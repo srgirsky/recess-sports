@@ -102,7 +102,7 @@ export class GameScene extends Phaser.Scene {
   private outsText!: Phaser.GameObjects.Text;
   private announce!: Phaser.GameObjects.Text;
   private announceBg!: Phaser.GameObjects.Rectangle;
-  private baseMarks: Phaser.GameObjects.Polygon[] = [];
+  private baseMarks: Phaser.GameObjects.Rectangle[] = [];
   private batterLabel!: Phaser.GameObjects.Text;
 
   constructor() {
@@ -142,36 +142,107 @@ export class GameScene extends Phaser.Scene {
 
   // --- Field & HUD ---------------------------------------------------------
   private drawField(): void {
-    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.grass);
+    const W = GAME_WIDTH;
+    const HORIZON = 210; // grass starts here; sky/crowd/fence above
 
-    // Infield dirt diamond spanning the four bases.
+    // Base grass fill (prevents any gaps behind everything else).
+    this.add.rectangle(W / 2, GAME_HEIGHT / 2, W, GAME_HEIGHT, COLORS.grass);
+
+    // --- Sky (gradient) ---
+    const sky = this.add.graphics();
+    sky.fillGradientStyle(0x8fd0ff, 0x8fd0ff, 0xd4efff, 0xd4efff, 1);
+    sky.fillRect(0, 68, W, HORIZON - 68);
+    // Sun + soft glow, top-right.
+    this.add.circle(858, 108, 46, 0xfff2b0, 0.5);
+    this.add.circle(858, 108, 30, 0xffe066, 1);
+    // A couple of clouds.
+    this.cloud(150, 110);
+    this.cloud(520, 96);
+
+    // --- Stands + crowd ---
+    this.add.rectangle(W / 2, 168, W, 44, 0x5b6a7a).setOrigin(0.5);
+    const crowdColors = [0xeb5a52, 0x3f86e0, 0x43b56f, 0x9161d0, 0xff924a, 0xf5c542, 0xffffff, 0x2fb4ac];
+    for (let i = 0; i < 110; i++) {
+      const x = Math.random() * W;
+      const y = 150 + Math.random() * 32;
+      this.add.circle(x, y, 4 + Math.random() * 2, crowdColors[(Math.random() * crowdColors.length) | 0]);
+    }
+
+    // --- Outfield fence (wall + padded cap + bunting) ---
+    this.add.rectangle(W / 2, 200, W, 26, 0x2f9e73).setOrigin(0.5); // green wall
+    this.add.rectangle(W / 2, 189, W, 8, COLORS.gold).setOrigin(0.5); // yellow cap
+    // Bunting triangles hanging off the cap.
+    const bunt = [0xeb5a52, 0xffffff, 0x3f86e0];
+    for (let x = 20; x < W; x += 60) {
+      this.add
+        .triangle(x, 193, 0, 0, 40, 0, 20, 22, bunt[(x / 60) % bunt.length])
+        .setOrigin(0.5, 0)
+        .setAlpha(0.9);
+    }
+
+    // --- Grass mowing stripes (subtle) ---
+    for (let x = 0; x < W; x += 96) {
+      if (((x / 96) & 1) === 0)
+        this.add.rectangle(x + 48, (HORIZON + GAME_HEIGHT) / 2, 96, GAME_HEIGHT - HORIZON, COLORS.grassDark, 0.35).setOrigin(0.5);
+    }
+
+    // --- Infield dirt diamond ---
     const cx = (FIRST.x + THIRD.x) / 2;
     const cy = (SECOND.y + HOME.y) / 2;
     this.add
-      .polygon(
-        cx,
-        cy,
-        [0, HOME.y - cy, FIRST.x - cx, 0, 0, SECOND.y - cy, THIRD.x - cx, 0],
-        COLORS.dirt
-      )
+      .polygon(cx, cy, [0, HOME.y - cy, FIRST.x - cx, 0, 0, SECOND.y - cy, THIRD.x - cx, 0], COLORS.dirt)
+      .setOrigin(0.5)
+      .setStrokeStyle(3, 0xb87a3f);
+    // Grass "cutout" in the middle of the infield for that manicured look.
+    this.add
+      .polygon(cx, cy + 6, [0, 58, 78, 0, 0, -58, -78, 0], COLORS.grass)
       .setOrigin(0.5);
 
-    // Base paths (subtle lines between the bases).
-    const g = this.add.graphics();
-    g.lineStyle(4, 0xffffff, 0.25);
-    g.strokePoints(
+    // --- Foul lines (home out past the corners) ---
+    const lines = this.add.graphics();
+    lines.lineStyle(4, 0xffffff, 0.85);
+    lines.lineBetween(HOME.x, HOME.y, 828, HORIZON);
+    lines.lineBetween(HOME.x, HOME.y, 132, HORIZON);
+
+    // Base paths.
+    const paths = this.add.graphics();
+    paths.lineStyle(5, 0xe9d9bf, 0.6);
+    paths.strokePoints(
       [HOME, FIRST, SECOND, THIRD, HOME].map((p) => new Phaser.Math.Vector2(p.x, p.y)),
       true
     );
 
-    // Base markers, lit gold when occupied. Index 0 = home (decorative).
-    [HOME, FIRST, SECOND, THIRD].forEach((p, i) => {
-      const diamond = this.add
-        .polygon(p.x, p.y, [0, -13, 13, 0, 0, 13, -13, 0], i === 0 ? COLORS.white : COLORS.cream)
+    // --- Pitcher's mound + rubber ---
+    this.add.ellipse(MOUND.x, MOUND.y + 4, 92, 60, COLORS.dirt).setStrokeStyle(3, 0xb87a3f);
+    this.add.rectangle(MOUND.x, MOUND.y, 26, 8, COLORS.white).setStrokeStyle(2, 0x9a9a9a);
+
+    // --- Home plate (pentagon) ---
+    this.add
+      .polygon(HOME.x, HOME.y + 6, [-13, -8, 13, -8, 13, 4, 0, 14, -13, 4], COLORS.white)
+      .setStrokeStyle(3, COLORS.ink)
+      .setOrigin(0.5);
+    // Batter's boxes.
+    const box = this.add.graphics();
+    box.lineStyle(3, 0xffffff, 0.7);
+    box.strokeRect(HOME.x - 58, HOME.y - 20, 26, 52);
+    box.strokeRect(HOME.x + 32, HOME.y - 20, 26, 52);
+
+    // --- Base plates (white squares, lit gold when occupied) ---
+    [FIRST, SECOND, THIRD].forEach((p, i) => {
+      const plate = this.add
+        .rectangle(p.x, p.y, 22, 22, COLORS.white)
         .setStrokeStyle(3, COLORS.ink)
-        .setOrigin(0.5);
-      if (i > 0) this.baseMarks[i - 1] = diamond;
+        .setAngle(45);
+      this.baseMarks[i] = plate;
     });
+  }
+
+  /** A simple two-lobe cloud. */
+  private cloud(x: number, y: number): void {
+    this.add.circle(x, y, 20, 0xffffff);
+    this.add.circle(x + 24, y + 4, 26, 0xffffff);
+    this.add.circle(x + 52, y, 18, 0xffffff);
+    this.add.ellipse(x + 26, y + 14, 80, 24, 0xffffff);
   }
 
   private drawHud(): void {
@@ -233,7 +304,7 @@ export class GameScene extends Phaser.Scene {
     this.outsText.setText(`Outs: ${'●'.repeat(outs)}${'○'.repeat(3 - outs)}`);
     for (let i = 0; i < 3; i++) {
       const lit = this.halfState?.bases[i];
-      this.baseMarks[i]?.setFillStyle(lit ? COLORS.gold : COLORS.cream);
+      this.baseMarks[i]?.setFillStyle(lit ? COLORS.gold : COLORS.white);
     }
   }
 

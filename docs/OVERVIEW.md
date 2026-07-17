@@ -52,7 +52,7 @@ The other 27 span archetypes (sluggers, speedsters, all-rounders, pitchers, weak
 - **Boot** — generates all 30 SVG character textures once, shows a loading bar, hands off to Title.
 - **Title** — logo, bobbing lineup, PLAY (unlocks audio), mute toggle, dev pick-rate overlay (press D).
 - **Draft** — 30 cards; player and AI alternate picks to 9 each; every player pick is logged.
-- **Game** — the interactive pitch-and-swing loop plus all the juice (below).
+- **Game** — the interactive pitch-and-swing loop plus all the juice (below), on a full ballpark backdrop (gradient sky, sun/clouds, a crowd in the stands, an outfield wall with bunting, mowing-striped grass, a manicured dirt infield, mound, and home plate) drawn procedurally in `GameScene.drawField()`.
 - **Result** — win/lose, team MVP, confetti + voice, rematch.
 
 ### The golden rule: pure logic vs. view
