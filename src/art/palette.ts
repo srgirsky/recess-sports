@@ -1,41 +1,39 @@
 // ---------------------------------------------------------------------------
-// The color palettes the character art draws from. Kept as hex strings because
-// they go straight into SVG fills. Index into these arrays via VisualParams.
+// Color palettes the character art draws from. Hex strings (they go straight
+// into SVG fills). Index into these arrays via VisualParams. The art code
+// derives its own darker "shadow" shades at draw time, so we only list bases.
 // ---------------------------------------------------------------------------
 
 export const SKIN_TONES = [
-  '#ffd9b3',
-  '#f1c27d',
-  '#e0ac69',
-  '#c68642',
-  '#8d5524',
+  '#ffdbac',
+  '#f5c99a',
+  '#e0ac7e',
+  '#c68a5e',
+  '#a06a44',
+  '#7a4a2b',
 ];
 
-/** A slightly darker shade of each skin tone for simple flat shading. */
-export const SKIN_SHADOW = [
-  '#eec092',
-  '#dcab63',
-  '#c8944f',
-  '#a86d34',
-  '#6f4119',
-];
+/** Kept for backwards-compat; the art code now derives shading itself. */
+export const SKIN_SHADOW = SKIN_TONES.map((c) => c);
 
 export const HAIR_COLORS = [
-  '#2b1b0e', // dark brown
-  '#4a2c14', // brown
-  '#8a5a2b', // light brown
-  '#111111', // black
-  '#c99a3b', // blonde
-  '#b23a2a', // red/auburn
+  '#3b2412', // dark brown
+  '#5a3418', // brown
+  '#96602f', // light brown
+  '#1a1a1a', // black
+  '#e0b552', // blonde
+  '#c0492f', // auburn/red
+  '#2b2b2b', // soft black
 ];
 
 export const UNIFORM_COLORS = [
-  { jersey: '#e8524a', trim: '#ffffff' }, // red
-  { jersey: '#3a7ad9', trim: '#ffde59' }, // blue/gold
-  { jersey: '#3fae6b', trim: '#ffffff' }, // green
-  { jersey: '#8e57c9', trim: '#ffce3a' }, // purple
-  { jersey: '#ff8c42', trim: '#14202e' }, // orange
-  { jersey: '#2ba8a1', trim: '#fff4de' }, // teal
+  { jersey: '#eb5a52', trim: '#ffffff' }, // red
+  { jersey: '#3f86e0', trim: '#ffe066' }, // blue / gold
+  { jersey: '#43b56f', trim: '#ffffff' }, // green
+  { jersey: '#9161d0', trim: '#ffd54a' }, // purple
+  { jersey: '#ff924a', trim: '#2a2a2a' }, // orange
+  { jersey: '#2fb4ac', trim: '#fff4de' }, // teal
+  { jersey: '#f5c542', trim: '#3a2a10' }, // sunny yellow
 ];
 
 export const SKIN_TONE_COUNT = SKIN_TONES.length;

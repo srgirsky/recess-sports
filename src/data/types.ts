@@ -23,6 +23,12 @@ export interface VisualParams {
   hairColor: number; // index into palette.HAIR_COLORS
   uniform: number; // index into palette.UNIFORM_COLORS
   accessory: Accessory;
+  /** Face personality. Defaults to 'happy' when omitted. */
+  expression?: Expression;
+  /** Body shape. Defaults to 'normal'. */
+  bodyType?: BodyType;
+  /** Little dusting of freckles across the nose. */
+  freckles?: boolean;
 }
 
 export type HairStyle =
@@ -31,7 +37,22 @@ export type HairStyle =
   | 'ponytail'
   | 'buzz'
   | 'mohawk'
-  | 'bald';
+  | 'bald'
+  | 'afro'
+  | 'pigtails'
+  | 'spiky'
+  | 'bun'
+  | 'long';
+
+export type Expression =
+  | 'happy'
+  | 'grin'
+  | 'cool'
+  | 'determined'
+  | 'goofy'
+  | 'surprised';
+
+export type BodyType = 'normal' | 'chunky' | 'small';
 
 export type Accessory = 'none' | 'cap' | 'headband' | 'glasses' | 'wheelchair';
 

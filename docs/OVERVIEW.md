@@ -68,7 +68,7 @@ Scenes call these reducers and animate the result. This is why the logic is unit
 
 ### Character art pipeline
 
-No image files. `art/CharacterArt.ts` builds a flat-vector **SVG string** from `VisualParams` (skin/hair/hair-color/uniform/accessory); `art/textureFactory.ts` base64-encodes it into a data URI and loads it as a Phaser texture keyed by the character id. 30 distinct kids come from curated combinations plus a few bespoke touches (the wheelchair). Generated once in Boot, reused everywhere.
+No image files. `art/CharacterArt.ts` hand-draws each kid as a **modern flat-mascot SVG string** — bold consistent outline, soft cell-shading (a derived darker shade, no gradients), rounded proportions, and real expressions — from `VisualParams`: `skin` / `hair` / `hairColor` / `uniform` / `accessory` plus personality knobs `expression` (happy/grin/cool/determined/goofy/surprised), `bodyType` (normal/chunky/small), and `freckles`. Hair styles include short/curly/ponytail/buzz/mohawk/bald/afro/pigtails/spiky/bun/long. `art/textureFactory.ts` base64-encodes the SVG into a data URI and loads it as a Phaser texture (rendered at 3× the viewBox for crispness) keyed by the character id. 30 distinct kids come from curated combinations plus bespoke touches (the wheelchair). Generated once in Boot, reused everywhere. `art.test.ts` asserts every roster kid yields valid, undefined-free SVG. Dev tool: press **G** on the Title for an all-30 art gallery.
 
 ### Feel & juice
 

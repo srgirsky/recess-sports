@@ -8,6 +8,7 @@ import { GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
 import { makeButton } from '../ui/Button';
 import { makeMuteButton } from '../ui/MuteButton';
 import { mountPickRateOverlay } from '../dev/PickRateOverlay';
+import { mountArtGallery } from '../dev/ArtGallery';
 import * as audio from '../systems/audio';
 
 export class TitleScene extends Phaser.Scene {
@@ -78,7 +79,7 @@ export class TitleScene extends Phaser.Scene {
     // Dev-only: press D to inspect the "voting machine" tallies.
     if (import.meta.env.DEV) {
       this.add
-        .text(GAME_WIDTH - 12, GAME_HEIGHT - 8, 'press D for pick rates', {
+        .text(GAME_WIDTH - 12, GAME_HEIGHT - 8, 'dev: D = pick rates · G = art gallery', {
           fontFamily: 'monospace',
           fontSize: '14px',
           color: '#14202e',
@@ -86,6 +87,7 @@ export class TitleScene extends Phaser.Scene {
         .setOrigin(1, 1)
         .setAlpha(0.5);
       mountPickRateOverlay(this);
+      mountArtGallery(this);
     }
   }
 }

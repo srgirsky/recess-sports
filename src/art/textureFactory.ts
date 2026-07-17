@@ -12,8 +12,8 @@ import Phaser from 'phaser';
 import type { Character } from '../data/types';
 import { buildCharacterSVG } from './CharacterArt';
 
-const RENDER_W = 400; // 2x the 200-wide viewBox
-const RENDER_H = 520; // 2x the 260-tall viewBox
+const RENDER_W = 600; // 3x the 200-wide viewBox — keeps the added detail crisp
+const RENDER_H = 780; // 3x the 260-tall viewBox
 
 /** Native display aspect helpers so scenes can size sprites without magic numbers. */
 export const CHAR_ASPECT = RENDER_W / RENDER_H;

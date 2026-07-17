@@ -14,7 +14,7 @@ Phaser 3 · TypeScript · Vite · vitest. Static site, no backend, deployed free
 
 - **Pure game logic lives in `src/systems/` with NO Phaser imports.** Draft, at-bat resolution, innings, and pick logging are plain functions: state in → result out. They're unit-tested in `src/systems/logic.test.ts`. This is the most important rule — it keeps the tricky logic testable and lets the render loop stay dumb.
 - **Scenes are the thin view layer.** They read input, call `systems/` reducers, and animate the result. A scene should never *decide* game outcomes — it plays back what a reducer returned. (E.g. baserunning animation is driven by `ApplyResult.movements` from `inning.ts`, so it can't desync from the real base state.)
-- **Character art is generated once in `BootScene`** as flat-vector SVG (no image files). `art/CharacterArt.ts` builds an SVG string from `VisualParams`; `art/textureFactory.ts` turns it into a Phaser texture keyed by character id.
+- **Character art is generated once in `BootScene`** as modern flat-mascot SVG (no image files). `art/CharacterArt.ts` builds an SVG string from `VisualParams` (skin/hair/hairColor/uniform/accessory + `expression`/`bodyType`/`freckles`); `art/textureFactory.ts` turns it into a Phaser texture (3× viewBox) keyed by character id. Dev art gallery: press **G** on the Title.
 - **All "feel" tunables live in `src/config.ts`** (timing windows, pitch speed, innings, shake, runner speed, audio volume). Change feel there, not inside scenes.
 - **Reusable juice** (shake/burst/floating text/confetti) is in `src/ui/effects.ts`; **sound** (free, code-synthesized) is in `src/systems/audio.ts`.
 
