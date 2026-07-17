@@ -41,3 +41,24 @@ export const INNINGS = 2;
 export const AI_PICK_DELAY_MS = 750;
 
 export const TEAM_SIZE = 9;
+
+// --- Juice & feel ----------------------------------------------------------
+
+/** Screen-shake intensity (pixels) per hit type. Bigger hit = bigger shake. */
+export const SHAKE = {
+  single: 3,
+  double: 5,
+  triple: 8,
+  homer: 13,
+};
+
+/** How long a runner takes to jog ONE base (ms). Post-hit pacing derives from this. */
+export const RUNNER_TWEEN_MS = 460;
+
+/** Show the contracting timing ring at the plate (swing-timing teaching aid). */
+export const SHOW_TIMING_RING = true;
+
+/** Master volume for the code-synthesized sound effects (0-1). */
+export const AUDIO = {
+  masterVolume: 0.35,
+};

@@ -6,7 +6,9 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
 import { makeButton } from '../ui/Button';
+import { makeMuteButton } from '../ui/MuteButton';
 import { mountPickRateOverlay } from '../dev/PickRateOverlay';
+import * as audio from '../systems/audio';
 
 export class TitleScene extends Phaser.Scene {
   constructor() {
@@ -63,8 +65,15 @@ export class TitleScene extends Phaser.Scene {
       icon: '⚾',
       width: 320,
       height: 110,
-      onClick: () => this.scene.start('Draft'),
+      onClick: () => {
+        // First user gesture — unlock audio for the whole session.
+        audio.unlock();
+        audio.pop();
+        this.scene.start('Draft');
+      },
     });
+
+    makeMuteButton(this, GAME_WIDTH - 40, 40);
 
     // Dev-only: press D to inspect the "voting machine" tallies.
     if (import.meta.env.DEV) {

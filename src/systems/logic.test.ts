@@ -122,6 +122,9 @@ describe('inning: auto-baserunning', () => {
     expect(res.runsScored).toBe(4);
     expect(res.state.bases).toEqual([false, false, false]);
     expect(res.state.runs).toBe(4);
+    // Four runners (three on base + batter) all cross home (toBase 4).
+    expect(res.movements).toHaveLength(4);
+    expect(res.movements.every((m) => m.toBase === 4)).toBe(true);
   });
 
   it('a single advances runners by one and puts the batter on first', () => {
@@ -131,6 +134,18 @@ describe('inning: auto-baserunning', () => {
     // 3rd scores, 1st -> 2nd, batter -> 1st
     expect(res.runsScored).toBe(1);
     expect(res.state.bases).toEqual([true, true, false]);
+    // Movements mirror the state change exactly.
+    expect(res.movements).toEqual([
+      { fromBase: 1, toBase: 2 }, // runner on first -> second
+      { fromBase: 3, toBase: 4 }, // runner on third scores
+      { fromBase: 0, toBase: 1 }, // batter -> first
+    ]);
+  });
+
+  it('non-hit outcomes report no movements', () => {
+    let s = newHalfInning();
+    expect(applyAtBat(s, { kind: 'strike', bases: 0, description: 'K' }).movements).toEqual([]);
+    expect(applyAtBat(s, { kind: 'out', bases: 0, description: 'out' }).movements).toEqual([]);
   });
 
   it('three strikeouts end the half-inning', () => {

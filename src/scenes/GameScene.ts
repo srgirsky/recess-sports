@@ -3,8 +3,9 @@
 // the opponent's bottom half is auto-simulated so we only build ONE interactive
 // batting surface. Two innings, then off to the Result screen.
 //
-// This is the one scene that leans on update()-style timing, but we keep it to
-// tweens + timers rather than a manual per-frame loop, which is easier to read.
+// This scene owns all the "juice": ball tracking, a timing ring, contact pops,
+// screen shake, ball flight, animated baserunning, and sound. The RULES still
+// live in the pure systems/ reducers — this scene just plays back what they say.
 // ---------------------------------------------------------------------------
 
 import Phaser from 'phaser';
@@ -15,28 +16,59 @@ import {
   PITCH_TRAVEL_MS,
   INNINGS,
   TEAM_SIZE,
+  SHAKE,
+  RUNNER_TWEEN_MS,
+  SHOW_TIMING_RING,
 } from '../config';
 import type { Character, TeamState } from '../data/types';
 import { getCharacter } from '../data/characters';
+import { UNIFORM_COLORS } from '../art/palette';
 import { bandFromError, resolveSwing, type SwingBand } from '../systems/atbat';
 import {
   newHalfInning,
   applyAtBat,
   isHalfOver,
   type HalfInningState,
+  type RunnerMove,
 } from '../systems/inning';
 import { recordGamePlayed } from '../systems/picklog';
+import * as audio from '../systems/audio';
+import { screenShake, burst, floatingText } from '../ui/effects';
+import { makeMuteButton } from '../ui/MuteButton';
 
 type Phase = 'pitching' | 'resolving' | 'auto' | 'ended';
 
-const MOUND = { x: 480, y: 250 };
-const PLATE = { x: 480, y: 478 };
+// Field geometry — a clean diamond seen from behind home plate.
+const HOME = { x: 480, y: 500 };
+const FIRST = { x: 662, y: 358 };
+const SECOND = { x: 480, y: 216 };
+const THIRD = { x: 298, y: 358 };
+const MOUND = { x: 480, y: 356 };
+
+/** Position for a base index: 0 & 4 = home, 1/2/3 = the bases. */
+function basePos(idx: number): { x: number; y: number } {
+  switch (idx) {
+    case 1:
+      return FIRST;
+    case 2:
+      return SECOND;
+    case 3:
+      return THIRD;
+    default:
+      return HOME; // 0 (batter) and 4 (scored)
+  }
+}
+
+function jerseyColor(char: Character): number {
+  const hex = UNIFORM_COLORS[char.visual.uniform]?.jersey ?? '#ffffff';
+  return parseInt(hex.slice(1), 16);
+}
 
 export class GameScene extends Phaser.Scene {
   private playerTeam!: string[];
   private aiTeam!: string[];
-  private aiPitcher!: Character; // pitches to the player
-  private playerPitcher!: Character; // pitches during the auto-sim
+  private aiPitcher!: Character;
+  private playerPitcher!: Character;
 
   private inning = 1;
   private half: 'top' | 'bottom' = 'top';
@@ -44,15 +76,23 @@ export class GameScene extends Phaser.Scene {
   private aiScore = 0;
   private playerLineup = 0;
   private aiLineup = 0;
+  private firstPitchOfGame = true;
 
   private halfState!: HalfInningState;
   private phase: Phase = 'resolving';
 
-  // per-pitch state
+  // per-pitch visuals
   private ball?: Phaser.GameObjects.Arc;
+  private ballShadow?: Phaser.GameObjects.Ellipse;
+  private ringShrink?: Phaser.GameObjects.Arc;
+  private ringTarget?: Phaser.GameObjects.Arc;
+  private trailTimer?: Phaser.Time.TimerEvent;
   private pitchStart = 0;
   private swung = false;
   private batter!: Character;
+
+  // baserunners currently on the diamond, keyed by base (1-3)
+  private runners = new Map<number, Phaser.GameObjects.Arc>();
 
   // display objects
   private batterSprite?: Phaser.GameObjects.Image;
@@ -61,6 +101,7 @@ export class GameScene extends Phaser.Scene {
   private inningText!: Phaser.GameObjects.Text;
   private outsText!: Phaser.GameObjects.Text;
   private announce!: Phaser.GameObjects.Text;
+  private announceBg!: Phaser.GameObjects.Rectangle;
   private baseMarks: Phaser.GameObjects.Polygon[] = [];
   private batterLabel!: Phaser.GameObjects.Text;
 
@@ -78,7 +119,9 @@ export class GameScene extends Phaser.Scene {
     this.playerLineup = 0;
     this.aiLineup = 0;
     this.phase = 'resolving';
+    this.firstPitchOfGame = true;
     this.baseMarks = [];
+    this.runners = new Map();
   }
 
   create(): void {
@@ -89,9 +132,10 @@ export class GameScene extends Phaser.Scene {
     this.drawField();
     this.drawHud();
     this.bindSwingInput();
+    makeMuteButton(this, GAME_WIDTH - 30, 68);
 
     this.pitcherSprite = this.add.image(MOUND.x, MOUND.y, this.aiPitcher.id).setOrigin(0.5, 1);
-    this.pitcherSprite.setScale(120 / this.pitcherSprite.height);
+    this.pitcherSprite.setScale(110 / this.pitcherSprite.height);
 
     this.startHalf();
   }
@@ -99,29 +143,34 @@ export class GameScene extends Phaser.Scene {
   // --- Field & HUD ---------------------------------------------------------
   private drawField(): void {
     this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.grass);
-    // Infield dirt diamond
+
+    // Infield dirt diamond spanning the four bases.
+    const cx = (FIRST.x + THIRD.x) / 2;
+    const cy = (SECOND.y + HOME.y) / 2;
     this.add
       .polygon(
-        480,
-        360,
-        [0, -150, 170, 0, 0, 150, -170, 0],
+        cx,
+        cy,
+        [0, HOME.y - cy, FIRST.x - cx, 0, 0, SECOND.y - cy, THIRD.x - cx, 0],
         COLORS.dirt
       )
       .setOrigin(0.5);
 
-    // Base markers (home, first, second, third), lit when occupied.
-    const basePts = [
-      { x: 480, y: 500 }, // home (not used as an occupancy light)
-      { x: 632, y: 360 }, // first
-      { x: 480, y: 218 }, // second
-      { x: 328, y: 360 }, // third
-    ];
-    basePts.forEach((p, i) => {
+    // Base paths (subtle lines between the bases).
+    const g = this.add.graphics();
+    g.lineStyle(4, 0xffffff, 0.25);
+    g.strokePoints(
+      [HOME, FIRST, SECOND, THIRD, HOME].map((p) => new Phaser.Math.Vector2(p.x, p.y)),
+      true
+    );
+
+    // Base markers, lit gold when occupied. Index 0 = home (decorative).
+    [HOME, FIRST, SECOND, THIRD].forEach((p, i) => {
       const diamond = this.add
-        .polygon(p.x, p.y, [0, -14, 14, 0, 0, 14, -14, 0], i === 0 ? COLORS.white : COLORS.cream)
+        .polygon(p.x, p.y, [0, -13, 13, 0, 0, 13, -13, 0], i === 0 ? COLORS.white : COLORS.cream)
         .setStrokeStyle(3, COLORS.ink)
         .setOrigin(0.5);
-      if (i > 0) this.baseMarks[i - 1] = diamond; // index 0..2 => first/second/third
+      if (i > 0) this.baseMarks[i - 1] = diamond;
     });
   }
 
@@ -138,32 +187,40 @@ export class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5, 0);
     this.outsText = this.add
-      .text(GAME_WIDTH - 24, 20, '', {
+      .text(GAME_WIDTH - 70, 20, '', {
         fontFamily: 'Arial Black, Arial',
         fontSize: '26px',
         color: '#ffffff',
       })
       .setOrigin(1, 0);
 
+    // Announcer lives in its own band below the HUD so it never sits on a sprite.
+    this.announceBg = this.add
+      .rectangle(GAME_WIDTH / 2, 108, 640, 62, COLORS.ink, 0.55)
+      .setOrigin(0.5)
+      .setDepth(90)
+      .setAlpha(0);
     this.announce = this.add
-      .text(GAME_WIDTH / 2, 150, '', {
+      .text(GAME_WIDTH / 2, 108, '', {
         fontFamily: 'Arial Black, Arial',
-        fontSize: '44px',
+        fontSize: '38px',
         color: '#ffffff',
         fontStyle: 'bold',
         align: 'center',
       })
       .setOrigin(0.5)
-      .setStroke('#14202e', 8);
+      .setStroke('#14202e', 7)
+      .setDepth(91);
 
     this.batterLabel = this.add
-      .text(PLATE.x - 120, PLATE.y + 14, '', {
+      .text(HOME.x, HOME.y + 34, '', {
         fontFamily: 'Arial Black, Arial',
         fontSize: '20px',
         color: '#ffffff',
       })
-      .setOrigin(1, 0.5)
-      .setStroke('#14202e', 5);
+      .setOrigin(0.5, 0.5)
+      .setStroke('#14202e', 5)
+      .setDepth(30);
 
     this.refreshHud();
   }
@@ -183,9 +240,11 @@ export class GameScene extends Phaser.Scene {
   // --- Half-inning orchestration ------------------------------------------
   private startHalf(): void {
     this.halfState = newHalfInning();
+    this.clearRunners();
     this.refreshHud();
     if (this.half === 'top') {
       this.flashAnnounce(`Inning ${this.inning}\nYOU'RE UP!`, COLORS.gold);
+      if (this.firstPitchOfGame) audio.say('Play ball!');
       this.time.delayedCall(1100, () => this.nextPlayerBatter());
     } else {
       this.flashAnnounce('OTHER TEAM\nBATTING', COLORS.red);
@@ -230,7 +289,6 @@ export class GameScene extends Phaser.Scene {
     this.showBatter(this.batter);
     this.batterLabel.setText(this.batter.name);
 
-    // "Calls his shot" flavor: a confident (always wrong) prediction.
     if (this.batter.ability === 'calls_shot') {
       this.flashAnnounce('"HOME RUN,\nCALLED IT!"', COLORS.white, 900);
       this.time.delayedCall(950, () => this.throwPitch());
@@ -243,25 +301,74 @@ export class GameScene extends Phaser.Scene {
     this.phase = 'pitching';
     this.swung = false;
     this.pitchStart = this.time.now;
+    this.firstPitchOfGame = false;
+    audio.pitchWoosh();
 
-    this.ball?.destroy();
-    this.ball = this.add.circle(MOUND.x, MOUND.y - 40, 9, COLORS.white).setDepth(20);
+    // Timing ring: a white ring shrinks to meet the gold target ring exactly
+    // when the ball reaches the plate — swing when they line up.
+    if (SHOW_TIMING_RING) {
+      this.ringTarget = this.add.circle(HOME.x, HOME.y - 26, 30).setStrokeStyle(4, COLORS.gold).setDepth(15);
+      this.ringShrink = this.add.circle(HOME.x, HOME.y - 26, 30).setStrokeStyle(5, COLORS.white).setDepth(16);
+      this.ringShrink.setScale(3.6);
+      this.tweens.add({
+        targets: this.ringShrink,
+        scale: 1,
+        duration: PITCH_TRAVEL_MS,
+        ease: 'Sine.in',
+      });
+    }
+
+    // Ball + a shadow that grows as it nears the plate (depth cue).
+    this.ballShadow = this.add.ellipse(MOUND.x, MOUND.y + 6, 18, 7, COLORS.ink, 0.3).setDepth(14);
+    this.ball = this.add.circle(MOUND.x, MOUND.y - 36, 10, COLORS.white).setDepth(20);
     this.ball.setStrokeStyle(2, COLORS.ink);
 
     this.tweens.add({
       targets: this.ball,
-      x: PLATE.x,
-      y: PLATE.y - 30,
-      scale: { from: 0.7, to: 1.5 },
+      x: HOME.x,
+      y: HOME.y - 26,
+      scale: { from: 0.7, to: 1.7 },
       duration: PITCH_TRAVEL_MS,
       ease: 'Sine.in',
       onComplete: () => {
-        // Ball reached the plate with no swing -> a called strike ("a take").
-        if (!this.swung && this.phase === 'pitching') {
-          this.resolvePlayerSwing('miss', /* took */ true);
-        }
+        if (!this.swung && this.phase === 'pitching') this.resolvePlayerSwing('miss', true);
       },
     });
+    this.tweens.add({
+      targets: this.ballShadow,
+      x: HOME.x,
+      y: HOME.y + 8,
+      scaleX: 2,
+      scaleY: 2,
+      duration: PITCH_TRAVEL_MS,
+      ease: 'Sine.in',
+    });
+
+    // A faint fading trail behind the ball.
+    this.trailTimer = this.time.addEvent({
+      delay: 45,
+      loop: true,
+      callback: () => {
+        if (!this.ball) return;
+        const dot = this.add
+          .circle(this.ball.x, this.ball.y, 6 * this.ball.scale, COLORS.white, 0.4)
+          .setDepth(19);
+        this.tweens.add({ targets: dot, alpha: 0, duration: 220, onComplete: () => dot.destroy() });
+      },
+    });
+  }
+
+  private clearPitchVisuals(): void {
+    this.trailTimer?.remove();
+    this.trailTimer = undefined;
+    this.ball?.destroy();
+    this.ball = undefined;
+    this.ballShadow?.destroy();
+    this.ballShadow = undefined;
+    this.ringShrink?.destroy();
+    this.ringShrink = undefined;
+    this.ringTarget?.destroy();
+    this.ringTarget = undefined;
   }
 
   private onSwing(): void {
@@ -274,52 +381,141 @@ export class GameScene extends Phaser.Scene {
 
   private resolvePlayerSwing(band: SwingBand, took: boolean): void {
     this.phase = 'resolving';
-    this.ball?.destroy();
-    this.ball = undefined;
+    this.clearPitchVisuals();
 
     if (took) {
-      // Treat as a called strike outcome fed through the rules.
-      this.applyAndContinue({ kind: 'strike', bases: 0, description: 'Strike! (took it)' }, true);
+      floatingText(this, HOME.x, HOME.y - 60, 'STRIKE!', COLORS.red, 30);
+      this.applyAndContinue({ kind: 'strike', bases: 0, description: 'Strike! (took it)' });
       return;
     }
 
-    const result = resolveSwing(band, this.batter, this.aiPitcher, () => Math.random());
     this.animateSwing();
-    this.applyAndContinue(result, true);
+    this.showBandFeedback(band);
+
+    const result = resolveSwing(band, this.batter, this.aiPitcher, () => Math.random());
+    if (result.kind === 'hit') {
+      audio.crack();
+      this.flyHitBall(result.bases);
+      screenShake(this, shakeFor(result.bases));
+    } else if (result.kind === 'strike') {
+      audio.whiff();
+    } else if (result.kind === 'foul') {
+      audio.crack();
+    }
+    this.applyAndContinue(result);
   }
 
-  private applyAndContinue(
-    result: { kind: 'hit' | 'out' | 'strike' | 'foul'; bases: number; description: string },
-    interactive: boolean
-  ): void {
+  private applyAndContinue(result: {
+    kind: 'hit' | 'out' | 'strike' | 'foul';
+    bases: number;
+    description: string;
+  }): void {
+    const prevBatter = this.batter;
     const applied = applyAtBat(this.halfState, result);
     this.halfState = applied.state;
+    if (applied.runsScored > 0) this.playerScore += applied.runsScored;
 
-    if (interactive) {
-      if (applied.runsScored > 0) this.playerScore += applied.runsScored;
-    } else {
-      if (applied.runsScored > 0) this.aiScore += applied.runsScored;
+    // Baserunning animation, driven by the reducer's movement list.
+    let runDelay = 0;
+    if (result.kind === 'hit') {
+      runDelay = this.animateBaserunning(applied.movements, jerseyColor(prevBatter));
+      this.fadeOutBatter();
+    }
+
+    if (applied.runsScored > 0) {
+      audio.cheer();
+      if (result.bases >= 4) audio.say('Home run!');
     }
 
     const color =
       result.kind === 'hit' ? COLORS.gold : result.kind === 'foul' ? COLORS.white : COLORS.red;
     let msg = result.description;
-    if (applied.runsScored > 0) msg += `\n+${applied.runsScored} RUN${applied.runsScored > 1 ? 'S' : ''}!`;
+    if (applied.runsScored > 0)
+      msg += `\n+${applied.runsScored} RUN${applied.runsScored > 1 ? 'S' : ''}!`;
     this.flashAnnounce(msg, color);
     this.refreshHud();
 
-    if (!interactive) return; // auto-sim handles its own pacing
-
-    const delay = result.kind === 'hit' ? 1100 : 850;
-    this.time.delayedCall(delay, () => {
+    const baseDelay = result.kind === 'hit' ? Math.max(1000, runDelay + 350) : 850;
+    this.time.delayedCall(baseDelay, () => {
       if (applied.batterDone) this.playerLineup += 1;
       if (isHalfOver(this.halfState)) {
         this.endHalf();
       } else if (applied.batterDone) {
         this.nextPlayerBatter();
       } else {
-        this.throwPitch(); // same batter (foul, or a non-terminal strike)
+        this.throwPitch();
       }
+    });
+  }
+
+  // --- Animated baserunning -----------------------------------------------
+  /** Move runner tokens per the reducer's movements. Returns the animation duration. */
+  private animateBaserunning(movements: RunnerMove[], color: number): number {
+    const next = new Map<number, Phaser.GameObjects.Arc>();
+    let maxBases = 0;
+
+    for (const m of movements) {
+      maxBases = Math.max(maxBases, m.toBase - m.fromBase);
+      // Grab the token: the batter (fromBase 0) gets a fresh one at home.
+      let token = m.fromBase === 0 ? this.makeRunner(color) : this.runners.get(m.fromBase);
+      if (!token) token = this.makeRunner(color); // safety
+      this.runners.delete(m.fromBase);
+
+      // Waypoints: each base from fromBase+1 up to toBase.
+      const legs: Array<{ x: number; y: number; duration: number; ease: string }> = [];
+      for (let b = m.fromBase + 1; b <= m.toBase; b++) {
+        const p = basePos(b);
+        legs.push({ x: p.x, y: p.y, duration: RUNNER_TWEEN_MS, ease: 'Sine.inOut' });
+      }
+
+      const scored = m.toBase >= 4;
+      if (legs.length > 0) {
+        this.tweens.chain({
+          targets: token,
+          tweens: legs,
+          onComplete: () => {
+            if (scored) {
+              burst(this, HOME.x, HOME.y - 20, COLORS.gold, 14);
+              token!.destroy();
+            }
+          },
+        });
+      }
+      if (!scored) next.set(m.toBase, token);
+    }
+
+    this.runners = next;
+    return maxBases * RUNNER_TWEEN_MS;
+  }
+
+  private makeRunner(color: number): Phaser.GameObjects.Arc {
+    const r = this.add.circle(HOME.x, HOME.y - 6, 15, color).setStrokeStyle(3, COLORS.white).setDepth(40);
+    return r;
+  }
+
+  private clearRunners(): void {
+    this.runners.forEach((t) => t.destroy());
+    this.runners.clear();
+  }
+
+  /** Arc the hit ball out toward the outfield; distance scales with the hit. */
+  private flyHitBall(bases: number): void {
+    const targets: Record<number, { x: number; y: number }> = {
+      1: { x: 380 + Math.random() * 200, y: 250 },
+      2: { x: Math.random() < 0.5 ? 320 : 640, y: 170 },
+      3: { x: Math.random() < 0.5 ? 300 : 660, y: 120 },
+      4: { x: 360 + Math.random() * 240, y: -70 },
+    };
+    const dest = targets[bases] ?? targets[1];
+    const hitBall = this.add.circle(HOME.x, HOME.y - 26, 11, COLORS.white).setStrokeStyle(2, COLORS.ink).setDepth(25);
+    this.tweens.add({
+      targets: hitBall,
+      x: dest.x,
+      y: dest.y,
+      scale: 0.4,
+      duration: 700,
+      ease: 'Sine.out',
+      onComplete: () => hitBall.destroy(),
     });
   }
 
@@ -336,6 +532,9 @@ export class GameScene extends Phaser.Scene {
     this.halfState = applied.state;
     if (applied.runsScored > 0) this.aiScore += applied.runsScored;
 
+    if (result.kind === 'hit') audio.crack();
+    if (applied.runsScored > 0) audio.cheer();
+
     const color = result.kind === 'hit' ? COLORS.gold : COLORS.red;
     let msg = `${batter.name}: ${result.description}`;
     if (applied.runsScored > 0) msg += `  (+${applied.runsScored})`;
@@ -349,25 +548,43 @@ export class GameScene extends Phaser.Scene {
   // --- Little visual helpers ----------------------------------------------
   private showBatter(char: Character): void {
     this.batterSprite?.destroy();
-    this.batterSprite = this.add.image(PLATE.x - 66, PLATE.y, char.id).setOrigin(0.5, 1);
-    this.batterSprite.setScale(150 / this.batterSprite.height);
-    this.batterSprite.setFlipX(true); // face the mound
+    this.batterSprite = this.add.image(HOME.x - 70, HOME.y + 6, char.id).setOrigin(0.5, 1).setDepth(28);
+    const s = 150 / this.batterSprite.height;
+    this.batterSprite.setScale(s).setFlipX(true);
     this.tweens.add({
       targets: this.batterSprite,
-      scale: { from: (150 / this.batterSprite.height) * 1.15, to: 150 / this.batterSprite.height },
+      scale: { from: s * 1.15, to: s },
       duration: 200,
       ease: 'Back.out',
     });
+  }
+
+  private fadeOutBatter(): void {
+    if (!this.batterSprite) return;
+    const s = this.batterSprite;
+    this.batterSprite = undefined;
+    this.tweens.add({ targets: s, alpha: 0, duration: 300, onComplete: () => s.destroy() });
   }
 
   private animateSwing(): void {
     if (!this.batterSprite) return;
     this.tweens.add({
       targets: this.batterSprite,
-      angle: { from: -8, to: 12 },
-      duration: 120,
+      angle: { from: -10, to: 14 },
+      duration: 110,
       yoyo: true,
     });
+  }
+
+  private showBandFeedback(band: SwingBand): void {
+    const map: Record<SwingBand, { label: string; color: number }> = {
+      perfect: { label: 'PERFECT!', color: COLORS.gold },
+      good: { label: 'GOOD!', color: 0x3fae6b },
+      weak: { label: 'ok', color: 0xff8c42 },
+      miss: { label: 'MISS!', color: COLORS.red },
+    };
+    const f = map[band];
+    floatingText(this, HOME.x, HOME.y - 70, f.label, f.color, band === 'perfect' ? 40 : 32);
   }
 
   private flashAnnounce(text: string, color: number, hold = 700): void {
@@ -375,18 +592,9 @@ export class GameScene extends Phaser.Scene {
     this.announce.setColor('#' + color.toString(16).padStart(6, '0'));
     this.announce.setScale(0.6);
     this.announce.setAlpha(1);
-    this.tweens.add({
-      targets: this.announce,
-      scale: 1,
-      duration: 180,
-      ease: 'Back.out',
-    });
-    this.tweens.add({
-      targets: this.announce,
-      alpha: 0,
-      delay: hold,
-      duration: 250,
-    });
+    this.announceBg.setAlpha(0.55);
+    this.tweens.add({ targets: this.announce, scale: 1, duration: 180, ease: 'Back.out' });
+    this.tweens.add({ targets: [this.announce, this.announceBg], alpha: 0, delay: hold, duration: 250 });
   }
 
   private bindSwingInput(): void {
@@ -401,6 +609,19 @@ function bestPitcher(teamIds: string[]): Character {
   return teamIds
     .map(getCharacter)
     .reduce((best, c) => (c.stats.pitching > best.stats.pitching ? c : best));
+}
+
+function shakeFor(bases: number): number {
+  switch (bases) {
+    case 4:
+      return SHAKE.homer;
+    case 3:
+      return SHAKE.triple;
+    case 2:
+      return SHAKE.double;
+    default:
+      return SHAKE.single;
+  }
 }
 
 /** Auto-sim swing quality, weighted by the batter's contact stat. */

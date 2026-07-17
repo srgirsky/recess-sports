@@ -16,6 +16,7 @@ import {
 } from '../systems/draft';
 import { recordPick } from '../systems/picklog';
 import { makeCharacterCard, type CharacterCard } from '../ui/CharacterCard';
+import * as audio from '../systems/audio';
 
 export class DraftScene extends Phaser.Scene {
   private state!: DraftState;
@@ -119,6 +120,7 @@ export class DraftScene extends Phaser.Scene {
 
     this.state = applyPick(this.state, id);
     recordPick(id); // <-- the vote is cast
+    audio.pop();
 
     this.consumeCard(id);
     this.fillNextSlot(id);

@@ -28,6 +28,17 @@ export function isHalfOver(state: HalfInningState): boolean {
   return state.outs >= 3;
 }
 
+/**
+ * One runner's journey on a hit, in base units: 0 = home/at-bat (the batter),
+ * 1/2/3 = the bases, 4 = crossed home and scored. The scene tweens sprites
+ * along exactly these paths, so the animation is always driven by the real
+ * rules — it can never disagree with the resulting `state.bases`.
+ */
+export interface RunnerMove {
+  fromBase: number; // 0 = batter at home, 1-3 = on a base
+  toBase: number; // 1-3 = ended on a base, 4 = scored
+}
+
 export interface ApplyResult {
   state: HalfInningState;
   /** Runs that scored on THIS at-bat (for pop-up animations / SFX). */
@@ -36,6 +47,8 @@ export interface ApplyResult {
   batterOut: boolean;
   /** True if the batter's turn ended (out or reached base) — advance the lineup. */
   batterDone: boolean;
+  /** Runner movements to animate (only on a hit; empty otherwise). */
+  movements: RunnerMove[];
 }
 
 /**
@@ -57,7 +70,7 @@ export function applyAtBat(
     case 'foul': {
       // Foul is a strike, but never the third strike.
       if (state.count.strikes < 2) state.count.strikes += 1;
-      return { state, runsScored: 0, batterOut: false, batterDone: false };
+      return { state, runsScored: 0, batterOut: false, batterDone: false, movements: [] };
     }
 
     case 'strike': {
@@ -65,31 +78,35 @@ export function applyAtBat(
       if (state.count.strikes >= 3) {
         state.outs += 1;
         state.count = { balls: 0, strikes: 0 };
-        return { state, runsScored: 0, batterOut: true, batterDone: true };
+        return { state, runsScored: 0, batterOut: true, batterDone: true, movements: [] };
       }
-      return { state, runsScored: 0, batterOut: false, batterDone: false };
+      return { state, runsScored: 0, batterOut: false, batterDone: false, movements: [] };
     }
 
     case 'out': {
       state.outs += 1;
       state.count = { balls: 0, strikes: 0 };
-      return { state, runsScored: 0, batterOut: true, batterDone: true };
+      return { state, runsScored: 0, batterOut: true, batterDone: true, movements: [] };
     }
 
     case 'hit': {
-      const runsScored = advanceRunners(state, result.bases);
-      state.runs += runsScored;
+      const { runs, movements } = advanceRunners(state, result.bases);
+      state.runs += runs;
       state.count = { balls: 0, strikes: 0 };
-      return { state, runsScored, batterOut: false, batterDone: true };
+      return { state, runsScored: runs, batterOut: false, batterDone: true, movements };
     }
   }
 }
 
 /**
  * Push every runner (and the batter) forward by `bases`. Anyone past third
- * scores. Mutates `state.bases` in place and returns runs scored.
+ * scores. Mutates `state.bases` in place; returns runs scored plus the list of
+ * per-runner movements for the scene to animate.
  */
-function advanceRunners(state: HalfInningState, bases: number): number {
+function advanceRunners(
+  state: HalfInningState,
+  bases: number
+): { runs: number; movements: RunnerMove[] } {
   // Positions as distances from home: batter starts at 0.
   // Represent occupied bases as a list of positions (1..3), add the batter.
   const runners: number[] = [];
@@ -99,9 +116,11 @@ function advanceRunners(state: HalfInningState, bases: number): number {
   runners.push(0); // the batter
 
   let runs = 0;
+  const movements: RunnerMove[] = [];
   const newBases: [boolean, boolean, boolean] = [false, false, false];
   for (const pos of runners) {
     const dest = pos + bases;
+    movements.push({ fromBase: pos, toBase: Math.min(dest, 4) });
     if (dest >= 4) {
       runs += 1; // crossed home
     } else {
@@ -109,5 +128,5 @@ function advanceRunners(state: HalfInningState, bases: number): number {
     }
   }
   state.bases = newBases;
-  return runs;
+  return { runs, movements };
 }

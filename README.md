@@ -9,6 +9,12 @@ Built with **Phaser 3 + TypeScript + Vite**. It's a static site — no server, n
 database, free to host. All state (including pick tallies) lives in the browser
 for now; a real cross-player backend comes later.
 
+**🎮 Play it:** https://srgirsky.github.io/recess-sports/
+
+> New here? `CLAUDE.md` is the quick architecture on-ramp (great for AI tools too),
+> and `docs/OVERVIEW.md` has the full product + design context. This README is the
+> hands-on run/build/deploy guide.
+
 ---
 
 ## Running it
@@ -48,14 +54,17 @@ npm run build     # type-checks, then outputs a static site to dist/
 npm run preview   # serve the built site locally to double-check
 ```
 
-**Deploy to Cloudflare Pages or Netlify (free):**
+**Deployment is automatic via GitHub Pages.** A GitHub Actions workflow
+(`.github/workflows/deploy.yml`) builds and publishes on every push to `main`:
 
-1. `git init`, commit, and push to a GitHub repo.
-2. In Cloudflare Pages (or Netlify): "Create project" → connect the repo.
-3. Set **Build command:** `npm run build` and **Output directory:** `dist`.
-4. Every `git push` auto-builds and deploys to a free `*.pages.dev` URL.
+```bash
+git add -A && git commit -m "your message"
+git push          # → Actions builds + deploys to https://srgirsky.github.io/recess-sports/
+```
 
-Because it's pure static files, there's nothing to provision and no running cost.
+First-load caching: Pages/CDN can take a minute to reflect a push, and browsers
+cache hard — hard-refresh (Cmd/Ctrl+Shift+R) if you don't see a change. Because
+it's pure static files, there's nothing to provision and no running cost.
 
 ---
 
@@ -64,33 +73,36 @@ Because it's pure static files, there's nothing to provision and no running cost
 ```
 src/
   main.ts            Phaser game setup + scene list (the "urls.py")
-  config.ts          ★ ALL the tuning knobs: swing windows, innings, colors
+  config.ts          ★ ALL the tuning knobs: swing windows, innings, shake, audio
   scenes/            The "pages": Boot → Title → Draft → Game → Result
   data/
     types.ts         Character/Stats/... type definitions
     characters.ts    ★ The 30 kids (content — edit freely)
   art/               Draws each kid as flat-vector SVG (no image files)
   systems/           ★ Pure game logic (no Phaser) — draft, at-bat, innings, picklog
-    logic.test.ts    Headless tests for the above
-  ui/                Reusable Button + CharacterCard
+    audio.ts         Free code-synthesized SFX + voice (uses Web Audio / SpeechSynthesis)
+    logic.test.ts    Headless tests for the pure logic
+  ui/                Button, CharacterCard, MuteButton, effects (juice helpers)
   dev/               Dev-only pick-rate overlay
 ```
 
-★ = the files you'll most likely want to edit.
+★ = the files you'll most likely want to edit. (Architecture rationale: `docs/OVERVIEW.md`.)
 
 ## Handy things to know
 
 - **Tune the feel** in `src/config.ts` — `TIMING` controls how forgiving the
   swing is (widen for younger kids), `PITCH_TRAVEL_MS` the pitch speed,
-  `INNINGS` the game length.
+  `INNINGS` the game length, `SHAKE`/`RUNNER_TWEEN_MS`/`AUDIO` the juice.
 - **Add/rebalance kids** in `src/data/characters.ts`. Stats are 1–10. The three
   signature kids use `ability` hooks (`never_strikes_out`, `calls_shot`,
   `unhittable_pitch`); everyone else is `none`.
+- **Sound is free & code-generated** (no audio files) — SFX via Web Audio, voice
+  via the browser. A 🔊/🔇 toggle (persisted) sits on Title/Game/Result.
 - **See the "voting machine"**: on the title screen (dev mode only) press **D**
   to see which kids you've drafted most; **R** resets the tally.
 
-## What's next (not in this first slice)
+## What's next
 
-- Sound + kid-friendly voice callouts
 - A real backend to aggregate pick rates across all players
-- More characters, richer art, and — eventually — the dinosaurs 🦖
+- More characters, richer art, recorded audio
+- Eventually… the dinosaurs 🦖

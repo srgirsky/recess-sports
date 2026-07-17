@@ -6,6 +6,9 @@ import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
 import { getCharacter } from '../data/characters';
 import { makeButton } from '../ui/Button';
+import { makeMuteButton } from '../ui/MuteButton';
+import { confetti } from '../ui/effects';
+import * as audio from '../systems/audio';
 
 interface ResultData {
   playerScore: number;
@@ -35,6 +38,16 @@ export class ResultScene extends Phaser.Scene {
       })
       .setOrigin(0.5)
       .setStroke('#14202e', 12);
+
+    // Celebrate.
+    if (won) {
+      confetti(this);
+      audio.cheer();
+      audio.say('You win!');
+    } else {
+      audio.say(tied ? 'Tie game!' : 'Good game!');
+    }
+    makeMuteButton(this, GAME_WIDTH - 40, 40);
 
     this.add
       .text(cx, 190, `YOU ${data.playerScore}   —   ${data.aiScore} CPU`, {
