@@ -39,11 +39,20 @@ import {
 import {
   pitchBandFromError,
   resolveCpuPitch,
+  resolveCpuPitchLocated,
   rollAiWildPitch,
   wildSwingBand,
   type PitchBand,
   type CpuPitchPlan,
 } from '../systems/pitch';
+import {
+  chooseCpuPitch,
+  resolvePitchLocation,
+  ballCurveAt,
+  type PitchPlan,
+  type PlateLoc,
+} from '../systems/pitchkind';
+import { showPitchSelect, zoneOutline, plateToScreen, type PitchSelect } from './ui/PitchSelectUI';
 import { shouldSkipBottom, isWalkOff, decideAfterHalf } from '../systems/gameflow';
 import {
   newHalfInning,
@@ -74,7 +83,7 @@ import {
   type LiveInputs,
 } from '../systems/liveplay';
 import { getMode, getFeatures, resolveLiveParams, type LiveParams } from '../systems/mode';
-import { LIVE, type GameMode, type ModeFeatures } from '../config';
+import { LIVE, type GameMode, type ModeFeatures, type PitchKind } from '../config';
 import { recordGamePlayed } from '../systems/picklog';
 import * as audio from '../systems/audio';
 import { screenShake, burst, floatingText } from '../ui/effects';
@@ -134,12 +143,21 @@ export class GameScene extends Phaser.Scene {
   private swung = false;
   private batter!: Character;
   private pitchIsWild = false;
+  /** Flight time of the pitch currently inbound (varies by kind in main mode). */
+  private pitchTravelMs = PITCH_TRAVEL_MS;
+  /** The located pitch coming at the player (main mode; public for dev/tests —
+   *  the batting cursor reads it next phase). */
+  pitchPlan?: PitchPlan;
+  private zoneGfx?: Phaser.GameObjects.Graphics;
 
   // defense half (the player pitches)
   private cpuBatter!: Character;
   private meterStart = 0;
   private threw = false;
   private autoThrowTimer?: Phaser.Time.TimerEvent;
+  /** Main mode: the pitch kind + aim chosen before the meter starts. */
+  private selectedPitch?: { kind: PitchKind; target: PlateLoc };
+  private pitchSelect?: PitchSelect;
 
   // baserunners currently on the diamond, keyed by base (1-3) — each is the kid
   private runners = new Map<number, Phaser.GameObjects.Container>();
@@ -207,6 +225,11 @@ export class GameScene extends Phaser.Scene {
     this.threw = false;
     this.autoThrowTimer = undefined;
     this.livePlay = undefined;
+    this.pitchPlan = undefined;
+    this.pitchTravelMs = PITCH_TRAVEL_MS;
+    this.selectedPitch = undefined;
+    this.pitchSelect = undefined;
+    this.zoneGfx = undefined;
     this.fieldAssignment = [];
     this.fielderSprites = [];
     this.liveRunnerSprites = new Map();
@@ -543,10 +566,16 @@ export class GameScene extends Phaser.Scene {
   }
 
   private launchPitch(): void {
+    if (this.features.pitchSelection) {
+      this.launchPitchMain();
+      return;
+    }
     this.phase = 'pitching';
     this.swung = false;
     this.pitchStart = this.time.now;
     this.firstPitchOfGame = false;
+    this.pitchPlan = undefined;
+    this.pitchTravelMs = PITCH_TRAVEL_MS;
     // Sometimes the AI throws a WILD one — telegraphed in red, visibly off the
     // plate. Don't swing at those! Taking it earns a ball (4 = walk).
     this.pitchIsWild = rollAiWildPitch(this.aiPitcher, () => Math.random());
@@ -600,7 +629,11 @@ export class GameScene extends Phaser.Scene {
       ease: 'Sine.in',
     });
 
-    // A faint fading trail behind the ball.
+    this.startBallTrail();
+  }
+
+  /** A faint fading trail behind the inbound ball. */
+  private startBallTrail(): void {
     this.trailTimer = this.time.addEvent({
       delay: 45,
       loop: true,
@@ -614,6 +647,71 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * Main-mode inbound pitch: the CPU picks a kind + spot (pitchkind.ts) and
+   * the ball flies a curved path to its ACTUAL crossing point over the drawn
+   * strike zone. No red telegraph — reading the zone is the skill. Taking a
+   * pitch outside the zone is a ball; chasing one caps the swing.
+   */
+  private launchPitchMain(): void {
+    this.phase = 'pitching';
+    this.swung = false;
+    this.firstPitchOfGame = false;
+    const plan = chooseCpuPitch(
+      this.aiPitcher.stats.pitching,
+      this.halfState.count,
+      PITCH_TRAVEL_MS,
+      () => Math.random()
+    );
+    this.pitchPlan = plan;
+    this.pitchIsWild = !plan.inZone; // reuses the take-a-ball / capped-chase rules
+    this.pitchTravelMs = plan.travelMs;
+    this.pitchStart = this.time.now;
+    audio.pitchWoosh();
+
+    this.zoneGfx = zoneOutline(this);
+    const start: Vec = { x: MOUND.x, y: MOUND.y - 36 };
+    const end = plateToScreen(plan.actual);
+
+    if (SHOW_TIMING_RING) {
+      this.ringTarget = this.add.circle(end.x, end.y, 30).setStrokeStyle(4, COLORS.gold).setDepth(15);
+      this.ringShrink = this.add.circle(end.x, end.y, 30).setStrokeStyle(5, COLORS.white).setDepth(16);
+      this.ringShrink.setScale(3.6);
+      this.tweens.add({ targets: this.ringShrink, scale: 1, duration: plan.travelMs, ease: 'Sine.in' });
+    }
+
+    this.ballShadow = this.add.ellipse(start.x, MOUND.y + 6, 18, 7, COLORS.ink, 0.3).setDepth(14);
+    const ball = this.add.circle(start.x, start.y, 10, COLORS.white).setDepth(20);
+    ball.setStrokeStyle(2, COLORS.ink);
+    this.ball = ball;
+    this.tweens.add({
+      targets: this.ballShadow,
+      x: end.x,
+      y: HOME.y + 8,
+      scaleX: 2,
+      scaleY: 2,
+      duration: plan.travelMs,
+      ease: 'Sine.in',
+    });
+    this.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: plan.travelMs,
+      ease: 'Sine.in',
+      onUpdate: (tw) => {
+        if (this.ball !== ball) return;
+        const t = tw.getValue() ?? 0;
+        const bend = ballCurveAt(plan, t);
+        ball.setPosition(start.x + (end.x - start.x) * t + bend.x, start.y + (end.y - start.y) * t + bend.y);
+        ball.setScale(0.7 + t);
+      },
+      onComplete: () => {
+        if (!this.swung && this.phase === 'pitching') this.resolvePlayerSwing('miss', true);
+      },
+    });
+    this.startBallTrail();
+  }
+
   private clearPitchVisuals(): void {
     this.trailTimer?.remove();
     this.trailTimer = undefined;
@@ -625,12 +723,14 @@ export class GameScene extends Phaser.Scene {
     this.ringShrink = undefined;
     this.ringTarget?.destroy();
     this.ringTarget = undefined;
+    this.zoneGfx?.destroy();
+    this.zoneGfx = undefined;
   }
 
   private onSwing(): void {
     if (this.phase !== 'pitching' || this.swung) return;
     this.swung = true;
-    const error = this.time.now - this.pitchStart - PITCH_TRAVEL_MS;
+    const error = this.time.now - this.pitchStart - this.pitchTravelMs;
     const band = bandFromError(error);
     this.resolvePlayerSwing(band, false);
   }
@@ -1284,7 +1384,35 @@ export class GameScene extends Phaser.Scene {
     this.cpuBatter = getCharacter(this.aiTeam[this.aiLineup % TEAM_SIZE]);
     this.showBatter(this.cpuBatter, true); // jogs in from the dugout
     this.batterLabel.setText(this.cpuBatter.name);
-    this.time.delayedCall(520, () => this.startPitchMeter());
+    this.time.delayedCall(520, () => this.beginPitchTurn());
+  }
+
+  /** Main mode picks a pitch + aim first; kid mode goes straight to the meter. */
+  private beginPitchTurn(): void {
+    if (!this.features.pitchSelection) {
+      this.startPitchMeter();
+      return;
+    }
+    this.phase = 'resolving'; // the select UI owns input until the aim is tapped
+    const confirm = (kind: PitchKind, target: PlateLoc) => {
+      autoPick.remove();
+      this.pitchSelect?.destroy();
+      this.pitchSelect = undefined;
+      this.selectedPitch = { kind, target };
+      // Next tick, not now: the confirming tap's pointerdown is still being
+      // dispatched, and starting the meter synchronously would let that same
+      // tap fall through to the scene handler and instantly "throw" wild.
+      this.time.delayedCall(60, () => this.startPitchMeter());
+    };
+    // Idle-kid rescue: nobody stalls the game on the pitch menu.
+    const autoPick = this.time.delayedCall(9000, () => {
+      if (this.pitchSelect) confirm('fastball', { x: 0, y: 0 });
+    });
+    this.pitchSelect?.destroy();
+    this.pitchSelect = showPitchSelect(this, {
+      allowCrazy: false, // unlocks with the juice meter (later phase)
+      onDone: confirm,
+    });
   }
 
   /**
@@ -1320,7 +1448,12 @@ export class GameScene extends Phaser.Scene {
     if (this.phase !== 'aiming' || this.threw) return;
     this.threw = true;
     const error = this.time.now - this.meterStart - PITCH_METER_MS;
-    this.resolvePlayerPitch(pitchBandFromError(error));
+    const band = pitchBandFromError(error);
+    if (this.features.pitchSelection && this.selectedPitch) {
+      this.resolvePlayerPitchPlan(this.selectedPitch.kind, this.selectedPitch.target, band, error);
+    } else {
+      this.resolvePlayerPitch(band);
+    }
   }
 
   /** Public for the same headless/dev driving as resolvePlayerSwing. */
@@ -1335,6 +1468,60 @@ export class GameScene extends Phaser.Scene {
     // The CPU batter's plan is pure logic; the scene just acts it out.
     const plan = resolveCpuPitch(band, this.playerPitcher, this.cpuBatter, () => Math.random());
     this.time.delayedCall(ANIM.WINDUP_MS, () => this.launchCpuPitch(band, plan));
+  }
+
+  /** Public headless hook (main mode): resolve an aimed, typed pitch. */
+  resolvePlayerPitchPlan(kind: PitchKind, target: PlateLoc, band: PitchBand, errorMs?: number): void {
+    // Nominal meter error per band, for callers that only know the band.
+    const NOMINAL: Record<PitchBand, number> = { perfect: 0, good: 110, weak: 205, wild: 320 };
+    const err = errorMs ?? NOMINAL[band];
+    this.phase = 'resolving';
+    this.autoThrowTimer?.remove();
+    this.autoThrowTimer = undefined;
+    this.selectedPitch = undefined;
+    this.pitchSelect?.destroy(); // headless callers can skip the menu
+    this.pitchSelect = undefined;
+    this.clearPitchVisuals();
+    this.showPitchFeedback(band);
+    this.pitcherWindup();
+
+    const plan = resolvePitchLocation(
+      kind,
+      target,
+      this.playerPitcher.stats.pitching,
+      err,
+      CPU_PITCH_TRAVEL_MS,
+      () => Math.random()
+    );
+    const cpuPlan = resolveCpuPitchLocated(plan, band, this.cpuBatter, () => Math.random());
+    this.time.delayedCall(ANIM.WINDUP_MS, () => this.launchCpuPitchMain(plan, cpuPlan));
+  }
+
+  /** The aimed pitch flies its curved path over the drawn zone, then settles. */
+  private launchCpuPitchMain(plan: PitchPlan, cpuPlan: CpuPitchPlan): void {
+    audio.pitchWoosh();
+    this.zoneGfx = zoneOutline(this);
+    const start: Vec = { x: MOUND.x, y: MOUND.y - 36 };
+    const end = plateToScreen(plan.actual);
+    const ball = this.add.circle(start.x, start.y, 9, COLORS.white).setStrokeStyle(2, COLORS.ink).setDepth(20);
+    this.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: plan.travelMs,
+      ease: 'Sine.in',
+      onUpdate: (tw) => {
+        const t = tw.getValue() ?? 0;
+        const bend = ballCurveAt(plan, t);
+        ball.setPosition(start.x + (end.x - start.x) * t + bend.x, start.y + (end.y - start.y) * t + bend.y);
+        ball.setScale(0.7 + t * 0.8);
+      },
+      onComplete: () => {
+        ball.destroy();
+        this.zoneGfx?.destroy();
+        this.zoneGfx = undefined;
+        this.settleCpuPitch(cpuPlan);
+      },
+    });
   }
 
   /** Fast ball flight mound -> plate; wild pitches fly red and off-target. */
@@ -1442,7 +1629,7 @@ export class GameScene extends Phaser.Scene {
       } else if (applied.batterDone) {
         this.nextCpuBatter();
       } else {
-        this.startPitchMeter();
+        this.beginPitchTurn();
       }
     });
   }

@@ -12,7 +12,8 @@
 
 import type { Character } from '../data/types';
 import type { SwingBand } from './atbat';
-import { PITCH_TIMING, WILD_PITCH_CHANCE } from '../config';
+import { PITCH_TIMING, WILD_PITCH_CHANCE, PITCHES } from '../config';
+import { distOffZone, edgeFactor, type PitchPlan } from './pitchkind';
 
 export type PitchBand = 'perfect' | 'good' | 'weak' | 'wild';
 
@@ -80,6 +81,39 @@ export function resolveCpuPitch(
   if (band === 'wild') cpuBand = upgradeCapped(cpuBand); // a hanger right in the zone
 
   return { isBall, cpuSwings: true, cpuBand, description: 'Swings…' };
+}
+
+/**
+ * Location-aware CPU batter decision (main mode). Ball/strike comes from the
+ * pitch's ACTUAL crossing point, not a band roll: off the zone the CPU mostly
+ * takes (deception tempts a bad chase); in the zone it swings, with quality
+ * dragged down by good meter timing, painted corners, and deceptive pitches.
+ */
+export function resolveCpuPitchLocated(
+  plan: PitchPlan,
+  band: PitchBand,
+  batter: Character,
+  rng: () => number
+): CpuPitchPlan {
+  const def = PITCHES[plan.kind];
+
+  if (!plan.inZone) {
+    const off = distOffZone(plan.actual);
+    const chaseChance = Math.min(0.5, Math.max(0.05, 0.15 + def.deception * 0.35 - off * 0.004));
+    if (rng() >= chaseChance) {
+      return { isBall: true, cpuSwings: false, cpuBand: 'miss', description: 'Ball!' };
+    }
+    const cpuBand: SwingBand = rng() < 0.5 ? 'weak' : 'miss';
+    return { isBall: true, cpuSwings: true, cpuBand, description: 'Chased a bad one!' };
+  }
+
+  let cpuBand = cpuSwingBand(batter.stats.contact, rng);
+  if (band === 'perfect') cpuBand = downgradeSwing(cpuBand);
+  if (band === 'wild') cpuBand = upgradeCapped(cpuBand); // blew the meter but it found the zone: a hanger
+  if (rng() < edgeFactor(plan.actual) * 0.4) cpuBand = downgradeSwing(cpuBand); // painted the corner
+  if (rng() < def.deception * 0.3) cpuBand = downgradeSwing(cpuBand); // fooled by the pitch
+
+  return { isBall: false, cpuSwings: true, cpuBand, description: 'Swings…' };
 }
 
 /** Chance the AI pitcher throws a visibly wild one at the player. */

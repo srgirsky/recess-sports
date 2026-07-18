@@ -33,13 +33,15 @@ Phaser 3 · TypeScript · Vite · vitest. Static site, no backend, deployed free
 | `src/systems/liveplay.ts` | ★ The live-play sim: tick reducer, catches/force races, CPU fielder+runner policies, no-soft-lock guards. |
 | `src/systems/geometry.ts` | Field screen coords (bases, mound, 9 fielding spots, fence) shared by sim + scene. |
 | `src/systems/mode.ts` | CLASSIC/KID mode persistence (+ legacy `recess_difficulty` migration) + `resolveLiveParams` (LIVE × MODES) + `getFeatures`. |
-| `src/systems/pitch.ts` | Defense half: throw timing→pitch band + the CPU batter's take/swing plan; AI wild-pitch roll. |
+| `src/systems/pitch.ts` | Defense half: throw timing→pitch band + the CPU batter's take/swing plan (band-based for kid mode, location-aware `resolveCpuPitchLocated` for main); AI wild-pitch roll (kid mode). |
+| `src/systems/pitchkind.ts` | Main-mode pitch types + strike-zone aiming: `PitchPlan` (kind/target/actual/inZone/travelMs), scatter from meter error × pitching stat, `chooseCpuPitch` (CPU pitches at you, wastes when ahead), `ballCurveAt` flight bend. Plate-coord space: (0,0) = zone center at (HOME.x, HOME.y + PLATE_ZONE.CY). |
 | `src/systems/inning.ts` | Count/outs/bases state machine + walk advancement (+ `movements`); `applyLivePlay` folds live plays in. |
 | `src/systems/gameflow.ts` | Between-halves decisions: skip pointless bottoms, walk-offs, one bonus inning on a tie. |
 | `src/systems/picklog.ts` | The "voting machine" — localStorage pick tally. |
 | `src/systems/audio.ts` | Web Audio SFX + SpeechSynthesis voice + mute. |
 | `src/scenes/*` | Boot → Schoolyard (title beat + recess cutscene + wall draft) → Game → Result. |
 | `src/ui/*` | Button, statbars, MuteButton, effects, anim, theme. |
+| `src/scenes/ui/PitchSelectUI.ts` | Main-mode mound UI (pitch pills + tappable 3×3 zone grid) + the shared strike-zone overlay / plate→screen mapping. |
 | `src/dev/PickRateOverlay.ts` | Dev-only pick-rate view (press **D** on Title). |
 
 ## Commands

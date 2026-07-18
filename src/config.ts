@@ -65,6 +65,56 @@ export const WILD_PITCH_CHANCE = {
   PER_PITCHING: 0.015, // chance -= (pitching - 5) * this
 };
 
+// --- Pitch selection & aiming (main mode) ----------------------------------
+
+/**
+ * The strike-zone window at the plate, in "plate coords": px offsets from the
+ * zone center, which sits at (HOME.x, HOME.y + CY) on screen. Shared by pitch
+ * aiming, the ball's flight, and (later) the batting cursor.
+ */
+export const PLATE_ZONE = {
+  W: 96,
+  H: 100,
+  /** Zone center's y offset from HOME (the ball has always crossed at -26). */
+  CY: -26,
+};
+
+export type PitchKind = 'fastball' | 'changeup' | 'curve' | 'screwball' | 'crazy';
+
+export interface PitchDef {
+  /** Flight speed (× the half's base travel time — higher = faster). */
+  speedMult: number;
+  /** Flight bend at its widest, plate-coord px (x: + = toward 1B side). */
+  breakX: number;
+  breakY: number;
+  /** Extra flutter in the flight path (px) — the crazy pitch lives on this. */
+  wobble: number;
+  /** How hard the pitch is to read: drags CPU swings down, tempts chases. */
+  deception: number;
+  /** Kid-readable button label. */
+  label: string;
+}
+
+export const PITCHES: Record<PitchKind, PitchDef> = {
+  fastball: { speedMult: 1.18, breakX: 0, breakY: 0, wobble: 0, deception: 0.12, label: '🔥 FAST' },
+  changeup: { speedMult: 0.72, breakX: 0, breakY: 16, wobble: 0, deception: 0.5, label: '🐢 SLOW' },
+  curve: { speedMult: 0.92, breakX: -40, breakY: 16, wobble: 0, deception: 0.35, label: '🌙 CURVE' },
+  screwball: { speedMult: 0.95, breakX: 38, breakY: 8, wobble: 0, deception: 0.35, label: '🌀 SCREW' },
+  // Juice-meter special (locked until the juice system lands).
+  crazy: { speedMult: 0.88, breakX: 52, breakY: -10, wobble: 26, deception: 0.75, label: '⚡ CRAZY' },
+};
+
+/** How far a thrown pitch misses its aim point (plate-coord px). */
+export const PITCH_SCATTER = {
+  /** Even a perfect throw wanders this much. */
+  BASE: 6,
+  /** Extra scatter per ms of meter error. */
+  PER_ERROR_MS: 0.16,
+  /** Extra scatter per pitching-stat point below 5. */
+  PER_STAT_BELOW: 4.5,
+  MAX: 72,
+};
+
 /** Game length for the vertical slice. Two innings = four half-innings. */
 export const INNINGS = 2;
 
@@ -223,7 +273,7 @@ export const MODES: Record<GameMode, { live: ModeLiveTuning; features: ModeFeatu
     },
     // Flags flip to true as each Backyard-style mechanic lands.
     features: {
-      pitchSelection: false,
+      pitchSelection: true,
       battingCursor: false,
       manualBaserunning: false,
       errors: false,
