@@ -104,13 +104,10 @@ export const ANIM = {
   RUN_BOB: 7, // pixels a runner bounces while running
   IDLE_BOB: 5, // pixels the idle "breathing" bob rises
   RUN_FRAME_MS: 110, // run-cycle frame swap (run1 <-> run2 textures)
-  // Intro (Title) choreography.
-  TITLE_KID_RUN_MS: 460, // each showcase kid's run-in from off-screen
-  TITLE_KID_STAGGER_MS: 110, // delay between kids joining the line-up
-  AMBIENT_HOP_EVERY_MS: 2600, // a random showcase kid hops this often
-  // Draft choreography.
-  DEAL_STAGGER_MS: 18, // per-card delay while the grid deals in
-  DEAL_POP_MS: 210, // one card's deal-in pop
-  CPU_SCAN_HOP_MS: 170, // CPU "spotlight" hop while it pretends to decide
-  FLY_TO_BENCH_MS: 340, // drafted kid's flight from card to dugout bench
+  // Schoolyard (title + draft) choreography.
+  AMBIENT_HOP_EVERY_MS: 2600, // a random waiting kid hops ("pick me!") this often
+  STREAM_STAGGER_MS: 70, // delay between kids bursting out of the doors
+  STREAM_RUN_MS: 700, // one leg of a kid's run from the doors to the wall
+  CPU_SCAN_HOP_MS: 170, // CPU "?" spotlight hop while it pretends to decide
+  CHEER_WAVE_STAGGER_MS: 80, // delay between kids joining the cheer wave
 };

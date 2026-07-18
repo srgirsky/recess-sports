@@ -59,6 +59,6 @@ export class BootScene extends Phaser.Scene {
       ? document.fonts.load('600 40px Fredoka').then(() => document.fonts.ready)
       : Promise.resolve();
     const timeout = new Promise((r) => this.time.delayedCall(2500, r));
-    Promise.race([fontReady, timeout]).then(() => this.scene.start('Title'));
+    Promise.race([fontReady, timeout]).then(() => this.scene.start('Schoolyard'));
   }
 }

@@ -9,8 +9,7 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS } from './config';
 import { BootScene } from './scenes/BootScene';
-import { TitleScene } from './scenes/TitleScene';
-import { DraftScene } from './scenes/DraftScene';
+import { SchoolyardScene } from './scenes/SchoolyardScene';
 import { GameScene } from './scenes/GameScene';
 import { ResultScene } from './scenes/ResultScene';
 
@@ -29,7 +28,7 @@ const game = new Phaser.Game({
     antialias: true,
     roundPixels: true,
   },
-  scene: [BootScene, TitleScene, DraftScene, GameScene, ResultScene],
+  scene: [BootScene, SchoolyardScene, GameScene, ResultScene],
 });
 
 // Expose for in-browser debugging during development only.

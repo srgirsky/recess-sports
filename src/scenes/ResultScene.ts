@@ -78,7 +78,7 @@ export class ResultScene extends Phaser.Scene {
       icon: '🔄',
       width: 300,
       height: 82,
-      onClick: () => this.scene.start('Draft'),
+      onClick: () => this.scene.start('Schoolyard', { straightToDraft: true }),
     });
     makeButton(this, {
       x: cx + 175,
@@ -87,7 +87,7 @@ export class ResultScene extends Phaser.Scene {
       icon: '🏠',
       width: 250,
       height: 82,
-      onClick: () => this.scene.start('Title'),
+      onClick: () => this.scene.start('Schoolyard'),
     });
   }
 }
