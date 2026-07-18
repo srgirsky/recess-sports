@@ -6,7 +6,7 @@
 
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS, TEAM_SIZE, AI_PICK_DELAY_MS } from '../config';
-import { ROSTER } from '../data/characters';
+import { ROSTER, getCharacter } from '../data/characters';
 import {
   createDraft,
   applyPick,
@@ -16,14 +16,17 @@ import {
 } from '../systems/draft';
 import { recordPick } from '../systems/picklog';
 import { makeCharacterCard, type CharacterCard } from '../ui/CharacterCard';
+import { makeMuteButton } from '../ui/MuteButton';
+import { ribbon, pill, panel, heading } from '../ui/theme';
+import { floatingText } from '../ui/effects';
 import * as audio from '../systems/audio';
 
 export class DraftScene extends Phaser.Scene {
   private state!: DraftState;
   private cards = new Map<string, CharacterCard>();
-  private statusText!: Phaser.GameObjects.Text;
   private playerSlots: Phaser.GameObjects.Container[] = [];
-  private locked = false; // block input while the AI is "thinking"
+  private locked = false;
+  private turnPill!: ReturnType<typeof pill>;
 
   constructor() {
     super('Draft');
@@ -35,81 +38,60 @@ export class DraftScene extends Phaser.Scene {
     this.locked = false;
     this.state = createDraft(ROSTER.map((c) => c.id));
 
-    this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.sky);
+    // Themed sky background.
+    const bg = this.add.graphics();
+    bg.fillGradientStyle(0x5fb0ea, 0x5fb0ea, 0xa8dcf6, 0xa8dcf6, 1);
+    bg.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-    this.add
-      .text(GAME_WIDTH / 2, 30, 'PICK YOUR TEAM', {
-        fontFamily: 'Arial Black, Arial, sans-serif',
-        fontSize: '40px',
-        color: '#ffffff',
-        fontStyle: 'bold',
-      })
-      .setOrigin(0.5, 0)
-      .setStroke('#14202e', 8);
-
-    this.statusText = this.add
-      .text(GAME_WIDTH / 2, 78, '', {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '22px',
-        color: '#14202e',
-        fontStyle: 'bold',
-      })
-      .setOrigin(0.5, 0);
+    ribbon(this, GAME_WIDTH / 2, 34, 'PICK YOUR TEAM', { fill: COLORS.red, fontSize: 32 });
+    makeMuteButton(this, 34, 34);
+    this.turnPill = pill(this, GAME_WIDTH - 160, 34, '', { fill: COLORS.gold, minW: 250 });
 
     this.buildPool();
     this.buildTeamTray();
     this.refreshStatus();
   }
 
-  // --- Pool grid: 30 cards, 10 columns x 3 rows ----------------------------
   private buildPool(): void {
     const cols = 10;
     const cardW = 88;
     const cardH = 124;
-    const gapX = 4;
-    const gapY = 8;
+    const gapX = 6;
+    const gapY = 10;
     const gridW = cols * cardW + (cols - 1) * gapX;
     const startX = (GAME_WIDTH - gridW) / 2 + cardW / 2;
-    const startY = 130;
+    const startY = 132;
 
     ROSTER.forEach((char, i) => {
       const col = i % cols;
       const row = Math.floor(i / cols);
       const x = startX + col * (cardW + gapX);
       const y = startY + row * (cardH + gapY);
-      const card = makeCharacterCard(
-        this,
-        char,
-        x,
-        y,
-        (c) => this.onPlayerPick(c.id),
-        cardW,
-        cardH
-      );
+      const card = makeCharacterCard(this, char, x, y, (c) => this.onPlayerPick(c.id), cardW, cardH);
       this.cards.set(char.id, card);
     });
   }
 
-  // --- Bottom tray: 9 empty slots that fill as you draft -------------------
+  // --- Bottom "dugout bench": 9 rounded slots that fill as you draft --------
   private buildTeamTray(): void {
-    const trayY = GAME_HEIGHT - 78;
-    this.add
-      .text(20, trayY - 60, 'YOUR TEAM', {
-        fontFamily: 'Arial Black, Arial, sans-serif',
-        fontSize: '20px',
-        color: '#ffffff',
-        fontStyle: 'bold',
-      })
-      .setOrigin(0, 0.5)
-      .setStroke('#14202e', 6);
+    const trayY = GAME_HEIGHT - 74;
+    const slotW = 88;
+    const gap = 8;
+    const count = TEAM_SIZE;
+    const benchW = count * slotW + (count - 1) * gap + 150;
+    panel(this, GAME_WIDTH / 2 + 30, trayY, benchW, 130, { fill: 0x2f5d3a, strokeWidth: 5 });
 
-    const slotW = 92;
-    const startX = 130;
-    for (let i = 0; i < TEAM_SIZE; i++) {
-      const c = this.add.container(startX + i * (slotW + 6), trayY);
-      const box = this.add.rectangle(0, 0, slotW, 120, COLORS.ink, 0.18).setOrigin(0.5);
-      box.setStrokeStyle(3, COLORS.white);
-      c.add(box);
+    heading(this, 70, trayY, 'YOUR\nTEAM', 22).setStroke('#14202e', 5);
+
+    const startX = 150;
+    for (let i = 0; i < count; i++) {
+      const c = this.add.container(startX + i * (slotW + gap), trayY);
+      const g = this.add.graphics();
+      g.fillStyle(0x22303c, 0.4);
+      g.fillRoundedRect(-slotW / 2, -56, slotW, 112, 12);
+      g.lineStyle(3, 0xffffff, 0.5);
+      g.strokeRoundedRect(-slotW / 2, -56, slotW, 112, 12);
+      c.add(g);
       this.playerSlots.push(c);
     }
   }
@@ -119,7 +101,7 @@ export class DraftScene extends Phaser.Scene {
     if (!this.state.pool.includes(id)) return;
 
     this.state = applyPick(this.state, id);
-    recordPick(id); // <-- the vote is cast
+    recordPick(id);
     audio.pop();
 
     this.consumeCard(id);
@@ -130,8 +112,6 @@ export class DraftScene extends Phaser.Scene {
       this.finishDraft();
       return;
     }
-
-    // Hand the turn to the AI after a beat so kids see it happen.
     this.locked = true;
     this.time.delayedCall(AI_PICK_DELAY_MS, () => this.aiTurn());
   }
@@ -139,7 +119,10 @@ export class DraftScene extends Phaser.Scene {
   private aiTurn(): void {
     const id = chooseAiPick(this.state, () => Math.random());
     this.state = applyPick(this.state, id);
-    this.consumeCard(id, /* aiPicked */ true);
+    this.consumeCard(id, true);
+    // CPU pick callout.
+    const card = this.cards.get(id);
+    if (card) floatingText(this, card.x, card.y - 40, `CPU picks\n${getCharacter(id).name}`, COLORS.red, 18);
     this.refreshStatus();
     this.locked = false;
 
@@ -150,7 +133,6 @@ export class DraftScene extends Phaser.Scene {
     const card = this.cards.get(id);
     if (!card) return;
     card.setCardEnabled(false);
-    // Flash the picker's color so it's clear who grabbed the kid.
     const flash = this.add
       .rectangle(card.x, card.y, 88, 124, aiPicked ? COLORS.red : COLORS.gold, 0.5)
       .setOrigin(0.5);
@@ -161,28 +143,24 @@ export class DraftScene extends Phaser.Scene {
     const idx = this.state.playerTeam.length - 1;
     const slot = this.playerSlots[idx];
     if (!slot) return;
-    const img = this.add.image(0, -4, id).setOrigin(0.5);
-    img.setScale(96 / img.height);
+    const img = this.add.image(0, 44, id).setOrigin(0.5, 1);
+    const s = 104 / img.height;
+    img.setScale(s);
     slot.add(img);
-    this.tweens.add({
-      targets: img,
-      scale: { from: 96 / img.height * 1.4, to: 96 / img.height },
-      duration: 200,
-      ease: 'Back.out',
-    });
+    this.tweens.add({ targets: img, scale: { from: s * 1.4, to: s }, duration: 200, ease: 'Back.out' });
   }
 
   private refreshStatus(): void {
     const mine = this.state.playerTeam.length;
     if (this.state.turn === 'player' && !this.locked) {
-      this.statusText.setText(`Tap a kid to draft!   (${mine}/${TEAM_SIZE})`);
+      this.turnPill.setText(`YOUR PICK!  ${mine}/${TEAM_SIZE}`, COLORS.gold);
     } else {
-      this.statusText.setText('The other team is picking...');
+      this.turnPill.setText('CPU picking…', 0xe8a0a0);
     }
   }
 
   private finishDraft(): void {
-    this.statusText.setText('Teams are set! Play ball!');
+    this.turnPill.setText('PLAY BALL!', COLORS.gold);
     this.time.delayedCall(700, () => {
       this.scene.start('Game', {
         playerTeam: this.state.playerTeam,

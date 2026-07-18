@@ -46,6 +46,12 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.scene.start('Title');
+    // Wait for the brand font so text renders in Fredoka, not the fallback.
+    // Race against a short timeout so a slow/blocked font never hangs boot.
+    const fontReady = document.fonts
+      ? document.fonts.load('600 40px Fredoka').then(() => document.fonts.ready)
+      : Promise.resolve();
+    const timeout = new Promise((r) => this.time.delayedCall(2500, r));
+    Promise.race([fontReady, timeout]).then(() => this.scene.start('Title'));
   }
 }

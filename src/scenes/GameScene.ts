@@ -35,6 +35,7 @@ import { recordGamePlayed } from '../systems/picklog';
 import * as audio from '../systems/audio';
 import { screenShake, burst, floatingText } from '../ui/effects';
 import { makeMuteButton } from '../ui/MuteButton';
+import { FONT } from '../ui/theme';
 
 type Phase = 'pitching' | 'resolving' | 'auto' | 'ended';
 
@@ -248,18 +249,18 @@ export class GameScene extends Phaser.Scene {
   private drawHud(): void {
     this.add.rectangle(GAME_WIDTH / 2, 34, GAME_WIDTH, 68, COLORS.ink, 0.82).setOrigin(0.5);
     this.scoreText = this.add
-      .text(24, 20, '', { fontFamily: 'Arial Black, Arial', fontSize: '30px', color: '#ffffff' })
+      .text(24, 20, '', { fontFamily: FONT, fontSize: '30px', color: '#ffffff' })
       .setOrigin(0, 0);
     this.inningText = this.add
       .text(GAME_WIDTH / 2, 20, '', {
-        fontFamily: 'Arial Black, Arial',
+        fontFamily: FONT,
         fontSize: '26px',
         color: '#ffce3a',
       })
       .setOrigin(0.5, 0);
     this.outsText = this.add
       .text(GAME_WIDTH - 70, 20, '', {
-        fontFamily: 'Arial Black, Arial',
+        fontFamily: FONT,
         fontSize: '26px',
         color: '#ffffff',
       })
@@ -273,7 +274,7 @@ export class GameScene extends Phaser.Scene {
       .setAlpha(0);
     this.announce = this.add
       .text(GAME_WIDTH / 2, 108, '', {
-        fontFamily: 'Arial Black, Arial',
+        fontFamily: FONT,
         fontSize: '38px',
         color: '#ffffff',
         fontStyle: 'bold',
@@ -285,7 +286,7 @@ export class GameScene extends Phaser.Scene {
 
     this.batterLabel = this.add
       .text(HOME.x, HOME.y + 34, '', {
-        fontFamily: 'Arial Black, Arial',
+        fontFamily: FONT,
         fontSize: '20px',
         color: '#ffffff',
       })

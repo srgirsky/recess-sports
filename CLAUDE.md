@@ -17,6 +17,7 @@ Phaser 3 · TypeScript · Vite · vitest. Static site, no backend, deployed free
 - **Character art is generated once in `BootScene`** as modern flat-mascot SVG (no image files). `art/CharacterArt.ts` builds an SVG string from `VisualParams` (skin/hair/hairColor/uniform/accessory + `expression`/`bodyType`/`freckles`); `art/textureFactory.ts` turns it into a Phaser texture (3× viewBox) keyed by character id. Dev art gallery: press **G** on the Title.
 - **All "feel" tunables live in `src/config.ts`** (timing windows, pitch speed, innings, shake, runner speed, audio volume). Change feel there, not inside scenes.
 - **Reusable juice** (shake/burst/floating text/confetti) is in `src/ui/effects.ts`; **sound** (free, code-synthesized) is in `src/systems/audio.ts`.
+- **Shared UI kit** is `src/ui/theme.ts`: the brand `FONT`, `OUTLINE`, and rounded-outlined-with-shadow helpers `panel()`, `ribbon()`, `pill()`, `heading()`. Use these (not raw `add.rectangle`) for any UI chrome — Phaser rectangles can't round corners. Buttons/cards (`ui/Button.ts`, `ui/CharacterCard.ts`) are built on it. The font is self-hosted Fredoka (`public/fonts/fredoka.woff2`, `@font-face` in `index.html`), awaited in `BootScene` before Title.
 
 ## Key files
 

@@ -8,6 +8,7 @@ import { getCharacter } from '../data/characters';
 import { makeButton } from '../ui/Button';
 import { makeMuteButton } from '../ui/MuteButton';
 import { confetti } from '../ui/effects';
+import { heading, ribbon, panel, FONT } from '../ui/theme';
 import * as audio from '../systems/audio';
 
 interface ResultData {
@@ -26,18 +27,14 @@ export class ResultScene extends Phaser.Scene {
     const won = data.playerScore > data.aiScore;
     const tied = data.playerScore === data.aiScore;
 
-    this.add.rectangle(cx, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, won ? COLORS.grass : COLORS.sky);
+    // Themed background.
+    const bg = this.add.graphics();
+    if (won) bg.fillGradientStyle(0x5bbf5a, 0x5bbf5a, 0x9be08a, 0x9be08a, 1);
+    else bg.fillGradientStyle(0x5fb0ea, 0x5fb0ea, 0xa8dcf6, 0xa8dcf6, 1);
+    bg.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-    const headline = tied ? 'TIE GAME!' : won ? 'YOU WIN! 🏆' : 'GOOD GAME!';
-    this.add
-      .text(cx, 110, headline, {
-        fontFamily: 'Arial Black, Arial',
-        fontSize: '80px',
-        color: '#ffffff',
-        fontStyle: 'bold',
-      })
-      .setOrigin(0.5)
-      .setStroke('#14202e', 12);
+    const headline = tied ? 'TIE GAME!' : won ? 'YOU WIN!' : 'GOOD GAME!';
+    heading(this, cx, 70, headline, 70);
 
     // Celebrate.
     if (won) {
@@ -49,61 +46,44 @@ export class ResultScene extends Phaser.Scene {
     }
     makeMuteButton(this, GAME_WIDTH - 40, 40);
 
-    this.add
-      .text(cx, 190, `YOU ${data.playerScore}   —   ${data.aiScore} CPU`, {
-        fontFamily: 'Arial Black, Arial',
-        fontSize: '40px',
-        color: '#14202e',
-      })
-      .setOrigin(0.5);
+    ribbon(this, cx, 132, `YOU ${data.playerScore}   —   ${data.aiScore} CPU`, {
+      fill: COLORS.ink,
+      fontSize: 30,
+    });
 
-    // MVP = highest overall kid on your team (a friendly little spotlight).
+    // MVP = highest overall kid on your team, presented on a card.
     const mvp = [...data.playerTeam]
       .map(getCharacter)
       .reduce((best, c) => (overall(c) > overall(best) ? c : best));
 
+    panel(this, cx, 352, 300, 360, { fill: COLORS.cream, strokeWidth: 6 });
+    heading(this, cx, 214, '🏆 TEAM MVP 🏆', 24, '#ffce3a');
+    const mvpImg = this.add.image(cx, 246, mvp.id).setOrigin(0.5, 0);
+    mvpImg.setScale(176 / mvpImg.height);
+    this.tweens.add({ targets: mvpImg, y: mvpImg.y - 10, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
     this.add
-      .text(cx, 270, 'TEAM MVP', {
-        fontFamily: 'Arial Black, Arial',
-        fontSize: '26px',
-        color: '#ffce3a',
-      })
-      .setOrigin(0.5)
-      .setStroke('#14202e', 6);
-
-    const mvpImg = this.add.image(cx, 300, mvp.id).setOrigin(0.5, 0);
-    mvpImg.setScale(200 / mvpImg.height);
-    this.tweens.add({
-      targets: mvpImg,
-      y: mvpImg.y - 10,
-      duration: 650,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.inOut',
-    });
+      .text(cx, 452, mvp.name, { fontFamily: FONT, fontSize: '28px', color: '#14202e', fontStyle: '700' })
+      .setOrigin(0.5);
     this.add
-      .text(cx, 520, `${mvp.name} — ${mvp.tagline}`, {
-        fontFamily: 'Arial, sans-serif',
-        fontSize: '24px',
-        color: '#14202e',
-        fontStyle: 'bold',
-      })
+      .text(cx, 490, mvp.tagline, { fontFamily: FONT, fontSize: '17px', color: '#3a4654', align: 'center', wordWrap: { width: 270 } })
       .setOrigin(0.5);
 
     makeButton(this, {
-      x: cx - 180,
-      y: GAME_HEIGHT - 60,
+      x: cx - 175,
+      y: GAME_HEIGHT - 52,
       label: 'NEW TEAM',
       icon: '🔄',
       width: 300,
+      height: 82,
       onClick: () => this.scene.start('Draft'),
     });
     makeButton(this, {
-      x: cx + 180,
-      y: GAME_HEIGHT - 60,
+      x: cx + 175,
+      y: GAME_HEIGHT - 52,
       label: 'HOME',
       icon: '🏠',
       width: 250,
+      height: 82,
       onClick: () => this.scene.start('Title'),
     });
   }
