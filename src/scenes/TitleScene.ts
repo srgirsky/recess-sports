@@ -8,6 +8,7 @@ import { GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
 import { makeButton } from '../ui/Button';
 import { makeMuteButton } from '../ui/MuteButton';
 import { heading, ribbon, FONT, OUTLINE } from '../ui/theme';
+import { idleBob } from '../ui/anim';
 import { mountPickRateOverlay } from '../dev/PickRateOverlay';
 import { mountArtGallery } from '../dev/ArtGallery';
 import * as audio from '../systems/audio';
@@ -54,14 +55,7 @@ export class TitleScene extends Phaser.Scene {
     showcase.forEach((id, i) => {
       const kid = this.add.image(spacing * (i + 1), GAME_HEIGHT - 40, id).setOrigin(0.5, 1);
       kid.setScale(138 / kid.height);
-      this.tweens.add({
-        targets: kid,
-        y: kid.y - 12,
-        duration: 700 + i * 90,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.inOut',
-      });
+      idleBob(this, kid, { amp: 12, dur: 700 + i * 90 });
     });
 
     makeButton(this, {

@@ -62,3 +62,11 @@ export const SHOW_TIMING_RING = true;
 export const AUDIO = {
   masterVolume: 0.35,
 };
+
+/** Character-animation timing/feel. */
+export const ANIM = {
+  SWING_MS: 120, // how fast the bat whips through the swing
+  WINDUP_MS: 260, // pitcher lean-back before the release
+  RUN_BOB: 7, // pixels a runner bounces while running
+  IDLE_BOB: 5, // pixels the idle "breathing" bob rises
+};

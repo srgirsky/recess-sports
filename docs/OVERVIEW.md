@@ -75,6 +75,7 @@ No image files. `art/CharacterArt.ts` hand-draws each kid as a **modern flat-mas
 - **Tunables** in `config.ts`: `TIMING` windows, `PITCH_TRAVEL_MS`, `INNINGS`, `SHAKE`, `RUNNER_TWEEN_MS`, `SHOW_TIMING_RING`, `AUDIO`.
 - **`ui/theme.ts`** — the shared UI kit that makes every screen match: the brand font (self-hosted Fredoka), the mascot outline color, and `panel()`/`ribbon()`/`pill()`/`heading()` helpers for rounded, outlined, drop-shadowed chrome. Buttons and draft cards are built on it; the font is awaited in Boot before the Title shows.
 - **`ui/effects.ts`** — screen shake, particle burst, floating text, confetti.
+- **`ui/anim.ts`** — procedural character animation helpers (idle "breathing" bob, celebratory squash-hop, pop-in). Motion is tweens on the single-texture sprites — no frame art. In-game: a swinging **bat** prop, a pitcher **wind-up**, and baserunners rendered as the **actual kids** (containers) that bounce as they run and hop when they score. Timing lives in `config.ANIM`.
 - **`systems/audio.ts`** — free, code-synthesized sound: Web Audio SFX (bat crack, whiff, pop, cheer, pitch woosh) + browser SpeechSynthesis voice callouts + a persisted mute. No files, no cost.
 - In-game juice: a contracting **timing ring** teaches when to swing; band feedback (PERFECT!/GOOD!/…); contact pop + shake scaled to hit size; the hit ball arcs to the outfield; runners actually run the bases and cross home with a burst.
 

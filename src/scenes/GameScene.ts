@@ -19,10 +19,10 @@ import {
   SHAKE,
   RUNNER_TWEEN_MS,
   SHOW_TIMING_RING,
+  ANIM,
 } from '../config';
 import type { Character, TeamState } from '../data/types';
 import { getCharacter } from '../data/characters';
-import { UNIFORM_COLORS } from '../art/palette';
 import { bandFromError, resolveSwing, type SwingBand } from '../systems/atbat';
 import {
   newHalfInning,
@@ -35,9 +35,14 @@ import { recordGamePlayed } from '../systems/picklog';
 import * as audio from '../systems/audio';
 import { screenShake, burst, floatingText } from '../ui/effects';
 import { makeMuteButton } from '../ui/MuteButton';
-import { FONT } from '../ui/theme';
+import { FONT, OUTLINE } from '../ui/theme';
+import { idleBob, squashHop } from '../ui/anim';
 
 type Phase = 'pitching' | 'resolving' | 'auto' | 'ended';
+
+const BAT_REST = -42; // resting angle (bat on the shoulder)
+const BAT_SWING = 66; // follow-through angle
+const RUNNER_H = 66; // runner sprite height
 
 // Field geometry — a clean diamond seen from behind home plate.
 const HOME = { x: 480, y: 500 };
@@ -58,11 +63,6 @@ function basePos(idx: number): { x: number; y: number } {
     default:
       return HOME; // 0 (batter) and 4 (scored)
   }
-}
-
-function jerseyColor(char: Character): number {
-  const hex = UNIFORM_COLORS[char.visual.uniform]?.jersey ?? '#ffffff';
-  return parseInt(hex.slice(1), 16);
 }
 
 export class GameScene extends Phaser.Scene {
@@ -92,11 +92,14 @@ export class GameScene extends Phaser.Scene {
   private swung = false;
   private batter!: Character;
 
-  // baserunners currently on the diamond, keyed by base (1-3)
-  private runners = new Map<number, Phaser.GameObjects.Arc>();
+  // baserunners currently on the diamond, keyed by base (1-3) — each is the kid
+  private runners = new Map<number, Phaser.GameObjects.Container>();
 
   // display objects
   private batterSprite?: Phaser.GameObjects.Image;
+  private batterScale = 1;
+  private batterIdle?: Phaser.Tweens.Tween;
+  private bat?: Phaser.GameObjects.Container;
   private pitcherSprite?: Phaser.GameObjects.Image;
   private scoreText!: Phaser.GameObjects.Text;
   private inningText!: Phaser.GameObjects.Text;
@@ -137,6 +140,7 @@ export class GameScene extends Phaser.Scene {
 
     this.pitcherSprite = this.add.image(MOUND.x, MOUND.y, this.aiPitcher.id).setOrigin(0.5, 1);
     this.pitcherSprite.setScale(110 / this.pitcherSprite.height);
+    idleBob(this, this.pitcherSprite, { amp: 4, dur: 1100 }); // gentle breathing (y); wind-up uses angle
 
     this.startHalf();
   }
@@ -370,6 +374,27 @@ export class GameScene extends Phaser.Scene {
   }
 
   private throwPitch(): void {
+    // Wind up first, then release. Input is ignored until the ball is live.
+    this.phase = 'resolving';
+    this.pitcherWindup();
+    this.time.delayedCall(ANIM.WINDUP_MS, () => this.launchPitch());
+  }
+
+  private pitcherWindup(): void {
+    const p = this.pitcherSprite;
+    if (!p) return;
+    // Only touches angle/scaleY, so it coexists with the idle y-bob.
+    this.tweens.chain({
+      targets: p,
+      tweens: [
+        { angle: -13, scaleY: p.scaleX * 1.05, duration: ANIM.WINDUP_MS * 0.55, ease: 'Quad.out' },
+        { angle: 11, scaleY: p.scaleX * 0.97, duration: ANIM.WINDUP_MS * 0.45, ease: 'Quad.in' },
+        { angle: 0, scaleY: p.scaleX, duration: 220, ease: 'Sine.out' },
+      ],
+    });
+  }
+
+  private launchPitch(): void {
     this.phase = 'pitching';
     this.swung = false;
     this.pitchStart = this.time.now;
@@ -490,7 +515,7 @@ export class GameScene extends Phaser.Scene {
     // Baserunning animation, driven by the reducer's movement list.
     let runDelay = 0;
     if (result.kind === 'hit') {
-      runDelay = this.animateBaserunning(applied.movements, jerseyColor(prevBatter));
+      runDelay = this.animateBaserunning(applied.movements, prevBatter);
       this.fadeOutBatter();
     }
 
@@ -521,19 +546,19 @@ export class GameScene extends Phaser.Scene {
   }
 
   // --- Animated baserunning -----------------------------------------------
-  /** Move runner tokens per the reducer's movements. Returns the animation duration. */
-  private animateBaserunning(movements: RunnerMove[], color: number): number {
-    const next = new Map<number, Phaser.GameObjects.Arc>();
+  /** Move the kids around the bases per the reducer's movements. Returns the duration. */
+  private animateBaserunning(movements: RunnerMove[], batter: Character): number {
+    const next = new Map<number, Phaser.GameObjects.Container>();
     let maxBases = 0;
 
     for (const m of movements) {
       maxBases = Math.max(maxBases, m.toBase - m.fromBase);
-      // Grab the token: the batter (fromBase 0) gets a fresh one at home.
-      let token = m.fromBase === 0 ? this.makeRunner(color) : this.runners.get(m.fromBase);
-      if (!token) token = this.makeRunner(color); // safety
+      // The batter (fromBase 0) gets a fresh runner at home; others already exist.
+      let token = m.fromBase === 0 ? this.makeRunner(batter) : this.runners.get(m.fromBase);
+      if (!token) token = this.makeRunner(batter); // safety
       this.runners.delete(m.fromBase);
+      const img = token.getAt(0) as Phaser.GameObjects.Image;
 
-      // Waypoints: each base from fromBase+1 up to toBase.
       const legs: Array<{ x: number; y: number; duration: number; ease: string }> = [];
       for (let b = m.fromBase + 1; b <= m.toBase; b++) {
         const p = basePos(b);
@@ -542,13 +567,29 @@ export class GameScene extends Phaser.Scene {
 
       const scored = m.toBase >= 4;
       if (legs.length > 0) {
+        // Run bounce (bob + tilt) on the inner sprite while the container travels.
+        const bounce = this.tweens.add({
+          targets: img,
+          y: -ANIM.RUN_BOB,
+          angle: 6,
+          duration: RUNNER_TWEEN_MS / 2,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.inOut',
+        });
         this.tweens.chain({
           targets: token,
           tweens: legs,
           onComplete: () => {
+            bounce.stop();
+            img.y = 0;
+            img.angle = 0;
             if (scored) {
+              squashHop(this, img, { height: 20 });
               burst(this, HOME.x, HOME.y - 20, COLORS.gold, 14);
-              token!.destroy();
+              this.time.delayedCall(520, () => token!.destroy());
+            } else {
+              this.tweens.add({ targets: img, scaleY: img.scaleY * 0.85, yoyo: true, duration: 90 });
             }
           },
         });
@@ -560,9 +601,13 @@ export class GameScene extends Phaser.Scene {
     return maxBases * RUNNER_TWEEN_MS;
   }
 
-  private makeRunner(color: number): Phaser.GameObjects.Arc {
-    const r = this.add.circle(HOME.x, HOME.y - 6, 15, color).setStrokeStyle(3, COLORS.white).setDepth(40);
-    return r;
+  /** A baserunner = the actual kid, in a container so we can bob it while it moves. */
+  private makeRunner(char: Character): Phaser.GameObjects.Container {
+    const c = this.add.container(HOME.x, HOME.y - 6).setDepth(40);
+    const img = this.add.image(0, 0, char.id).setOrigin(0.5, 0.92);
+    img.setScale(RUNNER_H / img.height);
+    c.add(img);
+    return c;
   }
 
   private clearRunners(): void {
@@ -619,33 +664,80 @@ export class GameScene extends Phaser.Scene {
 
   // --- Little visual helpers ----------------------------------------------
   private showBatter(char: Character): void {
+    this.batterIdle?.stop();
     this.batterSprite?.destroy();
-    this.batterSprite = this.add.image(HOME.x - 70, HOME.y + 6, char.id).setOrigin(0.5, 1).setDepth(28);
-    const s = 150 / this.batterSprite.height;
-    this.batterSprite.setScale(s).setFlipX(true);
+    this.bat?.destroy();
+
+    const spr = this.add.image(HOME.x - 70, HOME.y + 6, char.id).setOrigin(0.5, 1).setDepth(28);
+    const s = 150 / spr.height;
+    spr.setScale(s).setFlipX(true);
+    this.batterSprite = spr;
+    this.batterScale = s;
+    this.createBat(HOME.x - 50, HOME.y - 66);
+
+    // Entrance, then a gentle "breathing" idle (scaleY only, so a swing can
+    // still tilt/step the body without fighting it).
     this.tweens.add({
-      targets: this.batterSprite,
-      scale: { from: s * 1.15, to: s },
+      targets: spr,
+      scaleX: { from: s * 1.15, to: s },
+      scaleY: { from: s * 1.15, to: s },
       duration: 200,
       ease: 'Back.out',
+      onComplete: () => {
+        if (this.batterSprite === spr) {
+          this.batterIdle = this.tweens.add({
+            targets: spr,
+            scaleY: s * 1.04,
+            duration: 850,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.inOut',
+          });
+        }
+      },
     });
+  }
+
+  /** A bat pivoted at the batter's hands, resting on the shoulder. */
+  private createBat(px: number, py: number): void {
+    const bat = this.add.container(px, py).setDepth(29);
+    const g = this.add.graphics();
+    g.fillStyle(0xd39a5c, 1);
+    g.lineStyle(3.5, OUTLINE, 1);
+    g.fillRoundedRect(-8, -84, 16, 46, 8); // barrel
+    g.strokeRoundedRect(-8, -84, 16, 46, 8);
+    g.fillRoundedRect(-5, -46, 10, 48, 5); // handle
+    g.strokeRoundedRect(-5, -46, 10, 48, 5);
+    g.fillStyle(OUTLINE, 1);
+    g.fillCircle(0, 0, 5); // knob at the grip
+    bat.add(g);
+    bat.setAngle(BAT_REST);
+    this.bat = bat;
   }
 
   private fadeOutBatter(): void {
+    this.batterIdle?.stop();
+    // Fade the bat (not destroy) so the swing tween still reads while it leaves.
+    const bat = this.bat;
+    this.bat = undefined;
+    if (bat) this.tweens.add({ targets: bat, alpha: 0, duration: 280, delay: 90, onComplete: () => bat.destroy() });
     if (!this.batterSprite) return;
     const s = this.batterSprite;
     this.batterSprite = undefined;
-    this.tweens.add({ targets: s, alpha: 0, duration: 300, onComplete: () => s.destroy() });
+    this.tweens.add({ targets: s, alpha: 0, y: s.y - 8, duration: 300, delay: 90, onComplete: () => s.destroy() });
   }
 
   private animateSwing(): void {
-    if (!this.batterSprite) return;
-    this.tweens.add({
-      targets: this.batterSprite,
-      angle: { from: -10, to: 14 },
-      duration: 110,
-      yoyo: true,
-    });
+    this.batterIdle?.stop();
+    if (this.bat) {
+      this.tweens.add({ targets: this.bat, angle: BAT_SWING, duration: ANIM.SWING_MS, yoyo: true, ease: 'Quad.out' });
+    }
+    const spr = this.batterSprite;
+    if (spr) {
+      spr.setScale(this.batterScale); // clear any mid-breath scale
+      this.tweens.add({ targets: spr, angle: 9, duration: ANIM.SWING_MS, yoyo: true, ease: 'Quad.out' });
+      this.tweens.add({ targets: spr, x: spr.x + 7, duration: ANIM.SWING_MS, yoyo: true, ease: 'Quad.out' });
+    }
   }
 
   private showBandFeedback(band: SwingBand): void {

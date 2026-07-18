@@ -9,6 +9,7 @@ import { makeButton } from '../ui/Button';
 import { makeMuteButton } from '../ui/MuteButton';
 import { confetti } from '../ui/effects';
 import { heading, ribbon, panel, FONT } from '../ui/theme';
+import { squashHop } from '../ui/anim';
 import * as audio from '../systems/audio';
 
 interface ResultData {
@@ -60,7 +61,9 @@ export class ResultScene extends Phaser.Scene {
     heading(this, cx, 214, '🏆 TEAM MVP 🏆', 24, '#ffce3a');
     const mvpImg = this.add.image(cx, 246, mvp.id).setOrigin(0.5, 0);
     mvpImg.setScale(176 / mvpImg.height);
-    this.tweens.add({ targets: mvpImg, y: mvpImg.y - 10, duration: 650, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+    // Celebratory hop on a loop.
+    squashHop(this, mvpImg, { height: 22 });
+    this.time.addEvent({ delay: 1500, loop: true, callback: () => squashHop(this, mvpImg, { height: 22 }) });
     this.add
       .text(cx, 452, mvp.name, { fontFamily: FONT, fontSize: '28px', color: '#14202e', fontStyle: '700' })
       .setOrigin(0.5);
