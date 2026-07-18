@@ -13,7 +13,10 @@ import {
   chooseAiPick,
   isDraftComplete,
 } from './draft';
-import { bandFromError, resolveContact, type SwingBand } from './atbat';
+import { bandFromError, resolveContact, resolveContactAimed, type SwingBand } from './atbat';
+import type { PitchPlan } from './pitchkind';
+import { CURSOR } from '../config';
+import { HOME } from './geometry';
 import { newHalfInning, applyAtBat, applyLivePlay } from './inning';
 import {
   startLivePlay,
@@ -118,6 +121,69 @@ describe('game mode', () => {
     } finally {
       g.localStorage = prev;
     }
+  });
+});
+
+describe('main-mode batting cursor (resolveContactAimed)', () => {
+  const planAt = (x: number, y: number): PitchPlan => ({
+    kind: 'fastball',
+    target: { x, y },
+    actual: { x, y },
+    inZone: true,
+    travelMs: 800,
+  });
+  const aimed = (over: Partial<Parameters<typeof resolveContactAimed>[0]>) =>
+    resolveContactAimed({
+      band: 'perfect',
+      errorMs: 0,
+      cursor: { x: 0, y: 0 },
+      plan: planAt(0, 0),
+      batter: plain({}),
+      pitcher: plain({}),
+      rng: () => 0.5,
+      ...over,
+    });
+
+  it('swinging where the ball is keeps the timing band', () => {
+    expect(aimed({}).band).toBe('perfect');
+  });
+
+  it('the sweet-spot fringe costs one band; missing entirely whiffs', () => {
+    expect(aimed({ cursor: { x: CURSOR.SWEET_R + 5, y: 0 } }).band).toBe('good');
+    const whiff = aimed({ cursor: { x: CURSOR.CONTACT_R + 10, y: 0 } });
+    expect(whiff.band).toBe('miss');
+    expect(whiff.swing.kind).toBe('strike');
+  });
+
+  it('never_strikes_out turns a cursor whiff into weak contact', () => {
+    const r = aimed({
+      cursor: { x: CURSOR.CONTACT_R + 10, y: 0 },
+      batter: plain({ ability: 'never_strikes_out' }),
+      rng: () => 0.9, // dodge the weak-contact foul roll
+    });
+    expect(r.band).toBe('weak');
+    expect(r.swing.kind).toBe('inPlay');
+  });
+
+  it('early swings pull left, late swings go opposite field', () => {
+    const early = aimed({ errorMs: -200, band: 'good' });
+    const late = aimed({ errorMs: 200, band: 'good' });
+    if (early.swing.kind !== 'inPlay' || late.swing.kind !== 'inPlay') throw new Error('expected contact');
+    expect(early.swing.launch.landing.x).toBeLessThan(HOME.x);
+    expect(late.swing.launch.landing.x).toBeGreaterThan(HOME.x);
+  });
+
+  it('cursor under the ball lifts it; over the top chops it down', () => {
+    const under = aimed({ band: 'good', cursor: { x: 0, y: 40 }, plan: planAt(0, 0), rng: () => 0.65 });
+    const over = aimed({ band: 'good', cursor: { x: 0, y: -40 }, plan: planAt(0, 0), rng: () => 0.65 });
+    if (under.swing.kind !== 'inPlay' || over.swing.kind !== 'inPlay') throw new Error('expected contact');
+    expect(under.swing.launch.type).toBe('fly');
+    expect(over.swing.launch.type).toBe('grounder');
+  });
+
+  it('main mode widens the timing windows via the override', () => {
+    expect(bandFromError(60)).toBe('good'); // kid default: PERFECT is 55
+    expect(bandFromError(60, MODES.main.swingTiming)).toBe('perfect');
   });
 });
 

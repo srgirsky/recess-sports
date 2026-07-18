@@ -4,7 +4,7 @@
 // multipliers into the flat params object the live-play sim consumes.
 // ---------------------------------------------------------------------------
 
-import { LIVE, MODES, type GameMode, type ModeFeatures } from '../config';
+import { LIVE, MODES, TIMING, type GameMode, type ModeFeatures } from '../config';
 
 const KEY = 'recess_mode';
 /** Pre-rename key ('easy' | 'hard') — migrated on first read. */
@@ -34,6 +34,11 @@ export function setMode(m: GameMode): void {
 
 export function getFeatures(m: GameMode): ModeFeatures {
   return MODES[m].features;
+}
+
+/** The swing-timing windows for a mode (main widens them — the cursor is the skill). */
+export function getSwingTiming(m: GameMode): typeof TIMING {
+  return MODES[m].swingTiming ?? TIMING;
 }
 
 /** Everything the live-play sim needs to know about speed/forgiveness. */

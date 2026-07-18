@@ -104,6 +104,16 @@ export const PITCHES: Record<PitchKind, PitchDef> = {
   crazy: { speedMult: 0.88, breakX: 52, breakY: -10, wobble: 26, deception: 0.75, label: '⚡ CRAZY' },
 };
 
+/** The main-mode batting cursor (plate-coord px). */
+export const CURSOR = {
+  /** Cursor within this of the ball keeps the full timing band. */
+  SWEET_R: 24,
+  /** Beyond SWEET_R but within this costs one band; past it = whiff. */
+  CONTACT_R: 50,
+  /** How far past the zone edge the cursor can roam (× zone half-size). */
+  RANGE_MULT: 1.6,
+};
+
 /** How far a thrown pitch misses its aim point (plate-coord px). */
 export const PITCH_SCATTER = {
   /** Even a perfect throw wanders this much. */
@@ -238,7 +248,16 @@ export interface ModeLiveTuning {
   cpuRunSpeedMult: number;
 }
 
-export const MODES: Record<GameMode, { live: ModeLiveTuning; features: ModeFeatures }> = {
+export const MODES: Record<
+  GameMode,
+  {
+    live: ModeLiveTuning;
+    features: ModeFeatures;
+    /** Optional swing-timing override (main mode: cursor aim adds difficulty,
+     *  so the windows widen a touch vs the kid-mode TIMING). */
+    swingTiming?: typeof TIMING;
+  }
+> = {
   kid: {
     live: {
       cpuFielderSpeedMult: 0.62,
@@ -271,10 +290,11 @@ export const MODES: Record<GameMode, { live: ModeLiveTuning; features: ModeFeatu
       playerRunSpeedMult: 1.0,
       cpuRunSpeedMult: 1.05,
     },
+    swingTiming: { PERFECT: 70, GOOD: 150, CONTACT: 250 },
     // Flags flip to true as each Backyard-style mechanic lands.
     features: {
       pitchSelection: true,
-      battingCursor: false,
+      battingCursor: true,
       manualBaserunning: false,
       errors: false,
       steals: false,

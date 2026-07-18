@@ -29,7 +29,7 @@ Phaser 3 · TypeScript · Vite · vitest. Static site, no backend, deployed free
 | `src/data/characters.ts` | ★ The 30 kids (content). Stats 1–10; 3 signature kids use `ability`. |
 | `src/data/types.ts` | Character / Stats / VisualParams / TeamState types. |
 | `src/systems/draft.ts` | Alternating pick + greedy AI value function. |
-| `src/systems/atbat.ts` | Timing→band + ability hooks; `resolveContact` → launch trajectory (homers decided here, everything else goes live). |
+| `src/systems/atbat.ts` | Timing→band + ability hooks; `resolveContact` (kid: RNG spray) and `resolveContactAimed` (main: cursor-vs-ball overlap gates the band, cursor position drives pull/oppo spray + fly/grounder bias) both feed the shared `buildLaunch` → trajectory (homers decided here, everything else goes live). |
 | `src/systems/liveplay.ts` | ★ The live-play sim: tick reducer, catches/force races, CPU fielder+runner policies, no-soft-lock guards. |
 | `src/systems/geometry.ts` | Field screen coords (bases, mound, 9 fielding spots, fence) shared by sim + scene. |
 | `src/systems/mode.ts` | CLASSIC/KID mode persistence (+ legacy `recess_difficulty` migration) + `resolveLiveParams` (LIVE × MODES) + `getFeatures`. |

@@ -12,8 +12,9 @@
 // ---------------------------------------------------------------------------
 
 import type { Character } from '../data/types';
-import { TIMING, LIVE } from '../config';
+import { TIMING, LIVE, CURSOR } from '../config';
 import { HOME, FENCE_Y, type Vec } from './geometry';
+import type { PitchPlan, PlateLoc } from './pitchkind';
 
 export type SwingBand = 'perfect' | 'good' | 'weak' | 'miss';
 
@@ -28,11 +29,11 @@ export interface AtBatResult {
 }
 
 /** Map swing-timing error (ms) to a band. A late/no swing is handled by the caller. */
-export function bandFromError(errorMs: number): SwingBand {
+export function bandFromError(errorMs: number, timing: typeof TIMING = TIMING): SwingBand {
   const e = Math.abs(errorMs);
-  if (e <= TIMING.PERFECT) return 'perfect';
-  if (e <= TIMING.GOOD) return 'good';
-  if (e <= TIMING.CONTACT) return 'weak';
+  if (e <= timing.PERFECT) return 'perfect';
+  if (e <= timing.GOOD) return 'good';
+  if (e <= timing.CONTACT) return 'weak';
   return 'miss';
 }
 
@@ -90,17 +91,116 @@ export function resolveContact(
   }
 
   const { contact, power } = batter.stats;
-  const L = LIVE.LAUNCH;
 
   // Contact quality: the same shape as the old hitBases roll — band + power
   // (and a whisper of contact) push the ball deeper and harder.
   const bandBoost = band === 'perfect' ? 0.35 : band === 'good' ? 0.12 : 0;
   const q = rng() + bandBoost + (power - 5) * 0.04 + (contact - 5) * 0.01;
 
-  const type = contactType(band, rng);
+  const L = LIVE.LAUNCH;
+  return {
+    kind: 'inPlay',
+    launch: buildLaunch({
+      band,
+      q,
+      typeBias: 0,
+      // Spray direction: RNG along the horizon between the foul lines.
+      sprayT: () => L.SPRAY_MARGIN + rng() * (1 - 2 * L.SPRAY_MARGIN),
+      rng,
+    }),
+  };
+}
 
-  // Spray direction: a point along the horizon between the foul lines.
-  const t = L.SPRAY_MARGIN + rng() * (1 - 2 * L.SPRAY_MARGIN);
+/** An aimed swing's result: the outcome plus the band actually credited. */
+export interface AimedSwing {
+  swing: SwingOutcome;
+  /** The effective band after cursor overlap + abilities (for feedback UI). */
+  band: SwingBand;
+}
+
+/**
+ * Main-mode swing: timing band × cursor-vs-ball overlap decide the contact,
+ * and WHERE the cursor met the ball decides the spray (inside = pull, outside
+ * = opposite field, blended with early/late timing) and the launch shape
+ * (under it = fly, over it = chopper). Same ability hooks as resolveContact.
+ */
+export function resolveContactAimed(spec: {
+  band: SwingBand;
+  /** Signed timing error, ms (negative = early). */
+  errorMs: number;
+  /** Where the swing cursor sat, plate coords. */
+  cursor: PlateLoc;
+  /** The pitch that was crossing (its `actual` is the ball's location). */
+  plan: PitchPlan;
+  batter: Character;
+  pitcher: Character;
+  rng: () => number;
+}): AimedSwing {
+  let { band } = spec;
+  const { cursor, plan, batter, pitcher, rng } = spec;
+  if (pitcher.ability === 'unhittable_pitch') band = downgrade(band);
+
+  // Cursor overlap: dead-on keeps the timing band, the sweet-spot fringe costs
+  // one band, and swinging where the ball isn't is a whiff.
+  const missDist = Math.hypot(cursor.x - plan.actual.x, cursor.y - plan.actual.y);
+  if (missDist > CURSOR.CONTACT_R) band = 'miss';
+  else if (missDist > CURSOR.SWEET_R) band = downgrade(band);
+
+  if (batter.ability === 'never_strikes_out' && band === 'miss') band = 'weak';
+
+  if (band === 'miss') {
+    return { swing: { kind: 'strike', description: 'Swing and a miss!' }, band };
+  }
+  if (band === 'weak' && rng() < 0.25) {
+    return { swing: { kind: 'foul', description: 'Ticked it foul.' }, band };
+  }
+
+  const { contact, power } = batter.stats;
+  const bandBoost = band === 'perfect' ? 0.35 : band === 'good' ? 0.12 : 0;
+  const q = rng() + bandBoost + (power - 5) * 0.04 + (contact - 5) * 0.01;
+
+  // Spray: early swings pull (left field), late go opposite (right field);
+  // meeting the ball on its inner/outer half nudges the same way.
+  const aimNudge = (cursor.x - plan.actual.x) / CURSOR.CONTACT_R;
+  const sprayT = 0.5 + (spec.errorMs / 300) * 0.55 + aimNudge * 0.18;
+  // Launch shape: cursor under the ball lifts it, over the top chops it down.
+  const typeBias = Math.max(-1, Math.min(1, (cursor.y - plan.actual.y) / CURSOR.CONTACT_R));
+
+  const launch = buildLaunch({
+    band: band as Exclude<SwingBand, 'miss'>,
+    q,
+    typeBias,
+    sprayT: () => sprayT,
+    rng,
+  });
+  return { swing: { kind: 'inPlay', launch }, band };
+}
+
+/** Everything buildLaunch needs to shape a batted ball. */
+export interface LaunchSpec {
+  band: Exclude<SwingBand, 'miss'>;
+  /** Contact quality (higher = deeper/harder). */
+  q: number;
+  /** Lifts (+, toward flies) or chops (−, toward grounders) the contact. */
+  typeBias: number;
+  /**
+   * 0..1 along the fence, left line → right line. A thunk (not a value) so a
+   * caller's rng rolls stay in the exact order the seeded tests expect.
+   */
+  sprayT: () => number;
+  rng: () => number;
+}
+
+/**
+ * Turn contact quality + direction into a Launch. Shared by the kid-mode RNG
+ * spray path (resolveContact) and the main-mode aimed path (resolveContactAimed).
+ */
+export function buildLaunch(spec: LaunchSpec): Launch {
+  const L = LIVE.LAUNCH;
+  const { q } = spec;
+  const type = contactType(spec.band, spec.rng, spec.typeBias);
+
+  const t = Math.min(1 - L.SPRAY_MARGIN, Math.max(L.SPRAY_MARGIN, spec.sprayT()));
   const target: Vec = { x: 132 + t * (828 - 132), y: FENCE_Y };
   const dirLen = Math.hypot(target.x - HOME.x, target.y - HOME.y);
   const dir: Vec = { x: (target.x - HOME.x) / dirLen, y: (target.y - HOME.y) / dirLen };
@@ -128,12 +228,15 @@ export function resolveContact(
   const rollSpeed =
     L.GROUNDER_SPEED.MIN + Math.min(1, Math.max(0, q)) * (L.GROUNDER_SPEED.MAX - L.GROUNDER_SPEED.MIN);
 
-  return { kind: 'inPlay', launch: { type, landing, hangMs, rollSpeed, homer } };
+  return { type, landing, hangMs, rollSpeed, homer };
 }
 
-/** Better timing lifts the ball: weak = choppers, perfect = liners and flies. */
-function contactType(band: Exclude<SwingBand, 'miss'>, rng: () => number): ContactType {
-  const r = rng();
+/**
+ * Better timing lifts the ball: weak = choppers, perfect = liners and flies.
+ * `bias` shifts the roll: + (swung under it) adds air, − (over it) chops down.
+ */
+function contactType(band: Exclude<SwingBand, 'miss'>, rng: () => number, bias = 0): ContactType {
+  const r = Math.min(1, Math.max(0, rng() + bias * 0.3));
   if (band === 'weak') return r < 0.7 ? 'grounder' : r < 0.9 ? 'fly' : 'liner';
   if (band === 'good') return r < 0.45 ? 'grounder' : r < 0.75 ? 'liner' : 'fly';
   return r < 0.2 ? 'grounder' : r < 0.6 ? 'liner' : 'fly'; // perfect

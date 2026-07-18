@@ -32,6 +32,7 @@ import { getCharacter } from '../data/characters';
 import {
   bandFromError,
   resolveContact,
+  resolveContactAimed,
   type Launch,
   type SwingBand,
   type AtBatResult,
@@ -82,8 +83,8 @@ import {
   type LivePlayState,
   type LiveInputs,
 } from '../systems/liveplay';
-import { getMode, getFeatures, resolveLiveParams, type LiveParams } from '../systems/mode';
-import { LIVE, type GameMode, type ModeFeatures, type PitchKind } from '../config';
+import { getMode, getFeatures, getSwingTiming, resolveLiveParams, type LiveParams } from '../systems/mode';
+import { LIVE, CURSOR, PLATE_ZONE, type GameMode, type ModeFeatures, type PitchKind } from '../config';
 import { recordGamePlayed } from '../systems/picklog';
 import * as audio from '../systems/audio';
 import { screenShake, burst, floatingText } from '../ui/effects';
@@ -145,10 +146,11 @@ export class GameScene extends Phaser.Scene {
   private pitchIsWild = false;
   /** Flight time of the pitch currently inbound (varies by kind in main mode). */
   private pitchTravelMs = PITCH_TRAVEL_MS;
-  /** The located pitch coming at the player (main mode; public for dev/tests —
-   *  the batting cursor reads it next phase). */
+  /** The located pitch coming at the player (main mode; public for dev/tests). */
   pitchPlan?: PitchPlan;
   private zoneGfx?: Phaser.GameObjects.Graphics;
+  /** Main-mode batting cursor reticle (follows the pointer over the plate). */
+  private swingCursor?: Phaser.GameObjects.Container;
 
   // defense half (the player pitches)
   private cpuBatter!: Character;
@@ -710,6 +712,37 @@ export class GameScene extends Phaser.Scene {
       },
     });
     this.startBallTrail();
+    if (this.features.battingCursor) this.showSwingCursor();
+  }
+
+  /** The aim reticle: sweet-spot ring + faint contact ring, pointer-driven. */
+  private showSwingCursor(): void {
+    this.swingCursor?.destroy();
+    const c = this.add.container(0, 0).setDepth(18);
+    const outer = this.add.circle(0, 0, CURSOR.CONTACT_R).setStrokeStyle(2, COLORS.white, 0.35);
+    const inner = this.add.circle(0, 0, CURSOR.SWEET_R).setStrokeStyle(4, COLORS.gold, 0.95);
+    const dot = this.add.circle(0, 0, 3, COLORS.gold, 0.9);
+    c.add([outer, inner, dot]);
+    this.swingCursor = c;
+    this.positionSwingCursor();
+  }
+
+  /** Clamp the pointer into the cursor's roam window around the zone. */
+  private cursorPlate(): PlateLoc {
+    const cx = HOME.x;
+    const cy = HOME.y + PLATE_ZONE.CY;
+    const rx = (PLATE_ZONE.W / 2) * CURSOR.RANGE_MULT;
+    const ry = (PLATE_ZONE.H / 2) * CURSOR.RANGE_MULT;
+    return {
+      x: Math.max(-rx, Math.min(rx, this.lastPointer.x - cx)),
+      y: Math.max(-ry, Math.min(ry, this.lastPointer.y - cy)),
+    };
+  }
+
+  private positionSwingCursor(): void {
+    if (!this.swingCursor) return;
+    const p = plateToScreen(this.cursorPlate());
+    this.swingCursor.setPosition(p.x, p.y);
   }
 
   private clearPitchVisuals(): void {
@@ -725,14 +758,56 @@ export class GameScene extends Phaser.Scene {
     this.ringTarget = undefined;
     this.zoneGfx?.destroy();
     this.zoneGfx = undefined;
+    this.swingCursor?.destroy();
+    this.swingCursor = undefined;
   }
 
   private onSwing(): void {
     if (this.phase !== 'pitching' || this.swung) return;
     this.swung = true;
     const error = this.time.now - this.pitchStart - this.pitchTravelMs;
+    if (this.features.battingCursor && this.pitchPlan) {
+      this.resolvePlayerSwingAimed(error, this.cursorPlate());
+      return;
+    }
     const band = bandFromError(error);
     this.resolvePlayerSwing(band, false);
+  }
+
+  /** Public headless hook (main mode): swing with the cursor at `cursor`. */
+  resolvePlayerSwingAimed(errorMs: number, cursor: PlateLoc): void {
+    const plan = this.pitchPlan!;
+    this.phase = 'resolving';
+    this.swung = true;
+    this.clearPitchVisuals();
+    this.animateSwing();
+
+    const { swing, band } = resolveContactAimed({
+      band: bandFromError(errorMs, getSwingTiming(this.mode)),
+      errorMs,
+      cursor,
+      plan,
+      batter: this.batter,
+      pitcher: this.aiPitcher,
+      rng: () => Math.random(),
+    });
+    this.showBandFeedback(band);
+
+    if (swing.kind !== 'inPlay') {
+      if (swing.kind === 'strike') audio.whiff();
+      else audio.crack();
+      this.applyAndContinue({ kind: swing.kind, bases: 0, description: swing.description });
+      return;
+    }
+    audio.crack();
+    if (swing.launch.homer) {
+      this.flyHitBall(4);
+      screenShake(this, SHAKE.homer);
+      this.applyAndContinue({ kind: 'hit', bases: 4, description: 'HOME RUN! 💥' });
+      return;
+    }
+    screenShake(this, SHAKE.single);
+    this.beginLivePlay('offense', swing.launch);
   }
 
   private resolvePlayerSwing(band: SwingBand, took: boolean): void {
@@ -1060,6 +1135,7 @@ export class GameScene extends Phaser.Scene {
 
   /** The per-frame heartbeat of a live play. Everything sim-owned is placed here. */
   update(_time: number, delta: number): void {
+    if (this.swingCursor && this.phase === 'pitching') this.positionSwingCursor();
     if (!this.livePlay || this.livePlay.phase === 'done') return;
 
     const inputs: LiveInputs = {};
