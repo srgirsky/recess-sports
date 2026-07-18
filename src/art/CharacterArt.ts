@@ -18,8 +18,8 @@
 import type { VisualParams, HairStyle, Expression, BodyType } from '../data/types';
 import { SKIN_TONES, HAIR_COLORS, UNIFORM_COLORS } from './palette';
 
-export type Pose = 'stand' | 'run1' | 'run2' | 'cheer';
-export const POSES: Pose[] = ['stand', 'run1', 'run2', 'cheer'];
+export type Pose = 'stand' | 'run1' | 'run2' | 'cheer' | 'bat' | 'windup' | 'ready' | 'slide';
+export const POSES: Pose[] = ['stand', 'run1', 'run2', 'cheer', 'bat', 'windup', 'ready', 'slide'];
 
 const VIEW_W = 200;
 const VIEW_H = 260;
@@ -486,6 +486,171 @@ function wheelchairSide(c: Ctx, frame: 1 | 2): { behind: string; front: string }
   };
 }
 
+// --- Gameplay poses (bat / windup / ready / slide) ---------------------------
+
+const BAT_WOOD = '#d39a5c';
+
+/** The bat itself: barrel + handle + knob along a line, rotated at the grip. */
+function batProp(gx: number, gy: number, deg: number): string {
+  return `
+    <g transform="translate(${gx} ${gy}) rotate(${deg})">
+      <rect x="-7" y="-96" width="14" height="52" rx="7" fill="${BAT_WOOD}" stroke="${OUT}" stroke-width="4"/>
+      <rect x="-5" y="-48" width="10" height="48" rx="5" fill="${darken(BAT_WOOD, 0.12)}" stroke="${OUT}" stroke-width="4"/>
+      <circle cx="0" cy="0" r="6" fill="${OUT}"/>
+    </g>`;
+}
+
+/**
+ * Batting stance, side view facing RIGHT (toward the pitch): wide planted
+ * legs, side torso leaned into the plate, both hands gripping a bat cocked
+ * up over the back shoulder. The bat pose IS the batter — no runtime prop.
+ */
+function poseBat(c: Ctx, v: VisualParams, hFront: string): string {
+  const w = Math.max(14, Math.round(c.m.halfW * 0.34));
+  const pantsDk = darken(PANTS, 0.16);
+  // Wide stance: back leg (far) planted, front leg open toward the pitch.
+  const legs = `
+    ${capsule('M 92 198 Q 74 214 64 228', pantsDk, w)}
+    ${sideShoe(58, 240, -8)}
+    ${capsule('M 102 200 Q 122 214 132 228', PANTS, w)}
+    ${sideShoe(136, 240, 6)}`;
+  // Both arms reach up-back to the grip.
+  const grip = { x: 76, y: 148 };
+  const arms = `
+    ${capsule(`M 96 158 Q 84 156 ${grip.x} ${grip.y + 4}`, darken(c.jerseyDk, 0.1), 13)}
+    <circle cx="${grip.x - 2}" cy="${grip.y + 2}" r="9" fill="${darken(c.skin, 0.1)}" ${c.S}/>
+    ${capsule(`M 104 160 Q 92 158 ${grip.x + 6} ${grip.y + 10}`, c.jerseyDk, 13)}
+    <circle cx="${grip.x + 4}" cy="${grip.y + 10}" r="9" fill="${c.skin}" ${c.S}/>`;
+  const head = `
+    <g transform="translate(6 2) rotate(3 ${HEAD.cx} ${HEAD.cy})">
+      ${headGroup(c, v, hFront, 0.8)}
+    </g>`;
+  if (c.usesChair) {
+    const chair = wheelchairSide(c, 1);
+    return `${batProp(grip.x, grip.y, -36)}${chair.behind}${torsoSide(c, 2)}${chair.front}${arms}${head}`;
+  }
+  return `${batProp(grip.x, grip.y, -36)}${legs}${torsoSide(c, 0)}${arms}${head}`;
+}
+
+/**
+ * Pitching wind-up, front view (the mound faces the plate): throwing arm
+ * coiled high overhead, glove arm tucked, front knee lifted mid-windup.
+ */
+function poseWindup(c: Ctx, v: VisualParams, hFront: string): string {
+  const { halfW } = c.m;
+  const shoulderY = 150;
+  const legHalf = halfW * 0.42;
+  // Planted leg straight; the other knee pumps up (shoe hangs mid-air).
+  const legs = `
+    <rect x="${100 + legHalf - 10}" y="200" width="20" height="28" rx="9" fill="${PANTS}" ${c.S}/>
+    ${frontShoe(100 + legHalf)}
+    ${capsule(`M ${100 - legHalf} 204 Q ${100 - legHalf - 12} 200 ${100 - legHalf - 14} 212`, PANTS, 16)}
+    ${sideShoe(100 - legHalf - 22, 224, -18)}`;
+  const throwArm = `
+    ${capsule(`M ${100 + halfW - 6} ${shoulderY + 2} Q ${100 + halfW + 18} ${shoulderY - 16} ${100 + halfW + 22} ${shoulderY - 40}`, c.jerseyDk, 15)}
+    ${capsule(`M ${100 + halfW + 22} ${shoulderY - 40} Q ${100 + halfW + 18} ${shoulderY - 58} ${100 + halfW + 8} ${shoulderY - 66}`, c.skin, 13)}
+    <circle cx="${100 + halfW + 5}" cy="${shoulderY - 70}" r="10" fill="${c.skin}" ${c.S}/>
+    <circle cx="${100 + halfW + 5}" cy="${shoulderY - 70}" r="7" fill="#ffffff" stroke="${OUT}" stroke-width="2.5"/>`;
+  const gloveArm = `
+    ${capsule(`M ${100 - halfW + 6} ${shoulderY + 4} Q ${100 - halfW - 6} ${shoulderY + 14} ${100 - halfW + 4} ${shoulderY + 26}`, c.jerseyDk, 15)}
+    <ellipse cx="${100 - halfW + 10}" cy="${shoulderY + 32}" rx="14" ry="12" fill="#a9743f" ${c.S}/>
+    <path d="M ${100 - halfW + 2} ${shoulderY + 26} q 8 -6 16 0" fill="none" stroke="${OUT}" stroke-width="3"/>`;
+  if (c.usesChair) {
+    return `${wheelchairFront()}${torsoFront(c)}${throwArm}${gloveArm}${headGroup(c, v, hFront)}`;
+  }
+  return `${legs}${torsoFront(c)}${throwArm}${gloveArm}${headGroup(c, v, hFront)}`;
+}
+
+/**
+ * Fielding-ready crouch, front view: everything drops, feet plant wide, knees
+ * bow out, arms hang open-forward ready to scoop. Shoes stay ON the ground.
+ */
+function poseReady(c: Ctx, v: VisualParams, hFront: string): string {
+  const { halfW } = c.m;
+  const drop = 14;
+  const legHalf = halfW * 0.62;
+  const legs = (['l', 'r'] as const)
+    .map((side) => {
+      const s = side === 'l' ? -1 : 1;
+      const x = 100 + s * legHalf;
+      return `
+        ${capsule(`M ${100 + s * (halfW * 0.35)} ${206 + drop} Q ${x + s * 8} ${212 + drop} ${x} ${GROUND - 12}`, PANTS, 17)}
+        ${frontShoe(x)}`;
+    })
+    .join('');
+  const shoulderY = 150 + drop;
+  const arms = (['l', 'r'] as const)
+    .map((side) => {
+      const s = side === 'l' ? -1 : 1;
+      const sx = 100 + s * (halfW - 4);
+      const hx = 100 + s * (halfW + 14);
+      return `
+        ${capsule(`M ${sx} ${shoulderY + 4} Q ${hx - s * 2} ${shoulderY + 22} ${hx} ${shoulderY + 40}`, c.jerseyDk, 15)}
+        <circle cx="${hx}" cy="${shoulderY + 46}" r="11" fill="${c.skin}" ${c.S}/>`;
+    })
+    .join('');
+  const body = `
+    <g transform="translate(0 ${drop})">
+      ${torsoFront(c)}
+    </g>`;
+  const head = `
+    <g transform="translate(0 ${drop})">
+      ${headGroup(c, v, hFront)}
+    </g>`;
+  if (c.usesChair) {
+    // Zoom's "ready" = leaning forward over the wheels, hands wide on the rims.
+    return `${wheelchairFront()}${body}${arms}${head}`;
+  }
+  return `${legs}${body}${arms}${head}`;
+}
+
+/**
+ * Slide, side view facing RIGHT: laid way back, legs out along the dirt, lead
+ * arm thrown up, dust kicked behind. Everything hugs the ground line.
+ */
+function poseSlide(c: Ctx, v: VisualParams, hFront: string): string {
+  const pantsDk = darken(PANTS, 0.16);
+  const w = Math.max(14, Math.round(c.m.halfW * 0.34));
+  if (c.usesChair) {
+    // A wheelchair slide is just Zoom at full tilt — reuse the speed pose.
+    const chair = wheelchairSide(c, 2);
+    const head = `
+      <g transform="translate(10 3) rotate(5 ${HEAD.cx} ${HEAD.cy})">
+        ${headGroup(c, v, hFront, 0.8)}
+      </g>`;
+    return `${chair.behind}${torsoSide(c, 2)}${chair.front}${head}`;
+  }
+  const dust = `
+    <g fill="#e0d5c0" stroke="${OUT}" stroke-width="3" opacity="0.85">
+      <circle cx="30" cy="${GROUND - 14}" r="12"/>
+      <circle cx="46" cy="${GROUND - 26}" r="9"/>
+      <circle cx="24" cy="${GROUND - 32}" r="7"/>
+    </g>`;
+  // Torso laid back at ~40°, hips near the ground around x 84.
+  const torso = `
+    <g transform="rotate(-42 84 ${GROUND - 34})">
+      <rect x="${84 - Math.round(c.m.halfW * 0.55)}" y="${GROUND - 92}" width="${Math.round(c.m.halfW * 1.1)}" height="60" rx="${Math.round(c.m.halfW * 0.4)}" fill="${c.jersey}" ${c.S}/>
+    </g>`;
+  // Legs shoot forward: lead leg straight to the bag, trail leg tucked under.
+  const legs = `
+    ${capsule(`M 92 ${GROUND - 30} Q 122 ${GROUND - 26} 150 ${GROUND - 18}`, PANTS, w)}
+    ${sideShoe(158, GROUND - 6, 4)}
+    ${capsule(`M 88 ${GROUND - 28} Q 106 ${GROUND - 12} 96 ${GROUND - 6}`, pantsDk, w - 2)}
+    ${sideShoe(100, GROUND, -4)}`;
+  // Trailing arm plants on the dirt; lead arm punches high for balance.
+  const arms = `
+    ${capsule(`M 66 ${GROUND - 62} Q 52 ${GROUND - 44} 46 ${GROUND - 26}`, c.jerseyDk, 13)}
+    <circle cx="45" cy="${GROUND - 20}" r="9" fill="${c.skin}" ${c.S}/>
+    ${capsule(`M 74 ${GROUND - 70} Q 92 ${GROUND - 88} 104 ${GROUND - 100}`, c.jerseyDk, 13)}
+    <circle cx="108" cy="${GROUND - 105}" r="9" fill="${c.skin}" ${c.S}/>`;
+  // Head sits up out of the lean, chin toward the bag.
+  const head = `
+    <g transform="translate(-32 84) scale(0.92) rotate(-10 ${HEAD.cx} ${HEAD.cy})">
+      ${headGroup(c, v, hFront, 0.8)}
+    </g>`;
+  return `${dust}${torso}${legs}${arms}${head}`;
+}
+
 // --- Assembly --------------------------------------------------------------
 
 export function buildCharacterSVG(v: VisualParams, pose: Pose = 'stand'): string {
@@ -510,7 +675,15 @@ export function buildCharacterSVG(v: VisualParams, pose: Pose = 'stand'): string
   const number = `<circle cx="100" cy="${shoulderY + 26}" r="13" fill="${uni.trim}" opacity="0.9"/>`;
 
   let layers: string;
-  if (pose === 'run1' || pose === 'run2') {
+  if (pose === 'bat') {
+    layers = poseBat(c, v, h.back + h.front);
+  } else if (pose === 'windup') {
+    layers = `${h.back}${poseWindup(c, v, h.front)}`;
+  } else if (pose === 'ready') {
+    layers = `${h.back}${poseReady(c, v, h.front)}`;
+  } else if (pose === 'slide') {
+    layers = poseSlide(c, v, h.back + h.front);
+  } else if (pose === 'run1' || pose === 'run2') {
     const frame: 1 | 2 = pose === 'run1' ? 1 : 2;
     const dropY = frame === 2 ? 3 : 0; // gallop bounce
     // Head shifted + tilted toward travel; pupils lead the motion.

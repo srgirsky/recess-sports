@@ -105,8 +105,10 @@ import { recordGamePlayed } from '../systems/picklog';
 import * as audio from '../systems/audio';
 import { screenShake, burst, floatingText } from '../ui/effects';
 import { makeMuteButton } from '../ui/MuteButton';
-import { FONT, OUTLINE, pill } from '../ui/theme';
+import { FONT, pill } from '../ui/theme';
 import { idleBob, squashHop, groundShadow, runCycle } from '../ui/anim';
+import { poseKey } from '../art/textureFactory';
+import { Announcer, type AnnounceKind } from '../systems/announcer';
 
 /**
  * 'pitching' = ball is inbound, swing now. 'aiming' = you're on the mound,
@@ -128,8 +130,6 @@ interface LiveSprite {
 
 const BALL_GREEN = 0x57d977; // "good eye" green for called balls
 
-const BAT_REST = -42; // resting angle (bat on the shoulder)
-const BAT_SWING = 66; // follow-through angle
 const RUNNER_H = 66; // runner sprite height
 
 export class GameScene extends Phaser.Scene {
@@ -187,6 +187,13 @@ export class GameScene extends Phaser.Scene {
   private armedPower = false;
   private powerBtn?: Phaser.GameObjects.Container;
   private juiceGfx?: Phaser.GameObjects.Graphics;
+  private announcer = new Announcer();
+
+  /** Play-by-play: pick a line for the moment and say it (rate-limited). */
+  private callIt(kind: AnnounceKind, ctx: { name?: string } = {}, priority: 1 | 2 = 1): void {
+    const line = this.announcer.line(kind, this.time.now, ctx, priority);
+    if (line) audio.say(line);
+  }
 
   // baserunners currently on the diamond, keyed by base (1-3) — each is the kid
   private runners = new Map<number, Phaser.GameObjects.Container>();
@@ -225,7 +232,6 @@ export class GameScene extends Phaser.Scene {
   private batterSprite?: Phaser.GameObjects.Image;
   private batterScale = 1;
   private batterIdle?: Phaser.Tweens.Tween;
-  private bat?: Phaser.GameObjects.Container;
   private pitcherSprite?: Phaser.GameObjects.Image;
   private scoreText!: Phaser.GameObjects.Text;
   private inningText!: Phaser.GameObjects.Text;
@@ -655,8 +661,11 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  private moundCharId = '';
+
   /** Put a kid on the mound (the AI's ace in the top, YOUR ace in the bottom). */
   private setMoundPitcher(char: Character): void {
+    this.moundCharId = char.id;
     const p = this.pitcherSprite;
     if (!p || p.texture.key === char.id) return;
     p.setTexture(char.id);
@@ -700,6 +709,9 @@ export class GameScene extends Phaser.Scene {
 
   private gameOver(): void {
     this.phase = 'ended';
+    if (this.playerScore !== this.aiScore) {
+      this.callIt(this.playerScore > this.aiScore ? 'winning' : 'losing', {}, 2);
+    }
     this.time.delayedCall(400, () => {
       this.scene.start('Result', {
         playerScore: this.playerScore,
@@ -737,7 +749,8 @@ export class GameScene extends Phaser.Scene {
   private pitcherWindup(): void {
     const p = this.pitcherSprite;
     if (!p) return;
-    // Only touches angle/scaleY, so it coexists with the idle y-bob.
+    // Real wind-up art (arm coiled, knee up) + the lean tween on top.
+    if (this.moundCharId) p.setTexture(poseKey(this.moundCharId, 'windup'));
     this.tweens.chain({
       targets: p,
       tweens: [
@@ -745,6 +758,9 @@ export class GameScene extends Phaser.Scene {
         { angle: 11, scaleY: p.scaleX * 0.97, duration: ANIM.WINDUP_MS * 0.45, ease: 'Quad.in' },
         { angle: 0, scaleY: p.scaleX, duration: 220, ease: 'Sine.out' },
       ],
+      onComplete: () => {
+        if (p.active && this.moundCharId) p.setTexture(this.moundCharId);
+      },
     });
   }
 
@@ -861,6 +877,7 @@ export class GameScene extends Phaser.Scene {
         () => Math.random()
       );
       floatingText(this, MOUND.x, MOUND.y - 80, '⚡ CRAZY PITCH!', COLORS.red, 26);
+      this.callIt('crazyPitch', {}, 2);
     }
     this.pitchPlan = plan;
     this.pitchIsWild = !plan.inZone; // reuses the take-a-ball / capped-chase rules
@@ -1079,6 +1096,8 @@ export class GameScene extends Phaser.Scene {
       this.flyHitBall(4);
       screenShake(this, SHAKE.homer);
       this.gainJuice('player', 'homer', this.batter.ability);
+      if (powered && this.batter.ability === 'calls_shot') this.callIt('calledShot', {}, 2);
+      else this.callIt('homer', { name: this.batter.name }, 2);
       this.applyAndContinue({ kind: 'hit', bases: 4, description: 'HOME RUN! 💥' });
       return;
     }
@@ -1135,7 +1154,10 @@ export class GameScene extends Phaser.Scene {
 
     const walked = result.kind === 'ball' && applied.batterDone;
     // The CPU pitcher charges off striking you out.
-    if (result.kind === 'strike' && applied.batterOut) this.gainJuice('cpu', 'strikeoutThrown');
+    if (result.kind === 'strike' && applied.batterOut) {
+      this.gainJuice('cpu', 'strikeoutThrown');
+      this.callIt('strikeoutSwinging', { name: prevBatter.name });
+    }
 
     // An armed steal races the catcher on a strike or a (non-walk) ball;
     // fouls and balls-four are dead — the runner scampers back.
@@ -1175,9 +1197,9 @@ export class GameScene extends Phaser.Scene {
 
     if (applied.runsScored > 0) {
       audio.cheer();
-      if (result.bases >= 4) audio.say('Home run!');
+      if (result.bases >= 4 && this.mode === 'kid') this.callIt('homer', { name: prevBatter.name }, 2);
     }
-    if (walked) audio.say('Take your base!');
+    if (walked) this.callIt('walk', {}, 2);
 
     const color =
       result.kind === 'hit'
@@ -1233,10 +1255,12 @@ export class GameScene extends Phaser.Scene {
           this.tweens.add({ targets: img, scaleY: img.scaleY * 0.85, yoyo: true, duration: 90 });
           this.runners.set(from + 1, token);
           this.gainJuice(cpuRunner ? 'cpu' : 'player', 'steal');
+          this.callIt('stealSafe', { name: getCharacter(token.getData('id') as string).name });
           if (cpuRunner) audio.whiff();
           else audio.cheer();
         } else {
           floatingText(this, to.x, to.y - 50, cpuRunner ? 'GOT HIM!' : 'CAUGHT!', cpuRunner ? COLORS.gold : COLORS.red, 28);
+          this.callIt('stealCaught', {});
           screenShake(this, 3);
           if (cpuRunner) audio.cheer();
           else audio.whiff();
@@ -1395,7 +1419,8 @@ export class GameScene extends Phaser.Scene {
       const outfield = a.position === 'LF' || a.position === 'CF' || a.position === 'RF';
       const c = this.add.container(p.x, p.y).setDepth(26);
       const shadow = groundShadow(this, 0, 3, outfield ? 26 : 32);
-      const img = this.add.image(0, 0, a.charId).setOrigin(0.5, 0.95);
+      // Fielders wait in the ready crouch, gloves out.
+      const img = this.add.image(0, 0, poseKey(a.charId, 'ready')).setOrigin(0.5, 0.95);
       img.setScale((outfield ? 52 : 60) / img.height);
       c.add([shadow, img]);
       idleBob(this, img, { amp: 3, dur: 1000 + i * 90 }); // bob the IMAGE — the sim owns the container
@@ -1565,6 +1590,22 @@ export class GameScene extends Phaser.Scene {
       if (r.done !== null) continue;
       const spr = this.liveRunnerSprites.get(r.charId);
       if (!spr || !spr.container.active) continue;
+      // A runner closing on a bag with the ball bearing down HITS THE DIRT.
+      const contested =
+        r.to !== r.from &&
+        r.progress > 0.72 &&
+        ((s.ball.phase === 'thrown' && s.ball.throw?.toBase === r.to) ||
+          (s.ball.phase === 'held' &&
+            s.ball.heldBy !== null &&
+            dist(s.fielders[s.ball.heldBy].pos, basePos(r.to)) < 70));
+      if (contested) {
+        spr.cycle?.stop(false);
+        spr.cycle = null;
+        spr.img.setTexture(poseKey(r.charId, 'slide'));
+        spr.img.setFlipX(basePos(r.to).x < spr.container.x);
+        spr.container.setPosition(r.pos.x, r.pos.y - 6);
+        continue;
+      }
       this.moveLiveSprite(spr, r.pos.x, r.pos.y - 6);
     }
 
@@ -1642,12 +1683,14 @@ export class GameScene extends Phaser.Scene {
           floatingText(this, s.ball.pos.x, s.ball.pos.y - 40, 'BONK! 🌳', COLORS.white, 26);
           burst(this, s.ball.pos.x, s.ball.pos.y - 20, 0x529a49, 8);
           audio.pop();
+          this.callIt('bonk', {});
           break;
         case 'error': {
           const label = e.kind === 'wild' ? 'WILD THROW!' : e.kind === 'drop' ? 'DROPPED IT!' : 'BOBBLED!';
           floatingText(this, s.ball.pos.x, s.ball.pos.y - 44, label, COLORS.red, 28);
           screenShake(this, 3);
           audio.whiff();
+          this.callIt(e.kind === 'wild' ? 'errorWild' : 'errorDrop', {});
           // An error by the CPU while your kids run = a gift. Cheer it.
           if (s.mode === 'offense') audio.cheer();
           break;
@@ -1744,8 +1787,9 @@ export class GameScene extends Phaser.Scene {
       if (!id) return;
       const spr = this.liveRunnerSprites.get(id);
       if (!spr || !spr.container.active) return;
-      spr.cycle?.stop(true);
+      spr.cycle?.stop(false);
       spr.cycle = null;
+      spr.img.setTexture(id); // whatever they ended in (run/slide) → standing
       const p = basePos(i + 1);
       spr.container.setPosition(p.x, p.y - 6);
       spr.img.setFlipX(false);
@@ -1778,6 +1822,14 @@ export class GameScene extends Phaser.Scene {
     for (let i = 0; i < applied.runsScored; i++) this.gainJuice(batSide, 'runScored');
     if (outcome.outs >= 2) this.gainJuice(fieldSide, 'doublePlay');
     else if (outcome.flyCaught) this.gainJuice(fieldSide, 'cleanCatch');
+
+    // Play-by-play for how the play ended.
+    const batterName = (isOffense ? this.batter : this.cpuBatter)?.name;
+    if (outcome.outs >= 2) this.callIt('doublePlay', {}, 2);
+    else if (outcome.flyCaught && applied.runsScored > 0) this.callIt('sacFly', {}, 2);
+    else if (outcome.flyCaught) this.callIt('catch', {});
+    else if (outcome.outs === 1) this.callIt('outRace', {});
+    else this.callIt('hitSafe', { name: batterName });
 
     const color = isOffense
       ? outcome.outs > 0
@@ -1823,8 +1875,9 @@ export class GameScene extends Phaser.Scene {
       }
       const spr = this.fielderSpriteAt(i);
       if (!spr) return;
-      spr.cycle?.stop(true);
+      spr.cycle?.stop(false);
       spr.cycle = null;
+      spr.img.setTexture(poseKey(spr.charId, 'ready')); // back to the crouch
       spr.img.setFlipX(false);
       // Kids who left their spot were in on the play — a hop if it worked.
       if (gotAnOut && dist({ x: spr.container.x, y: spr.container.y }, home) > 8) {
@@ -1922,6 +1975,7 @@ export class GameScene extends Phaser.Scene {
         this.playerJuice = spend(this.playerJuice, 'crazyPitch', this.playerPitcher.ability);
         this.refreshJuiceMeter();
         floatingText(this, MOUND.x, MOUND.y - 80, '⚡ CRAZY PITCH!', COLORS.gold, 26);
+        this.callIt('crazyPitch', {}, 2);
       }
       this.selectedPitch = { kind, target };
       // Next tick, not now: the confirming tap's pointerdown is still being
@@ -2129,6 +2183,7 @@ export class GameScene extends Phaser.Scene {
     if (outcome.launch.homer) {
       this.flyHitBall(4);
       screenShake(this, SHAKE.homer);
+      this.callIt('homer', { name: this.cpuBatter.name }, 2);
       this.applyCpuResult({ kind: 'hit', bases: 4, description: 'HOME RUN! 💥' });
       return;
     }
@@ -2202,6 +2257,7 @@ export class GameScene extends Phaser.Scene {
     // YOU threw the K — charge the meter.
     if (result.kind === 'strike' && applied.batterOut) {
       this.gainJuice('player', 'strikeoutThrown', this.playerPitcher.ability);
+      this.callIt('strikeoutPitched', { name: prevBatter.name });
     }
 
     const walked = result.kind === 'ball' && applied.batterDone;
@@ -2266,20 +2322,21 @@ export class GameScene extends Phaser.Scene {
   private showBatter(char: Character, walkIn = false): void {
     this.batterIdle?.stop();
     this.batterSprite?.destroy();
-    this.bat?.destroy();
 
+    // The batting-stance pose has the bat baked in, drawn facing the pitch.
     const targetX = HOME.x - 70;
     const spr = this.add
-      .image(walkIn ? GAME_WIDTH + 50 : targetX, HOME.y + 6, char.id)
+      .image(walkIn ? GAME_WIDTH + 50 : targetX, HOME.y + 6, poseKey(char.id, 'bat'))
       .setOrigin(0.5, 1)
       .setDepth(28);
     const s = 150 / spr.height;
-    spr.setScale(s).setFlipX(true);
+    spr.setScale(s);
     this.batterSprite = spr;
     this.batterScale = s;
 
     if (walkIn) {
-      // Jog to the plate with real run frames (facing left = flipX stays on).
+      // Jog to the plate with real run frames (facing left = flipX on).
+      spr.setFlipX(true);
       const cycle = runCycle(this, spr, char.id);
       this.tweens.add({
         targets: spr,
@@ -2287,17 +2344,16 @@ export class GameScene extends Phaser.Scene {
         duration: 460,
         ease: 'Sine.out',
         onComplete: () => {
-          cycle.stop(true);
+          cycle.stop(false);
           if (this.batterSprite !== spr) return;
-          spr.setFlipX(true);
-          this.createBat(HOME.x - 50, HOME.y - 66);
+          spr.setFlipX(false);
+          spr.setTexture(poseKey(char.id, 'bat'));
           this.startBatterIdle(spr, s);
         },
       });
       return;
     }
 
-    this.createBat(HOME.x - 50, HOME.y - 66);
     // Entrance, then a gentle "breathing" idle (scaleY only, so a swing can
     // still tilt/step the body without fighting it).
     this.tweens.add({
@@ -2322,29 +2378,8 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  /** A bat pivoted at the batter's hands, resting on the shoulder. */
-  private createBat(px: number, py: number): void {
-    const bat = this.add.container(px, py).setDepth(29);
-    const g = this.add.graphics();
-    g.fillStyle(0xd39a5c, 1);
-    g.lineStyle(3.5, OUTLINE, 1);
-    g.fillRoundedRect(-8, -84, 16, 46, 8); // barrel
-    g.strokeRoundedRect(-8, -84, 16, 46, 8);
-    g.fillRoundedRect(-5, -46, 10, 48, 5); // handle
-    g.strokeRoundedRect(-5, -46, 10, 48, 5);
-    g.fillStyle(OUTLINE, 1);
-    g.fillCircle(0, 0, 5); // knob at the grip
-    bat.add(g);
-    bat.setAngle(BAT_REST);
-    this.bat = bat;
-  }
-
   private fadeOutBatter(): void {
     this.batterIdle?.stop();
-    // Fade the bat (not destroy) so the swing tween still reads while it leaves.
-    const bat = this.bat;
-    this.bat = undefined;
-    if (bat) this.tweens.add({ targets: bat, alpha: 0, duration: 280, delay: 90, onComplete: () => bat.destroy() });
     if (!this.batterSprite) return;
     const s = this.batterSprite;
     this.batterSprite = undefined;
@@ -2353,14 +2388,12 @@ export class GameScene extends Phaser.Scene {
 
   private animateSwing(): void {
     this.batterIdle?.stop();
-    if (this.bat) {
-      this.tweens.add({ targets: this.bat, angle: BAT_SWING, duration: ANIM.SWING_MS, yoyo: true, ease: 'Quad.out' });
-    }
     const spr = this.batterSprite;
     if (spr) {
+      // The bat is part of the stance art — whip the whole kid through it.
       spr.setScale(this.batterScale); // clear any mid-breath scale
-      this.tweens.add({ targets: spr, angle: 9, duration: ANIM.SWING_MS, yoyo: true, ease: 'Quad.out' });
-      this.tweens.add({ targets: spr, x: spr.x + 7, duration: ANIM.SWING_MS, yoyo: true, ease: 'Quad.out' });
+      this.tweens.add({ targets: spr, angle: 16, duration: ANIM.SWING_MS, yoyo: true, ease: 'Quad.out' });
+      this.tweens.add({ targets: spr, x: spr.x + 10, duration: ANIM.SWING_MS, yoyo: true, ease: 'Quad.out' });
     }
   }
 
