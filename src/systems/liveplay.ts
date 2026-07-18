@@ -15,7 +15,7 @@
 
 import { LIVE } from '../config';
 import type { Launch } from './atbat';
-import type { LiveParams } from './difficulty';
+import type { LiveParams } from './mode';
 import {
   HOME,
   FIELD_POSITIONS,

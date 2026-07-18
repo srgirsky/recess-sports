@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Character } from '../data/types';
 import { resolveContact, type Launch } from './atbat';
-import { resolveLiveParams, type LiveParams } from './difficulty';
+import { resolveLiveParams, type LiveParams } from './mode';
 import { HOME, FENCE_Y, FIRST, type PositionId } from './geometry';
 import {
   startLivePlay,
@@ -105,7 +105,7 @@ describe('resolveContact: swing -> launch', () => {
 });
 
 describe('live play: defense (the player fields)', () => {
-  const easy = resolveLiveParams('easy');
+  const kid = resolveLiveParams('kid');
 
   it('steering onto a grounder picks it up, and a strong throw beats the batter', () => {
     let s = startLivePlay({
@@ -115,12 +115,12 @@ describe('live play: defense (the player fields)', () => {
       baseRunners: [],
       defense: DEFENSE,
       outs: 0,
-      params: easy,
+      params: kid,
     });
     expect(s.fielders[s.active].position).toBe('SS'); // nearest the settle point
 
     let threw = false;
-    const { s: end, events } = runPlay(s, easy, (st) => {
+    const { s: end, events } = runPlay(s, kid, (st) => {
       if (st.ball.phase === 'held' && !threw) {
         threw = true;
         return { throwTo: { base: 1, power: 1 } };
@@ -144,9 +144,9 @@ describe('live play: defense (the player fields)', () => {
       baseRunners: [{ base: 2, charId: 'r2', speed: 5 }],
       defense: DEFENSE,
       outs: 0,
-      params: easy,
+      params: kid,
     });
-    const { s: end, events } = runPlay(s, easy, () => ({ pointer: flyToCenter.landing }));
+    const { s: end, events } = runPlay(s, kid, () => ({ pointer: flyToCenter.landing }));
     expect(events.some((e) => e.t === 'catch')).toBe(true);
     const outcome = finishLivePlay(end);
     expect(outcome.batterOut).toBe(true);
@@ -164,10 +164,10 @@ describe('live play: defense (the player fields)', () => {
       baseRunners: [{ base: 2, charId: 'r2', speed: 5 }],
       defense: DEFENSE,
       outs: 0,
-      params: easy,
+      params: kid,
     });
-    const { s: end } = runPlay(s, easy, () => ({}));
-    expect(end.elapsed).toBeLessThanOrEqual(easy.maxPlayMs + 100);
+    const { s: end } = runPlay(s, kid, () => ({}));
+    expect(end.elapsed).toBeLessThanOrEqual(kid.maxPlayMs + 100);
     const outcome = finishLivePlay(end);
     // Nobody fielded it — the runner from 2nd (at least) comes around to score.
     expect(outcome.runs).toBeGreaterThanOrEqual(1);
@@ -183,12 +183,12 @@ describe('live play: defense (the player fields)', () => {
         baseRunners: [],
         defense: DEFENSE,
         outs: 0,
-        params: easy,
+        params: kid,
       });
       // Field it, then dawdle until 900ms before lobbing a soft throw — slow
       // enough that only the slow runner loses the race to first.
       let threw = false;
-      const { s: end } = runPlay(s, easy, (st) => {
+      const { s: end } = runPlay(s, kid, (st) => {
         if (st.ball.phase === 'held' && !threw && st.elapsed >= 900) {
           threw = true;
           return { throwTo: { base: 1, power: 0 } };
@@ -203,8 +203,8 @@ describe('live play: defense (the player fields)', () => {
 });
 
 describe('live play: offense (the player runs)', () => {
-  const easy = resolveLiveParams('easy');
-  const hard = resolveLiveParams('hard');
+  const kid = resolveLiveParams('kid');
+  const main = resolveLiveParams('main');
 
   it('the batter auto-runs to first with zero input (no soft-lock)', () => {
     let s = startLivePlay({
@@ -214,15 +214,15 @@ describe('live play: offense (the player runs)', () => {
       baseRunners: [],
       defense: DEFENSE,
       outs: 0,
-      params: easy,
+      params: kid,
     });
-    const { s: end } = runPlay(s, easy, () => ({}));
+    const { s: end } = runPlay(s, kid, () => ({}));
     const outcome = finishLivePlay(end);
     expect(outcome.batterOut).toBe(false);
     expect(outcome.bases[0]).toBe(true); // safe at first
   });
 
-  it('on hard, a slow batter is forced out at first by the CPU defense', () => {
+  it('in main mode, a slow batter is forced out at first by the CPU defense', () => {
     let s = startLivePlay({
       mode: 'offense',
       launch: grounderToShort,
@@ -230,9 +230,9 @@ describe('live play: offense (the player runs)', () => {
       baseRunners: [],
       defense: DEFENSE,
       outs: 0,
-      params: hard,
+      params: main,
     });
-    const { s: end, events } = runPlay(s, hard, () => ({}), seq([0.5]));
+    const { s: end, events } = runPlay(s, main, () => ({}), seq([0.5]));
     expect(events.some((e) => e.t === 'out' && e.base === 1)).toBe(true);
     expect(finishLivePlay(end).batterOut).toBe(true);
   });
@@ -245,20 +245,20 @@ describe('live play: offense (the player runs)', () => {
       baseRunners: [],
       defense: DEFENSE,
       outs: 0,
-      params: easy,
+      params: kid,
     });
     // Tap immediately: the batter is mid-leg to first, so nothing changes.
-    s = stepLivePlay(s, { run: true }, 50, easy, () => 0.5);
+    s = stepLivePlay(s, { run: true }, 50, kid, () => 0.5);
     const batter = s.runners.find((r) => r.isBatter)!;
     expect(batter.to).toBe(1);
 
     // Walk him to first, then tap — he should take off for second.
     let guard = 0;
     while (!(batter.to === 1 && batter.from === 1) && guard++ < 500 && s.phase !== 'done') {
-      s = stepLivePlay(s, {}, 50, easy, () => 0.5);
+      s = stepLivePlay(s, {}, 50, kid, () => 0.5);
     }
     expect(batter.from).toBe(1);
-    s = stepLivePlay(s, { run: true }, 50, easy, () => 0.5);
+    s = stepLivePlay(s, { run: true }, 50, kid, () => 0.5);
     expect(batter.to).toBe(2);
   });
 
@@ -273,7 +273,7 @@ describe('live play: offense (the player runs)', () => {
       ],
       defense: DEFENSE,
       outs: 0,
-      params: easy,
+      params: kid,
     });
     const r1 = s.runners.find((r) => r.charId === 'r1')!;
     const r3 = s.runners.find((r) => r.charId === 'r3')!;
@@ -307,10 +307,10 @@ describe('live play: folding into the inning', () => {
 
 describe('live play: termination property', () => {
   it('random launches + random inputs always finish, with sane outs/runs', () => {
-    const easy = resolveLiveParams('easy');
-    const hard = resolveLiveParams('hard');
+    const kid = resolveLiveParams('kid');
+    const main = resolveLiveParams('main');
     for (let i = 0; i < 200; i++) {
-      const params = i % 2 === 0 ? easy : hard;
+      const params = i % 2 === 0 ? kid : main;
       const mode = i % 3 === 0 ? 'offense' : ('defense' as const);
       const r = resolveContact(
         (['perfect', 'good', 'weak'] as const)[i % 3],

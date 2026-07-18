@@ -21,7 +21,8 @@ import {
   finishLivePlay,
   type LivePlayState,
 } from './liveplay';
-import { resolveLiveParams } from './difficulty';
+import { resolveLiveParams, getMode, setMode } from './mode';
+import { LIVE, MODES } from '../config';
 import type { PositionId } from './geometry';
 import {
   pitchBandFromError,
@@ -44,6 +45,80 @@ const plain = (over: Partial<Character>): Character => ({
   visual: { skin: 0, hair: 'short', hairColor: 0, uniform: 0, accessory: 'none' },
   ability: 'none',
   ...over,
+});
+
+describe('game mode', () => {
+  /** Minimal in-memory localStorage for the node test env. */
+  const fakeStorage = (initial: Record<string, string> = {}) => {
+    const store = new Map(Object.entries(initial));
+    return {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => void store.set(k, v),
+      removeItem: (k: string) => void store.delete(k),
+      dump: () => Object.fromEntries(store),
+    };
+  };
+  const withStorage = (initial: Record<string, string>, fn: () => void) => {
+    const g = globalThis as { localStorage?: unknown };
+    const prev = g.localStorage;
+    g.localStorage = fakeStorage(initial);
+    try {
+      fn();
+    } finally {
+      g.localStorage = prev;
+    }
+  };
+
+  it('kid mode keeps the original forgiving live params', () => {
+    const p = resolveLiveParams('kid');
+    expect(p.cpuFielderSpeed).toBeCloseTo(LIVE.FIELDER_SPEED * 0.62);
+    expect(p.cpuReactionMs).toBe(550);
+    expect(p.cpuThrowErrorMs).toBe(320);
+    expect(p.catchRadius).toBeCloseTo(LIVE.CATCH_RADIUS * 1.6);
+    expect(p.playerRunSpeed).toBeCloseTo(LIVE.RUNNER_SPEED * 1.15);
+    // CPU reach is never inflated by kid mode.
+    expect(p.cpuCatchRadius).toBe(LIVE.CATCH_RADIUS);
+  });
+
+  it('main mode is stricter than kid mode across the board', () => {
+    const kid = resolveLiveParams('kid');
+    const main = resolveLiveParams('main');
+    expect(main.cpuFielderSpeed).toBeGreaterThan(kid.cpuFielderSpeed);
+    expect(main.cpuReactionMs).toBeLessThan(kid.cpuReactionMs);
+    expect(main.cpuThrowErrorMs).toBeLessThan(kid.cpuThrowErrorMs);
+    expect(main.catchRadius).toBeLessThan(kid.catchRadius);
+  });
+
+  it('kid mode has every extra mechanic switched off', () => {
+    expect(Object.values(MODES.kid.features).every((f) => f === false)).toBe(true);
+  });
+
+  it('defaults to main for brand-new players', () => {
+    withStorage({}, () => expect(getMode()).toBe('main'));
+  });
+
+  it('migrates the legacy difficulty choice (easy→kid, hard→main)', () => {
+    withStorage({ recess_difficulty: 'easy' }, () => expect(getMode()).toBe('kid'));
+    withStorage({ recess_difficulty: 'hard' }, () => expect(getMode()).toBe('main'));
+  });
+
+  it('setMode persists and wins over the legacy key', () => {
+    withStorage({ recess_difficulty: 'easy' }, () => {
+      setMode('main');
+      expect(getMode()).toBe('main');
+    });
+  });
+
+  it('falls back to main when storage is unavailable', () => {
+    const g = globalThis as { localStorage?: unknown };
+    const prev = g.localStorage;
+    g.localStorage = undefined;
+    try {
+      expect(getMode()).toBe('main');
+    } finally {
+      g.localStorage = prev;
+    }
+  });
 });
 
 describe('roster', () => {
@@ -353,7 +428,7 @@ describe('sanity: a full simulated game always terminates with a score', () => {
     }
 
     const POSITIONS: PositionId[] = ['P', 'C', '1B', '2B', 'SS', '3B', 'LF', 'CF', 'RF'];
-    const params = resolveLiveParams('easy');
+    const params = resolveLiveParams('kid');
     const defenseFor = (team: string[]) =>
       POSITIONS.map((p, i) => ({ position: p, charId: team[i % team.length] }));
 

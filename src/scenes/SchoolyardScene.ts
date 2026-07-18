@@ -14,8 +14,8 @@
 // ---------------------------------------------------------------------------
 
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT, COLORS, TEAM_SIZE, AI_PICK_DELAY_MS, ANIM, type Difficulty } from '../config';
-import { getDifficulty, setDifficulty } from '../systems/difficulty';
+import { GAME_WIDTH, GAME_HEIGHT, COLORS, TEAM_SIZE, AI_PICK_DELAY_MS, ANIM, type GameMode } from '../config';
+import { getMode, setMode } from '../systems/mode';
 import { ROSTER } from '../data/characters';
 import type { Character } from '../data/types';
 import {
@@ -365,10 +365,10 @@ export class SchoolyardScene extends Phaser.Scene {
       onComplete: () => pulse(this, play, { scale: 1.05, dur: 520 }),
     });
 
-    // Difficulty toggle: two icon chips under PLAY. Selected = gold + full size.
-    const chips: Array<{ d: Difficulty; c: Phaser.GameObjects.Container }> = [];
+    // Mode toggle: two icon chips under PLAY. Selected = gold + full size.
+    const chips: Array<{ d: GameMode; c: Phaser.GameObjects.Container }> = [];
     const styleChips = () => {
-      const current = getDifficulty();
+      const current = getMode();
       for (const chip of chips) {
         const selected = chip.d === current;
         chip.c.setAlpha(selected ? 1 : 0.55);
@@ -377,8 +377,8 @@ export class SchoolyardScene extends Phaser.Scene {
     };
     (
       [
-        { d: 'easy' as Difficulty, label: '🙂 EASY', x: GAME_WIDTH / 2 - 92 },
-        { d: 'hard' as Difficulty, label: '🔥 HARD', x: GAME_WIDTH / 2 + 92 },
+        { d: 'main' as GameMode, label: '⚾ CLASSIC', x: GAME_WIDTH / 2 - 92 },
+        { d: 'kid' as GameMode, label: '🙂 KID MODE', x: GAME_WIDTH / 2 + 92 },
       ] as const
     ).forEach(({ d, label, x }) => {
       const { container } = pill(this, x, 592, label, { fill: COLORS.cream, fontSize: 20, minW: 150 });
@@ -389,9 +389,9 @@ export class SchoolyardScene extends Phaser.Scene {
       );
       container.on('pointerdown', () => {
         if (this.phase !== 'title') return;
-        setDifficulty(d);
+        setMode(d);
         audio.pop();
-        audio.say(d === 'easy' ? 'Easy mode!' : 'Hard mode!');
+        audio.say(d === 'kid' ? 'Kid mode!' : 'Classic mode!');
         styleChips();
       });
       chips.push({ d, c: container });

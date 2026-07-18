@@ -73,8 +73,8 @@ import {
   type LivePlayState,
   type LiveInputs,
 } from '../systems/liveplay';
-import { getDifficulty, resolveLiveParams, type LiveParams } from '../systems/difficulty';
-import { LIVE } from '../config';
+import { getMode, getFeatures, resolveLiveParams, type LiveParams } from '../systems/mode';
+import { LIVE, type GameMode, type ModeFeatures } from '../config';
 import { recordGamePlayed } from '../systems/picklog';
 import * as audio from '../systems/audio';
 import { screenShake, burst, floatingText } from '../ui/effects';
@@ -146,6 +146,9 @@ export class GameScene extends Phaser.Scene {
 
   // --- live play (interactive fielding / running) ---
   private liveParams!: LiveParams;
+  private mode!: GameMode;
+  /** Which main-mode mechanics are on (public: read by controls & dev drivers). */
+  features!: ModeFeatures;
   private livePlay?: LivePlayState;
   /** Defensive assignment for the current half, sim order (index 0 = P). */
   private fieldAssignment: Array<{ position: PositionId; charId: string }> = [];
@@ -218,7 +221,9 @@ export class GameScene extends Phaser.Scene {
   create(): void {
     this.aiPitcher = bestPitcher(this.aiTeam);
     this.playerPitcher = bestPitcher(this.playerTeam);
-    this.liveParams = resolveLiveParams(getDifficulty());
+    this.mode = getMode();
+    this.features = getFeatures(this.mode);
+    this.liveParams = resolveLiveParams(this.mode);
     recordGamePlayed();
     this.cameras.main.fadeIn(250, 0x5b, 0xbf, 0x5a);
 

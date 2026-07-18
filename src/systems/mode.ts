@@ -1,27 +1,39 @@
 // ---------------------------------------------------------------------------
-// Difficulty setting (EASY / HARD) — persisted per-browser like the pick log,
-// plus the resolver that merges the LIVE tunables with the difficulty
+// Game mode (CLASSIC main mode / KID MODE) — persisted per-browser like the
+// pick log, plus the resolver that merges the LIVE tunables with the mode's
 // multipliers into the flat params object the live-play sim consumes.
 // ---------------------------------------------------------------------------
 
-import { LIVE, DIFFICULTY, type Difficulty } from '../config';
+import { LIVE, MODES, type GameMode, type ModeFeatures } from '../config';
 
-const KEY = 'recess_difficulty';
+const KEY = 'recess_mode';
+/** Pre-rename key ('easy' | 'hard') — migrated on first read. */
+const LEGACY_KEY = 'recess_difficulty';
 
-export function getDifficulty(): Difficulty {
+export function getMode(): GameMode {
   try {
-    return localStorage.getItem(KEY) === 'hard' ? 'hard' : 'easy';
+    const stored = localStorage.getItem(KEY);
+    if (stored === 'kid' || stored === 'main') return stored;
+    // Migrate the old difficulty choice: easy → kid, hard → main.
+    const legacy = localStorage.getItem(LEGACY_KEY);
+    const mode: GameMode = legacy === 'easy' ? 'kid' : 'main';
+    localStorage.setItem(KEY, mode);
+    return mode;
   } catch {
-    return 'easy';
+    return 'main';
   }
 }
 
-export function setDifficulty(d: Difficulty): void {
+export function setMode(m: GameMode): void {
   try {
-    localStorage.setItem(KEY, d);
+    localStorage.setItem(KEY, m);
   } catch {
     /* ignore — the game still works, the choice just won't persist */
   }
+}
+
+export function getFeatures(m: GameMode): ModeFeatures {
+  return MODES[m].features;
 }
 
 /** Everything the live-play sim needs to know about speed/forgiveness. */
@@ -34,7 +46,7 @@ export interface LiveParams {
   cpuThrowErrorMs: number;
   catchRadius: number; // player's grab reach, px
   pickupRadius: number;
-  cpuCatchRadius: number; // CPU reach is never inflated by easy mode
+  cpuCatchRadius: number; // CPU reach is never inflated by kid mode
   cpuPickupRadius: number;
   throwSpeedMin: number;
   throwSpeedMax: number;
@@ -45,8 +57,8 @@ export interface LiveParams {
   maxPlayMs: number;
 }
 
-export function resolveLiveParams(d: Difficulty): LiveParams {
-  const m = DIFFICULTY[d];
+export function resolveLiveParams(mode: GameMode): LiveParams {
+  const m = MODES[mode].live;
   return {
     fielderSpeed: LIVE.FIELDER_SPEED,
     cpuFielderSpeed: LIVE.FIELDER_SPEED * m.cpuFielderSpeedMult,

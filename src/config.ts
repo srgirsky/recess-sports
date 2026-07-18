@@ -145,49 +145,91 @@ export const LIVE = {
   MAX_PLAY_MS: 9000,
 };
 
-export type Difficulty = 'easy' | 'hard';
+/**
+ * The two ways to play. KID is the original one-button game with a forgiving
+ * live sim; MAIN (the default) is the full Backyard-Baseball-style experience —
+ * its extra mechanics arrive behind the `features` flags below.
+ */
+export type GameMode = 'kid' | 'main';
 
-/** Forgiveness knobs. EASY is the default — HARD is real stakes. */
-export const DIFFICULTY: Record<
-  Difficulty,
-  {
-    /** CPU fielder chase speed (× FIELDER_SPEED). */
-    cpuFielderSpeedMult: number;
-    /** Delay before the CPU fielder starts chasing the ball. */
-    cpuReactionMs: number;
-    /** How long the CPU holds the ball before throwing. */
-    cpuThrowDelayMs: number;
-    /** CPU throw flight speed (× THROW_SPEED_MAX). */
-    cpuThrowSpeedMult: number;
-    /** Up to this many ms of wobble added to a CPU throw's arrival. */
-    cpuThrowErrorMs: number;
-    /** Player catch/pickup radius multiplier (bigger = easier grabs). */
-    reachMult: number;
-    /** Player runners' speed (× RUNNER_SPEED). */
-    playerRunSpeedMult: number;
-    /** CPU runners' speed (× RUNNER_SPEED). */
-    cpuRunSpeedMult: number;
-  }
-> = {
-  easy: {
-    cpuFielderSpeedMult: 0.62,
-    cpuReactionMs: 550,
-    cpuThrowDelayMs: 500,
-    cpuThrowSpeedMult: 0.62,
-    cpuThrowErrorMs: 320,
-    reachMult: 1.6,
-    playerRunSpeedMult: 1.15,
-    cpuRunSpeedMult: 0.8,
+/** Which main-mode mechanics are switched on. Kid mode keeps these all false. */
+export interface ModeFeatures {
+  /** Pick a pitch type + aim it into the strike zone on the mound. */
+  pitchSelection: boolean;
+  /** Positionable swing cursor over the plate (aim + timing at bat). */
+  battingCursor: boolean;
+  /** Per-runner send/hold, tag-ups, rundowns. */
+  manualBaserunning: boolean;
+  /** Drops / wild throws driven by fielder stats. */
+  errors: boolean;
+  /** Steals and leadoffs. */
+  steals: boolean;
+  /** Juice meter: power swings & crazy pitches. */
+  juice: boolean;
+}
+
+/** Per-mode live-sim multipliers (the old EASY/HARD forgiveness knobs). */
+export interface ModeLiveTuning {
+  /** CPU fielder chase speed (× FIELDER_SPEED). */
+  cpuFielderSpeedMult: number;
+  /** Delay before the CPU fielder starts chasing the ball. */
+  cpuReactionMs: number;
+  /** How long the CPU holds the ball before throwing. */
+  cpuThrowDelayMs: number;
+  /** CPU throw flight speed (× THROW_SPEED_MAX). */
+  cpuThrowSpeedMult: number;
+  /** Up to this many ms of wobble added to a CPU throw's arrival. */
+  cpuThrowErrorMs: number;
+  /** Player catch/pickup radius multiplier (bigger = easier grabs). */
+  reachMult: number;
+  /** Player runners' speed (× RUNNER_SPEED). */
+  playerRunSpeedMult: number;
+  /** CPU runners' speed (× RUNNER_SPEED). */
+  cpuRunSpeedMult: number;
+}
+
+export const MODES: Record<GameMode, { live: ModeLiveTuning; features: ModeFeatures }> = {
+  kid: {
+    live: {
+      cpuFielderSpeedMult: 0.62,
+      cpuReactionMs: 550,
+      cpuThrowDelayMs: 500,
+      cpuThrowSpeedMult: 0.62,
+      cpuThrowErrorMs: 320,
+      reachMult: 1.6,
+      playerRunSpeedMult: 1.15,
+      cpuRunSpeedMult: 0.8,
+    },
+    features: {
+      pitchSelection: false,
+      battingCursor: false,
+      manualBaserunning: false,
+      errors: false,
+      steals: false,
+      juice: false,
+    },
   },
-  hard: {
-    cpuFielderSpeedMult: 1.0,
-    cpuReactionMs: 160,
-    cpuThrowDelayMs: 220,
-    cpuThrowSpeedMult: 1.0,
-    cpuThrowErrorMs: 40,
-    reachMult: 1.0,
-    playerRunSpeedMult: 1.0,
-    cpuRunSpeedMult: 1.05,
+  main: {
+    // Old HARD, softened a touch — main mode is still for kids.
+    live: {
+      cpuFielderSpeedMult: 1.0,
+      cpuReactionMs: 220,
+      cpuThrowDelayMs: 220,
+      cpuThrowSpeedMult: 1.0,
+      cpuThrowErrorMs: 80,
+      reachMult: 1.15,
+      playerRunSpeedMult: 1.0,
+      cpuRunSpeedMult: 1.05,
+    },
+    // Flags flip to true as each Backyard-style mechanic lands.
+    features: {
+      pitchSelection: false,
+      battingCursor: false,
+      manualBaserunning: false,
+      errors: false,
+      steals: false,
+      juice: false,
+    },
   },
 };
 
