@@ -12,7 +12,7 @@
 // ---------------------------------------------------------------------------
 
 import type { Character } from '../data/types';
-import { TIMING, LIVE, CURSOR } from '../config';
+import { TIMING, LIVE, CURSOR, JUICE } from '../config';
 import { HOME, FENCE_Y, type Vec } from './geometry';
 import type { PitchPlan, PlateLoc } from './pitchkind';
 
@@ -43,6 +43,12 @@ const BAND_ORDER: SwingBand[] = ['miss', 'weak', 'good', 'perfect'];
 function downgrade(band: SwingBand): SwingBand {
   const i = BAND_ORDER.indexOf(band);
   return BAND_ORDER[Math.max(0, i - 1)];
+}
+
+/** Shift a band up one step (the juice-powered swing). */
+function upgrade(band: SwingBand): SwingBand {
+  const i = BAND_ORDER.indexOf(band);
+  return BAND_ORDER[Math.min(BAND_ORDER.length - 1, i + 1)];
 }
 
 // --- Contact → launch (the interactive live-play path) ----------------------
@@ -135,9 +141,12 @@ export function resolveContactAimed(spec: {
   batter: Character;
   pitcher: Character;
   rng: () => number;
+  /** A spent juice POWER SWING: band steps up + a quality bonus. */
+  boost?: { power: boolean };
 }): AimedSwing {
   let { band } = spec;
   const { cursor, plan, batter, pitcher, rng } = spec;
+  const powered = spec.boost?.power === true;
   if (pitcher.ability === 'unhittable_pitch') band = downgrade(band);
 
   // Cursor overlap: dead-on keeps the timing band, the sweet-spot fringe costs
@@ -147,6 +156,8 @@ export function resolveContactAimed(spec: {
   else if (missDist > CURSOR.SWEET_R) band = downgrade(band);
 
   if (batter.ability === 'never_strikes_out' && band === 'miss') band = 'weak';
+  // A power swing muscles decent contact up a band — but can't fix a whiff.
+  if (powered && band !== 'miss') band = upgrade(band);
 
   if (band === 'miss') {
     return { swing: { kind: 'strike', description: 'Swing and a miss!' }, band };
@@ -157,19 +168,29 @@ export function resolveContactAimed(spec: {
 
   const { contact, power } = batter.stats;
   const bandBoost = band === 'perfect' ? 0.35 : band === 'good' ? 0.12 : 0;
-  const q = rng() + bandBoost + (power - 5) * 0.04 + (contact - 5) * 0.01;
+  let q =
+    rng() + bandBoost + (power - 5) * 0.04 + (contact - 5) * 0.01 + (powered ? JUICE.POWER_Q_BONUS : 0);
 
   // Spray: early swings pull (left field), late go opposite (right field);
   // meeting the ball on its inner/outer half nudges the same way.
   const aimNudge = (cursor.x - plan.actual.x) / CURSOR.CONTACT_R;
   const sprayT = 0.5 + (spec.errorMs / 300) * 0.55 + aimNudge * 0.18;
   // Launch shape: cursor under the ball lifts it, over the top chops it down.
-  const typeBias = Math.max(-1, Math.min(1, (cursor.y - plan.actual.y) / CURSOR.CONTACT_R));
+  let typeBias = Math.max(-1, Math.min(1, (cursor.y - plan.actual.y) / CURSOR.CONTACT_R));
+
+  // The kid who ALWAYS calls his shot (and is always wrong) finally gets to be
+  // right — a powered swing from him is a guaranteed moonshot.
+  const calledShot = powered && batter.ability === 'calls_shot';
+  if (calledShot) {
+    q = Math.max(q, JUICE.CALLED_SHOT_Q_FLOOR);
+    typeBias = 1;
+  }
 
   const launch = buildLaunch({
     band: band as Exclude<SwingBand, 'miss'>,
     q,
     typeBias,
+    forceType: calledShot ? 'fly' : undefined,
     sprayT: () => sprayT,
     rng,
   });
@@ -189,6 +210,8 @@ export interface LaunchSpec {
    */
   sprayT: () => number;
   rng: () => number;
+  /** Skip the contact-type roll entirely (the called shot IS a fly). */
+  forceType?: ContactType;
 }
 
 /**
@@ -198,7 +221,7 @@ export interface LaunchSpec {
 export function buildLaunch(spec: LaunchSpec): Launch {
   const L = LIVE.LAUNCH;
   const { q } = spec;
-  const type = contactType(spec.band, spec.rng, spec.typeBias);
+  const type = spec.forceType ?? contactType(spec.band, spec.rng, spec.typeBias);
 
   const t = Math.min(1 - L.SPRAY_MARGIN, Math.max(L.SPRAY_MARGIN, spec.sprayT()));
   const target: Vec = { x: 132 + t * (828 - 132), y: FENCE_Y };

@@ -66,6 +66,16 @@ import {
 } from '../systems/inning';
 import { rollSteal, cpuWantsSteal } from '../systems/steal';
 import {
+  newJuice,
+  juiceGain,
+  addJuice,
+  canSpend,
+  spend,
+  cpuWantsSpend,
+  type JuiceState,
+  type JuiceEventKind,
+} from '../systems/juice';
+import {
   HOME,
   FIRST,
   SECOND,
@@ -167,6 +177,12 @@ export class GameScene extends Phaser.Scene {
   private stealChips: Phaser.GameObjects.Container[] = [];
   /** Main mode: a CPU runner is stealing on the current pitch. */
   private cpuStealFrom?: 1 | 2;
+  // Juice meters (main mode): charge on great plays, spend on power moves.
+  private playerJuice: JuiceState = newJuice();
+  private cpuJuice: JuiceState = newJuice();
+  private armedPower = false;
+  private powerBtn?: Phaser.GameObjects.Container;
+  private juiceGfx?: Phaser.GameObjects.Graphics;
 
   // baserunners currently on the diamond, keyed by base (1-3) — each is the kid
   private runners = new Map<number, Phaser.GameObjects.Container>();
@@ -267,8 +283,13 @@ export class GameScene extends Phaser.Scene {
     recordGamePlayed();
     this.cameras.main.fadeIn(250, 0x5b, 0xbf, 0x5a);
 
+    this.playerJuice = newJuice();
+    this.cpuJuice = newJuice();
+    this.armedPower = false;
+
     this.drawField();
     this.drawHud();
+    if (this.features.juice) this.drawJuiceMeter();
     this.bindSwingInput();
     makeMuteButton(this, GAME_WIDTH - 30, 68);
 
@@ -464,6 +485,48 @@ export class GameScene extends Phaser.Scene {
     for (let i = 0; i < 3; i++) {
       const lit = this.halfState?.bases[i];
       this.baseMarks[i]?.setFillStyle(lit ? COLORS.gold : COLORS.white);
+    }
+  }
+
+  // --- Juice meter (main mode) ---------------------------------------------
+
+  /** ⚡ bar under the HUD strip — the player's juice at a glance. */
+  private drawJuiceMeter(): void {
+    this.add
+      .text(22, 78, '⚡', { fontSize: '20px' })
+      .setOrigin(0, 0.5)
+      .setDepth(90);
+    this.juiceGfx = this.add.graphics().setDepth(90);
+    this.refreshJuiceMeter();
+  }
+
+  private refreshJuiceMeter(): void {
+    const g = this.juiceGfx;
+    if (!g) return;
+    const p = Phaser.Math.Clamp(this.playerJuice.value / this.playerJuice.max, 0, 1);
+    const full = canSpend(this.playerJuice, 'powerSwing');
+    g.clear();
+    g.fillStyle(COLORS.ink, 0.45);
+    g.fillRoundedRect(48, 70, 128, 16, 8);
+    if (p > 0.05) {
+      g.fillStyle(full ? COLORS.gold : COLORS.white, 1);
+      g.fillRoundedRect(51, 73, 122 * p, 10, 5);
+    }
+  }
+
+  /** Charge a side's meter for a great play. */
+  private gainJuice(side: 'player' | 'cpu', kind: JuiceEventKind, ability?: Character['ability']): void {
+    if (!this.features.juice) return;
+    const amount = juiceGain(kind, ability ?? 'none');
+    if (side === 'player') {
+      const was = canSpend(this.playerJuice, 'powerSwing');
+      this.playerJuice = addJuice(this.playerJuice, amount);
+      this.refreshJuiceMeter();
+      if (!was && canSpend(this.playerJuice, 'powerSwing')) {
+        floatingText(this, 110, 96, 'JUICE READY! ⚡', COLORS.gold, 22);
+      }
+    } else {
+      this.cpuJuice = addJuice(this.cpuJuice, amount);
     }
   }
 
@@ -674,12 +737,28 @@ export class GameScene extends Phaser.Scene {
     this.phase = 'pitching';
     this.swung = false;
     this.firstPitchOfGame = false;
-    const plan = chooseCpuPitch(
+    let plan = chooseCpuPitch(
       this.aiPitcher.stats.pitching,
       this.halfState.count,
       PITCH_TRAVEL_MS,
       () => Math.random()
     );
+    // A trailing CPU digs into its own juice for the crazy pitch.
+    if (
+      this.features.juice &&
+      cpuWantsSpend(this.cpuJuice, 'crazyPitch', this.aiScore - this.playerScore, () => Math.random(), this.aiPitcher.ability)
+    ) {
+      this.cpuJuice = spend(this.cpuJuice, 'crazyPitch', this.aiPitcher.ability);
+      plan = resolvePitchLocation(
+        'crazy',
+        plan.target,
+        this.aiPitcher.stats.pitching,
+        60,
+        PITCH_TRAVEL_MS,
+        () => Math.random()
+      );
+      floatingText(this, MOUND.x, MOUND.y - 80, '⚡ CRAZY PITCH!', COLORS.red, 26);
+    }
     this.pitchPlan = plan;
     this.pitchIsWild = !plan.inZone; // reuses the take-a-ball / capped-chase rules
     this.pitchTravelMs = plan.travelMs;
@@ -729,6 +808,36 @@ export class GameScene extends Phaser.Scene {
     this.startBallTrail();
     if (this.features.battingCursor) this.showSwingCursor();
     if (this.features.steals) this.showStealChips();
+    if (this.features.juice) this.showPowerButton();
+  }
+
+  /** 💥 POWER SWING button, shown while the meter can afford it. */
+  private showPowerButton(): void {
+    this.powerBtn?.destroy();
+    this.powerBtn = undefined;
+    if (!this.armedPower && !canSpend(this.playerJuice, 'powerSwing')) return;
+    const { container } = pill(
+      this,
+      116,
+      GAME_HEIGHT - 42,
+      this.armedPower ? '💥 POWERED UP!' : '💥 POWER SWING',
+      { fill: this.armedPower ? COLORS.gold : COLORS.cream, fontSize: 18, minW: 170 }
+    );
+    container.setDepth(94);
+    if (!this.armedPower) {
+      container.setInteractive(new Phaser.Geom.Rectangle(-90, -18, 180, 36), Phaser.Geom.Rectangle.Contains);
+      container.on('pointerdown', () => {
+        if (this.armedPower || !canSpend(this.playerJuice, 'powerSwing')) return;
+        this.playerJuice = spend(this.playerJuice, 'powerSwing');
+        this.armedPower = true;
+        this.refreshJuiceMeter();
+        audio.pop();
+        this.showPowerButton(); // restyle as armed
+      });
+    } else {
+      this.tweens.add({ targets: container, scale: 1.07, duration: 300, yoyo: true, repeat: -1 });
+    }
+    this.powerBtn = container;
   }
 
   /** 💨 STEAL! chips next to runners who have an open base ahead. */
@@ -816,6 +925,8 @@ export class GameScene extends Phaser.Scene {
     this.swingCursor = undefined;
     this.stealChips.forEach((c) => c.destroy());
     this.stealChips = [];
+    this.powerBtn?.destroy();
+    this.powerBtn = undefined;
   }
 
   private onSwing(): void {
@@ -838,6 +949,8 @@ export class GameScene extends Phaser.Scene {
     this.clearPitchVisuals();
     this.animateSwing();
 
+    const powered = this.armedPower;
+    this.armedPower = false;
     const { swing, band } = resolveContactAimed({
       band: bandFromError(errorMs, getSwingTiming(this.mode)),
       errorMs,
@@ -846,8 +959,10 @@ export class GameScene extends Phaser.Scene {
       batter: this.batter,
       pitcher: this.aiPitcher,
       rng: () => Math.random(),
+      boost: { power: powered },
     });
     this.showBandFeedback(band);
+    if (band === 'perfect') this.gainJuice('player', 'perfectSwing', this.batter.ability);
 
     if (swing.kind !== 'inPlay') {
       if (swing.kind === 'strike') audio.whiff();
@@ -859,6 +974,7 @@ export class GameScene extends Phaser.Scene {
     if (swing.launch.homer) {
       this.flyHitBall(4);
       screenShake(this, SHAKE.homer);
+      this.gainJuice('player', 'homer', this.batter.ability);
       this.applyAndContinue({ kind: 'hit', bases: 4, description: 'HOME RUN! 💥' });
       return;
     }
@@ -914,6 +1030,8 @@ export class GameScene extends Phaser.Scene {
     if (applied.runsScored > 0) this.playerScore += applied.runsScored;
 
     const walked = result.kind === 'ball' && applied.batterDone;
+    // The CPU pitcher charges off striking you out.
+    if (result.kind === 'strike' && applied.batterOut) this.gainJuice('cpu', 'strikeoutThrown');
 
     // An armed steal races the catcher on a strike or a (non-walk) ball;
     // fouls and balls-four are dead — the runner scampers back.
@@ -1010,6 +1128,7 @@ export class GameScene extends Phaser.Scene {
           floatingText(this, to.x, to.y - 50, 'STOLE IT!', cpuRunner ? COLORS.red : COLORS.gold, 28);
           this.tweens.add({ targets: img, scaleY: img.scaleY * 0.85, yoyo: true, duration: 90 });
           this.runners.set(from + 1, token);
+          this.gainJuice(cpuRunner ? 'cpu' : 'player', 'steal');
           if (cpuRunner) audio.whiff();
           else audio.cheer();
         } else {
@@ -1542,6 +1661,14 @@ export class GameScene extends Phaser.Scene {
       else this.aiScore += applied.runsScored;
     }
 
+    // Juice: the batting side charges off hits/runs, the fielding side off outs.
+    const batSide = isOffense ? ('player' as const) : ('cpu' as const);
+    const fieldSide = isOffense ? ('cpu' as const) : ('player' as const);
+    if (!outcome.batterOut && !outcome.flyCaught) this.gainJuice(batSide, 'hit');
+    for (let i = 0; i < applied.runsScored; i++) this.gainJuice(batSide, 'runScored');
+    if (outcome.outs >= 2) this.gainJuice(fieldSide, 'doublePlay');
+    else if (outcome.flyCaught) this.gainJuice(fieldSide, 'cleanCatch');
+
     const color = isOffense
       ? outcome.outs > 0
         ? COLORS.red
@@ -1681,6 +1808,11 @@ export class GameScene extends Phaser.Scene {
       autoPick.remove();
       this.pitchSelect?.destroy();
       this.pitchSelect = undefined;
+      if (kind === 'crazy') {
+        this.playerJuice = spend(this.playerJuice, 'crazyPitch', this.playerPitcher.ability);
+        this.refreshJuiceMeter();
+        floatingText(this, MOUND.x, MOUND.y - 80, '⚡ CRAZY PITCH!', COLORS.gold, 26);
+      }
       this.selectedPitch = { kind, target };
       // Next tick, not now: the confirming tap's pointerdown is still being
       // dispatched, and starting the meter synchronously would let that same
@@ -1693,7 +1825,7 @@ export class GameScene extends Phaser.Scene {
     });
     this.pitchSelect?.destroy();
     this.pitchSelect = showPitchSelect(this, {
-      allowCrazy: false, // unlocks with the juice meter (later phase)
+      allowCrazy: this.features.juice && canSpend(this.playerJuice, 'crazyPitch', this.playerPitcher.ability),
       onDone: confirm,
     });
   }
@@ -1863,7 +1995,19 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.animateSwing();
-    const outcome = resolveContact(plan.cpuBand, this.cpuBatter, this.playerPitcher, () =>
+    // A trailing CPU muscles up with its own juice.
+    let cpuBand = plan.cpuBand;
+    if (
+      this.features.juice &&
+      cpuBand !== 'miss' &&
+      cpuWantsSpend(this.cpuJuice, 'powerSwing', this.aiScore - this.playerScore, () => Math.random())
+    ) {
+      this.cpuJuice = spend(this.cpuJuice, 'powerSwing');
+      const up: Record<SwingBand, SwingBand> = { miss: 'weak', weak: 'good', good: 'perfect', perfect: 'perfect' };
+      cpuBand = up[cpuBand];
+      floatingText(this, HOME.x, HOME.y - 90, '⚡ POWER SWING!', COLORS.red, 24);
+    }
+    const outcome = resolveContact(cpuBand, this.cpuBatter, this.playerPitcher, () =>
       Math.random()
     );
     if (outcome.kind !== 'inPlay') {
@@ -1947,6 +2091,10 @@ export class GameScene extends Phaser.Scene {
     const applied = applyAtBat(this.halfState, result);
     this.halfState = applied.state;
     if (applied.runsScored > 0) this.aiScore += applied.runsScored;
+    // YOU threw the K — charge the meter.
+    if (result.kind === 'strike' && applied.batterOut) {
+      this.gainJuice('player', 'strikeoutThrown', this.playerPitcher.ability);
+    }
 
     const walked = result.kind === 'ball' && applied.batterDone;
 

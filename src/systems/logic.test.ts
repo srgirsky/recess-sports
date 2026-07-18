@@ -19,6 +19,8 @@ import { CURSOR } from '../config';
 import { HOME } from './geometry';
 import { newHalfInning, applyAtBat, applyLivePlay, applySteal } from './inning';
 import { rollSteal } from './steal';
+import { newJuice, addJuice, juiceGain, canSpend, spend, spendCost, cpuWantsSpend } from './juice';
+import { JUICE } from '../config';
 import {
   startLivePlay,
   stepLivePlay,
@@ -185,6 +187,65 @@ describe('main-mode batting cursor (resolveContactAimed)', () => {
   it('main mode widens the timing windows via the override', () => {
     expect(bandFromError(60)).toBe('good'); // kid default: PERFECT is 55
     expect(bandFromError(60, MODES.main.swingTiming)).toBe('perfect');
+  });
+});
+
+describe('juice meter (main mode)', () => {
+  it('charges by the gain table, capped at max', () => {
+    let j = newJuice();
+    j = addJuice(j, juiceGain('strikeoutThrown'));
+    expect(j.value).toBe(JUICE.GAINS.strikeoutThrown);
+    j = addJuice(j, 999);
+    expect(j.value).toBe(JUICE.MAX);
+  });
+
+  it('ability hooks: contact queen charges faster, the ace throws cheap crazy', () => {
+    expect(juiceGain('hit', 'never_strikes_out')).toBeGreaterThan(juiceGain('hit'));
+    expect(spendCost('crazyPitch', 'unhittable_pitch')).toBe(Math.round(JUICE.CRAZY_PITCH_COST / 2));
+    expect(spendCost('powerSwing', 'unhittable_pitch')).toBe(JUICE.POWER_SWING_COST);
+  });
+
+  it('spending gates on cost and deducts', () => {
+    let j = addJuice(newJuice(), JUICE.POWER_SWING_COST - 1);
+    expect(canSpend(j, 'powerSwing')).toBe(false);
+    expect(spend(j, 'powerSwing').value).toBe(j.value); // no-op
+    j = addJuice(j, 1);
+    expect(canSpend(j, 'powerSwing')).toBe(true);
+    expect(spend(j, 'powerSwing').value).toBe(0);
+  });
+
+  it('the CPU spends most eagerly when trailing', () => {
+    const full = addJuice(newJuice(), 999);
+    expect(cpuWantsSpend(full, 'powerSwing', -2, () => 0.5)).toBe(true); // trailing: 60%
+    expect(cpuWantsSpend(full, 'powerSwing', 2, () => 0.5)).toBe(false); // leading: 12%
+    expect(cpuWantsSpend(newJuice(), 'powerSwing', -2, () => 0.01)).toBe(false); // broke
+  });
+
+  it('a power swing lifts the band and quality; calls_shot guarantees the moonshot', () => {
+    const plan: PitchPlan = { kind: 'fastball', target: { x: 0, y: 0 }, actual: { x: 0, y: 0 }, inZone: true, travelMs: 800 };
+    const base = {
+      band: 'good' as const,
+      errorMs: 0,
+      cursor: { x: 0, y: 0 },
+      plan,
+      batter: plain({}),
+      pitcher: plain({}),
+      rng: () => 0.5,
+    };
+    const plainSwing = resolveContactAimed(base);
+    const powered = resolveContactAimed({ ...base, boost: { power: true } });
+    expect(plainSwing.band).toBe('good');
+    expect(powered.band).toBe('perfect');
+
+    const theo = resolveContactAimed({
+      ...base,
+      batter: plain({ ability: 'calls_shot' }),
+      rng: () => 0.1, // terrible roll — the floor saves it
+      boost: { power: true },
+    });
+    if (theo.swing.kind !== 'inPlay') throw new Error('expected contact');
+    expect(theo.swing.launch.type).toBe('fly');
+    expect(theo.swing.launch.homer).toBe(true); // q floor 1.05 clears HR_Q... via deep fly
   });
 });
 

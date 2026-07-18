@@ -227,6 +227,31 @@ export const ERRORS = {
   OVERSHOOT_PX: 64,
 };
 
+/**
+ * The juice meter (main mode): great plays charge it; spend it on a POWER
+ * SWING at the plate or the CRAZY pitch on the mound.
+ */
+export const JUICE = {
+  MAX: 100,
+  POWER_SWING_COST: 55,
+  CRAZY_PITCH_COST: 55,
+  GAINS: {
+    perfectSwing: 12,
+    hit: 10,
+    homer: 30,
+    runScored: 12,
+    strikeoutThrown: 18,
+    cleanCatch: 10,
+    doublePlay: 30,
+    steal: 20,
+  },
+  /** Power swing: the timing band steps up one and quality gets this bonus. */
+  POWER_Q_BONUS: 0.3,
+  /** calls_shot + power swing: contact quality can't roll below this — just
+   *  over LIVE.LAUNCH.HR_Q, so the called shot FINALLY clears the fence. */
+  CALLED_SHOT_Q_FLOOR: 1.2,
+};
+
 /** Full-baserunning rules (main mode). */
 export const RUN2 = {
   /** Ball-carrier within this of an off-bag runner = tag, you're out. */
@@ -347,7 +372,7 @@ export const MODES: Record<
       manualBaserunning: true,
       errors: true,
       steals: true,
-      juice: false,
+      juice: true,
     },
   },
 };
