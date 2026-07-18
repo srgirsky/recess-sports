@@ -103,6 +103,7 @@ export const ANIM = {
   WINDUP_MS: 260, // pitcher lean-back before the release
   RUN_BOB: 7, // pixels a runner bounces while running
   IDLE_BOB: 5, // pixels the idle "breathing" bob rises
+  RUN_FRAME_MS: 110, // run-cycle frame swap (run1 <-> run2 textures)
   // Intro (Title) choreography.
   TITLE_KID_RUN_MS: 460, // each showcase kid's run-in from off-screen
   TITLE_KID_STAGGER_MS: 110, // delay between kids joining the line-up

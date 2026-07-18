@@ -1,32 +1,48 @@
 // ---------------------------------------------------------------------------
-// DEV-ONLY. Press G on the Title to see all 30 kids at once — the iteration
-// surface for art work. Press G again to close. Gated behind import.meta.env.DEV
-// in TitleScene so it never ships.
+// DEV-ONLY. Press G to see all 30 kids at once — the iteration surface for art
+// work. While open: P cycles the pose (stand → run1 → run2 → cheer), A toggles
+// a live two-frame run animation. Press G again to close. Gated behind
+// import.meta.env.DEV so it never ships.
 // ---------------------------------------------------------------------------
 
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config';
 import { ROSTER } from '../data/characters';
+import { POSES, type Pose } from '../art/CharacterArt';
+import { poseKey } from '../art/textureFactory';
 
 export function mountArtGallery(scene: Phaser.Scene): void {
   let panel: Phaser.GameObjects.Container | undefined;
+  let poseIdx = 0;
+  let animate = false;
+  let animTimer: Phaser.Time.TimerEvent | undefined;
+  let images: Phaser.GameObjects.Image[] = [];
+  let header: Phaser.GameObjects.Text | undefined;
+
+  const applyPose = (pose: Pose): void => {
+    images.forEach((img, i) => img.setTexture(poseKey(ROSTER[i].id, pose)));
+    header?.setText(
+      `ART GALLERY — pose: ${animate ? 'RUN (animated)' : pose}  (G close · P pose · A animate)`
+    );
+  };
+
+  const stopAnim = (): void => {
+    animTimer?.remove();
+    animTimer = undefined;
+  };
 
   const render = (): Phaser.GameObjects.Container => {
     const c = scene.add.container(0, 0).setDepth(1200);
+    images = [];
     c.add(
       scene.add
         .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x2b3a48, 0.98)
         .setOrigin(0.5)
     );
-    c.add(
-      scene.add
-        .text(GAME_WIDTH / 2, 8, 'ART GALLERY — all 30 kids  (G to close)', {
-          fontFamily: 'monospace',
-          fontSize: '18px',
-          color: '#ffce3a',
-        })
-        .setOrigin(0.5, 0)
-    );
+    header = scene.add
+      .text(GAME_WIDTH / 2, 8, '', { fontFamily: 'monospace', fontSize: '18px', color: '#ffce3a' })
+      .setOrigin(0.5, 0);
+    c.add(header);
 
     const cols = 8;
     const cellW = GAME_WIDTH / cols;
@@ -39,6 +55,7 @@ export function mountArtGallery(scene: Phaser.Scene): void {
       const y = startY + row * cellH + cellH / 2;
       const img = scene.add.image(x, y - 12, char.id).setOrigin(0.5);
       img.setScale(120 / img.height);
+      images.push(img);
       c.add(img);
       c.add(
         scene.add
@@ -52,15 +69,48 @@ export function mountArtGallery(scene: Phaser.Scene): void {
           .setOrigin(0.5, 0)
       );
     });
+    applyPose(POSES[poseIdx]);
     return c;
   };
 
   scene.input.keyboard?.on('keydown-G', () => {
     if (panel) {
+      stopAnim();
+      animate = false;
       panel.destroy();
       panel = undefined;
+      images = [];
+      header = undefined;
     } else {
       panel = render();
+    }
+  });
+
+  scene.input.keyboard?.on('keydown-P', () => {
+    if (!panel) return;
+    stopAnim();
+    animate = false;
+    poseIdx = (poseIdx + 1) % POSES.length;
+    applyPose(POSES[poseIdx]);
+  });
+
+  scene.input.keyboard?.on('keydown-A', () => {
+    if (!panel) return;
+    animate = !animate;
+    stopAnim();
+    if (animate) {
+      let frame: 1 | 2 = 1;
+      applyPose('run1');
+      animTimer = scene.time.addEvent({
+        delay: 140,
+        loop: true,
+        callback: () => {
+          frame = frame === 1 ? 2 : 1;
+          applyPose(frame === 1 ? 'run1' : 'run2');
+        },
+      });
+    } else {
+      applyPose(POSES[poseIdx]);
     }
   });
 }

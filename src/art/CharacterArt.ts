@@ -1,21 +1,38 @@
 // ---------------------------------------------------------------------------
-// buildCharacterSVG(visual) -> an SVG document string.
+// buildCharacterSVG(visual, pose) -> an SVG document string.
 //
 // Modern flat-mascot style: bold consistent outline, soft cell-shading (a
 // derived darker shade, not gradients), rounded friendly proportions, and real
 // expressions. Still just string templating — 30 distinct kids from parameters,
 // zero image files. Fixed 200x260 viewBox so every kid aligns identically.
+//
+// POSES: 'stand' (front view, the default/base texture), 'run1'/'run2' (a
+// side-view two-frame run cycle, drawn facing RIGHT — flip the sprite for
+// leftward travel), and 'cheer' (front view, arms up). Every pose bottoms out
+// on the same GROUND line so texture swaps under setOrigin(0.5, 1) never make
+// the feet pop. Side poses use the classic small-sprite "¾ cheat": the front
+// head (all 11 hairstyles + 6 expressions reused verbatim) rides a side-view
+// body, shifted and tilted toward travel.
 // ---------------------------------------------------------------------------
 
 import type { VisualParams, HairStyle, Expression, BodyType } from '../data/types';
 import { SKIN_TONES, HAIR_COLORS, UNIFORM_COLORS } from './palette';
+
+export type Pose = 'stand' | 'run1' | 'run2' | 'cheer';
+export const POSES: Pose[] = ['stand', 'run1', 'run2', 'cheer'];
 
 const VIEW_W = 200;
 const VIEW_H = 260;
 const OUT = '#26333f'; // outline color
 const SW = 5; // outline width
 
+/** Lowest ink line for every pose (shoe soles / wheel bottoms). Keep sacred. */
+const GROUND = 248;
+
 const HEAD = { cx: 100, cy: 82, r: 50 };
+
+const PANTS = '#f2ede2'; // baseball-pant cream
+const SOLE = '#d8d3c8';
 
 /** Darken a #rrggbb hex by fraction f (0-1). */
 function darken(hex: string, f: number): string {
@@ -40,6 +57,18 @@ function bodyMetrics(t: BodyType | undefined): Body {
     default:
       return { halfW: 46, headR: 50, scale: 1 };
   }
+}
+
+/** Everything the pose builders need, computed once per document. */
+interface Ctx {
+  skin: string;
+  skinDk: string;
+  jersey: string;
+  jerseyDk: string;
+  trim: string;
+  m: Body;
+  S: string; // standard outline attributes
+  usesChair: boolean;
 }
 
 // --- Face ------------------------------------------------------------------
@@ -95,12 +124,14 @@ function mouth(expr: Expression): string {
   }
 }
 
-function face(v: VisualParams): string {
+/** look shifts the pupils sideways (run poses look toward travel). */
+function face(v: VisualParams, look = 0): string {
   const expr = v.expression ?? 'happy';
   const eyeY = 82;
   const open = expr === 'determined' ? 0.7 : expr === 'surprised' ? 1.25 : 1;
-  const leftEye = eye(82, eyeY, open, expr === 'cool' ? 0.4 : 0);
-  const rightEye = expr === 'goofy' ? wink(118, eyeY) : eye(118, eyeY, open, expr === 'cool' ? 0.4 : 0);
+  const gaze = expr === 'cool' ? 0.4 : look;
+  const leftEye = eye(82, eyeY, open, gaze);
+  const rightEye = expr === 'goofy' ? wink(118, eyeY) : eye(118, eyeY, open, gaze);
   const cheeks = `
     <circle cx="70" cy="98" r="8" fill="#ff9d9d" opacity="0.65"/>
     <circle cx="130" cy="98" r="8" fill="#ff9d9d" opacity="0.65"/>`;
@@ -204,8 +235,119 @@ function accessory(v: VisualParams): string {
   }
 }
 
+// --- Shared pieces ---------------------------------------------------------
+
+/**
+ * A capsule limb: one open path stroked twice — outline underneath, color on
+ * top, round caps. A single quadratic control point gives free knees/elbows.
+ */
+function capsule(d: string, color: string, w: number): string {
+  return `
+    <path d="${d}" fill="none" stroke="${OUT}" stroke-width="${w + SW * 1.6}" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+}
+
+/** A front-view sneaker whose sole sits exactly on GROUND. */
+function frontShoe(x: number): string {
+  return `
+    <rect x="${x - 16}" y="${GROUND - 14}" width="32" height="14" rx="7" fill="#ffffff" stroke="${OUT}" stroke-width="4"/>
+    <rect x="${x - 13}" y="${GROUND - 5}" width="26" height="5" rx="2.5" fill="${SOLE}"/>`;
+}
+
+/** A side-view sneaker, toe pointing along +x, rotated by `deg`. */
+function sideShoe(x: number, y: number, deg: number): string {
+  return `
+    <g transform="translate(${x} ${y}) rotate(${deg})">
+      <rect x="-10" y="-12" width="28" height="13" rx="6.5" fill="#ffffff" stroke="${OUT}" stroke-width="4"/>
+      <rect x="-7" y="-4" width="22" height="4" rx="2" fill="${SOLE}"/>
+    </g>`;
+}
+
+/**
+ * The whole head: neck, face circle, ears (with inner arcs), under-chin shade,
+ * face, front hair, and accessory. Reused verbatim by every pose.
+ * (Back hair is layered separately, behind the body.)
+ */
+function headGroup(c: Ctx, v: VisualParams, hFront: string, look = 0): string {
+  return `
+    <rect x="90" y="120" width="20" height="22" rx="8" fill="${c.skin}" ${c.S}/>
+    <rect x="90" y="120" width="20" height="8" rx="4" fill="${c.skinDk}" stroke="none"/>
+    <circle cx="${HEAD.cx}" cy="${HEAD.cy}" r="${c.m.headR}" fill="${c.skin}" ${c.S}/>
+    <ellipse cx="52" cy="86" rx="9" ry="11" fill="${c.skin}" ${c.S}/>
+    <ellipse cx="148" cy="86" rx="9" ry="11" fill="${c.skin}" ${c.S}/>
+    <path d="M 50 83 q 3 4 0 7" fill="none" stroke="${OUT}" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M 150 83 q -3 4 0 7" fill="none" stroke="${OUT}" stroke-width="2.5" stroke-linecap="round"/>
+    <clipPath id="hc"><circle cx="${HEAD.cx}" cy="${HEAD.cy}" r="${c.m.headR}"/></clipPath>
+    <ellipse cx="100" cy="${HEAD.cy + c.m.headR}" rx="${c.m.headR}" ry="24" fill="${c.skinDk}" opacity="0.45" clip-path="url(#hc)"/>
+    ${face(v, look)}
+    ${hFront}
+    ${accessory(v)}`;
+}
+
+// --- Front poses (stand / cheer) --------------------------------------------
+
+/** Baseball pants + trim stripe + sock band + real sneakers. */
+function legsFront(c: Ctx): string {
+  const legHalf = c.m.halfW * 0.42;
+  const leg = (x: number, stripeLeft: boolean) => `
+    <rect x="${x - 10}" y="200" width="20" height="28" rx="9" fill="${PANTS}" ${c.S}/>
+    <rect x="${stripeLeft ? x - 10 : x + 7}" y="203" width="3" height="22" fill="${c.trim}"/>
+    <rect x="${x - 9}" y="222" width="18" height="12" rx="4" fill="${c.trim}" stroke="${OUT}" stroke-width="3"/>
+    ${frontShoe(x)}`;
+  return leg(100 - legHalf, true) + leg(100 + legHalf, false);
+}
+
+/** Torso: rounded jersey with a darker hem, collar trim, and a cel-shade side. */
+function torsoFront(c: Ctx): string {
+  const { halfW } = c.m;
+  const shoulderY = 150;
+  const hipY = 208;
+  const torsoPath = `M ${100 - halfW} ${shoulderY}
+             q 0 -14 14 -16 q ${halfW - 14} -6 ${2 * (halfW - 14)} 0 q 14 2 14 16
+             l 4 ${hipY - shoulderY}
+             q ${-halfW} 12 ${-2 * halfW} 0 Z`;
+  return `
+    <path d="${torsoPath}" fill="${c.jersey}" ${c.S}/>
+    <clipPath id="tc"><path d="${torsoPath}"/></clipPath>
+    <ellipse cx="${100 + halfW * 0.62}" cy="${(shoulderY + hipY) / 2}" rx="${halfW * 0.55}" ry="${(hipY - shoulderY) / 2 + 10}" fill="${c.jerseyDk}" opacity="0.35" clip-path="url(#tc)"/>
+    <path d="M ${100 - halfW + 2} ${hipY - 14} q ${halfW - 2} 12 ${2 * (halfW - 2)} 0 l 2 12 q ${-(halfW - 2)} 12 ${-2 * (halfW - 2)} 0 Z" fill="${c.jerseyDk}"/>
+    <path d="M 84 ${shoulderY - 6} q 16 14 32 0" fill="none" stroke="${c.trim}" stroke-width="6" stroke-linecap="round"/>`;
+}
+
+/** Sleeve caps + skin forearms + hands, hanging naturally. */
+function armsStand(c: Ctx): string {
+  const { halfW } = c.m;
+  const shoulderY = 150;
+  const arm = (side: 1 | -1) => {
+    const sx = 100 + side * (halfW - 4);
+    const elbowX = 100 + side * (halfW + 9);
+    const handX = 100 + side * (halfW + 12);
+    return `
+      <path d="M ${sx} ${shoulderY + 2} q ${side * 18} 4 ${side * 20} 22 q ${-side * 8} 7 ${-side * 18} 3 q ${side * 2} -14 ${-side * 2} -25 Z" fill="${c.jerseyDk}" ${c.S}/>
+      ${capsule(`M ${elbowX} ${shoulderY + 22} Q ${handX} ${shoulderY + 30} ${handX} ${shoulderY + 38}`, c.skin, 13)}
+      <circle cx="${handX}" cy="${shoulderY + 40}" r="10" fill="${c.skin}" ${c.S}/>`;
+  };
+  return arm(-1) + arm(1);
+}
+
+/** Both arms up in a wide happy V (draft celebrations, big moments). */
+function armsCheer(c: Ctx): string {
+  const { halfW } = c.m;
+  const shoulderY = 150;
+  const arm = (side: 1 | -1) => {
+    const sx = 100 + side * (halfW - 6);
+    const elbowX = 100 + side * (halfW + 20);
+    const handX = 100 + side * (halfW + 30);
+    return `
+      ${capsule(`M ${sx} ${shoulderY + 2} Q ${elbowX - side * 4} ${shoulderY - 12} ${elbowX} ${shoulderY - 28}`, c.jerseyDk, 15)}
+      ${capsule(`M ${elbowX} ${shoulderY - 28} Q ${handX} ${shoulderY - 48} ${handX} ${shoulderY - 62}`, c.skin, 13)}
+      <circle cx="${handX}" cy="${shoulderY - 66}" r="10" fill="${c.skin}" ${c.S}/>`;
+  };
+  return arm(-1) + arm(1);
+}
+
 /** Front-view wheelchair: a big wheel on each side of the seated kid, seat + footrest. */
-function wheelchair(): string {
+function wheelchairFront(): string {
   const rim = '#2c3a47';
   const wheel = (cx: number) => `
     <circle cx="${cx}" cy="214" r="33" fill="#e9eef2" stroke="${OUT}" stroke-width="6"/>
@@ -225,73 +367,175 @@ function wheelchair(): string {
     <rect x="84" y="228" width="32" height="9" rx="4" fill="${OUT}"/>`;
 }
 
+// --- Side poses (run1 / run2) -----------------------------------------------
+
+/** Side-view torso: a leaned capsule jersey with a hem band and half collar. */
+function torsoSide(c: Ctx, dropY: number): string {
+  const w = Math.round(c.m.halfW * 1.1);
+  return `
+    <g transform="translate(0 ${dropY}) rotate(8 100 180)">
+      <rect x="${100 - w / 2}" y="146" width="${w}" height="60" rx="${Math.round(w * 0.36)}" fill="${c.jersey}" ${c.S}/>
+      <rect x="${100 - w / 2 + 3}" y="192" width="${w - 6}" height="11" rx="5" fill="${c.jerseyDk}"/>
+      <path d="M ${100 - 10} 150 q 12 10 24 2" fill="none" stroke="${c.trim}" stroke-width="5" stroke-linecap="round"/>
+    </g>`;
+}
+
+/** Side-view running legs. frame 1 = full extension, frame 2 = crossover. */
+function legsRun(c: Ctx, frame: 1 | 2): string {
+  const pantsDk = darken(PANTS, 0.16);
+  const w = Math.max(14, Math.round(c.m.halfW * 0.34));
+  if (frame === 1) {
+    // Far leg trails (heel kicked up), near leg drives forward.
+    return `
+      ${capsule('M 94 198 Q 72 212 58 220', pantsDk, w)}
+      ${sideShoe(52, 222, -32)}
+      ${capsule('M 98 200 Q 124 206 138 226', PANTS, w)}
+      ${sideShoe(142, 234, 18)}`;
+  }
+  // Crossover: far leg swings forward-low, near knee gathers under the body.
+  return `
+    ${capsule('M 94 198 Q 114 208 126 228', pantsDk, w)}
+    ${sideShoe(130, 236, 10)}
+    ${capsule('M 98 200 Q 112 220 100 234', PANTS, w)}
+    ${sideShoe(104, 242, -6)}`;
+}
+
+/** Side-view pumping arms (opposite phase to the legs), split into layers.
+ *  Hands stay at chest height or lower — near the chin they read as mittens. */
+function armsRun(c: Ctx, frame: 1 | 2): { far: string; near: string } {
+  const farJersey = darken(c.jerseyDk, 0.1);
+  const farSkin = darken(c.skin, 0.1);
+  const w = 13;
+  if (frame === 1) {
+    // Far arm drives forward at chest height, near arm swings back-down.
+    return {
+      far: `
+        ${capsule('M 100 154 Q 112 164 120 170', farJersey, w)}
+        ${capsule('M 120 170 Q 130 170 136 166', farSkin, w - 2)}
+        <circle cx="139" cy="165" r="9" fill="${farSkin}" ${c.S}/>`,
+      near: `
+        ${capsule('M 102 154 Q 90 166 82 176', c.jerseyDk, w)}
+        ${capsule('M 82 176 Q 74 184 72 192', c.skin, w - 2)}
+        <circle cx="71" cy="195" r="9" fill="${c.skin}" ${c.S}/>`,
+    };
+  }
+  return {
+    far: `
+      ${capsule('M 100 154 Q 88 164 80 172', farJersey, w)}
+      ${capsule('M 80 172 Q 74 180 72 186', farSkin, w - 2)}
+      <circle cx="71" cy="189" r="9" fill="${farSkin}" ${c.S}/>`,
+    near: `
+      ${capsule('M 102 154 Q 114 166 122 172', c.jerseyDk, w)}
+      ${capsule('M 122 172 Q 132 172 138 168', c.skin, w - 2)}
+      <circle cx="141" cy="167" r="9" fill="${c.skin}" ${c.S}/>`,
+  };
+}
+
+/**
+ * Side-view wheelchair push (Zoom Ramirez at speed): one big side wheel with
+ * handrim, front caster, seat frame, legs bent to the footplate. frame 1 =
+ * arm reaching the top of the handrim, frame 2 = end of the push stroke.
+ */
+function wheelchairSide(c: Ctx, frame: 1 | 2): { behind: string; front: string } {
+  const rim = '#2c3a47';
+  const wheelBottom = GROUND - 2;
+  const wcy = wheelBottom - 34;
+  const w = 13;
+  const arm =
+    frame === 1
+      ? `
+        ${capsule(`M 102 152 Q 116 166 120 178`, c.jerseyDk, w)}
+        ${capsule(`M 120 178 Q 122 186 118 192`, c.skin, w - 2)}
+        <circle cx="117" cy="195" r="9" fill="${c.skin}" ${c.S}/>`
+      : `
+        ${capsule(`M 102 152 Q 96 170 88 182`, c.jerseyDk, w)}
+        ${capsule(`M 88 182 Q 82 192 78 200`, c.skin, w - 2)}
+        <circle cx="76" cy="203" r="9" fill="${c.skin}" ${c.S}/>`;
+  const ticks =
+    frame === 2
+      ? `<g stroke="${rim}" stroke-width="3" stroke-linecap="round" opacity="0.55">
+          <line x1="48" y1="196" x2="36" y2="192"/>
+          <line x1="46" y1="212" x2="32" y2="212"/>
+          <line x1="48" y1="228" x2="36" y2="232"/>
+        </g>`
+      : '';
+  return {
+    // Seat, legs, footplate — behind the torso.
+    behind: `
+      ${ticks}
+      <rect x="62" y="164" width="12" height="40" rx="5" fill="#3f86e0" ${c.S}/>
+      <rect x="66" y="196" width="62" height="12" rx="5" fill="#3f86e0" ${c.S}/>
+      ${capsule('M 88 198 Q 112 200 126 208', PANTS, w)}
+      ${capsule('M 126 208 Q 136 214 140 222', PANTS, w - 1)}
+      ${sideShoe(142, 230, 6)}
+      <rect x="130" y="228" width="26" height="8" rx="4" fill="${OUT}"/>`,
+    // The near-side big wheel, handrim, caster, and pushing arm — in front,
+    // the way a side-on wheelchair actually reads.
+    front: `
+      <circle cx="92" cy="${wcy}" r="34" fill="#e9eef2" fill-opacity="0.55" stroke="${OUT}" stroke-width="6"/>
+      <circle cx="92" cy="${wcy}" r="24" fill="none" stroke="${rim}" stroke-width="4"/>
+      <circle cx="92" cy="${wcy}" r="6" fill="${OUT}"/>
+      <g stroke="${rim}" stroke-width="3">
+        <line x1="92" y1="${wcy - 22}" x2="92" y2="${wcy + 22}"/>
+        <line x1="${92 - 22}" y1="${wcy}" x2="${92 + 22}" y2="${wcy}"/>
+        <line x1="${92 - 16}" y1="${wcy - 16}" x2="${92 + 16}" y2="${wcy + 16}"/>
+        <line x1="${92 - 16}" y1="${wcy + 16}" x2="${92 + 16}" y2="${wcy - 16}"/>
+      </g>
+      <circle cx="146" cy="${GROUND - 9}" r="9" fill="#e9eef2" stroke="${OUT}" stroke-width="4"/>
+      ${arm}`,
+  };
+}
+
 // --- Assembly --------------------------------------------------------------
 
-export function buildCharacterSVG(v: VisualParams): string {
+export function buildCharacterSVG(v: VisualParams, pose: Pose = 'stand'): string {
   const skin = SKIN_TONES[v.skin] ?? SKIN_TONES[0];
   const skinDk = darken(skin, 0.12);
   const hairColor = HAIR_COLORS[v.hairColor] ?? HAIR_COLORS[0];
   const uni = UNIFORM_COLORS[v.uniform] ?? UNIFORM_COLORS[0];
-  const jerseyDk = darken(uni.jersey, 0.14);
-  const m = bodyMetrics(v.bodyType);
-  const usesChair = v.accessory === 'wheelchair';
+  const c: Ctx = {
+    skin,
+    skinDk,
+    jersey: uni.jersey,
+    jerseyDk: darken(uni.jersey, 0.14),
+    trim: uni.trim,
+    m: bodyMetrics(v.bodyType),
+    S: `stroke="${OUT}" stroke-width="${SW}" stroke-linejoin="round" stroke-linecap="round"`,
+    usesChair: v.accessory === 'wheelchair',
+  };
   const h = hair(v.hair, hairColor);
-  const S = `stroke="${OUT}" stroke-width="${SW}" stroke-linejoin="round" stroke-linecap="round"`;
-
   const shoulderY = 150;
-  const hipY = 208;
-  const legTop = hipY - 4;
-  const legBottom = 236;
-  const legHalf = m.halfW * 0.42;
 
-  const legs = usesChair
-    ? ''
-    : `
-      <rect x="${100 - legHalf - 9}" y="${legTop}" width="18" height="${legBottom - legTop}" rx="9" fill="#3c4a58" ${S}/>
-      <rect x="${100 + legHalf - 9}" y="${legTop}" width="18" height="${legBottom - legTop}" rx="9" fill="#3c4a58" ${S}/>
-      <ellipse cx="${100 - legHalf}" cy="${legBottom + 4}" rx="17" ry="10" fill="#20303c" ${S}/>
-      <ellipse cx="${100 + legHalf}" cy="${legBottom + 4}" rx="17" ry="10" fill="#20303c" ${S}/>`;
-
-  // Torso: rounded jersey with a darker hem + collar trim.
-  const torso = `
-    <path d="M ${100 - m.halfW} ${shoulderY}
-             q 0 -14 14 -16 q ${m.halfW - 14} -6 ${2 * (m.halfW - 14)} 0 q 14 2 14 16
-             l 4 ${hipY - shoulderY}
-             q ${-m.halfW} 12 ${-2 * m.halfW} 0 Z"
-          fill="${uni.jersey}" ${S}/>
-    <path d="M ${100 - m.halfW + 2} ${hipY - 14} q ${m.halfW - 2} 12 ${2 * (m.halfW - 2)} 0 l 2 12 q ${-(m.halfW - 2)} 12 ${-2 * (m.halfW - 2)} 0 Z" fill="${jerseyDk}"/>
-    <path d="M 84 ${shoulderY - 6} q 16 14 32 0" fill="none" stroke="${uni.trim}" stroke-width="6" stroke-linecap="round"/>`;
-
-  // Sleeves + hands.
-  const arms = `
-    <path d="M ${100 - m.halfW + 4} ${shoulderY + 2} q -22 4 -24 30 q 10 8 22 2 q 2 -18 8 -26 Z" fill="${jerseyDk}" ${S}/>
-    <path d="M ${100 + m.halfW - 4} ${shoulderY + 2} q 22 4 24 30 q -10 8 -22 2 q -2 -18 -8 -26 Z" fill="${jerseyDk}" ${S}/>
-    <circle cx="${100 - m.halfW - 12}" cy="${shoulderY + 38}" r="11" fill="${skin}" ${S}/>
-    <circle cx="${100 + m.halfW + 12}" cy="${shoulderY + 38}" r="11" fill="${skin}" ${S}/>`;
-
-  // Chest number.
+  // Chest number badge (front poses only — a side view showing it reads wrong).
   const number = `<circle cx="100" cy="${shoulderY + 26}" r="13" fill="${uni.trim}" opacity="0.9"/>`;
 
-  const headTop = `
-    <rect x="90" y="120" width="20" height="22" rx="8" fill="${skinDk}" ${S}/>
-    <circle cx="${HEAD.cx}" cy="${HEAD.cy}" r="${m.headR}" fill="${skin}" ${S}/>
-    <ellipse cx="52" cy="86" rx="9" ry="11" fill="${skin}" ${S}/>
-    <ellipse cx="148" cy="86" rx="9" ry="11" fill="${skin}" ${S}/>
-    <clipPath id="hc"><circle cx="${HEAD.cx}" cy="${HEAD.cy}" r="${m.headR}"/></clipPath>
-    <ellipse cx="100" cy="${HEAD.cy + m.headR}" rx="${m.headR}" ry="24" fill="${skinDk}" opacity="0.45" clip-path="url(#hc)"/>`;
+  let layers: string;
+  if (pose === 'run1' || pose === 'run2') {
+    const frame: 1 | 2 = pose === 'run1' ? 1 : 2;
+    const dropY = frame === 2 ? 3 : 0; // gallop bounce
+    // Head shifted + tilted toward travel; pupils lead the motion.
+    const head = `
+      <g transform="translate(10 ${dropY}) rotate(5 ${HEAD.cx} ${HEAD.cy})">
+        ${headGroup(c, v, h.front, 0.8)}
+      </g>`;
+    if (c.usesChair) {
+      const chair = wheelchairSide(c, frame);
+      layers = `${h.back}${chair.behind}${torsoSide(c, 2)}${chair.front}${head}`;
+    } else {
+      const arms = armsRun(c, frame);
+      layers = `${h.back}${arms.far}${legsRun(c, frame)}${torsoSide(c, dropY)}${arms.near}${head}`;
+    }
+  } else {
+    // Same back-to-front order as always: chair → back hair → legs → torso …
+    const arms = pose === 'cheer' ? armsCheer(c) : armsStand(c);
+    layers = c.usesChair
+      ? `${wheelchairFront()}${h.back}${torsoFront(c)}${arms}${number}${headGroup(c, v, h.front)}`
+      : `${h.back}${legsFront(c)}${torsoFront(c)}${arms}${number}${headGroup(c, v, h.front)}`;
+  }
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEW_W} ${VIEW_H}" width="${VIEW_W}" height="${VIEW_H}">
-  <g paint-order="stroke" transform="translate(100 130) scale(${m.scale}) translate(-100 -130)">
-    ${usesChair ? wheelchair() : ''}
-    ${h.back}
-    ${legs}
-    ${torso}
-    ${arms}
-    ${number}
-    ${headTop}
-    ${face(v)}
-    ${h.front}
-    ${accessory(v)}
+  <g paint-order="stroke" transform="translate(100 130) scale(${c.m.scale}) translate(-100 -130)">
+    ${layers}
   </g>
 </svg>`;
 }

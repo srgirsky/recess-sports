@@ -15,7 +15,10 @@ export class BootScene extends Phaser.Scene {
     super('Boot');
   }
 
+  private bootStart = 0;
+
   preload(): void {
+    this.bootStart = performance.now();
     // Simple loading bar so the wait never looks broken.
     const cx = GAME_WIDTH / 2;
     const cy = GAME_HEIGHT / 2;
@@ -46,6 +49,10 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
+    if (import.meta.env.DEV) {
+      // Budget: <2s desktop. If this creeps, render non-stand poses at 2x.
+      console.log(`[boot] textures ready in ${Math.round(performance.now() - this.bootStart)}ms`);
+    }
     // Wait for the brand font so text renders in Fredoka, not the fallback.
     // Race against a short timeout so a slow/blocked font never hangs boot.
     const fontReady = document.fonts

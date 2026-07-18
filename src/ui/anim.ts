@@ -6,8 +6,51 @@
 
 import Phaser from 'phaser';
 import { ANIM } from '../config';
+import { poseKey } from '../art/textureFactory';
 
 type Obj = Phaser.GameObjects.Components.Transform & Phaser.GameObjects.GameObject;
+
+/**
+ * A soft ground shadow under a character. Kept as a separate runtime object
+ * (not baked into the SVG) so it stays put during hops and run frames.
+ */
+export function groundShadow(
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  width: number
+): Phaser.GameObjects.Ellipse {
+  return scene.add.ellipse(x, y, width, width * 0.28, 0x26333f, 0.18);
+}
+
+/**
+ * Flip a sprite between its run1/run2 pose textures — the two-frame run cycle.
+ * Textures share dimensions, so the sprite's scale stays valid.
+ * `stop(true)` restores the stand texture.
+ */
+export function runCycle(
+  scene: Phaser.Scene,
+  img: Phaser.GameObjects.Image,
+  id: string,
+  opts: { frameMs?: number } = {}
+): { stop(restoreStand?: boolean): void } {
+  let frame: 1 | 2 = 1;
+  img.setTexture(poseKey(id, 'run1'));
+  const timer = scene.time.addEvent({
+    delay: opts.frameMs ?? ANIM.RUN_FRAME_MS,
+    loop: true,
+    callback: () => {
+      frame = frame === 1 ? 2 : 1;
+      img.setTexture(poseKey(id, frame === 1 ? 'run1' : 'run2'));
+    },
+  });
+  return {
+    stop(restoreStand = true) {
+      timer.remove();
+      if (restoreStand && img.active) img.setTexture(id);
+    },
+  };
+}
 
 /** Gentle "breathing" bob loop. Sprites use origin-bottom, so we bob y up a touch. */
 export function idleBob(
