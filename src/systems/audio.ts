@@ -158,6 +158,31 @@ export function pitchWoosh(): void {
   noise(0.18, 0.14, 700, 0.9, 1600);
 }
 
+/** The recess bell — a classic electric school-bell trill. */
+export function bell(): void {
+  if (!ready()) return;
+  const c = ctx!;
+  // Eight fast clapper strikes, each a bright fundamental + overtone with a
+  // sharp decay. Scheduled against currentTime so the trill is even.
+  for (let i = 0; i < 8; i++) {
+    const t0 = c.currentTime + i * 0.065;
+    for (const [freq, gain] of [
+      [1976, 0.2],
+      [2637, 0.09],
+    ] as const) {
+      const osc = c.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.value = freq;
+      const g = c.createGain();
+      g.gain.setValueAtTime(gain, t0);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.06);
+      osc.connect(g).connect(master!);
+      osc.start(t0);
+      osc.stop(t0 + 0.08);
+    }
+  }
+}
+
 // --- Voice -----------------------------------------------------------------
 
 let pickedVoice: SpeechSynthesisVoice | null = null;
