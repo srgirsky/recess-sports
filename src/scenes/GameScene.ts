@@ -56,7 +56,7 @@ import * as audio from '../systems/audio';
 import { screenShake, burst, floatingText } from '../ui/effects';
 import { makeMuteButton } from '../ui/MuteButton';
 import { FONT, OUTLINE } from '../ui/theme';
-import { idleBob, squashHop } from '../ui/anim';
+import { idleBob, squashHop, groundShadow, runCycle } from '../ui/anim';
 
 /** 'pitching' = ball is inbound, swing now. 'aiming' = you're on the mound, throw now. */
 type Phase = 'pitching' | 'resolving' | 'aiming' | 'ended';
@@ -673,21 +673,38 @@ export class GameScene extends Phaser.Scene {
       let token = m.fromBase === 0 ? this.makeRunner(batter) : this.runners.get(m.fromBase);
       if (!token) token = this.makeRunner(batter); // safety
       this.runners.delete(m.fromBase);
-      const img = token.getAt(0) as Phaser.GameObjects.Image;
+      const img = token.getAt(1) as Phaser.GameObjects.Image; // [0]=shadow, [1]=kid
+      const runnerId = token.getData('id') as string;
 
-      const legs: Array<{ x: number; y: number; duration: number; ease: string }> = [];
+      // Each leg flips the sprite to face its direction of travel.
+      const legs: Array<{
+        x: number;
+        y: number;
+        duration: number;
+        ease: string;
+        onStart?: () => void;
+      }> = [];
+      let fromP = basePos(m.fromBase);
       for (let b = m.fromBase + 1; b <= m.toBase; b++) {
         const p = basePos(b);
-        legs.push({ x: p.x, y: p.y, duration: RUNNER_TWEEN_MS, ease: 'Sine.inOut' });
+        const facesLeft = p.x < fromP.x;
+        legs.push({
+          x: p.x,
+          y: p.y,
+          duration: RUNNER_TWEEN_MS,
+          ease: 'Sine.inOut',
+          onStart: () => img.setFlipX(facesLeft),
+        });
+        fromP = p;
       }
 
       const scored = m.toBase >= 4;
       if (legs.length > 0) {
-        // Run bounce (bob + tilt) on the inner sprite while the container travels.
+        // Real run frames + a small bob while the container travels.
+        const cycle = runCycle(this, img, runnerId);
         const bounce = this.tweens.add({
           targets: img,
-          y: -ANIM.RUN_BOB,
-          angle: 6,
+          y: -3,
           duration: RUNNER_TWEEN_MS / 2,
           yoyo: true,
           repeat: -1,
@@ -697,9 +714,10 @@ export class GameScene extends Phaser.Scene {
           targets: token,
           tweens: legs,
           onComplete: () => {
+            cycle.stop(true);
             bounce.stop();
             img.y = 0;
-            img.angle = 0;
+            img.setFlipX(false);
             if (scored) {
               squashHop(this, img, { height: 20 });
               burst(this, HOME.x, HOME.y - 20, COLORS.gold, 14);
@@ -717,12 +735,14 @@ export class GameScene extends Phaser.Scene {
     return maxBases * RUNNER_TWEEN_MS;
   }
 
-  /** A baserunner = the actual kid, in a container so we can bob it while it moves. */
+  /** A baserunner = the actual kid (over a ground shadow), in a container. */
   private makeRunner(char: Character): Phaser.GameObjects.Container {
     const c = this.add.container(HOME.x, HOME.y - 6).setDepth(40);
+    const shadow = groundShadow(this, 0, 4, 36);
     const img = this.add.image(0, 0, char.id).setOrigin(0.5, 0.92);
     img.setScale(RUNNER_H / img.height);
-    c.add(img);
+    c.add([shadow, img]);
+    c.setData('id', char.id);
     return c;
   }
 
@@ -759,9 +779,9 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     this.cpuBatter = getCharacter(this.aiTeam[this.aiLineup % TEAM_SIZE]);
-    this.showBatter(this.cpuBatter);
+    this.showBatter(this.cpuBatter, true); // jogs in from the dugout
     this.batterLabel.setText(this.cpuBatter.name);
-    this.startPitchMeter();
+    this.time.delayedCall(520, () => this.startPitchMeter());
   }
 
   /**
@@ -931,18 +951,41 @@ export class GameScene extends Phaser.Scene {
   }
 
   // --- Little visual helpers ----------------------------------------------
-  private showBatter(char: Character): void {
+  private showBatter(char: Character, walkIn = false): void {
     this.batterIdle?.stop();
     this.batterSprite?.destroy();
     this.bat?.destroy();
 
-    const spr = this.add.image(HOME.x - 70, HOME.y + 6, char.id).setOrigin(0.5, 1).setDepth(28);
+    const targetX = HOME.x - 70;
+    const spr = this.add
+      .image(walkIn ? GAME_WIDTH + 50 : targetX, HOME.y + 6, char.id)
+      .setOrigin(0.5, 1)
+      .setDepth(28);
     const s = 150 / spr.height;
     spr.setScale(s).setFlipX(true);
     this.batterSprite = spr;
     this.batterScale = s;
-    this.createBat(HOME.x - 50, HOME.y - 66);
 
+    if (walkIn) {
+      // Jog to the plate with real run frames (facing left = flipX stays on).
+      const cycle = runCycle(this, spr, char.id);
+      this.tweens.add({
+        targets: spr,
+        x: targetX,
+        duration: 460,
+        ease: 'Sine.out',
+        onComplete: () => {
+          cycle.stop(true);
+          if (this.batterSprite !== spr) return;
+          spr.setFlipX(true);
+          this.createBat(HOME.x - 50, HOME.y - 66);
+          this.startBatterIdle(spr, s);
+        },
+      });
+      return;
+    }
+
+    this.createBat(HOME.x - 50, HOME.y - 66);
     // Entrance, then a gentle "breathing" idle (scaleY only, so a swing can
     // still tilt/step the body without fighting it).
     this.tweens.add({
@@ -951,18 +994,19 @@ export class GameScene extends Phaser.Scene {
       scaleY: { from: s * 1.15, to: s },
       duration: 200,
       ease: 'Back.out',
-      onComplete: () => {
-        if (this.batterSprite === spr) {
-          this.batterIdle = this.tweens.add({
-            targets: spr,
-            scaleY: s * 1.04,
-            duration: 850,
-            yoyo: true,
-            repeat: -1,
-            ease: 'Sine.inOut',
-          });
-        }
-      },
+      onComplete: () => this.startBatterIdle(spr, s),
+    });
+  }
+
+  private startBatterIdle(spr: Phaser.GameObjects.Image, s: number): void {
+    if (this.batterSprite !== spr) return;
+    this.batterIdle = this.tweens.add({
+      targets: spr,
+      scaleY: s * 1.04,
+      duration: 850,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.inOut',
     });
   }
 
