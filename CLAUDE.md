@@ -4,7 +4,7 @@ Read this first. It's the fast on-ramp; deeper context is in `docs/OVERVIEW.md`,
 
 ## What this is (the one thing to understand)
 
-A **free web baseball game for little kids (ages 4–8)**. You draft 9 of 30 neighborhood characters, then play a short pitch-and-swing game. The real product is **the 30 characters**: the game is a "voting machine" — every player draft pick is tallied, and pick rates reveal which kids should become toys/shows. So two jobs: (1) be genuinely fun, (2) log pick data. Design pillars: minimal reading, icon/voice-forward, short games.
+A **free web baseball game for little kids (ages 4–8)**. You draft 9 of 30 neighborhood characters, then play a short game where you bat the top of each inning and pitch the bottom — one timing button for both. The real product is **the 30 characters**: the game is a "voting machine" — every player draft pick is tallied, and pick rates reveal which kids should become toys/shows. So two jobs: (1) be genuinely fun, (2) log pick data. Design pillars: minimal reading, icon/voice-forward, short games.
 
 ## Stack
 
@@ -29,7 +29,9 @@ Phaser 3 · TypeScript · Vite · vitest. Static site, no backend, deployed free
 | `src/data/types.ts` | Character / Stats / VisualParams / TeamState types. |
 | `src/systems/draft.ts` | Alternating pick + greedy AI value function. |
 | `src/systems/atbat.ts` | Timing→band→outcome + stat bias + ability hooks. |
-| `src/systems/inning.ts` | Count/outs/bases state machine + auto-baserunning (+ `movements`). |
+| `src/systems/pitch.ts` | Defense half: throw timing→pitch band + the CPU batter's take/swing plan; AI wild-pitch roll. |
+| `src/systems/inning.ts` | Count/outs/bases state machine + auto-baserunning + balls/walks (+ `movements`). |
+| `src/systems/gameflow.ts` | Between-halves decisions: skip pointless bottoms, walk-offs, one bonus inning on a tie. |
 | `src/systems/picklog.ts` | The "voting machine" — localStorage pick tally. |
 | `src/systems/audio.ts` | Web Audio SFX + SpeechSynthesis voice + mute. |
 | `src/scenes/*` | Boot → Title → Draft → Game → Result. |
@@ -42,7 +44,8 @@ Phaser 3 · TypeScript · Vite · vitest. Static site, no backend, deployed free
 
 ## Gotchas (things that will bite you)
 
-- **Background tabs pause the game.** Browsers stop `requestAnimationFrame` when the tab isn't foreground, which freezes Phaser's clock — timers (AI pick, pitch) don't fire and input drops. Not a bug; playtest with the tab focused. For automated/headless visual checks, drive `window.__game`: `scene.start('Game', {...})` then pump `game.step(t, 16)` in a loop, and force swings via `gameScene.resolvePlayerSwing(band, false)`.
+- **Background tabs pause the game.** Browsers stop `requestAnimationFrame` when the tab isn't foreground, which freezes Phaser's clock — timers (AI pick, pitch) don't fire and input drops. Not a bug; playtest with the tab focused. For automated/headless visual checks, drive `window.__game`: `scene.start('Game', {...})` then pump `game.step(t, 16)` in a loop, and force swings via `gameScene.resolvePlayerSwing(band, false)` (top half) or pitches via `gameScene.resolvePlayerPitch(band)` (bottom half — wait for `phase === 'aiming'`).
+- **Phaser polygon points must be 0-based (no negative coords).** `add.polygon` computes its display origin from the AABB but does NOT normalize negative point coords, so negatives get shifted twice and the shape renders far from where you put it (this misplaced the infield dirt over the stands once). Author polygon point lists starting at 0,0.
 - **SVG textures need base64 data URIs.** Phaser's `load.svg` calls `atob` on data URIs — they must be base64 (`textureFactory.ts` does this), not URL-encoded, or it throws `InvalidCharacterError`.
 - **`textures.getTextureKeys()` is polluted** by Phaser Text objects (GUID keys). Don't treat texture keys as character ids — use `ROSTER` from `data/characters.ts`.
 - **Audio needs a user gesture** to start (browser autoplay policy). It's unlocked on the Title PLAY click (`audio.unlock()`); all audio calls no-op before that or when muted, so they're always safe to call.

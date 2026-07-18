@@ -47,7 +47,7 @@ export interface ApplyResult {
   batterOut: boolean;
   /** True if the batter's turn ended (out or reached base) — advance the lineup. */
   batterDone: boolean;
-  /** Runner movements to animate (only on a hit; empty otherwise). */
+  /** Runner movements to animate (on a hit or a walk; empty otherwise). */
   movements: RunnerMove[];
 }
 
@@ -89,6 +89,18 @@ export function applyAtBat(
       return { state, runsScored: 0, batterOut: true, batterDone: true, movements: [] };
     }
 
+    case 'ball': {
+      state.count.balls += 1;
+      if (state.count.balls >= 4) {
+        // Walk: forced runners only.
+        const { runs, movements } = advanceOnWalk(state);
+        state.runs += runs;
+        state.count = { balls: 0, strikes: 0 };
+        return { state, runsScored: runs, batterOut: false, batterDone: true, movements };
+      }
+      return { state, runsScored: 0, batterOut: false, batterDone: false, movements: [] };
+    }
+
     case 'hit': {
       const { runs, movements } = advanceRunners(state, result.bases);
       state.runs += runs;
@@ -96,6 +108,38 @@ export function applyAtBat(
       return { state, runsScored: runs, batterOut: false, batterDone: true, movements };
     }
   }
+}
+
+/**
+ * A walk moves only FORCED runners: the batter to first, and each runner who
+ * has a runner (or the batter) pushing from directly behind. A runner forced
+ * off third scores. Mutates `state.bases`; returns runs + movements to animate.
+ */
+function advanceOnWalk(
+  state: HalfInningState
+): { runs: number; movements: RunnerMove[] } {
+  const movements: RunnerMove[] = [];
+  let runs = 0;
+
+  // Walk the chain from first base upward while it's unbroken.
+  let forced = true; // the batter always forces first
+  for (let base = 1; base <= 3 && forced; base++) {
+    if (!state.bases[base - 1]) {
+      forced = false; // open base absorbs the push; nobody beyond moves
+      break;
+    }
+    // This runner is forced up one base (from third -> scores).
+    movements.push({ fromBase: base, toBase: base + 1 });
+  }
+  // Apply in reverse so we don't overwrite an occupied destination.
+  for (const m of [...movements].reverse()) {
+    if (m.toBase >= 4) runs += 1;
+    else state.bases[m.toBase - 1] = true;
+    state.bases[m.fromBase - 1] = false;
+  }
+  state.bases[0] = true;
+  movements.push({ fromBase: 0, toBase: 1 }); // the batter, last so runs read first
+  return { runs, movements };
 }
 
 /**

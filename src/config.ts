@@ -34,8 +34,42 @@ export const TIMING = {
   CONTACT: 230,
 };
 
+/**
+ * Pitch timing windows (ms error from the sweet spot) for the player's defense
+ * half. Same idea as TIMING but for the mound: beyond WEAK the throw is WILD.
+ */
+export const PITCH_TIMING = {
+  PERFECT: 70,
+  GOOD: 150,
+  WEAK: 260,
+};
+
+/** How long the mound ring shrinks before the sweet-spot moment (ms). */
+export const PITCH_METER_MS = 1000;
+
+/** Grace after the sweet spot before we auto-throw for an idle kid (no soft-lock). */
+export const PITCH_AUTO_THROW_MS = 600;
+
+/** Ball flight time in the CPU half — faster than the player's, keeps it snappy. */
+export const CPU_PITCH_TRAVEL_MS = 500;
+
+/** Pause between CPU-half pitches (ms). */
+export const CPU_STEP_DELAY_MS = 700;
+
+/**
+ * Chance the AI pitcher throws a visibly wild pitch at the player (a "don't
+ * swing!" ball). Better pitching stat = fewer wild ones.
+ */
+export const WILD_PITCH_CHANCE = {
+  BASE: 0.16,
+  PER_PITCHING: 0.015, // chance -= (pitching - 5) * this
+};
+
 /** Game length for the vertical slice. Two innings = four half-innings. */
 export const INNINGS = 2;
+
+/** Bonus innings allowed on a tie. After this many, the tie stands. */
+export const MAX_EXTRA_INNINGS = 1;
 
 /** How long the AI "thinks" before making a draft pick, so kids see it happen. */
 export const AI_PICK_DELAY_MS = 750;

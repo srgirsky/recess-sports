@@ -20,7 +20,7 @@ Two consequences for every design decision:
 
 - **Minimal reading.** Icons, color, and voice over text. A 6-year-old who can't read should be able to play.
 - **Icon/voice-forward.** Stats shown as bars/pips; callouts spoken; feedback is visual (pops, shakes, runners).
-- **Short games.** Two innings. Fast to start, fast to finish, easy to replay.
+- **Short games.** Two innings (plus at most one bonus inning on a tie). Fast to start, fast to finish, easy to replay.
 - **Forgiving but skillful.** Timing is the skill (see below); stats add character flavor; the timing windows are wide enough for little kids and tunable in `config.ts`.
 
 ### Roadmap
@@ -52,7 +52,7 @@ The other 27 span archetypes (sluggers, speedsters, all-rounders, pitchers, weak
 - **Boot** — generates all 30 SVG character textures once, shows a loading bar, hands off to Title.
 - **Title** — logo, bobbing lineup, PLAY (unlocks audio), mute toggle, dev pick-rate overlay (press D).
 - **Draft** — 30 cards; player and AI alternate picks to 9 each; every player pick is logged.
-- **Game** — the interactive pitch-and-swing loop plus all the juice (below), on a full ballpark backdrop (gradient sky, sun/clouds, a crowd in the stands, an outfield wall with bunting, mowing-striped grass, a manicured dirt infield, mound, and home plate) drawn procedurally in `GameScene.drawField()`.
+- **Game** — BOTH halves are interactive with the same one-button timing input: you bat the top of each inning (swing when the ring closes) and **pitch the bottom** (throw when the mound ring closes; a good throw drags the CPU batter's swing band down, a wild one is usually a ball). Walks, walk-offs, skipped pointless bottom halves, and one bonus inning on a tie. All the juice (below) on a full ballpark backdrop (gradient sky, sun/clouds, a crowd in the stands, an outfield wall with bunting, mowing-striped grass, a manicured dirt infield, mound, and home plate) drawn procedurally in `GameScene.drawField()`.
 - **Result** — win/lose, team MVP, confetti + voice, rematch.
 
 ### The golden rule: pure logic vs. view
@@ -61,7 +61,9 @@ Everything tricky lives in `src/systems/` as **pure functions with no Phaser imp
 
 - `draft.ts` — draft state, strict alternation, and a greedy AI value function (grabs the highest-value kid left, so leaving a stud on the board costs you).
 - `atbat.ts` — the heart. **Timing is the skill, stats are the flavor.** Swing error → a band (Perfect/Good/Weak/Miss); within a band, the batter's stats set the odds (contact forgives sloppy timing; power buys extra bases; speed steals hits). Ability hooks apply here.
-- `inning.ts` — count/outs/bases state machine + auto-baserunning. `applyAtBat` returns the new state **and** a `movements` list (each runner's from→to base) so the scene can animate baserunning driven by the real rules — the animation can never disagree with the base state.
+- `pitch.ts` — the mirror of `atbat.ts` for the defense half. Throw error → a pitch band (Perfect/Good/Weak/**Wild**); a strong arm forgives sloppy timing; pitch quality shifts the CPU batter's swing band (perfect = harder to hit, wild = usually taken for a ball). Also rolls the AI's occasional wild pitch at the player — the red "don't swing!" telegraph.
+- `inning.ts` — count/outs/bases state machine + auto-baserunning, now including **balls and walks** (forced runners only; a bases-loaded walk scores). `applyAtBat` returns the new state **and** a `movements` list (each runner's from→to base) so the scene can animate baserunning driven by the real rules — the animation can never disagree with the base state.
+- `gameflow.ts` — game-level sequencing between halves: skip a pointless bottom (home CPU already leads after the top of the final inning), end instantly on a walk-off, grant one bonus inning on a tie.
 - `picklog.ts` — the voting machine: `localStorage` tally + rate readout.
 
 Scenes call these reducers and animate the result. This is why the logic is unit-tested (`logic.test.ts`) while the scenes aren't — the bugs live in the rules, and the rules are isolated.
@@ -72,7 +74,7 @@ No image files. `art/CharacterArt.ts` hand-draws each kid as a **modern flat-mas
 
 ### Feel & juice
 
-- **Tunables** in `config.ts`: `TIMING` windows, `PITCH_TRAVEL_MS`, `INNINGS`, `SHAKE`, `RUNNER_TWEEN_MS`, `SHOW_TIMING_RING`, `AUDIO`.
+- **Tunables** in `config.ts`: `TIMING` + `PITCH_TIMING` windows, `PITCH_TRAVEL_MS` + the pitch-meter timings, `INNINGS` + `MAX_EXTRA_INNINGS`, `WILD_PITCH_CHANCE`, `SHAKE`, `RUNNER_TWEEN_MS`, `SHOW_TIMING_RING`, `AUDIO`.
 - **`ui/theme.ts`** — the shared UI kit that makes every screen match: the brand font (self-hosted Fredoka), the mascot outline color, and `panel()`/`ribbon()`/`pill()`/`heading()` helpers for rounded, outlined, drop-shadowed chrome. Buttons and draft cards are built on it; the font is awaited in Boot before the Title shows.
 - **`ui/effects.ts`** — screen shake, particle burst, floating text, confetti.
 - **`ui/anim.ts`** — procedural character animation helpers (idle "breathing" bob, celebratory squash-hop, pop-in). Motion is tweens on the single-texture sprites — no frame art. In-game: a swinging **bat** prop, a pitcher **wind-up**, and baserunners rendered as the **actual kids** (containers) that bounce as they run and hop when they score. Timing lives in `config.ANIM`.

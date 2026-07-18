@@ -15,11 +15,28 @@ import {
 } from './draft';
 import { bandFromError, resolveSwing } from './atbat';
 import { newHalfInning, applyAtBat } from './inning';
+import {
+  pitchBandFromError,
+  resolveCpuPitch,
+  rollAiWildPitch,
+  wildSwingBand,
+} from './pitch';
+import { shouldSkipBottom, isWalkOff, decideAfterHalf } from './gameflow';
 
 const seq = (nums: number[]) => {
   let i = 0;
   return () => nums[i++ % nums.length];
 };
+
+const plain = (over: Partial<Character>): Character => ({
+  id: 'x',
+  name: 'X',
+  tagline: '',
+  stats: { contact: 5, power: 5, speed: 5, pitching: 5 },
+  visual: { skin: 0, hair: 'short', hairColor: 0, uniform: 0, accessory: 'none' },
+  ability: 'none',
+  ...over,
+});
 
 describe('roster', () => {
   it('has 30 unique characters', () => {
@@ -86,16 +103,6 @@ describe('at-bat timing bands', () => {
 });
 
 describe('at-bat abilities', () => {
-  const plain = (over: Partial<Character>): Character => ({
-    id: 'x',
-    name: 'X',
-    tagline: '',
-    stats: { contact: 5, power: 5, speed: 5, pitching: 5 },
-    visual: { skin: 0, hair: 'short', hairColor: 0, uniform: 0, accessory: 'none' },
-    ability: 'none',
-    ...over,
-  });
-
   it('never_strikes_out turns a miss into contact (never a strikeout swing)', () => {
     const batter = plain({ ability: 'never_strikes_out' });
     const pitcher = plain({});
@@ -171,6 +178,165 @@ describe('inning: auto-baserunning', () => {
   });
 });
 
+describe('pitch timing bands', () => {
+  it('maps throw error to the right band', () => {
+    expect(pitchBandFromError(0)).toBe('perfect');
+    expect(pitchBandFromError(-60)).toBe('perfect'); // early but dead-on
+    expect(pitchBandFromError(140)).toBe('good');
+    expect(pitchBandFromError(250)).toBe('weak');
+    expect(pitchBandFromError(400)).toBe('wild');
+  });
+});
+
+describe('CPU at-bat vs the player pitch', () => {
+  it('a perfect pitch is never a ball', () => {
+    const plan = resolveCpuPitch('perfect', plain({}), plain({}), seq([0, 0.5]));
+    expect(plan.isBall).toBe(false);
+    expect(plan.cpuSwings).toBe(true);
+  });
+
+  it('a wild pitch is usually taken for a ball', () => {
+    // isBall roll 0.5 < 0.85 -> ball; chase roll 0.9 > 0.2 -> takes it.
+    const plan = resolveCpuPitch('wild', plain({}), plain({}), seq([0.5, 0.9]));
+    expect(plan.isBall).toBe(true);
+    expect(plan.cpuSwings).toBe(false);
+  });
+
+  it('a chased bad ball can only be a weak swing or a whiff', () => {
+    // ball -> chase (0.1 < 0.2) -> band roll.
+    const plan = resolveCpuPitch('wild', plain({}), plain({}), seq([0.5, 0.1, 0.9]));
+    expect(plan.isBall).toBe(true);
+    expect(plan.cpuSwings).toBe(true);
+    expect(['weak', 'miss']).toContain(plan.cpuBand);
+  });
+
+  it('a perfect pitch drags the CPU swing down a band vs a good pitch', () => {
+    // Same rng both times: swing roll 0.9 -> 'perfect' before the shift.
+    const vsGood = resolveCpuPitch('good', plain({}), plain({}), seq([0.5, 0.9]));
+    const vsPerfect = resolveCpuPitch('perfect', plain({}), plain({}), seq([0.5, 0.9]));
+    expect(vsGood.cpuBand).toBe('perfect');
+    expect(vsPerfect.cpuBand).toBe('good');
+  });
+
+  it('a big arm (8+) can rescue a wild throw into the zone', () => {
+    const ace = plain({ stats: { contact: 5, power: 5, speed: 5, pitching: 10 } });
+    // Ace: nudge roll 0.1 < 0.35 -> wild becomes weak; isBall 0.5 > 0.45 -> strike.
+    const rescued = resolveCpuPitch('wild', ace, plain({}), seq([0.1, 0.5, 0.5]));
+    expect(rescued.isBall).toBe(false);
+    // Average arm, same rolls: stays wild -> 0.5 < 0.85 -> ball. (First roll goes
+    // to the isBall check since there's no nudge roll.)
+    const notRescued = resolveCpuPitch('wild', plain({}), plain({}), seq([0.1, 0.5, 0.5]));
+    expect(notRescued.isBall).toBe(true);
+  });
+
+  it('AI wild pitches get rarer with a better pitching stat', () => {
+    const wildKid = plain({ stats: { contact: 5, power: 5, speed: 5, pitching: 1 } });
+    const ace = plain({ stats: { contact: 5, power: 5, speed: 5, pitching: 10 } });
+    expect(rollAiWildPitch(wildKid, () => 0.1)).toBe(true);
+    expect(rollAiWildPitch(ace, () => 0.1)).toBe(false);
+  });
+
+  it('swinging at a wild pitch caps the band', () => {
+    expect(wildSwingBand('perfect')).toBe('weak');
+    expect(wildSwingBand('good')).toBe('weak');
+    expect(wildSwingBand('weak')).toBe('miss');
+    expect(wildSwingBand('miss')).toBe('miss');
+  });
+});
+
+describe('inning: balls & walks', () => {
+  const ball = { kind: 'ball' as const, bases: 0, description: 'Ball!' };
+
+  it('balls 1-3 do not end the at-bat', () => {
+    let s = newHalfInning();
+    for (let i = 1; i <= 3; i++) {
+      const res = applyAtBat(s, ball);
+      s = res.state;
+      expect(s.count.balls).toBe(i);
+      expect(res.batterDone).toBe(false);
+      expect(res.movements).toEqual([]);
+    }
+  });
+
+  it('ball four with the bases empty walks the batter to first', () => {
+    const s = newHalfInning();
+    s.count.balls = 3;
+    const res = applyAtBat(s, ball);
+    expect(res.batterDone).toBe(true);
+    expect(res.batterOut).toBe(false);
+    expect(res.runsScored).toBe(0);
+    expect(res.state.bases).toEqual([true, false, false]);
+    expect(res.state.count).toEqual({ balls: 0, strikes: 0 });
+    expect(res.movements).toEqual([{ fromBase: 0, toBase: 1 }]);
+  });
+
+  it('a walk moves only forced runners (runner on 2nd stays put)', () => {
+    const s = newHalfInning();
+    s.bases = [false, true, false];
+    s.count.balls = 3;
+    const res = applyAtBat(s, ball);
+    expect(res.runsScored).toBe(0);
+    expect(res.state.bases).toEqual([true, true, false]);
+    expect(res.movements).toEqual([{ fromBase: 0, toBase: 1 }]);
+  });
+
+  it('a bases-loaded walk forces in a run and keeps the bases loaded', () => {
+    const s = newHalfInning();
+    s.bases = [true, true, true];
+    s.count.balls = 3;
+    const res = applyAtBat(s, ball);
+    expect(res.runsScored).toBe(1);
+    expect(res.state.bases).toEqual([true, true, true]);
+    expect(res.movements).toContainEqual({ fromBase: 3, toBase: 4 });
+    expect(res.movements).toContainEqual({ fromBase: 0, toBase: 1 });
+  });
+});
+
+describe('gameflow: walk-offs, skipped bottoms, bonus innings', () => {
+  it('skips the bottom of the final inning when the home CPU already leads', () => {
+    expect(shouldSkipBottom(2, 2, 3, 1)).toBe(true);
+    expect(shouldSkipBottom(2, 2, 1, 1)).toBe(false); // tied: they still bat
+    expect(shouldSkipBottom(2, 2, 1, 3)).toBe(false); // trailing: they still bat
+    expect(shouldSkipBottom(1, 2, 5, 0)).toBe(false); // mid-game: always play
+    expect(shouldSkipBottom(3, 2, 2, 1)).toBe(true); // extra innings too
+  });
+
+  it('walk-off only triggers in the bottom of a final/extra inning', () => {
+    expect(isWalkOff(2, 2, 'bottom', 3, 2)).toBe(true);
+    expect(isWalkOff(3, 2, 'bottom', 3, 2)).toBe(true); // extra inning
+    expect(isWalkOff(1, 2, 'bottom', 3, 2)).toBe(false); // too early
+    expect(isWalkOff(2, 2, 'top', 3, 2)).toBe(false); // wrong half
+    expect(isWalkOff(2, 2, 'bottom', 2, 2)).toBe(false); // not ahead yet
+  });
+
+  it('a tie after regulation earns exactly one bonus inning, then stands', () => {
+    // Tied after the bottom of the 2nd -> bonus inning 3.
+    expect(decideAfterHalf(2, 'bottom', 2, 2, 2, 1)).toEqual({
+      done: false,
+      inning: 3,
+      half: 'top',
+      extra: true,
+    });
+    // Still tied after the bonus inning -> the tie stands.
+    expect(decideAfterHalf(3, 'bottom', 2, 2, 2, 1)).toEqual({ done: true, tie: true });
+    // Decided after the bottom -> game over.
+    expect(decideAfterHalf(2, 'bottom', 2, 1, 3, 1)).toEqual({ done: true, tie: false });
+    // Normal mid-game transitions.
+    expect(decideAfterHalf(1, 'top', 2, 0, 0, 1)).toEqual({
+      done: false,
+      inning: 1,
+      half: 'bottom',
+      extra: false,
+    });
+    expect(decideAfterHalf(1, 'bottom', 2, 0, 0, 1)).toEqual({
+      done: false,
+      inning: 2,
+      half: 'top',
+      extra: false,
+    });
+  });
+});
+
 describe('sanity: a full simulated game always terminates with a score', () => {
   it('plays 2 innings without hanging', () => {
     // Draft two teams greedily.
@@ -179,6 +345,7 @@ describe('sanity: a full simulated game always terminates with a score', () => {
     while (!isDraftComplete(d) && guard++ < 100) {
       d = applyPick(d, chooseAiPick(d, () => Math.random()));
     }
+    // Player-style half: random swing bands straight into resolveSwing.
     const bat = (team: string[], pitcher: Character) => {
       let s = newHalfInning();
       let i = 0;
@@ -194,13 +361,35 @@ describe('sanity: a full simulated game always terminates with a score', () => {
       }
       return s.runs;
     };
+    // CPU-style half: random pitch bands through resolveCpuPitch (balls, walks,
+    // takes, and chases included) — the same path GameScene's defense half uses.
+    const pitchTo = (team: string[], pitcher: Character) => {
+      let s = newHalfInning();
+      let i = 0;
+      let g = 0;
+      while (s.outs < 3 && g++ < 400) {
+        const batter = getCharacter(team[i % team.length]);
+        const bands = ['perfect', 'good', 'weak', 'wild'] as const;
+        const band = bands[Math.floor(Math.random() * 4)];
+        const plan = resolveCpuPitch(band, pitcher, batter, () => Math.random());
+        const r = plan.cpuSwings
+          ? resolveSwing(plan.cpuBand, batter, pitcher, () => Math.random())
+          : plan.isBall
+            ? { kind: 'ball' as const, bases: 0, description: 'Ball!' }
+            : { kind: 'strike' as const, bases: 0, description: 'Strike looking!' };
+        const applied = applyAtBat(s, r);
+        s = applied.state;
+        if (applied.batterDone) i++;
+      }
+      return s.runs;
+    };
     const aiPitcher = getCharacter(d.aiTeam[0]);
     const playerPitcher = getCharacter(d.playerTeam[0]);
     let playerScore = 0;
     let aiScore = 0;
     for (let inn = 0; inn < 2; inn++) {
       playerScore += bat(d.playerTeam, aiPitcher);
-      aiScore += bat(d.aiTeam, playerPitcher);
+      aiScore += pitchTo(d.aiTeam, playerPitcher);
     }
     expect(Number.isFinite(playerScore)).toBe(true);
     expect(Number.isFinite(aiScore)).toBe(true);

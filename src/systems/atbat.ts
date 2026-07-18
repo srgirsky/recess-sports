@@ -13,7 +13,7 @@ import { TIMING } from '../config';
 
 export type SwingBand = 'perfect' | 'good' | 'weak' | 'miss';
 
-export type AtBatKind = 'hit' | 'out' | 'strike' | 'foul';
+export type AtBatKind = 'hit' | 'out' | 'strike' | 'foul' | 'ball';
 
 export interface AtBatResult {
   kind: AtBatKind;

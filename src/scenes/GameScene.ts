@@ -1,7 +1,8 @@
 // ---------------------------------------------------------------------------
-// The game. Player bats the top of each inning with the pitch-and-swing loop;
-// the opponent's bottom half is auto-simulated so we only build ONE interactive
-// batting surface. Two innings, then off to the Result screen.
+// The game. BOTH halves are interactive with the same one-button timing input:
+// the player bats the top of each inning (swing when the ring closes) and
+// PITCHES the bottom (throw when the mound ring closes — a good throw drags the
+// CPU batter's swing down). Walks, walk-offs, and one bonus inning on a tie.
 //
 // This scene owns all the "juice": ball tracking, a timing ring, contact pops,
 // screen shake, ball flight, animated baserunning, and sound. The RULES still
@@ -14,7 +15,12 @@ import {
   GAME_HEIGHT,
   COLORS,
   PITCH_TRAVEL_MS,
+  PITCH_METER_MS,
+  PITCH_AUTO_THROW_MS,
+  CPU_PITCH_TRAVEL_MS,
+  CPU_STEP_DELAY_MS,
   INNINGS,
+  MAX_EXTRA_INNINGS,
   TEAM_SIZE,
   SHAKE,
   RUNNER_TWEEN_MS,
@@ -23,7 +29,21 @@ import {
 } from '../config';
 import type { Character, TeamState } from '../data/types';
 import { getCharacter } from '../data/characters';
-import { bandFromError, resolveSwing, type SwingBand } from '../systems/atbat';
+import {
+  bandFromError,
+  resolveSwing,
+  type SwingBand,
+  type AtBatResult,
+} from '../systems/atbat';
+import {
+  pitchBandFromError,
+  resolveCpuPitch,
+  rollAiWildPitch,
+  wildSwingBand,
+  type PitchBand,
+  type CpuPitchPlan,
+} from '../systems/pitch';
+import { shouldSkipBottom, isWalkOff, decideAfterHalf } from '../systems/gameflow';
 import {
   newHalfInning,
   applyAtBat,
@@ -38,7 +58,10 @@ import { makeMuteButton } from '../ui/MuteButton';
 import { FONT, OUTLINE } from '../ui/theme';
 import { idleBob, squashHop } from '../ui/anim';
 
-type Phase = 'pitching' | 'resolving' | 'auto' | 'ended';
+/** 'pitching' = ball is inbound, swing now. 'aiming' = you're on the mound, throw now. */
+type Phase = 'pitching' | 'resolving' | 'aiming' | 'ended';
+
+const BALL_GREEN = 0x57d977; // "good eye" green for called balls
 
 const BAT_REST = -42; // resting angle (bat on the shoulder)
 const BAT_SWING = 66; // follow-through angle
@@ -78,6 +101,7 @@ export class GameScene extends Phaser.Scene {
   private playerLineup = 0;
   private aiLineup = 0;
   private firstPitchOfGame = true;
+  private firstDefenseOfGame = true;
 
   private halfState!: HalfInningState;
   private phase: Phase = 'resolving';
@@ -91,6 +115,13 @@ export class GameScene extends Phaser.Scene {
   private pitchStart = 0;
   private swung = false;
   private batter!: Character;
+  private pitchIsWild = false;
+
+  // defense half (the player pitches)
+  private cpuBatter!: Character;
+  private meterStart = 0;
+  private threw = false;
+  private autoThrowTimer?: Phaser.Time.TimerEvent;
 
   // baserunners currently on the diamond, keyed by base (1-3) — each is the kid
   private runners = new Map<number, Phaser.GameObjects.Container>();
@@ -104,6 +135,8 @@ export class GameScene extends Phaser.Scene {
   private scoreText!: Phaser.GameObjects.Text;
   private inningText!: Phaser.GameObjects.Text;
   private outsText!: Phaser.GameObjects.Text;
+  private ballsPips!: Phaser.GameObjects.Text;
+  private strikesPips!: Phaser.GameObjects.Text;
   private announce!: Phaser.GameObjects.Text;
   private announceBg!: Phaser.GameObjects.Rectangle;
   private baseMarks: Phaser.GameObjects.Rectangle[] = [];
@@ -124,8 +157,12 @@ export class GameScene extends Phaser.Scene {
     this.aiLineup = 0;
     this.phase = 'resolving';
     this.firstPitchOfGame = true;
+    this.firstDefenseOfGame = true;
     this.baseMarks = [];
     this.runners = new Map();
+    this.pitchIsWild = false;
+    this.threw = false;
+    this.autoThrowTimer = undefined;
   }
 
   create(): void {
@@ -141,6 +178,7 @@ export class GameScene extends Phaser.Scene {
     this.pitcherSprite = this.add.image(MOUND.x, MOUND.y, this.aiPitcher.id).setOrigin(0.5, 1);
     this.pitcherSprite.setScale(110 / this.pitcherSprite.height);
     idleBob(this, this.pitcherSprite, { amp: 4, dur: 1100 }); // gentle breathing (y); wind-up uses angle
+    this.setMoundPitcher(this.aiPitcher);
 
     this.startHalf();
   }
@@ -192,15 +230,19 @@ export class GameScene extends Phaser.Scene {
     }
 
     // --- Infield dirt diamond ---
+    // NOTE: Phaser polygon points must be 0-based (no negatives) — negative
+    // coords get double-shifted by the display origin and land off-field.
     const cx = (FIRST.x + THIRD.x) / 2;
     const cy = (SECOND.y + HOME.y) / 2;
+    const dw = FIRST.x - THIRD.x; // diamond bounds
+    const dh = HOME.y - SECOND.y;
     this.add
-      .polygon(cx, cy, [0, HOME.y - cy, FIRST.x - cx, 0, 0, SECOND.y - cy, THIRD.x - cx, 0], COLORS.dirt)
+      .polygon(cx, cy, [dw / 2, 0, dw, dh / 2, dw / 2, dh, 0, dh / 2], COLORS.dirt)
       .setOrigin(0.5)
       .setStrokeStyle(3, 0xb87a3f);
     // Grass "cutout" in the middle of the infield for that manicured look.
     this.add
-      .polygon(cx, cy + 6, [0, 58, 78, 0, 0, -58, -78, 0], COLORS.grass)
+      .polygon(cx, cy + 6, [78, 0, 156, 58, 78, 116, 0, 58], COLORS.grass)
       .setOrigin(0.5);
 
     // --- Foul lines (home out past the corners) ---
@@ -223,7 +265,7 @@ export class GameScene extends Phaser.Scene {
 
     // --- Home plate (pentagon) ---
     this.add
-      .polygon(HOME.x, HOME.y + 6, [-13, -8, 13, -8, 13, 4, 0, 14, -13, 4], COLORS.white)
+      .polygon(HOME.x, HOME.y + 6, [0, 0, 26, 0, 26, 12, 13, 22, 0, 12], COLORS.white)
       .setStrokeStyle(3, COLORS.ink)
       .setOrigin(0.5);
     // Batter's boxes.
@@ -263,11 +305,18 @@ export class GameScene extends Phaser.Scene {
       })
       .setOrigin(0.5, 0);
     this.outsText = this.add
-      .text(GAME_WIDTH - 70, 20, '', {
+      .text(GAME_WIDTH - 70, 14, '', {
         fontFamily: FONT,
         fontSize: '26px',
         color: '#ffffff',
       })
+      .setOrigin(1, 0);
+    // Ball/strike count as wordless pips: green = balls, red = strikes.
+    this.strikesPips = this.add
+      .text(GAME_WIDTH - 70, 44, '', { fontFamily: FONT, fontSize: '17px', color: '#ff7a70' })
+      .setOrigin(1, 0);
+    this.ballsPips = this.add
+      .text(GAME_WIDTH - 126, 44, '', { fontFamily: FONT, fontSize: '17px', color: '#57d977' })
       .setOrigin(1, 0);
 
     // Announcer lives in its own band below the HUD so it never sits on a sprite.
@@ -304,9 +353,17 @@ export class GameScene extends Phaser.Scene {
   private refreshHud(): void {
     this.scoreText.setText(`YOU ${this.playerScore}   —   ${this.aiScore} CPU`);
     const halfLabel = this.half === 'top' ? '▲' : '▼';
-    this.inningText.setText(`${halfLabel} Inning ${this.inning}/${INNINGS}`);
+    this.inningText.setText(
+      this.inning > INNINGS
+        ? `${halfLabel} BONUS INNING`
+        : `${halfLabel} Inning ${this.inning}/${INNINGS}`
+    );
     const outs = this.halfState ? this.halfState.outs : 0;
     this.outsText.setText(`Outs: ${'●'.repeat(outs)}${'○'.repeat(3 - outs)}`);
+    const balls = this.halfState ? this.halfState.count.balls : 0;
+    const strikes = this.halfState ? this.halfState.count.strikes : 0;
+    this.ballsPips.setText(`${'●'.repeat(balls)}${'○'.repeat(3 - balls)}`);
+    this.strikesPips.setText(`${'●'.repeat(strikes)}${'○'.repeat(2 - strikes)}`);
     for (let i = 0; i < 3; i++) {
       const lit = this.halfState?.bases[i];
       this.baseMarks[i]?.setFillStyle(lit ? COLORS.gold : COLORS.white);
@@ -319,28 +376,61 @@ export class GameScene extends Phaser.Scene {
     this.clearRunners();
     this.refreshHud();
     if (this.half === 'top') {
+      this.setMoundPitcher(this.aiPitcher);
       this.flashAnnounce(`Inning ${this.inning}\nYOU'RE UP!`, COLORS.gold);
       if (this.firstPitchOfGame) audio.say('Play ball!');
       this.time.delayedCall(1100, () => this.nextPlayerBatter());
     } else {
-      this.flashAnnounce('OTHER TEAM\nBATTING', COLORS.red);
-      this.phase = 'auto';
-      this.time.delayedCall(1100, () => this.autoSimStep());
+      this.setMoundPitcher(this.playerPitcher);
+      this.flashAnnounce('YOU PITCH!\nGET 3 OUTS', COLORS.gold);
+      if (this.firstDefenseOfGame) {
+        audio.say('You pitch! Throw when the ring closes!');
+        this.firstDefenseOfGame = false;
+      }
+      this.time.delayedCall(1100, () => this.nextCpuBatter());
     }
   }
 
+  /** Put a kid on the mound (the AI's ace in the top, YOUR ace in the bottom). */
+  private setMoundPitcher(char: Character): void {
+    const p = this.pitcherSprite;
+    if (!p || p.texture.key === char.id) return;
+    p.setTexture(char.id);
+    p.setScale(110 / p.height);
+  }
+
   private endHalf(): void {
-    if (this.half === 'top') {
-      this.half = 'bottom';
-      this.startHalf();
+    // Home (CPU) already leads after the top of the final inning: their
+    // at-bats can't change anything, so the game just ends.
+    if (
+      this.half === 'top' &&
+      shouldSkipBottom(this.inning, INNINGS, this.aiScore, this.playerScore)
+    ) {
+      this.flashAnnounce('GAME OVER!', COLORS.red, 900);
+      this.time.delayedCall(1000, () => this.gameOver());
+      return;
+    }
+
+    const next = decideAfterHalf(
+      this.inning,
+      this.half,
+      INNINGS,
+      this.playerScore,
+      this.aiScore,
+      MAX_EXTRA_INNINGS
+    );
+    if (next.done) {
+      this.gameOver();
+      return;
+    }
+    this.inning = next.inning;
+    this.half = next.half;
+    if (next.extra) {
+      this.flashAnnounce('TIE GAME!\nBONUS INNING!', COLORS.gold, 1100);
+      audio.say('Bonus inning!');
+      this.time.delayedCall(1300, () => this.startHalf());
     } else {
-      this.inning += 1;
-      if (this.inning > INNINGS) {
-        this.gameOver();
-      } else {
-        this.half = 'top';
-        this.startHalf();
-      }
+      this.startHalf();
     }
   }
 
@@ -399,13 +489,22 @@ export class GameScene extends Phaser.Scene {
     this.swung = false;
     this.pitchStart = this.time.now;
     this.firstPitchOfGame = false;
+    // Sometimes the AI throws a WILD one — telegraphed in red, visibly off the
+    // plate. Don't swing at those! Taking it earns a ball (4 = walk).
+    this.pitchIsWild = rollAiWildPitch(this.aiPitcher, () => Math.random());
+    const wild = this.pitchIsWild;
+    const plateX = wild ? HOME.x + (Math.random() < 0.5 ? -48 : 48) : HOME.x;
     audio.pitchWoosh();
 
     // Timing ring: a white ring shrinks to meet the gold target ring exactly
-    // when the ball reaches the plate — swing when they line up.
+    // when the ball reaches the plate — swing when they line up. On a wild
+    // pitch the shrink ring turns red: the "let it go" cue.
     if (SHOW_TIMING_RING) {
       this.ringTarget = this.add.circle(HOME.x, HOME.y - 26, 30).setStrokeStyle(4, COLORS.gold).setDepth(15);
-      this.ringShrink = this.add.circle(HOME.x, HOME.y - 26, 30).setStrokeStyle(5, COLORS.white).setDepth(16);
+      this.ringShrink = this.add
+        .circle(HOME.x, HOME.y - 26, 30)
+        .setStrokeStyle(5, wild ? COLORS.red : COLORS.white)
+        .setDepth(16);
       this.ringShrink.setScale(3.6);
       this.tweens.add({
         targets: this.ringShrink,
@@ -417,23 +516,25 @@ export class GameScene extends Phaser.Scene {
 
     // Ball + a shadow that grows as it nears the plate (depth cue).
     this.ballShadow = this.add.ellipse(MOUND.x, MOUND.y + 6, 18, 7, COLORS.ink, 0.3).setDepth(14);
-    this.ball = this.add.circle(MOUND.x, MOUND.y - 36, 10, COLORS.white).setDepth(20);
-    this.ball.setStrokeStyle(2, COLORS.ink);
+    this.ball = this.add
+      .circle(MOUND.x, MOUND.y - 36, 10, wild ? 0xffd6d0 : COLORS.white)
+      .setDepth(20);
+    this.ball.setStrokeStyle(2, wild ? COLORS.red : COLORS.ink);
 
     this.tweens.add({
       targets: this.ball,
-      x: HOME.x,
+      x: plateX,
       y: HOME.y - 26,
       scale: { from: 0.7, to: 1.7 },
       duration: PITCH_TRAVEL_MS,
-      ease: 'Sine.in',
+      ease: wild ? 'Sine.inOut' : 'Sine.in',
       onComplete: () => {
         if (!this.swung && this.phase === 'pitching') this.resolvePlayerSwing('miss', true);
       },
     });
     this.tweens.add({
       targets: this.ballShadow,
-      x: HOME.x,
+      x: plateX,
       y: HOME.y + 8,
       scaleX: 2,
       scaleY: 2,
@@ -481,10 +582,19 @@ export class GameScene extends Phaser.Scene {
     this.clearPitchVisuals();
 
     if (took) {
-      floatingText(this, HOME.x, HOME.y - 60, 'STRIKE!', COLORS.red, 30);
-      this.applyAndContinue({ kind: 'strike', bases: 0, description: 'Strike! (took it)' });
+      if (this.pitchIsWild) {
+        // Good eye! Letting a wild one go is a ball.
+        floatingText(this, HOME.x, HOME.y - 60, 'BALL!', BALL_GREEN, 30);
+        this.applyAndContinue({ kind: 'ball', bases: 0, description: 'Ball! Good eye!' });
+      } else {
+        floatingText(this, HOME.x, HOME.y - 60, 'STRIKE!', COLORS.red, 30);
+        this.applyAndContinue({ kind: 'strike', bases: 0, description: 'Strike! (took it)' });
+      }
       return;
     }
+
+    // Chasing a wild pitch caps the swing — the telegraph is the lesson.
+    if (this.pitchIsWild) band = wildSwingBand(band);
 
     this.animateSwing();
     this.showBandFeedback(band);
@@ -502,19 +612,17 @@ export class GameScene extends Phaser.Scene {
     this.applyAndContinue(result);
   }
 
-  private applyAndContinue(result: {
-    kind: 'hit' | 'out' | 'strike' | 'foul';
-    bases: number;
-    description: string;
-  }): void {
+  private applyAndContinue(result: AtBatResult): void {
     const prevBatter = this.batter;
     const applied = applyAtBat(this.halfState, result);
     this.halfState = applied.state;
     if (applied.runsScored > 0) this.playerScore += applied.runsScored;
 
-    // Baserunning animation, driven by the reducer's movement list.
+    const walked = result.kind === 'ball' && applied.batterDone;
+
+    // Baserunning animation, driven by the reducer's movement list (hit or walk).
     let runDelay = 0;
-    if (result.kind === 'hit') {
+    if (applied.movements.length > 0) {
       runDelay = this.animateBaserunning(applied.movements, prevBatter);
       this.fadeOutBatter();
     }
@@ -523,16 +631,23 @@ export class GameScene extends Phaser.Scene {
       audio.cheer();
       if (result.bases >= 4) audio.say('Home run!');
     }
+    if (walked) audio.say('Take your base!');
 
     const color =
-      result.kind === 'hit' ? COLORS.gold : result.kind === 'foul' ? COLORS.white : COLORS.red;
-    let msg = result.description;
+      result.kind === 'hit'
+        ? COLORS.gold
+        : result.kind === 'ball'
+          ? BALL_GREEN
+          : result.kind === 'foul'
+            ? COLORS.white
+            : COLORS.red;
+    let msg = walked ? 'WALK!' : result.description;
     if (applied.runsScored > 0)
       msg += `\n+${applied.runsScored} RUN${applied.runsScored > 1 ? 'S' : ''}!`;
     this.flashAnnounce(msg, color);
     this.refreshHud();
 
-    const baseDelay = result.kind === 'hit' ? Math.max(1000, runDelay + 350) : 850;
+    const baseDelay = applied.movements.length > 0 ? Math.max(1000, runDelay + 350) : 850;
     this.time.delayedCall(baseDelay, () => {
       if (applied.batterDone) this.playerLineup += 1;
       if (isHalfOver(this.halfState)) {
@@ -636,30 +751,182 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  // --- Opponent half (auto-simulated on a timer) --------------------------
-  private autoSimStep(): void {
+  // --- Opponent half (YOU pitch — same one-button timing, on the mound) ----
+  private nextCpuBatter(): void {
     if (isHalfOver(this.halfState)) {
       this.endHalf();
       return;
     }
-    const batter = getCharacter(this.aiTeam[this.aiLineup % TEAM_SIZE]);
-    const band = autoBand(batter.stats.contact);
-    const result = resolveSwing(band, batter, this.playerPitcher, () => Math.random());
+    this.cpuBatter = getCharacter(this.aiTeam[this.aiLineup % TEAM_SIZE]);
+    this.showBatter(this.cpuBatter);
+    this.batterLabel.setText(this.cpuBatter.name);
+    this.startPitchMeter();
+  }
+
+  /**
+   * The mound ring: shrinks onto the target over PITCH_METER_MS — press right
+   * when it closes for a perfect pitch. An idle kid never stalls the game: a
+   * fallback auto-throw fires shortly after the moment (late = weak/wild).
+   */
+  private startPitchMeter(): void {
+    this.phase = 'aiming';
+    this.threw = false;
+    this.meterStart = this.time.now;
+    this.ringTarget = this.add
+      .circle(MOUND.x, MOUND.y - 46, 26)
+      .setStrokeStyle(4, COLORS.gold)
+      .setDepth(15);
+    this.ringShrink = this.add
+      .circle(MOUND.x, MOUND.y - 46, 26)
+      .setStrokeStyle(5, COLORS.white)
+      .setDepth(16);
+    this.ringShrink.setScale(3.2);
+    this.tweens.add({
+      targets: this.ringShrink,
+      scale: 1,
+      duration: PITCH_METER_MS,
+      ease: 'Sine.in',
+    });
+    this.autoThrowTimer = this.time.delayedCall(PITCH_METER_MS + PITCH_AUTO_THROW_MS, () =>
+      this.onThrow()
+    );
+  }
+
+  private onThrow(): void {
+    if (this.phase !== 'aiming' || this.threw) return;
+    this.threw = true;
+    const error = this.time.now - this.meterStart - PITCH_METER_MS;
+    this.resolvePlayerPitch(pitchBandFromError(error));
+  }
+
+  /** Public for the same headless/dev driving as resolvePlayerSwing. */
+  resolvePlayerPitch(band: PitchBand): void {
+    this.phase = 'resolving';
+    this.autoThrowTimer?.remove();
+    this.autoThrowTimer = undefined;
+    this.clearPitchVisuals();
+    this.showPitchFeedback(band);
+    this.pitcherWindup();
+
+    // The CPU batter's plan is pure logic; the scene just acts it out.
+    const plan = resolveCpuPitch(band, this.playerPitcher, this.cpuBatter, () => Math.random());
+    this.time.delayedCall(ANIM.WINDUP_MS, () => this.launchCpuPitch(band, plan));
+  }
+
+  /** Fast ball flight mound -> plate; wild pitches fly red and off-target. */
+  private launchCpuPitch(band: PitchBand, plan: CpuPitchPlan): void {
+    audio.pitchWoosh();
+    const wild = band === 'wild';
+    const plateX = plan.isBall ? HOME.x + (Math.random() < 0.5 ? -48 : 48) : HOME.x;
+    const ball = this.add
+      .circle(MOUND.x, MOUND.y - 36, 9, wild ? 0xffd6d0 : COLORS.white)
+      .setStrokeStyle(2, wild ? COLORS.red : COLORS.ink)
+      .setDepth(20);
+    this.tweens.add({
+      targets: ball,
+      x: plateX,
+      y: HOME.y - 26,
+      scale: { from: 0.7, to: 1.5 },
+      duration: CPU_PITCH_TRAVEL_MS,
+      ease: 'Sine.in',
+      onComplete: () => {
+        ball.destroy();
+        this.settleCpuPitch(plan);
+      },
+    });
+  }
+
+  private settleCpuPitch(plan: CpuPitchPlan): void {
+    if (!plan.cpuSwings) {
+      if (plan.isBall) {
+        floatingText(this, HOME.x, HOME.y - 60, 'BALL!', BALL_GREEN, 28);
+        this.applyCpuResult({ kind: 'ball', bases: 0, description: 'Ball!' });
+      } else {
+        floatingText(this, HOME.x, HOME.y - 60, 'STRIKE!', COLORS.gold, 28);
+        audio.whiff();
+        this.applyCpuResult({ kind: 'strike', bases: 0, description: 'Strike! Looking!' });
+      }
+      return;
+    }
+
+    this.animateSwing();
+    const result = resolveSwing(plan.cpuBand, this.cpuBatter, this.playerPitcher, () =>
+      Math.random()
+    );
+    if (result.kind === 'hit') {
+      audio.crack();
+      this.flyHitBall(result.bases);
+      screenShake(this, shakeFor(result.bases));
+    } else if (result.kind === 'strike') {
+      audio.whiff();
+    } else if (result.kind === 'foul') {
+      audio.crack();
+    }
+    this.applyCpuResult(result);
+  }
+
+  private applyCpuResult(result: AtBatResult): void {
+    const prevBatter = this.cpuBatter;
     const applied = applyAtBat(this.halfState, result);
     this.halfState = applied.state;
     if (applied.runsScored > 0) this.aiScore += applied.runsScored;
 
-    if (result.kind === 'hit') audio.crack();
+    const walked = result.kind === 'ball' && applied.batterDone;
+
+    let runDelay = 0;
+    if (applied.movements.length > 0) {
+      runDelay = this.animateBaserunning(applied.movements, prevBatter);
+      this.fadeOutBatter();
+    }
+
     if (applied.runsScored > 0) audio.cheer();
 
-    const color = result.kind === 'hit' ? COLORS.gold : COLORS.red;
-    let msg = `${batter.name}: ${result.description}`;
-    if (applied.runsScored > 0) msg += `  (+${applied.runsScored})`;
-    this.flashAnnounce(msg, color, 500);
+    const color =
+      result.kind === 'hit'
+        ? COLORS.gold
+        : result.kind === 'ball'
+          ? BALL_GREEN
+          : result.kind === 'out' || result.kind === 'strike'
+            ? COLORS.gold // an out for THEM is good news for you
+            : COLORS.white;
+    let msg = walked
+      ? `${prevBatter.name} walks!`
+      : `${prevBatter.name}: ${result.description}`;
+    if (applied.runsScored > 0)
+      msg += `\n+${applied.runsScored} FOR CPU`;
+    this.flashAnnounce(msg, color, 600);
     this.refreshHud();
 
-    if (applied.batterDone) this.aiLineup += 1;
-    this.time.delayedCall(650, () => this.autoSimStep());
+    // Walk-off: the CPU just took the lead in the bottom of the final inning.
+    if (isWalkOff(this.inning, INNINGS, this.half, this.aiScore, this.playerScore)) {
+      this.phase = 'ended';
+      this.flashAnnounce('WALK-OFF!\nCPU WINS!', COLORS.red, 1300);
+      this.time.delayedCall(Math.max(1400, runDelay + 500), () => this.gameOver());
+      return;
+    }
+
+    const delay = Math.max(CPU_STEP_DELAY_MS, runDelay + 350);
+    this.time.delayedCall(delay, () => {
+      if (applied.batterDone) this.aiLineup += 1;
+      if (isHalfOver(this.halfState)) {
+        this.endHalf();
+      } else if (applied.batterDone) {
+        this.nextCpuBatter();
+      } else {
+        this.startPitchMeter();
+      }
+    });
+  }
+
+  private showPitchFeedback(band: PitchBand): void {
+    const map: Record<PitchBand, { label: string; color: number }> = {
+      perfect: { label: 'PERFECT!', color: COLORS.gold },
+      good: { label: 'GOOD!', color: 0x3fae6b },
+      weak: { label: 'ok', color: 0xff8c42 },
+      wild: { label: 'WILD!', color: COLORS.red },
+    };
+    const f = map[band];
+    floatingText(this, MOUND.x, MOUND.y - 90, f.label, f.color, band === 'perfect' ? 36 : 30);
   }
 
   // --- Little visual helpers ----------------------------------------------
@@ -761,9 +1028,14 @@ export class GameScene extends Phaser.Scene {
     this.tweens.add({ targets: [this.announce, this.announceBg], alpha: 0, delay: hold, duration: 250 });
   }
 
+  /** ONE button, routed by phase: batting -> swing, on the mound -> throw. */
   private bindSwingInput(): void {
-    this.input.on('pointerdown', () => this.onSwing());
-    this.input.keyboard?.on('keydown-SPACE', () => this.onSwing());
+    const press = () => {
+      if (this.phase === 'pitching') this.onSwing();
+      else if (this.phase === 'aiming') this.onThrow();
+    };
+    this.input.on('pointerdown', press);
+    this.input.keyboard?.on('keydown-SPACE', press);
   }
 }
 
@@ -786,13 +1058,4 @@ function shakeFor(bases: number): number {
     default:
       return SHAKE.single;
   }
-}
-
-/** Auto-sim swing quality, weighted by the batter's contact stat. */
-function autoBand(contact: number): SwingBand {
-  const r = Math.random() + (contact - 5) * 0.035;
-  if (r > 0.86) return 'perfect';
-  if (r > 0.58) return 'good';
-  if (r > 0.3) return 'weak';
-  return 'miss';
 }
