@@ -35,7 +35,8 @@ Phaser 3 · TypeScript · Vite · vitest. Static site, no backend, deployed free
 | `src/systems/mode.ts` | CLASSIC/KID mode persistence (+ legacy `recess_difficulty` migration) + `resolveLiveParams` (LIVE × MODES) + `getFeatures`. |
 | `src/systems/pitch.ts` | Defense half: throw timing→pitch band + the CPU batter's take/swing plan (band-based for kid mode, location-aware `resolveCpuPitchLocated` for main); AI wild-pitch roll (kid mode). |
 | `src/systems/pitchkind.ts` | Main-mode pitch types + strike-zone aiming: `PitchPlan` (kind/target/actual/inZone/travelMs), scatter from meter error × pitching stat, `chooseCpuPitch` (CPU pitches at you, wastes when ahead), `ballCurveAt` flight bend. Plate-coord space: (0,0) = zone center at (HOME.x, HOME.y + PLATE_ZONE.CY). |
-| `src/systems/inning.ts` | Count/outs/bases state machine + walk advancement (+ `movements`); `applyLivePlay` folds live plays in. |
+| `src/systems/inning.ts` | Count/outs/bases state machine + walk advancement (+ `movements`); `applyLivePlay` folds live plays in; `applySteal` folds steal races in (count preserved). |
+| `src/systems/steal.ts` | Main-mode steal race roll: runner speed vs catcher arm, better jump off slow stuff, throw-down reaction bonus; `cpuWantsSteal`. |
 | `src/systems/gameflow.ts` | Between-halves decisions: skip pointless bottoms, walk-offs, one bonus inning on a tie. |
 | `src/systems/picklog.ts` | The "voting machine" — localStorage pick tally. |
 | `src/systems/audio.ts` | Web Audio SFX + SpeechSynthesis voice + mute. |

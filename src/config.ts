@@ -346,7 +346,7 @@ export const MODES: Record<
       battingCursor: true,
       manualBaserunning: true,
       errors: true,
-      steals: false,
+      steals: true,
       juice: false,
     },
   },

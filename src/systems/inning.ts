@@ -133,6 +133,30 @@ export function applyLivePlay(prev: HalfInningState, outcome: LiveOutcome): Appl
 }
 
 /**
+ * Fold a steal attempt into the half inning (main mode). The count and the
+ * batter are untouched — only the runner moves (or is thrown out). No-op if
+ * the from base is empty or the target is occupied (the scene guards, this
+ * double-checks).
+ */
+export function applySteal(prev: HalfInningState, fromBase: 1 | 2, safe: boolean): ApplyResult {
+  const state: HalfInningState = {
+    outs: prev.outs,
+    bases: [...prev.bases] as [boolean, boolean, boolean],
+    runs: prev.runs,
+    count: { ...prev.count },
+  };
+  const none = { state, runsScored: 0, batterOut: false, batterDone: false, movements: [] };
+  if (!state.bases[fromBase - 1] || state.bases[fromBase]) return none;
+  state.bases[fromBase - 1] = false;
+  if (safe) {
+    state.bases[fromBase] = true;
+    return { ...none, movements: [{ fromBase, toBase: fromBase + 1 }] };
+  }
+  state.outs += 1;
+  return none;
+}
+
+/**
  * A walk moves only FORCED runners: the batter to first, and each runner who
  * has a runner (or the batter) pushing from directly behind. A runner forced
  * off third scores. Mutates `state.bases`; returns runs + movements to animate.

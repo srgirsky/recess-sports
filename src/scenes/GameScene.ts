@@ -59,10 +59,12 @@ import {
   newHalfInning,
   applyAtBat,
   applyLivePlay,
+  applySteal,
   isHalfOver,
   type HalfInningState,
   type RunnerMove,
 } from '../systems/inning';
+import { rollSteal, cpuWantsSteal } from '../systems/steal';
 import {
   HOME,
   FIRST,
@@ -160,6 +162,11 @@ export class GameScene extends Phaser.Scene {
   /** Main mode: the pitch kind + aim chosen before the meter starts. */
   private selectedPitch?: { kind: PitchKind; target: PlateLoc };
   private pitchSelect?: PitchSelect;
+  /** Main mode: the base a player steal was armed from this pitch. */
+  private armedSteal?: 1 | 2;
+  private stealChips: Phaser.GameObjects.Container[] = [];
+  /** Main mode: a CPU runner is stealing on the current pitch. */
+  private cpuStealFrom?: 1 | 2;
 
   // baserunners currently on the diamond, keyed by base (1-3) — each is the kid
   private runners = new Map<number, Phaser.GameObjects.Container>();
@@ -235,6 +242,9 @@ export class GameScene extends Phaser.Scene {
     this.selectedPitch = undefined;
     this.pitchSelect = undefined;
     this.zoneGfx = undefined;
+    this.armedSteal = undefined;
+    this.cpuStealFrom = undefined;
+    this.stealChips = [];
     this.fieldAssignment = [];
     this.fielderSprites = [];
     this.liveRunnerSprites = new Map();
@@ -718,6 +728,45 @@ export class GameScene extends Phaser.Scene {
     });
     this.startBallTrail();
     if (this.features.battingCursor) this.showSwingCursor();
+    if (this.features.steals) this.showStealChips();
+  }
+
+  /** 💨 STEAL! chips next to runners who have an open base ahead. */
+  private showStealChips(): void {
+    this.stealChips.forEach((c) => c.destroy());
+    this.stealChips = [];
+    this.armedSteal = undefined;
+    for (const fromBase of [1, 2] as const) {
+      if (!this.runners.has(fromBase) || this.runners.has(fromBase + 1)) continue;
+      const p = basePos(fromBase);
+      const { container } = pill(this, p.x + (fromBase === 1 ? 74 : 0), p.y - (fromBase === 2 ? 52 : 0), '💨 STEAL!', {
+        fill: COLORS.cream,
+        fontSize: 16,
+        minW: 100,
+      });
+      container.setDepth(60).setAlpha(0.92);
+      container.setInteractive(new Phaser.Geom.Rectangle(-52, -17, 104, 34), Phaser.Geom.Rectangle.Contains);
+      container.on('pointerdown', () => {
+        this.armedSteal = fromBase;
+        audio.pop();
+        // Highlight the armed chip; dim any other.
+        for (const c of this.stealChips) c.setAlpha(0.4);
+        container.setAlpha(1).setScale(1.12);
+        // A little lead-off toward the next bag sells the intent.
+        const token = this.runners.get(fromBase);
+        if (token) {
+          const next = basePos(fromBase + 1);
+          const len = Math.max(1, dist({ x: token.x, y: token.y }, next));
+          this.tweens.add({
+            targets: token,
+            x: token.x + ((next.x - token.x) / len) * 18,
+            y: token.y + ((next.y - token.y) / len) * 18,
+            duration: 180,
+          });
+        }
+      });
+      this.stealChips.push(container);
+    }
   }
 
   /** The aim reticle: sweet-spot ring + faint contact ring, pointer-driven. */
@@ -765,6 +814,8 @@ export class GameScene extends Phaser.Scene {
     this.zoneGfx = undefined;
     this.swingCursor?.destroy();
     this.swingCursor = undefined;
+    this.stealChips.forEach((c) => c.destroy());
+    this.stealChips = [];
   }
 
   private onSwing(): void {
@@ -864,6 +915,35 @@ export class GameScene extends Phaser.Scene {
 
     const walked = result.kind === 'ball' && applied.batterDone;
 
+    // An armed steal races the catcher on a strike or a (non-walk) ball;
+    // fouls and balls-four are dead — the runner scampers back.
+    if (this.armedSteal !== undefined && this.features.steals) {
+      const from = this.armedSteal;
+      this.armedSteal = undefined;
+      const token = this.runners.get(from);
+      const liveOnPitch =
+        (result.kind === 'strike' || (result.kind === 'ball' && !walked)) &&
+        !isHalfOver(this.halfState);
+      if (token && liveOnPitch) {
+        const runner = getCharacter(token.getData('id') as string);
+        const catcher = getCharacter(this.fieldAssignment.find((a) => a.position === 'C')!.charId);
+        const safe = rollSteal(
+          {
+            runnerSpeed: runner.stats.speed,
+            catcherArm: catcher.stats.pitching,
+            pitchKind: this.pitchPlan?.kind ?? null,
+          },
+          () => Math.random()
+        );
+        this.halfState = applySteal(this.halfState, from, safe).state;
+        this.animateSteal(from, token, safe);
+      } else if (token) {
+        // Dead ball — sneak back to the bag.
+        const p = basePos(from);
+        this.tweens.add({ targets: token, x: p.x, y: p.y - 6, duration: 220 });
+      }
+    }
+
     // Baserunning animation, driven by the reducer's movement list (hit or walk).
     let runDelay = 0;
     if (applied.movements.length > 0) {
@@ -901,6 +981,53 @@ export class GameScene extends Phaser.Scene {
       } else {
         this.throwPitch();
       }
+    });
+  }
+
+  /** Sprint the stealing runner to the next bag (or fade them on the out). */
+  private animateSteal(
+    from: 1 | 2,
+    token: Phaser.GameObjects.Container,
+    safe: boolean,
+    cpuRunner = false
+  ): void {
+    this.runners.delete(from);
+    const to = basePos(from + 1);
+    const img = token.getAt(1) as Phaser.GameObjects.Image;
+    const cycle = runCycle(this, img, token.getData('id') as string);
+    img.setFlipX(to.x < token.x);
+    this.tweens.add({
+      targets: token,
+      x: to.x,
+      y: to.y - 6,
+      duration: 380,
+      ease: 'Sine.in',
+      onComplete: () => {
+        cycle.stop(true);
+        img.setFlipX(false);
+        // Color/SFX read from the PLAYER's point of view.
+        if (safe) {
+          floatingText(this, to.x, to.y - 50, 'STOLE IT!', cpuRunner ? COLORS.red : COLORS.gold, 28);
+          this.tweens.add({ targets: img, scaleY: img.scaleY * 0.85, yoyo: true, duration: 90 });
+          this.runners.set(from + 1, token);
+          if (cpuRunner) audio.whiff();
+          else audio.cheer();
+        } else {
+          floatingText(this, to.x, to.y - 50, cpuRunner ? 'GOT HIM!' : 'CAUGHT!', cpuRunner ? COLORS.gold : COLORS.red, 28);
+          screenShake(this, 3);
+          if (cpuRunner) audio.cheer();
+          else audio.whiff();
+          this.tweens.add({
+            targets: token,
+            alpha: 0,
+            y: token.y - 10,
+            duration: 320,
+            delay: 150,
+            onComplete: () => token.destroy(),
+          });
+        }
+        this.refreshHud();
+      },
     });
   }
 
@@ -1626,8 +1753,23 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(ANIM.WINDUP_MS, () => this.launchCpuPitch(band, plan));
   }
 
+  private lastPitchKind?: PitchKind;
+
   /** Public headless hook (main mode): resolve an aimed, typed pitch. */
   resolvePlayerPitchPlan(kind: PitchKind, target: PlateLoc, band: PitchBand, errorMs?: number): void {
+    this.lastPitchKind = kind;
+    // Speedy CPU runners sometimes take off on the pitch.
+    this.cpuStealFrom = undefined;
+    if (this.features.steals) {
+      for (const from of [2, 1] as const) {
+        if (!this.runners.has(from) || this.runners.has(from + 1)) continue;
+        const runner = getCharacter(this.runners.get(from)!.getData('id') as string);
+        if (cpuWantsSteal(runner.stats.speed, () => Math.random())) {
+          this.cpuStealFrom = from;
+          break;
+        }
+      }
+    }
     // Nominal meter error per band, for callers that only know the band.
     const NOMINAL: Record<PitchBand, number> = { perfect: 0, good: 110, weak: 205, wild: 320 };
     const err = errorMs ?? NOMINAL[band];
@@ -1657,6 +1799,10 @@ export class GameScene extends Phaser.Scene {
   private launchCpuPitchMain(plan: PitchPlan, cpuPlan: CpuPitchPlan): void {
     audio.pitchWoosh();
     this.zoneGfx = zoneOutline(this);
+    if (this.cpuStealFrom !== undefined) {
+      const p = basePos(this.cpuStealFrom);
+      floatingText(this, p.x, p.y - 54, 'RUNNER GOING!', COLORS.red, 26);
+    }
     const start: Vec = { x: MOUND.x, y: MOUND.y - 36 };
     const end = plateToScreen(plan.actual);
     const ball = this.add.circle(start.x, start.y, 9, COLORS.white).setStrokeStyle(2, COLORS.ink).setDepth(20);
@@ -1707,11 +1853,11 @@ export class GameScene extends Phaser.Scene {
     if (!plan.cpuSwings) {
       if (plan.isBall) {
         floatingText(this, HOME.x, HOME.y - 60, 'BALL!', BALL_GREEN, 28);
-        this.applyCpuResult({ kind: 'ball', bases: 0, description: 'Ball!' });
+        this.resolveCpuStealThen({ kind: 'ball', bases: 0, description: 'Ball!' });
       } else {
         floatingText(this, HOME.x, HOME.y - 60, 'STRIKE!', COLORS.gold, 28);
         audio.whiff();
-        this.applyCpuResult({ kind: 'strike', bases: 0, description: 'Strike! Looking!' });
+        this.resolveCpuStealThen({ kind: 'strike', bases: 0, description: 'Strike! Looking!' });
       }
       return;
     }
@@ -1723,9 +1869,10 @@ export class GameScene extends Phaser.Scene {
     if (outcome.kind !== 'inPlay') {
       if (outcome.kind === 'strike') audio.whiff();
       else audio.crack();
-      this.applyCpuResult({ kind: outcome.kind, bases: 0, description: outcome.description });
+      this.resolveCpuStealThen({ kind: outcome.kind, bases: 0, description: outcome.description });
       return;
     }
+    this.cpuStealFrom = undefined; // contact: the live play owns the runners now
     audio.crack();
     if (outcome.launch.homer) {
       this.flyHitBall(4);
@@ -1735,6 +1882,64 @@ export class GameScene extends Phaser.Scene {
     }
     screenShake(this, SHAKE.single);
     this.beginLivePlay('defense', outcome.launch);
+  }
+
+  /**
+   * If a CPU runner took off on this pitch, race them first (a quick tap on
+   * the throw-down prompt sharpens the catcher's arm), then fold in the
+   * at-bat result. Fouls and ball-four are dead balls — the runner goes back.
+   */
+  private resolveCpuStealThen(result: AtBatResult): void {
+    const from = this.cpuStealFrom;
+    this.cpuStealFrom = undefined;
+    const token = from !== undefined ? this.runners.get(from) : undefined;
+    const willWalk = result.kind === 'ball' && this.halfState.count.balls + 1 >= 4;
+    const live =
+      from !== undefined &&
+      token !== undefined &&
+      !willWalk &&
+      (result.kind === 'strike' || result.kind === 'ball');
+    if (!live) {
+      this.applyCpuResult(result);
+      return;
+    }
+
+    const { container } = pill(this, GAME_WIDTH / 2, GAME_HEIGHT - 46, '🚨 TAP! THROW HIM OUT!', {
+      fill: COLORS.red,
+      textColor: '#ffffff',
+      fontSize: 26,
+    });
+    container.setDepth(95);
+    const start = this.time.now;
+    let done = false;
+    const finish = (reactMs: number) => {
+      if (done) return;
+      done = true;
+      container.destroy();
+      const runner = getCharacter(token!.getData('id') as string);
+      const catcher = getCharacter(this.fieldAssignment.find((a) => a.position === 'C')!.charId);
+      const reactBonus = Math.max(0, (900 - reactMs) / 900) * 3;
+      const safe = rollSteal(
+        {
+          runnerSpeed: runner.stats.speed,
+          catcherArm: catcher.stats.pitching,
+          pitchKind: this.lastPitchKind ?? null,
+          reactBonus,
+        },
+        () => Math.random()
+      );
+      this.halfState = applySteal(this.halfState, from!, safe).state;
+      this.animateSteal(from!, token!, safe, true);
+      // A caught-stealing third out ends the half; the at-bat carries over conceptually.
+      if (isHalfOver(this.halfState)) {
+        this.refreshHud();
+        this.time.delayedCall(900, () => this.endHalf());
+        return;
+      }
+      this.time.delayedCall(600, () => this.applyCpuResult(result));
+    };
+    this.input.once('pointerdown', () => finish(this.time.now - start));
+    this.time.delayedCall(900, () => finish(900));
   }
 
   private applyCpuResult(result: AtBatResult): void {

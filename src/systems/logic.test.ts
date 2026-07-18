@@ -17,7 +17,8 @@ import { bandFromError, resolveContact, resolveContactAimed, type SwingBand } fr
 import type { PitchPlan } from './pitchkind';
 import { CURSOR } from '../config';
 import { HOME } from './geometry';
-import { newHalfInning, applyAtBat, applyLivePlay } from './inning';
+import { newHalfInning, applyAtBat, applyLivePlay, applySteal } from './inning';
+import { rollSteal } from './steal';
 import {
   startLivePlay,
   stepLivePlay,
@@ -184,6 +185,43 @@ describe('main-mode batting cursor (resolveContactAimed)', () => {
   it('main mode widens the timing windows via the override', () => {
     expect(bandFromError(60)).toBe('good'); // kid default: PERFECT is 55
     expect(bandFromError(60, MODES.main.swingTiming)).toBe('perfect');
+  });
+});
+
+describe('steals (main mode)', () => {
+  it('applySteal moves the runner up (or writes the out) and preserves the count', () => {
+    const st = newHalfInning();
+    st.bases = [true, false, false];
+    st.count = { balls: 2, strikes: 1 };
+
+    const safe = applySteal(st, 1, true);
+    expect(safe.state.bases).toEqual([false, true, false]);
+    expect(safe.state.outs).toBe(0);
+    expect(safe.state.count).toEqual({ balls: 2, strikes: 1 });
+    expect(safe.movements).toEqual([{ fromBase: 1, toBase: 2 }]);
+
+    const out = applySteal(st, 1, false);
+    expect(out.state.bases).toEqual([false, false, false]);
+    expect(out.state.outs).toBe(1);
+  });
+
+  it('applySteal is a no-op on an empty base or a blocked target', () => {
+    const st = newHalfInning();
+    st.bases = [true, true, false];
+    expect(applySteal(st, 1, true).state.bases).toEqual([true, true, false]); // 2nd occupied
+    st.bases = [false, false, true];
+    expect(applySteal(st, 2, true).state.bases).toEqual([false, false, true]); // nobody on 2nd
+  });
+
+  it('rollSteal: speed helps, arm and a sharp reaction hurt, slow stuff helps', () => {
+    const base = { runnerSpeed: 5, catcherArm: 5, pitchKind: null } as const;
+    // p = 0.5 at baseline: rng 0.49 steals, 0.51 doesn't.
+    expect(rollSteal({ ...base }, () => 0.49)).toBe(true);
+    expect(rollSteal({ ...base }, () => 0.51)).toBe(false);
+    expect(rollSteal({ ...base, runnerSpeed: 10 }, () => 0.7)).toBe(true); // 0.75
+    expect(rollSteal({ ...base, catcherArm: 10 }, () => 0.3)).toBe(false); // 0.25
+    expect(rollSteal({ ...base, reactBonus: 3 }, () => 0.35)).toBe(false); // 0.32
+    expect(rollSteal({ ...base, pitchKind: 'changeup' }, () => 0.6)).toBe(true); // 0.62
   });
 });
 
