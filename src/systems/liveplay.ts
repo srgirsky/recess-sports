@@ -13,7 +13,7 @@
 //   - a runner standing safe on a base can never be put out
 // ---------------------------------------------------------------------------
 
-import { LIVE, ERRORS } from '../config';
+import { LIVE, ERRORS, RUN2 } from '../config';
 import type { Launch } from './atbat';
 import type { LiveParams } from './mode';
 import {
@@ -61,8 +61,15 @@ export interface RunnerState {
   /** px/s. */
   speed: number;
   pos: Vec;
-  /** Walking back to startBase after a caught fly — can't be put out. */
+  /** Kid mode: walking back to startBase after a caught fly — can't be put out. */
   returning: boolean;
+  /**
+   * Main mode: retreating to startBase after a caught fly (a real tag-up —
+   * CAN be doubled off). Retreat legs run with `to < from`. Cleared on touch.
+   */
+  tagging?: boolean;
+  /** Main mode: take off the moment the tag-up completes (a queued sac-fly send). */
+  goAfterTag?: boolean;
   done: 'safe' | 'out' | 'scored' | null;
 }
 
@@ -116,6 +123,8 @@ export interface LivePlayState {
   heldAt: number;
   /** elapsed value when the ball reached the ground (0 for grounders). */
   landedAt: number;
+  /** elapsed value when a fly was caught (0 if none) — opens the sac-fly window. */
+  catchAt: number;
   /** Events emitted THIS tick — the scene drains them for SFX/juice. */
   events: LiveEvent[];
 }
@@ -125,8 +134,12 @@ export interface LiveInputs {
   pointer?: Vec;
   /** Defense: a released throw (power 0..1 from the hold meter). */
   throwTo?: { base: 1 | 2 | 3 | 4; power: number };
-  /** Offense: "everybody GO!" tap. */
+  /** Offense (kid mode): "everybody GO!" tap. */
   run?: boolean;
+  /** Offense (main mode): send this settled/tagging runner to the next base. */
+  sendRunner?: string;
+  /** Offense (main mode): turn this mid-leg runner back to the base behind. */
+  holdRunner?: string;
 }
 
 export interface LiveOutcome {
@@ -206,6 +219,7 @@ export function startLivePlay(opts: {
     elapsed: 0,
     heldAt: 0,
     landedAt: 0,
+    catchAt: 0,
     events: [],
   };
 
@@ -260,18 +274,18 @@ export function stepLivePlay(
   if (s.phase === 'done' || dtMs <= 0) return s;
   s.elapsed += dtMs;
 
-  moveBall(s, dtMs);
+  moveBall(s, dtMs, params);
   moveFielders(s, inputs, params, dtMs);
   tryGrabBall(s, params, rng);
   maybeThrow(s, inputs, params, rng);
   moveRunners(s, dtMs);
   carrierTouchesBags(s, params);
-  decideRunning(s, inputs);
+  decideRunning(s, inputs, params);
   checkTermination(s, params);
   return s;
 }
 
-function moveBall(s: LivePlayState, dtMs: number): void {
+function moveBall(s: LivePlayState, dtMs: number, params: LiveParams): void {
   const b = s.ball;
   if (b.phase === 'flight') {
     b.flightT += dtMs;
@@ -304,7 +318,7 @@ function moveBall(s: LivePlayState, dtMs: number): void {
     const target = basePos(b.throw.toBase);
     b.pos = lerpVec(b.throw.from, target, t);
     b.height = Math.sin(Math.PI * t) * 0.5;
-    if (t >= 1) arriveThrow(s, b.throw.toBase);
+    if (t >= 1) arriveThrow(s, b.throw.toBase, params);
   }
 }
 
@@ -336,6 +350,35 @@ function moveFielders(
       target,
       (params.cpuFielderSpeed * statSpeedMult(chaser) * dtMs) / 1000
     );
+  }
+
+  // Main mode: a CPU carrier with nobody worth throwing at hunts the nearest
+  // off-bag runner for the tag — the defensive half of a rundown.
+  if (
+    s.mode === 'offense' &&
+    params.manualBaserunning &&
+    s.ball.phase === 'held' &&
+    s.ball.heldBy !== null
+  ) {
+    const carrier = s.fielders[s.ball.heldBy];
+    let target: RunnerState | null = null;
+    let best = Infinity;
+    for (const r of s.runners) {
+      if (r.done !== null || onABag(r)) continue;
+      const d = dist(carrier.pos, r.pos);
+      if (d < best) {
+        best = d;
+        target = r;
+      }
+    }
+    if (target) {
+      carrier.pos = moveToward(
+        carrier.pos,
+        target.pos,
+        (params.cpuFielderSpeed * statSpeedMult(carrier) * dtMs) / 1000
+      );
+      s.ball.pos = { ...carrier.pos };
+    }
   }
 
   // The covering fielder jogs to the bag while a throw is in the air, so the
@@ -407,6 +450,7 @@ function tryGrabBall(s: LivePlayState, params: LiveParams, rng: () => number): v
       }
       secureBall(s, s.active);
       s.flyCaught = true;
+      s.catchAt = s.elapsed;
       s.events.push({ t: 'catch', fielder: chaser.charId });
       const batter = s.runners.find((r) => r.isBatter)!;
       if (batter.done === null) {
@@ -414,9 +458,18 @@ function tryGrabBall(s: LivePlayState, params: LiveParams, rng: () => number): v
         s.outs += 1;
         s.events.push({ t: 'out', base: 1, runner: batter.charId });
       }
-      // Everyone else strolls back to where they started — no doubling off.
       for (const r of s.runners) {
-        if (r.done === null && !r.isBatter && (r.from !== r.startBase || r.to !== r.from)) {
+        if (r.done !== null || r.isBatter) continue;
+        if (params.manualBaserunning) {
+          // Real tag-up rules: anyone off their base must get back — and can
+          // be doubled off on the way. Touch it and you may be sent again.
+          if (r.from !== r.startBase || r.to !== r.from) {
+            r.tagging = true;
+            if (r.to !== r.from) reverseLeg(r);
+            else startRetreatLeg(r);
+          }
+        } else if (r.from !== r.startBase || r.to !== r.from) {
+          // Kid mode: everyone strolls back for free — no doubling off.
           r.returning = true;
           r.to = r.startBase;
         }
@@ -466,7 +519,15 @@ function maybeThrow(
       const speed = params.throwSpeedMin + 0.75 * (params.throwSpeedMax - params.throwSpeedMin);
       launchThrow(s, chooseThrowTarget(s, speed), speed, 0, false, carrier);
     }
-  } else if (s.elapsed - s.heldAt >= params.cpuThrowDelayMs && anyForwardMover(s)) {
+  } else if (
+    s.elapsed - s.heldAt >=
+      params.cpuThrowDelayMs +
+        (params.manualBaserunning && s.flyCaught ? RUN2.CATCH_GATHER_MS : 0) &&
+    anyForwardMover(s)
+  ) {
+    // Main mode: don't fling it when no throw can beat anyone — the carrier
+    // keeps the ball and hunts the runner for a tag instead (see moveFielders).
+    if (params.manualBaserunning && bestBeatableBase(s, params.cpuThrowSpeed) === null) return;
     const wild = rollThrowError(carrier?.arm ?? 5, 0.8, mult, rng);
     launchThrow(
       s,
@@ -498,8 +559,45 @@ function launchThrow(
   if (wild && thrower) s.events.push({ t: 'error', kind: 'wild', fielder: thrower.charId });
 }
 
+/** Flip a mid-leg runner around (same leg, opposite direction). */
+function reverseLeg(r: RunnerState): void {
+  if (r.to === r.from) return;
+  const { from } = r;
+  r.from = r.to;
+  r.to = from;
+  r.progress = 1 - r.progress;
+}
+
+/** A settled runner steps back one base (tag-up retreat / manual hold). */
+function startRetreatLeg(r: RunnerState): void {
+  if (r.to !== r.from || r.from <= 0) return;
+  const prev = (r.from - 1) as Base;
+  r.to = prev;
+  r.progress = 0;
+  r.legMs = Math.max(1, (dist(basePos(r.from), basePos(prev)) / r.speed) * 1000);
+}
+
+/** Is this runner standing on a bag (untaggable) rather than between them? */
+function onABag(r: RunnerState): boolean {
+  for (const b of [0, 1, 2, 3, 4] as const) {
+    if (dist(r.pos, basePos(b)) <= RUN2.SAFE_RADIUS) return true;
+  }
+  return false;
+}
+
+/**
+ * Whether a ball arriving at `base` retires this runner. Kid mode: any runner
+ * racing there. Main mode: only FORCED runners (real force-outs) and runners
+ * retreating there (doubled off) — an unforced advance must be tagged.
+ */
+function outAtBag(s: LivePlayState, r: RunnerState, base: 1 | 2 | 3 | 4, params: LiveParams): boolean {
+  if (r.done !== null || r.returning || r.to !== base || r.to === r.from || r.progress >= 1) return false;
+  if (!params.manualBaserunning) return true;
+  return isForced(s, r) || r.to < r.from;
+}
+
 /** The ball beat these runners to the bag — playground rules, they're out. */
-function arriveThrow(s: LivePlayState, base: 1 | 2 | 3 | 4): void {
+function arriveThrow(s: LivePlayState, base: 1 | 2 | 3 | 4, params: LiveParams): void {
   // A wild throw sails past the bag and dies loose — nobody's out, take a base!
   if (s.ball.throw?.wild) {
     const b = s.ball;
@@ -518,7 +616,7 @@ function arriveThrow(s: LivePlayState, base: 1 | 2 | 3 | 4): void {
     return;
   }
   for (const r of s.runners) {
-    if (r.done === null && !r.returning && r.to === base && r.to !== r.from && r.progress < 1) {
+    if (outAtBag(s, r, base, params)) {
       r.done = 'out';
       r.pos = { ...basePos(base) };
       s.outs += 1;
@@ -541,11 +639,23 @@ function carrierTouchesBags(s: LivePlayState, params: LiveParams): void {
   for (const base of [1, 2, 3, 4] as const) {
     if (dist(carrier.pos, basePos(base)) > reach) continue;
     for (const r of s.runners) {
-      if (r.done === null && !r.returning && r.to === base && r.to !== r.from && r.progress < 1) {
+      if (outAtBag(s, r, base, params)) {
         r.done = 'out';
         r.pos = { ...basePos(base) };
         s.outs += 1;
         s.events.push({ t: 'out', base, runner: r.charId });
+      }
+    }
+  }
+  // Main mode: carrying the ball to a runner caught between bags = tag out.
+  // This one rule is what makes rundowns happen with no special-case state.
+  if (params.manualBaserunning) {
+    for (const r of s.runners) {
+      if (r.done !== null || r.returning || onABag(r)) continue;
+      if (dist(carrier.pos, r.pos) <= RUN2.TAG_RADIUS) {
+        r.done = 'out';
+        s.outs += 1;
+        s.events.push({ t: 'out', base: Math.max(1, Math.min(4, r.to)) as 1 | 2 | 3 | 4, runner: r.charId });
       }
     }
   }
@@ -577,7 +687,20 @@ function moveRunners(s: LivePlayState, dtMs: number): void {
     if (r.progress >= 1) {
       r.from = r.to;
       r.progress = 0;
-      if (r.to >= 4) {
+      if (r.tagging) {
+        // Retreating after a caught fly: keep backing up until the start base
+        // is touched; then the runner is live again (and may have a queued send).
+        if (r.from === r.startBase) {
+          r.tagging = false;
+          s.events.push({ t: 'safe', base: Math.max(1, r.from) as 1 | 2 | 3, runner: r.charId });
+          if (r.goAfterTag) {
+            r.goAfterTag = false;
+            startLeg(s, r);
+          }
+        } else {
+          startRetreatLeg(r);
+        }
+      } else if (r.to >= 4) {
         r.done = 'scored';
         s.runs += 1;
         s.events.push({ t: 'score', runner: r.charId });
@@ -588,17 +711,46 @@ function moveRunners(s: LivePlayState, dtMs: number): void {
   }
 }
 
-function decideRunning(s: LivePlayState, inputs: LiveInputs): void {
-  if (s.flyCaught) return; // everyone's walking back — no more advancing
-
+function decideRunning(s: LivePlayState, inputs: LiveInputs, params: LiveParams): void {
   if (s.mode === 'offense') {
+    if (params.manualBaserunning) {
+      // Per-runner control. Sends work after a catch too — that's a sac fly.
+      if (inputs.sendRunner) {
+        const r = s.runners.find((o) => o.charId === inputs.sendRunner && o.done === null);
+        if (r) {
+          if (r.tagging) r.goAfterTag = true; // queued: go the moment the tag completes
+          else startLeg(s, r);
+        }
+      }
+      if (inputs.holdRunner) {
+        const r = s.runners.find((o) => o.charId === inputs.holdRunner && o.done === null);
+        if (r && r.to > r.from && r.progress < 1) reverseLeg(r);
+      }
+      return;
+    }
+    if (s.flyCaught) return; // kid mode: everyone's walking back — no more advancing
     if (!inputs.run) return;
     // Lead runner first so nobody piles into an occupied base.
     for (const r of leadFirst(settledRunners(s))) startLeg(s, r);
     return;
   }
 
-  // CPU baserunning (the player is fielding):
+  // --- CPU baserunning (the player is fielding) ----------------------------
+  if (s.flyCaught) {
+    if (!params.manualBaserunning) return;
+    // Tag-up-and-go: after (or during) the tag, a deep enough ball is worth a
+    // dash for the next bag — the sac fly emerges from this rule.
+    for (const r of s.runners) {
+      if (r.done !== null) continue;
+      const next = Math.min(4, (r.tagging ? r.startBase : r.from) + 1) as 1 | 2 | 3 | 4;
+      const deep = dist(s.ball.pos, basePos(next)) > LIVE.CPU_RUNNER_GREED_DIST;
+      if (!deep) continue;
+      if (r.tagging) r.goAfterTag = true;
+      else if (r.to === r.from) startLeg(s, r);
+    }
+    return;
+  }
+
   const ballLoose = s.ball.phase === 'flight' || s.ball.phase === 'rolling';
   const landed = s.ball.phase !== 'flight' && s.ball.phase !== 'thrown';
   // Nobody's picked it up in forever? Kids notice. Everybody goes.
@@ -614,6 +766,20 @@ function decideRunning(s: LivePlayState, inputs: LiveInputs): void {
     // it's just lying there unattended.
     if (ballLoose && landed && (unattended || dist(s.ball.pos, basePos(next)) > LIVE.CPU_RUNNER_GREED_DIST)) {
       startLeg(s, r);
+    }
+  }
+
+  // Main mode: a CPU runner caught with the carrier ahead of them turns back
+  // (which is what turns a botched advance into a real rundown).
+  if (params.manualBaserunning && s.ball.phase === 'held' && s.ball.heldBy !== null) {
+    const carrier = s.fielders[s.ball.heldBy];
+    for (const r of s.runners) {
+      if (r.done !== null || r.to === r.from || r.to < r.from || r.tagging) continue;
+      const bag = basePos(r.to);
+      const carrierAhead = dist(carrier.pos, bag) + 20 < dist(r.pos, bag);
+      if (carrierAhead && dist(carrier.pos, r.pos) < RUN2.CPU_PANIC_DIST && r.progress < 0.8) {
+        reverseLeg(r);
+      }
     }
   }
 }
@@ -662,7 +828,19 @@ function checkTermination(s: LivePlayState, params: LiveParams): void {
   const everyoneSettled = s.runners.every(
     (r) => r.done !== null || (!r.returning && r.to === r.from)
   );
-  if (everyoneSettled && s.ball.phase === 'held') endPlay(s);
+  if (everyoneSettled && s.ball.phase === 'held') {
+    // Main mode: hold a caught fly open long enough to send a tagged-up
+    // runner — otherwise the sac-fly window would slam shut instantly.
+    if (
+      params.manualBaserunning &&
+      s.flyCaught &&
+      s.mode === 'offense' &&
+      s.elapsed - s.catchAt < RUN2.SAC_WINDOW_MS
+    ) {
+      return;
+    }
+    endPlay(s);
+  }
 }
 
 function endPlay(s: LivePlayState): void {
@@ -681,16 +859,23 @@ export function chooseThrowTarget(s: LivePlayState, throwSpeed: number): 1 | 2 |
     (r) => r.done === null && !r.returning && r.to !== r.from
   );
   if (movers.length === 0) return 1;
+  const bestBase = bestBeatableBase(s, throwSpeed);
+  if (bestBase !== null) return bestBase;
+  const lead = leadFirst(movers)[0];
+  return lead.to as 1 | 2 | 3 | 4;
+}
+
+/** The highest base where a throw would beat the runner racing to it (or null). */
+function bestBeatableBase(s: LivePlayState, throwSpeed: number): 1 | 2 | 3 | 4 | null {
   let bestBase: 1 | 2 | 3 | 4 | null = null;
-  for (const r of movers) {
+  for (const r of s.runners) {
+    if (r.done !== null || r.returning || r.to === r.from) continue;
     const base = r.to as 1 | 2 | 3 | 4;
     const throwMs = (dist(s.ball.pos, basePos(base)) / throwSpeed) * 1000;
     const runnerMs = (1 - r.progress) * r.legMs;
     if (throwMs < runnerMs && (bestBase === null || base > bestBase)) bestBase = base;
   }
-  if (bestBase !== null) return bestBase;
-  const lead = leadFirst(movers)[0];
-  return lead.to as 1 | 2 | 3 | 4;
+  return bestBase;
 }
 
 /** Standard force chain: forced iff every base behind (down to the plate) is occupied. */

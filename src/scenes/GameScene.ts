@@ -186,6 +186,9 @@ export class GameScene extends Phaser.Scene {
   private chargeBase: 1 | 2 | 3 | 4 = 1;
   private pendingThrow?: { base: 1 | 2 | 3 | 4; power: number };
   private pendingRun = false;
+  /** Main-mode per-runner taps, consumed by the next sim tick. */
+  private pendingSend?: string;
+  private pendingHold?: string;
   private firstFieldPlay = true;
   private firstRunPlay = true;
 
@@ -239,6 +242,8 @@ export class GameScene extends Phaser.Scene {
     this.charging = false;
     this.pendingThrow = undefined;
     this.pendingRun = false;
+    this.pendingSend = undefined;
+    this.pendingHold = undefined;
     this.firstFieldPlay = true;
     this.firstRunPlay = true;
   }
@@ -1079,6 +1084,8 @@ export class GameScene extends Phaser.Scene {
     this.phase = mode === 'defense' ? 'fielding' : 'running';
     this.pendingThrow = undefined;
     this.pendingRun = false;
+    this.pendingSend = undefined;
+    this.pendingHold = undefined;
     this.charging = false;
 
     // The sim owns the pitcher's body now — stop his breathing/windup tweens.
@@ -1121,6 +1128,21 @@ export class GameScene extends Phaser.Scene {
         audio.say('Get the ball!');
         this.firstFieldPlay = false;
       }
+    } else if (this.features.manualBaserunning) {
+      // Main mode: the bases ARE the controls — tap ahead to send, behind to
+      // turn a runner back. Rings show what's tappable.
+      this.showBaseRings();
+      const { container } = pill(this, GAME_WIDTH / 2, GAME_HEIGHT - 46, 'TAP A BASE TO RUN!  ◆', {
+        fill: COLORS.gold,
+        fontSize: 26,
+      });
+      container.setDepth(95);
+      this.tweens.add({ targets: container, scale: 1.06, duration: 420, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
+      this.goBanner = container;
+      if (this.firstRunPlay) {
+        audio.say('Tap a base to send your runner!');
+        this.firstRunPlay = false;
+      }
     } else {
       // Big tap-anywhere GO prompt.
       const { container } = pill(this, GAME_WIDTH / 2, GAME_HEIGHT - 46, 'TAP TO RUN!  ▶', {
@@ -1150,9 +1172,19 @@ export class GameScene extends Phaser.Scene {
         this.pendingThrow = undefined;
         this.charging = false;
       }
-    } else if (this.phase === 'running' && this.pendingRun) {
-      inputs.run = true;
-      this.pendingRun = false;
+    } else if (this.phase === 'running') {
+      if (this.pendingRun) {
+        inputs.run = true;
+        this.pendingRun = false;
+      }
+      if (this.pendingSend) {
+        inputs.sendRunner = this.pendingSend;
+        this.pendingSend = undefined;
+      }
+      if (this.pendingHold) {
+        inputs.holdRunner = this.pendingHold;
+        this.pendingHold = undefined;
+      }
     }
 
     this.livePlay = stepLivePlay(this.livePlay, inputs, delta, this.liveParams, () => Math.random());
@@ -1458,6 +1490,41 @@ export class GameScene extends Phaser.Scene {
   /** Public for headless driving: the "everybody GO!" tap. */
   commandRun(): void {
     this.pendingRun = true;
+  }
+
+  /** Public for headless driving (main mode): send / turn back one runner. */
+  commandSend(charId: string): void {
+    this.pendingSend = charId;
+  }
+
+  commandHold(charId: string): void {
+    this.pendingHold = charId;
+  }
+
+  /**
+   * Main-mode running tap → a base: send the settled runner whose NEXT base
+   * was tapped, or turn back the mid-leg runner who LEFT the tapped base.
+   */
+  private handleRunTap(p: Vec): void {
+    const s = this.livePlay;
+    if (!s) return;
+    const base = this.nearestBaseTo(p);
+    const send = s.runners.find(
+      (r) => r.done === null && (r.tagging ? r.startBase : r.from) + 1 === base &&
+        (r.tagging || r.to === r.from)
+    );
+    if (send) {
+      this.pendingSend = send.charId;
+      audio.pop();
+      return;
+    }
+    const back = s.runners.find(
+      (r) => r.done === null && r.to > r.from && r.progress < 1 && r.from === base
+    );
+    if (back) {
+      this.pendingHold = back.charId;
+      audio.pop();
+    }
   }
 
   getLivePlay(): LivePlayState | undefined {
@@ -1870,8 +1937,10 @@ export class GameScene extends Phaser.Scene {
       this.lastPointer = { x: p.worldX, y: p.worldY };
       if (this.phase === 'pitching') this.onSwing();
       else if (this.phase === 'aiming') this.onThrow();
-      else if (this.phase === 'running') this.pendingRun = true;
-      else if (this.phase === 'fielding') this.beginThrowCharge();
+      else if (this.phase === 'running') {
+        if (this.features.manualBaserunning) this.handleRunTap(this.lastPointer);
+        else this.pendingRun = true;
+      } else if (this.phase === 'fielding') this.beginThrowCharge();
     });
 
     this.input.on('pointerup', () => {
@@ -1881,7 +1950,18 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard?.on('keydown-SPACE', () => {
       if (this.phase === 'pitching') this.onSwing();
       else if (this.phase === 'aiming') this.onThrow();
-      else if (this.phase === 'running') this.pendingRun = true;
+      else if (this.phase === 'running') {
+        if (this.features.manualBaserunning) {
+          // Keyboard shortcut: send the lead settled runner.
+          const s = this.livePlay;
+          const lead = s?.runners
+            .filter((r) => r.done === null && !r.tagging && r.to === r.from && r.from < 4)
+            .sort((a, b) => b.from - a.from)[0];
+          if (lead) this.pendingSend = lead.charId;
+        } else {
+          this.pendingRun = true;
+        }
+      }
       else if (this.phase === 'fielding' && this.livePlay?.ball.phase === 'held') {
         // Keyboard shortcut: a solid throw to the sim's best target.
         const speed =

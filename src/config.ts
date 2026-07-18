@@ -227,6 +227,21 @@ export const ERRORS = {
   OVERSHOOT_PX: 64,
 };
 
+/** Full-baserunning rules (main mode). */
+export const RUN2 = {
+  /** Ball-carrier within this of an off-bag runner = tag, you're out. */
+  TAG_RADIUS: 26,
+  /** A runner within this of a bag counts as standing ON it (untaggable). */
+  SAFE_RADIUS: 14,
+  /** A CPU runner turns back when the carrier is ahead and this close. */
+  CPU_PANIC_DIST: 130,
+  /** After a caught fly the play stays open this long for tag-up sends. */
+  SAC_WINDOW_MS: 1400,
+  /** A kid who just caught a fly needs this long to gather before throwing —
+   *  the beat that makes sac flies from third a real race. */
+  CATCH_GATHER_MS: 700,
+};
+
 /**
  * The two ways to play. KID is the original one-button game with a forgiving
  * live sim; MAIN (the default) is the full Backyard-Baseball-style experience —
@@ -272,6 +287,8 @@ export interface ModeLiveTuning {
   playerErrorMult: number;
   /** Scale on the CPU team's error chances. */
   cpuErrorMult: number;
+  /** Full baserunning rules: tag-ups, doubling off, tags/rundowns, per-runner control. */
+  manualBaserunning: boolean;
 }
 
 export const MODES: Record<
@@ -296,6 +313,7 @@ export const MODES: Record<
       cpuRunSpeedMult: 0.8,
       playerErrorMult: 0, // kid mode: your kids never drop it
       cpuErrorMult: 0,
+      manualBaserunning: false,
     },
     features: {
       pitchSelection: false,
@@ -319,13 +337,14 @@ export const MODES: Record<
       cpuRunSpeedMult: 1.05,
       playerErrorMult: 1,
       cpuErrorMult: 1,
+      manualBaserunning: true,
     },
     swingTiming: { PERFECT: 70, GOOD: 150, CONTACT: 250 },
     // Flags flip to true as each Backyard-style mechanic lands.
     features: {
       pitchSelection: true,
       battingCursor: true,
-      manualBaserunning: false,
+      manualBaserunning: true,
       errors: true,
       steals: false,
       juice: false,

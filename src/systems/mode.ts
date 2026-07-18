@@ -62,6 +62,7 @@ export interface LiveParams {
   maxPlayMs: number;
   playerErrorMult: number; // scale on player-team drop/wild chances (0 = never)
   cpuErrorMult: number;
+  manualBaserunning: boolean; // tag-ups, doubling off, tags/rundowns, per-runner control
 }
 
 export function resolveLiveParams(mode: GameMode): LiveParams {
@@ -86,5 +87,6 @@ export function resolveLiveParams(mode: GameMode): LiveParams {
     maxPlayMs: LIVE.MAX_PLAY_MS,
     playerErrorMult: m.playerErrorMult,
     cpuErrorMult: m.cpuErrorMult,
+    manualBaserunning: m.manualBaserunning,
   };
 }
