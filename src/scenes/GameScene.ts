@@ -108,6 +108,7 @@ import { makeMuteButton } from '../ui/MuteButton';
 import { FONT, pill } from '../ui/theme';
 import { idleBob, squashHop, groundShadow, runCycle } from '../ui/anim';
 import { poseKey } from '../art/textureFactory';
+import { project, unproject, depthScale } from '../art/projection';
 import { Announcer, type AnnounceKind } from '../systems/announcer';
 
 /**
@@ -126,6 +127,8 @@ interface LiveSprite {
   charId: string;
   cycle: { stop(restoreStand?: boolean): void } | null;
   lastX: number;
+  /** Sprite height at the plate; the projection shrinks it with depth. */
+  baseH: number;
 }
 
 const BALL_GREEN = 0x57d977; // "good eye" green for called balls
@@ -449,20 +452,34 @@ export class GameScene extends Phaser.Scene {
     // coords get double-shifted by the display origin and land off-field.
     const cx = (FIRST.x + THIRD.x) / 2;
     const cy = (SECOND.y + HOME.y) / 2;
-    const dw = FIRST.x - THIRD.x; // diamond bounds
-    const dh = HOME.y - SECOND.y;
-    this.add
-      .polygon(cx, cy, [dw / 2, 0, dw, dh / 2, dw / 2, dh, 0, dh / 2], look.dirt)
-      .setOrigin(0.5)
-      .setStrokeStyle(3, look.asphalt ? look.grassDark : 0xb87a3f);
+    const toPts = (pts: Vec[]) => pts.map((p) => { const q = project(p); return new Phaser.Geom.Point(q.x, q.y); });
+    const dirt = this.add.graphics();
+    dirt.fillStyle(look.dirt, 1);
+    dirt.lineStyle(3, look.asphalt ? look.grassDark : 0xb87a3f, 1);
+    const diamondPts = toPts([
+      { x: cx, y: SECOND.y - 24 },
+      { x: FIRST.x + 24, y: cy },
+      { x: cx, y: HOME.y + 24 },
+      { x: THIRD.x - 24, y: cy },
+    ]);
+    dirt.fillPoints(diamondPts, true);
+    dirt.strokePoints(diamondPts, true, true);
     // Ground "cutout" in the middle of the infield for that manicured look.
-    this.add
-      .polygon(cx, cy + 6, [78, 0, 156, 58, 78, 116, 0, 58], look.grass)
-      .setOrigin(0.5);
+    const cut = this.add.graphics();
+    cut.fillStyle(look.grass, 1);
+    cut.fillPoints(
+      toPts([
+        { x: cx, y: cy + 6 - 58 },
+        { x: cx + 78, y: cy + 6 },
+        { x: cx, y: cy + 6 + 58 },
+        { x: cx - 78, y: cy + 6 },
+      ]),
+      true
+    );
 
     // --- Foul lines (home out to where they meet THIS venue's fence) ---
-    const leftPole = fencePointAt(this.geo, 0);
-    const rightPole = fencePointAt(this.geo, 1);
+    const leftPole = project(fencePointAt(this.geo, 0));
+    const rightPole = project(fencePointAt(this.geo, 1));
     const lines = this.add.graphics();
     lines.lineStyle(4, 0xffffff, 0.85);
     lines.lineBetween(HOME.x, HOME.y, rightPole.x, rightPole.y);
@@ -472,7 +489,7 @@ export class GameScene extends Phaser.Scene {
     const paths = this.add.graphics();
     paths.lineStyle(5, 0xe9d9bf, 0.6);
     paths.strokePoints(
-      [HOME, FIRST, SECOND, THIRD, HOME].map((p) => new Phaser.Math.Vector2(p.x, p.y)),
+      [HOME, FIRST, SECOND, THIRD, HOME].map((p) => { const q = project(p); return new Phaser.Math.Vector2(q.x, q.y); }),
       true
     );
 
@@ -493,8 +510,9 @@ export class GameScene extends Phaser.Scene {
 
     // --- Base plates (white squares, lit gold when occupied) ---
     [FIRST, SECOND, THIRD].forEach((p, i) => {
+      const q = project(p);
       const plate = this.add
-        .rectangle(p.x, p.y, 22, 22, COLORS.white)
+        .rectangle(q.x, q.y, 22, 22, COLORS.white)
         .setStrokeStyle(3, COLORS.ink)
         .setAngle(45);
       this.baseMarks[i] = plate;
@@ -503,11 +521,13 @@ export class GameScene extends Phaser.Scene {
     // --- Venue obstacles (the sandlot oak) — the sim knows they're there ---
     for (const o of this.venue.obstacles) {
       if (o.kind !== 'tree') continue;
-      this.add.rectangle(o.x, o.y + o.r - 6, 14, 26, 0x6d4426).setStrokeStyle(3, 0x4e3019).setDepth(23);
-      this.add.circle(o.x - o.r * 0.45, o.y - o.r * 0.2, o.r * 0.62, 0x3f7d3a).setDepth(23);
-      this.add.circle(o.x + o.r * 0.45, o.y - o.r * 0.2, o.r * 0.62, 0x478940).setDepth(23);
-      this.add.circle(o.x, o.y - o.r * 0.55, o.r * 0.7, 0x529a49).setDepth(23);
-      groundShadow(this, 0, 0, o.r * 1.4).setPosition(o.x, o.y + o.r).setDepth(22);
+      const q = project({ x: o.x, y: o.y });
+      const r = o.r * depthScale({ x: o.x, y: o.y });
+      this.add.rectangle(q.x, q.y + r - 6, 14, 26, 0x6d4426).setStrokeStyle(3, 0x4e3019).setDepth(23);
+      this.add.circle(q.x - r * 0.45, q.y - r * 0.2, r * 0.62, 0x3f7d3a).setDepth(23);
+      this.add.circle(q.x + r * 0.45, q.y - r * 0.2, r * 0.62, 0x478940).setDepth(23);
+      this.add.circle(q.x, q.y - r * 0.55, r * 0.7, 0x529a49).setDepth(23);
+      groundShadow(this, 0, 0, r * 1.4).setPosition(q.x, q.y + r).setDepth(22);
     }
   }
 
@@ -967,7 +987,7 @@ export class GameScene extends Phaser.Scene {
     this.armedSteal = undefined;
     for (const fromBase of [1, 2] as const) {
       if (!this.runners.has(fromBase) || this.runners.has(fromBase + 1)) continue;
-      const p = basePos(fromBase);
+      const p = project(basePos(fromBase));
       const { container } = pill(this, p.x + (fromBase === 1 ? 74 : 0), p.y - (fromBase === 2 ? 52 : 0), '💨 STEAL!', {
         fill: COLORS.cream,
         fontSize: 16,
@@ -984,7 +1004,7 @@ export class GameScene extends Phaser.Scene {
         // A little lead-off toward the next bag sells the intent.
         const token = this.runners.get(fromBase);
         if (token) {
-          const next = basePos(fromBase + 1);
+          const next = project(basePos(fromBase + 1));
           const len = Math.max(1, dist({ x: token.x, y: token.y }, next));
           this.tweens.add({
             targets: token,
@@ -1183,7 +1203,7 @@ export class GameScene extends Phaser.Scene {
         this.animateSteal(from, token, safe);
       } else if (token) {
         // Dead ball — sneak back to the bag.
-        const p = basePos(from);
+        const p = project(basePos(from));
         this.tweens.add({ targets: token, x: p.x, y: p.y - 6, duration: 220 });
       }
     }
@@ -1236,7 +1256,7 @@ export class GameScene extends Phaser.Scene {
     cpuRunner = false
   ): void {
     this.runners.delete(from);
-    const to = basePos(from + 1);
+    const to = project(basePos(from + 1));
     const img = token.getAt(1) as Phaser.GameObjects.Image;
     const cycle = runCycle(this, img, token.getData('id') as string);
     img.setFlipX(to.x < token.x);
@@ -1301,9 +1321,9 @@ export class GameScene extends Phaser.Scene {
         ease: string;
         onStart?: () => void;
       }> = [];
-      let fromP = basePos(m.fromBase);
+      let fromP = project(basePos(m.fromBase));
       for (let b = m.fromBase + 1; b <= m.toBase; b++) {
-        const p = basePos(b);
+        const p = project(basePos(b));
         const facesLeft = p.x < fromP.x;
         legs.push({
           x: p.x,
@@ -1416,15 +1436,17 @@ export class GameScene extends Phaser.Scene {
     this.fieldAssignment.forEach((a, i) => {
       if (i === 0) return; // the mound sprite plays P
       const p = FIELD_POSITIONS[a.position];
-      const outfield = a.position === 'LF' || a.position === 'CF' || a.position === 'RF';
-      const c = this.add.container(p.x, p.y).setDepth(26);
-      const shadow = groundShadow(this, 0, 3, outfield ? 26 : 32);
+      const q = project(p);
+      const ds = depthScale(p);
+      const c = this.add.container(q.x, q.y).setDepth(26);
+      const shadow = groundShadow(this, 0, 3, 34 * ds);
       // Fielders wait in the ready crouch, gloves out.
       const img = this.add.image(0, 0, poseKey(a.charId, 'ready')).setOrigin(0.5, 0.95);
-      img.setScale((outfield ? 52 : 60) / img.height);
+      const baseH = 66;
+      img.setScale((baseH * ds) / img.height);
       c.add([shadow, img]);
       idleBob(this, img, { amp: 3, dur: 1000 + i * 90 }); // bob the IMAGE — the sim owns the container
-      this.fielderSprites.push({ container: c, img, charId: a.charId, cycle: null, lastX: p.x });
+      this.fielderSprites.push({ container: c, img, charId: a.charId, cycle: null, lastX: q.x, baseH });
     });
   }
 
@@ -1475,7 +1497,7 @@ export class GameScene extends Phaser.Scene {
     for (const token of this.runners.values()) {
       const img = token.getAt(1) as Phaser.GameObjects.Image;
       const id = token.getData('id') as string;
-      this.liveRunnerSprites.set(id, { container: token, img, charId: id, cycle: null, lastX: token.x });
+      this.liveRunnerSprites.set(id, { container: token, img, charId: id, cycle: null, lastX: token.x, baseH: RUNNER_H });
     }
     this.fadeOutBatter();
     const batterToken = this.makeRunner(batterChar);
@@ -1485,6 +1507,7 @@ export class GameScene extends Phaser.Scene {
       charId: batterChar.id,
       cycle: null,
       lastX: batterToken.x,
+      baseH: RUNNER_H,
     });
     this.runners = new Map(); // rebuilt from the outcome at settle
 
@@ -1574,13 +1597,14 @@ export class GameScene extends Phaser.Scene {
 
     // Fielders (index 0 = the mound pitcher sprite).
     s.fielders.forEach((f, i) => {
+      const q = project(f.pos);
       if (i === 0) {
-        this.pitcherSprite?.setPosition(f.pos.x, f.pos.y);
+        this.pitcherSprite?.setPosition(q.x, q.y);
         return;
       }
       const spr = this.fielderSpriteAt(i);
       if (!spr) return;
-      this.moveLiveSprite(spr, f.pos.x, f.pos.y);
+      this.moveLiveSprite(spr, q.x, q.y);
     });
 
     // Runners. Done runners are scene-owned again (their exit animations —
@@ -1602,37 +1626,40 @@ export class GameScene extends Phaser.Scene {
         spr.cycle?.stop(false);
         spr.cycle = null;
         spr.img.setTexture(poseKey(r.charId, 'slide'));
-        spr.img.setFlipX(basePos(r.to).x < spr.container.x);
-        spr.container.setPosition(r.pos.x, r.pos.y - 6);
+        const q = project(r.pos);
+        spr.img.setFlipX(project(basePos(r.to)).x < spr.container.x);
+        spr.container.setPosition(q.x, q.y - 6);
         continue;
       }
-      this.moveLiveSprite(spr, r.pos.x, r.pos.y - 6);
+      const q = project(r.pos);
+      this.moveLiveSprite(spr, q.x, q.y - 6);
     }
 
     // Ball: lift by arc height; the shadow stays on the ground plane.
     if (this.liveBall && this.liveBallShadow) {
       const b = s.ball;
       if (b.phase === 'held' && b.heldBy !== null) {
-        const holder = s.fielders[b.heldBy];
-        this.liveBall.setPosition(holder.pos.x + 12, holder.pos.y - 34).setVisible(true);
+        const hq = project(s.fielders[b.heldBy].pos);
+        this.liveBall.setPosition(hq.x + 12, hq.y - 34).setVisible(true);
         this.liveBallShadow.setVisible(false);
       } else {
+        const bq = project(b.pos);
         const lift = b.height * (b.phase === 'thrown' ? 46 : 92);
-        this.liveBall.setPosition(b.pos.x, b.pos.y - 10 - lift).setVisible(true);
-        this.liveBallShadow.setPosition(b.pos.x, b.pos.y).setVisible(true);
+        this.liveBall.setPosition(bq.x, bq.y - 10 - lift).setVisible(true);
+        this.liveBallShadow.setPosition(bq.x, bq.y).setVisible(true);
         this.liveBallShadow.setScale(1 - b.height * 0.45);
       }
     }
 
     // The steering spotlight follows the chaser.
     if (this.activeMarker) {
-      const chaser = s.fielders[s.active];
-      this.activeMarker.setPosition(chaser.pos.x, chaser.pos.y + 4);
+      const cq = project(s.fielders[s.active].pos);
+      this.activeMarker.setPosition(cq.x, cq.y + 4);
     }
 
     // Throw-charge meter over the carrier.
     if (this.charging && this.chargeMeter && s.ball.phase === 'held' && s.ball.heldBy !== null) {
-      const holder = s.fielders[s.ball.heldBy];
+      const holder = { pos: project(s.fielders[s.ball.heldBy].pos) };
       // Clamp hard: a tiny/negative width makes fillRoundedRect paint garbage.
       const p = Phaser.Math.Clamp((this.time.now - this.chargeStart) / LIVE.THROW_METER_MS, 0, 1);
       const g = this.chargeMeter;
@@ -1647,7 +1674,8 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  /** Direct placement + run-cycle bookkeeping for one sim-owned kid. */
+  /** Direct placement + run-cycle bookkeeping for one sim-owned kid.
+   *  (x, y are already-projected screen coords; y carries the depth.) */
   private moveLiveSprite(spr: LiveSprite, x: number, y: number): void {
     const moving = Math.abs(x - spr.container.x) > 0.5 || Math.abs(y - spr.container.y) > 0.5;
     if (moving) {
@@ -1658,6 +1686,7 @@ export class GameScene extends Phaser.Scene {
       spr.cycle = null;
       spr.img.setFlipX(false);
     }
+    spr.img.setScale((spr.baseH * depthScale({ x, y })) / spr.img.height);
     spr.container.setPosition(x, y);
   }
 
@@ -1668,7 +1697,8 @@ export class GameScene extends Phaser.Scene {
       switch (e.t) {
         case 'catch': {
           audio.pop();
-          floatingText(this, s.ball.pos.x, s.ball.pos.y - 40, 'CAUGHT!', COLORS.gold, 30);
+          const bq = project(s.ball.pos);
+          floatingText(this, bq.x, bq.y - 40, 'CAUGHT!', COLORS.gold, 30);
           if (s.mode === 'defense') audio.cheer();
           break;
         }
@@ -1676,18 +1706,23 @@ export class GameScene extends Phaser.Scene {
           audio.pop();
           if (s.mode === 'defense') this.showBaseRings();
           break;
-        case 'land':
-          burst(this, s.ball.pos.x, s.ball.pos.y, COLORS.dirt, 6);
+        case 'land': {
+          const lq = project(s.ball.pos);
+          burst(this, lq.x, lq.y, COLORS.dirt, 6);
           break;
-        case 'bonk':
-          floatingText(this, s.ball.pos.x, s.ball.pos.y - 40, 'BONK! 🌳', COLORS.white, 26);
-          burst(this, s.ball.pos.x, s.ball.pos.y - 20, 0x529a49, 8);
+        }
+        case 'bonk': {
+          const kq = project(s.ball.pos);
+          floatingText(this, kq.x, kq.y - 40, 'BONK! 🌳', COLORS.white, 26);
+          burst(this, kq.x, kq.y - 20, 0x529a49, 8);
           audio.pop();
           this.callIt('bonk', {});
           break;
+        }
         case 'error': {
           const label = e.kind === 'wild' ? 'WILD THROW!' : e.kind === 'drop' ? 'DROPPED IT!' : 'BOBBLED!';
-          floatingText(this, s.ball.pos.x, s.ball.pos.y - 44, label, COLORS.red, 28);
+          const eq = project(s.ball.pos);
+          floatingText(this, eq.x, eq.y - 44, label, COLORS.red, 28);
           screenShake(this, 3);
           audio.whiff();
           this.callIt(e.kind === 'wild' ? 'errorWild' : 'errorDrop', {});
@@ -1700,7 +1735,7 @@ export class GameScene extends Phaser.Scene {
           this.hideBaseRings();
           break;
         case 'out': {
-          const p = basePos(e.base);
+          const p = project(basePos(e.base));
           floatingText(this, p.x, p.y - 46, 'OUT!', COLORS.red, 32);
           screenShake(this, 4);
           if (s.mode === 'defense') audio.cheer();
@@ -1745,7 +1780,7 @@ export class GameScene extends Phaser.Scene {
   private showBaseRings(): void {
     if (this.baseRings.length > 0) return;
     ([1, 2, 3, 4] as const).forEach((base) => {
-      const p = basePos(base);
+      const p = project(basePos(base));
       const ring = this.add.circle(p.x, p.y, 30).setStrokeStyle(5, COLORS.gold, 0.9).setDepth(24);
       this.tweens.add({ targets: ring, scale: 1.25, alpha: 0.5, duration: 430, yoyo: true, repeat: -1 });
       this.baseRings.push(ring);
@@ -1790,7 +1825,7 @@ export class GameScene extends Phaser.Scene {
       spr.cycle?.stop(false);
       spr.cycle = null;
       spr.img.setTexture(id); // whatever they ended in (run/slide) → standing
-      const p = basePos(i + 1);
+      const p = project(basePos(i + 1));
       spr.container.setPosition(p.x, p.y - 6);
       spr.img.setFlipX(false);
       nextRunners.set(i + 1, spr.container);
@@ -1865,7 +1900,7 @@ export class GameScene extends Phaser.Scene {
   /** Walk every fielder back to their spot; a successful defense cheers first. */
   private resetFieldersAfterPlay(gotAnOut: boolean): void {
     this.fieldAssignment.forEach((a, i) => {
-      const home = FIELD_POSITIONS[a.position];
+      const home = project(FIELD_POSITIONS[a.position]);
       if (i === 0) {
         if (this.pitcherSprite) {
           this.pitcherSprite.setPosition(MOUND.x, MOUND.y);
@@ -2096,7 +2131,7 @@ export class GameScene extends Phaser.Scene {
     audio.pitchWoosh();
     this.zoneGfx = zoneOutline(this);
     if (this.cpuStealFrom !== undefined) {
-      const p = basePos(this.cpuStealFrom);
+      const p = project(basePos(this.cpuStealFrom));
       floatingText(this, p.x, p.y - 54, 'RUNNER GOING!', COLORS.red, 26);
     }
     const start: Vec = { x: MOUND.x, y: MOUND.y - 36 };
@@ -2424,11 +2459,11 @@ export class GameScene extends Phaser.Scene {
    */
   private bindSwingInput(): void {
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
-      this.lastPointer = { x: p.worldX, y: p.worldY };
+      this.lastPointer = unproject({ x: p.worldX, y: p.worldY });
     });
 
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
-      this.lastPointer = { x: p.worldX, y: p.worldY };
+      this.lastPointer = unproject({ x: p.worldX, y: p.worldY });
       if (this.phase === 'pitching') this.onSwing();
       else if (this.phase === 'aiming') this.onThrow();
       else if (this.phase === 'running') {
