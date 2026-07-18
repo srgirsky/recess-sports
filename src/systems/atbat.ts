@@ -13,7 +13,7 @@
 
 import type { Character } from '../data/types';
 import { TIMING, LIVE, CURSOR, JUICE } from '../config';
-import { HOME, FENCE_Y, type Vec } from './geometry';
+import { HOME, DEFAULT_GEOMETRY, fencePointAt, type FieldGeometry, type Vec } from './geometry';
 import type { PitchPlan, PlateLoc } from './pitchkind';
 
 export type SwingBand = 'perfect' | 'good' | 'weak' | 'miss';
@@ -82,7 +82,8 @@ export function resolveContact(
   band: SwingBand,
   batter: Character,
   pitcher: Character,
-  rng: () => number
+  rng: () => number,
+  geo?: FieldGeometry
 ): SwingOutcome {
   if (pitcher.ability === 'unhittable_pitch') band = downgrade(band);
   if (batter.ability === 'never_strikes_out' && band === 'miss') band = 'weak';
@@ -113,6 +114,7 @@ export function resolveContact(
       // Spray direction: RNG along the horizon between the foul lines.
       sprayT: () => L.SPRAY_MARGIN + rng() * (1 - 2 * L.SPRAY_MARGIN),
       rng,
+      geo,
     }),
   };
 }
@@ -143,6 +145,8 @@ export function resolveContactAimed(spec: {
   rng: () => number;
   /** A spent juice POWER SWING: band steps up + a quality bonus. */
   boost?: { power: boolean };
+  /** The venue's field shape. Default: the park. */
+  geo?: FieldGeometry;
 }): AimedSwing {
   let { band } = spec;
   const { cursor, plan, batter, pitcher, rng } = spec;
@@ -193,6 +197,7 @@ export function resolveContactAimed(spec: {
     forceType: calledShot ? 'fly' : undefined,
     sprayT: () => sprayT,
     rng,
+    geo: spec.geo,
   });
   return { swing: { kind: 'inPlay', launch }, band };
 }
@@ -212,6 +217,8 @@ export interface LaunchSpec {
   rng: () => number;
   /** Skip the contact-type roll entirely (the called shot IS a fly). */
   forceType?: ContactType;
+  /** The venue's field shape (fence distances / obstacles). Default: the park. */
+  geo?: FieldGeometry;
 }
 
 /**
@@ -220,11 +227,13 @@ export interface LaunchSpec {
  */
 export function buildLaunch(spec: LaunchSpec): Launch {
   const L = LIVE.LAUNCH;
+  const geo = spec.geo ?? DEFAULT_GEOMETRY;
   const { q } = spec;
   const type = spec.forceType ?? contactType(spec.band, spec.rng, spec.typeBias);
 
   const t = Math.min(1 - L.SPRAY_MARGIN, Math.max(L.SPRAY_MARGIN, spec.sprayT()));
-  const target: Vec = { x: 132 + t * (828 - 132), y: FENCE_Y };
+  // The fence distance varies by direction (a short porch = cheap homers there).
+  const target: Vec = fencePointAt(geo, t);
   const dirLen = Math.hypot(target.x - HOME.x, target.y - HOME.y);
   const dir: Vec = { x: (target.x - HOME.x) / dirLen, y: (target.y - HOME.y) / dirLen };
 
@@ -234,12 +243,27 @@ export function buildLaunch(spec: LaunchSpec): Launch {
     fly: L.FLY_DIST.BASE + Math.max(0, q) * L.FLY_DIST.SCALE,
   };
 
-  // A crushed fly clears the fence outright.
-  const homer = type === 'fly' && q > L.HR_Q;
+  // A crushed fly clears the fence outright. The threshold scales with how
+  // far THIS venue's fence is versus the park's — squared, so a short porch
+  // reads as genuinely cheap homers instead of a rounding error.
+  const refTarget = fencePointAt(DEFAULT_GEOMETRY, t);
+  const refLen = Math.hypot(refTarget.x - HOME.x, refTarget.y - HOME.y);
+  const homer = type === 'fly' && q > L.HR_Q * (dirLen / refLen) ** 2;
   // Everything else stays on the field, just short of the wall.
   const maxDist = dirLen - 14;
   const d = homer ? dirLen + 60 : Math.min(distFor[type], maxDist);
   const landing: Vec = { x: HOME.x + dir.x * d, y: HOME.y + dir.y * d };
+  // Nothing settles inside a tree — nudge the landing to its edge.
+  if (!homer) {
+    for (const o of geo.obstacles) {
+      const d0 = Math.hypot(landing.x - o.x, landing.y - o.y);
+      if (d0 < o.r + 6) {
+        const push = (o.r + 8) / Math.max(1, d0);
+        landing.x = o.x + (landing.x - o.x) * push;
+        landing.y = o.y + (landing.y - o.y) * push;
+      }
+    }
+  }
 
   const depth = Math.min(1, d / dirLen);
   const hangMs =

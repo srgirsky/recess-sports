@@ -19,6 +19,41 @@ export const MOUND: Vec = { x: 480, y: 356 };
 /** Top of the outfield wall — a fly landing above this line is a home run. */
 export const FENCE_Y = 210;
 
+/** The foul lines meet the fence band at these x's (left/right). */
+export const FENCE_LEFT_X = 132;
+export const FENCE_RIGHT_X = 828;
+
+/**
+ * Venue-shaped field geometry: where the fence sits per spray direction, how
+ * the ground plays, and what's in the way. Bases/mound are fixed for every
+ * venue. PURE data + helpers, shared by atbat launches, the live sim, and
+ * the renderer.
+ */
+export interface FieldGeometry {
+  /** Fence y at the left foul line and at the right foul line. */
+  fenceLeftY: number;
+  fenceRightY: number;
+  /** Grounder roll-speed multiplier. */
+  rollMult: number;
+  obstacles: Array<{ x: number; y: number; r: number }>;
+}
+
+/** The classic park — identical to the pre-venue constants. */
+export const DEFAULT_GEOMETRY: FieldGeometry = {
+  fenceLeftY: FENCE_Y,
+  fenceRightY: FENCE_Y,
+  rollMult: 1,
+  obstacles: [],
+};
+
+/** The point on the fence at spray fraction t (0 = left line, 1 = right). */
+export function fencePointAt(geo: FieldGeometry, t: number): Vec {
+  return {
+    x: FENCE_LEFT_X + t * (FENCE_RIGHT_X - FENCE_LEFT_X),
+    y: geo.fenceLeftY + t * (geo.fenceRightY - geo.fenceLeftY),
+  };
+}
+
 /** Position for a base index: 0 & 4 = home, 1/2/3 = the bases. */
 export function basePos(idx: number): Vec {
   switch (idx) {

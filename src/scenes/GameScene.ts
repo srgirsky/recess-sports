@@ -83,10 +83,14 @@ import {
   MOUND,
   basePos,
   dist,
+  fencePointAt,
   FIELD_POSITIONS,
+  type FieldGeometry,
   type PositionId,
   type Vec,
 } from '../systems/geometry';
+import { getVenue, getFieldGeometry } from '../systems/venue';
+import type { VenueDef } from '../data/venues';
 import {
   startLivePlay,
   stepLivePlay,
@@ -189,6 +193,8 @@ export class GameScene extends Phaser.Scene {
 
   // --- live play (interactive fielding / running) ---
   private liveParams!: LiveParams;
+  private venue!: VenueDef;
+  private geo!: FieldGeometry;
   private mode!: GameMode;
   /** Which main-mode mechanics are on (public: read by controls & dev drivers). */
   features!: ModeFeatures;
@@ -280,6 +286,8 @@ export class GameScene extends Phaser.Scene {
     this.mode = getMode();
     this.features = getFeatures(this.mode);
     this.liveParams = resolveLiveParams(this.mode);
+    this.venue = getVenue();
+    this.geo = getFieldGeometry(this.venue);
     recordGamePlayed();
     this.cameras.main.fadeIn(250, 0x5b, 0xbf, 0x5a);
 
@@ -304,10 +312,11 @@ export class GameScene extends Phaser.Scene {
   // --- Field & HUD ---------------------------------------------------------
   private drawField(): void {
     const W = GAME_WIDTH;
-    const HORIZON = 210; // grass starts here; sky/crowd/fence above
+    const HORIZON = 210; // ground starts here; sky/backdrop/fence above
+    const look = this.venue.look;
 
-    // Base grass fill (prevents any gaps behind everything else).
-    this.add.rectangle(W / 2, GAME_HEIGHT / 2, W, GAME_HEIGHT, COLORS.grass);
+    // Base ground fill (prevents any gaps behind everything else).
+    this.add.rectangle(W / 2, GAME_HEIGHT / 2, W, GAME_HEIGHT, look.grass);
 
     // --- Sky (gradient) ---
     const sky = this.add.graphics();
@@ -320,31 +329,113 @@ export class GameScene extends Phaser.Scene {
     this.cloud(150, 110);
     this.cloud(520, 96);
 
-    // --- Stands + crowd ---
-    this.add.rectangle(W / 2, 168, W, 44, 0x5b6a7a).setOrigin(0.5);
-    const crowdColors = [0xeb5a52, 0x3f86e0, 0x43b56f, 0x9161d0, 0xff924a, 0xf5c542, 0xffffff, 0x2fb4ac];
-    for (let i = 0; i < 110; i++) {
-      const x = Math.random() * W;
-      const y = 150 + Math.random() * 32;
-      this.add.circle(x, y, 4 + Math.random() * 2, crowdColors[(Math.random() * crowdColors.length) | 0]);
+    if (look.stands) {
+      // --- Stands + crowd (the park) ---
+      this.add.rectangle(W / 2, 168, W, 44, 0x5b6a7a).setOrigin(0.5);
+      const crowdColors = [0xeb5a52, 0x3f86e0, 0x43b56f, 0x9161d0, 0xff924a, 0xf5c542, 0xffffff, 0x2fb4ac];
+      for (let i = 0; i < 110; i++) {
+        const x = Math.random() * W;
+        const y = 150 + Math.random() * 32;
+        this.add.circle(x, y, 4 + Math.random() * 2, crowdColors[(Math.random() * crowdColors.length) | 0]);
+      }
+    } else if (this.venue.id === 'sandlot') {
+      // Backyard skyline: a treeline and a couple of neighbor rooftops.
+      for (let x = 30; x < W; x += 90) {
+        this.add.circle(x, 168 + ((x / 90) % 3) * 8, 34, 0x3f7d3a, 0.9);
+      }
+      for (const hx of [180, 470, 760]) {
+        this.add.rectangle(hx, 178, 90, 46, 0xc9b8a4).setStrokeStyle(3, 0x8a7a66);
+        const roof = this.add.graphics({ x: hx, y: 155 });
+        roof.fillStyle(0xa14f3c, 1);
+        roof.fillTriangle(-55, 0, 55, 0, 0, -30);
+        this.add.rectangle(hx - 18, 186, 16, 16, 0x7fb2d8).setStrokeStyle(2, 0x5c7d99);
+        this.add.rectangle(hx + 18, 186, 16, 16, 0x7fb2d8).setStrokeStyle(2, 0x5c7d99);
+      }
+    } else {
+      // Blacktop: the school wall behind the court.
+      this.add.rectangle(W / 2, 168, W, 44, 0xb0503c).setOrigin(0.5);
+      const mortar = this.add.graphics();
+      mortar.lineStyle(2, 0x8f3f30, 0.6);
+      for (let y = 152; y <= 184; y += 10) mortar.lineBetween(0, y, W, y);
     }
 
-    // --- Outfield fence (wall + padded cap + bunting) ---
-    this.add.rectangle(W / 2, 200, W, 26, 0x2f9e73).setOrigin(0.5); // green wall
-    this.add.rectangle(W / 2, 189, W, 8, COLORS.gold).setOrigin(0.5); // yellow cap
-    // Bunting triangles hanging off the cap (Graphics — Triangle shapes are
-    // unreliable about fills, and the old fractional index passed undefined).
-    const bunt = [0xeb5a52, 0xffffff, 0x3f86e0];
-    for (let x = 20; x < W; x += 60) {
-      const pennant = this.add.graphics({ x, y: 193 }).setAlpha(0.9);
-      pennant.fillStyle(bunt[Math.floor(x / 60) % bunt.length], 1);
-      pennant.fillTriangle(-20, 0, 20, 0, 0, 22);
+    // --- Outfield fence: a band that follows the venue's (possibly slanted)
+    // fence line, so a short porch reads at a glance ---
+    const fl = { x: 0, y: this.geo.fenceLeftY };
+    const fr = { x: W, y: this.geo.fenceRightY };
+    const fence = this.add.graphics();
+    fence.fillStyle(look.fence, 1);
+    fence.fillPoints(
+      [
+        new Phaser.Geom.Point(fl.x, fl.y),
+        new Phaser.Geom.Point(fr.x, fr.y),
+        new Phaser.Geom.Point(fr.x, fr.y - 26),
+        new Phaser.Geom.Point(fl.x, fl.y - 26),
+      ],
+      true
+    );
+    fence.fillStyle(look.fenceTrim, 1);
+    fence.fillPoints(
+      [
+        new Phaser.Geom.Point(fl.x, fl.y - 26),
+        new Phaser.Geom.Point(fr.x, fr.y - 26),
+        new Phaser.Geom.Point(fr.x, fr.y - 32),
+        new Phaser.Geom.Point(fl.x, fl.y - 32),
+      ],
+      true
+    );
+    if (this.venue.id === 'sandlot') {
+      // Wood-plank verticals.
+      const planks = this.add.graphics();
+      planks.lineStyle(2, 0x6d4426, 0.7);
+      for (let x = 8; x < W; x += 22) {
+        const t = x / W;
+        const y = fl.y + (fr.y - fl.y) * t;
+        planks.lineBetween(x, y - 26, x, y);
+      }
+    } else if (this.venue.id === 'blacktop') {
+      // Chain-link diamonds.
+      const links = this.add.graphics();
+      links.lineStyle(1.5, 0xcfd6db, 0.5);
+      for (let x = 0; x < W; x += 16) {
+        const t = x / W;
+        const y = fl.y + (fr.y - fl.y) * t;
+        links.lineBetween(x, y - 26, x + 13, y);
+        links.lineBetween(x + 13, y - 26, x, y);
+      }
+    } else if (look.stands) {
+      // Park bunting triangles hanging off the cap.
+      const bunt = [0xeb5a52, 0xffffff, 0x3f86e0];
+      for (let x = 20; x < W; x += 60) {
+        const pennant = this.add.graphics({ x, y: 193 }).setAlpha(0.9);
+        pennant.fillStyle(bunt[Math.floor(x / 60) % bunt.length], 1);
+        pennant.fillTriangle(-20, 0, 20, 0, 0, 22);
+      }
     }
 
-    // --- Grass mowing stripes (subtle) ---
-    for (let x = 0; x < W; x += 96) {
-      if (((x / 96) & 1) === 0)
-        this.add.rectangle(x + 48, (HORIZON + GAME_HEIGHT) / 2, 96, GAME_HEIGHT - HORIZON, COLORS.grassDark, 0.35).setOrigin(0.5);
+    // --- Ground texture ---
+    if (look.stripes) {
+      for (let x = 0; x < W; x += 96) {
+        if (((x / 96) & 1) === 0)
+          this.add.rectangle(x + 48, (HORIZON + GAME_HEIGHT) / 2, 96, GAME_HEIGHT - HORIZON, look.grassDark, 0.35).setOrigin(0.5);
+      }
+    } else if (look.asphalt) {
+      // Faded expansion seams + a painted center ring around second base.
+      const seams = this.add.graphics();
+      seams.lineStyle(2, look.grassDark, 0.7);
+      for (let x = 120; x < W; x += 240) seams.lineBetween(x, HORIZON, x, GAME_HEIGHT);
+      seams.lineBetween(0, 470, W, 470);
+      this.add.circle(SECOND.x, SECOND.y, 58).setStrokeStyle(4, 0xf2e6c9, 0.5);
+    } else {
+      // Backyard grass: scruffy tufts.
+      const tufts = this.add.graphics();
+      tufts.lineStyle(2, look.grassDark, 0.8);
+      for (let i = 0; i < 70; i++) {
+        const x = (i * 137) % W;
+        const y = HORIZON + 20 + ((i * 89) % (GAME_HEIGHT - HORIZON - 40));
+        tufts.lineBetween(x, y, x - 4, y - 7);
+        tufts.lineBetween(x, y, x + 4, y - 7);
+      }
     }
 
     // --- Infield dirt diamond ---
@@ -355,19 +446,21 @@ export class GameScene extends Phaser.Scene {
     const dw = FIRST.x - THIRD.x; // diamond bounds
     const dh = HOME.y - SECOND.y;
     this.add
-      .polygon(cx, cy, [dw / 2, 0, dw, dh / 2, dw / 2, dh, 0, dh / 2], COLORS.dirt)
+      .polygon(cx, cy, [dw / 2, 0, dw, dh / 2, dw / 2, dh, 0, dh / 2], look.dirt)
       .setOrigin(0.5)
-      .setStrokeStyle(3, 0xb87a3f);
-    // Grass "cutout" in the middle of the infield for that manicured look.
+      .setStrokeStyle(3, look.asphalt ? look.grassDark : 0xb87a3f);
+    // Ground "cutout" in the middle of the infield for that manicured look.
     this.add
-      .polygon(cx, cy + 6, [78, 0, 156, 58, 78, 116, 0, 58], COLORS.grass)
+      .polygon(cx, cy + 6, [78, 0, 156, 58, 78, 116, 0, 58], look.grass)
       .setOrigin(0.5);
 
-    // --- Foul lines (home out past the corners) ---
+    // --- Foul lines (home out to where they meet THIS venue's fence) ---
+    const leftPole = fencePointAt(this.geo, 0);
+    const rightPole = fencePointAt(this.geo, 1);
     const lines = this.add.graphics();
     lines.lineStyle(4, 0xffffff, 0.85);
-    lines.lineBetween(HOME.x, HOME.y, 828, HORIZON);
-    lines.lineBetween(HOME.x, HOME.y, 132, HORIZON);
+    lines.lineBetween(HOME.x, HOME.y, rightPole.x, rightPole.y);
+    lines.lineBetween(HOME.x, HOME.y, leftPole.x, leftPole.y);
 
     // Base paths.
     const paths = this.add.graphics();
@@ -378,7 +471,7 @@ export class GameScene extends Phaser.Scene {
     );
 
     // --- Pitcher's mound + rubber ---
-    this.add.ellipse(MOUND.x, MOUND.y + 4, 92, 60, COLORS.dirt).setStrokeStyle(3, 0xb87a3f);
+    this.add.ellipse(MOUND.x, MOUND.y + 4, 92, 60, look.dirt).setStrokeStyle(3, look.asphalt ? look.grassDark : 0xb87a3f);
     this.add.rectangle(MOUND.x, MOUND.y, 26, 8, COLORS.white).setStrokeStyle(2, 0x9a9a9a);
 
     // --- Home plate (pentagon) ---
@@ -400,6 +493,16 @@ export class GameScene extends Phaser.Scene {
         .setAngle(45);
       this.baseMarks[i] = plate;
     });
+
+    // --- Venue obstacles (the sandlot oak) — the sim knows they're there ---
+    for (const o of this.venue.obstacles) {
+      if (o.kind !== 'tree') continue;
+      this.add.rectangle(o.x, o.y + o.r - 6, 14, 26, 0x6d4426).setStrokeStyle(3, 0x4e3019).setDepth(23);
+      this.add.circle(o.x - o.r * 0.45, o.y - o.r * 0.2, o.r * 0.62, 0x3f7d3a).setDepth(23);
+      this.add.circle(o.x + o.r * 0.45, o.y - o.r * 0.2, o.r * 0.62, 0x478940).setDepth(23);
+      this.add.circle(o.x, o.y - o.r * 0.55, o.r * 0.7, 0x529a49).setDepth(23);
+      groundShadow(this, 0, 0, o.r * 1.4).setPosition(o.x, o.y + o.r).setDepth(22);
+    }
   }
 
   /** A simple two-lobe cloud. */
@@ -960,6 +1063,7 @@ export class GameScene extends Phaser.Scene {
       pitcher: this.aiPitcher,
       rng: () => Math.random(),
       boost: { power: powered },
+      geo: this.geo,
     });
     this.showBandFeedback(band);
     if (band === 'perfect') this.gainJuice('player', 'perfectSwing', this.batter.ability);
@@ -1004,7 +1108,7 @@ export class GameScene extends Phaser.Scene {
     this.animateSwing();
     this.showBandFeedback(band);
 
-    const outcome = resolveContact(band, this.batter, this.aiPitcher, () => Math.random());
+    const outcome = resolveContact(band, this.batter, this.aiPitcher, () => Math.random(), this.geo);
     if (outcome.kind !== 'inPlay') {
       if (outcome.kind === 'strike') audio.whiff();
       else audio.crack();
@@ -1326,6 +1430,7 @@ export class GameScene extends Phaser.Scene {
       }),
       outs: this.halfState.outs,
       params: this.liveParams,
+      geo: this.geo,
     });
     this.phase = mode === 'defense' ? 'fielding' : 'running';
     this.pendingThrow = undefined;
@@ -1532,6 +1637,11 @@ export class GameScene extends Phaser.Scene {
           break;
         case 'land':
           burst(this, s.ball.pos.x, s.ball.pos.y, COLORS.dirt, 6);
+          break;
+        case 'bonk':
+          floatingText(this, s.ball.pos.x, s.ball.pos.y - 40, 'BONK! 🌳', COLORS.white, 26);
+          burst(this, s.ball.pos.x, s.ball.pos.y - 20, 0x529a49, 8);
+          audio.pop();
           break;
         case 'error': {
           const label = e.kind === 'wild' ? 'WILD THROW!' : e.kind === 'drop' ? 'DROPPED IT!' : 'BOBBLED!';
@@ -2007,9 +2117,7 @@ export class GameScene extends Phaser.Scene {
       cpuBand = up[cpuBand];
       floatingText(this, HOME.x, HOME.y - 90, '⚡ POWER SWING!', COLORS.red, 24);
     }
-    const outcome = resolveContact(cpuBand, this.cpuBatter, this.playerPitcher, () =>
-      Math.random()
-    );
+    const outcome = resolveContact(cpuBand, this.cpuBatter, this.playerPitcher, () => Math.random(), this.geo);
     if (outcome.kind !== 'inPlay') {
       if (outcome.kind === 'strike') audio.whiff();
       else audio.crack();

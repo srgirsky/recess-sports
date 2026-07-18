@@ -31,7 +31,9 @@ Phaser 3 · TypeScript · Vite · vitest. Static site, no backend, deployed free
 | `src/systems/draft.ts` | Alternating pick + greedy AI value function. |
 | `src/systems/atbat.ts` | Timing→band + ability hooks; `resolveContact` (kid: RNG spray) and `resolveContactAimed` (main: cursor-vs-ball overlap gates the band, cursor position drives pull/oppo spray + fly/grounder bias) both feed the shared `buildLaunch` → trajectory (homers decided here, everything else goes live). |
 | `src/systems/liveplay.ts` | ★ The live-play sim: tick reducer, catches/force races, CPU fielder+runner policies, no-soft-lock guards. Fielders carry per-kid speed/glove/arm; drops, bobbles & wild throws roll off glove/arm scaled by the mode's `errorMult`s (kid mode = 0, and mult 0 skips the rng roll so kid sims stay byte-identical). |
-| `src/systems/geometry.ts` | Field screen coords (bases, mound, 9 fielding spots, fence) shared by sim + scene. |
+| `src/systems/geometry.ts` | Field screen coords (bases, mound, 9 fielding spots, fence) shared by sim + scene; `FieldGeometry` + `fencePointAt` make the fence/ground/obstacles venue-shaped (bases never move). |
+| `src/data/venues.ts` | ★ The 3 venues (content): park / sandlot (short right porch + the oak) / blacktop (fast asphalt), each with fence line, rollMult, obstacles, and a drawField palette. |
+| `src/systems/venue.ts` | Venue persistence (localStorage `recess_venue`) + `getFieldGeometry`. |
 | `src/systems/mode.ts` | CLASSIC/KID mode persistence (+ legacy `recess_difficulty` migration) + `resolveLiveParams` (LIVE × MODES) + `getFeatures`. |
 | `src/systems/pitch.ts` | Defense half: throw timing→pitch band + the CPU batter's take/swing plan (band-based for kid mode, location-aware `resolveCpuPitchLocated` for main); AI wild-pitch roll (kid mode). |
 | `src/systems/pitchkind.ts` | Main-mode pitch types + strike-zone aiming: `PitchPlan` (kind/target/actual/inZone/travelMs), scatter from meter error × pitching stat, `chooseCpuPitch` (CPU pitches at you, wastes when ahead), `ballCurveAt` flight bend. Plate-coord space: (0,0) = zone center at (HOME.x, HOME.y + PLATE_ZONE.CY). |

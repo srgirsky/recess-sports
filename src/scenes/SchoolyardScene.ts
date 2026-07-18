@@ -16,6 +16,8 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS, TEAM_SIZE, AI_PICK_DELAY_MS, ANIM, type GameMode } from '../config';
 import { getMode, setMode } from '../systems/mode';
+import { getVenue, setVenue } from '../systems/venue';
+import { VENUES, type VenueDef, type VenueId } from '../data/venues';
 import { ROSTER } from '../data/characters';
 import type { Character } from '../data/types';
 import {
@@ -398,6 +400,40 @@ export class SchoolyardScene extends Phaser.Scene {
       this.titleObjs.push(container);
     });
     styleChips();
+
+    // Venue picker: three little field chips between the ribbon and PLAY.
+    const venueChips: Array<{ id: VenueId; c: Phaser.GameObjects.Container }> = [];
+    const styleVenues = () => {
+      const current = getVenue().id;
+      for (const chip of venueChips) {
+        const selected = chip.id === current;
+        chip.c.setAlpha(selected ? 1 : 0.5);
+        chip.c.setScale(selected ? 1 : 0.82);
+      }
+    };
+    (Object.values(VENUES) as VenueDef[]).forEach((v, i) => {
+      const x = GAME_WIDTH / 2 + (i - 1) * 150;
+      const { container } = pill(this, x, 444, `${v.emoji} ${v.name.replace('The ', '').toUpperCase()}`, {
+        fill: COLORS.cream,
+        fontSize: 15,
+        minW: 128,
+      });
+      container.setDepth(5);
+      container.setInteractive(
+        new Phaser.Geom.Rectangle(-70, -17, 140, 34),
+        Phaser.Geom.Rectangle.Contains
+      );
+      container.on('pointerdown', () => {
+        if (this.phase !== 'title') return;
+        setVenue(v.id);
+        audio.pop();
+        audio.say(v.name + '!');
+        styleVenues();
+      });
+      venueChips.push({ id: v.id, c: container });
+      this.titleObjs.push(container);
+    });
+    styleVenues();
 
     this.titleObjs.push(tag, play);
   }

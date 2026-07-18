@@ -20,10 +20,12 @@ import {
   HOME,
   FIELD_POSITIONS,
   BASE_COVER,
+  DEFAULT_GEOMETRY,
   basePos,
   dist,
   lerpVec,
   moveToward,
+  type FieldGeometry,
   type PositionId,
   type Vec,
 } from './geometry';
@@ -97,6 +99,7 @@ export type LiveEvent =
   | { t: 'pickup'; fielder: string }
   | { t: 'land' }
   | { t: 'error'; kind: 'drop' | 'bobble' | 'wild'; fielder: string }
+  | { t: 'bonk' } // the ball smacked a venue obstacle (the sandlot oak)
   | { t: 'throw'; toBase: 1 | 2 | 3 | 4 }
   | { t: 'out'; base: 1 | 2 | 3 | 4; runner: string }
   | { t: 'safe'; base: 1 | 2 | 3 | 4; runner: string }
@@ -125,6 +128,8 @@ export interface LivePlayState {
   landedAt: number;
   /** elapsed value when a fly was caught (0 if none) — opens the sac-fly window. */
   catchAt: number;
+  /** The venue's ground/obstacles (default: the park). */
+  geo: FieldGeometry;
   /** Events emitted THIS tick — the scene drains them for SFX/juice. */
   events: LiveEvent[];
 }
@@ -163,6 +168,7 @@ export function startLivePlay(opts: {
   defense: Array<{ position: PositionId; charId: string; speed?: number; glove?: number; arm?: number }>;
   outs: number;
   params: LiveParams;
+  geo?: FieldGeometry;
 }): LivePlayState {
   const { mode, launch, params } = opts;
   const runSpeedBase = mode === 'offense' ? params.playerRunSpeed : params.cpuRunSpeed;
@@ -220,6 +226,7 @@ export function startLivePlay(opts: {
     heldAt: 0,
     landedAt: 0,
     catchAt: 0,
+    geo: opts.geo ?? DEFAULT_GEOMETRY,
     events: [],
   };
 
@@ -308,9 +315,19 @@ function moveBall(s: LivePlayState, dtMs: number, params: LiveParams): void {
       b.rollV = 0;
     } else {
       // Decelerate toward the settle point (never fully crawls — snaps at 3px).
-      const v = s.launch.rollSpeed * Math.max(0.15, remain / b.rollTotal);
+      // The venue's ground sets the pace: asphalt is fast, shaggy grass slow.
+      const v = s.launch.rollSpeed * s.geo.rollMult * Math.max(0.15, remain / b.rollTotal);
       b.rollV = v;
       b.pos = moveToward(b.pos, s.launch.landing, (v * dtMs) / 1000);
+      // Rolled into a tree? It stops dead right there.
+      for (const o of s.geo.obstacles) {
+        if (dist(b.pos, o) <= o.r) {
+          b.rollV = 0;
+          s.launch = { ...s.launch, landing: { ...b.pos } };
+          s.events.push({ t: 'bonk' });
+          break;
+        }
+      }
     }
   } else if (b.phase === 'thrown' && b.throw) {
     b.throw.t += dtMs;
