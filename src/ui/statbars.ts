@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
 // The stat "equalizer" — four color-coded vertical bars with icon labels.
-// Icon-forward (no reading needed): 🏏 contact · 💪 power · ⚡ speed · ⚾ arm.
+// Icon-forward (no reading needed): 🏏 contact · 💪 power · ⚡ speed · ⚾ arm · 🧤 glove.
 // Extracted from the old draft card so any screen can show a kid's stats.
 // ---------------------------------------------------------------------------
 
@@ -12,6 +12,7 @@ export const STAT_BARS: Array<{ key: keyof Stats; color: number; icon: string }>
   { key: 'power', color: 0xe8524a, icon: '💪' },
   { key: 'speed', color: 0x3a7ad9, icon: '⚡' },
   { key: 'pitching', color: 0xffce3a, icon: '⚾' },
+  { key: 'fielding', color: 0x9b6dd6, icon: '🧤' },
 ];
 
 export interface StatBarOpts {

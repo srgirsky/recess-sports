@@ -60,6 +60,8 @@ export interface LiveParams {
   cpuRunSpeed: number;
   autoThrowMs: number;
   maxPlayMs: number;
+  playerErrorMult: number; // scale on player-team drop/wild chances (0 = never)
+  cpuErrorMult: number;
 }
 
 export function resolveLiveParams(mode: GameMode): LiveParams {
@@ -82,5 +84,7 @@ export function resolveLiveParams(mode: GameMode): LiveParams {
     cpuRunSpeed: LIVE.RUNNER_SPEED * m.cpuRunSpeedMult,
     autoThrowMs: LIVE.AUTO_THROW_MS,
     maxPlayMs: LIVE.MAX_PLAY_MS,
+    playerErrorMult: m.playerErrorMult,
+    cpuErrorMult: m.cpuErrorMult,
   };
 }

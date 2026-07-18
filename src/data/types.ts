@@ -12,8 +12,10 @@ export interface Stats {
   power: number;
   /** Baserunning — steals the occasional extra base and beats out weak grounders. */
   speed: number;
-  /** Only matters when this kid is the one pitching. */
+  /** Only matters when this kid is the one pitching. Doubles as the throwing arm. */
   pitching: number;
+  /** The glove: range on defense and how rarely this kid drops/bobbles the ball. */
+  fielding: number;
 }
 
 /** Visual knobs the character-drawing code reads to make each kid look distinct. */

@@ -206,6 +206,28 @@ export const LIVE = {
 };
 
 /**
+ * Error model (main mode): drops, bobbles, and wild throws, driven by each
+ * kid's glove (fielding stat) and arm (pitching stat). All chances are scaled
+ * by the mode's error multiplier — kid mode runs at 0.
+ */
+export const ERRORS = {
+  /** Drop chance on a fly catch at glove 5. Each glove point is ±PER_GLOVE. */
+  DROP_BASE: 0.14,
+  PER_GLOVE: 0.02,
+  /** Grounder bobbles are this fraction of the drop chance. */
+  BOBBLE_FACTOR: 0.5,
+  /** Wild-throw chance at arm 5. Each arm point is ±PER_ARM. */
+  WILD_BASE: 0.1,
+  PER_ARM: 0.015,
+  /** Extra wild chance when the throw meter is maxed (overthrowing it). */
+  OVERCHARGE_PENALTY: 0.08,
+  /** After a drop/bobble the kid is flustered this long (can't re-grab). */
+  FUMBLE_MS: 650,
+  /** A wild throw sails this far past the bag before dying. */
+  OVERSHOOT_PX: 64,
+};
+
+/**
  * The two ways to play. KID is the original one-button game with a forgiving
  * live sim; MAIN (the default) is the full Backyard-Baseball-style experience —
  * its extra mechanics arrive behind the `features` flags below.
@@ -246,6 +268,10 @@ export interface ModeLiveTuning {
   playerRunSpeedMult: number;
   /** CPU runners' speed (× RUNNER_SPEED). */
   cpuRunSpeedMult: number;
+  /** Scale on the PLAYER team's drop/wild-throw chances (0 = never errs). */
+  playerErrorMult: number;
+  /** Scale on the CPU team's error chances. */
+  cpuErrorMult: number;
 }
 
 export const MODES: Record<
@@ -268,6 +294,8 @@ export const MODES: Record<
       reachMult: 1.6,
       playerRunSpeedMult: 1.15,
       cpuRunSpeedMult: 0.8,
+      playerErrorMult: 0, // kid mode: your kids never drop it
+      cpuErrorMult: 0,
     },
     features: {
       pitchSelection: false,
@@ -289,6 +317,8 @@ export const MODES: Record<
       reachMult: 1.15,
       playerRunSpeedMult: 1.0,
       cpuRunSpeedMult: 1.05,
+      playerErrorMult: 1,
+      cpuErrorMult: 1,
     },
     swingTiming: { PERFECT: 70, GOOD: 150, CONTACT: 250 },
     // Flags flip to true as each Backyard-style mechanic lands.
@@ -296,7 +326,7 @@ export const MODES: Record<
       pitchSelection: true,
       battingCursor: true,
       manualBaserunning: false,
-      errors: false,
+      errors: true,
       steals: false,
       juice: false,
     },

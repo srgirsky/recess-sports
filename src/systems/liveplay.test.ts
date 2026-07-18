@@ -13,6 +13,8 @@ import {
   startLivePlay,
   stepLivePlay,
   finishLivePlay,
+  rollCatch,
+  rollThrowError,
   type LivePlayState,
   type LiveInputs,
   type LiveEvent,
@@ -28,7 +30,7 @@ const plain = (over: Partial<Character>): Character => ({
   id: 'x',
   name: 'X',
   tagline: '',
-  stats: { contact: 5, power: 5, speed: 5, pitching: 5 },
+  stats: { contact: 5, power: 5, speed: 5, pitching: 5, fielding: 5 },
   visual: { skin: 0, hair: 'short', hairColor: 0, uniform: 0, accessory: 'none' },
   ability: 'none',
   ...over,
@@ -83,7 +85,7 @@ describe('resolveContact: swing -> launch', () => {
   });
 
   it('a crushed perfect fly clears the fence', () => {
-    const slugger = plain({ stats: { contact: 5, power: 10, speed: 5, pitching: 5 } });
+    const slugger = plain({ stats: { contact: 5, power: 10, speed: 5, pitching: 5, fielding: 5 } });
     // q roll 0.99 (+0.35 band +0.2 power) = 1.54 > HR_Q; type roll 0.7 -> fly.
     const r = resolveContact('perfect', slugger, plain({}), seq([0.99, 0.7, 0.5]));
     expect(r.kind).toBe('inPlay');
@@ -282,6 +284,99 @@ describe('live play: offense (the player runs)', () => {
   });
 });
 
+describe('live play: stat-driven fielders & errors', () => {
+  const main = resolveLiveParams('main');
+
+  it('rollCatch: better gloves drop less; error mult 0 never rolls the rng', () => {
+    expect(rollCatch(1, 'fly', 1, () => 0.2)).toBe(false); // glove 1: 22% drop
+    expect(rollCatch(10, 'fly', 1, () => 0.2)).toBe(true); // glove 10: 4%
+    const boom = () => {
+      throw new Error('rng must not be consumed at mult 0');
+    };
+    expect(rollCatch(1, 'fly', 0, boom)).toBe(true); // kid-mode byte-identity
+  });
+
+  it('rollThrowError: weak arms sail more; a maxed meter adds risk', () => {
+    expect(rollThrowError(1, 0.5, 1, () => 0.12)).toBe(true); // arm 1: 16%
+    expect(rollThrowError(10, 0.5, 1, () => 0.12)).toBe(false); // arm 10: 2.5%
+    expect(rollThrowError(5, 1, 1, () => 0.15)).toBe(true); // overcharged: 18%
+    expect(rollThrowError(5, 0.5, 1, () => 0.15)).toBe(false); // normal: 10%
+  });
+
+  it('a dropped fly leaves the batter safe and the ball live on the grass', () => {
+    let s = startLivePlay({
+      mode: 'defense',
+      launch: flyToCenter,
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params: main,
+    });
+    // First grab attempt muffs it (0.01 < drop chance), later rolls are clean.
+    const rng = seq([0.01, 0.9]);
+    const { s: end, events } = runPlay(s, main, (st) => ({ pointer: st.ball.pos }), rng);
+    expect(events.some((e) => e.t === 'error' && e.kind === 'drop')).toBe(true);
+    expect(events.some((e) => e.t === 'catch')).toBe(false);
+    const out = finishLivePlay(end);
+    expect(out.batterOut).toBe(false);
+    expect(out.bases[0]).toBe(true); // reached on the error
+  });
+
+  it('a wild throw sails past the bag: no out, runners live', () => {
+    let s = startLivePlay({
+      mode: 'defense',
+      launch: grounderToShort,
+      batter: { charId: 'bat', speed: 3 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params: main,
+    });
+    // rng: clean pickup (0.9), then the overcharged throw sails (0.05 < 18%),
+    // then clean rolls for the recovery.
+    const rng = seq([0.9, 0.05, 0.9]);
+    let threw = false;
+    const { s: end, events } = runPlay(
+      s,
+      main,
+      (st) => {
+        if (st.ball.phase === 'held' && !threw) {
+          threw = true;
+          return { throwTo: { base: 1 as const, power: 1 } };
+        }
+        return { pointer: st.ball.pos };
+      },
+      rng
+    );
+    expect(events.some((e) => e.t === 'error' && e.kind === 'wild')).toBe(true);
+    expect(events.some((e) => e.t === 'out')).toBe(false);
+    expect(finishLivePlay(end).batterOut).toBe(false);
+  });
+
+  it('fast fielders reach the ball sooner than slow ones', () => {
+    const ticksToPickup = (speed: number) => {
+      const defense = POSITIONS.map((p, i) => ({ position: p, charId: `f${i}`, speed }));
+      let s = startLivePlay({
+        mode: 'offense', // CPU fields
+        launch: { ...grounderToShort, landing: { x: 300, y: 250 } },
+        batter: { charId: 'bat', speed: 5 },
+        baseRunners: [],
+        defense,
+        outs: 0,
+        params: main,
+      });
+      let ticks = 0;
+      while (s.phase !== 'done' && ticks++ < 500) {
+        s = stepLivePlay(s, {}, 50, main, () => 0.9);
+        if (s.events.some((e) => e.t === 'pickup')) return ticks;
+      }
+      return Infinity;
+    };
+    expect(ticksToPickup(10)).toBeLessThan(ticksToPickup(1));
+  });
+});
+
 describe('live play: folding into the inning', () => {
   it('applyLivePlay lands outs/runs/bases and resets the count', () => {
     const prev = newHalfInning();
@@ -314,7 +409,7 @@ describe('live play: termination property', () => {
       const mode = i % 3 === 0 ? 'offense' : ('defense' as const);
       const r = resolveContact(
         (['perfect', 'good', 'weak'] as const)[i % 3],
-        plain({ stats: { contact: 5, power: (i % 10) + 1, speed: ((i * 3) % 10) + 1, pitching: 5 } }),
+        plain({ stats: { contact: 5, power: (i % 10) + 1, speed: ((i * 3) % 10) + 1, pitching: 5, fielding: 5 } }),
         plain({}),
         () => Math.random()
       );

@@ -13,7 +13,7 @@
 //   - a runner standing safe on a base can never be put out
 // ---------------------------------------------------------------------------
 
-import { LIVE } from '../config';
+import { LIVE, ERRORS } from '../config';
 import type { Launch } from './atbat';
 import type { LiveParams } from './mode';
 import {
@@ -38,6 +38,12 @@ export interface FielderState {
   /** The spot this fielder returns to / stands at. */
   home: Vec;
   hasBall: boolean;
+  /** This kid's stats: chase speed, glove (drop resistance), arm (wild resistance). */
+  speed: number;
+  glove: number;
+  arm: number;
+  /** After a drop/bobble the kid is flustered until this `elapsed` time. */
+  fumbleUntil: number;
 }
 
 export interface RunnerState {
@@ -73,8 +79,8 @@ export interface BallState {
   /** Rolling: current speed + fixed deceleration reference. */
   rollV: number;
   rollTotal: number;
-  /** A live throw. */
-  throw?: { toBase: 1 | 2 | 3 | 4; from: Vec; t: number; totalMs: number };
+  /** A live throw. `wild` = it will sail past the bag (rolled at launch). */
+  throw?: { toBase: 1 | 2 | 3 | 4; from: Vec; t: number; totalMs: number; wild?: boolean };
 }
 
 export type LivePhase = 'live' | 'done';
@@ -83,6 +89,7 @@ export type LiveEvent =
   | { t: 'catch'; fielder: string }
   | { t: 'pickup'; fielder: string }
   | { t: 'land' }
+  | { t: 'error'; kind: 'drop' | 'bobble' | 'wild'; fielder: string }
   | { t: 'throw'; toBase: 1 | 2 | 3 | 4 }
   | { t: 'out'; base: 1 | 2 | 3 | 4; runner: string }
   | { t: 'safe'; base: 1 | 2 | 3 | 4; runner: string }
@@ -139,7 +146,8 @@ export function startLivePlay(opts: {
   launch: Launch;
   batter: { charId: string; speed: number };
   baseRunners: Array<{ base: 1 | 2 | 3; charId: string; speed: number }>;
-  defense: Array<{ position: PositionId; charId: string }>;
+  /** Stats default to 5 for callers (tests) that don't care. */
+  defense: Array<{ position: PositionId; charId: string; speed?: number; glove?: number; arm?: number }>;
   outs: number;
   params: LiveParams;
 }): LivePlayState {
@@ -157,6 +165,10 @@ export function startLivePlay(opts: {
     pos: { ...FIELD_POSITIONS[d.position] },
     home: { ...FIELD_POSITIONS[d.position] },
     hasBall: false,
+    speed: d.speed ?? 5,
+    glove: d.glove ?? 5,
+    arm: d.arm ?? 5,
+    fumbleUntil: 0,
   }));
 
   // The chaser: whoever starts nearest the ball's landing/settle point.
@@ -250,7 +262,7 @@ export function stepLivePlay(
 
   moveBall(s, dtMs);
   moveFielders(s, inputs, params, dtMs);
-  tryGrabBall(s, params);
+  tryGrabBall(s, params, rng);
   maybeThrow(s, inputs, params, rng);
   moveRunners(s, dtMs);
   carrierTouchesBags(s, params);
@@ -308,14 +320,22 @@ function moveFielders(
   if (s.mode === 'defense') {
     // Steerable while chasing AND while holding — a kid can run the ball to a bag.
     if (inputs.pointer) {
-      chaser.pos = moveToward(chaser.pos, inputs.pointer, (params.fielderSpeed * dtMs) / 1000);
+      chaser.pos = moveToward(
+        chaser.pos,
+        inputs.pointer,
+        (params.fielderSpeed * statSpeedMult(chaser) * dtMs) / 1000
+      );
       if (chaser.hasBall) s.ball.pos = { ...chaser.pos };
     }
   } else if (ballBusy && s.elapsed >= params.cpuReactionMs) {
     // CPU runs to the landing spot while the ball is up ("read it off the
     // bat"), then charges the ball itself once it's on the ground.
     const target = s.ball.phase === 'flight' ? s.launch.landing : s.ball.pos;
-    chaser.pos = moveToward(chaser.pos, target, (params.cpuFielderSpeed * dtMs) / 1000);
+    chaser.pos = moveToward(
+      chaser.pos,
+      target,
+      (params.cpuFielderSpeed * statSpeedMult(chaser) * dtMs) / 1000
+    );
   }
 
   // The covering fielder jogs to the bag while a throw is in the air, so the
@@ -326,21 +346,65 @@ function moveFielders(
       s.fielders[idx].pos = moveToward(
         s.fielders[idx].pos,
         basePos(s.ball.throw.toBase),
-        (params.fielderSpeed * dtMs) / 1000
+        (params.fielderSpeed * statSpeedMult(s.fielders[idx]) * dtMs) / 1000
       );
     }
   }
 }
 
-function tryGrabBall(s: LivePlayState, params: LiveParams): void {
+/** A fielder's chase speed factor from their speed stat (±5%/point around 5). */
+function statSpeedMult(f: FielderState): number {
+  return 1 + (f.speed - 5) * 0.05;
+}
+
+/** The error scale for the side currently on defense. */
+function defErrorMult(s: LivePlayState, params: LiveParams): number {
+  return s.mode === 'defense' ? params.playerErrorMult : params.cpuErrorMult;
+}
+
+/** Does this kid hang onto the ball? true = clean. Pure, exported for tests. */
+export function rollCatch(glove: number, kind: 'fly' | 'grounder', mult: number, rng: () => number): boolean {
+  if (mult <= 0) return true; // kid mode: no rng consumed, byte-identical sim
+  const base = Math.max(0.01, ERRORS.DROP_BASE - (glove - 5) * ERRORS.PER_GLOVE);
+  const chance = (kind === 'fly' ? base : base * ERRORS.BOBBLE_FACTOR) * mult;
+  return rng() >= chance;
+}
+
+/** Does this throw sail past the bag? Pure, exported for tests. */
+export function rollThrowError(arm: number, power: number, mult: number, rng: () => number): boolean {
+  if (mult <= 0) return false;
+  const overcharge = power >= 0.98 ? ERRORS.OVERCHARGE_PENALTY : 0;
+  const chance = (Math.max(0.01, ERRORS.WILD_BASE - (arm - 5) * ERRORS.PER_ARM) + overcharge) * mult;
+  return rng() < chance;
+}
+
+/** A muffed ball drops live at `pos`; the kid is flustered for a beat. */
+function fumble(s: LivePlayState, fielder: FielderState, kind: 'drop' | 'bobble'): void {
+  const b = s.ball;
+  b.phase = 'rolling';
+  b.height = 0;
+  b.rollV = 0;
+  b.rollTotal = 1;
+  s.launch = { ...s.launch, landing: { ...b.pos } }; // it dies where it fell
+  s.landedAt = s.elapsed;
+  fielder.fumbleUntil = s.elapsed + ERRORS.FUMBLE_MS;
+  s.events.push({ t: 'error', kind, fielder: fielder.charId });
+}
+
+function tryGrabBall(s: LivePlayState, params: LiveParams, rng: () => number): void {
   const b = s.ball;
   const chaser = s.fielders[s.active];
+  if (s.elapsed < chaser.fumbleUntil) return; // still flustered from the muff
   const catchR = s.mode === 'defense' ? params.catchRadius : params.cpuCatchRadius;
   const pickupR = s.mode === 'defense' ? params.pickupRadius : params.cpuPickupRadius;
 
   if (b.phase === 'flight') {
     const t = b.flightT / b.flightMs;
     if (t >= 1 - LIVE.CATCHABLE_TAIL && dist(chaser.pos, b.pos) <= catchR) {
+      if (!rollCatch(chaser.glove, 'fly', defErrorMult(s, params), rng)) {
+        fumble(s, chaser, 'drop'); // clanked it — ball's live on the grass, nobody's out
+        return;
+      }
       secureBall(s, s.active);
       s.flyCaught = true;
       s.events.push({ t: 'catch', fielder: chaser.charId });
@@ -360,6 +424,10 @@ function tryGrabBall(s: LivePlayState, params: LiveParams): void {
     }
   } else if (b.phase === 'rolling') {
     if (dist(chaser.pos, b.pos) <= pickupR) {
+      if (!rollCatch(chaser.glove, 'grounder', defErrorMult(s, params), rng)) {
+        fumble(s, chaser, 'bobble');
+        return;
+      }
       secureBall(s, s.active);
       s.events.push({ t: 'pickup', fielder: chaser.charId });
     }
@@ -384,35 +452,71 @@ function maybeThrow(
   rng: () => number
 ): void {
   if (s.ball.phase !== 'held') return;
+  const carrier = s.ball.heldBy !== null ? s.fielders[s.ball.heldBy] : undefined;
+  const mult = defErrorMult(s, params);
 
   if (s.mode === 'defense') {
     if (inputs.throwTo) {
       const speed =
         params.throwSpeedMin + inputs.throwTo.power * (params.throwSpeedMax - params.throwSpeedMin);
-      launchThrow(s, inputs.throwTo.base, speed, 0);
+      const wild = rollThrowError(carrier?.arm ?? 5, inputs.throwTo.power, mult, rng);
+      launchThrow(s, inputs.throwTo.base, speed, 0, wild, carrier);
     } else if (s.elapsed - s.heldAt >= params.autoThrowMs && anyForwardMover(s)) {
       // Idle-kid rescue: the sim throws a decent (not perfect) ball by itself.
       const speed = params.throwSpeedMin + 0.75 * (params.throwSpeedMax - params.throwSpeedMin);
-      launchThrow(s, chooseThrowTarget(s, speed), speed, 0);
+      launchThrow(s, chooseThrowTarget(s, speed), speed, 0, false, carrier);
     }
   } else if (s.elapsed - s.heldAt >= params.cpuThrowDelayMs && anyForwardMover(s)) {
-    launchThrow(s, chooseThrowTarget(s, params.cpuThrowSpeed), params.cpuThrowSpeed, rng() * params.cpuThrowErrorMs);
+    const wild = rollThrowError(carrier?.arm ?? 5, 0.8, mult, rng);
+    launchThrow(
+      s,
+      chooseThrowTarget(s, params.cpuThrowSpeed),
+      params.cpuThrowSpeed,
+      rng() * params.cpuThrowErrorMs,
+      wild,
+      carrier
+    );
   }
 }
 
-function launchThrow(s: LivePlayState, toBase: 1 | 2 | 3 | 4, speed: number, extraMs: number): void {
+function launchThrow(
+  s: LivePlayState,
+  toBase: 1 | 2 | 3 | 4,
+  speed: number,
+  extraMs: number,
+  wild = false,
+  thrower?: FielderState
+): void {
   const b = s.ball;
   const from = { ...b.pos };
   const totalMs = (dist(from, basePos(toBase)) / speed) * 1000 + extraMs;
   b.phase = 'thrown';
   b.heldBy = null;
-  b.throw = { toBase, from, t: 0, totalMs: Math.max(60, totalMs) };
+  b.throw = { toBase, from, t: 0, totalMs: Math.max(60, totalMs), wild };
   s.fielders.forEach((f) => (f.hasBall = false));
   s.events.push({ t: 'throw', toBase });
+  if (wild && thrower) s.events.push({ t: 'error', kind: 'wild', fielder: thrower.charId });
 }
 
 /** The ball beat these runners to the bag — playground rules, they're out. */
 function arriveThrow(s: LivePlayState, base: 1 | 2 | 3 | 4): void {
+  // A wild throw sails past the bag and dies loose — nobody's out, take a base!
+  if (s.ball.throw?.wild) {
+    const b = s.ball;
+    const from = b.throw!.from;
+    const bag = basePos(base);
+    const len = Math.max(1, dist(from, bag));
+    const dir = { x: (bag.x - from.x) / len, y: (bag.y - from.y) / len };
+    b.pos = { x: bag.x + dir.x * ERRORS.OVERSHOOT_PX, y: bag.y + dir.y * ERRORS.OVERSHOOT_PX };
+    b.phase = 'rolling';
+    b.height = 0;
+    b.rollV = 0;
+    b.rollTotal = 1;
+    b.throw = undefined;
+    s.launch = { ...s.launch, landing: { ...b.pos } };
+    s.landedAt = s.elapsed;
+    return;
+  }
   for (const r of s.runners) {
     if (r.done === null && !r.returning && r.to === base && r.to !== r.from && r.progress < 1) {
       r.done = 'out';

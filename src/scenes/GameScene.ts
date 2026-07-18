@@ -1068,7 +1068,11 @@ export class GameScene extends Phaser.Scene {
       launch,
       batter: { charId: batterChar.id, speed: batterChar.stats.speed },
       baseRunners,
-      defense: this.fieldAssignment,
+      // Each kid fields with their own legs, glove, and arm.
+      defense: this.fieldAssignment.map((a) => {
+        const c = getCharacter(a.charId);
+        return { ...a, speed: c.stats.speed, glove: c.stats.fielding, arm: c.stats.pitching };
+      }),
       outs: this.halfState.outs,
       params: this.liveParams,
     });
@@ -1251,6 +1255,15 @@ export class GameScene extends Phaser.Scene {
         case 'land':
           burst(this, s.ball.pos.x, s.ball.pos.y, COLORS.dirt, 6);
           break;
+        case 'error': {
+          const label = e.kind === 'wild' ? 'WILD THROW!' : e.kind === 'drop' ? 'DROPPED IT!' : 'BOBBLED!';
+          floatingText(this, s.ball.pos.x, s.ball.pos.y - 44, label, COLORS.red, 28);
+          screenShake(this, 3);
+          audio.whiff();
+          // An error by the CPU while your kids run = a gift. Cheer it.
+          if (s.mode === 'offense') audio.cheer();
+          break;
+        }
         case 'throw':
           audio.pitchWoosh();
           this.hideBaseRings();

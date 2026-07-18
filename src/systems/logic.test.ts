@@ -44,7 +44,7 @@ const plain = (over: Partial<Character>): Character => ({
   id: 'x',
   name: 'X',
   tagline: '',
-  stats: { contact: 5, power: 5, speed: 5, pitching: 5 },
+  stats: { contact: 5, power: 5, speed: 5, pitching: 5, fielding: 5 },
   visual: { skin: 0, hair: 'short', hairColor: 0, uniform: 0, accessory: 'none' },
   ability: 'none',
   ...over,
@@ -366,7 +366,7 @@ describe('CPU at-bat vs the player pitch', () => {
   });
 
   it('a big arm (8+) can rescue a wild throw into the zone', () => {
-    const ace = plain({ stats: { contact: 5, power: 5, speed: 5, pitching: 10 } });
+    const ace = plain({ stats: { contact: 5, power: 5, speed: 5, pitching: 10, fielding: 5 } });
     // Ace: nudge roll 0.1 < 0.35 -> wild becomes weak; isBall 0.5 > 0.45 -> strike.
     const rescued = resolveCpuPitch('wild', ace, plain({}), seq([0.1, 0.5, 0.5]));
     expect(rescued.isBall).toBe(false);
@@ -377,8 +377,8 @@ describe('CPU at-bat vs the player pitch', () => {
   });
 
   it('AI wild pitches get rarer with a better pitching stat', () => {
-    const wildKid = plain({ stats: { contact: 5, power: 5, speed: 5, pitching: 1 } });
-    const ace = plain({ stats: { contact: 5, power: 5, speed: 5, pitching: 10 } });
+    const wildKid = plain({ stats: { contact: 5, power: 5, speed: 5, pitching: 1, fielding: 5 } });
+    const ace = plain({ stats: { contact: 5, power: 5, speed: 5, pitching: 10, fielding: 5 } });
     expect(rollAiWildPitch(wildKid, () => 0.1)).toBe(true);
     expect(rollAiWildPitch(ace, () => 0.1)).toBe(false);
   });
