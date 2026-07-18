@@ -14,7 +14,8 @@
 // ---------------------------------------------------------------------------
 
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT, COLORS, TEAM_SIZE, AI_PICK_DELAY_MS, ANIM } from '../config';
+import { GAME_WIDTH, GAME_HEIGHT, COLORS, TEAM_SIZE, AI_PICK_DELAY_MS, ANIM, type Difficulty } from '../config';
+import { getDifficulty, setDifficulty } from '../systems/difficulty';
 import { ROSTER } from '../data/characters';
 import type { Character } from '../data/types';
 import {
@@ -364,7 +365,41 @@ export class SchoolyardScene extends Phaser.Scene {
       onComplete: () => pulse(this, play, { scale: 1.05, dur: 520 }),
     });
 
-    this.titleObjs = [tag, play];
+    // Difficulty toggle: two icon chips under PLAY. Selected = gold + full size.
+    const chips: Array<{ d: Difficulty; c: Phaser.GameObjects.Container }> = [];
+    const styleChips = () => {
+      const current = getDifficulty();
+      for (const chip of chips) {
+        const selected = chip.d === current;
+        chip.c.setAlpha(selected ? 1 : 0.55);
+        chip.c.setScale(selected ? 1 : 0.85);
+      }
+    };
+    (
+      [
+        { d: 'easy' as Difficulty, label: '🙂 EASY', x: GAME_WIDTH / 2 - 92 },
+        { d: 'hard' as Difficulty, label: '🔥 HARD', x: GAME_WIDTH / 2 + 92 },
+      ] as const
+    ).forEach(({ d, label, x }) => {
+      const { container } = pill(this, x, 592, label, { fill: COLORS.cream, fontSize: 20, minW: 150 });
+      container.setDepth(5);
+      container.setInteractive(
+        new Phaser.Geom.Rectangle(-80, -22, 160, 44),
+        Phaser.Geom.Rectangle.Contains
+      );
+      container.on('pointerdown', () => {
+        if (this.phase !== 'title') return;
+        setDifficulty(d);
+        audio.pop();
+        audio.say(d === 'easy' ? 'Easy mode!' : 'Hard mode!');
+        styleChips();
+      });
+      chips.push({ d, c: container });
+      this.titleObjs.push(container);
+    });
+    styleChips();
+
+    this.titleObjs.push(tag, play);
   }
 
   // --- Recess cutscene --------------------------------------------------------

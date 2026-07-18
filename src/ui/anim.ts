@@ -40,6 +40,11 @@ export function runCycle(
     delay: opts.frameMs ?? ANIM.RUN_FRAME_MS,
     loop: true,
     callback: () => {
+      if (!img.active) {
+        // The sprite died with the cycle still running — stop, don't crash.
+        timer.remove();
+        return;
+      }
       frame = frame === 1 ? 2 : 1;
       img.setTexture(poseKey(id, frame === 1 ? 'run1' : 'run2'));
     },

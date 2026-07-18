@@ -2,14 +2,18 @@
 // At-bat resolution. PURE. Two ideas kept separate on purpose:
 //
 //   TIMING is the skill  -> how close the swing was decides the "band".
-//   STATS are the flavor -> within a band, the kid's stats decide the outcome.
+//   STATS are the flavor -> within a band, the kid's stats shape the LAUNCH.
 //
-// So a max-contact kid forgives sloppy timing; a slugger turns good timing into
-// home runs. Ability hooks (never_strikes_out, unhittable_pitch) also apply here.
+// Since the live-play rework, a swing resolves into a trajectory (grounder /
+// liner / fly, where it lands, how long it hangs) — NOT a hit/out. Whether it
+// becomes a hit or an out emerges from the interactive play in liveplay.ts.
+// Only home runs are decided here (crushed flies that clear the fence).
+// Ability hooks (never_strikes_out, unhittable_pitch) still apply to the band.
 // ---------------------------------------------------------------------------
 
 import type { Character } from '../data/types';
-import { TIMING } from '../config';
+import { TIMING, LIVE } from '../config';
+import { HOME, FENCE_Y, type Vec } from './geometry';
 
 export type SwingBand = 'perfect' | 'good' | 'weak' | 'miss';
 
@@ -40,98 +44,98 @@ function downgrade(band: SwingBand): SwingBand {
   return BAND_ORDER[Math.max(0, i - 1)];
 }
 
+// --- Contact → launch (the interactive live-play path) ----------------------
+
+export type ContactType = 'grounder' | 'liner' | 'fly';
+
+/** A batted ball's trajectory. The live-play sim turns this into outs/hits. */
+export interface Launch {
+  type: ContactType;
+  /** Where the ball lands (fly/liner) or settles (grounder), screen coords. */
+  landing: Vec;
+  /** Air time in ms (0 for grounders). */
+  hangMs: number;
+  /** Initial ground speed (px/s) — grounders decelerate to stop at `landing`. */
+  rollSpeed: number;
+  /** Over the fence — skip the live play and celebrate. */
+  homer: boolean;
+}
+
+export type SwingOutcome =
+  | { kind: 'strike' | 'foul'; description: string }
+  | { kind: 'inPlay'; launch: Launch };
+
 /**
- * Resolve a swing into an outcome.
- * @param band   the timing band from bandFromError
- * @param batter the kid at the plate
- * @param pitcher the kid on the mound
- * @param rng    () => 0..1
+ * Resolve a swing into a LAUNCH, not an outcome — whether it becomes a hit or
+ * an out now emerges from the live fielding/running play. Keeps the same band
+ * logic and ability hooks as resolveSwing, but the only dice rolled here are
+ * "where does the ball go".
  */
-export function resolveSwing(
+export function resolveContact(
   band: SwingBand,
   batter: Character,
   pitcher: Character,
   rng: () => number
-): AtBatResult {
-  // --- Pitcher ability: nearly unhittable heat drags the band down a notch ---
-  if (pitcher.ability === 'unhittable_pitch') {
-    band = downgrade(band);
-  }
-
-  // --- Batter ability: this kid literally never whiffs ---------------------
-  if (batter.ability === 'never_strikes_out' && band === 'miss') {
-    band = 'weak';
-  }
-
-  const { contact, power, speed } = batter.stats;
+): SwingOutcome {
+  if (pitcher.ability === 'unhittable_pitch') band = downgrade(band);
+  if (batter.ability === 'never_strikes_out' && band === 'miss') band = 'weak';
 
   if (band === 'miss') {
-    return { kind: 'strike', bases: 0, description: 'Swing and a miss!' };
+    return { kind: 'strike', description: 'Swing and a miss!' };
   }
 
-  // Probability of making a hit (vs. an out) within this band, nudged by contact.
-  const baseHitChance: Record<Exclude<SwingBand, 'miss'>, number> = {
-    weak: 0.18,
-    good: 0.62,
-    perfect: 0.9,
-  };
-  const contactBonus = (contact - 5) * 0.03; // +/-15% across the stat range
-  const hitChance = clamp(baseHitChance[band] + contactBonus, 0.05, 0.98);
-
-  // Weak contact has a small chance to be fouled off (a strike that can't be #3).
+  // Weak contact still has a small chance to be fouled straight off.
   if (band === 'weak' && rng() < 0.25) {
-    return { kind: 'foul', bases: 0, description: 'Ticked it foul.' };
+    return { kind: 'foul', description: 'Ticked it foul.' };
   }
 
-  if (rng() > hitChance) {
-    // An out — but a speedy kid sometimes beats out a weak grounder.
-    if (band === 'weak' && rng() < speed * 0.03) {
-      return { kind: 'hit', bases: 1, description: 'Beats the throw! Infield single!' };
-    }
-    return { kind: 'out', bases: 0, description: outFlavor(band, rng) };
-  }
+  const { contact, power } = batter.stats;
+  const L = LIVE.LAUNCH;
 
-  // It's a hit — decide how many bases from the band + power (+ a little speed).
-  const bases = hitBases(band, power, speed, rng);
-  return { kind: 'hit', bases, description: hitFlavor(bases) };
-}
-
-function hitBases(
-  band: SwingBand,
-  power: number,
-  speed: number,
-  rng: () => number
-): number {
-  // Roll a "quality" score; higher band + power push toward extra bases.
+  // Contact quality: the same shape as the old hitBases roll — band + power
+  // (and a whisper of contact) push the ball deeper and harder.
   const bandBoost = band === 'perfect' ? 0.35 : band === 'good' ? 0.12 : 0;
-  const q = rng() + bandBoost + (power - 5) * 0.04 + (speed - 5) * 0.015;
-  if (q > 1.15) return 4; // home run
-  if (q > 0.92) return 3; // triple
-  if (q > 0.68) return 2; // double
-  return 1; // single
+  const q = rng() + bandBoost + (power - 5) * 0.04 + (contact - 5) * 0.01;
+
+  const type = contactType(band, rng);
+
+  // Spray direction: a point along the horizon between the foul lines.
+  const t = L.SPRAY_MARGIN + rng() * (1 - 2 * L.SPRAY_MARGIN);
+  const target: Vec = { x: 132 + t * (828 - 132), y: FENCE_Y };
+  const dirLen = Math.hypot(target.x - HOME.x, target.y - HOME.y);
+  const dir: Vec = { x: (target.x - HOME.x) / dirLen, y: (target.y - HOME.y) / dirLen };
+
+  const distFor: Record<ContactType, number> = {
+    grounder: L.GROUNDER_DIST.BASE + Math.max(0, q) * L.GROUNDER_DIST.SCALE,
+    liner: L.LINER_DIST.BASE + Math.max(0, q) * L.LINER_DIST.SCALE,
+    fly: L.FLY_DIST.BASE + Math.max(0, q) * L.FLY_DIST.SCALE,
+  };
+
+  // A crushed fly clears the fence outright.
+  const homer = type === 'fly' && q > L.HR_Q;
+  // Everything else stays on the field, just short of the wall.
+  const maxDist = dirLen - 14;
+  const d = homer ? dirLen + 60 : Math.min(distFor[type], maxDist);
+  const landing: Vec = { x: HOME.x + dir.x * d, y: HOME.y + dir.y * d };
+
+  const depth = Math.min(1, d / dirLen);
+  const hangMs =
+    type === 'fly'
+      ? L.FLY_HANG_MS.MIN + depth * (L.FLY_HANG_MS.MAX - L.FLY_HANG_MS.MIN)
+      : type === 'liner'
+        ? L.LINER_HANG_MS.MIN + depth * (L.LINER_HANG_MS.MAX - L.LINER_HANG_MS.MIN)
+        : 0;
+  const rollSpeed =
+    L.GROUNDER_SPEED.MIN + Math.min(1, Math.max(0, q)) * (L.GROUNDER_SPEED.MAX - L.GROUNDER_SPEED.MIN);
+
+  return { kind: 'inPlay', launch: { type, landing, hangMs, rollSpeed, homer } };
 }
 
-function hitFlavor(bases: number): string {
-  switch (bases) {
-    case 4:
-      return 'HOME RUN! 💥';
-    case 3:
-      return 'Triple! All the way to third!';
-    case 2:
-      return 'Double! Stand-up double!';
-    default:
-      return 'Base hit!';
-  }
+/** Better timing lifts the ball: weak = choppers, perfect = liners and flies. */
+function contactType(band: Exclude<SwingBand, 'miss'>, rng: () => number): ContactType {
+  const r = rng();
+  if (band === 'weak') return r < 0.7 ? 'grounder' : r < 0.9 ? 'fly' : 'liner';
+  if (band === 'good') return r < 0.45 ? 'grounder' : r < 0.75 ? 'liner' : 'fly';
+  return r < 0.2 ? 'grounder' : r < 0.6 ? 'liner' : 'fly'; // perfect
 }
 
-function outFlavor(band: SwingBand, rng: () => number): string {
-  const pool =
-    band === 'perfect' || band === 'good'
-      ? ['Lined right at someone!', 'Great catch robs the hit!', 'Caught at the wall!']
-      : ['Grounds out.', 'Pops it up — caught.', 'Easy out.'];
-  return pool[Math.floor(rng() * pool.length)];
-}
-
-function clamp(x: number, lo: number, hi: number): number {
-  return Math.max(lo, Math.min(hi, x));
-}

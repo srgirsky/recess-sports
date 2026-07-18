@@ -13,8 +13,16 @@ import {
   chooseAiPick,
   isDraftComplete,
 } from './draft';
-import { bandFromError, resolveSwing } from './atbat';
-import { newHalfInning, applyAtBat } from './inning';
+import { bandFromError, resolveContact, type SwingBand } from './atbat';
+import { newHalfInning, applyAtBat, applyLivePlay } from './inning';
+import {
+  startLivePlay,
+  stepLivePlay,
+  finishLivePlay,
+  type LivePlayState,
+} from './liveplay';
+import { resolveLiveParams } from './difficulty';
+import type { PositionId } from './geometry';
 import {
   pitchBandFromError,
   resolveCpuPitch,
@@ -106,18 +114,16 @@ describe('at-bat abilities', () => {
   it('never_strikes_out turns a miss into contact (never a strikeout swing)', () => {
     const batter = plain({ ability: 'never_strikes_out' });
     const pitcher = plain({});
-    // Force the "out" branch deterministically: rng high enough to miss the hit roll.
-    const r = resolveSwing('miss', batter, pitcher, seq([0.99, 0.99, 0.99]));
+    const r = resolveContact('miss', batter, pitcher, seq([0.9, 0.5, 0.5, 0.5]));
     expect(r.kind).not.toBe('strike'); // upgraded away from a whiff
   });
 
-  it('unhittable_pitch drags the batter down a band (perfect -> good)', () => {
-    const batter = plain({});
-    const acePitcher = plain({ ability: 'unhittable_pitch' });
-    // With a perfect swing vs the ace, and a low roll, it should still be tougher
-    // than vs a normal pitcher. We check it never returns a home run on a low roll.
-    const r = resolveSwing('perfect', batter, acePitcher, seq([0.5, 0.1]));
-    expect(['hit', 'out', 'foul', 'strike']).toContain(r.kind);
+  it('unhittable_pitch drags the batter down a band (a miss stays a strikeout)', () => {
+    // vs a normal pitcher a weak swing is contact; vs the ace it drops to a miss.
+    const rWeakVsAce = resolveContact('weak', plain({}), plain({ ability: 'unhittable_pitch' }), seq([0.9]));
+    expect(rWeakVsAce.kind).toBe('strike');
+    const rWeakVsNormal = resolveContact('weak', plain({}), plain({}), seq([0.9, 0.5, 0.5, 0.5]));
+    expect(rWeakVsNormal.kind).toBe('inPlay');
   });
 });
 
@@ -338,15 +344,66 @@ describe('gameflow: walk-offs, skipped bottoms, bonus innings', () => {
 });
 
 describe('sanity: a full simulated game always terminates with a score', () => {
-  it('plays 2 innings without hanging', () => {
+  it('plays 2 innings without hanging (live plays included)', () => {
     // Draft two teams greedily.
     let d = createDraft(ROSTER.map((c) => c.id));
     let guard = 0;
     while (!isDraftComplete(d) && guard++ < 100) {
       d = applyPick(d, chooseAiPick(d, () => Math.random()));
     }
-    // Player-style half: random swing bands straight into resolveSwing.
-    const bat = (team: string[], pitcher: Character) => {
+
+    const POSITIONS: PositionId[] = ['P', 'C', '1B', '2B', 'SS', '3B', 'LF', 'CF', 'RF'];
+    const params = resolveLiveParams('easy');
+    const defenseFor = (team: string[]) =>
+      POSITIONS.map((p, i) => ({ position: p, charId: team[i % team.length] }));
+
+    // Drive one live play to completion with plausible scripted inputs: the
+    // headless equivalent of the GameScene update() loop.
+    const runLive = (s: LivePlayState) => {
+      let threw = false;
+      let g = 0;
+      while (s.phase !== 'done' && g++ < 2000) {
+        const inputs =
+          s.mode === 'offense'
+            ? { run: Math.random() < 0.15 }
+            : s.ball.phase === 'held' && !threw
+              ? ((threw = true),
+                { throwTo: { base: (1 + Math.floor(Math.random() * 4)) as 1 | 2 | 3 | 4, power: Math.random() } })
+              : { pointer: s.ball.pos };
+        s = stepLivePlay(s, inputs, 50, params, () => Math.random());
+      }
+      return finishLivePlay(s);
+    };
+
+    // Both halves fold contact through the live sim, like GameScene does.
+    const contactOrCount = (
+      band: SwingBand,
+      batter: Character,
+      pitcher: Character,
+      mode: 'offense' | 'defense',
+      state: ReturnType<typeof newHalfInning>,
+      defense: Array<{ position: PositionId; charId: string }>
+    ) => {
+      const r = resolveContact(band, batter, pitcher, () => Math.random());
+      if (r.kind !== 'inPlay') return applyAtBat(state, { kind: r.kind, bases: 0, description: '' });
+      if (r.launch.homer) return applyAtBat(state, { kind: 'hit', bases: 4, description: 'HR' });
+      const baseRunners = ([1, 2, 3] as const)
+        .filter((b) => state.bases[b - 1])
+        .map((b) => ({ base: b, charId: `r${b}`, speed: 5 }));
+      const live = startLivePlay({
+        mode,
+        launch: r.launch,
+        batter: { charId: batter.id, speed: batter.stats.speed },
+        baseRunners,
+        defense,
+        outs: state.outs,
+        params,
+      });
+      return applyLivePlay(state, runLive(live));
+    };
+
+    // Player-style half: random swing bands; the AI defense fields the sim.
+    const bat = (team: string[], pitcher: Character, defense: ReturnType<typeof defenseFor>) => {
       let s = newHalfInning();
       let i = 0;
       let g = 0;
@@ -354,8 +411,7 @@ describe('sanity: a full simulated game always terminates with a score', () => {
         const batter = getCharacter(team[i % team.length]);
         const bands = ['perfect', 'good', 'weak', 'miss'] as const;
         const band = bands[Math.floor(Math.random() * 4)];
-        const r = resolveSwing(band, batter, pitcher, () => Math.random());
-        const applied = applyAtBat(s, r);
+        const applied = contactOrCount(band, batter, pitcher, 'offense', s, defense);
         s = applied.state;
         if (applied.batterDone) i++;
       }
@@ -363,7 +419,7 @@ describe('sanity: a full simulated game always terminates with a score', () => {
     };
     // CPU-style half: random pitch bands through resolveCpuPitch (balls, walks,
     // takes, and chases included) — the same path GameScene's defense half uses.
-    const pitchTo = (team: string[], pitcher: Character) => {
+    const pitchTo = (team: string[], pitcher: Character, defense: ReturnType<typeof defenseFor>) => {
       let s = newHalfInning();
       let i = 0;
       let g = 0;
@@ -372,24 +428,29 @@ describe('sanity: a full simulated game always terminates with a score', () => {
         const bands = ['perfect', 'good', 'weak', 'wild'] as const;
         const band = bands[Math.floor(Math.random() * 4)];
         const plan = resolveCpuPitch(band, pitcher, batter, () => Math.random());
-        const r = plan.cpuSwings
-          ? resolveSwing(plan.cpuBand, batter, pitcher, () => Math.random())
-          : plan.isBall
-            ? { kind: 'ball' as const, bases: 0, description: 'Ball!' }
-            : { kind: 'strike' as const, bases: 0, description: 'Strike looking!' };
-        const applied = applyAtBat(s, r);
+        const applied = plan.cpuSwings
+          ? contactOrCount(plan.cpuBand, batter, pitcher, 'defense', s, defense)
+          : applyAtBat(
+              s,
+              plan.isBall
+                ? { kind: 'ball' as const, bases: 0, description: 'Ball!' }
+                : { kind: 'strike' as const, bases: 0, description: 'Strike looking!' }
+            );
         s = applied.state;
         if (applied.batterDone) i++;
       }
       return s.runs;
     };
+
     const aiPitcher = getCharacter(d.aiTeam[0]);
     const playerPitcher = getCharacter(d.playerTeam[0]);
+    const aiDefense = defenseFor(d.aiTeam);
+    const playerDefense = defenseFor(d.playerTeam);
     let playerScore = 0;
     let aiScore = 0;
     for (let inn = 0; inn < 2; inn++) {
-      playerScore += bat(d.playerTeam, aiPitcher);
-      aiScore += pitchTo(d.aiTeam, playerPitcher);
+      playerScore += bat(d.playerTeam, aiPitcher, aiDefense);
+      aiScore += pitchTo(d.aiTeam, playerPitcher, playerDefense);
     }
     expect(Number.isFinite(playerScore)).toBe(true);
     expect(Number.isFinite(aiScore)).toBe(true);

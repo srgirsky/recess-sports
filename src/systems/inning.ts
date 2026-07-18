@@ -6,6 +6,7 @@
 // ---------------------------------------------------------------------------
 
 import type { AtBatResult } from './atbat';
+import type { LiveOutcome } from './liveplay';
 
 export interface HalfInningState {
   outs: number;
@@ -108,6 +109,27 @@ export function applyAtBat(
       return { state, runsScored: runs, batterOut: false, batterDone: true, movements };
     }
   }
+}
+
+/**
+ * Fold a finished LIVE PLAY (interactive fielding/running) into the half
+ * inning. The play already animated itself in real time, so `movements` is
+ * empty — the bases/outs/runs land exactly where the sim left them.
+ */
+export function applyLivePlay(prev: HalfInningState, outcome: LiveOutcome): ApplyResult {
+  const state: HalfInningState = {
+    outs: prev.outs + outcome.outs,
+    bases: [...outcome.bases] as [boolean, boolean, boolean],
+    runs: prev.runs + outcome.runs,
+    count: { balls: 0, strikes: 0 },
+  };
+  return {
+    state,
+    runsScored: outcome.runs,
+    batterOut: outcome.batterOut,
+    batterDone: true,
+    movements: [],
+  };
 }
 
 /**
