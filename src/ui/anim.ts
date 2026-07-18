@@ -32,7 +32,7 @@ export function idleBob(
 export function squashHop(
   scene: Phaser.Scene,
   target: Obj,
-  opts: { height?: number; baseScaleY?: number; baseScaleX?: number } = {}
+  opts: { height?: number; baseScaleY?: number; baseScaleX?: number; onDone?: () => void } = {}
 ): void {
   const t = target as unknown as { y: number; scaleX: number; scaleY: number };
   const height = opts.height ?? 26;
@@ -47,6 +47,7 @@ export function squashHop(
       { y: y0, scaleY: sy, scaleX: sx, duration: 150, ease: 'Quad.in' }, // land
       { scaleY: sy * 0.9, scaleX: sx * 1.06, duration: 70, yoyo: true, ease: 'Quad.out' }, // squish
     ],
+    onComplete: opts.onDone,
   });
 }
 
@@ -61,5 +62,96 @@ export function popIn(scene: Phaser.Scene, target: Obj, toScale: number): void {
     scaleY: toScale,
     duration: 220,
     ease: 'Back.out',
+  });
+}
+
+/**
+ * Entrance: the target is already at its final spot — offset it by (dx, dy)
+ * and tween it home with a little overshoot. Great for staggered UI reveals.
+ */
+export function enterFrom(
+  scene: Phaser.Scene,
+  target: Obj,
+  opts: { dx?: number; dy?: number; delay?: number; dur?: number; ease?: string; fade?: boolean } = {}
+): Phaser.Tweens.Tween {
+  const t = target as unknown as { x: number; y: number; alpha: number };
+  const toX = t.x;
+  const toY = t.y;
+  t.x = toX + (opts.dx ?? 0);
+  t.y = toY + (opts.dy ?? 0);
+  const fromAlpha = t.alpha;
+  if (opts.fade !== false) t.alpha = 0;
+  return scene.tweens.add({
+    targets: target,
+    x: toX,
+    y: toY,
+    alpha: fromAlpha,
+    delay: opts.delay ?? 0,
+    duration: opts.dur ?? 320,
+    ease: opts.ease ?? 'Back.out',
+  });
+}
+
+/** Looping "look at me" pulse for the one thing we want a kid to press next. */
+export function pulse(
+  scene: Phaser.Scene,
+  target: Obj,
+  opts: { scale?: number; dur?: number } = {}
+): Phaser.Tweens.Tween {
+  const t = target as unknown as { scaleX: number; scaleY: number };
+  return scene.tweens.add({
+    targets: target,
+    scaleX: t.scaleX * (opts.scale ?? 1.05),
+    scaleY: t.scaleY * (opts.scale ?? 1.05),
+    duration: opts.dur ?? 460,
+    yoyo: true,
+    repeat: -1,
+    ease: 'Sine.inOut',
+  });
+}
+
+/**
+ * A kid runs in from off-screen to their current spot: horizontal dash with a
+ * run-bob and a lean, then a happy landing squash. Calls `onArrive` (e.g. to
+ * start an idle bob) after the landing.
+ */
+export function runIn(
+  scene: Phaser.Scene,
+  target: Obj,
+  opts: { fromX: number; delay?: number; dur?: number; onArrive?: () => void } = { fromX: -80 }
+): void {
+  const t = target as unknown as { x: number; y: number; angle: number; alpha: number };
+  const toX = t.x;
+  const baseY = t.y;
+  t.x = opts.fromX;
+  t.alpha = 0;
+  const lean = opts.fromX < toX ? 7 : -7; // lean into the direction of travel
+  const dur = opts.dur ?? ANIM.TITLE_KID_RUN_MS;
+
+  // Run-bob while traveling (stopped on arrival).
+  const bob = scene.tweens.add({
+    targets: target,
+    y: baseY - ANIM.RUN_BOB,
+    duration: 90,
+    delay: opts.delay ?? 0,
+    yoyo: true,
+    repeat: -1,
+    ease: 'Sine.inOut',
+  });
+  scene.tweens.add({
+    targets: target,
+    x: toX,
+    alpha: 1,
+    angle: lean,
+    delay: opts.delay ?? 0,
+    duration: dur,
+    ease: 'Sine.out',
+    onComplete: () => {
+      bob.stop();
+      t.y = baseY;
+      scene.tweens.add({ targets: target, angle: 0, duration: 120, ease: 'Sine.out' });
+      squashHop(scene, target, { height: 14 });
+      opts.onArrive?.();
+    },
   });
 }

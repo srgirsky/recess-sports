@@ -169,6 +169,7 @@ export class GameScene extends Phaser.Scene {
     this.aiPitcher = bestPitcher(this.aiTeam);
     this.playerPitcher = bestPitcher(this.playerTeam);
     recordGamePlayed();
+    this.cameras.main.fadeIn(250, 0x5b, 0xbf, 0x5a);
 
     this.drawField();
     this.drawHud();
@@ -214,13 +215,13 @@ export class GameScene extends Phaser.Scene {
     // --- Outfield fence (wall + padded cap + bunting) ---
     this.add.rectangle(W / 2, 200, W, 26, 0x2f9e73).setOrigin(0.5); // green wall
     this.add.rectangle(W / 2, 189, W, 8, COLORS.gold).setOrigin(0.5); // yellow cap
-    // Bunting triangles hanging off the cap.
+    // Bunting triangles hanging off the cap (Graphics — Triangle shapes are
+    // unreliable about fills, and the old fractional index passed undefined).
     const bunt = [0xeb5a52, 0xffffff, 0x3f86e0];
     for (let x = 20; x < W; x += 60) {
-      this.add
-        .triangle(x, 193, 0, 0, 40, 0, 20, 22, bunt[(x / 60) % bunt.length])
-        .setOrigin(0.5, 0)
-        .setAlpha(0.9);
+      const pennant = this.add.graphics({ x, y: 193 }).setAlpha(0.9);
+      pennant.fillStyle(bunt[Math.floor(x / 60) % bunt.length], 1);
+      pennant.fillTriangle(-20, 0, 20, 0, 0, 22);
     }
 
     // --- Grass mowing stripes (subtle) ---

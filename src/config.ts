@@ -103,4 +103,13 @@ export const ANIM = {
   WINDUP_MS: 260, // pitcher lean-back before the release
   RUN_BOB: 7, // pixels a runner bounces while running
   IDLE_BOB: 5, // pixels the idle "breathing" bob rises
+  // Intro (Title) choreography.
+  TITLE_KID_RUN_MS: 460, // each showcase kid's run-in from off-screen
+  TITLE_KID_STAGGER_MS: 110, // delay between kids joining the line-up
+  AMBIENT_HOP_EVERY_MS: 2600, // a random showcase kid hops this often
+  // Draft choreography.
+  DEAL_STAGGER_MS: 18, // per-card delay while the grid deals in
+  DEAL_POP_MS: 210, // one card's deal-in pop
+  CPU_SCAN_HOP_MS: 170, // CPU "spotlight" hop while it pretends to decide
+  FLY_TO_BENCH_MS: 340, // drafted kid's flight from card to dugout bench
 };
