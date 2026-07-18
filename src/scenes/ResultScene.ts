@@ -87,7 +87,9 @@ export class ResultScene extends Phaser.Scene {
       icon: '🏠',
       width: 250,
       height: 82,
-      onClick: () => this.scene.start('Schoolyard'),
+      // Explicit data: Phaser reuses the previous start()'s data when none is
+      // passed, which would carry straightToDraft over from NEW TEAM.
+      onClick: () => this.scene.start('Schoolyard', { straightToDraft: false }),
     });
   }
 }
