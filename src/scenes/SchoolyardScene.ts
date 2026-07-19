@@ -21,9 +21,11 @@ import {
   TEAM_SIZE,
   AI_PICK_DELAY_MS,
   ANIM,
+  CROWD,
   KID_SIZE,
   type GameMode,
 } from '../config';
+import { createCrowd, stepCrowd, type CrowdKidInit, type CrowdState } from '../systems/crowd';
 import { getMode, setMode } from '../systems/mode';
 import { getVenue, setVenue } from '../systems/venue';
 import { VENUES, type VenueDef, type VenueId } from '../data/venues';
@@ -65,10 +67,14 @@ interface YardKid {
   /** Container at the kid's FEET point; holds [shadow, img]. */
   root: Phaser.GameObjects.Container;
   img: Phaser.GameObjects.Image;
+  shadow: Phaser.GameObjects.Ellipse;
   home: { x: number; y: number; h: number; row: 0 | 1 };
   idle?: Phaser.Tweens.Tween;
   cycle?: { stop(restoreStand?: boolean): void };
 }
+
+/** How small a kid is drawn at the door vs their full wall-row size. */
+const DOOR_SCALE = 0.55;
 
 // Yard geometry.
 const DOOR = { x: 480, y: 208 };
@@ -93,6 +99,7 @@ export class SchoolyardScene extends Phaser.Scene {
   private skipHint?: Phaser.GameObjects.Container;
   private autoBtn?: Phaser.GameObjects.Container;
   private autoWalkers = 0;
+  private crowd?: CrowdState;
 
   constructor() {
     super('Schoolyard');
@@ -109,6 +116,7 @@ export class SchoolyardScene extends Phaser.Scene {
     this.pillPulse = undefined;
     this.autoBtn = undefined;
     this.autoWalkers = 0;
+    this.crowd = undefined;
     this.straightToDraft = data?.straightToDraft ?? false;
   }
 
@@ -502,26 +510,91 @@ export class SchoolyardScene extends Phaser.Scene {
     });
     this.cutsceneJobs.push(openDoors);
 
-    // Compute everyone's home spot, then stream them out.
-    this.assignHomes();
-    let i = 0;
-    for (const kid of this.kids.values()) {
-      const jitter = Math.floor(Math.random() * 60) - 30;
-      const launch = this.time.delayedCall(
-        620 + i * ANIM.STREAM_STAGGER_MS + jitter,
-        () => this.streamOut(kid)
-      );
-      this.cutsceneJobs.push(launch);
-      i++;
-    }
+    // Compute everyone's home spot, then hand the stream to the crowd sim —
+    // update() steps it every frame and positions the kids directly.
+    const inits = this.assignHomes();
+    this.crowd = createCrowd(
+      inits,
+      {
+        door: DOOR,
+        stairBottomY: STAIRS.topY + STAIRS.count * STAIRS.stepH,
+        stairHalfW: CROWD.STAIR_HALF_W,
+        gap: WALL_GAP,
+        gapExitY: 318,
+        wallTopY: 222,
+      },
+      CROWD,
+      () => Math.random()
+    );
 
-    // When the last kid should have arrived, begin the draft.
-    const doneAt = 620 + this.kids.size * ANIM.STREAM_STAGGER_MS + ANIM.STREAM_RUN_MS * 2 + 400;
-    this.cutsceneJobs.push(this.time.delayedCall(doneAt, () => this.finishCutscene()));
+    // Safety net: if update() ever stops stepping the sim, still start the draft.
+    this.cutsceneJobs.push(
+      this.time.delayedCall(CROWD.MAX_RUN_MS + 2000, () => this.finishCutscene())
+    );
+  }
+
+  /** Steps the stream-out sim; a no-op outside the recess cutscene. */
+  update(_t: number, delta: number): void {
+    if (this.phase !== 'cutscene' || !this.crowd) return;
+    stepCrowd(this.crowd, delta, CROWD);
+    for (const ev of this.crowd.events) {
+      const kid = this.kids.get(ev.id);
+      if (!kid) continue;
+      if (ev.type === 'launched') {
+        kid.root.setVisible(true);
+        kid.cycle = runCycle(this, kid.img, kid.char.id);
+      } else {
+        kid.img.y = 0; // clear the run bob before idleBob captures its baseline
+        this.settleKid(kid);
+      }
+    }
+    this.renderCrowd();
+    if (this.crowd.allSettled) {
+      this.crowd = undefined;
+      this.finishCutscene();
+    }
+  }
+
+  /** Draw the sim state: positions set directly (never tweened — the sim owns them). */
+  private renderCrowd(): void {
+    if (!this.crowd) return;
+    for (const k of this.crowd.kids) {
+      if (k.phase !== 'stairs' && k.phase !== 'yard') continue;
+      const kid = this.kids.get(k.id);
+      if (!kid) continue;
+      kid.root.setPosition(k.pos.x, k.pos.y);
+      kid.root.setDepth(this.yardDepth(k.pos.y, k.pos.x));
+      const f = DOOR_SCALE + (1 - DOOR_SCALE) * k.progress;
+      kid.img.setScale((f * kid.home.h) / kid.img.height);
+      kid.shadow.setScale(f);
+      // Hysteresis so separation jiggle doesn't flicker the facing.
+      if (Math.abs(k.vel.x) > 0.02) kid.img.setFlipX(k.vel.x < 0);
+      // Flourish only — written to the img INSIDE the container so the sim's
+      // feet position is never touched. Stairs: an arc per step, derived from
+      // sim y so it survives fast-forward. Yard: a simple run bob.
+      if (k.phase === 'stairs') {
+        const stepPhase = (k.pos.y - STAIRS.topY) / STAIRS.stepH;
+        kid.img.y = -CROWD.STAIR_HOP_H * Math.abs(Math.sin(Math.PI * stepPhase));
+      } else {
+        const t = k.bobSeed + (this.crowd.timeMs * CROWD.RUN_BOB_HZ * Math.PI) / 1000;
+        kid.img.y = -CROWD.RUN_BOB_H * Math.abs(Math.sin(t));
+      }
+    }
+  }
+
+  /**
+   * Draw order for kids in the yard: lower on screen = nearer = on top.
+   * Output range ≈ 11–34 — above the environment (≤6), below the team
+   * clusters (40/50), inspect (60+), and UI (80+). The tiny x term is a
+   * deterministic tie-break for kids on the same row.
+   */
+  private yardDepth(y: number, x = 0): number {
+    return 10 + (y - 200) * 0.15 + x * 0.0001;
   }
 
   /** Everyone's spot against the wall: 15 on the curb, 15 in front. */
-  private assignHomes(): void {
+  private assignHomes(): CrowdKidInit[] {
+    const inits: CrowdKidInit[] = [];
     ROSTER.forEach((char, i) => {
       const row: 0 | 1 = i < 15 ? 0 : 1;
       const col = i % 15;
@@ -533,63 +606,19 @@ export class SchoolyardScene extends Phaser.Scene {
         h: row === 0 ? KID_SIZE.WALL_BACK_H : KID_SIZE.WALL_FRONT_H,
         row,
       };
-      const root = this.add.container(DOOR.x, DOOR.y).setDepth(row === 0 ? 10 + col : 30 + col);
+      const root = this.add
+        .container(DOOR.x, DOOR.y)
+        .setDepth(this.yardDepth(home.y, home.x));
       const shadow = groundShadow(this, 0, 2, 46);
       const img = this.add.image(0, 0, char.id).setOrigin(0.5, 1);
-      img.setScale((home.h * 0.55) / img.height); // small at the door, grows en route
+      img.setScale((home.h * DOOR_SCALE) / img.height); // small at the door, grows en route
+      shadow.setScale(DOOR_SCALE);
       root.add([shadow, img]);
       root.setVisible(false);
-      this.kids.set(char.id, { char, root, img, home });
+      this.kids.set(char.id, { char, root, img, shadow, home });
+      inits.push({ id: char.id, home: { x: home.x, y: home.y } });
     });
-  }
-
-  /** One kid runs from the door, hops down the steps, and crosses to their wall spot. */
-  private streamOut(kid: YardKid): void {
-    const { root, img, home } = kid;
-    root.setVisible(true);
-    kid.cycle = runCycle(this, img, kid.char.id);
-    img.setFlipX(home.x < DOOR.x);
-    const finalScale = home.h / img.height;
-
-    // Leg 1: down the steps — one quick drop per stair with a little landing
-    // bounce, drifting toward the kid's side so they don't single-file.
-    const drift = Phaser.Math.Clamp((home.x - DOOR.x) / 18, -14, 14);
-    const legs: Phaser.Types.Tweens.TweenBuilderConfig[] = [];
-    for (let s = 1; s <= STAIRS.count; s++) {
-      legs.push({
-        targets: root,
-        x: DOOR.x + (drift * s) / STAIRS.count + (Math.random() * 6 - 3),
-        y: STAIRS.topY + s * STAIRS.stepH,
-        duration: ANIM.STAIR_HOP_MS,
-        ease: 'Bounce.out',
-      });
-    }
-    // Leg 2: down the path through the gap.
-    const midY = 330 + Math.random() * 20;
-    legs.push({ targets: root, y: midY, duration: ANIM.STREAM_RUN_MS * 0.35, ease: 'Sine.in' });
-    // Leg 3: across the yard to the wall spot (back rows step up to the curb).
-    legs.push({
-      targets: root,
-      x: home.x,
-      y: home.y,
-      duration: ANIM.STREAM_RUN_MS,
-      ease: 'Sine.out',
-    });
-    const run = this.tweens.chain({
-      targets: root,
-      tweens: legs,
-      onComplete: () => this.settleKid(kid),
-    });
-    this.cutsceneJobs.push(run);
-    // Grow to full row size on the way.
-    const totalMs = STAIRS.count * ANIM.STAIR_HOP_MS + ANIM.STREAM_RUN_MS * 1.35;
-    const tScale = this.tweens.add({
-      targets: img,
-      scale: finalScale,
-      duration: totalMs * 0.8,
-      ease: 'Sine.out',
-    });
-    this.cutsceneJobs.push(tScale);
+    return inits;
   }
 
   /** Kid arrives at the wall: stand, hop, breathe, become tappable. */
@@ -598,7 +627,9 @@ export class SchoolyardScene extends Phaser.Scene {
     kid.cycle = undefined;
     kid.img.setFlipX(false);
     kid.img.setScale(kid.home.h / kid.img.height);
+    kid.shadow.setScale(1);
     kid.root.setPosition(kid.home.x, kid.home.y);
+    kid.root.setDepth(this.yardDepth(kid.home.y, kid.home.x));
     squashHop(this, kid.img, { height: 8 });
     kid.idle?.stop();
     kid.idle = idleBob(this, kid.img, { amp: 3, dur: 800 + Math.random() * 400 });
@@ -608,6 +639,7 @@ export class SchoolyardScene extends Phaser.Scene {
   /** Idempotent cutscene fast-forward: everyone snaps to their spot. */
   finishCutscene(): void {
     if (this.phase !== 'cutscene') return;
+    this.crowd = undefined;
     this.cutsceneJobs.forEach((j) => {
       if (j instanceof Phaser.Time.TimerEvent) j.remove(false);
       else j.stop();
@@ -623,6 +655,7 @@ export class SchoolyardScene extends Phaser.Scene {
       kid.cycle?.stop(true);
       kid.cycle = undefined;
       kid.root.setVisible(true);
+      kid.img.y = 0; // clear any in-flight run bob before idleBob captures baseY
       this.settleKid(kid);
     }
     this.skipHint?.destroy();
@@ -800,7 +833,7 @@ export class SchoolyardScene extends Phaser.Scene {
       scale: kid.home.h / kid.img.height,
       duration: 150,
       onComplete: () => {
-        kid.root.setDepth(kid.home.row === 0 ? 10 : 30);
+        kid.root.setDepth(this.yardDepth(kid.home.y, kid.home.x));
         kid.idle = idleBob(this, kid.img, { amp: 3, dur: 800 });
       },
     });

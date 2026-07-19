@@ -424,14 +424,35 @@ export const ANIM = {
   RUN_FRAME_MS: 110, // run-cycle frame swap (run1 <-> run2 textures)
   // Schoolyard (title + draft) choreography.
   AMBIENT_HOP_EVERY_MS: 2600, // a random waiting kid hops ("pick me!") this often
-  STREAM_STAGGER_MS: 70, // delay between kids bursting out of the doors
-  STREAM_RUN_MS: 700, // one leg of a kid's run from the doors to the wall
   CUTSCENE_ZOOM: 2.0, // door close-up zoom while the bell rings
   CUTSCENE_ZOOM_HOLD_MS: 700, // how long the camera lingers on the doors
   CUTSCENE_ZOOMOUT_MS: 1100, // camera pull-back from the doors to the full yard
-  STAIR_HOP_MS: 95, // one hop down one school step during the stream-out
   CPU_SCAN_HOP_MS: 170, // CPU "?" spotlight hop while it pretends to decide
   CHEER_WAVE_STAGGER_MS: 80, // delay between kids joining the cheer wave
   AUTO_PICK_STEP_MS: 260, // delay between successive AUTO-draft picks launching
   AUTO_PICK_RUN_SPEED: 3, // walk-speed multiplier while auto-drafting (kids sprint)
+};
+
+/**
+ * Recess stream-out crowd sim (systems/crowd.ts, stepped from
+ * SchoolyardScene.update). Movement/separation knobs are sim-side;
+ * the *_HOP/_BOB knobs are render-side flourish only.
+ */
+export const CROWD = {
+  STAGGER_MS: 70, // nominal delay between door launches
+  STAGGER_JITTER_MS: 30, // ± jitter on each kid's launch time
+  DOOR_CLEAR_R: 20, // door mouth must be this clear before the next kid launches
+  LANE_SPREAD: 14, // ± exit-lane x offset at the door
+  SPEED: 0.27, // base run speed, px/ms
+  SPEED_JITTER: 0.25, // ± fraction of SPEED per kid
+  RADIUS: 15, // full-size separation radius (px); scales down near the door
+  SEP_ITERATIONS: 3, // positional-relaxation passes per tick
+  ARRIVE_R: 5, // arrival snap distance
+  GAP_MARGIN: 14, // keep-off distance from the wall-gap posts
+  STAIR_HALF_W: 38, // x clamp around the door while on the steps
+  MAX_DT_MS: 50, // per-tick dt clamp (tab refocus / frame hitches)
+  MAX_RUN_MS: 6000, // no-soft-lock guard: force-settle any kid running longer
+  STAIR_HOP_H: 6, // render-side hop amplitude on the steps
+  RUN_BOB_H: 4, // render-side bob amplitude crossing the yard
+  RUN_BOB_HZ: 7, // render-side bob frequency
 };
