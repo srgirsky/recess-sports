@@ -28,7 +28,7 @@ Phaser 3 · TypeScript · Vite · vitest. Static site, no backend, deployed free
 | `src/config.ts` | ★ All tunables. |
 | `src/data/characters.ts` | ★ The 30 kids (content). Stats 1–10 (contact/power/speed/pitching/fielding); 3 signature kids use `ability`. |
 | `src/data/types.ts` | Character / Stats / VisualParams / TeamState types. |
-| `src/systems/draft.ts` | Alternating pick + greedy AI value function. |
+| `src/systems/draft.ts` | Alternating pick + greedy value function; `chooseBestPick` picks for either side (CPU turns + the ⚡ AUTO fast-forward, which skips `recordPick`). |
 | `src/systems/atbat.ts` | Timing→band + ability hooks; `resolveContact` (kid: RNG spray) and `resolveContactAimed` (main: cursor-vs-ball overlap gates the band, cursor position drives pull/oppo spray + fly/grounder bias) both feed the shared `buildLaunch` → trajectory (homers decided here, everything else goes live). |
 | `src/systems/liveplay.ts` | ★ The live-play sim: tick reducer, catches/force races, CPU fielder+runner policies, no-soft-lock guards. Fielders carry per-kid speed/glove/arm; drops, bobbles & wild throws roll off glove/arm scaled by the mode's `errorMult`s (kid mode = 0, and mult 0 skips the rng roll so kid sims stay byte-identical). |
 | `src/systems/geometry.ts` | Field screen coords (bases, mound, 9 fielding spots, fence) shared by sim + scene; `FieldGeometry` + `fencePointAt` make the fence/ground/obstacles venue-shaped (bases never move). |

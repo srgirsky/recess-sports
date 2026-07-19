@@ -432,4 +432,6 @@ export const ANIM = {
   STAIR_HOP_MS: 95, // one hop down one school step during the stream-out
   CPU_SCAN_HOP_MS: 170, // CPU "?" spotlight hop while it pretends to decide
   CHEER_WAVE_STAGGER_MS: 80, // delay between kids joining the cheer wave
+  AUTO_PICK_STEP_MS: 260, // delay between successive AUTO-draft picks launching
+  AUTO_PICK_RUN_SPEED: 3, // walk-speed multiplier while auto-drafting (kids sprint)
 };

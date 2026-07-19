@@ -33,6 +33,7 @@ import {
   createDraft,
   applyPick,
   chooseAiPick,
+  chooseBestPick,
   isDraftComplete,
   type DraftState,
 } from '../systems/draft';
@@ -56,6 +57,7 @@ type Phase =
   | 'playerRun'
   | 'cpuScan'
   | 'cpuRun'
+  | 'auto'
   | 'done';
 
 interface YardKid {
@@ -89,6 +91,8 @@ export class SchoolyardScene extends Phaser.Scene {
   private straightToDraft = false;
   private titleObjs: Phaser.GameObjects.GameObject[] = [];
   private skipHint?: Phaser.GameObjects.Container;
+  private autoBtn?: Phaser.GameObjects.Container;
+  private autoWalkers = 0;
 
   constructor() {
     super('Schoolyard');
@@ -103,6 +107,8 @@ export class SchoolyardScene extends Phaser.Scene {
     this.inspectedId = undefined;
     this.titleObjs = [];
     this.pillPulse = undefined;
+    this.autoBtn = undefined;
+    this.autoWalkers = 0;
     this.straightToDraft = data?.straightToDraft ?? false;
   }
 
@@ -629,6 +635,21 @@ export class SchoolyardScene extends Phaser.Scene {
     banner.setDepth(80);
     enterFrom(this, banner, { dy: -70, dur: 380, ease: 'Bounce.out' });
     this.turnPill.container.setVisible(true);
+    // Skip-the-drafting escape hatch: fast-forwards the rest of the picks.
+    // Depth 80 keeps it under the inspect panel's catcher, so a tap while a
+    // stat card is open just closes the card.
+    this.autoBtn = makeButton(this, {
+      x: GAME_WIDTH - 160,
+      y: 92,
+      label: 'AUTO',
+      icon: '⚡',
+      width: 170,
+      height: 52,
+      color: 0x8a6de0,
+      onClick: () => this.startAutoDraft(),
+    });
+    this.autoBtn.setDepth(80);
+    enterFrom(this, this.autoBtn, { dy: -70, dur: 380, ease: 'Bounce.out' });
     audio.say('Pick your team!');
     this.phase = 'idle';
     this.refreshStatus();
@@ -844,6 +865,12 @@ export class SchoolyardScene extends Phaser.Scene {
 
     let step = 0;
     const hop = () => {
+      // AUTO can interrupt the scan mid-chain — bail before committing a pick.
+      if (this.phase !== 'cpuScan') {
+        spot.destroy();
+        q.destroy();
+        return;
+      }
       const kid = this.kids.get(stops[step]);
       if (kid) {
         spot.setVisible(true).setPosition(kid.home.x, kid.home.y + 4);
@@ -858,6 +885,7 @@ export class SchoolyardScene extends Phaser.Scene {
         this.time.delayedCall(ANIM.CPU_SCAN_HOP_MS + 80, () => {
           spot.destroy();
           q.destroy();
+          if (this.phase !== 'cpuScan') return;
           this.commitCpuPick(id);
         });
       }
@@ -886,6 +914,59 @@ export class SchoolyardScene extends Phaser.Scene {
     });
   }
 
+  // --- Auto draft ---------------------------------------------------------------
+
+  /** AUTO pressed: rapid-fire the rest of the draft. Safe in idle or cpuScan. */
+  private startAutoDraft(): void {
+    if (this.phase !== 'idle' && this.phase !== 'cpuScan') return;
+    this.phase = 'auto';
+    this.autoBtn?.destroy();
+    this.autoBtn = undefined;
+    audio.pop();
+    audio.say('Auto pick!');
+    this.refreshStatus();
+    // First pick waits one beat: a tap through an open stat card closes it on
+    // pointerdown and lands here on pointerup, and the inspected kid needs
+    // their ~150ms return-to-wall tween to finish before they can be drafted.
+    this.time.delayedCall(ANIM.AUTO_PICK_STEP_MS, () => this.autoStep());
+  }
+
+  /** One auto pick for whoever's turn it is, then schedule the next. */
+  private autoStep(): void {
+    if (this.phase !== 'auto' || isDraftComplete(this.state)) return;
+    const forPlayer = this.state.turn === 'player';
+    const id = chooseBestPick(this.state, () => Math.random());
+    this.state = applyPick(this.state, id);
+    // NO recordPick — auto picks aren't human preference (see picklog.ts).
+    this.refreshStatus();
+    audio.pop();
+
+    const kid = this.kids.get(id);
+    const team = forPlayer ? 'player' : 'cpu';
+    const idx = (forPlayer ? this.state.playerTeam : this.state.aiTeam).length - 1;
+    if (kid) {
+      // Walks overlap and durations vary with distance, so count them in and
+      // out — the celebration waits for the LAST kid to land, not the last
+      // one launched.
+      this.autoWalkers += 1;
+      this.walkToTeam(
+        kid,
+        this.teamSpot(team, idx),
+        () => {
+          this.autoWalkers -= 1;
+          if (isDraftComplete(this.state) && this.autoWalkers === 0) this.finishDraft();
+        },
+        ANIM.AUTO_PICK_RUN_SPEED
+      );
+    }
+
+    if (!isDraftComplete(this.state)) {
+      this.time.delayedCall(ANIM.AUTO_PICK_STEP_MS, () => this.autoStep());
+    } else if (!kid && this.autoWalkers === 0) {
+      this.finishDraft(); // defensive: last pick's sprite missing
+    }
+  }
+
   // --- Walking to a team --------------------------------------------------------
 
   /** Where the n-th drafted kid stands in a team cluster. */
@@ -902,7 +983,12 @@ export class SchoolyardScene extends Phaser.Scene {
     return { x, y, h };
   }
 
-  private walkToTeam(kid: YardKid, slot: { x: number; y: number; h: number }, done: () => void): void {
+  private walkToTeam(
+    kid: YardKid,
+    slot: { x: number; y: number; h: number },
+    done: () => void,
+    speedMult = 1
+  ): void {
     kid.idle?.stop();
     kid.img.y = 0;
     kid.root.disableInteractive();
@@ -911,12 +997,12 @@ export class SchoolyardScene extends Phaser.Scene {
     kid.img.setFlipX(slot.x < kid.root.x);
 
     const dist = Math.hypot(slot.x - kid.root.x, slot.y - kid.root.y);
-    const dur = Math.max(500, dist / 0.42);
+    const dur = Math.max(500, dist / 0.42) / speedMult;
     // Step down off the wall first if in the back row, then across.
     this.tweens.chain({
       targets: kid.root,
       tweens: [
-        { y: kid.home.y === CURB_Y ? FRONT_Y : kid.root.y, duration: 140, ease: 'Quad.in' },
+        { y: kid.home.y === CURB_Y ? FRONT_Y : kid.root.y, duration: 140 / speedMult, ease: 'Quad.in' },
         { x: slot.x, y: slot.y, duration: dur, ease: 'Sine.inOut' },
       ],
       onComplete: () => {
@@ -944,6 +1030,8 @@ export class SchoolyardScene extends Phaser.Scene {
       this.pillPulse = pulse(this, this.turnPill.container, { scale: 1.06, dur: 420 });
     } else if (this.phase === 'playerRun' || this.phase === 'inspect') {
       this.turnPill.setText(`YOUR PICK!  ${mine}/${TEAM_SIZE}`, COLORS.gold);
+    } else if (this.phase === 'auto') {
+      this.turnPill.setText('AUTO DRAFT!', COLORS.gold);
     } else {
       this.turnPill.setText('CPU picking…', 0xe8a0a0);
     }
@@ -951,6 +1039,8 @@ export class SchoolyardScene extends Phaser.Scene {
 
   private finishDraft(): void {
     this.phase = 'done';
+    this.autoBtn?.destroy();
+    this.autoBtn = undefined;
     this.turnPill.setText('PLAY BALL!', COLORS.gold);
     audio.cheer();
     confetti(this, 70);

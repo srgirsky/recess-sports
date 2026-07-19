@@ -11,6 +11,7 @@ import {
   createDraft,
   applyPick,
   chooseAiPick,
+  chooseBestPick,
   isDraftComplete,
 } from './draft';
 import { bandFromError, resolveContact, resolveContactAimed, type SwingBand } from './atbat';
@@ -337,6 +338,60 @@ describe('draft', () => {
     state = applyPick(state, weak.id);
     const aiPick = chooseAiPick(state, () => 0); // no jitter
     expect(aiPick).toBe(stud.id);
+  });
+
+  it('auto-draft completes from any midpoint (AUTO PICK)', () => {
+    // A few manual picks first, then chooseBestPick drives both sides home.
+    let state = createDraft(ROSTER.map((c) => c.id));
+    state = applyPick(state, state.pool[0]); // player
+    state = applyPick(state, chooseAiPick(state, () => 0.5)); // ai
+    state = applyPick(state, state.pool[0]); // player
+    let guard = 0;
+    while (!isDraftComplete(state) && guard++ < 100) {
+      state = applyPick(state, chooseBestPick(state, () => 0.5));
+    }
+    expect(state.playerTeam).toHaveLength(9);
+    expect(state.aiTeam).toHaveLength(9);
+    expect(state.pool).toHaveLength(30 - 18);
+    expect(new Set([...state.playerTeam, ...state.aiTeam]).size).toBe(18);
+  });
+
+  it('chooseBestPick checks the CURRENT turn team for the pitcher bonus', () => {
+    const value = (c: Character, needsPitcher: boolean) =>
+      c.stats.contact +
+      c.stats.power +
+      c.stats.speed +
+      c.stats.fielding * 0.6 +
+      c.stats.pitching * (needsPitcher ? 1.4 : 0.2);
+
+    // Find two kids whose ranking flips with the pitcher weighting, so the
+    // choice below actually depends on which team gets the pitcher check.
+    let batFirst: Character | undefined;
+    let armFirst: Character | undefined;
+    outer: for (const a of ROSTER) {
+      for (const b of ROSTER) {
+        if (value(a, false) > value(b, false) && value(a, true) < value(b, true)) {
+          batFirst = a;
+          armFirst = b;
+          break outer;
+        }
+      }
+    }
+    expect(batFirst).toBeDefined();
+    const pool = [batFirst!.id, armFirst!.id];
+    const ace = ROSTER.find(
+      (c) => c.stats.pitching >= 7 && !pool.includes(c.id)
+    )!;
+
+    // Player already has an arm → no pitcher bonus on the player's turn.
+    expect(
+      chooseBestPick({ pool, playerTeam: [ace.id], aiTeam: [], turn: 'player' }, () => 0)
+    ).toBe(batFirst!.id);
+
+    // Player still needs an arm (the ace is on the AI side) → arm-weighted pick.
+    expect(
+      chooseBestPick({ pool, playerTeam: [], aiTeam: [ace.id], turn: 'player' }, () => 0)
+    ).toBe(armFirst!.id);
   });
 });
 

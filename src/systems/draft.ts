@@ -66,12 +66,16 @@ function draftValue(char: Character, aiNeedsPitcher: boolean): number {
 }
 
 /**
- * Pick the AI's next kid. `rng` (0-1) only breaks ties, so behavior is
- * deterministic-ish but not robotic. Returns the chosen id.
+ * Pick the best remaining kid for whoever's turn it is. Same greedy value as
+ * the AI, but the needs-a-pitcher check looks at the CURRENT turn's team.
+ * Used by the AI every turn, and by AUTO PICK fast-forward for both sides.
+ * `rng` (0-1) only breaks ties, so behavior is deterministic-ish but not
+ * robotic. Returns the chosen id.
  */
-export function chooseAiPick(state: DraftState, rng: () => number): string {
-  // Does the AI already have a real pitcher (7+)?
-  const aiNeedsPitcher = !state.aiTeam.some(
+export function chooseBestPick(state: DraftState, rng: () => number): string {
+  // Does this side already have a real pitcher (7+)?
+  const team = state.turn === 'player' ? state.playerTeam : state.aiTeam;
+  const needsPitcher = !team.some(
     (id) => getCharacter(id).stats.pitching >= 7
   );
 
@@ -79,11 +83,16 @@ export function chooseAiPick(state: DraftState, rng: () => number): string {
   let bestScore = -Infinity;
   for (const id of state.pool) {
     const score =
-      draftValue(getCharacter(id), aiNeedsPitcher) + rng() * 0.5; // tiny jitter
+      draftValue(getCharacter(id), needsPitcher) + rng() * 0.5; // tiny jitter
     if (score > bestScore) {
       bestScore = score;
       best = id;
     }
   }
   return best;
+}
+
+/** Pick the AI's next kid (only ever called on the AI's turn). */
+export function chooseAiPick(state: DraftState, rng: () => number): string {
+  return chooseBestPick(state, rng);
 }
