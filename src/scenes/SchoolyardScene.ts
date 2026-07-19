@@ -14,7 +14,16 @@
 // ---------------------------------------------------------------------------
 
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT, COLORS, TEAM_SIZE, AI_PICK_DELAY_MS, ANIM, type GameMode } from '../config';
+import {
+  GAME_WIDTH,
+  GAME_HEIGHT,
+  COLORS,
+  TEAM_SIZE,
+  AI_PICK_DELAY_MS,
+  ANIM,
+  KID_SIZE,
+  type GameMode,
+} from '../config';
 import { getMode, setMode } from '../systems/mode';
 import { getVenue, setVenue } from '../systems/venue';
 import { VENUES, type VenueDef, type VenueId } from '../data/venues';
@@ -515,11 +524,11 @@ export class SchoolyardScene extends Phaser.Scene {
       const home = {
         x: Math.min(GAME_WIDTH - 40, x),
         y: row === 0 ? CURB_Y : FRONT_Y,
-        h: row === 0 ? 76 : 84,
+        h: row === 0 ? KID_SIZE.WALL_BACK_H : KID_SIZE.WALL_FRONT_H,
         row,
       };
       const root = this.add.container(DOOR.x, DOOR.y).setDepth(row === 0 ? 10 + col : 30 + col);
-      const shadow = groundShadow(this, 0, 2, 40);
+      const shadow = groundShadow(this, 0, 2, 46);
       const img = this.add.image(0, 0, char.id).setOrigin(0.5, 1);
       img.setScale((home.h * 0.55) / img.height); // small at the door, grows en route
       root.add([shadow, img]);

@@ -11,8 +11,8 @@ import { HOME, FENCE_Y, type Vec } from '../systems/geometry';
 
 /** Horizontal pinch at full depth (fraction of distance from center). */
 const PINCH = 0.2;
-/** Sprite shrink at full depth. */
-const SHRINK = 0.38;
+/** Sprite shrink at full depth. Kept gentle so outfielders stay chunky enough to recognize. */
+const SHRINK = 0.28;
 /** The vanishing axis. */
 const CX = 480;
 /** Depth 0 a little below home (the batter's box), 1 at the fence line. */

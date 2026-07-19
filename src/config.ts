@@ -165,6 +165,25 @@ export const CAMERA = {
   SNAP_MS: 260,
 };
 
+/**
+ * Kid sprite heights (px). Backyard-style chunky: big enough that faces,
+ * hair, and freckles read at a glance. Field sprites still shrink with depth
+ * via art/projection's depthScale.
+ */
+export const KID_SIZE = {
+  /** Batting-stance sprite at the plate (also shown in the camera close-up). */
+  BATTER_H: 164,
+  /** The kid on the mound. */
+  PITCHER_H: 124,
+  /** The 8 non-pitcher fielders (at depth 0; projection shrinks with depth). */
+  FIELDER_H: 82,
+  /** Baserunner tokens. */
+  RUNNER_H: 82,
+  /** Schoolyard draft wall: back row (on the curb) / front row. */
+  WALL_BACK_H: 88,
+  WALL_FRONT_H: 98,
+};
+
 /** How long a runner takes to jog ONE base (ms). Post-hit pacing derives from this. */
 export const RUNNER_TWEEN_MS = 460;
 

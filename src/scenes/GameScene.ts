@@ -101,7 +101,15 @@ import {
   type LiveInputs,
 } from '../systems/liveplay';
 import { getMode, getFeatures, getSwingTiming, resolveLiveParams, type LiveParams } from '../systems/mode';
-import { LIVE, CURSOR, PLATE_ZONE, type GameMode, type ModeFeatures, type PitchKind } from '../config';
+import {
+  LIVE,
+  CURSOR,
+  PLATE_ZONE,
+  KID_SIZE,
+  type GameMode,
+  type ModeFeatures,
+  type PitchKind,
+} from '../config';
 import { recordGamePlayed } from '../systems/picklog';
 import * as audio from '../systems/audio';
 import { screenShake, burst, floatingText } from '../ui/effects';
@@ -134,7 +142,7 @@ interface LiveSprite {
 
 const BALL_GREEN = 0x57d977; // "good eye" green for called balls
 
-const RUNNER_H = 66; // runner sprite height
+const RUNNER_H = KID_SIZE.RUNNER_H; // runner sprite height
 
 /** Shadow tone for a 0xrrggbb int: mix toward cool navy (matches CharacterArt). */
 function shadeInt(color: number, f: number): number {
@@ -352,7 +360,7 @@ export class GameScene extends Phaser.Scene {
     this.pinUI(makeMuteButton(this, GAME_WIDTH - 30, 68));
 
     this.pitcherSprite = this.add.image(MOUND.x, MOUND.y, this.aiPitcher.id).setOrigin(0.5, 1);
-    this.pitcherSprite.setScale(110 / this.pitcherSprite.height);
+    this.pitcherSprite.setScale(KID_SIZE.PITCHER_H / this.pitcherSprite.height);
     idleBob(this, this.pitcherSprite, { amp: 4, dur: 1100 }); // gentle breathing (y); wind-up uses angle
     this.setMoundPitcher(this.aiPitcher);
 
@@ -868,7 +876,7 @@ export class GameScene extends Phaser.Scene {
     const p = this.pitcherSprite;
     if (!p || p.texture.key === char.id) return;
     p.setTexture(char.id);
-    p.setScale(110 / p.height);
+    p.setScale(KID_SIZE.PITCHER_H / p.height);
   }
 
   private endHalf(): void {
@@ -1569,7 +1577,7 @@ export class GameScene extends Phaser.Scene {
   /** A baserunner = the actual kid (over a ground shadow), in a container. */
   private makeRunner(char: Character): Phaser.GameObjects.Container {
     const c = this.add.container(HOME.x, HOME.y - 6).setDepth(40);
-    const shadow = groundShadow(this, 0, 4, 36);
+    const shadow = groundShadow(this, 0, 4, 42);
     const img = this.add.image(0, 0, char.id).setOrigin(0.5, 0.92);
     img.setScale(RUNNER_H / img.height);
     c.add([shadow, img]);
@@ -1634,10 +1642,10 @@ export class GameScene extends Phaser.Scene {
       const q = project(p);
       const ds = depthScale(p);
       const c = this.add.container(q.x, q.y).setDepth(26);
-      const shadow = groundShadow(this, 0, 3, 34 * ds);
+      const shadow = groundShadow(this, 0, 3, 40 * ds);
       // Fielders wait in the ready crouch, gloves out.
       const img = this.add.image(0, 0, poseKey(a.charId, 'ready')).setOrigin(0.5, 0.95);
-      const baseH = 66;
+      const baseH = KID_SIZE.FIELDER_H;
       img.setScale((baseH * ds) / img.height);
       c.add([shadow, img]);
       idleBob(this, img, { amp: 3, dur: 1000 + i * 90 }); // bob the IMAGE — the sim owns the container
@@ -2568,7 +2576,7 @@ export class GameScene extends Phaser.Scene {
       .image(walkIn ? GAME_WIDTH + 50 : targetX, HOME.y + 6, poseKey(char.id, 'bat'))
       .setOrigin(0.5, 1)
       .setDepth(28);
-    const s = 150 / spr.height;
+    const s = KID_SIZE.BATTER_H / spr.height;
     spr.setScale(s);
     this.batterSprite = spr;
     this.batterScale = s;
