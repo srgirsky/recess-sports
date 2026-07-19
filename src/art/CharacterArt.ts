@@ -23,8 +23,23 @@ export const POSES: Pose[] = ['stand', 'run1', 'run2', 'cheer', 'bat', 'windup',
 
 const VIEW_W = 200;
 const VIEW_H = 260;
-const OUT = '#26333f'; // outline color
-const SW = 5; // outline width
+
+/**
+ * PROTOTYPE FLAG — soft-3D "Trash Truck" style. true = lineless matte-CG
+ * look: shape outlines vanish (SW 0), limbs get a tinted self-colored edge
+ * instead of navy ink, facial features render in warm brown, eyes shrink to
+ * dark button eyes with one key-light spec, and the whole palette is muted
+ * via soften(). false = the original bold-outline flat-mascot style.
+ * Flip + reload (or re-run the G gallery) to compare. If we adopt this for
+ * real: bake the palette into palette.ts, restyle the field to match, and
+ * update CLAUDE.md/docs.
+ */
+export const SOFT3D = true;
+
+const OUT = '#26333f'; // outline color (classic style)
+const SW = SOFT3D ? 0 : 5; // outline width — 0 removes shape outlines wholesale
+/** Facial-feature ink: warm brown reads "rendered", navy reads "drawn". */
+const INK = SOFT3D ? '#4a3a2e' : OUT;
 
 /** Lowest ink line for every pose (shoe soles / wheel bottoms). Keep sacred. */
 const GROUND = 248;
@@ -33,13 +48,47 @@ const HEAD = { cx: 100, cy: 82, r: 50 };
 
 const PANTS = '#f2ede2'; // baseball-pant cream
 const SOLE = '#d8d3c8';
+const SHOE_EDGE = SOFT3D ? '#c8c1b2' : OUT;
+const SHOE_SW = SOFT3D ? 3 : 4;
+/** Wheelchair metal in soft mode: cool gray instead of navy ink. */
+const METAL_DK = SOFT3D ? '#3c4650' : OUT;
 
-/** Darken a #rrggbb hex by fraction f (0-1). */
+/**
+ * Shadow tone for a #rrggbb hex: mixes toward a cool navy instead of straight
+ * black — hue-shifted shadows are what makes flat shapes read as lit volume.
+ */
 function darken(hex: string, f: number): string {
   const n = parseInt(hex.slice(1), 16);
-  const r = Math.round(((n >> 16) & 255) * (1 - f));
-  const g = Math.round(((n >> 8) & 255) * (1 - f));
-  const b = Math.round((n & 255) * (1 - f));
+  const mix = (c: number, to: number) => Math.round(c * (1 - f) + to * f);
+  const r = mix((n >> 16) & 255, 0x2c);
+  const g = mix((n >> 8) & 255, 0x3e);
+  const b = mix(n & 255, 0x66);
+  return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
+}
+
+/**
+ * Soft-3D palette pass: pulls a color ~22% toward its own luminance (matte,
+ * desaturated) with a slight warm bias — the muted sage/cream/wheat range of
+ * the Trash Truck poster instead of candy saturation. Hex in, hex out.
+ */
+function soften(hex: string): string {
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16) & 255;
+  const g = (n >> 8) & 255;
+  const b = n & 255;
+  const l = 0.3 * r + 0.59 * g + 0.11 * b;
+  const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
+  const mix = (c: number, warm: number) => clamp(c + (l - c) * 0.22 + warm);
+  return '#' + ((mix(r, 6) << 16) | (mix(g, 2) << 8) | mix(b, -5)).toString(16).padStart(6, '0');
+}
+
+/** Highlight tone: mixes toward a warm near-white (the key light is warm). */
+function lighten(hex: string, f: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const mix = (c: number, to: number) => Math.round(c * (1 - f) + to * f);
+  const r = mix((n >> 16) & 255, 0xff);
+  const g = mix((n >> 8) & 255, 0xfa);
+  const b = mix(n & 255, 0xe8);
   return '#' + ((r << 16) | (g << 8) | b).toString(16).padStart(6, '0');
 }
 
@@ -66,14 +115,65 @@ interface Ctx {
   jersey: string;
   jerseyDk: string;
   trim: string;
+  /** Gradient fill refs ('url(#...)') — the toy-brand volume pass. */
+  gSkin: string;
+  gJersey: string;
+  gPants: string;
   m: Body;
   S: string; // standard outline attributes
   usesChair: boolean;
 }
 
+/**
+ * The <defs> block for one character document: soft airbrushed gradients
+ * derived from the kid's own palette. Light stop sits toward the upper-left
+ * (the key light), dark stop lower-right — same convention as every layered
+ * shade in this file. Ids are per-document (each pose is its own SVG).
+ */
+function gradientDefs(skin: string, hairColor: string, jersey: string): string {
+  const radial = (id: string, base: string, lite: number, dark: number) => `
+    <radialGradient id="${id}" cx="0.36" cy="0.3" r="0.9">
+      <stop offset="0" stop-color="${lighten(base, lite)}"/>
+      <stop offset="0.55" stop-color="${base}"/>
+      <stop offset="1" stop-color="${darken(base, dark)}"/>
+    </radialGradient>`;
+  const linear = (id: string, base: string, lite: number, dark: number) => `
+    <linearGradient id="${id}" x1="0.1" y1="0" x2="0.85" y2="1">
+      <stop offset="0" stop-color="${lighten(base, lite)}"/>
+      <stop offset="0.45" stop-color="${base}"/>
+      <stop offset="1" stop-color="${darken(base, dark)}"/>
+    </linearGradient>`;
+  // Soft mode leans harder on the gradients — with no outlines they carry
+  // ALL the form, so both the light and dark stops push further.
+  return SOFT3D
+    ? `<defs>
+    ${radial('skinG', skin, 0.36, 0.3)}
+    ${radial('hairG', hairColor, 0.26, 0.34)}
+    ${radial('hairDkG', darken(hairColor, 0.22), 0.24, 0.3)}
+    ${linear('jerseyG', jersey, 0.38, 0.36)}
+    ${linear('pantsG', PANTS, 0.3, 0.24)}
+  </defs>`
+    : `<defs>
+    ${radial('skinG', skin, 0.28, 0.22)}
+    ${radial('hairG', hairColor, 0.18, 0.28)}
+    ${radial('hairDkG', darken(hairColor, 0.22), 0.18, 0.24)}
+    ${linear('jerseyG', jersey, 0.3, 0.3)}
+    ${linear('pantsG', PANTS, 0.25, 0.18)}
+  </defs>`;
+}
+
 // --- Face ------------------------------------------------------------------
 
 function eye(x: number, y: number, open = 1, look = 0): string {
+  if (SOFT3D) {
+    // Small wide-set button eyes (the Trash Truck read): dark warm oval, no
+    // sclera, one key-light spec toward the upper-left. Charm from restraint.
+    const ry = 7.5 * open;
+    const px = x + look * 2;
+    return `
+    <ellipse cx="${px}" cy="${y + 1}" rx="6" ry="${ry}" fill="#3a2d24"/>
+    <circle cx="${px - 2}" cy="${y + 1 - ry * 0.35}" r="1.9" fill="#fff8ec" opacity="0.95"/>`;
+  }
   const rx = 9;
   const ry = 11 * open;
   const px = x + look * 3;
@@ -84,15 +184,15 @@ function eye(x: number, y: number, open = 1, look = 0): string {
 }
 
 function wink(x: number, y: number): string {
-  return `<path d="M ${x - 9} ${y} q 9 8 18 0" fill="none" stroke="${OUT}" stroke-width="4" stroke-linecap="round"/>`;
+  return `<path d="M ${x - 9} ${y} q 9 8 18 0" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>`;
 }
 
 function brows(expr: Expression, lx: number, rx: number, y: number): string {
   const b = (x: number, tilt: number) =>
-    `<path d="M ${x - 9} ${y + tilt} q 9 -5 18 ${-tilt}" fill="none" stroke="${OUT}" stroke-width="4" stroke-linecap="round"/>`;
+    `<path d="M ${x - 9} ${y + tilt} q 9 -5 18 ${-tilt}" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>`;
   switch (expr) {
     case 'determined':
-      return b(lx, 6) + `<path d="M ${rx - 9} ${y - 6} q 9 5 18 6" fill="none" stroke="${OUT}" stroke-width="4" stroke-linecap="round"/>`;
+      return b(lx, 6) + `<path d="M ${rx - 9} ${y - 6} q 9 5 18 6" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>`;
     case 'cool':
       return b(lx, 0) + b(rx, -5); // one raised
     case 'surprised':
@@ -107,20 +207,20 @@ function mouth(expr: Expression): string {
   switch (expr) {
     case 'grin':
       return `
-        <path d="M 78 ${y - 2} q 22 26 44 0 q -22 8 -44 0 Z" fill="#7a2b2b" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M 78 ${y - 2} q 22 26 44 0 q -22 8 -44 0 Z" fill="#7a2b2b" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
         <path d="M 80 ${y - 1} q 20 6 40 0 l -2 6 q -18 5 -36 0 Z" fill="#ffffff"/>`;
     case 'surprised':
-      return `<ellipse cx="100" cy="${y + 2}" rx="10" ry="12" fill="#7a2b2b" stroke="${OUT}" stroke-width="3"/>`;
+      return `<ellipse cx="100" cy="${y + 2}" rx="10" ry="12" fill="#7a2b2b" stroke="${INK}" stroke-width="3"/>`;
     case 'cool':
-      return `<path d="M 84 ${y} q 20 12 34 -2" fill="none" stroke="${OUT}" stroke-width="4" stroke-linecap="round"/>`;
+      return `<path d="M 84 ${y} q 20 12 34 -2" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>`;
     case 'determined':
-      return `<path d="M 84 ${y + 2} q 16 -4 32 0" fill="none" stroke="${OUT}" stroke-width="4" stroke-linecap="round"/>`;
+      return `<path d="M 84 ${y + 2} q 16 -4 32 0" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>`;
     case 'goofy':
       return `
-        <path d="M 80 ${y - 2} q 20 22 40 0 q -20 6 -40 0 Z" fill="#7a2b2b" stroke="${OUT}" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M 80 ${y - 2} q 20 22 40 0 q -20 6 -40 0 Z" fill="#7a2b2b" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
         <path d="M 96 ${y + 6} q 8 12 16 0 q -8 -4 -16 0 Z" fill="#e8746f"/>`;
     default: // happy
-      return `<path d="M 82 ${y - 2} q 18 20 36 0" fill="none" stroke="${OUT}" stroke-width="4.5" stroke-linecap="round"/>`;
+      return `<path d="M 82 ${y - 2} q 18 20 36 0" fill="none" stroke="${INK}" stroke-width="4.5" stroke-linecap="round"/>`;
   }
 }
 
@@ -135,9 +235,9 @@ function face(v: VisualParams, look = 0): string {
   const cheeks = `
     <circle cx="70" cy="98" r="8" fill="#ff9d9d" opacity="0.65"/>
     <circle cx="130" cy="98" r="8" fill="#ff9d9d" opacity="0.65"/>`;
-  const nose = `<path d="M 97 94 q 3 4 6 0" fill="none" stroke="${OUT}" stroke-width="3" stroke-linecap="round"/>`;
+  const nose = `<path d="M 97 94 q 3 4 6 0" fill="none" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>`;
   const freckles = v.freckles
-    ? `<g fill="${OUT}" opacity="0.5">
+    ? `<g fill="${INK}" opacity="0.5">
          <circle cx="78" cy="96" r="1.6"/><circle cx="85" cy="99" r="1.6"/>
          <circle cx="115" cy="99" r="1.6"/><circle cx="122" cy="96" r="1.6"/></g>`
     : '';
@@ -153,9 +253,12 @@ function face(v: VisualParams, look = 0): string {
 
 // --- Hair ------------------------------------------------------------------
 
-/** Hair split into a back layer (behind head) and front layer (on top). */
-function hair(style: HairStyle, color: string): { back: string; front: string } {
-  const dk = darken(color, 0.22);
+/**
+ * Hair split into a back layer (behind head) and front layer (on top).
+ * Takes pre-computed fill strings (gradient refs) — deriving shades from a
+ * 'url(#...)' here would NaN, so the caller supplies both.
+ */
+function hair(style: HairStyle, color: string, dk: string): { back: string; front: string } {
   const S = `stroke="${OUT}" stroke-width="${SW}" stroke-linejoin="round"`;
   const top = (d: string, fill = color) => `<path d="${d}" fill="${fill}" ${S}/>`;
   switch (style) {
@@ -215,13 +318,14 @@ function hair(style: HairStyle, color: string): { back: string; front: string } 
 // --- Accessories -----------------------------------------------------------
 
 function accessory(v: VisualParams): string {
-  const uni = UNIFORM_COLORS[v.uniform] ?? UNIFORM_COLORS[0];
+  const uniRaw = UNIFORM_COLORS[v.uniform] ?? UNIFORM_COLORS[0];
+  const uni = SOFT3D ? { jersey: soften(uniRaw.jersey), trim: soften(uniRaw.trim) } : uniRaw;
   const S = `stroke="${OUT}" stroke-width="${SW}" stroke-linejoin="round"`;
   switch (v.accessory) {
     case 'cap':
       return `
-        <path d="M 52 70 a48 42 0 0 1 96 0 q -48 -20 -96 0 Z" fill="${uni.jersey}" ${S}/>
-        <path d="M 96 40 q 6 -6 10 0 l 0 6 q -5 3 -10 0 Z" fill="${uni.trim}" stroke="${OUT}" stroke-width="3"/>
+        <path d="M 52 70 a48 42 0 0 1 96 0 q -48 -20 -96 0 Z" fill="url(#jerseyG)" ${S}/>
+        <path d="M 96 40 q 6 -6 10 0 l 0 6 q -5 3 -10 0 Z" fill="${uni.trim}" stroke="${SOFT3D ? darken(uni.trim, 0.3) : OUT}" stroke-width="3"/>
         <path d="M 138 66 q 26 2 30 14 q -4 8 -14 8 q -8 -14 -22 -14 Z" fill="${darken(uni.jersey, 0.12)}" ${S}/>`;
     case 'headband':
       return `<path d="M 52 62 q 48 -16 96 0 l 0 12 q -48 -16 -96 0 Z" fill="${uni.trim}" stroke="${uni.jersey}" stroke-width="4"/>`;
@@ -238,19 +342,28 @@ function accessory(v: VisualParams): string {
 // --- Shared pieces ---------------------------------------------------------
 
 /**
- * A capsule limb: one open path stroked twice — outline underneath, color on
- * top, round caps. A single quadratic control point gives free knees/elbows.
+ * A capsule limb: one open path stroked three times — outline underneath,
+ * color on top, then a thin highlight nudged toward the upper-left key light
+ * so the limb reads as a cylinder. One quadratic control point gives free
+ * knees/elbows.
  */
 function capsule(d: string, color: string, w: number): string {
+  // Soft mode: the under-stroke becomes a dark tint of the limb's OWN color
+  // (a soft occlusion edge — how lineless CG separates shapes), not navy ink.
+  const edge = SOFT3D ? darken(color, 0.3) : OUT;
+  const edgeW = SOFT3D ? w + 4 : w + SW * 1.6;
   return `
-    <path d="${d}" fill="none" stroke="${OUT}" stroke-width="${w + SW * 1.6}" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
+    <path d="${d}" fill="none" stroke="${edge}" stroke-width="${edgeW}" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${d}" fill="none" stroke="${color}" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>
+    <g transform="translate(-2 -2.5)" opacity="0.4">
+      <path d="${d}" fill="none" stroke="${lighten(color, 0.5)}" stroke-width="${Math.max(3, w * 0.28)}" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>`;
 }
 
 /** A front-view sneaker whose sole sits exactly on GROUND. */
 function frontShoe(x: number): string {
   return `
-    <rect x="${x - 16}" y="${GROUND - 14}" width="32" height="14" rx="7" fill="#ffffff" stroke="${OUT}" stroke-width="4"/>
+    <rect x="${x - 16}" y="${GROUND - 14}" width="32" height="14" rx="7" fill="#ffffff" stroke="${SHOE_EDGE}" stroke-width="${SHOE_SW}"/>
     <rect x="${x - 13}" y="${GROUND - 5}" width="26" height="5" rx="2.5" fill="${SOLE}"/>`;
 }
 
@@ -258,7 +371,7 @@ function frontShoe(x: number): string {
 function sideShoe(x: number, y: number, deg: number): string {
   return `
     <g transform="translate(${x} ${y}) rotate(${deg})">
-      <rect x="-10" y="-12" width="28" height="13" rx="6.5" fill="#ffffff" stroke="${OUT}" stroke-width="4"/>
+      <rect x="-10" y="-12" width="28" height="13" rx="6.5" fill="#ffffff" stroke="${SHOE_EDGE}" stroke-width="${SHOE_SW}"/>
       <rect x="-7" y="-4" width="22" height="4" rx="2" fill="${SOLE}"/>
     </g>`;
 }
@@ -270,15 +383,15 @@ function sideShoe(x: number, y: number, deg: number): string {
  */
 function headGroup(c: Ctx, v: VisualParams, hFront: string, look = 0): string {
   return `
-    <rect x="90" y="120" width="20" height="22" rx="8" fill="${c.skin}" ${c.S}/>
+    <rect x="90" y="120" width="20" height="22" rx="8" fill="${c.gSkin}" ${c.S}/>
     <rect x="90" y="120" width="20" height="8" rx="4" fill="${c.skinDk}" stroke="none"/>
-    <circle cx="${HEAD.cx}" cy="${HEAD.cy}" r="${c.m.headR}" fill="${c.skin}" ${c.S}/>
-    <ellipse cx="52" cy="86" rx="9" ry="11" fill="${c.skin}" ${c.S}/>
-    <ellipse cx="148" cy="86" rx="9" ry="11" fill="${c.skin}" ${c.S}/>
-    <path d="M 50 83 q 3 4 0 7" fill="none" stroke="${OUT}" stroke-width="2.5" stroke-linecap="round"/>
-    <path d="M 150 83 q -3 4 0 7" fill="none" stroke="${OUT}" stroke-width="2.5" stroke-linecap="round"/>
+    <circle cx="${HEAD.cx}" cy="${HEAD.cy}" r="${c.m.headR}" fill="${c.gSkin}" ${c.S}/>
+    <ellipse cx="52" cy="86" rx="9" ry="11" fill="${c.gSkin}" ${c.S}/>
+    <ellipse cx="148" cy="86" rx="9" ry="11" fill="${c.gSkin}" ${c.S}/>
+    <path d="M 50 83 q 3 4 0 7" fill="none" stroke="${SOFT3D ? c.skinDk : OUT}" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M 150 83 q -3 4 0 7" fill="none" stroke="${SOFT3D ? c.skinDk : OUT}" stroke-width="2.5" stroke-linecap="round"/>
     <clipPath id="hc"><circle cx="${HEAD.cx}" cy="${HEAD.cy}" r="${c.m.headR}"/></clipPath>
-    <ellipse cx="100" cy="${HEAD.cy + c.m.headR}" rx="${c.m.headR}" ry="24" fill="${c.skinDk}" opacity="0.45" clip-path="url(#hc)"/>
+    <ellipse cx="100" cy="${HEAD.cy + c.m.headR}" rx="${c.m.headR}" ry="24" fill="${c.skinDk}" opacity="0.35" clip-path="url(#hc)"/>
     ${face(v, look)}
     ${hFront}
     ${accessory(v)}`;
@@ -290,9 +403,9 @@ function headGroup(c: Ctx, v: VisualParams, hFront: string, look = 0): string {
 function legsFront(c: Ctx): string {
   const legHalf = c.m.halfW * 0.42;
   const leg = (x: number, stripeLeft: boolean) => `
-    <rect x="${x - 10}" y="200" width="20" height="28" rx="9" fill="${PANTS}" ${c.S}/>
+    <rect x="${x - 10}" y="200" width="20" height="28" rx="9" fill="${c.gPants}" ${c.S}/>
     <rect x="${stripeLeft ? x - 10 : x + 7}" y="203" width="3" height="22" fill="${c.trim}"/>
-    <rect x="${x - 9}" y="222" width="18" height="12" rx="4" fill="${c.trim}" stroke="${OUT}" stroke-width="3"/>
+    <rect x="${x - 9}" y="222" width="18" height="12" rx="4" fill="${c.trim}" stroke="${SOFT3D ? darken(c.trim, 0.25) : OUT}" stroke-width="3"/>
     ${frontShoe(x)}`;
   return leg(100 - legHalf, true) + leg(100 + legHalf, false);
 }
@@ -307,9 +420,7 @@ function torsoFront(c: Ctx): string {
              l 4 ${hipY - shoulderY}
              q ${-halfW} 12 ${-2 * halfW} 0 Z`;
   return `
-    <path d="${torsoPath}" fill="${c.jersey}" ${c.S}/>
-    <clipPath id="tc"><path d="${torsoPath}"/></clipPath>
-    <ellipse cx="${100 + halfW * 0.62}" cy="${(shoulderY + hipY) / 2}" rx="${halfW * 0.55}" ry="${(hipY - shoulderY) / 2 + 10}" fill="${c.jerseyDk}" opacity="0.35" clip-path="url(#tc)"/>
+    <path d="${torsoPath}" fill="${c.gJersey}" ${c.S}/>
     <path d="M ${100 - halfW + 2} ${hipY - 14} q ${halfW - 2} 12 ${2 * (halfW - 2)} 0 l 2 12 q ${-(halfW - 2)} 12 ${-2 * (halfW - 2)} 0 Z" fill="${c.jerseyDk}"/>
     <path d="M 84 ${shoulderY - 6} q 16 14 32 0" fill="none" stroke="${c.trim}" stroke-width="6" stroke-linecap="round"/>`;
 }
@@ -325,7 +436,7 @@ function armsStand(c: Ctx): string {
     return `
       <path d="M ${sx} ${shoulderY + 2} q ${side * 18} 4 ${side * 20} 22 q ${-side * 8} 7 ${-side * 18} 3 q ${side * 2} -14 ${-side * 2} -25 Z" fill="${c.jerseyDk}" ${c.S}/>
       ${capsule(`M ${elbowX} ${shoulderY + 22} Q ${handX} ${shoulderY + 30} ${handX} ${shoulderY + 38}`, c.skin, 13)}
-      <circle cx="${handX}" cy="${shoulderY + 40}" r="10" fill="${c.skin}" ${c.S}/>`;
+      <circle cx="${handX}" cy="${shoulderY + 40}" r="10" fill="${c.gSkin}" ${c.S}/>`;
   };
   return arm(-1) + arm(1);
 }
@@ -341,18 +452,18 @@ function armsCheer(c: Ctx): string {
     return `
       ${capsule(`M ${sx} ${shoulderY + 2} Q ${elbowX - side * 4} ${shoulderY - 12} ${elbowX} ${shoulderY - 28}`, c.jerseyDk, 15)}
       ${capsule(`M ${elbowX} ${shoulderY - 28} Q ${handX} ${shoulderY - 48} ${handX} ${shoulderY - 62}`, c.skin, 13)}
-      <circle cx="${handX}" cy="${shoulderY - 66}" r="10" fill="${c.skin}" ${c.S}/>`;
+      <circle cx="${handX}" cy="${shoulderY - 66}" r="10" fill="${c.gSkin}" ${c.S}/>`;
   };
   return arm(-1) + arm(1);
 }
 
 /** Front-view wheelchair: a big wheel on each side of the seated kid, seat + footrest. */
 function wheelchairFront(): string {
-  const rim = '#2c3a47';
+  const rim = SOFT3D ? '#59636e' : '#2c3a47';
   const wheel = (cx: number) => `
-    <circle cx="${cx}" cy="214" r="33" fill="#e9eef2" stroke="${OUT}" stroke-width="6"/>
+    <circle cx="${cx}" cy="214" r="33" fill="#e9eef2" stroke="${SOFT3D ? '#59636e' : OUT}" stroke-width="${SOFT3D ? 5 : 6}"/>
     <circle cx="${cx}" cy="214" r="20" fill="none" stroke="${rim}" stroke-width="4"/>
-    <circle cx="${cx}" cy="214" r="6" fill="${OUT}"/>
+    <circle cx="${cx}" cy="214" r="6" fill="${METAL_DK}"/>
     <g stroke="${rim}" stroke-width="3">
       <line x1="${cx}" y1="194" x2="${cx}" y2="234"/>
       <line x1="${cx - 20}" y1="214" x2="${cx + 20}" y2="214"/>
@@ -364,7 +475,7 @@ function wheelchairFront(): string {
     ${wheel(154)}
     <!-- seat + footrest -->
     <path d="M 60 206 h 80 l -8 18 h -64 Z" fill="#3f86e0" stroke="${OUT}" stroke-width="${SW}" stroke-linejoin="round"/>
-    <rect x="84" y="228" width="32" height="9" rx="4" fill="${OUT}"/>`;
+    <rect x="84" y="228" width="32" height="9" rx="4" fill="${METAL_DK}"/>`;
 }
 
 // --- Side poses (run1 / run2) -----------------------------------------------
@@ -374,7 +485,7 @@ function torsoSide(c: Ctx, dropY: number): string {
   const w = Math.round(c.m.halfW * 1.1);
   return `
     <g transform="translate(0 ${dropY}) rotate(8 100 180)">
-      <rect x="${100 - w / 2}" y="146" width="${w}" height="60" rx="${Math.round(w * 0.36)}" fill="${c.jersey}" ${c.S}/>
+      <rect x="${100 - w / 2}" y="146" width="${w}" height="60" rx="${Math.round(w * 0.36)}" fill="${c.gJersey}" ${c.S}/>
       <rect x="${100 - w / 2 + 3}" y="192" width="${w - 6}" height="11" rx="5" fill="${c.jerseyDk}"/>
       <path d="M ${100 - 10} 150 q 12 10 24 2" fill="none" stroke="${c.trim}" stroke-width="5" stroke-linecap="round"/>
     </g>`;
@@ -416,7 +527,7 @@ function armsRun(c: Ctx, frame: 1 | 2): { far: string; near: string } {
       near: `
         ${capsule('M 102 154 Q 90 166 82 176', c.jerseyDk, w)}
         ${capsule('M 82 176 Q 74 184 72 192', c.skin, w - 2)}
-        <circle cx="71" cy="195" r="9" fill="${c.skin}" ${c.S}/>`,
+        <circle cx="71" cy="195" r="9" fill="${c.gSkin}" ${c.S}/>`,
     };
   }
   return {
@@ -427,7 +538,7 @@ function armsRun(c: Ctx, frame: 1 | 2): { far: string; near: string } {
     near: `
       ${capsule('M 102 154 Q 114 166 122 172', c.jerseyDk, w)}
       ${capsule('M 122 172 Q 132 172 138 168', c.skin, w - 2)}
-      <circle cx="141" cy="167" r="9" fill="${c.skin}" ${c.S}/>`,
+      <circle cx="141" cy="167" r="9" fill="${c.gSkin}" ${c.S}/>`,
   };
 }
 
@@ -437,7 +548,7 @@ function armsRun(c: Ctx, frame: 1 | 2): { far: string; near: string } {
  * arm reaching the top of the handrim, frame 2 = end of the push stroke.
  */
 function wheelchairSide(c: Ctx, frame: 1 | 2): { behind: string; front: string } {
-  const rim = '#2c3a47';
+  const rim = SOFT3D ? '#59636e' : '#2c3a47';
   const wheelBottom = GROUND - 2;
   const wcy = wheelBottom - 34;
   const w = 13;
@@ -446,11 +557,11 @@ function wheelchairSide(c: Ctx, frame: 1 | 2): { behind: string; front: string }
       ? `
         ${capsule(`M 102 152 Q 116 166 120 178`, c.jerseyDk, w)}
         ${capsule(`M 120 178 Q 122 186 118 192`, c.skin, w - 2)}
-        <circle cx="117" cy="195" r="9" fill="${c.skin}" ${c.S}/>`
+        <circle cx="117" cy="195" r="9" fill="${c.gSkin}" ${c.S}/>`
       : `
         ${capsule(`M 102 152 Q 96 170 88 182`, c.jerseyDk, w)}
         ${capsule(`M 88 182 Q 82 192 78 200`, c.skin, w - 2)}
-        <circle cx="76" cy="203" r="9" fill="${c.skin}" ${c.S}/>`;
+        <circle cx="76" cy="203" r="9" fill="${c.gSkin}" ${c.S}/>`;
   const ticks =
     frame === 2
       ? `<g stroke="${rim}" stroke-width="3" stroke-linecap="round" opacity="0.55">
@@ -468,20 +579,20 @@ function wheelchairSide(c: Ctx, frame: 1 | 2): { behind: string; front: string }
       ${capsule('M 88 198 Q 112 200 126 208', PANTS, w)}
       ${capsule('M 126 208 Q 136 214 140 222', PANTS, w - 1)}
       ${sideShoe(142, 230, 6)}
-      <rect x="130" y="228" width="26" height="8" rx="4" fill="${OUT}"/>`,
+      <rect x="130" y="228" width="26" height="8" rx="4" fill="${METAL_DK}"/>`,
     // The near-side big wheel, handrim, caster, and pushing arm — in front,
     // the way a side-on wheelchair actually reads.
     front: `
-      <circle cx="92" cy="${wcy}" r="34" fill="#e9eef2" fill-opacity="0.55" stroke="${OUT}" stroke-width="6"/>
+      <circle cx="92" cy="${wcy}" r="34" fill="#e9eef2" fill-opacity="0.55" stroke="${SOFT3D ? '#59636e' : OUT}" stroke-width="${SOFT3D ? 5 : 6}"/>
       <circle cx="92" cy="${wcy}" r="24" fill="none" stroke="${rim}" stroke-width="4"/>
-      <circle cx="92" cy="${wcy}" r="6" fill="${OUT}"/>
+      <circle cx="92" cy="${wcy}" r="6" fill="${METAL_DK}"/>
       <g stroke="${rim}" stroke-width="3">
         <line x1="92" y1="${wcy - 22}" x2="92" y2="${wcy + 22}"/>
         <line x1="${92 - 22}" y1="${wcy}" x2="${92 + 22}" y2="${wcy}"/>
         <line x1="${92 - 16}" y1="${wcy - 16}" x2="${92 + 16}" y2="${wcy + 16}"/>
         <line x1="${92 - 16}" y1="${wcy + 16}" x2="${92 + 16}" y2="${wcy - 16}"/>
       </g>
-      <circle cx="146" cy="${GROUND - 9}" r="9" fill="#e9eef2" stroke="${OUT}" stroke-width="4"/>
+      <circle cx="146" cy="${GROUND - 9}" r="9" fill="#e9eef2" stroke="${SOFT3D ? '#59636e' : OUT}" stroke-width="4"/>
       ${arm}`,
   };
 }
@@ -492,11 +603,14 @@ const BAT_WOOD = '#d39a5c';
 
 /** The bat itself: barrel + handle + knob along a line, rotated at the grip. */
 function batProp(gx: number, gy: number, deg: number): string {
+  const edge = SOFT3D ? darken(BAT_WOOD, 0.35) : OUT;
+  const ew = SOFT3D ? 3 : 4;
   return `
     <g transform="translate(${gx} ${gy}) rotate(${deg})">
-      <rect x="-7" y="-96" width="14" height="52" rx="7" fill="${BAT_WOOD}" stroke="${OUT}" stroke-width="4"/>
-      <rect x="-5" y="-48" width="10" height="48" rx="5" fill="${darken(BAT_WOOD, 0.12)}" stroke="${OUT}" stroke-width="4"/>
-      <circle cx="0" cy="0" r="6" fill="${OUT}"/>
+      <rect x="-7" y="-96" width="14" height="52" rx="7" fill="${BAT_WOOD}" stroke="${edge}" stroke-width="${ew}"/>
+      <rect x="-4.5" y="-91" width="4" height="42" rx="2" fill="${lighten(BAT_WOOD, 0.4)}" opacity="0.6"/>
+      <rect x="-5" y="-48" width="10" height="48" rx="5" fill="${darken(BAT_WOOD, 0.12)}" stroke="${edge}" stroke-width="${ew}"/>
+      <circle cx="0" cy="0" r="6" fill="${SOFT3D ? darken(BAT_WOOD, 0.45) : OUT}"/>
     </g>`;
 }
 
@@ -520,7 +634,7 @@ function poseBat(c: Ctx, v: VisualParams, hFront: string): string {
     ${capsule(`M 96 158 Q 84 156 ${grip.x} ${grip.y + 4}`, darken(c.jerseyDk, 0.1), 13)}
     <circle cx="${grip.x - 2}" cy="${grip.y + 2}" r="9" fill="${darken(c.skin, 0.1)}" ${c.S}/>
     ${capsule(`M 104 160 Q 92 158 ${grip.x + 6} ${grip.y + 10}`, c.jerseyDk, 13)}
-    <circle cx="${grip.x + 4}" cy="${grip.y + 10}" r="9" fill="${c.skin}" ${c.S}/>`;
+    <circle cx="${grip.x + 4}" cy="${grip.y + 10}" r="9" fill="${c.gSkin}" ${c.S}/>`;
   const head = `
     <g transform="translate(6 2) rotate(3 ${HEAD.cx} ${HEAD.cy})">
       ${headGroup(c, v, hFront, 0.8)}
@@ -549,12 +663,12 @@ function poseWindup(c: Ctx, v: VisualParams, hFront: string): string {
   const throwArm = `
     ${capsule(`M ${100 + halfW - 6} ${shoulderY + 2} Q ${100 + halfW + 18} ${shoulderY - 16} ${100 + halfW + 22} ${shoulderY - 40}`, c.jerseyDk, 15)}
     ${capsule(`M ${100 + halfW + 22} ${shoulderY - 40} Q ${100 + halfW + 18} ${shoulderY - 58} ${100 + halfW + 8} ${shoulderY - 66}`, c.skin, 13)}
-    <circle cx="${100 + halfW + 5}" cy="${shoulderY - 70}" r="10" fill="${c.skin}" ${c.S}/>
-    <circle cx="${100 + halfW + 5}" cy="${shoulderY - 70}" r="7" fill="#ffffff" stroke="${OUT}" stroke-width="2.5"/>`;
+    <circle cx="${100 + halfW + 5}" cy="${shoulderY - 70}" r="10" fill="${c.gSkin}" ${c.S}/>
+    <circle cx="${100 + halfW + 5}" cy="${shoulderY - 70}" r="7" fill="#ffffff" stroke="${SOFT3D ? '#cfc9bd' : OUT}" stroke-width="2.5"/>`;
   const gloveArm = `
     ${capsule(`M ${100 - halfW + 6} ${shoulderY + 4} Q ${100 - halfW - 6} ${shoulderY + 14} ${100 - halfW + 4} ${shoulderY + 26}`, c.jerseyDk, 15)}
     <ellipse cx="${100 - halfW + 10}" cy="${shoulderY + 32}" rx="14" ry="12" fill="#a9743f" ${c.S}/>
-    <path d="M ${100 - halfW + 2} ${shoulderY + 26} q 8 -6 16 0" fill="none" stroke="${OUT}" stroke-width="3"/>`;
+    <path d="M ${100 - halfW + 2} ${shoulderY + 26} q 8 -6 16 0" fill="none" stroke="${SOFT3D ? darken('#a9743f', 0.3) : OUT}" stroke-width="3"/>`;
   if (c.usesChair) {
     return `${wheelchairFront()}${torsoFront(c)}${throwArm}${gloveArm}${headGroup(c, v, hFront)}`;
   }
@@ -586,7 +700,7 @@ function poseReady(c: Ctx, v: VisualParams, hFront: string): string {
       const hx = 100 + s * (halfW + 14);
       return `
         ${capsule(`M ${sx} ${shoulderY + 4} Q ${hx - s * 2} ${shoulderY + 22} ${hx} ${shoulderY + 40}`, c.jerseyDk, 15)}
-        <circle cx="${hx}" cy="${shoulderY + 46}" r="11" fill="${c.skin}" ${c.S}/>`;
+        <circle cx="${hx}" cy="${shoulderY + 46}" r="11" fill="${c.gSkin}" ${c.S}/>`;
     })
     .join('');
   const body = `
@@ -621,7 +735,7 @@ function poseSlide(c: Ctx, v: VisualParams, hFront: string): string {
     return `${chair.behind}${torsoSide(c, 2)}${chair.front}${head}`;
   }
   const dust = `
-    <g fill="#e0d5c0" stroke="${OUT}" stroke-width="3" opacity="0.85">
+    <g fill="#e0d5c0" stroke="${OUT}" stroke-width="${SOFT3D ? 0 : 3}" opacity="0.85">
       <circle cx="30" cy="${GROUND - 14}" r="12"/>
       <circle cx="46" cy="${GROUND - 26}" r="9"/>
       <circle cx="24" cy="${GROUND - 32}" r="7"/>
@@ -640,9 +754,9 @@ function poseSlide(c: Ctx, v: VisualParams, hFront: string): string {
   // Trailing arm plants on the dirt; lead arm punches high for balance.
   const arms = `
     ${capsule(`M 66 ${GROUND - 62} Q 52 ${GROUND - 44} 46 ${GROUND - 26}`, c.jerseyDk, 13)}
-    <circle cx="45" cy="${GROUND - 20}" r="9" fill="${c.skin}" ${c.S}/>
+    <circle cx="45" cy="${GROUND - 20}" r="9" fill="${c.gSkin}" ${c.S}/>
     ${capsule(`M 74 ${GROUND - 70} Q 92 ${GROUND - 88} 104 ${GROUND - 100}`, c.jerseyDk, 13)}
-    <circle cx="108" cy="${GROUND - 105}" r="9" fill="${c.skin}" ${c.S}/>`;
+    <circle cx="108" cy="${GROUND - 105}" r="9" fill="${c.gSkin}" ${c.S}/>`;
   // Head sits up out of the lean, chin toward the bag.
   const head = `
     <g transform="translate(-32 84) scale(0.92) rotate(-10 ${HEAD.cx} ${HEAD.cy})">
@@ -654,21 +768,28 @@ function poseSlide(c: Ctx, v: VisualParams, hFront: string): string {
 // --- Assembly --------------------------------------------------------------
 
 export function buildCharacterSVG(v: VisualParams, pose: Pose = 'stand'): string {
-  const skin = SKIN_TONES[v.skin] ?? SKIN_TONES[0];
+  // Soft mode mutes every palette color before anything derives from it, so
+  // all the darken/lighten/gradient math stays in the matte range too.
+  const mute = (hex: string) => (SOFT3D ? soften(hex) : hex);
+  const skin = mute(SKIN_TONES[v.skin] ?? SKIN_TONES[0]);
   const skinDk = darken(skin, 0.12);
-  const hairColor = HAIR_COLORS[v.hairColor] ?? HAIR_COLORS[0];
-  const uni = UNIFORM_COLORS[v.uniform] ?? UNIFORM_COLORS[0];
+  const hairColor = mute(HAIR_COLORS[v.hairColor] ?? HAIR_COLORS[0]);
+  const uniRaw = UNIFORM_COLORS[v.uniform] ?? UNIFORM_COLORS[0];
+  const uni = { jersey: mute(uniRaw.jersey), trim: mute(uniRaw.trim) };
   const c: Ctx = {
     skin,
     skinDk,
     jersey: uni.jersey,
     jerseyDk: darken(uni.jersey, 0.14),
     trim: uni.trim,
+    gSkin: 'url(#skinG)',
+    gJersey: 'url(#jerseyG)',
+    gPants: 'url(#pantsG)',
     m: bodyMetrics(v.bodyType),
     S: `stroke="${OUT}" stroke-width="${SW}" stroke-linejoin="round" stroke-linecap="round"`,
     usesChair: v.accessory === 'wheelchair',
   };
-  const h = hair(v.hair, hairColor);
+  const h = hair(v.hair, 'url(#hairG)', 'url(#hairDkG)');
   const shoulderY = 150;
 
   // Chest number badge (front poses only — a side view showing it reads wrong).
@@ -707,6 +828,7 @@ export function buildCharacterSVG(v: VisualParams, pose: Pose = 'stand'): string
   }
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${VIEW_W} ${VIEW_H}" width="${VIEW_W}" height="${VIEW_H}">
+  ${gradientDefs(skin, hairColor, uni.jersey)}
   <g paint-order="stroke" transform="translate(100 130) scale(${c.m.scale}) translate(-100 -130)">
     ${layers}
   </g>

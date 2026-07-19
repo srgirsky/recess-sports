@@ -42,7 +42,8 @@ export function burst(
   }
 }
 
-/** A word that pops in, floats up, and fades — "PERFECT!", "+2 RUNS!", etc. */
+/** A word that pops in, floats up, and fades — "PERFECT!", "+2 RUNS!", etc.
+ *  Returns the text so screen-anchored callers can pin it to a UI camera. */
 export function floatingText(
   scene: Phaser.Scene,
   x: number,
@@ -50,7 +51,7 @@ export function floatingText(
   text: string,
   color: number,
   size = 34
-): void {
+): Phaser.GameObjects.Text {
   const t = scene.add
     .text(x, y, text, {
       fontFamily: 'Arial Black, Arial, sans-serif',
@@ -73,6 +74,7 @@ export function floatingText(
     ease: 'Cubic.in',
     onComplete: () => t.destroy(),
   });
+  return t;
 }
 
 /** Confetti raining from the top — for wins and big moments. */

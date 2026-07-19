@@ -146,6 +146,25 @@ export const SHAKE = {
   homer: 13,
 };
 
+/**
+ * The two-view camera choreography (Backyard-style): a zoomed batting/pitching
+ * close-up on the plate–mound corridor for every pitch, snapping out to the
+ * full field the moment a ball is in play (or runners move). HUD chrome lives
+ * on a separate UI camera and never zooms.
+ */
+export const CAMERA = {
+  /** Close-up zoom + the world point it centers on (between mound and plate). */
+  CLOSE_ZOOM: 1.5,
+  CLOSE_X: 480,
+  CLOSE_Y: 426,
+  /** Settling into the close view (a new at-bat / next pitch). */
+  IN_MS: 450,
+  /** Easing back out for walks, steals, between-innings beats. */
+  OUT_MS: 380,
+  /** The fast snap out on contact — the ball is already flying. */
+  SNAP_MS: 260,
+};
+
 /** How long a runner takes to jog ONE base (ms). Post-hit pacing derives from this. */
 export const RUNNER_TWEEN_MS = 460;
 
@@ -388,6 +407,10 @@ export const ANIM = {
   AMBIENT_HOP_EVERY_MS: 2600, // a random waiting kid hops ("pick me!") this often
   STREAM_STAGGER_MS: 70, // delay between kids bursting out of the doors
   STREAM_RUN_MS: 700, // one leg of a kid's run from the doors to the wall
+  CUTSCENE_ZOOM: 2.0, // door close-up zoom while the bell rings
+  CUTSCENE_ZOOM_HOLD_MS: 700, // how long the camera lingers on the doors
+  CUTSCENE_ZOOMOUT_MS: 1100, // camera pull-back from the doors to the full yard
+  STAIR_HOP_MS: 95, // one hop down one school step during the stream-out
   CPU_SCAN_HOP_MS: 170, // CPU "?" spotlight hop while it pretends to decide
   CHEER_WAVE_STAGGER_MS: 80, // delay between kids joining the cheer wave
 };

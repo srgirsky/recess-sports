@@ -23,6 +23,7 @@ import {
   MAX_EXTRA_INNINGS,
   TEAM_SIZE,
   SHAKE,
+  CAMERA,
   RUNNER_TWEEN_MS,
   SHOW_TIMING_RING,
   ANIM,
@@ -135,6 +136,24 @@ const BALL_GREEN = 0x57d977; // "good eye" green for called balls
 
 const RUNNER_H = 66; // runner sprite height
 
+/** Shadow tone for a 0xrrggbb int: mix toward cool navy (matches CharacterArt). */
+function shadeInt(color: number, f: number): number {
+  const mix = (c: number, to: number) => Math.round(c * (1 - f) + to * f);
+  const r = mix((color >> 16) & 255, 0x2c);
+  const g = mix((color >> 8) & 255, 0x3e);
+  const b = mix(color & 255, 0x66);
+  return (r << 16) | (g << 8) | b;
+}
+
+/** Highlight tone for a 0xrrggbb int: mix toward warm near-white. */
+function lightenInt(color: number, f: number): number {
+  const mix = (c: number, to: number) => Math.round(c * (1 - f) + to * f);
+  const r = mix((color >> 16) & 255, 0xff);
+  const g = mix((color >> 8) & 255, 0xfa);
+  const b = mix(color & 255, 0xe8);
+  return (r << 16) | (g << 8) | b;
+}
+
 export class GameScene extends Phaser.Scene {
   private playerTeam!: string[];
   private aiTeam!: string[];
@@ -243,8 +262,16 @@ export class GameScene extends Phaser.Scene {
   private strikesPips!: Phaser.GameObjects.Text;
   private announce!: Phaser.GameObjects.Text;
   private announceBg!: Phaser.GameObjects.Rectangle;
-  private baseMarks: Phaser.GameObjects.Rectangle[] = [];
+  private baseMarks: Phaser.GameObjects.Polygon[] = [];
   private batterLabel!: Phaser.GameObjects.Text;
+
+  // --- Two-view camera (Backyard-style) ---
+  /** HUD camera: never zooms. World objects are hidden from it via pinUI's
+   *  inverse — see the addedtoscene hook in create(). */
+  private uiCam!: Phaser.Cameras.Scene2D.Camera;
+  private viewMode: 'close' | 'wide' = 'wide';
+  /** The corner mini-diamond inset's base dots (gold = occupied). */
+  private miniBaseDots: Phaser.GameObjects.Arc[] = [];
 
   constructor() {
     super('Game');
@@ -287,6 +314,8 @@ export class GameScene extends Phaser.Scene {
     this.pendingHold = undefined;
     this.firstFieldPlay = true;
     this.firstRunPlay = true;
+    this.viewMode = 'wide';
+    this.miniBaseDots = [];
   }
 
   create(): void {
@@ -298,7 +327,18 @@ export class GameScene extends Phaser.Scene {
     this.venue = getVenue();
     this.geo = getFieldGeometry(this.venue);
     recordGamePlayed();
+
+    // The UI camera renders HUD chrome only and never zooms. Every object is
+    // world by default: this hook hides it from the UI cam the moment it's
+    // added (so bursts/floating text/trails spawned mid-play stay world-side);
+    // pinUI() flips an object the other way. Registered BEFORE any add() call.
+    this.uiCam = this.cameras.add(0, 0, GAME_WIDTH, GAME_HEIGHT);
+    const routeToWorld = (go: Phaser.GameObjects.GameObject) => this.uiCam.ignore(go);
+    this.events.on('addedtoscene', routeToWorld);
+    this.events.once('shutdown', () => this.events.off('addedtoscene', routeToWorld));
+
     this.cameras.main.fadeIn(250, 0x5b, 0xbf, 0x5a);
+    this.uiCam.fadeIn(250, 0x5b, 0xbf, 0x5a);
 
     this.playerJuice = newJuice();
     this.cpuJuice = newJuice();
@@ -306,9 +346,10 @@ export class GameScene extends Phaser.Scene {
 
     this.drawField();
     this.drawHud();
+    this.drawMiniDiamond();
     if (this.features.juice) this.drawJuiceMeter();
     this.bindSwingInput();
-    makeMuteButton(this, GAME_WIDTH - 30, 68);
+    this.pinUI(makeMuteButton(this, GAME_WIDTH - 30, 68));
 
     this.pitcherSprite = this.add.image(MOUND.x, MOUND.y, this.aiPitcher.id).setOrigin(0.5, 1);
     this.pitcherSprite.setScale(110 / this.pitcherSprite.height);
@@ -316,6 +357,45 @@ export class GameScene extends Phaser.Scene {
     this.setMoundPitcher(this.aiPitcher);
 
     this.startHalf();
+  }
+
+  // --- Camera choreography -------------------------------------------------
+
+  /**
+   * Move a display object (and any container children) onto the UI camera:
+   * the main camera stops rendering it, so the gameplay zoom never touches
+   * it. Children are routed too — the hit-tester checks them individually.
+   */
+  private pinUI<T extends Phaser.GameObjects.GameObject>(go: T): T {
+    const route = (o: Phaser.GameObjects.GameObject) => {
+      o.cameraFilter &= ~this.uiCam.id;
+      this.cameras.main.ignore(o);
+      const kids = (o as Phaser.GameObjects.Container).list;
+      if (kids) kids.forEach(route);
+    };
+    route(go);
+    return go;
+  }
+
+  /**
+   * 'close' = the batting/pitching view (plate–mound corridor fills the
+   * screen, batter big in the foreground — the Backyard shot). 'wide' = the
+   * whole field for live plays and baserunning. HUD is on the UI cam and
+   * doesn't move.
+   */
+  private setView(view: 'close' | 'wide', ms?: number): void {
+    if (this.viewMode === view) return;
+    this.viewMode = view;
+    const cam = this.cameras.main;
+    if (view === 'close') {
+      const dur = ms ?? CAMERA.IN_MS;
+      cam.pan(CAMERA.CLOSE_X, CAMERA.CLOSE_Y, dur, 'Sine.easeInOut');
+      cam.zoomTo(CAMERA.CLOSE_ZOOM, dur, 'Sine.easeInOut');
+    } else {
+      const dur = ms ?? CAMERA.OUT_MS;
+      cam.pan(GAME_WIDTH / 2, GAME_HEIGHT / 2, dur, 'Sine.easeInOut');
+      cam.zoomTo(1, dur, 'Sine.easeInOut');
+    }
   }
 
   // --- Field & HUD ---------------------------------------------------------
@@ -331,12 +411,13 @@ export class GameScene extends Phaser.Scene {
     const sky = this.add.graphics();
     sky.fillGradientStyle(0x8fd0ff, 0x8fd0ff, 0xd4efff, 0xd4efff, 1);
     sky.fillRect(0, 68, W, HORIZON - 68);
-    // Sun + soft glow, top-right.
-    this.add.circle(858, 108, 46, 0xfff2b0, 0.5);
-    this.add.circle(858, 108, 30, 0xffe066, 1);
+    // Sun + soft glow, top-LEFT — the whole game is lit from the upper-left
+    // (character cel-shade sits on the right side), so the sun must agree.
+    this.add.circle(96, 104, 46, 0xfff2b0, 0.5);
+    this.add.circle(96, 104, 30, 0xffe066, 1);
     // A couple of clouds.
-    this.cloud(150, 110);
-    this.cloud(520, 96);
+    this.cloud(320, 110);
+    this.cloud(660, 94);
 
     if (look.stands) {
       // --- Stands + crowd (the park) ---
@@ -393,6 +474,25 @@ export class GameScene extends Phaser.Scene {
       ],
       true
     );
+    // The fence casts a soft shadow onto the ground in front of it — the
+    // contact shadow is what makes it read as a standing wall, not a stripe.
+    fence.fillStyle(0x1b2833, 0.18);
+    fence.fillPoints(
+      [
+        new Phaser.Geom.Point(fl.x, fl.y),
+        new Phaser.Geom.Point(fr.x, fr.y),
+        new Phaser.Geom.Point(fr.x, fr.y + 9),
+        new Phaser.Geom.Point(fl.x, fl.y + 9),
+      ],
+      true
+    );
+    // Fence posts: vertical darker slats that give the wall thickness.
+    fence.fillStyle(shadeInt(look.fence, 0.25), 1);
+    for (let x = 40; x < W; x += 120) {
+      const t = x / W;
+      const y = fl.y + (fr.y - fl.y) * t;
+      fence.fillRect(x - 3, y - 32, 6, 32);
+    }
     if (this.venue.id === 'sandlot') {
       // Wood-plank verticals.
       const planks = this.add.graphics();
@@ -424,9 +524,24 @@ export class GameScene extends Phaser.Scene {
 
     // --- Ground texture ---
     if (look.stripes) {
+      // Mow stripes as PROJECTED trapezoids — they converge toward the fence
+      // with the 3/4 camera, which is what makes the ground read as a plane
+      // receding in depth instead of a painted backdrop.
+      const stripes = this.add.graphics();
+      stripes.fillStyle(look.grassDark, 0.35);
       for (let x = 0; x < W; x += 96) {
-        if (((x / 96) & 1) === 0)
-          this.add.rectangle(x + 48, (HORIZON + GAME_HEIGHT) / 2, 96, GAME_HEIGHT - HORIZON, look.grassDark, 0.35).setOrigin(0.5);
+        if (((x / 96) & 1) !== 0) continue;
+        const tl = project({ x, y: HORIZON });
+        const tr = project({ x: x + 96, y: HORIZON });
+        stripes.fillPoints(
+          [
+            new Phaser.Geom.Point(tl.x, HORIZON),
+            new Phaser.Geom.Point(tr.x, HORIZON),
+            new Phaser.Geom.Point(x + 96, GAME_HEIGHT),
+            new Phaser.Geom.Point(x, GAME_HEIGHT),
+          ],
+          true
+        );
       }
     } else if (look.asphalt) {
       // Faded expansion seams + a painted center ring around second base.
@@ -447,6 +562,14 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    // --- Atmospheric haze: distant things are lighter and cooler. A soft
+    // sky-tinted band over the fence + deep outfield pushes the far edge of
+    // the world back in space. ---
+    const hazeTop = Math.min(fl.y, fr.y) - 32;
+    const haze = this.add.graphics();
+    haze.fillGradientStyle(0xdfefff, 0xdfefff, 0xdfefff, 0xdfefff, 0.22, 0.22, 0, 0);
+    haze.fillRect(0, hazeTop, W, Math.max(fl.y, fr.y) + 110 - hazeTop);
+
     // --- Infield dirt diamond ---
     // NOTE: Phaser polygon points must be 0-based (no negatives) — negative
     // coords get double-shifted by the display origin and land off-field.
@@ -464,6 +587,11 @@ export class GameScene extends Phaser.Scene {
     ]);
     dirt.fillPoints(diamondPts, true);
     dirt.strokePoints(diamondPts, true, true);
+    // Ground tilt: far half of the diamond darker, near half catching light.
+    dirt.fillStyle(shadeInt(look.dirt, 0.35), 0.16);
+    dirt.fillPoints([diamondPts[0], diamondPts[1], diamondPts[3]], true);
+    dirt.fillStyle(lightenInt(look.dirt, 0.5), 0.14);
+    dirt.fillPoints([diamondPts[3], diamondPts[2], diamondPts[1]], true);
     // Ground "cutout" in the middle of the infield for that manicured look.
     const cut = this.add.graphics();
     cut.fillStyle(look.grass, 1);
@@ -493,8 +621,11 @@ export class GameScene extends Phaser.Scene {
       true
     );
 
-    // --- Pitcher's mound + rubber ---
+    // --- Pitcher's mound + rubber (a lit dome, not a flat disc) ---
+    this.add.ellipse(MOUND.x + 6, MOUND.y + 8, 96, 54, 0x1b2833, 0.14); // cast shadow, down-right
     this.add.ellipse(MOUND.x, MOUND.y + 4, 92, 60, look.dirt).setStrokeStyle(3, look.asphalt ? look.grassDark : 0xb87a3f);
+    this.add.ellipse(MOUND.x, MOUND.y + 12, 78, 34, shadeInt(look.dirt, 0.3), 0.3); // shaded near slope
+    this.add.ellipse(MOUND.x - 8, MOUND.y - 4, 54, 24, lightenInt(look.dirt, 0.4), 0.45); // lit crown, upper-left
     this.add.rectangle(MOUND.x, MOUND.y, 26, 8, COLORS.white).setStrokeStyle(2, 0x9a9a9a);
 
     // --- Home plate (pentagon) ---
@@ -511,10 +642,12 @@ export class GameScene extends Phaser.Scene {
     // --- Base plates (white squares, lit gold when occupied) ---
     [FIRST, SECOND, THIRD].forEach((p, i) => {
       const q = project(p);
+      // A flattened diamond, so the bag lies ON the ground plane instead of
+      // standing up like a sign. (Points 0-based — see the polygon gotcha.)
       const plate = this.add
-        .rectangle(q.x, q.y, 22, 22, COLORS.white)
+        .polygon(q.x, q.y, [14, 0, 28, 9, 14, 18, 0, 9], COLORS.white)
         .setStrokeStyle(3, COLORS.ink)
-        .setAngle(45);
+        .setOrigin(0.5);
       this.baseMarks[i] = plate;
     });
 
@@ -540,49 +673,61 @@ export class GameScene extends Phaser.Scene {
   }
 
   private drawHud(): void {
-    this.add.rectangle(GAME_WIDTH / 2, 34, GAME_WIDTH, 68, COLORS.ink, 0.82).setOrigin(0.5);
-    this.scoreText = this.add
-      .text(24, 20, '', { fontFamily: FONT, fontSize: '30px', color: '#ffffff' })
-      .setOrigin(0, 0);
-    this.inningText = this.add
-      .text(GAME_WIDTH / 2, 20, '', {
-        fontFamily: FONT,
-        fontSize: '26px',
-        color: '#ffce3a',
-      })
-      .setOrigin(0.5, 0);
-    this.outsText = this.add
-      .text(GAME_WIDTH - 70, 14, '', {
-        fontFamily: FONT,
-        fontSize: '26px',
-        color: '#ffffff',
-      })
-      .setOrigin(1, 0);
+    this.pinUI(this.add.rectangle(GAME_WIDTH / 2, 34, GAME_WIDTH, 68, COLORS.ink, 0.82).setOrigin(0.5));
+    this.scoreText = this.pinUI(
+      this.add.text(24, 20, '', { fontFamily: FONT, fontSize: '30px', color: '#ffffff' }).setOrigin(0, 0)
+    );
+    this.inningText = this.pinUI(
+      this.add
+        .text(GAME_WIDTH / 2, 20, '', {
+          fontFamily: FONT,
+          fontSize: '26px',
+          color: '#ffce3a',
+        })
+        .setOrigin(0.5, 0)
+    );
+    this.outsText = this.pinUI(
+      this.add
+        .text(GAME_WIDTH - 70, 14, '', {
+          fontFamily: FONT,
+          fontSize: '26px',
+          color: '#ffffff',
+        })
+        .setOrigin(1, 0)
+    );
     // Ball/strike count as wordless pips: green = balls, red = strikes.
-    this.strikesPips = this.add
-      .text(GAME_WIDTH - 70, 44, '', { fontFamily: FONT, fontSize: '17px', color: '#ff7a70' })
-      .setOrigin(1, 0);
-    this.ballsPips = this.add
-      .text(GAME_WIDTH - 126, 44, '', { fontFamily: FONT, fontSize: '17px', color: '#57d977' })
-      .setOrigin(1, 0);
+    this.strikesPips = this.pinUI(
+      this.add
+        .text(GAME_WIDTH - 70, 44, '', { fontFamily: FONT, fontSize: '17px', color: '#ff7a70' })
+        .setOrigin(1, 0)
+    );
+    this.ballsPips = this.pinUI(
+      this.add
+        .text(GAME_WIDTH - 126, 44, '', { fontFamily: FONT, fontSize: '17px', color: '#57d977' })
+        .setOrigin(1, 0)
+    );
 
     // Announcer lives in its own band below the HUD so it never sits on a sprite.
-    this.announceBg = this.add
-      .rectangle(GAME_WIDTH / 2, 108, 640, 62, COLORS.ink, 0.55)
-      .setOrigin(0.5)
-      .setDepth(90)
-      .setAlpha(0);
-    this.announce = this.add
-      .text(GAME_WIDTH / 2, 108, '', {
-        fontFamily: FONT,
-        fontSize: '38px',
-        color: '#ffffff',
-        fontStyle: 'bold',
-        align: 'center',
-      })
-      .setOrigin(0.5)
-      .setStroke('#14202e', 7)
-      .setDepth(91);
+    this.announceBg = this.pinUI(
+      this.add
+        .rectangle(GAME_WIDTH / 2, 108, 640, 62, COLORS.ink, 0.55)
+        .setOrigin(0.5)
+        .setDepth(90)
+        .setAlpha(0)
+    );
+    this.announce = this.pinUI(
+      this.add
+        .text(GAME_WIDTH / 2, 108, '', {
+          fontFamily: FONT,
+          fontSize: '38px',
+          color: '#ffffff',
+          fontStyle: 'bold',
+          align: 'center',
+        })
+        .setOrigin(0.5)
+        .setStroke('#14202e', 7)
+        .setDepth(91)
+    );
 
     this.batterLabel = this.add
       .text(HOME.x, HOME.y + 34, '', {
@@ -614,18 +759,51 @@ export class GameScene extends Phaser.Scene {
     for (let i = 0; i < 3; i++) {
       const lit = this.halfState?.bases[i];
       this.baseMarks[i]?.setFillStyle(lit ? COLORS.gold : COLORS.white);
+      this.miniBaseDots[i]?.setFillStyle(lit ? COLORS.gold : 0xffffff, lit ? 1 : 0.85);
     }
+  }
+
+  /**
+   * The corner mini-diamond inset (the Backyard "Steal!" widget): base state
+   * at a glance while the batting close-up hides the outfield. Steal chips
+   * anchor next to it — see showStealChips(). UI camera, so it never zooms.
+   */
+  private drawMiniDiamond(): void {
+    const c = this.add.container(72, 158).setDepth(92);
+    const g = this.add.graphics();
+    g.fillStyle(COLORS.ink, 0.55);
+    g.fillRoundedRect(-52, -48, 104, 96, 12);
+    // Basepath diamond: home at the bottom, second at the top.
+    const pts = [
+      new Phaser.Geom.Point(0, 34), // home
+      new Phaser.Geom.Point(30, 2), // first
+      new Phaser.Geom.Point(0, -30), // second
+      new Phaser.Geom.Point(-30, 2), // third
+    ];
+    g.lineStyle(3, 0xffffff, 0.55);
+    g.strokePoints(pts, true, true);
+    c.add(g);
+    // Home marker + the three base dots (gold when occupied — refreshHud).
+    c.add(this.add.circle(0, 34, 4, 0xffffff, 0.9));
+    this.miniBaseDots = [pts[1], pts[2], pts[3]].map((p) => {
+      const dot = this.add.circle(p.x, p.y, 7, 0xffffff, 0.85).setStrokeStyle(2, COLORS.ink);
+      c.add(dot);
+      return dot;
+    });
+    this.pinUI(c);
   }
 
   // --- Juice meter (main mode) ---------------------------------------------
 
   /** ⚡ bar under the HUD strip — the player's juice at a glance. */
   private drawJuiceMeter(): void {
-    this.add
-      .text(22, 78, '⚡', { fontSize: '20px' })
-      .setOrigin(0, 0.5)
-      .setDepth(90);
-    this.juiceGfx = this.add.graphics().setDepth(90);
+    this.pinUI(
+      this.add
+        .text(22, 78, '⚡', { fontSize: '20px' })
+        .setOrigin(0, 0.5)
+        .setDepth(90)
+    );
+    this.juiceGfx = this.pinUI(this.add.graphics().setDepth(90));
     this.refreshJuiceMeter();
   }
 
@@ -652,7 +830,7 @@ export class GameScene extends Phaser.Scene {
       this.playerJuice = addJuice(this.playerJuice, amount);
       this.refreshJuiceMeter();
       if (!was && canSpend(this.playerJuice, 'powerSwing')) {
-        floatingText(this, 110, 96, 'JUICE READY! ⚡', COLORS.gold, 22);
+        this.pinUI(floatingText(this, 110, 96, 'JUICE READY! ⚡', COLORS.gold, 22));
       }
     } else {
       this.cpuJuice = addJuice(this.cpuJuice, amount);
@@ -661,6 +839,7 @@ export class GameScene extends Phaser.Scene {
 
   // --- Half-inning orchestration ------------------------------------------
   private startHalf(): void {
+    this.setView('wide'); // between-halves beat: see the whole yard
     this.halfState = newHalfInning();
     this.clearRunners();
     this.buildDefense();
@@ -729,6 +908,7 @@ export class GameScene extends Phaser.Scene {
 
   private gameOver(): void {
     this.phase = 'ended';
+    this.setView('wide'); // the final beat plays out over the whole yard
     if (this.playerScore !== this.aiScore) {
       this.callIt(this.playerScore > this.aiScore ? 'winning' : 'losing', {}, 2);
     }
@@ -762,6 +942,7 @@ export class GameScene extends Phaser.Scene {
   private throwPitch(): void {
     // Wind up first, then release. Input is ignored until the ball is live.
     this.phase = 'resolving';
+    this.setView('close'); // the batting view: batter + mound fill the screen
     this.pitcherWindup();
     this.time.delayedCall(ANIM.WINDUP_MS, () => this.launchPitch());
   }
@@ -964,6 +1145,7 @@ export class GameScene extends Phaser.Scene {
       { fill: this.armedPower ? COLORS.gold : COLORS.cream, fontSize: 18, minW: 170 }
     );
     container.setDepth(94);
+    this.pinUI(container);
     if (!this.armedPower) {
       container.setInteractive(new Phaser.Geom.Rectangle(-90, -18, 180, 36), Phaser.Geom.Rectangle.Contains);
       container.on('pointerdown', () => {
@@ -980,21 +1162,31 @@ export class GameScene extends Phaser.Scene {
     this.powerBtn = container;
   }
 
-  /** 💨 STEAL! chips next to runners who have an open base ahead. */
+  /**
+   * 💨 STEAL! chips for runners with an open base ahead. They anchor next to
+   * the mini-diamond inset (NOT the world bases — the batting close-up crops
+   * second base out of view), Backyard-style: the inset IS the steal UI.
+   */
   private showStealChips(): void {
     this.stealChips.forEach((c) => c.destroy());
     this.stealChips = [];
     this.armedSteal = undefined;
     for (const fromBase of [1, 2] as const) {
       if (!this.runners.has(fromBase) || this.runners.has(fromBase + 1)) continue;
-      const p = project(basePos(fromBase));
-      const { container } = pill(this, p.x + (fromBase === 1 ? 74 : 0), p.y - (fromBase === 2 ? 52 : 0), '💨 STEAL!', {
-        fill: COLORS.cream,
-        fontSize: 16,
-        minW: 100,
-      });
-      container.setDepth(60).setAlpha(0.92);
-      container.setInteractive(new Phaser.Geom.Rectangle(-52, -17, 104, 34), Phaser.Geom.Rectangle.Contains);
+      const { container } = pill(
+        this,
+        212,
+        fromBase === 1 ? 176 : 136,
+        fromBase === 1 ? '💨 STEAL 2ND!' : '💨 STEAL 3RD!',
+        {
+          fill: COLORS.cream,
+          fontSize: 16,
+          minW: 136,
+        }
+      );
+      container.setDepth(93).setAlpha(0.92);
+      this.pinUI(container);
+      container.setInteractive(new Phaser.Geom.Rectangle(-70, -17, 140, 34), Phaser.Geom.Rectangle.Contains);
       container.on('pointerdown', () => {
         this.armedSteal = fromBase;
         audio.pop();
@@ -1189,6 +1381,7 @@ export class GameScene extends Phaser.Scene {
         (result.kind === 'strike' || (result.kind === 'ball' && !walked)) &&
         !isHalfOver(this.halfState);
       if (token && liveOnPitch) {
+        this.setView('wide', CAMERA.SNAP_MS); // the race is at the bases
         const runner = getCharacter(token.getData('id') as string);
         const catcher = getCharacter(this.fieldAssignment.find((a) => a.position === 'C')!.charId);
         const safe = rollSteal(
@@ -1211,6 +1404,7 @@ export class GameScene extends Phaser.Scene {
     // Baserunning animation, driven by the reducer's movement list (hit or walk).
     let runDelay = 0;
     if (applied.movements.length > 0) {
+      this.setView('wide'); // runners moving — show the bases
       runDelay = this.animateBaserunning(applied.movements, prevBatter);
       this.fadeOutBatter();
     }
@@ -1390,6 +1584,7 @@ export class GameScene extends Phaser.Scene {
 
   /** Arc the hit ball out toward the outfield; distance scales with the hit. */
   private flyHitBall(bases: number): void {
+    this.setView('wide', CAMERA.SNAP_MS); // watch it go
     const targets: Record<number, { x: number; y: number }> = {
       1: { x: 380 + Math.random() * 200, y: 250 },
       2: { x: Math.random() < 0.5 ? 320 : 640, y: 170 },
@@ -1479,6 +1674,7 @@ export class GameScene extends Phaser.Scene {
       params: this.liveParams,
       geo: this.geo,
     });
+    this.setView('wide', CAMERA.SNAP_MS); // ball's in play — whole field, fast
     this.phase = mode === 'defense' ? 'fielding' : 'running';
     this.pendingThrow = undefined;
     this.pendingRun = false;
@@ -1536,6 +1732,7 @@ export class GameScene extends Phaser.Scene {
         fontSize: 26,
       });
       container.setDepth(95);
+      this.pinUI(container);
       this.tweens.add({ targets: container, scale: 1.06, duration: 420, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       this.goBanner = container;
       if (this.firstRunPlay) {
@@ -1549,6 +1746,7 @@ export class GameScene extends Phaser.Scene {
         fontSize: 28,
       });
       container.setDepth(95);
+      this.pinUI(container);
       this.tweens.add({ targets: container, scale: 1.07, duration: 420, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       this.goBanner = container;
       if (this.firstRunPlay) {
@@ -1640,14 +1838,15 @@ export class GameScene extends Phaser.Scene {
       const b = s.ball;
       if (b.phase === 'held' && b.heldBy !== null) {
         const hq = project(s.fielders[b.heldBy].pos);
-        this.liveBall.setPosition(hq.x + 12, hq.y - 34).setVisible(true);
+        this.liveBall.setPosition(hq.x + 12, hq.y - 34).setScale(1).setVisible(true);
         this.liveBallShadow.setVisible(false);
       } else {
         const bq = project(b.pos);
         const lift = b.height * (b.phase === 'thrown' ? 46 : 92);
-        this.liveBall.setPosition(bq.x, bq.y - 10 - lift).setVisible(true);
+        // A high ball is nearer the camera: swell it, and thin its shadow.
+        this.liveBall.setPosition(bq.x, bq.y - 10 - lift).setScale(1 + b.height * 0.35).setVisible(true);
         this.liveBallShadow.setPosition(bq.x, bq.y).setVisible(true);
-        this.liveBallShadow.setScale(1 - b.height * 0.45);
+        this.liveBallShadow.setScale(1 - b.height * 0.45).setAlpha(1 - b.height * 0.45);
       }
     }
 
@@ -1997,6 +2196,7 @@ export class GameScene extends Phaser.Scene {
 
   /** Main mode picks a pitch + aim first; kid mode goes straight to the meter. */
   private beginPitchTurn(): void {
+    this.setView('close'); // the pitching view mirrors the batting one
     if (!this.features.pitchSelection) {
       this.startPitchMeter();
       return;
@@ -2026,6 +2226,7 @@ export class GameScene extends Phaser.Scene {
     this.pitchSelect = showPitchSelect(this, {
       allowCrazy: this.features.juice && canSpend(this.playerJuice, 'crazyPitch', this.playerPitcher.ability),
       onDone: confirm,
+      pin: (o) => this.pinUI(o),
     });
   }
 
@@ -2246,12 +2447,14 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.setView('wide', CAMERA.SNAP_MS); // the race happens on the bases
     const { container } = pill(this, GAME_WIDTH / 2, GAME_HEIGHT - 46, '🚨 TAP! THROW HIM OUT!', {
       fill: COLORS.red,
       textColor: '#ffffff',
       fontSize: 26,
     });
     container.setDepth(95);
+    this.pinUI(container);
     const start = this.time.now;
     let done = false;
     const finish = (reactMs: number) => {
@@ -2299,6 +2502,7 @@ export class GameScene extends Phaser.Scene {
 
     let runDelay = 0;
     if (applied.movements.length > 0) {
+      this.setView('wide'); // runners moving — show the bases
       runDelay = this.animateBaserunning(applied.movements, prevBatter);
       this.fadeOutBatter();
     }
@@ -2458,12 +2662,20 @@ export class GameScene extends Phaser.Scene {
    * fielding -> steer / hold-to-charge a throw, running -> "everybody GO!".
    */
   private bindSwingInput(): void {
+    // NOT p.worldX/worldY: with the UI cam on top, Phaser computes those
+    // against the topmost camera (zoom 1). World input must go through the
+    // ZOOMED gameplay camera, then the 3/4 projection.
+    const toLogical = (p: Phaser.Input.Pointer): Vec => {
+      const w = this.cameras.main.getWorldPoint(p.x, p.y);
+      return unproject({ x: w.x, y: w.y });
+    };
+
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
-      this.lastPointer = unproject({ x: p.worldX, y: p.worldY });
+      this.lastPointer = toLogical(p);
     });
 
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
-      this.lastPointer = unproject({ x: p.worldX, y: p.worldY });
+      this.lastPointer = toLogical(p);
       if (this.phase === 'pitching') this.onSwing();
       else if (this.phase === 'aiming') this.onThrow();
       else if (this.phase === 'running') {

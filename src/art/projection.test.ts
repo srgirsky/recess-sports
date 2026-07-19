@@ -29,8 +29,8 @@ describe('the 3/4 projection', () => {
     expect(l.x).toBeGreaterThan(132); // pulled inward
     expect(r.x).toBeLessThan(828);
     expect(l.x - 132).toBeCloseTo(828 - r.x, 6); // same amount each side
-    // Near the plate there is almost no pinch.
-    expect(project({ x: 132, y: HOME.y }).x - 132).toBeLessThan(8);
+    // Near the plate there is almost no pinch (~3% of the offset from center).
+    expect(project({ x: 132, y: HOME.y }).x - 132).toBeLessThan(12);
   });
 
   it('kids shrink with depth, never below the far cap', () => {

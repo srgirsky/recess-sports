@@ -61,6 +61,7 @@ interface YardKid {
 
 // Yard geometry.
 const DOOR = { x: 480, y: 208 };
+const STAIRS = { topY: 212, stepH: 12, count: 4 }; // concrete steps below the doors
 const WALL_GAP = { left: 428, right: 532 }; // opening in the wall under the doors
 const CURB_Y = 308; // back-row feet (on the concrete curb)
 const FRONT_Y = 356; // front-row feet (on the blacktop)
@@ -72,7 +73,7 @@ export class SchoolyardScene extends Phaser.Scene {
   private phase: Phase = 'title';
   private turnPill!: ReturnType<typeof pill>;
   private pillPulse?: Phaser.Tweens.Tween;
-  private cutsceneJobs: Array<Phaser.Tweens.Tween | Phaser.Time.TimerEvent> = [];
+  private cutsceneJobs: Array<Phaser.Tweens.Tween | Phaser.Tweens.TweenChain | Phaser.Time.TimerEvent> = [];
   private doors: Phaser.GameObjects.Rectangle[] = [];
   private inspectObjs: Phaser.GameObjects.GameObject[] = [];
   private inspectedId?: string;
@@ -239,6 +240,17 @@ export class SchoolyardScene extends Phaser.Scene {
     path.fillStyle(0x9aa5b1, 0.9);
     path.fillRect(WALL_GAP.left + 10, 212, WALL_GAP.right - WALL_GAP.left - 20, 100);
     path.setDepth(2);
+
+    // Concrete steps down from the doors (the kids hop these in the cutscene).
+    const stairs = this.add.graphics().setDepth(2);
+    for (let s = 0; s < STAIRS.count; s++) {
+      const sw = 84 + s * 6; // each step a touch wider than the one above
+      const sy = STAIRS.topY + s * STAIRS.stepH;
+      stairs.fillStyle(0xcfd6db, 1);
+      stairs.fillRect(DOOR.x - sw / 2, sy, sw, STAIRS.stepH);
+      stairs.fillStyle(0x7f8a95, 1);
+      stairs.fillRect(DOOR.x - sw / 2, sy + STAIRS.stepH - 3, sw, 3);
+    }
 
     // Concrete curb the back row stands on.
     this.add.rectangle(W / 2, 305, W, 18, 0xb9c0c7).setDepth(3);
@@ -445,6 +457,19 @@ export class SchoolyardScene extends Phaser.Scene {
     this.phase = 'cutscene';
     audio.bell();
 
+    // Open on a close-up of the doors, then pull back to the whole yard as the
+    // kids start streaming out.
+    const cam = this.cameras.main;
+    cam.setZoom(ANIM.CUTSCENE_ZOOM);
+    cam.centerOn(DOOR.x, DOOR.y + 30);
+    const pullBack = this.time.delayedCall(ANIM.CUTSCENE_ZOOM_HOLD_MS, () => {
+      // NB: camera effects need exact EaseMap keys ('Sine.easeInOut'), unlike
+      // tweens which also accept the 'Sine.inOut' shorthand.
+      cam.pan(GAME_WIDTH / 2, GAME_HEIGHT / 2, ANIM.CUTSCENE_ZOOMOUT_MS, 'Sine.easeInOut');
+      cam.zoomTo(1, ANIM.CUTSCENE_ZOOMOUT_MS, 'Sine.easeInOut');
+    });
+    this.cutsceneJobs.push(pullBack);
+
     // Small "skip" hint (icon only).
     this.skipHint = pill(this, GAME_WIDTH - 60, GAME_HEIGHT - 34, '⏩', {
       fill: 0xffffff,
@@ -503,7 +528,7 @@ export class SchoolyardScene extends Phaser.Scene {
     });
   }
 
-  /** One kid runs from the door, through the gap, to their wall spot. */
+  /** One kid runs from the door, hops down the steps, and crosses to their wall spot. */
   private streamOut(kid: YardKid): void {
     const { root, img, home } = kid;
     root.setVisible(true);
@@ -511,32 +536,42 @@ export class SchoolyardScene extends Phaser.Scene {
     img.setFlipX(home.x < DOOR.x);
     const finalScale = home.h / img.height;
 
-    // Leg 1: out the doors and down through the gap.
+    // Leg 1: down the steps — one quick drop per stair with a little landing
+    // bounce, drifting toward the kid's side so they don't single-file.
+    const drift = Phaser.Math.Clamp((home.x - DOOR.x) / 18, -14, 14);
+    const legs: Phaser.Types.Tweens.TweenBuilderConfig[] = [];
+    for (let s = 1; s <= STAIRS.count; s++) {
+      legs.push({
+        targets: root,
+        x: DOOR.x + (drift * s) / STAIRS.count + (Math.random() * 6 - 3),
+        y: STAIRS.topY + s * STAIRS.stepH,
+        duration: ANIM.STAIR_HOP_MS,
+        ease: 'Bounce.out',
+      });
+    }
+    // Leg 2: down the path through the gap.
     const midY = 330 + Math.random() * 20;
-    const t1 = this.tweens.add({
+    legs.push({ targets: root, y: midY, duration: ANIM.STREAM_RUN_MS * 0.35, ease: 'Sine.in' });
+    // Leg 3: across the yard to the wall spot (back rows step up to the curb).
+    legs.push({
       targets: root,
-      y: midY,
-      duration: ANIM.STREAM_RUN_MS * 0.45,
-      ease: 'Sine.in',
-      onComplete: () => {
-        // Leg 2: across the yard to the wall spot (back rows step up to the curb).
-        const t2 = this.tweens.add({
-          targets: root,
-          x: home.x,
-          y: home.y,
-          duration: ANIM.STREAM_RUN_MS,
-          ease: 'Sine.out',
-          onComplete: () => this.settleKid(kid),
-        });
-        this.cutsceneJobs.push(t2);
-      },
+      x: home.x,
+      y: home.y,
+      duration: ANIM.STREAM_RUN_MS,
+      ease: 'Sine.out',
     });
-    this.cutsceneJobs.push(t1);
+    const run = this.tweens.chain({
+      targets: root,
+      tweens: legs,
+      onComplete: () => this.settleKid(kid),
+    });
+    this.cutsceneJobs.push(run);
     // Grow to full row size on the way.
+    const totalMs = STAIRS.count * ANIM.STAIR_HOP_MS + ANIM.STREAM_RUN_MS * 1.35;
     const tScale = this.tweens.add({
       targets: img,
       scale: finalScale,
-      duration: ANIM.STREAM_RUN_MS * 1.2,
+      duration: totalMs * 0.8,
       ease: 'Sine.out',
     });
     this.cutsceneJobs.push(tScale);
@@ -563,6 +598,11 @@ export class SchoolyardScene extends Phaser.Scene {
       else j.stop();
     });
     this.cutsceneJobs = [];
+    const cam = this.cameras.main;
+    cam.panEffect.reset();
+    cam.zoomEffect.reset();
+    cam.setZoom(1);
+    cam.centerOn(GAME_WIDTH / 2, GAME_HEIGHT / 2);
     this.doors.forEach((d) => d.setScale(0.16, 1));
     for (const kid of this.kids.values()) {
       kid.cycle?.stop(true);

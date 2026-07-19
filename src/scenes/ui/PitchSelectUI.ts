@@ -45,7 +45,14 @@ export interface PitchSelect {
  */
 export function showPitchSelect(
   scene: Phaser.Scene,
-  opts: { allowCrazy: boolean; onDone: (kind: PitchKind, target: PlateLoc) => void }
+  opts: {
+    allowCrazy: boolean;
+    onDone: (kind: PitchKind, target: PlateLoc) => void;
+    /** Pin screen-anchored chrome (prompt + pill row) to the UI camera. The
+     *  zone grid stays in WORLD space on purpose: the batting close-up zooms
+     *  it into a bigger tap target. */
+    pin?: (go: Phaser.GameObjects.GameObject) => void;
+  }
 ): PitchSelect {
   const objs: Phaser.GameObjects.GameObject[] = [];
   let selected: PitchKind = 'fastball';
@@ -63,6 +70,7 @@ export function showPitchSelect(
     })
     .setOrigin(0.5)
     .setDepth(90);
+  opts.pin?.(prompt);
   objs.push(prompt);
 
   // --- Pitch pills ----------------------------------------------------------
@@ -84,6 +92,7 @@ export function showPitchSelect(
       minW: 156,
     });
     container.setDepth(90);
+    opts.pin?.(container);
     container.setInteractive(new Phaser.Geom.Rectangle(-80, -22, 160, 44), Phaser.Geom.Rectangle.Contains);
     container.on('pointerdown', () => {
       selected = kind;
