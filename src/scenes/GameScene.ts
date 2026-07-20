@@ -120,6 +120,8 @@ import { idleBob, squashHop, groundShadow, runCycle } from '../ui/anim';
 import { poseKey } from '../art/textureFactory';
 import { project, unproject, depthScale } from '../art/projection';
 import { Announcer, type AnnounceKind } from '../systems/announcer';
+import { commentatorProfile } from '../systems/voices';
+import { Chatter, type ChatterMoment } from '../systems/chatter';
 
 /**
  * 'pitching' = ball is inbound, swing now. 'aiming' = you're on the mound,
@@ -220,11 +222,20 @@ export class GameScene extends Phaser.Scene {
   private powerBtn?: Phaser.GameObjects.Container;
   private juiceGfx?: Phaser.GameObjects.Graphics;
   private announcer = new Announcer();
+  private chatter = new Chatter();
 
-  /** Play-by-play: pick a line for the moment and say it (rate-limited). */
+  /** Field chatter: maybe let a kid pipe up (droppable — never talks over the booth). */
+  private kidChat(moment: ChatterMoment, kid: Character): void {
+    const c = this.chatter.pick(moment, this.time.now, kid);
+    if (c) audio.say(c.text, c.profile, 'chatter');
+  }
+
+  /** Play-by-play: the booth kids call the moment (rate-limited, sometimes a 2-line exchange). */
   private callIt(kind: AnnounceKind, ctx: { name?: string } = {}, priority: 1 | 2 = 1): void {
-    const line = this.announcer.line(kind, this.time.now, ctx, priority);
-    if (line) audio.say(line);
+    const lines = this.announcer.line(kind, this.time.now, ctx, priority);
+    lines?.forEach((l, i) =>
+      audio.say(l.text, commentatorProfile(l.speaker), priority === 2 && i === 0 ? 'flush' : 'queue')
+    );
   }
 
   // baserunners currently on the diamond, keyed by base (1-3) — each is the kid
@@ -829,13 +840,13 @@ export class GameScene extends Phaser.Scene {
     if (this.half === 'top') {
       this.setMoundPitcher(this.aiPitcher);
       this.flashAnnounce(`Inning ${this.inning}\nYOU'RE UP!`, COLORS.gold);
-      if (this.firstPitchOfGame) audio.say('Play ball!');
+      if (this.firstPitchOfGame) audio.say('Play ball!', commentatorProfile('A'));
       this.time.delayedCall(FLOW.HALF_START_MS, () => this.nextPlayerBatter());
     } else {
       this.setMoundPitcher(this.playerPitcher);
       this.flashAnnounce('YOU PITCH!\nGET 3 OUTS', COLORS.gold);
       if (this.firstDefenseOfGame) {
-        audio.say('You pitch! Throw when the ring closes!');
+        audio.say('You pitch! Throw when the ring closes!', commentatorProfile('B'), 'flush');
         this.firstDefenseOfGame = false;
       }
       this.time.delayedCall(FLOW.HALF_START_MS, () => this.nextCpuBatter());
@@ -881,7 +892,7 @@ export class GameScene extends Phaser.Scene {
     this.half = next.half;
     if (next.extra) {
       this.flashAnnounce('TIE GAME!\nBONUS INNING!', COLORS.gold, 1100);
-      audio.say('Bonus inning!');
+      audio.say('Bonus inning!', commentatorProfile('A'));
       this.time.delayedCall(1300, () => this.startHalf());
     } else {
       this.startHalf();
@@ -959,6 +970,7 @@ export class GameScene extends Phaser.Scene {
     this.batter = getCharacter(this.playerTeam[this.playerLineup % TEAM_SIZE]);
     this.showBatter(this.batter);
     this.batterLabel.setText(this.batter.name);
+    this.kidChat('batterUp', this.batter);
 
     if (this.batter.ability === 'calls_shot') {
       this.flashAnnounce('"HOME RUN,\nCALLED IT!"', COLORS.white, 900);
@@ -1758,7 +1770,7 @@ export class GameScene extends Phaser.Scene {
         .setDepth(25);
       this.tweens.add({ targets: this.activeMarker, alpha: 0.45, duration: 380, yoyo: true, repeat: -1 });
       if (this.firstFieldPlay) {
-        audio.say('Get the ball!');
+        audio.say('Get the ball!', commentatorProfile('A'), 'flush');
         this.firstFieldPlay = false;
       }
     } else if (this.features.manualBaserunning) {
@@ -1774,7 +1786,7 @@ export class GameScene extends Phaser.Scene {
       this.tweens.add({ targets: container, scale: 1.06, duration: 420, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       this.goBanner = container;
       if (this.firstRunPlay) {
-        audio.say('Tap a base to send your runner!');
+        audio.say('Tap a base to send your runner!', commentatorProfile('A'), 'flush');
         this.firstRunPlay = false;
       }
     } else {
@@ -1788,7 +1800,7 @@ export class GameScene extends Phaser.Scene {
       this.tweens.add({ targets: container, scale: 1.07, duration: 420, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
       this.goBanner = container;
       if (this.firstRunPlay) {
-        audio.say('Run! Tap to take the next base!');
+        audio.say('Run! Tap to take the next base!', commentatorProfile('A'), 'flush');
         this.firstRunPlay = false;
       }
     }
@@ -2234,6 +2246,9 @@ export class GameScene extends Phaser.Scene {
     this.cpuBatter = getCharacter(this.aiTeam[this.aiLineup % TEAM_SIZE]);
     this.showBatter(this.cpuBatter, true); // jogs in from the dugout
     this.batterLabel.setText(this.cpuBatter.name);
+    // Your defense heckles the incoming batter, Backyard style.
+    const heckler = getCharacter(this.playerTeam[Math.floor(Math.random() * this.playerTeam.length)]);
+    this.kidChat('fielding', heckler);
     this.time.delayedCall(FLOW.CPU_NEW_BATTER_MS, () => this.beginPitchTurn());
   }
 

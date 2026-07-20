@@ -79,6 +79,10 @@ export interface Character {
   stats: Stats;
   visual: VisualParams;
   ability: AbilityId;
+  /** First-person excited line this kid shouts when drafted (spoken in their derived voice). */
+  draftLine?: string;
+  /** Signature field-chatter lines (first person). Generic pools cover kids without them. */
+  chatterLines?: string[];
 }
 
 /** The two 9-kid rosters, handed from the Draft scene to the Game scene. */

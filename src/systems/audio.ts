@@ -8,7 +8,8 @@
 // muted or before unlock, so it's always safe to call.
 // ---------------------------------------------------------------------------
 
-import { AUDIO } from '../config';
+import { AUDIO, VOICE } from '../config';
+import type { VoiceProfile } from './voices';
 
 const MUTE_KEY = 'recess_muted';
 
@@ -37,7 +38,7 @@ export function toggleMute(): boolean {
   } catch {
     /* ignore */
   }
-  if (muted) window.speechSynthesis?.cancel();
+  if (muted) cancelSpeech();
   return muted;
 }
 
@@ -184,25 +185,56 @@ export function bell(): void {
 }
 
 // --- Voice -----------------------------------------------------------------
+// Every speaker (the two booth kids + the 30 characters) is a VoiceProfile
+// (pitch/rate/voiceIdx) applied per utterance. A tiny sequential queue lets a
+// commentator exchange or a drafted kid's line finish instead of the old
+// cancel-everything behavior.
 
-let pickedVoice: SpeechSynthesisVoice | null = null;
+let voiceList: SpeechSynthesisVoice[] = [];
+let voicesHooked = false;
 
-function chooseVoice(): SpeechSynthesisVoice | null {
+/** Cached English voice list. getVoices() populates async — re-cache on voiceschanged. */
+function enVoices(): SpeechSynthesisVoice[] {
   const synth = window.speechSynthesis;
-  if (!synth) return null;
-  if (pickedVoice) return pickedVoice;
-  const voices = synth.getVoices();
-  if (!voices.length) return null;
-  // Prefer an English voice; fall back to the first available.
-  pickedVoice =
-    voices.find((v) => /en[-_]/i.test(v.lang) && /female|samantha|karen|zira/i.test(v.name)) ||
-    voices.find((v) => /en[-_]/i.test(v.lang)) ||
-    voices[0];
-  return pickedVoice;
+  if (!synth) return [];
+  if (!voicesHooked) {
+    voicesHooked = true;
+    synth.addEventListener?.('voiceschanged', () => {
+      voiceList = [];
+    });
+  }
+  if (!voiceList.length) {
+    const all = synth.getVoices();
+    voiceList = all.filter((v) => /en[-_]/i.test(v.lang));
+    if (!voiceList.length && all.length) voiceList = all;
+  }
+  return voiceList;
+}
+
+/**
+ * flush = big moment: cancel everything and speak now.
+ * queue = speak after the current line (small cap; oldest pending drops).
+ * chatter = only speaks if nothing else is talking or waiting.
+ */
+export type SayMode = 'flush' | 'queue' | 'chatter';
+
+let pending: { text: string; profile: VoiceProfile }[] = [];
+let speaking = false;
+let watchdog: ReturnType<typeof setTimeout> | undefined;
+/** Invalidates deferred flush speaks when the queue is cleared under them. */
+let flushSeq = 0;
+
+function clearQueue(): void {
+  pending = [];
+  speaking = false;
+  flushSeq++;
+  if (watchdog !== undefined) clearTimeout(watchdog);
+  watchdog = undefined;
 }
 
 /** Stop any in-flight speech (used when the game pauses). Always safe to call. */
 export function cancelSpeech(): void {
+  clearQueue();
   try {
     window.speechSynthesis?.cancel();
   } catch {
@@ -210,21 +242,65 @@ export function cancelSpeech(): void {
   }
 }
 
-/** Speak a short kid-friendly callout. No-ops when muted / unsupported. */
-export function say(text: string): void {
-  if (muted) return;
+function advance(): void {
+  speaking = false;
+  if (watchdog !== undefined) clearTimeout(watchdog);
+  watchdog = undefined;
+  const next = pending.shift();
+  if (next) speakNow(next.text, next.profile);
+}
+
+function speakNow(text: string, profile: VoiceProfile): void {
+  if (muted) {
+    clearQueue();
+    return;
+  }
   const synth = window.speechSynthesis;
   if (!synth) return;
   try {
-    synth.cancel(); // don't let callouts pile up
+    speaking = true;
     const u = new SpeechSynthesisUtterance(text);
-    const v = chooseVoice();
-    if (v) u.voice = v;
-    u.pitch = 1.3; // brighter / younger
-    u.rate = 1.05;
-    u.volume = 1;
+    const voices = enVoices();
+    if (voices.length) u.voice = voices[(profile.voiceIdx ?? 0) % voices.length];
+    u.pitch = profile.pitch;
+    u.rate = profile.rate;
+    u.volume = VOICE.VOLUME;
+    u.onend = advance;
+    u.onerror = advance;
     synth.speak(u);
+    // Chrome sometimes never fires onend (esp. around cancel) — a duration
+    // watchdog keeps the queue from wedging. Whichever fires first advances.
+    const est = VOICE.QUEUE.EST_BASE_MS + (text.length * VOICE.QUEUE.EST_MS_PER_CHAR) / profile.rate;
+    watchdog = setTimeout(advance, est);
   } catch {
-    /* ignore */
+    speaking = false;
   }
+}
+
+/** Old single-voice feel for bare say(text) call sites. */
+const DEFAULT_PROFILE: VoiceProfile = { pitch: 1.3, rate: 1.05, voiceIdx: 0 };
+
+/** Speak a short kid-friendly callout. No-ops when muted / unsupported. */
+export function say(text: string, profile: VoiceProfile = DEFAULT_PROFILE, mode: SayMode = 'queue'): void {
+  if (muted || !window.speechSynthesis) return;
+  if (mode === 'flush') {
+    cancelSpeech();
+    // Chrome drops an utterance spoken synchronously after cancel() — defer a
+    // tick. Reserve the speaking slot NOW so a follow-up 'queue' line (e.g.
+    // the second half of a booth exchange) lines up behind this one instead
+    // of jumping in front during the deferred gap.
+    speaking = true;
+    const seq = flushSeq;
+    setTimeout(() => {
+      if (seq === flushSeq) speakNow(text, profile);
+    }, 0);
+    return;
+  }
+  if (!speaking) {
+    speakNow(text, profile);
+    return;
+  }
+  if (mode === 'chatter') return; // droppable — never talks over anyone
+  pending.push({ text, profile });
+  if (pending.length > VOICE.QUEUE.MAX_PENDING) pending.shift(); // newest info wins
 }

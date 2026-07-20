@@ -11,6 +11,7 @@ import { confetti } from '../ui/effects';
 import { heading, ribbon, panel, FONT } from '../ui/theme';
 import { squashHop } from '../ui/anim';
 import * as audio from '../systems/audio';
+import { commentatorProfile } from '../systems/voices';
 
 interface ResultData {
   playerScore: number;
@@ -41,9 +42,9 @@ export class ResultScene extends Phaser.Scene {
     if (won) {
       confetti(this);
       audio.cheer();
-      audio.say('You win!');
+      audio.say('You win!', commentatorProfile('A'), 'flush');
     } else {
-      audio.say(tied ? 'Tie game!' : 'Good game!');
+      audio.say(tied ? 'Tie game!' : 'Good game!', commentatorProfile('A'), 'flush');
     }
     makeMuteButton(this, GAME_WIDTH - 40, 40);
 

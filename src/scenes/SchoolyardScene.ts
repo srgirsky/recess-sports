@@ -50,6 +50,7 @@ import { drawStatBars } from '../ui/statbars';
 import { mountPickRateOverlay } from '../dev/PickRateOverlay';
 import { mountArtGallery } from '../dev/ArtGallery';
 import * as audio from '../systems/audio';
+import { commentatorProfile, kidVoice } from '../systems/voices';
 
 type Phase =
   | 'title'
@@ -428,7 +429,7 @@ export class SchoolyardScene extends Phaser.Scene {
         if (this.phase !== 'title') return;
         setMode(d);
         audio.pop();
-        audio.say(d === 'kid' ? 'Kid mode!' : 'Classic mode!');
+        audio.say(d === 'kid' ? 'Kid mode!' : 'Classic mode!', commentatorProfile('A'), 'flush');
         styleChips();
       });
       chips.push({ d, c: container });
@@ -462,7 +463,7 @@ export class SchoolyardScene extends Phaser.Scene {
         if (this.phase !== 'title') return;
         setVenue(v.id);
         audio.pop();
-        audio.say(v.name + '!');
+        audio.say(v.name + '!', commentatorProfile('A'), 'flush');
         styleVenues();
       });
       venueChips.push({ id: v.id, c: container });
@@ -683,7 +684,7 @@ export class SchoolyardScene extends Phaser.Scene {
     });
     this.autoBtn.setDepth(80);
     enterFrom(this, this.autoBtn, { dy: -70, dur: 380, ease: 'Bounce.out' });
-    audio.say('Pick your team!');
+    audio.say('Pick your team!', commentatorProfile('A'), 'flush');
     this.phase = 'idle';
     this.refreshStatus();
 
@@ -740,7 +741,7 @@ export class SchoolyardScene extends Phaser.Scene {
     this.phase = 'inspect';
     this.inspectedId = id;
     audio.pop();
-    audio.say(kid.char.name);
+    audio.say(kid.char.name, kidVoice(kid.char), 'flush'); // tap the wall = voice toybox
 
     kid.idle?.stop();
     kid.img.y = 0;
@@ -853,7 +854,8 @@ export class SchoolyardScene extends Phaser.Scene {
     this.state = applyPick(this.state, id);
     recordPick(id);
     audio.pop();
-    audio.say(`${kid.char.name}!`);
+    // The kid announces themself in their own voice as they run to the pennant.
+    audio.say(kid.char.draftLine ?? `${kid.char.name}!`, kidVoice(kid.char), 'flush');
 
     this.phase = 'playerRun';
     this.refreshStatus();
@@ -930,6 +932,7 @@ export class SchoolyardScene extends Phaser.Scene {
     const kid = this.kids.get(id);
     this.state = applyPick(this.state, id);
     audio.pop();
+    if (kid) audio.say(`${kid.char.name}!`, kidVoice(kid.char), 'chatter'); // droppable — never delays the draft
     this.phase = 'cpuRun';
     this.refreshStatus();
     if (!kid) return;
@@ -956,7 +959,7 @@ export class SchoolyardScene extends Phaser.Scene {
     this.autoBtn?.destroy();
     this.autoBtn = undefined;
     audio.pop();
-    audio.say('Auto pick!');
+    audio.say('Auto pick!', commentatorProfile('A'), 'flush');
     this.refreshStatus();
     // First pick waits one beat: a tap through an open stat card closes it on
     // pointerdown and lands here on pointerup, and the inspected kid needs

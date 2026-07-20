@@ -221,6 +221,43 @@ export const AUDIO = {
   masterVolume: 0.35,
 };
 
+/**
+ * SpeechSynthesis voices: the two booth kids, the 30 derived character voices,
+ * the speech queue, and field-chatter cadence. NOTE: speech does NOT pass
+ * through AUDIO.masterVolume — VOLUME below is the only speech volume knob.
+ */
+export const VOICE = {
+  /** The two kid commentators (a milk crate behind the backstop). */
+  COMMENTATORS: {
+    A: { pitch: 1.55, rate: 1.12, voiceIdx: 0 }, // Pip — hyped little kid
+    B: { pitch: 1.0, rate: 0.95, voiceIdx: 1 }, // Rocco — deadpan older kid
+  },
+  /** Chance a big call (priority 2) becomes a two-line A/B exchange. */
+  EXCHANGE_CHANCE: 0.45,
+  /** Derived per-character voices: hash(id) picks within these ranges. */
+  KID: {
+    PITCH_MIN: 1.15,
+    PITCH_MAX: 1.7,
+    RATE_MIN: 0.95,
+    RATE_MAX: 1.15,
+    /** Expression nudges (added after the hash roll, then clamped to the ranges). */
+    NUDGE: {
+      happy: { pitch: 0, rate: 0 },
+      grin: { pitch: 0.04, rate: 0.02 },
+      cool: { pitch: -0.12, rate: -0.05 },
+      determined: { pitch: -0.06, rate: 0 },
+      goofy: { pitch: 0.1, rate: 0.06 },
+      surprised: { pitch: 0.1, rate: 0.04 },
+    },
+  },
+  /** Speech queue: pending cap + watchdog duration estimate (onend is flaky). */
+  QUEUE: { MAX_PENDING: 2, EST_BASE_MS: 450, EST_MS_PER_CHAR: 65 },
+  /** Field chatter cadence (systems/chatter.ts). */
+  CHATTER: { COOLDOWN_MS: 8000, CHANCE: 0.55 },
+  /** Utterance volume (0-1). */
+  VOLUME: 1,
+};
+
 // --- Live plays (interactive fielding & baserunning) -----------------------
 
 /**
