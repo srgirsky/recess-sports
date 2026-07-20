@@ -386,7 +386,7 @@ describe('live play: manual baserunning (main mode)', () => {
       mode: 'offense',
       launch: { type: 'fly', landing: { x: 480, y: 235 }, hangMs: 1300, rollSpeed: 0, homer: false },
       batter: { charId: 'bat', speed: 5 },
-      baseRunners: [{ base: 3, charId: 'r3', speed: 8 }],
+      baseRunners: [{ base: 3, charId: 'r3', speed: 10 }],
       outs: 0,
       defense: DEFENSE,
       params: main,

@@ -633,6 +633,7 @@ function arriveThrow(s: LivePlayState, base: 1 | 2 | 3 | 4, params: LiveParams):
     return;
   }
   for (const r of s.runners) {
+    if (halfHasThreeOuts(s)) break; // the third out ends the play — no fourth
     if (outAtBag(s, r, base, params)) {
       r.done = 'out';
       r.pos = { ...basePos(base) };
@@ -656,6 +657,7 @@ function carrierTouchesBags(s: LivePlayState, params: LiveParams): void {
   for (const base of [1, 2, 3, 4] as const) {
     if (dist(carrier.pos, basePos(base)) > reach) continue;
     for (const r of s.runners) {
+      if (halfHasThreeOuts(s)) return; // the third out ends the play — no fourth
       if (outAtBag(s, r, base, params)) {
         r.done = 'out';
         r.pos = { ...basePos(base) };
@@ -668,6 +670,7 @@ function carrierTouchesBags(s: LivePlayState, params: LiveParams): void {
   // This one rule is what makes rundowns happen with no special-case state.
   if (params.manualBaserunning) {
     for (const r of s.runners) {
+      if (halfHasThreeOuts(s)) return;
       if (r.done !== null || r.returning || onABag(r)) continue;
       if (dist(carrier.pos, r.pos) <= RUN2.TAG_RADIUS) {
         r.done = 'out';
@@ -676,6 +679,11 @@ function carrierTouchesBags(s: LivePlayState, params: LiveParams): void {
       }
     }
   }
+}
+
+/** True once the half's third out is on the board — the play is already over. */
+function halfHasThreeOuts(s: LivePlayState): boolean {
+  return s.outsBefore + s.outs >= 3;
 }
 
 function moveRunners(s: LivePlayState, dtMs: number): void {

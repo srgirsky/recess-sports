@@ -18,7 +18,7 @@ import {
   PITCH_METER_MS,
   PITCH_AUTO_THROW_MS,
   CPU_PITCH_TRAVEL_MS,
-  CPU_STEP_DELAY_MS,
+  FLOW,
   INNINGS,
   MAX_EXTRA_INNINGS,
   TEAM_SIZE,
@@ -55,6 +55,7 @@ import {
   type PlateLoc,
 } from '../systems/pitchkind';
 import { showPitchSelect, zoneOutline, plateToScreen, type PitchSelect } from './ui/PitchSelectUI';
+import { createScoreboard, type Scoreboard } from './ui/Scoreboard';
 import { shouldSkipBottom, isWalkOff, decideAfterHalf } from '../systems/gameflow';
 import {
   newHalfInning,
@@ -263,11 +264,7 @@ export class GameScene extends Phaser.Scene {
   private batterScale = 1;
   private batterIdle?: Phaser.Tweens.Tween;
   private pitcherSprite?: Phaser.GameObjects.Image;
-  private scoreText!: Phaser.GameObjects.Text;
-  private inningText!: Phaser.GameObjects.Text;
-  private outsText!: Phaser.GameObjects.Text;
-  private ballsPips!: Phaser.GameObjects.Text;
-  private strikesPips!: Phaser.GameObjects.Text;
+  private scoreboard!: Scoreboard;
   private announce!: Phaser.GameObjects.Text;
   private announceBg!: Phaser.GameObjects.Rectangle;
   private baseMarks: Phaser.GameObjects.Polygon[] = [];
@@ -357,7 +354,8 @@ export class GameScene extends Phaser.Scene {
     this.drawMiniDiamond();
     if (this.features.juice) this.drawJuiceMeter();
     this.bindSwingInput();
-    this.pinUI(makeMuteButton(this, GAME_WIDTH - 30, 68));
+    // Below the count panel so it never sits on the B/S/OUT pips.
+    this.pinUI(makeMuteButton(this, GAME_WIDTH - 30, 122));
 
     this.pitcherSprite = this.add.image(MOUND.x, MOUND.y, this.aiPitcher.id).setOrigin(0.5, 1);
     this.pitcherSprite.setScale(KID_SIZE.PITCHER_H / this.pitcherSprite.height);
@@ -681,39 +679,8 @@ export class GameScene extends Phaser.Scene {
   }
 
   private drawHud(): void {
-    this.pinUI(this.add.rectangle(GAME_WIDTH / 2, 34, GAME_WIDTH, 68, COLORS.ink, 0.82).setOrigin(0.5));
-    this.scoreText = this.pinUI(
-      this.add.text(24, 20, '', { fontFamily: FONT, fontSize: '30px', color: '#ffffff' }).setOrigin(0, 0)
-    );
-    this.inningText = this.pinUI(
-      this.add
-        .text(GAME_WIDTH / 2, 20, '', {
-          fontFamily: FONT,
-          fontSize: '26px',
-          color: '#ffce3a',
-        })
-        .setOrigin(0.5, 0)
-    );
-    this.outsText = this.pinUI(
-      this.add
-        .text(GAME_WIDTH - 70, 14, '', {
-          fontFamily: FONT,
-          fontSize: '26px',
-          color: '#ffffff',
-        })
-        .setOrigin(1, 0)
-    );
-    // Ball/strike count as wordless pips: green = balls, red = strikes.
-    this.strikesPips = this.pinUI(
-      this.add
-        .text(GAME_WIDTH - 70, 44, '', { fontFamily: FONT, fontSize: '17px', color: '#ff7a70' })
-        .setOrigin(1, 0)
-    );
-    this.ballsPips = this.pinUI(
-      this.add
-        .text(GAME_WIDTH - 126, 44, '', { fontFamily: FONT, fontSize: '17px', color: '#57d977' })
-        .setOrigin(1, 0)
-    );
+    // The scoreboard strip: score / inning / labeled B-S-OUT count, all pinned.
+    this.scoreboard = createScoreboard(this, (o) => this.pinUI(o));
 
     // Announcer lives in its own band below the HUD so it never sits on a sprite.
     this.announceBg = this.pinUI(
@@ -751,19 +718,17 @@ export class GameScene extends Phaser.Scene {
   }
 
   private refreshHud(): void {
-    this.scoreText.setText(`YOU ${this.playerScore}   —   ${this.aiScore} CPU`);
-    const halfLabel = this.half === 'top' ? '▲' : '▼';
-    this.inningText.setText(
-      this.inning > INNINGS
-        ? `${halfLabel} BONUS INNING`
-        : `${halfLabel} Inning ${this.inning}/${INNINGS}`
-    );
-    const outs = this.halfState ? this.halfState.outs : 0;
-    this.outsText.setText(`Outs: ${'●'.repeat(outs)}${'○'.repeat(3 - outs)}`);
-    const balls = this.halfState ? this.halfState.count.balls : 0;
-    const strikes = this.halfState ? this.halfState.count.strikes : 0;
-    this.ballsPips.setText(`${'●'.repeat(balls)}${'○'.repeat(3 - balls)}`);
-    this.strikesPips.setText(`${'●'.repeat(strikes)}${'○'.repeat(2 - strikes)}`);
+    this.scoreboard.refresh({
+      playerScore: this.playerScore,
+      aiScore: this.aiScore,
+      inning: this.inning,
+      innings: INNINGS,
+      half: this.half,
+      bonus: this.inning > INNINGS,
+      balls: this.halfState ? this.halfState.count.balls : 0,
+      strikes: this.halfState ? this.halfState.count.strikes : 0,
+      outs: this.halfState ? this.halfState.outs : 0,
+    });
     for (let i = 0; i < 3; i++) {
       const lit = this.halfState?.bases[i];
       this.baseMarks[i]?.setFillStyle(lit ? COLORS.gold : COLORS.white);
@@ -856,7 +821,7 @@ export class GameScene extends Phaser.Scene {
       this.setMoundPitcher(this.aiPitcher);
       this.flashAnnounce(`Inning ${this.inning}\nYOU'RE UP!`, COLORS.gold);
       if (this.firstPitchOfGame) audio.say('Play ball!');
-      this.time.delayedCall(1100, () => this.nextPlayerBatter());
+      this.time.delayedCall(FLOW.HALF_START_MS, () => this.nextPlayerBatter());
     } else {
       this.setMoundPitcher(this.playerPitcher);
       this.flashAnnounce('YOU PITCH!\nGET 3 OUTS', COLORS.gold);
@@ -864,7 +829,7 @@ export class GameScene extends Phaser.Scene {
         audio.say('You pitch! Throw when the ring closes!');
         this.firstDefenseOfGame = false;
       }
-      this.time.delayedCall(1100, () => this.nextCpuBatter());
+      this.time.delayedCall(FLOW.HALF_START_MS, () => this.nextCpuBatter());
     }
   }
 
@@ -943,7 +908,8 @@ export class GameScene extends Phaser.Scene {
       this.flashAnnounce('"HOME RUN,\nCALLED IT!"', COLORS.white, 900);
       this.time.delayedCall(950, () => this.throwPitch());
     } else {
-      this.throwPitch();
+      // A beat for the new batter to step in before the wind-up starts.
+      this.time.delayedCall(FLOW.NEW_BATTER_MS, () => this.throwPitch());
     }
   }
 
@@ -1332,10 +1298,10 @@ export class GameScene extends Phaser.Scene {
     if (took) {
       if (this.pitchIsWild) {
         // Good eye! Letting a wild one go is a ball.
-        floatingText(this, HOME.x, HOME.y - 60, 'BALL!', BALL_GREEN, 30);
+        this.scoreboard.umpCall('BALL!', BALL_GREEN);
         this.applyAndContinue({ kind: 'ball', bases: 0, description: 'Ball! Good eye!' });
       } else {
-        floatingText(this, HOME.x, HOME.y - 60, 'STRIKE!', COLORS.red, 30);
+        this.scoreboard.umpCall('STRIKE!', COLORS.red);
         this.applyAndContinue({ kind: 'strike', bases: 0, description: 'Strike! (took it)' });
       }
       return;
@@ -1431,13 +1397,21 @@ export class GameScene extends Phaser.Scene {
           : result.kind === 'foul'
             ? COLORS.white
             : COLORS.red;
-    let msg = walked ? 'WALK!' : result.description;
+    if (result.kind === 'foul') this.scoreboard.umpCall('FOUL!', COLORS.white);
+    const struckOut = result.kind === 'strike' && applied.batterOut;
+    let msg = walked ? 'WALK!' : struckOut ? 'STRIKEOUT!' : result.description;
     if (applied.runsScored > 0)
       msg += `\n+${applied.runsScored} RUN${applied.runsScored > 1 ? 'S' : ''}!`;
-    this.flashAnnounce(msg, color);
+    const big = walked || struckOut || applied.runsScored > 0;
+    this.flashAnnounce(msg, color, big ? FLOW.BIG_BANNER_HOLD_MS : FLOW.BANNER_HOLD_MS);
     this.refreshHud();
 
-    const baseDelay = applied.movements.length > 0 ? Math.max(1000, runDelay + 350) : 850;
+    // The invariant: whatever banner is up must finish before the next beat.
+    const floor = big ? FLOW.BIG_BANNER_HOLD_MS : FLOW.BETWEEN_PITCH_MS;
+    const baseDelay =
+      applied.movements.length > 0
+        ? Math.max(FLOW.AFTER_PLAY_MS, floor, runDelay + FLOW.RUN_SETTLE_PAD_MS)
+        : floor;
     this.time.delayedCall(baseDelay, () => {
       if (applied.batterDone) this.playerLineup += 1;
       if (isHalfOver(this.halfState)) {
@@ -2080,18 +2054,23 @@ export class GameScene extends Phaser.Scene {
       : outcome.outs > 0
         ? COLORS.gold
         : COLORS.white;
-    this.flashAnnounce(outcome.description, color, 800);
+    const bigPlay = outcome.outs > 0 || applied.runsScored > 0;
+    this.flashAnnounce(
+      outcome.description,
+      color,
+      bigPlay ? FLOW.BIG_BANNER_HOLD_MS : FLOW.BANNER_HOLD_MS
+    );
     this.refreshHud();
 
     // Walk-off: the CPU just took the lead in the bottom of the final inning.
     if (!isOffense && isWalkOff(this.inning, INNINGS, this.half, this.aiScore, this.playerScore)) {
       this.phase = 'ended';
-      this.flashAnnounce('WALK-OFF!\nCPU WINS!', COLORS.red, 1300);
-      this.time.delayedCall(1500, () => this.gameOver());
+      this.flashAnnounce('WALK-OFF!\nCPU WINS!', COLORS.red, FLOW.BIG_BANNER_HOLD_MS);
+      this.time.delayedCall(FLOW.BIG_BANNER_HOLD_MS + 200, () => this.gameOver());
       return;
     }
 
-    this.time.delayedCall(1100, () => {
+    this.time.delayedCall(FLOW.AFTER_LIVE_PLAY_MS, () => {
       if (isOffense) this.playerLineup += 1;
       else this.aiLineup += 1;
       if (isHalfOver(this.halfState)) {
@@ -2199,7 +2178,7 @@ export class GameScene extends Phaser.Scene {
     this.cpuBatter = getCharacter(this.aiTeam[this.aiLineup % TEAM_SIZE]);
     this.showBatter(this.cpuBatter, true); // jogs in from the dugout
     this.batterLabel.setText(this.cpuBatter.name);
-    this.time.delayedCall(520, () => this.beginPitchTurn());
+    this.time.delayedCall(FLOW.CPU_NEW_BATTER_MS, () => this.beginPitchTurn());
   }
 
   /** Main mode picks a pitch + aim first; kid mode goes straight to the meter. */
@@ -2392,10 +2371,10 @@ export class GameScene extends Phaser.Scene {
   private settleCpuPitch(plan: CpuPitchPlan): void {
     if (!plan.cpuSwings) {
       if (plan.isBall) {
-        floatingText(this, HOME.x, HOME.y - 60, 'BALL!', BALL_GREEN, 28);
+        this.scoreboard.umpCall('BALL!', BALL_GREEN);
         this.resolveCpuStealThen({ kind: 'ball', bases: 0, description: 'Ball!' });
       } else {
-        floatingText(this, HOME.x, HOME.y - 60, 'STRIKE!', COLORS.gold, 28);
+        this.scoreboard.umpCall('STRIKE!', COLORS.gold);
         audio.whiff();
         this.resolveCpuStealThen({ kind: 'strike', bases: 0, description: 'Strike! Looking!' });
       }
@@ -2525,23 +2504,35 @@ export class GameScene extends Phaser.Scene {
           : result.kind === 'out' || result.kind === 'strike'
             ? COLORS.gold // an out for THEM is good news for you
             : COLORS.white;
+    if (result.kind === 'foul') this.scoreboard.umpCall('FOUL!', COLORS.white);
+    const struckOut = result.kind === 'strike' && applied.batterOut;
     let msg = walked
       ? `${prevBatter.name} walks!`
-      : `${prevBatter.name}: ${result.description}`;
+      : struckOut
+        ? `STRIKEOUT!\nYou got ${prevBatter.name}!`
+        : `${prevBatter.name}: ${result.description}`;
     if (applied.runsScored > 0)
       msg += `\n+${applied.runsScored} FOR CPU`;
-    this.flashAnnounce(msg, color, 600);
+    const big = walked || struckOut || applied.runsScored > 0;
+    this.flashAnnounce(msg, color, big ? FLOW.BIG_BANNER_HOLD_MS : FLOW.BANNER_HOLD_MS);
     this.refreshHud();
 
     // Walk-off: the CPU just took the lead in the bottom of the final inning.
     if (isWalkOff(this.inning, INNINGS, this.half, this.aiScore, this.playerScore)) {
       this.phase = 'ended';
-      this.flashAnnounce('WALK-OFF!\nCPU WINS!', COLORS.red, 1300);
-      this.time.delayedCall(Math.max(1400, runDelay + 500), () => this.gameOver());
+      this.flashAnnounce('WALK-OFF!\nCPU WINS!', COLORS.red, FLOW.BIG_BANNER_HOLD_MS);
+      this.time.delayedCall(
+        Math.max(FLOW.BIG_BANNER_HOLD_MS + 200, runDelay + FLOW.RUN_SETTLE_PAD_MS),
+        () => this.gameOver()
+      );
       return;
     }
 
-    const delay = Math.max(CPU_STEP_DELAY_MS, runDelay + 350);
+    const delay = Math.max(
+      FLOW.CPU_STEP_MS,
+      big ? FLOW.BIG_BANNER_HOLD_MS : 0,
+      runDelay + FLOW.RUN_SETTLE_PAD_MS
+    );
     this.time.delayedCall(delay, () => {
       if (applied.batterDone) this.aiLineup += 1;
       if (isHalfOver(this.halfState)) {
@@ -2655,7 +2646,7 @@ export class GameScene extends Phaser.Scene {
     floatingText(this, HOME.x, HOME.y - 70, f.label, f.color, band === 'perfect' ? 40 : 32);
   }
 
-  private flashAnnounce(text: string, color: number, hold = 700): void {
+  private flashAnnounce(text: string, color: number, hold = FLOW.BANNER_HOLD_MS): void {
     this.announce.setText(text);
     this.announce.setColor('#' + color.toString(16).padStart(6, '0'));
     this.announce.setScale(0.6);

@@ -21,7 +21,7 @@ export const COLORS = {
 };
 
 /** How long a pitch takes to travel from the mound to the plate (ms). */
-export const PITCH_TRAVEL_MS = 950;
+export const PITCH_TRAVEL_MS = 1250;
 
 /**
  * Swing timing windows, in ms of error from the ideal contact moment.
@@ -29,9 +29,9 @@ export const PITCH_TRAVEL_MS = 950;
  * Widen these to make the game easier (younger kids), tighten to make it harder.
  */
 export const TIMING = {
-  PERFECT: 55,
-  GOOD: 130,
-  CONTACT: 230,
+  PERFECT: 80,
+  GOOD: 170,
+  CONTACT: 300,
 };
 
 /**
@@ -39,22 +39,48 @@ export const TIMING = {
  * half. Same idea as TIMING but for the mound: beyond WEAK the throw is WILD.
  */
 export const PITCH_TIMING = {
-  PERFECT: 70,
-  GOOD: 150,
-  WEAK: 260,
+  PERFECT: 90,
+  GOOD: 180,
+  WEAK: 300,
 };
 
 /** How long the mound ring shrinks before the sweet-spot moment (ms). */
-export const PITCH_METER_MS = 1000;
+export const PITCH_METER_MS = 1200;
 
 /** Grace after the sweet spot before we auto-throw for an idle kid (no soft-lock). */
-export const PITCH_AUTO_THROW_MS = 600;
+export const PITCH_AUTO_THROW_MS = 700;
 
 /** Ball flight time in the CPU half — faster than the player's, keeps it snappy. */
-export const CPU_PITCH_TRAVEL_MS = 500;
+export const CPU_PITCH_TRAVEL_MS = 750;
 
-/** Pause between CPU-half pitches (ms). */
-export const CPU_STEP_DELAY_MS = 700;
+/**
+ * Between-moments pacing (ms). Every "wait before the next thing" beat lives
+ * HERE, not hardcoded in GameScene delayedCalls. Invariant: a banner's hold
+ * time must be <= the FLOW beat that follows it, so calls are always readable
+ * before the next pitch fires.
+ */
+export const FLOW = {
+  /** Ball/strike/foul settled -> next pitch (player batting half). */
+  BETWEEN_PITCH_MS: 1250,
+  /** Floor after any at-bat that moved runners (walk/hit fold-in). */
+  AFTER_PLAY_MS: 1500,
+  /** Extra pad after the baserunning animation finishes. */
+  RUN_SETTLE_PAD_MS: 500,
+  /** Live play resolved -> next batter steps in. */
+  AFTER_LIVE_PLAY_MS: 1600,
+  /** New batter announced -> the first pitch (player half). */
+  NEW_BATTER_MS: 750,
+  /** CPU batter jogs in -> your pitch turn begins. */
+  CPU_NEW_BATTER_MS: 850,
+  /** Between CPU-half pitches. */
+  CPU_STEP_MS: 1100,
+  /** Half-start banner -> first batter. */
+  HALF_START_MS: 1400,
+  /** Default flashAnnounce hold. */
+  BANNER_HOLD_MS: 1100,
+  /** Big-moment banners: STRIKEOUT / WALK / runs scored / walk-off. */
+  BIG_BANNER_HOLD_MS: 1600,
+};
 
 /**
  * Chance the AI pitcher throws a visibly wild pitch at the player (a "don't
@@ -96,7 +122,7 @@ export interface PitchDef {
 }
 
 export const PITCHES: Record<PitchKind, PitchDef> = {
-  fastball: { speedMult: 1.18, breakX: 0, breakY: 0, wobble: 0, deception: 0.12, label: '🔥 FAST' },
+  fastball: { speedMult: 1.1, breakX: 0, breakY: 0, wobble: 0, deception: 0.12, label: '🔥 FAST' },
   changeup: { speedMult: 0.72, breakX: 0, breakY: 16, wobble: 0, deception: 0.5, label: '🐢 SLOW' },
   curve: { speedMult: 0.92, breakX: -40, breakY: 16, wobble: 0, deception: 0.35, label: '🌙 CURVE' },
   screwball: { speedMult: 0.95, breakX: 38, breakY: 8, wobble: 0, deception: 0.35, label: '🌀 SCREW' },
@@ -185,7 +211,7 @@ export const KID_SIZE = {
 };
 
 /** How long a runner takes to jog ONE base (ms). Post-hit pacing derives from this. */
-export const RUNNER_TWEEN_MS = 460;
+export const RUNNER_TWEEN_MS = 550;
 
 /** Show the contracting timing ring at the plate (swing-timing teaching aid). */
 export const SHOW_TIMING_RING = true;
@@ -214,10 +240,10 @@ export const LIVE = {
     LINER_DIST: { BASE: 170, SCALE: 220 },
     FLY_DIST: { BASE: 190, SCALE: 240 },
     /** Air time ranges (ms) — deeper ball = longer hang within the range. */
-    LINER_HANG_MS: { MIN: 380, MAX: 560 },
-    FLY_HANG_MS: { MIN: 950, MAX: 1400 },
+    LINER_HANG_MS: { MIN: 500, MAX: 700 },
+    FLY_HANG_MS: { MIN: 1200, MAX: 1700 },
     /** Initial grounder roll speed (px/s); decelerates to stop at the settle point. */
-    GROUNDER_SPEED: { MIN: 300, MAX: 430 },
+    GROUNDER_SPEED: { MIN: 240, MAX: 350 },
   },
   /** Player-steered fielder speed (px/s). */
   FIELDER_SPEED: 210,
@@ -229,16 +255,16 @@ export const LIVE = {
   /** Hold-to-charge time (ms) for a full-power throw. */
   THROW_METER_MS: 900,
   /** Throw flight speed (px/s) at zero / full charge. */
-  THROW_SPEED_MIN: 340,
+  THROW_SPEED_MIN: 380,
   THROW_SPEED_MAX: 820,
   /** Idle-kid rescue: sim throws by itself after holding the ball this long. */
   AUTO_THROW_MS: 2600,
   /** Runner speed (px/s) at speed stat 5; each stat point is ±6%. */
-  RUNNER_SPEED: 175,
+  RUNNER_SPEED: 150,
   /** Distance ball→next base above which a CPU runner risks the extra base. */
   CPU_RUNNER_GREED_DIST: 210,
   /** A loose ball nobody has picked up for this long → CPU runners just go. */
-  CPU_RUNNER_PATIENCE_MS: 1200,
+  CPU_RUNNER_PATIENCE_MS: 1500,
   /** Hard cap: any live play resolves by now (stragglers settle safe behind). */
   MAX_PLAY_MS: 9000,
 };
@@ -372,7 +398,7 @@ export const MODES: Record<
       cpuThrowSpeedMult: 0.62,
       cpuThrowErrorMs: 320,
       reachMult: 1.6,
-      playerRunSpeedMult: 1.15,
+      playerRunSpeedMult: 1.3,
       cpuRunSpeedMult: 0.8,
       playerErrorMult: 0, // kid mode: your kids never drop it
       cpuErrorMult: 0,
@@ -391,18 +417,18 @@ export const MODES: Record<
     // Old HARD, softened a touch — main mode is still for kids.
     live: {
       cpuFielderSpeedMult: 1.0,
-      cpuReactionMs: 220,
-      cpuThrowDelayMs: 220,
+      cpuReactionMs: 320,
+      cpuThrowDelayMs: 300,
       cpuThrowSpeedMult: 1.0,
       cpuThrowErrorMs: 80,
       reachMult: 1.15,
       playerRunSpeedMult: 1.0,
-      cpuRunSpeedMult: 1.05,
+      cpuRunSpeedMult: 0.95,
       playerErrorMult: 1,
       cpuErrorMult: 1,
       manualBaserunning: true,
     },
-    swingTiming: { PERFECT: 70, GOOD: 150, CONTACT: 250 },
+    swingTiming: { PERFECT: 90, GOOD: 180, CONTACT: 300 },
     // Flags flip to true as each Backyard-style mechanic lands.
     features: {
       pitchSelection: true,
@@ -418,7 +444,7 @@ export const MODES: Record<
 /** Character-animation timing/feel. */
 export const ANIM = {
   SWING_MS: 120, // how fast the bat whips through the swing
-  WINDUP_MS: 260, // pitcher lean-back before the release
+  WINDUP_MS: 380, // pitcher lean-back before the release (the "here it comes" telegraph)
   RUN_BOB: 7, // pixels a runner bounces while running
   IDLE_BOB: 5, // pixels the idle "breathing" bob rises
   RUN_FRAME_MS: 110, // run-cycle frame swap (run1 <-> run2 textures)
