@@ -201,6 +201,15 @@ function chooseVoice(): SpeechSynthesisVoice | null {
   return pickedVoice;
 }
 
+/** Stop any in-flight speech (used when the game pauses). Always safe to call. */
+export function cancelSpeech(): void {
+  try {
+    window.speechSynthesis?.cancel();
+  } catch {
+    /* ignore */
+  }
+}
+
 /** Speak a short kid-friendly callout. No-ops when muted / unsupported. */
 export function say(text: string): void {
   if (muted) return;

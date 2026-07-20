@@ -180,6 +180,7 @@ export class GameScene extends Phaser.Scene {
 
   private halfState!: HalfInningState;
   private phase: Phase = 'resolving';
+  private pauseRequested = false;
 
   // per-pitch visuals
   private ball?: Phaser.GameObjects.Arc;
@@ -292,6 +293,7 @@ export class GameScene extends Phaser.Scene {
     this.playerLineup = 0;
     this.aiLineup = 0;
     this.phase = 'resolving';
+    this.pauseRequested = false;
     this.firstPitchOfGame = true;
     this.firstDefenseOfGame = true;
     this.baseMarks = [];
@@ -356,6 +358,13 @@ export class GameScene extends Phaser.Scene {
     this.bindSwingInput();
     // Below the count panel so it never sits on the B/S/OUT pips.
     this.pinUI(makeMuteButton(this, GAME_WIDTH - 30, 122));
+    this.addPauseButton();
+    // The overlay's PLAY button resumes us; re-arm the pause guard.
+    const onResume = () => {
+      this.pauseRequested = false;
+    };
+    this.events.on(Phaser.Scenes.Events.RESUME, onResume);
+    this.events.once('shutdown', () => this.events.off(Phaser.Scenes.Events.RESUME, onResume));
 
     this.pitcherSprite = this.add.image(MOUND.x, MOUND.y, this.aiPitcher.id).setOrigin(0.5, 1);
     this.pitcherSprite.setScale(KID_SIZE.PITCHER_H / this.pitcherSprite.height);
@@ -892,6 +901,53 @@ export class GameScene extends Phaser.Scene {
         playerTeam: this.playerTeam,
       });
     });
+  }
+
+  // --- Pause ---------------------------------------------------------------
+
+  /** The ⏸ corner button, on the right rail under the mute toggle. */
+  private addPauseButton(): void {
+    const btn = this.add
+      .text(GAME_WIDTH - 30, 168, '⏸', { fontSize: '30px' })
+      .setOrigin(0.5)
+      .setDepth(500)
+      .setInteractive({ useHandCursor: true });
+    // stopPropagation: without it the tap falls through to the scene-level
+    // pointerdown below and swings/throws mid-pitch.
+    btn.on(
+      'pointerdown',
+      (_p: unknown, _x: number, _y: number, e: Phaser.Types.Input.EventData) => e.stopPropagation()
+    );
+    btn.on(
+      'pointerup',
+      (_p: unknown, _x: number, _y: number, e: Phaser.Types.Input.EventData) => {
+        e.stopPropagation();
+        this.pauseGame();
+      }
+    );
+    this.pinUI(btn);
+  }
+
+  /**
+   * Freeze everything via scene.pause (update loop, Clock timers, tweens,
+   * camera effects, input) and put the Pause overlay on top. The overlay owns
+   * resume input while we're frozen — never add a manual-freeze pause path.
+   */
+  private pauseGame(): void {
+    if (this.phase === 'ended') return; // game-over handoff owns the scene
+    if (this.pauseRequested) return; // double-tap guard (scene ops are queued)
+    this.pauseRequested = true;
+    // A held throw-charge would orphan its pointerup while input is paused,
+    // making the next unrelated pointerup fire the throw. Cancel it.
+    if (this.charging) {
+      this.charging = false;
+      this.chargeMeter?.destroy();
+      this.chargeMeter = undefined;
+      this.baseRings.forEach((r) => r.setStrokeStyle(5, COLORS.gold, 0.9));
+    }
+    audio.cancelSpeech(); // the announcer must not talk over the menu
+    this.scene.launch('Pause'); // launch before pause: both ops queue in order
+    this.scene.pause();
   }
 
   // --- Player at-bats (interactive) ---------------------------------------
@@ -2710,6 +2766,13 @@ export class GameScene extends Phaser.Scene {
         this.pendingThrow = { base: chooseThrowTarget(this.livePlay, speed), power: 0.8 };
       }
     });
+
+    // Pause keys. Guard key-repeat so a held key doesn't bounce pause/resume.
+    const pauseKey = (e: KeyboardEvent) => {
+      if (!e.repeat) this.pauseGame();
+    };
+    this.input.keyboard?.on('keydown-ESC', pauseKey);
+    this.input.keyboard?.on('keydown-P', pauseKey);
   }
 
   /** A fresh press while holding the ball = start charging a throw at a base. */

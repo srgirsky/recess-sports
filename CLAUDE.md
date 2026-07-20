@@ -46,7 +46,7 @@ Phaser 3 · TypeScript · Vite · vitest. Static site, no backend, deployed free
 | `src/systems/audio.ts` | Web Audio SFX + SpeechSynthesis voice + mute. |
 | `src/systems/announcer.ts` | Play-by-play line pools per moment (homer/K/DP/errors/steals/sac fly/called shot...), no-repeat + 2.5s rate limit (priority-2 moments always speak); GameScene's `callIt` feeds `audio.say`. |
 | `src/art/projection.ts` | The 3/4 camera: trapezoid pinch toward the fence + depth-scaled kids, render-side only. |
-| `src/scenes/*` | Boot → Schoolyard (title beat + recess cutscene + wall draft) → Game → Result. |
+| `src/scenes/*` | Boot → Schoolyard (title beat + recess cutscene + wall draft) → Game (+ Pause overlay) → Result. Pausing = `scene.launch('Pause')` + `scene.pause()` — the overlay owns resume input while Game is frozen; never add a second manual-freeze pause path (`time.paused` etc.). |
 | `src/ui/*` | Button, statbars, MuteButton, effects, anim, theme. |
 | `src/scenes/ui/PitchSelectUI.ts` | Main-mode mound UI (pitch pills + tappable 3×3 zone grid) + the shared strike-zone overlay / plate→screen mapping. |
 | `src/scenes/ui/Scoreboard.ts` | The pinned scoreboard strip: score / inning / labeled B-S-OUT pips (pulse on change) + the HUD-anchored umpire calls. View-only. |
@@ -67,6 +67,7 @@ Phaser 3 · TypeScript · Vite · vitest. Static site, no backend, deployed free
 - **`textures.getTextureKeys()` is polluted** by Phaser Text objects (GUID keys). Don't treat texture keys as character ids — use `ROSTER` from `data/characters.ts`.
 - **All pose art must bottom out on the same ground line** (`GROUND = 248` in `CharacterArt.ts`): sprites use `setOrigin(0.5, 1)` and swap pose textures in place, so a pose whose lowest ink sits higher/lower makes the kid visibly pop up or sink when a run cycle starts.
 - **Phaser camera zoom ignores `setScrollFactor`** — HUD can't be pinned that way. GameScene runs a second UI camera: every screen-anchored element must go through `pinUI()` (it also routes container children — the input hit-tester checks them individually) or it will zoom with the field; an `addedtoscene` hook auto-hides everything else from the UI cam. Read world pointer coords via `cameras.main.getWorldPoint(p.x, p.y)`, NOT `pointer.worldX/worldY` — Phaser computes those against the topmost camera, which is the unzoomed UI cam.
+- **GameScene has a scene-level `pointerdown` that swings/throws on ANY tap.** Corner HUD buttons (⏸ pause, 🔇 mute) must call `e.stopPropagation()` in their GameObject-level pointer handlers, or tapping the button mid-pitch also swings the bat.
 - **Camera effects (`cam.pan`/`zoomTo`) need exact EaseMap keys** like `'Sine.easeInOut'` — tweens fuzzy-match the `'Sine.inOut'` shorthand, but camera effects don't resolve it, leave `this.ease` undefined, and crash the game loop on the next update.
 - **Audio needs a user gesture** to start (browser autoplay policy). It's unlocked on the Title PLAY click (`audio.unlock()`); all audio calls no-op before that or when muted, so they're always safe to call.
 

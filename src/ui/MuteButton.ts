@@ -17,9 +17,19 @@ export function makeMuteButton(
     .setOrigin(0.5)
     .setDepth(500)
     .setInteractive({ useHandCursor: true });
-  btn.on('pointerup', () => {
-    toggleMute();
-    btn.setText(label());
-  });
+  // stopPropagation: GameScene's scene-level pointerdown swings/throws on any
+  // tap — without this, muting mid-pitch also swings the bat.
+  btn.on(
+    'pointerdown',
+    (_p: unknown, _x: number, _y: number, e: Phaser.Types.Input.EventData) => e.stopPropagation()
+  );
+  btn.on(
+    'pointerup',
+    (_p: unknown, _x: number, _y: number, e: Phaser.Types.Input.EventData) => {
+      e.stopPropagation();
+      toggleMute();
+      btn.setText(label());
+    }
+  );
   return btn;
 }
