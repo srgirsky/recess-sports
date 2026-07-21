@@ -213,10 +213,38 @@ export const PLATE_VIEW = {
   HORIZON_Y: 292,
   /** The white-flash punch on the hard cut between views. */
   CUT_FLASH_MS: 60,
+  /** The contact frame: how long the rig holds at bat-meets-ball before the
+   *  cut to the wide field. Pure presentation — the live sim starts after it. */
+  HIT_PAUSE_MS: 90,
   /** Pitch-ball scale ramp — it grows as it flies at the camera. */
   BALL: { SCALE_FROM: 0.5, SCALE_TO: 2.2 },
   /** Kid-mode timing-ring radius on the frontal zone. */
   RING_R: 40,
+};
+
+/**
+ * Render-side effect knobs for the live play (GameScene). All presentation —
+ * nothing here feeds the sim.
+ */
+export const FX = {
+  /** Streak dots behind an airborne hit ball. */
+  HIT_TRAIL_EVERY_MS: 40, // spawn cadence while the ball flies
+  HIT_TRAIL_LIFE_MS: 240, // how long each dot lingers
+  HIT_TRAIL_MIN_H: 0.1, // no trail below this arc height (grounders stay clean)
+  /** The chalk ring that marks where a fly ball lands. */
+  LAND_RING_MS: 550,
+  /** 📼 instant replay (great live plays re-run in slow motion). */
+  REPLAY: {
+    SPEED: 0.55, // playback rate vs real time
+    MAX_FRAMES: 700, // snapshot cap (~12s of play at 60fps)
+  },
+  /** The home-run show (scenes/ui/Spectacle.ts). */
+  HOMER: {
+    FLIGHT_MS: 800, // gold ball's flight from plate to over-the-fence
+    TRAIL_EVERY_MS: 36, // star-trail spawn cadence behind it
+    CONFETTI: 70, // confetti pieces
+    FLASHBULBS: 14, // crowd camera flashes
+  },
 };
 
 /**
@@ -300,6 +328,11 @@ export const VOICE = {
       determined: { pitch: -0.06, rate: 0 },
       goofy: { pitch: 0.1, rate: 0.06 },
       surprised: { pitch: 0.1, rate: 0.04 },
+      // Reaction expressions — never a kid's RESTING face in ROSTER, but the
+      // Expression type is total so the voice table covers them too.
+      upset: { pitch: -0.08, rate: -0.06 },
+      nervous: { pitch: 0.06, rate: 0.08 },
+      celebrate: { pitch: 0.12, rate: 0.06 },
     },
   },
   /** Speech queue: pending cap + watchdog duration estimate (onend is flaky). */
@@ -387,6 +420,13 @@ export const LIVE = {
   CPU_RUNNER_PATIENCE_MS: 1500,
   /** Hard cap: any live play resolves by now (stragglers settle safe behind). */
   MAX_PLAY_MS: 9000,
+  /** The dive verb (CLASSIC defense): tap mid-chase for a reach burst. */
+  DIVE: {
+    REACH_BONUS: 30, // px added to catch/pickup reach during the window
+    WINDOW_MS: 340, // how long the lunge lasts
+    WHIFF_MS: 800, // face-down-in-the-grass freeze after an empty dive
+    TAP_MAX_MS: 180, // press shorter than this = dive tap; longer = steering hold
+  },
 };
 
 /**
@@ -417,8 +457,21 @@ export const ERRORS = {
  */
 export const JUICE = {
   MAX: 100,
-  POWER_SWING_COST: 55,
-  CRAZY_PITCH_COST: 55,
+  /** What each spend costs (systems/juice.ts `SpendKind`). */
+  COSTS: {
+    powerSwing: 55,
+    crazyPitch: 55,
+    turboLegs: 40, // 💨 next offensive live play: everyone runs faster
+    goldenGlove: 40, // 🧤 next defensive live play: sure hands + strong magnet
+    rallyCap: 70, // 🧢 rest of the batting half: wider swing windows
+  },
+  /** 💨 turboLegs: runner-speed multiplier for the armed play. */
+  TURBO_SPEED_MULT: 1.35,
+  /** 🧤 goldenGlove: magnet-assist blend + catch-reach bonus for the armed play. */
+  GLOVE_BLEND: 0.85,
+  GLOVE_REACH_BONUS: 8,
+  /** 🧢 rallyCap: extra swing-window forgiveness (ms) while it's on. */
+  RALLY_FORGIVE_MS: 40,
   GAINS: {
     perfectSwing: 12,
     hit: 10,
@@ -434,6 +487,42 @@ export const JUICE = {
   /** calls_shot + power swing: contact quality can't roll below this — just
    *  over LIVE.LAUNCH.HR_Q, so the called shot FINALLY clears the fence. */
   CALLED_SHOT_Q_FLOOR: 1.2,
+};
+
+/** Recess Week — the 5-game season (systems/season.ts). */
+export const SEASON = {
+  GAMES: 5, // Monday through Friday
+  PENNANT_WINS: 3, // win this many and the pennant is yours
+};
+
+/** CPU difficulty ramp (CLASSIC; systems/difficulty.ts). */
+export const DIFFICULTY = {
+  PER_GAME: 0.34, // ramp level gained per game played
+  MAX_LEVEL: 3, // hard cap — a ramp, not a wall
+  ARM_PER_LEVEL: 0.7, // CPU pitcher stat bonus per level (tighter pitches)
+  CONTACT_PER_LEVEL: 0.7, // CPU batter contact bonus per level
+};
+
+/** Pitcher fatigue (CLASSIC, `features.fatigue`; systems/fatigue.ts). */
+export const FATIGUE = {
+  DRAIN_PITCH: 0.03, // stamina per ordinary pitch (~33 pitches to empty)
+  DRAIN_CRAZY: 0.09, // the crazy pitch costs triple
+  TIRED_AT: 0.45, // below this: sweat tell + the stat starts sagging
+  MAX_STAT_LOSS: 4, // pitching-stat points lost at empty
+  CPU_RELIEF_AT: 0.15, // the CPU calls its own bullpen here
+};
+
+/**
+ * Pre-pitch swing types (CLASSIC, `features.swingChoice`). NORMAL is absent —
+ * it's the unmodified baseline. Applied in systems/atbat.ts.
+ */
+export const SWING_TYPES = {
+  /** 🛡 SAFE: choke up — wider timing windows, softer contact. */
+  SAFE: { FORGIVE_MS: 45, Q_ADJ: -0.3 },
+  /** 💪 BIG: sell out — weak contact becomes a whiff, solid contact is crushed. */
+  BIG: { NARROW_MS: 35, Q_ADJ: 0.22, TYPE_BIAS: 0.35 },
+  /** 🤏 BUNT: easy to get bat on it; the ball dies in front of the plate. */
+  BUNT: { FORGIVE_MS: 60, DIST_CAP: 115, Q_ADJ: -0.5, SPRAY_MIN: 0.34, SPRAY_MAX: 0.66 },
 };
 
 /** Full-baserunning rules (main mode). */
@@ -472,6 +561,14 @@ export interface ModeFeatures {
   steals: boolean;
   /** Juice meter: power swings & crazy pitches. */
   juice: boolean;
+  /** Tap mid-chase to dive: a reach burst, with a face-full-of-grass whiff. */
+  dive: boolean;
+  /** Pitcher stamina drain + relief swaps. */
+  fatigue: boolean;
+  /** 📼 instant replay of great live plays. */
+  replay: boolean;
+  /** Pre-pitch swing-type chips at the plate (safe / big / bunt). */
+  swingChoice: boolean;
 }
 
 /** Per-mode live-sim multipliers (the old EASY/HARD forgiveness knobs). */
@@ -538,6 +635,10 @@ export const MODES: Record<
       errors: false,
       steals: false,
       juice: false,
+      dive: false,
+      swingChoice: false,
+      fatigue: false,
+      replay: false,
     },
   },
   main: {
@@ -565,6 +666,10 @@ export const MODES: Record<
       errors: true,
       steals: true,
       juice: true,
+      dive: true,
+      swingChoice: true,
+      fatigue: true,
+      replay: true,
     },
   },
 };
@@ -576,6 +681,10 @@ export const ANIM = {
   RUN_BOB: 7, // pixels a runner bounces while running
   IDLE_BOB: 5, // pixels the idle "breathing" bob rises
   RUN_FRAME_MS: 110, // run-cycle frame swap (run1 <-> run2 textures)
+  REACT_HOLD_MS: 950, // how long a one-shot reaction pose (upset/nervous/cheer) holds before restoring
+  ACTION_HOLD_MS: 420, // quicker hold for in-play action poses (throw release, glove-up catch)
+  WAGGLE_EVERY_MS: 2700, // idle bat-waggle tic cadence at the plate
+  WAGGLE_AMP: 2.5, // waggle swing, degrees
   // Schoolyard (title + draft) choreography.
   AMBIENT_HOP_EVERY_MS: 2600, // a random waiting kid hops ("pick me!") this often
   CUTSCENE_ZOOM: 2.0, // door close-up zoom while the bell rings

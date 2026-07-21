@@ -9,6 +9,8 @@ import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
 import { ROSTER } from '../data/characters';
 import { queueRosterTextures } from '../art/textureFactory';
+import { getSettings } from '../systems/settings';
+import * as audio from '../systems/audio';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -49,6 +51,10 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
+    // Saved volume settings apply from the first sound.
+    const st = getSettings();
+    audio.setSfxVolume(st.sfx);
+    audio.setVoiceVolume(st.voice);
     if (import.meta.env.DEV) {
       // Budget: <2s desktop. If this creeps, render non-stand poses at 2x.
       console.log(`[boot] textures ready in ${Math.round(performance.now() - this.bootStart)}ms`);

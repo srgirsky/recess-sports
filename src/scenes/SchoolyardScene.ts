@@ -40,7 +40,9 @@ import {
   type DraftState,
 } from '../systems/draft';
 import { recordPick } from '../systems/picklog';
-import { poseKey } from '../art/textureFactory';
+import { poseKey, clearTeamVariant } from '../art/textureFactory';
+import { getSeason, newSeason, saveSeason } from '../systems/season';
+import { getTeamIdentity } from '../systems/team';
 import { makeButton } from '../ui/Button';
 import { makeMuteButton } from '../ui/MuteButton';
 import { ribbon, pill, panel, heading, FONT, OUTLINE } from '../ui/theme';
@@ -122,6 +124,9 @@ export class SchoolyardScene extends Phaser.Scene {
   }
 
   create(): void {
+    // The draft always shows each kid's OWN look — team jerseys are a
+    // Game/Result-era thing (the resolver re-arms on the next Game init).
+    clearTeamVariant();
     this.cameras.main.fadeIn(250, 0x6c, 0xc0, 0xf5);
     this.state = createDraft(ROSTER.map((c) => c.id));
 
@@ -402,6 +407,76 @@ export class SchoolyardScene extends Phaser.Scene {
       ease: 'Back.out',
       onComplete: () => pulse(this, play, { scale: 1.05, dur: 520 }),
     });
+
+    // 🏆 RECESS WEEK: the 5-game season (resumes mid-week automatically) and
+    // 📔 the sticker album.
+    const week = pill(this, GAME_WIDTH / 2 - 250, 452, '🏆 WEEK', { fill: COLORS.gold, fontSize: 20, minW: 130 });
+    week.container.setDepth(5);
+    week.container.setInteractive(new Phaser.Geom.Rectangle(-70, -22, 140, 44), Phaser.Geom.Rectangle.Contains);
+    week.container.on('pointerdown', () => {
+      if (this.phase !== 'title') return;
+      audio.unlock();
+      audio.pop();
+      if (getSeason()) {
+        this.scene.start('Season'); // resume the week in progress
+      } else {
+        // Draft first; finishDraft sees the flag and builds the season.
+        this.registry.set('seasonDraft', true);
+        this.titleObjs.forEach((o) => o.destroy());
+        this.titleObjs = [];
+        this.startRecess();
+      }
+    });
+    this.titleObjs.push(week.container);
+
+    const albumBtn = pill(this, GAME_WIDTH / 2 + 250, 452, '📔', { fill: COLORS.cream, fontSize: 24, minW: 64 });
+    albumBtn.container.setDepth(5);
+    albumBtn.container.setInteractive(new Phaser.Geom.Rectangle(-32, -22, 64, 44), Phaser.Geom.Rectangle.Contains);
+    albumBtn.container.on('pointerdown', () => {
+      if (this.phase !== 'title') return;
+      audio.unlock();
+      this.scene.start('Album');
+    });
+    this.titleObjs.push(albumBtn.container);
+
+    // 🥎 batting practice: no draft, no innings — grab a bat and swing.
+    const practice = pill(this, GAME_WIDTH / 2 - 250, 512, '🥎 PRACTICE', {
+      fill: COLORS.cream,
+      fontSize: 20,
+      minW: 160,
+    });
+    practice.container.setDepth(5);
+    practice.container.setInteractive(
+      new Phaser.Geom.Rectangle(-85, -22, 170, 44),
+      Phaser.Geom.Rectangle.Contains
+    );
+    practice.container.on('pointerdown', () => {
+      if (this.phase !== 'title') return;
+      audio.unlock();
+      audio.pop();
+      // A quick random 9-vs-9 so the cage is always ready.
+      const shuffled = [...ROSTER].sort(() => Math.random() - 0.5).map((c) => c.id);
+      this.scene.start('Game', {
+        playerTeam: shuffled.slice(0, TEAM_SIZE),
+        aiTeam: shuffled.slice(TEAM_SIZE, TEAM_SIZE * 2),
+        practice: true,
+      });
+    });
+    this.titleObjs.push(practice.container);
+
+    // ⚙️ settings.
+    const gear = pill(this, GAME_WIDTH / 2 + 250, 512, '⚙️', { fill: COLORS.cream, fontSize: 24, minW: 64 });
+    gear.container.setDepth(5);
+    gear.container.setInteractive(
+      new Phaser.Geom.Rectangle(-32, -22, 64, 44),
+      Phaser.Geom.Rectangle.Contains
+    );
+    gear.container.on('pointerdown', () => {
+      if (this.phase !== 'title') return;
+      audio.unlock();
+      this.scene.start('Settings');
+    });
+    this.titleObjs.push(gear.container);
 
     // Mode toggle: two icon chips under PLAY. Selected = gold + full size.
     const chips: Array<{ d: GameMode; c: Phaser.GameObjects.Container }> = [];
@@ -1092,10 +1167,20 @@ export class SchoolyardScene extends Phaser.Scene {
     });
     this.time.delayedCall(1300, () => this.cameras.main.fadeOut(280, 0x43, 0x4a, 0x52));
     this.time.delayedCall(1600, () => {
-      this.scene.start('Game', {
-        playerTeam: this.state.playerTeam,
-        aiTeam: this.state.aiTeam,
-      });
+      // A season draft rolls into Recess Week instead of a one-off game.
+      if (this.registry.get('seasonDraft')) {
+        this.registry.remove('seasonDraft');
+        const identity = getTeamIdentity() ?? { color: 0, logo: 0 };
+        saveSeason(
+          newSeason(this.state.playerTeam, identity, ROSTER.map((c) => c.id), () => Math.random())
+        );
+        this.scene.start('Season');
+        return;
+      }
+      const teams = { playerTeam: this.state.playerTeam, aiTeam: this.state.aiTeam };
+      // CLASSIC gets the lineup screen (order/positions/pitcher); kid mode
+      // goes straight to the game with the automatic defaults.
+      this.scene.start(getMode() === 'main' ? 'Lineup' : 'Game', teams);
     });
   }
 }

@@ -65,6 +65,10 @@ export interface LiveParams {
   manualBaserunning: boolean; // tag-ups, doubling off, tags/rundowns, per-runner control
   assist: 'auto' | 'magnet'; // idle pointer: fielder plays itself / steering bent ball-ward
   assistBlend: number; // magnet strength (0..1)
+  diveEnabled: boolean; // the tap-to-dive verb (CLASSIC only)
+  diveReachBonus: number; // px added to grab reach mid-dive
+  diveWindowMs: number; // lunge duration
+  diveWhiffMs: number; // empty-dive freeze
 }
 
 export function resolveLiveParams(mode: GameMode): LiveParams {
@@ -92,5 +96,9 @@ export function resolveLiveParams(mode: GameMode): LiveParams {
     manualBaserunning: m.manualBaserunning,
     assist: m.fielderAssist,
     assistBlend: LIVE.ASSIST.MAGNET_BLEND,
+    diveEnabled: MODES[mode].features.dive,
+    diveReachBonus: LIVE.DIVE.REACH_BONUS,
+    diveWindowMs: LIVE.DIVE.WINDOW_MS,
+    diveWhiffMs: LIVE.DIVE.WHIFF_MS,
   };
 }

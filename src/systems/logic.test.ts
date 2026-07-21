@@ -14,7 +14,8 @@ import {
   chooseBestPick,
   isDraftComplete,
 } from './draft';
-import { bandFromError, resolveContact, resolveContactAimed, type SwingBand } from './atbat';
+import { bandFromError, resolveContact, resolveContactAimed, timingForSwing, type SwingBand } from './atbat';
+import { SWING_TYPES } from '../config';
 import type { PitchPlan } from './pitchkind';
 import { CURSOR } from '../config';
 import { HOME } from './geometry';
@@ -189,6 +190,44 @@ describe('main-mode batting cursor (resolveContactAimed)', () => {
     expect(bandFromError(85)).toBe('good'); // kid default: PERFECT is 80
     expect(bandFromError(85, MODES.main.swingTiming)).toBe('perfect');
   });
+
+  it('swing types reshape the timing windows (safe wider, big narrower)', () => {
+    const base = { PERFECT: 80, GOOD: 170, CONTACT: 300 };
+    const safe = timingForSwing(base, 'safe');
+    const big = timingForSwing(base, 'big');
+    const bunt = timingForSwing(base, 'bunt');
+    expect(safe.CONTACT).toBeGreaterThan(base.CONTACT);
+    expect(safe.GOOD).toBeGreaterThan(base.GOOD);
+    expect(big.CONTACT).toBeLessThan(base.CONTACT);
+    expect(bunt.CONTACT).toBeGreaterThan(base.CONTACT);
+    expect(timingForSwing(base, 'normal')).toEqual(base);
+  });
+
+  it('the BIG swing turns weak contact into a whiff', () => {
+    const r = aimed({ band: 'weak', swingType: 'big' });
+    expect(r.band).toBe('miss');
+    expect(r.swing.kind).toBe('strike');
+  });
+
+  it('a bunt dies as a short grounder in front of the plate, never a homer', () => {
+    for (const roll of [0.2, 0.5, 0.99]) {
+      const r = aimed({ band: 'perfect', swingType: 'bunt', rng: () => roll, batter: plain({ stats: { contact: 5, power: 10, speed: 5, pitching: 5, fielding: 5 } }) });
+      if (r.swing.kind !== 'inPlay') continue; // weak-foul roll — fine
+      expect(r.swing.launch.type).toBe('grounder');
+      expect(r.swing.launch.homer).toBe(false);
+      const d = Math.hypot(r.swing.launch.landing.x - HOME.x, r.swing.launch.landing.y - HOME.y);
+      expect(d).toBeLessThanOrEqual(SWING_TYPES.BUNT.DIST_CAP + 10);
+    }
+  });
+
+  it('a SAFE swing lands shorter than a NORMAL one on the same contact', () => {
+    const norm = aimed({ band: 'good', rng: () => 0.6 });
+    const safe = aimed({ band: 'good', swingType: 'safe', rng: () => 0.6 });
+    if (norm.swing.kind !== 'inPlay' || safe.swing.kind !== 'inPlay') throw new Error('expected contact');
+    const dist = (l: { landing: { x: number; y: number } }) =>
+      Math.hypot(l.landing.x - HOME.x, l.landing.y - HOME.y);
+    expect(dist(safe.swing.launch)).toBeLessThan(dist(norm.swing.launch));
+  });
 });
 
 describe('juice meter (main mode)', () => {
@@ -202,12 +241,12 @@ describe('juice meter (main mode)', () => {
 
   it('ability hooks: contact queen charges faster, the ace throws cheap crazy', () => {
     expect(juiceGain('hit', 'never_strikes_out')).toBeGreaterThan(juiceGain('hit'));
-    expect(spendCost('crazyPitch', 'unhittable_pitch')).toBe(Math.round(JUICE.CRAZY_PITCH_COST / 2));
-    expect(spendCost('powerSwing', 'unhittable_pitch')).toBe(JUICE.POWER_SWING_COST);
+    expect(spendCost('crazyPitch', 'unhittable_pitch')).toBe(Math.round(JUICE.COSTS.crazyPitch / 2));
+    expect(spendCost('powerSwing', 'unhittable_pitch')).toBe(JUICE.COSTS.powerSwing);
   });
 
   it('spending gates on cost and deducts', () => {
-    let j = addJuice(newJuice(), JUICE.POWER_SWING_COST - 1);
+    let j = addJuice(newJuice(), JUICE.COSTS.powerSwing - 1);
     expect(canSpend(j, 'powerSwing')).toBe(false);
     expect(spend(j, 'powerSwing').value).toBe(j.value); // no-op
     j = addJuice(j, 1);

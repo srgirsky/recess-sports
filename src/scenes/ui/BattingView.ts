@@ -19,6 +19,8 @@ import { GAME_WIDTH, GAME_HEIGHT, COLORS, PLATE_VIEW, ANIM } from '../../config'
 import type { VenueDef } from '../../data/venues';
 import type { PositionId } from '../../systems/geometry';
 import { poseKey } from '../../art/textureFactory';
+import type { Pose } from '../../art/CharacterArt';
+import { batWaggle } from '../../ui/anim';
 
 export interface RigActors {
   batterId: string;
@@ -55,7 +57,10 @@ export class BattingView {
   private batter: Phaser.GameObjects.Image;
   private catcher: Phaser.GameObjects.Image;
   private pitcherId = '';
+  private batterId = '';
   private batterIdle?: Phaser.Tweens.Tween;
+  private batterTic?: Phaser.Time.TimerEvent;
+  private batterReactTimer?: Phaser.Time.TimerEvent;
   private batterBaseScale = 1;
   private fielderImgs = new Map<PositionId, Phaser.GameObjects.Image>();
 
@@ -111,8 +116,10 @@ export class BattingView {
       img.setVisible(true);
     }
     const batterChanged = this.batter.texture.key !== poseKey(actors.batterId, 'batRear');
+    if (batterChanged) this.batterReactTimer?.remove(false); // a reaction pose never outlives its batter
     this.setKid(this.batter, actors.batterId, 'batRear', PLATE_VIEW.BATTER.H);
     this.pitcherId = actors.pitcherId;
+    this.batterId = actors.batterId;
     this.batterBaseScale = this.batter.scale;
     if (!this.root.visible || batterChanged) {
       this.startBatterIdle();
@@ -122,12 +129,15 @@ export class BattingView {
 
   hide(): void {
     if (!this.root.visible) return;
+    this.batterReactTimer?.remove(false);
+    this.batterTic?.remove(false);
+    this.batterTic = undefined;
     this.root.setVisible(false);
     // Nothing may keep animating off-screen (windup lean, idle breathing).
     this.scene.tweens.killTweensOf([this.pitcher, this.batter]);
     this.batterIdle = undefined;
     this.pitcher.setAngle(0);
-    if (this.pitcherId) this.pitcher.setTexture(this.pitcherId);
+    if (this.pitcherId) this.pitcher.setTexture(poseKey(this.pitcherId, 'stand'));
     this.setKid(this.pitcher, this.pitcherId || undefined, 'stand', PLATE_VIEW.PITCHER.H);
     this.batter.setAngle(0);
     this.batter.setX(PLATE_VIEW.BATTER.X);
@@ -156,12 +166,46 @@ export class BattingView {
     });
   }
 
-  /** The rear-view swing whip: the whole kid snaps through the zone. */
-  swingBatter(): void {
-    if (!this.root.visible) return;
+  /**
+   * One-shot reaction on the foreground batter: the kid turns to face the
+   * camera in a front-view reaction pose (upset slump / nervous fidget /
+   * cheer), then settles back into the rear-view stance. Safe to call any
+   * time — swingBatter() and show() both restore the stance first, so a
+   * reaction can never be worn through a swing or by the wrong kid.
+   */
+  reactBatter(pose: 'upset' | 'nervous' | 'cheer', holdMs: number): void {
+    if (!this.root.visible || !this.batterId) return;
     this.batterIdle?.stop();
     this.batterIdle = undefined;
     const b = this.batter;
+    b.setAngle(0).setX(PLATE_VIEW.BATTER.X);
+    this.setKid(b, this.batterId, pose, PLATE_VIEW.BATTER.H);
+    this.batterReactTimer?.remove(false);
+    this.batterReactTimer = this.scene.time.delayedCall(holdMs, () => this.settleBatter());
+  }
+
+  /** Put the current batter back in the rear-view stance if a reaction is up. */
+  private settleBatter(): void {
+    if (!this.batterId || !this.batter.active) return;
+    if (this.batter.texture.key !== poseKey(this.batterId, 'batRear')) {
+      this.setKid(this.batter, this.batterId, 'batRear', PLATE_VIEW.BATTER.H);
+      this.batterBaseScale = this.batter.scale;
+      if (this.root.visible) this.startBatterIdle();
+    }
+  }
+
+  /** The rear-view swing whip: the whole kid snaps through the zone. */
+  swingBatter(): void {
+    if (!this.root.visible) return;
+    this.batterReactTimer?.remove(false);
+    this.settleBatter();
+    this.batterIdle?.stop();
+    this.batterIdle = undefined;
+    this.batterTic?.remove(false);
+    this.batterTic = undefined;
+    const b = this.batter;
+    this.scene.tweens.killTweensOf(b); // a mid-waggle tween must not fight the whip
+    b.setAngle(0);
     b.setScale(this.batterBaseScale); // clear any mid-breath scale
     this.scene.tweens.add({ targets: b, angle: 12, duration: ANIM.SWING_MS, yoyo: true, ease: 'Quad.out' });
     this.scene.tweens.add({ targets: b, x: PLATE_VIEW.BATTER.X + 14, duration: ANIM.SWING_MS, yoyo: true, ease: 'Quad.out' });
@@ -170,7 +214,7 @@ export class BattingView {
   private setKid(
     img: Phaser.GameObjects.Image,
     id: string | undefined,
-    pose: 'stand' | 'batRear' | 'catchRear' | 'ready',
+    pose: Pose,
     h: number
   ): void {
     if (!id) return;
@@ -181,6 +225,7 @@ export class BattingView {
 
   private startBatterIdle(): void {
     this.batterIdle?.stop();
+    this.batterTic?.remove(false);
     const s = this.batterBaseScale;
     this.batter.setAngle(0).setX(PLATE_VIEW.BATTER.X).setScale(s);
     this.batterIdle = this.scene.tweens.add({
@@ -191,6 +236,8 @@ export class BattingView {
       repeat: -1,
       ease: 'Sine.inOut',
     });
+    // The waiting-batter tic: an occasional bat waggle.
+    this.batterTic = batWaggle(this.scene, this.batter);
   }
 
   // --- The backdrop: sky, venue fence, ground, mound, plate dirt ------------

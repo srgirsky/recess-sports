@@ -27,13 +27,16 @@ import {
   RUNNER_TWEEN_MS,
   SHOW_TIMING_RING,
   ANIM,
+  FX,
 } from '../config';
-import type { Character, TeamState } from '../data/types';
+import type { Character } from '../data/types';
 import { getCharacter } from '../data/characters';
 import {
   bandFromError,
   resolveContact,
   resolveContactAimed,
+  timingForSwing,
+  type SwingType,
   type Launch,
   type SwingBand,
   type AtBatResult,
@@ -57,6 +60,23 @@ import {
 import { showPitchSelect, zoneOutline, type PitchSelect } from './ui/PitchSelectUI';
 import { plateToScreen, screenToPlate, clampToCursorRange } from '../art/plateView';
 import { BattingView } from './ui/BattingView';
+import { homerSpectacle, powerSwingFx, crazyPitchFx } from './ui/Spectacle';
+import type { GameInitData } from './LineupScene';
+import { swapPositions, type LineupPlan } from '../systems/lineup';
+import { newFatigue, drainPitch, effectivePitching, isTired, cpuWantsRelief } from '../systems/fatigue';
+import { rampLevel, rampedArm, rampedCpuBatter } from '../systems/difficulty';
+import { teamName, type TeamIdentity } from '../systems/team';
+import { getSettings } from '../systems/settings';
+import type { StatEvent } from '../systems/stats';
+import { getSeason, saveSeason, recordSeasonGame } from '../systems/season';
+import {
+  snapshotLive,
+  applyFrame,
+  isReplayWorthy,
+  newHighlights,
+  type ReplayFrame,
+} from '../systems/replay';
+import { setTeamVariant, clearTeamVariant, teamSuffix } from '../art/textureFactory';
 import { createScoreboard, type Scoreboard } from './ui/Scoreboard';
 import { shouldSkipBottom, isWalkOff, decideAfterHalf } from '../systems/gameflow';
 import {
@@ -108,18 +128,19 @@ import { getMode, getFeatures, getSwingTiming, resolveLiveParams, type LiveParam
 import {
   LIVE,
   CURSOR,
+  JUICE,
   PLATE_ZONE,
   KID_SIZE,
   type GameMode,
   type ModeFeatures,
   type PitchKind,
 } from '../config';
-import { recordGamePlayed } from '../systems/picklog';
+import { recordGamePlayed, getGamesPlayed } from '../systems/picklog';
 import * as audio from '../systems/audio';
 import { screenShake, burst, floatingText } from '../ui/effects';
 import { makeMuteButton } from '../ui/MuteButton';
 import { FONT, pill } from '../ui/theme';
-import { idleBob, squashHop, groundShadow, runCycle } from '../ui/anim';
+import { idleBob, squashHop, groundShadow, runCycle, reactPose } from '../ui/anim';
 import { poseKey } from '../art/textureFactory';
 import { project, unproject, depthScale } from '../art/projection';
 import { Announcer, type AnnounceKind } from '../systems/announcer';
@@ -170,6 +191,35 @@ function lightenInt(color: number, f: number): number {
 
 export class GameScene extends Phaser.Scene {
   private playerTeam!: string[];
+  private playerPlan?: LineupPlan; // CLASSIC lineup (order/positions/pitcher)
+  private aiPlan?: LineupPlan;
+  private identity?: TeamIdentity; // team jerseys + spoken name (CLASSIC)
+  private rival?: TeamIdentity;
+  private playerFatigue = newFatigue(); // current mound arms' gas tanks
+  private cpuFatigue = newFatigue();
+  private reliefBtn?: Phaser.GameObjects.Container;
+  private reliefOverlay?: Phaser.GameObjects.Container;
+  private pitchAutoPick?: Phaser.Time.TimerEvent;
+  // The newer juice spends: armed until their live play happens (turbo/glove)
+  // or the batting half ends (rally cap).
+  private armedTurbo = false;
+  private armedGlove = false;
+  private rallyCapOn = false;
+  private spendChips?: Phaser.GameObjects.Container;
+  private activeLiveParams?: LiveParams; // per-play override (goldenGlove/turbo)
+  private ramp = 0; // CPU difficulty ramp level (CLASSIC, from games played)
+  private regulation = INNINGS; // game length (settings can pick 1/2/3)
+  private practice = false; // batting practice: endless pitches, no outs, no innings
+  private seasonGame = false; // this game counts toward Recess Week
+  private statEvents: StatEvent[] = []; // player-side stat feed (season games)
+  // 📼 instant replay: per-tick position snapshots of the current live play.
+  private replayFrames: ReplayFrame[] = [];
+  private playHighlights = newHighlights();
+  private replaying = false;
+  private replayed = false; // one replay per play, max
+  private replayT = 0;
+  private replayIdx = 0;
+  private replayChrome?: Phaser.GameObjects.Container;
   private aiTeam!: string[];
   private aiPitcher!: Character;
   private playerPitcher!: Character;
@@ -258,6 +308,7 @@ export class GameScene extends Phaser.Scene {
   private liveRunnerSprites = new Map<string, LiveSprite>();
   private liveBall?: Phaser.GameObjects.Arc;
   private liveBallShadow?: Phaser.GameObjects.Ellipse;
+  private lastTrailAt = 0; // spawn gate for the live-ball streak dots
   private activeMarker?: Phaser.GameObjects.Ellipse;
   private baseRings: Phaser.GameObjects.Arc[] = [];
   private chargeMeter?: Phaser.GameObjects.Graphics;
@@ -269,6 +320,10 @@ export class GameScene extends Phaser.Scene {
   private chargeStart = 0;
   private chargeBase: 1 | 2 | 3 | 4 = 1;
   private pendingThrow?: { base: 1 | 2 | 3 | 4; power: number };
+  private pendingDive = false;
+  private pressAt = 0; // pointerdown time — a short press+release is a dive tap
+  private swingType: SwingType = 'normal'; // pre-pitch chip choice, reset per batter
+  private swingChips?: Phaser.GameObjects.Container;
   private pendingRun = false;
   /** Main-mode per-runner taps, consumed by the next sim tick. */
   private pendingSend?: string;
@@ -304,9 +359,22 @@ export class GameScene extends Phaser.Scene {
     super('Game');
   }
 
-  init(data: TeamState): void {
+  init(data: GameInitData): void {
     this.playerTeam = data.playerTeam;
     this.aiTeam = data.aiTeam;
+    this.playerPlan = data.playerPlan;
+    this.aiPlan = data.aiPlan;
+    // Team jerseys: arm the texture-variant resolver so EVERY sprite in this
+    // scene (and Result) wears team colors. Schoolyard clears it again.
+    clearTeamVariant();
+    if (data.identity) setTeamVariant(data.playerTeam, teamSuffix(data.identity.color, data.identity.logo));
+    if (data.rival) setTeamVariant(data.aiTeam, teamSuffix(data.rival.color, data.rival.logo));
+    this.identity = data.identity;
+    this.rival = data.rival;
+    this.regulation = getSettings().innings;
+    this.practice = data.practice ?? false;
+    this.seasonGame = data.seasonGame ?? false;
+    this.statEvents = [];
     this.inning = 1;
     this.half = 'top';
     this.playerScore = 0;
@@ -337,6 +405,7 @@ export class GameScene extends Phaser.Scene {
     this.baseRings = [];
     this.charging = false;
     this.pendingThrow = undefined;
+    this.pendingDive = false;
     this.pendingRun = false;
     this.pendingSend = undefined;
     this.pendingHold = undefined;
@@ -347,14 +416,43 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.aiPitcher = bestPitcher(this.aiTeam);
-    this.playerPitcher = bestPitcher(this.playerTeam);
+    // Lineup plans (CLASSIC, from LineupScene) name the starters; without a
+    // plan (kid mode / legacy) the best arm just takes the mound.
+    this.aiPitcher = this.aiPlan ? getCharacter(this.aiPlan.pitcherId) : bestPitcher(this.aiTeam);
+    this.playerPitcher = this.playerPlan
+      ? getCharacter(this.playerPlan.pitcherId)
+      : bestPitcher(this.playerTeam);
     this.mode = getMode();
     this.features = getFeatures(this.mode);
     this.liveParams = resolveLiveParams(this.mode);
     this.venue = getVenue();
     this.geo = getFieldGeometry(this.venue);
+    // Ramp is read BEFORE this game is tallied (game 1 plays at level 0),
+    // and only in CLASSIC — kid mode never sharpens.
+    this.ramp = this.mode === 'main' ? rampLevel(getGamesPlayed()) : 0;
     recordGamePlayed();
+    // The booth introduces the matchup.
+    if (this.identity && this.rival) {
+      audio.say(`${teamName(this.identity)} versus ${teamName(this.rival)}! Play ball!`, undefined, 'queue');
+    }
+    // Batting practice: a big DONE button is the only way out (no innings).
+    // Deferred a tick — pinUI needs the UI camera, which is built later in
+    // create().
+    if (this.practice) {
+      this.time.delayedCall(0, () => {
+        const done = pill(this, GAME_WIDTH / 2, 40, '✅ DONE', { fill: COLORS.gold, fontSize: 20, minW: 130 });
+        done.container.setDepth(95);
+        this.pinUI(done.container);
+        done.container.setInteractive(
+          new Phaser.Geom.Rectangle(-65, -22, 130, 44),
+          Phaser.Geom.Rectangle.Contains
+        );
+        done.container.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, e: Phaser.Types.Input.EventData) => {
+          e.stopPropagation();
+          this.scene.start('Schoolyard', { straightToDraft: false });
+        });
+      });
+    }
 
     // The UI camera renders HUD chrome only and never zooms. Every object is
     // world by default: this hook hides it from the UI cam the moment it's
@@ -742,9 +840,9 @@ export class GameScene extends Phaser.Scene {
       playerScore: this.playerScore,
       aiScore: this.aiScore,
       inning: this.inning,
-      innings: INNINGS,
+      innings: this.regulation,
       half: this.half,
-      bonus: this.inning > INNINGS,
+      bonus: this.inning > this.regulation,
       balls: this.halfState ? this.halfState.count.balls : 0,
       strikes: this.halfState ? this.halfState.count.strikes : 0,
       outs: this.halfState ? this.halfState.outs : 0,
@@ -860,16 +958,27 @@ export class GameScene extends Phaser.Scene {
     this.moundCharId = char.id;
     const p = this.pitcherSprite;
     if (!p || p.texture.key === char.id) return;
-    p.setTexture(char.id);
+    p.setTexture(poseKey(char.id, 'stand'));
     p.setScale(KID_SIZE.PITCHER_H / p.height);
   }
 
   private endHalf(): void {
+    this.swingChips?.destroy();
+    this.swingChips = undefined;
+    this.reliefBtn?.destroy();
+    this.reliefBtn = undefined;
+    this.reliefOverlay?.destroy();
+    this.reliefOverlay = undefined;
+    this.spendChips?.destroy();
+    this.spendChips = undefined;
+    this.rallyCapOn = false; // the rally cap comes off between halves
+    this.armedTurbo = false;
+    this.armedGlove = false;
     // Home (CPU) already leads after the top of the final inning: their
     // at-bats can't change anything, so the game just ends.
     if (
       this.half === 'top' &&
-      shouldSkipBottom(this.inning, INNINGS, this.aiScore, this.playerScore)
+      shouldSkipBottom(this.inning, this.regulation, this.aiScore, this.playerScore)
     ) {
       this.flashAnnounce('GAME OVER!', COLORS.red, 900);
       this.time.delayedCall(1000, () => this.gameOver());
@@ -879,7 +988,7 @@ export class GameScene extends Phaser.Scene {
     const next = decideAfterHalf(
       this.inning,
       this.half,
-      INNINGS,
+      this.regulation,
       this.playerScore,
       this.aiScore,
       MAX_EXTRA_INNINGS
@@ -905,11 +1014,21 @@ export class GameScene extends Phaser.Scene {
     if (this.playerScore !== this.aiScore) {
       this.callIt(this.playerScore > this.aiScore ? 'winning' : 'losing', {}, 2);
     }
+    // A season game folds into the week before the Result screen shows.
+    if (this.seasonGame) {
+      const season = getSeason();
+      if (season) {
+        const result =
+          this.playerScore > this.aiScore ? 'W' : this.playerScore < this.aiScore ? 'L' : 'T';
+        saveSeason(recordSeasonGame(season, result, this.statEvents));
+      }
+    }
     this.time.delayedCall(400, () => {
       this.scene.start('Result', {
         playerScore: this.playerScore,
         aiScore: this.aiScore,
         playerTeam: this.playerTeam,
+        seasonGame: this.seasonGame,
       });
     });
   }
@@ -967,10 +1086,25 @@ export class GameScene extends Phaser.Scene {
       this.endHalf();
       return;
     }
+    // The CPU manages its own bullpen between batters.
+    if (this.features.fatigue && this.aiPlan && cpuWantsRelief(this.cpuFatigue)) {
+      const best = this.aiTeam
+        .filter((id) => id !== this.aiPitcher.id)
+        .sort((a, b) => getCharacter(b).stats.pitching - getCharacter(a).stats.pitching)[0];
+      this.aiPlan = swapPositions(this.aiPlan, this.aiPitcher.id, best);
+      this.aiPitcher = getCharacter(best);
+      this.cpuFatigue = newFatigue();
+      this.buildDefense();
+      this.setMoundPitcher(this.aiPitcher);
+      this.flashAnnounce(`CPU brings in\n${this.aiPitcher.name}!`, COLORS.white, FLOW.BANNER_HOLD_MS);
+    }
     this.batter = getCharacter(this.playerTeam[this.playerLineup % TEAM_SIZE]);
     this.showBatter(this.batter);
     this.batterLabel.setText(this.batter.name);
     this.kidChat('batterUp', this.batter);
+    this.swingType = 'normal'; // the chip choice is per-at-bat
+    this.showSwingChips();
+    this.showSpendChips();
 
     if (this.batter.ability === 'calls_shot') {
       this.flashAnnounce('"HOME RUN,\nCALLED IT!"', COLORS.white, 900);
@@ -991,6 +1125,14 @@ export class GameScene extends Phaser.Scene {
 
   private pitcherWindup(): void {
     if (this.rig.visible) this.rig.windup(); // the distant rig pitcher coils too
+    // Tired-arm tell: sweat flies off the mound as the wind-up starts.
+    if (this.features.fatigue) {
+      const f = this.half === 'top' ? this.cpuFatigue : this.playerFatigue;
+      if (isTired(f)) {
+        const at = this.rig.visible ? this.rig.pitcherAnchor : project(MOUND);
+        floatingText(this, at.x + 24, at.y - 60, '💦', COLORS.white, 26);
+      }
+    }
     const p = this.pitcherSprite;
     if (!p) return;
     // Real wind-up art (arm coiled, knee up) + the lean tween on top.
@@ -1096,8 +1238,14 @@ export class GameScene extends Phaser.Scene {
     this.phase = 'pitching';
     this.swung = false;
     this.firstPitchOfGame = false;
+    // The CPU arm tires too — same drain, same sag. The ramp sharpens it.
+    if (this.features.fatigue) this.cpuFatigue = drainPitch(this.cpuFatigue, null);
+    let cpuArm = this.features.fatigue
+      ? effectivePitching(this.aiPitcher.stats.pitching, this.cpuFatigue)
+      : this.aiPitcher.stats.pitching;
+    cpuArm = rampedArm(cpuArm, this.ramp);
     let plan = chooseCpuPitch(
-      this.aiPitcher.stats.pitching,
+      cpuArm,
       this.halfState.count,
       PITCH_TRAVEL_MS,
       () => Math.random()
@@ -1108,15 +1256,17 @@ export class GameScene extends Phaser.Scene {
       cpuWantsSpend(this.cpuJuice, 'crazyPitch', this.aiScore - this.playerScore, () => Math.random(), this.aiPitcher.ability)
     ) {
       this.cpuJuice = spend(this.cpuJuice, 'crazyPitch', this.aiPitcher.ability);
+      if (this.features.fatigue) this.cpuFatigue = drainPitch(this.cpuFatigue, 'crazy');
       plan = resolvePitchLocation(
         'crazy',
         plan.target,
-        this.aiPitcher.stats.pitching,
+        cpuArm,
         60,
         PITCH_TRAVEL_MS,
         () => Math.random()
       );
       floatingText(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y, '⚡ CRAZY PITCH!', COLORS.red, 26);
+      crazyPitchFx(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y);
       this.callIt('crazyPitch', {}, 2);
     }
     this.pitchPlan = plan;
@@ -1173,6 +1323,174 @@ export class GameScene extends Phaser.Scene {
     if (this.features.juice) this.showPowerButton();
   }
 
+  /**
+   * 🛡/🏏/💪/🤏 swing-type chips (CLASSIC batting): a vertical icon stack on
+   * the left edge. Sticky for the at-bat, reset to normal for each batter.
+   * Chips stopPropagation — a chip tap must never double as a swing.
+   */
+  private showSwingChips(): void {
+    this.swingChips?.destroy();
+    this.swingChips = undefined;
+    if (!this.features.swingChoice || this.half !== 'top') return;
+    const defs: Array<{ t: SwingType; icon: string }> = [
+      { t: 'safe', icon: '🛡' },
+      { t: 'normal', icon: '🏏' },
+      { t: 'big', icon: '💪' },
+      { t: 'bunt', icon: '🤏' },
+    ];
+    const root = this.add.container(0, 0).setDepth(94);
+    defs.forEach((d, i) => {
+      const y = GAME_HEIGHT - 118 - (defs.length - 1 - i) * 54;
+      const selected = this.swingType === d.t;
+      const { container } = pill(this, 44, y, d.icon, {
+        fill: selected ? COLORS.gold : COLORS.cream,
+        fontSize: 22,
+        minW: 58,
+      });
+      container.setAlpha(selected ? 1 : 0.75);
+      container.setInteractive(
+        new Phaser.Geom.Rectangle(-32, -22, 64, 44),
+        Phaser.Geom.Rectangle.Contains
+      );
+      container.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, e: Phaser.Types.Input.EventData) => {
+        e.stopPropagation();
+        if (this.swingType === d.t) return;
+        this.swingType = d.t;
+        audio.pop();
+        this.showSwingChips(); // restyle
+      });
+      root.add(container);
+    });
+    this.pinUI(root);
+    this.swingChips = root;
+  }
+
+  /**
+   * 🥵 relief chip: appears with the pitch-select UI once your arm is gassed.
+   * Tapping it opens a portrait picker; the new kid takes the mound fresh and
+   * trades positions with the old pitcher (the lineup plan stays valid).
+   */
+  private showReliefButton(): void {
+    this.reliefBtn?.destroy();
+    this.reliefBtn = undefined;
+    if (!this.features.fatigue || !this.playerPlan || !isTired(this.playerFatigue)) return;
+    const { container } = pill(this, 116, GAME_HEIGHT - 96, '🥵 NEW PITCHER', {
+      fill: COLORS.red,
+      fontSize: 17,
+      minW: 170,
+    });
+    container.setDepth(94);
+    this.pinUI(container);
+    container.setInteractive(new Phaser.Geom.Rectangle(-90, -18, 180, 36), Phaser.Geom.Rectangle.Contains);
+    container.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, e: Phaser.Types.Input.EventData) => {
+      e.stopPropagation();
+      this.showReliefPicker();
+    });
+    this.tweens.add({ targets: container, scale: 1.06, duration: 380, yoyo: true, repeat: -1 });
+    this.reliefBtn = container;
+  }
+
+  /** The bullpen: eight portraits; tap one and they jog to the mound fresh. */
+  private showReliefPicker(): void {
+    if (this.reliefOverlay) return;
+    this.pitchAutoPick?.remove(false);
+    this.pitchAutoPick = undefined;
+    this.pitchSelect?.destroy();
+    this.pitchSelect = undefined;
+    const root = this.add.container(0, 0).setDepth(96);
+    const dim = this.add
+      .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.ink, 0.55)
+      .setInteractive(); // swallow taps behind the picker
+    root.add(dim);
+    const candidates = this.playerTeam.filter((id) => id !== this.playerPitcher.id);
+    candidates.forEach((id, i) => {
+      const x = GAME_WIDTH / 2 + (i % 4) * 130 - 195;
+      const y = GAME_HEIGHT / 2 + Math.floor(i / 4) * 150 - 70;
+      const chip = this.add.container(x, y);
+      const bg = this.add.circle(0, 0, 44, COLORS.cream).setStrokeStyle(4, COLORS.ink, 0.9);
+      const img = this.add.image(0, 4, id).setOrigin(0.5, 0.55);
+      img.setScale(74 / img.height);
+      const arm = getCharacter(id).stats.pitching;
+      const tag = this.add
+        .text(0, 52, '⚾'.repeat(Math.max(1, Math.round(arm / 3))), { fontSize: '14px' })
+        .setOrigin(0.5);
+      chip.add([bg, img, tag]);
+      chip.setInteractive(new Phaser.Geom.Rectangle(-48, -48, 96, 112), Phaser.Geom.Rectangle.Contains);
+      chip.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, e: Phaser.Types.Input.EventData) => {
+        e.stopPropagation();
+        this.doRelief(id);
+      });
+      root.add(chip);
+    });
+    this.pinUI(root);
+    this.reliefOverlay = root;
+  }
+
+  private doRelief(id: string): void {
+    this.reliefOverlay?.destroy();
+    this.reliefOverlay = undefined;
+    this.reliefBtn?.destroy();
+    this.reliefBtn = undefined;
+    const newPitcher = getCharacter(id);
+    if (this.playerPlan) this.playerPlan = swapPositions(this.playerPlan, this.playerPitcher.id, id);
+    this.playerPitcher = newPitcher;
+    this.playerFatigue = newFatigue();
+    this.buildDefense();
+    this.setMoundPitcher(newPitcher);
+    audio.cheer();
+    this.flashAnnounce(`${newPitcher.name}\nTAKES THE MOUND!`, COLORS.gold, FLOW.BANNER_HOLD_MS);
+    this.time.delayedCall(FLOW.BANNER_HOLD_MS, () => this.beginPitchTurn());
+  }
+
+  /**
+   * The newer juice spends, one chip each above the power button: batting
+   * shows 💨 TURBO (next play's runners) + 🧢 RALLY (this half's swings);
+   * defense shows 🧤 GLOVE (next play error-proof). Armed = gold + pulsing.
+   */
+  private showSpendChips(): void {
+    this.spendChips?.destroy();
+    this.spendChips = undefined;
+    if (!this.features.juice) return;
+    const defs: Array<{ kind: 'turboLegs' | 'goldenGlove' | 'rallyCap'; label: string; armed: boolean; arm: () => void }> =
+      this.half === 'top'
+        ? [
+            { kind: 'turboLegs', label: '💨 TURBO', armed: this.armedTurbo, arm: () => (this.armedTurbo = true) },
+            { kind: 'rallyCap', label: '🧢 RALLY', armed: this.rallyCapOn, arm: () => (this.rallyCapOn = true) },
+          ]
+        : [{ kind: 'goldenGlove', label: '🧤 GLOVE', armed: this.armedGlove, arm: () => (this.armedGlove = true) }];
+    const root = this.add.container(0, 0).setDepth(94);
+    let row = 0;
+    for (const d of defs) {
+      if (!d.armed && !canSpend(this.playerJuice, d.kind)) continue;
+      const y = GAME_HEIGHT - (this.half === 'top' ? 96 : 148) - row * 46;
+      row += 1;
+      const { container } = pill(this, 116, y, d.armed ? `${d.label}!` : d.label, {
+        fill: d.armed ? COLORS.gold : COLORS.cream,
+        fontSize: 16,
+        minW: 150,
+      });
+      if (d.armed) {
+        this.tweens.add({ targets: container, scale: 1.06, duration: 340, yoyo: true, repeat: -1 });
+      } else {
+        container.setInteractive(new Phaser.Geom.Rectangle(-80, -17, 160, 34), Phaser.Geom.Rectangle.Contains);
+        container.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, e: Phaser.Types.Input.EventData) => {
+          e.stopPropagation();
+          if (!canSpend(this.playerJuice, d.kind)) return;
+          this.playerJuice = spend(this.playerJuice, d.kind);
+          d.arm();
+          this.refreshJuiceMeter();
+          audio.pop();
+          const hue = d.kind === 'turboLegs' ? 0x4aa5e0 : d.kind === 'goldenGlove' ? 0x3fae6b : COLORS.red;
+          powerSwingFx(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY, hue);
+          this.showSpendChips(); // restyle as armed
+        });
+      }
+      root.add(container);
+    }
+    this.pinUI(root);
+    this.spendChips = root;
+  }
+
   /** 💥 POWER SWING button, shown while the meter can afford it. */
   private showPowerButton(): void {
     this.powerBtn?.destroy();
@@ -1195,6 +1513,7 @@ export class GameScene extends Phaser.Scene {
         this.armedPower = true;
         this.refreshJuiceMeter();
         audio.pop();
+        powerSwingFx(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY);
         this.showPowerButton(); // restyle as armed
       });
     } else {
@@ -1330,8 +1649,14 @@ export class GameScene extends Phaser.Scene {
 
     const powered = this.armedPower;
     this.armedPower = false;
+    // Rally cap: the whole bench believes — every swing window widens.
+    let timing = timingForSwing(getSwingTiming(this.mode), this.swingType);
+    if (this.rallyCapOn) {
+      const f = JUICE.RALLY_FORGIVE_MS;
+      timing = { PERFECT: timing.PERFECT + f * 0.5, GOOD: timing.GOOD + f, CONTACT: timing.CONTACT + f };
+    }
     const { swing, band } = resolveContactAimed({
-      band: bandFromError(errorMs, getSwingTiming(this.mode)),
+      band: bandFromError(errorMs, timing),
       errorMs,
       cursor,
       plan,
@@ -1339,6 +1664,7 @@ export class GameScene extends Phaser.Scene {
       pitcher: this.aiPitcher,
       rng: () => Math.random(),
       boost: { power: powered },
+      swingType: this.swingType,
       geo: this.geo,
     });
     this.showBandFeedback(band);
@@ -1352,16 +1678,20 @@ export class GameScene extends Phaser.Scene {
     }
     audio.crack();
     if (swing.launch.homer) {
-      this.flyHitBall(4);
-      screenShake(this, SHAKE.homer);
-      this.gainJuice('player', 'homer', this.batter.ability);
-      if (powered && this.batter.ability === 'calls_shot') this.callIt('calledShot', {}, 2);
-      else this.callIt('homer', { name: this.batter.name }, 2);
-      this.applyAndContinue({ kind: 'hit', bases: 4, description: 'HOME RUN! 💥' });
+      this.hitPause(() => {
+        this.flyHitBall();
+        screenShake(this, SHAKE.homer);
+        this.gainJuice('player', 'homer', this.batter.ability);
+        if (powered && this.batter.ability === 'calls_shot') this.callIt('calledShot', {}, 2);
+        else this.callIt('homer', { name: this.batter.name }, 2);
+        this.applyAndContinue({ kind: 'hit', bases: 4, description: 'HOME RUN! 💥' });
+      });
       return;
     }
-    screenShake(this, SHAKE.single);
-    this.beginLivePlay('offense', swing.launch);
+    this.hitPause(() => {
+      screenShake(this, SHAKE.single);
+      this.beginLivePlay('offense', swing.launch);
+    });
   }
 
   private resolvePlayerSwing(band: SwingBand, took: boolean): void {
@@ -1396,19 +1726,25 @@ export class GameScene extends Phaser.Scene {
     // Contact! Homers keep the classic celebration; everything else goes live.
     audio.crack();
     if (outcome.launch.homer) {
-      this.flyHitBall(4);
-      screenShake(this, SHAKE.homer);
-      this.applyAndContinue({ kind: 'hit', bases: 4, description: 'HOME RUN! 💥' });
+      this.hitPause(() => {
+        this.flyHitBall();
+        screenShake(this, SHAKE.homer);
+        this.applyAndContinue({ kind: 'hit', bases: 4, description: 'HOME RUN! 💥' });
+      });
       return;
     }
-    screenShake(this, SHAKE.single);
-    this.beginLivePlay('offense', outcome.launch);
+    this.hitPause(() => {
+      screenShake(this, SHAKE.single);
+      this.beginLivePlay('offense', outcome.launch);
+    });
   }
 
   private applyAndContinue(result: AtBatResult): void {
     const prevBatter = this.batter;
     const applied = applyAtBat(this.halfState, result);
     this.halfState = applied.state;
+    // Batting practice: outs never stick, so the half never ends.
+    if (this.practice) this.halfState = { ...this.halfState, outs: 0 };
     if (applied.runsScored > 0) this.playerScore += applied.runsScored;
 
     const walked = result.kind === 'ball' && applied.batterDone;
@@ -1416,6 +1752,21 @@ export class GameScene extends Phaser.Scene {
     if (result.kind === 'strike' && applied.batterOut) {
       this.gainJuice('cpu', 'strikeoutThrown');
       this.callIt('strikeoutSwinging', { name: prevBatter.name });
+    }
+    // Season stat feed (player side): a completed non-walk AB, and homers.
+    // (Runs on live plays arrive via the 'score' event; a homer's runs are
+    // known right here — batter + everyone who was aboard.)
+    if (this.seasonGame && applied.batterDone && !walked) {
+      this.statEvents.push({ t: 'atBat', kid: prevBatter.id });
+      if (result.kind === 'hit') {
+        this.statEvents.push({ t: 'hit', kid: prevBatter.id, homer: result.bases >= 4 });
+        if (result.bases >= 4) {
+          this.statEvents.push({ t: 'run', kid: prevBatter.id });
+          for (const token of this.runners.values()) {
+            this.statEvents.push({ t: 'run', kid: token.getData('id') as string });
+          }
+        }
+      }
     }
 
     // An armed steal races the catcher on a strike or a (non-walk) ball;
@@ -1472,6 +1823,8 @@ export class GameScene extends Phaser.Scene {
             : COLORS.red;
     if (result.kind === 'foul') this.scoreboard.umpCall('FOUL!', COLORS.white);
     const struckOut = result.kind === 'strike' && applied.batterOut;
+    // The K'd kid turns to the camera and slumps.
+    if (struckOut) this.rig.reactBatter('upset', ANIM.REACT_HOLD_MS);
     let msg = walked ? 'WALK!' : struckOut ? 'STRIKEOUT!' : result.description;
     if (applied.runsScored > 0)
       msg += `\n+${applied.runsScored} RUN${applied.runsScored > 1 ? 'S' : ''}!`;
@@ -1625,7 +1978,7 @@ export class GameScene extends Phaser.Scene {
   private makeRunner(char: Character): Phaser.GameObjects.Container {
     const c = this.add.container(HOME.x, HOME.y - 6).setDepth(40);
     const shadow = groundShadow(this, 0, 4, 42);
-    const img = this.add.image(0, 0, char.id).setOrigin(0.5, 0.92);
+    const img = this.add.image(0, 0, poseKey(char.id, 'stand')).setOrigin(0.5, 0.92);
     img.setScale(RUNNER_H / img.height);
     c.add([shadow, img]);
     c.setData('id', char.id);
@@ -1638,25 +1991,29 @@ export class GameScene extends Phaser.Scene {
   }
 
   /** Arc the hit ball out toward the outfield; distance scales with the hit. */
-  private flyHitBall(bases: number): void {
+  /**
+   * The contact frame: hold the rig for a beat at bat-meets-ball with a white
+   * pop, THEN run the cut/celebration. Never pauses the sim clock — the live
+   * play (or homer flight) simply starts a beat later.
+   */
+  private hitPause(then: () => void): void {
+    const ms = PLATE_VIEW.HIT_PAUSE_MS;
+    if (ms <= 0 || this.viewMode !== 'close') {
+      then();
+      return;
+    }
+    this.cameras.main.flash(ms + 50, 255, 255, 255);
+    this.time.delayedCall(ms, then);
+  }
+
+  /** The classic homer celebration: cut wide, run the full Spectacle show. */
+  private flyHitBall(): void {
     this.setView('wide'); // watch it go
-    const targets: Record<number, { x: number; y: number }> = {
-      1: { x: 380 + Math.random() * 200, y: 250 },
-      2: { x: Math.random() < 0.5 ? 320 : 640, y: 170 },
-      3: { x: Math.random() < 0.5 ? 300 : 660, y: 120 },
-      4: { x: 360 + Math.random() * 240, y: -70 },
-    };
-    const dest = targets[bases] ?? targets[1];
-    const hitBall = this.add.circle(HOME.x, HOME.y - 26, 11, COLORS.white).setStrokeStyle(2, COLORS.ink).setDepth(25);
-    this.tweens.add({
-      targets: hitBall,
-      x: dest.x,
-      y: dest.y,
-      scale: 0.4,
-      duration: 700,
-      ease: 'Sine.out',
-      onComplete: () => hitBall.destroy(),
-    });
+    homerSpectacle(
+      this,
+      { x: HOME.x, y: HOME.y - 26 },
+      { x: 360 + Math.random() * 240, y: -70 }
+    );
   }
 
   // --- Live plays: interactive fielding & baserunning ----------------------
@@ -1677,11 +2034,25 @@ export class GameScene extends Phaser.Scene {
 
     const defendingIds = this.half === 'top' ? this.aiTeam : this.playerTeam;
     const pitcher = this.half === 'top' ? this.aiPitcher : this.playerPitcher;
-    const others = defendingIds.filter((id) => id !== pitcher.id);
-    this.fieldAssignment = [
-      { position: 'P' as PositionId, charId: pitcher.id },
-      ...POSITION_ORDER.map((position, i) => ({ position, charId: others[i % others.length] })),
-    ];
+    const plan = this.half === 'top' ? this.aiPlan : this.playerPlan;
+    if (plan) {
+      // The lineup plan says exactly who stands where.
+      const byPos = new Map<PositionId, string>();
+      for (const [id, pos] of Object.entries(plan.positions)) byPos.set(pos, id);
+      this.fieldAssignment = [
+        { position: 'P' as PositionId, charId: byPos.get('P') ?? pitcher.id },
+        ...POSITION_ORDER.map((position) => ({
+          position,
+          charId: byPos.get(position) ?? defendingIds[0],
+        })),
+      ];
+    } else {
+      const others = defendingIds.filter((id) => id !== pitcher.id);
+      this.fieldAssignment = [
+        { position: 'P' as PositionId, charId: pitcher.id },
+        ...POSITION_ORDER.map((position, i) => ({ position, charId: others[i % others.length] })),
+      ];
+    }
 
     this.fieldAssignment.forEach((a, i) => {
       if (i === 0) return; // the mound sprite plays P
@@ -1715,6 +2086,26 @@ export class GameScene extends Phaser.Scene {
       baseRunners.push({ base: base as 1 | 2 | 3, charId: id, speed: getCharacter(id).stats.speed });
     }
 
+    // Armed juice spends modify THIS play's params only.
+    let params = this.liveParams;
+    if (mode === 'offense' && this.armedTurbo) {
+      this.armedTurbo = false;
+      params = { ...params, playerRunSpeed: params.playerRunSpeed * JUICE.TURBO_SPEED_MULT };
+      floatingText(this, HOME.x, HOME.y - 80, '💨 TURBO LEGS!', COLORS.gold, 30);
+    }
+    if (mode === 'defense' && this.armedGlove) {
+      this.armedGlove = false;
+      params = {
+        ...params,
+        playerErrorMult: 0,
+        assistBlend: JUICE.GLOVE_BLEND,
+        catchRadius: params.catchRadius + JUICE.GLOVE_REACH_BONUS,
+        pickupRadius: params.pickupRadius + JUICE.GLOVE_REACH_BONUS,
+      };
+      floatingText(this, HOME.x, HOME.y - 80, '🧤 GOLDEN GLOVE!', COLORS.gold, 30);
+    }
+    this.activeLiveParams = params;
+
     this.livePlay = startLivePlay({
       mode,
       launch,
@@ -1726,16 +2117,22 @@ export class GameScene extends Phaser.Scene {
         return { ...a, speed: c.stats.speed, glove: c.stats.fielding, arm: c.stats.pitching };
       }),
       outs: this.halfState.outs,
-      params: this.liveParams,
+      params,
       geo: this.geo,
     });
     this.setView('wide'); // ball's in play — whole field, fast
     this.phase = mode === 'defense' ? 'fielding' : 'running';
     this.pendingThrow = undefined;
+    this.pendingDive = false;
     this.pendingRun = false;
     this.pendingSend = undefined;
     this.pendingHold = undefined;
     this.charging = false;
+    // Fresh replay recording for this play.
+    this.replayFrames = [];
+    this.playHighlights = newHighlights();
+    this.replaying = false;
+    this.replayed = false;
 
     // The sim owns the pitcher's body now — stop his breathing/windup tweens.
     if (this.pitcherSprite) {
@@ -1814,6 +2211,10 @@ export class GameScene extends Phaser.Scene {
   /** The per-frame heartbeat of a live play. Everything sim-owned is placed here. */
   update(_time: number, delta: number): void {
     if (this.swingCursor && this.phase === 'pitching') this.positionSwingCursor();
+    if (this.replaying) {
+      this.stepReplay(delta);
+      return;
+    }
     if (!this.livePlay || this.livePlay.phase === 'done') return;
 
     const inputs: LiveInputs = {};
@@ -1828,6 +2229,10 @@ export class GameScene extends Phaser.Scene {
         inputs.throwTo = this.pendingThrow;
         this.pendingThrow = undefined;
         this.charging = false;
+      }
+      if (this.pendingDive) {
+        inputs.dive = true;
+        this.pendingDive = false;
       }
     } else if (this.phase === 'running') {
       if (this.pendingRun) {
@@ -1844,10 +2249,102 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    this.livePlay = stepLivePlay(this.livePlay, inputs, delta, this.liveParams, () => Math.random());
+    this.livePlay = stepLivePlay(
+      this.livePlay,
+      inputs,
+      delta,
+      this.activeLiveParams ?? this.liveParams,
+      () => Math.random()
+    );
+    // Record the frame for a possible 📼 (positions only — never inputs).
+    if (this.features.replay && this.replayFrames.length < FX.REPLAY.MAX_FRAMES) {
+      this.replayFrames.push(snapshotLive(this.livePlay));
+    }
     this.drainLiveEvents();
     this.renderLivePlay();
-    if (this.livePlay.phase === 'done') this.settleLivePlay();
+    if (this.livePlay.phase === 'done') {
+      if (
+        this.features.replay &&
+        !this.replayed &&
+        this.replayFrames.length > 12 &&
+        isReplayWorthy(this.playHighlights)
+      ) {
+        this.startReplay();
+      } else {
+        this.settleLivePlay();
+      }
+    }
+  }
+
+  // --- 📼 Instant replay ----------------------------------------------------
+
+  /** Roll the tape: slow-motion playback of the recorded play, then settle. */
+  private startReplay(): void {
+    this.replaying = true;
+    this.replayed = true;
+    this.replayT = 0;
+    this.replayIdx = 0;
+    this.phase = 'resolving'; // input router ignores everything until settle
+    audio.pop();
+    // Out/scored runners faded during the live play — bring everyone back.
+    for (const spr of this.liveRunnerSprites.values()) {
+      if (!spr.container.active) continue;
+      this.tweens.killTweensOf(spr.container);
+      spr.container.setAlpha(1);
+    }
+    // Letterbox bars + the ribbon, pinned over everything.
+    const chrome = this.add.container(0, 0).setDepth(96);
+    chrome.add(this.add.rectangle(GAME_WIDTH / 2, 24, GAME_WIDTH, 48, COLORS.ink, 0.9));
+    chrome.add(this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 24, GAME_WIDTH, 48, COLORS.ink, 0.9));
+    const tag = this.add
+      .text(GAME_WIDTH / 2, 24, '📼 INSTANT REPLAY', {
+        fontFamily: 'Arial Black, Arial, sans-serif',
+        fontSize: '22px',
+        color: '#ffce3a',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5);
+    chrome.add(tag);
+    this.tweens.add({ targets: tag, alpha: 0.5, duration: 420, yoyo: true, repeat: -1 });
+    this.pinUI(chrome);
+    this.replayChrome = chrome;
+    // Any tap skips straight to the end.
+    this.input.once('pointerdown', () => {
+      if (this.replaying) this.endReplay();
+    });
+  }
+
+  private stepReplay(delta: number): void {
+    const s = this.livePlay;
+    if (!s || this.replayFrames.length === 0) {
+      this.endReplay();
+      return;
+    }
+    this.replayT += delta * FX.REPLAY.SPEED;
+    const start = this.replayFrames[0].t;
+    while (
+      this.replayIdx < this.replayFrames.length - 1 &&
+      this.replayFrames[this.replayIdx + 1].t - start <= this.replayT
+    ) {
+      this.replayIdx += 1;
+    }
+    applyFrame(s, this.replayFrames[this.replayIdx]);
+    this.renderLivePlay();
+    if (this.replayIdx >= this.replayFrames.length - 1) this.endReplay();
+  }
+
+  /** Restore the true final state and rejoin the normal settle flow. */
+  private endReplay(): void {
+    if (!this.replaying) return;
+    this.replaying = false;
+    this.replayChrome?.destroy();
+    this.replayChrome = undefined;
+    const s = this.livePlay;
+    if (s && this.replayFrames.length > 0) {
+      applyFrame(s, this.replayFrames[this.replayFrames.length - 1]);
+      this.renderLivePlay();
+    }
+    this.settleLivePlay();
   }
 
   private renderLivePlay(): void {
@@ -1862,6 +2359,21 @@ export class GameScene extends Phaser.Scene {
       }
       const spr = this.fielderSpriteAt(i);
       if (!spr) return;
+      // Mid-dive (or face-down after a whiff): the dive pose owns the sprite.
+      if (f.diveUntil !== undefined || f.diveDown) {
+        spr.cycle?.stop(false);
+        spr.cycle = null;
+        const key = poseKey(f.charId, 'dive');
+        if (spr.img.texture.key !== key) spr.img.setTexture(key);
+        spr.img.setFlipX(project(s.ball.pos).x < q.x);
+        spr.img.setScale((spr.baseH * depthScale(q)) / spr.img.height);
+        spr.container.setPosition(q.x, q.y);
+        return;
+      }
+      // Fresh off a dive: make sure the stand texture is back.
+      if (spr.img.texture.key === poseKey(f.charId, 'dive') && !spr.cycle) {
+        spr.img.setTexture(poseKey(f.charId, 'stand'));
+      }
       this.moveLiveSprite(spr, q.x, q.y);
     });
 
@@ -1907,6 +2419,20 @@ export class GameScene extends Phaser.Scene {
         this.liveBall.setPosition(bq.x, bq.y - 10 - lift).setScale(1 + b.height * 0.35).setVisible(true);
         this.liveBallShadow.setPosition(bq.x, bq.y).setVisible(true);
         this.liveBallShadow.setScale(1 - b.height * 0.45).setAlpha(1 - b.height * 0.45);
+        // Streak dots behind an airborne ball (visual only — never the sim's).
+        if (b.height >= FX.HIT_TRAIL_MIN_H && this.time.now - this.lastTrailAt >= FX.HIT_TRAIL_EVERY_MS) {
+          this.lastTrailAt = this.time.now;
+          const dot = this.add
+            .circle(this.liveBall.x, this.liveBall.y, 5 * this.liveBall.scale, COLORS.white, 0.45)
+            .setDepth(41);
+          this.tweens.add({
+            targets: dot,
+            alpha: 0,
+            scale: 0.4,
+            duration: FX.HIT_TRAIL_LIFE_MS,
+            onComplete: () => dot.destroy(),
+          });
+        }
       }
     }
 
@@ -1959,6 +2485,14 @@ export class GameScene extends Phaser.Scene {
           const bq = project(s.ball.pos);
           floatingText(this, bq.x, bq.y - 40, 'CAUGHT!', COLORS.gold, 30);
           if (s.mode === 'defense') audio.cheer();
+          if (this.playHighlights.sawDive) this.playHighlights.diveCatch = true;
+          // The catcher's glove-up beat.
+          const cspr = this.fielderSprites.find((f) => f.charId === e.fielder);
+          if (cspr && cspr.img.active) {
+            cspr.cycle?.stop(false);
+            cspr.cycle = null;
+            reactPose(this, cspr.img, e.fielder, 'catch', { holdMs: ANIM.ACTION_HOLD_MS, restoreTo: e.fielder });
+          }
           break;
         }
         case 'pickup':
@@ -1968,6 +2502,18 @@ export class GameScene extends Phaser.Scene {
         case 'land': {
           const lq = project(s.ball.pos);
           burst(this, lq.x, lq.y, COLORS.dirt, 6);
+          // Chalk ring marking the landing spot — reads at a glance where the
+          // ball came down even if you were watching your runner.
+          const ring = this.add.ellipse(lq.x, lq.y, 26, 11).setStrokeStyle(4, COLORS.white, 0.85).setDepth(13);
+          this.tweens.add({
+            targets: ring,
+            scaleX: 2.1,
+            scaleY: 2.1,
+            alpha: 0,
+            duration: FX.LAND_RING_MS,
+            ease: 'Quad.out',
+            onComplete: () => ring.destroy(),
+          });
           break;
         }
         case 'bonk': {
@@ -1984,6 +2530,7 @@ export class GameScene extends Phaser.Scene {
           burst(this, cq.x, cq.y - 12, this.venue.look.fenceTrim, 8);
           screenShake(this, 2);
           audio.pop();
+          this.playHighlights.carom = true;
           break;
         }
         case 'error': {
@@ -1993,31 +2540,47 @@ export class GameScene extends Phaser.Scene {
           screenShake(this, 3);
           audio.whiff();
           this.callIt(e.kind === 'wild' ? 'errorWild' : 'errorDrop', {});
+          // The flustered kid wears it on their face for the fumble beat.
+          const fspr = this.fielderSprites.find((f) => f.charId === e.fielder);
+          if (fspr && !fspr.cycle && fspr.img.active) {
+            reactPose(this, fspr.img, e.fielder, 'upset');
+          }
           // An error by the CPU while your kids run = a gift. Cheer it.
           if (s.mode === 'offense') audio.cheer();
           break;
         }
-        case 'throw':
+        case 'throw': {
           audio.pitchWoosh();
           this.hideBaseRings();
+          // The thrower whips through the release pose, facing the target bag.
+          const tspr = e.fielder ? this.fielderSprites.find((f) => f.charId === e.fielder) : undefined;
+          if (tspr && tspr.img.active) {
+            tspr.cycle?.stop(false);
+            tspr.cycle = null;
+            tspr.img.setFlipX(project(basePos(e.toBase)).x < tspr.container.x);
+            reactPose(this, tspr.img, e.fielder!, 'throw', { holdMs: ANIM.ACTION_HOLD_MS, restoreTo: e.fielder! });
+          }
           break;
+        }
         case 'out': {
           const p = project(basePos(e.base));
           floatingText(this, p.x, p.y - 46, 'OUT!', COLORS.red, 32);
           screenShake(this, 4);
           if (s.mode === 'defense') audio.cheer();
           else audio.whiff();
+          this.playHighlights.outs += 1;
           const spr = this.liveRunnerSprites.get(e.runner);
           if (spr) {
             spr.cycle?.stop(false);
             spr.cycle = null;
+            // Fade but DON'T destroy — a replay may need them back; the
+            // settle sweep disposes of everyone off-base.
             this.tweens.add({
               targets: spr.container,
               alpha: 0,
               y: spr.container.y - 10,
               duration: 320,
               delay: 120,
-              onComplete: () => spr.container.destroy(),
             });
           }
           break;
@@ -2026,13 +2589,29 @@ export class GameScene extends Phaser.Scene {
           burst(this, HOME.x, HOME.y - 20, COLORS.gold, 14);
           audio.cheer();
           floatingText(this, HOME.x, HOME.y - 60, '+1', COLORS.gold, 34);
+          if (this.seasonGame && s.mode === 'offense') {
+            this.statEvents.push({ t: 'run', kid: e.runner });
+          }
           const spr = this.liveRunnerSprites.get(e.runner);
           if (spr) {
             spr.cycle?.stop(true);
             spr.cycle = null;
             squashHop(this, spr.img, { height: 18 });
-            this.time.delayedCall(480, () => spr.container.destroy());
+            this.time.delayedCall(480, () => spr.container.setAlpha(0)); // sweep disposes at settle
           }
+          break;
+        }
+        case 'dive': {
+          const dq = project(s.fielders[s.active].pos);
+          burst(this, dq.x, dq.y + 4, COLORS.dirt, 5);
+          audio.pitchWoosh();
+          this.playHighlights.sawDive = true;
+          break;
+        }
+        case 'diveMiss': {
+          const mq = project(s.fielders[s.active].pos);
+          floatingText(this, mq.x, mq.y - 40, 'JUST MISSED!', COLORS.white, 24);
+          burst(this, mq.x, mq.y + 2, COLORS.dirt, 8);
           break;
         }
         case 'safe':
@@ -2091,7 +2670,7 @@ export class GameScene extends Phaser.Scene {
       if (!spr || !spr.container.active) return;
       spr.cycle?.stop(false);
       spr.cycle = null;
-      spr.img.setTexture(id); // whatever they ended in (run/slide) → standing
+      spr.img.setTexture(poseKey(id, 'stand')); // whatever they ended in (run/slide) → standing
       const p = project(basePos(i + 1));
       spr.container.setPosition(p.x, p.y - 6);
       spr.img.setFlipX(false);
@@ -2111,7 +2690,14 @@ export class GameScene extends Phaser.Scene {
     // Rules layer: fold in outs/runs/bases.
     const applied = applyLivePlay(this.halfState, outcome);
     this.halfState = applied.state;
+    if (this.practice) this.halfState = { ...this.halfState, outs: 0 }; // BP: outs never stick
     const isOffense = s.mode === 'offense';
+    // Season stat feed: contact always completes the batter's AB; reaching on
+    // it is a hit (playground scoring — errors count, and that's fine).
+    if (this.seasonGame && isOffense) {
+      this.statEvents.push({ t: 'atBat', kid: this.batter.id });
+      if (!outcome.batterOut) this.statEvents.push({ t: 'hit', kid: this.batter.id });
+    }
     if (applied.runsScored > 0) {
       if (isOffense) this.playerScore += applied.runsScored;
       else this.aiScore += applied.runsScored;
@@ -2149,7 +2735,7 @@ export class GameScene extends Phaser.Scene {
     this.refreshHud();
 
     // Walk-off: the CPU just took the lead in the bottom of the final inning.
-    if (!isOffense && isWalkOff(this.inning, INNINGS, this.half, this.aiScore, this.playerScore)) {
+    if (!isOffense && isWalkOff(this.inning, this.regulation, this.half, this.aiScore, this.playerScore)) {
       this.phase = 'ended';
       this.flashAnnounce('WALK-OFF!\nCPU WINS!', COLORS.red, FLOW.BIG_BANNER_HOLD_MS);
       this.time.delayedCall(FLOW.BIG_BANNER_HOLD_MS + 200, () => this.gameOver());
@@ -2274,6 +2860,10 @@ export class GameScene extends Phaser.Scene {
   /** Main mode picks a pitch + aim first; kid mode goes straight to the meter. */
   private beginPitchTurn(): void {
     this.setView('close'); // the pitching view mirrors the batting one
+    // Two strikes on the CPU kid: they turn around and sweat while you pick.
+    if (this.halfState.count.strikes === 2) this.rig.reactBatter('nervous', ANIM.REACT_HOLD_MS);
+    this.showReliefButton();
+    this.showSpendChips();
     if (!this.features.pitchSelection) {
       this.startPitchMeter();
       return;
@@ -2287,6 +2877,7 @@ export class GameScene extends Phaser.Scene {
         this.playerJuice = spend(this.playerJuice, 'crazyPitch', this.playerPitcher.ability);
         this.refreshJuiceMeter();
         floatingText(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y, '⚡ CRAZY PITCH!', COLORS.gold, 26);
+        crazyPitchFx(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y);
         this.callIt('crazyPitch', {}, 2);
       }
       this.selectedPitch = { kind, target };
@@ -2295,10 +2886,14 @@ export class GameScene extends Phaser.Scene {
       // tap fall through to the scene handler and instantly "throw" wild.
       this.time.delayedCall(60, () => this.startPitchMeter());
     };
-    // Idle-kid rescue: nobody stalls the game on the pitch menu.
+    // Idle-kid rescue: nobody stalls the game on the pitch menu. Tracked as a
+    // field so the relief picker can cancel it (its stale closure would
+    // otherwise auto-throw over the NEXT pitch turn's fresh menu).
+    this.pitchAutoPick?.remove(false);
     const autoPick = this.time.delayedCall(9000, () => {
       if (this.pitchSelect) confirm('fastball', { x: 0, y: 0 });
     });
+    this.pitchAutoPick = autoPick;
     this.pitchSelect?.destroy();
     this.pitchSelect = showPitchSelect(this, {
       allowCrazy: this.features.juice && canSpend(this.playerJuice, 'crazyPitch', this.playerPitcher.ability),
@@ -2394,15 +2989,25 @@ export class GameScene extends Phaser.Scene {
     this.showPitchFeedback(band);
     this.pitcherWindup();
 
+    // A tired arm throws with a sagged effective stat — more scatter.
+    if (this.features.fatigue) this.playerFatigue = drainPitch(this.playerFatigue, kind);
+    const armStat = this.features.fatigue
+      ? effectivePitching(this.playerPitcher.stats.pitching, this.playerFatigue)
+      : this.playerPitcher.stats.pitching;
     const plan = resolvePitchLocation(
       kind,
       target,
-      this.playerPitcher.stats.pitching,
+      armStat,
       err,
       CPU_PITCH_TRAVEL_MS,
       () => Math.random()
     );
-    const cpuPlan = resolveCpuPitchLocated(plan, band, this.cpuBatter, () => Math.random());
+    const cpuPlan = resolveCpuPitchLocated(
+      plan,
+      band,
+      rampedCpuBatter(this.cpuBatter, this.ramp),
+      () => Math.random()
+    );
     this.time.delayedCall(ANIM.WINDUP_MS, () => this.launchCpuPitchMain(plan, cpuPlan));
   }
 
@@ -2495,6 +3100,7 @@ export class GameScene extends Phaser.Scene {
       const up: Record<SwingBand, SwingBand> = { miss: 'weak', weak: 'good', good: 'perfect', perfect: 'perfect' };
       cpuBand = up[cpuBand];
       floatingText(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY - 120, '⚡ POWER SWING!', COLORS.red, 24);
+      powerSwingFx(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY, COLORS.red);
     }
     const outcome = resolveContact(cpuBand, this.cpuBatter, this.playerPitcher, () => Math.random(), this.geo);
     if (outcome.kind !== 'inPlay') {
@@ -2506,14 +3112,18 @@ export class GameScene extends Phaser.Scene {
     this.cpuStealFrom = undefined; // contact: the live play owns the runners now
     audio.crack();
     if (outcome.launch.homer) {
-      this.flyHitBall(4);
-      screenShake(this, SHAKE.homer);
-      this.callIt('homer', { name: this.cpuBatter.name }, 2);
-      this.applyCpuResult({ kind: 'hit', bases: 4, description: 'HOME RUN! 💥' });
+      this.hitPause(() => {
+        this.flyHitBall();
+        screenShake(this, SHAKE.homer);
+        this.callIt('homer', { name: this.cpuBatter.name }, 2);
+        this.applyCpuResult({ kind: 'hit', bases: 4, description: 'HOME RUN! 💥' });
+      });
       return;
     }
-    screenShake(this, SHAKE.single);
-    this.beginLivePlay('defense', outcome.launch);
+    this.hitPause(() => {
+      screenShake(this, SHAKE.single);
+      this.beginLivePlay('defense', outcome.launch);
+    });
   }
 
   /**
@@ -2581,10 +3191,11 @@ export class GameScene extends Phaser.Scene {
     const applied = applyAtBat(this.halfState, result);
     this.halfState = applied.state;
     if (applied.runsScored > 0) this.aiScore += applied.runsScored;
-    // YOU threw the K — charge the meter.
+    // YOU threw the K — charge the meter (and your pitcher's stat line).
     if (result.kind === 'strike' && applied.batterOut) {
       this.gainJuice('player', 'strikeoutThrown', this.playerPitcher.ability);
       this.callIt('strikeoutPitched', { name: prevBatter.name });
+      if (this.seasonGame) this.statEvents.push({ t: 'kThrown', kid: this.playerPitcher.id });
     }
 
     const walked = result.kind === 'ball' && applied.batterDone;
@@ -2608,6 +3219,8 @@ export class GameScene extends Phaser.Scene {
             : COLORS.white;
     if (result.kind === 'foul') this.scoreboard.umpCall('FOUL!', COLORS.white);
     const struckOut = result.kind === 'strike' && applied.batterOut;
+    // YOUR strikeout victim slumps too.
+    if (struckOut) this.rig.reactBatter('upset', ANIM.REACT_HOLD_MS);
     let msg = walked
       ? `${prevBatter.name} walks!`
       : struckOut
@@ -2620,7 +3233,7 @@ export class GameScene extends Phaser.Scene {
     this.refreshHud();
 
     // Walk-off: the CPU just took the lead in the bottom of the final inning.
-    if (isWalkOff(this.inning, INNINGS, this.half, this.aiScore, this.playerScore)) {
+    if (isWalkOff(this.inning, this.regulation, this.half, this.aiScore, this.playerScore)) {
       this.phase = 'ended';
       this.flashAnnounce('WALK-OFF!\nCPU WINS!', COLORS.red, FLOW.BIG_BANNER_HOLD_MS);
       this.time.delayedCall(
@@ -2792,11 +3405,24 @@ export class GameScene extends Phaser.Scene {
       else if (this.phase === 'running') {
         if (this.features.manualBaserunning) this.handleRunTap(this.lastPointer);
         else this.pendingRun = true;
-      } else if (this.phase === 'fielding') this.beginThrowCharge();
+      } else if (this.phase === 'fielding') {
+        this.pressAt = this.time.now;
+        this.beginThrowCharge();
+      }
     });
 
     this.input.on('pointerup', () => {
-      if (this.phase === 'fielding' && this.charging) this.releaseThrow();
+      if (this.phase === 'fielding' && this.charging) {
+        this.releaseThrow();
+      } else if (
+        this.phase === 'fielding' &&
+        this.features.dive &&
+        this.time.now - this.pressAt < LIVE.DIVE.TAP_MAX_MS
+      ) {
+        // A quick tap while chasing (not charging a throw) = DIVE. Press-and-
+        // hold keeps meaning "steer" — only the fast tap lunges.
+        this.pendingDive = true;
+      }
     });
 
     this.input.keyboard?.on('keydown-SPACE', () => {

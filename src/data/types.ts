@@ -31,7 +31,12 @@ export interface VisualParams {
   bodyType?: BodyType;
   /** Little dusting of freckles across the nose. */
   freckles?: boolean;
+  /** Batting-stance variant (undefined = the standard stance). Same texture
+   *  count — it reshapes the bat/windup poses, it doesn't add poses. */
+  stance?: BattingStance;
 }
+
+export type BattingStance = 'open' | 'crouch' | 'high';
 
 export type HairStyle =
   | 'short'
@@ -52,7 +57,12 @@ export type Expression =
   | 'cool'
   | 'determined'
   | 'goofy'
-  | 'surprised';
+  | 'surprised'
+  // Reaction expressions — not used as resting faces in ROSTER; they're baked
+  // into the reaction poses ('upset'/'nervous') and big-moment art.
+  | 'upset'
+  | 'nervous'
+  | 'celebrate';
 
 export type BodyType = 'normal' | 'chunky' | 'small';
 

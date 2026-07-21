@@ -32,18 +32,28 @@ export function addJuice(j: JuiceState, amount: number): JuiceState {
   return { ...j, value: Math.min(j.max, j.value + amount) };
 }
 
+/**
+ * Everything the meter buys. powerSwing/crazyPitch are the classics; the
+ * newer three are one-play/one-inning modifiers consumed by existing systems:
+ * turboLegs (next offensive live play: runner speed burst), goldenGlove (next
+ * defensive live play: error-proof + stronger magnet), rallyCap (rest of the
+ * batting half: wider swing windows). The CPU currently spends only the
+ * classic two (cpuWantsSpend is called with those).
+ */
+export type SpendKind = 'powerSwing' | 'crazyPitch' | 'turboLegs' | 'goldenGlove' | 'rallyCap';
+
 /** What a spend costs — the ace's crazy pitch comes cheap. */
-export function spendCost(kind: 'powerSwing' | 'crazyPitch', ability: AbilityId = 'none'): number {
-  const base = kind === 'powerSwing' ? JUICE.POWER_SWING_COST : JUICE.CRAZY_PITCH_COST;
+export function spendCost(kind: SpendKind, ability: AbilityId = 'none'): number {
+  const base = JUICE.COSTS[kind];
   if (kind === 'crazyPitch' && ability === 'unhittable_pitch') return Math.round(base / 2);
   return base;
 }
 
-export function canSpend(j: JuiceState, kind: 'powerSwing' | 'crazyPitch', ability: AbilityId = 'none'): boolean {
+export function canSpend(j: JuiceState, kind: SpendKind, ability: AbilityId = 'none'): boolean {
   return j.value >= spendCost(kind, ability);
 }
 
-export function spend(j: JuiceState, kind: 'powerSwing' | 'crazyPitch', ability: AbilityId = 'none'): JuiceState {
+export function spend(j: JuiceState, kind: SpendKind, ability: AbilityId = 'none'): JuiceState {
   if (!canSpend(j, kind, ability)) return j;
   return { ...j, value: j.value - spendCost(kind, ability) };
 }
@@ -51,7 +61,7 @@ export function spend(j: JuiceState, kind: 'powerSwing' | 'crazyPitch', ability:
 /** The CPU spends when it's behind (or the game is on the line late). */
 export function cpuWantsSpend(
   j: JuiceState,
-  kind: 'powerSwing' | 'crazyPitch',
+  kind: SpendKind,
   scoreDiff: number, // CPU score minus player score
   rng: () => number,
   ability: AbilityId = 'none'

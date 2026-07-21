@@ -966,3 +966,81 @@ describe('live play: geometry sanity', () => {
     }
   });
 });
+
+describe('live play: the dive verb (main mode)', () => {
+  const main = resolveLiveParams('main');
+  // Pure steering for exact distances: kill the magnet blend.
+  const noAssist: LiveParams = { ...main, assistBlend: 0 };
+
+  /** A fly the chaser parks NEAR but not ON: reachable only with the dive bonus. */
+  const setup = () =>
+    startLivePlay({
+      mode: 'defense',
+      launch: flyToCenter,
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params: noAssist,
+    });
+  // Park just outside plain catch reach, inside dive reach.
+  const camp = {
+    x: flyToCenter.landing.x + noAssist.catchRadius + LIVE.DIVE.REACH_BONUS / 2,
+    y: flyToCenter.landing.y,
+  };
+
+  it('a well-timed dive turns an out-of-reach fly into a catch', () => {
+    let dove = false;
+    const { events } = runPlay(setup(), noAssist, (st) => {
+      const t = st.ball.phase === 'flight' ? st.ball.flightT / st.ball.flightMs : 1;
+      if (!dove && t >= 0.8) {
+        dove = true;
+        return { pointer: camp, pointerActive: true, dive: true };
+      }
+      return { pointer: camp, pointerActive: true };
+    });
+    expect(events.some((e) => e.t === 'dive')).toBe(true);
+    expect(events.some((e) => e.t === 'catch')).toBe(true);
+  });
+
+  it('without the dive, the same camp spot is out of reach', () => {
+    const { events } = runPlay(setup(), noAssist, () => ({ pointer: camp, pointerActive: true }));
+    expect(events.some((e) => e.t === 'catch')).toBe(false);
+    expect(events.some((e) => e.t === 'land')).toBe(true);
+  });
+
+  it('an empty dive leaves the kid face-down and the ball live', () => {
+    let dove = false;
+    let sawFrozen = false;
+    const far = { x: flyToCenter.landing.x + 200, y: flyToCenter.landing.y };
+    const { events } = runPlay(setup(), noAssist, (st) => {
+      const chaser = st.fielders[st.active];
+      if (chaser.diveDown && st.elapsed < chaser.fumbleUntil) sawFrozen = true;
+      if (!dove && st.elapsed >= 200) {
+        dove = true;
+        return { pointer: far, pointerActive: true, dive: true };
+      }
+      return { pointer: far, pointerActive: true };
+    });
+    expect(events.some((e) => e.t === 'dive')).toBe(true);
+    expect(events.some((e) => e.t === 'diveMiss')).toBe(true);
+    expect(sawFrozen).toBe(true);
+    expect(events.some((e) => e.t === 'catch')).toBe(false);
+  });
+
+  it('kid mode ignores the dive input entirely (no event, no rng change)', () => {
+    const kid = resolveLiveParams('kid');
+    let s = startLivePlay({
+      mode: 'defense',
+      launch: flyToCenter,
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params: kid,
+    });
+    const { events } = runPlay(s, kid, () => ({ pointer: camp, pointerActive: true, dive: true }));
+    expect(events.some((e) => e.t === 'dive')).toBe(false);
+    expect(events.some((e) => e.t === 'diveMiss')).toBe(false);
+  });
+});

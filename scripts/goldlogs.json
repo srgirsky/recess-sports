@@ -1,0 +1,18 @@
+{
+  "comment": "Gold-log regression fingerprints (scripts/goldlog.browser.js). Behavior-identical refactor phases must reproduce these EXACTLY for the same seed. Hash = SHA-256 hex of the returned JSON log string, dash-grouped every 8 chars. To debug a mismatch: check out the commit that captured the gold and re-run goldLogRun to get the full log for diffing.",
+  "capturedAt": "pre-P1 baseline (parity plan: seat extraction)",
+  "script": "goldlog.browser.js",
+  "seed": 42,
+  "logs": {
+    "main": {
+      "length": 1914,
+      "sha256": "d8497e41-733582ed-bceba41a-1ed23f4c-3749269a-04234a2e-b5c0d5cc-6d05f3bf",
+      "finalScore": "0-1 CPU, ended, guard 132"
+    },
+    "kid": {
+      "length": 6312,
+      "sha256": "bbc5bf4b-728309e1-6f95e691-442d4e24-624f93d0-5d9f1280-3450ac05-df3aaadb",
+      "finalScore": "0-1 CPU, ended, guard 299"
+    }
+  }
+}

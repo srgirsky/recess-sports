@@ -8,11 +8,14 @@
 //
 // POSES: 'stand' (front view, the default/base texture), 'run1'/'run2' (a
 // side-view two-frame run cycle, drawn facing RIGHT — flip the sprite for
-// leftward travel), and 'cheer' (front view, arms up). Every pose bottoms out
-// on the same GROUND line so texture swaps under setOrigin(0.5, 1) never make
-// the feet pop. Side poses use the classic small-sprite "¾ cheat": the front
-// head (all 11 hairstyles + 6 expressions reused verbatim) rides a side-view
-// body, shifted and tilted toward travel.
+// leftward travel), 'cheer' (front view, arms up), the gameplay set
+// (bat/windup/ready/slide + the rear-view rig pair), and the REACTION pair
+// 'upset'/'nervous' (front stands with a baked reaction face that overrides
+// the kid's resting expression; swapped in one-shot via anim.reactPose).
+// Every pose bottoms out on the same GROUND line so texture swaps under
+// setOrigin(0.5, 1) never make the feet pop. Side poses use the classic
+// small-sprite "¾ cheat": the front head (all hairstyles + expressions reused
+// verbatim) rides a side-view body, shifted and tilted toward travel.
 // ---------------------------------------------------------------------------
 
 import type { VisualParams, HairStyle, Expression, BodyType } from '../data/types';
@@ -28,7 +31,12 @@ export type Pose =
   | 'ready'
   | 'slide'
   | 'batRear'
-  | 'catchRear';
+  | 'catchRear'
+  | 'upset'
+  | 'nervous'
+  | 'throw'
+  | 'catch'
+  | 'dive';
 export const POSES: Pose[] = [
   'stand',
   'run1',
@@ -40,6 +48,11 @@ export const POSES: Pose[] = [
   'slide',
   'batRear',
   'catchRear',
+  'upset',
+  'nervous',
+  'throw',
+  'catch',
+  'dive',
 ];
 
 const VIEW_W = 200;
@@ -143,6 +156,23 @@ interface Ctx {
   m: Body;
   S: string; // standard outline attributes
   usesChair: boolean;
+  /** Team logo emoji baked into the chest/back badge (team-uniform variants). */
+  logo?: string;
+}
+
+/** The chest/back badge: trim circle, plus the team logo when one is set. */
+function badge(c: Ctx, cx: number, cy: number, r: number): string {
+  const circle = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${c.trim}" opacity="0.9"/>`;
+  if (!c.logo) return circle;
+  // Emoji must go in as XML numeric entities — raw astral-plane characters
+  // get mangled by the base64 data-URI decode path (utf8 read as latin-1).
+  const logoXml = [...c.logo]
+    .map((ch) => `&#x${ch.codePointAt(0)!.toString(16)};`)
+    .join('');
+  return (
+    circle +
+    `<text x="${cx}" y="${cy + r * 0.55}" font-size="${Math.round(r * 1.5)}" text-anchor="middle">${logoXml}</text>`
+  );
 }
 
 /**
@@ -211,13 +241,27 @@ function wink(x: number, y: number): string {
 function brows(expr: Expression, lx: number, rx: number, y: number): string {
   const b = (x: number, tilt: number) =>
     `<path d="M ${x - 9} ${y + tilt} q 9 -5 18 ${-tilt}" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>`;
+  const stroke = `fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"`;
   switch (expr) {
     case 'determined':
-      return b(lx, 6) + `<path d="M ${rx - 9} ${y - 6} q 9 5 18 6" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>`;
+      return b(lx, 6) + `<path d="M ${rx - 9} ${y - 6} q 9 5 18 6" ${stroke}/>`;
     case 'cool':
       return b(lx, 0) + b(rx, -5); // one raised
     case 'surprised':
+    case 'celebrate':
       return b(lx, -6) + b(rx, -6); // both high
+    case 'upset':
+      // Sad knit: inner ends pull up toward the center.
+      return (
+        `<path d="M ${lx - 9} ${y + 7} q 10 -2 18 -8" ${stroke}/>` +
+        `<path d="M ${rx - 9} ${y - 1} q 8 6 18 8" ${stroke}/>`
+      );
+    case 'nervous':
+      // Worried: both raised with a gentle inner-up tilt.
+      return (
+        `<path d="M ${lx - 9} ${y + 2} q 10 -8 18 -6" ${stroke}/>` +
+        `<path d="M ${rx - 9} ${y - 4} q 8 2 18 6" ${stroke}/>`
+      );
     default:
       return '';
   }
@@ -240,6 +284,18 @@ function mouth(expr: Expression): string {
       return `
         <path d="M 80 ${y - 2} q 20 22 40 0 q -20 6 -40 0 Z" fill="#7a2b2b" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
         <path d="M 96 ${y + 6} q 8 12 16 0 q -8 -4 -16 0 Z" fill="#e8746f"/>`;
+    case 'upset':
+      // Frown: the happy arc, flipped.
+      return `<path d="M 82 ${y + 8} q 18 -16 36 0" fill="none" stroke="${INK}" stroke-width="4.5" stroke-linecap="round"/>`;
+    case 'nervous':
+      // Wobbly worry line.
+      return `<path d="M 82 ${y + 2} q 6 -7 12 0 q 6 7 12 0 q 6 -7 12 0" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>`;
+    case 'celebrate':
+      // Full-joy open mouth: teeth up top, tongue below.
+      return `
+        <path d="M 78 ${y - 4} q 22 30 44 0 q -22 10 -44 0 Z" fill="#7a2b2b" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M 82 ${y - 2} q 18 7 36 0 l -2 6 q -16 5 -32 0 Z" fill="#ffffff"/>
+        <path d="M 92 ${y + 13} q 8 9 16 0 q -8 -5 -16 0 Z" fill="#e8746f"/>`;
     default: // happy
       return `<path d="M 82 ${y - 2} q 18 20 36 0" fill="none" stroke="${INK}" stroke-width="4.5" stroke-linecap="round"/>`;
   }
@@ -249,7 +305,12 @@ function mouth(expr: Expression): string {
 function face(v: VisualParams, look = 0): string {
   const expr = v.expression ?? 'happy';
   const eyeY = 82;
-  const open = expr === 'determined' ? 0.7 : expr === 'surprised' ? 1.25 : 1;
+  const open =
+    expr === 'determined' ? 0.7
+    : expr === 'surprised' ? 1.25
+    : expr === 'upset' ? 0.8
+    : expr === 'nervous' ? 1.15
+    : 1;
   const gaze = expr === 'cool' ? 0.4 : look;
   const leftEye = eye(82, eyeY, open, gaze);
   const rightEye = expr === 'goofy' ? wink(118, eyeY) : eye(118, eyeY, open, gaze);
@@ -526,7 +587,7 @@ function torsoRear(c: Ctx): string {
   return `
     <path d="${torsoPath}" fill="${c.gJersey}" ${c.S}/>
     <path d="M ${100 - halfW + 2} ${hipY - 14} q ${halfW - 2} 12 ${2 * (halfW - 2)} 0 l 2 12 q ${-(halfW - 2)} 12 ${-2 * (halfW - 2)} 0 Z" fill="${c.jerseyDk}"/>
-    <circle cx="100" cy="${shoulderY + 28}" r="16" fill="${c.trim}" opacity="0.92"/>`;
+    ${badge(c, 100, shoulderY + 28, 16)}`;
 }
 
 // --- Front poses (stand / cheer) --------------------------------------------
@@ -754,15 +815,20 @@ function batProp(gx: number, gy: number, deg: number): string {
 function poseBat(c: Ctx, v: VisualParams, hFront: string): string {
   const w = Math.max(14, Math.round(c.m.halfW * 0.34));
   const pantsDk = darken(PANTS, 0.16);
+  // Stance variant: reshape grip height / bat angle / body drop per kid.
+  const stance = v.stance;
+  const drop = stance === 'crouch' ? 9 : 0;
+  const spread = stance === 'open' ? 10 : 0;
   // Wide stance: back leg (far) planted, front leg open toward the pitch.
   const legs = `
-    ${capsule('M 92 198 Q 74 214 64 228', pantsDk, w)}
-    ${sideShoe(58, 240, -8)}
-    ${capsule('M 102 200 Q 122 214 132 228', PANTS, w)}
-    ${sideShoe(136, 240, 6)}`;
+    ${capsule(`M 92 198 Q ${74 - spread / 2} 214 ${64 - spread} 228`, pantsDk, w)}
+    ${sideShoe(58 - spread, 240, -8)}
+    ${capsule(`M 102 200 Q ${122 + spread / 2} 214 ${132 + spread} 228`, PANTS, w)}
+    ${sideShoe(136 + spread, 240, 6)}`;
   // Grip low behind the back shoulder; the barrel sweeps up-left, well clear
   // of the head silhouette (head left edge ≈ x 56 with its offset).
-  const grip = { x: 70, y: 158 };
+  const grip = { x: 70, y: (stance === 'high' ? 146 : stance === 'crouch' ? 166 : 158) + drop };
+  const batDeg = stance === 'high' ? -24 : stance === 'open' ? -54 : -40;
   // Far/near arm split (like armsRun): the far arm dips behind the torso, the
   // near arm crosses in front of it — both hang from the shoulder line, hands
   // stacked on the handle.
@@ -773,14 +839,14 @@ function poseBat(c: Ctx, v: VisualParams, hFront: string): string {
     ${capsule(`M 104 154 Q 92 158 ${grip.x + 8} ${grip.y + 2}`, c.jerseyDk, 13)}
     <circle cx="${grip.x + 6}" cy="${grip.y + 2}" r="9" fill="${c.gSkin}" ${c.S}/>`;
   const head = `
-    <g transform="translate(6 2) rotate(3 ${HEAD.cx} ${HEAD.cy})">
+    <g transform="translate(6 ${2 + drop}) rotate(3 ${HEAD.cx} ${HEAD.cy})">
       ${headGroup(c, v, hFront, 0.8)}
     </g>`;
   if (c.usesChair) {
     const chair = wheelchairSide(c, 1);
-    return `${batProp(grip.x, grip.y, -40)}${armFar}${chair.behind}${torsoSide(c, 2)}${chair.front}${armNear}${head}`;
+    return `${batProp(grip.x, grip.y, batDeg)}${armFar}${chair.behind}${torsoSide(c, 2)}${chair.front}${armNear}${head}`;
   }
-  return `${batProp(grip.x, grip.y, -40)}${armFar}${legs}${torsoSide(c, 0)}${armNear}${head}`;
+  return `${batProp(grip.x, grip.y, batDeg)}${armFar}${legs}${torsoSide(c, drop)}${armNear}${head}`;
 }
 
 /**
@@ -859,7 +925,7 @@ function poseReady(c: Ctx, v: VisualParams, hFront: string): string {
  * Slide, side view facing RIGHT: laid way back, legs out along the dirt, lead
  * arm thrown up, dust kicked behind. Everything hugs the ground line.
  */
-function poseSlide(c: Ctx, v: VisualParams, hFront: string): string {
+function poseSlide(c: Ctx, v: VisualParams, hBack: string, hFront: string): string {
   const pantsDk = darken(PANTS, 0.16);
   const w = Math.max(14, Math.round(c.m.halfW * 0.34));
   if (c.usesChair) {
@@ -867,7 +933,7 @@ function poseSlide(c: Ctx, v: VisualParams, hFront: string): string {
     const chair = wheelchairSide(c, 2);
     const head = `
       <g transform="translate(10 3) rotate(5 ${HEAD.cx} ${HEAD.cy})">
-        ${headGroup(c, v, hFront, 0.8)}
+        ${hBack}${headGroup(c, v, hFront, 0.8)}
       </g>`;
     return `${chair.behind}${torsoSide(c, 2)}${chair.front}${head}`;
   }
@@ -894,12 +960,199 @@ function poseSlide(c: Ctx, v: VisualParams, hFront: string): string {
     <circle cx="45" cy="${GROUND - 20}" r="9" fill="${c.gSkin}" ${c.S}/>
     ${capsule(`M 74 ${GROUND - 70} Q 92 ${GROUND - 88} 104 ${GROUND - 100}`, c.jerseyDk, 13)}
     <circle cx="108" cy="${GROUND - 105}" r="9" fill="${c.gSkin}" ${c.S}/>`;
-  // Head sits up out of the lean, chin toward the bag.
+  // Head sits up out of the lean, chin toward the bag. Back hair rides INSIDE
+  // the head transform (behind the skull) — the head has moved a long way
+  // from the default anchor, so origin-anchored back hair would float loose.
   const head = `
     <g transform="translate(-32 84) scale(0.92) rotate(-10 ${HEAD.cx} ${HEAD.cy})">
-      ${headGroup(c, v, hFront, 0.8)}
+      ${hBack}${headGroup(c, v, hFront, 0.8)}
     </g>`;
   return `${dust}${torso}${legs}${arms}${head}`;
+}
+
+// --- Reaction poses (upset / nervous) ---------------------------------------
+
+/**
+ * Struck-out slump, front view: shoulders drop, head hangs with a sad face,
+ * arms dangle limp, a scuff of kicked dirt by the front shoe. The baked face
+ * overrides the kid's resting expression — that's the whole point of the pose.
+ */
+function poseUpset(c: Ctx, v: VisualParams, hFront: string): string {
+  const vv: VisualParams = { ...v, expression: 'upset' };
+  const { halfW } = c.m;
+  const drop = 8;
+  const shoulderY = 150 + drop;
+  const badge = `<circle cx="100" cy="${shoulderY + 26}" r="13" fill="${c.trim}" opacity="0.9"/>`;
+  // Limp arms: nearly straight down, hands inside the shoulder line.
+  const arm = (side: 1 | -1) => {
+    const handX = 100 + side * (halfW + 2);
+    return `
+      ${capsule(`M ${100 + side * (halfW - 6)} ${shoulderY + 2} Q ${100 + side * (halfW + 7)} ${shoulderY + 22} ${handX} ${shoulderY + 44}`, c.jerseyDk, 15)}
+      <circle cx="${handX}" cy="${shoulderY + 50}" r="10" fill="${c.gSkin}" ${c.S}/>`;
+  };
+  const torso = `<g transform="translate(0 ${drop})">${torsoFront(c)}</g>`;
+  const head = `
+    <g transform="translate(0 ${drop + 8}) rotate(-6 ${HEAD.cx} ${HEAD.cy})">
+      ${headGroup(c, vv, hFront)}
+    </g>`;
+  const scuff = `
+    <g fill="#e0d5c0" opacity="0.75">
+      <circle cx="146" cy="${GROUND - 8}" r="7"/>
+      <circle cx="157" cy="${GROUND - 13}" r="4.5"/>
+    </g>`;
+  if (c.usesChair) {
+    return `${wheelchairFront()}${torso}${arm(-1)}${arm(1)}${badge}${head}`;
+  }
+  return `${legsFront(c)}${scuff}${torso}${arm(-1)}${arm(1)}${badge}${head}`;
+}
+
+/**
+ * Nervous fidget, front view: hands wring together at the belly, worried face,
+ * a sweat bead at the temple. Bases-loaded body language.
+ */
+function poseNervous(c: Ctx, v: VisualParams, hFront: string): string {
+  const vv: VisualParams = { ...v, expression: 'nervous' };
+  const { halfW } = c.m;
+  const shoulderY = 150;
+  const badge = `<circle cx="100" cy="${shoulderY + 26}" r="13" fill="${c.trim}" opacity="0.9"/>`;
+  // Both hands meet low-center, slightly overlapping — the wring.
+  const arm = (side: 1 | -1) => `
+    ${capsule(`M ${100 + side * (halfW - 6)} ${shoulderY + 2} Q ${100 + side * (halfW - 2)} ${shoulderY + 26} ${100 + side * 8} ${shoulderY + 40}`, c.jerseyDk, 15)}
+    <circle cx="${100 + side * 7}" cy="${shoulderY + 44}" r="10" fill="${c.gSkin}" ${c.S}/>`;
+  const sweat = `
+    <path d="M 154 52 q 8 12 1 17 q -9 -3 -5 -15 Z" fill="#9fd8f5" stroke="${SOFT3D ? '#6fb8dd' : OUT}" stroke-width="2.5" stroke-linejoin="round"/>`;
+  const head = `
+    <g transform="rotate(3 ${HEAD.cx} ${HEAD.cy})">
+      ${headGroup(c, vv, hFront)}
+      ${sweat}
+    </g>`;
+  if (c.usesChair) {
+    return `${wheelchairFront()}${torsoFront(c)}${arm(-1)}${arm(1)}${badge}${head}`;
+  }
+  return `${legsFront(c)}${torsoFront(c)}${arm(-1)}${arm(1)}${badge}${head}`;
+}
+
+// --- Action poses (throw / catch / dive) ------------------------------------
+
+const MITT = '#a9743f';
+
+/** The fielder's mitt: ellipse + seam, at (x, y), scaled a touch by `s`. */
+function mitt(x: number, y: number, s = 1): string {
+  return `
+    <ellipse cx="${x}" cy="${y}" rx="${14 * s}" ry="${12 * s}" fill="${MITT}" stroke="${SOFT3D ? darken(MITT, 0.3) : OUT}" stroke-width="3"/>
+    <path d="M ${x - 8 * s} ${y - 6 * s} q ${8 * s} -6 ${16 * s} 0" fill="none" stroke="${SOFT3D ? darken(MITT, 0.3) : OUT}" stroke-width="3"/>`;
+}
+
+/**
+ * Mid-throw, side view facing RIGHT (flipX for leftward throws): lunged
+ * stride, torso leaned in, throwing arm whipped forward at release. NO baked
+ * ball — the live sim's ball is already flying when this pose shows.
+ */
+function poseThrow(c: Ctx, v: VisualParams, hFront: string): string {
+  const w = Math.max(14, Math.round(c.m.halfW * 0.34));
+  const pantsDk = darken(PANTS, 0.16);
+  const legs = `
+    ${capsule('M 92 198 Q 70 214 54 230', pantsDk, w)}
+    ${sideShoe(48, 242, -26)}
+    ${capsule('M 102 200 Q 126 210 138 228', PANTS, w)}
+    ${sideShoe(144, 240, 8)}`;
+  // Glove arm trails behind-low; throw arm extends forward-high, hand open.
+  const gloveArm = `
+    ${capsule('M 94 154 Q 78 166 68 178', darken(c.jerseyDk, 0.1), 13)}
+    ${mitt(64, 186, 0.9)}`;
+  const throwArm = `
+    ${capsule('M 106 152 Q 128 136 146 126', c.jerseyDk, 14)}
+    ${capsule('M 146 126 Q 158 120 166 116', c.skin, 12)}
+    <circle cx="171" cy="113" r="9" fill="${c.gSkin}" ${c.S}/>`;
+  const head = `
+    <g transform="translate(8 4) rotate(7 ${HEAD.cx} ${HEAD.cy})">
+      ${headGroup(c, v, hFront, 0.8)}
+    </g>`;
+  if (c.usesChair) {
+    const chair = wheelchairSide(c, 2);
+    return `${gloveArm}${chair.behind}${torsoSide(c, 2)}${chair.front}${throwArm}${head}`;
+  }
+  return `${gloveArm}${legs}${torsoSide(c, 0)}${throwArm}${head}`;
+}
+
+/**
+ * Glove-up catch, front view: planted feet, mitt stretched high beside the
+ * head, balance arm half out, chin tipped up toward the ball.
+ */
+function poseCatch(c: Ctx, v: VisualParams, hFront: string): string {
+  const { halfW } = c.m;
+  const shoulderY = 150;
+  const badge = `<circle cx="100" cy="${shoulderY + 26}" r="13" fill="${c.trim}" opacity="0.9"/>`;
+  const gx = 100 - halfW - 10;
+  // Drawn AFTER the head: a glove reaching high must read in FRONT of the
+  // hair, or the mitt vanishes behind the dome.
+  const gloveArm = `
+    ${capsule(`M ${100 - halfW + 6} ${shoulderY + 2} Q ${gx - 6} ${shoulderY - 28} ${gx - 2} ${shoulderY - 58}`, c.jerseyDk, 15)}
+    ${capsule(`M ${gx - 2} ${shoulderY - 58} Q ${gx - 1} ${shoulderY - 70} ${gx + 1} ${shoulderY - 80}`, c.skin, 13)}
+    ${mitt(gx + 2, shoulderY - 93, 1.15)}`;
+  const balanceArm = `
+    ${capsule(`M ${100 + halfW - 6} ${shoulderY + 2} Q ${100 + halfW + 12} ${shoulderY - 8} ${100 + halfW + 18} ${shoulderY - 22}`, c.jerseyDk, 15)}
+    <circle cx="${100 + halfW + 20}" cy="${shoulderY - 28}" r="10" fill="${c.gSkin}" ${c.S}/>`;
+  const head = `
+    <g transform="rotate(-6 ${HEAD.cx} ${HEAD.cy})">
+      ${headGroup(c, v, hFront, -0.4)}
+    </g>`;
+  if (c.usesChair) {
+    return `${wheelchairFront()}${torsoFront(c)}${balanceArm}${badge}${head}${gloveArm}`;
+  }
+  return `${legsFront(c)}${torsoFront(c)}${balanceArm}${badge}${head}${gloveArm}`;
+}
+
+/**
+ * Full-layout dive, side view facing RIGHT: airborne and horizontal just off
+ * the grass, mitt arm leading, legs trailing, dust kicked behind. The
+ * wheelchair kid gets a lean-and-reach instead — full tilt, arm stretched.
+ */
+function poseDive(c: Ctx, v: VisualParams, hBack: string, hFront: string): string {
+  const w = Math.max(13, Math.round(c.m.halfW * 0.3));
+  const pantsDk = darken(PANTS, 0.16);
+  if (c.usesChair) {
+    const chair = wheelchairSide(c, 2);
+    const reach = `
+      ${capsule('M 104 150 Q 132 140 154 134', c.jerseyDk, 14)}
+      ${capsule('M 154 134 Q 166 132 174 132', c.skin, 12)}
+      ${mitt(184, 132, 1)}`;
+    const head = `
+      <g transform="translate(12 6) rotate(9 ${HEAD.cx} ${HEAD.cy})">
+        ${hBack}${headGroup(c, v, hFront, 0.8)}
+      </g>`;
+    return `${chair.behind}${torsoSide(c, 4)}${chair.front}${reach}${head}`;
+  }
+  const dust = `
+    <g fill="#e0d5c0" opacity="0.85">
+      <circle cx="26" cy="${GROUND - 12}" r="11"/>
+      <circle cx="42" cy="${GROUND - 24}" r="8"/>
+      <circle cx="20" cy="${GROUND - 30}" r="6"/>
+    </g>`;
+  // Prone torso: a horizontal jersey capsule floating just off the ground.
+  const torso = `
+    <rect x="60" y="${GROUND - 62}" width="${Math.round(c.m.halfW * 1.6)}" height="38" rx="17" fill="${c.gJersey}" ${c.S}/>
+    <rect x="64" y="${GROUND - 34}" width="${Math.round(c.m.halfW * 1.6) - 8}" height="9" rx="4" fill="${c.jerseyDk}"/>`;
+  // Legs trail back-up; toes point away from the reach.
+  const legs = `
+    ${capsule(`M 70 ${GROUND - 46} Q 50 ${GROUND - 56} 36 ${GROUND - 62}`, pantsDk, w)}
+    ${sideShoe(26, GROUND - 58, -155)}
+    ${capsule(`M 72 ${GROUND - 38} Q 54 ${GROUND - 38} 40 ${GROUND - 32}`, PANTS, w)}
+    ${sideShoe(30, GROUND - 26, -175)}`;
+  // Far arm reaches low under the chin; near arm leads with the mitt.
+  const armFar = `
+    ${capsule(`M 122 ${GROUND - 46} Q 140 ${GROUND - 40} 154 ${GROUND - 36}`, darken(c.jerseyDk, 0.1), 12)}
+    <circle cx="159" cy="${GROUND - 34}" r="8" fill="${darken(c.skin, 0.1)}" ${c.S}/>`;
+  const armNear = `
+    ${capsule(`M 124 ${GROUND - 56} Q 148 ${GROUND - 60} 166 ${GROUND - 60}`, c.jerseyDk, 13)}
+    ${mitt(182, GROUND - 60, 1)}`;
+  // Head up-forward out of the prone torso, chin toward the ball. Back hair
+  // rides inside the transform — see poseSlide.
+  const head = `
+    <g transform="translate(32 100) scale(0.88) rotate(9 ${HEAD.cx} ${HEAD.cy})">
+      ${hBack}${headGroup(c, v, hFront, 0.8)}
+    </g>`;
+  return `${dust}${legs}${torso}${armFar}${head}${armNear}`;
 }
 
 // --- Rear poses (batRear / catchRear — the behind-home-plate rig) -----------
@@ -911,11 +1164,14 @@ function poseSlide(c: Ctx, v: VisualParams, hFront: string): string {
  */
 function poseBatRear(c: Ctx, v: VisualParams, hRear: string): string {
   const { halfW } = c.m;
+  // Stance variant mirrors poseBat: grip height + bat angle + crouch drop.
+  const stance = v.stance;
+  const drop = stance === 'crouch' ? 9 : 0;
   // Bat leans up-right over the shoulder, drawn first (it's on the far side).
   // Grip low beside the right shoulder so the barrel clears the head — its
   // axis passes ≈ x 174 at head height vs the head's right edge ≈ 153.
-  const grip = { x: 138, y: 158 };
-  const bat = batProp(grip.x, grip.y, 32);
+  const grip = { x: 138, y: (stance === 'high' ? 146 : stance === 'crouch' ? 166 : 158) + drop };
+  const bat = batProp(grip.x, grip.y, stance === 'high' ? 20 : stance === 'open' ? 46 : 32);
   // Both arms hang from the shoulder line (y≈150) across the jersey back to
   // the grip; two fists stack on the handle just above the knob.
   const shL = 100 - (halfW - 6);
@@ -968,7 +1224,7 @@ function poseCatchRear(c: Ctx, v: VisualParams, hRear: string): string {
   const torso = `
     <rect x="${100 - w / 2}" y="170" width="${w}" height="58" rx="24" fill="${c.gJersey}" ${c.S}/>
     <rect x="${100 - w / 2 + 5}" y="214" width="${w - 10}" height="10" rx="5" fill="${c.jerseyDk}"/>
-    <circle cx="100" cy="200" r="14" fill="${c.trim}" opacity="0.92"/>`;
+    ${badge(c, 100, 200, 14)}`;
   if (c.usesChair) {
     // Seated behind the plate: the chair IS the crouch.
     return `${wheelchairFront()}${torso}${elbows}${head}`;
@@ -988,7 +1244,14 @@ function poseCatchRear(c: Ctx, v: VisualParams, hRear: string): string {
 
 // --- Assembly --------------------------------------------------------------
 
-export function buildCharacterSVG(v: VisualParams, pose: Pose = 'stand'): string {
+export function buildCharacterSVG(
+  v: VisualParams,
+  pose: Pose = 'stand',
+  team?: { uniform?: number; logo?: string }
+): string {
+  // Team-uniform variant: swap the jersey palette (and stamp the logo badge)
+  // without touching the kid's own VisualParams.
+  if (team?.uniform !== undefined) v = { ...v, uniform: team.uniform };
   // Soft mode mutes every palette color before anything derives from it, so
   // all the darken/lighten/gradient math stays in the matte range too.
   const mute = (hex: string) => (SOFT3D ? soften(hex) : hex);
@@ -1009,12 +1272,13 @@ export function buildCharacterSVG(v: VisualParams, pose: Pose = 'stand'): string
     m: bodyMetrics(v.bodyType),
     S: `stroke="${OUT}" stroke-width="${SW}" stroke-linejoin="round" stroke-linecap="round"`,
     usesChair: v.accessory === 'wheelchair',
+    logo: team?.logo,
   };
   const h = hair(v.hair, 'url(#hairG)', 'url(#hairDkG)');
   const shoulderY = 150;
 
   // Chest number badge (front poses only — a side view showing it reads wrong).
-  const number = `<circle cx="100" cy="${shoulderY + 26}" r="13" fill="${uni.trim}" opacity="0.9"/>`;
+  const number = badge(c, 100, shoulderY + 26, 13);
 
   let layers: string;
   if (pose === 'batRear' || pose === 'catchRear') {
@@ -1022,13 +1286,25 @@ export function buildCharacterSVG(v: VisualParams, pose: Pose = 'stand'): string
     const hr = hairRear(v.hair, 'url(#hairG)', 'url(#hairDkG)');
     layers = pose === 'batRear' ? poseBatRear(c, v, hr) : poseCatchRear(c, v, hr);
   } else if (pose === 'bat') {
-    layers = poseBat(c, v, h.back + h.front);
+    // Back hair goes BEHIND the body (like the run poses) — concatenating it
+    // into the head group draws afros/long drapes OVER the face.
+    layers = `${h.back}${poseBat(c, v, h.front)}`;
   } else if (pose === 'windup') {
     layers = `${h.back}${poseWindup(c, v, h.front)}`;
   } else if (pose === 'ready') {
     layers = `${h.back}${poseReady(c, v, h.front)}`;
   } else if (pose === 'slide') {
-    layers = poseSlide(c, v, h.back + h.front);
+    layers = poseSlide(c, v, h.back, h.front);
+  } else if (pose === 'upset') {
+    layers = `${h.back}${poseUpset(c, v, h.front)}`;
+  } else if (pose === 'nervous') {
+    layers = `${h.back}${poseNervous(c, v, h.front)}`;
+  } else if (pose === 'throw') {
+    layers = `${h.back}${poseThrow(c, v, h.front)}`;
+  } else if (pose === 'catch') {
+    layers = `${h.back}${poseCatch(c, v, h.front)}`;
+  } else if (pose === 'dive') {
+    layers = poseDive(c, v, h.back, h.front);
   } else if (pose === 'run1' || pose === 'run2') {
     const frame: 1 | 2 = pose === 'run1' ? 1 : 2;
     const dropY = frame === 2 ? 3 : 0; // gallop bounce

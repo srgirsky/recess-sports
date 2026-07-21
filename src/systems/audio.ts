@@ -43,6 +43,23 @@ export function toggleMute(): boolean {
   return muted;
 }
 
+// --- Volume settings (systems/settings.ts drives these) ---------------------
+// SFX rides the master GainNode; voice rides each utterance's own volume.
+// They are independent pipelines — speech NEVER passes through masterVolume.
+let sfxVolume = 1;
+let voiceVolume = 1;
+
+/** 0..1 multiplier on the SFX master gain. Live — applies immediately. */
+export function setSfxVolume(v: number): void {
+  sfxVolume = Math.max(0, Math.min(1, v));
+  if (master) master.gain.value = AUDIO.masterVolume * sfxVolume;
+}
+
+/** 0..1 multiplier on speech volume (applies to the next utterance). */
+export function setVoiceVolume(v: number): void {
+  voiceVolume = Math.max(0, Math.min(1, v));
+}
+
 /** Create/resume the AudioContext. Safe to call repeatedly; call on a user gesture. */
 export function unlock(): void {
   try {
@@ -52,7 +69,7 @@ export function unlock(): void {
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       ctx = new Ctor();
       master = ctx.createGain();
-      master.gain.value = AUDIO.masterVolume;
+      master.gain.value = AUDIO.masterVolume * sfxVolume;
       master.connect(ctx.destination);
       // Pre-bake one second of white noise we can reuse for cracks/cheers.
       noiseBuffer = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
@@ -274,7 +291,7 @@ function speakNow(text: string, profile: VoiceProfile): void {
     const j = VOICE.JITTER;
     u.pitch = Math.min(2, Math.max(0, profile.pitch + (Math.random() * 2 - 1) * j.PITCH));
     u.rate = Math.min(2, Math.max(0.5, profile.rate + (Math.random() * 2 - 1) * j.RATE));
-    u.volume = VOICE.VOLUME;
+    u.volume = VOICE.VOLUME * voiceVolume;
     u.onend = advance;
     u.onerror = advance;
     synth.speak(u);

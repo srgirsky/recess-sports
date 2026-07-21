@@ -49,6 +49,10 @@ export interface FielderState {
   arm: number;
   /** After a drop/bobble the kid is flustered until this `elapsed` time. */
   fumbleUntil: number;
+  /** Mid-dive until this `elapsed` time (reach bonus active). Human chaser only. */
+  diveUntil?: number;
+  /** Face-down after an empty dive (render cue; the freeze itself is fumbleUntil). */
+  diveDown?: boolean;
 }
 
 export interface RunnerState {
@@ -108,9 +112,11 @@ export type LiveEvent =
   | { t: 'pickup'; fielder: string }
   | { t: 'land' }
   | { t: 'error'; kind: 'drop' | 'bobble' | 'wild'; fielder: string }
+  | { t: 'dive'; fielder: string } // the lunge started
+  | { t: 'diveMiss'; fielder: string } // came up empty — kid eats grass
   | { t: 'bonk' } // the ball smacked a venue obstacle (the sandlot oak)
   | { t: 'carom' } // the ball rebounded off the outfield fence — play it!
-  | { t: 'throw'; toBase: 1 | 2 | 3 | 4 }
+  | { t: 'throw'; toBase: 1 | 2 | 3 | 4; fielder?: string }
   | { t: 'out'; base: 1 | 2 | 3 | 4; runner: string }
   | { t: 'safe'; base: 1 | 2 | 3 | 4; runner: string }
   | { t: 'score'; runner: string }
@@ -162,6 +168,8 @@ export interface LiveInputs {
   sendRunner?: string;
   /** Offense (main mode): turn this mid-leg runner back to the base behind. */
   holdRunner?: string;
+  /** Defense (main mode): tap-to-dive — a one-tick lunge signal. */
+  dive?: boolean;
 }
 
 export interface LiveOutcome {
@@ -300,6 +308,7 @@ export function stepLivePlay(
 
   moveBall(s, dtMs, params);
   moveFielders(s, inputs, params, dtMs);
+  handleDive(s, inputs, params);
   tryGrabBall(s, params, rng);
   maybeThrow(s, inputs, params, rng);
   moveRunners(s, dtMs);
@@ -595,12 +604,41 @@ function fumble(s: LivePlayState, fielder: FielderState, kind: 'drop' | 'bobble'
   s.events.push({ t: 'error', kind, fielder: fielder.charId });
 }
 
+/**
+ * The dive verb (main-mode defense, human chaser only): a tap starts a short
+ * lunge window with a reach bonus; a dive that secures nothing leaves the kid
+ * face-down (the fumble freeze) with the ball still live. No rng — kid-mode
+ * sims stay byte-identical (diveEnabled is false there and the input ignored).
+ */
+function handleDive(s: LivePlayState, inputs: LiveInputs, params: LiveParams): void {
+  const chaser = s.fielders[s.active];
+  // Expire a running dive; empty glove = eat grass for a beat.
+  if (chaser.diveUntil !== undefined && s.elapsed >= chaser.diveUntil) {
+    chaser.diveUntil = undefined;
+    if (!chaser.hasBall) {
+      chaser.fumbleUntil = Math.max(chaser.fumbleUntil, s.elapsed + params.diveWhiffMs);
+      chaser.diveDown = true;
+      s.events.push({ t: 'diveMiss', fielder: chaser.charId });
+    }
+  }
+  // Back on their feet once the whiff freeze ends.
+  if (chaser.diveDown && s.elapsed >= chaser.fumbleUntil) chaser.diveDown = false;
+
+  if (!inputs.dive || !params.diveEnabled || s.mode !== 'defense') return;
+  if (chaser.diveUntil !== undefined || s.elapsed < chaser.fumbleUntil) return;
+  const bp = s.ball.phase;
+  if (bp === 'held' || bp === 'thrown') return; // nothing to dive for
+  chaser.diveUntil = s.elapsed + params.diveWindowMs;
+  s.events.push({ t: 'dive', fielder: chaser.charId });
+}
+
 function tryGrabBall(s: LivePlayState, params: LiveParams, rng: () => number): void {
   const b = s.ball;
   const chaser = s.fielders[s.active];
   if (s.elapsed < chaser.fumbleUntil) return; // still flustered from the muff
-  const catchR = s.mode === 'defense' ? params.catchRadius : params.cpuCatchRadius;
-  const pickupR = s.mode === 'defense' ? params.pickupRadius : params.cpuPickupRadius;
+  const diveReach = chaser.diveUntil !== undefined ? params.diveReachBonus : 0;
+  const catchR = (s.mode === 'defense' ? params.catchRadius : params.cpuCatchRadius) + diveReach;
+  const pickupR = (s.mode === 'defense' ? params.pickupRadius : params.cpuPickupRadius) + diveReach;
 
   if (b.phase === 'flight') {
     const t = b.flightT / b.flightMs;
@@ -652,6 +690,8 @@ function tryGrabBall(s: LivePlayState, params: LiveParams, rng: () => number): v
 
 function secureBall(s: LivePlayState, fielderIdx: number): void {
   const b = s.ball;
+  // A catch mid-dive ends the dive cleanly — no whiff penalty coming.
+  s.fielders[fielderIdx].diveUntil = undefined;
   b.phase = 'held';
   b.height = 0;
   b.heldBy = fielderIdx;
@@ -719,7 +759,7 @@ function launchThrow(
   b.heldBy = null;
   b.throw = { toBase, from, t: 0, totalMs: Math.max(60, totalMs), wild };
   s.fielders.forEach((f) => (f.hasBall = false));
-  s.events.push({ t: 'throw', toBase });
+  s.events.push({ t: 'throw', toBase, fielder: thrower?.charId });
   if (wild && thrower) s.events.push({ t: 'error', kind: 'wild', fielder: thrower.charId });
 }
 

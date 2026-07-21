@@ -52,9 +52,64 @@ export function runCycle(
   return {
     stop(restoreStand = true) {
       timer.remove();
-      if (restoreStand && img.active) img.setTexture(id);
+      if (restoreStand && img.active) img.setTexture(poseKey(id, 'stand'));
     },
   };
+}
+
+/**
+ * One-shot reaction: swap a sprite to a reaction pose (upset/nervous/cheer),
+ * hold it, then restore whatever texture it wore before. Guards on
+ * `img.active` like runCycle so a sprite dying mid-hold can't crash the loop.
+ * Returns a handle to cancel early (e.g. the next pitch starts sooner).
+ */
+export function reactPose(
+  scene: Phaser.Scene,
+  img: Phaser.GameObjects.Image,
+  id: string,
+  pose: 'upset' | 'nervous' | 'cheer' | 'catch' | 'throw' | 'dive',
+  opts: { holdMs?: number; restoreTo?: string } = {}
+): { cancel(restore?: boolean): void } {
+  if (!img.active) return { cancel() {} };
+  const prev = opts.restoreTo ?? img.texture.key;
+  img.setTexture(poseKey(id, pose));
+  const timer = scene.time.delayedCall(opts.holdMs ?? ANIM.REACT_HOLD_MS, () => {
+    if (img.active) img.setTexture(prev);
+  });
+  return {
+    cancel(restore = true) {
+      timer.remove(false);
+      if (restore && img.active) img.setTexture(prev);
+    },
+  };
+}
+
+/**
+ * The batter's idle tic: an occasional little bat waggle (a quick angle
+ * shimmy). Returns the timer — remove it before swinging or hiding, and pair
+ * with killTweensOf(target) so a mid-waggle tween can't strand an angle.
+ */
+export function batWaggle(
+  scene: Phaser.Scene,
+  target: Obj,
+  opts: { everyMs?: number; amp?: number } = {}
+): Phaser.Time.TimerEvent {
+  return scene.time.addEvent({
+    delay: opts.everyMs ?? ANIM.WAGGLE_EVERY_MS,
+    loop: true,
+    callback: () => {
+      const t = target as unknown as { active: boolean; angle: number };
+      if (!t.active) return;
+      scene.tweens.add({
+        targets: target,
+        angle: t.angle + (opts.amp ?? ANIM.WAGGLE_AMP),
+        duration: 95,
+        yoyo: true,
+        repeat: 3,
+        ease: 'Sine.inOut',
+      });
+    },
+  });
 }
 
 /** Gentle "breathing" bob loop. Sprites use origin-bottom, so we bob y up a touch. */

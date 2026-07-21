@@ -12,11 +12,14 @@ import { heading, ribbon, panel, FONT } from '../ui/theme';
 import { squashHop } from '../ui/anim';
 import * as audio from '../systems/audio';
 import { commentatorProfile } from '../systems/voices';
+import { recordAlbumGame } from '../systems/album';
 
 interface ResultData {
   playerScore: number;
   aiScore: number;
   playerTeam: string[];
+  /** Season games route back to the week, not the draft. */
+  seasonGame?: boolean;
 }
 
 export class ResultScene extends Phaser.Scene {
@@ -71,6 +74,23 @@ export class ResultScene extends Phaser.Scene {
     this.add
       .text(cx, 490, mvp.tagline, { fontFamily: FONT, fontSize: '17px', color: '#3a4654', align: 'center', wordWrap: { width: 270 } })
       .setOrigin(0.5);
+
+    // Every finished game feeds the sticker album (drafted / won-with).
+    recordAlbumGame(data.playerTeam, won);
+
+    if (data.seasonGame) {
+      // Season games return to the week's chalkboard, not the draft.
+      makeButton(this, {
+        x: cx,
+        y: GAME_HEIGHT - 52,
+        label: 'BACK TO THE WEEK',
+        icon: '🏆',
+        width: 380,
+        height: 82,
+        onClick: () => this.scene.start('Season'),
+      });
+      return;
+    }
 
     makeButton(this, {
       x: cx - 175,

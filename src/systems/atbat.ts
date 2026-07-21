@@ -12,11 +12,40 @@
 // ---------------------------------------------------------------------------
 
 import type { Character } from '../data/types';
-import { TIMING, LIVE, CURSOR, JUICE } from '../config';
+import { TIMING, LIVE, CURSOR, JUICE, SWING_TYPES } from '../config';
 import { HOME, DEFAULT_GEOMETRY, fencePointAt, type FieldGeometry, type Vec } from './geometry';
 import type { PitchPlan, PlateLoc } from './pitchkind';
 
 export type SwingBand = 'perfect' | 'good' | 'weak' | 'miss';
+
+/** Pre-pitch swing choice (CLASSIC): trade contact ease against power. */
+export type SwingType = 'normal' | 'safe' | 'big' | 'bunt';
+
+/**
+ * The timing windows for a swing type: SAFE widens every band (easy contact),
+ * BIG narrows the contact tail (crushed or nothing), BUNT is trivially easy
+ * to get bat on. The band the caller computes from these feeds the resolver.
+ */
+export function timingForSwing(base: typeof TIMING, type: SwingType): typeof TIMING {
+  switch (type) {
+    case 'safe': {
+      const f = SWING_TYPES.SAFE.FORGIVE_MS;
+      return { PERFECT: base.PERFECT + f * 0.5, GOOD: base.GOOD + f, CONTACT: base.CONTACT + f };
+    }
+    case 'big': {
+      const n = SWING_TYPES.BIG.NARROW_MS;
+      return {
+        PERFECT: base.PERFECT,
+        GOOD: Math.max(base.PERFECT + 10, base.GOOD - n * 0.5),
+        CONTACT: Math.max(base.PERFECT + 20, base.CONTACT - n),
+      };
+    }
+    case 'bunt':
+      return { ...base, CONTACT: base.CONTACT + SWING_TYPES.BUNT.FORGIVE_MS };
+    default:
+      return base;
+  }
+}
 
 export type AtBatKind = 'hit' | 'out' | 'strike' | 'foul' | 'ball';
 
@@ -145,12 +174,15 @@ export function resolveContactAimed(spec: {
   rng: () => number;
   /** A spent juice POWER SWING: band steps up + a quality bonus. */
   boost?: { power: boolean };
+  /** Pre-pitch swing choice. Default 'normal' (unmodified). */
+  swingType?: SwingType;
   /** The venue's field shape. Default: the park. */
   geo?: FieldGeometry;
 }): AimedSwing {
   let { band } = spec;
   const { cursor, plan, batter, pitcher, rng } = spec;
   const powered = spec.boost?.power === true;
+  const swingType = spec.swingType ?? 'normal';
   if (pitcher.ability === 'unhittable_pitch') band = downgrade(band);
 
   // Cursor overlap: dead-on keeps the timing band, the sweet-spot fringe costs
@@ -162,6 +194,8 @@ export function resolveContactAimed(spec: {
   if (batter.ability === 'never_strikes_out' && band === 'miss') band = 'weak';
   // A power swing muscles decent contact up a band — but can't fix a whiff.
   if (powered && band !== 'miss') band = upgrade(band);
+  // The BIG swing is all-or-nothing: weak contact becomes a whiff outright.
+  if (swingType === 'big' && band === 'weak') band = 'miss';
 
   if (band === 'miss') {
     return { swing: { kind: 'strike', description: 'Swing and a miss!' }, band };
@@ -172,15 +206,34 @@ export function resolveContactAimed(spec: {
 
   const { contact, power } = batter.stats;
   const bandBoost = band === 'perfect' ? 0.35 : band === 'good' ? 0.12 : 0;
+  const swingQAdj =
+    swingType === 'safe'
+      ? SWING_TYPES.SAFE.Q_ADJ
+      : swingType === 'big'
+        ? SWING_TYPES.BIG.Q_ADJ
+        : swingType === 'bunt'
+          ? SWING_TYPES.BUNT.Q_ADJ
+          : 0;
   let q =
-    rng() + bandBoost + (power - 5) * 0.04 + (contact - 5) * 0.01 + (powered ? JUICE.POWER_Q_BONUS : 0);
+    rng() +
+    bandBoost +
+    (power - 5) * 0.04 +
+    (contact - 5) * 0.01 +
+    (powered ? JUICE.POWER_Q_BONUS : 0) +
+    swingQAdj;
 
   // Spray: early swings pull (left field), late go opposite (right field);
   // meeting the ball on its inner/outer half nudges the same way.
   const aimNudge = (cursor.x - plan.actual.x) / CURSOR.CONTACT_R;
-  const sprayT = 0.5 + (spec.errorMs / 300) * 0.55 + aimNudge * 0.18;
+  let sprayT = 0.5 + (spec.errorMs / 300) * 0.55 + aimNudge * 0.18;
   // Launch shape: cursor under the ball lifts it, over the top chops it down.
   let typeBias = Math.max(-1, Math.min(1, (cursor.y - plan.actual.y) / CURSOR.CONTACT_R));
+  if (swingType === 'big') typeBias += SWING_TYPES.BIG.TYPE_BIAS;
+  // A bunt is deadened in front of the plate, kept between the lines.
+  if (swingType === 'bunt') {
+    const B = SWING_TYPES.BUNT;
+    sprayT = Math.min(B.SPRAY_MAX, Math.max(B.SPRAY_MIN, sprayT));
+  }
 
   // The kid who ALWAYS calls his shot (and is always wrong) finally gets to be
   // right — a powered swing from him is a guaranteed moonshot.
@@ -194,7 +247,8 @@ export function resolveContactAimed(spec: {
     band: band as Exclude<SwingBand, 'miss'>,
     q,
     typeBias,
-    forceType: calledShot ? 'fly' : undefined,
+    forceType: calledShot ? 'fly' : swingType === 'bunt' ? 'grounder' : undefined,
+    distCap: swingType === 'bunt' ? SWING_TYPES.BUNT.DIST_CAP : undefined,
     sprayT: () => sprayT,
     rng,
     geo: spec.geo,
@@ -217,6 +271,8 @@ export interface LaunchSpec {
   rng: () => number;
   /** Skip the contact-type roll entirely (the called shot IS a fly). */
   forceType?: ContactType;
+  /** Hard cap on travel distance, px from home (the bunt's dead ball). */
+  distCap?: number;
   /** The venue's field shape (fence distances / obstacles). Default: the park. */
   geo?: FieldGeometry;
 }
@@ -251,7 +307,7 @@ export function buildLaunch(spec: LaunchSpec): Launch {
   const homer = type === 'fly' && q > L.HR_Q * (dirLen / refLen) ** 2;
   // Everything else stays on the field, just short of the wall.
   const maxDist = dirLen - 14;
-  const d = homer ? dirLen + 60 : Math.min(distFor[type], maxDist);
+  const d = homer ? dirLen + 60 : Math.min(distFor[type], maxDist, spec.distCap ?? Infinity);
   const landing: Vec = { x: HOME.x + dir.x * d, y: HOME.y + dir.y * d };
   // Nothing settles inside a tree — nudge the landing to its edge.
   if (!homer) {
