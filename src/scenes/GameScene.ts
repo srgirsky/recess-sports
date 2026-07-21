@@ -69,6 +69,8 @@ import { teamName, TEAM_LOGOS, type TeamIdentity } from '../systems/team';
 import { UNIFORM_COLORS } from '../art/palette';
 import { showHandoffSplash } from './ui/HandoffSplash';
 import { LivePlayView } from './ui/LivePlayView';
+import { activeSession } from '../net/peer';
+import type { NetMsg, HudSnap } from '../net/protocol';
 import { getSettings } from '../systems/settings';
 import type { StatEvent } from '../systems/stats';
 import { getSeason, saveSeason, recordSeasonGame } from '../systems/season';
@@ -131,6 +133,7 @@ import {
   LIVE,
   CURSOR,
   JUICE,
+  NET,
   PLATE_ZONE,
   KID_SIZE,
   type GameMode,
@@ -306,6 +309,66 @@ export class GameScene extends Phaser.Scene {
     const actingSeat =
       this.phase === 'pitching' || this.phase === 'running' ? this.battingSeat() : this.fieldingSeat();
     return actingSeat !== this.seats[this.netSeatIdx()];
+  }
+
+  /** Net: does the OTHER device own this seat? */
+  private seatIsRemote(seat: SeatState): boolean {
+    return this.matchType === 'net' && seat !== this.seats[this.netSeatIdx()];
+  }
+
+  // --- Two-device play (host side) -----------------------------------------
+  /** Buffered remote intents (they may arrive before the sim reaches the seam). */
+  private netPitchPlan?: NetMsg & { t: 'pitchPlan' };
+  private netSwing?: NetMsg & { t: 'swing' };
+  /** The host's aimed mound plan for the in-flight pitch (remote batter). */
+  private netMoundPlan?: PitchPlan;
+  /** What the host flow is currently blocked on, + its continuation/fallback. */
+  private netAwait?: 'pitchPlan' | 'swing';
+  private netResume?: () => void;
+  private netWaitTimer?: Phaser.Time.TimerEvent;
+  private lastNetFrameAt = 0;
+
+  /** Host-authoritative broadcast — no-op unless we're the net host. */
+  private hostCast(msg: NetMsg): void {
+    if (this.matchType === 'net' && this.netRole === 'host') activeSession()?.send(msg);
+  }
+
+  /** Everything the guest needs to mirror the HUD after a beat. */
+  private hudSnap(): HudSnap {
+    const baseId = (b: number) => (this.runners.get(b)?.getData('id') as string | undefined) ?? null;
+    return {
+      scores: [this.seats[0].score, this.seats[1].score],
+      outs: this.halfState?.outs ?? 0,
+      balls: this.halfState?.count.balls ?? 0,
+      strikes: this.halfState?.count.strikes ?? 0,
+      bases: [baseId(1), baseId(2), baseId(3)],
+      lineupIdx: [this.seats[0].lineupIdx, this.seats[1].lineupIdx],
+      batterId: this.battingSeat().humanBats ? this.batter?.id : this.cpuBatter?.id,
+      pitcherId: this.fieldingSeat().pitcher?.id,
+      juice: [this.seats[0].juice.value, this.seats[1].juice.value],
+    };
+  }
+
+  /** Park the flow on a remote intent; the timeout runs the local fallback. */
+  private netWaitFor(what: 'pitchPlan' | 'swing', resume: () => void, onTimeout: () => void): void {
+    this.netAwait = what;
+    this.netResume = resume;
+    this.netWaitTimer?.remove(false);
+    this.netWaitTimer = this.time.delayedCall(NET.ACTION_TIMEOUT_MS, () => {
+      this.netAwait = undefined;
+      this.netResume = undefined;
+      this.netWaitTimer = undefined;
+      onTimeout();
+    });
+  }
+
+  private netResumeWait(): void {
+    this.netWaitTimer?.remove(false);
+    this.netWaitTimer = undefined;
+    this.netAwait = undefined;
+    const r = this.netResume;
+    this.netResume = undefined;
+    r?.();
   }
   // 📼 instant replay: per-tick position snapshots of the current live play.
   private replayFrames: ReplayFrame[] = [];
@@ -594,6 +657,13 @@ export class GameScene extends Phaser.Scene {
     this.pitcherSprite.setScale(KID_SIZE.PITCHER_H / this.pitcherSprite.height);
     idleBob(this, this.pitcherSprite, { amp: 4, dur: 1100 }); // gentle breathing (y); wind-up uses angle
     this.setMoundPitcher(this.aiPitcher);
+
+    // Two-device play: remote messages route into the flow; unsubscribe on
+    // shutdown or the dead scene's handler fires on the next game's traffic.
+    if (this.matchType === 'net') {
+      const un = activeSession()?.onMessage((m) => this.handleNetMsg(m));
+      this.events.once('shutdown', () => un?.());
+    }
 
     this.startHalf();
   }
@@ -1069,6 +1139,13 @@ export class GameScene extends Phaser.Scene {
     this.liveView.cancelCharge();
     this.pendingThrow = undefined;
     this.pendingDive = false;
+    // Net: a half boundary invalidates any parked remote wait or stale intent.
+    this.netWaitTimer?.remove(false);
+    this.netWaitTimer = undefined;
+    this.netAwait = undefined;
+    this.netResume = undefined;
+    this.netPitchPlan = undefined;
+    this.netSwing = undefined;
   }
 
   private startHalf(): void {
@@ -1078,6 +1155,7 @@ export class GameScene extends Phaser.Scene {
     this.clearRunners();
     this.buildDefense();
     this.refreshHud();
+    this.hostCast({ t: 'half', inning: this.inning, half: this.half, hud: this.hudSnap() });
     // Route by which flow family serves the batting seat: a human batter runs
     // the batting engine; otherwise the human pitches to the CPU order.
     const begin = () => {
@@ -1164,6 +1242,7 @@ export class GameScene extends Phaser.Scene {
 
   private gameOver(): void {
     this.phase = 'ended';
+    this.hostCast({ t: 'gameOver', hud: this.hudSnap() });
     this.setView('wide'); // the final beat plays out over the whole yard
     if (this.playerScore !== this.aiScore) {
       this.callIt(this.playerScore > this.aiScore ? 'winning' : 'losing', {}, 2);
@@ -1314,6 +1393,14 @@ export class GameScene extends Phaser.Scene {
       this.launchPitchMain();
       return;
     }
+    // Net (kid mode): the remote defender's meter band replaces the AI roll —
+    // a 'wild' band throws the telegraphed wild one.
+    const remoteMoundKid = this.seatIsRemote(this.fieldingSeat());
+    if (remoteMoundKid && !this.netPitchPlan) {
+      this.phase = 'resolving';
+      this.netWaitFor('pitchPlan', () => this.launchPitch(), () => this.launchPitch());
+      return;
+    }
     this.phase = 'pitching';
     this.swung = false;
     this.pitchStart = this.time.now;
@@ -1322,8 +1409,14 @@ export class GameScene extends Phaser.Scene {
     this.pitchTravelMs = PITCH_TRAVEL_MS;
     // Sometimes the AI throws a WILD one — telegraphed in red, visibly off the
     // plate. Don't swing at those! Taking it earns a ball (4 = walk).
-    this.pitchIsWild = rollAiWildPitch(this.fieldingSeat().pitcher!, () => Math.random());
+    if (remoteMoundKid && this.netPitchPlan) {
+      this.pitchIsWild = this.netPitchPlan.band === 'wild';
+      this.netPitchPlan = undefined;
+    } else {
+      this.pitchIsWild = rollAiWildPitch(this.fieldingSeat().pitcher!, () => Math.random());
+    }
     const wild = this.pitchIsWild;
+    this.hostCast({ t: 'pitchLaunch', wild, travelMs: PITCH_TRAVEL_MS });
     // Wild pitches sail visibly off the plate (plate-coord px, past the edge).
     const end = plateToScreen({ x: wild ? (Math.random() < 0.5 ? -60 : 60) : 0, y: 0 });
     const start = this.rig.releasePoint;
@@ -1394,6 +1487,19 @@ export class GameScene extends Phaser.Scene {
    * pitch outside the zone is a ball; chasing one caps the swing.
    */
   private launchPitchMain(): void {
+    // Net: the REMOTE defender's own mound ceremony supplies the plan. Park
+    // here until it arrives (their 9s auto-pick guarantees liveness on a
+    // healthy channel); the timeout falls back to a CPU plan.
+    const remoteMound = this.seatIsRemote(this.fieldingSeat());
+    if (remoteMound && !this.netPitchPlan) {
+      this.phase = 'resolving';
+      this.netWaitFor(
+        'pitchPlan',
+        () => this.launchPitchMain(),
+        () => this.launchPitchMain() // no plan buffered → CPU path below
+      );
+      return;
+    }
     this.phase = 'pitching';
     this.swung = false;
     this.firstPitchOfGame = false;
@@ -1404,40 +1510,57 @@ export class GameScene extends Phaser.Scene {
       ? effectivePitching(moundSeat.pitcher!.stats.pitching, moundSeat.fatigue)
       : moundSeat.pitcher!.stats.pitching;
     cpuArm = rampedArm(cpuArm, this.ramp);
-    let plan = chooseCpuPitch(
-      cpuArm,
-      this.halfState.count,
-      PITCH_TRAVEL_MS,
-      () => Math.random()
-    );
-    // A trailing CPU digs into its own juice for the crazy pitch. Never in
-    // pass-and-play: the CPU defense must not burn a HUMAN seat's meter.
-    if (
-      this.features.juice &&
-      this.matchType !== 'passplay' &&
-      cpuWantsSpend(
-        moundSeat.juice,
-        'crazyPitch',
-        moundSeat.score - this.battingSeat().score,
-        () => Math.random(),
-        moundSeat.pitcher!.ability
-      )
-    ) {
-      moundSeat.juice = spend(moundSeat.juice, 'crazyPitch', moundSeat.pitcher!.ability);
-      if (this.features.fatigue) moundSeat.fatigue = drainPitch(moundSeat.fatigue, 'crazy');
-      plan = resolvePitchLocation(
-        'crazy',
-        plan.target,
-        cpuArm,
-        60,
-        PITCH_TRAVEL_MS,
-        () => Math.random()
-      );
-      floatingText(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y, '⚡ CRAZY PITCH!', COLORS.red, 26);
-      crazyPitchFx(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y);
-      this.callIt('crazyPitch', {}, 2);
+    let plan;
+    const rp = this.netPitchPlan;
+    this.netPitchPlan = undefined;
+    if (remoteMound && rp) {
+      // The guest already resolved its meter (band/errorMs) locally; the host
+      // authoritatively rolls the location scatter and validates the spend.
+      let kind = rp.kind;
+      if (kind === 'crazy') {
+        if (this.features.juice && canSpend(moundSeat.juice, 'crazyPitch', moundSeat.pitcher!.ability)) {
+          moundSeat.juice = spend(moundSeat.juice, 'crazyPitch', moundSeat.pitcher!.ability);
+          if (this.features.fatigue) moundSeat.fatigue = drainPitch(moundSeat.fatigue, 'crazy');
+          floatingText(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y, '⚡ CRAZY PITCH!', COLORS.red, 26);
+          crazyPitchFx(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y);
+          this.callIt('crazyPitch', {}, 2);
+        } else {
+          kind = 'fastball'; // stale guest meter — never a free crazy
+        }
+      }
+      plan = resolvePitchLocation(kind, rp.target, cpuArm, rp.errorMs, PITCH_TRAVEL_MS, () => Math.random());
+    } else {
+      plan = chooseCpuPitch(cpuArm, this.halfState.count, PITCH_TRAVEL_MS, () => Math.random());
+      // A trailing CPU digs into its own juice for the crazy pitch. Never in
+      // pass-and-play/net: the CPU must not burn a HUMAN seat's meter.
+      if (
+        this.features.juice &&
+        this.matchType === 'solo' &&
+        cpuWantsSpend(
+          moundSeat.juice,
+          'crazyPitch',
+          moundSeat.score - this.battingSeat().score,
+          () => Math.random(),
+          moundSeat.pitcher!.ability
+        )
+      ) {
+        moundSeat.juice = spend(moundSeat.juice, 'crazyPitch', moundSeat.pitcher!.ability);
+        if (this.features.fatigue) moundSeat.fatigue = drainPitch(moundSeat.fatigue, 'crazy');
+        plan = resolvePitchLocation(
+          'crazy',
+          plan.target,
+          cpuArm,
+          60,
+          PITCH_TRAVEL_MS,
+          () => Math.random()
+        );
+        floatingText(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y, '⚡ CRAZY PITCH!', COLORS.red, 26);
+        crazyPitchFx(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y);
+        this.callIt('crazyPitch', {}, 2);
+      }
     }
     this.pitchPlan = plan;
+    this.hostCast({ t: 'pitchLaunch', wild: !plan.inZone, travelMs: plan.travelMs, plan });
     this.pitchIsWild = !plan.inZone; // reuses the take-a-ball / capped-chase rules
     this.pitchTravelMs = plan.travelMs;
     this.pitchStart = this.time.now;
@@ -2004,6 +2127,12 @@ export class GameScene extends Phaser.Scene {
     const big = walked || struckOut || applied.runsScored > 0;
     this.flashAnnounce(msg, color, big ? FLOW.BIG_BANNER_HOLD_MS : FLOW.BANNER_HOLD_MS);
     this.refreshHud();
+    this.hostCast({ t: 'atBat', result, movements: applied.movements, hud: this.hudSnap() });
+    this.hostCast({
+      t: 'settle',
+      hud: this.hudSnap(),
+      next: isHalfOver(this.halfState) ? 'half' : applied.batterDone ? 'batter' : 'pitch',
+    });
 
     // The invariant: whatever banner is up must finish before the next beat.
     const floor = big ? FLOW.BIG_BANNER_HOLD_MS : FLOW.BETWEEN_PITCH_MS;
@@ -2264,6 +2393,17 @@ export class GameScene extends Phaser.Scene {
       params,
       geo: this.geo,
     });
+    this.hostCast({
+      t: 'liveStart',
+      mode,
+      launch,
+      assignment: this.fieldAssignment,
+      batter: { charId: batterChar.id, speed: batterChar.stats.speed },
+      baseRunners,
+      outs: this.halfState.outs,
+      frame: snapshotLive(this.livePlay),
+    });
+    this.lastNetFrameAt = this.time.now;
     this.setView('wide'); // ball's in play — whole field, fast
     this.phase = mode === 'defense' ? 'fielding' : 'running';
     this.pendingThrow = undefined;
@@ -2297,6 +2437,7 @@ export class GameScene extends Phaser.Scene {
 
   /** The per-frame heartbeat of a live play. Everything sim-owned is placed here. */
   update(_time: number, delta: number): void {
+    if (this.matchType === 'net') activeSession()?.tick(this.time.now);
     if (this.swingCursor && this.phase === 'pitching') this.positionSwingCursor();
     if (this.replaying) {
       this.stepReplay(delta);
@@ -2308,9 +2449,11 @@ export class GameScene extends Phaser.Scene {
     if (this.phase === 'fielding') {
       inputs.pointer = this.lastPointer;
       // A pointer that hasn't moved (and isn't held) recently stops steering,
-      // which is what lets the kid-mode auto-fielder take over.
+      // which is what lets the kid-mode auto-fielder take over. When the
+      // REMOTE seat fields (net host), only the injected stream freshens it —
+      // the host's own held button must not count as steering.
       inputs.pointerActive =
-        this.input.activePointer.isDown ||
+        (!this.remoteActs() && this.input.activePointer.isDown) ||
         this.time.now - this.lastPointerAt < LIVE.ASSIST.POINTER_STALE_MS;
       if (this.pendingThrow) {
         inputs.throwTo = this.pendingThrow;
@@ -2349,6 +2492,16 @@ export class GameScene extends Phaser.Scene {
     }
     this.drainLiveEvents();
     this.liveView.render(this.livePlay);
+    // Net host: stream this tick's events + a positions frame at NET.FRAME_HZ.
+    if (this.matchType === 'net' && this.netRole === 'host') {
+      if (this.livePlay.events.length > 0) {
+        this.hostCast({ t: 'liveEvents', events: [...this.livePlay.events] });
+      }
+      if (this.time.now - this.lastNetFrameAt >= 1000 / NET.FRAME_HZ) {
+        this.lastNetFrameAt = this.time.now;
+        this.hostCast({ t: 'liveFrame', frame: snapshotLive(this.livePlay) });
+      }
+    }
     if (this.livePlay.phase === 'done') {
       if (
         this.features.replay &&
@@ -2538,6 +2691,11 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    this.hostCast({
+      t: 'settle',
+      hud: this.hudSnap(),
+      next: isHalfOver(this.halfState) ? 'half' : 'batter',
+    });
     this.time.delayedCall(FLOW.AFTER_LIVE_PLAY_MS, () => {
       batSeat.lineupIdx += 1;
       if (isHalfOver(this.halfState)) {
@@ -2729,7 +2887,12 @@ export class GameScene extends Phaser.Scene {
     this.pitcherWindup();
 
     // The CPU batter's plan is pure logic; the scene just acts it out.
-    const plan = resolveCpuPitch(band, this.fieldingSeat().pitcher!, this.cpuBatter, () => Math.random());
+    // Net: placeholder — the remote batter's swing decides at the settle.
+    const plan = this.seatIsRemote(this.battingSeat())
+      ? { isBall: band === 'wild', cpuSwings: false, cpuBand: 'miss' as SwingBand, description: '' }
+      : resolveCpuPitch(band, this.fieldingSeat().pitcher!, this.cpuBatter, () => Math.random());
+    this.netSwing = undefined; // a fresh pitch invalidates any stale swing
+    this.hostCast({ t: 'pitchLaunch', wild: band === 'wild', travelMs: CPU_PITCH_TRAVEL_MS });
     this.time.delayedCall(ANIM.WINDUP_MS, () => this.launchCpuPitch(band, plan));
   }
 
@@ -2777,12 +2940,14 @@ export class GameScene extends Phaser.Scene {
       CPU_PITCH_TRAVEL_MS,
       () => Math.random()
     );
-    const cpuPlan = resolveCpuPitchLocated(
-      plan,
-      band,
-      rampedCpuBatter(this.cpuBatter, this.ramp),
-      () => Math.random()
-    );
+    // Net: the REMOTE batter decides — the CPU-batter plan is a placeholder
+    // and settleCpuPitch routes to the remote swing instead of consuming it.
+    const cpuPlan = this.seatIsRemote(this.battingSeat())
+      ? { isBall: !plan.inZone, cpuSwings: false, cpuBand: 'miss' as SwingBand, description: '' }
+      : resolveCpuPitchLocated(plan, band, rampedCpuBatter(this.cpuBatter, this.ramp), () => Math.random());
+    this.netMoundPlan = plan;
+    this.netSwing = undefined; // a fresh pitch invalidates any stale swing
+    this.hostCast({ t: 'pitchLaunch', wild: false, travelMs: plan.travelMs, plan, stealFrom: this.cpuStealFrom });
     this.time.delayedCall(ANIM.WINDUP_MS, () => this.launchCpuPitchMain(plan, cpuPlan));
   }
 
@@ -2851,6 +3016,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   private settleCpuPitch(plan: CpuPitchPlan): void {
+    // Net: the REMOTE human batter decides, not the CPU-plan placeholder.
+    if (this.seatIsRemote(this.battingSeat())) {
+      this.settleNetSwing(plan);
+      return;
+    }
     if (!plan.cpuSwings) {
       if (plan.isBall) {
         this.scoreboard.umpCall('BALL!', BALL_GREEN);
@@ -2900,6 +3070,127 @@ export class GameScene extends Phaser.Scene {
       screenShake(this, SHAKE.single);
       this.beginLivePlay('defense', outcome.launch);
     });
+  }
+
+  /**
+   * Net: the pitch crossed the plate — resolve the REMOTE batter's swing.
+   * Their timing windows already resolved on their device (the wire carries
+   * band/errorMs/cursor, never raw taps); a swing message with NO swing data
+   * is an explicit take. Parks briefly if the message is still in flight.
+   */
+  private settleNetSwing(plan: CpuPitchPlan): void {
+    const sw = this.netSwing;
+    if (!sw) {
+      this.phase = 'resolving';
+      this.netWaitFor(
+        'swing',
+        () => this.settleNetSwing(plan),
+        () => this.resolveNetTake(plan) // silence = a take; the game never stalls
+      );
+      return;
+    }
+    this.netSwing = undefined;
+    if (sw.errorMs === undefined && sw.band === undefined) {
+      this.resolveNetTake(plan);
+      return;
+    }
+
+    this.animateSwing();
+    const batSeat = this.battingSeat();
+    // Spends validate authoritatively — a stale guest meter can't double-spend.
+    let powered = false;
+    if (sw.spend === 'powerSwing' && this.features.juice && canSpend(batSeat.juice, 'powerSwing')) {
+      batSeat.juice = spend(batSeat.juice, 'powerSwing');
+      powered = true;
+      floatingText(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY - 120, '⚡ POWER SWING!', COLORS.red, 24);
+      powerSwingFx(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY, COLORS.red);
+    }
+
+    let outcome: ReturnType<typeof resolveContact>;
+    if (this.netMoundPlan && sw.errorMs !== undefined && sw.cursor) {
+      // Main mode: the aimed path, exactly as a local batter would resolve.
+      const timing = timingForSwing(getSwingTiming(this.mode), sw.swingType);
+      const { swing, band } = resolveContactAimed({
+        band: bandFromError(sw.errorMs, timing),
+        errorMs: sw.errorMs,
+        cursor: sw.cursor,
+        plan: this.netMoundPlan,
+        batter: this.cpuBatter,
+        pitcher: this.fieldingSeat().pitcher!,
+        rng: () => Math.random(),
+        boost: { power: powered },
+        swingType: sw.swingType,
+        geo: this.geo,
+      });
+      if (band === 'perfect') this.gainJuiceSeat(batSeat, 'perfectSwing', this.cpuBatter.ability);
+      outcome = swing;
+    } else {
+      // Kid mode: the meter band drives plain contact.
+      outcome = resolveContact(sw.band ?? 'miss', this.cpuBatter, this.fieldingSeat().pitcher!, () => Math.random(), this.geo);
+    }
+
+    if (outcome.kind !== 'inPlay') {
+      if (outcome.kind === 'strike') audio.whiff();
+      else audio.crack();
+      this.resolveCpuStealThen({ kind: outcome.kind, bases: 0, description: outcome.description });
+      return;
+    }
+    this.cpuStealFrom = undefined; // contact: the live play owns the runners now
+    audio.crack();
+    const launch = outcome.launch;
+    if (launch.homer) {
+      this.hitPause(() => {
+        this.flyHitBall();
+        screenShake(this, SHAKE.homer);
+        this.gainJuiceSeat(batSeat, 'homer', this.cpuBatter.ability);
+        this.callIt('homer', { name: this.cpuBatter.name }, 2);
+        this.applyCpuResult({ kind: 'hit', bases: 4, description: 'HOME RUN! 💥' });
+      });
+      return;
+    }
+    this.hitPause(() => {
+      screenShake(this, SHAKE.single);
+      this.beginLivePlay('defense', launch);
+    });
+  }
+
+  /** Net: the remote batter let it go — the placeholder plan calls it. */
+  private resolveNetTake(plan: CpuPitchPlan): void {
+    if (plan.isBall) {
+      this.scoreboard.umpCall('BALL!', BALL_GREEN);
+      this.resolveCpuStealThen({ kind: 'ball', bases: 0, description: 'Ball!' });
+    } else {
+      this.scoreboard.umpCall('STRIKE!', COLORS.gold);
+      audio.whiff();
+      this.resolveCpuStealThen({ kind: 'strike', bases: 0, description: 'Strike! Looking!' });
+    }
+  }
+
+  /** Net: everything the other device sends routes through here. */
+  private handleNetMsg(m: NetMsg): void {
+    if (this.netRole === 'host') {
+      switch (m.t) {
+        case 'pitchPlan':
+          this.netPitchPlan = m;
+          if (this.netAwait === 'pitchPlan') this.netResumeWait();
+          break;
+        case 'swing':
+          this.netSwing = m;
+          if (this.netAwait === 'swing') this.netResumeWait();
+          break;
+        case 'liveInput':
+          // Remote live-play intents inject through the verify-hook seams.
+          if (m.pointer) this.setLivePointer(m.pointer.x, m.pointer.y);
+          if (m.dive) this.commandDive();
+          if (m.throwTo) this.commandThrow(m.throwTo.base, m.throwTo.power);
+          if (m.run) this.commandRun();
+          if (m.send) this.commandSend(m.send);
+          if (m.hold) this.commandHold(m.hold);
+          break;
+        default:
+          break; // pause/resume/bye land with the disconnect pass
+      }
+    }
   }
 
   /**
@@ -3008,6 +3299,7 @@ export class GameScene extends Phaser.Scene {
     const big = walked || struckOut || applied.runsScored > 0;
     this.flashAnnounce(msg, color, big ? FLOW.BIG_BANNER_HOLD_MS : FLOW.BANNER_HOLD_MS);
     this.refreshHud();
+    this.hostCast({ t: 'atBat', result, movements: applied.movements, hud: this.hudSnap() });
 
     // Walk-off: the HOME seat just took the lead in the bottom of the final
     // inning (home/away are seat POSITIONS — seats[1]/seats[0] — not roles).
@@ -3020,6 +3312,12 @@ export class GameScene extends Phaser.Scene {
       );
       return;
     }
+
+    this.hostCast({
+      t: 'settle',
+      hud: this.hudSnap(),
+      next: isHalfOver(this.halfState) ? 'half' : applied.batterDone ? 'batter' : 'pitch',
+    });
 
     const delay = Math.max(
       FLOW.CPU_STEP_MS,
@@ -3169,6 +3467,7 @@ export class GameScene extends Phaser.Scene {
     };
 
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      if (this.remoteActs()) return; // net: don't fight the injected remote stream
       this.lastScreenPointer = { x: p.x, y: p.y };
       this.lastPointer = toLogical(p);
       this.lastPointerAt = this.time.now;
