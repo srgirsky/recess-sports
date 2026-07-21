@@ -66,6 +66,10 @@ First-load caching: Pages/CDN can take a minute to reflect a push, and browsers
 cache hard — hard-refresh (Cmd/Ctrl+Shift+R) if you don't see a change. Because
 it's pure static files, there's nothing to provision and no running cost.
 
+Two-device play (🔗 FRIEND on the title) also needs **no backend and no keys**:
+it connects browsers directly over WebRTC using the free public PeerJS cloud
+broker, so the deploy stays exactly this simple.
+
 ---
 
 ## How it's organized
@@ -83,6 +87,7 @@ src/
     audio.ts         Free code-synthesized SFX + voice (uses Web Audio / SpeechSynthesis)
     logic.test.ts    Headless tests for the pure logic
   ui/                Button, CharacterCard, MuteButton, effects (juice helpers)
+  net/               Two-device play: pure wire protocol + the PeerJS session
   dev/               Dev-only pick-rate overlay
 ```
 
@@ -105,4 +110,5 @@ src/
 
 - A real backend to aggregate pick rates across all players
 - More characters, richer art, recorded audio
+- Online-play polish: remote steal-reaction taps, guest relief, rematch
 - Eventually… the dinosaurs 🦖
