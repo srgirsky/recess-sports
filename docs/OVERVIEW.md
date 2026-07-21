@@ -102,6 +102,10 @@ The session structure that makes kids come back: **🏆 RECESS WEEK** (`systems/
 
 - **📼 Instant replay (CLASSIC)**: highlight-worthy live plays — a catch off a dive, a double play, a ball off the wall — re-run themselves in letterboxed slow motion before the game moves on (tap to skip). Implemented as position-snapshot playback through the ordinary live-play renderer (`systems/replay.ts`), never re-simulation.
 
+### Pass-and-play 2P (👥 VS)
+
+Two kids, one device. GameScene now runs on a **two-seat model** (`SeatState` — team/score/lineup/pitcher/plan/fatigue/juice/identity per seat, resolved by `battingSeat()`/`fieldingSeat()`): in VS mode both seats are human *batters* — the batting player holds the device for their whole half (swing aiming, swing-type chips, steals, sends), while the defending team is CPU-pitched and CPU-fielded, so the device never has to change hands mid-pitch. Both kids draft face-to-face (every tap is a real voting-machine pick), each sets their own lineup and team identity on back-to-back Lineup passes, and a full-screen team-colored **handoff splash** ("THE TEAL ROCKETS, YOU'RE UP!" — tap when ready) gates each half. PvP balance: no CPU difficulty ramp, no CPU juice spends against an absent human, the juice meter follows whoever's batting, and the winner's team name headlines the Result. A seeded **gold-log harness** (`scripts/goldlog.browser.js`) guards all of this: solo CLASSIC and KID games are byte-identical before and after the seat refactor.
+
 ## What's explicitly not built yet
 
-Real recorded audio, a cross-player pick-rate backend, more characters/richer art, the Phase 3 dinosaurs — and from the parity plan: pass-and-play 2P (needs the GameScene half-controller extraction first: reorganizing the hardcoded player-half vs CPU-half paths around "which seat is human this half") and the LivePlayView structural extraction.
+Real recorded audio, a cross-player pick-rate backend, more characters/richer art, the Phase 3 dinosaurs — and from the deferred-items plan: the LivePlayView structural extraction and **two-device online play** (WebRTC/PeerJS, host-authoritative with ReplayFrame streaming — designed in the plan, lands with the LivePlayView extraction it renders through).
