@@ -89,7 +89,9 @@ describe('venue geometry', () => {
 });
 
 describe('venue ground & obstacles in the live sim', () => {
-  const params = resolveLiveParams('kid'); // slow CPU keeps the ball rolling
+  // Kid pacing (slow CPU keeps the ball rolling), but WITHOUT kid's auto
+  // fielding assist — these tests need the ball to roll unfielded.
+  const params = { ...resolveLiveParams('kid'), assist: 'magnet' as const };
 
   const roller: Launch = {
     type: 'grounder',

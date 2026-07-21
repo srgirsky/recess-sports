@@ -263,6 +263,8 @@ export class GameScene extends Phaser.Scene {
   private chargeMeter?: Phaser.GameObjects.Graphics;
   private goBanner?: Phaser.GameObjects.Container;
   private lastPointer: Vec = { ...MOUND };
+  /** When the pointer last actually moved/tapped — stale pointers stop steering. */
+  private lastPointerAt = -Infinity;
   private charging = false;
   private chargeStart = 0;
   private chargeBase: 1 | 2 | 3 | 4 = 1;
@@ -1817,6 +1819,11 @@ export class GameScene extends Phaser.Scene {
     const inputs: LiveInputs = {};
     if (this.phase === 'fielding') {
       inputs.pointer = this.lastPointer;
+      // A pointer that hasn't moved (and isn't held) recently stops steering,
+      // which is what lets the kid-mode auto-fielder take over.
+      inputs.pointerActive =
+        this.input.activePointer.isDown ||
+        this.time.now - this.lastPointerAt < LIVE.ASSIST.POINTER_STALE_MS;
       if (this.pendingThrow) {
         inputs.throwTo = this.pendingThrow;
         this.pendingThrow = undefined;
@@ -2189,6 +2196,7 @@ export class GameScene extends Phaser.Scene {
   /** Public for headless driving (see CLAUDE.md): steer the fielder. */
   setLivePointer(x: number, y: number): void {
     this.lastPointer = { x, y };
+    this.lastPointerAt = this.time.now; // headless steering counts as steering
   }
 
   /** Public for headless driving: release a throw at a base. */
@@ -2764,11 +2772,13 @@ export class GameScene extends Phaser.Scene {
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
       this.lastScreenPointer = { x: p.x, y: p.y };
       this.lastPointer = toLogical(p);
+      this.lastPointerAt = this.time.now;
     });
 
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
       this.lastScreenPointer = { x: p.x, y: p.y };
       this.lastPointer = toLogical(p);
+      this.lastPointerAt = this.time.now;
       if (this.phase === 'pitching') this.onSwing();
       else if (this.phase === 'aiming') this.onThrow();
       else if (this.phase === 'running') {
