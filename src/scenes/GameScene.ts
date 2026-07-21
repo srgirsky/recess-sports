@@ -68,6 +68,7 @@ import { rampLevel, rampedArm, rampedCpuBatter } from '../systems/difficulty';
 import { teamName, TEAM_LOGOS, type TeamIdentity } from '../systems/team';
 import { UNIFORM_COLORS } from '../art/palette';
 import { showHandoffSplash } from './ui/HandoffSplash';
+import { LivePlayView } from './ui/LivePlayView';
 import { getSettings } from '../systems/settings';
 import type { StatEvent } from '../systems/stats';
 import { getSeason, saveSeason, recordSeasonGame } from '../systems/season';
@@ -111,7 +112,6 @@ import {
   dist,
   fencePointAt,
   fenceYAtX,
-  FIELD_POSITIONS,
   type FieldGeometry,
   type PositionId,
   type Vec,
@@ -157,17 +157,6 @@ import { Chatter, type ChatterMoment } from '../systems/chatter';
 type Phase = 'pitching' | 'resolving' | 'aiming' | 'fielding' | 'running' | 'ended';
 
 const POSITION_ORDER: PositionId[] = ['C', '1B', '2B', 'SS', '3B', 'LF', 'CF', 'RF'];
-
-/** One on-screen kid the live play can move (fielder or runner). */
-interface LiveSprite {
-  container: Phaser.GameObjects.Container;
-  img: Phaser.GameObjects.Image;
-  charId: string;
-  cycle: { stop(restoreStand?: boolean): void } | null;
-  lastX: number;
-  /** Sprite height at the plate; the projection shrinks it with depth. */
-  baseH: number;
-}
 
 const BALL_GREEN = 0x57d977; // "good eye" green for called balls
 
@@ -386,15 +375,9 @@ export class GameScene extends Phaser.Scene {
   private livePlay?: LivePlayState;
   /** Defensive assignment for the current half, sim order (index 0 = P). */
   private fieldAssignment: Array<{ position: PositionId; charId: string }> = [];
-  private fielderSprites: LiveSprite[] = []; // parallel to fieldAssignment
-  private liveRunnerSprites = new Map<string, LiveSprite>();
-  private liveBall?: Phaser.GameObjects.Arc;
-  private liveBallShadow?: Phaser.GameObjects.Ellipse;
-  private lastTrailAt = 0; // spawn gate for the live-ball streak dots
-  private activeMarker?: Phaser.GameObjects.Ellipse;
-  private baseRings: Phaser.GameObjects.Arc[] = [];
-  private chargeMeter?: Phaser.GameObjects.Graphics;
-  private goBanner?: Phaser.GameObjects.Container;
+  /** The live-play sprite layer (scenes/ui/LivePlayView.ts) — the sim's
+   *  fielders/runners/ball/chrome. Rebuilt fresh every create(). */
+  private liveView!: LivePlayView;
   private lastPointer: Vec = { ...MOUND };
   /** When the pointer last actually moved/tapped — stale pointers stop steering. */
   private lastPointerAt = -Infinity;
@@ -494,9 +477,6 @@ export class GameScene extends Phaser.Scene {
     this.cpuStealFrom = undefined;
     this.stealChips = [];
     this.fieldAssignment = [];
-    this.fielderSprites = [];
-    this.liveRunnerSprites = new Map();
-    this.baseRings = [];
     this.charging = false;
     this.pendingThrow = undefined;
     this.pendingDive = false;
@@ -569,6 +549,12 @@ export class GameScene extends Phaser.Scene {
 
     this.drawField();
     this.rig = new BattingView(this, this.venue.look);
+    this.liveView = new LivePlayView(this, {
+      pitcherSprite: () => this.pitcherSprite,
+      charge: () => ({ active: this.charging, start: this.chargeStart }),
+      pin: (o) => this.pinUI(o),
+      look: this.venue.look,
+    });
     this.drawHud();
     this.drawMiniDiamond();
     if (this.features.juice) this.drawJuiceMeter();
@@ -1059,8 +1045,7 @@ export class GameScene extends Phaser.Scene {
     this.autoThrowTimer?.remove(false);
     this.autoThrowTimer = undefined;
     this.charging = false;
-    this.chargeMeter?.destroy();
-    this.chargeMeter = undefined;
+    this.liveView.cancelCharge();
     this.pendingThrow = undefined;
     this.pendingDive = false;
   }
@@ -1223,9 +1208,7 @@ export class GameScene extends Phaser.Scene {
     // making the next unrelated pointerup fire the throw. Cancel it.
     if (this.charging) {
       this.charging = false;
-      this.chargeMeter?.destroy();
-      this.chargeMeter = undefined;
-      this.baseRings.forEach((r) => r.setStrokeStyle(5, COLORS.gold, 0.9));
+      this.liveView.cancelCharge();
     }
     audio.cancelSpeech(); // the announcer must not talk over the menu
     this.scene.launch('Pause'); // launch before pause: both ops queue in order
@@ -2187,19 +2170,10 @@ export class GameScene extends Phaser.Scene {
   // --- Live plays: interactive fielding & baserunning ----------------------
 
   /**
-   * Stand the defending team's nine kids at their positions for this half.
-   * Index 0 is always the pitcher (rendered by the existing mound sprite);
-   * the other eight get fresh container sprites. The SIM moves these — the
-   * scene must never tween them during a live play.
+   * Decide who stands where for this half (index 0 = the pitcher), then hand
+   * the assignment to the view to stand the nine kids up.
    */
   private buildDefense(): void {
-    for (const f of this.fielderSprites) {
-      f.cycle?.stop(false); // kill the texture-swap timer BEFORE the image dies
-      f.cycle = null;
-      if (f.container !== (this.pitcherSprite as unknown)) f.container.destroy();
-    }
-    this.fielderSprites = [];
-
     const defendingIds = this.fieldingSeat().team;
     const pitcher = this.fieldingSeat().pitcher!;
     const plan = this.fieldingSeat().plan;
@@ -2222,27 +2196,7 @@ export class GameScene extends Phaser.Scene {
       ];
     }
 
-    this.fieldAssignment.forEach((a, i) => {
-      if (i === 0) return; // the mound sprite plays P
-      const p = FIELD_POSITIONS[a.position];
-      const q = project(p);
-      const ds = depthScale(p);
-      const c = this.add.container(q.x, q.y).setDepth(26);
-      const shadow = groundShadow(this, 0, 3, 40 * ds);
-      // Fielders wait in the ready crouch, gloves out.
-      const img = this.add.image(0, 0, poseKey(a.charId, 'ready')).setOrigin(0.5, 0.95);
-      const baseH = KID_SIZE.FIELDER_H;
-      img.setScale((baseH * ds) / img.height);
-      c.add([shadow, img]);
-      idleBob(this, img, { amp: 3, dur: 1000 + i * 90 }); // bob the IMAGE — the sim owns the container
-      this.fielderSprites.push({ container: c, img, charId: a.charId, cycle: null, lastX: q.x, baseH });
-    });
-  }
-
-  /** A wrapper so index 0 (the pitcher) resolves to the mound sprite. */
-  private fielderSpriteAt(i: number): LiveSprite | undefined {
-    if (i === 0) return undefined; // handled specially via pitcherSprite
-    return this.fielderSprites[i - 1];
+    this.liveView.buildDefense(this.fieldAssignment);
   }
 
   /** Contact! Hand the play to the sim and switch input modes. */
@@ -2302,78 +2256,21 @@ export class GameScene extends Phaser.Scene {
     this.replaying = false;
     this.replayed = false;
 
-    // The sim owns the pitcher's body now — stop his breathing/windup tweens.
-    if (this.pitcherSprite) {
-      this.tweens.killTweensOf(this.pitcherSprite);
-      this.pitcherSprite.setAngle(0);
-    }
-
-    // The batter becomes a runner token at home; existing runners keep theirs.
-    this.liveRunnerSprites = new Map();
-    for (const token of this.runners.values()) {
-      const img = token.getAt(1) as Phaser.GameObjects.Image;
-      const id = token.getData('id') as string;
-      this.liveRunnerSprites.set(id, { container: token, img, charId: id, cycle: null, lastX: token.x, baseH: RUNNER_H });
-    }
+    // Sprite setup is the view's job: it wraps the settled runner tokens, adds
+    // the batter's fresh token, and raises the ball/marker/rings/GO chrome.
     this.fadeOutBatter();
     const batterToken = this.makeRunner(batterChar);
-    this.liveRunnerSprites.set(batterChar.id, {
-      container: batterToken,
-      img: batterToken.getAt(1) as Phaser.GameObjects.Image,
-      charId: batterChar.id,
-      cycle: null,
-      lastX: batterToken.x,
-      baseH: RUNNER_H,
+    const firstPlay = mode === 'defense' ? this.firstFieldPlay : this.firstRunPlay;
+    if (mode === 'defense') this.firstFieldPlay = false;
+    else this.firstRunPlay = false;
+    this.liveView.beginPlay(this.livePlay, {
+      runnerTokens: this.runners,
+      batterToken,
+      batterId: batterChar.id,
+      manualBaserunning: this.features.manualBaserunning,
+      firstPlay,
     });
     this.runners = new Map(); // rebuilt from the outcome at settle
-
-    // Ball + shadow, sim-positioned every frame.
-    this.liveBallShadow = this.add.ellipse(HOME.x, HOME.y, 16, 6, COLORS.ink, 0.3).setDepth(14);
-    this.liveBall = this.add.circle(HOME.x, HOME.y - 10, 9, COLORS.white).setStrokeStyle(2, COLORS.ink).setDepth(42);
-
-    if (mode === 'defense') {
-      // Spotlight the kid you steer.
-      const chaser = this.livePlay.fielders[this.livePlay.active];
-      this.activeMarker = this.add
-        .ellipse(chaser.pos.x, chaser.pos.y + 4, 52, 20)
-        .setStrokeStyle(4, COLORS.gold)
-        .setDepth(25);
-      this.tweens.add({ targets: this.activeMarker, alpha: 0.45, duration: 380, yoyo: true, repeat: -1 });
-      if (this.firstFieldPlay) {
-        audio.say('Get the ball!', commentatorProfile('A'), 'flush');
-        this.firstFieldPlay = false;
-      }
-    } else if (this.features.manualBaserunning) {
-      // Main mode: the bases ARE the controls — tap ahead to send, behind to
-      // turn a runner back. Rings show what's tappable.
-      this.showBaseRings();
-      const { container } = pill(this, GAME_WIDTH / 2, GAME_HEIGHT - 46, 'TAP A BASE TO RUN!  ◆', {
-        fill: COLORS.gold,
-        fontSize: 26,
-      });
-      container.setDepth(95);
-      this.pinUI(container);
-      this.tweens.add({ targets: container, scale: 1.06, duration: 420, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-      this.goBanner = container;
-      if (this.firstRunPlay) {
-        audio.say('Tap a base to send your runner!', commentatorProfile('A'), 'flush');
-        this.firstRunPlay = false;
-      }
-    } else {
-      // Big tap-anywhere GO prompt.
-      const { container } = pill(this, GAME_WIDTH / 2, GAME_HEIGHT - 46, 'TAP TO RUN!  ▶', {
-        fill: COLORS.gold,
-        fontSize: 28,
-      });
-      container.setDepth(95);
-      this.pinUI(container);
-      this.tweens.add({ targets: container, scale: 1.07, duration: 420, yoyo: true, repeat: -1, ease: 'Sine.inOut' });
-      this.goBanner = container;
-      if (this.firstRunPlay) {
-        audio.say('Run! Tap to take the next base!', commentatorProfile('A'), 'flush');
-        this.firstRunPlay = false;
-      }
-    }
   }
 
   /** The per-frame heartbeat of a live play. Everything sim-owned is placed here. */
@@ -2429,7 +2326,7 @@ export class GameScene extends Phaser.Scene {
       this.replayFrames.push(snapshotLive(this.livePlay));
     }
     this.drainLiveEvents();
-    this.renderLivePlay();
+    this.liveView.render(this.livePlay);
     if (this.livePlay.phase === 'done') {
       if (
         this.features.replay &&
@@ -2455,11 +2352,7 @@ export class GameScene extends Phaser.Scene {
     this.phase = 'resolving'; // input router ignores everything until settle
     audio.pop();
     // Out/scored runners faded during the live play — bring everyone back.
-    for (const spr of this.liveRunnerSprites.values()) {
-      if (!spr.container.active) continue;
-      this.tweens.killTweensOf(spr.container);
-      spr.container.setAlpha(1);
-    }
+    this.liveView.restoreRunnersForReplay();
     // Letterbox bars + the ribbon, pinned over everything.
     const chrome = this.add.container(0, 0).setDepth(96);
     chrome.add(this.add.rectangle(GAME_WIDTH / 2, 24, GAME_WIDTH, 48, COLORS.ink, 0.9));
@@ -2497,7 +2390,7 @@ export class GameScene extends Phaser.Scene {
       this.replayIdx += 1;
     }
     applyFrame(s, this.replayFrames[this.replayIdx]);
-    this.renderLivePlay();
+    this.liveView.render(s);
     if (this.replayIdx >= this.replayFrames.length - 1) this.endReplay();
   }
 
@@ -2510,137 +2403,9 @@ export class GameScene extends Phaser.Scene {
     const s = this.livePlay;
     if (s && this.replayFrames.length > 0) {
       applyFrame(s, this.replayFrames[this.replayFrames.length - 1]);
-      this.renderLivePlay();
+      this.liveView.render(s);
     }
     this.settleLivePlay();
-  }
-
-  private renderLivePlay(): void {
-    const s = this.livePlay!;
-
-    // Fielders (index 0 = the mound pitcher sprite).
-    s.fielders.forEach((f, i) => {
-      const q = project(f.pos);
-      if (i === 0) {
-        this.pitcherSprite?.setPosition(q.x, q.y);
-        return;
-      }
-      const spr = this.fielderSpriteAt(i);
-      if (!spr) return;
-      // Mid-dive (or face-down after a whiff): the dive pose owns the sprite.
-      if (f.diveUntil !== undefined || f.diveDown) {
-        spr.cycle?.stop(false);
-        spr.cycle = null;
-        const key = poseKey(f.charId, 'dive');
-        if (spr.img.texture.key !== key) spr.img.setTexture(key);
-        spr.img.setFlipX(project(s.ball.pos).x < q.x);
-        spr.img.setScale((spr.baseH * depthScale(q)) / spr.img.height);
-        spr.container.setPosition(q.x, q.y);
-        return;
-      }
-      // Fresh off a dive: make sure the stand texture is back.
-      if (spr.img.texture.key === poseKey(f.charId, 'dive') && !spr.cycle) {
-        spr.img.setTexture(poseKey(f.charId, 'stand'));
-      }
-      this.moveLiveSprite(spr, q.x, q.y);
-    });
-
-    // Runners. Done runners are scene-owned again (their exit animations —
-    // fade on an out, hop on a score — must not be fought or their run cycle
-    // restarted on a dying sprite).
-    for (const r of s.runners) {
-      if (r.done !== null) continue;
-      const spr = this.liveRunnerSprites.get(r.charId);
-      if (!spr || !spr.container.active) continue;
-      // A runner closing on a bag with the ball bearing down HITS THE DIRT.
-      const contested =
-        r.to !== r.from &&
-        r.progress > 0.72 &&
-        ((s.ball.phase === 'thrown' && s.ball.throw?.toBase === r.to) ||
-          (s.ball.phase === 'held' &&
-            s.ball.heldBy !== null &&
-            dist(s.fielders[s.ball.heldBy].pos, basePos(r.to)) < 70));
-      if (contested) {
-        spr.cycle?.stop(false);
-        spr.cycle = null;
-        spr.img.setTexture(poseKey(r.charId, 'slide'));
-        const q = project(r.pos);
-        spr.img.setFlipX(project(basePos(r.to)).x < spr.container.x);
-        spr.container.setPosition(q.x, q.y - 6);
-        continue;
-      }
-      const q = project(r.pos);
-      this.moveLiveSprite(spr, q.x, q.y - 6);
-    }
-
-    // Ball: lift by arc height; the shadow stays on the ground plane.
-    if (this.liveBall && this.liveBallShadow) {
-      const b = s.ball;
-      if (b.phase === 'held' && b.heldBy !== null) {
-        const hq = project(s.fielders[b.heldBy].pos);
-        this.liveBall.setPosition(hq.x + 12, hq.y - 34).setScale(1).setVisible(true);
-        this.liveBallShadow.setVisible(false);
-      } else {
-        const bq = project(b.pos);
-        const lift = b.height * (b.phase === 'thrown' ? 46 : 92);
-        // A high ball is nearer the camera: swell it, and thin its shadow.
-        this.liveBall.setPosition(bq.x, bq.y - 10 - lift).setScale(1 + b.height * 0.35).setVisible(true);
-        this.liveBallShadow.setPosition(bq.x, bq.y).setVisible(true);
-        this.liveBallShadow.setScale(1 - b.height * 0.45).setAlpha(1 - b.height * 0.45);
-        // Streak dots behind an airborne ball (visual only — never the sim's).
-        if (b.height >= FX.HIT_TRAIL_MIN_H && this.time.now - this.lastTrailAt >= FX.HIT_TRAIL_EVERY_MS) {
-          this.lastTrailAt = this.time.now;
-          const dot = this.add
-            .circle(this.liveBall.x, this.liveBall.y, 5 * this.liveBall.scale, COLORS.white, 0.45)
-            .setDepth(41);
-          this.tweens.add({
-            targets: dot,
-            alpha: 0,
-            scale: 0.4,
-            duration: FX.HIT_TRAIL_LIFE_MS,
-            onComplete: () => dot.destroy(),
-          });
-        }
-      }
-    }
-
-    // The steering spotlight follows the chaser.
-    if (this.activeMarker) {
-      const cq = project(s.fielders[s.active].pos);
-      this.activeMarker.setPosition(cq.x, cq.y + 4);
-    }
-
-    // Throw-charge meter over the carrier.
-    if (this.charging && this.chargeMeter && s.ball.phase === 'held' && s.ball.heldBy !== null) {
-      const holder = { pos: project(s.fielders[s.ball.heldBy].pos) };
-      // Clamp hard: a tiny/negative width makes fillRoundedRect paint garbage.
-      const p = Phaser.Math.Clamp((this.time.now - this.chargeStart) / LIVE.THROW_METER_MS, 0, 1);
-      const g = this.chargeMeter;
-      g.clear();
-      g.setPosition(holder.pos.x, holder.pos.y - 58);
-      g.fillStyle(COLORS.ink, 0.5);
-      g.fillRoundedRect(-30, -7, 60, 14, 7);
-      if (p > 0.08) {
-        g.fillStyle(p >= 1 ? COLORS.gold : COLORS.white, 1);
-        g.fillRoundedRect(-27, -4, 54 * p, 8, 4);
-      }
-    }
-  }
-
-  /** Direct placement + run-cycle bookkeeping for one sim-owned kid.
-   *  (x, y are already-projected screen coords; y carries the depth.) */
-  private moveLiveSprite(spr: LiveSprite, x: number, y: number): void {
-    const moving = Math.abs(x - spr.container.x) > 0.5 || Math.abs(y - spr.container.y) > 0.5;
-    if (moving) {
-      if (!spr.cycle) spr.cycle = runCycle(this, spr.img, spr.charId);
-      if (Math.abs(x - spr.container.x) > 0.5) spr.img.setFlipX(x < spr.container.x);
-    } else if (spr.cycle) {
-      spr.cycle.stop(true);
-      spr.cycle = null;
-      spr.img.setFlipX(false);
-    }
-    spr.img.setScale((spr.baseH * depthScale({ x, y })) / spr.img.height);
-    spr.container.setPosition(x, y);
   }
 
   /** Turn this tick's sim events into juice: SFX, pops, shakes, text. */
@@ -2655,7 +2420,7 @@ export class GameScene extends Phaser.Scene {
           if (s.mode === 'defense') audio.cheer();
           if (this.playHighlights.sawDive) this.playHighlights.diveCatch = true;
           // The catcher's glove-up beat.
-          const cspr = this.fielderSprites.find((f) => f.charId === e.fielder);
+          const cspr = this.liveView.fielderSprite(e.fielder);
           if (cspr && cspr.img.active) {
             cspr.cycle?.stop(false);
             cspr.cycle = null;
@@ -2665,7 +2430,7 @@ export class GameScene extends Phaser.Scene {
         }
         case 'pickup':
           audio.pop();
-          if (s.mode === 'defense') this.showBaseRings();
+          if (s.mode === 'defense') this.liveView.showBaseRings();
           break;
         case 'land': {
           const lq = project(s.ball.pos);
@@ -2709,7 +2474,7 @@ export class GameScene extends Phaser.Scene {
           audio.whiff();
           this.callIt(e.kind === 'wild' ? 'errorWild' : 'errorDrop', {});
           // The flustered kid wears it on their face for the fumble beat.
-          const fspr = this.fielderSprites.find((f) => f.charId === e.fielder);
+          const fspr = this.liveView.fielderSprite(e.fielder);
           if (fspr && !fspr.cycle && fspr.img.active) {
             reactPose(this, fspr.img, e.fielder, 'upset');
           }
@@ -2719,9 +2484,9 @@ export class GameScene extends Phaser.Scene {
         }
         case 'throw': {
           audio.pitchWoosh();
-          this.hideBaseRings();
+          this.liveView.hideBaseRings();
           // The thrower whips through the release pose, facing the target bag.
-          const tspr = e.fielder ? this.fielderSprites.find((f) => f.charId === e.fielder) : undefined;
+          const tspr = e.fielder ? this.liveView.fielderSprite(e.fielder) : undefined;
           if (tspr && tspr.img.active) {
             tspr.cycle?.stop(false);
             tspr.cycle = null;
@@ -2737,7 +2502,7 @@ export class GameScene extends Phaser.Scene {
           if (s.mode === 'defense') audio.cheer();
           else audio.whiff();
           this.playHighlights.outs += 1;
-          const spr = this.liveRunnerSprites.get(e.runner);
+          const spr = this.liveView.runnerSprite(e.runner);
           if (spr) {
             spr.cycle?.stop(false);
             spr.cycle = null;
@@ -2760,7 +2525,7 @@ export class GameScene extends Phaser.Scene {
           if (this.seasonGame && s.mode === 'offense') {
             this.statEvents.push({ t: 'run', kid: e.runner });
           }
-          const spr = this.liveRunnerSprites.get(e.runner);
+          const spr = this.liveView.runnerSprite(e.runner);
           if (spr) {
             spr.cycle?.stop(true);
             spr.cycle = null;
@@ -2790,22 +2555,6 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  /** Four fat glowing rings — throw targets while you hold the ball. */
-  private showBaseRings(): void {
-    if (this.baseRings.length > 0) return;
-    ([1, 2, 3, 4] as const).forEach((base) => {
-      const p = project(basePos(base));
-      const ring = this.add.circle(p.x, p.y, 30).setStrokeStyle(5, COLORS.gold, 0.9).setDepth(24);
-      this.tweens.add({ targets: ring, scale: 1.25, alpha: 0.5, duration: 430, yoyo: true, repeat: -1 });
-      this.baseRings.push(ring);
-    });
-  }
-
-  private hideBaseRings(): void {
-    this.baseRings.forEach((r) => r.destroy());
-    this.baseRings = [];
-  }
-
   /** The play is over — fold it into the inning and rejoin the normal flow. */
   private settleLivePlay(): void {
     const s = this.livePlay!;
@@ -2813,47 +2562,9 @@ export class GameScene extends Phaser.Scene {
     this.livePlay = undefined;
     this.phase = 'resolving';
 
-    // Chrome down.
-    this.hideBaseRings();
-    this.activeMarker?.destroy();
-    this.activeMarker = undefined;
-    this.chargeMeter?.destroy();
-    this.chargeMeter = undefined;
-    this.goBanner?.destroy();
-    this.goBanner = undefined;
-    this.liveBall?.destroy();
-    this.liveBall = undefined;
-    this.liveBallShadow?.destroy();
-    this.liveBallShadow = undefined;
+    // Chrome down + fielders trot home + runner-map rebuild — the view's job.
     this.charging = false;
-
-    // Fielders trot home; the winner side cheers a beat.
-    this.resetFieldersAfterPlay(outcome.outs > 0);
-
-    // Rebuild the base->token map from where the sim left everyone.
-    const nextRunners = new Map<number, Phaser.GameObjects.Container>();
-    outcome.baseIds.forEach((id, i) => {
-      if (!id) return;
-      const spr = this.liveRunnerSprites.get(id);
-      if (!spr || !spr.container.active) return;
-      spr.cycle?.stop(false);
-      spr.cycle = null;
-      spr.img.setTexture(poseKey(id, 'stand')); // whatever they ended in (run/slide) → standing
-      const p = project(basePos(i + 1));
-      spr.container.setPosition(p.x, p.y - 6);
-      spr.img.setFlipX(false);
-      nextRunners.set(i + 1, spr.container);
-    });
-    // Anything not standing on a base (outs already faded, scorers hopped) — sweep.
-    for (const [id, spr] of this.liveRunnerSprites) {
-      if (!outcome.baseIds.includes(id) && spr.container.active) {
-        spr.cycle?.stop(false);
-        spr.cycle = null;
-        this.time.delayedCall(520, () => spr.container.destroy());
-      }
-    }
-    this.liveRunnerSprites = new Map();
-    this.runners = nextRunners;
+    this.runners = this.liveView.settlePlay({ baseIds: outcome.baseIds, outs: outcome.outs });
 
     // Rules layer: fold in outs/runs/bases.
     const applied = applyLivePlay(this.halfState, outcome);
@@ -2921,37 +2632,6 @@ export class GameScene extends Phaser.Scene {
       } else {
         this.nextCpuBatter();
       }
-    });
-  }
-
-  /** Walk every fielder back to their spot; a successful defense cheers first. */
-  private resetFieldersAfterPlay(gotAnOut: boolean): void {
-    this.fieldAssignment.forEach((a, i) => {
-      const home = project(FIELD_POSITIONS[a.position]);
-      if (i === 0) {
-        if (this.pitcherSprite) {
-          this.pitcherSprite.setPosition(MOUND.x, MOUND.y);
-          idleBob(this, this.pitcherSprite, { amp: 4, dur: 1100 });
-        }
-        return;
-      }
-      const spr = this.fielderSpriteAt(i);
-      if (!spr) return;
-      spr.cycle?.stop(false);
-      spr.cycle = null;
-      spr.img.setTexture(poseKey(spr.charId, 'ready')); // back to the crouch
-      spr.img.setFlipX(false);
-      // Kids who left their spot were in on the play — a hop if it worked.
-      if (gotAnOut && dist({ x: spr.container.x, y: spr.container.y }, home) > 8) {
-        squashHop(this, spr.img, { height: 14 });
-      }
-      this.tweens.add({
-        targets: spr.container,
-        x: home.x,
-        y: home.y,
-        duration: 420,
-        ease: 'Sine.inOut',
-      });
     });
   }
 
@@ -3633,9 +3313,7 @@ export class GameScene extends Phaser.Scene {
     this.charging = true;
     this.chargeStart = this.time.now;
     this.chargeBase = this.nearestBaseTo(this.lastPointer);
-    this.chargeMeter?.destroy();
-    this.chargeMeter = this.add.graphics().setDepth(60);
-    this.baseRings.forEach((r, i) => r.setStrokeStyle(5, i + 1 === this.chargeBase ? COLORS.red : COLORS.gold, 0.9));
+    this.liveView.beginCharge(this.chargeBase);
   }
 
   private releaseThrow(): void {
@@ -3645,8 +3323,7 @@ export class GameScene extends Phaser.Scene {
     const power = Math.min(1, Math.max(0.2, held / LIVE.THROW_METER_MS));
     this.pendingThrow = { base: this.chargeBase, power };
     this.charging = false;
-    this.chargeMeter?.destroy();
-    this.chargeMeter = undefined;
+    this.liveView.releaseCharge();
   }
 
   private nearestBaseTo(p: Vec): 1 | 2 | 3 | 4 {
