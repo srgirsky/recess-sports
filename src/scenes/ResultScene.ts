@@ -22,8 +22,8 @@ interface ResultData {
   aiTeam?: string[];
   /** Season games route back to the week, not the draft. */
   seasonGame?: boolean;
-  /** Pass-and-play: team-named headline, both albums credited. */
-  matchType?: 'solo' | 'passplay';
+  /** Pass-and-play/net: team-named headline, both albums credited. */
+  matchType?: 'solo' | 'passplay' | 'net';
   awayIdentity?: TeamIdentity;
   homeIdentity?: TeamIdentity;
 }

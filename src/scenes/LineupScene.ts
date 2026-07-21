@@ -42,8 +42,11 @@ export interface GameInitData extends TeamState {
   practice?: boolean;
   /** This game counts toward the Recess Week season. */
   seasonGame?: boolean;
-  /** Pass-and-play: both seats human-batted, the batting player holds the device. */
-  matchType?: 'solo' | 'passplay';
+  /** Pass-and-play: both seats human-batted, the batting player holds the device.
+   *  Net: two devices — the host runs the one true sim, the guest mirrors. */
+  matchType?: 'solo' | 'passplay' | 'net';
+  /** Two-device play only: which end of the wire this device is. */
+  netRole?: 'host' | 'guest';
 }
 
 /** Where each position pad sits on the mini-diamond (screen coords). */

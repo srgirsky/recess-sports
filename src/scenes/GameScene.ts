@@ -283,12 +283,29 @@ export class GameScene extends Phaser.Scene {
   private regulation = INNINGS; // game length (settings can pick 1/2/3)
   private practice = false; // batting practice: endless pitches, no outs, no innings
   private seasonGame = false; // this game counts toward Recess Week
-  private matchType: 'solo' | 'passplay' = 'solo';
+  private matchType: 'solo' | 'passplay' | 'net' = 'solo';
+  /** Two-device play: which end of the wire this device is (unset = local). */
+  private netRole?: 'host' | 'guest';
+
+  /** Net: this device permanently owns one seat (host = 0/away, guest = 1/home). */
+  private netSeatIdx(): 0 | 1 {
+    return this.netRole === 'guest' ? 1 : 0;
+  }
 
   /** Whose juice meter/chips are on screen: the device holder — the batting
-   *  player in pass-and-play, always seat 0 in solo. */
+   *  player in pass-and-play, this device's fixed seat in net, seat 0 in solo. */
   private deviceSeat(): SeatState {
+    if (this.matchType === 'net') return this.seats[this.netSeatIdx()];
     return this.matchType === 'passplay' ? this.battingSeat() : this.seats[0];
+  }
+
+  /** Net: is the seat that acts in the CURRENT phase the REMOTE device's?
+   *  Guards the local input handlers so a spectator's taps do nothing. */
+  private remoteActs(): boolean {
+    if (this.matchType !== 'net') return false;
+    const actingSeat =
+      this.phase === 'pitching' || this.phase === 'running' ? this.battingSeat() : this.fieldingSeat();
+    return actingSeat !== this.seats[this.netSeatIdx()];
   }
   // 📼 instant replay: per-tick position snapshots of the current live play.
   private replayFrames: ReplayFrame[] = [];
@@ -438,9 +455,13 @@ export class GameScene extends Phaser.Scene {
     this.practice = data.practice ?? false;
     this.seasonGame = data.seasonGame ?? false;
     this.matchType = data.matchType ?? 'solo';
+    this.netRole = data.netRole;
     // Seat flags EVERY game (the seat objects persist across scene restarts):
     // pass-and-play makes the home seat a human batter too — both halves run
     // the human-batting family; the human-pitching family is never entered.
+    // Net keeps SOLO routing on both devices (the host's remote human enters
+    // at the CPU decision seams; the guest never routes flow at all) — the
+    // guest's UI gates key off deviceSeat()/remoteActs(), not these flags.
     const passplay = this.matchType === 'passplay';
     this.seats[0].humanBats = true;
     this.seats[0].humanPitches = !passplay;
@@ -496,6 +517,9 @@ export class GameScene extends Phaser.Scene {
       : bestPitcher(this.playerTeam);
     this.mode = getMode();
     this.features = getFeatures(this.mode);
+    // Net: frames already stream to the guest at 1× — a replay would
+    // double-consume them, so the 📼 stays off on both devices.
+    if (this.matchType === 'net') this.features = { ...this.features, replay: false };
     this.liveParams = resolveLiveParams(this.mode);
     this.venue = getVenue();
     this.geo = getFieldGeometry(this.venue);
@@ -503,9 +527,8 @@ export class GameScene extends Phaser.Scene {
     // and only in CLASSIC — kid mode never sharpens.
     // Pass-and-play is PvP: symmetric CPU defenses, no ramp, and it doesn't
     // feed the solo ramp's games-played tally.
-    this.ramp =
-      this.mode === 'main' && this.matchType !== 'passplay' ? rampLevel(getGamesPlayed()) : 0;
-    if (this.matchType !== 'passplay') recordGamePlayed();
+    this.ramp = this.mode === 'main' && this.matchType === 'solo' ? rampLevel(getGamesPlayed()) : 0;
+    if (this.matchType === 'solo') recordGamePlayed();
     // The booth introduces the matchup.
     if (this.identity && this.rival) {
       audio.say(`${teamName(this.identity)} versus ${teamName(this.rival)}! Play ball!`, undefined, 'queue');
@@ -2539,6 +2562,11 @@ export class GameScene extends Phaser.Scene {
     this.pendingThrow = { base, power };
   }
 
+  /** Public for headless/net driving: the quick-tap dive lunge. */
+  commandDive(): void {
+    this.pendingDive = true;
+  }
+
   /** Public for headless driving: the "everybody GO!" tap. */
   commandRun(): void {
     this.pendingRun = true;
@@ -3150,6 +3178,7 @@ export class GameScene extends Phaser.Scene {
       this.lastScreenPointer = { x: p.x, y: p.y };
       this.lastPointer = toLogical(p);
       this.lastPointerAt = this.time.now;
+      if (this.remoteActs()) return; // net: the other device's moment
       if (this.phase === 'pitching') this.onSwing();
       else if (this.phase === 'aiming') this.onThrow();
       else if (this.phase === 'running') {
@@ -3162,6 +3191,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.input.on('pointerup', () => {
+      if (this.remoteActs()) return; // net: the other device's moment
       if (this.phase === 'fielding' && this.charging) {
         this.releaseThrow();
       } else if (
@@ -3176,6 +3206,7 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.input.keyboard?.on('keydown-SPACE', () => {
+      if (this.remoteActs()) return; // net: the other device's moment
       if (this.phase === 'pitching') this.onSwing();
       else if (this.phase === 'aiming') this.onThrow();
       else if (this.phase === 'running') {
