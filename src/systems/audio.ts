@@ -9,6 +9,7 @@
 // ---------------------------------------------------------------------------
 
 import { AUDIO, VOICE } from '../config';
+import { rankVoices } from './voices';
 import type { VoiceProfile } from './voices';
 
 const MUTE_KEY = 'recess_muted';
@@ -62,6 +63,9 @@ export function unlock(): void {
   } catch {
     /* Web Audio unavailable — the game still runs silently. */
   }
+  // Warm the voice cache: the user gesture kicks off Chrome's async getVoices()
+  // population so the first spoken line gets a curated voice, not the default.
+  if (window.speechSynthesis) void enVoices();
 }
 
 function ready(): boolean {
@@ -193,7 +197,8 @@ export function bell(): void {
 let voiceList: SpeechSynthesisVoice[] = [];
 let voicesHooked = false;
 
-/** Cached English voice list. getVoices() populates async — re-cache on voiceschanged. */
+/** Cached curated voice list (rankVoices over the English inventory).
+ *  getVoices() populates async — re-cache on voiceschanged. */
 function enVoices(): SpeechSynthesisVoice[] {
   const synth = window.speechSynthesis;
   if (!synth) return [];
@@ -205,8 +210,10 @@ function enVoices(): SpeechSynthesisVoice[] {
   }
   if (!voiceList.length) {
     const all = synth.getVoices();
-    voiceList = all.filter((v) => /en[-_]/i.test(v.lang));
-    if (!voiceList.length && all.length) voiceList = all;
+    voiceList = rankVoices(all.filter((v) => /en[-_]/i.test(v.lang)));
+    if (!voiceList.length && all.length) voiceList = rankVoices(all);
+    if (import.meta.env.DEV && voiceList.length)
+      console.debug('[voice] curated:', voiceList.map((v) => `${v.name} (${v.lang})`));
   }
   return voiceList;
 }
@@ -262,8 +269,11 @@ function speakNow(text: string, profile: VoiceProfile): void {
     const u = new SpeechSynthesisUtterance(text);
     const voices = enVoices();
     if (voices.length) u.voice = voices[(profile.voiceIdx ?? 0) % voices.length];
-    u.pitch = profile.pitch;
-    u.rate = profile.rate;
+    // Humanizing jitter: repeated lines shouldn't sound byte-identical. Lives
+    // here (the impure module) so kidVoice profiles stay deterministic.
+    const j = VOICE.JITTER;
+    u.pitch = Math.min(2, Math.max(0, profile.pitch + (Math.random() * 2 - 1) * j.PITCH));
+    u.rate = Math.min(2, Math.max(0.5, profile.rate + (Math.random() * 2 - 1) * j.RATE));
     u.volume = VOICE.VOLUME;
     u.onend = advance;
     u.onerror = advance;
@@ -278,7 +288,7 @@ function speakNow(text: string, profile: VoiceProfile): void {
 }
 
 /** Old single-voice feel for bare say(text) call sites. */
-const DEFAULT_PROFILE: VoiceProfile = { pitch: 1.3, rate: 1.05, voiceIdx: 0 };
+const DEFAULT_PROFILE: VoiceProfile = { pitch: 1.2, rate: 1.02, voiceIdx: 0 };
 
 /** Speak a short kid-friendly callout. No-ops when muted / unsupported. */
 export function say(text: string, profile: VoiceProfile = DEFAULT_PROFILE, mode: SayMode = 'queue'): void {

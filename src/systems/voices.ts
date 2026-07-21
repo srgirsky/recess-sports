@@ -11,8 +11,42 @@ import type { Character } from '../data/types';
 export interface VoiceProfile {
   pitch: number;
   rate: number;
-  /** Index into the cached English voice list (modulo its length). */
+  /** Index into the curated voice list rankVoices builds (modulo its length). */
   voiceIdx?: number;
+}
+
+/** Minimal shape of SpeechSynthesisVoice the ranker needs (keeps it pure/testable). */
+export interface VoiceInfo {
+  name: string;
+  lang: string;
+}
+
+const normLang = (lang: string) => lang.toLowerCase().replace(/_/g, '-');
+
+/**
+ * Rank the browser's voice inventory by childlike suitability and return the
+ * curated top VOICE.PICK.TOP_N — real child voices first, then neural/Google
+ * quality voices, then younger-leaning system voices; deep/novelty voices are
+ * dropped. voiceIdx indexes into this list. If nothing matches any tier the
+ * result degrades to raw browser order, and a non-empty input never ranks to
+ * an empty list.
+ */
+export function rankVoices<T extends VoiceInfo>(voices: T[]): T[] {
+  const P = VOICE.PICK;
+  const seen = new Set<string>();
+  const deduped = voices.filter((v) => !seen.has(v.name) && (seen.add(v.name), true));
+  const kept = deduped.filter((v) => !P.AVOID.test(v.name));
+  const pool = kept.length ? kept : deduped;
+  const preferred = new Set(P.PREFERRED_LANGS.map(normLang));
+  const score = (v: VoiceInfo): number => {
+    const tier = P.TIERS.findIndex((re) => re.test(v.name));
+    return (tier >= 0 ? (P.TIERS.length - tier) * 100 : 0) + (preferred.has(normLang(v.lang)) ? 10 : 0);
+  };
+  return pool
+    .map((v, i) => ({ v, s: score(v), i }))
+    .sort((a, b) => b.s - a.s || a.i - b.i) // equal scores keep browser order
+    .slice(0, P.TOP_N)
+    .map((e) => e.v);
 }
 
 /** The two commentators: A = Pip (hyped little kid), B = Rocco (deadpan older kid). */
@@ -37,8 +71,8 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
 /**
  * A stable voice for one kid: same id always yields the same profile. Two
  * independent hash rolls place pitch/rate inside the KID ranges, the
- * expression nudge shifts them (clamped back into range), and a third bit
- * splits kids across the two cached English voices.
+ * expression nudge shifts them (clamped back into range), and a third hash
+ * slice spreads kids across the curated voice list.
  */
 export function kidVoice(char: Pick<Character, 'id' | 'visual'>): VoiceProfile {
   const K = VOICE.KID;
@@ -49,6 +83,6 @@ export function kidVoice(char: Pick<Character, 'id' | 'visual'>): VoiceProfile {
   return {
     pitch: clamp(pitchRoll + nudge.pitch, K.PITCH_MIN, K.PITCH_MAX),
     rate: clamp(rateRoll + nudge.rate, K.RATE_MIN, K.RATE_MAX),
-    voiceIdx: (h >>> 31) & 1,
+    voiceIdx: (h >>> 24) % VOICE.PICK.TOP_N,
   };
 }
