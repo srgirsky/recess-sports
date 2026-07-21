@@ -75,6 +75,8 @@ export interface BeginPlayOpts {
   manualBaserunning: boolean;
   /** First play of this kind this game — speak the one-shot coach line. */
   firstPlay: boolean;
+  /** Net guest spectating the other player's play: no tappable prompts. */
+  prompts?: boolean;
 }
 
 export class LivePlayView {
@@ -309,9 +311,11 @@ export class LivePlayView {
         .setStrokeStyle(4, COLORS.gold)
         .setDepth(25);
       this.scene.tweens.add({ targets: this.activeMarker, alpha: 0.45, duration: 380, yoyo: true, repeat: -1 });
-      if (opts.firstPlay) {
+      if (opts.firstPlay && opts.prompts !== false) {
         audio.say('Get the ball!', commentatorProfile('A'), 'flush');
       }
+    } else if (opts.prompts === false) {
+      // Spectating the other device's play — ball and runners only.
     } else if (opts.manualBaserunning) {
       // Main mode: the bases ARE the controls — tap ahead to send, behind to
       // turn a runner back. Rings show what's tappable.

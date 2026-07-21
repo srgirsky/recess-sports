@@ -77,6 +77,7 @@ import { getSeason, saveSeason, recordSeasonGame } from '../systems/season';
 import {
   snapshotLive,
   applyFrame,
+  lerpFrames,
   isReplayWorthy,
   newHighlights,
   type ReplayFrame,
@@ -322,6 +323,25 @@ export class GameScene extends Phaser.Scene {
   private netSwing?: NetMsg & { t: 'swing' };
   /** The host's aimed mound plan for the in-flight pitch (remote batter). */
   private netMoundPlan?: PitchPlan;
+
+  // --- Two-device play (guest side) ----------------------------------------
+  /** Frame interpolation buffer: render between the last two host frames. */
+  private netFramePrev?: ReplayFrame;
+  private netFrameNext?: ReplayFrame;
+  private netFrameAt = 0;
+  private lastGuestSendAt = 0;
+  private netShownBatterId?: string;
+
+  /** Does THIS device's human hold the bat right now? (Net overrides the
+   *  flow-family flags — the guest bats the bottom on solo-flagged seats.) */
+  private localHumanBats(): boolean {
+    if (this.matchType === 'net') return !this.seatIsRemote(this.battingSeat());
+    return this.battingSeat().humanBats;
+  }
+
+  private guestSend(msg: NetMsg): void {
+    if (this.matchType === 'net' && this.netRole === 'guest') activeSession()?.send(msg);
+  }
   /** What the host flow is currently blocked on, + its continuation/fallback. */
   private netAwait?: 'pitchPlan' | 'swing';
   private netResume?: () => void;
@@ -1174,6 +1194,9 @@ export class GameScene extends Phaser.Scene {
         this.time.delayedCall(FLOW.HALF_START_MS, () => this.nextCpuBatter());
       }
     };
+    if (this.matchType === 'net' && this.netRole === 'guest') {
+      return; // presentation only — every beat arrives by wire
+    }
     if (this.matchType === 'passplay') {
       // Nothing schedules until the right kid holds the device.
       const seat = this.battingSeat();
@@ -1343,6 +1366,9 @@ export class GameScene extends Phaser.Scene {
     this.swingType = 'normal'; // the chip choice is per-at-bat
     this.showSwingChips();
     this.showSpendChips();
+    // Net: the batter is now known — the guest shows the intro and (fielding)
+    // arms its own mound ceremony off this beat.
+    this.hostCast({ t: 'settle', hud: this.hudSnap(), next: 'pitch' });
 
     if (this.batter.ability === 'calls_shot') {
       this.flashAnnounce('"HOME RUN,\nCALLED IT!"', COLORS.white, 900);
@@ -1622,7 +1648,7 @@ export class GameScene extends Phaser.Scene {
   private showSwingChips(): void {
     this.swingChips?.destroy();
     this.swingChips = undefined;
-    if (!this.features.swingChoice || !this.battingSeat().humanBats) return;
+    if (!this.features.swingChoice || !this.localHumanBats()) return;
     const defs: Array<{ t: SwingType; icon: string }> = [
       { t: 'safe', icon: '🛡' },
       { t: 'normal', icon: '🏏' },
@@ -1664,6 +1690,9 @@ export class GameScene extends Phaser.Scene {
   private showReliefButton(): void {
     this.reliefBtn?.destroy();
     this.reliefBtn = undefined;
+    // Net guest: manual relief isn't wired (no relief message) — the CPU
+    // bullpen policy manages the remote seat host-side.
+    if (this.matchType === 'net' && this.netRole === 'guest') return;
     if (!this.features.fatigue || !this.fieldingSeat().plan || !isTired(this.fieldingSeat().fatigue)) return;
     const { container } = pill(this, 116, GAME_HEIGHT - 96, '🥵 NEW PITCHER', {
       fill: COLORS.red,
@@ -1745,7 +1774,7 @@ export class GameScene extends Phaser.Scene {
     if (!this.features.juice) return;
     // Batting chips vs pitching chips follow the human's ROLE this half (and
     // so does the y-offset — the pitching stack sits above the relief chip).
-    const humanBatting = this.battingSeat().humanBats;
+    const humanBatting = this.localHumanBats();
     const defs: Array<{ kind: 'turboLegs' | 'goldenGlove' | 'rallyCap'; label: string; armed: boolean; arm: () => void }> =
       humanBatting
         ? [
@@ -1936,6 +1965,25 @@ export class GameScene extends Phaser.Scene {
 
   /** Public headless hook (main mode): swing with the cursor at `cursor`. */
   resolvePlayerSwingAimed(errorMs: number, cursor: PlateLoc): void {
+    // Net guest: the timing resolved HERE, on this device — ship the numbers,
+    // show local feedback, and let the host resolve the contact.
+    if (this.matchType === 'net' && this.netRole === 'guest') {
+      this.phase = 'resolving';
+      this.swung = true;
+      this.clearPitchVisuals();
+      this.animateSwing();
+      const powered = this.armedPower;
+      this.armedPower = false;
+      this.showBandFeedback(bandFromError(errorMs, timingForSwing(getSwingTiming(this.mode), this.swingType)));
+      this.guestSend({
+        t: 'swing',
+        errorMs,
+        cursor,
+        swingType: this.swingType,
+        spend: powered ? 'powerSwing' : undefined,
+      });
+      return;
+    }
     const plan = this.pitchPlan!;
     this.phase = 'resolving';
     this.swung = true;
@@ -1990,6 +2038,19 @@ export class GameScene extends Phaser.Scene {
   }
 
   private resolvePlayerSwing(band: SwingBand, took: boolean): void {
+    // Net guest (kid mode): ship the band (or the take) — host resolves.
+    if (this.matchType === 'net' && this.netRole === 'guest') {
+      this.phase = 'resolving';
+      this.clearPitchVisuals();
+      if (took) {
+        this.guestSend({ t: 'swing', swingType: this.swingType }); // no data = take
+        return;
+      }
+      this.animateSwing();
+      this.showBandFeedback(this.pitchIsWild ? wildSwingBand(band) : band);
+      this.guestSend({ t: 'swing', band, swingType: this.swingType });
+      return;
+    }
     this.phase = 'resolving';
     this.clearPitchVisuals();
 
@@ -2439,6 +2500,10 @@ export class GameScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     if (this.matchType === 'net') activeSession()?.tick(this.time.now);
     if (this.swingCursor && this.phase === 'pitching') this.positionSwingCursor();
+    if (this.matchType === 'net' && this.netRole === 'guest') {
+      this.netGuestUpdate();
+      return; // guests NEVER step the sim — frames arrive by wire
+    }
     if (this.replaying) {
       this.stepReplay(delta);
       return;
@@ -2779,6 +2844,7 @@ export class GameScene extends Phaser.Scene {
     this.cpuBatter = getCharacter(batSeat.team[batSeat.lineupIdx % TEAM_SIZE]);
     this.showBatter(this.cpuBatter, true); // jogs in from the dugout
     this.batterLabel.setText(this.cpuBatter.name);
+    this.hostCast({ t: 'settle', hud: this.hudSnap(), next: 'pitch' });
     // Your defense heckles the incoming batter, Backyard style.
     const fieldTeam = this.fieldingSeat().team;
     const heckler = getCharacter(fieldTeam[Math.floor(Math.random() * fieldTeam.length)]);
@@ -2885,6 +2951,11 @@ export class GameScene extends Phaser.Scene {
     this.clearPitchVisuals();
     this.showPitchFeedback(band);
     this.pitcherWindup();
+    // Net guest: the meter resolved HERE — ship it; the host launches.
+    if (this.matchType === 'net' && this.netRole === 'guest') {
+      this.guestSend({ t: 'pitchPlan', kind: 'fastball', target: { x: 0, y: 0 }, band, errorMs: 0 });
+      return;
+    }
 
     // The CPU batter's plan is pure logic; the scene just acts it out.
     // Net: placeholder — the remote batter's swing decides at the settle.
@@ -2900,6 +2971,22 @@ export class GameScene extends Phaser.Scene {
 
   /** Public headless hook (main mode): resolve an aimed, typed pitch. */
   resolvePlayerPitchPlan(kind: PitchKind, target: PlateLoc, band: PitchBand, errorMs?: number): void {
+    // Net guest: the meter + aim resolved HERE — ship them; the host rolls
+    // the location scatter and launches.
+    if (this.matchType === 'net' && this.netRole === 'guest') {
+      const NOMINAL_NET: Record<PitchBand, number> = { perfect: 0, good: 110, weak: 205, wild: 320 };
+      this.phase = 'resolving';
+      this.autoThrowTimer?.remove();
+      this.autoThrowTimer = undefined;
+      this.selectedPitch = undefined;
+      this.pitchSelect?.destroy();
+      this.pitchSelect = undefined;
+      this.clearPitchVisuals();
+      this.showPitchFeedback(band);
+      this.pitcherWindup();
+      this.guestSend({ t: 'pitchPlan', kind, target, band, errorMs: errorMs ?? NOMINAL_NET[band] });
+      return;
+    }
     this.lastPitchKind = kind;
     // Speedy CPU runners sometimes take off on the pitch.
     this.cpuStealFrom = undefined;
@@ -3190,7 +3277,353 @@ export class GameScene extends Phaser.Scene {
         default:
           break; // pause/resume/bye land with the disconnect pass
       }
+      return;
     }
+
+    // Guest: mirror the host's beats — never simulate, never schedule flow.
+    switch (m.t) {
+      case 'half':
+        this.inning = m.inning;
+        this.half = m.half;
+        this.netShownBatterId = undefined;
+        this.startHalf(); // presentation only (guest-guarded scheduling)
+        this.netApplyHud(m.hud);
+        this.netSyncRunners(m.hud);
+        break;
+      case 'settle':
+        this.netGuestSettle(m);
+        break;
+      case 'atBat':
+        this.netGuestAtBat(m);
+        break;
+      case 'pitchLaunch':
+        this.netGuestPitchLaunch(m);
+        break;
+      case 'liveStart':
+        this.netGuestLiveStart(m);
+        break;
+      case 'liveFrame':
+        if (this.livePlay) {
+          this.netFramePrev = this.netFrameNext ?? m.frame;
+          this.netFrameNext = m.frame;
+          this.netFrameAt = this.time.now;
+        }
+        break;
+      case 'liveEvents':
+        if (this.livePlay) {
+          for (const e of m.events) {
+            this.liveView.reactTo(e, this.livePlay);
+            if (e.t === 'bonk') this.callIt('bonk', {});
+            else if (e.t === 'error') this.callIt(e.kind === 'wild' ? 'errorWild' : 'errorDrop', {});
+          }
+        }
+        break;
+      case 'gameOver':
+        this.netGuestGameOver(m);
+        break;
+      default:
+        break;
+    }
+  }
+
+  // --- Guest ceremony (driven entirely by host messages) --------------------
+
+  /** Mirror seat/half state from a HudSnap; the wire is the truth. */
+  private netApplyHud(hud: HudSnap): void {
+    this.seats[0].score = hud.scores[0];
+    this.seats[1].score = hud.scores[1];
+    this.seats[0].lineupIdx = hud.lineupIdx[0];
+    this.seats[1].lineupIdx = hud.lineupIdx[1];
+    this.seats[0].juice = { ...this.seats[0].juice, value: hud.juice[0] };
+    this.seats[1].juice = { ...this.seats[1].juice, value: hud.juice[1] };
+    this.halfState = {
+      ...this.halfState,
+      outs: hud.outs,
+      bases: [hud.bases[0] !== null, hud.bases[1] !== null, hud.bases[2] !== null],
+      count: { balls: hud.balls, strikes: hud.strikes },
+    };
+    if (hud.batterId) {
+      const char = getCharacter(hud.batterId);
+      if (this.battingSeat().humanBats) this.batter = char;
+      else this.cpuBatter = char;
+    }
+    if (hud.pitcherId) this.fieldingSeat().pitcher = getCharacter(hud.pitcherId);
+    if (this.features.juice) this.refreshJuiceMeter();
+    this.refreshHud();
+  }
+
+  /** Reconcile the settled runner tokens to the wire's base state. */
+  private netSyncRunners(hud: HudSnap): void {
+    if (this.livePlay) return; // a live play owns the tokens
+    const want = new Map<number, string>();
+    hud.bases.forEach((id, i) => {
+      if (id) want.set(i + 1, id);
+    });
+    for (const [base, token] of [...this.runners]) {
+      if (want.get(base) !== (token.getData('id') as string)) {
+        token.destroy();
+        this.runners.delete(base);
+      }
+    }
+    for (const [base, id] of want) {
+      if (!this.runners.has(base)) {
+        const token = this.makeRunner(getCharacter(id));
+        const p = project(basePos(base));
+        token.setPosition(p.x, p.y - 6);
+        this.runners.set(base, token);
+      }
+    }
+  }
+
+  private netGuestSettle(m: NetMsg & { t: 'settle' }): void {
+    // A live play in progress settles first (chrome down, runner-map rebuild).
+    if (this.livePlay) {
+      const outsThisPlay = Math.max(0, m.hud.outs - this.livePlay.outsBefore);
+      this.livePlay = undefined;
+      this.phase = 'resolving';
+      this.charging = false;
+      this.runners = this.liveView.settlePlay({ baseIds: [...m.hud.bases], outs: outsThisPlay });
+      this.netFramePrev = undefined;
+      this.netFrameNext = undefined;
+    }
+    this.netApplyHud(m.hud);
+    this.netSyncRunners(m.hud);
+    // Fresh batter → the intro beat.
+    if (m.hud.batterId && m.hud.batterId !== this.netShownBatterId) {
+      this.netShownBatterId = m.hud.batterId;
+      const char = getCharacter(m.hud.batterId);
+      this.showBatter(char, !this.localHumanBats());
+      this.batterLabel.setText(char.name);
+      if (this.localHumanBats()) {
+        this.swingType = 'normal';
+        this.showSwingChips();
+      }
+      this.showSpendChips();
+    }
+    // We field: arm our own mound ceremony for the coming pitch.
+    if (m.next === 'pitch' && !this.localHumanBats() && !this.pitchSelect && this.phase !== 'aiming') {
+      this.time.delayedCall(FLOW.BETWEEN_PITCH_MS, () => {
+        if (this.pitchSelect || this.phase === 'aiming' || this.phase === 'ended' || this.livePlay) return;
+        this.beginPitchTurn();
+      });
+    }
+  }
+
+  private netGuestAtBat(m: NetMsg & { t: 'atBat' }): void {
+    this.clearPitchVisuals();
+    this.phase = 'resolving';
+    const r = m.result;
+    const prevBatter = this.battingSeat().humanBats ? this.batter : this.cpuBatter;
+    if (r.kind === 'ball') this.scoreboard.umpCall('BALL!', BALL_GREEN);
+    else if (r.kind === 'foul') this.scoreboard.umpCall('FOUL!', COLORS.white);
+    else if (r.kind === 'strike') this.scoreboard.umpCall('STRIKE!', COLORS.gold);
+    if (m.movements.length > 0 && prevBatter) {
+      this.setView('wide');
+      this.animateBaserunning(m.movements, prevBatter);
+      this.fadeOutBatter();
+    }
+    this.netApplyHud(m.hud);
+    this.flashAnnounce(
+      r.description,
+      r.kind === 'hit' ? COLORS.gold : r.kind === 'ball' ? BALL_GREEN : COLORS.white,
+      FLOW.BANNER_HOLD_MS
+    );
+  }
+
+  private netGuestPitchLaunch(m: NetMsg & { t: 'pitchLaunch' }): void {
+    if (this.phase === 'ended') return;
+    this.setView('close');
+    if (!this.localHumanBats()) return; // our pitch — the windup already played
+    // We bat: run the local flight and arm the swing. The timing window is
+    // OURS — the host only learns the resolved band/cursor.
+    this.phase = 'pitching';
+    this.swung = false;
+    this.pitchStart = this.time.now;
+    this.pitchTravelMs = m.travelMs;
+    this.pitchPlan = m.plan;
+    this.pitchIsWild = m.wild;
+    audio.pitchWoosh();
+    const start = this.rig.releasePoint;
+    const endPt = m.plan ? plateToScreen(m.plan.actual) : plateToScreen({ x: m.wild ? 60 : 0, y: 0 });
+    if (SHOW_TIMING_RING) {
+      const rc = m.plan ? endPt : plateToScreen({ x: 0, y: 0 });
+      this.ringTarget = this.add
+        .circle(rc.x, rc.y, PLATE_VIEW.RING_R)
+        .setStrokeStyle(4, COLORS.gold)
+        .setDepth(PLATE_VIEW.DEPTH + 4);
+      this.ringShrink = this.add
+        .circle(rc.x, rc.y, PLATE_VIEW.RING_R)
+        .setStrokeStyle(5, m.wild && !m.plan ? COLORS.red : COLORS.white)
+        .setDepth(PLATE_VIEW.DEPTH + 5);
+      this.ringShrink.setScale(3.6);
+      this.tweens.add({ targets: this.ringShrink, scale: 1, duration: m.travelMs, ease: 'Sine.in' });
+    }
+    const ball = this.add.circle(start.x, start.y, 10, COLORS.white).setDepth(PLATE_VIEW.DEPTH + 8);
+    ball.setStrokeStyle(2, COLORS.ink);
+    this.ball = ball;
+    if (m.plan) {
+      const plan = m.plan;
+      const bendScale = PLATE_VIEW.ZONE.SCALE;
+      this.zoneGfx = zoneOutline(this);
+      this.tweens.addCounter({
+        from: 0,
+        to: 1,
+        duration: m.travelMs,
+        ease: 'Sine.in',
+        onUpdate: (tw) => {
+          if (this.ball !== ball) return;
+          const t = tw.getValue() ?? 0;
+          const bend = ballCurveAt(plan, t);
+          ball.setPosition(
+            start.x + (endPt.x - start.x) * t + bend.x * bendScale,
+            start.y + (endPt.y - start.y) * t + bend.y * bendScale
+          );
+          ball.setScale(
+            PLATE_VIEW.BALL.SCALE_FROM + t * (PLATE_VIEW.BALL.SCALE_TO - PLATE_VIEW.BALL.SCALE_FROM)
+          );
+        },
+        onComplete: () => {
+          if (!this.swung && this.phase === 'pitching') this.resolvePlayerSwing('miss', true);
+        },
+      });
+    } else {
+      this.tweens.add({
+        targets: ball,
+        x: endPt.x,
+        y: endPt.y,
+        scale: { from: PLATE_VIEW.BALL.SCALE_FROM, to: PLATE_VIEW.BALL.SCALE_TO },
+        duration: m.travelMs,
+        ease: m.wild ? 'Sine.inOut' : 'Sine.in',
+        onComplete: () => {
+          if (!this.swung && this.phase === 'pitching') this.resolvePlayerSwing('miss', true);
+        },
+      });
+    }
+    this.startBallTrail();
+    if (this.features.battingCursor && m.plan) this.showSwingCursor();
+    if (this.features.juice) this.showPowerButton();
+  }
+
+  private netGuestLiveStart(m: NetMsg & { t: 'liveStart' }): void {
+    this.clearPitchVisuals();
+    this.fieldAssignment = m.assignment;
+    this.liveView.buildDefense(this.fieldAssignment);
+    // Structurally-valid puppet state — NEVER stepped; the frames drive it.
+    this.livePlay = startLivePlay({
+      mode: m.mode,
+      launch: m.launch,
+      batter: m.batter,
+      baseRunners: m.baseRunners,
+      defense: m.assignment.map((a) => {
+        const c = getCharacter(a.charId);
+        return { ...a, speed: c.stats.speed, glove: c.stats.fielding, arm: c.stats.pitching };
+      }),
+      outs: m.outs,
+      params: this.liveParams,
+      geo: this.geo,
+    });
+    applyFrame(this.livePlay, m.frame);
+    this.netFramePrev = m.frame;
+    this.netFrameNext = m.frame;
+    this.netFrameAt = this.time.now;
+    this.setView('wide');
+    this.phase = m.mode === 'defense' ? 'fielding' : 'running';
+    this.pendingThrow = undefined;
+    this.pendingDive = false;
+    this.pendingRun = false;
+    this.pendingSend = undefined;
+    this.pendingHold = undefined;
+    this.charging = false;
+    const guestActs = !this.remoteActs();
+    this.fadeOutBatter();
+    const batterToken = this.makeRunner(getCharacter(m.batter.charId));
+    const firstPlay = m.mode === 'defense' ? this.firstFieldPlay : this.firstRunPlay;
+    if (m.mode === 'defense') this.firstFieldPlay = false;
+    else this.firstRunPlay = false;
+    this.liveView.beginPlay(this.livePlay, {
+      runnerTokens: this.runners,
+      batterToken,
+      batterId: m.batter.charId,
+      manualBaserunning: this.features.manualBaserunning,
+      firstPlay,
+      prompts: guestActs,
+    });
+    this.runners = new Map();
+  }
+
+  /** Stream local intents to the host + render between its frames. */
+  private netGuestUpdate(): void {
+    const lp = this.livePlay;
+    if (!lp) return;
+    const acting = !this.remoteActs();
+    if (acting && this.phase === 'fielding') {
+      const msg: NetMsg & { t: 'liveInput' } = { t: 'liveInput' };
+      let send = false;
+      if (this.time.now - this.lastGuestSendAt >= 1000 / NET.FRAME_HZ) {
+        msg.pointer = this.lastPointer;
+        msg.pointerActive =
+          this.input.activePointer.isDown ||
+          this.time.now - this.lastPointerAt < LIVE.ASSIST.POINTER_STALE_MS;
+        send = true;
+        this.lastGuestSendAt = this.time.now;
+      }
+      if (this.pendingThrow) {
+        msg.throwTo = this.pendingThrow;
+        this.pendingThrow = undefined;
+        this.charging = false;
+        this.liveView.releaseCharge();
+        send = true;
+      }
+      if (this.pendingDive) {
+        msg.dive = true;
+        this.pendingDive = false;
+        send = true;
+      }
+      if (send) this.guestSend(msg);
+    } else if (acting && this.phase === 'running') {
+      const msg: NetMsg & { t: 'liveInput' } = { t: 'liveInput' };
+      let send = false;
+      if (this.pendingRun) {
+        msg.run = true;
+        this.pendingRun = false;
+        send = true;
+      }
+      if (this.pendingSend) {
+        msg.send = this.pendingSend;
+        this.pendingSend = undefined;
+        send = true;
+      }
+      if (this.pendingHold) {
+        msg.hold = this.pendingHold;
+        this.pendingHold = undefined;
+        send = true;
+      }
+      if (send) this.guestSend(msg);
+    }
+    // Interpolated render: 20 Hz wire → per-frame draw.
+    if (this.netFramePrev && this.netFrameNext) {
+      const span = 1000 / NET.FRAME_HZ;
+      const alpha = Math.min(1, (this.time.now - this.netFrameAt) / span);
+      applyFrame(lp, lerpFrames(this.netFramePrev, this.netFrameNext, alpha));
+      this.liveView.render(lp);
+    }
+  }
+
+  private netGuestGameOver(m: NetMsg & { t: 'gameOver' }): void {
+    this.netApplyHud(m.hud);
+    this.phase = 'ended';
+    this.setView('wide');
+    this.time.delayedCall(400, () => {
+      this.scene.start('Result', {
+        playerScore: this.seats[0].score,
+        aiScore: this.seats[1].score,
+        playerTeam: this.playerTeam,
+        aiTeam: this.aiTeam,
+        matchType: this.matchType,
+        awayIdentity: this.seats[0].identity,
+        homeIdentity: this.seats[1].identity,
+      });
+    });
   }
 
   /**
