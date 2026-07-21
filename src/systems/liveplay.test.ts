@@ -5,6 +5,7 @@
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
+import { LIVE } from '../config';
 import type { Character } from '../data/types';
 import { resolveContact, type Launch } from './atbat';
 import { resolveLiveParams, type LiveParams } from './mode';
@@ -643,6 +644,129 @@ describe('live play: manual baserunning (main mode)', () => {
       expect(outcome.outs + (s.outsBefore ?? 0)).toBeLessThanOrEqual(4);
       expect(outcome.runs).toBeLessThanOrEqual(4);
     }
+  });
+});
+
+describe('live play: bounces & fence caroms', () => {
+  // Assist fully off: the ball is left alone to do physics.
+  const params: LiveParams = { ...resolveLiveParams('kid'), assist: 'magnet', assistBlend: 0 };
+
+  const start = (launch: Launch, geo = DEFAULT_GEOMETRY) =>
+    startLivePlay({
+      mode: 'defense',
+      launch,
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params,
+      geo,
+    });
+
+  // Park the chaser in the corner so nobody grabs the ball — these tests
+  // watch the ball's own physics. (Only the active chaser can field it.)
+  const parked = { pointer: { x: 60, y: 560 }, pointerActive: true };
+
+  /** Step until the ball is settled (or the play ends); returns the trace. */
+  const settle = (s: LivePlayState) => {
+    const trace: { pos: { x: number; y: number }; height: number; events: LiveEvent[] }[] = [];
+    let guard = 0;
+    while (guard++ < 400 && s.phase !== 'done') {
+      s = stepLivePlay(s, parked, 25, params, () => 0.5);
+      trace.push({ pos: { ...s.ball.pos }, height: s.ball.height, events: [...s.events] });
+      if (s.ball.phase === 'rolling' && s.ball.rollV === 0 && !s.ball.hop && s.landedAt > 0) break;
+    }
+    return { s, trace };
+  };
+
+  const gapLiner: Launch = {
+    type: 'liner',
+    landing: { x: 480, y: 300 },
+    hangMs: 900,
+    rollSpeed: 300,
+    homer: false,
+  };
+
+  it('a landed liner hops past its landing spot, hops diminish, and it settles', () => {
+    const { s, trace } = settle(start(gapLiner));
+    const landIdx = trace.findIndex((t) => t.events.some((e) => e.t === 'land'));
+    expect(landIdx).toBeGreaterThanOrEqual(0);
+    const afterLand = trace.slice(landIdx + 1);
+    // It traveled beyond the landing point...
+    expect(dist(s.ball.pos, gapLiner.landing)).toBeGreaterThan(20);
+    // ...with bounded, diminishing hop height...
+    const peak = Math.max(...afterLand.map((t) => t.height));
+    expect(peak).toBeGreaterThan(0);
+    expect(peak).toBeLessThanOrEqual(LIVE.BOUNCE.FIRST_HOP_H + 1e-9);
+    // ...and it came to rest (settled, flat, done hopping).
+    expect(s.ball.rollV).toBe(0);
+    expect(s.ball.height).toBe(0);
+    expect(s.ball.hop).toBeUndefined();
+  });
+
+  it('identical kid-mode sims are byte-identical, bounces included', () => {
+    let a = start(gapLiner);
+    let b = start(gapLiner);
+    for (let i = 0; i < 200; i++) {
+      a = stepLivePlay(a, parked, 25, params, () => 0.5);
+      b = stepLivePlay(b, parked, 25, params, () => 0.5);
+      expect(JSON.stringify(b)).toBe(JSON.stringify(a));
+      if (a.phase === 'done') break;
+    }
+  });
+
+  it('livelier ground = longer bounce-out: blacktop > park > sandlot', () => {
+    const travel = (geo = DEFAULT_GEOMETRY) =>
+      dist(settle(start(gapLiner, geo)).s.ball.pos, gapLiner.landing);
+    const park = travel();
+    const blacktop = travel(getFieldGeometry(VENUES.blacktop));
+    const sandlot = travel(getFieldGeometry(VENUES.sandlot));
+    expect(blacktop).toBeGreaterThan(park);
+    expect(park).toBeGreaterThan(sandlot);
+  });
+
+  it('a hot liner at the wall caroms back into play — a live double off the fence', () => {
+    // Lands 20px in front of the center-field wall, still moving fast.
+    const wall = fenceYAtX(DEFAULT_GEOMETRY, 480);
+    const hot: Launch = {
+      type: 'liner',
+      landing: { x: 480, y: wall + 20 },
+      hangMs: 600,
+      rollSpeed: 300,
+      homer: false,
+    };
+    const { s, trace } = settle(start(hot));
+    expect(trace.some((t) => t.events.some((e) => e.t === 'carom'))).toBe(true);
+    // Never past the wall from the carom on, and it settles heading home-ward.
+    for (const t of trace) {
+      expect(t.pos.y).toBeGreaterThanOrEqual(fenceYAtX(DEFAULT_GEOMETRY, t.pos.x) + 4 - 0.001);
+    }
+    expect(s.ball.pos.y).toBeGreaterThan(wall + 4);
+  });
+
+  it('caroms keep the ball in-bounds across every venue and spray direction', () => {
+    for (const v of Object.values(VENUES)) {
+      const geo = getFieldGeometry(v);
+      for (const t of [0.15, 0.35, 0.5, 0.65, 0.85]) {
+        const at = fencePointAt(geo, t);
+        const hot: Launch = {
+          type: 'liner',
+          landing: { x: at.x, y: at.y + 18 },
+          hangMs: 550,
+          rollSpeed: 300,
+          homer: false,
+        };
+        const { trace } = settle(start(hot, geo));
+        for (const step of trace) {
+          expect(step.pos.y).toBeGreaterThanOrEqual(fenceYAtX(geo, step.pos.x) + 4 - 0.001);
+        }
+      }
+    }
+  });
+
+  it('grounders never hop — they roll exactly like before', () => {
+    const { trace } = settle(start(grounderToShort));
+    for (const t of trace) expect(t.height).toBe(0);
   });
 });
 

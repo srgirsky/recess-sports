@@ -334,6 +334,29 @@ export const LIVE = {
     /** Initial grounder roll speed (px/s); decelerates to stop at the settle point. */
     GROUNDER_SPEED: { MIN: 240, MAX: 350 },
   },
+  /**
+   * What a landed ball does next (systems/liveplay.ts). Flies and liners
+   * take diminishing hops, then roll out; anything hopping or rolling that
+   * reaches the wall caroms back into play. Fully deterministic — no rng —
+   * so kid-mode sims stay byte-identical.
+   */
+  BOUNCE: {
+    /** Diminishing hops after a fly/liner lands. */
+    HOPS: 2,
+    /** Speed / height / duration retained per hop. */
+    RESTITUTION: 0.5,
+    /** Landing ground-speed fraction carried into the first hop, per type. */
+    KEEP: { fly: 0.4, liner: 0.6 },
+    /** First hop duration (ms) and height cue (0..1, renderer scale). */
+    FIRST_HOP_MS: 340,
+    FIRST_HOP_H: 0.45,
+    /** Post-hop speed (px/s) → decel-roll settle distance (v * this, px). */
+    ROLLOUT_S: 0.55,
+    /** Carom: speed retained bouncing off the fence. */
+    WALL_REST: 0.55,
+    /** A hopping ball is grabbable only below this height (short-hop scoop). */
+    PICKUP_MAX_H: 0.4,
+  },
   /** Player-steered fielder speed (px/s). */
   FIELDER_SPEED: 210,
   /** Fielding assist (mode-tied: kid = auto, main = magnet). */

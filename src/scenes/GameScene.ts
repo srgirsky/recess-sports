@@ -1978,6 +1978,14 @@ export class GameScene extends Phaser.Scene {
           this.callIt('bonk', {});
           break;
         }
+        case 'carom': {
+          const cq = project(s.ball.pos);
+          floatingText(this, cq.x, cq.y - 36, 'OFF THE WALL!', COLORS.gold, 26);
+          burst(this, cq.x, cq.y - 12, this.venue.look.fenceTrim, 8);
+          screenShake(this, 2);
+          audio.pop();
+          break;
+        }
         case 'error': {
           const label = e.kind === 'wild' ? 'WILD THROW!' : e.kind === 'drop' ? 'DROPPED IT!' : 'BOBBLED!';
           const eq = project(s.ball.pos);
