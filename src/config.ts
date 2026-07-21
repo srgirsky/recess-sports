@@ -195,6 +195,20 @@ export const PLATE_VIEW = {
   /** The fielding team's catcher, crouched and cropped by the frame bottom
    *  (head + shoulders in frame; feet well below it). */
   CATCHER: { X: 556, Y: 696, H: 230 },
+  /** The 7 non-battery defenders in the behind-home view, so the close view
+   *  shows the same defense as the wide field. From a camera at home plate,
+   *  3B/SS/LF sit screen-LEFT and 1B/2B/RF screen-RIGHT (matching the
+   *  backdrop's foul lines). Corners nearest (biggest), middle infield
+   *  deeper, outfield smallest with feet just under the horizon. */
+  FIELDERS: {
+    '1B': { X: 792, Y: 330, H: 94 },
+    '3B': { X: 168, Y: 330, H: 94 },
+    '2B': { X: 604, Y: 304, H: 76 },
+    SS: { X: 356, Y: 304, H: 76 },
+    LF: { X: 264, Y: 299, H: 60 }, // OF sit nearer the center than the corners
+    CF: { X: 522, Y: 297, H: 56 }, // (deeper = compressed toward the vanishing
+    RF: { X: 696, Y: 299, H: 60 }, //  point); offsets keep everyone un-stacked
+  } as Record<string, { X: number; Y: number; H: number }>,
   /** Where the ground meets the backdrop fence. */
   HORIZON_Y: 292,
   /** The white-flash punch on the hard cut between views. */

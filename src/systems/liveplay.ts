@@ -22,6 +22,7 @@ import {
   BASE_COVER,
   DEFAULT_GEOMETRY,
   basePos,
+  clampToField,
   dist,
   lerpVec,
   moveToward,
@@ -349,12 +350,17 @@ function moveFielders(
   const ballBusy = s.ball.phase === 'flight' || s.ball.phase === 'rolling';
 
   if (s.mode === 'defense') {
-    // Steerable while chasing AND while holding — a kid can run the ball to a bag.
+    // Steerable while chasing AND while holding — a kid can run the ball to a
+    // bag. Clamped into the field: the pointer can roam past the fence or the
+    // chalk, but the kid stops at the wall.
     if (inputs.pointer) {
-      chaser.pos = moveToward(
-        chaser.pos,
-        inputs.pointer,
-        (params.fielderSpeed * statSpeedMult(chaser) * dtMs) / 1000
+      chaser.pos = clampToField(
+        s.geo,
+        moveToward(
+          chaser.pos,
+          inputs.pointer,
+          (params.fielderSpeed * statSpeedMult(chaser) * dtMs) / 1000
+        )
       );
       if (chaser.hasBall) s.ball.pos = { ...chaser.pos };
     }
@@ -362,10 +368,13 @@ function moveFielders(
     // CPU runs to the landing spot while the ball is up ("read it off the
     // bat"), then charges the ball itself once it's on the ground.
     const target = s.ball.phase === 'flight' ? s.launch.landing : s.ball.pos;
-    chaser.pos = moveToward(
-      chaser.pos,
-      target,
-      (params.cpuFielderSpeed * statSpeedMult(chaser) * dtMs) / 1000
+    chaser.pos = clampToField(
+      s.geo,
+      moveToward(
+        chaser.pos,
+        target,
+        (params.cpuFielderSpeed * statSpeedMult(chaser) * dtMs) / 1000
+      )
     );
   }
 
@@ -389,10 +398,13 @@ function moveFielders(
       }
     }
     if (target) {
-      carrier.pos = moveToward(
-        carrier.pos,
-        target.pos,
-        (params.cpuFielderSpeed * statSpeedMult(carrier) * dtMs) / 1000
+      carrier.pos = clampToField(
+        s.geo,
+        moveToward(
+          carrier.pos,
+          target.pos,
+          (params.cpuFielderSpeed * statSpeedMult(carrier) * dtMs) / 1000
+        )
       );
       s.ball.pos = { ...carrier.pos };
     }

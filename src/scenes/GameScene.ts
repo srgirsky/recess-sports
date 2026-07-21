@@ -428,6 +428,7 @@ export class GameScene extends Phaser.Scene {
         batterId: (batting ? this.batter : this.cpuBatter).id,
         pitcherId: this.moundCharId,
         catcherId: catcher?.charId ?? this.moundCharId,
+        fielders: this.fieldAssignment.filter((a) => a.position !== 'P' && a.position !== 'C'),
       });
     } else {
       this.rig.hide();

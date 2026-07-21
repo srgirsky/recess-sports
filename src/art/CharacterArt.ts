@@ -760,22 +760,27 @@ function poseBat(c: Ctx, v: VisualParams, hFront: string): string {
     ${sideShoe(58, 240, -8)}
     ${capsule('M 102 200 Q 122 214 132 228', PANTS, w)}
     ${sideShoe(136, 240, 6)}`;
-  // Both arms reach up-back to the grip.
-  const grip = { x: 76, y: 148 };
-  const arms = `
-    ${capsule(`M 96 158 Q 84 156 ${grip.x} ${grip.y + 4}`, darken(c.jerseyDk, 0.1), 13)}
-    <circle cx="${grip.x - 2}" cy="${grip.y + 2}" r="9" fill="${darken(c.skin, 0.1)}" ${c.S}/>
-    ${capsule(`M 104 160 Q 92 158 ${grip.x + 6} ${grip.y + 10}`, c.jerseyDk, 13)}
-    <circle cx="${grip.x + 4}" cy="${grip.y + 10}" r="9" fill="${c.gSkin}" ${c.S}/>`;
+  // Grip low behind the back shoulder; the barrel sweeps up-left, well clear
+  // of the head silhouette (head left edge ≈ x 56 with its offset).
+  const grip = { x: 70, y: 158 };
+  // Far/near arm split (like armsRun): the far arm dips behind the torso, the
+  // near arm crosses in front of it — both hang from the shoulder line, hands
+  // stacked on the handle.
+  const armFar = `
+    ${capsule(`M 98 152 Q 84 152 ${grip.x + 4} ${grip.y - 6}`, darken(c.jerseyDk, 0.1), 13)}
+    <circle cx="${grip.x + 2}" cy="${grip.y - 6}" r="9" fill="${darken(c.skin, 0.1)}" ${c.S}/>`;
+  const armNear = `
+    ${capsule(`M 104 154 Q 92 158 ${grip.x + 8} ${grip.y + 2}`, c.jerseyDk, 13)}
+    <circle cx="${grip.x + 6}" cy="${grip.y + 2}" r="9" fill="${c.gSkin}" ${c.S}/>`;
   const head = `
     <g transform="translate(6 2) rotate(3 ${HEAD.cx} ${HEAD.cy})">
       ${headGroup(c, v, hFront, 0.8)}
     </g>`;
   if (c.usesChair) {
     const chair = wheelchairSide(c, 1);
-    return `${batProp(grip.x, grip.y, -36)}${chair.behind}${torsoSide(c, 2)}${chair.front}${arms}${head}`;
+    return `${batProp(grip.x, grip.y, -40)}${armFar}${chair.behind}${torsoSide(c, 2)}${chair.front}${armNear}${head}`;
   }
-  return `${batProp(grip.x, grip.y, -36)}${legs}${torsoSide(c, 0)}${arms}${head}`;
+  return `${batProp(grip.x, grip.y, -40)}${armFar}${legs}${torsoSide(c, 0)}${armNear}${head}`;
 }
 
 /**
@@ -907,14 +912,19 @@ function poseSlide(c: Ctx, v: VisualParams, hFront: string): string {
 function poseBatRear(c: Ctx, v: VisualParams, hRear: string): string {
   const { halfW } = c.m;
   // Bat leans up-right over the shoulder, drawn first (it's on the far side).
-  const grip = { x: 128, y: 148 };
-  const bat = batProp(grip.x, grip.y, 30);
-  // Both arms lift toward the grip; hands stack on the handle.
+  // Grip low beside the right shoulder so the barrel clears the head — its
+  // axis passes ≈ x 174 at head height vs the head's right edge ≈ 153.
+  const grip = { x: 138, y: 158 };
+  const bat = batProp(grip.x, grip.y, 32);
+  // Both arms hang from the shoulder line (y≈150) across the jersey back to
+  // the grip; two fists stack on the handle just above the knob.
+  const shL = 100 - (halfW - 6);
+  const shR = 100 + (halfW - 6);
   const arms = `
-    ${capsule(`M 90 160 Q 106 150 ${grip.x - 6} ${grip.y + 4}`, darken(c.jerseyDk, 0.1), 13)}
-    <circle cx="${grip.x - 6}" cy="${grip.y + 4}" r="9" fill="${darken(c.skin, 0.1)}" ${c.S}/>
-    ${capsule(`M 104 164 Q 116 158 ${grip.x} ${grip.y + 12}`, c.jerseyDk, 13)}
-    <circle cx="${grip.x - 1}" cy="${grip.y + 11}" r="9" fill="${c.gSkin}" ${c.S}/>`;
+    ${capsule(`M ${shL} 152 Q 112 142 ${grip.x - 10} ${grip.y - 4}`, darken(c.jerseyDk, 0.1), 13)}
+    <circle cx="${grip.x - 4}" cy="${grip.y - 8}" r="9" fill="${darken(c.skin, 0.1)}" ${c.S}/>
+    ${capsule(`M ${shR} 152 Q ${grip.x - 8} 152 ${grip.x - 2} ${grip.y + 2}`, c.jerseyDk, 13)}
+    <circle cx="${grip.x + 1}" cy="${grip.y + 1}" r="9" fill="${c.gSkin}" ${c.S}/>`;
   // Head tips slightly toward the pitch (up-right on screen), no face.
   const head = `
     <g transform="translate(3 0) rotate(4 ${HEAD.cx} ${HEAD.cy})">

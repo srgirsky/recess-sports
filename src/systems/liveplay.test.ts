@@ -16,7 +16,12 @@ import {
   THIRD,
   FOUL_SLOPE,
   FIELD_POSITIONS,
+  FIELD_MARGIN,
+  FOUL_ALLOWANCE,
+  FIELD_BOTTOM_Y,
   fencePointAt,
+  fenceYAtX,
+  clampToField,
   dist,
   type PositionId,
 } from './geometry';
@@ -632,6 +637,99 @@ describe('live play: geometry sanity', () => {
 
   it('a real outfield exists beyond second base', () => {
     expect(SECOND.y).toBeGreaterThanOrEqual(FENCE_Y + 50);
+  });
+
+  it('clampToField pins points behind the fence, inside the cone, above the floor', () => {
+    for (const venue of Object.values(VENUES)) {
+      const geo = getFieldGeometry(venue);
+      // Straight over the wall in center -> lands FIELD_MARGIN in front of it.
+      const overWall = clampToField(geo, { x: 480, y: 0 });
+      expect(overWall.x).toBe(480);
+      expect(overWall.y).toBeCloseTo(fenceYAtX(geo, 480) + FIELD_MARGIN, 6);
+      // Way foul left/right at mid-depth -> pulled inside the cone allowance.
+      for (const p of [clampToField(geo, { x: 0, y: 300 }), clampToField(geo, { x: 960, y: 300 })]) {
+        const half = FOUL_SLOPE * (HOME.y - p.y) + FOUL_ALLOWANCE;
+        expect(Math.abs(p.x - HOME.x)).toBeLessThanOrEqual(half + 0.001);
+        expect(p.y).toBeGreaterThanOrEqual(fenceYAtX(geo, p.x) + FIELD_MARGIN - 0.001);
+      }
+      // Off the bottom of the screen -> the sanity floor.
+      expect(clampToField(geo, { x: 480, y: 700 }).y).toBe(FIELD_BOTTOM_Y);
+      // A plainly interior point is untouched.
+      expect(clampToField(geo, { x: 480, y: 320 })).toEqual({ x: 480, y: 320 });
+    }
+    // The sandlot's short right porch: a deep right-field target respects the
+    // shallower fence there, not the deep left-field number.
+    const sandlot = getFieldGeometry(VENUES.sandlot);
+    const deepRight = clampToField(sandlot, { x: 760, y: 0 });
+    expect(deepRight.y).toBeGreaterThanOrEqual(fenceYAtX(sandlot, deepRight.x) + FIELD_MARGIN - 0.001);
+    expect(deepRight.y).toBeGreaterThan(sandlot.fenceLeftY + FIELD_MARGIN);
+  });
+
+  it('the steered fielder can never be driven past the fence or off the field', () => {
+    const kid = resolveLiveParams('kid');
+    const corners = [
+      { x: 480, y: 0 },
+      { x: 0, y: 0 },
+      { x: 960, y: 0 },
+      { x: 0, y: 640 },
+      { x: 960, y: 640 },
+    ];
+    for (const venue of Object.values(VENUES)) {
+      const geo = getFieldGeometry(venue);
+      for (const target of corners) {
+        let s = startLivePlay({
+          mode: 'defense',
+          launch: flyToCenter,
+          batter: { charId: 'bat', speed: 5 },
+          baseRunners: [],
+          defense: DEFENSE,
+          outs: 0,
+          params: kid,
+          geo,
+        });
+        for (let tick = 0; tick < 200 && s.phase !== 'done'; tick++) {
+          s = stepLivePlay(s, { pointer: target }, 50, kid, () => 0.5);
+          const f = s.fielders[s.active];
+          const tag = `${venue.id} -> (${target.x},${target.y}) tick ${tick}`;
+          expect(f.pos.y, `${tag}: past the fence`).toBeGreaterThanOrEqual(
+            fenceYAtX(geo, f.pos.x) + FIELD_MARGIN - 0.5
+          );
+          expect(Math.abs(f.pos.x - HOME.x), `${tag}: outside the foul cone`).toBeLessThanOrEqual(
+            FOUL_SLOPE * Math.max(0, HOME.y - f.pos.y) + FOUL_ALLOWANCE + 0.5
+          );
+          expect(f.pos.y, `${tag}: below the screen`).toBeLessThanOrEqual(FIELD_BOTTOM_Y + 0.5);
+          if (f.hasBall) expect(s.ball.pos, `${tag}: ball detached`).toEqual(f.pos);
+        }
+      }
+    }
+  });
+
+  it('a held ball follows the CLAMPED carrier at the wall', () => {
+    const kid = resolveLiveParams('kid');
+    const geo = getFieldGeometry(VENUES.park);
+    let s = startLivePlay({
+      mode: 'defense',
+      launch: flyToCenter,
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params: kid,
+      geo,
+    });
+    // Camp under the fly until the catch, then try to carry it over the wall.
+    let guard = 0;
+    while (!s.fielders[s.active].hasBall && s.phase !== 'done' && guard++ < 200) {
+      s = stepLivePlay(s, { pointer: flyToCenter.landing }, 50, kid, () => 0.5);
+    }
+    expect(s.fielders[s.active].hasBall).toBe(true);
+    for (let tick = 0; tick < 60 && s.phase !== 'done'; tick++) {
+      s = stepLivePlay(s, { pointer: { x: 480, y: 0 } }, 50, kid, () => 0.5);
+      const f = s.fielders[s.active];
+      if (!f.hasBall) break; // no-soft-lock guard may resolve the play
+      expect(f.pos.y).toBeGreaterThanOrEqual(fenceYAtX(geo, f.pos.x) + FIELD_MARGIN - 0.5);
+      expect(s.ball.pos).toEqual(f.pos);
+    }
   });
 
   it('every fielder starts in fair territory and clear of obstacles, in every venue', () => {

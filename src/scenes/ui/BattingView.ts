@@ -1,8 +1,10 @@
 // ---------------------------------------------------------------------------
 // The behind-home-plate pitch view (the "rig"): a full-screen, fully OPAQUE
-// venue-themed backdrop + three kids — the batter big in the foreground seen
-// from behind, the pitcher small in the distance facing the camera, and the
-// fielding team's catcher crouched at the bottom of the frame.
+// venue-themed backdrop + the batter big in the foreground seen from behind,
+// the pitcher small in the distance facing the camera, the fielding team's
+// catcher crouched at the bottom of the frame, and the rest of the defense
+// small at their positions (PLATE_VIEW.FIELDERS) so the close view shows the
+// same nine kids as the wide field.
 //
 // It lives at PLATE_VIEW.DEPTH in WORLD space (never pinUI'd): the HUD on the
 // UI camera stays above it, floatingText/burst (depth 60-80) draw over it, and
@@ -15,12 +17,15 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS, PLATE_VIEW, ANIM } from '../../config';
 import type { VenueDef } from '../../data/venues';
+import type { PositionId } from '../../systems/geometry';
 import { poseKey } from '../../art/textureFactory';
 
 export interface RigActors {
   batterId: string;
   pitcherId: string;
   catcherId: string;
+  /** The 7 non-battery defenders (1B/2B/SS/3B/LF/CF/RF). */
+  fielders: Array<{ position: PositionId; charId: string }>;
 }
 
 /** Shadow tone for a 0xrrggbb int: mix toward cool navy (the house shade). */
@@ -52,11 +57,21 @@ export class BattingView {
   private pitcherId = '';
   private batterIdle?: Phaser.Tweens.Tween;
   private batterBaseScale = 1;
+  private fielderImgs = new Map<PositionId, Phaser.GameObjects.Image>();
 
   constructor(scene: Phaser.Scene, look: VenueDef['look']) {
     this.scene = scene;
     this.root = scene.add.container(0, 0).setDepth(PLATE_VIEW.DEPTH).setVisible(false);
     this.drawBackdrop(look);
+
+    // The 7 distant defenders sit between the backdrop and the battery,
+    // added far-to-near (Y ascending) so nearer kids draw over farther ones.
+    const spots = Object.entries(PLATE_VIEW.FIELDERS).sort((a, b) => a[1].Y - b[1].Y);
+    for (const [pos, spot] of spots) {
+      const img = scene.add.image(spot.X, spot.Y, '__DEFAULT').setOrigin(0.5, 1).setVisible(false);
+      this.fielderImgs.set(pos as PositionId, img);
+      this.root.add(img);
+    }
 
     const { PITCHER, BATTER, CATCHER } = PLATE_VIEW;
     this.pitcher = scene.add.image(PITCHER.X, PITCHER.Y, '__DEFAULT').setOrigin(0.5, 1);
@@ -87,6 +102,14 @@ export class BattingView {
   show(actors: RigActors): void {
     this.setKid(this.pitcher, actors.pitcherId, 'stand', PLATE_VIEW.PITCHER.H);
     this.setKid(this.catcher, actors.catcherId, 'catchRear', PLATE_VIEW.CATCHER.H);
+    for (const img of this.fielderImgs.values()) img.setVisible(false);
+    for (const f of actors.fielders) {
+      const spot = PLATE_VIEW.FIELDERS[f.position];
+      const img = this.fielderImgs.get(f.position);
+      if (!spot || !img) continue;
+      this.setKid(img, f.charId, 'ready', spot.H);
+      img.setVisible(true);
+    }
     const batterChanged = this.batter.texture.key !== poseKey(actors.batterId, 'batRear');
     this.setKid(this.batter, actors.batterId, 'batRear', PLATE_VIEW.BATTER.H);
     this.pitcherId = actors.pitcherId;
@@ -147,7 +170,7 @@ export class BattingView {
   private setKid(
     img: Phaser.GameObjects.Image,
     id: string | undefined,
-    pose: 'stand' | 'batRear' | 'catchRear',
+    pose: 'stand' | 'batRear' | 'catchRear' | 'ready',
     h: number
   ): void {
     if (!id) return;
@@ -238,11 +261,6 @@ export class BattingView {
       for (const [y, h] of bands) g.fillRect(0, y, W, h);
     }
 
-    // Foul lines converging toward the horizon (1B right, 3B left).
-    g.lineStyle(5, COLORS.white, 0.85);
-    g.lineBetween(478 - 26, HORIZON + 6, 80, H);
-    g.lineBetween(482 + 26, HORIZON + 6, 880, H);
-
     // The mound: a lit dirt disc under the distant pitcher.
     const { PITCHER } = PLATE_VIEW;
     g.fillStyle(shadeInt(look.dirt, 0.18), 1);
@@ -255,6 +273,15 @@ export class BattingView {
     g.fillEllipse(W / 2, H + 60, 900, 320);
     g.fillStyle(lightenInt(look.dirt, 0.12), 0.5);
     g.fillEllipse(W / 2 - 90, H + 40, 560, 200);
+
+    // Foul lines shoot OUT from the plate to the poles at the fence's far
+    // edges — the camera looks straight out from home, so the 45° lines
+    // spread wide; they must NOT converge on the pitcher (that reads as a
+    // tiny fair wedge and strands the fielders in "foul" ground). Drawn
+    // after the home dirt so they run over it from the plate, like chalk.
+    g.lineStyle(5, COLORS.white, 0.85);
+    g.lineBetween(452, 592, 40, HORIZON + 2);
+    g.lineBetween(508, 592, 920, HORIZON + 2);
 
     // Batter's boxes + the plate itself.
     g.lineStyle(4, COLORS.white, 0.75);

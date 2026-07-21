@@ -70,6 +70,44 @@ export function fencePointAt(geo: FieldGeometry, t: number): Vec {
   };
 }
 
+/** How far inside the fence fielders (and landings — see atbat) stay. */
+export const FIELD_MARGIN = 14;
+
+/**
+ * How far past a foul line a fielder may stray. Foul balls never become live
+ * plays (landings are clamped into the fair cone), so this is purely feel —
+ * chasing a ball near the chalk shouldn't hit a glass wall on the line.
+ */
+export const FOUL_ALLOWANCE = 28;
+
+/** Sanity floor: nobody runs off the bottom of the 960x640 screen. */
+export const FIELD_BOTTOM_Y = 600;
+
+/** Fence y at screen x, interpolated along this venue's fence line. */
+export function fenceYAtX(geo: FieldGeometry, x: number): number {
+  const t = Math.min(1, Math.max(0, (x - geo.fenceLeftX) / (geo.fenceRightX - geo.fenceLeftX)));
+  return geo.fenceLeftY + t * (geo.fenceRightY - geo.fenceLeftY);
+}
+
+/**
+ * Clamp a point into the playable field: in front of the fence line (by
+ * `margin`), inside the foul cone (+FOUL_ALLOWANCE), above FIELD_BOTTOM_Y.
+ * The region is an intersection of half-planes (convex), so moveToward
+ * between two in-bounds points can never exit — only externally-targeted
+ * moves (the steered fielder) need this.
+ */
+export function clampToField(geo: FieldGeometry, p: Vec, margin = FIELD_MARGIN): Vec {
+  // y first: pushing y down toward home narrows the cone, so the x-clamp
+  // must use the final y.
+  let y = Math.min(FIELD_BOTTOM_Y, Math.max(p.y, fenceYAtX(geo, p.x) + margin));
+  const half = FOUL_SLOPE * Math.max(0, HOME.y - y) + FOUL_ALLOWANCE;
+  const x = Math.min(HOME.x + half, Math.max(HOME.x - half, p.x));
+  // Slanted fences (sandlot): clamping x can land under a shallower fence
+  // segment, so re-check the fence at the clamped x.
+  y = Math.max(y, fenceYAtX(geo, x) + margin);
+  return { x, y };
+}
+
 /** Position for a base index: 0 & 4 = home, 1/2/3 = the bases. */
 export function basePos(idx: number): Vec {
   switch (idx) {
