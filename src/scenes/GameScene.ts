@@ -257,8 +257,6 @@ export class GameScene extends Phaser.Scene {
   private set playerPlan(v: LineupPlan | undefined) { this.seats[0].plan = v; }
   private get aiPlan(): LineupPlan | undefined { return this.seats[1].plan; }
   private set aiPlan(v: LineupPlan | undefined) { this.seats[1].plan = v; }
-  private get playerFatigue(): FatigueState { return this.seats[0].fatigue; }
-  private set playerFatigue(v: FatigueState) { this.seats[0].fatigue = v; }
   private get playerJuice(): JuiceState { return this.seats[0].juice; }
   private set playerJuice(v: JuiceState) { this.seats[0].juice = v; }
   private get cpuJuice(): JuiceState { return this.seats[1].juice; }
@@ -1066,7 +1064,7 @@ export class GameScene extends Phaser.Scene {
         if (this.firstPitchOfGame) audio.say('Play ball!', commentatorProfile('A'));
         this.time.delayedCall(FLOW.HALF_START_MS, () => this.nextPlayerBatter());
       } else {
-        this.setMoundPitcher(this.playerPitcher);
+        this.setMoundPitcher(this.fieldingSeat().pitcher!);
         this.flashAnnounce('YOU PITCH!\nGET 3 OUTS', COLORS.gold);
         if (this.firstDefenseOfGame) {
           audio.say('You pitch! Throw when the ring closes!', commentatorProfile('B'), 'flush');
@@ -1520,7 +1518,7 @@ export class GameScene extends Phaser.Scene {
   private showReliefButton(): void {
     this.reliefBtn?.destroy();
     this.reliefBtn = undefined;
-    if (!this.features.fatigue || !this.playerPlan || !isTired(this.playerFatigue)) return;
+    if (!this.features.fatigue || !this.fieldingSeat().plan || !isTired(this.fieldingSeat().fatigue)) return;
     const { container } = pill(this, 116, GAME_HEIGHT - 96, '🥵 NEW PITCHER', {
       fill: COLORS.red,
       fontSize: 17,
@@ -1549,7 +1547,7 @@ export class GameScene extends Phaser.Scene {
       .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.ink, 0.55)
       .setInteractive(); // swallow taps behind the picker
     root.add(dim);
-    const candidates = this.playerTeam.filter((id) => id !== this.playerPitcher.id);
+    const candidates = this.fieldingSeat().team.filter((id) => id !== this.fieldingSeat().pitcher!.id);
     candidates.forEach((id, i) => {
       const x = GAME_WIDTH / 2 + (i % 4) * 130 - 195;
       const y = GAME_HEIGHT / 2 + Math.floor(i / 4) * 150 - 70;
@@ -1579,9 +1577,10 @@ export class GameScene extends Phaser.Scene {
     this.reliefBtn?.destroy();
     this.reliefBtn = undefined;
     const newPitcher = getCharacter(id);
-    if (this.playerPlan) this.playerPlan = swapPositions(this.playerPlan, this.playerPitcher.id, id);
-    this.playerPitcher = newPitcher;
-    this.playerFatigue = newFatigue();
+    const fseat = this.fieldingSeat();
+    if (fseat.plan) fseat.plan = swapPositions(fseat.plan, fseat.pitcher!.id, id);
+    fseat.pitcher = newPitcher;
+    fseat.fatigue = newFatigue();
     this.buildDefense();
     this.setMoundPitcher(newPitcher);
     audio.cheer();
@@ -2590,11 +2589,13 @@ export class GameScene extends Phaser.Scene {
       this.endHalf();
       return;
     }
-    this.cpuBatter = getCharacter(this.aiTeam[this.aiLineup % TEAM_SIZE]);
+    const batSeat = this.battingSeat();
+    this.cpuBatter = getCharacter(batSeat.team[batSeat.lineupIdx % TEAM_SIZE]);
     this.showBatter(this.cpuBatter, true); // jogs in from the dugout
     this.batterLabel.setText(this.cpuBatter.name);
     // Your defense heckles the incoming batter, Backyard style.
-    const heckler = getCharacter(this.playerTeam[Math.floor(Math.random() * this.playerTeam.length)]);
+    const fieldTeam = this.fieldingSeat().team;
+    const heckler = getCharacter(fieldTeam[Math.floor(Math.random() * fieldTeam.length)]);
     this.kidChat('fielding', heckler);
     this.time.delayedCall(FLOW.CPU_NEW_BATTER_MS, () => this.beginPitchTurn());
   }
@@ -2616,7 +2617,8 @@ export class GameScene extends Phaser.Scene {
       this.pitchSelect?.destroy();
       this.pitchSelect = undefined;
       if (kind === 'crazy') {
-        this.playerJuice = spend(this.playerJuice, 'crazyPitch', this.playerPitcher.ability);
+        const fseat = this.fieldingSeat();
+        fseat.juice = spend(fseat.juice, 'crazyPitch', fseat.pitcher!.ability);
         this.refreshJuiceMeter();
         floatingText(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y, '⚡ CRAZY PITCH!', COLORS.gold, 26);
         crazyPitchFx(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y);
@@ -2638,7 +2640,9 @@ export class GameScene extends Phaser.Scene {
     this.pitchAutoPick = autoPick;
     this.pitchSelect?.destroy();
     this.pitchSelect = showPitchSelect(this, {
-      allowCrazy: this.features.juice && canSpend(this.playerJuice, 'crazyPitch', this.playerPitcher.ability),
+      allowCrazy:
+        this.features.juice &&
+        canSpend(this.fieldingSeat().juice, 'crazyPitch', this.fieldingSeat().pitcher!.ability),
       onDone: confirm,
       pin: (o) => this.pinUI(o),
     });
@@ -2697,7 +2701,7 @@ export class GameScene extends Phaser.Scene {
     this.pitcherWindup();
 
     // The CPU batter's plan is pure logic; the scene just acts it out.
-    const plan = resolveCpuPitch(band, this.playerPitcher, this.cpuBatter, () => Math.random());
+    const plan = resolveCpuPitch(band, this.fieldingSeat().pitcher!, this.cpuBatter, () => Math.random());
     this.time.delayedCall(ANIM.WINDUP_MS, () => this.launchCpuPitch(band, plan));
   }
 
@@ -2732,10 +2736,11 @@ export class GameScene extends Phaser.Scene {
     this.pitcherWindup();
 
     // A tired arm throws with a sagged effective stat — more scatter.
-    if (this.features.fatigue) this.playerFatigue = drainPitch(this.playerFatigue, kind);
+    const fseat = this.fieldingSeat();
+    if (this.features.fatigue) fseat.fatigue = drainPitch(fseat.fatigue, kind);
     const armStat = this.features.fatigue
-      ? effectivePitching(this.playerPitcher.stats.pitching, this.playerFatigue)
-      : this.playerPitcher.stats.pitching;
+      ? effectivePitching(fseat.pitcher!.stats.pitching, fseat.fatigue)
+      : fseat.pitcher!.stats.pitching;
     const plan = resolvePitchLocation(
       kind,
       target,
@@ -2833,18 +2838,19 @@ export class GameScene extends Phaser.Scene {
     this.animateSwing();
     // A trailing CPU muscles up with its own juice.
     let cpuBand = plan.cpuBand;
+    const batSeat = this.battingSeat();
     if (
       this.features.juice &&
       cpuBand !== 'miss' &&
-      cpuWantsSpend(this.cpuJuice, 'powerSwing', this.aiScore - this.playerScore, () => Math.random())
+      cpuWantsSpend(batSeat.juice, 'powerSwing', batSeat.score - this.fieldingSeat().score, () => Math.random())
     ) {
-      this.cpuJuice = spend(this.cpuJuice, 'powerSwing');
+      batSeat.juice = spend(batSeat.juice, 'powerSwing');
       const up: Record<SwingBand, SwingBand> = { miss: 'weak', weak: 'good', good: 'perfect', perfect: 'perfect' };
       cpuBand = up[cpuBand];
       floatingText(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY - 120, '⚡ POWER SWING!', COLORS.red, 24);
       powerSwingFx(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY, COLORS.red);
     }
-    const outcome = resolveContact(cpuBand, this.cpuBatter, this.playerPitcher, () => Math.random(), this.geo);
+    const outcome = resolveContact(cpuBand, this.cpuBatter, this.fieldingSeat().pitcher!, () => Math.random(), this.geo);
     if (outcome.kind !== 'inPlay') {
       if (outcome.kind === 'strike') audio.whiff();
       else audio.crack();
@@ -2932,12 +2938,13 @@ export class GameScene extends Phaser.Scene {
     const prevBatter = this.cpuBatter;
     const applied = applyAtBat(this.halfState, result);
     this.halfState = applied.state;
-    if (applied.runsScored > 0) this.aiScore += applied.runsScored;
-    // YOU threw the K — charge the meter (and your pitcher's stat line).
+    if (applied.runsScored > 0) this.battingSeat().score += applied.runsScored;
+    // The fielding seat threw the K — charge its meter (and its pitcher's line).
     if (result.kind === 'strike' && applied.batterOut) {
-      this.gainJuice('player', 'strikeoutThrown', this.playerPitcher.ability);
+      const fseat = this.fieldingSeat();
+      this.gainJuiceSeat(fseat, 'strikeoutThrown', fseat.pitcher!.ability);
       this.callIt('strikeoutPitched', { name: prevBatter.name });
-      if (this.seasonGame) this.statEvents.push({ t: 'kThrown', kid: this.playerPitcher.id });
+      if (this.seasonGame && fseat.recordsStats) fseat.stats.push({ t: 'kThrown', kid: fseat.pitcher!.id });
     }
 
     const walked = result.kind === 'ball' && applied.batterDone;
@@ -2974,8 +2981,9 @@ export class GameScene extends Phaser.Scene {
     this.flashAnnounce(msg, color, big ? FLOW.BIG_BANNER_HOLD_MS : FLOW.BANNER_HOLD_MS);
     this.refreshHud();
 
-    // Walk-off: the CPU just took the lead in the bottom of the final inning.
-    if (isWalkOff(this.inning, this.regulation, this.half, this.aiScore, this.playerScore)) {
+    // Walk-off: the HOME seat just took the lead in the bottom of the final
+    // inning (home/away are seat POSITIONS — seats[1]/seats[0] — not roles).
+    if (isWalkOff(this.inning, this.regulation, this.half, this.seats[1].score, this.seats[0].score)) {
       this.phase = 'ended';
       this.flashAnnounce(`WALK-OFF!\n${this.seats[1].identity ? teamName(this.seats[1].identity) : 'CPU'} WINS!`, COLORS.red, FLOW.BIG_BANNER_HOLD_MS);
       this.time.delayedCall(
@@ -2991,7 +2999,7 @@ export class GameScene extends Phaser.Scene {
       runDelay + FLOW.RUN_SETTLE_PAD_MS
     );
     this.time.delayedCall(delay, () => {
-      if (applied.batterDone) this.aiLineup += 1;
+      if (applied.batterDone) this.battingSeat().lineupIdx += 1;
       if (isHalfOver(this.halfState)) {
         this.endHalf();
       } else if (applied.batterDone) {
