@@ -35,6 +35,7 @@ export function getFieldGeometry(v: VenueDef): FieldGeometry {
     fenceRightX: foulPoleXAt(v.fenceRightY).right,
     fenceBulge: v.fenceBulge,
     rollMult: v.rollMult,
+    bounceMult: v.bounceMult,
     obstacles: v.obstacles.map((o) => ({ x: o.x, y: o.y, r: o.r })),
   };
 }

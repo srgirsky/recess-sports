@@ -56,6 +56,8 @@ export interface FieldGeometry {
   fenceBulge: number;
   /** Grounder roll-speed multiplier. */
   rollMult: number;
+  /** Hop/carom liveliness multiplier (asphalt springy, shaggy grass dead). */
+  bounceMult: number;
   obstacles: Array<{ x: number; y: number; r: number }>;
 }
 
@@ -67,6 +69,7 @@ export const DEFAULT_GEOMETRY: FieldGeometry = {
   fenceRightX: foulPoleXAt(FENCE_Y).right,
   fenceBulge: 24,
   rollMult: 1,
+  bounceMult: 1,
   obstacles: [],
 };
 

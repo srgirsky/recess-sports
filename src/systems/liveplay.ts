@@ -24,6 +24,8 @@ import {
   basePos,
   clampToField,
   dist,
+  fenceNormalAt,
+  fenceYAtX,
   lerpVec,
   moveToward,
   type FieldGeometry,
@@ -89,6 +91,12 @@ export interface BallState {
   /** Rolling: current speed + fixed deceleration reference. */
   rollV: number;
   rollTotal: number;
+  /**
+   * Diminishing hops after a fly/liner lands (rolling phase, before the
+   * decel roll): remaining hops, ground speed px/s, unit direction, elapsed/
+   * total ms of the current hop, and its peak height cue.
+   */
+  hop?: { n: number; v: number; dir: Vec; t: number; ms: number; h: number };
   /** A live throw. `wild` = it will sail past the bag (rolled at launch). */
   throw?: { toBase: 1 | 2 | 3 | 4; from: Vec; t: number; totalMs: number; wild?: boolean };
 }
@@ -101,6 +109,7 @@ export type LiveEvent =
   | { t: 'land' }
   | { t: 'error'; kind: 'drop' | 'bobble' | 'wild'; fielder: string }
   | { t: 'bonk' } // the ball smacked a venue obstacle (the sandlot oak)
+  | { t: 'carom' } // the ball rebounded off the outfield fence — play it!
   | { t: 'throw'; toBase: 1 | 2 | 3 | 4 }
   | { t: 'out'; base: 1 | 2 | 3 | 4; runner: string }
   | { t: 'safe'; base: 1 | 2 | 3 | 4; runner: string }
@@ -308,13 +317,63 @@ function moveBall(s: LivePlayState, dtMs: number, params: LiveParams): void {
     b.pos = lerpVec(HOME, s.launch.landing, t);
     b.height = Math.sin(Math.PI * t);
     if (t >= 1) {
-      // Dropped in. It sits where it landed (no bounce — this is kickball rules).
+      // Dropped in — and it BOUNCES: diminishing hops carry it past the
+      // landing spot before it settles into a roll. Deterministic (no rng),
+      // so kid-mode sims stay byte-identical.
       b.phase = 'rolling';
       b.height = 0;
       b.rollV = 0;
       b.rollTotal = 1;
+      const len = Math.max(1, dist(HOME, s.launch.landing));
+      const keep = s.launch.type === 'grounder' ? 0 : LIVE.BOUNCE.KEEP[s.launch.type];
+      const v0 = (len / b.flightMs) * 1000 * keep * s.geo.bounceMult;
+      if (v0 > 1) {
+        b.hop = {
+          n: LIVE.BOUNCE.HOPS,
+          v: v0,
+          dir: { x: (s.launch.landing.x - HOME.x) / len, y: (s.launch.landing.y - HOME.y) / len },
+          t: 0,
+          ms: LIVE.BOUNCE.FIRST_HOP_MS,
+          h: LIVE.BOUNCE.FIRST_HOP_H,
+        };
+      }
       s.landedAt = s.elapsed;
-      s.events.push({ t: 'land' });
+      s.events.push({ t: 'land' }); // first touch only — hops don't re-land
+    }
+  } else if (b.phase === 'rolling' && b.hop) {
+    // Hopping: skip along the landing direction in shrinking arcs.
+    const hop = b.hop;
+    hop.t += dtMs;
+    b.pos = {
+      x: b.pos.x + (hop.dir.x * hop.v * dtMs) / 1000,
+      y: b.pos.y + (hop.dir.y * hop.v * dtMs) / 1000,
+    };
+    b.height = hop.h * Math.sin(Math.PI * Math.min(1, hop.t / hop.ms));
+    maybeCarom(s);
+    if (ballHitObstacle(s)) return;
+    if (hop.t >= hop.ms) {
+      hop.n -= 1;
+      hop.t = 0;
+      hop.v *= LIVE.BOUNCE.RESTITUTION;
+      hop.ms *= LIVE.BOUNCE.RESTITUTION;
+      hop.h *= LIVE.BOUNCE.RESTITUTION;
+      if (hop.n <= 0) {
+        // Out of hops: convert the leftover speed into the existing decel
+        // roll (mutate-the-launch, same pattern as bonk/fumble).
+        const settle = clampToField(
+          s.geo,
+          {
+            x: b.pos.x + hop.dir.x * hop.v * LIVE.BOUNCE.ROLLOUT_S,
+            y: b.pos.y + hop.dir.y * hop.v * LIVE.BOUNCE.ROLLOUT_S,
+          },
+          4
+        );
+        s.launch = { ...s.launch, landing: settle, rollSpeed: hop.v };
+        b.rollV = hop.v;
+        b.rollTotal = Math.max(1, dist(b.pos, settle));
+        b.height = 0;
+        b.hop = undefined;
+      }
     }
   } else if (b.phase === 'rolling' && b.rollV > 0) {
     const remain = dist(b.pos, s.launch.landing);
@@ -327,15 +386,8 @@ function moveBall(s: LivePlayState, dtMs: number, params: LiveParams): void {
       const v = s.launch.rollSpeed * s.geo.rollMult * Math.max(0.15, remain / b.rollTotal);
       b.rollV = v;
       b.pos = moveToward(b.pos, s.launch.landing, (v * dtMs) / 1000);
-      // Rolled into a tree? It stops dead right there.
-      for (const o of s.geo.obstacles) {
-        if (dist(b.pos, o) <= o.r) {
-          b.rollV = 0;
-          s.launch = { ...s.launch, landing: { ...b.pos } };
-          s.events.push({ t: 'bonk' });
-          break;
-        }
-      }
+      maybeCarom(s);
+      ballHitObstacle(s);
     }
   } else if (b.phase === 'thrown' && b.throw) {
     b.throw.t += dtMs;
@@ -345,6 +397,64 @@ function moveBall(s: LivePlayState, dtMs: number, params: LiveParams): void {
     b.height = Math.sin(Math.PI * t) * 0.5;
     if (t >= 1) arriveThrow(s, b.throw.toBase, params);
   }
+}
+
+/**
+ * A hopping/rolling ball that reaches the wall rebounds back into play — a
+ * real double off the fence. Reflects the travel direction off the fence
+ * arc's inward normal; the convex fence guarantees re-entry into the field.
+ */
+function maybeCarom(s: LivePlayState): void {
+  const b = s.ball;
+  const wallY = fenceYAtX(s.geo, b.pos.x) + 4;
+  if (b.pos.y >= wallY) return;
+  const n = fenceNormalAt(s.geo, b.pos.x);
+  const rest = LIVE.BOUNCE.WALL_REST * s.geo.bounceMult;
+  if (b.hop) {
+    const d = b.hop.dir;
+    const dot = d.x * n.x + d.y * n.y;
+    if (dot >= 0) return; // already heading back in — don't re-reflect
+    b.pos = { x: b.pos.x, y: wallY };
+    b.hop.dir = { x: d.x - 2 * dot * n.x, y: d.y - 2 * dot * n.y };
+    b.hop.v *= rest;
+  } else if (b.rollV > 0) {
+    // Defensive: the decel roll aims at an in-field settle point, but a
+    // caromed target near the wall can still graze it.
+    const remain = dist(b.pos, s.launch.landing);
+    const len = Math.max(1, remain);
+    const d = { x: (s.launch.landing.x - b.pos.x) / len, y: (s.launch.landing.y - b.pos.y) / len };
+    const dot = d.x * n.x + d.y * n.y;
+    if (dot >= 0) return;
+    b.pos = { x: b.pos.x, y: wallY };
+    const rd = { x: d.x - 2 * dot * n.x, y: d.y - 2 * dot * n.y };
+    const newRemain = Math.max(6, remain * rest);
+    const settle = clampToField(
+      s.geo,
+      { x: b.pos.x + rd.x * newRemain, y: b.pos.y + rd.y * newRemain },
+      4
+    );
+    s.launch = { ...s.launch, landing: settle };
+    b.rollTotal = Math.max(1, dist(b.pos, settle));
+  } else {
+    return;
+  }
+  s.events.push({ t: 'carom' });
+}
+
+/** Hopped/rolled into a tree? It stops dead right there (true = it did). */
+function ballHitObstacle(s: LivePlayState): boolean {
+  const b = s.ball;
+  for (const o of s.geo.obstacles) {
+    if (dist(b.pos, o) <= o.r) {
+      b.rollV = 0;
+      b.height = 0;
+      b.hop = undefined;
+      s.launch = { ...s.launch, landing: { ...b.pos } };
+      s.events.push({ t: 'bonk' });
+      return true;
+    }
+  }
+  return false;
 }
 
 function moveFielders(
@@ -478,6 +588,7 @@ function fumble(s: LivePlayState, fielder: FielderState, kind: 'drop' | 'bobble'
   b.height = 0;
   b.rollV = 0;
   b.rollTotal = 1;
+  b.hop = undefined;
   s.launch = { ...s.launch, landing: { ...b.pos } }; // it dies where it fell
   s.landedAt = s.elapsed;
   fielder.fumbleUntil = s.elapsed + ERRORS.FUMBLE_MS;
@@ -526,7 +637,9 @@ function tryGrabBall(s: LivePlayState, params: LiveParams, rng: () => number): v
       }
     }
   } else if (b.phase === 'rolling') {
-    if (dist(chaser.pos, b.pos) <= pickupR) {
+    // A hopping ball is only grabbable low — you scoop the short hop, you
+    // don't pluck it off the top of a bounce. Never an out either way.
+    if (dist(chaser.pos, b.pos) <= pickupR && b.height <= LIVE.BOUNCE.PICKUP_MAX_H) {
       if (!rollCatch(chaser.glove, 'grounder', defErrorMult(s, params), rng)) {
         fumble(s, chaser, 'bobble');
         return;
@@ -543,6 +656,7 @@ function secureBall(s: LivePlayState, fielderIdx: number): void {
   b.height = 0;
   b.heldBy = fielderIdx;
   b.throw = undefined;
+  b.hop = undefined;
   b.pos = { ...s.fielders[fielderIdx].pos };
   s.fielders.forEach((f, i) => (f.hasBall = i === fielderIdx));
   s.heldAt = s.elapsed;

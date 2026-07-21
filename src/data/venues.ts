@@ -35,6 +35,8 @@ export interface VenueDef {
   fenceBulge: number;
   /** Grounder roll-speed multiplier: asphalt is fast, backyard grass is shaggy. */
   rollMult: number;
+  /** Hop/carom liveliness: how springy landings and fence caroms play here. */
+  bounceMult: number;
   obstacles: VenueObstacle[];
   /** drawField palette + dressing flags. */
   look: {
@@ -61,6 +63,7 @@ export const VENUES: Record<VenueId, VenueDef> = {
     fenceRightY: 210,
     fenceBulge: 24, // the classic gentle arc, deepest in dead center
     rollMult: 1,
+    bounceMult: 1,
     obstacles: [],
     look: {
       grass: 0x5bbf5a,
@@ -82,6 +85,7 @@ export const VENUES: Record<VenueId, VenueDef> = {
     fenceRightY: 252,
     fenceBulge: 14, // a lumpy backyard curve — small, so the right porch stays cheap
     rollMult: 0.85, // shaggy backyard grass
+    bounceMult: 0.8, // dead hops off the lumpy lawn
     obstacles: [{ x: 330, y: 262, r: 30, kind: 'tree' }], // the old oak in left-center
     look: {
       grass: 0x71b356,
@@ -103,6 +107,7 @@ export const VENUES: Record<VenueId, VenueDef> = {
     fenceRightY: 198,
     fenceBulge: 10, // chain-link pulled nearly straight between posts
     rollMult: 1.3,
+    bounceMult: 1.3, // hot asphalt — the ball SPRINGS
     obstacles: [],
     look: {
       grass: 0x4a4f5a, // asphalt
