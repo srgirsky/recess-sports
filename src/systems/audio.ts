@@ -9,8 +9,8 @@
 // ---------------------------------------------------------------------------
 
 import { AUDIO, VOICE } from '../config';
-import { rankVoices } from './voices';
-import type { VoiceProfile } from './voices';
+import { curateVoices, pickVoice } from './voices';
+import type { CuratedVoices, VoiceProfile } from './voices';
 
 const MUTE_KEY = 'recess_muted';
 
@@ -211,26 +211,34 @@ export function bell(): void {
 // commentator exchange or a drafted kid's line finish instead of the old
 // cancel-everything behavior.
 
-let voiceList: SpeechSynthesisVoice[] = [];
+const EMPTY_CURATED: CuratedVoices<SpeechSynthesisVoice> = { mixed: [], boy: [], girl: [] };
+let voiceList: CuratedVoices<SpeechSynthesisVoice> = EMPTY_CURATED;
 let voicesHooked = false;
 
-/** Cached curated voice list (rankVoices over the English inventory).
- *  getVoices() populates async — re-cache on voiceschanged. */
-function enVoices(): SpeechSynthesisVoice[] {
+/** Cached curated voice lists (curateVoices over the English inventory —
+ *  mixed + boy/girl gendered sublists). getVoices() populates async —
+ *  re-cache on voiceschanged. */
+function enVoices(): CuratedVoices<SpeechSynthesisVoice> {
   const synth = window.speechSynthesis;
-  if (!synth) return [];
+  if (!synth) return EMPTY_CURATED;
   if (!voicesHooked) {
     voicesHooked = true;
     synth.addEventListener?.('voiceschanged', () => {
-      voiceList = [];
+      voiceList = EMPTY_CURATED;
     });
   }
-  if (!voiceList.length) {
+  if (!voiceList.mixed.length) {
     const all = synth.getVoices();
-    voiceList = rankVoices(all.filter((v) => /en[-_]/i.test(v.lang)));
-    if (!voiceList.length && all.length) voiceList = rankVoices(all);
-    if (import.meta.env.DEV && voiceList.length)
-      console.debug('[voice] curated:', voiceList.map((v) => `${v.name} (${v.lang})`));
+    voiceList = curateVoices(all.filter((v) => /en[-_]/i.test(v.lang)));
+    if (!voiceList.mixed.length && all.length) voiceList = curateVoices(all);
+    if (import.meta.env.DEV && voiceList.mixed.length) {
+      const names = (vs: SpeechSynthesisVoice[]) => vs.map((v) => `${v.name} (${v.lang})`);
+      console.debug('[voice] curated:', {
+        mixed: names(voiceList.mixed),
+        boy: names(voiceList.boy),
+        girl: names(voiceList.girl),
+      });
+    }
   }
   return voiceList;
 }
@@ -284,8 +292,8 @@ function speakNow(text: string, profile: VoiceProfile): void {
   try {
     speaking = true;
     const u = new SpeechSynthesisUtterance(text);
-    const voices = enVoices();
-    if (voices.length) u.voice = voices[(profile.voiceIdx ?? 0) % voices.length];
+    const v = pickVoice(enVoices(), profile);
+    if (v) u.voice = v;
     // Humanizing jitter: repeated lines shouldn't sound byte-identical. Lives
     // here (the impure module) so kidVoice profiles stay deterministic.
     const j = VOICE.JITTER;

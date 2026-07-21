@@ -50,6 +50,7 @@ const plain = (over: Partial<Character>): Character => ({
   id: 'x',
   name: 'X',
   tagline: '',
+  voiceGender: 'boy',
   stats: { contact: 5, power: 5, speed: 5, pitching: 5, fielding: 5 },
   visual: { skin: 0, hair: 'short', hairColor: 0, uniform: 0, accessory: 'none' },
   ability: 'none',

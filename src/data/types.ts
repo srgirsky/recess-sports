@@ -86,6 +86,8 @@ export interface Character {
   emoji?: string;
   /** One-line kid-friendly flavor ("Never misses.", "Calls his shot. Always wrong."). */
   tagline: string;
+  /** Drives voice selection only (curated-voice sublist + pitch band) — not art. */
+  voiceGender: 'boy' | 'girl';
   stats: Stats;
   visual: VisualParams;
   ability: AbilityId;

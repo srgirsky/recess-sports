@@ -283,10 +283,11 @@ export const AUDIO = {
  * through AUDIO.masterVolume — VOLUME below is the only speech volume knob.
  */
 export const VOICE = {
-  /** The two kid commentators (a milk crate behind the backstop). */
+  /** The two kid commentators (a milk crate behind the backstop). Pip stays
+   *  un-gendered (voiceIdx 0 on the mixed list = the best child voice). */
   COMMENTATORS: {
     A: { pitch: 1.35, rate: 1.08, voiceIdx: 0 }, // Pip — hyped little kid
-    B: { pitch: 1.05, rate: 0.92, voiceIdx: 1 }, // Rocco — deadpan older kid
+    B: { pitch: 1.05, rate: 0.92, voiceIdx: 1, voiceGender: 'boy' as const }, // Rocco — deadpan older kid
   },
   /** Chance a big call (priority 2) becomes a two-line A/B exchange. */
   EXCHANGE_CHANCE: 0.45,
@@ -311,6 +312,13 @@ export const VOICE = {
       /albert|bad news|bahh|bells|boing|bubbles|cellos|deranged|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|grandma|grandpa|ralph|fred|rocko\b/i,
     /** Curated list size — voiceIdx spreads speakers across these. */
     TOP_N: 4,
+    /** Name-based gender classification (SpeechSynthesisVoice has no gender
+     *  API). GIRL is tested first; a name matching neither stays mixed-list-only
+     *  (e.g. "Google US English"). AVOID runs first, so Fred/Ralph never get here. */
+    GENDER: {
+      GIRL: /samantha|karen|moira|tessa|fiona|victoria|kate\b|susan|allison|ava\b|zira|aria|jenny|michelle|\bana\b|sonia|libby|natasha|zoe|emma|olivia|catherine|female|woman|girl/i,
+      BOY: /daniel|junior|david|mark\b|alex\b|george|oliver|thomas|arthur|\bguy\b|ryan|william|james|christopher|eric\b|aaron|nathan|\bmale\b|\bman\b|boy/i,
+    },
   },
   /** Per-utterance humanizing jitter (±), applied in audio.ts speakNow. */
   JITTER: { PITCH: 0.05, RATE: 0.04 },
@@ -320,6 +328,14 @@ export const VOICE = {
     PITCH_MAX: 1.45,
     RATE_MIN: 0.9,
     RATE_MAX: 1.12,
+    /** Gender pitch bands (inside PITCH_MIN..MAX): the hash roll lands in the
+     *  kid's band and the expression nudge clamps to it. Bands overlap so it
+     *  never sounds cartoonishly binary — and they carry the differentiation
+     *  when a browser has no gender-marked voices (empty gendered sublist). */
+    GENDER_PITCH: {
+      boy: { MIN: 1.05, MAX: 1.28 },
+      girl: { MIN: 1.2, MAX: 1.45 },
+    },
     /** Expression nudges (added after the hash roll, then clamped to the ranges). */
     NUDGE: {
       happy: { pitch: 0, rate: 0 },

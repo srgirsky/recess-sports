@@ -1,10 +1,12 @@
 // ---------------------------------------------------------------------------
-// Voice-profile tests: derived kid voices are stable, in range, spread out
-// across the roster, and nudged by expression in the right direction.
+// Voice-profile tests: derived kid voices are stable, in range (inside their
+// gender pitch band), spread out across the roster, nudged by expression in
+// the right direction — and the curated voice lists partition by gender with
+// a graceful fallback when a browser offers no gender-marked voices.
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
-import { commentatorProfile, kidVoice, rankVoices } from './voices';
+import { commentatorProfile, curateVoices, kidVoice, pickVoice, rankVoices } from './voices';
 import { VOICE } from '../config';
 import { ROSTER } from '../data/characters';
 import type { VisualParams } from '../data/types';
@@ -33,10 +35,21 @@ describe('voices', () => {
     }
   });
 
-  it('every roster kid stays inside the config ranges', () => {
+  it('every roster kid has a voiceGender the profile carries through', () => {
+    for (const c of ROSTER) {
+      expect(['boy', 'girl'], c.id).toContain(c.voiceGender);
+      expect(kidVoice(c).voiceGender, c.id).toBe(c.voiceGender);
+    }
+  });
+
+  it('every roster kid stays inside the config ranges and their gender pitch band', () => {
     const K = VOICE.KID;
     for (const c of ROSTER) {
+      const band = K.GENDER_PITCH[c.voiceGender];
       const v = kidVoice(c);
+      expect(v.pitch, c.id).toBeGreaterThanOrEqual(band.MIN);
+      expect(v.pitch, c.id).toBeLessThanOrEqual(band.MAX);
+      // The bands sit inside the global range, so the old invariant still holds.
       expect(v.pitch, c.id).toBeGreaterThanOrEqual(K.PITCH_MIN);
       expect(v.pitch, c.id).toBeLessThanOrEqual(K.PITCH_MAX);
       expect(v.rate, c.id).toBeGreaterThanOrEqual(K.RATE_MIN);
@@ -47,12 +60,24 @@ describe('voices', () => {
     }
   });
 
+  it('girls pitch above boys on average (the no-gendered-voices fallback tell)', () => {
+    const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+    const boys = ROSTER.filter((c) => c.voiceGender === 'boy').map((c) => kidVoice(c).pitch);
+    const girls = ROSTER.filter((c) => c.voiceGender === 'girl').map((c) => kidVoice(c).pitch);
+    expect(boys.length).toBeGreaterThan(0);
+    expect(girls.length).toBeGreaterThan(0);
+    expect(mean(girls)).toBeGreaterThan(mean(boys));
+  });
+
   it('voices spread out across the roster (not everyone sounds the same)', () => {
     const pitches = new Set(ROSTER.map((c) => kidVoice(c).pitch));
     expect(pitches.size).toBeGreaterThanOrEqual(8);
-    // Kids should also land on several different base voices.
-    const idxes = new Set(ROSTER.map((c) => kidVoice(c).voiceIdx));
-    expect(idxes.size).toBeGreaterThanOrEqual(2);
+    // Kids should land on several different base voices — within each gender
+    // sublist too, or all boys (or girls) would share one voice.
+    for (const g of ['boy', 'girl'] as const) {
+      const idxes = new Set(ROSTER.filter((c) => c.voiceGender === g).map((c) => kidVoice(c).voiceIdx));
+      expect(idxes.size, g).toBeGreaterThanOrEqual(2);
+    }
   });
 
   it('expression nudges shift the voice in the expected direction', () => {
@@ -60,8 +85,8 @@ describe('voices', () => {
     // (unless clamping eats it — pick a mid-range id-free comparison instead:
     // cool must never be higher-pitched than goofy for the same kid).
     for (const c of ROSTER) {
-      const cool = kidVoice({ id: c.id, visual: visual('cool') });
-      const goofy = kidVoice({ id: c.id, visual: visual('goofy') });
+      const cool = kidVoice({ id: c.id, visual: visual('cool'), voiceGender: c.voiceGender });
+      const goofy = kidVoice({ id: c.id, visual: visual('goofy'), voiceGender: c.voiceGender });
       expect(cool.pitch).toBeLessThanOrEqual(goofy.pitch);
       expect(cool.rate).toBeLessThanOrEqual(goofy.rate);
     }
@@ -127,5 +152,72 @@ describe('rankVoices', () => {
     const plain = [v('Voice A'), v('Voice B', 'fr-FR'), v('Voice C', 'de-DE')];
     // A gets the preferred-lang bonus; B and C tie at 0 and keep input order.
     expect(rankVoices(plain).map((r) => r.name)).toEqual(['Voice A', 'Voice B', 'Voice C']);
+  });
+});
+
+describe('curateVoices / pickVoice', () => {
+  const v = (name: string, lang = 'en-US') => ({ name, lang });
+  const boyProfile = { pitch: 1.1, rate: 1, voiceIdx: 0, voiceGender: 'boy' as const };
+  const girlProfile = { pitch: 1.3, rate: 1, voiceIdx: 0, voiceGender: 'girl' as const };
+
+  it('Edge/Windows inventory partitions into disjoint boy/girl sublists', () => {
+    const c = curateVoices([
+      v('Microsoft David - English (United States)'),
+      v('Microsoft Guy Online (Natural) - English (United States)'),
+      v('Microsoft Aria Online (Natural) - English (United States)'),
+      v('Microsoft Jenny Online (Natural) - English (United States)'),
+      v('Microsoft Ana Online (Natural) - English (United States)'),
+    ]);
+    const names = (vs: { name: string }[]) => vs.map((x) => x.name);
+    expect(names(c.girl).join()).toMatch(/Ana/);
+    expect(names(c.girl).join()).toMatch(/Aria/);
+    expect(names(c.girl).join()).toMatch(/Jenny/);
+    expect(names(c.boy).join()).toMatch(/David/);
+    expect(names(c.boy).join()).toMatch(/Guy/);
+    for (const b of names(c.boy)) expect(names(c.girl)).not.toContain(b);
+  });
+
+  it('macOS inventory partitions and each sublist preserves rank order', () => {
+    const c = curateVoices([v('Daniel', 'en-GB'), v('Samantha'), v('Junior'), v('Karen', 'en-AU'), v('Tessa', 'en-ZA'), v('Alex')]);
+    expect(c.girl.map((x) => x.name)).toContain('Samantha');
+    expect(c.girl.map((x) => x.name)).toContain('Karen');
+    expect(c.boy.map((x) => x.name)).toContain('Daniel');
+    // Junior is tier-1 (a real child voice) so it must lead the boy sublist.
+    expect(c.boy[0].name).toBe('Junior');
+  });
+
+  it('unmarked voices land only in mixed; sublists cap at TOP_N', () => {
+    const c = curateVoices([v('Google US English'), v('Samantha')]);
+    expect(c.mixed.map((x) => x.name)).toContain('Google US English');
+    expect(c.boy.map((x) => x.name)).not.toContain('Google US English');
+    expect(c.girl.map((x) => x.name)).not.toContain('Google US English');
+
+    const girls = curateVoices(['Samantha', 'Karen', 'Tessa', 'Moira', 'Fiona', 'Zira'].map((n) => v(n)));
+    expect(girls.girl.length).toBeLessThanOrEqual(VOICE.PICK.TOP_N);
+  });
+
+  it('mixed matches rankVoices exactly (existing behavior preserved)', () => {
+    const inv = [v('Albert'), v('Samantha'), v('Google US English'), v('Karen', 'en-AU'), v('Daniel', 'en-GB')];
+    expect(curateVoices(inv).mixed).toEqual(rankVoices(inv));
+  });
+
+  it('a gendered profile picks only from its sublist when it is populated', () => {
+    const c = curateVoices([v('Samantha'), v('Daniel', 'en-GB'), v('Karen', 'en-AU'), v('Alex')]);
+    for (let i = 0; i < 6; i++) {
+      const g = pickVoice(c, { ...girlProfile, voiceIdx: i })!;
+      expect(VOICE.PICK.GENDER.GIRL.test(g.name)).toBe(true);
+      const b = pickVoice(c, { ...boyProfile, voiceIdx: i })!;
+      expect(VOICE.PICK.GENDER.GIRL.test(b.name)).toBe(false);
+    }
+  });
+
+  it('falls back to the mixed list when the gender sublist is empty', () => {
+    const c = curateVoices([v('Google US English'), v('Samantha')]);
+    expect(c.boy).toHaveLength(0);
+    expect(pickVoice(c, boyProfile)).toBe(c.mixed[0]);
+    // A genderless profile (commentator Pip, DEFAULT_PROFILE) always uses mixed.
+    expect(pickVoice(c, { pitch: 1.2, rate: 1, voiceIdx: 0 })).toBe(c.mixed[0]);
+    // Empty inventory → undefined, never a throw.
+    expect(pickVoice(curateVoices([]), girlProfile)).toBeUndefined();
   });
 });
