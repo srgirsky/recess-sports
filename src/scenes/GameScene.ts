@@ -69,7 +69,7 @@ import { teamName, TEAM_LOGOS, type TeamIdentity } from '../systems/team';
 import { UNIFORM_COLORS } from '../art/palette';
 import { showHandoffSplash } from './ui/HandoffSplash';
 import { LivePlayView } from './ui/LivePlayView';
-import { activeSession } from '../net/peer';
+import { activeSession, dropSession } from '../net/peer';
 import type { NetMsg, HudSnap } from '../net/protocol';
 import { getSettings } from '../systems/settings';
 import type { StatEvent } from '../systems/stats';
@@ -331,6 +331,9 @@ export class GameScene extends Phaser.Scene {
   private netFrameAt = 0;
   private lastGuestSendAt = 0;
   private netShownBatterId?: string;
+  /** Channel lost — pause at the next play boundary; reconnect resumes. */
+  private netLost = false;
+  private netPausedBy?: 'me' | 'them';
 
   /** Does THIS device's human hold the bat right now? (Net overrides the
    *  flow-family flags — the guest bats the bottom on solo-flagged seats.) */
@@ -669,6 +672,11 @@ export class GameScene extends Phaser.Scene {
     // The overlay's PLAY button resumes us; re-arm the pause guard.
     const onResume = () => {
       this.pauseRequested = false;
+      // Net: WE paused, WE resumed — mirror it (with a snapshot from the host).
+      if (this.matchType === 'net' && this.netPausedBy === 'me') {
+        this.netPausedBy = undefined;
+        activeSession()?.send({ t: 'resume', hud: this.hudSnap() });
+      }
     };
     this.events.on(Phaser.Scenes.Events.RESUME, onResume);
     this.events.once('shutdown', () => this.events.off(Phaser.Scenes.Events.RESUME, onResume));
@@ -682,7 +690,16 @@ export class GameScene extends Phaser.Scene {
     // shutdown or the dead scene's handler fires on the next game's traffic.
     if (this.matchType === 'net') {
       const un = activeSession()?.onMessage((m) => this.handleNetMsg(m));
-      this.events.once('shutdown', () => un?.());
+      // Status runs on wall-clock session events — it fires even while the
+      // scene is frozen under the Pause overlay (that's the point).
+      const unStatus = activeSession()?.onStatus((s) => this.onNetStatus(s));
+      this.events.once('shutdown', () => {
+        un?.();
+        unStatus?.();
+      });
+      this.netLost = false;
+      this.netPausedBy = undefined;
+      if (!activeSession()) this.netLost = true; // friend gone before the anthem
     }
 
     this.startHalf();
@@ -1334,8 +1351,65 @@ export class GameScene extends Phaser.Scene {
       this.liveView.cancelCharge();
     }
     audio.cancelSpeech(); // the announcer must not talk over the menu
+    // Net: mirror the pause on the friend's device; only we resume it.
+    if (this.matchType === 'net') {
+      this.netPausedBy = 'me';
+      activeSession()?.send({ t: 'pause' });
+    }
     this.scene.launch('Pause'); // launch before pause: both ops queue in order
     this.scene.pause();
+  }
+
+  // --- Net disconnect / pause mirroring ------------------------------------
+
+  private onNetStatus(s: 'connected' | 'reconnecting' | 'gone'): void {
+    if (this.phase === 'ended') return;
+    if (s === 'reconnecting') {
+      this.netLost = true;
+      // Mid-live-play on the host: the CPU policies finish the remote seat's
+      // play (liveInput silence does that for free) — pause at the settle.
+      if (this.netRole === 'guest' || !this.livePlay) this.netWaitPause();
+    } else if (s === 'connected') {
+      const wasLost = this.netLost;
+      this.netLost = false;
+      if (!wasLost) return;
+      if (this.netRole === 'host') {
+        // Full snapshot resync; both sides resume at the at-bat boundary.
+        activeSession()?.send({ t: 'resume', hud: this.hudSnap() });
+        this.netResumeFromPause();
+      }
+      // Guest: wait for the resume message (it carries the snapshot).
+    } else {
+      this.netGoodGame();
+    }
+  }
+
+  /** The 🔍 overlay: no PLAY button — reconnection (wall-clock) resumes us. */
+  private netWaitPause(): void {
+    if (this.pauseRequested || this.phase === 'ended') return;
+    this.pauseRequested = true;
+    audio.cancelSpeech();
+    this.scene.launch('Pause', { net: 'waiting' });
+    this.scene.pause();
+  }
+
+  private netResumeFromPause(): void {
+    this.netPausedBy = undefined;
+    if (this.scene.isPaused()) {
+      this.scene.resume(); // fires RESUME → pauseRequested re-arms
+    }
+    this.scene.stop('Pause');
+  }
+
+  /** The channel is gone for good: no blame, both back to the title. */
+  private netGoodGame(): void {
+    if (this.phase === 'ended') return;
+    this.phase = 'ended';
+    dropSession();
+    audio.say('Good game!', commentatorProfile('A'), 'flush');
+    if (this.scene.isPaused()) this.scene.resume();
+    this.scene.stop('Pause');
+    this.scene.start('Schoolyard', { straightToDraft: false });
   }
 
   // --- Player at-bats (interactive) ---------------------------------------
@@ -2498,7 +2572,13 @@ export class GameScene extends Phaser.Scene {
 
   /** The per-frame heartbeat of a live play. Everything sim-owned is placed here. */
   update(_time: number, delta: number): void {
-    if (this.matchType === 'net') activeSession()?.tick(this.time.now);
+    if (this.matchType === 'net') {
+      activeSession()?.tick(this.time.now);
+      // A channel lost mid-live-play pauses once the CPU finishes the play.
+      if (this.netLost && !this.livePlay && !this.pauseRequested && this.phase !== 'ended') {
+        this.netWaitPause();
+      }
+    }
     if (this.swingCursor && this.phase === 'pitching') this.positionSwingCursor();
     if (this.matchType === 'net' && this.netRole === 'guest') {
       this.netGuestUpdate();
@@ -3255,6 +3335,36 @@ export class GameScene extends Phaser.Scene {
 
   /** Net: everything the other device sends routes through here. */
   private handleNetMsg(m: NetMsg): void {
+    // Role-agnostic control traffic first.
+    if (m.t === 'pause') {
+      if (!this.pauseRequested && this.phase !== 'ended') {
+        this.netPausedBy = 'them';
+        this.pauseRequested = true;
+        audio.cancelSpeech();
+        this.scene.launch('Pause', { net: 'peer' });
+        this.scene.pause();
+      }
+      return;
+    }
+    if (m.t === 'resume') {
+      if (this.netRole === 'guest') {
+        // The snapshot resyncs us — a play that settled during the gap folds.
+        if (this.livePlay) {
+          this.livePlay = undefined;
+          this.runners = this.liveView.settlePlay({ baseIds: [...m.hud.bases], outs: 0 });
+          this.netFramePrev = undefined;
+          this.netFrameNext = undefined;
+        }
+        this.netApplyHud(m.hud);
+        this.netSyncRunners(m.hud);
+      }
+      this.netResumeFromPause();
+      return;
+    }
+    if (m.t === 'bye') {
+      this.netGoodGame();
+      return;
+    }
     if (this.netRole === 'host') {
       switch (m.t) {
         case 'pitchPlan':

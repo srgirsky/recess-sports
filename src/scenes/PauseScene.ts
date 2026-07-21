@@ -9,13 +9,23 @@ import { GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
 import { makeButton } from '../ui/Button';
 import { makeMuteButton } from '../ui/MuteButton';
 import { heading, panel } from '../ui/theme';
+import { dropSession } from '../net/peer';
+
+/** Net variants: 'waiting' = channel lost (no PLAY — the session's wall-clock
+ *  reconnect drives resume); 'peer' = the friend paused (only they resume). */
+export interface PauseData {
+  net?: 'waiting' | 'peer';
+}
 
 export class PauseScene extends Phaser.Scene {
+  private net?: 'waiting' | 'peer';
+
   constructor() {
     super('Pause');
   }
 
-  create(): void {
+  create(data?: PauseData): void {
+    this.net = data?.net;
     const cx = GAME_WIDTH / 2;
     const cy = GAME_HEIGHT / 2;
 
@@ -26,17 +36,26 @@ export class PauseScene extends Phaser.Scene {
       .setInteractive();
 
     panel(this, cx, cy, 420, 400);
-    heading(this, cx, cy - 132, '⏸ PAUSED', 48);
+    const title =
+      this.net === 'waiting' ? '🔍' : this.net === 'peer' ? '⏸' : '⏸ PAUSED';
+    heading(this, cx, cy - 132, title, 48);
 
-    makeButton(this, {
-      x: cx,
-      y: cy - 20,
-      label: 'PLAY',
-      icon: '▶️',
-      width: 320,
-      height: 96,
-      onClick: () => this.resumeGame(),
-    });
+    if (this.net) {
+      const label =
+        this.net === 'waiting' ? 'Looking for\nyour friend…' : 'Your friend\npaused the game';
+      const t = heading(this, cx, cy - 40, label, 30);
+      this.tweens.add({ targets: t, alpha: 0.55, duration: 550, yoyo: true, repeat: -1 });
+    } else {
+      makeButton(this, {
+        x: cx,
+        y: cy - 20,
+        label: 'PLAY',
+        icon: '▶️',
+        width: 320,
+        height: 96,
+        onClick: () => this.resumeGame(),
+      });
+    }
     makeButton(this, {
       x: cx,
       y: cy + 105,
@@ -52,9 +71,10 @@ export class PauseScene extends Phaser.Scene {
     makeMuteButton(this, GAME_WIDTH - 40, 40);
 
     // Same keys that opened the menu close it. Guard key-repeat or a held key
-    // would bounce pause <-> resume.
+    // would bounce pause <-> resume. (Net variants: only the other side or
+    // the reconnect can resume — keys stay dead.)
     const resumeKey = (e: KeyboardEvent) => {
-      if (!e.repeat) this.resumeGame();
+      if (!e.repeat && !this.net) this.resumeGame();
     };
     this.input.keyboard?.on('keydown-ESC', resumeKey);
     this.input.keyboard?.on('keydown-P', resumeKey);
@@ -66,6 +86,8 @@ export class PauseScene extends Phaser.Scene {
   }
 
   private quit(): void {
+    // Net: leaving the game means leaving the session (bye + teardown).
+    if (this.net) dropSession();
     // scene.start only stops the caller — stop the paused GameScene explicitly
     // so its shutdown cleanup runs. Explicit data: Phaser reuses the previous
     // start()'s data when none is passed (see ResultScene's HOME button).
