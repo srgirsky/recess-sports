@@ -5,28 +5,25 @@
 // ---------------------------------------------------------------------------
 
 import Phaser from 'phaser';
-import { COLORS, GAME_WIDTH, PLATE_ZONE, PITCHES, type PitchKind } from '../../config';
-import { HOME } from '../../systems/geometry';
+import { COLORS, GAME_WIDTH, PLATE_ZONE, PLATE_VIEW, PITCHES, type PitchKind } from '../../config';
 import type { PlateLoc } from '../../systems/pitchkind';
 import { availablePitches } from '../../systems/pitchkind';
+import { plateToScreen } from '../../art/plateView';
 import { pill, FONT, OUTLINE } from '../../ui/theme';
 import * as audio from '../../systems/audio';
 
-/** Screen position of a plate-coord point. */
-export function plateToScreen(p: PlateLoc): { x: number; y: number } {
-  return { x: HOME.x + p.x, y: HOME.y + PLATE_ZONE.CY + p.y };
-}
-
 /**
- * The strike-zone window: rounded outline + faint 3x3 grid, drawn at the
- * plate. Destroy it with the rest of the pitch visuals.
+ * The strike-zone window: rounded outline + faint 3x3 grid, floating on the
+ * behind-plate rig (art/plateView maps plate coords to it, ZONE.SCALE-sized).
+ * Destroy it with the rest of the pitch visuals.
  */
 export function zoneOutline(scene: Phaser.Scene, alpha = 0.75): Phaser.GameObjects.Graphics {
-  const g = scene.add.graphics().setDepth(13).setAlpha(alpha);
-  const { W, H } = PLATE_ZONE;
+  const g = scene.add.graphics().setDepth(PLATE_VIEW.DEPTH + 2).setAlpha(alpha);
+  const W = PLATE_ZONE.W * PLATE_VIEW.ZONE.SCALE;
+  const H = PLATE_ZONE.H * PLATE_VIEW.ZONE.SCALE;
   const c = plateToScreen({ x: 0, y: 0 });
   g.lineStyle(3, COLORS.white, 0.9);
-  g.strokeRoundedRect(c.x - W / 2, c.y - H / 2, W, H, 8);
+  g.strokeRoundedRect(c.x - W / 2, c.y - H / 2, W, H, 10);
   g.lineStyle(1.5, COLORS.white, 0.35);
   for (const f of [-1 / 6, 1 / 6]) {
     g.lineBetween(c.x + W * f * 2, c.y - H / 2, c.x + W * f * 2, c.y + H / 2);
@@ -49,8 +46,8 @@ export function showPitchSelect(
     allowCrazy: boolean;
     onDone: (kind: PitchKind, target: PlateLoc) => void;
     /** Pin screen-anchored chrome (prompt + pill row) to the UI camera. The
-     *  zone grid stays in WORLD space on purpose: the batting close-up zooms
-     *  it into a bigger tap target. */
+     *  zone grid stays in WORLD space: the frontal plate mapping already makes
+     *  it a big tap target, and the camera never zooms anyway. */
     pin?: (go: Phaser.GameObjects.GameObject) => void;
   }
 ): PitchSelect {
@@ -107,14 +104,18 @@ export function showPitchSelect(
   // --- Zone grid ------------------------------------------------------------
   objs.push(zoneOutline(scene, 0.9));
   const { W, H } = PLATE_ZONE;
+  // Targets stay PLATE-coord (what resolvePitchLocation consumes); only the
+  // drawn cell size is screen-scaled by the frontal mapping.
   const cellW = W / 3;
   const cellH = H / 3;
+  const drawW = cellW * PLATE_VIEW.ZONE.SCALE - 4;
+  const drawH = cellH * PLATE_VIEW.ZONE.SCALE - 4;
   for (let row = 0; row < 3; row++) {
     for (let col = 0; col < 3; col++) {
       const target: PlateLoc = { x: (col - 1) * cellW, y: (row - 1) * cellH };
       const c = plateToScreen(target);
       const cell = scene.add
-        .rectangle(c.x, c.y, cellW - 3, cellH - 3, COLORS.gold, 0.12)
+        .rectangle(c.x, c.y, drawW, drawH, COLORS.gold, 0.12)
         .setDepth(89)
         .setInteractive();
       cell.on('pointerover', () => cell.setFillStyle(COLORS.gold, 0.4));
@@ -125,7 +126,7 @@ export function showPitchSelect(
         audio.pop();
         // A quick confirm flash on the chosen cell, then hand over.
         const flash = scene.add
-          .rectangle(c.x, c.y, cellW - 3, cellH - 3, COLORS.gold, 0.7)
+          .rectangle(c.x, c.y, drawW, drawH, COLORS.gold, 0.7)
           .setDepth(91)
           .setStrokeStyle(3, OUTLINE);
         objs.push(flash);

@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------------------
 
 import { VENUES, type VenueDef, type VenueId } from '../data/venues';
-import type { FieldGeometry } from './geometry';
+import { foulPoleXAt, type FieldGeometry } from './geometry';
 
 const KEY = 'recess_venue';
 
@@ -31,6 +31,8 @@ export function getFieldGeometry(v: VenueDef): FieldGeometry {
   return {
     fenceLeftY: v.fenceLeftY,
     fenceRightY: v.fenceRightY,
+    fenceLeftX: foulPoleXAt(v.fenceLeftY).left,
+    fenceRightX: foulPoleXAt(v.fenceRightY).right,
     rollMult: v.rollMult,
     obstacles: v.obstacles.map((o) => ({ x: o.x, y: o.y, r: o.r })),
   };

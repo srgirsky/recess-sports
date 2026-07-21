@@ -23,7 +23,7 @@ import {
   MAX_EXTRA_INNINGS,
   TEAM_SIZE,
   SHAKE,
-  CAMERA,
+  PLATE_VIEW,
   RUNNER_TWEEN_MS,
   SHOW_TIMING_RING,
   ANIM,
@@ -54,7 +54,9 @@ import {
   type PitchPlan,
   type PlateLoc,
 } from '../systems/pitchkind';
-import { showPitchSelect, zoneOutline, plateToScreen, type PitchSelect } from './ui/PitchSelectUI';
+import { showPitchSelect, zoneOutline, type PitchSelect } from './ui/PitchSelectUI';
+import { plateToScreen, screenToPlate, clampToCursorRange } from '../art/plateView';
+import { BattingView } from './ui/BattingView';
 import { createScoreboard, type Scoreboard } from './ui/Scoreboard';
 import { shouldSkipBottom, isWalkOff, decideAfterHalf } from '../systems/gameflow';
 import {
@@ -282,11 +284,16 @@ export class GameScene extends Phaser.Scene {
   private baseMarks: Phaser.GameObjects.Polygon[] = [];
   private batterLabel!: Phaser.GameObjects.Text;
 
-  // --- Two-view camera (Backyard-style) ---
-  /** HUD camera: never zooms. World objects are hidden from it via pinUI's
-   *  inverse — see the addedtoscene hook in create(). */
+  // --- Two views (Backyard-style hard cut) ---
+  /** HUD camera: world objects are hidden from it via pinUI's inverse — see
+   *  the addedtoscene hook in create(). Neither camera ever pans or zooms:
+   *  'close' just shows the behind-plate rig over the field. */
   private uiCam!: Phaser.Cameras.Scene2D.Camera;
   private viewMode: 'close' | 'wide' = 'wide';
+  /** The behind-home-plate pitch view (scenes/ui/BattingView.ts). */
+  private rig!: BattingView;
+  /** Raw screen pointer coords — the rig's cursor input (never unprojected). */
+  private lastScreenPointer: Vec = { x: PLATE_VIEW.ZONE.CX, y: PLATE_VIEW.ZONE.CY };
   /** The corner mini-diamond inset's base dots (gold = occupied). */
   private miniBaseDots: Phaser.GameObjects.Arc[] = [];
 
@@ -363,6 +370,7 @@ export class GameScene extends Phaser.Scene {
     this.armedPower = false;
 
     this.drawField();
+    this.rig = new BattingView(this, this.venue.look);
     this.drawHud();
     this.drawMiniDiamond();
     if (this.features.juice) this.drawJuiceMeter();
@@ -404,23 +412,29 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
-   * 'close' = the batting/pitching view (plate–mound corridor fills the
-   * screen, batter big in the foreground — the Backyard shot). 'wide' = the
-   * whole field for live plays and baserunning. HUD is on the UI cam and
-   * doesn't move.
+   * 'close' = the behind-home-plate pitch view (the rig: your batter seen
+   * from behind, pitcher facing you, ball flying at the camera). 'wide' =
+   * the 3/4 field for live plays and baserunning. A hard Backyard-style cut
+   * with a white-flash punch — the camera itself never pans or zooms.
+   *
+   * NOTE: rig actors must refresh on EVERY 'close' call, not just on view
+   * changes — the view stays close across batters (strikeout -> next kid).
    */
-  private setView(view: 'close' | 'wide', ms?: number): void {
-    if (this.viewMode === view) return;
-    this.viewMode = view;
-    const cam = this.cameras.main;
+  private setView(view: 'close' | 'wide'): void {
     if (view === 'close') {
-      const dur = ms ?? CAMERA.IN_MS;
-      cam.pan(CAMERA.CLOSE_X, CAMERA.CLOSE_Y, dur, 'Sine.easeInOut');
-      cam.zoomTo(CAMERA.CLOSE_ZOOM, dur, 'Sine.easeInOut');
+      const batting = this.half === 'top';
+      const catcher = this.fieldAssignment.find((a) => a.position === 'C');
+      this.rig.show({
+        batterId: (batting ? this.batter : this.cpuBatter).id,
+        pitcherId: this.moundCharId,
+        catcherId: catcher?.charId ?? this.moundCharId,
+      });
     } else {
-      const dur = ms ?? CAMERA.OUT_MS;
-      cam.pan(GAME_WIDTH / 2, GAME_HEIGHT / 2, dur, 'Sine.easeInOut');
-      cam.zoomTo(1, dur, 'Sine.easeInOut');
+      this.rig.hide();
+    }
+    if (this.viewMode !== view) {
+      this.viewMode = view;
+      this.cameras.main.flash(PLATE_VIEW.CUT_FLASH_MS, 255, 255, 255);
     }
   }
 
@@ -575,7 +589,7 @@ export class GameScene extends Phaser.Scene {
       seams.lineStyle(2, look.grassDark, 0.7);
       for (let x = 120; x < W; x += 240) seams.lineBetween(x, HORIZON, x, GAME_HEIGHT);
       seams.lineBetween(0, 470, W, 470);
-      this.add.circle(SECOND.x, SECOND.y, 58).setStrokeStyle(4, 0xf2e6c9, 0.5);
+      this.add.circle(SECOND.x, SECOND.y, 45).setStrokeStyle(4, 0xf2e6c9, 0.5);
     } else {
       // Backyard grass: scruffy tufts.
       const tufts = this.add.graphics();
@@ -623,10 +637,10 @@ export class GameScene extends Phaser.Scene {
     cut.fillStyle(look.grass, 1);
     cut.fillPoints(
       toPts([
-        { x: cx, y: cy + 6 - 58 },
-        { x: cx + 78, y: cy + 6 },
-        { x: cx, y: cy + 6 + 58 },
-        { x: cx - 78, y: cy + 6 },
+        { x: cx, y: cy + 6 - 45 },
+        { x: cx + 61, y: cy + 6 },
+        { x: cx, y: cy + 6 + 45 },
+        { x: cx - 61, y: cy + 6 },
       ]),
       true
     );
@@ -990,6 +1004,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private pitcherWindup(): void {
+    if (this.rig.visible) this.rig.windup(); // the distant rig pitcher coils too
     const p = this.pitcherSprite;
     if (!p) return;
     // Real wind-up art (arm coiled, knee up) + the lean tween on top.
@@ -1022,18 +1037,24 @@ export class GameScene extends Phaser.Scene {
     // plate. Don't swing at those! Taking it earns a ball (4 = walk).
     this.pitchIsWild = rollAiWildPitch(this.aiPitcher, () => Math.random());
     const wild = this.pitchIsWild;
-    const plateX = wild ? HOME.x + (Math.random() < 0.5 ? -48 : 48) : HOME.x;
+    // Wild pitches sail visibly off the plate (plate-coord px, past the edge).
+    const end = plateToScreen({ x: wild ? (Math.random() < 0.5 ? -60 : 60) : 0, y: 0 });
+    const start = this.rig.releasePoint;
     audio.pitchWoosh();
 
     // Timing ring: a white ring shrinks to meet the gold target ring exactly
     // when the ball reaches the plate — swing when they line up. On a wild
     // pitch the shrink ring turns red: the "let it go" cue.
     if (SHOW_TIMING_RING) {
-      this.ringTarget = this.add.circle(HOME.x, HOME.y - 26, 30).setStrokeStyle(4, COLORS.gold).setDepth(15);
+      const rc = plateToScreen({ x: 0, y: 0 });
+      this.ringTarget = this.add
+        .circle(rc.x, rc.y, PLATE_VIEW.RING_R)
+        .setStrokeStyle(4, COLORS.gold)
+        .setDepth(PLATE_VIEW.DEPTH + 4);
       this.ringShrink = this.add
-        .circle(HOME.x, HOME.y - 26, 30)
+        .circle(rc.x, rc.y, PLATE_VIEW.RING_R)
         .setStrokeStyle(5, wild ? COLORS.red : COLORS.white)
-        .setDepth(16);
+        .setDepth(PLATE_VIEW.DEPTH + 5);
       this.ringShrink.setScale(3.6);
       this.tweens.add({
         targets: this.ringShrink,
@@ -1043,32 +1064,22 @@ export class GameScene extends Phaser.Scene {
       });
     }
 
-    // Ball + a shadow that grows as it nears the plate (depth cue).
-    this.ballShadow = this.add.ellipse(MOUND.x, MOUND.y + 6, 18, 7, COLORS.ink, 0.3).setDepth(14);
+    // The ball flies AT the camera and grows — no shadow in the head-on view.
     this.ball = this.add
-      .circle(MOUND.x, MOUND.y - 36, 10, wild ? 0xffd6d0 : COLORS.white)
-      .setDepth(20);
+      .circle(start.x, start.y, 10, wild ? 0xffd6d0 : COLORS.white)
+      .setDepth(PLATE_VIEW.DEPTH + 8);
     this.ball.setStrokeStyle(2, wild ? COLORS.red : COLORS.ink);
 
     this.tweens.add({
       targets: this.ball,
-      x: plateX,
-      y: HOME.y - 26,
-      scale: { from: 0.7, to: 1.7 },
+      x: end.x,
+      y: end.y,
+      scale: { from: PLATE_VIEW.BALL.SCALE_FROM, to: PLATE_VIEW.BALL.SCALE_TO },
       duration: PITCH_TRAVEL_MS,
       ease: wild ? 'Sine.inOut' : 'Sine.in',
       onComplete: () => {
         if (!this.swung && this.phase === 'pitching') this.resolvePlayerSwing('miss', true);
       },
-    });
-    this.tweens.add({
-      targets: this.ballShadow,
-      x: plateX,
-      y: HOME.y + 8,
-      scaleX: 2,
-      scaleY: 2,
-      duration: PITCH_TRAVEL_MS,
-      ease: 'Sine.in',
     });
 
     this.startBallTrail();
@@ -1083,7 +1094,7 @@ export class GameScene extends Phaser.Scene {
         if (!this.ball) return;
         const dot = this.add
           .circle(this.ball.x, this.ball.y, 6 * this.ball.scale, COLORS.white, 0.4)
-          .setDepth(19);
+          .setDepth(PLATE_VIEW.DEPTH + 7);
         this.tweens.add({ targets: dot, alpha: 0, duration: 220, onComplete: () => dot.destroy() });
       },
     });
@@ -1119,7 +1130,7 @@ export class GameScene extends Phaser.Scene {
         PITCH_TRAVEL_MS,
         () => Math.random()
       );
-      floatingText(this, MOUND.x, MOUND.y - 80, '⚡ CRAZY PITCH!', COLORS.red, 26);
+      floatingText(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y, '⚡ CRAZY PITCH!', COLORS.red, 26);
       this.callIt('crazyPitch', {}, 2);
     }
     this.pitchPlan = plan;
@@ -1129,29 +1140,26 @@ export class GameScene extends Phaser.Scene {
     audio.pitchWoosh();
 
     this.zoneGfx = zoneOutline(this);
-    const start: Vec = { x: MOUND.x, y: MOUND.y - 36 };
+    const start = this.rig.releasePoint;
     const end = plateToScreen(plan.actual);
+    const bendScale = PLATE_VIEW.ZONE.SCALE; // flight bend is plate-coord px
 
     if (SHOW_TIMING_RING) {
-      this.ringTarget = this.add.circle(end.x, end.y, 30).setStrokeStyle(4, COLORS.gold).setDepth(15);
-      this.ringShrink = this.add.circle(end.x, end.y, 30).setStrokeStyle(5, COLORS.white).setDepth(16);
+      this.ringTarget = this.add
+        .circle(end.x, end.y, PLATE_VIEW.RING_R)
+        .setStrokeStyle(4, COLORS.gold)
+        .setDepth(PLATE_VIEW.DEPTH + 4);
+      this.ringShrink = this.add
+        .circle(end.x, end.y, PLATE_VIEW.RING_R)
+        .setStrokeStyle(5, COLORS.white)
+        .setDepth(PLATE_VIEW.DEPTH + 5);
       this.ringShrink.setScale(3.6);
       this.tweens.add({ targets: this.ringShrink, scale: 1, duration: plan.travelMs, ease: 'Sine.in' });
     }
 
-    this.ballShadow = this.add.ellipse(start.x, MOUND.y + 6, 18, 7, COLORS.ink, 0.3).setDepth(14);
-    const ball = this.add.circle(start.x, start.y, 10, COLORS.white).setDepth(20);
+    const ball = this.add.circle(start.x, start.y, 10, COLORS.white).setDepth(PLATE_VIEW.DEPTH + 8);
     ball.setStrokeStyle(2, COLORS.ink);
     this.ball = ball;
-    this.tweens.add({
-      targets: this.ballShadow,
-      x: end.x,
-      y: HOME.y + 8,
-      scaleX: 2,
-      scaleY: 2,
-      duration: plan.travelMs,
-      ease: 'Sine.in',
-    });
     this.tweens.addCounter({
       from: 0,
       to: 1,
@@ -1161,8 +1169,13 @@ export class GameScene extends Phaser.Scene {
         if (this.ball !== ball) return;
         const t = tw.getValue() ?? 0;
         const bend = ballCurveAt(plan, t);
-        ball.setPosition(start.x + (end.x - start.x) * t + bend.x, start.y + (end.y - start.y) * t + bend.y);
-        ball.setScale(0.7 + t);
+        ball.setPosition(
+          start.x + (end.x - start.x) * t + bend.x * bendScale,
+          start.y + (end.y - start.y) * t + bend.y * bendScale
+        );
+        ball.setScale(
+          PLATE_VIEW.BALL.SCALE_FROM + t * (PLATE_VIEW.BALL.SCALE_TO - PLATE_VIEW.BALL.SCALE_FROM)
+        );
       },
       onComplete: () => {
         if (!this.swung && this.phase === 'pitching') this.resolvePlayerSwing('miss', true);
@@ -1206,8 +1219,8 @@ export class GameScene extends Phaser.Scene {
 
   /**
    * 💨 STEAL! chips for runners with an open base ahead. They anchor next to
-   * the mini-diamond inset (NOT the world bases — the batting close-up crops
-   * second base out of view), Backyard-style: the inset IS the steal UI.
+   * the mini-diamond inset (NOT the world bases — the behind-plate rig hides
+   * the whole field), Backyard-style: the inset IS the steal UI.
    */
   private showStealChips(): void {
     this.stealChips.forEach((c) => c.destroy());
@@ -1252,28 +1265,34 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  /** The aim reticle: sweet-spot ring + faint contact ring, pointer-driven. */
+  /** The aim reticle: sweet-spot ring + faint contact ring, pointer-driven.
+   *  Radii are plate-coord px, scaled up by the frontal zone mapping. */
   private showSwingCursor(): void {
     this.swingCursor?.destroy();
-    const c = this.add.container(0, 0).setDepth(18);
-    const outer = this.add.circle(0, 0, CURSOR.CONTACT_R).setStrokeStyle(2, COLORS.white, 0.35);
-    const inner = this.add.circle(0, 0, CURSOR.SWEET_R).setStrokeStyle(4, COLORS.gold, 0.95);
-    const dot = this.add.circle(0, 0, 3, COLORS.gold, 0.9);
+    const s = PLATE_VIEW.ZONE.SCALE;
+    const c = this.add.container(0, 0).setDepth(PLATE_VIEW.DEPTH + 6);
+    const outer = this.add.circle(0, 0, CURSOR.CONTACT_R * s).setStrokeStyle(2, COLORS.white, 0.35);
+    const inner = this.add.circle(0, 0, CURSOR.SWEET_R * s).setStrokeStyle(4, COLORS.gold, 0.95);
+    const dot = this.add.circle(0, 0, 4, COLORS.gold, 0.9);
     c.add([outer, inner, dot]);
     this.swingCursor = c;
     this.positionSwingCursor();
   }
 
-  /** Clamp the pointer into the cursor's roam window around the zone. */
+  /** Pointer -> plate coords on the frontal zone, clamped to the roam window.
+   *  RAW screen coords on purpose: the rig ignores the 3/4 projection. */
   private cursorPlate(): PlateLoc {
-    const cx = HOME.x;
-    const cy = HOME.y + PLATE_ZONE.CY;
-    const rx = (PLATE_ZONE.W / 2) * CURSOR.RANGE_MULT;
-    const ry = (PLATE_ZONE.H / 2) * CURSOR.RANGE_MULT;
-    return {
-      x: Math.max(-rx, Math.min(rx, this.lastPointer.x - cx)),
-      y: Math.max(-ry, Math.min(ry, this.lastPointer.y - cy)),
-    };
+    return clampToCursorRange(screenToPlate(this.lastScreenPointer));
+  }
+
+  /** Where mound-side callouts (pitch bands, ⚡ CRAZY) float: over the rig's
+   *  distant pitcher while the plate view is up, over the world mound after. */
+  private pitchCalloutPos(): Vec {
+    if (this.rig.visible) {
+      const a = this.rig.pitcherAnchor;
+      return { x: a.x, y: a.y - PLATE_VIEW.PITCHER.H - 16 };
+    }
+    return { x: MOUND.x, y: MOUND.y - 90 };
   }
 
   private positionSwingCursor(): void {
@@ -1423,7 +1442,7 @@ export class GameScene extends Phaser.Scene {
         (result.kind === 'strike' || (result.kind === 'ball' && !walked)) &&
         !isHalfOver(this.halfState);
       if (token && liveOnPitch) {
-        this.setView('wide', CAMERA.SNAP_MS); // the race is at the bases
+        this.setView('wide'); // the race is at the bases
         const runner = getCharacter(token.getData('id') as string);
         const catcher = getCharacter(this.fieldAssignment.find((a) => a.position === 'C')!.charId);
         const safe = rollSteal(
@@ -1634,7 +1653,7 @@ export class GameScene extends Phaser.Scene {
 
   /** Arc the hit ball out toward the outfield; distance scales with the hit. */
   private flyHitBall(bases: number): void {
-    this.setView('wide', CAMERA.SNAP_MS); // watch it go
+    this.setView('wide'); // watch it go
     const targets: Record<number, { x: number; y: number }> = {
       1: { x: 380 + Math.random() * 200, y: 250 },
       2: { x: Math.random() < 0.5 ? 320 : 640, y: 170 },
@@ -1724,7 +1743,7 @@ export class GameScene extends Phaser.Scene {
       params: this.liveParams,
       geo: this.geo,
     });
-    this.setView('wide', CAMERA.SNAP_MS); // ball's in play — whole field, fast
+    this.setView('wide'); // ball's in play — whole field, fast
     this.phase = mode === 'defense' ? 'fielding' : 'running';
     this.pendingThrow = undefined;
     this.pendingRun = false;
@@ -2267,7 +2286,7 @@ export class GameScene extends Phaser.Scene {
       if (kind === 'crazy') {
         this.playerJuice = spend(this.playerJuice, 'crazyPitch', this.playerPitcher.ability);
         this.refreshJuiceMeter();
-        floatingText(this, MOUND.x, MOUND.y - 80, '⚡ CRAZY PITCH!', COLORS.gold, 26);
+        floatingText(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y, '⚡ CRAZY PITCH!', COLORS.gold, 26);
         this.callIt('crazyPitch', {}, 2);
       }
       this.selectedPitch = { kind, target };
@@ -2297,14 +2316,16 @@ export class GameScene extends Phaser.Scene {
     this.phase = 'aiming';
     this.threw = false;
     this.meterStart = this.time.now;
+    // The throw meter rings the rig's distant pitcher (your kid on the hill).
+    const rp = this.rig.releasePoint;
     this.ringTarget = this.add
-      .circle(MOUND.x, MOUND.y - 46, 26)
+      .circle(rp.x, rp.y, 26)
       .setStrokeStyle(4, COLORS.gold)
-      .setDepth(15);
+      .setDepth(PLATE_VIEW.DEPTH + 4);
     this.ringShrink = this.add
-      .circle(MOUND.x, MOUND.y - 46, 26)
+      .circle(rp.x, rp.y, 26)
       .setStrokeStyle(5, COLORS.white)
-      .setDepth(16);
+      .setDepth(PLATE_VIEW.DEPTH + 5);
     this.ringShrink.setScale(3.2);
     this.tweens.add({
       targets: this.ringShrink,
@@ -2390,12 +2411,16 @@ export class GameScene extends Phaser.Scene {
     audio.pitchWoosh();
     this.zoneGfx = zoneOutline(this);
     if (this.cpuStealFrom !== undefined) {
-      const p = project(basePos(this.cpuStealFrom));
-      floatingText(this, p.x, p.y - 54, 'RUNNER GOING!', COLORS.red, 26);
+      // World bases are hidden under the rig — flag it by the mini-diamond.
+      this.pinUI(floatingText(this, 212, 96, 'RUNNER GOING!', COLORS.red, 26));
     }
-    const start: Vec = { x: MOUND.x, y: MOUND.y - 36 };
+    const start = this.rig.releasePoint;
     const end = plateToScreen(plan.actual);
-    const ball = this.add.circle(start.x, start.y, 9, COLORS.white).setStrokeStyle(2, COLORS.ink).setDepth(20);
+    const bendScale = PLATE_VIEW.ZONE.SCALE;
+    const ball = this.add
+      .circle(start.x, start.y, 9, COLORS.white)
+      .setStrokeStyle(2, COLORS.ink)
+      .setDepth(PLATE_VIEW.DEPTH + 8);
     this.tweens.addCounter({
       from: 0,
       to: 1,
@@ -2404,8 +2429,13 @@ export class GameScene extends Phaser.Scene {
       onUpdate: (tw) => {
         const t = tw.getValue() ?? 0;
         const bend = ballCurveAt(plan, t);
-        ball.setPosition(start.x + (end.x - start.x) * t + bend.x, start.y + (end.y - start.y) * t + bend.y);
-        ball.setScale(0.7 + t * 0.8);
+        ball.setPosition(
+          start.x + (end.x - start.x) * t + bend.x * bendScale,
+          start.y + (end.y - start.y) * t + bend.y * bendScale
+        );
+        ball.setScale(
+          PLATE_VIEW.BALL.SCALE_FROM + t * (PLATE_VIEW.BALL.SCALE_TO - PLATE_VIEW.BALL.SCALE_FROM)
+        );
       },
       onComplete: () => {
         ball.destroy();
@@ -2420,16 +2450,17 @@ export class GameScene extends Phaser.Scene {
   private launchCpuPitch(band: PitchBand, plan: CpuPitchPlan): void {
     audio.pitchWoosh();
     const wild = band === 'wild';
-    const plateX = plan.isBall ? HOME.x + (Math.random() < 0.5 ? -48 : 48) : HOME.x;
+    const start = this.rig.releasePoint;
+    const end = plateToScreen({ x: plan.isBall ? (Math.random() < 0.5 ? -60 : 60) : 0, y: 0 });
     const ball = this.add
-      .circle(MOUND.x, MOUND.y - 36, 9, wild ? 0xffd6d0 : COLORS.white)
+      .circle(start.x, start.y, 9, wild ? 0xffd6d0 : COLORS.white)
       .setStrokeStyle(2, wild ? COLORS.red : COLORS.ink)
-      .setDepth(20);
+      .setDepth(PLATE_VIEW.DEPTH + 8);
     this.tweens.add({
       targets: ball,
-      x: plateX,
-      y: HOME.y - 26,
-      scale: { from: 0.7, to: 1.5 },
+      x: end.x,
+      y: end.y,
+      scale: { from: PLATE_VIEW.BALL.SCALE_FROM, to: PLATE_VIEW.BALL.SCALE_TO },
       duration: CPU_PITCH_TRAVEL_MS,
       ease: 'Sine.in',
       onComplete: () => {
@@ -2463,7 +2494,7 @@ export class GameScene extends Phaser.Scene {
       this.cpuJuice = spend(this.cpuJuice, 'powerSwing');
       const up: Record<SwingBand, SwingBand> = { miss: 'weak', weak: 'good', good: 'perfect', perfect: 'perfect' };
       cpuBand = up[cpuBand];
-      floatingText(this, HOME.x, HOME.y - 90, '⚡ POWER SWING!', COLORS.red, 24);
+      floatingText(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY - 120, '⚡ POWER SWING!', COLORS.red, 24);
     }
     const outcome = resolveContact(cpuBand, this.cpuBatter, this.playerPitcher, () => Math.random(), this.geo);
     if (outcome.kind !== 'inPlay') {
@@ -2505,7 +2536,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.setView('wide', CAMERA.SNAP_MS); // the race happens on the bases
+    this.setView('wide'); // the race happens on the bases
     const { container } = pill(this, GAME_WIDTH / 2, GAME_HEIGHT - 46, '🚨 TAP! THROW HIM OUT!', {
       fill: COLORS.red,
       textColor: '#ffffff',
@@ -2624,7 +2655,8 @@ export class GameScene extends Phaser.Scene {
       wild: { label: 'WILD!', color: COLORS.red },
     };
     const f = map[band];
-    floatingText(this, MOUND.x, MOUND.y - 90, f.label, f.color, band === 'perfect' ? 36 : 30);
+    const p = this.pitchCalloutPos();
+    floatingText(this, p.x, p.y, f.label, f.color, band === 'perfect' ? 36 : 30);
   }
 
   // --- Little visual helpers ----------------------------------------------
@@ -2696,6 +2728,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private animateSwing(): void {
+    if (this.rig.visible) this.rig.swingBatter(); // the rear-view kid whips
     this.batterIdle?.stop();
     const spr = this.batterSprite;
     if (spr) {
@@ -2714,7 +2747,11 @@ export class GameScene extends Phaser.Scene {
       miss: { label: 'MISS!', color: COLORS.red },
     };
     const f = map[band];
-    floatingText(this, HOME.x, HOME.y - 70, f.label, f.color, band === 'perfect' ? 40 : 32);
+    // Over the frontal zone while the rig is up; at the world plate otherwise.
+    const p = this.rig.visible
+      ? { x: PLATE_VIEW.ZONE.CX, y: PLATE_VIEW.ZONE.CY - (PLATE_ZONE.H / 2) * PLATE_VIEW.ZONE.SCALE - 30 }
+      : { x: HOME.x, y: HOME.y - 70 };
+    floatingText(this, p.x, p.y, f.label, f.color, band === 'perfect' ? 40 : 32);
   }
 
   private flashAnnounce(text: string, color: number, hold = FLOW.BANNER_HOLD_MS): void {
@@ -2732,19 +2769,21 @@ export class GameScene extends Phaser.Scene {
    * fielding -> steer / hold-to-charge a throw, running -> "everybody GO!".
    */
   private bindSwingInput(): void {
-    // NOT p.worldX/worldY: with the UI cam on top, Phaser computes those
-    // against the topmost camera (zoom 1). World input must go through the
-    // ZOOMED gameplay camera, then the 3/4 projection.
+    // Wide-view (field) input goes through the 3/4 projection. Rig input
+    // (the swing cursor) uses lastScreenPointer instead — RAW screen coords,
+    // never unprojected, because the rig isn't drawn in field space.
     const toLogical = (p: Phaser.Input.Pointer): Vec => {
       const w = this.cameras.main.getWorldPoint(p.x, p.y);
       return unproject({ x: w.x, y: w.y });
     };
 
     this.input.on('pointermove', (p: Phaser.Input.Pointer) => {
+      this.lastScreenPointer = { x: p.x, y: p.y };
       this.lastPointer = toLogical(p);
     });
 
     this.input.on('pointerdown', (p: Phaser.Input.Pointer) => {
+      this.lastScreenPointer = { x: p.x, y: p.y };
       this.lastPointer = toLogical(p);
       if (this.phase === 'pitching') this.onSwing();
       else if (this.phase === 'aiming') this.onThrow();

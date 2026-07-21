@@ -36,6 +36,18 @@ describe('character art', () => {
     }
   });
 
+  it('rear poses show no face', () => {
+    // face() always paints the #ff9d9d cheek circles; a rear view must not.
+    for (const char of ROSTER) {
+      for (const pose of ['batRear', 'catchRear'] as const) {
+        expect(
+          buildCharacterSVG(char.visual, pose).includes('ff9d9d'),
+          `${char.id}/${pose} rendered a face`
+        ).toBe(false);
+      }
+    }
+  });
+
   it('the wheelchair kid keeps her wheel in the run frames', () => {
     const zoom = ROSTER.find((c) => c.visual.accessory === 'wheelchair');
     expect(zoom).toBeDefined();

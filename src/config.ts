@@ -173,22 +173,36 @@ export const SHAKE = {
 };
 
 /**
- * The two-view camera choreography (Backyard-style): a zoomed batting/pitching
- * close-up on the plate–mound corridor for every pitch, snapping out to the
- * full field the moment a ball is in play (or runners move). HUD chrome lives
- * on a separate UI camera and never zooms.
+ * The behind-home-plate pitch view (the TV/umpire angle): a full-screen rig
+ * (scenes/ui/BattingView.ts) shown for every pitch — batter big in the
+ * foreground seen from behind, pitcher small in the distance facing you, the
+ * ball flying AT the camera. Hard cut back to the wide 3/4 field on contact.
+ * The main camera never pans/zooms; HUD chrome lives on the UI camera.
  */
-export const CAMERA = {
-  /** Close-up zoom + the world point it centers on (between mound and plate). */
-  CLOSE_ZOOM: 1.5,
-  CLOSE_X: 480,
-  CLOSE_Y: 426,
-  /** Settling into the close view (a new at-bat / next pitch). */
-  IN_MS: 450,
-  /** Easing back out for walks, steals, between-innings beats. */
-  OUT_MS: 380,
-  /** The fast snap out on contact — the ball is already flying. */
-  SNAP_MS: 260,
+export const PLATE_VIEW = {
+  /** Rig container depth. Pitch-era visuals (zone, rings, cursor, ball) sit at
+   *  DEPTH+2..+8; anything below DEPTH silently vanishes under the backdrop. */
+  DEPTH: 50,
+  /** Frontal strike zone: screen anchor of the zone center + plate-px scale
+   *  (PLATE_ZONE 96x100 -> ~173x180 on screen). */
+  ZONE: { CX: 480, CY: 390, SCALE: 1.8 },
+  /** The distant pitcher, facing the camera. RELEASE_DY = ball release point
+   *  above their feet. */
+  PITCHER: { X: 480, Y: 318, H: 104, RELEASE_DY: 56 },
+  /** The rear-view batter, big in the foreground (RHB = screen-left, the 3B
+   *  side — same side as the world batter, so the cut has continuity). */
+  BATTER: { X: 300, Y: 624, H: 288 },
+  /** The fielding team's catcher, crouched and cropped by the frame bottom
+   *  (head + shoulders in frame; feet well below it). */
+  CATCHER: { X: 556, Y: 696, H: 230 },
+  /** Where the ground meets the backdrop fence. */
+  HORIZON_Y: 292,
+  /** The white-flash punch on the hard cut between views. */
+  CUT_FLASH_MS: 60,
+  /** Pitch-ball scale ramp — it grows as it flies at the camera. */
+  BALL: { SCALE_FROM: 0.5, SCALE_TO: 2.2 },
+  /** Kid-mode timing-ring radius on the frontal zone. */
+  RING_R: 40,
 };
 
 /**
@@ -211,7 +225,7 @@ export const KID_SIZE = {
 };
 
 /** How long a runner takes to jog ONE base (ms). Post-hit pacing derives from this. */
-export const RUNNER_TWEEN_MS = 550;
+export const RUNNER_TWEEN_MS = 450;
 
 /** Show the contracting timing ring at the plate (swing-timing teaching aid). */
 export const SHOW_TIMING_RING = true;
@@ -296,10 +310,11 @@ export const LIVE = {
   THROW_SPEED_MAX: 820,
   /** Idle-kid rescue: sim throws by itself after holding the ball this long. */
   AUTO_THROW_MS: 2600,
-  /** Runner speed (px/s) at speed stat 5; each stat point is ±6%. */
-  RUNNER_SPEED: 150,
+  /** Runner speed (px/s) at speed stat 5; each stat point is ±6%.
+   *  Scaled with the base-leg length (~180px legs) so a leg takes ~1.5s. */
+  RUNNER_SPEED: 117,
   /** Distance ball→next base above which a CPU runner risks the extra base. */
-  CPU_RUNNER_GREED_DIST: 210,
+  CPU_RUNNER_GREED_DIST: 165,
   /** A loose ball nobody has picked up for this long → CPU runners just go. */
   CPU_RUNNER_PATIENCE_MS: 1500,
   /** Hard cap: any live play resolves by now (stragglers settle safe behind). */
@@ -360,7 +375,7 @@ export const RUN2 = {
   /** A runner within this of a bag counts as standing ON it (untaggable). */
   SAFE_RADIUS: 14,
   /** A CPU runner turns back when the carrier is ahead and this close. */
-  CPU_PANIC_DIST: 130,
+  CPU_PANIC_DIST: 100,
   /** After a caught fly the play stays open this long for tag-up sends. */
   SAC_WINDOW_MS: 1400,
   /** A kid who just caught a fly needs this long to gather before throwing —

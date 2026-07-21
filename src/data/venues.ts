@@ -22,7 +22,8 @@ export interface VenueDef {
   /**
    * Fence line endpoints: y at the LEFT foul line and at the RIGHT foul line
    * (screen px — larger y = closer to home = shorter porch). The park is the
-   * classic flat 210/210.
+   * classic flat 210/210. The pole x's are DERIVED from these y's via
+   * geometry's FOUL_SLOPE, so foul lines always pass through 1B/3B.
    */
   fenceLeftY: number;
   fenceRightY: number;

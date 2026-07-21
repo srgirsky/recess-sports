@@ -18,8 +18,29 @@
 import type { VisualParams, HairStyle, Expression, BodyType } from '../data/types';
 import { SKIN_TONES, HAIR_COLORS, UNIFORM_COLORS } from './palette';
 
-export type Pose = 'stand' | 'run1' | 'run2' | 'cheer' | 'bat' | 'windup' | 'ready' | 'slide';
-export const POSES: Pose[] = ['stand', 'run1', 'run2', 'cheer', 'bat', 'windup', 'ready', 'slide'];
+export type Pose =
+  | 'stand'
+  | 'run1'
+  | 'run2'
+  | 'cheer'
+  | 'bat'
+  | 'windup'
+  | 'ready'
+  | 'slide'
+  | 'batRear'
+  | 'catchRear';
+export const POSES: Pose[] = [
+  'stand',
+  'run1',
+  'run2',
+  'cheer',
+  'bat',
+  'windup',
+  'ready',
+  'slide',
+  'batRear',
+  'catchRear',
+];
 
 const VIEW_W = 200;
 const VIEW_H = 260;
@@ -315,6 +336,62 @@ function hair(style: HairStyle, color: string, dk: string): { back: string; fron
   }
 }
 
+/**
+ * Back-of-head hair for the rear-view poses (behind-home-plate rig). A nape
+ * dome covers the crown down past the ears; styles add their own silhouette
+ * on top (spikes, puffs, tail...). NO face renders under these — the rear
+ * poses skip face() entirely. Same pre-computed-fill rule as hair().
+ */
+function hairRear(style: HairStyle, color: string, dk: string): string {
+  const S = `stroke="${OUT}" stroke-width="${SW}" stroke-linejoin="round"`;
+  const top = (d: string, fill = color) => `<path d="${d}" fill="${fill}" ${S}/>`;
+  // Crown-to-nape dome: covers the whole back of the head, skin nape below.
+  const dome = top('M 50 80 a 50 50 0 0 1 100 0 l 0 16 q -50 28 -100 0 Z');
+  switch (style) {
+    case 'bald':
+      return '';
+    case 'buzz':
+      return top('M 54 80 a 46 46 0 0 1 92 0 l 0 10 q -46 22 -92 0 Z', dk);
+    case 'short':
+      return dome;
+    case 'spiky':
+      // The front spike silhouette rides the dome — spikes read from any side.
+      return (
+        dome +
+        top(
+          'M 52 78 l 6 -26 l 10 20 l 8 -30 l 10 26 l 12 -32 l 12 32 l 10 -26 l 8 30 l 10 -20 l 6 26 q -50 -20 -100 0 Z'
+        )
+      );
+    case 'curly':
+      return (
+        dome +
+        `<g fill="${color}" ${S}>
+          <circle cx="60" cy="60" r="17"/><circle cx="80" cy="46" r="18"/>
+          <circle cx="100" cy="42" r="19"/><circle cx="120" cy="46" r="18"/>
+          <circle cx="140" cy="60" r="17"/></g>`
+      );
+    case 'afro':
+      return top('M 100 22 a56 52 0 0 1 0 104 a56 52 0 0 1 0 -104 Z');
+    case 'mohawk':
+      // Shaved sides from behind: no dome, just the stripe down the back.
+      return top('M 88 18 q 12 -14 24 0 l 2 100 q -14 10 -28 0 Z');
+    case 'ponytail':
+      // Tail hangs down the center of the back, over the jersey.
+      return dome + top('M 88 106 q -8 34 2 58 q 10 8 20 0 q 10 -24 0 -58 Z', dk);
+    case 'pigtails':
+      return (
+        dome +
+        top('M 52 74 q -30 6 -26 40 q 4 22 22 24 q -14 -30 12 -56 Z') +
+        top('M 148 74 q 30 6 26 40 q -4 22 -22 24 q 14 -30 -12 -56 Z')
+      );
+    case 'bun':
+      return dome + `<circle cx="100" cy="30" r="16" fill="${color}" ${S}/>`;
+    case 'long':
+      // Full drape: crown over the top, hair falling past the shoulders.
+      return top('M 48 70 q -8 60 6 96 l 92 0 q 14 -36 6 -96 q -2 -40 -52 -40 q -50 0 -52 40 Z');
+  }
+}
+
 // --- Accessories -----------------------------------------------------------
 
 function accessory(v: VisualParams): string {
@@ -395,6 +472,61 @@ function headGroup(c: Ctx, v: VisualParams, hFront: string, look = 0): string {
     ${face(v, look)}
     ${hFront}
     ${accessory(v)}`;
+}
+
+/** Rear accessory variants: cap = dome only (brim faces away), headband =
+ *  the same symmetric band, glasses = temple arms hooking the ears. */
+function accessoryRear(v: VisualParams): string {
+  const uniRaw = UNIFORM_COLORS[v.uniform] ?? UNIFORM_COLORS[0];
+  const uni = SOFT3D ? { jersey: soften(uniRaw.jersey), trim: soften(uniRaw.trim) } : uniRaw;
+  const S = `stroke="${OUT}" stroke-width="${SW}" stroke-linejoin="round"`;
+  switch (v.accessory) {
+    case 'cap':
+      return `
+        <path d="M 52 70 a48 42 0 0 1 96 0 l 0 8 q -48 18 -96 0 Z" fill="url(#jerseyG)" ${S}/>
+        <circle cx="100" cy="34" r="5" fill="${uni.trim}" stroke="${SOFT3D ? darken(uni.trim, 0.3) : OUT}" stroke-width="3"/>`;
+    case 'headband':
+      return `<path d="M 52 62 q 48 -16 96 0 l 0 12 q -48 -16 -96 0 Z" fill="${uni.trim}" stroke="${uni.jersey}" stroke-width="4"/>`;
+    case 'glasses':
+      return `
+        <g fill="none" stroke="${OUT}" stroke-width="4" stroke-linecap="round">
+          <path d="M 54 80 l 12 3"/><path d="M 146 80 l -12 3"/></g>`;
+    default:
+      return '';
+  }
+}
+
+/**
+ * The head seen from BEHIND: neck, skull in gSkin, both ears, an under-crown
+ * shade for volume, rear hair, rear accessory. NO face() — that's the point.
+ */
+function headRearGroup(c: Ctx, v: VisualParams, hRear: string): string {
+  return `
+    <rect x="90" y="120" width="20" height="22" rx="8" fill="${c.gSkin}" ${c.S}/>
+    <rect x="90" y="120" width="20" height="8" rx="4" fill="${c.skinDk}" stroke="none"/>
+    <circle cx="${HEAD.cx}" cy="${HEAD.cy}" r="${c.m.headR}" fill="${c.gSkin}" ${c.S}/>
+    <ellipse cx="52" cy="86" rx="9" ry="11" fill="${c.gSkin}" ${c.S}/>
+    <ellipse cx="148" cy="86" rx="9" ry="11" fill="${c.gSkin}" ${c.S}/>
+    <clipPath id="hcr"><circle cx="${HEAD.cx}" cy="${HEAD.cy}" r="${c.m.headR}"/></clipPath>
+    <ellipse cx="100" cy="${HEAD.cy + c.m.headR}" rx="${c.m.headR}" ry="24" fill="${c.skinDk}" opacity="0.35" clip-path="url(#hcr)"/>
+    ${hRear}
+    ${accessoryRear(v)}`;
+}
+
+/** Jersey back for the rear-view poses: the front torso shapes minus the
+ *  collar trim, plus a big back-number badge in the team's trim color. */
+function torsoRear(c: Ctx): string {
+  const { halfW } = c.m;
+  const shoulderY = 150;
+  const hipY = 208;
+  const torsoPath = `M ${100 - halfW} ${shoulderY}
+             q 0 -14 14 -16 q ${halfW - 14} -6 ${2 * (halfW - 14)} 0 q 14 2 14 16
+             l 4 ${hipY - shoulderY}
+             q ${-halfW} 12 ${-2 * halfW} 0 Z`;
+  return `
+    <path d="${torsoPath}" fill="${c.gJersey}" ${c.S}/>
+    <path d="M ${100 - halfW + 2} ${hipY - 14} q ${halfW - 2} 12 ${2 * (halfW - 2)} 0 l 2 12 q ${-(halfW - 2)} 12 ${-2 * (halfW - 2)} 0 Z" fill="${c.jerseyDk}"/>
+    <circle cx="100" cy="${shoulderY + 28}" r="16" fill="${c.trim}" opacity="0.92"/>`;
 }
 
 // --- Front poses (stand / cheer) --------------------------------------------
@@ -765,6 +897,85 @@ function poseSlide(c: Ctx, v: VisualParams, hFront: string): string {
   return `${dust}${torso}${legs}${arms}${head}`;
 }
 
+// --- Rear poses (batRear / catchRear — the behind-home-plate rig) -----------
+
+/**
+ * Batting stance seen from BEHIND (the rig's foreground batter): wide planted
+ * legs, jersey back with the number, both hands up to a grip on the right,
+ * bat cocked up over the right shoulder, head turned away toward the pitcher.
+ */
+function poseBatRear(c: Ctx, v: VisualParams, hRear: string): string {
+  const { halfW } = c.m;
+  // Bat leans up-right over the shoulder, drawn first (it's on the far side).
+  const grip = { x: 128, y: 148 };
+  const bat = batProp(grip.x, grip.y, 30);
+  // Both arms lift toward the grip; hands stack on the handle.
+  const arms = `
+    ${capsule(`M 90 160 Q 106 150 ${grip.x - 6} ${grip.y + 4}`, darken(c.jerseyDk, 0.1), 13)}
+    <circle cx="${grip.x - 6}" cy="${grip.y + 4}" r="9" fill="${darken(c.skin, 0.1)}" ${c.S}/>
+    ${capsule(`M 104 164 Q 116 158 ${grip.x} ${grip.y + 12}`, c.jerseyDk, 13)}
+    <circle cx="${grip.x - 1}" cy="${grip.y + 11}" r="9" fill="${c.gSkin}" ${c.S}/>`;
+  // Head tips slightly toward the pitch (up-right on screen), no face.
+  const head = `
+    <g transform="translate(3 0) rotate(4 ${HEAD.cx} ${HEAD.cy})">
+      ${headRearGroup(c, v, hRear)}
+    </g>`;
+  if (c.usesChair) {
+    // Rear view of the chair ≈ front geometry (two wheels flanking the seat).
+    return `${bat}${wheelchairFront()}${torsoRear(c)}${arms}${head}`;
+  }
+  const legHalf = halfW * 0.75;
+  const legs = (['l', 'r'] as const)
+    .map((side) => {
+      const s = side === 'l' ? -1 : 1;
+      const x = 100 + s * legHalf;
+      return `
+        ${capsule(`M ${100 + s * (halfW * 0.35)} 206 Q ${x + s * 6} 214 ${x} ${GROUND - 12}`, PANTS, 16)}
+        ${frontShoe(x)}`;
+    })
+    .join('');
+  const torso = `<g transform="rotate(3 100 180)">${torsoRear(c)}</g>`;
+  return `${bat}${legs}${torso}${arms}${head}`;
+}
+
+/**
+ * Catcher's crouch seen from BEHIND (the rig's bottom-of-frame kid): deep
+ * squat, shoes planted wide ON the ground line, squashed jersey back, head
+ * dropped onto the shoulders, elbows out.
+ */
+function poseCatchRear(c: Ctx, v: VisualParams, hRear: string): string {
+  const { halfW } = c.m;
+  const drop = 54;
+  const head = `
+    <g transform="translate(0 ${drop})">
+      ${headRearGroup(c, v, hRear)}
+    </g>`;
+  const elbows = `
+    ${capsule(`M ${100 - halfW + 2} 196 Q ${100 - halfW - 12} 202 ${100 - halfW - 15} 214`, c.jerseyDk, 13)}
+    ${capsule(`M ${100 + halfW - 2} 196 Q ${100 + halfW + 12} 202 ${100 + halfW + 15} 214`, c.jerseyDk, 13)}`;
+  // Squashed jersey back + hem + number, hips near the heels.
+  const w = Math.round(halfW * 2.1);
+  const torso = `
+    <rect x="${100 - w / 2}" y="170" width="${w}" height="58" rx="24" fill="${c.gJersey}" ${c.S}/>
+    <rect x="${100 - w / 2 + 5}" y="214" width="${w - 10}" height="10" rx="5" fill="${c.jerseyDk}"/>
+    <circle cx="100" cy="200" r="14" fill="${c.trim}" opacity="0.92"/>`;
+  if (c.usesChair) {
+    // Seated behind the plate: the chair IS the crouch.
+    return `${wheelchairFront()}${torso}${elbows}${head}`;
+  }
+  const legHalf = halfW * 0.66;
+  const legs = (['l', 'r'] as const)
+    .map((side) => {
+      const s = side === 'l' ? -1 : 1;
+      const x = 100 + s * legHalf;
+      return `
+        ${capsule(`M ${x - s * 3} ${GROUND - 36} Q ${x} ${GROUND - 24} ${x} ${GROUND - 10}`, PANTS, 15)}
+        ${frontShoe(x)}`;
+    })
+    .join('');
+  return `${legs}${torso}${elbows}${head}`;
+}
+
 // --- Assembly --------------------------------------------------------------
 
 export function buildCharacterSVG(v: VisualParams, pose: Pose = 'stand'): string {
@@ -796,7 +1007,11 @@ export function buildCharacterSVG(v: VisualParams, pose: Pose = 'stand'): string
   const number = `<circle cx="100" cy="${shoulderY + 26}" r="13" fill="${uni.trim}" opacity="0.9"/>`;
 
   let layers: string;
-  if (pose === 'bat') {
+  if (pose === 'batRear' || pose === 'catchRear') {
+    // Rear poses use the back-of-head hair set; the front set is ignored.
+    const hr = hairRear(v.hair, 'url(#hairG)', 'url(#hairDkG)');
+    layers = pose === 'batRear' ? poseBatRear(c, v, hr) : poseCatchRear(c, v, hr);
+  } else if (pose === 'bat') {
     layers = poseBat(c, v, h.back + h.front);
   } else if (pose === 'windup') {
     layers = `${h.back}${poseWindup(c, v, h.front)}`;

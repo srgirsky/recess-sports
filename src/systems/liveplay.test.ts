@@ -8,7 +8,20 @@ import { describe, it, expect } from 'vitest';
 import type { Character } from '../data/types';
 import { resolveContact, type Launch } from './atbat';
 import { resolveLiveParams, type LiveParams } from './mode';
-import { HOME, FENCE_Y, FIRST, type PositionId } from './geometry';
+import {
+  HOME,
+  FENCE_Y,
+  FIRST,
+  SECOND,
+  THIRD,
+  FOUL_SLOPE,
+  FIELD_POSITIONS,
+  fencePointAt,
+  dist,
+  type PositionId,
+} from './geometry';
+import { VENUES } from '../data/venues';
+import { getFieldGeometry } from './venue';
 import {
   startLivePlay,
   stepLivePlay,
@@ -187,11 +200,11 @@ describe('live play: defense (the player fields)', () => {
         outs: 0,
         params: kid,
       });
-      // Field it, then dawdle until 900ms before lobbing a soft throw — slow
+      // Field it, then dawdle until 1000ms before lobbing a soft throw — slow
       // enough that only the slow runner loses the race to first.
       let threw = false;
       const { s: end } = runPlay(s, kid, (st) => {
-        if (st.ball.phase === 'held' && !threw && st.elapsed >= 900) {
+        if (st.ball.phase === 'held' && !threw && st.elapsed >= 1000) {
           threw = true;
           return { throwTo: { base: 1, power: 0 } };
         }
@@ -609,6 +622,34 @@ describe('live play: geometry sanity', () => {
   it('first base screen position is where runners race to', () => {
     // A tripwire for anyone moving the diamond: the sim and the scene share
     // these coordinates, so a change here changes gameplay, not just pixels.
-    expect(FIRST).toEqual({ x: 662, y: 358 });
+    expect(FIRST).toEqual({ x: 618, y: 385 });
+  });
+
+  it('the bases sit exactly on the foul lines', () => {
+    expect(FIRST.x - HOME.x).toBeCloseTo(FOUL_SLOPE * (HOME.y - FIRST.y), 6);
+    expect(HOME.x - THIRD.x).toBeCloseTo(FOUL_SLOPE * (HOME.y - THIRD.y), 6);
+  });
+
+  it('a real outfield exists beyond second base', () => {
+    expect(SECOND.y).toBeGreaterThanOrEqual(FENCE_Y + 50);
+  });
+
+  it('every fielder starts in fair territory and clear of obstacles, in every venue', () => {
+    for (const venue of Object.values(VENUES)) {
+      const geo = getFieldGeometry(venue);
+      // Steepest possible line per side: through this venue's actual pole.
+      const left = fencePointAt(geo, 0);
+      const right = fencePointAt(geo, 1);
+      for (const [id, p] of Object.entries(FIELD_POSITIONS)) {
+        if (id === 'C') continue; // catcher squats behind the plate, off-diamond
+        const leftLineX = HOME.x + ((left.x - HOME.x) * (HOME.y - p.y)) / (HOME.y - left.y);
+        const rightLineX = HOME.x + ((right.x - HOME.x) * (HOME.y - p.y)) / (HOME.y - right.y);
+        expect(p.x, `${venue.id}: ${id} is past the left line`).toBeGreaterThan(leftLineX);
+        expect(p.x, `${venue.id}: ${id} is past the right line`).toBeLessThan(rightLineX);
+        for (const o of geo.obstacles) {
+          expect(dist(p, o), `${venue.id}: ${id} starts inside an obstacle`).toBeGreaterThan(o.r);
+        }
+      }
+    }
   });
 });

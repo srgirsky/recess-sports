@@ -9,19 +9,30 @@ export interface Vec {
   y: number;
 }
 
-// A clean diamond seen from behind home plate.
+// A clean diamond seen from behind home plate. The bases sit exactly on the
+// foul lines (slope FOUL_SLOPE from home), and home→2B is well short of the
+// fence so a real outfield band exists beyond the infield.
 export const HOME: Vec = { x: 480, y: 500 };
-export const FIRST: Vec = { x: 662, y: 358 };
-export const SECOND: Vec = { x: 480, y: 216 };
-export const THIRD: Vec = { x: 298, y: 358 };
-export const MOUND: Vec = { x: 480, y: 356 };
+export const FIRST: Vec = { x: 618, y: 385 };
+export const SECOND: Vec = { x: 480, y: 270 };
+export const THIRD: Vec = { x: 342, y: 385 };
+export const MOUND: Vec = { x: 480, y: 388 };
 
 /** Top of the outfield wall — a fly landing above this line is a home run. */
 export const FENCE_Y = 210;
 
-/** The foul lines meet the fence band at these x's (left/right). */
-export const FENCE_LEFT_X = 132;
-export const FENCE_RIGHT_X = 828;
+/**
+ * Foul-line slope: x-per-y from home out through 1B/3B (138/115 = 1.2). The
+ * foul poles derive from this per venue, so the drawn lines pass exactly
+ * through the bags no matter where a venue's fence sits.
+ */
+export const FOUL_SLOPE = 1.2;
+
+/** Where the foul lines meet a fence at the given y (left/right pole x's). */
+export function foulPoleXAt(fenceY: number): { left: number; right: number } {
+  const d = FOUL_SLOPE * (HOME.y - fenceY);
+  return { left: HOME.x - d, right: HOME.x + d };
+}
 
 /**
  * Venue-shaped field geometry: where the fence sits per spray direction, how
@@ -33,6 +44,9 @@ export interface FieldGeometry {
   /** Fence y at the left foul line and at the right foul line. */
   fenceLeftY: number;
   fenceRightY: number;
+  /** Foul-pole x's — always foulPoleXAt(fence y), so lines hit the bags. */
+  fenceLeftX: number;
+  fenceRightX: number;
   /** Grounder roll-speed multiplier. */
   rollMult: number;
   obstacles: Array<{ x: number; y: number; r: number }>;
@@ -42,6 +56,8 @@ export interface FieldGeometry {
 export const DEFAULT_GEOMETRY: FieldGeometry = {
   fenceLeftY: FENCE_Y,
   fenceRightY: FENCE_Y,
+  fenceLeftX: foulPoleXAt(FENCE_Y).left,
+  fenceRightX: foulPoleXAt(FENCE_Y).right,
   rollMult: 1,
   obstacles: [],
 };
@@ -49,7 +65,7 @@ export const DEFAULT_GEOMETRY: FieldGeometry = {
 /** The point on the fence at spray fraction t (0 = left line, 1 = right). */
 export function fencePointAt(geo: FieldGeometry, t: number): Vec {
   return {
-    x: FENCE_LEFT_X + t * (FENCE_RIGHT_X - FENCE_LEFT_X),
+    x: geo.fenceLeftX + t * (geo.fenceRightX - geo.fenceLeftX),
     y: geo.fenceLeftY + t * (geo.fenceRightY - geo.fenceLeftY),
   };
 }
@@ -87,17 +103,21 @@ export function lerpVec(a: Vec, b: Vec, t: number): Vec {
 /** The nine defensive positions. */
 export type PositionId = 'P' | 'C' | '1B' | '2B' | 'SS' | '3B' | 'LF' | 'CF' | 'RF';
 
-/** Where each fielder stands at the start of a play (screen coords). */
+/**
+ * Where each fielder stands at the start of a play (screen coords). Every
+ * spot is strictly inside the fair cone for EVERY venue's foul lines, and
+ * clear of all venue obstacles (the sandlot oak) — asserted in tests.
+ */
 export const FIELD_POSITIONS: Record<PositionId, Vec> = {
   P: MOUND,
   C: { x: 480, y: 540 },
-  '1B': { x: 690, y: 330 },
-  '2B': { x: 565, y: 258 },
-  SS: { x: 395, y: 258 },
-  '3B': { x: 270, y: 330 },
-  LF: { x: 260, y: 235 },
-  CF: { x: 480, y: 225 },
-  RF: { x: 700, y: 235 },
+  '1B': { x: 600, y: 375 },
+  '2B': { x: 555, y: 300 },
+  SS: { x: 405, y: 300 },
+  '3B': { x: 360, y: 375 },
+  LF: { x: 295, y: 240 },
+  CF: { x: 480, y: 232 },
+  RF: { x: 665, y: 240 },
 };
 
 /** Which position covers each base for a throw (4 = home plate). */
