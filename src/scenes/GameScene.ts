@@ -63,7 +63,7 @@ import { BattingView } from './ui/BattingView';
 import { homerSpectacle, powerSwingFx, crazyPitchFx } from './ui/Spectacle';
 import type { GameInitData } from './LineupScene';
 import { swapPositions, type LineupPlan } from '../systems/lineup';
-import { newFatigue, drainPitch, effectivePitching, isTired, cpuWantsRelief } from '../systems/fatigue';
+import { newFatigue, drainPitch, effectivePitching, isTired, cpuWantsRelief, type FatigueState } from '../systems/fatigue';
 import { rampLevel, rampedArm, rampedCpuBatter } from '../systems/difficulty';
 import { teamName, type TeamIdentity } from '../systems/team';
 import { getSettings } from '../systems/settings';
@@ -189,14 +189,99 @@ function lightenInt(color: number, f: number): number {
   return (r << 16) | (g << 8) | b;
 }
 
+/**
+ * One team's seat at the ballpark — everything that used to live in the
+ * paired "player"/"ai" scene fields. seats[0] = away (the original player
+ * side), seats[1] = home (the original CPU side); battingSeat()/fieldingSeat()
+ * resolve by half. `humanBats`/`humanPitches` say which flow family serves the
+ * seat (solo: seat 0 both, seat 1 neither — the CPU); `recordsStats` gates the
+ * season stat feed (seat 0 only in solo).
+ */
+interface SeatState {
+  team: string[];
+  score: number;
+  lineupIdx: number;
+  pitcher?: Character;
+  plan?: LineupPlan;
+  fatigue: FatigueState;
+  juice: JuiceState;
+  identity?: TeamIdentity;
+  humanBats: boolean;
+  humanPitches: boolean;
+  recordsStats: boolean;
+  stats: StatEvent[];
+}
+
+function newSeatState(human: boolean): SeatState {
+  return {
+    team: [],
+    score: 0,
+    lineupIdx: 0,
+    fatigue: newFatigue(),
+    juice: newJuice(),
+    humanBats: human,
+    humanPitches: human,
+    recordsStats: human,
+    stats: [],
+  };
+}
+
 export class GameScene extends Phaser.Scene {
-  private playerTeam!: string[];
-  private playerPlan?: LineupPlan; // CLASSIC lineup (order/positions/pitcher)
-  private aiPlan?: LineupPlan;
-  private identity?: TeamIdentity; // team jerseys + spoken name (CLASSIC)
-  private rival?: TeamIdentity;
-  private playerFatigue = newFatigue(); // current mound arms' gas tanks
-  private cpuFatigue = newFatigue();
+  /** The two seats. Declaration-initialized ONCE (like the old field
+   *  initializers) — init() resets the per-game parts through the accessors,
+   *  preserving the exact pre-seat reset semantics. */
+  private seats: [SeatState, SeatState] = [newSeatState(true), newSeatState(false)];
+
+  /** The seat whose team is at bat this half. */
+  private battingSeat(): SeatState {
+    return this.seats[this.half === 'top' ? 0 : 1];
+  }
+
+  /** The seat whose team is in the field this half. */
+  private fieldingSeat(): SeatState {
+    return this.seats[this.half === 'top' ? 1 : 0];
+  }
+
+  // --- Legacy seat accessors -------------------------------------------------
+  // Mechanical bridge from the old paired fields to the seat model: call sites
+  // migrate to battingSeat()/fieldingSeat()/seats[i] group-by-group, then these
+  // disappear. Behavior-identical by construction.
+  private get playerTeam(): string[] { return this.seats[0].team; }
+  private set playerTeam(v: string[]) { this.seats[0].team = v; }
+  private get aiTeam(): string[] { return this.seats[1].team; }
+  private set aiTeam(v: string[]) { this.seats[1].team = v; }
+  private get playerScore(): number { return this.seats[0].score; }
+  private set playerScore(v: number) { this.seats[0].score = v; }
+  private get aiScore(): number { return this.seats[1].score; }
+  private set aiScore(v: number) { this.seats[1].score = v; }
+  private get playerLineup(): number { return this.seats[0].lineupIdx; }
+  private set playerLineup(v: number) { this.seats[0].lineupIdx = v; }
+  private get aiLineup(): number { return this.seats[1].lineupIdx; }
+  private set aiLineup(v: number) { this.seats[1].lineupIdx = v; }
+  private get playerPitcher(): Character { return this.seats[0].pitcher!; }
+  private set playerPitcher(v: Character) { this.seats[0].pitcher = v; }
+  private get aiPitcher(): Character { return this.seats[1].pitcher!; }
+  private set aiPitcher(v: Character) { this.seats[1].pitcher = v; }
+  private get playerPlan(): LineupPlan | undefined { return this.seats[0].plan; }
+  private set playerPlan(v: LineupPlan | undefined) { this.seats[0].plan = v; }
+  private get aiPlan(): LineupPlan | undefined { return this.seats[1].plan; }
+  private set aiPlan(v: LineupPlan | undefined) { this.seats[1].plan = v; }
+  private get playerFatigue(): FatigueState { return this.seats[0].fatigue; }
+  private set playerFatigue(v: FatigueState) { this.seats[0].fatigue = v; }
+  private get cpuFatigue(): FatigueState { return this.seats[1].fatigue; }
+  private set cpuFatigue(v: FatigueState) { this.seats[1].fatigue = v; }
+  private get playerJuice(): JuiceState { return this.seats[0].juice; }
+  private set playerJuice(v: JuiceState) { this.seats[0].juice = v; }
+  private get cpuJuice(): JuiceState { return this.seats[1].juice; }
+  private set cpuJuice(v: JuiceState) { this.seats[1].juice = v; }
+  private get identity(): TeamIdentity | undefined { return this.seats[0].identity; }
+  private set identity(v: TeamIdentity | undefined) { this.seats[0].identity = v; }
+  private get rival(): TeamIdentity | undefined { return this.seats[1].identity; }
+  private set rival(v: TeamIdentity | undefined) { this.seats[1].identity = v; }
+  private get statEvents(): StatEvent[] { return this.seats[0].stats; }
+  private set statEvents(v: StatEvent[]) { this.seats[0].stats = v; }
+  // ---------------------------------------------------------------------------
+
   private reliefBtn?: Phaser.GameObjects.Container;
   private reliefOverlay?: Phaser.GameObjects.Container;
   private pitchAutoPick?: Phaser.Time.TimerEvent;
@@ -211,7 +296,6 @@ export class GameScene extends Phaser.Scene {
   private regulation = INNINGS; // game length (settings can pick 1/2/3)
   private practice = false; // batting practice: endless pitches, no outs, no innings
   private seasonGame = false; // this game counts toward Recess Week
-  private statEvents: StatEvent[] = []; // player-side stat feed (season games)
   // 📼 instant replay: per-tick position snapshots of the current live play.
   private replayFrames: ReplayFrame[] = [];
   private playHighlights = newHighlights();
@@ -220,16 +304,9 @@ export class GameScene extends Phaser.Scene {
   private replayT = 0;
   private replayIdx = 0;
   private replayChrome?: Phaser.GameObjects.Container;
-  private aiTeam!: string[];
-  private aiPitcher!: Character;
-  private playerPitcher!: Character;
 
   private inning = 1;
   private half: 'top' | 'bottom' = 'top';
-  private playerScore = 0;
-  private aiScore = 0;
-  private playerLineup = 0;
-  private aiLineup = 0;
   private firstPitchOfGame = true;
   private firstDefenseOfGame = true;
 
@@ -269,8 +346,6 @@ export class GameScene extends Phaser.Scene {
   /** Main mode: a CPU runner is stealing on the current pitch. */
   private cpuStealFrom?: 1 | 2;
   // Juice meters (main mode): charge on great plays, spend on power moves.
-  private playerJuice: JuiceState = newJuice();
-  private cpuJuice: JuiceState = newJuice();
   private armedPower = false;
   private powerBtn?: Phaser.GameObjects.Container;
   private juiceGfx?: Phaser.GameObjects.Graphics;
@@ -523,10 +598,12 @@ export class GameScene extends Phaser.Scene {
    */
   private setView(view: 'close' | 'wide'): void {
     if (view === 'close') {
-      const batting = this.half === 'top';
+      // The rig's batter is whoever the batting seat's flow family put in the
+      // box: the human-batting family owns `batter`, the CPU family `cpuBatter`.
+      const humanBatting = this.battingSeat().humanBats;
       const catcher = this.fieldAssignment.find((a) => a.position === 'C');
       this.rig.show({
-        batterId: (batting ? this.batter : this.cpuBatter).id,
+        batterId: (humanBatting ? this.batter : this.cpuBatter).id,
         pitcherId: this.moundCharId,
         catcherId: catcher?.charId ?? this.moundCharId,
         fielders: this.fieldAssignment.filter((a) => a.position !== 'P' && a.position !== 'C'),
@@ -2032,9 +2109,9 @@ export class GameScene extends Phaser.Scene {
     }
     this.fielderSprites = [];
 
-    const defendingIds = this.half === 'top' ? this.aiTeam : this.playerTeam;
-    const pitcher = this.half === 'top' ? this.aiPitcher : this.playerPitcher;
-    const plan = this.half === 'top' ? this.aiPlan : this.playerPlan;
+    const defendingIds = this.fieldingSeat().team;
+    const pitcher = this.fieldingSeat().pitcher!;
+    const plan = this.fieldingSeat().plan;
     if (plan) {
       // The lineup plan says exactly who stands where.
       const byPos = new Map<PositionId, string>();
