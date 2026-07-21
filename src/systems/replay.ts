@@ -70,6 +70,43 @@ export function snapshotLive(s: LivePlayState): ReplayFrame {
 }
 
 /**
+ * Interpolate two snapshots for the guest renderer in two-device play:
+ * frames arrive at NET.FRAME_HZ (20 Hz) and render at 60 fps. Numeric fields
+ * (positions, height, progress, t) lerp; discrete fields (ball phase/holder,
+ * diving, runner from/to/done) SNAP from `b` — at 20 Hz that is at most one
+ * 50 ms frame early, and `done` must never lag its exit fade. Array items
+ * missing from either frame snap from `b`.
+ */
+export function lerpFrames(a: ReplayFrame, b: ReplayFrame, t01: number): ReplayFrame {
+  const k = Math.min(1, Math.max(0, t01));
+  const num = (x: number, y: number) => x + (y - x) * k;
+  const vec = (x: Vec, y: Vec): Vec => ({ x: num(x.x, y.x), y: num(x.y, y.y) });
+  return {
+    t: num(a.t, b.t),
+    ball: {
+      pos: vec(a.ball.pos, b.ball.pos),
+      height: num(a.ball.height, b.ball.height),
+      phase: b.ball.phase,
+      heldBy: b.ball.heldBy,
+    },
+    fielders: b.fielders.map((bf, i) => {
+      const af = a.fielders[i];
+      return { pos: af ? vec(af.pos, bf.pos) : { ...bf.pos }, diving: bf.diving };
+    }),
+    runners: b.runners.map((br, i) => {
+      const ar = a.runners[i];
+      return {
+        pos: ar ? vec(ar.pos, br.pos) : { ...br.pos },
+        from: br.from,
+        to: br.to,
+        progress: ar ? num(ar.progress, br.progress) : br.progress,
+        done: br.done,
+      };
+    }),
+  };
+}
+
+/**
  * Write a frame's positions back into the live state so the ordinary renderer
  * draws it. The LAST frame restores the true end-of-play state exactly, so
  * settling after playback folds the correct outcome.
