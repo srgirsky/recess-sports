@@ -412,7 +412,7 @@ export class SchoolyardScene extends Phaser.Scene {
 
     // 👥 VS: pass-and-play — two kids draft against each other, then the
     // batting player holds the device each half.
-    const vs = pill(this, GAME_WIDTH / 2, 452, '👥 VS', { fill: COLORS.cream, fontSize: 20, minW: 110 });
+    const vs = pill(this, GAME_WIDTH / 2 - 78, 452, '👥 VS', { fill: COLORS.cream, fontSize: 20, minW: 110 });
     vs.container.setDepth(5);
     vs.container.setInteractive(new Phaser.Geom.Rectangle(-55, -22, 110, 44), Phaser.Geom.Rectangle.Contains);
     vs.container.on('pointerdown', () => {
@@ -425,6 +425,18 @@ export class SchoolyardScene extends Phaser.Scene {
       this.startRecess();
     });
     this.titleObjs.push(vs.container);
+
+    // 🔗 two-device play: host/join over the emoji room code (LobbyScene).
+    const link = pill(this, GAME_WIDTH / 2 + 78, 452, '🔗 FRIEND', { fill: COLORS.cream, fontSize: 20, minW: 130 });
+    link.container.setDepth(5);
+    link.container.setInteractive(new Phaser.Geom.Rectangle(-65, -22, 130, 44), Phaser.Geom.Rectangle.Contains);
+    link.container.on('pointerdown', () => {
+      if (this.phase !== 'title') return;
+      audio.unlock();
+      audio.pop();
+      this.scene.start('Lobby');
+    });
+    this.titleObjs.push(link.container);
 
     // 🏆 RECESS WEEK: the 5-game season (resumes mid-week automatically) and
     // 📔 the sticker album.
