@@ -16,6 +16,7 @@ import {
   GAME_WIDTH,
   GAME_HEIGHT,
   COLORS,
+  ANIM,
   FX,
   LIVE,
   KID_SIZE,
@@ -29,10 +30,11 @@ import {
   FIELD_POSITIONS,
   type PositionId,
 } from '../../systems/geometry';
-import type { LivePlayState } from '../../systems/liveplay';
+import type { LivePlayState, LiveEvent } from '../../systems/liveplay';
 import { project, depthScale } from '../../art/projection';
 import { poseKey } from '../../art/textureFactory';
-import { idleBob, squashHop, groundShadow, runCycle } from '../../ui/anim';
+import { idleBob, squashHop, groundShadow, runCycle, reactPose } from '../../ui/anim';
+import { screenShake, burst, floatingText } from '../../ui/effects';
 import { pill } from '../../ui/theme';
 import * as audio from '../../systems/audio';
 import { commentatorProfile } from '../../systems/voices';
@@ -131,14 +133,143 @@ export class LivePlayView {
     return this.fielderSprites[i - 1];
   }
 
-  /** TEMP — removed by the reactTo split (drainLiveEvents still scene-side). */
-  fielderSprite(charId: string): LiveSprite | undefined {
-    return this.fielderSprites.find((f) => f.charId === charId);
-  }
-
-  /** TEMP — removed by the reactTo split (drainLiveEvents still scene-side). */
-  runnerSprite(charId: string): LiveSprite | undefined {
-    return this.liveRunnerSprites.get(charId);
+  /**
+   * The visual verbs for one sim event: SFX, pops, shakes, floating text,
+   * reaction poses, and the out/score runner send-offs. The controller keeps
+   * the drain loop and its bookkeeping (highlights, stats, booth calls).
+   */
+  reactTo(e: LiveEvent, s: LivePlayState): void {
+    switch (e.t) {
+      case 'catch': {
+        audio.pop();
+        const bq = project(s.ball.pos);
+        floatingText(this.scene, bq.x, bq.y - 40, 'CAUGHT!', COLORS.gold, 30);
+        if (s.mode === 'defense') audio.cheer();
+        // The catcher's glove-up beat.
+        const cspr = this.fielderSprites.find((f) => f.charId === e.fielder);
+        if (cspr && cspr.img.active) {
+          cspr.cycle?.stop(false);
+          cspr.cycle = null;
+          reactPose(this.scene, cspr.img, e.fielder, 'catch', { holdMs: ANIM.ACTION_HOLD_MS, restoreTo: e.fielder });
+        }
+        break;
+      }
+      case 'pickup':
+        audio.pop();
+        if (s.mode === 'defense') this.showBaseRings();
+        break;
+      case 'land': {
+        const lq = project(s.ball.pos);
+        burst(this.scene, lq.x, lq.y, COLORS.dirt, 6);
+        // Chalk ring marking the landing spot — reads at a glance where the
+        // ball came down even if you were watching your runner.
+        const ring = this.scene.add.ellipse(lq.x, lq.y, 26, 11).setStrokeStyle(4, COLORS.white, 0.85).setDepth(13);
+        this.scene.tweens.add({
+          targets: ring,
+          scaleX: 2.1,
+          scaleY: 2.1,
+          alpha: 0,
+          duration: FX.LAND_RING_MS,
+          ease: 'Quad.out',
+          onComplete: () => ring.destroy(),
+        });
+        break;
+      }
+      case 'bonk': {
+        const kq = project(s.ball.pos);
+        floatingText(this.scene, kq.x, kq.y - 40, 'BONK! 🌳', COLORS.white, 26);
+        burst(this.scene, kq.x, kq.y - 20, 0x529a49, 8);
+        audio.pop();
+        break;
+      }
+      case 'carom': {
+        const cq = project(s.ball.pos);
+        floatingText(this.scene, cq.x, cq.y - 36, 'OFF THE WALL!', COLORS.gold, 26);
+        burst(this.scene, cq.x, cq.y - 12, this.deps.look.fenceTrim, 8);
+        screenShake(this.scene, 2);
+        audio.pop();
+        break;
+      }
+      case 'error': {
+        const label = e.kind === 'wild' ? 'WILD THROW!' : e.kind === 'drop' ? 'DROPPED IT!' : 'BOBBLED!';
+        const eq = project(s.ball.pos);
+        floatingText(this.scene, eq.x, eq.y - 44, label, COLORS.red, 28);
+        screenShake(this.scene, 3);
+        audio.whiff();
+        // The flustered kid wears it on their face for the fumble beat.
+        const fspr = this.fielderSprites.find((f) => f.charId === e.fielder);
+        if (fspr && !fspr.cycle && fspr.img.active) {
+          reactPose(this.scene, fspr.img, e.fielder, 'upset');
+        }
+        // An error by the CPU while your kids run = a gift. Cheer it.
+        if (s.mode === 'offense') audio.cheer();
+        break;
+      }
+      case 'throw': {
+        audio.pitchWoosh();
+        this.hideBaseRings();
+        // The thrower whips through the release pose, facing the target bag.
+        const tspr = e.fielder ? this.fielderSprites.find((f) => f.charId === e.fielder) : undefined;
+        if (tspr && tspr.img.active) {
+          tspr.cycle?.stop(false);
+          tspr.cycle = null;
+          tspr.img.setFlipX(project(basePos(e.toBase)).x < tspr.container.x);
+          reactPose(this.scene, tspr.img, e.fielder!, 'throw', { holdMs: ANIM.ACTION_HOLD_MS, restoreTo: e.fielder! });
+        }
+        break;
+      }
+      case 'out': {
+        const p = project(basePos(e.base));
+        floatingText(this.scene, p.x, p.y - 46, 'OUT!', COLORS.red, 32);
+        screenShake(this.scene, 4);
+        if (s.mode === 'defense') audio.cheer();
+        else audio.whiff();
+        const spr = this.liveRunnerSprites.get(e.runner);
+        if (spr) {
+          spr.cycle?.stop(false);
+          spr.cycle = null;
+          // Fade but DON'T destroy — a replay may need them back; the
+          // settle sweep disposes of everyone off-base.
+          this.scene.tweens.add({
+            targets: spr.container,
+            alpha: 0,
+            y: spr.container.y - 10,
+            duration: 320,
+            delay: 120,
+          });
+        }
+        break;
+      }
+      case 'score': {
+        burst(this.scene, HOME.x, HOME.y - 20, COLORS.gold, 14);
+        audio.cheer();
+        floatingText(this.scene, HOME.x, HOME.y - 60, '+1', COLORS.gold, 34);
+        const spr = this.liveRunnerSprites.get(e.runner);
+        if (spr) {
+          spr.cycle?.stop(true);
+          spr.cycle = null;
+          squashHop(this.scene, spr.img, { height: 18 });
+          this.scene.time.delayedCall(480, () => spr.container.setAlpha(0)); // sweep disposes at settle
+        }
+        break;
+      }
+      case 'dive': {
+        const dq = project(s.fielders[s.active].pos);
+        burst(this.scene, dq.x, dq.y + 4, COLORS.dirt, 5);
+        audio.pitchWoosh();
+        break;
+      }
+      case 'diveMiss': {
+        const mq = project(s.fielders[s.active].pos);
+        floatingText(this.scene, mq.x, mq.y - 40, 'JUST MISSED!', COLORS.white, 24);
+        burst(this.scene, mq.x, mq.y + 2, COLORS.dirt, 8);
+        break;
+      }
+      case 'safe':
+      case 'run':
+      case 'playOver':
+        break;
+    }
   }
 
   /** Sprite setup for a fresh live play (the sim state was just created). */

@@ -142,7 +142,7 @@ import * as audio from '../systems/audio';
 import { screenShake, burst, floatingText } from '../ui/effects';
 import { makeMuteButton } from '../ui/MuteButton';
 import { FONT, pill } from '../ui/theme';
-import { idleBob, squashHop, groundShadow, runCycle, reactPose } from '../ui/anim';
+import { idleBob, squashHop, groundShadow, runCycle } from '../ui/anim';
 import { poseKey } from '../art/textureFactory';
 import { project, unproject, depthScale } from '../art/projection';
 import { Announcer, type AnnounceKind } from '../systems/announcer';
@@ -2408,148 +2408,41 @@ export class GameScene extends Phaser.Scene {
     this.settleLivePlay();
   }
 
-  /** Turn this tick's sim events into juice: SFX, pops, shakes, text. */
+  /**
+   * Drain this tick's sim events. The view plays the visual verbs FIRST
+   * (preserving the burst→booth rng draw order of the pre-split handlers);
+   * the controller then does its bookkeeping: replay highlights, season
+   * stats, and the booth calls.
+   */
   private drainLiveEvents(): void {
     const s = this.livePlay!;
     for (const e of s.events) {
+      this.liveView.reactTo(e, s);
       switch (e.t) {
-        case 'catch': {
-          audio.pop();
-          const bq = project(s.ball.pos);
-          floatingText(this, bq.x, bq.y - 40, 'CAUGHT!', COLORS.gold, 30);
-          if (s.mode === 'defense') audio.cheer();
+        case 'catch':
           if (this.playHighlights.sawDive) this.playHighlights.diveCatch = true;
-          // The catcher's glove-up beat.
-          const cspr = this.liveView.fielderSprite(e.fielder);
-          if (cspr && cspr.img.active) {
-            cspr.cycle?.stop(false);
-            cspr.cycle = null;
-            reactPose(this, cspr.img, e.fielder, 'catch', { holdMs: ANIM.ACTION_HOLD_MS, restoreTo: e.fielder });
-          }
           break;
-        }
-        case 'pickup':
-          audio.pop();
-          if (s.mode === 'defense') this.liveView.showBaseRings();
-          break;
-        case 'land': {
-          const lq = project(s.ball.pos);
-          burst(this, lq.x, lq.y, COLORS.dirt, 6);
-          // Chalk ring marking the landing spot — reads at a glance where the
-          // ball came down even if you were watching your runner.
-          const ring = this.add.ellipse(lq.x, lq.y, 26, 11).setStrokeStyle(4, COLORS.white, 0.85).setDepth(13);
-          this.tweens.add({
-            targets: ring,
-            scaleX: 2.1,
-            scaleY: 2.1,
-            alpha: 0,
-            duration: FX.LAND_RING_MS,
-            ease: 'Quad.out',
-            onComplete: () => ring.destroy(),
-          });
-          break;
-        }
-        case 'bonk': {
-          const kq = project(s.ball.pos);
-          floatingText(this, kq.x, kq.y - 40, 'BONK! 🌳', COLORS.white, 26);
-          burst(this, kq.x, kq.y - 20, 0x529a49, 8);
-          audio.pop();
+        case 'bonk':
           this.callIt('bonk', {});
           break;
-        }
-        case 'carom': {
-          const cq = project(s.ball.pos);
-          floatingText(this, cq.x, cq.y - 36, 'OFF THE WALL!', COLORS.gold, 26);
-          burst(this, cq.x, cq.y - 12, this.venue.look.fenceTrim, 8);
-          screenShake(this, 2);
-          audio.pop();
+        case 'carom':
           this.playHighlights.carom = true;
           break;
-        }
-        case 'error': {
-          const label = e.kind === 'wild' ? 'WILD THROW!' : e.kind === 'drop' ? 'DROPPED IT!' : 'BOBBLED!';
-          const eq = project(s.ball.pos);
-          floatingText(this, eq.x, eq.y - 44, label, COLORS.red, 28);
-          screenShake(this, 3);
-          audio.whiff();
+        case 'error':
           this.callIt(e.kind === 'wild' ? 'errorWild' : 'errorDrop', {});
-          // The flustered kid wears it on their face for the fumble beat.
-          const fspr = this.liveView.fielderSprite(e.fielder);
-          if (fspr && !fspr.cycle && fspr.img.active) {
-            reactPose(this, fspr.img, e.fielder, 'upset');
-          }
-          // An error by the CPU while your kids run = a gift. Cheer it.
-          if (s.mode === 'offense') audio.cheer();
           break;
-        }
-        case 'throw': {
-          audio.pitchWoosh();
-          this.liveView.hideBaseRings();
-          // The thrower whips through the release pose, facing the target bag.
-          const tspr = e.fielder ? this.liveView.fielderSprite(e.fielder) : undefined;
-          if (tspr && tspr.img.active) {
-            tspr.cycle?.stop(false);
-            tspr.cycle = null;
-            tspr.img.setFlipX(project(basePos(e.toBase)).x < tspr.container.x);
-            reactPose(this, tspr.img, e.fielder!, 'throw', { holdMs: ANIM.ACTION_HOLD_MS, restoreTo: e.fielder! });
-          }
-          break;
-        }
-        case 'out': {
-          const p = project(basePos(e.base));
-          floatingText(this, p.x, p.y - 46, 'OUT!', COLORS.red, 32);
-          screenShake(this, 4);
-          if (s.mode === 'defense') audio.cheer();
-          else audio.whiff();
+        case 'out':
           this.playHighlights.outs += 1;
-          const spr = this.liveView.runnerSprite(e.runner);
-          if (spr) {
-            spr.cycle?.stop(false);
-            spr.cycle = null;
-            // Fade but DON'T destroy — a replay may need them back; the
-            // settle sweep disposes of everyone off-base.
-            this.tweens.add({
-              targets: spr.container,
-              alpha: 0,
-              y: spr.container.y - 10,
-              duration: 320,
-              delay: 120,
-            });
-          }
           break;
-        }
-        case 'score': {
-          burst(this, HOME.x, HOME.y - 20, COLORS.gold, 14);
-          audio.cheer();
-          floatingText(this, HOME.x, HOME.y - 60, '+1', COLORS.gold, 34);
+        case 'score':
           if (this.seasonGame && s.mode === 'offense') {
             this.statEvents.push({ t: 'run', kid: e.runner });
           }
-          const spr = this.liveView.runnerSprite(e.runner);
-          if (spr) {
-            spr.cycle?.stop(true);
-            spr.cycle = null;
-            squashHop(this, spr.img, { height: 18 });
-            this.time.delayedCall(480, () => spr.container.setAlpha(0)); // sweep disposes at settle
-          }
           break;
-        }
-        case 'dive': {
-          const dq = project(s.fielders[s.active].pos);
-          burst(this, dq.x, dq.y + 4, COLORS.dirt, 5);
-          audio.pitchWoosh();
+        case 'dive':
           this.playHighlights.sawDive = true;
           break;
-        }
-        case 'diveMiss': {
-          const mq = project(s.fielders[s.active].pos);
-          floatingText(this, mq.x, mq.y - 40, 'JUST MISSED!', COLORS.white, 24);
-          burst(this, mq.x, mq.y + 2, COLORS.dirt, 8);
-          break;
-        }
-        case 'safe':
-        case 'run':
-        case 'playOver':
+        default:
           break;
       }
     }
