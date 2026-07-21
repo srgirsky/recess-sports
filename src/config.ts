@@ -257,17 +257,41 @@ export const AUDIO = {
 export const VOICE = {
   /** The two kid commentators (a milk crate behind the backstop). */
   COMMENTATORS: {
-    A: { pitch: 1.55, rate: 1.12, voiceIdx: 0 }, // Pip — hyped little kid
-    B: { pitch: 1.0, rate: 0.95, voiceIdx: 1 }, // Rocco — deadpan older kid
+    A: { pitch: 1.35, rate: 1.08, voiceIdx: 0 }, // Pip — hyped little kid
+    B: { pitch: 1.05, rate: 0.92, voiceIdx: 1 }, // Rocco — deadpan older kid
   },
   /** Chance a big call (priority 2) becomes a two-line A/B exchange. */
   EXCHANGE_CHANCE: 0.45,
+  /**
+   * Curated voice ranking (pure rankVoices in systems/voices.ts). The browser's
+   * voice inventory is scored by childlike suitability so speakers land on
+   * genuinely younger/less-robotic base voices instead of the default adult one.
+   */
+  PICK: {
+    /** Name-pattern tiers, best first. \bana\b = Edge's "Microsoft Ana Online
+     *  (Natural)", a real child voice; Junior is macOS's boy voice. */
+    TIERS: [
+      /child|kid|junior|\bana\b/i,
+      /online.*natural|neural/i, // Edge neural voices
+      /^google/i, // Chrome's Google voices
+      /samantha|karen|moira|tessa|zira|aria|jenny/i, // younger-leaning system voices
+    ],
+    /** Small score bonus for these langs (kids' game targets US/UK English). */
+    PREFERRED_LANGS: ['en-US', 'en_US', 'en-GB', 'en_GB'],
+    /** Deep/novelty voices that must never speak for a kid. */
+    AVOID:
+      /albert|bad news|bahh|bells|boing|bubbles|cellos|deranged|good news|jester|organ|superstar|trinoids|whisper|wobble|zarvox|grandma|grandpa|ralph|fred|rocko\b/i,
+    /** Curated list size — voiceIdx spreads speakers across these. */
+    TOP_N: 4,
+  },
+  /** Per-utterance humanizing jitter (±), applied in audio.ts speakNow. */
+  JITTER: { PITCH: 0.05, RATE: 0.04 },
   /** Derived per-character voices: hash(id) picks within these ranges. */
   KID: {
-    PITCH_MIN: 1.15,
-    PITCH_MAX: 1.7,
-    RATE_MIN: 0.95,
-    RATE_MAX: 1.15,
+    PITCH_MIN: 1.05,
+    PITCH_MAX: 1.45,
+    RATE_MIN: 0.9,
+    RATE_MAX: 1.12,
     /** Expression nudges (added after the hash roll, then clamped to the ranges). */
     NUDGE: {
       happy: { pitch: 0, rate: 0 },

@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
-import { commentatorProfile, kidVoice } from './voices';
+import { commentatorProfile, kidVoice, rankVoices } from './voices';
 import { VOICE } from '../config';
 import { ROSTER } from '../data/characters';
 import type { VisualParams } from '../data/types';
@@ -41,13 +41,18 @@ describe('voices', () => {
       expect(v.pitch, c.id).toBeLessThanOrEqual(K.PITCH_MAX);
       expect(v.rate, c.id).toBeGreaterThanOrEqual(K.RATE_MIN);
       expect(v.rate, c.id).toBeLessThanOrEqual(K.RATE_MAX);
-      expect([0, 1]).toContain(v.voiceIdx);
+      expect(Number.isInteger(v.voiceIdx), c.id).toBe(true);
+      expect(v.voiceIdx, c.id).toBeGreaterThanOrEqual(0);
+      expect(v.voiceIdx, c.id).toBeLessThan(VOICE.PICK.TOP_N);
     }
   });
 
   it('voices spread out across the roster (not everyone sounds the same)', () => {
     const pitches = new Set(ROSTER.map((c) => kidVoice(c).pitch));
     expect(pitches.size).toBeGreaterThanOrEqual(8);
+    // Kids should also land on several different base voices.
+    const idxes = new Set(ROSTER.map((c) => kidVoice(c).voiceIdx));
+    expect(idxes.size).toBeGreaterThanOrEqual(2);
   });
 
   it('expression nudges shift the voice in the expected direction', () => {
@@ -60,5 +65,67 @@ describe('voices', () => {
       expect(cool.pitch).toBeLessThanOrEqual(goofy.pitch);
       expect(cool.rate).toBeLessThanOrEqual(goofy.rate);
     }
+  });
+});
+
+describe('rankVoices', () => {
+  const v = (name: string, lang = 'en-US') => ({ name, lang });
+
+  it('Chrome/macOS: Google voices win, novelty voices are dropped', () => {
+    const ranked = rankVoices([
+      v('Albert'),
+      v('Bad News'),
+      v('Samantha'),
+      v('Zarvox'),
+      v('Karen', 'en-AU'),
+      v('Google US English'),
+      v('Google UK English Female', 'en-GB'),
+    ]);
+    expect(ranked[0].name).toBe('Google US English');
+    const names = ranked.map((r) => r.name);
+    expect(names).not.toContain('Albert');
+    expect(names).not.toContain('Bad News');
+    expect(names).not.toContain('Zarvox');
+    expect(names).toContain('Samantha');
+  });
+
+  it('Edge/Windows: the child voice Ana ranks first, neural before plain', () => {
+    const ranked = rankVoices([
+      v('Microsoft David - English (United States)'),
+      v('Microsoft Aria Online (Natural) - English (United States)'),
+      v('Microsoft Ana Online (Natural) - English (United States)'),
+    ]);
+    expect(ranked[0].name).toContain('Ana');
+    expect(ranked.map((r) => r.name).indexOf('Microsoft Aria Online (Natural) - English (United States)')).toBeLessThan(
+      ranked.map((r) => r.name).indexOf('Microsoft David - English (United States)'),
+    );
+  });
+
+  it('Safari/Firefox on mac: Samantha outranks the deep voices', () => {
+    const ranked = rankVoices([v('Fred'), v('Albert'), v('Samantha'), v('Ralph')]);
+    expect(ranked[0].name).toBe('Samantha');
+  });
+
+  it('caps at TOP_N and returns everything when the input is shorter', () => {
+    const many = Array.from({ length: 10 }, (_, i) => v(`Voice ${i}`));
+    expect(rankVoices(many)).toHaveLength(VOICE.PICK.TOP_N);
+    expect(rankVoices([v('Solo')])).toHaveLength(1);
+  });
+
+  it('dedupes by name', () => {
+    const ranked = rankVoices([v('Samantha'), v('Samantha'), v('Karen', 'en-AU')]);
+    expect(ranked.filter((r) => r.name === 'Samantha')).toHaveLength(1);
+  });
+
+  it('never empties a non-empty input, even if every voice is on the avoid list', () => {
+    const ranked = rankVoices([v('Zarvox'), v('Bubbles')]);
+    expect(ranked.length).toBeGreaterThan(0);
+  });
+
+  it('empty in, empty out; unmatched inventories keep browser order', () => {
+    expect(rankVoices([])).toEqual([]);
+    const plain = [v('Voice A'), v('Voice B', 'fr-FR'), v('Voice C', 'de-DE')];
+    // A gets the preferred-lang bonus; B and C tie at 0 and keep input order.
+    expect(rankVoices(plain).map((r) => r.name)).toEqual(['Voice A', 'Voice B', 'Voice C']);
   });
 });
