@@ -63,6 +63,8 @@ export interface LiveParams {
   playerErrorMult: number; // scale on player-team drop/wild chances (0 = never)
   cpuErrorMult: number;
   manualBaserunning: boolean; // tag-ups, doubling off, tags/rundowns, per-runner control
+  assist: 'auto' | 'magnet'; // idle pointer: fielder plays itself / steering bent ball-ward
+  assistBlend: number; // magnet strength (0..1)
 }
 
 export function resolveLiveParams(mode: GameMode): LiveParams {
@@ -88,5 +90,7 @@ export function resolveLiveParams(mode: GameMode): LiveParams {
     playerErrorMult: m.playerErrorMult,
     cpuErrorMult: m.cpuErrorMult,
     manualBaserunning: m.manualBaserunning,
+    assist: m.fielderAssist,
+    assistBlend: LIVE.ASSIST.MAGNET_BLEND,
   };
 }

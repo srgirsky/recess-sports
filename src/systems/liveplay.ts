@@ -138,6 +138,13 @@ export interface LivePlayState {
 export interface LiveInputs {
   /** Defense: where the kid wants the chasing fielder to go. */
   pointer?: Vec;
+  /**
+   * Defense: is the pointer actually steering right now (moved recently or
+   * held down)? Omitted = treat a present pointer as active, so callers that
+   * don't track staleness behave exactly as before. A stale pointer lets the
+   * 'auto' assist take over.
+   */
+  pointerActive?: boolean;
   /** Defense: a released throw (power 0..1 from the hold meter). */
   throwTo?: { base: 1 | 2 | 3 | 4; power: number };
   /** Offense (kid mode): "everybody GO!" tap. */
@@ -353,21 +360,26 @@ function moveFielders(
     // Steerable while chasing AND while holding — a kid can run the ball to a
     // bag. Clamped into the field: the pointer can roam past the fence or the
     // chalk, but the kid stops at the wall.
-    if (inputs.pointer) {
-      chaser.pos = clampToField(
-        s.geo,
-        moveToward(
-          chaser.pos,
-          inputs.pointer,
-          (params.fielderSpeed * statSpeedMult(chaser) * dtMs) / 1000
-        )
-      );
+    const step = (params.fielderSpeed * statSpeedMult(chaser) * dtMs) / 1000;
+    const steering = inputs.pointer && (inputs.pointerActive ?? true);
+    if (steering) {
+      let next = moveToward(chaser.pos, inputs.pointer!, step);
+      if (params.assist === 'magnet' && ballBusy && params.assistBlend > 0) {
+        // Magnet assist: bend the step toward the ball. Both candidate points
+        // are within `step` of the kid, so the blend never exceeds speed.
+        next = lerpVec(next, moveToward(chaser.pos, chaseTarget(s), step), params.assistBlend);
+      }
+      chaser.pos = clampToField(s.geo, next);
       if (chaser.hasBall) s.ball.pos = { ...chaser.pos };
+    } else if (params.assist === 'auto' && ballBusy) {
+      // Kid mode, hands off: the fielder plays itself, CPU-style but at full
+      // player speed with no reaction lag. Any real steering overrides it.
+      chaser.pos = clampToField(s.geo, moveToward(chaser.pos, chaseTarget(s), step));
     }
   } else if (ballBusy && s.elapsed >= params.cpuReactionMs) {
     // CPU runs to the landing spot while the ball is up ("read it off the
     // bat"), then charges the ball itself once it's on the ground.
-    const target = s.ball.phase === 'flight' ? s.launch.landing : s.ball.pos;
+    const target = chaseTarget(s);
     chaser.pos = clampToField(
       s.geo,
       moveToward(
@@ -422,6 +434,15 @@ function moveFielders(
       );
     }
   }
+}
+
+/**
+ * Where a ball-chasing kid should head: the known landing spot while it's in
+ * the air ("read it off the bat"), the ball itself once it's on the ground.
+ * Shared by the CPU chase and both player assists.
+ */
+function chaseTarget(s: LivePlayState): Vec {
+  return s.ball.phase === 'flight' ? s.launch.landing : s.ball.pos;
 }
 
 /** A fielder's chase speed factor from their speed stat (±5%/point around 5). */

@@ -336,6 +336,13 @@ export const LIVE = {
   },
   /** Player-steered fielder speed (px/s). */
   FIELDER_SPEED: 210,
+  /** Fielding assist (mode-tied: kid = auto, main = magnet). */
+  ASSIST: {
+    /** Magnet: how much steering is bent toward the ball (0 = pure manual). */
+    MAGNET_BLEND: 0.35,
+    /** A pointer that hasn't moved (and isn't down) this long stops steering. */
+    POINTER_STALE_MS: 300,
+  },
   /** How close (px) a fielder must be to grab the ball. */
   CATCH_RADIUS: 34,
   PICKUP_RADIUS: 28,
@@ -468,6 +475,12 @@ export interface ModeLiveTuning {
   cpuErrorMult: number;
   /** Full baserunning rules: tag-ups, doubling off, tags/rundowns, per-runner control. */
   manualBaserunning: boolean;
+  /**
+   * Fielding assist: 'auto' = the fielder plays itself when the pointer is
+   * idle (steering overrides); 'magnet' = steering is blended toward the
+   * ball's landing spot by LIVE.ASSIST.MAGNET_BLEND.
+   */
+  fielderAssist: 'auto' | 'magnet';
 }
 
 export const MODES: Record<
@@ -493,6 +506,7 @@ export const MODES: Record<
       playerErrorMult: 0, // kid mode: your kids never drop it
       cpuErrorMult: 0,
       manualBaserunning: false,
+      fielderAssist: 'auto', // hands off? the kid fields it themself
     },
     features: {
       pitchSelection: false,
@@ -517,6 +531,7 @@ export const MODES: Record<
       playerErrorMult: 1,
       cpuErrorMult: 1,
       manualBaserunning: true,
+      fielderAssist: 'magnet', // you steer; the game leans you toward the ball
     },
     swingTiming: { PERFECT: 90, GOOD: 180, CONTACT: 300 },
     // Flags flip to true as each Backyard-style mechanic lands.

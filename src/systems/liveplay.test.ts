@@ -177,6 +177,9 @@ describe('live play: defense (the player fields)', () => {
   });
 
   it('ignoring the ball entirely still terminates (cap) and the CPU runs wild', () => {
+    // Magnet assist (not kid's auto) so an idle pointer really means nobody
+    // fields it — this test is about the no-soft-lock termination cap.
+    const noAuto: LiveParams = { ...kid, assist: 'magnet' };
     let s = startLivePlay({
       mode: 'defense',
       // Lands in the SS/LF/3B gap — no fielder close enough to auto-grab it.
@@ -185,9 +188,9 @@ describe('live play: defense (the player fields)', () => {
       baseRunners: [{ base: 2, charId: 'r2', speed: 5 }],
       defense: DEFENSE,
       outs: 0,
-      params: kid,
+      params: noAuto,
     });
-    const { s: end } = runPlay(s, kid, () => ({}));
+    const { s: end } = runPlay(s, noAuto, () => ({}));
     expect(end.elapsed).toBeLessThanOrEqual(kid.maxPlayMs + 100);
     const outcome = finishLivePlay(end);
     // Nobody fielded it — the runner from 2nd (at least) comes around to score.
@@ -220,6 +223,93 @@ describe('live play: defense (the player fields)', () => {
     };
     expect(race(1).batterOut).toBe(true);
     expect(race(10).batterOut).toBe(false);
+  });
+});
+
+describe('live play: fielding assist', () => {
+  const kid = resolveLiveParams('kid'); // assist: 'auto'
+  const main = resolveLiveParams('main'); // assist: 'magnet'
+
+  const start = (params: LiveParams, launch: Launch) =>
+    startLivePlay({
+      mode: 'defense',
+      launch,
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params,
+    });
+
+  it('kid mode fields a fly completely hands-free (auto assist)', () => {
+    const { events } = runPlay(start(kid, flyToCenter), kid, () => ({}));
+    expect(events.some((e) => e.t === 'catch')).toBe(true);
+  });
+
+  it('kid mode picks up a grounder hands-free too', () => {
+    const { events } = runPlay(start(kid, grounderToShort), kid, () => ({}));
+    expect(events.some((e) => e.t === 'pickup')).toBe(true);
+  });
+
+  it('an active pointer fully overrides auto — steer away and the fly drops', () => {
+    const corner = { x: 60, y: 560 };
+    const { s: end, events } = runPlay(start(kid, flyToCenter), kid, () => ({
+      pointer: corner,
+      pointerActive: true,
+    }));
+    expect(events.some((e) => e.t === 'catch')).toBe(false);
+    // The chaser obeyed the pointer, not the ball.
+    expect(dist(end.fielders[end.active].pos, clampToField(end.geo, corner))).toBeLessThan(30);
+  });
+
+  it('a stale pointer yields to auto: pointerActive false behaves like no input', () => {
+    const corner = { x: 60, y: 560 };
+    const { events } = runPlay(start(kid, flyToCenter), kid, () => ({
+      pointer: corner,
+      pointerActive: false,
+    }));
+    expect(events.some((e) => e.t === 'catch')).toBe(true);
+  });
+
+  it('magnet bends a bad steer toward the ball, and never exceeds fielder speed', () => {
+    // Steer perpendicular to the ball the whole play; compare where the
+    // chaser ends up with the magnet on vs a hand-built params with blend 0.
+    const off = { x: 900, y: 500 };
+    const noMagnet: LiveParams = { ...main, assistBlend: 0 };
+    const drive = (params: LiveParams) => {
+      let s = start(params, { ...flyToCenter, hangMs: 1400 });
+      let maxStep = 0;
+      for (let i = 0; i < 24; i++) {
+        const before = { ...s.fielders[s.active].pos };
+        s = stepLivePlay(s, { pointer: off, pointerActive: true }, 50, params, () => 0.5);
+        maxStep = Math.max(maxStep, dist(before, s.fielders[s.active].pos));
+      }
+      return { pos: s.fielders[s.active].pos, maxStep, target: s.launch.landing };
+    };
+    const bent = drive(main);
+    const straight = drive(noMagnet);
+    expect(dist(bent.pos, bent.target)).toBeLessThan(dist(straight.pos, straight.target));
+    // One tick at dt=50ms can cover at most fielderSpeed * statMult * 0.05 px.
+    expect(bent.maxStep).toBeLessThanOrEqual((main.fielderSpeed * 1.0 * 50) / 1000 + 0.001);
+  });
+
+  it('magnet never steers the kid while the ball is held (carrying is manual)', () => {
+    // Get the ball into the chaser's hands, then steer to a bag — the path
+    // must head exactly where the pointer points.
+    let s = start(main, grounderToShort);
+    let guard = 0;
+    while (s.ball.phase !== 'held' && guard++ < 400) {
+      s = stepLivePlay(s, { pointer: s.ball.pos, pointerActive: true }, 50, main, () => 0.5);
+    }
+    expect(s.ball.phase).toBe('held');
+    const bag = { x: 618, y: 385 };
+    const from = { ...s.fielders[s.active].pos };
+    s = stepLivePlay(s, { pointer: bag, pointerActive: true }, 50, main, () => 0.5);
+    const to = s.fielders[s.active].pos;
+    // The step vector points at the bag (cross product ~ 0).
+    const cross =
+      (bag.x - from.x) * (to.y - from.y) - (bag.y - from.y) * (to.x - from.x);
+    expect(Math.abs(cross)).toBeLessThan(1e-6 * dist(from, bag) * dist(from, to) + 1e-6);
   });
 });
 
