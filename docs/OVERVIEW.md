@@ -108,4 +108,4 @@ Two kids, one device. GameScene now runs on a **two-seat model** (`SeatState` �
 
 ## What's explicitly not built yet
 
-Real recorded audio, a cross-player pick-rate backend, more characters/richer art, the Phase 3 dinosaurs — and from the deferred-items plan: the LivePlayView structural extraction and **two-device online play** (WebRTC/PeerJS, host-authoritative with ReplayFrame streaming — designed in the plan, lands with the LivePlayView extraction it renders through).
+Real recorded audio, a cross-player pick-rate backend, more characters/richer art, the Phase 3 dinosaurs — and from the deferred-items plan: **two-device online play** (WebRTC/PeerJS, host-authoritative with ReplayFrame streaming — designed in the plan; its guest renderer, the `scenes/ui/LivePlayView.ts` extraction, has landed).
