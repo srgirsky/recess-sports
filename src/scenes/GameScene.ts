@@ -88,6 +88,7 @@ import {
   basePos,
   dist,
   fencePointAt,
+  fenceYAtX,
   FIELD_POSITIONS,
   type FieldGeometry,
   type PositionId,
@@ -490,57 +491,38 @@ export class GameScene extends Phaser.Scene {
       for (let y = 152; y <= 184; y += 10) mortar.lineBetween(0, y, W, y);
     }
 
-    // --- Outfield fence: a band that follows the venue's (possibly slanted)
-    // fence line, so a short porch reads at a glance ---
-    const fl = { x: 0, y: this.geo.fenceLeftY };
-    const fr = { x: W, y: this.geo.fenceRightY };
+    // --- Outfield fence: a band that follows the venue's fence ARC (rounded,
+    // deepest toward center — plus the sandlot's slant), sampled across the
+    // screen so a short porch still reads at a glance ---
+    const wallY = (x: number) => fenceYAtX(this.geo, x);
+    // A band between wallY+topOff and wallY+botOff as one closed sampled strip.
+    const wallStrip = (g: Phaser.GameObjects.Graphics, topOff: number, botOff: number) => {
+      const pts: Phaser.Geom.Point[] = [];
+      const STEP = 32;
+      for (let x = 0; x <= W; x += STEP) pts.push(new Phaser.Geom.Point(x, wallY(x) + topOff));
+      for (let x = W; x >= 0; x -= STEP) pts.push(new Phaser.Geom.Point(x, wallY(x) + botOff));
+      g.fillPoints(pts, true);
+    };
     const fence = this.add.graphics();
     fence.fillStyle(look.fence, 1);
-    fence.fillPoints(
-      [
-        new Phaser.Geom.Point(fl.x, fl.y),
-        new Phaser.Geom.Point(fr.x, fr.y),
-        new Phaser.Geom.Point(fr.x, fr.y - 26),
-        new Phaser.Geom.Point(fl.x, fl.y - 26),
-      ],
-      true
-    );
+    wallStrip(fence, -26, 0);
     fence.fillStyle(look.fenceTrim, 1);
-    fence.fillPoints(
-      [
-        new Phaser.Geom.Point(fl.x, fl.y - 26),
-        new Phaser.Geom.Point(fr.x, fr.y - 26),
-        new Phaser.Geom.Point(fr.x, fr.y - 32),
-        new Phaser.Geom.Point(fl.x, fl.y - 32),
-      ],
-      true
-    );
+    wallStrip(fence, -32, -26);
     // The fence casts a soft shadow onto the ground in front of it — the
     // contact shadow is what makes it read as a standing wall, not a stripe.
     fence.fillStyle(0x1b2833, 0.18);
-    fence.fillPoints(
-      [
-        new Phaser.Geom.Point(fl.x, fl.y),
-        new Phaser.Geom.Point(fr.x, fr.y),
-        new Phaser.Geom.Point(fr.x, fr.y + 9),
-        new Phaser.Geom.Point(fl.x, fl.y + 9),
-      ],
-      true
-    );
+    wallStrip(fence, 0, 9);
     // Fence posts: vertical darker slats that give the wall thickness.
     fence.fillStyle(shadeInt(look.fence, 0.25), 1);
     for (let x = 40; x < W; x += 120) {
-      const t = x / W;
-      const y = fl.y + (fr.y - fl.y) * t;
-      fence.fillRect(x - 3, y - 32, 6, 32);
+      fence.fillRect(x - 3, wallY(x) - 32, 6, 32);
     }
     if (this.venue.id === 'sandlot') {
       // Wood-plank verticals.
       const planks = this.add.graphics();
       planks.lineStyle(2, 0x6d4426, 0.7);
       for (let x = 8; x < W; x += 22) {
-        const t = x / W;
-        const y = fl.y + (fr.y - fl.y) * t;
+        const y = wallY(x);
         planks.lineBetween(x, y - 26, x, y);
       }
     } else if (this.venue.id === 'blacktop') {
@@ -548,10 +530,10 @@ export class GameScene extends Phaser.Scene {
       const links = this.add.graphics();
       links.lineStyle(1.5, 0xcfd6db, 0.5);
       for (let x = 0; x < W; x += 16) {
-        const t = x / W;
-        const y = fl.y + (fr.y - fl.y) * t;
-        links.lineBetween(x, y - 26, x + 13, y);
-        links.lineBetween(x + 13, y - 26, x, y);
+        const yl = wallY(x);
+        const yr = wallY(x + 13);
+        links.lineBetween(x, yl - 26, x + 13, yr);
+        links.lineBetween(x + 13, yr - 26, x, yl);
       }
     } else if (look.stands) {
       // Park bunting triangles hanging off the cap.
@@ -606,10 +588,11 @@ export class GameScene extends Phaser.Scene {
     // --- Atmospheric haze: distant things are lighter and cooler. A soft
     // sky-tinted band over the fence + deep outfield pushes the far edge of
     // the world back in space. ---
-    const hazeTop = Math.min(fl.y, fr.y) - 32;
+    const hazeTop = Math.min(wallY(0), wallY(W / 2), wallY(W)) - 32;
+    const hazeBot = Math.max(wallY(0), wallY(W / 2), wallY(W)) + 110;
     const haze = this.add.graphics();
     haze.fillGradientStyle(0xdfefff, 0xdfefff, 0xdfefff, 0xdfefff, 0.22, 0.22, 0, 0);
-    haze.fillRect(0, hazeTop, W, Math.max(fl.y, fr.y) + 110 - hazeTop);
+    haze.fillRect(0, hazeTop, W, hazeBot - hazeTop);
 
     // --- Infield dirt diamond ---
     // NOTE: Phaser polygon points must be 0-based (no negatives) — negative

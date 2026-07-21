@@ -23,6 +23,7 @@ import {
   fenceYAtX,
   clampToField,
   dist,
+  DEFAULT_GEOMETRY,
   type PositionId,
 } from './geometry';
 import { VENUES } from '../data/venues';
@@ -115,7 +116,7 @@ describe('resolveContact: swing -> launch', () => {
       const r = resolveContact('good', plain({}), plain({}), () => Math.random());
       if (r.kind !== 'inPlay' || r.launch.homer) continue;
       const { landing } = r.launch;
-      expect(landing.y).toBeGreaterThan(FENCE_Y - 1);
+      expect(landing.y).toBeGreaterThan(fenceYAtX(DEFAULT_GEOMETRY, landing.x) - 1);
       expect(landing.y).toBeLessThan(HOME.y);
       // Inside the foul lines: |dx| grows at most ~1.2 px per px of rise.
       const rise = HOME.y - landing.y;

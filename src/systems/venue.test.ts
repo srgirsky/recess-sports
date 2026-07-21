@@ -7,7 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import { VENUES } from '../data/venues';
 import { getFieldGeometry } from './venue';
-import { DEFAULT_GEOMETRY, fencePointAt, FENCE_Y, dist } from './geometry';
+import { DEFAULT_GEOMETRY, fencePointAt, fenceYAtX, fenceNormalAt, FENCE_Y, dist } from './geometry';
 import { buildLaunch, type Launch } from './atbat';
 import { startLivePlay, stepLivePlay, type LivePlayState } from './liveplay';
 import { resolveLiveParams } from './mode';
@@ -23,7 +23,43 @@ describe('venue geometry', () => {
   it('the park geometry matches the pre-venue constants', () => {
     const park = getFieldGeometry(VENUES.park);
     expect(park).toEqual(DEFAULT_GEOMETRY);
-    expect(fencePointAt(park, 0.5).y).toBe(FENCE_Y);
+    // Poles sit on the classic line; the arc dips exactly fenceBulge at center.
+    expect(fencePointAt(park, 0).y).toBe(FENCE_Y);
+    expect(fencePointAt(park, 1).y).toBe(FENCE_Y);
+    expect(fencePointAt(park, 0.5).y).toBe(FENCE_Y - park.fenceBulge);
+  });
+
+  it('every venue arcs deepest at mid-fence, exactly fenceBulge past the chord', () => {
+    for (const v of Object.values(VENUES)) {
+      const geo = getFieldGeometry(v);
+      const chordMidY = (geo.fenceLeftY + geo.fenceRightY) / 2;
+      expect(geo.fenceBulge).toBeGreaterThanOrEqual(0);
+      expect(fencePointAt(geo, 0.5).y).toBeCloseTo(chordMidY - geo.fenceBulge, 6);
+    }
+  });
+
+  it('fenceYAtX is convex in x for every venue (the clampToField invariant)', () => {
+    for (const v of Object.values(VENUES)) {
+      const geo = getFieldGeometry(v);
+      const span = geo.fenceRightX - geo.fenceLeftX;
+      const ys: number[] = [];
+      for (let i = 0; i <= 20; i++) ys.push(fenceYAtX(geo, geo.fenceLeftX + (span * i) / 20));
+      for (let i = 1; i < ys.length - 1; i++) {
+        expect(ys[i - 1] + ys[i + 1] - 2 * ys[i]).toBeGreaterThanOrEqual(-1e-9);
+      }
+    }
+  });
+
+  it('fenceNormalAt is unit length and points into the field everywhere', () => {
+    for (const v of Object.values(VENUES)) {
+      const geo = getFieldGeometry(v);
+      const span = geo.fenceRightX - geo.fenceLeftX;
+      for (let i = 0; i <= 20; i++) {
+        const n = fenceNormalAt(geo, geo.fenceLeftX + (span * i) / 20);
+        expect(Math.hypot(n.x, n.y)).toBeCloseTo(1, 6);
+        expect(n.y).toBeGreaterThan(0);
+      }
+    }
   });
 
   it('a short porch makes homers cheaper only in that direction', () => {

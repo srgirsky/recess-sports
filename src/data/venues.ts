@@ -27,6 +27,12 @@ export interface VenueDef {
    */
   fenceLeftY: number;
   fenceRightY: number;
+  /**
+   * Extra px of depth the fence arcs beyond the pole-to-pole chord at
+   * mid-fence (a rounded wall, deepest toward center). MUST be ≥ 0 — the
+   * arc bulges AWAY from home; convexity keeps clampToField valid.
+   */
+  fenceBulge: number;
   /** Grounder roll-speed multiplier: asphalt is fast, backyard grass is shaggy. */
   rollMult: number;
   obstacles: VenueObstacle[];
@@ -53,6 +59,7 @@ export const VENUES: Record<VenueId, VenueDef> = {
     emoji: '🌳',
     fenceLeftY: 210,
     fenceRightY: 210,
+    fenceBulge: 24, // the classic gentle arc, deepest in dead center
     rollMult: 1,
     obstacles: [],
     look: {
@@ -73,6 +80,7 @@ export const VENUES: Record<VenueId, VenueDef> = {
     // Short right-field porch over the neighbor's wood fence; deep left.
     fenceLeftY: 196,
     fenceRightY: 252,
+    fenceBulge: 14, // a lumpy backyard curve — small, so the right porch stays cheap
     rollMult: 0.85, // shaggy backyard grass
     obstacles: [{ x: 330, y: 262, r: 30, kind: 'tree' }], // the old oak in left-center
     look: {
@@ -93,6 +101,7 @@ export const VENUES: Record<VenueId, VenueDef> = {
     // Deep chain-link all around — but the asphalt is FAST.
     fenceLeftY: 198,
     fenceRightY: 198,
+    fenceBulge: 10, // chain-link pulled nearly straight between posts
     rollMult: 1.3,
     obstacles: [],
     look: {
