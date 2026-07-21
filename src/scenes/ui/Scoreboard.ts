@@ -36,11 +36,18 @@ const OUTS_MAX = 3;
 
 const pips = (lit: number, max: number) => ('● '.repeat(lit) + '○ '.repeat(max - lit)).trim();
 
+/** Optional per-seat labels (team logo/name + tint). Falls back to YOU/CPU. */
+export interface SeatLabels {
+  away: { label: string; color: string };
+  home: { label: string; color: string };
+}
+
 export function createScoreboard(
   scene: Phaser.Scene,
-  pin: <T extends Phaser.GameObjects.GameObject>(o: T) => T
+  pin: <T extends Phaser.GameObjects.GameObject>(o: T) => T,
+  labels?: SeatLabels
 ): Scoreboard {
-  // --- Score panel (left): YOU 0 — 0 CPU -----------------------------------
+  // --- Score panel (left): YOU 0 — 0 CPU (or team logos) --------------------
   const scorePanel = panel(scene, 122, 38, 218, 56, { fill: COLORS.cream });
   scorePanel.setDepth(90);
   const small = (x: number, txt: string, color: string) =>
@@ -54,13 +61,13 @@ export function createScoreboard(
   const playerScoreText = big(-34);
   const aiScoreText = big(34);
   scorePanel.add([
-    small(-78, 'YOU', '#3f7d2c'),
+    small(-78, labels?.away.label ?? 'YOU', labels?.away.color ?? '#3f7d2c'),
     playerScoreText,
     scene.add
       .text(0, 0, '—', { fontFamily: FONT, fontSize: '22px', color: '#8a94a0' })
       .setOrigin(0.5),
     aiScoreText,
-    small(78, 'CPU', '#c0392b'),
+    small(78, labels?.home.label ?? 'CPU', labels?.home.color ?? '#c0392b'),
   ]);
   pin(scorePanel);
 

@@ -13,13 +13,19 @@ import { squashHop } from '../ui/anim';
 import * as audio from '../systems/audio';
 import { commentatorProfile } from '../systems/voices';
 import { recordAlbumGame } from '../systems/album';
+import { teamName, type TeamIdentity } from '../systems/team';
 
 interface ResultData {
   playerScore: number;
   aiScore: number;
   playerTeam: string[];
+  aiTeam?: string[];
   /** Season games route back to the week, not the draft. */
   seasonGame?: boolean;
+  /** Pass-and-play: team-named headline, both albums credited. */
+  matchType?: 'solo' | 'passplay';
+  awayIdentity?: TeamIdentity;
+  homeIdentity?: TeamIdentity;
 }
 
 export class ResultScene extends Phaser.Scene {
@@ -38,14 +44,27 @@ export class ResultScene extends Phaser.Scene {
     else bg.fillGradientStyle(0x5fb0ea, 0x5fb0ea, 0xa8dcf6, 0xa8dcf6, 1);
     bg.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-    const headline = tied ? 'TIE GAME!' : won ? 'YOU WIN!' : 'GOOD GAME!';
-    heading(this, cx, 70, headline, 70);
+    // Pass-and-play names the winner; solo keeps the classic YOU framing.
+    const passplay = data.matchType === 'passplay';
+    const winnerIdentity = won ? data.awayIdentity : data.homeIdentity;
+    const headline = tied
+      ? 'TIE GAME!'
+      : passplay && winnerIdentity
+        ? `${teamName(winnerIdentity)} WIN!`
+        : won
+          ? 'YOU WIN!'
+          : 'GOOD GAME!';
+    heading(this, cx, 70, headline, passplay ? 52 : 70);
 
     // Celebrate.
-    if (won) {
+    if (won || (passplay && !tied)) {
       confetti(this);
       audio.cheer();
-      audio.say('You win!', commentatorProfile('A'), 'flush');
+      audio.say(
+        passplay && winnerIdentity ? `${teamName(winnerIdentity)} win!` : 'You win!',
+        commentatorProfile('A'),
+        'flush'
+      );
     } else {
       audio.say(tied ? 'Tie game!' : 'Good game!', commentatorProfile('A'), 'flush');
     }
@@ -76,7 +95,12 @@ export class ResultScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     // Every finished game feeds the sticker album (drafted / won-with).
+    // Pass-and-play: both squads used this device — the household album
+    // credits both, foil to the winning nine.
     recordAlbumGame(data.playerTeam, won);
+    if (data.matchType === 'passplay' && data.aiTeam) {
+      recordAlbumGame(data.aiTeam, !won && !tied);
+    }
 
     if (data.seasonGame) {
       // Season games return to the week's chalkboard, not the draft.

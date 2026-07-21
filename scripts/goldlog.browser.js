@@ -54,12 +54,17 @@ async function goldLogRun(seed = 42) {
   Date.now = () => virtualNow;
 
   const game = window.__game;
+  // Persistent virtual loop clock: sync to performance.now() ONCE. Re-syncing
+  // per pump call would jump the loop clock by however long the real awaits
+  // between drive sections took (module parse, texture loads) — making the
+  // log depend on BUILD COMPOSITION rather than game behavior.
+  let virtT = null;
   const pump = (ms, dt = 50) => {
-    let t = Math.max(game.loop.time, performance.now());
+    if (virtT === null) virtT = Math.max(game.loop.time, performance.now());
     for (let e = 0; e < ms; e += dt) {
-      t += dt;
+      virtT += dt;
       virtualNow += dt;
-      game.loop.step(t);
+      game.loop.step(virtT);
     }
   };
   window.pump = pump;
@@ -72,15 +77,23 @@ async function goldLogRun(seed = 42) {
   }
   pump(800);
 
-  // Title -> cutscene -> AUTO draft.
-  const sy = game.scene.getScene('Schoolyard');
-  sy.titleObjs.find((o) => o.x === 480 && o.y === 512).emit('pointerup');
+  // FIXED teams, skipping the visual draft entirely. The draft's greedy
+  // chooser jitters every candidate with rng, so ANY upstream cosmetic draw
+  // (a new title button's tween, an ambient hop) would cascade into different
+  // teams — the fingerprint would measure title-screen cosmetics, not game
+  // behavior. The Schoolyard flow has its own coverage; this harness gates
+  // the LINEUP + GAME surface, which is what the refactor phases touch.
+  const TEAM_A = ['nostrike', 'wheelchair_ace', 'big_lou', 'turbo', 'penny', 'dex', 'smokey', 'clover', 'diva'];
+  const TEAM_B = ['calls_shot', 'tank', 'mimi_mash', 'sprout', 'zippy', 'ace_kid', 'lefty', 'bend_it', 'noodle'];
+  // Fresh, boot-independent stream for everything from Lineup onward.
+  Math.random = mulberry32(seed + 1);
+  const mode = localStorage.getItem('recess_mode');
+  game.scene.getScene('Schoolyard').scene.start(mode === 'main' ? 'Lineup' : 'Game', {
+    playerTeam: TEAM_A,
+    aiTeam: TEAM_B,
+    matchType: 'solo',
+  });
   pump(600);
-  sy.finishCutscene();
-  pump(500);
-  sy.autoBtn.emit('pointerup');
-  pump(9000);
-  pump(3000);
 
   // CLASSIC passes through the Lineup screen (auto plan, no edits).
   if (game.scene.isActive('Lineup')) {
@@ -88,10 +101,19 @@ async function goldLogRun(seed = 42) {
     await new Promise((r) => setTimeout(r, 700)); // jersey bake
     pump(500);
     game.scene.getScene('Lineup').go();
-    pump(2500);
-    await new Promise((r) => setTimeout(r, 400));
-    pump(1500);
   }
+  // Wait until the GAME is actually up: go() may defer on the jersey loader
+  // (real async — its duration is BUILD-dependent). Small pumps process the
+  // queued scene start; real sleeps let the loader finish. The variable pump
+  // count here spends virtual time while only Lineup exists (no rng, no game
+  // timers), and the Game then starts ON the 50ms grid — so what follows is
+  // alignment-identical regardless of how long the loader took.
+  let gameWait = 0;
+  while (!game.scene.isActive('Game') && gameWait++ < 300) {
+    pump(50);
+    await new Promise((r) => setTimeout(r, 25));
+  }
+  pump(500);
 
   const g = game.scene.getScene('Game');
   const log = [];
@@ -117,11 +139,13 @@ async function goldLogRun(seed = 42) {
 
   // Scripted policy: deterministic band sequence at bat; center fastballs on
   // the mound; live plays run on CPU policies + no-soft-lock guards.
+  // 50ms-grid stepping + per-step sampling: every state transition ≥ one step
+  // long is captured, so the log can't alias on batch alignment.
   const bands = ['miss', 'good', 'miss', 'perfect', 'weak', 'miss'];
   let swingN = 0;
   let guard = 0;
-  while (!game.scene.isActive('Result') && guard++ < 500) {
-    pump(300);
+  while (!game.scene.isActive('Result') && guard++ < 3600) {
+    pump(50);
     sample();
     try {
       if (g.phase === 'pitching' && g.half === 'top' && game.loop.time - g.pitchStart > 200) {
@@ -136,8 +160,19 @@ async function goldLogRun(seed = 42) {
     }
     sample();
   }
-  log.push({ done: game.scene.isActive('Result'), guard });
-  return JSON.stringify(log);
+  // NOTE: no iteration counters in the log — the pre-game loader wait is
+  // real-async, so raw counts vary run-to-run without any behavior change.
+  log.push({ done: game.scene.isActive('Result') });
+  void guard;
+  const out = JSON.stringify(log);
+  // Stash for retrieval in a fresh eval — long drives can outlive one
+  // CDP evaluate's timeout even after finishing the game.
+  try {
+    sessionStorage.setItem('goldlog_last', out);
+  } catch (e) {
+    /* fine */
+  }
+  return out;
 }
 
 window.goldLogPrepare = goldLogPrepare;

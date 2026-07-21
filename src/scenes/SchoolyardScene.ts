@@ -103,6 +103,7 @@ export class SchoolyardScene extends Phaser.Scene {
   private autoBtn?: Phaser.GameObjects.Container;
   private autoWalkers = 0;
   private crowd?: CrowdState;
+  private passplay = false; // 👥 VS: both draft turns are human taps
 
   constructor() {
     super('Schoolyard');
@@ -120,6 +121,7 @@ export class SchoolyardScene extends Phaser.Scene {
     this.autoBtn = undefined;
     this.autoWalkers = 0;
     this.crowd = undefined;
+    this.passplay = false;
     this.straightToDraft = data?.straightToDraft ?? false;
   }
 
@@ -407,6 +409,22 @@ export class SchoolyardScene extends Phaser.Scene {
       ease: 'Back.out',
       onComplete: () => pulse(this, play, { scale: 1.05, dur: 520 }),
     });
+
+    // 👥 VS: pass-and-play — two kids draft against each other, then the
+    // batting player holds the device each half.
+    const vs = pill(this, GAME_WIDTH / 2, 452, '👥 VS', { fill: COLORS.cream, fontSize: 20, minW: 110 });
+    vs.container.setDepth(5);
+    vs.container.setInteractive(new Phaser.Geom.Rectangle(-55, -22, 110, 44), Phaser.Geom.Rectangle.Contains);
+    vs.container.on('pointerdown', () => {
+      if (this.phase !== 'title') return;
+      audio.unlock();
+      audio.pop();
+      this.passplay = true;
+      this.titleObjs.forEach((o) => o.destroy());
+      this.titleObjs = [];
+      this.startRecess();
+    });
+    this.titleObjs.push(vs.container);
 
     // 🏆 RECESS WEEK: the 5-game season (resumes mid-week automatically) and
     // 📔 the sticker album.
@@ -801,7 +819,8 @@ export class SchoolyardScene extends Phaser.Scene {
       Phaser.Geom.Rectangle.Contains
     );
     kid.root.on('pointerdown', (_pointer: Phaser.Input.Pointer, _x: number, _y: number, event: Phaser.Types.Input.EventData) => {
-      if (this.phase !== 'idle' || this.state.turn !== 'player') return;
+      // Pass-and-play: BOTH turns are human taps (the 'ai' turn is Player 2).
+      if (this.phase !== 'idle' || (this.state.turn !== 'player' && !this.passplay)) return;
       if (!this.state.pool.includes(kid.char.id)) return;
       event.stopPropagation();
       this.inspectKid(kid.char.id);
@@ -915,7 +934,7 @@ export class SchoolyardScene extends Phaser.Scene {
     });
   }
 
-  /** PICK pressed: log the vote, and the kid runs to your side of the yard. */
+  /** PICK pressed: log the vote, and the kid runs to that side of the yard. */
   confirmPick(): void {
     if (this.phase !== 'inspect' || !this.inspectedId) return;
     const id = this.inspectedId;
@@ -926,7 +945,11 @@ export class SchoolyardScene extends Phaser.Scene {
     this.inspectObjs = [];
     this.inspectedId = undefined;
 
+    // Which pennant the kid runs to — capture BEFORE applyPick flips the turn.
+    const side = this.state.turn === 'player' ? 'player' : 'cpu';
     this.state = applyPick(this.state, id);
+    // Every deliberate human tap is a vote — in pass-and-play, BOTH seats'
+    // picks are genuine preferences (AUTO and solo-CPU picks still aren't).
     recordPick(id);
     audio.pop();
     // The kid announces themself in their own voice as they run to the pennant.
@@ -934,7 +957,8 @@ export class SchoolyardScene extends Phaser.Scene {
 
     this.phase = 'playerRun';
     this.refreshStatus();
-    const slot = this.teamSpot('player', this.state.playerTeam.length - 1);
+    const teamLen = side === 'player' ? this.state.playerTeam.length : this.state.aiTeam.length;
+    const slot = this.teamSpot(side, teamLen - 1);
     this.walkToTeam(kid, slot, () => {
       burst(this, slot.x, slot.y - 20, COLORS.gold, 10);
       this.afterPlayerPick();
@@ -944,6 +968,12 @@ export class SchoolyardScene extends Phaser.Scene {
   private afterPlayerPick(): void {
     if (isDraftComplete(this.state)) {
       this.finishDraft();
+      return;
+    }
+    if (this.passplay) {
+      // The other human's turn — back to the wall, no CPU theater.
+      this.phase = 'idle';
+      this.refreshStatus();
       return;
     }
     this.phase = 'cpuScan';
@@ -1136,6 +1166,16 @@ export class SchoolyardScene extends Phaser.Scene {
     this.pillPulse = undefined;
     this.turnPill.container.setScale(1);
     if (isDraftComplete(this.state)) return;
+    // Pass-and-play: name the picking seat instead of YOUR/CPU.
+    if (this.passplay && this.phase !== 'auto') {
+      const p1 = this.state.turn === 'player';
+      const n = p1 ? mine : this.state.aiTeam.length;
+      this.turnPill.setText(`${p1 ? '1️⃣ P1' : '2️⃣ P2'} PICK!  ${n}/${TEAM_SIZE}`, p1 ? COLORS.gold : 0xd9a0e8);
+      if (this.phase === 'idle') {
+        this.pillPulse = pulse(this, this.turnPill.container, { scale: 1.06, dur: 420 });
+      }
+      return;
+    }
     if (this.phase === 'idle' && this.state.turn === 'player') {
       this.turnPill.setText(`YOUR PICK!  ${mine}/${TEAM_SIZE}`, COLORS.gold);
       this.pillPulse = pulse(this, this.turnPill.container, { scale: 1.06, dur: 420 });
@@ -1177,7 +1217,11 @@ export class SchoolyardScene extends Phaser.Scene {
         this.scene.start('Season');
         return;
       }
-      const teams = { playerTeam: this.state.playerTeam, aiTeam: this.state.aiTeam };
+      const teams = {
+        playerTeam: this.state.playerTeam,
+        aiTeam: this.state.aiTeam,
+        matchType: (this.passplay ? 'passplay' : 'solo') as 'solo' | 'passplay',
+      };
       // CLASSIC gets the lineup screen (order/positions/pitcher); kid mode
       // goes straight to the game with the automatic defaults.
       this.scene.start(getMode() === 'main' ? 'Lineup' : 'Game', teams);

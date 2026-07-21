@@ -1,18 +1,18 @@
 {
-  "comment": "Gold-log regression fingerprints (scripts/goldlog.browser.js). Behavior-identical refactor phases must reproduce these EXACTLY for the same seed. Hash = SHA-256 hex of the returned JSON log string, dash-grouped every 8 chars. To debug a mismatch: check out the commit that captured the gold and re-run goldLogRun to get the full log for diffing.",
-  "capturedAt": "pre-P1 baseline (parity plan: seat extraction)",
-  "script": "goldlog.browser.js",
+  "comment": "Gold-log regression fingerprints (scripts/goldlog.browser.js, harness v2.1). The harness seeds Math.random (mulberry32), virtualizes Date.now onto the pump grid, bypasses the visual draft with FIXED teams (the draft's greedy chooser jitters every candidate with rng, so title-screen cosmetics would cascade into different teams), reseeds at game entry, waits out the real-async jersey loader on a 50ms pump grid, and samples every 50ms step. Fingerprint = SHA-256 of the state-transition log (dash-grouped). Behavior-identical phases must reproduce these exactly. To debug a mismatch: check out the anchoring commit and re-run goldLogRun for the full log.",
+  "capturedAt": "post-P3 anchor (seat model committed; verified identical HEAD-vs-P3)",
+  "script": "goldlog.browser.js v2.1",
   "seed": 42,
   "logs": {
     "main": {
-      "length": 1914,
-      "sha256": "d8497e41-733582ed-bceba41a-1ed23f4c-3749269a-04234a2e-b5c0d5cc-6d05f3bf",
-      "finalScore": "0-1 CPU, ended, guard 132"
+      "length": 2405,
+      "sha256": "78b7ebad-fb2ca8c2-bb85e671-7b313afa-f6b2a9ea-0f5e1f29-f9a8b119-4e856595",
+      "note": "fixed teams A/B, 1 inning, ends 0-1"
     },
     "kid": {
-      "length": 6312,
-      "sha256": "bbc5bf4b-728309e1-6f95e691-442d4e24-624f93d0-5d9f1280-3450ac05-df3aaadb",
-      "finalScore": "0-1 CPU, ended, guard 299"
+      "length": 6922,
+      "sha256": "9bb4d287-ebc89c23-cf28e748-69ccb854-677f2060-28ed312e-21ca3785-7e864a67",
+      "note": "fixed teams A/B, 1 inning, ends 5-0"
     }
   }
 }

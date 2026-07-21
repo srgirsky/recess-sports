@@ -489,6 +489,12 @@ export const JUICE = {
   CALLED_SHOT_Q_FLOOR: 1.2,
 };
 
+/** Pass-and-play 2P (one device, the batting player holds it). */
+export const PASSPLAY = {
+  /** Ignore taps on the handoff splash for this long (no accidental blow-through). */
+  SPLASH_GUARD_MS: 600,
+};
+
 /** Recess Week — the 5-game season (systems/season.ts). */
 export const SEASON = {
   GAMES: 5, // Monday through Friday

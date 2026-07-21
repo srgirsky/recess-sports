@@ -42,6 +42,8 @@ export interface GameInitData extends TeamState {
   practice?: boolean;
   /** This game counts toward the Recess Week season. */
   seasonGame?: boolean;
+  /** Pass-and-play: both seats human-batted, the batting player holds the device. */
+  matchType?: 'solo' | 'passplay';
 }
 
 /** Where each position pad sits on the mini-diamond (screen coords). */
@@ -75,18 +77,45 @@ export class LineupScene extends Phaser.Scene {
   private rival!: TeamIdentity;
   private identityUi?: Phaser.GameObjects.Container;
   private seasonGame = false;
+  private matchType: 'solo' | 'passplay' = 'solo';
+  private pass: 1 | 2 = 1;
+  private aPlan?: LineupPlan; // pass 1's plan, carried into pass 2
+  private aIdentity?: TeamIdentity;
+  private editingTeam: string[] = [];
 
   constructor() {
     super('Lineup');
   }
 
-  create(data: TeamState & { seasonGame?: boolean }): void {
+  create(
+    data: TeamState & {
+      seasonGame?: boolean;
+      matchType?: 'solo' | 'passplay';
+      pass?: 1 | 2;
+      aPlan?: LineupPlan;
+      aIdentity?: TeamIdentity;
+    }
+  ): void {
     this.teams = data;
     this.seasonGame = data.seasonGame ?? false;
-    this.plan = autoAssign(data.playerTeam);
+    this.matchType = data.matchType ?? 'solo';
+    this.pass = data.pass ?? 1;
+    this.aPlan = data.aPlan;
+    this.aIdentity = data.aIdentity;
+    // Pass-and-play runs this screen twice: pass 1 edits Player 1's nine,
+    // pass 2 (after the handoff) edits Player 2's.
+    const passB = this.matchType === 'passplay' && this.pass === 2;
+    this.editingTeam = passB ? data.aiTeam : data.playerTeam;
+    this.plan = autoAssign(this.editingTeam);
     this.aiPlan = autoAssign(data.aiTeam);
     this.selected = undefined;
-    this.identity = getTeamIdentity() ?? { color: 0, logo: 0 };
+    if (passB) {
+      // Player 2's identity is per-session; steer clear of Player 1's color.
+      const taken = this.aIdentity?.color ?? -1;
+      this.identity = { color: taken === 3 ? 4 : 3, logo: 3 };
+    } else {
+      this.identity = getTeamIdentity() ?? { color: 0, logo: 0 };
+    }
     // Season games face the WEEK's scheduled rival; exhibitions rotate.
     const season = this.seasonGame ? getSeason() : null;
     this.rival = season ? season.rivals[season.gameIndex] : pickRival(this.identity, getGamesPlayed());
@@ -104,7 +133,9 @@ export class LineupScene extends Phaser.Scene {
     chalk.lineBetween(700, 305, 590, 408); // 2B -> 3B
     chalk.lineBetween(590, 408, 700, 520); // 3B -> home
 
-    ribbon(this, GAME_WIDTH / 2, 46, '⚾ YOUR LINEUP');
+    const who =
+      this.matchType === 'passplay' ? (this.pass === 2 ? '2️⃣ PLAYER 2' : '1️⃣ PLAYER 1') : '⚾ YOUR';
+    ribbon(this, GAME_WIDTH / 2, 46, `${who} LINEUP`);
     heading(this, 190, 96, '1 → 9', 26, '#fff4de');
     heading(this, 700, 96, 'POSITIONS', 26, '#fff4de');
 
@@ -120,7 +151,7 @@ export class LineupScene extends Phaser.Scene {
       width: 210,
       height: 74,
       onClick: () => {
-        this.plan = autoAssign(this.teams.playerTeam);
+        this.plan = autoAssign(this.editingTeam);
         this.selected = undefined;
         audio.pop();
         this.buildChips();
@@ -138,17 +169,43 @@ export class LineupScene extends Phaser.Scene {
   }
 
   private go(): void {
-    if (!validateLineup(this.plan, this.teams.playerTeam)) return; // can't happen via swaps
+    if (!validateLineup(this.plan, this.editingTeam)) return; // can't happen via swaps
     audio.cheer();
-    const payload: GameInitData = {
-      playerTeam: this.plan.order,
-      aiTeam: this.aiPlan.order,
-      playerPlan: this.plan,
-      aiPlan: this.aiPlan,
-      identity: this.identity,
-      rival: this.rival,
-      seasonGame: this.seasonGame,
-    };
+
+    if (this.matchType === 'passplay' && this.pass === 1) {
+      // Hand the device to Player 2 for THEIR lineup + identity.
+      audio.say('Player two, your turn!', commentatorProfile('A'), 'flush');
+      this.scene.restart({
+        ...this.teams,
+        matchType: 'passplay',
+        pass: 2,
+        aPlan: this.plan,
+        aIdentity: this.identity,
+      });
+      return;
+    }
+
+    const passB = this.matchType === 'passplay' && this.pass === 2;
+    const payload: GameInitData = passB
+      ? {
+          playerTeam: this.aPlan!.order,
+          aiTeam: this.plan.order,
+          playerPlan: this.aPlan!,
+          aiPlan: this.plan,
+          identity: this.aIdentity,
+          rival: this.identity,
+          matchType: 'passplay',
+          seasonGame: false,
+        }
+      : {
+          playerTeam: this.plan.order,
+          aiTeam: this.aiPlan.order,
+          playerPlan: this.plan,
+          aiPlan: this.aiPlan,
+          identity: this.identity,
+          rival: this.rival,
+          seasonGame: this.seasonGame,
+        };
     this.cameras.main.fadeOut(240, 0, 0, 0);
     // Jersey variants render in well under a second — but never start the
     // game before the loader has finished baking them.
@@ -200,29 +257,37 @@ export class LineupScene extends Phaser.Scene {
 
   private setIdentity(next: TeamIdentity): void {
     this.identity = next;
-    setTeamIdentity(next);
-    this.rival = pickRival(next, getGamesPlayed());
+    // Player 2's pick is session-only; only the device owner's seat persists.
+    if (!(this.matchType === 'passplay' && this.pass === 2)) {
+      setTeamIdentity(next);
+      this.rival = pickRival(next, getGamesPlayed());
+    }
     audio.pop();
     audio.say(`${teamName(next)}!`, commentatorProfile('A'), 'flush');
     this.buildIdentityPicker();
     this.queueJerseys();
   }
 
-  /** Bake team-jersey texture variants for both squads in the background. */
+  /** Bake team-jersey texture variants in the background. */
   private queueJerseys(): void {
     const chars = (ids: string[]) => ids.map(getCharacter);
+    // This pass's team in this pass's colors.
     queueTeamTextures(
       this,
-      chars(this.teams.playerTeam),
+      chars(this.editingTeam),
       { color: this.identity.color, logo: TEAM_LOGOS[this.identity.logo].icon },
       teamSuffix(this.identity.color, this.identity.logo)
     );
-    queueTeamTextures(
-      this,
-      chars(this.teams.aiTeam),
-      { color: this.rival.color, logo: TEAM_LOGOS[this.rival.logo].icon },
-      teamSuffix(this.rival.color, this.rival.logo)
-    );
+    // Solo also bakes the CPU rival here; pass-and-play bakes each team on
+    // its own pass (pass 1 already covered Player 1's nine).
+    if (this.matchType !== 'passplay') {
+      queueTeamTextures(
+        this,
+        chars(this.teams.aiTeam),
+        { color: this.rival.color, logo: TEAM_LOGOS[this.rival.logo].icon },
+        teamSuffix(this.rival.color, this.rival.logo)
+      );
+    }
     this.load.start();
   }
 

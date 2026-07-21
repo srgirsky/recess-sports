@@ -65,7 +65,9 @@ import type { GameInitData } from './LineupScene';
 import { swapPositions, type LineupPlan } from '../systems/lineup';
 import { newFatigue, drainPitch, effectivePitching, isTired, cpuWantsRelief, type FatigueState } from '../systems/fatigue';
 import { rampLevel, rampedArm, rampedCpuBatter } from '../systems/difficulty';
-import { teamName, type TeamIdentity } from '../systems/team';
+import { teamName, TEAM_LOGOS, type TeamIdentity } from '../systems/team';
+import { UNIFORM_COLORS } from '../art/palette';
+import { showHandoffSplash } from './ui/HandoffSplash';
 import { getSettings } from '../systems/settings';
 import type { StatEvent } from '../systems/stats';
 import { getSeason, saveSeason, recordSeasonGame } from '../systems/season';
@@ -294,6 +296,13 @@ export class GameScene extends Phaser.Scene {
   private regulation = INNINGS; // game length (settings can pick 1/2/3)
   private practice = false; // batting practice: endless pitches, no outs, no innings
   private seasonGame = false; // this game counts toward Recess Week
+  private matchType: 'solo' | 'passplay' = 'solo';
+
+  /** Whose juice meter/chips are on screen: the device holder — the batting
+   *  player in pass-and-play, always seat 0 in solo. */
+  private deviceSeat(): SeatState {
+    return this.matchType === 'passplay' ? this.battingSeat() : this.seats[0];
+  }
   // 📼 instant replay: per-tick position snapshots of the current live play.
   private replayFrames: ReplayFrame[] = [];
   private playHighlights = newHighlights();
@@ -447,6 +456,18 @@ export class GameScene extends Phaser.Scene {
     this.regulation = getSettings().innings;
     this.practice = data.practice ?? false;
     this.seasonGame = data.seasonGame ?? false;
+    this.matchType = data.matchType ?? 'solo';
+    // Seat flags EVERY game (the seat objects persist across scene restarts):
+    // pass-and-play makes the home seat a human batter too — both halves run
+    // the human-batting family; the human-pitching family is never entered.
+    const passplay = this.matchType === 'passplay';
+    this.seats[0].humanBats = true;
+    this.seats[0].humanPitches = !passplay;
+    this.seats[0].recordsStats = true;
+    this.seats[1].humanBats = passplay;
+    this.seats[1].humanPitches = false;
+    this.seats[1].recordsStats = passplay;
+    this.seats[1].stats = [];
     this.statEvents = [];
     this.inning = 1;
     this.half = 'top';
@@ -502,8 +523,11 @@ export class GameScene extends Phaser.Scene {
     this.geo = getFieldGeometry(this.venue);
     // Ramp is read BEFORE this game is tallied (game 1 plays at level 0),
     // and only in CLASSIC — kid mode never sharpens.
-    this.ramp = this.mode === 'main' ? rampLevel(getGamesPlayed()) : 0;
-    recordGamePlayed();
+    // Pass-and-play is PvP: symmetric CPU defenses, no ramp, and it doesn't
+    // feed the solo ramp's games-played tally.
+    this.ramp =
+      this.mode === 'main' && this.matchType !== 'passplay' ? rampLevel(getGamesPlayed()) : 0;
+    if (this.matchType !== 'passplay') recordGamePlayed();
     // The booth introduces the matchup.
     if (this.identity && this.rival) {
       audio.say(`${teamName(this.identity)} versus ${teamName(this.rival)}! Play ball!`, undefined, 'queue');
@@ -873,7 +897,19 @@ export class GameScene extends Phaser.Scene {
 
   private drawHud(): void {
     // The scoreboard strip: score / inning / labeled B-S-OUT count, all pinned.
-    this.scoreboard = createScoreboard(this, (o) => this.pinUI(o));
+    // Team logos + colors label the score panel when identities exist (solo
+    // CLASSIC has both; kid mode falls back to YOU/CPU).
+    const idA = this.seats[0].identity;
+    const idB = this.seats[1].identity;
+    const seatLabel = (id: TeamIdentity) => ({
+      label: TEAM_LOGOS[id.logo].icon,
+      color: UNIFORM_COLORS[id.color].jersey,
+    });
+    this.scoreboard = createScoreboard(
+      this,
+      (o) => this.pinUI(o),
+      idA && idB ? { away: seatLabel(idA), home: seatLabel(idB) } : undefined
+    );
 
     // Announcer lives in its own band below the HUD so it never sits on a sprite.
     this.announceBg = this.pinUI(
@@ -976,8 +1012,8 @@ export class GameScene extends Phaser.Scene {
   private refreshJuiceMeter(): void {
     const g = this.juiceGfx;
     if (!g) return;
-    const p = Phaser.Math.Clamp(this.playerJuice.value / this.playerJuice.max, 0, 1);
-    const full = canSpend(this.playerJuice, 'powerSwing');
+    const p = Phaser.Math.Clamp(this.deviceSeat().juice.value / this.deviceSeat().juice.max, 0, 1);
+    const full = canSpend(this.deviceSeat().juice, 'powerSwing');
     g.clear();
     g.fillStyle(COLORS.ink, 0.45);
     g.fillRoundedRect(48, 70, 128, 16, 8);
@@ -996,9 +1032,8 @@ export class GameScene extends Phaser.Scene {
   private gainJuiceSeat(seat: SeatState, kind: JuiceEventKind, ability?: Character['ability']): void {
     if (!this.features.juice) return;
     const amount = juiceGain(kind, ability ?? 'none');
-    // The on-screen meter (and its READY pop) belongs to the device holder —
-    // seat 0 in solo.
-    if (seat === this.seats[0]) {
+    // The on-screen meter (and its READY pop) belongs to the device holder.
+    if (seat === this.deviceSeat()) {
       const was = canSpend(seat.juice, 'powerSwing');
       seat.juice = addJuice(seat.juice, amount);
       this.refreshJuiceMeter();
@@ -1039,19 +1074,28 @@ export class GameScene extends Phaser.Scene {
     this.refreshHud();
     // Route by which flow family serves the batting seat: a human batter runs
     // the batting engine; otherwise the human pitches to the CPU order.
-    if (this.battingSeat().humanBats) {
-      this.setMoundPitcher(this.aiPitcher);
-      this.flashAnnounce(`Inning ${this.inning}\nYOU'RE UP!`, COLORS.gold);
-      if (this.firstPitchOfGame) audio.say('Play ball!', commentatorProfile('A'));
-      this.time.delayedCall(FLOW.HALF_START_MS, () => this.nextPlayerBatter());
-    } else {
-      this.setMoundPitcher(this.playerPitcher);
-      this.flashAnnounce('YOU PITCH!\nGET 3 OUTS', COLORS.gold);
-      if (this.firstDefenseOfGame) {
-        audio.say('You pitch! Throw when the ring closes!', commentatorProfile('B'), 'flush');
-        this.firstDefenseOfGame = false;
+    const begin = () => {
+      if (this.battingSeat().humanBats) {
+        this.setMoundPitcher(this.fieldingSeat().pitcher!);
+        this.flashAnnounce(`Inning ${this.inning}\nYOU'RE UP!`, COLORS.gold);
+        if (this.firstPitchOfGame) audio.say('Play ball!', commentatorProfile('A'));
+        this.time.delayedCall(FLOW.HALF_START_MS, () => this.nextPlayerBatter());
+      } else {
+        this.setMoundPitcher(this.playerPitcher);
+        this.flashAnnounce('YOU PITCH!\nGET 3 OUTS', COLORS.gold);
+        if (this.firstDefenseOfGame) {
+          audio.say('You pitch! Throw when the ring closes!', commentatorProfile('B'), 'flush');
+          this.firstDefenseOfGame = false;
+        }
+        this.time.delayedCall(FLOW.HALF_START_MS, () => this.nextCpuBatter());
       }
-      this.time.delayedCall(FLOW.HALF_START_MS, () => this.nextCpuBatter());
+    };
+    if (this.matchType === 'passplay') {
+      // Nothing schedules until the right kid holds the device.
+      const seat = this.battingSeat();
+      showHandoffSplash(this, seat.identity, seat.team[0], begin, (o) => this.pinUI(o));
+    } else {
+      begin();
     }
   }
 
@@ -1132,7 +1176,11 @@ export class GameScene extends Phaser.Scene {
         playerScore: this.playerScore,
         aiScore: this.aiScore,
         playerTeam: this.playerTeam,
+        aiTeam: this.aiTeam,
         seasonGame: this.seasonGame,
+        matchType: this.matchType,
+        awayIdentity: this.seats[0].identity,
+        homeIdentity: this.seats[1].identity,
       });
     });
   }
@@ -1358,9 +1406,11 @@ export class GameScene extends Phaser.Scene {
       PITCH_TRAVEL_MS,
       () => Math.random()
     );
-    // A trailing CPU digs into its own juice for the crazy pitch.
+    // A trailing CPU digs into its own juice for the crazy pitch. Never in
+    // pass-and-play: the CPU defense must not burn a HUMAN seat's meter.
     if (
       this.features.juice &&
+      this.matchType !== 'passplay' &&
       cpuWantsSpend(
         moundSeat.juice,
         'crazyPitch',
@@ -1578,7 +1628,7 @@ export class GameScene extends Phaser.Scene {
     const root = this.add.container(0, 0).setDepth(94);
     let row = 0;
     for (const d of defs) {
-      if (!d.armed && !canSpend(this.playerJuice, d.kind)) continue;
+      if (!d.armed && !canSpend(this.deviceSeat().juice, d.kind)) continue;
       const y = GAME_HEIGHT - (humanBatting ? 96 : 148) - row * 46;
       row += 1;
       const { container } = pill(this, 116, y, d.armed ? `${d.label}!` : d.label, {
@@ -1592,8 +1642,8 @@ export class GameScene extends Phaser.Scene {
         container.setInteractive(new Phaser.Geom.Rectangle(-80, -17, 160, 34), Phaser.Geom.Rectangle.Contains);
         container.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, e: Phaser.Types.Input.EventData) => {
           e.stopPropagation();
-          if (!canSpend(this.playerJuice, d.kind)) return;
-          this.playerJuice = spend(this.playerJuice, d.kind);
+          if (!canSpend(this.deviceSeat().juice, d.kind)) return;
+          this.deviceSeat().juice = spend(this.deviceSeat().juice, d.kind);
           d.arm();
           this.refreshJuiceMeter();
           audio.pop();
@@ -1612,7 +1662,7 @@ export class GameScene extends Phaser.Scene {
   private showPowerButton(): void {
     this.powerBtn?.destroy();
     this.powerBtn = undefined;
-    if (!this.armedPower && !canSpend(this.playerJuice, 'powerSwing')) return;
+    if (!this.armedPower && !canSpend(this.deviceSeat().juice, 'powerSwing')) return;
     const { container } = pill(
       this,
       116,
@@ -1625,8 +1675,8 @@ export class GameScene extends Phaser.Scene {
     if (!this.armedPower) {
       container.setInteractive(new Phaser.Geom.Rectangle(-90, -18, 180, 36), Phaser.Geom.Rectangle.Contains);
       container.on('pointerdown', () => {
-        if (this.armedPower || !canSpend(this.playerJuice, 'powerSwing')) return;
-        this.playerJuice = spend(this.playerJuice, 'powerSwing');
+        if (this.armedPower || !canSpend(this.deviceSeat().juice, 'powerSwing')) return;
+        this.deviceSeat().juice = spend(this.deviceSeat().juice, 'powerSwing');
         this.armedPower = true;
         this.refreshJuiceMeter();
         audio.pop();
@@ -2857,7 +2907,7 @@ export class GameScene extends Phaser.Scene {
       isWalkOff(this.inning, this.regulation, this.half, this.seats[1].score, this.seats[0].score)
     ) {
       this.phase = 'ended';
-      this.flashAnnounce('WALK-OFF!\nCPU WINS!', COLORS.red, FLOW.BIG_BANNER_HOLD_MS);
+      this.flashAnnounce(`WALK-OFF!\n${this.seats[1].identity ? teamName(this.seats[1].identity) : 'CPU'} WINS!`, COLORS.red, FLOW.BIG_BANNER_HOLD_MS);
       this.time.delayedCall(FLOW.BIG_BANNER_HOLD_MS + 200, () => this.gameOver());
       return;
     }
@@ -3354,7 +3404,7 @@ export class GameScene extends Phaser.Scene {
     // Walk-off: the CPU just took the lead in the bottom of the final inning.
     if (isWalkOff(this.inning, this.regulation, this.half, this.aiScore, this.playerScore)) {
       this.phase = 'ended';
-      this.flashAnnounce('WALK-OFF!\nCPU WINS!', COLORS.red, FLOW.BIG_BANNER_HOLD_MS);
+      this.flashAnnounce(`WALK-OFF!\n${this.seats[1].identity ? teamName(this.seats[1].identity) : 'CPU'} WINS!`, COLORS.red, FLOW.BIG_BANNER_HOLD_MS);
       this.time.delayedCall(
         Math.max(FLOW.BIG_BANNER_HOLD_MS + 200, runDelay + FLOW.RUN_SETTLE_PAD_MS),
         () => this.gameOver()
