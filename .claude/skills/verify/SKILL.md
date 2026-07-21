@@ -45,8 +45,8 @@ Screenshots still capture the current painted state — pump, then screenshot.
 
 ```js
 const s = window.__game.scene.getScene('Schoolyard');
-// PLAY: the titleObjs container at logical (480, 512); makeButton fires on pointerup
-s.titleObjs.find(o => o.x === 480 && o.y === 512).emit('pointerup');
+// PLAY: the titleObjs container at logical (480, TITLE.MAIN_Y = 535); makeButton fires on pointerup
+s.titleObjs.find(o => o.x === 480 && o.y === 535).emit('pointerup');
 pump(600);            // phase 'cutscene', 30 kids spawn
 s.finishCutscene();   // public tap-to-skip → phase 'idle'
 // Manual pick: s.inspectKid(s.state.pool[0]); pump(300); s.confirmPick();

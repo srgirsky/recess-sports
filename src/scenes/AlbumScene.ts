@@ -36,7 +36,7 @@ export class AlbumScene extends Phaser.Scene {
     const cellW = (GAME_WIDTH - 130) / cols;
     ROSTER.forEach((char, i) => {
       const x = 90 + (i % cols) * cellW;
-      const y = 150 + Math.floor(i / cols) * 118;
+      const y = 150 + Math.floor(i / cols) * 112;
       const drafted = (album.drafted[char.id] ?? 0) > 0;
       const foiled = (album.wonWith[char.id] ?? 0) > 0;
       const trophies = album.trophies[char.id] ?? 0;

@@ -88,6 +88,16 @@ const CURB_Y = 308; // back-row feet (on the concrete curb)
 const FRONT_Y = 356; // front-row feet (on the blacktop)
 const TEAM_Y = [438, 482]; // cluster rows (back, front)
 
+// Title-row centers, top→bottom. Ribbon h≈50, chips h≈33–38, PLAY h=100;
+// keep ≥10px between row bounding boxes (band: blacktop top 314 → 633).
+const TITLE = {
+  RIBBON_Y: 358,
+  VENUE_Y: 410,
+  ENTRY_Y: 456,
+  MAIN_Y: 535,
+  TOGGLE_Y: 614,
+};
+
 export class SchoolyardScene extends Phaser.Scene {
   private state!: DraftState;
   private kids = new Map<string, YardKid>();
@@ -402,7 +412,7 @@ export class SchoolyardScene extends Phaser.Scene {
     this.tweens.add({ targets: line1, scale: 1, delay: 150, duration: 260, ease: 'Back.out' });
     this.tweens.add({ targets: line2, scale: 1, delay: 300, duration: 260, ease: 'Back.out' });
 
-    const tag = ribbon(this, GAME_WIDTH / 2, 400, 'Recess is almost here…', {
+    const tag = ribbon(this, GAME_WIDTH / 2, TITLE.RIBBON_Y, 'Recess is almost here…', {
       fill: COLORS.red,
       fontSize: 24,
       padX: 26,
@@ -412,7 +422,7 @@ export class SchoolyardScene extends Phaser.Scene {
 
     const play = makeButton(this, {
       x: GAME_WIDTH / 2,
-      y: 512,
+      y: TITLE.MAIN_Y,
       label: 'PLAY',
       icon: '🔔',
       width: 300,
@@ -439,7 +449,7 @@ export class SchoolyardScene extends Phaser.Scene {
 
     // 👥 VS: pass-and-play — two kids draft against each other, then the
     // batting player holds the device each half.
-    const vs = pill(this, GAME_WIDTH / 2 - 78, 452, '👥 VS', { fill: COLORS.cream, fontSize: 20, minW: 110 });
+    const vs = pill(this, GAME_WIDTH / 2 - 78, TITLE.ENTRY_Y, '👥 VS', { fill: COLORS.cream, fontSize: 20, minW: 110 });
     vs.container.setDepth(5);
     vs.container.setInteractive(new Phaser.Geom.Rectangle(-55, -22, 110, 44), Phaser.Geom.Rectangle.Contains);
     vs.container.on('pointerdown', () => {
@@ -454,7 +464,7 @@ export class SchoolyardScene extends Phaser.Scene {
     this.titleObjs.push(vs.container);
 
     // 🔗 two-device play: host/join over the emoji room code (LobbyScene).
-    const link = pill(this, GAME_WIDTH / 2 + 78, 452, '🔗 FRIEND', { fill: COLORS.cream, fontSize: 20, minW: 130 });
+    const link = pill(this, GAME_WIDTH / 2 + 78, TITLE.ENTRY_Y, '🔗 FRIEND', { fill: COLORS.cream, fontSize: 20, minW: 130 });
     link.container.setDepth(5);
     link.container.setInteractive(new Phaser.Geom.Rectangle(-65, -22, 130, 44), Phaser.Geom.Rectangle.Contains);
     link.container.on('pointerdown', () => {
@@ -467,7 +477,7 @@ export class SchoolyardScene extends Phaser.Scene {
 
     // 🏆 RECESS WEEK: the 5-game season (resumes mid-week automatically) and
     // 📔 the sticker album.
-    const week = pill(this, GAME_WIDTH / 2 - 250, 452, '🏆 WEEK', { fill: COLORS.gold, fontSize: 20, minW: 130 });
+    const week = pill(this, GAME_WIDTH / 2 - 250, TITLE.ENTRY_Y, '🏆 WEEK', { fill: COLORS.gold, fontSize: 20, minW: 130 });
     week.container.setDepth(5);
     week.container.setInteractive(new Phaser.Geom.Rectangle(-70, -22, 140, 44), Phaser.Geom.Rectangle.Contains);
     week.container.on('pointerdown', () => {
@@ -486,7 +496,7 @@ export class SchoolyardScene extends Phaser.Scene {
     });
     this.titleObjs.push(week.container);
 
-    const albumBtn = pill(this, GAME_WIDTH / 2 + 250, 452, '📔', { fill: COLORS.cream, fontSize: 24, minW: 64 });
+    const albumBtn = pill(this, GAME_WIDTH / 2 + 250, TITLE.ENTRY_Y, '📔', { fill: COLORS.cream, fontSize: 24, minW: 64 });
     albumBtn.container.setDepth(5);
     albumBtn.container.setInteractive(new Phaser.Geom.Rectangle(-32, -22, 64, 44), Phaser.Geom.Rectangle.Contains);
     albumBtn.container.on('pointerdown', () => {
@@ -497,7 +507,7 @@ export class SchoolyardScene extends Phaser.Scene {
     this.titleObjs.push(albumBtn.container);
 
     // 🥎 batting practice: no draft, no innings — grab a bat and swing.
-    const practice = pill(this, GAME_WIDTH / 2 - 250, 512, '🥎 PRACTICE', {
+    const practice = pill(this, GAME_WIDTH / 2 - 250, TITLE.MAIN_Y, '🥎 PRACTICE', {
       fill: COLORS.cream,
       fontSize: 20,
       minW: 160,
@@ -522,7 +532,7 @@ export class SchoolyardScene extends Phaser.Scene {
     this.titleObjs.push(practice.container);
 
     // ⚙️ settings.
-    const gear = pill(this, GAME_WIDTH / 2 + 250, 512, '⚙️', { fill: COLORS.cream, fontSize: 24, minW: 64 });
+    const gear = pill(this, GAME_WIDTH / 2 + 250, TITLE.MAIN_Y, '⚙️', { fill: COLORS.cream, fontSize: 24, minW: 64 });
     gear.container.setDepth(5);
     gear.container.setInteractive(
       new Phaser.Geom.Rectangle(-32, -22, 64, 44),
@@ -551,7 +561,7 @@ export class SchoolyardScene extends Phaser.Scene {
         { d: 'kid' as GameMode, label: '🙂 KID MODE', x: GAME_WIDTH / 2 + 92 },
       ] as const
     ).forEach(({ d, label, x }) => {
-      const { container } = pill(this, x, 592, label, { fill: COLORS.cream, fontSize: 20, minW: 150 });
+      const { container } = pill(this, x, TITLE.TOGGLE_Y, label, { fill: COLORS.cream, fontSize: 20, minW: 150 });
       container.setDepth(5);
       container.setInteractive(
         new Phaser.Geom.Rectangle(-80, -22, 160, 44),
@@ -569,7 +579,7 @@ export class SchoolyardScene extends Phaser.Scene {
     });
     styleChips();
 
-    // Venue picker: three little field chips between the ribbon and PLAY.
+    // Venue picker: three little field chips between the ribbon and the entry row.
     const venueChips: Array<{ id: VenueId; c: Phaser.GameObjects.Container }> = [];
     const styleVenues = () => {
       const current = getVenue().id;
@@ -581,7 +591,7 @@ export class SchoolyardScene extends Phaser.Scene {
     };
     (Object.values(VENUES) as VenueDef[]).forEach((v, i) => {
       const x = GAME_WIDTH / 2 + (i - 1) * 150;
-      const { container } = pill(this, x, 444, `${v.emoji} ${v.name.replace('The ', '').toUpperCase()}`, {
+      const { container } = pill(this, x, TITLE.VENUE_Y, `${v.emoji} ${v.name.replace('The ', '').toUpperCase()}`, {
         fill: COLORS.cream,
         fontSize: 15,
         minW: 128,

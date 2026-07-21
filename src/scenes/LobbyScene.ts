@@ -156,7 +156,7 @@ export class LobbyScene extends Phaser.Scene {
       });
       this.stage.add(chip);
     });
-    this.button(GAME_WIDTH / 2, GAME_HEIGHT - 60, '⬅ BACK', () => this.quit(), 180);
+    this.button(GAME_WIDTH / 2, GAME_HEIGHT - 70, '⬅ BACK', () => this.quit(), 180);
   }
 
   /** Dev/E2E: join straight from the wire code's hex digits. */

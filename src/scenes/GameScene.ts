@@ -624,7 +624,9 @@ export class GameScene extends Phaser.Scene {
     // create().
     if (this.practice) {
       this.time.delayedCall(0, () => {
-        const done = pill(this, GAME_WIDTH / 2, 40, '✅ DONE', { fill: COLORS.gold, fontSize: 20, minW: 130 });
+        // Below the scoreboard's inning pill (centered at y=36, h≈44) — the
+        // top strip itself has no gap wide enough for this.
+        const done = pill(this, GAME_WIDTH / 2, 92, '✅ DONE', { fill: COLORS.gold, fontSize: 20, minW: 130 });
         done.container.setDepth(95);
         this.pinUI(done.container);
         done.container.setInteractive(
@@ -1729,9 +1731,11 @@ export class GameScene extends Phaser.Scene {
       { t: 'big', icon: '💪' },
       { t: 'bunt', icon: '🤏' },
     ];
+    // Lane split with the spend/relief/power column at x=116: the swing stack
+    // owns x≤76 / y≤GAME_HEIGHT-170; that column owns y≥GAME_HEIGHT-159.
     const root = this.add.container(0, 0).setDepth(94);
     defs.forEach((d, i) => {
-      const y = GAME_HEIGHT - 118 - (defs.length - 1 - i) * 54;
+      const y = GAME_HEIGHT - 190 - (defs.length - 1 - i) * 54;
       const selected = this.swingType === d.t;
       const { container } = pill(this, 44, y, d.icon, {
         fill: selected ? COLORS.gold : COLORS.cream,
