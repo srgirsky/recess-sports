@@ -495,6 +495,27 @@ export const PASSPLAY = {
   SPLASH_GUARD_MS: 600,
 };
 
+/** Two-device play over WebRTC (src/net/*; PeerJS free cloud broker). */
+export const NET = {
+  /** Bumped on any wire-format change; hello handshake rejects mismatches. */
+  PROTOCOL_VERSION: 1,
+  /** liveFrame + liveInput pointer stream rate (full ReplayFrames, no deltas). */
+  FRAME_HZ: 20,
+  /** "Looking for your friend… 🔍" window before the no-blame GOOD GAME. */
+  RECONNECT_MS: 30000,
+  /** Keepalive send cadence — ridden on the Phaser clock (pumpable in tests). */
+  HEARTBEAT_MS: 2000,
+  /** No traffic for this long → treat the channel as softly disconnected. */
+  STALE_MS: 6000,
+  /** A remote pitch/swing never arrives → CPU fallback + soft disconnect. */
+  ACTION_TIMEOUT_MS: 15000,
+  /** Room-code alphabet: 16 emoji = one hex digit each (PeerJS ids must be
+   *  alphanumeric — the wire id is 'recess-' + hex; emoji are UI-only). */
+  CODE_EMOJI: ['🐶', '🐱', '🦊', '🐸', '🐢', '🦄', '🐝', '🐠', '🍎', '🍌', '🍕', '🌟', '⚽', '🎈', '🚗', '🌈'],
+  /** Emoji per room code. */
+  CODE_LEN: 4,
+};
+
 /** Recess Week — the 5-game season (systems/season.ts). */
 export const SEASON = {
   GAMES: 5, // Monday through Friday
