@@ -42,7 +42,8 @@ import {
 import { recordPick } from '../systems/picklog';
 import { poseKey, clearTeamVariant } from '../art/textureFactory';
 import { getSeason, newSeason, saveSeason } from '../systems/season';
-import { getTeamIdentity } from '../systems/team';
+import { getTeamIdentity, type TeamIdentity } from '../systems/team';
+import { activeSession, dropSession } from '../net/peer';
 import { makeButton } from '../ui/Button';
 import { makeMuteButton } from '../ui/MuteButton';
 import { ribbon, pill, panel, heading, FONT, OUTLINE } from '../ui/theme';
@@ -104,12 +105,15 @@ export class SchoolyardScene extends Phaser.Scene {
   private autoWalkers = 0;
   private crowd?: CrowdState;
   private passplay = false; // 👥 VS: both draft turns are human taps
+  private netDraft = false; // 🔗: both draft turns are human taps, one remote
+  private netPickCount = 0; // applied picks — remote pickNo must match
+  private netPickQueue: Array<{ pickNo: number; charId: string }> = [];
 
   constructor() {
     super('Schoolyard');
   }
 
-  init(data?: { straightToDraft?: boolean }): void {
+  init(data?: { straightToDraft?: boolean; netDraft?: boolean }): void {
     this.kids = new Map();
     this.phase = 'title';
     this.cutsceneJobs = [];
@@ -122,6 +126,9 @@ export class SchoolyardScene extends Phaser.Scene {
     this.autoWalkers = 0;
     this.crowd = undefined;
     this.passplay = false;
+    this.netDraft = data?.netDraft ?? false;
+    this.netPickCount = 0;
+    this.netPickQueue = [];
     this.straightToDraft = data?.straightToDraft ?? false;
   }
 
@@ -129,6 +136,26 @@ export class SchoolyardScene extends Phaser.Scene {
     // The draft always shows each kid's OWN look — team jerseys are a
     // Game/Result-era thing (the resolver re-arms on the next Game init).
     clearTeamVariant();
+    // A lingering net session with no net draft to serve = a stale game.
+    if (!this.netDraft) dropSession();
+    if (this.netDraft) {
+      const session = activeSession();
+      if (!session) {
+        // The friend vanished between lobby and draft — back to the title.
+        this.netDraft = false;
+      } else {
+        const un = session.onMessage((m) => {
+          if (m.t === 'draftPick') this.netPickQueue.push({ pickNo: m.pickNo, charId: m.charId });
+        });
+        const unStatus = session.onStatus((s) => {
+          if (s === 'gone') this.netAbort();
+        });
+        this.events.once('shutdown', () => {
+          un();
+          unStatus();
+        });
+      }
+    }
     this.cameras.main.fadeIn(250, 0x6c, 0xc0, 0xf5);
     this.state = createDraft(ROSTER.map((c) => c.id));
 
@@ -641,6 +668,18 @@ export class SchoolyardScene extends Phaser.Scene {
 
   /** Steps the stream-out sim; a no-op outside the recess cutscene. */
   update(_t: number, delta: number): void {
+    // Net: the friend's picks apply between our own animations.
+    if (this.netDraft) {
+      activeSession()?.tick(this.time.now);
+      if (this.phase === 'idle' && this.netPickQueue.length > 0) {
+        const pick = this.netPickQueue.shift()!;
+        if (pick.pickNo !== this.netPickCount || !this.state.pool.includes(pick.charId)) {
+          this.netAbort(); // desync must fail loud, never quietly diverge
+          return;
+        }
+        this.applyRemotePick(pick.charId);
+      }
+    }
     if (this.phase !== 'cutscene' || !this.crowd) return;
     stepCrowd(this.crowd, delta, CROWD);
     for (const ev of this.crowd.events) {
@@ -776,19 +815,22 @@ export class SchoolyardScene extends Phaser.Scene {
     this.turnPill.container.setVisible(true);
     // Skip-the-drafting escape hatch: fast-forwards the rest of the picks.
     // Depth 80 keeps it under the inspect panel's catcher, so a tap while a
-    // stat card is open just closes the card.
-    this.autoBtn = makeButton(this, {
-      x: GAME_WIDTH - 160,
-      y: 92,
-      label: 'AUTO',
-      icon: '⚡',
-      width: 170,
-      height: 52,
-      color: 0x8a6de0,
-      onClick: () => this.startAutoDraft(),
-    });
-    this.autoBtn.setDepth(80);
-    enterFrom(this, this.autoBtn, { dy: -70, dur: 380, ease: 'Bounce.out' });
+    // stat card is open just closes the card. Hidden in net — every wire
+    // pick is a deliberate human vote, and AUTO would desync the devices.
+    if (!this.netDraft) {
+      this.autoBtn = makeButton(this, {
+        x: GAME_WIDTH - 160,
+        y: 92,
+        label: 'AUTO',
+        icon: '⚡',
+        width: 170,
+        height: 52,
+        color: 0x8a6de0,
+        onClick: () => this.startAutoDraft(),
+      });
+      this.autoBtn.setDepth(80);
+      enterFrom(this, this.autoBtn, { dy: -70, dur: 380, ease: 'Bounce.out' });
+    }
     audio.say('Pick your team!', commentatorProfile('A'), 'flush');
     this.phase = 'idle';
     this.refreshStatus();
@@ -832,7 +874,8 @@ export class SchoolyardScene extends Phaser.Scene {
     );
     kid.root.on('pointerdown', (_pointer: Phaser.Input.Pointer, _x: number, _y: number, event: Phaser.Types.Input.EventData) => {
       // Pass-and-play: BOTH turns are human taps (the 'ai' turn is Player 2).
-      if (this.phase !== 'idle' || (this.state.turn !== 'player' && !this.passplay)) return;
+      // Net: only MY side's turns are tappable — the friend's arrive by wire.
+      if (this.phase !== 'idle' || !this.myDraftTurn()) return;
       if (!this.state.pool.includes(kid.char.id)) return;
       event.stopPropagation();
       this.inspectKid(kid.char.id);
@@ -962,7 +1005,13 @@ export class SchoolyardScene extends Phaser.Scene {
     this.state = applyPick(this.state, id);
     // Every deliberate human tap is a vote — in pass-and-play, BOTH seats'
     // picks are genuine preferences (AUTO and solo-CPU picks still aren't).
+    // Net: each device tallies only its OWN picks; the friend's device gets
+    // the pick by wire and records it in ITS OWN picklog.
     recordPick(id);
+    if (this.netDraft) {
+      activeSession()?.send({ t: 'draftPick', pickNo: this.netPickCount, charId: id });
+      this.netPickCount += 1;
+    }
     audio.pop();
     // The kid announces themself in their own voice as they run to the pennant.
     audio.say(kid.char.draftLine ?? `${kid.char.name}!`, kidVoice(kid.char), 'flush');
@@ -982,8 +1031,9 @@ export class SchoolyardScene extends Phaser.Scene {
       this.finishDraft();
       return;
     }
-    if (this.passplay) {
-      // The other human's turn — back to the wall, no CPU theater.
+    if (this.passplay || this.netDraft) {
+      // The other human's turn — back to the wall, no CPU theater. (Net: the
+      // friend's pick arrives by wire and applies from the idle queue.)
       this.phase = 'idle';
       this.refreshStatus();
       return;
@@ -991,6 +1041,48 @@ export class SchoolyardScene extends Phaser.Scene {
     this.phase = 'cpuScan';
     this.refreshStatus();
     this.time.delayedCall(AI_PICK_DELAY_MS, () => this.cpuTurn());
+  }
+
+  /** Net: is the side on the clock THIS device's? */
+  private myDraftTurn(): boolean {
+    if (this.netDraft) {
+      const mySide = activeSession()?.role === 'guest' ? 'ai' : 'player';
+      return this.state.turn === mySide;
+    }
+    return this.state.turn === 'player' || this.passplay;
+  }
+
+  /** Net: apply the friend's wire pick — same walk, their pennant. */
+  private applyRemotePick(id: string): void {
+    const kid = this.kids.get(id);
+    const side = this.state.turn === 'player' ? 'player' : 'cpu';
+    this.state = applyPick(this.state, id);
+    this.netPickCount += 1;
+    audio.pop();
+    if (kid) audio.say(`${kid.char.name}!`, kidVoice(kid.char), 'chatter'); // droppable
+    this.phase = 'cpuRun'; // reuse the walking phase; taps stay blocked
+    this.refreshStatus();
+    if (!kid) return;
+    kid.idle?.stop();
+    kid.img.y = 0;
+    const teamLen = side === 'player' ? this.state.playerTeam.length : this.state.aiTeam.length;
+    const slot = this.teamSpot(side, teamLen - 1);
+    this.walkToTeam(kid, slot, () => {
+      if (isDraftComplete(this.state)) {
+        this.finishDraft();
+        return;
+      }
+      this.phase = 'idle';
+      this.refreshStatus();
+    });
+  }
+
+  /** Net: the channel died or the picks diverged — no blame, back to title. */
+  private netAbort(): void {
+    dropSession();
+    this.netDraft = false;
+    audio.say('Good game!', commentatorProfile('A'), 'flush');
+    this.scene.start('Schoolyard', { straightToDraft: false });
   }
 
   // --- CPU turn ---------------------------------------------------------------
@@ -1178,6 +1270,19 @@ export class SchoolyardScene extends Phaser.Scene {
     this.pillPulse = undefined;
     this.turnPill.container.setScale(1);
     if (isDraftComplete(this.state)) return;
+    // Net: YOUR pick vs your FRIEND's — no CPU anywhere.
+    if (this.netDraft) {
+      const myTurn = this.myDraftTurn();
+      const n = this.state.turn === 'player' ? mine : this.state.aiTeam.length;
+      this.turnPill.setText(
+        myTurn ? `YOUR PICK!  ${n}/${TEAM_SIZE}` : `FRIEND'S PICK…  ${n}/${TEAM_SIZE}`,
+        myTurn ? COLORS.gold : 0xa0c8e8
+      );
+      if (this.phase === 'idle' && myTurn) {
+        this.pillPulse = pulse(this, this.turnPill.container, { scale: 1.06, dur: 420 });
+      }
+      return;
+    }
     // Pass-and-play: name the picking seat instead of YOUR/CPU.
     if (this.passplay && this.phase !== 'auto') {
       const p1 = this.state.turn === 'player';
@@ -1227,6 +1332,22 @@ export class SchoolyardScene extends Phaser.Scene {
           newSeason(this.state.playerTeam, identity, ROSTER.map((c) => c.id), () => Math.random())
         );
         this.scene.start('Season');
+        return;
+      }
+      if (this.netDraft) {
+        // Net: both devices built the same teams pick-by-pick; identities came
+        // from the lobby. CLASSIC: each device edits its OWN lineup next.
+        const ids = this.registry.get('netIdentities') as
+          | { away: TeamIdentity; home: TeamIdentity }
+          | undefined;
+        this.scene.start(getMode() === 'main' ? 'Lineup' : 'Game', {
+          playerTeam: this.state.playerTeam,
+          aiTeam: this.state.aiTeam,
+          identity: ids?.away,
+          rival: ids?.home,
+          matchType: 'net',
+          netRole: activeSession()?.role ?? 'host',
+        });
         return;
       }
       const teams = {

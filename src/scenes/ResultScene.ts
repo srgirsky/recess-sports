@@ -14,6 +14,7 @@ import * as audio from '../systems/audio';
 import { commentatorProfile } from '../systems/voices';
 import { recordAlbumGame } from '../systems/album';
 import { teamName, type TeamIdentity } from '../systems/team';
+import { dropSession } from '../net/peer';
 
 interface ResultData {
   playerScore: number;
@@ -44,8 +45,8 @@ export class ResultScene extends Phaser.Scene {
     else bg.fillGradientStyle(0x5fb0ea, 0x5fb0ea, 0xa8dcf6, 0xa8dcf6, 1);
     bg.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-    // Pass-and-play names the winner; solo keeps the classic YOU framing.
-    const passplay = data.matchType === 'passplay';
+    // Pass-and-play/net names the winner; solo keeps the classic YOU framing.
+    const passplay = data.matchType === 'passplay' || data.matchType === 'net';
     const winnerIdentity = won ? data.awayIdentity : data.homeIdentity;
     const headline = tied
       ? 'TIE GAME!'
@@ -95,11 +96,28 @@ export class ResultScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     // Every finished game feeds the sticker album (drafted / won-with).
-    // Pass-and-play: both squads used this device — the household album
-    // credits both, foil to the winning nine.
+    // Pass-and-play/net: both squads played in this household's game — the
+    // album credits both, foil to the winning nine.
     recordAlbumGame(data.playerTeam, won);
-    if (data.matchType === 'passplay' && data.aiTeam) {
+    if (passplay && data.aiTeam) {
       recordAlbumGame(data.aiTeam, !won && !tied);
+    }
+
+    if (data.matchType === 'net') {
+      // No rematch in v1 — one button, no blame, session closed.
+      makeButton(this, {
+        x: cx,
+        y: GAME_HEIGHT - 52,
+        label: 'GOOD GAME!',
+        icon: '🏠',
+        width: 340,
+        height: 82,
+        onClick: () => {
+          dropSession();
+          this.scene.start('Schoolyard', { straightToDraft: false });
+        },
+      });
+      return;
     }
 
     if (data.seasonGame) {

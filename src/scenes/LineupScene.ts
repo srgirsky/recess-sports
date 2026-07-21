@@ -14,7 +14,8 @@ import type { TeamState } from '../data/types';
 import type { PositionId } from '../systems/geometry';
 import { autoAssign, swapOrder, swapPositions, validateLineup, type LineupPlan } from '../systems/lineup';
 import { makeButton } from '../ui/Button';
-import { heading, ribbon, FONT } from '../ui/theme';
+import { heading, ribbon, pill, FONT } from '../ui/theme';
+import { activeSession, dropSession } from '../net/peer';
 import { popIn } from '../ui/anim';
 import * as audio from '../systems/audio';
 import { kidVoice, commentatorProfile } from '../systems/voices';
@@ -80,11 +81,18 @@ export class LineupScene extends Phaser.Scene {
   private rival!: TeamIdentity;
   private identityUi?: Phaser.GameObjects.Container;
   private seasonGame = false;
-  private matchType: 'solo' | 'passplay' = 'solo';
+  private matchType: 'solo' | 'passplay' | 'net' = 'solo';
   private pass: 1 | 2 = 1;
   private aPlan?: LineupPlan; // pass 1's plan, carried into pass 2
   private aIdentity?: TeamIdentity;
   private editingTeam: string[] = [];
+  // Net: both devices edit their OWN nine at the same time; PLAY BALL waits
+  // for the friend's plan to arrive before either game starts.
+  private netRole?: 'host' | 'guest';
+  private theirPlan?: LineupPlan;
+  private netReady = false; // we pressed PLAY BALL
+  private awayIdentity?: TeamIdentity;
+  private homeIdentity?: TeamIdentity;
 
   constructor() {
     super('Lineup');
@@ -93,7 +101,10 @@ export class LineupScene extends Phaser.Scene {
   create(
     data: TeamState & {
       seasonGame?: boolean;
-      matchType?: 'solo' | 'passplay';
+      matchType?: 'solo' | 'passplay' | 'net';
+      netRole?: 'host' | 'guest';
+      identity?: TeamIdentity;
+      rival?: TeamIdentity;
       pass?: 1 | 2;
       aPlan?: LineupPlan;
       aIdentity?: TeamIdentity;
@@ -105,14 +116,44 @@ export class LineupScene extends Phaser.Scene {
     this.pass = data.pass ?? 1;
     this.aPlan = data.aPlan;
     this.aIdentity = data.aIdentity;
+    this.netRole = data.netRole;
+    this.theirPlan = undefined;
+    this.netReady = false;
     // Pass-and-play runs this screen twice: pass 1 edits Player 1's nine,
-    // pass 2 (after the handoff) edits Player 2's.
+    // pass 2 (after the handoff) edits Player 2's. Net runs it ONCE per
+    // device, each editing its own seat concurrently.
     const passB = this.matchType === 'passplay' && this.pass === 2;
-    this.editingTeam = passB ? data.aiTeam : data.playerTeam;
+    const netGuest = this.matchType === 'net' && this.netRole === 'guest';
+    this.editingTeam = passB || netGuest ? data.aiTeam : data.playerTeam;
     this.plan = autoAssign(this.editingTeam);
     this.aiPlan = autoAssign(data.aiTeam);
     this.selected = undefined;
-    if (passB) {
+    if (this.matchType === 'net') {
+      // Identities were agreed in the lobby — fixed for this game.
+      this.awayIdentity = data.identity;
+      this.homeIdentity = data.rival;
+      this.identity = (netGuest ? data.rival : data.identity) ?? { color: 0, logo: 0 };
+      this.rival = (netGuest ? data.identity : data.rival) ?? { color: 1, logo: 1 };
+      const session = activeSession();
+      if (session) {
+        const un = session.onMessage((m) => {
+          if (m.t === 'lineup') {
+            this.theirPlan = m.plan;
+            if (this.netReady) this.netStart();
+          }
+        });
+        const unStatus = session.onStatus((s) => {
+          if (s === 'gone') {
+            dropSession();
+            this.scene.start('Schoolyard', { straightToDraft: false });
+          }
+        });
+        this.events.once('shutdown', () => {
+          un();
+          unStatus();
+        });
+      }
+    } else if (passB) {
       // Player 2's identity is per-session; steer clear of Player 1's color.
       const taken = this.aIdentity?.color ?? -1;
       this.identity = { color: taken === 3 ? 4 : 3, logo: 3 };
@@ -120,8 +161,10 @@ export class LineupScene extends Phaser.Scene {
       this.identity = getTeamIdentity() ?? { color: 0, logo: 0 };
     }
     // Season games face the WEEK's scheduled rival; exhibitions rotate.
-    const season = this.seasonGame ? getSeason() : null;
-    this.rival = season ? season.rivals[season.gameIndex] : pickRival(this.identity, getGamesPlayed());
+    if (this.matchType !== 'net') {
+      const season = this.seasonGame ? getSeason() : null;
+      this.rival = season ? season.rivals[season.gameIndex] : pickRival(this.identity, getGamesPlayed());
+    }
 
     // Chalkboard-green backdrop, like the dugout wall.
     const bg = this.add.graphics();
@@ -175,6 +218,26 @@ export class LineupScene extends Phaser.Scene {
     if (!validateLineup(this.plan, this.editingTeam)) return; // can't happen via swaps
     audio.cheer();
 
+    if (this.matchType === 'net') {
+      if (this.netReady) return; // double-tap guard
+      this.netReady = true;
+      activeSession()?.send({
+        t: 'lineup',
+        seat: this.netRole === 'guest' ? 1 : 0,
+        plan: this.plan,
+      });
+      if (this.theirPlan) {
+        this.netStart();
+      } else {
+        const wait = pill(this, GAME_WIDTH / 2, GAME_HEIGHT - 130, 'waiting for your friend… 🔍', {
+          fill: COLORS.cream,
+          fontSize: 20,
+        });
+        this.tweens.add({ targets: wait.container, alpha: 0.5, duration: 500, yoyo: true, repeat: -1 });
+      }
+      return;
+    }
+
     if (this.matchType === 'passplay' && this.pass === 1) {
       // Hand the device to Player 2 for THEIR lineup + identity.
       audio.say('Player two, your turn!', commentatorProfile('A'), 'flush');
@@ -219,6 +282,29 @@ export class LineupScene extends Phaser.Scene {
     });
   }
 
+  /** Net: both plans known — identical Game payloads on both devices. */
+  private netStart(): void {
+    const myIsHost = this.netRole !== 'guest';
+    const hostPlan = myIsHost ? this.plan : this.theirPlan!;
+    const guestPlan = myIsHost ? this.theirPlan! : this.plan;
+    const payload: GameInitData = {
+      playerTeam: hostPlan.order,
+      aiTeam: guestPlan.order,
+      playerPlan: hostPlan,
+      aiPlan: guestPlan,
+      identity: this.awayIdentity,
+      rival: this.homeIdentity,
+      matchType: 'net',
+      netRole: this.netRole,
+    };
+    this.cameras.main.fadeOut(240, 0, 0, 0);
+    const start = () => this.scene.start('Game', payload);
+    this.time.delayedCall(260, () => {
+      if (this.load.isLoading()) this.load.once('complete', start);
+      else start();
+    });
+  }
+
   /**
    * MY TEAM: a color-dot row + logo-emoji grid in the middle column. The
    * "name" is the spoken color+logo pair — naming a team requires zero
@@ -226,6 +312,8 @@ export class LineupScene extends Phaser.Scene {
    */
   private buildIdentityPicker(): void {
     this.identityUi?.destroy();
+    // Net: identities were agreed in the lobby — show the badge, no editing.
+    const locked = this.matchType === 'net';
     const root = this.add.container(440, 150);
     const title = this.add
       .text(0, -34, 'MY TEAM', { fontFamily: FONT, fontSize: '20px', color: '#fff4de', fontStyle: 'bold' })
@@ -235,6 +323,10 @@ export class LineupScene extends Phaser.Scene {
     const preview = this.add.circle(0, 16, 34, jersey).setStrokeStyle(4, COLORS.ink, 0.9);
     const logo = this.add.text(0, 16, TEAM_LOGOS[this.identity.logo].icon, { fontSize: '34px' }).setOrigin(0.5);
     root.add([title, preview, logo]);
+    if (locked) {
+      this.identityUi = root;
+      return;
+    }
 
     UNIFORM_COLORS.forEach((u, i) => {
       const dot = this.add
