@@ -47,26 +47,39 @@ export interface FieldGeometry {
   /** Foul-pole x's — always foulPoleXAt(fence y), so lines hit the bags. */
   fenceLeftX: number;
   fenceRightX: number;
+  /**
+   * Extra depth (px) the fence arcs beyond the pole-to-pole chord at
+   * mid-fence — a real ballpark curve, deepest toward center. MUST be ≥ 0
+   * (bulge away from home): that keeps fenceYAtX convex in x, which is what
+   * keeps clampToField's convex-region argument (and sim containment) valid.
+   */
+  fenceBulge: number;
   /** Grounder roll-speed multiplier. */
   rollMult: number;
   obstacles: Array<{ x: number; y: number; r: number }>;
 }
 
-/** The classic park — identical to the pre-venue constants. */
+/** The classic park — identical to the pre-venue constants (+ its arc). */
 export const DEFAULT_GEOMETRY: FieldGeometry = {
   fenceLeftY: FENCE_Y,
   fenceRightY: FENCE_Y,
   fenceLeftX: foulPoleXAt(FENCE_Y).left,
   fenceRightX: foulPoleXAt(FENCE_Y).right,
+  fenceBulge: 24,
   rollMult: 1,
   obstacles: [],
 };
+
+/** The arc's depth beyond the straight chord at fence parameter t. */
+function bulgeAt(geo: FieldGeometry, t: number): number {
+  return geo.fenceBulge * 4 * t * (1 - t);
+}
 
 /** The point on the fence at spray fraction t (0 = left line, 1 = right). */
 export function fencePointAt(geo: FieldGeometry, t: number): Vec {
   return {
     x: geo.fenceLeftX + t * (geo.fenceRightX - geo.fenceLeftX),
-    y: geo.fenceLeftY + t * (geo.fenceRightY - geo.fenceLeftY),
+    y: geo.fenceLeftY + t * (geo.fenceRightY - geo.fenceLeftY) - bulgeAt(geo, t),
   };
 }
 
@@ -83,18 +96,34 @@ export const FOUL_ALLOWANCE = 28;
 /** Sanity floor: nobody runs off the bottom of the 960x640 screen. */
 export const FIELD_BOTTOM_Y = 600;
 
-/** Fence y at screen x, interpolated along this venue's fence line. */
+/** Fence y at screen x, evaluated along this venue's fence arc. */
 export function fenceYAtX(geo: FieldGeometry, x: number): number {
   const t = Math.min(1, Math.max(0, (x - geo.fenceLeftX) / (geo.fenceRightX - geo.fenceLeftX)));
-  return geo.fenceLeftY + t * (geo.fenceRightY - geo.fenceLeftY);
+  return geo.fenceLeftY + t * (geo.fenceRightY - geo.fenceLeftY) - bulgeAt(geo, t);
 }
 
 /**
- * Clamp a point into the playable field: in front of the fence line (by
+ * Inward (toward-home) unit normal of the fence arc at screen x — what a
+ * caromed ball reflects off. Past the poles t clamps, so the wall reads as
+ * flat there (matching fenceYAtX).
+ */
+export function fenceNormalAt(geo: FieldGeometry, x: number): Vec {
+  const t = Math.min(1, Math.max(0, (x - geo.fenceLeftX) / (geo.fenceRightX - geo.fenceLeftX)));
+  const tx = geo.fenceRightX - geo.fenceLeftX;
+  const ty = geo.fenceRightY - geo.fenceLeftY - geo.fenceBulge * 4 * (1 - 2 * t);
+  // Perpendicular of the tangent, oriented +y (into the field): tx > 0 always.
+  const len = Math.hypot(tx, ty);
+  return { x: -ty / len, y: tx / len };
+}
+
+/**
+ * Clamp a point into the playable field: in front of the fence (by
  * `margin`), inside the foul cone (+FOUL_ALLOWANCE), above FIELD_BOTTOM_Y.
- * The region is an intersection of half-planes (convex), so moveToward
- * between two in-bounds points can never exit — only externally-targeted
- * moves (the steered fielder) need this.
+ * The region stays convex — the foul cone and floor are half-planes, and
+ * fenceYAtX is a CONVEX function of x whenever fenceBulge ≥ 0 (the arc
+ * bulges away from home), so {y ≥ fenceYAtX(x)} is convex too. That's why
+ * moveToward between two in-bounds points can never exit — only
+ * externally-targeted moves (the steered fielder) need this.
  */
 export function clampToField(geo: FieldGeometry, p: Vec, margin = FIELD_MARGIN): Vec {
   // y first: pushing y down toward home narrows the cone, so the x-clamp
