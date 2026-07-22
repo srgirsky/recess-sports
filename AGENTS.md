@@ -84,6 +84,19 @@ Phaser 3 · TypeScript · Vite · vitest. Static site, no backend, deployed free
 
 `npm run dev` (play locally) · `npm test` (logic tests) · `npm run build` (→ `dist/`). Full details + deploy in `README.md`.
 
+## Shipping changes (the standard delivery process)
+
+Every non-trivial change ships as a **pull request against `main` — never a direct push**. GitHub Pages auto-deploys `main`, so merging IS deploying; the PR is the gate between "done" and "live".
+
+1. Start from clean, up-to-date `main`; branch with a typed slug: `feat/<slug>`, `fix/<slug>`, `docs/<slug>`, `chore/<slug>`.
+2. Implement; keep `systems/` pure + covered by `npm test`, and run the goldlog gate (`scripts/goldlog.browser.js`) if the change touches anything on the seeded rng path.
+3. Update the owning docs (see "Keeping docs current") **in the same branch** — doc drift is a review blocker, not a follow-up.
+4. Commit style: a single imperative summary line (see `git log` for the house voice); agent-authored commits carry their `Co-Authored-By` trailer.
+5. Push the branch and open the PR with `gh pr create` against `main`. The body summarizes **what changed** and **how it was verified** (tests run, headless/manual playtest), and agent-authored PRs end with the "Generated with Claude Code" footer.
+6. Nothing is live until the PR merges — call that out when handing off, so nobody waits on a deploy that hasn't happened.
+
+Tiny exception: pure typo/doc fixes may go straight to `main` at the maintainer's discretion — agents always use the PR path.
+
 ## Gotchas (things that will bite you)
 
 - **Background tabs pause the game.** Browsers stop `requestAnimationFrame` when the tab isn't foreground, which freezes Phaser's clock — timers (AI pick, pitch) don't fire and input drops. Not a bug; playtest with the tab focused. For automated/headless visual checks, drive `window.__game` and force swings via `gameScene.resolvePlayerSwing(band, false)` (top half) or pitches via `gameScene.resolvePlayerPitch(band)` (bottom half — wait for `phase === 'aiming'`). **Pumping the clock correctly matters**: call `game.loop.step(t)` with monotonically increasing `t` (always > `game.loop.time` — screenshots can advance the real clock behind your back), NOT `game.step(t, delta)` (leaves `loop.delta` stale). And Phaser's tweens run on **wall-clock `Date.now()`**, not the game clock — to fast-forward tweens headlessly you must also rewind each active scene's `scene.tweens.startTime` by your step size per pump. Timers (`delayedCall`) follow the loop clock; tweens follow `Date.now()` — pump both or animations desync from logic.
