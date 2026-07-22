@@ -812,18 +812,30 @@ function accessoryRear(v: VisualParams): string {
 /**
  * The head seen from BEHIND: neck, skull in gSkin, both ears, an under-crown
  * shade for volume, rear hair, rear accessory. NO face() — that's the point.
+ * `profile` turns it a quarter toward the pitcher (screen-right): the far ear
+ * disappears behind the turn and a cheek/nose bump, brow, and one eye peek
+ * past the right silhouette edge — the Backyard "you can see them watching
+ * the pitch" cheat. No face() colors, so the rear-no-face invariant holds.
  */
-function headRearGroup(c: Ctx, v: VisualParams, hRear: string): string {
+function headRearGroup(c: Ctx, v: VisualParams, hRear: string, profile = false): string {
+  const farEar = profile ? '' : `<ellipse cx="148" cy="86" rx="9" ry="11" fill="${c.gSkin}" ${c.S}/>`;
+  const profileHint = profile
+    ? `
+    <path d="M 147 82 q 16 8 8 20 q -5 8 -14 5 Z" fill="${c.gSkin}" ${c.S}/>
+    <path d="M 131 79 q 9 -3 14 1" fill="none" stroke="${OUT}" stroke-width="3.5" stroke-linecap="round"/>
+    <ellipse cx="140" cy="89" rx="4.5" ry="6" fill="#4a3628" stroke="none"/>`
+    : '';
   return `
     <rect x="90" y="${120 - c.m.neck}" width="20" height="${22 + c.m.neck}" rx="8" fill="${c.gSkin}" ${c.S}/>
     <rect x="90" y="${120 - c.m.neck}" width="20" height="8" rx="4" fill="${c.skinDk}" stroke="none"/>
     <g transform="${headXform(c)}">
     <circle cx="${HEAD.cx}" cy="${HEAD.cy}" r="${c.m.headR}" fill="${c.gSkin}" ${c.S}/>
     <ellipse cx="52" cy="86" rx="9" ry="11" fill="${c.gSkin}" ${c.S}/>
-    <ellipse cx="148" cy="86" rx="9" ry="11" fill="${c.gSkin}" ${c.S}/>
+    ${farEar}
     <clipPath id="hcr"><circle cx="${HEAD.cx}" cy="${HEAD.cy}" r="${c.m.headR}"/></clipPath>
     <ellipse cx="100" cy="${HEAD.cy + c.m.headR}" rx="${c.m.headR}" ry="24" fill="${c.skinDk}" opacity="0.35" clip-path="url(#hcr)"/>
     ${hRear}
+    ${profileHint}
     ${accessoryRear(v)}
     </g>`;
 }
@@ -1241,9 +1253,27 @@ function batProp(gx: number, gy: number, deg: number): string {
 }
 
 /**
+ * batProp scaled about the grip: the one way to draw a longer/foreshortened
+ * bat (the stance frames run 1.3 — Backyard bats are ~70% of body height —
+ * while swing frames shrink toward the camera). gripPoints takes the same
+ * scale so fists stay ON the resized handle.
+ */
+function batAt(gx: number, gy: number, deg: number, s = 1): string {
+  if (s === 1) return batProp(gx, gy, deg);
+  return `
+    <g transform="translate(${gx} ${gy}) scale(${s}) translate(${-gx} ${-gy})">
+      ${batProp(gx, gy, deg)}
+    </g>`;
+}
+
+/** How much longer the resting/load bats run than the base prop. */
+const BAT_STANCE_SCALE = 1.3;
+
+/**
  * Batting stance, side view facing RIGHT (toward the pitch): wide planted
- * legs, side torso leaned into the plate, both hands gripping a bat cocked
- * up over the back shoulder. The bat pose IS the batter — no runtime prop.
+ * legs, side torso leaned into the plate, both hands stacked at CHEST height
+ * with the long barrel rising past the cap beside the head — the Backyard
+ * high-cocked silhouette. The bat pose IS the batter — no runtime prop.
  */
 function poseBat(c: Ctx, v: VisualParams, hFront: string): string {
   const w = Math.max(14, Math.round(c.m.halfW * 0.34));
@@ -1258,33 +1288,38 @@ function poseBat(c: Ctx, v: VisualParams, hFront: string): string {
     ${sideShoe(58 - spread, 240, -8)}
     ${capsule(`M 102 200 Q ${122 + spread / 2} 214 ${132 + spread} 228`, PANTS, w)}
     ${sideShoe(136 + spread, 240, 6)}`;
-  // Grip low behind the back shoulder; the barrel sweeps up-left, well clear
-  // of the head silhouette (head left edge ≈ x 56 with its offset).
-  const grip = { x: 70, y: (stance === 'high' ? 146 : stance === 'crouch' ? 166 : 158) + drop };
-  const batDeg = stance === 'high' ? -24 : stance === 'open' ? -54 : -40;
+  // Hands stacked HIGH beside the back shoulder (chest/chin height), barrel
+  // near-vertical rising past the cap on the head's left — the giant chibi
+  // head means the bat rides BESIDE the silhouette, never across it.
+  const grip = {
+    x: stance === 'high' ? 48 : stance === 'open' ? 54 : 50,
+    y: (stance === 'high' ? 134 : stance === 'crouch' ? 148 : 140) + drop,
+  };
+  const batDeg = stance === 'high' ? -2 : stance === 'open' ? -14 : -6;
   // Far/near arm split (like armsRun): the far arm folds at a REAL elbow —
-  // jersey upper arm down-back, skin forearm back up to the grip (the bent
-  // back elbow is most of what makes a batting load read as loaded). The near
-  // arm crosses in front with a slighter bend; hands stacked on the handle.
-  const gp = gripPoints(grip.x, grip.y, batDeg);
-  const elbow = { x: 82, y: 174 + drop };
+  // jersey upper arm down-back, skin forearm folding UP to the high grip (the
+  // bent back elbow is most of what makes a batting load read as loaded). The
+  // near arm crosses in front with a slighter bend; hands stacked on the handle.
+  const gp = gripPoints(grip.x, grip.y, batDeg, BAT_STANCE_SCALE);
+  const elbow = { x: 74, y: 162 + drop };
   const armFar = `
-    ${capsule(`M 98 ${152 + drop} Q 90 ${164 + drop} ${elbow.x} ${elbow.y}`, darken(c.jerseyDk, 0.1), 13)}
-    ${capsule(`M ${elbow.x} ${elbow.y} Q 72 ${162 + drop} ${gp.far.x} ${gp.far.y}`, darken(c.skin, 0.1), 11)}
+    ${capsule(`M 98 ${152 + drop} Q 86 ${160 + drop} ${elbow.x} ${elbow.y}`, darken(c.jerseyDk, 0.1), 13)}
+    ${capsule(`M ${elbow.x} ${elbow.y} Q 54 ${144 + drop} ${gp.far.x} ${gp.far.y}`, darken(c.skin, 0.1), 11)}
     ${gripFistFar(c, gp.far, batDeg)}`;
   const armNear = `
-    ${capsule(`M 104 ${154 + drop} Q 96 ${164 + drop} 88 ${166 + drop}`, c.jerseyDk, 13)}
-    ${capsule(`M 88 ${166 + drop} Q 78 ${160 + drop} ${gp.near.x} ${gp.near.y}`, c.skin, 11)}
+    ${capsule(`M 104 ${154 + drop} Q 92 ${158 + drop} 84 ${156 + drop}`, c.jerseyDk, 13)}
+    ${capsule(`M 84 ${156 + drop} Q 66 ${146 + drop} ${gp.near.x} ${gp.near.y}`, c.skin, 11)}
     ${gripFistNear(c, gp.near, batDeg)}`;
   const head = `
     <g transform="translate(6 ${2 + drop}) rotate(3 ${HEAD.cx} ${HEAD.cy})">
       ${headGroup(c, v, hFront, 0.8)}
     </g>`;
+  const bat = batAt(grip.x, grip.y, batDeg, BAT_STANCE_SCALE);
   if (c.usesChair) {
     const chair = wheelchairSide(c, 1);
-    return `${batProp(grip.x, grip.y, batDeg)}${armFar}${chair.behind}${torsoSide(c, 2)}${chair.front}${armNear}${head}`;
+    return `${bat}${armFar}${chair.behind}${torsoSide(c, 2)}${chair.front}${armNear}${head}`;
   }
-  return `${batProp(grip.x, grip.y, batDeg)}${armFar}${legs}${torsoSide(c, drop)}${armNear}${head}`;
+  return `${bat}${armFar}${legs}${torsoSide(c, drop)}${armNear}${head}`;
 }
 
 /**
@@ -1296,21 +1331,23 @@ function poseBat(c: Ctx, v: VisualParams, hFront: string): string {
 function poseSwingLoad(c: Ctx, v: VisualParams, hFront: string): string {
   const w = Math.max(14, Math.round(c.m.halfW * 0.34));
   const pantsDk = darken(PANTS, 0.16);
-  const grip = { x: 66, y: 152 };
-  const batDeg = -32;
+  // Coil from the high stance: hands push a touch further back-up, the
+  // barrel tips a few degrees more, the lead leg strides.
+  const grip = { x: 46, y: 134 };
+  const batDeg = -12;
   const legs = `
     ${capsule(`M 92 198 Q 74 214 64 228`, pantsDk, w)}
     ${sideShoe(58, 240, -8)}
     ${capsule(`M 102 200 Q 126 210 142 224`, PANTS, w)}
     ${sideShoe(148, 236, 10)}`;
-  const gp = gripPoints(grip.x, grip.y, batDeg);
+  const gp = gripPoints(grip.x, grip.y, batDeg, BAT_STANCE_SCALE);
   const armFar = `
-    ${capsule(`M 98 152 Q 90 162 84 172`, darken(c.jerseyDk, 0.1), 13)}
-    ${capsule(`M 84 172 Q 72 160 ${gp.far.x} ${gp.far.y}`, darken(c.skin, 0.1), 11)}
+    ${capsule(`M 98 152 Q 84 158 70 158`, darken(c.jerseyDk, 0.1), 13)}
+    ${capsule(`M 70 158 Q 48 138 ${gp.far.x} ${gp.far.y}`, darken(c.skin, 0.1), 11)}
     ${gripFistFar(c, gp.far, batDeg)}`;
   const armNear = `
-    ${capsule(`M 104 154 Q 96 162 90 164`, c.jerseyDk, 13)}
-    ${capsule(`M 90 164 Q 78 158 ${gp.near.x} ${gp.near.y}`, c.skin, 11)}
+    ${capsule(`M 104 154 Q 88 156 80 152`, c.jerseyDk, 13)}
+    ${capsule(`M 80 152 Q 60 140 ${gp.near.x} ${gp.near.y}`, c.skin, 11)}
     ${gripFistNear(c, gp.near, batDeg)}`;
   // Coiled back: the torso counter-rotates away from the pitch.
   const torso = `<g transform="rotate(-4 100 185)">${torsoSide(c, 0)}</g>`;
@@ -1318,11 +1355,12 @@ function poseSwingLoad(c: Ctx, v: VisualParams, hFront: string): string {
     <g transform="translate(4 2) rotate(2 ${HEAD.cx} ${HEAD.cy})">
       ${headGroup(c, v, hFront, 0.8)}
     </g>`;
+  const bat = batAt(grip.x, grip.y, batDeg, BAT_STANCE_SCALE);
   if (c.usesChair) {
     const chair = wheelchairSide(c, 1);
-    return `${batProp(grip.x, grip.y, batDeg)}${armFar}${chair.behind}${torsoSide(c, 2)}${chair.front}${armNear}${head}`;
+    return `${bat}${armFar}${chair.behind}${torsoSide(c, 2)}${chair.front}${armNear}${head}`;
   }
-  return `${batProp(grip.x, grip.y, batDeg)}${armFar}${legs}${torso}${armNear}${head}`;
+  return `${bat}${armFar}${legs}${torso}${armNear}${head}`;
 }
 
 /**
@@ -1338,11 +1376,8 @@ function poseSwingMid(c: Ctx, v: VisualParams, hFront: string): string {
   const pantsDk = darken(PANTS, 0.16);
   const grip = { x: 118, y: 170 };
   const batDeg = 100;
-  const batScale = 0.72;
-  const bat = `
-    <g transform="translate(${grip.x} ${grip.y}) scale(${batScale}) translate(${-grip.x} ${-grip.y})">
-      ${batProp(grip.x, grip.y, batDeg)}
-    </g>`;
+  const batScale = 0.8; // foreshortened vs the 1.3 stance bat, but still long
+  const bat = batAt(grip.x, grip.y, batDeg, batScale);
   const swoosh = `
     <g fill="none" stroke="#ffffff" stroke-linecap="round">
       <path d="M 30 90 A 90 90 0 0 1 180 168" stroke-width="7" opacity="0.3"/>
@@ -1799,30 +1834,33 @@ function poseBatRear(c: Ctx, v: VisualParams, hRear: string): string {
   // Stance variant mirrors poseBat: grip height + bat angle + crouch drop.
   const stance = v.stance;
   const drop = stance === 'crouch' ? 9 : 0;
-  // Bat leans up-right over the shoulder, drawn first (it's on the far side).
-  // Grip low beside the right shoulder so the barrel clears the head — its
-  // axis passes ≈ x 174 at head height vs the head's right edge ≈ 153.
-  const grip = { x: 138, y: (stance === 'high' ? 146 : stance === 'crouch' ? 166 : 158) + drop };
-  const batDeg = stance === 'high' ? 20 : stance === 'open' ? 46 : 32;
-  const bat = batProp(grip.x, grip.y, batDeg);
-  // Both arms hang from the shoulder line (y≈150) across the jersey back to
-  // the grip. The far (left) arm folds at a real elbow — jersey upper arm
-  // down across the back, skin forearm back up to the grip — mirroring
+  // Hands stacked HIGH beside the right shoulder (chest/chin height), barrel
+  // near-vertical rising past the cap on the head's right — the Backyard
+  // silhouette. Drawn first: the bat's inner edge tucks behind the big head.
+  const grip = {
+    x: stance === 'high' ? 152 : stance === 'open' ? 146 : 150,
+    y: (stance === 'high' ? 134 : stance === 'crouch' ? 148 : 140) + drop,
+  };
+  const batDeg = stance === 'high' ? 2 : stance === 'open' ? 14 : 6;
+  const bat = batAt(grip.x, grip.y, batDeg, BAT_STANCE_SCALE);
+  // Both arms reach from the shoulder line (y≈150) across the jersey back UP
+  // to the high grip. The far (left) arm folds at a real elbow — jersey upper
+  // arm across the back, skin forearm rising to the grip — mirroring
   // poseBat's loaded back elbow; two fists wrap the handle above the knob.
   const shL = 100 - (halfW - 6);
   const shR = 100 + (halfW - 6);
-  const gp = gripPoints(grip.x, grip.y, batDeg);
-  const elbow = { x: 124, y: 170 + drop };
+  const gp = gripPoints(grip.x, grip.y, batDeg, BAT_STANCE_SCALE);
+  const elbow = { x: 128, y: 160 + drop };
   const arms = `
-    ${capsule(`M ${shL} 152 Q ${shL + 10} ${164 + drop} ${elbow.x} ${elbow.y}`, darken(c.jerseyDk, 0.1), 13)}
-    ${capsule(`M ${elbow.x} ${elbow.y} Q ${elbow.x + 12} ${elbow.y - 4} ${gp.far.x} ${gp.far.y}`, darken(c.skin, 0.1), 11)}
+    ${capsule(`M ${shL} 152 Q ${shL + 20} ${166 + drop} ${elbow.x} ${elbow.y}`, darken(c.jerseyDk, 0.1), 13)}
+    ${capsule(`M ${elbow.x} ${elbow.y} Q ${elbow.x + 18} ${elbow.y - 14} ${gp.far.x} ${gp.far.y}`, darken(c.skin, 0.1), 11)}
     ${gripFistFar(c, gp.far, batDeg)}
-    ${capsule(`M ${shR} 152 Q ${grip.x - 8} 152 ${gp.near.x} ${gp.near.y}`, c.jerseyDk, 13)}
+    ${capsule(`M ${shR} 152 Q ${grip.x - 10} 150 ${gp.near.x} ${gp.near.y}`, c.jerseyDk, 13)}
     ${gripFistNear(c, gp.near, batDeg)}`;
-  // Head tips slightly toward the pitch (up-right on screen), no face.
+  // Head turned a quarter toward the pitch: profile cheek/eye on the right.
   const head = `
-    <g transform="translate(3 0) rotate(4 ${HEAD.cx} ${HEAD.cy})">
-      ${headRearGroup(c, v, hRear)}
+    <g transform="translate(3 0) rotate(5 ${HEAD.cx} ${HEAD.cy})">
+      ${headRearGroup(c, v, hRear, true)}
     </g>`;
   if (c.usesChair) {
     // Rear view of the chair ≈ front geometry (two wheels flanking the seat).
@@ -1850,22 +1888,23 @@ function poseBatRear(c: Ctx, v: VisualParams, hRear: string): string {
  */
 function poseSwingLoadRear(c: Ctx, v: VisualParams, hRear: string): string {
   const { halfW } = c.m;
-  const grip = { x: 134, y: 152 };
-  const batDeg = 24;
-  const bat = batProp(grip.x, grip.y, batDeg);
+  // Coil from the high stance: hands push back-up, barrel tips a few degrees.
+  const grip = { x: 154, y: 134 };
+  const batDeg = 12;
+  const bat = batAt(grip.x, grip.y, batDeg, BAT_STANCE_SCALE);
   const shL = 100 - (halfW - 6);
   const shR = 100 + (halfW - 6);
-  const gp = gripPoints(grip.x, grip.y, batDeg);
-  const elbow = { x: 122, y: 168 };
+  const gp = gripPoints(grip.x, grip.y, batDeg, BAT_STANCE_SCALE);
+  const elbow = { x: 130, y: 158 };
   const arms = `
-    ${capsule(`M ${shL} 152 Q ${shL + 8} 162 ${elbow.x} ${elbow.y}`, darken(c.jerseyDk, 0.1), 13)}
-    ${capsule(`M ${elbow.x} ${elbow.y} Q 132 158 ${gp.far.x} ${gp.far.y}`, darken(c.skin, 0.1), 11)}
+    ${capsule(`M ${shL} 152 Q ${shL + 22} 166 ${elbow.x} ${elbow.y}`, darken(c.jerseyDk, 0.1), 13)}
+    ${capsule(`M ${elbow.x} ${elbow.y} Q ${elbow.x + 20} ${elbow.y - 14} ${gp.far.x} ${gp.far.y}`, darken(c.skin, 0.1), 11)}
     ${gripFistFar(c, gp.far, batDeg)}
-    ${capsule(`M ${shR} 152 Q 128 150 ${gp.near.x} ${gp.near.y}`, c.jerseyDk, 13)}
+    ${capsule(`M ${shR} 152 Q 136 148 ${gp.near.x} ${gp.near.y}`, c.jerseyDk, 13)}
     ${gripFistNear(c, gp.near, batDeg)}`;
   const head = `
-    <g transform="translate(4 0) rotate(6 ${HEAD.cx} ${HEAD.cy})">
-      ${headRearGroup(c, v, hRear)}
+    <g transform="translate(4 0) rotate(7 ${HEAD.cx} ${HEAD.cy})">
+      ${headRearGroup(c, v, hRear, true)}
     </g>`;
   if (c.usesChair) {
     return `${bat}${wheelchairFront()}${torsoRear(c)}${arms}${head}`;
@@ -1894,11 +1933,8 @@ function poseSwingMidRear(c: Ctx, v: VisualParams, hRear: string): string {
   const { halfW } = c.m;
   const grip = { x: 84, y: 168 };
   const batDeg = -100;
-  const batScale = 0.72;
-  const bat = `
-    <g transform="translate(${grip.x} ${grip.y}) scale(${batScale}) translate(${-grip.x} ${-grip.y})">
-      ${batProp(grip.x, grip.y, batDeg)}
-    </g>`;
+  const batScale = 0.8; // foreshortened vs the 1.3 stance bat, but still long
+  const bat = batAt(grip.x, grip.y, batDeg, batScale);
   const swoosh = `
     <g fill="none" stroke="#ffffff" stroke-linecap="round">
       <path d="M 170 90 A 90 90 0 0 0 20 168" stroke-width="7" opacity="0.3"/>
