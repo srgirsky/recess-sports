@@ -722,6 +722,9 @@ export const MODES: Record<
 /** Character-animation timing/feel. */
 export const ANIM = {
   SWING_MS: 120, // how fast the bat whips through the swing
+  SWING_CONTACT_FRAC: 0.35, // when the swingMid contact frame lands inside SWING_MS (hit-pause catches it)
+  SWING_FOLLOW_MS: 420, // how long the follow-through frame holds before restoring the stance
+  SWING_WHIFF_EXTRA_MS: 260, // extra follow-through hold on a whiff (sells the over-swing)
   WINDUP_MS: 380, // pitcher lean-back before the release (the "here it comes" telegraph)
   RUN_BOB: 7, // pixels a runner bounces while running
   IDLE_BOB: 5, // pixels the idle "breathing" bob rises

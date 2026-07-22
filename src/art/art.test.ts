@@ -40,7 +40,7 @@ describe('character art', () => {
   it('rear poses show no face', () => {
     // face() always paints the #ff9d9d cheek circles; a rear view must not.
     for (const char of ROSTER) {
-      for (const pose of ['batRear', 'catchRear'] as const) {
+      for (const pose of ['batRear', 'catchRear', 'swingMidRear', 'swingFollowRear'] as const) {
         expect(
           buildCharacterSVG(char.visual, pose).includes('ff9d9d'),
           `${char.id}/${pose} rendered a face`
@@ -70,7 +70,7 @@ describe('character art', () => {
     // or afro/long-hair kids bat and dive with their face hidden.
     const afroKid = ROSTER.find((c) => c.visual.hair === 'afro');
     expect(afroKid).toBeDefined();
-    for (const pose of ['bat', 'slide', 'throw', 'dive', 'run1'] as const) {
+    for (const pose of ['bat', 'slide', 'throw', 'dive', 'run1', 'swingMid', 'swingFollow'] as const) {
       const svg = buildCharacterSVG(afroKid!.visual, pose);
       const afroIdx = svg.indexOf('a56 52 0 0 1 0 104'); // the afro dome path
       const faceIdx = svg.indexOf('ff9d9d'); // face() cheek color
@@ -90,7 +90,7 @@ describe('character art', () => {
   it('long back hair also stays behind the face in side poses', () => {
     const longKid = ROSTER.find((c) => c.visual.hair === 'long');
     expect(longKid).toBeDefined();
-    for (const pose of ['bat', 'slide', 'throw', 'dive', 'run1'] as const) {
+    for (const pose of ['bat', 'slide', 'throw', 'dive', 'run1', 'swingMid', 'swingFollow'] as const) {
       const svg = buildCharacterSVG(longKid!.visual, pose);
       const hairIdx = svg.indexOf('M 48 70'); // the long-drape back path
       const faceIdx = svg.indexOf('ff9d9d');
@@ -157,11 +157,54 @@ describe('character art', () => {
     // an outfit renders byte-identically to the same kid without one.
     for (const char of ROSTER) {
       const { outfit: _drop, ...noOutfit } = char.visual;
-      for (const pose of ['stand', 'bat', 'batRear', 'run1'] as const) {
+      for (const pose of ['stand', 'bat', 'batRear', 'run1', 'swingMid', 'swingFollowRear'] as const) {
         expect(
           buildCharacterSVG(char.visual, pose),
           `${char.id}/${pose} jersey render depends on outfit`
         ).toBe(buildCharacterSVG(noOutfit, pose));
+      }
+    }
+  });
+
+  it('swing frames actually differ from the stance and each other', () => {
+    // load → contact → follow-through must be three distinct drawings, or the
+    // swing sequence animates nothing (mirrors the run1 ≠ run2 guard).
+    for (const char of ROSTER) {
+      const load = buildCharacterSVG(char.visual, 'bat');
+      const mid = buildCharacterSVG(char.visual, 'swingMid');
+      const follow = buildCharacterSVG(char.visual, 'swingFollow');
+      expect(mid, `${char.id} swingMid === bat`).not.toBe(load);
+      expect(follow, `${char.id} swingFollow === swingMid`).not.toBe(mid);
+      const loadR = buildCharacterSVG(char.visual, 'batRear');
+      const midR = buildCharacterSVG(char.visual, 'swingMidRear');
+      const followR = buildCharacterSVG(char.visual, 'swingFollowRear');
+      expect(midR, `${char.id} swingMidRear === batRear`).not.toBe(loadR);
+      expect(followR, `${char.id} swingFollowRear === swingMidRear`).not.toBe(midR);
+    }
+  });
+
+  it('swing frames keep the bat in hand', () => {
+    // Every swing frame must still draw the bat wood — a frame that dropped
+    // the batProp call would flash an empty-handed batter mid-swing.
+    for (const char of ROSTER) {
+      for (const pose of ['swingMid', 'swingFollow', 'swingMidRear', 'swingFollowRear'] as const) {
+        expect(
+          buildCharacterSVG(char.visual, pose).includes('#d39a5c'),
+          `${char.id}/${pose} lost the bat`
+        ).toBe(true);
+      }
+    }
+  });
+
+  it('batting poses grip with real fists (no bare circle hands)', () => {
+    // The fist helper paints its knuckle-hint path; the old marble hands did
+    // not. Both grips of every batting/swing pose must wear it.
+    for (const char of ROSTER) {
+      for (const pose of ['bat', 'batRear', 'swingMid', 'swingMidRear'] as const) {
+        expect(
+          buildCharacterSVG(char.visual, pose).includes('q 3 2.5 0 5'),
+          `${char.id}/${pose} has no fists`
+        ).toBe(true);
       }
     }
   });

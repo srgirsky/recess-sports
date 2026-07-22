@@ -146,7 +146,7 @@ import * as audio from '../systems/audio';
 import { screenShake, burst, floatingText } from '../ui/effects';
 import { makeMuteButton } from '../ui/MuteButton';
 import { FONT, pill } from '../ui/theme';
-import { idleBob, squashHop, groundShadow, runCycle } from '../ui/anim';
+import { idleBob, squashHop, groundShadow, runCycle, poseSequence } from '../ui/anim';
 import { poseKey } from '../art/textureFactory';
 import { project, unproject, depthScale } from '../art/projection';
 import { Announcer, type AnnounceKind } from '../systems/announcer';
@@ -500,6 +500,8 @@ export class GameScene extends Phaser.Scene {
   // display objects
   private batterSprite?: Phaser.GameObjects.Image;
   private batterScale = 1;
+  private worldBatterId = ''; // the kid the wide-view batter sprite wears (for swing-frame keys)
+  private batterSwingSeq?: { cancel(restore?: boolean): void };
   private batterIdle?: Phaser.Tweens.Tween;
   private pitcherSprite?: Phaser.GameObjects.Image;
   private scoreboard!: Scoreboard;
@@ -2049,10 +2051,11 @@ export class GameScene extends Phaser.Scene {
       this.phase = 'resolving';
       this.swung = true;
       this.clearPitchVisuals();
-      this.animateSwing();
       const powered = this.armedPower;
       this.armedPower = false;
-      this.showBandFeedback(bandFromError(errorMs, timingForSwing(getSwingTiming(this.mode), this.swingType)));
+      const shownBand = bandFromError(errorMs, timingForSwing(getSwingTiming(this.mode), this.swingType));
+      this.animateSwing(shownBand === 'miss');
+      this.showBandFeedback(shownBand);
       this.guestSend({
         t: 'swing',
         errorMs,
@@ -2066,7 +2069,6 @@ export class GameScene extends Phaser.Scene {
     this.phase = 'resolving';
     this.swung = true;
     this.clearPitchVisuals();
-    this.animateSwing();
 
     const powered = this.armedPower;
     this.armedPower = false;
@@ -2088,6 +2090,7 @@ export class GameScene extends Phaser.Scene {
       swingType: this.swingType,
       geo: this.geo,
     });
+    this.animateSwing(swing.kind === 'strike'); // same tick as the tap — no felt latency
     this.showBandFeedback(band);
     if (band === 'perfect') this.gainJuiceSeat(this.battingSeat(), 'perfectSwing', this.batter.ability);
 
@@ -2124,8 +2127,9 @@ export class GameScene extends Phaser.Scene {
         this.guestSend({ t: 'swing', swingType: this.swingType }); // no data = take
         return;
       }
-      this.animateSwing();
-      this.showBandFeedback(this.pitchIsWild ? wildSwingBand(band) : band);
+      const shown = this.pitchIsWild ? wildSwingBand(band) : band;
+      this.animateSwing(shown === 'miss');
+      this.showBandFeedback(shown);
       this.guestSend({ t: 'swing', band, swingType: this.swingType });
       return;
     }
@@ -2147,7 +2151,12 @@ export class GameScene extends Phaser.Scene {
     // Chasing a wild pitch caps the swing — the telegraph is the lesson.
     if (this.pitchIsWild) band = wildSwingBand(band);
 
-    this.animateSwing();
+    // GOLDLOG: keep this exact statement order. showBandFeedback creates a
+    // Phaser Text whose canvas texture key draws Math.random (UUID) — moving
+    // it across resolveContact shifts the seeded rng stream and breaks the
+    // byte-identical fingerprint. The whiff flag keys off the band (which is
+    // what the feedback shows anyway), not the resolved outcome.
+    this.animateSwing(band === 'miss');
     this.showBandFeedback(band);
 
     const outcome = resolveContact(band, this.batter, this.fieldingSeat().pitcher!, () => Math.random(), this.geo);
@@ -3204,7 +3213,6 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.animateSwing();
     // A trailing CPU muscles up with its own juice.
     let cpuBand = plan.cpuBand;
     const batSeat = this.battingSeat();
@@ -3220,6 +3228,7 @@ export class GameScene extends Phaser.Scene {
       powerSwingFx(this, PLATE_VIEW.ZONE.CX, PLATE_VIEW.ZONE.CY, COLORS.red);
     }
     const outcome = resolveContact(cpuBand, this.cpuBatter, this.fieldingSeat().pitcher!, () => Math.random(), this.geo);
+    this.animateSwing(outcome.kind === 'strike');
     if (outcome.kind !== 'inPlay') {
       if (outcome.kind === 'strike') audio.whiff();
       else audio.crack();
@@ -3266,7 +3275,6 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.animateSwing();
     const batSeat = this.battingSeat();
     // Spends validate authoritatively — a stale guest meter can't double-spend.
     let powered = false;
@@ -3299,6 +3307,7 @@ export class GameScene extends Phaser.Scene {
       // Kid mode: the meter band drives plain contact.
       outcome = resolveContact(sw.band ?? 'miss', this.cpuBatter, this.fieldingSeat().pitcher!, () => Math.random(), this.geo);
     }
+    this.animateSwing(outcome.kind === 'strike');
 
     if (outcome.kind !== 'inPlay') {
       if (outcome.kind === 'strike') audio.whiff();
@@ -3904,7 +3913,10 @@ export class GameScene extends Phaser.Scene {
   // --- Little visual helpers ----------------------------------------------
   private showBatter(char: Character, walkIn = false): void {
     this.batterIdle?.stop();
+    this.batterSwingSeq?.cancel(false); // stale swing timers must not re-pose the new sprite
+    this.batterSwingSeq = undefined;
     this.batterSprite?.destroy();
+    this.worldBatterId = char.id;
 
     // The batting-stance pose has the bat baked in, drawn facing the pitch.
     const targetX = HOME.x - 70;
@@ -3963,21 +3975,44 @@ export class GameScene extends Phaser.Scene {
 
   private fadeOutBatter(): void {
     this.batterIdle?.stop();
+    this.batterSwingSeq?.cancel(false); // let the fade own the sprite
+    this.batterSwingSeq = undefined;
     if (!this.batterSprite) return;
     const s = this.batterSprite;
     this.batterSprite = undefined;
     this.tweens.add({ targets: s, alpha: 0, y: s.y - 8, duration: 300, delay: 90, onComplete: () => s.destroy() });
   }
 
-  private animateSwing(): void {
-    if (this.rig.visible) this.rig.swingBatter(); // the rear-view kid whips
+  /**
+   * The swing, both views: a real frame sequence (load stance → swingMid at
+   * the contact moment → swingFollow held, then back to the stance) with a
+   * small body whip on top. `whiff` holds the follow-through longer and
+   * over-rotates — the kid swung himself around. Presentation only: no game
+   * state ever waits on these timers.
+   */
+  private animateSwing(whiff = false): void {
+    if (this.rig.visible) this.rig.swingBatter(whiff); // the rear-view kid swings through frames
     this.batterIdle?.stop();
     const spr = this.batterSprite;
-    if (spr) {
-      // The bat is part of the stance art — whip the whole kid through it.
+    const id = this.worldBatterId;
+    if (spr && id) {
+      this.batterSwingSeq?.cancel(false);
       spr.setScale(this.batterScale); // clear any mid-breath scale
-      this.tweens.add({ targets: spr, angle: 16, duration: ANIM.SWING_MS, yoyo: true, ease: 'Quad.out' });
-      this.tweens.add({ targets: spr, x: spr.x + 10, duration: ANIM.SWING_MS, yoyo: true, ease: 'Quad.out' });
+      this.batterSwingSeq = poseSequence(
+        this,
+        spr,
+        [
+          { key: poseKey(id, 'swingMid'), atMs: ANIM.SWING_MS * ANIM.SWING_CONTACT_FRAC },
+          { key: poseKey(id, 'swingFollow'), atMs: ANIM.SWING_MS },
+        ],
+        {
+          restoreTo: poseKey(id, 'bat'),
+          restoreAtMs: ANIM.SWING_MS + ANIM.SWING_FOLLOW_MS + (whiff ? ANIM.SWING_WHIFF_EXTRA_MS : 0),
+          onRestore: () => this.startBatterIdle(spr, this.batterScale),
+        }
+      );
+      this.tweens.add({ targets: spr, angle: 10, duration: ANIM.SWING_MS, yoyo: true, ease: 'Quad.out' });
+      this.tweens.add({ targets: spr, x: spr.x + 8, duration: ANIM.SWING_MS, yoyo: true, ease: 'Quad.out' });
     }
   }
 

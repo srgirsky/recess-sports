@@ -83,8 +83,8 @@ export function mountArtGallery(scene: Phaser.Scene): void {
       header = undefined;
     } else {
       // The Schoolyard arms the ':sc' street variant, but Boot only bakes the
-      // 4 draft poses — lazily bake the rest so P can cycle all 15 in street
-      // clothes. Idempotent; opens once the loader settles.
+      // 4 draft poses — lazily bake the rest so P can cycle every pose in
+      // street clothes. Idempotent; opens once the loader settles.
       queueStreetTextures(scene, ROSTER, POSES);
       if (scene.load.list.size > 0) {
         scene.load.once('complete', () => {

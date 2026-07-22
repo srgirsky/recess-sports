@@ -85,6 +85,44 @@ export function reactPose(
 }
 
 /**
+ * One-shot multi-frame pose stepping (the swing: load → contact →
+ * follow-through). Steps carry FULL texture keys so callers choose the tier
+ * (poseKey vs heroKey) and variant themselves. Every callback guards on
+ * `img.active` like runCycle. `cancel(false)` just clears the timers;
+ * `cancel()` also re-applies `restoreTo` immediately. Presentation only —
+ * never gate game state on these timers.
+ */
+export function poseSequence(
+  scene: Phaser.Scene,
+  img: Phaser.GameObjects.Image,
+  steps: Array<{ key: string; atMs: number }>,
+  opts: { restoreTo?: string; restoreAtMs?: number; onRestore?: () => void } = {}
+): { cancel(restore?: boolean): void } {
+  if (!img.active) return { cancel() {} };
+  const timers = steps.map((s) =>
+    scene.time.delayedCall(s.atMs, () => {
+      if (img.active) img.setTexture(s.key);
+    })
+  );
+  const { restoreTo, restoreAtMs, onRestore } = opts;
+  if (restoreTo !== undefined && restoreAtMs !== undefined) {
+    timers.push(
+      scene.time.delayedCall(restoreAtMs, () => {
+        if (!img.active) return;
+        img.setTexture(restoreTo);
+        onRestore?.();
+      })
+    );
+  }
+  return {
+    cancel(restore = true) {
+      for (const t of timers) t.remove(false);
+      if (restore && restoreTo !== undefined && img.active) img.setTexture(restoreTo);
+    },
+  };
+}
+
+/**
  * The batter's idle tic: an occasional little bat waggle (a quick angle
  * shimmy). Returns the timer — remove it before swinging or hiding, and pair
  * with killTweensOf(target) so a mid-waggle tween can't strand an angle.

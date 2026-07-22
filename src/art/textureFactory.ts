@@ -25,8 +25,17 @@ const HERO_W = 480; // 2.4x — the rig-only tier
 const HERO_H = 624;
 const HERO_SUFFIX = ':hi';
 /** The poses the behind-plate rig displays at 230px+ (see config.PLATE_VIEW):
- *  the stance/crouch pair plus every reactBatter swap (upset/nervous/cheer). */
-export const HERO_POSES: Pose[] = ['batRear', 'catchRear', 'upset', 'nervous', 'cheer'];
+ *  the stance/crouch pair, the rig batter's swing frames, and every
+ *  reactBatter swap (upset/nervous/cheer). */
+export const HERO_POSES: Pose[] = [
+  'batRear',
+  'catchRear',
+  'swingMidRear',
+  'swingFollowRear',
+  'upset',
+  'nervous',
+  'cheer',
+];
 
 /** Street-clothes variant suffix. SchoolyardScene arms the whole roster with
  *  it so the draft shows personal outfits; GameScene clears/re-arms with team

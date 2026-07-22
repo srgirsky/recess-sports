@@ -20,7 +20,7 @@ import type { VenueDef } from '../../data/venues';
 import type { PositionId } from '../../systems/geometry';
 import { poseKey, heroKey, HERO_POSES } from '../../art/textureFactory';
 import type { Pose } from '../../art/CharacterArt';
-import { batWaggle } from '../../ui/anim';
+import { batWaggle, poseSequence } from '../../ui/anim';
 
 export interface RigActors {
   batterId: string;
@@ -61,6 +61,7 @@ export class BattingView {
   private batterIdle?: Phaser.Tweens.Tween;
   private batterTic?: Phaser.Time.TimerEvent;
   private batterReactTimer?: Phaser.Time.TimerEvent;
+  private batterSwing?: { cancel(restore?: boolean): void };
   private batterBaseScale = 1;
   private fielderImgs = new Map<PositionId, Phaser.GameObjects.Image>();
 
@@ -117,6 +118,10 @@ export class BattingView {
     }
     const batterChanged = this.batter.texture.key !== this.rigKey(actors.batterId, 'batRear');
     if (batterChanged) this.batterReactTimer?.remove(false); // a reaction pose never outlives its batter
+    // A stale swing sequence must not re-frame the (possibly new) batter —
+    // setKid below puts the stance back, so cancel without restoring.
+    this.batterSwing?.cancel(false);
+    this.batterSwing = undefined;
     this.setKid(this.batter, actors.batterId, 'batRear', PLATE_VIEW.BATTER.H);
     this.pitcherId = actors.pitcherId;
     this.batterId = actors.batterId;
@@ -130,6 +135,8 @@ export class BattingView {
   hide(): void {
     if (!this.root.visible) return;
     this.batterReactTimer?.remove(false);
+    this.batterSwing?.cancel(false);
+    this.batterSwing = undefined;
     this.batterTic?.remove(false);
     this.batterTic = undefined;
     this.root.setVisible(false);
@@ -175,6 +182,10 @@ export class BattingView {
    */
   reactBatter(pose: 'upset' | 'nervous' | 'cheer', holdMs: number): void {
     if (!this.root.visible || !this.batterId) return;
+    // A strikeout reaction can fire while the whiff follow-through is still
+    // held — the sequence must not re-frame over the reaction pose.
+    this.batterSwing?.cancel(false);
+    this.batterSwing = undefined;
     this.batterIdle?.stop();
     this.batterIdle = undefined;
     const b = this.batter;
@@ -194,10 +205,17 @@ export class BattingView {
     }
   }
 
-  /** The rear-view swing whip: the whole kid snaps through the zone. */
-  swingBatter(): void {
+  /**
+   * The rear-view swing: a real frame sequence — stance (load) → swingMidRear
+   * at the contact moment (the hit-pause flash catches this frame) →
+   * swingFollowRear held through the result — with a small body whip on top.
+   * A whiff over-rotates and holds the follow-through a beat longer.
+   * Presentation only: nothing downstream waits on these timers.
+   */
+  swingBatter(whiff = false): void {
     if (!this.root.visible) return;
     this.batterReactTimer?.remove(false);
+    this.batterSwing?.cancel(false);
     this.settleBatter();
     this.batterIdle?.stop();
     this.batterIdle = undefined;
@@ -207,8 +225,36 @@ export class BattingView {
     this.scene.tweens.killTweensOf(b); // a mid-waggle tween must not fight the whip
     b.setAngle(0);
     b.setScale(this.batterBaseScale); // clear any mid-breath scale
-    this.scene.tweens.add({ targets: b, angle: 12, duration: ANIM.SWING_MS, yoyo: true, ease: 'Quad.out' });
-    this.scene.tweens.add({ targets: b, x: PLATE_VIEW.BATTER.X + 14, duration: ANIM.SWING_MS, yoyo: true, ease: 'Quad.out' });
+    const id = this.batterId;
+    if (!id) return;
+    const followHold = ANIM.SWING_FOLLOW_MS + (whiff ? ANIM.SWING_WHIFF_EXTRA_MS : 0);
+    this.batterSwing = poseSequence(
+      this.scene,
+      b,
+      [
+        { key: this.rigKey(id, 'swingMidRear'), atMs: ANIM.SWING_MS * ANIM.SWING_CONTACT_FRAC },
+        { key: this.rigKey(id, 'swingFollowRear'), atMs: ANIM.SWING_MS },
+      ],
+      {
+        restoreTo: this.rigKey(id, 'batRear'),
+        restoreAtMs: ANIM.SWING_MS + followHold,
+        onRestore: () => this.startBatterIdle(),
+      }
+    );
+    // The whip is smaller than it used to be — the frames carry the motion.
+    this.scene.tweens.add({ targets: b, angle: 8, duration: ANIM.SWING_MS, yoyo: true, ease: 'Quad.out' });
+    this.scene.tweens.add({ targets: b, x: PLATE_VIEW.BATTER.X + 10, duration: ANIM.SWING_MS, yoyo: true, ease: 'Quad.out' });
+    if (whiff) {
+      // Over-rotation after the whip settles: the kid spins himself around.
+      this.scene.tweens.add({
+        targets: b,
+        angle: -10,
+        delay: ANIM.SWING_MS * 2,
+        duration: 150,
+        yoyo: true,
+        ease: 'Quad.out',
+      });
+    }
   }
 
   private setKid(
