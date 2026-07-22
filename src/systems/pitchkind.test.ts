@@ -3,14 +3,16 @@
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
-import { PLATE_ZONE, PITCHES, PITCH_FX, type PitchKind } from '../config';
+import { PLATE_ZONE, PITCHES, PITCH_FX, PITCH_SPEED, type PitchKind } from '../config';
 import {
+  armTravelMult,
   availablePitches,
   specialPitches,
   flightProgress,
   isInZone,
   distOffZone,
   edgeFactor,
+  lobHeightPx,
   resolvePitchLocation,
   chooseCpuPitch,
   ballCurveAt,
@@ -79,6 +81,37 @@ describe('resolvePitchLocation', () => {
     const slow = resolvePitchLocation('changeup', { x: 0, y: 0 }, 5, 0, 500, () => 0.5);
     expect(fast.travelMs).toBeLessThan(500);
     expect(slow.travelMs).toBeGreaterThan(500);
+  });
+
+  it('a better arm throws a genuinely faster pitch (Backyard corridor)', () => {
+    const at = (stat: number) =>
+      resolvePitchLocation('fastball', { x: 0, y: 0 }, stat, 0, PITCH_SPEED.MAIN_BASE_MS, () => 0.5).travelMs;
+    expect(at(10)).toBeLessThan(at(5));
+    expect(at(5)).toBeLessThan(at(1));
+    // The shipped band: an ace fastball ~545ms, a wet noodle ~875ms.
+    expect(at(10)).toBeCloseTo((PITCH_SPEED.MAIN_BASE_MS / PITCHES.fastball.speedMult) * 0.75, 0);
+    expect(at(1)).toBeCloseTo((PITCH_SPEED.MAIN_BASE_MS / PITCHES.fastball.speedMult) * 1.2, 0);
+  });
+});
+
+describe('armTravelMult', () => {
+  it('is neutral at stat 5 and clamps at both ends', () => {
+    expect(armTravelMult(5)).toBeCloseTo(1.0, 10);
+    expect(armTravelMult(10)).toBeCloseTo(0.75, 10);
+    expect(armTravelMult(1)).toBeCloseTo(1.2, 10);
+    // Content typos can't produce an untimeable pitch.
+    expect(armTravelMult(100)).toBe(PITCH_SPEED.ARM_MULT.MIN);
+    expect(armTravelMult(-5)).toBe(PITCH_SPEED.ARM_MULT.MAX);
+  });
+});
+
+describe('lobHeightPx (render-only rainbow)', () => {
+  it('is zero for fast pitches, grows for slow ones, and caps', () => {
+    expect(lobHeightPx(500)).toBe(0);
+    expect(lobHeightPx(PITCH_SPEED.LOB.FROM_MS)).toBe(0);
+    expect(lobHeightPx(PITCH_SPEED.LOB.FROM_MS + 400)).toBeGreaterThan(0);
+    expect(lobHeightPx(1200)).toBeLessThan(lobHeightPx(1800));
+    expect(lobHeightPx(60_000)).toBe(PITCH_SPEED.LOB.MAX_PX);
   });
 });
 

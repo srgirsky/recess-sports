@@ -4,7 +4,16 @@
 // multipliers into the flat params object the live-play sim consumes.
 // ---------------------------------------------------------------------------
 
-import { LIVE, MODES, TIMING, type GameMode, type ModeFeatures } from '../config';
+import {
+  CPU_PITCH_TRAVEL_MS,
+  LIVE,
+  MODES,
+  PITCH_SPEED,
+  PITCH_TRAVEL_MS,
+  TIMING,
+  type GameMode,
+  type ModeFeatures,
+} from '../config';
 
 const KEY = 'recess_mode';
 /** Pre-rename key ('easy' | 'hard') — migrated on first read. */
@@ -39,6 +48,17 @@ export function getFeatures(m: GameMode): ModeFeatures {
 /** The swing-timing windows for a mode (main widens them — the cursor is the skill). */
 export function getSwingTiming(m: GameMode): typeof TIMING {
   return MODES[m].swingTiming ?? TIMING;
+}
+
+/**
+ * Base pitch travel (ms) before the per-kind speedMult and per-arm term.
+ * `half` is which side the HUMAN plays: 'batting' = the ball flies at you,
+ * 'pitching' = you're on the mound. CLASSIC reads the Backyard-paced
+ * PITCH_SPEED block; kid mode keeps the original floaty constants.
+ */
+export function getPitchBaseMs(m: GameMode, half: 'batting' | 'pitching'): number {
+  if (m === 'kid') return half === 'batting' ? PITCH_TRAVEL_MS : CPU_PITCH_TRAVEL_MS;
+  return half === 'batting' ? PITCH_SPEED.MAIN_BASE_MS : PITCH_SPEED.MAIN_CPU_BASE_MS;
 }
 
 /** Everything the live-play sim needs to know about speed/forgiveness. */

@@ -54,6 +54,35 @@ export const PITCH_AUTO_THROW_MS = 700;
 export const CPU_PITCH_TRAVEL_MS = 750;
 
 /**
+ * The CLASSIC pitch corridor — Backyard-measured. Real BB2001 flights span
+ * ~250ms (pro arm) to ~700ms (weakest kid arm) — see
+ * docs/research/backyard-2001-video-notes.md. This block lands a kid-fair
+ * version of that band, and (like BB) scales flight speed with the pitcher's
+ * arm: drafting a good arm makes pitches genuinely faster, and the fatigue
+ * sag makes tired arms lob. KID MODE NEVER READS THIS BLOCK — its pitches
+ * keep PITCH_TRAVEL_MS / CPU_PITCH_TRAVEL_MS above (systems/mode.ts
+ * getPitchBaseMs is the one resolver).
+ */
+export const PITCH_SPEED = {
+  /** CLASSIC base travel (ms): human batting / human pitching halves. */
+  MAIN_BASE_MS: 800,
+  MAIN_CPU_BASE_MS: 700,
+  /**
+   * Arm term: travel × clamp(BASE − PER_STAT × pitching). Stat 10 → 0.75
+   * (fastball ≈ 545ms), stat 1 → 1.20 (fastball ≈ 875ms) — the Backyard band.
+   * Clamped so a content typo can't make a pitch untimeable.
+   */
+  ARM_MULT: { BASE: 1.25, PER_STAT: 0.05, MIN: 0.7, MAX: 1.25 },
+  /**
+   * Render-only "rainbow": pitches slower than FROM_MS arc visibly (px of
+   * lob height per ms over the threshold, capped). BB's speed range doubles
+   * as a SHAPE range — fast pitches are lasers, slow ones are lobs you track
+   * the whole way. Never touches swing-timing math or the sim.
+   */
+  LOB: { FROM_MS: 850, PER_MS: 0.12, MAX_PX: 110 },
+};
+
+/**
  * Between-moments pacing (ms). Every "wait before the next thing" beat lives
  * HERE, not hardcoded in GameScene delayedCalls. Invariant: a banner's hold
  * time must be <= the FLOW beat that follows it, so calls are always readable
@@ -558,7 +587,7 @@ export const JUICE = {
   GLOVE_BLEND: 0.85,
   GLOVE_REACH_BONUS: 8,
   /** 🧢 rallyCap: extra swing-window forgiveness (ms) while it's on. */
-  RALLY_FORGIVE_MS: 40,
+  RALLY_FORGIVE_MS: 55,
   GAINS: {
     perfectSwing: 12,
     hit: 10,
@@ -585,7 +614,7 @@ export const PASSPLAY = {
 /** Two-device play over WebRTC (src/net/*; PeerJS free cloud broker). */
 export const NET = {
   /** Bumped on any wire-format change; hello handshake rejects mismatches. */
-  PROTOCOL_VERSION: 3, // v3: fireball/freezeball PitchKinds on the wire
+  PROTOCOL_VERSION: 4, // v4: Backyard pitch corridor — timing windows differ from v3 builds
   /** liveFrame + liveInput pointer stream rate (full ReplayFrames, no deltas). */
   FRAME_HZ: 20,
   /** "Looking for your friend… 🔍" window before the no-blame GOOD GAME. */
@@ -633,12 +662,14 @@ export const FATIGUE = {
  * it's the unmodified baseline. Applied in systems/atbat.ts.
  */
 export const SWING_TYPES = {
+  // Deltas scaled up with the Backyard-paced pitch corridor (PITCH_SPEED) —
+  // absolute ms mean more against a ~40% shorter flight.
   /** 🛡 SAFE: choke up — wider timing windows, softer contact. */
-  SAFE: { FORGIVE_MS: 45, Q_ADJ: -0.3 },
+  SAFE: { FORGIVE_MS: 60, Q_ADJ: -0.3 },
   /** 💪 BIG: sell out — weak contact becomes a whiff, solid contact is crushed. */
-  BIG: { NARROW_MS: 35, Q_ADJ: 0.22, TYPE_BIAS: 0.35 },
+  BIG: { NARROW_MS: 45, Q_ADJ: 0.22, TYPE_BIAS: 0.35 },
   /** 🤏 BUNT: easy to get bat on it; the ball dies in front of the plate. */
-  BUNT: { FORGIVE_MS: 60, DIST_CAP: 115, Q_ADJ: -0.5, SPRAY_MIN: 0.34, SPRAY_MAX: 0.66 },
+  BUNT: { FORGIVE_MS: 80, DIST_CAP: 115, Q_ADJ: -0.5, SPRAY_MIN: 0.34, SPRAY_MAX: 0.66 },
 };
 
 /** Full-baserunning rules (main mode). */
@@ -776,7 +807,9 @@ export const MODES: Record<
       manualBaserunning: true,
       fielderAssist: 'magnet', // you steer; the game leans you toward the ball
     },
-    swingTiming: { PERFECT: 90, GOOD: 180, CONTACT: 300 },
+    // Widened ~35% with the Backyard-paced pitch corridor (PITCH_SPEED): the
+    // flight got ~40% shorter, the reaction window shouldn't have.
+    swingTiming: { PERFECT: 120, GOOD: 240, CONTACT: 380 },
     // Flags flip to true as each Backyard-style mechanic lands.
     features: {
       pitchSelection: true,

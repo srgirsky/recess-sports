@@ -56,6 +56,7 @@ import {
   resolvePitchLocation,
   ballCurveAt,
   flightProgress,
+  lobHeightPx,
   specialPitches,
   type PitchPlan,
   type PlateLoc,
@@ -137,7 +138,14 @@ import {
   type LivePlayState,
   type LiveInputs,
 } from '../systems/liveplay';
-import { getMode, getFeatures, getSwingTiming, resolveLiveParams, type LiveParams } from '../systems/mode';
+import {
+  getMode,
+  getFeatures,
+  getPitchBaseMs,
+  getSwingTiming,
+  resolveLiveParams,
+  type LiveParams,
+} from '../systems/mode';
 import {
   LIVE,
   CURSOR,
@@ -1660,9 +1668,16 @@ export class GameScene extends Phaser.Scene {
           kind = 'fastball'; // stale guest meter — never a free special
         }
       }
-      plan = resolvePitchLocation(kind, rp.target, cpuArm, rp.errorMs, PITCH_TRAVEL_MS, () => Math.random());
+      plan = resolvePitchLocation(
+        kind,
+        rp.target,
+        cpuArm,
+        rp.errorMs,
+        getPitchBaseMs(this.mode, 'batting'),
+        () => Math.random()
+      );
     } else {
-      plan = chooseCpuPitch(cpuArm, this.halfState.count, PITCH_TRAVEL_MS, () => Math.random());
+      plan = chooseCpuPitch(cpuArm, this.halfState.count, getPitchBaseMs(this.mode, 'batting'), () => Math.random());
       // A trailing CPU digs into its own juice for a special pitch. Never in
       // pass-and-play/net: the CPU must not burn a HUMAN seat's meter.
       const special =
@@ -1682,7 +1697,7 @@ export class GameScene extends Phaser.Scene {
           plan.target,
           cpuArm,
           60,
-          PITCH_TRAVEL_MS,
+          getPitchBaseMs(this.mode, 'batting'),
           () => Math.random()
         );
         this.announceSpecialPitch(special, COLORS.red);
@@ -1721,6 +1736,7 @@ export class GameScene extends Phaser.Scene {
     // freeze-remapped progress (flightProgress) so the freezeball's hold spans
     // real flight TIME — identical output to the old eased counter for every
     // other kind. Arrival still lands exactly at travelMs.
+    const lob = lobHeightPx(plan.travelMs); // slow pitches rainbow (render-only)
     this.tweens.addCounter({
       from: 0,
       to: 1,
@@ -1733,7 +1749,7 @@ export class GameScene extends Phaser.Scene {
         const bend = ballCurveAt(plan, t);
         ball.setPosition(
           start.x + (end.x - start.x) * t + bend.x * bendScale,
-          start.y + (end.y - start.y) * t + bend.y * bendScale
+          start.y + (end.y - start.y) * t + bend.y * bendScale - lob * Math.sin(Math.PI * t)
         );
         ball.setScale(
           PLATE_VIEW.BALL.SCALE_FROM + t * (PLATE_VIEW.BALL.SCALE_TO - PLATE_VIEW.BALL.SCALE_FROM)
@@ -3166,7 +3182,7 @@ export class GameScene extends Phaser.Scene {
       target,
       armStat,
       err,
-      CPU_PITCH_TRAVEL_MS,
+      getPitchBaseMs(this.mode, 'pitching'),
       () => Math.random()
     );
     // Net: the REMOTE batter decides — the CPU-batter plan is a placeholder
@@ -3199,6 +3215,7 @@ export class GameScene extends Phaser.Scene {
     const fx = this.pitchFx;
     // Linear counter + manual Sine.in on the freeze-remapped progress — see
     // launchPitchMain for why.
+    const lob = lobHeightPx(plan.travelMs); // slow pitches rainbow (render-only)
     this.tweens.addCounter({
       from: 0,
       to: 1,
@@ -3210,7 +3227,7 @@ export class GameScene extends Phaser.Scene {
         const bend = ballCurveAt(plan, t);
         ball.setPosition(
           start.x + (end.x - start.x) * t + bend.x * bendScale,
-          start.y + (end.y - start.y) * t + bend.y * bendScale
+          start.y + (end.y - start.y) * t + bend.y * bendScale - lob * Math.sin(Math.PI * t)
         );
         ball.setScale(
           PLATE_VIEW.BALL.SCALE_FROM + t * (PLATE_VIEW.BALL.SCALE_TO - PLATE_VIEW.BALL.SCALE_FROM)
@@ -3654,6 +3671,7 @@ export class GameScene extends Phaser.Scene {
       this.pitchFx = createPitchFx(this, plan.kind);
       // Linear counter + manual Sine.in on the freeze-remapped progress — the
       // guest mirrors the host's freezeball hold exactly (plan rides the wire).
+      const lob = lobHeightPx(m.travelMs); // pure fn of wire travelMs — devices match
       this.tweens.addCounter({
         from: 0,
         to: 1,
@@ -3666,7 +3684,7 @@ export class GameScene extends Phaser.Scene {
           const bend = ballCurveAt(plan, t);
           ball.setPosition(
             start.x + (endPt.x - start.x) * t + bend.x * bendScale,
-            start.y + (endPt.y - start.y) * t + bend.y * bendScale
+            start.y + (endPt.y - start.y) * t + bend.y * bendScale - lob * Math.sin(Math.PI * t)
           );
           ball.setScale(
             PLATE_VIEW.BALL.SCALE_FROM + t * (PLATE_VIEW.BALL.SCALE_TO - PLATE_VIEW.BALL.SCALE_FROM)
