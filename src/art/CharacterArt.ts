@@ -35,9 +35,12 @@ export type Pose =
   | 'stand'
   | 'run1'
   | 'run2'
+  | 'run3'
+  | 'run4'
   | 'cheer'
   | 'bat'
   | 'windup'
+  | 'windup2'
   | 'ready'
   | 'slide'
   | 'batRear'
@@ -48,17 +51,22 @@ export type Pose =
   | 'throw'
   | 'catch'
   | 'dive'
+  | 'swingLoad'
   | 'swingMid'
   | 'swingFollow'
+  | 'swingLoadRear'
   | 'swingMidRear'
   | 'swingFollowRear';
 export const POSES: Pose[] = [
   'stand',
   'run1',
   'run2',
+  'run3',
+  'run4',
   'cheer',
   'bat',
   'windup',
+  'windup2',
   'ready',
   'slide',
   'batRear',
@@ -69,8 +77,10 @@ export const POSES: Pose[] = [
   'throw',
   'catch',
   'dive',
+  'swingLoad',
   'swingMid',
   'swingFollow',
+  'swingLoadRear',
   'swingMidRear',
   'swingFollowRear',
 ];
@@ -1027,21 +1037,41 @@ function quadSplit(d: string, t: number): { prefix: string; suffix: string } {
   };
 }
 
-/** Side-view running legs. frame 1 = full extension, frame 2 = crossover.
- *  Wardrobe-aware: pants/jeans run full-length in the bottom color; shorts
- *  end mid-thigh with a skin shin; a skirt means bare legs (flare on torso). */
-function legsRun(c: Ctx, frame: 1 | 2): string {
+/** The gait order the run cycle steps through: reach → pass → crossover → pass. */
+export type RunFrame = 1 | 2 | 3 | 4;
+
+/** Side-view running legs. frame 1 = full extension (reach), frame 2 =
+ *  crossover; frames 3/4 are the PASS in-betweens (legs gathered under the
+ *  body mid-swap — the frames that make the gait read as running, not a flip).
+ *  Every path stays a single-segment quadratic (quadSplit parses exactly that
+ *  to cut street shorts at mid-thigh). Wardrobe-aware: pants/jeans run
+ *  full-length in the bottom color; shorts end mid-thigh with a skin shin;
+ *  a skirt means bare legs (flare on torso). */
+function legsRun(c: Ctx, frame: RunFrame): string {
   const w = Math.max(14, Math.round(c.m.halfW * 0.34));
-  const legs =
-    frame === 1
-      ? [
-          { d: 'M 94 198 Q 72 212 58 220', far: true, shoe: sideShoe(52, 222, -32) },
-          { d: 'M 98 200 Q 124 206 138 226', far: false, shoe: sideShoe(142, 234, 18) },
-        ]
-      : [
-          { d: 'M 94 198 Q 114 208 126 228', far: true, shoe: sideShoe(130, 236, 10) },
-          { d: 'M 98 200 Q 112 220 100 234', far: false, shoe: sideShoe(104, 242, -6) },
-        ];
+  const FRAMES = {
+    1: [
+      { d: 'M 94 198 Q 72 212 58 220', far: true, shoe: sideShoe(52, 222, -32) },
+      { d: 'M 98 200 Q 124 206 138 226', far: false, shoe: sideShoe(142, 234, 18) },
+    ],
+    2: [
+      { d: 'M 94 198 Q 114 208 126 228', far: true, shoe: sideShoe(130, 236, 10) },
+      { d: 'M 98 200 Q 112 220 100 234', far: false, shoe: sideShoe(104, 242, -6) },
+    ],
+    // Pass after the reach: far leg swings forward under the hip while the
+    // near leg pushes off behind.
+    3: [
+      { d: 'M 94 198 Q 96 214 98 230', far: true, shoe: sideShoe(102, 238, 4) },
+      { d: 'M 98 200 Q 92 216 84 232', far: false, shoe: sideShoe(82, 240, -18) },
+    ],
+    // Mirror-phase pass after the crossover: far leg pushes off behind, near
+    // leg swings forward under.
+    4: [
+      { d: 'M 94 198 Q 86 214 78 230', far: true, shoe: sideShoe(76, 238, -16) },
+      { d: 'M 98 200 Q 104 218 106 234', far: false, shoe: sideShoe(110, 242, 6) },
+    ],
+  } as const;
+  const legs = FRAMES[frame];
   const kind = c.w.bottomKind;
   return legs
     .map(({ d, far, shoe }) => {
@@ -1060,8 +1090,9 @@ function legsRun(c: Ctx, frame: 1 | 2): string {
 }
 
 /** Side-view pumping arms (opposite phase to the legs), split into layers.
+ *  Frames 3/4 are the transitional half-swings matching the leg pass frames.
  *  Hands stay at chest height or lower — near the chin they read as mittens. */
-function armsRun(c: Ctx, frame: 1 | 2): { far: string; near: string } {
+function armsRun(c: Ctx, frame: RunFrame): { far: string; near: string } {
   const farJersey = darken(c.jerseyDk, 0.1);
   const farSkin = darken(c.skin, 0.1);
   const w = 13;
@@ -1078,40 +1109,82 @@ function armsRun(c: Ctx, frame: 1 | 2): { far: string; near: string } {
         ${fist(c, 71, 195, 105, { s: 0.95 })}`,
     };
   }
+  if (frame === 2) {
+    return {
+      far: `
+        ${capsule('M 100 154 Q 88 164 80 172', farJersey, w)}
+        ${capsule('M 80 172 Q 74 180 72 186', farSkin, w - 2)}
+        ${fist(c, 71, 190, 110, { far: true, s: 0.95 })}`,
+      near: `
+        ${capsule('M 102 154 Q 114 166 122 172', c.jerseyDk, w)}
+        ${capsule('M 122 172 Q 132 172 138 168', c.skin, w - 2)}
+        ${fist(c, 142, 166, -30, { s: 0.95 })}`,
+    };
+  }
+  if (frame === 3) {
+    // Coming off the reach: far arm pulling back to the waist, near arm
+    // swinging forward past the hip.
+    return {
+      far: `
+        ${capsule('M 100 154 Q 106 162 110 170', farJersey, w)}
+        ${capsule('M 110 170 Q 116 172 122 172', farSkin, w - 2)}
+        ${fist(c, 126, 172, -10, { far: true, s: 0.95 })}`,
+      near: `
+        ${capsule('M 102 154 Q 94 164 88 172', c.jerseyDk, w)}
+        ${capsule('M 88 172 Q 82 178 78 184', c.skin, w - 2)}
+        ${fist(c, 76, 187, 100, { s: 0.95 })}`,
+    };
+  }
+  // Frame 4: mirror phase of 3.
   return {
     far: `
-      ${capsule('M 100 154 Q 88 164 80 172', farJersey, w)}
-      ${capsule('M 80 172 Q 74 180 72 186', farSkin, w - 2)}
-      ${fist(c, 71, 190, 110, { far: true, s: 0.95 })}`,
+      ${capsule('M 100 154 Q 94 162 88 170', farJersey, w)}
+      ${capsule('M 88 170 Q 82 176 79 182', farSkin, w - 2)}
+      ${fist(c, 77, 185, 105, { far: true, s: 0.95 })}`,
     near: `
-      ${capsule('M 102 154 Q 114 166 122 172', c.jerseyDk, w)}
-      ${capsule('M 122 172 Q 132 172 138 168', c.skin, w - 2)}
-      ${fist(c, 142, 166, -30, { s: 0.95 })}`,
+      ${capsule('M 102 154 Q 108 164 114 170', c.jerseyDk, w)}
+      ${capsule('M 114 170 Q 120 172 126 172', c.skin, w - 2)}
+      ${fist(c, 130, 172, -12, { s: 0.95 })}`,
   };
 }
 
 /**
  * Side-view wheelchair push (Zoom Ramirez at speed): one big side wheel with
- * handrim, front caster, seat frame, legs bent to the footplate. frame 1 =
- * arm reaching the top of the handrim, frame 2 = end of the push stroke.
+ * handrim, front caster, seat frame, legs bent to the footplate. Four push
+ * phases matching the run gait order (1 → 3 → 2 → 4): 1 = arm reaching the
+ * top of the handrim, 3 = mid push, 2 = end of the push stroke, 4 = recovery
+ * lifting back to the top. The spoke group rotates 22.5° per gait step so the
+ * wheel visibly turns.
  */
-function wheelchairSide(c: Ctx, frame: 1 | 2): { behind: string; front: string } {
+function wheelchairSide(c: Ctx, frame: RunFrame): { behind: string; front: string } {
   const rim = '#2c3a47';
   const wheelBottom = GROUND - 2;
   const wcy = wheelBottom - 34;
   const w = 13;
-  const arm =
-    frame === 1
-      ? `
+  const ARMS = {
+    1: `
         ${capsule(`M 102 152 Q 116 166 120 178`, c.jerseyDk, w)}
         ${capsule(`M 120 178 Q 122 186 118 192`, c.skin, w - 2)}
-        ${fist(c, 117, 195, 55, { s: 0.95 })}`
-      : `
+        ${fist(c, 117, 195, 55, { s: 0.95 })}`,
+    3: `
+        ${capsule(`M 102 152 Q 106 168 104 182`, c.jerseyDk, w)}
+        ${capsule(`M 104 182 Q 102 192 98 198`, c.skin, w - 2)}
+        ${fist(c, 96, 201, 90, { s: 0.95 })}`,
+    2: `
         ${capsule(`M 102 152 Q 96 170 88 182`, c.jerseyDk, w)}
         ${capsule(`M 88 182 Q 82 192 78 200`, c.skin, w - 2)}
-        ${fist(c, 76, 203, 120, { s: 0.95 })}`;
+        ${fist(c, 76, 203, 120, { s: 0.95 })}`,
+    4: `
+        ${capsule(`M 102 152 Q 112 160 118 168`, c.jerseyDk, w)}
+        ${capsule(`M 118 168 Q 122 176 122 184`, c.skin, w - 2)}
+        ${fist(c, 122, 187, 70, { s: 0.95 })}`,
+  } as const;
+  const arm = ARMS[frame];
+  // Spoke rotation per gait step (order 1 → 3 → 2 → 4).
+  const SPOKE_ROT = { 1: 0, 3: 22.5, 2: 45, 4: 67.5 } as const;
+  const spokeRot = SPOKE_ROT[frame];
   const ticks =
-    frame === 2
+    frame === 2 || frame === 3
       ? `<g stroke="${rim}" stroke-width="3" stroke-linecap="round" opacity="0.55">
           <line x1="48" y1="196" x2="36" y2="192"/>
           <line x1="46" y1="212" x2="32" y2="212"/>
@@ -1134,7 +1207,7 @@ function wheelchairSide(c: Ctx, frame: 1 | 2): { behind: string; front: string }
       <circle cx="92" cy="${wcy}" r="34" fill="#e9eef2" fill-opacity="0.55" stroke="${OUT}" stroke-width="6"/>
       <circle cx="92" cy="${wcy}" r="24" fill="none" stroke="${rim}" stroke-width="4"/>
       <circle cx="92" cy="${wcy}" r="6" fill="${METAL_DK}"/>
-      <g stroke="${rim}" stroke-width="3">
+      <g stroke="${rim}" stroke-width="3" transform="rotate(${spokeRot} 92 ${wcy})">
         <line x1="92" y1="${wcy - 22}" x2="92" y2="${wcy + 22}"/>
         <line x1="${92 - 22}" y1="${wcy}" x2="${92 + 22}" y2="${wcy}"/>
         <line x1="${92 - 16}" y1="${wcy - 16}" x2="${92 + 16}" y2="${wcy + 16}"/>
@@ -1212,6 +1285,44 @@ function poseBat(c: Ctx, v: VisualParams, hFront: string): string {
     return `${batProp(grip.x, grip.y, batDeg)}${armFar}${chair.behind}${torsoSide(c, 2)}${chair.front}${armNear}${head}`;
   }
   return `${batProp(grip.x, grip.y, batDeg)}${armFar}${legs}${torsoSide(c, drop)}${armNear}${head}`;
+}
+
+/**
+ * Swing load, side view facing RIGHT — the in-between before contact: hands
+ * pushed back and up, bat more vertical, lead leg striding toward the pitch,
+ * torso coiled back. Like the other swing frames it converges to ONE geometry
+ * (the per-kid stance variants shape only the resting `bat` pose).
+ */
+function poseSwingLoad(c: Ctx, v: VisualParams, hFront: string): string {
+  const w = Math.max(14, Math.round(c.m.halfW * 0.34));
+  const pantsDk = darken(PANTS, 0.16);
+  const grip = { x: 66, y: 152 };
+  const batDeg = -32;
+  const legs = `
+    ${capsule(`M 92 198 Q 74 214 64 228`, pantsDk, w)}
+    ${sideShoe(58, 240, -8)}
+    ${capsule(`M 102 200 Q 126 210 142 224`, PANTS, w)}
+    ${sideShoe(148, 236, 10)}`;
+  const gp = gripPoints(grip.x, grip.y, batDeg);
+  const armFar = `
+    ${capsule(`M 98 152 Q 90 162 84 172`, darken(c.jerseyDk, 0.1), 13)}
+    ${capsule(`M 84 172 Q 72 160 ${gp.far.x} ${gp.far.y}`, darken(c.skin, 0.1), 11)}
+    ${gripFistFar(c, gp.far, batDeg)}`;
+  const armNear = `
+    ${capsule(`M 104 154 Q 96 162 90 164`, c.jerseyDk, 13)}
+    ${capsule(`M 90 164 Q 78 158 ${gp.near.x} ${gp.near.y}`, c.skin, 11)}
+    ${gripFistNear(c, gp.near, batDeg)}`;
+  // Coiled back: the torso counter-rotates away from the pitch.
+  const torso = `<g transform="rotate(-4 100 185)">${torsoSide(c, 0)}</g>`;
+  const head = `
+    <g transform="translate(4 2) rotate(2 ${HEAD.cx} ${HEAD.cy})">
+      ${headGroup(c, v, hFront, 0.8)}
+    </g>`;
+  if (c.usesChair) {
+    const chair = wheelchairSide(c, 1);
+    return `${batProp(grip.x, grip.y, batDeg)}${armFar}${chair.behind}${torsoSide(c, 2)}${chair.front}${armNear}${head}`;
+  }
+  return `${batProp(grip.x, grip.y, batDeg)}${armFar}${legs}${torso}${armNear}${head}`;
 }
 
 /**
@@ -1325,6 +1436,39 @@ function poseWindup(c: Ctx, v: VisualParams, hFront: string): string {
   const gloveArm = `
     ${capsule(`M ${100 - halfW + 6} ${shoulderY + 4} Q ${100 - halfW - 6} ${shoulderY + 14} ${100 - halfW + 4} ${shoulderY + 26}`, c.jerseyDk, 15)}
     ${mitt(100 - halfW + 10, shoulderY + 32)}`;
+  if (c.usesChair) {
+    return `${wheelchairFront()}${torsoFront(c)}${throwArm}${gloveArm}${headGroup(c, v, hFront)}`;
+  }
+  return `${legs}${torsoFront(c)}${throwArm}${gloveArm}${headGroup(c, v, hFront)}`;
+}
+
+/**
+ * Wind-up stride/plant, front view — the in-between after the leg lift: the
+ * stride foot has landed low-forward ON the ground, the throwing arm is at
+ * the top of its arc, the glove arm extends toward the plate. Stepped after
+ * `windup` at the moment the lean tween reverses.
+ */
+function poseWindup2(c: Ctx, v: VisualParams, hFront: string): string {
+  const { halfW } = c.m;
+  const shoulderY = 150;
+  const legHalf = halfW * 0.42;
+  // Planted back leg stays; the lifted knee has extended into the stride —
+  // the front foot lands low-forward with its sole near the ground line.
+  const legs = `
+    <rect x="${100 + legHalf - 10}" y="200" width="20" height="28" rx="9" fill="${PANTS}" ${c.S}/>
+    ${frontShoe(100 + legHalf)}
+    ${capsule(`M ${100 - legHalf} 204 Q ${100 - legHalf - 14} 216 ${100 - legHalf - 24} 230`, PANTS, 16)}
+    ${sideShoe(100 - legHalf - 30, GROUND - 2, -6)}`;
+  // Throwing arm at the top of the arc, ball cocked behind the head.
+  const throwArm = `
+    ${capsule(`M ${100 + halfW - 6} ${shoulderY + 2} Q ${100 + halfW + 12} ${shoulderY - 22} ${100 + halfW + 8} ${shoulderY - 48}`, c.jerseyDk, 15)}
+    ${capsule(`M ${100 + halfW + 8} ${shoulderY - 48} Q ${100 + halfW + 2} ${shoulderY - 62} ${100 + halfW - 8} ${shoulderY - 70}`, c.skin, 13)}
+    ${fist(c, 100 + halfW - 12, shoulderY - 73, -85)}
+    <circle cx="${100 + halfW - 10}" cy="${shoulderY - 81}" r="7" fill="#ffffff" stroke="${OUT}" stroke-width="2.5"/>`;
+  // Glove arm extended front toward the plate, leading the stride.
+  const gloveArm = `
+    ${capsule(`M ${100 - halfW + 6} ${shoulderY + 4} Q ${100 - halfW - 12} ${shoulderY + 6} ${100 - halfW - 20} ${shoulderY + 2}`, c.jerseyDk, 15)}
+    ${mitt(100 - halfW - 26, shoulderY + 2)}`;
   if (c.usesChair) {
     return `${wheelchairFront()}${torsoFront(c)}${throwArm}${gloveArm}${headGroup(c, v, hFront)}`;
   }
@@ -1699,6 +1843,49 @@ function poseBatRear(c: Ctx, v: VisualParams, hRear: string): string {
 }
 
 /**
+ * Swing load from BEHIND (the rig batter) — the in-between before contact:
+ * hands pushed back-up beside the right shoulder, bat more vertical, lead
+ * (left) leg striding, torso coiled toward the right. Converged geometry like
+ * the other swing frames. Rear = no face.
+ */
+function poseSwingLoadRear(c: Ctx, v: VisualParams, hRear: string): string {
+  const { halfW } = c.m;
+  const grip = { x: 134, y: 152 };
+  const batDeg = 24;
+  const bat = batProp(grip.x, grip.y, batDeg);
+  const shL = 100 - (halfW - 6);
+  const shR = 100 + (halfW - 6);
+  const gp = gripPoints(grip.x, grip.y, batDeg);
+  const elbow = { x: 122, y: 168 };
+  const arms = `
+    ${capsule(`M ${shL} 152 Q ${shL + 8} 162 ${elbow.x} ${elbow.y}`, darken(c.jerseyDk, 0.1), 13)}
+    ${capsule(`M ${elbow.x} ${elbow.y} Q 132 158 ${gp.far.x} ${gp.far.y}`, darken(c.skin, 0.1), 11)}
+    ${gripFistFar(c, gp.far, batDeg)}
+    ${capsule(`M ${shR} 152 Q 128 150 ${gp.near.x} ${gp.near.y}`, c.jerseyDk, 13)}
+    ${gripFistNear(c, gp.near, batDeg)}`;
+  const head = `
+    <g transform="translate(4 0) rotate(6 ${HEAD.cx} ${HEAD.cy})">
+      ${headRearGroup(c, v, hRear)}
+    </g>`;
+  if (c.usesChair) {
+    return `${bat}${wheelchairFront()}${torsoRear(c)}${arms}${head}`;
+  }
+  const legHalf = halfW * 0.75;
+  const legs = (['l', 'r'] as const)
+    .map((side) => {
+      const s = side === 'l' ? -1 : 1;
+      // Lead (left) foot striding a touch wider than the stance.
+      const x = s === -1 ? 100 - legHalf - 6 : 100 + legHalf;
+      return `
+        ${capsule(`M ${100 + s * (halfW * 0.35)} 206 Q ${x + s * 6} 214 ${x} ${GROUND - 12}`, PANTS, 16)}
+        ${frontShoe(x)}`;
+    })
+    .join('');
+  const torso = `<g transform="rotate(5 100 180)">${torsoRear(c)}</g>`;
+  return `${bat}${legs}${torso}${arms}${head}`;
+}
+
+/**
  * Mid-swing contact frame from BEHIND (the rig batter): hips opened, barrel
  * driven level across the zone toward screen-left, foreshortened like
  * poseSwingMid, swoosh trailing from the load position. Rear = no face.
@@ -1866,6 +2053,7 @@ export function buildCharacterSVG(
   if (
     pose === 'batRear' ||
     pose === 'catchRear' ||
+    pose === 'swingLoadRear' ||
     pose === 'swingMidRear' ||
     pose === 'swingFollowRear'
   ) {
@@ -1876,9 +2064,11 @@ export function buildCharacterSVG(
         ? poseBatRear(c, v, hr)
         : pose === 'catchRear'
           ? poseCatchRear(c, v, hr)
-          : pose === 'swingMidRear'
-            ? poseSwingMidRear(c, v, hr)
-            : poseSwingFollowRear(c, v, hr);
+          : pose === 'swingLoadRear'
+            ? poseSwingLoadRear(c, v, hr)
+            : pose === 'swingMidRear'
+              ? poseSwingMidRear(c, v, hr)
+              : poseSwingFollowRear(c, v, hr);
   } else if (pose === 'bat') {
     // Back hair goes BEHIND the body (like the run poses) — concatenating it
     // into the head group draws afros/long drapes OVER the face. It wears the
@@ -1886,6 +2076,8 @@ export function buildCharacterSVG(
     layers = `${wrapHeadBack(c, h.back)}${poseBat(c, v, h.front)}`;
   } else if (pose === 'windup') {
     layers = `${wrapHeadBack(c, h.back)}${poseWindup(c, v, h.front)}`;
+  } else if (pose === 'windup2') {
+    layers = `${wrapHeadBack(c, h.back)}${poseWindup2(c, v, h.front)}`;
   } else if (pose === 'ready') {
     layers = `${wrapHeadBack(c, h.back)}${poseReady(c, v, h.front)}`;
   } else if (pose === 'slide') {
@@ -1902,13 +2094,15 @@ export function buildCharacterSVG(
     layers = `${wrapHeadBack(c, h.back)}${poseCatch(c, v, h.front)}`;
   } else if (pose === 'dive') {
     layers = poseDive(c, v, h.back, h.front);
+  } else if (pose === 'swingLoad') {
+    layers = `${wrapHeadBack(c, h.back)}${poseSwingLoad(c, v, h.front)}`;
   } else if (pose === 'swingMid') {
     layers = `${wrapHeadBack(c, h.back)}${poseSwingMid(c, v, h.front)}`;
   } else if (pose === 'swingFollow') {
     layers = `${wrapHeadBack(c, h.back)}${poseSwingFollow(c, v, h.front)}`;
-  } else if (pose === 'run1' || pose === 'run2') {
-    const frame: 1 | 2 = pose === 'run1' ? 1 : 2;
-    const dropY = frame === 2 ? 3 : 0; // gallop bounce
+  } else if (pose === 'run1' || pose === 'run2' || pose === 'run3' || pose === 'run4') {
+    const frame: RunFrame = pose === 'run1' ? 1 : pose === 'run2' ? 2 : pose === 'run3' ? 3 : 4;
+    const dropY = { 1: 0, 2: 3, 3: 1, 4: 1 }[frame]; // gallop bounce (passes sit between)
     // Head shifted + tilted toward travel; pupils lead the motion.
     const head = `
       <g transform="translate(10 ${dropY}) rotate(5 ${HEAD.cx} ${HEAD.cy})">

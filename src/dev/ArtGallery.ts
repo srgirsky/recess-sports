@@ -10,6 +10,7 @@ import { GAME_WIDTH, GAME_HEIGHT } from '../config';
 import { ROSTER } from '../data/characters';
 import { POSES, type Pose } from '../art/CharacterArt';
 import { poseKey, queueStreetTextures } from '../art/textureFactory';
+import { RUN_FRAMES } from '../ui/anim';
 
 export function mountArtGallery(scene: Phaser.Scene): void {
   let panel: Phaser.GameObjects.Container | undefined;
@@ -110,14 +111,14 @@ export function mountArtGallery(scene: Phaser.Scene): void {
     animate = !animate;
     stopAnim();
     if (animate) {
-      let frame: 1 | 2 = 1;
-      applyPose('run1');
+      let i = 0;
+      applyPose(RUN_FRAMES[0]);
       animTimer = scene.time.addEvent({
-        delay: 140,
+        delay: 80,
         loop: true,
         callback: () => {
-          frame = frame === 1 ? 2 : 1;
-          applyPose(frame === 1 ? 'run1' : 'run2');
+          i = (i + 1) % RUN_FRAMES.length;
+          applyPose(RUN_FRAMES[i]);
         },
       });
     } else {

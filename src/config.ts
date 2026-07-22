@@ -859,7 +859,7 @@ export const ANIM = {
   WINDUP_MS: 380, // pitcher lean-back before the release (the "here it comes" telegraph)
   RUN_BOB: 7, // pixels a runner bounces while running
   IDLE_BOB: 5, // pixels the idle "breathing" bob rises
-  RUN_FRAME_MS: 110, // run-cycle frame swap (run1 <-> run2 textures)
+  RUN_FRAME_MS: 60, // run-cycle frame swap (4-frame reach→pass→crossover→pass gait, ~240ms/cycle)
   REACT_HOLD_MS: 950, // how long a one-shot reaction pose (upset/nervous/cheer) holds before restoring
   ACTION_HOLD_MS: 420, // quicker hold for in-play action poses (throw release, glove-up catch)
   WAGGLE_EVERY_MS: 2700, // idle bat-waggle tic cadence at the plate

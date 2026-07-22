@@ -62,6 +62,7 @@ export class BattingView {
   private batterTic?: Phaser.Time.TimerEvent;
   private batterReactTimer?: Phaser.Time.TimerEvent;
   private batterSwing?: { cancel(restore?: boolean): void };
+  private pitcherWindupSeq?: { cancel(restore?: boolean): void };
   private batterBaseScale = 1;
   private fielderImgs = new Map<PositionId, Phaser.GameObjects.Image>();
   private tossBall: Phaser.GameObjects.Arc;
@@ -173,6 +174,8 @@ export class BattingView {
     this.batterReactTimer?.remove(false);
     this.batterSwing?.cancel(false);
     this.batterSwing = undefined;
+    this.pitcherWindupSeq?.cancel(false); // a stale windup2 must not re-pose the hidden rig
+    this.pitcherWindupSeq = undefined;
     this.batterTic?.remove(false);
     this.batterTic = undefined;
     this.root.setVisible(false);
@@ -186,13 +189,18 @@ export class BattingView {
     this.batter.setX(PLATE_VIEW.BATTER.X);
   }
 
-  /** The distant pitcher coils and leans — mirrors the world-sprite windup. */
+  /** The distant pitcher coils, strides, and leans — mirrors the world-sprite
+   *  windup's leg-lift → stride/plant frame pair. */
   windup(): void {
     if (!this.root.visible || !this.pitcherId) return;
     this.stopTossIdle(); // the pitched ball takes over from here
     const p = this.pitcher;
     this.scene.tweens.killTweensOf(p);
+    this.pitcherWindupSeq?.cancel(false);
     p.setTexture(poseKey(this.pitcherId, 'windup'));
+    this.pitcherWindupSeq = poseSequence(this.scene, p, [
+      { key: poseKey(this.pitcherId, 'windup2'), atMs: ANIM.WINDUP_MS * 0.55 },
+    ]);
     p.setScale(PLATE_VIEW.PITCHER.H / p.height);
     const s = p.scaleX;
     this.scene.tweens.chain({
@@ -265,6 +273,10 @@ export class BattingView {
     const id = this.batterId;
     if (!id) return;
     const followHold = ANIM.SWING_FOLLOW_MS + (whiff ? ANIM.SWING_WHIFF_EXTRA_MS : 0);
+    // Load frame synchronously (no one-tick stance flash); contact and
+    // follow-through keep their exact times — the hit-pause flash must still
+    // catch swingMidRear at SWING_MS × SWING_CONTACT_FRAC.
+    b.setTexture(this.rigKey(id, 'swingLoadRear'));
     this.batterSwing = poseSequence(
       this.scene,
       b,
