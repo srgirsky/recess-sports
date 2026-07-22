@@ -689,6 +689,11 @@ export const SWING_TYPES = {
   BIG: { NARROW_MS: 45, Q_ADJ: 0.22, TYPE_BIAS: 0.35 },
   /** 🤏 BUNT: easy to get bat on it; the ball dies in front of the plate. */
   BUNT: { FORGIVE_MS: 80, DIST_CAP: 115, Q_ADJ: -0.5, SPRAY_MIN: 0.34, SPRAY_MAX: 0.66 },
+  /** 🤪 CRAZY BUNT (signature card, ability 'crazy_bunt' — BB2001's Tony D.
+   *  special): trivially easy contact, but the ball SQUIRTS hard down
+   *  whichever line the swing leans toward — a chaos tool, not a sacrifice.
+   *  Spray snaps to the extremes (no rng draw — goldlog/net safe). */
+  CRAZY_BUNT: { FORGIVE_MS: 100, DIST_CAP: 205, Q_ADJ: -0.15, SPRAY_LO: 0.16, SPRAY_HI: 0.84 },
 };
 
 /** Full-baserunning rules (main mode). */

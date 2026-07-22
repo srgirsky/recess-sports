@@ -231,6 +231,36 @@ describe('main-mode batting cursor (resolveContactAimed)', () => {
     }
   });
 
+  it('the CRAZY BUNT widens contact even past the plain bunt', () => {
+    const base = { PERFECT: 80, GOOD: 170, CONTACT: 300 };
+    expect(timingForSwing(base, 'crazyBunt').CONTACT).toBeGreaterThan(
+      timingForSwing(base, 'bunt').CONTACT
+    );
+  });
+
+  it('a CRAZY BUNT squirts a capped grounder down a line, never up the middle', () => {
+    const C = SWING_TYPES.CRAZY_BUNT;
+    for (const [errorMs, roll] of [
+      [-180, 0.5],
+      [180, 0.5],
+      [-120, 0.99],
+      [120, 0.3],
+    ] as const) {
+      const r = aimed({ band: 'perfect', swingType: 'crazyBunt', errorMs, rng: () => roll });
+      if (r.swing.kind !== 'inPlay') continue; // weak-foul roll — fine
+      expect(r.swing.launch.type).toBe('grounder');
+      expect(r.swing.launch.homer).toBe(false);
+      const d = Math.hypot(r.swing.launch.landing.x - HOME.x, r.swing.launch.landing.y - HOME.y);
+      expect(d).toBeLessThanOrEqual(C.DIST_CAP + 10);
+      // Spray snaps to a LINE: the landing sits clearly off the center axis,
+      // pulled the way the timing leaned (early = pull side, late = oppo).
+      const dx = r.swing.launch.landing.x - HOME.x;
+      expect(Math.abs(dx)).toBeGreaterThan(20);
+      if (errorMs < 0) expect(dx).toBeLessThan(0);
+      else expect(dx).toBeGreaterThan(0);
+    }
+  });
+
   it('a SAFE swing lands shorter than a NORMAL one on the same contact', () => {
     const norm = aimed({ band: 'good', rng: () => 0.6 });
     const safe = aimed({ band: 'good', swingType: 'safe', rng: () => 0.6 });

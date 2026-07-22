@@ -133,15 +133,16 @@ export const ROSTER: Character[] = [
     id: 'sprout',
     name: 'Sprout',
     emoji: '🌱',
-    tagline: 'Tiny. Quick. Sneaky.',
+    tagline: 'Tiny. Quick. Sneaky bunts.',
     voiceGender: 'boy',
     stats: { contact: 6, power: 2, speed: 9, pitching: 4, fielding: 6 },
     visual: { skin: 3, hair: 'short', hairColor: 0, uniform: 2, accessory: 'none', expression: 'happy', bodyType: 'small', freckles: true, stance: 'crouch',
       body: { height: 0.82, shoulderW: 36, neck: -1, headW: 1.08, headH: 1.08 },
       face: { eyeSize: 1.25, nose: 'dot', cheeks: 1.3 },
       outfit: { kind: 'overalls', top: 2 } },
-    ability: 'none',
+    ability: 'crazy_bunt', // the signature 🤪 CRAZY BUNT card joins his swing stack
     draftLine: 'You picked me?! YES! Tiny but mighty!',
+    chatterLines: ['Nobody ever fields my crazy bunt.', 'Watch the ball go ZOOP.'],
   },
   {
     id: 'zippy',
