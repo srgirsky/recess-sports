@@ -228,6 +228,31 @@ describe('character art', () => {
     }
   });
 
+  it('the bat is a real bat: tapered barrel, flared knob, opposed-thumb grip', () => {
+    // The tapered-silhouette path and the knob ellipse are what keep the prop
+    // from regressing to a uniform rod; the flipped top fist is what keeps
+    // the stacked hands reading as a two-hand grip instead of one blob.
+    const TAPER = 'C 9 -56 9 -50 3.5 -44';
+    const KNOB = 'rx="6.5" ry="4"';
+    for (const char of ROSTER) {
+      for (const pose of [
+        'bat',
+        'batRear',
+        'swingMid',
+        'swingFollow',
+        'swingMidRear',
+        'swingFollowRear',
+      ] as const) {
+        const svg = buildCharacterSVG(char.visual, pose);
+        expect(svg.includes(TAPER), `${char.id}/${pose} lost the barrel taper`).toBe(true);
+        expect(svg.includes(KNOB), `${char.id}/${pose} lost the knob flare`).toBe(true);
+        expect(svg.includes(' scale(-1 1)'), `${char.id}/${pose} lost the opposed thumb`).toBe(
+          true
+        );
+      }
+    }
+  });
+
   it('every kid is visually unique (no two stand textures identical)', () => {
     const seen = new Map<string, string>();
     for (const char of ROSTER) {
