@@ -444,7 +444,7 @@ export const LIVE = {
     LINER_HANG_MS: { MIN: 500, MAX: 700 },
     FLY_HANG_MS: { MIN: 1200, MAX: 1700 },
     /** Initial grounder roll speed (px/s); decelerates to stop at the settle point. */
-    GROUNDER_SPEED: { MIN: 240, MAX: 350 },
+    GROUNDER_SPEED: { MIN: 200, MAX: 300 },
   },
   /**
    * What a landed ball does next (systems/liveplay.ts). Flies and liners
@@ -458,12 +458,12 @@ export const LIVE = {
     /** Speed / height / duration retained per hop. */
     RESTITUTION: 0.5,
     /** Landing ground-speed fraction carried into the first hop, per type. */
-    KEEP: { fly: 0.4, liner: 0.6 },
+    KEEP: { fly: 0.35, liner: 0.5 },
     /** First hop duration (ms) and height cue (0..1, renderer scale). */
     FIRST_HOP_MS: 340,
     FIRST_HOP_H: 0.45,
     /** Post-hop speed (px/s) → decel-roll settle distance (v * this, px). */
-    ROLLOUT_S: 0.55,
+    ROLLOUT_S: 0.48,
     /** Carom: speed retained bouncing off the fence. */
     WALL_REST: 0.55,
     /** A hopping ball is grabbable only below this height (short-hop scoop). */
@@ -484,17 +484,19 @@ export const LIVE = {
   /** An airborne ball is catchable in this last fraction of its flight. */
   CATCHABLE_TAIL: 0.4,
   /** Hold-to-charge time (ms) for a full-power throw. */
-  THROW_METER_MS: 900,
+  THROW_METER_MS: 650,
   /** Throw flight speed (px/s) at zero / full charge. */
-  THROW_SPEED_MIN: 380,
+  THROW_SPEED_MIN: 470,
   THROW_SPEED_MAX: 820,
   /** Idle-kid rescue: sim throws by itself after holding the ball this long. */
   AUTO_THROW_MS: 2600,
   /** Runner speed (px/s) at speed stat 5; each stat point is ±6%.
-   *  Scaled with the base-leg length (~180px legs) so a leg takes ~1.5s. */
-  RUNNER_SPEED: 117,
+   *  Scaled with the base-leg length (~180px legs) so a leg takes ~1.7s —
+   *  slow enough that a cleanly fielded routine grounder beats the runner,
+   *  while a good jump still wins the extra-base bang-bang plays. */
+  RUNNER_SPEED: 106,
   /** Distance ball→next base above which a CPU runner risks the extra base. */
-  CPU_RUNNER_GREED_DIST: 165,
+  CPU_RUNNER_GREED_DIST: 180,
   /** A loose ball nobody has picked up for this long → CPU runners just go. */
   CPU_RUNNER_PATIENCE_MS: 1500,
   /** Hard cap: any live play resolves by now (stragglers settle safe behind). */
@@ -647,7 +649,7 @@ export const RUN2 = {
   SAC_WINDOW_MS: 1400,
   /** A kid who just caught a fly needs this long to gather before throwing —
    *  the beat that makes sac flies from third a real race. */
-  CATCH_GATHER_MS: 700,
+  CATCH_GATHER_MS: 800,
 };
 
 /**

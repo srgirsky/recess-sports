@@ -211,11 +211,11 @@ describe('live play: defense (the player fields)', () => {
         outs: 0,
         params: kid,
       });
-      // Field it, then dawdle until 1000ms before lobbing a soft throw — slow
+      // Field it, then dawdle until 1400ms before lobbing a soft throw — slow
       // enough that only the slow runner loses the race to first.
       let threw = false;
       const { s: end } = runPlay(s, kid, (st) => {
-        if (st.ball.phase === 'held' && !threw && st.elapsed >= 1000) {
+        if (st.ball.phase === 'held' && !threw && st.elapsed >= 1400) {
           threw = true;
           return { throwTo: { base: 1, power: 0 } };
         }
@@ -353,7 +353,9 @@ describe('live play: offense (the player runs)', () => {
   it('a tap mid-leg is a no-op; a tap while settled takes the extra base', () => {
     let s = startLivePlay({
       mode: 'offense',
-      launch: { type: 'grounder', landing: { x: 700, y: 250 }, hangMs: 0, rollSpeed: 420, homer: false },
+      // A deep uncatchable fly: the ball is still in the air when the batter
+      // settles at first, so the play is guaranteed open for the second tap.
+      launch: { type: 'fly', landing: { x: 790, y: 220 }, hangMs: 1400, rollSpeed: 60, homer: false },
       batter: { charId: 'bat', speed: 10 },
       baseRunners: [],
       defense: DEFENSE,
@@ -590,11 +592,11 @@ describe('live play: manual baserunning (main mode)', () => {
       defense: DEFENSE,
       params: main,
     });
-    // Send r2 to third; CPU will throw ahead of them but nobody's covering
-    // with a tag in time — reaching the bag = safe in the new rules unless tagged.
+    // Send r2 to third with a good jump; the CPU's throw beats them there by a
+    // hair, but a bang-bang arrival is inside SAFE_RADIUS — safe unless tagged.
     let sent = false;
     const { s: end } = runPlay(s, main, (st) => {
-      if (!sent && st.elapsed > 200) {
+      if (!sent && st.elapsed > 100) {
         sent = true;
         return { sendRunner: 'r2' };
       }
