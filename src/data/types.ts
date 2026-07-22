@@ -145,7 +145,8 @@ export type AbilityId =
   | 'none'
   | 'never_strikes_out' // Misses become weak contact — this kid never whiffs.
   | 'calls_shot' // Pure flavor: a speech bubble prediction that is always wrong.
-  | 'unhittable_pitch'; // As a pitcher, shifts the batter's timing band down one.
+  | 'unhittable_pitch' // As a pitcher, shifts the batter's timing band down one.
+  | 'crazy_bunt'; // Signature 🤪 CRAZY BUNT swing card (SWING_TYPES.CRAZY_BUNT).
 
 export interface Character {
   /** Stable key — used as the texture key AND the localStorage pick-tally key. */

@@ -62,7 +62,7 @@ import {
   type PlateLoc,
 } from '../systems/pitchkind';
 import { showPitchSelect, zoneOutline, type PitchSelect } from './ui/PitchSelectUI';
-import { makeCardStack, type CardStack } from './ui/EdgeCards';
+import { makeCardStack, type CardDef, type CardStack } from './ui/EdgeCards';
 import { createPitchFx, type PitchFx } from './ui/PitchFx';
 import { plateToScreen, screenToPlate, clampToCursorRange } from '../art/plateView';
 import { BattingView } from './ui/BattingView';
@@ -1818,13 +1818,19 @@ export class GameScene extends Phaser.Scene {
     this.swingChips?.destroy();
     this.swingChips = undefined;
     if (!this.features.swingChoice || !this.localHumanBats()) return;
+    // The base four for everyone + this batter's signature card, BB2001-style
+    // (signature abilities gate extra cards the way juice gates pitch cards).
+    const cards: CardDef[] = [
+      { id: 'safe', icon: '🛡', label: 'SAFE' },
+      { id: 'normal', icon: '🏏', label: 'NORMAL' },
+      { id: 'big', icon: '💪', label: 'BIG SWING' },
+      { id: 'bunt', icon: '🤏', label: 'BUNT' },
+    ];
+    if (this.batter.ability === 'crazy_bunt') {
+      cards.push({ id: 'crazyBunt', icon: '🤪', label: 'CRAZY BUNT', gapBefore: true });
+    }
     this.swingChips = makeCardStack(this, {
-      cards: [
-        { id: 'safe', icon: '🛡', label: 'SAFE' },
-        { id: 'normal', icon: '🏏', label: 'NORMAL' },
-        { id: 'big', icon: '💪', label: 'BIG SWING' },
-        { id: 'bunt', icon: '🤏', label: 'BUNT' },
-      ],
+      cards,
       selectedId: this.swingType,
       onSelect: (id) => {
         if (this.swingType === id) return;

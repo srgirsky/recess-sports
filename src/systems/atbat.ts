@@ -18,8 +18,10 @@ import type { PitchPlan, PlateLoc } from './pitchkind';
 
 export type SwingBand = 'perfect' | 'good' | 'weak' | 'miss';
 
-/** Pre-pitch swing choice (CLASSIC): trade contact ease against power. */
-export type SwingType = 'normal' | 'safe' | 'big' | 'bunt';
+/** Pre-pitch swing choice (CLASSIC): trade contact ease against power.
+ *  'crazyBunt' is the signature card — only batters with ability
+ *  'crazy_bunt' ever see it (GameScene.showSwingChips gates the stack). */
+export type SwingType = 'normal' | 'safe' | 'big' | 'bunt' | 'crazyBunt';
 
 /**
  * The timing windows for a swing type: SAFE widens every band (easy contact),
@@ -42,6 +44,8 @@ export function timingForSwing(base: typeof TIMING, type: SwingType): typeof TIM
     }
     case 'bunt':
       return { ...base, CONTACT: base.CONTACT + SWING_TYPES.BUNT.FORGIVE_MS };
+    case 'crazyBunt':
+      return { ...base, CONTACT: base.CONTACT + SWING_TYPES.CRAZY_BUNT.FORGIVE_MS };
     default:
       return base;
   }
@@ -213,7 +217,9 @@ export function resolveContactAimed(spec: {
         ? SWING_TYPES.BIG.Q_ADJ
         : swingType === 'bunt'
           ? SWING_TYPES.BUNT.Q_ADJ
-          : 0;
+          : swingType === 'crazyBunt'
+            ? SWING_TYPES.CRAZY_BUNT.Q_ADJ
+            : 0;
   let q =
     rng() +
     bandBoost +
@@ -233,6 +239,11 @@ export function resolveContactAimed(spec: {
   if (swingType === 'bunt') {
     const B = SWING_TYPES.BUNT;
     sprayT = Math.min(B.SPRAY_MAX, Math.max(B.SPRAY_MIN, sprayT));
+  } else if (swingType === 'crazyBunt') {
+    // The CRAZY bunt squirts down whichever LINE the swing leans toward —
+    // deterministic off the already-computed sprayT (no extra rng draw).
+    const C = SWING_TYPES.CRAZY_BUNT;
+    sprayT = sprayT < 0.5 ? C.SPRAY_LO : C.SPRAY_HI;
   }
 
   // The kid who ALWAYS calls his shot (and is always wrong) finally gets to be
@@ -247,8 +258,13 @@ export function resolveContactAimed(spec: {
     band: band as Exclude<SwingBand, 'miss'>,
     q,
     typeBias,
-    forceType: calledShot ? 'fly' : swingType === 'bunt' ? 'grounder' : undefined,
-    distCap: swingType === 'bunt' ? SWING_TYPES.BUNT.DIST_CAP : undefined,
+    forceType: calledShot ? 'fly' : swingType === 'bunt' || swingType === 'crazyBunt' ? 'grounder' : undefined,
+    distCap:
+      swingType === 'bunt'
+        ? SWING_TYPES.BUNT.DIST_CAP
+        : swingType === 'crazyBunt'
+          ? SWING_TYPES.CRAZY_BUNT.DIST_CAP
+          : undefined,
     sprayT: () => sprayT,
     rng,
     geo: spec.geo,
