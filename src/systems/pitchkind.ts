@@ -10,7 +10,7 @@
 // up", so aiming skill stays readable for kids.
 // ---------------------------------------------------------------------------
 
-import { PLATE_ZONE, PITCHES, PITCH_SCATTER, PITCH_FX, type PitchKind } from '../config';
+import { PLATE_ZONE, PITCHES, PITCH_SCATTER, PITCH_FX, PITCH_SPEED, type PitchKind } from '../config';
 
 export type { PitchKind };
 
@@ -63,6 +63,27 @@ export function flightProgress(kind: PitchKind, t: number): number {
   return a * k;
 }
 
+/**
+ * The Backyard arm term: a better pitching stat means a genuinely FASTER
+ * flight, not just a tighter one (fatigue's sagged stat makes tired arms
+ * lob). Clamped so a content typo can't produce an untimeable pitch.
+ */
+export function armTravelMult(pitcherStat: number): number {
+  const { BASE, PER_STAT, MIN, MAX } = PITCH_SPEED.ARM_MULT;
+  return Math.min(MAX, Math.max(MIN, BASE - PER_STAT * pitcherStat));
+}
+
+/**
+ * Render-only rainbow-arc height (px) for a pitch of this flight time: 0 for
+ * fast pitches, growing (capped) for slow ones. Pure math shared by all three
+ * flight renderers AND the net guest so both devices draw the identical lob —
+ * never used by swing-timing or the sim.
+ */
+export function lobHeightPx(travelMs: number): number {
+  const { FROM_MS, PER_MS, MAX_PX } = PITCH_SPEED.LOB;
+  return Math.min(MAX_PX, Math.max(0, (travelMs - FROM_MS) * PER_MS));
+}
+
 export function isInZone(p: PlateLoc): boolean {
   return Math.abs(p.x) <= PLATE_ZONE.W / 2 && Math.abs(p.y) <= PLATE_ZONE.H / 2;
 }
@@ -108,7 +129,7 @@ export function resolvePitchLocation(
     target,
     actual,
     inZone: isInZone(actual),
-    travelMs: baseTravelMs / def.speedMult,
+    travelMs: (baseTravelMs / def.speedMult) * armTravelMult(pitcherStat),
   };
 }
 
