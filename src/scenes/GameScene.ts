@@ -3340,6 +3340,12 @@ export class GameScene extends Phaser.Scene {
   /** Net: everything the other device sends routes through here. */
   private handleNetMsg(m: NetMsg): void {
     // Role-agnostic control traffic first.
+    if (m.t === 'draftPick') {
+      // Backstop: our ack to the friend's FINAL draft pick was lost and they
+      // are still retransmitting (kid-mode net skips Lineup) — re-ack.
+      activeSession()?.send({ t: 'draftAck', pickNo: m.pickNo });
+      return;
+    }
     if (m.t === 'pause') {
       if (!this.pauseRequested && this.phase !== 'ended') {
         this.netPausedBy = 'them';

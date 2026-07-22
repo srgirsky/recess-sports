@@ -23,6 +23,7 @@ import {
   ANIM,
   CROWD,
   KID_SIZE,
+  NET,
   type GameMode,
 } from '../config';
 import { createCrowd, stepCrowd, type CrowdKidInit, type CrowdState } from '../systems/crowd';
@@ -44,6 +45,7 @@ import { poseKey, clearTeamVariant } from '../art/textureFactory';
 import { getSeason, newSeason, saveSeason } from '../systems/season';
 import { getTeamIdentity, type TeamIdentity } from '../systems/team';
 import { activeSession, dropSession } from '../net/peer';
+import { PickCourier, classifyDraftPick } from '../net/protocol';
 import { makeButton } from '../ui/Button';
 import { makeMuteButton } from '../ui/MuteButton';
 import { ribbon, pill, panel, heading, FONT, OUTLINE } from '../ui/theme';
@@ -118,6 +120,9 @@ export class SchoolyardScene extends Phaser.Scene {
   private netDraft = false; // 🔗: both draft turns are human taps, one remote
   private netPickCount = 0; // applied picks — remote pickNo must match
   private netPickQueue: Array<{ pickNo: number; charId: string }> = [];
+  private netCourier?: PickCourier; // retransmits our unacked pick (loss ≠ deadlock)
+  private netSearching = false; // channel 'reconnecting' — 🔍 pill owns the status
+  private netFinishPending = false; // draft done but our last pick unacked — hold the exit
 
   constructor() {
     super('Schoolyard');
@@ -139,6 +144,9 @@ export class SchoolyardScene extends Phaser.Scene {
     this.netDraft = data?.netDraft ?? false;
     this.netPickCount = 0;
     this.netPickQueue = [];
+    this.netCourier = undefined;
+    this.netSearching = false;
+    this.netFinishPending = false;
     this.straightToDraft = data?.straightToDraft ?? false;
   }
 
@@ -154,11 +162,39 @@ export class SchoolyardScene extends Phaser.Scene {
         // The friend vanished between lobby and draft — back to the title.
         this.netDraft = false;
       } else {
+        this.netCourier = new PickCourier(NET.DRAFT_RESEND_MS);
         const un = session.onMessage((m) => {
-          if (m.t === 'draftPick') this.netPickQueue.push({ pickNo: m.pickNo, charId: m.charId });
+          if (m.t === 'draftPick') {
+            // Ack HERE, not in the idle-gated drain — the drain never runs
+            // again after the final pick, and retransmits must still get
+            // answered (duplicates included).
+            session.send({ t: 'draftAck', pickNo: m.pickNo });
+            this.netCourier?.ackedBy(m); // their later pick implicitly acks ours
+            if (classifyDraftPick(m.pickNo, this.netPickCount) !== 'duplicate') {
+              this.netPickQueue.push({ pickNo: m.pickNo, charId: m.charId });
+            }
+          } else if (m.t === 'draftAck') {
+            this.netCourier?.ackedBy(m);
+          } else if (m.t === 'bye') {
+            this.netAbort(); // friend quit cleanly — don't wait out the 30s window
+          }
         });
         const unStatus = session.onStatus((s) => {
-          if (s === 'gone') this.netAbort();
+          if (s === 'gone') {
+            this.netAbort();
+          } else if (s === 'reconnecting') {
+            this.netSearching = true;
+            this.pillPulse?.stop();
+            this.pillPulse = undefined;
+            this.turnPill.container.setScale(1);
+            this.turnPill.setText('🔍 FINDING YOUR FRIEND…', 0xa0c8e8);
+          } else {
+            // connected: resend our unacked pick right away, restore the pill.
+            this.netSearching = false;
+            this.netCourier?.poke(this.time.now);
+            if (this.netFinishPending) this.turnPill.setText('PLAY BALL!', COLORS.gold);
+            else this.refreshStatus();
+          }
         });
         this.events.once('shutdown', () => {
           un();
@@ -680,14 +716,26 @@ export class SchoolyardScene extends Phaser.Scene {
   update(_t: number, delta: number): void {
     // Net: the friend's picks apply between our own animations.
     if (this.netDraft) {
-      activeSession()?.tick(this.time.now);
+      const session = activeSession();
+      session?.tick(this.time.now);
+      // Retransmit our unacked pick — NOT phase-gated: the final pick must
+      // keep resending through 'done' or a lost ack deadlocks the friend.
+      const again = this.netCourier?.due(this.time.now);
+      if (again) session?.send(again);
       if (this.phase === 'idle' && this.netPickQueue.length > 0) {
         const pick = this.netPickQueue.shift()!;
-        if (pick.pickNo !== this.netPickCount || !this.state.pool.includes(pick.charId)) {
+        const kind = classifyDraftPick(pick.pickNo, this.netPickCount);
+        if (kind === 'expected' && this.state.pool.includes(pick.charId)) {
+          this.applyRemotePick(pick.charId);
+        } else if (kind !== 'duplicate') {
+          // A pick from the future or a kid not in the pool = true desync.
           this.netAbort(); // desync must fail loud, never quietly diverge
           return;
         }
-        this.applyRemotePick(pick.charId);
+      }
+      if (this.netFinishPending && !this.netCourier?.unacked()) {
+        this.netFinishPending = false;
+        this.beginExitFade();
       }
     }
     if (this.phase !== 'cutscene' || !this.crowd) return;
@@ -1020,6 +1068,9 @@ export class SchoolyardScene extends Phaser.Scene {
     recordPick(id);
     if (this.netDraft) {
       activeSession()?.send({ t: 'draftPick', pickNo: this.netPickCount, charId: id });
+      // Courier retransmits until acked — a pick sent into a dead channel
+      // (send() drops silently while reconnecting) must self-heal, not deadlock.
+      this.netCourier?.arm(this.netPickCount, id, this.time.now);
       this.netPickCount += 1;
     }
     audio.pop();
@@ -1275,6 +1326,7 @@ export class SchoolyardScene extends Phaser.Scene {
   // --- Status & finish ------------------------------------------------------------
 
   private refreshStatus(): void {
+    if (this.netSearching) return; // the 🔍 pill owns the status while reconnecting
     const mine = this.state.playerTeam.length;
     this.pillPulse?.stop();
     this.pillPulse = undefined;
@@ -1332,8 +1384,23 @@ export class SchoolyardScene extends Phaser.Scene {
         squashHop(this, kid.img, { height: 16 });
       });
     });
-    this.time.delayedCall(1300, () => this.cameras.main.fadeOut(280, 0x43, 0x4a, 0x52));
-    this.time.delayedCall(1600, () => {
+    this.time.delayedCall(1300, () => {
+      if (this.netDraft && this.netCourier?.unacked()) {
+        // The friend hasn't confirmed our last pick — hold the yard while the
+        // courier retransmits (update() exits the moment the ack lands; the
+        // staleness → 'gone' chain is the no-blame abort if they're truly gone).
+        this.netFinishPending = true;
+        this.turnPill.setText('🔍 FINDING YOUR FRIEND…', 0xa0c8e8);
+        return;
+      }
+      this.beginExitFade();
+    });
+  }
+
+  /** The cheer ceremony is over and (net) the last pick is acked — leave. */
+  private beginExitFade(): void {
+    this.cameras.main.fadeOut(280, 0x43, 0x4a, 0x52);
+    this.time.delayedCall(300, () => {
       // A season draft rolls into Recess Week instead of a one-off game.
       if (this.registry.get('seasonDraft')) {
         this.registry.remove('seasonDraft');

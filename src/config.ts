@@ -514,7 +514,7 @@ export const PASSPLAY = {
 /** Two-device play over WebRTC (src/net/*; PeerJS free cloud broker). */
 export const NET = {
   /** Bumped on any wire-format change; hello handshake rejects mismatches. */
-  PROTOCOL_VERSION: 1,
+  PROTOCOL_VERSION: 2,
   /** liveFrame + liveInput pointer stream rate (full ReplayFrames, no deltas). */
   FRAME_HZ: 20,
   /** "Looking for your friend… 🔍" window before the no-blame GOOD GAME. */
@@ -525,6 +525,8 @@ export const NET = {
   STALE_MS: 6000,
   /** A remote pitch/swing never arrives → CPU fallback + soft disconnect. */
   ACTION_TIMEOUT_MS: 15000,
+  /** Unacked draftPick retransmit cadence — Phaser clock, pumpable. */
+  DRAFT_RESEND_MS: 1500,
   /** Room-code alphabet: 16 emoji = one hex digit each (PeerJS ids must be
    *  alphanumeric — the wire id is 'recess-' + hex; emoji are UI-only). */
   CODE_EMOJI: ['🐶', '🐱', '🦊', '🐸', '🐢', '🦄', '🐝', '🐠', '🍎', '🍌', '🍕', '🌟', '⚽', '🎈', '🚗', '🌈'],

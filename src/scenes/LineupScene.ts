@@ -140,6 +140,10 @@ export class LineupScene extends Phaser.Scene {
           if (m.t === 'lineup') {
             this.theirPlan = m.plan;
             if (this.netReady) this.netStart();
+          } else if (m.t === 'draftPick') {
+            // Backstop: our ack to the friend's FINAL pick was lost and they
+            // are still retransmitting from the draft — re-ack, stateless.
+            session.send({ t: 'draftAck', pickNo: m.pickNo });
           }
         });
         const unStatus = session.onStatus((s) => {

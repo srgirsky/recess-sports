@@ -11,6 +11,8 @@ import {
   decode,
   helloCompatible,
   Sequencer,
+  PickCourier,
+  classifyDraftPick,
   emojiToRoomId,
   roomIdToEmoji,
   rollRoomCode,
@@ -94,6 +96,7 @@ const ALL_MSGS: NetMsg[] = [
   { t: 'hello', version: NET.PROTOCOL_VERSION, mode: 'main', innings: 3, venueId: 'park' },
   { t: 'identity', seat: 1, color: 3, logo: 7 },
   { t: 'draftPick', pickNo: 4, charId: 'turbo' },
+  { t: 'draftAck', pickNo: 4 },
   { t: 'lineup', seat: 0, plan: { order: ['a', 'b'], positions: { a: 'P', b: 'C' }, pitcherId: 'a' } as never },
   { t: 'pitchPlan', kind: 'fastball', target: { x: 0.2, y: -0.4 }, band: 'good', errorMs: 88 },
   { t: 'pitchLaunch', wild: false, travelMs: 900, stealFrom: 2 },
@@ -206,6 +209,124 @@ describe('Sequencer', () => {
     for (let i = 1; i <= 6; i++) a.send(encode(i, { t: 'bye' }));
     b.flush({ dropEvery: 3 }); // drops seq 3 and 6
     expect(got).toEqual([1, 2, 4, 5]);
+  });
+});
+
+describe('PickCourier', () => {
+  const RESEND = NET.DRAFT_RESEND_MS;
+  const PICK: NetMsg = { t: 'draftPick', pickNo: 3, charId: 'turbo' };
+
+  it('is idle until armed, then due only after the resend window', () => {
+    const c = new PickCourier(RESEND);
+    expect(c.unacked()).toBe(false);
+    expect(c.due(99999)).toBeNull(); // unarmed: never due
+    c.arm(3, 'turbo', 1000);
+    expect(c.unacked()).toBe(true);
+    expect(c.due(1000 + RESEND - 1)).toBeNull();
+    expect(c.due(1000 + RESEND)).toEqual(PICK);
+  });
+
+  it('re-arms after each resend (steady cadence, not a burst)', () => {
+    const c = new PickCourier(RESEND);
+    c.arm(3, 'turbo', 0);
+    expect(c.due(RESEND)).toEqual(PICK);
+    expect(c.due(RESEND + 1)).toBeNull(); // just resent — not due again yet
+    expect(c.due(RESEND * 2)).toEqual(PICK);
+  });
+
+  it('clears on the matching draftAck, ignores a non-matching one', () => {
+    const c = new PickCourier(RESEND);
+    c.arm(3, 'turbo', 0);
+    expect(c.ackedBy({ t: 'draftAck', pickNo: 2 })).toBe(false);
+    expect(c.unacked()).toBe(true);
+    expect(c.ackedBy({ t: 'draftAck', pickNo: 3 })).toBe(true);
+    expect(c.unacked()).toBe(false);
+    expect(c.due(RESEND * 5)).toBeNull(); // acked: nothing to resend
+  });
+
+  it("treats the friend's LATER pick as an implicit ack, not an earlier one", () => {
+    const c = new PickCourier(RESEND);
+    c.arm(3, 'turbo', 0);
+    expect(c.ackedBy({ t: 'draftPick', pickNo: 2, charId: 'penny' })).toBe(false); // a retransmit of theirs
+    expect(c.ackedBy({ t: 'draftPick', pickNo: 4, charId: 'penny' })).toBe(true);
+    expect(c.unacked()).toBe(false);
+  });
+
+  it('poke() forces the next due() to fire immediately (reconnect resend)', () => {
+    const c = new PickCourier(RESEND);
+    c.arm(3, 'turbo', 1000);
+    expect(c.due(1001)).toBeNull();
+    c.poke(1001);
+    expect(c.due(1001)).toEqual(PICK);
+  });
+});
+
+describe('classifyDraftPick', () => {
+  it('splits duplicate / expected / future around the applied counter', () => {
+    expect(classifyDraftPick(4, 5)).toBe('duplicate');
+    expect(classifyDraftPick(0, 5)).toBe('duplicate');
+    expect(classifyDraftPick(5, 5)).toBe('expected');
+    expect(classifyDraftPick(6, 5)).toBe('future');
+  });
+});
+
+describe('draft reliability over a lossy channel', () => {
+  it('retransmits until acked; the receiver applies exactly once despite drops both ways', () => {
+    const { a, b } = fakePair();
+    const RESEND = NET.DRAFT_RESEND_MS;
+    const sender = { seq: new Sequencer(), courier: new PickCourier(RESEND) };
+    const receiver = { seqIn: new Sequencer(), seqOut: new Sequencer(), applied: 0, appliedIds: [] as string[] };
+
+    // Receiver: ack EVERY arriving draftPick (dups included), apply once.
+    b.onMessage((raw) => {
+      const env = decode(raw);
+      if (!env || receiver.seqIn.accept(env) !== 'ok') return;
+      if (env.msg.t !== 'draftPick') return;
+      b.send(encode(receiver.seqOut.nextSeq(), { t: 'draftAck', pickNo: env.msg.pickNo }));
+      if (classifyDraftPick(env.msg.pickNo, receiver.applied) === 'expected') {
+        receiver.applied += 1;
+        receiver.appliedIds.push(env.msg.charId);
+      }
+    });
+    const senderSeqIn = new Sequencer();
+    a.onMessage((raw) => {
+      const env = decode(raw);
+      if (!env || senderSeqIn.accept(env) !== 'ok') return;
+      sender.courier.ackedBy(env.msg);
+    });
+
+    const resendNow = (now: number) => {
+      const again = sender.courier.due(now);
+      expect(again).not.toBeNull();
+      a.send(encode(sender.seq.nextSeq(), again!));
+    };
+
+    // The FIRST send vanishes into a dead channel (peer.ts drops silently
+    // while reconnecting) — arm the courier with nothing on the wire.
+    sender.courier.arm(0, 'turbo', 0);
+
+    // Round 1: retransmit lost too (dropEvery: 1 = drop everything).
+    resendNow(RESEND);
+    b.flush({ dropEvery: 1 });
+    expect(sender.courier.unacked()).toBe(true);
+    expect(receiver.applied).toBe(0);
+
+    // Round 2: the pick lands and is applied — but the ACK is lost.
+    resendNow(RESEND * 2);
+    b.flush();
+    expect(receiver.applied).toBe(1);
+    a.flush({ dropEvery: 1 });
+    expect(sender.courier.unacked()).toBe(true);
+
+    // Round 3: the duplicate lands, is re-acked but NOT re-applied,
+    // and this ack finally gets home.
+    resendNow(RESEND * 3);
+    b.flush();
+    a.flush();
+    expect(sender.courier.unacked()).toBe(false);
+    expect(receiver.applied).toBe(1); // dup deliveries never double-apply
+    expect(receiver.appliedIds).toEqual(['turbo']);
+    expect(sender.courier.due(RESEND * 9)).toBeNull(); // courier is done
   });
 });
 
