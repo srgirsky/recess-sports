@@ -10,7 +10,7 @@
 // up", so aiming skill stays readable for kids.
 // ---------------------------------------------------------------------------
 
-import { PLATE_ZONE, PITCHES, PITCH_SCATTER, type PitchKind } from '../config';
+import { PLATE_ZONE, PITCHES, PITCH_SCATTER, PITCH_FX, type PitchKind } from '../config';
 
 export type { PitchKind };
 
@@ -30,10 +30,37 @@ export interface PitchPlan {
   travelMs: number;
 }
 
-/** The pitch kinds a pitcher may throw. `crazy` needs juice (later phase). */
+/**
+ * The base rotation. `hasJuice` appends only the classic crazy (legacy shape —
+ * the full juice-gated menu is specialPitches). IMPORTANT: the base-4 list is
+ * what chooseCpuPitch samples with rng — its length is part of the goldlog
+ * fingerprint's rng stream. New specials go in specialPitches, never here.
+ */
 export function availablePitches(hasJuice: boolean): PitchKind[] {
   const base: PitchKind[] = ['fastball', 'changeup', 'curve', 'screwball'];
   return hasJuice ? [...base, 'crazy'] : base;
+}
+
+/** The juice-gated specials, in card-stack display order. */
+export function specialPitches(): PitchKind[] {
+  return ['crazy', 'fireball', 'freezeball'];
+}
+
+/**
+ * Visual flight progress u(t): identity for every kind except freezeball,
+ * which holds spatially FROZEN for t ∈ [HOLD_START, HOLD_END] and still lands
+ * at u(1)=1 — so the visual arrival IS travelMs and the swing-timing math
+ * (error = now − pitchStart − travelMs) never changes. Piecewise-linear,
+ * monotone non-decreasing, rng-free — shared by all flight renderers AND the
+ * net guest, so both devices see the identical freeze.
+ */
+export function flightProgress(kind: PitchKind, t: number): number {
+  if (kind !== 'freezeball') return t;
+  const { HOLD_START: a, HOLD_END: b } = PITCH_FX.FREEZE;
+  const k = 1 / (1 - (b - a)); // speedup that repays the frozen span
+  if (t <= a) return t * k;
+  if (t >= b) return Math.min(1, a * k + (t - b) * k);
+  return a * k;
 }
 
 export function isInZone(p: PlateLoc): boolean {

@@ -21,7 +21,17 @@ import { CURSOR } from '../config';
 import { HOME } from './geometry';
 import { newHalfInning, applyAtBat, applyLivePlay, applySteal } from './inning';
 import { rollSteal } from './steal';
-import { newJuice, addJuice, juiceGain, canSpend, spend, spendCost, cpuWantsSpend } from './juice';
+import {
+  newJuice,
+  addJuice,
+  juiceGain,
+  canSpend,
+  spend,
+  spendCost,
+  cpuWantsSpend,
+  cpuPickSpecialPitch,
+  spendKindForPitch,
+} from './juice';
 import { JUICE } from '../config';
 import {
   startLivePlay,
@@ -260,6 +270,32 @@ describe('juice meter (main mode)', () => {
     expect(cpuWantsSpend(full, 'powerSwing', -2, () => 0.5)).toBe(true); // trailing: 60%
     expect(cpuWantsSpend(full, 'powerSwing', 2, () => 0.5)).toBe(false); // leading: 12%
     expect(cpuWantsSpend(newJuice(), 'powerSwing', -2, () => 0.01)).toBe(false); // broke
+  });
+
+  it('special pitches map to their spends; base kinds map to none', () => {
+    expect(spendKindForPitch('crazy')).toBe('crazyPitch');
+    expect(spendKindForPitch('fireball')).toBe('fireball');
+    expect(spendKindForPitch('freezeball')).toBe('freezeball');
+    expect(spendKindForPitch('fastball')).toBeUndefined();
+    expect(spendKindForPitch('curve')).toBeUndefined();
+  });
+
+  it('cpuPickSpecialPitch only ever picks what it can afford', () => {
+    const seq = (nums: number[]) => {
+      let i = 0;
+      return () => nums[i++ % nums.length];
+    };
+    // Broke: no draw, no pick.
+    expect(cpuPickSpecialPitch(newJuice(), -2, () => 0)).toBeUndefined();
+    // Full meter, trailing, want-roll passes → deterministic pick among all 3.
+    const full = addJuice(newJuice(), 999);
+    expect(cpuPickSpecialPitch(full, -2, seq([0.1, 0]))).toBe('crazy');
+    expect(cpuPickSpecialPitch(full, -2, seq([0.1, 0.99]))).toBe('freezeball');
+    // Want-roll fails (leading, roll above 12%) → no pick.
+    expect(cpuPickSpecialPitch(full, 2, seq([0.5, 0]))).toBeUndefined();
+    // Only crazy affordable (55 ≤ v < 60) → the pick can't be a 60-cost special.
+    const crazyOnly = addJuice(newJuice(), JUICE.COSTS.crazyPitch);
+    expect(cpuPickSpecialPitch(crazyOnly, -2, seq([0.1, 0.99]))).toBe('crazy');
   });
 
   it('a power swing lifts the band and quality; calls_shot guarantees the moonshot', () => {

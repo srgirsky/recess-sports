@@ -180,6 +180,18 @@ export function pitchWoosh(): void {
   noise(0.18, 0.14, 700, 0.9, 1600);
 }
 
+/** 🔥 fireball launch — a hot rising roar under the flame trail. */
+export function fireWhoosh(): void {
+  noise(0.35, 0.35, 500, 0.8, 2400);
+  tone(120, 0.3, 'sawtooth', 0.12, 260);
+}
+
+/** 🧊 freezeball flash-freeze — a glassy crack + an icy descending ring. */
+export function freezeCrack(): void {
+  noise(0.07, 0.5, 3400, 2);
+  tone(1400, 0.22, 'triangle', 0.2, 500);
+}
+
 /** The recess bell — a classic electric school-bell trill. */
 export function bell(): void {
   if (!ready()) return;

@@ -38,7 +38,9 @@ export interface VenueDef {
   /** Hop/carom liveliness: how springy landings and fence caroms play here. */
   bounceMult: number;
   obstacles: VenueObstacle[];
-  /** drawField palette + dressing flags. */
+  /** drawField palette + dressing flags. The scenery descriptors keep the
+   *  field renderer data-driven — new venues pick a combination instead of
+   *  growing another `venue.id` branch in drawField. */
   look: {
     grass: number;
     grassDark: number;
@@ -51,6 +53,18 @@ export interface VenueDef {
     stripes: boolean;
     /** Painted blacktop look (court lines, no dirt diamond texture change). */
     asphalt: boolean;
+    /** Fence surface texture. */
+    fenceStyle: 'wall' | 'planks' | 'chainlink';
+    /** What sits on the horizon behind the fence. */
+    skyline: 'stands' | 'rooftops' | 'brick';
+    /** Haze-tinted treetops peeking over the fence (distance parallax). */
+    treeline: boolean;
+    /** Rows of crowd head-dots in the stands band (0 = empty skyline). */
+    crowdRows: number;
+    /** Dirt strip hugging the fence arc, big-league style. */
+    warningTrack: boolean;
+    /** Outfield ground dressing. */
+    mowPattern: 'stripes' | 'checker' | 'tufts' | 'court';
   };
 }
 
@@ -74,6 +88,12 @@ export const VENUES: Record<VenueId, VenueDef> = {
       stands: true,
       stripes: true,
       asphalt: false,
+      fenceStyle: 'wall',
+      skyline: 'stands',
+      treeline: true,
+      crowdRows: 2,
+      warningTrack: true,
+      mowPattern: 'checker',
     },
   },
   sandlot: {
@@ -96,6 +116,12 @@ export const VENUES: Record<VenueId, VenueDef> = {
       stands: false,
       stripes: false,
       asphalt: false,
+      fenceStyle: 'planks',
+      skyline: 'rooftops',
+      treeline: true,
+      crowdRows: 0,
+      warningTrack: false,
+      mowPattern: 'tufts',
     },
   },
   blacktop: {
@@ -118,6 +144,12 @@ export const VENUES: Record<VenueId, VenueDef> = {
       stands: false,
       stripes: false,
       asphalt: true,
+      fenceStyle: 'chainlink',
+      skyline: 'brick',
+      treeline: false,
+      crowdRows: 0,
+      warningTrack: false,
+      mowPattern: 'court',
     },
   },
 };

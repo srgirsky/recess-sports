@@ -17,6 +17,13 @@ describe('fatigue', () => {
     expect(f.stamina).toBe(0);
   });
 
+  it('all three juice specials drain like the crazy pitch', () => {
+    for (const kind of ['crazy', 'fireball', 'freezeball'] as const) {
+      const f = drainPitch(newFatigue(), kind);
+      expect(f.stamina).toBeCloseTo(1 - FATIGUE.DRAIN_CRAZY);
+    }
+  });
+
   it('a fresh arm throws its full stat; an empty one sags by MAX_STAT_LOSS', () => {
     expect(effectivePitching(8, newFatigue())).toBe(8);
     expect(effectivePitching(8, { stamina: 0 })).toBe(8 - FATIGUE.MAX_STAT_LOSS);

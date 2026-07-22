@@ -1,6 +1,8 @@
 // ---------------------------------------------------------------------------
-// Main-mode mound UI: pick a pitch (pill row) and tap a strike-zone cell to
-// aim it. Pure view — it reports {kind, target} and GameScene does the rest.
+// Main-mode mound UI: pick a pitch from the Backyard-style card stack on the
+// right edge, then tap a strike-zone cell to aim it. Pure view — it reports
+// {kind, target} and GameScene does the rest (juice spends for special cards
+// are validated scene-side; this UI only knows affordable vs locked).
 // Also exports the strike-zone overlay both halves draw while a pitch flies.
 // ---------------------------------------------------------------------------
 
@@ -9,7 +11,8 @@ import { COLORS, GAME_WIDTH, PLATE_ZONE, PLATE_VIEW, PITCHES, type PitchKind } f
 import type { PlateLoc } from '../../systems/pitchkind';
 import { availablePitches } from '../../systems/pitchkind';
 import { plateToScreen } from '../../art/plateView';
-import { pill, FONT, OUTLINE } from '../../ui/theme';
+import { FONT, OUTLINE } from '../../ui/theme';
+import { makeCardStack, type CardDef } from './EdgeCards';
 import * as audio from '../../systems/audio';
 
 /**
@@ -36,19 +39,36 @@ export interface PitchSelect {
   destroy(): void;
 }
 
+/** A juice-gated special pitch entry for the card stack. */
+export interface SpecialPitchOption {
+  kind: PitchKind;
+  /** Can the fielding seat afford it right now? Locked card otherwise. */
+  affordable: boolean;
+  /** Juice cost, shown as the card's badge. */
+  cost: number;
+}
+
+/** Card label = the PITCHES label minus its leading emoji (the icon slot). */
+const cardParts = (kind: PitchKind): { icon: string; label: string } => {
+  const [icon, ...rest] = PITCHES[kind].label.split(' ');
+  return { icon, label: rest.join(' ') };
+};
+
 /**
- * Show the pill row + tappable 3x3 zone grid. Fastball starts selected; a
- * grid tap confirms and fires onDone once. Caller destroys any leftovers.
+ * Show the right-edge pitch card stack + tappable 3x3 zone grid. Fastball
+ * starts selected; a grid tap confirms and fires onDone once. Caller destroys
+ * any leftovers.
  */
 export function showPitchSelect(
   scene: Phaser.Scene,
   opts: {
-    allowCrazy: boolean;
+    /** Juice specials to append below the base cards (locked when broke). */
+    specials: SpecialPitchOption[];
     onDone: (kind: PitchKind, target: PlateLoc) => void;
-    /** Pin screen-anchored chrome (prompt + pill row) to the UI camera. The
+    /** Pin screen-anchored chrome (prompt + card stack) to the UI camera. The
      *  zone grid stays in WORLD space: the frontal plate mapping already makes
      *  it a big tap target, and the camera never zooms anyway. */
-    pin?: (go: Phaser.GameObjects.GameObject) => void;
+    pin: <T extends Phaser.GameObjects.GameObject>(go: T) => T;
   }
 ): PitchSelect {
   const objs: Phaser.GameObjects.GameObject[] = [];
@@ -67,39 +87,32 @@ export function showPitchSelect(
     })
     .setOrigin(0.5)
     .setDepth(90);
-  opts.pin?.(prompt);
+  opts.pin(prompt);
   objs.push(prompt);
 
-  // --- Pitch pills ----------------------------------------------------------
-  const kinds = availablePitches(opts.allowCrazy);
-  const pills: Array<{ kind: PitchKind; c: Phaser.GameObjects.Container }> = [];
-  const spacing = 172;
-  const rowX = GAME_WIDTH / 2 - ((kinds.length - 1) * spacing) / 2;
-  const styleAll = () => {
-    for (const p of pills) {
-      const sel = p.kind === selected;
-      p.c.setAlpha(sel ? 1 : 0.6);
-      p.c.setScale(sel ? 1 : 0.88);
-    }
-  };
-  kinds.forEach((kind, i) => {
-    const { container } = pill(scene, rowX + i * spacing, 600, PITCHES[kind].label, {
-      fill: COLORS.cream,
-      fontSize: 20,
-      minW: 156,
+  // --- Pitch cards (right edge, base group + specials group) ---------------
+  const cards: CardDef[] = availablePitches(false).map((kind) => ({
+    id: kind,
+    ...cardParts(kind),
+  }));
+  opts.specials.forEach((sp, i) => {
+    cards.push({
+      id: sp.kind,
+      ...cardParts(sp.kind),
+      sub: `⚡${sp.cost}`,
+      locked: !sp.affordable,
+      gapBefore: i === 0,
     });
-    container.setDepth(90);
-    opts.pin?.(container);
-    container.setInteractive(new Phaser.Geom.Rectangle(-80, -22, 160, 44), Phaser.Geom.Rectangle.Contains);
-    container.on('pointerdown', () => {
-      selected = kind;
-      audio.pop();
-      styleAll();
-    });
-    pills.push({ kind, c: container });
-    objs.push(container);
   });
-  styleAll();
+  const stack = makeCardStack(scene, {
+    cards,
+    selectedId: selected,
+    onSelect: (id) => {
+      selected = id as PitchKind;
+      audio.pop();
+    },
+    pin: opts.pin,
+  });
 
   // --- Zone grid ------------------------------------------------------------
   objs.push(zoneOutline(scene, 0.9));
@@ -139,6 +152,7 @@ export function showPitchSelect(
 
   return {
     destroy() {
+      stack.destroy();
       for (const o of objs) o.destroy();
       objs.length = 0;
     },

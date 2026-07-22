@@ -38,6 +38,19 @@ describe('venue geometry', () => {
     }
   });
 
+  it('every venue look carries valid scenery descriptors', () => {
+    const fenceStyles = ['wall', 'planks', 'chainlink'];
+    const skylines = ['stands', 'rooftops', 'brick'];
+    const mows = ['stripes', 'checker', 'tufts', 'court'];
+    for (const v of Object.values(VENUES)) {
+      expect(fenceStyles).toContain(v.look.fenceStyle);
+      expect(skylines).toContain(v.look.skyline);
+      expect(mows).toContain(v.look.mowPattern);
+      expect(v.look.crowdRows).toBeGreaterThanOrEqual(0);
+      expect(Number.isInteger(v.look.crowdRows)).toBe(true);
+    }
+  });
+
   it('fenceYAtX is convex in x for every venue (the clampToField invariant)', () => {
     for (const v of Object.values(VENUES)) {
       const geo = getFieldGeometry(v);

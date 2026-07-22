@@ -28,6 +28,7 @@ import {
   SHOW_TIMING_RING,
   ANIM,
   FX,
+  HUD,
 } from '../config';
 import type { Character } from '../data/types';
 import { getCharacter } from '../data/characters';
@@ -54,13 +55,17 @@ import {
   chooseCpuPitch,
   resolvePitchLocation,
   ballCurveAt,
+  flightProgress,
+  specialPitches,
   type PitchPlan,
   type PlateLoc,
 } from '../systems/pitchkind';
 import { showPitchSelect, zoneOutline, type PitchSelect } from './ui/PitchSelectUI';
+import { makeCardStack, type CardStack } from './ui/EdgeCards';
+import { createPitchFx, type PitchFx } from './ui/PitchFx';
 import { plateToScreen, screenToPlate, clampToCursorRange } from '../art/plateView';
 import { BattingView } from './ui/BattingView';
-import { homerSpectacle, powerSwingFx, crazyPitchFx } from './ui/Spectacle';
+import { homerSpectacle, powerSwingFx, crazyPitchFx, fireballFx, freezeballFx } from './ui/Spectacle';
 import type { GameInitData } from './LineupScene';
 import { swapPositions, type LineupPlan } from '../systems/lineup';
 import { newFatigue, drainPitch, effectivePitching, isTired, cpuWantsRelief, type FatigueState } from '../systems/fatigue';
@@ -72,7 +77,7 @@ import { LivePlayView } from './ui/LivePlayView';
 import { activeSession, dropSession } from '../net/peer';
 import type { NetMsg, HudSnap } from '../net/protocol';
 import { getSettings } from '../systems/settings';
-import type { StatEvent } from '../systems/stats';
+import { foldStats, statLine, type KidStats, type StatEvent } from '../systems/stats';
 import { getSeason, saveSeason, recordSeasonGame } from '../systems/season';
 import {
   snapshotLive,
@@ -101,7 +106,10 @@ import {
   addJuice,
   canSpend,
   spend,
+  spendCost,
+  spendKindForPitch,
   cpuWantsSpend,
+  cpuPickSpecialPitch,
   type JuiceState,
   type JuiceEventKind,
 } from '../systems/juice';
@@ -413,6 +421,8 @@ export class GameScene extends Phaser.Scene {
 
   // per-pitch visuals
   private ball?: Phaser.GameObjects.Arc;
+  /** Per-kind flight dressing for the current pitch (scenes/ui/PitchFx.ts). */
+  private pitchFx?: PitchFx;
   private ballShadow?: Phaser.GameObjects.Ellipse;
   private ringShrink?: Phaser.GameObjects.Arc;
   private ringTarget?: Phaser.GameObjects.Arc;
@@ -489,7 +499,7 @@ export class GameScene extends Phaser.Scene {
   private pendingDive = false;
   private pressAt = 0; // pointerdown time — a short press+release is a dive tap
   private swingType: SwingType = 'normal'; // pre-pitch chip choice, reset per batter
-  private swingChips?: Phaser.GameObjects.Container;
+  private swingChips?: CardStack;
   private pendingRun = false;
   /** Main-mode per-runner taps, consumed by the next sim tick. */
   private pendingSend?: string;
@@ -508,7 +518,9 @@ export class GameScene extends Phaser.Scene {
   private announce!: Phaser.GameObjects.Text;
   private announceBg!: Phaser.GameObjects.Rectangle;
   private baseMarks: Phaser.GameObjects.Polygon[] = [];
-  private batterLabel!: Phaser.GameObjects.Text;
+  /** THIS game's per-kid lines (both seats, always tallied — unlike the
+   *  season feed in seat.stats) — feeds the strip's AT BAT stat line. */
+  private gameLines: Record<string, KidStats> = {};
 
   // --- Two views (Backyard-style hard cut) ---
   /** HUD camera: world objects are hidden from it via pinUI's inverse — see
@@ -520,8 +532,6 @@ export class GameScene extends Phaser.Scene {
   private rig!: BattingView;
   /** Raw screen pointer coords — the rig's cursor input (never unprojected). */
   private lastScreenPointer: Vec = { x: PLATE_VIEW.ZONE.CX, y: PLATE_VIEW.ZONE.CY };
-  /** The corner mini-diamond inset's base dots (gold = occupied). */
-  private miniBaseDots: Phaser.GameObjects.Arc[] = [];
 
   constructor() {
     super('Game');
@@ -593,7 +603,7 @@ export class GameScene extends Phaser.Scene {
     this.firstFieldPlay = true;
     this.firstRunPlay = true;
     this.viewMode = 'wide';
-    this.miniBaseDots = [];
+    this.gameLines = {};
   }
 
   create(): void {
@@ -667,11 +677,10 @@ export class GameScene extends Phaser.Scene {
       look: this.venue.look,
     });
     this.drawHud();
-    this.drawMiniDiamond();
     if (this.features.juice) this.drawJuiceMeter();
     this.bindSwingInput();
-    // Below the count panel so it never sits on the B/S/OUT pips.
-    this.pinUI(makeMuteButton(this, GAME_WIDTH - 30, 122));
+    // Top-right corner rail (config.HUD.CORNER), clear of the card stacks.
+    this.pinUI(makeMuteButton(this, HUD.CORNER.MUTE_X, HUD.CORNER.Y));
     this.addPauseButton();
     // The overlay's PLAY button resumes us; re-arm the pause guard.
     const onResume = () => {
@@ -766,10 +775,11 @@ export class GameScene extends Phaser.Scene {
     // Base ground fill (prevents any gaps behind everything else).
     this.add.rectangle(W / 2, GAME_HEIGHT / 2, W, GAME_HEIGHT, look.grass);
 
-    // --- Sky (gradient) ---
+    // --- Sky (gradient, up to the screen top — the scoreboard lives at the
+    // BOTTOM now, so nothing covers the sky band anymore) ---
     const sky = this.add.graphics();
     sky.fillGradientStyle(0x8fd0ff, 0x8fd0ff, 0xd4efff, 0xd4efff, 1);
-    sky.fillRect(0, 68, W, HORIZON - 68);
+    sky.fillRect(0, 0, W, HORIZON);
     // Sun + soft glow, top-LEFT — the whole game is lit from the upper-left
     // (character cel-shade sits on the right side), so the sun must agree.
     this.add.circle(96, 104, 46, 0xfff2b0, 0.5);
@@ -778,16 +788,19 @@ export class GameScene extends Phaser.Scene {
     this.cloud(320, 110);
     this.cloud(660, 94);
 
-    if (look.stands) {
-      // --- Stands + crowd (the park) ---
+    // --- Skyline band (data-driven; deterministic — NO Math.random here, so
+    // create-time draws never shift the seeded goldlog rng stream) ---
+    if (look.skyline === 'stands') {
       this.add.rectangle(W / 2, 168, W, 44, 0x5b6a7a).setOrigin(0.5);
       const crowdColors = [0xeb5a52, 0x3f86e0, 0x43b56f, 0x9161d0, 0xff924a, 0xf5c542, 0xffffff, 0x2fb4ac];
-      for (let i = 0; i < 110; i++) {
-        const x = Math.random() * W;
-        const y = 150 + Math.random() * 32;
-        this.add.circle(x, y, 4 + Math.random() * 2, crowdColors[(Math.random() * crowdColors.length) | 0]);
+      for (let row = 0; row < look.crowdRows; row++) {
+        for (let i = 0; i < 55; i++) {
+          const x = (i * 61 + row * 29) % W;
+          const y = 150 + row * 15 + ((i * 37) % 7);
+          this.add.circle(x, y, 4 + ((i + row) % 3), crowdColors[(i * 5 + row) % crowdColors.length]);
+        }
       }
-    } else if (this.venue.id === 'sandlot') {
+    } else if (look.skyline === 'rooftops') {
       // Backyard skyline: a treeline and a couple of neighbor rooftops.
       for (let x = 30; x < W; x += 90) {
         this.add.circle(x, 168 + ((x / 90) % 3) * 8, 34, 0x3f7d3a, 0.9);
@@ -801,7 +814,7 @@ export class GameScene extends Phaser.Scene {
         this.add.rectangle(hx + 18, 186, 16, 16, 0x7fb2d8).setStrokeStyle(2, 0x5c7d99);
       }
     } else {
-      // Blacktop: the school wall behind the court.
+      // Brick: the school wall behind the court.
       this.add.rectangle(W / 2, 168, W, 44, 0xb0503c).setOrigin(0.5);
       const mortar = this.add.graphics();
       mortar.lineStyle(2, 0x8f3f30, 0.6);
@@ -820,11 +833,29 @@ export class GameScene extends Phaser.Scene {
       for (let x = W; x >= 0; x -= STEP) pts.push(new Phaser.Geom.Point(x, wallY(x) + botOff));
       g.fillPoints(pts, true);
     };
+    // Haze-tinted treetops peeking over the cap: two size tiers for a cheap
+    // parallax read. Drawn BEFORE the fence so the wall overlaps their trunks.
+    if (look.treeline) {
+      const trees = this.add.graphics();
+      for (let x = 12; x < W; x += 68) {
+        const big = ((x / 68) | 0) % 2 === 0;
+        const y = wallY(x) - 34 - (big ? 10 : 2) - ((x * 7) % 9);
+        trees.fillStyle(big ? 0x4f9d5e : 0x6fb589, big ? 0.75 : 0.6);
+        trees.fillCircle(x, y, big ? 20 : 13);
+        trees.fillCircle(x + (big ? 14 : 9), y + 5, big ? 14 : 9);
+      }
+    }
     const fence = this.add.graphics();
     fence.fillStyle(look.fence, 1);
     wallStrip(fence, -26, 0);
     fence.fillStyle(look.fenceTrim, 1);
     wallStrip(fence, -32, -26);
+    // A dirt warning track hugging the arc, big-league style — drawn UNDER
+    // the contact shadow so the wall still reads as standing on it.
+    if (look.warningTrack) {
+      fence.fillStyle(shadeInt(look.dirt, 0.08), 0.85);
+      wallStrip(fence, 0, 18);
+    }
     // The fence casts a soft shadow onto the ground in front of it — the
     // contact shadow is what makes it read as a standing wall, not a stripe.
     fence.fillStyle(0x1b2833, 0.18);
@@ -834,7 +865,7 @@ export class GameScene extends Phaser.Scene {
     for (let x = 40; x < W; x += 120) {
       fence.fillRect(x - 3, wallY(x) - 32, 6, 32);
     }
-    if (this.venue.id === 'sandlot') {
+    if (look.fenceStyle === 'planks') {
       // Wood-plank verticals.
       const planks = this.add.graphics();
       planks.lineStyle(2, 0x6d4426, 0.7);
@@ -842,7 +873,7 @@ export class GameScene extends Phaser.Scene {
         const y = wallY(x);
         planks.lineBetween(x, y - 26, x, y);
       }
-    } else if (this.venue.id === 'blacktop') {
+    } else if (look.fenceStyle === 'chainlink') {
       // Chain-link diamonds.
       const links = this.add.graphics();
       links.lineStyle(1.5, 0xcfd6db, 0.5);
@@ -852,7 +883,7 @@ export class GameScene extends Phaser.Scene {
         links.lineBetween(x, yl - 26, x + 13, yr);
         links.lineBetween(x + 13, yr - 26, x, yl);
       }
-    } else if (look.stands) {
+    } else if (look.skyline === 'stands') {
       // Park bunting triangles hanging off the cap.
       const bunt = [0xeb5a52, 0xffffff, 0x3f86e0];
       for (let x = 20; x < W; x += 60) {
@@ -862,8 +893,8 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
-    // --- Ground texture ---
-    if (look.stripes) {
+    // --- Ground texture (look.mowPattern) ---
+    if (look.mowPattern === 'stripes' || look.mowPattern === 'checker') {
       // Mow stripes as PROJECTED trapezoids — they converge toward the fence
       // with the 3/4 camera, which is what makes the ground read as a plane
       // receding in depth instead of a painted backdrop.
@@ -883,13 +914,32 @@ export class GameScene extends Phaser.Scene {
           true
         );
       }
-    } else if (look.asphalt) {
-      // Faded expansion seams + a painted center ring around second base.
+      if (look.mowPattern === 'checker') {
+        // Cross bands: horizontal rows widening toward the camera, so the
+        // cross-hatch with the verticals reads as a checkerboard mow.
+        stripes.fillStyle(look.grassDark, 0.14);
+        for (let y = HORIZON + 22, h = 18; y < GAME_HEIGHT; y += h * 2.4, h *= 1.35) {
+          stripes.fillRect(0, y, W, h);
+        }
+      }
+    } else if (look.mowPattern === 'court') {
+      // Faded expansion seams + painted playground markings.
       const seams = this.add.graphics();
       seams.lineStyle(2, look.grassDark, 0.7);
       for (let x = 120; x < W; x += 240) seams.lineBetween(x, HORIZON, x, GAME_HEIGHT);
       seams.lineBetween(0, 470, W, 470);
       this.add.circle(SECOND.x, SECOND.y, 45).setStrokeStyle(4, 0xf2e6c9, 0.5);
+      // A basketball three-point arc sweeping through deep foul ground...
+      const court = this.add.graphics();
+      court.lineStyle(4, 0xf2e6c9, 0.35);
+      court.beginPath();
+      court.arc(HOME.x, HOME.y + 40, 190, Math.PI * 1.15, Math.PI * 1.85);
+      court.strokePath();
+      // ...and a hopscotch grid chalked in the left foul corner.
+      court.lineStyle(3, 0xf2e6c9, 0.4);
+      for (let i = 0; i < 4; i++) court.strokeRect(56, 480 + i * 30, 34, 30);
+      court.strokeRect(22, 510, 34, 30);
+      court.strokeRect(90, 510, 34, 30);
     } else {
       // Backyard grass: scruffy tufts.
       const tufts = this.add.graphics();
@@ -1014,13 +1064,14 @@ export class GameScene extends Phaser.Scene {
   }
 
   private drawHud(): void {
-    // The scoreboard strip: score / inning / labeled B-S-OUT count, all pinned.
-    // Team logos + colors label the score panel when identities exist (solo
-    // CLASSIC has both; kid mode falls back to YOU/CPU).
+    // The bottom scoreboard strip: team rows / at-bat block / inning / mini-
+    // diamond, all pinned. Team logos + names + colors label the rows when
+    // identities exist (solo CLASSIC has both; kid mode falls back to YOU/CPU).
     const idA = this.seats[0].identity;
     const idB = this.seats[1].identity;
     const seatLabel = (id: TeamIdentity) => ({
       label: TEAM_LOGOS[id.logo].icon,
+      name: teamName(id).replace(/^THE /, ''),
       color: UNIFORM_COLORS[id.color].jersey,
     });
     this.scoreboard = createScoreboard(
@@ -1029,17 +1080,17 @@ export class GameScene extends Phaser.Scene {
       idA && idB ? { away: seatLabel(idA), home: seatLabel(idB) } : undefined
     );
 
-    // Announcer lives in its own band below the HUD so it never sits on a sprite.
+    // Announcer lives in its own band along the top so it never sits on a sprite.
     this.announceBg = this.pinUI(
       this.add
-        .rectangle(GAME_WIDTH / 2, 108, 640, 62, COLORS.ink, 0.55)
+        .rectangle(GAME_WIDTH / 2, HUD.ANNOUNCER.CY, HUD.ANNOUNCER.W, HUD.ANNOUNCER.H, COLORS.ink, 0.55)
         .setOrigin(0.5)
         .setDepth(90)
         .setAlpha(0)
     );
     this.announce = this.pinUI(
       this.add
-        .text(GAME_WIDTH / 2, 108, '', {
+        .text(GAME_WIDTH / 2, HUD.ANNOUNCER.CY, '', {
           fontFamily: FONT,
           fontSize: '38px',
           color: '#ffffff',
@@ -1050,16 +1101,6 @@ export class GameScene extends Phaser.Scene {
         .setStroke('#14202e', 7)
         .setDepth(91)
     );
-
-    this.batterLabel = this.add
-      .text(HOME.x, HOME.y + 34, '', {
-        fontFamily: FONT,
-        fontSize: '20px',
-        color: '#ffffff',
-      })
-      .setOrigin(0.5, 0.5)
-      .setStroke('#14202e', 5)
-      .setDepth(30);
 
     this.refreshHud();
   }
@@ -1075,51 +1116,38 @@ export class GameScene extends Phaser.Scene {
       balls: this.halfState ? this.halfState.count.balls : 0,
       strikes: this.halfState ? this.halfState.count.strikes : 0,
       outs: this.halfState ? this.halfState.outs : 0,
+      bases: [
+        !!this.halfState?.bases[0],
+        !!this.halfState?.bases[1],
+        !!this.halfState?.bases[2],
+      ],
     });
     for (let i = 0; i < 3; i++) {
       const lit = this.halfState?.bases[i];
       this.baseMarks[i]?.setFillStyle(lit ? COLORS.gold : COLORS.white);
-      this.miniBaseDots[i]?.setFillStyle(lit ? COLORS.gold : 0xffffff, lit ? 1 : 0.85);
     }
   }
 
-  /**
-   * The corner mini-diamond inset (the Backyard "Steal!" widget): base state
-   * at a glance while the batting close-up hides the outfield. Steal chips
-   * anchor next to it — see showStealChips(). UI camera, so it never zooms.
-   */
-  private drawMiniDiamond(): void {
-    const c = this.add.container(72, 158).setDepth(92);
-    const g = this.add.graphics();
-    g.fillStyle(COLORS.ink, 0.55);
-    g.fillRoundedRect(-52, -48, 104, 96, 12);
-    // Basepath diamond: home at the bottom, second at the top.
-    const pts = [
-      new Phaser.Geom.Point(0, 34), // home
-      new Phaser.Geom.Point(30, 2), // first
-      new Phaser.Geom.Point(0, -30), // second
-      new Phaser.Geom.Point(-30, 2), // third
-    ];
-    g.lineStyle(3, 0xffffff, 0.55);
-    g.strokePoints(pts, true, true);
-    c.add(g);
-    // Home marker + the three base dots (gold when occupied — refreshHud).
-    c.add(this.add.circle(0, 34, 4, 0xffffff, 0.9));
-    this.miniBaseDots = [pts[1], pts[2], pts[3]].map((p) => {
-      const dot = this.add.circle(p.x, p.y, 7, 0xffffff, 0.85).setStrokeStyle(2, COLORS.ink);
-      c.add(dot);
-      return dot;
-    });
-    this.pinUI(c);
+  /** Fold one stat event into THIS game's lines (both seats, every mode —
+   *  unlike the gated season feed) and refresh the strip's AT BAT block. */
+  private tallyGame(ev: StatEvent): void {
+    this.gameLines = foldStats(this.gameLines, [ev]);
+  }
+
+  /** The strip's stat line for a kid: '' until they have a game line. */
+  private gameLineFor(id: string): string {
+    const line = this.gameLines[id];
+    return line ? statLine(line) : '';
   }
 
   // --- Juice meter (main mode) ---------------------------------------------
 
-  /** ⚡ bar under the HUD strip — the player's juice at a glance. */
+  /** ⚡ bar in the top-left corner — the player's juice at a glance. */
   private drawJuiceMeter(): void {
+    const { ICON_X, ICON_Y } = HUD.JUICE;
     this.pinUI(
       this.add
-        .text(22, 78, '⚡', { fontSize: '20px' })
+        .text(ICON_X, ICON_Y, '⚡', { fontSize: '20px' })
         .setOrigin(0, 0.5)
         .setDepth(90)
     );
@@ -1132,12 +1160,13 @@ export class GameScene extends Phaser.Scene {
     if (!g) return;
     const p = Phaser.Math.Clamp(this.deviceSeat().juice.value / this.deviceSeat().juice.max, 0, 1);
     const full = canSpend(this.deviceSeat().juice, 'powerSwing');
+    const { BAR_X, BAR_Y, BAR_W, BAR_H } = HUD.JUICE;
     g.clear();
     g.fillStyle(COLORS.ink, 0.45);
-    g.fillRoundedRect(48, 70, 128, 16, 8);
+    g.fillRoundedRect(BAR_X, BAR_Y, BAR_W, BAR_H, 8);
     if (p > 0.05) {
       g.fillStyle(full ? COLORS.gold : COLORS.white, 1);
-      g.fillRoundedRect(51, 73, 122 * p, 10, 5);
+      g.fillRoundedRect(BAR_X + 3, BAR_Y + 3, (BAR_W - 6) * p, BAR_H - 6, 5);
     }
   }
 
@@ -1156,7 +1185,7 @@ export class GameScene extends Phaser.Scene {
       seat.juice = addJuice(seat.juice, amount);
       this.refreshJuiceMeter();
       if (!was && canSpend(seat.juice, 'powerSwing')) {
-        this.pinUI(floatingText(this, 110, 96, 'JUICE READY! ⚡', COLORS.gold, 22));
+        this.pinUI(floatingText(this, HUD.JUICE.READY_X, HUD.JUICE.READY_Y, 'JUICE READY! ⚡', COLORS.gold, 22));
       }
     } else {
       seat.juice = addJuice(seat.juice, amount);
@@ -1316,10 +1345,10 @@ export class GameScene extends Phaser.Scene {
 
   // --- Pause ---------------------------------------------------------------
 
-  /** The ⏸ corner button, on the right rail under the mute toggle. */
+  /** The ⏸ corner button, on the top rail beside the mute toggle. */
   private addPauseButton(): void {
     const btn = this.add
-      .text(GAME_WIDTH - 30, 168, '⏸', { fontSize: '30px' })
+      .text(HUD.CORNER.PAUSE_X, HUD.CORNER.Y, '⏸', { fontSize: '30px' })
       .setOrigin(0.5)
       .setDepth(500)
       .setInteractive({ useHandCursor: true });
@@ -1439,7 +1468,7 @@ export class GameScene extends Phaser.Scene {
     const seat = this.battingSeat();
     this.batter = getCharacter(seat.team[seat.lineupIdx % TEAM_SIZE]);
     this.showBatter(this.batter);
-    this.batterLabel.setText(this.batter.name);
+    this.scoreboard.setBatter(this.batter.name, this.gameLineFor(this.batter.id));
     this.kidChat('batterUp', this.batter);
     this.swingType = 'normal'; // the chip choice is per-at-bat
     this.showSwingChips();
@@ -1621,46 +1650,42 @@ export class GameScene extends Phaser.Scene {
       // The guest already resolved its meter (band/errorMs) locally; the host
       // authoritatively rolls the location scatter and validates the spend.
       let kind = rp.kind;
-      if (kind === 'crazy') {
-        if (this.features.juice && canSpend(moundSeat.juice, 'crazyPitch', moundSeat.pitcher!.ability)) {
-          moundSeat.juice = spend(moundSeat.juice, 'crazyPitch', moundSeat.pitcher!.ability);
-          if (this.features.fatigue) moundSeat.fatigue = drainPitch(moundSeat.fatigue, 'crazy');
-          floatingText(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y, '⚡ CRAZY PITCH!', COLORS.red, 26);
-          crazyPitchFx(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y);
-          this.callIt('crazyPitch', {}, 2);
+      const sk = spendKindForPitch(kind);
+      if (sk) {
+        if (this.features.juice && canSpend(moundSeat.juice, sk, moundSeat.pitcher!.ability)) {
+          moundSeat.juice = spend(moundSeat.juice, sk, moundSeat.pitcher!.ability);
+          if (this.features.fatigue) moundSeat.fatigue = drainPitch(moundSeat.fatigue, kind);
+          this.announceSpecialPitch(kind as 'crazy' | 'fireball' | 'freezeball', COLORS.red);
         } else {
-          kind = 'fastball'; // stale guest meter — never a free crazy
+          kind = 'fastball'; // stale guest meter — never a free special
         }
       }
       plan = resolvePitchLocation(kind, rp.target, cpuArm, rp.errorMs, PITCH_TRAVEL_MS, () => Math.random());
     } else {
       plan = chooseCpuPitch(cpuArm, this.halfState.count, PITCH_TRAVEL_MS, () => Math.random());
-      // A trailing CPU digs into its own juice for the crazy pitch. Never in
+      // A trailing CPU digs into its own juice for a special pitch. Never in
       // pass-and-play/net: the CPU must not burn a HUMAN seat's meter.
-      if (
-        this.features.juice &&
-        this.matchType === 'solo' &&
-        cpuWantsSpend(
-          moundSeat.juice,
-          'crazyPitch',
-          moundSeat.score - this.battingSeat().score,
-          () => Math.random(),
-          moundSeat.pitcher!.ability
-        )
-      ) {
-        moundSeat.juice = spend(moundSeat.juice, 'crazyPitch', moundSeat.pitcher!.ability);
-        if (this.features.fatigue) moundSeat.fatigue = drainPitch(moundSeat.fatigue, 'crazy');
+      const special =
+        this.features.juice && this.matchType === 'solo'
+          ? cpuPickSpecialPitch(
+              moundSeat.juice,
+              moundSeat.score - this.battingSeat().score,
+              () => Math.random(),
+              moundSeat.pitcher!.ability
+            )
+          : undefined;
+      if (special) {
+        moundSeat.juice = spend(moundSeat.juice, spendKindForPitch(special)!, moundSeat.pitcher!.ability);
+        if (this.features.fatigue) moundSeat.fatigue = drainPitch(moundSeat.fatigue, special);
         plan = resolvePitchLocation(
-          'crazy',
+          special,
           plan.target,
           cpuArm,
           60,
           PITCH_TRAVEL_MS,
           () => Math.random()
         );
-        floatingText(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y, '⚡ CRAZY PITCH!', COLORS.red, 26);
-        crazyPitchFx(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y);
-        this.callIt('crazyPitch', {}, 2);
+        this.announceSpecialPitch(special, COLORS.red);
       }
     }
     this.pitchPlan = plan;
@@ -1691,14 +1716,20 @@ export class GameScene extends Phaser.Scene {
     const ball = this.add.circle(start.x, start.y, 10, COLORS.white).setDepth(PLATE_VIEW.DEPTH + 8);
     ball.setStrokeStyle(2, COLORS.ink);
     this.ball = ball;
+    this.pitchFx = createPitchFx(this, plan.kind);
+    // Linear counter; the classic Sine.in ease is applied MANUALLY on the
+    // freeze-remapped progress (flightProgress) so the freezeball's hold spans
+    // real flight TIME — identical output to the old eased counter for every
+    // other kind. Arrival still lands exactly at travelMs.
     this.tweens.addCounter({
       from: 0,
       to: 1,
       duration: plan.travelMs,
-      ease: 'Sine.in',
       onUpdate: (tw) => {
         if (this.ball !== ball) return;
-        const t = tw.getValue() ?? 0;
+        const tLin = tw.getValue() ?? 0;
+        const u = flightProgress(plan.kind, tLin);
+        const t = 1 - Math.cos((u * Math.PI) / 2); // Sine.in on remapped progress
         const bend = ballCurveAt(plan, t);
         ball.setPosition(
           start.x + (end.x - start.x) * t + bend.x * bendScale,
@@ -1707,59 +1738,43 @@ export class GameScene extends Phaser.Scene {
         ball.setScale(
           PLATE_VIEW.BALL.SCALE_FROM + t * (PLATE_VIEW.BALL.SCALE_TO - PLATE_VIEW.BALL.SCALE_FROM)
         );
+        this.pitchFx?.onUpdate(ball, tLin, t);
       },
       onComplete: () => {
         if (!this.swung && this.phase === 'pitching') this.resolvePlayerSwing('miss', true);
       },
     });
-    this.startBallTrail();
+    // The generic white trail reads wrong under the flame/frost dressings.
+    if (plan.kind !== 'fireball' && plan.kind !== 'freezeball') this.startBallTrail();
     if (this.features.battingCursor) this.showSwingCursor();
     if (this.features.steals) this.showStealChips();
     if (this.features.juice) this.showPowerButton();
   }
 
   /**
-   * 🛡/🏏/💪/🤏 swing-type chips (CLASSIC batting): a vertical icon stack on
-   * the left edge. Sticky for the at-bat, reset to normal for each batter.
-   * Chips stopPropagation — a chip tap must never double as a swing.
+   * Swing-type cards (CLASSIC batting): the Backyard-style labeled stack on
+   * the right edge (config.HUD.CARDS). Sticky for the at-bat, reset to normal
+   * for each batter. Cards stopPropagation — a tap must never double as a swing.
    */
   private showSwingChips(): void {
     this.swingChips?.destroy();
     this.swingChips = undefined;
     if (!this.features.swingChoice || !this.localHumanBats()) return;
-    const defs: Array<{ t: SwingType; icon: string }> = [
-      { t: 'safe', icon: '🛡' },
-      { t: 'normal', icon: '🏏' },
-      { t: 'big', icon: '💪' },
-      { t: 'bunt', icon: '🤏' },
-    ];
-    // Lane split with the spend/relief/power column at x=116: the swing stack
-    // owns x≤76 / y≤GAME_HEIGHT-170; that column owns y≥GAME_HEIGHT-159.
-    const root = this.add.container(0, 0).setDepth(94);
-    defs.forEach((d, i) => {
-      const y = GAME_HEIGHT - 190 - (defs.length - 1 - i) * 54;
-      const selected = this.swingType === d.t;
-      const { container } = pill(this, 44, y, d.icon, {
-        fill: selected ? COLORS.gold : COLORS.cream,
-        fontSize: 22,
-        minW: 58,
-      });
-      container.setAlpha(selected ? 1 : 0.75);
-      container.setInteractive(
-        new Phaser.Geom.Rectangle(-32, -22, 64, 44),
-        Phaser.Geom.Rectangle.Contains
-      );
-      container.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, e: Phaser.Types.Input.EventData) => {
-        e.stopPropagation();
-        if (this.swingType === d.t) return;
-        this.swingType = d.t;
+    this.swingChips = makeCardStack(this, {
+      cards: [
+        { id: 'safe', icon: '🛡', label: 'SAFE' },
+        { id: 'normal', icon: '🏏', label: 'NORMAL' },
+        { id: 'big', icon: '💪', label: 'BIG SWING' },
+        { id: 'bunt', icon: '🤏', label: 'BUNT' },
+      ],
+      selectedId: this.swingType,
+      onSelect: (id) => {
+        if (this.swingType === id) return;
+        this.swingType = id as SwingType;
         audio.pop();
-        this.showSwingChips(); // restyle
-      });
-      root.add(container);
+      },
+      pin: (o) => this.pinUI(o),
     });
-    this.pinUI(root);
-    this.swingChips = root;
   }
 
   /**
@@ -1774,7 +1789,7 @@ export class GameScene extends Phaser.Scene {
     // bullpen policy manages the remote seat host-side.
     if (this.matchType === 'net' && this.netRole === 'guest') return;
     if (!this.features.fatigue || !this.fieldingSeat().plan || !isTired(this.fieldingSeat().fatigue)) return;
-    const { container } = pill(this, 116, GAME_HEIGHT - 96, '🥵 NEW PITCHER', {
+    const { container } = pill(this, HUD.SPEND_COL.X, HUD.SPEND_COL.ROW1_Y, '🥵 NEW PITCHER', {
       fill: COLORS.red,
       fontSize: 17,
       minW: 170,
@@ -1866,9 +1881,11 @@ export class GameScene extends Phaser.Scene {
     let row = 0;
     for (const d of defs) {
       if (!d.armed && !canSpend(this.deviceSeat().juice, d.kind)) continue;
-      const y = GAME_HEIGHT - (humanBatting ? 96 : 148) - row * 46;
+      // One rung above the column's bottom row (power when batting, relief
+      // when pitching), stacking upward.
+      const y = HUD.SPEND_COL.ROW1_Y - (row + 1) * HUD.SPEND_COL.ROW_GAP;
       row += 1;
-      const { container } = pill(this, 116, y, d.armed ? `${d.label}!` : d.label, {
+      const { container } = pill(this, HUD.SPEND_COL.X, y, d.armed ? `${d.label}!` : d.label, {
         fill: d.armed ? COLORS.gold : COLORS.cream,
         fontSize: 16,
         minW: 150,
@@ -1902,8 +1919,8 @@ export class GameScene extends Phaser.Scene {
     if (!this.armedPower && !canSpend(this.deviceSeat().juice, 'powerSwing')) return;
     const { container } = pill(
       this,
-      116,
-      GAME_HEIGHT - 42,
+      HUD.SPEND_COL.X,
+      HUD.SPEND_COL.ROW1_Y,
       this.armedPower ? '💥 POWERED UP!' : '💥 POWER SWING',
       { fill: this.armedPower ? COLORS.gold : COLORS.cream, fontSize: 18, minW: 170 }
     );
@@ -1927,9 +1944,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
-   * 💨 STEAL! chips for runners with an open base ahead. They anchor next to
-   * the mini-diamond inset (NOT the world bases — the behind-plate rig hides
-   * the whole field), Backyard-style: the inset IS the steal UI.
+   * 💨 STEAL! chips for runners with an open base ahead. They anchor above the
+   * strip's mini-diamond (NOT the world bases — the behind-plate rig hides
+   * the whole field), Backyard-style: the diamond IS the steal UI.
    */
   private showStealChips(): void {
     this.stealChips.forEach((c) => c.destroy());
@@ -1939,8 +1956,8 @@ export class GameScene extends Phaser.Scene {
       if (!this.runners.has(fromBase) || this.runners.has(fromBase + 1)) continue;
       const { container } = pill(
         this,
-        212,
-        fromBase === 1 ? 176 : 136,
+        HUD.STEAL.X,
+        fromBase === 1 ? HUD.STEAL.STEAL2_Y : HUD.STEAL.STEAL3_Y,
         fromBase === 1 ? '💨 STEAL 2ND!' : '💨 STEAL 3RD!',
         {
           fill: COLORS.cream,
@@ -2004,6 +2021,21 @@ export class GameScene extends Phaser.Scene {
     return { x: MOUND.x, y: MOUND.y - 90 };
   }
 
+  /** The mound-side theater for any juice special: callout + Spectacle fx +
+   *  booth hype (all three specials share the crazyPitch announce moment). */
+  private announceSpecialPitch(kind: 'crazy' | 'fireball' | 'freezeball', color: number): void {
+    const p = this.pitchCalloutPos();
+    const label =
+      kind === 'crazy' ? '⚡ CRAZY PITCH!' : kind === 'fireball' ? '🔥 FIREBALL!' : '🧊 FREEZEBALL!';
+    floatingText(this, p.x, p.y, label, color, 26);
+    if (kind === 'crazy') crazyPitchFx(this, p.x, p.y);
+    else if (kind === 'fireball') {
+      fireballFx(this, p.x, p.y);
+      audio.fireWhoosh();
+    } else freezeballFx(this, p.x, p.y);
+    this.callIt('crazyPitch', {}, 2);
+  }
+
   private positionSwingCursor(): void {
     if (!this.swingCursor) return;
     const p = plateToScreen(this.cursorPlate());
@@ -2013,6 +2045,8 @@ export class GameScene extends Phaser.Scene {
   private clearPitchVisuals(): void {
     this.trailTimer?.remove();
     this.trailTimer = undefined;
+    this.pitchFx?.destroy();
+    this.pitchFx = undefined;
     this.ball?.destroy();
     this.ball = undefined;
     this.ballShadow?.destroy();
@@ -2196,21 +2230,25 @@ export class GameScene extends Phaser.Scene {
     if (result.kind === 'strike' && applied.batterOut) {
       this.gainJuiceSeat(this.fieldingSeat(), 'strikeoutThrown');
       this.callIt('strikeoutSwinging', { name: prevBatter.name });
+      this.tallyGame({ t: 'kThrown', kid: this.fieldingSeat().pitcher!.id });
     }
-    // Season stat feed: a completed non-walk AB, and homers. (Runs on live
-    // plays arrive via the 'score' event; a homer's runs are known right
-    // here — batter + everyone who was aboard.)
-    if (this.seasonGame && seat.recordsStats && applied.batterDone && !walked) {
-      seat.stats.push({ t: 'atBat', kid: prevBatter.id });
+    // Stat feed: a completed non-walk AB, and homers. (Runs on live plays
+    // arrive via the 'score' event; a homer's runs are known right here —
+    // batter + everyone who was aboard.) The game-line tally always runs;
+    // the season feed stays gated on the recording seat.
+    if (applied.batterDone && !walked) {
+      const events: StatEvent[] = [{ t: 'atBat', kid: prevBatter.id }];
       if (result.kind === 'hit') {
-        seat.stats.push({ t: 'hit', kid: prevBatter.id, homer: result.bases >= 4 });
+        events.push({ t: 'hit', kid: prevBatter.id, homer: result.bases >= 4 });
         if (result.bases >= 4) {
-          seat.stats.push({ t: 'run', kid: prevBatter.id });
+          events.push({ t: 'run', kid: prevBatter.id });
           for (const token of this.runners.values()) {
-            seat.stats.push({ t: 'run', kid: token.getData('id') as string });
+            events.push({ t: 'run', kid: token.getData('id') as string });
           }
         }
       }
+      for (const ev of events) this.tallyGame(ev);
+      if (this.seasonGame && seat.recordsStats) seat.stats.push(...events);
     }
 
     // An armed steal races the catcher on a strike or a (non-walk) ball;
@@ -2768,6 +2806,7 @@ export class GameScene extends Phaser.Scene {
           this.playHighlights.outs += 1;
           break;
         case 'score':
+          this.tallyGame({ t: 'run', kid: e.runner });
           if (this.seasonGame && s.mode === 'offense') {
             this.statEvents.push({ t: 'run', kid: e.runner });
           }
@@ -2802,6 +2841,8 @@ export class GameScene extends Phaser.Scene {
     // it is a hit (playground scoring — errors count, and that's fine).
     // The batter char came from whichever flow family ran this half.
     const playBatter = isOffense ? this.batter : this.cpuBatter;
+    this.tallyGame({ t: 'atBat', kid: playBatter.id });
+    if (!outcome.batterOut) this.tallyGame({ t: 'hit', kid: playBatter.id });
     if (this.seasonGame && batSeat.recordsStats) {
       batSeat.stats.push({ t: 'atBat', kid: playBatter.id });
       if (!outcome.batterOut) batSeat.stats.push({ t: 'hit', kid: playBatter.id });
@@ -2936,7 +2977,7 @@ export class GameScene extends Phaser.Scene {
     const batSeat = this.battingSeat();
     this.cpuBatter = getCharacter(batSeat.team[batSeat.lineupIdx % TEAM_SIZE]);
     this.showBatter(this.cpuBatter, true); // jogs in from the dugout
-    this.batterLabel.setText(this.cpuBatter.name);
+    this.scoreboard.setBatter(this.cpuBatter.name, this.gameLineFor(this.cpuBatter.id));
     this.hostCast({ t: 'settle', hud: this.hudSnap(), next: 'pitch' });
     // Your defense heckles the incoming batter, Backyard style.
     const fieldTeam = this.fieldingSeat().team;
@@ -2961,13 +3002,12 @@ export class GameScene extends Phaser.Scene {
       autoPick.remove();
       this.pitchSelect?.destroy();
       this.pitchSelect = undefined;
-      if (kind === 'crazy') {
+      const sk = spendKindForPitch(kind);
+      if (sk) {
         const fseat = this.fieldingSeat();
-        fseat.juice = spend(fseat.juice, 'crazyPitch', fseat.pitcher!.ability);
+        fseat.juice = spend(fseat.juice, sk, fseat.pitcher!.ability);
         this.refreshJuiceMeter();
-        floatingText(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y, '⚡ CRAZY PITCH!', COLORS.gold, 26);
-        crazyPitchFx(this, this.pitchCalloutPos().x, this.pitchCalloutPos().y);
-        this.callIt('crazyPitch', {}, 2);
+        this.announceSpecialPitch(kind as 'crazy' | 'fireball' | 'freezeball', COLORS.gold);
       }
       this.selectedPitch = { kind, target };
       // Next tick, not now: the confirming tap's pointerdown is still being
@@ -2984,10 +3024,19 @@ export class GameScene extends Phaser.Scene {
     });
     this.pitchAutoPick = autoPick;
     this.pitchSelect?.destroy();
+    const fseat = this.fieldingSeat();
+    const ability = fseat.pitcher!.ability;
     this.pitchSelect = showPitchSelect(this, {
-      allowCrazy:
-        this.features.juice &&
-        canSpend(this.fieldingSeat().juice, 'crazyPitch', this.fieldingSeat().pitcher!.ability),
+      specials: this.features.juice
+        ? specialPitches().map((kind) => {
+            const sk = spendKindForPitch(kind)!;
+            return {
+              kind,
+              affordable: canSpend(fseat.juice, sk, ability),
+              cost: spendCost(sk, ability),
+            };
+          })
+        : [],
       onDone: confirm,
       pin: (o) => this.pinUI(o),
     });
@@ -3137,7 +3186,7 @@ export class GameScene extends Phaser.Scene {
     this.zoneGfx = zoneOutline(this);
     if (this.cpuStealFrom !== undefined) {
       // World bases are hidden under the rig — flag it by the mini-diamond.
-      this.pinUI(floatingText(this, 212, 96, 'RUNNER GOING!', COLORS.red, 26));
+      this.pinUI(floatingText(this, HUD.STEAL.X, HUD.STEAL.GOING_Y, 'RUNNER GOING!', COLORS.red, 26));
     }
     const start = this.rig.releasePoint;
     const end = plateToScreen(plan.actual);
@@ -3146,13 +3195,18 @@ export class GameScene extends Phaser.Scene {
       .circle(start.x, start.y, 9, COLORS.white)
       .setStrokeStyle(2, COLORS.ink)
       .setDepth(PLATE_VIEW.DEPTH + 8);
+    this.pitchFx = createPitchFx(this, plan.kind);
+    const fx = this.pitchFx;
+    // Linear counter + manual Sine.in on the freeze-remapped progress — see
+    // launchPitchMain for why.
     this.tweens.addCounter({
       from: 0,
       to: 1,
       duration: plan.travelMs,
-      ease: 'Sine.in',
       onUpdate: (tw) => {
-        const t = tw.getValue() ?? 0;
+        const tLin = tw.getValue() ?? 0;
+        const u = flightProgress(plan.kind, tLin);
+        const t = 1 - Math.cos((u * Math.PI) / 2);
         const bend = ballCurveAt(plan, t);
         ball.setPosition(
           start.x + (end.x - start.x) * t + bend.x * bendScale,
@@ -3161,8 +3215,11 @@ export class GameScene extends Phaser.Scene {
         ball.setScale(
           PLATE_VIEW.BALL.SCALE_FROM + t * (PLATE_VIEW.BALL.SCALE_TO - PLATE_VIEW.BALL.SCALE_FROM)
         );
+        fx.onUpdate(ball, tLin, t);
       },
       onComplete: () => {
+        fx.destroy();
+        if (this.pitchFx === fx) this.pitchFx = undefined;
         ball.destroy();
         this.zoneGfx?.destroy();
         this.zoneGfx = undefined;
@@ -3522,7 +3579,7 @@ export class GameScene extends Phaser.Scene {
       this.netShownBatterId = m.hud.batterId;
       const char = getCharacter(m.hud.batterId);
       this.showBatter(char, !this.localHumanBats());
-      this.batterLabel.setText(char.name);
+      this.scoreboard.setBatter(char.name, this.gameLineFor(char.id));
       if (this.localHumanBats()) {
         this.swingType = 'normal';
         this.showSwingChips();
@@ -3594,14 +3651,18 @@ export class GameScene extends Phaser.Scene {
       const plan = m.plan;
       const bendScale = PLATE_VIEW.ZONE.SCALE;
       this.zoneGfx = zoneOutline(this);
+      this.pitchFx = createPitchFx(this, plan.kind);
+      // Linear counter + manual Sine.in on the freeze-remapped progress — the
+      // guest mirrors the host's freezeball hold exactly (plan rides the wire).
       this.tweens.addCounter({
         from: 0,
         to: 1,
         duration: m.travelMs,
-        ease: 'Sine.in',
         onUpdate: (tw) => {
           if (this.ball !== ball) return;
-          const t = tw.getValue() ?? 0;
+          const tLin = tw.getValue() ?? 0;
+          const u = flightProgress(plan.kind, tLin);
+          const t = 1 - Math.cos((u * Math.PI) / 2);
           const bend = ballCurveAt(plan, t);
           ball.setPosition(
             start.x + (endPt.x - start.x) * t + bend.x * bendScale,
@@ -3610,6 +3671,7 @@ export class GameScene extends Phaser.Scene {
           ball.setScale(
             PLATE_VIEW.BALL.SCALE_FROM + t * (PLATE_VIEW.BALL.SCALE_TO - PLATE_VIEW.BALL.SCALE_FROM)
           );
+          this.pitchFx?.onUpdate(ball, tLin, t);
         },
         onComplete: () => {
           if (!this.swung && this.phase === 'pitching') this.resolvePlayerSwing('miss', true);
@@ -3628,7 +3690,7 @@ export class GameScene extends Phaser.Scene {
         },
       });
     }
-    this.startBallTrail();
+    if (m.plan?.kind !== 'fireball' && m.plan?.kind !== 'freezeball') this.startBallTrail();
     if (this.features.battingCursor && m.plan) this.showSwingCursor();
     if (this.features.juice) this.showPowerButton();
   }
@@ -3776,7 +3838,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.setView('wide'); // the race happens on the bases
-    const { container } = pill(this, GAME_WIDTH / 2, GAME_HEIGHT - 46, '🚨 TAP! THROW HIM OUT!', {
+    const { container } = pill(this, GAME_WIDTH / 2, HUD.STRIP.TOP - 28, '🚨 TAP! THROW HIM OUT!', {
       fill: COLORS.red,
       textColor: '#ffffff',
       fontSize: 26,
@@ -3825,10 +3887,25 @@ export class GameScene extends Phaser.Scene {
       const fseat = this.fieldingSeat();
       this.gainJuiceSeat(fseat, 'strikeoutThrown', fseat.pitcher!.ability);
       this.callIt('strikeoutPitched', { name: prevBatter.name });
+      this.tallyGame({ t: 'kThrown', kid: fseat.pitcher!.id });
       if (this.seasonGame && fseat.recordsStats) fseat.stats.push({ t: 'kThrown', kid: fseat.pitcher!.id });
     }
 
     const walked = result.kind === 'ball' && applied.batterDone;
+    // Game-line tally for the CPU/remote batter (the season feed never
+    // records this side in solo — the strip's AT BAT line still should).
+    if (applied.batterDone && !walked) {
+      this.tallyGame({ t: 'atBat', kid: prevBatter.id });
+      if (result.kind === 'hit') {
+        this.tallyGame({ t: 'hit', kid: prevBatter.id, homer: result.bases >= 4 });
+        if (result.bases >= 4) {
+          this.tallyGame({ t: 'run', kid: prevBatter.id });
+          for (const token of this.runners.values()) {
+            this.tallyGame({ t: 'run', kid: token.getData('id') as string });
+          }
+        }
+      }
+    }
 
     let runDelay = 0;
     if (applied.movements.length > 0) {

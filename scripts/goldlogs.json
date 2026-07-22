@@ -1,18 +1,18 @@
 {
-  "comment": "Gold-log regression fingerprints (scripts/goldlog.browser.js, harness v2.1). The harness seeds Math.random (mulberry32), virtualizes Date.now onto the pump grid, bypasses the visual draft with FIXED teams (the draft's greedy chooser jitters every candidate with rng, so title-screen cosmetics would cascade into different teams), reseeds at game entry, waits out the real-async jersey loader on a 50ms pump grid, and samples every 50ms step. Fingerprint = SHA-256 of the state-transition log (dash-grouped). Behavior-identical phases must reproduce these exactly. To debug a mismatch: check out the anchoring commit and re-run goldLogRun for the full log.",
-  "capturedAt": "post-P3 anchor (seat model committed; verified identical HEAD-vs-P3)",
-  "script": "goldlog.browser.js v2.1",
+  "comment": "Gold-log regression fingerprints (scripts/goldlog.browser.js, harness v2.2). The harness seeds Math.random (mulberry32), virtualizes Date.now onto the pump grid, bypasses the visual draft with FIXED teams (the draft's greedy chooser jitters every candidate with rng, so title-screen cosmetics would cascade into different teams), reseeds at game entry, waits out the real-async jersey loader on a 50ms pump grid, and samples every 50ms step. Fingerprint = SHA-256 of the state-transition log (dash-grouped). Behavior-identical phases must reproduce these exactly. To debug a mismatch: check out the anchoring commit and re-run goldLogRun for the full log. CAUTION when regenerating: launch goldLogRun fire-and-forget and poll sessionStorage('goldlog_last') afterward — an awaited eval that times out mid-drive interleaves CDP work with the run and pollutes the fingerprint.",
+  "capturedAt": "post Backyard-views overhaul anchor (bottom scoreboard strip + right-edge cards + special pitches + fielding markers/scenery; drawField is now rng-free; each fingerprint verified byte-stable across two clean runs)",
+  "script": "goldlog.browser.js v2.2 (guard 9000)",
   "seed": 42,
   "logs": {
     "main": {
-      "length": 2405,
-      "sha256": "78b7ebad-fb2ca8c2-bb85e671-7b313afa-f6b2a9ea-0f5e1f29-f9a8b119-4e856595",
-      "note": "fixed teams A/B, 1 inning, ends 0-1"
+      "length": 1826,
+      "sha256": "bed7447a-73776790-72e274d1-ce231872-e3a4708b-d301c848-29b62a7a-6d5a4cbe",
+      "note": "fixed teams A/B, 1 inning, ends 0-1 walk-off"
     },
     "kid": {
-      "length": 6922,
-      "sha256": "9bb4d287-ebc89c23-cf28e748-69ccb854-677f2060-28ed312e-21ca3785-7e864a67",
-      "note": "fixed teams A/B, 1 inning, ends 5-0"
+      "length": 5222,
+      "sha256": "a6db628c-e0a5f861-4b474a71-18f695d5-b372c9a1-e5cd04c5-fb687d7e-5d3eec6b",
+      "note": "fixed teams A/B, 1 inning, ends 0-1"
     }
   }
 }

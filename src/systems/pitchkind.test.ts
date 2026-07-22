@@ -3,9 +3,11 @@
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
-import { PLATE_ZONE, PITCHES } from '../config';
+import { PLATE_ZONE, PITCHES, PITCH_FX, type PitchKind } from '../config';
 import {
   availablePitches,
+  specialPitches,
+  flightProgress,
   isInZone,
   distOffZone,
   edgeFactor,
@@ -84,6 +86,59 @@ describe('availablePitches', () => {
   it('locks the crazy pitch behind juice', () => {
     expect(availablePitches(false)).not.toContain('crazy');
     expect(availablePitches(true)).toContain('crazy');
+  });
+
+  it('the CPU base rotation is frozen at the classic four (goldlog rng contract)', () => {
+    // chooseCpuPitch samples this list with rng — its LENGTH is part of the
+    // seeded-rng fingerprint. New specials belong in specialPitches.
+    expect(availablePitches(false)).toEqual(['fastball', 'changeup', 'curve', 'screwball']);
+  });
+
+  it('the juice specials never leak into the base rotation', () => {
+    expect(specialPitches()).toEqual(['crazy', 'fireball', 'freezeball']);
+    for (const sp of specialPitches()) {
+      expect(availablePitches(false)).not.toContain(sp);
+    }
+  });
+});
+
+describe('PITCHES definitions', () => {
+  it('every kind has a positive speed and a labeled card', () => {
+    for (const def of Object.values(PITCHES)) {
+      expect(def.speedMult).toBeGreaterThan(0);
+      expect(def.label.length).toBeGreaterThan(2);
+    }
+  });
+});
+
+describe('flightProgress (the freezeball time-remap)', () => {
+  const kinds = Object.keys(PITCHES) as PitchKind[];
+
+  it('is the identity for every kind except freezeball', () => {
+    for (const kind of kinds.filter((k) => k !== 'freezeball')) {
+      for (let t = 0; t <= 1.0001; t += 0.05) {
+        expect(flightProgress(kind, t)).toBe(t);
+      }
+    }
+  });
+
+  it('hits both endpoints exactly (arrival IS travelMs)', () => {
+    expect(flightProgress('freezeball', 0)).toBe(0);
+    expect(flightProgress('freezeball', 1)).toBeCloseTo(1, 10);
+  });
+
+  it('is monotone non-decreasing and flat exactly inside the hold window', () => {
+    const { HOLD_START, HOLD_END } = PITCH_FX.FREEZE;
+    let prev = -1;
+    for (let i = 0; i <= 100; i++) {
+      const t = i / 100;
+      const u = flightProgress('freezeball', t);
+      expect(u).toBeGreaterThanOrEqual(prev);
+      prev = u;
+    }
+    const frozenAt = flightProgress('freezeball', HOLD_START);
+    expect(flightProgress('freezeball', (HOLD_START + HOLD_END) / 2)).toBe(frozenAt);
+    expect(flightProgress('freezeball', HOLD_END + 0.01)).toBeGreaterThan(frozenAt);
   });
 });
 

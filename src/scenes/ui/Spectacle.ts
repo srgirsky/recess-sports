@@ -145,6 +145,51 @@ export function powerSwingFx(scene: Phaser.Scene, cx: number, cy: number, color 
   });
 }
 
+/** The 🔥 fireball: a hot orange wash + sun-rays + rising embers off the mound. */
+export function fireballFx(scene: Phaser.Scene, cx: number, cy: number): void {
+  wash(scene, 0xff6a2a, 0.22);
+  rays(scene, cx, cy, 0xff9a3a);
+  const colors = [0xffd23a, 0xff7a2a, 0xe8524a];
+  for (let i = 0; i < 9; i++) {
+    scene.time.delayedCall(i * 50, () => {
+      const ember = scene.add
+        .circle(cx + (Math.random() - 0.5) * 90, cy + 20, 5 + Math.random() * 5, colors[i % 3], 0.9)
+        .setDepth(64);
+      scene.tweens.add({
+        targets: ember,
+        y: ember.y - 70 - Math.random() * 40,
+        scale: 0.2,
+        alpha: 0,
+        duration: 480,
+        ease: 'Quad.out',
+        onComplete: () => ember.destroy(),
+      });
+    });
+  }
+}
+
+/** The 🧊 freezeball: an icy wash + a crystallizing snowflake burst. */
+export function freezeballFx(scene: Phaser.Scene, cx: number, cy: number): void {
+  wash(scene, 0x9fd9ff, 0.24);
+  burst(scene, cx, cy, 0xbfe6ff, 14);
+  for (let i = 0; i < 6; i++) {
+    const ang = (Math.PI * 2 * i) / 6;
+    const spoke = scene.add
+      .rectangle(cx, cy, 60, 5, 0xe8f7ff, 0.9)
+      .setDepth(64)
+      .setOrigin(0, 0.5)
+      .setRotation(ang);
+    scene.tweens.add({
+      targets: spoke,
+      scaleX: 1.7,
+      alpha: 0,
+      duration: 420,
+      ease: 'Cubic.out',
+      onComplete: () => spoke.destroy(),
+    });
+  }
+}
+
 /** The ⚡ crazy pitch: electric purple wash + crackling bolts off the mound. */
 export function crazyPitchFx(scene: Phaser.Scene, cx: number, cy: number): void {
   wash(scene, 0x8e57c9, 0.2);

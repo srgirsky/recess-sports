@@ -105,7 +105,14 @@ export const PLATE_ZONE = {
   CY: -26,
 };
 
-export type PitchKind = 'fastball' | 'changeup' | 'curve' | 'screwball' | 'crazy';
+export type PitchKind =
+  | 'fastball'
+  | 'changeup'
+  | 'curve'
+  | 'screwball'
+  | 'crazy'
+  | 'fireball'
+  | 'freezeball';
 
 export interface PitchDef {
   /** Flight speed (× the half's base travel time — higher = faster). */
@@ -122,12 +129,30 @@ export interface PitchDef {
 }
 
 export const PITCHES: Record<PitchKind, PitchDef> = {
-  fastball: { speedMult: 1.1, breakX: 0, breakY: 0, wobble: 0, deception: 0.12, label: '🔥 FAST' },
+  fastball: { speedMult: 1.1, breakX: 0, breakY: 0, wobble: 0, deception: 0.12, label: '💨 FAST' },
   changeup: { speedMult: 0.72, breakX: 0, breakY: 16, wobble: 0, deception: 0.5, label: '🐢 SLOW' },
   curve: { speedMult: 0.92, breakX: -40, breakY: 16, wobble: 0, deception: 0.35, label: '🌙 CURVE' },
   screwball: { speedMult: 0.95, breakX: 38, breakY: 8, wobble: 0, deception: 0.35, label: '🌀 SCREW' },
-  // Juice-meter special (locked until the juice system lands).
+  // The juice-meter specials (systems/juice.ts SpendKinds; never in the CPU's
+  // base rotation — availablePitches keeps them out of chooseCpuPitch's draw).
   crazy: { speedMult: 0.88, breakX: 52, breakY: -10, wobble: 26, deception: 0.75, label: '⚡ CRAZY' },
+  fireball: { speedMult: 1.35, breakX: 0, breakY: -6, wobble: 0, deception: 0.55, label: '🔥 FIREBALL' },
+  // Freezeball's terror is the mid-flight FREEZE (PITCH_FX.FREEZE time-remap),
+  // not the break: a slow floater that stops dead, hangs, then finishes.
+  freezeball: { speedMult: 0.55, breakX: 0, breakY: 20, wobble: 0, deception: 0.85, label: '🧊 FREEZE' },
+};
+
+/**
+ * Special-pitch flight dressing (render-only, scenes/ui/PitchFx.ts — RNG-FREE
+ * so goldlog/net stay deterministic) + the freezeball time-remap, which IS
+ * gameplay-visible: flightProgress (systems/pitchkind.ts) holds the ball
+ * spatially frozen for t ∈ [HOLD_START, HOLD_END] of the flight and still
+ * arrives exactly at travelMs, so swing timing math never changes.
+ */
+export const PITCH_FX = {
+  /** Trail-particle spawn cadence for the per-kind flight effects. */
+  TRAIL_EVERY_MS: 40,
+  FREEZE: { HOLD_START: 0.45, HOLD_END: 0.75 },
 };
 
 /** The main-mode batting cursor (plate-coord px). */
@@ -191,10 +216,10 @@ export const PLATE_VIEW = {
   PITCHER: { X: 480, Y: 318, H: 104, RELEASE_DY: 56 },
   /** The rear-view batter, big in the foreground (RHB = screen-left, the 3B
    *  side — same side as the world batter, so the cut has continuity). */
-  BATTER: { X: 300, Y: 624, H: 288 },
-  /** The fielding team's catcher, crouched and cropped by the frame bottom
+  BATTER: { X: 300, Y: 576, H: 288 },
+  /** The fielding team's catcher, crouched and cropped by the scoreboard strip
    *  (head + shoulders in frame; feet well below it). */
-  CATCHER: { X: 556, Y: 696, H: 230 },
+  CATCHER: { X: 556, Y: 648, H: 230 },
   /** The 7 non-battery defenders in the behind-home view, so the close view
    *  shows the same defense as the wide field. From a camera at home plate,
    *  3B/SS/LF sit screen-LEFT and 1B/2B/RF screen-RIGHT (matching the
@@ -223,6 +248,31 @@ export const PLATE_VIEW = {
 };
 
 /**
+ * Screen-anchored HUD geometry (UI camera) — the whole layout in one place,
+ * Backyard-style: the scoreboard is a bottom STRIP (team rows + at-bat count +
+ * mini-diamond), action cards stack on the right edge, juice tops the left.
+ * Every screen-anchored element claims its lane here so overlaps are a config
+ * review, not a scavenger hunt.
+ */
+export const HUD = {
+  /** The bottom scoreboard strip (both modes). Rig ground furniture (plate,
+   *  boxes, batter feet) sits ABOVE STRIP.TOP — see BattingView.drawBackdrop. */
+  STRIP: { TOP: 568, CY: 604, W: 952, H: 64 },
+  /** Right-edge pitch/swing card stacks (CLASSIC only, EdgeCards.ts). */
+  CARDS: { X: 864, W: 168, H: 52, GAP: 60, TOP_Y: 148 },
+  /** ⚡ juice meter, top-left. */
+  JUICE: { ICON_X: 22, ICON_Y: 36, BAR_X: 48, BAR_Y: 28, BAR_W: 128, BAR_H: 16, READY_X: 110, READY_Y: 60 },
+  /** Spend/relief/power column, bottom-left, above the strip. */
+  SPEND_COL: { X: 116, ROW1_Y: 528, ROW_GAP: 46 },
+  /** 💨 STEAL! chips, bottom-right above the strip's mini-diamond. */
+  STEAL: { X: 848, STEAL2_Y: 530, STEAL3_Y: 494, GOING_Y: 470 },
+  /** Announcer banner band, top-center. */
+  ANNOUNCER: { CY: 72, W: 640, H: 62 },
+  /** Corner buttons (top-right, clear of the card stacks below them). */
+  CORNER: { MUTE_X: 930, PAUSE_X: 882, Y: 34 },
+};
+
+/**
  * Render-side effect knobs for the live play (GameScene). All presentation —
  * nothing here feeds the sim.
  */
@@ -244,6 +294,19 @@ export const FX = {
     TRAIL_EVERY_MS: 36, // star-trail spawn cadence behind it
     CONFETTI: 70, // confetti pieces
     FLASHBULBS: 14, // crowd camera flashes
+  },
+  /** Backyard-style live-play steering read (scenes/ui/LivePlayView.ts):
+   *  the glowing capsule from YOUR fielder to the ball, the landing-preview
+   *  ring while a hit hangs in the air, and the chevron over the chaser. */
+  LIVE_MARKER: {
+    CAPSULE_W: 9, // px at the plate; depth-scaled at the capsule midpoint
+    CAPSULE_ALPHA: 0.5,
+    CAPSULE_SEGMENTS: 3, // alpha-stepped glow falloff toward the ball end
+    RING_R: 24, // landing-preview ring radius
+    RING_PULSE_SCALE: 1.35,
+    RING_PULSE_MS: 480,
+    CHEVRON_H: 14, // gold arrow over the controlled fielder
+    CHEVRON_BOB: 5,
   },
 };
 
@@ -477,6 +540,8 @@ export const JUICE = {
   COSTS: {
     powerSwing: 55,
     crazyPitch: 55,
+    fireball: 60, // 🔥 blazing special pitch — extra fast, flame trail
+    freezeball: 60, // 🧊 special pitch that freezes mid-flight, wrecking timing
     turboLegs: 40, // 💨 next offensive live play: everyone runs faster
     goldenGlove: 40, // 🧤 next defensive live play: sure hands + strong magnet
     rallyCap: 70, // 🧢 rest of the batting half: wider swing windows
@@ -514,7 +579,7 @@ export const PASSPLAY = {
 /** Two-device play over WebRTC (src/net/*; PeerJS free cloud broker). */
 export const NET = {
   /** Bumped on any wire-format change; hello handshake rejects mismatches. */
-  PROTOCOL_VERSION: 2,
+  PROTOCOL_VERSION: 3, // v3: fireball/freezeball PitchKinds on the wire
   /** liveFrame + liveInput pointer stream rate (full ReplayFrames, no deltas). */
   FRAME_HZ: 20,
   /** "Looking for your friend… 🔍" window before the no-blame GOOD GAME. */

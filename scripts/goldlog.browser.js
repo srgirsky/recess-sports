@@ -144,7 +144,9 @@ async function goldLogRun(seed = 42) {
   const bands = ['miss', 'good', 'miss', 'perfect', 'weak', 'miss'];
   let swingN = 0;
   let guard = 0;
-  while (!game.scene.isActive('Result') && guard++ < 3600) {
+  // 9000 × 50ms = 450s of game time — roomy enough for a bonus-inning game;
+  // the loop exits on Result long before this for normal games.
+  while (!game.scene.isActive('Result') && guard++ < 9000) {
     pump(50);
     sample();
     try {

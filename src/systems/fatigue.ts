@@ -18,9 +18,10 @@ export function newFatigue(): FatigueState {
   return { stamina: 1 };
 }
 
-/** One pitch thrown. The crazy pitch costs real gas. */
+/** One pitch thrown. The juice specials all cost real gas. */
 export function drainPitch(f: FatigueState, kind: PitchKind | null): FatigueState {
-  const cost = kind === 'crazy' ? FATIGUE.DRAIN_CRAZY : FATIGUE.DRAIN_PITCH;
+  const special = kind === 'crazy' || kind === 'fireball' || kind === 'freezeball';
+  const cost = special ? FATIGUE.DRAIN_CRAZY : FATIGUE.DRAIN_PITCH;
   return { stamina: Math.max(0, f.stamina - cost) };
 }
 

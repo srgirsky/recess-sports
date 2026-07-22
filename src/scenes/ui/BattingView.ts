@@ -310,11 +310,19 @@ export class BattingView {
     g.fillStyle(0xfff4de, 0.25);
     g.fillCircle(92, 66, 50);
 
-    // Venue fence band on the horizon.
+    // Venue fence band on the horizon (same look descriptors as drawField).
     const fenceTop = HORIZON - 46;
+    if (look.treeline) {
+      // Haze-tinted treetops peeking over the wall.
+      for (let x = 8; x < W; x += 60) {
+        const big = ((x / 60) | 0) % 2 === 0;
+        g.fillStyle(big ? 0x4f9d5e : 0x6fb589, big ? 0.75 : 0.6);
+        g.fillCircle(x, fenceTop - (big ? 14 : 6) - ((x * 7) % 8), big ? 17 : 11);
+      }
+    }
     g.fillStyle(look.fence, 1);
     g.fillRect(0, fenceTop, W, HORIZON - fenceTop);
-    if (look.asphalt) {
+    if (look.fenceStyle === 'chainlink') {
       // Chain-link: a light X-hatch over the gray.
       g.lineStyle(2, look.fenceTrim, 0.6);
       for (let x = -40; x < W + 40; x += 26) {
@@ -323,26 +331,28 @@ export class BattingView {
       }
       g.lineStyle(3, lightenInt(look.fence, 0.3), 0.9);
       g.lineBetween(0, fenceTop + 2, W, fenceTop + 2);
-    } else if (look.stands) {
-      // Park: wall + a crowd strip peeking over it.
-      g.fillStyle(shadeInt(look.fence, 0.25), 1);
-      g.fillRect(0, fenceTop - 20, W, 20);
-      const crowd = [0xffce3a, 0xe8524a, 0x4aa5e0, 0xfff4de, 0x9a6bd0];
-      for (let i = 0; i < 64; i++) {
-        // Deterministic scatter — no RNG so the backdrop never shimmers.
-        const x = (i * 61) % W;
-        const y = fenceTop - 8 - ((i * 37) % 10);
-        g.fillStyle(crowd[i % crowd.length], 0.9);
-        g.fillCircle(x, y, 4);
-      }
-      g.lineStyle(4, look.fenceTrim, 1);
-      g.lineBetween(0, fenceTop + 3, W, fenceTop + 3);
-    } else {
-      // Sandlot: neighbor's plank fence.
+    } else if (look.fenceStyle === 'planks') {
+      // Neighbor's plank fence.
       g.lineStyle(3, look.fenceTrim, 0.8);
       for (let x = 14; x < W; x += 30) g.lineBetween(x, fenceTop, x, HORIZON);
       g.lineStyle(3, lightenInt(look.fence, 0.25), 0.9);
       g.lineBetween(0, fenceTop + 2, W, fenceTop + 2);
+    } else {
+      // Wall — with a crowd strip peeking over it when the venue has stands.
+      if (look.skyline === 'stands') {
+        g.fillStyle(shadeInt(look.fence, 0.25), 1);
+        g.fillRect(0, fenceTop - 20, W, 20);
+        const crowd = [0xffce3a, 0xe8524a, 0x4aa5e0, 0xfff4de, 0x9a6bd0];
+        for (let i = 0; i < 64; i++) {
+          // Deterministic scatter — no RNG so the backdrop never shimmers.
+          const x = (i * 61) % W;
+          const y = fenceTop - 8 - ((i * 37) % 10);
+          g.fillStyle(crowd[i % crowd.length], 0.9);
+          g.fillCircle(x, y, 4);
+        }
+      }
+      g.lineStyle(4, look.fenceTrim, 1);
+      g.lineBetween(0, fenceTop + 3, W, fenceTop + 3);
     }
 
     // Ground from the horizon down.
@@ -368,10 +378,12 @@ export class BattingView {
     g.fillEllipse(PITCHER.X - 3, PITCHER.Y - 5, 88, 22);
 
     // Home-plate dirt filling the bottom of the frame, behind batter+catcher.
+    // Ground furniture sits 48px higher than the frame bottom so the plate,
+    // boxes, and batter feet all clear the bottom scoreboard strip (HUD.STRIP).
     g.fillStyle(look.dirt, 1);
-    g.fillEllipse(W / 2, H + 60, 900, 320);
+    g.fillEllipse(W / 2, H + 12, 900, 320);
     g.fillStyle(lightenInt(look.dirt, 0.12), 0.5);
-    g.fillEllipse(W / 2 - 90, H + 40, 560, 200);
+    g.fillEllipse(W / 2 - 90, H - 8, 560, 200);
 
     // Foul lines shoot OUT from the plate to the poles at the fence's far
     // edges — the camera looks straight out from home, so the 45° lines
@@ -379,21 +391,21 @@ export class BattingView {
     // tiny fair wedge and strands the fielders in "foul" ground). Drawn
     // after the home dirt so they run over it from the plate, like chalk.
     g.lineStyle(5, COLORS.white, 0.85);
-    g.lineBetween(452, 592, 40, HORIZON + 2);
-    g.lineBetween(508, 592, 920, HORIZON + 2);
+    g.lineBetween(452, 544, 40, HORIZON + 2);
+    g.lineBetween(508, 544, 920, HORIZON + 2);
 
     // Batter's boxes + the plate itself.
     g.lineStyle(4, COLORS.white, 0.75);
-    g.strokeRect(298, 548, 130, 76);
-    g.strokeRect(532, 548, 130, 76);
+    g.strokeRect(298, 500, 130, 68);
+    g.strokeRect(532, 500, 130, 68);
     g.fillStyle(COLORS.white, 0.95);
     g.fillPoints(
       [
-        { x: 452, y: 566 },
-        { x: 508, y: 566 },
-        { x: 508, y: 586 },
-        { x: 480, y: 600 },
-        { x: 452, y: 586 },
+        { x: 452, y: 518 },
+        { x: 508, y: 518 },
+        { x: 508, y: 538 },
+        { x: 480, y: 552 },
+        { x: 452, y: 538 },
       ],
       true
     );

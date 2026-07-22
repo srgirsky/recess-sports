@@ -99,7 +99,20 @@ const ALL_MSGS: NetMsg[] = [
   { t: 'draftAck', pickNo: 4 },
   { t: 'lineup', seat: 0, plan: { order: ['a', 'b'], positions: { a: 'P', b: 'C' }, pitcherId: 'a' } as never },
   { t: 'pitchPlan', kind: 'fastball', target: { x: 0.2, y: -0.4 }, band: 'good', errorMs: 88 },
+  { t: 'pitchPlan', kind: 'fireball', target: { x: 0, y: 0 }, band: 'perfect', errorMs: 5 },
   { t: 'pitchLaunch', wild: false, travelMs: 900, stealFrom: 2 },
+  {
+    t: 'pitchLaunch',
+    wild: false,
+    travelMs: 2273,
+    plan: {
+      kind: 'freezeball',
+      target: { x: 0, y: 0 },
+      actual: { x: 4, y: -8 },
+      inZone: true,
+      travelMs: 2273,
+    },
+  },
   { t: 'swing', errorMs: 42, cursor: { x: 0.1, y: 0 }, swingType: 'big', spend: 'powerSwing' },
   { t: 'atBat', result: { kind: 'hit', bases: 1, description: 'Single!' }, movements: [], hud: HUD },
   {

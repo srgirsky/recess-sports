@@ -14,12 +14,12 @@
 import Phaser from 'phaser';
 import {
   GAME_WIDTH,
-  GAME_HEIGHT,
   COLORS,
   ANIM,
   FX,
   LIVE,
   KID_SIZE,
+  HUD,
 } from '../../config';
 import type { VenueDef } from '../../data/venues';
 import {
@@ -86,6 +86,13 @@ export class LivePlayView {
   private liveBallShadow?: Phaser.GameObjects.Ellipse;
   private lastTrailAt = 0; // spawn gate for the live-ball streak dots
   private activeMarker?: Phaser.GameObjects.Ellipse;
+  private activeGlow?: Phaser.GameObjects.Ellipse;
+  /** Gold chevron bobbing over the controlled fielder (bob tween on the child). */
+  private chevron?: Phaser.GameObjects.Container;
+  /** The Backyard steering capsule: chaser → ball, redrawn every frame. */
+  private steerCapsule?: Phaser.GameObjects.Graphics;
+  /** Landing-preview ring, visible while a hit hangs in the air. */
+  private landingRing?: Phaser.GameObjects.Arc;
   private baseRings: Phaser.GameObjects.Arc[] = [];
   private chargeMeter?: Phaser.GameObjects.Graphics;
   private goBanner?: Phaser.GameObjects.Container;
@@ -303,14 +310,53 @@ export class LivePlayView {
     this.liveBallShadow = this.scene.add.ellipse(HOME.x, HOME.y, 16, 6, COLORS.ink, 0.3).setDepth(14);
     this.liveBall = this.scene.add.circle(HOME.x, HOME.y - 10, 9, COLORS.white).setStrokeStyle(2, COLORS.ink).setDepth(42);
 
+    // Landing preview (both modes — runners read the drop spot too): a pulsing
+    // ring at the sim's predicted landing point while the hit hangs in the air.
+    const M = FX.LIVE_MARKER;
+    this.landingRing = this.scene.add
+      .circle(0, 0, M.RING_R)
+      .setStrokeStyle(4, COLORS.white, 0.9)
+      .setDepth(13)
+      .setVisible(false);
+    this.scene.tweens.add({
+      targets: this.landingRing,
+      scale: M.RING_PULSE_SCALE,
+      duration: M.RING_PULSE_MS,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.inOut',
+    });
+
     if (state.mode === 'defense') {
-      // Spotlight the kid you steer.
-      const chaser = state.fielders[state.active];
+      // Spotlight the kid you steer (all created PROJECTED — render moves them
+      // in projected space every frame).
+      const chaser = project(state.fielders[state.active].pos);
+      this.activeGlow = this.scene.add
+        .ellipse(chaser.x, chaser.y + 4, 74, 28, COLORS.gold, 0.18)
+        .setDepth(24);
       this.activeMarker = this.scene.add
-        .ellipse(chaser.pos.x, chaser.pos.y + 4, 52, 20)
+        .ellipse(chaser.x, chaser.y + 4, 52, 20)
         .setStrokeStyle(4, COLORS.gold)
         .setDepth(25);
       this.scene.tweens.add({ targets: this.activeMarker, alpha: 0.45, duration: 380, yoyo: true, repeat: -1 });
+      // The "YOU" chevron over their head, bobbing on its child so render owns
+      // the container's sim-driven position.
+      this.chevron = this.scene.add.container(chaser.x, chaser.y).setDepth(27);
+      const tri = this.scene.add
+        .triangle(0, 0, 0, 0, M.CHEVRON_H, 0, M.CHEVRON_H / 2, M.CHEVRON_H * 0.85, COLORS.gold)
+        .setStrokeStyle(2, 0x26333f, 1)
+        .setOrigin(0.5, 0.5);
+      this.chevron.add(tri);
+      this.scene.tweens.add({
+        targets: tri,
+        y: M.CHEVRON_BOB,
+        duration: 340,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.inOut',
+      });
+      // The steering capsule (chaser → ball), redrawn per frame in render().
+      this.steerCapsule = this.scene.add.graphics().setDepth(24);
       if (opts.firstPlay && opts.prompts !== false) {
         audio.say('Get the ball!', commentatorProfile('A'), 'flush');
       }
@@ -320,7 +366,8 @@ export class LivePlayView {
       // Main mode: the bases ARE the controls — tap ahead to send, behind to
       // turn a runner back. Rings show what's tappable.
       this.showBaseRings();
-      const { container } = pill(this.scene, GAME_WIDTH / 2, GAME_HEIGHT - 46, 'TAP A BASE TO RUN!  ◆', {
+      // Just above the bottom scoreboard strip (HUD.STRIP.TOP).
+      const { container } = pill(this.scene, GAME_WIDTH / 2, HUD.STRIP.TOP - 28, 'TAP A BASE TO RUN!  ◆', {
         fill: COLORS.gold,
         fontSize: 26,
       });
@@ -332,8 +379,8 @@ export class LivePlayView {
         audio.say('Tap a base to send your runner!', commentatorProfile('A'), 'flush');
       }
     } else {
-      // Big tap-anywhere GO prompt.
-      const { container } = pill(this.scene, GAME_WIDTH / 2, GAME_HEIGHT - 46, 'TAP TO RUN!  ▶', {
+      // Big tap-anywhere GO prompt, above the scoreboard strip.
+      const { container } = pill(this.scene, GAME_WIDTH / 2, HUD.STRIP.TOP - 28, 'TAP TO RUN!  ▶', {
         fill: COLORS.gold,
         fontSize: 28,
       });
@@ -435,10 +482,51 @@ export class LivePlayView {
       }
     }
 
-    // The steering spotlight follows the chaser.
+    // The steering spotlight + chevron follow the chaser.
     if (this.activeMarker) {
       const cq = project(s.fielders[s.active].pos);
       this.activeMarker.setPosition(cq.x, cq.y + 4);
+      this.activeGlow?.setPosition(cq.x, cq.y + 4);
+      const chaserSpr = s.active === 0 ? this.deps.pitcherSprite() : this.fielderSpriteAt(s.active)?.img;
+      const headY = cq.y - (chaserSpr?.displayHeight ?? 60) - 14;
+      this.chevron?.setPosition(cq.x, headY);
+    }
+
+    // The Backyard steering capsule: your fielder → where the ball will be
+    // (the predicted landing while it flies, the ball itself once it's down).
+    // Loose ball only — it vanishes the moment someone holds or throws it.
+    if (this.steerCapsule) {
+      const g = this.steerCapsule;
+      g.clear();
+      const loose = s.ball.phase === 'flight' || s.ball.phase === 'rolling';
+      if (loose) {
+        const M = FX.LIVE_MARKER;
+        const from = project(s.fielders[s.active].pos);
+        const target = s.ball.phase === 'flight' ? s.launch.landing : s.ball.pos;
+        const to = project(target);
+        const mid = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
+        const w = M.CAPSULE_W * depthScale(mid);
+        // Alpha-stepped segments: bright at the fielder, fading toward the ball.
+        for (let i = 0; i < M.CAPSULE_SEGMENTS; i++) {
+          const t0 = i / M.CAPSULE_SEGMENTS;
+          const t1 = (i + 1) / M.CAPSULE_SEGMENTS;
+          g.lineStyle(w, COLORS.gold, M.CAPSULE_ALPHA * (1 - i / M.CAPSULE_SEGMENTS) + 0.12);
+          g.beginPath();
+          g.moveTo(from.x + (to.x - from.x) * t0, from.y + 4 + (to.y - from.y) * t0);
+          g.lineTo(from.x + (to.x - from.x) * t1, from.y + 4 + (to.y - from.y) * t1);
+          g.strokePath();
+        }
+      }
+    }
+
+    // Landing preview while the hit hangs; the post-land chalk ring takes over.
+    if (this.landingRing) {
+      const inFlight = s.ball.phase === 'flight';
+      this.landingRing.setVisible(inFlight);
+      if (inFlight) {
+        const lq = project(s.launch.landing);
+        this.landingRing.setPosition(lq.x, lq.y);
+      }
     }
 
     // Throw-charge meter over the carrier.
@@ -530,6 +618,14 @@ export class LivePlayView {
     this.hideBaseRings();
     this.activeMarker?.destroy();
     this.activeMarker = undefined;
+    this.activeGlow?.destroy();
+    this.activeGlow = undefined;
+    this.chevron?.destroy();
+    this.chevron = undefined;
+    this.steerCapsule?.destroy();
+    this.steerCapsule = undefined;
+    this.landingRing?.destroy();
+    this.landingRing = undefined;
     this.chargeMeter?.destroy();
     this.chargeMeter = undefined;
     this.goBanner?.destroy();
