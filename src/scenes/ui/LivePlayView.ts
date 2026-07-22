@@ -35,7 +35,8 @@ import { project, depthScale } from '../../art/projection';
 import { poseKey } from '../../art/textureFactory';
 import { idleBob, squashHop, groundShadow, runCycle, reactPose } from '../../ui/anim';
 import { screenShake, burst, floatingText } from '../../ui/effects';
-import { pill } from '../../ui/theme';
+import { FONT, pill } from '../../ui/theme';
+import { getCharacter } from '../../data/characters';
 import * as audio from '../../systems/audio';
 import { commentatorProfile } from '../../systems/voices';
 
@@ -86,6 +87,10 @@ export class LivePlayView {
   private liveBallShadow?: Phaser.GameObjects.Ellipse;
   private lastTrailAt = 0; // spawn gate for the live-ball streak dots
   private activeMarker?: Phaser.GameObjects.Ellipse;
+  private nameBubble?: Phaser.GameObjects.Container;
+  private nameBubbleBg?: Phaser.GameObjects.Graphics;
+  private nameBubbleText?: Phaser.GameObjects.Text;
+  private nameBubbleFor = -1; // fielder index the bubble currently names
   private activeGlow?: Phaser.GameObjects.Ellipse;
   /** Gold chevron bobbing over the controlled fielder (bob tween on the child). */
   private chevron?: Phaser.GameObjects.Container;
@@ -355,6 +360,19 @@ export class LivePlayView {
         repeat: -1,
         ease: 'Sine.inOut',
       });
+      // BB2001-style name bubble trailing the controlled kid. The Text is
+      // created HERE, once per play (its canvas-texture key draws Math.random
+      // — a fixed point in the seeded stream); chaser switches only setText,
+      // which re-renders the same canvas and never touches the rng.
+      this.nameBubbleBg = this.scene.add.graphics();
+      this.nameBubbleText = this.scene.add
+        .text(0, 0, '', { fontFamily: FONT, fontSize: '15px', color: '#fff6e0', fontStyle: '700' })
+        .setOrigin(0.5);
+      this.nameBubble = this.scene.add
+        .container(chaser.x, chaser.y + M.NAME.DY, [this.nameBubbleBg, this.nameBubbleText])
+        .setDepth(26)
+        .setAlpha(0.92);
+      this.nameBubbleFor = -1;
       // The steering capsule (chaser → ball), redrawn per frame in render().
       this.steerCapsule = this.scene.add.graphics().setDepth(24);
       if (opts.firstPlay && opts.prompts !== false) {
@@ -490,6 +508,13 @@ export class LivePlayView {
       const chaserSpr = s.active === 0 ? this.deps.pitcherSprite() : this.fielderSpriteAt(s.active)?.img;
       const headY = cq.y - (chaserSpr?.displayHeight ?? 60) - 14;
       this.chevron?.setPosition(cq.x, headY);
+      // The name bubble LERPS after the kid — the lag is the Backyard charm.
+      if (this.nameBubble) {
+        this.setBubbleName(s);
+        const M = FX.LIVE_MARKER;
+        this.nameBubble.x += (cq.x - this.nameBubble.x) * M.NAME.LAG;
+        this.nameBubble.y += (cq.y + M.NAME.DY - this.nameBubble.y) * M.NAME.LAG;
+      }
     }
 
     // The Backyard steering capsule: your fielder → where the ball will be
@@ -613,9 +638,26 @@ export class LivePlayView {
    * map is rebuilt from where the sim left everyone. Returns the next
    * base→token map for the scene's `runners`.
    */
+  /** Re-label the bubble when steering hops to a different fielder. */
+  private setBubbleName(s: LivePlayState): void {
+    if (s.active === this.nameBubbleFor || !this.nameBubbleText || !this.nameBubbleBg) return;
+    this.nameBubbleFor = s.active;
+    const first = getCharacter(s.fielders[s.active].charId).name.split(' ')[0].toUpperCase();
+    this.nameBubbleText.setText(first);
+    const w = this.nameBubbleText.width + 18;
+    const g = this.nameBubbleBg;
+    g.clear();
+    g.fillStyle(0x2e5aa8, 0.5);
+    g.fillRoundedRect(-w / 2, -12, w, 24, 12);
+  }
+
   settlePlay(outcome: { baseIds: Array<string | null>; outs: number }): Map<number, Phaser.GameObjects.Container> {
     // Chrome down.
     this.hideBaseRings();
+    this.nameBubble?.destroy();
+    this.nameBubble = undefined;
+    this.nameBubbleBg = undefined;
+    this.nameBubbleText = undefined;
     this.activeMarker?.destroy();
     this.activeMarker = undefined;
     this.activeGlow?.destroy();

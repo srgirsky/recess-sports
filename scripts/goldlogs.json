@@ -1,6 +1,6 @@
 {
   "comment": "Gold-log regression fingerprints (scripts/goldlog.browser.js, harness v2.2). The harness seeds Math.random (mulberry32), virtualizes Date.now onto the pump grid, bypasses the visual draft with FIXED teams (the draft's greedy chooser jitters every candidate with rng, so title-screen cosmetics would cascade into different teams), reseeds at game entry, waits out the real-async jersey loader on a 50ms pump grid, and samples every 50ms step. Fingerprint = SHA-256 of the state-transition log (dash-grouped). Behavior-identical phases must reproduce these exactly. To debug a mismatch: check out the anchoring commit and re-run goldLogRun for the full log. CAUTION when regenerating: launch goldLogRun fire-and-forget and poll sessionStorage('goldlog_last') afterward \u2014 an awaited eval that times out mid-drive interleaves CDP work with the run and pollutes the fingerprint.",
-  "capturedAt": "post Backyard-pacing retune anchor (slower runners + longer hangs + slower grounders, quicker throws, gather-gated fly-ball tag-chase, more deliberate CPU defense; each fingerprint verified byte-stable across two clean runs)",
+  "capturedAt": "post live-play readability anchor (chaser name bubble Text now enters the seeded stream at beginPlay-defense; steal trail/OUT text are rng-free) on top of the Backyard pitch corridor + plate-view feel packs; each fingerprint verified byte-stable across two clean runs",
   "script": "goldlog.browser.js v2.2 (guard 9000)",
   "seed": 42,
   "logs": {
@@ -10,9 +10,9 @@
       "note": "fixed teams A/B, 1 inning, ends 1-0"
     },
     "kid": {
-      "length": 9555,
-      "sha256": "b08d0c46-e7387ddb-2c5a92e4-ed3b22d3-56307b6a-b5350a4b-2e57f73d-f77678ff",
-      "note": "fixed teams A/B, 1 inning + bonus, ends 0-1 walk-off"
+      "length": 10824,
+      "sha256": "675fbd06-6b8b4342-58951606-726a8511-a4601b0d-3d8d1788-1a416341-856ea477",
+      "note": "fixed teams A/B, 1 inning + bonus, ends 1-0 in the bonus 2nd"
     }
   }
 }

@@ -2416,6 +2416,23 @@ export class GameScene extends Phaser.Scene {
     const img = token.getAt(1) as Phaser.GameObjects.Image;
     const cycle = runCycle(this, img, token.getData('id') as string);
     img.setFlipX(to.x < token.x);
+    // BB2001-style motion streak: fading dots along the whole dash path make
+    // the race readable at a glance (rng-free — circles + tweens only).
+    const T = FX.STEAL_TRAIL;
+    const trail = this.time.addEvent({
+      delay: T.EVERY_MS,
+      loop: true,
+      callback: () => {
+        const dot = this.add.circle(token.x, token.y - 4, T.R, COLORS.gold, 0.45).setDepth(token.depth - 1);
+        this.tweens.add({
+          targets: dot,
+          alpha: 0,
+          scale: 0.4,
+          duration: T.LIFE_MS,
+          onComplete: () => dot.destroy(),
+        });
+      },
+    });
     this.tweens.add({
       targets: token,
       x: to.x,
@@ -2423,6 +2440,7 @@ export class GameScene extends Phaser.Scene {
       duration: 380,
       ease: 'Sine.in',
       onComplete: () => {
+        trail.remove();
         cycle.stop(true);
         img.setFlipX(false);
         // Color/SFX read from the PLAYER's point of view.
