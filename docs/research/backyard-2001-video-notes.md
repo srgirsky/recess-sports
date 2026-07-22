@@ -87,9 +87,9 @@ Purpose: ground-truth tuning reference for Recess Sports (pitch speed, pacing, H
 | Pitch selection pressure | None — fully player-paced (9s+ observed) | Ours: also untimed | ✅ Match |
 | Contact → field view | Instant hard cut, <1 frame of ceremony | 90ms `HIT_PAUSE_MS` flash then cut | ✅ Ours adds a deliberate contact beat — keep |
 | Live-play HUD | Collapses to mini score+outs only | We keep the full bottom strip | 🤔 Consider dimming/collapsing the strip during live plays |
-| Pitch-location feedback | Caught ball RESTS at its crossing spot ~1s+ (through the whole next deliberation if idle) | We clear pitch visuals immediately | 💡 STEAL: leave the caught ball at the crossing spot until next windup |
-| Pitcher idle | Tosses ball up and catches it, loops | Idle bob | 💡 STEAL candidate |
-| Card selection | Card art plays a flourish animation | Gold highlight | 💡 Nice-to-have |
+| Pitch-location feedback | Caught ball RESTS at its crossing spot ~1s+ (through the whole next deliberation if idle) | Taken pitches rest at the crossing spot (grey aura) until the next windup (`PLATE_VIEW.REST_BALL`) | ✅ SHIPPED |
+| Pitcher idle | Tosses ball up and catches it, loops | Rig pitcher toss idle between pitches (`PLATE_VIEW.TOSS`, restarts when each pitch settles) | ✅ SHIPPED |
+| Card selection | Card art plays a flourish animation | Tap flourish: card pop + icon wiggle in EdgeCards | ✅ SHIPPED (+ blue/yellow/red pip colors and the ~200ms ump-call beat, `FLOW.UMP_CALL_DELAY_MS`) |
 | Out presentation | Yellow "OUT" text at the base, in-world | Floating text/banner | 🤔 In-world at-the-base text is very readable |
 | Fielder identity | Name bubble follows the active fielder (lags behind on sprints) | Chaser spotlight + gold chevron, no name | 💡 Name bubble reinforces the characters-are-the-product goal |
 

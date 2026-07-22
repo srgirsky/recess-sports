@@ -429,6 +429,10 @@ export class GameScene extends Phaser.Scene {
 
   // per-pitch visuals
   private ball?: Phaser.GameObjects.Arc;
+  /** The taken pitch resting at its crossing spot (cleared by the next windup). */
+  private restingBall?: Phaser.GameObjects.Container;
+  /** Where the last CPU-half pitch crossed — the resting ball's spot on a take. */
+  private lastPlateBall?: { x: number; y: number };
   /** Per-kind flight dressing for the current pitch (scenes/ui/PitchFx.ts). */
   private pitchFx?: PitchFx;
   private ballShadow?: Phaser.GameObjects.Ellipse;
@@ -767,6 +771,7 @@ export class GameScene extends Phaser.Scene {
       });
     } else {
       this.rig.hide();
+      this.clearRestingBall(); // a rig-space prop must never float over the field
     }
     if (this.viewMode !== view) {
       this.viewMode = view;
@@ -1209,6 +1214,7 @@ export class GameScene extends Phaser.Scene {
    * human the timers serve. Pure hardening; no solo behavior change.
    */
   private enterHalf(): void {
+    this.clearRestingBall();
     this.pitchAutoPick?.remove(false);
     this.pitchAutoPick = undefined;
     this.autoThrowTimer?.remove(false);
@@ -1502,7 +1508,28 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(ANIM.WINDUP_MS, () => this.launchPitch());
   }
 
+  /**
+   * BB2001's lingering pitch-location feedback: a TAKEN pitch's ball rests
+   * where it crossed (grey aura) until the next windup sweeps it. Circles
+   * only — a Text here would draw Math.random (canvas-texture UUID) and
+   * shift the seeded goldlog stream.
+   */
+  private showRestingBall(x: number, y: number): void {
+    this.restingBall?.destroy();
+    const { R, AURA_R, AURA_ALPHA } = PLATE_VIEW.REST_BALL;
+    const c = this.add.container(x, y).setDepth(PLATE_VIEW.DEPTH + 3);
+    c.add(this.add.circle(0, 0, AURA_R, 0x8a939e, AURA_ALPHA));
+    c.add(this.add.circle(0, 0, R, COLORS.white).setStrokeStyle(2, COLORS.ink));
+    this.restingBall = c;
+  }
+
+  private clearRestingBall(): void {
+    this.restingBall?.destroy();
+    this.restingBall = undefined;
+  }
+
   private pitcherWindup(): void {
+    this.clearRestingBall(); // the pitcher has the ball back now
     if (this.rig.visible) this.rig.windup(); // the distant rig pitcher coils too
     // Tired-arm tell: sweat flies off the mound as the wind-up starts.
     if (this.features.fatigue) {
@@ -2059,6 +2086,9 @@ export class GameScene extends Phaser.Scene {
   }
 
   private clearPitchVisuals(): void {
+    // The pitch is settled — the rig pitcher goes back to his ball-toss idle
+    // (no-op when the rig is hidden or the toss already runs).
+    this.rig.tossIdle();
     this.trailTimer?.remove();
     this.trailTimer = undefined;
     this.pitchFx?.destroy();
@@ -2169,11 +2199,15 @@ export class GameScene extends Phaser.Scene {
   }
 
   private resolvePlayerSwing(band: SwingBand, took: boolean): void {
+    // On a take the ball is AT the plate right now — remember where, so the
+    // resting-ball feedback can sit exactly there after the visuals clear.
+    const takenAt = took && this.ball ? { x: this.ball.x, y: this.ball.y } : undefined;
     // Net guest (kid mode): ship the band (or the take) — host resolves.
     if (this.matchType === 'net' && this.netRole === 'guest') {
       this.phase = 'resolving';
       this.clearPitchVisuals();
       if (took) {
+        if (takenAt) this.showRestingBall(takenAt.x, takenAt.y);
         this.guestSend({ t: 'swing', swingType: this.swingType }); // no data = take
         return;
       }
@@ -2187,6 +2221,7 @@ export class GameScene extends Phaser.Scene {
     this.clearPitchVisuals();
 
     if (took) {
+      if (takenAt) this.showRestingBall(takenAt.x, takenAt.y);
       if (this.pitchIsWild) {
         // Good eye! Letting a wild one go is a ball.
         this.scoreboard.umpCall('BALL!', BALL_GREEN);
@@ -3206,6 +3241,7 @@ export class GameScene extends Phaser.Scene {
     }
     const start = this.rig.releasePoint;
     const end = plateToScreen(plan.actual);
+    this.lastPlateBall = end; // a take rests the ball exactly here
     const bendScale = PLATE_VIEW.ZONE.SCALE;
     const ball = this.add
       .circle(start.x, start.y, 9, COLORS.white)
@@ -3251,6 +3287,7 @@ export class GameScene extends Phaser.Scene {
     const wild = band === 'wild';
     const start = this.rig.releasePoint;
     const end = plateToScreen({ x: plan.isBall ? (Math.random() < 0.5 ? -60 : 60) : 0, y: 0 });
+    this.lastPlateBall = end; // a take rests the ball exactly here
     const ball = this.add
       .circle(start.x, start.y, 9, wild ? 0xffd6d0 : COLORS.white)
       .setStrokeStyle(2, wild ? COLORS.red : COLORS.ink)
@@ -3276,6 +3313,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     if (!plan.cpuSwings) {
+      if (this.lastPlateBall) this.showRestingBall(this.lastPlateBall.x, this.lastPlateBall.y);
       if (plan.isBall) {
         this.scoreboard.umpCall('BALL!', BALL_GREEN);
         this.resolveCpuStealThen({ kind: 'ball', bases: 0, description: 'Ball!' });

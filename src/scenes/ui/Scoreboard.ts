@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------
 
 import Phaser from 'phaser';
-import { GAME_WIDTH, COLORS, HUD } from '../../config';
+import { GAME_WIDTH, COLORS, FLOW, HUD } from '../../config';
 import { panel, heading, FONT } from '../../ui/theme';
 
 export interface ScoreboardState {
@@ -110,9 +110,10 @@ export function createScoreboard(
     strip.add(c);
     return { c, dots };
   };
-  const ballsRow = pipGroup(-114, 'B', '#57d977', BALLS_MAX);
-  const strikesRow = pipGroup(-18, 'S', '#ff7a70', STRIKES_MAX);
-  const outsRow = pipGroup(76, 'OUT', '#ffffff', OUTS_MAX);
+  // BB2001's pip color language: balls fill BLUE, strikes YELLOW, outs RED.
+  const ballsRow = pipGroup(-114, 'B', '#5aa9ff', BALLS_MAX);
+  const strikesRow = pipGroup(-18, 'S', '#ffce3a', STRIKES_MAX);
+  const outsRow = pipGroup(76, 'OUT', '#ff6a5e', OUTS_MAX);
 
   // --- Right: inning + the mini-diamond base state --------------------------
   const inningText = scene.add
@@ -183,17 +184,28 @@ export function createScoreboard(
 
     umpCall(text: string, color: number): void {
       call?.destroy();
+      // The Text is created NOW (its canvas-texture key draws Math.random —
+      // creation must stay at this point in the seeded rng stream); only the
+      // visible pop waits out the BB-measured ump beat. Total life
+      // (delay + hold + fade = 1050ms) stays under FLOW.CPU_STEP_MS.
       const t = heading(scene, GAME_WIDTH / 2, HUD.STRIP.TOP - 26, text, 32, '#' + color.toString(16).padStart(6, '0'));
-      t.setDepth(95).setScale(0.5);
+      t.setDepth(95).setScale(0.5).setAlpha(0);
       pin(t);
       call = t;
-      scene.tweens.add({ targets: t, scale: 1, duration: 160, ease: 'Back.out' });
+      scene.tweens.add({
+        targets: t,
+        scale: 1,
+        alpha: 1,
+        delay: FLOW.UMP_CALL_DELAY_MS,
+        duration: 160,
+        ease: 'Back.out',
+      });
       scene.tweens.add({
         targets: t,
         y: HUD.STRIP.TOP - 40,
         alpha: 0,
-        delay: 700,
-        duration: 350,
+        delay: FLOW.UMP_CALL_DELAY_MS + 550,
+        duration: 300,
         onComplete: () => {
           if (call === t) call = undefined;
           t.destroy();
