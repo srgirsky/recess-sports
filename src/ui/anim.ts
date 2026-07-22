@@ -67,7 +67,7 @@ export function reactPose(
   scene: Phaser.Scene,
   img: Phaser.GameObjects.Image,
   id: string,
-  pose: 'upset' | 'nervous' | 'cheer' | 'catch' | 'throw' | 'dive',
+  pose: 'upset' | 'nervous' | 'dodge' | 'cheer' | 'catch' | 'throw' | 'dive',
   opts: { holdMs?: number; restoreTo?: string } = {}
 ): { cancel(restore?: boolean): void } {
   if (!img.active) return { cancel() {} };

@@ -217,7 +217,7 @@ export class BattingView {
    * time — swingBatter() and show() both restore the stance first, so a
    * reaction can never be worn through a swing or by the wrong kid.
    */
-  reactBatter(pose: 'upset' | 'nervous' | 'cheer', holdMs: number): void {
+  reactBatter(pose: 'upset' | 'nervous' | 'dodge' | 'cheer', holdMs: number): void {
     if (!this.root.visible || !this.batterId) return;
     // A strikeout reaction can fire while the whiff follow-through is still
     // held — the sequence must not re-frame over the reaction pose.

@@ -44,6 +44,7 @@ export type Pose =
   | 'catchRear'
   | 'upset'
   | 'nervous'
+  | 'dodge'
   | 'throw'
   | 'catch'
   | 'dive'
@@ -64,6 +65,7 @@ export const POSES: Pose[] = [
   'catchRear',
   'upset',
   'nervous',
+  'dodge',
   'throw',
   'catch',
   'dive',
@@ -1454,6 +1456,41 @@ function poseNervous(c: Ctx, v: VisualParams, hFront: string): string {
   return `${legsFront(c)}${torsoFront(c)}${arm(-1)}${arm(1)}${badge}${head}`;
 }
 
+/**
+ * Inside-pitch dodge, front view: the whole upper body leans hard AWAY from
+ * the plate (screen-left — the rig batter stands on the 3B side with the zone
+ * to their right), both hands fling up toward the incoming ball, worried
+ * baked face. The lean moves the head a long way, so back hair rides INSIDE
+ * the lean+head transform (the slide/dive rule), never at the origin anchor.
+ */
+function poseDodge(c: Ctx, v: VisualParams, hBack: string, hFront: string): string {
+  const vv: VisualParams = { ...v, expression: 'nervous' };
+  const { halfW } = c.m;
+  const shoulderY = 150;
+  const badge = `<circle cx="100" cy="${shoulderY + 26}" r="13" fill="${c.trim}" opacity="0.9"/>`;
+  // Shield arms: both fling up toward the plate side (screen-right), open
+  // hands turned at the ball.
+  const nearArm = `
+    ${capsule(`M ${100 + (halfW - 6)} ${shoulderY + 2} Q ${100 + halfW + 12} ${shoulderY - 16} ${100 + halfW + 20} ${shoulderY - 36}`, c.jerseyDk, 15)}
+    ${openHand(c, 100 + halfW + 24, shoulderY - 44, 40)}`;
+  const farArm = `
+    ${capsule(`M ${100 - (halfW - 8)} ${shoulderY + 4} Q ${100 + 2} ${shoulderY - 8} ${100 + 20} ${shoulderY - 22}`, c.jerseyDk, 14)}
+    ${openHand(c, 100 + 26, shoulderY - 28, 60, { s: 0.9 })}`;
+  // The lean pivots at the hips; the head tips further and tucks slightly.
+  const upper = `
+    <g transform="rotate(-14 100 ${GROUND - 46})">
+      ${torsoFront(c)}
+      ${farArm}${nearArm}${badge}
+      <g transform="translate(-6 2) rotate(-8 ${HEAD.cx} ${HEAD.cy})">
+        ${wrapHeadBack(c, hBack)}${headGroup(c, vv, hFront)}
+      </g>
+    </g>`;
+  if (c.usesChair) {
+    return `${wheelchairFront()}${upper}`;
+  }
+  return `${legsFront(c)}${upper}`;
+}
+
 // --- Action poses (throw / catch / dive) ------------------------------------
 
 const MITT = '#a9743f';
@@ -1820,6 +1857,8 @@ export function buildCharacterSVG(
     layers = `${wrapHeadBack(c, h.back)}${poseUpset(c, v, h.front)}`;
   } else if (pose === 'nervous') {
     layers = `${wrapHeadBack(c, h.back)}${poseNervous(c, v, h.front)}`;
+  } else if (pose === 'dodge') {
+    layers = poseDodge(c, v, h.back, h.front); // hBack rides inside the lean
   } else if (pose === 'throw') {
     layers = `${wrapHeadBack(c, h.back)}${poseThrow(c, v, h.front)}`;
   } else if (pose === 'catch') {
