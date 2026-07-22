@@ -34,6 +34,7 @@ export const HERO_POSES: Pose[] = [
   'swingFollowRear',
   'upset',
   'nervous',
+  'dodge',
   'cheer',
 ];
 

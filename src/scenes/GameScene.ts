@@ -1509,6 +1509,20 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
+   * BB2001: an inside pitch sends the rig batter into a lean-away dodge while
+   * the ball is still in flight. Deterministic off the plan's crossing point
+   * (no rng); the batter side is screen-left (3B side), so "inside" = x well
+   * past the zone's negative edge. swingBatter/show cancel a stale dodge.
+   */
+  private scheduleDodge(plan: PitchPlan, stillWants: () => boolean = () => !this.swung): void {
+    const { X_BEYOND, AT_FRAC, HOLD_MS } = PLATE_VIEW.DODGE;
+    if (plan.actual.x > -(PLATE_ZONE.W / 2 + X_BEYOND)) return;
+    this.time.delayedCall(plan.travelMs * AT_FRAC, () => {
+      if (this.rig.visible && stillWants()) this.rig.reactBatter('dodge', HOLD_MS);
+    });
+  }
+
+  /**
    * BB2001's lingering pitch-location feedback: a TAKEN pitch's ball rests
    * where it crossed (grey aura) until the next windup sweeps it. Circles
    * only — a Text here would draw Math.random (canvas-texture UUID) and
@@ -1738,6 +1752,7 @@ export class GameScene extends Phaser.Scene {
     audio.pitchWoosh();
 
     this.zoneGfx = zoneOutline(this);
+    this.scheduleDodge(plan);
     const start = this.rig.releasePoint;
     const end = plateToScreen(plan.actual);
     const bendScale = PLATE_VIEW.ZONE.SCALE; // flight bend is plate-coord px
@@ -3235,6 +3250,10 @@ export class GameScene extends Phaser.Scene {
   private launchCpuPitchMain(plan: PitchPlan, cpuPlan: CpuPitchPlan): void {
     audio.pitchWoosh();
     this.zoneGfx = zoneOutline(this);
+    // The CPU batter flinches off inside pitches too (`swung` is a batting-
+    // half flag — stale here, so this site supplies its own always-true guard;
+    // a CPU swing right after simply cancels the dodge via swingBatter).
+    this.scheduleDodge(plan, () => true);
     if (this.cpuStealFrom !== undefined) {
       // World bases are hidden under the rig — flag it by the mini-diamond.
       this.pinUI(floatingText(this, HUD.STEAL.X, HUD.STEAL.GOING_Y, 'RUNNER GOING!', COLORS.red, 26));
@@ -3706,6 +3725,7 @@ export class GameScene extends Phaser.Scene {
       const plan = m.plan;
       const bendScale = PLATE_VIEW.ZONE.SCALE;
       this.zoneGfx = zoneOutline(this);
+      this.scheduleDodge(plan); // mirrors the host's inside-pitch flinch
       this.pitchFx = createPitchFx(this, plan.kind);
       // Linear counter + manual Sine.in on the freeze-remapped progress — the
       // guest mirrors the host's freezeball hold exactly (plan rides the wire).

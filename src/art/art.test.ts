@@ -65,6 +65,25 @@ describe('character art', () => {
     }
   });
 
+  it('dodge leans the upper body away and carries back hair inside the lean', () => {
+    for (const char of ROSTER) {
+      const svg = buildCharacterSVG(char.visual, 'dodge');
+      expect(svg.includes('rotate(-14 100'), `${char.id}/dodge is missing the hip lean`).toBe(true);
+    }
+    // The lean moves the head far from its anchor — origin-anchored back hair
+    // would detach, so the afro dome must sit INSIDE the lean group (after it
+    // opens) and still behind the face.
+    const afroKid = ROSTER.find((c) => c.visual.hair === 'afro');
+    expect(afroKid).toBeDefined();
+    const svg = buildCharacterSVG(afroKid!.visual, 'dodge');
+    const lean = svg.indexOf('rotate(-14 100');
+    const afro = svg.indexOf('a56 52 0 0 1 0 104');
+    const face = svg.indexOf('ff9d9d');
+    expect(afro, 'dodge: afro missing').toBeGreaterThan(-1);
+    expect(afro, 'dodge: back hair outside the lean').toBeGreaterThan(lean);
+    expect(afro, 'dodge: afro drawn over the face').toBeLessThan(face);
+  });
+
   it('back hair never covers the face in side poses', () => {
     // The afro's back layer must be drawn BEFORE the face (behind the body),
     // or afro/long-hair kids bat and dive with their face hidden.

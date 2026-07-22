@@ -275,6 +275,10 @@ export const PLATE_VIEW = {
   /** The rig pitcher's between-pitch idle: tossing the ball up and catching
    *  it (BB2001's mound idle). Render-only, stops on windup. */
   TOSS: { AMP: 24, MS: 640 },
+  /** Inside-pitch dodge (BB2001: the batter leans out of the way mid-flight).
+   *  Fires when the pitch will cross ≥ X_BEYOND px past the zone's batter-side
+   *  edge, at AT_FRAC of the flight. Deterministic off plan.actual — no rng. */
+  DODGE: { X_BEYOND: 22, AT_FRAC: 0.55, HOLD_MS: 500 },
   /** The white-flash punch on the hard cut between views. */
   CUT_FLASH_MS: 60,
   /** The contact frame: how long the rig holds at bat-meets-ball before the

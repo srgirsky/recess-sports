@@ -30,7 +30,7 @@ describe('poseKey / heroKey', () => {
   });
 
   it('every reactBatter pose is in the hero set', () => {
-    for (const pose of ['batRear', 'catchRear', 'upset', 'nervous', 'cheer'] as const) {
+    for (const pose of ['batRear', 'catchRear', 'upset', 'nervous', 'dodge', 'cheer'] as const) {
       expect(HERO_POSES).toContain(pose);
     }
   });
