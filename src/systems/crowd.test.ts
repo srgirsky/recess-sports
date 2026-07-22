@@ -97,9 +97,35 @@ describe('crowd stream-out', () => {
       if (st.timeMs < 1000) return;
       for (const [a, b] of activePairs(st)) {
         const d = Math.hypot(a.pos.x - b.pos.x, a.pos.y - b.pos.y);
-        expect(d).toBeGreaterThanOrEqual(0.7 * (a.radius + b.radius));
+        // 0.85: the hard-resolve pass closes what the funnel clamps reopen —
+        // anything below this is a visible body overlap at render scale.
+        expect(d).toBeGreaterThanOrEqual(0.85 * (a.radius + b.radius));
       }
     });
+  });
+
+  it('a launching kid never spawns overlapping an active kid', () => {
+    // The door meter measures from the actual spawn point (door + lane), so a
+    // fresh launch must already be clear of every kid on the stairs/yard.
+    const s = make(seq([0.13, 0.91, 0.44, 0.67, 0.28]));
+    run(s, CROWD, (st) => {
+      for (const ev of st.events) {
+        if (ev.type !== 'launched') continue;
+        const k = st.kids.find((x) => x.id === ev.id)!;
+        for (const o of st.kids) {
+          if (o.id === k.id || (o.phase !== 'stairs' && o.phase !== 'yard')) continue;
+          const d = Math.hypot(o.pos.x - k.pos.x, o.pos.y - k.pos.y);
+          expect(d).toBeGreaterThanOrEqual(k.radius + o.radius);
+        }
+      }
+    });
+  });
+
+  it('the wall-gap corridor fits two kids abreast (RADIUS vs GAP_MARGIN sanity)', () => {
+    // A future RADIUS bump must not silently pinch the funnel below
+    // two-abreast, or the stream jams into a single-file crawl.
+    const corridor = GEOM.gap.right - GEOM.gap.left - 2 * CROWD.GAP_MARGIN;
+    expect(corridor).toBeGreaterThanOrEqual(4 * CROWD.RADIUS);
   });
 
   it('is deterministic for a given rng', () => {
@@ -177,7 +203,7 @@ describe('crowd stream-out', () => {
     const before = s.kids.map((k) => ({ ...k.pos }));
     stepCrowd(s, 5000, CROWD);
     const maxStep = CROWD.SPEED * (1 + CROWD.SPEED_JITTER) * CROWD.MAX_DT_MS;
-    const sepSlack = 2 * CROWD.RADIUS * CROWD.SEP_ITERATIONS;
+    const sepSlack = 2 * CROWD.RADIUS * (CROWD.SEP_ITERATIONS + 1); // +1: the hard-resolve pass
     s.kids.forEach((k, i) => {
       expect(Number.isFinite(k.pos.x)).toBe(true);
       expect(Number.isFinite(k.pos.y)).toBe(true);
