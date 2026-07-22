@@ -132,14 +132,16 @@ export function stepCrowd(s: CrowdState, dtMs: number, cfg: CrowdConfig): CrowdS
 
   const active = (k: CrowdKid): boolean => k.phase === 'stairs' || k.phase === 'yard';
 
-  // Launch gate: next kid steps out only when the door mouth is clear, so the
-  // doorway meters itself into a queue instead of stacking bodies on one pixel.
+  // Launch gate: next kid steps out only when their actual SPAWN POINT
+  // (door + lane offset) is clear, so the doorway meters itself into a queue
+  // instead of stacking bodies on one pixel. Measuring from the door center
+  // used to let a wide-lane kid spawn already inside a neighbor.
   for (const k of s.kids) {
     if (k.phase !== 'waiting' || s.timeMs < k.launchAtMs) continue;
+    const sx = geom.door.x + k.lane;
     const doorBusy = s.kids.some(
       (o) =>
-        active(o) &&
-        Math.hypot(o.pos.x - geom.door.x, o.pos.y - geom.door.y) < cfg.DOOR_CLEAR_R
+        active(o) && Math.hypot(o.pos.x - sx, o.pos.y - geom.door.y) < cfg.DOOR_CLEAR_R
     );
     if (doorBusy) continue;
     k.phase = 'stairs';
@@ -186,6 +188,22 @@ export function stepCrowd(s: CrowdState, dtMs: number, cfg: CrowdConfig): CrowdS
   // Separation: positional relaxation over active pairs — stiff, can't
   // oscillate, and overlapping bodies simply can't persist.
   const movers = s.kids.filter(active);
+  // A kid whose x is clamped this tick (stair column / wall funnel).
+  const inBand = (k: CrowdKid): boolean =>
+    k.phase === 'stairs' || (!k.cleared && k.pos.y >= geom.wallTopY);
+  // Constraints re-applied after every relaxation pass so pushes can't shove
+  // anyone through the stair rails or the brick wall. Only uncleared kids are
+  // wall-bound; cleared kids at curb height are on the yard side and free to
+  // fan out past the gap posts.
+  const applyClamps = (): void => {
+    for (const k of movers) {
+      if (k.phase === 'stairs') {
+        k.pos.x = clamp(k.pos.x, geom.door.x - geom.stairHalfW, geom.door.x + geom.stairHalfW);
+      } else if (!k.cleared && k.pos.y >= geom.wallTopY) {
+        k.pos.x = clamp(k.pos.x, geom.gap.left + cfg.GAP_MARGIN, geom.gap.right - cfg.GAP_MARGIN);
+      }
+    }
+  };
   for (let iter = 0; iter < cfg.SEP_ITERATIONS; iter++) {
     for (let a = 0; a < movers.length; a++) {
       for (let b = a + 1; b < movers.length; b++) {
@@ -206,18 +224,41 @@ export function stepCrowd(s: CrowdState, dtMs: number, cfg: CrowdConfig): CrowdS
         kb.pos.y += ny * push;
       }
     }
-    // Constraints re-applied after every relaxation pass so pushes can't
-    // shove anyone through the stair rails or the brick wall.
-    for (const k of movers) {
-      if (k.phase === 'stairs') {
-        k.pos.x = clamp(k.pos.x, geom.door.x - geom.stairHalfW, geom.door.x + geom.stairHalfW);
-      } else if (!k.cleared && k.pos.y >= geom.wallTopY) {
-        // Only uncleared kids are wall-bound; cleared kids at curb height are
-        // on the yard side and free to fan out past the gap posts.
-        k.pos.x = clamp(k.pos.x, geom.gap.left + cfg.GAP_MARGIN, geom.gap.right - cfg.GAP_MARGIN);
+    applyClamps();
+  }
+  // Hard resolve: the x-clamps above can re-introduce exactly the overlap the
+  // pair passes just closed (the funnel squeezes everyone into a 76px lane).
+  // One final pass closes any residual pair gap — and for pairs where BOTH
+  // kids are x-clamped, it resolves along the band's FREE axis (y), which the
+  // clamps can't undo. That is what guarantees no overlap survives to render.
+  for (let a = 0; a < movers.length; a++) {
+    for (let b = a + 1; b < movers.length; b++) {
+      const ka = movers[a];
+      const kb = movers[b];
+      const dx = kb.pos.x - ka.pos.x;
+      const dy = kb.pos.y - ka.pos.y;
+      const dist = Math.hypot(dx, dy);
+      const minDist = ka.radius + kb.radius;
+      if (dist >= minDist) continue;
+      if (inBand(ka) && inBand(kb)) {
+        // y-only resolve: grow |dy| until the pair clears at its current dx.
+        const reqDy = Math.sqrt(Math.max(0, minDist * minDist - dx * dx));
+        const sign = dy >= 0 ? 1 : -1;
+        const push = (reqDy - Math.abs(dy)) / 2;
+        ka.pos.y -= sign * push;
+        kb.pos.y += sign * push;
+      } else {
+        const nx = dist > 0.001 ? dx / dist : 1;
+        const ny = dist > 0.001 ? dy / dist : 0;
+        const push = (minDist - dist) / 2;
+        ka.pos.x -= nx * push;
+        ka.pos.y -= ny * push;
+        kb.pos.x += nx * push;
+        kb.pos.y += ny * push;
       }
     }
   }
+  applyClamps();
 
   // Arrival, progress, velocity, and the no-soft-lock guard.
   for (const k of s.kids) {

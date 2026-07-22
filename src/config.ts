@@ -884,12 +884,16 @@ export const ANIM = {
 export const CROWD = {
   STAGGER_MS: 70, // nominal delay between door launches
   STAGGER_JITTER_MS: 30, // ± jitter on each kid's launch time
-  DOOR_CLEAR_R: 20, // door mouth must be this clear before the next kid launches
+  DOOR_CLEAR_R: 26, // launch SPAWN POINT must be this clear before the next kid launches
   LANE_SPREAD: 14, // ± exit-lane x offset at the door
   SPEED: 0.27, // base run speed, px/ms
   SPEED_JITTER: 0.25, // ± fraction of SPEED per kid
-  RADIUS: 15, // full-size separation radius (px); scales down near the door
-  SEP_ITERATIONS: 3, // positional-relaxation passes per tick
+  // Full-size separation radius (px); scales down near the door. minDist 38
+  // matches the ~34-38px drawn body width — smaller radii let kids at "legal"
+  // separation still visibly overlap. NOT higher: the wall-gap corridor
+  // (104px - 2×GAP_MARGIN = 76px) is exactly two-abreast at minDist 38.
+  RADIUS: 19,
+  SEP_ITERATIONS: 5, // positional-relaxation passes per tick (funnel needs the extra passes)
   ARRIVE_R: 5, // arrival snap distance
   GAP_MARGIN: 14, // keep-off distance from the wall-gap posts
   STAIR_HALF_W: 38, // x clamp around the door while on the steps
