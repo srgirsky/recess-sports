@@ -83,6 +83,7 @@ export function makeCardStack(
         const sel = def.id === selected;
         // Opaque either way — translucent cards let the fielders bleed through.
         paint(sel ? COLORS.gold : COLORS.cream);
+        scene.tweens.killTweensOf(card); // a stale pick-pop must not fight this scale
         card.setScale(sel ? 1.06 : 1);
       };
       restyles.push(restyle);
@@ -97,6 +98,12 @@ export function makeCardStack(
           e.stopPropagation();
           selected = def.id;
           for (const r of restyles) r();
+          // BB2001-style pick flourish: the card pops and its art wiggles.
+          // Taps only — programmatic setSelected stays quiet.
+          scene.tweens.killTweensOf([card, icon]);
+          icon.setAngle(0);
+          scene.tweens.add({ targets: card, scale: { from: 1.22, to: 1.06 }, duration: 190, ease: 'Back.out' });
+          scene.tweens.add({ targets: icon, angle: -14, duration: 70, yoyo: true, repeat: 2, ease: 'Sine.inOut' });
           opts.onSelect(def.id);
         }
       );

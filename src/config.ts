@@ -105,6 +105,10 @@ export const FLOW = {
   CPU_STEP_MS: 1100,
   /** Half-start banner -> first batter. */
   HALF_START_MS: 1400,
+  /** Ball arrival -> the ump's call pops (the BB2001-measured beat). The
+   *  call's total life (this + its internal hold + fade, Scoreboard.umpCall)
+   *  must stay ≤ the shortest beat that follows it (CPU_STEP_MS). */
+  UMP_CALL_DELAY_MS: 200,
   /** Default flashAnnounce hold. */
   BANNER_HOLD_MS: 1100,
   /** Big-moment banners: STRIKEOUT / WALK / runs scored / walk-off. */
@@ -265,6 +269,12 @@ export const PLATE_VIEW = {
   } as Record<string, { X: number; Y: number; H: number }>,
   /** Where the ground meets the backdrop fence. */
   HORIZON_Y: 292,
+  /** A TAKEN pitch's ball rests at its crossing spot with a grey aura until
+   *  the next windup — BB2001's lingering pitch-location feedback. */
+  REST_BALL: { R: 8, AURA_R: 15, AURA_ALPHA: 0.28 },
+  /** The rig pitcher's between-pitch idle: tossing the ball up and catching
+   *  it (BB2001's mound idle). Render-only, stops on windup. */
+  TOSS: { AMP: 24, MS: 640 },
   /** The white-flash punch on the hard cut between views. */
   CUT_FLASH_MS: 60,
   /** The contact frame: how long the rig holds at bat-meets-ball before the

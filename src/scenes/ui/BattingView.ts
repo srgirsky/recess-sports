@@ -64,6 +64,8 @@ export class BattingView {
   private batterSwing?: { cancel(restore?: boolean): void };
   private batterBaseScale = 1;
   private fielderImgs = new Map<PositionId, Phaser.GameObjects.Image>();
+  private tossBall: Phaser.GameObjects.Arc;
+  private tossTween?: Phaser.Tweens.Tween;
 
   constructor(scene: Phaser.Scene, look: VenueDef['look']) {
     this.scene = scene;
@@ -83,7 +85,14 @@ export class BattingView {
     this.pitcher = scene.add.image(PITCHER.X, PITCHER.Y, '__DEFAULT').setOrigin(0.5, 1);
     this.catcher = scene.add.image(CATCHER.X, CATCHER.Y, '__DEFAULT').setOrigin(0.5, 1);
     this.batter = scene.add.image(BATTER.X, BATTER.Y, '__DEFAULT').setOrigin(0.5, 1);
-    this.root.add([this.pitcher, this.catcher, this.batter]);
+    // The between-pitch idle ball the distant pitcher tosses and catches
+    // (BB2001's mound idle). Added after the pitcher so it draws over his
+    // glove; windup() hides it — the pitched ball takes over from there.
+    this.tossBall = scene.add
+      .circle(0, 0, 4, COLORS.white)
+      .setStrokeStyle(1.5, COLORS.ink)
+      .setVisible(false);
+    this.root.add([this.pitcher, this.tossBall, this.catcher, this.batter]);
   }
 
   /** The distant pitcher's feet — feedback text anchors near here. */
@@ -130,10 +139,37 @@ export class BattingView {
       this.startBatterIdle();
     }
     this.root.setVisible(true);
+    this.tossIdle();
+  }
+
+  /**
+   * The pitcher tosses the ball up and catches it while everyone waits —
+   * started by show() and again by GameScene when a pitch settles (the
+   * catcher lobs it back); windup() stops it. No-op while hidden or running.
+   */
+  tossIdle(): void {
+    if (!this.root.visible || this.tossTween) return;
+    const { x, y } = this.releasePoint;
+    this.tossBall.setPosition(x, y).setVisible(true);
+    this.tossTween = this.scene.tweens.add({
+      targets: this.tossBall,
+      y: y - PLATE_VIEW.TOSS.AMP,
+      duration: PLATE_VIEW.TOSS.MS,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Quad.out',
+    });
+  }
+
+  private stopTossIdle(): void {
+    this.tossTween?.stop();
+    this.tossTween = undefined;
+    this.tossBall.setVisible(false);
   }
 
   hide(): void {
     if (!this.root.visible) return;
+    this.stopTossIdle();
     this.batterReactTimer?.remove(false);
     this.batterSwing?.cancel(false);
     this.batterSwing = undefined;
@@ -153,6 +189,7 @@ export class BattingView {
   /** The distant pitcher coils and leans — mirrors the world-sprite windup. */
   windup(): void {
     if (!this.root.visible || !this.pitcherId) return;
+    this.stopTossIdle(); // the pitched ball takes over from here
     const p = this.pitcher;
     this.scene.tweens.killTweensOf(p);
     p.setTexture(poseKey(this.pitcherId, 'windup'));
