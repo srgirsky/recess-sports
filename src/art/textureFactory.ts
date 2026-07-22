@@ -5,15 +5,36 @@
 // data-URI URL. We queue every character's SVG in BootScene.preload(); once the
 // loader finishes, `scene.add.image(x, y, char.id)` works anywhere.
 //
-// Rendering at 2x the viewBox keeps the kids crisp on retina/tablet screens.
+// TWO SIZE TIERS. Kids display at 54–200px in the 960x640 logical space, so
+// oversized textures just get GPU-minified into mush (bilinear filtering, no
+// mipmaps). The BASE tier rasterizes near display size — the SVG rasterizer's
+// downsampling beats the GPU's. The HERO tier (:hi suffix) exists ONLY for the
+// behind-plate rig poses that display at 230-288px (batRear/catchRear and the
+// upset/nervous reaction swaps of the rig batter); BattingView is the sole
+// opt-in via heroKey() — everything else keys through poseKey unchanged.
 // ---------------------------------------------------------------------------
 
-import Phaser from 'phaser';
+import type Phaser from 'phaser';
 import type { Character } from '../data/types';
 import { buildCharacterSVG, POSES, type Pose } from './CharacterArt';
 
-const RENDER_W = 600; // 3x the 200-wide viewBox — keeps the added detail crisp
-const RENDER_H = 780; // 3x the 260-tall viewBox
+const RENDER_W = 240; // 1.2x the 200-wide viewBox — near the largest common display size
+const RENDER_H = 312; // 1.2x the 260-tall viewBox
+
+const HERO_W = 480; // 2.4x — the rig-only tier
+const HERO_H = 624;
+const HERO_SUFFIX = ':hi';
+/** The poses the behind-plate rig displays at 230px+ (see config.PLATE_VIEW):
+ *  the stance/crouch pair plus every reactBatter swap (upset/nervous/cheer). */
+export const HERO_POSES: Pose[] = ['batRear', 'catchRear', 'upset', 'nervous', 'cheer'];
+
+/** Street-clothes variant suffix. SchoolyardScene arms the whole roster with
+ *  it so the draft shows personal outfits; GameScene clears/re-arms with team
+ *  suffixes, so games (kid mode included) stay in jerseys. */
+export const STREET_SUFFIX = ':sc';
+/** The only poses the draft renders: wall idle, crowd stream-out, pennant
+ *  celebration, inspect card. (The dev gallery lazily bakes the rest.) */
+export const STREET_POSES: Pose[] = ['stand', 'run1', 'run2', 'cheer'];
 
 /** Native display aspect helpers so scenes can size sprites without magic numbers. */
 export const CHAR_ASPECT = RENDER_W / RENDER_H;
@@ -53,6 +74,15 @@ export function poseKey(id: string, pose: Pose): string {
   return suffix ? `${base}${suffix}` : base;
 }
 
+/**
+ * Hero-tier texture key: the high-res rig variant of a pose. Composes AFTER
+ * the team suffix so jerseys and hero resolution stack (`id:batRear:t2x4:hi`).
+ * Only BattingView should use this — the rig is the only 230px+ render site.
+ */
+export function heroKey(id: string, pose: Pose): string {
+  return `${poseKey(id, pose)}${HERO_SUFFIX}`;
+}
+
 function svgToDataUri(svg: string): string {
   // Phaser's loader base64-decodes SVG data URIs (it calls atob), so we must
   // provide base64 — a URL-encoded URI throws InvalidCharacterError.
@@ -69,18 +99,44 @@ function svgToDataUri(svg: string): string {
 export function queueCharacterTexture(
   scene: Phaser.Scene,
   char: Character,
-  pose: Pose = 'stand'
+  pose: Pose = 'stand',
+  hero = false
 ): void {
-  const key = poseKey(char.id, pose);
+  const base = poseKey(char.id, pose);
+  const key = hero ? `${base}${HERO_SUFFIX}` : base;
   if (scene.textures.exists(key)) return;
   const svg = buildCharacterSVG(char.visual, pose);
-  scene.load.svg(key, svgToDataUri(svg), { width: RENDER_W, height: RENDER_H });
+  scene.load.svg(key, svgToDataUri(svg), {
+    width: hero ? HERO_W : RENDER_W,
+    height: hero ? HERO_H : RENDER_H,
+  });
 }
 
-/** Queue the whole roster in every pose. */
+/** Queue the whole roster in every pose, plus the hero tier for the rig poses. */
 export function queueRosterTextures(scene: Phaser.Scene, roster: Character[]): void {
   for (const char of roster) {
     for (const pose of POSES) queueCharacterTexture(scene, char, pose);
+    for (const pose of HERO_POSES) queueCharacterTexture(scene, char, pose, true);
+  }
+}
+
+/**
+ * Queue STREET-CLOTHES variants (personal outfits, no badge/collar) keyed
+ * base+':sc' at the base tier. BootScene bakes the 4 draft poses; the dev
+ * gallery can pass POSES to review street looks in every pose.
+ */
+export function queueStreetTextures(
+  scene: Phaser.Scene,
+  roster: Character[],
+  poses: Pose[] = STREET_POSES
+): void {
+  for (const char of roster) {
+    for (const pose of poses) {
+      const key = `${poseKeyBase(char.id, pose)}${STREET_SUFFIX}`;
+      if (scene.textures.exists(key)) continue;
+      const svg = buildCharacterSVG(char.visual, pose, undefined, { street: true });
+      scene.load.svg(key, svgToDataUri(svg), { width: RENDER_W, height: RENDER_H });
+    }
   }
 }
 
@@ -103,6 +159,13 @@ export function queueTeamTextures(
       if (scene.textures.exists(key)) continue;
       const svg = buildCharacterSVG(char.visual, pose, { uniform: identity.color, logo: identity.logo });
       scene.load.svg(key, svgToDataUri(svg), { width: RENDER_W, height: RENDER_H });
+    }
+    // Hero tier for the rig poses — the close-up batter/catcher wear jerseys.
+    for (const pose of HERO_POSES) {
+      const key = `${poseKeyBase(char.id, pose)}${suffix}${HERO_SUFFIX}`;
+      if (scene.textures.exists(key)) continue;
+      const svg = buildCharacterSVG(char.visual, pose, { uniform: identity.color, logo: identity.logo });
+      scene.load.svg(key, svgToDataUri(svg), { width: HERO_W, height: HERO_H });
     }
   }
 }

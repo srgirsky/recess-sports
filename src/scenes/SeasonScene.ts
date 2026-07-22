@@ -10,6 +10,7 @@ import { GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
 import { getSeason, isWeekOver, wins, WEEKDAYS, type SeasonState } from '../systems/season';
 import { TEAM_LOGOS, teamName } from '../systems/team';
 import { UNIFORM_COLORS } from '../art/palette';
+import { clearTeamVariant } from '../art/textureFactory';
 import { makeButton } from '../ui/Button';
 import { ribbon, heading, FONT } from '../ui/theme';
 import { enterFrom } from '../ui/anim';
@@ -22,6 +23,9 @@ export class SeasonScene extends Phaser.Scene {
   }
 
   create(): void {
+    // The week hub (and the Awards podium behind it) is a jersey-era surface;
+    // clear any lingering draft street-clothes variant from the title path.
+    clearTeamVariant();
     const season = getSeason();
     if (!season) {
       this.scene.start('Schoolyard', { straightToDraft: false });

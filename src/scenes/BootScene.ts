@@ -8,7 +8,7 @@
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
 import { ROSTER } from '../data/characters';
-import { queueRosterTextures } from '../art/textureFactory';
+import { queueRosterTextures, queueStreetTextures } from '../art/textureFactory';
 import { getSettings } from '../systems/settings';
 import * as audio from '../systems/audio';
 
@@ -46,8 +46,10 @@ export class BootScene extends Phaser.Scene {
       fill.width = (barW - 8) * p;
     });
 
-    // Queue every kid's art as a texture keyed by character id.
+    // Queue every kid's art as a texture keyed by character id, plus the
+    // street-clothes variants the draft wall wears (:sc, 4 poses).
     queueRosterTextures(this, ROSTER);
+    queueStreetTextures(this, ROSTER);
   }
 
   create(): void {
@@ -56,7 +58,8 @@ export class BootScene extends Phaser.Scene {
     audio.setSfxVolume(st.sfx);
     audio.setVoiceVolume(st.voice);
     if (import.meta.env.DEV) {
-      // Budget: <2s desktop. If this creeps, render non-stand poses at 2x.
+      // Budget: <2s desktop. Base tier is 1.2x + a small hero set (textureFactory);
+      // if this creeps, trim HERO_POSES or drop the base tier to 1x.
       console.log(`[boot] textures ready in ${Math.round(performance.now() - this.bootStart)}ms`);
     }
     // Wait for the brand font so text renders in Fredoka, not the fallback.

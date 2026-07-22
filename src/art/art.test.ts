@@ -7,6 +7,7 @@
 import { describe, it, expect } from 'vitest';
 import { ROSTER } from '../data/characters';
 import { buildCharacterSVG, POSES } from './CharacterArt';
+import { STREET_POSES } from './textureFactory';
 
 describe('character art', () => {
   it('produces valid SVG for every kid in every pose', () => {
@@ -83,6 +84,95 @@ describe('character art', () => {
     expect(zoom).toBeDefined();
     for (const pose of ['run1', 'run2'] as const) {
       expect(buildCharacterSVG(zoom!.visual, pose)).toContain('<circle cx="92"');
+    }
+  });
+
+  it('long back hair also stays behind the face in side poses', () => {
+    const longKid = ROSTER.find((c) => c.visual.hair === 'long');
+    expect(longKid).toBeDefined();
+    for (const pose of ['bat', 'slide', 'throw', 'dive', 'run1'] as const) {
+      const svg = buildCharacterSVG(longKid!.visual, pose);
+      const hairIdx = svg.indexOf('M 48 70'); // the long-drape back path
+      const faceIdx = svg.indexOf('ff9d9d');
+      expect(hairIdx, `${pose}: long drape missing`).toBeGreaterThan(-1);
+      expect(hairIdx, `${pose}: long drape drawn over the face`).toBeLessThan(faceIdx);
+    }
+  });
+
+  it('height scale is anchored at the GROUND line (feet stay planted)', () => {
+    // The outer scale wrapper must pivot at (100, 248): a shorter kid's head
+    // drops while their shoes stay on the shared ground line.
+    for (const char of ROSTER) {
+      expect(buildCharacterSVG(char.visual, 'stand')).toContain('translate(100 248)');
+    }
+  });
+
+  it('BodySpec/FaceSpec values are clamped (a content typo cannot clip the viewBox)', () => {
+    const base = ROSTER[0].visual;
+    const wild = buildCharacterSVG({
+      ...base,
+      body: { height: 9, shoulderW: 500, hipW: 99, belly: 7, neck: 40, headW: 5, headH: 5 },
+      face: { eyeGap: 90, eyeSize: 9, mouthW: 9, cheeks: 99 },
+    });
+    const maxed = buildCharacterSVG({
+      ...base,
+      body: { height: 1, shoulderW: 56, hipW: 10, belly: 1, neck: 6, headW: 1.08, headH: 1.08 },
+      face: { eyeGap: 24, eyeSize: 1.3, mouthW: 1.25, cheeks: 1.4 },
+    });
+    expect(wild).toBe(maxed);
+  });
+
+  it('body and face specs actually reshape the art', () => {
+    const base = ROSTER[0].visual;
+    const plain = buildCharacterSVG(base, 'stand');
+    expect(buildCharacterSVG({ ...base, body: { height: 0.85 } }, 'stand')).not.toBe(plain);
+    expect(buildCharacterSVG({ ...base, face: { eyeGap: 22 } }, 'stand')).not.toBe(plain);
+  });
+
+  it('street clothes render valid SVG for every kid in the draft poses', () => {
+    for (const char of ROSTER) {
+      expect(char.visual.outfit, `${char.id} has no outfit`).toBeDefined();
+      for (const pose of STREET_POSES) {
+        const svg = buildCharacterSVG(char.visual, pose, undefined, { street: true });
+        expect(svg.startsWith('<svg')).toBe(true);
+        expect(svg.includes('undefined'), `${char.id}/${pose} street has undefined`).toBe(false);
+        expect(svg.includes('NaN'), `${char.id}/${pose} street has NaN`).toBe(false);
+        // Street clothes are not a jersey: no chest badge circle.
+        expect(svg, `${char.id}/${pose} street shows a jersey badge`).not.toContain('opacity="0.9"/><text');
+      }
+    }
+  });
+
+  it('street outfits differ from the jersey look', () => {
+    for (const char of ROSTER) {
+      expect(
+        buildCharacterSVG(char.visual, 'stand', undefined, { street: true }),
+        `${char.id} street === jersey`
+      ).not.toBe(buildCharacterSVG(char.visual, 'stand'));
+    }
+  });
+
+  it('jersey mode ignores the outfit field entirely', () => {
+    // The wardrobe plumbing must be invisible outside street mode: a kid with
+    // an outfit renders byte-identically to the same kid without one.
+    for (const char of ROSTER) {
+      const { outfit: _drop, ...noOutfit } = char.visual;
+      for (const pose of ['stand', 'bat', 'batRear', 'run1'] as const) {
+        expect(
+          buildCharacterSVG(char.visual, pose),
+          `${char.id}/${pose} jersey render depends on outfit`
+        ).toBe(buildCharacterSVG(noOutfit, pose));
+      }
+    }
+  });
+
+  it('every kid is visually unique (no two stand textures identical)', () => {
+    const seen = new Map<string, string>();
+    for (const char of ROSTER) {
+      const svg = buildCharacterSVG(char.visual, 'stand');
+      const dup = seen.get(svg);
+      expect(dup, `${char.id} renders identically to ${dup}`).toBeUndefined();
+      seen.set(svg, char.id);
     }
   });
 });

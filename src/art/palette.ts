@@ -36,6 +36,30 @@ export const UNIFORM_COLORS = [
   { jersey: '#f5c542', trim: '#3a2a10' }, // sunny yellow
 ];
 
+/**
+ * Street-clothes hues for the draft-wall outfits (VisualParams.outfit.top /
+ * .bottom index here). Distinct from UNIFORM_COLORS so personal clothes never
+ * read as a team jersey.
+ */
+export const STREET_COLORS = [
+  '#e85d4a', // tomato
+  '#f2a33c', // marigold
+  '#f7d154', // sunshine
+  '#7bc26a', // grass
+  '#4aa3df', // sky
+  '#8f7ae5', // grape
+  '#e57fb1', // bubblegum
+  '#4ecdc4', // seafoam
+  '#f0ede2', // chalk white
+  '#5b6d84', // slate
+  '#a97c50', // acorn brown
+  '#93b7e8', // powder blue
+];
+
+/** Denim for jeans / overall bibs (fixed — not a palette pick). */
+export const DENIM = '#5273b8';
+
 export const SKIN_TONE_COUNT = SKIN_TONES.length;
 export const HAIR_COLOR_COUNT = HAIR_COLORS.length;
 export const UNIFORM_COUNT = UNIFORM_COLORS.length;
+export const STREET_COLOR_COUNT = STREET_COLORS.length;

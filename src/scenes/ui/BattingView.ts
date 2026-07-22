@@ -18,7 +18,7 @@ import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS, PLATE_VIEW, ANIM } from '../../config';
 import type { VenueDef } from '../../data/venues';
 import type { PositionId } from '../../systems/geometry';
-import { poseKey } from '../../art/textureFactory';
+import { poseKey, heroKey, HERO_POSES } from '../../art/textureFactory';
 import type { Pose } from '../../art/CharacterArt';
 import { batWaggle } from '../../ui/anim';
 
@@ -115,7 +115,7 @@ export class BattingView {
       this.setKid(img, f.charId, 'ready', spot.H);
       img.setVisible(true);
     }
-    const batterChanged = this.batter.texture.key !== poseKey(actors.batterId, 'batRear');
+    const batterChanged = this.batter.texture.key !== this.rigKey(actors.batterId, 'batRear');
     if (batterChanged) this.batterReactTimer?.remove(false); // a reaction pose never outlives its batter
     this.setKid(this.batter, actors.batterId, 'batRear', PLATE_VIEW.BATTER.H);
     this.pitcherId = actors.pitcherId;
@@ -187,7 +187,7 @@ export class BattingView {
   /** Put the current batter back in the rear-view stance if a reaction is up. */
   private settleBatter(): void {
     if (!this.batterId || !this.batter.active) return;
-    if (this.batter.texture.key !== poseKey(this.batterId, 'batRear')) {
+    if (this.batter.texture.key !== this.rigKey(this.batterId, 'batRear')) {
       this.setKid(this.batter, this.batterId, 'batRear', PLATE_VIEW.BATTER.H);
       this.batterBaseScale = this.batter.scale;
       if (this.root.visible) this.startBatterIdle();
@@ -218,9 +218,15 @@ export class BattingView {
     h: number
   ): void {
     if (!id) return;
-    const key = poseKey(id, pose);
+    const key = this.rigKey(id, pose);
     if (img.texture.key !== key) img.setTexture(key);
     img.setScale(h / img.height);
+  }
+
+  /** The rig is the one 230px+ render site: hero tier for the big poses,
+   *  base tier for the small distant kids (pitcher, mini fielders). */
+  private rigKey(id: string, pose: Pose): string {
+    return HERO_POSES.includes(pose) ? heroKey(id, pose) : poseKey(id, pose);
   }
 
   private startBatterIdle(): void {

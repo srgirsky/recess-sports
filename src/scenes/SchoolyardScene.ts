@@ -41,7 +41,7 @@ import {
   type DraftState,
 } from '../systems/draft';
 import { recordPick } from '../systems/picklog';
-import { poseKey, clearTeamVariant } from '../art/textureFactory';
+import { poseKey, clearTeamVariant, setTeamVariant, STREET_SUFFIX } from '../art/textureFactory';
 import { getSeason, newSeason, saveSeason } from '../systems/season';
 import { getTeamIdentity, type TeamIdentity } from '../systems/team';
 import { activeSession, dropSession } from '../net/peer';
@@ -151,9 +151,12 @@ export class SchoolyardScene extends Phaser.Scene {
   }
 
   create(): void {
-    // The draft always shows each kid's OWN look — team jerseys are a
-    // Game/Result-era thing (the resolver re-arms on the next Game init).
+    // The draft always shows each kid's OWN look — street clothes, not team
+    // jerseys. Arming the ':sc' variant flips the whole scene (wall, crowd,
+    // inspect card, pennants) to personal outfits; GameScene.init clears it,
+    // so games — kid mode included — stay in jerseys.
     clearTeamVariant();
+    setTeamVariant(ROSTER.map((ch) => ch.id), STREET_SUFFIX);
     // A lingering net session with no net draft to serve = a stale game.
     if (!this.netDraft) dropSession();
     if (this.netDraft) {
@@ -813,7 +816,7 @@ export class SchoolyardScene extends Phaser.Scene {
         .container(DOOR.x, DOOR.y)
         .setDepth(this.yardDepth(home.y, home.x));
       const shadow = groundShadow(this, 0, 2, 46);
-      const img = this.add.image(0, 0, char.id).setOrigin(0.5, 1);
+      const img = this.add.image(0, 0, poseKey(char.id, 'stand')).setOrigin(0.5, 1);
       img.setScale((home.h * DOOR_SCALE) / img.height); // small at the door, grows en route
       shadow.setScale(DOOR_SCALE);
       root.add([shadow, img]);
@@ -978,7 +981,7 @@ export class SchoolyardScene extends Phaser.Scene {
     card.setDepth(100);
     popIn(this, card, 1);
 
-    const portrait = this.add.image(-220, 94, char.id).setOrigin(0.5, 1);
+    const portrait = this.add.image(-220, 94, poseKey(char.id, 'stand')).setOrigin(0.5, 1);
     portrait.setScale(180 / portrait.height);
     card.add(portrait);
 

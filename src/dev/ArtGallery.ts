@@ -9,7 +9,7 @@ import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT } from '../config';
 import { ROSTER } from '../data/characters';
 import { POSES, type Pose } from '../art/CharacterArt';
-import { poseKey } from '../art/textureFactory';
+import { poseKey, queueStreetTextures } from '../art/textureFactory';
 
 export function mountArtGallery(scene: Phaser.Scene): void {
   let panel: Phaser.GameObjects.Container | undefined;
@@ -82,7 +82,18 @@ export function mountArtGallery(scene: Phaser.Scene): void {
       images = [];
       header = undefined;
     } else {
-      panel = render();
+      // The Schoolyard arms the ':sc' street variant, but Boot only bakes the
+      // 4 draft poses — lazily bake the rest so P can cycle all 15 in street
+      // clothes. Idempotent; opens once the loader settles.
+      queueStreetTextures(scene, ROSTER, POSES);
+      if (scene.load.list.size > 0) {
+        scene.load.once('complete', () => {
+          if (!panel) panel = render();
+        });
+        scene.load.start();
+      } else {
+        panel = render();
+      }
     }
   });
 

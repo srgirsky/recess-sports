@@ -34,7 +34,76 @@ export interface VisualParams {
   /** Batting-stance variant (undefined = the standard stance). Same texture
    *  count — it reshapes the bat/windup poses, it doesn't add poses. */
   stance?: BattingStance;
+  /** Per-kid body geometry overrides on top of the bodyType preset. Every
+   *  field optional; omitted fields fall back to the preset. Values are
+   *  clamped in CharacterArt's buildBodySpec so a content typo can't clip
+   *  the viewBox or break pose choreography. */
+  body?: BodySpec;
+  /** Per-kid face geometry (eye spacing/size/style, nose, mouth width,
+   *  cheek blush). Omitted = today's default face layout. */
+  face?: FaceSpec;
+  /** Personal street clothes worn during the draft (the ':sc' texture
+   *  variant). Jerseys stay the base look everywhere else. Omitted = the kid
+   *  renders their jersey even in street mode. */
+  outfit?: Outfit;
 }
+
+/** A street outfit: top garment kind + STREET_COLORS indexes + bottoms. */
+export interface Outfit {
+  kind: OutfitKind;
+  /** STREET_COLORS index for the top garment. */
+  top: number;
+  /** STREET_COLORS index for the bottoms (shorts/skirt); jeans/overalls are
+   *  always denim. Defaults to a neutral. */
+  bottom?: number;
+  /** Bottom garment for tee/stripeTee/hoodie/jacket kids (default 'shorts').
+   *  Dress kids get a skirt, overalls kids get denim, automatically. */
+  bottoms?: 'shorts' | 'jeans';
+}
+
+export type OutfitKind = 'tee' | 'stripeTee' | 'hoodie' | 'overalls' | 'dress' | 'jacket';
+
+/** Silhouette-level body knobs. Defaults reproduce the bodyType preset. */
+export interface BodySpec {
+  /** Overall height scale, anchored at the GROUND line (feet stay planted).
+   *  Clamped to 0.82–1.0 — kids only shrink, nothing can clip the top. */
+  height?: number;
+  /** Torso/shoulder half-width in viewBox px (preset: 46 normal / 54 chunky /
+   *  38 small). Clamped 36–56 so cheer hands stay inside the viewBox. */
+  shoulderW?: number;
+  /** Extra hip width per side (px). Positive = pear, negative = V-taper. */
+  hipW?: number;
+  /** 0–1 lower-torso bow — rounds the belly line of the jersey. */
+  belly?: number;
+  /** Head lift in px (positive = longer neck, negative = no-neck). */
+  neck?: number;
+  /** Head-group scale (skull + face + hair + hat together). Clamped
+   *  0.9–1.08 — the mohawk tip already grazes the viewBox top. */
+  headW?: number;
+  headH?: number;
+}
+
+/** Face-geometry knobs consumed by CharacterArt's face()/accessory(). */
+export interface FaceSpec {
+  /** Eye offset from face center (eyes at 100±gap; default 18). Glasses
+   *  lenses follow it. Clamped 13–24. */
+  eyeGap?: number;
+  /** Eye size multiplier (default 1). Clamped 0.75–1.3. */
+  eyeSize?: number;
+  /** 'classic' sclera eyes (default), 'button' dark toy eyes, 'sleepy'
+   *  heavy-lidded classic. */
+  eyeStyle?: EyeStyle;
+  /** Nose variant: 'arc' (default squiggle), 'dot' button, 'wedge' big kid-nose. */
+  nose?: NoseStyle;
+  /** Mouth width multiplier (default 1) — applied as a scaleX wrapper so the
+   *  mouth path strings themselves never change. Clamped 0.75–1.25. */
+  mouthW?: number;
+  /** Cheek-blush intensity (default 1; 0 = none). Clamped 0–1.4. */
+  cheeks?: number;
+}
+
+export type EyeStyle = 'classic' | 'button' | 'sleepy';
+export type NoseStyle = 'arc' | 'dot' | 'wedge';
 
 export type BattingStance = 'open' | 'crouch' | 'high';
 
