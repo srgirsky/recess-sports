@@ -1,6 +1,6 @@
 # Recess Sports — Overview
 
-The deep-context doc: what we're making, why, and how it's put together. For the quick AI on-ramp see `../CLAUDE.md`; for run/build/deploy see `../README.md`.
+The deep-context doc: what we're making, why, and how it's put together. For the quick AI on-ramp see `../AGENTS.md` (`CLAUDE.md` symlinks to it); for run/build/deploy see `../README.md`.
 
 ---
 

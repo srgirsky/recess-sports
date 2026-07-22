@@ -11,7 +11,7 @@ description: How to run and drive Recess Sports for end-to-end verification (dev
 npm run dev          # Vite on http://localhost:5173/ (background it)
 ```
 
-Open the URL in a Chrome tab via the claude-in-chrome tools.
+Open the URL in a Chrome tab via your browser-automation tools.
 
 ## The occlusion trap
 
@@ -23,7 +23,7 @@ enumeration can time out). Don't fight it — switch to headless clock pumping.
 
 ## Headless clock pumping (works while occluded)
 
-Install once via javascript_tool (per CLAUDE.md gotchas — timers follow the
+Install once via the browser javascript tool (per AGENTS.md gotchas — timers follow the
 loop clock, tweens follow `Date.now()`, so pump BOTH):
 
 ```js
@@ -61,5 +61,5 @@ State to assert: `s.phase`, `s.state.playerTeam/aiTeam/pool/turn`,
 `localStorage.getItem('recess_pickcounts')` (only deliberate human picks tally),
 `game.scene.getScenes(true)` for scene transitions.
 
-GameScene has its own headless hooks — see CLAUDE.md gotchas
+GameScene has its own headless hooks — see AGENTS.md gotchas
 (`resolvePlayerSwing`, `resolvePlayerPitch`, `setLivePointer`, ...).

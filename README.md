@@ -11,7 +11,7 @@ for now; a real cross-player backend comes later.
 
 **🎮 Play it:** https://srgirsky.github.io/recess-sports/
 
-> New here? `CLAUDE.md` is the quick architecture on-ramp (great for AI tools too),
+> New here? `AGENTS.md` is the quick architecture on-ramp (shared by every AI coding tool; `CLAUDE.md` symlinks to it),
 > and `docs/OVERVIEW.md` has the full product + design context. This README is the
 > hands-on run/build/deploy guide.
 

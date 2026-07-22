@@ -2867,7 +2867,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   // --- Headless / dev hooks for live plays ---------------------------------
-  /** Public for headless driving (see CLAUDE.md): steer the fielder. */
+  /** Public for headless driving (see AGENTS.md): steer the fielder. */
   setLivePointer(x: number, y: number): void {
     this.lastPointer = { x, y };
     this.lastPointerAt = this.time.now; // headless steering counts as steering
