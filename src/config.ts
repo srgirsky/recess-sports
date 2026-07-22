@@ -805,6 +805,7 @@ export const ANIM = {
   CUTSCENE_ZOOM: 2.0, // door close-up zoom while the bell rings
   CUTSCENE_ZOOM_HOLD_MS: 700, // how long the camera lingers on the doors
   CUTSCENE_ZOOMOUT_MS: 1100, // camera pull-back from the doors to the full yard
+  SKY_SCROLL_FACTOR: 0.85, // sky-layer parallax lag during the cutscene pan (building stays 1)
   CPU_SCAN_HOP_MS: 170, // CPU "?" spotlight hop while it pretends to decide
   CHEER_WAVE_STAGGER_MS: 80, // delay between kids joining the cheer wave
   AUTO_PICK_STEP_MS: 260, // delay between successive AUTO-draft picks launching
@@ -833,4 +834,7 @@ export const CROWD = {
   STAIR_HOP_H: 6, // render-side hop amplitude on the steps
   RUN_BOB_H: 4, // render-side bob amplitude crossing the yard
   RUN_BOB_HZ: 7, // render-side bob frequency
+  AIR_SHADOW_SHRINK: 0.3, // how much the ground shadow shrinks at the top of a stair hop
+  STAIR_SQUASH: 0.15, // landing squash (fraction of scaleY) when a kid hits a step
+  SQUASH_MS: 90, // how long the landing squash takes to decay
 };

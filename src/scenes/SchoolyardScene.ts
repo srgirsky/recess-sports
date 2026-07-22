@@ -77,6 +77,10 @@ interface YardKid {
   home: { x: number; y: number; h: number; row: 0 | 1 };
   idle?: Phaser.Tweens.Tween;
   cycle?: { stop(restoreStand?: boolean): void };
+  /** Cutscene-only: last whole stair index, for landing-squash detection. */
+  lastStairStep?: number;
+  /** Cutscene-only: crowd-sim time until which the landing squash decays. */
+  squashUntil?: number;
 }
 
 /** How small a kid is drawn at the door vs their full wall-row size. */
@@ -243,11 +247,13 @@ export class SchoolyardScene extends Phaser.Scene {
   private drawSchoolyard(): void {
     const W = GAME_WIDTH;
 
-    // Sky.
-    const sky = this.add.graphics();
+    // Sky. The whole sky layer lags the cutscene camera pan slightly
+    // (scrollFactor < 1) — parallax depth for free. The building/yard must
+    // stay at 1 or the door would misalign with the crowd sim's world coords.
+    const sky = this.add.graphics().setScrollFactor(ANIM.SKY_SCROLL_FACTOR);
     sky.fillGradientStyle(0x7cc4f2, 0x7cc4f2, 0xcdeeff, 0xcdeeff, 1);
-    sky.fillRect(0, 0, W, 220);
-    this.add.circle(880, 40, 34, 0xffe066).setDepth(0);
+    sky.fillRect(0, -80, W, 300);
+    this.add.circle(880, 40, 34, 0xffe066).setDepth(0).setScrollFactor(ANIM.SKY_SCROLL_FACTOR);
     this.driftCloud(180, 30, 0.7, 46000);
     this.driftCloud(640, 22, 0.5, 58000);
 
@@ -283,9 +289,11 @@ export class SchoolyardScene extends Phaser.Scene {
         wg.lineStyle(3, 0x27404f, 1);
         wg.lineBetween(wx, wy - 18, wx, wy + 20);
         wg.lineBetween(wx - 22, wy + 1, wx + 22, wy + 1);
-        // Sill.
+        // Sill, seated with a cast-shadow line beneath (key light upper-left).
         wg.fillStyle(0xd8cdb5, 1);
         wg.fillRect(wx - 28, wy + 22, 56, 5);
+        wg.fillStyle(0x27404f, 0.25);
+        wg.fillRect(wx - 27, wy + 27, 57, 2);
       }
     }
 
@@ -293,8 +301,29 @@ export class SchoolyardScene extends Phaser.Scene {
     const frame = this.add.graphics();
     frame.fillStyle(0x59352a, 1);
     frame.fillRoundedRect(DOOR.x - 52, 128, 104, 84, { tl: 10, tr: 10, bl: 0, br: 0 });
-    frame.fillStyle(0x2b3a48, 1);
+    // Hallway interior: dark at the ceiling, warming toward the floor, so the
+    // opening reads as a space the kids come OUT of — not a flat panel.
+    frame.fillGradientStyle(0x18222c, 0x18222c, 0x413528, 0x413528, 1);
     frame.fillRoundedRect(DOOR.x - 44, 136, 88, 76, { tl: 8, tr: 8, bl: 0, br: 0 });
+    // Receding hallway floor (edges converge inward) + a faint far-end glow.
+    frame.fillStyle(0x7d6547, 1);
+    frame.fillPoints(
+      [
+        { x: DOOR.x - 44, y: 212 },
+        { x: DOOR.x + 44, y: 212 },
+        { x: DOOR.x + 22, y: 194 },
+        { x: DOOR.x - 22, y: 194 },
+      ],
+      true
+    );
+    frame.fillStyle(0xc9a86d, 0.22);
+    frame.fillRect(DOOR.x - 22, 176, 44, 18);
+    // Frame jambs: lit on the left, shaded on the right — gives the doorway
+    // visible thickness.
+    frame.fillStyle(0x7a5540, 1);
+    frame.fillRect(DOOR.x - 44, 146, 5, 66);
+    frame.fillStyle(0x3a2018, 1);
+    frame.fillRect(DOOR.x + 39, 146, 5, 66);
     const doorL = this.add
       .rectangle(DOOR.x - 43, 174, 42, 74, 0x8a5a3b)
       .setOrigin(0, 0.5)
@@ -342,26 +371,87 @@ export class SchoolyardScene extends Phaser.Scene {
     for (const px of [WALL_GAP.left, WALL_GAP.right]) {
       this.add.rectangle(px, 255, 14, 90, 0x9aa5b1).setStrokeStyle(3, 0x6b7a88).setDepth(4);
     }
-    // Path from the doors through the gap.
-    const path = this.add.graphics();
+    // Path from the doors through the gap — a trapezoid widening toward the
+    // viewer (converging edges = perspective), with seams that spread apart
+    // as the ground comes closer.
+    const path = this.add.graphics().setDepth(2);
+    const pathHalf = (y: number) =>
+      (WALL_GAP.right - WALL_GAP.left) / 2 - 10 + 20 * ((y - 212) / 100);
     path.fillStyle(0x9aa5b1, 0.9);
-    path.fillRect(WALL_GAP.left + 10, 212, WALL_GAP.right - WALL_GAP.left - 20, 100);
-    path.setDepth(2);
-
-    // Concrete steps down from the doors (the kids hop these in the cutscene).
-    const stairs = this.add.graphics().setDepth(2);
-    for (let s = 0; s < STAIRS.count; s++) {
-      const sw = 84 + s * 6; // each step a touch wider than the one above
-      const sy = STAIRS.topY + s * STAIRS.stepH;
-      stairs.fillStyle(0xcfd6db, 1);
-      stairs.fillRect(DOOR.x - sw / 2, sy, sw, STAIRS.stepH);
-      stairs.fillStyle(0x7f8a95, 1);
-      stairs.fillRect(DOOR.x - sw / 2, sy + STAIRS.stepH - 3, sw, 3);
+    path.fillPoints(
+      [
+        { x: DOOR.x - pathHalf(212), y: 212 },
+        { x: DOOR.x + pathHalf(212), y: 212 },
+        { x: DOOR.x + pathHalf(312), y: 312 },
+        { x: DOOR.x - pathHalf(312), y: 312 },
+      ],
+      true
+    );
+    path.lineStyle(2, 0x7f8a95, 0.35);
+    for (const sy of [238, 266, 298]) {
+      path.lineBetween(DOOR.x - pathHalf(sy), sy, DOOR.x + pathHalf(sy), sy);
     }
 
-    // Concrete curb the back row stands on.
+    // Concrete steps down from the doors (the kids hop these in the cutscene).
+    // Drawn in the yard's 3/4 view. The wall slabs (depth 3) crop anything
+    // outside the gap, so the perspective can't come from a wide silhouette —
+    // it comes from FORESHORTENING instead: nearer steps show progressively
+    // more tread (up-facing top surface), each tread's edges converge slightly
+    // toward the door, and every step lip gets a bright nosing over a dark
+    // riser + AO seat. Purely visual — the sim's stair clamp (door.x ±
+    // STAIR_HALF_W) and stairBottomY are untouched, and the step heights sum
+    // to exactly STAIRS.count * STAIRS.stepH so the hop flourish stays in sync
+    // (per-step drawn edges drift ≤3px from the uniform hop rhythm).
+    const stairs = this.add.graphics().setDepth(2);
+    const stepHs = [10, 11, 13, 14]; // must sum to STAIRS.count * STAIRS.stepH
+    const RISER_H = 5;
+    const stairHalf = (edge: number) => 40 + edge * 2.5; // ±40 at the door → ±50 at the yard
+    let sy = STAIRS.topY;
+    for (let s = 0; s < STAIRS.count; s++) {
+      const treadH = stepHs[s] - RISER_H;
+      const hw0 = stairHalf(s);
+      const hw1 = stairHalf(s + 1);
+      // Tread: faces up toward the key light.
+      stairs.fillStyle(0xdce2e7, 1);
+      stairs.fillPoints(
+        [
+          { x: DOOR.x - hw0, y: sy },
+          { x: DOOR.x + hw0, y: sy },
+          { x: DOOR.x + hw1, y: sy + treadH },
+          { x: DOOR.x - hw1, y: sy + treadH },
+        ],
+        true
+      );
+      // Nosing: the step lip catches the light.
+      stairs.lineStyle(2, 0xf4f7f9, 1);
+      stairs.lineBetween(DOOR.x - hw1, sy + treadH, DOOR.x + hw1, sy + treadH);
+      // Riser: the vertical front face, darker.
+      stairs.fillStyle(0x8f99a3, 1);
+      stairs.fillRect(DOOR.x - hw1, sy + treadH + 1, hw1 * 2, RISER_H - 1);
+      // AO line seating this step on the surface below.
+      stairs.lineStyle(2, 0x27404f, 0.25);
+      stairs.lineBetween(DOOR.x - hw1, sy + stepHs[s], DOOR.x + hw1, sy + stepHs[s]);
+      sy += stepHs[s];
+    }
+    // Landing pad flaring onto the path + soft shadow pooling at the base.
+    const stairBottom = STAIRS.topY + STAIRS.count * STAIRS.stepH;
+    stairs.fillStyle(0xc8cfd6, 1);
+    stairs.fillPoints(
+      [
+        { x: DOOR.x - stairHalf(STAIRS.count), y: stairBottom },
+        { x: DOOR.x + stairHalf(STAIRS.count), y: stairBottom },
+        { x: DOOR.x + stairHalf(STAIRS.count) + 3, y: stairBottom + 8 },
+        { x: DOOR.x - stairHalf(STAIRS.count) - 3, y: stairBottom + 8 },
+      ],
+      true
+    );
+    stairs.fillStyle(0x27404f, 0.16);
+    stairs.fillEllipse(DOOR.x, stairBottom + 10, stairHalf(STAIRS.count) * 2 + 12, 9);
+
+    // Concrete curb the back row stands on: light top face, darker front face.
     this.add.rectangle(W / 2, 305, W, 18, 0xb9c0c7).setDepth(3);
     this.add.rectangle(W / 2, 298, W, 4, 0xd7dde2).setDepth(3);
+    this.add.rectangle(W / 2, 311, W, 6, 0xa2aab2).setDepth(3);
 
     // --- Blacktop ---
     const bt = this.add.graphics();
@@ -397,6 +487,28 @@ export class SchoolyardScene extends Phaser.Scene {
     chalk.lineStyle(5, 0xf3f6f8, 0.28);
     chalk.strokeCircle(480, 560, 70);
 
+    // Cast-shadow pass: everything vertical drops a soft navy shadow onto the
+    // surface below it (key light upper-left → shadows fall lower-right).
+    // This is what glues the flat shapes to the ground. Depth 4: above the
+    // wall/path/curb, below the kids (11+).
+    const shade = this.add.graphics().setDepth(4);
+    // School facade onto the wall cap / path / top stair.
+    shade.fillStyle(0x27404f, 0.12);
+    shade.fillRect(0, 212, W, 7);
+    shade.fillStyle(0x27404f, 0.15);
+    shade.fillRect(0, 212, W, 3);
+    // Playground wall slabs onto the curb, nudged right.
+    shade.fillStyle(0x27404f, 0.14);
+    shade.fillRect(4, 298, WALL_GAP.left, 8);
+    shade.fillRect(WALL_GAP.right + 4, 298, W - WALL_GAP.right, 8);
+    // Gate posts.
+    shade.fillStyle(0x27404f, 0.18);
+    for (const px of [WALL_GAP.left, WALL_GAP.right]) shade.fillEllipse(px + 10, 301, 24, 7);
+    // Flagpole: contact blob + a faint diagonal on the facade behind it.
+    shade.fillEllipse(41, 131, 14, 5);
+    shade.lineStyle(5, 0x27404f, 0.1);
+    shade.lineBetween(41, 72, 57, 129);
+
     // Team zone pennants.
     this.pennant(60, 396, COLORS.gold);
     this.pennant(900, 396, COLORS.red);
@@ -413,7 +525,12 @@ export class SchoolyardScene extends Phaser.Scene {
 
   /** A soft two-lobe cloud that drifts across the sky forever. */
   private driftCloud(x: number, y: number, scale: number, loopMs: number): void {
-    const c = this.add.container(x, y).setScale(scale).setAlpha(0.9).setDepth(0);
+    const c = this.add
+      .container(x, y)
+      .setScale(scale)
+      .setAlpha(0.9)
+      .setDepth(0)
+      .setScrollFactor(ANIM.SKY_SCROLL_FACTOR);
     c.add(this.add.circle(0, 0, 18, 0xffffff));
     c.add(this.add.circle(22, 4, 23, 0xffffff));
     c.add(this.add.circle(46, 0, 16, 0xffffff));
@@ -770,7 +887,12 @@ export class SchoolyardScene extends Phaser.Scene {
       if (!kid) continue;
       kid.root.setPosition(k.pos.x, k.pos.y);
       kid.root.setDepth(this.yardDepth(k.pos.y, k.pos.x));
-      const f = DOOR_SCALE + (1 - DOOR_SCALE) * k.progress;
+      // Perspective: size is a function of screen y (= depth), not path
+      // progress, so kids running sideways stay the same size and same-row
+      // kids at the same y match. Normalized per kid by their home row, so f
+      // hits exactly 1 when settleKid takes over — no pop.
+      const t0 = Phaser.Math.Clamp((k.pos.y - DOOR.y) / (kid.home.y - DOOR.y), 0, 1);
+      const f = DOOR_SCALE + (1 - DOOR_SCALE) * t0;
       kid.img.setScale((f * kid.home.h) / kid.img.height);
       kid.shadow.setScale(f);
       // Hysteresis so separation jiggle doesn't flicker the facing.
@@ -780,10 +902,31 @@ export class SchoolyardScene extends Phaser.Scene {
       // sim y so it survives fast-forward. Yard: a simple run bob.
       if (k.phase === 'stairs') {
         const stepPhase = (k.pos.y - STAIRS.topY) / STAIRS.stepH;
-        kid.img.y = -CROWD.STAIR_HOP_H * Math.abs(Math.sin(Math.PI * stepPhase));
+        const hopFrac = Math.abs(Math.sin(Math.PI * stepPhase));
+        kid.img.y = -CROWD.STAIR_HOP_H * hopFrac;
+        // Airborne = the ground shadow pulls away from the feet.
+        kid.shadow.setScale(f * (1 - CROWD.AIR_SHADOW_SHRINK * hopFrac));
+        const step = Math.floor(stepPhase);
+        if (kid.lastStairStep !== undefined && step > kid.lastStairStep) {
+          kid.squashUntil = this.crowd.timeMs + CROWD.SQUASH_MS;
+        }
+        kid.lastStairStep = step;
       } else {
+        if (kid.lastStairStep !== undefined) {
+          // Just came off the bottom step: landing squash + one dust puff.
+          kid.lastStairStep = undefined;
+          kid.squashUntil = this.crowd.timeMs + CROWD.SQUASH_MS;
+          burst(this, k.pos.x, k.pos.y, 0xcfd6db, 4);
+        }
         const t = k.bobSeed + (this.crowd.timeMs * CROWD.RUN_BOB_HZ * Math.PI) / 1000;
         kid.img.y = -CROWD.RUN_BOB_H * Math.abs(Math.sin(t));
+      }
+      // Landing squash: frame-driven decay (never a tween — this loop resets
+      // the scale every frame and would fight one).
+      if (kid.squashUntil !== undefined) {
+        const left = kid.squashUntil - this.crowd.timeMs;
+        if (left > 0) kid.img.scaleY *= 1 - CROWD.STAIR_SQUASH * (left / CROWD.SQUASH_MS);
+        else kid.squashUntil = undefined;
       }
     }
   }
