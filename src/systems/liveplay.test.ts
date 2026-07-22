@@ -211,11 +211,12 @@ describe('live play: defense (the player fields)', () => {
         outs: 0,
         params: kid,
       });
-      // Field it, then dawdle until 1400ms before lobbing a soft throw — slow
-      // enough that only the slow runner loses the race to first.
+      // Field it, then dawdle until 1800ms before lobbing a soft throw — slow
+      // enough that only the slow runner loses the race to first. (The dawdle
+      // is sized to RUNNER_SPEED: the jackrabbit reaches first at ~2.0s.)
       let threw = false;
       const { s: end } = runPlay(s, kid, (st) => {
-        if (st.ball.phase === 'held' && !threw && st.elapsed >= 1400) {
+        if (st.ball.phase === 'held' && !threw && st.elapsed >= 1800) {
           threw = true;
           return { throwTo: { base: 1, power: 0 } };
         }
@@ -353,9 +354,11 @@ describe('live play: offense (the player runs)', () => {
   it('a tap mid-leg is a no-op; a tap while settled takes the extra base', () => {
     let s = startLivePlay({
       mode: 'offense',
-      // A deep uncatchable fly: the ball is still in the air when the batter
-      // settles at first, so the play is guaranteed open for the second tap.
-      launch: { type: 'fly', landing: { x: 790, y: 220 }, hangMs: 1400, rollSpeed: 60, homer: false },
+      // A deep fly with a long hang: the catchable window (last 40% of flight)
+      // hasn't opened when the batter settles at first, so the play is
+      // guaranteed open for the second tap. (Hang sized to RUNNER_SPEED: the
+      // batter's leg takes ~1.3s, the window opens at 1440ms.)
+      launch: { type: 'fly', landing: { x: 790, y: 220 }, hangMs: 2400, rollSpeed: 60, homer: false },
       batter: { charId: 'bat', speed: 10 },
       baseRunners: [],
       defense: DEFENSE,

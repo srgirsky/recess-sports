@@ -286,7 +286,7 @@ export const FX = {
   /** 📼 instant replay (great live plays re-run in slow motion). */
   REPLAY: {
     SPEED: 0.55, // playback rate vs real time
-    MAX_FRAMES: 700, // snapshot cap (~12s of play at 60fps)
+    MAX_FRAMES: 900, // snapshot cap (~15s of play at 60fps — covers MAX_PLAY_MS)
   },
   /** The home-run show (scenes/ui/Spectacle.ts). */
   HOMER: {
@@ -302,7 +302,7 @@ export const FX = {
     CAPSULE_W: 9, // px at the plate; depth-scaled at the capsule midpoint
     CAPSULE_ALPHA: 0.5,
     CAPSULE_SEGMENTS: 3, // alpha-stepped glow falloff toward the ball end
-    RING_R: 24, // landing-preview ring radius
+    RING_R: 34, // landing-preview ring radius (big Backyard-X read)
     RING_PULSE_SCALE: 1.35,
     RING_PULSE_MS: 480,
     CHEVRON_H: 14, // gold arrow over the controlled fielder
@@ -440,11 +440,12 @@ export const LIVE = {
     /** Liner / fly landing distance from home (px): BASE + q * SCALE. */
     LINER_DIST: { BASE: 170, SCALE: 220 },
     FLY_DIST: { BASE: 190, SCALE: 240 },
-    /** Air time ranges (ms) — deeper ball = longer hang within the range. */
-    LINER_HANG_MS: { MIN: 500, MAX: 700 },
-    FLY_HANG_MS: { MIN: 1200, MAX: 1700 },
+    /** Air time ranges (ms) — deeper ball = longer hang within the range.
+     *  Backyard-paced: flies hang long enough to settle under the landing ring. */
+    LINER_HANG_MS: { MIN: 650, MAX: 900 },
+    FLY_HANG_MS: { MIN: 2000, MAX: 2900 },
     /** Initial grounder roll speed (px/s); decelerates to stop at the settle point. */
-    GROUNDER_SPEED: { MIN: 200, MAX: 300 },
+    GROUNDER_SPEED: { MIN: 160, MAX: 240 },
   },
   /**
    * What a landed ball does next (systems/liveplay.ts). Flies and liners
@@ -474,7 +475,7 @@ export const LIVE = {
   /** Fielding assist (mode-tied: kid = auto, main = magnet). */
   ASSIST: {
     /** Magnet: how much steering is bent toward the ball (0 = pure manual). */
-    MAGNET_BLEND: 0.35,
+    MAGNET_BLEND: 0.5,
     /** A pointer that hasn't moved (and isn't down) this long stops steering. */
     POINTER_STALE_MS: 300,
   },
@@ -483,24 +484,27 @@ export const LIVE = {
   PICKUP_RADIUS: 28,
   /** An airborne ball is catchable in this last fraction of its flight. */
   CATCHABLE_TAIL: 0.4,
-  /** Hold-to-charge time (ms) for a full-power throw. */
-  THROW_METER_MS: 650,
+  /** Hold-to-charge time (ms) for a full-power throw. Short, Backyard-style:
+   *  once you've fielded it, the out is about picking the base, not the charge. */
+  THROW_METER_MS: 450,
   /** Throw flight speed (px/s) at zero / full charge. */
-  THROW_SPEED_MIN: 470,
+  THROW_SPEED_MIN: 550,
   THROW_SPEED_MAX: 820,
   /** Idle-kid rescue: sim throws by itself after holding the ball this long. */
   AUTO_THROW_MS: 2600,
   /** Runner speed (px/s) at speed stat 5; each stat point is ±6%.
-   *  Scaled with the base-leg length (~180px legs) so a leg takes ~1.7s —
-   *  slow enough that a cleanly fielded routine grounder beats the runner,
-   *  while a good jump still wins the extra-base bang-bang plays. */
-  RUNNER_SPEED: 106,
+   *  Scaled with the base-leg length (~180px legs) so a leg takes ~2.1s —
+   *  Backyard-paced: slow enough that there's real time to read the ball,
+   *  field it, and pick a base, while a good jump still wins the extra-base
+   *  bang-bang plays. */
+  RUNNER_SPEED: 85,
   /** Distance ball→next base above which a CPU runner risks the extra base. */
   CPU_RUNNER_GREED_DIST: 180,
   /** A loose ball nobody has picked up for this long → CPU runners just go. */
   CPU_RUNNER_PATIENCE_MS: 1500,
-  /** Hard cap: any live play resolves by now (stragglers settle safe behind). */
-  MAX_PLAY_MS: 9000,
+  /** Hard cap: any live play resolves by now (stragglers settle safe behind).
+   *  Sized for the slower Backyard pace (~2.1s legs + ~3s fly hangs). */
+  MAX_PLAY_MS: 11000,
   /** The dive verb (CLASSIC defense): tap mid-chase for a reach burst. */
   DIVE: {
     REACH_BONUS: 30, // px added to catch/pickup reach during the window
@@ -648,8 +652,9 @@ export const RUN2 = {
   /** After a caught fly the play stays open this long for tag-up sends. */
   SAC_WINDOW_MS: 1400,
   /** A kid who just caught a fly needs this long to gather before throwing —
-   *  the beat that makes sac flies from third a real race. */
-  CATCH_GATHER_MS: 800,
+   *  the beat that makes sac flies from third a real race. Scaled with
+   *  RUNNER_SPEED (slower legs need a longer beat to keep the race winnable). */
+  CATCH_GATHER_MS: 1100,
 };
 
 /**
@@ -757,8 +762,10 @@ export const MODES: Record<
     // Old HARD, softened a touch — main mode is still for kids.
     live: {
       cpuFielderSpeedMult: 1.0,
-      cpuReactionMs: 320,
-      cpuThrowDelayMs: 300,
+      // Reaction/throw delays scale with the Backyard pace (RUNNER_SPEED):
+      // slower runners need a more deliberate CPU defense or offense is crushed.
+      cpuReactionMs: 420,
+      cpuThrowDelayMs: 600,
       cpuThrowSpeedMult: 1.0,
       cpuThrowErrorMs: 80,
       reachMult: 1.15,

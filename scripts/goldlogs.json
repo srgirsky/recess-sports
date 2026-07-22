@@ -1,18 +1,18 @@
 {
-  "comment": "Gold-log regression fingerprints (scripts/goldlog.browser.js, harness v2.2). The harness seeds Math.random (mulberry32), virtualizes Date.now onto the pump grid, bypasses the visual draft with FIXED teams (the draft's greedy chooser jitters every candidate with rng, so title-screen cosmetics would cascade into different teams), reseeds at game entry, waits out the real-async jersey loader on a 50ms pump grid, and samples every 50ms step. Fingerprint = SHA-256 of the state-transition log (dash-grouped). Behavior-identical phases must reproduce these exactly. To debug a mismatch: check out the anchoring commit and re-run goldLogRun for the full log. CAUTION when regenerating: launch goldLogRun fire-and-forget and poll sessionStorage('goldlog_last') afterward — an awaited eval that times out mid-drive interleaves CDP work with the run and pollutes the fingerprint.",
-  "capturedAt": "post Backyard-views overhaul anchor (bottom scoreboard strip + right-edge cards + special pitches + fielding markers/scenery; drawField is now rng-free; each fingerprint verified byte-stable across two clean runs)",
+  "comment": "Gold-log regression fingerprints (scripts/goldlog.browser.js, harness v2.2). The harness seeds Math.random (mulberry32), virtualizes Date.now onto the pump grid, bypasses the visual draft with FIXED teams (the draft's greedy chooser jitters every candidate with rng, so title-screen cosmetics would cascade into different teams), reseeds at game entry, waits out the real-async jersey loader on a 50ms pump grid, and samples every 50ms step. Fingerprint = SHA-256 of the state-transition log (dash-grouped). Behavior-identical phases must reproduce these exactly. To debug a mismatch: check out the anchoring commit and re-run goldLogRun for the full log. CAUTION when regenerating: launch goldLogRun fire-and-forget and poll sessionStorage('goldlog_last') afterward \u2014 an awaited eval that times out mid-drive interleaves CDP work with the run and pollutes the fingerprint.",
+  "capturedAt": "post Backyard-pacing retune anchor (slower runners + longer hangs + slower grounders, quicker throws, gather-gated fly-ball tag-chase, more deliberate CPU defense; each fingerprint verified byte-stable across two clean runs)",
   "script": "goldlog.browser.js v2.2 (guard 9000)",
   "seed": 42,
   "logs": {
     "main": {
-      "length": 1826,
-      "sha256": "bed7447a-73776790-72e274d1-ce231872-e3a4708b-d301c848-29b62a7a-6d5a4cbe",
-      "note": "fixed teams A/B, 1 inning, ends 0-1 walk-off"
+      "length": 2324,
+      "sha256": "ba3c1d4c-fb00909b-6f35b37b-14019d53-2fe9a7db-dcdd5903-18d6b1f3-b5fe6799",
+      "note": "fixed teams A/B, 1 inning, ends 1-0"
     },
     "kid": {
-      "length": 5222,
-      "sha256": "a6db628c-e0a5f861-4b474a71-18f695d5-b372c9a1-e5cd04c5-fb687d7e-5d3eec6b",
-      "note": "fixed teams A/B, 1 inning, ends 0-1"
+      "length": 9555,
+      "sha256": "b08d0c46-e7387ddb-2c5a92e4-ed3b22d3-56307b6a-b5350a4b-2e57f73d-f77678ff",
+      "note": "fixed teams A/B, 1 inning + bonus, ends 0-1 walk-off"
     }
   }
 }

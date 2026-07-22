@@ -510,7 +510,11 @@ function moveFielders(
   }
 
   // Main mode: a CPU carrier with nobody worth throwing at hunts the nearest
-  // off-bag runner for the tag — the defensive half of a rundown.
+  // off-bag runner for the tag — the defensive half of a rundown. On a caught
+  // fly the carrier only chases RETREATING runners (doubling off a strayed
+  // kid); an advancing tag-up runner is the throw's problem (paced by the
+  // CATCH_GATHER_MS beat) — an outfielder never footraces them to the plate,
+  // which is what keeps sac flies from third winnable.
   if (
     s.mode === 'offense' &&
     params.manualBaserunning &&
@@ -522,6 +526,7 @@ function moveFielders(
     let best = Infinity;
     for (const r of s.runners) {
       if (r.done !== null || onABag(r)) continue;
+      if (s.flyCaught && r.to > r.from) continue; // advancing tag-up: throw, don't chase
       const d = dist(carrier.pos, r.pos);
       if (d < best) {
         best = d;
