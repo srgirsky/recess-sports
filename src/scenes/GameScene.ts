@@ -524,6 +524,7 @@ export class GameScene extends Phaser.Scene {
   private batterScale = 1;
   private worldBatterId = ''; // the kid the wide-view batter sprite wears (for swing-frame keys)
   private batterSwingSeq?: { cancel(restore?: boolean): void };
+  private pitcherWindupSeq?: { cancel(restore?: boolean): void };
   private batterIdle?: Phaser.Tweens.Tween;
   private pitcherSprite?: Phaser.GameObjects.Image;
   private scoreboard!: Scoreboard;
@@ -1215,6 +1216,8 @@ export class GameScene extends Phaser.Scene {
    */
   private enterHalf(): void {
     this.clearRestingBall();
+    this.pitcherWindupSeq?.cancel(false); // stale windup2 must not land on next half's mound
+    this.pitcherWindupSeq = undefined;
     this.pitchAutoPick?.remove(false);
     this.pitchAutoPick = undefined;
     this.autoThrowTimer?.remove(false);
@@ -1275,6 +1278,8 @@ export class GameScene extends Phaser.Scene {
   /** Put a kid on the mound (the AI's ace in the top, YOUR ace in the bottom). */
   private setMoundPitcher(char: Character): void {
     this.moundCharId = char.id;
+    this.pitcherWindupSeq?.cancel(false); // relief swap: the old arm's windup2 dies with him
+    this.pitcherWindupSeq = undefined;
     const p = this.pitcherSprite;
     if (!p || p.texture.key === char.id) return;
     p.setTexture(poseKey(char.id, 'stand'));
@@ -1555,8 +1560,17 @@ export class GameScene extends Phaser.Scene {
     }
     const p = this.pitcherSprite;
     if (!p) return;
-    // Real wind-up art (arm coiled, knee up) + the lean tween on top.
-    if (this.moundCharId) p.setTexture(poseKey(this.moundCharId, 'windup'));
+    // Real wind-up frames (leg lift → stride/plant, the second swap timed to
+    // the moment the lean tween reverses) + the lean tween on top. Cancel any
+    // previous sequence first — wind-ups fire repeatedly, and a stale windup2
+    // timer must never re-pose a pitcher who already threw or was relieved.
+    this.pitcherWindupSeq?.cancel(false);
+    if (this.moundCharId) {
+      p.setTexture(poseKey(this.moundCharId, 'windup'));
+      this.pitcherWindupSeq = poseSequence(this, p, [
+        { key: poseKey(this.moundCharId, 'windup2'), atMs: ANIM.WINDUP_MS * 0.55 },
+      ]);
+    }
     this.tweens.chain({
       targets: p,
       tweens: [
@@ -1565,7 +1579,7 @@ export class GameScene extends Phaser.Scene {
         { angle: 0, scaleY: p.scaleX, duration: 220, ease: 'Sine.out' },
       ],
       onComplete: () => {
-        if (p.active && this.moundCharId) p.setTexture(this.moundCharId);
+        if (p.active && this.moundCharId) p.setTexture(poseKey(this.moundCharId, 'stand'));
       },
     });
   }
@@ -4175,6 +4189,10 @@ export class GameScene extends Phaser.Scene {
     if (spr && id) {
       this.batterSwingSeq?.cancel(false);
       spr.setScale(this.batterScale); // clear any mid-breath scale
+      // The load frame lands synchronously (a delayedCall(0) would leave the
+      // resting stance visible for one tick); contact/follow-through stay at
+      // their exact times so the hit-pause still catches the contact frame.
+      spr.setTexture(poseKey(id, 'swingLoad'));
       this.batterSwingSeq = poseSequence(
         this,
         spr,

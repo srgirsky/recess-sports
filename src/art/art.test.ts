@@ -28,19 +28,28 @@ describe('character art', () => {
     }
   });
 
-  it('run frames differ (there is an actual cycle to animate)', () => {
+  it('run frames are pairwise distinct (there is an actual 4-frame gait)', () => {
+    const RUN = ['run1', 'run2', 'run3', 'run4'] as const;
     for (const char of ROSTER) {
-      expect(
-        buildCharacterSVG(char.visual, 'run1'),
-        `${char.id} run1 === run2`
-      ).not.toBe(buildCharacterSVG(char.visual, 'run2'));
+      const svgs = RUN.map((p) => buildCharacterSVG(char.visual, p));
+      for (let a = 0; a < RUN.length; a++) {
+        for (let b = a + 1; b < RUN.length; b++) {
+          expect(svgs[a], `${char.id} ${RUN[a]} === ${RUN[b]}`).not.toBe(svgs[b]);
+        }
+      }
     }
   });
 
   it('rear poses show no face', () => {
     // face() always paints the #ff9d9d cheek circles; a rear view must not.
     for (const char of ROSTER) {
-      for (const pose of ['batRear', 'catchRear', 'swingMidRear', 'swingFollowRear'] as const) {
+      for (const pose of [
+        'batRear',
+        'catchRear',
+        'swingLoadRear',
+        'swingMidRear',
+        'swingFollowRear',
+      ] as const) {
         expect(
           buildCharacterSVG(char.visual, pose).includes('ff9d9d'),
           `${char.id}/${pose} rendered a face`
@@ -89,7 +98,7 @@ describe('character art', () => {
     // or afro/long-hair kids bat and dive with their face hidden.
     const afroKid = ROSTER.find((c) => c.visual.hair === 'afro');
     expect(afroKid).toBeDefined();
-    for (const pose of ['bat', 'slide', 'throw', 'dive', 'run1', 'swingMid', 'swingFollow'] as const) {
+    for (const pose of ['bat', 'slide', 'throw', 'dive', 'run1', 'run3', 'run4', 'swingLoad', 'swingMid', 'swingFollow'] as const) {
       const svg = buildCharacterSVG(afroKid!.visual, pose);
       const afroIdx = svg.indexOf('a56 52 0 0 1 0 104'); // the afro dome path
       const faceIdx = svg.indexOf('ff9d9d'); // face() cheek color
@@ -98,18 +107,23 @@ describe('character art', () => {
     }
   });
 
-  it('the wheelchair kid keeps her wheel in the run frames', () => {
+  it('the wheelchair kid keeps her wheel in the run frames — and it turns', () => {
     const zoom = ROSTER.find((c) => c.visual.accessory === 'wheelchair');
     expect(zoom).toBeDefined();
-    for (const pose of ['run1', 'run2'] as const) {
+    for (const pose of ['run1', 'run2', 'run3', 'run4'] as const) {
       expect(buildCharacterSVG(zoom!.visual, pose)).toContain('<circle cx="92"');
     }
+    // The spoke group rotates 22.5° per gait step (1 → 3 → 2 → 4), so the
+    // wheel visibly turns instead of sliding.
+    expect(buildCharacterSVG(zoom!.visual, 'run3')).toContain('rotate(22.5 92');
+    expect(buildCharacterSVG(zoom!.visual, 'run2')).toContain('rotate(45 92');
+    expect(buildCharacterSVG(zoom!.visual, 'run4')).toContain('rotate(67.5 92');
   });
 
   it('long back hair also stays behind the face in side poses', () => {
     const longKid = ROSTER.find((c) => c.visual.hair === 'long');
     expect(longKid).toBeDefined();
-    for (const pose of ['bat', 'slide', 'throw', 'dive', 'run1', 'swingMid', 'swingFollow'] as const) {
+    for (const pose of ['bat', 'slide', 'throw', 'dive', 'run1', 'run3', 'run4', 'swingLoad', 'swingMid', 'swingFollow'] as const) {
       const svg = buildCharacterSVG(longKid!.visual, pose);
       const hairIdx = svg.indexOf('M 48 70'); // the long-drape back path
       const faceIdx = svg.indexOf('ff9d9d');
@@ -176,7 +190,7 @@ describe('character art', () => {
     // an outfit renders byte-identically to the same kid without one.
     for (const char of ROSTER) {
       const { outfit: _drop, ...noOutfit } = char.visual;
-      for (const pose of ['stand', 'bat', 'batRear', 'run1', 'swingMid', 'swingFollowRear'] as const) {
+      for (const pose of ['stand', 'bat', 'batRear', 'run1', 'run3', 'windup2', 'swingLoad', 'swingMid', 'swingFollowRear'] as const) {
         expect(
           buildCharacterSVG(char.visual, pose),
           `${char.id}/${pose} jersey render depends on outfit`
@@ -186,18 +200,22 @@ describe('character art', () => {
   });
 
   it('swing frames actually differ from the stance and each other', () => {
-    // load → contact → follow-through must be three distinct drawings, or the
-    // swing sequence animates nothing (mirrors the run1 ≠ run2 guard).
+    // stance → load → contact → follow-through must be four distinct drawings,
+    // or the swing sequence animates nothing (mirrors the run-frame guard).
     for (const char of ROSTER) {
-      const load = buildCharacterSVG(char.visual, 'bat');
+      const stance = buildCharacterSVG(char.visual, 'bat');
+      const load = buildCharacterSVG(char.visual, 'swingLoad');
       const mid = buildCharacterSVG(char.visual, 'swingMid');
       const follow = buildCharacterSVG(char.visual, 'swingFollow');
-      expect(mid, `${char.id} swingMid === bat`).not.toBe(load);
+      expect(load, `${char.id} swingLoad === bat`).not.toBe(stance);
+      expect(mid, `${char.id} swingMid === swingLoad`).not.toBe(load);
       expect(follow, `${char.id} swingFollow === swingMid`).not.toBe(mid);
-      const loadR = buildCharacterSVG(char.visual, 'batRear');
+      const stanceR = buildCharacterSVG(char.visual, 'batRear');
+      const loadR = buildCharacterSVG(char.visual, 'swingLoadRear');
       const midR = buildCharacterSVG(char.visual, 'swingMidRear');
       const followR = buildCharacterSVG(char.visual, 'swingFollowRear');
-      expect(midR, `${char.id} swingMidRear === batRear`).not.toBe(loadR);
+      expect(loadR, `${char.id} swingLoadRear === batRear`).not.toBe(stanceR);
+      expect(midR, `${char.id} swingMidRear === swingLoadRear`).not.toBe(loadR);
       expect(followR, `${char.id} swingFollowRear === swingMidRear`).not.toBe(midR);
     }
   });
@@ -206,7 +224,14 @@ describe('character art', () => {
     // Every swing frame must still draw the bat wood — a frame that dropped
     // the batProp call would flash an empty-handed batter mid-swing.
     for (const char of ROSTER) {
-      for (const pose of ['swingMid', 'swingFollow', 'swingMidRear', 'swingFollowRear'] as const) {
+      for (const pose of [
+        'swingLoad',
+        'swingMid',
+        'swingFollow',
+        'swingLoadRear',
+        'swingMidRear',
+        'swingFollowRear',
+      ] as const) {
         expect(
           buildCharacterSVG(char.visual, pose).includes('#d39a5c'),
           `${char.id}/${pose} lost the bat`
@@ -219,7 +244,14 @@ describe('character art', () => {
     // The fist helper paints its knuckle-hint path; the old marble hands did
     // not. Both grips of every batting/swing pose must wear it.
     for (const char of ROSTER) {
-      for (const pose of ['bat', 'batRear', 'swingMid', 'swingMidRear'] as const) {
+      for (const pose of [
+        'bat',
+        'batRear',
+        'swingLoad',
+        'swingLoadRear',
+        'swingMid',
+        'swingMidRear',
+      ] as const) {
         expect(
           buildCharacterSVG(char.visual, pose).includes('q 3 2.5 0 5'),
           `${char.id}/${pose} has no fists`
@@ -238,6 +270,8 @@ describe('character art', () => {
       for (const pose of [
         'bat',
         'batRear',
+        'swingLoad',
+        'swingLoadRear',
         'swingMid',
         'swingFollow',
         'swingMidRear',

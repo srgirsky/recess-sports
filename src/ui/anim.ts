@@ -7,8 +7,12 @@
 import Phaser from 'phaser';
 import { ANIM } from '../config';
 import { poseKey } from '../art/textureFactory';
+import type { Pose } from '../art/CharacterArt';
 
 type Obj = Phaser.GameObjects.Components.Transform & Phaser.GameObjects.GameObject;
+
+/** The canonical 4-frame gait: reach → pass → crossover → pass. */
+export const RUN_FRAMES: readonly Pose[] = ['run1', 'run3', 'run2', 'run4'];
 
 /**
  * A soft ground shadow under a character. Kept as a separate runtime object
@@ -24,18 +28,20 @@ export function groundShadow(
 }
 
 /**
- * Flip a sprite between its run1/run2 pose textures — the two-frame run cycle.
- * Textures share dimensions, so the sprite's scale stays valid.
- * `stop(true)` restores the stand texture.
+ * Step a sprite through its run-frame pose textures — RUN_FRAMES (the 4-frame
+ * reach → pass → crossover → pass gait) by default; pass `frames` to loop any
+ * other pose list. Textures share dimensions, so the sprite's scale stays
+ * valid. `stop(true)` restores the stand texture.
  */
 export function runCycle(
   scene: Phaser.Scene,
   img: Phaser.GameObjects.Image,
   id: string,
-  opts: { frameMs?: number } = {}
+  opts: { frameMs?: number; frames?: readonly Pose[] } = {}
 ): { stop(restoreStand?: boolean): void } {
-  let frame: 1 | 2 = 1;
-  img.setTexture(poseKey(id, 'run1'));
+  const frames = opts.frames ?? RUN_FRAMES;
+  let i = 0;
+  img.setTexture(poseKey(id, frames[0]));
   const timer = scene.time.addEvent({
     delay: opts.frameMs ?? ANIM.RUN_FRAME_MS,
     loop: true,
@@ -45,8 +51,8 @@ export function runCycle(
         timer.remove();
         return;
       }
-      frame = frame === 1 ? 2 : 1;
-      img.setTexture(poseKey(id, frame === 1 ? 'run1' : 'run2'));
+      i = (i + 1) % frames.length;
+      img.setTexture(poseKey(id, frames[i]));
     },
   });
   return {

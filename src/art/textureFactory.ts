@@ -30,6 +30,7 @@ const HERO_SUFFIX = ':hi';
 export const HERO_POSES: Pose[] = [
   'batRear',
   'catchRear',
+  'swingLoadRear',
   'swingMidRear',
   'swingFollowRear',
   'upset',
@@ -42,9 +43,10 @@ export const HERO_POSES: Pose[] = [
  *  it so the draft shows personal outfits; GameScene clears/re-arms with team
  *  suffixes, so games (kid mode included) stay in jerseys. */
 export const STREET_SUFFIX = ':sc';
-/** The only poses the draft renders: wall idle, crowd stream-out, pennant
- *  celebration, inspect card. (The dev gallery lazily bakes the rest.) */
-export const STREET_POSES: Pose[] = ['stand', 'run1', 'run2', 'cheer'];
+/** The only poses the draft renders: wall idle, the crowd stream-out's full
+ *  4-frame run cycle, pennant celebration, inspect card. (The dev gallery
+ *  lazily bakes the rest.) */
+export const STREET_POSES: Pose[] = ['stand', 'run1', 'run2', 'run3', 'run4', 'cheer'];
 
 /** Native display aspect helpers so scenes can size sprites without magic numbers. */
 export const CHAR_ASPECT = RENDER_W / RENDER_H;
