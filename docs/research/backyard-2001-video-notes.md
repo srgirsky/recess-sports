@@ -92,7 +92,8 @@ Purpose: ground-truth tuning reference for Recess Sports (pitch speed, pacing, H
 | Card selection | Card art plays a flourish animation | Tap flourish: card pop + icon wiggle in EdgeCards | ✅ SHIPPED (+ blue/yellow/red pip colors and the ~200ms ump-call beat, `FLOW.UMP_CALL_DELAY_MS`) |
 | Out presentation | Yellow "OUT" text at the base, in-world | Floating text/banner | 🤔 In-world at-the-base text is very readable |
 | Batter dodges inside pitches | Lean-back reaction mid-flight, before the call | `dodge` reaction pose, fired at 55% of flight on pitches crossing well inside (`PLATE_VIEW.DODGE`, all three renderers) | ✅ SHIPPED |
-| Fielder identity | Name bubble follows the active fielder (lags behind on sprints) | Chaser spotlight + gold chevron, no name | 💡 Name bubble reinforces the characters-are-the-product goal |
+| Fielder identity | Name bubble follows the active fielder (lags behind on sprints) | Lagging name bubble under the chaser (`FX.LIVE_MARKER.NAME`, lerp follower — replays get it free) + spotlight + chevron | ✅ SHIPPED |
+| Steal race readability | Yellow motion trail along the runner's whole dash | Fading gold dot streak behind the steal dash (`FX.STEAL_TRAIL`) | ✅ SHIPPED (in-world OUT!-at-the-base already existed) |
 
 ## Measurement technique (for repeating this)
 - Drive the YouTube player via `document.querySelector('video.video-stream')`: pause, set `currentTime`, read exact times back. Screenshot/zoom the player region per step.

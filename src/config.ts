@@ -324,6 +324,8 @@ export const FX = {
   HIT_TRAIL_EVERY_MS: 40, // spawn cadence while the ball flies
   HIT_TRAIL_LIFE_MS: 240, // how long each dot lingers
   HIT_TRAIL_MIN_H: 0.1, // no trail below this arc height (grounders stay clean)
+  /** BB2001-style motion streak behind the stealing runner's dash. */
+  STEAL_TRAIL: { EVERY_MS: 26, R: 8, LIFE_MS: 300 },
   /** The chalk ring that marks where a fly ball lands. */
   LAND_RING_MS: 550,
   /** 📼 instant replay (great live plays re-run in slow motion). */
@@ -349,6 +351,9 @@ export const FX = {
     RING_PULSE_SCALE: 1.35,
     RING_PULSE_MS: 480,
     CHEVRON_H: 14, // gold arrow over the controlled fielder
+    /** BB2001-style name bubble trailing the controlled fielder: per-frame
+     *  lerp fraction (the lag IS the charm) + offset below the kid's feet. */
+    NAME: { LAG: 0.16, DY: 30 },
     CHEVRON_BOB: 5,
   },
 };
