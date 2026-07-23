@@ -687,6 +687,29 @@ export const DIFFICULTY = {
   CONTACT_PER_LEVEL: 0.7, // CPU batter contact bonus per level
 };
 
+/**
+ * The player-facing difficulty ladder (BB2001's TEE-BALL / EASY / MEDIUM / HARD)
+ * mapped over our two internal feature sets. TEE-BALL and EASY resolve to the
+ * forgiving KID feature set (tee-ball additionally sits the ball on a tee — a
+ * slow soft lob so timing is trivial); MEDIUM and HARD use the full CLASSIC set,
+ * with HARD seeding the CPU ramp a couple levels up front. `GameMode` stays the
+ * internal switch — difficulty is the label on top of it. See systems/mode.ts.
+ */
+export type DifficultyLevel = 'teeball' | 'easy' | 'medium' | 'hard';
+
+export const DIFFICULTY_TIERS: Record<
+  DifficultyLevel,
+  { mode: GameMode; baseRamp: number; tee: boolean; icon: string; label: string }
+> = {
+  teeball: { mode: 'kid', baseRamp: 0, tee: true, icon: '🏌️', label: 'TEE-BALL' },
+  easy: { mode: 'kid', baseRamp: 0, tee: false, icon: '🙂', label: 'EASY' },
+  medium: { mode: 'main', baseRamp: 0, tee: false, icon: '⚾', label: 'MEDIUM' },
+  hard: { mode: 'main', baseRamp: 2, tee: false, icon: '🔥', label: 'HARD' },
+};
+
+/** Tee-ball: the pitch is a slow, high soft lob so any timing makes contact. */
+export const TEE_PITCH_MS = 1500;
+
 /** Pitcher fatigue (CLASSIC, `features.fatigue`; systems/fatigue.ts). */
 export const FATIGUE = {
   DRAIN_PITCH: 0.03, // stamina per ordinary pitch (~33 pitches to empty)

@@ -41,6 +41,8 @@ export interface GameInitData extends TeamState {
   rival?: TeamIdentity;
   /** Batting practice: endless pitches, no outs, no innings, big DONE button. */
   practice?: boolean;
+  /** Spectator (WATCH): both teams CPU-driven, no human input. */
+  spectator?: boolean;
   /** This game counts toward the Recess Week season. */
   seasonGame?: boolean;
   /** Pass-and-play: both seats human-batted, the batting player holds the device.

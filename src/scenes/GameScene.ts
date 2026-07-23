@@ -15,6 +15,7 @@ import {
   GAME_HEIGHT,
   COLORS,
   PITCH_TRAVEL_MS,
+  TEE_PITCH_MS,
   PITCH_METER_MS,
   PITCH_AUTO_THROW_MS,
   CPU_PITCH_TRAVEL_MS,
@@ -144,6 +145,9 @@ import {
   getPitchBaseMs,
   getSwingTiming,
   resolveLiveParams,
+  isTee,
+  difficultyBaseRamp,
+  type FeatureOverrides,
   type LiveParams,
 } from '../systems/mode';
 import {
@@ -294,6 +298,8 @@ export class GameScene extends Phaser.Scene {
   private ramp = 0; // CPU difficulty ramp level (CLASSIC, from games played)
   private regulation = INNINGS; // game length (settings can pick 1/2/3)
   private practice = false; // batting practice: endless pitches, no outs, no innings
+  private spectator = false; // WATCH: both teams CPU-driven, no human input
+  private tee = false; // tee-ball difficulty: the pitch is a slow soft lob
   private seasonGame = false; // this game counts toward Recess Week
   private matchType: 'solo' | 'passplay' | 'net' = 'solo';
   /** Two-device play: which end of the wire this device is (unset = local). */
@@ -557,6 +563,7 @@ export class GameScene extends Phaser.Scene {
     this.rival = data.rival;
     this.regulation = getSettings().innings;
     this.practice = data.practice ?? false;
+    this.spectator = data.spectator ?? false;
     this.seasonGame = data.seasonGame ?? false;
     this.matchType = data.matchType ?? 'solo';
     this.netRole = data.netRole;
@@ -566,6 +573,10 @@ export class GameScene extends Phaser.Scene {
     // Net keeps SOLO routing on both devices (the host's remote human enters
     // at the CPU decision seams; the guest never routes flow at all) — the
     // guest's UI gates key off deviceSeat()/remoteActs(), not these flags.
+    // Spectator (WATCH): seat 0 keeps the human-batting/pitching seam flags so
+    // the normal flow families run, but the auto-driver (scheduleSpectatorSwing
+    // + a standing run input, the kid-mode auto-throw on the mound) feeds those
+    // seams the CPU's decisions — the human never touches the controls.
     const passplay = this.matchType === 'passplay';
     this.seats[0].humanBats = true;
     this.seats[0].humanPitches = !passplay;
@@ -620,32 +631,46 @@ export class GameScene extends Phaser.Scene {
     this.playerPitcher = this.playerPlan
       ? getCharacter(this.playerPlan.pitcherId)
       : bestPitcher(this.playerTeam);
-    this.mode = getMode();
-    this.features = getFeatures(this.mode);
+    // Spectator forces the forgiving KID feature set (auto-fielding self-plays
+    // the defense) so the auto-driver only has to supply pitch/swing decisions.
+    const settings = getSettings();
+    this.mode = this.spectator ? 'kid' : getMode();
+    // GAME SETUP helper toggles trim the classic feature set; they can only
+    // disable (a no-op at the defaults), so the seeded goldlog stream is safe.
+    const overrides: FeatureOverrides | undefined = this.spectator
+      ? undefined
+      : { errors: settings.errors, swingSpot: settings.swingSpot, pitchLocator: settings.pitchLocator };
+    this.tee = !this.spectator && isTee(settings.difficulty);
+    this.features = getFeatures(this.mode, overrides);
     // Net: frames already stream to the guest at 1× — a replay would
     // double-consume them, so the 📼 stays off on both devices.
     if (this.matchType === 'net') this.features = { ...this.features, replay: false };
-    this.liveParams = resolveLiveParams(this.mode);
+    this.liveParams = resolveLiveParams(this.mode, overrides);
     this.venue = getVenue();
     this.geo = getFieldGeometry(this.venue);
     // Ramp is read BEFORE this game is tallied (game 1 plays at level 0),
-    // and only in CLASSIC — kid mode never sharpens.
-    // Pass-and-play is PvP: symmetric CPU defenses, no ramp, and it doesn't
-    // feed the solo ramp's games-played tally.
-    this.ramp = this.mode === 'main' && this.matchType === 'solo' ? rampLevel(getGamesPlayed()) : 0;
-    if (this.matchType === 'solo') recordGamePlayed();
+    // and only in CLASSIC — kid mode never sharpens. HARD difficulty seeds a
+    // couple ramp levels up front. Pass-and-play is PvP: symmetric CPU
+    // defenses, no ramp, and it doesn't feed the solo games-played tally.
+    this.ramp =
+      this.mode === 'main' && this.matchType === 'solo'
+        ? difficultyBaseRamp(settings.difficulty) + rampLevel(getGamesPlayed())
+        : 0;
+    if (this.matchType === 'solo' && !this.spectator) recordGamePlayed();
     // The booth introduces the matchup.
     if (this.identity && this.rival) {
       audio.say(`${teamName(this.identity)} versus ${teamName(this.rival)}! Play ball!`, undefined, 'queue');
     }
-    // Batting practice: a big DONE button is the only way out (no innings).
+    // Batting practice / spectator: a big button up top is the way back to the
+    // title (practice has no innings; WATCH lets you bail before the last out).
     // Deferred a tick — pinUI needs the UI camera, which is built later in
     // create().
-    if (this.practice) {
+    if (this.practice || this.spectator) {
+      const label = this.spectator ? '👀 STOP' : '✅ DONE';
       this.time.delayedCall(0, () => {
         // Below the scoreboard's inning pill (centered at y=36, h≈44) — the
         // top strip itself has no gap wide enough for this.
-        const done = pill(this, GAME_WIDTH / 2, 92, '✅ DONE', { fill: COLORS.gold, fontSize: 20, minW: 130 });
+        const done = pill(this, GAME_WIDTH / 2, 92, label, { fill: COLORS.gold, fontSize: 20, minW: 130 });
         done.container.setDepth(95);
         this.pinUI(done.container);
         done.container.setInteractive(
@@ -1729,7 +1754,10 @@ export class GameScene extends Phaser.Scene {
     this.pitchStart = this.time.now;
     this.firstPitchOfGame = false;
     this.pitchPlan = undefined;
-    this.pitchTravelMs = PITCH_TRAVEL_MS;
+    // Tee-ball sits the ball on a tee: a slow, high soft lob so any timing
+    // makes contact. Everything downstream (ring + ball tweens) reads `travel`.
+    const travel = this.tee ? TEE_PITCH_MS : PITCH_TRAVEL_MS;
+    this.pitchTravelMs = travel;
     // Sometimes the AI throws a WILD one — telegraphed in red, visibly off the
     // plate. Don't swing at those! Taking it earns a ball (4 = walk).
     if (remoteMoundKid && this.netPitchPlan) {
@@ -1739,7 +1767,7 @@ export class GameScene extends Phaser.Scene {
       this.pitchIsWild = rollAiWildPitch(this.fieldingSeat().pitcher!, () => Math.random());
     }
     const wild = this.pitchIsWild;
-    this.hostCast({ t: 'pitchLaunch', wild, travelMs: PITCH_TRAVEL_MS });
+    this.hostCast({ t: 'pitchLaunch', wild, travelMs: travel });
     // Wild pitches sail visibly off the plate (plate-coord px, past the edge).
     const end = plateToScreen({ x: wild ? (Math.random() < 0.5 ? -60 : 60) : 0, y: 0 });
     const start = this.rig.releasePoint;
@@ -1762,7 +1790,7 @@ export class GameScene extends Phaser.Scene {
       this.tweens.add({
         targets: this.ringShrink,
         scale: 1,
-        duration: PITCH_TRAVEL_MS,
+        duration: travel,
         ease: 'Sine.in',
       });
     }
@@ -1778,12 +1806,18 @@ export class GameScene extends Phaser.Scene {
       x: end.x,
       y: end.y,
       scale: { from: PLATE_VIEW.BALL.SCALE_FROM, to: PLATE_VIEW.BALL.SCALE_TO },
-      duration: PITCH_TRAVEL_MS,
+      duration: travel,
       ease: wild ? 'Sine.inOut' : 'Sine.in',
       onComplete: () => {
         if (!this.swung && this.phase === 'pitching') this.resolvePlayerSwing('miss', true);
       },
     });
+
+    // Spectator (WATCH): the batting team is CPU-driven — schedule an auto-swing
+    // partway into the flight so the ball actually gets put in play. The
+    // pitching half needs no help (kid mode auto-throws + resolves the CPU
+    // batter on its own).
+    if (this.spectator) this.scheduleSpectatorSwing(travel, wild);
 
     this.startBallTrail();
   }
@@ -1800,6 +1834,27 @@ export class GameScene extends Phaser.Scene {
           .setDepth(PLATE_VIEW.DEPTH + 7);
         this.tweens.add({ targets: dot, alpha: 0, duration: 220, onComplete: () => dot.destroy() });
       },
+    });
+  }
+
+  /**
+   * Spectator auto-batter: partway into the flight, mostly swing (with a rolled
+   * quality band) and sometimes take, so a WATCH game puts the ball in play,
+   * draws the odd walk, and strikes out — a game that plays itself. Not on any
+   * seeded path (WATCH uses random teams), so Math.random here is fine. A wild
+   * pitch is always taken (good eye → ball), mirroring how a human should play.
+   */
+  private scheduleSpectatorSwing(travel: number, wild: boolean): void {
+    const delay = travel * (0.45 + Math.random() * 0.4);
+    this.time.delayedCall(delay, () => {
+      if (this.phase !== 'pitching' || this.swung) return;
+      if (wild || Math.random() < 0.2) {
+        this.resolvePlayerSwing('miss', true); // take it
+        return;
+      }
+      const r = Math.random();
+      const band: SwingBand = r < 0.26 ? 'perfect' : r < 0.6 ? 'good' : r < 0.85 ? 'weak' : 'miss';
+      this.resolvePlayerSwing(band, false);
     });
   }
 
@@ -1855,11 +1910,11 @@ export class GameScene extends Phaser.Scene {
         rp.target,
         cpuArm,
         rp.errorMs,
-        getPitchBaseMs(this.mode, 'batting'),
+        getPitchBaseMs(this.mode, 'batting', this.tee),
         () => Math.random()
       );
     } else {
-      plan = chooseCpuPitch(cpuArm, this.halfState.count, getPitchBaseMs(this.mode, 'batting'), () => Math.random());
+      plan = chooseCpuPitch(cpuArm, this.halfState.count, getPitchBaseMs(this.mode, 'batting', this.tee), () => Math.random());
       // A trailing CPU digs into its own juice for a special pitch. Never in
       // pass-and-play/net: the CPU must not burn a HUMAN seat's meter.
       const special =
@@ -1879,7 +1934,7 @@ export class GameScene extends Phaser.Scene {
           plan.target,
           cpuArm,
           60,
-          getPitchBaseMs(this.mode, 'batting'),
+          getPitchBaseMs(this.mode, 'batting', this.tee),
           () => Math.random()
         );
         this.announceSpecialPitch(special, COLORS.red);
@@ -2892,6 +2947,8 @@ export class GameScene extends Phaser.Scene {
         this.pendingDive = false;
       }
     } else if (this.phase === 'running') {
+      // Spectator: nobody's tapping GO — keep the batting team advancing.
+      if (this.spectator) this.pendingRun = true;
       if (this.pendingRun) {
         inputs.run = true;
         this.pendingRun = false;
@@ -3397,7 +3454,7 @@ export class GameScene extends Phaser.Scene {
       target,
       armStat,
       err,
-      getPitchBaseMs(this.mode, 'pitching'),
+      getPitchBaseMs(this.mode, 'pitching', this.tee),
       () => Math.random()
     );
     // Net: the REMOTE batter decides — the CPU-batter plan is a placeholder
@@ -4387,6 +4444,7 @@ export class GameScene extends Phaser.Scene {
       this.lastScreenPointer = { x: p.x, y: p.y };
       this.lastPointer = toLogical(p);
       this.lastPointerAt = this.time.now;
+      if (this.spectator) return; // WATCH: taps do nothing, the auto-driver plays
       if (this.remoteActs()) return; // net: the other device's moment
       if (this.phase === 'pitching') this.onSwing();
       else if (this.phase === 'aiming') this.onThrow();
