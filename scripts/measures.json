@@ -1,0 +1,48 @@
+{
+  "comment": "BB2001 measurement records (companion to scripts/measure/*.js, mirroring the goldlogs.json pattern). Each record names the src/config.ts constant it informs, so the audit trail runs source -> record -> src/data/bb2001.ts -> the constant. Geometry records are in SOURCE pixels (BB2001 is 640x480). Measured off the public YouTube capture YMmqNpmA60U by frame-stepping in-browser with full canvas pixel access (the video was untainted), then fitting features with the scripts/measure/lib.js math (affinity, RANSAC line fits by hand in the browser). Method notes and the perspective finding are written up in docs/research/backyard-2001-video-notes.md.",
+  "capturedAt": "2026-07-23",
+  "source": {
+    "primary": "youtube:YMmqNpmA60U",
+    "resolution": [640, 480],
+    "note": "Public gameplay capture, 640x480. Canvas pixel access confirmed untainted, so geometry was measured objectively (dirt/grass boundary scans + RANSAC foul-line fits), not eyeballed."
+  },
+  "geometry": {
+    "affinityTest": {
+      "id": "geometry.projection-type",
+      "category": "geometry",
+      "what": "Is BB2001's field an affine squash of the diamond (like ours) or true perspective? A diamond is a square, so its 4 bases are a square's corners; affine maps preserve diagonal bisection, perspective does not.",
+      "method": "Wide reset frame t=430. Foul lines fit by RANSAC (white chalk, occlusion-robust): left slope 1.239, right 1.238, symmetric, intersecting at home (319,444). Bases located by dirt/grass boundary scans: 2B apex down the symmetry axis, 1B/3B as the outer infield-dirt corners along each foul line (symmetric: y=286/287, x=513.6/126.2). Robust to camera pan/zoom, which is affine and cannot convert perspective<->affine.",
+      "source": { "video": "YMmqNpmA60U", "clips": [{ "t0": 430, "note": "quiet post-play wide view, everyone reset" }] },
+      "bases_srcpx": { "home": [319, 444.5], "first": [513.6, 286], "second": [319, 198], "third": [126.2, 287] },
+      "diagonalMidpoints": { "M1_home_2B": [319, 321.25], "M2_1B_3B": [319.9, 286.5] },
+      "diagonalMidpointGapPx": 34.8,
+      "affineThresholdPx": 3,
+      "verdict": "PERSPECTIVE",
+      "nearHalfPx": 158,
+      "farHalfPx": 88.5,
+      "nearFarRatio": 1.79,
+      "perspectiveStrength_gapOverHeight": 0.141,
+      "confidence": "high",
+      "informs": "src/art/projection.ts (which maps y 1:1 -- NO vertical foreshortening). BB matching would need a render-only y'=f(y). Gated behind the graphics phase; does NOT affect pace.",
+      "n": 1,
+      "nNote": "n=1 frame, but the measurement is objective (pixel boundaries, not eyeball) and the gap is 11x the threshold, so a second frame would confirm rather than decide. Left/right symmetry (1.239 vs 1.238; bases mirror about x=319.9) is the internal consistency check."
+    },
+    "foulSlope": {
+      "id": "geometry.foul-slope",
+      "category": "geometry",
+      "what": "Near-field lateral foreshortening: horizontal run per unit depth along the foul lines from home.",
+      "method": "RANSAC fit of white chalk foul-line pixels, refit on inliers.",
+      "source": { "video": "YMmqNpmA60U", "clips": [{ "t0": 430, "note": "same frame" }] },
+      "slopeLeft": 1.239,
+      "slopeRight": 1.238,
+      "slopeAsymmetryPct": 0.08,
+      "ours_FOUL_SLOPE": 1.2,
+      "deltaPct": 3.2,
+      "confidence": "high",
+      "informs": "src/systems/geometry.ts FOUL_SLOPE. Our near-field lateral squash already matches BB within ~3%; the difference from BB is the DEPTH compression (perspective), not the foul angle."
+    }
+  },
+  "pace": {
+    "note": "Pending. The pace shot list (home->1B x6, fly hang x6, fielder/throw/CPU delays, pitch corridor) is the next measurement pass and the one that fixes the 'too fast' complaint. No pace records yet -- deliberately not seeding from the existing n=1 notes."
+  }
+}

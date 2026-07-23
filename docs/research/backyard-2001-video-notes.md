@@ -100,3 +100,24 @@ Purpose: ground-truth tuning reference for Recess Sports (pitch speed, pacing, H
 - Drive the YouTube player via `document.querySelector('video.video-stream')`: pause, set `currentTime`, read exact times back. Screenshot/zoom the player region per step.
 - GOTCHA: after a BACKWARD seek the old frame can stay on screen even AFTER the `seeked` event fires (compositor lag / buffer refetch) — a "new" screenshot can silently show the old frame. Only trust frames reached by FORWARD seeks; after any backward jump, discard the first frame and step forward once before capturing. `requestVideoFrameCallback` does NOT fire on a paused video — don't await it (it hangs the eval).
 - The video is a 640×480 capture; the YouTube player region on screen was (173,70)–(906,616) during this session (window-size dependent — recheck).
+
+## Geometry: BB2001's field is TRUE PERSPECTIVE, not affine (measured 2026-07-23)
+
+The single most structurally-important measurement in the project, and it came back the "hard" way. Method and numbers are in `scripts/measures.json`; this is the narrative.
+
+**The question.** Our renderer (`src/art/projection.ts`) maps `y: p.y` — a pure horizontal pinch with **no vertical foreshortening**. If BB2001 draws its field in true perspective, that identity is structurally wrong, and matching BB's look would ripple into the sim's coordinate assumptions. The affinity test decides it: a diamond is a square, so its four bases are a square's corners; **affine** maps preserve diagonal bisection (the two diagonal midpoints coincide), **perspective** maps do not (the far half compresses).
+
+**The measurement** (frame t=430, the quiet post-play wide reset). Canvas pixel access was **untainted**, so this was done objectively, not by eye:
+- **Foul lines** fit by RANSAC on the white chalk (occlusion-robust — players stand inside the lines): left slope **1.239**, right **1.238** — symmetric, and they intersect exactly on the home-plate pentagon at **(319, 444)**, which validates the fit.
+- **Bases** from the dirt/grass boundary (players stand *on* the dirt, so the diamond's outer corners read through them): 2B apex down the symmetry axis at **(319, 198)**; 1B/3B as the outer infield-dirt corners on each foul line at **(514, 286)** and **(126, 287)** — symmetric about x=319.9, the internal consistency check.
+
+**The verdict.** Diagonal midpoints: M1 (home–2B) at (319, **321**), M2 (1B–3B) at (320, **287**). Gap = **34.8px** against a 3px affine threshold — **11× over. BB2001 is perspective.** The near half of the infield is drawn **158px** tall vs the far half's **88px** — a **1.79 ratio** where affine demands 1.0. Perspective strength (gap ÷ home→2B height) = **0.14**.
+
+Robust to camera pan/zoom: those are affine transforms and cannot convert perspective↔affine. And robust to apex uncertainty — even a 30px error in 2B keeps the gap far above threshold.
+
+**The one reassuring part:** BB's foul slope (**1.24**) is within ~3% of our `FOUL_SLOPE` (1.2). Our *near-field lateral* squash already matches BB. What we lack is the *depth* compression.
+
+**Implication (for the graphics phase, which is sequenced last and gated on a legit game copy):** matching BB's field means adding a render-only `y' = f(y)` to `projection.ts` with a matching inverse in `unproject`, keeping the sim flat so `geometry.ts`, `clampToField`'s convexity argument, and the goldlog stay untouched. Fix the two coordinate-hygiene bugs first (the raw-`MOUND` draw in `drawField`, and `depthScale()` called on an already-projected point in `LivePlayView`). **This does not touch the pace work.** It is also a genuine product question, not a mandate — our flatter view is a deliberate style, and adding perspective is a large visual change worth deciding on its own merits.
+
+### Method upgrade over the technique section above
+This session drove the video the same way (pause / set `currentTime` / forward-seeks-only) but added: (1) a **canvas taint probe** (primed magenta so a no-op draw is distinguishable from a black frame) which came back **untainted**, unlocking direct pixel reads at exact 640×480 game coordinates — no screen-pixel/DPR conversion; (2) **RANSAC** line fitting so occluding uniforms/bags don't poison the foul-line fit; (3) **dirt/grass boundary scans** to locate bases through standing fielders. When pixel access is available, prefer all three over eyeballing a scaled screenshot.
