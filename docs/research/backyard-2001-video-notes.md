@@ -121,3 +121,11 @@ Robust to camera pan/zoom: those are affine transforms and cannot convert perspe
 
 ### Method upgrade over the technique section above
 This session drove the video the same way (pause / set `currentTime` / forward-seeks-only) but added: (1) a **canvas taint probe** (primed magenta so a no-op draw is distinguishable from a black frame) which came back **untainted**, unlocking direct pixel reads at exact 640×480 game coordinates — no screen-pixel/DPR conversion; (2) **RANSAC** line fitting so occluding uniforms/bags don't poison the foul-line fit; (3) **dirt/grass boundary scans** to locate bases through standing fielders. When pixel access is available, prefer all three over eyeballing a scaled screenshot.
+
+## ⚠️ The timestamps in the segments above do NOT map to the live YouTube stream (found 2026-07-23)
+
+Re-opening `YMmqNpmA60U` to measure pace, the frame at each cited timestamp does not match what the notes recorded. Spot checks: t=389 does show a pitch in flight (matches), but **t≈445–460, recorded as a live play (fly to RF, runner home→1B), is a static defensive set** — no runner on the basepaths, no ball aloft, score 0-0 — as is t=456 (a full reset). So `video.currentTime` in this session is offset from the prior session's (an ad shifting the timeline, or a re-upload). **Consequence: the numbered timestamps cannot be used to jump to plays.** Pace measurement off this stream requires blind-scrubbing 47 minutes to relocate suitable plays and then nailing events — the expensive path the plan set out to avoid.
+
+The frame rate WAS re-confirmed this session (frame-change deltas cluster at ~33ms → ~30fps, likely 29.97), so the ±1-frame precision floor is ~33ms. And the geometry/perspective result above stands independently: it came from t=430, whose content (a clean wide reset) is stable and self-consistent regardless of absolute-time drift.
+
+**Recommendation recorded for whoever picks up pace:** prefer repeatable local capture (produce 6 flies on demand) over scrubbing this video. `docs/research/bb2001-capture-setup.md` has the rig. If staying on video, budget a coarse play-index pass first (one thumbnail every ~10–15s) before measuring anything.
