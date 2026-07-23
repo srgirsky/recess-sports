@@ -165,6 +165,16 @@ import { FONT, pill } from '../ui/theme';
 import { idleBob, squashHop, groundShadow, runCycle, poseSequence } from '../ui/anim';
 import { poseKey } from '../art/textureFactory';
 import { project, unproject, depthScale } from '../art/projection';
+import {
+  shadeInt,
+  lightenInt,
+  hash01,
+  speckleEllipse,
+  speckleQuad,
+  speckleStrip,
+  chalkLine,
+  chalkRect,
+} from '../art/fieldTexture';
 import { Announcer, type AnnounceKind } from '../systems/announcer';
 import { commentatorProfile } from '../systems/voices';
 import { Chatter, type ChatterMoment } from '../systems/chatter';
@@ -181,24 +191,6 @@ const POSITION_ORDER: PositionId[] = ['C', '1B', '2B', 'SS', '3B', 'LF', 'CF', '
 const BALL_GREEN = 0x57d977; // "good eye" green for called balls
 
 const RUNNER_H = KID_SIZE.RUNNER_H; // runner sprite height
-
-/** Shadow tone for a 0xrrggbb int: mix toward cool navy (matches CharacterArt). */
-function shadeInt(color: number, f: number): number {
-  const mix = (c: number, to: number) => Math.round(c * (1 - f) + to * f);
-  const r = mix((color >> 16) & 255, 0x2c);
-  const g = mix((color >> 8) & 255, 0x3e);
-  const b = mix(color & 255, 0x66);
-  return (r << 16) | (g << 8) | b;
-}
-
-/** Highlight tone for a 0xrrggbb int: mix toward warm near-white. */
-function lightenInt(color: number, f: number): number {
-  const mix = (c: number, to: number) => Math.round(c * (1 - f) + to * f);
-  const r = mix((color >> 16) & 255, 0xff);
-  const g = mix((color >> 8) & 255, 0xfa);
-  const b = mix(color & 255, 0xe8);
-  return (r << 16) | (g << 8) | b;
-}
 
 /**
  * One team's seat at the ballpark — everything that used to live in the
@@ -531,6 +523,7 @@ export class GameScene extends Phaser.Scene {
   private announce!: Phaser.GameObjects.Text;
   private announceBg!: Phaser.GameObjects.Rectangle;
   private baseMarks: Phaser.GameObjects.Polygon[] = [];
+  private baseSideMarks: Phaser.GameObjects.Polygon[] = [];
   /** THIS game's per-kid lines (both seats, always tallied — unlike the
    *  season feed in seat.stats) — feeds the strip's AT BAT stat line. */
   private gameLines: Record<string, KidStats> = {};
@@ -593,6 +586,7 @@ export class GameScene extends Phaser.Scene {
     this.firstPitchOfGame = true;
     this.firstDefenseOfGame = true;
     this.baseMarks = [];
+    this.baseSideMarks = [];
     this.runners = new Map();
     this.pitchIsWild = false;
     this.threw = false;
@@ -805,7 +799,12 @@ export class GameScene extends Phaser.Scene {
     // --- Skyline band (data-driven; deterministic — NO Math.random here, so
     // create-time draws never shift the seeded goldlog rng stream) ---
     if (look.skyline === 'stands') {
+      // A higher back tier behind the main stand gives the bleachers depth.
+      this.add.rectangle(W / 2, 140, W, 18, 0x4d5b6a).setOrigin(0.5);
       this.add.rectangle(W / 2, 168, W, 44, 0x5b6a7a).setOrigin(0.5);
+      const seams = this.add.graphics();
+      seams.lineStyle(2, 0x4d5b6a, 0.8);
+      for (let x = 40; x < W; x += 80) seams.lineBetween(x, 146, x, 190);
       const crowdColors = [0xeb5a52, 0x3f86e0, 0x43b56f, 0x9161d0, 0xff924a, 0xf5c542, 0xffffff, 0x2fb4ac];
       for (let row = 0; row < look.crowdRows; row++) {
         for (let i = 0; i < 55; i++) {
@@ -826,6 +825,9 @@ export class GameScene extends Phaser.Scene {
         roof.fillTriangle(-55, 0, 55, 0, 0, -30);
         this.add.rectangle(hx - 18, 186, 16, 16, 0x7fb2d8).setStrokeStyle(2, 0x5c7d99);
         this.add.rectangle(hx + 18, 186, 16, 16, 0x7fb2d8).setStrokeStyle(2, 0x5c7d99);
+        // Yard bushes hugging each house's foundation.
+        this.add.circle(hx - 54, 198, 10, 0x478940);
+        this.add.circle(hx + 54, 198, 8, 0x3f7d3a);
       }
     } else {
       // Brick: the school wall behind the court.
@@ -833,6 +835,12 @@ export class GameScene extends Phaser.Scene {
       const mortar = this.add.graphics();
       mortar.lineStyle(2, 0x8f3f30, 0.6);
       for (let y = 152; y <= 184; y += 10) mortar.lineBetween(0, y, W, y);
+      // A row of classroom windows so the wall reads as the school building.
+      for (let i = 0; i < 5; i++) {
+        const wx = 100 + i * 190;
+        this.add.rectangle(wx, 166, 34, 22, 0x30404f).setStrokeStyle(2, 0x22303c);
+        this.add.rectangle(wx, 179, 40, 4, 0xd8c8b4); // sill
+      }
     }
 
     // --- Outfield fence: a band that follows the venue's fence ARC (rounded,
@@ -860,44 +868,98 @@ export class GameScene extends Phaser.Scene {
       }
     }
     const fence = this.add.graphics();
-    fence.fillStyle(look.fence, 1);
-    wallStrip(fence, -26, 0);
-    fence.fillStyle(look.fenceTrim, 1);
-    wallStrip(fence, -32, -26);
+    // A short arc-following quad column between two wall offsets — the unit
+    // both plank boards and wall panels are built from.
+    const wallCol = (x0: number, x1: number, topOff: number, botOff: number) => {
+      fence.fillPoints(
+        [
+          new Phaser.Geom.Point(x0, wallY(x0) + topOff),
+          new Phaser.Geom.Point(x1, wallY(x1) + topOff),
+          new Phaser.Geom.Point(x1, wallY(x1) + botOff),
+          new Phaser.Geom.Point(x0, wallY(x0) + botOff),
+        ],
+        true
+      );
+    };
+    // A rail/pipe stroked along the arc at a fixed offset above the wall base.
+    const wallRail = (off: number) => {
+      for (let x = 0; x < W; x += 32) fence.lineBetween(x, wallY(x) + off, x + 32, wallY(Math.min(x + 32, W)) + off);
+    };
+    if (look.fenceStyle === 'planks') {
+      // Neighbor's wood fence: per-board tint variation, carpentry rails,
+      // and posts poking above the cap — taller than the old flat band.
+      const PLANK = 20;
+      for (let x0 = 0; x0 < W; x0 += PLANK) {
+        const t = hash01(x0 / PLANK, 7);
+        fence.fillStyle(t > 0.62 ? lightenInt(look.fence, 0.09) : t < 0.3 ? shadeInt(look.fence, 0.12) : look.fence, 1);
+        wallCol(x0, Math.min(x0 + PLANK, W), -36, 0);
+      }
+      fence.fillStyle(look.fenceTrim, 1);
+      wallStrip(fence, -41, -36);
+      fence.lineStyle(2, shadeInt(look.fence, 0.35), 0.5);
+      for (let x = PLANK; x < W; x += PLANK) fence.lineBetween(x, wallY(x) - 36, x, wallY(x));
+      fence.lineStyle(3, shadeInt(look.fence, 0.3), 0.8);
+      wallRail(-27);
+      wallRail(-11);
+      fence.fillStyle(shadeInt(look.fence, 0.35), 1);
+      for (let x = 50; x < W; x += 100) fence.fillRect(x - 4, wallY(x) - 47, 8, 47);
+    } else if (look.fenceStyle === 'chainlink') {
+      // Playground chain-link: a low windscreen base, see-through diamonds
+      // rising to a top-rail pipe, and full-height posts.
+      fence.fillStyle(look.fence, 1);
+      wallStrip(fence, -26, 0);
+      fence.lineStyle(1.5, 0xcfd6db, 0.5);
+      for (let x = 0; x < W; x += 16) {
+        const yl = wallY(x);
+        const yr = wallY(x + 13);
+        fence.lineBetween(x, yl - 52, x + 13, yr);
+        fence.lineBetween(x + 13, yr - 52, x, yl);
+      }
+      fence.lineStyle(3, lightenInt(look.fence, 0.35), 0.9);
+      wallRail(-52);
+      fence.fillStyle(shadeInt(look.fence, 0.25), 1);
+      for (let x = 40; x < W; x += 120) fence.fillRect(x - 3, wallY(x) - 54, 6, 54);
+    } else {
+      // Park wall: painted panels with per-section tint variation, the trim
+      // cap, and a chain-link screen rising above it so the crowd reads as
+      // sitting safely behind the outfield wall.
+      fence.fillStyle(look.fence, 1);
+      wallStrip(fence, -26, 0);
+      for (let col = 0; col * 120 < W; col++) {
+        const t = hash01(col, 11);
+        if (t > 0.4 && t < 0.7) continue;
+        fence.fillStyle(t >= 0.7 ? lightenInt(look.fence, 0.12) : shadeInt(look.fence, 0.14), 0.35);
+        wallCol(col * 120, Math.min(col * 120 + 120, W), -26, 0);
+      }
+      fence.fillStyle(look.fenceTrim, 1);
+      wallStrip(fence, -32, -26);
+      fence.lineStyle(1.5, 0xcfd6db, 0.45);
+      for (let x = 0; x < W; x += 14) {
+        fence.lineBetween(x, wallY(x) - 54, x + 12, wallY(x + 12) - 32);
+        fence.lineBetween(x + 12, wallY(x + 12) - 54, x, wallY(x) - 32);
+      }
+      fence.lineStyle(3, 0xdfe6ea, 0.7);
+      wallRail(-54);
+      fence.fillStyle(shadeInt(look.fence, 0.25), 1);
+      for (let x = 40; x < W; x += 120) {
+        fence.fillRect(x - 3, wallY(x) - 56, 6, 56);
+        fence.fillRect(x - 5, wallY(x) - 58, 10, 4); // post cap
+      }
+    }
     // A dirt warning track hugging the arc, big-league style — drawn UNDER
     // the contact shadow so the wall still reads as standing on it.
     if (look.warningTrack) {
       fence.fillStyle(shadeInt(look.dirt, 0.08), 0.85);
       wallStrip(fence, 0, 18);
+      speckleStrip(fence, wallY, 0, W, 3, 16, [shadeInt(look.dirt, 0.25), lightenInt(look.dirt, 0.3)], 90, 0.4, 3);
+      fence.lineStyle(2, shadeInt(look.dirt, 0.35), 0.7);
+      wallRail(18);
     }
     // The fence casts a soft shadow onto the ground in front of it — the
     // contact shadow is what makes it read as a standing wall, not a stripe.
     fence.fillStyle(0x1b2833, 0.18);
     wallStrip(fence, 0, 9);
-    // Fence posts: vertical darker slats that give the wall thickness.
-    fence.fillStyle(shadeInt(look.fence, 0.25), 1);
-    for (let x = 40; x < W; x += 120) {
-      fence.fillRect(x - 3, wallY(x) - 32, 6, 32);
-    }
-    if (look.fenceStyle === 'planks') {
-      // Wood-plank verticals.
-      const planks = this.add.graphics();
-      planks.lineStyle(2, 0x6d4426, 0.7);
-      for (let x = 8; x < W; x += 22) {
-        const y = wallY(x);
-        planks.lineBetween(x, y - 26, x, y);
-      }
-    } else if (look.fenceStyle === 'chainlink') {
-      // Chain-link diamonds.
-      const links = this.add.graphics();
-      links.lineStyle(1.5, 0xcfd6db, 0.5);
-      for (let x = 0; x < W; x += 16) {
-        const yl = wallY(x);
-        const yr = wallY(x + 13);
-        links.lineBetween(x, yl - 26, x + 13, yr);
-        links.lineBetween(x + 13, yr - 26, x, yl);
-      }
-    } else if (look.skyline === 'stands') {
+    if (look.fenceStyle === 'wall' && look.skyline === 'stands') {
       // Park bunting triangles hanging off the cap.
       const bunt = [0xeb5a52, 0xffffff, 0x3f86e0];
       for (let x = 20; x < W; x += 60) {
@@ -984,12 +1046,13 @@ export class GameScene extends Phaser.Scene {
     const dirt = this.add.graphics();
     dirt.fillStyle(look.dirt, 1);
     dirt.lineStyle(3, look.asphalt ? look.grassDark : 0xb87a3f, 1);
-    const diamondPts = toPts([
+    const outerDiamond: Vec[] = [
       { x: cx, y: SECOND.y - 24 },
       { x: FIRST.x + 24, y: cy },
       { x: cx, y: HOME.y + 24 },
       { x: THIRD.x - 24, y: cy },
-    ]);
+    ];
+    const diamondPts = toPts(outerDiamond);
     dirt.fillPoints(diamondPts, true);
     dirt.strokePoints(diamondPts, true, true);
     // Ground tilt: far half of the diamond darker, near half catching light.
@@ -997,40 +1060,95 @@ export class GameScene extends Phaser.Scene {
     dirt.fillPoints([diamondPts[0], diamondPts[1], diamondPts[3]], true);
     dirt.fillStyle(lightenInt(look.dirt, 0.5), 0.14);
     dirt.fillPoints([diamondPts[3], diamondPts[2], diamondPts[1]], true);
-    // Ground "cutout" in the middle of the infield for that manicured look.
+    // Mottled dirt: flat fills read as plastic, speckle reads as ground.
+    // (Asphalt keeps its flat paint — just sparse wear scuffs.)
+    if (look.asphalt) {
+      speckleQuad(dirt, [diamondPts[0], diamondPts[1], diamondPts[2], diamondPts[3]], [0x000000], 40, 0.06, 2);
+    } else {
+      const mottle = [shadeInt(look.dirt, 0.25), lightenInt(look.dirt, 0.3)];
+      speckleQuad(dirt, [diamondPts[0], diamondPts[1], diamondPts[2], diamondPts[3]], mottle, 140, 0.3, 1);
+    }
+    // Ground "cutout" in the middle of the infield — enlarged so the dirt
+    // reads as a BB-style basepath RING around a grass infield, not a slab.
+    // Inner corners are lerped toward the diamond center in LOGICAL space
+    // before projecting, so the band width stays true near AND far.
+    const RING = 0.27; // fraction of each corner's reach left as dirt (~28px band)
+    const innerPts = toPts(
+      outerDiamond.map((p) => ({ x: p.x + (cx - p.x) * RING, y: p.y + (cy - p.y) * RING }))
+    );
     const cut = this.add.graphics();
     cut.fillStyle(look.grass, 1);
-    cut.fillPoints(
-      toPts([
-        { x: cx, y: cy + 6 - 45 },
-        { x: cx + 61, y: cy + 6 },
-        { x: cx, y: cy + 6 + 45 },
-        { x: cx - 61, y: cy + 6 },
-      ]),
-      true
-    );
+    cut.fillPoints(innerPts, true);
+    cut.lineStyle(2, shadeInt(look.grass, 0.15), 0.8); // mow edge
+    cut.strokePoints(innerPts, true, true);
+
+    // --- Worn dirt circles biting into the grass at each bag + around home ---
+    if (!look.asphalt) {
+      const mottle = [shadeInt(look.dirt, 0.25), lightenInt(look.dirt, 0.3)];
+      const circles = this.add.graphics();
+      [FIRST, SECOND, THIRD].forEach((p, i) => {
+        const q = project(p);
+        const ds = depthScale(p);
+        circles.fillStyle(look.dirt, 1);
+        circles.fillEllipse(q.x, q.y + 2, 64 * ds, 30 * ds);
+        circles.lineStyle(2, shadeInt(look.dirt, 0.2), 0.7);
+        circles.strokeEllipse(q.x, q.y + 2, 64 * ds, 30 * ds);
+        speckleEllipse(circles, q.x, q.y + 2, 28 * ds, 12 * ds, mottle, 14, 0.35, i * 17);
+      });
+      circles.fillStyle(look.dirt, 1);
+      circles.fillEllipse(HOME.x, HOME.y + 4, 116, 54);
+      circles.lineStyle(2, shadeInt(look.dirt, 0.2), 0.7);
+      circles.strokeEllipse(HOME.x, HOME.y + 4, 116, 54);
+      speckleEllipse(circles, HOME.x, HOME.y + 4, 50, 22, mottle, 26, 0.35, 9);
+    }
+
+    // --- Base paths ---
+    const paths = this.add.graphics();
+    if (look.asphalt) {
+      // On the blacktop the paths are court PAINT, not worn dirt.
+      paths.lineStyle(5, 0xe9d9bf, 0.6);
+      paths.strokePoints(
+        [HOME, FIRST, SECOND, THIRD, HOME].map((p) => { const q = project(p); return new Phaser.Math.Vector2(q.x, q.y); }),
+        true
+      );
+    } else {
+      // Worn dirt bands down each leg: quads built ±11px around the leg in
+      // logical space, then projected — cleats wear the middle light.
+      const legs: Array<[Vec, Vec]> = [[HOME, FIRST], [FIRST, SECOND], [SECOND, THIRD], [THIRD, HOME]];
+      legs.forEach(([p, q], li) => {
+        const len = Math.hypot(q.x - p.x, q.y - p.y);
+        const nx = (-(q.y - p.y) / len) * 11;
+        const ny = ((q.x - p.x) / len) * 11;
+        const quad = [
+          { x: p.x + nx, y: p.y + ny },
+          { x: q.x + nx, y: q.y + ny },
+          { x: q.x - nx, y: q.y - ny },
+          { x: p.x - nx, y: p.y - ny },
+        ].map((v) => project(v));
+        paths.fillStyle(lightenInt(look.dirt, 0.18), 0.5);
+        paths.fillPoints(quad.map((v) => new Phaser.Geom.Point(v.x, v.y)), true);
+        speckleQuad(paths, [quad[0], quad[1], quad[2], quad[3]], [shadeInt(look.dirt, 0.25), lightenInt(look.dirt, 0.35)], 20, 0.4, li * 13);
+      });
+    }
 
     // --- Foul lines (home out to where they meet THIS venue's fence) ---
+    // Chalk, not vector: dashed with hand-limed width/alpha variation. Drawn
+    // AFTER the paths so the first/third-base chalk rides ON the worn dirt.
     const leftPole = project(fencePointAt(this.geo, 0));
     const rightPole = project(fencePointAt(this.geo, 1));
     const lines = this.add.graphics();
-    lines.lineStyle(4, 0xffffff, 0.85);
-    lines.lineBetween(HOME.x, HOME.y, rightPole.x, rightPole.y);
-    lines.lineBetween(HOME.x, HOME.y, leftPole.x, leftPole.y);
-
-    // Base paths.
-    const paths = this.add.graphics();
-    paths.lineStyle(5, 0xe9d9bf, 0.6);
-    paths.strokePoints(
-      [HOME, FIRST, SECOND, THIRD, HOME].map((p) => { const q = project(p); return new Phaser.Math.Vector2(q.x, q.y); }),
-      true
-    );
+    chalkLine(lines, HOME.x, HOME.y, rightPole.x, rightPole.y, 4, 0.9, 1);
+    chalkLine(lines, HOME.x, HOME.y, leftPole.x, leftPole.y, 4, 0.9, 2);
 
     // --- Pitcher's mound + rubber (a lit dome, not a flat disc) ---
     this.add.ellipse(MOUND.x + 6, MOUND.y + 8, 96, 54, 0x1b2833, 0.14); // cast shadow, down-right
     this.add.ellipse(MOUND.x, MOUND.y + 4, 92, 60, look.dirt).setStrokeStyle(3, look.asphalt ? look.grassDark : 0xb87a3f);
     this.add.ellipse(MOUND.x, MOUND.y + 12, 78, 34, shadeInt(look.dirt, 0.3), 0.3); // shaded near slope
     this.add.ellipse(MOUND.x - 8, MOUND.y - 4, 54, 24, lightenInt(look.dirt, 0.4), 0.45); // lit crown, upper-left
+    if (!look.asphalt) {
+      const moundTex = this.add.graphics();
+      speckleEllipse(moundTex, MOUND.x, MOUND.y + 2, 38, 20, [shadeInt(look.dirt, 0.25), lightenInt(look.dirt, 0.35)], 24, 0.4, 5);
+    }
     this.add.rectangle(MOUND.x, MOUND.y, 26, 8, COLORS.white).setStrokeStyle(2, 0x9a9a9a);
 
     // --- Home plate (pentagon) ---
@@ -1038,17 +1156,25 @@ export class GameScene extends Phaser.Scene {
       .polygon(HOME.x, HOME.y + 6, [0, 0, 26, 0, 26, 12, 13, 22, 0, 12], COLORS.white)
       .setStrokeStyle(3, COLORS.ink)
       .setOrigin(0.5);
-    // Batter's boxes.
+    // Batter's boxes: worn chalk instead of crisp vector strokes.
     const box = this.add.graphics();
-    box.lineStyle(3, 0xffffff, 0.7);
-    box.strokeRect(HOME.x - 58, HOME.y - 20, 26, 52);
-    box.strokeRect(HOME.x + 32, HOME.y - 20, 26, 52);
+    chalkRect(box, HOME.x - 58, HOME.y - 20, 26, 52, 3, 0.75, 4);
+    chalkRect(box, HOME.x + 32, HOME.y - 20, 26, 52, 3, 0.75, 8);
 
-    // --- Base plates (white squares, lit gold when occupied) ---
+    // --- Base plates: 3D pillows (cast shadow + side face + top), the top
+    // AND side lit gold when occupied ---
     [FIRST, SECOND, THIRD].forEach((p, i) => {
       const q = project(p);
-      // A flattened diamond, so the bag lies ON the ground plane instead of
-      // standing up like a sign. (Points 0-based — see the polygon gotcha.)
+      this.add.ellipse(q.x + 3, q.y + 7, 34, 11, 0x1b2833, 0.18); // cast shadow, down-right
+      // The side face: the same flattened diamond dropped 4px, shaded — it
+      // gives the bag thickness. (Points 0-based — see the polygon gotcha.)
+      const side = this.add
+        .polygon(q.x, q.y + 4, [14, 0, 28, 9, 14, 18, 0, 9], 0xd8dde6)
+        .setStrokeStyle(3, COLORS.ink)
+        .setOrigin(0.5);
+      this.baseSideMarks[i] = side;
+      // The top: a flattened diamond, so the bag lies ON the ground plane
+      // instead of standing up like a sign.
       const plate = this.add
         .polygon(q.x, q.y, [14, 0, 28, 9, 14, 18, 0, 9], COLORS.white)
         .setStrokeStyle(3, COLORS.ink)
@@ -1139,6 +1265,7 @@ export class GameScene extends Phaser.Scene {
     for (let i = 0; i < 3; i++) {
       const lit = this.halfState?.bases[i];
       this.baseMarks[i]?.setFillStyle(lit ? COLORS.gold : COLORS.white);
+      this.baseSideMarks[i]?.setFillStyle(lit ? shadeInt(COLORS.gold, 0.25) : 0xd8dde6);
     }
   }
 
