@@ -25,12 +25,9 @@ import {
   KID_SIZE,
   NET,
   DRAFT,
-  type GameMode,
 } from '../config';
 import { createCrowd, stepCrowd, type CrowdKidInit, type CrowdState } from '../systems/crowd';
-import { getMode, setMode } from '../systems/mode';
-import { getVenue, setVenue } from '../systems/venue';
-import { VENUES, type VenueDef, type VenueId } from '../data/venues';
+import { getMode } from '../systems/mode';
 import { ROSTER } from '../data/characters';
 import type { Character } from '../data/types';
 import {
@@ -598,9 +595,9 @@ export class SchoolyardScene extends Phaser.Scene {
         if (this.phase !== 'title') return;
         audio.unlock();
         audio.pop();
-        this.titleObjs.forEach((o) => o.destroy());
-        this.titleObjs = [];
-        this.startRecess();
+        // The BB2001-style GAME SETUP page: game type / difficulty / innings /
+        // errors / helpers / field. Its GAME → PLAY BALL runs the draft.
+        this.scene.start('GameSetup');
       },
     });
     play.setDepth(5).setScale(0);
@@ -711,73 +708,8 @@ export class SchoolyardScene extends Phaser.Scene {
     });
     this.titleObjs.push(gear.container);
 
-    // Mode toggle: two icon chips under PLAY. Selected = gold + full size.
-    const chips: Array<{ d: GameMode; c: Phaser.GameObjects.Container }> = [];
-    const styleChips = () => {
-      const current = getMode();
-      for (const chip of chips) {
-        const selected = chip.d === current;
-        chip.c.setAlpha(selected ? 1 : 0.55);
-        chip.c.setScale(selected ? 1 : 0.85);
-      }
-    };
-    (
-      [
-        { d: 'main' as GameMode, label: '⚾ CLASSIC', x: GAME_WIDTH / 2 - 92 },
-        { d: 'kid' as GameMode, label: '🙂 KID MODE', x: GAME_WIDTH / 2 + 92 },
-      ] as const
-    ).forEach(({ d, label, x }) => {
-      const { container } = pill(this, x, TITLE.TOGGLE_Y, label, { fill: COLORS.cream, fontSize: 20, minW: 150 });
-      container.setDepth(5);
-      container.setInteractive(
-        new Phaser.Geom.Rectangle(-80, -22, 160, 44),
-        Phaser.Geom.Rectangle.Contains
-      );
-      container.on('pointerdown', () => {
-        if (this.phase !== 'title') return;
-        setMode(d);
-        audio.pop();
-        audio.say(d === 'kid' ? 'Kid mode!' : 'Classic mode!', commentatorProfile('A'), 'flush');
-        styleChips();
-      });
-      chips.push({ d, c: container });
-      this.titleObjs.push(container);
-    });
-    styleChips();
-
-    // Venue picker: three little field chips between the ribbon and the entry row.
-    const venueChips: Array<{ id: VenueId; c: Phaser.GameObjects.Container }> = [];
-    const styleVenues = () => {
-      const current = getVenue().id;
-      for (const chip of venueChips) {
-        const selected = chip.id === current;
-        chip.c.setAlpha(selected ? 1 : 0.5);
-        chip.c.setScale(selected ? 1 : 0.82);
-      }
-    };
-    (Object.values(VENUES) as VenueDef[]).forEach((v, i) => {
-      const x = GAME_WIDTH / 2 + (i - 1) * 150;
-      const { container } = pill(this, x, TITLE.VENUE_Y, `${v.emoji} ${v.name.replace('The ', '').toUpperCase()}`, {
-        fill: COLORS.cream,
-        fontSize: 15,
-        minW: 128,
-      });
-      container.setDepth(5);
-      container.setInteractive(
-        new Phaser.Geom.Rectangle(-70, -17, 140, 34),
-        Phaser.Geom.Rectangle.Contains
-      );
-      container.on('pointerdown', () => {
-        if (this.phase !== 'title') return;
-        setVenue(v.id);
-        audio.pop();
-        audio.say(v.name + '!', commentatorProfile('A'), 'flush');
-        styleVenues();
-      });
-      venueChips.push({ id: v.id, c: container });
-      this.titleObjs.push(container);
-    });
-    styleVenues();
+    // Game mode (difficulty) and venue now live on the GAME SETUP page (PLAY),
+    // so the title stays uncluttered — just the entry pills + PLAY.
 
     this.titleObjs.push(tag, play);
   }

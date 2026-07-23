@@ -10,6 +10,7 @@ import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS } from './config';
 import { BootScene } from './scenes/BootScene';
 import { SchoolyardScene } from './scenes/SchoolyardScene';
+import { GameSetupScene } from './scenes/GameSetupScene';
 import { LineupScene } from './scenes/LineupScene';
 import { SettingsScene } from './scenes/SettingsScene';
 import { SeasonScene } from './scenes/SeasonScene';
@@ -37,7 +38,7 @@ const game = new Phaser.Game({
   },
   // PauseScene last: scene-list order is render order for concurrently active
   // scenes, so the launched pause overlay draws on top of the paused Game.
-  scene: [BootScene, SchoolyardScene, LobbyScene, LineupScene, GameScene, ResultScene, SettingsScene, SeasonScene, AwardsScene, AlbumScene, PauseScene],
+  scene: [BootScene, SchoolyardScene, GameSetupScene, LobbyScene, LineupScene, GameScene, ResultScene, SettingsScene, SeasonScene, AwardsScene, AlbumScene, PauseScene],
 });
 
 // Expose for in-browser debugging during development only.
