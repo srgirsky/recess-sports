@@ -9,6 +9,7 @@ import {
   LIVE,
   MODES,
   PITCH_SPEED,
+  PITCH_TEMPO,
   PITCH_TRAVEL_MS,
   TIMING,
   type GameMode,
@@ -58,7 +59,11 @@ export function getSwingTiming(m: GameMode): typeof TIMING {
  */
 export function getPitchBaseMs(m: GameMode, half: 'batting' | 'pitching'): number {
   if (m === 'kid') return half === 'batting' ? PITCH_TRAVEL_MS : CPU_PITCH_TRAVEL_MS;
-  return half === 'batting' ? PITCH_SPEED.MAIN_BASE_MS : PITCH_SPEED.MAIN_CPU_BASE_MS;
+  const base = half === 'batting' ? PITCH_SPEED.MAIN_BASE_MS : PITCH_SPEED.MAIN_CPU_BASE_MS;
+  // PITCH_TEMPO < 1 lengthens the flight (slower pitch), preserving arm/kind
+  // ratios. Kept separate from the sim TEMPO — pitch "fastness" is readability,
+  // not clock, so this stays mild while TEMPO can go much lower.
+  return base / PITCH_TEMPO;
 }
 
 /** Everything the live-play sim needs to know about speed/forgiveness. */

@@ -153,6 +153,7 @@ import {
   NET,
   PLATE_ZONE,
   KID_SIZE,
+  TEMPO,
   type GameMode,
   type ModeFeatures,
   type PitchKind,
@@ -2906,10 +2907,13 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    // TEMPO slows the whole live sim (fielders/runners/ball/throws/CPU delays)
+    // in CLASSIC uniformly, preserving every balance ratio. Kid mode runs 1:1.
+    const simDelta = this.mode === 'main' ? delta * TEMPO : delta;
     this.livePlay = stepLivePlay(
       this.livePlay,
       inputs,
-      delta,
+      simDelta,
       this.activeLiveParams ?? this.liveParams,
       () => Math.random()
     );
