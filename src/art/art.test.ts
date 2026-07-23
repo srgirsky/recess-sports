@@ -287,6 +287,24 @@ describe('character art', () => {
     }
   });
 
+  it('the rig batter peeks at the pitcher (rear profile cheat)', () => {
+    // The stance/load rear poses turn a quarter toward the pitch: profile eye
+    // ink must be present there and ONLY there — the catcher stays a pure
+    // back-of-head (and rear-no-face above already bans face() colors).
+    for (const char of ROSTER) {
+      for (const pose of ['batRear', 'swingLoadRear'] as const) {
+        expect(
+          buildCharacterSVG(char.visual, pose).includes('#4a3628'),
+          `${char.id}/${pose} lost the profile eye`
+        ).toBe(true);
+      }
+      expect(
+        buildCharacterSVG(char.visual, 'catchRear').includes('#4a3628'),
+        `${char.id}/catchRear grew a profile eye`
+      ).toBe(false);
+    }
+  });
+
   it('every kid is visually unique (no two stand textures identical)', () => {
     const seen = new Map<string, string>();
     for (const char of ROSTER) {

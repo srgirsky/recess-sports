@@ -249,7 +249,7 @@ export const PLATE_VIEW = {
   PITCHER: { X: 480, Y: 318, H: 104, RELEASE_DY: 56 },
   /** The rear-view batter, big in the foreground (RHB = screen-left, the 3B
    *  side — same side as the world batter, so the cut has continuity). */
-  BATTER: { X: 300, Y: 576, H: 288 },
+  BATTER: { X: 300, Y: 576, H: 318 }, // Backyard-sized: ~45% of playfield height
   /** The fielding team's catcher, crouched and cropped by the scoreboard strip
    *  (head + shoulders in frame; feet well below it). */
   CATCHER: { X: 556, Y: 648, H: 230 },
