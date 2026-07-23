@@ -377,6 +377,26 @@ export const KID_SIZE = {
   WALL_FRONT_H: 98,
 };
 
+/**
+ * Draft scouting UI (the Schoolyard wall). Two tiers, Backyard-style:
+ * HOVER a kid → a small floating name + mini-equalizer tag rides above them;
+ * TAP a kid → the full baseball card (portrait, dot ratings, ability chip,
+ * PICK). Layout/feel knobs only — the readouts themselves live in
+ * ui/PlayerCard.ts + ui/statbars.ts.
+ */
+export const DRAFT = {
+  HOVER_HIDE_MS: 90, // grace before the hover tag hides — kills slide-across strobe
+  TAG_W: 176, // hover-tag size
+  TAG_H: 78,
+  TAG_GAP: 14, // gap between the tag's pointer and the kid's head
+  CARD_W: 664, // baseball-card size
+  CARD_H: 250,
+  CARD_Y: 502, // card center y
+  DOT_R: 6, // skill-rating dot radius
+  DOT_PITCH: 22, // spacing between dots in a row
+  DOT_ROW: 26, // vertical pitch between rating rows
+};
+
 /** How long a runner takes to jog ONE base (ms). Post-hit pacing derives from this. */
 export const RUNNER_TWEEN_MS = 450;
 

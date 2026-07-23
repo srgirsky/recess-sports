@@ -24,6 +24,7 @@ import {
   CROWD,
   KID_SIZE,
   NET,
+  DRAFT,
   type GameMode,
 } from '../config';
 import { createCrowd, stepCrowd, type CrowdKidInit, type CrowdState } from '../systems/crowd';
@@ -51,7 +52,7 @@ import { makeMuteButton } from '../ui/MuteButton';
 import { ribbon, pill, panel, heading, FONT, OUTLINE } from '../ui/theme';
 import { floatingText, burst, confetti } from '../ui/effects';
 import { idleBob, squashHop, popIn, enterFrom, pulse, groundShadow, runCycle } from '../ui/anim';
-import { drawStatBars } from '../ui/statbars';
+import { playerCard, statTag } from '../ui/PlayerCard';
 import { mountPickRateOverlay } from '../dev/PickRateOverlay';
 import { mountArtGallery } from '../dev/ArtGallery';
 import * as audio from '../systems/audio';
@@ -127,6 +128,11 @@ export class SchoolyardScene extends Phaser.Scene {
   private netCourier?: PickCourier; // retransmits our unacked pick (loss ≠ deadlock)
   private netSearching = false; // channel 'reconnecting' — 🔍 pill owns the status
   private netFinishPending = false; // draft done but our last pick unacked — hold the exit
+  // Hover scouting tier: a floating tag + floor spotlight over the hovered kid.
+  private hoveredId?: string;
+  private hoverTag?: ReturnType<typeof statTag>;
+  private hoverSpot?: Phaser.GameObjects.Ellipse;
+  private hoverHideTimer?: Phaser.Time.TimerEvent;
 
   constructor() {
     super('Schoolyard');
@@ -151,6 +157,10 @@ export class SchoolyardScene extends Phaser.Scene {
     this.netCourier = undefined;
     this.netSearching = false;
     this.netFinishPending = false;
+    this.hoveredId = undefined;
+    this.hoverTag = undefined;
+    this.hoverSpot = undefined;
+    this.hoverHideTimer = undefined;
     this.straightToDraft = data?.straightToDraft ?? false;
   }
 
@@ -1035,6 +1045,12 @@ export class SchoolyardScene extends Phaser.Scene {
       this.autoBtn.setDepth(80);
       enterFrom(this, this.autoBtn, { dy: -70, dur: 380, ease: 'Bounce.out' });
     }
+    // Hover scouting: a floor spotlight (under the kids) + a re-targetable tag.
+    this.hoverSpot = this.add.ellipse(0, 0, 74, 22, 0xffffff, 0.28).setDepth(9).setVisible(false);
+    this.hoverTag = statTag(this);
+    this.hoverTag.container.setDepth(75);
+    this.events.once('shutdown', () => this.clearHover());
+
     audio.say('Pick your team!', commentatorProfile('A'), 'flush');
     this.phase = 'idle';
     this.refreshStatus();
@@ -1049,7 +1065,8 @@ export class SchoolyardScene extends Phaser.Scene {
 
   private pickMeHop(): void {
     if (this.phase !== 'idle' && this.phase !== 'cpuScan') return;
-    const pool = this.state.pool.filter((id) => id !== this.inspectedId);
+    // Skip the kid being read (inspect or hover) — a hop jiggles the sprite.
+    const pool = this.state.pool.filter((id) => id !== this.inspectedId && id !== this.hoveredId);
     if (pool.length === 0) return;
     const kid = this.kids.get(pool[Math.floor(Math.random() * pool.length)]);
     if (!kid || kid.cycle) return;
@@ -1071,11 +1088,13 @@ export class SchoolyardScene extends Phaser.Scene {
     const w = Math.max(50, kid.img.displayWidth + 8);
     // Back row: head + torso only, so the front row can't shadow them.
     const height = kid.home.row === 0 ? kid.home.h * 0.62 : kid.home.h;
-    kid.root.off('pointerdown'); // settleKid can run twice (arrival + skip)
-    kid.root.setInteractive(
-      new Phaser.Geom.Rectangle(-w / 2, -kid.home.h, w, height),
-      Phaser.Geom.Rectangle.Contains
-    );
+    // settleKid can run twice (arrival + skip); clear every handler first.
+    kid.root.off('pointerdown').off('pointerover').off('pointerout');
+    kid.root.setInteractive({
+      hitArea: new Phaser.Geom.Rectangle(-w / 2, -kid.home.h, w, height),
+      hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+      useHandCursor: true,
+    });
     kid.root.on('pointerdown', (_pointer: Phaser.Input.Pointer, _x: number, _y: number, event: Phaser.Types.Input.EventData) => {
       // Pass-and-play: BOTH turns are human taps (the 'ai' turn is Player 2).
       // Net: only MY side's turns are tappable — the friend's arrive by wire.
@@ -1084,6 +1103,36 @@ export class SchoolyardScene extends Phaser.Scene {
       event.stopPropagation();
       this.inspectKid(kid.char.id);
     });
+    kid.root.on('pointerover', () => this.hoverKid(kid.char.id));
+    kid.root.on('pointerout', () => this.scheduleHoverHide());
+  }
+
+  /** Hover a kid on the wall: floor spotlight + a floating name/stat tag. */
+  private hoverKid(id: string): void {
+    if (this.phase !== 'idle' || !this.myDraftTurn()) return;
+    if (!this.state.pool.includes(id)) return;
+    const kid = this.kids.get(id);
+    if (!kid || !this.hoverTag || !this.hoverSpot) return;
+    this.hoverHideTimer?.remove(false);
+    this.hoverHideTimer = undefined;
+    this.hoveredId = id;
+    this.hoverSpot.setPosition(kid.home.x, kid.home.y + 2).setVisible(true);
+    this.hoverTag.show(kid.char, kid.home.x, kid.home.y - kid.home.h);
+  }
+
+  /** Grace period so sliding from one kid to the next doesn't strobe the tag. */
+  private scheduleHoverHide(): void {
+    this.hoverHideTimer?.remove(false);
+    this.hoverHideTimer = this.time.delayedCall(DRAFT.HOVER_HIDE_MS, () => this.clearHover());
+  }
+
+  /** Hide the hover tag + spotlight immediately (pick/inspect/turn change). */
+  private clearHover(): void {
+    this.hoverHideTimer?.remove(false);
+    this.hoverHideTimer = undefined;
+    this.hoveredId = undefined;
+    this.hoverTag?.hide();
+    this.hoverSpot?.setVisible(false);
   }
 
   /** Tap a kid: they step forward and their stat card pops. */
@@ -1091,6 +1140,7 @@ export class SchoolyardScene extends Phaser.Scene {
     if (this.phase !== 'idle') return;
     const kid = this.kids.get(id);
     if (!kid) return;
+    this.clearHover(); // touch fires pointerover on tap-down — drop the tag
     this.phase = 'inspect';
     this.inspectedId = id;
     audio.pop();
@@ -1119,46 +1169,26 @@ export class SchoolyardScene extends Phaser.Scene {
     catcher.on('pointerdown', () => this.closeInspect());
 
     const px = GAME_WIDTH / 2;
-    const py = 508;
-    const card = panel(this, px, py, 600, 224, { fill: COLORS.cream, strokeWidth: 6 });
+    const py = DRAFT.CARD_Y;
+    const card = playerCard(this, char, px, py);
     card.setDepth(100);
     popIn(this, card, 1);
 
-    const portrait = this.add.image(-220, 94, poseKey(char.id, 'stand')).setOrigin(0.5, 1);
-    portrait.setScale(180 / portrait.height);
-    card.add(portrait);
-
-    const name = this.add
-      .text(40, -76, char.name, { fontFamily: FONT, fontSize: '32px', color: '#14202e', fontStyle: '700' })
-      .setOrigin(0.5, 0);
-    card.add(name);
-    const tag = this.add
-      .text(40, -40, char.tagline, {
-        fontFamily: FONT,
-        fontSize: '16px',
-        color: '#3a4654',
-        align: 'center',
-        wordWrap: { width: 300 },
-      })
-      .setOrigin(0.5, 0);
-    card.add(tag);
-
-    drawStatBars(this, card, char.stats, { x: -130, y: 56, width: 250, height: 60 });
-
+    // Buttons live in the card's right column (depth above the card).
     const pick = makeButton(this, {
-      x: px + 205,
-      y: py + 52,
+      x: px + DRAFT.CARD_W / 2 - 82,
+      y: py + DRAFT.CARD_H / 2 - 52,
       label: 'PICK',
       icon: '✅',
-      width: 160,
-      height: 68,
+      width: 148,
+      height: 62,
       color: 0x3fae6b,
       onClick: () => this.confirmPick(),
     });
     pick.setDepth(101);
     const close = makeButton(this, {
-      x: px + 254,
-      y: py - 80,
+      x: px + DRAFT.CARD_W / 2 - 44,
+      y: py - DRAFT.CARD_H / 2 + 40,
       label: '✕',
       width: 62,
       height: 54,
@@ -1199,6 +1229,7 @@ export class SchoolyardScene extends Phaser.Scene {
     const id = this.inspectedId;
     const kid = this.kids.get(id);
     if (!kid) return;
+    this.clearHover();
 
     this.inspectObjs.forEach((o) => o.destroy());
     this.inspectObjs = [];
@@ -1261,6 +1292,7 @@ export class SchoolyardScene extends Phaser.Scene {
 
   /** Net: apply the friend's wire pick — same walk, their pennant. */
   private applyRemotePick(id: string): void {
+    this.clearHover();
     const kid = this.kids.get(id);
     const side = this.state.turn === 'player' ? 'player' : 'cpu';
     this.state = applyPick(this.state, id);
@@ -1345,6 +1377,7 @@ export class SchoolyardScene extends Phaser.Scene {
   }
 
   private commitCpuPick(id: string): void {
+    this.clearHover();
     const kid = this.kids.get(id);
     this.state = applyPick(this.state, id);
     audio.pop();
@@ -1371,6 +1404,7 @@ export class SchoolyardScene extends Phaser.Scene {
   /** AUTO pressed: rapid-fire the rest of the draft. Safe in idle or cpuScan. */
   private startAutoDraft(): void {
     if (this.phase !== 'idle' && this.phase !== 'cpuScan') return;
+    this.clearHover();
     this.phase = 'auto';
     this.autoBtn?.destroy();
     this.autoBtn = undefined;
