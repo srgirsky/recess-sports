@@ -102,8 +102,14 @@ export const PITCH_SPEED = {
  *
  * Kid mode keeps its own floaty constants and is NOT scaled by this.
  *
- * NOTE: feeds the seeded live sim → changing it changes the `main` goldlog
- * fingerprint (kid unaffected). Regenerate after tuning (scripts/goldlogs.json).
+ * NOTE: the goldlog does NOT gate this. Verified empirically — TEMPO 1.0 → 0.6
+ * leaves BOTH fingerprints byte-identical, because the log records state
+ * TRANSITIONS (inning/half/phase/score/outs/count), never timestamps: uniform
+ * dt scaling preserves every outcome, just slower. That is a nice confirmation
+ * the lever is ratio-safe, but it also means **no existing test can catch a
+ * pace regression here** — the conformance gate in src/data/bb2001.test.ts is
+ * the only thing that will. Re-run the goldlog anyway when touching this (a
+ * changed fingerprint would mean you altered outcomes, not just pace).
  */
 export const TEMPO = 0.6;
 
