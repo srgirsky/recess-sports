@@ -12,10 +12,10 @@
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, rmSync, existsSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { probe, readFrames, distinctFrameRate, diffSeries, samplePatch, contactSheet, hasFfmpeg } from './video.js';
+import { probe, readFrames, distinctFrameRate, diffSeries, samplePatch, contactSheet, findCuts, hasFfmpeg } from './video.js';
 import { findSpike, medianColor, patchFlatness } from './lib.js';
 
 const FFMPEG_OK = hasFfmpeg();
@@ -203,6 +203,52 @@ d('readFrames', () => {
     expect(r.width).toBe(160);
     expect(r.height).toBe(120);
     expect(r.frames[0].length).toBe(160 * 120 * 3);
+  });
+});
+
+d('findCuts — the play indexer', () => {
+  it('finds hard cuts at the times they were authored', () => {
+    // Ground truth by construction: three 1s scenes concatenated, so cuts
+    // belong at t=1 and t=2. This mimics the thing that makes the real index
+    // work — BB cuts instantly from the pitching view to the wide field view
+    // when a ball is put in play, with no transition effect.
+    const a = join(dir, 'sc-a.mkv'), b = join(dir, 'sc-b.mkv'), c = join(dir, 'sc-c.mkv');
+    const cat = join(dir, 'cuts.mkv');
+    ff(['-f', 'lavfi', '-i', 'color=c=0x1020a0:s=320x240:d=1:r=30', ...LOSSLESS, a]);
+    ff(['-f', 'lavfi', '-i', 'color=c=0xd0c020:s=320x240:d=1:r=30', ...LOSSLESS, b]);
+    ff(['-f', 'lavfi', '-i', 'color=c=0x20a040:s=320x240:d=1:r=30', ...LOSSLESS, c]);
+    const list = join(dir, 'list.txt');
+    writeFileSync(list, [a, b, c].map((f) => `file '${f}'`).join('\n'));
+    ff(['-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', cat]);
+
+    const r = findCuts(cat, { threshold: 0.3 });
+    expect(r.count).toBeGreaterThanOrEqual(2);
+    // Each authored boundary should have a detected cut within a frame or two.
+    for (const expected of [1.0, 2.0]) {
+      const nearest = Math.min(...r.cuts.map((t) => Math.abs(t - expected)));
+      expect(nearest).toBeLessThan(0.1);
+    }
+  });
+
+  it('reports NO cuts for continuous motion with no view change', () => {
+    // The failure mode that would make the index useless: if ordinary movement
+    // registered as a cut, every play would be buried in false positives.
+    const f = join(dir, 'nocut.mkv');
+    ff(['-f', 'lavfi', '-i', 'testsrc=s=320x240:d=3:r=30', ...LOSSLESS, f]);
+    expect(findCuts(f, { threshold: 0.3 }).count).toBe(0);
+  });
+
+  it('offsets reported times when seeking in with startSec', () => {
+    const a = join(dir, 'o-a.mkv'), b = join(dir, 'o-b.mkv'), cat = join(dir, 'off.mkv');
+    ff(['-f', 'lavfi', '-i', 'color=c=0x101010:s=320x240:d=2:r=30', ...LOSSLESS, a]);
+    ff(['-f', 'lavfi', '-i', 'color=c=0xe0e0e0:s=320x240:d=2:r=30', ...LOSSLESS, b]);
+    const list = join(dir, 'list2.txt');
+    writeFileSync(list, [a, b].map((f) => `file '${f}'`).join('\n'));
+    ff(['-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', cat]);
+    // Cut is authored at t=2. Seeking in at 1s must still report ~2, not ~1.
+    const r = findCuts(cat, { threshold: 0.3, startSec: 1 });
+    expect(r.count).toBeGreaterThanOrEqual(1);
+    expect(Math.min(...r.cuts.map((t) => Math.abs(t - 2.0)))).toBeLessThan(0.15);
   });
 });
 

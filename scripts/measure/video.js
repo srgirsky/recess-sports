@@ -290,6 +290,54 @@ export function samplePatch(path, { atSec = 0, rect = null } = {}) {
 }
 
 /**
+ * Find hard view cuts — and therefore, in this game, the PLAYS.
+ *
+ * This is the tool that makes a long capture tractable. Backyard Baseball cuts
+ * INSTANTLY from the behind-plate pitching view to the wide field view the
+ * moment a ball is put in play (frame-measured: no transition effect at all).
+ * So a scene-cut list IS a play index: "here are the 40 plays and when they
+ * start", instead of scrubbing 47 minutes hoping to stumble on a fly ball.
+ *
+ * Uses ffmpeg's own `scene` metric rather than a hand-rolled frame differ —
+ * it is battle-tested, runs at decode speed, and needs no frame buffering.
+ * `showinfo` reports on STDERR even on success, so this deliberately does not
+ * use run() (which only surfaces stderr on failure).
+ *
+ * `threshold` is the scene score 0..1. ~0.3 catches hard cuts while ignoring
+ * ordinary motion; lower it to catch softer transitions, raise it if ordinary
+ * play is registering as cuts. Tune against a known clip, don't guess.
+ */
+export function findCuts(path, { threshold = 0.3, startSec = 0, durationSec = null } = {}) {
+  const args = ['-hide_banner'];
+  // -ss BEFORE -i seeks by keyframe (fast). Output timestamps then restart near
+  // zero, so startSec is added back below — getting this wrong silently shifts
+  // every reported time by the seek offset.
+  if (startSec) args.push('-ss', String(startSec));
+  args.push('-i', path);
+  if (durationSec) args.push('-t', String(durationSec));
+  args.push('-vf', `select='gt(scene,${threshold})',showinfo`, '-an', '-f', 'null', '-');
+
+  const r = spawnSync(FFMPEG, args, { encoding: 'utf8', maxBuffer: 1 << 28 });
+  if (r.error) throw new Error(`ffmpeg failed to start: ${r.error.message}`);
+  const stderr = r.stderr || '';
+  if (r.status !== 0) {
+    throw new Error(`ffmpeg exited ${r.status}\n  ${stderr.trim().split('\n').slice(-4).join('\n')}`);
+  }
+  const cuts = [...stderr.matchAll(/pts_time:([0-9.]+)/g)]
+    .map((m) => Math.round((Number(m[1]) + startSec) * 1000) / 1000)
+    .filter((t) => Number.isFinite(t));
+
+  return {
+    threshold,
+    cuts,
+    count: cuts.length,
+    // Gaps between cuts are how long each view segment lasted. In this game a
+    // short wide segment is a quick out; a long one is a ball in the gap.
+    gaps: cuts.slice(1).map((t, i) => Math.round((t - cuts[i]) * 1000) / 1000),
+  };
+}
+
+/**
  * Tile N consecutive frames into one PNG so a human can judge many frames from
  * a single look instead of one screenshot per frame.
  *
