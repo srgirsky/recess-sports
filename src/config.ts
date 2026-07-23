@@ -83,6 +83,43 @@ export const PITCH_SPEED = {
 };
 
 /**
+ * LIVE-SIM tempo scalar for CLASSIC (main) mode — the knob for "the running &
+ * fielding feel too fast/slow." Applied as `delta * TEMPO` into stepLivePlay,
+ * so it uniformly slows EVERYTHING the sim owns — fielders, runners, thrown
+ * balls, and the CPU reaction/throw delays — together. Because it scales them
+ * all at once, every bang-bang RATIO is preserved (a force play stays a force
+ * play, just in slow motion); that's why this is the right lever and cutting
+ * RUNNER_SPEED alone is NOT (it would break the force-out balance the CPU
+ * defense is tuned around).
+ *
+ * CALIBRATION (measured, not remembered): the basepath is ~180px
+ * (hypot(138,115) from HOME→FIRST in geometry.ts), so at RUNNER_SPEED 85 a raw
+ * (TEMPO 1.0) home→1B is ~2.1s — the value the sim was ORIGINALLY tuned to,
+ * under the mistaken belief that 2.1s was the Backyard pace. Frame-measured
+ * BB2001 is actually ~3.0s (docs/research/backyard-2001-video-notes.md), so the
+ * raw sim runs ~40% too fast. TEMPO 0.60 → home→1B ~3.5s, deliberately a touch
+ * SLOWER than the video (little kids, short attention, want to read the play).
+ *
+ * Kid mode keeps its own floaty constants and is NOT scaled by this.
+ *
+ * NOTE: feeds the seeded live sim → changing it changes the `main` goldlog
+ * fingerprint (kid unaffected). Regenerate after tuning (scripts/goldlogs.json).
+ */
+export const TEMPO = 0.6;
+
+/**
+ * PITCH-FLIGHT tempo scalar (CLASSIC main) — SEPARATE from TEMPO on purpose.
+ * Pitch flight is a different problem than running: a mid-arm fastball is
+ * already ~900ms here (slower than the video's 700ms slowest lob), and pitches
+ * feel "fast" because the ball is a LASER — invisible until the last third of
+ * flight — not because the clock is short. Slowing the clock more just makes a
+ * floaty rainbow (crosses the LOB threshold) without buying read time; the real
+ * pitch-readability fix is render-side (show/track the ball earlier). So this
+ * stays MILD. Divides into getPitchBaseMs's main branch (lower = slower flight).
+ */
+export const PITCH_TEMPO = 0.8;
+
+/**
  * Between-moments pacing (ms). Every "wait before the next thing" beat lives
  * HERE, not hardcoded in GameScene delayedCalls. Invariant: a banner's hold
  * time must be <= the FLOW beat that follows it, so calls are always readable

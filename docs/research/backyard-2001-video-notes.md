@@ -78,11 +78,31 @@ Purpose: ground-truth tuning reference for Recess Sports (pitch speed, pacing, H
 
 ## How BB2001 measures against our config (July 2026 values)
 
+**⚠️ The basepath calibration was wrong (corrected July 2026).** For a long time this table claimed a "~234px basepath ≈ 2.75s home→1B ✅ in the pocket." That distance was never measured — the REAL basepath is `hypot(138,115)` = **~180px** (HOME(480,500)→FIRST(618,385) in `geometry.ts`). At `RUNNER_SPEED` 85 that's **~2.1s home→1B raw, ~40% faster than the video's 3.0s.** The sim was originally tuned to that 2.1s under the mistaken belief it *was* the Backyard pace (see the `config.ts` RUNNER_SPEED comment), which is why "matched the video on paper" still felt fast in the hand — the paper was wrong. It was NOT a hidden multiplier, and NOT the projection/aspect ratio: `projection.ts` maps `y` 1:1 (no vertical magnification) and only pinches `x` inward with depth, so a 180px run takes the same time regardless of display scale.
+
+**Two tempo knobs (added July 2026).** The rows below are the *raw* constants (both scalars 1.0). CLASSIC ships two separate dials because running and pitching are different problems:
+- **`config.TEMPO = 0.60`** — the LIVE-SIM clock (fielders/runners/ball/throws/CPU delays), applied as `delta * TEMPO` into stepLivePlay. Scales them all together, so bang-bang ratios are preserved. → home→1B ~3.5s, deliberately a touch slower than the video.
+- **`config.PITCH_TEMPO = 0.80`** — pitch flight only, `÷` into getPitchBaseMs. Kept MILD: pitch flight is already generous (~900ms fastball > the video's 700ms slowest lob); pitches feel fast because of *readability* (laser ball, visible only the last third), which is a render fix, not a clock fix. Over-slowing just makes a rainbow.
+
+### ⚠️ TWO CLOCKS — read this before comparing ANY number in the table below
+
+`TEMPO` scales the sim's `dt`, and `liveplay.ts` accumulates it (`s.elapsed += dtMs`). So the constants split into two clocks, and **mixing them up is the single easiest way to draw a false conclusion here**:
+
+- **Sim-time** (divide by `TEMPO` to get real seconds): every `LIVE.*` and `MODES[].live.*` millisecond — `FLY_HANG_MS`, `LINER_HANG_MS`, `cpuReactionMs`, `cpuThrowDelayMs`, `MAX_PLAY_MS`, and all speeds in px/s.
+- **Real-time already** (compare directly to video): `FLOW.*`, `PLATE_VIEW.*`, `ANIM.*`, and the pitch-flight tween.
+
+At `TEMPO` 0.60: `FLY_HANG_MS` 2000–2900 → **3333–4833ms real**; `cpuReactionMs` 420 → **700ms**; `MAX_PLAY_MS` 11000 → **18.3s**.
+
+**This immediately exposes a real error.** BB's hang/leg ratio is 2.0/3.0 = **0.667**. Ours is 3.333/3.522 = 0.947 up to 4.833/3.522 = **1.372** — our fly balls hang **42–106% too long relative to the run**, and `TEMPO` made it worse (uniform `dt` scaling stretched hang times along with everything else). Fixing this needs n≥6 measured flies spanning shallow→deep, not the existing n=1.
+
+**The lesson generalizes:** compare *dimensionless ratios* against the anchor (home→1B time), never absolute values across the two clocks. τ cancels in every ratio, which also makes the comparison immune to BB being 640×480.
+
 | Thing | BB2001 measured | Recess Sports today | Verdict |
 |---|---|---|---|
-| Home→1B time | ~3.0s | `LIVE.RUNNER_SPEED` 85 px/s over ~234px basepath ≈ 2.75s | ✅ In the pocket |
-| Deep fly hang | ~2.0s | `LIVE.FLY_HANG_MS` 2000–2900 | ✅ Match at the low end |
-| Pitch flight range | ~250ms (pro arm, HEAT) → ~700ms (weakest kid arm, lob) | `PITCH_SPEED`: CLASSIC base 800ms ÷ per-kind speedMult × per-arm `armTravelMult` (stat 10 → 0.75, stat 1 → 1.20) — fastball ≈ 545–875ms; fatigue's sagged stat slows tired arms. Kid mode keeps 1250. | ✅ SHIPPED (arm-scaled corridor + `lobHeightPx` rainbow arcs on slow pitches; swing windows widened ~35% to compensate) |
+| Home→1B time | ~3.0s | `LIVE.RUNNER_SPEED` 85 px/s over **~180px** basepath ≈ 2.1s raw → **~3.5s at `TEMPO` 0.60** | ✅ Now slightly slower than BB (was ~40% faster before) |
+| Deep fly hang | ~2.0s | `LIVE.FLY_HANG_MS` 2000–2900 is **sim-time** → **3333–4833ms REAL** at `TEMPO` 0.60 | ❌ **BROKEN — flies hang 42–106% too long.** See the two-clocks warning below. |
+| Fielder speed | (BB not measured) | `LIVE.FIELDER_SPEED` 210 px/s raw (2.5× runner) → **~126 px/s effective at `TEMPO` 0.60** | ✅ The main "felt too fast" culprit — TEMPO tames it |
+| Pitch flight range | ~250ms (pro arm, HEAT) → ~700ms (weakest kid arm, lob) | `PITCH_SPEED`: CLASSIC base 800ms ÷ per-kind speedMult × per-arm `armTravelMult`, then ÷ `PITCH_TEMPO` — fastball ≈ 900ms–1.45s. Kid mode keeps 1250. | ✅ Generous already; remaining "fast" feel is READABILITY (a render fix), not the clock |
 | Catch → next pitch ready | ~1.3s | `FLOW.BETWEEN_PITCH_MS` 1250 | ✅ Match |
 | Pitch selection pressure | None — fully player-paced (9s+ observed) | Ours: also untimed | ✅ Match |
 | Contact → field view | Instant hard cut, <1 frame of ceremony | 90ms `HIT_PAUSE_MS` flash then cut | ✅ Ours adds a deliberate contact beat — keep |
