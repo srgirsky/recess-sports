@@ -20,7 +20,16 @@ import type { VenueDef } from '../../data/venues';
 import type { PositionId } from '../../systems/geometry';
 import { poseKey, heroKey, HERO_POSES } from '../../art/textureFactory';
 import type { Pose } from '../../art/CharacterArt';
-import { batWaggle, poseSequence } from '../../ui/anim';
+import { batWaggle, groundShadow, poseSequence } from '../../ui/anim';
+import {
+  shadeInt,
+  lightenInt,
+  hash01,
+  speckleEllipse,
+  chalkLine,
+  chalkRect,
+  grassFlecks,
+} from '../../art/fieldTexture';
 
 export interface RigActors {
   batterId: string;
@@ -28,26 +37,6 @@ export interface RigActors {
   catcherId: string;
   /** The 7 non-battery defenders (1B/2B/SS/3B/LF/CF/RF). */
   fielders: Array<{ position: PositionId; charId: string }>;
-}
-
-/** Shadow tone for a 0xrrggbb int: mix toward cool navy (the house shade). */
-function shadeInt(color: number, f: number): number {
-  const mix = (c: number, to: number) => Math.round(c * (1 - f) + to * f);
-  return (
-    (mix((color >> 16) & 255, 0x2c) << 16) |
-    (mix((color >> 8) & 255, 0x3e) << 8) |
-    mix(color & 255, 0x66)
-  );
-}
-
-/** Highlight tone: mix toward warm near-white (the key light is warm). */
-function lightenInt(color: number, f: number): number {
-  const mix = (c: number, to: number) => Math.round(c * (1 - f) + to * f);
-  return (
-    (mix((color >> 16) & 255, 0xff) << 16) |
-    (mix((color >> 8) & 255, 0xfa) << 8) |
-    mix(color & 255, 0xe8)
-  );
 }
 
 export class BattingView {
@@ -65,6 +54,7 @@ export class BattingView {
   private pitcherWindupSeq?: { cancel(restore?: boolean): void };
   private batterBaseScale = 1;
   private fielderImgs = new Map<PositionId, Phaser.GameObjects.Image>();
+  private fielderShadows = new Map<PositionId, Phaser.GameObjects.Ellipse>();
   private tossBall: Phaser.GameObjects.Arc;
   private tossTween?: Phaser.Tweens.Tween;
 
@@ -75,14 +65,25 @@ export class BattingView {
 
     // The 7 distant defenders sit between the backdrop and the battery,
     // added far-to-near (Y ascending) so nearer kids draw over farther ones.
+    // Each gets a ground shadow (added to root BEFORE its image = drawn
+    // under it) so nobody floats on the backdrop — same grounding as the
+    // wide field's runners/fielders. Shadows are static; breathing tweens
+    // scale the sprite only (the LivePlayView convention).
     const spots = Object.entries(PLATE_VIEW.FIELDERS).sort((a, b) => a[1].Y - b[1].Y);
     for (const [pos, spot] of spots) {
+      const shadow = groundShadow(scene, spot.X, spot.Y - 2, spot.H * 0.52).setVisible(false);
+      this.fielderShadows.set(pos as PositionId, shadow);
+      this.root.add(shadow);
       const img = scene.add.image(spot.X, spot.Y, '__DEFAULT').setOrigin(0.5, 1).setVisible(false);
       this.fielderImgs.set(pos as PositionId, img);
       this.root.add(img);
     }
 
     const { PITCHER, BATTER, CATCHER } = PLATE_VIEW;
+    // Battery ground shadows, under the images (container order = draw order).
+    this.root.add(groundShadow(scene, PITCHER.X, PITCHER.Y - 2, 54));
+    this.root.add(groundShadow(scene, CATCHER.X, CATCHER.Y - 6, 120));
+    this.root.add(groundShadow(scene, BATTER.X + 10, BATTER.Y - 2, 150));
     this.pitcher = scene.add.image(PITCHER.X, PITCHER.Y, '__DEFAULT').setOrigin(0.5, 1);
     this.catcher = scene.add.image(CATCHER.X, CATCHER.Y, '__DEFAULT').setOrigin(0.5, 1);
     this.batter = scene.add.image(BATTER.X, BATTER.Y, '__DEFAULT').setOrigin(0.5, 1);
@@ -119,12 +120,14 @@ export class BattingView {
     this.setKid(this.pitcher, actors.pitcherId, 'stand', PLATE_VIEW.PITCHER.H);
     this.setKid(this.catcher, actors.catcherId, 'catchRear', PLATE_VIEW.CATCHER.H);
     for (const img of this.fielderImgs.values()) img.setVisible(false);
+    for (const sh of this.fielderShadows.values()) sh.setVisible(false);
     for (const f of actors.fielders) {
       const spot = PLATE_VIEW.FIELDERS[f.position];
       const img = this.fielderImgs.get(f.position);
       if (!spot || !img) continue;
       this.setKid(img, f.charId, 'ready', spot.H);
       img.setVisible(true);
+      this.fielderShadows.get(f.position)?.setVisible(true);
     }
     const batterChanged = this.batter.texture.key !== this.rigKey(actors.batterId, 'batRear');
     if (batterChanged) this.batterReactTimer?.remove(false); // a reaction pose never outlives its batter
@@ -360,7 +363,8 @@ export class BattingView {
     g.fillCircle(92, 66, 50);
 
     // Venue fence band on the horizon (same look descriptors as drawField).
-    const fenceTop = HORIZON - 46;
+    // Taller than the old 46px band, with real construction per style.
+    const fenceTop = HORIZON - 58;
     if (look.treeline) {
       // Haze-tinted treetops peeking over the wall.
       for (let x = 8; x < W; x += 60) {
@@ -369,84 +373,173 @@ export class BattingView {
         g.fillCircle(x, fenceTop - (big ? 14 : 6) - ((x * 7) % 8), big ? 17 : 11);
       }
     }
-    g.fillStyle(look.fence, 1);
-    g.fillRect(0, fenceTop, W, HORIZON - fenceTop);
     if (look.fenceStyle === 'chainlink') {
-      // Chain-link: a light X-hatch over the gray.
+      // Playground chain-link: a low windscreen base, tall see-through
+      // diamonds up to a top-rail pipe, and full-height posts.
+      g.fillStyle(look.fence, 1);
+      g.fillRect(0, HORIZON - 22, W, 22);
       g.lineStyle(2, look.fenceTrim, 0.6);
       for (let x = -40; x < W + 40; x += 26) {
         g.lineBetween(x, fenceTop, x + 34, HORIZON);
         g.lineBetween(x + 34, fenceTop, x, HORIZON);
       }
-      g.lineStyle(3, lightenInt(look.fence, 0.3), 0.9);
-      g.lineBetween(0, fenceTop + 2, W, fenceTop + 2);
+      g.lineStyle(3, lightenInt(look.fence, 0.35), 0.9);
+      g.lineBetween(0, fenceTop, W, fenceTop);
+      g.fillStyle(shadeInt(look.fence, 0.25), 1);
+      for (let x = 65; x < W; x += 130) g.fillRect(x - 2, fenceTop, 4, HORIZON - fenceTop);
     } else if (look.fenceStyle === 'planks') {
-      // Neighbor's plank fence.
-      g.lineStyle(3, look.fenceTrim, 0.8);
-      for (let x = 14; x < W; x += 30) g.lineBetween(x, fenceTop, x, HORIZON);
+      // Neighbor's wood fence: per-board tint variation, two carpentry
+      // rails, and posts poking above the cap.
+      const PLANK = 24;
+      for (let x = 0; x < W; x += PLANK) {
+        const t = hash01(x / PLANK, 7);
+        g.fillStyle(t > 0.62 ? lightenInt(look.fence, 0.09) : t < 0.3 ? shadeInt(look.fence, 0.12) : look.fence, 1);
+        g.fillRect(x, fenceTop, Math.min(PLANK, W - x), HORIZON - fenceTop);
+      }
+      g.lineStyle(2, look.fenceTrim, 0.7);
+      for (let x = PLANK; x < W; x += PLANK) g.lineBetween(x, fenceTop, x, HORIZON);
+      g.lineStyle(3, shadeInt(look.fence, 0.3), 0.8);
+      g.lineBetween(0, fenceTop + 16, W, fenceTop + 16);
+      g.lineBetween(0, fenceTop + 40, W, fenceTop + 40);
       g.lineStyle(3, lightenInt(look.fence, 0.25), 0.9);
       g.lineBetween(0, fenceTop + 2, W, fenceTop + 2);
+      g.fillStyle(shadeInt(look.fence, 0.35), 1);
+      for (let x = 55; x < W; x += 110) {
+        g.fillRect(x - 4, fenceTop - 6, 8, HORIZON - fenceTop + 6);
+        g.fillRect(x - 6, fenceTop - 9, 12, 4); // post cap
+      }
     } else {
-      // Wall — with a crowd strip peeking over it when the venue has stands.
-      if (look.skyline === 'stands') {
+      // Park wall: the painted wall with panel tints below, a chain-link
+      // screen rising above it, and the crowd sitting safely behind.
+      const wallTop = fenceTop + 22;
+      if (look.skyline === 'stands' && look.crowdRows > 0) {
         g.fillStyle(shadeInt(look.fence, 0.25), 1);
-        g.fillRect(0, fenceTop - 20, W, 20);
+        g.fillRect(0, fenceTop - 14, W, wallTop - fenceTop + 14);
         const crowd = [0xffce3a, 0xe8524a, 0x4aa5e0, 0xfff4de, 0x9a6bd0];
-        for (let i = 0; i < 64; i++) {
-          // Deterministic scatter — no RNG so the backdrop never shimmers.
-          const x = (i * 61) % W;
-          const y = fenceTop - 8 - ((i * 37) % 10);
-          g.fillStyle(crowd[i % crowd.length], 0.9);
-          g.fillCircle(x, y, 4);
+        const rows = Math.min(2, look.crowdRows);
+        for (let row = 0; row < rows; row++) {
+          for (let i = 0; i < 64; i++) {
+            // Deterministic scatter — no RNG so the backdrop never shimmers.
+            const x = (i * 61 + row * 29) % W;
+            const y = wallTop - 9 - row * 10 - ((i * 37) % 6);
+            const c = crowd[(i + row * 3) % crowd.length];
+            g.fillStyle(c, 0.9);
+            g.fillRect(x - 5, y + 3, 10, 5); // shoulders — heads read as people
+            g.fillCircle(x, y, 4);
+          }
         }
       }
+      g.fillStyle(look.fence, 1);
+      g.fillRect(0, wallTop, W, HORIZON - wallTop);
+      for (let col = 0; col * 120 < W; col++) {
+        const t = hash01(col, 11);
+        if (t > 0.4 && t < 0.7) continue;
+        g.fillStyle(t >= 0.7 ? lightenInt(look.fence, 0.12) : shadeInt(look.fence, 0.14), 0.35);
+        g.fillRect(col * 120, wallTop, Math.min(120, W - col * 120), HORIZON - wallTop);
+      }
       g.lineStyle(4, look.fenceTrim, 1);
-      g.lineBetween(0, fenceTop + 3, W, fenceTop + 3);
+      g.lineBetween(0, wallTop + 2, W, wallTop + 2);
+      // The chain-link screen above the wall.
+      g.lineStyle(1.5, 0xcfd6db, 0.45);
+      for (let x = 0; x < W; x += 14) {
+        g.lineBetween(x, fenceTop, x + 12, wallTop);
+        g.lineBetween(x + 12, fenceTop, x, wallTop);
+      }
+      g.lineStyle(3, 0xdfe6ea, 0.8);
+      g.lineBetween(0, fenceTop, W, fenceTop);
+      g.fillStyle(shadeInt(look.fence, 0.25), 1);
+      for (let x = 60; x < W; x += 120) {
+        g.fillRect(x - 2, fenceTop, 4, HORIZON - fenceTop);
+        g.fillRect(x - 4, fenceTop - 3, 8, 3); // post cap
+      }
     }
 
     // Ground from the horizon down.
     g.fillStyle(look.grass, 1);
     g.fillRect(0, HORIZON, W, H - HORIZON);
-    if (look.stripes) {
-      // Mow bands, wider as they near the camera.
-      g.fillStyle(look.grassDark, 0.5);
-      const bands = [
-        [HORIZON + 14, 16],
-        [HORIZON + 58, 26],
-        [HORIZON + 128, 40],
-        [HORIZON + 232, 60],
-      ] as const;
-      for (const [y, h] of bands) g.fillRect(0, y, W, h);
+    if (look.asphalt) {
+      // Blacktop: expansion seams instead of mow bands (the wide 'court' read).
+      g.lineStyle(2, look.grassDark, 0.7);
+      for (let x = 120; x < W; x += 240) g.lineBetween(x, HORIZON, x, H);
+      g.lineBetween(0, HORIZON + 150, W, HORIZON + 150);
+    } else {
+      if (look.stripes) {
+        // Mow bands generated with the same recession law as the wide
+        // field's checker rows — wider and further apart near the camera.
+        g.fillStyle(look.grassDark, 0.5);
+        for (let y = HORIZON + 10, h = 14; y < H; y += h * 2.2, h *= 1.5) {
+          g.fillRect(0, y, W, h);
+        }
+      }
+      // Tone flecks over the far band pull the flat fill into grass.
+      grassFlecks(g, 0, HORIZON + 8, W, 130, lightenInt(look.grass, 0.25), shadeInt(look.grass, 0.2), 60, 1);
     }
 
-    // The mound: a lit dirt disc under the distant pitcher.
+    // The mound under the distant pitcher: the wide field's 5-layer lit-dome
+    // recipe at rig scale — cast shadow, rimmed base, near-slope shade, lit
+    // crown upper-left, and a real pitching rubber under his feet.
     const { PITCHER } = PLATE_VIEW;
-    g.fillStyle(shadeInt(look.dirt, 0.18), 1);
-    g.fillEllipse(PITCHER.X, PITCHER.Y - 2, 96, 26);
+    g.fillStyle(0x1b2833, 0.14);
+    g.fillEllipse(PITCHER.X + 6, PITCHER.Y + 1, 96, 26);
     g.fillStyle(look.dirt, 1);
-    g.fillEllipse(PITCHER.X - 3, PITCHER.Y - 5, 88, 22);
+    g.fillEllipse(PITCHER.X, PITCHER.Y - 2, 96, 26);
+    g.lineStyle(2, shadeInt(look.dirt, 0.3), 0.8);
+    g.strokeEllipse(PITCHER.X, PITCHER.Y - 2, 96, 26);
+    g.fillStyle(shadeInt(look.dirt, 0.3), 0.3);
+    g.fillEllipse(PITCHER.X, PITCHER.Y + 2, 80, 15);
+    g.fillStyle(lightenInt(look.dirt, 0.4), 0.45);
+    g.fillEllipse(PITCHER.X - 6, PITCHER.Y - 6, 56, 11);
+    if (!look.asphalt) {
+      speckleEllipse(g, PITCHER.X, PITCHER.Y - 2, 40, 9, [shadeInt(look.dirt, 0.25), lightenInt(look.dirt, 0.35)], 18, 0.4, 5);
+    }
+    g.fillStyle(COLORS.white, 1);
+    g.fillRect(PITCHER.X - 15, PITCHER.Y - 4, 30, 5);
+    g.lineStyle(1.5, 0x9a9a9a, 1);
+    g.strokeRect(PITCHER.X - 15, PITCHER.Y - 4, 30, 5);
 
     // Home-plate dirt filling the bottom of the frame, behind batter+catcher.
     // Ground furniture sits 48px higher than the frame bottom so the plate,
     // boxes, and batter feet all clear the bottom scoreboard strip (HUD.STRIP).
     g.fillStyle(look.dirt, 1);
     g.fillEllipse(W / 2, H + 12, 900, 320);
+    // The mow edge where the grass meets the home dirt — the boundary line
+    // is what makes the dirt read as a SHAPE instead of a brown wash.
+    g.lineStyle(5, shadeInt(look.grass, 0.2), 0.8);
+    g.strokeEllipse(W / 2, H + 12, 900, 320);
     g.fillStyle(lightenInt(look.dirt, 0.12), 0.5);
     g.fillEllipse(W / 2 - 90, H - 8, 560, 200);
+    if (!look.asphalt) {
+      speckleEllipse(g, W / 2, H + 12, 430, 150, [shadeInt(look.dirt, 0.22), lightenInt(look.dirt, 0.28)], 130, 0.35, 6);
+      // Feet-scuff wear where batters actually stand.
+      g.fillStyle(shadeInt(look.dirt, 0.3), 0.25);
+      g.fillEllipse(363, 534, 100, 34);
+      g.fillEllipse(597, 534, 100, 34);
+    }
 
     // Foul lines shoot OUT from the plate to the poles at the fence's far
     // edges — the camera looks straight out from home, so the 45° lines
     // spread wide; they must NOT converge on the pitcher (that reads as a
     // tiny fair wedge and strands the fielders in "foul" ground). Drawn
     // after the home dirt so they run over it from the plate, like chalk.
-    g.lineStyle(5, COLORS.white, 0.85);
-    g.lineBetween(452, 544, 40, HORIZON + 2);
-    g.lineBetween(508, 544, 920, HORIZON + 2);
+    chalkLine(g, 452, 544, 40, HORIZON + 2, 5, 0.8, 1);
+    chalkLine(g, 508, 544, 920, HORIZON + 2, 5, 0.8, 2);
 
-    // Batter's boxes + the plate itself.
-    g.lineStyle(4, COLORS.white, 0.75);
-    g.strokeRect(298, 500, 130, 68);
-    g.strokeRect(532, 500, 130, 68);
+    // Batter's boxes (worn chalk) + the plate itself.
+    chalkRect(g, 298, 500, 130, 68, 4, 0.65, 4);
+    chalkRect(g, 532, 500, 130, 68, 4, 0.65, 8);
+    // The plate gets a shaded front edge first, then the white top — a 3px
+    // lip that makes it sit IN the dirt instead of floating on it.
+    g.fillStyle(0xd8dde6, 0.95);
+    g.fillPoints(
+      [
+        { x: 452, y: 521 },
+        { x: 508, y: 521 },
+        { x: 508, y: 541 },
+        { x: 480, y: 555 },
+        { x: 452, y: 541 },
+      ],
+      true
+    );
     g.fillStyle(COLORS.white, 0.95);
     g.fillPoints(
       [
