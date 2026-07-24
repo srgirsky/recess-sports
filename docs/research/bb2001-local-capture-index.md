@@ -307,10 +307,15 @@ confidence `med`. Ours is 2113ms — we run the basepath in **half** BB's time
 (−49.7%). That is the number every other pace ratio hangs off, so it was the
 right thing to spend the pass on.
 
-`flyHang` and `betweenPitch` are **still `awaiting-measurement`**, but for a much
-better reason than session 1's. The capture *contains* both shots, and a working
-method now exists for each; what's missing in both cases is the same bounded
-work — one pair of zoomed eye reads per event to pin the second endpoint.
+`flyHang` and `betweenPitch` are **still `awaiting-measurement`** after two
+passes. The capture *contains* both shots and the tooling is most of the way
+there; what remains for each is named in its record's `pass2Attempt` block —
+principally blob-to-track linking, then the eye reads.
+
+Two constants that had *claimed* to be Backyard-measured in `src/config.ts` with
+no record behind them — `PITCH_SPEED` and `FLOW.UMP_CALL_DELAY_MS` — now have
+records (both honestly `awaiting-measurement`), and a conformance test refuses
+to let any future comment claim a measurement no record informs.
 
 - **fly hang** — contact is free and exact (it's the cut). What's missing is
   ball-down. Colour-based ball detection *fails* in this venue: the white plank
@@ -319,6 +324,53 @@ work — one pair of zoomed eye reads per event to pin the second endpoint.
   change scan (mound / mid corridor / zone) isolates each pitch cleanly no matter
   how long the human dithered over the cards. What's missing is the resting
   ball's disappearance.
+
+### Pass 2 — background subtraction, and a shadow that nearly cost a finding
+
+The pass-1 blocker was "colour can't find the ball in this venue". Pass 2 built
+the tool that answers it and discovered the blocker was one layer deeper.
+
+**The tool** (`temporalMedian` + `foregroundBlobs` in `scripts/measure/video.js`,
+both validated against synthetic ground truth): stop asking *what is white* and
+ask *what moved*. A per-pixel **median** background — not a mean, which smears
+every transient sprite into a ghost that then reads as foreground wherever an
+actor has ever been — makes the fence, crowd, chalk and stands stop existing as
+candidates.
+
+**It works, and it is not sufficient.** In the wide view eleven actors are
+moving, and their extremities throw off small fragments that pass any size
+filter. "The smallest moving blob" is not the ball. What remains is linking
+blobs frame-to-frame into *tracks* and selecting on motion — fast, smooth,
+roughly parabolic — which no fielder's arm produces.
+
+**The shadow trap.** On the plate view the tracker produced a beautiful, clean,
+monotone descent: y=134 → y=286 over ~930 ms. It was not the ball. It was a
+shadow. Taken at face value it would have made the pitch flight ~4× too long
+and — far worse — it would have contradicted `instrument.clockValidity`'s
+corroboration and reopened the emulator-stretch question **on false evidence**.
+
+A frame-by-frame corridor sheet settled it: the ball is still in the pitcher's
+hand at 53.683, clearly airborne at 53.783, and inside the strike-zone bracket
+at 53.917 — a **~220 ms flight**, against the ~250 ms the YouTube notes measured
+for a max-arm pitch. The recorded corroboration was *confirmed*, not corrected.
+
+The lesson generalises the pass-1 one rather than replacing it. A clean monotone
+track is evidence that *something* is moving smoothly and nothing more. In pass 1
+that was a valid check because no canned fielder animation produces one; in a
+scene containing shadows it is not. The standing rule is what caught it: **a
+tracker brackets and rejects; the picture decides.**
+
+### Two plan assumptions that broke
+
+- **"PT" on the ON THE MOUND panel is not a pitching rating.** It is a
+  pitches-thrown counter — the video notes had already seen it tick 0→1 on a
+  single ball. So arm ratings cannot be read off the footage, and calibrating
+  `PITCH_SPEED.ARM_MULT` per-pitcher from the HUD is not possible. The corridor
+  has to be measured as a *range* across many arms instead.
+- **The three-ROI change scan finds pitch-shaped events, not pitches.** On the
+  first plate stretch it returned 7 events for 1 actual pitch — a batter walking
+  into the box and a swing both look like one. The discriminator has to be the
+  ball itself.
 
 ### What each venue is good at
 

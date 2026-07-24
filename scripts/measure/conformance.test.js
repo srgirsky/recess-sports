@@ -134,6 +134,58 @@ describe('measures.json — record hygiene', () => {
   });
 });
 
+describe('config.ts — no claiming a measurement that nothing backs', () => {
+  it('makes every "Backyard-measured" comment name a constant some record informs', () => {
+    // THE LOOPHOLE THIS CLOSES. measures.json is gated, but a comment in
+    // config.ts is not -- and two of them asserted BB measurements that no
+    // record had ever carried: PITCH_SPEED ("Backyard-measured. Real BB2001
+    // flights span ~250ms to ~700ms") and FLOW.UMP_CALL_DELAY_MS ("the
+    // BB2001-measured beat"). Both rested on superseded n=1 readings. A reader
+    // has no way to tell those apart from a measurement with an audit trail,
+    // which is the whole problem this project exists to fix.
+    //
+    // So: if the source says a number came from Backyard, a record must own it.
+    // The record is allowed to say "awaiting-measurement" -- being honest about
+    // not knowing is fine, silently implying you do is not.
+    //
+    // Deliberately scoped to "-measured". "Backyard-paced" appears on several
+    // constants as a STYLE claim, not a measurement claim, and gating that
+    // would make this test noise.
+    const src = readFileSync(join(here, '..', '..', 'src', 'config.ts'), 'utf8');
+
+    // Every constant any record points at, however it phrases it.
+    const claimed = new Set();
+    const walk = (o) => {
+      for (const v of Object.values(o)) {
+        if (!v || typeof v !== 'object') continue;
+        if (v.id) {
+          const names = [v.informs, v.ours?.constant, ...(v.ours?.constants ?? [])].filter(Boolean);
+          for (const nm of names) for (const tok of String(nm).match(/\b[A-Z][A-Z0-9_]{2,}\b/g) ?? []) claimed.add(tok);
+        }
+        walk(v);
+      }
+    };
+    walk(M);
+
+    const re = /(Backyard|BB2001)-measured/g;
+    const unbacked = [];
+    let m;
+    let found = 0;
+    while ((m = re.exec(src))) {
+      found++;
+      // The constant a claim is about is the next one DECLARED after it.
+      const after = src.slice(m.index);
+      const decl = after.match(/\b([A-Z][A-Z0-9_]{2,})\b\s*[:=]/);
+      if (!decl) { unbacked.push(`(no constant found after "${m[0]}" at index ${m.index})`); continue; }
+      if (!claimed.has(decl[1])) unbacked.push(decl[1]);
+    }
+
+    // The test is worthless if the regex silently stops matching anything.
+    expect(found, 'expected config.ts to still contain Backyard-measurement claims').toBeGreaterThan(0);
+    expect(unbacked, 'these config.ts comments claim a BB measurement no record informs').toEqual([]);
+  });
+});
+
 describe('geometry — known drifts stay exactly as big as recorded', () => {
   it('FOUL_SLOPE sits inside BB’s per-venue band', () => {
     // This one REVERSED on 2026-07-24. It was a known-drift asserting that our

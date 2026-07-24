@@ -624,3 +624,128 @@ export function gameSegments(
 
   return { segments, samples, rect, stepSec, minScore, duration: meta.duration };
 }
+
+/**
+ * A static-background frame, built as the PER-PIXEL MEDIAN of N samples.
+ *
+ * WHY THIS EXISTS. The pace pass stalled twice on the same thing: finding the
+ * BALL. Looking for "a small near-white blob" works on a plain field and falls
+ * apart the moment the venue has a white plank fence, a crowd and chalk lines in
+ * frame -- measured on the session2 park venue, that search returns 25-30
+ * candidates per frame and the ball is not distinguishable among them.
+ *
+ * The fix is to stop asking "what is white?" and start asking "what MOVED?".
+ * The field is static; the actors are not. Subtract a background and the fence,
+ * crowd, stands and chalk stop existing as far as detection is concerned.
+ *
+ * MEDIAN, not mean, and that is the whole trick: a mean smears every transient
+ * sprite faintly into the background, leaving a ghost that then shows up as
+ * foreground everywhere an actor has ever been. A median discards them outright
+ * as long as any pixel is background in most samples -- so the sample window
+ * should be wide enough that nothing parks in one spot for over half of it.
+ *
+ * `sampleEvery` spreads those samples over a longer span for the same decode
+ * cost, which is what makes that condition easy to satisfy.
+ */
+export function temporalMedian(path, { startSec = 0, count = 24, scale = 1, crop = null, sampleEvery = 1, info = null } = {}) {
+  const n = Math.max(1, Math.round(count));
+  const step = Math.max(1, Math.round(sampleEvery));
+  const read = readFrames(path, { startSec, count: n * step, scale, crop, info });
+  const picked = [];
+  for (let i = 0; i < read.frames.length && picked.length < n; i += step) picked.push(read.frames[i]);
+  if (!picked.length) throw new Error(`temporalMedian: no frames decoded at t=${startSec} in ${path}`);
+
+  const len = picked[0].length;
+  const bg = Buffer.allocUnsafe(len);
+  const win = new Uint8Array(picked.length);
+  for (let p = 0; p < len; p++) {
+    for (let s = 0; s < picked.length; s++) win[s] = picked[s][p];
+    // Insertion sort: the window is tiny (tens of samples) and this avoids
+    // allocating a fresh array per pixel, which at ~900k pixels matters.
+    for (let a = 1; a < win.length; a++) {
+      const v = win[a];
+      let b = a - 1;
+      while (b >= 0 && win[b] > v) { win[b + 1] = win[b]; b--; }
+      win[b + 1] = v;
+    }
+    bg[p] = win[win.length >> 1];
+  }
+
+  return { background: bg, width: read.width, height: read.height, samples: picked.length, startSec, step };
+}
+
+/**
+ * Connected components of "this frame differs from the background".
+ *
+ * Returns each blob with its bbox, its centroid, AND its **bottom-centre** --
+ * which is the one downstream code should normally use. BB draws its kids in
+ * 3/4 iso with the sprite origin at the feet, so a change-mass centroid sits at
+ * the chest: measured against the home->1B axis, that is ~19px FURTHER up the
+ * line than where the runner actually is. Centroids systematically overstate
+ * progress along any ground axis; sprite origins do not. (Recorded as
+ * pace.trackerLessons in measures.json.)
+ *
+ * `maxSpan` is what separates a ball from a kid without knowing anything about
+ * colour: in native 640x480 the ball is ~4-8px across and a kid is ~20x35.
+ */
+export function foregroundBlobs(frame, background, width, height, { threshold = 40, roi = null, minPx = 4, maxSpan = Infinity, minSpan = 0 } = {}) {
+  const r = normRoi(roi, width, height);
+  const x1 = r.x + r.w;
+  const y1 = r.y + r.h;
+  const mark = new Uint8Array(width * height);
+  for (let y = r.y; y < y1; y++) {
+    for (let x = r.x; x < x1; x++) {
+      const p = y * width + x;
+      const q = p * 3;
+      const d =
+        Math.abs(frame[q] - background[q]) +
+        Math.abs(frame[q + 1] - background[q + 1]) +
+        Math.abs(frame[q + 2] - background[q + 2]);
+      if (d / 3 >= threshold) mark[p] = 1;
+    }
+  }
+
+  const seen = new Uint8Array(width * height);
+  const blobs = [];
+  const stack = [];
+  for (let y = r.y; y < y1; y++) {
+    for (let x = r.x; x < x1; x++) {
+      const p0 = y * width + x;
+      if (!mark[p0] || seen[p0]) continue;
+      stack.length = 0;
+      stack.push(p0);
+      seen[p0] = 1;
+      let n = 0, sx = 0, sy = 0, xa = x, xb = x, ya = y, yb = y;
+      while (stack.length) {
+        const p = stack.pop();
+        const px = p % width;
+        const py = (p / width) | 0;
+        n++; sx += px; sy += py;
+        if (px < xa) xa = px; if (px > xb) xb = px;
+        if (py < ya) ya = py; if (py > yb) yb = py;
+        for (const d of [-1, 1, -width, width]) {
+          const q = p + d;
+          if (q < 0 || q >= width * height) continue;
+          // Guard the horizontal neighbours against wrapping to the next row.
+          if ((d === -1 || d === 1) && Math.abs((q % width) - px) !== 1) continue;
+          if (mark[q] && !seen[q]) { seen[q] = 1; stack.push(q); }
+        }
+      }
+      const bw = xb - xa + 1;
+      const bh = yb - ya + 1;
+      const span = Math.max(bw, bh);
+      if (n < minPx || span > maxSpan || span < minSpan) continue;
+      blobs.push({
+        n,
+        x: Math.round((sx / n) * 10) / 10,
+        y: Math.round((sy / n) * 10) / 10,
+        // Sprite origin: bottom-centre of the bbox. Prefer this over (x, y).
+        fx: (xa + xb) / 2,
+        fy: yb,
+        bw, bh, x0: xa, y0: ya, x1: xb, y1: yb,
+        fill: Math.round((n / (bw * bh)) * 100) / 100,
+      });
+    }
+  }
+  return blobs.sort((a, b) => b.n - a.n);
+}

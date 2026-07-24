@@ -26,6 +26,8 @@ import {
   detectGameRect,
   blitScore,
   gameSegments,
+  temporalMedian,
+  foregroundBlobs,
   hasFfmpeg,
 } from './video.js';
 import { findSpike, medianColor, patchFlatness } from './lib.js';
@@ -476,5 +478,183 @@ d('gameSegments — the content-blind segment map', () => {
     const kinds = r.segments.map((s) => s.kind);
     expect(kinds).toEqual(['game', 'other']);
     expect(r.segments[0].t1).toBeCloseTo(2.0, 1);
+  });
+});
+
+d('temporalMedian + foregroundBlobs — finding what MOVED, not what is white', () => {
+  // THE CASE THAT BLOCKED THE PACE PASS TWICE. Colour-based ball detection dies
+  // in a venue with a white fence, a crowd and chalk lines: measured on the real
+  // session2 capture that search returned 25-30 near-white candidates per frame
+  // with the ball indistinguishable among them. So this clip is built to be
+  // hostile in exactly that way -- a busy STATIC background full of bright
+  // clutter, plus two movers of very different sizes -- and the tests assert the
+  // clutter falls away and only the movers survive.
+  //
+  // The frames are painted PIXEL BY PIXEL in JS rather than by ffmpeg filters,
+  // so the ground truth is not merely known, it is authored: every box position
+  // below is an exact integer we can assert against. (An earlier version drove
+  // this with `drawbox` time expressions and silently drew nothing at all --
+  // `t` is thickness there, not time. A ground-truth test that generates the
+  // wrong ground truth is worse than no test, so this path avoids ffmpeg's
+  // expression semantics entirely.)
+
+  const W = 240, H = 180, N = 60, FPS = 30;
+  const BALL = 6, KID_W = 24, KID_H = 36;
+  const BALL_X0 = 20, BALL_VX = 160 / FPS;   // px per frame
+  const KID_X0 = 150, KID_VX = -40 / FPS;
+  const KID_TOP = H - 10 - KID_H;
+  const ballX = (n) => Math.round(BALL_X0 + n * BALL_VX);
+
+  let clip;
+  beforeAll(() => {
+    const box = (buf, x, y, w, h, [r, g, b]) => {
+      for (let j = Math.max(0, y); j < Math.min(H, y + h); j++) {
+        for (let i = Math.max(0, x); i < Math.min(W, x + w); i++) {
+          const q = (j * W + i) * 3;
+          buf[q] = r; buf[q + 1] = g; buf[q + 2] = b;
+        }
+      }
+    };
+    const chunks = [];
+    for (let n = 0; n < N; n++) {
+      const f = Buffer.alloc(W * H * 3);
+      box(f, 0, 0, W, H, [47, 122, 42]);                 // grass
+      box(f, 0, 10, W, 14, [255, 255, 255]);             // "fence"
+      box(f, 30, 40, 2, H - 40, [255, 255, 255]);        // "chalk"
+      box(f, 200, 40, 2, H - 40, [255, 255, 255]);
+      box(f, 60, 0, 8, 8, [240, 240, 224]);              // "crowd"
+      box(f, 140, 2, 8, 8, [232, 232, 240]);
+      box(f, ballX(n), 118, BALL, BALL, [255, 255, 255]);
+      box(f, Math.round(KID_X0 + n * KID_VX), KID_TOP, KID_W, KID_H, [32, 64, 192]);
+      chunks.push(f);
+    }
+    clip = join(dir, 'fg.mkv');
+    const r = spawnSync('ffmpeg', [
+      '-v', 'error', '-y',
+      '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', `${W}x${H}`, '-r', String(FPS),
+      '-i', '-', ...LOSSLESS, clip,
+    ], { input: Buffer.concat(chunks), maxBuffer: 1 << 28 });
+    if (r.status !== 0) throw new Error('ffmpeg gen failed: ' + r.stderr.toString().slice(-400));
+  });
+
+  const bg = () => temporalMedian(clip, { startSec: 0, count: 20, sampleEvery: 3 });
+
+  it('medians the static clutter into the background and the movers out of it', () => {
+    const { background, width, height, samples } = bg();
+    expect(samples).toBe(20);
+    expect(width).toBe(W);
+    expect(height).toBe(H);
+
+    const at = (x, y) => {
+      const q = (y * width + x) * 3;
+      return [background[q], background[q + 1], background[q + 2]];
+    };
+    // The static fence survives.
+    expect(at(120, 16)[0]).toBeGreaterThan(200);
+    // And the grass UNDER the ball's flight path survives too, because the ball
+    // was only ever there for an instant. This is the assertion a MEAN
+    // background would fail: it would leave a bright smear along y=121.
+    const [r, g, b] = at(120, 121);
+    expect(g).toBeGreaterThan(r + 20);
+    expect(g).toBeGreaterThan(b + 20);
+  });
+
+  it('returns exactly the two movers, sized right, with sprite-origin feet', () => {
+    const { background, width, height } = bg();
+    const { frames } = readFrames(clip, { startSec: 1.0, count: 1 });
+    const blobs = foregroundBlobs(frames[0], background, width, height, { threshold: 40, minPx: 4 });
+
+    // Two movers and NOTHING else -- no fence, no chalk, no crowd.
+    expect(blobs).toHaveLength(2);
+    const [kid, ball] = blobs;              // sorted by pixel count, descending
+    expect(kid.bw).toBe(KID_W);
+    expect(kid.bh).toBe(KID_H);
+    expect(ball.bw).toBe(BALL);
+    expect(ball.bh).toBe(BALL);
+
+    // SPRITE ORIGIN, the whole reason fx/fy exist. The kid's feet are at
+    // H-10-1; his centroid is ~17px higher, at his middle. Measuring progress
+    // along a ground axis from the centroid is what biased the first runner
+    // tracker (recorded as pace.trackerLessons).
+    expect(kid.fy).toBe(H - 11);
+    expect(kid.y).toBeLessThan(kid.fy - 15);
+
+    // The ball is exactly where frame 30 drew it.
+    expect(ball.fx).toBe(ballX(30) + (BALL - 1) / 2);
+  });
+
+  it('separates ball from kid by span alone, with no colour knowledge', () => {
+    // The size filter is what finds the ball without ever asking its colour --
+    // the property that survives a change of venue, which colour did not.
+    const { background, width, height } = bg();
+    const { frames } = readFrames(clip, { startSec: 1.0, count: 1 });
+
+    const small = foregroundBlobs(frames[0], background, width, height, { threshold: 40, minPx: 4, maxSpan: 12 });
+    expect(small).toHaveLength(1);
+    expect(small[0].bw).toBe(BALL);
+
+    const big = foregroundBlobs(frames[0], background, width, height, { threshold: 40, minPx: 4, minSpan: 20 });
+    expect(big).toHaveLength(1);
+    expect(big[0].bh).toBe(KID_H);
+  });
+
+  it('confines the search to an roi', () => {
+    const { background, width, height } = bg();
+    const { frames } = readFrames(clip, { startSec: 1.0, count: 1 });
+    // A band containing only the ball's flight line.
+    const blobs = foregroundBlobs(frames[0], background, width, height, {
+      threshold: 40, minPx: 4, roi: { x: 0, y: 112, w: W, h: 16 },
+    });
+    expect(blobs).toHaveLength(1);
+    expect(blobs[0].bh).toBe(BALL);
+  });
+
+  it('tracks the ball across frames at the speed it was drawn', () => {
+    // End to end: the thing every hang/throw measurement actually needs is a
+    // ball POSITION SERIES, so assert one comes back linear at the authored
+    // velocity rather than merely that a blob exists in one frame.
+    const { background, width, height } = bg();
+    const track = [];
+    // Sampled over n=6..30, i.e. ball x ~52..180. Deliberately stopping short
+    // of x=200: see the blind-spot test below.
+    for (let n = 6; n <= 30; n += 6) {
+      const { frames } = readFrames(clip, { startSec: n / FPS, count: 1 });
+      const [b] = foregroundBlobs(frames[0], background, width, height, { threshold: 40, minPx: 4, maxSpan: 12 });
+      track.push({ n, x: b.fx });
+    }
+    expect(track).toHaveLength(5);
+    for (const t of track) expect(t.x).toBeCloseTo(ballX(t.n) + (BALL - 1) / 2, 0);
+
+    // And the series is linear at the authored velocity, which is the property
+    // a hang or throw measurement actually leans on.
+    const dx = track.slice(1).map((t, i) => t.x - track[i].x);
+    for (const step of dx) expect(step).toBeCloseTo(6 * BALL_VX, 0);
+  });
+
+  it('is eaten into where a white ball crosses a white line — a real limit, not a bug', () => {
+    // Background subtraction detects DIFFERENCE, so wherever the ball's colour
+    // equals what is behind it, those pixels are not detected. The clip's chalk
+    // line at x=200 is white, and the white ball crossing it loses the columns
+    // that overlap.
+    //
+    // Measured here: 36px intact -> 24px at worst. NOT to zero, because a 6px
+    // ball cannot be fully hidden behind a 2px line -- which is exactly why this
+    // is asserted rather than assumed. The failure mode is partial and silent.
+    //
+    // It matters because the blob's CENTROID shifts when it is eaten
+    // asymmetrically, so a position series wobbles at every same-coloured
+    // crossing while still looking perfectly healthy. On real footage the same
+    // trap is a ball over the fence, a base, or a white uniform. Mitigation:
+    // prefer bbox edges over centroids near known light features, and never
+    // treat a track thinning or ending as an event by itself.
+    const { background, width, height } = bg();
+    const worst = [];
+    for (let n = 30; n <= 38; n++) {
+      const { frames } = readFrames(clip, { startSec: n / FPS, count: 1 });
+      const [b] = foregroundBlobs(frames[0], background, width, height, { threshold: 40, minPx: 1, maxSpan: 12 });
+      if (b) worst.push(b.n);
+    }
+    expect(Math.max(...worst)).toBe(BALL * BALL);            // clean frames are intact
+    expect(Math.min(...worst)).toBeLessThan(BALL * BALL);    // and some are not
   });
 });
