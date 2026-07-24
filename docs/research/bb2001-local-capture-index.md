@@ -151,3 +151,35 @@ Runner arrival has to be separated from scripted animation by magnitude *and* by
 the runner's track along the baseline, or read frame-by-frame off a zoomed
 corridor sheet at the true 50ms period (`contactSheet` with `crop` + `stepFrames`
 does this). Either way it is per-play work, not a threshold sweep.
+
+### The measurement attempt, and why session1 can't finish the pace pass
+
+Attempted all three pace metrics on the 14 plays (2026-07-23). Every one hit a
+real footage confound — recorded in full as `pace.captureConfounds` in
+`measures.json`, summarised here:
+
+- **home→1B — lane overlap.** In the backyard-grass venue (the *only* venue any
+  local play is on), the 1B foul line points into right-center, and every ball
+  this session went to right/center. So the runner's home→1B lane is drawn on top
+  of the ball-and-fielder action; a baseline frontier-tracker locks onto the
+  right fielder near 1B, not the runner. Clean anchor samples need the ball to
+  *left* field or an infield single.
+- **between-pitch — deliberation, not turnaround.** The plate segments are long,
+  but the gaps between actual pitches are 5–12s of player deliberation over the
+  pitch cards. `FLOW.BETWEEN_PITCH_MS` models the forced ~1.3s catch→ready sliver,
+  which is invisible in the pitch cadence and readable only per-pitch.
+- **fly hang — few clean flies.** The short right porch turns most contact into
+  grounders rolling to the fence (play-01 is the type case), not arcing pop-ups.
+
+**Play classification (from the sheets):** grounder to RF, runner safe — play-02
+(79.1), play-04 (120.1); grounder to the fence — play-01 (33.9); quick out (~2s,
+too short for a full run) — play-00 (24.1); defensive throw / steal — play-06
+(194.2, steal pad + throw arrow); long plays not yet classified — play-03 (93.3),
+play-11 (799.5), play-12 (828.4), play-13 (855.7).
+
+**The clean path** is a short targeted re-capture — exactly what
+`bb2001-capture-setup.md` step 7 already prescribes: a handful of home→1B
+run-outs with the ball poked to *left* field or an infield single, and deliberate
+pop-ups shallow→deep, each shot name said aloud. Per-play frame reading of
+session1's cluttered plays can scrape a few low-confidence samples but can't reach
+the shot list's n=6.

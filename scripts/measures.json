@@ -163,7 +163,7 @@
     }
   },
   "pace": {
-    "note": "THE PRIORITY, and still open. The shot list (home->1B, fly hang, line drives, fielder/throw delays, pitch corridor) is what fixes the 'too fast' defect. What now exists that did not before: a reproducible index of 14 live plays with exact start frames (instrument.play-index), the venue's base positions in the same coordinate space (geometry.projectionType.measurements[1]), and a measured 50ms precision floor. What does NOT yet exist is a trustworthy per-play event timing, for the reason recorded below. No pace values are seeded from the superseded n=1 YouTube readings.",
+    "note": "THE PRIORITY, and still open after a measurement attempt (2026-07-23). The shot list (home->1B, fly hang, line drives, fielder/throw delays, pitch corridor) is what fixes the 'too fast' defect. What now exists: a reproducible index of 14 live plays with exact start frames (instrument.play-index), the venue's base positions in the same coordinate space (geometry.projectionType.measurements[1]), a measured 50ms precision floor, and the classification of those plays. What does NOT exist is trustworthy per-play event timing -- session1 is a natural playthrough whose plays do not isolate the shot-list situations, for three concrete reasons recorded in pace.captureConfounds. No pace values are seeded from the superseded n=1 YouTube readings; producing a shaky number here would be the exact mistake this instrument exists to prevent.",
     "measurementTrap": {
       "id": "pace.measurement-trap",
       "category": "pace",
@@ -172,6 +172,26 @@
       "finding": "Detecting 'the runner reached 1B' from a change-fraction spike in a box on the bag FAILS. BB2001 plays canned fielder animations at the bag, and they are deterministic: six different plays produced change series matching to the millisecond (1.187:0.07, 1.287:0.07, 1.337:0.08, 1.387:0.12, ...). A naive threshold reads six identical 'arrivals'. The tell was the impossible precision -- six unrelated plays cannot agree to 1ms -- and it was caught only because the numbers were inspected rather than aggregated.",
       "implication": "Runner arrival must be distinguished from scripted animation by magnitude AND by the runner's track along the baseline, or read frame-by-frame off a zoomed corridor sheet at the true 50ms period. Either way it is per-play work; it is not a threshold sweep.",
       "note": "This is precisely the failure mode this whole instrument exists to prevent: a plausible, confident, wrong number. It would have produced a home->1B time with a suspiciously tight spread and therefore a HIGH derived confidence."
+    },
+    "captureConfounds": {
+      "id": "pace.capture-confounds",
+      "category": "pace",
+      "status": "note",
+      "what": "Why THIS capture (session1) cannot yield clean pace numbers, and what a capture that could must do differently. Found by attempting all three pace metrics on the 14 indexed plays, 2026-07-23.",
+      "findings": [
+        "home->1B lane overlap: in the backyard-grass venue (the only venue any local play is on), the 1B foul line points straight into right-center field. Every ball put in play in this session went to right/center, so the batter-runner's home->1B lane is drawn ON TOP OF the ball-and-fielder action. A frontier tracker along the baseline locks onto the right fielder standing near 1B, not the runner. Clean anchor samples need the ball hit to LEFT field (3B side) or an infield single, so the right-side lane stays empty.",
+        "between-pitch is deliberation, not turnaround: the plate-view segments are long (30s+) but the gaps between actual pitches are 5-12s of PLAYER DELIBERATION over the pitch cards (the notes already flag pitch selection as untimed). FLOW.BETWEEN_PITCH_MS models the forced catch->ready dead time (~1.3s), which is a sub-second sliver AFTER each pitch settles -- invisible in the pitch-to-pitch cadence and readable only frame-by-frame per pitch.",
+        "few clean flies: the short right porch turns most solid contact into grounders that roll to the fence (play-01 is the type case -- a ball rolling to the wall, retrieved), not arcing flies. FLY_HANG needs deliberate shallow->deep pop-ups, which a natural at-'em playthrough rarely produces."
+      ],
+      "playClassification": {
+        "note": "From contact-sheet reads. S1 = 0..452s, S2 = 640..925s; all backyard-grass.",
+        "grounder-to-RF-runner-safe": ["play-02 (79.1)", "play-04 (120.1)"],
+        "grounder-to-fence": ["play-01 (33.9)"],
+        "quick-out": ["play-00 (24.1, ~2s -- too short to contain a full home->1B)"],
+        "defensive-throw-or-steal": ["play-06 (194.2, steal pad + throw arrow)"],
+        "unclassified-long-plays": ["play-03 (93.3, 18.7s)", "play-05", "play-11 (799.5, 15.9s)", "play-12 (828.4, 20.1s)", "play-13 (855.7, 16.3s)"]
+      },
+      "recommendation": "A short targeted re-capture following docs/research/bb2001-capture-setup.md step 7 is the clean path, and it is what that step already prescribes ('produce these deliberately instead of hoping they occur'): a handful of home->1B run-outs with the ball poked to LEFT field or an easy infield single, and deliberate pop-ups shallow->deep, each shot name said aloud. Alternatively, per-play frame-by-frame reading of session1's cluttered plays can extract a few low-confidence samples but cannot reach the shot list's n=6."
     },
     "homeToFirst": {
       "id": "pace.home-to-first",
@@ -209,7 +229,7 @@
       "confidence": "estimate",
       "priorReading": { "value": 1300, "source": "youtube:YMmqNpmA60U", "n": 1, "superseded": true },
       "ours": { "constant": "src/config.ts FLOW.BETWEEN_PITCH_MS", "value": 1250 },
-      "oursNote": "Of the pace metrics this one should be the EASIEST to measure to high n from the local capture: the plate-view segments are long, numerous, and the pitch is the only fast-moving thing in frame.",
+      "oursNote": "Expected to be the easiest metric; turned out confounded (see pace.captureConfounds). The plate segments are long but their gaps are player DELIBERATION over the pitch cards, not the catch->ready turnaround this constant models. The turnaround is a sub-second sliver after each pitch settles, readable only per-pitch frame-by-frame.",
       "informs": "src/config.ts FLOW.BETWEEN_PITCH_MS"
     }
   }
