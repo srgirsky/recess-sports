@@ -121,9 +121,28 @@ The payoff: **produce these deliberately** instead of hoping they occur. Aim for
 
 Play naturally and work through the list. No need to be precious about it: I can find the plays automatically (`findCuts` detects the hard cut from pitching view to wide view, which marks every ball put in play). Saying the shot name out loud while recording makes indexing even easier.
 
+> ⚠️ **Learned from session1 (the first real capture).** A natural playthrough
+> does *not* isolate these shots, and the automation can't dig them out of the
+> clutter (`pace.captureConfounds` in `measures.json`). Two rules make the
+> difference between a measurable capture and an unmeasurable one:
+>
+> - **Hit home→1B grounders to LEFT field (3B side), or as soft infield
+>   singles.** The 1B foul line points into right-center, so a ball hit to right
+>   draws the runner's lane *on top of* the ball and the fielders chasing it, and
+>   the runner can't be isolated. A ball to left leaves the home→1B lane empty
+>   except for the runner.
+> - **Get actual pop-ups for the fly shots.** The short right porch turns most
+>   swings into grounders that roll to the fence. Aim for balls that clearly go
+>   *up* and hang, shallow → deep — an infield pop, a bloop, a can-of-corn, a deep
+>   drive. If it rolls, it's not a fly sample.
+
 **Priority — these unblock the actual fix:**
-1. **Home → 1B ×6.** Ordinary grounder, run it out. Note each kid's speed rating if visible. *This is the anchor every other number is a ratio against.*
-2. **Fly balls ×6, deliberately shallow → deep.** Infield pop-up, bloop, medium, deep, warning track, off the fence. *Fixes our worst known defect — our flies hang 42–106% too long relative to the run.*
+1. **Home → 1B ×6.** Grounder to LEFT field or a soft infield single, run it out
+   full speed. Note each kid's speed rating if visible. *This is the anchor every
+   other number is a ratio against — and the one session1 completely missed.*
+2. **Fly balls ×6, deliberately shallow → deep, that actually go UP.** Infield
+   pop-up, bloop, medium, deep, warning track, off the fence. *Fixes our worst
+   known defect — our flies hang 42–106% too long relative to the run.*
 3. **Line drives ×3.**
 
 **Secondary:**
@@ -132,7 +151,7 @@ Play naturally and work through the list. No need to be precious about it: I can
 6. Balls the CPU fields and throws ×4 — reaction and throw-delay timing.
 7. Grounders that roll and settle ×3.
 8. **Pitches ×8** spanning weakest → strongest pitcher. Note each pitcher's PT rating.
-9. A few ordinary pitch→pitch cycles with no action, for the between-pitch beat.
+9. A few ordinary pitch→pitch cycles with no action, for the between-pitch beat. *The number we want is the forced catch→ready turnaround (the ball settling and returning to the pitcher), not the pitch-to-pitch gap — that gap is your own deliberation time and isn't a game constant. Any clean taken pitches work; just don't rush.*
 10. A kid running in a straight line for several seconds, so the run-cycle frame count is countable.
 
 ## Step 8 — Hand it over
