@@ -49,8 +49,13 @@ Purpose: ground-truth tuning reference for Recess Sports (pitch speed, pacing, H
 - A purple/blue puddle-like decal appeared near 2B during the play (special-ability or marker effect — unidentified; BB2001 has kid abilities that leave field decals).
 
 ### Measured speeds
-- **Home → 1B ≈ 3.0s** (runner leaves home ~453.6, reaches the bag ~456.5–457.0).
-- **Deep-fly hang time ≈ 2.0s** (contact ~453.3 → arrives at the RF fence area ~455.0–455.5).
+- ~~**Home → 1B ≈ 3.0s**~~ **SUPERSEDED (2026-07-24).** Measured properly off the
+  session2 local capture at n=3, home→1B is **4200ms** (spread 261ms, confidence
+  `med`) — 40% longer than this n=1 reading, whose timestamp no longer locates the
+  play it came from. See `pace.homeToFirst` in `scripts/measures.json`.
+- **Deep-fly hang time ≈ 2.0s** — still n=1 and still unconfirmed. `pace.flyHang`
+  remains `awaiting-measurement`; note that its *ratio* to the anchor changes even
+  if the 2.0s were right, because the anchor moved from 3.0s to 4.2s.
 - Fast pitch (HEAT, max-arm): **~250ms** mound → plate (measured in segment 1).
 - After the play resolves, the wide view HOLDS for a beat (t=430 shows a quiet post-play wide frame with everyone reset), then cuts back to the plate view for the next batter.
 

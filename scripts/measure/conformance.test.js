@@ -111,22 +111,57 @@ describe('measures.json — record hygiene', () => {
     // Not an accident, and not zero: this is the outstanding reference work.
     expect(pending.length).toBeGreaterThan(0);
   });
+
+  it('never lets a partial reading masquerade as a measurement', () => {
+    // The n<3 convention: 1-2 clean samples are recorded honestly in a
+    // `partialReading` block, but the record keeps saying BB is unmeasured.
+    // Collapsing the two is how an n=1 becomes a drift the test then enforces
+    // forever -- which is the original 234px-basepath mistake, mechanised.
+    const walk = (o) => {
+      for (const v of Object.values(o)) {
+        if (!v || typeof v !== 'object') continue;
+        if (v.id && v.partialReading) {
+          expect(v.status, `${v.id} has a partialReading, so it cannot claim to be measured`).toBe(
+            'awaiting-measurement'
+          );
+          expect(v.measured, `${v.id} must leave measured null while only partial`).toBeNull();
+          expect(v.partialReading.confidence, `${v.id} partial readings are low-confidence by definition`).toBe('low');
+        }
+        walk(v);
+      }
+    };
+    walk(M);
+  });
 });
 
 describe('geometry — known drifts stay exactly as big as recorded', () => {
-  it('FOUL_SLOPE is still 3.2% shallower than BB, no more and no less', () => {
+  it('FOUL_SLOPE sits inside BB’s per-venue band', () => {
+    // This one REVERSED on 2026-07-24. It was a known-drift asserting that our
+    // 1.2 was 3.2% shallower than a single BB value of 1.24, and that the gap
+    // was 14x the spread between two agreeing sources. A third venue measured
+    // 1.1974, which does not widen an error bar -- it says the quantity is
+    // per-venue and was never one number. The assertion has to change shape
+    // with the finding: band membership, not drift size.
     const rec = M.geometry.foulSlope;
-    expect(rec.status).toBe('known-drift');
+    expect(rec.status).toBe('conformed');
     expect(FOUL_SLOPE).toBe(rec.ours.value);
 
-    const drift = ((FOUL_SLOPE - rec.measured) / rec.measured) * 100;
-    expect(round(drift, 2)).toBeCloseTo(rec.driftPct, 1);
+    const slopes = rec.measurements.map((m) => m.combined);
+    expect(slopes.length).toBeGreaterThanOrEqual(3);
+    expect(rec.band).toEqual([Math.min(...slopes), Math.max(...slopes)]);
+    expect(FOUL_SLOPE).toBeGreaterThanOrEqual(rec.band[0]);
+    expect(FOUL_SLOPE).toBeLessThanOrEqual(rec.band[1]);
 
-    // And the drift is real rather than noise: BB's two independent sources
-    // agree far more tightly than we differ from them. If a future measurement
-    // widened that spread past the gap, this record would no longer be a drift
-    // at all and should be re-examined -- so assert the ordering holds.
-    expect(Math.abs(FOUL_SLOPE - rec.measured)).toBeGreaterThan(rec.spread);
+    // The reversal must stay legible: a superseded record keeps the reading it
+    // replaced, so nobody re-derives the old conclusion from the new numbers.
+    expect(rec.supersedes.was.status).toBe('known-drift');
+
+    // And the finding that justified the reversal must hold: variation BETWEEN
+    // venues has to exceed the worst left/right asymmetry WITHIN one, or the
+    // spread really is noise and this should go back to being a drift.
+    const asym = Math.max(...rec.measurements.map((m) => m.asymmetryPct ?? 0));
+    const between = ((rec.band[1] - rec.band[0]) / rec.band[0]) * 100;
+    expect(between).toBeGreaterThan(asym * 2);
   });
 
   it('our projection is still exactly affine while BB is decisively not', () => {
@@ -156,18 +191,29 @@ describe('geometry — known drifts stay exactly as big as recorded', () => {
   });
 });
 
-describe('pace — pinned until BB is actually measured', () => {
-  it('home->1B is unchanged, and the record does not pretend BB is known', () => {
+describe('pace — the anchor is measured; the rest stays pinned', () => {
+  it('home->1B runs at exactly the recorded fraction of BB’s time', () => {
+    // The load-bearing pace assertion. Both sides are DERIVED: BB's from the
+    // record's own samples, ours from the real constants. A stale copy of
+    // either cannot agree with the other by accident.
     const rec = M.pace.homeToFirst;
-    expect(rec.status).toBe('awaiting-measurement');
-    // No BB value may be asserted while the only reading is superseded.
-    expect(rec.measured).toBeNull();
-    expect(rec.n).toBe(0);
-    expect(rec.priorReading.superseded).toBe(true);
+    expect(rec.status).toBe('known-drift');
 
     expect(round(BASEPATH_PX, 2)).toBeCloseTo(rec.ours.basepathPx, 1);
     expect(LIVE.RUNNER_SPEED).toBe(rec.ours.runnerSpeedPxPerSec);
     expect(Math.round(ourHomeToFirstMs('main'))).toBe(rec.ours.realMs);
+
+    const drift = ((ourHomeToFirstMs('main') - rec.measured) / rec.measured) * 100;
+    expect(round(drift, 2)).toBeCloseTo(rec.driftPct, 1);
+
+    // The drift must stay far bigger than the instrument can resolve, or it is
+    // an error bar wearing a finding's clothes.
+    expect(Math.abs(ourHomeToFirstMs('main') - rec.measured)).toBeGreaterThan(rec.spread);
+
+    // n and the sample list must agree. This is the guard against the exact
+    // failure that started this project: a number nobody can trace back.
+    expect(rec.samples).toHaveLength(rec.n);
+    expect(rec.n).toBeGreaterThanOrEqual(3);
   });
 
   it('fly hang is unchanged, and its ratio to the anchor is what the record says', () => {
@@ -189,6 +235,17 @@ describe('pace — pinned until BB is actually measured', () => {
     expect(rec.status).toBe('awaiting-measurement');
     expect(FLOW.BETWEEN_PITCH_MS).toBe(rec.ours.value);
   });
+
+  it('keeps the two unmeasured pace metrics naming what still blocks them', () => {
+    // An awaiting-measurement record that stops saying WHY decays into folklore
+    // ("we never measured that") within one handover. Session2 contains the
+    // shots for both of these, so the blocker is now specific work, and the
+    // record has to keep saying which.
+    for (const rec of [M.pace.flyHang, M.pace.betweenPitch]) {
+      expect(rec.session2Attempt, `${rec.id} must record what session2 did and did not settle`).toBeTruthy();
+      expect(rec.session2Attempt.whatWouldWork).toBeTruthy();
+    }
+  });
 });
 
 describe('instrument — the capture facts the pace pass will rely on', () => {
@@ -200,6 +257,37 @@ describe('instrument — the capture facts the pace pass will rely on', () => {
     expect(r.containerFps).toBe(60);
     expect(r.effectiveFramePeriodMs).toBeGreaterThan(1000 / r.containerFps * 2);
     expect(r.distinctFps).toBeLessThan(r.containerFps / 2);
+  });
+
+  it('keeps session2’s precision floor at its MEASURED value, not the assumed one', () => {
+    // Session2 entered the pace pass on an assumed ~33ms floor and measured
+    // ~50ms. Feeding summarize the assumed value would have claimed ~1.4x the
+    // precision that exists -- a right reading with a wrong error bar, which is
+    // the same class of failure as the 234px basepath. Assert the record keeps
+    // the measured floor and that it is consistent with its own samples.
+    const s = M.instrument.frameRate.session2;
+    const worst = Math.min(...s.distinctFpsSamples);
+    expect(s.effectiveFramePeriodMs).toBeGreaterThanOrEqual(1000 / s.distinctFpsMedian - 6);
+    expect(s.effectiveFramePeriodMs).toBeLessThanOrEqual(1000 / worst);
+    // And the anchor must actually have been summarized against it.
+    expect(M.pace.homeToFirst.framePeriodMs).toBe(s.effectiveFramePeriodMs);
+    expect(M.pace.homeToFirst.spread).toBeGreaterThanOrEqual(s.effectiveFramePeriodMs);
+  });
+
+  it('rejects the emulator-stretch explanation before trusting any duration', () => {
+    // Session2's ~4.2s anchor was almost exactly explainable as a frame-locked
+    // game rendered at ~22 of an intended ~30fps (22/30 = 0.73 vs 3.0/4.2 =
+    // 0.71). The record has to keep the test that rejected it, because the
+    // coincidence is good enough to re-convince the next reader.
+    const c = M.instrument.clockValidity;
+    expect(c.verdict).toMatch(/REAL TIME/);
+    expect(c.result.length).toBeGreaterThanOrEqual(4);
+
+    // The decisive observation: under frame-locking the fastest-rendering run
+    // must have the SHORTEST wall clock. Assert it still does not.
+    const fastest = c.result.reduce((a, b) => (b.distinctFps > a.distinctFps ? b : a));
+    const longest = c.result.reduce((a, b) => (b.legMs > a.legMs ? b : a));
+    expect(fastest.play).toBe(longest.play);
   });
 
   it('measures only inside the confirmed game segments', () => {

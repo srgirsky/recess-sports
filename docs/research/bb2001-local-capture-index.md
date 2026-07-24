@@ -1,5 +1,14 @@
 # BB2001 local capture — segment map and play index
 
+Two sessions now exist. **[Session 2](#session-2--the-targeted-re-capture) is the
+one the pace numbers come from**; session 1 below is the natural playthrough that
+failed to isolate them, and is kept because *why* it failed is what shaped the
+re-capture.
+
+---
+
+## Session 1 — the natural playthrough
+
 Source: `~/Desktop/bb01-capture-session1.mkv`, captured 2026-07-23.
 3024×1964, FFV1 lossless, 60fps container, 925.033s.
 Companion screenshots: `~/Desktop/scummvm-baseball2001-{00000..00011}.png`.
@@ -183,3 +192,161 @@ run-outs with the ball poked to *left* field or an infield single, and deliberat
 pop-ups shallow→deep, each shot name said aloud. Per-play frame reading of
 session1's cluttered plays can scrape a few low-confidence samples but can't reach
 the shot list's n=6.
+
+---
+
+## Session 2 — the targeted re-capture
+
+Source: `~/Desktop/bb01-capture-session2.mkv`, captured 2026-07-24.
+3024×1964, FFV1 lossless, 60fps container, **655.617s**. One continuous game
+segment — no non-game material, so `gameSegments` wasn't needed.
+
+Game window: **1920×1440 at (556, 263)**. Verified rather than assumed —
+`blitScore` reads 0.9991–1.0000 at six timestamps spanning the file, i.e. an
+exact 3× nearest-neighbour blit throughout. So `readFrames({crop, scale: 3})`
+recovers native 640×480 game pixels and every coordinate below is in that space.
+
+**Venue: park** (blue plank fence, trees, benches, crowd) — *not* session 1's
+backyard-grass. That turned out to matter in both directions, and neither was
+predictable from the shot list. See "what each venue is good at" below.
+
+### Play index — 42 cuts → 20 live plays
+
+Same call as session 1, unchanged: `findCuts(crop=gameRect, scale=4,
+threshold=0.25)`. The threshold transferred to a new venue with no retuning,
+which is a small independent vote for it sitting in a real valley rather than
+having been fitted.
+
+Starts (s): 28.967 · 54.983 · 96.533 · 125.167 · 163.283 · 202.817 · 219.867 ·
+253.867 · 271.617 · 300.717 · 329.367 · 350.25 · 390.633 · 415.683 · 457.367 ·
+485.3 · 535.45 · 578.1 · 602.85 · 629.5. Wide segments run 6.3–17.3s.
+
+Classified off coarse whole-play sheets (30 tiles × 200 ms):
+
+| Kind | Plays |
+|---|---|
+| clean home→1B | 00, 03, 04 |
+| fly caught in play | 05 (shallow-med), 08 (shallow), 11 (medium), 14 (infield pop), 19 (med-deep) |
+| home run | 07, 09, 10, 18 |
+| steal / defensive | 02, 13 |
+| infield grounder | 12, 15, 17 (double play) |
+| unclear | 01, 06, 16 |
+
+The shot list was clearly played — there are deliberate pop-ups *and* left-side
+balls, both of which session 1 lacked. It also produced **four home runs**, which
+are worthless for fly hang because the ball never comes down in play. That is why
+20 plays yield only 5 hang candidates.
+
+### Geometry — a third independent sample
+
+Bases in native 640×480: home **(318.2, 440.6)** · 1B **(473.7, 311.2)** ·
+2B **(317.4, 220.2)** · 3B **(163.8, 311.2)**. Basepath **202.3px**.
+
+Derived by clustering white blobs *across 26 frames* and keeping only those that
+persist at the same centroid — a base can't move, a fielder can. Two simpler
+variants were tried and rejected first: "biggest blob" locks onto base-plus-white-sock
+merges (216px vs home plate's 87px), and "modal centroid" locks onto chalk-line
+fragments. Both were caught by the internal symmetry checks failing, then settled
+by rendering the candidates as boxes over a real frame and looking.
+
+Internal checks all pass: 1B and 3B land on the same y unconstrained; home x,
+2B x and the 1B/3B midpoint agree within 1.4px; foul-line asymmetry 0.71%.
+
+**This overturned a published finding.** `geometry.foulSlope` had recorded BB at
+1.24 with a 0.0029 spread from two sources, and concluded our 1.2 was a real
+3.2% drift because the gap was 14× that spread. The park venue measures
+**1.1974**. So the quantity is *per-venue* (1.197–1.241), the tight two-source
+agreement was two similar fields rather than a global constant, and our 1.2 sits
+inside the band — the record is now `conformed`. The lesson is in `measures.json`:
+n=2 agreeing tightly is not the same evidence as n=2 sampling the space.
+
+Perspective is independently re-confirmed: diagonal-midpoint gap 19.22px,
+leg spread 12.46%.
+
+### Precision floor: ~50ms, and the 33ms trap
+
+The pass began on a working assumption of 27–32 distinct fps (~33ms). Measured
+across 13 windows, session 2 runs **19.5–35 fps, median ~22 → a ~50ms floor**.
+Feeding `summarize({framePeriodMs: 33})` would have claimed ~1.4× the precision
+that exists — a right reading with a wrong error bar, which is the same class of
+failure as the 234px basepath. **50ms is what every session 2 summary uses.**
+
+Unlike session 1's steady 20fps, session 2's rate *varies*. That variability is
+load-bearing evidence — see next.
+
+### The check that had to happen first
+
+The runs measured ~4.2s home→1B against a superseded ~3.0s prior reading.
+3.0/4.2 = 0.71; session 2 renders ~22 of a plausible 30fps intended rate, and
+22/30 = 0.73. **"The emulator is running the game 1.4× slow" was a fully
+sufficient explanation of the entire finding**, and shipping the number without
+testing it would have been the 234px mistake with extra steps.
+
+Frame-locking predicts the frame *count* of a run is invariant while wall-clock
+varies inversely with render rate. Real time predicts the opposite. Five tracked
+runs spanning 19.9–26.9 fps:
+
+| Play | leg (ms) | distinct fps | leg (frames) |
+|---|---|---|---|
+| 00 | 4178 | 20.88 | 87.2 |
+| 03 | 4439 | 26.94 | 119.6 |
+| 04 | 3250 | 23.20 | 75.4 |
+| 09 | 3986 | 19.92 | 79.4 |
+| 17 | 4287 | 23.91 | 102.5 |
+
+Frame counts spread 45% while wall-clock spreads 30%, and decisively the
+**highest-rate run has the longest wall-clock**, which frame-locking forbids.
+Verdict: real time. Corroborated independently — a pitch bracketed by ROI change
+scan gives a ~300ms flight against the ~250ms the YouTube notes measured for a
+max-arm HEAT; under a 1.4× stretch it would have read ~350–420ms.
+
+### Where the pace pass stands after session 2
+
+**The anchor is measured.** `pace.homeToFirst` = **4200ms**, n=3, spread 261ms,
+confidence `med`. Ours is 2113ms — we run the basepath in **half** BB's time
+(−49.7%). That is the number every other pace ratio hangs off, so it was the
+right thing to spend the pass on.
+
+`flyHang` and `betweenPitch` are **still `awaiting-measurement`**, but for a much
+better reason than session 1's. The capture *contains* both shots, and a working
+method now exists for each; what's missing in both cases is the same bounded
+work — one pair of zoomed eye reads per event to pin the second endpoint.
+
+- **fly hang** — contact is free and exact (it's the cut). What's missing is
+  ball-down. Colour-based ball detection *fails* in this venue: the white plank
+  fence, crowd and chalk return 25–30 false candidates per frame.
+- **between-pitch** — the deliberation problem is *solved*. A three-ROI per-frame
+  change scan (mound / mid corridor / zone) isolates each pitch cleanly no matter
+  how long the human dithered over the cards. What's missing is the resting
+  ball's disappearance.
+
+### What each venue is good at
+
+Worth knowing before anyone plans a session 3: **neither venue is good at
+everything.** Backyard-grass hides the home→1B lane under the ball-and-fielder
+action but has a clean field for ball tracking. The park frees the lane but fills
+the frame with white the ball can't be told apart from. A capture that nails both
+metrics needs either two venues or a ball-tracking method that doesn't rely on
+colour.
+
+### Tracking a runner — what actually works
+
+Most of this pass's time went into rediscovering this, so it's recorded in full
+as `pace.trackerLessons`. The short version:
+
+- Reduce each moving blob to the **bottom-centre of its bounding box**, not its
+  centroid. In BB's 3/4 iso a change-mass centroid sits at the chest, which is
+  ~19px *further up the line* than the feet.
+- Select by **sprite shape**, not by largest change. "28–44px tall, feet within
+  12px of the axis" rejects both persistent contaminants at once: the floating
+  name bubble (13px, ~19px off-axis, and it *lags* the runner) and the first
+  baseman camped on the bag.
+- A clean monotone ramp is the **validity check** — no canned fielder animation
+  produces one. A fit residual above ~25px means the tracker changed sprites;
+  that culled 2 of 5 otherwise plausible fits here.
+- **Annotate the sheet, don't estimate off it.** Drawing a fixed box on 1B in
+  every tile turns "how far along is he?" into "is he at the box yet?", and is
+  what made 400ms-step eye reads usable.
+
+None of this promotes a tracker to being *the number*. Every sample that entered
+the record was confirmed by marked frames or an annotated sheet.

@@ -34,6 +34,23 @@
         "scale": 3,
         "note": "docs/research/bb2001-capture-setup.md predicted ScummVM would write the raw 640x480 framebuffer. It does not -- it writes the scaled window. The conclusion survives anyway: the blit is an exact 3x nearest-neighbour upscale, so decimating the 3x3 blocks recovers the framebuffer bit-for-bit and COLOUR IS EXACT (no YUV round trip, unlike anything read from the video). Measured across all 12: 99.59-99.96% of blocks perfectly uniform, the remainder being ScummVM's OSD toast and the mouse cursor, both drawn at native resolution over the scaled game."
       }
+    },
+    "local2": {
+      "id": "local:bb01-capture-session2",
+      "captured": "2026-07-24",
+      "game": "Backyard Baseball '01, Steam app 3104970, run under ScummVM on macOS",
+      "why": "The targeted re-capture prescribed by pace.captureConfounds and step 7 of docs/research/bb2001-capture-setup.md, after session1's natural playthrough failed to isolate any of the three pace shots.",
+      "video": {
+        "raster": [3024, 1964],
+        "pixFmt": "yuv422p",
+        "codec": "ffv1 lossless",
+        "containerFps": 60,
+        "durationSec": 655.617,
+        "gameRect": { "x": 556, "y": 263, "w": 1920, "h": 1440 }
+      },
+      "gameRectCheck": "blitScore at this rect reads 0.9991-1.0000 across six timestamps spanning the whole file (t=29.5/100/208/300/600), i.e. an exact 3x nearest-neighbour blit throughout -- so `readFrames({crop: gameRect, scale: 3})` recovers native 640x480 game pixels and every coordinate below is in that space.",
+      "venue": "park (blue plank fence, trees, benches, crowd) -- NOT the backyard-grass venue session1 was played on. That is useful rather than inconvenient: it makes session2 an independent third sample for the geometry records.",
+      "continuity": "One continuous game segment; no non-game material, so gameSegments was not needed."
     }
   },
   "instrument": {
@@ -49,7 +66,35 @@
       "effectiveFramePeriodMs": 50,
       "confidence": "high",
       "implication": "Every timestamp carries +-50ms of quantisation. A ~3000ms run measurement is +-1.7% (fine); a ~250ms pitch flight is +-20% and needs n>=5 to average down. This is WORSE than the YouTube source's ~33ms, and it is the number summarize({framePeriodMs}) must be fed -- passing the container's 16.67ms would claim 3x the precision that exists.",
-      "note": "Recording at 60fps was deliberate oversampling and it paid for itself here: had the capture been made at the assumed rate, the duplication would have been invisible and every derived constant would have inherited a 3x overstatement of precision."
+      "note": "Recording at 60fps was deliberate oversampling and it paid for itself here: had the capture been made at the assumed rate, the duplication would have been invisible and every derived constant would have inherited a 3x overstatement of precision.",
+      "session2": {
+        "source": "local:bb01-capture-session2",
+        "distinctFpsSamples": [19.55, 19.92, 20.22, 20.22, 20.22, 20.88, 22.25, 22.25, 23.2, 23.91, 26.94, 27.64, 35.06],
+        "distinctFpsMedian": 22.25,
+        "effectiveFramePeriodMs": 50,
+        "confidence": "high",
+        "trap": "The session2 working assumption entering this pass was 27-32 distinct fps, i.e. a ~33ms floor. MEASURED, it is 19.5-35 fps with a median near 22 -- a ~45-50ms floor. Feeding summarize({framePeriodMs: 33}) would have claimed ~1.4x the precision that exists, which is the same class of error as the 234px basepath: not a wrong reading, a wrongly-tight ERROR BAR on a right one. 50ms is used for every session2 summarize call.",
+        "variability": "Unlike session1 (a steady 20fps), session2's rate VARIES 19.5-35 across the file. That variability is itself load-bearing evidence -- see instrument.clockValidity."
+      }
+    },
+    "clockValidity": {
+      "id": "instrument.clock-validity",
+      "category": "instrument",
+      "status": "note",
+      "what": "Does a wall-clock duration read off this capture mean what it says? A 1999 game under emulation could be FRAME-LOCKED -- advancing its logic once per rendered frame -- in which case an emulator rendering below the intended rate stretches every duration and every pace number inherits the stretch.",
+      "whyItMattered": "session2's home->1B runs read ~4.2s against a superseded ~3.0s prior reading. 3.0/4.2 = 0.71, and session2's distinct rate is ~22fps against a plausible 30fps intended rate: 22/30 = 0.73. The two agree closely enough that 'the emulator is running the game 1.4x slow' was a live and fully sufficient explanation of the entire finding. Shipping the number without testing it would have been the 234px mistake with extra steps.",
+      "test": "Frame-locking predicts the FRAME COUNT of a run is invariant and its wall-clock varies inversely with the rendered rate. Real-time predicts the opposite. Five tracked home->1B runs spanning 19.9-26.9 distinct fps were measured both ways.",
+      "result": [
+        { "play": "play-00", "legMs": 4178, "distinctFps": 20.88, "legFrames": 87.2 },
+        { "play": "play-03", "legMs": 4439, "distinctFps": 26.94, "legFrames": 119.6 },
+        { "play": "play-04", "legMs": 3250, "distinctFps": 23.2, "legFrames": 75.4 },
+        { "play": "play-09", "legMs": 3986, "distinctFps": 19.92, "legFrames": 79.4 },
+        { "play": "play-17", "legMs": 4287, "distinctFps": 23.91, "legFrames": 102.5 }
+      ],
+      "verdict": "REAL TIME, not frame-locked. Frame counts spread 45% while wall-clock spreads 30%, so wall-clock is the tighter invariant; and decisively, the HIGHEST-rate run (play-03, 26.94fps) has the LONGEST wall-clock, which frame-locking forbids. The residual spread is per-kid speed rating, which BB2001 genuinely has.",
+      "corroboration": "An independent check agrees: a pitch bracketed by ROI change-scan (release ~53.70-53.83, zone arrival ~53.97-54.00) gives a ~300ms flight, against the ~250ms the YouTube notes measured for a max-arm HEAT. Under a 1.4x stretch that pitch would have read ~350-420ms.",
+      "confidence": "med",
+      "nNote": "n=5 for the frame-lock test, n=1 for the pitch corroboration. Enough to reject a 1.4x systematic stretch; not enough to certify the clock to a few percent."
     },
     "playIndex": {
       "id": "instrument.play-index",
@@ -65,7 +110,25 @@
       "playDurations": [1.967, 6.95, 5.2, 18.683, 10, 10.85, 6.3, 3.333, 9.4, 13.35, 9.4, 15.9, 20.116, 16.317],
       "confidence": "high",
       "priorAttempt": "An uncropped run at the default 0.3 threshold found 5 cuts in 450 seconds. ffmpeg's scene metric is frame-GLOBAL, so with the game covering 46.55% of the frame every real cut scored ~0.45 -- and only the two strongest cuts in the whole capture cleared 0.3. Cropping first recovered 6.8x more cuts. This is recorded because the failure was silent: a broken index looks exactly like a capture with no plays in it.",
-      "informs": "Nothing in src/ directly. This is the map the pace pass measures against."
+      "informs": "Nothing in src/ directly. This is the map the pace pass measures against.",
+      "session2": {
+        "source": "local:bb01-capture-session2",
+        "method": "Same call, unchanged: findCuts with crop=gameRect, scale=4, threshold=0.25 over the whole file. The threshold transferred to a different venue with no retuning, which is a small independent vote for it sitting in a real valley rather than being fitted to session1.",
+        "cutsFound": 42,
+        "livePlays": 20,
+        "playStarts": [28.967, 54.983, 96.533, 125.167, 163.283, 202.817, 219.867, 253.867, 271.617, 300.717, 329.367, 350.25, 390.633, 415.683, 457.367, 485.3, 535.45, 578.1, 602.85, 629.5],
+        "wideSegmentDurations": [6.68, 8.45, 8.0, 9.65, 11.75, 7.48, 17.3, 10.35, 13.7, 9.85, 11.9, 10.0, 8.85, 8.75, 6.3, 16.8, 11.48, 9.25, 8.95, null],
+        "classification": {
+          "note": "From coarse whole-play contact sheets (30 tiles x 200ms per play). The shot list was clearly played -- unlike session1 there are deliberate pop-ups AND left-side balls -- but it also produced five home runs, which are useless for fly hang because the ball never comes down in play.",
+          "battedBallWithCleanHome1B": ["play-00 (28.967)", "play-03 (125.167)", "play-04 (163.283)"],
+          "flyCaughtInPlay": ["play-05 (202.817, shallow-med LC)", "play-08 (271.617, shallow L)", "play-11 (350.25, medium C)", "play-14 (457.367, infield pop)", "play-19 (629.5, medium-deep L)"],
+          "homeRun": ["play-07 (253.867)", "play-09 (300.717)", "play-10 (329.367)", "play-18 (602.85)"],
+          "stealOrDefensive": ["play-02 (96.533)", "play-13 (415.683)"],
+          "infieldGrounder": ["play-12 (390.633)", "play-15 (485.3)", "play-17 (578.1, double play)"],
+          "unclear": ["play-01 (54.983)", "play-06 (219.867)", "play-16 (535.45)"]
+        },
+        "confidence": "high"
+      }
     },
     "gameSegments": {
       "id": "instrument.game-segments",
@@ -116,10 +179,23 @@
           "basepathPx": 198.58,
           "legSpreadPct": 11.75,
           "internalChecks": "1B and 3B land on the SAME y (310.9) without being constrained to; home x 320.3, 2B x 318.0 and the 1B/3B midpoint x 320.45 all agree within 2.5px. Under an affine map opposite legs would be equal -- home-1B is 198.58 and 2B-3B is 176.43, an 11.75% spread, which is an independent perspective signature that does not use the diagonal test at all."
+        },
+        {
+          "source": "local:bb01-capture-session2",
+          "venue": "park (blue plank fence, trees, benches) -- a THIRD venue, distinct from both prior sources",
+          "frame": "26 wide frames spread across the whole capture, native 640x480",
+          "method": "White-blob detection clustered ACROSS frames, keeping only blobs that persist at the same centroid: a base cannot move, a fielder can. Two naive variants were tried and rejected first -- 'biggest blob' locks onto base+white-sock merges (n=216px vs home plate's 87px), and 'modal centroid' locks onto chalk-line fragments (a 2x16px sliver at (330.8,439.5)). Both were caught by the internal symmetry checks below failing, then confirmed by rendering the candidates as boxes over a real frame and looking.",
+          "bases_srcpx": { "home": [318.2, 440.6], "first": [473.7, 311.2], "second": [317.4, 220.2], "third": [163.8, 311.2] },
+          "diagonalMidpointGapPx": 19.22,
+          "gapPctOfLeg": 10.08,
+          "basepathPx": 202.3,
+          "legSpreadPct": 12.46,
+          "internalChecks": "1B and 3B land on the SAME y (311.2) unconstrained; home x 318.2, 2B x 317.4 and the 1B/3B midpoint x 318.75 agree within 1.4px; foul-line slope asymmetry is 0.71%. Opposite legs are 202.3 vs 178.5 (12.46% spread) -- the same independent perspective signature, on a third venue.",
+          "visualConfirmation": "All four derived positions rendered as boxes over the t=208 frame land on the pillows, including the two that were partly behind fielders."
         }
       ],
-      "n": 2,
-      "nNote": "Two INDEPENDENT sources, two different venues, two different measurement techniques, both far past the threshold (11.6x and 5.9x). Perspective STRENGTH differs by venue (0.141 vs 0.082), so it is a per-venue camera property, not one global constant -- worth knowing before anyone tries to model it with a single number.",
+      "n": 3,
+      "nNote": "Three INDEPENDENT sources, three different venues, three different measurement techniques, all far past the threshold (11.6x, 5.9x and 6.4x). Perspective STRENGTH differs by venue (0.141 vs 0.082), so it is a per-venue camera property, not one global constant -- worth knowing before anyone tries to model it with a single number.",
       "confidence": "high",
       "ours": { "constant": "src/art/projection.ts", "diagonalMidpointGapPx": 0, "isAffine": true },
       "driftNote": "Our projection maps y 1:1 -- a pure horizontal pinch with NO vertical foreshortening, so its diagonal-midpoint gap is exactly 0 and it is affine by construction. Matching BB would mean a render-only y'=f(y) plus a matching inverse in unproject, keeping the sim flat so geometry.ts, clampToField's convexity argument and the goldlog stay untouched.",
@@ -129,20 +205,27 @@
     "foulSlope": {
       "id": "geometry.foul-slope",
       "category": "geometry",
-      "status": "known-drift",
+      "status": "conformed",
+      "statusChangedAt": "2026-07-24",
       "what": "Near-field lateral foreshortening: horizontal run per unit of depth along the foul lines from home.",
       "measurements": [
-        { "source": "youtube:YMmqNpmA60U", "slopeLeft": 1.239, "slopeRight": 1.238, "combined": 1.2385, "method": "RANSAC fit of white chalk foul-line pixels, refit on inliers." },
-        { "source": "local:bb01-capture-session1", "slopeLeft": 1.2402, "slopeRight": 1.2426, "combined": 1.2414, "asymmetryPct": 0.19, "method": "Derived from the four cross-validated base positions via lib.js affinity()." }
+        { "source": "youtube:YMmqNpmA60U", "venue": "stadium-ish", "slopeLeft": 1.239, "slopeRight": 1.238, "combined": 1.2385, "method": "RANSAC fit of white chalk foul-line pixels, refit on inliers." },
+        { "source": "local:bb01-capture-session1", "venue": "backyard-grass", "slopeLeft": 1.2402, "slopeRight": 1.2426, "combined": 1.2414, "asymmetryPct": 0.19, "method": "Derived from the four cross-validated base positions via lib.js affinity()." },
+        { "source": "local:bb01-capture-session2", "venue": "park", "slopeLeft": 1.1932, "slopeRight": 1.2017, "combined": 1.1974, "asymmetryPct": 0.71, "method": "Same as session1: lib.js affinity() over four persistence-clustered, visually confirmed base positions." }
       ],
-      "measured": 1.24,
-      "spread": 0.0029,
-      "n": 2,
-      "confidence": "high",
-      "nNote": "Two sources, two venues, two techniques, agreeing to 0.24%. That agreement is what makes the 3.2% gap to our own value a real difference rather than measurement noise.",
+      "band": [1.1974, 1.2414],
+      "measured": 1.2385,
+      "spread": 0.044,
+      "n": 3,
+      "confidence": "med",
+      "supersedes": {
+        "was": { "measured": 1.24, "spread": 0.0029, "n": 2, "status": "known-drift", "driftPct": -3.23 },
+        "why": "The old record read a 0.24% agreement between two sources as 'BB's foul slope is 1.24, full stop', and concluded our 1.2 was a real 3.2% drift because the gap was 14x that spread. The third venue breaks that reading: the park field measures 1.1974, so the 0.24% agreement was two venues that happened to be similar, not a global constant. BB's foul slope is a PER-VENUE camera property spanning at least 1.197-1.241 -- exactly the conclusion geometry.projection-type had already reached independently about perspective STRENGTH.",
+        "lesson": "n=2 agreeing tightly is not the same evidence as n=2 sampling the space. Both prior sources were fenced-stadium-ish fields; neither tested the variation the third one found. The tight spread was real and the inference from it was wrong."
+      },
+      "nNote": "Three sources, three venues, three techniques. The 3.7% spread BETWEEN venues is 5x the worst within-venue left/right asymmetry (0.71%), so the variation is a property of BB's per-venue cameras and not measurement noise.",
       "ours": { "constant": "src/systems/geometry.ts FOUL_SLOPE", "value": 1.2 },
-      "driftPct": -3.23,
-      "driftNote": "Ours is 3.2% shallower. Small, and arguably below the threshold anyone would notice -- but it is 14x the spread between the two independent measurements, so it is a genuine difference and not noise. Our near-field LATERAL squash essentially matches BB; what we lack is the DEPTH compression (see geometry.projection-type).",
+      "conformNote": "Our 1.2 sits INSIDE the measured band [1.1974, 1.2414], 0.2% off the park venue and 3.2% off the two stadium-ish ones. Since we render one slope for all three of our venues, sitting near the shallow end of BB's range is a defensible single choice and there is nothing to fix. What we still lack is the DEPTH compression, which is a separate record (geometry.projection-type) and unaffected by this.",
       "informs": "src/systems/geometry.ts FOUL_SLOPE"
     }
   },
@@ -163,7 +246,7 @@
     }
   },
   "pace": {
-    "note": "THE PRIORITY, and still open after a measurement attempt (2026-07-23). The shot list (home->1B, fly hang, line drives, fielder/throw delays, pitch corridor) is what fixes the 'too fast' defect. What now exists: a reproducible index of 14 live plays with exact start frames (instrument.play-index), the venue's base positions in the same coordinate space (geometry.projectionType.measurements[1]), a measured 50ms precision floor, and the classification of those plays. What does NOT exist is trustworthy per-play event timing -- session1 is a natural playthrough whose plays do not isolate the shot-list situations, for three concrete reasons recorded in pace.captureConfounds. No pace values are seeded from the superseded n=1 YouTube readings; producing a shaky number here would be the exact mistake this instrument exists to prevent.",
+    "note": "THE PRIORITY. PARTIALLY CLOSED as of 2026-07-24 (session2). The ANCHOR is now measured: pace.homeToFirst is 4200ms at n=3, and our 2113ms is a 49.7% drift -- we run the basepath in half BB's time. That single number is what every other pace ratio hangs off, so it was the right thing to spend the pass on. flyHang and betweenPitch remain awaiting-measurement, but for a materially better reason than session1's: session2 CONTAINS the shots (five catchable flies at a spread of depths) and a working method now exists for finding every pitch (a three-ROI change scan). What is missing in both cases is the same bounded, known work -- one pair of zoomed eye reads per event to pin the second endpoint. Each record's `session2Attempt` block says exactly what remains. Before trusting any of this, note instrument.clockValidity: the ~4.2s anchor was very nearly explainable as a 1.4x emulator stretch, and that had to be tested and rejected before the number meant anything.",
     "measurementTrap": {
       "id": "pace.measurement-trap",
       "category": "pace",
@@ -191,20 +274,84 @@
         "defensive-throw-or-steal": ["play-06 (194.2, steal pad + throw arrow)"],
         "unclassified-long-plays": ["play-03 (93.3, 18.7s)", "play-05", "play-11 (799.5, 15.9s)", "play-12 (828.4, 20.1s)", "play-13 (855.7, 16.3s)"]
       },
-      "recommendation": "A short targeted re-capture following docs/research/bb2001-capture-setup.md step 7 is the clean path, and it is what that step already prescribes ('produce these deliberately instead of hoping they occur'): a handful of home->1B run-outs with the ball poked to LEFT field or an easy infield single, and deliberate pop-ups shallow->deep, each shot name said aloud. Alternatively, per-play frame-by-frame reading of session1's cluttered plays can extract a few low-confidence samples but cannot reach the shot list's n=6."
+      "recommendation": "A short targeted re-capture following docs/research/bb2001-capture-setup.md step 7 is the clean path, and it is what that step already prescribes ('produce these deliberately instead of hoping they occur'): a handful of home->1B run-outs with the ball poked to LEFT field or an easy infield single, and deliberate pop-ups shallow->deep, each shot name said aloud. Alternatively, per-play frame-by-frame reading of session1's cluttered plays can extract a few low-confidence samples but cannot reach the shot list's n=6.",
+      "outcome": {
+        "recapture": "local:bb01-capture-session2, 2026-07-24. The recommendation was followed and it worked: the anchor got measured (pace.homeToFirst, n=3) off a venue where the home->1B lane is readable, and the capture contains real pop-ups instead of grounders rolling to the wall.",
+        "confoundsResolved": ["home->1B lane overlap (different venue, lane readable)", "few clean flies (five catchable flies at a spread of depths)"],
+        "confoundPartiallyResolved": "between-pitch: the deliberation problem is solved -- a three-ROI change scan finds each pitch regardless of how long the human dithered -- but the turnaround itself still needs a per-pitch read.",
+        "newConfound": "The park venue's white plank fence, crowd and chalk defeat colour-based BALL detection in the wide view (25-30 false candidates per frame). Session1's backyard-grass venue would not have had this. Neither venue is good at everything, which is itself worth knowing before a session3 is planned."
+      }
+    },
+    "trackerLessons": {
+      "id": "pace.tracker-lessons",
+      "category": "pace",
+      "status": "note",
+      "what": "What actually works for tracking a RUNNER, recorded because the pass burned most of its time rediscovering it. Companion to pace.measurementTrap, which covers why threshold-on-a-box detection fails.",
+      "findings": [
+        "Reduce each moving blob to the BOTTOM-CENTRE of its bounding box, not its centroid. BB draws kids in 3/4 iso, so a change-mass centroid sits at the runner's chest -- which, along the home->1B axis, is ~19px FURTHER up the line than his feet. Centroids systematically overstate progress; sprite origins do not.",
+        "Select by sprite SHAPE, not by being the largest change. In the lane, a full kid is 28-44px tall with feet within ~12px of the axis. That one filter rejects both persistent contaminants at once: the floating NAME BUBBLE (13px tall, ~19px off-axis, and it LAGS the runner so it is not a proxy for him) and the first baseman camped on the bag (8-14px on the far side of the axis).",
+        "A clean monotone ramp from s=0 to s=leg is the validity check. No canned BB fielder animation produces one, so a low-residual straight-line fit is positive evidence the track is a runner. Correspondingly, a max residual above ~25px means the tracker changed sprites mid-run and the sample must be dropped -- that culled 2 of 5 otherwise plausible home->1B fits here.",
+        "Fit a SPEED over the middle of the run rather than differencing two endpoint frames. It averages dozens of frames instead of trusting two, and it degrades gracefully when the runner is briefly occluded.",
+        "Annotate the sheet, don't estimate off it. Drawing a fixed box on 1B in every tile turns 'how far along is he?' into 'is he at the box yet?'. That single change is what made the eye reads usable at 400ms steps."
+      ],
+      "stillTrue": "None of this promotes a tracker to being the number. Every sample that entered pace.homeToFirst was confirmed by rendering marked frames or reading an annotated sheet. The tracker's job is to bracket and to reject."
     },
     "homeToFirst": {
       "id": "pace.home-to-first",
       "category": "pace",
-      "status": "awaiting-measurement",
+      "status": "known-drift",
+      "statusChangedAt": "2026-07-24",
       "what": "THE ANCHOR. Every other pace number is a dimensionless ratio against this one, which is what makes the whole approach immune to BB being 640x480 while we are 960x640, and immune to any future tempo dial.",
+      "definition": "Runner LEAVES THE BOX -> touches 1B. Deliberately not cut->touch: LIVE.RUNNER_SPEED is pure px/s traversal, so charging it for the departure beat would fold two different things into one constant. The departure beat is its own record (pace.contactToDepart).",
+      "source": "local:bb01-capture-session2",
+      "measured": 4200,
+      "spread": 261,
+      "min": 4178,
+      "max": 4439,
+      "n": 3,
+      "confidence": "med",
+      "samples": [
+        { "play": "play-00 (cut 28.967)", "kid": "Amir", "ms": 4178, "method": "lane track, least-squares over the forward run (n=52 frames, max residual 26.6px)", "situation": "thrown out at 1B, so running through the bag at full effort" },
+        { "play": "play-03 (cut 125.167)", "kid": "Achmed", "ms": 4439, "method": "lane track, least-squares (n=36 frames, max residual 5.1px) + six marked frames rendered and confirmed by eye", "situation": "comebacker to the pitcher; cleanest sample in the set" },
+        { "play": "play-04 (cut 163.283)", "kid": "Pablo", "ms": 4200, "method": "eye-read off an annotated lane sheet at 400ms steps (1B ringed in every tile), so +-200ms", "situation": "force play at 2B; batter-runner safe at 1B" }
+      ],
+      "framePeriodMs": 50,
+      "derivation": "summarize(samples, {unit:'ms', framePeriodMs:50}) -> median 4200, spread 261; confidence() -> 'med' (n=3, relative spread 0.062).",
+      "excluded": [
+        "play-09 (300.717) read ~3986ms but is a HOME RUN -- a trot risk, and the batter-runner's effort cannot be assumed. Excluded deliberately rather than counted to reach a rounder n.",
+        "play-17 (578.1) read ~4287ms but the track's max residual was 73.6px, i.e. the tracker changed sprites mid-run. Excluded.",
+        "Twelve further plays yielded no usable home->1B: five home runs, two steals/defensive plays, and five where the runner was occluded or the fit residual exceeded 25px."
+      ],
+      "priorReading": { "value": 3000, "source": "youtube:YMmqNpmA60U", "n": 1, "superseded": true, "why": "Single sample, and its timestamp no longer locates the play it came from. Session2 reads 40% longer than it." },
+      "ours": { "constants": ["src/config.ts LIVE.RUNNER_SPEED", "src/systems/geometry.ts HOME/FIRST"], "basepathPx": 179.63, "runnerSpeedPxPerSec": 85, "playerRunSpeedMult_main": 1.0, "realMs": 2113 },
+      "driftPct": -49.68,
+      "driftNote": "Our home->1B is 2113ms against BB's 4200ms -- we run the anchor leg in HALF the time. The drift is 8x the measurement spread, so it is not an error bar. To match, LIVE.RUNNER_SPEED would go 85 -> 42.8 px/s (179.63px / 4.2s). That is a tempo decision, not an arithmetic one: see driftCaveats and the coupling note before changing it.",
+      "driftCaveats": [
+        "BB kids have real per-kid speed ratings and this n=3 does not identify them, so 4200ms is 'a BB runner', not 'the average BB runner'. A larger n would likely widen the band rather than move the median.",
+        "In SCREEN-RELATIVE terms the gap is far smaller than 2x: BB's basepath is 202.3px of a 640-wide frame (31.6%) and ours is 179.63px of 960 (18.7%), so BB crosses 0.075 screen-widths/s against our 0.089 -- about 18% faster, not 100%. Both framings are true; which one 'feels' right is the tempo question the retune has to answer.",
+        "The wall-clock these are read in was checked for emulator stretch and cleared -- see instrument.clockValidity. Without that check this number would not be trustworthy at all."
+      ],
+      "informs": "src/config.ts LIVE.RUNNER_SPEED"
+    },
+    "contactToDepart": {
+      "id": "pace.contact-to-depart",
+      "category": "pace",
+      "status": "awaiting-measurement",
+      "what": "The beat between contact (which is exactly the hard cut to the wide view) and the batter-runner actually leaving the box. We model it as zero -- our runner starts at contact.",
       "measured": null,
       "n": 0,
       "confidence": "estimate",
-      "priorReading": { "value": 3000, "source": "youtube:YMmqNpmA60U", "n": 1, "superseded": true, "why": "Single sample, and its timestamp no longer locates the play it came from." },
-      "ours": { "constants": ["src/config.ts LIVE.RUNNER_SPEED", "src/systems/geometry.ts HOME/FIRST"], "basepathPx": 179.63, "runnerSpeedPxPerSec": 85, "playerRunSpeedMult_main": 1.0, "realMs": 2113 },
-      "oursNote": "179.63px at 85px/s = 2113ms in main mode. Against the superseded 3000ms reading we run ~30% fast -- but that comparison is only as good as an n=1 number nobody can relocate, which is exactly why it is not recorded as a drift.",
-      "informs": "src/config.ts LIVE.RUNNER_SPEED"
+      "partialReading": {
+        "samples": [74, 2, 300],
+        "n": 3,
+        "medianMs": 74,
+        "spreadMs": 298,
+        "confidence": "low",
+        "why": "Recorded but NOT promoted to `measured`, because two of the three values are the x-intercept of a straight-line fit extrapolated back to s=0, not an observed departure frame. If the runner accelerates out of the box -- which he visibly does -- that extrapolation is biased early by construction. The third is a 400ms-granularity eye-read. The honest summary is 'small, possibly zero', which is not worth a status flip.",
+        "implication": "The superseded YouTube reading implied a ~300-400ms delay between contact and departure. Session2 does not support that as a systematic beat, so there is currently no evidence we should be modelling one."
+      },
+      "ours": { "constant": "none -- src/systems/liveplay.ts starts the batter-runner at contact", "value": 0 },
+      "informs": "src/config.ts LIVE (no constant exists yet; this record exists so the question stays enumerable)"
     },
     "flyHang": {
       "id": "pace.fly-hang",
@@ -217,6 +364,13 @@
       "priorReading": { "value": 2000, "ratioToAnchor": 0.667, "source": "youtube:YMmqNpmA60U", "n": 1, "superseded": true },
       "ours": { "constant": "src/config.ts LIVE.LAUNCH.FLY_HANG_MS", "value": { "MIN": 2000, "MAX": 2900 }, "ratioToAnchor": [0.947, 1.372] },
       "oursNote": "Our worst suspected defect: against the superseded reading our flies hang 42%-106% longer RELATIVE TO THE RUN. Note this was always a ratio claim -- an earlier comment held that liveplay steps on a tempo-scaled delta, but GameScene passes Phaser's raw delta and there is no tempo anywhere in src/, so sim-ms and real-ms are the same thing today. The defect survives that correction unchanged, because both sides of a ratio scale together.",
+      "session2Attempt": {
+        "outcome": "NOT MEASURED. Still awaiting-measurement after session2, for a different reason than session1.",
+        "whatSession2Fixed": "The shot list worked: there ARE deliberate pop-ups this time, five of them caught in play at a usable spread of depths (play-05 shallow-medium, play-08 shallow, play-11 medium, play-14 infield pop, play-19 medium-deep). Contact time is also exact and free -- it is the findCuts cut time, since BB cuts to the wide view on the frame of contact.",
+        "whatBlocked": "The missing half is t_down (caught, or first touching ground). Colour-based ball detection FAILS in this venue: the park field puts a white-plank fence, a light crowd, chalk lines and white uniform elements in frame, and a scan for small compact near-white blobs returns 25-30 candidates per frame with the ball indistinguishable among them. That is a venue property, not a bug -- session1's backyard-grass venue would not have had it.",
+        "whatWouldWork": "Per-play eye reads off zoomed sheets of the ball's descent path, the same two-stage coarse-then-fine method that produced the home->1B anchor. Roughly two sheet reads per play, five plays. This is bounded, known work -- it was simply not reached in this pass.",
+        "alsoNote": "Four of session2's twenty plays are home runs. Those are worthless for this metric (the ball never comes down in play) and are why 20 plays yielded only 5 candidates."
+      },
       "informs": "src/config.ts LIVE.LAUNCH.FLY_HANG_MS"
     },
     "betweenPitch": {
@@ -230,6 +384,13 @@
       "priorReading": { "value": 1300, "source": "youtube:YMmqNpmA60U", "n": 1, "superseded": true },
       "ours": { "constant": "src/config.ts FLOW.BETWEEN_PITCH_MS", "value": 1250 },
       "oursNote": "Expected to be the easiest metric; turned out confounded (see pace.captureConfounds). The plate segments are long but their gaps are player DELIBERATION over the pitch cards, not the catch->ready turnaround this constant models. The turnaround is a sub-second sliver after each pitch settles, readable only per-pitch frame-by-frame.",
+      "session2Attempt": {
+        "outcome": "NOT MEASURED. Still awaiting-measurement, but session2 solved the part that made session1 hopeless: FINDING the pitches.",
+        "methodThatWorks": "A three-ROI per-frame change scan of the plate view at native resolution -- mound (270..350, 110..200), mid corridor (250..400, 180..270), zone (265..360, 250..330) -- separates a pitch from the deliberation around it cleanly. On the plate stretch before play-01 it read: mound activity 53.70-53.83 (windup/release), mid corridor 53.87-53.93 (ball travelling), zone peak 53.97-54.00 (arrival), then silence. The 5-12s deliberation gaps that defeated the pitch-to-pitch cadence approach are simply flat in all three ROIs, so they no longer hide anything.",
+        "whatBlocked": "Only the first half of the beat was pinned. This constant models catch -> READY, i.e. arrival at the plate through the ball resting in the zone to the pitcher having it back. The resting-ball disappearance needs the same per-pitch eye read as the fly hang, and was not reached.",
+        "incidentalFinding": "That one bracketed pitch gives a ~300ms mound->plate flight, which is the corroboration instrument.clockValidity leans on. It is n=1 and is NOT recorded as a pitch-corridor measurement.",
+        "whatWouldWork": "Run the three-ROI scan over each of the ~20 plate stretches to enumerate every pitch, then one fine sheet per pitch to read arrival -> ball gone. n>=6 is reachable in this capture."
+      },
       "informs": "src/config.ts FLOW.BETWEEN_PITCH_MS"
     }
   }
