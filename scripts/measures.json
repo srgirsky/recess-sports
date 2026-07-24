@@ -1,48 +1,216 @@
 {
-  "comment": "BB2001 measurement records (companion to scripts/measure/*.js, mirroring the goldlogs.json pattern). Each record names the src/config.ts constant it informs, so the audit trail runs source -> record -> src/data/bb2001.ts -> the constant. Geometry records are in SOURCE pixels (BB2001 is 640x480). Measured off the public YouTube capture YMmqNpmA60U by frame-stepping in-browser with full canvas pixel access (the video was untainted), then fitting features with the scripts/measure/lib.js math (affinity, RANSAC line fits by hand in the browser). Method notes and the perspective finding are written up in docs/research/backyard-2001-video-notes.md.",
+  "comment": "BB2001 measurement records (companion to scripts/measure/*.js, mirroring the goldlogs.json pattern). Each record names the src/config.ts constant it informs, so the audit trail runs source -> record -> the constant. Geometry records are in SOURCE pixels (BB2001 renders 640x480). Two independent sources now exist: the public YouTube capture YMmqNpmA60U (measured in-browser with canvas pixel access) and a local ScummVM capture of the Steam re-release (pixel-exact screenshots + a lossless screen recording). Method notes are in docs/research/backyard-2001-video-notes.md; the capture rig is in docs/research/bb2001-capture-setup.md. Every record carries a `status` that scripts/measure/conformance.test.js enforces -- see the statuses block below.",
   "capturedAt": "2026-07-23",
-  "source": {
-    "primary": "youtube:YMmqNpmA60U",
-    "resolution": [640, 480],
-    "note": "Public gameplay capture, 640x480. Canvas pixel access confirmed untainted, so geometry was measured objectively (dirt/grass boundary scans + RANSAC foul-line fits), not eyeballed."
+  "statuses": {
+    "conformed": "BB's value is measured and trusted, and ours is inside the band. The test asserts it stays there.",
+    "known-drift": "BB's value is measured and trusted, and ours is OUTSIDE the band. The test asserts the drift is still the recorded SIZE, so it cannot grow or be half-fixed unnoticed. Closing one means editing the record -- a visible, reviewed act.",
+    "awaiting-measurement": "BB's value is NOT yet measured (or rests only on a superseded reading). The test asserts our value is unchanged from the recorded snapshot and makes no claim about BB. This is how the pending work stays enumerable instead of becoming folklore.",
+    "note": "A recorded finding about the MEASUREMENT rather than about a constant -- a trap, a technique, a dead end. No constant to conform to, but too expensive to rediscover."
+  },
+  "schemaNote": "Anything carrying a `category` is a record and must carry a `status`. The `sources` block is provenance, not records, and carries neither.",
+  "sources": {
+    "youtube": {
+      "id": "youtube:YMmqNpmA60U",
+      "resolution": [640, 480],
+      "note": "Public gameplay capture, 640x480. Canvas pixel access confirmed untainted, so geometry was measured objectively (dirt/grass boundary scans + RANSAC foul-line fits), not eyeballed. SUPERSEDED FOR PACE: the notes' timestamps no longer map to the stream (an ad or re-upload shifted the timeline), so no play can be relocated by timestamp. The geometry result is unaffected -- it came from a single self-consistent frame."
+    },
+    "local": {
+      "id": "local:bb01-capture-session1",
+      "captured": "2026-07-23",
+      "game": "Backyard Baseball '01, Steam app 3104970 (2025 re-release ships the original Humongous data untouched), run under ScummVM on macOS",
+      "video": {
+        "raster": [3024, 1964],
+        "pixFmt": "yuv422p",
+        "codec": "ffv1 lossless",
+        "containerFps": 60,
+        "durationSec": 925.033,
+        "gameRect": { "x": 552, "y": 266, "w": 1920, "h": 1440 },
+        "gameRectNote": "The recording is of a SCREEN, not of the game: the emulator window fills 1920x1440 of the 3024x1964 frame, i.e. 46.55% of the pixels. Located by detectGameRect (bounding box of the largest inter-frame change at a known hard cut) -- NOT by looking for a non-black region, because the surround is desktop wallpaper. Everything measured off this video is read through crop=1920:1440:552:266, which also means nothing outside the emulator window is ever decoded."
+      },
+      "screenshots": {
+        "count": 12,
+        "raster": [2984, 1712],
+        "gameRect": { "x": 532, "y": 136, "w": 1920, "h": 1440 },
+        "scale": 3,
+        "note": "docs/research/bb2001-capture-setup.md predicted ScummVM would write the raw 640x480 framebuffer. It does not -- it writes the scaled window. The conclusion survives anyway: the blit is an exact 3x nearest-neighbour upscale, so decimating the 3x3 blocks recovers the framebuffer bit-for-bit and COLOUR IS EXACT (no YUV round trip, unlike anything read from the video). Measured across all 12: 99.59-99.96% of blocks perfectly uniform, the remainder being ScummVM's OSD toast and the mouse cursor, both drawn at native resolution over the scaled game."
+      }
+    }
+  },
+  "instrument": {
+    "frameRate": {
+      "id": "instrument.frame-rate",
+      "category": "instrument",
+      "status": "conformed",
+      "what": "The rate at which the PICTURE actually changes, which is the real precision floor -- not the 60fps the container claims.",
+      "method": "distinctFrameRate over high-motion windows (dupFactor 2.7-3.3, medianRunLength 2-3), corroborated by the inter-frame delta cadence during a live play, which steps in a clean +50ms grid.",
+      "containerFps": 60,
+      "distinctFps": 20,
+      "distinctFpsRange": [18.15, 22.18],
+      "effectiveFramePeriodMs": 50,
+      "confidence": "high",
+      "implication": "Every timestamp carries +-50ms of quantisation. A ~3000ms run measurement is +-1.7% (fine); a ~250ms pitch flight is +-20% and needs n>=5 to average down. This is WORSE than the YouTube source's ~33ms, and it is the number summarize({framePeriodMs}) must be fed -- passing the container's 16.67ms would claim 3x the precision that exists.",
+      "note": "Recording at 60fps was deliberate oversampling and it paid for itself here: had the capture been made at the assumed rate, the duplication would have been invisible and every derived constant would have inherited a 3x overstatement of precision."
+    },
+    "playIndex": {
+      "id": "instrument.play-index",
+      "category": "instrument",
+      "status": "conformed",
+      "what": "Where the plays are in the local capture. BB2001 cuts INSTANTLY from the behind-plate view to the wide field view when a ball is put in play, so a scene-cut list is a play index.",
+      "method": "findCuts with crop=gameRect, scale=4, threshold=0.25, run only over the confirmed game segments. Each cut-delimited segment is then labelled plate/wide by median colour in two bottom-of-frame regions (the behind-plate HUD strip paints #004100 there; every wide-field venue paints something else). Calibrated against screenshots 00007/00008 (plate) and 00001/00003/00009 (wide).",
+      "cutThreshold": 0.25,
+      "cutThresholdEvidence": "Real cuts score 0.72-0.81 once cropped; ordinary play scores ~0.03. The threshold sits in a wide empty valley rather than being guessed.",
+      "cutsFound": 34,
+      "livePlays": 14,
+      "playStarts": [24.1, 33.867, 79.133, 93.3, 120.067, 161.4, 194.2, 220.25, 742.8, 759.867, 781.383, 799.45, 828.417, 855.7],
+      "playDurations": [1.967, 6.95, 5.2, 18.683, 10, 10.85, 6.3, 3.333, 9.4, 13.35, 9.4, 15.9, 20.116, 16.317],
+      "confidence": "high",
+      "priorAttempt": "An uncropped run at the default 0.3 threshold found 5 cuts in 450 seconds. ffmpeg's scene metric is frame-GLOBAL, so with the game covering 46.55% of the frame every real cut scored ~0.45 -- and only the two strongest cuts in the whole capture cleared 0.3. Cropping first recovered 6.8x more cuts. This is recorded because the failure was silent: a broken index looks exactly like a capture with no plays in it.",
+      "informs": "Nothing in src/ directly. This is the map the pace pass measures against."
+    },
+    "gameSegments": {
+      "id": "instrument.game-segments",
+      "category": "instrument",
+      "status": "conformed",
+      "what": "Which parts of the capture contain the emulator, decided WITHOUT inspecting what any frame depicts.",
+      "method": "ScummVM blits 640x480 at an integer factor, so inside its window every group of 3 consecutive rows is pixel-identical; native desktop content is not. blitScore samples row-triples (rows, not columns -- yuv422p subsamples chroma horizontally, so column triples break at block boundaries while row triples survive exactly) and scores ONLY samples where the image varies vertically, since a flat region passes the triple test trivially and would let a blank window impersonate the game.",
+      "segments": [
+        { "kind": "game", "t0": 0, "t1": 452 },
+        { "kind": "other", "t0": 452, "t1": 640 },
+        { "kind": "game", "t0": 640, "t1": 925.033 }
+      ],
+      "separation": { "gameScoreRange": [0.989, 1.0], "otherScoreRange": [0.054, 0.195], "unknownSamples": 0 },
+      "confidence": "high",
+      "note": "463 samples at 2s spacing, no ambiguous ones and no overlap between the classes. 737s of game material -- 2.3x what an earlier hand-built index had assumed was in scope. Measurement is confined to the two game runs."
+    }
   },
   "geometry": {
-    "affinityTest": {
+    "projectionType": {
       "id": "geometry.projection-type",
       "category": "geometry",
-      "what": "Is BB2001's field an affine squash of the diamond (like ours) or true perspective? A diamond is a square, so its 4 bases are a square's corners; affine maps preserve diagonal bisection, perspective does not.",
-      "method": "Wide reset frame t=430. Foul lines fit by RANSAC (white chalk, occlusion-robust): left slope 1.239, right 1.238, symmetric, intersecting at home (319,444). Bases located by dirt/grass boundary scans: 2B apex down the symmetry axis, 1B/3B as the outer infield-dirt corners along each foul line (symmetric: y=286/287, x=513.6/126.2). Robust to camera pan/zoom, which is affine and cannot convert perspective<->affine.",
-      "source": { "video": "YMmqNpmA60U", "clips": [{ "t0": 430, "note": "quiet post-play wide view, everyone reset" }] },
-      "bases_srcpx": { "home": [319, 444.5], "first": [513.6, 286], "second": [319, 198], "third": [126.2, 287] },
-      "diagonalMidpoints": { "M1_home_2B": [319, 321.25], "M2_1B_3B": [319.9, 286.5] },
-      "diagonalMidpointGapPx": 34.8,
-      "affineThresholdPx": 3,
+      "status": "known-drift",
+      "what": "Is BB2001's field an affine squash of the diamond (like ours) or true perspective? A diamond is a SQUARE, so its 4 bases are a square's corners; affine maps preserve diagonal bisection, perspective maps do not.",
       "verdict": "PERSPECTIVE",
-      "nearHalfPx": 158,
-      "farHalfPx": 88.5,
-      "nearFarRatio": 1.79,
-      "perspectiveStrength_gapOverHeight": 0.141,
+      "affineThresholdPx": 3,
+      "measurements": [
+        {
+          "source": "youtube:YMmqNpmA60U",
+          "venue": "stadium-ish (fenced field, stands)",
+          "frame": "t=430, quiet post-play wide reset",
+          "method": "RANSAC fit of the white chalk foul lines (occlusion-robust), bases from dirt/grass boundary scans so standing fielders read through.",
+          "bases_srcpx": { "home": [319, 444.5], "first": [513.6, 286], "second": [319, 198], "third": [126.2, 287] },
+          "diagonalMidpointGapPx": 34.8,
+          "nearFarRatio": 1.79,
+          "perspectiveStrength": 0.141,
+          "basepathPx": 251.0
+        },
+        {
+          "source": "local:bb01-capture-session1",
+          "venue": "backyard-grass (pool, shed, red roof) -- the venue every play in the local video is on",
+          "frame": "screenshots 00009/00010/00011, native 640x480",
+          "method": "Compact white-blob detection at NATIVE resolution (pixel-exact, no scaling), cross-validated across three frames of the same venue: a base cannot move between frames, a fielder can. Two symmetric candidates at y~283 appeared in only one frame and were correctly rejected as fielders; the four that persisted are the bases. Confirmed visually by overlay.",
+          "bases_srcpx": { "home": [320.3, 435.4], "first": [475.0, 310.9], "second": [318.0, 221.5], "third": [165.9, 310.9] },
+          "diagonalMidpointGapPx": 17.6,
+          "gapPctOfLeg": 9.34,
+          "nearFarRatio": 1.393,
+          "perspectiveStrength": 0.0823,
+          "basepathPx": 198.58,
+          "legSpreadPct": 11.75,
+          "internalChecks": "1B and 3B land on the SAME y (310.9) without being constrained to; home x 320.3, 2B x 318.0 and the 1B/3B midpoint x 320.45 all agree within 2.5px. Under an affine map opposite legs would be equal -- home-1B is 198.58 and 2B-3B is 176.43, an 11.75% spread, which is an independent perspective signature that does not use the diagonal test at all."
+        }
+      ],
+      "n": 2,
+      "nNote": "Two INDEPENDENT sources, two different venues, two different measurement techniques, both far past the threshold (11.6x and 5.9x). Perspective STRENGTH differs by venue (0.141 vs 0.082), so it is a per-venue camera property, not one global constant -- worth knowing before anyone tries to model it with a single number.",
       "confidence": "high",
-      "informs": "src/art/projection.ts (which maps y 1:1 -- NO vertical foreshortening). BB matching would need a render-only y'=f(y). Gated behind the graphics phase; does NOT affect pace.",
-      "n": 1,
-      "nNote": "n=1 frame, but the measurement is objective (pixel boundaries, not eyeball) and the gap is 11x the threshold, so a second frame would confirm rather than decide. Left/right symmetry (1.239 vs 1.238; bases mirror about x=319.9) is the internal consistency check."
+      "ours": { "constant": "src/art/projection.ts", "diagonalMidpointGapPx": 0, "isAffine": true },
+      "driftNote": "Our projection maps y 1:1 -- a pure horizontal pinch with NO vertical foreshortening, so its diagonal-midpoint gap is exactly 0 and it is affine by construction. Matching BB would mean a render-only y'=f(y) plus a matching inverse in unproject, keeping the sim flat so geometry.ts, clampToField's convexity argument and the goldlog stay untouched.",
+      "informs": "src/art/projection.ts",
+      "deliberate": "This drift is a KNOWN PRODUCT DECISION, not an oversight. Our flatter view is a style choice; adding perspective is a large visual change gated behind the graphics phase and does not affect pace."
     },
     "foulSlope": {
       "id": "geometry.foul-slope",
       "category": "geometry",
-      "what": "Near-field lateral foreshortening: horizontal run per unit depth along the foul lines from home.",
-      "method": "RANSAC fit of white chalk foul-line pixels, refit on inliers.",
-      "source": { "video": "YMmqNpmA60U", "clips": [{ "t0": 430, "note": "same frame" }] },
-      "slopeLeft": 1.239,
-      "slopeRight": 1.238,
-      "slopeAsymmetryPct": 0.08,
-      "ours_FOUL_SLOPE": 1.2,
-      "deltaPct": 3.2,
+      "status": "known-drift",
+      "what": "Near-field lateral foreshortening: horizontal run per unit of depth along the foul lines from home.",
+      "measurements": [
+        { "source": "youtube:YMmqNpmA60U", "slopeLeft": 1.239, "slopeRight": 1.238, "combined": 1.2385, "method": "RANSAC fit of white chalk foul-line pixels, refit on inliers." },
+        { "source": "local:bb01-capture-session1", "slopeLeft": 1.2402, "slopeRight": 1.2426, "combined": 1.2414, "asymmetryPct": 0.19, "method": "Derived from the four cross-validated base positions via lib.js affinity()." }
+      ],
+      "measured": 1.24,
+      "spread": 0.0029,
+      "n": 2,
       "confidence": "high",
-      "informs": "src/systems/geometry.ts FOUL_SLOPE. Our near-field lateral squash already matches BB within ~3%; the difference from BB is the DEPTH compression (perspective), not the foul angle."
+      "nNote": "Two sources, two venues, two techniques, agreeing to 0.24%. That agreement is what makes the 3.2% gap to our own value a real difference rather than measurement noise.",
+      "ours": { "constant": "src/systems/geometry.ts FOUL_SLOPE", "value": 1.2 },
+      "driftPct": -3.23,
+      "driftNote": "Ours is 3.2% shallower. Small, and arguably below the threshold anyone would notice -- but it is 14x the spread between the two independent measurements, so it is a genuine difference and not noise. Our near-field LATERAL squash essentially matches BB; what we lack is the DEPTH compression (see geometry.projection-type).",
+      "informs": "src/systems/geometry.ts FOUL_SLOPE"
+    }
+  },
+  "palette": {
+    "note": "Pixel-exact colour is now available (see sources.local.screenshots) and video colour is not -- video carries +-2 per channel from YUV<->RGB conversion even losslessly encoded. Only a first sample is recorded here; a systematic palette pass has not been done.",
+    "backyardGrass": {
+      "id": "palette.backyard-grass",
+      "category": "palette",
+      "status": "awaiting-measurement",
+      "source": "local screenshot 00009, native 640x480",
+      "what": "BB's grass is not one colour -- it is a lit gradient plus a dither, so a region MEDIAN is the meaningful statistic and patchFlatness correctly reports isFlat=false (that is texture, not a filter; the blit check in screenshot.js is what proves the source is unfiltered).",
+      "outfieldShade": { "hex": "#3a9631", "rgb": [58, 150, 49] },
+      "infieldLit": { "hex": "#73ce5a", "rgb": [115, 206, 90] },
+      "chalk": { "hex": "#f3e7d6", "rgb": [243, 231, 214] },
+      "confidence": "low",
+      "nNote": "Hand-picked sample regions, one frame, one venue. Recorded to establish that the exact-colour path works end to end, NOT as a palette anyone should build against yet.",
+      "informs": "src/data/venues.ts drawField palettes"
     }
   },
   "pace": {
-    "note": "Pending. The pace shot list (home->1B x6, fly hang x6, fielder/throw/CPU delays, pitch corridor) is the next measurement pass and the one that fixes the 'too fast' complaint. No pace records yet -- deliberately not seeding from the existing n=1 notes."
+    "note": "THE PRIORITY, and still open. The shot list (home->1B, fly hang, line drives, fielder/throw delays, pitch corridor) is what fixes the 'too fast' defect. What now exists that did not before: a reproducible index of 14 live plays with exact start frames (instrument.play-index), the venue's base positions in the same coordinate space (geometry.projectionType.measurements[1]), and a measured 50ms precision floor. What does NOT yet exist is a trustworthy per-play event timing, for the reason recorded below. No pace values are seeded from the superseded n=1 YouTube readings.",
+    "measurementTrap": {
+      "id": "pace.measurement-trap",
+      "category": "pace",
+      "status": "note",
+      "what": "Why the obvious automation does not work, recorded so the next pass does not rediscover it.",
+      "finding": "Detecting 'the runner reached 1B' from a change-fraction spike in a box on the bag FAILS. BB2001 plays canned fielder animations at the bag, and they are deterministic: six different plays produced change series matching to the millisecond (1.187:0.07, 1.287:0.07, 1.337:0.08, 1.387:0.12, ...). A naive threshold reads six identical 'arrivals'. The tell was the impossible precision -- six unrelated plays cannot agree to 1ms -- and it was caught only because the numbers were inspected rather than aggregated.",
+      "implication": "Runner arrival must be distinguished from scripted animation by magnitude AND by the runner's track along the baseline, or read frame-by-frame off a zoomed corridor sheet at the true 50ms period. Either way it is per-play work; it is not a threshold sweep.",
+      "note": "This is precisely the failure mode this whole instrument exists to prevent: a plausible, confident, wrong number. It would have produced a home->1B time with a suspiciously tight spread and therefore a HIGH derived confidence."
+    },
+    "homeToFirst": {
+      "id": "pace.home-to-first",
+      "category": "pace",
+      "status": "awaiting-measurement",
+      "what": "THE ANCHOR. Every other pace number is a dimensionless ratio against this one, which is what makes the whole approach immune to BB being 640x480 while we are 960x640, and immune to any future tempo dial.",
+      "measured": null,
+      "n": 0,
+      "confidence": "estimate",
+      "priorReading": { "value": 3000, "source": "youtube:YMmqNpmA60U", "n": 1, "superseded": true, "why": "Single sample, and its timestamp no longer locates the play it came from." },
+      "ours": { "constants": ["src/config.ts LIVE.RUNNER_SPEED", "src/systems/geometry.ts HOME/FIRST"], "basepathPx": 179.63, "runnerSpeedPxPerSec": 85, "playerRunSpeedMult_main": 1.0, "realMs": 2113 },
+      "oursNote": "179.63px at 85px/s = 2113ms in main mode. Against the superseded 3000ms reading we run ~30% fast -- but that comparison is only as good as an n=1 number nobody can relocate, which is exactly why it is not recorded as a drift.",
+      "informs": "src/config.ts LIVE.RUNNER_SPEED"
+    },
+    "flyHang": {
+      "id": "pace.fly-hang",
+      "category": "pace",
+      "status": "awaiting-measurement",
+      "what": "Deep-fly hang time, as a RATIO to the home->1B anchor. The ratio is the durable form: absolute hang times cannot be compared across two games with different field scales.",
+      "measured": null,
+      "n": 0,
+      "confidence": "estimate",
+      "priorReading": { "value": 2000, "ratioToAnchor": 0.667, "source": "youtube:YMmqNpmA60U", "n": 1, "superseded": true },
+      "ours": { "constant": "src/config.ts LIVE.LAUNCH.FLY_HANG_MS", "value": { "MIN": 2000, "MAX": 2900 }, "ratioToAnchor": [0.947, 1.372] },
+      "oursNote": "Our worst suspected defect: against the superseded reading our flies hang 42%-106% longer RELATIVE TO THE RUN. Note this was always a ratio claim -- an earlier comment held that liveplay steps on a tempo-scaled delta, but GameScene passes Phaser's raw delta and there is no tempo anywhere in src/, so sim-ms and real-ms are the same thing today. The defect survives that correction unchanged, because both sides of a ratio scale together.",
+      "informs": "src/config.ts LIVE.LAUNCH.FLY_HANG_MS"
+    },
+    "betweenPitch": {
+      "id": "pace.between-pitch",
+      "category": "pace",
+      "status": "awaiting-measurement",
+      "what": "Catch -> ready-for-the-next-pitch turnaround.",
+      "measured": null,
+      "n": 0,
+      "confidence": "estimate",
+      "priorReading": { "value": 1300, "source": "youtube:YMmqNpmA60U", "n": 1, "superseded": true },
+      "ours": { "constant": "src/config.ts FLOW.BETWEEN_PITCH_MS", "value": 1250 },
+      "oursNote": "Of the pace metrics this one should be the EASIEST to measure to high n from the local capture: the plate-view segments are long, numerous, and the pitch is the only fast-moving thing in frame.",
+      "informs": "src/config.ts FLOW.BETWEEN_PITCH_MS"
+    }
   }
 }

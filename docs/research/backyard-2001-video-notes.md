@@ -78,12 +78,21 @@ Purpose: ground-truth tuning reference for Recess Sports (pitch speed, pacing, H
 
 ## How BB2001 measures against our config (July 2026 values)
 
+> ⚠️ **The pace rows in this table were wrong, and two of them are still open.**
+> They rest on n=1 readings from a stream whose timestamps no longer locate the
+> plays they came from (see the section below), and the home→1B row compounded
+> that with a basepath number nobody checked: it is `hypot(138,115) = 179.6px`,
+> not 234px, so our real home→1B is **2.11s**, not 2.75s. The corrected status of
+> every pace metric now lives in `scripts/measures.json` under `pace`, where each
+> one carries its own `n`, `confidence` and `status`. Presentation rows in this
+> table are unaffected — those were observed, not timed.
+
 | Thing | BB2001 measured | Recess Sports today | Verdict |
 |---|---|---|---|
-| Home→1B time | ~3.0s | `LIVE.RUNNER_SPEED` 85 px/s over ~234px basepath ≈ 2.75s | ✅ In the pocket |
-| Deep fly hang | ~2.0s | `LIVE.FLY_HANG_MS` 2000–2900 | ✅ Match at the low end |
+| Home→1B time | ~3.0s (n=1, **superseded**) | 179.6px at 85 px/s = **2.11s** | ⏳ `awaiting-measurement` — the anchor, and the number every other ratio depends on |
+| Deep fly hang | ~2.0s (n=1, **superseded**) | `LIVE.FLY_HANG_MS` 2000–2900 | ⏳ `awaiting-measurement` — against the old reading our flies hang **42–106% long relative to the run**; our worst suspected defect |
 | Pitch flight range | ~250ms (pro arm, HEAT) → ~700ms (weakest kid arm, lob) | `PITCH_SPEED`: CLASSIC base 800ms ÷ per-kind speedMult × per-arm `armTravelMult` (stat 10 → 0.75, stat 1 → 1.20) — fastball ≈ 545–875ms; fatigue's sagged stat slows tired arms. Kid mode keeps 1250. | ✅ SHIPPED (arm-scaled corridor + `lobHeightPx` rainbow arcs on slow pitches; swing windows widened ~35% to compensate) |
-| Catch → next pitch ready | ~1.3s | `FLOW.BETWEEN_PITCH_MS` 1250 | ✅ Match |
+| Catch → next pitch ready | ~1.3s (n=1, **superseded**) | `FLOW.BETWEEN_PITCH_MS` 1250 | ⏳ `awaiting-measurement` — but the easiest of the three to measure to high n from the local capture |
 | Pitch selection pressure | None — fully player-paced (9s+ observed) | Ours: also untimed | ✅ Match |
 | Contact → field view | Instant hard cut, <1 frame of ceremony | 90ms `HIT_PAUSE_MS` flash then cut | ✅ Ours adds a deliberate contact beat — keep |
 | Live-play HUD | Collapses to mini score+outs only | We keep the full bottom strip | 🤔 Consider dimming/collapsing the strip during live plays |
@@ -118,6 +127,43 @@ Robust to camera pan/zoom: those are affine transforms and cannot convert perspe
 **The one reassuring part:** BB's foul slope (**1.24**) is within ~3% of our `FOUL_SLOPE` (1.2). Our *near-field lateral* squash already matches BB. What we lack is the *depth* compression.
 
 **Implication (for the graphics phase, which is sequenced last and gated on a legit game copy):** matching BB's field means adding a render-only `y' = f(y)` to `projection.ts` with a matching inverse in `unproject`, keeping the sim flat so `geometry.ts`, `clampToField`'s convexity argument, and the goldlog stay untouched. Fix the two coordinate-hygiene bugs first (the raw-`MOUND` draw in `drawField`, and `depthScale()` called on an already-projected point in `LivePlayView`). **This does not touch the pace work.** It is also a genuine product question, not a mandate — our flatter view is a deliberate style, and adding perspective is a large visual change worth deciding on its own merits.
+
+### Confirmed independently off the local capture (2026-07-23)
+
+The perspective finding no longer rests on one frame of one venue. Repeated on
+the **backyard-grass venue** from the local ScummVM capture — a different venue,
+a different source, a different technique, and this time at **pixel-exact native
+640×480** rather than through YouTube's 4:2:0 chroma:
+
+| | YouTube (stadium-ish) | Local (backyard-grass) |
+|---|---|---|
+| Foul slope L / R | 1.239 / 1.238 | **1.2402 / 1.2426** |
+| Diagonal-midpoint gap | 34.8px | **17.6px** (threshold 3px) |
+| Near/far ratio | 1.79 | **1.393** |
+| Perspective strength | 0.141 | **0.0823** |
+| Basepath | 251px | **198.6px** |
+
+**The foul slope reproduces to 0.24%.** Two sources, two venues, two techniques
+landing on **1.240** is what turns our own `FOUL_SLOPE` 1.2 from "close enough"
+into a real 3.2% difference — it's 14× the spread between the measurements.
+
+**Perspective is confirmed, but its STRENGTH is per-venue** (0.141 vs 0.082).
+Anyone modelling this with a single global constant would be wrong; it's a
+property of each venue's camera.
+
+Bases were found by compact white-blob detection at native resolution, then
+cross-validated across three frames of the same venue — a base can't move
+between frames, a fielder can. Two symmetric candidates at y≈283 appeared in only
+one frame and were correctly rejected as fielders. Internal checks that weren't
+constrained by the fit: 1B and 3B land on the *same* y (310.9), and home's x
+(320.3), 2B's x (318.0) and the 1B/3B midpoint x (320.45) all agree within 2.5px.
+
+A third, independent perspective signature falls out without using the diagonal
+test at all: under an affine map a diamond's opposite legs are equal, and
+home→1B is 198.58 while 2B→3B is 176.43 — an **11.75% leg spread**.
+
+No fifth-point validation for this venue: it's a *backyard*, with no pitching
+rubber drawn to predict against.
 
 ### Method upgrade over the technique section above
 This session drove the video the same way (pause / set `currentTime` / forward-seeks-only) but added: (1) a **canvas taint probe** (primed magenta so a no-op draw is distinguishable from a black frame) which came back **untainted**, unlocking direct pixel reads at exact 640×480 game coordinates — no screen-pixel/DPR conversion; (2) **RANSAC** line fitting so occluding uniforms/bags don't poison the foul-line fit; (3) **dirt/grass boundary scans** to locate bases through standing fielders. When pixel access is available, prefer all three over eyeballing a scaled screenshot.

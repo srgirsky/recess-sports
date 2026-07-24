@@ -266,11 +266,24 @@ export function ratioToAnchor(measuredMs, anchorMs) {
 }
 
 /**
- * Our live-sim constants are SIM-TIME milliseconds: liveplay.ts accumulates
- * `s.elapsed += dtMs` on the TEMPO-scaled delta, so real seconds = value/tau.
- * Conflating the two clocks is how the notes came to mark fly hang "matched"
- * when our flies actually hang 42-106% too long. Any converter that lands a
- * value in LIVE.* must go through here.
+ * Sim time <-> real time.
+ *
+ * CORRECTION (2026-07-23). This comment used to assert that liveplay.ts
+ * accumulates `s.elapsed += dtMs` on a TEMPO-scaled delta. It does not.
+ * GameScene passes Phaser's raw frame `delta` straight into stepLivePlay, and
+ * `grep -rn tempo src/` is empty -- there is no tempo dial anywhere in the
+ * codebase. So TAU IS 1 TODAY and both of these are the identity function.
+ *
+ * They are kept, and every converter still routes through them, because the
+ * moment a tempo dial is introduced every ratio in measures.json silently
+ * becomes wrong unless the conversion is already threaded. conformance.test.js
+ * passes `tempo: 1` explicitly for the same reason: adding a dial breaks the
+ * test loudly instead of invalidating the records quietly.
+ *
+ * The defect the old comment blamed on clock confusion is real and survives the
+ * correction, because it was always a RATIO claim: our flies hang 42-106%
+ * longer relative to the home->1B run than BB's do. Both sides of a ratio scale
+ * with tau, so tau cancels and the finding is untouched.
  */
 export function simMsForRealMs(realMs, tempo) {
   return realMs * tempo;

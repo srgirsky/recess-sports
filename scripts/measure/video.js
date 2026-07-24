@@ -28,6 +28,41 @@ import { spawnSync } from 'node:child_process';
 const FFMPEG = 'ffmpeg';
 const FFPROBE = 'ffprobe';
 
+/**
+ * Build the `crop=w:h:x:y` filter, or null for no crop.
+ *
+ * WHY EVERY ENTRY POINT TAKES A CROP. A local capture is a recording of a
+ * SCREEN, not of a game: the emulator window occupies some rectangle and the
+ * desktop occupies the rest. Measured on the real session capture, the game
+ * fills 1920x1440 of a 3024x1964 frame -- 45.3% of the pixels. That fraction
+ * silently ruins the two things this file exists to do:
+ *
+ *   - ffmpeg's `scene` metric is frame-GLOBAL, so a full hard cut scores ~0.45
+ *     instead of ~1.0. The default 0.3 threshold then demands more than twice a
+ *     real cut, and findCuts reported 5 cuts across 450 seconds of a capture
+ *     that visibly contains dozens of plays.
+ *   - every coordinate comes back in desktop pixels, which are not the game's
+ *     pixels and are not comparable to anything in scripts/measures.json.
+ *
+ * Cropping first fixes both, and it means the pipeline only ever DECODES the
+ * emulator window -- whatever else was on the desktop is never read.
+ */
+function cropFilter(crop) {
+  if (!crop) return null;
+  return `crop=${Math.round(crop.w)}:${Math.round(crop.h)}:${Math.round(crop.x)}:${Math.round(crop.y)}`;
+}
+
+/** Compose crop -> scale into one -vf argument list (either may be absent). */
+function filterChain({ crop, w, h, scale }) {
+  const chain = [];
+  const c = cropFilter(crop);
+  if (c) chain.push(c);
+  // NEAREST always: any smoothing filter invents intermediate colours, and this
+  // same path feeds colour sampling.
+  if (scale !== 1) chain.push(`scale=${w}:${h}:flags=neighbor`);
+  return chain.length ? ['-vf', chain.join(',')] : [];
+}
+
 /** Is ffmpeg available? Tests skip rather than fail when it isn't. */
 export function hasFfmpeg() {
   try {
@@ -94,14 +129,20 @@ export function probe(path) {
  *
  * `scale` divides both dimensions using NEAREST-neighbour: any smoothing filter
  * would invent intermediate colours, and this same path feeds colour sampling.
+ *
+ * `crop` (see cropFilter) is applied BEFORE the scale, so the returned width and
+ * height describe the cropped region and every coordinate downstream is in that
+ * region's own pixel space -- game pixels, not desktop pixels.
  */
-export function readFrames(path, { startSec = 0, count = 1, scale = 1, info = null } = {}) {
+export function readFrames(path, { startSec = 0, count = 1, scale = 1, crop = null, info = null } = {}) {
   const meta = info || probe(path);
-  const w = Math.max(1, Math.floor(meta.width / scale));
-  const h = Math.max(1, Math.floor(meta.height / scale));
+  const srcW = crop ? Math.round(crop.w) : meta.width;
+  const srcH = crop ? Math.round(crop.h) : meta.height;
+  const w = Math.max(1, Math.floor(srcW / scale));
+  const h = Math.max(1, Math.floor(srcH / scale));
 
   const args = ['-v', 'error', '-ss', String(startSec), '-i', path, '-frames:v', String(count)];
-  if (scale !== 1) args.push('-vf', `scale=${w}:${h}:flags=neighbor`);
+  args.push(...filterChain({ crop, w, h, scale }));
   args.push('-f', 'rawvideo', '-pix_fmt', 'rgb24', '-');
 
   const buf = run(FFMPEG, args).stdout;
@@ -109,7 +150,7 @@ export function readFrames(path, { startSec = 0, count = 1, scale = 1, info = nu
   const n = Math.floor(buf.length / frameBytes);
   const frames = [];
   for (let i = 0; i < n; i++) frames.push(buf.subarray(i * frameBytes, (i + 1) * frameBytes));
-  return { frames, width: w, height: h, frameBytes, meta };
+  return { frames, width: w, height: h, frameBytes, meta, crop };
 }
 
 /** Exact-equality frame comparison, cheap enough to run over a whole window. */
@@ -191,8 +232,8 @@ function normRoi(roi, w, h) {
  *
  * Feed the result to lib.js `findSpike` for onset/peak detection.
  */
-export function diffSeries(path, { startSec = 0, count = 30, roi = null, scale = 1, threshold = 12, sub = 1 } = {}) {
-  const { frames, width, height, meta } = readFrames(path, { startSec, count, scale });
+export function diffSeries(path, { startSec = 0, count = 30, roi = null, scale = 1, crop = null, threshold = 12, sub = 1 } = {}) {
+  const { frames, width, height, meta } = readFrames(path, { startSec, count, scale, crop });
   const r = normRoi(roi, width, height);
   const fps = meta.containerFps;
   const series = [];
@@ -238,15 +279,17 @@ export function diffSeries(path, { startSec = 0, count = 30, roi = null, scale =
       mad: n ? Math.round((sum / n) * 1000) / 1000 : 0,
       maxd: Math.round(maxd),
       changed: n ? Math.round((hit / n) * 10000) / 10000 : 0,
-      // Centroid back in FULL-resolution source pixels, so tracks are
-      // comparable across different `scale` settings.
+      // Centroid back in FULL-resolution pixels, so tracks are comparable
+      // across different `scale` settings. With a crop in play these are
+      // CROPPED-frame coordinates -- i.e. game pixels, which is the space every
+      // record in scripts/measures.json is written in.
       cx: sw ? Math.round((sx / sw) * scale) : null,
       cy: sw ? Math.round((sy / sw) * scale) : null,
     });
     prev = cur;
   }
 
-  return { series, roi: r, width, height, fps, framePeriodMs: 1000 / fps, startSec, scale };
+  return { series, roi: r, width, height, fps, framePeriodMs: 1000 / fps, startSec, scale, crop };
 }
 
 /**
@@ -272,8 +315,8 @@ export function diffSeries(path, { startSec = 0, count = 30, roi = null, scale =
  * subsampling throws away three-quarters of the colour resolution before any
  * of this.
  */
-export function samplePatch(path, { atSec = 0, rect = null } = {}) {
-  const { frames, width, height } = readFrames(path, { startSec: atSec, count: 1, scale: 1 });
+export function samplePatch(path, { atSec = 0, rect = null, crop = null } = {}) {
+  const { frames, width, height } = readFrames(path, { startSec: atSec, count: 1, scale: 1, crop });
   if (!frames.length) throw new Error(`no frame decoded at t=${atSec} in ${path}`);
   const r = normRoi(rect, width, height);
   const out = new Uint8Array(r.w * r.h * 3);
@@ -306,16 +349,42 @@ export function samplePatch(path, { atSec = 0, rect = null } = {}) {
  * `threshold` is the scene score 0..1. ~0.3 catches hard cuts while ignoring
  * ordinary motion; lower it to catch softer transitions, raise it if ordinary
  * play is registering as cuts. Tune against a known clip, don't guess.
+ *
+ * PASS A CROP FOR ANY SCREEN CAPTURE. The scene metric is computed over the
+ * WHOLE frame, so letterboxing or desktop around the game divides every score
+ * by the game's share of the frame. On the real session capture (45.3%
+ * coverage) an uncropped run at the default threshold found 5 cuts in 450
+ * seconds; the game rect is what should be scored, not the desktop it sits on.
+ * `scale` additionally downsamples before scoring -- cuts are a whole-frame
+ * event, so a quarter-size image detects them just as well and far faster.
  */
-export function findCuts(path, { threshold = 0.3, startSec = 0, durationSec = null } = {}) {
+export function findCuts(path, { threshold = 0.3, startSec = 0, durationSec = null, crop = null, scale = 1 } = {}) {
   const args = ['-hide_banner'];
   // -ss BEFORE -i seeks by keyframe (fast). Output timestamps then restart near
   // zero, so startSec is added back below — getting this wrong silently shifts
   // every reported time by the seek offset.
   if (startSec) args.push('-ss', String(startSec));
-  args.push('-i', path);
+  // -t goes BEFORE -i so it bounds the INPUT read. As an output option it
+  // bounds output timestamps instead, and `select` drops frames while keeping
+  // their original pts -- so ffmpeg reads far past the requested window looking
+  // for output it will never produce. Measured: a `durationSec: 330` request
+  // decoded to 451s. On a 43GB source that is minutes of wasted decode, and
+  // worse, it reads material the caller deliberately excluded.
   if (durationSec) args.push('-t', String(durationSec));
-  args.push('-vf', `select='gt(scene,${threshold})',showinfo`, '-an', '-f', 'null', '-');
+  args.push('-i', path);
+  const info = crop || scale !== 1 ? probe(path) : null;
+  const srcW = crop ? Math.round(crop.w) : info?.width;
+  const srcH = crop ? Math.round(crop.h) : info?.height;
+  const pre = filterChain({
+    crop,
+    scale,
+    w: Math.max(1, Math.floor(srcW / scale)),
+    h: Math.max(1, Math.floor(srcH / scale)),
+  });
+  // filterChain returns ['-vf', chain]; the select/showinfo pair has to join
+  // that same chain, not become a second -vf (ffmpeg keeps only the last one).
+  const chain = pre.length ? `${pre[1]},` : '';
+  args.push('-vf', `${chain}select='gt(scene,${threshold})',showinfo`, '-an', '-f', 'null', '-');
 
   const r = spawnSync(FFMPEG, args, { encoding: 'utf8', maxBuffer: 1 << 28 });
   if (r.error) throw new Error(`ffmpeg failed to start: ${r.error.message}`);
@@ -346,11 +415,22 @@ export function findCuts(path, { threshold = 0.3, startSec = 0, durationSec = nu
  * machine. The index->timestamp map is returned instead, and reading tiles
  * left-to-right, top-to-bottom against it is unambiguous.
  */
-export function contactSheet(path, { startSec = 0, count = 16, cols = 4, scale = 2, out }) {
+export function contactSheet(path, { startSec = 0, count = 16, cols = 4, scale = 2, crop = null, stepFrames = 1, out }) {
   if (!out) throw new Error('contactSheet requires an `out` path');
   const info = probe(path);
-  const w = Math.floor(info.width / scale);
-  const h = Math.floor(info.height / scale);
+  const srcW = crop ? Math.round(crop.w) : info.width;
+  const srcH = crop ? Math.round(crop.h) : info.height;
+  const w = Math.floor(srcW / scale);
+  const h = Math.floor(srcH / scale);
+
+  const chain = [];
+  if (crop) chain.push(cropFilter(crop));
+  // Thinning BEFORE the scale keeps the decode cheap. A sheet of consecutive
+  // frames off a 60fps capture spans a third of a second and shows one moment
+  // six times over; `stepFrames` is what makes a sheet cover a whole play.
+  if (stepFrames > 1) chain.push(`select='not(mod(n\\,${Math.round(stepFrames)}))'`);
+  chain.push(`scale=${w}:${h}:flags=neighbor`);
+  chain.push(`tile=${cols}x${Math.ceil(count / cols)}`);
 
   // `tile` consumes cols*rows input frames and emits ONE image, so the output
   // frame count is 1 -- asking for `count` here makes the image2 muxer try to
@@ -359,7 +439,11 @@ export function contactSheet(path, { startSec = 0, count = 16, cols = 4, scale =
     '-v', 'error', '-y',
     '-ss', String(startSec),
     '-i', path,
-    '-vf', `scale=${w}:${h}:flags=neighbor,tile=${cols}x${Math.ceil(count / cols)}`,
+    '-vf', chain.join(','),
+    // select drops frames, so vsync must not try to restore the original
+    // cadence by duplicating them back in -- that would make every tile
+    // identical to its neighbour and quietly undo the thinning.
+    '-fps_mode', 'passthrough',
     '-frames:v', '1',
     out,
   ]);
@@ -369,7 +453,174 @@ export function contactSheet(path, { startSec = 0, count = 16, cols = 4, scale =
     tile: i,
     row: Math.floor(i / cols),
     col: i % cols,
-    t: Math.round((startSec + i / fps) * 10000) / 10000,
+    t: Math.round((startSec + (i * stepFrames) / fps) * 10000) / 10000,
   }));
-  return { out, cols, rows: Math.ceil(count / cols), tileW: w, tileH: h, tiles, fps };
+  return { out, cols, rows: Math.ceil(count / cols), tileW: w, tileH: h, tiles, fps, stepFrames };
+}
+
+/**
+ * Where is the emulator window in this screen capture?
+ *
+ * Derived from a HARD CUT rather than from colour. Looking for "the non-black
+ * region" fails the moment the desktop behind the window isn't black (it wasn't
+ * -- the real capture's surround is wallpaper). But at an instant view change
+ * the game repaints EVERY pixel it owns and nothing outside it moves, so the
+ * bounding box of the largest inter-frame change is exactly the window.
+ *
+ * Give it a timestamp where a cut is known to occur. It returns the rect plus
+ * the fraction of the frame the game occupies -- which is the number that
+ * decides findCuts' threshold, so it is reported rather than left implicit.
+ */
+export function detectGameRect(path, { atSec = 0, count = 12, scale = 2, threshold = 60 } = {}) {
+  const { frames, width, height, meta } = readFrames(path, { startSec: atSec, count, scale });
+  let best = null;
+
+  for (let i = 1; i < frames.length; i++) {
+    const cur = frames[i];
+    const prev = frames[i - 1];
+    let x0 = width;
+    let x1 = -1;
+    let y0 = height;
+    let y1 = -1;
+    let n = 0;
+    for (let p = 0, q = 0; p < width * height; p++, q += 3) {
+      const e =
+        Math.abs(cur[q] - prev[q]) + Math.abs(cur[q + 1] - prev[q + 1]) + Math.abs(cur[q + 2] - prev[q + 2]);
+      if (e <= threshold) continue;
+      n++;
+      const x = p % width;
+      const y = (p / width) | 0;
+      if (x < x0) x0 = x;
+      if (x > x1) x1 = x;
+      if (y < y0) y0 = y;
+      if (y > y1) y1 = y;
+    }
+    if (n && (!best || n > best.changed)) {
+      best = {
+        x: x0 * scale,
+        y: y0 * scale,
+        w: (x1 - x0 + 1) * scale,
+        h: (y1 - y0 + 1) * scale,
+        changed: n,
+        atSec: Math.round((atSec + i / meta.containerFps) * 10000) / 10000,
+      };
+    }
+  }
+  if (!best) return null;
+
+  const frameArea = meta.width * meta.height;
+  return {
+    ...best,
+    aspect: Math.round((best.w / best.h) * 1000) / 1000,
+    // The scene metric is frame-global, so this fraction is the factor every
+    // uncropped cut score is divided by. See cropFilter.
+    frameCoverage: Math.round(((best.w * best.h) / frameArea) * 10000) / 10000,
+  };
+}
+
+/**
+ * Does this frame look like an INTEGER NEAREST-NEIGHBOUR UPSCALE?
+ *
+ * The structural fingerprint of an emulator: ScummVM blits a 640x480 buffer at
+ * an integer factor, so inside its window every group of `scale` consecutive
+ * rows is pixel-identical. Native desktop content is not built that way.
+ *
+ * Rows, deliberately, not columns. The capture is yuv422p, which subsamples
+ * chroma HORIZONTALLY -- the 2-pixel chroma window does not align with a 3-pixel
+ * block, so exact column equality breaks at block boundaries. Vertical
+ * resolution is untouched by 4:2:2, so row triples survive the round trip
+ * exactly.
+ *
+ * The subtle part: only samples where the image actually VARIES vertically are
+ * counted. A flat region trivially passes the row-triple test, so a solid-colour
+ * desktop window would score a perfect 1.0 and be mistaken for the game.
+ * Scoring only the varying samples means flat content contributes no evidence
+ * either way -- and when a frame yields too few of them, the honest answer is
+ * `unknown`, not a guess.
+ */
+export function blitScore(frame, width, height, { scale = 3, colStride = 7 } = {}) {
+  let tested = 0;
+  let matched = 0;
+  const groups = Math.floor(height / scale) - 1;
+
+  for (let g = 0; g < groups; g++) {
+    const y = g * scale;
+    for (let x = 0; x < width; x += colStride) {
+      const p = (y * width + x) * 3;
+      const nxt = ((y + scale) * width + x) * 3;
+      // Same colour as the next group down => no vertical variation here, so
+      // this sample cannot distinguish a blit from anything else. Skip it.
+      if (frame[p] === frame[nxt] && frame[p + 1] === frame[nxt + 1] && frame[p + 2] === frame[nxt + 2]) {
+        continue;
+      }
+      tested++;
+      let ok = true;
+      for (let d = 1; d < scale && ok; d++) {
+        const q = ((y + d) * width + x) * 3;
+        ok = frame[q] === frame[p] && frame[q + 1] === frame[p + 1] && frame[q + 2] === frame[p + 2];
+      }
+      if (ok) matched++;
+    }
+  }
+
+  return { score: tested ? matched / tested : NaN, tested, matched };
+}
+
+/**
+ * Split a long capture into runs of "the emulator is on screen" and "something
+ * else is".
+ *
+ * WHY THIS EXISTS, and why it works the way it does. A screen-capture session
+ * is not all game: there is setup at the front, and there can be ordinary
+ * desktop use in the middle. Measurement must not wander into that material.
+ * The obvious approach -- look at the frames and see what they are -- means
+ * reading someone's screen.
+ *
+ * blitScore avoids that entirely. It answers "is this an integer upscale of a
+ * small framebuffer?" from PIXEL STRUCTURE ALONE. It never needs to know what
+ * the frame depicts, and because the read is cropped to the emulator rect, the
+ * rest of the desktop is not even decoded. The result is a segment map that can
+ * be reviewed and confirmed before anything is measured.
+ *
+ * `unknown` samples (too flat to judge -- a fade, a black screen) inherit the
+ * previous known classification rather than cutting a run in half.
+ */
+export function gameSegments(
+  path,
+  { rect, scale = 3, stepSec = 2, startSec = 0, endSec = null, minScore = 0.9, colStride = 7, minTested = 200, onSample = null } = {}
+) {
+  if (!rect) throw new Error('gameSegments requires a `rect` (see detectGameRect)');
+  const meta = probe(path);
+  const stop = endSec == null ? meta.duration : Math.min(endSec, meta.duration);
+  const samples = [];
+
+  for (let t = startSec; t < stop; t += stepSec) {
+    const { frames, width, height } = readFrames(path, { startSec: t, count: 1, crop: rect, info: meta });
+    if (!frames.length) break;
+    const s = blitScore(frames[0], width, height, { scale, colStride });
+    const kind = !Number.isFinite(s.score) || s.tested < minTested ? 'unknown' : s.score >= minScore ? 'game' : 'other';
+    const sample = { t: Math.round(t * 1000) / 1000, kind, score: Number.isFinite(s.score) ? Math.round(s.score * 1000) / 1000 : null, tested: s.tested };
+    samples.push(sample);
+    if (onSample) onSample(sample);
+  }
+
+  // Carry the last known kind across `unknown` gaps, then run-length encode.
+  let last = null;
+  for (const s of samples) {
+    if (s.kind === 'unknown') s.resolved = last ?? 'unknown';
+    else s.resolved = last = s.kind;
+  }
+
+  const segments = [];
+  for (const s of samples) {
+    const tail = segments[segments.length - 1];
+    if (tail && tail.kind === s.resolved) tail.t1 = s.t + stepSec;
+    else segments.push({ kind: s.resolved, t0: s.t, t1: s.t + stepSec });
+  }
+  for (const seg of segments) {
+    seg.t1 = Math.round(Math.min(seg.t1, stop) * 1000) / 1000;
+    seg.durationSec = Math.round((seg.t1 - seg.t0) * 1000) / 1000;
+  }
+
+  return { segments, samples, rect, stepSec, minScore, duration: meta.duration };
 }

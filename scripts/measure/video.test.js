@@ -15,7 +15,19 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, existsSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { probe, readFrames, distinctFrameRate, diffSeries, samplePatch, contactSheet, findCuts, hasFfmpeg } from './video.js';
+import {
+  probe,
+  readFrames,
+  distinctFrameRate,
+  diffSeries,
+  samplePatch,
+  contactSheet,
+  findCuts,
+  detectGameRect,
+  blitScore,
+  gameSegments,
+  hasFfmpeg,
+} from './video.js';
 import { findSpike, medianColor, patchFlatness } from './lib.js';
 
 const FFMPEG_OK = hasFfmpeg();
@@ -238,6 +250,59 @@ d('findCuts — the play indexer', () => {
     expect(findCuts(f, { threshold: 0.3 }).count).toBe(0);
   });
 
+  it('MISSES a cut confined to part of the frame, and finds it once cropped', () => {
+    // The bug that made the real play index useless, reproduced at small scale.
+    // ffmpeg's `scene` metric is frame-GLOBAL: when the game owns only part of
+    // the capture, a full hard cut scores its share of the frame rather than
+    // ~1.0. Here a 96x72 region of a 320x240 frame repaints -- 9% coverage --
+    // so the score lands near 0.09 and the default 0.3 threshold sails past it.
+    // On the real 3024x1964 desktop capture the game covers 45.3%, halving
+    // every cut score; findCuts reported 5 cuts in 450 seconds of footage full
+    // of them. Cropping to the game rect first is the whole fix.
+    const a = join(dir, 'pc-a.mkv');
+    const b = join(dir, 'pc-b.mkv');
+    const cat = join(dir, 'pc.mkv');
+    const box = (colour, out) =>
+      ff([
+        '-f', 'lavfi', '-i', 'color=c=0x404058:s=320x240:d=1:r=30',
+        '-f', 'lavfi', '-i', `color=c=${colour}:s=96x72:d=1:r=30`,
+        '-filter_complex', '[0][1]overlay=x=40:y=30',
+        ...LOSSLESS, out,
+      ]);
+    box('0xe01010', a);
+    box('0x10e030', b);
+    const list = join(dir, 'pc-list.txt');
+    writeFileSync(list, [a, b].map((f) => `file '${f}'`).join('\n'));
+    ff(['-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', cat]);
+
+    const rect = { x: 40, y: 30, w: 96, h: 72 };
+    expect(findCuts(cat, { threshold: 0.3 }).count).toBe(0);
+
+    const cropped = findCuts(cat, { threshold: 0.3, crop: rect });
+    expect(cropped.count).toBeGreaterThanOrEqual(1);
+    expect(Math.min(...cropped.cuts.map((t) => Math.abs(t - 1.0)))).toBeLessThan(0.1);
+  });
+
+  it('stops reading at durationSec instead of running past it', () => {
+    // `select` drops frames but keeps their timestamps, so a `-t` placed on the
+    // OUTPUT never sees the pts it is waiting for and ffmpeg keeps decoding.
+    // Real cost measured on the session capture: asking for 330s decoded 451s.
+    // Three scenes at 1s each; a 1.5s window must not report the t=2 cut.
+    const parts = ['0x101040', '0xd0d020', '0x20a0d0'].map((c, i) => {
+      const f = join(dir, `dur-${i}.mkv`);
+      ff(['-f', 'lavfi', '-i', `color=c=${c}:s=320x240:d=1:r=30`, ...LOSSLESS, f]);
+      return f;
+    });
+    const cat = join(dir, 'dur.mkv');
+    const list = join(dir, 'dur-list.txt');
+    writeFileSync(list, parts.map((f) => `file '${f}'`).join('\n'));
+    ff(['-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', cat]);
+
+    const r = findCuts(cat, { threshold: 0.3, durationSec: 1.5 });
+    expect(r.cuts.some((t) => Math.abs(t - 1.0) < 0.1)).toBe(true);
+    expect(r.cuts.every((t) => t < 1.6)).toBe(true);
+  });
+
   it('offsets reported times when seeking in with startSec', () => {
     const a = join(dir, 'o-a.mkv'), b = join(dir, 'o-b.mkv'), cat = join(dir, 'off.mkv');
     ff(['-f', 'lavfi', '-i', 'color=c=0x101010:s=320x240:d=2:r=30', ...LOSSLESS, a]);
@@ -264,5 +329,152 @@ d('contactSheet', () => {
     // The map is what makes a tile re-derivable without burnt-in labels.
     expect(s.tiles[0].t).toBeCloseTo(0.5, 3);
     expect(s.tiles[4].t).toBeCloseTo(0.5 + 4 / 30, 3);
+  });
+
+  it('spaces tiles by stepFrames so one sheet can span a whole play', () => {
+    // Consecutive frames off a 60fps capture cover a third of a second -- a
+    // sheet of them shows one instant six times. Thinning is what makes a sheet
+    // a play summary instead of a stutter.
+    const f = join(dir, 'sheet-step.mkv');
+    const out = join(dir, 'sheet-step.png');
+    ff(['-f', 'lavfi', '-i', 'testsrc=s=320x240:d=4:r=30', ...LOSSLESS, f]);
+    const s = contactSheet(f, { startSec: 0, count: 6, cols: 3, scale: 2, stepFrames: 15, out });
+    expect(existsSync(out)).toBe(true);
+    expect(s.tiles[1].t).toBeCloseTo(0.5, 3);
+    expect(s.tiles[5].t).toBeCloseTo(2.5, 3);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Screen-capture support: the game is a rectangle on a desktop, not the frame.
+// ---------------------------------------------------------------------------
+
+/** A 3x nearest-neighbour blit of `srcW x srcH` detail, in yuv422p like the real
+ *  capture -- so the chroma subsampling that breaks COLUMN triples is actually
+ *  exercised rather than assumed away. */
+function blitClip(out, { srcW = 64, srcH = 48, scale = 3, dur = 1, rate = 30 }) {
+  ff([
+    '-f', 'lavfi', '-i', `testsrc=s=${srcW}x${srcH}:d=${dur}:r=${rate}`,
+    '-vf', `scale=${srcW * scale}:${srcH * scale}:flags=neighbor`,
+    '-pix_fmt', 'yuv422p', ...LOSSLESS, out,
+  ]);
+}
+
+d('detectGameRect — finding the emulator window on a desktop', () => {
+  it('recovers the rect of the only region that repaints at a cut', () => {
+    // Ground truth: a 100x60 box at (60,40) inside a 320x240 frame flips colour
+    // at t=1 while everything around it holds still. Looking for "the non-black
+    // region" would fail here by design -- the surround is deliberately NOT
+    // black, exactly like the real capture's wallpaper.
+    const a = join(dir, 'gr-a.mkv');
+    const b = join(dir, 'gr-b.mkv');
+    const cat = join(dir, 'gr.mkv');
+    const box = (colour, out) =>
+      ff([
+        '-f', 'lavfi', '-i', 'color=c=0x404058:s=320x240:d=1:r=30',
+        '-f', 'lavfi', '-i', `color=c=${colour}:s=100x60:d=1:r=30`,
+        '-filter_complex', '[0][1]overlay=x=60:y=40',
+        ...LOSSLESS, out,
+      ]);
+    box('0xd02020', a);
+    box('0x20d040', b);
+    const list = join(dir, 'gr-list.txt');
+    writeFileSync(list, [a, b].map((f) => `file '${f}'`).join('\n'));
+    ff(['-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', cat]);
+
+    const r = detectGameRect(cat, { atSec: 0.8, count: 16, scale: 1 });
+    expect(r).not.toBeNull();
+    expect(r.x).toBeCloseTo(60, -1);
+    expect(r.y).toBeCloseTo(40, -1);
+    expect(r.w).toBeCloseTo(100, -1);
+    expect(r.h).toBeCloseTo(60, -1);
+    // The number that decides findCuts' threshold: 100*60 / 320*240 = 7.8%.
+    expect(r.frameCoverage).toBeCloseTo(0.078, 2);
+  });
+});
+
+d('blitScore — the content-blind emulator fingerprint', () => {
+  /** Hand-built RGB buffer, `scale`-upscaled from a per-row-varying pattern. */
+  function upscaled(w, h, scale) {
+    const buf = Buffer.alloc(w * h * 3);
+    for (let y = 0; y < h; y++) {
+      const src = Math.floor(y / scale);
+      for (let x = 0; x < w; x++) {
+        const p = (y * w + x) * 3;
+        buf[p] = (src * 37 + x * 11) & 0xff;
+        buf[p + 1] = (src * 91) & 0xff;
+        buf[p + 2] = (x * 7) & 0xff;
+      }
+    }
+    return buf;
+  }
+
+  it('scores a clean 3x blit at 1.0', () => {
+    const s = blitScore(upscaled(90, 90, 3), 90, 90, { scale: 3, colStride: 1 });
+    expect(s.score).toBe(1);
+    expect(s.tested).toBeGreaterThan(100);
+  });
+
+  it('scores native-resolution detail far below the threshold', () => {
+    const s = blitScore(upscaled(90, 90, 1), 90, 90, { scale: 3, colStride: 1 });
+    expect(s.score).toBeLessThan(0.2);
+  });
+
+  it('refuses to judge a flat region instead of scoring it 1.0', () => {
+    // THE TRAP. Every row-triple in a solid-colour window matches trivially, so
+    // a naive score would call a blank desktop window "the emulator". Samples
+    // with no vertical variation must contribute no evidence at all.
+    const s = blitScore(Buffer.alloc(90 * 90 * 3, 0x40), 90, 90, { scale: 3, colStride: 1 });
+    expect(s.tested).toBe(0);
+    expect(Number.isNaN(s.score)).toBe(true);
+  });
+
+  it('survives yuv422p, which is what the real capture is stored as', () => {
+    // 4:2:2 subsamples chroma HORIZONTALLY, so column triples break at block
+    // boundaries but row triples are untouched. This asserts that reasoning
+    // against a real encode rather than trusting it.
+    const f = join(dir, 'blit422.mkv');
+    blitClip(f, { srcW: 64, srcH: 48, scale: 3, dur: 1 });
+    const { frames, width, height } = readFrames(f, { startSec: 0.5, count: 1 });
+    expect(blitScore(frames[0], width, height, { scale: 3, colStride: 3 }).score).toBeGreaterThan(0.98);
+  });
+});
+
+d('gameSegments — the content-blind segment map', () => {
+  it('separates emulator material from native-resolution material', () => {
+    // Half a clip is a 3x blit of a small buffer (the emulator), half is the
+    // same generator at native size (anything else). The classifier never sees
+    // what either half DEPICTS -- only whether it is an integer upscale.
+    const a = join(dir, 'seg-a.mkv');
+    const b = join(dir, 'seg-b.mkv');
+    const cat = join(dir, 'seg.mkv');
+    blitClip(a, { srcW: 64, srcH: 48, scale: 3, dur: 2 });
+    ff([
+      '-f', 'lavfi', '-i', 'testsrc=s=192x144:d=2:r=30',
+      '-pix_fmt', 'yuv422p', ...LOSSLESS, b,
+    ]);
+    const list = join(dir, 'seg-list.txt');
+    writeFileSync(list, [a, b].map((f) => `file '${f}'`).join('\n'));
+    ff(['-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', cat]);
+
+    const r = gameSegments(cat, {
+      rect: { x: 0, y: 0, w: 192, h: 144 },
+      scale: 3,
+      stepSec: 0.5,
+      endSec: 3.9,
+      colStride: 3,
+      minTested: 50,
+    });
+
+    const at = (t) => r.samples.find((s) => Math.abs(s.t - t) < 0.01);
+    expect(at(0.5).kind).toBe('game');
+    expect(at(1.5).kind).toBe('game');
+    expect(at(2.5).kind).toBe('other');
+    expect(at(3.5).kind).toBe('other');
+
+    // And it collapses to two runs with the boundary at the join.
+    const kinds = r.segments.map((s) => s.kind);
+    expect(kinds).toEqual(['game', 'other']);
+    expect(r.segments[0].t1).toBeCloseTo(2.0, 1);
   });
 });

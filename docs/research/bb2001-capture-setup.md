@@ -75,7 +75,26 @@ Gradation means a filter is still on somewhere and every colour we take would be
 This split is the one thing to get right. Measured empirically: pushing a known flat `#5abe5a` through a *lossless* video clip reads back as `(88,189,89)` — off by 2, purely from YUV↔RGB conversion. **Video cannot carry exact colour, even losslessly encoded.**
 
 **6a. Colour, geometry, sprite proportions → ScummVM's screenshot key.**
-ScummVM writes the **raw 640×480 framebuffer** straight to PNG, bypassing all display scaling — pixel-exact by construction. Capture:
+
+> ⚠️ **Corrected after the first real session (2026-07-23).** This guide used to
+> claim ScummVM writes the raw 640×480 framebuffer, bypassing display scaling.
+> **It doesn't** — it writes the scaled *window* (2984×1712 in that session, game
+> area 1920×1440 at offset (532,136)).
+>
+> The conclusion survives, for a different reason: the blit is an **exact 3×
+> nearest-neighbour upscale**, so every source pixel became an identical 3×3
+> block and decimating them recovers the framebuffer bit-for-bit. Colour is still
+> pixel-exact. Measured across 12 screenshots: 99.59–99.96% of blocks perfectly
+> uniform, the rest being ScummVM's OSD toast and the mouse cursor — both drawn
+> at *native* resolution over the scaled game, so both must be masked out of any
+> sample region.
+>
+> `scripts/measure/screenshot.js` `readScreenshot()` does all of this and
+> **throws** if the blit isn't exact. That refusal is the point: a filtered
+> source returns plausible blended colours and looks no different from a good
+> one, so it has to fail loudly or it will quietly poison the palette records.
+
+Capture:
 - **Wide field** — full diamond, all four bases, rubber and plate visible, ideally with fielders *not* standing on the bags. From **2 different venues**.
 - **Behind-plate** — batter, pitcher, catcher, HUD strip.
 - **A kid standing still**, full body, for sprite proportions.
@@ -118,21 +137,45 @@ Play naturally and work through the list. No need to be precious about it: I can
 
 ## Step 8 — Hand it over
 
-Tell me where the `.mkv` and screenshots are. From there it's mine. First thing I run:
+Tell me where the `.mkv` and screenshots are. From there it's mine.
 
 ```bash
 node --input-type=module -e "
-import {probe, distinctFrameRate, findCuts} from './scripts/measure/video.js';
+import {probe, distinctFrameRate, detectGameRect, gameSegments, findCuts} from './scripts/measure/video.js';
 const f = process.env.HOME + '/bb01-capture.mkv';
 console.log('source:', probe(f));
+
+// 1. Where is the emulator window? A screen capture is mostly NOT the game.
+const rect = detectGameRect(f, {atSec: /* a timestamp with a view cut */ 40});
+console.log('game rect:', rect);
+
+// 2. Which stretches are the game at all? Structure only, no content read.
+console.log('segments:', gameSegments(f, {rect}).segments);
+
+// 3. The real precision floor, and the play index — both cropped to the rect.
 console.log('true rate:', distinctFrameRate(f, {startSec: 60}));
-const c = findCuts(f);
-console.log('plays found:', c.count);
-console.log('first 20 play starts:', c.cuts.slice(0, 20));
+console.log('plays:', findCuts(f, {crop: rect, scale: 4, threshold: 0.25}).cuts);
 "
 ```
 
-That reports the raster, the container rate **and the true distinct-frame rate** (so a 60fps capture of a 15fps-rendering game can't fool us into claiming 4× the precision we have), plus **an index of every play in the capture**. Then I measure each event, convert via the ratio math, and land the numbers in a conformance test so they can't silently drift again.
+Then I measure each event, convert via the ratio math, and land the numbers in
+`scripts/measures.json` behind `scripts/measure/conformance.test.js` so they
+can't silently drift again.
+
+### Two things the first real session taught, the hard way
+
+**Crop to the game rect before anything.** ffmpeg's `scene` metric is
+frame-global. The emulator window covered 46.55% of that capture, so every hard
+cut scored ~0.45 instead of ~1.0 and the default 0.3 threshold found **5 cuts in
+450 seconds** of footage full of plays. Cropping first recovered 6.8× more. A
+broken index looks exactly like a capture with no plays in it — there is no error
+to notice.
+
+**Don't believe the container frame rate.** That 60fps file carried ~20 *distinct*
+fps, so the real quantisation is ±50ms, not ±16.7ms. Oversampling is what made
+this detectable at all; `distinctFrameRate` is what makes it visible. Timing
+against the container rate would have claimed 3× the precision that exists and
+every derived constant would have inherited it.
 
 ---
 
