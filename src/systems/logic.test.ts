@@ -40,7 +40,7 @@ import {
   type LivePlayState,
 } from './liveplay';
 import { resolveLiveParams, getMode, setMode } from './mode';
-import { LIVE, MODES } from '../config';
+import { LIVE, MODES, TIMING, FLOW } from '../config';
 import type { PositionId } from './geometry';
 import {
   pitchBandFromError,
@@ -113,6 +113,19 @@ describe('game mode', () => {
 
   it('kid mode has every extra mechanic switched off', () => {
     expect(Object.values(MODES.kid.features).every((f) => f === false)).toBe(true);
+  });
+
+  it('the pitch clock can only gate modes that actually have swing cards', () => {
+    // THE HANG RISK. GameScene.pitchWhenReady() parks the pitch until the batter
+    // taps the swing-card stack, gated on `features.swingChoice`. If a mode
+    // without cards ever got swingChoice:true, the pitch would wait for a tap
+    // that can never arrive and the game would stall forever -- kid, TEE-BALL,
+    // EASY and spectator (which forces mode 'kid') all rely on this being false.
+    expect(MODES.kid.features.swingChoice).toBe(false);
+    expect(MODES.main.features.swingChoice).toBe(true);
+    // And the clock must outlast the settle beat, or it would fire before the
+    // batter has even been shown the cards.
+    expect(FLOW.PITCH_CLOCK_MS).toBeGreaterThan(FLOW.BETWEEN_PITCH_MS);
   });
 
   it('defaults to main for brand-new players', () => {
@@ -201,8 +214,11 @@ describe('main-mode batting cursor (resolveContactAimed)', () => {
   });
 
   it('main mode widens the timing windows via the override', () => {
-    expect(bandFromError(85)).toBe('good'); // kid default: PERFECT is 80
-    expect(bandFromError(85, MODES.main.swingTiming)).toBe('perfect');
+    // An error inside main's PERFECT band but outside kid's -- derived, so it
+    // survives both windows moving with the pitch corridor.
+    const e = (TIMING.PERFECT + MODES.main.swingTiming!.PERFECT) / 2;
+    expect(bandFromError(e)).not.toBe('perfect'); // kid: too early
+    expect(bandFromError(e, MODES.main.swingTiming)).toBe('perfect');
   });
 
   it('swing types reshape the timing windows (safe wider, big narrower)', () => {
@@ -506,11 +522,16 @@ describe('draft', () => {
 
 describe('at-bat timing bands', () => {
   it('maps swing error to the right band', () => {
+    // DERIVED from TIMING, not restated. These are absolute-ms windows and they
+    // move with the pitch corridor -- they were scaled 0.371 when the flight was
+    // matched to BB's 270ms fastball. A test that hardcodes 100/200/400 only
+    // pins yesterday's tuning and goes red for the wrong reason.
+    const mid = (a: number, b: number) => (a + b) / 2;
     expect(bandFromError(0)).toBe('perfect');
-    expect(bandFromError(-40)).toBe('perfect'); // early but dead-on
-    expect(bandFromError(100)).toBe('good');
-    expect(bandFromError(200)).toBe('weak');
-    expect(bandFromError(400)).toBe('miss');
+    expect(bandFromError(-TIMING.PERFECT)).toBe('perfect'); // early but dead-on
+    expect(bandFromError(mid(TIMING.PERFECT, TIMING.GOOD))).toBe('good');
+    expect(bandFromError(mid(TIMING.GOOD, TIMING.CONTACT))).toBe('weak');
+    expect(bandFromError(TIMING.CONTACT + 1)).toBe('miss');
   });
 });
 

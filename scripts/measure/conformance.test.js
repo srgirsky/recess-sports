@@ -35,7 +35,10 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { LIVE, FLOW, MODES, PITCH_SPEED, PITCHES } from '../../src/config.ts';
+import {
+  LIVE, FLOW, MODES, PITCH_SPEED, PITCHES, TIMING,
+  PITCH_TRAVEL_MS, CPU_PITCH_TRAVEL_MS,
+} from '../../src/config.ts';
 import { HOME, FIRST, FOUL_SLOPE } from '../../src/systems/geometry.ts';
 import { affinity, ourLegRealMs, ratioToAnchor, round } from './lib.js';
 
@@ -345,50 +348,65 @@ describe('pace — measured, retuned, and now conformed', () => {
   });
 });
 
-describe('pitch corridor — our pitches are slower than BB’s across the board', () => {
-  it('drifts from BB’s fastball by the recorded amount', () => {
-    // Derived from the real constants, not restated: travelMs =
-    // (base / speedMult) * armTravelMult(stat), which is the formula in
-    // src/systems/pitchkind.ts. If anyone changes PITCH_SPEED or the fastball's
-    // speedMult, this moves and the record has to move with it.
+describe('pitch corridor — matched to BB, and timing can never go free again', () => {
+  const armMult = (stat) =>
+    Math.min(PITCH_SPEED.ARM_MULT.MAX, Math.max(PITCH_SPEED.ARM_MULT.MIN,
+      PITCH_SPEED.ARM_MULT.BASE - PITCH_SPEED.ARM_MULT.PER_STAT * stat));
+  const travel = (base, kind, stat) => (base / PITCHES[kind].speedMult) * armMult(stat);
+
+  it('our fastball matches BB’s measured 270ms', () => {
     const rec = M.pace.pitchCorridor;
-    expect(rec.status).toBe('known-drift');
+    expect(rec.status).toBe('conformed');
 
-    const armMult = (stat) =>
-      Math.min(PITCH_SPEED.ARM_MULT.MAX, Math.max(PITCH_SPEED.ARM_MULT.MIN,
-        PITCH_SPEED.ARM_MULT.BASE - PITCH_SPEED.ARM_MULT.PER_STAT * stat));
-    const ours = (stat) => (PITCH_SPEED.MAIN_BASE_MS / PITCHES.fastball.speedMult) * armMult(stat);
-
+    // Both sides derived: ours from the real formula, BB's from its own samples.
+    const ours = (stat) => travel(PITCH_SPEED.MAIN_BASE_MS, 'fastball', stat);
     expect(Math.round(ours(5))).toBe(rec.ours.fastballMs.stat5);
-    expect(Math.round(ours(10))).toBe(rec.ours.fastballMs.stat10);
-    expect(Math.round(ours(1))).toBe(rec.ours.fastballMs.stat1);
 
-    // BB's side derived from the record's own samples.
     const lasers = rec.samples.filter((x) => x.kind.startsWith('laser')).map((x) => x.ms);
-    expect(lasers).toHaveLength(rec.measured.fastballN);
     const bbFast = lasers.sort((a, b) => a - b)[Math.floor(lasers.length / 2)];
     expect(bbFast).toBe(rec.measured.fastballMs);
+    expect(Math.abs(ours(5) - bbFast)).toBeLessThan(rec.measured.fastballSpread);
 
-    expect(round((ours(5) / bbFast - 1) * 100, 1)).toBeCloseTo(rec.driftPct, 0);
-
-    // The starkest form of the finding, and the one worth pinning: our FASTEST
-    // possible pitch is still slower than BB's SLOWEST measured one. If that
-    // ever stops being true the whole "our pitches are slow" conclusion changes.
-    expect(ours(10)).toBeGreaterThan(rec.measured.corridorMaxMs);
+    // And our corridor now BRACKETS BB's lasers instead of sitting entirely
+    // above them, which was the old finding.
+    expect(ours(10)).toBeLessThan(Math.min(...lasers));
+    expect(ours(1)).toBeGreaterThan(Math.max(...lasers));
   });
 
-  it('keeps the cadence finding separate from the flight-time finding', () => {
-    // These point in opposite directions and collapsing them would lose the
-    // actual explanation: our pitches FLY slower than BB's, but arrive on a
-    // fixed timer where BB waits for the player indefinitely.
+  it('never lets a timing window swallow the whole flight', () => {
+    // THE STRUCTURAL GUARD, and the reason the windows had to move at all. If
+    // CONTACT ever reaches the FASTEST possible travelMs, a tap at the instant
+    // of release scores contact and timing stops being a skill. This outlives
+    // any future retune of either number -- it is about the relationship.
+    const kinds = Object.keys(PITCHES);
+    const worst = (base) => Math.min(...kinds.map((k) => travel(base, k, 10)));
+
+    expect(MODES.main.swingTiming.CONTACT).toBeLessThan(worst(PITCH_SPEED.MAIN_BASE_MS));
+    expect(MODES.main.swingTiming.CONTACT).toBeLessThan(worst(PITCH_SPEED.MAIN_CPU_BASE_MS));
+    // Kid mode always throws the fastball (no pitch selection).
+    expect(TIMING.CONTACT).toBeLessThan(travel(PITCH_TRAVEL_MS, 'fastball', 10));
+    expect(TIMING.CONTACT).toBeLessThan(travel(CPU_PITCH_TRAVEL_MS, 'fastball', 10));
+  });
+
+  it('keeps a lob range alive so slow pitches still read as slow', () => {
+    // BB's readability trick: fastballs are lasers, off-speed arcs. If FROM_MS
+    // sits above every possible travelMs the cue dies silently.
+    const slowest = travel(PITCH_SPEED.MAIN_BASE_MS, 'changeup', 1);
+    const fastest = travel(PITCH_SPEED.MAIN_BASE_MS, 'fastball', 10);
+    expect(PITCH_SPEED.LOB.FROM_MS).toBeLessThan(slowest);
+    expect(PITCH_SPEED.LOB.FROM_MS).toBeGreaterThan(fastest);
+  });
+
+  it('records the pitch clock, and that the old "no timer" claim was corrected', () => {
     const cad = M.pace.pitchCadence;
-    expect(cad.status).toBe('known-drift');
-    expect(cad.measured.bbIsPlayerPaced).toBe(true);
-    expect(FLOW.BETWEEN_PITCH_MS).toBe(cad.ours.value);
-    // Every BB gap measured is many times our timer -- that gap IS the finding.
-    for (const g of cad.measured.bbGapsSec) {
-      expect(g * 1000).toBeGreaterThan(FLOW.BETWEEN_PITCH_MS * 3);
-    }
+    expect(cad.status).toBe('conformed');
+    expect(FLOW.PITCH_CLOCK_MS).toBe(cad.ours.value);
+    // The walk-back must stay visible: BB HAS a clock, it just never binds.
+    expect(cad.supersedes.was).toMatch(/DOES NOT USE A TIMER/);
+    expect(cad.measured.bbClockExists).toBe(true);
+    // Our clock must sit below every gap BB was observed to allow, or we would
+    // be claiming to be more patient than the game we measured.
+    for (const g of cad.measured.bbGapsSec) expect(FLOW.PITCH_CLOCK_MS).toBeLessThan(g * 1000 + 1);
   });
 });
 

@@ -9,6 +9,7 @@
 import Phaser from 'phaser';
 import { COLORS, HUD } from '../../config';
 import { panel, FONT } from '../../ui/theme';
+import { pulse } from '../../ui/anim';
 
 export interface CardDef {
   id: string;
@@ -27,6 +28,12 @@ export interface CardDef {
 export interface CardStack {
   destroy(): void;
   setSelected(id: string): void;
+  /**
+   * Breathe the whole stack to say "your move". Used by the pitch clock: with a
+   * player-paced pitch the batter MUST tap to make the pitcher throw, and a
+   * static stack gives no hint that the game is waiting on them.
+   */
+  attention(on: boolean): void;
 }
 
 export function makeCardStack(
@@ -113,11 +120,25 @@ export function makeCardStack(
   }
 
   opts.pin(root);
+  let attn: Phaser.Tweens.Tween | undefined;
   return {
-    destroy: () => root.destroy(),
+    destroy: () => {
+      attn?.stop();
+      root.destroy();
+    },
     setSelected(id: string) {
       selected = id;
       for (const r of restyles) r();
+    },
+    attention(on: boolean) {
+      if (on === !!attn) return;
+      if (!on) {
+        attn?.stop();
+        attn = undefined;
+        root.setScale(1);
+        return;
+      }
+      attn = pulse(scene, root, { scale: 1.06, dur: 520 });
     },
   };
 }
