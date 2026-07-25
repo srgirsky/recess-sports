@@ -53,3 +53,45 @@ export function drawStatBars(
   });
   return added;
 }
+
+export interface StatDotOpts {
+  x: number; // left edge of the icon column (container-local)
+  y: number; // TOP of the first row
+  radius?: number; // dot radius (default 6)
+  pitch?: number; // horizontal spacing between dots (default 22)
+  row?: number; // vertical spacing between rows (default 26)
+}
+
+/**
+ * Draw the stats as BB2001-style "skill ratings": one row per stat — the emoji
+ * icon, then 10 dots filled in the stat's color up to its value. Same stat
+ * order/colors/icons as `drawStatBars` (shared `STAT_BARS`). Round dots are
+ * fine as plain circles (only rounded RECTS + triangles need Graphics).
+ */
+export function drawStatDots(
+  scene: Phaser.Scene,
+  container: Phaser.GameObjects.Container,
+  stats: Stats,
+  opts: StatDotOpts
+): Phaser.GameObjects.GameObject[] {
+  const added: Phaser.GameObjects.GameObject[] = [];
+  const r = opts.radius ?? 6;
+  const pitch = opts.pitch ?? 22;
+  const row = opts.row ?? 26;
+  const dot0 = opts.x + 34; // first dot sits right of the icon column
+  STAT_BARS.forEach((stat, i) => {
+    const cy = opts.y + row * i + r;
+    const icon = scene.add
+      .text(opts.x, cy, stat.icon, { fontSize: `${Math.round(r * 3)}px` })
+      .setOrigin(0, 0.5);
+    container.add(icon);
+    added.push(icon);
+    const val = stats[stat.key];
+    for (let d = 0; d < 10; d++) {
+      const dot = scene.add.circle(dot0 + d * pitch, cy, r, d < val ? stat.color : 0xd8cdb5);
+      container.add(dot);
+      added.push(dot);
+    }
+  });
+  return added;
+}

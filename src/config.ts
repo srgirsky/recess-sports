@@ -377,6 +377,26 @@ export const KID_SIZE = {
   WALL_FRONT_H: 98,
 };
 
+/**
+ * Draft scouting UI (the Schoolyard wall). Two tiers, Backyard-style:
+ * HOVER a kid → a small floating name + mini-equalizer tag rides above them;
+ * TAP a kid → the full baseball card (portrait, dot ratings, ability chip,
+ * PICK). Layout/feel knobs only — the readouts themselves live in
+ * ui/PlayerCard.ts + ui/statbars.ts.
+ */
+export const DRAFT = {
+  HOVER_HIDE_MS: 90, // grace before the hover tag hides — kills slide-across strobe
+  TAG_W: 176, // hover-tag size
+  TAG_H: 78,
+  TAG_GAP: 14, // gap between the tag's pointer and the kid's head
+  CARD_W: 664, // baseball-card size
+  CARD_H: 250,
+  CARD_Y: 502, // card center y
+  DOT_R: 6, // skill-rating dot radius
+  DOT_PITCH: 22, // spacing between dots in a row
+  DOT_ROW: 26, // vertical pitch between rating rows
+};
+
 /** How long a runner takes to jog ONE base (ms). Post-hit pacing derives from this. */
 export const RUNNER_TWEEN_MS = 450;
 
@@ -666,6 +686,29 @@ export const DIFFICULTY = {
   ARM_PER_LEVEL: 0.7, // CPU pitcher stat bonus per level (tighter pitches)
   CONTACT_PER_LEVEL: 0.7, // CPU batter contact bonus per level
 };
+
+/**
+ * The player-facing difficulty ladder (BB2001's TEE-BALL / EASY / MEDIUM / HARD)
+ * mapped over our two internal feature sets. TEE-BALL and EASY resolve to the
+ * forgiving KID feature set (tee-ball additionally sits the ball on a tee — a
+ * slow soft lob so timing is trivial); MEDIUM and HARD use the full CLASSIC set,
+ * with HARD seeding the CPU ramp a couple levels up front. `GameMode` stays the
+ * internal switch — difficulty is the label on top of it. See systems/mode.ts.
+ */
+export type DifficultyLevel = 'teeball' | 'easy' | 'medium' | 'hard';
+
+export const DIFFICULTY_TIERS: Record<
+  DifficultyLevel,
+  { mode: GameMode; baseRamp: number; tee: boolean; icon: string; label: string }
+> = {
+  teeball: { mode: 'kid', baseRamp: 0, tee: true, icon: '🏌️', label: 'TEE-BALL' },
+  easy: { mode: 'kid', baseRamp: 0, tee: false, icon: '🙂', label: 'EASY' },
+  medium: { mode: 'main', baseRamp: 0, tee: false, icon: '⚾', label: 'MEDIUM' },
+  hard: { mode: 'main', baseRamp: 2, tee: false, icon: '🔥', label: 'HARD' },
+};
+
+/** Tee-ball: the pitch is a slow, high soft lob so any timing makes contact. */
+export const TEE_PITCH_MS = 1500;
 
 /** Pitcher fatigue (CLASSIC, `features.fatigue`; systems/fatigue.ts). */
 export const FATIGUE = {
