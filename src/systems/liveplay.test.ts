@@ -5,7 +5,7 @@
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
-import { LIVE } from '../config';
+import { LIVE, ERRORS } from '../config';
 import type { Character } from '../data/types';
 import { resolveContact, type Launch } from './atbat';
 import { resolveLiveParams, type LiveParams } from './mode';
@@ -17,6 +17,7 @@ import {
   THIRD,
   FOUL_SLOPE,
   FIELD_POSITIONS,
+  basePos,
   FIELD_MARGIN,
   FOUL_ALLOWANCE,
   FIELD_BOTTOM_Y,
@@ -35,6 +36,7 @@ import {
   finishLivePlay,
   rollCatch,
   rollThrowError,
+  wildSettlePoint,
   type LivePlayState,
   type LiveInputs,
   type LiveEvent,
@@ -76,6 +78,44 @@ function runPlay(
   }
   expect(s.phase).toBe('done');
   return { s, events };
+}
+
+/**
+ * Baseball's direction rules, checked every tick. A runner is only ever headed
+ * at a real bag, and a batter-runner can never be aimed back at the plate.
+ */
+function expectLegalRunners(s: LivePlayState): void {
+  for (const r of s.runners) {
+    if (r.done !== null) continue;
+    expect(r.to).toBeLessThanOrEqual(4);
+    // Base 0 is the batter's BOX, not a destination. A batter may idle there
+    // (to === from === 0) while first is still occupied, but nobody may ever
+    // be RUNNING at it — that's the illegal retreat, and it's also how the
+    // batter used to end a play at base 0 and vanish from the inning.
+    if (r.to === 0) expect(r.from).toBe(0);
+    expect(r.from >= 1 || r.isBatter).toBe(true);
+  }
+  for (const e of s.events) {
+    if (e.t === 'out' || e.t === 'safe' || e.t === 'throw') {
+      const base = e.t === 'throw' ? e.toBase : e.base;
+      expect(base).toBeGreaterThanOrEqual(1);
+      expect(base).toBeLessThanOrEqual(4);
+    }
+  }
+}
+
+/**
+ * Nobody evaporates: every live runner ends standing on 1-3, so applyLivePlay
+ * can place them. Exempt when the third out ended the half — the inning is
+ * over and where the remaining runners stood no longer matters.
+ */
+function expectEveryRunnerAccountedFor(s: LivePlayState): void {
+  if (s.outsBefore + s.outs >= 3) return;
+  for (const r of s.runners) {
+    if (r.done !== null) continue;
+    expect(r.from).toBeGreaterThanOrEqual(1);
+    expect(r.from).toBeLessThanOrEqual(3);
+  }
 }
 
 const grounderToShort: Launch = {
@@ -179,9 +219,10 @@ describe('live play: defense (the player fields)', () => {
   });
 
   it('ignoring the ball entirely still terminates (cap) and the CPU runs wild', () => {
-    // Magnet assist (not kid's auto) so an idle pointer really means nobody
-    // fields it — this test is about the no-soft-lock termination cap.
-    const noAuto: LiveParams = { ...kid, assist: 'magnet' };
+    // Nobody fields it — magnet assist (not kid's auto) AND nobody can move,
+    // so neither steering nor the idle takeover gets anyone to the ball. This
+    // test is about the no-soft-lock termination cap, not about fielding.
+    const noAuto: LiveParams = { ...kid, assist: 'magnet', fielderSpeed: 0 };
     let s = startLivePlay({
       mode: 'defense',
       // Lands in the SS/LF/3B gap — no fielder close enough to auto-grab it.
@@ -198,6 +239,27 @@ describe('live play: defense (the player fields)', () => {
     // Nobody fielded it — the runner from 2nd (at least) comes around to score.
     expect(outcome.runs).toBeGreaterThanOrEqual(1);
     expect(outcome.outs).toBe(0);
+  });
+
+  it('CLASSIC: letting go of the pointer no longer freezes the fielder', () => {
+    // Kid mode's 'auto' assist always self-fielded; CLASSIC's 'magnet' had no
+    // fallback, so lifting the pointer left the chaser standing still and the
+    // play ran out the clock with the ball lying on the grass.
+    const classic = resolveLiveParams('main');
+    let s = startLivePlay({
+      mode: 'defense',
+      launch: { ...grounderToShort, landing: { x: 335, y: 300 } },
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params: classic,
+    });
+    const startPos = { ...s.fielders[s.active].pos };
+    const { s: end, events } = runPlay(s, classic, () => ({}), () => 0.9);
+    expect(dist(end.fielders[end.active].pos, startPos)).toBeGreaterThan(20);
+    expect(events.some((e) => e.t === 'pickup')).toBe(true);
+    expect(end.elapsed).toBeLessThan(classic.maxPlayMs * 0.75);
   });
 
   it('a slow CPU batter is thrown out; a jackrabbit beats the same throw', () => {
@@ -587,29 +649,41 @@ describe('live play: manual baserunning (main mode)', () => {
   });
 
   it('an unforced runner is NOT out just because the ball beat them to the bag', () => {
-    let s = startLivePlay({
-      mode: 'offense',
-      launch: { ...grounderToShort, landing: { x: 700, y: 260 } }, // hit to right side
-      batter: { charId: 'bat', speed: 10 },
-      baseRunners: [{ base: 2, charId: 'r2', speed: 9 }], // unforced (1st empty... batter forces only 1st)
-      outs: 0,
-      defense: DEFENSE,
-      params: main,
-    });
-    // Send r2 to third with a good jump; the CPU's throw beats them there by a
-    // hair, but a bang-bang arrival is inside SAFE_RADIUS — safe unless tagged.
-    let sent = false;
-    const { s: end } = runPlay(s, main, (st) => {
-      if (!sent && st.elapsed > 100) {
-        sent = true;
-        return { sendRunner: 'r2' };
-      }
-      return {};
-    }, () => 0.9);
-    const r2 = end.runners.find((r) => r.charId === 'r2')!;
-    // A fast unforced runner with a big head start should not be force-out-able.
-    expect(r2.done === 'out' && r2.pos.x === 298 && false).toBe(false); // (no force at 3rd)
-    expect(finishLivePlay(end).outs).toBeLessThanOrEqual(1); // at most the batter
+    // Tested at the seam rather than through a live race: whether a throw beats
+    // a runner by a hair depends on how fast the defense happens to be, so a
+    // scenario version silently turns into a different test whenever fielding
+    // is tuned. The RULE is what matters — a force retires you, a mere arrival
+    // does not, and the difference is exactly `isForced`.
+    const arrive = (forced: boolean) => {
+      const s = startLivePlay({
+        mode: 'offense',
+        launch: { ...grounderToShort, landing: { x: 700, y: 260 } },
+        batter: { charId: 'bat', speed: 5 },
+        // A runner on 1st behind them makes the runner on 2nd forced; alone,
+        // they are not.
+        baseRunners: forced
+          ? [
+              { base: 1 as const, charId: 'r1', speed: 5 },
+              { base: 2 as const, charId: 'r2', speed: 5 },
+            ]
+          : [{ base: 2 as const, charId: 'r2', speed: 5 }],
+        outs: 0,
+        defense: DEFENSE,
+        params: main,
+      });
+      const r2 = s.runners.find((r) => r.charId === 'r2')!;
+      // Halfway to third, then put the ball on the bag ahead of them.
+      r2.from = 2;
+      r2.to = 3;
+      r2.progress = 0.5;
+      r2.pos = { x: 400, y: 330 };
+      s.ball.phase = 'thrown';
+      s.ball.throw = { toBase: 3, from: { x: 700, y: 260 }, t: 0, totalMs: 10 };
+      stepLivePlay(s, {}, 50, main, () => 0.9);
+      return r2;
+    };
+    expect(arrive(false).done).toBeNull(); // unforced: needs a tag, not a bag
+    expect(arrive(true).done).toBe('out'); // forced: the bag is enough
   });
 
   it('termination property holds under random send/hold spam', () => {
@@ -644,13 +718,114 @@ describe('live play: manual baserunning (main mode)', () => {
         if (Math.random() < 0.25) inputs.sendRunner = ids[Math.floor(Math.random() * ids.length)];
         if (Math.random() < 0.25) inputs.holdRunner = ids[Math.floor(Math.random() * ids.length)];
         s = stepLivePlay(s, inputs, 50, main, () => Math.random());
+        expectLegalRunners(s);
       }
       expect(s.phase).toBe('done');
+      expectEveryRunnerAccountedFor(s);
       const outcome = finishLivePlay(s);
       expect(outcome.outs).toBeGreaterThanOrEqual(0);
       expect(outcome.outs + (s.outsBefore ?? 0)).toBeLessThanOrEqual(4);
       expect(outcome.runs).toBeLessThanOrEqual(4);
     }
+  });
+
+  it('a hold aimed at the batter is a no-op — nobody runs back to the plate', () => {
+    let s = startLivePlay({
+      mode: 'offense',
+      launch: grounderToShort,
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params: main,
+    });
+    // Let them get well up the line, then spam HOLD at the batter.
+    for (let i = 0; i < 10; i++) s = stepLivePlay(s, {}, 50, main, () => 0.5);
+    const bat = s.runners.find((r) => r.isBatter)!;
+    expect(bat.to).toBe(1);
+    const midProgress = bat.progress;
+    for (let i = 0; i < 10; i++) s = stepLivePlay(s, { holdRunner: 'bat' }, 50, main, () => 0.5);
+    expect(bat.from).toBe(0);
+    expect(bat.to).toBe(1);
+    expect(bat.progress).toBeGreaterThan(midProgress); // still going forward
+  });
+
+  it('the CPU rundown rule never turns the batter back toward home', () => {
+    // The reported bug: an infielder holding the ball near the baseline used to
+    // satisfy the panic test against the batter-runner, who then sprinted at the
+    // plate, touched it, and was force-sent to first again — over and over.
+    let s = startLivePlay({
+      mode: 'defense',
+      launch: grounderToShort,
+      batter: { charId: 'bat', speed: 4 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params: main,
+    });
+    let maxTo = 0;
+    let guard = 0;
+    while (s.phase !== 'done' && guard++ < 4000) {
+      // Field it, then just stand there holding the ball in the batter's face.
+      const bat = s.runners.find((r) => r.isBatter)!;
+      s = stepLivePlay(s, { pointer: s.ball.phase === 'held' ? { ...bat.pos } : { ...s.ball.pos } }, 50, main, () => 0.9);
+      expect(bat.to).toBeGreaterThanOrEqual(bat.from === 0 ? 0 : 1);
+      expect(bat.to).not.toBe(0); // never aimed at the plate
+      maxTo = Math.max(maxTo, bat.to);
+    }
+    const bat = s.runners.find((r) => r.isBatter)!;
+    expect(bat.done === 'out' || bat.from >= 1).toBe(true);
+    expect(maxTo).toBeGreaterThanOrEqual(1);
+  });
+
+  it('finishLivePlay never loses a batter stranded at the plate', () => {
+    // Hand-built pathological state: if this ever happens, the batter must be
+    // credited with first, not deleted from the inning with no out recorded.
+    let s = startLivePlay({
+      mode: 'offense',
+      launch: grounderToShort,
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params: main,
+    });
+    const bat = s.runners.find((r) => r.isBatter)!;
+    bat.from = 0;
+    bat.to = 0;
+    bat.progress = 0;
+    bat.done = null;
+    const outcome = finishLivePlay(s);
+    expect(outcome.batterOut).toBe(false);
+    expect(outcome.bases[0]).toBe(true);
+    expect(outcome.baseIds[0]).toBe('bat');
+  });
+
+  it('the max-play backstop settles the batter on first, never at the plate', () => {
+    // "Stragglers settle on the base behind them" has no meaning for a batter —
+    // behind them is the box. Drive the clock to the cap with the batter still
+    // on the leg out of it and check they're credited with first.
+    const frozen: LiveParams = { ...main, assist: 'magnet', assistBlend: 0 };
+    let s = startLivePlay({
+      mode: 'defense',
+      launch: grounderToShort,
+      batter: { charId: 'bat', speed: 1 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params: frozen,
+    });
+    s.elapsed = frozen.maxPlayMs - 50;
+    const bat = s.runners.find((r) => r.isBatter)!;
+    bat.from = 0;
+    bat.to = 1;
+    bat.progress = 0.3;
+    s = stepLivePlay(s, {}, 50, frozen, () => 0.9);
+    expect(s.phase).toBe('done');
+    expect(bat.done).toBeNull();
+    expect(bat.from).toBe(1);
+    expectEveryRunnerAccountedFor(s);
+    expect(finishLivePlay(s).bases[0]).toBe(true);
   });
 });
 
@@ -774,6 +949,263 @@ describe('live play: bounces & fence caroms', () => {
   it('grounders never hop — they roll exactly like before', () => {
     const { trace } = settle(start(grounderToShort));
     for (const t of trace) expect(t.height).toBe(0);
+  });
+});
+
+describe('live play: who chases it', () => {
+  const kid = resolveLiveParams('kid');
+  const main = resolveLiveParams('main');
+  const grounder = (settle: { x: number; y: number }, q = 0.8): Launch => ({
+    type: 'grounder',
+    landing: settle,
+    hangMs: 0,
+    rollSpeed: 81 + q * 40,
+    homer: false,
+  });
+  const chaserFor = (launch: Launch, params: LiveParams) =>
+    startLivePlay({
+      mode: 'defense',
+      launch,
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params,
+    });
+
+  it('sends an infielder — not the right fielder — after a grounder up the right side', () => {
+    // The reported bug. A hard grounder through the 1B-2B hole SETTLES in
+    // shallow right, so "nearest the settle point" elected RF while the ball
+    // rolled through the second baseman's feet a second and a half earlier.
+    for (const params of [kid, main]) {
+      const s = chaserFor(grounder({ x: 613, y: 203 }, 0.9), params);
+      const pos = s.fielders[s.active].position;
+      expect(pos, `mode ${params.manualBaserunning ? 'main' : 'kid'}`).not.toBe('RF');
+      expect(pos).not.toBe('P'); // ...and not the pitcher-vacuum either
+      expect(['2B', '1B', 'SS']).toContain(pos);
+    }
+  });
+
+  it('still gives the pitcher a real comebacker', () => {
+    for (const params of [kid, main]) {
+      const s = chaserFor(grounder({ x: 480, y: 380 }, 0), params);
+      expect(s.fielders[s.active].position).toBe('P');
+    }
+  });
+
+  it('leaves a ball rolling straight at a fielder to that fielder', () => {
+    // Nobody charges across in front of the kid it's hit at.
+    for (const params of [kid, main]) {
+      const s = chaserFor(grounder({ x: 405, y: 300 }, 0.5), params);
+      expect(s.fielders[s.active].position).toBe('SS');
+    }
+  });
+
+  it('camps the nearest outfielder under a deep fly', () => {
+    for (const params of [kid, main]) {
+      const s = chaserFor(
+        { type: 'fly', landing: { x: 700, y: 235 }, hangMs: 4000, rollSpeed: 100, homer: false },
+        params
+      );
+      expect(s.fielders[s.active].position).toBe('RF');
+    }
+  });
+
+  it('hands the ball to whoever actually has it', () => {
+    // phase 'held' => heldBy === active. Before, a completed throw left the
+    // player steering a kid with empty hands who could not carry it anywhere.
+    let s = startLivePlay({
+      mode: 'defense',
+      launch: grounderToShort,
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params: kid,
+    });
+    let threw = false;
+    let guard = 0;
+    while (s.phase !== 'done' && guard++ < 4000) {
+      const inputs: LiveInputs =
+        s.ball.phase === 'held' && !threw
+          ? ((threw = true), { throwTo: { base: 1 as const, power: 1 } })
+          : { pointer: s.ball.pos };
+      s = stepLivePlay(s, inputs, 50, kid, () => 0.9);
+      if (s.ball.phase === 'held') expect(s.ball.heldBy).toBe(s.active);
+    }
+    expect(threw).toBe(true);
+  });
+
+  it('hands over when a wild throw dies next to a different kid', () => {
+    let s = startLivePlay({
+      mode: 'defense',
+      launch: grounderToShort,
+      batter: { charId: 'bat', speed: 3 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params: main,
+    });
+    let threw = false;
+    let guard = 0;
+    const seen = new Set<number>();
+    while (s.phase !== 'done' && guard++ < 4000) {
+      const inputs: LiveInputs =
+        s.ball.phase === 'held' && !threw
+          ? ((threw = true), { throwTo: { base: 1 as const, power: 1 } })
+          : {};
+      // rng: clean pickup, then a wild throw, then clean.
+      s = stepLivePlay(s, inputs, 50, main, seq([0.9, 0.05, 0.9]));
+      seen.add(s.active);
+    }
+    // Somebody other than the original chaser got involved, and the play
+    // resolved rather than burning down the clock with an orphaned ball.
+    expect(seen.size).toBeGreaterThan(1);
+    expect(s.elapsed).toBeLessThan(main.maxPlayMs * 0.75);
+  });
+
+  it('does not flicker: handovers are rare and never mid-reach', () => {
+    for (let i = 0; i < 60; i++) {
+      const r = resolveContact('good', plain({}), plain({}), () => Math.random());
+      if (r.kind !== 'inPlay' || r.launch.homer) continue;
+      let s = startLivePlay({
+        mode: 'defense',
+        launch: r.launch,
+        batter: { charId: 'bat', speed: 5 },
+        baseRunners: [],
+        defense: DEFENSE,
+        outs: 0,
+        params: main,
+      });
+      let switches = 0;
+      let lastAt = -Infinity;
+      let guard = 0;
+      while (s.phase !== 'done' && guard++ < 4000) {
+        const before = s.active;
+        const wasClose = dist(s.fielders[before].pos, s.ball.pos) <= LIVE.CHASE.KEEP_RADIUS;
+        s = stepLivePlay(s, { pointer: s.ball.pos }, 50, main, () => 0.9);
+        if (s.active !== before && s.ball.phase !== 'held') {
+          switches++;
+          // A kid already on the ball never has it taken away mid-reach.
+          expect(wasClose).toBe(false);
+          expect(s.elapsed - lastAt).toBeGreaterThanOrEqual(LIVE.CHASE.SWITCH_COOLDOWN_MS);
+          lastAt = s.elapsed;
+        }
+      }
+      expect(switches).toBeLessThanOrEqual(6);
+    }
+  });
+
+  it('consumes no rng — two identical sims stay byte-identical', () => {
+    const run = (launch: Launch) => {
+      let s = startLivePlay({
+        mode: 'defense',
+        launch,
+        batter: { charId: 'bat', speed: 5 },
+        baseRunners: [{ base: 1, charId: 'r1', speed: 5 }],
+        defense: DEFENSE,
+        outs: 0,
+        params: kid,
+      });
+      const frames: string[] = [];
+      let guard = 0;
+      while (s.phase !== 'done' && guard++ < 4000) {
+        s = stepLivePlay(s, {}, 50, kid, () => 0.5);
+        frames.push(JSON.stringify({ a: s.active, b: s.ball.pos, c: s.chase?.point }));
+      }
+      return frames.join('|');
+    };
+    expect(run(grounder({ x: 613, y: 203 }, 0.9))).toBe(run(grounder({ x: 613, y: 203 }, 0.9)));
+    expect(run(flyToCenter)).toBe(run(flyToCenter));
+  });
+});
+
+describe('live play: a wild throw always leaves the ball retrievable', () => {
+  // The bug: 1B and 3B sit exactly ON the foul lines, so a straight-line
+  // OVERSHOOT_PX sail landed up to ~72px outside the region clampToField lets
+  // fielders occupy. The chaser then pressed against the boundary for the rest
+  // of the play — 20+ seconds of dead air, every ~10th throw.
+  const ORIGINS = Object.entries(FIELD_POSITIONS) as Array<[PositionId, { x: number; y: number }]>;
+  const BASES = [1, 2, 3, 4] as const;
+
+  it('rests inside the field for every origin x base x venue', () => {
+    for (const v of Object.values(VENUES)) {
+      const geo = getFieldGeometry(v);
+      for (const [, from] of ORIGINS) {
+        for (const b of BASES) {
+          const p = wildSettlePoint(geo, from, basePos(b));
+          const where = `${v.id} ${from.x},${from.y} -> base ${b}`;
+          expect(p.y, where).toBeGreaterThanOrEqual(fenceYAtX(geo, p.x) + 4 - 0.001);
+          expect(p.y, where).toBeLessThanOrEqual(FIELD_BOTTOM_Y + 0.001);
+          expect(Math.abs(p.x - HOME.x), where).toBeLessThanOrEqual(
+            FOUL_SLOPE * Math.max(0, HOME.y - p.y) + FOUL_ALLOWANCE + 0.001
+          );
+        }
+      }
+    }
+  });
+
+  it('rests within a fielder’s pickup reach of somewhere they may stand', () => {
+    for (const v of Object.values(VENUES)) {
+      const geo = getFieldGeometry(v);
+      for (const [, from] of ORIGINS) {
+        for (const b of BASES) {
+          const p = wildSettlePoint(geo, from, basePos(b));
+          // clampToField at FIELD_MARGIN is the nearest LEGAL fielder spot.
+          expect(dist(p, clampToField(geo, p)), `${v.id} base ${b}`).toBeLessThan(LIVE.PICKUP_RADIUS);
+        }
+      }
+    }
+  });
+
+  it('the worst case (CF -> 3B) is recovered, not orphaned for 20 seconds', () => {
+    // Measured as the furthest out of bounds before the clamp: the ball came to
+    // rest ~72px outside anywhere a fielder may stand, so the chaser pressed
+    // against the boundary until MAX_PLAY_MS with runners circling.
+    const main = resolveLiveParams('main');
+    let s = startLivePlay({
+      mode: 'defense',
+      launch: { type: 'grounder', landing: { x: 480, y: 250 }, hangMs: 0, rollSpeed: 110, homer: false },
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [{ base: 2, charId: 'r2', speed: 5 }],
+      defense: DEFENSE,
+      outs: 0,
+      params: main,
+    });
+    // Field it, then heave it wildly across the diamond to third — and after
+    // that give NO input at all, so the recovery has to come from the idle
+    // takeover finding a ball that used to be unreachable.
+    let threw = false;
+    let guard = 0;
+    let last = s;
+    while (s.phase !== 'done' && guard++ < 4000) {
+      const inputs: LiveInputs =
+        s.ball.phase === 'held' && !threw
+          ? ((threw = true), { throwTo: { base: 3 as const, power: 1 } })
+          : threw
+            ? {}
+            : { pointer: { ...s.ball.pos } };
+      // rng: clean pickup, then the throw sails, then clean.
+      s = stepLivePlay(s, inputs, 50, main, seq([0.9, 0.02, 0.9]));
+      last = s;
+    }
+    expect(threw).toBe(true);
+    expect(last.phase).toBe('done');
+    // Recovered rather than timed out, and it ended in someone's glove.
+    expect(last.elapsed).toBeLessThan(main.maxPlayMs * 0.75);
+    expect(last.ball.phase).toBe('held');
+  });
+
+  it('still sails — a corner bag is as costly as one up the middle', () => {
+    // Plain clamping would truncate the sail to ~26px at 1B/3B while leaving
+    // the full 64px at 2B/home, making wild throws to the corners cheap.
+    const geo = getFieldGeometry(VENUES.park);
+    for (const [, from] of ORIGINS) {
+      for (const b of BASES) {
+        const sail = dist(wildSettlePoint(geo, from, basePos(b)), basePos(b));
+        expect(sail).toBeGreaterThan(ERRORS.OVERSHOOT_PX * 0.9);
+      }
+    }
   });
 });
 

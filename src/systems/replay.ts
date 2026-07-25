@@ -11,6 +11,14 @@ import type { Vec } from './geometry';
 /** What the renderer needs per tick — positions and motion cues only. */
 export interface ReplayFrame {
   t: number; // play-elapsed ms at capture
+  /**
+   * Index of the chasing fielder. The chaser can change hands mid-play (see
+   * systems/fielding.ts), and the view draws the steering spotlight, chevron
+   * and name bubble straight off it — so a frame that omitted it would leave
+   * the net guest highlighting the wrong kid, and every replay showing the
+   * chaser as of the END of the play.
+   */
+  active: number;
   ball: {
     pos: Vec;
     height: number;
@@ -49,6 +57,7 @@ export function isReplayWorthy(h: PlayHighlights): boolean {
 export function snapshotLive(s: LivePlayState): ReplayFrame {
   return {
     t: s.elapsed,
+    active: s.active,
     ball: {
       pos: { ...s.ball.pos },
       height: s.ball.height,
@@ -83,6 +92,7 @@ export function lerpFrames(a: ReplayFrame, b: ReplayFrame, t01: number): ReplayF
   const vec = (x: Vec, y: Vec): Vec => ({ x: num(x.x, y.x), y: num(x.y, y.y) });
   return {
     t: num(a.t, b.t),
+    active: b.active, // discrete: snap, same rule as phase/heldBy/done
     ball: {
       pos: vec(a.ball.pos, b.ball.pos),
       height: num(a.ball.height, b.ball.height),
@@ -112,6 +122,7 @@ export function lerpFrames(a: ReplayFrame, b: ReplayFrame, t01: number): ReplayF
  * settling after playback folds the correct outcome.
  */
 export function applyFrame(s: LivePlayState, f: ReplayFrame): void {
+  s.active = f.active;
   s.ball.pos = { ...f.ball.pos };
   s.ball.height = f.ball.height;
   s.ball.phase = f.ball.phase;
