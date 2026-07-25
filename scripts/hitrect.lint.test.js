@@ -33,7 +33,7 @@ const SRC = join(here, '..', 'src');
  * silently disagree. Drive these to zero; never raise one.
  */
 const ALLOWLIST = {
-  'scenes/GameSetupScene.ts': 4,
+  // GameSetupScene is fully converted — it deliberately has no entry.
   'scenes/SchoolyardScene.ts': 6,
   'scenes/GameScene.ts': 6,
   'scenes/AlbumScene.ts': 1,

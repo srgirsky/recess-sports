@@ -33,6 +33,7 @@ import * as audio from '../systems/audio';
 import { commentatorProfile } from '../systems/voices';
 import { makeButton } from '../ui/Button';
 import { ribbon, pill, heading } from '../ui/theme';
+import { row, columnGroups, hitFromBox, remeasureText, type Item } from '../ui/layout';
 import { shadeInt, lightenInt, grassFlecks, hash01 } from '../art/fieldTexture';
 
 type GameType = 'game' | 'practice' | 'watch';
@@ -40,7 +41,18 @@ type GameType = 'game' | 'practice' | 'watch';
 const DIFF_ORDER: DifficultyLevel[] = ['teeball', 'easy', 'medium', 'hard'];
 
 /** The field-preview card footprint (top-right, mirroring BB's photo panel). */
-const PREVIEW = { x: 700, y: 300, w: 420, h: 260 };
+const PREVIEW = { x: 716, y: 292, w: 400, h: 244 };
+
+/**
+ * The left choice column. Nothing here is a per-item x — every row measures its
+ * own pills and fits itself into `maxW`, which is what the preview panel's left
+ * edge (PREVIEW.x - PREVIEW.w / 2 = 516) leaves free.
+ */
+const LEFT = { cx: 262, maxW: 486, top: 88, bottom: 562 };
+
+/** Bottom row (back + reset), and the venue row under the preview. */
+const FOOT_Y = 600;
+const VENUE_ROW_Y = 452;
 
 export class GameSetupScene extends Phaser.Scene {
   private settings!: Settings;
@@ -55,6 +67,8 @@ export class GameSetupScene extends Phaser.Scene {
   private helperPills: Array<{ key: 'swingSpot' | 'pitchLocator'; c: Phaser.GameObjects.Container }> = [];
   private previewLabel?: Phaser.GameObjects.Text;
   private preview?: Phaser.GameObjects.Container;
+  /** ◀ NAME ▶ — re-flowed whenever the venue name's width changes. */
+  private venueRow: Item[] = [];
 
   constructor() {
     super('GameSetup');
@@ -78,15 +92,18 @@ export class GameSetupScene extends Phaser.Scene {
     ribbon(this, GAME_WIDTH / 2, 44, '⚾ GAME SETUP', { fontSize: 34 });
 
     // --- Left column: the choices -----------------------------------------
-    heading(this, 250, 96, 'CHOOSE A GAME', 22, '#fff4de');
+    // Everything is built at the column centre with a throwaway y, then MEASURED
+    // and placed below. Nothing here may hardcode a pitch: pills size themselves
+    // to their rendered text, and emoji widths differ per platform.
+    const hGame = heading(this, LEFT.cx, 0, 'CHOOSE A GAME', 22, '#fff4de');
     (
       [
         { t: 'game' as GameType, label: '⚾ GAME' },
         { t: 'practice' as GameType, label: '🥎 PRACTICE' },
         { t: 'watch' as GameType, label: '👀 WATCH' },
       ]
-    ).forEach(({ t, label }, i) => {
-      const c = this.choiceChip(120 + i * 140, 138, label, () => {
+    ).forEach(({ t, label }) => {
+      const c = this.choiceChip(label, () => {
         this.gameType = t;
         this.speak(label);
         this.styleAll();
@@ -94,10 +111,10 @@ export class GameSetupScene extends Phaser.Scene {
       this.typePills.push({ t, c });
     });
 
-    heading(this, 250, 192, 'HOW HARD?', 22, '#fff4de');
-    DIFF_ORDER.forEach((d, i) => {
+    const hHard = heading(this, LEFT.cx, 0, 'HOW HARD?', 22, '#fff4de');
+    DIFF_ORDER.forEach((d) => {
       const tier = DIFFICULTY_TIERS[d];
-      const c = this.choiceChip(96 + i * 108, 234, `${tier.icon} ${tier.label}`, () => {
+      const c = this.choiceChip(`${tier.icon} ${tier.label}`, () => {
         setDifficulty(d);
         // A fresh difficulty re-seeds the helper toggles to that mode's
         // defaults (RESET-ALL-lite), just like BB restores them per level.
@@ -112,9 +129,9 @@ export class GameSetupScene extends Phaser.Scene {
       this.diffPills.push({ d, c });
     });
 
-    heading(this, 150, 292, '⚾ INNINGS', 20, '#fff4de');
-    INNING_CHOICES.forEach((n, i) => {
-      const c = this.choiceChip(70 + i * 74, 332, `${n}`, () => {
+    const hInnings = heading(this, LEFT.cx, 0, '⚾ INNINGS', 20, '#fff4de');
+    INNING_CHOICES.forEach((n) => {
+      const c = this.choiceChip(`${n}`, () => {
         this.settings.innings = n;
         saveSettings(this.settings);
         audio.pop();
@@ -123,14 +140,14 @@ export class GameSetupScene extends Phaser.Scene {
       this.inningPills.push({ n, c });
     });
 
-    heading(this, 130, 392, '🧤 OOPSIES', 20, '#fff4de');
+    const hOopsies = heading(this, LEFT.cx, 0, '🧤 OOPSIES', 20, '#fff4de');
     (
       [
         { on: true, label: 'ON' },
         { on: false, label: 'OFF' },
       ]
-    ).forEach(({ on, label }, i) => {
-      const c = this.choiceChip(70 + i * 96, 432, label, () => {
+    ).forEach(({ on, label }) => {
+      const c = this.choiceChip(label, () => {
         this.settings.errors = on;
         saveSettings(this.settings);
         audio.pop();
@@ -140,14 +157,17 @@ export class GameSetupScene extends Phaser.Scene {
       this.errorPills.push({ on, c });
     });
 
-    heading(this, 330, 392, '🙋 HELPERS', 20, '#fff4de');
+    // HELPERS gets its own row. The two helper pills measure ~176 + ~192, so
+    // there is no gap value that also fits ON/OFF inside the column — sharing a
+    // row is what put SWING SPOT on top of OFF. layoutMath.test.ts pins this.
+    const hHelpers = heading(this, LEFT.cx, 0, '🙋 HELPERS', 20, '#fff4de');
     (
       [
         { key: 'swingSpot' as const, label: '🎯 SWING SPOT' },
         { key: 'pitchLocator' as const, label: '🥊 PITCH LOCATOR' },
       ]
-    ).forEach(({ key, label }, i) => {
-      const c = this.choiceChip(280 + i * 190, 432, label, () => {
+    ).forEach(({ key, label }) => {
+      const c = this.choiceChip(label, () => {
         this.settings[key] = !this.settings[key];
         saveSettings(this.settings);
         audio.pop();
@@ -156,32 +176,46 @@ export class GameSetupScene extends Phaser.Scene {
       this.helperPills.push({ key, c });
     });
 
-    // Reset all: back to defaults + medium difficulty.
-    const reset = pill(this, 130, 494, '♻ RESET ALL', { fill: COLORS.cream, fontSize: 16, minW: 170 });
-    reset.container.setInteractive(new Phaser.Geom.Rectangle(-90, -20, 180, 40), Phaser.Geom.Rectangle.Contains);
-    reset.container.on('pointerdown', () => this.resetAll());
+    // Five heading+pills groups: each heading hugs its own row, and all the
+    // leftover vertical slack goes between the groups.
+    columnGroups(
+      [
+        [[hGame], this.typePills.map((p) => p.c)],
+        [[hHard], this.diffPills.map((p) => p.c)],
+        [[hInnings], this.inningPills.map((p) => p.c)],
+        [[hOopsies], this.errorPills.map((p) => p.c)],
+        [[hHelpers], this.helperPills.map((p) => p.c)],
+      ],
+      { top: LEFT.top, bottom: LEFT.bottom, gap: 8, innerGap: 6 }
+    );
+    const fit = { centerX: LEFT.cx, maxW: LEFT.maxW, minGap: 8 };
+    row([hGame], fit);
+    row(this.typePills.map((p) => p.c), { ...fit, gap: 16 });
+    row([hHard], fit);
+    row(this.diffPills.map((p) => p.c), { ...fit, gap: 14 });
+    row([hInnings], fit);
+    row(this.inningPills.map((p) => p.c), { ...fit, gap: 16 });
+    row([hOopsies], fit);
+    row(this.errorPills.map((p) => p.c), { ...fit, gap: 18 });
+    row([hHelpers], fit);
+    row(this.helperPills.map((p) => p.c), { ...fit, gap: 16 });
 
     // --- Right column: field preview + PLAY BALL --------------------------
     heading(this, PREVIEW.x, 128, 'CHOOSE A FIELD', 22, '#c6ffb0');
     this.drawPreview();
 
-    const prevBtn = pill(this, PREVIEW.x - PREVIEW.w / 2 - 6, PREVIEW.y + PREVIEW.h / 2 + 40, '◀', {
-      fill: COLORS.cream,
-      fontSize: 26,
-      minW: 56,
-    });
-    prevBtn.container.setInteractive(new Phaser.Geom.Rectangle(-28, -24, 56, 48), Phaser.Geom.Rectangle.Contains);
+    const prevBtn = pill(this, 0, 0, '◀', { fill: COLORS.cream, fontSize: 26, minW: 56 });
+    hitFromBox(prevBtn.container);
     prevBtn.container.on('pointerdown', () => this.cycleVenue(-1));
 
-    const nextBtn = pill(this, PREVIEW.x + PREVIEW.w / 2 + 6, PREVIEW.y + PREVIEW.h / 2 + 40, '▶', {
-      fill: COLORS.cream,
-      fontSize: 26,
-      minW: 56,
-    });
-    nextBtn.container.setInteractive(new Phaser.Geom.Rectangle(-28, -24, 56, 48), Phaser.Geom.Rectangle.Contains);
+    const nextBtn = pill(this, 0, 0, '▶', { fill: COLORS.cream, fontSize: 26, minW: 56 });
+    hitFromBox(nextBtn.container);
     nextBtn.container.on('pointerdown', () => this.cycleVenue(1));
 
-    this.previewLabel = heading(this, PREVIEW.x, PREVIEW.y + PREVIEW.h / 2 + 40, this.currentVenue().name, 24, '#ffffff');
+    // maxW keeps a long venue name from shouldering the arrows off the panel.
+    this.previewLabel = heading(this, 0, 0, this.currentVenue().name, 24, '#ffffff', { maxW: 220 });
+    this.venueRow = [prevBtn.container, this.previewLabel, nextBtn.container];
+    this.layoutVenueRow();
 
     makeButton(this, {
       x: PREVIEW.x,
@@ -194,30 +228,43 @@ export class GameSetupScene extends Phaser.Scene {
       onClick: () => this.playBall(),
     });
 
-    // Back to the title.
-    const back = pill(this, 70, GAME_HEIGHT - 40, '⬅', { fill: COLORS.cream, fontSize: 22, minW: 60 });
-    back.container.setInteractive(new Phaser.Geom.Rectangle(-30, -22, 60, 44), Phaser.Geom.Rectangle.Contains);
+    // Back to the title, sharing the bottom row with RESET ALL — moving reset
+    // out of the choice column is what makes room for the fifth group.
+    const back = pill(this, 0, 0, '⬅', { fill: COLORS.cream, fontSize: 22, minW: 60 });
+    hitFromBox(back.container);
     back.container.on('pointerdown', () => this.scene.start('Schoolyard', { straightToDraft: false }));
+
+    const reset = pill(this, 0, 0, '♻ RESET ALL', { fill: COLORS.cream, fontSize: 16, minW: 170 });
+    hitFromBox(reset.container);
+    reset.container.on('pointerdown', () => this.resetAll());
+
+    row([back.container, reset.container], { left: 24, y: FOOT_Y, gap: 20 });
 
     this.styleAll();
   }
 
+  /** Re-centre ◀ NAME ▶ under the preview. Re-run whenever the name changes. */
+  private layoutVenueRow(): void {
+    if (this.venueRow.length) {
+      row(this.venueRow, { centerX: PREVIEW.x, y: VENUE_ROW_Y, gap: 20, maxW: PREVIEW.w });
+    }
+  }
+
   // --- Chips ----------------------------------------------------------------
 
+  /**
+   * Built at the column centre with a throwaway y — `row()` and `columnGroups()`
+   * own placement. The tap target is derived from the pill's measured box, so it
+   * can never drift from the shape the way a hand-written rect did.
+   */
   private choiceChip(
-    x: number,
-    y: number,
     label: string,
     onTap: () => void,
     minW = 120,
     fontSize = 18
   ): Phaser.GameObjects.Container {
-    const { container } = pill(this, x, y, label, { fill: COLORS.cream, fontSize, minW });
-    const w = (container as Phaser.GameObjects.Container).width || minW;
-    container.setInteractive(
-      new Phaser.Geom.Rectangle(-w / 2, -22, w, 44),
-      Phaser.Geom.Rectangle.Contains
-    );
+    const { container } = pill(this, LEFT.cx, 0, label, { fill: COLORS.cream, fontSize, minW });
+    hitFromBox(container);
     container.on('pointerdown', onTap);
     return container;
   }
@@ -256,7 +303,7 @@ export class GameSetupScene extends Phaser.Scene {
     this.venueIdx = 0;
     this.gameType = 'game';
     this.drawPreview();
-    this.previewLabel?.setText(this.currentVenue().name);
+    this.setVenueLabel(this.currentVenue().name);
     audio.pop();
     this.speak('Reset!');
     this.styleAll();
@@ -275,9 +322,16 @@ export class GameSetupScene extends Phaser.Scene {
     const v = this.currentVenue();
     setVenue(v.id);
     this.drawPreview();
-    this.previewLabel?.setText(v.name);
+    this.setVenueLabel(v.name);
     audio.pop();
     this.speak(v.name);
+  }
+
+  /** A new name is a new width — re-measure and re-centre, never just setText. */
+  private setVenueLabel(name: string): void {
+    if (!this.previewLabel) return;
+    remeasureText(this.previewLabel.setText(name));
+    this.layoutVenueRow();
   }
 
   /**
