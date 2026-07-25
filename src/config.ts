@@ -562,6 +562,57 @@ export const LIVE = {
     /** A pointer that hasn't moved (and isn't down) this long stops steering. */
     POINTER_STALE_MS: 300,
   },
+  /**
+   * Who chases a loose ball (systems/fielding.ts `electChaser`). A ball in the
+   * AIR goes to whoever is nearest its landing spot. A ball on the GROUND goes
+   * to whoever can CUT IT OFF soonest — but only among fielders whose LEASH
+   * covers where it will finally settle.
+   *
+   * The leash is the whole trick. Ranking purely by "who reaches the ball
+   * first" hands every grounder to the pitcher: a grounder starts at HOME and
+   * rolls outward, so P (112px from the plate) is nearest its early path at
+   * every spray angle. Gating on the SETTLE point instead encodes what a real
+   * defense does — the pitcher fields balls hit at him, he does not chase one
+   * into right field.
+   */
+  CHASE: {
+    /** Path samples used to find the cut-off point. */
+    SAMPLES: 24,
+    /** Never predict further ahead than this (sanity cap, ms). */
+    HORIZON_MS: 8000,
+    /** A fielder still "cuts it off" arriving this much AFTER the ball.
+     *  First lever if the defense reads too good: lower = fewer cut-offs. */
+    CUTOFF_GRACE_MS: 120,
+    /**
+     * How much sooner another kid must get the ball before he takes it off the
+     * fielder whose ZONE it settles in. Without this a third baseman charges
+     * across in front of the shortstop for a ball rolling right at him — true
+     * on the clock, wrong on a ball field.
+     *
+     * Measured window is 257-523ms: below 257 the 3B-poaches-SS case comes
+     * back, above 523 the second baseman stops cutting off the grounder that
+     * started all this and it dribbles out to right. 400 sits mid-window.
+     */
+    CUT_AHEAD_MS: 400,
+    /**
+     * Max distance (px) from a fielder's POST to the ball's SETTLE point for
+     * them to be a candidate. P/C = 90 separates a real comebacker (dies
+     * 49-80px from the mound) from a ball that merely rolls past it (settles
+     * 122px+ away). Corners hold their bags, the middle has range, the
+     * outfield backs up everything.
+     */
+    LEASH: { P: 90, C: 90, '1B': 170, '3B': 170, '2B': 250, SS: 250, LF: 9999, CF: 9999, RF: 9999 },
+    /** Hysteresis: a challenger must beat the incumbent by this much... */
+    SWITCH_MARGIN_MS: 350,
+    /** ...no two handovers closer together than this... */
+    SWITCH_COOLDOWN_MS: 500,
+    /** ...and a chaser already this close to the ball keeps the job, full
+     *  stop. This is what protects the kid the player is steering. */
+    KEEP_RADIUS: 60,
+    /** A throw's receiver is the base's cover fielder only if this near the
+     *  bag — otherwise the nearest kid takes it (no cross-field teleports). */
+    COVER_MAX_PX: 140,
+  },
   /** How close (px) a fielder must be to grab the ball. */
   CATCH_RADIUS: 34,
   PICKUP_RADIUS: 28,

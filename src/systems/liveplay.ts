@@ -16,6 +16,7 @@
 import { LIVE, ERRORS, RUN2 } from '../config';
 import type { Launch } from './atbat';
 import type { LiveParams } from './mode';
+import { electChaser, predictLoosePath, shouldSwitch, type PathSample } from './fielding';
 import {
   HOME,
   FIELD_POSITIONS,
@@ -144,6 +145,18 @@ export interface LivePlayState {
   fielders: FielderState[];
   /** Index of the chasing fielder (player-steered or CPU-driven). */
   active: number;
+  /** Where the chaser is headed to meet a loose ball, and when (see fielding.ts). */
+  chase?: { point: Vec; ms: number };
+  /**
+   * Set by whatever put the ball somewhere new (landing, carom, bonk, fumble,
+   * wild throw); consumed once per tick by `stepLivePlay`, which is where
+   * `params` is in scope to re-run the election.
+   */
+  reelect?: boolean;
+  /** When the chaser last changed hands (ms) — gates the switch cooldown. */
+  electedAt: number;
+  /** When the player last actively steered (ms) — gates the magnet idle takeover. */
+  lastSteerAt: number;
   runners: RunnerState[];
   outsBefore: number;
   outs: number;
@@ -227,17 +240,6 @@ export function startLivePlay(opts: {
     fumbleUntil: 0,
   }));
 
-  // The chaser: whoever starts nearest the ball's landing/settle point.
-  let active = 0;
-  let best = Infinity;
-  fielders.forEach((f, i) => {
-    const d = dist(f.pos, launch.landing);
-    if (d < best) {
-      best = d;
-      active = i;
-    }
-  });
-
   const s: LivePlayState = {
     mode,
     phase: 'live',
@@ -253,7 +255,7 @@ export function startLivePlay(opts: {
       rollTotal: launch.hangMs > 0 ? 1 : Math.max(1, dist(HOME, launch.landing)),
     },
     fielders,
-    active,
+    active: 0,
     runners,
     outsBefore: opts.outs,
     outs: 0,
@@ -263,9 +265,12 @@ export function startLivePlay(opts: {
     heldAt: 0,
     landedAt: 0,
     catchAt: 0,
+    electedAt: 0,
+    lastSteerAt: 0,
     geo: opts.geo ?? DEFAULT_GEOMETRY,
     events: [],
   };
+  electChaserNow(s, params, true);
 
   // The batter always runs. Forced runners must run too — on offense right
   // away (a caught fly returns them for free, so there's no downside); the
@@ -319,9 +324,20 @@ export function stepLivePlay(
   s.elapsed += dtMs;
 
   moveBall(s, dtMs, params);
+  // The ball turned up somewhere new this tick (landed, caromed, bonked) —
+  // re-run the election BEFORE anyone moves, so the handover costs no ground.
+  if (s.reelect) {
+    s.reelect = false;
+    electChaserNow(s, params);
+  }
   moveFielders(s, inputs, params, dtMs);
   handleDive(s, inputs, params);
   tryGrabBall(s, params, rng);
+  // ...and again for anything the grab/fumble phase shook loose.
+  if (s.reelect) {
+    s.reelect = false;
+    electChaserNow(s, params);
+  }
   maybeThrow(s, inputs, params, rng);
   moveRunners(s, dtMs);
   carrierTouchesBags(s, params);
@@ -360,6 +376,7 @@ function moveBall(s: LivePlayState, dtMs: number, params: LiveParams): void {
       }
       s.landedAt = s.elapsed;
       s.events.push({ t: 'land' }); // first touch only — hops don't re-land
+      s.reelect = true; // it's down: whoever can cut off the roll takes over
     }
   } else if (b.phase === 'rolling' && b.hop) {
     // Hopping: skip along the landing direction in shrinking arcs.
@@ -459,6 +476,7 @@ function maybeCarom(s: LivePlayState): void {
   } else {
     return;
   }
+  s.reelect = true; // it's coming back off the wall on a new line
   s.events.push({ t: 'carom' });
 }
 
@@ -470,6 +488,7 @@ function ballHitObstacle(s: LivePlayState): boolean {
       // markLanded false: a bonk keeps the ORIGINAL loose-ball clock, so CPU
       // runners don't get a fresh CPU_RUNNER_PATIENCE_MS wait out of it.
       settleBallAt(s, b.pos, false);
+      s.reelect = true; // dead against the tree — nearest kid goes and gets it
       s.events.push({ t: 'bonk' });
       return true;
     }
@@ -573,11 +592,113 @@ function moveFielders(
 
 /**
  * Where a ball-chasing kid should head: the known landing spot while it's in
- * the air ("read it off the bat"), the ball itself once it's on the ground.
- * Shared by the CPU chase and both player assists.
+ * the air ("read it off the bat"), and once it's down, the CUT-OFF spot the
+ * election picked — falling back to the ball itself once the ball has gone
+ * past that spot. Without the fallback a slightly-off prediction would leave
+ * the kid standing on an empty patch of grass forever.
+ *
+ * Aiming at the cut-off rather than at the ball is what makes the election
+ * mean anything: pure pursuit trails a rolling ball instead of heading it off.
  */
 function chaseTarget(s: LivePlayState): Vec {
-  return s.ball.phase === 'flight' ? s.launch.landing : s.ball.pos;
+  if (s.ball.phase === 'flight') return s.launch.landing;
+  const cut = s.chase?.point;
+  if (!cut) return s.ball.pos;
+  // "Has the ball passed my spot?" — compare remaining distance to the settle
+  // point; the ball only ever moves toward it.
+  const end = s.launch.landing;
+  return dist(s.ball.pos, end) > dist(cut, end) ? cut : s.ball.pos;
+}
+
+/** Speed the sim will actually move a given fielder at, for the election. */
+function chaseSpeedOf(s: LivePlayState, params: LiveParams, f: FielderState): number {
+  const base = s.mode === 'defense' ? params.fielderSpeed : params.cpuFielderSpeed;
+  return Math.max(1, base * statSpeedMult(f));
+}
+
+/**
+ * Re-run the chaser election. Called at play start and whenever the ball turns
+ * up somewhere NEW — it lands, caroms off the wall, bonks the oak, is dropped
+ * or bobbled, or a wild throw dies loose. Deliberately NOT every tick: that
+ * would flicker the kid the player is steering, for no gain.
+ */
+function electChaserNow(s: LivePlayState, params: LiveParams, initial = false): void {
+  if (s.ball.phase === 'held' || s.ball.phase === 'thrown') return;
+  const inAir = s.ball.phase === 'flight';
+  const settle = inAir ? s.launch.landing : s.launch.landing;
+  const reach = s.mode === 'defense' ? params.pickupRadius : params.cpuPickupRadius;
+  const path = inAir
+    ? []
+    : predictLoosePath(
+        s.ball.pos,
+        settle,
+        Math.max(1, s.launch.rollSpeed),
+        Math.max(1, s.ball.rollTotal),
+        s.geo.rollMult
+      );
+  const pick = electChaser({
+    fielders: s.fielders,
+    inAir,
+    settle,
+    path,
+    speedOf: (_f, i) => chaseSpeedOf(s, params, s.fielders[i]),
+    reach,
+  });
+  if (initial) {
+    s.active = pick.index;
+    s.chase = { point: pick.point, ms: pick.ms };
+    s.electedAt = s.elapsed;
+    return;
+  }
+  const incumbent = s.fielders[s.active];
+  const incumbentHit = inAir
+    ? null
+    : (() => {
+        const solo = electChaser({
+          fielders: [incumbent],
+          inAir,
+          settle,
+          path,
+          speedOf: () => chaseSpeedOf(s, params, incumbent),
+          reach,
+        });
+        return Number.isFinite(solo.ms) ? solo.ms : null;
+      })();
+  const switching = shouldSwitch({
+    incumbent: s.active,
+    incumbentMs: incumbentHit,
+    challenger: pick,
+    incumbentToBall: dist(incumbent.pos, s.ball.pos),
+    sinceElection: s.elapsed - s.electedAt,
+  });
+  if (switching) {
+    s.active = pick.index;
+    s.electedAt = s.elapsed;
+  }
+  // The aim point refreshes either way — the incumbent should still cut it off.
+  s.chase = switching
+    ? { point: pick.point, ms: pick.ms }
+    : { point: chaseAimFor(s, params, s.fielders[s.active], settle, path), ms: 0 };
+}
+
+/** Where THIS fielder should meet the ball (their own cut-off, else the settle). */
+function chaseAimFor(
+  s: LivePlayState,
+  params: LiveParams,
+  f: FielderState,
+  settle: Vec,
+  path: PathSample[]
+): Vec {
+  if (path.length === 0) return settle;
+  const solo = electChaser({
+    fielders: [f],
+    inAir: false,
+    settle,
+    path,
+    speedOf: () => chaseSpeedOf(s, params, f),
+    reach: s.mode === 'defense' ? params.pickupRadius : params.cpuPickupRadius,
+  });
+  return solo.point;
 }
 
 /** A fielder's chase speed factor from their speed stat (±5%/point around 5). */
@@ -623,6 +744,7 @@ export function rollThrowError(arm: number, power: number, mult: number, rng: ()
  */
 function settleBallAt(s: LivePlayState, pos: Vec, markLanded: boolean): void {
   const b = s.ball;
+  s.reelect = true; // the ball is loose somewhere new — re-run the election
   b.pos = clampToField(s.geo, pos, BALL_SETTLE_MARGIN);
   b.phase = 'rolling';
   b.height = 0;
@@ -737,6 +859,14 @@ function secureBall(s: LivePlayState, fielderIdx: number): void {
   b.pos = { ...s.fielders[fielderIdx].pos };
   s.fielders.forEach((f, i) => (f.hasBall = i === fielderIdx));
   s.heldAt = s.elapsed;
+  // Whoever HAS the ball is who you steer. This is the single choke point for
+  // every possession change (fly catch, pickup, and the cover fielder taking a
+  // throw), so it also holds the invariant `phase === 'held'` => heldBy ===
+  // active — previously a completed throw left the player steering a kid who
+  // no longer had the ball and so could not carry it anywhere.
+  s.active = fielderIdx;
+  s.electedAt = s.elapsed;
+  s.chase = undefined;
 }
 
 function maybeThrow(
@@ -917,10 +1047,27 @@ function arriveThrow(s: LivePlayState, base: 1 | 2 | 3 | 4, params: LiveParams):
       s.events.push({ t: 'out', base, runner: r.charId });
     }
   }
-  // The covering fielder takes it standing on the bag.
+  // The covering fielder takes it standing on the bag — but only if they were
+  // near enough to plausibly get there. Now that a corner infielder can be
+  // elected chaser and run into the corner after a ball, blindly using the
+  // cover fielder would teleport them back across the field to receive a throw
+  // at their own bag; the nearest available kid takes it instead.
+  const bag = basePos(base);
   const coverIdx = s.fielders.findIndex((f) => f.position === BASE_COVER[base]);
-  const idx = coverIdx >= 0 ? coverIdx : s.active;
-  s.fielders[idx].pos = { ...basePos(base) };
+  let idx = coverIdx >= 0 && dist(s.fielders[coverIdx].pos, bag) <= LIVE.CHASE.COVER_MAX_PX ? coverIdx : -1;
+  if (idx < 0) {
+    let best = Infinity;
+    s.fielders.forEach((f, i) => {
+      if (i === s.active && s.fielders.length > 1) return; // not the thrower
+      const d = dist(f.pos, bag);
+      if (d < best) {
+        best = d;
+        idx = i;
+      }
+    });
+  }
+  if (idx < 0) idx = s.active;
+  s.fielders[idx].pos = { ...bag };
   secureBall(s, idx);
 }
 

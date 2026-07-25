@@ -627,29 +627,41 @@ describe('live play: manual baserunning (main mode)', () => {
   });
 
   it('an unforced runner is NOT out just because the ball beat them to the bag', () => {
-    let s = startLivePlay({
-      mode: 'offense',
-      launch: { ...grounderToShort, landing: { x: 700, y: 260 } }, // hit to right side
-      batter: { charId: 'bat', speed: 10 },
-      baseRunners: [{ base: 2, charId: 'r2', speed: 9 }], // unforced (1st empty... batter forces only 1st)
-      outs: 0,
-      defense: DEFENSE,
-      params: main,
-    });
-    // Send r2 to third with a good jump; the CPU's throw beats them there by a
-    // hair, but a bang-bang arrival is inside SAFE_RADIUS — safe unless tagged.
-    let sent = false;
-    const { s: end } = runPlay(s, main, (st) => {
-      if (!sent && st.elapsed > 100) {
-        sent = true;
-        return { sendRunner: 'r2' };
-      }
-      return {};
-    }, () => 0.9);
-    const r2 = end.runners.find((r) => r.charId === 'r2')!;
-    // A fast unforced runner with a big head start should not be force-out-able.
-    expect(r2.done === 'out' && r2.pos.x === 298 && false).toBe(false); // (no force at 3rd)
-    expect(finishLivePlay(end).outs).toBeLessThanOrEqual(1); // at most the batter
+    // Tested at the seam rather than through a live race: whether a throw beats
+    // a runner by a hair depends on how fast the defense happens to be, so a
+    // scenario version silently turns into a different test whenever fielding
+    // is tuned. The RULE is what matters — a force retires you, a mere arrival
+    // does not, and the difference is exactly `isForced`.
+    const arrive = (forced: boolean) => {
+      const s = startLivePlay({
+        mode: 'offense',
+        launch: { ...grounderToShort, landing: { x: 700, y: 260 } },
+        batter: { charId: 'bat', speed: 5 },
+        // A runner on 1st behind them makes the runner on 2nd forced; alone,
+        // they are not.
+        baseRunners: forced
+          ? [
+              { base: 1 as const, charId: 'r1', speed: 5 },
+              { base: 2 as const, charId: 'r2', speed: 5 },
+            ]
+          : [{ base: 2 as const, charId: 'r2', speed: 5 }],
+        outs: 0,
+        defense: DEFENSE,
+        params: main,
+      });
+      const r2 = s.runners.find((r) => r.charId === 'r2')!;
+      // Halfway to third, then put the ball on the bag ahead of them.
+      r2.from = 2;
+      r2.to = 3;
+      r2.progress = 0.5;
+      r2.pos = { x: 400, y: 330 };
+      s.ball.phase = 'thrown';
+      s.ball.throw = { toBase: 3, from: { x: 700, y: 260 }, t: 0, totalMs: 10 };
+      stepLivePlay(s, {}, 50, main, () => 0.9);
+      return r2;
+    };
+    expect(arrive(false).done).toBeNull(); // unforced: needs a tag, not a bag
+    expect(arrive(true).done).toBe('out'); // forced: the bag is enough
   });
 
   it('termination property holds under random send/hold spam', () => {
@@ -915,6 +927,174 @@ describe('live play: bounces & fence caroms', () => {
   it('grounders never hop — they roll exactly like before', () => {
     const { trace } = settle(start(grounderToShort));
     for (const t of trace) expect(t.height).toBe(0);
+  });
+});
+
+describe('live play: who chases it', () => {
+  const kid = resolveLiveParams('kid');
+  const main = resolveLiveParams('main');
+  const grounder = (settle: { x: number; y: number }, q = 0.8): Launch => ({
+    type: 'grounder',
+    landing: settle,
+    hangMs: 0,
+    rollSpeed: 81 + q * 40,
+    homer: false,
+  });
+  const chaserFor = (launch: Launch, params: LiveParams) =>
+    startLivePlay({
+      mode: 'defense',
+      launch,
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params,
+    });
+
+  it('sends an infielder — not the right fielder — after a grounder up the right side', () => {
+    // The reported bug. A hard grounder through the 1B-2B hole SETTLES in
+    // shallow right, so "nearest the settle point" elected RF while the ball
+    // rolled through the second baseman's feet a second and a half earlier.
+    for (const params of [kid, main]) {
+      const s = chaserFor(grounder({ x: 613, y: 203 }, 0.9), params);
+      const pos = s.fielders[s.active].position;
+      expect(pos, `mode ${params.manualBaserunning ? 'main' : 'kid'}`).not.toBe('RF');
+      expect(pos).not.toBe('P'); // ...and not the pitcher-vacuum either
+      expect(['2B', '1B', 'SS']).toContain(pos);
+    }
+  });
+
+  it('still gives the pitcher a real comebacker', () => {
+    for (const params of [kid, main]) {
+      const s = chaserFor(grounder({ x: 480, y: 380 }, 0), params);
+      expect(s.fielders[s.active].position).toBe('P');
+    }
+  });
+
+  it('leaves a ball rolling straight at a fielder to that fielder', () => {
+    // Nobody charges across in front of the kid it's hit at.
+    for (const params of [kid, main]) {
+      const s = chaserFor(grounder({ x: 405, y: 300 }, 0.5), params);
+      expect(s.fielders[s.active].position).toBe('SS');
+    }
+  });
+
+  it('camps the nearest outfielder under a deep fly', () => {
+    for (const params of [kid, main]) {
+      const s = chaserFor(
+        { type: 'fly', landing: { x: 700, y: 235 }, hangMs: 4000, rollSpeed: 100, homer: false },
+        params
+      );
+      expect(s.fielders[s.active].position).toBe('RF');
+    }
+  });
+
+  it('hands the ball to whoever actually has it', () => {
+    // phase 'held' => heldBy === active. Before, a completed throw left the
+    // player steering a kid with empty hands who could not carry it anywhere.
+    let s = startLivePlay({
+      mode: 'defense',
+      launch: grounderToShort,
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params: kid,
+    });
+    let threw = false;
+    let guard = 0;
+    while (s.phase !== 'done' && guard++ < 4000) {
+      const inputs: LiveInputs =
+        s.ball.phase === 'held' && !threw
+          ? ((threw = true), { throwTo: { base: 1 as const, power: 1 } })
+          : { pointer: s.ball.pos };
+      s = stepLivePlay(s, inputs, 50, kid, () => 0.9);
+      if (s.ball.phase === 'held') expect(s.ball.heldBy).toBe(s.active);
+    }
+    expect(threw).toBe(true);
+  });
+
+  it('hands over when a wild throw dies next to a different kid', () => {
+    let s = startLivePlay({
+      mode: 'defense',
+      launch: grounderToShort,
+      batter: { charId: 'bat', speed: 3 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params: main,
+    });
+    let threw = false;
+    let guard = 0;
+    const seen = new Set<number>();
+    while (s.phase !== 'done' && guard++ < 4000) {
+      const inputs: LiveInputs =
+        s.ball.phase === 'held' && !threw
+          ? ((threw = true), { throwTo: { base: 1 as const, power: 1 } })
+          : {};
+      // rng: clean pickup, then a wild throw, then clean.
+      s = stepLivePlay(s, inputs, 50, main, seq([0.9, 0.05, 0.9]));
+      seen.add(s.active);
+    }
+    // Somebody other than the original chaser got involved, and the play
+    // resolved rather than burning down the clock with an orphaned ball.
+    expect(seen.size).toBeGreaterThan(1);
+    expect(s.elapsed).toBeLessThan(main.maxPlayMs * 0.75);
+  });
+
+  it('does not flicker: handovers are rare and never mid-reach', () => {
+    for (let i = 0; i < 60; i++) {
+      const r = resolveContact('good', plain({}), plain({}), () => Math.random());
+      if (r.kind !== 'inPlay' || r.launch.homer) continue;
+      let s = startLivePlay({
+        mode: 'defense',
+        launch: r.launch,
+        batter: { charId: 'bat', speed: 5 },
+        baseRunners: [],
+        defense: DEFENSE,
+        outs: 0,
+        params: main,
+      });
+      let switches = 0;
+      let lastAt = -Infinity;
+      let guard = 0;
+      while (s.phase !== 'done' && guard++ < 4000) {
+        const before = s.active;
+        const wasClose = dist(s.fielders[before].pos, s.ball.pos) <= LIVE.CHASE.KEEP_RADIUS;
+        s = stepLivePlay(s, { pointer: s.ball.pos }, 50, main, () => 0.9);
+        if (s.active !== before && s.ball.phase !== 'held') {
+          switches++;
+          // A kid already on the ball never has it taken away mid-reach.
+          expect(wasClose).toBe(false);
+          expect(s.elapsed - lastAt).toBeGreaterThanOrEqual(LIVE.CHASE.SWITCH_COOLDOWN_MS);
+          lastAt = s.elapsed;
+        }
+      }
+      expect(switches).toBeLessThanOrEqual(6);
+    }
+  });
+
+  it('consumes no rng — two identical sims stay byte-identical', () => {
+    const run = (launch: Launch) => {
+      let s = startLivePlay({
+        mode: 'defense',
+        launch,
+        batter: { charId: 'bat', speed: 5 },
+        baseRunners: [{ base: 1, charId: 'r1', speed: 5 }],
+        defense: DEFENSE,
+        outs: 0,
+        params: kid,
+      });
+      const frames: string[] = [];
+      let guard = 0;
+      while (s.phase !== 'done' && guard++ < 4000) {
+        s = stepLivePlay(s, {}, 50, kid, () => 0.5);
+        frames.push(JSON.stringify({ a: s.active, b: s.ball.pos, c: s.chase?.point }));
+      }
+      return frames.join('|');
+    };
+    expect(run(grounder({ x: 613, y: 203 }, 0.9))).toBe(run(grounder({ x: 613, y: 203 }, 0.9)));
+    expect(run(flyToCenter)).toBe(run(flyToCenter));
   });
 });
 
