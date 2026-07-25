@@ -1,5 +1,5 @@
 {
-  "comment": "Gold-log regression fingerprints (scripts/goldlog.browser.js, harness v2.2). The harness seeds Math.random (mulberry32), virtualizes Date.now onto the pump grid, bypasses the visual draft with FIXED teams (the draft's greedy chooser jitters every candidate with rng, so title-screen cosmetics would cascade into different teams), reseeds at game entry, waits out the real-async jersey loader on a 50ms pump grid, and samples every 50ms step. Fingerprint = SHA-256 of the state-transition log (dash-grouped). Behavior-identical phases must reproduce these exactly. To debug a mismatch: check out the anchoring commit and re-run goldLogRun for the full log. CAUTION when regenerating: launch goldLogRun fire-and-forget and poll sessionStorage('goldlog_last') afterward \u2014 an awaited eval that times out mid-drive interleaves CDP work with the run and pollutes the fingerprint.",
+  "comment": "Gold-log regression fingerprints (scripts/goldlog.browser.js, harness v2.2). The harness seeds Math.random (mulberry32), virtualizes Date.now onto the pump grid, bypasses the visual draft with FIXED teams (the draft's greedy chooser jitters every candidate with rng, so title-screen cosmetics would cascade into different teams), reseeds at game entry, waits out the real-async jersey loader on a 50ms pump grid, and samples every 50ms step. Fingerprint = SHA-256 of the state-transition log (dash-grouped). Behavior-identical phases must reproduce these exactly. To debug a mismatch: check out the anchoring commit and re-run goldLogRun for the full log. CAUTION when regenerating: launch goldLogRun fire-and-forget and poll sessionStorage('goldlog_last') afterward — an awaited eval that times out mid-drive interleaves CDP work with the run and pollutes the fingerprint.",
   "capturedAt": "post live-play readability anchor (chaser name bubble Text now enters the seeded stream at beginPlay-defense; steal trail/OUT text are rng-free) on top of the Backyard pitch corridor + plate-view feel packs; each fingerprint verified byte-stable across two clean runs",
   "script": "goldlog.browser.js v2.2 (guard 9000)",
   "seed": 42,
@@ -7,12 +7,20 @@
     "main": {
       "length": 2324,
       "sha256": "ba3c1d4c-fb00909b-6f35b37b-14019d53-2fe9a7db-dcdd5903-18d6b1f3-b5fe6799",
-      "note": "fixed teams A/B, 1 inning, ends 1-0"
+      "note": "fixed teams A/B, 1 inning, ends 1-0",
+      "stale": true
     },
     "kid": {
       "length": 10824,
       "sha256": "675fbd06-6b8b4342-58951606-726a8511-a4601b0d-3d8d1788-1a416341-856ea477",
-      "note": "fixed teams A/B, 1 inning + bonus, ends 1-0 in the bonus 2nd"
+      "note": "fixed teams A/B, 1 inning + bonus, ends 1-0 in the bonus 2nd",
+      "stale": true
     }
+  },
+  "STALE": {
+    "since": "2026-07-24 (feat/pace-retune)",
+    "why": "These fingerprints encode the PRE-RETUNE pace and no longer describe the game. The retune deliberately changed the seeded sim (RUNNER_SPEED 85->42.8, FLY_HANG_MS 2000-2900->2875-5075, plus every coupled speed and delay), so a mismatch here is now EXPECTED and proves nothing. Do not treat a failure as a regression until they are regenerated.",
+    "regenerateWhen": "AFTER the defense constants settle. defense.* in scripts/measures.json is scaled-not-measured and is explicitly expected to need feel iteration, so fingerprints captured today would be stale again after the first tuning pass. Regenerate once the feel is signed off.",
+    "how": "The procedure in `comment` below is unchanged: goldLogPrepare(mode), reload, then fire-and-forget goldLogRun and poll sessionStorage('goldlog_last')."
   }
 }

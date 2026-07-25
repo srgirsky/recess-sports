@@ -243,98 +243,81 @@ describe('geometry — known drifts stay exactly as big as recorded', () => {
   });
 });
 
-describe('pace — the anchor is measured; the rest stays pinned', () => {
-  it('home->1B runs at exactly the recorded fraction of BB’s time', () => {
-    // The load-bearing pace assertion. Both sides are DERIVED: BB's from the
-    // record's own samples, ours from the real constants. A stale copy of
-    // either cannot agree with the other by accident.
+describe('pace — measured, retuned, and now conformed', () => {
+  it('home->1B matches BB, and stays the anchor everything else hangs off', () => {
+    // Was a 49.7% known-drift until the 2026-07-24 retune moved RUNNER_SPEED
+    // 85 -> 42.8. Both sides stay DERIVED: BB's from the record's own samples,
+    // ours from the real constants, so a stale copy of either cannot agree with
+    // the other by accident.
     const rec = M.pace.homeToFirst;
-    expect(rec.status).toBe('known-drift');
+    expect(rec.status).toBe('conformed');
 
     expect(round(BASEPATH_PX, 2)).toBeCloseTo(rec.ours.basepathPx, 1);
     expect(LIVE.RUNNER_SPEED).toBe(rec.ours.runnerSpeedPxPerSec);
     expect(Math.round(ourHomeToFirstMs('main'))).toBe(rec.ours.realMs);
 
-    const drift = ((ourHomeToFirstMs('main') - rec.measured) / rec.measured) * 100;
-    expect(round(drift, 2)).toBeCloseTo(rec.driftPct, 1);
-
-    // The drift must stay far bigger than the instrument can resolve, or it is
-    // an error bar wearing a finding's clothes.
-    expect(Math.abs(ourHomeToFirstMs('main') - rec.measured)).toBeGreaterThan(rec.spread);
-
-    // n and the sample list must agree. This is the guard against the exact
-    // failure that started this project: a number nobody can trace back.
+    // Inside BB's measured spread is the bar -- not equality, which would be a
+    // false precision on an n=3 median with a 261ms spread.
+    expect(Math.abs(ourHomeToFirstMs('main') - rec.measured)).toBeLessThan(rec.spread);
     expect(rec.samples).toHaveLength(rec.n);
-    expect(rec.n).toBeGreaterThanOrEqual(3);
   });
 
-  it('fly hang drifts from BB by exactly the recorded RATIO, at both ends', () => {
+  it('fly hang matches BB at both ends of the range, as a ratio', () => {
     // The ratio is the durable form -- absolute hang times are meaningless
-    // across two games with different field scales -- so the ratio is what gets
-    // pinned, not the raw milliseconds. Both ends are asserted separately
-    // because FLY_HANG_MS is a RANGE and the two ends drift by very different
-    // amounts (38% vs 14%); a single combined check would hide that.
+    // across two games with different field scales. Both ends are checked
+    // separately because FLY_HANG_MS is a RANGE and they were drifting by very
+    // different amounts (38% vs 14%) before the retune.
     const rec = M.pace.flyHang;
-    expect(rec.status).toBe('known-drift');
+    expect(rec.status).toBe('conformed');
     expect(LIVE.LAUNCH.FLY_HANG_MS.MIN).toBe(rec.ours.value.MIN);
     expect(LIVE.LAUNCH.FLY_HANG_MS.MAX).toBe(rec.ours.value.MAX);
 
     const anchor = ourHomeToFirstMs('main');
     const ourMin = ratioToAnchor(LIVE.LAUNCH.FLY_HANG_MS.MIN, anchor);
     const ourMax = ratioToAnchor(LIVE.LAUNCH.FLY_HANG_MS.MAX, anchor);
-    expect(round(ourMin, 3)).toBeCloseTo(rec.ours.ratioToAnchor[0], 2);
-    expect(round(ourMax, 3)).toBeCloseTo(rec.ours.ratioToAnchor[1], 2);
 
-    // BB's side, derived from the record's own samples rather than restated.
     const anchorBB = M.pace.homeToFirst.measured;
-    const bbMin = Math.min(...rec.samples.map((s) => s.ms)) / anchorBB;
-    const bbMax = Math.max(...rec.samples.map((s) => s.ms)) / anchorBB;
+    const bbMin = Math.min(...rec.samples.map((x) => x.ms)) / anchorBB;
+    const bbMax = Math.max(...rec.samples.map((x) => x.ms)) / anchorBB;
     expect(round(bbMin, 3)).toBeCloseTo(rec.measured.ratioToAnchor.min, 2);
     expect(round(bbMax, 3)).toBeCloseTo(rec.measured.ratioToAnchor.max, 2);
 
-    expect(round((ourMin / bbMin - 1) * 100, 1)).toBeCloseTo(rec.driftPctMin, 0);
-    expect(round((ourMax / bbMax - 1) * 100, 1)).toBeCloseTo(rec.driftPctMax, 0);
-
-    // n and the sample list must agree -- the guard against an untraceable number.
+    expect(Math.abs(ourMin / bbMin - 1)).toBeLessThan(0.02);
+    expect(Math.abs(ourMax / bbMax - 1)).toBeLessThan(0.02);
     expect(rec.samples).toHaveLength(rec.n);
   });
 
-  it('keeps the retune trap on the record: fixing the runner alone overshoots', () => {
-    // The most useful thing this pass learned, and the easiest to lose. At BB's
-    // anchor our CURRENT fly range lands BELOW BB's, so a retune that slows the
-    // runner without lengthening the flies makes them too SHORT -- the opposite
-    // of the defect everyone assumed. Assert the arithmetic that says so, so it
-    // cannot quietly stop being true.
+  it('keeps the retune trap on the record even though the retune has happened', () => {
+    // The most useful thing the measurement pass learned, and the easiest to
+    // lose now that it has been acted on: at BB's anchor the OLD fly range sat
+    // BELOW BB's, so slowing the runner without lengthening the flies would have
+    // made them too SHORT. Assert the record still carries the warning and the
+    // arithmetic that produced it, so a future reader cannot conclude from the
+    // conformed status that flies were simply left alone.
     const rec = M.pace.flyHang;
     const anchorBB = M.pace.homeToFirst.measured;
-    const afterRunnerFixMin = LIVE.LAUNCH.FLY_HANG_MS.MIN / anchorBB;
-    const afterRunnerFixMax = LIVE.LAUNCH.FLY_HANG_MS.MAX / anchorBB;
-    expect(afterRunnerFixMin).toBeLessThan(rec.measured.ratioToAnchor.min);
-    expect(afterRunnerFixMax).toBeLessThan(rec.measured.ratioToAnchor.max);
+    const OLD = { MIN: 2000, MAX: 2900 };
+    expect(OLD.MIN / anchorBB).toBeLessThan(rec.measured.ratioToAnchor.min);
+    expect(OLD.MAX / anchorBB).toBeLessThan(rec.measured.ratioToAnchor.max);
     expect(rec.retuneWarning).toBeTruthy();
+    // And the fix went UP, not down -- the counterintuitive part.
+    expect(LIVE.LAUNCH.FLY_HANG_MS.MIN).toBeGreaterThan(OLD.MIN);
+    expect(LIVE.LAUNCH.FLY_HANG_MS.MAX).toBeGreaterThan(OLD.MAX);
   });
 
-  it('between-pitch drifts by the recorded amount, and stays correctly PROPORTIONED', () => {
+  it('between-pitch matches BB, and is still correctly PROPORTIONED', () => {
     const rec = M.pace.betweenPitch;
-    expect(rec.status).toBe('known-drift');
+    expect(rec.status).toBe('conformed');
     expect(FLOW.BETWEEN_PITCH_MS).toBe(rec.ours.value);
-
-    const drift = ((FLOW.BETWEEN_PITCH_MS - rec.measured) / rec.measured) * 100;
-    expect(round(drift, 2)).toBeCloseTo(rec.driftPct, 1);
-    expect(Math.abs(FLOW.BETWEEN_PITCH_MS - rec.measured)).toBeGreaterThan(rec.spread);
+    expect(Math.abs(FLOW.BETWEEN_PITCH_MS - rec.measured)).toBeLessThanOrEqual(rec.spread);
     expect(rec.samples).toHaveLength(rec.n);
 
-    // The finding that makes this constant EASY, and the reason it is worth
-    // asserting separately: as a fraction of the anchor we are already almost
-    // exactly right (0.591 vs BB's 0.607). This one is wrong only in absolute
-    // tempo, so scaling it with RUNNER_SPEED lands it -- no judgement call.
-    // Contrast fly hang, which is wrong in ratio too. If that ever stops being
-    // true, the retune advice changes and this should go red.
+    // This one was ALREADY correctly proportioned before the retune (0.591 vs
+    // 0.607) and wrong only in absolute tempo, which is why it needed no
+    // separate judgement call. Assert the proportion survived the move.
     const oursRatio = ratioToAnchor(FLOW.BETWEEN_PITCH_MS, ourHomeToFirstMs('main'));
     const bbRatio = rec.measured / M.pace.homeToFirst.measured;
-    expect(round(oursRatio, 3)).toBeCloseTo(rec.ratioToAnchor.ours, 2);
-    expect(round(bbRatio, 3)).toBeCloseTo(rec.ratioToAnchor.bb, 2);
-    expect(Math.abs(oursRatio / bbRatio - 1)).toBeLessThan(0.1);
+    expect(Math.abs(oursRatio / bbRatio - 1)).toBeLessThan(0.05);
   });
 
   it('makes every still-unmeasured record name the work that would close it', () => {

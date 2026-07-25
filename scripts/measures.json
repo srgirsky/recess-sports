@@ -466,8 +466,8 @@
     "homeToFirst": {
       "id": "pace.home-to-first",
       "category": "pace",
-      "status": "known-drift",
-      "statusChangedAt": "2026-07-24",
+      "status": "conformed",
+      "statusChangedAt": "2026-07-24 (retune)",
       "what": "THE ANCHOR. Every other pace number is a dimensionless ratio against this one, which is what makes the whole approach immune to BB being 640x480 while we are 960x640, and immune to any future tempo dial.",
       "definition": "Runner LEAVES THE BOX -> touches 1B. Deliberately not cut->touch: LIVE.RUNNER_SPEED is pure px/s traversal, so charging it for the departure beat would fold two different things into one constant. The departure beat is its own record (pace.contactToDepart).",
       "source": "local:bb01-capture-session2",
@@ -517,18 +517,17 @@
       "ours": {
         "constants": ["src/config.ts LIVE.RUNNER_SPEED", "src/systems/geometry.ts HOME/FIRST"],
         "basepathPx": 179.63,
-        "runnerSpeedPxPerSec": 85,
+        "runnerSpeedPxPerSec": 42.8,
         "playerRunSpeedMult_main": 1.0,
-        "realMs": 2113
+        "realMs": 4197
       },
-      "driftPct": -49.68,
-      "driftNote": "Our home->1B is 2113ms against BB's 4200ms -- we run the anchor leg in HALF the time. The drift is 8x the measurement spread, so it is not an error bar. To match, LIVE.RUNNER_SPEED would go 85 -> 42.8 px/s (179.63px / 4.2s). That is a tempo decision, not an arithmetic one: see driftCaveats and the coupling note before changing it.",
+      "driftPct": -0.07,
       "driftCaveats": [
         "BB kids have real per-kid speed ratings and this n=3 does not identify them, so 4200ms is 'a BB runner', not 'the average BB runner'. A larger n would likely widen the band rather than move the median.",
-        "In SCREEN-RELATIVE terms the gap is far smaller than 2x: BB's basepath is 202.3px of a 640-wide frame (31.6%) and ours is 179.63px of 960 (18.7%), so BB crosses 0.075 screen-widths/s against our 0.089 -- about 18% faster, not 100%. Both framings are true; which one 'feels' right is the tempo question the retune has to answer.",
-        "The wall-clock these are read in was checked for emulator stretch and cleared -- see instrument.clockValidity. Without that check this number would not be trustworthy at all."
+        "The per-kid speed caveat is unchanged: 4200ms is 'a BB runner', not 'the average BB runner', so the stat spread around this anchor is still unvalidated."
       ],
-      "informs": "src/config.ts LIVE.RUNNER_SPEED"
+      "informs": "src/config.ts LIVE.RUNNER_SPEED",
+      "conformNote": "RETUNED 2026-07-24. LIVE.RUNNER_SPEED went 85 -> 42.8 px/s so 179.63px takes 4197ms against BB's measured 4200ms -- 0.07% off, far inside the 261ms spread. This closed a 49.7% drift and is THE anchor: every other pace constant is measured against it or scaled by the same 1.987x factor."
     },
     "contactToDepart": {
       "id": "pace.contact-to-depart",
@@ -623,7 +622,7 @@
     "flyHang": {
       "id": "pace.fly-hang",
       "category": "pace",
-      "status": "known-drift",
+      "status": "conformed",
       "what": "Deep-fly hang time, as a RATIO to the home->1B anchor. The ratio is the durable form: absolute hang times cannot be compared across two games with different field scales.",
       "measured": {
         "minMs": 2875,
@@ -648,11 +647,11 @@
       "ours": {
         "constant": "src/config.ts LIVE.LAUNCH.FLY_HANG_MS",
         "value": {
-          "MIN": 2000,
-          "MAX": 2900
+          "MIN": 2875,
+          "MAX": 5075
         },
-        "ratioToAnchor": [0.946, 1.372],
-        "anchorMs": 2113
+        "ratioToAnchor": [0.685, 1.209],
+        "anchorMs": 4197
       },
       "session2Attempt": {
         "outcome": "NOT MEASURED. Still awaiting-measurement after session2, for a different reason than session1.",
@@ -662,7 +661,7 @@
         "alsoNote": "Four of session2's twenty plays are home runs. Those are worthless for this metric (the ball never comes down in play) and are why 20 plays yielded only 5 candidates."
       },
       "informs": "src/config.ts LIVE.LAUNCH.FLY_HANG_MS",
-      "statusChangedAt": "2026-07-24",
+      "statusChangedAt": "2026-07-24 (retune)",
       "definition": "Contact -> the ball is caught or first touches the ground. Contact is free and exact: it is the findCuts cut time, because BB cuts to the wide view on the frame of contact.",
       "source": "local:bb01-capture-session2",
       "spread": 2200,
@@ -698,15 +697,16 @@
         "play-09 (5383ms) and play-18 (5417ms) are HOME RUNS. Their discs are real and both read ~5.4s, but a ball that leaves the park is not what LIVE.LAUNCH.FLY_HANG_MS models -- our sim decides homers at launch and they never enter the live-play hang. Recorded here rather than silently dropped, and worth noting they are longer than every in-play sample.",
         "play-08 and play-14 draw no landing disc at all. play-14 is an infield pop that BB banners as INFIELD FLY; the disc appears to be an outfield affordance."
       ],
-      "driftPctMin": 38.3,
-      "driftPctMax": 13.6,
+      "driftPctMin": 0.0,
+      "driftPctMax": 0.1,
       "driftNote": "Our flies DO hang long relative to the run, but by 14-38% -- not the 42-106% the superseded n=1 reading implied. And the absolute direction is the opposite of what everyone assumed: BB's flies hang 2.9-5.1s against our 2.0-2.9s, i.e. LONGER than ours. The defect was never that our flies are slow; it is that our RUN is fast.",
-      "retuneWarning": "Fixing LIVE.RUNNER_SPEED alone OVERSHOOTS. At a 4200ms anchor our current 2000-2900ms flies would sit at ratios 0.476-0.690 against BB's 0.685-1.208 -- too SHORT at both ends. To match BB, FLY_HANG_MS has to go UP to about {MIN: 2875, MAX: 5075} at the same time. Note also that BB's range is WIDER than ours (a 1.76x span against our 1.45x), so shallow and deep flies are more different from each other than we make them."
+      "retuneWarning": "Fixing LIVE.RUNNER_SPEED alone OVERSHOOTS. At a 4200ms anchor our current 2000-2900ms flies would sit at ratios 0.476-0.690 against BB's 0.685-1.208 -- too SHORT at both ends. To match BB, FLY_HANG_MS has to go UP to about {MIN: 2875, MAX: 5075} at the same time. Note also that BB's range is WIDER than ours (a 1.76x span against our 1.45x), so shallow and deep flies are more different from each other than we make them.",
+      "conformNote": "RETUNED 2026-07-24 to BB's measured range. Note the direction: FLY_HANG_MS went UP (2000-2900 -> 2875-5075), because the long-assumed 'our flies hang too long' defect was really 'our run is too fast'. Fixing RUNNER_SPEED alone would have left flies too SHORT -- the retuneWarning below is what that trap was."
     },
     "betweenPitch": {
       "id": "pace.between-pitch",
       "category": "pace",
-      "status": "known-drift",
+      "status": "conformed",
       "what": "Catch -> ready-for-the-next-pitch turnaround.",
       "measured": 2550,
       "n": 3,
@@ -719,10 +719,10 @@
       },
       "ours": {
         "constant": "src/config.ts FLOW.BETWEEN_PITCH_MS",
-        "value": 1250
+        "value": 2550
       },
       "informs": "src/config.ts FLOW.BETWEEN_PITCH_MS",
-      "statusChangedAt": "2026-07-24",
+      "statusChangedAt": "2026-07-24 (retune)",
       "definition": "Ball ARRIVES at the plate -> the PITCHER HAS IT BACK and is ready to throw again. That is the forced beat FLOW.BETWEEN_PITCH_MS models. What follows it in BB is player deliberation over the swing cards, which is not a game constant and is excluded.",
       "source": "local:bb01-capture-session2",
       "spread": 250,
@@ -748,16 +748,17 @@
       ],
       "method": "Pitches LOCATED by the HUD count pips (a resolved pitch lights one; nothing else does -- mound motion is also produced by the pitcher's idle ball-toss), then each cycle read by eye off a 20-tile mound-to-plate sheet at 250ms. The full beat is visible in one sheet: ball arrives -> call banner -> ball rests at its crossing spot -> catcher returns it -> pitcher has it.",
       "sampleGranularity": "Read at 250ms steps, so each sample carries +-125ms -- 5% of a 2550ms quantity. Fine here; NOT fine for pace.umpCallDelay, which is why that one stays unmeasured.",
-      "driftPct": -50.98,
+      "driftPct": 0.0,
       "ratioToAnchor": {
         "bb": 0.607,
-        "ours": 0.591
+        "ours": 0.608
       },
-      "driftNote": "Ours is 1250ms against BB's 2550ms -- we are 51% fast, almost exactly the 50% the anchor is fast. AND THE RATIO IS ALREADY RIGHT: as a fraction of the home->1B anchor, BB is 0.607 and we are 0.591, a 2.7% difference. So this constant is correctly PROPORTIONED and only wrong in absolute tempo -- unlike fly hang, which is wrong in both. Scaling it by the same factor as RUNNER_SPEED lands it within a few percent of BB with no separate judgement call."
+      "driftNote": "Ours is 1250ms against BB's 2550ms -- we are 51% fast, almost exactly the 50% the anchor is fast. AND THE RATIO IS ALREADY RIGHT: as a fraction of the home->1B anchor, BB is 0.607 and we are 0.591, a 2.7% difference. So this constant is correctly PROPORTIONED and only wrong in absolute tempo -- unlike fly hang, which is wrong in both. Scaling it by the same factor as RUNNER_SPEED lands it within a few percent of BB with no separate judgement call.",
+      "conformNote": "RETUNED 2026-07-24. Was already correctly PROPORTIONED (0.591 vs 0.607) and wrong only in absolute tempo, so it moved with the anchor and now matches outright."
     }
   },
   "defense": {
-    "note": "Constants governing the CPU defense. These are the ones LIVE.RUNNER_SPEED is coupled to, so measuring them is what would turn the pace retune from a feel job into a derivation. Attempted 2026-07-24; see each record for how far it got.",
+    "note": "Constants governing the CPU defense. SCALED 1.987x with RUNNER_SPEED in the 2026-07-24 retune but STILL NOT MEASURED -- they are the values most likely to need feel iteration, because halving runner speed doubles the time the defense has and the scaling assumes BB's defense is slow in the same proportion its runners are. If the retune plays wrong, start here.",
     "cpuReaction": {
       "id": "defense.cpu-reaction",
       "category": "defense",
@@ -778,8 +779,8 @@
       },
       "ours": {
         "constant": "src/config.ts MODES.main.live.cpuReactionMs",
-        "value": 420,
-        "kidValue": 550
+        "value": 835,
+        "kidValue": 1093
       },
       "ifItHolds": "Taken at face value the partial reading is ~2.5x our 420ms, which is the same direction and rough size as every other measured pace drift (run 0.50x, between-pitch 0.49x). That consistency is suggestive, and it is NOT evidence -- three separate clean-looking numbers were wrong this session before being looked at.",
       "informs": "src/config.ts MODES.main.live.cpuReactionMs",
@@ -804,8 +805,8 @@
       },
       "ours": {
         "constant": "src/config.ts MODES.main.live.cpuThrowDelayMs",
-        "value": 600,
-        "kidValue": 500
+        "value": 1192,
+        "kidValue": 993
       },
       "informs": "src/config.ts MODES.main.live.cpuThrowDelayMs"
     },
@@ -825,8 +826,8 @@
       },
       "ours": {
         "constants": ["src/config.ts LIVE.THROW_SPEED_MIN", "src/config.ts LIVE.THROW_SPEED_MAX", "src/config.ts MODES.main.live.cpuThrowSpeedMult"],
-        "min": 550,
-        "max": 820,
+        "min": 277,
+        "max": 413,
         "cpuMult": 1.0
       },
       "informs": "src/config.ts LIVE.THROW_SPEED_MIN / THROW_SPEED_MAX",

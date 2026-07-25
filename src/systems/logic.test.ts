@@ -91,8 +91,11 @@ describe('game mode', () => {
   it('kid mode keeps the original forgiving live params', () => {
     const p = resolveLiveParams('kid');
     expect(p.cpuFielderSpeed).toBeCloseTo(LIVE.FIELDER_SPEED * 0.62);
-    expect(p.cpuReactionMs).toBe(550);
-    expect(p.cpuThrowErrorMs).toBe(320);
+    // Derived, not restated: every other line here reads through MODES/LIVE,
+    // and this one hardcoded 550 until the pace retune changed it. A test that
+    // repeats a constant just asserts someone typed the same number twice.
+    expect(p.cpuReactionMs).toBe(MODES.kid.live.cpuReactionMs);
+    expect(p.cpuThrowErrorMs).toBe(MODES.kid.live.cpuThrowErrorMs);
     expect(p.catchRadius).toBeCloseTo(LIVE.CATCH_RADIUS * 1.6);
     expect(p.playerRunSpeed).toBeCloseTo(LIVE.RUNNER_SPEED * 1.3);
     // CPU reach is never inflated by kid mode.

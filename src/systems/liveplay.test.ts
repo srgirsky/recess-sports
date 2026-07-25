@@ -70,7 +70,7 @@ function runPlay(
 ): { s: LivePlayState; events: LiveEvent[] } {
   const events: LiveEvent[] = [];
   let guard = 0;
-  while (s.phase !== 'done' && guard++ < 2000) {
+  while (s.phase !== 'done' && guard++ < 4000) {
     s = stepLivePlay(s, perTick(s), dt, params, rng);
     events.push(...s.events);
   }
@@ -82,15 +82,15 @@ const grounderToShort: Launch = {
   type: 'grounder',
   landing: { x: 395, y: 300 },
   hangMs: 0,
-  rollSpeed: 350,
+  rollSpeed: 176,
   homer: false,
 };
 
 const flyToCenter: Launch = {
   type: 'fly',
   landing: { x: 480, y: 240 },
-  hangMs: 1200,
-  rollSpeed: 350,
+  hangMs: 2384,
+  rollSpeed: 176,
   homer: false,
 };
 
@@ -114,7 +114,7 @@ describe('resolveContact: swing -> launch', () => {
   });
 
   it('non-homer landings always stay on the field, inside the foul cone', () => {
-    for (let i = 0; i < 200; i++) {
+    for (let i = 0; i < 400; i++) {
       const r = resolveContact('good', plain({}), plain({}), () => Math.random());
       if (r.kind !== 'inPlay' || r.launch.homer) continue;
       const { landing } = r.launch;
@@ -185,7 +185,7 @@ describe('live play: defense (the player fields)', () => {
     let s = startLivePlay({
       mode: 'defense',
       // Lands in the SS/LF/3B gap — no fielder close enough to auto-grab it.
-      launch: { ...flyToCenter, landing: { x: 335, y: 300 }, hangMs: 1100 },
+      launch: { ...flyToCenter, landing: { x: 335, y: 300 }, hangMs: 2186 },
       batter: { charId: 'bat', speed: 5 },
       baseRunners: [{ base: 2, charId: 'r2', speed: 5 }],
       defense: DEFENSE,
@@ -211,12 +211,13 @@ describe('live play: defense (the player fields)', () => {
         outs: 0,
         params: kid,
       });
-      // Field it, then dawdle until 1800ms before lobbing a soft throw — slow
+      // Field it, then dawdle until 3576ms before lobbing a soft throw — slow
       // enough that only the slow runner loses the race to first. (The dawdle
-      // is sized to RUNNER_SPEED: the jackrabbit reaches first at ~2.0s.)
+      // is sized to RUNNER_SPEED: the jackrabbit reaches first at ~4.0s. Scaled
+      // 1.987x with the Backyard-measured retune; see scripts/measures.json.)
       let threw = false;
       const { s: end } = runPlay(s, kid, (st) => {
-        if (st.ball.phase === 'held' && !threw && st.elapsed >= 1800) {
+        if (st.ball.phase === 'held' && !threw && st.elapsed >= 3576) {
           threw = true;
           return { throwTo: { base: 1, power: 0 } };
         }
@@ -280,9 +281,9 @@ describe('live play: fielding assist', () => {
     const off = { x: 900, y: 500 };
     const noMagnet: LiveParams = { ...main, assistBlend: 0 };
     const drive = (params: LiveParams) => {
-      let s = start(params, { ...flyToCenter, hangMs: 1400 });
+      let s = start(params, { ...flyToCenter, hangMs: 2782 });
       let maxStep = 0;
-      for (let i = 0; i < 24; i++) {
+      for (let i = 0; i < 48; i++) {
         const before = { ...s.fielders[s.active].pos };
         s = stepLivePlay(s, { pointer: off, pointerActive: true }, 50, params, () => 0.5);
         maxStep = Math.max(maxStep, dist(before, s.fielders[s.active].pos));
@@ -301,7 +302,7 @@ describe('live play: fielding assist', () => {
     // must head exactly where the pointer points.
     let s = start(main, grounderToShort);
     let guard = 0;
-    while (s.ball.phase !== 'held' && guard++ < 400) {
+    while (s.ball.phase !== 'held' && guard++ < 800) {
       s = stepLivePlay(s, { pointer: s.ball.pos, pointerActive: true }, 50, main, () => 0.5);
     }
     expect(s.ball.phase).toBe('held');
@@ -358,7 +359,7 @@ describe('live play: offense (the player runs)', () => {
       // hasn't opened when the batter settles at first, so the play is
       // guaranteed open for the second tap. (Hang sized to RUNNER_SPEED: the
       // batter's leg takes ~1.3s, the window opens at 1440ms.)
-      launch: { type: 'fly', landing: { x: 790, y: 220 }, hangMs: 2400, rollSpeed: 60, homer: false },
+      launch: { type: 'fly', landing: { x: 790, y: 220 }, hangMs: 4769, rollSpeed: 30, homer: false },
       batter: { charId: 'bat', speed: 10 },
       baseRunners: [],
       defense: DEFENSE,
@@ -372,7 +373,7 @@ describe('live play: offense (the player runs)', () => {
 
     // Walk him to first, then tap — he should take off for second.
     let guard = 0;
-    while (!(batter.to === 1 && batter.from === 1) && guard++ < 500 && s.phase !== 'done') {
+    while (!(batter.to === 1 && batter.from === 1) && guard++ < 1000 && s.phase !== 'done') {
       s = stepLivePlay(s, {}, 50, kid, () => 0.5);
     }
     expect(batter.from).toBe(1);
@@ -483,7 +484,7 @@ describe('live play: stat-driven fielders & errors', () => {
         params: main,
       });
       let ticks = 0;
-      while (s.phase !== 'done' && ticks++ < 500) {
+      while (s.phase !== 'done' && ticks++ < 1000) {
         s = stepLivePlay(s, {}, 50, main, () => 0.9);
         if (s.events.some((e) => e.t === 'pickup')) return ticks;
       }
@@ -500,7 +501,7 @@ describe('live play: manual baserunning (main mode)', () => {
   it('tag-up and score: a deep caught fly becomes a sac fly', () => {
     let s = startLivePlay({
       mode: 'offense',
-      launch: { type: 'fly', landing: { x: 480, y: 235 }, hangMs: 1300, rollSpeed: 0, homer: false },
+      launch: { type: 'fly', landing: { x: 480, y: 235 }, hangMs: 2583, rollSpeed: 0, homer: false },
       batter: { charId: 'bat', speed: 5 },
       baseRunners: [{ base: 3, charId: 'r3', speed: 10 }],
       outs: 0,
@@ -525,7 +526,7 @@ describe('live play: manual baserunning (main mode)', () => {
   it('kid mode still gives the free walk-back (no doubling off, no sac flies)', () => {
     let s = startLivePlay({
       mode: 'offense',
-      launch: { type: 'fly', landing: { x: 480, y: 235 }, hangMs: 1300, rollSpeed: 0, homer: false },
+      launch: { type: 'fly', landing: { x: 480, y: 235 }, hangMs: 2583, rollSpeed: 0, homer: false },
       batter: { charId: 'bat', speed: 5 },
       baseRunners: [{ base: 3, charId: 'r3', speed: 8 }],
       outs: 0,
@@ -541,7 +542,7 @@ describe('live play: manual baserunning (main mode)', () => {
   it('a runner who strayed far gets doubled off on a caught fly', () => {
     let s = startLivePlay({
       mode: 'offense',
-      launch: { type: 'fly', landing: { x: 480, y: 235 }, hangMs: 1300, rollSpeed: 0, homer: false },
+      launch: { type: 'fly', landing: { x: 480, y: 235 }, hangMs: 2583, rollSpeed: 0, homer: false },
       batter: { charId: 'bat', speed: 5 },
       baseRunners: [{ base: 1, charId: 'r1', speed: 3 }], // slow — a bad tag-up bet
       outs: 0,
@@ -612,7 +613,7 @@ describe('live play: manual baserunning (main mode)', () => {
   });
 
   it('termination property holds under random send/hold spam', () => {
-    for (let i = 0; i < 120; i++) {
+    for (let i = 0; i < 240; i++) {
       const r = resolveContact(
         (['perfect', 'good', 'weak'] as const)[i % 3],
         plain({ stats: { contact: 5, power: (i % 10) + 1, speed: ((i * 3) % 10) + 1, pitching: 5, fielding: 5 } }),
@@ -635,7 +636,7 @@ describe('live play: manual baserunning (main mode)', () => {
         params: main,
       });
       let guard = 0;
-      while (s.phase !== 'done' && guard++ < 2000) {
+      while (s.phase !== 'done' && guard++ < 4000) {
         const inputs: LiveInputs = {};
         if (Math.random() < 0.8) inputs.pointer = { x: Math.random() * 960, y: Math.random() * 640 };
         if (Math.random() < 0.1)
@@ -677,7 +678,7 @@ describe('live play: bounces & fence caroms', () => {
   const settle = (s: LivePlayState) => {
     const trace: { pos: { x: number; y: number }; height: number; events: LiveEvent[] }[] = [];
     let guard = 0;
-    while (guard++ < 400 && s.phase !== 'done') {
+    while (guard++ < 800 && s.phase !== 'done') {
       s = stepLivePlay(s, parked, 25, params, () => 0.5);
       trace.push({ pos: { ...s.ball.pos }, height: s.ball.height, events: [...s.events] });
       if (s.ball.phase === 'rolling' && s.ball.rollV === 0 && !s.ball.hop && s.landedAt > 0) break;
@@ -688,8 +689,8 @@ describe('live play: bounces & fence caroms', () => {
   const gapLiner: Launch = {
     type: 'liner',
     landing: { x: 480, y: 300 },
-    hangMs: 900,
-    rollSpeed: 300,
+    hangMs: 1788,
+    rollSpeed: 151,
     homer: false,
   };
 
@@ -713,7 +714,7 @@ describe('live play: bounces & fence caroms', () => {
   it('identical kid-mode sims are byte-identical, bounces included', () => {
     let a = start(gapLiner);
     let b = start(gapLiner);
-    for (let i = 0; i < 200; i++) {
+    for (let i = 0; i < 400; i++) {
       a = stepLivePlay(a, parked, 25, params, () => 0.5);
       b = stepLivePlay(b, parked, 25, params, () => 0.5);
       expect(JSON.stringify(b)).toBe(JSON.stringify(a));
@@ -737,8 +738,8 @@ describe('live play: bounces & fence caroms', () => {
     const hot: Launch = {
       type: 'liner',
       landing: { x: 480, y: wall + 20 },
-      hangMs: 600,
-      rollSpeed: 300,
+      hangMs: 1192,
+      rollSpeed: 151,
       homer: false,
     };
     const { s, trace } = settle(start(hot));
@@ -758,8 +759,8 @@ describe('live play: bounces & fence caroms', () => {
         const hot: Launch = {
           type: 'liner',
           landing: { x: at.x, y: at.y + 18 },
-          hangMs: 550,
-          rollSpeed: 300,
+          hangMs: 1093,
+          rollSpeed: 151,
           homer: false,
         };
         const { trace } = settle(start(hot, geo));
@@ -803,7 +804,7 @@ describe('live play: termination property', () => {
   it('random launches + random inputs always finish, with sane outs/runs', () => {
     const kid = resolveLiveParams('kid');
     const main = resolveLiveParams('main');
-    for (let i = 0; i < 200; i++) {
+    for (let i = 0; i < 400; i++) {
       const params = i % 2 === 0 ? kid : main;
       const mode = i % 3 === 0 ? 'offense' : ('defense' as const);
       const r = resolveContact(
@@ -827,7 +828,7 @@ describe('live play: termination property', () => {
         params,
       });
       let guard = 0;
-      while (s.phase !== 'done' && guard++ < 2000) {
+      while (s.phase !== 'done' && guard++ < 4000) {
         const inputs: LiveInputs = {};
         if (Math.random() < 0.8) inputs.pointer = { x: Math.random() * 960, y: Math.random() * 640 };
         if (Math.random() < 0.1)
@@ -940,7 +941,7 @@ describe('live play: geometry sanity', () => {
     });
     // Camp under the fly until the catch, then try to carry it over the wall.
     let guard = 0;
-    while (!s.fielders[s.active].hasBall && s.phase !== 'done' && guard++ < 200) {
+    while (!s.fielders[s.active].hasBall && s.phase !== 'done' && guard++ < 400) {
       s = stepLivePlay(s, { pointer: flyToCenter.landing }, 50, kid, () => 0.5);
     }
     expect(s.fielders[s.active].hasBall).toBe(true);
