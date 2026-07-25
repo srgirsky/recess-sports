@@ -50,6 +50,8 @@ export class BattingView {
   private batterIdle?: Phaser.Tweens.Tween;
   private batterTic?: Phaser.Time.TimerEvent;
   private batterReactTimer?: Phaser.Time.TimerEvent;
+  private catcherId = '';
+  private catcherReactTimer?: Phaser.Time.TimerEvent;
   private batterSwing?: { cancel(restore?: boolean): void };
   private pitcherWindupSeq?: { cancel(restore?: boolean): void };
   private batterBaseScale = 1;
@@ -138,6 +140,7 @@ export class BattingView {
     this.setKid(this.batter, actors.batterId, 'batRear', PLATE_VIEW.BATTER.H);
     this.pitcherId = actors.pitcherId;
     this.batterId = actors.batterId;
+    this.catcherId = actors.catcherId;
     this.batterBaseScale = this.batter.scale;
     if (!this.root.visible || batterChanged) {
       this.startBatterIdle();
@@ -175,6 +178,7 @@ export class BattingView {
     if (!this.root.visible) return;
     this.stopTossIdle();
     this.batterReactTimer?.remove(false);
+    this.catcherReactTimer?.remove(false);
     this.batterSwing?.cancel(false);
     this.batterSwing = undefined;
     this.pitcherWindupSeq?.cancel(false); // a stale windup2 must not re-pose the hidden rig
@@ -241,6 +245,33 @@ export class BattingView {
     this.setKid(b, this.batterId, pose, PLATE_VIEW.BATTER.H);
     this.batterReactTimer?.remove(false);
     this.batterReactTimer = this.scene.time.delayedCall(holdMs, () => this.settleBatter());
+  }
+
+  /**
+   * The catcher throws the ball back to the mound — the visual half of the
+   * between-pitch beat. tossIdle()'s own docstring has claimed "the catcher
+   * lobs it back" since it was written; this is that claim, finally drawn.
+   *
+   * Same trade-off reactBatter already accepts: 'throw' is a front-view pose, so
+   * he turns to face the camera for those frames instead of staying in the
+   * rear-view crouch. At this size, and for this long, reading as a throw beats
+   * staying correctly oriented.
+   */
+  catcherThrow(): void {
+    if (!this.root.visible || !this.catcherId) return;
+    this.catcherReactTimer?.remove(false);
+    this.setKid(this.catcher, this.catcherId, 'throw', PLATE_VIEW.CATCHER.H);
+    this.catcherReactTimer = this.scene.time.delayedCall(ANIM.ACTION_HOLD_MS, () =>
+      this.settleCatcher()
+    );
+  }
+
+  /** Back into the crouch once the throw pose has held. */
+  private settleCatcher(): void {
+    if (!this.catcherId || !this.catcher.active) return;
+    if (this.catcher.texture.key !== this.rigKey(this.catcherId, 'catchRear')) {
+      this.setKid(this.catcher, this.catcherId, 'catchRear', PLATE_VIEW.CATCHER.H);
+    }
   }
 
   /** Put the current batter back in the rear-view stance if a reaction is up. */

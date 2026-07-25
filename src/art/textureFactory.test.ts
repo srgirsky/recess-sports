@@ -29,9 +29,14 @@ describe('poseKey / heroKey', () => {
     expect(heroKey('junebug', 'batRear')).toBe('junebug:batRear:t2x4:hi');
   });
 
-  it('every reactBatter pose is in the hero set', () => {
-    for (const pose of ['batRear', 'catchRear', 'upset', 'nervous', 'dodge', 'cheer'] as const) {
-      expect(HERO_POSES).toContain(pose);
-    }
+  it('every pose the rig renders big is in the hero set', () => {
+    // rigKey() falls back to the base tier for anything missing here, so an
+    // omission does not crash -- the sprite just goes soft. That is worst when
+    // one actor SWAPS between a hero pose and a base one (the catcher's crouch
+    // -> throw -> crouch, twice a pitch), because the resolution change reads
+    // as a flicker rather than as blur.
+    const reactions = ['batRear', 'catchRear', 'upset', 'nervous', 'dodge', 'cheer'] as const;
+    for (const pose of reactions) expect(HERO_POSES).toContain(pose);
+    expect(HERO_POSES).toContain('throw'); // catcherThrow(), same 230px catcher
   });
 });

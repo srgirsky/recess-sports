@@ -397,12 +397,18 @@ describe('pitch corridor — matched to BB, and timing can never go free again',
     expect(PITCH_SPEED.LOB.FROM_MS).toBeGreaterThan(fastest);
   });
 
-  it('records the pitch clock, and that the old "no timer" claim was corrected', () => {
+  it('records the pitch clock, and keeps BOTH walk-backs about it visible', () => {
     const cad = M.pace.pitchCadence;
     expect(cad.status).toBe('conformed');
     expect(FLOW.PITCH_CLOCK_MS).toBe(cad.ours.value);
-    // The walk-back must stay visible: BB HAS a clock, it just never binds.
-    expect(cad.supersedes.was).toMatch(/DOES NOT USE A TIMER/);
+    // This record has been corrected twice, and the value of the record is the
+    // trail, not the current answer. Overwriting either correction with the
+    // other would hide the more instructive of the two mistakes.
+    expect(Array.isArray(cad.supersedes)).toBe(true);
+    expect(cad.supersedes).toHaveLength(2);
+    expect(cad.supersedes[0].was).toMatch(/DOES NOT USE A TIMER/); // there IS a clock
+    expect(cad.supersedes[1].was).toMatch(/BATTING-side/); // ...on the mound, not the plate
+    for (const c of cad.supersedes) expect(c.lesson).toBeTruthy();
     expect(cad.measured.bbClockExists).toBe(true);
     // Our clock must sit below every gap BB was observed to allow, or we would
     // be claiming to be more patient than the game we measured.

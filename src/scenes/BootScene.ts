@@ -58,7 +58,7 @@ export class BootScene extends Phaser.Scene {
     audio.setSfxVolume(st.sfx);
     audio.setVoiceVolume(st.voice);
     if (import.meta.env.DEV) {
-      // Budget: <2s desktop (~1200 textures: 25 base + 9 hero + 6 street poses × 30 kids).
+      // Budget: <2s desktop (~1200 textures: 25 base + 10 hero + 6 street poses × 30 kids).
       // If this creeps: lazy-bake the street run frames in SchoolyardScene.create
       // (queue + load.start(), the crowd only runs after the PLAY tap), trim
       // HERO_POSES, or drop the base tier to 1x.
