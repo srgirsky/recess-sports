@@ -1,13 +1,13 @@
 {
   "comment": "Gold-log regression fingerprints (scripts/goldlog.browser.js, harness v2.2). The harness seeds Math.random (mulberry32), virtualizes Date.now onto the pump grid, bypasses the visual draft with FIXED teams (the draft's greedy chooser jitters every candidate with rng, so title-screen cosmetics would cascade into different teams), reseeds at game entry, waits out the real-async jersey loader on a 50ms pump grid, and samples every 50ms step. Fingerprint = SHA-256 of the state-transition log (dash-grouped). Behavior-identical phases must reproduce these exactly. To debug a mismatch: check out the anchoring commit and re-run goldLogRun for the full log. CAUTION when regenerating: launch goldLogRun fire-and-forget and poll sessionStorage('goldlog_last') afterward \u2014 an awaited eval that times out mid-drive interleaves CDP work with the run and pollutes the fingerprint.",
-  "capturedAt": "post live-play fielding+baserunning fixes (fix/live-play-fielding-and-baserunning): chaser election moved to systems/fielding.ts and can now change hands mid-play; every loose-ball settle clamps into the field; batter-runners can no longer be turned back toward the plate. Each fingerprint verified byte-stable across clean runs (main x3, kid x2).",
+  "capturedAt": "post live-play fielding+baserunning fixes (fix/live-play-fielding-and-baserunning): chaser election moved to systems/fielding.ts and can now change hands mid-play; every loose-ball settle clamps into the field; batter-runners can no longer be turned back toward the plate. Each fingerprint verified byte-stable across clean runs (main x3, kid x2). MAIN RE-CAPTURED 2026-07-25 on feat/pitch-ceremony to correct the drift #24 left behind (see mainDrift) -- main x2 on the branch plus x1 on post-#24 src, all identical; kid re-verified unchanged.",
   "script": "goldlog.browser.js v2.2 (guard 9000)",
   "seed": 42,
   "logs": {
     "main": {
-      "length": 2568,
-      "sha256": "b4463dd2-46214115-b6ce64e2-0bdc3b31-1d3dd15c-aa671c73-c4416527-ff5e813f",
-      "note": "fixed teams A/B, 1 inning, ends 1-0"
+      "length": 3038,
+      "sha256": "b7377201-ac885818-ca0cf397-7f874dbb-dc4fe76b-e90ab9e4-c9987266-cc1151ed",
+      "note": "fixed teams A/B, 1 inning, ends 1-0. REGENERATED for #24 (see mainDrift) -- the ceremony PR that carries this change is itself fingerprint-neutral."
     },
     "kid": {
       "length": 10756,
@@ -19,5 +19,12 @@
     "on": "2026-07-25 (fix/live-play-fielding-and-baserunning)",
     "why": "Clears the STALE flag set on 2026-07-24. Those fingerprints encoded the PRE-RETUNE pace; these are captured against the retuned pace AND the fielding/baserunning fixes, so the gate is meaningful again.",
     "caveat": "defense.* in scripts/measures.json is still scaled-not-measured, and the chaser election added here is new defense behaviour that has NOT had a feel-tuning pass. If the defense is later tuned (start with LIVE.CHASE.CUTOFF_GRACE_MS, then the leashes), these will need regenerating again \u2014 that is expected, not a regression."
+  },
+  "mainDrift": {
+    "found": "2026-07-25 (feat/pitch-ceremony)",
+    "what": "The main fingerprint had been silently invalid since #24 (Match Backyard's pitch). #24 changed PITCH_SPEED and every swing window without regenerating, so the recorded 2568/b4463dd2 described a build that no longer existed -- the gate would have failed for the next person to run it, and read as their fault. Corrected here to 3038/b7377201.",
+    "attribution": "NOT caused by the ceremony PR that lands this fix. Verified by driving the harness on two checkouts: post-#24 src (old swing-card gate present, ceremonyThen absent -- asserted in the tab before the drive) and the ceremony branch. Both produce 3038/b7377201 byte for byte. The ceremony fills a beat the game already waited out, so it moves no state transition.",
+    "kidUnaffected": "kid held at 10756/335f3ca0 throughout -- #24's pitch corridor is CLASSIC-only and the ceremony is mode-blind. Re-verified, not assumed.",
+    "lesson": "A gate nobody runs is a gate nobody notices breaking. #24 touched constants squarely on the seeded rng path and skipped the goldlog step the delivery process calls for. Run it when the diff touches PACE, not only when it touches the sim."
   }
 }
