@@ -451,6 +451,46 @@ the quantity is ~200 ms, so the sampling interval is the same order as the thing
 being measured. One 33 ms sheet per pitch would settle it, and the pitch times
 are now known.
 
+### The defense constants — attempted, and why they aren't recorded
+
+These are the constants `LIVE.RUNNER_SPEED` is coupled to, so measuring them is
+what would turn the retune from a feel job into a derivation. All three remain
+`awaiting-measurement`.
+
+**Fielder reaction** got closest. Fielders are ~20×35 native, so the size filter
+that cannot isolate a 5px ball works cleanly on them: background-subtract, keep
+distinct frames, link with `linkTracks`. Grounder plays specifically — on a *fly*
+the chaser often doesn't move at all, because BB paints the landing disc where
+the ball will go and the nearest fielder is frequently already standing on it
+(fly plays gave 817–3283 ms of noise for exactly that reason). Grounders gave a
+tight-looking cluster: **900 / 1050 / 1150 / 783 / 1183 ms**, about 2.5× our
+420 ms — the same direction and rough size as every other measured pace drift.
+
+It is recorded as a `partialReading` and **not** promoted, for two reasons that
+are about the measurement rather than the spread:
+
+1. **Definitional.** A displacement threshold cannot separate a *decision delay*
+   from an *acceleration ramp*. Our `cpuReactionMs` is a deliberate AI pause; if
+   BB's fielders instead start immediately and accelerate slowly, that 1050 ms
+   measures something we don't model and scaling our constant to it would be
+   wrong. An eye read of play-15 shows a fielder genuinely **static for ~0.67 s**
+   then breaking, which favours a real delay — but that's n=1.
+2. **Identification.** Without ball tracking the *primary* fielder can't be
+   picked out, and "biggest mover" also selects kids backing up or covering a
+   base — different behaviour with its own timing.
+
+What would resolve it is the same read that settled the fly hang: watch the
+fielder who actually gathers the ball and check whether he holds a standing pose
+for a beat, or shifts to a run pose immediately and covers ground slowly. BB's
+pose set makes that visible.
+
+**Throw delay** and **throw speed** both depend on tracking the ball, the open
+problem from earlier passes. Throw speed has the cleanest possible target and was
+simply not reached: catcher→2B on a steal (plays 02, 13), where *both endpoints
+are bases* whose native coordinates are already measured — home (318.2, 440.6) to
+2B (317.4, 220.2) = **220.4 px** — so no geometry has to be inferred and only the
+release and arrival frames are needed.
+
 ### Two plan assumptions that broke
 
 - **"PT" on the ON THE MOUND panel is not a pitching rating.** It is a

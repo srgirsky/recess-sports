@@ -362,6 +362,35 @@ describe('pace — the anchor is measured; the rest stays pinned', () => {
   });
 });
 
+describe('defense — pinned until BB is actually measured', () => {
+  it('holds the CPU defense constants that RUNNER_SPEED is coupled to', () => {
+    // These are the constants the pace retune cannot be derived without, and
+    // they are exactly where a "reasonable-looking" guess would do the most
+    // damage: halving RUNNER_SPEED doubles the time the defense has, so leaving
+    // these untouched hands it every close play. Pin them so a retune has to
+    // change them DELIBERATELY, and so this record notices when it happens.
+    expect(MODES.main.live.cpuReactionMs).toBe(M.defense.cpuReaction.ours.value);
+    expect(MODES.kid.live.cpuReactionMs).toBe(M.defense.cpuReaction.ours.kidValue);
+    expect(MODES.main.live.cpuThrowDelayMs).toBe(M.defense.cpuThrowDelay.ours.value);
+    expect(MODES.kid.live.cpuThrowDelayMs).toBe(M.defense.cpuThrowDelay.ours.kidValue);
+    expect(LIVE.THROW_SPEED_MIN).toBe(M.defense.throwSpeed.ours.min);
+    expect(LIVE.THROW_SPEED_MAX).toBe(M.defense.throwSpeed.ours.max);
+    expect(MODES.main.live.cpuThrowSpeedMult).toBe(M.defense.throwSpeed.ours.cpuMult);
+  });
+
+  it('makes no claim about BB for any of them', () => {
+    // The whole point of the status. defense.cpuReaction carries a 5-sample
+    // partialReading that LOOKS like a measurement; the hygiene test elsewhere
+    // already forbids it coexisting with a non-null `measured`, and this asserts
+    // the same thing locally where a reader of this block will see it.
+    for (const rec of [M.defense.cpuReaction, M.defense.cpuThrowDelay, M.defense.throwSpeed]) {
+      expect(rec.status).toBe('awaiting-measurement');
+      expect(rec.measured).toBeNull();
+      expect(rec.n).toBe(0);
+    }
+  });
+});
+
 describe('instrument — the capture facts the pace pass will rely on', () => {
   it('keeps the precision floor at the DISTINCT frame rate, not the container rate', () => {
     // The single easiest way to produce confident garbage from this capture is

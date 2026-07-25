@@ -755,5 +755,73 @@
       },
       "driftNote": "Ours is 1250ms against BB's 2550ms -- we are 51% fast, almost exactly the 50% the anchor is fast. AND THE RATIO IS ALREADY RIGHT: as a fraction of the home->1B anchor, BB is 0.607 and we are 0.591, a 2.7% difference. So this constant is correctly PROPORTIONED and only wrong in absolute tempo -- unlike fly hang, which is wrong in both. Scaling it by the same factor as RUNNER_SPEED lands it within a few percent of BB with no separate judgement call."
     }
+  },
+  "defense": {
+    "note": "Constants governing the CPU defense. These are the ones LIVE.RUNNER_SPEED is coupled to, so measuring them is what would turn the pace retune from a feel job into a derivation. Attempted 2026-07-24; see each record for how far it got.",
+    "cpuReaction": {
+      "id": "defense.cpu-reaction",
+      "category": "defense",
+      "status": "awaiting-measurement",
+      "what": "Delay between contact and the fielding team actually breaking for the ball.",
+      "measured": null,
+      "n": 0,
+      "confidence": "estimate",
+      "partialReading": {
+        "samples": [900, 1050, 1150, 783, 1183],
+        "n": 5,
+        "medianMs": 1050,
+        "confidence": "low",
+        "source": "local:bb01-capture-session2, grounder plays 12/15/17/03/04",
+        "method": "Background-subtracted fielder tracks (kids are ~20x35 native, so the size filter that cannot isolate a 5px ball works cleanly on them), decimated to distinct frames, linked with lib.js linkTracks. Reaction = first frame the biggest-moving infielder has left its start by >6px and stays gone. Grounders specifically: on a FLY the chaser often does not move at all, because BB paints the landing disc where the ball will go and the nearest fielder is frequently already standing on it -- fly plays gave 817-3283ms of noise for exactly that reason.",
+        "why": "NOT promoted, for two reasons that are about the measurement rather than the spread. (1) DEFINITIONAL: a displacement threshold cannot separate a DECISION DELAY from an ACCELERATION RAMP. Our cpuReactionMs is a deliberate AI pause; if BB's fielders instead start immediately and accelerate slowly, the same 1050ms would be measuring something we do not model, and scaling our constant to it would be wrong. An eye read of play-15 shows a fielder genuinely STATIC for ~0.67s and then breaking, which favours a real delay -- but that is n=1 and not enough to settle it. (2) IDENTIFICATION: without ball tracking the PRIMARY fielder cannot be picked out reliably, and 'biggest mover' also selects kids who are backing up or covering a base, which is different behaviour with its own timing.",
+        "whatWouldResolveIt": "Per-play eye reads on grounders: watch the fielder who actually gathers the ball, and check whether he holds a standing pose for a beat (decision delay) or shifts into a run pose immediately and covers ground slowly (acceleration ramp). BB's pose set makes that visible -- it is the same read that settled the fly hang. Roughly one sheet per play across the five grounders."
+      },
+      "ours": {
+        "constant": "src/config.ts MODES.main.live.cpuReactionMs",
+        "value": 420,
+        "kidValue": 550
+      },
+      "ifItHolds": "Taken at face value the partial reading is ~2.5x our 420ms, which is the same direction and rough size as every other measured pace drift (run 0.50x, between-pitch 0.49x). That consistency is suggestive, and it is NOT evidence -- three separate clean-looking numbers were wrong this session before being looked at.",
+      "informs": "src/config.ts MODES.main.live.cpuReactionMs"
+    },
+    "cpuThrowDelay": {
+      "id": "defense.cpu-throw-delay",
+      "category": "defense",
+      "status": "awaiting-measurement",
+      "what": "How long a CPU fielder holds the ball before releasing a throw.",
+      "measured": null,
+      "n": 0,
+      "confidence": "estimate",
+      "blocked": {
+        "finding": "Needs the BALL: the beat is 'fielder gathers it' -> 'ball separates and accelerates away'. Ball tracking in the wide view is the open problem recorded in instrument.background-subtraction and pace.flyHang -- the fly hang was measured off the landing DISC precisely because the ball itself is not reliably trackable there.",
+        "whatWouldWork": "The gather and release are both visible as POSE changes on a large sprite (glove-down, then throw). Reading those by eye sidesteps ball tracking entirely, and is the same technique that would settle defense.cpuReaction. Not reached."
+      },
+      "ours": {
+        "constant": "src/config.ts MODES.main.live.cpuThrowDelayMs",
+        "value": 600,
+        "kidValue": 500
+      },
+      "informs": "src/config.ts MODES.main.live.cpuThrowDelayMs"
+    },
+    "throwSpeed": {
+      "id": "defense.throw-speed",
+      "category": "defense",
+      "status": "awaiting-measurement",
+      "what": "Throw flight speed in px/s.",
+      "measured": null,
+      "n": 0,
+      "confidence": "estimate",
+      "blocked": {
+        "finding": "Same ball-tracking dependency, but this one has the cleanest possible target and was simply not reached.",
+        "whatWouldWork": "Catcher->2B on a steal (plays 02 and 13). BOTH ENDPOINTS ARE BASES, whose native coordinates are already measured (geometry.projectionType.measurements[2]), so no geometry has to be inferred and the distance is known exactly: home(318.2,440.6) to 2B(317.4,220.2) = 220.4px. Only the release and arrival frames are needed, and on a steal both are framed events. The capture guide's shot list already flagged this as the best throw measurement available; it remains true."
+      },
+      "ours": {
+        "constants": ["src/config.ts LIVE.THROW_SPEED_MIN", "src/config.ts LIVE.THROW_SPEED_MAX", "src/config.ts MODES.main.live.cpuThrowSpeedMult"],
+        "min": 550,
+        "max": 820,
+        "cpuMult": 1.0
+      },
+      "informs": "src/config.ts LIVE.THROW_SPEED_MIN / THROW_SPEED_MAX"
+    }
   }
 }
