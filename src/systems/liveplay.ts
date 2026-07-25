@@ -512,6 +512,7 @@ function moveFielders(
     const step = (params.fielderSpeed * statSpeedMult(chaser) * dtMs) / 1000;
     const steering = inputs.pointer && (inputs.pointerActive ?? true);
     if (steering) {
+      s.lastSteerAt = s.elapsed;
       let next = moveToward(chaser.pos, inputs.pointer!, step);
       if (params.assist === 'magnet' && ballBusy && params.assistBlend > 0) {
         // Magnet assist: bend the step toward the ball. Both candidate points
@@ -524,6 +525,18 @@ function moveFielders(
       // Kid mode, hands off: the fielder plays itself, CPU-style but at full
       // player speed with no reaction lag. Any real steering overrides it.
       chaser.pos = clampToField(s.geo, moveToward(chaser.pos, chaseTarget(s), step));
+    } else if (
+      params.assist === 'magnet' &&
+      ballBusy &&
+      s.elapsed - s.lastSteerAt >= LIVE.ASSIST.IDLE_TAKEOVER_MS
+    ) {
+      // CLASSIC, nobody steering: amble after it rather than standing frozen
+      // while the play burns down to MAX_PLAY_MS. Slower than steering, so
+      // letting go is never the better way to play.
+      chaser.pos = clampToField(
+        s.geo,
+        moveToward(chaser.pos, chaseTarget(s), step * LIVE.ASSIST.IDLE_SPEED_MULT)
+      );
     }
   } else if (ballBusy && s.elapsed >= params.cpuReactionMs) {
     // CPU runs to the landing spot while the ball is up ("read it off the

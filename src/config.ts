@@ -334,7 +334,7 @@ export const FX = {
   /** 📼 instant replay (great live plays re-run in slow motion). */
   REPLAY: {
     SPEED: 0.55, // playback rate vs real time
-    MAX_FRAMES: 900, // snapshot cap (~15s of play at 60fps — covers MAX_PLAY_MS)
+    MAX_FRAMES: 1320, // snapshot cap (~22s at 60fps — covers MAX_PLAY_MS's 21862)
   },
   /** The home-run show (scenes/ui/Spectacle.ts). */
   HOMER: {
@@ -561,6 +561,14 @@ export const LIVE = {
     MAGNET_BLEND: 0.5,
     /** A pointer that hasn't moved (and isn't down) this long stops steering. */
     POINTER_STALE_MS: 300,
+    /** CLASSIC magnet: with the ball loose and nobody steering for this long,
+     *  the chaser ambles after it by themselves. Kid mode's 'auto' assist has
+     *  always done this; without it, lifting the pointer in CLASSIC froze the
+     *  fielder and the play ran out the clock. */
+    IDLE_TAKEOVER_MS: 1200,
+    /** ...at this fraction of full speed. Deliberately slower than steering,
+     *  so letting go is never the better way to play. */
+    IDLE_SPEED_MULT: 0.6,
   },
   /**
    * Who chases a loose ball (systems/fielding.ts `electChaser`). A ball in the
@@ -725,7 +733,7 @@ export const PASSPLAY = {
 /** Two-device play over WebRTC (src/net/*; PeerJS free cloud broker). */
 export const NET = {
   /** Bumped on any wire-format change; hello handshake rejects mismatches. */
-  PROTOCOL_VERSION: 4, // v4: Backyard pitch corridor — timing windows differ from v3 builds
+  PROTOCOL_VERSION: 5, // v5: ReplayFrame carries the active chaser (it can now change mid-play)
   /** liveFrame + liveInput pointer stream rate (full ReplayFrames, no deltas). */
   FRAME_HZ: 20,
   /** "Looking for your friend… 🔍" window before the no-blame GOOD GAME. */

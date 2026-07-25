@@ -219,9 +219,10 @@ describe('live play: defense (the player fields)', () => {
   });
 
   it('ignoring the ball entirely still terminates (cap) and the CPU runs wild', () => {
-    // Magnet assist (not kid's auto) so an idle pointer really means nobody
-    // fields it — this test is about the no-soft-lock termination cap.
-    const noAuto: LiveParams = { ...kid, assist: 'magnet' };
+    // Nobody fields it — magnet assist (not kid's auto) AND nobody can move,
+    // so neither steering nor the idle takeover gets anyone to the ball. This
+    // test is about the no-soft-lock termination cap, not about fielding.
+    const noAuto: LiveParams = { ...kid, assist: 'magnet', fielderSpeed: 0 };
     let s = startLivePlay({
       mode: 'defense',
       // Lands in the SS/LF/3B gap — no fielder close enough to auto-grab it.
@@ -238,6 +239,27 @@ describe('live play: defense (the player fields)', () => {
     // Nobody fielded it — the runner from 2nd (at least) comes around to score.
     expect(outcome.runs).toBeGreaterThanOrEqual(1);
     expect(outcome.outs).toBe(0);
+  });
+
+  it('CLASSIC: letting go of the pointer no longer freezes the fielder', () => {
+    // Kid mode's 'auto' assist always self-fielded; CLASSIC's 'magnet' had no
+    // fallback, so lifting the pointer left the chaser standing still and the
+    // play ran out the clock with the ball lying on the grass.
+    const classic = resolveLiveParams('main');
+    let s = startLivePlay({
+      mode: 'defense',
+      launch: { ...grounderToShort, landing: { x: 335, y: 300 } },
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params: classic,
+    });
+    const startPos = { ...s.fielders[s.active].pos };
+    const { s: end, events } = runPlay(s, classic, () => ({}), () => 0.9);
+    expect(dist(end.fielders[end.active].pos, startPos)).toBeGreaterThan(20);
+    expect(events.some((e) => e.t === 'pickup')).toBe(true);
+    expect(end.elapsed).toBeLessThan(classic.maxPlayMs * 0.75);
   });
 
   it('a slow CPU batter is thrown out; a jackrabbit beats the same throw', () => {

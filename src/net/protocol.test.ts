@@ -86,6 +86,7 @@ const HUD: HudSnap = {
 
 const FRAME = {
   t: 1250,
+  active: 3,
   ball: { pos: { x: 480, y: 300 }, height: 0.4, phase: 'flight' as const, heldBy: null },
   fielders: [{ pos: { x: 480, y: 420 }, diving: false }],
   runners: [{ pos: { x: 700, y: 500 }, from: 0, to: 1, progress: 0.5, done: null }],
