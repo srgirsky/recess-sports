@@ -5,7 +5,7 @@
 
 import Phaser from 'phaser';
 import { isMuted, toggleMute } from '../systems/audio';
-import { tagUi } from './layout';
+import { tagUi, MIN_TOUCH } from './layout';
 
 export function makeMuteButton(
   scene: Phaser.Scene,
@@ -16,8 +16,19 @@ export function makeMuteButton(
   const btn = scene.add
     .text(x, y, label(), { fontSize: '30px' })
     .setOrigin(0.5)
-    .setDepth(500)
-    .setInteractive({ useHandCursor: true });
+    .setDepth(500);
+  // A 30px emoji is a 30px tap target — too small for the audience. Widen the
+  // hit area around the glyph without changing how it looks.
+  btn.setInteractive({
+    hitArea: new Phaser.Geom.Rectangle(
+      btn.width / 2 - MIN_TOUCH / 2,
+      btn.height / 2 - MIN_TOUCH / 2,
+      MIN_TOUCH,
+      MIN_TOUCH
+    ),
+    hitAreaCallback: Phaser.Geom.Rectangle.Contains,
+    useHandCursor: true,
+  });
   // stopPropagation: GameScene's scene-level pointerdown swings/throws on any
   // tap — without this, muting mid-pitch also swings the bat.
   btn.on(

@@ -75,7 +75,9 @@ export class AlbumScene extends Phaser.Scene {
 
     makeButton(this, {
       x: GAME_WIDTH / 2,
-      y: GAME_HEIGHT - 46,
+      // -52, not -46: makeButton's box runs to y + h/2 + lip + stroke/2, which
+      // put the old bottom edge at 639 of a 640-tall canvas.
+      y: GAME_HEIGHT - 52,
       label: 'DONE',
       icon: '✅',
       width: 220,

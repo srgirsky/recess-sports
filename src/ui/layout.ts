@@ -58,12 +58,14 @@ export function uiMeta(o: Phaser.GameObjects.GameObject): UiMeta | undefined {
  */
 export function remeasureText(t: Phaser.GameObjects.Text): Phaser.GameObjects.Text {
   const prev = uiMeta(t);
+  // Same ink-height rule heading() uses — see the comment there.
+  const fontSize = parseFloat(String(t.style.fontSize)) || t.height;
   return tagUi(t, {
     role: prev?.role ?? 'heading',
     ox: 0,
     oy: 0,
     w: t.width,
-    h: t.height,
+    h: Math.min(t.height, fontSize + (t.style.strokeThickness || 0)),
     label: t.text,
   });
 }

@@ -9,12 +9,17 @@ import { makeButton } from '../ui/Button';
 import { makeMuteButton } from '../ui/MuteButton';
 import { confetti } from '../ui/effects';
 import { heading, ribbon, panel, FONT } from '../ui/theme';
+import { row } from '../ui/layout';
 import { squashHop } from '../ui/anim';
 import * as audio from '../systems/audio';
 import { commentatorProfile } from '../systems/voices';
 import { recordAlbumGame } from '../systems/album';
 import { teamName, type TeamIdentity } from '../systems/team';
 import { dropSession } from '../net/peer';
+
+/** The bottom button row. A makeButton's box runs to y + h/2 + lip + stroke/2. */
+const BUTTON_H = 78;
+const BUTTON_Y = GAME_HEIGHT - 58;
 
 interface ResultData {
   playerScore: number;
@@ -55,7 +60,9 @@ export class ResultScene extends Phaser.Scene {
         : won
           ? 'YOU WIN!'
           : 'GOOD GAME!';
-    heading(this, cx, 70, headline, passplay ? 52 : 70);
+    // maxW: a team-named headline is unbounded — "THE PURPLE ALL-STARS WIN!"
+    // is the worst of the 56 combinations and runs the full width at 52px.
+    heading(this, cx, 46, headline, passplay ? 48 : 62, '#ffffff', { maxW: 900, minFontSize: 34 });
 
     // Celebrate.
     if (won || (passplay && !tied)) {
@@ -71,9 +78,10 @@ export class ResultScene extends Phaser.Scene {
     }
     makeMuteButton(this, GAME_WIDTH - 40, 40);
 
-    ribbon(this, cx, 132, `YOU ${data.playerScore}   —   ${data.aiScore} CPU`, {
+    ribbon(this, cx, 122, `YOU ${data.playerScore}   —   ${data.aiScore} CPU`, {
       fill: COLORS.ink,
       fontSize: 30,
+      maxW: 880,
     });
 
     // MVP = highest overall kid on your team, presented on a card.
@@ -81,18 +89,21 @@ export class ResultScene extends Phaser.Scene {
       .map(getCharacter)
       .reduce((best, c) => (overall(c) > overall(best) ? c : best));
 
-    panel(this, cx, 352, 300, 360, { fill: COLORS.cream, strokeWidth: 6 });
-    heading(this, cx, 214, '🏆 TEAM MVP 🏆', 24, '#ffce3a');
-    const mvpImg = this.add.image(cx, 246, mvp.id).setOrigin(0.5, 0);
+    // The card sits 8px higher than it used to: the old stack put the button
+    // row's bottom edge at y 639 of a 640-tall canvas, so both buttons were
+    // visibly clipped by the frame.
+    panel(this, cx, 344, 300, 360, { fill: COLORS.cream, strokeWidth: 6 });
+    heading(this, cx, 206, '🏆 TEAM MVP 🏆', 24, '#ffce3a');
+    const mvpImg = this.add.image(cx, 238, mvp.id).setOrigin(0.5, 0);
     mvpImg.setScale(176 / mvpImg.height);
     // Celebratory hop on a loop.
     squashHop(this, mvpImg, { height: 22 });
     this.time.addEvent({ delay: 1500, loop: true, callback: () => squashHop(this, mvpImg, { height: 22 }) });
     this.add
-      .text(cx, 452, mvp.name, { fontFamily: FONT, fontSize: '28px', color: '#14202e', fontStyle: '700' })
+      .text(cx, 444, mvp.name, { fontFamily: FONT, fontSize: '28px', color: '#14202e', fontStyle: '700' })
       .setOrigin(0.5);
     this.add
-      .text(cx, 490, mvp.tagline, { fontFamily: FONT, fontSize: '17px', color: '#3a4654', align: 'center', wordWrap: { width: 270 } })
+      .text(cx, 482, mvp.tagline, { fontFamily: FONT, fontSize: '17px', color: '#3a4654', align: 'center', wordWrap: { width: 270 } })
       .setOrigin(0.5);
 
     // Every finished game feeds the sticker album (drafted / won-with).
@@ -124,36 +135,39 @@ export class ResultScene extends Phaser.Scene {
       // Season games return to the week's chalkboard, not the draft.
       makeButton(this, {
         x: cx,
-        y: GAME_HEIGHT - 52,
+        y: BUTTON_Y,
         label: 'BACK TO THE WEEK',
         icon: '🏆',
         width: 380,
-        height: 82,
+        height: BUTTON_H,
         onClick: () => this.scene.start('Season'),
       });
       return;
     }
 
-    makeButton(this, {
-      x: cx - 175,
-      y: GAME_HEIGHT - 52,
+    const newTeam = makeButton(this, {
+      x: cx,
+      y: BUTTON_Y,
       label: 'NEW TEAM',
       icon: '🔄',
       width: 300,
-      height: 82,
+      height: BUTTON_H,
       onClick: () => this.scene.start('Schoolyard', { straightToDraft: true }),
     });
-    makeButton(this, {
-      x: cx + 175,
-      y: GAME_HEIGHT - 52,
+    const home = makeButton(this, {
+      x: cx,
+      y: BUTTON_Y,
       label: 'HOME',
       icon: '🏠',
       width: 250,
-      height: 82,
+      height: BUTTON_H,
       // Explicit data: Phaser reuses the previous start()'s data when none is
       // passed, which would carry straightToDraft over from NEW TEAM.
       onClick: () => this.scene.start('Schoolyard', { straightToDraft: false }),
     });
+    // The two buttons are different widths, so the old fixed cx±175 offsets put
+    // the pair's true centre 25px right of the screen's. row() measures.
+    row([newTeam, home], { centerX: cx, y: BUTTON_Y + 4, gap: 40 });
   }
 }
 

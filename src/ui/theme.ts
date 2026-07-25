@@ -252,7 +252,18 @@ export function heading(
     fontSize = fitted.fontSize;
     overflow = fitted.overflow;
   }
-  // Phaser folds strokeThickness into Text.width/height already, so these are
-  // honest measurements with no bleed to add.
-  return tagUi(t, { role: 'heading', ox: 0, oy: 0, w: t.width, h: t.height, label: text, overflow });
+  return tagUi(t, {
+    role: 'heading',
+    ox: 0,
+    oy: 0,
+    // Width comes from Phaser, which folds strokeThickness in.
+    w: t.width,
+    // Height is the INK, not the line box. Text.height carries font
+    // line-height padding well past the glyphs — enough that two headings a
+    // comfortable distance apart still report overlapping boxes. Clamped by
+    // the real height so it can never over-report.
+    h: Math.min(t.height, fontSize + Math.max(6, fontSize / 6)),
+    label: text,
+    overflow,
+  });
 }
