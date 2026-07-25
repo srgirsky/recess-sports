@@ -33,6 +33,14 @@ import {
   type Vec,
 } from './geometry';
 
+/**
+ * How far inside the fence a RESTING ball is clamped. Smaller than the
+ * fielders' FIELD_MARGIN (14) on purpose — a ball may die a little nearer the
+ * wall than a kid can stand — but the gap (10px) must stay well under
+ * PICKUP_RADIUS so the ball is always retrievable. See `settleBallAt`.
+ */
+const BALL_SETTLE_MARGIN = 4;
+
 /** 0 = at the plate (the batter), 1-3 = the bases, 4 = home / scored. */
 export type Base = 0 | 1 | 2 | 3 | 4;
 
@@ -79,6 +87,10 @@ export interface RunnerState {
   tagging?: boolean;
   /** Main mode: take off the moment the tag-up completes (a queued sac-fly send). */
   goAfterTag?: boolean;
+  /** When this runner last TOUCHED a bag (ms) — gates the settle dwell. */
+  touchedAt?: number;
+  /** When this runner was last turned around (ms) — gates the CPU panic rule. */
+  reversedAt?: number;
   done: 'safe' | 'out' | 'scored' | null;
 }
 
@@ -375,7 +387,7 @@ function moveBall(s: LivePlayState, dtMs: number, params: LiveParams): void {
             x: b.pos.x + hop.dir.x * hop.v * LIVE.BOUNCE.ROLLOUT_S,
             y: b.pos.y + hop.dir.y * hop.v * LIVE.BOUNCE.ROLLOUT_S,
           },
-          4
+          BALL_SETTLE_MARGIN
         );
         s.launch = { ...s.launch, landing: settle, rollSpeed: hop.v };
         b.rollV = hop.v;
@@ -440,7 +452,7 @@ function maybeCarom(s: LivePlayState): void {
     const settle = clampToField(
       s.geo,
       { x: b.pos.x + rd.x * newRemain, y: b.pos.y + rd.y * newRemain },
-      4
+      BALL_SETTLE_MARGIN
     );
     s.launch = { ...s.launch, landing: settle };
     b.rollTotal = Math.max(1, dist(b.pos, settle));
@@ -455,10 +467,9 @@ function ballHitObstacle(s: LivePlayState): boolean {
   const b = s.ball;
   for (const o of s.geo.obstacles) {
     if (dist(b.pos, o) <= o.r) {
-      b.rollV = 0;
-      b.height = 0;
-      b.hop = undefined;
-      s.launch = { ...s.launch, landing: { ...b.pos } };
+      // markLanded false: a bonk keeps the ORIGINAL loose-ball clock, so CPU
+      // runners don't get a fresh CPU_RUNNER_PATIENCE_MS wait out of it.
+      settleBallAt(s, b.pos, false);
       s.events.push({ t: 'bonk' });
       return true;
     }
@@ -595,16 +606,37 @@ export function rollThrowError(arm: number, power: number, mult: number, rng: ()
   return rng() < chance;
 }
 
-/** A muffed ball drops live at `pos`; the kid is flustered for a beat. */
-function fumble(s: LivePlayState, fielder: FielderState, kind: 'drop' | 'bobble'): void {
+/**
+ * Park the ball, dead and live, at `pos` — the ONE contract for "a loose ball
+ * that has stopped". Every settle site goes through here so the resting spot
+ * is always CLAMPED into the field: a fielder's own moves are clamped at
+ * FIELD_MARGIN, so an unclamped ball can come to rest somewhere no kid is
+ * allowed to stand, and the chaser then presses against the boundary until
+ * MAX_PLAY_MS. Margin 4 matches the hop-rollout and carom settles — the
+ * `margin` argument only moves the FENCE limit (the foul cone and floor are
+ * identical for balls and fielders), so the ball rests at most 10px in front
+ * of a reachable fielder, well inside PICKUP_RADIUS.
+ *
+ * `markLanded` resets the loose-ball clock that CPU runners read via
+ * CPU_RUNNER_PATIENCE_MS — true for a fumble or a wild throw (a fresh loose
+ * ball), false for a bonk (which deliberately keeps the original clock).
+ */
+function settleBallAt(s: LivePlayState, pos: Vec, markLanded: boolean): void {
   const b = s.ball;
+  b.pos = clampToField(s.geo, pos, BALL_SETTLE_MARGIN);
   b.phase = 'rolling';
   b.height = 0;
   b.rollV = 0;
   b.rollTotal = 1;
   b.hop = undefined;
-  s.launch = { ...s.launch, landing: { ...b.pos } }; // it dies where it fell
-  s.landedAt = s.elapsed;
+  b.throw = undefined;
+  s.launch = { ...s.launch, landing: { ...b.pos } };
+  if (markLanded) s.landedAt = s.elapsed;
+}
+
+/** A muffed ball drops live at `pos`; the kid is flustered for a beat. */
+function fumble(s: LivePlayState, fielder: FielderState, kind: 'drop' | 'bobble'): void {
+  settleBallAt(s, s.ball.pos, true); // it dies where it fell
   fielder.fumbleUntil = s.elapsed + ERRORS.FUMBLE_MS;
   s.events.push({ t: 'error', kind, fielder: fielder.charId });
 }
@@ -669,7 +701,7 @@ function tryGrabBall(s: LivePlayState, params: LiveParams, rng: () => number): v
           // be doubled off on the way. Touch it and you may be sent again.
           if (r.from !== r.startBase || r.to !== r.from) {
             r.tagging = true;
-            if (r.to !== r.from) reverseLeg(r);
+            if (r.to !== r.from) reverseLeg(r, s.elapsed);
             else startRetreatLeg(r);
           }
         } else if (r.from !== r.startBase || r.to !== r.from) {
@@ -768,13 +800,24 @@ function launchThrow(
   if (wild && thrower) s.events.push({ t: 'error', kind: 'wild', fielder: thrower.charId });
 }
 
-/** Flip a mid-leg runner around (same leg, opposite direction). */
-function reverseLeg(r: RunnerState): void {
-  if (r.to === r.from) return;
+/**
+ * Flip a mid-leg runner around (same leg, opposite direction). Returns whether
+ * it actually turned them.
+ *
+ * The `from <= 0` guard mirrors `startRetreatLeg`: a BATTER-RUNNER can never
+ * go back to the plate. Without it the rundown rule turns the batter toward
+ * home, and since `isForced` is true for a batter at base 0, they get re-sent
+ * to first the moment they touch it — the flip-flop, plus a batter who can end
+ * the play at base 0 and vanish from the inning entirely.
+ */
+function reverseLeg(r: RunnerState, now: number): boolean {
+  if (r.to === r.from || r.from <= 0) return false;
   const { from } = r;
   r.from = r.to;
   r.to = from;
   r.progress = 1 - r.progress;
+  r.reversedAt = now;
+  return true;
 }
 
 /** A settled runner steps back one base (tag-up retreat / manual hold). */
@@ -786,11 +829,19 @@ function startRetreatLeg(r: RunnerState): void {
   r.legMs = Math.max(1, (dist(basePos(r.from), basePos(prev)) / r.speed) * 1000);
 }
 
-/** Is this runner standing on a bag (untaggable) rather than between them? */
+/**
+ * Is this runner standing on a bag (untaggable) rather than between them?
+ *
+ * Asked of the runner's OWN leg rather than "near any base coordinate": home
+ * is both base 0 and base 4, so a blanket scan let a runner steaming toward
+ * the plate count as sheltered before they'd touched it (and gave a batter
+ * turned back to the plate an illegal safe haven). Shelter comes from a bag
+ * you have actually touched (`from`, never the plate) or the one you are
+ * arriving at (`to`, 1-3 — reaching home ends the leg as a run instead).
+ */
 function onABag(r: RunnerState): boolean {
-  for (const b of [0, 1, 2, 3, 4] as const) {
-    if (dist(r.pos, basePos(b)) <= RUN2.SAFE_RADIUS) return true;
-  }
+  if (r.from > 0 && dist(r.pos, basePos(r.from)) <= RUN2.SAFE_RADIUS) return true;
+  if (r.to >= 1 && r.to <= 3 && dist(r.pos, basePos(r.to)) <= RUN2.SAFE_RADIUS) return true;
   return false;
 }
 
@@ -805,23 +856,56 @@ function outAtBag(s: LivePlayState, r: RunnerState, base: 1 | 2 | 3 | 4, params:
   return isForced(s, r) || r.to < r.from;
 }
 
+/** Angular resolution of the wild-throw sweep (steps over a half-turn). */
+const WILD_SWEEP_STEPS = 24;
+
+/**
+ * Where a wild throw from `from` at `bag` comes to rest: OVERSHOOT_PX past the
+ * bag, in the direction closest to the throw's line that keeps the ball ON THE
+ * FIELD. PURE and exported so the reachability property test can sweep every
+ * origin x base x venue.
+ *
+ * Two things have to hold at once. The ball must be REACHABLE — 1B and 3B sit
+ * exactly on the foul lines, so a straight-line overshoot lands ~46-72px
+ * outside the region fielders may occupy, and the chaser then presses against
+ * the clamp boundary until MAX_PLAY_MS. But it must also still SAIL: plainly
+ * clamping the straight-line point shortens the overshoot to ~26px at 1B/3B
+ * while leaving it at the full 64px for 2B/home, which would make a wild throw
+ * to a corner bag markedly cheaper than one up the middle. Rotating instead of
+ * truncating keeps every wild throw equally costly, and puts an overthrow at
+ * first down the right-field line — where a real one goes.
+ */
+export function wildSettlePoint(geo: FieldGeometry, from: Vec, bag: Vec): Vec {
+  const len = Math.max(1, dist(from, bag));
+  const base = Math.atan2(bag.y - from.y, bag.x - from.x);
+  const at = (angle: number): Vec => ({
+    x: bag.x + Math.cos(angle) * ERRORS.OVERSHOOT_PX,
+    y: bag.y + Math.sin(angle) * ERRORS.OVERSHOOT_PX,
+  });
+  // Smallest rotation first, +ve before -ve, so the pick is deterministic.
+  for (let i = 0; i <= WILD_SWEEP_STEPS; i++) {
+    for (const sign of [1, -1] as const) {
+      const cand = at(base + (sign * i * Math.PI) / WILD_SWEEP_STEPS);
+      const clamped = clampToField(geo, cand, BALL_SETTLE_MARGIN);
+      if (dist(clamped, cand) < 0.5) return clamped;
+      if (i === 0) break; // +0 and -0 are the same direction
+    }
+  }
+  // No direction keeps the full sail (a bag boxed in by a venue's fence) —
+  // fall back to the straight line, clamped. Reachability still holds.
+  const dir = { x: (bag.x - from.x) / len, y: (bag.y - from.y) / len };
+  return clampToField(
+    geo,
+    { x: bag.x + dir.x * ERRORS.OVERSHOOT_PX, y: bag.y + dir.y * ERRORS.OVERSHOOT_PX },
+    BALL_SETTLE_MARGIN
+  );
+}
+
 /** The ball beat these runners to the bag — playground rules, they're out. */
 function arriveThrow(s: LivePlayState, base: 1 | 2 | 3 | 4, params: LiveParams): void {
   // A wild throw sails past the bag and dies loose — nobody's out, take a base!
   if (s.ball.throw?.wild) {
-    const b = s.ball;
-    const from = b.throw!.from;
-    const bag = basePos(base);
-    const len = Math.max(1, dist(from, bag));
-    const dir = { x: (bag.x - from.x) / len, y: (bag.y - from.y) / len };
-    b.pos = { x: bag.x + dir.x * ERRORS.OVERSHOOT_PX, y: bag.y + dir.y * ERRORS.OVERSHOOT_PX };
-    b.phase = 'rolling';
-    b.height = 0;
-    b.rollV = 0;
-    b.rollTotal = 1;
-    b.throw = undefined;
-    s.launch = { ...s.launch, landing: { ...b.pos } };
-    s.landedAt = s.elapsed;
+    settleBallAt(s, wildSettlePoint(s.geo, s.ball.throw.from, basePos(base)), true);
     return;
   }
   for (const r of s.runners) {
@@ -904,6 +988,7 @@ function moveRunners(s: LivePlayState, dtMs: number): void {
     if (r.progress >= 1) {
       r.from = r.to;
       r.progress = 0;
+      r.touchedAt = s.elapsed;
       if (r.tagging) {
         // Retreating after a caught fly: keep backing up until the start base
         // is touched; then the runner is live again (and may have a queued send).
@@ -922,7 +1007,9 @@ function moveRunners(s: LivePlayState, dtMs: number): void {
         s.runs += 1;
         s.events.push({ t: 'score', runner: r.charId });
       } else {
-        s.events.push({ t: 'safe', base: r.to as 1 | 2 | 3, runner: r.charId });
+        // Clamp like the tagging branch above: `to` is 1-3 here in practice,
+        // but the event contract is 1|2|3 and a 0 would leak to the announcer.
+        s.events.push({ t: 'safe', base: Math.max(1, Math.min(3, r.to)) as 1 | 2 | 3, runner: r.charId });
       }
     }
   }
@@ -941,7 +1028,10 @@ function decideRunning(s: LivePlayState, inputs: LiveInputs, params: LiveParams)
       }
       if (inputs.holdRunner) {
         const r = s.runners.find((o) => o.charId === inputs.holdRunner && o.done === null);
-        if (r && r.to > r.from && r.progress < 1) reverseLeg(r);
+        // reverseLeg's own guard refuses the batter (they can't return to the
+        // plate); holding a forced runner is legal-if-unwise and stays allowed,
+        // since it's how a player deliberately starts a rundown.
+        if (r && r.to > r.from && r.progress < 1) reverseLeg(r, s.elapsed);
       }
       return;
     }
@@ -973,6 +1063,11 @@ function decideRunning(s: LivePlayState, inputs: LiveInputs, params: LiveParams)
   // Nobody's picked it up in forever? Kids notice. Everybody goes.
   const unattended = ballLoose && landed && s.elapsed - s.landedAt > LIVE.CPU_RUNNER_PATIENCE_MS;
   for (const r of leadFirst(settledRunners(s))) {
+    // A kid who JUST touched a bag holds it for a beat. `moveRunners` completes
+    // a leg and this policy runs later in the SAME tick, so without the dwell a
+    // runner can be re-launched with zero frames on the base — the other half
+    // of the ping-pong. Human sends and tag-up queues deliberately skip this.
+    if (r.touchedAt !== undefined && s.elapsed - r.touchedAt < RUN2.BASE_DWELL_MS) continue;
     const next = (r.from + 1) as 1 | 2 | 3 | 4;
     // Forced runners take off once it's clearly not a catchable fly.
     if (isForced(s, r) && (s.launch.type === 'grounder' || landed)) {
@@ -992,10 +1087,17 @@ function decideRunning(s: LivePlayState, inputs: LiveInputs, params: LiveParams)
     const carrier = s.fielders[s.ball.heldBy];
     for (const r of s.runners) {
       if (r.done !== null || r.to === r.from || r.to < r.from || r.tagging) continue;
+      // A FORCED runner has nowhere to go back to — the bag behind them is
+      // taken and they're out there either way. This also excludes the batter
+      // (isForced is true for a batter at base 0), which is what stops the
+      // turn-back-to-home flip-flop at its source.
+      if (isForced(s, r)) continue;
+      // ...and don't turn the same kid around again on the very next beat.
+      if (r.reversedAt !== undefined && s.elapsed - r.reversedAt < RUN2.REVERSE_COOLDOWN_MS) continue;
       const bag = basePos(r.to);
       const carrierAhead = dist(carrier.pos, bag) + 20 < dist(r.pos, bag);
       if (carrierAhead && dist(carrier.pos, r.pos) < RUN2.CPU_PANIC_DIST && r.progress < 0.8) {
-        reverseLeg(r);
+        reverseLeg(r, s.elapsed);
       }
     }
   }
@@ -1033,6 +1135,9 @@ function checkTermination(s: LivePlayState, params: LiveParams): void {
       if (r.returning) {
         r.from = r.startBase;
       }
+      // "The base behind them" is nowhere for a batter-runner — and a whole
+      // play went by without the defense retiring them, so they reached.
+      if (r.from <= 0) r.from = 1;
       r.to = r.from;
       r.progress = 0;
       r.pos = { ...basePos(r.from) };
@@ -1043,7 +1148,10 @@ function checkTermination(s: LivePlayState, params: LiveParams): void {
   }
 
   const everyoneSettled = s.runners.every(
-    (r) => r.done !== null || (!r.returning && r.to === r.from)
+    // A batter still standing at the plate is not "settled" — ending here
+    // would drop them from the inning (finishLivePlay records no base and no
+    // out). They are either running or already retired.
+    (r) => r.done !== null || (!r.returning && r.to === r.from && r.from > 0)
   );
   if (everyoneSettled && s.ball.phase === 'held') {
     // Main mode: hold a caught fly open long enough to send a tagged-up
@@ -1078,8 +1186,10 @@ export function chooseThrowTarget(s: LivePlayState, throwSpeed: number): 1 | 2 |
   if (movers.length === 0) return 1;
   const bestBase = bestBeatableBase(s, throwSpeed);
   if (bestBase !== null) return bestBase;
-  const lead = leadFirst(movers)[0];
-  return lead.to as 1 | 2 | 3 | 4;
+  // A retreating lead runner has `to` behind them; base 0 is not a throwable
+  // target (BASE_COVER has no entry) and would leak out of the event contract.
+  const lead = leadFirst(movers)[0].to;
+  return lead >= 1 && lead <= 4 ? (lead as 1 | 2 | 3 | 4) : 1;
 }
 
 /** The highest base where a throw would beat the runner racing to it (or null). */
@@ -1087,6 +1197,7 @@ function bestBeatableBase(s: LivePlayState, throwSpeed: number): 1 | 2 | 3 | 4 |
   let bestBase: 1 | 2 | 3 | 4 | null = null;
   for (const r of s.runners) {
     if (r.done !== null || r.returning || r.to === r.from) continue;
+    if (r.to < 1 || r.to > 4) continue; // retreating past first: not a bag we throw to
     const base = r.to as 1 | 2 | 3 | 4;
     const throwMs = (dist(s.ball.pos, basePos(base)) / throwSpeed) * 1000;
     const runnerMs = (1 - r.progress) * r.legMs;
@@ -1129,9 +1240,14 @@ export function finishLivePlay(s: LivePlayState): LiveOutcome {
   const baseIds: [string | null, string | null, string | null] = [null, null, null];
   for (const r of s.runners) {
     if (r.done === 'out' || r.done === 'scored') continue;
-    if (r.from >= 1 && r.from <= 3) {
-      bases[r.from - 1] = true;
-      baseIds[r.from - 1] = r.charId;
+    // Belt-and-braces: a live runner still at base 0 would be reported on no
+    // base and not out, and applyLivePlay would silently DELETE them from the
+    // inning. Nothing should reach here at 0 any more; if anything does, the
+    // batter reached first rather than evaporating.
+    const at = r.from <= 0 ? 1 : r.from;
+    if (at >= 1 && at <= 3) {
+      bases[at - 1] = true;
+      baseIds[at - 1] = r.charId;
     }
   }
   const batter = s.runners.find((r) => r.isBatter)!;

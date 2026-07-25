@@ -5,7 +5,7 @@
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
-import { LIVE } from '../config';
+import { LIVE, ERRORS } from '../config';
 import type { Character } from '../data/types';
 import { resolveContact, type Launch } from './atbat';
 import { resolveLiveParams, type LiveParams } from './mode';
@@ -17,6 +17,7 @@ import {
   THIRD,
   FOUL_SLOPE,
   FIELD_POSITIONS,
+  basePos,
   FIELD_MARGIN,
   FOUL_ALLOWANCE,
   FIELD_BOTTOM_Y,
@@ -35,6 +36,7 @@ import {
   finishLivePlay,
   rollCatch,
   rollThrowError,
+  wildSettlePoint,
   type LivePlayState,
   type LiveInputs,
   type LiveEvent,
@@ -76,6 +78,44 @@ function runPlay(
   }
   expect(s.phase).toBe('done');
   return { s, events };
+}
+
+/**
+ * Baseball's direction rules, checked every tick. A runner is only ever headed
+ * at a real bag, and a batter-runner can never be aimed back at the plate.
+ */
+function expectLegalRunners(s: LivePlayState): void {
+  for (const r of s.runners) {
+    if (r.done !== null) continue;
+    expect(r.to).toBeLessThanOrEqual(4);
+    // Base 0 is the batter's BOX, not a destination. A batter may idle there
+    // (to === from === 0) while first is still occupied, but nobody may ever
+    // be RUNNING at it — that's the illegal retreat, and it's also how the
+    // batter used to end a play at base 0 and vanish from the inning.
+    if (r.to === 0) expect(r.from).toBe(0);
+    expect(r.from >= 1 || r.isBatter).toBe(true);
+  }
+  for (const e of s.events) {
+    if (e.t === 'out' || e.t === 'safe' || e.t === 'throw') {
+      const base = e.t === 'throw' ? e.toBase : e.base;
+      expect(base).toBeGreaterThanOrEqual(1);
+      expect(base).toBeLessThanOrEqual(4);
+    }
+  }
+}
+
+/**
+ * Nobody evaporates: every live runner ends standing on 1-3, so applyLivePlay
+ * can place them. Exempt when the third out ended the half — the inning is
+ * over and where the remaining runners stood no longer matters.
+ */
+function expectEveryRunnerAccountedFor(s: LivePlayState): void {
+  if (s.outsBefore + s.outs >= 3) return;
+  for (const r of s.runners) {
+    if (r.done !== null) continue;
+    expect(r.from).toBeGreaterThanOrEqual(1);
+    expect(r.from).toBeLessThanOrEqual(3);
+  }
 }
 
 const grounderToShort: Launch = {
@@ -644,13 +684,114 @@ describe('live play: manual baserunning (main mode)', () => {
         if (Math.random() < 0.25) inputs.sendRunner = ids[Math.floor(Math.random() * ids.length)];
         if (Math.random() < 0.25) inputs.holdRunner = ids[Math.floor(Math.random() * ids.length)];
         s = stepLivePlay(s, inputs, 50, main, () => Math.random());
+        expectLegalRunners(s);
       }
       expect(s.phase).toBe('done');
+      expectEveryRunnerAccountedFor(s);
       const outcome = finishLivePlay(s);
       expect(outcome.outs).toBeGreaterThanOrEqual(0);
       expect(outcome.outs + (s.outsBefore ?? 0)).toBeLessThanOrEqual(4);
       expect(outcome.runs).toBeLessThanOrEqual(4);
     }
+  });
+
+  it('a hold aimed at the batter is a no-op — nobody runs back to the plate', () => {
+    let s = startLivePlay({
+      mode: 'offense',
+      launch: grounderToShort,
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params: main,
+    });
+    // Let them get well up the line, then spam HOLD at the batter.
+    for (let i = 0; i < 10; i++) s = stepLivePlay(s, {}, 50, main, () => 0.5);
+    const bat = s.runners.find((r) => r.isBatter)!;
+    expect(bat.to).toBe(1);
+    const midProgress = bat.progress;
+    for (let i = 0; i < 10; i++) s = stepLivePlay(s, { holdRunner: 'bat' }, 50, main, () => 0.5);
+    expect(bat.from).toBe(0);
+    expect(bat.to).toBe(1);
+    expect(bat.progress).toBeGreaterThan(midProgress); // still going forward
+  });
+
+  it('the CPU rundown rule never turns the batter back toward home', () => {
+    // The reported bug: an infielder holding the ball near the baseline used to
+    // satisfy the panic test against the batter-runner, who then sprinted at the
+    // plate, touched it, and was force-sent to first again — over and over.
+    let s = startLivePlay({
+      mode: 'defense',
+      launch: grounderToShort,
+      batter: { charId: 'bat', speed: 4 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params: main,
+    });
+    let maxTo = 0;
+    let guard = 0;
+    while (s.phase !== 'done' && guard++ < 4000) {
+      // Field it, then just stand there holding the ball in the batter's face.
+      const bat = s.runners.find((r) => r.isBatter)!;
+      s = stepLivePlay(s, { pointer: s.ball.phase === 'held' ? { ...bat.pos } : { ...s.ball.pos } }, 50, main, () => 0.9);
+      expect(bat.to).toBeGreaterThanOrEqual(bat.from === 0 ? 0 : 1);
+      expect(bat.to).not.toBe(0); // never aimed at the plate
+      maxTo = Math.max(maxTo, bat.to);
+    }
+    const bat = s.runners.find((r) => r.isBatter)!;
+    expect(bat.done === 'out' || bat.from >= 1).toBe(true);
+    expect(maxTo).toBeGreaterThanOrEqual(1);
+  });
+
+  it('finishLivePlay never loses a batter stranded at the plate', () => {
+    // Hand-built pathological state: if this ever happens, the batter must be
+    // credited with first, not deleted from the inning with no out recorded.
+    let s = startLivePlay({
+      mode: 'offense',
+      launch: grounderToShort,
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params: main,
+    });
+    const bat = s.runners.find((r) => r.isBatter)!;
+    bat.from = 0;
+    bat.to = 0;
+    bat.progress = 0;
+    bat.done = null;
+    const outcome = finishLivePlay(s);
+    expect(outcome.batterOut).toBe(false);
+    expect(outcome.bases[0]).toBe(true);
+    expect(outcome.baseIds[0]).toBe('bat');
+  });
+
+  it('the max-play backstop settles the batter on first, never at the plate', () => {
+    // "Stragglers settle on the base behind them" has no meaning for a batter —
+    // behind them is the box. Drive the clock to the cap with the batter still
+    // on the leg out of it and check they're credited with first.
+    const frozen: LiveParams = { ...main, assist: 'magnet', assistBlend: 0 };
+    let s = startLivePlay({
+      mode: 'defense',
+      launch: grounderToShort,
+      batter: { charId: 'bat', speed: 1 },
+      baseRunners: [],
+      defense: DEFENSE,
+      outs: 0,
+      params: frozen,
+    });
+    s.elapsed = frozen.maxPlayMs - 50;
+    const bat = s.runners.find((r) => r.isBatter)!;
+    bat.from = 0;
+    bat.to = 1;
+    bat.progress = 0.3;
+    s = stepLivePlay(s, {}, 50, frozen, () => 0.9);
+    expect(s.phase).toBe('done');
+    expect(bat.done).toBeNull();
+    expect(bat.from).toBe(1);
+    expectEveryRunnerAccountedFor(s);
+    expect(finishLivePlay(s).bases[0]).toBe(true);
   });
 });
 
@@ -774,6 +915,57 @@ describe('live play: bounces & fence caroms', () => {
   it('grounders never hop — they roll exactly like before', () => {
     const { trace } = settle(start(grounderToShort));
     for (const t of trace) expect(t.height).toBe(0);
+  });
+});
+
+describe('live play: a wild throw always leaves the ball retrievable', () => {
+  // The bug: 1B and 3B sit exactly ON the foul lines, so a straight-line
+  // OVERSHOOT_PX sail landed up to ~72px outside the region clampToField lets
+  // fielders occupy. The chaser then pressed against the boundary for the rest
+  // of the play — 20+ seconds of dead air, every ~10th throw.
+  const ORIGINS = Object.entries(FIELD_POSITIONS) as Array<[PositionId, { x: number; y: number }]>;
+  const BASES = [1, 2, 3, 4] as const;
+
+  it('rests inside the field for every origin x base x venue', () => {
+    for (const v of Object.values(VENUES)) {
+      const geo = getFieldGeometry(v);
+      for (const [, from] of ORIGINS) {
+        for (const b of BASES) {
+          const p = wildSettlePoint(geo, from, basePos(b));
+          const where = `${v.id} ${from.x},${from.y} -> base ${b}`;
+          expect(p.y, where).toBeGreaterThanOrEqual(fenceYAtX(geo, p.x) + 4 - 0.001);
+          expect(p.y, where).toBeLessThanOrEqual(FIELD_BOTTOM_Y + 0.001);
+          expect(Math.abs(p.x - HOME.x), where).toBeLessThanOrEqual(
+            FOUL_SLOPE * Math.max(0, HOME.y - p.y) + FOUL_ALLOWANCE + 0.001
+          );
+        }
+      }
+    }
+  });
+
+  it('rests within a fielder’s pickup reach of somewhere they may stand', () => {
+    for (const v of Object.values(VENUES)) {
+      const geo = getFieldGeometry(v);
+      for (const [, from] of ORIGINS) {
+        for (const b of BASES) {
+          const p = wildSettlePoint(geo, from, basePos(b));
+          // clampToField at FIELD_MARGIN is the nearest LEGAL fielder spot.
+          expect(dist(p, clampToField(geo, p)), `${v.id} base ${b}`).toBeLessThan(LIVE.PICKUP_RADIUS);
+        }
+      }
+    }
+  });
+
+  it('still sails — a corner bag is as costly as one up the middle', () => {
+    // Plain clamping would truncate the sail to ~26px at 1B/3B while leaving
+    // the full 64px at 2B/home, making wild throws to the corners cheap.
+    const geo = getFieldGeometry(VENUES.park);
+    for (const [, from] of ORIGINS) {
+      for (const b of BASES) {
+        const sail = dist(wildSettlePoint(geo, from, basePos(b)), basePos(b));
+        expect(sail).toBeGreaterThan(ERRORS.OVERSHOOT_PX * 0.9);
+      }
+    }
   });
 });
 

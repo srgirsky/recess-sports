@@ -774,6 +774,15 @@ export const RUN2 = {
    *  the beat that makes sac flies from third a real race. Scaled with
    *  RUNNER_SPEED (slower legs need a longer beat to keep the race winnable). */
   CATCH_GATHER_MS: 2186,
+  /** A runner who just touched a bag holds it this long before the CPU policy
+   *  can send them again. `moveRunners` finishes a leg and the policy runs
+   *  later in the SAME tick, so without this a runner re-launches with zero
+   *  frames on the base. Human sends and tag-up queues are exempt. */
+  BASE_DWELL_MS: 400,
+  /** The CPU panic rule can't turn the same runner around again this soon —
+   *  each direction gets a real commitment, so a rundown reads as a rundown
+   *  instead of a stutter. Player holds and tag-up reverses are exempt. */
+  REVERSE_COOLDOWN_MS: 600,
 };
 
 /**
