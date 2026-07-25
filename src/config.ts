@@ -89,8 +89,11 @@ export const PITCH_SPEED = {
  * before the next pitch fires.
  */
 export const FLOW = {
-  /** Ball/strike/foul settled -> next pitch (player batting half). */
-  BETWEEN_PITCH_MS: 1250,
+  /** Ball/strike/foul settled -> next pitch (player batting half).
+   *  MEASURED (pace.betweenPitch): BB takes 2550ms from the ball arriving to the
+   *  pitcher having it back (n=3). Ours was already correctly PROPORTIONED to
+   *  the anchor (0.591 vs BB's 0.607) and wrong only in absolute tempo. */
+  BETWEEN_PITCH_MS: 2550,
   /** Floor after any at-bat that moved runners (walk/hit fold-in). */
   AFTER_PLAY_MS: 1500,
   /** Extra pad after the baserunning animation finishes. */
@@ -398,7 +401,7 @@ export const DRAFT = {
 };
 
 /** How long a runner takes to jog ONE base (ms). Post-hit pacing derives from this. */
-export const RUNNER_TWEEN_MS = 450;
+export const RUNNER_TWEEN_MS = 894;
 
 /** Show the contracting timing ring at the plate (swing-timing teaching aid). */
 export const SHOW_TIMING_RING = true;
@@ -509,11 +512,18 @@ export const LIVE = {
     LINER_DIST: { BASE: 170, SCALE: 220 },
     FLY_DIST: { BASE: 190, SCALE: 240 },
     /** Air time ranges (ms) — deeper ball = longer hang within the range.
-     *  Backyard-paced: flies hang long enough to settle under the landing ring. */
-    LINER_HANG_MS: { MIN: 650, MAX: 900 },
-    FLY_HANG_MS: { MIN: 2000, MAX: 2900 },
-    /** Initial grounder roll speed (px/s); decelerates to stop at the settle point. */
-    GROUNDER_SPEED: { MIN: 160, MAX: 240 },
+     *  FLY_HANG_MS is MEASURED (pace.flyHang): BB's flies hang 2875-5075ms
+     *  (n=4, read off BB's landing-preview disc). Note this went UP, not down:
+     *  the long-assumed "our flies hang too long" defect was really "our run is
+     *  too fast", and fixing RUNNER_SPEED alone would have left flies too SHORT.
+     *  LINER_HANG_MS is NOT measured — derived by preserving its old ratio to
+     *  the fly range (0.325 / 0.310). */
+    LINER_HANG_MS: { MIN: 934, MAX: 1573 },
+    FLY_HANG_MS: { MIN: 2875, MAX: 5075 },
+    /** Initial grounder roll speed (px/s); decelerates to stop at the settle
+     *  point. NOT measured — scaled 1/1.987 with RUNNER_SPEED so a grounder
+     *  still beats/loses to a runner the way it used to. */
+    GROUNDER_SPEED: { MIN: 81, MAX: 121 },
   },
   /**
    * What a landed ball does next (systems/liveplay.ts). Flies and liners
@@ -528,18 +538,23 @@ export const LIVE = {
     RESTITUTION: 0.5,
     /** Landing ground-speed fraction carried into the first hop, per type. */
     KEEP: { fly: 0.35, liner: 0.5 },
-    /** First hop duration (ms) and height cue (0..1, renderer scale). */
-    FIRST_HOP_MS: 340,
+    /** First hop duration (ms) and height cue (0..1, renderer scale).
+     *  Duration scaled 1.987x with the pace retune; the height cue is a
+     *  renderer fraction and does not scale. */
+    FIRST_HOP_MS: 676,
     FIRST_HOP_H: 0.45,
-    /** Post-hop speed (px/s) → decel-roll settle distance (v * this, px). */
-    ROLLOUT_S: 0.48,
+    /** Post-hop speed (px/s) → decel-roll settle distance (v * this, px).
+     *  SECONDS, so it scales 1.987x WITH the pace retune: ball speeds halved,
+     *  and leaving this alone would have halved every settle distance and moved
+     *  where balls come to rest. Geometry is unchanged; only time is. */
+    ROLLOUT_S: 0.954,
     /** Carom: speed retained bouncing off the fence. */
     WALL_REST: 0.55,
     /** A hopping ball is grabbable only below this height (short-hop scoop). */
     PICKUP_MAX_H: 0.4,
   },
   /** Player-steered fielder speed (px/s). */
-  FIELDER_SPEED: 210,
+  FIELDER_SPEED: 106,
   /** Fielding assist (mode-tied: kid = auto, main = magnet). */
   ASSIST: {
     /** Magnet: how much steering is bent toward the ball (0 = pure manual). */
@@ -555,24 +570,30 @@ export const LIVE = {
   /** Hold-to-charge time (ms) for a full-power throw. Short, Backyard-style:
    *  once you've fielded it, the out is about picking the base, not the charge. */
   THROW_METER_MS: 450,
-  /** Throw flight speed (px/s) at zero / full charge. */
-  THROW_SPEED_MIN: 550,
-  THROW_SPEED_MAX: 820,
-  /** Idle-kid rescue: sim throws by itself after holding the ball this long. */
-  AUTO_THROW_MS: 2600,
+  /** Throw flight speed (px/s) at zero / full charge.
+   *  NOT MEASURED — scaled 1/1.987 with RUNNER_SPEED. defense.throwSpeed is
+   *  still awaiting-measurement: the clean target (catcher→2B on a steal) turned
+   *  out not to exist in the capture, because both steals were uncontested. */
+  THROW_SPEED_MIN: 277,
+  THROW_SPEED_MAX: 413,
+  /** Idle-kid rescue: sim throws by itself after holding the ball this long.
+   *  NOT measured — scaled with RUNNER_SPEED. */
+  AUTO_THROW_MS: 5167,
   /** Runner speed (px/s) at speed stat 5; each stat point is ±6%.
-   *  Scaled with the base-leg length (~180px legs) so a leg takes ~2.1s —
-   *  Backyard-paced: slow enough that there's real time to read the ball,
-   *  field it, and pick a base, while a good jump still wins the extra-base
-   *  bang-bang plays. */
-  RUNNER_SPEED: 85,
+   *  MEASURED (pace.homeToFirst): BB2001 runs home→1B in 4200ms (n=3), and
+   *  179.63px / 4.200s = 42.8px/s. We ran this leg in HALF BB's time until
+   *  2026-07-24. THIS IS THE ANCHOR — every other pace constant below is either
+   *  measured against it or scaled by the same 1.987x factor, so changing it
+   *  alone will desynchronise the rest. See scripts/measures.json. */
+  RUNNER_SPEED: 42.8,
   /** Distance ball→next base above which a CPU runner risks the extra base. */
   CPU_RUNNER_GREED_DIST: 180,
   /** A loose ball nobody has picked up for this long → CPU runners just go. */
-  CPU_RUNNER_PATIENCE_MS: 1500,
+  CPU_RUNNER_PATIENCE_MS: 2981,
   /** Hard cap: any live play resolves by now (stragglers settle safe behind).
-   *  Sized for the slower Backyard pace (~2.1s legs + ~3s fly hangs). */
-  MAX_PLAY_MS: 11000,
+   *  NOT measured — scaled with RUNNER_SPEED. Sized for ~4.2s legs and fly
+   *  hangs up to ~5.1s, so it must stay well clear of both. */
+  MAX_PLAY_MS: 21862,
   /** The dive verb (CLASSIC defense): tap mid-chase for a reach burst. */
   DIVE: {
     REACH_BONUS: 30, // px added to catch/pickup reach during the window
@@ -748,11 +769,11 @@ export const RUN2 = {
   /** A CPU runner turns back when the carrier is ahead and this close. */
   CPU_PANIC_DIST: 100,
   /** After a caught fly the play stays open this long for tag-up sends. */
-  SAC_WINDOW_MS: 1400,
+  SAC_WINDOW_MS: 2782,
   /** A kid who just caught a fly needs this long to gather before throwing —
    *  the beat that makes sac flies from third a real race. Scaled with
    *  RUNNER_SPEED (slower legs need a longer beat to keep the race winnable). */
-  CATCH_GATHER_MS: 1100,
+  CATCH_GATHER_MS: 2186,
 };
 
 /**
@@ -831,8 +852,8 @@ export const MODES: Record<
   kid: {
     live: {
       cpuFielderSpeedMult: 0.62,
-      cpuReactionMs: 550,
-      cpuThrowDelayMs: 500,
+      cpuReactionMs: 1093,
+      cpuThrowDelayMs: 993,
       cpuThrowSpeedMult: 0.62,
       cpuThrowErrorMs: 320,
       reachMult: 1.6,
@@ -860,10 +881,14 @@ export const MODES: Record<
     // Old HARD, softened a touch — main mode is still for kids.
     live: {
       cpuFielderSpeedMult: 1.0,
-      // Reaction/throw delays scale with the Backyard pace (RUNNER_SPEED):
-      // slower runners need a more deliberate CPU defense or offense is crushed.
-      cpuReactionMs: 420,
-      cpuThrowDelayMs: 600,
+      // NOT MEASURED — scaled 1.987x with RUNNER_SPEED. Halving runner speed
+      // doubles the time the defense has, so leaving these alone would hand it
+      // every close play. defense.cpuReaction holds a 5-sample partialReading
+      // (~1050ms) that was deliberately not promoted: a displacement threshold
+      // cannot separate a decision delay from an acceleration ramp. These are
+      // the most likely values to need feel iteration.
+      cpuReactionMs: 835,
+      cpuThrowDelayMs: 1192,
       cpuThrowSpeedMult: 1.0,
       cpuThrowErrorMs: 80,
       reachMult: 1.15,
