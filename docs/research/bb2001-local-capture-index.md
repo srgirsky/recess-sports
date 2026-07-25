@@ -491,6 +491,42 @@ are bases* whose native coordinates are already measured — home (318.2, 440.6)
 2B (317.4, 220.2) = **220.4 px** — so no geometry has to be inferred and only the
 release and arrival frames are needed.
 
+### Throw speed — the cleanest target turned out not to exist
+
+The plan was catcher→2B on a steal: **both endpoints are measured bases**
+(220.4 px, zero geometry inference), which would have made it the most precise
+measurement in the file. Checked by eye on both candidates, and it isn't there:
+
+- **play-02's steal is uncontested.** The catcher holds the ball and then lobs it
+  back to the *pitcher* — a star pops at the mound at dt ≈ 4.0 s — and no throw to
+  2B is ever made. A corridor tracker over home→2B correspondingly found nothing
+  faster than ~15 px per distinct frame, where a real 220 px throw would move
+  ~30 px. **The absence is real, not a detection failure.**
+- **play-13 is not a steal at all.** It's an infield grounder fielded near 2B with
+  a throw to 1B, identifiable by BB's yellow throw-lane affordance appearing
+  between the bases at dt 3.2–4.0 s. This is a correction to the recorded play
+  classification, which had it under `stealOrDefensive`.
+
+So throw speed has to come from the **infield family** (fielder → 1B, whose
+coordinates are exact; the release point is the fielder's position off the same
+frame, so distance carries 2–5%). Candidates: plays 03, 04, 12, 15, 17 and now
+13. The remaining difficulty is purely bracketing — a throw crosses 100–200 px in
+a few hundred ms, so a 200 ms coarse sheet steps over it entirely while a 66 ms
+sheet covers only ~1.2 s per read. **The throw-lane affordance is the way in: it
+appears *before* the throw and points at the target base.**
+
+The comparison form is settled even though the number isn't:
+**throw speed ÷ runner speed**, dimensionless and scale-free — *"a throw travels
+N× as fast as a kid runs."* Ours is **9.65×** (820 px/s ÷ 85 px/s); BB's divides
+by 48.17 px/s (202.3 px ÷ 4.200 s). Sanity band 3–20×.
+
+**One rider did land.** On play-15, a 33 ms sheet from the cut shows the fielding
+kid holding a **standing pose for ~0.67 s** before shifting to a run pose. That
+favours a real *decision delay* — comparable to our `cpuReactionMs` — over a pure
+acceleration ramp, which is the confound blocking that record. It's n=1, so it
+doesn't promote the 5-sample partialReading, but it points the verdict and the
+same read on plays 03/04/12/17 would settle it.
+
 ### Two plan assumptions that broke
 
 - **"PT" on the ON THE MOUND panel is not a pitching rating.** It is a

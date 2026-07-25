@@ -782,7 +782,13 @@
         "kidValue": 550
       },
       "ifItHolds": "Taken at face value the partial reading is ~2.5x our 420ms, which is the same direction and rough size as every other measured pace drift (run 0.50x, between-pitch 0.49x). That consistency is suggestive, and it is NOT evidence -- three separate clean-looking numbers were wrong this session before being looked at.",
-      "informs": "src/config.ts MODES.main.live.cpuReactionMs"
+      "informs": "src/config.ts MODES.main.live.cpuReactionMs",
+      "poseEvidence": {
+        "finding": "play-15, 33ms sheet from the cut: the fielding kid holds a STANDING pose for ~0.67s and only then shifts to a run pose and covers ground.",
+        "implication": "That favours a real DECISION DELAY -- something comparable to our cpuReactionMs -- rather than a pure acceleration ramp, which is the confound that keeps this record from being promoted.",
+        "n": 1,
+        "why": "n=1 is not enough to promote. One fielder on one play could be hesitating for a reason specific to that play (the ball was hit elsewhere, he is not the primary). The read is cheap and repeatable though: the same 33ms sheet on plays 03/04/12/17 would settle it, and the partialReading's five samples are already waiting for that verdict."
+      }
     },
     "cpuThrowDelay": {
       "id": "defense.cpu-throw-delay",
@@ -812,8 +818,10 @@
       "n": 0,
       "confidence": "estimate",
       "blocked": {
-        "finding": "Same ball-tracking dependency, but this one has the cleanest possible target and was simply not reached.",
-        "whatWouldWork": "Catcher->2B on a steal (plays 02 and 13). BOTH ENDPOINTS ARE BASES, whose native coordinates are already measured (geometry.projectionType.measurements[2]), so no geometry has to be inferred and the distance is known exactly: home(318.2,440.6) to 2B(317.4,220.2) = 220.4px. Only the release and arrival frames are needed, and on a steal both are framed events. The capture guide's shot list already flagged this as the best throw measurement available; it remains true."
+        "finding": "THE CLEANEST TARGET DOES NOT EXIST IN THIS CAPTURE. The plan was catcher->2B on a steal, where both endpoints are measured bases (220.4px, zero geometry inference). Checked by eye: play-02's steal is UNCONTESTED -- the catcher holds the ball, then lobs it back to the PITCHER (a star pops at the mound at dt~4.0s), and no throw to 2B is ever made. A corridor tracker over home->2B correspondingly found nothing faster than ~15px per distinct frame, where a real 220px throw would move ~30px. The absence is real, not a detection failure.",
+        "classificationCorrection": "play-13 is NOT a steal, contrary to instrument.playIndex.session2.classification which listed it under stealOrDefensive. It is an infield grounder fielded near 2B with a throw to 1B, identifiable by BB's yellow throw-lane affordance appearing between 2B and 1B at dt 3.2-4.0s. The classification block should be read with that correction.",
+        "whatWouldWork": "The infield-throw family: a fielder gathers a grounder and throws to 1B, whose native coordinates are exact (473.7, 311.2). The release point is the fielder's position read off the same frame, so distance carries 2-5%. Candidates are plays 03, 04, 12, 15, 17 and now 13. The remaining difficulty is bracketing: a throw crosses 100-200px in a few hundred ms, so a 200ms coarse sheet can step over it entirely and a 66ms sheet covers only ~1.2s per read. Locate the release from the throw-lane affordance (it appears BEFORE the throw and points at the target base), then one 33ms sheet on that bracket.",
+        "attempted": "2026-07-24. Steal family eliminated by eye on both candidates; infield family located but not read to a number."
       },
       "ours": {
         "constants": ["src/config.ts LIVE.THROW_SPEED_MIN", "src/config.ts LIVE.THROW_SPEED_MAX", "src/config.ts MODES.main.live.cpuThrowSpeedMult"],
@@ -821,7 +829,8 @@
         "max": 820,
         "cpuMult": 1.0
       },
-      "informs": "src/config.ts LIVE.THROW_SPEED_MIN / THROW_SPEED_MAX"
+      "informs": "src/config.ts LIVE.THROW_SPEED_MIN / THROW_SPEED_MAX",
+      "comparisonForm": "throw speed / runner speed -- both px/s in the same space, so the ratio is dimensionless and survives BB being 640x480 while we are 960x640. Reads as plain English: 'a throw travels N times as fast as a kid runs.' OURS = THROW_SPEED_MAX 820 x cpuThrowSpeedMult 1.0 / (RUNNER_SPEED 85 x playerRunSpeedMult 1.0) = 9.65x (player charge range 550-820 gives 6.5-9.65x). BB = measured px/s / (202.3px / 4.200s = 48.17px/s). Sanity band: a throw must land between 3x and 20x a run; outside that the read is wrong."
     }
   }
 }
