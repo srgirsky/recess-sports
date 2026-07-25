@@ -107,7 +107,7 @@ describe('armTravelMult', () => {
 
 describe('lobHeightPx (render-only rainbow)', () => {
   it('is zero for fast pitches, grows for slow ones, and caps', () => {
-    expect(lobHeightPx(500)).toBe(0);
+    expect(lobHeightPx(PITCH_SPEED.LOB.FROM_MS - 100)).toBe(0); // derived: FROM_MS moved with the corridor
     expect(lobHeightPx(PITCH_SPEED.LOB.FROM_MS)).toBe(0);
     expect(lobHeightPx(PITCH_SPEED.LOB.FROM_MS + 400)).toBeGreaterThan(0);
     expect(lobHeightPx(1200)).toBeLessThan(lobHeightPx(1800));

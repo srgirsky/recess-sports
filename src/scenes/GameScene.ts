@@ -363,6 +363,9 @@ export class GameScene extends Phaser.Scene {
   private netAwait?: 'pitchPlan' | 'swing';
   private netResume?: () => void;
   private netWaitTimer?: Phaser.Time.TimerEvent;
+  /** Pitch clock: set while the pitch is parked waiting for the batter. */
+  private batterClock?: Phaser.Time.TimerEvent;
+  private batterResume?: () => void;
   private lastNetFrameAt = 0;
 
   /** Host-authoritative broadcast — no-op unless we're the net host. */
@@ -406,6 +409,48 @@ export class GameScene extends Phaser.Scene {
     const r = this.netResume;
     this.netResume = undefined;
     r?.();
+  }
+
+  /**
+   * THE PITCH CLOCK. BB waits for the batter to pick a swing before it throws --
+   * measured gaps between its pitches are 10.7s, 11.6s and 19.5s, so its clock
+   * never binds in normal play (pace.pitchCadence in scripts/measures.json). We
+   * fired on a fixed timer regardless, which is what made pitching feel rushed.
+   *
+   * Same shape as netWaitFor: park the transition, keep a NAMED timer, always
+   * have a fallback. Gated on exactly `swingChoice && localHumanBats()` -- the
+   * guard showSwingChips already uses -- so kid / tee-ball / EASY (no cards
+   * exist), spectator (swallows taps) and the net guest (message-driven, never
+   * schedules locally) all keep firing on their own and cannot hang waiting for
+   * a tap that can never arrive.
+   */
+  private pitchWhenReady(): void {
+    if (!this.features.swingChoice || !this.localHumanBats()) {
+      this.throwPitch();
+      return;
+    }
+    this.batterResume = () => this.throwPitch();
+    this.batterClock?.remove(false);
+    this.batterClock = this.time.delayedCall(FLOW.PITCH_CLOCK_MS, () => this.batterReady());
+    this.swingChips?.attention(true);
+  }
+
+  /** The batter tapped a swing card, or the clock ran out. Throw. */
+  private batterReady(): void {
+    this.batterClock?.remove(false);
+    this.batterClock = undefined;
+    this.swingChips?.attention(false);
+    const r = this.batterResume;
+    this.batterResume = undefined;
+    r?.();
+  }
+
+  /** Cancel a parked pitch without throwing (half boundaries, teardown). */
+  private clearBatterClock(): void {
+    this.batterClock?.remove(false);
+    this.batterClock = undefined;
+    this.batterResume = undefined;
+    this.swingChips?.attention(false);
   }
   // 📼 instant replay: per-tick position snapshots of the current live play.
   private replayFrames: ReplayFrame[] = [];
@@ -1368,6 +1413,7 @@ export class GameScene extends Phaser.Scene {
    */
   private enterHalf(): void {
     this.clearRestingBall();
+    this.clearBatterClock();
     this.pitcherWindupSeq?.cancel(false); // stale windup2 must not land on next half's mound
     this.pitcherWindupSeq = undefined;
     this.pitchAutoPick?.remove(false);
@@ -1439,6 +1485,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private endHalf(): void {
+    this.clearBatterClock(); // before swingChips dies -- attention(false) needs it
     this.swingChips?.destroy();
     this.swingChips = undefined;
     this.reliefBtn?.destroy();
@@ -1653,7 +1700,7 @@ export class GameScene extends Phaser.Scene {
       this.time.delayedCall(950, () => this.throwPitch());
     } else {
       // A beat for the new batter to step in before the wind-up starts.
-      this.time.delayedCall(FLOW.NEW_BATTER_MS, () => this.throwPitch());
+      this.time.delayedCall(FLOW.NEW_BATTER_MS, () => this.pitchWhenReady());
     }
   }
 
@@ -2029,9 +2076,13 @@ export class GameScene extends Phaser.Scene {
       cards,
       selectedId: this.swingType,
       onSelect: (id) => {
-        if (this.swingType === id) return;
-        this.swingType = id as SwingType;
-        audio.pop();
+        // Re-tapping the already-selected card is NOT a no-op any more: it is
+        // how a batter who likes their swing tells the pitcher to throw.
+        if (this.swingType !== id) {
+          this.swingType = id as SwingType;
+          audio.pop();
+        }
+        this.batterReady();
       },
       pin: (o) => this.pinUI(o),
     });
@@ -2601,7 +2652,7 @@ export class GameScene extends Phaser.Scene {
       } else if (applied.batterDone) {
         this.nextPlayerBatter();
       } else {
-        this.throwPitch();
+        this.pitchWhenReady();
       }
     });
   }
