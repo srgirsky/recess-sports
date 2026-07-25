@@ -527,6 +527,66 @@ acceleration ramp, which is the confound blocking that record. It's n=1, so it
 doesn't promote the 5-sample partialReading, but it points the verdict and the
 same read on plays 03/04/12/17 would settle it.
 
+### The pitch corridor — ours are *slower* than BB's, across the board
+
+Measured n=6 off 33 ms corridor sheets, located by the HUD count pips. The split
+is cleanly bimodal, which is what makes the laser/lob classification trustworthy:
+
+| kind | samples | median |
+|---|---|---|
+| **laser (fastball)** | 250 / 270 / 290 ms | **270 ms** |
+| lob (off-speed) | 420 / 430 / 480 ms | 430 ms |
+
+Ours, from the real formula `(MAIN_BASE_MS 800 ÷ fastball speedMult 1.1) ×
+armTravelMult(stat)`: **545 ms** (stat 10) · **727 ms** (stat 5) · **873 ms**
+(stat 1).
+
+So our typical fastball is **2.7× slower** than BB's. The starker form:
+**our fastest possible pitch (545 ms) is slower than BB's slowest measured pitch
+(480 ms)** — our entire corridor sits below theirs. The ratio-to-anchor form says
+the same (0.173 vs 0.064, also 2.7×), so it isn't a scale artifact.
+
+**Better classification is available and unused.** Session 2 contains *both*
+halves, and when the human pitches the right-edge pitch cards (HEAT / SLOWBALL /
+LEFT HOOK / RIGHT HOOK / INTENTIONAL WALK) are on screen with the selected one
+highlighted — reading the kind directly instead of inferring it from flight
+appearance. Only one of the six samples came from a human-pitching stretch;
+re-reading those halves would turn the inference into ground truth and let
+`ARM_MULT` be separated from pitch *kind*.
+
+### Why pitching *feels* fast — it isn't the flight time
+
+**BB does not use a timer here.** In the human-batting half it waits for the
+player to pick a swing card, and the measured pitch-to-pitch gaps are
+**10.7 s, 11.6 s and 19.5 s** — entirely player deliberation, zero game pressure.
+The video notes recorded the same on the pitching side: *"no pitch clock; the
+game idles happily in the card-select state."*
+
+**We fire on a timer.** `GameScene.ts:3887` is a
+`delayedCall(FLOW.BETWEEN_PITCH_MS)` that throws the next pitch whether or not
+the batter has chosen. You get 2.55 s to read the situation and pick a swing;
+BB gives you as long as you want.
+
+That is a *design* difference, not a tuning error, and it is the most likely
+explanation for the feel report. The forced part of the beat — arrival → pitcher
+has the ball back — **is** measured and conformed at 2550 ms
+(`pace.betweenPitch`); what differs is that BB adds an unbounded player-paced
+wait on top of it and we don't.
+
+### The retune left most of FLOW behind
+
+It scaled the live-play sim 1.987× and changed exactly **one** FLOW constant —
+`BETWEEN_PITCH_MS`, the one that was measured. Everything else is still at the
+pre-retune tempo: `NEW_BATTER_MS` 750, `CPU_NEW_BATTER_MS` 850, `CPU_STEP_MS`
+1100, `AFTER_PLAY_MS` 1500, `AFTER_LIVE_PLAY_MS` 1600, `HALF_START_MS` 1400,
+`RUN_SETTLE_PAD_MS` 500, `BANNER_HOLD_MS` 1100, `UMP_CALL_DELAY_MS` 200.
+
+So the game now mixes two tempos: live play at the Backyard pace, every
+transition around it at the old faster one. **`CPU_STEP_MS` is the one most
+likely to read as rushed** — it governs the gap between pitches in the half where
+*you* pitch, was never scaled, and is under half the retuned `BETWEEN_PITCH_MS`
+that governs the other half.
+
 ### Two plan assumptions that broke
 
 - **"PT" on the ON THE MOUND panel is not a pitching rating.** It is a

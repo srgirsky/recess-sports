@@ -35,7 +35,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { LIVE, FLOW, MODES } from '../../src/config.ts';
+import { LIVE, FLOW, MODES, PITCH_SPEED, PITCHES } from '../../src/config.ts';
 import { HOME, FIRST, FOUL_SLOPE } from '../../src/systems/geometry.ts';
 import { affinity, ourLegRealMs, ratioToAnchor, round } from './lib.js';
 
@@ -342,6 +342,53 @@ describe('pace — measured, retuned, and now conformed', () => {
     };
     walk(M);
     expect(pending.length).toBeGreaterThan(0);
+  });
+});
+
+describe('pitch corridor — our pitches are slower than BB’s across the board', () => {
+  it('drifts from BB’s fastball by the recorded amount', () => {
+    // Derived from the real constants, not restated: travelMs =
+    // (base / speedMult) * armTravelMult(stat), which is the formula in
+    // src/systems/pitchkind.ts. If anyone changes PITCH_SPEED or the fastball's
+    // speedMult, this moves and the record has to move with it.
+    const rec = M.pace.pitchCorridor;
+    expect(rec.status).toBe('known-drift');
+
+    const armMult = (stat) =>
+      Math.min(PITCH_SPEED.ARM_MULT.MAX, Math.max(PITCH_SPEED.ARM_MULT.MIN,
+        PITCH_SPEED.ARM_MULT.BASE - PITCH_SPEED.ARM_MULT.PER_STAT * stat));
+    const ours = (stat) => (PITCH_SPEED.MAIN_BASE_MS / PITCHES.fastball.speedMult) * armMult(stat);
+
+    expect(Math.round(ours(5))).toBe(rec.ours.fastballMs.stat5);
+    expect(Math.round(ours(10))).toBe(rec.ours.fastballMs.stat10);
+    expect(Math.round(ours(1))).toBe(rec.ours.fastballMs.stat1);
+
+    // BB's side derived from the record's own samples.
+    const lasers = rec.samples.filter((x) => x.kind.startsWith('laser')).map((x) => x.ms);
+    expect(lasers).toHaveLength(rec.measured.fastballN);
+    const bbFast = lasers.sort((a, b) => a - b)[Math.floor(lasers.length / 2)];
+    expect(bbFast).toBe(rec.measured.fastballMs);
+
+    expect(round((ours(5) / bbFast - 1) * 100, 1)).toBeCloseTo(rec.driftPct, 0);
+
+    // The starkest form of the finding, and the one worth pinning: our FASTEST
+    // possible pitch is still slower than BB's SLOWEST measured one. If that
+    // ever stops being true the whole "our pitches are slow" conclusion changes.
+    expect(ours(10)).toBeGreaterThan(rec.measured.corridorMaxMs);
+  });
+
+  it('keeps the cadence finding separate from the flight-time finding', () => {
+    // These point in opposite directions and collapsing them would lose the
+    // actual explanation: our pitches FLY slower than BB's, but arrive on a
+    // fixed timer where BB waits for the player indefinitely.
+    const cad = M.pace.pitchCadence;
+    expect(cad.status).toBe('known-drift');
+    expect(cad.measured.bbIsPlayerPaced).toBe(true);
+    expect(FLOW.BETWEEN_PITCH_MS).toBe(cad.ours.value);
+    // Every BB gap measured is many times our timer -- that gap IS the finding.
+    for (const g of cad.measured.bbGapsSec) {
+      expect(g * 1000).toBeGreaterThan(FLOW.BETWEEN_PITCH_MS * 3);
+    }
   });
 });
 
