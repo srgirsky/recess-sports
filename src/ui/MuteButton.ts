@@ -5,6 +5,7 @@
 
 import Phaser from 'phaser';
 import { isMuted, toggleMute } from '../systems/audio';
+import { tagUi } from './layout';
 
 export function makeMuteButton(
   scene: Phaser.Scene,
@@ -31,5 +32,5 @@ export function makeMuteButton(
       btn.setText(label());
     }
   );
-  return btn;
+  return tagUi(btn, { role: 'icon', ox: 0, oy: 0, w: btn.width, h: btn.height, label: 'mute' });
 }
