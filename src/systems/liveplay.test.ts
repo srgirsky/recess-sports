@@ -1158,6 +1158,44 @@ describe('live play: a wild throw always leaves the ball retrievable', () => {
     }
   });
 
+  it('the worst case (CF -> 3B) is recovered, not orphaned for 20 seconds', () => {
+    // Measured as the furthest out of bounds before the clamp: the ball came to
+    // rest ~72px outside anywhere a fielder may stand, so the chaser pressed
+    // against the boundary until MAX_PLAY_MS with runners circling.
+    const main = resolveLiveParams('main');
+    let s = startLivePlay({
+      mode: 'defense',
+      launch: { type: 'grounder', landing: { x: 480, y: 250 }, hangMs: 0, rollSpeed: 110, homer: false },
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [{ base: 2, charId: 'r2', speed: 5 }],
+      defense: DEFENSE,
+      outs: 0,
+      params: main,
+    });
+    // Field it, then heave it wildly across the diamond to third — and after
+    // that give NO input at all, so the recovery has to come from the idle
+    // takeover finding a ball that used to be unreachable.
+    let threw = false;
+    let guard = 0;
+    let last = s;
+    while (s.phase !== 'done' && guard++ < 4000) {
+      const inputs: LiveInputs =
+        s.ball.phase === 'held' && !threw
+          ? ((threw = true), { throwTo: { base: 3 as const, power: 1 } })
+          : threw
+            ? {}
+            : { pointer: { ...s.ball.pos } };
+      // rng: clean pickup, then the throw sails, then clean.
+      s = stepLivePlay(s, inputs, 50, main, seq([0.9, 0.02, 0.9]));
+      last = s;
+    }
+    expect(threw).toBe(true);
+    expect(last.phase).toBe('done');
+    // Recovered rather than timed out, and it ended in someone's glove.
+    expect(last.elapsed).toBeLessThan(main.maxPlayMs * 0.75);
+    expect(last.ball.phase).toBe('held');
+  });
+
   it('still sails — a corner bag is as costly as one up the middle', () => {
     // Plain clamping would truncate the sail to ~26px at 1B/3B while leaving
     // the full 64px at 2B/home, making wild throws to the corners cheap.

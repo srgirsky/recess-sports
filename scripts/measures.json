@@ -11,7 +11,10 @@
   "sources": {
     "youtube": {
       "id": "youtube:YMmqNpmA60U",
-      "resolution": [640, 480],
+      "resolution": [
+        640,
+        480
+      ],
       "note": "Public gameplay capture, 640x480. Canvas pixel access confirmed untainted, so geometry was measured objectively (dirt/grass boundary scans + RANSAC foul-line fits), not eyeballed. SUPERSEDED FOR PACE: the notes' timestamps no longer map to the stream (an ad or re-upload shifted the timeline), so no play can be relocated by timestamp. The geometry result is unaffected -- it came from a single self-consistent frame."
     },
     "local": {
@@ -19,7 +22,10 @@
       "captured": "2026-07-23",
       "game": "Backyard Baseball '01, Steam app 3104970 (2025 re-release ships the original Humongous data untouched), run under ScummVM on macOS",
       "video": {
-        "raster": [3024, 1964],
+        "raster": [
+          3024,
+          1964
+        ],
         "pixFmt": "yuv422p",
         "codec": "ffv1 lossless",
         "containerFps": 60,
@@ -34,7 +40,10 @@
       },
       "screenshots": {
         "count": 12,
-        "raster": [2984, 1712],
+        "raster": [
+          2984,
+          1712
+        ],
         "gameRect": {
           "x": 532,
           "y": 136,
@@ -51,7 +60,10 @@
       "game": "Backyard Baseball '01, Steam app 3104970, run under ScummVM on macOS",
       "why": "The targeted re-capture prescribed by pace.captureConfounds and step 7 of docs/research/bb2001-capture-setup.md, after session1's natural playthrough failed to isolate any of the three pace shots.",
       "video": {
-        "raster": [3024, 1964],
+        "raster": [
+          3024,
+          1964
+        ],
         "pixFmt": "yuv422p",
         "codec": "ffv1 lossless",
         "containerFps": 60,
@@ -77,14 +89,31 @@
       "method": "distinctFrameRate over high-motion windows (dupFactor 2.7-3.3, medianRunLength 2-3), corroborated by the inter-frame delta cadence during a live play, which steps in a clean +50ms grid.",
       "containerFps": 60,
       "distinctFps": 20,
-      "distinctFpsRange": [18.15, 22.18],
+      "distinctFpsRange": [
+        18.15,
+        22.18
+      ],
       "effectiveFramePeriodMs": 50,
       "confidence": "high",
       "implication": "Every timestamp carries +-50ms of quantisation. A ~3000ms run measurement is +-1.7% (fine); a ~250ms pitch flight is +-20% and needs n>=5 to average down. This is WORSE than the YouTube source's ~33ms, and it is the number summarize({framePeriodMs}) must be fed -- passing the container's 16.67ms would claim 3x the precision that exists.",
       "note": "Recording at 60fps was deliberate oversampling and it paid for itself here: had the capture been made at the assumed rate, the duplication would have been invisible and every derived constant would have inherited a 3x overstatement of precision.",
       "session2": {
         "source": "local:bb01-capture-session2",
-        "distinctFpsSamples": [19.55, 19.92, 20.22, 20.22, 20.22, 20.88, 22.25, 22.25, 23.2, 23.91, 26.94, 27.64, 35.06],
+        "distinctFpsSamples": [
+          19.55,
+          19.92,
+          20.22,
+          20.22,
+          20.22,
+          20.88,
+          22.25,
+          22.25,
+          23.2,
+          23.91,
+          26.94,
+          27.64,
+          35.06
+        ],
         "distinctFpsMedian": 22.25,
         "effectiveFramePeriodMs": 50,
         "confidence": "high",
@@ -163,8 +192,38 @@
       "cutThresholdEvidence": "Real cuts score 0.72-0.81 once cropped; ordinary play scores ~0.03. The threshold sits in a wide empty valley rather than being guessed.",
       "cutsFound": 34,
       "livePlays": 14,
-      "playStarts": [24.1, 33.867, 79.133, 93.3, 120.067, 161.4, 194.2, 220.25, 742.8, 759.867, 781.383, 799.45, 828.417, 855.7],
-      "playDurations": [1.967, 6.95, 5.2, 18.683, 10, 10.85, 6.3, 3.333, 9.4, 13.35, 9.4, 15.9, 20.116, 16.317],
+      "playStarts": [
+        24.1,
+        33.867,
+        79.133,
+        93.3,
+        120.067,
+        161.4,
+        194.2,
+        220.25,
+        742.8,
+        759.867,
+        781.383,
+        799.45,
+        828.417,
+        855.7
+      ],
+      "playDurations": [
+        1.967,
+        6.95,
+        5.2,
+        18.683,
+        10,
+        10.85,
+        6.3,
+        3.333,
+        9.4,
+        13.35,
+        9.4,
+        15.9,
+        20.116,
+        16.317
+      ],
       "confidence": "high",
       "priorAttempt": "An uncropped run at the default 0.3 threshold found 5 cuts in 450 seconds. ffmpeg's scene metric is frame-GLOBAL, so with the game covering 46.55% of the frame every real cut scored ~0.45 -- and only the two strongest cuts in the whole capture cleared 0.3. Cropping first recovered 6.8x more cuts. This is recorded because the failure was silent: a broken index looks exactly like a capture with no plays in it.",
       "informs": "Nothing in src/ directly. This is the map the pace pass measures against.",
@@ -173,11 +232,57 @@
         "method": "Same call, unchanged: findCuts with crop=gameRect, scale=4, threshold=0.25 over the whole file. The threshold transferred to a different venue with no retuning, which is a small independent vote for it sitting in a real valley rather than being fitted to session1.",
         "cutsFound": 42,
         "livePlays": 20,
-        "playStarts": [28.967, 54.983, 96.533, 125.167, 163.283, 202.817, 219.867, 253.867, 271.617, 300.717, 329.367, 350.25, 390.633, 415.683, 457.367, 485.3, 535.45, 578.1, 602.85, 629.5],
-        "wideSegmentDurations": [6.68, 8.45, 8.0, 9.65, 11.75, 7.48, 17.3, 10.35, 13.7, 9.85, 11.9, 10.0, 8.85, 8.75, 6.3, 16.8, 11.48, 9.25, 8.95, null],
+        "playStarts": [
+          28.967,
+          54.983,
+          96.533,
+          125.167,
+          163.283,
+          202.817,
+          219.867,
+          253.867,
+          271.617,
+          300.717,
+          329.367,
+          350.25,
+          390.633,
+          415.683,
+          457.367,
+          485.3,
+          535.45,
+          578.1,
+          602.85,
+          629.5
+        ],
+        "wideSegmentDurations": [
+          6.68,
+          8.45,
+          8.0,
+          9.65,
+          11.75,
+          7.48,
+          17.3,
+          10.35,
+          13.7,
+          9.85,
+          11.9,
+          10.0,
+          8.85,
+          8.75,
+          6.3,
+          16.8,
+          11.48,
+          9.25,
+          8.95,
+          null
+        ],
         "classification": {
           "note": "From coarse whole-play contact sheets (30 tiles x 200ms per play). The shot list was clearly played -- unlike session1 there are deliberate pop-ups AND left-side balls -- but it also produced five home runs, which are useless for fly hang because the ball never comes down in play.",
-          "battedBallWithCleanHome1B": ["play-00 (28.967)", "play-03 (125.167)", "play-04 (163.283)"],
+          "battedBallWithCleanHome1B": [
+            "play-00 (28.967)",
+            "play-03 (125.167)",
+            "play-04 (163.283)"
+          ],
           "flyCaughtInPlay": [
             "play-05 (202.817, shallow-med LC)",
             "play-08 (271.617, shallow L)",
@@ -185,10 +290,26 @@
             "play-14 (457.367, infield pop)",
             "play-19 (629.5, medium-deep L)"
           ],
-          "homeRun": ["play-07 (253.867)", "play-09 (300.717)", "play-10 (329.367)", "play-18 (602.85)"],
-          "stealOrDefensive": ["play-02 (96.533)", "play-13 (415.683)"],
-          "infieldGrounder": ["play-12 (390.633)", "play-15 (485.3)", "play-17 (578.1, double play)"],
-          "unclear": ["play-01 (54.983)", "play-06 (219.867)", "play-16 (535.45)"]
+          "homeRun": [
+            "play-07 (253.867)",
+            "play-09 (300.717)",
+            "play-10 (329.367)",
+            "play-18 (602.85)"
+          ],
+          "stealOrDefensive": [
+            "play-02 (96.533)",
+            "play-13 (415.683)"
+          ],
+          "infieldGrounder": [
+            "play-12 (390.633)",
+            "play-15 (485.3)",
+            "play-17 (578.1, double play)"
+          ],
+          "unclear": [
+            "play-01 (54.983)",
+            "play-06 (219.867)",
+            "play-16 (535.45)"
+          ]
         },
         "confidence": "high"
       }
@@ -217,8 +338,14 @@
         }
       ],
       "separation": {
-        "gameScoreRange": [0.989, 1.0],
-        "otherScoreRange": [0.054, 0.195],
+        "gameScoreRange": [
+          0.989,
+          1.0
+        ],
+        "otherScoreRange": [
+          0.054,
+          0.195
+        ],
         "unknownSamples": 0
       },
       "confidence": "high",
@@ -268,10 +395,22 @@
           "frame": "t=430, quiet post-play wide reset",
           "method": "RANSAC fit of the white chalk foul lines (occlusion-robust), bases from dirt/grass boundary scans so standing fielders read through.",
           "bases_srcpx": {
-            "home": [319, 444.5],
-            "first": [513.6, 286],
-            "second": [319, 198],
-            "third": [126.2, 287]
+            "home": [
+              319,
+              444.5
+            ],
+            "first": [
+              513.6,
+              286
+            ],
+            "second": [
+              319,
+              198
+            ],
+            "third": [
+              126.2,
+              287
+            ]
           },
           "diagonalMidpointGapPx": 34.8,
           "nearFarRatio": 1.79,
@@ -284,10 +423,22 @@
           "frame": "screenshots 00009/00010/00011, native 640x480",
           "method": "Compact white-blob detection at NATIVE resolution (pixel-exact, no scaling), cross-validated across three frames of the same venue: a base cannot move between frames, a fielder can. Two symmetric candidates at y~283 appeared in only one frame and were correctly rejected as fielders; the four that persisted are the bases. Confirmed visually by overlay.",
           "bases_srcpx": {
-            "home": [320.3, 435.4],
-            "first": [475.0, 310.9],
-            "second": [318.0, 221.5],
-            "third": [165.9, 310.9]
+            "home": [
+              320.3,
+              435.4
+            ],
+            "first": [
+              475.0,
+              310.9
+            ],
+            "second": [
+              318.0,
+              221.5
+            ],
+            "third": [
+              165.9,
+              310.9
+            ]
           },
           "diagonalMidpointGapPx": 17.6,
           "gapPctOfLeg": 9.34,
@@ -303,10 +454,22 @@
           "frame": "26 wide frames spread across the whole capture, native 640x480",
           "method": "White-blob detection clustered ACROSS frames, keeping only blobs that persist at the same centroid: a base cannot move, a fielder can. Two naive variants were tried and rejected first -- 'biggest blob' locks onto base+white-sock merges (n=216px vs home plate's 87px), and 'modal centroid' locks onto chalk-line fragments (a 2x16px sliver at (330.8,439.5)). Both were caught by the internal symmetry checks below failing, then confirmed by rendering the candidates as boxes over a real frame and looking.",
           "bases_srcpx": {
-            "home": [318.2, 440.6],
-            "first": [473.7, 311.2],
-            "second": [317.4, 220.2],
-            "third": [163.8, 311.2]
+            "home": [
+              318.2,
+              440.6
+            ],
+            "first": [
+              473.7,
+              311.2
+            ],
+            "second": [
+              317.4,
+              220.2
+            ],
+            "third": [
+              163.8,
+              311.2
+            ]
           },
           "diagonalMidpointGapPx": 19.22,
           "gapPctOfLeg": 10.08,
@@ -362,7 +525,10 @@
           "method": "Same as session1: lib.js affinity() over four persistence-clustered, visually confirmed base positions."
         }
       ],
-      "band": [1.1974, 1.2414],
+      "band": [
+        1.1974,
+        1.2414
+      ],
       "measured": 1.2385,
       "spread": 0.044,
       "n": 3,
@@ -397,15 +563,27 @@
       "what": "BB's grass is not one colour -- it is a lit gradient plus a dither, so a region MEDIAN is the meaningful statistic and patchFlatness correctly reports isFlat=false (that is texture, not a filter; the blit check in screenshot.js is what proves the source is unfiltered).",
       "outfieldShade": {
         "hex": "#3a9631",
-        "rgb": [58, 150, 49]
+        "rgb": [
+          58,
+          150,
+          49
+        ]
       },
       "infieldLit": {
         "hex": "#73ce5a",
-        "rgb": [115, 206, 90]
+        "rgb": [
+          115,
+          206,
+          90
+        ]
       },
       "chalk": {
         "hex": "#f3e7d6",
-        "rgb": [243, 231, 214]
+        "rgb": [
+          243,
+          231,
+          214
+        ]
       },
       "confidence": "low",
       "nNote": "Hand-picked sample regions, one frame, one venue. Recorded to establish that the exact-colour path works end to end, NOT as a palette anyone should build against yet.",
@@ -435,16 +613,34 @@
       ],
       "playClassification": {
         "note": "From contact-sheet reads. S1 = 0..452s, S2 = 640..925s; all backyard-grass.",
-        "grounder-to-RF-runner-safe": ["play-02 (79.1)", "play-04 (120.1)"],
-        "grounder-to-fence": ["play-01 (33.9)"],
-        "quick-out": ["play-00 (24.1, ~2s -- too short to contain a full home->1B)"],
-        "defensive-throw-or-steal": ["play-06 (194.2, steal pad + throw arrow)"],
-        "unclassified-long-plays": ["play-03 (93.3, 18.7s)", "play-05", "play-11 (799.5, 15.9s)", "play-12 (828.4, 20.1s)", "play-13 (855.7, 16.3s)"]
+        "grounder-to-RF-runner-safe": [
+          "play-02 (79.1)",
+          "play-04 (120.1)"
+        ],
+        "grounder-to-fence": [
+          "play-01 (33.9)"
+        ],
+        "quick-out": [
+          "play-00 (24.1, ~2s -- too short to contain a full home->1B)"
+        ],
+        "defensive-throw-or-steal": [
+          "play-06 (194.2, steal pad + throw arrow)"
+        ],
+        "unclassified-long-plays": [
+          "play-03 (93.3, 18.7s)",
+          "play-05",
+          "play-11 (799.5, 15.9s)",
+          "play-12 (828.4, 20.1s)",
+          "play-13 (855.7, 16.3s)"
+        ]
       },
       "recommendation": "A short targeted re-capture following docs/research/bb2001-capture-setup.md step 7 is the clean path, and it is what that step already prescribes ('produce these deliberately instead of hoping they occur'): a handful of home->1B run-outs with the ball poked to LEFT field or an easy infield single, and deliberate pop-ups shallow->deep, each shot name said aloud. Alternatively, per-play frame-by-frame reading of session1's cluttered plays can extract a few low-confidence samples but cannot reach the shot list's n=6.",
       "outcome": {
         "recapture": "local:bb01-capture-session2, 2026-07-24. The recommendation was followed and it worked: the anchor got measured (pace.homeToFirst, n=3) off a venue where the home->1B lane is readable, and the capture contains real pop-ups instead of grounders rolling to the wall.",
-        "confoundsResolved": ["home->1B lane overlap (different venue, lane readable)", "few clean flies (five catchable flies at a spread of depths)"],
+        "confoundsResolved": [
+          "home->1B lane overlap (different venue, lane readable)",
+          "few clean flies (five catchable flies at a spread of depths)"
+        ],
         "confoundPartiallyResolved": "between-pitch: the deliberation problem is solved -- a three-ROI change scan finds each pitch regardless of how long the human dithered -- but the turnaround itself still needs a per-pitch read.",
         "newConfound": "The park venue's white plank fence, crowd and chalk defeat colour-based BALL detection in the wide view (25-30 false candidates per frame). Session1's backyard-grass venue would not have had this. Neither venue is good at everything, which is itself worth knowing before a session3 is planned."
       }
@@ -515,7 +711,10 @@
         "why": "Single sample, and its timestamp no longer locates the play it came from. Session2 reads 40% longer than it."
       },
       "ours": {
-        "constants": ["src/config.ts LIVE.RUNNER_SPEED", "src/systems/geometry.ts HOME/FIRST"],
+        "constants": [
+          "src/config.ts LIVE.RUNNER_SPEED",
+          "src/systems/geometry.ts HOME/FIRST"
+        ],
         "basepathPx": 179.63,
         "runnerSpeedPxPerSec": 42.8,
         "playerRunSpeedMult_main": 1.0,
@@ -538,7 +737,11 @@
       "n": 0,
       "confidence": "estimate",
       "partialReading": {
-        "samples": [74, 2, 300],
+        "samples": [
+          74,
+          2,
+          300
+        ],
         "n": 3,
         "medianMs": 74,
         "spreadMs": 298,
@@ -562,7 +765,9 @@
       "n": 0,
       "confidence": "estimate",
       "partialReading": {
-        "samples": [220],
+        "samples": [
+          220
+        ],
         "n": 1,
         "confidence": "low",
         "source": "local:bb01-capture-session2, the pitch ending in play-01 (cut 54.983)",
@@ -582,7 +787,11 @@
         "whatWouldWork": "Either capture the Player Finder roster screen (session1 screenshot 00000 is one, for a different roster) to read ratings, or measure the corridor as a pure RANGE across many pitchers and fit ARM_MULT to the spread rather than to per-pitch stats. The range approach needs n>=8 spanning visibly strong and weak arms, which this capture does contain."
       },
       "ours": {
-        "constants": ["src/config.ts PITCH_SPEED.MAIN_BASE_MS", "src/config.ts PITCH_SPEED.MAIN_CPU_BASE_MS", "src/config.ts PITCH_SPEED.ARM_MULT"],
+        "constants": [
+          "src/config.ts PITCH_SPEED.MAIN_BASE_MS",
+          "src/config.ts PITCH_SPEED.MAIN_CPU_BASE_MS",
+          "src/config.ts PITCH_SPEED.ARM_MULT"
+        ],
         "mainBaseMs": 800,
         "mainCpuBaseMs": 700,
         "armMult": "clamp(1.25 - 0.05 * pitching, 0.7, 1.25)"
@@ -611,7 +820,12 @@
       },
       "informs": "src/config.ts FLOW.UMP_CALL_DELAY_MS",
       "partialReading": {
-        "samples": [150, 250, 250, 250],
+        "samples": [
+          150,
+          250,
+          250,
+          250
+        ],
         "n": 4,
         "medianMs": 250,
         "confidence": "low",
@@ -650,7 +864,10 @@
           "MIN": 2875,
           "MAX": 5075
         },
-        "ratioToAnchor": [0.685, 1.209],
+        "ratioToAnchor": [
+          0.685,
+          1.209
+        ],
         "anchorMs": 4197
       },
       "session2Attempt": {
@@ -768,7 +985,13 @@
       "n": 0,
       "confidence": "estimate",
       "partialReading": {
-        "samples": [900, 1050, 1150, 783, 1183],
+        "samples": [
+          900,
+          1050,
+          1150,
+          783,
+          1183
+        ],
         "n": 5,
         "medianMs": 1050,
         "confidence": "low",
@@ -825,13 +1048,41 @@
         "attempted": "2026-07-24. Steal family eliminated by eye on both candidates; infield family located but not read to a number."
       },
       "ours": {
-        "constants": ["src/config.ts LIVE.THROW_SPEED_MIN", "src/config.ts LIVE.THROW_SPEED_MAX", "src/config.ts MODES.main.live.cpuThrowSpeedMult"],
+        "constants": [
+          "src/config.ts LIVE.THROW_SPEED_MIN",
+          "src/config.ts LIVE.THROW_SPEED_MAX",
+          "src/config.ts MODES.main.live.cpuThrowSpeedMult"
+        ],
         "min": 277,
         "max": 413,
         "cpuMult": 1.0
       },
       "informs": "src/config.ts LIVE.THROW_SPEED_MIN / THROW_SPEED_MAX",
       "comparisonForm": "throw speed / runner speed -- both px/s in the same space, so the ratio is dimensionless and survives BB being 640x480 while we are 960x640. Reads as plain English: 'a throw travels N times as fast as a kid runs.' OURS = THROW_SPEED_MAX 820 x cpuThrowSpeedMult 1.0 / (RUNNER_SPEED 85 x playerRunSpeedMult 1.0) = 9.65x (player charge range 550-820 gives 6.5-9.65x). BB = measured px/s / (202.3px / 4.200s = 48.17px/s). Sanity band: a throw must land between 3x and 20x a run; outside that the read is wrong."
+    },
+    "chaserElection": {
+      "id": "defense.chaser-election",
+      "category": "defense",
+      "status": "note",
+      "what": "WHICH fielder chases a loose ball is now a decision with its own constants, not a fixed consequence of geometry. Recorded because the two obvious metrics both fail, and both failures are cheap to rediscover and expensive to diagnose.",
+      "finding": "Ranking candidates by 'who can reach the ball soonest' hands essentially every grounder to the PITCHER. A grounder starts at HOME and rolls outward, so P -- 112px from the plate -- is nearest its early path at every spray angle, and wins the race to cut it off before anyone else is close. Adding a distance-to-settle penalty term does not separate them (swept lambda 0..8 ms/px, no crossover). Gating candidacy on the SETTLE point instead does: the pitcher is simply not a candidate for a ball that comes to rest 122px+ from the mound, which is what a real defense does. But that alone is still not enough -- a third baseman can genuinely reach a ball rolling AT the shortstop 125-257ms sooner by charging across in front of him. True on the clock, wrong on a ball field. So the ball belongs to whoever's zone it settles in, and a challenger must beat that fielder by CUT_AHEAD_MS.",
+      "measuredWindow": {
+        "constant": "src/config.ts LIVE.CHASE.CUT_AHEAD_MS",
+        "lowerBound": 257,
+        "upperBound": 523,
+        "chosen": 400,
+        "how": "Cut-off times computed against the real predictLoosePath and the real fielder speeds for four reference launches (grounder settling at the shortstop's feet at two roll speeds, the shallow-right grounder that motivated the work, and a comebacker). Below 257 the third-baseman-poaches-shortstop case returns; above 523 the second baseman stops cutting off the shallow-right grounder and it dribbles through to the outfielder. Stable across both kid and main fielder speeds."
+      },
+      "ours": {
+        "constants": [
+          "src/config.ts LIVE.CHASE.LEASH",
+          "src/config.ts LIVE.CHASE.CUT_AHEAD_MS",
+          "src/config.ts LIVE.CHASE.CUTOFF_GRACE_MS"
+        ]
+      },
+      "informs": "src/config.ts LIVE.CHASE",
+      "notMeasuredAgainstBB": true,
+      "why": "BB2001 was NOT measured for this. The election is tuned against baseball sense and our own geometry, not against a capture -- the same standing caveat as the rest of the defense block. It also makes the CPU defense meaningfully better on grounders (it cuts balls off instead of trailing them), so it is a live candidate for the first feel-tuning pass. Lower CUTOFF_GRACE_MS first (fewer cut-offs), then the corner/middle leashes -- not cpuFielderSpeedMult, which is on the scaled pace path and would desynchronise it."
     }
   }
 }
