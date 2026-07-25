@@ -360,6 +360,55 @@ that was a valid check because no canned fielder animation produces one; in a
 scene containing shadows it is not. The standing rule is what caught it: **a
 tracker brackets and rejects; the picture decides.**
 
+### Fly hang, measured — from the disc, not the ball
+
+The ball is ~5px and BB frequently draws it into a **picture-in-picture inset**
+at the top of the frame instead of onto the field, so for much of a high fly
+there is no ball on the field to track at all. That is why two passes of
+ball-tracking went nowhere.
+
+What BB *does* paint is a big saturated-green ellipse on the grass at the
+predicted landing spot, for exactly as long as the ball is airborne. Measured:
+disc RGB (44–58, 207–223, 26–40) against grass that tops out near g=165, so
+`g≥190 && r≤90 && b≤70` separates them with no overlap. It appears on the frame
+of contact and vanishes on the frame the ball reaches a glove or the ground —
+**verified by eye on all four samples**, including one (play-19) where the ball
+*lands* rather than being caught, so the disc marks end-of-flight either way.
+
+| Play | hang | end | bracket |
+|---|---|---|---|
+| play-05 | 3625 ms | caught | disc present 3.60, gone 3.65 |
+| play-06 | 3100 ms | caught | present 3.067, gone 3.133 |
+| play-11 | 5075 ms | caught (deep) | present 5.05, gone 5.10 |
+| play-19 | 2875 ms | landed | present 2.85, gone 2.90 |
+
+Home runs excluded (play-09 5383 ms, play-18 5417 ms — both real, both longer
+than every in-play sample, but a ball that leaves the park isn't what
+`FLY_HANG_MS` models). play-08 and play-14 draw no disc; play-14 is an infield
+pop that BB banners as INFIELD FLY, so the disc looks like an outfield
+affordance.
+
+**Three ways the automation produced clean, plausible, wrong numbers**, each
+caught only by looking:
+
+- *Two green things.* The landing disc belongs to the ball; the fielder's glow is
+  smaller and moves with him. Blending them ran play-19 past the catch (3.02 s
+  against a verified 2.85 s).
+- *The disc moves.* It tracks the updating prediction, so pinning it to its first
+  bounding box truncated play-06 to 2334 ms when it was plainly still on screen
+  at 2680 ms (true: 3100 ms).
+- *The disc is occluded.* A fielder standing on it hides most of it for several
+  frames, breaking a naive continuous-run detector — play-11 read 3084 ms
+  against a verified 5075 ms.
+
+**The result reversed the assumption it was meant to confirm.** Our flies hang
+long relative to the run by 14–38%, not the 42–106% the superseded n=1 reading
+implied — and *in absolute terms BB's flies hang longer than ours* (2.9–5.1 s vs
+2.0–2.9 s). The defect was never that our flies are slow; it is that our run is
+fast. Consequently **fixing `RUNNER_SPEED` alone overshoots**: at BB's 4200 ms
+anchor our current flies land at ratios 0.476–0.690 against BB's 0.685–1.208,
+i.e. too *short*. BB's range is also wider than ours (1.76× span vs 1.45×).
+
 ### Two plan assumptions that broke
 
 - **"PT" on the ON THE MOUND panel is not a pitching rating.** It is a

@@ -333,3 +333,165 @@ function rgbToHex(r, g, b) {
 }
 
 export { round };
+
+// ---------------------------------------------------------------------------
+// TRACK LINKING -- turning per-frame blobs into things that move.
+//
+// Why this exists. Background subtraction (video.js foregroundBlobs) answers
+// "what moved in this frame", and on the wide field the answer is eleven kids
+// plus a ball plus every stray fragment their arms and legs throw off. Filtering
+// by SIZE does not separate them: a sleeve and a baseball are the same few
+// pixels. Measured on session2, that is exactly where the fly-hang measurement
+// stalled.
+//
+// What DOES separate them is motion across time. A batted ball is the only
+// object on a baseball field that flies a parabola: fast, smooth, and with a
+// near-constant vertical acceleration. A fielder's limb jitters, reverses, and
+// goes nowhere. So: link blobs into tracks first, then judge the tracks.
+//
+// Pure by construction -- blobs in, tracks out -- so it is unit-testable
+// against synthetic trajectories where the answer is known exactly.
+// ---------------------------------------------------------------------------
+
+/**
+ * Link per-frame blobs into tracks by nearest-neighbour association.
+ *
+ * `frames` is an array (one entry per frame) of arrays of points carrying at
+ * least {x, y}. Everything else on a point is preserved, so callers can keep
+ * pixel counts or bboxes and use them downstream.
+ *
+ * `maxGap` is the load-bearing option, not a nicety. Occlusion is silent and
+ * routine here: a ball crossing the fence, a base, or a white uniform simply
+ * stops differing from the background for a few frames (video.test.js pins that
+ * behaviour). A linker that ends a track at the first missing frame would report
+ * a ball "landing" every time it passed something pale. Tracks are therefore
+ * allowed to coast across a short gap and resume.
+ *
+ * Greedy nearest-neighbour, deliberately: a global assignment would be more
+ * correct in dense scenes and impossible to reason about when it goes wrong,
+ * and every number this instrument produces has to be defensible frame by frame.
+ */
+export function linkTracks(frames, { maxJump = 40, maxGap = 3, minLen = 4 } = {}) {
+  const open = [];
+  const done = [];
+
+  frames.forEach((pts, i) => {
+    const taken = new Set();
+    // Longest tracks claim their continuation first: an established trajectory
+    // is better evidence of what a point IS than a one-frame speck is.
+    for (const tr of [...open].sort((a, b) => b.pts.length - a.pts.length)) {
+      const last = tr.pts[tr.pts.length - 1];
+      // Extrapolate from the last step so a fast ball is predicted forward
+      // rather than being expected to sit still. This is what lets maxJump stay
+      // tight enough to reject a nearby fielder.
+      const prev = tr.pts.length >= 2 ? tr.pts[tr.pts.length - 2] : null;
+      const dt = i - last.i;
+      const px = prev ? last.x + ((last.x - prev.x) / (last.i - prev.i)) * dt : last.x;
+      const py = prev ? last.y + ((last.y - prev.y) / (last.i - prev.i)) * dt : last.y;
+
+      let best = -1;
+      let bestD = Infinity;
+      pts.forEach((p, j) => {
+        if (taken.has(j)) return;
+        const d = Math.hypot(p.x - px, p.y - py);
+        if (d < bestD) { bestD = d; best = j; }
+      });
+      if (best >= 0 && bestD <= maxJump * Math.max(1, dt)) {
+        taken.add(best);
+        tr.pts.push({ ...pts[best], i });
+      }
+    }
+    // Anything unclaimed starts its own track.
+    pts.forEach((p, j) => { if (!taken.has(j)) open.push({ pts: [{ ...p, i }] }); });
+    // Retire tracks that have gone quiet for longer than the gap allowance.
+    for (let k = open.length - 1; k >= 0; k--) {
+      if (i - open[k].pts[open[k].pts.length - 1].i > maxGap) done.push(open.splice(k, 1)[0]);
+    }
+  });
+
+  return [...done, ...open]
+    .filter((t) => t.pts.length >= minLen)
+    .map((t) => ({ pts: t.pts, i0: t.pts[0].i, i1: t.pts[t.pts.length - 1].i }));
+}
+
+/** Least-squares polynomial fit (degree 1 or 2) + max residual. Tiny by design. */
+function polyFit(xs, ys, deg) {
+  const n = xs.length;
+  const m = deg + 1;
+  const A = Array.from({ length: m }, () => new Array(m).fill(0));
+  const b = new Array(m).fill(0);
+  for (let r = 0; r < m; r++) {
+    for (let c = 0; c < m; c++) for (let k = 0; k < n; k++) A[r][c] += xs[k] ** (r + c);
+    for (let k = 0; k < n; k++) b[r] += ys[k] * xs[k] ** r;
+  }
+  // Gaussian elimination with partial pivoting.
+  for (let c = 0; c < m; c++) {
+    let piv = c;
+    for (let r = c + 1; r < m; r++) if (Math.abs(A[r][c]) > Math.abs(A[piv][c])) piv = r;
+    [A[c], A[piv]] = [A[piv], A[c]];
+    [b[c], b[piv]] = [b[piv], b[c]];
+    if (Math.abs(A[c][c]) < 1e-12) return null;
+    for (let r = c + 1; r < m; r++) {
+      const f = A[r][c] / A[c][c];
+      for (let k = c; k < m; k++) A[r][k] -= f * A[c][k];
+      b[r] -= f * b[c];
+    }
+  }
+  const coef = new Array(m).fill(0);
+  for (let r = m - 1; r >= 0; r--) {
+    let s = b[r];
+    for (let k = r + 1; k < m; k++) s -= A[r][k] * coef[k];
+    coef[r] = s / A[r][r];
+  }
+  const at = (x) => coef.reduce((acc, cf, p) => acc + cf * x ** p, 0);
+  const resid = Math.max(...xs.map((x, k) => Math.abs(ys[k] - at(x))));
+  return { coef, maxResid: resid, at };
+}
+
+/**
+ * Is this track a flying ball?
+ *
+ * The signature, in the order it discriminates:
+ *
+ *  - **Ballistic.** Under BB's fixed camera a batted ball's screen x is very
+ *    close to linear in time and its screen y very close to quadratic. Fitting
+ *    both and taking the WORST residual is the single strongest separator --
+ *    a limb cannot hold a parabola for a dozen frames.
+ *  - **Fast.** The ball outruns everything else on the field.
+ *  - **Going somewhere.** Net displacement, which rejects a jitter that averages
+ *    a high speed while staying put.
+ *
+ * Returns the measurements and a boolean rather than a bare verdict, so a
+ * caller can see WHY something did or did not qualify -- and so a threshold
+ * that is wrong for a venue can be re-tuned against evidence rather than guessed.
+ */
+export function trackMotion(track, { minSpeed = 2.5, maxResid = 6, minSpan = 40 } = {}) {
+  const p = track.pts;
+  const ts = p.map((q) => q.i);
+  const xs = p.map((q) => q.x);
+  const ys = p.map((q) => q.y);
+  const span = Math.hypot(xs[xs.length - 1] - xs[0], ys[ys.length - 1] - ys[0]);
+  const frames = ts[ts.length - 1] - ts[0];
+  let path = 0;
+  for (let k = 1; k < p.length; k++) path += Math.hypot(xs[k] - xs[k - 1], ys[k] - ys[k - 1]);
+  const speed = frames > 0 ? path / frames : 0;
+
+  const fx = polyFit(ts, xs, 1);
+  const fy = polyFit(ts, ys, 2);
+  const resid = fx && fy ? Math.max(fx.maxResid, fy.maxResid) : Infinity;
+
+  return {
+    n: p.length,
+    i0: ts[0],
+    i1: ts[ts.length - 1],
+    frames,
+    span: round(span, 1),
+    speed: round(speed, 2),
+    resid: round(resid, 2),
+    // The vertical acceleration term: gravity's fingerprint, positive because
+    // screen y grows downward. Reported for inspection, not thresholded --
+    // BB's arcs are stylised and their "g" is not a physical constant.
+    accelY: fy ? round(2 * fy.coef[2], 3) : null,
+    ballistic: speed >= minSpeed && resid <= maxResid && span >= minSpan,
+  };
+}

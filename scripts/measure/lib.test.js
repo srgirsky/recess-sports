@@ -13,6 +13,8 @@ import {
   simConstantFromRatio,
   ourLegRealMs,
   realMsForSimMs,
+  linkTracks,
+  trackMotion,
 } from './lib.js';
 
 describe('robust statistics', () => {
@@ -266,5 +268,87 @@ describe('conversion to our units', () => {
     // measurement sets ratios and TEMPO stays a free product decision.
     expect(at(0.6)).toBeCloseTo(at(1.0), 9);
     expect(at(0.6)).toBeCloseTo(at(0.35), 9);
+  });
+});
+
+describe('track linking — separating a ball from eleven kids', () => {
+  // A synthetic live play: one ball on a real parabola, plus "fielders" that
+  // drift and jitter the way limbs do. Ground truth is authored, so the test
+  // asserts the ball is found AND that nothing else is mistaken for it.
+  const BALL = (i) => ({ x: 40 + 7 * i, y: 300 - 22 * i + 1.1 * i * i });
+  const FIELDER = (i, seed) => ({
+    // Slow drift with a wobble -- fast enough to be "moving", never ballistic.
+    x: 200 + seed * 60 + 1.2 * i + 6 * Math.sin(i * 0.9 + seed),
+    y: 250 + seed * 20 + 0.8 * i + 6 * Math.cos(i * 1.1 + seed),
+  });
+  const N = 20;
+  const scene = () =>
+    Array.from({ length: N }, (_, i) => [
+      BALL(i),
+      ...Array.from({ length: 4 }, (_, s) => FIELDER(i, s)),
+    ]);
+
+  it('recovers one unbroken track per moving object', () => {
+    const tracks = linkTracks(scene(), { maxJump: 40, maxGap: 3, minLen: 5 });
+    expect(tracks).toHaveLength(5);
+    for (const t of tracks) expect(t.pts).toHaveLength(N);
+  });
+
+  it('picks out the ball by its parabola, not by being fastest', () => {
+    const tracks = linkTracks(scene(), { maxJump: 40, maxGap: 3, minLen: 5 });
+    const scored = tracks.map((t) => ({ t, m: trackMotion(t) }));
+    const ballistic = scored.filter((s) => s.m.ballistic);
+
+    // Exactly one, and it is the one that starts where the ball starts.
+    expect(ballistic).toHaveLength(1);
+    expect(ballistic[0].t.pts[0].x).toBeCloseTo(BALL(0).x, 5);
+
+    // And the fit recovers the authored vertical acceleration (2 * 1.1).
+    expect(ballistic[0].m.accelY).toBeCloseTo(2.2, 1);
+    expect(ballistic[0].m.resid).toBeLessThan(0.01);
+
+    // The fielders are rejected on SHAPE, not on speed -- assert at least one
+    // of them was moving fast enough to pass a naive speed-only filter, so the
+    // test would fail if `ballistic` degenerated into "the quickest thing".
+    const rejected = scored.filter((s) => !s.m.ballistic);
+    expect(rejected.some((s) => s.m.speed >= 2.5)).toBe(true);
+  });
+
+  it('coasts a track across an occlusion instead of ending it', () => {
+    // THE FAILURE THIS PREVENTS. A ball crossing a fence, a base or a white
+    // uniform stops differing from the background for a few frames. If the
+    // linker ended the track there, the ball would appear to "land" every time
+    // it passed something pale -- a wrong hang time that looks perfectly clean.
+    const frames = scene().map((pts, i) => (i >= 8 && i <= 10 ? pts.slice(1) : pts));
+    const tracks = linkTracks(frames, { maxJump: 40, maxGap: 3, minLen: 5 });
+    const ball = tracks.map((t) => ({ t, m: trackMotion(t) })).filter((s) => s.m.ballistic);
+
+    expect(ball).toHaveLength(1);
+    // One track spanning the whole flight, with the gap simply missing from it.
+    expect(ball[0].m.i0).toBe(0);
+    expect(ball[0].m.i1).toBe(N - 1);
+    expect(ball[0].t.pts).toHaveLength(N - 3);
+  });
+
+  it('does end a track when the gap is longer than the allowance', () => {
+    // The other half of the same rule: coasting must not be unlimited, or two
+    // unrelated objects get welded into one implausible track.
+    const frames = scene().map((pts, i) => (i >= 8 && i <= 13 ? pts.slice(1) : pts));
+    const tracks = linkTracks(frames, { maxJump: 40, maxGap: 3, minLen: 3 });
+    const starts = tracks.map((t) => t.i0).sort((a, b) => a - b);
+    expect(starts).toContain(0);
+    expect(starts).toContain(14);
+  });
+
+  it('reports why a track failed rather than just failing it', () => {
+    // A short, slow, straight drift: fails on speed and span, and the caller
+    // can see which. A bare boolean would make a mis-tuned threshold invisible.
+    const drift = Array.from({ length: 10 }, (_, i) => [{ x: 100 + 0.4 * i, y: 100 }]);
+    const [t] = linkTracks(drift, { minLen: 5 });
+    const m = trackMotion(t);
+    expect(m.ballistic).toBe(false);
+    expect(m.speed).toBeLessThan(2.5);
+    expect(m.span).toBeLessThan(40);
+    expect(m.resid).toBeLessThan(6);      // it IS smooth -- just going nowhere
   });
 });

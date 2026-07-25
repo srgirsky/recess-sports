@@ -223,6 +223,21 @@
       },
       "confidence": "high",
       "note": "463 samples at 2s spacing, no ambiguous ones and no overlap between the classes. 737s of game material -- 2.3x what an earlier hand-built index had assumed was in scope. Measurement is confined to the two game runs."
+    },
+    "landingDisc": {
+      "id": "instrument.landing-disc",
+      "category": "instrument",
+      "status": "note",
+      "what": "How to time a BB2001 fly ball, after tracking the ball itself failed twice.",
+      "finding": "BB draws a big saturated-green ellipse on the grass at the predicted landing spot for exactly as long as the ball is in the air. Measured: disc RGB (44-58, 207-223, 26-40) against grass that tops out around g=165, so `g>=190 && r<=90 && b<=70` separates them with no overlap at all. It appears on the frame of contact and vanishes on the frame the ball reaches a glove or the ground.",
+      "whyNotTheBall": "The ball is ~5px, and in the wide view BB frequently draws it into a picture-in-picture inset at the top of the frame instead of onto the field, so for much of a high fly there is no ball on the field to track. The disc is ~96x40px, always on the field, and uniquely coloured. It is the better instrument by every measure.",
+      "gotchas": [
+        "There are TWO green things. The landing disc is large and belongs to the ball; the active fielder's glow is smaller and moves with him. Taking all green pixels together blends them and the lifetime runs past the catch (play-19 read 3.02s that way against an eye-verified 2.85s).",
+        "The disc MOVES. It tracks the updating landing prediction, so pinning it to its first bounding box truncates the measurement -- play-06 read 2334ms that way when the disc was plainly still on screen at 2680ms, and the true value is 3100ms.",
+        "The disc is OCCLUDED. A fielder standing on it can hide most of it for several frames, which breaks a naive continuous-run detector -- play-11 read 3084ms that way against an eye-verified 5075ms.",
+        "All three of those produced clean, plausible, wrong numbers. Every sample in pace.flyHang was therefore read by eye off a zoomed sheet; the detector's role was to say where to look."
+      ],
+      "confidence": "high"
     }
   },
   "geometry": {
@@ -587,17 +602,27 @@
     "flyHang": {
       "id": "pace.fly-hang",
       "category": "pace",
-      "status": "awaiting-measurement",
+      "status": "known-drift",
       "what": "Deep-fly hang time, as a RATIO to the home->1B anchor. The ratio is the durable form: absolute hang times cannot be compared across two games with different field scales.",
-      "measured": null,
-      "n": 0,
-      "confidence": "estimate",
+      "measured": {
+        "minMs": 2875,
+        "medianMs": 3362.5,
+        "maxMs": 5075,
+        "ratioToAnchor": {
+          "min": 0.685,
+          "median": 0.801,
+          "max": 1.208
+        }
+      },
+      "n": 4,
+      "confidence": "low",
       "priorReading": {
         "value": 2000,
         "ratioToAnchor": 0.667,
         "source": "youtube:YMmqNpmA60U",
         "n": 1,
-        "superseded": true
+        "superseded": true,
+        "why": "One sample, off a stream whose timestamps no longer locate it, and it is now contradicted: it claimed a ratio of 0.667 where the measured range is 0.685-1.208."
       },
       "ours": {
         "constant": "src/config.ts LIVE.LAUNCH.FLY_HANG_MS",
@@ -605,9 +630,9 @@
           "MIN": 2000,
           "MAX": 2900
         },
-        "ratioToAnchor": [0.947, 1.372]
+        "ratioToAnchor": [0.946, 1.372],
+        "anchorMs": 2113
       },
-      "oursNote": "Our worst suspected defect: against the superseded reading our flies hang 42%-106% longer RELATIVE TO THE RUN. Note this was always a ratio claim -- an earlier comment held that liveplay steps on a tempo-scaled delta, but GameScene passes Phaser's raw delta and there is no tempo anywhere in src/, so sim-ms and real-ms are the same thing today. The defect survives that correction unchanged, because both sides of a ratio scale together.",
       "session2Attempt": {
         "outcome": "NOT MEASURED. Still awaiting-measurement after session2, for a different reason than session1.",
         "whatSession2Fixed": "The shot list worked: there ARE deliberate pop-ups this time, five of them caught in play at a usable spread of depths (play-05 shallow-medium, play-08 shallow, play-11 medium, play-14 infield pop, play-19 medium-deep). Contact time is also exact and free -- it is the findCuts cut time, since BB cuts to the wide view on the frame of contact.",
@@ -616,13 +641,46 @@
         "alsoNote": "Four of session2's twenty plays are home runs. Those are worthless for this metric (the ball never comes down in play) and are why 20 plays yielded only 5 candidates."
       },
       "informs": "src/config.ts LIVE.LAUNCH.FLY_HANG_MS",
-      "pass2Attempt": {
-        "outcome": "STILL NOT MEASURED. Pass 2 built the tool the blocker called for and found the blocker was one layer deeper.",
-        "built": "video.js temporalMedian + foregroundBlobs (see instrument.background-subtraction), validated against synthetic ground truth. It does exactly what was asked of it: the park venue's white fence, crowd and chalk vanish into the background and stop being candidates.",
-        "whyStillBlocked": "Removing the STATIC clutter is not enough in the wide view, because the remaining clutter is not static. Eleven actors are moving during a live play and their extremities throw off small fragments that pass any size filter, so 'the smallest moving blob' is not the ball. Size alone cannot separate them.",
-        "whatWouldWork": "Link blobs frame-to-frame into TRACKS and select on motion -- fast, smooth, roughly parabolic -- rather than on size. The ball is the only object on the field with that signature. Then confirm each sample by eye, as always. Candidates are unchanged: plays 05, 08, 11, 14, 19.",
-        "cost": "Bounded and known: one linking pass over the existing primitive, then two sheet reads per play across five plays."
-      }
+      "statusChangedAt": "2026-07-24",
+      "definition": "Contact -> the ball is caught or first touches the ground. Contact is free and exact: it is the findCuts cut time, because BB cuts to the wide view on the frame of contact.",
+      "source": "local:bb01-capture-session2",
+      "spread": 2200,
+      "confidenceNote": "Derived 'low' because relative spread is 0.65, and that is the RIGHT arithmetic applied to the wrong shape of quantity: FLY_HANG_MS is a MIN/MAX RANGE, so the spread here is the signal (a shallow fly against a deep one), not measurement error. Each individual sample is pinned to +-50ms -- 1.4% at 3.6s -- because all four were read frame by frame off zoomed sheets. Not hand-raised: confidence() stays derived, and the caveat is recorded instead.",
+      "samples": [
+        {
+          "play": "play-05 (cut 202.817)",
+          "ms": 3625,
+          "end": "caught",
+          "bracket": "disc present 3.60, gone 3.65"
+        },
+        {
+          "play": "play-06 (cut 219.867)",
+          "ms": 3100,
+          "end": "caught",
+          "bracket": "disc present 3.067, gone 3.133"
+        },
+        {
+          "play": "play-11 (cut 350.25)",
+          "ms": 5075,
+          "end": "caught (deep)",
+          "bracket": "disc present 5.05, gone 5.10"
+        },
+        {
+          "play": "play-19 (cut 629.5)",
+          "ms": 2875,
+          "end": "landed (not caught)",
+          "bracket": "disc present 2.85, gone 2.90"
+        }
+      ],
+      "method": "BB's LANDING-PREVIEW DISC, not the ball. See instrument.landing-disc for why the ball itself is not trackable here. The disc appears on the frame of contact and vanishes on the frame the flight ends -- verified by eye on all four samples, including one where the ball LANDS rather than being caught, so the disc marks end-of-flight either way.",
+      "excluded": [
+        "play-09 (5383ms) and play-18 (5417ms) are HOME RUNS. Their discs are real and both read ~5.4s, but a ball that leaves the park is not what LIVE.LAUNCH.FLY_HANG_MS models -- our sim decides homers at launch and they never enter the live-play hang. Recorded here rather than silently dropped, and worth noting they are longer than every in-play sample.",
+        "play-08 and play-14 draw no landing disc at all. play-14 is an infield pop that BB banners as INFIELD FLY; the disc appears to be an outfield affordance."
+      ],
+      "driftPctMin": 38.3,
+      "driftPctMax": 13.6,
+      "driftNote": "Our flies DO hang long relative to the run, but by 14-38% -- not the 42-106% the superseded n=1 reading implied. And the absolute direction is the opposite of what everyone assumed: BB's flies hang 2.9-5.1s against our 2.0-2.9s, i.e. LONGER than ours. The defect was never that our flies are slow; it is that our RUN is fast.",
+      "retuneWarning": "Fixing LIVE.RUNNER_SPEED alone OVERSHOOTS. At a 4200ms anchor our current 2000-2900ms flies would sit at ratios 0.476-0.690 against BB's 0.685-1.208 -- too SHORT at both ends. To match BB, FLY_HANG_MS has to go UP to about {MIN: 2875, MAX: 5075} at the same time. Note also that BB's range is WIDER than ours (a 1.76x span against our 1.45x), so shallow and deep flies are more different from each other than we make them."
     },
     "betweenPitch": {
       "id": "pace.between-pitch",

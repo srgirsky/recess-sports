@@ -268,18 +268,50 @@ describe('pace — the anchor is measured; the rest stays pinned', () => {
     expect(rec.n).toBeGreaterThanOrEqual(3);
   });
 
-  it('fly hang is unchanged, and its ratio to the anchor is what the record says', () => {
+  it('fly hang drifts from BB by exactly the recorded RATIO, at both ends', () => {
     // The ratio is the durable form -- absolute hang times are meaningless
-    // across two games with different field scales -- so the ratio is what
-    // gets pinned, not the raw milliseconds.
+    // across two games with different field scales -- so the ratio is what gets
+    // pinned, not the raw milliseconds. Both ends are asserted separately
+    // because FLY_HANG_MS is a RANGE and the two ends drift by very different
+    // amounts (38% vs 14%); a single combined check would hide that.
     const rec = M.pace.flyHang;
-    expect(rec.status).toBe('awaiting-measurement');
+    expect(rec.status).toBe('known-drift');
     expect(LIVE.LAUNCH.FLY_HANG_MS.MIN).toBe(rec.ours.value.MIN);
     expect(LIVE.LAUNCH.FLY_HANG_MS.MAX).toBe(rec.ours.value.MAX);
 
     const anchor = ourHomeToFirstMs('main');
-    expect(round(ratioToAnchor(LIVE.LAUNCH.FLY_HANG_MS.MIN, anchor), 3)).toBeCloseTo(rec.ours.ratioToAnchor[0], 2);
-    expect(round(ratioToAnchor(LIVE.LAUNCH.FLY_HANG_MS.MAX, anchor), 3)).toBeCloseTo(rec.ours.ratioToAnchor[1], 2);
+    const ourMin = ratioToAnchor(LIVE.LAUNCH.FLY_HANG_MS.MIN, anchor);
+    const ourMax = ratioToAnchor(LIVE.LAUNCH.FLY_HANG_MS.MAX, anchor);
+    expect(round(ourMin, 3)).toBeCloseTo(rec.ours.ratioToAnchor[0], 2);
+    expect(round(ourMax, 3)).toBeCloseTo(rec.ours.ratioToAnchor[1], 2);
+
+    // BB's side, derived from the record's own samples rather than restated.
+    const anchorBB = M.pace.homeToFirst.measured;
+    const bbMin = Math.min(...rec.samples.map((s) => s.ms)) / anchorBB;
+    const bbMax = Math.max(...rec.samples.map((s) => s.ms)) / anchorBB;
+    expect(round(bbMin, 3)).toBeCloseTo(rec.measured.ratioToAnchor.min, 2);
+    expect(round(bbMax, 3)).toBeCloseTo(rec.measured.ratioToAnchor.max, 2);
+
+    expect(round((ourMin / bbMin - 1) * 100, 1)).toBeCloseTo(rec.driftPctMin, 0);
+    expect(round((ourMax / bbMax - 1) * 100, 1)).toBeCloseTo(rec.driftPctMax, 0);
+
+    // n and the sample list must agree -- the guard against an untraceable number.
+    expect(rec.samples).toHaveLength(rec.n);
+  });
+
+  it('keeps the retune trap on the record: fixing the runner alone overshoots', () => {
+    // The most useful thing this pass learned, and the easiest to lose. At BB's
+    // anchor our CURRENT fly range lands BELOW BB's, so a retune that slows the
+    // runner without lengthening the flies makes them too SHORT -- the opposite
+    // of the defect everyone assumed. Assert the arithmetic that says so, so it
+    // cannot quietly stop being true.
+    const rec = M.pace.flyHang;
+    const anchorBB = M.pace.homeToFirst.measured;
+    const afterRunnerFixMin = LIVE.LAUNCH.FLY_HANG_MS.MIN / anchorBB;
+    const afterRunnerFixMax = LIVE.LAUNCH.FLY_HANG_MS.MAX / anchorBB;
+    expect(afterRunnerFixMin).toBeLessThan(rec.measured.ratioToAnchor.min);
+    expect(afterRunnerFixMax).toBeLessThan(rec.measured.ratioToAnchor.max);
+    expect(rec.retuneWarning).toBeTruthy();
   });
 
   it('between-pitch is unchanged', () => {
