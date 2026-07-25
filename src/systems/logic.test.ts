@@ -40,7 +40,16 @@ import {
   type LivePlayState,
 } from './liveplay';
 import { resolveLiveParams, getMode, setMode } from './mode';
-import { LIVE, MODES, TIMING, FLOW } from '../config';
+import {
+  LIVE,
+  MODES,
+  TIMING,
+  FLOW,
+  PLATE_VIEW,
+  PITCH_METER_MS,
+  PITCH_AUTO_THROW_MS,
+  NET,
+} from '../config';
 import type { PositionId } from './geometry';
 import {
   pitchBandFromError,
@@ -115,17 +124,23 @@ describe('game mode', () => {
     expect(Object.values(MODES.kid.features).every((f) => f === false)).toBe(true);
   });
 
-  it('the pitch clock can only gate modes that actually have swing cards', () => {
-    // THE HANG RISK. GameScene.pitchWhenReady() parks the pitch until the batter
-    // taps the swing-card stack, gated on `features.swingChoice`. If a mode
-    // without cards ever got swingChoice:true, the pitch would wait for a tap
-    // that can never arrive and the game would stall forever -- kid, TEE-BALL,
-    // EASY and spectator (which forces mode 'kid') all rely on this being false.
-    expect(MODES.kid.features.swingChoice).toBe(false);
-    expect(MODES.main.features.swingChoice).toBe(true);
-    // And the clock must outlast the settle beat, or it would fire before the
-    // batter has even been shown the cards.
-    expect(FLOW.PITCH_CLOCK_MS).toBeGreaterThan(FLOW.BETWEEN_PITCH_MS);
+  it('the between-pitch ceremony fits inside the beat it fills', () => {
+    // The ceremony is animation for dead time we ALREADY wait -- pace.betweenPitch
+    // measured BB at 2550ms and FLOW.BETWEEN_PITCH_MS matches it. GameScene
+    // subtracts the ceremony budget from that beat, so if the budget ever grew
+    // past it the subtraction would floor at 0 and the ceremony would silently
+    // start ADDING time to every pitch. That is the regression this catches.
+    const c = PLATE_VIEW.CEREMONY;
+    expect(c.HOLD_MS + c.RETURN_MS + c.SET_MS).toBeLessThanOrEqual(FLOW.BETWEEN_PITCH_MS);
+  });
+
+  it('the mound idle clock leaves the remote peer room to wait', () => {
+    // launchPitchMain's netWaitFor('pitchPlan') has no timeout of its own -- it
+    // relies on the pitching device's auto-pick to guarantee liveness. The whole
+    // worst-case mound turn must therefore land before the remote gives up, or
+    // the guest declares a disconnect on a peer who was merely thinking.
+    const worstCase = FLOW.PITCH_CLOCK_MS + PITCH_METER_MS + PITCH_AUTO_THROW_MS;
+    expect(worstCase).toBeLessThan(NET.ACTION_TIMEOUT_MS);
   });
 
   it('defaults to main for brand-new players', () => {

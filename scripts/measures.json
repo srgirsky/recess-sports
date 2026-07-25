@@ -825,15 +825,22 @@
       "ours": {
         "constant": "src/config.ts FLOW.PITCH_CLOCK_MS",
         "value": 10000,
-        "behaviour": "the pitch waits for the batter to tap the swing-card stack; the clock is the backstop. BETWEEN_PITCH_MS is now the MINIMUM before the gate opens, not the trigger."
+        "behaviour": "the MOUND idle clock: when the human is pitching and never picks a pitch, the game picks a fastball down the middle for them. Batting is not gated on input at all -- the pitch fires on FLOW.BETWEEN_PITCH_MS, with PLATE_VIEW.CEREMONY animating that wait and any tap skipping it."
       },
-      "informs": "src/config.ts FLOW.BETWEEN_PITCH_MS and the GameScene pitch scheduling",
-      "supersedes": {
-        "was": "BB DOES NOT USE A TIMER.",
-        "why": "OVERCLAIM, corrected on the player's report. The footage only showed that the observed gaps (10.7 / 11.6 / 19.5s) never REACHED a clock -- not that none exists. Seth, who has played the game, reports there IS a pitch clock, just long enough that normal play never hits it. Absence of evidence was written up as evidence of absence; the corrected claim is the one the footage actually supports.",
-        "lesson": "A measurement can only bound what it observed. 'No gap reached X' does not license 'there is no X'."
-      },
-      "conformNote": "RETUNED 2026-07-25. Gated on features.swingChoice && localHumanBats(), so kid / tee-ball / EASY (no cards exist), spectator (swallows taps) and the net guest (message-driven) keep firing on their own and cannot hang."
+      "informs": "src/config.ts FLOW.BETWEEN_PITCH_MS, PLATE_VIEW.CEREMONY, and the GameScene pitch scheduling",
+      "supersedes": [
+        {
+          "was": "BB DOES NOT USE A TIMER.",
+          "why": "OVERCLAIM, corrected on the player's report. The footage only showed that the observed gaps (10.7 / 11.6 / 19.5s) never REACHED a clock -- not that none exists. Seth, who has played the game, reports there IS a pitch clock, just long enough that normal play never hits it. Absence of evidence was written up as evidence of absence; the corrected claim is the one the footage actually supports.",
+          "lesson": "A measurement can only bound what it observed. 'No gap reached X' does not license 'there is no X'."
+        },
+        {
+          "was": "The clock is a BATTING-side backstop: BB waits for the batter to choose a swing, so we gate the pitch on a swing-card tap.",
+          "why": "WRONG MECHANISM, corrected on the player's report. The long gaps are real, but they are not BB waiting for a swing selection -- they are the between-pitch CEREMONY (catcher throws back, pitcher gets set) playing out, which is skippable, and Seth was skipping it. The clock he was describing is on the PITCHING side. The numbers in `measured` were never wrong; the story told about what produced them was, and the gate built on that story shipped in #24 and is reverted here.",
+          "lesson": "A gap is a duration, not an explanation. Timing footage bounds HOW LONG a beat lasts and says nothing about WHAT fills it -- and an inferred mechanism dressed as a measured one is the more dangerous error, because it inherits the measurement's credibility."
+        }
+      ],
+      "conformNote": "RETUNED 2026-07-25, then re-scoped the same day. The clock now guards only the mound (beginPitchTurn's auto-pick); nothing on the batting side waits for input, so no mode can hang on a tap that never comes. The worst-case mound turn (clock + PITCH_METER_MS + PITCH_AUTO_THROW_MS = 11.9s) stays under NET.ACTION_TIMEOUT_MS, which launchPitchMain's netWaitFor depends on for liveness."
     },
     "flowCoherence": {
       "id": "pace.flow-coherence",

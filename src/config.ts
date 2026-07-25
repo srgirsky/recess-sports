@@ -146,12 +146,15 @@ export const FLOW = {
   /** Big-moment banners: STRIKEOUT / WALK / runs scored / walk-off. */
   BIG_BANNER_HOLD_MS: 3179,
   /**
-   * THE PITCH CLOCK (CLASSIC, human batting). After the settle beat the pitch
-   * waits for the batter to tap the swing-card stack; this is the backstop so
-   * play cannot stall. Matches BB's SHAPE rather than a measured value: BB has a
-   * clock, but it is long enough that normal play never reaches it -- measured
-   * gaps between pitches there are 10.7s, 11.6s and 19.5s (pace.pitchCadence).
-   * Only applies where swing cards exist; kid/tee/spectator keep their timer.
+   * THE MOUND IDLE CLOCK. You are pitching and dithering over the card menu;
+   * this is how long before the game picks for you (fastball, down the middle)
+   * so play cannot stall. BB's clock is on this side too -- long enough that
+   * normal play never reaches it (pace.pitchCadence).
+   *
+   * ⚠️ Load-bearing for two-device play: launchPitchMain's netWaitFor('pitchPlan')
+   * relies on this firing to guarantee liveness, and the whole mound turn
+   * (this + PITCH_METER_MS + PITCH_AUTO_THROW_MS) must stay under
+   * NET.ACTION_TIMEOUT_MS or the remote gives up first. A test asserts it.
    */
   PITCH_CLOCK_MS: 10000,
 };
@@ -316,6 +319,17 @@ export const PLATE_VIEW = {
   /** The rig pitcher's between-pitch idle: tossing the ball up and catching
    *  it (BB2001's mound idle). Render-only, stops on windup. */
   TOSS: { AMP: 24, MS: 640 },
+  /**
+   * The between-pitch ceremony: the ball rests where it crossed, the catcher
+   * throws it back, the pitcher gets set. BB plays this every pitch and lets
+   * you skip it.
+   *
+   * These do NOT add time. pace.betweenPitch measured BB's "ball arrives ->
+   * pitcher has it back" at 2550ms and FLOW.BETWEEN_PITCH_MS already waits that
+   * long -- this fills the window instead of leaving it empty. A test asserts
+   * HOLD + RETURN + SET stays inside FLOW.BETWEEN_PITCH_MS.
+   */
+  CEREMONY: { HOLD_MS: 600, RETURN_MS: 800, SET_MS: 400 },
   /** Inside-pitch dodge (BB2001: the batter leans out of the way mid-flight).
    *  Fires when the pitch will cross ≥ X_BEYOND px past the zone's batter-side
    *  edge, at AT_FRAC of the flight. Deterministic off plan.actual — no rng. */

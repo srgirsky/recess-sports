@@ -363,9 +363,10 @@ export class GameScene extends Phaser.Scene {
   private netAwait?: 'pitchPlan' | 'swing';
   private netResume?: () => void;
   private netWaitTimer?: Phaser.Time.TimerEvent;
-  /** Pitch clock: set while the pitch is parked waiting for the batter. */
-  private batterClock?: Phaser.Time.TimerEvent;
-  private batterResume?: () => void;
+  /** Between-pitch ceremony: every in-flight tween/timer, killed together. */
+  private ceremonyJobs: Array<Phaser.Tweens.Tween | Phaser.Time.TimerEvent> = [];
+  private ceremonyResume?: () => void;
+  private ceremonyBall?: Phaser.GameObjects.Container;
   private lastNetFrameAt = 0;
 
   /** Host-authoritative broadcast — no-op unless we're the net host. */
@@ -412,45 +413,108 @@ export class GameScene extends Phaser.Scene {
   }
 
   /**
-   * THE PITCH CLOCK. BB waits for the batter to pick a swing before it throws --
-   * measured gaps between its pitches are 10.7s, 11.6s and 19.5s, so its clock
-   * never binds in normal play (pace.pitchCadence in scripts/measures.json). We
-   * fired on a fixed timer regardless, which is what made pitching feel rushed.
+   * THE BETWEEN-PITCH CEREMONY: the catcher throws the ball back and the pitcher
+   * gets set, then the pitch goes. BB plays this every pitch and lets you skip
+   * it -- skipping it is what made our pace feel wrong by comparison, because we
+   * had the dead time without the animation that belongs in it.
    *
-   * Same shape as netWaitFor: park the transition, keep a NAMED timer, always
-   * have a fallback. Gated on exactly `swingChoice && localHumanBats()` -- the
-   * guard showSwingChips already uses -- so kid / tee-ball / EASY (no cards
-   * exist), spectator (swallows taps) and the net guest (message-driven, never
-   * schedules locally) all keep firing on their own and cannot hang waiting for
-   * a tap that can never arrive.
+   * It does NOT slow anything down. pace.betweenPitch measured BB's "ball
+   * arrives -> pitcher has it back" at 2550ms and FLOW.BETWEEN_PITCH_MS already
+   * waits exactly that long; this fills that window instead of leaving it empty.
+   * The CEREMONY budget is asserted to fit inside it.
+   *
+   * Same parked-transition shape as netWaitFor: stash the continuation, keep the
+   * jobs in a NAMED registry, and make the finish idempotent so a skip tap and
+   * the natural end cannot both fire it.
    */
-  private pitchWhenReady(): void {
-    if (!this.features.swingChoice || !this.localHumanBats()) {
-      this.throwPitch();
+  private ceremonyThen(resume: () => void): void {
+    this.clearCeremony();
+    // No rig on screen (wide view, live play, kid handoff) -> nothing to show.
+    if (!this.rig.visible) {
+      resume();
       return;
     }
-    this.batterResume = () => this.throwPitch();
-    this.batterClock?.remove(false);
-    this.batterClock = this.time.delayedCall(FLOW.PITCH_CLOCK_MS, () => this.batterReady());
-    this.swingChips?.attention(true);
+    this.ceremonyResume = resume;
+    const { HOLD_MS, RETURN_MS, SET_MS } = PLATE_VIEW.CEREMONY;
+
+    // Any tap or SPACE skips straight to the pitch. Safe to arm here: the
+    // ceremony runs while phase === 'resolving', and the scene-level input
+    // router has no branch for that phase, so this collides with nothing.
+    this.input.once('pointerdown', this.skipCeremony, this);
+    this.input.keyboard?.once('keydown-SPACE', this.skipCeremony, this);
+
+    this.ceremonyJobs.push(
+      this.time.delayedCall(HOLD_MS, () => {
+        this.rig.catcherThrow();
+        this.ceremonyBall = this.restingBall;
+        this.restingBall = undefined; // the ceremony owns it now
+        const to = this.rig.releasePoint;
+        const ball = this.ceremonyBall;
+        if (ball) {
+          this.ceremonyJobs.push(
+            this.tweens.add({
+              targets: ball,
+              x: to.x,
+              y: to.y,
+              scale: 0.6, // shrinking away toward the distant mound
+              duration: RETURN_MS,
+              ease: 'Quad.inOut',
+              onComplete: () => {
+                ball.destroy();
+                this.ceremonyBall = undefined;
+                this.rig.tossIdle(); // he has it back — the idle toss resumes
+              },
+            })
+          );
+        } else {
+          this.rig.tossIdle();
+        }
+        this.ceremonyJobs.push(this.time.delayedCall(RETURN_MS + SET_MS, () => this.finishCeremony()));
+      })
+    );
   }
 
-  /** The batter tapped a swing card, or the clock ran out. Throw. */
-  private batterReady(): void {
-    this.batterClock?.remove(false);
-    this.batterClock = undefined;
-    this.swingChips?.attention(false);
-    const r = this.batterResume;
-    this.batterResume = undefined;
-    r?.();
+  /**
+   * How long the ceremony occupies the screen. Callers subtract this from the
+   * beat they were already going to wait, so the animation fills that window
+   * instead of being appended to it — the whole point is that pace is unchanged.
+   */
+  private get ceremonyMs(): number {
+    const c = PLATE_VIEW.CEREMONY;
+    return c.HOLD_MS + c.RETURN_MS + c.SET_MS;
   }
 
-  /** Cancel a parked pitch without throwing (half boundaries, teardown). */
-  private clearBatterClock(): void {
-    this.batterClock?.remove(false);
-    this.batterClock = undefined;
-    this.batterResume = undefined;
-    this.swingChips?.attention(false);
+  /** Tap/SPACE handler — separate method so `once` can be removed by reference. */
+  private skipCeremony(): void {
+    this.finishCeremony();
+  }
+
+  /**
+   * End the ceremony and pitch. Idempotent: the skip tap and the natural end
+   * both land here. Resumes on the NEXT TICK because finishing flips phase to
+   * 'pitching', and the very pointerdown that skipped is still being dispatched
+   * -- letting it through would register a phantom swing (same trap as the
+   * pitch-select confirm at startPitchMeter).
+   */
+  private finishCeremony(): void {
+    const r = this.ceremonyResume;
+    if (!r) return;
+    this.clearCeremony();
+    this.time.delayedCall(0, r);
+  }
+
+  /** Kill every ceremony job without pitching (half boundaries, teardown). */
+  private clearCeremony(): void {
+    this.input.off('pointerdown', this.skipCeremony, this);
+    this.input.keyboard?.off('keydown-SPACE', this.skipCeremony, this);
+    for (const j of this.ceremonyJobs) {
+      if (j instanceof Phaser.Time.TimerEvent) j.remove(false);
+      else j.stop();
+    }
+    this.ceremonyJobs = [];
+    this.ceremonyResume = undefined;
+    this.ceremonyBall?.destroy();
+    this.ceremonyBall = undefined;
   }
   // 📼 instant replay: per-tick position snapshots of the current live play.
   private replayFrames: ReplayFrame[] = [];
@@ -1413,7 +1477,7 @@ export class GameScene extends Phaser.Scene {
    */
   private enterHalf(): void {
     this.clearRestingBall();
-    this.clearBatterClock();
+    this.clearCeremony();
     this.pitcherWindupSeq?.cancel(false); // stale windup2 must not land on next half's mound
     this.pitcherWindupSeq = undefined;
     this.pitchAutoPick?.remove(false);
@@ -1485,7 +1549,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private endHalf(): void {
-    this.clearBatterClock(); // before swingChips dies -- attention(false) needs it
+    this.clearCeremony();
     this.swingChips?.destroy();
     this.swingChips = undefined;
     this.reliefBtn?.destroy();
@@ -1700,7 +1764,7 @@ export class GameScene extends Phaser.Scene {
       this.time.delayedCall(950, () => this.throwPitch());
     } else {
       // A beat for the new batter to step in before the wind-up starts.
-      this.time.delayedCall(FLOW.NEW_BATTER_MS, () => this.pitchWhenReady());
+      this.time.delayedCall(FLOW.NEW_BATTER_MS, () => this.throwPitch());
     }
   }
 
@@ -2076,13 +2140,9 @@ export class GameScene extends Phaser.Scene {
       cards,
       selectedId: this.swingType,
       onSelect: (id) => {
-        // Re-tapping the already-selected card is NOT a no-op any more: it is
-        // how a batter who likes their swing tells the pitcher to throw.
-        if (this.swingType !== id) {
-          this.swingType = id as SwingType;
-          audio.pop();
-        }
-        this.batterReady();
+        if (this.swingType === id) return;
+        this.swingType = id as SwingType;
+        audio.pop();
       },
       pin: (o) => this.pinUI(o),
     });
@@ -2645,14 +2705,23 @@ export class GameScene extends Phaser.Scene {
       applied.movements.length > 0
         ? Math.max(FLOW.AFTER_PLAY_MS, floor, runDelay + FLOW.RUN_SETTLE_PAD_MS)
         : floor;
-    this.time.delayedCall(baseDelay, () => {
+    // Only a pitch-to-the-same-batter gets the ceremony, and it eats the TAIL of
+    // baseDelay rather than following it (see ceremonyMs). A hidden rig (wide
+    // view after a ball in play) has nothing to animate, so that beat is unchanged.
+    const ceremony =
+      !isHalfOver(this.halfState) && !applied.batterDone && this.rig.visible ? this.ceremonyMs : 0;
+    this.time.delayedCall(Math.max(0, baseDelay - ceremony), () => {
+      if (ceremony) {
+        this.ceremonyThen(() => this.throwPitch());
+        return;
+      }
       if (applied.batterDone) seat.lineupIdx += 1;
       if (isHalfOver(this.halfState)) {
         this.endHalf();
       } else if (applied.batterDone) {
         this.nextPlayerBatter();
       } else {
-        this.pitchWhenReady();
+        this.ceremonyThen(() => this.throwPitch());
       }
     });
   }
@@ -3358,7 +3427,7 @@ export class GameScene extends Phaser.Scene {
     // field so the relief picker can cancel it (its stale closure would
     // otherwise auto-throw over the NEXT pitch turn's fresh menu).
     this.pitchAutoPick?.remove(false);
-    const autoPick = this.time.delayedCall(9000, () => {
+    const autoPick = this.time.delayedCall(FLOW.PITCH_CLOCK_MS, () => {
       if (this.pitchSelect) confirm('fastball', { x: 0, y: 0 });
     });
     this.pitchAutoPick = autoPick;
@@ -4312,7 +4381,15 @@ export class GameScene extends Phaser.Scene {
       big ? FLOW.BIG_BANNER_HOLD_MS : 0,
       runDelay + FLOW.RUN_SETTLE_PAD_MS
     );
-    this.time.delayedCall(delay, () => {
+    // Same deal on the mound: the ceremony plays inside this dead beat, before
+    // the pitch menu opens, so the pitching half stops being 2.2s of empty ump call.
+    const ceremony =
+      !isHalfOver(this.halfState) && !applied.batterDone && this.rig.visible ? this.ceremonyMs : 0;
+    this.time.delayedCall(Math.max(0, delay - ceremony), () => {
+      if (ceremony) {
+        this.ceremonyThen(() => this.beginPitchTurn());
+        return;
+      }
       if (applied.batterDone) this.battingSeat().lineupIdx += 1;
       if (isHalfOver(this.halfState)) {
         this.endHalf();

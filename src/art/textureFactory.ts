@@ -30,6 +30,7 @@ const HERO_SUFFIX = ':hi';
 export const HERO_POSES: Pose[] = [
   'batRear',
   'catchRear',
+  'throw', // the catcher's return throw — same 230px sprite as catchRear
   'swingLoadRear',
   'swingMidRear',
   'swingFollowRear',
