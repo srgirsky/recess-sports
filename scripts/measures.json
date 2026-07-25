@@ -238,6 +238,19 @@
         "All three of those produced clean, plausible, wrong numbers. Every sample in pace.flyHang was therefore read by eye off a zoomed sheet; the detector's role was to say where to look."
       ],
       "confidence": "high"
+    },
+    "pipPitchIndex": {
+      "id": "instrument.pip-pitch-index",
+      "category": "instrument",
+      "status": "note",
+      "what": "How to find every pitch in a plate stretch, after three other discriminators failed.",
+      "finding": "The HUD's BALLS/STRIKES pips are the only unambiguous pitch marker. A resolved pitch lights one and nothing else does. Mound motion does NOT work: the pitcher tosses the ball to himself on a loop while the human deliberates, producing identical bursts. Zone colour does not work: the strike-zone fill is dirt-brown and a white-blob search returns only crop-boundary artifacts.",
+      "gotchas": [
+        "THE ODD-WIDTH TRAP, and it cost the most. The capture is yuv422p, which subsamples chroma HORIZONTALLY, and ffmpeg emits ZERO frames for an odd-width crop -- no error, no warning, an empty buffer. A 435px-wide pip crop silently returned nothing, which read exactly like 'this capture has no taken pitches' and briefly became a recorded conclusion. Widening it to 436 showed 17 of 20 plate stretches contain count changes. ALWAYS use even crop width and height on this source.",
+        "Do not run the scene metric over the pip strip across the WHOLE file: during live plays BB collapses the HUD to a mini scoreboard with no count at all, so every view cut registers as a pip change. Restrict to plate stretches.",
+        "Pitch-to-pitch cadence is NOT the between-pitch constant. Measured gaps are 10.7-11.6s, because the human deliberates over the SWING cards while batting exactly as they do over the pitch cards while pitching. session1's confound was assumed not to apply to a human-batting capture; it does."
+      ],
+      "confidence": "high"
     }
   },
   "geometry": {
@@ -592,12 +605,20 @@
         "n": 1,
         "superseded": true
       },
-      "whatWouldWork": "It falls out of the same per-pitch reads as pace.between-pitch for no extra decode: the banner is a large saturated red/yellow starburst near the plate, trivially separable from the field once the pitch itself is bracketed. Not reached in pass 2.",
+      "whatWouldWork": "The pitches are now located (see pace.betweenPitch.method and the pip technique in instrument.pipPitchIndex). One 33ms sheet per pitch resolves it; n>=6 is reachable.",
       "ours": {
         "constant": "src/config.ts FLOW.UMP_CALL_DELAY_MS",
         "value": 200
       },
-      "informs": "src/config.ts FLOW.UMP_CALL_DELAY_MS"
+      "informs": "src/config.ts FLOW.UMP_CALL_DELAY_MS",
+      "partialReading": {
+        "samples": [150, 250, 250, 250],
+        "n": 4,
+        "medianMs": 250,
+        "confidence": "low",
+        "method": "Read off the same mound-to-plate sheets as pace.betweenPitch: ball arrival -> the BALL!/STRIKE! starburst appearing.",
+        "why": "NOT promoted despite n=4. The sheets step at 250ms and the quantity is ~200ms, so the sampling interval is the SAME ORDER as the thing being measured: this cannot tell our 200ms from BB's 250ms, and reporting a median of 250 would claim a resolution the read does not have. The honest statement is 'roughly 150-250ms, consistent with our 200ms'. A 33ms sheet over these same, now-known pitch times would settle it cheaply."
+      }
     },
     "flyHang": {
       "id": "pace.fly-hang",
@@ -685,11 +706,11 @@
     "betweenPitch": {
       "id": "pace.between-pitch",
       "category": "pace",
-      "status": "awaiting-measurement",
+      "status": "known-drift",
       "what": "Catch -> ready-for-the-next-pitch turnaround.",
-      "measured": null,
-      "n": 0,
-      "confidence": "estimate",
+      "measured": 2550,
+      "n": 3,
+      "confidence": "med",
       "priorReading": {
         "value": 1300,
         "source": "youtube:YMmqNpmA60U",
@@ -700,21 +721,39 @@
         "constant": "src/config.ts FLOW.BETWEEN_PITCH_MS",
         "value": 1250
       },
-      "oursNote": "Expected to be the easiest metric; turned out confounded (see pace.captureConfounds). The plate segments are long but their gaps are player DELIBERATION over the pitch cards, not the catch->ready turnaround this constant models. The turnaround is a sub-second sliver after each pitch settles, readable only per-pitch frame-by-frame.",
-      "session2Attempt": {
-        "outcome": "NOT MEASURED. Still awaiting-measurement, but session2 solved the part that made session1 hopeless: FINDING the pitches.",
-        "methodThatWorks": "A three-ROI per-frame change scan of the plate view at native resolution -- mound (270..350, 110..200), mid corridor (250..400, 180..270), zone (265..360, 250..330) -- separates a pitch from the deliberation around it cleanly. On the plate stretch before play-01 it read: mound activity 53.70-53.83 (windup/release), mid corridor 53.87-53.93 (ball travelling), zone peak 53.97-54.00 (arrival), then silence. The 5-12s deliberation gaps that defeated the pitch-to-pitch cadence approach are simply flat in all three ROIs, so they no longer hide anything.",
-        "whatBlocked": "Only the first half of the beat was pinned. This constant models catch -> READY, i.e. arrival at the plate through the ball resting in the zone to the pitcher having it back. The resting-ball disappearance needs the same per-pitch eye read as the fly hang, and was not reached.",
-        "incidentalFinding": "That one bracketed pitch gives a ~300ms mound->plate flight, which is the corroboration instrument.clockValidity leans on. It is n=1 and is NOT recorded as a pitch-corridor measurement.",
-        "whatWouldWork": "Run the three-ROI scan over each of the ~20 plate stretches to enumerate every pitch, then one fine sheet per pitch to read arrival -> ball gone. n>=6 is reachable in this capture."
-      },
       "informs": "src/config.ts FLOW.BETWEEN_PITCH_MS",
-      "pass2Attempt": {
-        "outcome": "STILL NOT MEASURED, and pass 2 sharpened why.",
-        "finding": "The three-ROI change scan finds pitch-shaped EVENTS reliably, but it cannot tell a pitch from a batter walking into the box or from a swing: on the first plate stretch it returned 7 events for 1 actual pitch. The discriminator has to be the ball itself, not aggregate change in a region.",
-        "corroborated": "Background subtraction on the PLATE view is much better behaved than on the wide field (only pitcher, batter and ball move) -- but it is exactly where the shadow trap bit, so it needs the same track-linking and the same eye confirmation.",
-        "whatWouldWork": "Bracket with the ROI scan, identify the ball by track, then one fine sheet per pitch to read arrival -> resting ball gone. n>=6 is reachable; the same reads also yield pace.ump-call-delay and pace.pitch-corridor for free."
-      }
+      "statusChangedAt": "2026-07-24",
+      "definition": "Ball ARRIVES at the plate -> the PITCHER HAS IT BACK and is ready to throw again. That is the forced beat FLOW.BETWEEN_PITCH_MS models. What follows it in BB is player deliberation over the swing cards, which is not a game constant and is excluded.",
+      "source": "local:bb01-capture-session2",
+      "spread": 250,
+      "min": 2500,
+      "max": 2750,
+      "framePeriodMs": 250,
+      "samples": [
+        {
+          "pitch": "t=82.30 (BALL)",
+          "ms": 2550,
+          "bracket": "arrival 82.30, pitcher has ball 84.85"
+        },
+        {
+          "pitch": "t=512.45 (swinging STRIKE)",
+          "ms": 2500,
+          "bracket": "arrival 512.45, pitcher has ball 514.95"
+        },
+        {
+          "pitch": "t=113.35 (swinging STRIKE)",
+          "ms": 2750,
+          "bracket": "arrival 113.35, pitcher has ball 116.10"
+        }
+      ],
+      "method": "Pitches LOCATED by the HUD count pips (a resolved pitch lights one; nothing else does -- mound motion is also produced by the pitcher's idle ball-toss), then each cycle read by eye off a 20-tile mound-to-plate sheet at 250ms. The full beat is visible in one sheet: ball arrives -> call banner -> ball rests at its crossing spot -> catcher returns it -> pitcher has it.",
+      "sampleGranularity": "Read at 250ms steps, so each sample carries +-125ms -- 5% of a 2550ms quantity. Fine here; NOT fine for pace.umpCallDelay, which is why that one stays unmeasured.",
+      "driftPct": -50.98,
+      "ratioToAnchor": {
+        "bb": 0.607,
+        "ours": 0.591
+      },
+      "driftNote": "Ours is 1250ms against BB's 2550ms -- we are 51% fast, almost exactly the 50% the anchor is fast. AND THE RATIO IS ALREADY RIGHT: as a fraction of the home->1B anchor, BB is 0.607 and we are 0.591, a 2.7% difference. So this constant is correctly PROPORTIONED and only wrong in absolute tempo -- unlike fly hang, which is wrong in both. Scaling it by the same factor as RUNNER_SPEED lands it within a few percent of BB with no separate judgement call."
     }
   }
 }

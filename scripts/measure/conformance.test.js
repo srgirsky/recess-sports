@@ -314,21 +314,51 @@ describe('pace — the anchor is measured; the rest stays pinned', () => {
     expect(rec.retuneWarning).toBeTruthy();
   });
 
-  it('between-pitch is unchanged', () => {
+  it('between-pitch drifts by the recorded amount, and stays correctly PROPORTIONED', () => {
     const rec = M.pace.betweenPitch;
-    expect(rec.status).toBe('awaiting-measurement');
+    expect(rec.status).toBe('known-drift');
     expect(FLOW.BETWEEN_PITCH_MS).toBe(rec.ours.value);
+
+    const drift = ((FLOW.BETWEEN_PITCH_MS - rec.measured) / rec.measured) * 100;
+    expect(round(drift, 2)).toBeCloseTo(rec.driftPct, 1);
+    expect(Math.abs(FLOW.BETWEEN_PITCH_MS - rec.measured)).toBeGreaterThan(rec.spread);
+    expect(rec.samples).toHaveLength(rec.n);
+
+    // The finding that makes this constant EASY, and the reason it is worth
+    // asserting separately: as a fraction of the anchor we are already almost
+    // exactly right (0.591 vs BB's 0.607). This one is wrong only in absolute
+    // tempo, so scaling it with RUNNER_SPEED lands it -- no judgement call.
+    // Contrast fly hang, which is wrong in ratio too. If that ever stops being
+    // true, the retune advice changes and this should go red.
+    const oursRatio = ratioToAnchor(FLOW.BETWEEN_PITCH_MS, ourHomeToFirstMs('main'));
+    const bbRatio = rec.measured / M.pace.homeToFirst.measured;
+    expect(round(oursRatio, 3)).toBeCloseTo(rec.ratioToAnchor.ours, 2);
+    expect(round(bbRatio, 3)).toBeCloseTo(rec.ratioToAnchor.bb, 2);
+    expect(Math.abs(oursRatio / bbRatio - 1)).toBeLessThan(0.1);
   });
 
-  it('keeps the two unmeasured pace metrics naming what still blocks them', () => {
+  it('makes every still-unmeasured record name the work that would close it', () => {
     // An awaiting-measurement record that stops saying WHY decays into folklore
-    // ("we never measured that") within one handover. Session2 contains the
-    // shots for both of these, so the blocker is now specific work, and the
-    // record has to keep saying which.
-    for (const rec of [M.pace.flyHang, M.pace.betweenPitch]) {
-      expect(rec.session2Attempt, `${rec.id} must record what session2 did and did not settle`).toBeTruthy();
-      expect(rec.session2Attempt.whatWouldWork).toBeTruthy();
-    }
+    // ("we never measured that") within one handover. Deliberately generic
+    // rather than a hand-listed pair: as metrics get measured the list shrinks
+    // by itself, and a NEW unmeasured record inherits the requirement instead
+    // of slipping in unannotated.
+    const pending = [];
+    const walk = (o) => {
+      for (const v of Object.values(o)) {
+        if (!v || typeof v !== 'object') continue;
+        if (v.id && v.status === 'awaiting-measurement') {
+          pending.push(v.id);
+          const says =
+            v.whatWouldWork || v.blocked?.whatWouldWork || v.partialReading?.why ||
+            v.session2Attempt?.whatWouldWork || v.pass2Attempt?.whatWouldWork || v.nNote;
+          expect(says, `${v.id} must record what would close it`).toBeTruthy();
+        }
+        walk(v);
+      }
+    };
+    walk(M);
+    expect(pending.length).toBeGreaterThan(0);
   });
 });
 

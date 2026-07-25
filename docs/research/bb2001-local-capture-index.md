@@ -409,6 +409,48 @@ fast. Consequently **fixing `RUNNER_SPEED` alone overshoots**: at BB's 4200 ms
 anchor our current flies land at ratios 0.476–0.690 against BB's 0.685–1.208,
 i.e. too *short*. BB's range is also wider than ours (1.76× span vs 1.45×).
 
+### Between-pitch, measured — and the odd-width trap that nearly buried it
+
+The forced beat is **ball arrives → pitcher has it back** (what follows is the
+human deliberating over swing cards, which is not a game constant). Measured at
+**2550 ms** (n=3: 2550 / 2500 / 2750), against our 1250 ms — **51% fast, the
+same factor as the anchor**.
+
+The useful part: *its ratio to the anchor is already right.* BB sits at 0.607 of
+a home→1B, we sit at 0.591 — a 2.7% difference. So unlike fly hang, this
+constant is wrong only in absolute tempo and scales correctly alongside
+`RUNNER_SPEED` with no separate decision.
+
+**Finding the pitches** took four attempts. Only the HUD **count pips** work — a
+resolved pitch lights one and nothing else does. Mound motion fails because the
+pitcher tosses the ball to himself on a loop while the human deliberates,
+producing identical bursts; zone colour fails because the strike-zone fill is
+dirt-brown.
+
+⚠️ **The odd-width trap, which cost the most of anything in this pass.** The
+capture is `yuv422p`, which subsamples chroma *horizontally*, and ffmpeg emits
+**zero frames for an odd-width crop** — no error, no warning, an empty buffer. A
+435px-wide pip crop silently returned nothing, and that read exactly like *"this
+capture contains almost no taken pitches"* — a conclusion I had already started
+recording. Widening the crop to 436 showed **17 of 20 plate stretches contain
+count changes**. Always use even crop width *and* height on this source.
+
+Two more corrections worth carrying:
+
+- Do not run the scene metric over the pip strip across the whole file: during
+  live plays BB collapses the HUD to a mini scoreboard with **no count at all**,
+  so every view cut registers as a pip change.
+- **Pitch-to-pitch cadence is not this constant.** Measured gaps are 10.7–11.6 s.
+  I had assumed session 1's deliberation confound wouldn't apply to a
+  human-*batting* capture — it does, because the batter picks a swing card
+  before every pitch exactly as the pitcher picks a pitch card.
+
+`pace.umpCallDelay` came out of the same sheets at 150–250 ms, consistent with
+our 200 ms, but is **not** recorded as measured: the sheets step at 250 ms and
+the quantity is ~200 ms, so the sampling interval is the same order as the thing
+being measured. One 33 ms sheet per pitch would settle it, and the pitch times
+are now known.
+
 ### Two plan assumptions that broke
 
 - **"PT" on the ON THE MOUND panel is not a pitching rating.** It is a
