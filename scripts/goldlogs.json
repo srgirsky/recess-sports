@@ -1,26 +1,23 @@
 {
-  "comment": "Gold-log regression fingerprints (scripts/goldlog.browser.js, harness v2.2). The harness seeds Math.random (mulberry32), virtualizes Date.now onto the pump grid, bypasses the visual draft with FIXED teams (the draft's greedy chooser jitters every candidate with rng, so title-screen cosmetics would cascade into different teams), reseeds at game entry, waits out the real-async jersey loader on a 50ms pump grid, and samples every 50ms step. Fingerprint = SHA-256 of the state-transition log (dash-grouped). Behavior-identical phases must reproduce these exactly. To debug a mismatch: check out the anchoring commit and re-run goldLogRun for the full log. CAUTION when regenerating: launch goldLogRun fire-and-forget and poll sessionStorage('goldlog_last') afterward — an awaited eval that times out mid-drive interleaves CDP work with the run and pollutes the fingerprint.",
-  "capturedAt": "post live-play readability anchor (chaser name bubble Text now enters the seeded stream at beginPlay-defense; steal trail/OUT text are rng-free) on top of the Backyard pitch corridor + plate-view feel packs; each fingerprint verified byte-stable across two clean runs",
+  "comment": "Gold-log regression fingerprints (scripts/goldlog.browser.js, harness v2.2). The harness seeds Math.random (mulberry32), virtualizes Date.now onto the pump grid, bypasses the visual draft with FIXED teams (the draft's greedy chooser jitters every candidate with rng, so title-screen cosmetics would cascade into different teams), reseeds at game entry, waits out the real-async jersey loader on a 50ms pump grid, and samples every 50ms step. Fingerprint = SHA-256 of the state-transition log (dash-grouped). Behavior-identical phases must reproduce these exactly. To debug a mismatch: check out the anchoring commit and re-run goldLogRun for the full log. CAUTION when regenerating: launch goldLogRun fire-and-forget and poll sessionStorage('goldlog_last') afterward \u2014 an awaited eval that times out mid-drive interleaves CDP work with the run and pollutes the fingerprint.",
+  "capturedAt": "post live-play fielding+baserunning fixes (fix/live-play-fielding-and-baserunning): chaser election moved to systems/fielding.ts and can now change hands mid-play; every loose-ball settle clamps into the field; batter-runners can no longer be turned back toward the plate. Each fingerprint verified byte-stable across clean runs (main x3, kid x2).",
   "script": "goldlog.browser.js v2.2 (guard 9000)",
   "seed": 42,
   "logs": {
     "main": {
-      "length": 2324,
-      "sha256": "ba3c1d4c-fb00909b-6f35b37b-14019d53-2fe9a7db-dcdd5903-18d6b1f3-b5fe6799",
-      "note": "fixed teams A/B, 1 inning, ends 1-0",
-      "stale": true
+      "length": 2568,
+      "sha256": "b4463dd2-46214115-b6ce64e2-0bdc3b31-1d3dd15c-aa671c73-c4416527-ff5e813f",
+      "note": "fixed teams A/B, 1 inning, ends 1-0"
     },
     "kid": {
-      "length": 10824,
-      "sha256": "675fbd06-6b8b4342-58951606-726a8511-a4601b0d-3d8d1788-1a416341-856ea477",
-      "note": "fixed teams A/B, 1 inning + bonus, ends 1-0 in the bonus 2nd",
-      "stale": true
+      "length": 10756,
+      "sha256": "335f3ca0-5b1848e1-d377eb9a-39fc0bfd-bcff808d-c734f066-115c613c-de208772",
+      "note": "fixed teams A/B, 1 inning + bonus, ends 1-0 in the bonus 2nd"
     }
   },
-  "STALE": {
-    "since": "2026-07-24 (feat/pace-retune)",
-    "why": "These fingerprints encode the PRE-RETUNE pace and no longer describe the game. The retune deliberately changed the seeded sim (RUNNER_SPEED 85->42.8, FLY_HANG_MS 2000-2900->2875-5075, plus every coupled speed and delay), so a mismatch here is now EXPECTED and proves nothing. Do not treat a failure as a regression until they are regenerated.",
-    "regenerateWhen": "AFTER the defense constants settle. defense.* in scripts/measures.json is scaled-not-measured and is explicitly expected to need feel iteration, so fingerprints captured today would be stale again after the first tuning pass. Regenerate once the feel is signed off.",
-    "how": "The procedure in `comment` below is unchanged: goldLogPrepare(mode), reload, then fire-and-forget goldLogRun and poll sessionStorage('goldlog_last')."
+  "REGENERATED": {
+    "on": "2026-07-25 (fix/live-play-fielding-and-baserunning)",
+    "why": "Clears the STALE flag set on 2026-07-24. Those fingerprints encoded the PRE-RETUNE pace; these are captured against the retuned pace AND the fielding/baserunning fixes, so the gate is meaningful again.",
+    "caveat": "defense.* in scripts/measures.json is still scaled-not-measured, and the chaser election added here is new defense behaviour that has NOT had a feel-tuning pass. If the defense is later tuned (start with LIVE.CHASE.CUTOFF_GRACE_MS, then the leashes), these will need regenerating again \u2014 that is expected, not a regression."
   }
 }

@@ -87,11 +87,26 @@ describe('snapshotLive / applyFrame', () => {
     frame.runners = [];
     expect(() => applyFrame(s, frame)).not.toThrow();
   });
+
+  it('carries the active chaser, which can change hands mid-play', () => {
+    // The view draws the steering spotlight, chevron and name bubble straight
+    // off `active`. If the frame dropped it, a net guest would highlight the
+    // wrong kid the moment the chaser changed, and a replay would show the
+    // end-of-play chaser for the whole tape.
+    const s = freshPlay();
+    s.active = 6;
+    expect(snapshotLive(s).active).toBe(6);
+    const fresh = freshPlay();
+    fresh.active = 0;
+    applyFrame(fresh, snapshotLive(s));
+    expect(fresh.active).toBe(6);
+  });
 });
 
 describe('lerpFrames', () => {
   const mk = (t: number, x: number, progress: number): ReplayFrame => ({
     t,
+    active: 0,
     ball: { pos: { x, y: 100 + x }, height: x / 1000, phase: 'flight', heldBy: null },
     fielders: [{ pos: { x: x + 10, y: 50 }, diving: false }],
     runners: [{ pos: { x: x + 20, y: 60 }, from: 0, to: 1, progress, done: null }],

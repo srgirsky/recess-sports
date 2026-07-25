@@ -145,6 +145,11 @@ describe('venue ground & obstacles in the live sim', () => {
   it('a roller through the oak stops dead with a bonk', () => {
     // Aim the roll straight through the tree at (330, 262).
     const throughTree: Launch = { ...roller, landing: { x: 330, y: 240 } };
+    // This is a BALL-PHYSICS test, so take fielding out of it: the line to the
+    // oak runs right past third base, and the chaser election (correctly) sends
+    // the third baseman to field a ball rolling at his feet before it ever gets
+    // to the tree. Zero reach lets the roll play out untouched.
+    const noHands = { ...params, pickupRadius: 0, cpuPickupRadius: 0 };
     let s = startLivePlay({
       mode: 'defense',
       launch: throughTree,
@@ -152,13 +157,13 @@ describe('venue ground & obstacles in the live sim', () => {
       baseRunners: [],
       defense: DEFENSE,
       outs: 0,
-      params,
+      params: noHands,
       geo: getFieldGeometry(VENUES.sandlot),
     });
     let bonked = false;
     let guard = 0;
     while (guard++ < 300 && s.ball.phase === 'rolling') {
-      s = stepLivePlay(s, {}, 50, params, () => 0.9);
+      s = stepLivePlay(s, {}, 50, noHands, () => 0.9);
       if (s.events.some((e) => e.t === 'bonk')) {
         bonked = true;
         break;
