@@ -555,20 +555,20 @@
     "pitchCorridor": {
       "id": "pace.pitch-corridor",
       "category": "pace",
-      "status": "awaiting-measurement",
+      "status": "known-drift",
       "what": "Mound-to-plate flight time, and how it scales with the pitcher's arm.",
       "whyThisRecordExists": "src/config.ts's PITCH_SPEED block calls itself 'Backyard-measured' and states a ~250ms-to-~700ms corridor. Until 2026-07-24 NO record backed that claim -- it rests on two n=1 readings off the superseded YouTube stream. An in-code comment asserting a measurement that nothing gates is precisely the failure this file exists to prevent, so the claim now has a record even though the answer is still 'not measured'. conformance.test.js enforces the link.",
-      "measured": null,
-      "n": 0,
-      "confidence": "estimate",
-      "partialReading": {
-        "samples": [220],
-        "n": 1,
-        "confidence": "low",
-        "source": "local:bb01-capture-session2, the pitch ending in play-01 (cut 54.983)",
-        "method": "12-tile corridor contact sheet at 33ms steps, crop native x245..410 y88..363, read frame by frame: ball still in the pitcher's hand at 53.683, clearly airborne at 53.783, inside the strike-zone bracket at 53.917.",
-        "why": "n=1, and the frame period is ~50ms against a ~220ms quantity -- a +-23% error bar. Recorded because it is a real eye read that corroborates instrument.clock-validity, NOT promoted because one sample cannot describe a corridor whose entire point is its SPREAD across arms."
+      "measured": {
+        "fastballMs": 270,
+        "fastballSpread": 50,
+        "fastballN": 3,
+        "offSpeedMs": 430,
+        "offSpeedN": 3,
+        "corridorMinMs": 250,
+        "corridorMaxMs": 480
       },
+      "n": 6,
+      "confidence": "med",
       "priorReading": {
         "fastMs": 250,
         "slowMs": 700,
@@ -577,17 +577,69 @@
         "superseded": true,
         "why": "One max-arm pitch and one weakest-arm pitch, off a stream whose timestamps no longer locate them."
       },
-      "blocked": {
-        "finding": "The planned calibration of ARM_MULT from the HUD DOES NOT WORK. The plate view's 'ON THE MOUND' panel reads e.g. 'NOMAR GARCIAPARRA / 2 PT, 0 K, 0 BB', and PT is a PITCHES-THROWN COUNTER, not a pitching rating -- the video notes already observed it ticking 0->1 on a single ball. So this capture shows no per-pitcher arm rating anywhere, and flight times cannot be bound to a stat from the footage alone.",
-        "whatWouldWork": "Either capture the Player Finder roster screen (session1 screenshot 00000 is one, for a different roster) to read ratings, or measure the corridor as a pure RANGE across many pitchers and fit ARM_MULT to the spread rather than to per-pitch stats. The range approach needs n>=8 spanning visibly strong and weak arms, which this capture does contain."
-      },
       "ours": {
         "constants": ["src/config.ts PITCH_SPEED.MAIN_BASE_MS", "src/config.ts PITCH_SPEED.MAIN_CPU_BASE_MS", "src/config.ts PITCH_SPEED.ARM_MULT"],
-        "mainBaseMs": 800,
-        "mainCpuBaseMs": 700,
-        "armMult": "clamp(1.25 - 0.05 * pitching, 0.7, 1.25)"
+        "formula": "(MAIN_BASE_MS 800 / PITCHES.fastball.speedMult 1.1) x clamp(1.25 - 0.05*stat, 0.7, 1.25)",
+        "fastballMs": {
+          "stat10": 545,
+          "stat5": 727,
+          "stat1": 873
+        }
       },
-      "informs": "src/config.ts PITCH_SPEED"
+      "informs": "src/config.ts PITCH_SPEED",
+      "statusChangedAt": "2026-07-24",
+      "source": "local:bb01-capture-session2",
+      "spread": 230,
+      "samples": [
+        {
+          "t": 53.9,
+          "ms": 250,
+          "kind": "laser (fastball)",
+          "half": "human batting (CPU pitches)",
+          "bracket": "ball first separates 53.667, in zone 53.900"
+        },
+        {
+          "t": 113.38,
+          "ms": 270,
+          "kind": "laser (fastball)",
+          "half": "human batting",
+          "bracket": "release ~113.11, in zone 113.38"
+        },
+        {
+          "t": 379.3,
+          "ms": 290,
+          "kind": "laser (fastball)",
+          "half": "human PITCHING (pitch card visible)",
+          "bracket": "release ~379.01, in zone ~379.30"
+        },
+        {
+          "t": 93.82,
+          "ms": 420,
+          "kind": "lob (off-speed)",
+          "half": "human batting",
+          "bracket": "release ~93.40, in zone 93.82"
+        },
+        {
+          "t": 150.88,
+          "ms": 430,
+          "kind": "lob (off-speed)",
+          "half": "human batting",
+          "bracket": "release ~150.45, in zone 150.88"
+        },
+        {
+          "t": 82.3,
+          "ms": 480,
+          "kind": "lob (off-speed)",
+          "half": "human batting",
+          "bracket": "release ~81.82, in zone 82.30"
+        }
+      ],
+      "method": "Pitches located by the HUD count pips (instrument.pip-pitch-index), then each read frame-by-frame off a 33ms corridor sheet (crop native x245-410, y88-363; 24 tiles, cols 8). Release = the frame the ball separates from the pitcher; arrival = the frame it is inside the yellow strike-zone bracket. Classified LASER vs LOB by the documented tell: a fastball is invisible until late and flat, off-speed is visible from release. The split is cleanly bimodal (250/270/290 vs 420/430/480), which is what makes the classification trustworthy.",
+      "classificationGroundTruth": "BETTER METHOD AVAILABLE, not yet used: session2 contains BOTH halves, and when the HUMAN pitches the right-edge pitch cards (HEAT / SLOWBALL / LEFT HOOK / RIGHT HOOK / INTENTIONAL WALK) are on screen and the selected one is highlighted. That reads the pitch KIND directly instead of inferring it from flight appearance. Only one of the six samples (379.30) is from a human-pitching stretch; re-reading the human-pitching halves with the card visible would turn the laser/lob inference into ground truth and let ARM_MULT be separated from pitch KIND.",
+      "driftPct": 169.3,
+      "driftNote": "OUR PITCHES ARE MUCH SLOWER THAN BB'S, not faster. Our typical fastball is 727ms against BB's 270ms -- 2.7x. The starker form: our FASTEST possible pitch (545ms, a stat-10 arm) is still slower than BB's SLOWEST measured pitch (480ms, an off-speed lob). Our entire corridor sits below BB's entire corridor. Same conclusion in ratio-to-anchor terms (0.173 vs 0.064, also 2.7x), so this is not a scale artifact.",
+      "retuneCoherenceNote": "The 2026-07-24 pace retune scaled the live-play sim 1.987x and did NOT touch PITCH_SPEED, so the pitch became ~2x faster RELATIVE to everything around it. That is real, and it is not why pitching feels fast -- see pace.pitchCadence, which is the actual finding.",
+      "armRatingCaveat": "Still unresolved: the 'ON THE MOUND' panel's PT is a pitches-thrown counter, not a rating, so flight time cannot be bound to a pitcher stat from this footage. The corridor is therefore measured as a RANGE across pitchers and kinds, not a per-stat curve, and ARM_MULT remains uncalibrated."
     },
     "umpCallDelay": {
       "id": "pace.ump-call-delay",
@@ -755,6 +807,36 @@
       },
       "driftNote": "Ours is 1250ms against BB's 2550ms -- we are 51% fast, almost exactly the 50% the anchor is fast. AND THE RATIO IS ALREADY RIGHT: as a fraction of the home->1B anchor, BB is 0.607 and we are 0.591, a 2.7% difference. So this constant is correctly PROPORTIONED and only wrong in absolute tempo -- unlike fly hang, which is wrong in both. Scaling it by the same factor as RUNNER_SPEED lands it within a few percent of BB with no separate judgement call.",
       "conformNote": "RETUNED 2026-07-24. Was already correctly PROPORTIONED (0.591 vs 0.607) and wrong only in absolute tempo, so it moved with the anchor and now matches outright."
+    },
+    "pitchCadence": {
+      "id": "pace.pitch-cadence",
+      "category": "pace",
+      "status": "known-drift",
+      "statusChangedAt": "2026-07-24",
+      "what": "How long the game waits before throwing the next pitch AT the player -- the beat that decides how rushed batting feels.",
+      "finding": "BB DOES NOT USE A TIMER HERE. In the human-batting half it waits for the player to choose a swing card, and the measured pitch-to-pitch gaps are 10.7s, 11.6s and 19.5s -- entirely player deliberation, with zero game pressure. The video notes recorded the same thing on the pitching side ('no pitch clock; the game idles happily in the card-select state'). WE FIRE ON A TIMER: GameScene.ts:3887 is a delayedCall(FLOW.BETWEEN_PITCH_MS) that throws the next pitch whether or not the batter has chosen.",
+      "measured": {
+        "bbGapsSec": [10.7, 11.6, 19.5],
+        "bbIsPlayerPaced": true
+      },
+      "n": 3,
+      "confidence": "med",
+      "ours": {
+        "constant": "src/config.ts FLOW.BETWEEN_PITCH_MS",
+        "value": 2550,
+        "behaviour": "fixed timer, does not wait for swing-card selection"
+      },
+      "driftNote": "This is a DESIGN difference, not a tuning error, and it is the most likely explanation for 'pitching feels fast' -- you get 2.55s to read the situation and pick a swing, where BB gives you as long as you want. Note the forced part of the beat (arrival -> pitcher has the ball back) IS measured and conformed at 2550ms in pace.betweenPitch; what differs is that BB adds an unbounded player-paced wait on top of it and we do not.",
+      "informs": "src/config.ts FLOW.BETWEEN_PITCH_MS and the GameScene pitch scheduling"
+    },
+    "flowCoherence": {
+      "id": "pace.flow-coherence",
+      "category": "pace",
+      "status": "note",
+      "what": "Which FLOW beats the pace retune left behind.",
+      "finding": "The 2026-07-24 retune scaled the live-play sim 1.987x and changed exactly ONE FLOW constant -- BETWEEN_PITCH_MS, the one that was measured. Every other between-moments beat is still at the pre-retune tempo: NEW_BATTER_MS 750, CPU_NEW_BATTER_MS 850, CPU_STEP_MS 1100, AFTER_PLAY_MS 1500, AFTER_LIVE_PLAY_MS 1600, HALF_START_MS 1400, RUN_SETTLE_PAD_MS 500, BANNER_HOLD_MS 1100, BIG_BANNER_HOLD_MS 1600, UMP_CALL_DELAY_MS 200.",
+      "implication": "So the game now mixes two tempos: live play at the Backyard pace, and every transition around it at the old, faster one. CPU_STEP_MS (the gap between pitches in the half where the HUMAN pitches) is the one most likely to read as rushed, since it was never scaled and is less than half of the retuned BETWEEN_PITCH_MS that governs the other half.",
+      "note": "None of these are measured against BB. Scaling them 1.987x would at least make the game internally consistent; measuring them is a separate pass."
     }
   },
   "defense": {
