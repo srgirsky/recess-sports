@@ -29,6 +29,14 @@ const CFG = JSON.parse(readFileSync(join(here, 'layout-audit.json'), 'utf8'));
 const AUDIT_JS = readFileSync(join(here, 'layout.browser.js'), 'utf8');
 const PORT = 5177;
 const URL = `http://localhost:${PORT}/`;
+/**
+ * Hard ceiling on the whole run. A gate that can hang is worse than no gate —
+ * it burns a CI runner until the 6-hour default and tells you nothing. Locally
+ * this takes ~90s; CI is slower, so the ceiling is generous but finite.
+ */
+const RUN_BUDGET_MS = 8 * 60_000;
+/** Per-step ceiling, so a wedged scene names itself instead of stalling the run. */
+const STEP_MS = 60_000;
 
 const c = { red: '\x1b[31m', green: '\x1b[32m', yellow: '\x1b[33m', dim: '\x1b[2m', off: '\x1b[0m' };
 
@@ -48,6 +56,17 @@ function startVite() {
     p.stderr.on('data', (d) => process.stderr.write(c.dim + String(d) + c.off));
     p.on('exit', (code) => reject(new Error(`vite exited early (${code})`)));
   });
+}
+
+/** Reject rather than hang, and say WHICH step wedged. */
+function withTimeout(label, promise, ms = STEP_MS) {
+  let timer;
+  return Promise.race([
+    promise,
+    new Promise((_, rej) => {
+      timer = setTimeout(() => rej(new Error(`timed out after ${ms}ms: ${label}`)), ms);
+    }),
+  ]).finally(() => clearTimeout(timer));
 }
 
 /** Waivers match on scene + code + the unordered element pair. */
@@ -158,21 +177,37 @@ async function auditScene(page, spec, loose) {
 
 async function runPass(browser, { blockFont }) {
   const ctx = await browser.newContext({ viewport: { width: 1200, height: 820 } });
+  ctx.setDefaultTimeout(STEP_MS);
   if (blockFont) await ctx.route('**/fredoka*.woff2', (r) => r.abort());
   const page = await ctx.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
+  // Console errors only in the strict pass: the font-blocked pass causes its own
+  // (the aborted woff2 request), and counting those would fail a run for doing
+  // exactly what it was asked to do.
+  if (!blockFont) {
+    page.on('console', (m) => {
+      if (m.type() === 'error') errors.push(`console: ${m.text()}`);
+    });
+  }
 
-  await page.goto(URL, { waitUntil: 'load' });
-  await page.addScriptTag({ content: AUDIT_JS });
-  await page.waitForFunction(() => window.__game && window.__game.scene.getScenes(true).length > 0, null, {
-    timeout: 30_000,
-  });
-  // Boot hands off to Schoolyard only after the font settles (or times out).
-  await page.waitForFunction(
-    () => window.__game.scene.getScenes(true).some((s) => s.scene.key !== 'Boot'),
-    null,
-    { timeout: 30_000 }
+  await withTimeout('page.goto', page.goto(URL, { waitUntil: 'load' }));
+  await withTimeout('inject audit', page.addScriptTag({ content: AUDIT_JS }));
+  await withTimeout(
+    'wait for window.__game',
+    page.waitForFunction(() => window.__game && window.__game.scene.getScenes(true).length > 0, null, {
+      timeout: STEP_MS,
+    })
+  );
+  // Boot rasterizes ~1200 SVG textures before it hands off, and a cold CI runner
+  // is a lot slower at that than a laptop — hence the generous per-step budget.
+  await withTimeout(
+    'wait for Boot to hand off',
+    page.waitForFunction(
+      () => window.__game.scene.getScenes(true).some((s) => s.scene.key !== 'Boot'),
+      null,
+      { timeout: STEP_MS }
+    )
   );
 
   const fontReady = await page.evaluate(() => window.layoutFontReady());
@@ -187,8 +222,15 @@ async function runPass(browser, { blockFont }) {
 
   const results = [];
   for (const spec of CFG.scenes) {
-    const r = await auditScene(page, spec, blockFont);
-    results.push({ id: spec.id, ...r });
+    // Progress goes to the log as it happens: if this ever wedges in CI, the
+    // last line printed names the screen that did it.
+    if (process.env.CI) console.log(`${c.dim}  … ${spec.id}${c.off}`);
+    try {
+      const r = await withTimeout(`audit ${spec.id}`, auditScene(page, spec, blockFont));
+      results.push({ id: spec.id, ...r });
+    } catch (err) {
+      results.push({ id: spec.id, error: err.message, tagged: 0, findings: [] });
+    }
   }
   await ctx.close();
   return { results, errors };
@@ -229,9 +271,23 @@ function report(label, results, errors, { loose }) {
 
 let vite;
 let browser;
+// Nothing below may outlive the run budget — including the process itself, in
+// case a Playwright handle keeps the event loop alive after we're done.
+const hardStop = setTimeout(() => {
+  console.error(`${c.red}audit exceeded ${RUN_BUDGET_MS / 1000}s — killing.${c.off}`);
+  if (vite) vite.kill('SIGKILL');
+  process.exit(1);
+}, RUN_BUDGET_MS);
+hardStop.unref?.();
+
 try {
-  vite = await startVite();
-  browser = await chromium.launch();
+  vite = await withTimeout('vite start', startVite());
+  browser = await withTimeout(
+    'chromium launch',
+    // --no-sandbox: GitHub runners execute as root, where Chromium's sandbox
+    // refuses to start.
+    chromium.launch({ args: process.env.CI ? ['--no-sandbox'] : [] })
+  );
 
   const strict = await runPass(browser, { blockFont: false });
   const a = report(`Fredoka loaded ${c.dim}(full ruleset)${c.off}`, strict.results, strict.errors, { loose: false });
@@ -257,6 +313,10 @@ try {
   console.error(`${c.red}audit failed to run:${c.off} ${err.message}`);
   process.exitCode = 1;
 } finally {
-  if (browser) await browser.close();
+  clearTimeout(hardStop);
+  if (browser) await browser.close().catch(() => {});
   if (vite) vite.kill();
+  // Playwright and the vite child can both leave handles open; the exit code is
+  // already decided, so leaving would just stall the runner.
+  process.exit(process.exitCode ?? 0);
 }
