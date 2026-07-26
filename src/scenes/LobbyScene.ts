@@ -21,6 +21,8 @@ import { getMode, setMode } from '../systems/mode';
 import { getSettings, saveSettings } from '../systems/settings';
 import { getVenue, setVenue } from '../systems/venue';
 import type { VenueId } from '../data/venues';
+import { tagUi, hitFromBox } from '../ui/layout';
+import { mountLayoutOverlay } from '../dev/LayoutOverlay';
 
 export class LobbyScene extends Phaser.Scene {
   private stage!: Phaser.GameObjects.Container;
@@ -43,6 +45,7 @@ export class LobbyScene extends Phaser.Scene {
   }
 
   create(): void {
+    if (import.meta.env.DEV) mountLayoutOverlay(this);
     this.myIdentity = getTeamIdentity() ?? { color: 5, logo: 0 };
     this.gotHello = false;
     this.sentIdentity = false;
@@ -69,7 +72,7 @@ export class LobbyScene extends Phaser.Scene {
 
   private button(x: number, y: number, label: string, onTap: () => void, minW = 340): Phaser.GameObjects.Container {
     const b = pill(this, x, y, label, { fill: COLORS.cream, fontSize: 26, minW });
-    b.container.setInteractive(new Phaser.Geom.Rectangle(-minW / 2, -26, minW, 52), Phaser.Geom.Rectangle.Contains);
+    hitFromBox(b.container);
     b.container.on('pointerdown', () => {
       audio.pop();
       onTap();
@@ -146,7 +149,10 @@ export class LobbyScene extends Phaser.Scene {
       const bg = this.add.circle(0, 0, 38, COLORS.cream).setStrokeStyle(4, COLORS.ink, 0.9);
       const face = this.add.text(0, 0, emo, { fontSize: '38px' }).setOrigin(0.5);
       chip.add([bg, face]);
-      chip.setInteractive(new Phaser.Geom.Rectangle(-40, -40, 80, 80), Phaser.Geom.Rectangle.Contains);
+      // Hand-built, so it publishes its own footprint: the 38px circle plus its
+      // 4px stroke. Tagging is also what puts it in the layout audit's view.
+      tagUi(chip, { role: 'icon', ox: 0, oy: 0, w: 80, h: 80, label: `code ${emo}` });
+      hitFromBox(chip);
       chip.on('pointerdown', () => {
         if (this.picked.length >= NET.CODE_LEN) return;
         audio.pop();

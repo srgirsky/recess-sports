@@ -1,0 +1,51 @@
+name: CI
+
+# Runs on pull requests, and on main as a backstop. Deliberately SEPARATE from
+# deploy.yml: deploys stay fast, and the layout audit's browser download never
+# sits between a merge and the site going live.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests + types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+
+  layout:
+    name: Layout audit
+    runs-on: ubuntu-latest
+    # Belt and braces: the driver has its own run budget, but a wedged browser
+    # must never hold a runner for the 6-hour default.
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      # Chromium only — the audit reads AABBs, it does not need cross-browser.
+      - run: npx playwright install --with-deps chromium
+      # Boots every menu screen headlessly and fails on any overlap, off-frame
+      # element, hit-area collision, or too-small tap target. Findings that are
+      # deliberate live in scripts/layout-audit.json with a reason.
+      - run: npm run audit:layout

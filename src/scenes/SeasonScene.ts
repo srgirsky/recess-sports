@@ -16,6 +16,7 @@ import { ribbon, heading, FONT } from '../ui/theme';
 import { enterFrom } from '../ui/anim';
 import * as audio from '../systems/audio';
 import { commentatorProfile } from '../systems/voices';
+import { mountLayoutOverlay } from '../dev/LayoutOverlay';
 
 export class SeasonScene extends Phaser.Scene {
   constructor() {
@@ -23,6 +24,7 @@ export class SeasonScene extends Phaser.Scene {
   }
 
   create(): void {
+    if (import.meta.env.DEV) mountLayoutOverlay(this);
     // The week hub (and the Awards podium behind it) is a jersey-era surface;
     // clear any lingering draft street-clothes variant from the title path.
     clearTeamVariant();
@@ -39,7 +41,12 @@ export class SeasonScene extends Phaser.Scene {
     bg.lineStyle(10, 0x8a6a48, 1);
     bg.strokeRect(5, 5, GAME_WIDTH - 10, GAME_HEIGHT - 10);
 
-    ribbon(this, GAME_WIDTH / 2, 54, `🏆 RECESS WEEK — ${teamName(season.identity)}`);
+    // maxW: the team name is unbounded. "THE PURPLE ALL-STARS" is the longest
+    // of the 56 colour x logo combinations and already reaches 883 of 960.
+    ribbon(this, GAME_WIDTH / 2, 54, `🏆 RECESS WEEK — ${teamName(season.identity)}`, {
+      maxW: 880,
+      minFontSize: 26,
+    });
     const w = wins(season);
     const l = season.results.filter((r) => r === 'L').length;
     const t = season.results.filter((r) => r === 'T').length;

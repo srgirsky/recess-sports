@@ -6,6 +6,7 @@
 import Phaser from 'phaser';
 import { COLORS } from '../config';
 import { FONT, OUTLINE, OUTLINE_HEX, RADIUS } from './theme';
+import { tagUi } from './layout';
 
 export interface ButtonOpts {
   x: number;
@@ -88,5 +89,15 @@ export function makeButton(scene: Phaser.Scene, opts: ButtonOpts): Phaser.GameOb
   });
   container.on('pointerout', release);
 
-  return container;
+  // The drawn shape runs from -h/2 - stroke/2 down to +h/2 + lip + stroke/2, so
+  // the true box is BELOW-centre by lip/2. `setSize(w, h + lip)` alone reports
+  // the right size at the wrong place; layout needs both.
+  return tagUi(container, {
+    role: 'button',
+    ox: 0,
+    oy: lip / 2,
+    w: w + 5,
+    h: h + lip + 5,
+    label: opts.label,
+  });
 }

@@ -65,11 +65,19 @@ export class BootScene extends Phaser.Scene {
       console.log(`[boot] textures ready in ${Math.round(performance.now() - this.bootStart)}ms`);
     }
     // Wait for the brand font so text renders in Fredoka, not the fallback.
-    // Race against a short timeout so a slow/blocked font never hangs boot.
+    // Race against a short timeout so a slow font never hangs boot — and CATCH,
+    // because a font that fails outright (offline, blocked, 404) REJECTS rather
+    // than hanging, which would reject the race and strand the player on the
+    // loading bar forever. The timeout only ever covered the slow case.
     const fontReady = document.fonts
-      ? document.fonts.load('600 40px Fredoka').then(() => document.fonts.ready)
+      ? document.fonts
+          .load('600 40px Fredoka')
+          .then(() => document.fonts.ready)
+          .catch(() => undefined)
       : Promise.resolve();
     const timeout = new Promise((r) => this.time.delayedCall(2500, r));
-    Promise.race([fontReady, timeout]).then(() => this.scene.start('Schoolyard'));
+    Promise.race([fontReady, timeout])
+      .catch(() => undefined)
+      .then(() => this.scene.start('Schoolyard'));
   }
 }

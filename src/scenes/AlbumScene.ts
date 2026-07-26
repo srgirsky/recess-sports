@@ -14,6 +14,8 @@ import { ribbon, FONT } from '../ui/theme';
 import { popIn } from '../ui/anim';
 import * as audio from '../systems/audio';
 import { kidVoice } from '../systems/voices';
+import { tagUi, hitFromBox } from '../ui/layout';
+import { mountLayoutOverlay } from '../dev/LayoutOverlay';
 
 export class AlbumScene extends Phaser.Scene {
   constructor() {
@@ -21,6 +23,7 @@ export class AlbumScene extends Phaser.Scene {
   }
 
   create(): void {
+    if (import.meta.env.DEV) mountLayoutOverlay(this);
     const album = getAlbum();
 
     const bg = this.add.graphics();
@@ -63,7 +66,10 @@ export class AlbumScene extends Phaser.Scene {
         slot.add(t);
       }
       if (drafted) {
-        slot.setInteractive(new Phaser.Geom.Rectangle(-42, -46, 84, 104), Phaser.Geom.Rectangle.Contains);
+        // The grid cell, published so the audit can see it. Height spans the
+        // trophy chip above the portrait down to the name below it.
+        tagUi(slot, { role: 'card', ox: 0, oy: 0, w: 84, h: 104, label: char.name.split(' ')[0] });
+        hitFromBox(slot);
         slot.on('pointerdown', () => {
           audio.pop();
           audio.say(char.name, kidVoice(char), 'flush');
@@ -75,7 +81,9 @@ export class AlbumScene extends Phaser.Scene {
 
     makeButton(this, {
       x: GAME_WIDTH / 2,
-      y: GAME_HEIGHT - 46,
+      // -52, not -46: makeButton's box runs to y + h/2 + lip + stroke/2, which
+      // put the old bottom edge at 639 of a 640-tall canvas.
+      y: GAME_HEIGHT - 52,
       label: 'DONE',
       icon: '✅',
       width: 220,

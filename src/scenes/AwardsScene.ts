@@ -18,6 +18,7 @@ import { confetti } from '../ui/effects';
 import { squashHop } from '../ui/anim';
 import * as audio from '../systems/audio';
 import { commentatorProfile, kidVoice } from '../systems/voices';
+import { mountLayoutOverlay } from '../dev/LayoutOverlay';
 
 export class AwardsScene extends Phaser.Scene {
   constructor() {
@@ -25,6 +26,7 @@ export class AwardsScene extends Phaser.Scene {
   }
 
   create(): void {
+    if (import.meta.env.DEV) mountLayoutOverlay(this);
     const season = getSeason();
     if (!season) {
       this.scene.start('Schoolyard', { straightToDraft: false });
