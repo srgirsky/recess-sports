@@ -86,16 +86,28 @@ export const CPU_PITCH_TRAVEL_MS = 278;
  */
 export const PITCH_SPEED = {
   /** CLASSIC base travel (ms): human batting / human pitching halves. */
-  // MEASURED (pace.pitchCorridor): BB's fastball is 270ms (n=6, bimodal split
-  // 250/270/290 laser vs 420/430/480 lob). 297 / fastball speedMult 1.1 = 270ms
-  // at an average arm. We were at 800 -- 2.7x slower than BB, with our FASTEST
-  // possible pitch slower than BB's SLOWEST measured one.
+  // ⚠️ NOT MEASURED. These were fitted to a BB fastball of 270ms that has since
+  // been WITHDRAWN -- pace.pitchCorridor is now `awaiting-measurement`, because
+  // the method could not observe the release frame for the pitch type it was
+  // measuring (BB draws the ball for only ~5 frames of a flight, so "release"
+  // was always the first frame the ball became VISIBLE). Nothing here is known
+  // to match Backyard; it is the last value we happened to ship.
+  //
+  // Reported real play is HEAT ~1.5-2s and SLOWBALL ~3s, i.e. these may be
+  // several times too fast. Do NOT re-derive from the withdrawn samples -- see
+  // pitchCorridor.whatWouldWork for the capture that would settle it.
   MAIN_BASE_MS: 297,
   MAIN_CPU_BASE_MS: 260,
   /**
-   * Arm term: travel × clamp(BASE − PER_STAT × pitching). Stat 10 → 0.75
-   * (fastball ≈ 545ms), stat 1 → 1.20 (fastball ≈ 875ms) — the Backyard band.
+   * Arm term: travel × clamp(BASE − PER_STAT × pitching), so a better arm
+   * throws genuinely faster. At MAIN_BASE_MS 297 that is stat 10 → 0.75
+   * (fastball 203ms) and stat 1 → 1.20 (fastball 324ms).
    * Clamped so a content typo can't make a pitch untimeable.
+   *
+   * (This comment read "≈ 545ms / ≈ 875ms" until 2026-07-25 -- left over from
+   * the pre-corridor era and stale by 2.7x, which made the config look as
+   * though something downstream were scaling the speed. Restate these whenever
+   * MAIN_BASE_MS moves; they are derived, not independent.)
    */
   ARM_MULT: { BASE: 1.25, PER_STAT: 0.05, MIN: 0.7, MAX: 1.25 },
   /**

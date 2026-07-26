@@ -28,6 +28,8 @@ import {
   gameSegments,
   temporalMedian,
   foregroundBlobs,
+  clockFidelity,
+  pitchFidelity,
   hasFfmpeg,
 } from './video.js';
 import { findSpike, medianColor, patchFlatness } from './lib.js';
@@ -656,5 +658,98 @@ d('temporalMedian + foregroundBlobs — finding what MOVED, not what is white', 
     }
     expect(Math.max(...worst)).toBe(BALL * BALL);            // clean frames are intact
     expect(Math.min(...worst)).toBeLessThan(BALL * BALL);    // and some are not
+  });
+});
+
+d('clockFidelity — is the RECORDING real-time?', () => {
+  // A source that updates R times per second, muxed to 60fps, is a stopwatch
+  // digit ticking at R Hz. We know R, so we know the answer.
+  function ticking(name, rate, dur) {
+    const f = join(dir, name);
+    ff(['-f', 'lavfi', '-i', `testsrc=s=64x64:d=${dur}:r=${rate}`, '-vf', 'fps=60', '-r', '60', ...LOSSLESS, f]);
+    return f;
+  }
+
+  it('reports timeScale 1 when the digit ticks once per captured second', () => {
+    const f = ticking('clock-1hz.mkv', 1, 10);
+    const r = clockFidelity(f, { durationSec: 8, ticksPerSec: 1 });
+    expect(r.observedTicksPerSec).toBeCloseTo(1, 1);
+    expect(r.timeScale).toBeCloseTo(1, 1);
+    expect(r.verdict).toBe('faithful');
+  });
+
+  it('detects a COMPRESSED capture — the failure that makes events look faster', () => {
+    // The whole reason this function exists. A digit that really ticks at 1Hz
+    // but shows up ticking twice per captured second means one captured second
+    // holds two real seconds, so every duration read off the file is half true.
+    const f = ticking('clock-2hz.mkv', 2, 10);
+    const r = clockFidelity(f, { durationSec: 8, ticksPerSec: 1 });
+    expect(r.timeScale).toBeCloseTo(2, 1);
+    expect(r.verdict).toBe('compressed');
+  });
+
+  it('reports inconclusive rather than a wild ratio when the crop misses the clock', () => {
+    // A static crop must never be read as "infinitely stretched time".
+    const f = join(dir, 'clock-static.mkv');
+    ff(['-f', 'lavfi', '-i', 'color=c=black:s=64x64:d=6:r=60', ...LOSSLESS, f]);
+    const r = clockFidelity(f, { durationSec: 5, ticksPerSec: 1 });
+    expect(r.ticks).toBe(0);
+    expect(r.verdict).toBe('inconclusive');
+  });
+});
+
+d('pitchFidelity — a one-sided gate: rejects, never certifies', () => {
+  function stepped(name, rate, dur) {
+    const f = join(dir, name);
+    ff(['-f', 'lavfi', '-i', `testsrc=s=96x96:d=${dur}:r=${rate}`, '-vf', 'fps=60', '-r', '60', ...LOSSLESS, f]);
+    return f;
+  }
+
+  it('bounds the drawn steps of an animation from above', () => {
+    // 20fps over 1s = 20 distinct images, whatever the container says.
+    const f = stepped('pitch-smooth.mkv', 20, 2);
+    const r = pitchFidelity(f, { startSec: 0.1, durationSec: 1, minSteps: 10 });
+    expect(r.maxSteps).toBeGreaterThanOrEqual(18);
+    expect(r.maxSteps).toBeLessThanOrEqual(22);
+    expect(r.rushed).toBe(false);
+  });
+
+  it('REJECTS a corridor too static to hold a real flight', () => {
+    // The rejection the gate exists for: if even the upper bound is single
+    // digits, no flight was drawn there and no duration may be read off it.
+    // A failure means "discard the capture", never "scale the number".
+    const f = stepped('pitch-rushed.mkv', 10, 2);
+    const r = pitchFidelity(f, { startSec: 0.1, durationSec: 0.5, minSteps: 10 });
+    expect(r.maxSteps).toBeLessThan(10);
+    expect(r.rushed).toBe(true);
+    expect(r.verdict).toMatch(/rejected/);
+  });
+
+  it('does not claim a pass is a certification', () => {
+    // The bound is loose — the pitcher's arm and BB's target shadow animate in
+    // the same corridor. session2 passes this gate at 9-13 steps and is still
+    // not measurable, so the wording must not imply otherwise.
+    const f = stepped('pitch-pass.mkv', 20, 2);
+    const r = pitchFidelity(f, { startSec: 0.1, durationSec: 1, minSteps: 10 });
+    expect(r.rushed).toBe(false);
+    expect(r.verdict).toMatch(/NOT a certification/);
+  });
+
+  it('implies the authored flight from step count and the game render rate', () => {
+    // 20 steps authored for a 22fps renderer is a ~900ms flight, regardless of
+    // how fast the capture actually played them.
+    const f = stepped('pitch-implied.mkv', 20, 2);
+    const r = pitchFidelity(f, { startSec: 0.1, durationSec: 1, renderFps: 22 });
+    expect(r.impliedFlightMs).toBeGreaterThan(750);
+    expect(r.impliedFlightMs).toBeLessThan(1050);
+  });
+
+  it('honours crop, so the corridor can be isolated from the rest of the frame', () => {
+    // Cropping is what keeps the bound as tight as it can be: a static region
+    // reports no steps even while the full frame is animating.
+    const f = stepped('pitch-crop.mkv', 20, 2);
+    const whole = pitchFidelity(f, { startSec: 0.1, durationSec: 1 });
+    const corner = pitchFidelity(f, { startSec: 0.1, durationSec: 1, crop: { x: 0, y: 0, w: 8, h: 8 } });
+    expect(whole.maxSteps).toBeGreaterThan(corner.maxSteps);
   });
 });

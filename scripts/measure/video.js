@@ -168,9 +168,13 @@ function framesIdentical(a, b) {
  *
  * Measure over a HIGH-MOTION window — a still menu legitimately has no distinct
  * frames and would report a nonsense rate.
+ *
+ * `crop` restricts the comparison to a region, which is what lets the same
+ * primitive answer "how often does THIS PART of the picture change?" — the basis
+ * of both clockFidelity and pitchFidelity below.
  */
-export function distinctFrameRate(path, { startSec = 0, count = 60, scale = 4 } = {}) {
-  const { frames, meta } = readFrames(path, { startSec, count, scale });
+export function distinctFrameRate(path, { startSec = 0, count = 60, scale = 4, crop = null } = {}) {
+  const { frames, meta } = readFrames(path, { startSec, count, scale, crop });
   if (frames.length < 2) {
     return { distinctFps: NaN, containerFps: meta.containerFps, samples: frames.length };
   }
@@ -748,4 +752,125 @@ export function foregroundBlobs(frame, background, width, height, { threshold = 
     }
   }
   return blobs.sort((a, b) => b.n - a.n);
+}
+
+/**
+ * Is the RECORDING real-time?
+ *
+ * Point a millisecond stopwatch at the camera alongside the game and crop this
+ * to a single digit. A digit that advances at a known real rate turns "trust the
+ * container timestamps" into a measurement: count how often it changes per
+ * captured second and compare against how often it changes per real second.
+ *
+ * Deliberately OCR-free. Reading digits is a recognition problem with its own
+ * failure modes; counting *changes* is the same distinct-image primitive already
+ * validated above, and it cannot misread a 3 as an 8.
+ *
+ * Pick the digit by how long the window is: the SECONDS digit (ticksPerSec 1)
+ * over 10+ seconds is the most robust; the tenths digit (10) resolves faster but
+ * needs the container rate to comfortably exceed 10fps to avoid aliasing.
+ *
+ * `timeScale` is the payload: 1.0 means one real second per captured second.
+ * Above 1 the capture is compressed (events look faster than they happened),
+ * below 1 it is stretched.
+ *
+ * SCOPE — this validates the RECORDING ONLY. It says nothing about whether the
+ * emulator ran the game at authentic speed; a perfectly faithful recording of a
+ * game running too fast passes this check. It bounds what the capture did to the
+ * footage, not what the emulator did to the game.
+ */
+export function clockFidelity(path, { startSec = 0, durationSec = 10, crop = null, scale = 1, ticksPerSec = 1, info = null } = {}) {
+  const meta = info || probe(path);
+  const count = Math.max(2, Math.round(durationSec * meta.containerFps));
+  const { frames } = readFrames(path, { startSec, count, scale, crop, info: meta });
+
+  const at = [];
+  for (let i = 1; i < frames.length; i++) {
+    if (!framesIdentical(frames[i], frames[i - 1])) at.push(i);
+  }
+
+  // Rate is measured FIRST TICK to LAST TICK, never across the whole window.
+  // The partial intervals at either end are unobserved, and counting them as
+  // whole ones biases the estimate low — a 1Hz digit sampled over 8s shows 7
+  // transitions, which would read as 0.88Hz and slander a faithful capture.
+  const ticks = at.length;
+  const spanSec = ticks >= 2 ? (at[ticks - 1] - at[0]) / meta.containerFps : 0;
+  const observedTicksPerSec = spanSec > 0 ? (ticks - 1) / spanSec : NaN;
+  const timeScale = ticksPerSec > 0 ? observedTicksPerSec / ticksPerSec : NaN;
+
+  // A crop that missed the stopwatch, or a window too short to hold two ticks,
+  // must report ignorance — never "infinitely stretched time".
+  const verdict = !Number.isFinite(timeScale)
+    ? 'inconclusive'
+    : Math.abs(timeScale - 1) <= 0.05
+      ? 'faithful'
+      : timeScale > 1 ? 'compressed' : 'stretched';
+
+  return {
+    ticks,
+    spanSec: Math.round(spanSec * 1000) / 1000,
+    windowSec: Math.round(((frames.length - 1) / meta.containerFps) * 1000) / 1000,
+    observedTicksPerSec: Number.isFinite(observedTicksPerSec) ? Math.round(observedTicksPerSec * 100) / 100 : NaN,
+    expectedTicksPerSec: ticksPerSec,
+    timeScale: Number.isFinite(timeScale) ? Math.round(timeScale * 1000) / 1000 : NaN,
+    verdict,
+    containerFps: meta.containerFps,
+  };
+}
+
+/**
+ * How many distinct images is the pitch corridor DRAWN in during a flight?
+ *
+ * A one-sided gate: **it can reject a capture, it cannot certify one.**
+ *
+ * Crop to the corridor between mound and plate and count distinct images over
+ * the flight window. Every ball animation step must produce a change, so the
+ * count is an UPPER BOUND on how many positions the ball was drawn in. If even
+ * the upper bound is implausibly low for a smooth animation, the capture cannot
+ * support a timing measurement and must be discarded.
+ *
+ * It is only an upper bound because anything else animating in the corridor —
+ * the pitcher's arm, BB's descending target shadow — also counts. On session2
+ * this reads 9-13 over a 300ms window against a ~22fps render rate (controls:
+ * wide play 22.2, plate idle 22.7), so it does NOT reject that capture. Do not
+ * read a pass as evidence the capture is sound.
+ *
+ * Counting the ball *sprite* instead was tried and abandoned: ball-sized
+ * foreground blobs on this footage are dominated by sprite-edge fragments and
+ * produce incoherent tracks (see pace.trackerLessons). That failure is why this
+ * gate deliberately measures the region rather than the object.
+ *
+ * `minSteps` is a PLAUSIBILITY threshold, not a derived quantity — nothing in
+ * the footage says how many steps the animation truly contains. Treat a failure
+ * as "do not measure this capture", never as a correction factor.
+ *
+ * Steps-per-second cannot discriminate on its own: a rushed capture still shows
+ * roughly one new image per drawn frame. The absolute count is the signal.
+ */
+export function pitchFidelity(path, { startSec, durationSec, crop = null, scale = 1, renderFps = null, minSteps = 10, info = null } = {}) {
+  const meta = info || probe(path);
+  const count = Math.max(2, Math.round(durationSec * meta.containerFps));
+  const d = distinctFrameRate(path, { startSec, count, scale, crop });
+
+  const spanSec = (d.samples - 1) / meta.containerFps;
+  const steps = d.changes + 1; // N transitions bound N+1 distinct images
+  const stepsPerSec = spanSec > 0 ? d.changes / spanSec : NaN;
+
+  // What the same number of steps would span if each were drawn once at the
+  // game's own render rate — i.e. the flight this animation was authored for.
+  const impliedFlightMs = renderFps > 0 ? Math.round((steps / renderFps) * 1000) : null;
+
+  return {
+    // Upper bound on drawn ball positions, not a count of them.
+    maxSteps: steps,
+    observedWindowMs: Math.round(spanSec * 1000),
+    stepsPerSec: Number.isFinite(stepsPerSec) ? Math.round(stepsPerSec * 100) / 100 : NaN,
+    renderFps,
+    impliedFlightMs,
+    rushed: steps < minSteps,
+    minSteps,
+    verdict: steps < minSteps
+      ? 'rejected — corridor too static to hold a real flight; do not measure timing here'
+      : 'not-rejected — NOT a certification; the bound is loose (arm and target shadow also count)',
+  };
 }

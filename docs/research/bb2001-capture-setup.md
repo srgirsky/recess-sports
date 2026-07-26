@@ -115,6 +115,20 @@ ffmpeg -f avfoundation -capture_cursor 0 -framerate 60 \
 
 `-framerate 60` oversamples on purpose: the game likely renders slower, and the duplicate frames let the pipeline *detect* the true render rate instead of assuming it. macOS will ask for Screen Recording permission for your terminal the first time.
 
+**6c. A millisecond stopwatch IN FRAME. Not optional.**
+
+Session 2 followed every rule above and is still **rejected as a source for pitch timing**, because nothing in it distinguishes *"the game did X in 250 ms"* from *"the recording compressed 2 s into 250 ms"* from *"the emulator ran the animation faster than the game intends"*. The ffv1/60 fps rules protect image quality. **None of them bound the clock.**
+
+Put a stopwatch beside the game window and capture both in the same frame. Elapsed time then comes off pixels instead of container metadata, and fidelity becomes a measurement rather than an assumption.
+
+- Use a **native** stopwatch app. A browser tab can be throttled in the background, which would defeat the entire point. macOS Clock's hundredths are sufficient.
+- Beside the game, **not overlapping** it, and don't resize anything mid-recording.
+- Gate the result with `clockFidelity` (`scripts/measure/video.js`) **before reading a single timestamp** — crop to one digit, pass its real tick rate, and require `timeScale ≈ 1.0`.
+
+Because the stopwatch makes the clock self-evident, the *codec* matters much less than it did: **macOS Screenshot (⌘⇧5) is acceptable** if ffv1 is inconvenient. H.264 still smears the ~5 px ball, so verify the ball is trackable frame-to-frame before trusting a flight measurement; the clock reading stays valid either way.
+
+**What the stopwatch does and does not prove.** It proves the *recording* is real-time. It does **not** prove ScummVM runs the game at authentic speed — a faithful recording of a too-fast emulator passes. That is still the sharper test, because it answers whether the pitch *on screen, in the session you are playing*, took the time you perceive it taking.
+
 ## Step 7 — Play the shot list
 
 The payoff: **produce these deliberately** instead of hoping they occur. Aim for **6 of each** of the top three — n=1 is what caused the original mistake.

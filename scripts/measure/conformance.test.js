@@ -348,29 +348,40 @@ describe('pace — measured, retuned, and now conformed', () => {
   });
 });
 
-describe('pitch corridor — matched to BB, and timing can never go free again', () => {
+describe('pitch corridor — withdrawn, and timing can never go free again', () => {
   const armMult = (stat) =>
     Math.min(PITCH_SPEED.ARM_MULT.MAX, Math.max(PITCH_SPEED.ARM_MULT.MIN,
       PITCH_SPEED.ARM_MULT.BASE - PITCH_SPEED.ARM_MULT.PER_STAT * stat));
   const travel = (base, kind, stat) => (base / PITCHES[kind].speedMult) * armMult(stat);
 
-  it('our fastball matches BB’s measured 270ms', () => {
+  it('pins OUR fastball and claims nothing about BB', () => {
+    // This assertion used to read "our fastball matches BB's measured 270ms".
+    // It doesn't any more, and the reason is the whole point of this file: the
+    // 270 was read off a capture that cannot show the release frame for the
+    // pitch type being measured, so conforming to it asserted a parity nobody
+    // had established. Under awaiting-measurement the contract inverts — the
+    // test pins our snapshot so it cannot drift unnoticed, and makes no claim
+    // about BB at all until a gated capture exists.
     const rec = M.pace.pitchCorridor;
-    expect(rec.status).toBe('conformed');
+    expect(rec.status).toBe('awaiting-measurement');
+    expect(rec.measured, 'no BB value may be asserted while withdrawn').toBeNull();
 
-    // Both sides derived: ours from the real formula, BB's from its own samples.
     const ours = (stat) => travel(PITCH_SPEED.MAIN_BASE_MS, 'fastball', stat);
     expect(Math.round(ours(5))).toBe(rec.ours.fastballMs.stat5);
+    expect(Math.round(ours(10))).toBe(rec.ours.fastballMs.stat10);
+    expect(Math.round(ours(1))).toBe(rec.ours.fastballMs.stat1);
+  });
 
-    const lasers = rec.samples.filter((x) => x.kind.startsWith('laser')).map((x) => x.ms);
-    const bbFast = lasers.sort((a, b) => a - b)[Math.floor(lasers.length / 2)];
-    expect(bbFast).toBe(rec.measured.fastballMs);
-    expect(Math.abs(ours(5) - bbFast)).toBeLessThan(rec.measured.fastballSpread);
-
-    // And our corridor now BRACKETS BB's lasers instead of sitting entirely
-    // above them, which was the old finding.
-    expect(ours(10)).toBeLessThan(Math.min(...lasers));
-    expect(ours(1)).toBeGreaterThan(Math.max(...lasers));
+  it('keeps the withdrawal auditable instead of quietly deleting it', () => {
+    // A withdrawn measurement that leaves no trail is how the same mistake gets
+    // made twice. The old value, its old status, and why it fell must survive.
+    const rec = M.pace.pitchCorridor;
+    expect(rec.whyWithdrawn).toBeTruthy();
+    expect(rec.supersedes.was.status).toBe('conformed');
+    expect(rec.supersedes.was.measured.fastballMs).toBe(270);
+    // The samples are kept because the RATIO may outlive the absolute values.
+    expect(rec.partialReading.confidence).toBe('low');
+    expect(rec.partialReading.samples.length).toBe(6);
   });
 
   it('never lets a timing window swallow the whole flight', () => {

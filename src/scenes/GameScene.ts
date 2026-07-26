@@ -15,10 +15,8 @@ import {
   GAME_HEIGHT,
   COLORS,
   PITCH_TRAVEL_MS,
-  TEE_PITCH_MS,
   PITCH_METER_MS,
   PITCH_AUTO_THROW_MS,
-  CPU_PITCH_TRAVEL_MS,
   FLOW,
   INNINGS,
   MAX_EXTRA_INNINGS,
@@ -1867,7 +1865,9 @@ export class GameScene extends Phaser.Scene {
     this.pitchPlan = undefined;
     // Tee-ball sits the ball on a tee: a slow, high soft lob so any timing
     // makes contact. Everything downstream (ring + ball tweens) reads `travel`.
-    const travel = this.tee ? TEE_PITCH_MS : PITCH_TRAVEL_MS;
+    // Through the one resolver, never the raw constants — the defensive half
+    // read them directly and silently missed the tee case for months.
+    const travel = getPitchBaseMs(this.mode, 'batting', this.tee);
     this.pitchTravelMs = travel;
     // Sometimes the AI throws a WILD one — telegraphed in red, visibly off the
     // plate. Don't swing at those! Taking it earns a ball (4 = walk).
@@ -3513,8 +3513,14 @@ export class GameScene extends Phaser.Scene {
       ? { isBall: band === 'wild', cpuSwings: false, cpuBand: 'miss' as SwingBand, description: '' }
       : resolveCpuPitch(band, this.fieldingSeat().pitcher!, this.cpuBatter, () => Math.random());
     this.netSwing = undefined; // a fresh pitch invalidates any stale swing
-    this.hostCast({ t: 'pitchLaunch', wild: band === 'wild', travelMs: CPU_PITCH_TRAVEL_MS });
-    this.time.delayedCall(ANIM.WINDUP_MS, () => this.launchCpuPitch(band, plan));
+    // Resolve ONCE and pass it down: the cast and the local flight must be the
+    // same number or the net guest's ball lands on a different frame. This used
+    // to be CPU_PITCH_TRAVEL_MS hardcoded in both places, which ignored `tee` —
+    // so a tee-ball game lobbed at 1500ms when you batted and fired a 278ms
+    // laser when you pitched, in the tier that is meant to be the easiest.
+    const travel = getPitchBaseMs(this.mode, 'pitching', this.tee);
+    this.hostCast({ t: 'pitchLaunch', wild: band === 'wild', travelMs: travel });
+    this.time.delayedCall(ANIM.WINDUP_MS, () => this.launchCpuPitch(band, plan, travel));
   }
 
   private lastPitchKind?: PitchKind;
@@ -3642,8 +3648,12 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  /** Fast ball flight mound -> plate; wild pitches fly red and off-target. */
-  private launchCpuPitch(band: PitchBand, plan: CpuPitchPlan): void {
+  /**
+   * Ball flight mound -> plate; wild pitches fly red and off-target.
+   * `travelMs` comes from the caller (getPitchBaseMs) rather than a constant, so
+   * tee-ball's soft lob applies on BOTH halves — see resolvePlayerPitch.
+   */
+  private launchCpuPitch(band: PitchBand, plan: CpuPitchPlan, travelMs: number): void {
     audio.pitchWoosh();
     const wild = band === 'wild';
     const start = this.rig.releasePoint;
@@ -3658,7 +3668,7 @@ export class GameScene extends Phaser.Scene {
       x: end.x,
       y: end.y,
       scale: { from: PLATE_VIEW.BALL.SCALE_FROM, to: PLATE_VIEW.BALL.SCALE_TO },
-      duration: CPU_PITCH_TRAVEL_MS,
+      duration: travelMs,
       ease: 'Sine.in',
       onComplete: () => {
         ball.destroy();

@@ -354,6 +354,40 @@ hand at 53.683, clearly airborne at 53.783, and inside the strike-zone bracket
 at 53.917 — a **~220 ms flight**, against the ~250 ms the YouTube notes measured
 for a max-arm pitch. The recorded corroboration was *confirmed*, not corrected.
 
+> 🛑 **2026-07-25 — this section's conclusion is withdrawn, and so is the
+> ~220 ms reading built on it.** Two errors compound here.
+>
+> **The rejected object is BB's target shadow, not "a shadow".** BB draws a
+> descending indicator on the corridor floor showing where the pitch is headed.
+> It is a real, continuously-rendered part of the pitch, and it was dismissed by
+> name without ever being identified. The plate view holds **three** moving
+> things — ball sprite, target indicator, swing cursor — and a tracker not shown
+> to separate all three has identified none of them.
+>
+> **The eye read is not independent of the trap.** "The ball is still in the
+> pitcher's hand at 53.683, clearly airborne at 53.783" rests on a ball sprite
+> that BB draws for only ~5 frames of a flight — a fact this very file records
+> two sections down ("the ball is ~5px and BB frequently draws it into a
+> picture-in-picture inset… for much of a high fly there is no ball on the field
+> to track at all"). If the sprite is absent early, "the frame it separates from
+> the pitcher" is the frame it became VISIBLE, which is late by construction.
+> `pace.pitchCorridor`'s own method compounds this: it classified pitches as
+> fastballs *because* the ball was invisible until late.
+>
+> So the ~930 ms indicator track and the ~220 ms sprite read are not rival
+> answers to one question — they bound different things, and neither was shown
+> to bound release→plate. The corroboration was neither confirmed nor corrected;
+> it was never tested. `pace.pitchCorridor` is now `awaiting-measurement` and
+> session 2 is rejected as a source for pitch timing.
+>
+> What was actually established, and is worth keeping: the game renders a steady
+> ~22 fps here (wide play 22.18, plate idle 22.69), and the pitch corridor is no
+> exception, so nothing is being frame-dropped during the pitch. A first draft of
+> the withdrawal claimed the ~5 drawn positions *proved* a rushed capture; that
+> was also wrong — `pitchFidelity` returns 9–13 over the flight window, fully
+> consistent with 22 fps. It is recorded in `instrument.captureFidelity` so the
+> overreach does not get rediscovered as a finding.
+
 The lesson generalises the pass-1 one rather than replacing it. A clean monotone
 track is evidence that *something* is moving smoothly and nothing more. In pass 1
 that was a valid check because no canned fielder animation produces one; in a
