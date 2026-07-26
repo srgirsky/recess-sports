@@ -15,6 +15,7 @@ import type { PositionId } from '../systems/geometry';
 import { autoAssign, swapOrder, swapPositions, validateLineup, type LineupPlan } from '../systems/lineup';
 import { makeButton } from '../ui/Button';
 import { heading, ribbon, pill, FONT } from '../ui/theme';
+import { tagUi, hitFromBox } from '../ui/layout';
 import { activeSession, dropSession } from '../net/peer';
 import { popIn } from '../ui/anim';
 import * as audio from '../systems/audio';
@@ -459,7 +460,10 @@ export class LineupScene extends Phaser.Scene {
       c.add(name);
     }
     c.setSize(84, 78);
-    c.setInteractive(new Phaser.Geom.Rectangle(-42, -39, 84, 78), Phaser.Geom.Rectangle.Contains);
+    // setInteractive only — no Text is created, removed or reordered here, so
+    // this stays neutral to the seeded goldlog stream (see AGENTS.md).
+    tagUi(c, { role: 'card', ox: 0, oy: 0, w: 84, h: 78, label: char.name.split(' ')[0] });
+    hitFromBox(c);
     const chip: Chip = { container: c, ring, kind, slot };
     c.on('pointerdown', () => this.tapChip(chip, char.name));
     popIn(this, c, 1);

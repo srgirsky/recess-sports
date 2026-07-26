@@ -50,6 +50,7 @@ import { ribbon, pill, panel, heading, FONT, OUTLINE } from '../ui/theme';
 import { floatingText, burst, confetti } from '../ui/effects';
 import { idleBob, squashHop, popIn, enterFrom, pulse, groundShadow, runCycle } from '../ui/anim';
 import { playerCard, statTag } from '../ui/PlayerCard';
+import { row, hitFromBox } from '../ui/layout';
 import { mountPickRateOverlay } from '../dev/PickRateOverlay';
 import { mountArtGallery } from '../dev/ArtGallery';
 import * as audio from '../systems/audio';
@@ -92,13 +93,17 @@ const CURB_Y = 308; // back-row feet (on the concrete curb)
 const FRONT_Y = 356; // front-row feet (on the blacktop)
 const TEAM_Y = [438, 482]; // cluster rows (back, front)
 
-// Title-row centers, top→bottom. Ribbon h≈50, chips h≈33–38, PLAY h=100;
-// keep ≥10px between row bounding boxes (band: blacktop top 314 → 633).
+// Title-row centres, top→bottom, inside the blacktop band (314 → 633).
+// Both rows are laid out horizontally by row(), so only the y's live here.
+// MAIN_Y is 545, not 535: PLAY's real box is 113 tall (100 + the 8px lip + the
+// 5px stroke, centred lip/2 BELOW its y), which at 535 reached up under the
+// entry row once that row was centred rather than pinned at cx±250.
+// The audit pins this — `npm run audit:layout`.
 const TITLE = {
   RIBBON_Y: 358,
   VENUE_Y: 410,
   ENTRY_Y: 456,
-  MAIN_Y: 535,
+  MAIN_Y: 545,
   TOGGLE_Y: 614,
 };
 
@@ -612,9 +617,9 @@ export class SchoolyardScene extends Phaser.Scene {
 
     // 👥 VS: pass-and-play — two kids draft against each other, then the
     // batting player holds the device each half.
-    const vs = pill(this, GAME_WIDTH / 2 - 78, TITLE.ENTRY_Y, '👥 VS', { fill: COLORS.cream, fontSize: 20, minW: 110 });
+    const vs = pill(this, GAME_WIDTH / 2, TITLE.ENTRY_Y, '👥 VS', { fill: COLORS.cream, fontSize: 20, minW: 110 });
     vs.container.setDepth(5);
-    vs.container.setInteractive(new Phaser.Geom.Rectangle(-55, -22, 110, 44), Phaser.Geom.Rectangle.Contains);
+    hitFromBox(vs.container);
     vs.container.on('pointerdown', () => {
       if (this.phase !== 'title') return;
       audio.unlock();
@@ -627,9 +632,9 @@ export class SchoolyardScene extends Phaser.Scene {
     this.titleObjs.push(vs.container);
 
     // 🔗 two-device play: host/join over the emoji room code (LobbyScene).
-    const link = pill(this, GAME_WIDTH / 2 + 78, TITLE.ENTRY_Y, '🔗 FRIEND', { fill: COLORS.cream, fontSize: 20, minW: 130 });
+    const link = pill(this, GAME_WIDTH / 2, TITLE.ENTRY_Y, '🔗 FRIEND', { fill: COLORS.cream, fontSize: 20, minW: 130 });
     link.container.setDepth(5);
-    link.container.setInteractive(new Phaser.Geom.Rectangle(-65, -22, 130, 44), Phaser.Geom.Rectangle.Contains);
+    hitFromBox(link.container);
     link.container.on('pointerdown', () => {
       if (this.phase !== 'title') return;
       audio.unlock();
@@ -640,9 +645,9 @@ export class SchoolyardScene extends Phaser.Scene {
 
     // 🏆 RECESS WEEK: the 5-game season (resumes mid-week automatically) and
     // 📔 the sticker album.
-    const week = pill(this, GAME_WIDTH / 2 - 250, TITLE.ENTRY_Y, '🏆 WEEK', { fill: COLORS.gold, fontSize: 20, minW: 130 });
+    const week = pill(this, GAME_WIDTH / 2, TITLE.ENTRY_Y, '🏆 WEEK', { fill: COLORS.gold, fontSize: 20, minW: 130 });
     week.container.setDepth(5);
-    week.container.setInteractive(new Phaser.Geom.Rectangle(-70, -22, 140, 44), Phaser.Geom.Rectangle.Contains);
+    hitFromBox(week.container);
     week.container.on('pointerdown', () => {
       if (this.phase !== 'title') return;
       audio.unlock();
@@ -659,9 +664,9 @@ export class SchoolyardScene extends Phaser.Scene {
     });
     this.titleObjs.push(week.container);
 
-    const albumBtn = pill(this, GAME_WIDTH / 2 + 250, TITLE.ENTRY_Y, '📔', { fill: COLORS.cream, fontSize: 24, minW: 64 });
+    const albumBtn = pill(this, GAME_WIDTH / 2, TITLE.ENTRY_Y, '📔', { fill: COLORS.cream, fontSize: 24, minW: 64 });
     albumBtn.container.setDepth(5);
-    albumBtn.container.setInteractive(new Phaser.Geom.Rectangle(-32, -22, 64, 44), Phaser.Geom.Rectangle.Contains);
+    hitFromBox(albumBtn.container);
     albumBtn.container.on('pointerdown', () => {
       if (this.phase !== 'title') return;
       audio.unlock();
@@ -670,16 +675,13 @@ export class SchoolyardScene extends Phaser.Scene {
     this.titleObjs.push(albumBtn.container);
 
     // 🥎 batting practice: no draft, no innings — grab a bat and swing.
-    const practice = pill(this, GAME_WIDTH / 2 - 250, TITLE.MAIN_Y, '🥎 PRACTICE', {
+    const practice = pill(this, GAME_WIDTH / 2, TITLE.MAIN_Y, '🥎 PRACTICE', {
       fill: COLORS.cream,
       fontSize: 20,
       minW: 160,
     });
     practice.container.setDepth(5);
-    practice.container.setInteractive(
-      new Phaser.Geom.Rectangle(-85, -22, 170, 44),
-      Phaser.Geom.Rectangle.Contains
-    );
+    hitFromBox(practice.container);
     practice.container.on('pointerdown', () => {
       if (this.phase !== 'title') return;
       audio.unlock();
@@ -695,18 +697,38 @@ export class SchoolyardScene extends Phaser.Scene {
     this.titleObjs.push(practice.container);
 
     // ⚙️ settings.
-    const gear = pill(this, GAME_WIDTH / 2 + 250, TITLE.MAIN_Y, '⚙️', { fill: COLORS.cream, fontSize: 24, minW: 64 });
+    const gear = pill(this, GAME_WIDTH / 2, TITLE.MAIN_Y, '⚙️', { fill: COLORS.cream, fontSize: 24, minW: 64 });
     gear.container.setDepth(5);
-    gear.container.setInteractive(
-      new Phaser.Geom.Rectangle(-32, -22, 64, 44),
-      Phaser.Geom.Rectangle.Contains
-    );
+    hitFromBox(gear.container);
     gear.container.on('pointerdown', () => {
       if (this.phase !== 'title') return;
       audio.unlock();
       this.scene.start('Settings');
     });
     this.titleObjs.push(gear.container);
+
+    // Both title rows are placed by MEASUREMENT, not the old fixed cx±250 /
+    // cx±78 offsets — those assumed each pill was exactly its `minW`, which is
+    // why two of them had already been hand-patched with a wider hit rect than
+    // the pill they belonged to. Layout reads the unscaled `ui` box, so PLAY's
+    // pulse(1.05) loop and its Back.out entrance tween can't make the row jitter.
+    row([week.container, vs.container, link.container, albumBtn.container], {
+      centerX: GAME_WIDTH / 2,
+      y: TITLE.ENTRY_Y,
+      // Wide on purpose: the entry pills are meant to spread across the
+      // blacktop between the pennants, not huddle in the middle. maxW still
+      // pulls them in if a label ever grows.
+      gap: 50,
+      maxW: 880,
+    });
+    row([practice.container, play, gear.container], {
+      centerX: GAME_WIDTH / 2,
+      y: TITLE.MAIN_Y,
+      // Comfortably past 2x PLAY's 7.5px-per-side pulse overhang, and matches
+      // the spread the fixed cx±250 offsets used to give this row.
+      gap: 40,
+      maxW: 900,
+    });
 
     // Game mode (difficulty) and venue now live on the GAME SETUP page (PLAY),
     // so the title stays uncluttered — just the entry pills + PLAY.

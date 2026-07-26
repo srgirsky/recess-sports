@@ -33,13 +33,13 @@ const SRC = join(here, '..', 'src');
  * silently disagree. Drive these to zero; never raise one.
  */
 const ALLOWLIST = {
-  // GameSetupScene is fully converted — it deliberately has no entry.
-  'scenes/SchoolyardScene.ts': 6,
+  // Every menu scene is converted and deliberately has no entry.
+  //
+  // GameScene is the last holdout, and on purpose: its HUD sits inside the
+  // seeded goldlog stream, so re-flowing it needs its own PR with a
+  // fingerprint-regeneration budget. Its hit areas are stable today because the
+  // HUD geometry is declared in config.HUD rather than measured per label.
   'scenes/GameScene.ts': 6,
-  'scenes/AlbumScene.ts': 1,
-  'scenes/LineupScene.ts': 1,
-  'scenes/SettingsScene.ts': 1,
-  'scenes/LobbyScene.ts': 1,
 };
 
 function walk(dir, out = []) {

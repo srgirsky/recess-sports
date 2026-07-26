@@ -12,6 +12,7 @@ import * as audio from '../systems/audio';
 import { commentatorProfile } from '../systems/voices';
 import { makeButton } from '../ui/Button';
 import { ribbon, pill, heading } from '../ui/theme';
+import { hitFromBox } from '../ui/layout';
 import { mountLayoutOverlay } from '../dev/LayoutOverlay';
 
 const TRACK_W = 420;
@@ -110,7 +111,7 @@ export class SettingsScene extends Phaser.Scene {
         minW: 92,
       });
       container.setAlpha(selected ? 1 : 0.7);
-      container.setInteractive(new Phaser.Geom.Rectangle(-46, -24, 92, 48), Phaser.Geom.Rectangle.Contains);
+      hitFromBox(container);
       container.on('pointerdown', () => {
         this.settings.innings = n;
         saveSettings(this.settings);
