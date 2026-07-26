@@ -16,6 +16,7 @@ import { commentatorProfile } from '../systems/voices';
 import { recordAlbumGame } from '../systems/album';
 import { teamName, type TeamIdentity } from '../systems/team';
 import { dropSession } from '../net/peer';
+import { mountLayoutOverlay } from '../dev/LayoutOverlay';
 
 /** The bottom button row. A makeButton's box runs to y + h/2 + lip + stroke/2. */
 const BUTTON_H = 78;
@@ -40,6 +41,7 @@ export class ResultScene extends Phaser.Scene {
   }
 
   create(data: ResultData): void {
+    if (import.meta.env.DEV) mountLayoutOverlay(this);
     const cx = GAME_WIDTH / 2;
     const won = data.playerScore > data.aiScore;
     const tied = data.playerScore === data.aiScore;

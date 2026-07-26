@@ -14,6 +14,7 @@ import { ribbon, FONT } from '../ui/theme';
 import { popIn } from '../ui/anim';
 import * as audio from '../systems/audio';
 import { kidVoice } from '../systems/voices';
+import { mountLayoutOverlay } from '../dev/LayoutOverlay';
 
 export class AlbumScene extends Phaser.Scene {
   constructor() {
@@ -21,6 +22,7 @@ export class AlbumScene extends Phaser.Scene {
   }
 
   create(): void {
+    if (import.meta.env.DEV) mountLayoutOverlay(this);
     const album = getAlbum();
 
     const bg = this.add.graphics();

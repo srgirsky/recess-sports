@@ -16,6 +16,7 @@ import { ribbon, heading, FONT } from '../ui/theme';
 import { enterFrom } from '../ui/anim';
 import * as audio from '../systems/audio';
 import { commentatorProfile } from '../systems/voices';
+import { mountLayoutOverlay } from '../dev/LayoutOverlay';
 
 export class SeasonScene extends Phaser.Scene {
   constructor() {
@@ -23,6 +24,7 @@ export class SeasonScene extends Phaser.Scene {
   }
 
   create(): void {
+    if (import.meta.env.DEV) mountLayoutOverlay(this);
     // The week hub (and the Awards podium behind it) is a jersey-era surface;
     // clear any lingering draft street-clothes variant from the title path.
     clearTeamVariant();

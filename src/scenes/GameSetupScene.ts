@@ -35,6 +35,7 @@ import { makeButton } from '../ui/Button';
 import { ribbon, pill, heading } from '../ui/theme';
 import { row, columnGroups, hitFromBox, remeasureText, type Item } from '../ui/layout';
 import { shadeInt, lightenInt, grassFlecks, hash01 } from '../art/fieldTexture';
+import { mountLayoutOverlay } from '../dev/LayoutOverlay';
 
 type GameType = 'game' | 'practice' | 'watch';
 
@@ -75,6 +76,7 @@ export class GameSetupScene extends Phaser.Scene {
   }
 
   create(): void {
+    if (import.meta.env.DEV) mountLayoutOverlay(this);
     this.settings = getSettings();
     this.gameType = 'game';
     const ids = Object.keys(VENUES) as VenueId[];

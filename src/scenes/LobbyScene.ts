@@ -21,6 +21,7 @@ import { getMode, setMode } from '../systems/mode';
 import { getSettings, saveSettings } from '../systems/settings';
 import { getVenue, setVenue } from '../systems/venue';
 import type { VenueId } from '../data/venues';
+import { mountLayoutOverlay } from '../dev/LayoutOverlay';
 
 export class LobbyScene extends Phaser.Scene {
   private stage!: Phaser.GameObjects.Container;
@@ -43,6 +44,7 @@ export class LobbyScene extends Phaser.Scene {
   }
 
   create(): void {
+    if (import.meta.env.DEV) mountLayoutOverlay(this);
     this.myIdentity = getTeamIdentity() ?? { color: 5, logo: 0 };
     this.gotHello = false;
     this.sentIdentity = false;

@@ -12,6 +12,7 @@ import * as audio from '../systems/audio';
 import { commentatorProfile } from '../systems/voices';
 import { makeButton } from '../ui/Button';
 import { ribbon, pill, heading } from '../ui/theme';
+import { mountLayoutOverlay } from '../dev/LayoutOverlay';
 
 const TRACK_W = 420;
 
@@ -24,6 +25,7 @@ export class SettingsScene extends Phaser.Scene {
   }
 
   create(): void {
+    if (import.meta.env.DEV) mountLayoutOverlay(this);
     this.settings = getSettings();
     this.inningPills = [];
 

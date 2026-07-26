@@ -47,6 +47,28 @@ Phaser, so they're unit-tested headlessly:
 npm test
 ```
 
+## Checking the layout
+
+Every menu screen is a fixed 960×640 absolute layout, and pills size themselves
+to their *rendered* text — so a label change or a platform's wider emoji can push
+two controls into each other. This boots every screen headlessly and fails if any
+two pieces of chrome overlap, leave the frame, collide in tap-area, or end up too
+small to tap:
+
+```bash
+npx playwright install chromium   # once
+npm run audit:layout
+```
+
+It sweeps the content that actually causes trouble (all three venues, every
+difficulty, the longest of the 56 team names, all five Result variants) in both
+the Fredoka and font-blocked states. Deliberate exceptions live in
+`scripts/layout-audit.json` with a written reason. It also runs in CI
+(`.github/workflows/ci.yml`) on every pull request.
+
+While playing locally, **press `L` on any menu screen** for the same check as an
+overlay: chrome boxes in green, tap targets in blue, collisions flashing red.
+
 ## Building & deploying (free)
 
 ```bash

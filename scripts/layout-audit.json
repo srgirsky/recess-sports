@@ -1,0 +1,53 @@
+{
+  "_comment": [
+    "The layout audit's record file, in the shape of measures.json: the gate is",
+    "scripts/layout-audit.mjs (npm run audit:layout), and every silenced finding",
+    "is an explicit, reviewable row here rather than a quiet edit to the code.",
+    "",
+    "A waiver needs a `why`. If you cannot write one, it is a bug, not a waiver."
+  ],
+
+  "frame": { "w": 960, "h": 640, "margin": 6 },
+  "tolerancePx": 2,
+  "minTouchPx": 44,
+
+  "_scenesComment": [
+    "Each entry boots one scene with one set of DATA. Variants exist because the",
+    "defects live in the content, not the code: the longest team name, a tie, a",
+    "season game. `teamIdentity: \"longest\"` seeds recess_team with the widest of",
+    "the 56 colour x logo combinations before boot."
+  ],
+  "scenes": [
+    { "id": "GameSetup", "key": "GameSetup", "cycleVenues": true, "cycleDifficulties": true },
+    { "id": "Schoolyard title", "key": "Schoolyard", "data": { "straightToDraft": false }, "settle": 2500 },
+    { "id": "Settings", "key": "Settings" },
+    { "id": "Album", "key": "Album" },
+    { "id": "Lobby", "key": "Lobby" },
+    { "id": "Season (week over)", "key": "Season", "needsSeason": true, "teamIdentity": "longest" },
+    { "id": "Awards", "key": "Awards", "needsSeason": true, "teamIdentity": "longest" },
+    { "id": "Result solo win", "key": "Result", "result": { "playerScore": 7, "aiScore": 3, "matchType": "solo" } },
+    { "id": "Result solo loss", "key": "Result", "result": { "playerScore": 2, "aiScore": 9, "matchType": "solo" } },
+    { "id": "Result tie", "key": "Result", "result": { "playerScore": 5, "aiScore": 5, "matchType": "solo" } },
+    {
+      "id": "Result passplay (longest name)",
+      "key": "Result",
+      "teamIdentity": "longest",
+      "result": { "playerScore": 12, "aiScore": 10, "matchType": "passplay", "useIdentity": true }
+    },
+    { "id": "Result season", "key": "Result", "result": { "playerScore": 4, "aiScore": 1, "seasonGame": true } }
+  ],
+
+  "_waiversComment": [
+    "Matched on scene id + the two element labels (order-insensitive) + code."
+  ],
+  "waivers": [
+    {
+      "scene": "Schoolyard title",
+      "code": "OVERLAP",
+      "a": "RECESS",
+      "b": "SPORTS",
+      "status": "waived",
+      "why": "The school-sign wordmark is 42px type deliberately set on 40px leading. The ink does not touch; only the ink-height boxes do, by 9px. Tightening the leading would be a worse logo."
+    }
+  ]
+}
