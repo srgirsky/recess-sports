@@ -1,24 +1,24 @@
 {
-  "comment": "Gold-log regression fingerprints (scripts/goldlog.browser.js, harness v2.2). The harness seeds Math.random (mulberry32), virtualizes Date.now onto the pump grid, bypasses the visual draft with FIXED teams (the draft's greedy chooser jitters every candidate with rng, so title-screen cosmetics would cascade into different teams), reseeds at game entry, waits out the real-async jersey loader on a 50ms pump grid, and samples every 50ms step. Fingerprint = SHA-256 of the state-transition log (dash-grouped). Behavior-identical phases must reproduce these exactly. To debug a mismatch: check out the anchoring commit and re-run goldLogRun for the full log. CAUTION when regenerating: launch goldLogRun fire-and-forget and poll sessionStorage('goldlog_last') afterward \u2014 an awaited eval that times out mid-drive interleaves CDP work with the run and pollutes the fingerprint.",
-  "capturedAt": "post live-play fielding+baserunning fixes (fix/live-play-fielding-and-baserunning): chaser election moved to systems/fielding.ts and can now change hands mid-play; every loose-ball settle clamps into the field; batter-runners can no longer be turned back toward the plate. Each fingerprint verified byte-stable across clean runs (main x3, kid x2). MAIN RE-CAPTURED 2026-07-25 on feat/pitch-ceremony to correct the drift #24 left behind (see mainDrift) -- main x2 on the branch plus x1 on post-#24 src, all identical; kid re-verified unchanged.",
+  "comment": "Gold-log regression fingerprints (scripts/goldlog.browser.js, harness v2.2). The harness seeds Math.random (mulberry32), virtualizes Date.now onto the pump grid, bypasses the visual draft with FIXED teams (the draft's greedy chooser jitters every candidate with rng, so title-screen cosmetics would cascade into different teams), reseeds at game entry, waits out the real-async jersey loader on a 50ms pump grid, and samples every 50ms step. Fingerprint = SHA-256 of the state-transition log (dash-grouped). Behavior-identical phases must reproduce these exactly. To debug a mismatch: check out the anchoring commit and re-run goldLogRun for the full log. CAUTION when regenerating: launch goldLogRun fire-and-forget and poll sessionStorage('goldlog_last') afterward — an awaited eval that times out mid-drive interleaves CDP work with the run and pollutes the fingerprint.",
+  "capturedAt": "post live-play fielding+baserunning fixes (fix/live-play-fielding-and-baserunning): chaser election moved to systems/fielding.ts and can now change hands mid-play; every loose-ball settle clamps into the field; batter-runners can no longer be turned back toward the plate. Each fingerprint verified byte-stable across clean runs (main x3, kid x2). MAIN RE-CAPTURED 2026-07-25 on feat/pitch-ceremony to correct the drift #24 left behind (see mainDrift) -- main x2 on the branch plus x1 on post-#24 src, all identical; kid re-verified unchanged. | MAIN RE-CAPTURED 2026-07-26 on feat/pitch-corridor-remeasure (pitch corridor re-measured against a stopwatch; kid re-verified unchanged, main x2 identical).",
   "script": "goldlog.browser.js v2.2 (guard 9000)",
   "seed": 42,
   "logs": {
     "main": {
-      "length": 3038,
-      "sha256": "b7377201-ac885818-ca0cf397-7f874dbb-dc4fe76b-e90ab9e4-c9987266-cc1151ed",
-      "note": "fixed teams A/B, 1 inning, ends 1-0. REGENERATED for #24 (see mainDrift) -- the ceremony PR that carries this change is itself fingerprint-neutral."
+      "length": 2568,
+      "sha256": "b4463dd2-46214115-b6ce64e2-0bdc3b31-1d3dd15c-aa671c73-c4416527-ff5e813f",
+      "note": "fixed teams A/B, 1 inning, ends 1-0. RECAPTURED 2026-07-26 for the pitch-corridor re-measure (MAIN_BASE_MS 297->1350, swing windows rescaled with it). Shorter than the old 3038 because the wider CLASSIC windows change swing outcomes, not because it truncated -- the log ends {\"done\":true} with the game at phase \"ended\" and the scene on Result. Verified byte-identical across two clean runs."
     },
     "kid": {
       "length": 10756,
       "sha256": "335f3ca0-5b1848e1-d377eb9a-39fc0bfd-bcff808d-c734f066-115c613c-de208772",
-      "note": "fixed teams A/B, 1 inning + bonus, ends 1-0 in the bonus 2nd"
+      "note": "fixed teams A/B, 1 inning + bonus, ends 1-0 in the bonus 2nd UNCHANGED by the 2026-07-26 pitch retune: the log records state TRANSITIONS, not timestamps, and the harness force-resolves swings rather than waiting out flights -- so pitch DURATION moves without moving the fingerprint. A useful property to know before assuming a timing change must recapture."
     }
   },
   "REGENERATED": {
     "on": "2026-07-25 (fix/live-play-fielding-and-baserunning)",
     "why": "Clears the STALE flag set on 2026-07-24. Those fingerprints encoded the PRE-RETUNE pace; these are captured against the retuned pace AND the fielding/baserunning fixes, so the gate is meaningful again.",
-    "caveat": "defense.* in scripts/measures.json is still scaled-not-measured, and the chaser election added here is new defense behaviour that has NOT had a feel-tuning pass. If the defense is later tuned (start with LIVE.CHASE.CUTOFF_GRACE_MS, then the leashes), these will need regenerating again \u2014 that is expected, not a regression."
+    "caveat": "defense.* in scripts/measures.json is still scaled-not-measured, and the chaser election added here is new defense behaviour that has NOT had a feel-tuning pass. If the defense is later tuned (start with LIVE.CHASE.CUTOFF_GRACE_MS, then the leashes), these will need regenerating again — that is expected, not a regression."
   },
   "mainDrift": {
     "found": "2026-07-25 (feat/pitch-ceremony)",

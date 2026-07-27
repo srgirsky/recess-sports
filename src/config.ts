@@ -21,7 +21,7 @@ export const COLORS = {
 };
 
 /** How long a pitch takes to travel from the mound to the plate (ms). */
-export const PITCH_TRAVEL_MS = 464;
+export const PITCH_TRAVEL_MS = 1600;
 
 /**
  * Swing timing windows, in ms of error from the ideal contact moment.
@@ -29,30 +29,30 @@ export const PITCH_TRAVEL_MS = 464;
  * Widen these to make the game easier (younger kids), tighten to make it harder.
  */
 /**
- * Swing timing windows (ms of error from the ball's arrival).
+ * Swing timing windows (ms of error from the ball's arrival). KID + TEE read
+ * these; CLASSIC overrides via MODES.main.swingTiming.
  *
  * DERIVED, NOT MEASURED, and it cannot be otherwise: a timing window is an
  * internal tolerance with no on-screen representation, so no amount of BB2001
- * footage can reveal theirs. What forced these to move is that the pitch flight
- * DID get measured (pace.pitchCorridor, BB's fastball = 270ms) -- and a 300ms
- * CONTACT band against a 270ms flight means a tap at the instant of release
- * still connects, i.e. timing stops being a skill at all.
+ * footage can reveal theirs. What they must track is the FLIGHT, which is
+ * measured (pace.pitchCorridor) -- a window is only meaningful as a fraction of
+ * the pitch it forgives.
  *
- * So they are scaled by exactly the factor the flight scaled (0.371), which
- * keeps every internal relationship -- window as a fraction of flight, and the
- * SWING_TYPES deltas relative to the windows -- identical to before. Nothing is
- * invented; only the tempo moved.
+ * Set at ~24% of the flight they judge: CONTACT 384 against kid's 1600ms.
+ * CLASSIC runs WIDER (488 / 1227ms = 40%) on purpose — there the batting
+ * cursor is the skill, so timing is the more forgiving half.
+ * A window that approaches the flight time means a tap at the instant of release
+ * still connects and timing stops being a skill; one far below human jitter
+ * (~50-100ms) means it is a coin flip. 35% sits between those.
  *
- * CAVEAT worth knowing before tuning: this preserves the RATIO, not the
- * absolute difficulty. Human timing jitter is absolute (~50-100ms), so a 30ms
- * PERFECT band is genuinely harder to hit than an 80ms one. Batting is harder
- * than it was. These are the first dial to widen if it plays badly -- TEE_PITCH_MS
- * is deliberately untouched as the escape hatch for the youngest players.
+ * These were 30/63/111 until 2026-07-26, scaled by 0.371 to chase a pitch
+ * corridor that turned out to be ~5x too fast -- so they inherited that error
+ * and moved back up with it. First dial to reach for if batting plays wrong.
  */
 export const TIMING = {
-  PERFECT: 30,
-  GOOD: 63,
-  CONTACT: 111,
+  PERFECT: 104,
+  GOOD: 218,
+  CONTACT: 384,
 };
 
 /**
@@ -72,12 +72,13 @@ export const PITCH_METER_MS = 1200;
 export const PITCH_AUTO_THROW_MS = 700;
 
 /** Ball flight time in the CPU half — faster than the player's, keeps it snappy. */
-export const CPU_PITCH_TRAVEL_MS = 278;
+export const CPU_PITCH_TRAVEL_MS = 1250;
 
 /**
- * The CLASSIC pitch corridor — Backyard-measured. Real BB2001 flights span
- * ~250ms (pro arm) to ~700ms (weakest kid arm) — see
- * docs/research/backyard-2001-video-notes.md. This block lands a kid-fair
+ * The CLASSIC pitch corridor — Backyard-measured against a real clock. A BB2001
+ * HEAT flight is ~1230ms (pace.pitchCorridor); the older "~250ms to ~700ms"
+ * figures in docs/research/backyard-2001-video-notes.md are SUPERSEDED — they
+ * timed only the tail of the flight. This block lands a kid-fair
  * version of that band, and (like BB) scales flight speed with the pitcher's
  * arm: drafting a good arm makes pitches genuinely faster, and the fatigue
  * sag makes tired arms lob. KID MODE NEVER READS THIS BLOCK — its pitches
@@ -86,28 +87,31 @@ export const CPU_PITCH_TRAVEL_MS = 278;
  */
 export const PITCH_SPEED = {
   /** CLASSIC base travel (ms): human batting / human pitching halves. */
-  // ⚠️ NOT MEASURED. These were fitted to a BB fastball of 270ms that has since
-  // been WITHDRAWN -- pace.pitchCorridor is now `awaiting-measurement`, because
-  // the method could not observe the release frame for the pitch type it was
-  // measuring (BB draws the ball for only ~5 frames of a flight, so "release"
-  // was always the first frame the ball became VISIBLE). Nothing here is known
-  // to match Backyard; it is the last value we happened to ship.
+  // MEASURED AGAINST A REAL CLOCK (pace.pitchCorridor, 2026-07-26). A HEAT pitch
+  // in BB2001, read frame-by-frame against a millisecond stopwatch captured in
+  // the SAME frame as the game: release 12:58.87 -> plate 13:00.10, a flight of
+  // **1230ms**. 1350 / fastball speedMult 1.1 = 1227ms at an average arm.
   //
-  // Reported real play is HEAT ~1.5-2s and SLOWBALL ~3s, i.e. these may be
-  // several times too fast. Do NOT re-derive from the withdrawn samples -- see
-  // pitchCorridor.whatWouldWork for the capture that would settle it.
-  MAIN_BASE_MS: 297,
-  MAIN_CPU_BASE_MS: 260,
+  // That is ~5x slower than the 297 shipped before. Every earlier reading -- BB
+  // 270ms, the YouTube 250ms, and two of our own at 180-200ms -- made the SAME
+  // mistake: BB's ball is ~5px and is lost in the grass for the first two-thirds
+  // of its flight, so "release" was marked at the first frame the ball could be
+  // SPOTTED, which is late by construction. Magnify >=2x before judging any
+  // frame; that single habit is the whole difference (pace.trackerLessons).
+  //
+  // n=1 at this rigour, corroborated by session2 (>=750ms, a lower bound off the
+  // target-shadow onset). Filed as partialReading -- NOT conformed.
+  MAIN_BASE_MS: 1350,
+  MAIN_CPU_BASE_MS: 1180,
   /**
    * Arm term: travel × clamp(BASE − PER_STAT × pitching), so a better arm
-   * throws genuinely faster. At MAIN_BASE_MS 297 that is stat 10 → 0.75
-   * (fastball 203ms) and stat 1 → 1.20 (fastball 324ms).
+   * throws genuinely faster. At MAIN_BASE_MS 1350 that is stat 10 → 0.75
+   * (fastball 920ms) and stat 1 → 1.20 (fastball 1473ms).
    * Clamped so a content typo can't make a pitch untimeable.
    *
-   * (This comment read "≈ 545ms / ≈ 875ms" until 2026-07-25 -- left over from
-   * the pre-corridor era and stale by 2.7x, which made the config look as
-   * though something downstream were scaling the speed. Restate these whenever
-   * MAIN_BASE_MS moves; they are derived, not independent.)
+   * These ms figures are DERIVED — restate them whenever MAIN_BASE_MS moves.
+   * (They read "≈ 545ms / ≈ 875ms" until 2026-07-25, stale by 2.7x, which made
+   * the config look as though something downstream were scaling the speed.)
    */
   ARM_MULT: { BASE: 1.25, PER_STAT: 0.05, MIN: 0.7, MAX: 1.25 },
   /**
@@ -116,11 +120,10 @@ export const PITCH_SPEED = {
    * as a SHAPE range — fast pitches are lasers, slow ones are lobs you track
    * the whole way. Never touches swing-timing math or the sim.
    */
-  // FROM_MS had to come down with the corridor. At the old 850 nothing would
-  // ever lob again (the slowest possible pitch is now 675ms) and the rainbow-arc
-  // readability cue would have silently died. At 315 the fastball (270ms) stays
-  // flat and off-speed (~412ms) arcs -- which is exactly BB's laser-vs-lob split.
-  LOB: { FROM_MS: 315, PER_MS: 0.12, MAX_PX: 110 },
+  // FROM_MS moves WITH the corridor or the cue dies silently: set too low every
+  // pitch arcs, too high none do. At 1430 the fastball (1227ms) stays flat and
+  // off-speed (changeup ~1875ms) arcs -- BB's laser-vs-lob split.
+  LOB: { FROM_MS: 1430, PER_MS: 0.12, MAX_PX: 110 },
 };
 
 /**
@@ -770,7 +773,7 @@ export const JUICE = {
   GLOVE_BLEND: 0.85,
   GLOVE_REACH_BONUS: 8,
   /** 🧢 rallyCap: extra swing-window forgiveness (ms) while it's on. */
-  RALLY_FORGIVE_MS: 55,
+  RALLY_FORGIVE_MS: 190,
   GAINS: {
     perfectSwing: 12,
     hit: 10,
@@ -852,7 +855,7 @@ export const DIFFICULTY_TIERS: Record<
 };
 
 /** Tee-ball: the pitch is a slow, high soft lob so any timing makes contact. */
-export const TEE_PITCH_MS = 1500;
+export const TEE_PITCH_MS = 2400;
 
 /** Pitcher fatigue (CLASSIC, `features.fatigue`; systems/fatigue.ts). */
 export const FATIGUE = {
@@ -868,19 +871,20 @@ export const FATIGUE = {
  * it's the unmodified baseline. Applied in systems/atbat.ts.
  */
 export const SWING_TYPES = {
-  // Deltas scaled up with the Backyard-paced pitch corridor (PITCH_SPEED) —
-  // absolute ms mean more against a ~40% shorter flight.
+  // Deltas move WITH the pitch corridor (PITCH_SPEED): a forgiveness window is
+  // only meaningful as a fraction of the flight it forgives. Rescaled 2026-07-26
+  // when the corridor was re-measured against a real clock (297 -> 1350).
   /** 🛡 SAFE: choke up — wider timing windows, softer contact. */
-  SAFE: { FORGIVE_MS: 22, Q_ADJ: -0.3 },
+  SAFE: { FORGIVE_MS: 76, Q_ADJ: -0.3 },
   /** 💪 BIG: sell out — weak contact becomes a whiff, solid contact is crushed. */
-  BIG: { NARROW_MS: 17, Q_ADJ: 0.22, TYPE_BIAS: 0.35 },
+  BIG: { NARROW_MS: 59, Q_ADJ: 0.22, TYPE_BIAS: 0.35 },
   /** 🤏 BUNT: easy to get bat on it; the ball dies in front of the plate. */
-  BUNT: { FORGIVE_MS: 30, DIST_CAP: 115, Q_ADJ: -0.5, SPRAY_MIN: 0.34, SPRAY_MAX: 0.66 },
+  BUNT: { FORGIVE_MS: 104, DIST_CAP: 115, Q_ADJ: -0.5, SPRAY_MIN: 0.34, SPRAY_MAX: 0.66 },
   /** 🤪 CRAZY BUNT (signature card, ability 'crazy_bunt' — BB2001's Tony D.
    *  special): trivially easy contact, but the ball SQUIRTS hard down
    *  whichever line the swing leans toward — a chaos tool, not a sacrifice.
    *  Spray snaps to the extremes (no rng draw — goldlog/net safe). */
-  CRAZY_BUNT: { FORGIVE_MS: 37, DIST_CAP: 205, Q_ADJ: -0.15, SPRAY_LO: 0.16, SPRAY_HI: 0.84 },
+  CRAZY_BUNT: { FORGIVE_MS: 128, DIST_CAP: 205, Q_ADJ: -0.15, SPRAY_LO: 0.16, SPRAY_HI: 0.84 },
 };
 
 /** Full-baserunning rules (main mode). */
@@ -1033,7 +1037,7 @@ export const MODES: Record<
     },
     // Widened ~35% with the Backyard-paced pitch corridor (PITCH_SPEED): the
     // flight got ~40% shorter, the reaction window shouldn't have.
-    swingTiming: { PERFECT: 45, GOOD: 89, CONTACT: 141 },
+    swingTiming: { PERFECT: 156, GOOD: 307, CONTACT: 488 },
     // Flags flip to true as each Backyard-style mechanic lands.
     features: {
       pitchSelection: true,
@@ -1056,7 +1060,12 @@ export const ANIM = {
   SWING_CONTACT_FRAC: 0.35, // when the swingMid contact frame lands inside SWING_MS (hit-pause catches it)
   SWING_FOLLOW_MS: 420, // how long the follow-through frame holds before restoring the stance
   SWING_WHIFF_EXTRA_MS: 260, // extra follow-through hold on a whiff (sells the over-swing)
-  WINDUP_MS: 380, // pitcher lean-back before the release (the "here it comes" telegraph)
+  // MEASURED (pace.pitchWindup): BB2001's delivery runs ~770ms from the first
+  // motion to release. Ours was 380ms -- half the telegraph, which is part of
+  // why the pitch arrived unannounced. The two windup frames now hold ~400ms
+  // each; if that reads stiff, add intermediate poses (poseSequence already
+  // takes an arbitrary frame list) rather than shortening this back.
+  WINDUP_MS: 800,
   RUN_BOB: 7, // pixels a runner bounces while running
   IDLE_BOB: 5, // pixels the idle "breathing" bob rises
   RUN_FRAME_MS: 60, // run-cycle frame swap (4-frame reach→pass→crossover→pass gait, ~240ms/cycle)

@@ -387,7 +387,7 @@
       "theGap": "session2's real-time fidelity was ASSUMED, never measured. Nothing in the file distinguishes 'the game did X in 250ms' from 'the recording compressed 2s into 250ms' from 'the emulator ran the animation faster than the game intends'. The capture guide's ffv1/60fps rules protect image quality; none of them bound the clock.",
       "whatIsAndIsNotEstablished": {
         "established.renderRate": "The game draws a steady ~22fps throughout: wide play 22.18, plate idle 22.69 (distinctFrameRate, scale 4, n=120 each). The pitch corridor is not an exception, so there is NO frame-dropping during the pitch.",
-        "established.ballIsBarelyDrawn": "The ball SPRITE appears in only ~5 frames of a pitch. This is consistent with TWO different stories and the footage does not separate them: BB not drawing the ball until late (its own notes say a fastball is 'invisible until the last third'), or the animation being advanced faster than it is drawn.",
+        "established.ballIsBarelyDrawn": "CORRECTED 2026-07-26. This previously read 'the ball SPRITE appears in only ~5 frames of a pitch'. It does not. The ball is drawn from release; it is ~5px and is simply LOST IN THE GRASS at low magnification. Read at >=2x it is visible leaving the pitcher's hand. The error mattered: it made a ~1230ms flight look like ~200ms, and it is the single mistake behind every pitch-timing number this project has produced.",
         "notEstablished.rushHypothesis": "An earlier draft of this record claimed ~5 rendered positions PROVED a rushed capture. It does not. Running pitchFidelity over the corridor returns maxSteps 9-13 across a 300ms window -- fully consistent with 22fps and NOT a rejection. The claim was withdrawn before it could become the next unchecked number.",
         "notEstablished.uniformity": "Whatever affects the pitch does not obviously affect everything: runner legs in the same capture measure plausibly (~4.2s home->1B). A non-uniform artifact is exactly what would hide from a whole-capture sanity check, which is why per-quantity fidelity gates exist now."
       },
@@ -398,7 +398,8 @@
         "HEAT and SLOWBALL thrown FROM THE MOUND so the pitch card is on screen (classificationGroundTruth)."
       ],
       "scopeOfTheStopwatch": "It proves the RECORDING is real-time. It does NOT prove the emulator runs the game at authentic speed -- a faithful recording of a too-fast emulator passes. What it does settle is sharper and sufficient: whether the pitch ON SCREEN, in the session where it is perceived as ~2s, actually took ~2s.",
-      "informs": "scripts/measure/video.js clockFidelity, pitchFidelity"
+      "informs": "scripts/measure/video.js clockFidelity, pitchFidelity",
+      "supersededHypothesis": "DEAD: 'session2 is rushed ~7x'. Re-read at magnification, session2's flight (>=750ms) agrees in order with the stopwatch-gated capture (1230ms). The apparent 7x was the low-magnification reading error on both sides of the comparison, not an emulator artifact. Never shipped -- withdrawn before commit -- and it should not resurface."
     }
   },
   "geometry": {
@@ -679,7 +680,9 @@
         "Annotate the sheet, don't estimate off it. Drawing a fixed box on 1B in every tile turns 'how far along is he?' into 'is he at the box yet?'. That single change is what made the eye reads usable at 400ms steps.",
         "THE TARGET SHADOW IS NOT THE BALL. BB draws a descending indicator on the corridor floor showing where the pitch is headed. It is smooth, monotone, roughly parabolic and survives every motion filter -- i.e. it passes the exact test used to argue a track IS the ball. It is also the object behind the '~930ms descent' that instrument.backgroundSubtraction rejected as 'a shadow'. Rule: on the plate view there are THREE moving things (ball sprite, target indicator, swing cursor); a tracker that has not been shown to separate all three has identified none of them.",
         "TILE SPACING ALIASES BOTH WAYS. At 250ms tiles a sub-300ms flight can fall ENTIRELY BETWEEN TILES and the pitch looks like it never happened; at 33ms tiles on a 22fps source most tiles are duplicates and the extra tiles are false precision. Choose spacing from the DISTINCT frame period (50ms here), never from the container rate, and never finer than the event you are bracketing.",
-        "A DOWNSCALED CONTACT SHEET HIDES THE BALL. BB's ball is ~5px in native 640x480; a sheet whose tiles are rendered below 1:1 loses it into the grass. Magnify the corridor crop rather than widening the sheet -- several early 'the ball is not visible here' reads were the sheet's fault, not the game's."
+        "A DOWNSCALED CONTACT SHEET HIDES THE BALL. BB's ball is ~5px in native 640x480; a sheet whose tiles are rendered below 1:1 loses it into the grass. Magnify the corridor crop rather than widening the sheet -- several early 'the ball is not visible here' reads were the sheet's fault, not the game's.",
+        "MAGNIFY BEFORE YOU JUDGE A FRAME. This is the big one, and it is four-for-four: BB's original 270ms, the YouTube 250ms, and two of our own re-reads at 180-200ms ALL marked 'release' at the first frame the ball could be spotted. The true flight is ~1230ms. A ~5px ball on textured grass is invisible at 1x and obvious at 2x with flags=neighbor. Any frame judgement made on a downscaled sheet is worthless -- crop tight and scale up FIRST. A corollary trap: at that size a pitcher's ARM reads as a held ball, so 'the ball is still in his hand' is exactly as unreliable as 'the ball is not drawn yet'.",
+        "VARIABLE FRAME RATE. macOS screen recordings declare 60fps and deliver something else -- the 2026-07-26 capture holds 49,630 frames across 866s (57.3fps average). Deriving timestamps from frame INDEX would have been ~5% wrong with no symptom. Read time off an in-frame stopwatch, or off PTS, never off frame counting."
       ],
       "stillTrue": "None of this promotes a tracker to being the number. Every sample that entered pace.homeToFirst was confirmed by rendering marked frames or reading an annotated sheet. The tracker's job is to bracket and to reject."
     },
@@ -788,20 +791,67 @@
       "measured": null,
       "n": 0,
       "confidence": "low",
-      "whyWithdrawn": "Filed 2026-07-25 as conformed/driftPct 0.0 on n=3 hand marks; withdrawn 2026-07-25 after review. Four independent problems, any one of which is disqualifying. (1) THE RELEASE FRAME IS NOT OBSERVABLE FOR THE PITCH TYPE MEASURED. The method's own classification rule is 'a fastball is invisible until late'; you cannot both identify a pitch as a laser BECAUSE the ball is not drawn early and claim to have read the frame it separated from the pitcher. Confirmed directly: across three pitches the ball SPRITE is drawn in only ~5 frames, so 'release' was in every case the first frame the ball became visible, which is late by construction. (2) THE TARGET SHADOW WAS NOT DISTINGUISHED FROM THE BALL. BB draws a descending target indicator on the corridor floor. It is smooth, monotone and reads exactly like a ball track. instrument.backgroundSubtraction records a ~930ms descent being rejected as 'a shadow'; that object is the target indicator, its span is ~3.5x the recorded flight, and which of the two bounds the flight was never settled. (3) PRECISION EXCEEDS THE SOURCE. instrument.frameRate sets effectiveFramePeriodMs 50 for session2 and warns a ~250ms flight is +-20%% needing n>=5; the corridor was read off a 33ms sheet at n=3 and every value is a round multiple of 10ms. fastballSpread 50 is exactly one frame period, i.e. the tolerance was the noise. (4) THE SAME PITCH IS RECORDED FOUR WAYS. t=53.90 appears as 220ms (capture index), 233ms (this record's own bracket), 234ms (instrument.clockValidity) and 250ms (the sample's ms). clockValidity also records a 100ms gap between last-seen-in-hand and first-seen-airborne -- a +-43%% ambiguity on the start endpoint of a ~230ms quantity, never propagated here.",
+      "whyWithdrawn": "Filed 2026-07-25 as conformed/driftPct 0.0 on n=3 hand marks; withdrawn 2026-07-25 after review. Four independent problems, any one of which is disqualifying. (1) THE RELEASE FRAME IS NOT OBSERVABLE FOR THE PITCH TYPE MEASURED. The method's own classification rule is 'a fastball is invisible until late'; you cannot both identify a pitch as a laser BECAUSE the ball is not drawn early and claim to have read the frame it separated from the pitcher. CORRECTED 2026-07-26: an earlier draft of this record said the ball sprite is 'drawn in only ~5 frames'. That was wrong, and wrong the same way -- at low magnification BB's ~5px ball is LOST IN THE GRASS for the first two-thirds of its flight, but it IS drawn from release. Re-read at >=2x magnification the ball is visible leaving the hand. So 'release' was marked at the first frame the ball could be SPOTTED, which is late by construction -- the conclusion stands, the stated evidence did not. (2) THE TARGET SHADOW WAS NOT DISTINGUISHED FROM THE BALL. BB draws a descending target indicator on the corridor floor. It is smooth, monotone and reads exactly like a ball track. instrument.backgroundSubtraction records a ~930ms descent being rejected as 'a shadow'; that object is the target indicator, its span is ~3.5x the recorded flight, and which of the two bounds the flight was never settled. (3) PRECISION EXCEEDS THE SOURCE. instrument.frameRate sets effectiveFramePeriodMs 50 for session2 and warns a ~250ms flight is +-20%% needing n>=5; the corridor was read off a 33ms sheet at n=3 and every value is a round multiple of 10ms. fastballSpread 50 is exactly one frame period, i.e. the tolerance was the noise. (4) THE SAME PITCH IS RECORDED FOUR WAYS. t=53.90 appears as 220ms (capture index), 233ms (this record's own bracket), 234ms (instrument.clockValidity) and 250ms (the sample's ms). clockValidity also records a 100ms gap between last-seen-in-hand and first-seen-airborne -- a +-43%% ambiguity on the start endpoint of a ~230ms quantity, never propagated here.",
       "partialReading": {
         "confidence": "low",
-        "what": "The withdrawn samples, kept because the RATIO may survive even though the absolute values do not.",
-        "visibleFlightMs": {
-          "fastballMs": 270,
-          "fastballSpread": 50,
-          "fastballN": 3,
-          "offSpeedMs": 430,
-          "offSpeedN": 3,
-          "corridorMinMs": 250,
-          "corridorMaxMs": 480
+        "n": 1,
+        "what": "One HEAT pitch bracketed against a millisecond stopwatch captured in the same frame as the game.",
+        "source": "local:screen-recording-2026-07-26 (stopwatch-gated)",
+        "clockCheck": "Recording verified real-time at three points 660s apart; drift 0.03s, timeScale 0.99995. The stopwatch is IN FRAME, so elapsed time is read off pixels, not container metadata.",
+        "flightMs": 1230,
+        "windupMs": 770,
+        "bracket": {
+          "pitcherSet": "12:57.57",
+          "deliveryBegins": "~12:58.10",
+          "release": "12:58.87",
+          "ballPlainlyPastMound": "12:58.97",
+          "contactAtPlate": "13:00.10"
         },
-        "samples": [
+        "kind": "HEAT (read off the on-screen pitch card, not inferred from flight appearance)",
+        "corroboration": "session2 re-read at magnification agrees in ORDER: target shadow onset 378.55, ball sprite first visible 379.00, arrival 379.30 -- a flight of >=750ms, not the ~200ms previously recorded off the same footage.",
+        "whyStillPartial": "n=1 at this rigour. The repo convention is n<3 stays a partialReading, and the entire point of this record is that overclaiming is how the 270ms happened. Do not promote to conformed without n>=3 per kind.",
+        "whatWouldClose": "~6 more flights from the same capture (human-pitching stretch t=700-866s), classified by the on-screen HEAT/SLOWBALL card, each read at >=2x magnification."
+      },
+      "ours": {
+        "constants": [
+          "src/config.ts PITCH_SPEED.MAIN_BASE_MS",
+          "src/config.ts PITCH_SPEED.MAIN_CPU_BASE_MS",
+          "src/config.ts PITCH_SPEED.ARM_MULT"
+        ],
+        "formula": "(MAIN_BASE_MS 1350 / PITCHES.fastball.speedMult 1.1) x clamp(1.25 - 0.05*stat, 0.7, 1.25)",
+        "fastballMs": {
+          "stat10": 920,
+          "stat5": 1227,
+          "stat1": 1473
+        },
+        "snapshot": "MAIN_BASE_MS 1350 -> stat5 fastball 1227ms, retuned 2026-07-26 to the stopwatch-gated reading below. Still partialReading (n=1), so the test pins OURS and claims nothing about BB."
+      },
+      "informs": "src/config.ts PITCH_SPEED",
+      "statusChangedAt": "2026-07-26 (re-measured against a stopwatch; ours retuned 297 -> 1350)",
+      "source": "local:screen-recording-2026-07-26",
+      "whatWouldWork": "~6 more flights from the same capture (human-pitching stretch t=700-866s), classified by the on-screen HEAT/SLOWBALL card, each read at >=2x magnification.",
+      "classificationGroundTruth": "BETTER METHOD AVAILABLE, not yet used: session2 contains BOTH halves, and when the HUMAN pitches the right-edge pitch cards (HEAT / SLOWBALL / LEFT HOOK / RIGHT HOOK / INTENTIONAL WALK) are on screen and the selected one is highlighted. That reads the pitch KIND directly instead of inferring it from flight appearance. Only one of the six samples (379.30) is from a human-pitching stretch; re-reading the human-pitching halves with the card visible would turn the laser/lob inference into ground truth and let ARM_MULT be separated from pitch KIND.",
+      "armRatingCaveat": "Still unresolved: the 'ON THE MOUND' panel's PT is a pitches-thrown counter, not a rating, so flight time cannot be bound to a pitcher stat from this footage. The corridor is therefore measured as a RANGE across pitchers and kinds, not a per-stat curve, and ARM_MULT remains uncalibrated.",
+      "supersedes": {
+        "was": {
+          "status": "conformed",
+          "driftPct": 0.0,
+          "measured": {
+            "fastballMs": 270,
+            "fastballSpread": 50,
+            "fastballN": 3,
+            "offSpeedMs": 430,
+            "offSpeedN": 3,
+            "corridorMinMs": 250,
+            "corridorMaxMs": 480
+          },
+          "n": 6
+        },
+        "why": "The conformance was to a number whose start endpoint the method could not observe. Recorded rather than deleted: this file exists so a withdrawn measurement leaves a trail.",
+        "coupledChanges": "Matching the flight FORCED other constants, all recorded because none of them is measured: (1) the swing windows had to shrink -- a 380ms CONTACT band against a 270ms flight means a tap at the instant of release still connects, so timing would stop being a skill. Scaled by the same 0.371 (see pace.swingWindows). (2) PITCH_SPEED.LOB.FROM_MS 850 -> 315, or nothing would ever lob again (the slowest possible pitch is now 675ms) and the rainbow-arc readability cue would have silently died. At 315 the fastball stays flat and off-speed arcs -- BB's own laser-vs-lob split. (3) kid PITCH_TRAVEL_MS and CPU_PITCH_TRAVEL_MS scaled likewise; TEE_PITCH_MS deliberately untouched as the accessibility escape hatch.",
+        "retuneCoherenceNote": "The 2026-07-24 pace retune scaled the live-play sim 1.987x and did NOT touch PITCH_SPEED, so the pitch became ~2x faster RELATIVE to everything around it. That is real, and it is not why pitching feels fast -- see pace.pitchCadence, which is the actual finding.",
+        "conformNote": "RETUNED 2026-07-25. MAIN_BASE_MS 800 -> 297 puts an average arm at exactly BB's measured 270ms, and our 203-324ms range brackets BB's measured lasers (250/270/290). We were 2.7x slower, with our FASTEST pitch slower than BB's SLOWEST measured one.",
+        "withdrawnSamples": [
           {
             "t": 53.9,
             "ms": 250,
@@ -845,49 +895,17 @@
             "bracket": "release ~81.82, in zone 82.30"
           }
         ],
-        "whatTheseActuallyBound": "The interval in which the ball SPRITE was visible -- not release-to-plate. A measurement can only bound what it observed (pace.pitchCadence). Treat these as a lower bound on flight time.",
-        "ratioMayHold": "laser:lob is 1.7x here. Reported real-play observation is HEAT ~1.5-2s and SLOWBALL ~3s, a ratio of ~1.5x. Our own PITCHES.speedMult spread (fastball 1.1 vs changeup 0.72) is 1.53x, so the corridor SHAPE is probably right and only the base constant is in question.",
-        "method": "Pitches located by the HUD count pips (instrument.pip-pitch-index), then each read frame-by-frame off a 33ms corridor sheet (crop native x245-410, y88-363; 24 tiles, cols 8). Release = the frame the ball separates from the pitcher; arrival = the frame it is inside the yellow strike-zone bracket. Classified LASER vs LOB by the documented tell: a fastball is invisible until late and flat, off-speed is visible from release. The split is cleanly bimodal (250/270/290 vs 420/430/480), which is what makes the classification trustworthy."
-      },
-      "ours": {
-        "constants": [
-          "src/config.ts PITCH_SPEED.MAIN_BASE_MS",
-          "src/config.ts PITCH_SPEED.MAIN_CPU_BASE_MS",
-          "src/config.ts PITCH_SPEED.ARM_MULT"
-        ],
-        "formula": "(MAIN_BASE_MS 297 / PITCHES.fastball.speedMult 1.1) x clamp(1.25 - 0.05*stat, 0.7, 1.25)",
-        "fastballMs": {
-          "stat10": 203,
-          "stat5": 270,
-          "stat1": 324
+        "withdrawnMeasured": {
+          "fastballMs": 270,
+          "fastballSpread": 50,
+          "fastballN": 3,
+          "offSpeedMs": 430,
+          "offSpeedN": 3,
+          "corridorMinMs": 250,
+          "corridorMaxMs": 480
         },
-        "snapshot": "MAIN_BASE_MS 297 -> stat5 fastball 270ms. Unchanged while awaiting measurement; the test pins it and claims nothing about BB."
-      },
-      "informs": "src/config.ts PITCH_SPEED",
-      "statusChangedAt": "2026-07-25 (withdrawn -- see whyWithdrawn)",
-      "source": "local:bb01-capture-session2 (rejected for pitch timing -- see instrument.captureFidelity)",
-      "whatWouldWork": "A capture with a millisecond stopwatch in frame, so recording fidelity is measured rather than assumed, and with HEAT/SLOWBALL thrown from the mound so the pitch card gives kind as ground truth (classificationGroundTruth, still unused). Gate it with video.js clockFidelity + pitchFidelity before reading a single timestamp.",
-      "classificationGroundTruth": "BETTER METHOD AVAILABLE, not yet used: session2 contains BOTH halves, and when the HUMAN pitches the right-edge pitch cards (HEAT / SLOWBALL / LEFT HOOK / RIGHT HOOK / INTENTIONAL WALK) are on screen and the selected one is highlighted. That reads the pitch KIND directly instead of inferring it from flight appearance. Only one of the six samples (379.30) is from a human-pitching stretch; re-reading the human-pitching halves with the card visible would turn the laser/lob inference into ground truth and let ARM_MULT be separated from pitch KIND.",
-      "armRatingCaveat": "Still unresolved: the 'ON THE MOUND' panel's PT is a pitches-thrown counter, not a rating, so flight time cannot be bound to a pitcher stat from this footage. The corridor is therefore measured as a RANGE across pitchers and kinds, not a per-stat curve, and ARM_MULT remains uncalibrated.",
-      "supersedes": {
-        "was": {
-          "status": "conformed",
-          "driftPct": 0.0,
-          "measured": {
-            "fastballMs": 270,
-            "fastballSpread": 50,
-            "fastballN": 3,
-            "offSpeedMs": 430,
-            "offSpeedN": 3,
-            "corridorMinMs": 250,
-            "corridorMaxMs": 480
-          },
-          "n": 6
-        },
-        "why": "The conformance was to a number whose start endpoint the method could not observe. Recorded rather than deleted: this file exists so a withdrawn measurement leaves a trail.",
-        "coupledChanges": "Matching the flight FORCED other constants, all recorded because none of them is measured: (1) the swing windows had to shrink -- a 380ms CONTACT band against a 270ms flight means a tap at the instant of release still connects, so timing would stop being a skill. Scaled by the same 0.371 (see pace.swingWindows). (2) PITCH_SPEED.LOB.FROM_MS 850 -> 315, or nothing would ever lob again (the slowest possible pitch is now 675ms) and the rainbow-arc readability cue would have silently died. At 315 the fastball stays flat and off-speed arcs -- BB's own laser-vs-lob split. (3) kid PITCH_TRAVEL_MS and CPU_PITCH_TRAVEL_MS scaled likewise; TEE_PITCH_MS deliberately untouched as the accessibility escape hatch.",
-        "retuneCoherenceNote": "The 2026-07-24 pace retune scaled the live-play sim 1.987x and did NOT touch PITCH_SPEED, so the pitch became ~2x faster RELATIVE to everything around it. That is real, and it is not why pitching feels fast -- see pace.pitchCadence, which is the actual finding.",
-        "conformNote": "RETUNED 2026-07-25. MAIN_BASE_MS 800 -> 297 puts an average arm at exactly BB's measured 270ms, and our 203-324ms range brackets BB's measured lasers (250/270/290). We were 2.7x slower, with our FASTEST pitch slower than BB's SLOWEST measured one."
+        "withdrawnMethod": "Pitches located by the HUD count pips (instrument.pip-pitch-index), then each read frame-by-frame off a 33ms corridor sheet (crop native x245-410, y88-363; 24 tiles, cols 8). Release = the frame the ball separates from the pitcher; arrival = the frame it is inside the yellow strike-zone bracket. Classified LASER vs LOB by the documented tell: a fastball is invisible until late and flat, off-speed is visible from release. The split is cleanly bimodal (250/270/290 vs 420/430/480), which is what makes the classification trustworthy.",
+        "whatTheyActuallyBound": "Kept for the trail, and because they are a clean worked example of the error. Each is the tail of a flight -- the stretch where the sprite was big enough to spot -- not release-to-plate. Their MEDIAN (270ms) is ~22% of the stopwatch-gated 1230ms, which is about what you get if you catch only the last third of an accelerating approach. Note the laser:lob RATIO of 1.7x survived the error; only the absolutes did not."
       }
     },
     "umpCallDelay": {
@@ -1123,6 +1141,31 @@
       "caveat": "This preserves the RATIO, not the absolute difficulty. Human timing jitter is absolute (~50-100ms), so a 30ms PERFECT band is genuinely harder to hit than an 80ms one -- batting IS harder now, and a 270ms flight rewards anticipation over reaction, which is what BB does too. These are the first dial to widen if it plays badly. TEE_PITCH_MS (1500, untouched) is the escape hatch for the youngest players.",
       "structuralInvariant": "CONTACT must stay below the FASTEST possible travelMs in every mode, or timing becomes free again. Asserted in conformance.test.js.",
       "informs": "src/config.ts TIMING, MODES.main.swingTiming, SWING_TYPES"
+    },
+    "pitchWindup": {
+      "id": "pace.pitch-windup",
+      "category": "pace",
+      "status": "awaiting-measurement",
+      "what": "How long BB2001's pitcher takes from his first delivery motion to releasing the ball.",
+      "whyThisRecordExists": "Nothing had ever measured it, and it turned out to be half the problem. Our ANIM.WINDUP_MS was 380ms against BB's ~770ms, so the ball arrived with barely any telegraph -- which reads as 'too fast' even independently of the flight itself.",
+      "measured": null,
+      "n": 0,
+      "confidence": "low",
+      "partialReading": {
+        "confidence": "low",
+        "n": 1,
+        "windupMs": 770,
+        "bracket": "delivery motion begins ~12:58.10, release 12:58.87 (same stopwatch-gated pitch as pace.pitchCorridor)",
+        "note": "From the SET position (12:57.57) it is ~1.3s. The 770ms figure counts only from the first delivery motion, which is the batter-visible telegraph.",
+        "why": "n=1; needs n>=3 like the corridor."
+      },
+      "ours": {
+        "constant": "src/config.ts ANIM.WINDUP_MS",
+        "value": 800,
+        "snapshot": "380 -> 800 on 2026-07-26. The two existing windup frames now hold ~400ms each; if that reads stiff the fix is more poses, not a shorter windup."
+      },
+      "informs": "src/config.ts ANIM.WINDUP_MS",
+      "whatWouldWork": "Bracket the delivery start on n>=3 pitches from the stopwatch-gated capture."
     }
   },
   "defense": {

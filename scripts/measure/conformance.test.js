@@ -379,9 +379,12 @@ describe('pitch corridor — withdrawn, and timing can never go free again', () 
     expect(rec.whyWithdrawn).toBeTruthy();
     expect(rec.supersedes.was.status).toBe('conformed');
     expect(rec.supersedes.was.measured.fastballMs).toBe(270);
-    // The samples are kept because the RATIO may outlive the absolute values.
+    // The six withdrawn samples survive in `supersedes` -- deleting them would
+    // erase the worked example of the error that produced them.
+    expect(rec.supersedes.withdrawnSamples.length).toBe(6);
+    // And whatever currently stands in their place is still only partial.
     expect(rec.partialReading.confidence).toBe('low');
-    expect(rec.partialReading.samples.length).toBe(6);
+    expect(rec.partialReading.n).toBeLessThan(3);
   });
 
   it('never lets a timing window swallow the whole flight', () => {
