@@ -104,8 +104,14 @@ export function getSwingTiming(m: GameMode): typeof TIMING {
 /**
  * Base pitch travel (ms) before the per-kind speedMult and per-arm term.
  * `half` is which side the HUMAN plays: 'batting' = the ball flies at you,
- * 'pitching' = you're on the mound. CLASSIC reads the Backyard-paced
- * PITCH_SPEED block; kid mode keeps the original floaty constants.
+ * 'pitching' = you're on the mound. CLASSIC reads the PITCH_SPEED block; kid
+ * mode keeps the original floaty constants.
+ *
+ * THE ONE RESOLVER — every pitch flight routes through here. The `tee` and
+ * `kid` branches were dead until 2026-07-25 because the only callers sat behind
+ * features.pitchSelection (false in kid mode) while the kid path hardcoded its
+ * constants; GameScene.launchCpuPitch now calls this too, which is what makes
+ * tee-ball lob on the defensive half as well as the offensive one.
  */
 export function getPitchBaseMs(
   m: GameMode,

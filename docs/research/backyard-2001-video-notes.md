@@ -25,6 +25,19 @@ Purpose: ground-truth tuning reference for Recess Sports (pitch speed, pacing, H
 - STRIKE! call: big red starburst banner with yellow outlined text, centered low over the plate, batter does an upset/arms-up reaction pose, pitcher reacts too. Banner persists 1–2s+.
 
 ### One full pitch cycle, measured frame-by-frame (HEAT, Curt Schilling = max-arm pitcher)
+
+> 🛑 **The ~250 ms flight below is SUPERSEDED (2026-07-25).** It is an n=1
+> reading, and the note that produced it says exactly why it cannot bound the
+> flight: *"ball first visible, ALREADY well past the mound"*. The release at
+> "~389.03–389.05" was back-extrapolated from an unobserved start, not read. The
+> same document then records that HEAT is *"invisible until the last third"* —
+> if the visible portion is the last third and it takes ~200 ms, release→plate
+> is ~600 ms, not 250. Both claims sit in this file and were never reconciled.
+> The local-capture measurement that appeared to corroborate this number is
+> withdrawn too (`pace.pitchCorridor` → `awaiting-measurement`); it repeated the
+> same error and additionally confused BB's **target shadow** for the ball.
+> Reported real play is HEAT ~1.5–2 s. Treat every flight time in this section
+> as a **lower bound on the visible portion**, never as the flight.
 - t=389.066: no ball visible (last clean pre-flight frame).
 - t=389.10: ball first visible, ALREADY well past the mound (mid-screen height, drawn with a smear/ghost trail).
 - t=389.10 → 389.30: ball descends toward the camera growing rapidly; crosses into the zone marker at t≈389.30 with a dark grey impact aura.

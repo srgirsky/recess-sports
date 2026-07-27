@@ -354,6 +354,42 @@ hand at 53.683, clearly airborne at 53.783, and inside the strike-zone bracket
 at 53.917 — a **~220 ms flight**, against the ~250 ms the YouTube notes measured
 for a max-arm pitch. The recorded corroboration was *confirmed*, not corrected.
 
+> 🛑 **2026-07-25 — this section's conclusion is withdrawn, and so is the
+> ~220 ms reading built on it.** Two errors compound here.
+>
+> **The rejected object is BB's target shadow, not "a shadow".** BB draws a
+> descending indicator on the corridor floor showing where the pitch is headed.
+> It is a real, continuously-rendered part of the pitch, and it was dismissed by
+> name without ever being identified. The plate view holds **three** moving
+> things — ball sprite, target indicator, swing cursor — and a tracker not shown
+> to separate all three has identified none of them.
+>
+> **The eye read is not independent of the trap.** "The ball is still in the
+> pitcher's hand at 53.683, clearly airborne at 53.783" was read at ~1×, where
+> BB's ~5px ball is lost in the grass and the pitcher's **arm** reads as a held
+> ball. Re-read at ≥2× magnification the ball is plainly visible leaving the
+> hand much earlier. So "the frame it separates from the pitcher" was the frame
+> it became SPOTTABLE, which is late by construction. `pace.pitchCorridor`'s own
+> method compounds it: pitches were classified as fastballs *because* the ball
+> was invisible until late.
+>
+> **2026-07-26 — the ~930 ms track was closer to right than what replaced it.**
+> A stopwatch-gated capture (millisecond clock in the same frame as the game)
+> puts a HEAT flight at **1230 ms**: release 12:58.87 → plate 13:00.10. Re-read
+> at magnification, session 2 agrees in order — target shadow onset 378.55, ball
+> sprite first visible 379.00, arrival 379.30, i.e. **≥750 ms**, not 220. The
+> ~930 ms descent that was dismissed as "a shadow" was the target indicator, and
+> as a *duration* it bracketed the flight far better than the sprite read that
+> displaced it. Rejecting it cost this project three rounds of wrong constants.
+>
+> Two things from the withdrawal still stand. The game renders a steady ~22 fps
+> here (wide play 22.18, plate idle 22.69) with no frame-dropping during the
+> pitch. And a first draft claimed the ~5 *drawn* positions proved a rushed
+> capture — that was wrong too (`pitchFidelity` returns 9–13, consistent with
+> 22 fps), and the "session 2 is rushed ~7×" hypothesis it fed is **dead**. Both
+> are recorded in `instrument.captureFidelity` so neither gets rediscovered as a
+> finding.
+
 The lesson generalises the pass-1 one rather than replacing it. A clean monotone
 track is evidence that *something* is moving smoothly and nothing more. In pass 1
 that was a valid check because no canned fielder animation produces one; in a
