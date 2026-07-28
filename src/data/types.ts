@@ -42,6 +42,10 @@ export interface VisualParams {
   /** Per-kid face geometry (eye spacing/size/style, nose, mouth width,
    *  cheek blush). Omitted = today's default face layout. */
   face?: FaceSpec;
+  /** Per-kid hair geometry (mass, back-layer drop, part side, extra strands)
+   *  on top of the `hair` style. Clamped in CharacterArt's buildHairSpec.
+   *  Omitted = the style's base silhouette. */
+  hairSpec?: HairSpec;
   /** Personal street clothes worn during the draft (the ':sc' texture
    *  variant). Jerseys stay the base look everywhere else. Omitted = the kid
    *  renders their jersey even in street mode. */
@@ -100,6 +104,25 @@ export interface FaceSpec {
   mouthW?: number;
   /** Cheek-blush intensity (default 1; 0 = none). Clamped 0–1.4. */
   cheeks?: number;
+}
+
+/**
+ * Per-kid hair geometry, the twin of BodySpec/FaceSpec.
+ *
+ * Hair was the ONE feature axis with no spec object, which is why six kids
+ * sharing `short` rendered a byte-identical path and read as the same kid. All
+ * four fields are CLAMPED in buildHairSpec — a content typo must never push a
+ * mohawk tip or a pigtail out of the viewBox.
+ */
+export interface HairSpec {
+  /** Overall mass, scaled about the head centre. Clamped 0.88–1.1. */
+  volume?: number;
+  /** Back-layer drop (ponytail / pigtails / long / bun). Clamped 0.8–1.25. */
+  length?: number;
+  /** Part side: −1 hard left, +1 hard right, 0 centred. Clamped −1–1. */
+  part?: number;
+  /** Extra strand clumps beyond the base set. Clamped 0–3, integer. */
+  wisps?: number;
 }
 
 export type EyeStyle = 'classic' | 'button' | 'sleepy';

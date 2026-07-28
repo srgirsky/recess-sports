@@ -295,8 +295,11 @@ function gradientDefs(skin: string, hairColor: string, top: string, bottom: stri
 const GRAD = {
   SKIN_LITE: 0.34,
   SKIN_DARK: 0.28,
-  HAIR_LITE: 0.24,
-  HAIR_DARK: 0.32,
+  // Hair used to carry the WEAKEST highlight and the STRONGEST shadow of the
+  // whole set, which on the near-black most of the roster wears left nothing
+  // visible to model with. Now it leads: dark hair needs the most help.
+  HAIR_LITE: 0.4,
+  HAIR_DARK: 0.26,
   HAIRDK_LITE: 0.22,
   HAIRDK_DARK: 0.28,
   JERSEY_LITE: 0.36,
@@ -473,63 +476,329 @@ function face(v: VisualParams, look = 0, skinDk = '#c98d68'): string {
 // --- Hair ------------------------------------------------------------------
 
 /**
- * Hair split into a back layer (behind head) and front layer (on top).
- * Takes pre-computed fill strings (gradient refs) — deriving shades from a
- * 'url(#...)' here would NaN, so the caller supplies both.
+ * The four hair fills, all PRE-COMPUTED by the caller.
+ *
+ * `hair()` never sees a raw hex: it is handed gradient refs, and calling
+ * darken('url(#hairG)') would parse "url(#hai" as a colour and NaN (the art
+ * test catches it). `lite`/`shade` are flat colours derived from the kid's real
+ * hairColor at the call site, because gradients cannot go on a stroke and the
+ * strand work is all strokes.
  */
-function hair(style: HairStyle, color: string, dk: string): { back: string; front: string } {
+interface HairFills {
+  /** The mass: the radial hairG gradient. */
+  color: string;
+  /** The darker mass (buzz, ponytail tail): hairDkG. */
+  dk: string;
+  /** Warm highlight, flat. Upper-LEFT only — the key light is global. */
+  lite: string;
+  /** Cool separation shade, flat. Hairlines, strand grooves, occipital roll. */
+  shade: string;
+}
+
+/** Per-kid hair geometry, clamped. The twin of buildBodySpec. */
+function buildHairSpec(v: VisualParams) {
+  const h = v.hairSpec ?? {};
+  return {
+    volume: clampN(h.volume ?? 1, 0.88, 1.1),
+    length: clampN(h.length ?? 1, 0.8, 1.25),
+    part: clampN(h.part ?? 0, -1, 1),
+    wisps: Math.round(clampN(h.wisps ?? 0, 0, 3)),
+  };
+}
+type HairGeom = ReturnType<typeof buildHairSpec>;
+
+/**
+ * Wrap a hair layer in its per-kid volume (and, for back layers, drop).
+ *
+ * Scales about the head CENTRE, so a bigger afro grows outward instead of
+ * sliding off the skull. Emitted only when it would do something, so a kid
+ * with no hairSpec renders exactly the base silhouette.
+ */
+function hairXform(g: HairGeom, ink: string, lengthens = false): string {
+  if (!ink) return '';
+  const sy = lengthens ? r1(g.volume * g.length) : g.volume;
+  if (g.volume === 1 && sy === 1) return ink;
+  return `<g transform="translate(100 82) scale(${r1(g.volume)} ${sy}) translate(-100 -82)">${ink}</g>`;
+}
+
+/**
+ * The detail kit every style shares. Hair used to be a single flat gradient
+ * fill with NO highlight, NO strands and NO hairline — the only element in
+ * this file with no modelling at all, while limbs got an offset highlight
+ * stroke and even the bat got a highlight rect. On the 60% of the roster
+ * wearing near-black that left one unreadable blob.
+ */
+function hairDetail(f: HairFills, g: HairGeom) {
+  // Part offset in px: shifts where the strands fan FROM. The sheen does not
+  // move with it — the key light is upper-left everywhere, by convention.
+  const px = r1(g.part * 11);
+  return {
+    /** Warm crescent on the upper-left of the mass. No stroke: it is light. */
+    sheen: (d: string, op = 0.5) =>
+      `<path data-hair="sheen" d="${d}" fill="${f.lite}" opacity="${op}" stroke="none"/>`,
+    /** Cool groove where hair meets skin, or where a mass folds under. */
+    shade: (d: string, op = 0.35) =>
+      `<path data-hair="shade" d="${d}" fill="${f.shade}" opacity="${op}" stroke="none"/>`,
+    /**
+     * Strand clumps: thin strokes following the hair's flow. Solid colour, not
+     * a gradient — objectBoundingBox gradients are undefined on a zero-width
+     * stroke bbox, which is the same rule capsule() limbs live under.
+     */
+    strands: (ds: string[], w = 3, op = 0.42) =>
+      `<g data-hair="strands" transform="translate(${px} 0)" fill="none" stroke="${f.shade}" stroke-width="${w}" stroke-linecap="round" opacity="${op}">${ds
+        .map((d) => `<path d="${d}"/>`)
+        .join('')}</g>`,
+    /** Extra clumps a kid's `wisps` earns, fanned off the part. */
+    wisps: (ds: string[]) => (g.wisps ? d3(ds.slice(0, g.wisps), px, f.shade) : ''),
+  };
+}
+
+/**
+ * Detail CLIPPED to the hair's own silhouette.
+ *
+ * Not optional: sheen crescents and strand strokes are authored to flow with
+ * the mass, and without a clip they run past the hairline onto the forehead —
+ * where they read as scratches on skin rather than texture in hair. The clip
+ * geometry and the detail sit inside the same hairXform group, so both are in
+ * the same user space and a per-kid volume can't shear one off the other.
+ */
+function clipped(id: string, mask: string, detail: string): string {
+  if (!detail) return '';
+  return `<defs><clipPath id="${id}">${mask}</clipPath></defs><g clip-path="url(#${id})">${detail}</g>`;
+}
+
+function d3(ds: string[], px: number, stroke: string): string {
+  return `<g data-hair="strands" transform="translate(${px} 0)" fill="none" stroke="${stroke}" stroke-width="2.5" stroke-linecap="round" opacity="0.34">${ds
+    .map((d) => `<path d="${d}"/>`)
+    .join('')}</g>`;
+}
+
+// The silhouette paths, named once so the MASS and its CLIP can never drift
+// apart. Three near-identical forehead caps exist because the styles that wear
+// them sit at slightly different heights; they are not interchangeable.
+const CAP_A = 'M 50 78 a50 50 0 0 1 100 0 q -8 -34 -50 -34 q -42 0 -50 34 Z';
+const CAP_B = 'M 50 80 a50 50 0 0 1 100 0 q -8 -36 -50 -36 q -42 0 -50 36 Z';
+const CAP_C = 'M 52 78 a48 48 0 0 1 96 0 q -8 -32 -48 -32 q -40 0 -48 32 Z';
+const BUZZ_F = 'M 54 74 a46 46 0 0 1 92 0 q -46 -20 -92 0 Z';
+const SPIKE_F =
+  'M 52 78 l 6 -26 l 10 20 l 8 -30 l 10 26 l 12 -32 l 12 32 l 10 -26 l 8 30 l 10 -20 l 6 26 q -50 -20 -100 0 Z';
+const AFRO = 'M 100 22 a56 52 0 0 1 0 104 a56 52 0 0 1 0 -104 Z';
+const MOHAWK_F = 'M 88 18 q 12 -14 24 0 l 4 46 q -16 8 -32 0 Z';
+const TAIL = 'M 140 66 q 40 8 34 52 q -6 30 -26 34 q 18 -34 -16 -74 Z';
+const PIG_L = 'M 52 74 q -30 6 -26 40 q 4 22 22 24 q -14 -30 12 -56 Z';
+const PIG_R = 'M 148 74 q 30 6 26 40 q -4 22 -22 24 q 14 -30 -12 -56 Z';
+const LONG_F = 'M 48 70 q -8 60 6 96 l 92 0 q 14 -36 6 -96 q -14 30 -52 30 q -38 0 -58 -30 Z';
+// Rear-view silhouettes.
+const DOME_R = 'M 50 80 a 50 50 0 0 1 100 0 l 0 24 q -50 32 -100 0 Z';
+const BUZZ_R = 'M 54 80 a 46 46 0 0 1 92 0 l 0 18 q -46 26 -92 0 Z';
+const SPIKE_R =
+  'M 56 62 l 5 -18 l 9 15 l 8 -21 l 9 19 l 11 -23 l 11 23 l 9 -19 l 8 21 l 9 -15 l 5 18 q -47 -14 -94 0 Z';
+const MOHAWK_R = 'M 88 18 q 12 -14 24 0 l 2 100 q -14 10 -28 0 Z';
+const TAIL_R = 'M 88 106 q -8 34 2 58 q 10 8 20 0 q 10 -24 0 -58 Z';
+const LONG_R = 'M 48 70 q -8 60 6 96 l 92 0 q 14 -36 6 -96 q -2 -40 -52 -40 q -50 0 -52 40 Z';
+
+/**
+ * Hair split into a back layer (behind head) and front layer (on top).
+ * Takes pre-computed fill strings — see HairFills.
+ */
+function hair(style: HairStyle, f: HairFills, g: HairGeom): { back: string; front: string } {
+  const color = f.color;
+  const dk = f.dk;
   const S = `stroke="${OUT}" stroke-width="${SW}" stroke-linejoin="round"`;
   const top = (d: string, fill = color) => `<path d="${d}" fill="${fill}" ${S}/>`;
+  const D = hairDetail(f, g);
+  // The generic cap kit. short/spiky/ponytail/pigtails/bun/long all wear the
+  // same dome over the forehead, so they share one sheen, one hairline groove
+  // and one strand fan rather than each re-inventing them.
+  const capSheen = D.sheen('M 62 68 q 4 -28 30 -37 q -16 17 -20 40 q -6 1 -10 -3 Z');
+  const capHairline = D.shade('M 52 76 q 48 -18 96 0 q -48 -10 -96 0 Z', 0.4);
+  const capStrands = D.strands([
+    'M 86 40 q -16 12 -24 32',
+    'M 100 36 q -6 16 -8 36',
+    'M 116 40 q 10 14 14 32',
+  ]);
+  const capWisps = D.wisps(['M 74 48 q -8 12 -10 26', 'M 128 50 q 6 12 8 24', 'M 100 44 q 2 14 0 28']);
+  const cap = capSheen + capHairline + capStrands + capWisps;
   switch (style) {
     case 'bald':
-      return { back: '', front: '' };
+      // Not nothing: a bare scalp still catches the key light, and without a
+      // highlight a bald kid's head reads as a flat disc next to haired ones.
+      return {
+        back: '',
+        front: clipped(
+          'hcF',
+          `<circle cx="${HEAD.cx}" cy="${HEAD.cy}" r="50"/>`,
+          D.sheen('M 70 60 q 10 -22 34 -26 q -20 12 -26 30 q -6 1 -8 -4 Z', 0.3)
+        ),
+      };
     case 'buzz':
-      return { back: '', front: top('M 54 74 a46 46 0 0 1 92 0 q -46 -20 -92 0 Z', dk) };
+      return {
+        back: '',
+        front: hairXform(
+          g,
+          top(BUZZ_F, dk) +
+            clipped(
+              'hcF',
+              `<path d="${BUZZ_F}"/>`,
+              D.sheen('M 66 62 q 6 -22 28 -28 q -16 13 -20 31 Z', 0.42) +
+                // Buzzed hair has no strands to speak of — it reads as stubble
+                // texture, so the clumps go finer and fainter instead.
+                D.strands(['M 78 50 q -4 8 -6 16', 'M 100 44 q 0 9 -1 17', 'M 122 50 q 4 8 6 16'], 2, 0.3) +
+                D.shade('M 56 72 q 44 -16 88 0 q -44 -9 -88 0 Z', 0.32)
+            )
+        ),
+      };
     case 'short':
-      return { back: '', front: top('M 50 78 a50 50 0 0 1 100 0 q -8 -34 -50 -34 q -42 0 -50 34 Z') };
+      return {
+        back: '',
+        front: hairXform(g, top(CAP_A) + clipped('hcF', `<path d="${CAP_A}"/>`, cap)),
+      };
     case 'spiky':
       return {
         back: '',
-        front: top(
-          'M 52 78 l 6 -26 l 10 20 l 8 -30 l 10 26 l 12 -32 l 12 32 l 10 -26 l 8 30 l 10 -20 l 6 26 q -50 -20 -100 0 Z'
+        front: hairXform(
+          g,
+          top(SPIKE_F) +
+            clipped(
+              'hcF',
+              `<path d="${SPIKE_F}"/>`,
+              // Strands run UP each spike, not across the dome — spikes are
+              // separated clumps and the grooves are what sell that.
+              D.strands(['M 68 72 l 4 -18', 'M 88 70 l 4 -24', 'M 112 70 l -3 -25', 'M 132 72 l -4 -18'], 3, 0.4) +
+                D.sheen('M 62 70 q 4 -20 18 -30 q -8 18 -10 32 Z', 0.45) +
+                capHairline
+            )
         ),
       };
-    case 'curly':
+    case 'curly': {
+      // Each curl is its own little sphere: the gradient already re-maps per
+      // path bbox, so what they lacked was a highlight dot and a contact
+      // shadow where they overlap.
+      const curls = [
+        [60, 60, 17],
+        [80, 46, 18],
+        [100, 42, 19],
+        [120, 46, 18],
+        [140, 60, 17],
+      ];
       return {
         back: '',
-        front: `<g fill="${color}" ${S}>
-          <circle cx="60" cy="60" r="17"/><circle cx="80" cy="46" r="18"/>
-          <circle cx="100" cy="42" r="19"/><circle cx="120" cy="46" r="18"/>
-          <circle cx="140" cy="60" r="17"/></g>`,
+        front: hairXform(
+          g,
+          `<g fill="${color}" ${S}>${curls.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join('')}</g>` +
+            clipped(
+              'hcF',
+              curls.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join(''),
+              `<g data-hair="sheen" fill="${f.lite}" opacity="0.4" stroke="none">${curls
+                .map(([x, y, r]) => `<circle cx="${r1(x - r * 0.34)}" cy="${r1(y - r * 0.38)}" r="${r1(r * 0.36)}"/>`)
+                .join('')}</g>` +
+                D.strands(['M 70 68 q 6 -8 12 -4', 'M 92 56 q 8 -8 16 -2', 'M 116 60 q 8 -6 14 0'], 2.5, 0.3) +
+                capHairline
+            )
+        ),
       };
+    }
     case 'afro':
       return {
-        back: top('M 100 22 a56 52 0 0 1 0 104 a56 52 0 0 1 0 -104 Z'),
+        back: hairXform(
+          g,
+          top(AFRO) +
+            clipped(
+              'hcB',
+              `<path d="${AFRO}"/>`,
+              D.sheen('M 62 56 q 10 -30 36 -32 q -24 16 -28 38 q -6 0 -8 -6 Z', 0.42) +
+                // A big round mass needs an occipital roll or it stays a circle.
+                D.shade('M 100 126 a56 52 0 0 0 52 -34 q -14 30 -52 34 Z', 0.32) +
+                D.strands(
+                  ['M 74 44 q -10 22 -8 44', 'M 100 32 q -4 30 -2 52', 'M 126 44 q 10 22 8 44'],
+                  3.5,
+                  0.32
+                )
+            )
+        ),
         front: '',
       };
     case 'mohawk':
-      return { back: '', front: top('M 88 18 q 12 -14 24 0 l 4 46 q -16 8 -32 0 Z') };
+      return {
+        back: '',
+        front: hairXform(
+          g,
+          top(MOHAWK_F) +
+            clipped(
+              'hcF',
+              `<path d="${MOHAWK_F}"/>`,
+              D.sheen('M 90 26 q 6 -8 10 -6 l 2 34 q -6 2 -8 0 Z', 0.45) +
+                D.strands(['M 96 22 l 1 38', 'M 105 22 l 1 38'], 2, 0.35)
+            )
+        ),
+      };
     case 'ponytail':
       return {
-        back: top('M 140 66 q 40 8 34 52 q -6 30 -26 34 q 18 -34 -16 -74 Z'),
-        front: top('M 50 80 a50 50 0 0 1 100 0 q -8 -36 -50 -36 q -42 0 -50 36 Z'),
+        back: hairXform(
+          g,
+          top(TAIL) +
+            clipped(
+              'hcB',
+              `<path d="${TAIL}"/>`,
+              D.sheen('M 148 76 q 20 8 18 34 q -8 -22 -22 -30 Z', 0.34) +
+                D.strands(['M 150 76 q 20 16 14 48', 'M 158 82 q 12 16 8 40'], 3, 0.3)
+            ),
+          true
+        ),
+        front: hairXform(g, top(CAP_B) + clipped('hcF', `<path d="${CAP_B}"/>`, cap)),
       };
     case 'pigtails':
       return {
-        back:
-          top('M 52 74 q -30 6 -26 40 q 4 22 22 24 q -14 -30 12 -56 Z') +
-          top('M 148 74 q 30 6 26 40 q -4 22 -22 24 q 14 -30 -12 -56 Z'),
-        front: top('M 50 78 a50 50 0 0 1 100 0 q -8 -34 -50 -34 q -42 0 -50 34 Z'),
+        back: hairXform(
+          g,
+          top(PIG_L) +
+            top(PIG_R) +
+            clipped(
+              'hcB',
+              `<path d="${PIG_L}"/><path d="${PIG_R}"/>`,
+              D.sheen('M 46 82 q -16 8 -14 30 q 0 -20 16 -26 Z', 0.34) +
+                D.strands(['M 44 84 q -16 14 -10 40', 'M 156 84 q 16 14 10 40'], 3, 0.28)
+            ),
+          true
+        ),
+        front: hairXform(g, top(CAP_A) + clipped('hcF', `<path d="${CAP_A}"/>`, cap)),
       };
     case 'bun':
       return {
-        back: `<circle cx="100" cy="30" r="16" fill="${color}" ${S}/>`,
-        front: top('M 52 78 a48 48 0 0 1 96 0 q -8 -32 -48 -32 q -40 0 -48 32 Z'),
+        back: hairXform(
+          g,
+          `<circle cx="100" cy="30" r="16" fill="${color}" ${S}/>` +
+            clipped(
+              'hcB',
+              '<circle cx="100" cy="30" r="16"/>',
+              `<circle data-hair="sheen" cx="94" cy="24" r="6" fill="${f.lite}" opacity="0.42" stroke="none"/>` +
+                // Wrap lines: what makes a bun read as coiled hair, not a ball.
+                D.strands(['M 88 34 q 12 -10 24 -2', 'M 88 26 q 12 -8 24 -1'], 2.5, 0.34)
+            ),
+          true
+        ),
+        front: hairXform(g, top(CAP_C) + clipped('hcF', `<path d="${CAP_C}"/>`, cap)),
       };
     case 'long':
       return {
-        back: top('M 48 70 q -8 60 6 96 l 92 0 q 14 -36 6 -96 q -14 30 -52 30 q -38 0 -58 -30 Z'),
-        front: top('M 50 80 a50 50 0 0 1 100 0 q -8 -36 -50 -36 q -42 0 -50 36 Z'),
+        back: hairXform(
+          g,
+          top(LONG_F) +
+            clipped(
+              'hcB',
+              `<path d="${LONG_F}"/>`,
+              D.sheen('M 58 84 q -4 40 2 66 q -10 -32 -6 -66 Z', 0.34) +
+                // Long hair is the style that most needs vertical flow lines: one
+                // flat silhouette down to the shoulders is a cape, not hair.
+                D.strands(
+                  ['M 70 82 q -6 42 -2 78', 'M 100 96 q -2 40 0 70', 'M 130 82 q 6 42 2 78'],
+                  3.5,
+                  0.3
+                )
+            ),
+          true
+        ),
+        front: hairXform(g, top(CAP_B) + clipped('hcF', `<path d="${CAP_B}"/>`, cap)),
       };
   }
 }
@@ -540,53 +809,189 @@ function hair(style: HairStyle, color: string, dk: string): { back: string; fron
  * on top (spikes, puffs, tail...). NO face renders under these — the rear
  * poses skip face() entirely. Same pre-computed-fill rule as hair().
  */
-function hairRear(style: HairStyle, color: string, dk: string): string {
+function hairRear(style: HairStyle, f: HairFills, g: HairGeom): string {
+  const color = f.color;
+  const dk = f.dk;
   const S = `stroke="${OUT}" stroke-width="${SW}" stroke-linejoin="round"`;
   const top = (d: string, fill = color) => `<path d="${d}" fill="${fill}" ${S}/>`;
-  // Crown-to-nape dome: covers the whole back of the head, skin nape below.
-  const dome = top('M 50 80 a 50 50 0 0 1 100 0 l 0 16 q -50 28 -100 0 Z');
+  const D = hairDetail(f, g);
+  // Crown-to-NAPE dome. It used to stop at y≈110 against a skull that bottoms
+  // out at 132 (HEAD.cy + r), leaving ~22px of bare scalp under the hairline —
+  // which is why the rig batter read as a bald ball wearing a hair sticker.
+  // It now reaches ~120, keeping a sliver of nape and the ears (cx 52/148,
+  // which sit outside x=50..150) visible.
+  const dome = top(DOME_R);
+  // A back of a head is a SPHERE. One flat fill has no way to say that, so the
+  // dome gets the same treatment as the front: warm sweep upper-left, cool roll
+  // along the occipital curve, strands falling from the crown.
+  const domeVolume =
+    D.sheen('M 62 62 q 8 -26 32 -30 q -22 15 -26 36 q -5 0 -6 -6 Z', 0.42) +
+    D.shade('M 52 100 q 48 30 96 0 q -48 22 -96 0 Z', 0.4);
+  const domeStrands = D.strands(
+    ['M 84 36 q -14 32 -12 62', 'M 100 32 q -2 34 -1 66', 'M 116 36 q 14 32 12 62'],
+    3,
+    0.34
+  );
+  const crown =
+    dome +
+    clipped(
+      'hcR',
+      `<path d="${DOME_R}"/>`,
+      domeVolume +
+        domeStrands +
+        D.wisps(['M 70 46 q -8 26 -6 48', 'M 132 48 q 8 24 6 44', 'M 100 40 q 0 30 0 52'])
+    );
   switch (style) {
     case 'bald':
-      return '';
+      return clipped(
+        'hcR',
+        `<circle cx="${HEAD.cx}" cy="${HEAD.cy}" r="50"/>`,
+        D.sheen('M 70 60 q 10 -22 34 -26 q -20 12 -26 30 q -6 1 -8 -4 Z', 0.28)
+      );
     case 'buzz':
-      return top('M 54 80 a 46 46 0 0 1 92 0 l 0 10 q -46 22 -92 0 Z', dk);
+      return hairXform(
+        g,
+        top(BUZZ_R, dk) +
+          clipped(
+            'hcR',
+            `<path d="${BUZZ_R}"/>`,
+            D.sheen('M 66 64 q 6 -24 28 -28 q -18 14 -22 32 Z', 0.36) +
+              D.shade('M 56 96 q 44 26 88 0 q -44 19 -88 0 Z', 0.34) +
+              // Buzzed hair reads as stubble, so the clumps stay fine and faint.
+              D.strands(['M 78 52 q -4 20 -5 40', 'M 100 46 q 0 22 -1 44', 'M 122 52 q 4 20 5 40'], 2, 0.26)
+          )
+      );
     case 'short':
-      return dome;
+      return hairXform(g, crown);
     case 'spiky':
-      // The front spike silhouette rides the dome — spikes read from any side.
-      return (
+      // Spikes from BEHIND are shorter and denser than the front silhouette —
+      // reusing the front path verbatim is what made this read as a decal.
+      return hairXform(
+        g,
         dome +
-        top(
-          'M 52 78 l 6 -26 l 10 20 l 8 -30 l 10 26 l 12 -32 l 12 32 l 10 -26 l 8 30 l 10 -20 l 6 26 q -50 -20 -100 0 Z'
-        )
+          top(SPIKE_R) +
+          clipped(
+            'hcR',
+            `<path d="${DOME_R}"/><path d="${SPIKE_R}"/>`,
+            domeVolume +
+              D.strands(['M 70 60 l 3 -14', 'M 90 58 l 3 -17', 'M 110 58 l -3 -17', 'M 130 60 l -3 -14'], 3, 0.36)
+          )
       );
-    case 'curly':
-      return (
+    case 'curly': {
+      // Curls wrap the whole back of the head in two staggered rows, instead
+      // of the single front hairline arc this used to borrow.
+      const curls = [
+        [58, 74, 15],
+        [78, 60, 17],
+        [100, 54, 18],
+        [122, 60, 17],
+        [142, 74, 15],
+        [70, 96, 14],
+        [100, 100, 15],
+        [130, 96, 14],
+      ];
+      return hairXform(
+        g,
         dome +
-        `<g fill="${color}" ${S}>
-          <circle cx="60" cy="60" r="17"/><circle cx="80" cy="46" r="18"/>
-          <circle cx="100" cy="42" r="19"/><circle cx="120" cy="46" r="18"/>
-          <circle cx="140" cy="60" r="17"/></g>`
+          `<g fill="${color}" ${S}>${curls.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join('')}</g>` +
+          clipped(
+            'hcR',
+            curls.map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}"/>`).join(''),
+            `<g data-hair="sheen" fill="${f.lite}" opacity="0.36" stroke="none">${curls
+              .map(([x, y, r]) => `<circle cx="${r1(x - r * 0.34)}" cy="${r1(y - r * 0.38)}" r="${r1(r * 0.34)}"/>`)
+              .join('')}</g>` +
+              // Contact grooves where the curls sit against each other.
+              D.strands(['M 68 84 q 8 -8 16 -3', 'M 92 106 q 10 -8 18 -2', 'M 116 84 q 8 -6 14 -1'], 2.5, 0.28)
+          )
       );
+    }
     case 'afro':
-      return top('M 100 22 a56 52 0 0 1 0 104 a56 52 0 0 1 0 -104 Z');
+      return hairXform(
+        g,
+        top(AFRO) +
+          clipped(
+            'hcR',
+            `<path d="${AFRO}"/>`,
+            D.sheen('M 62 56 q 10 -30 36 -32 q -24 16 -28 38 q -6 0 -8 -6 Z', 0.4) +
+              D.shade('M 100 126 a56 52 0 0 0 52 -34 q -14 30 -52 34 Z', 0.32) +
+              D.strands(['M 74 44 q -10 22 -8 44', 'M 100 32 q -4 30 -2 52', 'M 126 44 q 10 22 8 44'], 3.5, 0.3)
+          )
+      );
     case 'mohawk':
       // Shaved sides from behind: no dome, just the stripe down the back.
-      return top('M 88 18 q 12 -14 24 0 l 2 100 q -14 10 -28 0 Z');
+      return hairXform(
+        g,
+        top(MOHAWK_R) +
+          clipped(
+            'hcR',
+            `<path d="${MOHAWK_R}"/>`,
+            D.sheen('M 90 26 q 6 -8 10 -6 l 3 86 q -7 2 -9 0 Z', 0.4) +
+              D.strands(['M 97 24 l 2 90', 'M 106 24 l 2 88'], 2, 0.32)
+          )
+      );
     case 'ponytail':
       // Tail hangs down the center of the back, over the jersey.
-      return dome + top('M 88 106 q -8 34 2 58 q 10 8 20 0 q 10 -24 0 -58 Z', dk);
+      return (
+        hairXform(g, crown) +
+        hairXform(
+          g,
+          top(TAIL_R, dk) +
+            clipped(
+              'hcR2',
+              `<path d="${TAIL_R}"/>`,
+              D.sheen('M 92 112 q -4 26 1 44 q -6 -20 -5 -44 Z', 0.3) +
+                D.strands(['M 100 112 q -2 30 0 48'], 2.5, 0.3)
+            ),
+          true
+        )
+      );
     case 'pigtails':
       return (
-        dome +
-        top('M 52 74 q -30 6 -26 40 q 4 22 22 24 q -14 -30 12 -56 Z') +
-        top('M 148 74 q 30 6 26 40 q -4 22 -22 24 q 14 -30 -12 -56 Z')
+        hairXform(g, crown) +
+        hairXform(
+          g,
+          top(PIG_L) +
+            top(PIG_R) +
+            clipped(
+              'hcR2',
+              `<path d="${PIG_L}"/><path d="${PIG_R}"/>`,
+              D.strands(['M 44 84 q -16 14 -10 40', 'M 156 84 q 16 14 10 40'], 3, 0.28)
+            ),
+          true
+        )
       );
     case 'bun':
-      return dome + `<circle cx="100" cy="30" r="16" fill="${color}" ${S}/>`;
+      return (
+        hairXform(g, crown) +
+        hairXform(
+          g,
+          `<circle cx="100" cy="30" r="16" fill="${color}" ${S}/>` +
+            clipped(
+              'hcR2',
+              '<circle cx="100" cy="30" r="16"/>',
+              `<circle data-hair="sheen" cx="94" cy="24" r="6" fill="${f.lite}" opacity="0.42" stroke="none"/>` +
+                D.strands(['M 88 34 q 12 -10 24 -2', 'M 88 26 q 12 -8 24 -1'], 2.5, 0.34)
+            ),
+          true
+        )
+      );
     case 'long':
       // Full drape: crown over the top, hair falling past the shoulders.
-      return top('M 48 70 q -8 60 6 96 l 92 0 q 14 -36 6 -96 q -2 -40 -52 -40 q -50 0 -52 40 Z');
+      return hairXform(
+        g,
+        top(LONG_R) +
+          clipped(
+            'hcR',
+            `<path d="${LONG_R}"/>`,
+            D.sheen('M 58 84 q -4 40 2 66 q -10 -32 -6 -66 Z', 0.32) +
+              D.strands(
+                ['M 68 80 q -6 44 -2 82', 'M 100 74 q -2 44 0 88', 'M 132 80 q 6 44 2 82'],
+                3.5,
+                0.3
+              )
+          ),
+        true
+      );
   }
 }
 
@@ -2174,7 +2579,17 @@ export function buildCharacterSVG(
     usesChair: v.accessory === 'wheelchair',
     logo: team?.logo,
   };
-  const h = hair(v.hair, 'url(#hairG)', 'url(#hairDkG)');
+  // Mass fills are gradient refs; highlight/shade are flat colours derived from
+  // the kid's REAL hairColor here, because hair() can't derive a shade from a
+  // 'url(#...)' and a gradient can't live on a stroke.
+  const hf: HairFills = {
+    color: 'url(#hairG)',
+    dk: 'url(#hairDkG)',
+    lite: lighten(hairColor, 0.5),
+    shade: darken(hairColor, 0.38),
+  };
+  const hg = buildHairSpec(v);
+  const h = hair(v.hair, hf, hg);
   const shoulderY = 150;
 
   // Chest number badge (front jersey poses only — street clothes have none).
@@ -2189,7 +2604,7 @@ export function buildCharacterSVG(
     pose === 'swingFollowRear'
   ) {
     // Rear poses use the back-of-head hair set; the front set is ignored.
-    const hr = hairRear(v.hair, 'url(#hairG)', 'url(#hairDkG)');
+    const hr = hairRear(v.hair, hf, hg);
     layers =
       pose === 'batRear'
         ? poseBatRear(c, v, hr)

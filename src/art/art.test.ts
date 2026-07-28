@@ -140,19 +140,79 @@ describe('character art', () => {
     }
   });
 
-  it('BodySpec/FaceSpec values are clamped (a content typo cannot clip the viewBox)', () => {
+  it('BodySpec/FaceSpec/HairSpec values are clamped (a content typo cannot clip the viewBox)', () => {
     const base = ROSTER[0].visual;
     const wild = buildCharacterSVG({
       ...base,
       body: { height: 9, shoulderW: 500, hipW: 99, belly: 7, neck: 40, headW: 5, headH: 5 },
       face: { eyeGap: 90, eyeSize: 9, mouthW: 9, cheeks: 99 },
+      hairSpec: { volume: 9, length: 40, part: 12, wisps: 99 },
     });
     const maxed = buildCharacterSVG({
       ...base,
       body: { height: 1, shoulderW: 56, hipW: 10, belly: 1, neck: 6, headW: 1.08, headH: 1.08 },
       face: { eyeGap: 24, eyeSize: 1.3, mouthW: 1.25, cheeks: 1.4 },
+      hairSpec: { volume: 1.1, length: 1.25, part: 1, wisps: 3 },
     });
     expect(wild).toBe(maxed);
+  });
+
+  it('hair is modelled, not a flat blob', () => {
+    // Hair was the ONE element in the file with no highlight treatment at all
+    // — limbs get an offset highlight stroke via capsule(), the bat gets a
+    // highlight rect, hair got a single gradient fill and nothing else. On the
+    // near-black most of the roster wears, that is an unreadable silhouette.
+    // Both views, because the rear dome is the one the rig shows at 318px.
+    for (const char of ROSTER) {
+      if (char.visual.hair === 'bald') continue;
+      for (const pose of ['stand', 'batRear'] as const) {
+        const svg = buildCharacterSVG(char.visual, pose);
+        expect(svg, `${char.id}/${pose} hair has no highlight`).toContain('data-hair="sheen"');
+        expect(svg, `${char.id}/${pose} hair has no strand detail`).toContain('data-hair="strands"');
+      }
+    }
+  });
+
+  it('the rear hair dome reaches the nape', () => {
+    // It used to stop at y≈110 against a skull bottoming out at 132
+    // (HEAD.cy + headR), leaving ~22px of bare scalp under the hairline — the
+    // reason the rig batter read as a bald ball wearing a hair sticker.
+    const NAPE = 'l 0 24 q -50 32 -100 0';
+    const domed = ROSTER.filter((c) =>
+      ['short', 'spiky', 'curly', 'ponytail', 'pigtails', 'bun'].includes(c.visual.hair)
+    );
+    expect(domed.length).toBeGreaterThan(0);
+    for (const char of domed) {
+      expect(
+        buildCharacterSVG(char.visual, 'batRear'),
+        `${char.id} rear dome stops short of the nape`
+      ).toContain(NAPE);
+    }
+  });
+
+  it('no two kids share a hair silhouette (style + colour + skin)', () => {
+    // The uniqueness test below is byte-equality on the whole SVG, so it passes
+    // happily while two kids differ by one pixel of shoulder width and still
+    // read as the same kid across a room. This is the reading-distance version:
+    // `calls_shot` and `the_prof` were an exact match on all three until
+    // 2026-07-27, and six kids shared one byte-identical `short` path.
+    const seen = new Map<string, string>();
+    for (const char of ROSTER) {
+      const v = char.visual;
+      const sig = `${v.hair}/${v.hairColor}/${v.skin}`;
+      expect(seen.get(sig), `${char.id} is a visual twin of ${seen.get(sig)} (${sig})`).toBeUndefined();
+      seen.set(sig, char.id);
+    }
+  });
+
+  it('every haired kid carries a HairSpec', () => {
+    // Body and face each got a per-kid spec object; hair never did, which is
+    // the mechanical reason the roster read same-y. Bald kids have nothing to
+    // spec.
+    for (const char of ROSTER) {
+      if (char.visual.hair === 'bald') continue;
+      expect(char.visual.hairSpec, `${char.id} has no hairSpec`).toBeDefined();
+    }
   });
 
   it('body and face specs actually reshape the art', () => {
