@@ -287,6 +287,64 @@ describe('character art', () => {
     }
   });
 
+  it('no bat leaves the viewBox', () => {
+    // This was an UNGUARDED invariant until 2026-07-27, and the stance retune
+    // walked straight into it: giving the bat its measured length (1.3 -> 1.64
+    // body heights) sent poseSwingLoad's tip to y = -20, twenty pixels off the
+    // top of the frame, where it silently clipped.
+    //
+    // Read off the EMITTED transform rather than the pose constants, so it
+    // covers the swing frames too and cannot be satisfied by a table that the
+    // drawing code has stopped using. The per-kid height scale wraps everything
+    // in `translate(100 GROUND) scale(<=1) translate(...)`, which only ever
+    // pulls ink INWARD toward (100, GROUND) — so checking the unscaled coords
+    // is the strict case and short kids are covered for free.
+    const VIEW_W = 200;
+    const VIEW_H = 260;
+    // batProp's outermost ink: barrel cap corners and the knob flare, each
+    // grown by half the 4-wide outline stroke.
+    const CORNERS = [
+      [-11, -98],
+      [11, -98],
+      [-8.5, -3],
+      [8.5, -3],
+      [-8.5, 3],
+      [8.5, 3],
+    ];
+    const batXform = /<g transform="translate\((-?[\d.]+) (-?[\d.]+)\) rotate\((-?[\d.]+)\)(?: scale\((-?[\d.]+) (-?[\d.]+)\))?">\s*<path d="M -3\.5 -6/g;
+
+    for (const char of ROSTER) {
+      for (const pose of [
+        'bat',
+        'batRear',
+        'swingLoad',
+        'swingLoadRear',
+        'swingMid',
+        'swingFollow',
+        'swingMidRear',
+        'swingFollowRear',
+      ] as const) {
+        const svg = buildCharacterSVG(char.visual, pose);
+        const hits = [...svg.matchAll(batXform)];
+        expect(hits.length, `${char.id}/${pose}: bat transform not found`).toBe(1);
+        const [, gx, gy, deg, sx, sy] = hits[0];
+        const rad = (Number(deg) * Math.PI) / 180;
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+        for (const [lx, ly] of CORNERS) {
+          const px = lx * Number(sx ?? 1);
+          const py = ly * Number(sy ?? 1);
+          const x = Number(gx) + px * cos - py * sin;
+          const y = Number(gy) + px * sin + py * cos;
+          expect(x, `${char.id}/${pose}: bat ink off the left edge`).toBeGreaterThanOrEqual(0);
+          expect(x, `${char.id}/${pose}: bat ink off the right edge`).toBeLessThanOrEqual(VIEW_W);
+          expect(y, `${char.id}/${pose}: bat ink off the top edge`).toBeGreaterThanOrEqual(0);
+          expect(y, `${char.id}/${pose}: bat ink off the bottom edge`).toBeLessThanOrEqual(VIEW_H);
+        }
+      }
+    }
+  });
+
   it('the rig batter peeks at the pitcher (rear profile cheat)', () => {
     // The stance/load rear poses turn a quarter toward the pitch: profile eye
     // ink must be present there and ONLY there — the catcher stays a pure

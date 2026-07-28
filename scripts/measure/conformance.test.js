@@ -40,6 +40,7 @@ import {
   PITCH_TRAVEL_MS, CPU_PITCH_TRAVEL_MS,
 } from '../../src/config.ts';
 import { HOME, FIRST, FOUL_SLOPE } from '../../src/systems/geometry.ts';
+import { BAT_STANCE_GEOMETRY } from '../../src/art/CharacterArt.ts';
 import { affinity, ourLegRealMs, ratioToAnchor, round } from './lib.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -242,6 +243,71 @@ describe('geometry — known drifts stay exactly as big as recorded', () => {
       expect(m.diagonalMidpointGapPx, `${m.source} must clear the affine threshold`).toBeGreaterThan(
         rec.affineThresholdPx
       );
+    }
+  });
+});
+
+describe('art — the batting stance stays inside BB’s measured bands', () => {
+  it('grip height, bat length and tip-vs-crown all sit in BB’s bands', () => {
+    // DERIVED from the real pose constants, never restated: a record that
+    // copies a number can agree with a stale copy of it forever. Edit the pose
+    // without editing the record and this goes red -- which is the entire point,
+    // because the comment this replaced ASSERTED the pose was Backyard-shaped
+    // and nothing ever checked.
+    const rec = M.art.battingStance;
+    expect(rec.status).toBe('conformed');
+    expect(rec.measurements).toHaveLength(rec.n);
+
+    const g = BAT_STANCE_GEOMETRY;
+    const s = g.stances.front.normal;
+    const len = g.baseLen * g.scale;
+    const rad = (Math.abs(s.deg) * Math.PI) / 180;
+
+    const ours = {
+      gripHeightFrac: (g.ground - s.y) / g.bodyH,
+      batLenFrac: len / g.bodyH,
+      tipAboveHeadFrac: (g.crownY - (s.y - len * Math.cos(rad))) / g.bodyH,
+      gripDxFrac: (s.x - 100) / g.bodyH,
+    };
+
+    for (const [k, [lo, hi]] of Object.entries(rec.bands)) {
+      expect(round(ours[k], 3), `${k} drifted out of BB's band`).toBeGreaterThanOrEqual(lo);
+      expect(round(ours[k], 3), `${k} drifted out of BB's band`).toBeLessThanOrEqual(hi);
+      expect(round(ours[k], 3), `${k} no longer matches what the record says we render`).toBe(
+        rec.ours[k]
+      );
+    }
+
+    // Each band must actually be the span of the samples -- otherwise a band
+    // could be widened to admit a drift without anyone re-measuring.
+    for (const k of Object.keys(rec.bands)) {
+      const v = rec.measurements.map((m) => m[k]);
+      expect(rec.bands[k], `${k}'s band is not the sample span`).toEqual([
+        Math.min(...v),
+        Math.max(...v),
+      ]);
+    }
+
+    // The tight one, called out on its own: BB never lets the bat rise above
+    // the crown, and neither may we. This is the invariant the old pose broke.
+    expect(ours.tipAboveHeadFrac).toBeLessThanOrEqual(0);
+    expect(rec.was.tipAboveHeadFrac).toBeGreaterThan(0);
+  });
+
+  it('every stance variant keeps its bat tip under the crown', () => {
+    // The record pins front.normal only, deliberately -- the variants are
+    // spread on purpose. But the ONE invariant applies to all of them, in both
+    // views, or a kid with an unlucky stance grows a bat through their hat.
+    const g = BAT_STANCE_GEOMETRY;
+    const len = g.baseLen * g.scale;
+    for (const view of ['front', 'rear']) {
+      for (const [name, s] of Object.entries(g.stances[view])) {
+        const drop = name === 'crouch' ? 9 : 0;
+        const tipY = s.y + drop - len * Math.cos((Math.abs(s.deg) * Math.PI) / 180);
+        expect(tipY, `${view}.${name} bat tip pokes above the crown`).toBeGreaterThanOrEqual(
+          g.crownY + drop
+        );
+      }
     }
   });
 });

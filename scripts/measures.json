@@ -575,6 +575,145 @@
       "informs": "src/systems/geometry.ts FOUL_SLOPE"
     }
   },
+  "art": {
+    "note": "Character-art measurements: how BB2001 DRAWS its kids, as opposed to how fast it moves them (pace) or where it puts its camera (geometry).",
+    "battingStance": {
+      "id": "art.batting-stance",
+      "category": "art",
+      "status": "conformed",
+      "statusChangedAt": "2026-07-27",
+      "what": "How a BB2001 batter HOLDS the bat at rest: where the hands sit, how long the bat is, and how high its tip reaches -- all as fractions of the batter's own body height, so they transfer across sprite scales and into our 200x260 viewBox.",
+      "why": "Reported as 'the batters all look like they hold the bat in the wrong position'. Our stance had never been measured; the code comment asserting it WAS the Backyard silhouette was written by eye, and was wrong on two of the three quantities.",
+      "definitions": {
+        "bodyHeight": "feet (lowest body pixel) to crown (highest NON-BAT pixel). Excluding the bat is the whole point -- the bat sticks out past the head in the wrong poses, which is the thing being measured.",
+        "gripHeightFrac": "(feet - knobY) / bodyHeight. How high off the ground the hands are.",
+        "batLenFrac": "bat length / bodyHeight, from the PCA major axis of the bat's pixels.",
+        "tipAboveHeadFrac": "(crownY - tipY) / bodyHeight. POSITIVE means the bat pokes above the head.",
+        "gripDxFrac": "(knobX - bodyCentreX) / bodyHeight. How far outboard the hands are.",
+        "degFromVertical": "signed angle of the bat's major axis; sign follows the batter's handedness, so compare magnitudes."
+      },
+      "method": "Bat pixels found by EXACT palette match (240,208,164) -- ScummVM's blit is integer nearest-neighbour, so colours survive the capture exactly and no thresholding is needed. Body found by differencing against t=400, a frame of the same behind-plate camera with NO batter in it, then taking the largest connected foreground component and subtracting its bat pixels. Bat axis and endpoints from PCA. The right-edge swing cards draw bats in the SAME wood colour, so the ROI stops at x=520; the HUD strip stops it at y=398.",
+      "rejectionRule": "A frame is rejected if the bat blob is under 800px or under 0.6 body-heights long -- that catches mid-swing frames (the bat blurs off-ROI or foreshortens) and SQUARED/bunt frames, where the bat is held out flat and is NOT the resting stance. Every plate-view screenshot in sources.local is a squared frame, which is why this had to come off the video.",
+      "measurements": [
+        {
+          "source": "local:bb01-capture-session2",
+          "t": 195.0,
+          "batter": "Barry Bonds RHB",
+          "bodyHeightPx": 234,
+          "degFromVertical": 9.5,
+          "batLenFrac": 0.724,
+          "gripHeightFrac": 0.282,
+          "gripDxFrac": 0.071,
+          "tipAboveHeadFrac": -0.004
+        },
+        {
+          "source": "local:bb01-capture-session2",
+          "t": 80.0,
+          "batter": "Achmed Khan LHB",
+          "bodyHeightPx": 211,
+          "degFromVertical": -7.7,
+          "batLenFrac": 0.708,
+          "gripHeightFrac": 0.294,
+          "gripDxFrac": -0.142,
+          "tipAboveHeadFrac": -0.005
+        },
+        {
+          "source": "local:bb01-capture-session2",
+          "t": 510.0,
+          "batter": "Mikey Thomas RHB",
+          "bodyHeightPx": 191,
+          "degFromVertical": 48.9,
+          "batLenFrac": 0.813,
+          "gripHeightFrac": 0.346,
+          "gripDxFrac": -0.275,
+          "tipAboveHeadFrac": -0.12
+        },
+        {
+          "source": "local:bb01-capture-session2",
+          "t": 600.0,
+          "batter": "RHB",
+          "bodyHeightPx": 213,
+          "degFromVertical": 9.3,
+          "batLenFrac": 0.728,
+          "gripHeightFrac": 0.277,
+          "gripDxFrac": 0.092,
+          "tipAboveHeadFrac": -0.005
+        },
+        {
+          "source": "local:bb01-capture-session2",
+          "t": 250.0,
+          "batter": "LHB",
+          "bodyHeightPx": 213,
+          "degFromVertical": -8.9,
+          "batLenFrac": 0.727,
+          "gripHeightFrac": 0.277,
+          "gripDxFrac": -0.115,
+          "tipAboveHeadFrac": -0.005
+        },
+        {
+          "source": "local:bb01-capture-session2",
+          "t": 560.0,
+          "batter": "LHB",
+          "bodyHeightPx": 166,
+          "degFromVertical": -19.9,
+          "batLenFrac": 0.865,
+          "gripHeightFrac": 0.181,
+          "gripDxFrac": -0.048,
+          "tipAboveHeadFrac": -0.006
+        }
+      ],
+      "bands": {
+        "gripHeightFrac": [
+          0.181,
+          0.346
+        ],
+        "batLenFrac": [
+          0.708,
+          0.865
+        ],
+        "tipAboveHeadFrac": [
+          -0.12,
+          -0.004
+        ],
+        "gripDxFrac": [
+          -0.275,
+          0.092
+        ]
+      },
+      "medians": {
+        "gripHeightFrac": 0.277,
+        "batLenFrac": 0.727,
+        "tipAboveHeadFrac": -0.005,
+        "gripDxFrac": -0.115,
+        "absDegFromVertical": 9.3
+      },
+      "n": 6,
+      "nNote": "Six at-bats, six different batters, ONE capture and one venue. That is the right shape of evidence for this quantity in a way it would not be for a camera property: a batting stance is a per-character art asset, so sampling batters is what matters and sampling venues is not. Body height varies 166-234px across the six because BB scales the batter sprite per character, which is exactly why every quantity here is a FRACTION and none is a pixel count.",
+      "confidence": "med",
+      "theTightOne": "tipAboveHeadFrac. Range -0.120..-0.004, and five of six samples sit within 0.006 of exactly level -- BB tops the bat out AT the crown and never above it. That single invariant is most of what makes the stance read as a stance, and it is the one ours broke.",
+      "degIsPerCharacter": "Bat angle is NOT one value: five samples cluster at 7.7-19.9 degrees and Mikey Thomas sits at 48.9. Sampling t=505-512 at 0.5s intervals shows him dead static the whole time, so this is his stance and not a frame of an animation. Bonds by contrast cycles a 3-frame idle waggle across 9.1/9.5/11.2 -- a ~2 degree flutter, which is the scale of the only animation in the resting pose. So we render a per-kid `stance` table rather than one angle, and no band is claimed for degrees.",
+      "ours": {
+        "constant": "src/art/CharacterArt.ts BAT_STANCE / BAT_STANCE_SCALE",
+        "exportedAs": "BAT_STANCE_GEOMETRY",
+        "stance": "front.normal",
+        "gripHeightFrac": 0.289,
+        "batLenFrac": 0.722,
+        "tipAboveHeadFrac": -0.005,
+        "gripDxFrac": -0.128,
+        "degFromVertical": -12
+      },
+      "was": {
+        "gripHeightFrac": 0.495,
+        "batLenFrac": 0.572,
+        "tipAboveHeadFrac": 0.065,
+        "gripDxFrac": -0.229,
+        "degFromVertical": -6,
+        "why": "Hands at 0.495 were at CHIN height, nearly twice BB's 0.277 -- on a chibi body whose head eats the top 45%, BB's 'chest height' lands near the belt. That put the grip level with the face, which is what forced the near forearm across the chin (its ink reached y=126 against a chin at y=134), and it left the 0.572-length bat pointing straight up past the cap instead of topping out at it. The angle (-6) and outboard offset were already inside BB's bands; height and length were not, and those two are what the eye reads."
+      },
+      "conformNote": "All four fractions now sit inside BB's measured bands, with tipAboveHeadFrac landing on the median exactly. The test DERIVES ours from BAT_STANCE_GEOMETRY rather than restating them, so editing the pose without editing this record goes red. Note it checks front.normal only: the other three stance variants are deliberate per-kid spread across the same bands (BB's own batters spread further), and pinning all four would freeze variation the measurement explicitly found.",
+      "informs": "src/art/CharacterArt.ts poseBat / poseBatRear / poseSwingLoad / poseSwingLoadRear"
+    }
+  },
   "palette": {
     "note": "Pixel-exact colour is now available (see sources.local.screenshots) and video colour is not -- video carries +-2 per channel from YUV<->RGB conversion even losslessly encoded. Only a first sample is recorded here; a systematic palette pass has not been done.",
     "backyardGrass": {
