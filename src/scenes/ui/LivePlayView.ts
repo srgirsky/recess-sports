@@ -29,6 +29,7 @@ import {
   dist,
   FIELD_POSITIONS,
   type PositionId,
+  type Vec,
 } from '../../systems/geometry';
 import type { LivePlayState, LiveEvent } from '../../systems/liveplay';
 import { project, depthScale } from '../../art/projection';
@@ -430,7 +431,10 @@ export class LivePlayView {
         const key = poseKey(f.charId, 'dive');
         if (spr.img.texture.key !== key) spr.img.setTexture(key);
         spr.img.setFlipX(project(s.ball.pos).x < q.x);
-        spr.img.setScale((spr.baseH * depthScale(q)) / spr.img.height);
+        // depthScale takes a LOGICAL point. Passing the projected q worked only
+        // while project() was the identity in y; with a field zoom it reads the
+        // depth off a screen row and sizes the diver wrong.
+        spr.img.setScale((spr.baseH * depthScale(f.pos)) / spr.img.height);
         spr.container.setPosition(q.x, q.y);
         return;
       }
@@ -438,7 +442,7 @@ export class LivePlayView {
       if (spr.img.texture.key === poseKey(f.charId, 'dive') && !spr.cycle) {
         spr.img.setTexture(poseKey(f.charId, 'stand'));
       }
-      this.moveLiveSprite(spr, q.x, q.y);
+      this.moveLiveSprite(spr, q.x, q.y, f.pos);
     });
 
     // Runners. Done runners are scene-owned again (their exit animations —
@@ -466,7 +470,7 @@ export class LivePlayView {
         continue;
       }
       const q = project(r.pos);
-      this.moveLiveSprite(spr, q.x, q.y - 6);
+      this.moveLiveSprite(spr, q.x, q.y - 6, r.pos);
     }
 
     // Ball: lift by arc height; the shadow stays on the ground plane.
@@ -529,8 +533,12 @@ export class LivePlayView {
         const from = project(s.fielders[s.active].pos);
         const target = s.ball.phase === 'flight' ? s.launch.landing : s.ball.pos;
         const to = project(target);
-        const mid = { x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 };
-        const w = M.CAPSULE_W * depthScale(mid);
+        // Width follows the LOGICAL midpoint, not the projected one — same
+        // rule as every other depthScale call here.
+        const w = M.CAPSULE_W * depthScale({
+          x: (s.fielders[s.active].pos.x + target.x) / 2,
+          y: (s.fielders[s.active].pos.y + target.y) / 2,
+        });
         // Alpha-stepped segments: bright at the fielder, fading toward the ball.
         for (let i = 0; i < M.CAPSULE_SEGMENTS; i++) {
           const t0 = i / M.CAPSULE_SEGMENTS;
@@ -574,7 +582,14 @@ export class LivePlayView {
 
   /** Direct placement + run-cycle bookkeeping for one sim-owned kid.
    *  (x, y are already-projected screen coords; y carries the depth.) */
-  private moveLiveSprite(spr: LiveSprite, x: number, y: number): void {
+  /**
+   * Move a sim-owned sprite to a SCREEN position, sized from its LOGICAL one.
+   *
+   * The two are separate arguments on purpose: depthScale answers "how far
+   * away is this kid", which is a question about the flat field, and reading it
+   * off a screen row silently ties sprite size to the field zoom.
+   */
+  private moveLiveSprite(spr: LiveSprite, x: number, y: number, at: Vec): void {
     const moving = Math.abs(x - spr.container.x) > 0.5 || Math.abs(y - spr.container.y) > 0.5;
     if (moving) {
       if (!spr.cycle) spr.cycle = runCycle(this.scene, spr.img, spr.charId);
@@ -584,7 +599,7 @@ export class LivePlayView {
       spr.cycle = null;
       spr.img.setFlipX(false);
     }
-    spr.img.setScale((spr.baseH * depthScale({ x, y })) / spr.img.height);
+    spr.img.setScale((spr.baseH * depthScale(at)) / spr.img.height);
     spr.container.setPosition(x, y);
   }
 

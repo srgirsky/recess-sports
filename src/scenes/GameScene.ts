@@ -123,6 +123,7 @@ import {
   dist,
   fencePointAt,
   fenceYAtX,
+  FENCE_Y,
   type FieldGeometry,
   type PositionId,
   type Vec,
@@ -166,7 +167,7 @@ import { makeMuteButton } from '../ui/MuteButton';
 import { FONT, pill } from '../ui/theme';
 import { idleBob, squashHop, groundShadow, runCycle, poseSequence } from '../ui/anim';
 import { poseKey } from '../art/textureFactory';
-import { project, unproject, depthScale } from '../art/projection';
+import { project, unproject, depthScale, ZOOM } from '../art/projection';
 import {
   shadeInt,
   lightenInt,
@@ -833,8 +834,9 @@ export class GameScene extends Phaser.Scene {
     this.events.on(Phaser.Scenes.Events.RESUME, onResume);
     this.events.once('shutdown', () => this.events.off(Phaser.Scenes.Events.RESUME, onResume));
 
-    this.pitcherSprite = this.add.image(MOUND.x, MOUND.y, this.aiPitcher.id).setOrigin(0.5, 1);
-    this.pitcherSprite.setScale(KID_SIZE.PITCHER_H / this.pitcherSprite.height);
+    const mq0 = project(MOUND);
+    this.pitcherSprite = this.add.image(mq0.x, mq0.y, this.aiPitcher.id).setOrigin(0.5, 1);
+    this.pitcherSprite.setScale((KID_SIZE.PITCHER_H * depthScale(MOUND)) / this.pitcherSprite.height);
     idleBob(this, this.pitcherSprite, { amp: 4, dur: 1100 }); // gentle breathing (y); wind-up uses angle
     this.setMoundPitcher(this.aiPitcher);
 
@@ -909,76 +911,98 @@ export class GameScene extends Phaser.Scene {
   // --- Field & HUD ---------------------------------------------------------
   private drawField(): void {
     const W = GAME_WIDTH;
-    const HORIZON = 210; // ground starts here; sky/backdrop/fence above
     const look = this.venue.look;
+
+    // --- Where the fence sits ON SCREEN ------------------------------------
+    // The camera has a zoom now, so `wallY` has to answer in screen space and
+    // the sky/skyline have to FOLLOW it. They used to be pinned to a literal
+    // HORIZON = 210 that duplicated FENCE_Y, which would have detached the
+    // moment the fence moved.
+    //
+    // The x round-trip matters: a screen column is a different LOGICAL column
+    // (the field pinches toward the fence), and the arc is sampled by logical
+    // x. Depth is read at the fence plane, where it barely varies.
+    const fencePlaneY = project({ x: 0, y: FENCE_Y }).y;
+    const wallY = (sx: number) => {
+      const lx = unproject({ x: sx, y: fencePlaneY }).x;
+      return project({ x: lx, y: fenceYAtX(this.geo, lx) }).y;
+    };
+    /** The fence's highest point on screen — the bottom of the clear sky band. */
+    const skyBase = Math.min(wallY(0), wallY(W / 2), wallY(W));
+    /** Skyline anchor: offsets are relative to the fence line, as they read. */
+    const skyY = (off: number) => skyBase + off;
 
     // Base ground fill (prevents any gaps behind everything else).
     this.add.rectangle(W / 2, GAME_HEIGHT / 2, W, GAME_HEIGHT, look.grass);
 
-    // --- Sky (gradient, up to the screen top — the scoreboard lives at the
-    // BOTTOM now, so nothing covers the sky band anymore) ---
+    // --- Sky: a band that follows the fence ARC down to just inside the
+    // fence structure, so no grass shows above the wall where the arc dips. ---
     const sky = this.add.graphics();
     sky.fillGradientStyle(0x8fd0ff, 0x8fd0ff, 0xd4efff, 0xd4efff, 1);
-    sky.fillRect(0, 0, W, HORIZON);
+    const skyPts: Phaser.Geom.Point[] = [new Phaser.Geom.Point(0, 0), new Phaser.Geom.Point(W, 0)];
+    for (let x = W; x >= 0; x -= 32) skyPts.push(new Phaser.Geom.Point(x, wallY(x) - 30));
+    sky.fillPoints(skyPts, true);
     // Sun + soft glow, top-LEFT — the whole game is lit from the upper-left
     // (character cel-shade sits on the right side), so the sun must agree.
-    this.add.circle(96, 104, 46, 0xfff2b0, 0.5);
-    this.add.circle(96, 104, 30, 0xffe066, 1);
+    const sunY = Math.round(skyBase * 0.42);
+    this.add.circle(96, sunY, 46, 0xfff2b0, 0.5);
+    this.add.circle(96, sunY, 30, 0xffe066, 1);
     // A couple of clouds.
-    this.cloud(320, 110);
-    this.cloud(660, 94);
+    this.cloud(320, Math.round(skyBase * 0.48));
+    this.cloud(660, Math.round(skyBase * 0.34));
 
     // --- Skyline band (data-driven; deterministic — NO Math.random here, so
-    // create-time draws never shift the seeded goldlog rng stream) ---
+    // create-time draws never shift the seeded goldlog rng stream). Every y is
+    // an offset from the fence line, so the scenery stays behind the wall at
+    // any zoom instead of floating off it. ---
     if (look.skyline === 'stands') {
       // A higher back tier behind the main stand gives the bleachers depth.
-      this.add.rectangle(W / 2, 140, W, 18, 0x4d5b6a).setOrigin(0.5);
-      this.add.rectangle(W / 2, 168, W, 44, 0x5b6a7a).setOrigin(0.5);
+      this.add.rectangle(W / 2, skyY(-70), W, 18, 0x4d5b6a).setOrigin(0.5);
+      this.add.rectangle(W / 2, skyY(-42), W, 44, 0x5b6a7a).setOrigin(0.5);
       const seams = this.add.graphics();
       seams.lineStyle(2, 0x4d5b6a, 0.8);
-      for (let x = 40; x < W; x += 80) seams.lineBetween(x, 146, x, 190);
+      for (let x = 40; x < W; x += 80) seams.lineBetween(x, skyY(-64), x, skyY(-20));
       const crowdColors = [0xeb5a52, 0x3f86e0, 0x43b56f, 0x9161d0, 0xff924a, 0xf5c542, 0xffffff, 0x2fb4ac];
       for (let row = 0; row < look.crowdRows; row++) {
         for (let i = 0; i < 55; i++) {
           const x = (i * 61 + row * 29) % W;
-          const y = 150 + row * 15 + ((i * 37) % 7);
+          const y = skyY(-60 + row * 15 + ((i * 37) % 7));
           this.add.circle(x, y, 4 + ((i + row) % 3), crowdColors[(i * 5 + row) % crowdColors.length]);
         }
       }
     } else if (look.skyline === 'rooftops') {
       // Backyard skyline: a treeline and a couple of neighbor rooftops.
       for (let x = 30; x < W; x += 90) {
-        this.add.circle(x, 168 + ((x / 90) % 3) * 8, 34, 0x3f7d3a, 0.9);
+        this.add.circle(x, skyY(-42 + ((x / 90) % 3) * 8), 34, 0x3f7d3a, 0.9);
       }
       for (const hx of [180, 470, 760]) {
-        this.add.rectangle(hx, 178, 90, 46, 0xc9b8a4).setStrokeStyle(3, 0x8a7a66);
-        const roof = this.add.graphics({ x: hx, y: 155 });
+        this.add.rectangle(hx, skyY(-32), 90, 46, 0xc9b8a4).setStrokeStyle(3, 0x8a7a66);
+        const roof = this.add.graphics({ x: hx, y: skyY(-55) });
         roof.fillStyle(0xa14f3c, 1);
         roof.fillTriangle(-55, 0, 55, 0, 0, -30);
-        this.add.rectangle(hx - 18, 186, 16, 16, 0x7fb2d8).setStrokeStyle(2, 0x5c7d99);
-        this.add.rectangle(hx + 18, 186, 16, 16, 0x7fb2d8).setStrokeStyle(2, 0x5c7d99);
+        this.add.rectangle(hx - 18, skyY(-24), 16, 16, 0x7fb2d8).setStrokeStyle(2, 0x5c7d99);
+        this.add.rectangle(hx + 18, skyY(-24), 16, 16, 0x7fb2d8).setStrokeStyle(2, 0x5c7d99);
         // Yard bushes hugging each house's foundation.
-        this.add.circle(hx - 54, 198, 10, 0x478940);
-        this.add.circle(hx + 54, 198, 8, 0x3f7d3a);
+        this.add.circle(hx - 54, skyY(-12), 10, 0x478940);
+        this.add.circle(hx + 54, skyY(-12), 8, 0x3f7d3a);
       }
     } else {
       // Brick: the school wall behind the court.
-      this.add.rectangle(W / 2, 168, W, 44, 0xb0503c).setOrigin(0.5);
+      this.add.rectangle(W / 2, skyY(-42), W, 44, 0xb0503c).setOrigin(0.5);
       const mortar = this.add.graphics();
       mortar.lineStyle(2, 0x8f3f30, 0.6);
-      for (let y = 152; y <= 184; y += 10) mortar.lineBetween(0, y, W, y);
+      for (let dy = -58; dy <= -26; dy += 10) mortar.lineBetween(0, skyY(dy), W, skyY(dy));
       // A row of classroom windows so the wall reads as the school building.
       for (let i = 0; i < 5; i++) {
         const wx = 100 + i * 190;
-        this.add.rectangle(wx, 166, 34, 22, 0x30404f).setStrokeStyle(2, 0x22303c);
-        this.add.rectangle(wx, 179, 40, 4, 0xd8c8b4); // sill
+        this.add.rectangle(wx, skyY(-44), 34, 22, 0x30404f).setStrokeStyle(2, 0x22303c);
+        this.add.rectangle(wx, skyY(-31), 40, 4, 0xd8c8b4); // sill
       }
     }
 
     // --- Outfield fence: a band that follows the venue's fence ARC (rounded,
     // deepest toward center — plus the sandlot's slant), sampled across the
     // screen so a short porch still reads at a glance ---
-    const wallY = (x: number) => fenceYAtX(this.geo, x);
     // A band between wallY+topOff and wallY+botOff as one closed sampled strip.
     const wallStrip = (g: Phaser.GameObjects.Graphics, topOff: number, botOff: number) => {
       const pts: Phaser.Geom.Point[] = [];
@@ -1095,7 +1119,7 @@ export class GameScene extends Phaser.Scene {
       // Park bunting triangles hanging off the cap.
       const bunt = [0xeb5a52, 0xffffff, 0x3f86e0];
       for (let x = 20; x < W; x += 60) {
-        const pennant = this.add.graphics({ x, y: 193 }).setAlpha(0.9);
+        const pennant = this.add.graphics({ x, y: skyY(-17) }).setAlpha(0.9);
         pennant.fillStyle(bunt[Math.floor(x / 60) % bunt.length], 1);
         pennant.fillTriangle(-20, 0, 20, 0, 0, 22);
       }
@@ -1110,12 +1134,12 @@ export class GameScene extends Phaser.Scene {
       stripes.fillStyle(look.grassDark, 0.35);
       for (let x = 0; x < W; x += 96) {
         if (((x / 96) & 1) !== 0) continue;
-        const tl = project({ x, y: HORIZON });
-        const tr = project({ x: x + 96, y: HORIZON });
+        const tl = project({ x, y: FENCE_Y });
+        const tr = project({ x: x + 96, y: FENCE_Y });
         stripes.fillPoints(
           [
-            new Phaser.Geom.Point(tl.x, HORIZON),
-            new Phaser.Geom.Point(tr.x, HORIZON),
+            new Phaser.Geom.Point(tl.x, tl.y),
+            new Phaser.Geom.Point(tr.x, tr.y),
             new Phaser.Geom.Point(x + 96, GAME_HEIGHT),
             new Phaser.Geom.Point(x, GAME_HEIGHT),
           ],
@@ -1126,7 +1150,7 @@ export class GameScene extends Phaser.Scene {
         // Cross bands: horizontal rows widening toward the camera, so the
         // cross-hatch with the verticals reads as a checkerboard mow.
         stripes.fillStyle(look.grassDark, 0.14);
-        for (let y = HORIZON + 22, h = 18; y < GAME_HEIGHT; y += h * 2.4, h *= 1.35) {
+        for (let y = skyBase + 22, h = 18; y < GAME_HEIGHT; y += h * 2.4, h *= 1.35) {
           stripes.fillRect(0, y, W, h);
         }
       }
@@ -1134,27 +1158,35 @@ export class GameScene extends Phaser.Scene {
       // Faded expansion seams + painted playground markings.
       const seams = this.add.graphics();
       seams.lineStyle(2, look.grassDark, 0.7);
-      for (let x = 120; x < W; x += 240) seams.lineBetween(x, HORIZON, x, GAME_HEIGHT);
-      seams.lineBetween(0, 470, W, 470);
-      this.add.circle(SECOND.x, SECOND.y, 45).setStrokeStyle(4, 0xf2e6c9, 0.5);
+      for (let x = 120; x < W; x += 240) seams.lineBetween(x, skyBase, x, GAME_HEIGHT);
+      seams.lineBetween(0, project({ x: 0, y: 470 }).y, W, project({ x: W, y: 470 }).y);
+      const sq = project(SECOND);
+      this.add.circle(sq.x, sq.y, 45 * depthScale(SECOND) * ZOOM).setStrokeStyle(4, 0xf2e6c9, 0.5);
       // A basketball three-point arc sweeping through deep foul ground...
+      const cq = project({ x: HOME.x, y: HOME.y + 40 });
+      const cz = depthScale({ x: HOME.x, y: HOME.y + 40 }) * ZOOM;
       const court = this.add.graphics();
       court.lineStyle(4, 0xf2e6c9, 0.35);
       court.beginPath();
-      court.arc(HOME.x, HOME.y + 40, 190, Math.PI * 1.15, Math.PI * 1.85);
+      court.arc(cq.x, cq.y, 190 * cz, Math.PI * 1.15, Math.PI * 1.85);
       court.strokePath();
       // ...and a hopscotch grid chalked in the left foul corner.
       court.lineStyle(3, 0xf2e6c9, 0.4);
-      for (let i = 0; i < 4; i++) court.strokeRect(56, 480 + i * 30, 34, 30);
-      court.strokeRect(22, 510, 34, 30);
-      court.strokeRect(90, 510, 34, 30);
+      const hop = (lx: number, ly: number, w: number, h: number) => {
+        const q = project({ x: lx, y: ly });
+        const z = depthScale({ x: lx, y: ly }) * ZOOM;
+        court.strokeRect(q.x, q.y, w * z, h * z);
+      };
+      for (let i = 0; i < 4; i++) hop(56, 480 + i * 30, 34, 30);
+      hop(22, 510, 34, 30);
+      hop(90, 510, 34, 30);
     } else {
       // Backyard grass: scruffy tufts.
       const tufts = this.add.graphics();
       tufts.lineStyle(2, look.grassDark, 0.8);
       for (let i = 0; i < 70; i++) {
         const x = (i * 137) % W;
-        const y = HORIZON + 20 + ((i * 89) % (GAME_HEIGHT - HORIZON - 40));
+        const y = skyBase + 20 + ((i * 89) % (GAME_HEIGHT - skyBase - 40));
         tufts.lineBetween(x, y, x - 4, y - 7);
         tufts.lineBetween(x, y, x + 4, y - 7);
       }
@@ -1227,11 +1259,13 @@ export class GameScene extends Phaser.Scene {
         circles.strokeEllipse(q.x, q.y + 2, 64 * ds, 30 * ds);
         speckleEllipse(circles, q.x, q.y + 2, 28 * ds, 12 * ds, mottle, 14, 0.35, i * 17);
       });
+      const hq = project(HOME);
+      const hds = depthScale(HOME) * ZOOM;
       circles.fillStyle(look.dirt, 1);
-      circles.fillEllipse(HOME.x, HOME.y + 4, 116, 54);
+      circles.fillEllipse(hq.x, hq.y + 4 * ZOOM, 116 * hds, 54 * hds);
       circles.lineStyle(2, shadeInt(look.dirt, 0.2), 0.7);
-      circles.strokeEllipse(HOME.x, HOME.y + 4, 116, 54);
-      speckleEllipse(circles, HOME.x, HOME.y + 4, 50, 22, mottle, 26, 0.35, 9);
+      circles.strokeEllipse(hq.x, hq.y + 4 * ZOOM, 116 * hds, 54 * hds);
+      speckleEllipse(circles, hq.x, hq.y + 4 * ZOOM, 50 * hds, 22 * hds, mottle, 26, 0.35, 9);
     }
 
     // --- Base paths ---
@@ -1269,29 +1303,39 @@ export class GameScene extends Phaser.Scene {
     const leftPole = project(fencePointAt(this.geo, 0));
     const rightPole = project(fencePointAt(this.geo, 1));
     const lines = this.add.graphics();
-    chalkLine(lines, HOME.x, HOME.y, rightPole.x, rightPole.y, 4, 0.9, 1);
-    chalkLine(lines, HOME.x, HOME.y, leftPole.x, leftPole.y, 4, 0.9, 2);
+    const homeQ = project(HOME);
+    chalkLine(lines, homeQ.x, homeQ.y, rightPole.x, rightPole.y, 4, 0.9, 1);
+    chalkLine(lines, homeQ.x, homeQ.y, leftPole.x, leftPole.y, 4, 0.9, 2);
 
     // --- Pitcher's mound + rubber (a lit dome, not a flat disc) ---
-    this.add.ellipse(MOUND.x + 6, MOUND.y + 8, 96, 54, 0x1b2833, 0.14); // cast shadow, down-right
-    this.add.ellipse(MOUND.x, MOUND.y + 4, 92, 60, look.dirt).setStrokeStyle(3, look.asphalt ? look.grassDark : 0xb87a3f);
-    this.add.ellipse(MOUND.x, MOUND.y + 12, 78, 34, shadeInt(look.dirt, 0.3), 0.3); // shaded near slope
-    this.add.ellipse(MOUND.x - 8, MOUND.y - 4, 54, 24, lightenInt(look.dirt, 0.4), 0.45); // lit crown, upper-left
+    // PROJECTED. This block drew at raw MOUND coords for months and got away
+    // with it only because MOUND.x === the vanishing axis, so the x-pinch was
+    // a no-op there; the moment the camera gained a y term it would have left
+    // the mound behind on the old ground plane.
+    const mq = project(MOUND);
+    const mds = depthScale(MOUND) * ZOOM;
+    const my = (dy: number) => mq.y + dy * ZOOM;
+    this.add.ellipse(mq.x + 6 * mds, my(8), 96 * mds, 54 * mds, 0x1b2833, 0.14); // cast shadow, down-right
+    this.add.ellipse(mq.x, my(4), 92 * mds, 60 * mds, look.dirt).setStrokeStyle(3, look.asphalt ? look.grassDark : 0xb87a3f);
+    this.add.ellipse(mq.x, my(12), 78 * mds, 34 * mds, shadeInt(look.dirt, 0.3), 0.3); // shaded near slope
+    this.add.ellipse(mq.x - 8 * mds, my(-4), 54 * mds, 24 * mds, lightenInt(look.dirt, 0.4), 0.45); // lit crown, upper-left
     if (!look.asphalt) {
       const moundTex = this.add.graphics();
-      speckleEllipse(moundTex, MOUND.x, MOUND.y + 2, 38, 20, [shadeInt(look.dirt, 0.25), lightenInt(look.dirt, 0.35)], 24, 0.4, 5);
+      speckleEllipse(moundTex, mq.x, my(2), 38 * mds, 20 * mds, [shadeInt(look.dirt, 0.25), lightenInt(look.dirt, 0.35)], 24, 0.4, 5);
     }
-    this.add.rectangle(MOUND.x, MOUND.y, 26, 8, COLORS.white).setStrokeStyle(2, 0x9a9a9a);
+    this.add.rectangle(mq.x, mq.y, 26 * mds, 8 * mds, COLORS.white).setStrokeStyle(2, 0x9a9a9a);
 
     // --- Home plate (pentagon) ---
+    const hz = depthScale(HOME) * ZOOM;
     this.add
-      .polygon(HOME.x, HOME.y + 6, [0, 0, 26, 0, 26, 12, 13, 22, 0, 12], COLORS.white)
+      .polygon(homeQ.x, homeQ.y + 6 * hz, [0, 0, 26, 0, 26, 12, 13, 22, 0, 12], COLORS.white)
       .setStrokeStyle(3, COLORS.ink)
+      .setScale(hz)
       .setOrigin(0.5);
     // Batter's boxes: worn chalk instead of crisp vector strokes.
     const box = this.add.graphics();
-    chalkRect(box, HOME.x - 58, HOME.y - 20, 26, 52, 3, 0.75, 4);
-    chalkRect(box, HOME.x + 32, HOME.y - 20, 26, 52, 3, 0.75, 8);
+    chalkRect(box, homeQ.x - 58 * hz, homeQ.y - 20 * hz, 26 * hz, 52 * hz, 3, 0.75, 4);
+    chalkRect(box, homeQ.x + 32 * hz, homeQ.y - 20 * hz, 26 * hz, 52 * hz, 3, 0.75, 8);
 
     // --- Base plates: 3D pillows (cast shadow + side face + top), the top
     // AND side lit gold when occupied ---
@@ -2389,7 +2433,8 @@ export class GameScene extends Phaser.Scene {
       const a = this.rig.pitcherAnchor;
       return { x: a.x, y: a.y - PLATE_VIEW.PITCHER.H - 16 };
     }
-    return { x: MOUND.x, y: MOUND.y - 90 };
+    const mq = project(MOUND);
+    return { x: mq.x, y: mq.y - 90 };
   }
 
   /** The mound-side theater for any juice special: callout + Spectacle fx +
@@ -2853,7 +2898,7 @@ export class GameScene extends Phaser.Scene {
             img.setFlipX(false);
             if (scored) {
               squashHop(this, img, { height: 20 });
-              burst(this, HOME.x, HOME.y - 20, COLORS.gold, 14);
+              burst(this, project(HOME).x, project(HOME).y - 20, COLORS.gold, 14);
               this.time.delayedCall(520, () => token!.destroy());
             } else {
               this.tweens.add({ targets: img, scaleY: img.scaleY * 0.85, yoyo: true, duration: 90 });
@@ -2870,10 +2915,11 @@ export class GameScene extends Phaser.Scene {
 
   /** A baserunner = the actual kid (over a ground shadow), in a container. */
   private makeRunner(char: Character): Phaser.GameObjects.Container {
-    const c = this.add.container(HOME.x, HOME.y - 6).setDepth(40);
+    const hq = project(HOME);
+    const c = this.add.container(hq.x, hq.y - 6).setDepth(40);
     const shadow = groundShadow(this, 0, 4, 42);
     const img = this.add.image(0, 0, poseKey(char.id, 'stand')).setOrigin(0.5, 0.92);
-    img.setScale(RUNNER_H / img.height);
+    img.setScale((RUNNER_H * depthScale(HOME)) / img.height);
     c.add([shadow, img]);
     c.setData('id', char.id);
     return c;
@@ -2905,7 +2951,7 @@ export class GameScene extends Phaser.Scene {
     this.setView('wide'); // watch it go
     homerSpectacle(
       this,
-      { x: HOME.x, y: HOME.y - 26 },
+      { x: project(HOME).x, y: project(HOME).y - 26 },
       { x: 360 + Math.random() * 240, y: -70 }
     );
   }
@@ -2956,7 +3002,7 @@ export class GameScene extends Phaser.Scene {
     if (mode === 'offense' && this.armedTurbo) {
       this.armedTurbo = false;
       params = { ...params, playerRunSpeed: params.playerRunSpeed * JUICE.TURBO_SPEED_MULT };
-      floatingText(this, HOME.x, HOME.y - 80, '💨 TURBO LEGS!', COLORS.gold, 30);
+      floatingText(this, project(HOME).x, project(HOME).y - 80, '💨 TURBO LEGS!', COLORS.gold, 30);
     }
     if (mode === 'defense' && this.armedGlove) {
       this.armedGlove = false;
@@ -2967,7 +3013,7 @@ export class GameScene extends Phaser.Scene {
         catchRadius: params.catchRadius + JUICE.GLOVE_REACH_BONUS,
         pickupRadius: params.pickupRadius + JUICE.GLOVE_REACH_BONUS,
       };
-      floatingText(this, HOME.x, HOME.y - 80, '🧤 GOLDEN GLOVE!', COLORS.gold, 30);
+      floatingText(this, project(HOME).x, project(HOME).y - 80, '🧤 GOLDEN GLOVE!', COLORS.gold, 30);
     }
     this.activeLiveParams = params;
 
@@ -4432,12 +4478,13 @@ export class GameScene extends Phaser.Scene {
     this.worldBatterId = char.id;
 
     // The batting-stance pose has the bat baked in, drawn facing the pitch.
-    const targetX = HOME.x - 70;
+    const hq2 = project(HOME);
+    const targetX = hq2.x - 70;
     const spr = this.add
-      .image(walkIn ? GAME_WIDTH + 50 : targetX, HOME.y + 6, poseKey(char.id, 'bat'))
+      .image(walkIn ? GAME_WIDTH + 50 : targetX, hq2.y + 6, poseKey(char.id, 'bat'))
       .setOrigin(0.5, 1)
       .setDepth(28);
-    const s = KID_SIZE.BATTER_H / spr.height;
+    const s = (KID_SIZE.BATTER_H * depthScale(HOME)) / spr.height;
     spr.setScale(s);
     this.batterSprite = spr;
     this.batterScale = s;
@@ -4544,7 +4591,7 @@ export class GameScene extends Phaser.Scene {
     // Over the frontal zone while the rig is up; at the world plate otherwise.
     const p = this.rig.visible
       ? { x: PLATE_VIEW.ZONE.CX, y: PLATE_VIEW.ZONE.CY - (PLATE_ZONE.H / 2) * PLATE_VIEW.ZONE.SCALE - 30 }
-      : { x: HOME.x, y: HOME.y - 70 };
+      : { x: project(HOME).x, y: project(HOME).y - 70 };
     floatingText(this, p.x, p.y, f.label, f.color, band === 'perfect' ? 40 : 32);
   }
 

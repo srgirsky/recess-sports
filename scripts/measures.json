@@ -573,6 +573,73 @@
       },
       "conformNote": "Our 1.2 sits INSIDE the measured band [1.1974, 1.2414], 0.2% off the park venue and 3.2% off the two stadium-ish ones. Since we render one slope for all three of our venues, sitting near the shallow end of BB's range is a defensible single choice and there is nothing to fix. What we still lack is the DEPTH compression, which is a separate record (geometry.projection-type) and unaffected by this.",
       "informs": "src/systems/geometry.ts FOUL_SLOPE"
+    },
+    "fieldScale": {
+      "id": "geometry.field-scale",
+      "category": "geometry",
+      "status": "known-drift",
+      "statusChangedAt": "2026-07-27",
+      "what": "How BIG the diamond is drawn, as a fraction of the frame. Normalised by frame HEIGHT: that is the dimension the field is squeezed in, and it is the one comparable across BB's 4:3 and our 3:2.",
+      "why": "Reported as 'why is the field smaller in our game vs in BB from the fielding and running view'. The complaint is real and the cause is not what it looks like -- our KIDS are correctly sized against the frame (an outfielder is ~9% of frame height, BB's ~8-9%). The diamond around them was too small, so the players dwarfed the field.",
+      "method": "No new capture needed. geometry.projectionType already carries pixel-exact base positions for three BB venues, measured by persistence-clustered white-blob detection at native 640x480 and visually confirmed. basepath = |home - first| from those. Ours is DERIVED from geometry.ts through art/projection.ts, so it measures what is actually drawn rather than what a constant says.",
+      "measurements": [
+        {
+          "source": "youtube:YMmqNpmA60U",
+          "venue": "stadium-ish",
+          "basepathPx": 251.0,
+          "frame": [
+            640,
+            480
+          ],
+          "pctOfFrameHeight": 52.3
+        },
+        {
+          "source": "local:bb01-capture-session1",
+          "venue": "backyard-grass",
+          "basepathPx": 198.58,
+          "frame": [
+            640,
+            480
+          ],
+          "pctOfFrameHeight": 41.4
+        },
+        {
+          "source": "local:bb01-capture-session2",
+          "venue": "park",
+          "basepathPx": 202.3,
+          "frame": [
+            640,
+            480
+          ],
+          "pctOfFrameHeight": 42.1
+        }
+      ],
+      "band": [
+        41.4,
+        52.3
+      ],
+      "measured": 42.1,
+      "n": 3,
+      "nNote": "The same three venues geometry.projectionType and geometry.foulSlope rest on. The stadium venue is a clear outlier at 52.3% -- BB's camera distance is per-venue, exactly like its perspective strength and foul slope -- so the two LOCAL venues (41.4, 42.1) are the honest target and the band's top is not something to chase.",
+      "confidence": "med",
+      "ours": {
+        "constant": "src/art/projection.ts ZOOM",
+        "value": 1.28,
+        "basepathScreenPx": 217.4,
+        "pctOfFrameHeight": 34.0,
+        "was": {
+          "zoom": 1.0,
+          "basepathScreenPx": 179.64,
+          "pctOfFrameHeight": 28.1
+        }
+      },
+      "driftPct": -19.3,
+      "driftNote": "Ours is 34.0% against BB's 41.4% -- still 19% short, and the shortfall is STRUCTURAL rather than a tuning choice. Four constraints pin ZOOM at 1.28: FIELD_BOTTOM_Y (sim y 600) must land at or above the canvas bottom (639.8), the catcher's spot (540) must stay above HUD.STRIP.TOP (563 < 568), the fence needs headroom for its own structure plus the skyline band (mid-arc lands at 110), and the basepath is maximised subject to those. Raising the zoom past that puts the catcher behind the scoreboard or the foul ground off the canvas.",
+      "whatWouldClose": "Reclaiming vertical space rather than zooming further. Our full-width HUD strip eats 11% of frame height where BB's wide-view HUD is a small corner box; that alone is most of the remaining gap. Shrinking FIELD_BOTTOM_Y would also buy room, but it is a SIM constant (clampToField) and would move the goldlog.",
+      "whyNotWider": "A non-uniform zoom -- x scaled more than y -- would buy the width our 3:2 canvas is short of against BB's 4:3, and the width gap is the bigger one (33.3% of frame width against BB's ~48%). It is rejected on purpose: it would change the DRAWN foul slope from 1.2 to ~1.35, outside the [1.1974, 1.2414] band geometry.foulSlope is conformed to. That record was measured off BB's screen pixels, so breaking it on screen breaks it for real.",
+      "renderOnly": "This is a camera change and NOTHING else. The sim stays in flat 960x640 space, so LIVE.RUNNER_SPEED, the conformed home->1B time, clampToField's convexity argument, every systems/ test and both goldlog fingerprints are untouched -- verified byte-identical after the change. It is also still AFFINE (a uniform scale composed with the existing pinch), so geometry.projectionType's drift is unchanged and its conformance assertion still passes.",
+      "sideEffect": "Fielder height went from 33% of a basepath to 26% (BB: ~20%). depthScale is deliberately NOT multiplied by ZOOM -- the field grows and the kids do not, which is the half of the complaint that was about proportion rather than size.",
+      "informs": "src/art/projection.ts ZOOM"
     }
   },
   "art": {
