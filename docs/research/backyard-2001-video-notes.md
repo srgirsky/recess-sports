@@ -193,3 +193,47 @@ Re-opening `YMmqNpmA60U` to measure pace, the frame at each cited timestamp does
 The frame rate WAS re-confirmed this session (frame-change deltas cluster at ~33ms → ~30fps, likely 29.97), so the ±1-frame precision floor is ~33ms. And the geometry/perspective result above stands independently: it came from t=430, whose content (a clean wide reset) is stable and self-consistent regardless of absolute-time drift.
 
 **Recommendation recorded for whoever picks up pace:** prefer repeatable local capture (produce 6 flies on demand) over scrubbing this video. `docs/research/bb2001-capture-setup.md` has the rig. If staying on video, budget a coarse play-index pass first (one thumbnail every ~10–15s) before measuring anything.
+
+## Field SCALE — the diamond was too small, the kids were fine (2026-07-27)
+
+Recorded as `geometry.fieldScale`. It needed no new capture: `geometry.projectionType`
+already carries pixel-exact base positions for three BB venues, and the basepath
+falls straight out of them.
+
+**The reading that mattered.** Normalised by frame HEIGHT — the dimension the
+field is squeezed in, and the one that survives BB's 4:3 against our 3:2:
+
+| | ours (was) | BB2001 |
+|---|---|---|
+| basepath | 179.6px = **28.1%** | 198.6 / 202.3 / 251px = **41.4 / 42.1 / 52.3%** |
+| home plate y | 78% down the frame | 90.7% down |
+| 2B y | 42% down | 46% down |
+| fielder height ÷ basepath | **33%** | ~20% |
+
+Our 2B already sat at about the right height, and an outfielder was ~9% of frame
+height against BB's 8–9% — so the KIDS were never the problem. The diamond around
+them was too small, which is why they dwarfed it. That is the reason `depthScale`
+is deliberately not multiplied by the zoom: the fix is proportional, not just
+bigger.
+
+**Where the ceiling comes from.** A render-only dolly in `projection.ts` gets us
+to 34.0% and stops there, pinned by four constraints that meet at ZOOM ≈ 1.28:
+`FIELD_BOTTOM_Y` (sim y 600) landing at the canvas bottom, the catcher's spot
+(540) staying above `HUD.STRIP.TOP`, the fence needing headroom for its own
+structure plus the skyline band, and the basepath being maximised subject to
+those. The rest of the gap is not a dial anybody forgot to turn: our full-width
+HUD strip eats 11% of frame height where BB's wide-view HUD is a small corner
+box, and that alone is most of what's left.
+
+**The width gap is bigger than the height gap and cannot be closed the easy
+way.** BB's diamond is ~48% of frame width; ours is 33.3%. Scaling x more than y
+would fix it exactly — and would drag the DRAWN foul slope from 1.2 to ~1.35,
+outside the [1.1974, 1.2414] band `geometry.foulSlope` is conformed to. That
+record was measured off BB's screen pixels, so breaking it on screen breaks it
+for real. Rejected on purpose.
+
+**Why this is safe.** The sim never learns about it. Both goldlog fingerprints
+came back byte-identical, which is the check that matters: `RUNNER_SPEED`, the
+conformed home→1B time, `clampToField`'s convexity argument and every `systems/`
+test are untouched. A uniform scale composed with the existing pinch is still
+AFFINE, so `geometry.projectionType`'s drift is unchanged too.

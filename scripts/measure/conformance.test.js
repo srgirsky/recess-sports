@@ -37,10 +37,11 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import {
   LIVE, FLOW, MODES, PITCH_SPEED, PITCHES, TIMING,
-  PITCH_TRAVEL_MS, CPU_PITCH_TRAVEL_MS,
+  PITCH_TRAVEL_MS, CPU_PITCH_TRAVEL_MS, GAME_HEIGHT, HUD,
 } from '../../src/config.ts';
-import { HOME, FIRST, FOUL_SLOPE } from '../../src/systems/geometry.ts';
+import { HOME, FIRST, FOUL_SLOPE, FIELD_BOTTOM_Y } from '../../src/systems/geometry.ts';
 import { BAT_STANCE_GEOMETRY } from '../../src/art/CharacterArt.ts';
+import { project, ZOOM } from '../../src/art/projection.ts';
 import { affinity, ourLegRealMs, ratioToAnchor, round } from './lib.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -218,6 +219,33 @@ describe('geometry — known drifts stay exactly as big as recorded', () => {
     const asym = Math.max(...rec.measurements.map((m) => m.asymmetryPct ?? 0));
     const between = ((rec.band[1] - rec.band[0]) / rec.band[0]) * 100;
     expect(between).toBeGreaterThan(asym * 2);
+  });
+
+  it('the drawn diamond is still exactly as far off BB’s size as recorded', () => {
+    // DERIVED end to end: the basepath is measured off what art/projection.ts
+    // actually draws, not off a number typed into the record. Change ZOOM and
+    // this goes red until someone re-states the drift and says why.
+    const rec = M.geometry.fieldScale;
+    expect(rec.status).toBe('known-drift');
+    expect(ZOOM).toBe(rec.ours.value);
+
+    const h = project(HOME);
+    const f = project(FIRST);
+    const drawn = Math.hypot(f.x - h.x, f.y - h.y);
+    expect(round(drawn, 1)).toBe(rec.ours.basepathScreenPx);
+
+    const pct = (drawn / GAME_HEIGHT) * 100;
+    expect(round(pct, 1)).toBe(rec.ours.pctOfFrameHeight);
+    // BB's side stays derived from its own samples too.
+    const bbs = rec.measurements.map((m) => m.pctOfFrameHeight);
+    expect(rec.band).toEqual([Math.min(...bbs), Math.max(...bbs)]);
+    expect(pct).toBeLessThan(rec.band[0]); // still a drift, not yet conformed
+    expect(round(((pct - rec.measured) / rec.measured) * 100, 1)).toBe(rec.driftPct);
+
+    // The four constraints the zoom is pinned by. These are what make the
+    // remaining gap structural rather than a dial nobody turned.
+    expect(project({ x: 480, y: FIELD_BOTTOM_Y }).y).toBeLessThanOrEqual(GAME_HEIGHT);
+    expect(project({ x: 480, y: 540 }).y).toBeLessThan(HUD.STRIP.TOP);
   });
 
   it('our projection is still exactly affine while BB is decisively not', () => {
