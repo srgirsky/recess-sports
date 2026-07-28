@@ -665,3 +665,38 @@ as `pace.trackerLessons`. The short version:
 
 None of this promotes a tracker to being *the number*. Every sample that entered
 the record was confirmed by marked frames or an annotated sheet.
+
+### The batting stance — what session 2 is unexpectedly good for
+
+Recorded as `art.battingStance` (n=6, `conformed`). Worth its own note because
+it is the first thing measured off these captures that is **art, not timing**,
+and the constraints are completely different.
+
+- **The screenshots are useless for it and the video is easy.** Every
+  behind-plate PNG in session 1 (`00007`, `00008`) catches the batter
+  **SQUARED** — the bunt pose, bat held out flat. Reading a resting stance off
+  them would have measured the wrong pose entirely. The video has resting
+  batters everywhere.
+- **No clock fidelity needed.** This is the one measurement class the
+  `clockFidelity` / `pitchFidelity` gates don't apply to: a static pose has no
+  duration, so a capture that fails those gates is still a perfectly good source
+  for what a sprite *looks like*. Session 2 is rejected for pitch timing and
+  fine here.
+- **Exact-colour matching does the work.** The bat is palette entry
+  `(240,208,164)` and ScummVM's blit is integer nearest-neighbour, so the bat
+  segments with `===`, no thresholding. The trap: the right-edge swing cards
+  draw bat icons in the *same* wood colour, so the ROI has to stop short of
+  them (`x < 520`).
+- **A frame with no batter in it is a free background plate.** `t=400` is a
+  behind-plate view between batters. Differencing against it isolates the whole
+  batter in one connected component — much cleaner than `temporalMedian`, which
+  would have to average over frames that all contain *some* batter.
+- **Normalise by body height, always.** BB scales the batter sprite per
+  character: the six samples run 166–234px tall. Every quantity in the record is
+  a fraction of that, which is also what lets them cross into our 200×260
+  viewBox unchanged.
+- **Check whether the pose is animated before treating one frame as the pose.**
+  Sampling t=505–512 at 0.5s showed Mikey Thomas dead static at 48.9°, while
+  Bonds cycles a 3-frame idle waggle over 9.1/9.5/11.2°. That distinction is
+  what turned "our sample disagrees" into "bat angle is per-character" — and it
+  cost two ffmpeg passes to establish, not an assumption.
