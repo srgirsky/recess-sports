@@ -338,6 +338,50 @@ describe('art — the batting stance stays inside BB’s measured bands', () => 
       }
     }
   });
+
+  it('nothing but the hands covers the bat — BB never puts the head on it', () => {
+    // art.batOcclusion. The stance conformed on all four battingStance
+    // fractions and STILL read wrong, because the quantity it was wrong on was
+    // never measured: what is allowed in FRONT of the bat. BB's occluded run
+    // is contiguous, sits between 0.204 and 0.681 of body height, and is the
+    // hands on the handle; above it the bat is unbroken to the tip.
+    const rec = M.art.batOcclusion;
+    expect(rec.status).toBe('conformed');
+    expect(rec.measurements).toHaveLength(rec.n);
+    expect(rec.headCrossesBat).toBe(false);
+
+    // The band must be the span of the samples, so it cannot be widened to
+    // admit a drift without re-measuring.
+    const los = rec.measurements.map((m) => m.occludedBandFrac[0]);
+    const his = rec.measurements.map((m) => m.occludedBandFrac[1]);
+    expect(rec.bands.occludedBandFrac).toEqual([Math.min(...los), Math.max(...his)]);
+
+    // Ours, DERIVED: the perpendicular distance from the skull centre to each
+    // stance's bat axis, over the skull's half-width. >= 1 means the head is
+    // clear of the barrel. The skull here is the default 50 the record quotes;
+    // art.test.ts runs the same check per kid against their real head size.
+    const g = BAT_STANCE_GEOMETRY;
+    const skull = g.head.r;
+    for (const view of ['front', 'rear']) {
+      const shift = g.headShift[view];
+      for (const [name, s] of Object.entries(g.stances[view])) {
+        const rad = (s.deg * Math.PI) / 180;
+        const dx = Math.sin(rad);
+        const dy = -Math.cos(rad);
+        const vx = g.head.cx + shift.x - s.x;
+        const vy = g.head.cy + shift.y - (s.y + (name === 'crouch' ? 9 : 0));
+        const ours = round(Math.abs(vx * dy - vy * dx) / skull, 3);
+        expect(ours, `${view}.${name}: the head crosses the bat`).toBeGreaterThanOrEqual(1);
+        expect(
+          ours,
+          `${view}.${name} no longer matches what the record says we render`
+        ).toBe(rec.ours.axisClearanceRatio[`${view}.${name}`]);
+      }
+    }
+    // The rear view is what broke, and the record has to remember how badly.
+    expect(rec.was.minAxisClearanceRatio).toBeLessThan(1);
+    expect(rec.ours.minAxisClearanceRatio).toBeGreaterThanOrEqual(1);
+  });
 });
 
 describe('pace — measured, retuned, and now conformed', () => {

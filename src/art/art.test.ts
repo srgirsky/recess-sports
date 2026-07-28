@@ -6,7 +6,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { ROSTER } from '../data/characters';
-import { buildCharacterSVG, POSES } from './CharacterArt';
+import { buildCharacterSVG, POSES, BAT_STANCE_GEOMETRY, headHalfWidth } from './CharacterArt';
 import { STREET_POSES } from './textureFactory';
 
 describe('character art', () => {
@@ -400,6 +400,49 @@ describe('character art', () => {
           expect(x, `${char.id}/${pose}: bat ink off the right edge`).toBeLessThanOrEqual(VIEW_W);
           expect(y, `${char.id}/${pose}: bat ink off the top edge`).toBeGreaterThanOrEqual(0);
           expect(y, `${char.id}/${pose}: bat ink off the bottom edge`).toBeLessThanOrEqual(VIEW_H);
+        }
+      }
+    }
+  });
+
+  it('the head never crosses the bat', () => {
+    // ★ MEASURED (art.batOcclusion, n=6): a BB2001 batter's bat is occluded
+    // only between 0.29 and 0.61 of body height — the HANDS on the handle —
+    // and runs unbroken from there to the tip. BB's head never crosses its bat.
+    //
+    // Ours did, in the rear view only: poseBatRear mirrored poseBat's grip but
+    // not its head shift, so the head moved TOWARD the bat, and with the bat
+    // drawn as the backmost layer it swallowed 25% of the barrel (rear
+    // `normal`; 16% `open`, 11% `crouch`). The fix is geometric — the grip
+    // moved outboard and the head shifted away — so guard it geometrically,
+    // per kid, deriving the skull from the real per-kid head size.
+    const g = BAT_STANCE_GEOMETRY;
+    const len = g.scale * g.baseLen;
+    for (const char of ROSTER) {
+      const skull = headHalfWidth(char.visual);
+      for (const view of ['front', 'rear'] as const) {
+        const shift = g.headShift[view];
+        const cx = g.head.cx + shift.x;
+        const cy = g.head.cy + shift.y;
+        for (const [name, s] of Object.entries(g.stances[view])) {
+          const gy = s.y + (name === 'crouch' ? 9 : 0);
+          const rad = (s.deg * Math.PI) / 180;
+          // Perpendicular distance from the skull centre to the bat's axis.
+          // The axis runs from the knob at (s.x, gy) toward the tip; every
+          // point of it is inside the barrel, so an axis inside the skull is
+          // barrel the head is eating.
+          const dx = Math.sin(rad);
+          const dy = -Math.cos(rad);
+          const vx = cx - s.x;
+          const vy = cy - gy;
+          const along = vx * dx + vy * dy;
+          expect(along, `${char.id}/${view}/${name}: head is behind the knob`).toBeGreaterThan(0);
+          expect(along, `${char.id}/${view}/${name}: head is past the tip`).toBeLessThan(len);
+          const perp = Math.abs(vx * dy - vy * dx);
+          expect(
+            perp,
+            `${char.id}/${view}/${name}: the head crosses the bat (axis ${perp.toFixed(1)} from a ${skull} skull)`
+          ).toBeGreaterThanOrEqual(skull);
         }
       }
     }

@@ -779,6 +779,139 @@
       },
       "conformNote": "All four fractions now sit inside BB's measured bands, with tipAboveHeadFrac landing on the median exactly. The test DERIVES ours from BAT_STANCE_GEOMETRY rather than restating them, so editing the pose without editing this record goes red. Note it checks front.normal only: the other three stance variants are deliberate per-kid spread across the same bands (BB's own batters spread further), and pinning all four would freeze variation the measurement explicitly found.",
       "informs": "src/art/CharacterArt.ts poseBat / poseBatRear / poseSwingLoad / poseSwingLoadRear"
+    },
+    "batOcclusion": {
+      "id": "art.bat-occlusion",
+      "category": "art",
+      "status": "conformed",
+      "statusChangedAt": "2026-07-28",
+      "what": "WHAT covers a BB2001 batter's bat at rest, and what does not. The companion to art.battingStance: that record fixed where the bat IS, this one fixes what is allowed in front of it.",
+      "why": "The stance conformed to art.battingStance on all four fractions and still read wrong on the behind-plate rig. The quantity it was wrong on had never been measured: our rear pose drew the bat as the backmost layer and then put the head on top of a quarter of the barrel. An earlier note in BAT_STANCE claimed 'BB's own bats overlap the head box in all six samples' and moved our grip inboard on that basis -- but a bounding-BOX overlap is not occlusion, and BB has none.",
+      "definitions": {
+        "occludedBandFrac": "The lowest and highest points of the bat's axis that are NOT bat-coloured, as fractions of body height above the feet. Same bodyHeight definition as art.battingStance (feet to highest non-bat pixel).",
+        "occludedFrac": "Fraction of the sampled axis that is covered by something.",
+        "headCrossesBat": "Whether any occluded sample lies under the head rather than the hands/forearms.",
+        "axisClearanceRatio": "OUR side. Perpendicular distance from the skull centre to the bat's axis, divided by the skull's half-width. >= 1 means the axis runs outside the skull; < 1 means the head is eating barrel."
+      },
+      "method": "Batter and bat segmented exactly as art.battingStance (diff against t=400, the same behind-plate camera with no batter in it; largest connected component; bat by exact palette match on 240,208,164). The bat's major axis comes from PCA; it is then sampled knob->tip and each sample tested for bat colour. The two end samples are dropped -- a PCA endpoint lands a pixel outside the blob and would read as a false occlusion at the tip.",
+      "theFinding": "In all six samples the occluded run is CONTIGUOUS and sits between 0.204 and 0.681 of body height -- the hands and forearms on the handle. Above it the bat is unbroken to the tip. Rendering the occluded samples in red over the frame shows the red segment starting under the top fist and ending at the knob, with the barrel passing clear ALONGSIDE the head, its left edge just touching the head silhouette. BB's head never crosses its bat.",
+      "measurements": [
+        {
+          "source": "local:bb01-capture-session2",
+          "t": 195.0,
+          "batter": "Barry Bonds RHB",
+          "bodyHeightPx": 234,
+          "occludedBandFrac": [
+            0.291,
+            0.534
+          ],
+          "occludedFrac": 0.316
+        },
+        {
+          "source": "local:bb01-capture-session2",
+          "t": 80.0,
+          "batter": "Achmed Khan LHB",
+          "bodyHeightPx": 142,
+          "occludedBandFrac": [
+            0.359,
+            0.38
+          ],
+          "occludedFrac": 0.041
+        },
+        {
+          "source": "local:bb01-capture-session2",
+          "t": 510.0,
+          "batter": "Mikey Thomas RHB",
+          "bodyHeightPx": 191,
+          "occludedBandFrac": [
+            0.366,
+            0.681
+          ],
+          "occludedFrac": 0.311
+        },
+        {
+          "source": "local:bb01-capture-session2",
+          "t": 600.0,
+          "batter": "RHB",
+          "bodyHeightPx": 213,
+          "occludedBandFrac": [
+            0.31,
+            0.615
+          ],
+          "occludedFrac": 0.439
+        },
+        {
+          "source": "local:bb01-capture-session2",
+          "t": 250.0,
+          "batter": "LHB",
+          "bodyHeightPx": 213,
+          "occludedBandFrac": [
+            0.31,
+            0.615
+          ],
+          "occludedFrac": 0.439
+        },
+        {
+          "source": "local:bb01-capture-session2",
+          "t": 560.0,
+          "batter": "LHB",
+          "bodyHeightPx": 167,
+          "occludedBandFrac": [
+            0.204,
+            0.623
+          ],
+          "occludedFrac": 0.255
+        }
+      ],
+      "bands": {
+        "occludedBandFrac": [
+          0.204,
+          0.681
+        ],
+        "occludedFrac": [
+          0.041,
+          0.439
+        ]
+      },
+      "headCrossesBat": false,
+      "n": 6,
+      "nNote": "The same six at-bats as art.battingStance, re-read for a different quantity -- so the sampling argument carries over unchanged: a batting stance is a per-character art asset, and sampling batters is what matters.",
+      "confidence": "med",
+      "ours": {
+        "constant": "src/art/CharacterArt.ts BAT_STANCE.rear / HEAD_SHIFT_REAR / TURN",
+        "exportedAs": "BAT_STANCE_GEOMETRY + headHalfWidth()",
+        "axisClearanceRatio": {
+          "front.normal": 1.085,
+          "front.high": 1.176,
+          "front.crouch": 1.152,
+          "front.open": 1.126,
+          "rear.normal": 1.463,
+          "rear.high": 1.396,
+          "rear.crouch": 1.557,
+          "rear.open": 1.438
+        },
+        "minAxisClearanceRatio": 1.085,
+        "torsoHalfWidthFrac": 0.173
+      },
+      "was": {
+        "axisClearanceRatio": {
+          "rear.normal": 0.917,
+          "rear.high": 1.021,
+          "rear.crouch": 0.984,
+          "rear.open": 0.966
+        },
+        "minAxisClearanceRatio": 0.917,
+        "headOccludedBatFrac": {
+          "rear.normal": 0.25,
+          "rear.open": 0.16,
+          "rear.crouch": 0.11,
+          "rear.high": 0.0
+        },
+        "torsoHalfWidthFrac": 0.211,
+        "why": "poseBatRear mirrored poseBat's grip about x=100 but not its head shift: poseBat moves the head +6 AWAY from its (left-hand) bat, and the rear pose moved it +3 TOWARD its (right-hand) bat. With the bat drawn first and the head last, the head swallowed the middle of the barrel -- the band 0.63-0.80 of body height, exactly where BB's bat is unbroken. The torso was the other half: at halfW 46/218 = 0.211 the jersey back was wider than the grip was outboard, so the hands sat INSIDE the body silhouette and there was nowhere for the bat to go but behind the head."
+      },
+      "conformNote": "The guard is geometric and per-kid: art.test.ts's 'the head never crosses the bat' walks every stance variant in both views, derives the skull from the kid's real headR x headW via headHalfWidth(), and requires the bat's axis to run outside it. Reverting HEAD_SHIFT_REAR to +3 fails it at 45.9 against a 50 skull. front.normal is the tightest at 1.085 -- BB's own bat is near-tangent to the head, so a small margin is the correct answer, not a bug.",
+      "informs": "src/art/CharacterArt.ts BAT_STANCE.rear, HEAD_SHIFT_REAR, TURN, poseBatRear / poseSwingLoadRear / poseSwingMidRear / poseSwingFollowRear"
     }
   },
   "palette": {
