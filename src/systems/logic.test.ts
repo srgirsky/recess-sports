@@ -99,7 +99,9 @@ describe('game mode', () => {
 
   it('kid mode keeps the original forgiving live params', () => {
     const p = resolveLiveParams('kid');
-    expect(p.cpuFielderSpeed).toBeCloseTo(LIVE.FIELDER_SPEED * 0.62);
+    expect(p.cpuFielderSpeed).toBeCloseTo(
+      LIVE.FIELDER_SPEED * MODES.kid.live.cpuFielderSpeedMult
+    );
     // Derived, not restated: every other line here reads through MODES/LIVE,
     // and this one hardcoded 550 until the pace retune changed it. A test that
     // repeats a constant just asserts someone typed the same number twice.
@@ -114,7 +116,13 @@ describe('game mode', () => {
   it('main mode is stricter than kid mode across the board', () => {
     const kid = resolveLiveParams('kid');
     const main = resolveLiveParams('main');
-    expect(main.cpuFielderSpeed).toBeGreaterThan(kid.cpuFielderSpeed);
+    // NOT cpuFielderSpeed — that stopped being a difficulty lever on 2026-07-28.
+    // Both modes now chase at exactly the speed of the runner they're chasing
+    // (LIVE.FIELDER_RUN_RATIO), so kid's ABSOLUTE cpuFielderSpeed is HIGHER than
+    // main's purely because kid runners are faster (playerRunSpeedMult 1.3).
+    // Comparing the raw px/s would read that as "kid mode is harder". The ratio
+    // is the only meaningful comparison, and it is deliberately equal — kid
+    // mode's forgiveness lives in the lines below plus reach and error rates.
     expect(main.cpuReactionMs).toBeLessThan(kid.cpuReactionMs);
     expect(main.cpuThrowErrorMs).toBeLessThan(kid.cpuThrowErrorMs);
     expect(main.catchRadius).toBeLessThan(kid.catchRadius);

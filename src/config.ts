@@ -620,8 +620,25 @@ export const LIVE = {
     /** A hopping ball is grabbable only below this height (short-hop scoop). */
     PICKUP_MAX_H: 0.4,
   },
-  /** Player-steered fielder speed (px/s). */
-  FIELDER_SPEED: 106,
+  /**
+   * Fielder speed as a multiple of RUNNER_SPEED. Fielders and baserunners are
+   * THE SAME KIDS, so this is 1.0 — a kid does not get faster by putting a glove
+   * on. DERIVED, not measured (see scripts/measures.json `defense.fielderSpeed`
+   * for what would close it); conformance.test.js pins the relationship, because
+   * an object literal can't express it in source.
+   *
+   * This constant exists because its absence went unnoticed through the whole
+   * history of the fielding race. FIELDER_SPEED sat at 210 through FIVE
+   * consecutive runner slowdowns (175 -> 150 -> 117 -> 106 -> 85), so the ratio
+   * crept 1.20x -> 2.47x; the 2026-07-24 pace retune then
+   * scaled BOTH by 1/1.987 and faithfully preserved it. Every time the defense
+   * couldn't get outs the fix was "slow the runners", never "check the fielder" —
+   * and nothing caught it because this was the ONE pace constant with no record
+   * and no pin. Never set FIELDER_SPEED without setting this too.
+   */
+  FIELDER_RUN_RATIO: 1.0,
+  /** Player-steered fielder speed (px/s) = RUNNER_SPEED * FIELDER_RUN_RATIO. */
+  FIELDER_SPEED: 42.8,
   /**
    * Fielding assist (mode-tied: kid = auto, main = magnet). These are the BASE
    * values; CLASSIC scales all three per difficulty via
@@ -716,7 +733,9 @@ export const LIVE = {
    *  179.63px / 4.200s = 42.8px/s. We ran this leg in HALF BB's time until
    *  2026-07-24. THIS IS THE ANCHOR — every other pace constant below is either
    *  measured against it or scaled by the same 1.987x factor, so changing it
-   *  alone will desynchronise the rest. See scripts/measures.json. */
+   *  alone will desynchronise the rest. See scripts/measures.json.
+   *  FIELDER_SPEED rides this directly via FIELDER_RUN_RATIO — move one, move
+   *  both, or the fielding race silently drifts (it did, for five slowdowns). */
   RUNNER_SPEED: 42.8,
   /** Distance ball→next base above which a CPU runner risks the extra base. */
   CPU_RUNNER_GREED_DIST: 180,
@@ -1039,7 +1058,13 @@ export const MODES: Record<
 > = {
   kid: {
     live: {
-      cpuFielderSpeedMult: 0.62,
+      // Must equal playerRunSpeedMult: that is what holds LIVE.FIELDER_RUN_RATIO
+      // on the side the human BATS. Kid mode was accidentally the only branch
+      // near 1.0x before 2026-07-28 (0.62 * 106 = 65.7 against a 55.6px/s runner)
+      // — the old 0.62 was compensating for a FIELDER_SPEED that was 2.48x too
+      // high, so correcting the base means this goes UP, not down. Absolute kid
+      // CPU fielder speed barely moves: 65.7 -> 55.6px/s.
+      cpuFielderSpeedMult: 1.3,
       cpuReactionMs: 1093,
       cpuThrowDelayMs: 993,
       cpuThrowSpeedMult: 0.62,
@@ -1068,6 +1093,7 @@ export const MODES: Record<
   main: {
     // Old HARD, softened a touch — main mode is still for kids.
     live: {
+      /** Must equal playerRunSpeedMult — see the kid-mode note above. */
       cpuFielderSpeedMult: 1.0,
       // NOT MEASURED — scaled 1.987x with RUNNER_SPEED. Halving runner speed
       // doubles the time the defense has, so leaving these alone would hand it

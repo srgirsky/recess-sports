@@ -592,10 +592,15 @@ function moveFielders(
   if (s.ball.phase === 'thrown' && s.ball.throw) {
     const idx = s.fielders.findIndex((f) => f.position === BASE_COVER[s.ball.throw!.toBase]);
     if (idx >= 0 && idx !== s.active) {
+      // Whose defense this is decides the speed — on 'offense' the CPU is
+      // fielding, so the cover kid is theirs. Mirrors the runner-side pick in
+      // startLivePlay. (Invisible while both sides ran at FIELDER_SPEED; kid
+      // mode now differs, 42.8 player vs 55.6 CPU.)
+      const coverSpeed = s.mode === 'defense' ? params.fielderSpeed : params.cpuFielderSpeed;
       s.fielders[idx].pos = moveToward(
         s.fielders[idx].pos,
         basePos(s.ball.throw.toBase),
-        (params.fielderSpeed * statSpeedMult(s.fielders[idx]) * dtMs) / 1000
+        (coverSpeed * statSpeedMult(s.fielders[idx]) * dtMs) / 1000
       );
     }
   }
@@ -902,9 +907,7 @@ function maybeThrow(
       launchThrow(s, chooseThrowTarget(s, speed), speed, 0, false, carrier);
     }
   } else if (
-    s.elapsed - s.heldAt >=
-      params.cpuThrowDelayMs +
-        (params.manualBaserunning && s.flyCaught ? RUN2.CATCH_GATHER_MS : 0) &&
+    s.elapsed - s.heldAt >= params.cpuThrowDelayMs + catchGatherFor(s, params) &&
     anyForwardMover(s)
   ) {
     // Main mode: don't fling it when no throw can beat anyone — the carrier
@@ -1292,11 +1295,20 @@ function checkTermination(s: LivePlayState, params: LiveParams): void {
       if (r.done !== null) continue;
       if (r.returning) {
         r.from = r.startBase;
+        r.to = r.from;
       }
-      // "The base behind them" is nowhere for a batter-runner — and a whole
-      // play went by without the defense retiring them, so they reached.
-      if (r.from <= 0) r.from = 1;
-      r.to = r.from;
+      // "Behind them" is min(from, to), NOT from. `reverseLeg` SWAPS the pair,
+      // so a runner turned back from the plate carries from === 4 while running
+      // toward third, having never touched home. Settling them on `from` put a
+      // live runner on base 4: no run scored, and finishLivePlay writes
+      // bases[3] on a 3-element tuple, so the runner silently vanished from the
+      // inning. Both clamps are the same rule at the two ends — a batter-runner
+      // has nothing behind them (and a whole play went by without the defense
+      // retiring them, so they reached), and nobody may settle ON home without
+      // the run being scored.
+      const behind = Math.max(1, Math.min(3, Math.min(r.from, r.to))) as Base;
+      r.from = behind;
+      r.to = behind;
       r.progress = 0;
       r.pos = { ...basePos(r.from) };
       r.returning = false;
@@ -1388,6 +1400,31 @@ function leadFirst(runners: RunnerState[]): RunnerState[] {
 
 function anyForwardMover(s: LivePlayState): boolean {
   return s.runners.some((r) => r.done === null && !r.returning && r.to !== r.from);
+}
+
+/**
+ * How long the CPU sits on a caught fly before it may throw.
+ *
+ * The gather beat is what makes a sac fly from third a real race — the fielder
+ * has to come down and set before the ball can leave. But it is about runners
+ * ADVANCING. A runner scrambling BACK to the bag they left is the opposite play
+ * (the throw behind), and stacking both beats made doubling off arithmetically
+ * impossible: 1192ms of cpuThrowDelay + 1100ms of gather = 2292ms, against a
+ * runner who is already most of the way back.
+ *
+ * That went unnoticed until 2026-07-28 because the carrier never needed to
+ * throw — it simply ran the runner down and tagged them, a footrace only
+ * winnable while fielders moved at 2.5x runner speed. Once LIVE.FIELDER_RUN_RATIO
+ * made them the same kids, the tag stopped landing and the missing throw showed.
+ */
+function catchGatherFor(s: LivePlayState, params: LiveParams): number {
+  if (!params.manualBaserunning || !s.flyCaught) return 0;
+  return anyRetreatingTarget(s) ? 0 : RUN2.CATCH_GATHER_MS;
+}
+
+/** A live runner heading BACK to the bag they left — a throw-behind target. */
+function anyRetreatingTarget(s: LivePlayState): boolean {
+  return s.runners.some((r) => r.done === null && !r.returning && r.to < r.from && r.to >= 1);
 }
 
 // --- Wrap-up ---------------------------------------------------------------

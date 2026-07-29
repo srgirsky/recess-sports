@@ -591,6 +591,39 @@ describe('defense — pinned until BB is actually measured', () => {
     expect(MODES.main.live.cpuThrowSpeedMult).toBe(M.defense.throwSpeed.ours.cpuMult);
   });
 
+  it('keeps fielders and baserunners the same kids', () => {
+    // The gap this block existed to prevent, in the one constant it had missed.
+    // FIELDER_SPEED was the ONLY pace constant with no record and no pin, and it
+    // sat at 210px/s through five consecutive runner slowdowns while the ratio
+    // crept 1.20x -> 2.47x. See measures.json defense.fielderSpeed `history`.
+    const rec = M.defense.fielderSpeed.ours;
+    expect(LIVE.FIELDER_RUN_RATIO).toBe(rec.ratio);
+    expect(LIVE.FIELDER_SPEED).toBe(rec.fielderSpeed);
+    expect(MODES.main.live.cpuFielderSpeedMult).toBe(rec.cpuMult_main);
+    expect(MODES.kid.live.cpuFielderSpeedMult).toBe(rec.cpuMult_kid);
+
+    // The relationship config.ts cannot express (an object literal can't
+    // self-reference), asserted here instead. This is what makes the two
+    // constants move together — the whole failure was that they didn't.
+    expect(LIVE.FIELDER_SPEED).toBeCloseTo(LIVE.RUNNER_SPEED * LIVE.FIELDER_RUN_RATIO, 6);
+
+    // ...and the same claim on the side the human BATS. A CPU fielder chases a
+    // runner who has already been scaled by playerRunSpeedMult, so the mults
+    // must match or the ratio holds on only one half of the game. Kid mode's
+    // old 0.62 failed exactly this while looking deliberate.
+    for (const mode of ['kid', 'main']) {
+      expect(
+        MODES[mode].live.cpuFielderSpeedMult,
+        `${mode}: cpuFielderSpeedMult must equal playerRunSpeedMult`
+      ).toBe(MODES[mode].live.playerRunSpeedMult);
+    }
+
+    // Sanity band from the record, so a future retune can't quietly re-open it.
+    const ratio = LIVE.FIELDER_SPEED / LIVE.RUNNER_SPEED;
+    expect(ratio).toBeGreaterThanOrEqual(0.9);
+    expect(ratio).toBeLessThanOrEqual(1.4);
+  });
+
   it('holds the per-difficulty fielding assist ladder', () => {
     // The flat 0.5 blend caught flies FOR the player (5.3px off the landing
     // spot after steering perpendicular all flight, inside a 39px reach). The
@@ -617,7 +650,7 @@ describe('defense — pinned until BB is actually measured', () => {
     // partialReading that LOOKS like a measurement; the hygiene test elsewhere
     // already forbids it coexisting with a non-null `measured`, and this asserts
     // the same thing locally where a reader of this block will see it.
-    for (const rec of [M.defense.cpuReaction, M.defense.cpuThrowDelay, M.defense.throwSpeed, M.defense.fieldingAssist]) {
+    for (const rec of [M.defense.cpuReaction, M.defense.cpuThrowDelay, M.defense.throwSpeed, M.defense.fieldingAssist, M.defense.fielderSpeed]) {
       expect(rec.status).toBe('awaiting-measurement');
       expect(rec.measured).toBeNull();
       expect(rec.n).toBe(0);
