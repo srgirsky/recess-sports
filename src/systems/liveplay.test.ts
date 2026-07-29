@@ -719,6 +719,55 @@ describe('live play: manual baserunning (main mode)', () => {
     expect(r2.done === 'out' || (r2.done === null && r2.from === 2) || r2.done === 'safe').toBe(true);
   });
 
+  it('a runner turned back from the PLATE never settles standing on home', () => {
+    // The play-length cap settles stragglers on "the base behind them", and
+    // that used to read `r.from`. But `reverseLeg` SWAPS from/to, so a runner
+    // sent home and then turned back carries from === 4 while running toward
+    // third, having never touched the plate. Settling on `from` parked a live
+    // runner on base 4: no run scored, and finishLivePlay writes bases[3] on a
+    // 3-element tuple, so they silently vanished from the inning.
+    //
+    // Found via the random-spam property test below, which caught it only
+    // stochastically once slower fielders (LIVE.FIELDER_RUN_RATIO) started
+    // pushing plays out to maxPlayMs. Pinned deterministically here.
+    // Driven at the seam, like the force-out rule below: reaching the cap with a
+    // runner mid-retreat off the plate needs a play nobody ever fields, which no
+    // scripted launch reliably produces. The STATE is what matters.
+    const s = startLivePlay({
+      mode: 'offense',
+      launch: { ...grounderToShort, landing: { x: 700, y: 260 } },
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [{ base: 3, charId: 'r3', speed: 5 }],
+      outs: 0,
+      defense: DEFENSE,
+      params: main,
+    });
+    const r3 = s.runners.find((r) => r.charId === 'r3')!;
+    // Exactly what reverseLeg leaves behind: sent home (3->4), then turned back.
+    // legMs matters — leave it at the settled default and the runner "arrives"
+    // at third on the very next tick, settling the state before the cap can see
+    // it (which is how the first draft of this test passed against the bug).
+    r3.from = 4;
+    r3.to = 3;
+    r3.progress = 0.4;
+    r3.legMs = 4000;
+    s.elapsed = main.maxPlayMs - 50;
+    const end = stepLivePlay(s, {}, 50, main, () => 0.9);
+    expect(end.phase).toBe('done'); // the cap fired
+    for (const r of end.runners) {
+      if (r.done !== null) continue;
+      expect(r.from).toBeGreaterThanOrEqual(1);
+      expect(r.from).toBeLessThanOrEqual(3); // never parked on home
+      expect(r.to).toBe(r.from); // and genuinely settled
+    }
+    // Nobody is dropped: every runner is out, scored, or on a real bag.
+    const out = finishLivePlay(end);
+    const onBase = out.bases.filter(Boolean).length;
+    const retired = end.runners.filter((r) => r.done === 'out').length;
+    const scored = end.runners.filter((r) => r.done === 'scored').length;
+    expect(onBase + retired + scored).toBe(end.runners.length);
+  });
+
   it('an unforced runner is NOT out just because the ball beat them to the bag', () => {
     // Tested at the seam rather than through a live race: whether a throw beats
     // a runner by a hair depends on how fast the defense happens to be, so a
@@ -904,8 +953,8 @@ describe('live play: bounces & fence caroms', () => {
   // Assist fully off: the ball is left alone to do physics.
   const params: LiveParams = { ...resolveLiveParams('kid'), assist: 'magnet', assistBlend: 0 };
 
-  const start = (launch: Launch, geo = DEFAULT_GEOMETRY) =>
-    startLivePlay({
+  const start = (launch: Launch, geo = DEFAULT_GEOMETRY) => {
+    const s = startLivePlay({
       mode: 'defense',
       launch,
       batter: { charId: 'bat', speed: 5 },
@@ -915,10 +964,20 @@ describe('live play: bounces & fence caroms', () => {
       params,
       geo,
     });
+    // Physically stand the defense behind the plate, far from any ball these
+    // tests hit. Steering them away with `parked` alone is NOT enough: it only
+    // moves them at fielderSpeed, so how far they clear depends on a tuning
+    // constant. The wall liner lands 3px from CF's post, and once
+    // LIVE.FIELDER_RUN_RATIO dropped fielders to runner speed, CF no longer got
+    // out of its own way and caught the ball instead of letting it carom. These
+    // tests watch the BALL's physics; the defense must be irrelevant to them.
+    for (const f of s.fielders) f.pos = { x: 480, y: 560 };
+    return s;
+  };
 
-  // Park the chaser in the corner so nobody grabs the ball — these tests
-  // watch the ball's own physics. (Only the active chaser can field it.)
-  const parked = { pointer: { x: 60, y: 560 }, pointerActive: true };
+  // ...and keep steering them at that same corner, so nobody wanders back.
+  // (Only the active chaser can field it.)
+  const parked = { pointer: { x: 480, y: 560 }, pointerActive: true };
 
   /** Step until the ball is settled (or the play ends); returns the trace. */
   const settle = (s: LivePlayState) => {
