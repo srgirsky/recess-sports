@@ -1505,6 +1505,20 @@
       },
       "informs": "src/config.ts ANIM.WINDUP_MS",
       "whatWouldWork": "Bracket the delivery start on n>=3 pitches from the stopwatch-gated capture."
+    },
+    "simClock": {
+      "id": "pace.sim-clock",
+      "category": "pace",
+      "status": "note",
+      "statusChangedAt": "2026-07-28",
+      "what": "Why every pace.* record is allowed to be an absolute real-millisecond claim, and what would silently make them all wrong.",
+      "theClaim": "GameScene steps the live sim on Phaser's raw frame delta, so one sim-millisecond IS one real-millisecond. That is the only reason a constant in config.ts can be compared against a stopwatch reading off BB2001 -- pace.homeToFirst's 4197ms, pace.flyHang's 2875-5075, all of it.",
+      "theTrap": "conformance.test.js's ourHomeToFirstMs passes `tempo: 1` as a LITERAL, and was commented as though that defended the claim: 'introducing a tempo dial later breaks HERE, loudly, instead of silently invalidating every ratio in measures.json'. It does not. A tempo scalar changes what the game DOES and changes nothing the test COMPUTES.",
+      "theEvidence": "PR #17 (Split action tempo into TEMPO and PITCH_TEMPO, opened 2026-07-23, closed 2026-07-28) was test-merged into main on 2026-07-28. With TEMPO 0.6 the real home->1B becomes 6995ms against BB's measured 4200 -- 66% too slow -- while pace.homeToFirst went on reporting 4197 and conformed. Fly hang became 4792-8458 real. All 449 tests passed.",
+      "whyItWasTemptingAndWrong": "PR #17's premise was correct when written: home->1B ran ~2.1s. The 2026-07-24 pace retune fixed that at the source by moving LIVE.RUNNER_SPEED to 42.8 px/s. A tempo scalar landing afterwards applies the same correction a second time.",
+      "theGuard": "scripts/simclock.lint.test.js. Three checks, each verified to FAIL against PR #17's actual diff before being committed: config.ts exports no *TEMPO* constant; stepLivePlay's dt argument is the bare identifier `delta` (scoped to that call -- the replay's FX.REPLAY.SPEED playback clock legitimately scales delta and never reaches the sim); and getPitchBaseMs's body contains no arithmetic at all, checked structurally rather than by variable name.",
+      "notABan": "A tempo dial is a legitimate product decision -- lib.js's own header says TEMPO is 'the single absolute dial and is a product decision, not a measurement'. What this forbids is adding one INVISIBLY. Teach the conformance records to derive the tempo instead of hardcoding 1, then delete the lint in the same commit, with the reasoning attached.",
+      "informs": "src/config.ts, src/scenes/GameScene.ts update(), src/systems/mode.ts getPitchBaseMs"
     }
   },
   "defense": {

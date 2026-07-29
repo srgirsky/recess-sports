@@ -61,9 +61,15 @@ function ourHomeToFirstMs(mode = 'main') {
     basepathPx: BASEPATH_PX,
     speedPxPerSec: LIVE.RUNNER_SPEED * MODES[mode].live.playerRunSpeedMult,
     // No tempo dial exists in src/ -- GameScene steps the sim on Phaser's raw
-    // delta -- so sim-ms and real-ms are the same thing. Stated explicitly so
-    // that introducing a tempo dial later breaks HERE, loudly, instead of
-    // silently invalidating every ratio in measures.json.
+    // delta -- so sim-ms and real-ms are the same thing.
+    //
+    // This literal 1 does NOT defend that. It was commented as if it did
+    // ("introducing a tempo dial later breaks HERE, loudly"), but a tempo
+    // scalar in config.ts changes what the game DOES and changes nothing this
+    // computes: test-merging PR #17 put real home->1B at 6995ms while this
+    // went on asserting 4197, with all 449 tests green. The guard that
+    // actually fires is scripts/simclock.lint.test.js -- if a tempo dial is
+    // ever wanted, that file's header says what has to happen here first.
     tempo: 1,
   });
 }
