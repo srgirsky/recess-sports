@@ -146,15 +146,32 @@ export interface LiveParams {
   cpuErrorMult: number;
   manualBaserunning: boolean; // tag-ups, doubling off, tags/rundowns, per-runner control
   assist: 'auto' | 'magnet'; // idle pointer: fielder plays itself / steering bent ball-ward
-  assistBlend: number; // magnet strength (0..1)
+  assistBlend: number; // magnet strength (0..1) — tier-scaled in CLASSIC
+  assistIdleMs: number; // magnet: nobody steering this long, the chaser ambles
+  assistIdleSpeedMult: number; // ...at this fraction of full speed (always < 1)
   diveEnabled: boolean; // the tap-to-dive verb (CLASSIC only)
   diveReachBonus: number; // px added to grab reach mid-dive
   diveWindowMs: number; // lunge duration
   diveWhiffMs: number; // empty-dive freeze
 }
 
-export function resolveLiveParams(mode: GameMode, o?: FeatureOverrides): LiveParams {
+/**
+ * LIVE x MODES[mode].live x DIFFICULTY_TIERS[difficulty].fielding.
+ *
+ * `difficulty` defaults to the tier `getDifficulty()` itself falls back to for
+ * that mode, so a bare `resolveLiveParams('main')` means "the default CLASSIC
+ * difficulty" (MEDIUM) rather than some phantom tier nobody plays. It is a
+ * third positional arg on purpose, NOT a `FeatureOverrides` field: that
+ * interface's contract is "can only DISABLE what the mode already enables", and
+ * the tier scales a value rather than switching a mechanic off.
+ */
+export function resolveLiveParams(
+  mode: GameMode,
+  o?: FeatureOverrides,
+  difficulty: DifficultyLevel = mode === 'kid' ? 'easy' : 'medium'
+): LiveParams {
   const m = MODES[mode].live;
+  const t = DIFFICULTY_TIERS[difficulty].fielding;
   // Errors OFF forces both mults to 0 — mult 0 skips the rng roll entirely
   // (per config), so a no-error game stays byte-deterministic.
   const errorsOff = o?.errors === false;
@@ -180,7 +197,9 @@ export function resolveLiveParams(mode: GameMode, o?: FeatureOverrides): LivePar
     cpuErrorMult: errorsOff ? 0 : m.cpuErrorMult,
     manualBaserunning: m.manualBaserunning,
     assist: m.fielderAssist,
-    assistBlend: LIVE.ASSIST.MAGNET_BLEND,
+    assistBlend: LIVE.ASSIST.MAGNET_BLEND * t.magnetMult,
+    assistIdleMs: LIVE.ASSIST.IDLE_TAKEOVER_MS * t.idleDelayMult,
+    assistIdleSpeedMult: LIVE.ASSIST.IDLE_SPEED_MULT * t.idleSpeedMult,
     diveEnabled: MODES[mode].features.dive,
     diveReachBonus: LIVE.DIVE.REACH_BONUS,
     diveWindowMs: LIVE.DIVE.WINDOW_MS,

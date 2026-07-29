@@ -622,7 +622,13 @@ export const LIVE = {
   },
   /** Player-steered fielder speed (px/s). */
   FIELDER_SPEED: 106,
-  /** Fielding assist (mode-tied: kid = auto, main = magnet). */
+  /**
+   * Fielding assist (mode-tied: kid = auto, main = magnet). These are the BASE
+   * values; CLASSIC scales all three per difficulty via
+   * `DIFFICULTY_TIERS[d].fielding` (see there for why, and for the effective
+   * numbers). Read them off `LiveParams`, never straight from here — the sim
+   * must see the tier-scaled values.
+   */
   ASSIST: {
     /** Magnet: how much steering is bent toward the ball (0 = pure manual). */
     MAGNET_BLEND: 0.5,
@@ -841,17 +847,63 @@ export const DIFFICULTY = {
  * slow soft lob so timing is trivial); MEDIUM and HARD use the full CLASSIC set,
  * with HARD seeding the CPU ramp a couple levels up front. `GameMode` stays the
  * internal switch — difficulty is the label on top of it. See systems/mode.ts.
+ *
+ * The tier also varies YOUR DEFENSE, not just the CPU: `fielding` scales the
+ * CLASSIC magnet assist, so MEDIUM steers for you noticeably less than it used
+ * to and HARD is close to fully manual.
  */
 export type DifficultyLevel = 'teeball' | 'easy' | 'medium' | 'hard';
 
 export const DIFFICULTY_TIERS: Record<
   DifficultyLevel,
-  { mode: GameMode; baseRamp: number; tee: boolean; icon: string; label: string }
+  {
+    mode: GameMode;
+    baseRamp: number;
+    tee: boolean;
+    icon: string;
+    label: string;
+    /**
+     * CLASSIC fielding assist, scaled per tier — multipliers onto `LIVE.ASSIST`,
+     * resolved into `LiveParams` by systems/mode.ts. The kid tiers are 1x
+     * no-ops: kid mode takes the 'auto' branch and never reads any of these,
+     * but the table stays complete so nothing has to special-case a mode.
+     *
+     * DERIVED, NOT MEASURED. Assist strength has no on-screen representation,
+     * so it can never be read off BB2001 footage (same argument as the swing
+     * windows — see scripts/measures.json `feel.fieldingAssist`). These are
+     * feel dials; tune them by playing, not by conforming to a record.
+     *
+     * Effective values against the LIVE.ASSIST bases (0.5 / 1200ms / 0.6):
+     *   teeball, easy  blend 0.5 (inert)  1200ms  0.6
+     *   medium         blend 0.30         1200ms  0.6
+     *   hard           blend 0.125        1920ms  0.42
+     *
+     * Why `idle*` moves with the magnet on HARD: the amble is only fair while
+     * it stays worse than steering, and that is a RELATIVE claim. Drop the
+     * magnet to 0.125 and a full-speed bad steer no longer beats a 0.6-speed
+     * straight line at the landing spot — doing nothing would quietly become
+     * the optimal defense. Scaling the takeover later and slower keeps
+     * LIVE.ASSIST's "letting go is never the better way to play" true.
+     */
+    fielding: { magnetMult: number; idleDelayMult: number; idleSpeedMult: number };
+  }
 > = {
-  teeball: { mode: 'kid', baseRamp: 0, tee: true, icon: '🏌️', label: 'TEE-BALL' },
-  easy: { mode: 'kid', baseRamp: 0, tee: false, icon: '🙂', label: 'EASY' },
-  medium: { mode: 'main', baseRamp: 0, tee: false, icon: '⚾', label: 'MEDIUM' },
-  hard: { mode: 'main', baseRamp: 2, tee: false, icon: '🔥', label: 'HARD' },
+  teeball: {
+    mode: 'kid', baseRamp: 0, tee: true, icon: '🏌️', label: 'TEE-BALL',
+    fielding: { magnetMult: 1, idleDelayMult: 1, idleSpeedMult: 1 },
+  },
+  easy: {
+    mode: 'kid', baseRamp: 0, tee: false, icon: '🙂', label: 'EASY',
+    fielding: { magnetMult: 1, idleDelayMult: 1, idleSpeedMult: 1 },
+  },
+  medium: {
+    mode: 'main', baseRamp: 0, tee: false, icon: '⚾', label: 'MEDIUM',
+    fielding: { magnetMult: 0.6, idleDelayMult: 1, idleSpeedMult: 1 },
+  },
+  hard: {
+    mode: 'main', baseRamp: 2, tee: false, icon: '🔥', label: 'HARD',
+    fielding: { magnetMult: 0.25, idleDelayMult: 1.6, idleSpeedMult: 0.7 },
+  },
 };
 
 /** Tee-ball: the pitch is a slow, high soft lob so any timing makes contact. */

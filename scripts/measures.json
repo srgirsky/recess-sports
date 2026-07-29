@@ -1630,6 +1630,57 @@
       "informs": "src/config.ts LIVE.CHASE",
       "notMeasuredAgainstBB": true,
       "why": "BB2001 was NOT measured for this. The election is tuned against baseball sense and our own geometry, not against a capture -- the same standing caveat as the rest of the defense block. It also makes the CPU defense meaningfully better on grounders (it cuts balls off instead of trailing them), so it is a live candidate for the first feel-tuning pass. Lower CUTOFF_GRACE_MS first (fewer cut-offs), then the corner/middle leashes -- not cpuFielderSpeedMult, which is on the scaled pace path and would desynchronise it."
+    },
+    "fieldingAssist": {
+      "id": "defense.fielding-assist",
+      "category": "defense",
+      "status": "awaiting-measurement",
+      "measured": null,
+      "n": 0,
+      "what": "How much CLASSIC's magnet assist steers the player's fielder toward the ball, now scaled per difficulty tier rather than one flat constant.",
+      "why": "Recorded because the flat 0.5 blend was not a mild helper -- it was the whole play. Measured against the real sim: steering PERPENDICULAR to a fly for its entire hang time still left the fielder 5.3px from the landing spot, well inside the 39px catch reach. The game caught the ball for you no matter where you pointed, so defense had no skill in it. At the tiered blends the same deliberate mis-steer ends 102px off on MEDIUM and 189px off on HARD -- both clean misses.",
+      "ours": {
+        "constants": [
+          "src/config.ts LIVE.ASSIST.MAGNET_BLEND",
+          "src/config.ts LIVE.ASSIST.IDLE_TAKEOVER_MS",
+          "src/config.ts LIVE.ASSIST.IDLE_SPEED_MULT",
+          "src/config.ts DIFFICULTY_TIERS[d].fielding"
+        ],
+        "base": {
+          "magnetBlend": 0.5,
+          "idleTakeoverMs": 1200,
+          "idleSpeedMult": 0.6
+        },
+        "magnetMult": {
+          "teeball": 1,
+          "easy": 1,
+          "medium": 0.6,
+          "hard": 0.25
+        },
+        "idleDelayMult": {
+          "teeball": 1,
+          "easy": 1,
+          "medium": 1,
+          "hard": 1.6
+        },
+        "idleSpeedMult": {
+          "teeball": 1,
+          "easy": 1,
+          "medium": 1,
+          "hard": 0.7
+        },
+        "effectiveBlend": {
+          "teeball": "inert -- kid takes the 'auto' branch",
+          "easy": "inert",
+          "medium": 0.3,
+          "hard": 0.125
+        }
+      },
+      "invariants": [
+        "The magnet lerps between two candidate points each within one movement step, so it can only REDIRECT, never add speed. A liveplay test pins the per-tick cap at every tier.",
+        "assistIdleSpeedMult must stay < 1 at every tier. The idle amble is only fair while it is worse than steering, and that is a RELATIVE claim -- weakening the magnet without also slowing the amble would have made doing nothing the optimal defense on HARD. That is why the hard tier scales its idle knobs alongside its magnet."
+      ],
+      "whatWouldWork": "BB2001's assist strength has no on-screen representation -- nothing renders it, so no frame can be read for it, exactly like the swing windows (see pace.swingWindows). It could only be inferred behaviourally: drive BB's fielder along a fixed WRONG heading through a fly's full hang time on a known field, and measure how far the sprite drifts from its own steering line toward the landing spot. That needs frame-accurate input injection into the emulator, which this instrument does not have. Until then these are feel dials, tuned by playing -- not conformance targets."
     }
   }
 }
