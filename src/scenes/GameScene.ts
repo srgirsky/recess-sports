@@ -145,6 +145,7 @@ import {
   getSwingTiming,
   resolveLiveParams,
   isTee,
+  getDifficulty,
   difficultyBaseRamp,
   type FeatureOverrides,
   type LiveParams,
@@ -748,12 +749,19 @@ export class GameScene extends Phaser.Scene {
     const overrides: FeatureOverrides | undefined = this.spectator
       ? undefined
       : { errors: settings.errors, swingSpot: settings.swingSpot, pitchLocator: settings.pitchLocator };
-    this.tee = !this.spectator && isTee(settings.difficulty);
+    // ONE difficulty read for the whole scene — tee, fielding assist and the CPU
+    // ramp all key off it. `getDifficulty()` rather than `settings.difficulty`
+    // because only it reconciles the stored label against the authoritative
+    // `recess_mode`; the raw read let a stale 'teeball' lob a tee-ball pitch
+    // into a CLASSIC game while GAME SETUP showed MEDIUM. Spectator forces a kid
+    // tier to match the kid feature set it forces above.
+    const difficulty = this.spectator ? 'easy' : getDifficulty();
+    this.tee = !this.spectator && isTee(difficulty);
     this.features = getFeatures(this.mode, overrides);
     // Net: frames already stream to the guest at 1× — a replay would
     // double-consume them, so the 📼 stays off on both devices.
     if (this.matchType === 'net') this.features = { ...this.features, replay: false };
-    this.liveParams = resolveLiveParams(this.mode, overrides);
+    this.liveParams = resolveLiveParams(this.mode, overrides, difficulty);
     this.venue = getVenue();
     this.geo = getFieldGeometry(this.venue);
     // Ramp is read BEFORE this game is tallied (game 1 plays at level 0),
@@ -762,7 +770,7 @@ export class GameScene extends Phaser.Scene {
     // defenses, no ramp, and it doesn't feed the solo games-played tally.
     this.ramp =
       this.mode === 'main' && this.matchType === 'solo'
-        ? difficultyBaseRamp(settings.difficulty) + rampLevel(getGamesPlayed())
+        ? difficultyBaseRamp(difficulty) + rampLevel(getGamesPlayed())
         : 0;
     if (this.matchType === 'solo' && !this.spectator) recordGamePlayed();
     // The booth introduces the matchup.

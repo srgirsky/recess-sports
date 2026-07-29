@@ -38,6 +38,7 @@ import { dirname, join } from 'node:path';
 import {
   LIVE, FLOW, MODES, PITCH_SPEED, PITCHES, TIMING,
   PITCH_TRAVEL_MS, CPU_PITCH_TRAVEL_MS, GAME_HEIGHT, HUD,
+  DIFFICULTY_TIERS,
 } from '../../src/config.ts';
 import { HOME, FIRST, FOUL_SLOPE, FIELD_BOTTOM_Y } from '../../src/systems/geometry.ts';
 import { BAT_STANCE_GEOMETRY } from '../../src/art/CharacterArt.ts';
@@ -590,12 +591,33 @@ describe('defense — pinned until BB is actually measured', () => {
     expect(MODES.main.live.cpuThrowSpeedMult).toBe(M.defense.throwSpeed.ours.cpuMult);
   });
 
+  it('holds the per-difficulty fielding assist ladder', () => {
+    // The flat 0.5 blend caught flies FOR the player (5.3px off the landing
+    // spot after steering perpendicular all flight, inside a 39px reach). The
+    // tier multipliers are what make defense a skill again, so a retune has to
+    // move the record too.
+    const a = M.defense.fieldingAssist.ours;
+    expect(LIVE.ASSIST.MAGNET_BLEND).toBe(a.base.magnetBlend);
+    expect(LIVE.ASSIST.IDLE_TAKEOVER_MS).toBe(a.base.idleTakeoverMs);
+    expect(LIVE.ASSIST.IDLE_SPEED_MULT).toBe(a.base.idleSpeedMult);
+    for (const tier of Object.keys(a.magnetMult)) {
+      expect(DIFFICULTY_TIERS[tier].fielding.magnetMult).toBe(a.magnetMult[tier]);
+      expect(DIFFICULTY_TIERS[tier].fielding.idleDelayMult).toBe(a.idleDelayMult[tier]);
+      expect(DIFFICULTY_TIERS[tier].fielding.idleSpeedMult).toBe(a.idleSpeedMult[tier]);
+    }
+    // The invariant the record spells out, asserted rather than described:
+    // the amble must stay worse than steering at every tier.
+    for (const tier of Object.keys(DIFFICULTY_TIERS)) {
+      expect(LIVE.ASSIST.IDLE_SPEED_MULT * DIFFICULTY_TIERS[tier].fielding.idleSpeedMult).toBeLessThan(1);
+    }
+  });
+
   it('makes no claim about BB for any of them', () => {
     // The whole point of the status. defense.cpuReaction carries a 5-sample
     // partialReading that LOOKS like a measurement; the hygiene test elsewhere
     // already forbids it coexisting with a non-null `measured`, and this asserts
     // the same thing locally where a reader of this block will see it.
-    for (const rec of [M.defense.cpuReaction, M.defense.cpuThrowDelay, M.defense.throwSpeed]) {
+    for (const rec of [M.defense.cpuReaction, M.defense.cpuThrowDelay, M.defense.throwSpeed, M.defense.fieldingAssist]) {
       expect(rec.status).toBe('awaiting-measurement');
       expect(rec.measured).toBeNull();
       expect(rec.n).toBe(0);

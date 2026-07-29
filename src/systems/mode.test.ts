@@ -6,7 +6,7 @@
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { DIFFICULTY_TIERS, TEE_PITCH_MS, MODES, type DifficultyLevel } from '../config';
+import { DIFFICULTY_TIERS, LIVE, TEE_PITCH_MS, MODES, type DifficultyLevel } from '../config';
 import {
   getMode,
   getDifficulty,
@@ -105,6 +105,60 @@ describe('resolveLiveParams errors override', () => {
 
   it('no override leaves the mults at the mode defaults', () => {
     expect(resolveLiveParams('main', { swingSpot: false })).toEqual(resolveLiveParams('main'));
+  });
+});
+
+describe('per-difficulty fielding assist', () => {
+  const ALL: DifficultyLevel[] = ['teeball', 'easy', 'medium', 'hard'];
+
+  it('a bare call means the default tier for that mode', () => {
+    // Pins the default-arg contract the whole existing suite leans on: every
+    // bare resolveLiveParams('main') still reads as "the default CLASSIC
+    // difficulty", which is what keeps the errors-override deep-equal honest.
+    expect(resolveLiveParams('main')).toEqual(resolveLiveParams('main', undefined, 'medium'));
+    expect(resolveLiveParams('kid')).toEqual(resolveLiveParams('kid', undefined, 'easy'));
+  });
+
+  it('HARD is strictly less assisted than MEDIUM on all three knobs', () => {
+    const medium = resolveLiveParams('main', undefined, 'medium');
+    const hard = resolveLiveParams('main', undefined, 'hard');
+    expect(hard.assistBlend).toBeLessThan(medium.assistBlend);
+    expect(hard.assistIdleMs).toBeGreaterThan(medium.assistIdleMs);
+    expect(hard.assistIdleSpeedMult).toBeLessThan(medium.assistIdleSpeedMult);
+  });
+
+  it('MEDIUM already steers for you less than the raw base', () => {
+    // Derived, not restated — the point is the relationship, not the number.
+    const medium = resolveLiveParams('main', undefined, 'medium');
+    expect(medium.assistBlend).toBeLessThan(LIVE.ASSIST.MAGNET_BLEND);
+    expect(medium.assistBlend).toBeGreaterThan(0); // still an assist, not manual
+  });
+
+  it('the kid tiers leave the base assist untouched', () => {
+    (['teeball', 'easy'] as DifficultyLevel[]).forEach((d) => {
+      const p = resolveLiveParams('kid', undefined, d);
+      expect(p.assistBlend).toBe(LIVE.ASSIST.MAGNET_BLEND);
+      expect(p.assistIdleMs).toBe(LIVE.ASSIST.IDLE_TAKEOVER_MS);
+      expect(p.assistIdleSpeedMult).toBe(LIVE.ASSIST.IDLE_SPEED_MULT);
+    });
+  });
+
+  it('letting go is never the better way to play, at any tier', () => {
+    // The amble must stay slower than steering everywhere — the invariant that
+    // made HARD scale its idle knobs down alongside its magnet.
+    ALL.forEach((d) => {
+      const p = resolveLiveParams(DIFFICULTY_TIERS[d].mode, undefined, d);
+      expect(p.assistIdleSpeedMult).toBeGreaterThan(0);
+      expect(p.assistIdleSpeedMult).toBeLessThan(1);
+    });
+  });
+
+  it('the tier never touches anything but the assist', () => {
+    const { assistBlend: _b, assistIdleMs: _m, assistIdleSpeedMult: _s, ...medium } =
+      resolveLiveParams('main', undefined, 'medium');
+    const { assistBlend: _b2, assistIdleMs: _m2, assistIdleSpeedMult: _s2, ...hard } =
+      resolveLiveParams('main', undefined, 'hard');
+    expect(hard).toEqual(medium);
   });
 });
 

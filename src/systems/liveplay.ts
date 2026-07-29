@@ -525,17 +525,15 @@ function moveFielders(
       // Kid mode, hands off: the fielder plays itself, CPU-style but at full
       // player speed with no reaction lag. Any real steering overrides it.
       chaser.pos = clampToField(s.geo, moveToward(chaser.pos, chaseTarget(s), step));
-    } else if (
-      params.assist === 'magnet' &&
-      ballBusy &&
-      s.elapsed - s.lastSteerAt >= LIVE.ASSIST.IDLE_TAKEOVER_MS
-    ) {
+    } else if (params.assist === 'magnet' && ballBusy && s.elapsed - s.lastSteerAt >= params.assistIdleMs) {
       // CLASSIC, nobody steering: amble after it rather than standing frozen
       // while the play burns down to MAX_PLAY_MS. Slower than steering, so
-      // letting go is never the better way to play.
+      // letting go is never the better way to play — which is why the harder
+      // tiers, whose magnet barely helps, also start this later and run it
+      // slower (see DIFFICULTY_TIERS.fielding).
       chaser.pos = clampToField(
         s.geo,
-        moveToward(chaser.pos, chaseTarget(s), step * LIVE.ASSIST.IDLE_SPEED_MULT)
+        moveToward(chaser.pos, chaseTarget(s), step * params.assistIdleSpeedMult)
       );
     }
   } else if (ballBusy && s.elapsed >= params.cpuReactionMs) {

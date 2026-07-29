@@ -359,6 +359,77 @@ describe('live play: fielding assist', () => {
     expect(bent.maxStep).toBeLessThanOrEqual((main.fielderSpeed * 1.0 * 50) / 1000 + 0.001);
   });
 
+  describe('the magnet weakens as the difficulty climbs', () => {
+    const medium = resolveLiveParams('main', undefined, 'medium');
+    const hard = resolveLiveParams('main', undefined, 'hard');
+
+    /** Steer perpendicular to the ball for a fixed spell; how far off is the kid? */
+    const missBy = (params: LiveParams) => {
+      const off = { x: 900, y: 500 };
+      let s = start(params, { ...flyToCenter, hangMs: 2782 });
+      let maxStep = 0;
+      for (let i = 0; i < 48; i++) {
+        const before = { ...s.fielders[s.active].pos };
+        s = stepLivePlay(s, { pointer: off, pointerActive: true }, 50, params, () => 0.5);
+        maxStep = Math.max(maxStep, dist(before, s.fielders[s.active].pos));
+      }
+      return { miss: dist(s.fielders[s.active].pos, s.launch.landing), maxStep };
+    };
+
+    it('the same bad steer is punished more at every rung up the ladder', () => {
+      // The whole point of the change: at the old flat 0.5 blend, half of every
+      // step went at the landing spot no matter where you pointed, so camping
+      // under a fly was automatic. Ignoring the ball must now cost you, and
+      // cost you more on HARD.
+      const base = missBy({ ...medium, assistBlend: LIVE.ASSIST.MAGNET_BLEND });
+      // Measured at the time of writing: 5.3px off at the old flat 0.5 blend
+      // (inside the 39px catch reach — the game caught it FOR you), 102px on
+      // MEDIUM, 189px on HARD.
+      expect(missBy(medium).miss).toBeGreaterThan(base.miss);
+      expect(missBy(hard).miss).toBeGreaterThan(missBy(medium).miss);
+    });
+
+    it('a weaker magnet still cannot exceed fielder speed', () => {
+      // The magnet stays a lerp of two points each within one step, so it can
+      // only ever redirect — never add distance. Pinned at the new blends too.
+      const cap = (hard.fielderSpeed * 1.0 * 50) / 1000 + 0.001;
+      expect(missBy(hard).maxStep).toBeLessThanOrEqual(cap);
+      expect(missBy(medium).maxStep).toBeLessThanOrEqual(cap);
+    });
+
+    it('HARD still ambles rather than freezing when nobody steers', () => {
+      // The idle takeover starts later and runs slower on HARD, but it must
+      // still exist — a frozen kid burns the play down to MAX_PLAY_MS.
+      let s = start(hard, { ...grounderToShort, landing: { x: 335, y: 300 } });
+      const startPos = { ...s.fielders[s.active].pos };
+      const { s: end, events } = runPlay(s, hard, () => ({}), () => 0.9);
+      expect(dist(end.fielders[end.active].pos, startPos)).toBeGreaterThan(20);
+      expect(events.some((e) => e.t === 'pickup')).toBe(true);
+      expect(end.elapsed).toBeLessThan(hard.maxPlayMs * 0.75);
+    });
+
+    it('on HARD, steering yourself still beats letting go', () => {
+      // The invariant that made the idle knobs scale with the magnet: once the
+      // magnet barely helps, a full-speed straight-line amble at the landing
+      // spot must not out-perform actually playing.
+      const chase = (steer: boolean) => {
+        let s = start(hard, flyToCenter);
+        const landing = { ...s.launch.landing };
+        for (let i = 0; i < 40; i++) {
+          s = stepLivePlay(
+            s,
+            steer ? { pointer: landing, pointerActive: true } : {},
+            50,
+            hard,
+            () => 0.5
+          );
+        }
+        return dist(s.fielders[s.active].pos, landing);
+      };
+      expect(chase(true)).toBeLessThan(chase(false));
+    });
+  });
+
   it('magnet never steers the kid while the ball is held (carrying is manual)', () => {
     // Get the ball into the chaser's hands, then steer to a bag — the path
     // must head exactly where the pointer points.
