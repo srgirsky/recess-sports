@@ -31,6 +31,86 @@ Two consequences for every design decision:
 
 ---
 
+## v2 — the 3D rebuild (in progress, at `/v2/`)
+
+v1 ships and works, but two things were not fixable by iterating on it, and they
+turned out to have the same root cause: **it was never modelled at real scale.**
+
+**1. The art could not stop looking flat.** `art/projection.ts` is 87 lines of
+affine trapezoid pinch — no z, no perspective divide, no lights, no shadows. The
+measurement records had already said so out loud: `geometry.projectionType` sat
+at permanent `known-drift` because *BB's field is true perspective and ours is
+affine*, and `geometry.fieldScale` was stuck at 34.0% against a measured 41–42%
+because four layout constraints pinned the single `ZOOM` scalar. Neither is
+reachable inside an affine projection, at any amount of tuning.
+
+**2. The balance problem was geometry, not tuning.** Convert v1's field to feet
+(its 179.64px basepath read as 60ft ⇒ 2.994 px/ft) and centre field sits at
+**89ft — 1.49 basepaths** where Little League is 2.5–2.9, with the fence at 1.75
+against a real 3.1–3.4. The outfield was half as deep as it should be and the
+outfielders stood where a deep infield belongs. That is why BABIP went 0% → ~7%
+against baseball's ~30% across three rounds of speed retuning and an invented
+cutoff relay: **you cannot create an outfield gap when there is no outfield.**
+
+A happier check pointing the same way: BB2001's measured pitch corridor of
+1227ms over a 46ft mound is **25.6 mph** — exactly a 7-year-old's fastball. The
+instrument and the real-units decision agree independently.
+
+So v2 rebuilds on **three.js + real feet**: 60ft basepaths, 46ft mound, ~200ft
+fences, a ball with real gravity, quadratic drag and Magnus spin integrated RK4
+at 240Hz, and bat-ball contact that produces exit velocity, launch angle and
+spray from *where and when* you swung — replacing v1's categorical
+grounder/liner/fly roll. Hit rates then **emerge** instead of being tuned.
+
+All HUD and menus become HTML/CSS over the canvas, which deletes the entire
+measure-then-place layout apparatus (CSS Grid + one `clamp()` scalar does what
+`solveRow`/`solveColumn` computed by hand) and makes v1's "any tap swings the
+bat" gotcha class structurally impossible.
+
+**v1 stays live and untouched throughout.** Both games build from one Vite
+config; the votes (`recess_pickcounts`) are shared so the voting machine never
+loses continuity. See `AGENTS.md` § "Which tree am I in?" for the split.
+
+### What the renderer change buys, concretely
+
+Two of v1's permanent `known-drift` records **close**, and they close in a unit
+test rather than by eye. A real `PerspectiveCamera` has independent elevation,
+distance and FOV where the affine projection had one pinned scalar, so
+`render/cameraCues.ts`'s `FIELD` rig is *solved* rather than chosen — 40°
+elevation, 155ft, 46° FOV — and `cameraCues.test.ts` projects the four bases
+through its matrix to assert the measured foul slope (1.197–1.241) and basepath
+framing (41.4%) directly. No pixels, no screenshot diff.
+
+### The finding that came out of doing it
+
+Real units made two *previously compatible* records arithmetically
+contradictory. BB2001 draws a kid at **0.205 basepaths** tall; a real 4ft child
+on a real 60ft basepath is **0.052**. Matching BB's character presence at BB's
+field framing needs a **fourteen-foot kid** — taller than the wall they rob home
+runs at. BB could do it because its field was a painted backdrop with no physics
+behind it; we cannot, because real gravity over real distances *is* the balance
+fix. Recorded as `render.characterPresence` in `scripts/measures.json`, and
+resolved by splitting the wide camera (a conforming `FIELD` establishing shot, a
+closer `PLAY` rig the game actually lives in) plus a render-only 1.6×
+exaggeration that never touches the sim. This is the measurement discipline
+doing exactly what it is for.
+
+### Status
+
+**Stage 0 (the Look Spike) is done** — the park in 3D at kid scale, toon-shaded
+with inverted-hull outlines under the brand's upper-left key light, action-fitted
+shadows, 18 proxy characters, at 60fps / 52 draw calls / 98k triangles against a
+budget of 90 / 180k. Proxy characters are built from primitives on the *same*
+canonical skeleton the commissioned models bind to, driven by the `VisualParams`
+already authored for all 30 kids — so they are simultaneously the acceptance test
+for the skeleton spec and the reason no engineering work is ever blocked on art.
+
+Next: the pure sim core and its statistical conformance harness (headless, no art,
+no graphics), which asserts emergent BABIP / launch-angle split / exit-velocity
+percentiles against real baseball bands instead of pinning constants.
+
+---
+
 ## The 30 characters
 
 Defined in `src/data/characters.ts` (pure content — edit freely). Each has stats (contact/power/speed/pitching, 1–10), a look (`VisualParams`), and an optional `ability`. Three signature kids are implemented via **ability hooks** so they're data-driven, not special-cased in scene code:

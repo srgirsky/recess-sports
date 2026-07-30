@@ -511,6 +511,7 @@
       },
       "driftNote": "Our projection maps y 1:1 -- a pure horizontal pinch with NO vertical foreshortening, so its diagonal-midpoint gap is exactly 0 and it is affine by construction. Matching BB would mean a render-only y'=f(y) plus a matching inverse in unproject, keeping the sim flat so geometry.ts, clampToField's convexity argument and the goldlog stay untouched.",
       "informs": "src/art/projection.ts",
+      "v2": "CLOSED in v2 by the renderer change: a three.js PerspectiveCamera IS true perspective, so the diagonal-midpoint gap is nonzero by construction (21.7px on RIGS.FIELD against this record's 3px affine threshold). Asserted renderer-free in src/v2/render/cameraCues.test.ts by projecting the four bases through the preset's matrix -- no pixels, no screenshot diff. The v1 constant and this drift remain live and asserted for as long as v1 ships.",
       "deliberate": "This drift is a KNOWN PRODUCT DECISION, not an oversight. Our flatter view is a style choice; adding perspective is a large visual change gated behind the graphics phase and does not affect pace."
     },
     "foulSlope": {
@@ -639,7 +640,37 @@
       "whyNotWider": "A non-uniform zoom -- x scaled more than y -- would buy the width our 3:2 canvas is short of against BB's 4:3, and the width gap is the bigger one (33.3% of frame width against BB's ~48%). It is rejected on purpose: it would change the DRAWN foul slope from 1.2 to ~1.35, outside the [1.1974, 1.2414] band geometry.foulSlope is conformed to. That record was measured off BB's screen pixels, so breaking it on screen breaks it for real.",
       "renderOnly": "This is a camera change and NOTHING else. The sim stays in flat 960x640 space, so LIVE.RUNNER_SPEED, the conformed home->1B time, clampToField's convexity argument, every systems/ test and both goldlog fingerprints are untouched -- verified byte-identical after the change. It is also still AFFINE (a uniform scale composed with the existing pinch), so geometry.projectionType's drift is unchanged and its conformance assertion still passes.",
       "sideEffect": "Fielder height went from 33% of a basepath to 26% (BB: ~20%). depthScale is deliberately NOT multiplied by ZOOM -- the field grows and the kids do not, which is the half of the complaint that was about proportion rather than size.",
-      "informs": "src/art/projection.ts ZOOM"
+      "informs": "src/art/projection.ts ZOOM",
+      "v2": "CLOSED in v2 by the renderer change. A real PerspectiveCamera has independent elevation, distance and FOV where the affine projection had a single ZOOM scalar pinned by four simultaneous layout constraints -- so the drift here was structural, not a tuning choice. src/v2/render/cameraCues.ts RIGS.FIELD is SOLVED to 41.4% (elevation 40deg, distance 155ft, fov 46) and src/v2/render/cameraCues.test.ts asserts it by projecting the four bases through the preset's matrix. The v1 constant and this drift remain live and asserted for as long as v1 ships."
+    }
+  },
+  "render": {
+    "note": "v2-only records: findings about the three.js renderer that have no v1 equivalent because v1 had no camera, no lights and no depth.",
+    "characterPresence": {
+      "id": "render.character-presence",
+      "category": "render",
+      "status": "note",
+      "statusChangedAt": "2026-07-29",
+      "what": "BB2001's field framing and BB2001's character size are JOINTLY UNSATISFIABLE once the field is modelled at real scale. Recorded so the contradiction is not rediscovered as a bug.",
+      "why": "v2 moves the field to real units (60ft basepaths, 3.6-4.4ft kids) because v1's compressed outfield was the root cause of the balance failure -- see the v2 block on geometry.fieldScale and src/v2/sim/field.ts. Real units then make the two existing records arithmetically incompatible.",
+      "derivation": {
+        "fieldScale": "geometry.fieldScale: BB's basepath spans 41.4% of frame height (local venues, n=2).",
+        "characterSize": "A BB fielder stands ~8-9% of frame height (recorded in geometry.fieldScale's `why`).",
+        "bbKidPerBasepath": 0.205,
+        "realKidPerBasepath": 0.052,
+        "ratio": 3.94,
+        "impliedKidHeightFt": 14.0,
+        "note": "0.085 * 480 / 198.6 = 0.205 basepaths. A real 4ft kid on a real 60ft basepath is 4/60 with foreshortening, measured at 0.045-0.059 across depths. Matching BB would need a FOURTEEN FOOT child -- taller than the 8ft outfield wall they are meant to rob home runs at."
+      },
+      "whyBBCouldDoIt": "BB2001's field was a painted backdrop with no physics behind it, so its proportions cost nothing. v2's ball obeys real gravity over real distances, and that is precisely the balance fix -- so the field cannot be shrunk back to make the kids look big.",
+      "resolution": {
+        "cameraSplit": "src/v2/render/cameraCues.ts ships TWO wide rigs. FIELD conforms to geometry.fieldScale and is the establishing shot (half-inning starts, wide resets, replays). PLAY is where the game actually lives: same 40deg elevation so a cut never shifts the foul slope, at 115ft instead of 155ft. PLAY deliberately does NOT conform, and that is recorded here rather than left as an unexplained inconsistency.",
+        "characterScale": "src/v2/render/ProxyCharacter.ts CHARACTER_SCALE = 1.6 -- a RENDER-ONLY exaggeration drawing a 4ft kid as 6.4ft. Chunky-cartoon, still clear of the 8ft fence, the backstop and the foul poles. It must never leak into src/v2/sim/**: catch radii, reach, stride and collision stay real feet, and scripts/v2/purity.lint.test.js keeps the sim from importing render/.",
+        "residual": "Even at 1.6x on the PLAY rig a kid reads ~5% of frame height against BB's 8-9%. The remaining presence has to come from character DESIGN -- saturated colour, heavy contour, readable silhouette -- not from more size. That is a brief for the commissioned models, and it is why the Look Spike exists."
+      },
+      "n": 0,
+      "confidence": "n/a",
+      "informs": "src/v2/render/cameraCues.ts RIGS.PLAY, src/v2/render/ProxyCharacter.ts CHARACTER_SCALE"
     }
   },
   "art": {

@@ -27,6 +27,30 @@ npm run dev       # dev server with hot reload -> http://localhost:5173
 Open the URL in a browser. Edit a file and it reloads instantly (like Django's
 runserver, but faster).
 
+### Two games, one dev server
+
+The repo builds **two entry points**, and the same `npm run dev` serves both:
+
+| URL | what |
+|---|---|
+| `http://localhost:5173/` | **v1** — the shipped Phaser game. Live, stable. |
+| `http://localhost:5173/v2/` | **v2** — the three.js rebuild, in progress. |
+
+v2 currently boots the **Look Spike** (the 3D park + proxy characters, for
+judging the art direction). Useful query flags:
+
+| flag | effect |
+|---|---|
+| `?kids=18` | force the worst-case character count for a perf read |
+| `?perf=low\|mid\|high` | override the auto-detected device tier |
+| `?proxy=1` | force primitive proxy characters everywhere |
+
+Keys on the spike page: `1`–`5` switch camera preset, `V` cycles venue.
+
+The on-screen readout shows fps, p95 frame time, draw calls and triangles
+against the budget (≤90 draws, ≤180k tris). **Read it with the tab focused** —
+a backgrounded tab throttles the animation loop and the numbers go meaningless.
+
 **Test on a phone/tablet** (your real audience — swing timing feels different
 with a finger than a mouse):
 

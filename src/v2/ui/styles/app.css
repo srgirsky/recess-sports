@@ -1,0 +1,107 @@
+/* ---------------------------------------------------------------------------
+ * App shell + the input-routing rule.
+ * ------------------------------------------------------------------------- */
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--ink);
+  overflow: hidden;
+  font-family: var(--font);
+  color: var(--cream);
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+}
+
+/* The 3D world. `touch-action: none` lives HERE and only here — killing it on
+   <body> would also kill scrolling in any future long screen (Album, Season). */
+#stage {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * THE INPUT-ROUTING RULE.
+ *
+ * Every pointer event that does not land on an element which explicitly opted
+ * in falls through to the canvas BY CONSTRUCTION. No hit-testing, no z-order
+ * arithmetic, no stopPropagation() discipline.
+ *
+ * This is what makes v1's entire gotcha class structurally impossible:
+ * "GameScene has a scene-level pointerdown that swings on ANY tap, so corner
+ * HUD buttons must call stopPropagation or tapping pause also swings the bat."
+ * ------------------------------------------------------------------------- */
+#hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+    env(safe-area-inset-bottom) env(safe-area-inset-left);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    'topleft  top     topright'
+    'left     center  right'
+    'bottom   bottom  bottom';
+}
+
+#hud .interactive {
+  pointer-events: auto;
+}
+
+#screens {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: none;
+}
+#screens.open {
+  display: block;
+}
+
+#toasts {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+}
+
+/* ---- Minimum tap target, enforced once rather than per-component ---- */
+.interactive {
+  min-inline-size: var(--tap-min);
+  min-block-size: var(--tap-min);
+}
+
+/* ---- Dev readouts (?dev=1) ---- */
+#devstats {
+  position: absolute;
+  top: var(--s2);
+  left: var(--s2);
+  z-index: 40;
+  margin: 0;
+  padding: var(--s2) var(--s3);
+  border-radius: var(--radius);
+  background: rgb(20 32 46 / 0.78);
+  color: var(--cream);
+  font:
+    500 0.72rem/1.45 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
+  white-space: pre;
+  pointer-events: none;
+}

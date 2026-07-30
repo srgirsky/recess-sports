@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Recess Sports</title>
+    <!--
+      NOTE the `../fonts/` path. With Vite's relative base, URLs on this page
+      resolve against /v2/, so the site-root font would 404 as /v2/fonts/.
+    -->
+    <style>
+      @font-face {
+        font-family: 'Fredoka';
+        font-style: normal;
+        font-weight: 400 700;
+        font-display: swap;
+        src: url('../fonts/fredoka.woff2') format('woff2');
+      }
+    </style>
+    <link rel="stylesheet" href="../src/v2/ui/styles/tokens.css" />
+    <link rel="stylesheet" href="../src/v2/ui/styles/app.css" />
+  </head>
+  <body>
+    <div id="app">
+      <!-- The 3D world. The ONLY element that listens for pointer input. -->
+      <canvas id="stage"></canvas>
+      <!--
+        HUD is pointer-events:none; only children marked .interactive opt in.
+        That one rule is what makes every non-HUD tap fall through to the
+        canvas by construction — no hit-testing, no stopPropagation discipline.
+      -->
+      <div id="hud" aria-live="polite"></div>
+      <div id="screens"></div>
+      <div id="toasts"></div>
+    </div>
+    <script type="module" src="../src/v2/main.ts"></script>
+  </body>
+</html>
