@@ -687,12 +687,49 @@
         "actual": "3.90% at the 3.105ft drawn crown",
         "nowTrue": "5.02%. PLAY sits 115.0ft out at 46deg vertical FOV, so the frame is 97.63ft tall at the focus; a 4.0ft kid drawn at 1.6x is 6.40ft, foreshortened by cos(40deg) to 4.90ft = 5.02% of frame, i.e. 40.2px on an 800px viewport. The brief's 'about 5% of screen height' and 'readable at 40px tall' are only simultaneously true after the fix."
       },
-      "fix": "The whole bone table was rescaled by 4.0/3.4 and re-rounded so the chain sums to exactly 4.000 (1.671 + 0.212 + 0.235 + 0.235 + 0.188 + 0.165 + 1.294). Proportions are unchanged -- the head still spans 32.4% of the crown against the contract's '~30%'. ProxyCharacter now DERIVES its head radius from the crown, so the drawn silhouette lands on HeadTop_End by construction, and its other primitive dimensions were scaled by the same factor.",
+      "fix": "The whole bone table was rescaled by 4.0/3.4 and re-rounded so the chain sums to exactly 4.000 (1.671 + 0.212 + 0.235 + 0.235 + 0.188 + 0.165 + 1.294). Proportions of the BONE CHAIN are unchanged -- the Head joint still sits at 32.35% of the crown, against the contract's '~30%'. ProxyCharacter now DERIVES its head radius from the crown, so the drawn silhouette lands on HeadTop_End by construction, and its other primitive dimensions were scaled by the same factor.",
+      "correctedClaim": "That 'proportions are unchanged' sentence was true of the BONE CHAIN and was read as a statement about the DRAWING, which it was not: the drawn head sphere was 36.97% of body height, not 32.35%, because HEAD_RISE 0.75 reached the crown by hanging the sphere below the Head joint. Corrected 2026-07-30 -- see render.proxySilhouette. The class of error is this record's own: a number nothing computed, believed because a nearby number was checked.",
       "pinnedBy": "src/v2/render/skeleton.test.ts asserts crownHeightFt(SKELETON) === REFERENCE_HEIGHT_FT exactly, that the reference sits inside [HEIGHT_MIN_FT, HEIGHT_MAX_FT], and -- the one that actually failed -- that a built ProxyCharacter's world bounding box tops out at heightFt * CHARACTER_SCALE within 2%. scripts/v2/validate-models.mjs applies the same height rule to every delivered model.",
       "alsoFixed": "ProxyCharacter defaulted body.height to 1.0, the TOP of v1's authored 0.82-1.0 band, so the six kids in characters.ts with no authored height were each the tallest child in the game at 4.4ft. The default is now the band centre, which maps to exactly 4.000ft.",
       "n": 0,
       "confidence": "n/a",
       "informs": "src/v2/render/skeleton.ts REFERENCE_HEIGHT_FT and SKELETON, src/v2/render/ProxyCharacter.ts CHARACTER_SCALE"
+    },
+    "proxySilhouette": {
+      "id": "render.proxy-silhouette",
+      "category": "render",
+      "status": "note",
+      "statusChangedAt": "2026-07-30",
+      "what": "The rig summed to the height it claimed and the proxy STILL drew a bobblehead. Four drawn-silhouette errors that the bounding-box test could not see, because it measures a single point (the topmost vertex) of a single fixture (bald, no accessory).",
+      "found": {
+        "head": "The head sphere drew 1.479ft -- 36.97% of body height -- against a bone chain that puts the head at 32.35% and a commission brief that tells the animator '~30%'. HEAD_RISE 0.75 put the sphere's centre only 0.75 radii above the Head joint, so it reached the crown by hanging below the joint. The height test passed the whole time: the sphere's TOP was always right.",
+        "torso": "ball(at, r, scale)'s third argument is a dimensionless SCALE, and the torso handed one axis a LENGTH: x and z divided the desired half-extent by the 0.424 sphere radius, y did not. The trunk drew 0.49ft tall against 1.18ft wide.",
+        "neck": "Nothing was bound to the Neck or Spine2 bones at all, leaving 0.228ft of open air between a torso ending at 2.293 and a head starting at 2.521 -- invisible only because the head was big enough to cover it. It also meant every head-turn key in the clip library drove nothing visible.",
+        "hair": "No hair style and no accessory was measured by any test, because the fixture is hair:'bald', accessory:'none' -- 44 of 44 combinations unmeasured. That hid an afro standing 14.2% of body height above HeadTop_End, and a `spiky` whose absolute-sized cones sat INSIDE the skull, collapsing one of eleven silhouettes onto another."
+      },
+      "whyItMattered": "The proxy is not a placeholder that goes away. It is the acceptance test for the skeleton spec, the permanent LOD3, the fallback when a model fails to load, and -- until the commissioned models land -- the ONLY character anyone sees. render.characterPresence's residual argues the missing presence must come from character DESIGN: 'saturated colour, heavy contour, readable silhouette'. Silhouette was the one of the three that was measurably wrong, on the surface where the animation brief's acceptance criteria are judged.",
+      "derivation": {
+        "headJointFt": 2.706,
+        "crownFt": 4.0,
+        "boneHeadSpanPct": 32.35,
+        "drawnHeadSpanPctBefore": 36.97,
+        "drawnHeadSpanPctAfter": 32.35,
+        "headRiseBefore": 0.75,
+        "headRise": 1.0,
+        "torsoFtBefore": [1.801, 2.293],
+        "torsoFt": [1.621, 2.531],
+        "neckFt": [2.413, 2.803],
+        "hairHeadroomFrac": 0.04,
+        "hairOvershootPctBefore": { "afro": 14.2, "mohawk": 4.6, "bun": 2.2, "long": 1.6, "spiky": 0.0 },
+        "hairOvershootPctAfter": { "afro": 3.54, "spiky": 3.64, "mohawk": 3.15, "bun": 1.94, "long": 1.38 },
+        "trianglesPerKid": { "before": 2936, "after": 3448 }
+      },
+      "fix": "HEAD_RISE = 1.0, which needs no justification beyond its arithmetic: the centre sits exactly one radius above the Head joint, so the sphere spans Head -> HeadTop_End, the segment the bone table already calls the head. The radius is derived against headH as well, so a headH 1.08 kid no longer draws its crown 1.5% above the bone that defines its height. A blob() helper states ellipsoids in half-extents so no axis can be handed the wrong kind of number, and the torso is bounded by bind-pose landmarks (shoulder joint, pelvis) instead of magic numbers. A neck capsule bridges Spine2 -> Head on the Neck bone. Hair and accessories were re-anchored to the head SPHERE rather than the Head BONE first -- provably a no-op at the old HEAD_RISE, and mandatory, since anchoring off the bone meant changing HEAD_RISE would have slid every cap a quarter-radius down the skull and put a bald patch on eleven hair styles. Hair keeps a headroom budget (HAIR_HEADROOM_FRAC) instead of a hard cap, because height is defined on the BONE and an afro that stops at the skull is not an afro.",
+      "alsoFixed": "The proxy had nothing at all on the front of its head, so at the animation review page's own criterion 4 ('readable at 40px tall') a kid was rotationally ambiguous and a clip authored 180 degrees backwards would have looked fine. Two eyes, two brows and a nose, on the Head bone at 8x6 segments: a FACING CUE, not a face. Expression stays where the contract puts it -- the face_atlas texture on the delivered models -- and there is deliberately no mouth.",
+      "pinnedBy": "src/v2/render/skeleton.test.ts 'the proxy draws a kid, not a bobblehead': the silhouette budget across all 11 hair styles x 4 accessories (both a ceiling and, for the styles made of height, a FLOOR -- a ceiling alone cannot see a spike buried in the skull); solid-span ray casts through the merged buffer for body continuity, accumulated by winding depth because the parts deliberately interpenetrate; the drawn head span asserted against the BONE span so the drawing and the brief cannot diverge again; and the crown checked on all 30 kids, not the average one. Every one of those was verified to FAIL against the code it replaced.",
+      "n": 0,
+      "confidence": "n/a",
+      "informs": "src/v2/render/ProxyCharacter.ts HEAD_RISE and HAIR_HEADROOM_FRAC"
     },
     "runCadence": {
       "id": "render.run-cadence",

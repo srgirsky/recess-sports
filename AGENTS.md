@@ -84,6 +84,34 @@ continuous across a v1↔v2 switch in the same browser.
   and stride, foot plants and dive travel are all authored in absolute feet.
   `render.rigHeight` in `measures.json` has the arithmetic. Corollary: the proxy
   DERIVES its head radius from the crown; never hardcode it back.
+- **★ Summing to the right height did NOT make the drawing right, and the
+  bounding-box test could not tell.** It measures one point (the topmost vertex)
+  of one fixture (`hair: 'bald', accessory: 'none'`), so it stayed green over a
+  head that drew **37% of body height** against a bone chain and a commission
+  brief that both say ~32%; a torso **0.49ft tall and 1.18ft wide** (`ball(at, r,
+  scale)`'s third argument is a dimensionless SCALE and one axis was handed a
+  LENGTH — use `blob()`, which takes half-extents, for anything sized in feet);
+  **0.228ft of open air** where the neck goes, because nothing was bound to
+  `Neck` or `Spine2` at all; and **44 of 44 hair × accessory combinations
+  measured by nothing**, which hid an afro standing 14.2% of a body above the
+  crown and a `spiky` whose cones sat INSIDE the skull. Four rules now, all in
+  `skeleton.test.ts` § "the proxy draws a kid, not a bobblehead", all verified to
+  fail against the code they replaced: the drawn head span must equal the BONE
+  span (`HEAD_RISE = 1.0` — the sphere centre one radius above the `Head` joint,
+  so it spans `Head → HeadTop_End`, and the radius is derived against `headH` too
+  so no kid's crown floats off its own bone); hair gets a headroom BUDGET
+  (`HAIR_HEADROOM_FRAC`, 4% of body height — height is defined on the bone, and an
+  afro that stops at the skull is not an afro) with a FLOOR as well as a ceiling,
+  since a ceiling alone cannot see a buried spike; the body must be vertically
+  continuous under a solid-span ray cast; and **hair and accessories anchor to the
+  head SPHERE, never the `Head` bone** — off the bone they only line up for one
+  value of `HEAD_RISE`, so changing it would have slid every cap a quarter-radius
+  down the skull and put a bald patch on eleven styles. `render.proxySilhouette`
+  has the numbers. The proxy also carries a FACING CUE (eyes, brows, nose) and
+  never a face: expression is the `face_atlas` texture on the delivered models,
+  and there is deliberately no mouth. It is there because a featureless head is
+  rotationally ambiguous at 40px, so the review page could not have caught a clip
+  authored backwards.
 - **The clip library is `src/v2/render/clips.ts`, and the two v2 docs are
   MIRRORS of it.** 35 clips with frame counts, loop flags, marker frames,
   authored ground speeds, body travel and a settle graph. `clips.test.ts` parses
@@ -118,7 +146,10 @@ continuous across a v1↔v2 switch in the same browser.
   ships crude stand-ins for all 35 names, so the director, the marker warp, the
   loop-seam check and the review page all run today, and a delivery replaces
   them CLIP BY CLIP (the director prefers a delivered clip by name). Watch them
-  at `/v2/?anims=1`.
+  at `/v2/?anims=1`. That page labels the clip under REVIEW and the clip actually
+  PLAYING separately: a one-shot settles into its `returnsTo` when it ends (which
+  is criterion 2, so it must not be suppressed), and counting the settle clip's
+  time against the reviewed clip's frame count is what printed `frame 33 / 24`.
 - **Outline hulls are SIBLINGS, never children.** A skinned hull parented under
   its skinned mesh inherits the already-posed world matrix and skins a second
   time — every character renders as a solid navy blob. `attachOutline` throws if

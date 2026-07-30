@@ -143,7 +143,7 @@ from the delivered file.
 
 These are **six-to-eight-year-olds at recess**, not professional athletes.
 
-- **Heavy heads, light bodies.** The head is ~30% of total height. Momentum
+- **Heavy heads, light bodies.** The head is 32% of total height. Momentum
   should read: the head leads a turn and settles last, and every stop has a
   little overshoot.
 - **Big anticipation, big follow-through.** Small kids wind up too much and

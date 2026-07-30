@@ -37,7 +37,7 @@ import { buildSky } from '../render/Sky';
 import { ProxyCharacter } from '../render/ProxyCharacter';
 import { AnimationDirector } from '../render/AnimationDirector';
 import { buildProceduralClips } from '../render/proceduralClips';
-import { CLIPS, FPS, type AnimName, type ClipSpec } from '../render/clips';
+import { CLIPS, FPS, clipSpec, type AnimName, type ClipSpec } from '../render/clips';
 
 /** The three rates the brief requires loops to survive. */
 const RATES = [0.6, 1.0, 1.4] as const;
@@ -66,6 +66,8 @@ export class AnimSpike {
   private readoutEl: HTMLElement | null = null;
   private markerFlash = 0;
   private lastClipTime = 0;
+  private lastPlaying: AnimName | null = null;
+  private lastReadout = '';
   private readonly size = new Vector2();
 
   constructor(private readonly canvas: HTMLCanvasElement) {
@@ -116,17 +118,37 @@ export class AnimSpike {
     this.playCurrent();
   }
 
+  /** The clip the reviewer SELECTED. */
   private get spec(): ClipSpec {
     return CLIPS[this.clipIndex] as ClipSpec;
+  }
+
+  /**
+   * Reviewed vs actually playing — they diverge, and the readout used to lie
+   * about it.
+   *
+   * A one-shot ends and the director plays its `returnsTo` clip. The readout
+   * kept counting that clip's time against the REVIEWED clip's frame count, so
+   * `throw_overhand` (24f) settling into `field_ready` (40f) displayed "frame
+   * 33 / 24" — a counter past its own maximum, which reads as a broken clip
+   * rather than as the settle it is.
+   */
+  private get live(): { reviewed: ClipSpec; playing: ClipSpec; settled: boolean } {
+    const reviewed = this.spec;
+    const name = this.director?.playing ?? null;
+    const playing = name ? clipSpec(name) : reviewed;
+    return { reviewed, playing, settled: playing.name !== reviewed.name };
   }
 
   private playCurrent(): void {
     const spec = this.spec;
     this.director.play(spec.name as AnimName, { rate: this.rate, restart: true });
-    // A one-shot must not settle away mid-review — the reviewer decides when
-    // to move on. `hold` only cancels the callback; the settle blend still
-    // runs, which is the thing criterion 2 is about.
+    // We deliberately let a one-shot settle away rather than `hold()`ing it:
+    // criterion 2 IS the settle ("plays without popping into what it settles
+    // into"), so suppressing it would suppress the thing under review. The
+    // readout says which clip is on screen — see `live`.
     this.lastClipTime = 0;
+    this.lastPlaying = spec.name as AnimName;
     this.markerFlash = 0;
     this.refreshList();
   }
@@ -288,37 +310,61 @@ export class AnimSpike {
   }
 
   private readout(): void {
-    const spec = this.spec;
+    const { reviewed, playing, settled } = this.live;
     const action = this.director.action;
     const t = action ? action.time : 0;
     const frame = Math.floor(t * FPS);
 
-    // Flash on the marker frame. Wrapping back to 0 means the clip looped.
-    if (spec.marker) {
+    // Flash on the marker frame — of whatever is ON SCREEN. Wrapping back to 0
+    // means the clip looped; so does crossing into the settle clip, which
+    // starts at 0 and would otherwise read as a loop wrap.
+    if (playing.name !== this.lastPlaying) {
+      this.lastClipTime = 0;
+      this.markerFlash = 0;
+      this.lastPlaying = playing.name as AnimName;
+    }
+    if (playing.marker) {
       if (t < this.lastClipTime) this.markerFlash = 0;
-      if (frame === spec.marker.frame) this.markerFlash = 1;
+      if (frame === playing.marker.frame) this.markerFlash = 1;
       else this.markerFlash = Math.max(0, this.markerFlash - 0.06);
+    } else {
+      this.markerFlash = 0;
     }
     this.lastClipTime = t;
 
     if (this.readoutEl) {
       const flash = this.markerFlash > 0.05;
-      const markerText = spec.marker ? ` · ${spec.marker.name}@${spec.marker.frame}` : '';
-      this.readoutEl.innerHTML =
-        `<div style="font-size:1.15rem">${spec.name}</div>` +
-        `<div style="opacity:.8">frame ${String(frame).padStart(2)} / ${spec.frames} · ${this.rate.toFixed(1)}×${markerText}</div>` +
+      const m = playing.marker;
+      const markerText = m ? ` · ${m.name}@${m.frame}` : '';
+      const title = settled
+        ? `${reviewed.name} <span style="opacity:.55">→ ${playing.name}</span>`
+        : reviewed.name;
+      const html =
+        `<div style="font-size:1.15rem">${title}</div>` +
+        `<div style="opacity:.8">frame ${String(frame).padStart(2)} / ${playing.frames} · ${this.rate.toFixed(1)}×${markerText}</div>` +
+        (settled ? '<div style="opacity:.55;font-size:.78rem">SETTLED</div>' : '') +
         (flash ? '<div style="color:#ffd34d">◉ MARKER</div>' : '');
+      // This page exists to judge smoothness, so it must not relayout the HUD
+      // on every frame just to write the same string back.
+      if (html !== this.lastReadout) {
+        this.readoutEl.innerHTML = html;
+        this.lastReadout = html;
+      }
     }
 
     if (!this.statsEl) return;
     const s = this.renderer.stats();
-    const seam = spec.loop ? this.seamError() : null;
+    // Seam is a property of what is LOOPING on screen. Reviewing a one-shot
+    // therefore shows no seam until it settles, and then shows the seam of the
+    // loop it settled into — which is the seam that would pop forever in game.
+    const seam = playing.loop ? this.seamError() : null;
     this.statsEl.textContent =
-      `clip   ${spec.name}${this.director.isProcedural(spec.name) ? '  (procedural stand-in)' : '  (delivered)'}\n` +
-      `frames ${spec.frames}  loop ${spec.loop ? 'yes' : 'no'}  blend ${spec.blendMs}ms` +
-      `${spec.returnsTo ? `  settles into ${spec.returnsTo}` : ''}\n` +
-      (spec.authoredSpeedFts ? `speed  authored ${spec.authoredSpeedFts} ft/s\n` : '') +
-      (spec.bodyTravelFt !== undefined ? `travel ${spec.bodyTravelFt} ft\n` : '') +
+      `clip   ${reviewed.name}${this.director.isProcedural(reviewed.name) ? '  (procedural stand-in)' : '  (delivered)'}\n` +
+      (settled ? `now    ${playing.name}  (settled via returnsTo)\n` : '') +
+      `frames ${playing.frames}  loop ${playing.loop ? 'yes' : 'no'}  blend ${playing.blendMs}ms` +
+      `${playing.returnsTo ? `  settles into ${playing.returnsTo}` : ''}\n` +
+      (playing.authoredSpeedFts ? `speed  authored ${playing.authoredSpeedFts} ft/s\n` : '') +
+      (playing.bodyTravelFt !== undefined ? `travel ${playing.bodyTravelFt} ft\n` : '') +
       (seam !== null ? `seam   ${seam.toFixed(4)} rad  ${seam < 1e-3 ? '(closed)' : '(OPEN — will pop)'}\n` : '') +
       `fps ${s.fps.toFixed(0)}  p95 ${s.p95Ms.toFixed(1)}ms  draws ${s.drawCalls}  tris ${(s.triangles / 1000).toFixed(1)}k`;
   }
