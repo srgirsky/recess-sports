@@ -22,6 +22,14 @@ export const MOUND: Vec = { x: 480, y: 388 };
 export const FENCE_Y = 210;
 
 /**
+ * ONE basepath leg (px). Every size-coupled tunable is expressed against this
+ * rather than as a bare pixel count, so a change to the diamond can't silently
+ * leave a constant behind. `pace.homeToFirst` conforms 179.64px / 42.8px/s to
+ * BB's measured 4200ms.
+ */
+export const BASEPATH_PX = Math.hypot(FIRST.x - HOME.x, HOME.y - FIRST.y);
+
+/**
  * Foul-line slope: x-per-y from home out through 1B/3B (138/115 = 1.2). The
  * foul poles derive from this per venue, so the drawn lines pass exactly
  * through the bags no matter where a venue's fence sits.
