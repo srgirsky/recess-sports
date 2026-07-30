@@ -33,9 +33,17 @@ character #31 cheap. Every hard rule below exists to protect that.
 | **Height** | floor to `HeadTop_End`, **3.6–4.4 ft** (see the per-kid manifest); the reference rig is exactly **4.0 ft** |
 | **Format** | glTF 2.0 binary (`.glb`), single scene, single skin |
 
-Head is roughly **30% of total height** — toy-chibi, but deliberately less
-extreme than the 2D art it replaces (~45%). At real 3D depth an oversized head
-stops reading as stylised and starts reading as a bobblehead.
+Head is **32% of total height** — the `Head` joint sits at 2.706 ft on the 4.0 ft
+reference rig, so the head is the segment from there to `HeadTop_End`. Toy-chibi,
+but deliberately less extreme than the 2D art it replaces (~45%). At real 3D
+depth an oversized head stops reading as stylised and starts reading as a
+bobblehead. (This said "~30%" while the engine's own proxy drew 37%; both now
+say what the bone table says. See `render.proxySilhouette` in
+`scripts/measures.json`.)
+
+**Height is measured on the BONE, never on the mesh.** Hair may rise above
+`HeadTop_End` — up to 4% of body height, so an afro is still an afro — but body
+geometry may not, and neither may a hat.
 
 ---
 

@@ -135,6 +135,27 @@ buys 35 clips whose every distance is 17% wrong, discovered after the invoice.
 Fixed, and now pinned by a test that asserts the sum exactly and the drawn
 bounding box within 2% — see `render.rigHeight`.
 
+**Then the same instrument, pointed one layer down at the DRAWING rather than
+the bone table, found four more** (2026-07-30). The bounding-box test measures a
+single point of a single bald fixture, so it stayed green over a head drawn at
+37% of body height against a brief that says 32%, a torso 0.49 ft tall and 1.18
+ft wide (an ellipsoid axis handed a length where the API wanted a scale factor),
+0.228 ft of open air where the neck goes — nothing was bound to the `Neck` bone
+at all — and 44 of 44 hair × accessory combinations measured by nothing, which
+hid an afro standing 14.2% of a body above the crown and a `spiky` whose cones
+sat inside the skull, collapsing one of eleven silhouettes onto another. The
+proxy is not disposable: it is the acceptance test for the skeleton spec, the
+permanent LOD3, the load-failure fallback, and until models land it is the only
+character anyone sees — so "readable silhouette", the presence
+`render.characterPresence` says must come from design rather than size, was the
+one term that was measurably wrong. Fixed and pinned across every style, and the
+proxy now carries a facing cue (eyes and nose, never a mouth — expression is a
+texture on the delivered models) because a featureless head is rotationally
+ambiguous at 40 px, which is precisely the size the review page judges at. The
+neck and the face cost 512 triangles a kid (2,936 → 3,448, +17%); the Look Spike
+measures 46 draws / 89.2k triangles against the 90 / 180k budget. See
+`render.proxySilhouette`.
+
 Next: the pure sim core and its statistical conformance harness (headless, no art,
 no graphics), which asserts emergent BABIP / launch-angle split / exit-velocity
 percentiles against real baseball bands instead of pinning constants.

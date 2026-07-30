@@ -84,16 +84,41 @@ export const CHARACTER_SCALE = 1.6;
  * The head is the ONE primitive whose size is not free: it decides where the
  * drawn silhouette ends, and the rig's `HeadTop_End` is the contractual
  * definition of a character's height. So the radius is DERIVED from the crown
- * (`r = (crown - headY) / (1 + HEAD_RISE)`) rather than picked, and the drawn
- * kid tops out exactly on the bone by construction.
+ * (`r = (crown - headY) / (HEAD_RISE + headH)`) rather than picked, and the
+ * drawn kid tops out exactly on the bone by construction.
  *
  * It used to be a hardcoded 0.46 against a bone chain that reached 3.4ft, so a
  * "4.0ft" proxy actually drew 3.105ft — a 22% shortfall that made
  * `render.characterPresence`'s "~5% of frame height" residual really 3.9%.
  * `skeleton.test.ts` measures the built mesh's bounding box now, so drawn
  * height and claimed height cannot drift apart again.
+ *
+ * ★ AND IT WAS 0.75, WHICH FIXED THE HEIGHT AND KEPT THE BOBBLEHEAD. At 0.75
+ * the sphere reaches the crown only by hanging three quarters of a radius BELOW
+ * the Head joint, so the drawn head spanned 1.479ft — **37.0% of body height**,
+ * against a bone chain that puts the head at 32.4% and a commission brief
+ * (`docs/v2/asset-contract.md`, `docs/v2/animation-brief.md`) that tells the
+ * animator ~30%. The proxy was drawing bigger than the number the artists are
+ * given, on the one axis the whole spec is about.
+ *
+ * 1.0 is the value that needs no explanation: the centre sits exactly one
+ * radius above the Head joint, so the sphere spans `Head → HeadTop_End` — the
+ * segment the bone table already calls "the head". Drawn and bone proportions
+ * are then the same number, and `skeleton.test.ts` asserts they stay that way.
  */
-const HEAD_RISE = 0.75;
+export const HEAD_RISE = 1.0;
+
+/**
+ * ★ How far hair may rise above `HeadTop_End`, as a fraction of body height.
+ *
+ * Not zero: a character's height is defined on the BONE, so hair legitimately
+ * stands above it — an afro that stops at the skull is not an afro. But the
+ * drawn crown is what `render.characterPresence` makes a claim about, and the
+ * afro was overshooting by 14.2% of body height, half a head of hair above the
+ * top of the kid. Nothing could see it: the bounding-box test's fixture is
+ * `hair: 'bald'`, so all 11 styles and all 4 accessories went unmeasured.
+ */
+export const HAIR_HEADROOM_FRAC = 0.04;
 
 // --- Bind-pose bookkeeping --------------------------------------------------
 
@@ -150,11 +175,26 @@ function limb(a: Vector3, b: Vector3, r: number): BufferGeometry {
   return g;
 }
 
-function ball(at: Vector3, r: number, scale = new Vector3(1, 1, 1)): BufferGeometry {
-  const g = new SphereGeometry(r, 14, 10);
+function ball(at: Vector3, r: number, scale = new Vector3(1, 1, 1), seg = 14, rings = 10): BufferGeometry {
+  const g = new SphereGeometry(r, seg, rings);
   g.scale(scale.x, scale.y, scale.z);
   g.translate(at.x, at.y, at.z);
   return g;
+}
+
+/**
+ * ★ An ellipsoid stated in HALF-EXTENTS (feet) rather than radius × factor.
+ *
+ * `ball`'s third argument is a dimensionless SCALE, and the torso handed one
+ * axis a length instead: `new Vector3(torsoW / 0.424, (chest.y - hips.y) * 0.85,
+ * (torsoW * 0.72) / 0.424)` divides x and z by the sphere radius to convert a
+ * half-extent into a factor, and y does not. The torso therefore drew 0.49ft
+ * tall against 1.18ft wide — a pancake, and the reason the proxy read as a head
+ * balanced on nothing. Anything sized in real feet goes through here, where the
+ * units are in the name and no axis can be handed the wrong kind of number.
+ */
+function blob(at: Vector3, hx: number, hy: number, hz: number): BufferGeometry {
+  return ball(at, 1, new Vector3(hx, hy, hz));
 }
 
 function box(at: Vector3, w: number, h: number, d: number): BufferGeometry {
@@ -247,6 +287,24 @@ export interface ProxyOptions {
   outlines?: OutlineRegistry;
 }
 
+/**
+ * ★ What the builder actually DREW, in rig feet (before the per-kid root scale).
+ *
+ * Recorded rather than re-derived: the errors this file has shipped were all
+ * "the number in the comment is not the number in the geometry", so the test
+ * reads the same locals the primitives were built from. Restating the arithmetic
+ * in the test would just be a second place for it to be wrong.
+ */
+export interface ProxyProportions {
+  headTopFt: number;
+  headBottomFt: number;
+  neckTopFt: number;
+  neckBottomFt: number;
+  torsoTopFt: number;
+  torsoBottomFt: number;
+  torsoHalfWidthFt: number;
+}
+
 export class ProxyCharacter {
   readonly root = new Group();
   readonly mesh: SkinnedMesh;
@@ -254,6 +312,7 @@ export class ProxyCharacter {
   readonly bones: Bone[];
   /** Actual height, floor to crown, in feet. */
   readonly heightFt: number;
+  readonly proportions: ProxyProportions;
 
   constructor(visual: VisualParams, opts: ProxyOptions = {}) {
     const b = visual.body ?? {};
@@ -298,28 +357,65 @@ export class ProxyCharacter {
     // Derived, never picked: the sphere's top lands on HeadTop_End. Deriving
     // it AFTER the neck offset also makes total height invariant to the neck
     // knob — a longer neck gives a slightly smaller head, not a taller kid.
-    const headR = (crownHeightFt() - head.y) / (1 + HEAD_RISE);
+    // `headH` is in the denominator because it scales the sphere's Y radius: a
+    // headH 1.08 kid used to draw its crown 1.5% ABOVE the bone that defines
+    // its height, inside the test band but leaking all the same.
+    const headR = (crownHeightFt() - head.y) / (HEAD_RISE + headH);
+    const headC = head.clone().add(new Vector3(0, headR * HEAD_RISE, 0));
     parts.push({
-      geom: ball(head.clone().add(new Vector3(0, headR * HEAD_RISE, 0)), headR, new Vector3(headW, headH, headW * 0.95)),
+      geom: ball(headC, headR, new Vector3(headW, headH, headW * 0.95)),
       bone: 'Head',
       color: skinC,
     });
-    parts.push(...hairParts(visual.hair, head, headR, headW, headH, hairC));
-    parts.push(...accessoryParts(visual.accessory, head, headR, headW, headH, jersey));
+    parts.push(...hairParts(visual.hair, headC, headR, headW, headH, hairC));
+    parts.push(...accessoryParts(visual.accessory, headC, headR, headW, headH, jersey));
+    parts.push(...facingCue(headC, headR, headW, headH, skinC));
 
     // ---- Torso ----
+    // Bounded by BIND-POSE LANDMARKS rather than magic numbers: the ellipsoid's
+    // top pole clears the shoulder joints and its bottom sinks into the pelvis
+    // ball, so the trunk is continuous with both by construction.
     const hips = at('Hips');
     const chest = at('Spine2');
+    const torsoTop = at('LeftShoulder').y + 0.06;
+    const torsoBot = hips.y - 0.05;
     const torsoW = 0.59 * shoulder;
     parts.push({
-      geom: ball(
-        new Vector3(0, (hips.y + chest.y) / 2 + 0.035, 0),
-        0.424,
-        new Vector3(torsoW / 0.424, (chest.y - hips.y) * 0.85, (torsoW * 0.72) / 0.424)
+      geom: blob(
+        new Vector3(0, (torsoTop + torsoBot) / 2, 0),
+        torsoW,
+        (torsoTop - torsoBot) / 2,
+        torsoW * 0.72
       ),
       bone: 'Spine1',
       color: jersey,
     });
+
+    // ---- Neck ----
+    // Nothing was bound to `Neck` or `Spine2` at all, which left 0.23ft of open
+    // air between the torso and the head — invisible only because the head was
+    // big enough to hide it — and meant every head-turn key in the clip library
+    // drove nothing the eye could see. Both endpoints are pushed INSIDE the
+    // parts they join (`limb` spans exactly a→b, it does not cap past them), so
+    // the join stays closed for every `neck` and `headH` a kid can carry.
+    const neckR = headR * 0.25;
+    const neckBot = chest.y + 0.06;
+    const neckTop = head.y + headR * 0.15;
+    parts.push({
+      geom: limb(new Vector3(0, neckBot, 0), new Vector3(0, neckTop, 0), neckR),
+      bone: 'Neck',
+      color: skinC,
+    });
+
+    this.proportions = {
+      headTopFt: headC.y + headR * headH,
+      headBottomFt: headC.y - headR * headH,
+      neckTopFt: neckTop,
+      neckBottomFt: neckBot,
+      torsoTopFt: torsoTop,
+      torsoBottomFt: torsoBot,
+      torsoHalfWidthFt: torsoW,
+    };
     // Belly rounds the lower torso — v1's `belly` knob, in 3D.
     if (belly > 0.05) {
       parts.push({
@@ -393,20 +489,48 @@ export class ProxyCharacter {
 // --- Hair + accessories ------------------------------------------------------
 
 /**
+ * ★ Where hair and hats hang, expressed against the head SPHERE.
+ *
+ * They used to anchor off the Head BONE (`head + 0.95r`) while the skull sits at
+ * `head + HEAD_RISE·r`, so the two only lined up for one particular value of
+ * `HEAD_RISE`. Changing that constant — exactly what fixing the bobblehead
+ * required — would have slid every cap a quarter-radius down the skull and put a
+ * bald patch on the crown of eleven hair styles, with no test able to see it.
+ * Anchored to the sphere, hair scales with the head and `HEAD_RISE` stops being
+ * secretly load-bearing for the whole hair system.
+ *
+ * `crown` is the top of the skull-hugging cap; `jaw` is the low anchor a
+ * ponytail, pigtails and glasses hang from. The offsets (+0.20r, −0.75r) are the
+ * old ones re-expressed, so the re-anchor was a pixel-for-pixel no-op.
+ */
+function headAnchors(c: Vector3, r: number): { crown: Vector3; jaw: Vector3 } {
+  return {
+    crown: c.clone().add(new Vector3(0, r * 0.2, 0)),
+    jaw: c.clone().add(new Vector3(0, -r * 0.75, 0)),
+  };
+}
+
+/**
  * Hair as primitives. Crude by design — these are proxies — but the SILHOUETTE
  * has to differ per style, because silhouette is what makes 30 kids readable
  * at outfield distance, and reading them at distance is what the spike exists
  * to prove.
+ *
+ * Hair MAY rise above `HeadTop_End` — real hair adds height and the contract
+ * measures a character on the BONE, not the mesh — but only by
+ * `HAIR_HEADROOM_FRAC` of body height. Past that the silhouette stops being a
+ * kid with hair and becomes hair with a kid under it.
  */
 function hairParts(
   style: HairStyle,
-  head: Vector3,
+  /** ★ The head SPHERE's centre, not the Head bone — see `headAnchors`. */
+  c: Vector3,
   r: number,
   headW: number,
   headH: number,
   color: number
 ): Part[] {
-  const crown = head.clone().add(new Vector3(0, r * 0.95, 0));
+  const { crown, jaw } = headAnchors(c, r);
   const sx = headW;
   const sy = headH;
   const out: Part[] = [];
@@ -429,30 +553,40 @@ function hairParts(
       add(ball(crown, r * 0.95, new Vector3(sx, sy * 0.7, sx)));
       break;
     case 'afro':
-      add(ball(crown.clone().add(new Vector3(0, r * 0.22, 0)), r * 1.42, new Vector3(sx, sy * 0.95, sx)));
+      // Sat 14.2% of body height above the crown — half a head of hair above
+      // the top of the kid. Wider than the skull by 2.68r, so it still reads
+      // unmistakably as an afro; it just frames the face now instead of
+      // towering over it.
+      add(ball(crown.clone().add(new Vector3(0, -r * 0.08, 0)), r * 1.34, new Vector3(sx, sy * 0.82, sx)));
       break;
     case 'mohawk':
       add(ball(crown, r * 1.0, new Vector3(sx, sy * 0.5, sx)));
-      add(box(crown.clone().add(new Vector3(0, r * 0.55, -0.024)), 0.165, r * 1.0, r * 1.7));
+      // The fin's width was 0.165 ABSOLUTE feet in an otherwise r-relative
+      // system, so it stopped scaling the moment the head did.
+      add(box(crown.clone().add(new Vector3(0, r * 0.5, -0.024)), r * 0.26, r * 0.99, r * 1.7));
       break;
     case 'spiky': {
       add(ball(crown, r * 1.02, new Vector3(sx, sy * 0.66, sx)));
+      // ★ These spikes were BURIED. Absolute-size cones (0.106 × 0.353ft) at
+      // +0.42r topped out inside the skull, so `spiky` rendered as a plain cap
+      // — one of eleven silhouettes was a duplicate of `short`, on a proxy
+      // whose entire job is that 30 kids read apart at distance.
       for (let i = 0; i < 6; i++) {
         const a = (i / 6) * Math.PI * 2;
-        const g = new ConeGeometry(0.106, 0.353, 5);
-        g.translate(crown.x + Math.cos(a) * r * 0.42, crown.y + r * 0.42, crown.z + Math.sin(a) * r * 0.38);
+        const g = new ConeGeometry(r * 0.16, r * 0.55, 5);
+        g.translate(crown.x + Math.cos(a) * r * 0.42, crown.y + r * 0.75, crown.z + Math.sin(a) * r * 0.38);
         add(g);
       }
       break;
     }
     case 'ponytail':
       add(ball(crown, r * 1.06, new Vector3(sx, sy * 0.78, sx)));
-      add(ball(head.clone().add(new Vector3(0, r * 0.5, -r * 1.05)), r * 0.5, new Vector3(0.8, 1.5, 0.8)));
+      add(ball(jaw.clone().add(new Vector3(0, r * 0.5, -r * 1.05)), r * 0.5, new Vector3(0.8, 1.5, 0.8)));
       break;
     case 'pigtails':
       add(ball(crown, r * 1.06, new Vector3(sx, sy * 0.76, sx)));
       for (const sgn of [-1, 1]) {
-        add(ball(head.clone().add(new Vector3(sgn * r * 1.05, r * 0.42, -r * 0.2)), r * 0.42, new Vector3(0.85, 1.3, 0.85)));
+        add(ball(jaw.clone().add(new Vector3(sgn * r * 1.05, r * 0.42, -r * 0.2)), r * 0.42, new Vector3(0.85, 1.3, 0.85)));
       }
       break;
     case 'bun':
@@ -461,21 +595,69 @@ function hairParts(
       break;
     case 'long':
       add(ball(crown, r * 1.08, new Vector3(sx, sy * 0.82, sx)));
-      add(ball(head.clone().add(new Vector3(0, -r * 0.1, -r * 0.5)), r * 0.66, new Vector3(1.05, 1.5, 0.7)));
+      add(ball(jaw.clone().add(new Vector3(0, -r * 0.1, -r * 0.5)), r * 0.66, new Vector3(1.05, 1.5, 0.7)));
       break;
   }
   return out;
 }
 
+/**
+ * ★ A FACING CUE — two eyes and a nose. Not a face.
+ *
+ * The delivered models carry the face as a TEXTURE: `M_Body` with its own UV
+ * island and a 512² `face_atlas` of 12 expressions, swapped per cell
+ * (`docs/v2/asset-contract.md`). Nothing here is a spec change, and the line is
+ * drawn deliberately: no mouth, no expression, ever — that lives in the atlas.
+ *
+ * What this fixes is a review surface that could not review. The proxy had
+ * nothing on the front of its head, so at the animation page's own criterion 4
+ * ("readable at 40px tall") a kid was rotationally ambiguous and a clip authored
+ * 180° backwards would have looked completely fine. Which way a fielder is
+ * facing is the difference between charging and retreating, and it was the one
+ * thing the page could not show you.
+ */
+function facingCue(c: Vector3, r: number, headW: number, headH: number, skin: number): Part[] {
+  const out: Part[] = [];
+  const at = (x: number, y: number, z: number) => c.clone().add(new Vector3(x * r, y * r, z * r));
+  // ★ LOW on the skull, and that is not a style choice. The hair caps are
+  // authored large — a `short` cap hangs to 0.63 radii BELOW the sphere centre —
+  // so the only skin a kid actually shows is the bottom third of the head.
+  // Eyes at the anatomical middle sat inside the hair and read as two dents in
+  // a fringe. Brows are omitted for the same reason: on nine of eleven styles
+  // there is no lit skin left to put them on, and hair-coloured marks buried in
+  // hair are cost with no silhouette.
+  //
+  // Low segment counts on purpose: this lands on 18 kids in the Look Spike and
+  // on every LOD3 fielder in the game, where it must cost nothing.
+  for (const sgn of [-1, 1]) {
+    out.push({
+      geom: ball(at(sgn * 0.3 * headW, -0.4 * headH, 0.78), r * 0.13, undefined, 8, 6),
+      bone: 'Head',
+      color: 0x2b3440,
+    });
+  }
+  out.push({
+    geom: ball(at(0, -0.58 * headH, 0.74), r * 0.1, new Vector3(1, 0.9, 1.1), 8, 6),
+    bone: 'Head',
+    color: skin,
+  });
+  return out;
+}
+
+/**
+ * Worn ON the head, so unlike hair these get no headroom above the crown: a hat
+ * that stands proud of `HeadTop_End` is a hat drawn wrong, not a taller kid.
+ */
 function accessoryParts(
   acc: Accessory,
-  head: Vector3,
+  /** The head SPHERE's centre — see `headAnchors`. */
+  c: Vector3,
   r: number,
   headW: number,
   headH: number,
   teamColor: number
 ): Part[] {
-  const crown = head.clone().add(new Vector3(0, r * 0.95, 0));
+  const { crown, jaw } = headAnchors(c, r);
   switch (acc) {
     case 'cap': {
       const dome = ball(crown.clone().add(new Vector3(0, r * 0.14, 0)), r * 1.08, new Vector3(headW, headH * 0.6, headW));
@@ -488,14 +670,14 @@ function accessoryParts(
     case 'headband':
       return [
         {
-          geom: ball(head.clone().add(new Vector3(0, r * 0.62, 0)), r * 1.1, new Vector3(headW, headH * 0.16, headW)),
+          geom: ball(jaw.clone().add(new Vector3(0, r * 0.62, 0)), r * 1.1, new Vector3(headW, headH * 0.16, headW)),
           bone: 'Head',
           color: 0xffffff,
         },
       ];
     case 'glasses':
       return [-1, 1].map((sgn) => ({
-        geom: ball(head.clone().add(new Vector3(sgn * r * 0.34, r * 0.72, r * 0.82)), r * 0.24, new Vector3(1, 0.85, 0.35)),
+        geom: ball(jaw.clone().add(new Vector3(sgn * r * 0.34, r * 0.72, r * 0.82)), r * 0.24, new Vector3(1, 0.85, 0.35)),
         bone: 'Head',
         color: 0x2b3440,
       }));
