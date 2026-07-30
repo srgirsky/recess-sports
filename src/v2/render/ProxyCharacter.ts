@@ -49,6 +49,7 @@ import {
   HEIGHT_MIN_FT,
   REFERENCE_HEIGHT_FT,
   SKELETON,
+  crownHeightFt,
 } from './skeleton';
 import { hairHex, jerseyHex, skinHex, trimHex } from './materials/registry';
 import { makeToonMaterial } from './materials/toon';
@@ -76,6 +77,23 @@ import { clamp } from '../sim/units';
  * exaggerated. `purity.lint.test.js` keeps the sim from importing render/.
  */
 export const CHARACTER_SCALE = 1.6;
+
+/**
+ * ★ The head sphere's centre offset, as a fraction of its own radius.
+ *
+ * The head is the ONE primitive whose size is not free: it decides where the
+ * drawn silhouette ends, and the rig's `HeadTop_End` is the contractual
+ * definition of a character's height. So the radius is DERIVED from the crown
+ * (`r = (crown - headY) / (1 + HEAD_RISE)`) rather than picked, and the drawn
+ * kid tops out exactly on the bone by construction.
+ *
+ * It used to be a hardcoded 0.46 against a bone chain that reached 3.4ft, so a
+ * "4.0ft" proxy actually drew 3.105ft — a 22% shortfall that made
+ * `render.characterPresence`'s "~5% of frame height" residual really 3.9%.
+ * `skeleton.test.ts` measures the built mesh's bounding box now, so drawn
+ * height and claimed height cannot drift apart again.
+ */
+const HEAD_RISE = 0.75;
 
 // --- Bind-pose bookkeeping --------------------------------------------------
 
@@ -242,13 +260,20 @@ export class ProxyCharacter {
     // v1 authored `height` as a 0.82-1.0 scale; map that band onto the real
     // 3.6-4.4ft range so 30 existing kids get sensible real-world statures
     // with no content edits.
-    const hNorm = clamp(b.height ?? 1, 0.82, 1);
+    //
+    // The default is the MIDDLE of v1's authored band, not the top of it. The
+    // six kids in characters.ts with no `height` used to default to 1.0 and so
+    // came out at 4.4ft — every one of them the tallest child in the game,
+    // purely for lack of a content field.
+    const hNorm = clamp(b.height ?? 0.91, 0.82, 1);
     this.heightFt = HEIGHT_MIN_FT + ((hNorm - 0.82) / 0.18) * (HEIGHT_MAX_FT - HEIGHT_MIN_FT);
 
     const shoulder = clamp(b.shoulderW ?? 46, 36, 56) / 46;
     const hip = 1 + clamp(b.hipW ?? 0, -8, 10) / 46;
     const belly = clamp(b.belly ?? 0, 0, 1);
-    const neck = clamp(b.neck ?? 0, -6, 8) / 100;
+    // Feet, so it scales with the rig. (v1's px-derived /100 predates the
+    // 4.0ft rescale; /85 keeps the same visual travel at the new size.)
+    const neck = clamp(b.neck ?? 0, -6, 8) / 85;
     const headW = clamp(b.headW ?? 1, 0.9, 1.08);
     const headH = clamp(b.headH ?? 1, 0.9, 1.08);
 
@@ -270,9 +295,12 @@ export class ProxyCharacter {
     // ---- Head ----
     const head = at('Head');
     head.y += neck;
-    const headR = 0.46;
+    // Derived, never picked: the sphere's top lands on HeadTop_End. Deriving
+    // it AFTER the neck offset also makes total height invariant to the neck
+    // knob — a longer neck gives a slightly smaller head, not a taller kid.
+    const headR = (crownHeightFt() - head.y) / (1 + HEAD_RISE);
     parts.push({
-      geom: ball(head.clone().add(new Vector3(0, headR * 0.75, 0)), headR, new Vector3(headW, headH, headW * 0.95)),
+      geom: ball(head.clone().add(new Vector3(0, headR * HEAD_RISE, 0)), headR, new Vector3(headW, headH, headW * 0.95)),
       bone: 'Head',
       color: skinC,
     });
@@ -282,12 +310,12 @@ export class ProxyCharacter {
     // ---- Torso ----
     const hips = at('Hips');
     const chest = at('Spine2');
-    const torsoW = 0.5 * shoulder;
+    const torsoW = 0.59 * shoulder;
     parts.push({
       geom: ball(
-        new Vector3(0, (hips.y + chest.y) / 2 + 0.03, 0),
-        0.36,
-        new Vector3(torsoW / 0.36, (chest.y - hips.y) * 0.85, (torsoW * 0.72) / 0.36)
+        new Vector3(0, (hips.y + chest.y) / 2 + 0.035, 0),
+        0.424,
+        new Vector3(torsoW / 0.424, (chest.y - hips.y) * 0.85, (torsoW * 0.72) / 0.424)
       ),
       bone: 'Spine1',
       color: jersey,
@@ -295,31 +323,31 @@ export class ProxyCharacter {
     // Belly rounds the lower torso — v1's `belly` knob, in 3D.
     if (belly > 0.05) {
       parts.push({
-        geom: ball(new Vector3(0, hips.y + 0.16, 0.04), 0.3 * (1 + belly * 0.5), new Vector3(1, 0.78, 0.9)),
+        geom: ball(new Vector3(0, hips.y + 0.188, 0.047), 0.353 * (1 + belly * 0.5), new Vector3(1, 0.78, 0.9)),
         bone: 'Spine',
         color: jersey,
       });
     }
     parts.push({
-      geom: ball(new Vector3(0, hips.y, 0), 0.3 * hip, new Vector3(1, 0.7, 0.86)),
+      geom: ball(new Vector3(0, hips.y, 0), 0.353 * hip, new Vector3(1, 0.7, 0.86)),
       bone: 'Hips',
       color: pants,
     });
 
     // ---- Arms ----
     for (const side of ['Left', 'Right'] as const) {
-      parts.push({ geom: limb(at(`${side}Arm`), at(`${side}ForeArm`), 0.11), bone: `${side}Arm`, color: jersey });
-      parts.push({ geom: limb(at(`${side}ForeArm`), at(`${side}Hand`), 0.095), bone: `${side}ForeArm`, color: skinC });
-      parts.push({ geom: ball(at(`${side}Hand`), 0.125, new Vector3(1, 0.9, 0.85)), bone: `${side}Hand`, color: skinC });
+      parts.push({ geom: limb(at(`${side}Arm`), at(`${side}ForeArm`), 0.129), bone: `${side}Arm`, color: jersey });
+      parts.push({ geom: limb(at(`${side}ForeArm`), at(`${side}Hand`), 0.112), bone: `${side}ForeArm`, color: skinC });
+      parts.push({ geom: ball(at(`${side}Hand`), 0.147, new Vector3(1, 0.9, 0.85)), bone: `${side}Hand`, color: skinC });
     }
 
     // ---- Legs ----
     for (const side of ['Left', 'Right'] as const) {
-      parts.push({ geom: limb(at(`${side}UpLeg`), at(`${side}Leg`), 0.145 * hip), bone: `${side}UpLeg`, color: pants });
-      parts.push({ geom: limb(at(`${side}Leg`), at(`${side}Foot`), 0.115), bone: `${side}Leg`, color: pants });
+      parts.push({ geom: limb(at(`${side}UpLeg`), at(`${side}Leg`), 0.171 * hip), bone: `${side}UpLeg`, color: pants });
+      parts.push({ geom: limb(at(`${side}Leg`), at(`${side}Foot`), 0.135), bone: `${side}Leg`, color: pants });
       const foot = at(`${side}Foot`);
       parts.push({
-        geom: box(foot.clone().add(new Vector3(0, -0.05, 0.09)), 0.24, 0.13, 0.42),
+        geom: box(foot.clone().add(new Vector3(0, -0.059, 0.106)), 0.282, 0.153, 0.494),
         bone: `${side}Foot`,
         color: shoe,
       });
@@ -405,13 +433,13 @@ function hairParts(
       break;
     case 'mohawk':
       add(ball(crown, r * 1.0, new Vector3(sx, sy * 0.5, sx)));
-      add(box(crown.clone().add(new Vector3(0, r * 0.55, -0.02)), 0.14, r * 1.0, r * 1.7));
+      add(box(crown.clone().add(new Vector3(0, r * 0.55, -0.024)), 0.165, r * 1.0, r * 1.7));
       break;
     case 'spiky': {
       add(ball(crown, r * 1.02, new Vector3(sx, sy * 0.66, sx)));
       for (let i = 0; i < 6; i++) {
         const a = (i / 6) * Math.PI * 2;
-        const g = new ConeGeometry(0.09, 0.3, 5);
+        const g = new ConeGeometry(0.106, 0.353, 5);
         g.translate(crown.x + Math.cos(a) * r * 0.42, crown.y + r * 0.42, crown.z + Math.sin(a) * r * 0.38);
         add(g);
       }
@@ -451,7 +479,7 @@ function accessoryParts(
   switch (acc) {
     case 'cap': {
       const dome = ball(crown.clone().add(new Vector3(0, r * 0.14, 0)), r * 1.08, new Vector3(headW, headH * 0.6, headW));
-      const brim = box(crown.clone().add(new Vector3(0, -r * 0.05, r * 0.62)), r * 1.2, 0.06, r * 0.8);
+      const brim = box(crown.clone().add(new Vector3(0, -r * 0.05, r * 0.62)), r * 1.2, 0.071, r * 0.8);
       return [
         { geom: dome, bone: 'Head', color: teamColor },
         { geom: brim, bone: 'Head', color: teamColor },

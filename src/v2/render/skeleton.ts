@@ -27,7 +27,27 @@ export interface BoneSpec {
   pos: [number, number, number];
 }
 
-/** Reference height (floor to HeadTop_End) the table below is authored at. */
+/**
+ * Reference height (floor to HeadTop_End) the table below is authored at.
+ *
+ * ★ THIS NUMBER AND THE TABLE MUST AGREE, AND FOR A WHILE THEY DID NOT.
+ *
+ * The table originally summed to a crown of 3.400ft while this constant said
+ * 4.0 — 15% short, and below `HEIGHT_MIN_FT`, i.e. the canonical rig was
+ * outside its own legal height band. It went unnoticed because nothing
+ * computed the sum: every consumer read `REFERENCE_HEIGHT_FT` and trusted it.
+ *
+ * That is not a cosmetic error. `docs/v2/animation-brief.md` tells the animator
+ * "1 unit = 1 foot, the reference kid is 4.0ft", and stride length, foot
+ * plants and dive travel are all authored in absolute feet against the rig they
+ * are handed. A 3.4ft rig buys 33 clips whose every distance is 17% wrong,
+ * against a sim that works in real feet — and it is discovered after the
+ * invoice, not before.
+ *
+ * The whole table was therefore rescaled by 4.0/3.4 (proportions untouched —
+ * the head still spans 32.4% of the crown). `skeleton.test.ts` now asserts the
+ * forward sum EXACTLY, so the two can never disagree again.
+ */
 export const REFERENCE_HEIGHT_FT = 4.0;
 
 /** Per-kid height must land in this band — a real 6-to-8-year-old. */
@@ -46,45 +66,50 @@ export const HEIGHT_MAX_FT = 4.4;
  */
 export const SKELETON: readonly BoneSpec[] = [
   { name: 'Root', parent: null, pos: [0, 0, 0] },
-  { name: 'Hips', parent: 'Root', pos: [0, 1.42, 0] },
-  { name: 'Spine', parent: 'Hips', pos: [0, 0.18, 0] },
-  { name: 'Spine1', parent: 'Spine', pos: [0, 0.2, 0] },
-  { name: 'Spine2', parent: 'Spine1', pos: [0, 0.2, 0] },
-  { name: 'Neck', parent: 'Spine2', pos: [0, 0.16, 0] },
-  { name: 'Head', parent: 'Neck', pos: [0, 0.14, 0] },
-  { name: 'HeadTop_End', parent: 'Head', pos: [0, 1.1, 0] },
+  { name: 'Hips', parent: 'Root', pos: [0, 1.671, 0] },
+  { name: 'Spine', parent: 'Hips', pos: [0, 0.212, 0] },
+  { name: 'Spine1', parent: 'Spine', pos: [0, 0.235, 0] },
+  { name: 'Spine2', parent: 'Spine1', pos: [0, 0.235, 0] },
+  { name: 'Neck', parent: 'Spine2', pos: [0, 0.188, 0] },
+  { name: 'Head', parent: 'Neck', pos: [0, 0.165, 0] },
+  // 1.671 + 0.212 + 0.235 + 0.235 + 0.188 + 0.165 = 2.706, + 1.294 = 4.000.
+  // The rounded table sums to the reference height EXACTLY, on purpose.
+  { name: 'HeadTop_End', parent: 'Head', pos: [0, 1.294, 0] },
 
-  { name: 'LeftShoulder', parent: 'Spine2', pos: [-0.14, 0.1, 0] },
-  { name: 'LeftArm', parent: 'LeftShoulder', pos: [-0.2, 0, 0] },
-  { name: 'LeftForeArm', parent: 'LeftArm', pos: [-0.44, 0, 0] },
-  { name: 'LeftHand', parent: 'LeftForeArm', pos: [-0.38, 0, 0] },
-  { name: 'LeftHandThumb1', parent: 'LeftHand', pos: [-0.06, 0, 0.07] },
-  { name: 'LeftHandIndex1', parent: 'LeftHand', pos: [-0.14, 0, 0.02] },
+  { name: 'LeftShoulder', parent: 'Spine2', pos: [-0.165, 0.118, 0] },
+  { name: 'LeftArm', parent: 'LeftShoulder', pos: [-0.235, 0, 0] },
+  { name: 'LeftForeArm', parent: 'LeftArm', pos: [-0.518, 0, 0] },
+  { name: 'LeftHand', parent: 'LeftForeArm', pos: [-0.447, 0, 0] },
+  { name: 'LeftHandThumb1', parent: 'LeftHand', pos: [-0.071, 0, 0.082] },
+  { name: 'LeftHandIndex1', parent: 'LeftHand', pos: [-0.165, 0, 0.024] },
 
-  { name: 'RightShoulder', parent: 'Spine2', pos: [0.14, 0.1, 0] },
-  { name: 'RightArm', parent: 'RightShoulder', pos: [0.2, 0, 0] },
-  { name: 'RightForeArm', parent: 'RightArm', pos: [0.44, 0, 0] },
-  { name: 'RightHand', parent: 'RightForeArm', pos: [0.38, 0, 0] },
-  { name: 'RightHandThumb1', parent: 'RightHand', pos: [0.06, 0, 0.07] },
-  { name: 'RightHandIndex1', parent: 'RightHand', pos: [0.14, 0, 0.02] },
+  { name: 'RightShoulder', parent: 'Spine2', pos: [0.165, 0.118, 0] },
+  { name: 'RightArm', parent: 'RightShoulder', pos: [0.235, 0, 0] },
+  { name: 'RightForeArm', parent: 'RightArm', pos: [0.518, 0, 0] },
+  { name: 'RightHand', parent: 'RightForeArm', pos: [0.447, 0, 0] },
+  { name: 'RightHandThumb1', parent: 'RightHand', pos: [0.071, 0, 0.082] },
+  { name: 'RightHandIndex1', parent: 'RightHand', pos: [0.165, 0, 0.024] },
 
-  { name: 'LeftUpLeg', parent: 'Hips', pos: [-0.17, -0.06, 0] },
-  { name: 'LeftLeg', parent: 'LeftUpLeg', pos: [0, -0.66, 0] },
-  { name: 'LeftFoot', parent: 'LeftLeg', pos: [0, -0.62, 0] },
-  { name: 'LeftToeBase', parent: 'LeftFoot', pos: [0, -0.08, 0.22] },
+  // Leg chain: 1.671 - 0.071 - 0.776 - 0.729 = 0.095 at the ankle, and the toe
+  // offset is exactly -0.095 so the toes sit ON the floor plane. A rig whose
+  // feet float is a rig every foot-plant is authored wrong against.
+  { name: 'LeftUpLeg', parent: 'Hips', pos: [-0.2, -0.071, 0] },
+  { name: 'LeftLeg', parent: 'LeftUpLeg', pos: [0, -0.776, 0] },
+  { name: 'LeftFoot', parent: 'LeftLeg', pos: [0, -0.729, 0] },
+  { name: 'LeftToeBase', parent: 'LeftFoot', pos: [0, -0.095, 0.259] },
 
-  { name: 'RightUpLeg', parent: 'Hips', pos: [0.17, -0.06, 0] },
-  { name: 'RightLeg', parent: 'RightUpLeg', pos: [0, -0.66, 0] },
-  { name: 'RightFoot', parent: 'RightLeg', pos: [0, -0.62, 0] },
-  { name: 'RightToeBase', parent: 'RightFoot', pos: [0, -0.08, 0.22] },
+  { name: 'RightUpLeg', parent: 'Hips', pos: [0.2, -0.071, 0] },
+  { name: 'RightLeg', parent: 'RightUpLeg', pos: [0, -0.776, 0] },
+  { name: 'RightFoot', parent: 'RightLeg', pos: [0, -0.729, 0] },
+  { name: 'RightToeBase', parent: 'RightFoot', pos: [0, -0.095, 0.259] },
 
   // Prop anchors. The AnimationDirector parents the bat/glove/ball to these,
   // so a swing clip never has to know which hand a given kid bats with.
-  { name: 'Prop_BatGrip', parent: 'RightHand', pos: [0.08, 0, 0] },
-  { name: 'Prop_GloveAnchor', parent: 'LeftHand', pos: [-0.08, 0, 0] },
-  { name: 'Prop_BallAnchor', parent: 'RightHand', pos: [0.08, 0, 0.04] },
-  { name: 'Prop_CapAnchor', parent: 'Head', pos: [0, 0.62, 0] },
-  { name: 'Prop_HairAnchor', parent: 'Head', pos: [0, 0.42, 0] },
+  { name: 'Prop_BatGrip', parent: 'RightHand', pos: [0.094, 0, 0] },
+  { name: 'Prop_GloveAnchor', parent: 'LeftHand', pos: [-0.094, 0, 0] },
+  { name: 'Prop_BallAnchor', parent: 'RightHand', pos: [0.094, 0, 0.047] },
+  { name: 'Prop_CapAnchor', parent: 'Head', pos: [0, 0.729, 0] },
+  { name: 'Prop_HairAnchor', parent: 'Head', pos: [0, 0.494, 0] },
 ];
 
 /** Optional secondary bones a model MAY add, beyond the mandatory 33. */
@@ -102,6 +127,39 @@ export const OPTIONAL_BONES: readonly string[] = [
 export const MAX_BONES = 42;
 
 export const BONE_NAMES: readonly string[] = SKELETON.map((b) => b.name);
+
+/**
+ * Bind-pose world position of every bone, resolved by walking the parent chain.
+ *
+ * Shared rather than re-derived: `ProxyCharacter` needs it to place primitives,
+ * `skeleton.test.ts` needs it to assert the crown, and
+ * `scripts/v2/validate-models.mjs` needs the identical arithmetic to measure a
+ * DELIVERED model's height. Three copies of a forward sum is three chances for
+ * one of them to disagree about what "height" means.
+ */
+export function bindWorld(bones: readonly BoneSpec[] = SKELETON): Map<string, [number, number, number]> {
+  const world = new Map<string, [number, number, number]>();
+  for (const b of bones) {
+    const p = b.parent ? world.get(b.parent) : [0, 0, 0];
+    if (!p) throw new Error(`Skeleton: ${b.name} names a parent that comes after it`);
+    world.set(b.name, [p[0] + b.pos[0], p[1] + b.pos[1], p[2] + b.pos[2]]);
+  }
+  return world;
+}
+
+/**
+ * THE definition of a character's height: floor to `HeadTop_End`, in feet.
+ *
+ * The asset contract states the height band in exactly these terms, so the
+ * measurement has to exist as code — otherwise "3.6-4.4ft" is a sentence in a
+ * markdown file that nothing can check, which is precisely how the canonical
+ * rig came to be 3.4ft while claiming 4.0.
+ */
+export function crownHeightFt(bones: readonly BoneSpec[] = SKELETON): number {
+  const crown = bindWorld(bones).get('HeadTop_End');
+  if (!crown) throw new Error('Skeleton: no HeadTop_End bone — height is undefined');
+  return crown[1];
+}
 
 /** Index of a bone by name — the proxy and the rig both weight by index. */
 export const BONE_INDEX: Readonly<Record<string, number>> = Object.freeze(
