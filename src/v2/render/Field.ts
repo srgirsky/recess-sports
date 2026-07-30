@@ -3,16 +3,16 @@
 //
 // Two surfaces, split by what each is good at:
 //
-//   TURF is one mesh with vertex-colour mow bands. Because the bands are keyed
-//   on WORLD position, they converge under a real perspective camera for free
-//   — v1 had to hand-build converging trapezoids through its affine projection
-//   and could never get the far end right.
+//   TURF is one mesh with a procedural grass shader. Because it is keyed
+//   on WORLD position, the mow bands converge under a real perspective camera
+//   for free — v1 had to hand-build converging trapezoids through its affine
+//   projection and could never get the far end right.
 //
 //   The INFIELD OVERLAY is a canvas texture drawn by the SHARED, already
-//   deterministic `art/fieldTexture.ts` kit: speckled dirt, worn hand-limed
-//   chalk, grass flecks. It sits on its own plane over the turf. This is the
-//   single largest piece of v1's art work that survives the engine change
-//   unmodified, determinism test included.
+//   deterministic `art/fieldTexture.ts` kit: speckled dirt and worn hand-limed
+//   chalk. It draws DIRT ONLY and erases itself where grass belongs, so the
+//   infield grass IS the turf shader. Largest piece of v1 art surviving the
+//   engine change unmodified, determinism test included.
 //
 // Chalk beyond the infield square is real geometry rather than texture,
 // because a foul line that runs 185ft to the pole would be 2px wide in any
@@ -46,8 +46,8 @@ import {
   pointAt,
 } from '../sim/field';
 import { CanvasTexGraphics, makeFieldCanvas, toTexture } from './canvasTex';
-import { chalkLine, chalkRect, grassFlecks, lightenInt, shadeInt, speckleEllipse } from '../../art/fieldTexture';
-import { makeToonMaterial } from './materials/toon';
+import { chalkLine, chalkRect, hash01, lightenInt, shadeInt, speckleEllipse } from '../../art/fieldTexture';
+import { GROUND_STEPS, makeToonMaterial } from './materials/toon';
 import type { OutlineRegistry } from './materials/outline';
 import { attachOutline } from './materials/outline';
 
@@ -209,21 +209,28 @@ function buildTurf(look: VenueLook): Mesh {
   geom.rotateX(-Math.PI / 2);
   geom.translate(0, 0, D / 2 - 80); // home sits 80ft from the near edge
 
-  const mat = makeToonMaterial({ color: 0xffffff, rimStrength: 0 });
+  const mat = makeToonMaterial({
+    color: 0xffffff,
+    rimStrength: 0,
+    // 8 steps, not 4 — see GROUND_STEPS. A flat plane under a 4-step ramp is
+    // ONE flat lighting value across 560ft, which is most of why cheap 3D
+    // ground reads as vinyl matting.
+    gradientSteps: GROUND_STEPS,
+  });
+
   const light = new Color(look.grass).convertSRGBToLinear();
-  // A real mow stripe is grass blades bent toward or away from the light —
-  // a ~12% brightness difference, not a different shade of green. The venue's
-  // `grassDark` is the ART palette's shadow tone (a ~35% step, correct for a
-  // flat 2D fill); using it raw for stripes produces a chessboard. Pull it
-  // most of the way back toward the light tone.
-  const dark = new Color(look.grass).lerp(new Color(look.grassDark), 0.38).convertSRGBToLinear();
+  // The venue's `grassDark` is the ART palette's SHADOW tone — a ~35% step,
+  // correct for a flat 2D fill and far too strong for turf variation. Pull it
+  // most of the way back; the visible contrast now comes from sheen and noise,
+  // not from two different greens.
+  const dark = new Color(look.grass).lerp(new Color(look.grassDark), 0.3).convertSRGBToLinear();
   const mode = { stripes: 0, checker: 1, tufts: 2, court: 3 }[look.mowPattern];
 
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uLight = { value: light };
     shader.uniforms.uDark = { value: dark };
     shader.uniforms.uMode = { value: mode };
-    shader.uniforms.uCell = { value: 22 }; // ft — a real mower width
+    shader.uniforms.uCell = { value: 17 }; // ft — a real mower width
 
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>\nvarying vec3 vWorldPos;')
@@ -241,25 +248,100 @@ function buildTurf(look: VenueLook): Mesh {
          uniform vec3  uDark;
          uniform float uMode;
          uniform float uCell;
+
          float h21( vec2 p ) {
            return fract( sin( dot( p, vec2( 127.1, 311.7 ) ) ) * 43758.5453 );
+         }
+         // Smooth value noise. Real turf varies at several scales at once and
+         // a single frequency always reads as a pattern rather than as ground.
+         float vnoise( vec2 p ) {
+           vec2 i = floor( p ), f = fract( p );
+           vec2 u = f * f * ( 3.0 - 2.0 * f );
+           return mix( mix( h21( i ),                h21( i + vec2( 1.0, 0.0 ) ), u.x ),
+                       mix( h21( i + vec2( 0.0, 1.0 ) ), h21( i + vec2( 1.0, 1.0 ) ), u.x ), u.y );
+         }
+         float fbm( vec2 p ) {
+           float v = 0.0, a = 0.5;
+           for ( int i = 0; i < 4; i++ ) { v += a * vnoise( p ); p *= 2.03; a *= 0.5; }
+           return v;
+         }
+
+         /**
+          * ★ A mow stripe is VIEW-DEPENDENT, not painted on.
+          *
+          * Mowing bends the blades; a band bent toward you scatters light back
+          * and reads bright, a band bent away reads dark. Which is why real
+          * stripes SWAP as you walk around a field, and why a fixed albedo
+          * checker — however well tuned — always reads as a printed mat. This
+          * returns a signed sheen from the dot of the view direction with the
+          * band's lean direction.
+          */
+         float mowSheen( vec2 wxz, vec2 dir, float cell, vec2 viewXZ ) {
+           float band = sin( dot( wxz, dir ) / cell * 3.14159265 );
+           // Soft, not stepped: a mower leaves a blended edge a foot or two wide.
+           float lean = smoothstep( -0.5, 0.5, band ) * 2.0 - 1.0;
+           return dot( viewXZ, dir ) * lean;
          }`
       )
       .replace(
         '#include <color_fragment>',
         `#include <color_fragment>
          {
-           vec2 cell = floor( vWorldPos.xz / uCell );
-           float band;
-           if ( uMode < 0.5 )       band = mod( cell.y, 2.0 );
-           else if ( uMode < 1.5 )  band = mod( cell.x + cell.y, 2.0 );
-           else if ( uMode < 2.5 )  band = step( 0.45, h21( floor( vWorldPos.xz / 13.0 ) ) );
-           else                     band = 0.0;
-           vec3 turf = mix( uDark, uLight, band );
-           // Fine per-square-foot grain so a flat expanse still has texture at
-           // the batting camera, where the player is 6ft from the ground.
-           turf *= 1.0 + ( h21( floor( vWorldPos.xz * 1.5 ) ) - 0.5 ) * 0.05;
+           vec2  wxz  = vWorldPos.xz;
+           vec3  toCam = cameraPosition - vWorldPos;
+           float dist  = length( toCam );
+           vec2  viewXZ = normalize( toCam.xz + vec2( 1e-5 ) );
+
+           // --- Mow sheen -------------------------------------------------
+           float sheen;
+           if ( uMode < 0.5 ) {
+             sheen = mowSheen( wxz, vec2( 0.0, 1.0 ), uCell, viewXZ );
+           } else if ( uMode < 1.5 ) {
+             // A checkerboard is two perpendicular mowing passes, so it is two
+             // sheen terms — not one albedo XOR.
+             sheen = 0.5 * ( mowSheen( wxz, vec2( 0.0, 1.0 ), uCell, viewXZ )
+                           + mowSheen( wxz, vec2( 1.0, 0.0 ), uCell, viewXZ ) );
+           } else if ( uMode < 2.5 ) {
+             sheen = ( fbm( wxz * 0.09 ) - 0.5 ) * 1.2;   // shaggy, unmown
+           } else {
+             sheen = 0.0;                                  // asphalt
+           }
+
+           // --- Multi-scale colour ----------------------------------------
+           // NOTE: 'patch' is a RESERVED WORD in GLSL ES and will not compile.
+           float broad  = fbm( wxz * 0.016 );   // ~60ft: sun, wear, watering
+           float mottle = fbm( wxz * 0.13 );    // ~8ft: clumping
+           float grain  = vnoise( wxz * 2.4 );  // ~5in: blade texture
+
+           // Fade the finest octave out with distance or it aliases into
+           // crawling noise on the outfield — the classic detail-shimmer.
+           float grainFade = 1.0 - smoothstep( 70.0, 220.0, dist );
+
+           vec3 turf = mix( uDark, uLight, 0.42 + broad * 0.58 );
+           turf *= 1.0 + ( mottle - 0.5 ) * 0.18;
+           turf *= 1.0 + ( grain  - 0.5 ) * 0.16 * grainFade;
+           turf *= 1.0 + sheen * 0.22;
+
+           // Sun-bleached patches go yellower, not just lighter — a pure
+           // value change reads as a lighting artefact rather than as grass.
+           turf = mix( turf, turf * vec3( 1.07, 1.0, 0.82 ),
+                       smoothstep( 0.58, 0.92, broad ) * 0.55 );
+
            diffuseColor.rgb *= turf;
+         }`
+      )
+      // Perturb the NORMAL as well as the colour. With 8 ramp steps this makes
+      // the terminator itself wander gently, so the plane stops being one flat
+      // lighting value and starts reading as ground that is not perfectly
+      // level. Subtle on purpose: too much and turf reads as rock.
+      .replace(
+        '#include <normal_fragment_begin>',
+        `#include <normal_fragment_begin>
+         {
+           vec2 np = vWorldPos.xz * 0.06;
+           float nx = vnoise( np ) - vnoise( np + vec2( 0.35, 0.0 ) );
+           float nz = vnoise( np ) - vnoise( np + vec2( 0.0, 0.35 ) );
+           normal = normalize( normal + vec3( nx, 0.0, nz ) * 0.55 );
          }`
       );
   };
@@ -338,36 +420,102 @@ function drawInfield(
   g.raw.closePath();
   g.raw.clip();
 
+  // ★ The grass line is IRREGULAR. A perfect circle reads as clip-art the
+  // instant you see it — no groundskeeper on earth produces one, and the eye
+  // knows. Wobble the radius with the same index-hash the rest of the kit uses
+  // (still no Math.random, so the field stays byte-identical run to run).
   g.fillStyle(dirt, 1);
   g.raw.beginPath();
-  g.raw.arc(mound.x, mound.y, grassLineR, 0, Math.PI * 2);
+  const STEPS = 180;
+  for (let i = 0; i <= STEPS; i++) {
+    const th = (i / STEPS) * Math.PI * 2;
+    const wobble =
+      1 +
+      (hash01(i % STEPS, 5) - 0.5) * 0.012 + // per-step nibble
+      Math.sin(th * 3.1 + 0.7) * 0.018 + // slow lobes
+      Math.sin(th * 7.3 + 2.1) * 0.009;
+    const r = grassLineR * wobble;
+    const x = mound.x + Math.cos(th) * r;
+    const y = mound.y + Math.sin(th) * r;
+    if (i === 0) g.raw.moveTo(x, y);
+    else g.raw.lineTo(x, y);
+  }
+  g.raw.closePath();
   g.raw.fill();
-  speckleEllipse(g, mound.x, mound.y, grassLineR * 0.92, grassLineR * 0.92, [dirtLo, dirtHi], 700, 0.3, 11);
+
+  speckleEllipse(g, mound.x, mound.y, grassLineR * 0.92, grassLineR * 0.92, [dirtLo, dirtHi], 900, 0.3, 11);
+
+  // Large-scale blotching: watered, raked and worn areas. Without this the
+  // dirt is one flat orange shape, which is the same failure as flat grass.
+  for (let i = 0; i < 34; i++) {
+    const th = hash01(i * 3 + 1, 21) * Math.PI * 2;
+    const rr = Math.sqrt(hash01(i * 3 + 2, 22)) * grassLineR * 0.95;
+    const size = grassLineR * (0.10 + hash01(i * 3 + 3, 23) * 0.20);
+    g.fillStyle(i % 2 === 0 ? dirtHi : dirtLo, 0.16);
+    g.fillEllipse(mound.x + Math.cos(th) * rr, mound.y + Math.sin(th) * rr, size * 2.4, size * 1.5);
+  }
+
+  // Scatter dirt OUT past the line so the boundary is a transition, not a cut.
+  for (let i = 0; i < 260; i++) {
+    const th = hash01(i * 2 + 1, 31) * Math.PI * 2;
+    const rr = grassLineR * (1.0 + hash01(i * 2 + 2, 32) * 0.055);
+    const s = 1.5 + hash01(i, 33) * 3.2;
+    g.fillStyle(dirtLo, 0.3 + hash01(i, 34) * 0.28);
+    g.fillEllipse(mound.x + Math.cos(th) * rr, mound.y + Math.sin(th) * rr, s * 2.2, s * 1.3);
+  }
   g.raw.restore();
 
-  // ---- The grass cutout inside the infield -------------------------------
-  // A real infield has grass between the basepaths; drawing it as a hole in
-  // the dirt (rather than dirt as four separate paths) is what makes the
-  // worn base circles read correctly where they bite into it.
+  // ---- The infield grass: a HOLE, never painted --------------------------
+  //
+  // ★ This overlay draws DIRT ONLY, and erases itself where grass belongs.
+  //
+  // The first version painted the infield grass as a flat green polygon. It
+  // was the single most artificial thing in the frame, and for a structural
+  // reason rather than a tuning one: it put canvas-painted grass — one flat
+  // fill, hard geometric edges, its own shade of green — directly against the
+  // turf SHADER's multi-octave, view-dependent grass. Two different materials
+  // pretending to be the same lawn never reconcile, however carefully the
+  // colours are matched.
+  //
+  // Erasing instead means the infield grass IS the outfield grass: same noise,
+  // same mow sheen, same everything, automatically and forever.
+  g.raw.globalCompositeOperation = 'destination-out';
+  g.fillStyle(0x000000, 1);
   const inset = 12; // ft inside the basepath lines
-  const grassPoly = [
+  const corners = [
     toPx(HOME.x, HOME.z + inset * 1.5),
     toPx(FIRST.x - inset, FIRST.z),
     toPx(SECOND.x, SECOND.z - inset * 0.6),
     toPx(THIRD.x + inset, THIRD.z),
   ];
-  g.fillPolygon(grassPoly, look.grass, 1);
-  grassFlecks(
-    g,
-    home.x - ftToPx(40),
-    home.y - ftToPx(90),
-    ftToPx(80),
-    ftToPx(75),
-    lightenInt(look.grass, 0.25),
-    shadeInt(look.grass, 0.2),
-    260,
-    5
-  );
+  // Wobble the cut so the grass line is MOWN rather than laser-cut.
+  //
+  // Smooth harmonics, not per-vertex hash. Independent random offsets per
+  // vertex zigzag between neighbours and read as a torn edge — the opposite of
+  // the intent. A mower wanders slowly: low-frequency sine terms with an
+  // incommensurate ratio give a wandering line that never repeats.
+  g.raw.beginPath();
+  const SEGS = 40;
+  for (let c = 0; c < 4; c++) {
+    const a = corners[c];
+    const b = corners[(c + 1) % 4];
+    const phase = c * 1.7;
+    for (let s = 0; s <= SEGS; s++) {
+      const t = s / SEGS;
+      const nx = -(b.y - a.y);
+      const ny = b.x - a.x;
+      const nl = Math.hypot(nx, ny) || 1;
+      const w =
+        (Math.sin(t * 5.1 + phase) * 0.6 + Math.sin(t * 11.7 + phase * 2.3) * 0.28) * ftToPx(0.55);
+      const x = a.x + (b.x - a.x) * t + (nx / nl) * w;
+      const y = a.y + (b.y - a.y) * t + (ny / nl) * w;
+      if (c === 0 && s === 0) g.raw.moveTo(x, y);
+      else g.raw.lineTo(x, y);
+    }
+  }
+  g.raw.closePath();
+  g.raw.fill();
+  g.raw.globalCompositeOperation = 'source-over';
 
   // ---- Worn basepaths ----------------------------------------------------
   const pathW = ftToPx(5.5);
