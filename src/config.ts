@@ -728,6 +728,54 @@ export const LIVE = {
   /** Idle-kid rescue: sim throws by itself after holding the ball this long.
    *  NOT measured — scaled with RUNNER_SPEED. */
   AUTO_THROW_MS: 5167,
+  /**
+   * ★ THE CUTOFF RELAY (CPU defense, CLASSIC only) — what makes a ball that
+   * reaches the outfield a HIT instead of an out at first.
+   *
+   * OBSERVED IN BB2001, not inferred (bb01-capture-session2, park venue):
+   * an infield grounder is fielded and thrown to first for the out (~4.5s
+   * play), but a ball that lands on the outfield grass is relayed
+   * outfielder -> cutoff man near second -> pitcher while the batter runs to
+   * THIRD. 17.3s play, OUTS never changes. BB never ATTEMPTS a throw to first
+   * from the outfield — it does not try and lose the race, it does not try.
+   *
+   * Why a relay and not just a slower throw: throw DISTANCE provably cannot
+   * discriminate on our field. A coin-flip on a routine grounder would need an
+   * 806px throw to first; the longest that exists anywhere is 418px, and the
+   * whole field's distance spread (256-1012ms) is smaller than the margin we
+   * are trying to erase. See measures.json defense.relay.
+   */
+  RELAY: {
+    /**
+     * Secure the ball at or beyond this depth (x the basepath leg) and the CPU
+     * relays instead of throwing at a bag. Bracketed by the SECOND-BASE BAG
+     * (1.280 — an infielder standing on second still has a play) and the CF
+     * POST (1.492 — a true outfielder on his own spot must relay). 1.39 is the
+     * midpoint, ~20px of margin either side. Measured from the CARRIER, so an
+     * infielder who chased into the gap relays too — he has no play either.
+     */
+    DEPTH_LEGS: 1.39,
+    /** The cutoff sets up at SECOND-BASE depth on the ball's own line — where
+     *  BB's cutoff man stands. Derived: dist(HOME, SECOND) / basepath leg. */
+    CUTOFF_DEPTH_LEGS: 1.2804,
+    /** The infinite-relay guard: OF -> cutoff -> pitcher, then stop. */
+    MAX_LEGS: 2,
+    /** The cutoff man counts as in position within this radius. */
+    SET_RADIUS: 24,
+    /** ...but the outfielder never waits longer than this for him. A HARD cap,
+     *  not a hope: without it a fumbling cutoff hangs the play to MAX_PLAY_MS. */
+    SET_WAIT_MAX_MS: 1500,
+    /**
+     * Extra hold per relay leg on top of cpuThrowDelayMs. NOT MEASURED — 0.
+     *
+     * At 0, a gap ball is a reliable DOUBLE and a ball to the WALL is a triple
+     * (the outfielder's longer chase pushes delivery past the runner's next
+     * checkpoint) — which is exactly the play filmed in BB. Forcing triples on
+     * routine gap balls too would need ~1963ms here, and inventing that is the
+     * category of unmeasured compensation this project keeps unwinding.
+     */
+    GATHER_MS: 0,
+  },
   /** Runner speed (px/s) at speed stat 5; each stat point is ±6%.
    *  MEASURED (pace.homeToFirst): BB2001 runs home→1B in 4200ms (n=3), and
    *  179.63px / 4.200s = 42.8px/s. We ran this leg in HALF BB's time until
@@ -825,7 +873,7 @@ export const PASSPLAY = {
 /** Two-device play over WebRTC (src/net/*; PeerJS free cloud broker). */
 export const NET = {
   /** Bumped on any wire-format change; hello handshake rejects mismatches. */
-  PROTOCOL_VERSION: 5, // v5: ReplayFrame carries the active chaser (it can now change mid-play)
+  PROTOCOL_VERSION: 6, // v6: the LiveEvent union gained {t:'relay'} (the cutoff relay)
   /** liveFrame + liveInput pointer stream rate (full ReplayFrames, no deltas). */
   FRAME_HZ: 20,
   /** "Looking for your friend… 🔍" window before the no-blame GOOD GAME. */

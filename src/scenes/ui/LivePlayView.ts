@@ -233,6 +233,24 @@ export class LivePlayView {
         }
         break;
       }
+      case 'relay': {
+        // Same release read as a throw, aimed at a TEAMMATE. Deliberately does
+        // NOT light the base rings: a relay is not a play at a bag, and showing
+        // rings would tell the player a runner is in danger when nobody is.
+        audio.pitchWoosh();
+        const rspr = e.fielder ? this.fielderSprites.find((f) => f.charId === e.fielder) : undefined;
+        const dst = this.fielderSprites.find((f) => f.charId === e.to);
+        if (rspr && rspr.img.active) {
+          rspr.cycle?.stop(false);
+          rspr.cycle = null;
+          if (dst) rspr.img.setFlipX(dst.container.x < rspr.container.x);
+          reactPose(this.scene, rspr.img, e.fielder!, 'throw', {
+            holdMs: ANIM.ACTION_HOLD_MS,
+            restoreTo: e.fielder!,
+          });
+        }
+        break;
+      }
       case 'out': {
         const p = project(basePos(e.base));
         floatingText(this.scene, p.x, p.y - 46, 'OUT!', COLORS.red, 32);
@@ -456,7 +474,9 @@ export class LivePlayView {
       const contested =
         r.to !== r.from &&
         r.progress > 0.72 &&
-        ((s.ball.phase === 'thrown' && s.ball.throw?.toBase === r.to) ||
+        ((s.ball.phase === 'thrown' &&
+          s.ball.throw?.target.kind === 'base' &&
+          s.ball.throw.target.base === r.to) ||
           (s.ball.phase === 'held' &&
             s.ball.heldBy !== null &&
             dist(s.fielders[s.ball.heldBy].pos, basePos(r.to)) < 70));

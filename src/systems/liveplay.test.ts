@@ -798,7 +798,12 @@ describe('live play: manual baserunning (main mode)', () => {
       r2.progress = 0.5;
       r2.pos = { x: 400, y: 330 };
       s.ball.phase = 'thrown';
-      s.ball.throw = { toBase: 3, from: { x: 700, y: 260 }, t: 0, totalMs: 10 };
+      s.ball.throw = {
+        target: { kind: 'base', base: 3 },
+        from: { x: 700, y: 260 },
+        t: 0,
+        totalMs: 10,
+      };
       stepLivePlay(s, {}, 50, main, () => 0.9);
       return r2;
     };
@@ -946,6 +951,128 @@ describe('live play: manual baserunning (main mode)', () => {
     expect(bat.from).toBe(1);
     expectEveryRunnerAccountedFor(s);
     expect(finishLivePlay(s).bases[0]).toBe(true);
+  });
+});
+
+describe('live play: the cutoff relay (CPU defense)', () => {
+  const main = resolveLiveParams('main');
+  const kid = resolveLiveParams('kid');
+
+  /**
+   * A liner that LANDS deep in the left-centre gap — the ball the relay exists
+   * for. The landing spot matters: it sits ~93px from LF and ~104px from CF,
+   * and a CPU outfielder covers only ~60px in this hang, so neither can reach
+   * it and the ball actually falls in. Put it 10px from a post instead and the
+   * fielder catches it, the relay never arms, and the test silently checks
+   * nothing.
+   */
+  const gapLanded: Launch = {
+    type: 'liner',
+    landing: { x: 380, y: 201 },
+    hangMs: 1413,
+    rollSpeed: 145,
+    homer: false,
+  };
+
+  const drive = (launch: Launch, params: LiveParams, inputs: LiveInputs = {}) => {
+    const s = startLivePlay({
+      mode: 'offense',
+      launch,
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [],
+      outs: 0,
+      defense: DEFENSE,
+      params,
+    });
+    return runPlay(s, params, () => inputs, () => 0.5);
+  };
+
+  it('relays a ball that reached the outfield instead of throwing to first', () => {
+    const { s, events } = drive(gapLanded, main);
+    expect(events.some((e) => e.t === 'relay')).toBe(true);
+    // The whole point: no play is ever made on the batter at first.
+    expect(events.some((e) => e.t === 'out' && e.base === 1)).toBe(false);
+    const bat = s.runners.find((r) => r.charId === 'bat')!;
+    expect(bat.done).not.toBe('out');
+    expect(bat.from).toBeGreaterThanOrEqual(2); // at least a double
+  });
+
+  it('never records an out on a relay leg', () => {
+    // The safety argument, asserted rather than described: arriveThrow's
+    // fielder branch returns before the runner loop, so outs cannot happen
+    // while a throw is aimed at a teammate.
+    const s0 = startLivePlay({
+      mode: 'offense',
+      launch: gapLanded,
+      batter: { charId: 'bat', speed: 5 },
+      baseRunners: [{ base: 1, charId: 'r1', speed: 5 }],
+      outs: 0,
+      defense: DEFENSE,
+      params: main,
+    });
+    let s = s0;
+    let guard = 0;
+    while (s.phase !== 'done' && guard++ < 4000) {
+      const before = s.outs;
+      const relayInFlight =
+        s.ball.phase === 'thrown' && s.ball.throw?.target.kind === 'fielder';
+      s = stepLivePlay(s, {}, 50, main, () => 0.5);
+      if (relayInFlight) expect(s.outs).toBe(before);
+    }
+  });
+
+  it('ends the relay at the pitcher — MAX_LEGS, and leg 2 is not a self-throw', () => {
+    // Leg 2 used to target the cutoff man again: a zero-length throw that
+    // arrived instantly and spent none of the time the relay exists to spend.
+    const { s, events } = drive(gapLanded, main);
+    expect(s.relay?.legs).toBeLessThanOrEqual(LIVE.RELAY.MAX_LEGS);
+    expect(events.filter((e) => e.t === 'relay').length).toBeLessThanOrEqual(LIVE.RELAY.MAX_LEGS);
+    expect(s.relay?.delivered).toBe(true);
+    // The last leg goes home, so the pitcher finishes with it.
+    expect(s.fielders[s.ball.heldBy ?? -1]?.position).toBe('P');
+  });
+
+  it('concedes only the leg a runner was already on, not the whole play', () => {
+    // Keyed on the runner id ALONE the concession never expired: the defense
+    // stopped playing for the rest of the play and a gap ball became an
+    // inside-the-park home run. It only shows against a runner who keeps
+    // pushing, so this drives a relentless send — the concession must cover the
+    // ONE conceded leg and then re-arm the defense.
+    const { s } = drive(gapLanded, main, { sendRunner: 'bat' });
+    for (const c of s.relay?.committed ?? []) {
+      expect(typeof c.id).toBe('string');
+      expect(c.to).toBeGreaterThanOrEqual(1);
+    }
+    const bat = s.runners.find((r) => r.charId === 'bat')!;
+    expect(bat.done, 'a runner who never stops must eventually be retired').toBe('out');
+  });
+
+  it('a caught fly never relays — the sac-fly and doubling-off work is untouched', () => {
+    const caught: Launch = {
+      type: 'fly',
+      landing: { x: 480, y: 235 },
+      hangMs: 2875,
+      rollSpeed: 0,
+      homer: false,
+    };
+    const { s, events } = drive(caught, main);
+    expect(s.flyCaught).toBe(true);
+    expect(events.some((e) => e.t === 'relay')).toBe(false);
+    expect(s.relay).toBeUndefined();
+  });
+
+  it('kid mode never relays', () => {
+    const { s, events } = drive(gapLanded, kid, { run: true });
+    expect(events.some((e) => e.t === 'relay')).toBe(false);
+    expect(s.relay).toBeUndefined();
+  });
+
+  it('a routine infield grounder is still thrown out at first', () => {
+    // The guard for "the infield path is byte-identical": grounderToShort
+    // settles at 1.18 legs, comfortably inside RELAY.DEPTH_LEGS.
+    const { s, events } = drive(grounderToShort, main);
+    expect(events.some((e) => e.t === 'relay')).toBe(false);
+    expect(s.runners.find((r) => r.charId === 'bat')!.done).toBe('out');
   });
 });
 

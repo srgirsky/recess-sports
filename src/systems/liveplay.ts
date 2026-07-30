@@ -21,6 +21,7 @@ import {
   HOME,
   FIELD_POSITIONS,
   BASE_COVER,
+  BASEPATH_PX,
   DEFAULT_GEOMETRY,
   basePos,
   clampToField,
@@ -114,8 +115,28 @@ export interface BallState {
    * total ms of the current hop, and its peak height cue.
    */
   hop?: { n: number; v: number; dir: Vec; t: number; ms: number; h: number };
-  /** A live throw. `wild` = it will sail past the bag (rolled at launch). */
-  throw?: { toBase: 1 | 2 | 3 | 4; from: Vec; t: number; totalMs: number; wild?: boolean };
+  /** A live throw. `wild` = it will sail past the target (rolled at launch). */
+  throw?: { target: ThrowTarget; from: Vec; t: number; totalMs: number; wild?: boolean };
+}
+
+/**
+ * What a throw is aimed at: a BAG (an out is possible) or a TEAMMATE (a relay —
+ * nobody can be put out on it).
+ *
+ * A discriminated union on purpose. Every consumer has a genuinely different
+ * answer for the two cases, so this turns each one into a compile error instead
+ * of a silent wrong answer — and `arriveThrow`'s fielder branch returns BEFORE
+ * the runner loop, which is the whole reason a relay can never record an out.
+ * `at` freezes the aim point at RELEASE: a throw does not home on a moving
+ * cutoff man.
+ */
+export type ThrowTarget =
+  | { kind: 'base'; base: 1 | 2 | 3 | 4 }
+  | { kind: 'fielder'; idx: number; at: Vec };
+
+/** The bag a throw is aimed at, or null for a relay. */
+function throwBase(t: ThrowTarget): 1 | 2 | 3 | 4 | null {
+  return t.kind === 'base' ? t.base : null;
 }
 
 export type LivePhase = 'live' | 'done';
@@ -130,6 +151,10 @@ export type LiveEvent =
   | { t: 'bonk' } // the ball smacked a venue obstacle (the sandlot oak)
   | { t: 'carom' } // the ball rebounded off the outfield fence — play it!
   | { t: 'throw'; toBase: 1 | 2 | 3 | 4; fielder?: string }
+  // A relay leg: outfielder -> cutoff man. Deliberately NOT an overloaded
+  // 'throw' with an optional base — `expectLegalRunners` asserts every throw
+  // event carries a base 1-4, and a relay has none.
+  | { t: 'relay'; fielder?: string; to: string }
   | { t: 'out'; base: 1 | 2 | 3 | 4; runner: string }
   | { t: 'safe'; base: 1 | 2 | 3 | 4; runner: string }
   | { t: 'score'; runner: string }
@@ -171,8 +196,42 @@ export interface LivePlayState {
   catchAt: number;
   /** The venue's ground/obstacles (default: the park). */
   geo: FieldGeometry;
+  /**
+   * An in-progress cutoff relay (CPU defense, CLASSIC only). Set once per play
+   * when the ball is secured out in the outfield; see `beginRelay`.
+   */
+  relay?: RelayState;
   /** Events emitted THIS tick — the scene drains them for SFX/juice. */
   events: LiveEvent[];
+}
+
+export interface RelayState {
+  /** Fielder index of the cutoff man. */
+  cutoff: number;
+  /** Where the cutoff man sets up (frozen at arm time). */
+  spot: Vec;
+  /** Legs completed. Capped at LIVE.RELAY.MAX_LEGS. */
+  legs: number;
+  /** The ball is back in the infield; the defense stops chasing this play. */
+  delivered: boolean;
+  /**
+   * THE LOOK-BACK RULE. charIds of runners who were MID-LEG the moment the ball
+   * came home. They finish that leg uncontested — the defense has conceded it,
+   * exactly as BB2001's does (a 17.3s play in which OUTS never changes and no
+   * throw is ever attempted). Anyone SENT AFTER delivery is fair game: the
+   * pitcher has the ball and running on it is a real decision, not a free base.
+   *
+   * Without this the relay buys nothing. The ball lands back on the mound at
+   * ~4470ms, `bestBeatableBase` sees the batter running to second, and
+   * MOUND->SECOND is 118px (286ms) against a 4197ms leg — so the pitcher guns
+   * him down every single time and a gap ball is still just a single.
+   *
+   * Stored as (runner, DESTINATION) pairs, not bare ids: the concession covers
+   * the ONE leg they were already running, and expires the moment they touch
+   * that bag. Keyed on the id alone it never expires, the defense stops playing
+   * for the rest of the play, and a gap ball becomes an inside-the-park run.
+   */
+  committed: { id: string; to: Base }[];
 }
 
 export interface LiveInputs {
@@ -430,10 +489,10 @@ function moveBall(s: LivePlayState, dtMs: number, params: LiveParams): void {
   } else if (b.phase === 'thrown' && b.throw) {
     b.throw.t += dtMs;
     const t = Math.min(1, b.throw.t / b.throw.totalMs);
-    const target = basePos(b.throw.toBase);
+    const target = throwAimPoint(b.throw.target);
     b.pos = lerpVec(b.throw.from, target, t);
     b.height = Math.sin(Math.PI * t) * 0.5;
-    if (t >= 1) arriveThrow(s, b.throw.toBase, params);
+    if (t >= 1) arriveThrow(s, b.throw.target, params);
   }
 }
 
@@ -568,6 +627,11 @@ function moveFielders(
     for (const r of s.runners) {
       if (r.done !== null || onABag(r)) continue;
       if (s.flyCaught && r.to > r.from) continue; // advancing tag-up: throw, don't chase
+      // A relay is in progress, or this runner is one the look-back rule already
+      // conceded. Chasing him would take back with the glove exactly what the
+      // relay just gave away, which is how the first cut of this mechanic still
+      // retired every batter that reached first.
+      if (s.relay && (!s.relay.delivered || s.relay.committed.some((x) => x.id === r.charId))) continue;
       const d = dist(carrier.pos, r.pos);
       if (d < best) {
         best = d;
@@ -587,10 +651,27 @@ function moveFielders(
     }
   }
 
+  // The cutoff man sets up on the ball's line while a relay is in the air.
+  if (s.relay && !s.relay.delivered && s.relay.legs === 0) {
+    const c = s.fielders[s.relay.cutoff];
+    if (c) {
+      c.pos = clampToField(
+        s.geo,
+        moveToward(
+          c.pos,
+          s.relay.spot,
+          (params.cpuFielderSpeed * statSpeedMult(c) * dtMs) / 1000
+        )
+      );
+    }
+  }
+
   // The covering fielder jogs to the bag while a throw is in the air, so the
   // catch happens ON the base instead of the fielder teleporting there.
-  if (s.ball.phase === 'thrown' && s.ball.throw) {
-    const idx = s.fielders.findIndex((f) => f.position === BASE_COVER[s.ball.throw!.toBase]);
+  // A RELAY has no bag to cover — only a base throw does.
+  const coverBase = s.ball.throw ? throwBase(s.ball.throw.target) : null;
+  if (s.ball.phase === 'thrown' && coverBase !== null) {
+    const idx = s.fielders.findIndex((f) => f.position === BASE_COVER[coverBase]);
     if (idx >= 0 && idx !== s.active) {
       // Whose defense this is decides the speed — on 'offense' the CPU is
       // fielding, so the cover kid is theirs. Mirrors the runner-side pick in
@@ -599,7 +680,7 @@ function moveFielders(
       const coverSpeed = s.mode === 'defense' ? params.fielderSpeed : params.cpuFielderSpeed;
       s.fielders[idx].pos = moveToward(
         s.fielders[idx].pos,
-        basePos(s.ball.throw.toBase),
+        basePos(coverBase),
         (coverSpeed * statSpeedMult(s.fielders[idx]) * dtMs) / 1000
       );
     }
@@ -900,23 +981,44 @@ function maybeThrow(
       const speed =
         params.throwSpeedMin + inputs.throwTo.power * (params.throwSpeedMax - params.throwSpeedMin);
       const wild = rollThrowError(carrier?.arm ?? 5, inputs.throwTo.power, mult, rng);
-      launchThrow(s, inputs.throwTo.base, speed, 0, wild, carrier);
+      launchThrow(s, { kind: 'base', base: inputs.throwTo.base }, speed, 0, wild, carrier);
     } else if (s.elapsed - s.heldAt >= params.autoThrowMs && anyForwardMover(s)) {
       // Idle-kid rescue: the sim throws a decent (not perfect) ball by itself.
       const speed = params.throwSpeedMin + 0.75 * (params.throwSpeedMax - params.throwSpeedMin);
-      launchThrow(s, chooseThrowTarget(s, speed), speed, 0, false, carrier);
+      launchThrow(s, { kind: 'base', base: chooseThrowTarget(s, speed) }, speed, 0, false, carrier);
     }
-  } else if (
-    s.elapsed - s.heldAt >= params.cpuThrowDelayMs + catchGatherFor(s, params) &&
-    anyForwardMover(s)
-  ) {
+  } else {
+    // THE LOOK-BACK RULE. The ball is back in the infield and everyone still
+    // running was already committed when it got there — the defense concedes
+    // those bases, exactly as BB's does. Without this the pitcher guns the
+    // batter down at second and the relay buys nothing (see RelayState).
+    if (s.relay?.delivered && everyForwardMoverIsCommitted(s)) return;
+
+    // An ARMED, undelivered relay owns the ball: keep relaying it in. This must
+    // come BEFORE `shouldRelay`, whose `!s.relay` arms-once guard would
+    // otherwise send the next leg to a BAG — the relay gets created, abandoned
+    // on the following tick, and the batter is thrown out at first after all.
+    if (s.relay && !s.relay.delivered) {
+      if (s.elapsed - s.heldAt < params.cpuThrowDelayMs + LIVE.RELAY.GATHER_MS) return;
+      throwRelayLeg(s, params, rng, carrier, mult);
+      return;
+    }
+
+    if (s.elapsed - s.heldAt < params.cpuThrowDelayMs + catchGatherFor(s, params)) return;
+
+    // Out on the grass? Relay it in instead of firing at a bag.
+    if (shouldRelay(s, params)) {
+      throwRelayLeg(s, params, rng, carrier, mult);
+      return;
+    }
+    if (!anyForwardMover(s)) return;
     // Main mode: don't fling it when no throw can beat anyone — the carrier
     // keeps the ball and hunts the runner for a tag instead (see moveFielders).
     if (params.manualBaserunning && bestBeatableBase(s, params.cpuThrowSpeed) === null) return;
     const wild = rollThrowError(carrier?.arm ?? 5, 0.8, mult, rng);
     launchThrow(
       s,
-      chooseThrowTarget(s, params.cpuThrowSpeed),
+      { kind: 'base', base: chooseThrowTarget(s, params.cpuThrowSpeed) },
       params.cpuThrowSpeed,
       rng() * params.cpuThrowErrorMs,
       wild,
@@ -925,9 +1027,14 @@ function maybeThrow(
   }
 }
 
+/** Where a throw is headed on the ground plane. */
+function throwAimPoint(t: ThrowTarget): Vec {
+  return t.kind === 'base' ? basePos(t.base) : t.at;
+}
+
 function launchThrow(
   s: LivePlayState,
-  toBase: 1 | 2 | 3 | 4,
+  target: ThrowTarget,
   speed: number,
   extraMs: number,
   wild = false,
@@ -935,12 +1042,16 @@ function launchThrow(
 ): void {
   const b = s.ball;
   const from = { ...b.pos };
-  const totalMs = (dist(from, basePos(toBase)) / speed) * 1000 + extraMs;
+  const totalMs = (dist(from, throwAimPoint(target)) / speed) * 1000 + extraMs;
   b.phase = 'thrown';
   b.heldBy = null;
-  b.throw = { toBase, from, t: 0, totalMs: Math.max(60, totalMs), wild };
+  b.throw = { target, from, t: 0, totalMs: Math.max(60, totalMs), wild };
   s.fielders.forEach((f) => (f.hasBall = false));
-  s.events.push({ t: 'throw', toBase, fielder: thrower?.charId });
+  if (target.kind === 'base') {
+    s.events.push({ t: 'throw', toBase: target.base, fielder: thrower?.charId });
+  } else {
+    s.events.push({ t: 'relay', fielder: thrower?.charId, to: s.fielders[target.idx].charId });
+  }
   if (wild && thrower) s.events.push({ t: 'error', kind: 'wild', fielder: thrower.charId });
 }
 
@@ -1046,7 +1157,34 @@ export function wildSettlePoint(geo: FieldGeometry, from: Vec, bag: Vec): Vec {
 }
 
 /** The ball beat these runners to the bag — playground rules, they're out. */
-function arriveThrow(s: LivePlayState, base: 1 | 2 | 3 | 4, params: LiveParams): void {
+function arriveThrow(s: LivePlayState, target: ThrowTarget, params: LiveParams): void {
+  // ── A RELAY LEG. Nobody can be put out on a throw to a teammate, so this
+  // branch returns BEFORE the runner loop below. That return is the whole
+  // safety argument for the mechanic; do not restructure it away.
+  if (target.kind === 'fielder') {
+    const receiver = s.fielders[target.idx];
+    const missed =
+      s.ball.throw?.wild ||
+      !receiver ||
+      dist(receiver.pos, s.ball.pos) > params.cpuPickupRadius + LIVE.RELAY.SET_RADIUS;
+    if (missed) {
+      // A blown relay leaves the ball LIVE where it died — free bases.
+      settleBallAt(s, s.ball.pos, true);
+      if (s.relay) s.relay.delivered = true;
+      return;
+    }
+    secureBall(s, target.idx);
+    if (s.relay) {
+      s.relay.legs += 1;
+      if (s.relay.legs >= LIVE.RELAY.MAX_LEGS) {
+        s.relay.delivered = true;
+        s.relay.committed = midLegRunnerIds(s);
+      }
+    }
+    return;
+  }
+
+  const base = target.base;
   // A wild throw sails past the bag and dies loose — nobody's out, take a base!
   if (s.ball.throw?.wild) {
     settleBallAt(s, wildSettlePoint(s.geo, s.ball.throw.from, basePos(base)), true);
@@ -1179,6 +1317,20 @@ function moveRunners(s: LivePlayState, dtMs: number): void {
 function decideRunning(s: LivePlayState, inputs: LiveInputs, params: LiveParams): void {
   if (s.mode === 'offense') {
     if (params.manualBaserunning) {
+      // While the ball is out on the grass being relayed there is provably no
+      // play on the batter-runner: no bag is targeted, the carrier is ~300px
+      // away and the cutoff man sets up ~100px off second. Tapping for a base
+      // nobody is contesting is not a decision, it is a reflex test — and the
+      // window between reaching first (4197ms) and the ball landing back on the
+      // mound (~4470ms) is 272ms, which no 6-year-old will hit. The game runs
+      // him; the player taps only to push FURTHER.
+      //
+      // BATTER ONLY. Sending a man home from third stays a real decision, and
+      // holdRunner still works, so the player can always turn him back.
+      if (s.relay && !s.relay.delivered) {
+        const b = s.runners.find((r) => r.isBatter);
+        if (b && b.done === null && b.to === b.from && b.from >= 1) startLeg(s, b);
+      }
       // Per-runner control. Sends work after a catch too — that's a sac fly.
       if (inputs.sendRunner) {
         const r = s.runners.find((o) => o.charId === inputs.sendRunner && o.done === null);
@@ -1341,6 +1493,127 @@ function checkTermination(s: LivePlayState, params: LiveParams): void {
 function endPlay(s: LivePlayState): void {
   s.phase = 'done';
   s.events.push({ t: 'playOver' });
+}
+
+// --- The cutoff relay ------------------------------------------------------
+
+/** Infield positions, in cutoff-preference order per side of the field. */
+const MIDDLE_INFIELD: PositionId[] = ['SS', '2B'];
+const CORNER_INFIELD: PositionId[] = ['1B', '3B'];
+
+/**
+ * Should the CPU relay this ball in rather than throw at a bag?
+ *
+ * DEPTH-based, not position-based, on purpose: it is venue-robust, and it
+ * correctly makes an INFIELDER who chased into the gap relay too (he has no
+ * play at first either) while denying a relay to a centre fielder who charged
+ * a shallow bloop.
+ */
+function shouldRelay(s: LivePlayState, params: LiveParams): boolean {
+  return (
+    s.mode === 'offense' && // CPU defense only
+    params.manualBaserunning && // CLASSIC only — kid mode already yields hits
+    !s.flyCaught && // a caught fly is an OUT, not a hit
+    !s.relay && // arm at most once per play
+    dist(s.ball.pos, HOME) >= BASEPATH_PX * LIVE.RELAY.DEPTH_LEGS &&
+    pickCutoff(s) !== null
+  );
+}
+
+/** The cutoff man: the middle infielder on the ball's side, never the carrier. */
+function pickCutoff(s: LivePlayState): number | null {
+  const left = s.ball.pos.x < HOME.x;
+  const order = left
+    ? [MIDDLE_INFIELD[0], MIDDLE_INFIELD[1], ...CORNER_INFIELD]
+    : [MIDDLE_INFIELD[1], MIDDLE_INFIELD[0], ...CORNER_INFIELD];
+  for (const pos of order) {
+    const idx = s.fielders.findIndex((f) => f.position === pos);
+    if (idx >= 0 && idx !== s.active && s.fielders[idx].fumbleUntil <= s.elapsed) return idx;
+  }
+  return null;
+}
+
+/**
+ * Where the cutoff sets up: second-base DEPTH, on the ball's own line out from
+ * home. Deliberately not ON the bag — a fielder parked on second makes second
+ * unreachable forever, which is precisely why BB returns the ball to the
+ * pitcher instead of leaving it there.
+ */
+function relaySpotFor(s: LivePlayState): Vec {
+  const d = dist(s.ball.pos, HOME) || 1;
+  const reach = BASEPATH_PX * LIVE.RELAY.CUTOFF_DEPTH_LEGS;
+  return clampToField(s.geo, {
+    x: HOME.x + ((s.ball.pos.x - HOME.x) / d) * reach,
+    y: HOME.y + ((s.ball.pos.y - HOME.y) / d) * reach,
+  });
+}
+
+/**
+ * Fire the next leg. Leg 1 waits for the cutoff man to get set (capped by
+ * SET_WAIT_MAX_MS so a fumbling cutoff can never hang the play); leg 2 goes to
+ * the pitcher, which is what ends the relay.
+ */
+function throwRelayLeg(
+  s: LivePlayState,
+  params: LiveParams,
+  rng: () => number,
+  carrier: FielderState | undefined,
+  mult: number
+): void {
+  if (!s.relay) {
+    const cutoff = pickCutoff(s);
+    if (cutoff === null) return;
+    s.relay = { cutoff, spot: relaySpotFor(s), legs: 0, delivered: false, committed: [] };
+  }
+  const rel = s.relay;
+  // Leg 1 goes to the cutoff man; the LAST leg goes back to the pitcher, which
+  // is what actually ends the relay. Without the second target the cutoff threw
+  // to himself — a zero-length throw that arrived instantly and delivered the
+  // ball without any of the time the relay exists to spend.
+  const lastLeg = rel.legs >= LIVE.RELAY.MAX_LEGS - 1;
+  const toIdx = lastLeg ? s.fielders.findIndex((f) => f.position === 'P') : rel.cutoff;
+  if (toIdx < 0 || toIdx === s.ball.heldBy) {
+    // Nobody to relay to (a one-fielder test fixture, or the pitcher IS the
+    // carrier). Concede and stop — never spin.
+    rel.delivered = true;
+    rel.committed = midLegRunnerIds(s);
+    return;
+  }
+  const receiver = s.fielders[toIdx];
+  if (!lastLeg) {
+    const set = dist(receiver.pos, rel.spot) <= LIVE.RELAY.SET_RADIUS;
+    if (!set && s.elapsed - s.heldAt < params.cpuThrowDelayMs + LIVE.RELAY.SET_WAIT_MAX_MS) return;
+  }
+  const wild = rollThrowError(carrier?.arm ?? 5, 0.8, mult, rng);
+  launchThrow(
+    s,
+    { kind: 'fielder', idx: toIdx, at: { ...receiver.pos } },
+    params.cpuThrowSpeed,
+    rng() * params.cpuThrowErrorMs,
+    wild,
+    carrier
+  );
+}
+
+/** Every runner currently between bags, with the bag they're headed for. */
+function midLegRunnerIds(s: LivePlayState): { id: string; to: Base }[] {
+  return s.runners
+    .filter((r) => r.done === null && r.to !== r.from)
+    .map((r) => ({ id: r.charId, to: r.to }));
+}
+
+/**
+ * Is every still-running runner on a leg the defense already conceded?
+ *
+ * Matches the DESTINATION too, so pushing on past the conceded bag re-arms the
+ * defense — which is what makes a greedy send a real decision rather than a
+ * free trip around the bases.
+ */
+function everyForwardMoverIsCommitted(s: LivePlayState): boolean {
+  const c = s.relay?.committed ?? [];
+  const movers = s.runners.filter((r) => r.done === null && !r.returning && r.to !== r.from);
+  if (movers.length === 0) return false;
+  return movers.every((r) => c.some((x) => x.id === r.charId && x.to === r.to));
 }
 
 // --- Policies & helpers ----------------------------------------------------
