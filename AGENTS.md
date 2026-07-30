@@ -10,7 +10,76 @@ A **free web baseball game for little kids (ages 4–8)**. You draft 9 of 30 nei
 
 Phaser 3 · TypeScript · Vite · vitest. Static site, no backend, deployed free on **GitHub Pages** (auto-deploys on push to `main`; live at https://srgirsky.github.io/recess-sports/). All state (incl. pick tallies) is in `localStorage` for now.
 
-## Architecture rules (follow these)
+## ★ WHICH TREE AM I IN? (read before touching anything)
+
+This repo now builds **two games from one Vite config** (`rollupOptions.input`):
+
+| | v1 — `/` | v2 — `/v2/` |
+|---|---|---|
+| entry | `index.html` → `src/main.ts` | `v2/index.html` → `src/v2/main.ts` |
+| renderer | Phaser 3, 2D, affine fake-3D | **three.js**, real 3D, DOM/CSS for all HUD + menus |
+| units | arbitrary 960×640 screen px | **real feet** (60ft basepaths, 46ft mound, ~200ft fences) |
+| physics | landing spot decided at contact | real gravity + drag + Magnus, RK4 |
+| status | **shipped and live — do not disturb** | in progress (see `docs/OVERVIEW.md` § v2) |
+
+**v1 is live and stays live until cutover.** Its files, tests, goldlogs and
+layout audit are untouched by v2 work; a v2 change that alters `dist/assets/main-*.js`
+is a bug. v2 lives entirely under `src/v2/**` plus `v2/index.html`.
+
+**Shared, never copied:** `src/data/**`, `src/config.ts` (import-free constants),
+the pure `src/systems/**` that v2 reuses (`picklog` · `inning` · `gameflow` ·
+`stats` · `album` · `team` · `draft` · `lineup` · `season` · `awards` · `voices` ·
+`announcer` · `chatter` · `audio` · `difficulty` · `juice` · `fatigue` · `crowd`),
+`src/net/**`, **`src/art/fieldTexture.ts`** (its `TexGraphics` is a structural
+interface, so a Canvas2D shim gives three.js v1's speckled dirt and worn chalk
+unchanged), and `src/ui/layoutMath.ts`'s overlap predicates.
+
+Storage keys `recess_pickcounts` / `recess_games_played` / `recess_album` /
+`recess_team` are **shared on purpose** — the votes are the product and must stay
+continuous across a v1↔v2 switch in the same browser.
+
+### v2 architecture rules
+
+- **`src/v2/sim/**` is PURE and Node-runnable.** It may import only from
+  `src/v2/sim/**`, `src/data/**`, `src/config.ts`, and pure `src/systems/**`.
+  No `three`, no DOM, no `Math.random`, no `Date.now`. All randomness comes from
+  an injected `Rng`. This is what turns v1's fragile browser-paste goldlog into
+  an ordinary vitest that runs in CI and cannot be polluted by cosmetic changes.
+- **`src/v2/render/**` reads sim state and never writes it.** `render/bridge.ts`
+  is the single named coupling point.
+- **Camera POLICY is pure** (`render/cameraCues.ts`, no three import) — the heir
+  to v1's rule that `art/projection.ts` stays render-side and testable. This is
+  what lets `cameraCues.test.ts` close two of v1's permanent `known-drift`
+  records by projecting the four bases through a preset's matrix, with no pixels.
+- **The one CSS rule that replaces a whole gotcha class:** `#hud` is
+  `pointer-events: none`, `.interactive` opts back in. Every tap that isn't on a
+  HUD control falls through to the canvas *by construction* — so v1's "a
+  scene-level pointerdown swings on ANY tap, so corner buttons must
+  stopPropagation" simply cannot happen.
+- **Render-only exaggeration must never leak into the sim.** `CHARACTER_SCALE`
+  (1.6) draws a 4ft kid as 6.4ft; catch radii, reach, stride and collision stay
+  real feet. See `render.characterPresence` in `scripts/measures.json` for why
+  BB2001's field scale and character scale are jointly unsatisfiable at real
+  units, and why the answer is camera distance rather than giant kids.
+- **The fence profile must stay CONVEX** (`sim/field.ts` `fenceIsConvex`, asserted
+  per venue). Convexity is what keeps `moveToward` containment valid and what
+  stops a caromed ball reflecting out of the field. Two things that look
+  harmless break it and both are recorded as counterexamples in the tests:
+  smoothstep interpolation between control points (it can carry only a 4.75ft
+  rise per 22.5° segment at 185ft before denting inward — hence LINEAR), and any
+  profile whose deepest point is a foul pole.
+- **Character art**: 30 commissioned models on ONE shared skeleton + ONE shared
+  clip library. The spec is `src/v2/render/skeleton.ts`, the artist-facing copy
+  is `docs/v2/asset-contract.md`, and `scripts/v2/validate-models.mjs` is its
+  teeth. `render/ProxyCharacter.ts` builds a kid from primitives on that same
+  skeleton — it is both the acceptance test for the spec and the reason no
+  engineering is ever blocked on art.
+- **Outline hulls are SIBLINGS, never children.** A skinned hull parented under
+  its skinned mesh inherits the already-posed world matrix and skins a second
+  time — every character renders as a solid navy blob. `attachOutline` throws if
+  the mesh isn't in the scene graph yet.
+
+## Architecture rules — v1 (follow these)
 
 - **Pure game logic lives in `src/systems/` with NO Phaser imports.** Draft, at-bat resolution, innings, live plays, and pick logging are plain functions: state in → result out. They're unit-tested in `src/systems/logic.test.ts` + `liveplay.test.ts`. This is the most important rule — it keeps the tricky logic testable and lets the render loop stay dumb.
 - **Scenes are the thin view layer.** They read input, call `systems/` reducers, and animate the result. A scene should never *decide* game outcomes — it plays back what a reducer returned. (E.g. baserunning animation on walks is driven by `ApplyResult.movements` from `inning.ts`, so it can't desync from the real base state.)

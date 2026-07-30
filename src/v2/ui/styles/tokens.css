@@ -1,0 +1,83 @@
+/* ---------------------------------------------------------------------------
+ * Design tokens — the direct heir to v1's `src/ui/theme.ts`.
+ *
+ * Same brand, different mechanism: v1 had to compute rounded corners, stroke
+ * bleed and drop-shadow footprints by hand because Phaser rectangles can't
+ * round. CSS does all of that natively, which is why `ui/layoutMath.ts`'s
+ * solver has no v2 equivalent (its overlap PREDICATES still gate CI — see
+ * scripts/v2/ui-audit.mjs).
+ *
+ * THE ONE SCALAR: `--u` below drives the entire HUD's size. Everything else is
+ * expressed in `rem`, so one clamp() replaces v1's solveRow/solveColumn.
+ * ------------------------------------------------------------------------- */
+
+:root {
+  /* ---- The scalar. Everything sizes off this. ---- */
+  font-size: clamp(14px, 1.6svh + 0.6vw, 22px);
+
+  /* ---- Brand palette (matches v1 config.ts COLORS + theme.ts OUTLINE) ---- */
+  --sky: #4aa5e0;
+  --grass: #5bbf5a;
+  --grass-dark: #4aa84a;
+  --dirt: #c98a4b;
+  --ink: #14202e;
+  --cream: #fff4de;
+  --gold: #ffce3a;
+  --red: #e8524a;
+  --white: #ffffff;
+
+  /* The character-art contour colour. Load-bearing: the 3D outline shader and
+     every piece of UI chrome share it, which is what makes the game read as
+     one piece. See render/materials/outline.ts. */
+  --outline: #26333f;
+
+  /* Warm key / cool shadow — the same mix as art/fieldTexture.ts's
+     lightenInt/shadeInt, so DOM chrome and 3D shading agree. */
+  --key-warm: #fffae8;
+  --shade-cool: #2c3e66;
+
+  /* Throw-target confidence colours (§7.3). Shared by the DOM legend and the
+     3D base pucks so a kid never has to learn two colour languages. */
+  --conf-easy: #46c66a;
+  --conf-bang: #ffce3a;
+  --conf-none: #e8524a;
+  --conf-noplay: #7b8794;
+
+  /* ---- Type ---- */
+  --font: 'Fredoka', 'Arial Black', Arial, sans-serif;
+
+  /* ---- Shape ---- */
+  --radius: 0.9rem;
+  --radius-lg: 1.4rem;
+  --stroke: 0.18rem;
+  --shadow: 0 0.35rem 0 var(--outline);
+  --shadow-soft: 0 0.5rem 1.2rem rgb(20 32 46 / 0.35);
+
+  /* ---- Spacing: an 8-step scale ---- */
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1rem;
+  --s5: 1.5rem;
+  --s6: 2rem;
+  --s7: 3rem;
+  --s8: 4rem;
+
+  /* ---- Touch ----
+     56px min at the base font size. v1 learned this the hard way: chips render
+     at scale(0.86) when unselected, so the floor must clear 44px even shrunk. */
+  --tap-min: 3.5rem;
+
+  color-scheme: dark;
+}
+
+/* Kids' devices are frequently set to reduce motion by accident; respect it,
+   but never remove feedback entirely — swap movement for a colour change. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --motion-scale: 0;
+  }
+}
+:root {
+  --motion-scale: 1;
+}
