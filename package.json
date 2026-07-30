@@ -8,7 +8,9 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "audit:layout": "node scripts/layout-audit.mjs"
+    "audit:layout": "node scripts/layout-audit.mjs",
+    "export:skeleton": "node --disable-warning=ExperimentalWarning scripts/v2/export-skeleton.mjs",
+    "validate:models": "node --disable-warning=ExperimentalWarning scripts/v2/validate-models.mjs"
   },
   "dependencies": {
     "peerjs": "^1.5.5",

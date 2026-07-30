@@ -41,11 +41,30 @@ judging the art direction). Useful query flags:
 
 | flag | effect |
 |---|---|
+| `?anims=1` | the **Animation Spike** — review every clip (see below) |
 | `?kids=18` | force the worst-case character count for a perf read |
 | `?perf=low\|mid\|high` | override the auto-detected device tier |
 | `?proxy=1` | force primitive proxy characters everywhere |
 
 Keys on the spike page: `1`–`5` switch camera preset, `V` cycles venue.
+
+### Reviewing animation — `/v2/?anims=1`
+
+The acceptance surface for `docs/v2/animation-brief.md`. Three of that brief's
+four acceptance criteria are things you have to *watch*, so they need somewhere
+to be watched: it plays any of the 35 clips on a proxy character, at 0.6×, 1.0×
+or 1.4×, flashes the frame a clip's marker lands on, renders the same character
+in a real **40 px** viewport (that is criterion 4, literally), and prints a
+computed **loop-seam** error — a seam that is merely nearly closed pops once per
+stride and gets blamed on the playback rate instead.
+
+Keys: `←`/`→` or space step through clips, `1`–`3` set the rate, `R` replays.
+Clips marked `▫` are procedural stand-ins; `▪` means a delivered clip.
+
+Until the commissioned library arrives every clip is a crude stand-in generated
+in `src/v2/render/proceduralClips.ts` — correct about timing and contract,
+deliberately not about look. A real delivery replaces them **clip by clip**, so
+the animator's pilot batch is reviewable the day it lands.
 
 The on-screen readout shows fps, p95 frame time, draw calls and triangles
 against the budget (≤90 draws, ≤180k tris). **Read it with the tab focused** —
@@ -70,6 +89,33 @@ Phaser, so they're unit-tested headlessly:
 ```bash
 npm test
 ```
+
+## Checking a 3D asset delivery (v2)
+
+Character models and the animation library are commissioned against a strict
+contract (`docs/v2/asset-contract.md`, `docs/v2/animation-brief.md`). The
+validator is the first line of acceptance — rejections are automatic and free,
+and a file that passes is accepted:
+
+```bash
+npm run export:skeleton    # emit assets/v2/skeleton_recess_v1.glb from skeleton.ts
+npm run validate:models    # check every .glb in assets/v2/
+npm run validate:models path/to/anims_recess_v1.glb   # or one file
+VERBOSE=1 npm run validate:models                     # also print measurements
+```
+
+It checks bone names/order/bind pose, the height band, root motion, the 30 fps
+grid, loop seams, body travel and marker frames, plus LOD budgets, material
+slots and file size on characters. Every failure names the rule *and* why the
+rule exists.
+
+> The CLI needs **Node ≥ 22.6** — it imports the contract straight from
+> TypeScript so the rules have exactly one home. CI runs the identical rules
+> through vitest (`scripts/v2/validate-models.test.js`), so `npm test` covers it
+> on any Node.
+
+The rig is **generated, never hand-edited**: re-run `export:skeleton` after any
+change to `src/v2/render/skeleton.ts`, or a test fails telling you to.
 
 ## Checking the layout
 
@@ -135,6 +181,12 @@ src/
   ui/                Button, CharacterCard, MuteButton, effects (juice helpers)
   net/               Two-device play: pure wire protocol + the PeerJS session
   dev/               Dev-only pick-rate overlay
+  v2/                ★ The three.js rebuild (separate game, /v2/)
+    sim/             Pure, Node-runnable physics + field, in real feet
+    render/          three.js layer — skeleton, proxy characters, clips, camera
+    spike/           Review pages: LookSpike (art), AnimSpike (animation)
+assets/v2/           Generated + delivered 3D assets (the rig, later the models)
+scripts/v2/          The asset gates: glb read/write, exporter, validator, lints
 ```
 
 ★ = the files you'll most likely want to edit. (Architecture rationale: `docs/OVERVIEW.md`.)

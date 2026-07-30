@@ -25,6 +25,9 @@ import { VENUE_LOOKS, buildField, type FieldBuild } from '../render/Field';
 import { buildFence, type FenceBuild } from '../render/Fence';
 import { buildSky } from '../render/Sky';
 import { ProxyCharacter } from '../render/ProxyCharacter';
+import { AnimationDirector } from '../render/AnimationDirector';
+import { buildProceduralClips } from '../render/proceduralClips';
+import type { AnimName } from '../render/clips';
 import { RIGS, damp, type CameraPreset } from '../render/cameraCues';
 
 const PRESET_ORDER: CameraPreset[] = ['PLAY', 'FIELD', 'PITCH', 'DEEP', 'PITCH_HERO'];
@@ -44,6 +47,11 @@ export class LookSpike {
   private field!: FieldBuild;
   private fence!: FenceBuild;
   private kids: ProxyCharacter[] = [];
+  private directors: AnimationDirector[] = [];
+  // Built once and SHARED by every kid: an AnimationClip is immutable data, so
+  // 18 mixers can play the same one. Building per character would be 18x the
+  // memory for identical tracks.
+  private readonly clipLibrary = buildProceduralClips();
 
   private venueIdx = 0;
   private presetIdx = 0;
@@ -104,14 +112,34 @@ export class LookSpike {
    * `?kids=18` forces the full worst case for a stress read.
    */
   private buildKids(): void {
+    for (const d of this.directors) d.dispose();
     for (const k of this.kids) {
       k.root.removeFromParent();
       k.dispose();
     }
     this.kids = [];
+    this.directors = [];
 
     const want = Number(new URLSearchParams(location.search).get('kids') ?? '13');
     const positions = Object.keys(FIELD_POSITIONS) as PositionId[];
+
+    /**
+     * Give a kid a mixer and start them on a looping clip.
+     *
+     * A tableau of motionless kids was a fair Stage 0 read — the question was
+     * whether the LOOK landed — but a still character in a 3D scene reads as a
+     * bug, and the placeholder library costs nothing to hang here. It also
+     * puts real per-frame mixer cost inside the draw-call budget this spike
+     * exists to measure, which is the honest version of that measurement.
+     *
+     * `offset` staggers the phase so 13 kids do not breathe in unison.
+     */
+    const animate = (kid: ProxyCharacter, clip: AnimName, offset: number): void => {
+      const dir = new AnimationDirector(kid.mesh, { fallback: this.clipLibrary });
+      dir.play(clip);
+      dir.update(offset);
+      this.directors.push(dir);
+    };
 
     positions.forEach((pos, i) => {
       const c = ROSTER[i % ROSTER.length];
@@ -122,6 +150,8 @@ export class LookSpike {
       kid.setFacing(Math.atan2(p.x, p.z) + Math.PI);
       this.scene.add(kid.root);
       this.kids.push(kid);
+      // The defence is set: `field_ready`, not `idle`.
+      animate(kid, 'field_ready', i * 0.17);
     });
 
     // Batter (right-handed box), on-deck, and runners for the away team.
@@ -132,6 +162,8 @@ export class LookSpike {
       [-40, 43.5, Math.PI * 0.75], // runner at third
       [2, 84, Math.PI], // runner at second
     ];
+    // The batter takes their stance; everyone else waits their turn.
+    const extraClips: AnimName[] = ['bat_stance', 'idle', 'idle', 'idle', 'idle'];
     for (let i = 0; i < extras.length && this.kids.length < want; i++) {
       const [x, z, face] = extras[i];
       const c = ROSTER[(i + 11) % ROSTER.length];
@@ -140,6 +172,7 @@ export class LookSpike {
       kid.setFacing(face);
       this.scene.add(kid.root);
       this.kids.push(kid);
+      animate(kid, extraClips[i], i * 0.29);
     }
 
     // Pad out to the requested count for a stress read.
@@ -151,6 +184,7 @@ export class LookSpike {
       kid.setFacing(Math.PI);
       this.scene.add(kid.root);
       this.kids.push(kid);
+      animate(kid, 'idle', n * 0.23);
       n++;
     }
   }
@@ -228,6 +262,8 @@ export class LookSpike {
     const dt = 1 / 60;
     const rig = RIGS[PRESET_ORDER[this.presetIdx]];
 
+    for (const d of this.directors) d.update(dt);
+
     // Critically damped move to the active rig — never overshoots.
     for (const axis of ['x', 'y', 'z'] as const) {
       const i = axis === 'x' ? 0 : axis === 'y' ? 1 : 2;
@@ -275,6 +311,7 @@ export class LookSpike {
     cancelAnimationFrame(this.raf);
     window.removeEventListener('resize', this.onResize);
     window.removeEventListener('keydown', this.onKey);
+    for (const d of this.directors) d.dispose();
     for (const k of this.kids) k.dispose();
     this.field.dispose();
     this.fence.dispose();

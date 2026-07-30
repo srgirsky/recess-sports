@@ -74,6 +74,51 @@ continuous across a v1↔v2 switch in the same browser.
   teeth. `render/ProxyCharacter.ts` builds a kid from primitives on that same
   skeleton — it is both the acceptance test for the spec and the reason no
   engineering is ever blocked on art.
+- **The rig must sum to the height it claims.** `crownHeightFt(SKELETON)` must
+  equal `REFERENCE_HEIGHT_FT` EXACTLY, and a built proxy's drawn bounding box
+  must top out at `heightFt × CHARACTER_SCALE` — both pinned in
+  `skeleton.test.ts`. They are there because the table summed to 3.400ft while
+  the constant said 4.0 and the proxy drew 3.105ft: nothing computed the sum, so
+  every consumer read the constant and believed it. That rig was about to be
+  emailed to an animator with "the reference kid is 4.0 ft" printed above it,
+  and stride, foot plants and dive travel are all authored in absolute feet.
+  `render.rigHeight` in `measures.json` has the arithmetic. Corollary: the proxy
+  DERIVES its head radius from the crown; never hardcode it back.
+- **The clip library is `src/v2/render/clips.ts`, and the two v2 docs are
+  MIRRORS of it.** 35 clips with frame counts, loop flags, marker frames,
+  authored ground speeds, body travel and a settle graph. `clips.test.ts` parses
+  `docs/v2/animation-brief.md` and `docs/v2/asset-contract.md` and fails if
+  either drifts — same source → record → constant discipline `conformance.test.js`
+  applies to feel constants. Edit the table, then the docs, in one change.
+  Three fields carry weight the brief originally left unstated: `authoredSpeedFts`
+  (playback rate is `simSpeed ÷ authored`; without it feet skate at every speed),
+  `bodyTravelFt` (a dive's travel IS the reach the sim grants — mismatch and the
+  glove catches balls the sim scored as missed; a slide's must stay ~0 because
+  the basepath track is sim-owned), and `returnsTo` (the settle graph that makes
+  "no popping" checkable).
+- **A marker frame is DERIVED from the motion, not read from the file.** glTF
+  cannot carry a named marker, so `validate-models` finds the event itself:
+  peak hand SPEED for `CONTACT`/`RELEASE`, full glove EXTENSION for `CATCH`.
+  The second is not a stylistic choice — on `catch_jump` the fastest the glove
+  ever moves is the take-off, five frames before the ball. `modelRules.mjs` and
+  `AnimationDirector.test.ts` run the same derivation on purpose; if they ever
+  disagree the gate is checking something the engine does not believe.
+- **`AnimationDirector` is the only place clips are played**, and
+  `playToMarker(clip, secUntilEvent)` is why: it warps playback so the marker
+  frame lands on the simulated instant, which makes animation structurally
+  unable to desync from physics. Marker clips therefore need a WIDER rate band
+  (0.5×–2.5×) than the 0.6×–1.4× the brief states for loops — a late swing needs
+  ~1.9× compression, and clamping to 1.4× would put the bat through the ball
+  late rather than slowing the swing down.
+- **Quaternion tracks are LINEAR only.** `setInterpolation(InterpolateSmooth)`
+  on a `QuaternionKeyframeTrack` logs "unsupported interpolation" and silently
+  falls back — pure console noise, and it invites the belief that the curve is
+  smoothed when it is slerped.
+- **Nothing is blocked on the animator either.** `render/proceduralClips.ts`
+  ships crude stand-ins for all 35 names, so the director, the marker warp, the
+  loop-seam check and the review page all run today, and a delivery replaces
+  them CLIP BY CLIP (the director prefers a delivered clip by name). Watch them
+  at `/v2/?anims=1`.
 - **Outline hulls are SIBLINGS, never children.** A skinned hull parented under
   its skinned mesh inherits the already-posed world matrix and skins a second
   time — every character renders as a solid navy blob. `attachOutline` throws if
@@ -157,11 +202,19 @@ continuous across a v1↔v2 switch in the same browser.
 | `src/scenes/ui/Spectacle.ts` | Big-moment effects director (view-only, depths 60-66 — clears the rig): `homerSpectacle` (star-trail ball + fireworks + flashbulbs + confetti, driven by `flyHitBall`), `powerSwingFx`, `crazyPitchFx`. Knobs in `config.FX`. |
 | `src/dev/PickRateOverlay.ts` | Dev-only pick-rate view (press **D** on Title). |
 | `scripts/measure/*` | ★ The BB2001 measurement instrument (no Phaser, no `src/` imports except in the conformance test). `lib.js` = PURE math (robust stats, `summarize` with a spread FLOORED at one frame period, DERIVED `confidence`, the affinity test, ratio→constant conversion); `video.js` = the ffmpeg I/O (probe, `readFrames`, `distinctFrameRate`, `diffSeries`, `findCuts` play indexer, `contactSheet`, plus `detectGameRect`/`blitScore`/`gameSegments` for screen captures); `screenshot.js` = the EXACT-COLOUR path (`readScreenshot` recovers the native framebuffer from ScummVM's integer nearest-neighbour window blit and **throws** if the blit isn't exact). All four have synthetic ground-truth tests under `npm test`. |
+| `src/v2/render/clips.ts` | ★ v2. The ANIMATION CONTRACT, in code and PURE (no three, like `cameraCues.ts`): 35 clips × frames / loop / marker frame / blend / `authoredSpeedFts` / `bodyTravelFt` / `returnsTo`, plus the rate maths (`warpRateFor`, `locomotionRateFor`, `pickLocomotion`) so timing is testable with no mixer. The two `docs/v2/*` files are mirrors of this table and `clips.test.ts` parses them to prove it. |
+| `src/v2/render/AnimationDirector.ts` | ★ v2. The only place clips are played. `AnimationMixer` + the contract: `playToMarker` warps playback so a marker frame lands on the simulated instant (physics decides WHEN, the clip stretches to agree), `setLocomotionSpeed` picks the clip whose authored speed keeps the rate legible, one-shots settle down the `returnsTo` graph, and a delivered clip beats its stand-in name by name — so a pilot batch of five is playable next to thirty placeholders. |
+| `src/v2/render/proceduralClips.ts` | ★ v2. Crude stand-ins for all 35 clips, so no engineering is blocked on the animator — `ProxyCharacter`'s argument extended to motion. Deliberately correct about TIMING and CONTRACT (exact loop seams, markers on their frame, no root motion, declared body travel) and deliberately not about look. |
+| `src/v2/spike/AnimSpike.ts` | ★ v2 at `/v2/?anims=1`. The acceptance surface for `docs/v2/animation-brief.md`: clip list, 0.6/1.0/1.4× rates, marker flash, a real 40px thumbnail viewport (criterion 4, rendered not imagined) and a COMPUTED loop-seam number (criterion 3 — "nearly closed" pops once per stride and gets blamed on the rate). Real `dt`, unlike LookSpike's fixed 1/60. |
+| `scripts/v2/glb.mjs` | ★ v2. Dependency-free glTF 2.0 read AND write. Hand-rolled because a playback loader is built to be FORGIVING — it normalises, defaults and ignores — and every one of those kindnesses is a rejection the validator would fail to make. The writer is what generates the rig from `skeleton.ts`. |
+| `scripts/v2/export-skeleton.mjs` | ★ v2. `npm run export:skeleton` → `assets/v2/skeleton_recess_v1.glb`, emitted from `SKELETON` and never hand-edited, and it REFUSES to write if the bone table and `REFERENCE_HEIGHT_FT` disagree. Ships a two-triangle placeholder mesh bound to `Hips` on purpose: without a skin, glTF importers build 33 loose empties instead of an armature. |
+| `scripts/v2/modelRules.mjs` + `validate-models.mjs` | ★ v2. `npm run validate:models` — the gate both v2 docs promise. Pure rule engine (contract passed in, no TS import) behind two front ends: the CLI (Node ≥22.6, type stripping) and `validate-models.test.js` (vitest, so CI's Node 20 runs the same rules). Bone set/order/bind-pose hash, height band, morph targets, root motion, 30fps grid, loop seams, measured body travel, derived marker frames, LOD budgets, material slots, size. Failures name the rule AND why it exists. |
+| `scripts/v2/purity.lint.test.js` | ★ v2. `src/v2/sim/**` imports only sim/data/config/pure-systems; no three, no DOM, no `Math.random`, no `Date.now`; and every sim file must import in plain Node. Two files claimed this gate existed before it did. |
 | `scripts/measures.json` | ★ The measurement records + `conformance.test.js`'s gate. Every record names the `src/config.ts` constant it informs, so the audit trail runs source → record → constant, and carries a `status`: `conformed` (ours inside the band), `known-drift` (outside, and the test pins the drift's SIZE so it can't grow or be half-fixed unnoticed), `awaiting-measurement` (BB not measured yet — pins only OUR value, claims nothing about BB), `note` (a finding about the measurement itself). Read this before tuning any "Backyard feel" constant. |
 
 ## Commands
 
-`npm run dev` (play locally) · `npm test` (logic tests) · `npm run build` (→ `dist/`). Full details + deploy in `README.md`.
+`npm run dev` (play locally) · `npm test` (logic tests) · `npm run build` (→ `dist/`). v2 assets: `npm run export:skeleton` (emit the rig) · `npm run validate:models` (gate a delivery; needs Node ≥22.6 — CI runs the same rules through vitest). Full details + deploy in `README.md`.
 
 ## Shipping changes (the standard delivery process)
 

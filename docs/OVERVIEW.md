@@ -105,6 +105,36 @@ canonical skeleton the commissioned models bind to, driven by the `VisualParams`
 already authored for all 30 kids — so they are simultaneously the acceptance test
 for the skeleton spec and the reason no engineering work is ever blocked on art.
 
+**The animation contract is executable** (2026-07-30). The commission brief for
+the shared clip library (`docs/v2/animation-brief.md`) cited four acceptance
+gates, three of which did not exist: `npm run validate:models`, the
+`skeleton_recess_v1.glb` it tells you to send with it, and any way at all to
+*watch* a delivered clip. All three exist now. `src/v2/render/clips.ts` is the
+35-clip contract in code and the two markdown copies are parsed and checked
+against it; `scripts/v2/validate-models.mjs` rejects a delivery on bone order,
+bind-pose drift, height band, root motion, off-grid frame rate, unclosed loop
+seams, measured body travel and derived marker frames — and every one of those
+rules has a test that deliberately breaks something and demands the specific
+rejection, because a rule that never fires is indistinguishable from no rule.
+Crude **procedural stand-ins** cover all 35 clips, so the proxy characters move
+today and a real delivery replaces them clip by clip; `/v2/?anims=1` is where
+they get reviewed. The Look Spike's defence now crouches in `field_ready` and
+its batter takes a stance instead of standing in bind pose, and the animation
+costs essentially nothing: 18 mixers measured at **0.063 ms/frame**, 0.4% of a
+16.7 ms budget, with the scene at 56 draws / 109k triangles against 90 / 180k.
+
+Writing it surfaced the kind of error the measurement instrument exists for.
+**The canonical rig was 3.400 ft while claiming 4.0** — 15% short, and below the
+3.6 ft floor of the height band the same file defines for everyone else —
+because nothing ever summed the bone table. The proxy was shorter still (3.105
+ft drawn), which quietly made `render.characterPresence`'s "~5% of frame height"
+really 3.9%. It mattered because that number was about to be printed at the top
+of a commission brief, and stride length, foot plants and dive travel are all
+authored in absolute feet against the rig the animator is handed: a 3.4 ft rig
+buys 35 clips whose every distance is 17% wrong, discovered after the invoice.
+Fixed, and now pinned by a test that asserts the sum exactly and the drawn
+bounding box within 2% — see `render.rigHeight`.
+
 Next: the pure sim core and its statistical conformance harness (headless, no art,
 no graphics), which asserts emergent BABIP / launch-angle split / exit-velocity
 percentiles against real baseball bands instead of pinning constants.

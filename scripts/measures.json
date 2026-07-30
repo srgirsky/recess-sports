@@ -666,11 +666,55 @@
       "resolution": {
         "cameraSplit": "src/v2/render/cameraCues.ts ships TWO wide rigs. FIELD conforms to geometry.fieldScale and is the establishing shot (half-inning starts, wide resets, replays). PLAY is where the game actually lives: same 40deg elevation so a cut never shifts the foul slope, at 115ft instead of 155ft. PLAY deliberately does NOT conform, and that is recorded here rather than left as an unexplained inconsistency.",
         "characterScale": "src/v2/render/ProxyCharacter.ts CHARACTER_SCALE = 1.6 -- a RENDER-ONLY exaggeration drawing a 4ft kid as 6.4ft. Chunky-cartoon, still clear of the 8ft fence, the backstop and the foul poles. It must never leak into src/v2/sim/**: catch radii, reach, stride and collision stay real feet, and scripts/v2/purity.lint.test.js keeps the sim from importing render/.",
-        "residual": "Even at 1.6x on the PLAY rig a kid reads ~5% of frame height against BB's 8-9%. The remaining presence has to come from character DESIGN -- saturated colour, heavy contour, readable silhouette -- not from more size. That is a brief for the commissioned models, and it is why the Look Spike exists."
+        "residual": "Even at 1.6x on the PLAY rig a kid reads ~5% of frame height against BB's 8-9%. The remaining presence has to come from character DESIGN -- saturated colour, heavy contour, readable silhouette -- not from more size. That is a brief for the commissioned models, and it is why the Look Spike exists. CORRECTED 2026-07-30: this 5% was aspirational when written. The rig was 3.400ft against a claimed 4.0 and the proxy drew 3.105ft, so the real figure was 3.90%. It is 5.02% now that both are fixed -- see render.rigHeight."
       },
       "n": 0,
       "confidence": "n/a",
       "informs": "src/v2/render/cameraCues.ts RIGS.PLAY, src/v2/render/ProxyCharacter.ts CHARACTER_SCALE"
+    },
+    "rigHeight": {
+      "id": "render.rig-height",
+      "category": "render",
+      "status": "note",
+      "statusChangedAt": "2026-07-30",
+      "what": "The canonical rig claimed 4.0ft and was 3.400ft. Recorded because the error class -- a constant asserting a number that nothing computes -- is the one this whole instrument exists to catch, and because it was about to be printed at the top of a commission brief.",
+      "found": "src/v2/render/skeleton.ts set REFERENCE_HEIGHT_FT = 4.0 while the SKELETON table's parent-relative offsets summed to a HeadTop_End of 3.400ft -- 15% short, and BELOW the 3.6ft floor of the height band the same file defines for every character. Nothing summed the table, so every consumer read the constant and trusted it.",
+      "whyItMattered": "docs/v2/animation-brief.md opens with '1 unit = 1 foot, the reference kid is 4.0 ft tall' and ships skeleton_recess_v1.glb alongside it. Stride length, foot plants and dive travel are authored in absolute feet against the rig the animator is handed, so a 3.4ft rig buys 35 clips whose every distance is 17% wrong -- against a sim that works in real feet -- and the error surfaces after the invoice.",
+      "secondError": "The PROXY was shorter again: ProxyCharacter's head sphere used a hardcoded radius of 0.46 with no relation to the crown bone, topping out at 3.105ft. So a kid declared 4.0ft drew 4.97ft on screen at CHARACTER_SCALE 1.6 rather than 6.40ft.",
+      "consequence": {
+        "record": "render.characterPresence",
+        "claimed": "~5% of frame height on the PLAY rig",
+        "actual": "3.90% at the 3.105ft drawn crown",
+        "nowTrue": "5.02%. PLAY sits 115.0ft out at 46deg vertical FOV, so the frame is 97.63ft tall at the focus; a 4.0ft kid drawn at 1.6x is 6.40ft, foreshortened by cos(40deg) to 4.90ft = 5.02% of frame, i.e. 40.2px on an 800px viewport. The brief's 'about 5% of screen height' and 'readable at 40px tall' are only simultaneously true after the fix."
+      },
+      "fix": "The whole bone table was rescaled by 4.0/3.4 and re-rounded so the chain sums to exactly 4.000 (1.671 + 0.212 + 0.235 + 0.235 + 0.188 + 0.165 + 1.294). Proportions are unchanged -- the head still spans 32.4% of the crown against the contract's '~30%'. ProxyCharacter now DERIVES its head radius from the crown, so the drawn silhouette lands on HeadTop_End by construction, and its other primitive dimensions were scaled by the same factor.",
+      "pinnedBy": "src/v2/render/skeleton.test.ts asserts crownHeightFt(SKELETON) === REFERENCE_HEIGHT_FT exactly, that the reference sits inside [HEIGHT_MIN_FT, HEIGHT_MAX_FT], and -- the one that actually failed -- that a built ProxyCharacter's world bounding box tops out at heightFt * CHARACTER_SCALE within 2%. scripts/v2/validate-models.mjs applies the same height rule to every delivered model.",
+      "alsoFixed": "ProxyCharacter defaulted body.height to 1.0, the TOP of v1's authored 0.82-1.0 band, so the six kids in characters.ts with no authored height were each the tallest child in the game at 4.4ft. The default is now the band centre, which maps to exactly 4.000ft.",
+      "n": 0,
+      "confidence": "n/a",
+      "informs": "src/v2/render/skeleton.ts REFERENCE_HEIGHT_FT and SKELETON, src/v2/render/ProxyCharacter.ts CHARACTER_SCALE"
+    },
+    "runCadence": {
+      "id": "render.run-cadence",
+      "category": "render",
+      "status": "note",
+      "statusChangedAt": "2026-07-30",
+      "what": "The ground speed each locomotion clip is authored to read correctly at. DERIVED from pace.homeToFirst, not measured -- BB2001 has no on-screen representation of a clip's authored speed, so no frame can be read for it.",
+      "why": "A locomotion clip runs in place while the engine slides the character along the ground, and the engine sets playback rate = simSpeed / authoredSpeed. Without an authored speed there is no number to divide by, and the feet skate at every speed. docs/v2/animation-brief.md originally said only '2.5 strides/sec at 1x speed', which pins CADENCE and says nothing about ground speed.",
+      "derivation": {
+        "anchor": "pace.homeToFirst: 4200ms over one 60ft basepath leg (n=3, conformed).",
+        "runSpeedFts": 14.29,
+        "asMph": 9.74,
+        "cadence": "The brief's own 24-frame cycle at 30fps is 1.25 cycles/s = 2.5 footfalls/s, which settles the ambiguity in the word 'stride': it meant a single step, and the frame count says so rather than an argument about terminology.",
+        "impliedStepFt": 5.716,
+        "impliedStepPerHeight": 1.429,
+        "note": "1.43x body height per step is longer than an elite adult sprinter's step relative to height. Kept deliberately -- the brief asks for cartoon spacing and 'everything slightly too much effort' -- but recorded, because if the proxy reads as skating the fix is a SHORTER CYCLE (18 frames gives a 4.29ft step) and never a slower run. The run speed is the measured quantity; the cadence is the free one."
+      },
+      "others": "run_fast 17.9, trot 7.1, jog_back 8.6, shuffle_left/right 7.2, walk_on 4.4 ft/s. All proportions against the anchor, all unmeasured. Their bands overlap on purpose: pickLocomotion keeps the playback rate inside the brief's 0.6x-1.4x legibility window at every speed the game can produce, which clips.test.ts asserts over the whole range.",
+      "whatWouldClose": "Nothing in BB2001 can close this: an authored playback speed leaves no trace on screen. It could be VALIDATED against our own sim once v2 has baserunning, by measuring foot-contact slip at the rendered speed and requiring it under a threshold.",
+      "n": 0,
+      "confidence": "n/a",
+      "informs": "src/v2/render/clips.ts RUN_SPEED_FTS and every authoredSpeedFts"
     }
   },
   "art": {

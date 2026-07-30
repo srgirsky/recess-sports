@@ -5,8 +5,10 @@
 before sending anything: rejections are automatic and free, and a model that
 passes it is accepted.
 
-The engine-side source of truth is `src/v2/render/skeleton.ts`. If this document
-and that file ever disagree, the file wins — and that is a bug in this document.
+The engine-side source of truth is `src/v2/render/skeleton.ts` (the rig) and
+`src/v2/render/clips.ts` (the clip library). If this document and those files
+ever disagree, the files win — and that is a bug in this document. Tests parse
+this file and fail on drift, so it cannot stay wrong for long.
 
 ---
 
@@ -28,7 +30,7 @@ character #31 cheap. Every hard rule below exists to protect that.
 | **Facing** | +Z |
 | **Origin** | on the floor, between the feet |
 | **Pose** | T-pose: arms along ±X, palms down, feet parallel |
-| **Height** | floor to `HeadTop_End`, **3.6–4.4 ft** (see the per-kid manifest) |
+| **Height** | floor to `HeadTop_End`, **3.6–4.4 ft** (see the per-kid manifest); the reference rig is exactly **4.0 ft** |
 | **Format** | glTF 2.0 binary (`.glb`), single scene, single skin |
 
 Head is roughly **30% of total height** — toy-chibi, but deliberately less
@@ -59,6 +61,13 @@ Up to **6 optional secondary bones** may be added per character
 
 Bone names are Mixamo-style so off-the-shelf retargeting tools work.
 
+The rig file carries a two-triangle placeholder mesh bound to `Hips`, without
+which glTF importers build 33 loose empties instead of an armature. It is not
+part of any deliverable — delete it.
+
+Generate it with `npm run export:skeleton`; it is emitted from `SKELETON`, never
+hand-edited, so the file and the code cannot disagree.
+
 ---
 
 ## 3. The animation library — `anims_recess_v1.glb`
@@ -68,24 +77,47 @@ Authored **once**, on the canonical skeleton, **with no mesh**. 30 fps.
 **No root motion in any clip.** The game owns position; a clip that translates
 `Root` will be rejected. Run cycles run in place.
 
-~33 clips: `idle` · `idle_fidget` · `run` · `run_fast` · `jog_back` ·
-`shuffle_left` · `shuffle_right` · `slide` · `dive_left` · `dive_right` ·
-`getup` · `bat_stance` · `bat_load` · `swing_contact` · `swing_follow` ·
-`swing_whiff` · `bunt` · `pitch_windup` · `pitch_stride` · `pitch_release` ·
-`field_ready` · `field_scoop` · `catch_high` · `catch_chest` · `catch_low` ·
-`throw_overhand` · `throw_quick` · `cheer` · `upset` · `nervous` · `dodge` ·
-`walk_on` · `pose_card`
+35 clips: `idle` · `idle_fidget` · `run` · `run_fast` · `trot` · `jog_back` ·
+`shuffle_left` · `shuffle_right` · `bat_stance` · `bat_load` · `swing_contact` ·
+`swing_follow` · `swing_whiff` · `bunt` · `pitch_windup` · `pitch_stride` ·
+`pitch_release` · `field_ready` · `field_scoop` · `catch_high` · `catch_chest` ·
+`catch_low` · `catch_jump` · `dive_left` · `dive_right` · `getup` ·
+`throw_overhand` · `throw_quick` · `slide` · `cheer` · `upset` · `nervous` ·
+`dodge` · `walk_on` · `pose_card`
+
+Full frame counts, loop flags, authored ground speeds and blend targets are in
+`docs/v2/animation-brief.md`, which is the artist-facing copy of the same table.
 
 ### Marker frames (load-bearing)
 
-Three clips carry a named marker the engine syncs to the physics instant, so
-animation can never desync from the simulation:
+Ten clips carry a named marker the engine syncs to the physics instant, so
+animation can never desync from the simulation. **Frame counts are ±20%; these
+frames are exact.**
 
 | clip | marker | frame |
 |---|---|---|
 | `swing_contact` | `CONTACT` | 7 |
 | `pitch_release` | `RELEASE` | 4 |
 | `throw_overhand` | `RELEASE` | 11 |
+| `catch_high` | `CATCH` | 8 |
+| `catch_chest` | `CATCH` | 8 |
+| `catch_low` | `CATCH` | 9 |
+| `catch_jump` | `CATCH` | 13 |
+| `field_scoop` | `CATCH` | 9 |
+| `dive_left` | `CATCH` | 18 |
+| `dive_right` | `CATCH` | 18 |
+
+A marker cannot be carried in glTF as data, so the validator derives it: the
+event frame must be where the relevant hand (or `Prop_BatGrip`) reaches peak
+speed, within ±1 frame.
+
+### Body travel
+
+`Root` never moves, but the body may. `dive_left`/`dive_right` travel **3.0 ft**
+(±0.35) laterally at the `Hips`, `slide` and `getup` **≤ 0.4 ft**, and every
+other clip ≈ 0. This is a gameplay number: the diving reach the engine grants is
+in real feet, and a clip that reaches further catches balls the sim scored as
+missed. The validator measures it from the delivered file.
 
 ---
 
