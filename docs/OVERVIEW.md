@@ -290,8 +290,46 @@ declares `reference` — `bb2001 | baseball | physics | derived` — because
 that invites is specific: somebody eventually conforms a game for four-to-eight-
 year-olds to MLB's strikeout rate and every gate in the file agrees with them.
 
-Next: bounce, roll and carom (which finally give the four venue physics fields
-a consumer, and `fenceIsConvex` its first caromed ball); then contact — exit
+**The ball now bounces, rolls and caroms** (2026-07-31), which finally gives
+`field.ts`'s venue physics fields a consumer and `fenceIsConvex` its first
+actual caromed ball — the convexity had been asserted for three months on the
+stated grounds that it "guarantees a caromed ball always reflects back INTO the
+field", with nothing ever testing the consequent. It does now, across every
+venue, every spray angle and every inbound heading.
+
+The impact model is derived rather than looked up: solving the impulse problem
+for a sphere gives the grip impulse `(2/7)m|u|` and `v' = (5v − 2ωR)/7`, and the
+minus sign is the part memory gets wrong. Two results are worth stating because
+both look like bugs and are not. **Topspin accelerates the ball off the bounce**
+— measured 12.21 → 12.92 ft/s — because friction converts rotational energy into
+translational; the first version of the test asserted that speed never increases,
+failed on exactly that case, and was itself the error. The invariant is energy.
+And **backspin does not bounce a baseball backward**. It does in the model, but
+only above about 2900 rpm; at real batted-ball spin a chopper is slowed hard
+(20 → 7.4 ft/s) and keeps going. The catchier claim was in the first draft of
+the test name, and measuring it is what took it out.
+
+**And the sim contradicted the venues.** The blacktop has by far the lowest
+rolling friction and in isolation rolls a ball 3.6× as far as shaggy grass — but
+end to end it comes to rest *shortest of the three*, because its restitution is
+also the highest, so the ball spends its energy bouncing instead of rolling and
+every landing takes forward speed out through the grip. `data/venues.ts` calls
+it "hot asphalt — the ball SPRINGS" and means it as the fast park. A surface
+cannot be both the springiest and the fastest; v1 only held both because its
+bounce and roll multipliers were independent renderer knobs with no physics
+between them. Recorded as `sim.venueRollFeel`, a `known-drift` with the ratio
+pinned, rather than resolved by quietly editing a constant until the assertion
+flipped — which is the failure mode this whole apparatus exists to catch.
+
+One happier surprise: the ground restitutions were hand-authored months ago, and
+a published band turned up for them. Brosnan & McNitt's Pennbounce work at Penn
+State measured baseball COR on infield surfaces at **0.4–0.6**, tracking surface
+hardness. The park's mown grass lands at 0.50 and the sandlot's shaggy grass at
+0.40 — both inside it — while the blacktop's 0.65 falls outside, correctly,
+because asphalt is not a turf surface. Somebody's guesswork, checked against real
+literature after the fact, and it held.
+
+Next: contact — exit
 velocity, launch angle and spray from *where and when* you swung, including the
 power→exit-velocity mapping above; then fielders and runners off one speed
 function; then the play reducer; then the statistical conformance harness

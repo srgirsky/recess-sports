@@ -107,6 +107,37 @@ continuous across a v1↔v2 switch in the same browser.
   cannot find one that opens and closes inside a step). `sim.integratorStep`
   records it — including that the first convergence test compared 240/480/960
   and got a ratio of **zero**, because at those rates it measured rounding.
+- **★ THE BOUNCE MODEL'S FORM IS DERIVED; ITS COEFFICIENTS ARE CITED OR PENDING.**
+  Solving the impulse problem for a sphere gives the grip impulse `(2/7)m|u|`
+  and `v' = (5v − 2ωR)/7`; friction can only supply `μm(1+e)|v_y|`, so an impact
+  either GRIPS or SLIPS. Two things fall out that are worth knowing before you
+  "fix" them. **Topspin ACCELERATES the ball off the bounce** (12.21 → 12.92
+  ft/s measured) because friction converts rotational into translational energy
+  — the invariant is total ENERGY, not speed, and a speed cap is wrong. And
+  **backspin does not bounce a baseball backward**: it does in the model, but
+  only above ~2900 rpm, so at real batted-ball spin a chopper is *slowed hard*
+  (20 → 7.4 ft/s), not reversed. Cross (Am. J. Phys. 70(11), 2002) measured that
+  real balls GRIP rather than roll and spin MORE than the rolling prediction, so
+  our grip branch is a lower bound — recorded in `sim.bounceModel`, not glossed.
+- **★ `sim.venueRollFeel` is a `known-drift` you will trip over: the BLACKTOP
+  PLAYS SHORTEST.** It has the lowest rolling friction (0.10 vs 0.28 and 0.36)
+  and in isolation rolls 3.6× as far — but end to end a batted ball rests
+  shortest there, because its restitution is the highest (0.65) so the ball
+  spends its energy bouncing (6–7 hops vs 3–4) and every landing costs
+  tangential speed. `data/venues.ts` calls it the fast park. **A surface cannot
+  be both the springiest and the fastest**, and v1 only held both because its
+  `bounceMult` and `rollMult` were independent renderer knobs with no physics
+  between them. Resolve it in a venue-feel pass, explicitly — do not quietly
+  retune a constant to make the assertion flip.
+- **Rolling containment lives inside `rollStep`, not in the caller.**
+  `stepFlight`'s guards only run while the ball is AIRBORNE, so once it settles
+  into a roll nothing else is watching the fence — a grounder down the line
+  simply rolled out of the park (caught at sandlot spray 40: at rest 373ft from
+  home against a 156ft fence).
+- **Two `flight.ts` contracts a bounce caller must honour.** `state` and
+  `event.state` are the SAME object — clone before mutating. And a guard already
+  negative at step start never fires, so a bounce must leave the ball at `y ≥ 0`
+  and a carom must leave it strictly INSIDE the fence, or it tunnels and sticks.
 - **Events are BISECTED, never stepped onto.** A 130 ft/s liner covers 0.54ft
   per 240Hz step — 2.2 ball diameters — and fixing that with step size needs
   >1000Hz and is still approximate. Each bisection trial re-integrates from the
@@ -421,6 +452,7 @@ continuous across a v1↔v2 switch in the same browser.
 | `src/v2/sim/ball.ts` | ★ v2. The published ball, and the two aero coefficients. Everything folds into `BALL_K_PER_FT` = ½ρA/m, which is the *validation*: deriving it from the four published constants and comparing against Nathan's independently published 5.509e-3 exercises ρ, A and m at once. |
 | `src/v2/sim/flight.ts` | ★ v2. RK4 over gravity + quadratic drag + Magnus, with events resolved by **bisection**. It integrates and REPORTS ("crossed the ground plane 0.00317s into this step") — never decides what an event means. RK4 stages run on scalar locals: zero allocation, and reentrant for free. `sampleAt` is the render seam, exposed before any renderer exists. |
 | `src/v2/sim/launch.ts` | ★ v2. Describes-a-batted-ball → `BallState`. Its own file because it is the ONE place an authored ANGLE becomes a vector, so it is the one place needing trig — and the per-step path (`flight.ts`, `ball.ts`) is lint-checked to have none. PR 4's `contact.ts` hands off here. |
+| `src/v2/sim/bounce.ts` | ★ v2. What a crossing MEANS: grip/slip ground impact, roll, wall carom, obstacle. The tangential result is DERIVED (`v' = (5v − 2ωR)/7` — the minus is what memory gets wrong) and checked by conserved quantities. Carom is gated on `fenceHeight`; rolling containment lives in `rollStep` so "a rolling ball stays in the field" is true by construction. No `Rng`. |
 | `scripts/v2/purity.lint.test.js` | ★ v2. `src/v2/sim/**` imports only sim/data/config/**five** pure systems (`inning`·`gameflow`·`stats`·`lineup`·`draft`); no three, no DOM, no `Math.random`, no `Date.now`, **no module-scope `Rng`**; every sim file must import in plain Node; whole-statement `import type` gets a separate wider lane; **the whitelist itself is checked** (each named system must be browser-free, random-free, and value-import only pure modules); and **nothing outside `src/v2/**` may import v2**, which is what actually guarantees a v2 edit cannot reach v1's bundle. Two files claimed this gate existed before it did, and it then spent its first life vacuously satisfied. |
 | `scripts/measures.json` | ★ The measurement records + `conformance.test.js`'s gate. Every record names the `src/config.ts` constant it informs, so the audit trail runs source → record → constant, and carries a `status`: `conformed` (ours inside the band), `known-drift` (outside, and the test pins the drift's SIZE so it can't grow or be half-fixed unnoticed), `awaiting-measurement` (BB not measured yet — pins only OUR value, claims nothing about BB), `note` (a finding about the measurement itself). Read this before tuning any "Backyard feel" constant. |
 

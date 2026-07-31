@@ -145,6 +145,15 @@ export interface Obstacle {
   z: number;
   /** ft. */
   r: number;
+  /**
+   * ft. How high the obstacle actually reaches.
+   *
+   * ★ v1 had no height on its obstacle at all, so its oak was an infinite
+   * cylinder: a fly ball forty feet up "BONK"ed off a tree it was sailing well
+   * over, and stopped dead. Here it is a real canopy — hit the trunk or the
+   * branches and the ball dies; clear the top and the tree is not there.
+   */
+  heightFt: number;
   kind: 'tree';
 }
 
@@ -363,7 +372,10 @@ export const VENUE_GEOMETRY: Record<VenueId, FieldGeometry> = {
     wallRestitution: 0.42, // wood planks, dead
     rollFriction: 0.36, // shaggy backyard grass
     bounceMult: 0.8,
-    obstacles: [{ x: -55, z: 150, r: 8, kind: 'tree' }],
+    // A mature backyard oak: 8ft of trunk-and-branch radius, 34ft to the top of
+    // the canopy — comfortably over the 6ft fence it stands beside, and low
+    // enough that a real fly ball clears it.
+    obstacles: [{ x: -55, z: 150, r: 8, heightFt: 34, kind: 'tree' }],
   },
   /** Chain-link all round and hot asphalt — grounders scoot, hops spring. */
   blacktop: {

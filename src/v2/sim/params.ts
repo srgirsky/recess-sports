@@ -97,6 +97,69 @@ export const AERO = {
 } as const;
 
 /**
+ * What happens when the ball meets something solid.
+ *
+ * ★ THE MODEL FORM IS DERIVED; THE COEFFICIENTS ARE CITED OR PENDING. Same
+ * split as `AERO` above, and for the same reason: rigid-body impact mechanics
+ * is a thing you can derive on paper and check, while "how bouncy is shaggy
+ * backyard grass" is an empirical number nobody in this repo has measured.
+ * `sim.bounceModel` conforms the form; `sim.groundBounce`, `sim.rollFriction`
+ * and `sim.wallRestitution` stay `awaiting-measurement` and say what would
+ * close them.
+ *
+ * `COR_BASE` is the BASE ground restitution; each venue's `bounceMult` in
+ * `field.ts` scales it. Keeping those two in separate files is deliberate —
+ * v1 let one multiplier serve as both a hop multiplier and a wall multiplier
+ * (`WALL_REST * bounceMult`), and the doc comment describing it stopped being
+ * true. Here `bounceMult` means exactly what `field.ts` says it means: applied
+ * to the ground restitution, and to nothing else.
+ *
+ * Published band: Brosnan & McNitt's "Pennbounce" work at Penn State's Center
+ * for Sports Surface Research measured baseball COR across skinned infield,
+ * natural turfgrass and two synthetic turfs at **0.4-0.6**, ordered
+ * skinned >= synthetic > natural grass, and found COR tracks surface HARDNESS
+ * (soil properties matter more than cutting height or thatch). At
+ * `COR_BASE 0.50` the authored multipliers put the park's mown grass at 0.50
+ * and the sandlot's shaggy grass at 0.40 — both inside that band — while the
+ * blacktop lands at 0.65, deliberately OUTSIDE it, because asphalt is not a
+ * turf surface and the band is for infields. A test asserts all three.
+ */
+export const BOUNCE = {
+  /** Base ground coefficient of restitution, before the venue multiplier. */
+  COR_BASE: 0.5,
+  /**
+   * Coulomb friction coefficient between ball and ground, governing whether an
+   * impact GRIPS (the contact point stops) or SLIPS through. Not measured;
+   * chosen high enough that a normal grounder grips, which is what makes
+   * backspin behave.
+   */
+  MU_GROUND: 0.5,
+  /** Tangential speed retained in a wall carom, on top of `wallRestitution`. */
+  WALL_TANGENTIAL_KEEP: 0.8,
+  /**
+   * Below this rebound speed the ball stops bouncing and starts rolling.
+   * Needed because restitution is geometric: without a floor a ball takes
+   * infinitely many ever-smaller hops and the sim never advances (Zeno). v1
+   * hit the same wall and papered over it with a 0.15 speed floor and a 3px
+   * snap-to-settle.
+   */
+  REST_BOUNCE_FTS: 1.5,
+  /** Below this ground speed a rolling ball is at rest. */
+  REST_ROLL_FTS: 0.5,
+  /**
+   * How close to the fence a RESTING ball may sit, in ft.
+   *
+   * ★ Must stay well inside `FIELD_MARGIN` (4ft, where a FIELDER is clamped),
+   * or the ball comes to rest somewhere nobody can legally stand and the play
+   * runs to its length cap with a kid pressed against the wall. v1 shipped
+   * exactly that bug via an unclamped wild-throw overshoot. The gap here is
+   * 4 - 1 = 3ft, which PR 5's catch radius must cover; a test pins the
+   * relationship so it cannot silently invert.
+   */
+  BALL_SETTLE_MARGIN_FT: 1,
+} as const;
+
+/**
  * Integration rates.
  *
  * ★ 240 Hz IS NOT AN ACCURACY CHOICE, and measuring it is what showed that.
