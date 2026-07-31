@@ -725,11 +725,48 @@
         "trianglesPerKid": { "before": 2936, "after": 3448 }
       },
       "fix": "HEAD_RISE = 1.0, which needs no justification beyond its arithmetic: the centre sits exactly one radius above the Head joint, so the sphere spans Head -> HeadTop_End, the segment the bone table already calls the head. The radius is derived against headH as well, so a headH 1.08 kid no longer draws its crown 1.5% above the bone that defines its height. A blob() helper states ellipsoids in half-extents so no axis can be handed the wrong kind of number, and the torso is bounded by bind-pose landmarks (shoulder joint, pelvis) instead of magic numbers. A neck capsule bridges Spine2 -> Head on the Neck bone. Hair and accessories were re-anchored to the head SPHERE rather than the Head BONE first -- provably a no-op at the old HEAD_RISE, and mandatory, since anchoring off the bone meant changing HEAD_RISE would have slid every cap a quarter-radius down the skull and put a bald patch on eleven hair styles. Hair keeps a headroom budget (HAIR_HEADROOM_FRAC) instead of a hard cap, because height is defined on the BONE and an afro that stops at the skull is not an afro.",
-      "alsoFixed": "The proxy had nothing at all on the front of its head, so at the animation review page's own criterion 4 ('readable at 40px tall') a kid was rotationally ambiguous and a clip authored 180 degrees backwards would have looked fine. Two eyes, two brows and a nose, on the Head bone at 8x6 segments: a FACING CUE, not a face. Expression stays where the contract puts it -- the face_atlas texture on the delivered models -- and there is deliberately no mouth.",
+      "alsoFixed": "The proxy had nothing at all on the front of its head, so at the animation review page's own criterion 4 ('readable at 40px tall') a kid was rotationally ambiguous and a clip authored 180 degrees backwards would have looked fine. Two eyes, two brows and a nose, on the Head bone at 8x6 segments: a FACING CUE, not a face. Expression stays where the contract puts it -- the face_atlas texture on the delivered models -- and there is deliberately no mouth. The brows were removed once and restored -- see render.proxyFace, which is where the face's own errors are recorded.",
       "pinnedBy": "src/v2/render/skeleton.test.ts 'the proxy draws a kid, not a bobblehead': the silhouette budget across all 11 hair styles x 4 accessories (both a ceiling and, for the styles made of height, a FLOOR -- a ceiling alone cannot see a spike buried in the skull); solid-span ray casts through the merged buffer for body continuity, accumulated by winding depth because the parts deliberately interpenetrate; the drawn head span asserted against the BONE span so the drawing and the brief cannot diverge again; and the crown checked on all 30 kids, not the average one. Every one of those was verified to FAIL against the code it replaced.",
       "n": 0,
       "confidence": "n/a",
       "informs": "src/v2/render/ProxyCharacter.ts HEAD_RISE and HAIR_HEADROOM_FRAC"
+    },
+    "proxyFace": {
+      "id": "render.proxy-face",
+      "category": "render",
+      "status": "note",
+      "statusChangedAt": "2026-07-30",
+      "what": "The facing cue added by render.proxySilhouette was itself half invisible. Recorded separately because the errors are a different class: not 'the number nothing computes' but 'the feature nobody looks at', and they were found by trying to add ONE more feature to a face that already had three.",
+      "found": {
+        "afro": "grizz drew ZERO pixels of skin anywhere on his head. The afro is a single convex ball 1.34r wide centred on the head, and its front surface sat at z 1.14r against a skull surface of 0.82r, so it swallowed eyes, nose and forehead together. Shipped in the same change that added the eyes.",
+        "glasses": "Sat at y -0.03r -- the head's vertical CENTRE, 0.37r above the eyes -- and stood only 0.011r proud of the skull. Four of thirty kids wore an accessory that drew under a pixel. They were positioned against an older face and never re-checked when the eyes moved down.",
+        "fixedDepth": "facingCue placed every feature at an ABSOLUTE z, while the skull's z half-extent is headW * 0.95 and headW runs 0.90-1.08 across the roster. A wide-headed kid's face bulges forward past any constant. The eyes and nose survived it by luck -- still proud on all 30, but by as little as 0.014r -- and a brow at a fixed z is swallowed outright above headW 1.052: the skull front runs 0.884 * headW at the brow's latitude against a fixed brow front of 0.930. That is calls_shot, cricket, sprout and the_prof. Derived from the surface instead, the margin is a constant +0.066r for every kid.",
+        "brow": "The first brow was placed at the anatomical middle of the head and drawn in raw hair colour. Nine of eleven fringes cover that latitude, so it was removed as unshippable. That diagnosis was half right: the position was wrong, the colour was not."
+      },
+      "whyItMattered": "The cue exists so a clip authored 180 degrees backwards is visible on the review page. A face that is invisible on the widest-headed third of the roster, absent on the afro kid and sub-pixel on the four who wear glasses does not do that -- and the page itself was showing the back of the head anyway (see reviewFacing).",
+      "derivation": {
+        "headWRange": [0.9, 1.08],
+        "browBuriedAboveHeadW": 1.052,
+        "kidsAffectedByFixedDepth": 4,
+        "skullFrontPerHeadW": 0.884,
+        "fixedBrowFront": 0.93,
+        "derivedMarginR": 0.066,
+        "eyeLatitude": -0.43,
+        "browLatitude": -0.21,
+        "noseLatitude": -0.6,
+        "browShade": 0.55,
+        "browMinContrast": 90,
+        "worstBrowContrast": { "kid": "moose", "raw": 71, "at035": 78, "at055": 96, "at080": 114 },
+        "visibleFractionBald": { "eye": 0.35, "brow": 0.5, "nose": 0.26 },
+        "trianglesPerKid": 3448
+      },
+      "fix": "Features are placed by latitude on the head ellipsoid and sunk a fixed fraction of r into its own surface (onSkull), so they move with headW instead of ignoring it -- provably a no-op at headW 1, the same argument the hair re-anchor used. The afro keeps its exact width and top but is pulled back and shallower for the face opening, PLUS a skull-hugging cap for the hairline: pulling a convex ball back far enough to clear the eyes necessarily clears the forehead too, which trades no-face for no-hairline. Glasses moved onto the eyes on the same derivation. The brow is the kid's own hair colour shaded by BROW_SHADE toward the shared cool shadow -- raw hair colour is invisible on pale-haired kids and ink would have vanished into the three near-black hair colours it half-emerges from.",
+      "reviewFacing": "src/v2/spike/AnimSpike.ts stood the kid at PI*0.82, where the face-toward-camera dot is -0.47: the page that exists to review whether a clip faces the right way was showing the BACK of the head by default, which is why the buried face went unnoticed there. PI*0.5 gives a dot of +0.49 and keeps 0.87 of the lateral travel a dive needs.",
+      "pinnedBy": "src/v2/render/skeleton.test.ts casts rays along RIGS.PLAY's elevation through every front-facing vertex of a feature and asks whether it is the FRONTMOST surface, keyed on tagged index ranges in the merged geometry. Identity cannot come from colour: the nose is skin-coloured on a skin-coloured head, so a colour test passes with the nose deleted, and eyes, brows and glasses share one ink. Thresholds are RATIOS against the same feature on a bald kid, because each is embedded to a different depth and so has its own healthy value. Head width is varied explicitly, since a fixture built at headW 1 cannot see the defect that only exists above 1.04. Every assertion was verified to FAIL against the code it replaced.",
+      "falseNegative": "The test proves GEOMETRIC visibility, not perceptual visibility: it would pass a feature fully exposed and one pixel wide. browMinContrast covers the colour half for the brow; nothing covers absolute size, and at the Look Spike's game distance a face is a few pixels by design -- render.characterPresence already records why that cannot be fixed with size.",
+      "n": 0,
+      "confidence": "n/a",
+      "informs": "src/v2/render/ProxyCharacter.ts BROW_SHADE and BROW_MIN_CONTRAST, src/v2/spike/AnimSpike.ts kid facing"
     },
     "runCadence": {
       "id": "render.run-cadence",

@@ -19,7 +19,17 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { REFERENCE_HEIGHT_FT, HEIGHT_MAX_FT, HEIGHT_MIN_FT, bindWorld, crownHeightFt } from '../../src/v2/render/skeleton.ts';
-import { CHARACTER_SCALE, HAIR_HEADROOM_FRAC, HEAD_RISE } from '../../src/v2/render/ProxyCharacter.ts';
+import {
+  BROW_MIN_CONTRAST,
+  BROW_SHADE,
+  CHARACTER_SCALE,
+  HAIR_HEADROOM_FRAC,
+  HEAD_RISE,
+  ProxyCharacter,
+} from '../../src/v2/render/ProxyCharacter.ts';
+import { hairHex, skinHex } from '../../src/v2/render/materials/registry.ts';
+import { shadeInt } from '../../src/art/fieldTexture.ts';
+import { ROSTER } from '../../src/data/characters.ts';
 import { CLIPS, RUN_SPEED_FTS, clipSpec } from '../../src/v2/render/clips.ts';
 import { RIGS } from '../../src/v2/render/cameraCues.ts';
 
@@ -130,6 +140,81 @@ describe('render.proxySilhouette', () => {
     expect(M.render.rigHeight.correctedClaim).toMatch(/36\.97%/);
     expect(M.render.rigHeight.correctedClaim).toContain('render.proxySilhouette');
     expect(M.render.rigHeight.fix).toContain('BONE CHAIN');
+  });
+});
+
+describe('render.proxyFace', () => {
+  const rec = M.render.proxyFace;
+  const d = rec.derivation;
+
+  it('is a well-formed record', () => {
+    expect(Object.keys(M.statuses)).toContain(rec.status);
+    expect(rec.informs).toContain('BROW_SHADE');
+    expect(rec.informs).toContain('BROW_MIN_CONTRAST');
+    expect(rec.n).toBe(0);
+    expect(rec.confidence).toBe('n/a');
+    // A record whose whole subject is a feature nobody could see has to say
+    // what its own test still cannot see.
+    expect(rec.falseNegative).toBeTruthy();
+  });
+
+  it('states the constants the code actually carries', () => {
+    expect(BROW_SHADE).toBe(d.browShade);
+    expect(BROW_MIN_CONTRAST).toBe(d.browMinContrast);
+    expect(HEIGHT_MIN_FT).toBeLessThan(HEIGHT_MAX_FT); // (the record's band is the rig's)
+  });
+
+  it('recomputes the head width at which a FIXED-depth feature is swallowed', () => {
+    // The defect in one line of arithmetic: the skull's z half-extent scales
+    // with headW and a constant does not. Recomputed here so that reshaping the
+    // skull or moving the brow's latitude has to move the record too.
+    const perHeadW = 0.95 * Math.sqrt(1 - 0.3 ** 2 - d.browLatitude ** 2);
+    expect(perHeadW).toBeCloseTo(d.skullFrontPerHeadW, 3);
+
+    // The constant that reproduces today's geometry at headW 1 — i.e. what a
+    // fixed depth would have been — and the width at which the skull passes it.
+    const fixedFront = perHeadW * 1 - 0.02 + d.derivedMarginR;
+    expect(fixedFront).toBeCloseTo(d.fixedBrowFront, 3);
+    expect(fixedFront / perHeadW).toBeCloseTo(d.browBuriedAboveHeadW, 2);
+
+    // It has to be a width kids actually have, or the bug is hypothetical.
+    const affected = ROSTER.filter(
+      (c) => Math.min(1.08, Math.max(0.9, c.visual.body?.headW ?? 1)) > d.browBuriedAboveHeadW
+    );
+    expect(affected).toHaveLength(d.kidsAffectedByFixedDepth);
+    expect(d.headWRange[1]).toBeGreaterThan(d.browBuriedAboveHeadW);
+  });
+
+  it('recomputes the worst brow-against-skin separation on the real roster', () => {
+    // The record names `moose` and a number. Both are re-derived from the
+    // palettes and the shade constant, so a palette edit that makes a brow
+    // vanish cannot leave the record saying it did not.
+    const rgb = (h) => [(h >> 16) & 255, (h >> 8) & 255, h & 255];
+    let worst = Infinity;
+    let who = '';
+    for (const c of ROSTER) {
+      const s = rgb(skinHex(c.visual.skin));
+      const b = rgb(shadeInt(hairHex(c.visual.hairColor), BROW_SHADE));
+      const dist = Math.sqrt(2 * (s[0] - b[0]) ** 2 + 4 * (s[1] - b[1]) ** 2 + 3 * (s[2] - b[2]) ** 2);
+      if (dist < worst) {
+        worst = dist;
+        who = c.id;
+      }
+    }
+    expect(who).toBe(d.worstBrowContrast.kid);
+    expect(worst).toBeCloseTo(d.worstBrowContrast.at055, 0);
+    expect(worst).toBeGreaterThan(BROW_MIN_CONTRAST);
+  });
+
+  it('states the triangle cost it actually costs', () => {
+    // The figure this record and docs/OVERVIEW.md both quote, measured off a
+    // built proxy rather than copied. It was wrong once already: the count was
+    // taken with brows that were then removed, and nothing re-measured.
+    const kid = new ProxyCharacter(ROSTER[0].visual);
+    const tris = kid.mesh.geometry.index.count / 3;
+    kid.dispose();
+    expect(tris).toBe(d.trianglesPerKid);
+    expect(M.render.proxySilhouette.derivation.trianglesPerKid.after).toBe(tris);
   });
 });
 

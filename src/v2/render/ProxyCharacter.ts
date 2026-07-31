@@ -51,6 +51,7 @@ import {
   SKELETON,
   crownHeightFt,
 } from './skeleton';
+import { shadeInt } from '../../art/fieldTexture';
 import { hairHex, jerseyHex, skinHex, trimHex } from './materials/registry';
 import { makeToonMaterial } from './materials/toon';
 import { attachOutline, type OutlineRegistry } from './materials/outline';
@@ -119,6 +120,24 @@ export const HEAD_RISE = 1.0;
  * `hair: 'bald'`, so all 11 styles and all 4 accessories went unmeasured.
  */
 export const HAIR_HEADROOM_FRAC = 0.04;
+
+/**
+ * ★ How far the brow is shaded from the kid's hair colour, toward the shared
+ * cool shadow (`shadeInt`, the same mix v1's art and the DOM tokens use).
+ *
+ * Chosen, not assumed. Over all 30 kids' real skin × hair pairs the worst
+ * brow-against-skin separation runs 71 raw → 78 at 0.35 → **96 at 0.55**
+ * (weighted RGB distance). The worst case is `moose` — brown hair on the darkest
+ * skin — and he is worst at every value, because shading toward navy moves a
+ * brow TOWARD dark skin; 0.8 only buys him 114, so more shade is not the answer
+ * for him and the inverted-hull outline is what carries it.
+ *
+ * `BROW_MIN_CONTRAST` is the floor a test holds the whole roster to. It sits
+ * below the 96 the palette actually achieves so it has real headroom, rather
+ * than being a threshold reverse-engineered to pass.
+ */
+export const BROW_SHADE = 0.55;
+export const BROW_MIN_CONTRAST = 90;
 
 // --- Bind-pose bookkeeping --------------------------------------------------
 
@@ -207,6 +226,24 @@ interface Part {
   geom: BufferGeometry;
   bone: string;
   color: number;
+  /**
+   * ★ What this primitive IS, for tests that ask whether it can be seen.
+   *
+   * Colour cannot answer that question. The nose is drawn in skin colour on a
+   * skin-coloured head, so "is the frontmost surface here skin?" passes just as
+   * happily with the nose deleted; eyes, brows and glasses all share one ink.
+   * Identity has to come from the part list, so it is recorded at merge time.
+   */
+  tag?: FeatureTag;
+}
+
+export type FeatureTag = 'eye' | 'brow' | 'nose' | 'glasses';
+
+/** Index-buffer span of a tagged part in the merged geometry. */
+export interface FeatureRange {
+  tag: FeatureTag;
+  indexStart: number;
+  indexCount: number;
 }
 
 /**
@@ -217,7 +254,7 @@ interface Part {
  * write skin and colour attributes per source geometry anyway, and this way
  * the proxy has no dependency outside three's core.
  */
-function mergeParts(parts: Part[]): BufferGeometry {
+function mergeParts(parts: Part[], ranges: FeatureRange[] = []): BufferGeometry {
   let vCount = 0;
   let iCount = 0;
   for (const p of parts) {
@@ -263,6 +300,7 @@ function mergeParts(parts: Part[]): BufferGeometry {
     const src = p.geom.index;
     const n = src ? src.count : pos.count;
     for (let i = 0; i < n; i++) index[io + i] = (src ? src.getX(i) : i) + vo;
+    if (p.tag) ranges.push({ tag: p.tag, indexStart: io, indexCount: n });
 
     vo += pos.count;
     io += n;
@@ -313,6 +351,8 @@ export class ProxyCharacter {
   /** Actual height, floor to crown, in feet. */
   readonly heightFt: number;
   readonly proportions: ProxyProportions;
+  /** Which triangles belong to which face feature — see `Part.tag`. */
+  readonly features: FeatureRange[] = [];
 
   constructor(visual: VisualParams, opts: ProxyOptions = {}) {
     const b = visual.body ?? {};
@@ -369,7 +409,7 @@ export class ProxyCharacter {
     });
     parts.push(...hairParts(visual.hair, headC, headR, headW, headH, hairC));
     parts.push(...accessoryParts(visual.accessory, headC, headR, headW, headH, jersey));
-    parts.push(...facingCue(headC, headR, headW, headH, skinC));
+    parts.push(...facingCue(headC, headR, headW, headH, skinC, shadeInt(hairC, BROW_SHADE)));
 
     // ---- Torso ----
     // Bounded by BIND-POSE LANDMARKS rather than magic numbers: the ellipsoid's
@@ -449,7 +489,7 @@ export class ProxyCharacter {
       });
     }
 
-    const geom = mergeParts(parts);
+    const geom = mergeParts(parts, this.features);
     const mat = makeToonMaterial({ color: 0xffffff, rimStrength: 0.24, rimPower: 3.0 });
     mat.vertexColors = true;
 
@@ -557,7 +597,25 @@ function hairParts(
       // the top of the kid. Wider than the skull by 2.68r, so it still reads
       // unmistakably as an afro; it just frames the face now instead of
       // towering over it.
-      add(ball(crown.clone().add(new Vector3(0, -r * 0.08, 0)), r * 1.34, new Vector3(sx, sy * 0.82, sx)));
+      //
+      // ★ TWO parts, and the second is not decoration. A single ball this wide
+      // is convex and centred on the head, so its front surface swallowed the
+      // whole face: `grizz` drew ZERO pixels of skin — a sphere of hair with a
+      // body under it. Pulling the ball back far enough to clear the eyes pulls
+      // it back past the forehead too (a convex ellipsoid's front surface is
+      // monotone), which trades no-face for no-hairline — a bald kid in a fur
+      // collar. So: the wide ball, pulled back, carries the SILHOUETTE, and a
+      // skull-hugging cap carries the HAIRLINE. Width (1.34r) and top (1.219r)
+      // are unchanged by both, so the headroom budget and the outline are
+      // exactly what they were.
+      add(
+        ball(
+          crown.clone().add(new Vector3(0, -r * 0.08, -r * 0.15)),
+          r * 1.34,
+          new Vector3(sx, sy * 0.82, sx * 0.75)
+        )
+      );
+      add(ball(crown, r * 1.06, new Vector3(sx, sy * 0.78, sx)));
       break;
     case 'mohawk':
       add(ball(crown, r * 1.0, new Vector3(sx, sy * 0.5, sx)));
@@ -602,7 +660,32 @@ function hairParts(
 }
 
 /**
- * ★ A FACING CUE — two eyes and a nose. Not a face.
+ * ★ Where a feature sits on the FRONT of the skull, in units of `r`.
+ *
+ * `x` and `y` are latitude/longitude on the head ellipsoid; the returned z is
+ * the ellipsoid's own front surface there, minus `sink` so the primitive is
+ * embedded rather than stuck on.
+ *
+ * The reason this is a function and not three more constants: the skull's z
+ * half-extent is `headW · 0.95`, and `headW` runs 0.90-1.08 across the roster,
+ * so the face of a wide-headed kid bulges FORWARD past any fixed depth. The
+ * eyes and nose survived it by luck — they were still proud on all 30 kids, but
+ * by as little as 0.014r on `sprout` and `the_prof`, which is a bump you cannot
+ * see. A brow at a fixed z does not survive it: the skull's front runs
+ * `0.884 · headW` at the brow's latitude against a fixed front of 0.930, so it
+ * is swallowed outright above `headW 1.052` — `calls_shot`, `cricket`, `sprout`
+ * and `the_prof`. Derived, the margin is a constant +0.066r for every kid.
+ *
+ * Same defect class as the torso's Y scale — a quantity that has to move with
+ * the head, written as a constant. Verified a no-op at `headW = headH = 1`.
+ */
+function onSkull(x: number, y: number, headW: number, headH: number, sink: number): Vector3 {
+  const t = Math.max(0, 1 - (x / headW) ** 2 - (y / headH) ** 2);
+  return new Vector3(x, y, 0.95 * headW * Math.sqrt(t) - sink);
+}
+
+/**
+ * ★ A FACING CUE — eyes, brows and a nose. Not a face.
  *
  * The delivered models carry the face as a TEXTURE: `M_Body` with its own UV
  * island and a 512² `face_atlas` of 12 expressions, swapped per cell
@@ -615,31 +698,58 @@ function hairParts(
  * 180° backwards would have looked completely fine. Which way a fielder is
  * facing is the difference between charging and retreating, and it was the one
  * thing the page could not show you.
+ *
+ * Everything sits LOW on the skull, and that is not a style choice: the hair
+ * caps are authored large, so the skin a kid actually shows is the bottom third
+ * of the head. The first attempt put the brow at the anatomical middle, where
+ * the fringe covers it on nine of eleven styles, and drew it in raw hair colour
+ * so that where it did emerge it matched what it was emerging from. It is the
+ * kid's hair colour SHADED now — ink would have been the same mistake wearing a
+ * different hat, since three of the seven hair colours are near-black.
+ *
+ * Low segment counts on purpose: this lands on every kid in the Look Spike and
+ * on every LOD3 fielder in the game, where it must cost nothing.
  */
-function facingCue(c: Vector3, r: number, headW: number, headH: number, skin: number): Part[] {
+function facingCue(
+  c: Vector3,
+  r: number,
+  headW: number,
+  headH: number,
+  skin: number,
+  brow: number
+): Part[] {
   const out: Part[] = [];
-  const at = (x: number, y: number, z: number) => c.clone().add(new Vector3(x * r, y * r, z * r));
-  // ★ LOW on the skull, and that is not a style choice. The hair caps are
-  // authored large — a `short` cap hangs to 0.63 radii BELOW the sphere centre —
-  // so the only skin a kid actually shows is the bottom third of the head.
-  // Eyes at the anatomical middle sat inside the hair and read as two dents in
-  // a fringe. Brows are omitted for the same reason: on nine of eleven styles
-  // there is no lit skin left to put them on, and hair-coloured marks buried in
-  // hair are cost with no silhouette.
-  //
-  // Low segment counts on purpose: this lands on 18 kids in the Look Spike and
-  // on every LOD3 fielder in the game, where it must cost nothing.
+  const at = (v: Vector3) => c.clone().add(v.multiplyScalar(r));
   for (const sgn of [-1, 1]) {
     out.push({
-      geom: ball(at(sgn * 0.3 * headW, -0.4 * headH, 0.78), r * 0.13, undefined, 8, 6),
+      geom: ball(at(onSkull(sgn * 0.3 * headW, -0.43 * headH, headW, headH, 0.03)), r * 0.13, undefined, 8, 6),
       bone: 'Head',
       color: 0x2b3440,
+      tag: 'eye',
+    });
+    // The brow is the kid's own hair colour, SHADED. Raw hair colour is what
+    // failed the first time — and ink would have failed differently: three of
+    // the seven hair colours are near-black, so an ink brow would vanish into
+    // the fringe it half-emerges from. Shading toward the shared cool shadow
+    // keeps it that kid's brow and guarantees it separates from skin.
+    out.push({
+      geom: ball(
+        at(onSkull(sgn * 0.3 * headW, -0.21 * headH, headW, headH, 0.02)),
+        r * 0.22,
+        new Vector3(1, 0.28, 0.3),
+        8,
+        6
+      ),
+      bone: 'Head',
+      color: brow,
+      tag: 'brow',
     });
   }
   out.push({
-    geom: ball(at(0, -0.58 * headH, 0.74), r * 0.1, new Vector3(1, 0.9, 1.1), 8, 6),
+    geom: ball(at(onSkull(0, -0.6 * headH, headW, headH, 0.02)), r * 0.1, new Vector3(1, 0.9, 1.1), 8, 6),
     bone: 'Head',
     color: skin,
+    tag: 'nose',
   });
   return out;
 }
@@ -676,10 +786,21 @@ function accessoryParts(
         },
       ];
     case 'glasses':
+      // ★ These were at y −0.03r — the head's vertical CENTRE, 0.37r above the
+      // eyes — and only 0.011r proud of the skull, so four kids wore an
+      // accessory that drew under a pixel. They were placed against an older
+      // face and never re-checked when the eyes moved down. Now they ring the
+      // eyes, on the same skull derivation the eyes use so a wide-headed kid
+      // cannot swallow them, and they stand off far enough to actually read.
       return [-1, 1].map((sgn) => ({
-        geom: ball(jaw.clone().add(new Vector3(sgn * r * 0.34, r * 0.72, r * 0.82)), r * 0.24, new Vector3(1, 0.85, 0.35)),
+        geom: ball(
+          c.clone().add(onSkull(sgn * 0.3 * headW, -0.43 * headH, headW, headH, -0.04).multiplyScalar(r)),
+          r * 0.2,
+          new Vector3(1, 0.8, 0.24)
+        ),
         bone: 'Head',
         color: 0x2b3440,
+        tag: 'glasses' as const,
       }));
     default:
       return [];

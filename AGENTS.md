@@ -112,6 +112,31 @@ continuous across a v1↔v2 switch in the same browser.
   and there is deliberately no mouth. It is there because a featureless head is
   rotationally ambiguous at 40px, so the review page could not have caught a clip
   authored backwards.
+- **★ A feature you cannot SEE is the other half of the same bug, and the bbox
+  tests cannot see it either** — they measure the silhouette's outside, and
+  something swallowed by what is in front of it changes no extreme and no ray
+  span. Three shipped through that gap in one change: the `afro` was a single
+  convex ball whose front surface sat at z 1.14r against a skull at 0.82r, so
+  `grizz` drew **zero pixels of skin anywhere on his head**; the `glasses` sat at
+  the head's vertical CENTRE, 0.37r above the eyes and 0.011r proud, so four kids
+  wore an accessory that drew under a pixel; and `facingCue` placed features at
+  an ABSOLUTE z while the skull's z half-extent is `headW · 0.95` — so on a
+  wide-headed kid the face bulges forward past the constant, and a brow is
+  swallowed above `headW 1.052`. Rules now: **every face feature goes through
+  `onSkull()`** (latitude on the ellipsoid, sunk a fixed fraction of `r`, so the
+  margin is constant for every kid — a no-op at `headW 1`, the same argument the
+  hair re-anchor used); **a wide hair style needs two parts, not one** (pulling a
+  convex ball back far enough to clear the eyes clears the forehead too, so the
+  ball carries the silhouette and a skull-hugging cap carries the hairline); and
+  the brow is the kid's own hair colour **shaded**, because raw hair colour
+  vanishes on pale-haired kids and ink vanishes into the three near-black hair
+  colours it half-emerges from. `skeleton.test.ts` casts rays along `RIGS.PLAY`'s
+  elevation and asks whether a feature is the FRONTMOST surface, keyed on tagged
+  index ranges — **identity can never come from colour**, because the nose is
+  skin-coloured on a skin-coloured head and that test passes with the nose
+  deleted. Thresholds are RATIOS against the same feature on a bald kid, and head
+  width is varied explicitly, since a fixture at `headW 1` cannot see a defect
+  that only exists above 1.05. `render.proxyFace` has the numbers.
 - **The clip library is `src/v2/render/clips.ts`, and the two v2 docs are
   MIRRORS of it.** 35 clips with frame counts, loop flags, marker frames,
   authored ground speeds, body travel and a settle graph. `clips.test.ts` parses
