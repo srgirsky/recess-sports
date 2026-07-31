@@ -24,7 +24,9 @@ import { OutlineRegistry } from '../render/materials/outline';
 import { VENUE_LOOKS, buildField, type FieldBuild } from '../render/Field';
 import { buildFence, type FenceBuild } from '../render/Fence';
 import { buildSky } from '../render/Sky';
-import { ProxyCharacter } from '../render/ProxyCharacter';
+import { CharacterModel, type KidView } from '../render/CharacterModel';
+import { createCharacter, proxyForced, type KidSource } from '../render/CharacterFactory';
+import { configureModelLoader } from '../render/modelLoader';
 import { AnimationDirector } from '../render/AnimationDirector';
 import { buildProceduralClips } from '../render/proceduralClips';
 import type { AnimName } from '../render/clips';
@@ -46,8 +48,13 @@ export class LookSpike {
 
   private field!: FieldBuild;
   private fence!: FenceBuild;
-  private kids: ProxyCharacter[] = [];
+  private kids: KidView[] = [];
   private directors: AnimationDirector[] = [];
+  /** How each kid on the field was resolved — the review readout's whole point. */
+  private sources: KidSource[] = [];
+  /** `?proxy=1` at boot; the toggle button flips it without a reload. */
+  private forceProxy = proxyForced();
+  private building = false;
   // Built once and SHARED by every kid: an AnimationClip is immutable data, so
   // 18 mixers can play the same one. Building per character would be 18x the
   // memory for identical tracks.
@@ -67,6 +74,9 @@ export class LookSpike {
   constructor(private readonly canvas: HTMLCanvasElement) {
     this.renderer = new Renderer(canvas);
     this.renderer.bindOutlines(this.outlines);
+    // Before any load: KTX2 textures cannot transcode without asking the GPU
+    // which compressed formats it takes.
+    configureModelLoader(this.renderer.gl);
 
     this.camera = new PerspectiveCamera(RIGS.PLAY.fov, 1, 0.5, 1600);
     this.eye.set(...RIGS.PLAY.eye);
@@ -80,7 +90,7 @@ export class LookSpike {
     this.scene.fog = new Fog(0xcfe9f7, 260, 900);
 
     this.buildVenue();
-    this.buildKids();
+    void this.buildKids();
     this.mountControls();
     this.onResize();
 
@@ -111,7 +121,12 @@ export class LookSpike {
    * baserunners — 13 characters, which is what a live play actually shows.
    * `?kids=18` forces the full worst case for a stress read.
    */
-  private buildKids(): void {
+  private async buildKids(): Promise<void> {
+    // Guard against the toggle being hammered: two overlapping builds would
+    // race on `this.kids` and leave the losers parented to the scene forever.
+    if (this.building) return;
+    this.building = true;
+
     for (const d of this.directors) d.dispose();
     for (const k of this.kids) {
       k.root.removeFromParent();
@@ -119,6 +134,7 @@ export class LookSpike {
     }
     this.kids = [];
     this.directors = [];
+    this.sources = [];
 
     const want = Number(new URLSearchParams(location.search).get('kids') ?? '13');
     const positions = Object.keys(FIELD_POSITIONS) as PositionId[];
@@ -134,25 +150,54 @@ export class LookSpike {
      *
      * `offset` staggers the phase so 13 kids do not breathe in unison.
      */
-    const animate = (kid: ProxyCharacter, clip: AnimName, offset: number): void => {
+    const animate = (kid: KidView, clip: AnimName, offset: number): void => {
       const dir = new AnimationDirector(kid.mesh, { fallback: this.clipLibrary });
       dir.play(clip);
       dir.update(offset);
       this.directors.push(dir);
     };
 
-    positions.forEach((pos, i) => {
-      const c = ROSTER[i % ROSTER.length];
-      const kid = new ProxyCharacter(c.visual, { uniform: HOME_UNIFORM, outlines: this.outlines });
+    /**
+     * Resolve one character through the factory — model if there is one, proxy
+     * otherwise — and record WHICH, because that is what this page is for.
+     */
+    const place = async (
+      c: (typeof ROSTER)[number],
+      uniform: number,
+      x: number,
+      z: number,
+      facing: number,
+      clip: AnimName,
+      offset: number
+    ): Promise<void> => {
+      const { view, source } = await createCharacter(c, {
+        uniform,
+        outlines: this.outlines,
+        lodBias: this.renderer.tier.lodBias,
+        forceProxy: this.forceProxy,
+      });
+      view.setPosition(x, z);
+      view.setFacing(facing);
+      this.scene.add(view.root);
+      this.kids.push(view);
+      this.sources.push(source);
+      animate(view, clip, offset);
+    };
+
+    for (const [i, pos] of positions.entries()) {
       const p = FIELD_POSITIONS[pos];
-      kid.setPosition(p.x, p.z);
       // Everyone faces the plate. `atan2(x, z)` + π points them back at home.
-      kid.setFacing(Math.atan2(p.x, p.z) + Math.PI);
-      this.scene.add(kid.root);
-      this.kids.push(kid);
-      // The defence is set: `field_ready`, not `idle`.
-      animate(kid, 'field_ready', i * 0.17);
-    });
+      await place(
+        ROSTER[i % ROSTER.length],
+        HOME_UNIFORM,
+        p.x,
+        p.z,
+        Math.atan2(p.x, p.z) + Math.PI,
+        // The defence is set: `field_ready`, not `idle`.
+        'field_ready',
+        i * 0.17
+      );
+    }
 
     // Batter (right-handed box), on-deck, and runners for the away team.
     const extras: Array<[number, number, number]> = [
@@ -166,27 +211,53 @@ export class LookSpike {
     const extraClips: AnimName[] = ['bat_stance', 'idle', 'idle', 'idle', 'idle'];
     for (let i = 0; i < extras.length && this.kids.length < want; i++) {
       const [x, z, face] = extras[i];
-      const c = ROSTER[(i + 11) % ROSTER.length];
-      const kid = new ProxyCharacter(c.visual, { uniform: AWAY_UNIFORM, outlines: this.outlines });
-      kid.setPosition(x, z);
-      kid.setFacing(face);
-      this.scene.add(kid.root);
-      this.kids.push(kid);
-      animate(kid, extraClips[i], i * 0.29);
+      await place(ROSTER[(i + 11) % ROSTER.length], AWAY_UNIFORM, x, z, face, extraClips[i], i * 0.29);
     }
 
     // Pad out to the requested count for a stress read.
     let n = 0;
     while (this.kids.length < want) {
-      const c = ROSTER[(n + 3) % ROSTER.length];
-      const kid = new ProxyCharacter(c.visual, { uniform: AWAY_UNIFORM, outlines: this.outlines });
-      kid.setPosition(-58 + (n % 6) * 7, 18 + Math.floor(n / 6) * 6);
-      kid.setFacing(Math.PI);
-      this.scene.add(kid.root);
-      this.kids.push(kid);
-      animate(kid, 'idle', n * 0.23);
+      await place(
+        ROSTER[(n + 3) % ROSTER.length],
+        AWAY_UNIFORM,
+        -58 + (n % 6) * 7,
+        18 + Math.floor(n / 6) * 6,
+        Math.PI,
+        'idle',
+        n * 0.23
+      );
       n++;
     }
+
+    this.building = false;
+  }
+
+  /**
+   * ★ What is on screen, split model vs proxy and by LOD level.
+   *
+   * Reported SEPARATELY from what was asked for, following the precedent
+   * `/v2/?anims=1` set when it started labelling the reviewed clip apart from
+   * the playing one. A kid that silently fell back to a proxy while the page
+   * said "model" is the same bug: a review surface that agrees with your
+   * intention instead of with the frame.
+   */
+  private census(): string {
+    const models = this.sources.filter((s) => s === 'model').length;
+    const failed = this.sources.filter((s) => s === 'proxy-failed').length;
+    const levels = new Map<string, number>();
+    for (const k of this.kids) {
+      const level = k instanceof CharacterModel ? k.activeLevel() : 'proxy';
+      levels.set(level, (levels.get(level) ?? 0) + 1);
+    }
+    const histogram = [...levels]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([name, n]) => `${name}:${n}`)
+      .join(' ');
+    return (
+      `drawn ${models} model / ${this.kids.length - models} proxy` +
+      (failed ? `  (${failed} FAILED to load)` : '') +
+      `\n${histogram}`
+    );
   }
 
   // --- Controls ------------------------------------------------------------
@@ -222,7 +293,16 @@ export class LookSpike {
       this.buildVenue();
       venueBtn.textContent = `${['🌳 PARK', '🏡 SANDLOT', '🏀 BLACKTOP'][this.venueIdx]}`;
     });
-    btn('🔄 RELOAD KIDS', () => this.buildKids());
+    // ★ The A/B the asset contract §5 names. Same scene, same positions, same
+    // clips — only the geometry source changes, which is the only way to judge
+    // whether a delivered model is actually better than the stand-in it cost
+    // money to replace.
+    const artBtn = btn(this.forceProxy ? '🧍 PROXIES' : '🎨 MODELS', () => {
+      this.forceProxy = !this.forceProxy;
+      artBtn.textContent = this.forceProxy ? '🧍 PROXIES' : '🎨 MODELS';
+      void this.buildKids();
+    });
+    btn('🔄 RELOAD KIDS', () => void this.buildKids());
 
     hud.appendChild(bar);
 
@@ -238,6 +318,10 @@ export class LookSpike {
     if (e.key.toLowerCase() === 'v') {
       this.venueIdx = (this.venueIdx + 1) % VENUE_ORDER.length;
       this.buildVenue();
+    }
+    if (e.key.toLowerCase() === 'p') {
+      this.forceProxy = !this.forceProxy;
+      void this.buildKids();
     }
   };
 
@@ -303,7 +387,8 @@ export class LookSpike {
         `fps ${s.fps.toFixed(0)}   p95 ${s.p95Ms.toFixed(1)}ms   scale ${s.scale}\n` +
         `draws ${s.drawCalls}  tris ${(s.triangles / 1000).toFixed(1)}k  progs ${s.programs}\n` +
         `tier ${s.tier}   kids ${this.kids.length}   venue ${VENUE_ORDER[this.venueIdx]}\n` +
-        `cam ${PRESET_ORDER[this.presetIdx]}   budget: draws<=90 tris<=180k`;
+        `cam ${PRESET_ORDER[this.presetIdx]}   budget: draws<=90 tris<=180k\n` +
+        `${this.census()}`;
     }
   }
 

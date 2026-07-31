@@ -55,6 +55,27 @@ export const HEIGHT_MIN_FT = 3.6;
 export const HEIGHT_MAX_FT = 4.4;
 
 /**
+ * ★ How far DRAWN geometry may rise above `HeadTop_End`, as a fraction of body
+ * height. Hair only: body geometry and hats may not exceed the bone at all.
+ *
+ * It lives here, next to `crownHeightFt`, because it is a rule about the crown
+ * — and because it has to be readable by two things that cannot see each other.
+ * `ProxyCharacter` re-exports it and enforces it on the primitive stand-ins;
+ * `scripts/v2/validate-models.mjs` reads it straight out of this file to enforce
+ * the same number on a DELIVERED model. The validator deliberately imports only
+ * `skeleton.ts` and `clips.ts` (it must not depend on the renderer), so a
+ * constant that stayed in `ProxyCharacter.ts` could be enforced on our own
+ * stand-ins and on nothing anybody was paid to make.
+ *
+ * Not zero: a character's height is defined on the BONE, so hair legitimately
+ * stands above it — an afro that stops at the skull is not an afro. But the
+ * drawn crown is what `render.characterPresence` makes a claim about, and the
+ * proxy's afro was overshooting by 14.2% of body height, half a head of hair
+ * above the top of the kid.
+ */
+export const HAIR_HEADROOM_FRAC = 0.04;
+
+/**
  * The 33 mandatory bones. Order is part of the contract: the validator
  * compares the name list positionally, so a model that reorders them fails
  * even if the set matches.

@@ -60,6 +60,70 @@ const TIERS: Record<PerfTier, Omit<TierSettings, 'tier'>> = {
   },
 };
 
+// --- LOD -------------------------------------------------------------------
+
+/**
+ * ★ LOD thresholds are DERIVED from apparent size, not picked as distances.
+ *
+ * The thing that decides whether 7,000 triangles are worth spending is how many
+ * PIXELS the character covers, and that is a function of distance, field of
+ * view and viewport height together — not distance alone. Hardcoding "LOD1 past
+ * 90ft" bakes in one camera and one screen: the same 90ft is a 99px kid on the
+ * PLAY rig and a 14px kid through a 20° replay lens.
+ *
+ * The px thresholds themselves are where the judgement sits, so they are stated
+ * once, here:
+ *
+ *   90px  LOD0 -> LOD1. Around the size the batter reads at on the PLAY rig.
+ *                Above this, silhouette detail on hands and hair is legible.
+ *   40px  LOD1 -> LOD2. The animation brief's own thumbnail-review size
+ *                (criterion 4) — the size at which a clip must still read.
+ *   20px  LOD2 -> proxy. Below this a character is a coloured smudge with an
+ *                outline, which is exactly what a proxy is.
+ */
+export const LOD_PIXEL_STEPS = [90, 40, 20] as const;
+
+/** The reference viewport the default table is computed at. */
+export const LOD_REFERENCE_VIEWPORT_PX = 1080;
+/** The FOV of the rigs the game actually lives on (PLAY / FIELD / DEEP). */
+export const LOD_REFERENCE_FOV = 46;
+
+/**
+ * Distance (feet) at which a character of `heightFt` covers `px` pixels.
+ *
+ * `heightFt` is the DRAWN height — real stature times `CHARACTER_SCALE` — since
+ * pixels care about what is rendered, not what the sim believes.
+ */
+export function distanceForPixels(
+  px: number,
+  drawnHeightFt: number,
+  fovDeg = LOD_REFERENCE_FOV,
+  viewportPx = LOD_REFERENCE_VIEWPORT_PX
+): number {
+  const halfFov = (fovDeg * Math.PI) / 360;
+  return (drawnHeightFt * viewportPx) / (2 * px * Math.tan(halfFov));
+}
+
+/**
+ * The three switch distances for a character, nearest first.
+ *
+ * Per character rather than global: a 3.6ft kid and a 4.4ft kid do not cover
+ * the same pixels at the same distance, and the whole point of deriving this
+ * from apparent size is that it follows the thing being drawn.
+ */
+export function lodDistancesFt(
+  drawnHeightFt: number,
+  fovDeg = LOD_REFERENCE_FOV,
+  viewportPx = LOD_REFERENCE_VIEWPORT_PX
+): [number, number, number] {
+  const [a, b, c] = LOD_PIXEL_STEPS;
+  return [
+    distanceForPixels(a, drawnHeightFt, fovDeg, viewportPx),
+    distanceForPixels(b, drawnHeightFt, fovDeg, viewportPx),
+    distanceForPixels(c, drawnHeightFt, fovDeg, viewportPx),
+  ];
+}
+
 function isTabletish(): boolean {
   if (typeof navigator === 'undefined') return false;
   const ua = navigator.userAgent;

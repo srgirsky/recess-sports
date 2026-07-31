@@ -397,6 +397,74 @@ function checkOneClip(anim, spec, nodes, contract, report, travelTolerance) {
   }
 }
 
+
+/** A node and every descendant of it, in file order. */
+function subtree(nodes, root) {
+  const out = [];
+  const walk = (n) => {
+    out.push(n);
+    for (const c of n.children) if (nodes[c]) walk(nodes[c]);
+  };
+  walk(root);
+  return out;
+}
+
+/**
+ * ★ HEIGHT IS MEASURED ON THE BONE, AND THE MESH MAY NOT DISAGREE (§1).
+ *
+ * The contract defines a character's height as floor to `HeadTop_End`, and
+ * `checkSkeleton` already enforces that on the bones. This is the other half:
+ * the DRAWN silhouette has to respect the same number, because every downstream
+ * claim about character presence, camera framing and how a kid sits under an 8ft
+ * wall is made about the drawing, not the skeleton.
+ *
+ * Hair gets a budget — `HAIR_HEADROOM_FRAC` of body height — because an afro
+ * that stops at the skull is not an afro. Body geometry and hats get none.
+ *
+ * ★ IT WORKS ON A DRACO-COMPRESSED FILE, which is why it is measured this way.
+ * glTF requires `min`/`max` on a POSITION accessor even when the vertex data
+ * itself lives in a `KHR_draco_mesh_compression` payload this repo deliberately
+ * never decodes. So the mesh's extent is readable from the JSON alone — one of
+ * the very few geometry facts that is. The finer per-slot rule (hair may, body
+ * may not) needs the index buffer and therefore CANNOT be gated on a compressed
+ * delivery; §4 records it as review-only rather than pretending otherwise.
+ */
+function checkDrawnHeight(gltf, spec, report, nodes, lodNodes) {
+  const { HAIR_HEADROOM_FRAC, REFERENCE_HEIGHT_FT } = spec;
+  if (HAIR_HEADROOM_FRAC === undefined) return;
+
+  const crown = worldTranslations(nodes).get('HeadTop_End') ?? [0, REFERENCE_HEIGHT_FT, 0];
+  const ceiling = crown[1] * (1 + HAIR_HEADROOM_FRAC);
+
+  for (const lod of lodNodes) {
+    let top = -Infinity;
+    for (const n of subtree(nodes, lod)) {
+      if (n.mesh === undefined) continue;
+      for (const prim of gltf.json.meshes?.[n.mesh]?.primitives ?? []) {
+        const pos = gltf.json.accessors?.[prim.attributes?.POSITION];
+        // A POSITION accessor without max is itself a spec violation, but it is
+        // the container's business to say so, not this rule's.
+        if (pos?.max) top = Math.max(top, pos.max[1] + n.translation[1]);
+      }
+    }
+    if (top === -Infinity) continue;
+
+    const over = (top - crown[1]) / crown[1];
+    report.info(
+      'character.drawnHeight',
+      `${lod.name}: tops out at ${top.toFixed(3)}ft, ${(over * 100).toFixed(1)}% above HeadTop_End`
+    );
+    if (top > ceiling) {
+      report.fail(
+        'character.drawnHeight',
+        `${lod.name} draws to ${top.toFixed(3)}ft, ${(over * 100).toFixed(1)}% above the ${crown[1].toFixed(3)}ft ` +
+          `crown — hair may rise ${(HAIR_HEADROOM_FRAC * 100).toFixed(0)}% and nothing else may rise at all. ` +
+          'Height is defined on the bone, and every framing decision downstream is made about the drawing.'
+      );
+    }
+  }
+}
+
 // --- Character rules ----------------------------------------------------------
 
 const SLOTS = ['M_Body', 'M_Uniform', 'M_Hair', 'M_Accessory'];
@@ -404,26 +472,50 @@ const LOD_BUDGET = { LOD0: 7000, LOD1: 3000, LOD2: 1200 };
 
 export function checkCharacter(gltf, spec, report, id) {
   const { json } = gltf;
+  const nodes = readNodes(gltf);
 
-  const skinned = (json.nodes ?? []).filter((n) => n.skin !== undefined);
-  if (skinned.length > 3) {
-    report.fail('character.meshes', `${skinned.length} skinned meshes, at most 3 allowed (body / hair / accessory)`);
-  }
   if ((json.skins ?? []).length !== 1) {
     report.fail('character.skin', `${(json.skins ?? []).length} skins, expected exactly 1`);
   }
 
+  const lodNodes = [];
   for (const [lod, budget] of Object.entries(LOD_BUDGET)) {
     const wanted = `kid_${id}_${lod}`;
-    const node = (json.nodes ?? []).find((n) => n.name === wanted);
+    const node = nodes.find((n) => n.name === wanted);
     if (!node) {
       report.fail('character.lod', `no node named ${wanted}`);
       continue;
     }
-    const tris = node.mesh !== undefined ? triangleCount(gltf, node.mesh) : 0;
+    lodNodes.push(node);
+
+    // Summed over the LOD's whole SUBTREE, because a body/hair/accessory split
+    // puts the geometry on children of the named node, not on the node itself.
+    const tris = subtree(nodes, node).reduce(
+      (sum, n) => sum + (n.mesh !== undefined ? triangleCount(gltf, n.mesh) : 0),
+      0
+    );
     report.info('character.lod', `${wanted}: ${tris} triangles (budget ${budget})`);
     if (tris > budget) report.fail('character.lodBudget', `${wanted} has ${tris} triangles, over the ${budget} budget`);
   }
+
+  // ★ "At most 3 skinned meshes" is PER LOD LEVEL, and the two contract rules
+  // used to contradict each other. §4 asks for a body/hair/accessory split AND
+  // for three explicit LOD nodes; that is nine skinned nodes in the file, which
+  // the old whole-file `> 3` check rejected. A fully-conforming delivery would
+  // have been failed by the gate that exists to accept it.
+  const allSkinned = nodes.filter((n) => n.skin !== undefined);
+  for (const lod of lodNodes) {
+    const skinned = subtree(nodes, lod).filter((n) => n.skin !== undefined);
+    if (skinned.length > 3) {
+      report.fail(
+        'character.meshes',
+        `${lod.name} has ${skinned.length} skinned meshes, at most 3 per LOD level (body / hair / accessory)`
+      );
+    }
+  }
+  report.info('character.meshes', `${allSkinned.length} skinned meshes across ${lodNodes.length} LOD level(s)`);
+
+  checkDrawnHeight(gltf, spec, report, nodes, lodNodes);
 
   for (const mat of json.materials ?? []) {
     if (!SLOTS.includes(mat.name)) {

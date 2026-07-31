@@ -729,7 +729,7 @@
       "pinnedBy": "src/v2/render/skeleton.test.ts 'the proxy draws a kid, not a bobblehead': the silhouette budget across all 11 hair styles x 4 accessories (both a ceiling and, for the styles made of height, a FLOOR -- a ceiling alone cannot see a spike buried in the skull); solid-span ray casts through the merged buffer for body continuity, accumulated by winding depth because the parts deliberately interpenetrate; the drawn head span asserted against the BONE span so the drawing and the brief cannot diverge again; and the crown checked on all 30 kids, not the average one. Every one of those was verified to FAIL against the code it replaced.",
       "n": 0,
       "confidence": "n/a",
-      "informs": "src/v2/render/ProxyCharacter.ts HEAD_RISE and HAIR_HEADROOM_FRAC"
+      "informs": "src/v2/render/ProxyCharacter.ts HEAD_RISE, and HAIR_HEADROOM_FRAC (which now lives in src/v2/render/skeleton.ts, re-exported from ProxyCharacter, so scripts/v2/validate-models.mjs can enforce the same headroom on a DELIVERED model -- enforcing it only on our own stand-ins was checking the one character nobody is paid to make)"
     },
     "proxyFace": {
       "id": "render.proxy-face",
@@ -789,6 +789,36 @@
       "n": 0,
       "confidence": "n/a",
       "informs": "src/v2/render/clips.ts RUN_SPEED_FTS and every authoredSpeedFts"
+    },
+    "characterDrawCost": {
+      "id": "render.character-draw-cost",
+      "category": "render",
+      "status": "known-drift",
+      "statusChangedAt": "2026-07-30",
+      "what": "A DELIVERED model costs 8 draw calls where a proxy costs 2, and 13 characters put the Look Spike at 122 draws against a budget of 90. LOD pays for itself on triangles in the same measurement (93.3k -> 47.6k, -49%), so the trade is real and one-directional: the character pipeline buys triangles with draw calls.",
+      "why": "ProxyCharacter's header states the budget as '1 mesh + 1 outline hull -- exactly the 2-draw-calls-per-character the perf budget allows'. That sentence is true of a PROXY and was read as a statement about characters. A commissioned model carries the four material slots the asset contract mandates (M_Body / M_Uniform / M_Hair / M_Accessory); three.js splits a multi-primitive mesh into one Mesh per primitive; and the inverted hull needs a sibling per Mesh. 4 x 2 = 8. Neither number was wrong -- they had simply never been measured in the same scene.",
+      "measured": {
+        "when": "2026-07-30",
+        "how": "Look Spike at /v2/?kids=13, PLAY rig, park venue, high tier, toggling forceProxy between reads so nothing else in the scene changed. Rendered SYNCHRONOUSLY from the page: a backgrounded tab stops requestAnimationFrame, which freezes renderer.stats() and is what made the first three readings identical and wrong.",
+        "kids": 13,
+        "models": { "drawCalls": 122, "trianglesK": 47.6, "lodSplit": "LOD0:3 LOD1:7 LOD2:3" },
+        "proxies": { "drawCalls": 46, "trianglesK": 93.3 },
+        "perCharacter": {
+          "modelMax": 8,
+          "modelNote": "8 is the MAXIMUM -- two draws per POPULATED material slot. The measured total is 76 extra draws over 13 kids, not the 78 that 13 x 6 would predict, because one of the thirteen is bald and so carries no M_Hair primitive at all. The exporter skips empty slots and three.js never makes a Mesh for a primitive that does not exist; an accessory-less kid is 6 the same way.",
+          "proxy": 2
+        },
+        "budget": { "drawCalls": 90, "trianglesK": 180 }
+      },
+      "drift": {
+        "drawCallsOver": 32,
+        "emptySlotCharacters": 1,
+        "note": "The triangle budget is comfortable in both modes; only draw calls are at risk, and only with models."
+      },
+      "whatWouldClose": "One of: (a) ONE outline hull per LOD level instead of one per primitive -- the inner hulls are entirely hidden behind the character, but merging primitives is only trivial when they share attribute buffers, which a real delivery need not do; (b) fewer material slots per character, which is a contract change that costs either the team-colour multiply or the face atlas; (c) re-derive the 90, which was set against a proxy-only scene and has never been measured on a target device with models on it. Do NOT close it by dropping outlines at distance: a 20px character is where the contour does the most work.",
+      "n": 1,
+      "confidence": "derived",
+      "informs": "src/v2/render/CharacterModel.ts (attachOutline per primitive), src/v2/render/ProxyCharacter.ts (the 2-draw-calls-per-character header claim, now true only of proxies), src/v2/spike/LookSpike.ts (the on-screen budget line)"
     }
   },
   "art": {

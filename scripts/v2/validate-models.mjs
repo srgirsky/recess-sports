@@ -31,7 +31,20 @@ import { checkAnimations, checkCharacter, checkContainer, checkSkeleton, makeRep
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, '..', '..');
+/**
+ * The artist's directory and the validation inbox: the rig the modellers work
+ * from, and where a delivery is dropped to be checked.
+ */
 export const ASSET_DIR = join(repo, 'assets', 'v2');
+
+/**
+ * The RUNTIME directory — what actually ships. Scanned too, because "it
+ * validated" and "it ships" being two separate acts is only a safeguard if the
+ * second one is also checked: the whole point of moving a file here is that it
+ * passed, and nothing would otherwise notice a file that got here another way.
+ * `export-proxy-kid.mjs` writes its stand-ins here.
+ */
+export const RUNTIME_DIR = join(repo, 'public', 'v2', 'models');
 
 const MAX_CHARACTER_BYTES = 400 * 1024;
 
@@ -117,12 +130,14 @@ async function main() {
   let files;
   if (args.length) {
     files = args.map((a) => resolve(process.cwd(), a));
-  } else if (existsSync(ASSET_DIR)) {
-    files = readdirSync(ASSET_DIR)
-      .filter((f) => f.endsWith('.glb'))
-      .map((f) => join(ASSET_DIR, f));
   } else {
-    files = [];
+    files = [ASSET_DIR, RUNTIME_DIR]
+      .filter((dir) => existsSync(dir))
+      .flatMap((dir) =>
+        readdirSync(dir)
+          .filter((f) => f.endsWith('.glb'))
+          .map((f) => join(dir, f))
+      );
   }
 
   if (!files.length) {
