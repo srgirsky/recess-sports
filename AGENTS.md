@@ -27,12 +27,38 @@ layout audit are untouched by v2 work; a v2 change that alters `dist/assets/main
 is a bug. v2 lives entirely under `src/v2/**` plus `v2/index.html`.
 
 **Shared, never copied:** `src/data/**`, `src/config.ts` (import-free constants),
-the pure `src/systems/**` that v2 reuses (`picklog` · `inning` · `gameflow` ·
-`stats` · `album` · `team` · `draft` · `lineup` · `season` · `awards` · `voices` ·
-`announcer` · `chatter` · `audio` · `difficulty` · `juice` · `fatigue` · `crowd`),
 `src/net/**`, **`src/art/fieldTexture.ts`** (its `TexGraphics` is a structural
 interface, so a Canvas2D shim gives three.js v1's speckled dirt and worn chalk
 unchanged), and `src/ui/layoutMath.ts`'s overlap predicates.
+
+**★ Which `src/systems/**` the SIM may share is a much shorter list than it
+looks, and it is now a fence rather than a wish list.** `src/v2/sim/**` may
+value-import exactly five: **`inning` · `gameflow` · `stats` · `lineup` ·
+`draft`**. Those are the ones that are genuinely unit-free — `inning.ts`'s only
+two imports are `import type`, so it drags in no pixel-domain runtime code at
+all, and `LiveOutcome`'s fields carry no units. The list used to hold 29 names,
+including **`geometry`** (v1 SCREEN PIXELS: `BASEPATH_PX` 179.6386, `HOME` at
+(480,600)), `liveplay`/`atbat`/`fielding`/`pitchkind`/`steal` (px/s throughout),
+`mode` (`resolveLiveParams` returns px/s), and `picklog`/`album`/`team`/`season`/
+`settings`/`audio` (`localStorage`, Web Audio). It was harmless only because it
+was **vacuously satisfied** — nothing in the sim imported any system at all — so
+the fence had never been leaned on. `purity.lint.test.js` now also checks that
+each whitelisted module *keeps its own promises* (browser-free, no `Math.random`
+or `Date.now`, and its own value imports are pure too), because naming a module
+"pure" is a claim and nothing was checking it. Everything else in `systems/`
+stays **available to v2's render and UI layers** — the restriction is on the sim.
+
+**Type-only imports are a separate lane.** A whole-statement `import type` erases
+at build and cannot carry a constant, so the sim may type-import from anywhere in
+`systems/`. That is what lets `sim/field.ts` share `PositionId` with `lineup.ts`
+without opening the value door to v1's pixel-domain `geometry.ts`. A MIXED
+statement (`import { type A, B }`) counts as a value import — it has a value
+binding, so it is exactly as capable of carrying pixels as any other.
+
+**v1 may never import v2.** A lint enforces the one-way edge over all of `src/`.
+That is the structural guarantee behind "a v2 change that alters
+`dist/assets/main-*.js` is a bug": reviewing diffs cannot provide it, but an
+unreachable module graph can.
 
 Storage keys `recess_pickcounts` / `recess_games_played` / `recess_album` /
 `recess_team` are **shared on purpose** — the votes are the product and must stay
@@ -45,6 +71,24 @@ continuous across a v1↔v2 switch in the same browser.
   No `three`, no DOM, no `Math.random`, no `Date.now`. All randomness comes from
   an injected `Rng`. This is what turns v1's fragile browser-paste goldlog into
   an ordinary vitest that runs in CI and cannot be polluted by cosmetic changes.
+- **★ The `Rng` is INJECTED and FORKED, never module-scope** (`sim/rng.ts`;
+  a lint fails a module-scope `makeRng`, because that is a hidden global that
+  silently ignores the seed the harness passed in). It is sfc32 + xmur3 rather
+  than v1's mulberry32 — 2^128 of period against 2^32, which matters once the
+  harness runs 50k plate appearances across 8 seeds. The load-bearing feature is
+  **`fork(label)`**: substreams derive from `(root seed, label)` and **never from
+  the parent's position in its own stream**, so adding, removing or reordering a
+  draw in one substream cannot move another. That is the direct answer to v1's
+  most expensive determinism bug — every `add.text` draws a UUID from
+  `Math.random`, so reordering *any* Text object shifted the whole seeded stream.
+  A single global stream makes call order part of the contract; `fork` deletes
+  the class. Labels may not contain the NUL path separator (rejected, not merely
+  discouraged), or `fork('a\0b')` and `fork('a').fork('b')` would collide on one
+  stream. **`normal()`/`gauss()` are deliberately absent** until the interpolated
+  coefficient tables land: every textbook normal sampler needs `Math.log`, and
+  ECMAScript specifies `log`/`exp`/`pow`/trig as implementation-approximated —
+  only `+ - * /` and `Math.sqrt` are required to be correctly rounded, so a
+  fingerprint built on them goes red on a V8 bump and reads as somebody's bug.
 - **`src/v2/render/**` reads sim state and never writes it.** `render/bridge.ts`
   is the single named coupling point.
 - **Camera POLICY is pure** (`render/cameraCues.ts`, no three import) — the heir
@@ -338,7 +382,8 @@ continuous across a v1↔v2 switch in the same browser.
 | `scripts/v2/sync-decoders.mjs` | ★ v2. `npm run sync:decoders` — copies the Draco/Basis decoders out of `three` into `public/v2/decoders/`, with a `--check` mode so a `three` bump cannot desync the committed copies. |
 | `scripts/v2/ts-resolve.mjs` | ★ v2. A Node resolution hook so a build script can `import './skeleton'` and find `skeleton.ts`. Only fires after normal resolution fails, and only for the two scripts that opt in. |
 | `scripts/v2/modelRules.mjs` + `validate-models.mjs` | ★ v2. `npm run validate:models` — the gate both v2 docs promise. Pure rule engine (contract passed in, no TS import) behind two front ends: the CLI (Node ≥22.6, type stripping) and `validate-models.test.js` (vitest, so CI's Node 20 runs the same rules). Bone set/order/bind-pose hash, height band, morph targets, root motion, 30fps grid, loop seams, measured body travel, derived marker frames, LOD budgets, material slots, size. Failures name the rule AND why it exists. |
-| `scripts/v2/purity.lint.test.js` | ★ v2. `src/v2/sim/**` imports only sim/data/config/pure-systems; no three, no DOM, no `Math.random`, no `Date.now`; and every sim file must import in plain Node. Two files claimed this gate existed before it did. |
+| `src/v2/sim/rng.ts` | ★ v2. The sim's only randomness: sfc32 + xmur3, **injected never module-scope**, and `fork(label)` substreams keyed on `(seed, label)` rather than stream position — so a draw added in one place cannot move another. No `normal()` until the coefficient tables land (see the architecture rules). |
+| `scripts/v2/purity.lint.test.js` | ★ v2. `src/v2/sim/**` imports only sim/data/config/**five** pure systems (`inning`·`gameflow`·`stats`·`lineup`·`draft`); no three, no DOM, no `Math.random`, no `Date.now`, **no module-scope `Rng`**; every sim file must import in plain Node; whole-statement `import type` gets a separate wider lane; **the whitelist itself is checked** (each named system must be browser-free, random-free, and value-import only pure modules); and **nothing outside `src/v2/**` may import v2**, which is what actually guarantees a v2 edit cannot reach v1's bundle. Two files claimed this gate existed before it did, and it then spent its first life vacuously satisfied. |
 | `scripts/measures.json` | ★ The measurement records + `conformance.test.js`'s gate. Every record names the `src/config.ts` constant it informs, so the audit trail runs source → record → constant, and carries a `status`: `conformed` (ours inside the band), `known-drift` (outside, and the test pins the drift's SIZE so it can't grow or be half-fixed unnoticed), `awaiting-measurement` (BB not measured yet — pins only OUR value, claims nothing about BB), `note` (a finding about the measurement itself). Read this before tuning any "Backyard feel" constant. |
 
 ## Commands

@@ -23,7 +23,7 @@
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -34,13 +34,31 @@ const SIM = join(repo, 'src', 'v2', 'sim');
 /** What `src/v2/sim/**` is allowed to import, per AGENTS.md. */
 const ALLOWED_PREFIXES = ['./', '../sim/', '../../data/', '../../config', '../../systems/'];
 
-/** Pure systems v2 reuses. Anything else in systems/ may touch Phaser. */
-const PURE_SYSTEMS = [
-  'picklog', 'inning', 'gameflow', 'stats', 'album', 'team', 'draft', 'lineup',
-  'season', 'awards', 'voices', 'announcer', 'chatter', 'audio', 'difficulty',
-  'juice', 'fatigue', 'crowd', 'mode', 'atbat', 'pitch', 'pitchkind', 'steal',
-  'geometry', 'venue', 'replay', 'liveplay', 'fielding', 'settings',
-];
+/**
+ * ★ THE WHITELIST IS A FENCE, NOT A WISH LIST — and it used to be the latter.
+ *
+ * This list held 29 names. Among them: `geometry` (v1 SCREEN PIXELS —
+ * `BASEPATH_PX` 179.6386, `HOME` at (480, 600)), `liveplay` / `atbat` /
+ * `fielding` / `pitchkind` / `steal` (px/s throughout), `mode` (`resolveLiveParams`
+ * returns px/s and transitively reaches `localStorage`), and `picklog` / `album`
+ * / `team` / `season` / `settings` / `audio` (`localStorage` and Web Audio).
+ *
+ * The header above says this gate's job is to stop render and pixels leaking
+ * into the sim, because real feet ARE the balance fix. A whitelist that permits
+ * `import { BASEPATH_PX } from '../../systems/geometry'` does not do that job.
+ * It was harmless only because it was VACUOUSLY SATISFIED — nothing under
+ * `src/v2/sim/**` imported any system at all, so the fence had never been
+ * leaned on. The moment the sim core starts sharing modules for real, a wish
+ * list becomes a hole.
+ *
+ * These five are the ones actually verified shareable: each is unit-free, and
+ * `keeps its own promises` below re-derives that rather than trusting this
+ * comment. Everything else in `systems/` remains AVAILABLE for v2's render and
+ * UI layers — this list governs `src/v2/sim/**` only, and only VALUE imports.
+ * A type-only import erases at build and cannot carry a constant, so it is
+ * allowed from anywhere in `systems/` (see `TYPE_ONLY` handling below).
+ */
+const PURE_SYSTEMS = ['inning', 'gameflow', 'stats', 'lineup', 'draft'];
 
 function walk(dir) {
   const out = [];
@@ -52,6 +70,9 @@ function walk(dir) {
   return out;
 }
 
+/** Every `.ts` under a tree, including nested directories. */
+const walkAll = walk;
+
 const simFiles = walk(SIM);
 const sources = simFiles.map((path) => ({
   path,
@@ -60,14 +81,23 @@ const sources = simFiles.map((path) => ({
   isTest: /\.test\.ts$/.test(path),
 }));
 
-/** Every module specifier a file imports (static, type-only and dynamic). */
+/**
+ * Every module a file imports, as `{ spec, typeOnly }`.
+ *
+ * `typeOnly` is true only for a whole-statement `import type` / `export type`,
+ * which TypeScript erases entirely. A MIXED statement (`import { type A, B }`)
+ * is deliberately counted as a value import: it has a value binding, so it is
+ * exactly as capable of carrying a pixel constant as any other.
+ */
 function importsOf(text) {
   const out = [];
-  const patterns = [/\bfrom\s+['"]([^'"]+)['"]/g, /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g];
-  for (const re of patterns) {
-    let m;
-    while ((m = re.exec(text))) out.push(m[1]);
-  }
+  // `import ... from 'x'` / `export ... from 'x'`, capturing the leading keyword
+  // pair so a whole-statement type import can be told apart.
+  const re = /\b(import|export)\s+(type\s+)?([^'"]*?)from\s+['"]([^'"]+)['"]/g;
+  let m;
+  while ((m = re.exec(text))) out.push({ spec: m[4], typeOnly: Boolean(m[2]) });
+  const dyn = /\bimport\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
+  while ((m = dyn.exec(text))) out.push({ spec: m[1], typeOnly: false });
   return out;
 }
 
@@ -88,8 +118,10 @@ describe('src/v2/sim is pure', () => {
   });
 
   it('never imports three', () => {
+    // Absolute, type imports included: a three type in the sim is design drift
+    // even though it erases.
     for (const f of sources) {
-      for (const spec of importsOf(f.text)) {
+      for (const { spec } of importsOf(f.text)) {
         expect(spec === 'three' || spec.startsWith('three/'), `${f.rel} imports ${spec}`).toBe(false);
       }
     }
@@ -98,7 +130,7 @@ describe('src/v2/sim is pure', () => {
   it('never imports the render layer', () => {
     // The one that keeps CHARACTER_SCALE out of the physics.
     for (const f of sources) {
-      for (const spec of importsOf(f.text)) {
+      for (const { spec } of importsOf(f.text)) {
         expect(/(^|\/)render\//.test(spec), `${f.rel} imports ${spec}`).toBe(false);
         expect(/(^|\/)spike\//.test(spec), `${f.rel} imports ${spec}`).toBe(false);
         expect(/(^|\/)ui\//.test(spec), `${f.rel} imports ${spec}`).toBe(false);
@@ -108,15 +140,38 @@ describe('src/v2/sim is pure', () => {
 
   it('imports only from the four places AGENTS.md allows', () => {
     for (const f of sources) {
-      for (const spec of importsOf(f.text)) {
+      for (const { spec, typeOnly } of importsOf(f.text)) {
         if (f.isTest && (spec === 'vitest' || spec.startsWith('node:'))) continue;
         const ok = ALLOWED_PREFIXES.some((p) => spec.startsWith(p));
         expect(ok, `${f.rel} imports "${spec}", which is outside sim/, data/, config.ts and pure systems/`).toBe(true);
         if (spec.includes('systems/')) {
           const name = spec.split('systems/')[1].replace(/\.ts$/, '');
-          expect(PURE_SYSTEMS, `${f.rel} imports systems/${name}, which is not on the pure list`).toContain(name);
+          // The type-only lane. A whole-statement `import type` compiles to
+          // nothing, so it cannot carry a px constant into the sim — which is
+          // what lets `field.ts` share `PositionId` with v1's `lineup.ts`
+          // without opening the value door to v1's pixel-domain `geometry.ts`.
+          if (typeOnly) continue;
+          expect(
+            PURE_SYSTEMS,
+            `${f.rel} VALUE-imports systems/${name}, which is not on the pure list. ` +
+              `If you only need its types, use \`import type\`.`
+          ).toContain(name);
         }
       }
+    }
+  });
+
+  it('never builds an Rng at module scope', () => {
+    // A module-scope generator is a hidden global: two callers share a stream,
+    // import order decides who gets which values, and the seed the harness
+    // passes in is silently ignored. All randomness is INJECTED.
+    const moduleScope = /^(export\s+)?(const|let|var)\s+\w+\s*=\s*makeRng\s*\(/m;
+    for (const f of sources) {
+      if (f.isTest) continue;
+      expect(
+        moduleScope.test(code(f.text)),
+        `${f.rel} builds an Rng at module scope — take one as a parameter instead`
+      ).toBe(false);
     }
   });
 
@@ -149,6 +204,81 @@ describe('src/v2/sim is pure', () => {
     for (const f of sources) {
       if (f.isTest) continue;
       await expect(import(f.path)).resolves.toBeDefined();
+    }
+  });
+});
+
+describe('the pure-systems whitelist keeps its own promises', () => {
+  // Naming a module on PURE_SYSTEMS is a CLAIM about it. Nothing checked the
+  // claim, which is how `geometry` — 960x640 screen pixels — sat on the list
+  // as "pure". Purity there means two different things and both are asserted:
+  // it must not reach for the browser, and it must not drag in a module that
+  // does. A name-only list cannot tell you either.
+  const systemsDir = join(repo, 'src', 'systems');
+
+  it('lists only modules that exist', () => {
+    for (const name of PURE_SYSTEMS) {
+      expect(
+        existsSync(join(systemsDir, `${name}.ts`)),
+        `PURE_SYSTEMS names systems/${name}, which does not exist`
+      ).toBe(true);
+    }
+  });
+
+  it('lists only modules that are genuinely browser-free', () => {
+    const banned = /\b(document|window|navigator|localStorage|sessionStorage|AudioContext|requestAnimationFrame)\b/;
+    for (const name of PURE_SYSTEMS) {
+      const src = code(readFileSync(join(systemsDir, `${name}.ts`), 'utf8'));
+      const hit = banned.exec(src);
+      expect(hit, `systems/${name}.ts references ${hit?.[0]} — it is not pure`).toBeNull();
+      expect(/from\s+['"]phaser['"]/.test(src), `systems/${name}.ts imports Phaser`).toBe(false);
+      expect(/Math\s*\.\s*random/.test(src), `systems/${name}.ts calls Math.random`).toBe(false);
+      expect(/Date\s*\.\s*now/.test(src), `systems/${name}.ts calls Date.now`).toBe(false);
+    }
+  });
+
+  it('lists only modules whose own VALUE imports are also pure', () => {
+    // Transitivity is the half a name list always misses: a module that is
+    // itself clean can still pull a pixel-domain one in behind it.
+    const allowed = new Set(PURE_SYSTEMS);
+    for (const name of PURE_SYSTEMS) {
+      const text = readFileSync(join(systemsDir, `${name}.ts`), 'utf8');
+      for (const { spec, typeOnly } of importsOf(text)) {
+        if (typeOnly) continue;
+        const ok =
+          spec.startsWith('../data/') ||
+          spec === '../config' ||
+          spec.startsWith('../config') ||
+          (spec.startsWith('./') && allowed.has(spec.slice(2).replace(/\.ts$/, '')));
+        expect(
+          ok,
+          `systems/${name}.ts value-imports "${spec}", so it is not safely shareable with the sim`
+        ).toBe(true);
+      }
+    }
+  });
+});
+
+describe('v1 has no path to v2', () => {
+  it('is never imported by anything outside src/v2', () => {
+    // The structural guarantee behind AGENTS.md's "a v2 change that alters
+    // dist/assets/main-*.js is a bug". Reviewing diffs cannot provide it; a
+    // one-way dependency can — if v1's module graph cannot REACH v2, no v2
+    // edit can appear in v1's bundle, and the two games stay independent by
+    // construction rather than by care. (`scripts/v2/*` is build and test
+    // tooling, not bundled, and imports v2 freely.)
+    const v1Files = walkAll(join(repo, 'src')).filter(
+      (p) => !relative(repo, p).startsWith(join('src', 'v2'))
+    );
+    expect(v1Files.length).toBeGreaterThan(0);
+    for (const path of v1Files) {
+      const rel = relative(repo, path);
+      for (const { spec } of importsOf(readFileSync(path, 'utf8'))) {
+        expect(
+          /(^|\/)v2\//.test(spec),
+          `${rel} imports "${spec}" — v1 must never reach into v2`
+        ).toBe(false);
+      }
     }
   });
 });
