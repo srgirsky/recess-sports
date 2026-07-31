@@ -166,6 +166,7 @@ import * as audio from '../systems/audio';
 import { screenShake, burst, floatingText } from '../ui/effects';
 import { makeMuteButton } from '../ui/MuteButton';
 import { FONT, pill } from '../ui/theme';
+import { hitFromBox } from '../ui/layout';
 import { idleBob, squashHop, groundShadow, runCycle, poseSequence } from '../ui/anim';
 import { poseKey } from '../art/textureFactory';
 import { project, unproject, depthScale, ZOOM } from '../art/projection';
@@ -784,15 +785,21 @@ export class GameScene extends Phaser.Scene {
     if (this.practice || this.spectator) {
       const label = this.spectator ? '👀 STOP' : '✅ DONE';
       this.time.delayedCall(0, () => {
-        // Below the scoreboard's inning pill (centered at y=36, h≈44) — the
-        // top strip itself has no gap wide enough for this.
-        const done = pill(this, GAME_WIDTH / 2, 92, label, { fill: COLORS.gold, fontSize: 20, minW: 130 });
+        // HUD.EXIT, not a literal. It sat at (480, 92) on top of the announcer
+        // band (41-103) at a higher depth, so it drew over every half-start
+        // banner — see the lane's docstring in config.ts for how it got there.
+        const done = pill(this, HUD.EXIT.X, HUD.EXIT.Y, label, {
+          fill: COLORS.gold,
+          fontSize: 20,
+          minW: HUD.EXIT.W,
+        });
         done.container.setDepth(95);
         this.pinUI(done.container);
-        done.container.setInteractive(
-          new Phaser.Geom.Rectangle(-65, -22, 130, 44),
-          Phaser.Geom.Rectangle.Contains
-        );
+        // hitFromBox, not a hand-written rect: `pill` sizes itself to MEASURED
+        // text (`max(minW, label.width + 32)`), so the old fixed 130-wide
+        // rectangle silently mismatched the art whenever the label ran wider —
+        // '👀 STOP' against '✅ DONE', or either one on the font-blocked path.
+        hitFromBox(done.container);
         done.container.on('pointerdown', (_p: Phaser.Input.Pointer, _x: number, _y: number, e: Phaser.Types.Input.EventData) => {
           e.stopPropagation();
           this.scene.start('Schoolyard', { straightToDraft: false });

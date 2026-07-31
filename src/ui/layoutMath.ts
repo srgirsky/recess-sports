@@ -169,3 +169,73 @@ export function contains(outer: Box, inner: Box, tol = 0): boolean {
 export function insideFrame(b: Box, w = GAME_WIDTH, h = GAME_HEIGHT, margin = 0): boolean {
   return contains({ x: w / 2, y: h / 2, w: w - margin * 2, h: h - margin * 2 }, b);
 }
+
+// --- The HUD lanes ----------------------------------------------------------
+
+/**
+ * ★ `config.HUD`'s declared lanes as boxes, so "every screen-anchored element
+ * claims its lane here so overlaps are a config review, not a scavenger hunt"
+ * (HUD's own docstring) becomes a CHECKED claim instead of an aspiration.
+ *
+ * It was an aspiration. The practice/spectator exit button never claimed a lane
+ * — it was a bare `pill(this, 480, 92, …)` inside GameScene — and it spent its
+ * whole life sitting on the announcer band, drawing over every half-start
+ * banner. Nothing could have caught that: `npm run audit:layout` walks MENU
+ * scenes only, GameScene is deliberately excluded from its matrix (its HUD is
+ * on the seeded goldlog path), and the banner is transient — alpha 0 at rest —
+ * so even booting GameScene into the audit would not see the collision without
+ * firing a `flashAnnounce` mid-settle, which the audit's spec schema has no
+ * axis for.
+ *
+ * So the gate is here instead, over the DECLARATIONS rather than the pixels:
+ * pure, no Phaser, no boot, runs in `npm test`. Its power comes entirely from
+ * lanes being declared — which is why moving the exit button's number was not
+ * enough, and it had to become `HUD.EXIT`.
+ *
+ * Only lanes with a real extent are returned. `SPEND_COL` / `STEAL` are column
+ * anchors whose rows are sized by their content, and `JUICE` is a cluster of
+ * separate anchors; they are excluded rather than guessed at, since inventing
+ * an extent for them would make the test assert a fiction.
+ */
+export function hudLaneBoxes(hud: {
+  STRIP: { CY: number; W: number; H: number };
+  CARDS: { X: number; W: number; H: number; TOP_Y: number };
+  ANNOUNCER: { CY: number; W: number; H: number };
+  CORNER: { MUTE_X: number; PAUSE_X: number; Y: number };
+  EXIT: { X: number; Y: number; W: number; H: number };
+}): Record<string, Box> {
+  // The two corner buttons are NOT the same size, and modelling them as if
+  // they were is what first made this function report a collision that does
+  // not exist. MuteButton widens its 30px glyph to MIN_TOUCH; the ⏸ button
+  // takes Phaser's text bounds unchanged. See `CORNER_SPACING` below for the
+  // constraint that fact hides.
+  const MUTE_HIT = 52; // MIN_TOUCH, from MuteButton.ts
+  const PAUSE_HIT = 34; // the bare 30px glyph's bounds
+  return {
+    STRIP: { x: GAME_WIDTH / 2, y: hud.STRIP.CY, w: hud.STRIP.W, h: hud.STRIP.H },
+    // The card stack's TOP card only: the stack grows DOWNWARD from TOP_Y, so
+    // the top card is the one that can reach up into the banner band.
+    CARDS: { x: hud.CARDS.X, y: hud.CARDS.TOP_Y, w: hud.CARDS.W, h: hud.CARDS.H },
+    ANNOUNCER: { x: GAME_WIDTH / 2, y: hud.ANNOUNCER.CY, w: hud.ANNOUNCER.W, h: hud.ANNOUNCER.H },
+    MUTE: { x: hud.CORNER.MUTE_X, y: hud.CORNER.Y, w: MUTE_HIT, h: MUTE_HIT },
+    PAUSE: { x: hud.CORNER.PAUSE_X, y: hud.CORNER.Y, w: PAUSE_HIT, h: PAUSE_HIT },
+    EXIT: { x: hud.EXIT.X, y: hud.EXIT.Y, w: hud.EXIT.W, h: hud.EXIT.H },
+  };
+}
+
+/**
+ * The gap between the two corner buttons' centres, and the width they would
+ * each need to be a legal tap target.
+ *
+ * ★ These disagree, and the disagreement is load-bearing. ⏸ is drawn as a bare
+ * 30px glyph with no widened hit area, so it is an UNDERSIZED tap target for a
+ * game whose audience is four to eight years old — and the obvious fix is to
+ * give it the same `MIN_TOUCH` treatment `MuteButton` already applies. But the
+ * centres are 48px apart against a 52px `MIN_TOUCH`, so doing only that would
+ * put the two hit areas 4px into each other, and a mistap on ⏸ would mute.
+ *
+ * Recorded rather than fixed: widening ⏸ is a real improvement and belongs in
+ * its own change, and whoever makes it has to move `CORNER` too. The test that
+ * pins this pair is what will tell them.
+ */
+export const CORNER_SPACING = { gap: 48, minTouch: 52 };

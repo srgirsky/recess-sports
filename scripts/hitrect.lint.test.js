@@ -39,7 +39,13 @@ const ALLOWLIST = {
   // seeded goldlog stream, so re-flowing it needs its own PR with a
   // fingerprint-regeneration budget. Its hit areas are stable today because the
   // HUD geometry is declared in config.HUD rather than measured per label.
-  'scenes/GameScene.ts': 6,
+  //
+  // 6 -> 5 on 2026-07-31: the practice/spectator exit button's rect was the one
+  // that could NOT rely on that stability. It was hand-written 130 wide while
+  // `pill()` sizes itself to measured text, so '👀 STOP' and the font-blocked
+  // fallback both grew the art past a tap target that stayed put. Now
+  // `hitFromBox`, which derives the rect from the pill's published footprint.
+  'scenes/GameScene.ts': 5,
 };
 
 function walk(dir, out = []) {
