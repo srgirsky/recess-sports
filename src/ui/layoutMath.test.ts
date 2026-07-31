@@ -7,7 +7,10 @@ import {
   insideFrame,
   intersection,
   DEFAULT_MIN_SCALE,
+  hudLaneBoxes,
+  CORNER_SPACING,
 } from './layoutMath';
+import { HUD } from '../config';
 
 /** Left/right edges of an item, from a solved row. */
 function edges(offsets: number[], widths: number[], scale = 1) {
@@ -179,5 +182,69 @@ describe('collision predicates', () => {
     expect(insideFrame({ x: 916, y: 470, w: 56, h: 44 })).toBe(true);
     expect(insideFrame({ x: 916, y: 470, w: 56, h: 44 }, 960, 640, 20)).toBe(false);
     expect(insideFrame({ x: 480, y: 10, w: 200, h: 60 })).toBe(false);
+  });
+});
+
+describe("the HUD's declared lanes", () => {
+  // config.HUD's docstring promises "every screen-anchored element claims its
+  // lane here so overlaps are a config review, not a scavenger hunt". These
+  // are the tests that make that true rather than aspirational. The exit
+  // button spent its whole life on top of the announcer band precisely because
+  // it claimed no lane, and audit:layout covers menu scenes only.
+  const lanes = hudLaneBoxes(HUD);
+
+  it('gives every lane a real extent', () => {
+    expect(Object.keys(lanes).length).toBeGreaterThan(0);
+    for (const [name, b] of Object.entries(lanes)) {
+      expect(b.w, `${name} has no width`).toBeGreaterThan(0);
+      expect(b.h, `${name} has no height`).toBeGreaterThan(0);
+    }
+  });
+
+  it('never lets two lanes overlap', () => {
+    const names = Object.keys(lanes);
+    const collisions: string[] = [];
+    for (let i = 0; i < names.length; i++) {
+      for (let j = i + 1; j < names.length; j++) {
+        const hit = intersection(lanes[names[i]], lanes[names[j]]);
+        if (hit && overlaps(lanes[names[i]], lanes[names[j]], 2)) {
+          collisions.push(`${names[i]} x ${names[j]} (${Math.round(hit.w)}x${Math.round(hit.h)}px)`);
+        }
+      }
+    }
+    expect(collisions, 'HUD lanes must not collide').toEqual([]);
+  });
+
+  it('keeps every lane on screen', () => {
+    for (const [name, b] of Object.entries(lanes)) {
+      expect(insideFrame(b), `${name} runs off the canvas`).toBe(true);
+    }
+  });
+
+  it('records that widening the ⏸ tap target also means moving it', () => {
+    // Found by the overlap test above, on its first run. ⏸ is a bare 30px
+    // glyph — an undersized tap target for four-to-eight-year-olds — but the
+    // corner centres sit 48px apart against a 52px MIN_TOUCH, so giving it the
+    // same treatment MuteButton already applies would push the two hit areas
+    // 4px into each other and a mistap on pause would mute. Pinned, not fixed:
+    // that is its own change, and this is what will tell whoever makes it.
+    expect(HUD.CORNER.MUTE_X - HUD.CORNER.PAUSE_X).toBe(CORNER_SPACING.gap);
+    expect(CORNER_SPACING.gap).toBeLessThan(CORNER_SPACING.minTouch);
+
+    const widened = {
+      ...lanes.PAUSE,
+      w: CORNER_SPACING.minTouch,
+      h: CORNER_SPACING.minTouch,
+    };
+    expect(overlaps(widened, lanes.MUTE, 2)).toBe(true);
+  });
+
+  it('fails when a lane is moved onto the announcer — the bug this exists for', () => {
+    // The exact shipped defect: EXIT at (480, 92) against ANNOUNCER's 41-103
+    // band. A rule that never fires is indistinguishable from no rule, so the
+    // regression is asserted directly rather than trusted.
+    const broken = hudLaneBoxes({ ...HUD, EXIT: { ...HUD.EXIT, X: 480, Y: 92 } });
+    expect(overlaps(broken.EXIT, broken.ANNOUNCER, 2)).toBe(true);
+    expect(overlaps(lanes.EXIT, lanes.ANNOUNCER, 2)).toBe(false);
   });
 });

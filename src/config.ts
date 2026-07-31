@@ -312,14 +312,31 @@ export const PLATE_VIEW = {
   /** The fielding team's catcher, crouched and cropped by the scoreboard strip
    *  (head + shoulders in frame; feet well below it). */
   CATCHER: { X: 556, Y: 648, H: 230 },
-  /** The 7 non-battery defenders in the behind-home view, so the close view
-   *  shows the same defense as the wide field. From a camera at home plate,
-   *  3B/SS/LF sit screen-LEFT and 1B/2B/RF screen-RIGHT (matching the
-   *  backdrop's foul lines). Corners nearest (biggest), middle infield
-   *  deeper, outfield smallest with feet just under the horizon. */
+  /**
+   * The 7 non-battery defenders in the behind-home view, so the close view
+   * shows the same defense as the wide field. From a camera at home plate,
+   * 3B/SS/LF sit screen-LEFT and 1B/2B/RF screen-RIGHT (matching the backdrop's
+   * foul lines). Corners nearest (biggest), middle infield deeper, outfield
+   * smallest with feet just under the horizon.
+   *
+   * ★ NEARER MUST MEAN BIGGER, and for the corners it did not. 1B/3B sat at
+   * Y 330 — twelve pixels IN FRONT of the pitcher at Y 318 — while drawn ten
+   * pixels SHORTER than him (94 vs 104). A figure that is lower in frame and
+   * smaller states two contradictory depths at once, and it is what flattened
+   * the whole rig onto the fence. `plateView.test.ts` now asserts the ordering,
+   * so the two cues cannot disagree again.
+   *
+   * Measured against BB2001 (`art.rigFielders`, and read off the exact-colour
+   * screenshot path, not by eye): BB's pitcher stands 17-20px below its horizon
+   * at 35px tall, while every background fielder sits within -6..+2px OF the
+   * horizon at 15-19px. Nearer, and twice the height. Scaled to our 640-tall
+   * frame our pitcher's depth already matched that almost exactly (19.5px), and
+   * so did the outfield — the corners were the only thing out of place, which
+   * is why this fix moves two entries and not seven.
+   */
   FIELDERS: {
-    '1B': { X: 792, Y: 330, H: 94 },
-    '3B': { X: 168, Y: 330, H: 94 },
+    '1B': { X: 762, Y: 310, H: 88 },
+    '3B': { X: 198, Y: 310, H: 88 },
     '2B': { X: 604, Y: 304, H: 76 },
     SS: { X: 356, Y: 304, H: 76 },
     LF: { X: 264, Y: 299, H: 60 }, // OF sit nearer the center than the corners
@@ -383,6 +400,24 @@ export const HUD = {
   ANNOUNCER: { CY: 72, W: 640, H: 62 },
   /** Corner buttons (top-right, clear of the card stacks below them). */
   CORNER: { MUTE_X: 930, PAUSE_X: 882, Y: 34 },
+  /**
+   * ✅ DONE / 👀 STOP — the way out of PRACTICE and WATCH.
+   *
+   * ★ It lives here because it USED to live nowhere. It was the only
+   * top-band element placed at a bare literal inside GameScene, and it drifted
+   * onto the announcer: a comment put it "below the scoreboard's inning pill
+   * (centered at y=36)" back when the scoreboard was a TOP strip. The
+   * scoreboard is a BOTTOM strip now (STRIP.CY 604), so it was dodging
+   * something that no longer exists and landing on the 41-103 announcer band
+   * instead -- at depth 95 against the banner's 90/91, so it drew OVER every
+   * "Inning 1 / YOU'RE UP!" for the banner's whole 2.2s life.
+   *
+   * The left column is the free lane: JUICE ends at y 36, SPEND_COL does not
+   * start until y 528, and CARDS is x 780-948. `hudLaneBoxes` + the overlap
+   * test in logic.test.ts is what now makes that a checked claim rather than
+   * a paragraph.
+   */
+  EXIT: { X: 80, Y: 110, W: 130, H: 42 },
 };
 
 /**

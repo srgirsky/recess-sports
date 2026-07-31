@@ -1134,6 +1134,99 @@
       },
       "conformNote": "The guard is geometric and per-kid: art.test.ts's 'the head never crosses the bat' walks every stance variant in both views, derives the skull from the kid's real headR x headW via headHalfWidth(), and requires the bat's axis to run outside it. Reverting HEAD_SHIFT_REAR to +3 fails it at 45.9 against a 50 skull. front.normal is the tightest at 1.085 -- BB's own bat is near-tangent to the head, so a small margin is the correct answer, not a bug.",
       "informs": "src/art/CharacterArt.ts BAT_STANCE.rear, HEAD_SHIFT_REAR, TURN, poseBatRear / poseSwingLoadRear / poseSwingMidRear / poseSwingFollowRear"
+    },
+    "rigFielders": {
+      "id": "art.rig-fielders",
+      "category": "art",
+      "reference": "bb2001",
+      "status": "awaiting-measurement",
+      "statusChangedAt": "2026-07-31",
+      "what": "Where BB2001 stands the non-battery defenders in its BEHIND-THE-PLATE view, and how big it draws them, relative to its horizon and its pitcher.",
+      "whyThisRecordExists": "PLATE_VIEW.FIELDERS had no record at all -- it was hand-authored art direction carrying a confident comment ('Corners nearest (biggest), middle infield deeper'). No test touched it and audit:layout covers menu scenes only, so nothing was checking either the numbers or the claim. The claim turned out to be self-contradicting: 1B/3B sat at Y 330, twelve pixels IN FRONT of the pitcher at Y 318, while drawn ten pixels SHORTER than him (94 vs 104). Lower in frame and smaller states two depths at once.",
+      "method": "scripts/measure/screenshot.js on the two indexed behind-plate frames, so position is read off the native 640x480 framebuffer recovered bit-for-bit from ScummVM's exact 3x nearest-neighbour blit -- not off the scaled window, and not by eye. Sprites located as connected red-cap blobs inside a field-only window (x 150-560, y 20-200, clear of the Steal! overlay, the ON THE MOUND panel and the swing cards); feet as the lowest navy-contour pixel in each sprite's column band; horizon as the first row at x=200 where grass begins and holds for 12 rows.",
+      "partialReading": {
+        "confidence": "low",
+        "n": 1,
+        "horizonY": 50,
+        "pitcher": {
+          "feetY": [
+            67,
+            70
+          ],
+          "heightPx": 35,
+          "belowHorizonPx": [
+            17,
+            20
+          ]
+        },
+        "backgroundFielders": [
+          {
+            "cx": 277,
+            "feetY": 44,
+            "heightPx": 19,
+            "vsHorizonPx": -6
+          },
+          {
+            "cx": 175,
+            "feetY": 48,
+            "heightPx": 15,
+            "vsHorizonPx": -2
+          },
+          {
+            "cx": 377,
+            "feetY": 52,
+            "heightPx": 19,
+            "vsHorizonPx": 2
+          }
+        ],
+        "visibleBackgroundFielders": 3,
+        "theFinding": "BB's pitcher is the nearest non-battery figure on the field and roughly TWICE the height of any background fielder (35px against 15-19px). Every background fielder sits within -6..+2px OF the horizon; the pitcher is 17-20px below it. Nearer means bigger, without exception.",
+        "why": "n=1. Two screenshots exist and they are the same at-bat moments apart -- the three background fielders are pixel-identical between them, so they are one sample, not two. Only the pitcher differs (two poses), which is what makes the pair useful as a detector check rather than as a second sample. The repo's own n>=3 rule applies.",
+        "detectorCheck": "A first pass measured the pitcher's feet at 96 in one frame and 145 in the other -- a 49px swing between two frames in which he barely moves. That was the DETECTOR, not BB: an absence-of-background scan was running down the mound's shading. Switching to the navy contour gave 70 and 67, and made the three static fielders agree exactly across both frames. Recorded because a plausible, stable-looking, wrong number is exactly what instrument.landingDisc is about."
+      },
+      "measured": null,
+      "n": 0,
+      "confidence": "low",
+      "divergence": "BB shows THREE background fielders; we show seven. That is deliberate and predates this record -- AGENTS.md: 'the close view shows the same defense as the wide field', so a batter can read the defense he is hitting into. Recorded as a divergence so nobody 'conforms' it away by deleting four kids.",
+      "ours": {
+        "constant": "src/config.ts PLATE_VIEW.FIELDERS, PLATE_VIEW.PITCHER, PLATE_VIEW.HORIZON_Y",
+        "frameHeight": 640,
+        "horizonY": 292,
+        "pitcher": {
+          "Y": 318,
+          "H": 104,
+          "belowHorizonPx": 26,
+          "atBBScale": 19.5
+        },
+        "fielders": {
+          "1B/3B": {
+            "Y": 310,
+            "H": 88,
+            "belowHorizonPx": 18
+          },
+          "2B/SS": {
+            "Y": 304,
+            "H": 76,
+            "belowHorizonPx": 12
+          },
+          "LF/RF": {
+            "Y": 299,
+            "H": 60,
+            "belowHorizonPx": 7
+          },
+          "CF": {
+            "Y": 297,
+            "H": 56,
+            "belowHorizonPx": 5
+          }
+        },
+        "was": "1B/3B at Y 330 H 94 -- 38px below the horizon, 28.5px at BB's scale, and IN FRONT of the pitcher."
+      },
+      "whatTheThinReadingAlreadySupports": "Our pitcher's depth needed no change: 26px below a 292 horizon on a 640-tall frame is 19.5px at BB's 480 scale, against BB's measured 17-20. The outfield needed none either (5-7px against BB's -6..+2). Only the corners were out of place, which is why the fix moves two entries rather than seven -- and why 'the rig has too little depth spread', the intuition this started from, was WRONG. BB's spread is small too.",
+      "pinnedBy": "src/art/plateView.test.ts 'the rig reads as one depth' -- nearer-is-never-smaller across all eight ground actors, every fielder behind and below the pitcher, everyone inside the drawn foul wedge and below the horizon. The first two were verified to FAIL against the pre-fix values.",
+      "whatWouldWork": "Three or more behind-plate frames from DIFFERENT defensive alignments (different batters, ideally a shift), captured the way pace.pitchCorridor's stopwatch capture was, so background fielder placement can be read as a band rather than as one arrangement. The existing pair cannot do it: its three fielders are pixel-identical across both frames. Until then this record pins OUR values and claims nothing about BB's band.",
+      "informs": "src/config.ts PLATE_VIEW.FIELDERS, PLATE_VIEW.PITCHER, PLATE_VIEW.HORIZON_Y",
+      "source": "local:bb01-capture-session1 screenshots 00007, 00008"
     }
   },
   "palette": {
