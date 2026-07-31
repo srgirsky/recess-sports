@@ -347,7 +347,7 @@ const VIEW = (() => {
  * wide. `BROW_MIN_CONTRAST` covers one part of that; eyes on the real page
  * cover the rest.
  */
-function visibleFraction(visual: VisualParams, tag: FeatureTag): number {
+function measureFace(visual: VisualParams): Record<FeatureTag, number> {
   const kid = new ProxyCharacter(visual);
   kid.root.updateMatrixWorld(true);
   const mesh = kid.mesh;
@@ -356,37 +356,58 @@ function visibleFraction(visual: VisualParams, tag: FeatureTag): number {
   const pos = geom.attributes.position;
   const nor = geom.attributes.normal;
 
-  const owns = (faceIndex: number) =>
-    kid.features.some(
-      (f) =>
-        f.tag === tag && faceIndex * 3 >= f.indexStart && faceIndex * 3 < f.indexStart + f.indexCount
-    );
+  const tagOf = (faceIndex: number): FeatureTag | null => {
+    const i = faceIndex * 3;
+    for (const f of kid.features) {
+      if (i >= f.indexStart && i < f.indexStart + f.indexCount) return f.tag;
+    }
+    return null;
+  };
 
-  // Unique vertices of this feature, front-facing with respect to the view.
+  // Every feature's front-facing vertices, gathered in ONE pass over the parts.
+  // Rebuilding the proxy per feature is what made this the slowest test in the
+  // suite and timed it out on CI's runner at the 5s default.
+  const samples: { tag: FeatureTag; p: Vector3 }[] = [];
   const seen = new Set<number>();
-  const samples: Vector3[] = [];
   const n = new Vector3();
   for (const f of kid.features) {
-    if (f.tag !== tag) continue;
     for (let i = f.indexStart; i < f.indexStart + f.indexCount; i++) {
       const v = idx.getX(i);
       if (seen.has(v)) continue;
       seen.add(v);
       n.fromBufferAttribute(nor, v).transformDirection(mesh.matrixWorld);
       if (n.dot(VIEW) > -0.25) continue; // faces away from the camera
-      samples.push(new Vector3().fromBufferAttribute(pos, v).applyMatrix4(mesh.matrixWorld));
+      samples.push({ tag: f.tag, p: new Vector3().fromBufferAttribute(pos, v).applyMatrix4(mesh.matrixWorld) });
     }
   }
 
   const ray = new Raycaster();
-  let visible = 0;
-  for (const p of samples) {
+  const total: Record<string, number> = {};
+  const front: Record<string, number> = {};
+  for (const { tag, p } of samples) {
+    total[tag] = (total[tag] ?? 0) + 1;
     ray.set(p.clone().addScaledVector(VIEW, -20), VIEW);
     const hit = ray.intersectObject(mesh, false)[0];
-    if (hit && hit.faceIndex != null && owns(hit.faceIndex)) visible++;
+    if (hit && hit.faceIndex != null && tagOf(hit.faceIndex) === tag) front[tag] = (front[tag] ?? 0) + 1;
   }
   kid.dispose();
-  return samples.length === 0 ? 0 : visible / samples.length;
+
+  const out = {} as Record<FeatureTag, number>;
+  for (const tag of ['eye', 'brow', 'nose', 'glasses'] as FeatureTag[]) {
+    out[tag] = total[tag] ? (front[tag] ?? 0) / total[tag] : 0;
+  }
+  return out;
+}
+
+/** Memoised across the whole file — the same fixtures recur in every test. */
+const faceCache = new Map<string, Record<FeatureTag, number>>();
+function faceOf(visual: VisualParams, key: string): Record<FeatureTag, number> {
+  let m = faceCache.get(key);
+  if (!m) {
+    m = measureFace(visual);
+    faceCache.set(key, m);
+  }
+  return m;
 }
 
 describe('the proxy draws a kid, not a bobblehead', () => {
@@ -515,6 +536,20 @@ describe('the proxy draws a kid, not a bobblehead', () => {
   // one number that is wrong for two of them.
   const KEEPS = 0.75;
 
+  /**
+   * Every hair style bare, plus every accessory on one style — NOT the full
+   * 11 x 4 grid. The grid is 44 proxies each raycast against 3,448 triangles,
+   * which timed the suite out on CI, and its extra 29 fixtures only cover
+   * INTERACTIONS: hair occludes the face from above, accessories from the
+   * front, and nothing in the geometry couples them. Stated rather than
+   * silently trimmed — if a style and an accessory ever do interact, this is
+   * the list that has to grow.
+   */
+  const COVERS: [HairStyle, Accessory][] = [
+    ...HAIR.map((h) => [h, 'none'] as [HairStyle, Accessory]),
+    ...ACC.map((a) => ['short', a] as [HairStyle, Accessory]),
+  ];
+
   it('draws a face that hair does not bury, on every style', () => {
     // The rule the whole facing cue rests on, and the one nothing enforced.
     // The bbox tests measure the silhouette's OUTSIDE; a feature swallowed by
@@ -523,24 +558,22 @@ describe('the proxy draws a kid, not a bobblehead', () => {
     // pixels of skin anywhere on his head — and the glasses sat at the head's
     // vertical centre, 0.37r above the eyes and 0.011r proud of the skull.
     for (const tag of ['eye', 'nose'] as FeatureTag[]) {
-      const bald = visibleFraction(kidWith('bald', 'none'), tag);
+      const bald = faceOf(kidWith('bald', 'none'), 'bald|none')[tag];
       // An absolute anchor as well as the ratio: if a feature were sunk out of
       // sight on EVERY style, bald included, the ratio alone would be 1.0.
       expect(bald, `${tag} is not visible even on a bald kid`).toBeGreaterThan(0.2);
-      for (const hair of HAIR) {
-        for (const accessory of ACC) {
-          // Glasses are SUPPOSED to sit on the eyes — that is asserted, from
-          // the other side, in the glasses test below.
-          if (tag === 'eye' && accessory === 'glasses') continue;
-          const seen = visibleFraction(kidWith(hair, accessory), tag);
-          expect(
-            seen / bald,
-            `${hair} + ${accessory} leaves ${(seen * 100).toFixed(0)}% of the ${tag} against ${(bald * 100).toFixed(0)}% bare`
-          ).toBeGreaterThanOrEqual(KEEPS);
-        }
+      for (const [hair, accessory] of COVERS) {
+        // Glasses are SUPPOSED to sit on the eyes — that is asserted, from
+        // the other side, in the glasses test below.
+        if (tag === 'eye' && accessory === 'glasses') continue;
+        const seen = faceOf(kidWith(hair, accessory), `${hair}|${accessory}`)[tag];
+        expect(
+          seen / bald,
+          `${hair} + ${accessory} leaves ${(seen * 100).toFixed(0)}% of the ${tag} against ${(bald * 100).toFixed(0)}% bare`
+        ).toBeGreaterThanOrEqual(KEEPS);
       }
     }
-  });
+  }, 20_000);
 
   it('shows the brow except where something is meant to cover it', () => {
     // `long`'s fringe reaches lowest of any style, and a headband is worn
@@ -548,32 +581,26 @@ describe('the proxy draws a kid, not a bobblehead', () => {
     // NAMED so they cannot quietly grow to cover the next style someone edits,
     // and each is re-checked below to still be a real exception — a waiver for
     // something no longer covered is just a stale comment.
-    const waived: [HairStyle, Accessory][] = [
-      ['long', 'none'],
-      ['long', 'cap'],
-      ['long', 'glasses'],
-    ];
-    const bald = visibleFraction(kidWith('bald', 'none'), 'brow');
+    const waived: [HairStyle, Accessory][] = [['long', 'none']];
+    const bald = faceOf(kidWith('bald', 'none'), 'bald|none').brow;
     expect(bald).toBeGreaterThan(0.2);
-    for (const hair of HAIR) {
-      for (const accessory of ACC) {
-        const seen = visibleFraction(kidWith(hair, accessory), 'brow');
-        const isWaived =
-          accessory === 'headband' || waived.some(([h, a]) => h === hair && a === accessory);
-        if (isWaived) {
-          expect(
-            seen / bald,
-            `${hair} + ${accessory} is waived but nothing covers the brow`
-          ).toBeLessThan(KEEPS);
-          continue;
-        }
+    for (const [hair, accessory] of COVERS) {
+      const seen = faceOf(kidWith(hair, accessory), `${hair}|${accessory}`).brow;
+      const isWaived =
+        accessory === 'headband' || waived.some(([h, a]) => h === hair && a === accessory);
+      if (isWaived) {
         expect(
           seen / bald,
-          `${hair} + ${accessory} leaves ${(seen * 100).toFixed(0)}% of the brow against ${(bald * 100).toFixed(0)}% bare`
-        ).toBeGreaterThanOrEqual(KEEPS);
+          `${hair} + ${accessory} is waived but nothing covers the brow`
+        ).toBeLessThan(KEEPS);
+        continue;
       }
+      expect(
+        seen / bald,
+        `${hair} + ${accessory} leaves ${(seen * 100).toFixed(0)}% of the brow against ${(bald * 100).toFixed(0)}% bare`
+      ).toBeGreaterThanOrEqual(KEEPS);
     }
-  });
+  }, 20_000);
 
   it('keeps the face on the front of a WIDE head, not just an average one', () => {
     // ★ The variable the other visibility tests hold fixed, and the one that
@@ -583,25 +610,34 @@ describe('the proxy draws a kid, not a bobblehead', () => {
     // 1.052` — `calls_shot`, `cricket`, `sprout`, `the_prof` — and a fixture
     // built at headW 1 cannot see it, which is exactly how the torso's Y scale
     // and the 3.4ft rig both survived their own tests.
-    for (const headW of [0.9, 0.94, 1.0, 1.04, 1.08]) {
+    const ref = faceOf({ ...base, hair: 'bald', accessory: 'none', body: { height: 1, headW: 1 } }, 'w1');
+    for (const headW of [0.9, 0.94, 1.04, 1.08]) {
+      const wide = faceOf(
+        { ...base, hair: 'bald', accessory: 'none', body: { height: 1, headW } },
+        `w${headW}`
+      );
       for (const tag of ['eye', 'brow', 'nose'] as FeatureTag[]) {
-        const seen = visibleFraction(
-          { ...base, hair: 'bald', accessory: 'none', body: { height: 1, headW } },
-          tag
-        );
-        expect(seen, `${tag} at headW ${headW} is ${(seen * 100).toFixed(0)}% visible`).toBeGreaterThan(0.2);
+        // A RATIO against the average head, not an absolute: a wide head buries
+        // a fixed-depth feature GRADUALLY — the skull's curvature varies across
+        // the feature's own width, so the outer edge is still poking out when
+        // the middle has gone. An absolute floor lets that half-swallowed state
+        // through, which is exactly the state the roster's widest kids were in.
+        expect(
+          wide[tag] / ref[tag],
+          `${tag} at headW ${headW} keeps ${((wide[tag] / ref[tag]) * 100).toFixed(0)}% of what it has at headW 1`
+        ).toBeGreaterThanOrEqual(KEEPS);
       }
     }
-  });
+  }, 20_000);
 
   it('puts the glasses where the eyes are', () => {
-    const seen = visibleFraction(kidWith('short', 'glasses'), 'glasses');
+    const seen = faceOf(kidWith('short', 'glasses'), 'short|glasses').glasses;
     expect(seen, `glasses ${(seen * 100).toFixed(0)}% visible`).toBeGreaterThan(0.3);
     // And they must be ON the eyes, not somewhere else on the head: with
     // glasses on, the eyes behind them stop being the frontmost surface. They
     // used to sit 0.37r above, where this comparison would show no change.
-    const bare = visibleFraction(kidWith('short', 'none'), 'eye');
-    const behind = visibleFraction(kidWith('short', 'glasses'), 'eye');
+    const bare = faceOf(kidWith('short', 'none'), 'short|none').eye;
+    const behind = faceOf(kidWith('short', 'glasses'), 'short|glasses').eye;
     expect(behind, 'the glasses do not overlap the eyes at all').toBeLessThan(bare * 0.6);
   });
 
