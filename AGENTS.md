@@ -175,6 +175,70 @@ continuous across a v1↔v2 switch in the same browser.
   PLAYING separately: a one-shot settles into its `returnsTo` when it ends (which
   is criterion 2, so it must not be suppressed), and counting the settle clip's
   time against the reviewed clip's frame count is what printed `frame 33 / 24`.
+- **★ THE CHARACTER PIPELINE IS THE RUNTIME HALF OF THE ASSET CONTRACT'S §4**, and
+  `render/CharacterFactory.ts` is the ONE place that decides model-or-proxy:
+  `?proxy=1` → proxy; not in the manifest → proxy, SILENTLY (most of the roster
+  is undelivered during §5's batches of 5-6, and 25 warnings a game teaches
+  everyone to ignore the console); load failure → proxy plus ONE warning per
+  character, because that is the branch somebody has to fix. Nothing downstream
+  branches on which it got — `KidView` is the same surface either way, which is
+  what makes a delivery land with no code change.
+- **`render/modelLoader.ts` is the only file that loads a `.glb`**, the same way
+  `net/peer.ts` is the only one that imports peerjs. A second `new GLTFLoader()`
+  silently gets no Draco decoder and no KTX2 support detection, and fails on the
+  first compressed model at runtime on whichever device fielded that kid. The
+  decoders are **committed** under `public/v2/decoders/` (they are fetched by URL
+  at runtime, so a bundler never sees them and `node_modules` 404s in the built
+  site) and `scripts/v2/sync-decoders.mjs --check` runs in `npm test` so a
+  `three` bump cannot desync them.
+- **Two asset directories, two jobs, and conflating them is the mistake.**
+  `assets/v2/` is the artist's directory and the validation INBOX; only
+  `public/v2/models/` ships. So "it validated" and "it ships" are separate,
+  deliberate acts, and `npm run validate:models` scans both. Runtime URLs
+  resolve against `document.baseURI`, **never `import.meta.url`** — under the
+  relative `base: './'` those differ in the build and agree in dev, which is
+  exactly the bug that works locally and 404s in production.
+- **The delivery manifest is a generated `manifest.json`, NOT `import.meta.glob`.**
+  Vite copies `public/` verbatim into `dist/` and then emits every globbed file
+  AGAIN as a hashed bundle asset: measured at 1.34MB of duplicate `.glb` for
+  five stand-ins, ~8MB at thirty. `npm run manifest:models` writes it and
+  `manifest.test.js` fails if it drifts from the directory — a real model
+  dropped in without a manifest entry renders as a proxy forever, silently and
+  correctly-looking.
+- **`npm run export:proxy-kid` writes a contract-legal `kid_<id>.glb` from the
+  proxy**, which is what `proceduralClips.ts` does for the clip library. Before
+  it, §4's character rules had never run against a real file (only two synthetic
+  fixtures built to fail) and the loader had nothing to load. It refuses to write
+  a level over its triangle budget rather than renaming LOD1.
+- **A model's bones must be parented to the character root, OUTSIDE the LOD.** In
+  a `.glb` the joints are siblings of the meshes under the scene, so lifting the
+  LOD nodes into a new group orphans the whole skeleton: world matrices never
+  update, every vertex skins against a stale bind matrix, and the character
+  draws NOTHING while still reporting a mesh, a LOD level and a shadow caster.
+  Observed as 13 kids, a readout saying "drawn 13 model / 0 proxy", and an empty
+  field. Inside a level is equally wrong — a LOD hides every level but the
+  active one, so the kid would vanish again on walking away.
+- **`lodBias` DROPS the nearest levels, it does not scale distances.** `perfTier`
+  defines it as "added to every character's LOD index — 1 means never use LOD0",
+  and scaling distances would still upload LOD0's 7,000 triangles to a device
+  that must never draw them. The switch distances themselves are DERIVED from
+  apparent PIXEL size (`lodDistancesFt`), not picked: 90px / 40px / 20px, so
+  they follow the kid being drawn instead of one camera and one screen.
+- **⚠️ A delivered model costs up to 8 draw calls where a proxy costs 2** — two
+  per POPULATED material slot (mesh + inverted hull) — and 13 models put the
+  Look Spike at **122 draws against a budget of 90**, while halving triangles
+  (93.3k → 47.6k). `render.characterDrawCost` has the arithmetic and the three
+  ways to close it; the 90 was set against a proxy-only scene and has never been
+  re-derived with models in it. Do not close it by dropping outlines at
+  distance — a 20px character is where the contour does the most work.
+- **Expression is `face_atlas`, and ONLY on delivered models.** `faceAtlas.ts` is
+  pure (no three) and owns the 4×4 cell order; `asset-contract.md` is parsed
+  against it. Cell 0 is TOP-left, so the row index is V-flipped — getting that
+  backwards is not a crash, it is a roster wearing the expression three rows
+  away. The atlas rides `M_Body`'s `emissiveTexture` (glTF has no second-albedo
+  channel, and emissive is the one map the toon shader otherwise ignores), and
+  `setExpression` is a deliberate no-op on a proxy, which has a facing cue and
+  no face.
 - **Outline hulls are SIBLINGS, never children.** A skinned hull parented under
   its skinned mesh inherits the already-posed world matrix and skins a second
   time — every character renders as a solid navy blob. `attachOutline` throws if
@@ -264,13 +328,22 @@ continuous across a v1↔v2 switch in the same browser.
 | `src/v2/spike/AnimSpike.ts` | ★ v2 at `/v2/?anims=1`. The acceptance surface for `docs/v2/animation-brief.md`: clip list, 0.6/1.0/1.4× rates, marker flash, a real 40px thumbnail viewport (criterion 4, rendered not imagined) and a COMPUTED loop-seam number (criterion 3 — "nearly closed" pops once per stride and gets blamed on the rate). Real `dt`, unlike LookSpike's fixed 1/60. |
 | `scripts/v2/glb.mjs` | ★ v2. Dependency-free glTF 2.0 read AND write. Hand-rolled because a playback loader is built to be FORGIVING — it normalises, defaults and ignores — and every one of those kindnesses is a rejection the validator would fail to make. The writer is what generates the rig from `skeleton.ts`. |
 | `scripts/v2/export-skeleton.mjs` | ★ v2. `npm run export:skeleton` → `assets/v2/skeleton_recess_v1.glb`, emitted from `SKELETON` and never hand-edited, and it REFUSES to write if the bone table and `REFERENCE_HEIGHT_FT` disagree. Ships a two-triangle placeholder mesh bound to `Hips` on purpose: without a skin, glTF importers build 33 loose empties instead of an armature. |
+| `src/v2/render/CharacterFactory.ts` | ★ v2. The ONE seam that decides model-or-proxy (`?proxy=1` / undelivered / load failure), returning the shared `KidView`. Warns once per character, never per instance, and never rejects. |
+| `src/v2/render/CharacterModel.ts` | ★ v2. A delivered `kid_<id>.glb` made playable: three LOD nodes + the proxy as LOD3, material slots rebound onto `MaterialRegistry`, the team-colour multiply on `M_Uniform`, `face_atlas` expressions, an outline hull per primitive per level, and the bones parented outside the LOD. Same public surface as `ProxyCharacter`. |
+| `src/v2/render/modelLoader.ts` | ★ v2. The only `GLTFLoader`, with Draco + KTX2 wired to `public/v2/decoders/`. Configured with the live renderer (KTX2 needs GPU support detection); caches one parsed GLTF per id and dedupes in-flight loads. |
+| `src/v2/render/assets.ts` | ★ v2. Runtime asset URLs resolved against `document.baseURI`, plus the fetched delivery manifest. |
+| `src/v2/render/faceAtlas.ts` | ★ v2. PURE (no three). The 4×4 expression grid from the asset contract §4 and `faceCellUv`; `faceAtlas.test.ts` parses the doc and fails on drift. |
+| `scripts/v2/export-proxy-kid.mjs` | ★ v2. `npm run export:proxy-kid` → contract-legal `kid_<id>.glb` stand-ins in `public/v2/models/`, emitted from `ProxyCharacter`'s own geometry and slot spans. Refuses to write a level over its triangle budget. |
+| `scripts/v2/models-manifest.mjs` | ★ v2. `npm run manifest:models` — writes `public/v2/models/manifest.json` from the directory, with a `--check` mode a test runs. |
+| `scripts/v2/sync-decoders.mjs` | ★ v2. `npm run sync:decoders` — copies the Draco/Basis decoders out of `three` into `public/v2/decoders/`, with a `--check` mode so a `three` bump cannot desync the committed copies. |
+| `scripts/v2/ts-resolve.mjs` | ★ v2. A Node resolution hook so a build script can `import './skeleton'` and find `skeleton.ts`. Only fires after normal resolution fails, and only for the two scripts that opt in. |
 | `scripts/v2/modelRules.mjs` + `validate-models.mjs` | ★ v2. `npm run validate:models` — the gate both v2 docs promise. Pure rule engine (contract passed in, no TS import) behind two front ends: the CLI (Node ≥22.6, type stripping) and `validate-models.test.js` (vitest, so CI's Node 20 runs the same rules). Bone set/order/bind-pose hash, height band, morph targets, root motion, 30fps grid, loop seams, measured body travel, derived marker frames, LOD budgets, material slots, size. Failures name the rule AND why it exists. |
 | `scripts/v2/purity.lint.test.js` | ★ v2. `src/v2/sim/**` imports only sim/data/config/pure-systems; no three, no DOM, no `Math.random`, no `Date.now`; and every sim file must import in plain Node. Two files claimed this gate existed before it did. |
 | `scripts/measures.json` | ★ The measurement records + `conformance.test.js`'s gate. Every record names the `src/config.ts` constant it informs, so the audit trail runs source → record → constant, and carries a `status`: `conformed` (ours inside the band), `known-drift` (outside, and the test pins the drift's SIZE so it can't grow or be half-fixed unnoticed), `awaiting-measurement` (BB not measured yet — pins only OUR value, claims nothing about BB), `note` (a finding about the measurement itself). Read this before tuning any "Backyard feel" constant. |
 
 ## Commands
 
-`npm run dev` (play locally) · `npm test` (logic tests) · `npm run build` (→ `dist/`). v2 assets: `npm run export:skeleton` (emit the rig) · `npm run validate:models` (gate a delivery; needs Node ≥22.6 — CI runs the same rules through vitest). Full details + deploy in `README.md`.
+`npm run dev` (play locally) · `npm test` (logic tests) · `npm run build` (→ `dist/`). v2 assets: `npm run export:skeleton` (emit the rig) · `npm run export:proxy-kid` (stand-in characters; `-- all` for the whole roster) · `npm run manifest:models` (rebuild the delivery manifest) · `npm run sync:decoders` (refresh the committed Draco/Basis decoders after a `three` bump) · `npm run validate:models` (gate a delivery; needs Node ≥22.6 — CI runs the same rules through vitest). Full details + deploy in `README.md`.
 
 ## Shipping changes (the standard delivery process)
 

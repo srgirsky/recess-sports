@@ -25,9 +25,10 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { readGlb, writeGlb, f32 } from './glb.mjs';
-import { checkAnimations, checkContainer, checkSkeleton, makeReport } from './modelRules.mjs';
+import { readGlb, writeGlb, f32, triangleCount } from './glb.mjs';
+import { checkAnimations, checkCharacter, checkContainer, checkSkeleton, makeReport } from './modelRules.mjs';
 import { buildSkeletonGlb } from './export-skeleton.mjs';
+import { SAMPLE_IDS, buildProxyKidGlb, loadProxySpec } from './export-proxy-kid.mjs';
 
 import * as skeletonSpec from '../../src/v2/render/skeleton.ts';
 import * as clipSpec from '../../src/v2/render/clips.ts';
@@ -356,6 +357,155 @@ describe('the rules actually reject', () => {
     const report = makeReport();
     checkContainer(readGlb(path), report, { maxBytes: 400 * 1024 });
     expect(rules(report)).toContain('gltf.size');
+  });
+});
+
+// --- The character path ------------------------------------------------------
+
+/**
+ * A minimal contract-legal character, as JSON, that individual rules can be
+ * pointed at after breaking exactly one thing.
+ *
+ * Hand-built rather than produced by the exporter, for the reason the animation
+ * fixture above states: a round trip through one code path proves nothing. This
+ * one also has to be MUTABLE per test, and a 275KB exported file is not.
+ */
+function characterJson(id, { meshesPerLod = 1, topY = 4.0, lods = ['LOD0', 'LOD1', 'LOD2'] } = {}) {
+  const bones = contract.SKELETON;
+  const byName = new Map(bones.map((b, i) => [b.name, i]));
+  const nodes = bones.map((b) => ({ name: b.name, translation: [...b.pos], children: [] }));
+  for (const b of bones) if (b.parent) nodes[byName.get(b.parent)].children.push(byName.get(b.name));
+  for (const n of nodes) if (!n.children.length) delete n.children;
+
+  for (const lod of lods) {
+    const parent = { name: `kid_${id}_${lod}`, children: [] };
+    const parentIndex = nodes.length;
+    nodes.push(parent);
+    for (let m = 0; m < meshesPerLod; m++) {
+      parent.children.push(nodes.length);
+      nodes.push({ name: `kid_${id}_${lod}_part${m}`, mesh: 0, skin: 0 });
+    }
+    if (!parent.children.length) delete parent.children;
+    void parentIndex;
+  }
+
+  return {
+    asset: { version: '2.0' },
+    scene: 0,
+    scenes: [{ nodes: [0] }],
+    nodes,
+    skins: [{ inverseBindMatrices: 1, skeleton: 0, joints: bones.map((_, i) => i) }],
+    meshes: [{ name: 'body', primitives: [{ attributes: { POSITION: 0 }, indices: 2, mode: 4 }] }],
+    accessors: [
+      { componentType: 5126, count: 3, type: 'VEC3', min: [0, 0, 0], max: [1, topY, 1] },
+      { componentType: 5126, count: bones.length, type: 'MAT4' },
+      { componentType: 5123, count: 3, type: 'SCALAR' },
+    ],
+    materials: [{ name: 'M_Body' }],
+  };
+}
+
+function reportFor(json, id) {
+  const path = join(tmp, `kid_${id}.glb`);
+  writeGlb(path, json, [f32([0])]);
+  const report = makeReport();
+  checkCharacter(readGlb(path), contract, report, id);
+  return report;
+}
+
+describe('the character rules actually reject', () => {
+  it('accepts a body/hair/accessory split at THREE LOD levels', () => {
+    // Nine skinned nodes. The old whole-file `> 3` rule rejected exactly this,
+    // which is the shape §4 asks for — the gate that exists to accept a
+    // conforming delivery was failing one.
+    const report = reportFor(characterJson('split', { meshesPerLod: 3 }), 'split');
+    expect(rules(report)).not.toContain('character.meshes');
+  });
+
+  it('rejects a FOURTH skinned mesh inside one LOD level', () => {
+    const report = reportFor(characterJson('fat', { meshesPerLod: 4 }), 'fat');
+    expect(rules(report)).toContain('character.meshes');
+  });
+
+  it('rejects geometry drawn above the crown by more than the hair budget', () => {
+    // Height is defined on the BONE (§1). The proxy's own afro overshot by
+    // 14.2% of body height before anything measured it.
+    const over = 4.0 * (1 + skeletonSpec.HAIR_HEADROOM_FRAC) + 0.05;
+    const report = reportFor(characterJson('tall', { topY: over }), 'tall');
+    expect(rules(report)).toContain('character.drawnHeight');
+  });
+
+  it('allows hair its headroom, so an afro is still an afro', () => {
+    const inside = 4.0 * (1 + skeletonSpec.HAIR_HEADROOM_FRAC) - 0.01;
+    const report = reportFor(characterJson('afro', { topY: inside }), 'afro');
+    expect(rules(report)).not.toContain('character.drawnHeight');
+  });
+
+  it('reports every missing LOD node by name', () => {
+    const report = reportFor(characterJson('thin', { lods: ['LOD0'] }), 'thin');
+    const messages = report.items.filter((i) => i.rule === 'character.lod').map((i) => i.message);
+    expect(messages.some((m) => m.includes('kid_thin_LOD1'))).toBe(true);
+    expect(messages.some((m) => m.includes('kid_thin_LOD2'))).toBe(true);
+  });
+});
+
+describe('the rules survive Draco', () => {
+  it('still counts triangles when the vertex data is compressed away', () => {
+    // §4 mandates Draco, and `glb.mjs` deliberately never decodes it — a
+    // forgiving reader is a rejection the validator fails to make. The LOD
+    // budget rule survives anyway because glTF keeps `accessor.count` (and
+    // POSITION's min/max) even when the buffer view is gone, which is also
+    // what makes the drawn-height rule gateable on a real delivery.
+    const path = join(tmp, 'kid_draco.glb');
+    writeGlb(
+      path,
+      {
+        asset: { version: '2.0' },
+        scene: 0,
+        scenes: [{ nodes: [] }],
+        nodes: [],
+        meshes: [
+          {
+            name: 'compressed',
+            primitives: [
+              {
+                attributes: { POSITION: 0 },
+                indices: 1,
+                mode: 4,
+                extensions: { KHR_draco_mesh_compression: { bufferView: 0, attributes: { POSITION: 0 } } },
+              },
+            ],
+          },
+        ],
+        // No bufferView on either accessor: the real data is in the Draco blob.
+        accessors: [
+          { componentType: 5126, count: 300, type: 'VEC3', min: [0, 0, 0], max: [1, 4, 1] },
+          { componentType: 5123, count: 900, type: 'SCALAR' },
+        ],
+      },
+      [f32([0])]
+    );
+    expect(triangleCount(readGlb(path), 0)).toBe(300);
+  });
+});
+
+describe('the stand-in characters this repo generates clear their own contract', () => {
+  it('passes every character rule, for every sampled kid', async () => {
+    // ★ The first end-to-end exercise of the character path. Before this the
+    // rules had only ever seen two synthetic fixtures built to FAIL, so
+    // "a conforming character passes" was an untested claim about the gate
+    // every commissioned model has to clear.
+    const spec = await loadProxySpec();
+    for (const id of SAMPLE_IDS) {
+      const path = join(tmp, `kid_${id}.glb`);
+      await buildProxyKidGlb(id, path, spec);
+      const gltf = readGlb(path);
+      const report = makeReport();
+      checkContainer(gltf, report, { maxBytes: 400 * 1024 });
+      checkSkeleton(gltf, contract, report);
+      checkCharacter(gltf, contract, report, id);
+      expect(failures(report).map((f) => `${id} ${f.rule}: ${f.message}`)).toEqual([]);
+    }
   });
 });
 

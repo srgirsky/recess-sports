@@ -23,7 +23,17 @@
 //
 // ONE MATERIAL, ONE DRAW CALL. Part colours live in a vertex-colour attribute
 // rather than in separate materials, so a proxy costs 1 mesh + 1 outline hull
-// — exactly the 2-draw-calls-per-character the perf budget allows.
+// — 2 draw calls per character.
+//
+// ★ THAT IS A FACT ABOUT PROXIES, NOT ABOUT CHARACTERS, and this comment used
+// to end "— exactly the 2-draw-calls-per-character the perf budget allows",
+// which read as the latter. A COMMISSIONED model carries the four material
+// slots the asset contract mandates, three.js splits a multi-primitive mesh
+// into one Mesh per primitive, and the inverted hull needs a sibling per Mesh:
+// up to 8 draws, two per populated slot. Measured at 122 draws for 13 models
+// against 46 for 13 proxies, on a budget of 90. See
+// `render.characterDrawCost` in `scripts/measures.json` — the budget has never
+// been re-derived against a scene with real models in it.
 // ---------------------------------------------------------------------------
 
 import {
@@ -52,7 +62,7 @@ import {
   crownHeightFt,
 } from './skeleton';
 import { shadeInt } from '../../art/fieldTexture';
-import { hairHex, jerseyHex, skinHex, trimHex } from './materials/registry';
+import { hairHex, jerseyHex, skinHex, trimHex, type SlotName } from './materials/registry';
 import { makeToonMaterial } from './materials/toon';
 import { attachOutline, type OutlineRegistry } from './materials/outline';
 import { clamp } from '../sim/units';
@@ -112,6 +122,13 @@ export const HEAD_RISE = 1.0;
 /**
  * ★ How far hair may rise above `HeadTop_End`, as a fraction of body height.
  *
+ * Re-exported, not defined here: it MOVED to `skeleton.ts` so that
+ * `scripts/v2/validate-models.mjs` — which must not import the renderer — can
+ * enforce the same number on a delivered model that this file enforces on a
+ * proxy. Enforcing it only on our own stand-ins would be checking the one
+ * character nobody is paid to make. It stays exported from here because that is
+ * where every existing reader looks for it.
+ *
  * Not zero: a character's height is defined on the BONE, so hair legitimately
  * stands above it — an afro that stops at the skull is not an afro. But the
  * drawn crown is what `render.characterPresence` makes a claim about, and the
@@ -119,7 +136,7 @@ export const HEAD_RISE = 1.0;
  * top of the kid. Nothing could see it: the bounding-box test's fixture is
  * `hair: 'bald'`, so all 11 styles and all 4 accessories went unmeasured.
  */
-export const HAIR_HEADROOM_FRAC = 0.04;
+export { HAIR_HEADROOM_FRAC } from './skeleton';
 
 /**
  * ★ How far the brow is shaded from the kid's hair colour, toward the shared
@@ -138,6 +155,40 @@ export const HAIR_HEADROOM_FRAC = 0.04;
  */
 export const BROW_SHADE = 0.55;
 export const BROW_MIN_CONTRAST = 90;
+
+/**
+ * ★ A kid's real-world height, in feet, from the content already authored for
+ * them. THE one derivation — shared by the proxy and by delivered models.
+ *
+ * It has to be shared, and the reason is specific. Every delivered `.glb` is
+ * authored at the canonical 4.0ft bind pose (§2 hashes it, so a model cannot
+ * carry its own stature), which means per-kid height is a uniform scale the
+ * ENGINE applies. If `CharacterModel` derived it separately from
+ * `ProxyCharacter`, the two would agree only by coincidence — and the moment
+ * they drifted, a kid whose model failed to load would visibly change size on
+ * falling back to their proxy, which reads as a rendering glitch rather than as
+ * a missing file.
+ *
+ * v1 authored `height` as a 0.82-1.0 scale; that band maps onto the real
+ * 3.6-4.4ft range so 30 existing kids get sensible statures with no content
+ * edits. The default is the MIDDLE of v1's band, not the top of it: the six
+ * kids in characters.ts with no `height` used to default to 1.0 and so came out
+ * at 4.4ft — every one of them the tallest child in the game, purely for lack
+ * of a content field.
+ */
+export function kidHeightFt(visual: VisualParams): number {
+  const hNorm = clamp(visual.body?.height ?? 0.91, 0.82, 1);
+  return HEIGHT_MIN_FT + ((hNorm - 0.82) / 0.18) * (HEIGHT_MAX_FT - HEIGHT_MIN_FT);
+}
+
+/**
+ * The uniform scale applied to a character's ROOT GROUP — never to the bones,
+ * so every animation clip stays valid (they are authored at the reference
+ * height, and a uniform scale cannot invalidate them).
+ */
+export function kidRootScale(visual: VisualParams): number {
+  return (kidHeightFt(visual) / REFERENCE_HEIGHT_FT) * CHARACTER_SCALE;
+}
 
 // --- Bind-pose bookkeeping --------------------------------------------------
 
@@ -182,20 +233,54 @@ export function buildSkeleton(): BuiltSkeleton {
 
 const UP = new Vector3(0, 1, 0);
 
+/**
+ * ★ Tessellation multiplier, 1 = full detail.
+ *
+ * It exists so `scripts/v2/export-proxy-kid.mjs` can emit the three LOD meshes
+ * the asset contract §4 requires from ONE geometry description, instead of
+ * either hand-authoring three or writing a mesh decimator. Dropping segment
+ * counts is a crude decimation, but on a pile of spheres and capsules it is
+ * exactly the right one: the silhouette is the primitive, so fewer segments
+ * costs smoothness and never a feature.
+ *
+ * MODULE STATE, and safely so: `withDetail` is the only writer, it restores in
+ * a `finally`, and a `ProxyCharacter` constructor is straight-line synchronous
+ * code that calls nothing which could re-enter it. Threading a parameter
+ * through would touch ~30 call sites across four functions, and every one of
+ * those is a place to forget it.
+ */
+let detail = 1;
+
+/** Run `build` with a tessellation multiplier, then restore the previous one. */
+export function withDetail<T>(level: number, build: () => T): T {
+  const previous = detail;
+  detail = Math.max(0.15, level);
+  try {
+    return build();
+  } finally {
+    detail = previous;
+  }
+}
+
+/** Segment count at the current detail, never below what still closes a solid. */
+function seg(full: number, floor = 3): number {
+  return Math.max(floor, Math.round(full * detail));
+}
+
 /** A capsule spanning two bind-pose points. */
 function limb(a: Vector3, b: Vector3, r: number): BufferGeometry {
   const dir = new Vector3().subVectors(b, a);
   const len = dir.length();
   const cyl = Math.max(0.02, len - 2 * r);
-  const g = new CapsuleGeometry(r, cyl, 3, 8);
+  const g = new CapsuleGeometry(r, cyl, seg(3, 1), seg(8, 4));
   const q = new Quaternion().setFromUnitVectors(UP, dir.normalize());
   const mid = new Vector3().addVectors(a, b).multiplyScalar(0.5);
   g.applyMatrix4(new Matrix4().compose(mid, q, new Vector3(1, 1, 1)));
   return g;
 }
 
-function ball(at: Vector3, r: number, scale = new Vector3(1, 1, 1), seg = 14, rings = 10): BufferGeometry {
-  const g = new SphereGeometry(r, seg, rings);
+function ball(at: Vector3, r: number, scale = new Vector3(1, 1, 1), segments = 14, rings = 10): BufferGeometry {
+  const g = new SphereGeometry(r, seg(segments), seg(rings));
   g.scale(scale.x, scale.y, scale.z);
   g.translate(at.x, at.y, at.z);
   return g;
@@ -235,6 +320,22 @@ interface Part {
    * Identity has to come from the part list, so it is recorded at merge time.
    */
   tag?: FeatureTag;
+  /**
+   * ★ Which of the asset contract's four material slots this primitive would
+   * belong to on a COMMISSIONED model.
+   *
+   * The proxy itself does not need it — it is one material with vertex colours,
+   * which is what keeps it to two draw calls. It is here because
+   * `export-proxy-kid.mjs` emits a contract-legal `.glb` from these same parts,
+   * and §4 requires exactly `M_Body` / `M_Uniform` / `M_Hair` / `M_Accessory`.
+   *
+   * Stated per part rather than derived from `color`, for the reason the `tag`
+   * field above already records: the nose is skin-coloured and the brow is hair
+   * -coloured, so colour cannot tell you what a thing IS. Deriving the slot
+   * from the colour would put the nose in `M_Body` by luck and the brow in
+   * `M_Hair` by luck, and break the first time a palette moved.
+   */
+  slot?: SlotName;
 }
 
 export type FeatureTag = 'eye' | 'brow' | 'nose' | 'glasses';
@@ -242,6 +343,13 @@ export type FeatureTag = 'eye' | 'brow' | 'nose' | 'glasses';
 /** Index-buffer span of a tagged part in the merged geometry. */
 export interface FeatureRange {
   tag: FeatureTag;
+  indexStart: number;
+  indexCount: number;
+}
+
+/** Index-buffer span of one material slot in the merged geometry. */
+export interface SlotRange {
+  slot: SlotName;
   indexStart: number;
   indexCount: number;
 }
@@ -254,7 +362,11 @@ export interface FeatureRange {
  * write skin and colour attributes per source geometry anyway, and this way
  * the proxy has no dependency outside three's core.
  */
-function mergeParts(parts: Part[], ranges: FeatureRange[] = []): BufferGeometry {
+function mergeParts(
+  parts: Part[],
+  ranges: FeatureRange[] = [],
+  slots: SlotRange[] = []
+): BufferGeometry {
   let vCount = 0;
   let iCount = 0;
   for (const p of parts) {
@@ -301,6 +413,7 @@ function mergeParts(parts: Part[], ranges: FeatureRange[] = []): BufferGeometry 
     const n = src ? src.count : pos.count;
     for (let i = 0; i < n; i++) index[io + i] = (src ? src.getX(i) : i) + vo;
     if (p.tag) ranges.push({ tag: p.tag, indexStart: io, indexCount: n });
+    if (p.slot) slots.push({ slot: p.slot, indexStart: io, indexCount: n });
 
     vo += pos.count;
     io += n;
@@ -353,6 +466,14 @@ export class ProxyCharacter {
   readonly proportions: ProxyProportions;
   /** Which triangles belong to which face feature — see `Part.tag`. */
   readonly features: FeatureRange[] = [];
+  /**
+   * Which triangles belong to which material slot — see `Part.slot`.
+   *
+   * The proxy itself draws with one material and ignores this; it is what lets
+   * `scripts/v2/export-proxy-kid.mjs` split the same geometry into the four
+   * named slots §4 requires, without a second description of the character.
+   */
+  readonly slots: SlotRange[] = [];
 
   constructor(visual: VisualParams, opts: ProxyOptions = {}) {
     const b = visual.body ?? {};
@@ -364,8 +485,7 @@ export class ProxyCharacter {
     // six kids in characters.ts with no `height` used to default to 1.0 and so
     // came out at 4.4ft — every one of them the tallest child in the game,
     // purely for lack of a content field.
-    const hNorm = clamp(b.height ?? 0.91, 0.82, 1);
-    this.heightFt = HEIGHT_MIN_FT + ((hNorm - 0.82) / 0.18) * (HEIGHT_MAX_FT - HEIGHT_MIN_FT);
+    this.heightFt = kidHeightFt(visual);
 
     const shoulder = clamp(b.shoulderW ?? 46, 36, 56) / 46;
     const hip = 1 + clamp(b.hipW ?? 0, -8, 10) / 46;
@@ -406,6 +526,7 @@ export class ProxyCharacter {
       geom: ball(headC, headR, new Vector3(headW, headH, headW * 0.95)),
       bone: 'Head',
       color: skinC,
+      slot: 'M_Body',
     });
     parts.push(...hairParts(visual.hair, headC, headR, headW, headH, hairC));
     parts.push(...accessoryParts(visual.accessory, headC, headR, headW, headH, jersey));
@@ -429,6 +550,7 @@ export class ProxyCharacter {
       ),
       bone: 'Spine1',
       color: jersey,
+      slot: 'M_Uniform',
     });
 
     // ---- Neck ----
@@ -445,6 +567,7 @@ export class ProxyCharacter {
       geom: limb(new Vector3(0, neckBot, 0), new Vector3(0, neckTop, 0), neckR),
       bone: 'Neck',
       color: skinC,
+      slot: 'M_Body',
     });
 
     this.proportions = {
@@ -462,34 +585,43 @@ export class ProxyCharacter {
         geom: ball(new Vector3(0, hips.y + 0.188, 0.047), 0.353 * (1 + belly * 0.5), new Vector3(1, 0.78, 0.9)),
         bone: 'Spine',
         color: jersey,
+        slot: 'M_Uniform',
       });
     }
     parts.push({
       geom: ball(new Vector3(0, hips.y, 0), 0.353 * hip, new Vector3(1, 0.7, 0.86)),
       bone: 'Hips',
       color: pants,
+      slot: 'M_Uniform',
     });
 
     // ---- Arms ----
     for (const side of ['Left', 'Right'] as const) {
-      parts.push({ geom: limb(at(`${side}Arm`), at(`${side}ForeArm`), 0.129), bone: `${side}Arm`, color: jersey });
-      parts.push({ geom: limb(at(`${side}ForeArm`), at(`${side}Hand`), 0.112), bone: `${side}ForeArm`, color: skinC });
-      parts.push({ geom: ball(at(`${side}Hand`), 0.147, new Vector3(1, 0.9, 0.85)), bone: `${side}Hand`, color: skinC });
+      parts.push({ geom: limb(at(`${side}Arm`), at(`${side}ForeArm`), 0.129), bone: `${side}Arm`, color: jersey, slot: 'M_Uniform' });
+      parts.push({ geom: limb(at(`${side}ForeArm`), at(`${side}Hand`), 0.112), bone: `${side}ForeArm`, color: skinC, slot: 'M_Body' });
+      parts.push({ geom: ball(at(`${side}Hand`), 0.147, new Vector3(1, 0.9, 0.85)), bone: `${side}Hand`, color: skinC, slot: 'M_Body' });
     }
 
     // ---- Legs ----
     for (const side of ['Left', 'Right'] as const) {
-      parts.push({ geom: limb(at(`${side}UpLeg`), at(`${side}Leg`), 0.171 * hip), bone: `${side}UpLeg`, color: pants });
-      parts.push({ geom: limb(at(`${side}Leg`), at(`${side}Foot`), 0.135), bone: `${side}Leg`, color: pants });
+      parts.push({ geom: limb(at(`${side}UpLeg`), at(`${side}Leg`), 0.171 * hip), bone: `${side}UpLeg`, color: pants, slot: 'M_Uniform' });
+      parts.push({ geom: limb(at(`${side}Leg`), at(`${side}Foot`), 0.135), bone: `${side}Leg`, color: pants, slot: 'M_Uniform' });
       const foot = at(`${side}Foot`);
       parts.push({
         geom: box(foot.clone().add(new Vector3(0, -0.059, 0.106)), 0.282, 0.153, 0.494),
         bone: `${side}Foot`,
         color: shoe,
+        slot: 'M_Accessory',
       });
     }
 
-    const geom = mergeParts(parts, this.features);
+    // Every part must name a slot, or the exported stand-in silently loses
+    // triangles: a primitive with no slot lands in no primitive group, and the
+    // omission is invisible in the proxy itself (one material draws them all).
+    const unslotted = parts.filter((p) => !p.slot).length;
+    if (unslotted) throw new Error(`ProxyCharacter: ${unslotted} part(s) name no material slot`);
+
+    const geom = mergeParts(parts, this.features, this.slots);
     const mat = makeToonMaterial({ color: 0xffffff, rimStrength: 0.24, rimPower: 3.0 });
     mat.vertexColors = true;
 
@@ -503,13 +635,27 @@ export class ProxyCharacter {
     // Scale the whole rig to this kid's real height. Scaling the ROOT GROUP
     // (not the bones) keeps every animation clip valid — clips are authored
     // at the reference height and a uniform scale can't invalidate them.
-    const s = (this.heightFt / REFERENCE_HEIGHT_FT) * CHARACTER_SCALE;
-    this.root.scale.setScalar(s);
+    this.root.scale.setScalar(kidRootScale(visual));
     this.root.add(this.mesh);
     this.root.name = 'kid';
 
     if (opts.outlines) attachOutline(this.mesh, opts.outlines);
   }
+
+  /**
+   * ★ A proxy is a stand-in, and every caller is allowed to know it — the
+   * review page reports the count, and it is the honest answer to "are we
+   * looking at the art yet?".
+   */
+  readonly isProxy = true;
+
+  /**
+   * Deliberately a no-op: a proxy has a facing CUE (eyes, brows, nose) and no
+   * face. Expression is the `face_atlas` texture on the delivered models — see
+   * `faceAtlas.ts`. Throwing here would make every caller ask first, and a
+   * silent no-op is the correct behaviour for a kid with no face to change.
+   */
+  setExpression(): void {}
 
   /** Feet stay on the ground plane; the sim owns (x, z). */
   setPosition(x: number, z: number): void {
@@ -574,7 +720,8 @@ function hairParts(
   const sx = headW;
   const sy = headH;
   const out: Part[] = [];
-  const add = (g: BufferGeometry, bone = 'Head') => out.push({ geom: g, bone, color });
+  const add = (g: BufferGeometry, bone = 'Head') =>
+    out.push({ geom: g, bone, color, slot: 'M_Hair' });
 
   switch (style) {
     case 'bald':
@@ -631,7 +778,7 @@ function hairParts(
       // whose entire job is that 30 kids read apart at distance.
       for (let i = 0; i < 6; i++) {
         const a = (i / 6) * Math.PI * 2;
-        const g = new ConeGeometry(r * 0.16, r * 0.55, 5);
+        const g = new ConeGeometry(r * 0.16, r * 0.55, seg(5));
         g.translate(crown.x + Math.cos(a) * r * 0.42, crown.y + r * 0.75, crown.z + Math.sin(a) * r * 0.38);
         add(g);
       }
@@ -726,6 +873,7 @@ function facingCue(
       bone: 'Head',
       color: 0x2b3440,
       tag: 'eye',
+      slot: 'M_Accessory',
     });
     // The brow is the kid's own hair colour, SHADED. Raw hair colour is what
     // failed the first time — and ink would have failed differently: three of
@@ -743,6 +891,9 @@ function facingCue(
       bone: 'Head',
       color: brow,
       tag: 'brow',
+      // Hair-DERIVED, but not the hair slot: on a delivered model a brow is
+      // painted into the face atlas, and `M_Accessory` is where ink lives.
+      slot: 'M_Accessory',
     });
   }
   out.push({
@@ -750,6 +901,7 @@ function facingCue(
     bone: 'Head',
     color: skin,
     tag: 'nose',
+    slot: 'M_Body',
   });
   return out;
 }
@@ -773,8 +925,8 @@ function accessoryParts(
       const dome = ball(crown.clone().add(new Vector3(0, r * 0.14, 0)), r * 1.08, new Vector3(headW, headH * 0.6, headW));
       const brim = box(crown.clone().add(new Vector3(0, -r * 0.05, r * 0.62)), r * 1.2, 0.071, r * 0.8);
       return [
-        { geom: dome, bone: 'Head', color: teamColor },
-        { geom: brim, bone: 'Head', color: teamColor },
+        { geom: dome, bone: 'Head', color: teamColor, slot: 'M_Accessory' as const },
+        { geom: brim, bone: 'Head', color: teamColor, slot: 'M_Accessory' as const },
       ];
     }
     case 'headband':
@@ -783,6 +935,7 @@ function accessoryParts(
           geom: ball(jaw.clone().add(new Vector3(0, r * 0.62, 0)), r * 1.1, new Vector3(headW, headH * 0.16, headW)),
           bone: 'Head',
           color: 0xffffff,
+          slot: 'M_Accessory' as const,
         },
       ];
     case 'glasses':
@@ -801,6 +954,7 @@ function accessoryParts(
         bone: 'Head',
         color: 0x2b3440,
         tag: 'glasses' as const,
+        slot: 'M_Accessory' as const,
       }));
     default:
       return [];

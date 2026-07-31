@@ -170,6 +170,37 @@ part owns the frontmost surface — keyed on part identity, never colour, becaus
 the nose is skin-coloured on a skin-coloured head. The review page was also
 standing the kid with its back to the camera. See `render.proxyFace`.
 
+**The character pipeline is consumable** (2026-07-30). The asset contract's §4
+described a file nobody had produced and a runtime that could not have loaded
+one: nothing under `src/v2/**` imported a `GLTFLoader`, `perfTier.lodBias` was
+read by nobody, and the `MaterialRegistry` written for the four material slots
+had never been handed one. `checkCharacter`'s rules had only ever seen two
+synthetic fixtures built to fail. All of that is now live: a delivered
+`kid_<id>.glb` loads through one Draco/KTX2-configured loader, switches between
+its three LOD nodes at distances DERIVED from apparent pixel size, rebinds its
+material slots onto the toon shader, takes the drafting team's colour as a
+multiply on `M_Uniform`, swaps expressions out of the `face_atlas`, and degrades
+to its proxy — as LOD3, and as the fallback on any failure — with `?proxy=1` to
+force the comparison. `npm run export:proxy-kid` writes contract-legal stand-ins
+from the proxies themselves, so the gate and the engine were both exercised
+against real files before any art exists; the same move `proceduralClips.ts`
+makes for animation.
+
+Two things surfaced that only a running frame could. **A `.glb`'s joints are
+siblings of its meshes**, so lifting the LOD nodes into a new group orphaned the
+skeleton: thirteen characters reported a mesh, a LOD level and a shadow caster
+each, and drew nothing at all. The unit tests could not see it — the scene graph
+was correct in every respect they knew to ask about — and the readout said
+"drawn 13 model / 0 proxy" over an empty field, which is exactly the failure the
+review page's model-vs-proxy census exists to make visible. And **a delivered
+model costs up to 8 draw calls where a proxy costs 2**: 13 models measured 122
+draws against a budget of 90, while halving triangles. Neither number was wrong;
+`ProxyCharacter`'s "the 2-draw-calls-per-character the perf budget allows" was
+simply a fact about proxies that read as a fact about characters, and the 90 has
+never been re-derived against a scene with models in it. Recorded as
+`render.characterDrawCost` with the three ways to close it, rather than shipped
+quietly over budget.
+
 Next: the pure sim core and its statistical conformance harness (headless, no art,
 no graphics), which asserts emergent BABIP / launch-angle split / exit-velocity
 percentiles against real baseball bands instead of pinning constants.

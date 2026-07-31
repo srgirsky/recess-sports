@@ -1,9 +1,11 @@
 # Recess Sports — 3D character asset contract (v1 of the spec)
 
 **This is the artist-facing document.** Everything in it is machine-checked by
-`npm run validate:models` (`scripts/v2/validate-models.mjs`). Run the validator
-before sending anything: rejections are automatic and free, and a model that
-passes it is accepted.
+`npm run validate:models` (`scripts/v2/validate-models.mjs`) **except the
+welded-normals rule in §4**, which Draco compression puts out of the validator's
+reach and which is called out where it appears. Run the validator before sending
+anything: rejections are automatic and free, and a model that passes it — plus
+an eye on that one rule — is accepted.
 
 The engine-side source of truth is `src/v2/render/skeleton.ts` (the rig) and
 `src/v2/render/clips.ts` (the clip library). If this document and those files
@@ -135,8 +137,10 @@ missed. The validator measures it from the delivered file.
 
 ### Meshes
 - Bound to `skeleton_recess_v1` with an **identical bind pose**.
-- One skin, **at most 3 skinned meshes** (body / hair / accessory).
-- Three explicit LOD nodes in the same file:
+- One skin, **at most 3 skinned meshes per LOD level** (body / hair /
+  accessory), so at most 9 in the file.
+- Three explicit LOD nodes in the same file. The triangle budget is for the
+  whole level, summed over its meshes:
 
   | node | triangle budget |
   |---|---|
@@ -144,11 +148,24 @@ missed. The validator measures it from the delivered file.
   | `kid_<id>_LOD1` | ≤ 3,000 |
   | `kid_<id>_LOD2` | ≤ 1,200 |
 
+- **Nothing but hair may be drawn above `HeadTop_End`**, and hair only by up to
+  **4% of body height** (`HAIR_HEADROOM_FRAC` in `src/v2/render/skeleton.ts`).
+  Height is measured on the bone; a hat that stands proud of the crown is a hat
+  drawn wrong, not a taller kid. The validator checks the level's total extent,
+  which is the part it can check on a Draco-compressed file. Which triangles are
+  *hair* is a review question, not a machine-checked one.
+
 ### Normals — read this one twice
 **Welded and smooth-shaded. No hard-edge splits on any surface that forms the
 silhouette.** The outline is an inverted hull that offsets vertices along their
 normals; a split normal tears a visible gap in the contour. This is the single
 most common way a delivered model fails review.
+
+⚠️ **This rule is reviewed by eye, not by the validator** — and it is the only
+rule in this document that is. Draco compression puts the vertex data in a blob
+the validator deliberately never decodes (a forgiving reader is a rejection it
+would fail to make), so split normals are not visible to it. Check them
+yourself before sending; nothing else will.
 
 Optional: a **vertex-colour alpha** channel modulating outline width, so a
 contour can taper into a fingertip.
@@ -171,7 +188,7 @@ that bakes in a jersey colour cannot wear the team that drafts it.
 | map | size | notes |
 |---|---|---|
 | `albedo` | 1024² | |
-| `face_atlas` | 512² | 4×4 grid, cells in this order: neutral · grin · determined · worried · upset · surprised · blink · wink · sleepy · angry · tongue · cheer · +4 spare |
+| `face_atlas` | 512² | 4×4 grid, cells in this order: neutral · grin · determined · worried · upset · surprised · blink · wink · sleepy · angry · tongue · cheer · +4 spare. Ships in `M_Body`'s **`emissiveTexture`** slot — glTF has no second-albedo channel, and emissive is the one map the toon shader otherwise ignores. Cells read left-to-right, top-to-bottom, and a transparent pixel leaves the skin below it showing. |
 | `mask` | 512² | optional. R = team-colour mask, G = outline-width, B = spare |
 
 **No normal maps. No metalness/roughness.** The toon shader ignores them and
@@ -202,3 +219,10 @@ rejects any model that has them.
 Nothing downstream is ever blocked waiting on art: the proxies play every clip,
 carry each character's own body proportions and palette, and serve as LOD3 and
 as the fallback when a model fails to load. `?proxy=1` forces them everywhere.
+
+`npm run export:proxy-kid` goes one step further and writes a proxy out as a
+contract-legal `kid_<id>.glb`, so the rules in §4 and the engine that consumes
+them are exercised against a real file before any model exists. **Your delivery
+replaces one of these**, kid by kid, with no code change. Stand-ins live in
+`public/v2/models/` and are marked `STAND-IN` in the glTF `generator` string;
+they are not deliveries and are never sent to anyone.

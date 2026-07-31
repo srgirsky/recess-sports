@@ -12,6 +12,15 @@
 //                   `docs/v2/animation-brief.md`. Three of that brief's four
 //                   acceptance criteria are things you have to WATCH, so they
 //                   need a page to watch them on.
+//
+// Flags, all readable on either page:
+//
+//   ?proxy=1        force PROXY characters everywhere, even for kids whose
+//                   model has been delivered (asset contract §5). The A/B for
+//                   a delivery against the stand-in it replaces, and the way
+//                   to get a deterministic scene with no network in it.
+//   ?perf=low|mid|high   force a device tier (see `render/perfTier.ts`).
+//   ?kids=N         how many characters the Look Spike builds (default 13).
 // ---------------------------------------------------------------------------
 
 import { LookSpike } from './spike/LookSpike';

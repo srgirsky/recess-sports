@@ -117,6 +117,54 @@ rule exists.
 The rig is **generated, never hand-edited**: re-run `export:skeleton` after any
 change to `src/v2/render/skeleton.ts`, or a test fails telling you to.
 
+### Where the files go
+
+| directory | job |
+|---|---|
+| `assets/v2/` | the artist's copy and the **validation inbox** — the rig they work from, and where a delivery is dropped to be checked |
+| `public/v2/models/` | what actually **ships**: only files that have passed the gate get moved here |
+
+Those are two deliberate acts. `validate:models` scans both.
+
+### Shipping a delivery
+
+```bash
+cp kid_junebug.glb assets/v2/        # 1. into the inbox
+npm run validate:models              # 2. gate it (and eyeball the normals — see the contract)
+mv assets/v2/kid_junebug.glb public/v2/models/   # 3. ship it
+npm run manifest:models              # 4. tell the runtime it exists
+```
+
+Step 4 is not optional: the manifest is what the page fetches to know which
+characters have models. A `.glb` in the directory without a manifest entry never
+loads and renders as a proxy forever, silently. A test fails if they drift.
+
+### Playing before the art exists
+
+Nothing waits on the modeller. Stand-in characters are generated from the
+primitive proxies, in the real delivery format:
+
+```bash
+npm run export:proxy-kid           # a representative five
+npm run export:proxy-kid -- all    # the whole roster (~8MB, not committed)
+npm run export:proxy-kid -- moose sprout
+```
+
+Five are committed so a fresh clone has something to load. Compare models
+against proxies at `/v2/` with the 🎨 MODELS button, or `?proxy=1` to force
+proxies everywhere.
+
+### After bumping `three`
+
+The Draco and KTX2 decoders are committed under `public/v2/decoders/` because
+they are fetched by URL at runtime, where no bundler can follow them:
+
+```bash
+npm run sync:decoders
+```
+
+`npm test` fails if they drift from the installed `three`.
+
 ## Checking the layout
 
 Every menu screen is a fixed 960×640 absolute layout, and pills size themselves
