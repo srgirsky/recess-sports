@@ -89,6 +89,40 @@ continuous across a v1↔v2 switch in the same browser.
   ECMAScript specifies `log`/`exp`/`pow`/trig as implementation-approximated —
   only `+ - * /` and `Math.sqrt` are required to be correctly rounded, so a
   fingerprint built on them goes red on a V8 bump and reads as somebody's bug.
+- **★ THE AERO MODEL NEEDED NO TABLES, and that is why the ban above is
+  affordable.** Nathan's published fit is `C_D = 0.297 + 0.0292·(ω/1000rpm)` and
+  `C_L = 1.120·S/(0.583 + 2.333·S)` with `S = Rω/v` — pure `+ − × ÷` plus
+  `Math.sqrt`, so the entire per-step force path is bit-stable with no
+  interpolation machinery at all. `purity.lint.test.js` bans `Math.exp`/`log`/
+  `pow`/`**` across `src/v2/sim/**` and additionally bans **trig on the per-step
+  path** (`flight.ts`, `ball.ts`). Trig survives only at conversion boundaries —
+  `launch.ts`, and `field.ts`'s `sprayOf`/`pointAt` — a residual determinism
+  risk that is *confined and recorded*, not eliminated.
+- **`FLIGHT_HZ` = 240 is NOT an accuracy choice**, and measuring it is what
+  showed that. RK4 here is fourth order (measured ratios 16.20 / 16.13 per
+  halving, against a textbook 2⁴), and **accuracy saturates at 60 Hz** — a 60 Hz
+  flight lands within 3e-9 ft of a 15360 Hz one. 240 is for PHASE (4×60 = 2×120,
+  so the render remainder is exact) and for COLLISION SAMPLING (a guard is
+  evaluated once per step; bisection makes a *detected* crossing exact but
+  cannot find one that opens and closes inside a step). `sim.integratorStep`
+  records it — including that the first convergence test compared 240/480/960
+  and got a ratio of **zero**, because at those rates it measured rounding.
+- **Events are BISECTED, never stepped onto.** A 130 ft/s liner covers 0.54ft
+  per 240Hz step — 2.2 ball diameters — and fixing that with step size needs
+  >1000Hz and is still approximate. Each bisection trial re-integrates from the
+  START of the step, so the crossing is a real RK4 solution rather than a lerp
+  between samples. A phase sweep across a whole period pins the resolved
+  crossing to under 0.01ft; a step-size implementation fails it conspicuously.
+- **Every `measures.json` record now declares `reference`** —
+  `bb2001 | baseball | physics | derived`. `conformed` used to mean exactly one
+  thing; the sim brings records answering to published physics and to real
+  baseball's statistics, and collapsing those is how a game for four-to-eight-
+  year-olds ends up conformed to MLB's strikeout rate. Enforced in the
+  `category`-gated walk — the only one that visits each record once and
+  correctly skips `sources` (the other four key on `.id` and *do* descend into
+  provenance). A `reference: 'physics'` record may claim high confidence at n=1
+  — a rulebook is not a sample — **but only if it names its source**, so the
+  exemption cannot become "call it physics and claim anything".
 - **`src/v2/render/**` reads sim state and never writes it.** `render/bridge.ts`
   is the single named coupling point.
 - **Camera POLICY is pure** (`render/cameraCues.ts`, no three import) — the heir
@@ -382,7 +416,11 @@ continuous across a v1↔v2 switch in the same browser.
 | `scripts/v2/sync-decoders.mjs` | ★ v2. `npm run sync:decoders` — copies the Draco/Basis decoders out of `three` into `public/v2/decoders/`, with a `--check` mode so a `three` bump cannot desync the committed copies. |
 | `scripts/v2/ts-resolve.mjs` | ★ v2. A Node resolution hook so a build script can `import './skeleton'` and find `skeleton.ts`. Only fires after normal resolution fails, and only for the two scripts that opt in. |
 | `scripts/v2/modelRules.mjs` + `validate-models.mjs` | ★ v2. `npm run validate:models` — the gate both v2 docs promise. Pure rule engine (contract passed in, no TS import) behind two front ends: the CLI (Node ≥22.6, type stripping) and `validate-models.test.js` (vitest, so CI's Node 20 runs the same rules). Bone set/order/bind-pose hash, height band, morph targets, root motion, 30fps grid, loop seams, measured body travel, derived marker frames, LOD budgets, material slots, size. Failures name the rule AND why it exists. |
-| `src/v2/sim/rng.ts` | ★ v2. The sim's only randomness: sfc32 + xmur3, **injected never module-scope**, and `fork(label)` substreams keyed on `(seed, label)` rather than stream position — so a draw added in one place cannot move another. No `normal()` until the coefficient tables land (see the architecture rules). |
+| `src/v2/sim/rng.ts` | ★ v2. The sim's only randomness: sfc32 + xmur3, **injected never module-scope**, and `fork(label)` substreams keyed on `(seed, label)` rather than stream position — so a draw added in one place cannot move another. No `normal()` yet: every textbook sampler needs `Math.log` (see the architecture rules). |
+| `src/v2/sim/params.ts` | ★ v2. The sim's tunables in FEET and SECONDS — `BALL`·`AIR`·`AERO`·`INTEGRATOR`. Deliberately not `src/config.ts`, which is a 960×640 pixel world; a number here can be checked against a tape measure or a paper. `SCREAMING_SNAKE` so `conformance.test.js`'s token extractor can bind records to it. |
+| `src/v2/sim/ball.ts` | ★ v2. The published ball, and the two aero coefficients. Everything folds into `BALL_K_PER_FT` = ½ρA/m, which is the *validation*: deriving it from the four published constants and comparing against Nathan's independently published 5.509e-3 exercises ρ, A and m at once. |
+| `src/v2/sim/flight.ts` | ★ v2. RK4 over gravity + quadratic drag + Magnus, with events resolved by **bisection**. It integrates and REPORTS ("crossed the ground plane 0.00317s into this step") — never decides what an event means. RK4 stages run on scalar locals: zero allocation, and reentrant for free. `sampleAt` is the render seam, exposed before any renderer exists. |
+| `src/v2/sim/launch.ts` | ★ v2. Describes-a-batted-ball → `BallState`. Its own file because it is the ONE place an authored ANGLE becomes a vector, so it is the one place needing trig — and the per-step path (`flight.ts`, `ball.ts`) is lint-checked to have none. PR 4's `contact.ts` hands off here. |
 | `scripts/v2/purity.lint.test.js` | ★ v2. `src/v2/sim/**` imports only sim/data/config/**five** pure systems (`inning`·`gameflow`·`stats`·`lineup`·`draft`); no three, no DOM, no `Math.random`, no `Date.now`, **no module-scope `Rng`**; every sim file must import in plain Node; whole-statement `import type` gets a separate wider lane; **the whitelist itself is checked** (each named system must be browser-free, random-free, and value-import only pure modules); and **nothing outside `src/v2/**` may import v2**, which is what actually guarantees a v2 edit cannot reach v1's bundle. Two files claimed this gate existed before it did, and it then spent its first life vacuously satisfied. |
 | `scripts/measures.json` | ★ The measurement records + `conformance.test.js`'s gate. Every record names the `src/config.ts` constant it informs, so the audit trail runs source → record → constant, and carries a `status`: `conformed` (ours inside the band), `known-drift` (outside, and the test pins the drift's SIZE so it can't grow or be half-fixed unnoticed), `awaiting-measurement` (BB not measured yet — pins only OUR value, claims nothing about BB), `note` (a finding about the measurement itself). Read this before tuning any "Backyard feel" constant. |
 

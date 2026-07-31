@@ -175,6 +175,39 @@ describe('src/v2/sim is pure', () => {
     }
   });
 
+  it('never reaches for an implementation-approximated Math function', () => {
+    // ★ ECMAScript requires only + - * / and Math.sqrt to be CORRECTLY ROUNDED.
+    // `Math.exp`, `log`, `pow`, `cbrt`, `atan2`, `sin`, `cos`, `tan` and `**`
+    // are "implementation-approximated" — V8 has changed them across versions,
+    // and results can differ between engines. A determinism fingerprint built
+    // on them goes red on a Node bump and reads as somebody's bug.
+    //
+    // This is affordable only because it turned out not to cost anything:
+    // Nathan's drag and lift model is `CD_0 + CD_1*rpm/1000` and
+    // `CL_2*S/(CL_0 + CL_1*S)` — pure arithmetic, no interpolation tables
+    // needed. `Rng.normal()` is the one thing still owed a table, which is why
+    // it does not exist yet.
+    //
+    // Trig IS allowed at the boundary where a human-facing angle becomes a
+    // vector (`launch`, `pointAt`, `sprayOf`), because that is a once-per-play
+    // conversion of an authored number, not a per-step force term. It is
+    // confined to files that declare it, and the hot path below is checked
+    // separately.
+    const HOT = ['flight.ts', 'ball.ts'];
+    const banned = /Math\s*\.\s*(exp|log|log2|log10|pow|cbrt|sinh|cosh|tanh|expm1|log1p)\b|\*\*/;
+    for (const f of sources) {
+      if (f.isTest) continue;
+      const src = code(f.text);
+      const hit = banned.exec(src);
+      expect(hit, `${f.rel} uses ${hit?.[0]} — not bit-stable across engines`).toBeNull();
+      // The per-step force path additionally may not use trig at all.
+      if (HOT.some((h) => f.rel.endsWith(h))) {
+        const trig = /Math\s*\.\s*(sin|cos|tan|asin|acos|atan|atan2)\b/.exec(src);
+        expect(trig, `${f.rel} is on the per-step path and uses ${trig?.[0]}`).toBeNull();
+      }
+    }
+  });
+
   it('never reaches for the DOM', () => {
     const banned = /\b(document|window|navigator|localStorage|HTMLElement|requestAnimationFrame)\b/;
     for (const f of sources) {

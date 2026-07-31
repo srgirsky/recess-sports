@@ -89,15 +89,63 @@ describe('measures.json — record hygiene', () => {
     }
   });
 
+  it('makes every record say WHAT it answers to', () => {
+    // ★ `conformed` used to mean exactly one thing: "matches BB2001 footage".
+    // The v2 sim brings records whose reference is published physics, records
+    // whose reference is real baseball's statistics, and records that are pure
+    // arithmetic against our own constants -- three incompatible standards
+    // wearing the same word. Left implicit, the failure is specific and awful:
+    // somebody eventually "conforms" a game for four-to-eight-year-olds to
+    // MLB's strikeout rate, and every gate in this file agrees with them.
+    //
+    // Enforced HERE, in the category-gated walk, on purpose. It is the only one
+    // that visits every record exactly once, and being gated on `category` it
+    // skips the `sources` block -- the other four walks key on `.id` and DO
+    // descend into sources, so asserting there would fail on provenance.
+    const REFERENCES = ['bb2001', 'baseball', 'physics', 'derived'];
+    let seen = 0;
+    for (const [group, records] of Object.entries(M)) {
+      if (typeof records !== 'object' || records === null || Array.isArray(records)) continue;
+      for (const [name, rec] of Object.entries(records)) {
+        if (typeof rec !== 'object' || rec === null || !rec.category) continue;
+        seen++;
+        expect(
+          REFERENCES,
+          `${group}.${name} must declare what it answers to (reference: ${REFERENCES.join(' | ')})`
+        ).toContain(rec.reference);
+      }
+    }
+    expect(seen, 'the record walk matched nothing — the gate would be vacuous').toBeGreaterThan(0);
+  });
+
   it('never reports a confidence that n cannot support', () => {
     // lib.js's rule: confidence is DERIVED, never asserted. An operator who
     // types 'high' has told us nothing. This catches the reverse mistake --
     // a record hand-labelled 'high' on a single sample.
+    //
+    // ★ ONE NARROW EXEMPTION, and it is why `reference` had to exist. The rule
+    // is about SAMPLING: n is how many times we measured, and 'high on n=1' is
+    // how pace.pitchCorridor's withdrawn 270ms happened. A `reference:
+    // 'physics'` record is not a measurement at all -- it is a CITATION of a
+    // rulebook, a standard atmosphere, or a peer-reviewed fit. Its
+    // trustworthiness comes from the source, and "n" for it is close to
+    // meaningless (Official Baseball Rules 3.01 was not sampled twice).
+    //
+    // The exemption is paid for: such a record must NAME its provenance. That
+    // keeps the escape hatch from being "call it physics and claim anything" --
+    // it has to point at a `sources` block a reader can go and check.
     const walk = (o) => {
       for (const v of Object.values(o)) {
         if (!v || typeof v !== 'object') continue;
         if (v.id && v.confidence === 'high' && typeof v.n === 'number') {
-          expect(v.n, `${v.id} claims high confidence on n=${v.n}`).toBeGreaterThanOrEqual(2);
+          if (v.reference === 'physics') {
+            expect(
+              v.source,
+              `${v.id} claims high confidence as a physics citation but names no source`
+            ).toBeTruthy();
+          } else {
+            expect(v.n, `${v.id} claims high confidence on n=${v.n}`).toBeGreaterThanOrEqual(2);
+          }
         }
         walk(v);
       }
