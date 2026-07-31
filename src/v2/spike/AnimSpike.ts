@@ -108,10 +108,18 @@ export class AnimSpike {
     }
     const character = ROSTER[this.kidIndex % ROSTER.length];
     this.kid = new ProxyCharacter(character.visual, { uniform: 1, outlines: this.outlines });
-    // Stand at the origin facing the camera's side, so a lateral dive travels
-    // across the frame rather than into it.
+    // Stand at the origin, turned so a lateral dive travels ACROSS the frame
+    // rather than into it — but three-quarters toward the camera, not away
+    // from it.
+    //
+    // ★ This was `Math.PI * 0.82`, which puts the camera BEHIND the head: the
+    // face-toward-camera dot is −0.47, so the page reviewing whether a clip
+    // faces the right way was showing the back of the head by default. At 0.5
+    // the dot is +0.49 — a true three-quarter view with both eyes in shot —
+    // and the lateral component is still 0.87 of maximum, so a dive crosses
+    // the frame very nearly as well as it did.
     this.kid.setPosition(0, 0);
-    this.kid.setFacing(Math.PI * 0.82);
+    this.kid.setFacing(Math.PI * 0.5);
     this.scene.add(this.kid.root);
 
     this.director = new AnimationDirector(this.kid.mesh, { fallback: buildProceduralClips() });

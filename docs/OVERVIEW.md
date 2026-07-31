@@ -149,12 +149,26 @@ permanent LOD3, the load-failure fallback, and until models land it is the only
 character anyone sees — so "readable silhouette", the presence
 `render.characterPresence` says must come from design rather than size, was the
 one term that was measurably wrong. Fixed and pinned across every style, and the
-proxy now carries a facing cue (eyes and nose, never a mouth — expression is a
-texture on the delivered models) because a featureless head is rotationally
-ambiguous at 40 px, which is precisely the size the review page judges at. The
-neck and the face cost 512 triangles a kid (2,936 → 3,448, +17%); the Look Spike
-measures 46 draws / 89.2k triangles against the 90 / 180k budget. See
-`render.proxySilhouette`.
+proxy now carries a facing cue (eyes, brows and a nose, never a mouth —
+expression is a texture on the delivered models) because a featureless head is
+rotationally ambiguous at 40 px, which is precisely the size the review page
+judges at. The neck and the face cost 512 triangles a kid (2,936 → 3,448, +17%);
+the Look Spike measures 46 draws / 93.3k triangles against the 90 / 180k budget.
+See `render.proxySilhouette`.
+
+**And the face was itself half invisible** — a different error class, found by
+trying to add one more feature to it. The bbox tests measure the silhouette's
+outside, so a feature swallowed by what is in front of it changes nothing they
+look at: the afro was a single convex ball that covered its kid's entire head
+(zero pixels of skin), the glasses sat 0.37 radii above the eyes and 0.011 radii
+proud, and every feature was placed at an absolute depth while the skull's own
+depth scales with head width, so a brow is swallowed on the widest four kids.
+Features are derived from the skull surface now, a wide hair style carries its
+silhouette and its hairline as two parts rather than one, and the visibility
+question is asked by casting rays along the real play camera and checking which
+part owns the frontmost surface — keyed on part identity, never colour, because
+the nose is skin-coloured on a skin-coloured head. The review page was also
+standing the kid with its back to the camera. See `render.proxyFace`.
 
 Next: the pure sim core and its statistical conformance harness (headless, no art,
 no graphics), which asserts emergent BABIP / launch-angle split / exit-velocity
