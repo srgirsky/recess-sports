@@ -30,8 +30,12 @@ import {
 } from '../../src/v2/sim/ball.ts';
 import { FLIGHT_HZ } from '../../src/v2/sim/flight.ts';
 import { VENUE_GEOMETRY, fenceDistAt } from '../../src/v2/sim/field.ts';
-import { BOUNCE } from '../../src/v2/sim/params.ts';
+import { BAT, BOUNCE, PITCH } from '../../src/v2/sim/params.ts';
 import { groundCor } from '../../src/v2/sim/bounce.ts';
+import { collisionEfficiency, exitVelocity } from '../../src/v2/sim/contact.ts';
+import { batSpeedFts } from '../../src/v2/sim/athletes.ts';
+import { ftsToMph } from '../../src/v2/sim/units.ts';
+import { ROSTER } from '../../src/data/characters.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const M = JSON.parse(readFileSync(join(here, '..', 'measures.json'), 'utf8'));
@@ -167,10 +171,31 @@ describe('sim.integratorStep', () => {
 describe('sim.carryVsFence', () => {
   const rec = M.sim.carryVsFence;
 
-  it('is a well-formed record', () => {
-    wellFormed(rec, { reference: 'derived', status: 'known-drift' });
-    expect(rec.whatWouldClose).toBeTruthy();
+  it('is a well-formed record, and is now CLOSED', () => {
+    // known-drift -> conformed. `statuses.known-drift` says closing one "means
+    // editing the record -- a visible, reviewed act", and this assertion going
+    // red is what made it one.
+    wellFormed(rec, { reference: 'derived', status: 'conformed' });
+    expect(rec.conformNote, 'a closure must say what closed it').toBeTruthy();
+    expect(rec.whatClosedIt).toMatch(/Not a retune/);
+    // The drift it used to carry stays on the record rather than being deleted.
     expect(rec.drift.gapMph).toBeGreaterThan(0);
+  });
+
+  it('closed by moving the MAPPING, not the geometry', () => {
+    // The fences are the thing sim.carryVsFence explicitly refused to move, and
+    // `whyNotShrinkTheFences` explains what that would have cost. Assert the
+    // geometry is genuinely untouched rather than trusting the prose.
+    expect(rec.ours.value).toMatch(/unchanged/);
+    expect(Math.round(fenceDistAt(VENUE_GEOMETRY.park, -45))).toBe(185);
+    expect(Math.round(fenceDistAt(VENUE_GEOMETRY.park, 0))).toBe(212);
+    expect(Math.round(fenceDistAt(VENUE_GEOMETRY.sandlot, 45))).toBe(150);
+  });
+
+  it('records the margin as a decision, not an accident', () => {
+    // A 35->50 band cleared the park line by ONE FOOT. That is a number that
+    // reads as success and behaves as failure, so the widening is on the record.
+    expect(rec.theMarginIsDeliberate).toMatch(/ONE FOOT/);
   });
 
   it('names fence distances the venue table actually has', () => {
@@ -350,5 +375,126 @@ describe('sim.venueRollFeel', () => {
     expect(ratio).toBeCloseTo(rec.drift.shaggyOverAsphalt, 1);
     expect(ratio).toBeGreaterThan(1.5);
     expect(ratio).toBeLessThan(2.5);
+  });
+});
+
+describe('sim.batBallCollision', () => {
+  const rec = M.sim.batBallCollision;
+
+  it('is a well-formed record', () => {
+    wellFormed(rec, { reference: 'physics', status: 'conformed' });
+    expect(rec.source).toBe('physics:published');
+    expect(M.sources.physics.batBall.identity).toMatch(/change of inertial reference frame/);
+  });
+
+  it('recomputes e_A from the code, not from the record', () => {
+    expect(BAT.BALL_BAT_COR).toBe(rec.ours.value.ballBatCor);
+    expect(BAT.EFFECTIVE_MASS_OZ).toBe(rec.ours.value.effectiveMassOz);
+    expect(collisionEfficiency()).toBeCloseTo(rec.ours.value.eA, 3);
+  });
+
+  it('holds the identity the record calls an identity', () => {
+    for (const [eA, vp, vb] of [[0.1, 37, 51], [0.2, 0, 130], [0, 20, 20]]) {
+      expect(exitVelocity(eA, vp, vb)).toBeCloseTo(eA * vp + (1 + eA) * vb, 9);
+    }
+  });
+
+  it('keeps the recoil-factor explanation, which is the whole mechanism', () => {
+    expect(rec.theKidResult).toMatch(/no fudge factor/i);
+    expect(collisionEfficiency(20.5)).toBeGreaterThan(collisionEfficiency(14) * 1.8);
+  });
+});
+
+describe('sim.obliqueContact', () => {
+  const rec = M.sim.obliqueContact;
+
+  it('is a well-formed record', () => {
+    wellFormed(rec, { reference: 'physics', status: 'conformed' });
+    expect(rec.source).toBe('physics:published');
+  });
+
+  it('★ records that the 40% enhancement is NOT applied, and why', () => {
+    // The interesting half. Applying a published correction that double-counts
+    // is the kind of mistake a citation makes look rigorous.
+    expect(BAT.GRIP_SPIN_ENHANCEMENT).toBe(1);
+    expect(rec.theEnhancementIsNotApplied).toMatch(/DOUBLE-COUNTS/);
+    expect(rec.theEnhancementIsNotApplied).toMatch(/3600 rpm/);
+    expect(rec.whatWouldClose).toBeTruthy();
+  });
+
+  it('restricts its spin check to the angles actually measured', () => {
+    expect(rec.validation.angleBandDeg).toEqual([0, 30]);
+    expect(rec.validation.spinBandRpm).toEqual([0, 3500]);
+    expect(rec.validation.note).toMatch(/outside the ANGLE range/);
+  });
+});
+
+describe('sim.batSpeed', () => {
+  const rec = M.sim.batSpeed;
+
+  it('★ is the first record to use reference: baseball', () => {
+    // The vocabulary has carried the value since it was introduced and nothing
+    // had needed it. This is neither BB2001, nor physics, nor our own
+    // arithmetic — it is what real children do.
+    wellFormed(rec, { reference: 'baseball', status: 'awaiting-measurement' });
+    expect(rec.measured).toBeNull();
+    expect(rec.partialReading.confidence).toBe('low');
+    expect(rec.whatWouldWork).toBeTruthy();
+  });
+
+  it('pins the band the code actually carries', () => {
+    expect(BAT.SPEED_MIN_MPH).toBe(rec.ours.value.minMph);
+    expect(BAT.SPEED_MAX_MPH).toBe(rec.ours.value.maxMph);
+    expect(ftsToMph(batSpeedFts(1))).toBeCloseTo(rec.ours.value.minMph, 6);
+    expect(ftsToMph(batSpeedFts(10))).toBeCloseTo(rec.ours.value.maxMph, 6);
+  });
+
+  it('keeps the roster caveat true', () => {
+    // "Nobody on the roster has power 1" is a claim about content, so check it
+    // against the content rather than trusting the sentence.
+    const powers = ROSTER.map((c) => c.stats.power);
+    expect(Math.min(...powers)).toBe(2);
+    expect(rec.rosterNote).toMatch(/NOBODY ON THE ROSTER HAS POWER 1/);
+    const [lo, hi] = rec.ours.value.realisedRosterMph;
+    expect(ftsToMph(batSpeedFts(Math.min(...powers)))).toBeCloseTo(lo, 0);
+    expect(ftsToMph(batSpeedFts(Math.max(...powers)))).toBeCloseTo(hi, 0);
+  });
+});
+
+describe('sim.pitchCorridor (v2)', () => {
+  const rec = M.sim.pitchCorridorV2;
+
+  it('is a well-formed record and inherits its parent confidence', () => {
+    wellFormed(rec, { reference: 'bb2001', status: 'awaiting-measurement' });
+    expect(rec.measured).toBeNull();
+    // ★ Inherited, not chosen — the same discipline sim.flyHangRatio follows.
+    expect(rec.partialReading.n).toBe(M.pace.pitchCorridor.partialReading.n);
+    expect(rec.partialReading.confidence).toBe(M.pace.pitchCorridor.partialReading.confidence);
+    expect(rec.partialReading.flightMs).toBe(M.pace.pitchCorridor.partialReading.flightMs);
+  });
+
+  it('records that the measured quantity is a TIME, not a speed', () => {
+    expect(PITCH.FLIGHT_TIME_SEC).toBeCloseTo(rec.ours.value.flightSec, 6);
+    expect(rec.theReparameterisation).toMatch(/26 FEET UNDERGROUND/);
+  });
+
+  it('records the inverted-axis bug the aim solve hid', () => {
+    expect(rec.theBreakIsEmergent).toMatch(/every spin axis was inverted/i);
+  });
+});
+
+describe('sim.aeroModelLowSpeed, after the mapping landed', () => {
+  const rec = M.sim.aeroModelLowSpeed;
+
+  it('★ has had its significance raised, not quietly leaned on', () => {
+    // It was a caveat on a conformed model. It is now the open question every
+    // batted ball in the game passes through.
+    expect(rec.significanceRaisedBy).toMatch(/TWENTY-NINE OF THIRTY/);
+    // And that is checkable: the roster's exit velocities against the fit floor.
+    const eA = collisionEfficiency();
+    const below = ROSTER.filter(
+      (c) => ftsToMph(exitVelocity(eA, 37.6, batSpeedFts(c.stats.power))) < AERO.FIT_SPEED_BAND_MPH[0]
+    ).length;
+    expect(below).toBeGreaterThanOrEqual(29);
   });
 });

@@ -23,11 +23,16 @@ const sim = (f) => join(repo, 'src', 'v2', 'sim', f);
 
 const { stepFlight, groundGuard, cloneState, FLIGHT_HZ } = await import(sim('flight.ts'));
 const { launch } = await import(sim('launch.ts'));
-const { mphToFts } = await import(sim('units.ts'));
+const { mphToFts, ftsToMph } = await import(sim('units.ts'));
 const { VENUE_GEOMETRY, fenceDistAt } = await import(sim('field.ts'));
 const { BALL_K_PER_FT, NATHAN_K_PER_FT } = await import(sim('ball.ts'));
 const { groundBounce, rollStep, wallCarom, fenceGuard, isAtRest, groundCor } = await import(sim('bounce.ts'));
-const { BOUNCE } = await import(sim('params.ts'));
+const { BOUNCE, AERO } = await import(sim('params.ts'));
+const { resolveSwing, collisionEfficiency, exitVelocity } = await import(sim('contact.ts'));
+const { batSpeedFts } = await import(sim('athletes.ts'));
+const { releasePitch, flyToPlate, PITCHES } = await import(sim('pitch.ts'));
+const { makeRng } = await import(sim('rng.ts'));
+const { ROSTER } = await import(join(repo, 'src', 'data', 'characters.ts'));
 
 /** Fly to the ground. Returns carry, hang, apex. */
 function fly(spec) {
@@ -165,3 +170,58 @@ for (const w of [0, 50, 100, 200, 300, 800, 1650]) {
   const real = w <= 300 ? '' : '   (beyond a real baseball)';
   console.log(`    ${String(w).padStart(4)} rad/s (${String(rpm).padStart(5)} rpm) -> forward ${out.v.z.toFixed(1).padStart(6)} ft/s${out.v.z < 0 ? '  <-- comes BACK' : ''}${real}`);
 }
+
+// --- The swing: what a kid can actually do ---------------------------------
+
+const rng = makeRng('demo');
+const eA = collisionEfficiency();
+
+console.log('\n=== THE PITCH, SOLVED FROM THE MEASURED FLIGHT TIME ===');
+console.log('  pace.pitchCorridor brackets 1230ms over the 46ft mound. That is a TIME:');
+console.log('  aiming a release AT the plate arrives 26ft underground, so speed and');
+console.log('  elevation are both solved from it.');
+console.log('  kind        flight   at plate   crosses y   break x');
+for (const kind of Object.keys(PITCHES)) {
+  const f = flyToPlate(releasePitch({ kind, pitchingStat: 5, aimHeightFt: 2.4, aimLateralFt: 0 }));
+  const sp = Math.hypot(f.state.v.x, f.state.v.y, f.state.v.z);
+  console.log(`  ${kind.padEnd(10)} ${(f.travelSec * 1000).toFixed(0).padStart(5)}ms  ${ftsToMph(sp).toFixed(1).padStart(5)} mph   ${f.state.p.y.toFixed(2).padStart(6)}    ${f.state.p.x >= 0 ? '+' : ''}${f.state.p.x.toFixed(2)}`);
+}
+console.log('  (curve breaks toward THIRD, screwball toward FIRST; the fastball not at all)');
+
+const seenPitch = flyToPlate(releasePitch({ kind: 'fastball', pitchingStat: 5, aimHeightFt: 2.4, aimLateralFt: 0 }));
+const pitchSpeed = Math.hypot(seenPitch.state.v.x, seenPitch.state.v.y, seenPitch.state.v.z);
+
+function bestFor(kid) {
+  let best = { carry: 0 };
+  for (let u = 0; u <= 0.22; u += 0.005) {
+    const r = resolveSwing({ timingErrorSec: 0, undercutFt: u, batter: kid, travelSec: seenPitch.travelSec, pitchSpeedFts: pitchSpeed }, rng);
+    if (r.kind !== 'contact') continue;
+    const c = fly({ ...r.launch }).carry;
+    if (c > best.carry) best = { carry: c, ev: ftsToMph(r.launch.exitVelocityFts), la: r.launch.launchAngleDeg, spin: r.launch.spinRpm };
+  }
+  return best;
+}
+
+console.log('\n=== ★ POWER -> BAT SPEED -> EXIT VELOCITY -> CARRY, over the real roster ===');
+const park = VENUE_GEOMETRY.park, sandlot = VENUE_GEOMETRY.sandlot;
+const line = fenceDistAt(park, -45), cf = fenceDistAt(park, 0), porch = fenceDistAt(sandlot, 45);
+const byPower = new Map();
+for (const c of ROSTER) { if (!byPower.has(c.stats.power)) byPower.set(c.stats.power, []); byPower.get(c.stats.power).push(c); }
+console.log('  power  n   bat    EV    LA  spin   carry   clears');
+for (const p of [...byPower.keys()].sort((a, b) => a - b)) {
+  const kids = byPower.get(p), b = bestFor(kids[0]);
+  const clears = [b.carry >= porch ? 'porch' : null, b.carry >= line ? 'park-line' : null, b.carry >= cf ? 'park-CF' : null].filter(Boolean).join('+') || '-';
+  console.log(`   ${String(p).padStart(2)}    ${String(kids.length).padStart(2)}  ${ftsToMph(batSpeedFts(p)).toFixed(1).padStart(4)}  ${b.ev.toFixed(1).padStart(4)}  ${b.la.toFixed(0).padStart(3)} ${b.spin.toFixed(0).padStart(5)}   ${b.carry.toFixed(0).padStart(4)}   ${clears}`);
+}
+const clearsLine = ROSTER.filter((c) => bestFor(c).carry >= line).length;
+const clearsPorch = ROSTER.filter((c) => bestFor(c).carry >= porch).length;
+const clearsCf = ROSTER.filter((c) => bestFor(c).carry >= cf).length;
+console.log(`\n  of 30 kids: ${clearsPorch} clear the sandlot porch, ${clearsLine} the park line, ${clearsCf} the park centre.`);
+console.log('  Nobody on the roster has power 1 -- the realised span is 2 to 10.');
+
+console.log('\n=== THE OPEN QUESTION THIS WALKS INTO ===');
+const belowFit = ROSTER.filter((c) => ftsToMph(exitVelocity(eA, pitchSpeed, batSpeedFts(c.stats.power))) < AERO.FIT_SPEED_BAND_MPH[0]).length;
+console.log(`  Nathan's drag fit is verified over ${AERO.FIT_SPEED_BAND_MPH[0]}-${AERO.FIT_SPEED_BAND_MPH[1]} mph.`);
+console.log(`  ${belowFit} of ${ROSTER.length} kids hit BELOW that floor, so essentially every batted ball`);
+console.log('  in this game is an extrapolation past the edge of the measurement.');
+console.log('  Recorded as sim.aeroModelLowSpeed, significance raised rather than leaned on.');

@@ -160,6 +160,178 @@ export const BOUNCE = {
 } as const;
 
 /**
+ * The bat, and what happens when it meets the ball.
+ *
+ * ★ THE EXIT-VELOCITY IDENTITY IS NOT A FIT. Nathan ("Characterizing the
+ * performance of baseball bats", Am. J. Phys. 71(2) 134-143, 2003) derives
+ *
+ *     Eq. 3   v_f = e_A * v_ball + (1 + e_A) * v_bat
+ *
+ * "from nothing other than the definition of e_A followed by a change of
+ * inertial reference frame" — it is exact for any ball, bat or collision model.
+ * The only thing that needs a value is the collision efficiency e_A, and that
+ * is itself derived rather than assumed:
+ *
+ *     Eq. 6   e_A = (e - r) / (1 + r),      r = m / M_eff   (bat recoil factor)
+ *
+ * with e the ball-bat coefficient of restitution, measured at 0.45-0.50 in the
+ * sweet-spot zone at game speeds.
+ *
+ * ★ EQ. 6 IS WHY A KID IS NOT A SMALL ADULT. A light bat has a LARGE recoil
+ * factor, so more of the collision goes into moving the bat and less into the
+ * ball. At an adult's effective mass (~20oz at the sweet spot) e_A is about
+ * 0.20; at a youth bat's ~14oz it is 0.098. Halving e_A costs a kid far less
+ * than you would guess — the `(1 + e_A)` term on bat speed dominates — which is
+ * exactly why bat speed, not bat "power", is the stat that matters.
+ */
+export const BAT = {
+  /** Ball-bat COR in the sweet-spot zone. Nathan: 0.45-0.50 at game speeds. */
+  BALL_BAT_COR: 0.5,
+  /**
+   * Effective bat mass at the sweet spot, oz. A youth bat, not an adult's.
+   * `e_A` is DERIVED from this via Eq. 6 rather than stated, so the two can
+   * never disagree — see `collisionEfficiency` in `contact.ts`.
+   */
+  EFFECTIVE_MASS_OZ: 14,
+  /** Barrel radius, ft. A 2.5in youth barrel. Sets the contact geometry. */
+  BARREL_RADIUS_FT: 0.104,
+  /**
+   * Bat speed at the sweet spot, mph, mapped linearly from the `power` stat
+   * 1..10.
+   *
+   * ★ BOXED IN, NOT CHOSEN. Published Little League bat speed runs 40-60 mph
+   * with roughly +2.5 mph per year of age from 9U, so 35-53 is that band
+   * carried down to four-to-eight-year-olds. The top end is then pinned from
+   * the other side by `sim.carryVsFence`: it has to clear the park's 185ft
+   * line and NOT its 212ft centre. Both constraints land on the same number.
+   *
+   * Independent corroboration: at e_A 0.098 and no pitch (a tee), bat 40-50
+   * gives exit velocity 44-55 mph, against a published 8U tee band of 45-55.
+   */
+  SPEED_MIN_MPH: 35,
+  SPEED_MAX_MPH: 53,
+  /**
+   * How far off the sweet spot the barrel can meet the ball before e_A has
+   * fallen to nothing, ft. Nathan: e_A "is expected to be a strong function of
+   * the impact location along the axis of the bat", largest in a zone roughly
+   * 4-6in from the barrel end.
+   */
+  SWEET_SPOT_SPAN_FT: 0.5,
+  /**
+   * ★ THE GRIP ENHANCEMENT — SET TO 1.0, AND THAT IS THE HONEST NUMBER.
+   *
+   * Kensrud, Nathan & Smith ("Oblique Collisions of Baseballs and Softballs
+   * with a Bat", arXiv:1610.03464) found the ball GRIPS the bat rather than
+   * rolling off it, "resulting in a spin that was up to 40% greater than would
+   * be obtained by rolling contact of rigid bodies" — the same finding as
+   * `sim.bounceModel`'s, and the obvious thing to do is apply the 1.4.
+   *
+   * Applying it DOUBLE-COUNTS. Working their own numbers back: they measured
+   * spins of 0-3500 rpm over scattering angles 0-30 deg at bat speeds 63-88
+   * mph, and the rigid-body ROLLING prediction at 30 deg and 88 mph is already
+   * ~3600 rpm. Their measured ceiling sits at the rolling limit, not 40% above
+   * it, so the 40% must be normalised against something the abstract does not
+   * state — a different reference model, or a subset of angles. Multiplying our
+   * rolling result by 1.4 put a kid's batted ball at 4600-5400 rpm, comfortably
+   * outside the band the paper measured.
+   *
+   * So: use the DERIVED rolling limit, which lands inside their measured band,
+   * and record the enhancement as pending rather than guessing at a
+   * normalisation. `sim.obliqueContact` carries what would close it.
+   */
+  GRIP_SPIN_ENHANCEMENT: 1,
+  /**
+   * The swing window, as a FRACTION of the pitch's flight time.
+   *
+   * ★ A FRACTION ON PURPOSE. `pace.swingWindows` records the invariant that
+   * "CONTACT must stay below the FASTEST possible travelMs in every mode, or
+   * timing stops being a skill" — and v1 can only satisfy that by assertion,
+   * because `bandFromError` compares `Math.abs(errorMs)` against absolute-ms
+   * constants and never looks at `travelMs`. That is precisely how a 380ms
+   * window ended up wider than a 270ms flight. Expressed as a fraction it
+   * holds by construction and there is nothing left to assert.
+   *
+   * Same record: a window is DERIVED, never measured — it is an internal
+   * tolerance with no on-screen representation, so no footage can reveal one.
+   */
+  CONTACT_WINDOW_FRAC: 0.24,
+  /** Inside this fraction of the flight, contact is square. */
+  PERFECT_WINDOW_FRAC: 0.065,
+  /**
+   * Spray from timing, degrees of pull per foot of contact depth.
+   *
+   * DERIVED. v1's equivalent was a bare `spec.errorMs / 300` literal inside
+   * `resolveContactAimed` — the one number in that file coupled to timing-error
+   * magnitude, and it did NOT move when the pitch corridor was re-measured from
+   * 297ms to 1350ms. Named here so it cannot go stale invisibly.
+   */
+  PULL_DEG_PER_FT: 26,
+} as const;
+
+/**
+ * The pitch.
+ *
+ * ★ ANCHORED ON ONE MEASUREMENT, AND IT IS n=1. `pace.pitchCorridor` brackets a
+ * single BB2001 HEAT pitch against a millisecond stopwatch captured in the same
+ * frame: release 12:58.87, plate 13:00.10 — a flight of 1230ms over the 46ft
+ * mound. That is 37.4 ft/s, or 25.5 mph: a real seven-year-old's fastball, which
+ * is the happy check that the whole real-units decision rests on.
+ *
+ * The record is `awaiting-measurement`, not `conformed`, and says why: "n=1 at
+ * this rigour. The repo convention is n<3 stays a partialReading, and the entire
+ * point of this record is that overclaiming is how the 270ms happened." Every
+ * earlier reading — BB's own 270ms, a YouTube 250ms, two of our own at 180-200 —
+ * made the same mistake, marking release at the first frame the ~5px ball could
+ * be SPOTTED against the grass, which is late by construction.
+ */
+export const PITCH = {
+  /**
+   * ★ THE MEASURED QUANTITY IS THE FLIGHT TIME, NOT A SPEED — and conflating
+   * them is a mistake this file made first.
+   *
+   * The record brackets 1230ms over the 46ft mound and `docs/OVERVIEW.md`
+   * summarises that as "25.6 mph, exactly a seven-year-old's fastball". That
+   * figure is 46ft / 1.23s: the ball's average pace toward the plate. It is NOT
+   * the release speed, and using it as one puts the pitch 26 FEET UNDERGROUND
+   * at the plate — because a 46ft flight lasting 1.23s falls 24ft under gravity
+   * on the way, so the ball has to be thrown UPWARD to arrive hittable.
+   *
+   * So the flight time is the anchor and the release velocity is SOLVED from
+   * it: `releasePitch` finds the (speed, elevation) that both crosses the plate
+   * at the aim height and takes this long doing it. Two constraints, two
+   * unknowns. That makes the one measurement this project actually owns the
+   * thing the pitch is built on, rather than a number reinterpreted to fit.
+   */
+  FLIGHT_TIME_SEC: 1.23,
+  /** Release point height, ft. A kid's overhand release. */
+  RELEASE_HEIGHT_FT: 4.2,
+  /**
+   * Arm spread. DELIBERATELY NOT A CURVE: `pace.pitchCorridor.armRatingCaveat`
+   * records that BB's on-screen "PT" is a pitches-thrown counter rather than a
+   * rating, so flight time cannot be bound to a pitcher stat from that footage —
+   * "ARM_MULT remains uncalibrated". This is a spread around the one measured
+   * flight, and it is honest about being one.
+   */
+  ARM_MULT_MIN: 0.86,
+  ARM_MULT_MAX: 1.18,
+  /**
+   * Secant steps used to solve the release elevation that actually delivers the
+   * ball to the aim point. Three is enough: the crossing miss is near-linear in
+   * elevation over this range. See `releasePitch` for why a solve is needed at
+   * all (aiming straight at the target arrives 26ft underground).
+   */
+  AIM_ITERATIONS: 6,
+  /** Close enough on flight time, seconds. */
+  AIM_TOL_SEC: 0.005,
+  /** Bisection steps for the elevation solve. */
+  ELEV_ITERATIONS: 26,
+  /** Coarse scan points used to find the reachable peak before bisecting. */
+  ELEV_SCAN: 12,
+  /** A pitch that has not reached the plate by now is not going to. */
+  MAX_FLIGHT_SEC: 5,
+} as const;
+
+/**
  * Integration rates.
  *
  * ★ 240 Hz IS NOT AN ACCURACY CHOICE, and measuring it is what showed that.

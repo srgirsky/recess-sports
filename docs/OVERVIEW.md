@@ -329,7 +329,63 @@ hardness. The park's mown grass lands at 0.50 and the sandlot's shaggy grass at
 because asphalt is not a turf surface. Somebody's guesswork, checked against real
 literature after the fact, and it held.
 
-Next: contact — exit
+**Contact is real, and the home run survived** (2026-07-31). A swing now produces
+an exit velocity, a launch angle, a spray and a spin, and hands them to the
+integrator — replacing v1's `buildLaunch`, which rolled a *category*
+(grounder/liner/fly), looked the distance up in a table, and decided the home run
+at the moment of contact. There, whether a ball left the yard was an input.
+
+The physics is an identity rather than a fit. Nathan's
+`v_f = e_A·v_ball + (1 + e_A)·v_bat` is exact for any ball, bat and collision
+model, so it is asserted symbolically; and `e_A` is itself derived, from
+`(e − r)/(1 + r)` with `r` the bat's recoil factor. That last relation is what
+makes a child not a small adult: a light bat recoils more, so `e_A` falls from
+about 0.20 at an adult's effective mass to 0.098 at a youth bat's. No fudge
+factor appears anywhere. The check with no free parameter at all is the tee: off
+a tee the pitch contributes nothing, so exit velocity is `(1 + e_A)·v_bat`, and
+bat speeds of 40–50 mph give 44–55 — against a published 8-and-under tee band of
+45–55. A physics identity and a coaching benchmark, agreeing.
+
+**And `sim.carryVsFence` is closed.** The power stat maps to a bat speed (35–53
+mph, which is published Little League data carried down to four-to-eight-year-
+olds) and the collision turns that into carry. Measured over the real roster: 3
+of 30 kids can clear the park's 185ft line, 12 of 30 can clear the sandlot's
+150ft porch, and **nobody** reaches the park's 212ft centre. Exactly what the
+record's resolution said it should be, with the fences untouched — which was the
+point. An earlier band cleared the line by *one foot*, a number that reads as
+success and behaves as failure once contact quality takes its cut; widening it
+was a reviewed decision, on the record.
+
+Three bugs shipped through the demo rather than through review, and all three
+are the same shape — a solve that compensates for an error and hides it. Aiming
+the pitch straight at the plate put it **26 feet underground**, because the
+measured 1230ms is a flight *time*, not a release speed, and a 1.23s flight over
+46ft falls 24ft on the way. Fixing that by solving for the release exposed the
+next one: the crossing height is not monotone in elevation, so a plain bisection
+returned a near-vertical lob that took 2.7s and crossed 170ft low. And with the
+solve working, **every spin axis was inverted** — the fastball's "backspin" sank,
+the curve rose while breaking toward first — and nothing caught it, because the
+solve simply re-aimed and the ball still arrived exactly where it was sent. Only
+the lateral break shows it, which is why a test now asserts break *direction*.
+
+One correction to an earlier one, too. `bounce.ts` had recorded Kensrud, Nathan
+& Smith's finding that a gripping ball spins "up to 40% greater than would be
+obtained by rolling contact", and applying that here **double-counts**: their
+measured ceiling of 3500 rpm sits at the rolling limit itself, not 40% above it,
+so the 40% is normalised against something the abstract does not state.
+Multiplying by 1.4 put a kid's batted ball outside the band the paper measured.
+The derived rolling limit is used instead, and the enhancement is recorded as
+pending rather than guessed at.
+
+Finally, an open record got much heavier. Nathan's drag fit is verified over
+60–110 mph. The roster hits 43–61, so **29 of 30 kids** put batted balls below
+the floor of the band the fit was measured in: essentially every ball this game
+will ever simulate is an extrapolation past the edge of the measurement, and the
+statistical harness will be measuring BABIP straight through it.
+`sim.aeroModelLowSpeed` has had its significance raised rather than being quietly
+leaned on.
+
+Next: exit
 velocity, launch angle and spray from *where and when* you swung, including the
 power→exit-velocity mapping above; then fielders and runners off one speed
 function; then the play reducer; then the statistical conformance harness
