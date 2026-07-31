@@ -201,9 +201,48 @@ never been re-derived against a scene with models in it. Recorded as
 `render.characterDrawCost` with the three ways to close it, rather than shipped
 quietly over budget.
 
-Next: the pure sim core and its statistical conformance harness (headless, no art,
-no graphics), which asserts emergent BABIP / launch-angle split / exit-velocity
-percentiles against real baseball bands instead of pinning constants.
+**The sim core has started, and the first thing it needed was a fence** (2026-07-31).
+`src/v2/sim/` was two files — unit conversion and field geometry — and 477 lines
+against the render tree's 8,792. There was no ball, no integrator, no contact
+model, no `Rng`; `G` was defined and used by nothing, and the four venue physics
+fields (`rollFriction`, `wallRestitution`, `bounceMult`, `obstacles`) were
+authored, tested, and consumed by nothing.
+
+Step one is `sim/rng.ts`, and the interesting part is not the generator. v1's
+most expensive determinism bug is that every `add.text` draws a UUID from
+`Math.random`, so creating, removing or reordering **any** Text object shifted
+the whole seeded stream and broke the goldlog. The lesson usually taken is "keep
+cosmetics off the rng"; the deeper one is that a **single global stream makes
+call order part of the contract**, so an unrelated change cascades and the
+fingerprint reports a difference that means nothing. `fork(label)` derives each
+substream from `(root seed, label)` and never from the parent's position, so
+adding a draw to one cannot move another — the failure class is deleted rather
+than avoided. `normal()` is deliberately absent: every textbook sampler needs
+`Math.log`, which ECMAScript specifies as implementation-approximated, and a
+fingerprint that depends on it goes red on a V8 bump and reads as somebody's bug.
+
+The other half was the gate. `purity.lint.test.js` existed but its pure-systems
+whitelist held **29 names**, among them `geometry` — v1's 960×640 screen pixels —
+along with `liveplay`, `atbat`, `fielding`, `mode`, and six modules that touch
+`localStorage` or Web Audio. The file's own header says its job is to stop pixels
+leaking into the sim, because real feet *are* the balance fix. It was harmless
+only because it was **vacuously satisfied**: nothing in the sim imported any
+system at all, so the fence had never been leaned on, and a wish list would have
+become a hole the moment sharing started for real. It is now five names, each
+re-derived rather than asserted — a whitelisted module must itself be
+browser-free, `Math.random`-free, and value-import only other pure modules,
+because naming a module "pure" is a claim and nothing was checking the claim.
+Type-only imports get their own wider lane (they erase, so they cannot carry a
+constant), and a new one-way rule means nothing outside `src/v2/**` may import
+v2 — which is what actually guarantees a v2 edit cannot reach v1's bundle, where
+before there was only care. Every one of the six new rules was verified by
+breaking the code it rejects and demanding the specific failure.
+
+Next: the ball itself — real gravity, quadratic drag and Magnus spin integrated
+RK4, with collisions resolved by bisection rather than step size — then contact,
+fielders, the play reducer, and the statistical conformance harness (headless, no
+art, no graphics) which asserts emergent BABIP / launch-angle split /
+exit-velocity shape against real baseball bands instead of pinning constants.
 
 ---
 
