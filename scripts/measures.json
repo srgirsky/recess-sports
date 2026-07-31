@@ -1138,6 +1138,7 @@
     "rigFielders": {
       "id": "art.rig-fielders",
       "category": "art",
+      "reference": "bb2001",
       "status": "awaiting-measurement",
       "statusChangedAt": "2026-07-31",
       "what": "Where BB2001 stands the non-battery defenders in its BEHIND-THE-PLATE view, and how big it draws them, relative to its horizon and its pitcher.",
