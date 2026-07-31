@@ -238,11 +238,66 @@ v2 — which is what actually guarantees a v2 edit cannot reach v1's bundle, whe
 before there was only care. Every one of the six new rules was verified by
 breaking the code it rejects and demanding the specific failure.
 
-Next: the ball itself — real gravity, quadratic drag and Magnus spin integrated
-RK4, with collisions resolved by bisection rather than step size — then contact,
-fielders, the play reducer, and the statistical conformance harness (headless, no
-art, no graphics) which asserts emergent BABIP / launch-angle split /
-exit-velocity shape against real baseball bands instead of pinning constants.
+**The ball is real, and it answered the balance question before anything could
+be tuned around it** (2026-07-31). Gravity, quadratic drag and Magnus spin,
+integrated RK4, with collisions resolved by BISECTION rather than step size.
+The coefficients are not invented: they are Nathan's published Trajectory
+Calculator fit, read from the paper rather than recalled — `C_D = 0.297 +
+0.0292·(ω/1000rpm)` and `C_L = 1.120·S/(0.583 + 2.333·S)`. Two happy
+consequences fell out. Both forms are pure arithmetic, so the plan's committed
+interpolation tables — there to keep the future determinism fingerprint stable
+across V8 versions — turned out to be unnecessary, and a lint now keeps the
+per-step path that way. And `K = ½ρA/m` folds air density, cross-section and
+mass into one number that Nathan also publishes, so deriving it validates all
+three at once: we get 5.4929e-3 against his 5.509e-3, and the 0.29% is *his*
+rounding (his Eq. 9 normalises on 0.0767 lb/ft³; 1.225 kg/m³ is really
+0.076482). Feeding his rounded density into our own formula reproduces his
+constant exactly, which is what makes that a bookkeeping note rather than a
+discrepancy.
+
+Two things the measurement found that the design doc had asserted. **240 Hz is
+not an accuracy choice.** RK4 here is fourth order — measured error ratios 16.20
+and 16.13 per halving against a textbook 2⁴ — and accuracy *saturates at 60 Hz*,
+where a flight lands within 3e-9 ft of a 15360 Hz reference. 240 earns its place
+for phase (4×60 = 2×120, so the renderer's interpolation remainder is exact) and
+for collision sampling, and the comment now says so. Getting there also cost a
+test: the first convergence check compared 240/480/960 Hz and returned a ratio
+of **zero**, which read as a broken integrator and was really a broken test —
+at those rates the discretisation error is already at the double-precision
+floor, so it was measuring rounding. The same class of error as
+`pace.pitchCorridor`'s "the tolerance was the noise".
+
+**And the plan's number-one risk turned out to point the other way.** It was
+written as "every ball is a home run" — MLB-shaped exit velocities over a 200 ft
+park. The integrator alone says the opposite: clearing the park's shortest fence
+takes **57.5 mph** of exit velocity and its centre field takes 62.5, while
+published youth guidance puts 8-and-under at 45–55 mph *off a tee* with game
+exit velocity 5–10 mph lower. A real four-to-eight-year-old hits 35–50 mph and
+clears nothing. That is v1's problem exactly inverted: v1 had no outfield so
+every ball was an out; v2 has a real outfield and real kid strength, so nothing
+leaves the yard. The resolution is a game-design decision and is recorded as
+one — **the power stat earns it**: the fences stay, and PR 4 maps power 1→10
+onto roughly 35→60 mph, so only genuine sluggers clear the short parts, the
+park's 212 ft centre stays out of reach for everyone, and the sandlot's 150 ft
+porch becomes the cheap-homer park its own data file already intends. Shrinking
+the fences was the obvious alternative and loses more than it gains: it drags
+`FIELD_POSITIONS` in with it and returns the outfield to about two basepaths,
+which is the thing v2 exists to fix. See `sim.carryVsFence`.
+
+The measurement schema grew a required field to hold all this. Every record now
+declares `reference` — `bb2001 | baseball | physics | derived` — because
+`conformed` had quietly begun to mean three incompatible things, and the failure
+that invites is specific: somebody eventually conforms a game for four-to-eight-
+year-olds to MLB's strikeout rate and every gate in the file agrees with them.
+
+Next: bounce, roll and carom (which finally give the four venue physics fields
+a consumer, and `fenceIsConvex` its first caromed ball); then contact — exit
+velocity, launch angle and spray from *where and when* you swung, including the
+power→exit-velocity mapping above; then fielders and runners off one speed
+function; then the play reducer; then the statistical conformance harness
+(headless, no art, no graphics) which asserts emergent BABIP / launch-angle
+split / exit-velocity shape against real baseball bands instead of pinning
+constants.
 
 ---
 

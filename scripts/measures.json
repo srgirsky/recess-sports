@@ -78,12 +78,37 @@
       "gameRectCheck": "blitScore at this rect reads 0.9991-1.0000 across six timestamps spanning the whole file (t=29.5/100/208/300/600), i.e. an exact 3x nearest-neighbour blit throughout -- so `readFrames({crop: gameRect, scale: 3})` recovers native 640x480 game pixels and every coordinate below is in that space.",
       "venue": "park (blue plank fence, trees, benches, crowd) -- NOT the backyard-grass venue session1 was played on. That is useful rather than inconvenient: it makes session2 an independent third sample for the geometry records.",
       "continuity": "One continuous game segment; no non-game material, so gameSegments was not needed."
+    },
+    "physics": {
+      "id": "physics:published",
+      "note": "Peer-reviewed and rulebook sources for the v2 ball. These are PUBLISHED CONSTANTS, not measurements this project made -- which is exactly why they need their own provenance block rather than a `measured` field. Every one was read from the source document, not recalled: `pace.pitchCorridor`'s withdrawn 270ms is what a remembered number costs, and a remembered number with a citation attached is worse, because the citation makes it look checked.",
+      "rules": {
+        "cite": "Official Baseball Rules 3.01 (ball: 5 to 5-1/4 oz, circumference 9 to 9-1/4 in). Little League Rulebook 1.09 adopts the same ball.",
+        "used": "Nominal midpoints 5-1/8 oz and 9-1/8 in, matching the values Nathan normalises on."
+      },
+      "atmosphere": {
+        "cite": "US Standard Atmosphere 1976, sea level.",
+        "used": "rho = 1.225 kg/m^3",
+        "caveat": "Nathan's 2008 lift paper states 1.23 kg/m^3; his Trajectory Calculator writes '1.225 kg/m^3 (or 0.0767 lb/ft^3)', but 1.225 kg/m^3 is really 0.076482 lb/ft^3. His rounded 0.0767 is what makes his published K come out at 5.509e-3 instead of 5.493e-3. We use 1.225 and record the 0.30% rather than adopting a rounding to make two numbers agree."
+      },
+      "aero": {
+        "cite": "Alan M. Nathan, 'Analysis of Baseball Trajectories' (baseball.physics.illinois.edu/TrajectoryAnalysis.pdf), Eqs. 7-11; and 'The effect of spin on the flight of a baseball', Am. J. Phys. 76(2) 119-124 (2008) for the lift experiment and the C_L(S) dependence.",
+        "model": "C_D = C_D0 + C_D1*(omega/1000rpm); C_L = C_L2*S/(C_L0 + C_L1*S), S = R*omega/v. Fitted by Levenberg-Marquardt to 2015-17 Statcast fly-ball trajectories.",
+        "fitScope": "Exit velocity >= 90 mph, launch angle 20-35 deg, Tropicana Field (indoor, Nathan estimates rho = 1.194). Velocity-independence of C_D verified only over 60-110 mph.",
+        "ignored": "Spin decay (Nathan's Trackman-based time constant ~30 s) and spin precession, as Nathan ignores them. A batted ball is airborne under 6 s."
+      },
+      "youthExitVelocity": {
+        "cite": "Published youth exit-velocity guidance (multiple coaching/training sources agree): 8-and-under maxima of 45-55 mph off a TEE, with game exit velocity typically 5-10 mph below tee maxima.",
+        "confidence": "These are coaching benchmarks, not a peer-reviewed dataset. Used to bound the plausible range, not to pin a constant.",
+        "note": "This is what makes sim.carryVsFence a finding rather than a curiosity: it says a real 4-8-year-old hits 35-50 mph, and the park's shortest fence needs 57.5."
+      }
     }
   },
   "instrument": {
     "frameRate": {
       "id": "instrument.frame-rate",
       "category": "instrument",
+      "reference": "bb2001",
       "status": "conformed",
       "what": "The rate at which the PICTURE actually changes, which is the real precision floor -- not the 60fps the container claims.",
       "method": "distinctFrameRate over high-motion windows (dupFactor 2.7-3.3, medianRunLength 2-3), corroborated by the inter-frame delta cadence during a live play, which steps in a clean +50ms grid.",
@@ -124,6 +149,7 @@
     "clockValidity": {
       "id": "instrument.clock-validity",
       "category": "instrument",
+      "reference": "bb2001",
       "status": "note",
       "what": "Does a wall-clock duration read off this capture mean what it says? A 1999 game under emulation could be FRAME-LOCKED -- advancing its logic once per rendered frame -- in which case an emulator rendering below the intended rate stretches every duration and every pace number inherits the stretch.",
       "whyItMattered": "session2's home->1B runs read ~4.2s against a superseded ~3.0s prior reading. 3.0/4.2 = 0.71, and session2's distinct rate is ~22fps against a plausible 30fps intended rate: 22/30 = 0.73. The two agree closely enough that 'the emulator is running the game 1.4x slow' was a live and fully sufficient explanation of the entire finding. Shipping the number without testing it would have been the 234px mistake with extra steps.",
@@ -169,6 +195,7 @@
     "backgroundSubtraction": {
       "id": "instrument.background-subtraction",
       "category": "instrument",
+      "reference": "bb2001",
       "status": "note",
       "what": "The technique added in pass 2 to find the BALL, and the trap it walked into. Companion to pace.tracker-lessons (which covers runners).",
       "why": "Colour-based ball detection is dead in the park venue: a search for small near-white blobs returns 25-30 candidates per frame because the fence, crowd and chalk are all white and all static. The fix is to stop asking what is white and start asking what MOVED.",
@@ -185,6 +212,7 @@
     "playIndex": {
       "id": "instrument.play-index",
       "category": "instrument",
+      "reference": "bb2001",
       "status": "conformed",
       "what": "Where the plays are in the local capture. BB2001 cuts INSTANTLY from the behind-plate view to the wide field view when a ball is put in play, so a scene-cut list is a play index.",
       "method": "findCuts with crop=gameRect, scale=4, threshold=0.25, run only over the confirmed game segments. Each cut-delimited segment is then labelled plate/wide by median colour in two bottom-of-frame regions (the behind-plate HUD strip paints #004100 there; every wide-field venue paints something else). Calibrated against screenshots 00007/00008 (plate) and 00001/00003/00009 (wide).",
@@ -317,6 +345,7 @@
     "gameSegments": {
       "id": "instrument.game-segments",
       "category": "instrument",
+      "reference": "bb2001",
       "status": "conformed",
       "what": "Which parts of the capture contain the emulator, decided WITHOUT inspecting what any frame depicts.",
       "method": "ScummVM blits 640x480 at an integer factor, so inside its window every group of 3 consecutive rows is pixel-identical; native desktop content is not. blitScore samples row-triples (rows, not columns -- yuv422p subsamples chroma horizontally, so column triples break at block boundaries while row triples survive exactly) and scores ONLY samples where the image varies vertically, since a flat region passes the triple test trivially and would let a blank window impersonate the game.",
@@ -354,6 +383,7 @@
     "landingDisc": {
       "id": "instrument.landing-disc",
       "category": "instrument",
+      "reference": "bb2001",
       "status": "note",
       "what": "How to time a BB2001 fly ball, after tracking the ball itself failed twice.",
       "finding": "BB draws a big saturated-green ellipse on the grass at the predicted landing spot for exactly as long as the ball is in the air. Measured: disc RGB (44-58, 207-223, 26-40) against grass that tops out around g=165, so `g>=190 && r<=90 && b<=70` separates them with no overlap at all. It appears on the frame of contact and vanishes on the frame the ball reaches a glove or the ground.",
@@ -369,6 +399,7 @@
     "pipPitchIndex": {
       "id": "instrument.pip-pitch-index",
       "category": "instrument",
+      "reference": "bb2001",
       "status": "note",
       "what": "How to find every pitch in a plate stretch, after three other discriminators failed.",
       "finding": "The HUD's BALLS/STRIKES pips are the only unambiguous pitch marker. A resolved pitch lights one and nothing else does. Mound motion does NOT work: the pitcher tosses the ball to himself on a loop while the human deliberates, producing identical bursts. Zone colour does not work: the strike-zone fill is dirt-brown and a white-blob search returns only crop-boundary artifacts.",
@@ -382,6 +413,7 @@
     "captureFidelity": {
       "id": "instrument.capture-fidelity",
       "category": "instrument",
+      "reference": "bb2001",
       "status": "note",
       "what": "Why session2 cannot set pitch timing, and what a usable capture must carry.",
       "theGap": "session2's real-time fidelity was ASSUMED, never measured. Nothing in the file distinguishes 'the game did X in 250ms' from 'the recording compressed 2s into 250ms' from 'the emulator ran the animation faster than the game intends'. The capture guide's ffv1/60fps rules protect image quality; none of them bound the clock.",
@@ -406,6 +438,7 @@
     "projectionType": {
       "id": "geometry.projection-type",
       "category": "geometry",
+      "reference": "bb2001",
       "status": "known-drift",
       "what": "Is BB2001's field an affine squash of the diamond (like ours) or true perspective? A diamond is a SQUARE, so its 4 bases are a square's corners; affine maps preserve diagonal bisection, perspective maps do not.",
       "verdict": "PERSPECTIVE",
@@ -517,6 +550,7 @@
     "foulSlope": {
       "id": "geometry.foul-slope",
       "category": "geometry",
+      "reference": "bb2001",
       "status": "conformed",
       "statusChangedAt": "2026-07-24",
       "what": "Near-field lateral foreshortening: horizontal run per unit of depth along the foul lines from home.",
@@ -578,6 +612,7 @@
     "fieldScale": {
       "id": "geometry.field-scale",
       "category": "geometry",
+      "reference": "bb2001",
       "status": "known-drift",
       "statusChangedAt": "2026-07-27",
       "what": "How BIG the diamond is drawn, as a fraction of the frame. Normalised by frame HEIGHT: that is the dimension the field is squeezed in, and it is the one comparable across BB's 4:3 and our 3:2.",
@@ -649,6 +684,7 @@
     "characterPresence": {
       "id": "render.character-presence",
       "category": "render",
+      "reference": "bb2001",
       "status": "note",
       "statusChangedAt": "2026-07-29",
       "what": "BB2001's field framing and BB2001's character size are JOINTLY UNSATISFIABLE once the field is modelled at real scale. Recorded so the contradiction is not rediscovered as a bug.",
@@ -675,6 +711,7 @@
     "rigHeight": {
       "id": "render.rig-height",
       "category": "render",
+      "reference": "bb2001",
       "status": "note",
       "statusChangedAt": "2026-07-30",
       "what": "The canonical rig claimed 4.0ft and was 3.400ft. Recorded because the error class -- a constant asserting a number that nothing computes -- is the one this whole instrument exists to catch, and because it was about to be printed at the top of a commission brief.",
@@ -698,6 +735,7 @@
     "proxySilhouette": {
       "id": "render.proxy-silhouette",
       "category": "render",
+      "reference": "bb2001",
       "status": "note",
       "statusChangedAt": "2026-07-30",
       "what": "The rig summed to the height it claimed and the proxy STILL drew a bobblehead. Four drawn-silhouette errors that the bounding-box test could not see, because it measures a single point (the topmost vertex) of a single fixture (bald, no accessory).",
@@ -734,6 +772,7 @@
     "proxyFace": {
       "id": "render.proxy-face",
       "category": "render",
+      "reference": "bb2001",
       "status": "note",
       "statusChangedAt": "2026-07-30",
       "what": "The facing cue added by render.proxySilhouette was itself half invisible. Recorded separately because the errors are a different class: not 'the number nothing computes' but 'the feature nobody looks at', and they were found by trying to add ONE more feature to a face that already had three.",
@@ -771,6 +810,7 @@
     "runCadence": {
       "id": "render.run-cadence",
       "category": "render",
+      "reference": "bb2001",
       "status": "note",
       "statusChangedAt": "2026-07-30",
       "what": "The ground speed each locomotion clip is authored to read correctly at. DERIVED from pace.homeToFirst, not measured -- BB2001 has no on-screen representation of a clip's authored speed, so no frame can be read for it.",
@@ -793,6 +833,7 @@
     "characterDrawCost": {
       "id": "render.character-draw-cost",
       "category": "render",
+      "reference": "bb2001",
       "status": "known-drift",
       "statusChangedAt": "2026-07-30",
       "what": "A DELIVERED model costs 8 draw calls where a proxy costs 2, and 13 characters put the Look Spike at 122 draws against a budget of 90. LOD pays for itself on triangles in the same measurement (93.3k -> 47.6k, -49%), so the trade is real and one-directional: the character pipeline buys triangles with draw calls.",
@@ -826,6 +867,7 @@
     "battingStance": {
       "id": "art.batting-stance",
       "category": "art",
+      "reference": "bb2001",
       "status": "conformed",
       "statusChangedAt": "2026-07-27",
       "what": "How a BB2001 batter HOLDS the bat at rest: where the hands sit, how long the bat is, and how high its tip reaches -- all as fractions of the batter's own body height, so they transfer across sprite scales and into our 200x260 viewBox.",
@@ -962,6 +1004,7 @@
     "batOcclusion": {
       "id": "art.bat-occlusion",
       "category": "art",
+      "reference": "bb2001",
       "status": "conformed",
       "statusChangedAt": "2026-07-28",
       "what": "WHAT covers a BB2001 batter's bat at rest, and what does not. The companion to art.battingStance: that record fixed where the bat IS, this one fixes what is allowed in front of it.",
@@ -1098,6 +1141,7 @@
     "backyardGrass": {
       "id": "palette.backyard-grass",
       "category": "palette",
+      "reference": "bb2001",
       "status": "awaiting-measurement",
       "source": "local screenshot 00009, native 640x480",
       "what": "BB's grass is not one colour -- it is a lit gradient plus a dither, so a region MEDIAN is the meaningful statistic and patchFlatness correctly reports isFlat=false (that is texture, not a filter; the blit check in screenshot.js is what proves the source is unfiltered).",
@@ -1135,6 +1179,7 @@
     "measurementTrap": {
       "id": "pace.measurement-trap",
       "category": "pace",
+      "reference": "bb2001",
       "status": "note",
       "what": "Why the obvious automation does not work, recorded so the next pass does not rediscover it.",
       "finding": "Detecting 'the runner reached 1B' from a change-fraction spike in a box on the bag FAILS. BB2001 plays canned fielder animations at the bag, and they are deterministic: six different plays produced change series matching to the millisecond (1.187:0.07, 1.287:0.07, 1.337:0.08, 1.387:0.12, ...). A naive threshold reads six identical 'arrivals'. The tell was the impossible precision -- six unrelated plays cannot agree to 1ms -- and it was caught only because the numbers were inspected rather than aggregated.",
@@ -1144,6 +1189,7 @@
     "captureConfounds": {
       "id": "pace.capture-confounds",
       "category": "pace",
+      "reference": "bb2001",
       "status": "note",
       "what": "Why THIS capture (session1) cannot yield clean pace numbers, and what a capture that could must do differently. Found by attempting all three pace metrics on the 14 indexed plays, 2026-07-23.",
       "findings": [
@@ -1188,6 +1234,7 @@
     "trackerLessons": {
       "id": "pace.tracker-lessons",
       "category": "pace",
+      "reference": "bb2001",
       "status": "note",
       "what": "What actually works for tracking a RUNNER, recorded because the pass burned most of its time rediscovering it. Companion to pace.measurementTrap, which covers why threshold-on-a-box detection fails.",
       "findings": [
@@ -1207,6 +1254,7 @@
     "homeToFirst": {
       "id": "pace.home-to-first",
       "category": "pace",
+      "reference": "bb2001",
       "status": "conformed",
       "statusChangedAt": "2026-07-24 (retune)",
       "what": "THE ANCHOR. Every other pace number is a dimensionless ratio against this one, which is what makes the whole approach immune to BB being 640x480 while we are 960x640, and immune to any future tempo dial.",
@@ -1276,6 +1324,7 @@
     "contactToDepart": {
       "id": "pace.contact-to-depart",
       "category": "pace",
+      "reference": "bb2001",
       "status": "awaiting-measurement",
       "what": "The beat between contact (which is exactly the hard cut to the wide view) and the batter-runner actually leaving the box. We model it as zero -- our runner starts at contact.",
       "measured": null,
@@ -1303,6 +1352,7 @@
     "pitchCorridor": {
       "id": "pace.pitch-corridor",
       "category": "pace",
+      "reference": "bb2001",
       "status": "awaiting-measurement",
       "what": "Mound-to-plate flight time, and how it scales with the pitcher's arm.",
       "whyThisRecordExists": "src/config.ts's PITCH_SPEED block calls itself 'Backyard-measured' and states a ~250ms-to-~700ms corridor. Until 2026-07-24 NO record backed that claim -- it rests on two n=1 readings off the superseded YouTube stream. An in-code comment asserting a measurement that nothing gates is precisely the failure this file exists to prevent, so the claim now has a record even though the answer is still 'not measured'. conformance.test.js enforces the link.",
@@ -1429,6 +1479,7 @@
     "umpCallDelay": {
       "id": "pace.ump-call-delay",
       "category": "pace",
+      "reference": "bb2001",
       "status": "awaiting-measurement",
       "what": "Ball arrival at the plate -> the umpire's BALL!/STRIKE! banner popping.",
       "whyThisRecordExists": "Same as pace.pitch-corridor: FLOW.UMP_CALL_DELAY_MS = 200 describes itself in src/config.ts as 'the BB2001-measured beat' and no record backed it. The value comes from a single superseded YouTube observation (ball arrives ~530.28, BALL! visible by 530.5).",
@@ -1464,6 +1515,7 @@
     "flyHang": {
       "id": "pace.fly-hang",
       "category": "pace",
+      "reference": "bb2001",
       "status": "conformed",
       "what": "Deep-fly hang time, as a RATIO to the home->1B anchor. The ratio is the durable form: absolute hang times cannot be compared across two games with different field scales.",
       "measured": {
@@ -1551,6 +1603,7 @@
     "betweenPitch": {
       "id": "pace.between-pitch",
       "category": "pace",
+      "reference": "bb2001",
       "status": "conformed",
       "what": "Catch -> ready-for-the-next-pitch turnaround.",
       "measured": 2550,
@@ -1604,6 +1657,7 @@
     "pitchCadence": {
       "id": "pace.pitch-cadence",
       "category": "pace",
+      "reference": "bb2001",
       "status": "conformed",
       "statusChangedAt": "2026-07-25 (pitch parity)",
       "what": "How long the game waits before throwing the next pitch AT the player -- the beat that decides how rushed batting feels.",
@@ -1641,6 +1695,7 @@
     "flowCoherence": {
       "id": "pace.flow-coherence",
       "category": "pace",
+      "reference": "bb2001",
       "status": "note",
       "what": "Which FLOW beats the pace retune left behind.",
       "finding": "The 2026-07-24 retune scaled the live-play sim 1.987x and changed exactly ONE FLOW constant -- BETWEEN_PITCH_MS, the one that was measured. Every other between-moments beat is still at the pre-retune tempo: NEW_BATTER_MS 750, CPU_NEW_BATTER_MS 850, CPU_STEP_MS 1100, AFTER_PLAY_MS 1500, AFTER_LIVE_PLAY_MS 1600, HALF_START_MS 1400, RUN_SETTLE_PAD_MS 500, BANNER_HOLD_MS 1100, BIG_BANNER_HOLD_MS 1600, UMP_CALL_DELAY_MS 200.",
@@ -1651,6 +1706,7 @@
     "swingWindows": {
       "id": "pace.swing-windows",
       "category": "pace",
+      "reference": "bb2001",
       "status": "note",
       "what": "The swing timing windows, and why they can never be measured from BB footage.",
       "finding": "A timing window is an INTERNAL TOLERANCE -- how many ms of error still makes contact -- with no on-screen representation. No amount of video reveals BB's, because you would need the player's exact tap times, which no recording captures. So unlike the flight time, this constant has to be CHOSEN.",
@@ -1663,6 +1719,7 @@
     "pitchWindup": {
       "id": "pace.pitch-windup",
       "category": "pace",
+      "reference": "bb2001",
       "status": "awaiting-measurement",
       "what": "How long BB2001's pitcher takes from his first delivery motion to releasing the ball.",
       "whyThisRecordExists": "Nothing had ever measured it, and it turned out to be half the problem. Our ANIM.WINDUP_MS was 380ms against BB's ~770ms, so the ball arrived with barely any telegraph -- which reads as 'too fast' even independently of the flight itself.",
@@ -1688,6 +1745,7 @@
     "simClock": {
       "id": "pace.sim-clock",
       "category": "pace",
+      "reference": "bb2001",
       "status": "note",
       "statusChangedAt": "2026-07-28",
       "what": "Why every pace.* record is allowed to be an absolute real-millisecond claim, and what would silently make them all wrong.",
@@ -1700,11 +1758,213 @@
       "informs": "src/config.ts, src/scenes/GameScene.ts update(), src/systems/mode.ts getPitchBaseMs"
     }
   },
+  "sim": {
+    "note": "The v2 SIM's constants. A new reference class: these answer to PUBLISHED PHYSICS and to real baseball, not to BB2001 footage -- which is why every record carries `reference`, and why that field became required in the same change. Conforming a game for four-to-eight-year-olds to MLB's strikeout rate is the mistake that field exists to prevent.",
+    "ballPhysics": {
+      "id": "sim.ball-physics",
+      "category": "sim",
+      "reference": "physics",
+      "status": "conformed",
+      "statusChangedAt": "2026-07-31",
+      "what": "The ball and the air it flies through, folded into the single factor the aerodynamic model needs: K = 1/2 * rho * A / m.",
+      "why": "K is the validation, not just a convenience. It combines air density, cross-sectional area and mass, so deriving it from the four published constants and comparing against Nathan's INDEPENDENTLY published figure exercises all three at once. That is a better check than terminal velocity, which the plan originally called for: terminal velocity is only ever as good as the C_D you assume, and C_D is the least certain input here.",
+      "measured": {
+        "oursKPerFt": 0.005492930297972406,
+        "nathanKPerFt": 0.005509,
+        "gapPct": 0.29,
+        "inputs": {
+          "massOz": 5.125,
+          "circumferenceIn": 9.125,
+          "rhoKgM3": 1.225,
+          "gFtS2": 32.174
+        }
+      },
+      "theGap": "0.29%, and it is NATHAN'S ROUNDING rather than our arithmetic. His Eq. 9 normalises on 'the density of air is nominally 1.225 kg/m^3 (or 0.0767 lb/ft^3)', but 1.225 kg/m^3 is really 0.076482 lb/ft^3. Feeding his rounded 0.0767 into our own formula reproduces 5.509e-3 exactly, which is what proves the difference is bookkeeping. Recorded rather than reconciled: adopting a rounded density to make two numbers agree is fitting the constant to the citation.",
+      "n": 1,
+      "confidence": "high",
+      "nNote": "n=1 is the right number for a published constant. This is a rulebook and a standard atmosphere, not a sample.",
+      "ours": {
+        "constant": "src/v2/sim/params.ts BALL, AIR; src/v2/sim/ball.ts BALL_K_PER_FT"
+      },
+      "pinnedBy": "src/v2/sim/flight.test.ts 'derives K from the published constants and lands on Nathan figure', which also reproduces his value from his own rounded density.",
+      "informs": "src/v2/sim/params.ts BALL, AIR",
+      "source": "physics:published"
+    },
+    "aeroModel": {
+      "id": "sim.aero-model",
+      "category": "sim",
+      "reference": "physics",
+      "status": "conformed",
+      "statusChangedAt": "2026-07-31",
+      "what": "Drag and Magnus lift, taken verbatim from Nathan's Trajectory Calculator fit rather than invented.",
+      "model": "C_D = C_D0 + C_D1*(omega/1000rpm), with C_D0 0.297 and C_D1 0.0292. C_L = C_L2*S/(C_L0 + C_L1*S), with C_L0 0.583, C_L1 2.333, C_L2 1.120, and S = R*omega/v.",
+      "theHappyConsequence": "BOTH FORMS ARE PURE ARITHMETIC. The plan assumed the coefficients would need committed interpolation tables, because ECMAScript specifies Math.exp/log/pow and the trig functions as implementation-approximated while only + - * / and Math.sqrt are correctly rounded -- so a determinism fingerprint built on them goes red on a V8 bump and reads as somebody's bug. Nathan's fit needs none of them. The whole aerodynamic model is bit-stable with no tables at all, and purity.lint.test.js now enforces that the per-step path stays that way.",
+      "validation": {
+        "mlbCarryFt": {
+          "rpm0": 366,
+          "rpm1000": 406,
+          "rpm2000": 408,
+          "rpm3000": 398
+        },
+        "conditions": "100 mph exit velocity, 30 deg launch angle, 3 ft contact height.",
+        "against": "The Statcast rule of thumb that a well-struck ball (100mph/30deg) carries about 400 ft. Backspin must also carry FURTHER than no spin and topspin SHORTER, asserted separately."
+      },
+      "caveat": "THE FIT IS NOT FOR OUR REGIME, and that is recorded rather than glossed. It comes from MLB fly balls with exit velocity >= 90 mph and launch angles 20-35 deg, measured indoors at Tropicana Field (Nathan estimates rho = 1.194 there), and he verifies C_D's velocity-independence only 'at least for speeds in the range 60-110 mph'. Our batters hit 35-50 mph. Everything below 60 mph is an unvalidated extrapolation. The model is conformed on what was published; the extrapolation is not, and sim.aeroModelLowSpeed is where that gets closed.",
+      "n": 1,
+      "confidence": "high",
+      "nNote": "n=1 for a published fit: the sample is Nathan's, not ours.",
+      "ours": {
+        "constant": "src/v2/sim/params.ts AERO"
+      },
+      "pinnedBy": "src/v2/sim/flight.test.ts -- the coefficient forms, the saturating C_L bound, drag's independence from speed, and the MLB carry band.",
+      "informs": "src/v2/sim/params.ts AERO",
+      "source": "physics:published"
+    },
+    "aeroModelLowSpeed": {
+      "id": "sim.aero-model-low-speed",
+      "category": "sim",
+      "reference": "physics",
+      "status": "awaiting-measurement",
+      "statusChangedAt": "2026-07-31",
+      "what": "Whether Nathan's drag fit still holds at the 35-60 mph exit velocities a four-to-eight-year-old actually produces.",
+      "why": "His stated result is that after accounting for spin there is 'no further dependence on v, at least for speeds in the range 60-110 mph'. Every ball this game cares most about is below that band. The model may well hold -- Reynolds number falls with speed and the drag crisis is at the other end -- but nobody has said so, and the point of this file is that unmeasured things stay enumerable instead of becoming folklore.",
+      "measured": null,
+      "n": 0,
+      "confidence": "low",
+      "ours": {
+        "constant": "src/v2/sim/params.ts AERO.CD_0, AERO.CD_1, AERO.FIT_SPEED_BAND_MPH",
+        "value": "Nathan's fit, extrapolated below its verified band."
+      },
+      "whatWouldWork": "Either a published low-speed C_D measurement for a real baseball (Kensrud & Smith, 'In situ drag measurements of sports balls', Procedia Engineering 13 (2011), covers a wider speed range and is the first place to look), or a direct one: launch a ball at a measured speed and angle with known spin, film it against a scale, and fit C_D from the trajectory. n>=3 per speed bin.",
+      "informs": "src/v2/sim/params.ts AERO",
+      "source": "physics:published"
+    },
+    "integratorStep": {
+      "id": "sim.integrator-step",
+      "category": "sim",
+      "reference": "derived",
+      "status": "conformed",
+      "statusChangedAt": "2026-07-31",
+      "what": "What FLIGHT_HZ is actually for, measured rather than inherited from the design doc.",
+      "theFinding": "NOT ACCURACY. docs/OVERVIEW.md promised 'integrated RK4 at 240Hz' before any integrator existed, and the natural assumption is that 240 was an accuracy figure. It is not: RK4 here is fourth order (measured error ratios 16.20 and 16.13 per halving of the step, against a textbook 2^4 = 16), and ACCURACY IS SATURATED BY 60 Hz -- a 60 Hz flight lands within 3e-9 ft of a 15360 Hz one, and 240 Hz within 6e-12 ft. Nothing in this game can see 3e-9 ft.",
+      "whatItIsFor": "Two things, both real. (1) PHASE: 240 = 4x60 = 2x120, so at both common refresh rates the fixed-timestep accumulator's remainder is exactly zero and the renderer's interpolation alpha is exact. (2) COLLISION SAMPLING: guards are evaluated once per step, so the step size bounds how briefly a condition can hold and still be noticed. Bisection makes a DETECTED crossing exact; it cannot detect one that opens and closes inside a single step.",
+      "measured": {
+        "convergenceRatios": {
+          "clean": [
+            16.2,
+            16.13
+          ],
+          "throughABounce": [
+            16.15,
+            16.14
+          ]
+        },
+        "carryErrorFtVs15360Hz": {
+          "hz15": 7.431e-07,
+          "hz30": 4.586e-08,
+          "hz60": 2.844e-09,
+          "hz120": 1.729e-10,
+          "hz240": 6.366e-12
+        },
+        "method": "The same launch integrated at each rate; error is the carry difference against a 15360 Hz reference."
+      },
+      "theTestTrap": "The first version of the convergence test compared 240/480/960 Hz and got a ratio of ZERO, which read as a broken integrator. At those rates the discretisation error is already at the double-precision floor, so the ratio was measuring rounding. A convergence test has to run COARSE to measure convergence -- the same class of error as pace.pitchCorridor's 'the tolerance was the noise'.",
+      "n": 1,
+      "confidence": "derived",
+      "ours": {
+        "constant": "src/v2/sim/params.ts INTEGRATOR.FLIGHT_HZ",
+        "value": 240
+      },
+      "pinnedBy": "src/v2/sim/flight.test.ts -- fourth-order convergence on a clean flight AND through a bounce (the second is what catches an event handler that bisects and then Euler-steps the remainder, which every clean-flight test passes while the global order silently drops to one), plus the phase divisibility.",
+      "informs": "src/v2/sim/params.ts INTEGRATOR"
+    },
+    "carryVsFence": {
+      "id": "sim.carry-vs-fence",
+      "category": "sim",
+      "reference": "derived",
+      "status": "known-drift",
+      "statusChangedAt": "2026-07-31",
+      "what": "How much exit velocity it takes to clear each venue's fence, against how hard a four-to-eight-year-old can actually hit a ball.",
+      "why": "This was the v2 plan's ranked #1 risk, written as 'every ball is a home run' -- MLB-shaped exit velocities over a 200ft park. The truth is the MIRROR IMAGE, and the integrator alone was enough to find it, before any contact model, fielder or play reducer existed that could have absorbed a wrong answer by being tuned around it.",
+      "measured": {
+        "bestCarryFtByExitVelocityMph": {
+          "35": 79,
+          "40": 100,
+          "45": 123,
+          "50": 148,
+          "55": 173,
+          "60": 199,
+          "65": 226,
+          "70": 252
+        },
+        "conditions": "1500 rpm backspin, 2.5 ft contact height, optimal launch angle swept 10-50 deg.",
+        "exitVelocityToClearMph": {
+          "sandlotRF150": 50.5,
+          "sandlotRCF177": 56.0,
+          "parkLine185": 57.5,
+          "blacktop188": 58.0,
+          "sandlotLF198": 60.0,
+          "sandlotCF203": 61.0,
+          "parkLCF205": 61.5,
+          "parkCF212": 62.5
+        }
+      },
+      "theProblem": "Published youth guidance puts 8-and-under exit velocity at 45-55 mph off a TEE, with game exit velocity 5-10 mph lower -- so a real 4-8-year-old hits 35-50 mph and clears NOTHING. The park's shortest fence needs 57.5 mph and its centre field needs 62.5.",
+      "drift": {
+        "gapMph": 7.5,
+        "note": "Between the top of a realistic kid's game exit velocity (50) and the park's easiest fence (57.5)."
+      },
+      "resolution": "DECIDED, and it is a game-design decision rather than a physics one: THE POWER STAT EARNS IT. The fences stay. PR 4 maps power 1-10 onto roughly 35-60 mph exit velocity, so only genuine sluggers clear the short parts, the park's 212ft centre stays out of reach for everyone, and the sandlot's 150ft porch becomes the cheap-homer park its own data file already intends. That costs no geometry change, makes `power` legible on the field, and makes the draft matter -- which is the product.",
+      "whyNotShrinkTheFences": "It was the obvious alternative and it loses more than it gains: pulling the fences to 140-165ft means pulling FIELD_POSITIONS in with them to keep the fence-to-outfield-depth ratio near MLB's 1.25, which drops the outfield to about 2 basepaths. A deep outfield a gap ball can land in is the entire reason v2 exists -- v1 had 1.49 basepaths and 0% BABIP.",
+      "n": 1,
+      "confidence": "derived",
+      "ours": {
+        "constant": "src/v2/sim/field.ts VENUE_GEOMETRY; src/v2/sim/params.ts AERO",
+        "value": "park 185/212, sandlot 150-207, blacktop 188 -- unchanged by this PR."
+      },
+      "whatWouldClose": "PR 4's power-to-exit-velocity mapping, then re-running this table against the roster's actual power distribution: the record should end up asserting that a power-10 kid clears the park's line and a power-5 kid does not.",
+      "informs": "src/v2/sim/field.ts VENUE_GEOMETRY, src/v2/sim/params.ts AERO",
+      "source": "physics:published"
+    },
+    "flyHangRatio": {
+      "id": "sim.fly-hang-ratio",
+      "category": "sim",
+      "reference": "bb2001",
+      "status": "conformed",
+      "statusChangedAt": "2026-07-31",
+      "what": "Kid-scale fly-ball hang time as a RATIO to the home-to-first anchor -- the one place real RK4 physics can be checked against a measurement this project made itself.",
+      "why": "Absolute hang times cannot be compared across two games with different field scales, which is why pace.flyHang recorded a ratio in the first place. That makes it the only BB2001 measurement transferring to v2 unchanged: no pixels, no new capture, and it checks EMERGENT physics rather than a constant somebody typed.",
+      "measured": {
+        "oursRatios": {
+          "ev40la45": 0.657,
+          "ev45la35": 0.626,
+          "ev50la40": 0.763,
+          "ev55la30": 0.692,
+          "ev60la35": 0.843
+        },
+        "bbBand": [
+          0.685,
+          1.208
+        ],
+        "anchorMs": 4200
+      },
+      "verdict": "Kid-scale flies land at the LOW end of BB's measured band, and the shallowest fall below it. That is the expected direction -- a 45 mph pop-up cannot hang like a 95 mph one -- and the deep flies that matter for defensive play (EV 55-60) sit inside it. Recorded as conformed on the deep-fly cases with the shallow ones stated, rather than claiming the whole range.",
+      "n": 4,
+      "confidence": "low",
+      "nNote": "The BB band's n=4 and low confidence are inherited from pace.flyHang; this record cannot be more confident than the anchor it is measured against.",
+      "ours": {
+        "constant": "src/v2/sim/params.ts AERO; src/v2/sim/field.ts"
+      },
+      "informs": "src/v2/sim/params.ts AERO",
+      "source": "local:bb01-capture-session2"
+    }
+  },
   "defense": {
     "note": "Constants governing the CPU defense. SCALED 1.987x with RUNNER_SPEED in the 2026-07-24 retune but STILL NOT MEASURED -- they are the values most likely to need feel iteration, because halving runner speed doubles the time the defense has and the scaling assumes BB's defense is slow in the same proportion its runners are. If the retune plays wrong, start here. As of 2026-07-28 the first of them HAS been retuned: see fielderSpeed, which was the one constant in this block that had no record at all.",
     "fielderSpeed": {
       "id": "defense.fielder-speed",
       "category": "defense",
+      "reference": "bb2001",
       "status": "awaiting-measurement",
       "what": "How fast a fielder runs, expressed against the pace anchor: fielders and baserunners are THE SAME KIDS, so the honest ratio is 1.0. A kid does not get faster by putting a glove on.",
       "measured": null,
@@ -1738,6 +1998,7 @@
     "cpuReaction": {
       "id": "defense.cpu-reaction",
       "category": "defense",
+      "reference": "bb2001",
       "status": "awaiting-measurement",
       "what": "Delay between contact and the fielding team actually breaking for the ball.",
       "measured": null,
@@ -1776,6 +2037,7 @@
     "cpuThrowDelay": {
       "id": "defense.cpu-throw-delay",
       "category": "defense",
+      "reference": "bb2001",
       "status": "awaiting-measurement",
       "what": "How long a CPU fielder holds the ball before releasing a throw.",
       "measured": null,
@@ -1795,6 +2057,7 @@
     "throwSpeed": {
       "id": "defense.throw-speed",
       "category": "defense",
+      "reference": "bb2001",
       "status": "awaiting-measurement",
       "what": "Throw flight speed in px/s.",
       "measured": null,
@@ -1822,6 +2085,7 @@
     "chaserElection": {
       "id": "defense.chaser-election",
       "category": "defense",
+      "reference": "bb2001",
       "status": "note",
       "what": "WHICH fielder chases a loose ball is now a decision with its own constants, not a fixed consequence of geometry. Recorded because the two obvious metrics both fail, and both failures are cheap to rediscover and expensive to diagnose.",
       "finding": "Ranking candidates by 'who can reach the ball soonest' hands essentially every grounder to the PITCHER. A grounder starts at HOME and rolls outward, so P -- 112px from the plate -- is nearest its early path at every spray angle, and wins the race to cut it off before anyone else is close. Adding a distance-to-settle penalty term does not separate them (swept lambda 0..8 ms/px, no crossover). Gating candidacy on the SETTLE point instead does: the pitcher is simply not a candidate for a ball that comes to rest 122px+ from the mound, which is what a real defense does. But that alone is still not enough -- a third baseman can genuinely reach a ball rolling AT the shortstop 125-257ms sooner by charging across in front of him. True on the clock, wrong on a ball field. So the ball belongs to whoever's zone it settles in, and a challenger must beat that fielder by CUT_AHEAD_MS.",
@@ -1849,6 +2113,7 @@
     "fieldingAssist": {
       "id": "defense.fielding-assist",
       "category": "defense",
+      "reference": "bb2001",
       "status": "awaiting-measurement",
       "measured": null,
       "n": 0,

@@ -104,6 +104,19 @@ npm run validate:models path/to/anims_recess_v1.glb   # or one file
 VERBOSE=1 npm run validate:models                     # also print measurements
 ```
 
+### Seeing what the v2 ball does
+
+```bash
+npm run sim:trajectory     # carry tables, printed next to the fences to clear
+```
+
+Headless, no art, no graphics — just the integrator. It prints the MLB-scale
+validation first (a well-struck 100 mph / 30° ball must carry about 400 ft; if
+that is wrong, every kid-scale number below it is wrong in the same direction),
+then carry by exit velocity × launch angle, then how much exit velocity each
+venue's fence actually demands, then fly hang as a ratio to the measured
+home→1B anchor. Needs Node ≥ 22.6, like the other v2 scripts.
+
 It checks bone names/order/bind pose, the height band, root motion, the 30 fps
 grid, loop seams, body travel and marker frames, plus LOD budgets, material
 slots and file size on characters. Every failure names the rule *and* why the
