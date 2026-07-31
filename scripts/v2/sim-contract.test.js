@@ -30,6 +30,8 @@ import {
 } from '../../src/v2/sim/ball.ts';
 import { FLIGHT_HZ } from '../../src/v2/sim/flight.ts';
 import { VENUE_GEOMETRY, fenceDistAt } from '../../src/v2/sim/field.ts';
+import { BOUNCE } from '../../src/v2/sim/params.ts';
+import { groundCor } from '../../src/v2/sim/bounce.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const M = JSON.parse(readFileSync(join(here, '..', 'measures.json'), 'utf8'));
@@ -233,5 +235,120 @@ describe('sim.flyHangRatio', () => {
     // And the record must not pretend the shallow ones conform.
     expect(r.ev45la35).toBeLessThan(lo);
     expect(rec.verdict).toMatch(/low end|below/i);
+  });
+});
+
+describe('sim.bounceModel', () => {
+  const rec = M.sim.bounceModel;
+
+  it('is a well-formed record', () => {
+    wellFormed(rec, { reference: 'physics', status: 'conformed' });
+    expect(rec.source).toBe('physics:published');
+    expect(M.sources.physics.impact).toBeTruthy();
+  });
+
+  it('keeps the sign on the record, not just in the code', () => {
+    // The MINUS is the whole thing. If a future edit "simplifies" the record's
+    // prose the wrong way, this catches it.
+    expect(rec.theSign).toContain('(5v - 2wR)/7');
+  });
+
+  it('does not repeat the catchier version of the finding', () => {
+    // "backspin bounces the ball backward" is true of the model and NOT of a
+    // baseball — it needs 2900-7600 rpm. The record has to say so.
+    expect(rec.theSign).toMatch(/NOT true of a baseball/);
+    expect(rec.knownSimplification).toMatch(/Cross/);
+  });
+
+  it('carries the topspin result as intended behaviour, not a bug', () => {
+    expect(rec.emergentAndCorrect).toMatch(/TOPSPIN ACCELERATES/);
+  });
+});
+
+describe('sim.groundBounce', () => {
+  const rec = M.sim.groundBounce;
+
+  it('is a well-formed record', () => {
+    wellFormed(rec, { reference: 'physics', status: 'awaiting-measurement' });
+    expect(rec.measured).toBeNull();
+    expect(rec.whatWouldWork).toBeTruthy();
+    expect(rec.partialReading.confidence).toBe('low');
+  });
+
+  it('recomputes each venue COR from the code, not from the record', () => {
+    expect(BOUNCE.COR_BASE).toBe(rec.ours.value.COR_BASE);
+    for (const id of ['park', 'sandlot', 'blacktop']) {
+      const cor = BOUNCE.COR_BASE * VENUE_GEOMETRY[id].bounceMult;
+      expect(groundCor(VENUE_GEOMETRY[id])).toBeCloseTo(cor, 12);
+      expect(cor).toBeCloseTo(rec.ours.value[id], 9);
+    }
+  });
+
+  it('★ holds the cross-check the published band already bought', () => {
+    // The venue multipliers were hand-authored long before the Pennbounce band
+    // was found. Two of the three land inside it anyway; the third is outside
+    // for a stated reason. That is the check, and it is worth keeping live.
+    const [lo, hi] = rec.partialReading.band;
+    expect(lo).toBe(0.4);
+    expect(hi).toBe(0.6);
+    expect(groundCor(VENUE_GEOMETRY.park)).toBeGreaterThanOrEqual(lo);
+    expect(groundCor(VENUE_GEOMETRY.park)).toBeLessThanOrEqual(hi);
+    expect(groundCor(VENUE_GEOMETRY.sandlot)).toBeGreaterThanOrEqual(lo);
+    expect(groundCor(VENUE_GEOMETRY.sandlot)).toBeLessThanOrEqual(hi);
+    expect(groundCor(VENUE_GEOMETRY.blacktop)).toBeGreaterThan(hi);
+    expect(rec.partialReading.theCheckItAlreadyBuys).toMatch(/asphalt is not a turf surface/);
+  });
+});
+
+describe('sim.rollFriction and sim.wallRestitution', () => {
+  it('are well-formed and name their closing experiments', () => {
+    for (const rec of [M.sim.rollFriction, M.sim.wallRestitution]) {
+      wellFormed(rec, { reference: 'physics', status: 'awaiting-measurement' });
+      expect(rec.measured).toBeNull();
+      expect(rec.whatWouldWork).toBeTruthy();
+    }
+  });
+
+  it('pin the values the code actually carries', () => {
+    const roll = M.sim.rollFriction.ours.value;
+    for (const id of ['park', 'sandlot', 'blacktop']) {
+      expect(VENUE_GEOMETRY[id].rollFriction).toBeCloseTo(roll[id], 9);
+    }
+    const wall = M.sim.wallRestitution.ours.value;
+    for (const id of ['park', 'sandlot', 'blacktop']) {
+      expect(VENUE_GEOMETRY[id].wallRestitution).toBeCloseTo(wall[id], 9);
+    }
+    expect(BOUNCE.WALL_TANGENTIAL_KEEP).toBeCloseTo(wall.tangentialKeep, 9);
+  });
+
+  it('keeps the wall OUT of the ground band — different problem', () => {
+    expect(M.sim.wallRestitution.why).toMatch(/does NOT apply/);
+  });
+});
+
+describe('sim.venueRollFeel', () => {
+  const rec = M.sim.venueRollFeel;
+
+  it('is a well-formed record', () => {
+    wellFormed(rec, { reference: 'derived', status: 'known-drift' });
+    expect(rec.whatWouldClose).toBeTruthy();
+  });
+
+  it('records the contradiction rather than resolving it quietly', () => {
+    const d = rec.measured.restingDistanceFt;
+    expect(d.blacktop).toBeLessThan(d.park);
+    expect(d.blacktop).toBeLessThan(d.sandlot);
+    // The blacktop has the LOWEST friction and still plays shortest — the
+    // record has to hold both halves or it reads as a simple tuning miss.
+    expect(VENUE_GEOMETRY.blacktop.rollFriction).toBeLessThan(VENUE_GEOMETRY.park.rollFriction);
+    expect(VENUE_GEOMETRY.blacktop.bounceMult).toBeGreaterThan(VENUE_GEOMETRY.park.bounceMult);
+    expect(rec.whyNotJustRetune).toMatch(/tuning a constant to make a test pass/);
+  });
+
+  it('pins the drift so it can neither grow nor be half-fixed', () => {
+    const ratio = rec.measured.restingDistanceFt.sandlot / rec.measured.restingDistanceFt.blacktop;
+    expect(ratio).toBeCloseTo(rec.drift.shaggyOverAsphalt, 1);
+    expect(ratio).toBeGreaterThan(1.5);
+    expect(ratio).toBeLessThan(2.5);
   });
 });

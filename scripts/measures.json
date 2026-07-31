@@ -101,6 +101,18 @@
         "cite": "Published youth exit-velocity guidance (multiple coaching/training sources agree): 8-and-under maxima of 45-55 mph off a TEE, with game exit velocity typically 5-10 mph below tee maxima.",
         "confidence": "These are coaching benchmarks, not a peer-reviewed dataset. Used to bound the plausible range, not to pin a constant.",
         "note": "This is what makes sim.carryVsFence a finding rather than a curiosity: it says a real 4-8-year-old hits 35-50 mph, and the park's shortest fence needs 57.5."
+      },
+      "impact": {
+        "cite": "Rod Cross, 'Grip-slip behavior of a bouncing ball', Am. J. Phys. 70(11) 1093-1102 (2002), doi:10.1119/1.1507792.",
+        "theFinding": "Cross measured the friction force and spin directly and found REAL BALLS DO NOT ROLL WHEN THEY BOUNCE. The contact region deforms and GRIPS when the bottom of the ball momentarily stops; the ball then vibrates horizontally, the friction force REVERSES direction during the bounce, and the resulting spin is LARGER than friction alone would give -- explicable if the normal reaction acts through a point behind the centre.",
+        "howWeUseIt": "Our grip branch is the idealised rolling-contact limit, so it is a LOWER BOUND on spin reversal against what Cross measured. Recorded as a known simplification rather than left to be rediscovered.",
+        "theFormIsDerivable": "The 2/7 grip impulse and the v' = (5v - 2wR)/7 result are not taken on trust from anywhere -- they fall out of solving the impulse problem for a sphere (I = 2/5 mR^2, contact one radius below the centre) and were re-derived and numerically verified before use. The MINUS sign is the part that is easy to get wrong from memory."
+      },
+      "surfaceRestitution": {
+        "cite": "Brosnan & McNitt (2008a, b) and Brosnan, McNitt & Serensits (2011), Penn State Center for Sports Surface Research, using the 'Pennbounce' apparatus (infrared screens, baseballs propelled at varying angles and velocities).",
+        "band": "Infield coefficient of restitution 0.4-0.6 -- a ball retains 40-60% of its velocity after the first bounce.",
+        "ordering": "Skinned (dirt) >= synthetic turf > natural grass. COR is closely related to surface HARDNESS (Clegg hammer Gmax); soil properties affect COR more than cutting height or thatch.",
+        "confidence": "Read from a secondary summary of the primary papers, not from the papers themselves. Enough to bound our values; not enough to pin one."
       }
     }
   },
@@ -1957,6 +1969,147 @@
       },
       "informs": "src/v2/sim/params.ts AERO",
       "source": "local:bb01-capture-session2"
+    },
+    "bounceModel": {
+      "id": "sim.bounce-model",
+      "category": "sim",
+      "reference": "physics",
+      "status": "conformed",
+      "statusChangedAt": "2026-07-31",
+      "what": "The FORM of a ground impact: normal restitution, plus a tangential grip/slip branch that couples the ball's spin to its forward speed.",
+      "model": "Normal: vy' = -e*vy. Tangential: the contact point's horizontal velocity is u = v_t + w x (-R*yhat). Gripping it costs an impulse of (2/7)*m*|u|; Coulomb friction can supply mu*m*(1+e)*|vy|. If it can afford it the contact point stops (GRIP), giving v' = (5v - 2wR)/7; otherwise the full friction impulse is applied opposing the slip (SLIP). Spin updates from the same impulse in both branches.",
+      "whyConformed": "The form is DERIVABLE, and was derived rather than recalled: solving the impulse problem for a sphere (I = 2/5 mR^2, contact one radius below the centre) with the rolling-contact condition gives J = -(2/7)m(v + wR) directly. Verified three ways in bounce.test.ts -- pure rolling in gives zero impulse, an unspun ball gives exactly 5/7, and angular momentum about the contact point is conserved in BOTH branches, which is the property the 2/7 is a consequence of rather than an assumption alongside.",
+      "theSign": "v' = (5v - 2wR)/7. The MINUS is the part memory gets wrong, and getting it wrong makes backspin behave like topspin. Its consequence is checked directly: forward speed falls monotonically with backspin, is roughly halved at a realistic 200 rad/s (1910 rpm), and reverses only between 300 and 800 rad/s -- 2900 to 7600 rpm, off the top of the real batted-ball range. The headline 'backspin bounces the ball BACKWARD' is true of the model and NOT true of a baseball, and the record says so rather than repeating the catchier version.",
+      "emergentAndCorrect": "TOPSPIN ACCELERATES THE BALL off the bounce -- measured here at 12.21 -> 12.92 ft/s -- because friction converts rotational energy into translational. Total energy still falls (191.7 -> 111.9). The first version of the test asserted that speed never increases, failed on exactly this case, and looked like a bug when it was the physics being right. The invariant is ENERGY, and the acceleration is now asserted directly so nobody re-caps it.",
+      "knownSimplification": "Cross (2002) measured that real balls GRIP rather than roll, with the friction force reversing mid-bounce and the spin exceeding the rolling prediction. Our grip branch is the idealised limit, so it under-predicts spin reversal. Sidespin-induced lateral deflection is also unmodelled: the impulse is applied in the plane of the slip, and spin about the vertical is left untouched.",
+      "n": 1,
+      "confidence": "high",
+      "nNote": "n=1 for a derivation. It is checked by conserved quantities, not by sampling.",
+      "ours": {
+        "constant": "src/v2/sim/bounce.ts groundBounce; src/v2/sim/params.ts BOUNCE.MU_GROUND"
+      },
+      "pinnedBy": "src/v2/sim/bounce.test.ts 'the ground bounce' -- contact point at rest after a grip, exactly 5/7 unspun, rolling-in-stays-rolling, angular momentum conserved across both branches, slip when the impact is too glancing, and energy never increasing on a full sweep of every venue.",
+      "informs": "src/v2/sim/params.ts BOUNCE",
+      "source": "physics:published"
+    },
+    "groundBounce": {
+      "id": "sim.ground-bounce",
+      "category": "sim",
+      "reference": "physics",
+      "status": "awaiting-measurement",
+      "statusChangedAt": "2026-07-31",
+      "what": "The ground coefficient of restitution for each venue's surface -- the COEFFICIENT, where sim.bounceModel is the form.",
+      "measured": null,
+      "n": 0,
+      "confidence": "low",
+      "partialReading": {
+        "confidence": "low",
+        "n": 1,
+        "band": [
+          0.4,
+          0.6
+        ],
+        "ordering": "skinned (dirt) >= synthetic turf > natural grass",
+        "source": "Brosnan & McNitt's Pennbounce work at Penn State's Center for Sports Surface Research.",
+        "theCheckItAlreadyBuys": "At COR_BASE 0.50 the venue multipliers that were hand-authored MONTHS BEFORE this band was found land at park 0.50 and sandlot 0.40 -- both inside it -- while the blacktop's 0.65 falls outside, correctly, because asphalt is not a turf surface and the band is for infields. A cross-check of somebody else's guesswork against real literature, and it held.",
+        "why": "Read from a secondary summary of the primary papers rather than the papers themselves, and the band covers infield surfaces rather than the mown outfield grass, shaggy backyard lawn and asphalt this game actually has. n=1 source, not n=1 measurement."
+      },
+      "ours": {
+        "constant": "src/v2/sim/params.ts BOUNCE.COR_BASE; src/v2/sim/field.ts VENUE_GEOMETRY.*.bounceMult",
+        "value": {
+          "COR_BASE": 0.5,
+          "park": 0.5,
+          "sandlot": 0.4,
+          "blacktop": 0.65
+        }
+      },
+      "whatWouldWork": "Read Brosnan & McNitt directly for the per-surface figures; or measure it, which is genuinely cheap: drop a baseball from a measured height onto mown grass, shaggy grass and asphalt, film against a scale, and take COR = sqrt(rebound height / drop height). n>=3 per surface.",
+      "informs": "src/v2/sim/params.ts BOUNCE.COR_BASE, src/v2/sim/field.ts VENUE_GEOMETRY",
+      "source": "physics:published"
+    },
+    "rollFriction": {
+      "id": "sim.roll-friction",
+      "category": "sim",
+      "reference": "physics",
+      "status": "awaiting-measurement",
+      "statusChangedAt": "2026-07-31",
+      "what": "The rolling friction coefficient per surface, which sets how far a grounder travels once it stops bouncing.",
+      "why": "field.ts authors 0.28 (mown grass), 0.36 (shaggy backyard grass) and 0.10 (asphalt) with a comment and no citation. They are now load-bearing: a ball rolling at v covers exactly v^2/(2*mu*g), so mu IS the roll distance.",
+      "measured": null,
+      "n": 0,
+      "confidence": "low",
+      "ours": {
+        "constant": "src/v2/sim/field.ts VENUE_GEOMETRY.*.rollFriction",
+        "value": {
+          "park": 0.28,
+          "sandlot": 0.36,
+          "blacktop": 0.1
+        }
+      },
+      "whatWouldWork": "Roll a baseball from a measured initial speed across each surface and time it to a stop, then invert the closed form: mu = v^2 / (2*g*d). A phone camera and a tape measure are enough. n>=3 per surface. The ORDERING is not in doubt (asphalt < mown grass < shaggy grass); the magnitudes are.",
+      "informs": "src/v2/sim/field.ts VENUE_GEOMETRY",
+      "source": "physics:published"
+    },
+    "wallRestitution": {
+      "id": "sim.wall-restitution",
+      "category": "sim",
+      "reference": "physics",
+      "status": "awaiting-measurement",
+      "statusChangedAt": "2026-07-31",
+      "what": "The coefficient of restitution off each venue's outfield wall, and how much tangential speed a carom keeps.",
+      "why": "A ball off the wall is a double, so this decides how often the deepest hits pay. The Pennbounce band does NOT apply -- it is for GROUND surfaces, and a painted wall, wooden planks and chain-link are three different problems.",
+      "measured": null,
+      "n": 0,
+      "confidence": "low",
+      "ours": {
+        "constant": "src/v2/sim/field.ts VENUE_GEOMETRY.*.wallRestitution; src/v2/sim/params.ts BOUNCE.WALL_TANGENTIAL_KEEP",
+        "value": {
+          "park": 0.55,
+          "sandlot": 0.42,
+          "blacktop": 0.62,
+          "tangentialKeep": 0.8
+        }
+      },
+      "whatWouldWork": "Throw a ball at a measured speed square into each wall type and film the rebound; COR is the speed ratio. The tangential figure needs an oblique throw and two angles measured. n>=3 each. Chain-link is the interesting one -- it is a net, not a wall, and may not behave like a restitution at all.",
+      "informs": "src/v2/sim/field.ts VENUE_GEOMETRY, src/v2/sim/params.ts BOUNCE",
+      "source": "physics:published"
+    },
+    "venueRollFeel": {
+      "id": "sim.venue-roll-feel",
+      "category": "sim",
+      "reference": "derived",
+      "status": "known-drift",
+      "statusChangedAt": "2026-07-31",
+      "what": "Which venue plays FAST, once bounce and roll are both simulated -- and the answer contradicts what the venues were authored to be.",
+      "theFinding": "THE BLACKTOP PLAYS SHORTEST. It has by far the lowest rolling friction (0.10 against 0.28 and 0.36), and in isolation a ball rolling on it travels 3.6x as far. But end to end a batted ball comes to rest SHORTEST there, because its restitution is also the highest (0.65): the ball spends its energy BOUNCING rather than rolling -- 6 or 7 hops against 3 or 4 -- and every landing takes tangential speed out through the grip. A surface cannot be both the springiest and the fastest.",
+      "measured": {
+        "conditions": "EV 70mph, launch angle 8 deg, spray -20, 1200 rpm, contact 2.5ft.",
+        "restingDistanceFt": {
+          "park": 171,
+          "sandlot": 188,
+          "blacktop": 98
+        },
+        "hops": {
+          "park": 4,
+          "sandlot": 3,
+          "blacktop": 6
+        },
+        "isolatedRollRatio": "asphalt rolls 3.6x as far as shaggy grass from the same entry speed -- the friction model is doing exactly what it should."
+      },
+      "drift": {
+        "shaggyOverAsphalt": 1.9,
+        "note": "The sandlot's shaggy grass -- the surface authored to be the DEADEST -- carries a ball nearly twice as far as the asphalt authored to be the fastest."
+      },
+      "theIntent": "data/venues.ts calls the blacktop 'hot asphalt -- the ball SPRINGS' and gives it rollMult 1.3, i.e. the fast park; the sandlot gets 'dead hops off the lumpy lawn'. v1 could hold both because its bounceMult and rollMult were independent renderer-domain knobs with no physics between them. Real physics couples them.",
+      "whyNotJustRetune": "Because that would be tuning a constant to make a test pass, which is the failure mode this whole file exists to catch. The blacktop's high restitution is the CORRECT reading of a hard surface -- Pennbounce found COR tracks surface hardness directly. What is wrong is the expectation that hard also means fast.",
+      "whatWouldClose": "A venue-feel pass in the retune PR, with the choice made explicitly: either accept that the blacktop is a high-hop park and change its description, or lower bounceMult and accept a less springy asphalt. Both are legitimate; picking one quietly is not.",
+      "n": 1,
+      "confidence": "derived",
+      "ours": {
+        "constant": "src/v2/sim/field.ts VENUE_GEOMETRY.*.bounceMult, VENUE_GEOMETRY.*.rollFriction"
+      },
+      "pinnedBy": "src/v2/sim/bounce.test.ts 'plays SHORTEST on the blacktop', which pins the drift ratio between 1.5 and 2.5 so it can neither grow nor be half-fixed unnoticed.",
+      "informs": "src/v2/sim/field.ts VENUE_GEOMETRY, src/data/venues.ts"
     }
   },
   "defense": {

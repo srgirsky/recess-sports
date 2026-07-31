@@ -28,6 +28,8 @@ import {
   type BallState,
 } from './flight';
 import { launch } from './launch';
+import { groundBounce } from './bounce';
+import { VENUE_GEOMETRY } from './field';
 import { G, mphToFts, ftsToMph } from './units';
 
 /** Fly until the ball comes back to y=0. Returns carry, hang and apex. */
@@ -150,14 +152,14 @@ describe('the integrator', () => {
     expect(s.v.y).toBeCloseTo(-G * dt, 0);
   });
 
-  // A crude specular bounce, supplied BY THE TEST. The real restitution model
-  // is bounce.ts's job; all this has to do is put a non-smooth event in the
-  // middle of a trajectory so the convergence check has to pass through one.
-  const bounce = (s: BallState): BallState => ({
-    p: { x: s.p.x, y: 1e-9, z: s.p.z },
-    v: { x: s.v.x * 0.6, y: -s.v.y * 0.5, z: s.v.z * 0.6 },
-    w: { x: s.w.x, y: s.w.y, z: s.w.z },
-  });
+  // The REAL restitution model. This used to be a crude specular stand-in with
+  // a note saying "bounce.ts's job"; now that bounce.ts exists, the convergence
+  // check runs through the actual grip/slip impact — which makes it a stronger
+  // test, since that map is less smooth than the stand-in was.
+  const bounce = (s: BallState): BallState => {
+    const out = groundBounce(s, VENUE_GEOMETRY.park);
+    return { ...out, p: { x: out.p.x, y: 1e-9, z: out.p.z } };
+  };
   const conShot = () =>
     launch({ exitVelocityFts: mphToFts(85), launchAngleDeg: 22, sprayDeg: 5, spinRpm: 1800, heightFt: 3 });
 

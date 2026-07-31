@@ -26,6 +26,8 @@ const { launch } = await import(sim('launch.ts'));
 const { mphToFts } = await import(sim('units.ts'));
 const { VENUE_GEOMETRY, fenceDistAt } = await import(sim('field.ts'));
 const { BALL_K_PER_FT, NATHAN_K_PER_FT } = await import(sim('ball.ts'));
+const { groundBounce, rollStep, wallCarom, fenceGuard, isAtRest, groundCor } = await import(sim('bounce.ts'));
+const { BOUNCE } = await import(sim('params.ts'));
 
 /** Fly to the ground. Returns carry, hang, apex. */
 function fly(spec) {
@@ -105,3 +107,61 @@ console.log('  pace.flyHang measured band: 0.685 - 1.208 (n=4, confidence low).'
 
 console.log('\nPublished youth reference: 8U exit velocity is 45-55 mph off a TEE,');
 console.log('and game exit velocity runs 5-10 mph below tee maximums.');
+
+// --- Landing to rest: the half the integrator alone could not show ---------
+
+/** Fly, bounce, roll, stop — the loop the play reducer will run. */
+function playOut(geo, spec) {
+  let s = cloneState(launch(spec));
+  const dt = 1 / FLIGHT_HZ;
+  let t = 0, hops = 0, caroms = 0, rolling = false, landed = null, apex = s.p.y;
+  while (t < 30 && !isAtRest(s)) {
+    if (rolling) { s = rollStep(s, geo, dt); t += dt; continue; }
+    const r = stepFlight(s, dt, { ground: groundGuard, fence: fenceGuard(geo) });
+    t += r.event ? r.event.tSec : dt;
+    s = r.state;
+    if (s.p.y > apex) apex = s.p.y;
+    if (r.event?.kind === 'ground') {
+      if (landed === null) landed = Math.hypot(s.p.x, s.p.z);
+      s = groundBounce(s, geo);
+      hops++;
+      if (Math.abs(s.v.y) < BOUNCE.REST_BOUNCE_FTS) {
+        rolling = true;
+        s = cloneState(s);
+        s.p.y = 0; s.v.y = 0;
+      }
+    } else if (r.event?.kind === 'fence') {
+      s = wallCarom(s, geo);
+      caroms++;
+    }
+  }
+  return { hops, caroms, t, landed: landed ?? 0, rest: Math.hypot(s.p.x, s.p.z), apex };
+}
+
+console.log('\n=== GROUND RESTITUTION vs the published band ===');
+console.log('  Brosnan & McNitt (Pennbounce, Penn State): infield COR 0.4-0.6,');
+console.log('  tracking surface HARDNESS; skinned >= synthetic > natural grass.');
+for (const [id, geo] of Object.entries(VENUE_GEOMETRY)) {
+  const cor = groundCor(geo);
+  const inBand = cor >= 0.4 && cor <= 0.6;
+  console.log(`  ${id.padEnd(9)} COR ${cor.toFixed(2)}  mu_roll ${String(geo.rollFriction).padEnd(5)} ${inBand ? 'in band' : 'OUTSIDE the band (asphalt is not turf)'}`);
+}
+
+console.log('\n=== A BALL INTO THE GAP: land, hop, roll, stop ===');
+console.log('  venue     EV/LA    land  rest  hops caroms  time');
+for (const [mph, la] of [[70, 8], [80, 14], [60, 25]]) {
+  for (const [id, geo] of Object.entries(VENUE_GEOMETRY)) {
+    const r = playOut(geo, { exitVelocityFts: mphToFts(mph), launchAngleDeg: la, sprayDeg: -20, spinRpm: 1200, heightFt: 2.5 });
+    console.log(`  ${id.padEnd(9)} ${String(mph).padStart(2)}/${String(la).padStart(2)}   ${r.landed.toFixed(0).padStart(4)}  ${r.rest.toFixed(0).padStart(4)}   ${String(r.hops).padStart(2)}    ${String(r.caroms).padStart(2)}   ${r.t.toFixed(1)}s`);
+  }
+}
+
+console.log('\n=== BACKSPIN OFF THE GROUND ===');
+console.log('  a 20 ft/s grounder hitting at -30 ft/s, by backspin rate');
+console.log('  (a real batted ball carries roughly 150-300 rad/s = 1400-2900 rpm)');
+for (const w of [0, 50, 100, 200, 300, 800, 1650]) {
+  const out = groundBounce({ p: { x: 0, y: 0, z: 0 }, v: { x: 0, y: -30, z: 20 }, w: { x: -w, y: 0, z: 0 } }, VENUE_GEOMETRY.park);
+  const rpm = ((w * 60) / (2 * Math.PI)).toFixed(0);
+  const real = w <= 300 ? '' : '   (beyond a real baseball)';
+  console.log(`    ${String(w).padStart(4)} rad/s (${String(rpm).padStart(5)} rpm) -> forward ${out.v.z.toFixed(1).padStart(6)} ft/s${out.v.z < 0 ? '  <-- comes BACK' : ''}${real}`);
+}
