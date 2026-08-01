@@ -43,7 +43,8 @@
 import { BOUNCE } from './params';
 import { BALL_RADIUS_FT } from './ball';
 import { G } from './units';
-import { cloneState, type BallState, type Guard } from './flight';
+import { INTEGRATOR } from './params';
+import { cloneState, groundGuard, stepFlight, type BallState, type Guard } from './flight';
 import {
   clampToField,
   distFromHome,
@@ -52,6 +53,7 @@ import {
   sprayOf,
   type FieldGeometry,
   type Obstacle,
+  type Vec2,
 } from './field';
 
 /** Ground restitution for a venue: the base constant times its liveliness. */
@@ -287,6 +289,119 @@ export function settleBallAt(s: BallState, geo: FieldGeometry): BallState {
     v: { x: 0, y: 0, z: 0 },
     w: { x: 0, y: 0, z: 0 },
   };
+}
+
+// --- The whole life of a loose ball -----------------------------------------
+
+/** Where the ball is, how high, and when. */
+export interface PathSample {
+  p: Vec2;
+  /** Height above the turf, ft. The election ignores it; a catch test does not. */
+  h: number;
+  tSec: number;
+}
+
+export interface LooseTrace {
+  /** Sampled path, oldest first, `tSec` measured from the trace's start. */
+  samples: PathSample[];
+  /** Where it comes to rest, clamped into the field. */
+  settle: Vec2;
+  /** When it gets there. */
+  restAtSec: number;
+  /** Where it first touches down, and when. Null if it never does (a home run,
+   *  or a ball that was already on the ground when the trace began). */
+  landing: Vec2 | null;
+  landAtSec: number | null;
+  /** It cleared the fence instead. Nobody is fielding this one. */
+  leftPark: boolean;
+}
+
+/**
+ * Fly, bounce, roll and carom a loose ball until it stops.
+ *
+ * ★ THE SAME FUNCTION ANSWERS "WHERE IS IT GOING" AND "WHERE DID IT GO", and
+ * that closes a caveat v1 wrote into `fielding.ts` and could not remove.
+ * v1's `predictLoosePath` is "an ELECTION-ONLY estimate, deliberately not a
+ * second copy of `moveBall`", and it hedges that "a divergence changes who gets
+ * sent, never where the ball actually goes" — a real second implementation with
+ * a real second set of bugs, kept only because the first one was tangled up in
+ * the tick reducer. Here the composition is already a pure function of a ball
+ * and a field, so the chaser election calls the physics rather than a sketch of
+ * it, and there is no divergence to bound.
+ *
+ * Deliberately NO `Rng`: like everything else in this file, a loose ball is
+ * deterministic. The errors live on the fielder, not on the ball.
+ */
+export function traceLooseBall(
+  from: BallState,
+  geo: FieldGeometry,
+  opts: { horizonSec?: number; samples?: number; dtSec?: number } = {}
+): LooseTrace {
+  const horizon = opts.horizonSec ?? 8;
+  const want = opts.samples ?? 24;
+  const dt = opts.dtSec ?? 1 / INTEGRATOR.FLIGHT_HZ;
+
+  const guards: Record<string, Guard> = { ground: groundGuard, fence: fenceGuard(geo) };
+  for (let i = 0; i < geo.obstacles.length; i++) guards[`obstacle${i}`] = obstacleGuard(geo.obstacles[i]);
+
+  let s = cloneState(from);
+  let t = 0;
+  let rolling = isRollingNow(s) && s.p.y <= 0;
+  let leftPark = false;
+  let landing: Vec2 | null = null;
+  let landAtSec: number | null = null;
+  const samples: PathSample[] = [{ p: { x: s.p.x, z: s.p.z }, h: s.p.y, tSec: 0 }];
+  const every = horizon / want;
+  let nextSample = every;
+
+  while (t < horizon && !(rolling && isAtRest(s))) {
+    if (rolling) {
+      s = rollStep(s, geo, dt);
+      t += dt;
+    } else {
+      const r = stepFlight(s, dt, guards);
+      t += r.event ? r.event.tSec : dt;
+      s = r.state;
+      if (r.event) {
+        if (r.event.kind === 'fence') {
+          if (s.p.y > geo.fenceHeight) {
+            leftPark = true;
+            break;
+          }
+          s = wallCarom(s, geo);
+        } else if (r.event.kind === 'ground') {
+          if (landing === null) {
+            landing = { x: s.p.x, z: s.p.z };
+            landAtSec = t;
+          }
+          s = isRollingNow(s) ? s : groundBounce(s, geo);
+          if (isRollingNow(s)) {
+            s.p.y = 0;
+            rolling = true;
+          }
+        } else {
+          const idx = Number(r.event.kind.slice('obstacle'.length));
+          s = obstacleBonk(s, geo.obstacles[idx]);
+          rolling = true;
+        }
+      }
+    }
+    if (t >= nextSample) {
+      samples.push({ p: { x: s.p.x, z: s.p.z }, h: s.p.y, tSec: t });
+      nextSample += every;
+    }
+  }
+
+  const settled = settleBallAt(s, geo);
+  const settle = { x: settled.p.x, z: settled.p.z };
+
+  // ★ A TAIL OF SAMPLES AT THE RESTING SPOT, which v1 also carries and for the
+  // same reason: a ball lying still is still gettable. Without it a fielder who
+  // cannot beat the ball to any point ON its path is scored as unable to field
+  // it at all, and every slow roller past the infield becomes nobody's ball.
+  for (let i = 1; i <= 4; i++) samples.push({ p: { ...settle }, h: 0, tSec: t + i * every });
+
+  return { samples, settle, restAtSec: t, landing, landAtSec, leftPark };
 }
 
 // --- Guards, to hand to stepFlight ------------------------------------------

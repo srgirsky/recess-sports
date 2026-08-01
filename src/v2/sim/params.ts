@@ -332,6 +332,223 @@ export const PITCH = {
 } as const;
 
 /**
+ * Baserunning.
+ *
+ * ★ THE ANCHOR IS ONE EQUATION IN TWO UNKNOWNS, and pretending otherwise is how
+ * a "measured" constant gets invented. `pace.homeToFirst` is the most solid
+ * timing measurement this project owns — 4200ms from leaving the box to
+ * touching first, n=3, spread 261ms, and the record calls it "THE anchor: every
+ * other pace constant is measured against it". But a 60ft leg in 4.200s
+ * constrains a (top speed, acceleration) PAIR, not either one; v1 resolved that
+ * by assuming no acceleration at all and running every kid at a flat 14.29 ft/s,
+ * which is too fast out of the box and too slow at the bag.
+ *
+ * So the second constraint comes from somewhere else: published peak sprint
+ * velocity for 7-9 year olds runs about 5.0-5.8 m/s, and 18 ft/s (5.49 m/s) is
+ * the middle of it. That fixes the top speed, and the ACCELERATION is then
+ * SOLVED from the measured leg rather than chosen — see `sprintAccelFtS2`.
+ *
+ * The arithmetic is worth stating because it is exact. With a constant
+ * acceleration `a` to a top speed `V` and then a cap, the time to cover `d` is
+ *
+ *     t = T/2 + d/V ,   where T = V/a is the time spent accelerating
+ *
+ * for any `d` past the acceleration distance. So T = 2*(t - d/V), and nothing
+ * about it is fitted.
+ */
+export const RUN = {
+  /**
+   * Peak sprint speed, mph, mapped linearly from the `speed` stat 1..10.
+   *
+   * The stat-5 kid lands at 12.278 mph = 18.007 ft/s, which is what makes the
+   * measured leg come out at 4197ms — the same figure `pace.homeToFirst.ours`
+   * records for v1, reached from a completely different model.
+   *
+   * The 1.38x spread across the roster is narrower than v1's ±6%/point (1.71x).
+   * Neither is measured; this one at least stays inside the published band at
+   * both ends.
+   */
+  TOP_SPEED_MIN_MPH: 10.5,
+  TOP_SPEED_MAX_MPH: 14.5,
+  /** `pace.homeToFirst`, seconds. The measurement the acceleration is solved from. */
+  HOME_TO_FIRST_SEC: 4.2,
+  /** Which stat that measurement describes. "A BB runner", not the average one. */
+  ANCHOR_SPEED_STAT: 5,
+  /**
+   * A runner who just touched a bag holds it this long before a policy may send
+   * them again. v1's `RUN2.BASE_DWELL_MS`, and its reason survives: a leg
+   * finishes and the policy runs later in the SAME tick, so without it a runner
+   * relaunches with zero frames on the base.
+   */
+  BASE_DWELL_SEC: 0.4,
+  /**
+   * A reversal cannot be undone this soon. v1's `RUN2.REVERSE_COOLDOWN_MS` —
+   * each direction gets a real commitment, so a rundown reads as a rundown
+   * rather than a stutter.
+   */
+  REVERSE_COOLDOWN_SEC: 0.6,
+} as const;
+
+/**
+ * The defence.
+ *
+ * ★ TWO OF THESE NUMBERS ARE THE POINT OF THE WHOLE FILE, and neither had a
+ * measurement record in v1 at all.
+ *
+ * REACH. v1's `LIVE.CATCH_RADIUS` is 34px. At its own 2.994 px/ft that is
+ * 11.36ft — a four-foot child catching a ball eleven feet away — with pickup at
+ * 9.35ft and a dive adding 10ft more for a 21.4ft diving catch. Area scales as
+ * r², so a v1 fielder covers 14.3x the ground a real kid can. Nothing in
+ * `defense.*` records this, and `defense.fielderSpeed.notSufficient` spent its
+ * whole argument on chase speed while every ball a fielder "reached" was a
+ * putout partly because reaching was this cheap.
+ *
+ * THROW SPEED. `defense.throwSpeed` is `blocked` — the catcher-to-second steal
+ * it planned to measure does not occur in the capture — and
+ * `defense.fielderSpeed.nextLever` names it, not the chase, as the binding term
+ * on a batter-to-first race. v2 cannot unblock the BB2001 reading, so it anchors
+ * on a different reference class: published youth throwing velocity, ~36-42 mph
+ * at 8U and 37-50 at 9U.
+ */
+export const DEFENSE = {
+  /**
+   * How far from a fielder's feet a ball can be and still be caught, ft.
+   *
+   * A four-foot kid's arm span is about their height, so half a span is 2ft from
+   * the body centre, and a glove adds roughly another foot. Three feet is a
+   * child at full stretch, which is what a catch radius is meant to mean.
+   *
+   * ★ IT HAS A HARD FLOOR AND THIS IS IT. `BOUNCE.BALL_SETTLE_MARGIN_FT` lets a
+   * ball rest 1ft from the wall while `FIELD_MARGIN` clamps a FIELDER at 4ft, so
+   * a ball against the fence sits exactly 3ft from the nearest legal standing
+   * spot. `bounce.test.ts` has been asserting that gap is at most 3 since PR 3,
+   * with the message "PR 5 catch radius must cover this". Three feet covers it
+   * with nothing to spare — which is why the relationship is pinned from both
+   * ends rather than left to be noticed later.
+   */
+  REACH_FT: 3,
+  /**
+   * The height the reach sphere is centred on, ft — a kid's chest.
+   *
+   * ★ v1 HAS NO SUCH THING, and that absence is a whole fudge. Its fly-ball test
+   * is `dist(chaser.pos, b.pos) <= catchRadius` in the FLAT plane, so a fielder
+   * standing under a ball forty feet up is "within 34px" of it. What stops that
+   * catch is `CATCHABLE_TAIL` — a rule that only the last 40% of a flight can be
+   * caught — which is a timing constant standing in for a geometry fact. With a
+   * centre and a radius the rule falls out: reach tops out at 6ft, so a ball
+   * above that is not catchable, whenever in the flight it happens to be.
+   */
+  CATCH_CENTRE_FT: 3,
+  /**
+   * The kid the reach is derived from, ft. Mirrors `render/skeleton.ts`'s
+   * `REFERENCE_HEIGHT_FT`, which the sim may not import (that is the whole job
+   * of the purity gate). `sim-contract.test.js` reads both and fails if they
+   * drift — the one place allowed to look at each.
+   */
+  REFERENCE_HEIGHT_FT: 4,
+  /**
+   * A DIVE adds this much reach, ft. v1 adds 30px = 10ft, taking a diving catch
+   * out to 21.4ft. A real dive extends a kid by roughly their own torso.
+   */
+  DIVE_REACH_FT: 1.6,
+  /** How long the lunge lasts, seconds. v1's `LIVE.DIVE.WINDOW_MS`. */
+  DIVE_WINDOW_SEC: 0.34,
+  /** Face-down-in-the-grass after an empty dive, seconds. */
+  DIVE_WHIFF_SEC: 0.8,
+  /**
+   * Throwing velocity, mph, from the `pitching` stat 1..10.
+   *
+   * Published youth bands: 36-42 mph at 8U, 37-50 at 9U. Against the anchored
+   * 18 ft/s runner this is 2.4x-4.9x runner speed, where v1 CLASSIC throws at
+   * 9.65x and v1 KID — the mode that actually produces base hits — at 4.60x.
+   * That KID sits inside the published band and CLASSIC sits at twice its top is
+   * the strongest thing anyone has been able to say about `defense.throwSpeed`
+   * since it was blocked.
+   */
+  THROW_SPEED_MIN_MPH: 30,
+  THROW_SPEED_MAX_MPH: 48,
+  /**
+   * Gather-and-release once the ball is secured, seconds.
+   *
+   * v1 spends `cpuThrowDelayMs` 1192ms here on top of `cpuReactionMs` 835ms —
+   * 2027ms of a fielder standing perfectly still, 48% of the batter's entire
+   * 4200ms leg. This is a kid catching a ball, finding the bag and letting go.
+   */
+  RELEASE_SEC: 0.45,
+  /**
+   * Read-and-go, seconds, from the `fielding` stat.
+   *
+   * Published simple visual reaction time in 8-10 year olds is roughly 280-350ms;
+   * a fielder must also decide where the ball is going, so the band starts above
+   * it. Compare v1's 835ms (main) / 1093ms (kid), which `defense.cpuReaction`
+   * holds at `awaiting-measurement` with an explicit warning that its 1050ms
+   * partial reading "cannot separate a DECISION DELAY from an ACCELERATION
+   * RAMP". v2 models the ramp, so the two are no longer confounded here.
+   */
+  REACTION_MIN_SEC: 0.3,
+  REACTION_MAX_SEC: 0.5,
+  /** Chance of dropping a routine fly at glove 5, before the stat adjustment. */
+  DROP_BASE: 0.14,
+  /** How much each point of `fielding` buys. v1's `ERRORS.PER_GLOVE`. */
+  DROP_PER_GLOVE: 0.02,
+  /** A grounder is easier to handle than a fly. v1's `ERRORS.BOBBLE_FACTOR`. */
+  BOBBLE_FACTOR: 0.5,
+  /** A muffed ball freezes the kid this long, seconds. */
+  FUMBLE_SEC: 0.65,
+  /**
+   * Chaser election: how far ahead the ball's path is sampled, seconds, and how
+   * many samples. v1's `LIVE.CHASE.HORIZON_MS` / `SAMPLES`.
+   */
+  CHASE_HORIZON_SEC: 8,
+  CHASE_SAMPLES: 24,
+  /**
+   * The cut-ahead gate: how much sooner a challenger must reach the ball before
+   * it is taken off the fielder whose zone it settles in.
+   *
+   * ★ A RATIO RATHER THAN A DURATION — AND MEASURING THAT DECISION CORRECTED THE
+   * REASON FOR IT. v1's `LIVE.CHASE.CUT_AHEAD_MS` is a fixed 400ms compared
+   * against BALL-PATH times, and `defense.chaserElection` measured the zone
+   * owner being overridden 27.7% of the time at 106px/s against 32.4% at
+   * 42.8px/s, concluding the constant "cannot be speed-neutral by construction".
+   * The obvious inference — express it as a fraction and the drift goes away —
+   * is WRONG, and this file's first draft asserted it.
+   *
+   * Measured over 215 launches at three uniform defence speeds (0.5x, 1x, 2x),
+   * running the two gate forms on identical inputs: the ratio drifts 7.4pp and a
+   * fixed 0.40s gate drifts 7.4pp. They are the same. The override rate moves
+   * because a speed change alters WHICH FIELDERS CAN INTERCEPT AT ALL, which no
+   * gate form touches.
+   *
+   * So this stays a ratio for a smaller and honest reason: it is dimensionless,
+   * so it cannot silently become a different rule when the times it compares
+   * change scale, and there is no unit for a future retune to leave stale. It is
+   * a correctness-of-form change, not a measured improvement, and
+   * `sim.chaserElectionGate` records the measurement rather than the hope.
+   */
+  CUT_AHEAD_FRAC: 0.15,
+  /**
+   * Leash: how near a fielder's POST the ball must settle for them to be a
+   * candidate at all, ft. v1's `LIVE.CHASE.LEASH` converted directly — the
+   * infield geometry is the one part of v1's field that was already real (a 60ft
+   * basepath), so 90/170/250px are 30/57/84ft with no reinterpretation.
+   *
+   * Without it, ranking a grounder on "who gets there first" hands nearly every
+   * one to the pitcher, who starts closest to the ball's early path at every
+   * spray angle.
+   */
+  LEASH_FT: { P: 30, C: 30, '1B': 57, '3B': 57, '2B': 84, SS: 84, LF: 1e4, CF: 1e4, RF: 1e4 },
+  /** A chaser already this close to the ball keeps it. v1's `KEEP_RADIUS`. */
+  KEEP_RADIUS_FT: 20,
+  /** Handovers cannot come faster than this, seconds. A human-perception beat. */
+  SWITCH_COOLDOWN_SEC: 0.5,
+  /** A challenger must beat the incumbent by this fraction. Same form and same
+   *  reasoning as `CUT_AHEAD_FRAC`, including its limits. */
+  SWITCH_MARGIN_FRAC: 0.12,
+  /** Slack on a cut-off: a fielder arriving this much late still cuts it off. */
+  CUTOFF_GRACE_SEC: 0.12,
+} as const;
+
+/**
  * Integration rates.
  *
  * ★ 240 Hz IS NOT AN ACCURACY CHOICE, and measuring it is what showed that.

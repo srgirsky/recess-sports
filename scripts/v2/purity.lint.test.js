@@ -193,7 +193,15 @@ describe('src/v2/sim is pure', () => {
     // conversion of an authored number, not a per-step force term. It is
     // confined to files that declare it, and the hot path below is checked
     // separately.
-    const HOT = ['flight.ts', 'ball.ts'];
+    // ★ `fielders.ts` and `runners.ts` are on this list because they earn it:
+    // both run every tick, for nine kids and up to four runners, which is a
+    // per-step force term by any other name. Adding them cost nothing because
+    // pursuit is `moveToward` (hypot and a division) and the throw arc is solved
+    // through a half-angle identity that needs only `sqrt` — but it had to be
+    // checked rather than assumed, and closing the door now is cheaper than
+    // discovering a `Math.atan2` in the pursuit loop after the harness has
+    // fingerprints riding on it.
+    const HOT = ['flight.ts', 'ball.ts', 'fielders.ts', 'runners.ts'];
     const banned = /Math\s*\.\s*(exp|log|log2|log10|pow|cbrt|sinh|cosh|tanh|expm1|log1p)\b|\*\*/;
     for (const f of sources) {
       if (f.isTest) continue;
@@ -327,6 +335,74 @@ describe('src/v2/render may not be imported by the pure camera policy either', (
       for (const spec of importsOf(text)) {
         expect(spec === 'three' || spec.startsWith('three/'), `${name} imports ${spec}`).toBe(false);
       }
+    }
+  });
+});
+
+describe('★ there is exactly ONE kid speed in the sim', () => {
+  // `defense.fielderSpeed` is the record of what the alternative costs. v1's
+  // `FIELDER_SPEED` sat at 210 px/s through FIVE consecutive runner slowdowns,
+  // drifting from 1.20x to 2.47x runner speed one retune at a time, and the fix
+  // then scaled BOTH by 1/1.987 and preserved the wrong ratio exactly. Its
+  // conclusion — "a kid does not get faster by putting a glove on" — became an
+  // invariant a v1 test asserts about two constants that remain free to move.
+  //
+  // `athletes.ts` claims in prose that "there is exactly ONE function per
+  // physical quantity and every consumer calls it". This is that claim, checked.
+  // A rule that is documented and unenforced is worse than one that is neither,
+  // which is the whole reason this file exists.
+
+  /** Raw physical bands. Only `athletes.ts` may read them; everyone else calls. */
+  const RAW = [
+    'TOP_SPEED_MIN_MPH',
+    'TOP_SPEED_MAX_MPH',
+    'THROW_SPEED_MIN_MPH',
+    'THROW_SPEED_MAX_MPH',
+    'REACTION_MIN_SEC',
+    'REACTION_MAX_SEC',
+    'REACH_FT',
+    'HOME_TO_FIRST_SEC',
+    'ANCHOR_SPEED_STAT',
+  ];
+
+  it('lets nothing but athletes.ts read a raw physical band', () => {
+    for (const f of sources) {
+      if (f.isTest) continue;
+      if (f.rel.endsWith(join('sim', 'athletes.ts')) || f.rel.endsWith(join('sim', 'params.ts'))) continue;
+      const src = code(f.text);
+      for (const name of RAW) {
+        expect(
+          new RegExp(`\\b${name}\\b`).test(src),
+          `${f.rel} reads ${name} directly — call the athletes.ts function instead, ` +
+            `or it becomes a second place a kid's speed can be changed`
+        ).toBe(false);
+      }
+    }
+  });
+
+  it('gives a fielder and a runner the same legs, for every kid on the roster', async () => {
+    // The functional half. A textual rule can be routed around; this cannot.
+    const athletes = await import('../../src/v2/sim/athletes.ts');
+    const { makeFielder } = await import('../../src/v2/sim/fielders.ts');
+    const { makeRunner } = await import('../../src/v2/sim/runners.ts');
+    const { ROSTER } = await import('../../src/data/characters.ts');
+
+    expect(ROSTER.length).toBeGreaterThan(0);
+    for (const c of ROSTER) {
+      const f = makeFielder(c, 'SS');
+      const r = makeRunner(c, 1);
+      expect(f.topFts, `${c.name}: a glove does not make a kid faster`).toBe(r.topFts);
+      expect(f.accelFtS2, `${c.name}: nor does it make one quicker off the mark`).toBe(r.accelFtS2);
+      expect(f.topFts).toBe(athletes.sprintTopSpeedFts(c.stats.speed));
+    }
+
+    // And across the WHOLE stat range, not just the values the roster happens to
+    // use — the drift being guarded against is in the SLOPE as much as the
+    // level, and a roster with no speed-1 kid cannot see a broken bottom end.
+    for (let stat = 1; stat <= 10; stat++) {
+      const kid = { ...ROSTER[0], stats: { ...ROSTER[0].stats, speed: stat } };
+      expect(makeFielder(kid, 'CF').topFts, `stat ${stat}`).toBe(makeRunner(kid, 0).topFts);
+      expect(makeFielder(kid, 'CF').accelFtS2, `stat ${stat}`).toBe(makeRunner(kid, 0).accelFtS2);
     }
   });
 });

@@ -14,17 +14,16 @@
 // impossible to violate, because there is exactly ONE function per physical
 // quantity and every consumer calls it.
 //
-// ★ WHAT IS DELIBERATELY NOT HERE YET.
-//
-// `sprintSpeedFts`, `throwSpeedFts`, `reachFt`, `reactionSec`. They have no
-// consumer until fielders and runners exist, and shipping them now would repeat
-// exactly what `field.ts` did with `rollFriction` / `wallRestitution` /
-// `bounceMult` / `obstacles`: four physics fields authored, tested, and
-// consumed by nothing for months, which is a thing this project has criticised
-// itself for twice. They land in PR 5, with the code that calls them.
+// ★ AND THE PARITY IS NOT A COMMENT. `purity.lint.test.js` reads every other
+// file in `src/v2/sim/**` and fails any that names a kid speed of its own, then
+// asserts `sprintSpeedFts` is literally the function a fielder and a runner both
+// call. v1's version of this rule was a sentence in a config file, and the
+// sentence was true for five consecutive retunes while the ratio drifted to
+// 2.48x underneath it.
 // ---------------------------------------------------------------------------
 
-import { BAT } from './params';
+import { BAT, DEFENSE, RUN } from './params';
+import { BASEPATH } from './field';
 import { mphToFts } from './units';
 
 /** Clamp a 1-10 stat, so a content typo cannot produce a negative bat. */
@@ -48,4 +47,124 @@ function stat01(stat: number): number {
 export function batSpeedFts(powerStat: number): number {
   const mph = BAT.SPEED_MIN_MPH + (BAT.SPEED_MAX_MPH - BAT.SPEED_MIN_MPH) * stat01(powerStat);
   return mphToFts(mph);
+}
+
+// --- Running ----------------------------------------------------------------
+
+/**
+ * Peak sprint speed, ft/s, from the `speed` stat.
+ *
+ * ★ THE ONE SPEED FUNCTION. A fielder chasing a ball and a runner chasing a bag
+ * are the same child; both call this. `defense.fielderSpeed` is the record of
+ * what happens when they do not — v1's fielders ended up 2.48x faster than its
+ * runners, one retune at a time, because each had a constant of its own.
+ */
+export function sprintTopSpeedFts(speedStat: number): number {
+  const mph = RUN.TOP_SPEED_MIN_MPH + (RUN.TOP_SPEED_MAX_MPH - RUN.TOP_SPEED_MIN_MPH) * stat01(speedStat);
+  return mphToFts(mph);
+}
+
+/**
+ * ★ HOW LONG A KID SPENDS GETTING UP TO SPEED — SOLVED FROM THE MEASUREMENT,
+ * NOT PICKED.
+ *
+ * For constant acceleration to a capped top speed, covering `d` takes
+ * `T/2 + d/V` where `T = V/a`. `pace.homeToFirst` measures that time (4.200s)
+ * over `d = BASEPATH`, and `RUN.TOP_SPEED_*` fixes `V` from published child
+ * peak velocity, so
+ *
+ *     T = 2 * (HOME_TO_FIRST_SEC - BASEPATH / V)
+ *
+ * has no freedom left in it. It comes out at 1.736s, an acceleration of
+ * 10.37 ft/s², and the kid hits top speed 15.6ft down the line.
+ *
+ * Every kid takes the SAME time to get going; a faster kid simply ends up
+ * faster. That is one assumption and it is stated rather than buried, because
+ * the alternative — solving each stat against the same 4.200s — would make
+ * every kid on the roster run the leg in exactly 4.2s and delete the stat.
+ */
+const ACCEL_SEC = 2 * (RUN.HOME_TO_FIRST_SEC - BASEPATH / sprintTopSpeedFts(RUN.ANCHOR_SPEED_STAT));
+
+/** Sprint acceleration, ft/s², from the `speed` stat. */
+export function sprintAccelFtS2(speedStat: number): number {
+  return sprintTopSpeedFts(speedStat) / ACCEL_SEC;
+}
+
+/** How long the acceleration phase lasts, seconds. Exposed so a test can check
+ *  the derivation above against the measurement rather than against itself. */
+export function sprintAccelSec(): number {
+  return ACCEL_SEC;
+}
+
+/**
+ * Closed form: how long a kid takes to cover `distFt` from a standing start.
+ *
+ * This is the ORACLE, not the mover — `runners.ts` integrates, and a test
+ * asserts the integrator agrees with this to within a tick. An integrator
+ * checked only against itself is checked against nothing.
+ */
+export function sprintTimeSec(distFt: number, speedStat: number): number {
+  return sprintTimeForFt(distFt, sprintTopSpeedFts(speedStat), sprintAccelFtS2(speedStat));
+}
+
+/**
+ * The same closed form, against legs a caller already holds.
+ *
+ * ★ THE CHASER ELECTION HAS TO USE THIS ONE, and the reason is not performance.
+ * Ranking fielders by `sprintTimeSec(ft, f.speed)` re-derives the legs from the
+ * STAT and ignores whatever the fielder actually carries — so a test that scales
+ * a defence to prove the cut-ahead gate is speed-neutral scales nothing the
+ * election reads, and passes while proving nothing. Found by breaking the gate
+ * and watching it stay green.
+ */
+export function sprintTimeForFt(distFt: number, topFts: number, accelFtS2: number): number {
+  if (distFt <= 0) return 0;
+  const rampFt = (topFts * topFts) / (2 * accelFtS2);
+  if (distFt <= rampFt) return Math.sqrt((2 * distFt) / accelFtS2);
+  return topFts / accelFtS2 + (distFt - rampFt) / topFts;
+}
+
+// --- Fielding ---------------------------------------------------------------
+
+/**
+ * How far a fielder can reach, ft. Constant, and deliberately not per-kid.
+ *
+ * The roster's `body.height` is a RENDER scale — `VisualParams` describes a
+ * drawing — and `render.characterScale` is explicit that render exaggeration
+ * "must never leak into `src/v2/sim/**`: catch radii, reach, stride and
+ * collision stay real feet". A sim reach that varied with a drawing scale would
+ * be exactly that leak, and it would also put the shortest kid under the 3ft
+ * floor `DEFENSE.REACH_FT` documents.
+ */
+export function reachFt(): number {
+  return DEFENSE.REACH_FT;
+}
+
+/**
+ * Throwing velocity, ft/s, from the `pitching` stat.
+ *
+ * ★ ANCHORED ON SPEED, NOT ON FLIGHT TIME, and that is a deliberate split from
+ * `pitch.ts`. The pitch is solved to a measured FLIGHT TIME because that is what
+ * `pace.pitchCorridor` measured; a throw to a base has no such measurement and
+ * an entirely different constraint (get it there), so it is anchored directly on
+ * the published throwing-velocity band. The two agree where they can be
+ * compared: `releasePitch` at stat 5 leaves the hand at 33.5 mph, and this
+ * returns 38 mph for a max-effort throw by the same arm.
+ */
+export function throwSpeedFts(pitchingStat: number): number {
+  const mph =
+    DEFENSE.THROW_SPEED_MIN_MPH +
+    (DEFENSE.THROW_SPEED_MAX_MPH - DEFENSE.THROW_SPEED_MIN_MPH) * stat01(pitchingStat);
+  return mphToFts(mph);
+}
+
+/**
+ * Read-and-go, seconds, from the `fielding` stat. DECREASING: a better fielder
+ * reads it sooner. (`armMult` shipped inverted for want of this sentence.)
+ */
+export function reactionSec(fieldingStat: number): number {
+  return (
+    DEFENSE.REACTION_MAX_SEC -
+    (DEFENSE.REACTION_MAX_SEC - DEFENSE.REACTION_MIN_SEC) * stat01(fieldingStat)
+  );
 }

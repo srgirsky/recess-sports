@@ -98,6 +98,76 @@ continuous across a v1↔v2 switch in the same browser.
   path** (`flight.ts`, `ball.ts`). Trig survives only at conversion boundaries —
   `launch.ts`, and `field.ts`'s `sprayOf`/`pointAt` — a residual determinism
   risk that is *confined and recorded*, not eliminated.
+- **★ THERE IS EXACTLY ONE KID SPEED, AND A LINT SAYS SO.** `sim/athletes.ts` has
+  one function per physical quantity (`sprintTopSpeedFts` · `sprintAccelFtS2` ·
+  `reachFt` · `throwSpeedFts` · `reactionSec`) and every consumer calls it, so a
+  fielder and a runner cannot drift apart because there is no second constant.
+  `defense.fielderSpeed` is what the alternative cost: v1's `FIELDER_SPEED` sat
+  at 210 px/s through FIVE runner slowdowns, reaching 2.48× runner speed, and the
+  fix then scaled *both* by 1/1.987 and preserved the ratio exactly. In v1 the
+  rule is a sentence in a config file. `purity.lint.test.js` enforces it two
+  ways, because either alone can be routed around: **textually** (no file but
+  `athletes.ts` may read a raw band — `TOP_SPEED_*`, `THROW_SPEED_*`,
+  `REACTION_*`, `REACH_FT`, `HOME_TO_FIRST_SEC`, `ANCHOR_SPEED_STAT`) and
+  **functionally** (`makeFielder` and `makeRunner` agree over all 30 kids *and*
+  stats 1–10 — the drift is in the SLOPE as much as the level, and a roster with
+  no speed-1 kid cannot see a broken bottom end). `fielders.ts` and `runners.ts`
+  are also on the trig ban's HOT list, which cost nothing: pursuit is
+  `moveToward` and the throw arc is a half-angle identity needing only `sqrt`.
+- **★ THE SPRINT MODEL IS SOLVED FROM THE ANCHOR, NOT PICKED — and the anchor
+  alone cannot determine it.** `pace.homeToFirst` measures 4200ms over 60ft
+  (n=3), but a leg time constrains a *(top speed, acceleration) pair*; v1
+  resolved that by assuming no acceleration and running every kid flat at 14.29
+  ft/s, which is also why `defense.cpuReaction` could never separate "a decision
+  delay" from "an acceleration ramp" — v1 has no ramp. The second constraint is
+  published child peak velocity (~18 ft/s), and then `T = 2·(t − d/V)` = 1.736s
+  has no freedom in it. Every kid takes the *same* time to get going; a faster
+  kid ends up faster. That one assumption is stated because the alternative —
+  solving each stat against the same 4.200s — would delete the stat.
+- **★ A FIELDER'S REACH IS 3 ft, AND IT IS A CAPSULE, NOT A SPHERE.** v1's
+  `CATCH_RADIUS` 34px is **11.36 ft** at its own scale (pickup 9.35, a dive out
+  to 21.4), so a v1 fielder covers **14.3× the ground** a four-foot child can, and
+  nothing in `defense.*` records it. Two constraints pin ours from both sides:
+  it must be ≥ `FIELD_MARGIN − BOUNCE.BALL_SETTLE_MARGIN_FT` = 3ft, which
+  `bounce.test.ts` has asserted since PR 3 with the message "PR 5 catch radius
+  must cover this", and it must be below a kid's own height. It holds with
+  nothing to spare. **The envelope is cylindrical below chest height and
+  spherical above** — a sphere of radius 3 centred on the chest gives a ball ON
+  THE GROUND 0.84ft of horizontal reach, and the symptom was every routine
+  grounder becoming a chase to the wall while the election insisted the shortstop
+  had cut it off. He had; he could not bend over. The ceiling (6ft) then replaces
+  v1's `CATCHABLE_TAIL`, a timing constant standing in for a geometry fact.
+- **★ AN ARM HAS A RANGE, SO THE RELAY IS A CONSEQUENCE RATHER THAN A MECHANIC.**
+  `throwFlightSec` solves the flat projectile root in closed form
+  (`t = (2v/g)·√((1 − √(1 − k²))/2)`, `k = Rg/v²`) — no trig, so `fielders.ts`
+  stays on the HOT list — and returns **null** when the arm cannot reach. CF→1B
+  is 129.7ft and 27 of 30 kids cannot make it; every one of the 30 can make the
+  68ft throw from short. v1 had to invent `LIVE.RELAY` and gate it on a
+  hand-picked 1.39 basepath legs, because "throw DISTANCE provably cannot do this
+  job". The range is a VACUUM solve while the *ball* is integrated with drag, so
+  it is an upper bound and the relay is if anything under-triggered —
+  `sim.throwSpeed` records that.
+- **★ THE CHASER ELECTION MUST INCLUDE THE READ, AND ITS GATE BOUGHT LESS THAN
+  CLAIMED.** `cutOff` adds each kid's remaining `readyAtSec` to their travel
+  time; without it the election ranked a shortstop on a 1.42s cut-off of which
+  0.46s was standing still, and he trailed the ball eighty feet into left. It
+  also ranks on the fielder's OWN `topFts`/`accelFtS2` (`sprintTimeForFt`), not
+  re-derived from the stat — a test that scales a defence otherwise scales
+  nothing the election reads. **And the ratio gate is not the fix it looks
+  like**: `defense.chaserElection` says v1's fixed 400ms "cannot be speed-neutral
+  by construction", but measured on identical inputs (n=215, three speeds) the
+  ratio drifts 7.4pp and a fixed 0.40s gate drifts 7.4pp. The override rate moves
+  because a speed change alters *which fielders can intercept at all*. The ratio
+  stays only because it is dimensionless; `sim.chaserElectionGate` records that.
+- **Two v1 baserunning bugs are pinned before they can happen again**
+  (`defense.fielderSpeed.exposed`, both found only after slower fielders made long
+  plays common). `reverseLeg` refuses `from <= 0`, or the rundown rule turns the
+  batter toward home and — since a batter at base 0 is FORCED — re-sends them the
+  instant they touch first. And a straggler settles on **`min(from, to)`**, not
+  `from`: `reverseLeg` SWAPS the pair, so a runner turned back from the plate
+  carries `from === 4` having never touched home. Note the 1–3 clamp *masks* that
+  case (4 clamps to 3 either way) — the rule only shows its teeth mid-diamond, at
+  `from === 3, to === 2`, which is what the test uses.
 - **`FLIGHT_HZ` = 240 is NOT an accuracy choice**, and measuring it is what
   showed that. RK4 here is fourth order (measured ratios 16.20 / 16.13 per
   halving, against a textbook 2⁴), and **accuracy saturates at 60 Hz** — a 60 Hz
@@ -487,11 +557,13 @@ continuous across a v1↔v2 switch in the same browser.
 | `src/v2/sim/ball.ts` | ★ v2. The published ball, and the two aero coefficients. Everything folds into `BALL_K_PER_FT` = ½ρA/m, which is the *validation*: deriving it from the four published constants and comparing against Nathan's independently published 5.509e-3 exercises ρ, A and m at once. |
 | `src/v2/sim/flight.ts` | ★ v2. RK4 over gravity + quadratic drag + Magnus, with events resolved by **bisection**. It integrates and REPORTS ("crossed the ground plane 0.00317s into this step") — never decides what an event means. RK4 stages run on scalar locals: zero allocation, and reentrant for free. `sampleAt` is the render seam, exposed before any renderer exists. |
 | `src/v2/sim/launch.ts` | ★ v2. Describes-a-batted-ball → `BallState`. Its own file because it is the ONE place an authored ANGLE becomes a vector, so it is the one place needing trig — and the per-step path (`flight.ts`, `ball.ts`) is lint-checked to have none. PR 4's `contact.ts` hands off here. |
-| `src/v2/sim/bounce.ts` | ★ v2. What a crossing MEANS: grip/slip ground impact, roll, wall carom, obstacle. The tangential result is DERIVED (`v' = (5v − 2ωR)/7` — the minus is what memory gets wrong) and checked by conserved quantities. Carom is gated on `fenceHeight`; rolling containment lives in `rollStep` so "a rolling ball stays in the field" is true by construction. No `Rng`. |
-| `src/v2/sim/athletes.ts` | ★ v2. Where a 1-10 STAT becomes a physical quantity, and the ONE place each does. Only `batSpeedFts` so far — sprint/throw/reach land in PR 5 *with their consumers*, rather than repeating `field.ts`'s four venue fields authored and unused for months. |
+| `src/v2/sim/bounce.ts` | ★ v2. What a crossing MEANS: grip/slip ground impact, roll, wall carom, obstacle, plus **`traceLooseBall`** — fly, bounce, roll and carom until it stops, which is the SAME function the chaser election asks "where is it going" and the reducer will ask "where did it go". v1 keeps a second, sketch implementation for the election and hedges that "a divergence changes who gets sent"; there is no divergence to bound here. The tangential result is DERIVED (`v' = (5v − 2ωR)/7` — the minus is what memory gets wrong) and checked by conserved quantities. Carom is gated on `fenceHeight`; rolling containment lives in `rollStep` so "a rolling ball stays in the field" is true by construction. No `Rng`. |
+| `src/v2/sim/athletes.ts` | ★ v2. Where a 1-10 STAT becomes a physical quantity, and the ONE place each does: `batSpeedFts` · `sprintTopSpeedFts` · `sprintAccelFtS2` · `sprintTimeSec`/`sprintTimeForFt` · `reachFt` · `throwSpeedFts` · `reactionSec`. The sprint acceleration is DERIVED from `pace.homeToFirst` rather than stated. `purity.lint.test.js` enforces the single-source claim textually and functionally. |
+| `src/v2/sim/fielders.ts` | ★ v2. Nine kids with gloves: acceleration-limited pursuit, a 3ft capsule reach with a real ceiling, drops off the `fielding` stat through an injected `Rng`, closed-form throw flight that returns **null** out of range, and v1's two-regime chaser election with the read folded in and the cut-ahead gate expressed as a ratio. No trig anywhere — it is on the HOT list. |
+| `src/v2/sim/runners.ts` | ★ v2. Baserunning off the same two speed functions: legs measured in feet with a standing start, momentum kept through a bag and lost standing on one, a reversal that costs the speed, and v1's two `defense.fielderSpeed.exposed` bugs pinned deterministically (`reverseLeg`'s `from <= 0` guard, and `settleBase`'s `min(from, to)`). |
 | `src/v2/sim/contact.ts` | ★ v2. Bat meets ball: Nathan's Eq. 3 identity for exit velocity, `e_A` derived from the recoil factor, the undercut geometry for launch angle, and the same grip result `bounce.ts` uses for backspin. Replaces v1's categorical grounder/liner/fly roll. |
 | `src/v2/sim/pitch.ts` | ★ v2. The pitch as a real trajectory — break is EMERGENT Magnus, not a drawn bow. Release speed and elevation are SOLVED from the measured flight time, because aiming straight at the plate arrives 26ft underground. |
-| `scripts/v2/purity.lint.test.js` | ★ v2. `src/v2/sim/**` imports only sim/data/config/**five** pure systems (`inning`·`gameflow`·`stats`·`lineup`·`draft`); no three, no DOM, no `Math.random`, no `Date.now`, **no module-scope `Rng`**; every sim file must import in plain Node; whole-statement `import type` gets a separate wider lane; **the whitelist itself is checked** (each named system must be browser-free, random-free, and value-import only pure modules); and **nothing outside `src/v2/**` may import v2**, which is what actually guarantees a v2 edit cannot reach v1's bundle. Two files claimed this gate existed before it did, and it then spent its first life vacuously satisfied. |
+| `scripts/v2/purity.lint.test.js` | ★ v2. **★ There is exactly ONE kid speed in the sim** (textual: only `athletes.ts` may read a raw band; functional: `makeFielder` and `makeRunner` agree over 30 kids and stats 1-10). Plus: `src/v2/sim/**` imports only sim/data/config/**five** pure systems (`inning`·`gameflow`·`stats`·`lineup`·`draft`); no three, no DOM, no `Math.random`, no `Date.now`, **no module-scope `Rng`**; every sim file must import in plain Node; whole-statement `import type` gets a separate wider lane; **the whitelist itself is checked** (each named system must be browser-free, random-free, and value-import only pure modules); and **nothing outside `src/v2/**` may import v2**, which is what actually guarantees a v2 edit cannot reach v1's bundle. Two files claimed this gate existed before it did, and it then spent its first life vacuously satisfied. |
 | `scripts/measures.json` | ★ The measurement records + `conformance.test.js`'s gate. Every record names the `src/config.ts` constant it informs, so the audit trail runs source → record → constant, and carries a `status`: `conformed` (ours inside the band), `known-drift` (outside, and the test pins the drift's SIZE so it can't grow or be half-fixed unnoticed), `awaiting-measurement` (BB not measured yet — pins only OUR value, claims nothing about BB), `note` (a finding about the measurement itself). Read this before tuning any "Backyard feel" constant. |
 
 ## Commands

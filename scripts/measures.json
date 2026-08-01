@@ -2356,6 +2356,257 @@
       "whatWouldWork": "pace.pitchCorridor's own closing work, unchanged: ~6 more flights from the stopwatch-gated capture, classified by the on-screen pitch card, each read at >=2x magnification.",
       "informs": "src/v2/sim/params.ts PITCH",
       "source": "local:screen-recording-2026-07-26"
+    },
+    "kidSprintSpeed": {
+      "id": "sim.kid-sprint-speed",
+      "category": "sim",
+      "reference": "bb2001",
+      "status": "conformed",
+      "statusChangedAt": "2026-08-01",
+      "what": "How fast a kid runs, and how long they take to get there -- one speed function that both a baserunner and a fielder call.",
+      "why": "★ THE ANCHOR IS ONE EQUATION IN TWO UNKNOWNS, and treating it as one is how a 'measured' constant gets invented. pace.homeToFirst measures 4200ms over a 60ft leg (n=3, spread 261, confidence med) and calls itself 'THE anchor: every other pace constant is measured against it'. But a leg time constrains a (top speed, acceleration) PAIR, not either one. v1 resolved that by assuming NO acceleration -- 60/4.2 = 14.286 ft/s flat, for every kid, from the frame of contact -- which is too fast out of the box and too slow at the bag, and which is also why defense.cpuReaction could never separate 'a decision delay' from 'an acceleration ramp': v1 does not have the second one.",
+      "measured": {
+        "homeToFirstMs": 4200,
+        "n": 3,
+        "spreadMs": 261,
+        "confidence": "med",
+        "inheritedFrom": "pace.homeToFirst",
+        "note": "Not a new measurement. This record CONSUMES pace.homeToFirst and states what it does and does not determine."
+      },
+      "theSecondConstraint": "Published peak sprint velocity for 7-9 year olds runs about 5.0-5.8 m/s (16.4-19.0 ft/s). 18 ft/s = 5.49 m/s is the middle of it, and that is what fixes the top speed. The ACCELERATION is then solved, not chosen: for constant acceleration to a capped speed, covering d takes T/2 + d/V with T = V/a, so T = 2*(4.200 - 60/V) has no freedom left in it. It comes out at 1.7361s, an acceleration of 10.372 ft/s², and top speed reached 15.63ft down the line.",
+      "oneAssumptionStated": "Every kid takes the SAME time to get going; a faster kid simply ends up faster. Stated rather than buried, because the alternative -- solving each stat against the same 4.200s -- would make every kid on the roster run the leg in exactly 4.2s and delete the stat.",
+      "ours": {
+        "constant": "src/v2/sim/params.ts RUN.TOP_SPEED_MIN_MPH, RUN.TOP_SPEED_MAX_MPH, RUN.HOME_TO_FIRST_SEC; src/v2/sim/athletes.ts sprintTopSpeedFts, sprintAccelFtS2, sprintTimeSec",
+        "value": {
+          "topSpeedMph": [
+            10.5,
+            14.5
+          ],
+          "topSpeedFts": {
+            "stat1": 15.4,
+            "stat5": 18.007,
+            "stat10": 21.267
+          },
+          "accelFtS2": {
+            "stat1": 8.871,
+            "stat5": 10.372,
+            "stat10": 12.25
+          },
+          "accelSec": 1.7361,
+          "homeToFirstMs": {
+            "stat1": 4764,
+            "stat5": 4200,
+            "stat10": 3689
+          },
+          "rampFt": 15.63
+        }
+      },
+      "drift": {
+        "pct": 0.0,
+        "note": "The anchored kid runs the leg in 4200ms, which is the median of the three samples exactly. That is not a coincidence and not a fit: the acceleration was solved from it. What is NOT circular, and is what makes this conformed rather than tautological, is the SECOND number the solve produces -- 10.372 ft/s² over 1.736s, which is a plausible child and was free to come out absurd. It did not."
+      },
+      "spreadNote": "The roster spread is 1.38x fastest-to-slowest, narrower than v1's ±6%/point (1.71x). Neither is measured. pace.homeToFirst's own driftCaveats say '4200ms is a BB runner, not the average BB runner, so the stat spread around this anchor is still unvalidated' -- that caveat is inherited whole.",
+      "whatWouldClose": "Peak-velocity readings, not leg times, from four-to-eight-year-olds -- a 20m timing-gate split is enough to separate top speed from acceleration, which one 60ft total never can. That would replace the published second constraint with a measurement of the actual population and leave the anchor doing what it does now.",
+      "informs": "src/v2/sim/params.ts RUN",
+      "source": "local:bb01-capture-session1"
+    },
+    "fielderRunnerParity": {
+      "id": "sim.fielder-runner-parity",
+      "category": "sim",
+      "reference": "derived",
+      "status": "conformed",
+      "statusChangedAt": "2026-08-01",
+      "what": "That a fielder and a baserunner are the same child, enforced structurally rather than asserted.",
+      "why": "★ THE MOST EXPENSIVE TUNING BUG THIS PROJECT HAS HAD, made impossible instead of forbidden. defense.fielderSpeed's history: FIELDER_SPEED sat at 210 px/s through FIVE consecutive runner slowdowns, drifting 1.20x -> 2.47x one retune at a time, and the 2026-07-24 retune then scaled BOTH by 1/1.987 and preserved 2.48x exactly. Its conclusion was 'a kid does not get faster by putting a glove on', and in v1 that is an INVARIANT A TEST ASSERTS about two constants that remain free to move.",
+      "measured": null,
+      "n": 0,
+      "confidence": "derived",
+      "theStructure": "There is no fielder speed. src/v2/sim/athletes.ts has exactly one function per physical quantity, and makeFielder and makeRunner both call sprintTopSpeedFts / sprintAccelFtS2. A second constant cannot drift from the first because there is no second constant.",
+      "enforcement": "scripts/v2/purity.lint.test.js, '★ there is exactly ONE kid speed in the sim'. Two halves, because either alone can be routed around: a TEXTUAL rule that no file but athletes.ts may read a raw physical band (TOP_SPEED_*, THROW_SPEED_*, REACTION_*, REACH_FT, HOME_TO_FIRST_SEC, ANCHOR_SPEED_STAT), and a FUNCTIONAL one that makeFielder and makeRunner agree for all 30 kids AND across stats 1-10 -- the whole range, because the drift being guarded against is in the SLOPE as much as the level, and a roster with no speed-1 kid cannot see a broken bottom end.",
+      "ours": {
+        "constant": "src/v2/sim/athletes.ts sprintTopSpeedFts, sprintAccelFtS2",
+        "value": {
+          "ratio": 1.0,
+          "v1Ratio": 2.48,
+          "v1RatioAfterRetune": 1.0
+        }
+      },
+      "alsoCollapsed": "v1 carries a SECOND, smaller version of the same drift one level down: liveplay.ts statSpeedMult gives a fielder ±5% per stat point (line 803) while a runner gets ±6% (line 360). Same class of bug, never noticed, and gone here for the same structural reason.",
+      "whyNotMeasurable": "Nothing about this claim can be read off BB2001 footage: it is a statement about how our own code is organised. reference: 'derived' is the honest value, and the record claims nothing about BB.",
+      "informs": "src/v2/sim/athletes.ts"
+    },
+    "catchRadius": {
+      "id": "sim.catch-radius",
+      "category": "sim",
+      "reference": "baseball",
+      "status": "known-drift",
+      "statusChangedAt": "2026-08-01",
+      "what": "How far a fielder can reach for a ball -- and how much ground that lets one child cover.",
+      "why": "★ THERE WAS NO RECORD FOR THIS ANYWHERE, in a defense block whose own note says its constants 'are the values most likely to need feel iteration'. v1's LIVE.CATCH_RADIUS is 34px. At v1's own 2.99398 px/ft that is 11.356 ft: a four-foot child catching a ball eleven feet away. PICKUP_RADIUS is 9.352ft and a dive adds 30px for a 21.376ft diving catch. Area goes as r², so a v1 fielder covers 14.33x the ground a real kid can, and a diving one 21.59x. defense.fielderSpeed.notSufficient spends its entire argument on chase speed and concludes 'every ball a fielder reaches is still a putout at first' -- without ever asking how cheap REACHING had been made.",
+      "measured": {
+        "reachFt": 3,
+        "basis": "A four-foot child's arm span is about their height, so half a span is 2ft from the body centre; a glove adds roughly another foot. Three feet is a kid at full stretch, which is what a catch radius is supposed to mean.",
+        "confidence": "low",
+        "n": 0
+      },
+      "drift": {
+        "against": "v1",
+        "v1ReachFt": 11.356,
+        "v1PickupFt": 9.352,
+        "v1DivingFt": 21.376,
+        "areaRatio": 14.33,
+        "divingAreaRatio": 21.59,
+        "note": "known-drift against v1, not against a measurement. The two games are not being reconciled -- v1 stays as it is -- but the SIZE of the gap is pinned so it cannot be quietly reintroduced."
+      },
+      "ours": {
+        "constant": "src/v2/sim/params.ts DEFENSE.REACH_FT, DEFENSE.CATCH_CENTRE_FT, DEFENSE.DIVE_REACH_FT; src/v2/sim/athletes.ts reachFt",
+        "value": {
+          "reachFt": 3,
+          "catchCentreFt": 3,
+          "diveReachFt": 1.6,
+          "maxCatchHeightFt": 6
+        }
+      },
+      "theHardFloor": "3ft is not free to shrink. BOUNCE.BALL_SETTLE_MARGIN_FT lets a ball rest 1ft from the wall while FIELD_MARGIN clamps a FIELDER at 4ft, so a ball against the fence sits exactly 3ft from the nearest legal standing spot. bounce.test.ts has asserted that gap is at most 3 since PR 3, with the literal message 'PR 5 catch radius must cover this'; runners.test.ts now asserts the other end. It holds with nothing to spare, which is why it is pinned from both sides.",
+      "theEnvelopeIsNotASphere": "★ AND MAKING IT ONE BROKE THE INFIELD, which is the most useful thing in this record. A sphere of radius 3ft centred on a kid's chest gives a ball lying ON THE GROUND a horizontal reach of sqrt(3² - 2.88²) = 0.84ft -- the fielder has to stand almost exactly on top of a grounder to pick it up. Every routine grounder turned into a chase to the outfield wall while the election insisted the shortstop had cut it off. He had; he could not bend over. So: below chest height the reach is CYLINDRICAL (crouch and extend), above it spherical about the chest (an arm sweeping overhead). The ceiling is unchanged at 6ft.",
+      "whatItReplaces": "v1 has no catch HEIGHT at all: its fly-ball test is dist(chaser.pos, b.pos) in the flat plane, so a fielder standing under a ball forty feet up is 'within 34px' of it. What stops that catch is LIVE.CATCHABLE_TAIL -- a rule that only the last 40% of a flight is catchable -- which is a timing constant standing in for a geometry fact. With a centre and a radius the rule falls out and the constant is not needed.",
+      "consequenceMeasured": "Against the shipped field and physics (fielders.test.ts, park venue, stat-5 batter, 4200ms leg): a ball into the true LF-CF gap is a HIT, where defense.fielderSpeed.notSufficient measured v1's as 'out by 897ms'. A routine grounder to short is still an OUT -- secured at 2.06s, released at 2.51s, a 1.44s throw, 3.95s against the 4.20s leg -- and a grounder hit 40% harder goes THROUGH the infield and rolls 149ft. All three are what the record wanted and none of them was reachable in v1.",
+      "whatWouldClose": "A measurement rather than an anatomical estimate: the horizontal distance at which four-to-eight-year-olds actually catch a thrown ball, n>=3, which is an afternoon with a tape measure. It would also settle DIVE_REACH_FT, which is currently 'about a torso' and nothing better.",
+      "informs": "src/v2/sim/params.ts DEFENSE.REACH_FT",
+      "source": "physics:published"
+    },
+    "throwSpeed": {
+      "id": "sim.throw-speed",
+      "category": "sim",
+      "reference": "baseball",
+      "status": "awaiting-measurement",
+      "statusChangedAt": "2026-08-01",
+      "what": "How hard a kid throws, and therefore how far -- the term defense.fielderSpeed.nextLever names as binding on a batter-to-first race.",
+      "why": "★ THE BB2001 MEASUREMENT IS BLOCKED AND v2 CANNOT UNBLOCK IT. defense.throwSpeed's own note: 'THE CLEANEST TARGET DOES NOT EXIST IN THIS CAPTURE' -- the contested catcher-to-second steal it planned to measure never happens, because both steals in the footage are uncontested. So this record anchors on a DIFFERENT REFERENCE CLASS, which is what reference: 'baseball' is for: published youth throwing velocity, ~36-42 mph at 8U and 37-50 at 9U.",
+      "measured": null,
+      "n": 0,
+      "confidence": "low",
+      "partialReading": {
+        "confidence": "low",
+        "n": 1,
+        "youthBandMph": [
+          36,
+          50
+        ],
+        "ageNote": "8U and 9U coaching and showcase aggregates. Our roster is four to eight, BELOW the floor, so our 30-48 band is that data extrapolated DOWN -- the same move sim.batSpeed makes and for the same reason, and it is recorded rather than hidden.",
+        "source": "Youth pitching/throwing velocity benchmarks by age."
+      },
+      "comparisonForm": "throw speed / runner speed, dimensionless, which is the form defense.throwSpeed asks for and the only one that survives v1 being px/s and v2 being ft/s. Reads as: 'a throw travels N times as fast as a kid runs.'",
+      "theOrdering": "Ours is 2.44x-3.91x against the anchored 18.007 ft/s runner. The published band in the same units is 2.93x-4.07x. v1 KID -- the mode that actually produces base hits -- is 4.60x, just above our top. v1 CLASSIC is 9.65x, two and a half times it. That ordering is the strongest thing the blocked record can be given, and it turns KID's playability from a coincidence into a result.",
+      "ours": {
+        "constant": "src/v2/sim/params.ts DEFENSE.THROW_SPEED_MIN_MPH, DEFENSE.THROW_SPEED_MAX_MPH; src/v2/sim/athletes.ts throwSpeedFts",
+        "value": {
+          "mph": [
+            30,
+            48
+          ],
+          "ratioToRunner": [
+            2.44,
+            3.91
+          ],
+          "maxRangeFt": {
+            "arm1": 60.2,
+            "arm5": 96.5,
+            "arm10": 154.0
+          }
+        }
+      },
+      "theRelayBecomesAConsequence": "★ AND THIS IS THE POINT. v1 had to INVENT LIVE.RELAY and gate it on a hand-picked 1.39 basepath legs, because 'throw DISTANCE provably cannot do this job: a coin-flip on a routine grounder needs an 806px throw and the longest that exists is 418px'. Here an arm has a range. Centre field to first base is 129.7ft and an average kid's maximum is 96.5ft, so 27 of 30 kids simply cannot make that throw; every one of the 30 can make the 68.2ft throw from short. A cutoff man stops being a mechanic and becomes what happens when nobody can reach the bag.",
+      "vacuumCaveat": "The range is a VACUUM solve -- sin(2θ) = Rg/v², taking the fast root -- while everything the BALL does is integrated with drag and Magnus. Solving a release elevation against drag needs the iteration releasePitch runs, and a throw happens far more often than a pitch. The error is OPTIMISTIC (a vacuum range overstates a real one), so maxThrowFt reads as an upper bound on what an arm can do, and the relay above is if anything under-triggered.",
+      "armIsThePitchingStat": "There is no separate arm stat: data/types.ts has contact/power/speed/pitching/fielding, and v1 maps arm = stats.pitching too (though only for WILDNESS -- in v1 a better arm throws straighter, never harder). Consequence worth stating: lineup.ts autoAssign puts the best arm on the mound, so outfield arms are middling by construction and the relay is the normal case rather than the exception.",
+      "comparedWithThePitch": "sim.pitchCorridorV2 solves a pitch to a measured FLIGHT TIME and produces a 33.5 mph release at stat 5, against 38 mph here for a max-effort throw by the same arm. Those are consistent -- a game-pace pitch to a four-year-old is not a max-effort throw -- but the pitch solve also SATURATES: at a 2.4ft aim the slowest reachable flight is ~1.14s, so ARM_MULT_MIN/MAX request flights it cannot deliver and stat 1 and stat 10 end up 78ms apart and not in the order wantSec asks for. Recorded here because it is the same arm; it belongs to sim.pitchCorridorV2 to fix.",
+      "whatWouldWork": "Unchanged from defense.throwSpeed: the infield-throw family, plays 03/04/12/13/15/17, located via BB's yellow throw-lane affordance, one 33ms sheet on the bracket. Failing that, a radar gun at a tee-ball practice, n>=3, which would measure the population this game is actually for.",
+      "informs": "src/v2/sim/params.ts DEFENSE.THROW_SPEED_MIN_MPH",
+      "source": "physics:published"
+    },
+    "fielderReaction": {
+      "id": "sim.fielder-reaction",
+      "category": "sim",
+      "reference": "baseball",
+      "status": "awaiting-measurement",
+      "statusChangedAt": "2026-08-01",
+      "what": "How long a fielder stands still before doing anything -- reading the ball, and then gathering and releasing a throw.",
+      "why": "v1 spends cpuReactionMs 835 + cpuThrowDelayMs 1192 = 2027ms of a fielder standing perfectly still, 48% of the batter's entire 4200ms leg, and defense.fielderSpeed.nextLever identifies that fixed overhead plus the throw -- not the chase -- as what actually decides the race.",
+      "measured": null,
+      "n": 0,
+      "confidence": "low",
+      "partialReading": {
+        "confidence": "low",
+        "n": 1,
+        "childVisualReactionMs": [
+          280,
+          350
+        ],
+        "why": "Simple visual reaction time in 8-10 year olds. A fielder must also decide WHERE the ball is going, so our band starts above it at 300-500ms.",
+        "source": "Developmental reaction-time norms for children."
+      },
+      "theConfoundIsGone": "defense.cpuReaction refused to promote its own 1050ms partial reading (n=5) for a DEFINITIONAL reason, quoted whole: 'a displacement threshold cannot separate a DECISION DELAY from an ACCELERATION RAMP. Our cpuReactionMs is a deliberate AI pause; if BB's fielders instead start immediately and accelerate slowly, the same 1050ms would be measuring something we do not model.' v2 MODELS THE RAMP (sim.kidSprintSpeed), so the two are no longer confounded and that record's open question changes shape: a future measurement of BB can now be compared against reaction + ramp rather than against a single number standing for both.",
+      "ours": {
+        "constant": "src/v2/sim/params.ts DEFENSE.REACTION_MIN_SEC, DEFENSE.REACTION_MAX_SEC, DEFENSE.RELEASE_SEC; src/v2/sim/athletes.ts reactionSec",
+        "value": {
+          "readMs": [
+            300,
+            500
+          ],
+          "realisedRosterMs": [
+            344,
+            478
+          ],
+          "releaseMs": 450,
+          "worstCaseOverheadMs": 950,
+          "v1OverheadMs": 2027
+        }
+      },
+      "itIsAlsoPartOfTheElection": "★ A SECOND FINDING, and it was a real bug first. The chaser election ranks fielders on when they can cut the ball off, and the first version computed that as pure travel time -- for a fielder who has not seen the ball yet and is not moving. It elected a shortstop whose cut-off was 1.42s away when 0.46s of that would be spent standing still; the ball went past him at 7ft and he trailed it eighty feet into left field before catching up with it at rest. The read is now part of the journey. Nothing about this is visible in a fielder's POSITION, which is why it could only be found by running the election against the pursuit it was predicting.",
+      "whatWouldWork": "defense.cpuReaction's own plan, now with a second thing to look for: read first-motion frames at >=2x magnification on a clockFidelity-gated capture, but ALSO read the fielder's speed profile over the following second. A ramp and a pause look identical at one frame and completely different over thirty.",
+      "informs": "src/v2/sim/params.ts DEFENSE.REACTION_MIN_SEC",
+      "source": "physics:published"
+    },
+    "chaserElectionGate": {
+      "id": "sim.chaser-election-gate",
+      "category": "sim",
+      "reference": "derived",
+      "status": "note",
+      "statusChangedAt": "2026-08-01",
+      "what": "Whether expressing v1's cut-ahead gate as a RATIO rather than a fixed duration actually fixes what defense.chaserElection says is wrong with it.",
+      "finding": "★ IT DOES NOT, AND THE PR THAT MADE THE CHANGE ASSERTED THAT IT DID. defense.chaserElection.stabilityClaimCorrected reads: 'CUT_AHEAD_MS is a fixed ms gate compared against BALL-PATH times returned by cutOff(). Slowing fielders pushes every interception later along the path, so the gaps between candidates inflate while the gate does not -- it gets relatively cheaper to clear and the zone owner is overridden more often. It cannot be speed-neutral by construction.' The obvious inference is that a dimensionless gate would be. It is not.",
+      "measured": {
+        "n": 215,
+        "grid": "Ground balls, spray -42..+42 in 2deg steps x exit velocity 40/55/70/85/100 ft/s, park venue, the autoAssign lineup, reaction zeroed so only the gate varies.",
+        "overrideRateByDefenceSpeed": {
+          "ratioGate0_15": {
+            "x0_5": 11.2,
+            "x1": 18.6,
+            "x2": 17.7,
+            "spreadPp": 7.4
+          },
+          "fixedGate0_40sec": {
+            "x0_5": 11.6,
+            "x1": 19.1,
+            "x2": 17.7,
+            "spreadPp": 7.4
+          }
+        },
+        "confidence": "med"
+      },
+      "why": "Both gate forms drift by the same 7.4 percentage points across a 4x spread of defence speed. The override rate moves because a speed change alters WHICH FIELDERS CAN INTERCEPT THE BALL AT ALL -- a slow fielder's cutOff returns null and they drop out of the comparison entirely -- and no gate form touches that. The gate is not the dominant term.",
+      "whatThisCorrects": "defense.chaserElection's diagnosis is a correct observation with an incomplete mechanism. Its MEASUREMENT (27.7% -> 32.4% over a 2.48x speed change) stands and is not challenged here; what this shows is that the fixed gate is not what produced it, so re-deriving CUT_AHEAD_MS at the new speed -- the work that record schedules -- would not have stabilised the rate either.",
+      "whyKeepTheRatioAnyway": "A smaller and honest reason. It is dimensionless, so it cannot silently become a different rule when the times it compares change scale, and there is no unit for a future retune to leave stale -- which is the failure mode that produced v1's 400ms sitting unexamined through five speed changes. A correctness-of-form change, not a measured improvement.",
+      "ours": {
+        "constant": "src/v2/sim/params.ts DEFENSE.CUT_AHEAD_FRAC, DEFENSE.SWITCH_MARGIN_FRAC",
+        "value": {
+          "cutAheadFrac": 0.15,
+          "switchMarginFrac": 0.12,
+          "overrideRateAt1x": 18.6
+        }
+      },
+      "whatWouldClose": "The interesting question this opens is whether an election that ranks on cut-off time is stable under ANY gate, or whether the two-regime structure itself needs a term for 'nobody can head it off'. That is answerable with the same sweep and a third gate form, and it belongs with the play reducer rather than here.",
+      "informs": "src/v2/sim/params.ts DEFENSE.CUT_AHEAD_FRAC"
     }
   },
   "defense": {
