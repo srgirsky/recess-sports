@@ -300,7 +300,7 @@ export interface ChasePick {
  * `sprintTimeForFt`. The election must rank the fielders it is given.
  */
 function timeToCover(f: FielderState, ft: number): number {
-  return sprintTimeForFt(ft, f.topFts, f.accelFtS2);
+  return sprintTimeForFt(ft, f.topFts, f.accelFtS2, f.speedFts);
 }
 
 /** Is the ball settling anywhere near this position's post? */

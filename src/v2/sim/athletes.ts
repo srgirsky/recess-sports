@@ -116,12 +116,29 @@ export function sprintTimeSec(distFt: number, speedStat: number): number {
  * a defence to prove the cut-ahead gate is speed-neutral scales nothing the
  * election reads, and passes while proving nothing. Found by breaking the gate
  * and watching it stay green.
+ *
+ * ★ AND `fromFts` IS NOT A CONVENIENCE. The election re-runs while the chase is
+ * already under way, and charging a fielder a fresh standing-start ramp every
+ * time says he is up to 0.87s slower than he is. The symptom was a shortstop who
+ * would not CHARGE: told he could not reach the ball out in front, he settled
+ * for meeting it where it happened to arrive — fourteen feet deeper, which is
+ * fourteen feet added to the throw and half a second added to the play. He was
+ * being asked what a kid standing still could do, over and over, while running.
  */
-export function sprintTimeForFt(distFt: number, topFts: number, accelFtS2: number): number {
+export function sprintTimeForFt(
+  distFt: number,
+  topFts: number,
+  accelFtS2: number,
+  fromFts = 0
+): number {
   if (distFt <= 0) return 0;
-  const rampFt = (topFts * topFts) / (2 * accelFtS2);
-  if (distFt <= rampFt) return Math.sqrt((2 * distFt) / accelFtS2);
-  return topFts / accelFtS2 + (distFt - rampFt) / topFts;
+  const v0 = fromFts < 0 ? 0 : fromFts > topFts ? topFts : fromFts;
+  // Distance still needed to reach top speed from v0, and the time it takes.
+  const rampFt = (topFts * topFts - v0 * v0) / (2 * accelFtS2);
+  if (distFt <= rampFt) {
+    return (Math.sqrt(v0 * v0 + 2 * accelFtS2 * distFt) - v0) / accelFtS2;
+  }
+  return (topFts - v0) / accelFtS2 + (distFt - rampFt) / topFts;
 }
 
 // --- Fielding ---------------------------------------------------------------

@@ -201,7 +201,7 @@ describe('src/v2/sim is pure', () => {
     // checked rather than assumed, and closing the door now is cheaper than
     // discovering a `Math.atan2` in the pursuit loop after the harness has
     // fingerprints riding on it.
-    const HOT = ['flight.ts', 'ball.ts', 'fielders.ts', 'runners.ts'];
+    const HOT = ['flight.ts', 'ball.ts', 'fielders.ts', 'runners.ts', 'play.ts', 'bounce.ts'];
     const banned = /Math\s*\.\s*(exp|log|log2|log10|pow|cbrt|sinh|cosh|tanh|expm1|log1p)\b|\*\*/;
     for (const f of sources) {
       if (f.isTest) continue;

@@ -2471,6 +2471,7 @@
       "theEnvelopeIsNotASphere": "★ AND MAKING IT ONE BROKE THE INFIELD, which is the most useful thing in this record. A sphere of radius 3ft centred on a kid's chest gives a ball lying ON THE GROUND a horizontal reach of sqrt(3² - 2.88²) = 0.84ft -- the fielder has to stand almost exactly on top of a grounder to pick it up. Every routine grounder turned into a chase to the outfield wall while the election insisted the shortstop had cut it off. He had; he could not bend over. So: below chest height the reach is CYLINDRICAL (crouch and extend), above it spherical about the chest (an arm sweeping overhead). The ceiling is unchanged at 6ft.",
       "whatItReplaces": "v1 has no catch HEIGHT at all: its fly-ball test is dist(chaser.pos, b.pos) in the flat plane, so a fielder standing under a ball forty feet up is 'within 34px' of it. What stops that catch is LIVE.CATCHABLE_TAIL -- a rule that only the last 40% of a flight is catchable -- which is a timing constant standing in for a geometry fact. With a centre and a radius the rule falls out and the constant is not needed.",
       "consequenceMeasured": "Against the shipped field and physics (fielders.test.ts, park venue, stat-5 batter, 4200ms leg): a ball into the true LF-CF gap is a HIT, where defense.fielderSpeed.notSufficient measured v1's as 'out by 897ms'. A routine grounder to short is still an OUT -- secured at 2.06s, released at 2.51s, a 1.44s throw, 3.95s against the 4.20s leg -- and a grounder hit 40% harder goes THROUGH the infield and rolls 149ft. All three are what the record wanted and none of them was reachable in v1.",
+      "theTagUsesTheSameReach": "★ AND SO DOES THE TAG, which deleted a second v1 constant. RUN2.TAG_RADIUS is 26px = 8.7ft at v1's own scale -- a fielder tagging a runner from nine feet away -- and it exists as a separate number only because v1 has no single place for 'how far a kid can reach'. play.ts tags at reachFt(), the same three feet, from the same arm. RUN2.SAFE_RADIUS (14px, 'a runner within this of a bag counts as standing ON it') is gone outright and not even re-derived: v2's runners are LEG-parameterised, so `isSettled(r)` IS standing on the bag. v1 needs a radius because its runners are positions on a field and it has to ask geometry a question the state already answers.",
       "whatWouldClose": "A measurement rather than an anatomical estimate: the horizontal distance at which four-to-eight-year-olds actually catch a thrown ball, n>=3, which is an afternoon with a tape measure. It would also settle DIVE_REACH_FT, which is currently 'about a torso' and nothing better.",
       "informs": "src/v2/sim/params.ts DEFENSE.REACH_FT",
       "source": "physics:published"
@@ -2607,6 +2608,139 @@
       },
       "whatWouldClose": "The interesting question this opens is whether an election that ranks on cut-off time is stable under ANY gate, or whether the two-regime structure itself needs a term for 'nobody can head it off'. That is answerable with the same sweep and a third gate form, and it belongs with the play reducer rather than here.",
       "informs": "src/v2/sim/params.ts DEFENSE.CUT_AHEAD_FRAC"
+    },
+    "gapBallOutcome": {
+      "id": "sim.gap-ball-outcome",
+      "category": "sim",
+      "reference": "derived",
+      "status": "conformed",
+      "statusChangedAt": "2026-08-01",
+      "what": "What actually happens to the six plays defense.fielderSpeed.notSufficient measured in v1 -- run through a real play reducer rather than a test harness that admitted its own bias.",
+      "why": "★ THIS IS THE CLAIM v2 WAS BUILT TO TEST. defense.fielderSpeed.notSufficient measured six balls in v1 and every one was an out at first, including a ball into the true LF-CF gap (out by 897ms). Its conclusion was that the cause was structural -- 'our outfield is too shallow relative to the diamond... any real fix to offense has to touch geometry.FIELD_POSITIONS or the throw ratio, not the chase'. PR 5 answered it with a test-only harness that stepped ONE chaser against ONE runner and said so in its own header: 'no relays, no cutoff, no CPU baserunning policy, no errors. Every one of those omissions makes the DEFENCE look better than it will be, so a hit here is a lower bound on a hit.' This is the same six plays through the thing that plays the game.",
+      "measured": {
+        "venue": "park",
+        "batter": "speed 5 (the pace anchor)",
+        "defence": "systems/lineup.ts autoAssign over ROSTER[0..8] -- the SHIPPED planner, not a hand-picked nine",
+        "plays": {
+          "routineGrounderToSS": {
+            "v1": "out by 1397ms",
+            "v2": "single",
+            "playSec": 4.2
+          },
+          "slowRollerTo3B": {
+            "v1": "out by 347ms",
+            "v2": "out",
+            "playSec": 4.07
+          },
+          "throughThe56Hole": {
+            "v1": "out by 1047ms",
+            "v2": "single (relayed)",
+            "playSec": 5.63
+          },
+          "trueLFCFGap": {
+            "v1": "out by 897ms",
+            "v2": "DOUBLE",
+            "playSec": 7.53
+          },
+          "trueCFRFGap": {
+            "v1": "out by 1097ms",
+            "v2": "DOUBLE",
+            "playSec": 7.53
+          },
+          "downTheRFLine": {
+            "v1": "out by 2047ms",
+            "v2": "DOUBLE",
+            "playSec": 7.53
+          }
+        },
+        "gradient": {
+          "what": "Grounders swept over 15 spray angles at three contact qualities. Hits, out of 15.",
+          "31mph": "3/15",
+          "42mph": "12/15",
+          "55mph": "13/15"
+        },
+        "confidence": "med",
+        "n": 6
+      },
+      "theGradientIsTheResult": "A soft grounder is an out almost anywhere, a medium one finds the holes, a hard one gets through -- and NOTHING WAS TUNED TO PRODUCE IT. v1 measured every ball a fielder reached as an out, at every angle and every contact quality, which is a defence with no gradient at all.",
+      "notABabipClaim": "★ AND THIS IS NOT BABIP, which matters because the number is tempting. The sweep is grounders only: no fly balls, no strikeouts, no walks, one batter, one venue, and the sprays are uniform rather than distributed the way real contact is. PR 8's harness is what measures BABIP, over plate appearances rather than launch specs. Reading 12/15 as a batting average is exactly the overclaim pace.pitchCorridor exists to warn about.",
+      "theArmAtShort": "★ A FINDING WORTH MORE THAN THE HEADLINE: the routine grounder to short is now a SINGLE, and the reason is the arm. systems/lineup.ts autoAssign scores shortstop on `fielding*2 + speed` and never looks at `pitching`, so this nine puts a 34mph arm (max range 77ft) at the position with the longest routine throw in the infield. He fields the ball at 72ft and cannot quite beat the runner across. The same ball hit to the second-base side, where the throw is 40ft, is an out. v1 could not surface this because its throws were 9.65x runner speed and its catch radius was 11.4ft -- arm strength never bound anything. NOT FIXED HERE: autoAssign is v1 code and v1 must stay byte-identical; v2's own lineup planner is PR 7's.",
+      "bugsThisFound": [
+        "The election treated a ball skipping through the infield as IN THE AIR (phase === flight between hops), so it sent whoever was nearest the next bounce. The pitcher fielded a grounder forty feet behind the shortstop. Fixed by splitting the regimes on APEX HEIGHT against the same ceiling `canReach` enforces.",
+        "The election charged every fielder a fresh STANDING-START ramp on each re-read, saying a running kid was up to 0.87s slower than he was. The shortstop would not CHARGE: told he could not reach the ball out in front, he settled for meeting it where it happened to arrive, fourteen feet deeper. Fixed by `sprintTimeForFt(..., fromFts)`. Worth 7 of 15 outs on the soft-grounder sweep on its own.",
+        "`shouldSwitch` was handed a null incumbent score, so its third guard could not run and every challenger won. A grounder's single `land` event then fell inside the switch cooldown, so the first guess -- made in the air regime -- became permanent.",
+        "`startLeg` has no occupancy check (it is handed one runner and cannot see the traffic), and the reducer did not add one, so two runners settled on the same base. That does not look like a baserunning bug: it looks like a runner VANISHING, because finishPlay writes one baseIds entry. Caught only by the accounting sweep."
+      ],
+      "ours": {
+        "constant": "src/v2/sim/play.ts",
+        "value": {
+          "gapBall": "double",
+          "routineGrounderRightSide": "out",
+          "softGrounderHits": 3,
+          "softGrounderPlays": 15
+        }
+      },
+      "whatWouldClose": "Nothing -- this one is measured and conformed. What it hands forward is PR 8's job: the same defence over 50k plate appearances, where BABIP, the launch-angle split and the exit-velocity shape can be compared against real baseball bands instead of six named plays.",
+      "informs": "src/v2/sim/play.ts"
+    },
+    "playClock": {
+      "id": "sim.play-clock",
+      "category": "sim",
+      "reference": "derived",
+      "status": "conformed",
+      "statusChangedAt": "2026-08-01",
+      "what": "The hard cap on a play, and the assertion v1 never had: that no legitimate play reaches it.",
+      "why": "★ A CAP THAT FIRES IS A SOFT-LOCK THAT WAS CAUGHT, NOT A RULE. v1's LIVE.MAX_PLAY_MS is 21862 and its own comment says 'NOT measured -- scaled with RUNNER_SPEED'. Nothing in v1 asserts a legitimate play stays under it, so the cap quietly became the way some plays ended: eight separate anti-hang guards elsewhere in liveplay.ts exist because plays wedged, and each was added after the fact. The cap is only a backstop if something proves it is never the mechanism.",
+      "measured": {
+        "n": 180,
+        "grid": "3 venues x 12 spray angles x 5 contact qualities (35-120 ft/s, -3 to 30 deg), two runners aboard.",
+        "longestPlaySec": 12.38,
+        "capSec": 20,
+        "cappedPlays": 0,
+        "headroomPct": 38,
+        "confidence": "med"
+      },
+      "theBound": "The longest legitimate sequence is a ball to the deepest fence, a chase, a relay in, and a runner going first to home: 180ft from a standing start is ~11s at the slowest stat. Twenty seconds clears the measured worst case (12.38s) by 38%.",
+      "andTheGuardsAreFewer": "v2 needs fewer anti-hang guards than v1 because two of v1's exist to undo bad geometry rather than to stop a hang: `wildSettlePoint` rotates rather than truncates an overshoot 'because a fielder then presses against the clamp boundary until MAX_PLAY_MS', and `settleBallAt` clamps every settle site for the same reason. v2 inherits the second (bounce.ts owns it) and does not need the first, because a throw that misses is simply live at the bag rather than sailing to an unreachable spot.",
+      "ours": {
+        "constant": "src/v2/sim/params.ts PLAY.MAX_PLAY_SEC",
+        "value": {
+          "maxPlaySec": 20,
+          "measuredLongestSec": 12.38
+        }
+      },
+      "whatWouldClose": "Re-run the sweep after PR 7 adds tag-ups, rundowns and steals -- each of which lengthens a play, and rundowns most of all. The assertion is the thing to keep, not the number.",
+      "informs": "src/v2/sim/params.ts PLAY.MAX_PLAY_SEC"
+    },
+    "cutoffRelay": {
+      "id": "sim.cutoff-relay",
+      "category": "sim",
+      "reference": "derived",
+      "status": "conformed",
+      "statusChangedAt": "2026-08-01",
+      "what": "Whether the cutoff relay emerges from arm range on its own, and whether v1's look-back concession was needed to make it work.",
+      "why": "★ v1 HAD TO INVENT THE RELAY, and says so: 'throw DISTANCE provably cannot do this job. A coin-flip on a routine grounder would need an 806px throw to first; the longest that exists anywhere is 418px.' So LIVE.RELAY is a MECHANIC, armed by a hand-picked depth of 1.39 basepath legs and gated on CPU-defence-and-CLASSIC-only. Here an arm has a range: centre field to first base is 129.7ft and 27 of 30 kids cannot throw it, so a cutoff man is what happens when nobody can reach the bag.",
+      "measured": {
+        "n": 180,
+        "grid": "The same sweep as sim.playClock.",
+        "relayedPct": 16,
+        "cfToFirstFt": 129.7,
+        "armsThatCannotMakeIt": 27,
+        "rosterSize": 30,
+        "confidence": "med"
+      },
+      "theLookBackRuleWasNotNeeded": "★ v1's RelayState.committed is a CONCESSION -- the defence stops playing for the one leg a runner is already on -- and its comment is emphatic that 'without this the relay buys nothing. The ball lands back on the mound at ~4470ms, bestBeatableBase sees the batter running to second, and MOUND->SECOND is 118px (286ms) against a 4197ms leg, so the pitcher guns him down every single time and a gap ball is still just a single.' That is a statement about v1's GEOMETRY, not about relays. Here the same bestBeatableBase veto is the whole policy and the concession is absent: gap balls come out as doubles, not as singles and not as outs. Omitting it was the deliberate test, and the outcome is in sim.gapBallOutcome.",
+      "invariantsKept": "Three of v1's, each of which was a bug first. ThrowTarget stays a discriminated union so a relay leg and a throw at a bag cannot be confused; the `kind: 'fielder'` branch RETURNS BEFORE THE RUNNER LOOP, which is what makes an out on a relay structurally impossible ('do not restructure it away'); and PLAY.RELAY_MAX_LEGS caps the chain. A test steps every relay in a sweep and asserts the outs count does not move on the tick a relay leg lands.",
+      "ours": {
+        "constant": "src/v2/sim/play.ts pickCutoff, throwOrRelaySec; src/v2/sim/params.ts PLAY.RELAY_MAX_LEGS",
+        "value": {
+          "maxLegs": 2,
+          "relayedPct": 16,
+          "lookBackRule": false
+        }
+      },
+      "whatWouldClose": "Nothing here. The open question it hands PR 8 is whether 16% is the right rate -- it is a consequence of the arm band (sim.throwSpeed, still awaiting-measurement) and would move with it.",
+      "informs": "src/v2/sim/params.ts PLAY.RELAY_MAX_LEGS"
     }
   },
   "defense": {

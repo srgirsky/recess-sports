@@ -502,6 +502,17 @@ export const DEFENSE = {
   CHASE_HORIZON_SEC: 8,
   CHASE_SAMPLES: 24,
   /**
+   * How finely the play reducer samples the ball's path, seconds.
+   *
+   * ★ THE ELECTION AIMS AT A SAMPLE, so the grid is the resolution of the aim
+   * point — and `cutOff` returns the FIRST sample a fielder can beat the ball
+   * to, which a coarse grid pushes late. `CHASE_SAMPLES` 24 over an 8s horizon
+   * is one point every third of a second, or seven feet of a rolling ball: a
+   * shortstop was told to meet a grounder seven feet deeper than he needed to,
+   * every time, which is seven feet added to the throw AND to the play.
+   */
+  CHASE_STEP_SEC: 0.05,
+  /**
    * The cut-ahead gate: how much sooner a challenger must reach the ball before
    * it is taken off the fielder whose zone it settles in.
    *
@@ -546,6 +557,75 @@ export const DEFENSE = {
   SWITCH_MARGIN_FRAC: 0.12,
   /** Slack on a cut-off: a fielder arriving this much late still cuts it off. */
   CUTOFF_GRACE_SEC: 0.12,
+} as const;
+
+/**
+ * The play itself — the handful of numbers that are about a PLAY rather than
+ * about a ball, a kid or an arm.
+ *
+ * ★ TWO OF v1's ARE DELIBERATELY ABSENT, and their absence is the finding.
+ *
+ * `RUN2.TAG_RADIUS` is 26px = **8.7 ft** at v1's own scale: a fielder tagging a
+ * runner from nine feet away. There is no tag radius here because a tag is a
+ * glove touching a runner, which is `reachFt()` — the same three feet the catch
+ * uses, from the same arm. One quantity, one place, exactly as `athletes.ts`
+ * exists to enforce.
+ *
+ * `RUN2.SAFE_RADIUS` (14px, "a runner within this of a bag counts as standing
+ * ON it") does not exist either, and this one is not even a re-derivation: v2's
+ * runners are LEG-parameterised, so `isSettled(r)` — `to === from` — *is*
+ * standing on the bag. v1 needs a radius because its runners are positions on a
+ * field and it has to ask geometry a question the state already answers.
+ */
+export const PLAY = {
+  /**
+   * Hard cap on a play, seconds.
+   *
+   * v1's `LIVE.MAX_PLAY_MS` is 21862 and its comment says "NOT measured --
+   * scaled with RUNNER_SPEED". Ours is a real bound: the longest legitimate
+   * sequence is a ball to the deepest fence (~212ft), a chase, a relay in, and
+   * a runner going first to home (180ft from a standing start, ~11s at the
+   * slowest stat). Twenty seconds clears that with room, and — the part v1
+   * never had — `play.test.ts` asserts NO LEGITIMATE PLAY EVER REACHES IT.
+   * A cap that fires is a soft-lock that was caught, not a rule.
+   */
+  MAX_PLAY_SEC: 20,
+  /**
+   * The infinite-relay guard. v1's `LIVE.RELAY.MAX_LEGS`: outfielder -> cutoff
+   * -> pitcher, then stop.
+   */
+  RELAY_MAX_LEGS: 2,
+  /**
+   * How much a throw must beat a runner by to be worth making, seconds.
+   *
+   * v1's `bestBeatableBase` uses a bare `throwMs < runnerMs` and then vetoes the
+   * throw entirely when nothing is beatable. The margin is here because the
+   * runner's remaining time is computed from their CURRENT speed and a fielder
+   * cannot know it exactly; throwing on a coin-flip is how a defence gives away
+   * bases on overthrows it did not need to attempt.
+   */
+  THROW_MARGIN_SEC: 0.1,
+  /**
+   * ★ THERE IS NO GREED DISTANCE, AND THAT IS THE POINT.
+   *
+   * v1 sends a CPU runner when the ball is more than `CPU_RUNNER_GREED_DIST`
+   * (180px = 60.1ft, one basepath) from the next bag — a DISTANCE standing in
+   * for a RACE. A distance cannot see that the kid holding the ball is 190ft
+   * away with an arm that reaches 97, so a ball in the gap reads the same as a
+   * ball in the shortstop's glove once both are "far from second".
+   *
+   * `play.ts`'s `worthTaking` asks the question instead, through the same
+   * `throwFlightSec` the defence uses to decide whether to throw at all — so the
+   * two sides of the race are measured the same way. It is what makes a gap ball
+   * a DOUBLE rather than a single: the outfielder has the ball and still cannot
+   * do anything with it.
+   */
+  /**
+   * Nobody has picked the ball up in this long? Everyone goes. v1's
+   * `LIVE.CPU_RUNNER_PATIENCE_MS` (2981ms), which was itself scaled rather than
+   * measured; kept at three seconds because it reads as "kids notice".
+   */
+  RUNNER_PATIENCE_SEC: 3,
 } as const;
 
 /**
