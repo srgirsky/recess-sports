@@ -28,8 +28,31 @@ const PARK = VENUE_GEOMETRY.park;
 const SANDLOT = VENUE_GEOMETRY.sandlot;
 const rng = makeRng('contact-tests');
 
+// ★ BOTH HELPERS ARE MEMOISED, and that is not a nicety. `releasePitch` runs a
+// secant on top of a bisection, each iteration a full 240Hz integration; the
+// roster sweeps below asked for the same nine power values sixty times over and
+// re-solved the same pitch every time. That is how this file first ran 5.5s in
+// CI against vitest's 5s default. Raising the timeout would have hidden 6.7x
+// redundant work in the exact code path PR 8's harness runs hundreds of
+// thousands of times. Memoising is safe because both are pure in their
+// arguments: `Rng.fork` derives a substream from (seed, label) and never from
+// stream position, so `resolveSwing`'s foul-tip draw does not depend on how many
+// times it has been called.
+const pitchCache = new Map<string, ReturnType<typeof computePitchAtPlate>>();
+const carryCache = new Map<number, { carry: number; evMph: number; spinRpm: number }>();
+
 /** The pitch a batter actually sees: released, flown, measured at the plate. */
 function pitchAtPlate(kind: PitchKind = 'fastball', pitchingStat = 5) {
+  const key = `${kind}:${pitchingStat}`;
+  let hit = pitchCache.get(key);
+  if (!hit) {
+    hit = computePitchAtPlate(kind, pitchingStat);
+    pitchCache.set(key, hit);
+  }
+  return hit;
+}
+
+function computePitchAtPlate(kind: PitchKind, pitchingStat: number) {
   const flown = flyToPlate(releasePitch({ kind, pitchingStat, aimHeightFt: 2.4, aimLateralFt: 0 }));
   return {
     travelSec: flown.travelSec,
@@ -58,6 +81,14 @@ function carryFt(spec: Parameters<typeof launch>[0]): number {
 
 /** The best a kid can do: sweep the undercut, perfect timing. */
 function bestCarryFor(powerStat: number): { carry: number; evMph: number; spinRpm: number } {
+  const seen = carryCache.get(powerStat);
+  if (seen) return seen;
+  const out = computeBestCarryFor(powerStat);
+  carryCache.set(powerStat, out);
+  return out;
+}
+
+function computeBestCarryFor(powerStat: number): { carry: number; evMph: number; spinRpm: number } {
   const p = pitchAtPlate();
   const kid = ROSTER.find((c) => c.stats.power === powerStat) ?? ROSTER[0];
   let best = { carry: 0, evMph: 0, spinRpm: 0 };
