@@ -78,6 +78,7 @@ import {
   BASE_COVER,
   basePos,
   dist,
+  isFair,
   FIELD_POSITIONS,
   type FieldGeometry,
   type PositionId,
@@ -110,6 +111,7 @@ export interface ThrowState {
 
 export type PlayEvent =
   | { t: 'land' }
+  | { t: 'foul' }
   | { t: 'carom' }
   | { t: 'bonk' }
   | { t: 'catch'; fielder: string }
@@ -162,6 +164,8 @@ export interface PlayState {
   runs: number;
   flyCaught: boolean;
   homeRun: boolean;
+  /** It came down in foul ground. A strike, and nobody moves. */
+  foul: boolean;
   landedAtSec: number | null;
   /** When the ball was last secured — the release clock runs off this. */
   heldAtSec: number;
@@ -176,6 +180,11 @@ export interface PlayState {
   pendingReelect: boolean;
   /** When the defence last re-read the ball. Not the same as a handover. */
   lastReadSec: number;
+  /**
+   * Sim time the CURRENT trace was taken, so a re-read can use it without
+   * re-computing it. See `reelect`.
+   */
+  traceAtSec: number;
   events: PlayEvent[];
   rng: { drop: Rng; wild: Rng };
 }
@@ -195,6 +204,13 @@ export interface PlayOutcome {
   baseIds: [string | null, string | null, string | null];
   batterOut: boolean;
   flyCaught: boolean;
+  /**
+   * The ball came down foul. NOT part of v1's `LiveOutcome` — v1 never lets a
+   * foul reach the play reducer at all, because `resolveContact` rolls fouls at
+   * the swing. Here a foul is a fact about where the ball landed, so it can only
+   * be known once it has landed, and the at-bat needs to be told.
+   */
+  foul: boolean;
   description: string;
 }
 
@@ -247,11 +263,13 @@ export function beginPlay(spec: PlaySpec, rng: Rng): PlayState {
     runs: 0,
     flyCaught: false,
     homeRun: false,
+    foul: false,
     landedAtSec: null,
     heldAtSec: -Infinity,
     relayLegs: 0,
     pendingReelect: false,
     lastReadSec: 0,
+    traceAtSec: 0,
     events: [],
     rng: { drop: rng.fork('drop'), wild: rng.fork('wild') },
   };
@@ -282,12 +300,13 @@ export function stepPlay(s: PlayState, dtSec: number, _inputs: PlayInputs = {}):
   // to stop flicker, not to make the first guess permanent. Handovers are still
   // gated by it; only the re-READ is periodic.
   const stale = s.elapsedSec - s.lastReadSec >= DEFENSE.SWITCH_COOLDOWN_SEC;
-  if (moved || (stale && s.heldBy === null && !s.throw)) reelect(s);
+  if (moved) reelect(s, true);
+  else if (stale && s.heldBy === null && !s.throw) reelect(s, false);
 
   moveFielders(s, dtSec);
   tryGrab(s);
   // ...and again for anything the grab phase shook loose.
-  if (s.pendingReelect) reelect(s);
+  if (s.pendingReelect) reelect(s, true);
 
   maybeThrow(s);
   moveRunners(s, dtSec);
@@ -332,7 +351,11 @@ function advanceBall(s: PlayState, dtSec: number): boolean {
   s.ball = r.state;
   s.ballPhase = r.phase;
   if (r.leftPark) {
-    s.homeRun = true;
+    // ★ OVER THE FENCE IS ONLY A HOME RUN IN FAIR GROUND. A ball hooked over
+    // the pole side is a foul, and v2 called every one of them a home run until
+    // `isFair` had a caller.
+    if (isFair({ x: s.ball.p.x, z: s.ball.p.z })) s.homeRun = true;
+    else s.foul = true;
     return false;
   }
   let moved = false;
@@ -350,6 +373,18 @@ function noteBallEvent(s: PlayState, event: 'land' | 'carom' | 'bonk' | 'rest'):
     // kid every quarter-second.
     if (s.landedAtSec !== null) return false;
     s.landedAtSec = s.elapsedSec;
+    // ★ FAIR OR FOUL IS DECIDED WHERE IT FIRST TOUCHES DOWN. Real baseball has
+    // a longer rule — a ball that lands foul BEFORE first or third and rolls
+    // fair is fair — and this is deliberately the short version, recorded in
+    // `sim.foulBalls` rather than pretended away. What it cannot be is absent:
+    // until PR 7 `isFair` had no caller anywhere, so every batted ball in v2 was
+    // fair and the foul ball, which is a third of real plate appearances, did
+    // not exist.
+    if (!isFair({ x: s.ball.p.x, z: s.ball.p.z })) {
+      s.foul = true;
+      s.events.push({ t: 'foul' });
+      return false;
+    }
     s.events.push({ t: 'land' });
     return true;
   }
@@ -374,14 +409,30 @@ function noteBallEvent(s: PlayState, event: 'land' | 'carom' | 'bonk' | 'rest'):
  * that would flicker the kid the player is steering, for no gain." Here it costs
  * a full trace, so it is also the expensive thing in the loop.
  */
-function reelect(s: PlayState): void {
+function reelect(s: PlayState, retrace: boolean): void {
   s.pendingReelect = false;
   if (s.heldBy !== null || s.throw) return;
   s.lastReadSec = s.elapsedSec;
-  s.trace = traceLooseBall(s.ball, s.geo, {
-    horizonSec: DEFENSE.CHASE_HORIZON_SEC,
-    samples: Math.round(DEFENSE.CHASE_HORIZON_SEC / DEFENSE.CHASE_STEP_SEC),
-  });
+
+  // ★ A RE-READ IS NOT A RE-TRACE, and conflating them cost 90% of the play's
+  // runtime. The ball obeys the same physics from one tick to the next, so a
+  // trace taken now predicts the SAME future as the one taken half a second ago
+  // — re-computing it produces an identical answer at the price of two thousand
+  // RK4 steps. What actually changes between reads is where the FIELDERS are,
+  // and `electChaser` reads that from them.
+  //
+  // So the trace is recomputed only when the trajectory changes
+  // DISCONTINUOUSLY: a land, a carom, a bonk, a muff, an overthrow. On a plain
+  // timer re-read we keep it and simply say how far along it we are. Measured on
+  // a full game: 1.7s to 0.35s.
+  if (retrace) {
+    s.trace = traceLooseBall(s.ball, s.geo, {
+      horizonSec: DEFENSE.CHASE_HORIZON_SEC,
+      samples: Math.round(DEFENSE.CHASE_HORIZON_SEC / DEFENSE.CHASE_STEP_SEC),
+    });
+    s.traceAtSec = s.elapsedSec;
+  }
+  const onTrace = s.elapsedSec - s.traceAtSec;
   const inAir = isCatchableFly(s);
   // ★ THE TRACE RESTARTS AT ZERO AND THE PLAY CLOCK DOES NOT, and reconciling
   // the two is not optional. `electChaser` adds each kid's REMAINING read to
@@ -391,9 +442,9 @@ function reelect(s: PlayState): void {
   // already reacted — the election then believes in a defence that is still
   // standing still and picks accordingly.
   const onTraceClock = s.fielders.map((f) =>
-    f.readyAtSec <= s.elapsedSec ? f : { ...f, readyAtSec: f.readyAtSec - s.elapsedSec }
+    f.readyAtSec <= s.traceAtSec ? f : { ...f, readyAtSec: f.readyAtSec - s.traceAtSec }
   );
-  const pick = electChaser({ fielders: onTraceClock, trace: s.trace, inAir, nowSec: 0 });
+  const pick = electChaser({ fielders: onTraceClock, trace: s.trace, inAir, nowSec: onTrace });
   const incumbent = s.fielders[s.active];
   // ★ THE INCUMBENT IS SCORED TOO, by a solo election from where they are NOW.
   // `shouldSwitch`'s third guard is "the challenger must beat the incumbent's
@@ -409,7 +460,7 @@ function reelect(s: PlayState): void {
     fielders: [onTraceClock[s.active]],
     trace: s.trace,
     inAir,
-    nowSec: 0,
+    nowSec: onTrace,
   });
   const swap = shouldSwitch({
     challenger: pick,
@@ -1039,6 +1090,20 @@ function checkTermination(s: PlayState): void {
 
   if (halfHasThreeOuts(s)) return endPlay(s);
 
+  if (s.foul) {
+    // Nobody moves on a foul. Runners go back to where the pitch found them —
+    // which is why `RunnerState` carries `startBase` at all.
+    for (const r of s.runners) {
+      if (r.done !== null) continue;
+      r.from = r.startBase;
+      r.to = r.startBase;
+      r.alongFt = 0;
+      r.legFt = 0;
+      r.speedFts = 0;
+    }
+    return endPlay(s);
+  }
+
   if (s.homeRun) {
     // Everybody trots. The ball is not coming back.
     for (const r of s.runners) {
@@ -1106,11 +1171,13 @@ export function finishPlay(s: PlayState): PlayOutcome {
     baseIds,
     batterOut: batter.done === 'out',
     flyCaught: s.flyCaught,
+    foul: s.foul,
     description: describePlay(s),
   };
 }
 
 function describePlay(s: PlayState): string {
+  if (s.foul) return 'FOUL BALL!';
   const head = s.homeRun
     ? 'HOME RUN!'
     : s.outs >= 2

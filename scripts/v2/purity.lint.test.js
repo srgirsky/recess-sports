@@ -363,6 +363,15 @@ describe('★ there is exactly ONE kid speed in the sim', () => {
     'REACH_FT',
     'HOME_TO_FIRST_SEC',
     'ANCHOR_SPEED_STAT',
+    'JUDGE_FT_WORST',
+    'JUDGE_FT_BEST',
+    'JUDGE_FRAC_WORST',
+    'JUDGE_FRAC_BEST',
+    'PLATE_HALF_WIDTH_IN',
+    'ZONE_BOTTOM_FRAC',
+    'ZONE_TOP_FRAC',
+    'PITCH_SCATTER_FT_WORST',
+    'PITCH_SCATTER_FT_BEST',
   ];
 
   it('lets nothing but athletes.ts read a raw physical band', () => {

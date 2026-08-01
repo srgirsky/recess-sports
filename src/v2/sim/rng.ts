@@ -30,18 +30,26 @@
 // with several draws per pitch; 2^32 is close enough to that to be worth not
 // thinking about. It costs about ten lines more.
 //
-// ★ WHAT IS DELIBERATELY NOT HERE
+// ★ WHAT IS DELIBERATELY NOT HERE, AND WHAT ARRIVED INSTEAD
 //
-// `normal()` / `gauss()`. Every textbook normal sampler (Box-Muller, Marsaglia
-// polar, Ziggurat's tail) needs `Math.log`, and ECMAScript specifies `Math.log`
-// / `exp` / `pow` / the trig functions as IMPLEMENTATION-APPROXIMATED — only
-// `+ - * /` and `Math.sqrt` are required to be correctly rounded. A fingerprint
-// that depends on them goes red on a V8 bump and reads as somebody's bug. The
-// sim's answer is interpolated tables of committed literals, which arrive with
-// the aerodynamic coefficients; `normal()` lands on that same helper, at the
-// point the first caller needs it (contact scatter). An `Rng` with no normal is
-// honest; an `Rng` whose normal quietly makes the fingerprint version-dependent
-// is not.
+// `normal()` / `gauss()` are still absent. Every textbook normal sampler
+// (Box-Muller, Marsaglia polar, Ziggurat's tail) needs `Math.log`, and
+// ECMAScript specifies `Math.log` / `exp` / `pow` / the trig functions as
+// IMPLEMENTATION-APPROXIMATED — only `+ - * /` and `Math.sqrt` are required to
+// be correctly rounded. A fingerprint that depends on them goes red on a V8
+// bump and reads as somebody's bug.
+//
+// The first caller that genuinely needed bell-shaped noise is the batter's
+// plate judgement (PR 7), and it does not need a NORMAL — it needs a symmetric,
+// zero-mean, finite-tailed error. `bell()` is the Irwin-Hall sum of three
+// uniforms, scaled to unit variance: `+` and `/` only, so it is bit-stable by
+// the same argument as everything else here, and its support is bounded at ±3
+// rather than running to infinity. A batter who misjudges a pitch by six sigma
+// is not a batter, so the truncation is a feature.
+//
+// An `Rng` with no normal is honest; an `Rng` whose normal quietly makes the
+// fingerprint version-dependent is not. `bell()` is not a normal and does not
+// claim to be one.
 //
 // Everything in this file uses `Math.imul` (exactly specified), integer bit ops
 // and `/`. All of it is bit-stable across platforms and V8 versions.
@@ -67,6 +75,16 @@ export interface Rng {
   range(lo: number, hi: number): number;
   /** True with probability p. */
   bool(p: number): boolean;
+  /**
+   * Symmetric zero-mean noise with unit variance, in [-3, 3].
+   *
+   * The Irwin-Hall sum of three uniforms, scaled. NOT a normal — see the header
+   * — but the right shape for a judgement error: most misses small, big ones
+   * rare, and none of them absurd. Always draws exactly THREE values, so its
+   * cost to the stream is fixed and a caller cannot shift a sibling by taking a
+   * different branch.
+   */
+  bell(): number;
   /** A uniformly chosen element. Throws on an empty list. */
   pick<T>(xs: readonly T[]): T;
   /**
@@ -172,6 +190,13 @@ export function makeRng(seed: number | string): Rng {
     // p <= 0 and p >= 1 still DRAW, so a probability that happens to be
     // degenerate this tick cannot shift the stream relative to one that is not.
     return rng() < p;
+  };
+
+  rng.bell = function bell(): number {
+    // U(0,1) x3 has mean 3/2 and variance 3/12 = 1/4, so subtracting 1.5 and
+    // doubling gives mean 0, variance 1, support [-3, 3]. Exactly three draws,
+    // unconditionally.
+    return (rng() + rng() + rng() - 1.5) * 2;
   };
 
   rng.pick = function pick<T>(xs: readonly T[]): T {

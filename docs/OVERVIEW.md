@@ -502,11 +502,73 @@ asserts a legitimate play stays under it, so the cap quietly became the way some
 plays ended. Here the longest of 180 swept plays is 12.38s against a 20s cap and
 **zero reach it** — `sim.playClock` exists to keep that true.
 
-Next: the at-bat and game loop, where the five shared `systems/` modules get
-their first real use (the outcome type is already shaped so `inning.applyLivePlay`
-needs no adapter); then the statistical conformance harness (headless, no art, no
-graphics) which asserts emergent BABIP / launch-angle split / exit-velocity shape
-against real baseball bands instead of pinning constants.
+**The at-bat and the game loop** (2026-08-01). v2 plays a whole game headless —
+`npm run sim:game` prints a line score, a box score and a play-by-play — and the
+five shared `systems/` modules finally do the job the purity lint has been
+guarding for three PRs. `inning.applyAtBat` owns the count, the walk and the rule
+that a foul is a strike but never the third; `gameflow.decideAfterHalf` owns
+extras; `stats.foldStats` owns what an at-bat is. None of it is restated in v2.
+
+**The strike zone was the third v1 constant with no units, and the purest of the
+three.** `LIVE.CATCH_RADIUS` was 34 pixels, which converts to a wrong number of
+feet (11.36). `RUN2.TAG_RADIUS` was 26px, likewise (8.7). But `PLATE_ZONE` is
+`{ W: 96, H: 100 }` in "plate coords" — a space mapped to the screen at ~1.8×
+and related to the field by *nothing at all*. It is not a wrong size; it has no
+size, because v1 never needed the zone to be a place. v2's is the rulebook's:
+17in of plate plus a ball each side (19.9in wide), knees to the letters as
+fractions of the batter's height (16.3in on a four-foot kid). And the umpire asks
+the **trajectory** — a curveball that breaks out of the zone is a ball because it
+broke, where v1 sets `inZone` on an aim point before the ball has gone anywhere.
+
+**One judgement error, two behaviours.** v1 gives the CPU batter five constants
+describing an outcome distribution — ball chance per band, a chase rate, a swing
+band rolled off the stat. A hitter doesn't have five faculties, or two. Give him
+*one* misjudgement of where and when the ball will be, sized by his `contact`
+stat, and the rest falls out: he swings when he **believes** it is a strike, so
+chases and takes are consequences; and the same error in time becomes the timing
+error `contact.ts` already grades. A better-contact kid chases less *and* times
+better, and there is no chase rate or whiff rate anywhere to tune apart.
+
+**That noise failed silently first, which is the useful part.** `Rng` still has
+no `normal()` — every sampler needs `Math.log`, which is banned — so the new
+`bell()` is the Irwin–Hall sum of three uniforms: bit-stable, and **bounded at
+±3σ**. Bounded support is a feature and a trap. At the first draft's sigma a
+swinging strike needed 2.5σ, and the measurement over 4,000 pitches was **zero
+swinging strikes at every contact stat** — not rare, none. A game where nobody
+can swing through a pitch is a missing mechanic, not a bad tuning, and a bounded
+noise turns "unlikely" into "impossible" without saying so. The band is now sized
+against the contact window, and a test asserts the *relationship*.
+
+**And `isFair` had no caller.** `field.ts` has exported it since it was written,
+and `play.ts` stepped a ball, caromed it, relayed it and settled it without ever
+asking which side of the line it came down on. Every batted ball in v2 was fair;
+the foul ball — a third of the pitches in a real plate appearance — did not
+exist. It does now, at first touchdown and at the fence, so a ball hooked over
+the pole is a foul rather than a home run.
+
+**Two performance findings, because PR 8 has to run 50,000 plate appearances.**
+The pitch's release solve is a secant over a bisection — **13.6ms**, three
+hundred and fifty times the flight it produces, or forty-nine minutes for PR 8's
+200,000 pitches. The fix was not a faster solver but a better model: a pitcher
+aims at a **spot**, and his execution error lands on his release rather than his
+intention, so the solve is a property of (kind, arm, spot) and is memoised. And
+the play reducer was **re-tracing** the ball on every re-read, when the ball
+obeys the same physics from one tick to the next and the trace is identical —
+what changes between reads is where the *fielders* are. Together: 1.7s per game
+to 0.14s, and PR 8's 50k plate appearances from unusable to 113 seconds.
+
+The game produces K% 25.6, BB% 10.5 and 6.8 runs a game — all plausible — and
+**BABIP .624 against real baseball's ~.300**. Every second ball in play is a hit.
+That is the defence, the causes are already on the record (`sim.throwSpeed` still
+awaiting measurement, the 3ft reach, and the tag-ups PR 7 deferred), and
+`sim.gameShape` is a `note` that reports it rather than a target that meets it.
+Nothing was tuned to make the number look better; PR 8 measures it and PR 9 moves
+it.
+
+Next: the statistical conformance harness (headless, no art, no graphics) which
+asserts emergent BABIP / launch-angle split / exit-velocity shape against real
+baseball bands instead of pinning constants; then the retune, with tag-ups,
+rundowns and steals.
 
 ---
 

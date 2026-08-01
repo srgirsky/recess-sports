@@ -108,6 +108,8 @@ VERBOSE=1 npm run validate:models                     # also print measurements
 
 ```bash
 npm run sim:trajectory     # carry tables, printed next to the fences to clear
+npm run sim:game           # a whole v2 game, headless: line score, box score, play-by-play
+npm run sim:game <seed>    # ...with a chosen seed
 ```
 
 Headless, no art, no graphics — just the integrator. It prints the MLB-scale

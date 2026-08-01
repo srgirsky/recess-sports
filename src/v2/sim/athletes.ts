@@ -22,9 +22,10 @@
 // 2.48x underneath it.
 // ---------------------------------------------------------------------------
 
-import { BAT, DEFENSE, RUN } from './params';
+import { ATBAT, BAT, DEFENSE, RUN } from './params';
 import { BASEPATH } from './field';
-import { mphToFts } from './units';
+import { inToFt, mphToFts } from './units';
+import { BALL_RADIUS_FT } from './ball';
 
 /** Clamp a 1-10 stat, so a content typo cannot produce a negative bat. */
 function stat01(stat: number): number {
@@ -184,4 +185,73 @@ export function reactionSec(fieldingStat: number): number {
     DEFENSE.REACTION_MAX_SEC -
     (DEFENSE.REACTION_MAX_SEC - DEFENSE.REACTION_MIN_SEC) * stat01(fieldingStat)
   );
+}
+
+// --- Batting eye ------------------------------------------------------------
+
+/**
+ * How badly this kid misjudges where a pitch will cross, in FEET at the plate.
+ *
+ * ★ ONE QUANTITY DOES TWO JOBS, and that is the point of putting it here. The
+ * batter swings when he BELIEVES the pitch is a strike, so this error produces
+ * chases and takes; and its temporal twin below produces whiffs and weak
+ * contact. Neither a chase rate nor a whiff rate exists as a constant anywhere,
+ * because both are consequences of one kid being worse at reading a pitch than
+ * another.
+ *
+ * A stat-1 kid is off by about eight inches, a stat-10 kid by two.
+ */
+export function plateJudgementFt(contactStat: number): number {
+  return ATBAT.JUDGE_FT_WORST - (ATBAT.JUDGE_FT_WORST - ATBAT.JUDGE_FT_BEST) * stat01(contactStat);
+}
+
+/**
+ * The same error in TIME, as a fraction of the pitch's flight.
+ *
+ * ★ A FRACTION, NEVER MILLISECONDS — see `ATBAT.JUDGE_FRAC_*`. `contact.ts`
+ * grades timing against `BAT.CONTACT_WINDOW_FRAC * travelSec`; measuring the
+ * error in absolute ms against a scale-free window is how v1 ended up with a
+ * 380ms band over a 270ms flight, from the other direction.
+ */
+export function swingTimingSigmaFrac(contactStat: number): number {
+  return (
+    ATBAT.JUDGE_FRAC_WORST - (ATBAT.JUDGE_FRAC_WORST - ATBAT.JUDGE_FRAC_BEST) * stat01(contactStat)
+  );
+}
+
+/**
+ * How far a pitcher misses his aim, ft at the plate, from the `pitching` stat.
+ *
+ * Execution only. v1's `PITCH_SCATTER` folds a human's meter timing into the
+ * same number; there is no human on this mound.
+ */
+export function pitchScatterFt(pitchingStat: number): number {
+  return (
+    ATBAT.PITCH_SCATTER_FT_WORST -
+    (ATBAT.PITCH_SCATTER_FT_WORST - ATBAT.PITCH_SCATTER_FT_BEST) * stat01(pitchingStat)
+  );
+}
+
+// --- The strike zone --------------------------------------------------------
+
+/**
+ * Half-width of the strike zone at the plate, ft.
+ *
+ * DERIVED from the rulebook plate and the ball, never stated: the plate is 17in
+ * and a strike is any part of the ball over any part of it, so the ball's CENTRE
+ * may sit a radius outside each edge.
+ */
+export function zoneHalfWidthFt(): number {
+  return inToFt(ATBAT.PLATE_HALF_WIDTH_IN) + BALL_RADIUS_FT;
+}
+
+/**
+ * The zone's floor and ceiling for a batter of `heightFt`, in ft.
+ *
+ * The rulebook defines the zone on the BATTER — knee hollow to the midpoint
+ * between shoulders and belt — which is why these are fractions of height and
+ * not a fixed pair of feet. A four-foot kid's zone is 1.36ft tall.
+ */
+export function zoneBandFt(heightFt: number = DEFENSE.REFERENCE_HEIGHT_FT): [number, number] {
+  return [heightFt * ATBAT.ZONE_BOTTOM_FRAC, heightFt * ATBAT.ZONE_TOP_FRAC];
 }

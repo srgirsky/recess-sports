@@ -36,6 +36,8 @@ export type Base = 0 | 1 | 2 | 3 | 4;
 
 export interface RunnerState {
   charId: string;
+  /** Where they stood when the play began. A foul sends everyone back to it. */
+  startBase: Base;
   /** The bag behind them. Equals `to` when they are standing on it. */
   from: Base;
   /** Where they are running. Equals `from` when settled. */
@@ -58,6 +60,7 @@ export interface RunnerState {
 export function makeRunner(char: Character, at: Base, nowSec = 0): RunnerState {
   return {
     charId: char.id,
+    startBase: at,
     from: at,
     to: at,
     alongFt: 0,

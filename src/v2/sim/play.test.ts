@@ -166,6 +166,32 @@ describe('a play, end to end', () => {
     expect(r.s.elapsedSec, 'caught in the air, not chased down').toBeLessThan(5);
   });
 
+  it('★ calls a ball hooked over the POLE a foul, not a home run', () => {
+    // ★ THE GATE SWEEP FOUND THIS TEST MISSING. `play.ts` asks `isFair` at the
+    // fence as well as at the first touchdown, and deleting that check broke
+    // NOTHING — none of the six named plays in `sim.gapBallOutcome` leaves the
+    // park outside the lines, so a foul home run was unguarded. Before PR 7 it
+    // was worse than unguarded: `isFair` had no caller at all, and every ball
+    // that cleared the wall anywhere was a home run.
+    const over = (sprayDeg: number) =>
+      play(
+        spec({ exitVelocityFts: 115, launchAngleDeg: 28, sprayDeg, spinRpm: 2200, heightFt: 2.5 }),
+        `pole${sprayDeg}`
+      ).outcome;
+
+    for (const sprayDeg of [-60, -52, 52, 60]) {
+      const o = over(sprayDeg);
+      expect(o.foul, `spray ${sprayDeg} is outside the lines`).toBe(true);
+      expect(o.runs, `spray ${sprayDeg} must not score`).toBe(0);
+      expect(o.description).toBe('FOUL BALL!');
+    }
+    for (const sprayDeg of [-40, 0, 40]) {
+      const o = over(sprayDeg);
+      expect(o.foul, `spray ${sprayDeg} is fair`).toBe(false);
+      expect(o.runs, `spray ${sprayDeg} is a home run`).toBeGreaterThan(0);
+    }
+  });
+
   it('scores a home run and everybody on', () => {
     const r = play(
       spec({ exitVelocityFts: 115, launchAngleDeg: 28, sprayDeg: 0, spinRpm: 2200, heightFt: 2.5 }, {
@@ -474,10 +500,18 @@ describe('the outcome', () => {
     // only `outs`, `runs`, `bases` and `batterOut`. This file does not import
     // `inning` — the fold-back is PR 7's — but the shape has to fit today or
     // that is a rewrite rather than a wiring job.
+    //
+    // ★ A SUPERSET, NOT AN EQUAL SET, and the difference is the point. PR 7 added
+    // `foul`, which v1's `LiveOutcome` does not have and cannot need: v1 rolls
+    // fouls at the SWING (`resolveContact` has a flat 25% on weak contact), so a
+    // foul never reaches its play reducer at all. Here a foul is a fact about
+    // where the ball landed, so it can only be known once it has. What has to
+    // hold is that every field `applyLivePlay` reads is still there — an
+    // equal-set assertion would have failed for the wrong reason.
     const o = simulatePlay(spec(GROUNDER(-22)), makeRng('shape'), 1 / 60);
-    expect(Object.keys(o).sort()).toEqual(
-      ['baseIds', 'bases', 'batterOut', 'description', 'flyCaught', 'outs', 'runs'].sort()
-    );
+    const v1Keys = ['baseIds', 'bases', 'batterOut', 'description', 'flyCaught', 'outs', 'runs'];
+    for (const k of v1Keys) expect(Object.keys(o), `LiveOutcome.${k}`).toContain(k);
+    expect(o).toHaveProperty('foul');
     expect(o.bases).toHaveLength(3);
     expect(o.baseIds).toHaveLength(3);
     o.bases.forEach((b, i) => {

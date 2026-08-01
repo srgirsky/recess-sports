@@ -2630,12 +2630,12 @@
           "slowRollerTo3B": {
             "v1": "out by 347ms",
             "v2": "out",
-            "playSec": 4.07
+            "playSec": 3.95
           },
           "throughThe56Hole": {
             "v1": "out by 1047ms",
             "v2": "single (relayed)",
-            "playSec": 5.63
+            "playSec": 5.5
           },
           "trueLFCFGap": {
             "v1": "out by 897ms",
@@ -2655,9 +2655,9 @@
         },
         "gradient": {
           "what": "Grounders swept over 15 spray angles at three contact qualities. Hits, out of 15.",
-          "31mph": "3/15",
-          "42mph": "12/15",
-          "55mph": "13/15"
+          "31mph": "2/15",
+          "42mph": "10/15",
+          "55mph": "14/15"
         },
         "confidence": "med",
         "n": 6
@@ -2676,11 +2676,12 @@
         "value": {
           "gapBall": "double",
           "routineGrounderRightSide": "out",
-          "softGrounderHits": 3,
+          "softGrounderHits": 2,
           "softGrounderPlays": 15
         }
       },
-      "whatWouldClose": "Nothing -- this one is measured and conformed. What it hands forward is PR 8's job: the same defence over 50k plate appearances, where BABIP, the launch-angle split and the exit-velocity shape can be compared against real baseball bands instead of six named plays.",
+      "reMeasuredAt": "2026-08-01 (PR 7). Two changes moved these numbers and both are recorded rather than absorbed: play.ts now asks `isFair` (until PR 7 every batted ball in v2 was fair, so the foul ball did not exist), and the defence RE-READS the ball without RE-TRACING it -- the trajectory does not change between ticks, so re-computing the prediction produced an identical answer at the price of two thousand RK4 steps. The six named plays are unchanged; the gradient moved 3/12/13 to 2/10/14 and the relay rate 16% to 14%.",
+  "whatWouldClose": "Nothing -- this one is measured and conformed. What it hands forward is PR 8's job: the same defence over 50k plate appearances, where BABIP, the launch-angle split and the exit-velocity shape can be compared against real baseball bands instead of six named plays.",
       "informs": "src/v2/sim/play.ts"
     },
     "playClock": {
@@ -2723,7 +2724,7 @@
       "measured": {
         "n": 180,
         "grid": "The same sweep as sim.playClock.",
-        "relayedPct": 16,
+        "relayedPct": 14,
         "cfToFirstFt": 129.7,
         "armsThatCannotMakeIt": 27,
         "rosterSize": 30,
@@ -2735,12 +2736,169 @@
         "constant": "src/v2/sim/play.ts pickCutoff, throwOrRelaySec; src/v2/sim/params.ts PLAY.RELAY_MAX_LEGS",
         "value": {
           "maxLegs": 2,
-          "relayedPct": 16,
+          "relayedPct": 14,
           "lookBackRule": false
         }
       },
-      "whatWouldClose": "Nothing here. The open question it hands PR 8 is whether 16% is the right rate -- it is a consequence of the arm band (sim.throwSpeed, still awaiting-measurement) and would move with it.",
+      "whatWouldClose": "Nothing here. The open question it hands PR 8 is whether 14% is the right rate -- it is a consequence of the arm band (sim.throwSpeed, still awaiting-measurement) and would move with it.",
       "informs": "src/v2/sim/params.ts PLAY.RELAY_MAX_LEGS"
+    },
+    "strikeZone": {
+      "id": "sim.strike-zone",
+      "category": "sim",
+      "reference": "baseball",
+      "status": "conformed",
+      "statusChangedAt": "2026-08-01",
+      "what": "Where a strike is, in feet.",
+      "why": "★ THE THIRD v1 CONSTANT WITH NO UNITS, AND THE PUREST OF THE THREE. LIVE.CATCH_RADIUS was 34 PIXELS, which converts to a wrong number of feet (11.36). RUN2.TAG_RADIUS was 26px, likewise (8.7ft). v1's PLATE_ZONE is { W: 96, H: 100 } in 'plate coords' -- a space art/plateView.ts maps to the screen at about 1.8x and which NOTHING RELATES TO THE FIELD. It is not a wrong size; it has no size. v1 never needed the zone to be a place, only a rectangle to test a rolled crossing point against, so the question never came up. v2's crossing is a fact about an integrated trajectory, so the zone has to be somewhere real.",
+      "measured": {
+        "widthIn": 19.9,
+        "heightIn": 16.3,
+        "bottomFt": 1.12,
+        "topFt": 2.48,
+        "onBatterOfHeightFt": 4,
+        "confidence": "high",
+        "n": 1
+      },
+      "derivation": "WIDTH: Official Baseball Rules 2.02 and Little League Rulebook 1.05 both specify a 17-inch plate, and a strike is 'any part of the ball over any part of home plate' -- so the BALL'S CENTRE may sit a radius outside each edge. Half-width is 8.5in + r_ball, computed by zoneHalfWidthFt() rather than restated. HEIGHT: the rulebook defines the zone ON THE BATTER, from the hollow beneath the kneecap to the midpoint between the shoulders and the belt. Anthropometric knee height is about 0.28 of stature and the sternal notch about 0.62, so the band is a FRACTION of height and a taller kid has a taller zone.",
+      "confidenceExemption": "n=1 with high confidence, which the schema allows for reference: 'physics' and by extension a rulebook -- a rule is not a sample. The price of the exemption is naming the source, and both rulebook sections are named above.",
+      "ours": {
+        "constant": "src/v2/sim/params.ts ATBAT.PLATE_HALF_WIDTH_IN, ATBAT.ZONE_BOTTOM_FRAC, ATBAT.ZONE_TOP_FRAC; src/v2/sim/athletes.ts zoneHalfWidthFt, zoneBandFt",
+        "value": {
+          "plateHalfWidthIn": 8.5,
+          "bottomFrac": 0.28,
+          "topFrac": 0.62
+        }
+      },
+      "theUmpireAsksTheTRAJECTORY": "v1's pitchkind.ts sets `inZone` on an aim point plus a scatter roll -- a number invented at release, before the ball has gone anywhere. v2's flyToPlate integrates the ball through drag and Magnus and reports where it actually was when z reached zero, and isStrike looks at that. A curveball that breaks out of the zone is a ball BECAUSE IT BROKE.",
+      "whatWouldClose": "Nothing. This is a rulebook measurement plus two anthropometric fractions, and the fractions are the only soft part -- a real 4-8-year-old's knee and sternum heights, n>=3, would replace them with a measurement of the population the game is for.",
+      "informs": "src/v2/sim/params.ts ATBAT",
+      "source": "physics:published"
+    },
+    "plateDiscipline": {
+      "id": "sim.plate-discipline",
+      "category": "sim",
+      "reference": "derived",
+      "status": "awaiting-measurement",
+      "statusChangedAt": "2026-08-01",
+      "what": "How a batter decides to swing, and how well he times it -- which turn out to be the same question asked twice.",
+      "why": "★ ONE ERROR, TWO BEHAVIOURS. The obvious build gives a batter a chase rate and a whiff rate and tunes them apart; v1 does exactly that, with five constants in resolveCpuPitch (ball chance 0/0.1/0.45/0.85 per band, chase 0.2, and a swing band rolled off the contact stat) that describe an outcome distribution rather than a kid. But a hitter does not have two faculties. Give him ONE judgement error, sized by his contact stat, and both fall out: he swings when he BELIEVES the pitch is a strike, so chases and takes are consequences; and the same error in time becomes SwingSpec.timingErrorSec, so whiffs and weak contact come out of the window contact.ts already grades against. A better-contact kid then chases less AND times better, from one number.",
+      "measured": null,
+      "n": 0,
+      "confidence": "low",
+      "partialReading": {
+        "confidence": "low",
+        "n": 0,
+        "why": "NOTHING MEASURES THIS, and that is the honest status. A chase rate has no on-screen representation in BB2001 any more than a swing window does (see pace.swingWindows, which is a permanent `note` for exactly this reason), and real-baseball plate-discipline data is for adults facing 90mph. What the code asserts is that each MECHANISM exists and points the right way; the RATES are PR 8's to measure and PR 9's to tune."
+      },
+      "theBoundedNoiseFailedSilently": "Rng.bell is the Irwin-Hall sum of three uniforms -- bit-stable, `+` and `/` only, and the answer to the `normal()` gap rng.ts documents. Its support is BOUNDED at ±3 sigma, which is a feature (a batter who misjudges by six sigma is not a batter) and a trap. At the first draft's 0.115/0.035 a swinging strike needed 2.5 sigma, and the measurement over 4,000 pitches was ZERO swinging strikes at EVERY contact stat -- not rare, none. A game in which nobody can swing through a pitch is a missing mechanic rather than a bad tuning, and a bounded noise turns that from unlikely into impossible without saying so. The band is now sized AGAINST BAT.CONTACT_WINDOW_FRAC and a test asserts the relationship rather than the values.",
+      "aFractionNeverMilliseconds": "The temporal half is a fraction of the pitch's flight. pace.swingWindows records what absolute windows cost: v1's 380ms CONTACT band sat over a 270ms flight, so 'a tap at the instant of release still connects, and timing stops being a skill'. BAT.CONTACT_WINDOW_FRAC is scale-free for that reason; a batter noise in milliseconds would reintroduce the same failure from the other side, and the two would drift apart the next time the pitch corridor is re-measured.",
+      "ours": {
+        "constant": "src/v2/sim/params.ts ATBAT.JUDGE_FT_WORST/BEST, ATBAT.JUDGE_FRAC_WORST/BEST, ATBAT.TWO_STRIKE_PROTECT_FT; src/v2/sim/athletes.ts plateJudgementFt, swingTimingSigmaFrac",
+        "value": {
+          "judgeFt": [
+            0.68,
+            0.17
+          ],
+          "judgeFrac": [
+            0.2,
+            0.09
+          ],
+          "twoStrikeProtectFt": 0.55
+        }
+      },
+      "twoStrikeProtection": "Without it a batter offers only at what he READS as a strike, so every misread with two strikes is a called third -- which turns a poor-contact kid into a strikeout machine rather than the foul-ball machine a six-year-old actually is. It is what balances strikeouts against fouls, and it is measured: chase rate on an 0-2 count is materially higher than on 1-1.",
+      "whatWouldClose": "PR 8's harness, over plate appearances rather than pitches: K%, BB%, and the swing/take split against published youth-baseball rates. Until then these are feel dials with a mechanism behind them, not conformance targets -- the same standing this file gives defense.fieldingAssist.",
+      "informs": "src/v2/sim/params.ts ATBAT",
+      "source": "physics:published"
+    },
+    "foulBalls": {
+      "id": "sim.foul-balls",
+      "category": "sim",
+      "reference": "derived",
+      "status": "conformed",
+      "statusChangedAt": "2026-08-01",
+      "what": "That a batted ball can be foul at all.",
+      "why": "★ UNTIL PR 7, EVERY BATTED BALL IN v2 WAS FAIR. field.ts has exported isFair since it was written and NOTHING CALLED IT -- play.ts stepped a ball, caromed it, relayed it and settled it without ever asking which side of the line it came down on. contact.ts emits a foulTip that nothing consumed. The foul ball is roughly a third of the pitches in a real plate appearance and a fifth of a batter's outcomes, and it did not exist.",
+      "measured": {
+        "foulsPerPitchPct": 35.5,
+        "pitchesPerPlateAppearance": 5.2,
+        "n": 1166,
+        "over": "20 games, both teams, park venue",
+        "confidence": "med"
+      },
+      "theRuleIsTHESHORTVERSION": "Fair or foul is decided WHERE THE BALL FIRST TOUCHES DOWN. Real baseball's rule is longer -- a ball that lands foul BEFORE first or third and then rolls fair is fair, which is what makes a bunt down the line a real play -- and this is deliberately the short version, recorded rather than pretended away. What it cannot be is absent.",
+      "andOverTheFENCE": "A ball hooked over the pole side is a foul, not a home run. play.ts asks isFair at the exit point too; before PR 7 it called every ball that cleared the wall a home run regardless of where it left.",
+      "whatItMoved": "The PR 6 records were measured on a reducer in which every ball was fair, so they were re-run: the six named plays are unchanged (their sprays are all fair), the BABIP gradient moved 3/12/13 to 2/10/14 and the relay rate 16% to 14%. Both of those moved mostly for a different reason -- the defence now re-READS the ball without re-TRACING it -- and the records say so.",
+      "ours": {
+        "constant": "src/v2/sim/play.ts (isFair at first touchdown and at the fence)",
+        "value": {
+          "foulsPerPitchPct": 35.5
+        }
+      },
+      "whatWouldClose": "The long rule, if a bunt ever matters: a ball landing foul inside the bases is fair once it rolls past one. It needs a base-line crossing test rather than a single point sample, and nothing in the game asks for it yet.",
+      "informs": "src/v2/sim/play.ts"
+    },
+    "gameShape": {
+      "id": "sim.game-shape",
+      "category": "sim",
+      "reference": "derived",
+      "status": "note",
+      "statusChangedAt": "2026-08-01",
+      "what": "What a whole v2 game actually produces, reported and NOT conformed.",
+      "why": "★ THIS RECORD EXISTS TO BE READ, NOT TO BE MET. It is the first time v2 has been able to say anything about a game rather than a play, and the temptation is to compare the numbers to baseball's and start tuning. Two reasons not to. First, PR 8's harness is what measures these properly -- over 50,000 plate appearances across seeded runs, not 1,166. Second, and this is the one the whole `reference` field exists for: the sim category's own note warns that 'conforming a game for four-to-eight-year-olds to MLB's strikeout rate is the mistake this field exists to prevent'.",
+      "measured": {
+        "n": 1166,
+        "over": "20 games, 6 innings, park venue, ROSTER[0..8] vs ROSTER[9..17]",
+        "strikeoutPct": 25.6,
+        "walkPct": 10.5,
+        "ballsInPlayPct": 63.8,
+        "babip": 0.624,
+        "pitchesPerPlateAppearance": 5.2,
+        "runsPerGame": 6.8,
+        "confidence": "med"
+      },
+      "whatIsPLAUSIBLE": "K% 25.6 and BB% 10.5 are close to real baseball's shape and unremarkable. Pitches per plate appearance at 5.2 is high but not absurd. Runs per game at 6.8 is a lot of scoring, and for a kids' game that is arguably correct.",
+      "whatIsNot": "BABIP 0.624, against real baseball's ~0.300. Every second ball in play is a hit. That is the DEFENCE, and it is exactly what sim.gapBallOutcome's gradient shows from the other end -- a 42mph grounder finds a hole two thirds of the time. The likely causes are already recorded and none of them is tuned here: the arm band (sim.throwSpeed, awaiting-measurement, and 27 of 30 kids cannot throw CF to first), the reach (sim.catchRadius, 3ft against v1's 11.36), and the deferral of tag-ups and rundowns. PR 8 measures it, PR 9 moves it.",
+      "performanceNote": "A game costs ~140ms once the release memo is warm, or 2.25ms per plate appearance -- so PR 8's 50,000 is about 113 seconds. Getting there took two fixes worth naming: the pitcher aims at a SPOT so the release solve is memoisable (13.6ms to a cache hit), and the defence RE-READS the ball without RE-TRACING it (the trajectory does not change between ticks, so re-computing the prediction produced an identical answer for two thousand RK4 steps). Together, 1.7s per game to 0.14s.",
+      "ours": {
+        "constant": "src/v2/sim/game.ts",
+        "value": {
+          "strikeoutPct": 25.6,
+          "walkPct": 10.5,
+          "babip": 0.624,
+          "runsPerGame": 6.8
+        }
+      },
+      "whatWouldClose": "It does not close -- it is a `note`, and PR 8 replaces it with a real measurement over a real sample. What it does is put the numbers on the record BEFORE anyone starts tuning, so the retune has a before.",
+      "informs": "src/v2/sim/game.ts"
+    },
+    "lineupArm": {
+      "id": "sim.lineup-arm",
+      "category": "sim",
+      "reference": "derived",
+      "status": "conformed",
+      "statusChangedAt": "2026-08-01",
+      "what": "A lineup planner that knows a shortstop needs an arm.",
+      "why": "sim.gapBallOutcome.theArmAtShort recorded the finding and deferred the fix: systems/lineup.ts autoAssign scores shortstop on `fielding*2 + speed` and CENTRE FIELD on `fielding + speed*2` -- it puts the best arm on the mound and then never looks at `pitching` again. That was harmless in v1, where every throw was 9.65x runner speed and the catch radius was 11.4ft, so arm strength bound nothing. With real throws it put a 34mph arm (77ft of range) at the position with the longest routine infield throw, and the routine grounder to short became a single.",
+      "measured": {
+        "ssToFirstFt": 68.2,
+        "v1ShortstopRangeFt": 77,
+        "v2ShortstopRangeFt": 86.6,
+        "confidence": "high",
+        "n": 1
+      },
+      "whyNotTheBestArm": "The v2 shortstop reaches 86.6ft, not the roster's best 154 — because the mound takes the best arm and the demand ordering then puts the next three in left, right and behind the plate, all of which throw further than short does. That is the derivation working rather than a compromise: 86.6ft comfortably covers the 68.2ft throw, where v1's 77ft did not once the fielder had moved off his post.",
+  "theArmWeightIsDERIVED": "★ NOBODY STATES THAT LEFT FIELD NEEDS AN ARM. Each position's demand is the distance from its post to the bag it actually throws to, read out of FIELD_POSITIONS -- infielders to first, outfielders and the catcher to second. So if the field changes, the lineup follows, and the ordering (LF/RF > C > CF > 3B > SS > 2B) is a consequence of the park rather than a table somebody maintains.",
+      "v1IsUNTOUCHED": "src/systems/lineup.ts is v1 code on v1's bundle path, and AGENTS.md is explicit that a v2 change altering dist/assets/main-*.js is a bug. planDefence is a new file in src/v2/sim/; autoAssign keeps its own behaviour and its own tests, and a v2 test asserts the two differ in the direction this record claims.",
+      "ours": {
+        "constant": "src/v2/sim/lineup.ts planDefence, throwDemandFt",
+        "value": {
+          "weights": "arm = throwDemandFt(pos) normalised, x2; plus traffic x fielding and range x speed"
+        }
+      },
+      "whatWouldClose": "Nothing here. What it hands forward is whether an arm-aware defence changes BABIP enough to matter, which is PR 8's to answer -- the planner is one of the levers PR 9 has.",
+      "informs": "src/v2/sim/lineup.ts"
     }
   },
   "defense": {
