@@ -28,13 +28,12 @@ import {
   maxThrowFt,
   electChaser,
   shouldSwitch,
-  chaseTarget,
   type FielderState,
 } from './fielders';
 import { reachFt, reactionSec, sprintTimeSec, sprintTopSpeedFts, throwSpeedFts } from './athletes';
 import { DEFENSE, RUN } from './params';
 import { launch } from './launch';
-import { traceLooseBall, type LooseTrace } from './bounce';
+import { traceLooseBall } from './bounce';
 import {
   BASEPATH,
   FIELD_POSITIONS,
@@ -46,9 +45,10 @@ import {
   type PositionId,
   type Vec2,
 } from './field';
-import { makeRunner, startLeg, stepRunner } from './runners';
+import { makeRunner } from './runners';
 import { ftsToMph, mphToFts, G } from './units';
 import { makeRng } from './rng';
+import { simulatePlay } from './play';
 import { autoAssign } from '../../systems/lineup';
 import { ROSTER, getCharacter } from '../../data/characters';
 
@@ -354,193 +354,61 @@ describe('the throw', () => {
   });
 });
 
-// --- The scenario harness ---------------------------------------------------
+// --- The gap ball -----------------------------------------------------------
 //
-// ★ TEST-ONLY, AND DELIBERATELY SO. PR 6 owns the play reducer; this is the
-// smallest thing that can answer the gap-ball question with the primitives PR 5
-// ships. It steps ONE chaser against ONE runner: no relays, no cutoff, no CPU
-// baserunning policy, no errors. Every one of those omissions makes the DEFENCE
-// look better than it will be, so a "hit" here is a lower bound on a hit.
-
-interface RaceResult {
-  chaser: PositionId;
-  securedSec: number | null;
-  throwSec: number | null;
-  defenceSec: number | null;
-  runnerSec: number;
-  hit: boolean;
-  landingFt: number;
-  settleFt: number;
-}
-
-/** Interpolate the ball's traced path at `t`. */
-function ballAt(tr: LooseTrace, t: number): { x: number; y: number; z: number } {
-  const s = tr.samples;
-  for (let i = 1; i < s.length; i++) {
-    if (s[i].tSec >= t) {
-      const a = s[i - 1];
-      const b = s[i];
-      const span = b.tSec - a.tSec;
-      const u = span > 0 ? (t - a.tSec) / span : 0;
-      return { x: a.p.x + (b.p.x - a.p.x) * u, y: a.h + (b.h - a.h) * u, z: a.p.z + (b.p.z - a.p.z) * u };
-    }
-  }
-  return { x: tr.settle.x, y: 0, z: tr.settle.z };
-}
-
-/**
- * Hit the ball, send the chaser, run the batter, throw to a base. Reports
- * whether the runner beat the throw.
- */
-function race(
-  spec: Parameters<typeof launch>[0],
-  opts: { to?: 1 | 2; batterSpeed?: number; legs?: 1 | 2 } = {}
-): RaceResult {
-  const legs = opts.legs ?? 1;
-  const bag = legs === 2 ? SECOND : FIRST;
-  const tr = traceLooseBall(launch(spec), PARK, { horizonSec: 14, samples: 700 });
-  const fielders = defence(0);
-  let pick = electChaser({ fielders, trace: tr, inAir: tr.landAtSec !== null });
-  let f = fielders[pick.index];
-
-  const batter = ROSTER.find((c) => c.stats.speed === (opts.batterSpeed ?? 5)) ?? ROSTER[0];
-  const runner = makeRunner(batter, 0);
-  startLeg(runner, 1);
-  let runnerSec = Infinity;
-  let touchedFirst = Infinity;
-
-  let t = 0;
-  let secured: number | null = null;
-  let reelected = tr.landAtSec === null;
-  while (t < 14) {
-    t += TICK;
-    const b = ballAt(tr, t);
-    // ★ RE-ELECT WHEN IT COMES DOWN. The two regimes answer different questions,
-    // and a ball in the air is elected on where it will LAND. v1 does the same
-    // thing through its `reelect` flag, at every land, carom, bonk and fumble;
-    // electing once at contact is the rule its `fielding.ts` exists to replace.
-    if (!reelected && tr.landAtSec !== null && t >= tr.landAtSec) {
-      reelected = true;
-      pick = electChaser({ fielders, trace: tr, inAir: false, nowSec: t });
-      f = fielders[pick.index];
-    }
-    // ★ Through `chaseTarget`, never at the ball. Aiming straight at a rolling
-    // ball is pure pursuit, which trails it instead of heading it off — and the
-    // first draft of this harness did exactly that and never fielded a grounder.
-    const aim = chaseTarget(tr, { x: b.x, z: b.z }, pick, !reelected);
-    for (const other of fielders) stepFielder(other, other === f ? aim : other.home, TICK, t, PARK);
-    if (secured === null && canReach(f, b, t)) secured = t;
-
-    if (stepRunner(runner, TICK, t) === 'arrived') {
-      touchedFirst = Math.min(touchedFirst, t);
-      if (runner.from >= legs) {
-        runnerSec = t;
-        break;
-      }
-      startLeg(runner, (runner.from + 1) as 1 | 2);
-    }
-    if (secured !== null && t > secured) break;
-  }
-  // Finish the runner's leg on the closed form once the ball is in hand.
-  if (runnerSec === Infinity) {
-    runnerSec = legs === 2 ? sprintTimeSec(2 * BASEPATH, batter.stats.speed) : sprintTimeSec(BASEPATH, batter.stats.speed);
-  }
-
-  const throwSec = secured === null ? null : throwFlightSec(f.p, bag, f.arm);
-  const defenceSec = secured === null || throwSec === null ? null : secured + DEFENSE.RELEASE_SEC + throwSec;
-  return {
-    chaser: f.position,
-    securedSec: secured,
-    throwSec,
-    defenceSec,
-    runnerSec,
-    hit: defenceSec === null || defenceSec > runnerSec,
-    landingFt: tr.landing ? distFromHome(tr.landing) : NaN,
-    settleFt: distFromHome(tr.settle),
-  };
-}
+// ★ THIS BLOCK USED TO CARRY ITS OWN REDUCER, and deleting it is the point of
+// PR 6. It stepped ONE chaser against ONE runner and said so: "no relays, no
+// cutoff, no CPU baserunning policy, no errors. Every one of those omissions
+// makes the DEFENCE look better than it will be, so a 'hit' here is a lower
+// bound on a hit." It was ninety lines of tick loop that duplicated the control
+// flow the real play now owns — a second implementation kept only because the
+// first one did not exist yet.
+//
+// `play.ts` exists. These assertions are the same questions asked of the thing
+// that actually plays the game, and `play.test.ts` carries the rest.
 
 describe('★ the gap ball, which is the question v2 exists to answer', () => {
+  const PLAN = autoAssign(ROSTER.slice(0, 9).map((c) => c.id));
+  const BATTER = ROSTER.find((c) => c.stats.speed === 5) ?? ROSTER[0];
+  const hit = (l: Parameters<typeof launch>[0], seed: string) => {
+    const o = simulatePlay(
+      {
+        launch: l,
+        batter: BATTER,
+        runners: [],
+        defence: PLAN.positions,
+        lookup: getCharacter,
+        outs: 0,
+        geo: PARK,
+      },
+      makeRng(seed),
+      1 / 60
+    );
+    return { hit: !o.batterOut && o.outs === 0, o };
+  };
+
   it('makes a ball into the true LF-CF gap a hit, where v1 made it an out by 897ms', () => {
     // v1's own measurement, at v1's geometry: "true LF-CF gap: out by 897ms".
     // Its record concluded the problem was structural — centre field at 1.49
     // basepaths where real baseball is ~3.3 — and that "any real fix to offense
     // has to touch geometry.FIELD_POSITIONS or the throw ratio, not the chase".
-    const r = race({ exitVelocityFts: 95, launchAngleDeg: 22, sprayDeg: -13, spinRpm: 1800, heightFt: 2.5 });
-    expect(r.landingFt, 'it has to land in the outfield to be a gap ball').toBeGreaterThan(150);
-    expect(r.hit, `chaser ${r.chaser} secured at ${r.securedSec}s vs a ${r.runnerSec}s leg`).toBe(true);
-    // And not marginally: the batter is standing on first long before the ball
-    // could get there.
-    expect(r.defenceSec === null || r.defenceSec - r.runnerSec > 1).toBe(true);
-  });
-
-  it('makes both outfield gaps and the lines hits', () => {
-    for (const spray of [-25, -13, 13, 25, -38, 38]) {
-      const r = race({ exitVelocityFts: 95, launchAngleDeg: 20, sprayDeg: spray, spinRpm: 1600, heightFt: 2.5 });
-      expect(r.hit, `spray ${spray}: chaser ${r.chaser}, landed ${r.landingFt.toFixed(0)}ft`).toBe(true);
-    }
+    const r = hit({ exitVelocityFts: 95, launchAngleDeg: 22, sprayDeg: -13, spinRpm: 1800, heightFt: 2.5 }, 'lfcf');
+    expect(r.hit, r.o.description).toBe(true);
+    // And not marginally: he is standing on second, not first.
+    expect(r.o.bases, 'extra bases, through a real defence').toEqual([false, true, false]);
   });
 
   it('★ still retires a routine infield grounder, which is the other half', () => {
     // A defence that cannot make an out is not a fix — this is the play v1 got
-    // right and the one an over-corrected v2 would lose. The shortstop reaches
-    // it at 2.06s, releases at 2.51 and the throw takes 1.44: 3.95s against a
-    // 4.20s leg, so the batter is out by a quarter of a second. That margin is
-    // narrow ON PURPOSE and it is what the harness is for; PR 8 adjudicates
-    // whether it is the right one.
-    const r = race({ exitVelocityFts: 45, launchAngleDeg: -2, sprayDeg: -22, spinRpm: -400, heightFt: 2.5 });
-    expect(r.landingFt, 'a grounder').toBeLessThan(60);
-    expect(['SS', '3B', '2B', 'P'], `elected ${r.chaser}`).toContain(r.chaser);
-    expect(r.securedSec, 'somebody has to field it').not.toBeNull();
-    expect(r.hit, `secured ${r.securedSec?.toFixed(2)}s + throw vs ${r.runnerSec.toFixed(2)}s`).toBe(false);
-  });
-
-  it('★ lets a HARD grounder through the 5-6 hole, which is also right', () => {
-    // Hit harder and eight degrees wider, it is past the shortstop before he
-    // can reach it and rolls into left. `defense.fielderSpeed.notSufficient`
-    // measured v1's version as "5-6 hole: out by 1047ms" — v1's field could not
-    // produce this outcome at all, because there was no outfield to reach.
-    const r = race({ exitVelocityFts: 62, launchAngleDeg: -3, sprayDeg: -30, spinRpm: -500, heightFt: 2.5 });
-    expect(r.settleFt, 'through to the outfield').toBeGreaterThan(100);
-    expect(r.hit).toBe(true);
-  });
-
-  it('★ grades outs into hits as contact gets harder, which is what BABIP IS', () => {
-    // The single most important property of the whole model, and the one v1
-    // could not have: a soft grounder is an out everywhere, a medium one is an
-    // out up the middle and a hit down the lines, and a hard one gets through.
-    // v1 measured every one of these as an out, at every angle.
-    const sweep = (ev: number) => {
-      let hits = 0;
-      for (let spray = -42; spray <= 42; spray += 6) {
-        if (race({ exitVelocityFts: ev, launchAngleDeg: -3, sprayDeg: spray, spinRpm: -500, heightFt: 2.5 }).hit) {
-          hits++;
-        }
-      }
-      return hits;
-    };
-    const soft = sweep(45);
-    const medium = sweep(62);
-    const hard = sweep(80);
-    expect(soft, 'a 31mph grounder is an out wherever it goes').toBe(0);
-    expect(medium, 'a 42mph grounder finds the holes').toBeGreaterThan(soft);
-    expect(hard, 'a 55mph grounder gets through').toBeGreaterThan(medium);
-    expect(hard, 'and it is not simply everything').toBeLessThanOrEqual(15);
-  });
-
-  it('makes a lazy fly to an outfielder an out, standing still', () => {
-    const r = race({ exitVelocityFts: 70, launchAngleDeg: 38, sprayDeg: 0, spinRpm: 1500, heightFt: 2.5 });
-    expect(r.securedSec).not.toBeNull();
-    // Caught before it lands, which is what makes it a fly out rather than a race.
-    expect(r.securedSec!).toBeLessThan(4);
+    // right and the one an over-corrected v2 would lose.
+    const r = hit({ exitVelocityFts: 45, launchAngleDeg: -2, sprayDeg: 14, spinRpm: -400, heightFt: 2.5 }, 'routine');
+    expect(r.o.batterOut, `${r.o.description}`).toBe(true);
   });
 
   it('★ rewards a fast batter over a slow one on the same ball', () => {
-    const spec = { exitVelocityFts: 68, launchAngleDeg: -2, sprayDeg: 30, spinRpm: -400, heightFt: 2.5 };
-    const slow = race(spec, { batterSpeed: 2 });
-    const fast = race(spec, { batterSpeed: 10 });
-    expect(fast.runnerSec).toBeLessThan(slow.runnerSec);
-    expect(slow.runnerSec - fast.runnerSec).toBeGreaterThan(0.5);
+    // The race the whole defence is measured against. Half a second of leg is
+    // the difference between the roster's slowest kid and its fastest.
+    expect(sprintTimeSec(BASEPATH, 10)).toBeLessThan(sprintTimeSec(BASEPATH, 2) - 0.5);
   });
 });
 

@@ -159,6 +159,63 @@ continuous across a v1↔v2 switch in the same browser.
   ratio drifts 7.4pp and a fixed 0.40s gate drifts 7.4pp. The override rate moves
   because a speed change alters *which fielders can intercept at all*. The ratio
   stays only because it is dimensionless; `sim.chaserElectionGate` records that.
+- **★ THE PLAY REDUCER IS AN ORCHESTRATOR, AND THE BALL IS ONE FUNCTION.**
+  `sim/play.ts` steps ball → (re-elect) → fielders → grab → (re-elect) → throw →
+  runners → carrier-touches-bags → CPU running → termination, which is v1's
+  order and load-bearing (its own comment: *"re-run the election BEFORE anyone
+  moves, so the handover costs no ground"*). The linchpin is
+  `bounce.ts`'s **`stepLooseBallFull`**: `traceLooseBall` is a loop over it and
+  the reducer calls it once a tick, so "where is it going" and "where did it go"
+  are the same code rather than two that agree. It **consumes the remainder** an
+  event leaves — advancing the clock a full `dt` after a crossing deletes ~16ms
+  of motion over four bounces and makes the resting place tick-rate dependent.
+- **★ `PlayOutcome` IS v1's `LiveOutcome`, structurally.** That type is already
+  unit-free and `systems/inning.ts` TYPE-imports it, so PR 7 folds a v2 play into
+  a v1 half-inning with no adapter. `play.ts` must NOT value-import `inning` —
+  the fold-back is the game layer's job, and `lineup.autoAssign` is the only
+  pure-system value import the sim actually uses today.
+- **★ A GROUNDER IS A BALL THAT NEVER RISES ABOVE A GLOVE, not one whose phase
+  says `flight`.** A ball skipping through the infield is airborne between hops;
+  reading the phase put it in the AIR regime (nearest the next landing spot) for
+  its whole life, and the pitcher fielded one forty feet behind the shortstop.
+  Three fixes came out of that one bug and only their conjunction is safe: split
+  the regimes on `trace.apexFt` against `CATCH_CENTRE_FT + reachFt()`, emit
+  `land` on the **first touch only** (hops do not re-land), and re-read on a
+  TIMER as well as on events — a grounder raises exactly one event, and if it
+  falls inside `SWITCH_COOLDOWN_SEC` the first guess becomes permanent.
+- **★ THE ELECTION MUST KNOW A RUNNING KID IS RUNNING.** `sprintTimeForFt` takes
+  `fromFts`; without it every re-read charges a fresh standing-start ramp and
+  says a moving fielder is up to 0.87s slower than he is. The symptom is a
+  shortstop who **will not charge** — told he cannot reach the ball out in front,
+  he meets it fourteen feet deeper, which is fourteen feet added to the throw.
+  Worth 7 of 15 outs on the soft-grounder sweep by itself.
+- **★ THE RUNNER ASKS A RACE, NOT A DISTANCE.** v1 sends a CPU runner when the
+  ball is more than `CPU_RUNNER_GREED_DIST` (one basepath) from the next bag — a
+  distance that cannot see that the kid holding it is 190ft away with an arm that
+  reaches 97. `worthTaking` compares the runner's leg against `ballSecTo`, which
+  counts the relay. That, plus **`maybeRoundBag`** (the only leg that starts
+  without the dwell, because the decision is made at full speed several strides
+  out), is what makes a gap ball a DOUBLE instead of a single.
+- **★ `startLeg` HAS NO OCCUPANCY CHECK, AND MUST NOT.** It is handed one runner
+  and cannot see the traffic, so the guard lives in `play.ts`'s `send`. Without
+  it two runners settle on one base — which does not read as a baserunning bug,
+  it reads as a runner **VANISHING**, because `finishPlay` writes one `baseIds`
+  entry and the fold gets back fewer runners than it sent. Only the accounting
+  sweep can see it.
+- **★ THE RELAY IS A CONSEQUENCE AND THE LOOK-BACK RULE IS NOT PORTED.** An arm
+  has a range, so a cutoff man is what happens when nobody can reach the bag (16%
+  of plays). v1's `RelayState.committed` concedes a base so its invented relay
+  buys something; that is a statement about v1's geometry, and omitting it here
+  was the deliberate test — gap balls come out as doubles either way
+  (`sim.cutoffRelay`). Three v1 invariants DO carry over: `ThrowTarget` stays a
+  discriminated union, the `kind: 'fielder'` branch **returns before the runner
+  loop** (*"do not restructure it away"*), and the leg count is capped.
+- **★ A PLAY CLOCK THAT FIRES IS A SOFT-LOCK THAT WAS CAUGHT.** v1's
+  `MAX_PLAY_MS` is "NOT measured — scaled with `RUNNER_SPEED`" and nothing
+  asserts a real play stays under it. `play.test.ts` sweeps 180 plays and
+  requires **zero** reach the cap (longest 12.38s of 20s). Three guards in
+  `play.ts` are honestly labelled belt-and-braces because deleting them breaks no
+  test — the apex split, the incumbent's solo score, and `halfHasThreeOuts`.
 - **Two v1 baserunning bugs are pinned before they can happen again**
   (`defense.fielderSpeed.exposed`, both found only after slower fielders made long
   plays common). `reverseLeg` refuses `from <= 0`, or the rundown rule turns the
@@ -557,12 +614,13 @@ continuous across a v1↔v2 switch in the same browser.
 | `src/v2/sim/ball.ts` | ★ v2. The published ball, and the two aero coefficients. Everything folds into `BALL_K_PER_FT` = ½ρA/m, which is the *validation*: deriving it from the four published constants and comparing against Nathan's independently published 5.509e-3 exercises ρ, A and m at once. |
 | `src/v2/sim/flight.ts` | ★ v2. RK4 over gravity + quadratic drag + Magnus, with events resolved by **bisection**. It integrates and REPORTS ("crossed the ground plane 0.00317s into this step") — never decides what an event means. RK4 stages run on scalar locals: zero allocation, and reentrant for free. `sampleAt` is the render seam, exposed before any renderer exists. |
 | `src/v2/sim/launch.ts` | ★ v2. Describes-a-batted-ball → `BallState`. Its own file because it is the ONE place an authored ANGLE becomes a vector, so it is the one place needing trig — and the per-step path (`flight.ts`, `ball.ts`) is lint-checked to have none. PR 4's `contact.ts` hands off here. |
-| `src/v2/sim/bounce.ts` | ★ v2. What a crossing MEANS: grip/slip ground impact, roll, wall carom, obstacle, plus **`traceLooseBall`** — fly, bounce, roll and carom until it stops, which is the SAME function the chaser election asks "where is it going" and the reducer will ask "where did it go". v1 keeps a second, sketch implementation for the election and hedges that "a divergence changes who gets sent"; there is no divergence to bound here. The tangential result is DERIVED (`v' = (5v − 2ωR)/7` — the minus is what memory gets wrong) and checked by conserved quantities. Carom is gated on `fenceHeight`; rolling containment lives in `rollStep` so "a rolling ball stays in the field" is true by construction. No `Rng`. |
+| `src/v2/sim/bounce.ts` | ★ v2. What a crossing MEANS: grip/slip ground impact, roll, wall carom, obstacle, plus **`stepLooseBall`/`stepLooseBallFull`/`traceLooseBall`** — one tick, one whole tick (remainder consumed), and the whole life. The trace is a LOOP over the tick and the reducer calls the same tick, so "where is it going" and "where did it go" are one implementation. v1 keeps a second, sketch implementation for the election and hedges that "a divergence changes who gets sent"; there is no divergence to bound here. The tangential result is DERIVED (`v' = (5v − 2ωR)/7` — the minus is what memory gets wrong) and checked by conserved quantities. Carom is gated on `fenceHeight`; rolling containment lives in `rollStep` so "a rolling ball stays in the field" is true by construction. No `Rng`. |
 | `src/v2/sim/athletes.ts` | ★ v2. Where a 1-10 STAT becomes a physical quantity, and the ONE place each does: `batSpeedFts` · `sprintTopSpeedFts` · `sprintAccelFtS2` · `sprintTimeSec`/`sprintTimeForFt` · `reachFt` · `throwSpeedFts` · `reactionSec`. The sprint acceleration is DERIVED from `pace.homeToFirst` rather than stated. `purity.lint.test.js` enforces the single-source claim textually and functionally. |
 | `src/v2/sim/fielders.ts` | ★ v2. Nine kids with gloves: acceleration-limited pursuit, a 3ft capsule reach with a real ceiling, drops off the `fielding` stat through an injected `Rng`, closed-form throw flight that returns **null** out of range, and v1's two-regime chaser election with the read folded in and the cut-ahead gate expressed as a ratio. No trig anywhere — it is on the HOT list. |
 | `src/v2/sim/runners.ts` | ★ v2. Baserunning off the same two speed functions: legs measured in feet with a standing start, momentum kept through a bag and lost standing on one, a reversal that costs the speed, and v1's two `defense.fielderSpeed.exposed` bugs pinned deterministically (`reverseLeg`'s `from <= 0` guard, and `settleBase`'s `min(from, to)`). |
 | `src/v2/sim/contact.ts` | ★ v2. Bat meets ball: Nathan's Eq. 3 identity for exit velocity, `e_A` derived from the recoil factor, the undercut geometry for launch angle, and the same grip result `bounce.ts` uses for backspin. Replaces v1's categorical grounder/liner/fly roll. |
 | `src/v2/sim/pitch.ts` | ★ v2. The pitch as a real trajectory — break is EMERGENT Magnus, not a drawn bow. Release speed and elevation are SOLVED from the measured flight time, because aiming straight at the plate arrives 26ft underground. |
+| `src/v2/sim/play.ts` | ★ v2. The play reducer: a batted ball, nine fielders and up to four runners stepped to a `PlayOutcome` shaped exactly like v1's `LiveOutcome`. Owns possession (`secureBall`, the single choke point), throws and the emergent relay, base covering that self-heals when the conventional coverer is chasing, force-outs, tags at `reachFt()`, the CPU running policy, and the play clock. CPU-only; `PlayInputs` is a typed seam. |
 | `scripts/v2/purity.lint.test.js` | ★ v2. **★ There is exactly ONE kid speed in the sim** (textual: only `athletes.ts` may read a raw band; functional: `makeFielder` and `makeRunner` agree over 30 kids and stats 1-10). Plus: `src/v2/sim/**` imports only sim/data/config/**five** pure systems (`inning`·`gameflow`·`stats`·`lineup`·`draft`); no three, no DOM, no `Math.random`, no `Date.now`, **no module-scope `Rng`**; every sim file must import in plain Node; whole-statement `import type` gets a separate wider lane; **the whitelist itself is checked** (each named system must be browser-free, random-free, and value-import only pure modules); and **nothing outside `src/v2/**` may import v2**, which is what actually guarantees a v2 edit cannot reach v1's bundle. Two files claimed this gate existed before it did, and it then spent its first life vacuously satisfied. |
 | `scripts/measures.json` | ★ The measurement records + `conformance.test.js`'s gate. Every record names the `src/config.ts` constant it informs, so the audit trail runs source → record → constant, and carries a `status`: `conformed` (ours inside the band), `known-drift` (outside, and the test pins the drift's SIZE so it can't grow or be half-fixed unnoticed), `awaiting-measurement` (BB not measured yet — pins only OUR value, claims nothing about BB), `note` (a finding about the measurement itself). Read this before tuning any "Backyard feel" constant. |
 

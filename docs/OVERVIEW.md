@@ -449,11 +449,64 @@ gap is a hit — `defense.fielderSpeed.notSufficient` measured v1's as "out by
 897ms" — while a routine grounder to short is still an out by 302ms. Run
 `npm run sim:trajectory` to see the table.
 
-Next: the play reducer; then the at-bat and game loop, where the five shared
-`systems/` modules get their first real use; then the statistical conformance
-harness (headless, no art, no graphics) which asserts emergent BABIP /
-launch-angle split / exit-velocity shape against real baseball bands instead of
-pinning constants.
+**The play reducer, and the answer** (2026-08-01). `src/v2/sim/play.ts` steps a
+batted ball, nine kids and up to four runners to an outcome — CPU-driven on both
+sides, with human steering, the dive verb, tag-ups and steals deferred to the
+game loop that will actually have a player in it. It replaces a test-only
+harness that stepped one chaser against one runner and declared its own bias:
+*"every one of those omissions makes the DEFENCE look better than it will be, so
+a hit here is a lower bound on a hit."*
+
+**A ball into the gap is a double.** `defense.fielderSpeed.notSufficient`
+measured six plays in v1 and every one was an out at first — the true LF–CF gap
+by 897ms — and concluded the cause was structural. Through the real reducer:
+the gap balls are doubles, the slow roller to third is still an out, and a
+grounder through the 5–6 hole is a single. And the shape underneath it is the
+thing the rewrite was for: a 31 mph grounder is an out at 12 of 15 spray angles,
+a 42 mph one at 3, a 55 mph one at 2. **Nothing was tuned to produce that.** It
+is not BABIP — grounders only, no strikeouts, uniform sprays — and
+`sim.gapBallOutcome` says so at length, because the number is tempting.
+
+The relay stopped being a mechanic. v1 had to *invent* `LIVE.RELAY`, gated on a
+hand-picked 1.39 basepath legs, "because throw DISTANCE provably cannot do this
+job". Here an arm has a range: centre field to first is 129.7 ft and 27 of 30
+kids cannot throw it, so a cutoff man is what happens when nobody can reach the
+bag — 16% of plays. v1's **look-back rule**, which concedes a base so the relay
+buys anything, was deliberately *not* ported, and the outcome says it was not
+needed: that rule is a statement about v1's geometry, not about relays.
+
+Two v1 constants died rather than converting. `RUN2.TAG_RADIUS` is 26px = **8.7
+ft** — a tag from nine feet — and there is no tag radius here because a tag is a
+glove touching a runner, which is the same `reachFt()` the catch uses.
+`RUN2.SAFE_RADIUS` is gone outright: v2's runners are leg-parameterised, so
+`isSettled(r)` *is* standing on the bag. v1 needs a radius because it has to ask
+geometry a question the state already answers.
+
+**Six bugs, and the useful thing is how each was found.** A ball skipping
+through the infield counted as *in the air*, so the election chased individual
+hops and the pitcher fielded a grounder forty feet behind the shortstop. The
+election charged every fielder a fresh standing-start ramp on each re-read,
+saying a running kid was 0.87s slower than he was — so the shortstop *would not
+charge*, and settled for meeting the ball fourteen feet deeper; that one was
+worth seven of fifteen outs on the soft-grounder sweep by itself. `startLeg` has
+no occupancy check and the reducer did not add one, so two runners stacked on
+second — which does not look like a baserunning bug, it looks like a runner
+**vanishing**, and only the accounting sweep could see it. And the first version
+of the "one ball implementation" test compared `stepLooseBall` against
+`traceLooseBall`, which is a *loop over* `stepLooseBall`: it asserted a function
+equals itself and stayed green when the physics was deliberately broken.
+
+The play clock is the one thing v1 has and v2 makes mean something. v1's
+`MAX_PLAY_MS` is "NOT measured — scaled with `RUNNER_SPEED`", and nothing there
+asserts a legitimate play stays under it, so the cap quietly became the way some
+plays ended. Here the longest of 180 swept plays is 12.38s against a 20s cap and
+**zero reach it** — `sim.playClock` exists to keep that true.
+
+Next: the at-bat and game loop, where the five shared `systems/` modules get
+their first real use (the outcome type is already shaped so `inning.applyLivePlay`
+needs no adapter); then the statistical conformance harness (headless, no art, no
+graphics) which asserts emergent BABIP / launch-angle split / exit-velocity shape
+against real baseball bands instead of pinning constants.
 
 ---
 

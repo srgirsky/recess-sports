@@ -289,84 +289,48 @@ console.log(`  Area goes as r^2, so a v1 fielder covered ${((11.356 / reachFt())
 console.log(`  Reading the ball: ${(reactionSec(10) * 1000).toFixed(0)}-${(reactionSec(1) * 1000).toFixed(0)}ms, plus a ${(DEFENSE.RELEASE_SEC * 1000).toFixed(0)}ms release.`);
 console.log('  v1 stands still for cpuReactionMs 835 + cpuThrowDelayMs 1192 = 2027ms.');
 
-/** Hit it, chase it, throw it, and race the batter to the bag. */
-function race(spec, batterSpeed = 5) {
-  const tr = traceLooseBall(launch(spec), park, { horizonSec: 14, samples: 700 });
-  const fielders = defence();
-  let pick = electChaser({ fielders, trace: tr, inAir: tr.landAtSec !== null });
-  let f = fielders[pick.index];
-  const at = (t) => {
-    const ss = tr.samples;
-    for (let i = 1; i < ss.length; i++) {
-      if (ss[i].tSec >= t) {
-        const a = ss[i - 1], b = ss[i], span = b.tSec - a.tSec;
-        const u = span > 0 ? (t - a.tSec) / span : 0;
-        return { x: a.p.x + (b.p.x - a.p.x) * u, y: a.h + (b.h - a.h) * u, z: a.p.z + (b.p.z - a.p.z) * u };
-      }
-    }
-    return { x: tr.settle.x, y: 0, z: tr.settle.z };
-  };
-  const batter = ROSTER.find((c) => c.stats.speed === batterSpeed) ?? ROSTER[0];
-  const runner = makeRunner(batter, 0);
-  startLeg(runner, 1);
-  let t = 0, secured = null, inAir = false, reelected = tr.landAtSec === null;
-  while (t < 14 && secured === null) {
-    t += TICK;
-    const b = at(t);
-    if (!reelected && tr.landAtSec !== null && t >= tr.landAtSec) {
-      reelected = true;
-      pick = electChaser({ fielders, trace: tr, inAir: false, nowSec: t });
-      f = fielders[pick.index];
-    }
-    stepFielder(f, chaseTarget(tr, { x: b.x, z: b.z }, pick, !reelected), TICK, t, park);
-    stepRunner(runner, TICK, t);
-    // ★ "in the air" means BEFORE the first bounce. Reading it off the height
-    // alone called a ball secured on its second hop a catch.
-    if (canReach(f, b, t)) { secured = t; inAir = tr.landAtSec !== null && t < tr.landAtSec; }
-  }
-  const runnerSec = sprintTimeSec(BASEPATH, batter.stats.speed);
-  const thr = secured === null ? null : throwFlightSec(f.p, FIRST, f.arm);
-  const def = secured === null || thr === null ? null : secured + DEFENSE.RELEASE_SEC + thr;
-  return { pos: f.position, secured, inAir, thr, def, runnerSec, tr };
+const { beginPlay, stepPlay, finishPlay, simulatePlay } = await import(sim('play.ts'));
+
+/** Hit it, and let the real reducer play it out. */
+function playIt(spec, seed, over = {}) {
+  const s = beginPlay(
+    { launch: spec, batter: ROSTER.find((c) => c.stats.speed === 5), runners: [], defence: PLAN.positions,
+      lookup: getCharacter, outs: 0, geo: park, ...over },
+    makeRng(seed)
+  );
+  const evs = [];
+  let n = 0;
+  while (s.phase === 'live' && n++ < 20 * 60) { stepPlay(s, 1 / 60); evs.push(...s.events); }
+  return { s, evs, o: finishPlay(s) };
 }
 
 console.log('\n=== ★ THE GAP BALL, WHICH IS THE QUESTION v2 EXISTS TO ANSWER ===');
-console.log('  defense.fielderSpeed.notSufficient measured six of these in v1 and every');
-console.log('  one was an out; the true LF-CF gap was "out by 897ms". Same six plays here,');
-console.log('  against the real field, the real physics and the real roster.');
-console.log('  play                    lands  settles  chaser  secured    throw   defence   runner  result');
+console.log('  defense.fielderSpeed.notSufficient measured these six in v1 and every one');
+console.log('  was an out at first. Run here through the REAL play reducer -- nine kids,');
+console.log('  runners, throws, relays -- not the one-chaser harness PR 5 had to use.');
+console.log('  play                     v1               v2         took   events');
 const PLAYS = [
-  ['routine grounder SS', { exitVelocityFts: 45, launchAngleDeg: -2, sprayDeg: -22, spinRpm: -400, heightFt: 2.5 }],
-  ['hard ball, 5-6 hole', { exitVelocityFts: 62, launchAngleDeg: -3, sprayDeg: -30, spinRpm: -500, heightFt: 2.5 }],
-  ['slow roller to 3B', { exitVelocityFts: 35, launchAngleDeg: 2, sprayDeg: -30, spinRpm: -200, heightFt: 2.5 }],
-  ['true LF-CF gap', { exitVelocityFts: 95, launchAngleDeg: 22, sprayDeg: -13, spinRpm: 1800, heightFt: 2.5 }],
-  ['true CF-RF gap', { exitVelocityFts: 95, launchAngleDeg: 22, sprayDeg: 13, spinRpm: 1800, heightFt: 2.5 }],
-  ['down the RF line', { exitVelocityFts: 95, launchAngleDeg: 20, sprayDeg: 38, spinRpm: 1600, heightFt: 2.5 }],
-  ['lazy fly to CF', { exitVelocityFts: 70, launchAngleDeg: 38, sprayDeg: 0, spinRpm: 1500, heightFt: 2.5 }],
+  ['routine grounder SS', 'out by 1397ms', { exitVelocityFts: 45, launchAngleDeg: -2, sprayDeg: -22, spinRpm: -400, heightFt: 2.5 }],
+  ['slow roller to 3B', 'out by 347ms', { exitVelocityFts: 35, launchAngleDeg: 2, sprayDeg: -30, spinRpm: -200, heightFt: 2.5 }],
+  ['through the 5-6 hole', 'out by 1047ms', { exitVelocityFts: 62, launchAngleDeg: -3, sprayDeg: -30, spinRpm: -500, heightFt: 2.5 }],
+  ['true LF-CF gap', 'out by 897ms', { exitVelocityFts: 95, launchAngleDeg: 22, sprayDeg: -13, spinRpm: 1800, heightFt: 2.5 }],
+  ['true CF-RF gap', 'out by 1097ms', { exitVelocityFts: 95, launchAngleDeg: 22, sprayDeg: 13, spinRpm: 1800, heightFt: 2.5 }],
+  ['down the RF line', 'out by 2047ms', { exitVelocityFts: 95, launchAngleDeg: 20, sprayDeg: 38, spinRpm: 1600, heightFt: 2.5 }],
+  ['lazy fly to CF', '-', { exitVelocityFts: 70, launchAngleDeg: 38, sprayDeg: 0, spinRpm: 1500, heightFt: 2.5 }],
 ];
-for (const [label, spec] of PLAYS) {
-  const r = race(spec);
-  const out = r.inAir ? 'CAUGHT' : r.def === null ? 'HIT (no throw)' : r.def <= r.runnerSec ? `OUT by ${((r.runnerSec - r.def) * 1000).toFixed(0)}ms` : `HIT by ${((r.def - r.runnerSec) * 1000).toFixed(0)}ms`;
+for (const [label, v1, spec] of PLAYS) {
+  const r = playIt(spec, `six:${label}`);
+  const res = r.o.flyCaught ? 'CAUGHT' : r.o.batterOut ? 'OUT' : r.o.bases[2] ? 'TRIPLE' : r.o.bases[1] ? 'DOUBLE' : 'single';
+  const tags = [...new Set(r.evs.map((e) => e.t))].filter((t) => ['relay', 'error', 'carom', 'bonk'].includes(t));
   console.log(
-    `  ${label.padEnd(22)} ${(r.tr.landing ? distFromHome(r.tr.landing).toFixed(0) : '-').padStart(4)}ft ` +
-      `${distFromHome(r.tr.settle).toFixed(0).padStart(6)}ft  ${r.pos.padStart(4)}   ` +
-      `${(r.secured === null ? '  --  ' : (r.secured * 1000).toFixed(0) + 'ms').padStart(7)}  ` +
-      `${(r.thr === null ? ' out of range' : (r.thr * 1000).toFixed(0) + 'ms').padStart(8)}  ` +
-      `${(r.def === null ? '   --  ' : (r.def * 1000).toFixed(0) + 'ms').padStart(7)}  ` +
-      `${(r.runnerSec * 1000).toFixed(0).padStart(5)}ms  ${out}`
+    `  ${label.padEnd(23)} ${v1.padEnd(16)} ${res.padEnd(8)} ${r.s.elapsedSec.toFixed(2)}s  ${tags.join(',')}`
   );
 }
-console.log('\n  A gap ball is a hit and a routine grounder is still an out. Neither of those');
-console.log('  was reachable in v1, and the reason is geometry: CF sits 2.75 basepaths from');
-console.log('  home here against v1\'s 1.49, so there is somewhere for a ball to land.');
-console.log('  These are ONE chaser against ONE runner -- no relay, no cutoff, no CPU');
-console.log('  baserunning, no errors. Every omission flatters the DEFENCE, so a hit here');
-console.log('  is a lower bound on a hit. PR 8 is what adjudicates the margins.');
+console.log('\n  A gap ball is a DOUBLE. v1 measured it as an out by 897ms, and its own');
+console.log('  record said the cause was structural: "our outfield is too shallow relative');
+console.log('  to the diamond... any real fix has to touch geometry, not the chase."');
 
-console.log('\n=== ★★ AND THE ONE THAT MATTERS: OUTS GRADE INTO HITS WITH CONTACT ===');
-console.log('  v1 measured every ball a fielder reached as an out, at every angle. Here a');
-console.log('  soft grounder is an out wherever it goes, a medium one finds the holes, and');
-console.log('  a hard one gets through. O = out at first, H = hit, * = no throw in range.');
+console.log('\n=== ★★ OUTS GRADE INTO HITS WITH CONTACT, AND NOTHING WAS TUNED FOR IT ===');
 console.log('  exit vel            spray, degrees from centre');
 process.stdout.write('             ');
 for (let sp = -42; sp <= 42; sp += 6) process.stdout.write(String(sp).padStart(4));
@@ -375,12 +339,18 @@ for (const ev of [45, 62, 80]) {
   process.stdout.write(`  ${ftsToMph(ev).toFixed(0).padStart(2)} mph    `);
   let hits = 0;
   for (let sp = -42; sp <= 42; sp += 6) {
-    const r = race({ exitVelocityFts: ev, launchAngleDeg: -3, sprayDeg: sp, spinRpm: -500, heightFt: 2.5 });
-    const isHit = r.def === null || r.def > r.runnerSec;
+    const o = simulatePlay(
+      { launch: { exitVelocityFts: ev, launchAngleDeg: -3, sprayDeg: sp, spinRpm: -500, heightFt: 2.5 },
+        batter: ROSTER.find((c) => c.stats.speed === 5), runners: [], defence: PLAN.positions,
+        lookup: getCharacter, outs: 0, geo: park },
+      makeRng(`g${ev}${sp}`), 1 / 60
+    );
+    const isHit = !o.batterOut && o.outs === 0;
     if (isHit) hits++;
-    process.stdout.write(`${isHit ? 'H' : 'O'}${r.def === null ? '*' : ' '}`.padStart(4));
+    process.stdout.write(`${isHit ? 'H' : 'O'}`.padStart(4));
   }
   console.log(`   ${hits}/15 hits`);
 }
-console.log('\n  That gradient is what BABIP is, and it is the thing the whole v2 rewrite');
-console.log('  was for. It is NOT tuned: nothing in this PR was adjusted to produce it.');
+console.log('\n  v1 measured every ball a fielder reached as an out, at every angle and');
+console.log('  every contact quality -- a defence with no gradient at all. This is NOT');
+console.log('  BABIP: grounders only, no strikeouts, uniform sprays. PR 8 measures that.');

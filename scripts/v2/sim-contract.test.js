@@ -46,6 +46,12 @@ import {
 import { DEFENSE, RUN } from '../../src/v2/sim/params.ts';
 import { BASEPATH, FIELD_MARGIN, FIELD_POSITIONS, FIRST, dist } from '../../src/v2/sim/field.ts';
 import { maxThrowFt } from '../../src/v2/sim/fielders.ts';
+import { beginPlay, finishPlay, simulatePlay, stepPlay } from '../../src/v2/sim/play.ts';
+import { PLAY } from '../../src/v2/sim/params.ts';
+import { VENUE_GEOMETRY } from '../../src/v2/sim/field.ts';
+import { makeRng } from '../../src/v2/sim/rng.ts';
+import { autoAssign } from '../../src/systems/lineup.ts';
+import { getCharacter } from '../../src/data/characters.ts';
 import { makeRunner } from '../../src/v2/sim/runners.ts';
 import { REFERENCE_HEIGHT_FT } from '../../src/v2/render/skeleton.ts';
 import { ftsToMph, v1PxToFt } from '../../src/v2/sim/units.ts';
@@ -707,5 +713,142 @@ describe('sim.chaserElectionGate', () => {
       'CUT_AHEAD_FRAC',
       'SWITCH_MARGIN_FRAC',
     ]);
+  });
+});
+
+// --- PR 6: the play reducer -------------------------------------------------
+
+const PLAN = autoAssign(ROSTER.slice(0, 9).map((c) => c.id));
+const BATTER = ROSTER.find((c) => c.stats.speed === 5) ?? ROSTER[0];
+const playSpec = (launch, over = {}) => ({
+  launch,
+  batter: BATTER,
+  runners: [],
+  defence: PLAN.positions,
+  lookup: getCharacter,
+  outs: 0,
+  geo: VENUE_GEOMETRY.park,
+  ...over,
+});
+
+describe('sim.gapBallOutcome', () => {
+  const rec = M.sim.gapBallOutcome;
+
+  it('is a well-formed record', () => {
+    wellFormed(rec, { reference: 'derived', status: 'conformed' });
+    expect(rec.measured.n).toBe(6);
+  });
+
+  it('★ re-runs the six plays and gets what it says it gets', () => {
+    // Recomputed from the reducer, not read back out of the record.
+    const outcome = (l, seed) => {
+      const o = simulatePlay(playSpec(l), makeRng(seed), 1 / 60);
+      if (o.flyCaught) return 'caught';
+      if (o.batterOut) return 'out';
+      return o.bases[2] ? 'triple' : o.bases[1] ? 'double' : 'single';
+    };
+    const gap = { exitVelocityFts: 95, launchAngleDeg: 22, sprayDeg: -13, spinRpm: 1800, heightFt: 2.5 };
+    expect(outcome(gap, 'six:true LF-CF gap')).toBe('double');
+    expect(rec.measured.plays.trueLFCFGap.v2).toBe('DOUBLE');
+    // v1's side comes from v1's own record, not from this one.
+    expect(M.defense.fielderSpeed.notSufficient).toMatch(/TRUE LF-CF gap out by 897ms/);
+    expect(rec.measured.plays.trueLFCFGap.v1).toBe('out by 897ms');
+    // And the slow roller is still an out, which is the other half.
+    expect(
+      outcome({ exitVelocityFts: 35, launchAngleDeg: 2, sprayDeg: -30, spinRpm: -200, heightFt: 2.5 }, 'six:slow roller to 3B')
+    ).toBe('out');
+  });
+
+  it('★ recomputes the gradient, and refuses to call it BABIP', () => {
+    const sweep = (ev) => {
+      let hits = 0;
+      for (let sprayDeg = -42; sprayDeg <= 42; sprayDeg += 6) {
+        const o = simulatePlay(
+          playSpec({ exitVelocityFts: ev, launchAngleDeg: -3, sprayDeg, spinRpm: -500, heightFt: 2.5 }),
+          makeRng(`g${ev}${sprayDeg}`),
+          1 / 60
+        );
+        if (!o.batterOut && o.outs === 0) hits++;
+      }
+      return hits;
+    };
+    expect(`${sweep(45)}/15`).toBe(rec.measured.gradient['31mph']);
+    expect(`${sweep(80)}/15`).toBe(rec.measured.gradient['55mph']);
+    expect(sweep(45)).toBeLessThan(sweep(80)); // the gradient itself
+    expect(rec.notABabipClaim).toMatch(/THIS IS NOT BABIP/);
+  });
+
+  it('keeps the arm-at-short finding honest about what it does NOT fix', () => {
+    // The shortstop autoAssign picks really cannot make the throw.
+    const ssId = Object.entries(PLAN.positions).find(([, p]) => p === 'SS')[0];
+    const ss = getCharacter(ssId);
+    expect(maxThrowFt(ss.stats.pitching)).toBeLessThan(80);
+    expect(rec.theArmAtShort).toMatch(/autoAssign is v1 code and v1 must stay byte-identical/);
+  });
+});
+
+describe('sim.playClock', () => {
+  const rec = M.sim.playClock;
+
+  it('is a well-formed record', () => {
+    wellFormed(rec, { reference: 'derived', status: 'conformed' });
+    expect(PLAY.MAX_PLAY_SEC).toBe(rec.ours.value.maxPlaySec);
+  });
+
+  it('★ asserts the cap is a backstop, which is the thing v1 never did', () => {
+    expect(rec.measured.cappedPlays).toBe(0);
+    expect(rec.measured.longestPlaySec).toBeLessThan(PLAY.MAX_PLAY_SEC);
+    // Recomputed headroom, from the two numbers rather than the stated one.
+    const headroom = Math.round((1 - rec.measured.longestPlaySec / PLAY.MAX_PLAY_SEC) * 100);
+    expect(headroom).toBe(rec.measured.headroomPct);
+    expect(rec.why).toMatch(/NOT measured -- scaled with RUNNER_SPEED/);
+  });
+});
+
+describe('sim.cutoffRelay', () => {
+  const rec = M.sim.cutoffRelay;
+
+  it('is a well-formed record', () => {
+    wellFormed(rec, { reference: 'derived', status: 'conformed' });
+    expect(rec.ours.value.maxLegs).toBe(PLAY.RELAY_MAX_LEGS);
+  });
+
+  it('★ recomputes why a relay has to exist at all', () => {
+    expect(dist(FIELD_POSITIONS.CF, FIRST)).toBeCloseTo(rec.measured.cfToFirstFt, 1);
+    expect(ROSTER.filter((c) => maxThrowFt(c.stats.pitching) < dist(FIELD_POSITIONS.CF, FIRST)).length).toBe(
+      rec.measured.armsThatCannotMakeIt
+    );
+    expect(ROSTER.length).toBe(rec.measured.rosterSize);
+  });
+
+  it('★ records that the look-back concession was NOT ported, and it still works', () => {
+    expect(rec.ours.value.lookBackRule).toBe(false);
+    expect(rec.theLookBackRuleWasNotNeeded).toMatch(/a statement about v1's GEOMETRY, not about relays/);
+    // The v1 record it answers is left standing.
+    expect(M.defense.fielderSpeed.notSufficient).toBeTruthy();
+  });
+
+  it('★ never records an out on a relay leg', () => {
+    // The invariant v1 calls "the whole safety argument for the mechanic".
+    let sawRelay = false;
+    for (const sprayDeg of [-35, -13, 13, 35]) {
+      const s = beginPlay(
+        playSpec({ exitVelocityFts: 95, launchAngleDeg: 22, sprayDeg, spinRpm: 1800, heightFt: 2.5 }),
+        makeRng(`rl${sprayDeg}`)
+      );
+      let n = 0;
+      let prevOuts = 0;
+      let prevRelay = false;
+      while (s.phase === 'live' && n++ < 60 * PLAY.MAX_PLAY_SEC + 8) {
+        const inFlight = s.throw?.target.kind === 'fielder';
+        stepPlay(s, 1 / 60);
+        if (s.events.some((e) => e.t === 'relay')) sawRelay = true;
+        if (prevRelay && !inFlight) expect(s.outs, `spray ${sprayDeg}`).toBe(prevOuts);
+        prevRelay = inFlight;
+        prevOuts = s.outs;
+      }
+      finishPlay(s);
+    }
+    expect(sawRelay, 'the sweep must actually relay or it proves nothing').toBe(true);
   });
 });

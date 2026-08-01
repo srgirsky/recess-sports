@@ -312,25 +312,157 @@ export interface LooseTrace {
    *  or a ball that was already on the ground when the trace began). */
   landing: Vec2 | null;
   landAtSec: number | null;
+  /**
+   * The highest the ball gets, ft, from here on.
+   *
+   * ★ THIS IS HOW YOU TELL A FLY FROM A GROUNDER, and asking the phase instead
+   * is wrong: a ball skipping through the infield is airborne between hops. What
+   * makes a ball catchable in the air is that it goes ABOVE a kid's glove, which
+   * is a height, not a state.
+   */
+  apexFt: number;
   /** It cleared the fence instead. Nobody is fielding this one. */
   leftPark: boolean;
 }
 
+/** What a loose ball is doing. `atRest` is terminal until somebody moves it. */
+export type BallPhase = 'flight' | 'rolling' | 'atRest';
+
 /**
- * Fly, bounce, roll and carom a loose ball until it stops.
+ * Something happened to the ball this step that a caller may need to react to.
  *
- * ★ THE SAME FUNCTION ANSWERS "WHERE IS IT GOING" AND "WHERE DID IT GO", and
- * that closes a caveat v1 wrote into `fielding.ts` and could not remove.
- * v1's `predictLoosePath` is "an ELECTION-ONLY estimate, deliberately not a
- * second copy of `moveBall`", and it hedges that "a divergence changes who gets
- * sent, never where the ball actually goes" — a real second implementation with
- * a real second set of bugs, kept only because the first one was tangled up in
- * the tick reducer. Here the composition is already a pure function of a ball
- * and a field, so the chaser election calls the physics rather than a sketch of
- * it, and there is no divergence to bound.
+ * These are exactly v1's four re-election triggers — `liveplay.ts` sets its
+ * `reelect` flag "at every land, carom, bonk and fumble" — plus `rest`. The
+ * fourth, a fumble, belongs to the fielder rather than the ball and is raised by
+ * the reducer.
+ */
+export type LooseEvent = 'land' | 'carom' | 'bonk' | 'rest' | null;
+
+export interface LooseStep {
+  state: BallState;
+  phase: BallPhase;
+  event: LooseEvent;
+  /** Seconds actually consumed — less than `dtSec` when an event cut the step short. */
+  dtUsed: number;
+  /** It cleared the fence. Nobody is fielding this one. */
+  leftPark: boolean;
+}
+
+/**
+ * One tick of a loose ball: fly, bounce, roll, carom, bonk, or come to rest.
  *
- * Deliberately NO `Rng`: like everything else in this file, a loose ball is
- * deterministic. The errors live on the fielder, not on the ball.
+ * ★ THIS IS THE ONE BALL IMPLEMENTATION, and extracting it is the whole reason
+ * PR 6 could be written honestly. `traceLooseBall` below is a loop over this
+ * function, and the play reducer calls it once a tick — so "where is it going"
+ * (the chaser election) and "where did it go" (the play) are answered by the
+ * same code rather than by two that agree today.
+ *
+ * v1 has the other arrangement and says so: `systems/fielding.ts`'s
+ * `predictLoosePath` is "an ELECTION-ONLY estimate, deliberately not a second
+ * copy of `moveBall`", hedging that "a divergence changes who gets sent, never
+ * where the ball actually goes". That hedge is the cost of a second
+ * implementation, and it is not payable here.
+ *
+ * Deliberately NO `Rng`: like everything else in this file a loose ball is
+ * deterministic. The errors live on the fielder.
+ */
+export function stepLooseBall(
+  s: BallState,
+  phase: BallPhase,
+  geo: FieldGeometry,
+  dtSec: number
+): LooseStep {
+  if (phase === 'atRest') return { state: cloneState(s), phase, event: null, dtUsed: dtSec, leftPark: false };
+
+  if (phase === 'rolling') {
+    const rolled = rollStep(s, geo, dtSec);
+    if (isAtRest(rolled)) {
+      const settled = settleBallAt(rolled, geo);
+      return { state: settled, phase: 'atRest', event: 'rest', dtUsed: dtSec, leftPark: false };
+    }
+    return { state: rolled, phase: 'rolling', event: null, dtUsed: dtSec, leftPark: false };
+  }
+
+  const guards: Record<string, Guard> = { ground: groundGuard, fence: fenceGuard(geo) };
+  for (let i = 0; i < geo.obstacles.length; i++) guards[`obstacle${i}`] = obstacleGuard(geo.obstacles[i]);
+
+  const r = stepFlight(s, dtSec, guards);
+  const dtUsed = r.event ? r.event.tSec : dtSec;
+  let out = r.state;
+  if (!r.event) return { state: out, phase: 'flight', event: null, dtUsed, leftPark: false };
+
+  if (r.event.kind === 'fence') {
+    if (out.p.y > geo.fenceHeight) {
+      return { state: out, phase: 'flight', event: null, dtUsed, leftPark: true };
+    }
+    out = wallCarom(out, geo);
+    return { state: out, phase: 'flight', event: 'carom', dtUsed, leftPark: false };
+  }
+
+  if (r.event.kind === 'ground') {
+    const settling = isRollingNow(out);
+    out = settling ? out : groundBounce(out, geo);
+    if (isRollingNow(out)) {
+      out.p.y = 0;
+      return { state: out, phase: 'rolling', event: 'land', dtUsed, leftPark: false };
+    }
+    return { state: out, phase: 'flight', event: 'land', dtUsed, leftPark: false };
+  }
+
+  const idx = Number(r.event.kind.slice('obstacle'.length));
+  out = obstacleBonk(out, geo.obstacles[idx]);
+  return { state: out, phase: 'rolling', event: 'bonk', dtUsed, leftPark: false };
+}
+
+export interface LooseTick {
+  state: BallState;
+  phase: BallPhase;
+  /** Events that fired inside the tick, with the offset into it at which each did. */
+  events: Array<{ event: Exclude<LooseEvent, null>; atSec: number }>;
+  leftPark: boolean;
+}
+
+/**
+ * A WHOLE tick of a loose ball, events and all.
+ *
+ * ★ CONSUMING THE REMAINDER IS NOT A DETAIL. `stepLooseBall` returns the state
+ * AT a crossing and reports how much of the step that took; a caller that then
+ * moves its clock on by the full `dt` leaves the ball short by the remainder,
+ * once per event. Four bounces at 240 Hz is 16ms of motion quietly deleted, and
+ * worse, it makes the resting place depend on the tick rate — the same class of
+ * error `rollStep` finishes analytically to avoid.
+ *
+ * It also has to be shared. `traceLooseBall` and the play reducer both step a
+ * loose ball, and if only one of them consumed remainders the two would disagree
+ * by about an inch per play — small, real, and exactly the "second
+ * implementation" this file exists to not have. They call this.
+ */
+export function stepLooseBallFull(
+  s: BallState,
+  phase: BallPhase,
+  geo: FieldGeometry,
+  dtSec: number
+): LooseTick {
+  let state = s;
+  let ph = phase;
+  let left = dtSec;
+  const events: LooseTick['events'] = [];
+  for (let guard = 0; guard < 8 && left > 1e-12 && ph !== 'atRest'; guard++) {
+    const r = stepLooseBall(state, ph, geo, left);
+    left -= r.dtUsed;
+    state = r.state;
+    ph = r.phase;
+    if (r.leftPark) return { state, phase: ph, events, leftPark: true };
+    if (r.event !== null) events.push({ event: r.event, atSec: dtSec - left });
+    if (r.event === null) break; // a clean step consumed the whole remainder
+  }
+  return { state, phase: ph, events, leftPark: false };
+}
+
+/**
+ * Fly, bounce, roll and carom a loose ball until it stops — a loop over
+ * `stepLooseBallFull`, which is what makes the election and the play agree by
+ * construction rather than by review.
  */
 export function traceLooseBall(
   from: BallState,
@@ -341,51 +473,35 @@ export function traceLooseBall(
   const want = opts.samples ?? 24;
   const dt = opts.dtSec ?? 1 / INTEGRATOR.FLIGHT_HZ;
 
-  const guards: Record<string, Guard> = { ground: groundGuard, fence: fenceGuard(geo) };
-  for (let i = 0; i < geo.obstacles.length; i++) guards[`obstacle${i}`] = obstacleGuard(geo.obstacles[i]);
-
   let s = cloneState(from);
   let t = 0;
-  let rolling = isRollingNow(s) && s.p.y <= 0;
+  let phase: BallPhase = isRollingNow(s) && s.p.y <= 0 ? 'rolling' : 'flight';
   let leftPark = false;
   let landing: Vec2 | null = null;
   let landAtSec: number | null = null;
   const samples: PathSample[] = [{ p: { x: s.p.x, z: s.p.z }, h: s.p.y, tSec: 0 }];
   const every = horizon / want;
   let nextSample = every;
+  let apexFt = s.p.y;
 
-  while (t < horizon && !(rolling && isAtRest(s))) {
-    if (rolling) {
-      s = rollStep(s, geo, dt);
+  while (t < horizon && phase !== 'atRest') {
+    const r = stepLooseBallFull(s, phase, geo, dt);
+    s = r.state;
+    phase = r.phase;
+    if (s.p.y > apexFt) apexFt = s.p.y;
+    if (r.leftPark) {
+      leftPark = true;
       t += dt;
-    } else {
-      const r = stepFlight(s, dt, guards);
-      t += r.event ? r.event.tSec : dt;
-      s = r.state;
-      if (r.event) {
-        if (r.event.kind === 'fence') {
-          if (s.p.y > geo.fenceHeight) {
-            leftPark = true;
-            break;
-          }
-          s = wallCarom(s, geo);
-        } else if (r.event.kind === 'ground') {
-          if (landing === null) {
-            landing = { x: s.p.x, z: s.p.z };
-            landAtSec = t;
-          }
-          s = isRollingNow(s) ? s : groundBounce(s, geo);
-          if (isRollingNow(s)) {
-            s.p.y = 0;
-            rolling = true;
-          }
-        } else {
-          const idx = Number(r.event.kind.slice('obstacle'.length));
-          s = obstacleBonk(s, geo.obstacles[idx]);
-          rolling = true;
-        }
+      break;
+    }
+    if (landing === null) {
+      const land = r.events.find((e) => e.event === 'land');
+      if (land) {
+        landing = { x: s.p.x, z: s.p.z };
+        landAtSec = t + land.atSec;
       }
     }
+    t += dt;
     if (t >= nextSample) {
       samples.push({ p: { x: s.p.x, z: s.p.z }, h: s.p.y, tSec: t });
       nextSample += every;
@@ -401,7 +517,7 @@ export function traceLooseBall(
   // it at all, and every slow roller past the infield becomes nobody's ball.
   for (let i = 1; i <= 4; i++) samples.push({ p: { ...settle }, h: 0, tSec: t + i * every });
 
-  return { samples, settle, restAtSec: t, landing, landAtSec, leftPark };
+  return { samples, settle, restAtSec: t, landing, landAtSec, apexFt, leftPark };
 }
 
 // --- Guards, to hand to stepFlight ------------------------------------------
