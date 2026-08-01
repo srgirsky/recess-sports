@@ -385,13 +385,75 @@ statistical harness will be measuring BABIP straight through it.
 `sim.aeroModelLowSpeed` has had its significance raised rather than being quietly
 leaned on.
 
-Next: exit
-velocity, launch angle and spray from *where and when* you swung, including the
-power→exit-velocity mapping above; then fielders and runners off one speed
-function; then the play reducer; then the statistical conformance harness
-(headless, no art, no graphics) which asserts emergent BABIP / launch-angle
-split / exit-velocity shape against real baseball bands instead of pinning
-constants.
+**Fielders and runners now exist, and a gap ball is finally a hit**
+(2026-08-01). The headline was meant to be one speed function — `defense.fielderSpeed`
+records v1's `FIELDER_SPEED` drifting to 2.48× runner speed across five retunes,
+because fielders and runners each had a constant, and its conclusion was that "a
+kid does not get faster by putting a glove on". Here there is no fielder speed to
+drift: `athletes.ts` has one function per physical quantity and both callers call
+it, with the purity lint asserting that textually *and* functionally, over all 30
+kids and the whole 1–10 stat range rather than only the values the roster happens
+to use.
+
+Two larger things turned up while building it, and **neither had a measurement
+record anywhere.** v1's `LIVE.CATCH_RADIUS` is 34px — **11.36 ft** at its own
+scale, a four-foot child catching a ball eleven feet away, with a dive reaching
+21.4. Area goes as r², so a v1 fielder covered **14.3× the ground a real kid
+can**, which is a large part of why "every ball a fielder reaches is a putout"
+and is nowhere in `defense.*`. And v1 CLASSIC throws at 9.65× runner speed
+against a published youth band of roughly 2.9–4.1×; v1 KID, the one mode that
+actually produces base hits, throws at 4.60×, which makes its playability an
+explained result rather than a coincidence. Both are now records
+(`sim.catchRadius`, `sim.throwSpeed`), the second anchored on published youth
+throwing velocity because the BB2001 measurement is blocked on a play the capture
+does not contain.
+
+The sprint model is the nicest piece of arithmetic in the tree. `pace.homeToFirst`
+measures 4200ms over 60ft, but **a leg time constrains a (top speed, acceleration)
+pair, not either one** — v1 resolved that by assuming no acceleration at all and
+running every kid flat at 14.29 ft/s. The second constraint comes from published
+child peak velocity (~18 ft/s), and the acceleration is then *solved*:
+`T = 2·(4.200 − 60/V)` = 1.736s, i.e. 10.37 ft/s². The measured leg comes back out
+at 4200ms exactly, which is circular — but the *other* number the solve produces
+was free to be absurd and is not, and that is what makes it conformed.
+
+Three things went wrong in ways worth keeping. A glove modelled as a **sphere at
+chest height** gives a ball lying on the ground 0.84 ft of horizontal reach, so
+every routine grounder became a chase to the wall while the election insisted the
+shortstop had cut it off; he had, he just could not bend over. The election
+itself **left the reaction time out of the journey**, electing a kid whose 1.42s
+cut-off included 0.46s of standing still — invisible in any fielder's position,
+findable only by running the election against the pursuit it predicts. And the
+throw's arc is closed-form through a half-angle identity so the file needs no
+trig, which means an arm has a *range*: centre field to first is 129.7 ft and 27
+of 30 kids cannot make it, so **the cutoff relay stops being a mechanic and
+becomes what happens when nobody can reach the bag** — where v1 had to invent
+`LIVE.RELAY` and gate it on a hand-picked depth, because at its geometry throw
+distance could not discriminate at all.
+
+One claim in this work was **wrong and is recorded as wrong**. v1's cut-ahead
+gate is a fixed 400ms compared against ball-clock times, and
+`defense.chaserElection` says it "cannot be speed-neutral by construction"; the
+obvious fix is to express it as a ratio, and the first draft of this PR asserted
+that doing so removed the drift. Measured on identical inputs over 215 launches
+at three defence speeds: the ratio gate drifts 7.4pp and a fixed 0.40s gate
+drifts 7.4pp. They are the same. What moves the override rate is which fielders
+can intercept *at all*, which no gate form touches. The ratio stays for a smaller
+and honest reason — it is dimensionless, so no future retune can leave a unit
+stale — and `sim.chaserElectionGate` records the measurement instead of the hope.
+
+The outcome is the thing the rewrite was for, and nothing was tuned to produce
+it: at 31 mph a grounder is an out at every one of fifteen spray angles, at 42
+mph it finds the holes, and at 55 mph it gets through. A ball into the true LF–CF
+gap is a hit — `defense.fielderSpeed.notSufficient` measured v1's as "out by
+897ms" — while a routine grounder to short is still an out by 302ms. Run
+`npm run sim:trajectory` to see the table.
+
+Next: the play reducer; then the at-bat and game loop, where the five shared
+`systems/` modules get their first real use; then the statistical conformance
+harness (headless, no art, no graphics) which asserts emergent BABIP /
+launch-angle split / exit-velocity shape against real baseball bands instead of
+pinning constants.
 
 ---
 

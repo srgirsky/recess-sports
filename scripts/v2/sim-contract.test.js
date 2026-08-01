@@ -33,8 +33,22 @@ import { VENUE_GEOMETRY, fenceDistAt } from '../../src/v2/sim/field.ts';
 import { BAT, BOUNCE, PITCH } from '../../src/v2/sim/params.ts';
 import { groundCor } from '../../src/v2/sim/bounce.ts';
 import { collisionEfficiency, exitVelocity } from '../../src/v2/sim/contact.ts';
-import { batSpeedFts } from '../../src/v2/sim/athletes.ts';
-import { ftsToMph } from '../../src/v2/sim/units.ts';
+import {
+  batSpeedFts,
+  reachFt,
+  reactionSec,
+  sprintAccelFtS2,
+  sprintAccelSec,
+  sprintTimeSec,
+  sprintTopSpeedFts,
+  throwSpeedFts,
+} from '../../src/v2/sim/athletes.ts';
+import { DEFENSE, RUN } from '../../src/v2/sim/params.ts';
+import { BASEPATH, FIELD_MARGIN, FIELD_POSITIONS, FIRST, dist } from '../../src/v2/sim/field.ts';
+import { maxThrowFt } from '../../src/v2/sim/fielders.ts';
+import { makeRunner } from '../../src/v2/sim/runners.ts';
+import { REFERENCE_HEIGHT_FT } from '../../src/v2/render/skeleton.ts';
+import { ftsToMph, v1PxToFt } from '../../src/v2/sim/units.ts';
 import { ROSTER } from '../../src/data/characters.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -496,5 +510,202 @@ describe('sim.aeroModelLowSpeed, after the mapping landed', () => {
       (c) => ftsToMph(exitVelocity(eA, 37.6, batSpeedFts(c.stats.power))) < AERO.FIT_SPEED_BAND_MPH[0]
     ).length;
     expect(below).toBeGreaterThanOrEqual(29);
+  });
+});
+
+describe('sim.kidSprintSpeed', () => {
+  const rec = M.sim.kidSprintSpeed;
+
+  it('is a well-formed record and inherits the anchor rather than re-measuring it', () => {
+    wellFormed(rec, { reference: 'bb2001', status: 'conformed' });
+    // ★ It CONSUMES pace.homeToFirst. Consuming a number does not measure it,
+    // so every figure it states about the measurement has to be that record's.
+    expect(rec.measured.inheritedFrom).toBe('pace.homeToFirst');
+    expect(rec.measured.homeToFirstMs).toBe(M.pace.homeToFirst.measured);
+    expect(rec.measured.n).toBe(M.pace.homeToFirst.n);
+    expect(rec.measured.spreadMs).toBe(M.pace.homeToFirst.spread);
+    expect(rec.measured.confidence).toBe(M.pace.homeToFirst.confidence);
+  });
+
+  it('★ recomputes the acceleration from the anchor, not from the record', () => {
+    // T = 2*(t - d/V), derived here from RUN and BASEPATH and compared against
+    // what athletes.ts actually produces. If either drifts this goes red.
+    const v = sprintTopSpeedFts(RUN.ANCHOR_SPEED_STAT);
+    expect(sprintAccelSec()).toBeCloseTo(2 * (RUN.HOME_TO_FIRST_SEC - BASEPATH / v), 10);
+    expect(sprintAccelSec()).toBeCloseTo(rec.ours.value.accelSec, 4);
+    for (const [stat, want] of [[1, 'stat1'], [5, 'stat5'], [10, 'stat10']]) {
+      expect(sprintTopSpeedFts(stat)).toBeCloseTo(rec.ours.value.topSpeedFts[want], 3);
+      expect(sprintAccelFtS2(stat)).toBeCloseTo(rec.ours.value.accelFtS2[want], 3);
+      expect(Math.round(sprintTimeSec(BASEPATH, stat) * 1000)).toBe(rec.ours.value.homeToFirstMs[want]);
+    }
+    expect(ftsToMph(sprintTopSpeedFts(1))).toBeCloseTo(rec.ours.value.topSpeedMph[0], 6);
+    expect(ftsToMph(sprintTopSpeedFts(10))).toBeCloseTo(rec.ours.value.topSpeedMph[1], 6);
+  });
+
+  it('keeps the drift claim honest: zero, and says why that is not circular', () => {
+    expect(rec.drift.pct).toBe(0);
+    expect(Math.round(sprintTimeSec(BASEPATH, RUN.ANCHOR_SPEED_STAT) * 1000)).toBe(M.pace.homeToFirst.measured);
+    expect(rec.drift.note).toMatch(/free to come out absurd/);
+    // The non-circular half, checked rather than asserted in prose.
+    expect(sprintAccelFtS2(5)).toBeGreaterThan(8);
+    expect(sprintAccelFtS2(5)).toBeLessThan(13);
+  });
+});
+
+describe('sim.fielderRunnerParity', () => {
+  const rec = M.sim.fielderRunnerParity;
+
+  it('is a well-formed record and claims nothing about BB', () => {
+    wellFormed(rec, { reference: 'derived', status: 'conformed' });
+    expect(rec.measured).toBeNull();
+    expect(rec.whyNotMeasurable).toMatch(/how our own code is organised/);
+  });
+
+  it('★ names the enforcement that exists, which is the thing v1 lacked', () => {
+    // defense.fielderSpeed's invariant is a sentence in a config file that was
+    // true for five retunes while the ratio drifted underneath it.
+    expect(rec.enforcement).toMatch(/purity\.lint\.test\.js/);
+    expect(M.defense.fielderSpeed.history).toMatch(/FIVE consecutive runner slowdowns/);
+    expect(rec.ours.value.v1Ratio).toBe(2.48);
+    // And the ratio is 1.0 because there is one function, not two constants.
+    for (const c of ROSTER) {
+      expect(makeRunner(c, 1).topFts, c.name).toBe(sprintTopSpeedFts(c.stats.speed));
+    }
+  });
+});
+
+describe('sim.catchRadius', () => {
+  const rec = M.sim.catchRadius;
+
+  it('is a well-formed record, drifting against v1 rather than a measurement', () => {
+    wellFormed(rec, { reference: 'baseball', status: 'known-drift' });
+    expect(rec.drift.against).toBe('v1');
+    expect(rec.measured.n).toBe(0);
+  });
+
+  it('★ recomputes v1 s reach and the area ratio from v1 s own constants', () => {
+    // 34px and 28px are read out of v1's config; the feet and the ratio are
+    // derived here, so neither the record nor the conversion can drift alone.
+    expect(v1PxToFt(34)).toBeCloseTo(rec.drift.v1ReachFt, 3);
+    expect(v1PxToFt(28)).toBeCloseTo(rec.drift.v1PickupFt, 3);
+    expect(v1PxToFt(34 + 30)).toBeCloseTo(rec.drift.v1DivingFt, 3);
+    expect((v1PxToFt(34) / reachFt()) ** 2).toBeCloseTo(rec.drift.areaRatio, 1);
+    expect(reachFt()).toBe(rec.ours.value.reachFt);
+    expect(DEFENSE.CATCH_CENTRE_FT + reachFt()).toBe(rec.ours.value.maxCatchHeightFt);
+  });
+
+  it('★ pins the hard floor PR 3 handed forward, from both ends', () => {
+    expect(FIELD_MARGIN - 1).toBe(3); // BOUNCE.BALL_SETTLE_MARGIN_FT
+    expect(reachFt()).toBeGreaterThanOrEqual(FIELD_MARGIN - 1);
+    expect(rec.theHardFloor).toMatch(/PR 5 catch radius must cover this/);
+  });
+
+  it('keeps the reference kid the same one the rig is built on', () => {
+    // ★ The ONE place allowed to look at both. `src/v2/sim/**` may not import
+    // the render layer at all — that is the purity gate's whole job — so if
+    // DEFENSE.REFERENCE_HEIGHT_FT and skeleton.ts ever disagree, nothing inside
+    // the sim could notice. This is the seam that would.
+    expect(DEFENSE.REFERENCE_HEIGHT_FT).toBe(REFERENCE_HEIGHT_FT);
+    expect(reachFt()).toBeLessThan(REFERENCE_HEIGHT_FT);
+  });
+});
+
+describe('sim.throwSpeed', () => {
+  const rec = M.sim.throwSpeed;
+
+  it('is a well-formed record and says why it went to another reference class', () => {
+    wellFormed(rec, { reference: 'baseball', status: 'awaiting-measurement' });
+    expect(rec.measured).toBeNull();
+    expect(rec.partialReading.n).toBe(1);
+    // The BB2001 record it stands in for is blocked, and stays blocked.
+    expect(M.defense.throwSpeed.blocked).toBeTruthy();
+    expect(rec.why).toMatch(/THE CLEANEST TARGET DOES NOT EXIST IN THIS CAPTURE/);
+  });
+
+  it('★ recomputes the ratio ordering, which is the whole claim', () => {
+    const runner = sprintTopSpeedFts(RUN.ANCHOR_SPEED_STAT);
+    expect(throwSpeedFts(1) / runner).toBeCloseTo(rec.ours.value.ratioToRunner[0], 2);
+    expect(throwSpeedFts(10) / runner).toBeCloseTo(rec.ours.value.ratioToRunner[1], 2);
+    expect(ftsToMph(throwSpeedFts(1))).toBeCloseTo(rec.ours.value.mph[0], 6);
+    expect(ftsToMph(throwSpeedFts(10))).toBeCloseTo(rec.ours.value.mph[1], 6);
+    // ours < v1 KID < v1 CLASSIC, which is what makes KID's playability a result.
+    expect(throwSpeedFts(10) / runner).toBeLessThan(4.6);
+    expect(4.6).toBeLessThan(9.65);
+  });
+
+  it('★ makes the relay a consequence of an arm, and counts the kids it applies to', () => {
+    expect(maxThrowFt(5)).toBeCloseTo(rec.ours.value.maxRangeFt.arm5, 1);
+    expect(maxThrowFt(10)).toBeCloseTo(rec.ours.value.maxRangeFt.arm10, 1);
+    const cfToFirst = dist(FIELD_POSITIONS.CF, FIRST);
+    const ssToFirst = dist(FIELD_POSITIONS.SS, FIRST);
+    expect(cfToFirst).toBeCloseTo(129.7, 1);
+    expect(ssToFirst).toBeCloseTo(68.2, 1);
+    // "27 of 30 cannot make that throw; every one of the 30 can make the short one."
+    expect(ROSTER.filter((c) => maxThrowFt(c.stats.pitching) < cfToFirst).length).toBe(27);
+    expect(ROSTER.filter((c) => maxThrowFt(c.stats.pitching) >= ssToFirst).length).toBe(ROSTER.length);
+    expect(rec.theRelayBecomesAConsequence).toMatch(/806px/);
+  });
+});
+
+describe('sim.fielderReaction', () => {
+  const rec = M.sim.fielderReaction;
+
+  it('is a well-formed record', () => {
+    wellFormed(rec, { reference: 'baseball', status: 'awaiting-measurement' });
+    expect(rec.measured).toBeNull();
+  });
+
+  it('★ recomputes the overhead it is compared against, on both sides', () => {
+    expect(reactionSec(1) * 1000).toBeCloseTo(rec.ours.value.readMs[1], 6);
+    expect(reactionSec(10) * 1000).toBeCloseTo(rec.ours.value.readMs[0], 6);
+    expect(DEFENSE.RELEASE_SEC * 1000).toBe(rec.ours.value.releaseMs);
+    expect(rec.ours.value.worstCaseOverheadMs).toBe(rec.ours.value.readMs[1] + rec.ours.value.releaseMs);
+    // v1's side, from v1's own records rather than from this one.
+    expect(rec.ours.value.v1OverheadMs).toBe(
+      M.defense.cpuReaction.ours.value + M.defense.cpuThrowDelay.ours.value
+    );
+    expect(rec.ours.value.worstCaseOverheadMs).toBeLessThan(rec.ours.value.v1OverheadMs / 2);
+    // The roster's realised span, from the roster.
+    const ms = ROSTER.map((c) => reactionSec(c.stats.fielding) * 1000);
+    expect(Math.round(Math.min(...ms))).toBe(rec.ours.value.realisedRosterMs[0]);
+    expect(Math.round(Math.max(...ms))).toBe(rec.ours.value.realisedRosterMs[1]);
+  });
+
+  it('★ records that v1 s confound is gone, and quotes the record it answers', () => {
+    expect(rec.theConfoundIsGone).toMatch(/ACCELERATION RAMP/);
+    expect(M.defense.cpuReaction.partialReading).toBeTruthy();
+    expect(M.sim.kidSprintSpeed.ours.value.accelSec).toBeGreaterThan(0);
+    // And the second finding: the election has to include the read.
+    expect(rec.itIsAlsoPartOfTheElection).toMatch(/eighty feet into left field/);
+  });
+});
+
+describe('sim.chaserElectionGate', () => {
+  const rec = M.sim.chaserElectionGate;
+
+  it('is a well-formed NOTE — a finding about a decision, not a tuning target', () => {
+    wellFormed(rec, { reference: 'derived', status: 'note' });
+    expect(rec.measured.n).toBe(215);
+  });
+
+  it('★ records that the ratio gate bought nothing measurable, and says so', () => {
+    const r = rec.measured.overrideRateByDefenceSpeed;
+    // The two forms drift identically. That is the finding, and it CORRECTS a
+    // reading of defense.chaserElection rather than confirming it.
+    expect(r.ratioGate0_15.spreadPp).toBeCloseTo(r.fixedGate0_40sec.spreadPp, 1);
+    expect(rec.finding).toMatch(/IT DOES NOT/);
+    expect(rec.whyKeepTheRatioAnyway).toMatch(/correctness-of-form change, not a measured improvement/);
+    // And the record it corrects is left standing, not overwritten.
+    expect(M.defense.chaserElection.measuredWindow.stabilityClaimCorrected).toMatch(/cannot be speed-neutral/);
+    expect(rec.whatThisCorrects).toMatch(/stands and is not challenged here/);
+  });
+
+  it('pins the constants, and that neither of them carries a unit', () => {
+    expect(DEFENSE.CUT_AHEAD_FRAC).toBe(rec.ours.value.cutAheadFrac);
+    expect(DEFENSE.SWITCH_MARGIN_FRAC).toBe(rec.ours.value.switchMarginFrac);
+    expect(Object.keys(DEFENSE).filter((k) => /CUT_AHEAD|SWITCH_MARGIN/.test(k))).toEqual([
+      'CUT_AHEAD_FRAC',
+      'SWITCH_MARGIN_FRAC',
+    ]);
   });
 });
