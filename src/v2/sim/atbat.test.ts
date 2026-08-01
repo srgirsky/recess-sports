@@ -61,6 +61,20 @@ function sample(batter: (typeof ROSTER)[number], n: number, counts?: PitchSpec['
 
 const swung = (r: PitchResult) => r.kind !== 'ball' && r.kind !== 'calledStrike';
 
+/**
+ * ★ A STATED BUDGET FOR THE TESTS THAT THROW HUNDREDS OF PITCHES.
+ *
+ * A rate is not observable in one sample, so these sweep — and the first pitch
+ * for each (kind, arm, spot) pays the release solve, which is 8.6ms and cannot
+ * be memoised away because it IS the memo being filled. The waste that could be
+ * removed was (see `sim.gameShape.performanceNote`: 13.6ms per pitch to a cache
+ * hit, and the reducer's redundant re-tracing); what is left is measurement.
+ * A CI runner is three to five times slower than the machine these were timed
+ * on, which is exactly how #45 happened — so the budget is explicit rather than
+ * discovered in a red build.
+ */
+const SWEEPS_PITCHES = 30_000;
+
 describe('★ the strike zone, which v1 does not have in any units', () => {
   it('is the rulebook plate plus a ball on each side', () => {
     // `Official Baseball Rules` 2.02 and Little League 1.05 both specify a
@@ -146,7 +160,7 @@ describe('★ one judgement error, two behaviours', () => {
     const good = rate(10);
     expect(bad, 'a poor-contact kid swings through pitches').toBeGreaterThan(0.05);
     expect(good, 'an elite-contact kid almost never does').toBeLessThan(bad);
-  });
+  }, SWEEPS_PITCHES);
 
   it('★ produces takes and chases, and the good eye takes the right ones', () => {
     const look = (contact: number) => {
@@ -168,7 +182,7 @@ describe('★ one judgement error, two behaviours', () => {
     // whiff rate in the codebase — both come out of one judgement error.
     expect(Object.keys(ATBAT)).not.toContain('CHASE_RATE');
     expect(Object.keys(ATBAT)).not.toContain('WHIFF_RATE');
-  });
+  }, SWEEPS_PITCHES);
 
   it('★ protects with two strikes, which is what keeps a K from being a take', () => {
     const at = (count: PitchSpec['count']) => {
@@ -180,7 +194,7 @@ describe('★ one judgement error, two behaviours', () => {
     const twoStrikes = at({ balls: 1, strikes: 2 });
     expect(twoStrikes, 'he flails with two strikes').toBeGreaterThan(even);
     expect(ATBAT.TWO_STRIKE_PROTECT_FT).toBeGreaterThan(0);
-  });
+  }, SWEEPS_PITCHES);
 });
 
 describe('the mound', () => {
@@ -232,7 +246,7 @@ describe('the mound', () => {
       return inZone / 400;
     };
     expect(wildness(10), 'a better arm hits the zone more often').toBeGreaterThan(wildness(2));
-  });
+  }, SWEEPS_PITCHES);
 });
 
 describe('determinism', () => {
@@ -252,7 +266,7 @@ describe('determinism', () => {
       return out;
     };
     expect(run()).toEqual(run());
-  });
+  }, SWEEPS_PITCHES);
 
   it('keeps a fork independent of its siblings', () => {
     const a = makeRng('seed');
@@ -281,5 +295,5 @@ describe('determinism', () => {
     }
     expect(Math.abs(sum / 20000), 'zero mean').toBeLessThan(0.03);
     expect(max, 'bounded at three sigma, by construction').toBeLessThanOrEqual(3);
-  });
+  }, SWEEPS_PITCHES);
 });

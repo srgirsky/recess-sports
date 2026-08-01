@@ -43,6 +43,26 @@ function spec(over: Partial<GameSpec> = {}): GameSpec {
 const game = (seed: string, over: Partial<GameSpec> = {}): GameResult =>
   simulateGame(spec(over), makeRng(seed));
 
+/**
+ * ★ AN EXPLICIT TIMEOUT, AND WHY THIS IS NOT #45's MISTAKE.
+ *
+ * #45 raised nothing and fixed the waste: a test asked for the same nine values
+ * sixty times and re-solved each one, and the answer was to memoise. The same
+ * discipline was applied here twice and is recorded in `sim.gameShape`: the
+ * pitch's release solve went from 13.6ms to a cache hit by having the pitcher
+ * aim at a SPOT, and the play reducer stopped RE-TRACING a ball whose trajectory
+ * had not changed. Together, 1.7s per game to 0.14s.
+ *
+ * What is left is not waste — it is a game being played. These tests exist to
+ * assert that a game TERMINATES, at every venue and every length, which cannot
+ * be done without playing several; and a CI runner is three to five times slower
+ * than the machine that measured 140ms. Shaving the sweep further would leave a
+ * guard too small to guard anything.
+ *
+ * So: a stated budget, on the tests that play games, with the cost on the record.
+ */
+const PLAYS_GAMES = 30_000;
+
 // ★ WARM THE RELEASE MEMO ONCE, HERE, because it is FIXTURE and not the thing
 // under test. `releaseAtSpot` solves (kind x arm x spot) the first time each is
 // asked for, at 8.6ms a solve — about 860ms for two pitchers. Left inside the
@@ -51,7 +71,7 @@ const game = (seed: string, over: Partial<GameSpec> = {}): GameResult =>
 // timeout raised instead of its waste fixed. Setup belongs in setup.
 beforeAll(() => {
   game('warm', { regulationInnings: 1 });
-});
+}, PLAYS_GAMES);
 
 describe('★ a full game always terminates with a score', () => {
   // ★ THE SWEEPS ARE BOUNDED AND SPLIT ON PURPOSE. A game costs ~140ms once the
@@ -82,7 +102,7 @@ describe('★ a full game always terminates with a score', () => {
     for (const id of VENUES) {
       shouldFinish(game(`term:${id}`, { geo: VENUE_GEOMETRY[id], regulationInnings: 1 }), id, 1);
     }
-  });
+  }, PLAYS_GAMES);
 
   it('at every game length', () => {
     for (const innings of [1, 3, 6]) {
@@ -90,7 +110,7 @@ describe('★ a full game always terminates with a score', () => {
         shouldFinish(game(`len:${innings}:${seed}`, { regulationInnings: innings }), `x${innings} #${seed}`, innings);
       }
     }
-  });
+  }, PLAYS_GAMES);
 
   it('★ never bats out of order', () => {
     // `lineupIdx` is advanced by the CALLER, not by `applyAtBat` — v1 does it at
@@ -105,7 +125,7 @@ describe('★ a full game always terminates with a score', () => {
       const who = line.replace(/ (walks|strikes out).*$/, '');
       expect(names.has(who), `"${who}" is not on either team`).toBe(true);
     }
-  });
+  }, PLAYS_GAMES);
 
   it('honours the regulation length and can go to extras', () => {
     let sawExtras = false;
@@ -122,7 +142,7 @@ describe('★ a full game always terminates with a score', () => {
     }
     expect(sawExtras, 'a one-inning game should tie sometimes').toBe(true);
     expect(sawTie, 'and some of those should still be tied after the bonus').toBe(true);
-  });
+  }, PLAYS_GAMES);
 });
 
 describe('★ the three seams that bite', () => {
@@ -138,7 +158,7 @@ describe('★ the three seams that bite', () => {
       );
       expect(g.awayScore + g.homeScore).toBe(g.tally.runs);
     }
-  });
+  }, PLAYS_GAMES);
 
   it('★ keeps home and away the right way round through gameflow', () => {
     // Seam 2. `decideAfterHalf(…, awayScore, homeScore, …)` takes away first;
@@ -163,7 +183,7 @@ describe('★ the three seams that bite', () => {
       }
     }
     expect(sawWalkOff || sawSkip, 'the sweep has to exercise at least one of them').toBe(true);
-  });
+  }, PLAYS_GAMES);
 
   it('★ skips the BOTTOM of the last inning, never the top', () => {
     // `shouldSkipBottom` means "the home team already leads, so their at-bats
@@ -186,7 +206,7 @@ describe('★ the three seams that bite', () => {
       expect(g.homeScore).toBeGreaterThan(g.awayScore);
     }
     expect(checked, 'the sweep has to produce a skipped bottom').toBeGreaterThan(0);
-  });
+  }, PLAYS_GAMES);
 
   it('counts a walk as a plate appearance but never an at-bat', () => {
     // `stats.ts`: "Official at-bats (walks don't count)". So AB + walks + the
@@ -197,7 +217,7 @@ describe('★ the three seams that bite', () => {
     expect(abs, 'every PA is an AB except the walks').toBe(
       g.tally.plateAppearances - g.tally.walks
     );
-  });
+  }, PLAYS_GAMES);
 });
 
 describe('the shape of a game', () => {
@@ -212,7 +232,7 @@ describe('the shape of a game', () => {
     expect(t.ballsInPlay, 'balls in play').toBeGreaterThan(0);
     expect(t.hits, 'hits').toBeGreaterThan(0);
     expect(t.runs, 'runs').toBeGreaterThan(0);
-  });
+  }, PLAYS_GAMES);
 
   it('spends a plausible number of pitches on a plate appearance', () => {
     // ★ NOT A CONFORMANCE CLAIM. Nothing measures this and `sim.plateDiscipline`
@@ -229,7 +249,7 @@ describe('the shape of a game', () => {
     const perPa = pitches / pas;
     expect(perPa, `${perPa.toFixed(2)} pitches per plate appearance`).toBeGreaterThan(3);
     expect(perPa).toBeLessThan(8);
-  });
+  }, PLAYS_GAMES);
 
   it('gives a better-contact lineup more contact', () => {
     const best = [...ROSTER].sort((a, b) => b.stats.contact - a.stats.contact).slice(0, 9);
@@ -248,7 +268,7 @@ describe('the shape of a game', () => {
       return k / pa;
     };
     expect(kRate(worst.map((c) => c.id))).toBeGreaterThan(kRate(best.map((c) => c.id)));
-  });
+  }, PLAYS_GAMES);
 });
 
 describe('★ the v2 lineup planner, closing PR 6s own finding', () => {
@@ -317,12 +337,12 @@ describe('determinism', () => {
       return [g.awayScore, g.homeScore, g.innings, ...Object.values(g.tally), g.log.length];
     };
     expect(run()).toEqual(run());
-  });
+  }, PLAYS_GAMES);
 
   it('keeps a fork independent of its siblings', () => {
     const a = makeRng('seed');
     const b = makeRng('seed');
     b.fork('somethingElse')();
     expect(simulateGame(spec(), a).tally).toEqual(simulateGame(spec(), b).tally);
-  });
+  }, PLAYS_GAMES);
 });
