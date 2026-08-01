@@ -113,6 +113,22 @@
         "band": "Infield coefficient of restitution 0.4-0.6 -- a ball retains 40-60% of its velocity after the first bounce.",
         "ordering": "Skinned (dirt) >= synthetic turf > natural grass. COR is closely related to surface HARDNESS (Clegg hammer Gmax); soil properties affect COR more than cutting height or thatch.",
         "confidence": "Read from a secondary summary of the primary papers, not from the papers themselves. Enough to bound our values; not enough to pin one."
+      },
+      "batBall": {
+        "cite": "Alan M. Nathan, 'Characterizing the performance of baseball bats', Am. J. Phys. 71(2) 134-143 (2003), doi:10.1119/1.1522699.",
+        "identity": "Eq. 3: v_f = e_A*v_ball + (1 + e_A)*v_bat. Nathan states it is derived 'from nothing other than the definition of e_A followed by a change of inertial reference frame' -- exact for any ball, bat or collision model, and independent of both.",
+        "efficiency": "Eq. 6: e_A = (e - r)/(1 + r), with r = m/M_eff the bat recoil factor (Eq. 7) and e the ball-bat COR, measured at 0.45-0.50 in the sweet-spot zone at game speeds. e_A is 'expected to be a strong function of the impact location along the axis of the bat', largest in a zone ~4-6in from the barrel end.",
+        "whyItMattersHere": "Eq. 6 is what makes a child not a small adult. A light youth bat has a LARGE recoil factor, so more of the collision goes into moving the bat: e_A falls from ~0.20 at an adult's ~20oz effective mass to ~0.098 at a youth 14oz. No fudge factor is needed anywhere."
+      },
+      "obliqueContact": {
+        "cite": "Jeffrey R. Kensrud, Alan M. Nathan & Lloyd V. Smith, 'Oblique Collisions of Baseballs and Softballs with a Bat', arXiv:1610.03464.",
+        "method": "A machine swung bats at 63-88 mph into a stationary ball, filmed at 3000fps; launch angles 0-30 deg and spins 0-3500 rpm were measured directly.",
+        "theFinding": "'the data are consistent with a mechanism whereby the ball GRIPS the surface of the bat, stretching the ball in the transverse direction and resulting in a spin that was up to 40% greater than would be obtained by rolling contact of rigid bodies.' Also: 'both the spin rate and the exit speed scale linearly with the initial bat speed', and the normalised spins are 'remarkably linear over the full range' of scattering angle.",
+        "sameStoryAsTheGround": "This is Cross's grip-vs-roll finding again, one collision later: the rigid-body rolling limit under-predicts real spin in BOTH the ball-ground and ball-bat cases. sim.bounceModel records it for the ground; sim.obliqueContact records it here."
+      },
+      "youthBatSpeed": {
+        "cite": "Published coaching benchmarks (WIN Reality, Blast Motion, and swing-sensor aggregates from >7,000 lessons) agree on 40-60 mph for Little League, with roughly +2.5 mph per year of age from 9U to 16U.",
+        "confidence": "Coaching benchmarks, not a peer-reviewed dataset, and 4-8-year-olds sit BELOW the 9U floor these figures start at -- so our band is that data extrapolated down, not read off."
       }
     }
   },
@@ -1940,6 +1956,7 @@
         "constant": "src/v2/sim/params.ts AERO.CD_0, AERO.CD_1, AERO.FIT_SPEED_BAND_MPH",
         "value": "Nathan's fit, extrapolated below its verified band."
       },
+      "significanceRaisedBy": "PR 4 (2026-07-31). This was written as a caveat on an otherwise-conformed model, worth recording but not urgent. The power-to-bat-speed mapping has now made it the single most load-bearing open question in the sim: the roster's exit velocities run 43.5-61.4 mph, so TWENTY-NINE OF THIRTY KIDS produce batted balls below the 60 mph floor of the band Nathan's drag fit was verified over. Essentially every ball this game will ever simulate is an extrapolation past the edge of the measurement. The model may well hold there -- Reynolds number falls with speed and the drag crisis is at the other end -- but nothing has said so, and the statistical harness in PR 8 will be measuring BABIP against a drag law nobody has checked in the regime it runs in.",
       "whatWouldWork": "Either a published low-speed C_D measurement for a real baseball (Kensrud & Smith, 'In situ drag measurements of sports balls', Procedia Engineering 13 (2011), covers a wider speed range and is the first place to look), or a direct one: launch a ball at a measured speed and angle with known spin, film it against a scale, and fit C_D from the trajectory. n>=3 per speed bin.",
       "informs": "src/v2/sim/params.ts AERO",
       "source": "physics:published"
@@ -1987,8 +2004,8 @@
       "id": "sim.carry-vs-fence",
       "category": "sim",
       "reference": "derived",
-      "status": "known-drift",
-      "statusChangedAt": "2026-07-31",
+      "status": "conformed",
+      "statusChangedAt": "2026-07-31 (opened), 2026-07-31 (closed by PR 4)",
       "what": "How much exit velocity it takes to clear each venue's fence, against how hard a four-to-eight-year-old can actually hit a ball.",
       "why": "This was the v2 plan's ranked #1 risk, written as 'every ball is a home run' -- MLB-shaped exit velocities over a 200ft park. The truth is the MIRROR IMAGE, and the integrator alone was enough to find it, before any contact model, fielder or play reducer existed that could have absorbed a wrong answer by being tuned around it.",
       "measured": {
@@ -2025,9 +2042,12 @@
       "confidence": "derived",
       "ours": {
         "constant": "src/v2/sim/field.ts VENUE_GEOMETRY; src/v2/sim/params.ts AERO",
-        "value": "park 185/212, sandlot 150-207, blacktop 188 -- unchanged by this PR."
+        "value": "park 185/212, sandlot 150-207, blacktop 188 -- unchanged, which was the point: the mapping moved, the geometry did not."
       },
-      "whatWouldClose": "PR 4's power-to-exit-velocity mapping, then re-running this table against the roster's actual power distribution: the record should end up asserting that a power-10 kid clears the park's line and a power-5 kid does not.",
+      "conformNote": "CLOSED by PR 4. The power stat now maps to a bat speed (35-53 mph over power 1-10), and Nathan's collision identity turns that into an exit velocity, so the carry table is no longer a hypothetical: it is what the roster actually produces. Measured end to end through the real contact model, the real integrator and the real fences:\n\n  power  2 (Sprout, Noodle)        EV 43.5  ->  115 ft   clears nothing\n  power  5 (Smokey, The Prof, ...)  EV 50.1  ->  146 ft   clears nothing\n  power  8 (Grizz, Moose)           EV 56.7  ->  180 ft   clears the porch\n  power  9 (Tank, Mimi Mash)        EV 59.2  ->  190 ft   clears the park LINE\n  power 10 (Big Lou)                EV 61.4  ->  201 ft   clears the park LINE\n\n3 of 30 kids can clear the park's 185ft line, 12 of 30 can clear the sandlot's 150ft porch, and NOBODY reaches the park's 212ft centre -- exactly what `resolution` said it should be, and asserted per-kid over the real roster rather than in the abstract.",
+      "whatClosedIt": "Not a retune. The band was pinned from both ends independently: published Little League bat speed (40-60 mph, +2.5/yr from 9U) carried down to four-to-eight-year-olds gives 35-53, and the fence requires that power 10 clear 185 and nobody clear 212. Both landed on the same number. sim.batSpeed carries the extrapolation honestly as awaiting-measurement.",
+      "theMarginIsDeliberate": "An earlier 35-50 band cleared the park line by ONE FOOT, which would have meant park home runs never actually happening once contact quality took its cut. Widened to 35-53 as a reviewed decision, so a slugger clears by ~16ft and the biggest moment in the game can occur.",
+      "whatWouldCloseWas": "PR 4's power-to-exit-velocity mapping, then re-running this table against the roster's actual power distribution: the record should end up asserting that a power-10 kid clears the park's line and a power-5 kid does not.",
       "informs": "src/v2/sim/field.ts VENUE_GEOMETRY, src/v2/sim/params.ts AERO",
       "source": "physics:published"
     },
@@ -2203,6 +2223,139 @@
       },
       "pinnedBy": "src/v2/sim/bounce.test.ts 'plays SHORTEST on the blacktop', which pins the drift ratio between 1.5 and 2.5 so it can neither grow nor be half-fixed unnoticed.",
       "informs": "src/v2/sim/field.ts VENUE_GEOMETRY, src/data/venues.ts"
+    },
+    "batBallCollision": {
+      "id": "sim.bat-ball-collision",
+      "category": "sim",
+      "reference": "physics",
+      "status": "conformed",
+      "statusChangedAt": "2026-07-31",
+      "what": "How a swing becomes an exit velocity: Nathan's collision-efficiency identity, and the recoil factor that makes a youth bat different from an adult's.",
+      "model": "v_f = e_A*v_ball + (1 + e_A)*v_bat (Eq. 3), with e_A = (e - r)/(1 + r) and r = m/M_eff (Eqs. 6-7).",
+      "whyConformed": "Eq. 3 is an IDENTITY, not a fit -- exact for any ball, bat and collision model -- so it is asserted symbolically over a grid of inputs rather than in a band. e_A is not stated either: it is recomputed from the ball-bat COR and the bat's effective mass, so EFFECTIVE_MASS_OZ and e_A cannot drift apart.",
+      "theKidResult": "At a youth bat's ~14oz effective mass, e_A = 0.098 against an adult's ~0.20 at 20.5oz. The recoil factor is the entire mechanism -- no fudge factor appears anywhere -- and it is monotone in bat mass, which the test sweeps.",
+      "independentCheck": "Off a TEE the pitch contributes nothing, so v_f = (1 + e_A)*v_bat with no free parameter at all. At e_A 0.098, bat speeds of 40-50 mph give 44-55 mph, against a published 8-and-under tee band of 45-55. Two unrelated sources -- a physics identity and coaching benchmarks -- agreeing.",
+      "n": 1,
+      "confidence": "high",
+      "nNote": "n=1 for a published identity. It is checked by symbolic exactness, not by sampling.",
+      "ours": {
+        "constant": "src/v2/sim/params.ts BAT.BALL_BAT_COR, BAT.EFFECTIVE_MASS_OZ; src/v2/sim/contact.ts collisionEfficiency",
+        "value": {
+          "ballBatCor": 0.5,
+          "effectiveMassOz": 14,
+          "eA": 0.098
+        }
+      },
+      "pinnedBy": "src/v2/sim/contact.test.ts 'the collision' -- Eq. 3 as an identity over a grid, e_A recomputed from Eq. 6, monotonicity in bat mass, and the tee-band cross-check.",
+      "informs": "src/v2/sim/params.ts BAT",
+      "source": "physics:published"
+    },
+    "obliqueContact": {
+      "id": "sim.oblique-contact",
+      "category": "sim",
+      "reference": "physics",
+      "status": "conformed",
+      "statusChangedAt": "2026-07-31",
+      "what": "How the undercut sets launch angle and backspin -- the same grip/slip result the ground bounce uses, one collision later.",
+      "model": "The barrel's centre passing `undercut` below the ball's tilts the line of centres by asin(undercut/(r_ball + r_barrel)); the ball leaves along it. The tangential component at that contact is gripped, giving spin (5/7)*v_t/R, exactly as sim.bounceModel derives for the ground.",
+      "theEnhancementIsNotApplied": "★ Kensrud, Nathan & Smith measured spin 'up to 40% greater than would be obtained by rolling contact of rigid bodies', and applying that 1.4 DOUBLE-COUNTS. Working their numbers back: they measured 0-3500 rpm over 0-30 deg at 63-88 mph, and the rigid-body rolling prediction at 30 deg and 88 mph is ALREADY ~3600 rpm. Their ceiling sits at the rolling limit, not 40% above it, so the 40% is normalised against something the abstract does not state. Multiplying our rolling result by 1.4 put a kid's batted ball at 4600-5400 rpm, outside the band the paper measured. We use the derived rolling limit, which lands inside it.",
+      "validation": {
+        "spinBandRpm": [
+          0,
+          3500
+        ],
+        "angleBandDeg": [
+          0,
+          30
+        ],
+        "note": "Our model reaches 3622 rpm at a 32 deg launch -- outside the ANGLE range they measured, so the test deliberately restricts its sweep to <=30 deg rather than comparing an extrapolation against a band that never covered it.",
+        "linearity": "Both of Kensrud's stated linearities are asserted: exit speed and spin each scale linearly with bat speed."
+      },
+      "n": 1,
+      "confidence": "high",
+      "nNote": "n=1 for a derivation checked against one published experiment.",
+      "ours": {
+        "constant": "src/v2/sim/params.ts BAT.BARREL_RADIUS_FT, BAT.GRIP_SPIN_ENHANCEMENT",
+        "value": {
+          "barrelRadiusFt": 0.104,
+          "gripSpinEnhancement": 1
+        }
+      },
+      "whatWouldClose": "Read Kensrud et al. in full for the normalisation behind the 40% figure. If it is against a reference model rather than the plain rolling limit, GRIP_SPIN_ENHANCEMENT can be set honestly instead of left at 1.",
+      "pinnedBy": "src/v2/sim/contact.test.ts 'the batted ball' -- undercut lifts and backspins, topping chops and puts topspin on, spin stays in the measured band inside the measured angle range, and both linearities.",
+      "informs": "src/v2/sim/params.ts BAT",
+      "source": "physics:published"
+    },
+    "batSpeed": {
+      "id": "sim.bat-speed",
+      "category": "sim",
+      "reference": "baseball",
+      "status": "awaiting-measurement",
+      "statusChangedAt": "2026-07-31",
+      "what": "The map from the 1-10 `power` stat to a real bat speed -- the one number that decides whether anybody in this game can hit a home run.",
+      "why": "★ THE FIRST RECORD TO USE reference: 'baseball'. The vocabulary has carried that value since it was introduced and nothing had ever needed it: this is neither BB2001 footage, nor published physics, nor arithmetic off our own constants. It is what real children actually do, which is a fourth kind of claim.",
+      "measured": null,
+      "n": 0,
+      "confidence": "low",
+      "partialReading": {
+        "confidence": "low",
+        "n": 1,
+        "llBandMph": [
+          40,
+          60
+        ],
+        "perYearMph": 2.5,
+        "source": "Coaching benchmarks and swing-sensor aggregates (WIN Reality, Blast Motion, >7,000 lessons).",
+        "why": "Coaching benchmarks rather than a dataset, and they START at 9U -- our players are four to eight, BELOW the floor. Our 35-53 band is that data extrapolated DOWN, which is exactly the kind of move this file exists to keep visible.",
+        "boxedInFromTheOtherSide": "The top of the band is not free either: sim.carryVsFence requires that a power-10 kid clear the park's 185ft line and that NOBODY clear its 212ft centre. Both constraints -- extrapolated coaching data from below, and the fence from above -- land on the same number, which is the only reason it is worth stating at all."
+      },
+      "ours": {
+        "constant": "src/v2/sim/params.ts BAT.SPEED_MIN_MPH, BAT.SPEED_MAX_MPH; src/v2/sim/athletes.ts batSpeedFts",
+        "value": {
+          "minMph": 35,
+          "maxMph": 53,
+          "realisedRosterMph": [
+            37,
+            53
+          ]
+        }
+      },
+      "rosterNote": "NOBODY ON THE ROSTER HAS POWER 1. The realised span is power 2 (Sprout, Noodle) to power 10 (Big Lou), so the mapping is defined over 1-10 but only ever evaluated over 2-10. Any claim about 'a power-1 kid' is about a kid who does not exist, and a test pins that.",
+      "whatWouldWork": "Bat-sensor readings from three or more actual four-to-eight-year-olds. A Blast Motion or Diamond Kinetics knob sensor and an afternoon at a tee-ball practice would close it outright, and would replace an extrapolation with a measurement of exactly the population this game is for.",
+      "informs": "src/v2/sim/params.ts BAT",
+      "source": "physics:published"
+    },
+    "pitchCorridorV2": {
+      "id": "sim.pitch-corridor",
+      "category": "sim",
+      "reference": "bb2001",
+      "status": "awaiting-measurement",
+      "statusChangedAt": "2026-07-31",
+      "what": "The pitch's flight time, and the release velocity solved from it.",
+      "theReparameterisation": "★ THE MEASURED QUANTITY IS A TIME, NOT A SPEED, and conflating them is a mistake this PR made first. pace.pitchCorridor brackets 1230ms over the 46ft mound, and docs/OVERVIEW.md summarises that as '25.6 mph -- exactly a seven-year-old's fastball'. That figure is 46ft/1.23s: the ball's average PACE toward the plate. Using it as a RELEASE SPEED puts the pitch 26 FEET UNDERGROUND at the plate, because a 46ft flight lasting 1.23s falls 24ft under gravity on the way. So the flight time is the anchor and the release velocity is SOLVED from it -- two constraints (cross at the aim height, take this long) determining two unknowns.",
+      "measured": null,
+      "n": 0,
+      "confidence": "low",
+      "partialReading": {
+        "confidence": "low",
+        "n": 1,
+        "flightMs": 1230,
+        "moundFt": 46,
+        "why": "Inherited verbatim from pace.pitchCorridor, whose own note reads: 'n=1 at this rigour. The repo convention is n<3 stays a partialReading, and the entire point of this record is that overclaiming is how the 270ms happened.' Consuming a number does not measure it.",
+        "armIsUncalibrated": "pace.pitchCorridor.armRatingCaveat: BB's on-screen 'PT' is a pitches-thrown counter rather than a rating, so flight time cannot be bound to a pitcher stat from that footage -- 'ARM_MULT remains uncalibrated'. Our arm spread is a spread around the one measured flight and is honest about being one."
+      },
+      "ours": {
+        "constant": "src/v2/sim/params.ts PITCH.FLIGHT_TIME_SEC, PITCH.ARM_MULT_MIN, PITCH.ARM_MULT_MAX",
+        "value": {
+          "flightSec": 1.23,
+          "armMultMin": 0.86,
+          "armMultMax": 1.18
+        }
+      },
+      "theBreakIsEmergent": "v1's pitchkind.ts does not fly a ball: it lerps a straight line and adds a bow forced to zero at BOTH ends, so the crossing point is a rolled endpoint rather than a consequence of the release. Here a curveball breaks because flight.ts applies the Magnus force to its spin. That surfaced a bug the aim solve HID: every spin axis was inverted, so the 'backspin' fastball sank and the curve rose while breaking toward FIRST -- and the pitch still arrived exactly on its aim point, because the solve compensated. Only the lateral break shows it, which is why a test asserts the break DIRECTION.",
+      "whatWouldWork": "pace.pitchCorridor's own closing work, unchanged: ~6 more flights from the stopwatch-gated capture, classified by the on-screen pitch card, each read at >=2x magnification.",
+      "informs": "src/v2/sim/params.ts PITCH",
+      "source": "local:screen-recording-2026-07-26"
     }
   },
   "defense": {

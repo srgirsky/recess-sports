@@ -107,6 +107,41 @@ continuous across a v1↔v2 switch in the same browser.
   cannot find one that opens and closes inside a step). `sim.integratorStep`
   records it — including that the first convergence test compared 240/480/960
   and got a ratio of **zero**, because at those rates it measured rounding.
+- **★ THE BAT-BALL COLLISION IS AN IDENTITY, NOT A FIT.** Nathan's
+  `v_f = e_A·v_ball + (1 + e_A)·v_bat` is derived "from nothing other than the
+  definition of e_A followed by a change of inertial reference frame" — exact
+  for any ball, bat and collision model, so `contact.test.ts` asserts it
+  symbolically rather than in a band. And `e_A` is not stated either: it comes
+  from `e_A = (e − r)/(1 + r)` with `r = m/M_eff`. **That is what makes a kid
+  not a small adult** — a light bat recoils more, so `e_A` falls from ~0.20 at
+  an adult's 20oz effective mass to 0.098 at a youth 14oz. No fudge factor
+  appears anywhere, and the tee cross-check (bat 40-50 → 44-55 mph, against a
+  published 8U band of 45-55) has no free parameter at all.
+- **★ THE MEASURED PITCH QUANTITY IS A TIME, NOT A SPEED.** `pace.pitchCorridor`
+  brackets 1230ms over 46ft, and OVERVIEW summarises it as "25.6 mph". That is
+  46ft/1.23s — the ball's average *pace*. Using it as a RELEASE speed puts the
+  pitch **26 feet underground** at the plate, because a 1.23s flight falls 24ft
+  on the way. So the flight time is the anchor and `releasePitch` SOLVES speed
+  and elevation from it. Two further traps live in that solve: the crossing
+  height is **not monotone in elevation** (past the optimum, extra hang time
+  costs more drop than the loft buys, so a naive bisection returns a
+  near-vertical lob), and **the solve HIDES a wrong spin axis** — every axis was
+  inverted at first, the fastball's "backspin" sank and the curve rose while
+  breaking toward first, and the ball still arrived exactly on its aim point. A
+  test asserts the break DIRECTION for that reason.
+- **The swing window is a FRACTION of the flight, not a duration.**
+  `pace.swingWindows` requires that "CONTACT must stay below the FASTEST
+  possible travelMs, or timing stops being a skill" — v1 can only *assert* that,
+  because `bandFromError` compares absolute ms, which is how a 380ms window
+  ended up wider than a 270ms flight. A fraction holds by construction. Note the
+  test has to sweep SHORT flights to have teeth: hardcode the window and only
+  long flights still pass.
+- **★ `sim.aeroModelLowSpeed` is no longer a footnote.** Nathan's drag fit is
+  verified over **60-110 mph**; the roster's exit velocities run **43-61**, so
+  **29 of 30 kids** produce batted balls below the floor of the band the fit was
+  measured in. Essentially every ball this game simulates is an extrapolation
+  past the edge of the measurement, and PR 8's harness will be measuring BABIP
+  through it. Recorded, not leaned on.
 - **★ THE BOUNCE MODEL'S FORM IS DERIVED; ITS COEFFICIENTS ARE CITED OR PENDING.**
   Solving the impulse problem for a sphere gives the grip impulse `(2/7)m|u|`
   and `v' = (5v − 2ωR)/7`; friction can only supply `μm(1+e)|v_y|`, so an impact
@@ -453,6 +488,9 @@ continuous across a v1↔v2 switch in the same browser.
 | `src/v2/sim/flight.ts` | ★ v2. RK4 over gravity + quadratic drag + Magnus, with events resolved by **bisection**. It integrates and REPORTS ("crossed the ground plane 0.00317s into this step") — never decides what an event means. RK4 stages run on scalar locals: zero allocation, and reentrant for free. `sampleAt` is the render seam, exposed before any renderer exists. |
 | `src/v2/sim/launch.ts` | ★ v2. Describes-a-batted-ball → `BallState`. Its own file because it is the ONE place an authored ANGLE becomes a vector, so it is the one place needing trig — and the per-step path (`flight.ts`, `ball.ts`) is lint-checked to have none. PR 4's `contact.ts` hands off here. |
 | `src/v2/sim/bounce.ts` | ★ v2. What a crossing MEANS: grip/slip ground impact, roll, wall carom, obstacle. The tangential result is DERIVED (`v' = (5v − 2ωR)/7` — the minus is what memory gets wrong) and checked by conserved quantities. Carom is gated on `fenceHeight`; rolling containment lives in `rollStep` so "a rolling ball stays in the field" is true by construction. No `Rng`. |
+| `src/v2/sim/athletes.ts` | ★ v2. Where a 1-10 STAT becomes a physical quantity, and the ONE place each does. Only `batSpeedFts` so far — sprint/throw/reach land in PR 5 *with their consumers*, rather than repeating `field.ts`'s four venue fields authored and unused for months. |
+| `src/v2/sim/contact.ts` | ★ v2. Bat meets ball: Nathan's Eq. 3 identity for exit velocity, `e_A` derived from the recoil factor, the undercut geometry for launch angle, and the same grip result `bounce.ts` uses for backspin. Replaces v1's categorical grounder/liner/fly roll. |
+| `src/v2/sim/pitch.ts` | ★ v2. The pitch as a real trajectory — break is EMERGENT Magnus, not a drawn bow. Release speed and elevation are SOLVED from the measured flight time, because aiming straight at the plate arrives 26ft underground. |
 | `scripts/v2/purity.lint.test.js` | ★ v2. `src/v2/sim/**` imports only sim/data/config/**five** pure systems (`inning`·`gameflow`·`stats`·`lineup`·`draft`); no three, no DOM, no `Math.random`, no `Date.now`, **no module-scope `Rng`**; every sim file must import in plain Node; whole-statement `import type` gets a separate wider lane; **the whitelist itself is checked** (each named system must be browser-free, random-free, and value-import only pure modules); and **nothing outside `src/v2/**` may import v2**, which is what actually guarantees a v2 edit cannot reach v1's bundle. Two files claimed this gate existed before it did, and it then spent its first life vacuously satisfied. |
 | `scripts/measures.json` | ★ The measurement records + `conformance.test.js`'s gate. Every record names the `src/config.ts` constant it informs, so the audit trail runs source → record → constant, and carries a `status`: `conformed` (ours inside the band), `known-drift` (outside, and the test pins the drift's SIZE so it can't grow or be half-fixed unnoticed), `awaiting-measurement` (BB not measured yet — pins only OUR value, claims nothing about BB), `note` (a finding about the measurement itself). Read this before tuning any "Backyard feel" constant. |
 
