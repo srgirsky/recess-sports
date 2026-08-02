@@ -42,7 +42,7 @@
 // ---------------------------------------------------------------------------
 
 import type { Character } from '../../data/types';
-import { BALL, BAT } from './params';
+import { BALL, BAT, resolvePlate, type PlateParams } from './params';
 import { BALL_RADIUS_FT } from './ball';
 import { batSpeedFts } from './athletes';
 import { ftsToMph, mphToFts, clamp } from './units';
@@ -64,6 +64,8 @@ export interface SwingSpec {
   travelSec: number;
   /** Pitch speed at the plate, ft/s. */
   pitchSpeedFts: number;
+  /** Resolved plate constants. Omit for the shipped values. */
+  plate?: PlateParams;
 }
 
 export type SwingResult =
@@ -117,6 +119,7 @@ export function timingQuality(timingErrorSec: number, travelSec: number): number
 export function resolveSwing(spec: SwingSpec, rng: Rng): SwingResult {
   const q = timingQuality(spec.timingErrorSec, spec.travelSec);
   const ability = spec.batter.ability;
+  const plate = spec.plate ?? resolvePlate();
 
   // ★ The ability hooks, reinterpreted for a bandless model. v1 applies them as
   // band up/downgrades in a load-bearing ORDER; the order survives even though
@@ -172,7 +175,12 @@ export function resolveSwing(spec: SwingSpec, rng: Rng): SwingResult {
     if (ability !== 'never_strikes_out') return { kind: 'miss' };
     offset = clamp(offset, -centreSep, centreSep);
   }
-  const launchAngleDeg = (Math.asin(offset / centreSep) * 180) / Math.PI;
+  // ★ THE UNDERCUT IS PERPENDICULAR TO THE BAT'S PATH, so the angle it produces
+  // is measured in the BAT'S frame and the swing plane's own tilt adds to it.
+  // Without that term the distribution is exactly zero-mean and every kid swings
+  // dead level — see `BAT.ATTACK_ANGLE_DEG` and `sim.swingPlane`.
+  const launchAngleDeg =
+    plate.attackAngleDeg + (Math.asin(offset / centreSep) * 180) / Math.PI;
 
   // 3. Exit velocity, Nathan Eq. 3.
   const exitVelocityFts = Math.max(0, exitVelocity(eA, spec.pitchSpeedFts, batSpeed));
@@ -189,7 +197,7 @@ export function resolveSwing(spec: SwingSpec, rng: Rng): SwingResult {
   // 5. Spray. Timing decides where in front of the plate the bat met the ball;
   //    meeting it early means meeting it out front, which pulls.
   const depthFt = -spec.timingErrorSec * spec.pitchSpeedFts;
-  let sprayDeg = clamp(depthFt * BAT.PULL_DEG_PER_FT, -60, 60);
+  let sprayDeg = clamp(depthFt * plate.pullDegPerFt, -60, 60);
   // Right-handed batters pull to left field, which is negative spray.
   sprayDeg = -sprayDeg;
 

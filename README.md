@@ -111,6 +111,7 @@ npm run sim:trajectory     # carry tables, printed next to the fences to clear
 npm run sim:game           # a whole v2 game, headless: line score, box score, play-by-play
 npm run sim:game <seed>    # ...with a chosen seed
 npm run sim:harness        # 50,000 plate appearances: rates, splits, histograms (~75s)
+npm run sim:plate-sweep    # search the coupled plate constants against sim.retuneTargets
 ```
 
 Headless, no art, no graphics — just the integrator. It prints the MLB-scale

@@ -229,6 +229,18 @@ export interface HarnessRates {
   exitVelocityMedianMph: number;
   exitVelocityP90Mph: number;
   launchAngleMedianDeg: number;
+  /**
+   * The MEAN launch angle, degrees.
+   *
+   * ★ THE ONE STATISTIC THAT WOULD HAVE CAUGHT A SWING WITH NO PLANE. For four
+   * PRs `contact.ts` derived the launch angle from a zero-mean undercut alone,
+   * so this number was 0 BY CONSTRUCTION — every kid swung dead level and the
+   * average batted ball was a line drive into the dirt. The median could not see
+   * it (it read 2.5, which looks merely low), and no total could: the share of
+   * grounders was 60% for a purely arithmetic reason. A mean is what makes the
+   * absence of `BAT.ATTACK_ANGLE_DEG` visible as a number rather than as a feel.
+   */
+  launchAngleMeanDeg: number;
 }
 
 export function rates(t: HarnessTotals): HarnessRates {
@@ -262,7 +274,19 @@ export function rates(t: HarnessTotals): HarnessRates {
     exitVelocityMedianMph: percentileFromBins(t.evBins, EV_BIN_MPH, 0, 0.5),
     exitVelocityP90Mph: percentileFromBins(t.evBins, EV_BIN_MPH, 0, 0.9),
     launchAngleMedianDeg: percentileFromBins(t.laBins, LA_BIN_DEG, -90, 0.5),
+    launchAngleMeanDeg: meanFromBins(t.laBins, LA_BIN_DEG, -90),
   };
+}
+
+/** The mean off a histogram, using each bin's midpoint. */
+export function meanFromBins(bins: number[], width: number, origin: number): number {
+  let n = 0;
+  let sum = 0;
+  for (let i = 0; i < bins.length; i++) {
+    n += bins[i];
+    sum += bins[i] * (origin + (i + 0.5) * width);
+  }
+  return n === 0 ? NaN : sum / n;
 }
 
 /**

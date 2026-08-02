@@ -44,6 +44,7 @@ import {
 } from './harness';
 import { makeRng } from './rng';
 import { VENUE_GEOMETRY, type VenueId } from './field';
+import { ATBAT, BAT, resolvePlate } from './params';
 import { ROSTER, getCharacter } from '../../data/characters';
 
 const VENUES = Object.keys(VENUE_GEOMETRY) as VenueId[];
@@ -164,6 +165,58 @@ describe('the aggregator says what it means', () => {
   });
 });
 
+describe('★ the override seam actually overrides', () => {
+  // ★ A SEAM NOTHING TESTS IS A SEAM THAT CAN SILENTLY STOP WORKING, and this
+  // one fails in the worst possible direction: if `resolvePlate` ignored its
+  // argument, `sim:plate-sweep` would run 300 candidates against the SHIPPED
+  // constants and print 300 rows of seed noise as if they were 300 different
+  // tunings. Nothing would fail; the sweep would just be wrong, and a retune
+  // would be chosen from it. The gate sweep found this missing.
+  //
+  // Same lesson as PR 8's unread `SimEvent` fields, one level up: a field nobody
+  // reads is a field nobody can trust, and a parameter nobody honours is worse,
+  // because it looks honoured.
+  it('★ resolvePlate takes the override, and falls back when there is none', () => {
+    expect(resolvePlate().attackAngleDeg).toBe(BAT.ATTACK_ANGLE_DEG);
+    expect(resolvePlate().undercutFromJudge).toBe(ATBAT.UNDERCUT_FROM_JUDGE);
+    expect(resolvePlate({ attackAngleDeg: 21 }).attackAngleDeg).toBe(21);
+    expect(resolvePlate({ undercutFromJudge: 0.07 }).undercutFromJudge).toBe(0.07);
+    expect(resolvePlate({ pullDegPerFt: 3 }).pullDegPerFt).toBe(3);
+    expect(resolvePlate({ twoStrikeProtectFt: 1.4 }).twoStrikeProtectFt).toBe(1.4);
+    // A partial override leaves the rest shipped — the sweep varies one axis.
+    expect(resolvePlate({ attackAngleDeg: 21 }).pullDegPerFt).toBe(BAT.PULL_DEG_PER_FT);
+  });
+
+  it('★ reaches all the way through a GAME, which is what the sweep drives', () => {
+    // Not a unit test of the resolver — the whole thread, `GameSpec.plate` ->
+    // `playAtBat` -> `pitchAndSwing` -> `resolveSwing`. Each override must move
+    // the statistic it owns, or the sweep's axes are decorative.
+    const base = rates(run(4, 'seam-base'));
+    const steep = rates(run(4, 'seam-base', { plate: { attackAngleDeg: 30 } }));
+    expect(steep.launchAngleMeanDeg, 'attack angle moves the launch mean').toBeGreaterThan(
+      base.launchAngleMeanDeg + 8
+    );
+
+    const narrow = rates(run(4, 'seam-base', { plate: { undercutFromJudge: 0.05 } }));
+    expect(narrow.split.popup, 'a narrow undercut kills pop-ups').toBeLessThan(base.split.popup);
+
+    // ★ ASSERTED ON THE SWING RATE, NOT THE STRIKEOUT RATE, and the difference
+    // is a finding. `TWO_STRIKE_PROTECT_FT` widens what a batter offers at with
+    // two strikes, so the two-strike SWING rate is what it directly controls and
+    // that is monotonic. Its effect on STRIKEOUTS is not: measured over 80 games
+    // per point, K% runs 44.4 / 40.4 / 42.5 / 45.1 / 47.4 for protection
+    // 0 / 0.25 / 0.55 / 0.9 / 1.5 — a minimum near 0.25, with our shipped 0.55
+    // past it. See `sim.plateDiscipline.theProtectionCurveIsNotMonotonic`.
+    const noProtect = rates(run(4, 'seam-base', { plate: { twoStrikeProtectFt: 0 } }));
+    expect(noProtect.twoStrikeSwingPct, 'no protection is fewer two-strike swings').toBeLessThan(
+      base.twoStrikeSwingPct
+    );
+
+    const pull = rates(run(4, 'seam-base', { plate: { pullDegPerFt: 2 } }));
+    expect(pull.foulPct, 'almost no pull is almost no foul').toBeLessThan(base.foulPct);
+  }, SLICE_MS);
+});
+
 describe('★ the assertions that need no band', () => {
   it('★ strikes out a bad-contact lineup more than a good-contact one', () => {
     // The single most falsifiable thing the harness can say, and it does not
@@ -249,6 +302,21 @@ describe('★ the shape, which is what a total cannot show', () => {
   // Here the measurable claim is the one above: no PILE-UP at the boundary.
 
 
+  it('★ swings on a PLANE — the mean launch angle is positive', () => {
+    // ★ THE ASSERTION NO TEST IN THIS REPO COULD MAKE UNTIL PR 9. `contact.ts`
+    // derived the launch angle from an undercut that is exactly zero-mean
+    // (`-bell() * judgeFt * k`), so the mean batted ball left at 0 degrees and
+    // every kid swung dead level. The median read 2.5, which looks merely low;
+    // the 60% ground share looked like a tuning problem. Only the MEAN says
+    // "there is no swing plane here", and only because it has a value to be
+    // wrong against.
+    expect(r.launchAngleMeanDeg, 'a level swing reads 0 here').toBeGreaterThan(4);
+    // It tracks the constant rather than floating free: the undercut is
+    // symmetric, so the mean of the sum is the attack angle plus zero — give or
+    // take the asin's curvature and the fouls that never reach the histogram.
+    expect(Math.abs(r.launchAngleMeanDeg - BAT.ATTACK_ANGLE_DEG)).toBeLessThan(8);
+  });
+
   it('puts the bulk of contact on the ground, as a kid with a heavy bat does', () => {
     // Not a borrowed band — a consequence of a 4ft child swinging under a
     // 46ft pitch. It is here so a change that inverts the split has to argue.
@@ -274,11 +342,15 @@ describe('★ the pin — today, in bands a retune has to come and move', () => 
   };
 
   it('pins the plate', () => {
-    near(r.strikeoutPct, 0.43, 0.06, 'strikeout rate');
+    // ★ BARELY MOVED BY PR 9, AND THAT IS CORRECT. The swing plane changes
+    // where a struck ball GOES, not whether it is struck, so 43.0 -> 42.4 is the
+    // expected non-effect. The strikeout rate is PR 10's, together with the
+    // defence — see `sim.retuneTargets.whyTheStrikeoutRateDidNotMoveHere`.
+    near(r.strikeoutPct, 0.424, 0.06, 'strikeout rate');
     near(r.walkPct, 0.115, 0.05, 'walk rate');
-    near(r.zonePct, 0.48, 0.06, 'share of pitches in the zone');
-    near(r.whiffPct, 0.243, 0.06, 'whiff rate');
-    near(r.pitchesPerPlateAppearance, 5.12, 0.6, 'pitches per PA');
+    near(r.zonePct, 0.482, 0.06, 'share of pitches in the zone');
+    near(r.whiffPct, 0.242, 0.06, 'whiff rate');
+    near(r.pitchesPerPlateAppearance, 5.08, 0.6, 'pitches per PA');
   });
 
   it('★ pins the count-aware and hit-type numbers the gate sweep found unread', () => {
@@ -292,19 +364,29 @@ describe('★ the pin — today, in bands a retune has to come and move', () => 
     expect(r.twoStrikeSwingPct, 'protection widens the swing').toBeGreaterThan(
       slice.swings / slice.pitches
     );
-    near(r.twoStrikeSwingPct, 0.683, 0.12, 'two-strike swing rate');
+    near(r.twoStrikeSwingPct, 0.680, 0.12, 'two-strike swing rate');
     // Hit type is DERIVED from where the batter ended up; if it collapsed to
     // "everyone gets a single", this is the number that would notice.
-    near(r.extraBasePct, 0.19, 0.09, 'extra-base share of hits');
+    near(r.extraBasePct, 0.185, 0.09, 'extra-base share of hits');
     expect(slice.byHit['2B'] + slice.byHit['3B'], 'extra-base hits occur').toBeGreaterThan(5);
   });
 
   it('pins the batted ball', () => {
-    near(r.split.ground, 0.602, 0.06, 'ground-ball share');
-    near(r.split.line, 0.147, 0.05, 'line-drive share');
-    near(r.split.fly, 0.151, 0.05, 'fly-ball share');
-    near(r.split.popup, 0.1, 0.05, 'pop-up share');
-    near(r.exitVelocityMeanMph, 50.2, 3, 'mean exit velocity, mph');
+    // ★ REPINNED BY PR 9's SWING PLANE, and moving these is the whole point of
+    // having pinned them. Before: 60.2 / 14.7 / 15.1 / 10.0 with a launch median
+    // of 2.5 degrees. The ground share fell 10 points because the distribution
+    // is no longer centred on zero, which is `sim.swingPlane`.
+    near(r.split.ground, 0.498, 0.06, 'ground-ball share');
+    near(r.split.line, 0.160, 0.05, 'line-drive share');
+    near(r.split.fly, 0.182, 0.05, 'fly-ball share');
+    // ★ THE ONE NUMBER THAT GOT WORSE, and it is attributable rather than
+    // mysterious: 10.0 -> 16.0. Centring a distribution whose SPREAD is still
+    // too wide pushes its upper tail past 50 degrees. The spread is
+    // `ATBAT.UNDERCUT_FROM_JUDGE`, which PR 10 owns; measured at attack 8, it
+    // takes pop-ups from 15.9% to 3.7% as the undercut narrows 0.45 -> 0.22.
+    near(r.split.popup, 0.160, 0.06, 'pop-up share');
+    near(r.exitVelocityMeanMph, 50.0, 3, 'mean exit velocity, mph');
+    near(r.launchAngleMedianDeg, 12.5, 5, 'launch angle median, deg');
   });
 
   it('★ pins the BABIP this PR deliberately does not fix', () => {
@@ -312,7 +394,10 @@ describe('★ the pin — today, in bands a retune has to come and move', () => 
     // — `sim.throwSpeed` is unmeasured, the reach is 3ft, tag-ups are deferred —
     // and PR 9 is the retune. Pinning it is what makes that PR's "before"
     // exist; leaving it unpinned is what would let it drift instead of move.
-    near(r.babip, 0.713, 0.08, 'BABIP');
+    // .713 -> .678: PR 9 did not TOUCH the defence, but fewer grounders is
+    // fewer of the class that goes for hits 81.4% of the time. The record must
+    // report that side effect without claiming credit for a fix it did not make.
+    near(r.babip, 0.678, 0.08, 'BABIP');
     expect(r.babip, 'still far above real baseball — PR 9 owns this').toBeGreaterThan(0.5);
   });
 });

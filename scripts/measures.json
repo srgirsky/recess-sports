@@ -2827,7 +2827,7 @@
       "category": "sim",
       "reference": "derived",
       "status": "awaiting-measurement",
-      "statusChangedAt": "2026-08-01",
+      "statusChangedAt": "2026-08-02",
       "what": "How a batter decides to swing, and how well he times it -- which turn out to be the same question asked twice.",
       "why": "★ ONE ERROR, TWO BEHAVIOURS. The obvious build gives a batter a chase rate and a whiff rate and tunes them apart; v1 does exactly that, with five constants in resolveCpuPitch (ball chance 0/0.1/0.45/0.85 per band, chase 0.2, and a swing band rolled off the contact stat) that describe an outcome distribution rather than a kid. But a hitter does not have two faculties. Give him ONE judgement error, sized by his contact stat, and both fall out: he swings when he BELIEVES the pitch is a strike, so chases and takes are consequences; and the same error in time becomes SwingSpec.timingErrorSec, so whiffs and weak contact come out of the window contact.ts already grades against. A better-contact kid then chases less AND times better, from one number.",
       "measured": null,
@@ -2852,22 +2852,23 @@
             0.09
           ],
           "twoStrikeProtectFt": 0.55,
-          "strikeoutPct": 0.43,
+          "strikeoutPct": 0.424,
           "walkPct": 0.115,
-          "zonePct": 0.481,
-          "zoneSwingPct": 0.744,
-          "chasePct": 0.344,
-          "whiffPct": 0.243,
-          "pitchesPerPlateAppearance": 5.12,
-          "twoStrikeSwingPct": 0.683
+          "zonePct": 0.482,
+          "zoneSwingPct": 0.743,
+          "chasePct": 0.341,
+          "whiffPct": 0.242,
+          "pitchesPerPlateAppearance": 5.08,
+          "twoStrikeSwingPct": 0.68
         },
-        "over": "874 games / 50,045 plate appearances / 256,019 pitches, 8 seeds x 3 venues, roster rotated so all 30 kids bat"
+        "over": "878 games / 50,004 plate appearances / 254,128 pitches, 8 seeds x 3 venues, all 30 kids"
       },
       "twoStrikeProtection": "Without it a batter offers only at what he READS as a strike, so every misread with two strikes is a called third -- which turns a poor-contact kid into a strikeout machine rather than the foul-ball machine a six-year-old actually is. It is what balances strikeouts against fouls, and PR 8's harness measured it rather than leaving it a claim: 68.3% of two-strike pitches are swung at, against a 55.7% swing rate over all pitches. NOTE it is currently balancing toward BOTH at once -- 43.0% strikeouts AND 3.4 fouls per fair ball (sim.battedBallSplit). PR 9.",
       "whatWouldClose": "PR 8's harness has now run, and it closed the OURS column, not the record: K%, BB% and the swing/take split are measured over 50,045 plate appearances and pinned in harness.test.ts. What remains missing is the thing that was always missing -- published plate-discipline rates for four-to-eight-year-olds. Nothing found so far starts below 9U. The same afternoon of tee-ball observation that would close sim.batSpeed would go a long way here too, since K and BB are countable from a scorebook without any instrument at all.",
       "informs": "src/v2/sim/params.ts ATBAT",
       "source": "physics:published",
-      "whatTheHARNESSEXPOSED": "★ THE STRIKEOUT RATE IS 43.0%, AND IT WAS 20.6% BEFORE sim.contactGeometry WAS FIXED. The difference is not a regression -- the old number was arithmetic over a defect, because 30% of the balls it counted in play were swings that had actually missed the ball and were being clamped into vertical pop-ups. 43% is what this model has always meant; it is only now visible. Nearly half of all plate appearances ending in a strikeout is wrong for four-to-eight-year-olds by any reading, and the constant it lands on is named: ATBAT.UNDERCUT_FROM_JUDGE (0.45) turns a vertical READ error into a bat PLACEMENT error at nearly half strength, against a barrel that forgives 2.70 inches. Real batters place the bat far better than they judge the zone, because they track the ball all the way in. That is a tuning constant, PR 9 owns it, and PR 8 deliberately did not touch it -- the same standing sim.gameShape's BABIP has."
+      "whatTheHARNESSEXPOSED": "★ THE STRIKEOUT RATE IS 43.0%, AND IT WAS 20.6% BEFORE sim.contactGeometry WAS FIXED. The difference is not a regression -- the old number was arithmetic over a defect, because 30% of the balls it counted in play were swings that had actually missed the ball and were being clamped into vertical pop-ups. 43% is what this model has always meant; it is only now visible. Nearly half of all plate appearances ending in a strikeout is wrong for four-to-eight-year-olds by any reading, and the constant it lands on is named: ATBAT.UNDERCUT_FROM_JUDGE (0.45) turns a vertical READ error into a bat PLACEMENT error at nearly half strength, against a barrel that forgives 2.70 inches. Real batters place the bat far better than they judge the zone, because they track the ball all the way in. That is a tuning constant. PR 8 did not touch it, and PR 9 -- which was scoped to own it -- MEASURED THE REASON NOT TO: sweeping it to a 15% strikeout rate takes runs per game from 4.9 to 15.4, because 43% strikeouts is currently hiding a defence that converts under a third of balls in play. It moves in PR 10, alongside the defence. See sim.retuneTargets.",
+      "theProtectionCurveIsNotMonotonic": "★ A PR 9 FINDING, AND IT CORRECTS THIS RECORD'S OWN twoStrikeProtection PARAGRAPH. That paragraph argues protection exists because 'a batter who only ever swings at what he READS as a strike takes a third strike every time his read is wrong'. Measured over 80 games per point, K% against ATBAT.TWO_STRIKE_PROTECT_FT runs 44.4 / 40.4 / 42.5 / 45.1 / 47.4 for 0 / 0.25 / 0.55 / 0.9 / 1.5. The mechanism is REAL -- going from no protection to some does cut strikeouts, 44.4 to 40.4 -- but the curve TURNS, because past the minimum the extra protective swings whiff (24-26%) more often than the takes they replace get called for strike three. Our shipped 0.55 is on the WRONG SIDE of its own optimum. ★ NOT MOVED IN PR 9: it is one of the three constants sim.retuneTargets defers, and 0.25 also takes the walk rate to 17.1% -- outside the 8-14 target -- so it cannot be set alone either. PR 10, with the defence. What PR 9 owed it was the measurement, and a test that asserts protection against the two-strike SWING rate (which is monotonic) rather than the strikeout rate (which is not)."
     },
     "foulBalls": {
       "id": "sim.foul-balls",
@@ -2901,28 +2902,28 @@
       "category": "sim",
       "reference": "derived",
       "status": "note",
-      "statusChangedAt": "2026-08-01",
+      "statusChangedAt": "2026-08-02",
       "what": "What a whole v2 game actually produces, reported and NOT conformed.",
       "why": "★ THIS RECORD EXISTS TO BE READ, NOT TO BE MET. It is the first time v2 has been able to say anything about a game rather than a play, and the temptation is to compare the numbers to baseball's and start tuning. Two reasons not to. First, PR 8's harness is what measures these properly -- over 50,000 plate appearances across seeded runs, not 1,166. Second, and this is the one the whole `reference` field exists for: the sim category's own note warns that 'conforming a game for four-to-eight-year-olds to MLB's strikeout rate is the mistake this field exists to prevent'.",
       "measured": {
-        "n": 50045,
-        "over": "874 games / 50,045 plate appearances / 256,019 pitches, 8 seeds x 3 venues, roster rotated so all 30 kids bat",
-        "strikeoutPct": 43.0,
+        "n": 50004,
+        "over": "878 games / 50,004 plate appearances / 254,128 pitches, 8 seeds x 3 venues, all 30 kids",
+        "strikeoutPct": 42.4,
         "walkPct": 11.5,
-        "ballsInPlayPct": 45.5,
-        "babip": 0.713,
-        "battingAverageOnContact": 0.715,
-        "pitchesPerPlateAppearance": 5.12,
-        "runsPerGame": 5.34,
-        "homeRuns": 112,
-        "extraBaseSharePct": 19.0,
-        "confidence": "high",
-        "singles": 13170,
-        "doubles": 2389,
-        "triples": 593
+        "ballsInPlayPct": 46.1,
+        "babip": 0.678,
+        "battingAverageOnContact": 0.679,
+        "pitchesPerPlateAppearance": 5.08,
+        "runsPerGame": 4.48,
+        "homeRuns": 103,
+        "extraBaseSharePct": 18.5,
+        "singles": 12777,
+        "doubles": 2359,
+        "triples": 433,
+        "confidence": "high"
       },
       "whatIsPLAUSIBLE": "Runs per game at 5.34 is a lot of scoring, and for a kids' game that is arguably correct. The batted-ball split (60/15/15/10 ground/line/fly/popup) is ground-heavy in the way a child swinging under a pitch should be, and exit velocity means 50.2mph against sim.batSpeed's band.",
-      "whatIsNot": "BABIP 0.713, against real baseball's ~0.300. Every second ball in play is a hit, and the harness moved the number UP rather than down (0.624 on the old reading) because the balls the clamp used to manufacture were vertical pop-ups -- easy outs -- and removing them removed outs. That is the DEFENCE, and it is exactly what sim.gapBallOutcome's gradient shows from the other end: a 42mph grounder finds a hole two thirds of the time. The likely causes are already recorded and none of them is tuned here: the arm band (sim.throwSpeed, awaiting-measurement, and 27 of 30 kids cannot throw CF to first), the reach (sim.catchRadius, 3ft against v1's 11.36), and the deferral of tag-ups and rundowns. AND THE SECOND NUMBER: a 43.0% strikeout rate, on which see sim.plateDiscipline. PR 8 measured both. PR 9 moves them.",
+      "whatIsNot": "BABIP 0.678, against real baseball's ~0.300. PR 9 moved it from .713 WITHOUT TOUCHING THE DEFENCE -- fewer grounders is fewer of the class that goes for hits 81.4% of the time -- and claims no credit for a fix it did not make. The cause is unchanged and measured: grounders are 81.4% hits because an infielder facing the median 51mph grounder covers 6.5ft of an 18ft half-gap, most of that lost to a 0.39s read and a standing-start acceleration ramp. The contributing records are unchanged: the arm band (sim.throwSpeed), the reach (sim.catchRadius, 3ft against v1's 11.36), and the deferral of tag-ups. AND THE SECOND NUMBER: a 42.4% strikeout rate, which sim.retuneTargets now records as LOAD-BEARING -- removing it without fixing the defence takes runs per game from 4.9 to 15.4. PR 10 moves both, together, because the sweep proved they cannot move apart.",
       "performanceNote": "A game costs ~140ms once the release memo is warm, or 2.25ms per plate appearance -- so PR 8's 50,000 is about 113 seconds. Getting there took two fixes worth naming: the pitcher aims at a SPOT so the release solve is memoisable (13.6ms to a cache hit), and the defence RE-READS the ball without RE-TRACING it (the trajectory does not change between ticks, so re-computing the prediction produced an identical answer for two thousand RK4 steps). Together, 1.7s per game to 0.14s.",
       "ours": {
         "constant": "src/v2/sim/game.ts",
@@ -2937,17 +2938,37 @@
       "informs": "src/v2/sim/game.ts",
       "supersedes": {
         "reading": {
-          "n": 1166,
-          "over": "20 games, 6 innings, park venue, ROSTER[0..8] vs ROSTER[9..17]",
-          "strikeoutPct": 25.6,
-          "walkPct": 10.5,
-          "ballsInPlayPct": 63.8,
-          "babip": 0.624,
-          "pitchesPerPlateAppearance": 5.2,
-          "runsPerGame": 6.8,
-          "confidence": "med"
+          "n": 50045,
+          "over": "874 games / 50,045 plate appearances / 256,019 pitches, 8 seeds x 3 venues, roster rotated so all 30 kids bat",
+          "strikeoutPct": 43.0,
+          "walkPct": 11.5,
+          "ballsInPlayPct": 45.5,
+          "babip": 0.713,
+          "battingAverageOnContact": 0.715,
+          "pitchesPerPlateAppearance": 5.12,
+          "runsPerGame": 5.34,
+          "homeRuns": 112,
+          "extraBaseSharePct": 19.0,
+          "confidence": "high",
+          "singles": 13170,
+          "doubles": 2389,
+          "triples": 593
         },
-        "why": "★ NOT JUST A BIGGER SAMPLE -- A DIFFERENT SIM. The 1,166-PA reading was taken over a resolveSwing that clamped a missed bat into a graze at exactly 90 degrees (sim.contactGeometry), so its 25.6% strikeout rate and 0.624 BABIP were computed with 30% of fair balls being swings that never touched the ball. Both readings are kept because the old one is what a plausible-looking total looks like when the distribution underneath it is broken, and that is worth more than either number."
+        "andBefore": {
+          "reading": {
+            "n": 1166,
+            "over": "20 games, 6 innings, park venue, ROSTER[0..8] vs ROSTER[9..17]",
+            "strikeoutPct": 25.6,
+            "walkPct": 10.5,
+            "ballsInPlayPct": 63.8,
+            "babip": 0.624,
+            "pitchesPerPlateAppearance": 5.2,
+            "runsPerGame": 6.8,
+            "confidence": "med"
+          },
+          "why": "★ NOT JUST A BIGGER SAMPLE -- A DIFFERENT SIM. The 1,166-PA reading was taken over a resolveSwing that clamped a missed bat into a graze at exactly 90 degrees (sim.contactGeometry), so its 25.6% strikeout rate and 0.624 BABIP were computed with 30% of fair balls being swings that never touched the ball. Both readings are kept because the old one is what a plausible-looking total looks like when the distribution underneath it is broken, and that is worth more than either number."
+        },
+        "why": "★ THE SECOND SUPERSESSION, AND THE THREE READINGS TELL A STORY WORTH KEEPING. The 1,166-PA reading (K 25.6, BABIP .624) was taken over a resolveSwing that clamped a missed bat into a graze at 90 degrees. The 50,045-PA reading (K 43.0, BABIP .713) was taken after that fix but before there was a swing plane, so the mean batted ball left at 0 degrees. This one is the first taken over a sim where a bat that misses misses and a swing has a plane. Keeping all three is what makes 'every total stayed plausible' checkable rather than asserted."
       }
     },
     "lineupArm": {
@@ -3025,7 +3046,7 @@
       "category": "sim",
       "reference": "baseball",
       "status": "awaiting-measurement",
-      "statusChangedAt": "2026-08-01",
+      "statusChangedAt": "2026-08-02",
       "what": "How v2's batted balls divide into grounders, liners, flies and pop-ups, and the shape of the exit-velocity and launch-angle distributions behind that.",
       "why": "The roadmap asks the harness to assert the launch-angle split and exit-velocity shape 'against real baseball bands'. It measures them. It does not assert them, because the bands do not exist for this population -- see the partialReading.",
       "measured": null,
@@ -3046,30 +3067,32 @@
       },
       "ours": {
         "constant": "src/v2/sim/harness.ts LAUNCH_CUTS; measured off src/v2/sim/contact.ts",
-        "over": "874 games / 50,045 plate appearances / 256,019 pitches, 8 seeds x 3 venues, roster rotated so all 30 kids bat",
+        "over": "878 games / 50,004 plate appearances / 254,128 pitches, 8 seeds x 3 venues, all 30 kids",
         "value": {
-          "ground": 0.602,
-          "line": 0.147,
-          "fly": 0.151,
-          "popup": 0.1,
-          "fairBalls": 22762,
-          "foulBalls": 77985,
-          "exitVelocityMeanMph": 50.2,
+          "ground": 0.498,
+          "line": 0.16,
+          "fly": 0.182,
+          "popup": 0.16,
+          "fairBalls": 23076,
+          "foulBalls": 76680,
+          "exitVelocityMeanMph": 50.0,
           "exitVelocityMedianMph": 51.0,
           "exitVelocityP90Mph": 57.0,
-          "launchAngleMedianDeg": 2.5,
+          "launchAngleMedianDeg": 12.5,
           "launchCutsDeg": {
             "ground": 10,
             "line": 25,
             "fly": 50
-          }
+          },
+          "launchAngleMeanDeg": 8.0
         }
       },
       "thereIsNoHardHitRate": "Broadcast baseball calls a ball hard-hit at 95mph. The roster tops out near 61. The statistic would read zero for every kid forever, which is not a measurement -- and it is the MLB-contamination sim.note warns about wearing a number instead of a rate. The harness reports the distribution instead, and harness.ts says so in place of the field.",
-      "theFOULTOFAIRRATIOISAFINDING": "77,985 fouls against 22,762 fair balls -- 3.4 to 1, where real baseball is nearer 1 to 1. ATBAT.TWO_STRIKE_PROTECT_FT's own note predicted the mechanism from the other direction ('what balances strikeouts against fouls'), and it is currently balancing them toward both at once. Recorded for PR 9, not tuned here.",
+      "theFOULTOFAIRRATIOISAFINDING": "76,680 fouls against 23,076 fair balls -- 3.3 to 1, where real baseball is nearer 1 to 1. ATBAT.TWO_STRIKE_PROTECT_FT's own note predicted the mechanism from the other direction ('what balances strikeouts against fouls'), and it is currently balancing them toward both at once. ★ PR 9 DELIBERATELY DID NOT FIX IT: the sweep showed the foul dial cannot be set without setting the strikeout rate, and the strikeout rate cannot be set without the defence -- see sim.retuneTargets.whyTheStrikeoutRateDidNotMoveHere. PR 10.",
       "whatWouldClose": "Batted-ball tracking from actual four-to-eight-year-old games -- the same afternoon with a sensor that would close sim.batSpeed would go most of the way, since a launch monitor reports angle and exit velocity together. Failing that, a published youth-baseball batted-ball profile at 8U or below; nothing found so far starts below 9U.",
       "informs": "src/v2/sim/contact.ts",
-      "source": "physics:published"
+      "source": "physics:published",
+      "theSPLITISNOWSHAPEDBYAMECHANISM": "★ PR 8 MEASURED 60.2% GROUNDERS AND PR 9 FOUND OUT WHY: there was no swing plane, so the launch-angle distribution was symmetric about zero and the `ground` class -- everything below 10 degrees -- collected the whole negative half. 60% was arithmetic, not taste. With BAT.ATTACK_ANGLE_DEG at 8 the split is 49.8/16.0/18.2/16.0 and the launch MEAN is 8.0 rather than 0.0. sim.swingPlane has the derivation; the pop-up share is the one number that got worse and it is attributed there."
     },
     "harnessMethod": {
       "id": "sim.harness-method",
@@ -3113,6 +3136,166 @@
       },
       "whatWouldClose": "It does not close -- it is a `note` describing an instrument, the way instrument.* records describe the video one. It changes when the harness does.",
       "informs": "src/v2/sim/harness.ts"
+    },
+    "retuneTargets": {
+      "id": "sim.retune-targets",
+      "category": "sim",
+      "reference": "derived",
+      "status": "note",
+      "statusChangedAt": "2026-08-02",
+      "what": "What the retune is aiming AT, written down before anything was swept.",
+      "why": "★ THESE ARE DESIGN TARGETS FOR A GAME FOR FOUR-TO-EIGHT-YEAR-OLDS, NOT CONFORMANCE TO A MEASUREMENT NOBODY TOOK. That distinction is the entire reason this record exists and is a `note` rather than a band. There is no published plate-discipline or batted-ball data below 9U (sim.plateDiscipline, sim.battedBallSplit, sim.batSpeed all say so from their own directions), and sim.note's warning is explicit: conforming a game for this age group to MLB's strikeout rate is THE failure the `reference` field exists to prevent. So the alternative to a borrowed band is not a better band -- it is an honest design choice, argued and signed.",
+      "whyWrittenFIRST": "★ A TARGET FITTED AFTER THE SWEEP IS NOT A TARGET, IT IS A DESCRIPTION. Four coupled constants are being moved (ATTACK_ANGLE_DEG, UNDERCUT_FROM_JUDGE, PULL_DEG_PER_FT, TWO_STRIKE_PROTECT_FT) and any of them can be walked toward almost any pair of numbers. Committing the targets before running the sweep is what makes the sweep a search rather than a rationalisation -- the same discipline pace.pitchCorridor applies when it refuses to promote an n=1 reading, and the same one that made PR 8 pin a BABIP of .713 it did not like.",
+      "measured": {
+        "before": {
+          "over": "874 games / 50,045 plate appearances, PR 8's run",
+          "strikeoutPct": 0.43,
+          "walkPct": 0.115,
+          "foulToFairRatio": 3.43,
+          "pitchesPerPlateAppearance": 5.12,
+          "groundSharePct": 0.602,
+          "launchAngleMedianDeg": 2.5,
+          "babip": 0.713
+        },
+        "targets": {
+          "strikeoutPct": [
+            0.15,
+            0.2
+          ],
+          "walkPct": [
+            0.08,
+            0.14
+          ],
+          "foulToFairRatio": [
+            1.0,
+            2.0
+          ],
+          "pitchesPerPlateAppearance": [
+            3.6,
+            4.6
+          ],
+          "groundSharePct": [
+            0.4,
+            0.5
+          ],
+          "launchAngleMedianDeg": [
+            7,
+            14
+          ]
+        },
+        "n": 50045,
+        "confidence": "derived",
+        "after_pr9": {
+          "over": "878 games / 50,004 plate appearances / 254,128 pitches, 8 seeds x 3 venues, all 30 kids",
+          "strikeoutPct": 0.424,
+          "walkPct": 0.115,
+          "foulToFairRatio": 3.32,
+          "pitchesPerPlateAppearance": 5.08,
+          "groundSharePct": 0.498,
+          "launchAngleMedianDeg": 12.5,
+          "launchAngleMeanDeg": 8.0,
+          "babip": 0.678,
+          "runsPerGame": 4.48,
+          "hit": [
+            "groundSharePct",
+            "launchAngleMedianDeg"
+          ],
+          "missed": [
+            "strikeoutPct",
+            "foulToFairRatio",
+            "pitchesPerPlateAppearance"
+          ]
+        }
+      },
+      "theArgumentForEACHONE": {
+        "strikeouts": "15-20% against a measured 43.0%. The product is a voting machine for 30 characters and its design pillars are 'minimal reading, short games, be genuinely fun' -- a six-year-old who makes an out without swinging half the time is not voting, they are watching. 15-20% is BELOW real baseball's ~22% on purpose: the fun of this game is contact.",
+        "walks": "Left roughly where it is. A walk is already the least interesting outcome available and nothing in the measurement suggests it is wrong.",
+        "fouls": "3.43 fouls per fair ball means the median plate appearance spends most of its pitches going nowhere, which is what pushes pitches/PA to 5.12. Real baseball runs nearer 1:1. Targeting 1-2 keeps the foul as a real event -- ATBAT.TWO_STRIKE_PROTECT_FT exists precisely so a poor-contact kid becomes a foul-ball machine rather than a strikeout machine -- without it being the modal outcome.",
+        "groundShare": "40-50% against 60.2%. This one is NOT primarily a taste judgement: 60% is what a zero-mean launch-angle distribution produces mechanically, because the `ground` class is everything below 10 degrees and therefore the entire negative half. See sim.swingPlane. The target is what a swing with a real attack angle gives, and the range is wide because the exact figure is a consequence rather than a dial.",
+        "launchMedian": "7-14 degrees against 2.5. Same mechanism, stated in the units the defect actually lives in."
+      },
+      "whatIsNOTATARGETHERE": "BABIP. It is .713 and it is wrong, but it belongs to the DEFENCE and the defence is the next PR. Moving the batted-ball mix will move it as a side effect -- fewer grounders is fewer of the class that goes for hits 81.4% of the time -- and this record must report by how much WITHOUT claiming credit for a fix it did not make. Tuning a plate constant until BABIP looks right would be fixing a defence symptom through the batter, which is the same category of error as fixing the strikeout rate by clamping a bat that had missed.",
+      "theGATEISORDERING": "★ AND IT IS NOT ANY OF THE NUMBERS ABOVE. A retune that hits all six targets and makes a good-contact kid strike out MORE than a bad-contact one has broken the model, and only harness.test.ts's ordering assertions would say so. Those must survive the retune untouched; if one has to move, the retune is wrong and not the assertion.",
+      "ours": {
+        "constant": "src/v2/sim/params.ts BAT.ATTACK_ANGLE_DEG, BAT.PULL_DEG_PER_FT, ATBAT.UNDERCUT_FROM_JUDGE, ATBAT.TWO_STRIKE_PROTECT_FT",
+        "value": "see measured.targets"
+      },
+      "whatWouldClose": "It does not close -- it is a `note` recording a design decision and the state it was taken from. PR 10 answers the three targets PR 9 left: strikeouts, fouls and pitches per plate appearance, together with the defence, because the sweep proved they cannot be answered apart from it. The record is superseded outright when someone measures real four-to-eight-year-old baseball.",
+      "informs": "src/v2/sim/params.ts BAT, ATBAT",
+      "whyTheStrikeoutRateDidNotMoveHere": "★ THE SWEEP FOUND THAT 43% STRIKEOUTS IS LOAD-BEARING, and that is the most important thing this record now carries. The four constants WERE swept together as planned (scripts/v2/plate-sweep.mjs, 300 combinations), and several combinations hit all six targets at once -- attack 9 / undercut 0.22 / pull 16 / protect 0.55 gives K 15.4%, foul:fair 1.81, ground 50.5%. Measured at n=40 against the same seeds, that combination also takes RUNS PER GAME FROM 4.90 TO 15.35. The strikeout rate is currently doing the work the defence cannot: three times as many balls in play against a defence that converts under a third of them is a 15-run game. So the plate targets ALONE are under-determined -- they admit solutions that wreck the product -- and the strikeout and foul targets moved to PR 10, where they can be balanced against out conversion. That is the only place the balance can honestly be struck; striking it here would have meant PR 10 tuning a defence against a plate that was itself tuned blind to outs.",
+      "whatPR9SHIPPED": "The swing plane alone (sim.swingPlane) -- a MISSING MECHANIC rather than a dial. It hits the two batted-ball targets, and BABIP and runs per game both improve as a side effect. Nothing regressed except the pop-up share, which is measured against the dial that fixes it. A retune that improves every measured axis but one, and can say which pending change owns that one, is a different kind of change from a retune that hits its targets by moving four constants at once."
+    },
+    "swingPlane": {
+      "id": "sim.swing-plane",
+      "category": "sim",
+      "reference": "baseball",
+      "status": "awaiting-measurement",
+      "statusChangedAt": "2026-08-02",
+      "what": "The upward tilt of the bat's path through the zone -- the attack angle -- and the fact that until PR 9 there wasn't one.",
+      "why": "★ THE AVERAGE BATTED BALL LEFT AT EXACTLY 0 DEGREES, FOR FOUR PRs. atbat.ts computes the undercut as `(crossing.y - judged.y) * UNDERCUT_FROM_JUDGE`, and `judged.y` is `crossing.y + bell() * judgeFt` -- so the undercut is `-bell() * judgeFt * k`, which is EXACTLY zero-mean. contact.ts takes asin of it, so the launch-angle distribution was symmetric about zero BY CONSTRUCTION. Every kid in the game swung dead level. This is the same class of defect as isFair having no caller and Rng.bell's bounded support hiding the whiff rate: a mechanic that was never built, presenting as a number that merely looks wrong.",
+      "howItHid": "★ NO TOTAL COULD SEE IT AND NEITHER COULD THE MEDIAN. The ground-ball class is everything below 10 degrees, which includes the entire negative half of a symmetric distribution, so a 60.2% ground share was not a mistuning -- it was arithmetic. The launch MEDIAN read 2.5 degrees, which looks merely low rather than structurally impossible. PR 8 measured and pinned both without either being recognised as a missing mechanic; it took asking why the median was where it was. `harness.ts` now reports a MEAN, which is the one statistic that reads 0 when there is no swing plane, and harness.test.ts asserts it is positive.",
+      "measured": null,
+      "n": 0,
+      "confidence": "low",
+      "partialReading": {
+        "confidence": "low",
+        "n": 1,
+        "adultBandDeg": [
+          6,
+          10
+        ],
+        "amateurCoachingRangeDeg": [
+          5,
+          15
+        ],
+        "source": "Bat-sensor aggregates and coaching benchmarks for adult and amateur hitters (Blast Motion, Rapsodo-class swing tracking).",
+        "why": "★ QUARANTINED ON THE sim.batSpeed PRECEDENT, and for the identical reason. Attack angle is a real, routinely-measured property of a swing -- but every source measures adults or high-school-and-up amateurs. NOBODY HAS PUT A BAT SENSOR ON A FOUR-YEAR-OLD. Our 8 degrees is the bottom of the adult band, chosen because a child swinging a bat that is heavy for them has less ability to hold an upward plane, and that reasoning is an argument rather than a measurement."
+      },
+      "itIsNOTThePitchDescentAngle": "★ THE TEMPTING DERIVATION, AND IT IS WRONG. Measured off our own releasePitch/flyToPlate: our pitches arrive at the plate descending 22.2-39.9 degrees (mean 28.1), because a 25.6mph lob over 46ft falls a long way. A swing matched to the pitch plane -- the textbook 'swing along the plane of the pitch' -- would give an attack angle near 28 and put essentially everything in the air. A real attack angle is a property of the SWING, measured independently of what is being swung at, which is why this record answers to reference: 'baseball' and not to our own sim.pitchCorridorV2.",
+      "theFRAMEARGUMENT": "The undercut is a displacement measured PERPENDICULAR TO THE BAT'S PATH -- it is where the barrel's centre passed relative to the ball's centre. So `asin(undercut / centreSep)` is an angle in the BAT's frame, and the swing plane's own tilt adds to it to reach the world frame. That is a statement about which coordinate system the geometry was already in, not a fudge term bolted on to move a number.",
+      "whatItMoved": {
+        "over": "878 games / 50,004 plate appearances / 254,128 pitches, 8 seeds x 3 venues, all 30 kids",
+        "groundSharePct": [
+          0.602,
+          0.498
+        ],
+        "launchAngleMedianDeg": [
+          2.5,
+          12.5
+        ],
+        "launchAngleMeanDeg": [
+          0.0,
+          8.0
+        ],
+        "babip": [
+          0.713,
+          0.678
+        ],
+        "runsPerGame": [
+          5.34,
+          4.48
+        ],
+        "strikeoutPct": [
+          0.43,
+          0.424
+        ],
+        "note": "BABIP and runs both IMPROVED as a side effect -- fewer grounders is fewer of the class that goes for hits 81.4% of the time -- and this record claims no credit for a defence fix it did not make. The strikeout rate barely moved, correctly: a swing plane changes where a struck ball goes, not whether it is struck."
+      },
+      "theONENUMBERTHATGOTWORSE": "Pop-ups, 10.0% -> 16.0%. Centring a distribution whose SPREAD is still too wide pushes its upper tail past 50 degrees. The spread is ATBAT.UNDERCUT_FROM_JUDGE (0.45, untouched here), and it is measured rather than hoped: at attack 8, narrowing the undercut 0.45 -> 0.30 -> 0.22 takes pop-ups 15.9% -> 9.5% -> 3.7%. PR 10 owns that dial, so the cost is attributable to a specific pending change rather than left as a regression nobody can explain.",
+      "ours": {
+        "constant": "src/v2/sim/params.ts BAT.ATTACK_ANGLE_DEG; src/v2/sim/contact.ts resolveSwing",
+        "value": {
+          "attackAngleDeg": 8,
+          "pitchDescentAtPlateDeg": [
+            22.2,
+            39.9
+          ],
+          "pitchDescentMeanDeg": 28.1
+        }
+      },
+      "whatWouldClose": "A bat sensor on three or more actual four-to-eight-year-olds -- the SAME afternoon at a tee-ball practice that would close sim.batSpeed, since a Blast Motion or Diamond Kinetics knob sensor reports attack angle and bat speed from one swing. Two records close together or neither does.",
+      "informs": "src/v2/sim/params.ts BAT",
+      "source": "physics:published"
     }
   },
   "defense": {

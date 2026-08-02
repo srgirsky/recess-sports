@@ -15,6 +15,7 @@ import {
   type SwingSpec,
 } from './contact';
 import { batSpeedFts } from './athletes';
+import { resolvePlate } from './params';
 import { PITCHES, armMult, flyToPlate, releasePitch, type PitchKind } from './pitch';
 import { BAT, BALL } from './params';
 import { makeRng } from './rng';
@@ -251,8 +252,15 @@ describe('the batted ball', () => {
     expect(under.kind).toBe('contact');
     expect(over.kind).toBe('contact');
     if (under.kind !== 'contact' || over.kind !== 'contact') return;
-    expect(under.launch.launchAngleDeg).toBeGreaterThan(20);
-    expect(over.launch.launchAngleDeg).toBeLessThan(-20);
+    // ★ MEASURED RELATIVE TO THE SWING PLANE, not to the horizon. The claim is
+    // about the CONTACT GEOMETRY — under lifts, over chops — and PR 9's attack
+    // angle tilts the whole world-frame result by a constant. Asserting an
+    // absolute -20 here would be asserting the plane's value in a test about
+    // the undercut, and it would have to move every time the plane does.
+    expect(under.launch.launchAngleDeg - BAT.ATTACK_ANGLE_DEG).toBeGreaterThan(20);
+    expect(over.launch.launchAngleDeg - BAT.ATTACK_ANGLE_DEG).toBeLessThan(-20);
+    // The chop still goes DOWNWARD in the world, which is the thing a player sees.
+    expect(over.launch.launchAngleDeg).toBeLessThan(0);
     // And the spin follows the same geometry: undercut backspins, topping it
     // puts topspin on, which is what makes a chop stay down.
     expect(under.launch.spinRpm).toBeGreaterThan(0);
@@ -334,6 +342,71 @@ describe('the batted ball', () => {
   });
 });
 
+describe('★ the swing has a plane', () => {
+  // ★ THE MECHANISM PR 9 ADDED, tested where the angle exists rather than only
+  // in aggregate. `harness.test.ts` asserts the distribution's mean is positive;
+  // this asserts the geometry that makes it so.
+  const ordinary = () => ROSTER.find((k) => k.ability === 'none')!.id;
+  const at = (undercutFt: number, attackAngleDeg?: number) =>
+    resolveSwing(
+      {
+        timingErrorSec: 0,
+        undercutFt,
+        batter: getCharacter(ordinary()),
+        travelSec: 1.2,
+        pitchSpeedFts: 35,
+        plate: attackAngleDeg === undefined ? undefined : { ...resolvePlate(), attackAngleDeg },
+      },
+      rng.fork(`plane${undercutFt}${attackAngleDeg}`)
+    );
+
+  it('★ tilts a squarely-struck ball by exactly the attack angle', () => {
+    // Undercut zero is the bat's centre through the ball's centre: in the BAT's
+    // frame that leaves along the line of centres at 0, so the world-frame angle
+    // IS the plane. That is the whole claim, and it is an identity.
+    const r = at(0);
+    expect(r.kind).toBe('contact');
+    if (r.kind !== 'contact') return;
+    expect(r.launch.launchAngleDeg).toBeCloseTo(BAT.ATTACK_ANGLE_DEG, 9);
+  });
+
+  it('★ adds to the undercut geometry rather than replacing it', () => {
+    // The frame argument: the undercut is measured perpendicular to the bat's
+    // path, so the two angles compose.
+    for (const u of [-0.15, -0.05, 0.05, 0.15]) {
+      const withPlane = at(u);
+      const without = at(u, 0);
+      if (withPlane.kind !== 'contact' || without.kind !== 'contact') throw new Error('miss');
+      expect(withPlane.launch.launchAngleDeg - without.launch.launchAngleDeg).toBeCloseTo(
+        BAT.ATTACK_ANGLE_DEG,
+        9
+      );
+    }
+    // ★ AND THE UNDERCUT TERM MUST STILL BE THERE. The difference above is
+    // constant whether or not the asin term survives, so on its own it cannot
+    // tell "composes with" from "replaced". The angle has to VARY with the
+    // undercut too — that is the other half of the same claim.
+    const shallow = at(0.02);
+    const steep = at(0.15);
+    if (shallow.kind !== 'contact' || steep.kind !== 'contact') throw new Error('miss');
+    expect(steep.launch.launchAngleDeg).toBeGreaterThan(shallow.launch.launchAngleDeg + 10);
+  });
+
+  it('★ leaves the exit velocity and the spin alone', () => {
+    // A plane changes WHERE the ball goes, not how hard it was hit — the
+    // backspin is a tangential-velocity result in the bat's frame and must not
+    // move with the world-frame tilt. If this fails, the plane was applied to
+    // the collision rather than to the coordinate system.
+    for (const u of [-0.1, 0, 0.1]) {
+      const a = at(u);
+      const b = at(u, 0);
+      if (a.kind !== 'contact' || b.kind !== 'contact') throw new Error('miss');
+      expect(a.exitVelocityFts).toBeCloseTo(b.exitVelocityFts, 9);
+      expect(a.launch.spinRpm).toBeCloseTo(b.launch.spinRpm, 9);
+    }
+  });
+});
+
 describe('★ a bat that misses the ball misses the ball', () => {
   // ★ WHY THIS TEST EXISTS. `resolveSwing` clamped the undercut into the barrel
   // for three PRs, so a bat passing a foot below the ball was resolved as a
@@ -412,8 +485,9 @@ describe('★ a bat that misses the ball misses the ball', () => {
     const r = swing(centreSep * 6, her.id);
     expect(r.kind).toBe('contact');
     if (r.kind !== 'contact') return;
-    // At the edge exactly, not past it.
-    expect(Math.abs(r.launch.launchAngleDeg)).toBeCloseTo(90, 6);
+    // At the edge of the BARREL exactly, not past it — `asin(±1)` is ±90 in the
+    // bat's frame, and the swing plane tilts that into the world.
+    expect(Math.abs(r.launch.launchAngleDeg - BAT.ATTACK_ANGLE_DEG)).toBeCloseTo(90, 6);
     // And she is alone in it.
     for (const c of ROSTER) {
       if (c.id === her.id) continue;

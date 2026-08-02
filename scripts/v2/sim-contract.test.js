@@ -52,6 +52,8 @@ import { BASEPATH, FIELD_MARGIN, FIELD_POSITIONS, FIRST, dist } from '../../src/
 import { maxThrowFt } from '../../src/v2/sim/fielders.ts';
 import { beginPlay, finishPlay, simulatePlay, stepPlay } from '../../src/v2/sim/play.ts';
 import { classifyLaunch, LAUNCH_CUTS } from '../../src/v2/sim/harness.ts';
+import { resolvePlate } from '../../src/v2/sim/params.ts';
+import { PITCHES, releasePitch, flyToPlate } from '../../src/v2/sim/pitch.ts';
 import { makeRng } from '../../src/v2/sim/rng.ts';
 import { autoAssign } from '../../src/systems/lineup.ts';
 import { ROSTER, getCharacter } from '../../src/data/characters.ts';
@@ -902,13 +904,27 @@ describe('sim.plateDiscipline', () => {
     expect(rec.whatWouldClose).toMatch(/closed the OURS column, not the record/);
   });
 
+  it('★ corrects its own two-strike argument with a measurement', () => {
+    // The record ARGUES that protection cuts strikeouts. PR 9 measured the curve
+    // and it turns: our shipped value is past its own optimum. A record that
+    // states a mechanism has to carry the measurement that qualifies it.
+    expect(rec.theProtectionCurveIsNotMonotonic).toMatch(/WRONG SIDE/);
+    expect(rec.theProtectionCurveIsNotMonotonic).toMatch(/44\.4 \/ 40\.4 \/ 42\.5 \/ 45\.1 \/ 47\.4/);
+    // And it must not quietly "fix" it — PR 9 shipped the swing plane alone.
+    expect(rec.theProtectionCurveIsNotMonotonic).toMatch(/NOT MOVED IN PR 9/);
+    expect(ATBAT.TWO_STRIKE_PROTECT_FT).toBe(0.55);
+  });
+
   it('★ records the strikeout rate the geometry fix exposed, and names the dial', () => {
     // 43% of plate appearances ending in a K is wrong for this age group by any
     // reading. The record has to say so, say which constant it lands on, and say
     // that PR 8 did not touch it — the same standing gameShape's BABIP has.
     expect(rec.ours.value.strikeoutPct).toBeGreaterThan(0.4);
     expect(rec.whatTheHARNESSEXPOSED).toMatch(/UNDERCUT_FROM_JUDGE/);
-    expect(rec.whatTheHARNESSEXPOSED).toMatch(/PR 9 owns it/);
+    // ★ PR 9 WAS SCOPED TO OWN THIS AND MEASURED THE REASON NOT TO. The record
+    // has to carry that, or the deferral reads as a slip rather than a finding.
+    expect(rec.whatTheHARNESSEXPOSED).toMatch(/MEASURED THE REASON NOT TO/);
+    expect(rec.whatTheHARNESSEXPOSED).toMatch(/PR 10/);
     // And that the OLD, comfortable-looking number was the broken one.
     expect(rec.whatTheHARNESSEXPOSED).toMatch(/arithmetic over a defect/);
     expect(M.sim.contactGeometry.status).toBe('conformed');
@@ -966,15 +982,25 @@ describe('sim.gameShape', () => {
 
   it('★ keeps the reading it superseded, because the old one was a different sim', () => {
     // Not a bigger sample — a sample taken over broken geometry. Both are kept.
+    // ★ TWO SUPERSESSIONS NOW, AND ALL THREE READINGS ARE KEPT. Each was taken
+    // over a different sim: the first with a bat that clamped instead of
+    // missing, the second with no swing plane, this one with both fixed.
     expect(rec.measured.n).toBeGreaterThan(50_000);
-    expect(rec.supersedes.reading.n).toBe(1166);
-    expect(rec.supersedes.why).toMatch(/A DIFFERENT SIM/);
-    expect(rec.supersedes.reading.babip).toBeLessThan(rec.measured.babip);
+    expect(rec.supersedes.reading.n).toBeGreaterThan(50_000);
+    expect(rec.supersedes.andBefore.reading.n).toBe(1166);
+    expect(rec.supersedes.why).toMatch(/THE THREE READINGS TELL A STORY/);
+    expect(rec.supersedes.andBefore.why).toMatch(/A DIFFERENT SIM/);
+    // PR 9 lowered BABIP without touching the defence.
+    expect(rec.measured.babip).toBeLessThan(rec.supersedes.reading.babip);
   });
 
   it('★ names BABIP as the number that is wrong, rather than burying it', () => {
     expect(rec.measured.babip).toBeGreaterThan(0.5);
-    expect(rec.whatIsNot).toMatch(/Every second ball in play is a hit/);
+    // ★ AND IT MUST DISCLAIM THE IMPROVEMENT IT DID NOT EARN. PR 9 moved BABIP
+    // .713 -> .678 by changing the batted-ball MIX, not the defence.
+    expect(rec.whatIsNot).toMatch(/WITHOUT TOUCHING THE DEFENCE/);
+    expect(rec.whatIsNot).toMatch(/claims no credit/);
+    expect(rec.whatIsNot).toMatch(/LOAD-BEARING/);
     // And points at the records that explain it rather than at a dial.
     expect(rec.whatIsNot).toMatch(/sim\.throwSpeed/);
     expect(rec.whatIsNot).toMatch(/sim\.catchRadius/);
@@ -1136,7 +1162,8 @@ describe('sim.battedBallSplit', () => {
     const { foulBalls, fairBalls } = rec.ours.value;
     expect(foulBalls / fairBalls).toBeGreaterThan(3);
     expect(rec.theFOULTOFAIRRATIOISAFINDING).toMatch(/TWO_STRIKE_PROTECT_FT/);
-    expect(rec.theFOULTOFAIRRATIOISAFINDING).toMatch(/not tuned here/);
+    expect(rec.theFOULTOFAIRRATIOISAFINDING).toMatch(/DELIBERATELY DID NOT FIX IT/);
+    expect(rec.theFOULTOFAIRRATIOISAFINDING).toMatch(/PR 10/);
   });
 });
 
@@ -1171,5 +1198,128 @@ describe('sim.harnessMethod', () => {
   it('★ pins the slice against the full run, since they share one aggregator', () => {
     expect(rec.theSLICEAGREESWITHTHERUN).toMatch(/one aggregator/);
     expect(rec.measured.sliceGames).toBeLessThan(rec.measured.games);
+  });
+});
+
+describe('sim.swingPlane', () => {
+  const rec = M.sim.swingPlane;
+
+  it('claims no band, and quarantines the adult one it is not claiming', () => {
+    wellFormed(rec, { reference: 'baseball', status: 'awaiting-measurement' });
+    expect(rec.measured).toBeNull();
+    expect(rec.partialReading.n).toBe(1);
+    expect(rec.partialReading.why).toMatch(/QUARANTINED ON THE sim.batSpeed PRECEDENT/);
+    expect(rec.partialReading.why).toMatch(/NOBODY HAS PUT A BAT SENSOR ON A FOUR-YEAR-OLD/);
+  });
+
+  it('★ ours sits inside the published adult band, which is the only claim made for it', () => {
+    const [lo, hi] = rec.partialReading.adultBandDeg;
+    expect(BAT.ATTACK_ANGLE_DEG).toBeGreaterThanOrEqual(lo);
+    expect(BAT.ATTACK_ANGLE_DEG).toBeLessThanOrEqual(hi);
+    expect(rec.ours.value.attackAngleDeg).toBe(BAT.ATTACK_ANGLE_DEG);
+  });
+
+  it('★ recomputes the pitch descent it says the attack angle is NOT', () => {
+    // The tempting derivation — swing along the plane of the pitch — and the
+    // measurement that rejects it. Recomputed from the sim, not read back.
+    const seen = [];
+    for (const kind of Object.keys(PITCHES))
+      for (const arm of [3, 6, 9]) {
+        const { state } = flyToPlate(
+          releasePitch({ kind, pitchingStat: arm, aimHeightFt: 2.5, aimLateralFt: 0 })
+        );
+        const horiz = Math.hypot(state.v.x, state.v.z);
+        seen.push((Math.atan2(-state.v.y, horiz) * 180) / Math.PI);
+      }
+    const [lo, hi] = rec.ours.value.pitchDescentAtPlateDeg;
+    expect(Math.min(...seen)).toBeCloseTo(lo, 0);
+    expect(Math.max(...seen)).toBeCloseTo(hi, 0);
+    // And it is nothing like the attack angle — which is the point.
+    expect(Math.min(...seen)).toBeGreaterThan(BAT.ATTACK_ANGLE_DEG * 2);
+    expect(rec.itIsNOTThePitchDescentAngle).toMatch(/property of the SWING/);
+  });
+
+  it('★ makes the launch distribution stop being zero-mean', () => {
+    // The defect, reproduced: a symmetric undercut through `asin` alone gives a
+    // mean of zero, and every kid swings dead level.
+    const ordinary = ROSTER.find((k) => k.ability === 'none');
+    const swing = (u, plate) =>
+      resolveSwing(
+        { timingErrorSec: 0, undercutFt: u, batter: ordinary, travelSec: 1.2, pitchSpeedFts: 35, plate },
+        makeRng('plane').fork(String(u))
+      );
+    const sep = BALL_RADIUS_FT + BAT.BARREL_RADIUS_FT;
+    // ★ THE GRID MUST BE EXACTLY SYMMETRIC. `asin` is odd, so a symmetric sweep
+    // cancels to exactly zero and the claim is arithmetic rather than
+    // statistical — but a `u += step` loop does not land symmetrically and
+    // leaves a spurious -0.83 degrees, which reads as a real bias.
+    const meanOver = (plate) => {
+      const a = [];
+      for (let i = -50; i <= 50; i++) {
+        const r = swing((sep * 0.99 * i) / 50, plate);
+        if (r.kind === 'contact') a.push(r.launch.launchAngleDeg);
+      }
+      return a.reduce((x, y) => x + y, 0) / a.length;
+    };
+    // With no plane the symmetric sweep averages to zero, exactly.
+    expect(meanOver({ ...resolvePlate(), attackAngleDeg: 0 })).toBeCloseTo(0, 6);
+    // With one it averages to the plane.
+    expect(meanOver(undefined)).toBeCloseTo(BAT.ATTACK_ANGLE_DEG, 6);
+  });
+
+  it('★ says what it cost as well as what it bought', () => {
+    expect(rec.theONENUMBERTHATGOTWORSE).toMatch(/Pop-ups/);
+    // Attributed to a specific pending dial, with the measurement behind it.
+    expect(rec.theONENUMBERTHATGOTWORSE).toMatch(/UNDERCUT_FROM_JUDGE/);
+    expect(rec.theONENUMBERTHATGOTWORSE).toMatch(/PR 10/);
+    expect(rec.whatItMoved.babip[1]).toBeLessThan(rec.whatItMoved.babip[0]);
+    expect(rec.whatItMoved.note).toMatch(/claims no credit/);
+  });
+});
+
+describe('sim.retuneTargets', () => {
+  const rec = M.sim.retuneTargets;
+
+  it('is a NOTE that states design targets, not conformance', () => {
+    wellFormed(rec, { reference: 'derived', status: 'note' });
+    expect(rec.why).toMatch(/DESIGN TARGETS/);
+    expect(rec.why).toMatch(/NOT CONFORMANCE TO A MEASUREMENT NOBODY TOOK/);
+    expect(M.sim.note).toMatch(/four-to-eight/);
+  });
+
+  it('★ was written BEFORE the sweep, which is what makes it a target', () => {
+    expect(rec.whyWrittenFIRST).toMatch(/NOT A TARGET, IT IS A DESCRIPTION/);
+  });
+
+  it('★ records which targets PR 9 hit and which it deliberately left', () => {
+    const a = rec.measured.after_pr9;
+    const t = rec.measured.targets;
+    // The two it hit, checked against the target box rather than restated.
+    for (const k of a.hit) {
+      const [lo, hi] = t[k];
+      expect(a[k], `${k} claimed hit`).toBeGreaterThanOrEqual(lo);
+      expect(a[k], `${k} claimed hit`).toBeLessThanOrEqual(hi);
+    }
+    // The three it missed must really still be outside.
+    for (const k of a.missed) {
+      const [lo, hi] = t[k];
+      expect(a[k] < lo || a[k] > hi, `${k} claimed missed`).toBe(true);
+    }
+  });
+
+  it('★ carries the finding that resized the PR: strikeouts are load-bearing', () => {
+    expect(rec.whyTheStrikeoutRateDidNotMoveHere).toMatch(/LOAD-BEARING/);
+    expect(rec.whyTheStrikeoutRateDidNotMoveHere).toMatch(/4\.90 TO 15\.35/);
+    // Under-determined: the plate targets admit solutions that wreck the game.
+    expect(rec.whyTheStrikeoutRateDidNotMoveHere).toMatch(/under-determined/);
+  });
+
+  it('★ keeps ordering as the real gate, above any of the numbers', () => {
+    expect(rec.theGATEISORDERING).toMatch(/NOT ANY OF THE NUMBERS ABOVE/);
+    expect(rec.theGATEISORDERING).toMatch(/the retune is wrong and not the assertion/);
+  });
+
+  it('does not claim BABIP as its own', () => {
+    expect(rec.whatIsNOTATARGETHERE).toMatch(/belongs to the DEFENCE/);
   });
 });
