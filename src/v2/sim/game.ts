@@ -31,6 +31,7 @@
 import type { Character } from '../../data/types';
 import { GAME, PLAY } from './params';
 import { isStrike, pitchAndSwing, type PitchResult } from './atbat';
+import { resolvePlate, type PlateOverrides, type PlateParams } from './params';
 import { beginPlay, finishPlay, stepPlay, type PlayOutcome } from './play';
 import type { LaunchSpec } from './launch';
 import { planDefence, type DefencePlan } from './lineup';
@@ -100,6 +101,16 @@ export interface GameSpec {
    * retained. `harness.ts` is its only consumer.
    */
   onEvent?: (e: SimEvent) => void;
+  /**
+   * Override the four coupled plate constants for this game.
+   *
+   * ★ FOR THE SWEEP, AND IT IS A SEAM RATHER THAN A FILE REWRITE. See
+   * `params.ts`'s `PlateOverrides`: the alternative is a script that patches
+   * `params.ts` per candidate, and PR 7's gate sweep did that and left two
+   * injected values in the tree across two interrupted runs. Omitting the field
+   * resolves to the shipped constants, so the default path is unchanged.
+   */
+  plate?: PlateOverrides;
 }
 
 export interface GameResult {
@@ -190,6 +201,7 @@ function playAtBat(
     stats: StatEvent[];
     log: string[];
     onEvent?: (e: SimEvent) => void;
+    plate?: PlateParams;
   },
   rng: Rng
 ): void {
@@ -206,7 +218,7 @@ function playAtBat(
     tally.pitches += 1;
 
     const result = pitchAndSwing(
-      { pitcher: args.pitcher, batter: args.batter, count: half.state.count },
+      { pitcher: args.pitcher, batter: args.batter, count: half.state.count, plate: args.plate },
       rng.fork(`p${pitches}`)
     );
 
@@ -446,6 +458,7 @@ export function simulateGame(spec: GameSpec, rng: Rng): GameResult {
           stats,
           log,
           onEvent: spec.onEvent,
+          plate: resolvePlate(spec.plate),
         },
         rng.fork(`${inning}${half}${bat.lineupIdx}`)
       );

@@ -145,6 +145,7 @@ console.log(`  exit velo mean      ${num(r.exitVelocityMeanMph, 1)} mph`);
 console.log(`  exit velo median    ${num(r.exitVelocityMedianMph, 1)} mph  (+-${EV_BIN_MPH / 2})`);
 console.log(`  exit velo p90       ${num(r.exitVelocityP90Mph, 1)} mph  (+-${EV_BIN_MPH / 2})`);
 console.log(`  launch angle median ${num(r.launchAngleMedianDeg, 1)} deg  (+-${LA_BIN_DEG / 2})`);
+console.log(`  launch angle MEAN   ${num(r.launchAngleMeanDeg, 1)} deg  (0 means no swing plane — sim.swingPlane)`);
 
 console.log('\n=== THE OUTCOME ===   (sim.gameShape)');
 console.log(`  BABIP               ${num(r.babip)}   hits per non-HR ball in play`);

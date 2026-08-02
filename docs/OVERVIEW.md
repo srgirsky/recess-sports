@@ -618,8 +618,61 @@ pinned rates notice. It found three weaknesses in its own gates — a tautologic
 cut-boundary test that was true for any cut values, and two `SimEvent` fields
 (the count, the hit type) that were emitted and read by nothing.
 
-Next: the retune. BABIP, the strikeout rate, the foul ratio, the
-`sim.venueRollFeel` drift, and tag-ups, rundowns and steals.
+### PR 9 — the swing had no plane
+
+The retune, and it turned into a missing mechanic. `atbat.ts` derives the
+undercut as `(crossing.y − judged.y) × k` where `judged.y` is
+`crossing.y + bell() × judgeFt` — so the undercut is `−bell() × judgeFt × k`,
+**exactly zero-mean**. `contact.ts` takes `asin` of it, so the launch-angle
+distribution was symmetric about zero **by construction**: every kid in the game
+swung dead level and the average batted ball left the bat at 0°, a line drive
+into the dirt.
+
+No total could see it, and neither could the median. The `ground` class is
+everything below 10°, which collects the whole negative half of a symmetric
+distribution — so PR 8's 60.2% ground share was **arithmetic, not taste** — and
+the launch median read 2.5°, which looks merely low. `harness.ts` now reports a
+**mean**, which is the one statistic that reads 0 when there is no swing plane.
+
+`BAT.ATTACK_ANGLE_DEG` is 8° — inside the published adult band (6–10°), at the
+bottom of it because a child swinging a bat that is heavy for them holds less
+plane. It is **not** the pitch's descent angle, which is the tempting
+derivation: our pitches arrive descending 22–40° (mean 28.1) because a 25.6mph
+lob over 46ft falls a long way, and a swing matched to that plane would put
+everything in the air. Attack angle is a property of the *swing*.
+
+| | before | after |
+|---|---|---|
+| ground share | 60.2% | **49.8%** |
+| launch median / **mean** | 2.5° / **0.0°** | 12.5° / **8.0°** |
+| BABIP | .713 | **.678** |
+| runs per game | 5.34 | **4.48** |
+
+**★ And the finding that resized the PR.** The four coupled plate constants
+*were* swept as planned — 300 combinations through `npm run sim:plate-sweep`,
+against targets written into `sim.retuneTargets` **before** the sweep ran. Several
+combinations hit all six targets: one gives K% 15.4 and a 1.81 foul ratio. The
+same combination takes **runs per game from 4.90 to 15.35**.
+
+The strikeout rate is currently **load-bearing**: 43% strikeouts is hiding a
+defence that converts under a third of balls in play, and removing it puts three
+times as many balls in front of that defence. So the plate targets alone are
+*under-determined* — they admit solutions that wreck the product — and the
+strikeout, foul and pitches-per-PA targets moved to PR 10, where they can be
+balanced against out conversion. That is the only place the balance can honestly
+be struck.
+
+So PR 9 ships the mechanism alone. Every measured axis improved except the
+pop-up share (10.0% → 16.0%), which is attributed rather than mysterious:
+centring a distribution whose *spread* is still too wide pushes its upper tail
+past 50°, and the spread is `ATBAT.UNDERCUT_FROM_JUDGE` — measured, narrowing it
+0.45 → 0.22 takes pop-ups 15.9% → 3.7%. PR 10 owns that dial.
+
+Next: PR 10, the defence and the plate rates together — BABIP, the strikeout
+rate and the foul ratio, with the pre-pitch creep (a fielder currently starts
+every play from a dead stop into a 1.736s ramp), CPU dives, re-derived fielder
+positioning, and the unmeasured `DROP_BASE`. Then the `sim.venueRollFeel` drift,
+and tag-ups and steals once `PlayInputs` has a player behind it.
 
 ---
 

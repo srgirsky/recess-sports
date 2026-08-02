@@ -311,6 +311,33 @@ continuous across a v1↔v2 switch in the same browser.
   discontinuity no tuning constant can reach, and the old 20.6% was arithmetic
   over a defect. The one case the clamp survives is `never_strikes_out`, which
   would otherwise be struck out through the other door. `sim.contactGeometry`.
+- **★ THE SWING HAD NO PLANE, AND A MEAN IS WHAT SAW IT.** `atbat.ts` derives
+  the undercut as `(crossing.y − judged.y) × k` where `judged.y` is
+  `crossing.y + bell() × judgeFt`, so it is **exactly zero-mean** — and
+  `contact.ts` turns it into a launch angle through `asin`, so for four PRs the
+  launch distribution was symmetric about zero BY CONSTRUCTION and every kid
+  swung dead level. **No total could see it and neither could the median**: the
+  `ground` class is everything below 10°, which collects the whole negative
+  half, so a 60.2% ground share was ARITHMETIC rather than taste, and a 2.5°
+  median just looks low. `harness.ts` now reports a MEAN, the one statistic that
+  reads 0 when there is no plane. `BAT.ATTACK_ANGLE_DEG` (8°) is inside the
+  published adult band and is **NOT the pitch's descent angle** — ours arrive at
+  22–40° (mean 28.1) because a 25.6mph lob over 46ft falls a long way, and a
+  swing matched to that plane puts everything in the air. The undercut is
+  measured PERPENDICULAR TO THE BAT'S PATH, so the plane ADDS to the
+  line-of-centres angle: a statement about which frame the geometry was already
+  in, not a fudge term. `sim.swingPlane`.
+- **★ THE STRIKEOUT RATE IS LOAD-BEARING, WHICH IS WHY PR 9 DID NOT TOUCH IT.**
+  The four coupled plate constants were swept (300 combinations) against targets
+  written into `sim.retuneTargets` FIRST — and several combinations hit all six
+  at once (K% 15.4, foul:fair 1.81) while taking **runs per game from 4.90 to
+  15.35**. 43% strikeouts is hiding a defence that converts under a third of
+  balls in play; removing it puts three times as many balls in front of that
+  defence. **The plate targets alone are UNDER-DETERMINED** — they admit
+  solutions that wreck the product — so strikeouts, fouls and pitches/PA moved
+  to the defence PR, where they can be balanced against out conversion. A target
+  written after a sweep is not a target, it is a description; that is why
+  `sim.retuneTargets` exists and why it is dated before the run.
 - **★ A HARNESS THAT ONLY PINS IS A RATCHET, NOT A GATE.** Most of what PR 8
   measures has no band to answer to — published youth data starts at 9U and
   `sim.note` is explicit that borrowing MLB's numbers is THE failure the
@@ -709,12 +736,13 @@ continuous across a v1↔v2 switch in the same browser.
 | `src/v2/sim/lineup.ts` | ★ v2. `planDefence` — the arm-aware planner `sim.gapBallOutcome.theArmAtShort` asked for. Each position's arm weight is DERIVED from `FIELD_POSITIONS` (distance from post to the bag it throws to), so nobody has to remember that left field needs an arm. v1's `autoAssign` is untouched. |
 | `src/v2/sim/harness.ts` | ★ v2. The statistical harness's PURE aggregator — it plays nothing, it is FED, by an optional `onEvent` observer on `GameSpec`. Counters and histograms only (50k plate appearances of retained objects is a memory bill for nothing). ONE implementation, TWO front ends — the CI slice and `npm run sim:harness` — the way `layout.browser.js` serves both the dev overlay and the CI audit. **`LAUNCH_CUTS` are BORROWED bin edges, not physics**, and `sim.battedBallSplit` says so; there is deliberately **no `hardHitPct`**, because MLB's 95mph threshold reads zero for every kid forever and a statistic that cannot vary is not a measurement. |
 | `scripts/v2/harness.mjs` | ★ v2. `npm run sim:harness` — 874 games / 50,045 PA / 8 seeds / 3 venues in 73.5s, the cheque `rng.ts` wrote when it chose sfc32. Two traps it has to avoid and both are recorded: **every game gets its own root seed** (the per-PA fork key is `${inning}${half}${lineupIdx}`, which is NOT unique across games — one root per RUN measures one game 874 times), and **the roster ROTATES** (`sim:game` plays kids 0-8 vs 9-17, so twelve of thirty never bat and every rate is an average over 60% of a 1-10 stat span). `RUN_BUDGET_MS` is a hard ceiling, not a per-game timeout — the case a per-game timeout misses is every game getting four times slower. |
+| `scripts/v2/plate-sweep.mjs` | ★ v2. `npm run sim:plate-sweep` — searches the four COUPLED plate constants (`ATTACK_ANGLE_DEG` · `UNDERCUT_FROM_JUDGE` · `PULL_DEG_PER_FT` · `TWO_STRIKE_PROTECT_FT`) against `sim.retuneTargets`, which was written BEFORE it ran. It RANKS and never writes `params.ts` — overrides go through `PlateOverrides`, because PR 7's sweep patched files and left two injected values in the tree across two interrupted runs. It checks ORDERING per candidate, not once on the winner. |
 | `scripts/v2/purity.lint.test.js` | ★ v2. **★ There is exactly ONE kid speed in the sim** (textual: only `athletes.ts` may read a raw band; functional: `makeFielder` and `makeRunner` agree over 30 kids and stats 1-10). Plus: `src/v2/sim/**` imports only sim/data/config/**five** pure systems (`inning`·`gameflow`·`stats`·`lineup`·`draft`); no three, no DOM, no `Math.random`, no `Date.now`, **no module-scope `Rng`**; every sim file must import in plain Node; whole-statement `import type` gets a separate wider lane; **the whitelist itself is checked** (each named system must be browser-free, random-free, and value-import only pure modules); and **nothing outside `src/v2/**` may import v2**, which is what actually guarantees a v2 edit cannot reach v1's bundle. Two files claimed this gate existed before it did, and it then spent its first life vacuously satisfied. |
 | `scripts/measures.json` | ★ The measurement records + `conformance.test.js`'s gate. Every record names the `src/config.ts` constant it informs, so the audit trail runs source → record → constant, and carries a `status`: `conformed` (ours inside the band), `known-drift` (outside, and the test pins the drift's SIZE so it can't grow or be half-fixed unnoticed), `awaiting-measurement` (BB not measured yet — pins only OUR value, claims nothing about BB), `note` (a finding about the measurement itself). Read this before tuning any "Backyard feel" constant. |
 
 ## Commands
 
-`npm run dev` (play locally) · `npm test` (logic tests) · `npm run build` (→ `dist/`). v2 assets: `npm run export:skeleton` (emit the rig) · `npm run export:proxy-kid` (stand-in characters; `-- all` for the whole roster) · `npm run manifest:models` (rebuild the delivery manifest) · `npm run sync:decoders` (refresh the committed Draco/Basis decoders after a `three` bump) · `npm run sim:harness` (50,000 plate appearances: rates, splits, histograms, ~75s) · `npm run validate:models` (gate a delivery; needs Node ≥22.6 — CI runs the same rules through vitest) · `npm run sim:game` (play a whole v2 game headless: line score, box score, play-by-play). Full details + deploy in `README.md`.
+`npm run dev` (play locally) · `npm test` (logic tests) · `npm run build` (→ `dist/`). v2 assets: `npm run export:skeleton` (emit the rig) · `npm run export:proxy-kid` (stand-in characters; `-- all` for the whole roster) · `npm run manifest:models` (rebuild the delivery manifest) · `npm run sync:decoders` (refresh the committed Draco/Basis decoders after a `three` bump) · `npm run sim:harness` (50,000 plate appearances: rates, splits, histograms, ~75s) · `npm run sim:plate-sweep` (search the coupled plate constants) · `npm run validate:models` (gate a delivery; needs Node ≥22.6 — CI runs the same rules through vitest) · `npm run sim:game` (play a whole v2 game headless: line score, box score, play-by-play). Full details + deploy in `README.md`.
 
 ## Shipping changes (the standard delivery process)
 

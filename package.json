@@ -16,7 +16,8 @@
     "sim:trajectory": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/trajectory.mjs",
     "validate:models": "node --disable-warning=ExperimentalWarning scripts/v2/validate-models.mjs",
     "sim:game": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/game.mjs",
-    "sim:harness": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/harness.mjs"
+    "sim:harness": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/harness.mjs",
+    "sim:plate-sweep": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/plate-sweep.mjs"
   },
   "dependencies": {
     "peerjs": "^1.5.5",

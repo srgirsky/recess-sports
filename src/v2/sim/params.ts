@@ -266,7 +266,79 @@ export const BAT = {
    * 297ms to 1350ms. Named here so it cannot go stale invisibly.
    */
   PULL_DEG_PER_FT: 26,
+  /**
+   * The upward tilt of the bat's path through the zone, degrees.
+   *
+   * ★ WITHOUT THIS THE AVERAGE BATTED BALL LEAVES AT EXACTLY 0 DEGREES, and for
+   * four PRs it did. `atbat.ts` derives the undercut as
+   * `(crossing.y - judged.y) * UNDERCUT_FROM_JUDGE`, and `judged.y` is
+   * `crossing.y + bell() * judgeFt` — so the undercut is `-bell() * judgeFt *
+   * k`, which is EXACTLY zero-mean. `contact.ts` then takes `asin` of it, so the
+   * launch-angle distribution was symmetric about zero BY CONSTRUCTION: every
+   * kid in the game swung dead level and the mean batted ball was a line drive
+   * into the dirt. Since the `ground` class is everything below 10 degrees —
+   * which includes the whole negative half — a 60% ground-ball share was not a
+   * mistuning, it was arithmetic. PR 8's harness measured 60.2% and a launch
+   * median of 2.5 degrees; `sim.swingPlane` has the numbers.
+   *
+   * ★ AND IT IS NOT THE PITCH'S DESCENT ANGLE, which is the tempting derivation.
+   * Our pitches arrive descending 22-40 degrees (mean 28.1) because a 25.6mph
+   * lob over 46ft falls a long way, and a swing matched to that plane would put
+   * essentially everything in the air. A real attack angle is a modest upward
+   * tilt of the swing itself, measured independently of the pitch — which is why
+   * `sim.swingPlane` answers to `reference: 'baseball'` and not to our own
+   * `sim.pitchCorridorV2`.
+   *
+   * The undercut is measured PERPENDICULAR TO THE BAT'S PATH, so this adds to
+   * the line-of-centres angle rather than replacing it. That is a statement
+   * about which frame the geometry is in, not a fudge term.
+   *
+   * 8 degrees sits inside the published adult band (roughly 6-10) and at the
+   * bottom of the coaching range taught to amateurs, which is the defensible
+   * place to put a four-to-eight-year-old swinging a bat that is heavy for them.
+   * It is `awaiting-measurement` because nobody has put a bat sensor on a child
+   * this age; `sim.swingPlane` says so and says what would close it.
+   */
+  ATTACK_ANGLE_DEG: 8,
 } as const;
+
+/**
+ * The four coupled plate constants, overridable per game.
+ *
+ * ★ A TYPED SEAM RATHER THAN A SCRIPT THAT REWRITES THIS FILE. `sim.retuneTargets`
+ * needs these four searched together, because each moves more than one target
+ * and two of them move targets in OPPOSITE directions. The obvious way to sweep
+ * is to patch `params.ts` per candidate — and PR 7's gate sweep did exactly that
+ * and left two injected values in the tree across two interrupted runs, one of
+ * which hung the suite rather than failing it. An injected override cannot
+ * survive the process that injected it.
+ *
+ * It is also the shape v1 already uses: `systems/mode.ts`'s `resolveLiveParams`
+ * takes an optional `FeatureOverrides` for the same reason. Omitting the field
+ * resolves to the constants below, so the default path is byte-identical.
+ */
+export interface PlateOverrides {
+  attackAngleDeg?: number;
+  undercutFromJudge?: number;
+  pullDegPerFt?: number;
+  twoStrikeProtectFt?: number;
+}
+
+export interface PlateParams {
+  attackAngleDeg: number;
+  undercutFromJudge: number;
+  pullDegPerFt: number;
+  twoStrikeProtectFt: number;
+}
+
+export function resolvePlate(over?: PlateOverrides): PlateParams {
+  return {
+    attackAngleDeg: over?.attackAngleDeg ?? BAT.ATTACK_ANGLE_DEG,
+    undercutFromJudge: over?.undercutFromJudge ?? ATBAT.UNDERCUT_FROM_JUDGE,
+    pullDegPerFt: over?.pullDegPerFt ?? BAT.PULL_DEG_PER_FT,
+    twoStrikeProtectFt: over?.twoStrikeProtectFt ?? ATBAT.TWO_STRIKE_PROTECT_FT,
+  };
+}
 
 /**
  * The pitch.

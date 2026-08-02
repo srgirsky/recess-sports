@@ -41,7 +41,7 @@
 // ---------------------------------------------------------------------------
 
 import type { Character } from '../../data/types';
-import { ATBAT } from './params';
+import { ATBAT, resolvePlate, type PlateParams } from './params';
 import {
   pitchScatterFt,
   plateJudgementFt,
@@ -92,6 +92,8 @@ export interface PitchSpec {
   batter: Character;
   /** The count BEFORE this pitch. Drives what the pitcher tries. */
   count: { balls: number; strikes: number };
+  /** Resolved plate constants. Omit for the shipped values. */
+  plate?: PlateParams;
 }
 
 // --- The umpire -------------------------------------------------------------
@@ -202,7 +204,8 @@ export function pitchAndSwing(spec: PitchSpec, rng: Rng): PitchResult {
   // he READS as a strike, so every misread with two strikes is a called third —
   // which turns a poor-contact kid into a strikeout machine instead of the
   // foul-ball machine a six-year-old actually is.
-  const protectFt = spec.count.strikes >= ATBAT.STRIKES_PER_K - 1 ? ATBAT.TWO_STRIKE_PROTECT_FT : 0;
+  const plate = spec.plate ?? resolvePlate();
+  const protectFt = spec.count.strikes >= ATBAT.STRIKES_PER_K - 1 ? plate.twoStrikeProtectFt : 0;
   const swings = distOutsideZone(judged, undefined) <= protectFt;
 
   if (!swings) {
@@ -214,7 +217,7 @@ export function pitchAndSwing(spec: PitchSpec, rng: Rng): PitchResult {
   const timingErrorSec =
     eye.bell() * swingTimingSigmaFrac(spec.batter.stats.contact) * flown.travelSec;
   // Reading the ball LOW means swinging under it, which lifts it.
-  const undercutFt = (crossing.y - judged.y) * ATBAT.UNDERCUT_FROM_JUDGE;
+  const undercutFt = (crossing.y - judged.y) * plate.undercutFromJudge;
 
   const swing = resolveSwing(
     {
@@ -223,6 +226,7 @@ export function pitchAndSwing(spec: PitchSpec, rng: Rng): PitchResult {
       batter: spec.batter,
       travelSec: flown.travelSec,
       pitchSpeedFts: plateSpeedFts,
+      plate,
     },
     rng.fork('swing')
   );
