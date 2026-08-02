@@ -782,13 +782,37 @@
         "drawnHeadSpanPctAfter": 32.35,
         "headRiseBefore": 0.75,
         "headRise": 1.0,
-        "torsoFtBefore": [1.801, 2.293],
-        "torsoFt": [1.621, 2.531],
-        "neckFt": [2.413, 2.803],
+        "torsoFtBefore": [
+          1.801,
+          2.293
+        ],
+        "torsoFt": [
+          1.621,
+          2.531
+        ],
+        "neckFt": [
+          2.413,
+          2.803
+        ],
         "hairHeadroomFrac": 0.04,
-        "hairOvershootPctBefore": { "afro": 14.2, "mohawk": 4.6, "bun": 2.2, "long": 1.6, "spiky": 0.0 },
-        "hairOvershootPctAfter": { "afro": 3.54, "spiky": 3.64, "mohawk": 3.15, "bun": 1.94, "long": 1.38 },
-        "trianglesPerKid": { "before": 2936, "after": 3448 }
+        "hairOvershootPctBefore": {
+          "afro": 14.2,
+          "mohawk": 4.6,
+          "bun": 2.2,
+          "long": 1.6,
+          "spiky": 0.0
+        },
+        "hairOvershootPctAfter": {
+          "afro": 3.54,
+          "spiky": 3.64,
+          "mohawk": 3.15,
+          "bun": 1.94,
+          "long": 1.38
+        },
+        "trianglesPerKid": {
+          "before": 2936,
+          "after": 3448
+        }
       },
       "fix": "HEAD_RISE = 1.0, which needs no justification beyond its arithmetic: the centre sits exactly one radius above the Head joint, so the sphere spans Head -> HeadTop_End, the segment the bone table already calls the head. The radius is derived against headH as well, so a headH 1.08 kid no longer draws its crown 1.5% above the bone that defines its height. A blob() helper states ellipsoids in half-extents so no axis can be handed the wrong kind of number, and the torso is bounded by bind-pose landmarks (shoulder joint, pelvis) instead of magic numbers. A neck capsule bridges Spine2 -> Head on the Neck bone. Hair and accessories were re-anchored to the head SPHERE rather than the Head BONE first -- provably a no-op at the old HEAD_RISE, and mandatory, since anchoring off the bone meant changing HEAD_RISE would have slid every cap a quarter-radius down the skull and put a bald patch on eleven hair styles. Hair keeps a headroom budget (HAIR_HEADROOM_FRAC) instead of a hard cap, because height is defined on the BONE and an afro that stops at the skull is not an afro.",
       "alsoFixed": "The proxy had nothing at all on the front of its head, so at the animation review page's own criterion 4 ('readable at 40px tall') a kid was rotationally ambiguous and a clip authored 180 degrees backwards would have looked fine. Two eyes, two brows and a nose, on the Head bone at 8x6 segments: a FACING CUE, not a face. Expression stays where the contract puts it -- the face_atlas texture on the delivered models -- and there is deliberately no mouth. The brows were removed once and restored -- see render.proxyFace, which is where the face's own errors are recorded.",
@@ -812,7 +836,10 @@
       },
       "whyItMattered": "The cue exists so a clip authored 180 degrees backwards is visible on the review page. A face that is invisible on the widest-headed third of the roster, absent on the afro kid and sub-pixel on the four who wear glasses does not do that -- and the page itself was showing the back of the head anyway (see reviewFacing).",
       "derivation": {
-        "headWRange": [0.9, 1.08],
+        "headWRange": [
+          0.9,
+          1.08
+        ],
         "browBuriedAboveHeadW": 1.052,
         "kidsAffectedByFixedDepth": 4,
         "skullFrontPerHeadW": 0.884,
@@ -823,8 +850,18 @@
         "noseLatitude": -0.6,
         "browShade": 0.55,
         "browMinContrast": 90,
-        "worstBrowContrast": { "kid": "moose", "raw": 71, "at035": 78, "at055": 96, "at080": 114 },
-        "visibleFractionBald": { "eye": 0.35, "brow": 0.5, "nose": 0.26 },
+        "worstBrowContrast": {
+          "kid": "moose",
+          "raw": 71,
+          "at035": 78,
+          "at055": 96,
+          "at080": 114
+        },
+        "visibleFractionBald": {
+          "eye": 0.35,
+          "brow": 0.5,
+          "nose": 0.26
+        },
         "trianglesPerKid": 3448
       },
       "fix": "Features are placed by latitude on the head ellipsoid and sunk a fixed fraction of r into its own surface (onSkull), so they move with headW instead of ignoring it -- provably a no-op at headW 1, the same argument the hair re-anchor used. The afro keeps its exact width and top but is pulled back and shallower for the face opening, PLUS a skull-hugging cap for the hairline: pulling a convex ball back far enough to clear the eyes necessarily clears the forehead too, which trades no-face for no-hairline. Glasses moved onto the eyes on the same derivation. The brow is the kid's own hair colour shaded by BROW_SHADE toward the shared cool shadow -- raw hair colour is invisible on pale-haired kids and ink would have vanished into the three near-black hair colours it half-emerges from.",
@@ -870,14 +907,24 @@
         "when": "2026-07-30",
         "how": "Look Spike at /v2/?kids=13, PLAY rig, park venue, high tier, toggling forceProxy between reads so nothing else in the scene changed. Rendered SYNCHRONOUSLY from the page: a backgrounded tab stops requestAnimationFrame, which freezes renderer.stats() and is what made the first three readings identical and wrong.",
         "kids": 13,
-        "models": { "drawCalls": 122, "trianglesK": 47.6, "lodSplit": "LOD0:3 LOD1:7 LOD2:3" },
-        "proxies": { "drawCalls": 46, "trianglesK": 93.3 },
+        "models": {
+          "drawCalls": 122,
+          "trianglesK": 47.6,
+          "lodSplit": "LOD0:3 LOD1:7 LOD2:3"
+        },
+        "proxies": {
+          "drawCalls": 46,
+          "trianglesK": 93.3
+        },
         "perCharacter": {
           "modelMax": 8,
           "modelNote": "8 is the MAXIMUM -- two draws per POPULATED material slot. The measured total is 76 extra draws over 13 kids, not the 78 that 13 x 6 would predict, because one of the thirteen is bald and so carries no M_Hair primitive at all. The exporter skips empty slots and three.js never makes a Mesh for a primitive that does not exist; an accessory-less kid is 6 the same way.",
           "proxy": 2
         },
-        "budget": { "drawCalls": 90, "trianglesK": 180 }
+        "budget": {
+          "drawCalls": 90,
+          "trianglesK": 180
+        }
       },
       "drift": {
         "drawCallsOver": 32,
@@ -2681,7 +2728,7 @@
         }
       },
       "reMeasuredAt": "2026-08-01 (PR 7). Two changes moved these numbers and both are recorded rather than absorbed: play.ts now asks `isFair` (until PR 7 every batted ball in v2 was fair, so the foul ball did not exist), and the defence RE-READS the ball without RE-TRACING it -- the trajectory does not change between ticks, so re-computing the prediction produced an identical answer at the price of two thousand RK4 steps. The six named plays are unchanged; the gradient moved 3/12/13 to 2/10/14 and the relay rate 16% to 14%.",
-  "whatWouldClose": "Nothing -- this one is measured and conformed. What it hands forward is PR 8's job: the same defence over 50k plate appearances, where BABIP, the launch-angle split and the exit-velocity shape can be compared against real baseball bands instead of six named plays.",
+      "whatWouldClose": "Nothing -- this one is measured and conformed. What it hands forward is PR 8's job: the same defence over 50k plate appearances, where BABIP, the launch-angle split and the exit-velocity shape can be compared against real baseball bands instead of six named plays.",
       "informs": "src/v2/sim/play.ts"
     },
     "playClock": {
@@ -2789,7 +2836,7 @@
       "partialReading": {
         "confidence": "low",
         "n": 0,
-        "why": "NOTHING MEASURES THIS, and that is the honest status. A chase rate has no on-screen representation in BB2001 any more than a swing window does (see pace.swingWindows, which is a permanent `note` for exactly this reason), and real-baseball plate-discipline data is for adults facing 90mph. What the code asserts is that each MECHANISM exists and points the right way; the RATES are PR 8's to measure and PR 9's to tune."
+        "why": "NOTHING MEASURES THIS, and that is still the honest status AFTER PR 8's harness ran. The harness measured OURS -- over 50,045 plate appearances, and those numbers are in `ours` -- but the record's reference class was never our own output. A chase rate has no on-screen representation in BB2001 any more than a swing window does (see pace.swingWindows, a permanent `note` for exactly this reason), and real-baseball plate-discipline data is for adults facing 90mph. So `measured` stays null: the record pins our value and claims nothing about anyone else's, which is what `awaiting-measurement` means."
       },
       "theBoundedNoiseFailedSilently": "Rng.bell is the Irwin-Hall sum of three uniforms -- bit-stable, `+` and `/` only, and the answer to the `normal()` gap rng.ts documents. Its support is BOUNDED at ±3 sigma, which is a feature (a batter who misjudges by six sigma is not a batter) and a trap. At the first draft's 0.115/0.035 a swinging strike needed 2.5 sigma, and the measurement over 4,000 pitches was ZERO swinging strikes at EVERY contact stat -- not rare, none. A game in which nobody can swing through a pitch is a missing mechanic rather than a bad tuning, and a bounded noise turns that from unlikely into impossible without saying so. The band is now sized AGAINST BAT.CONTACT_WINDOW_FRAC and a test asserts the relationship rather than the values.",
       "aFractionNeverMilliseconds": "The temporal half is a fraction of the pitch's flight. pace.swingWindows records what absolute windows cost: v1's 380ms CONTACT band sat over a 270ms flight, so 'a tap at the instant of release still connects, and timing stops being a skill'. BAT.CONTACT_WINDOW_FRAC is scale-free for that reason; a batter noise in milliseconds would reintroduce the same failure from the other side, and the two would drift apart the next time the pitch corridor is re-measured.",
@@ -2804,13 +2851,23 @@
             0.2,
             0.09
           ],
-          "twoStrikeProtectFt": 0.55
-        }
+          "twoStrikeProtectFt": 0.55,
+          "strikeoutPct": 0.43,
+          "walkPct": 0.115,
+          "zonePct": 0.481,
+          "zoneSwingPct": 0.744,
+          "chasePct": 0.344,
+          "whiffPct": 0.243,
+          "pitchesPerPlateAppearance": 5.12,
+          "twoStrikeSwingPct": 0.683
+        },
+        "over": "874 games / 50,045 plate appearances / 256,019 pitches, 8 seeds x 3 venues, roster rotated so all 30 kids bat"
       },
-      "twoStrikeProtection": "Without it a batter offers only at what he READS as a strike, so every misread with two strikes is a called third -- which turns a poor-contact kid into a strikeout machine rather than the foul-ball machine a six-year-old actually is. It is what balances strikeouts against fouls, and it is measured: chase rate on an 0-2 count is materially higher than on 1-1.",
-      "whatWouldClose": "PR 8's harness, over plate appearances rather than pitches: K%, BB%, and the swing/take split against published youth-baseball rates. Until then these are feel dials with a mechanism behind them, not conformance targets -- the same standing this file gives defense.fieldingAssist.",
+      "twoStrikeProtection": "Without it a batter offers only at what he READS as a strike, so every misread with two strikes is a called third -- which turns a poor-contact kid into a strikeout machine rather than the foul-ball machine a six-year-old actually is. It is what balances strikeouts against fouls, and PR 8's harness measured it rather than leaving it a claim: 68.3% of two-strike pitches are swung at, against a 55.7% swing rate over all pitches. NOTE it is currently balancing toward BOTH at once -- 43.0% strikeouts AND 3.4 fouls per fair ball (sim.battedBallSplit). PR 9.",
+      "whatWouldClose": "PR 8's harness has now run, and it closed the OURS column, not the record: K%, BB% and the swing/take split are measured over 50,045 plate appearances and pinned in harness.test.ts. What remains missing is the thing that was always missing -- published plate-discipline rates for four-to-eight-year-olds. Nothing found so far starts below 9U. The same afternoon of tee-ball observation that would close sim.batSpeed would go a long way here too, since K and BB are countable from a scorebook without any instrument at all.",
       "informs": "src/v2/sim/params.ts ATBAT",
-      "source": "physics:published"
+      "source": "physics:published",
+      "whatTheHARNESSEXPOSED": "★ THE STRIKEOUT RATE IS 43.0%, AND IT WAS 20.6% BEFORE sim.contactGeometry WAS FIXED. The difference is not a regression -- the old number was arithmetic over a defect, because 30% of the balls it counted in play were swings that had actually missed the ball and were being clamped into vertical pop-ups. 43% is what this model has always meant; it is only now visible. Nearly half of all plate appearances ending in a strikeout is wrong for four-to-eight-year-olds by any reading, and the constant it lands on is named: ATBAT.UNDERCUT_FROM_JUDGE (0.45) turns a vertical READ error into a bat PLACEMENT error at nearly half strength, against a barrel that forgives 2.70 inches. Real batters place the bat far better than they judge the zone, because they track the ball all the way in. That is a tuning constant, PR 9 owns it, and PR 8 deliberately did not touch it -- the same standing sim.gameShape's BABIP has."
     },
     "foulBalls": {
       "id": "sim.foul-balls",
@@ -2848,18 +2905,24 @@
       "what": "What a whole v2 game actually produces, reported and NOT conformed.",
       "why": "★ THIS RECORD EXISTS TO BE READ, NOT TO BE MET. It is the first time v2 has been able to say anything about a game rather than a play, and the temptation is to compare the numbers to baseball's and start tuning. Two reasons not to. First, PR 8's harness is what measures these properly -- over 50,000 plate appearances across seeded runs, not 1,166. Second, and this is the one the whole `reference` field exists for: the sim category's own note warns that 'conforming a game for four-to-eight-year-olds to MLB's strikeout rate is the mistake this field exists to prevent'.",
       "measured": {
-        "n": 1166,
-        "over": "20 games, 6 innings, park venue, ROSTER[0..8] vs ROSTER[9..17]",
-        "strikeoutPct": 25.6,
-        "walkPct": 10.5,
-        "ballsInPlayPct": 63.8,
-        "babip": 0.624,
-        "pitchesPerPlateAppearance": 5.2,
-        "runsPerGame": 6.8,
-        "confidence": "med"
+        "n": 50045,
+        "over": "874 games / 50,045 plate appearances / 256,019 pitches, 8 seeds x 3 venues, roster rotated so all 30 kids bat",
+        "strikeoutPct": 43.0,
+        "walkPct": 11.5,
+        "ballsInPlayPct": 45.5,
+        "babip": 0.713,
+        "battingAverageOnContact": 0.715,
+        "pitchesPerPlateAppearance": 5.12,
+        "runsPerGame": 5.34,
+        "homeRuns": 112,
+        "extraBaseSharePct": 19.0,
+        "confidence": "high",
+        "singles": 13170,
+        "doubles": 2389,
+        "triples": 593
       },
-      "whatIsPLAUSIBLE": "K% 25.6 and BB% 10.5 are close to real baseball's shape and unremarkable. Pitches per plate appearance at 5.2 is high but not absurd. Runs per game at 6.8 is a lot of scoring, and for a kids' game that is arguably correct.",
-      "whatIsNot": "BABIP 0.624, against real baseball's ~0.300. Every second ball in play is a hit. That is the DEFENCE, and it is exactly what sim.gapBallOutcome's gradient shows from the other end -- a 42mph grounder finds a hole two thirds of the time. The likely causes are already recorded and none of them is tuned here: the arm band (sim.throwSpeed, awaiting-measurement, and 27 of 30 kids cannot throw CF to first), the reach (sim.catchRadius, 3ft against v1's 11.36), and the deferral of tag-ups and rundowns. PR 8 measures it, PR 9 moves it.",
+      "whatIsPLAUSIBLE": "Runs per game at 5.34 is a lot of scoring, and for a kids' game that is arguably correct. The batted-ball split (60/15/15/10 ground/line/fly/popup) is ground-heavy in the way a child swinging under a pitch should be, and exit velocity means 50.2mph against sim.batSpeed's band.",
+      "whatIsNot": "BABIP 0.713, against real baseball's ~0.300. Every second ball in play is a hit, and the harness moved the number UP rather than down (0.624 on the old reading) because the balls the clamp used to manufacture were vertical pop-ups -- easy outs -- and removing them removed outs. That is the DEFENCE, and it is exactly what sim.gapBallOutcome's gradient shows from the other end: a 42mph grounder finds a hole two thirds of the time. The likely causes are already recorded and none of them is tuned here: the arm band (sim.throwSpeed, awaiting-measurement, and 27 of 30 kids cannot throw CF to first), the reach (sim.catchRadius, 3ft against v1's 11.36), and the deferral of tag-ups and rundowns. AND THE SECOND NUMBER: a 43.0% strikeout rate, on which see sim.plateDiscipline. PR 8 measured both. PR 9 moves them.",
       "performanceNote": "A game costs ~140ms once the release memo is warm, or 2.25ms per plate appearance -- so PR 8's 50,000 is about 113 seconds. Getting there took two fixes worth naming: the pitcher aims at a SPOT so the release solve is memoisable (13.6ms to a cache hit), and the defence RE-READS the ball without RE-TRACING it (the trajectory does not change between ticks, so re-computing the prediction produced an identical answer for two thousand RK4 steps). Together, 1.7s per game to 0.14s.",
       "ours": {
         "constant": "src/v2/sim/game.ts",
@@ -2870,8 +2933,22 @@
           "runsPerGame": 6.8
         }
       },
-      "whatWouldClose": "It does not close -- it is a `note`, and PR 8 replaces it with a real measurement over a real sample. What it does is put the numbers on the record BEFORE anyone starts tuning, so the retune has a before.",
-      "informs": "src/v2/sim/game.ts"
+      "whatWouldClose": "It does not close -- it is a `note`, now carrying the real measurement PR 8 promised. Its job is to hold the numbers BEFORE anyone starts tuning, so PR 9's retune has a before. The instrument that produced them is described in sim.harnessMethod, including what it cannot see.",
+      "informs": "src/v2/sim/game.ts",
+      "supersedes": {
+        "reading": {
+          "n": 1166,
+          "over": "20 games, 6 innings, park venue, ROSTER[0..8] vs ROSTER[9..17]",
+          "strikeoutPct": 25.6,
+          "walkPct": 10.5,
+          "ballsInPlayPct": 63.8,
+          "babip": 0.624,
+          "pitchesPerPlateAppearance": 5.2,
+          "runsPerGame": 6.8,
+          "confidence": "med"
+        },
+        "why": "★ NOT JUST A BIGGER SAMPLE -- A DIFFERENT SIM. The 1,166-PA reading was taken over a resolveSwing that clamped a missed bat into a graze at exactly 90 degrees (sim.contactGeometry), so its 25.6% strikeout rate and 0.624 BABIP were computed with 30% of fair balls being swings that never touched the ball. Both readings are kept because the old one is what a plausible-looking total looks like when the distribution underneath it is broken, and that is worth more than either number."
+      }
     },
     "lineupArm": {
       "id": "sim.lineup-arm",
@@ -2889,7 +2966,7 @@
         "n": 1
       },
       "whyNotTheBestArm": "The v2 shortstop reaches 86.6ft, not the roster's best 154 — because the mound takes the best arm and the demand ordering then puts the next three in left, right and behind the plate, all of which throw further than short does. That is the derivation working rather than a compromise: 86.6ft comfortably covers the 68.2ft throw, where v1's 77ft did not once the fielder had moved off his post.",
-  "theArmWeightIsDERIVED": "★ NOBODY STATES THAT LEFT FIELD NEEDS AN ARM. Each position's demand is the distance from its post to the bag it actually throws to, read out of FIELD_POSITIONS -- infielders to first, outfielders and the catcher to second. So if the field changes, the lineup follows, and the ordering (LF/RF > C > CF > 3B > SS > 2B) is a consequence of the park rather than a table somebody maintains.",
+      "theArmWeightIsDERIVED": "★ NOBODY STATES THAT LEFT FIELD NEEDS AN ARM. Each position's demand is the distance from its post to the bag it actually throws to, read out of FIELD_POSITIONS -- infielders to first, outfielders and the catcher to second. So if the field changes, the lineup follows, and the ordering (LF/RF > C > CF > 3B > SS > 2B) is a consequence of the park rather than a table somebody maintains.",
       "v1IsUNTOUCHED": "src/systems/lineup.ts is v1 code on v1's bundle path, and AGENTS.md is explicit that a v2 change altering dist/assets/main-*.js is a bug. planDefence is a new file in src/v2/sim/; autoAssign keeps its own behaviour and its own tests, and a v2 test asserts the two differ in the direction this record claims.",
       "ours": {
         "constant": "src/v2/sim/lineup.ts planDefence, throwDemandFt",
@@ -2899,6 +2976,143 @@
       },
       "whatWouldClose": "Nothing here. What it hands forward is whether an arm-aware defence changes BABIP enough to matter, which is PR 8's to answer -- the planner is one of the levers PR 9 has.",
       "informs": "src/v2/sim/lineup.ts"
+    },
+    "contactGeometry": {
+      "id": "sim.contact-geometry",
+      "category": "sim",
+      "reference": "physics",
+      "status": "conformed",
+      "statusChangedAt": "2026-08-01",
+      "what": "That a bat which passes more than (r_ball + r_barrel) from the ball's centre MISSES it, rather than grazing it at the steepest angle two circles can touch at.",
+      "why": "★ THE HARNESS'S FIRST FINDING, AND IT WAS FOUND BY A HISTOGRAM RATHER THAN A TOTAL. resolveSwing turns the undercut into a launch angle through asin(offset / centreSep), and for three PRs it CLAMPED the offset into that separation first. The code comment beside the clamp said 'Beyond that separation the bat misses the ball entirely, which is what the clamp means' -- but a clamp means the opposite of a miss. asin(±1) is exactly ±90 degrees, so every swing that had actually gone by underneath the ball was recorded as a ball hit perfectly straight up or straight down.",
+      "howItHid": "Every TOTAL stayed plausible. GameTally counted these as balls in play and was right to; sim.gameShape reported a 25.6% strikeout rate that nobody would question; contact.test.ts asserts Nathan's identity SYMBOLICALLY, which is a claim about exit SPEED and says nothing about where the bat was; and 982 tests passed over it. What it could not survive was a distribution: 22% of fair balls in the single 5-degree bin at the top of the launch-angle scale, and 8% more at the bottom.",
+      "theGeometry": "Two circles intersect when the distance between their centres is at most the sum of their radii. centreSep = BALL_RADIUS_FT (0.1207) + BAT.BARREL_RADIUS_FT (0.104) = 0.2250 ft = 2.70 in. With ATBAT.UNDERCUT_FROM_JUDGE at 0.45, a vertical read error beyond 6.00 in puts the barrel past the ball. Nothing here is a fit; it is the intersection condition for a sphere and a cylinder.",
+      "measured": {
+        "centreSepFt": 0.225,
+        "centreSepIn": 2.7,
+        "missBeyondJudgeErrorFt": 0.5001,
+        "saturatedSharePreFix": {
+          "topBin": 0.22,
+          "bottomBin": 0.08
+        },
+        "sigmaToSaturateByContactStat": {
+          "1": 0.74,
+          "3": 0.88,
+          "5": 1.1,
+          "8": 1.76,
+          "10": 2.94
+        },
+        "n": 1,
+        "confidence": "high"
+      },
+      "whyAHIGHConfidenceAtN1": "A rulebook is not a sample and neither is a geometric identity -- the sim category's own exemption, which this record is entitled to only because it names its source (the circle-intersection condition) rather than asserting the number.",
+      "whatItCost": "A kid with contact 1 saturates beyond 0.74 sigma of his own vertical read, so 46% of his swings were arriving as vertical pop-ups instead of whiffs. Across the roster it was 30% of all fair balls.",
+      "whatItMoved": "Measured over 2,021 plate appearances on identical seeds, before and after: strikeout rate 20.6% -> 43.5%, whiff rate 9.3% -> 24.0%, BABIP 0.607 -> 0.709, and the batted-ball split from 48.7/10.9/11.4/29.0 (ground/line/fly/popup) to 58.7/15.5/14.8/11.0. ★ THE FIX TRADED A WRONG SHAPE FOR A WRONG RATE, DELIBERATELY: a 43% strikeout rate is one number a retune moves, whereas a spike at a boundary is a discontinuity no tuning constant can reach. And the old 20.6% was never right either -- it was arithmetic over a defect, since 30% of the balls it counted in play were swings that had missed.",
+      "theOneCaseTheCLAMPSURVIVES": "never_strikes_out. The ability already floors TIMING quality; a bat that misses on the VERTICAL axis would strike her out through the other door and make the ability a half-promise. She is pulled back to the edge of the barrel -- a real graze, and the worst contact the geometry allows -- rather than exempted from geometry. A test asserts she is alone in it.",
+      "ours": {
+        "constant": "src/v2/sim/contact.ts resolveSwing (the offset branch); src/v2/sim/params.ts BAT.BARREL_RADIUS_FT, ATBAT.UNDERCUT_FROM_JUDGE",
+        "value": {
+          "centreSepFt": 0.225,
+          "maxAbsLaunchAngleDeg": "< 90, strictly"
+        }
+      },
+      "whatWouldClose": "It is closed. The gate is contact.test.ts § 'a bat that misses the ball misses the ball', which sweeps undercuts past the barrel over the whole roster and requires max(|launchAngle|) < 90, plus harness.test.ts's boundary-pile-up check at the aggregate level.",
+      "informs": "src/v2/sim/contact.ts",
+      "source": "physics:published"
+    },
+    "battedBallSplit": {
+      "id": "sim.batted-ball-split",
+      "category": "sim",
+      "reference": "baseball",
+      "status": "awaiting-measurement",
+      "statusChangedAt": "2026-08-01",
+      "what": "How v2's batted balls divide into grounders, liners, flies and pop-ups, and the shape of the exit-velocity and launch-angle distributions behind that.",
+      "why": "The roadmap asks the harness to assert the launch-angle split and exit-velocity shape 'against real baseball bands'. It measures them. It does not assert them, because the bands do not exist for this population -- see the partialReading.",
+      "measured": null,
+      "n": 0,
+      "confidence": "low",
+      "partialReading": {
+        "confidence": "low",
+        "n": 0,
+        "mlbSplitForScale": {
+          "ground": 0.43,
+          "line": 0.21,
+          "fly": 0.26,
+          "popup": 0.1
+        },
+        "source": "Broadcast/Statcast conventions for adult professional baseball.",
+        "why": "★ QUARANTINED, AND THE QUARANTINE IS THE POINT. This is adults facing 90mph with a 32oz bat; ours are four-to-eight-year-olds facing 25.6mph. The two numbers are not comparable and the MLB column is here ONLY so a reader can see that ours is ground-heavier, which is what a child swinging under a pitch with a bat too heavy for them should produce. Conforming to it would be exactly the mistake sim.note names.",
+        "andTheBINEDGESAREBORROWEDTOO": "LAUNCH_CUTS (10 / 25 / 50 degrees) are the boundaries broadcast baseball reports itself with. Nothing about them is physics -- a ball at 9.9 degrees and one at 10.1 do the same thing -- and changing them changes the split without changing the sim. They are named here so that can never be mistaken for a measurement."
+      },
+      "ours": {
+        "constant": "src/v2/sim/harness.ts LAUNCH_CUTS; measured off src/v2/sim/contact.ts",
+        "over": "874 games / 50,045 plate appearances / 256,019 pitches, 8 seeds x 3 venues, roster rotated so all 30 kids bat",
+        "value": {
+          "ground": 0.602,
+          "line": 0.147,
+          "fly": 0.151,
+          "popup": 0.1,
+          "fairBalls": 22762,
+          "foulBalls": 77985,
+          "exitVelocityMeanMph": 50.2,
+          "exitVelocityMedianMph": 51.0,
+          "exitVelocityP90Mph": 57.0,
+          "launchAngleMedianDeg": 2.5,
+          "launchCutsDeg": {
+            "ground": 10,
+            "line": 25,
+            "fly": 50
+          }
+        }
+      },
+      "thereIsNoHardHitRate": "Broadcast baseball calls a ball hard-hit at 95mph. The roster tops out near 61. The statistic would read zero for every kid forever, which is not a measurement -- and it is the MLB-contamination sim.note warns about wearing a number instead of a rate. The harness reports the distribution instead, and harness.ts says so in place of the field.",
+      "theFOULTOFAIRRATIOISAFINDING": "77,985 fouls against 22,762 fair balls -- 3.4 to 1, where real baseball is nearer 1 to 1. ATBAT.TWO_STRIKE_PROTECT_FT's own note predicted the mechanism from the other direction ('what balances strikeouts against fouls'), and it is currently balancing them toward both at once. Recorded for PR 9, not tuned here.",
+      "whatWouldClose": "Batted-ball tracking from actual four-to-eight-year-old games -- the same afternoon with a sensor that would close sim.batSpeed would go most of the way, since a launch monitor reports angle and exit velocity together. Failing that, a published youth-baseball batted-ball profile at 8U or below; nothing found so far starts below 9U.",
+      "informs": "src/v2/sim/contact.ts",
+      "source": "physics:published"
+    },
+    "harnessMethod": {
+      "id": "sim.harness-method",
+      "category": "sim",
+      "reference": "derived",
+      "status": "note",
+      "statusChangedAt": "2026-08-01",
+      "what": "How the statistical harness runs, what it costs, and -- the part worth reading -- what it cannot see.",
+      "why": "★ A HARNESS THAT ONLY PINS IS A RATCHET, NOT A GATE. If every rate lands `awaiting-measurement` with ours pinned, the suite will happily enforce today's wrong BABIP forever. This record exists so that risk is written down next to the numbers rather than discovered later, and so the assertions that ARE falsifiable can be told apart from the ones that merely record.",
+      "measured": {
+        "games": 874,
+        "plateAppearances": 50045,
+        "pitches": 256019,
+        "seeds": 8,
+        "venues": 3,
+        "rosterCoverage": "all 30",
+        "fullRunSec": 73.5,
+        "msPerGame": 84,
+        "sliceGames": 20,
+        "sliceSec": 15.4,
+        "n": 50045,
+        "confidence": "high"
+      },
+      "theSLICEAGREESWITHTHERUN": "The CI slice and the full run share one aggregator, the way layout.browser.js is shared between the dev overlay and layout-audit.mjs -- a slice measuring something subtly different would be worse than no slice. Measured agreement over 2,021 PA against 50,045: strikeout rate 43.5 vs 43.0, BABIP 0.709 vs 0.713, ground-ball share 58.7 vs 60.2, exit-velocity mean 50.2 vs 50.2. The pinned bands in harness.test.ts are +-6pp, which is roughly twice the widest of those gaps.",
+      "everyGameGetsItsOwnROOT": "The per-plate-appearance fork key is `${inning}${half}${lineupIdx}`, which is NOT unique across games. Two simulateGame calls sharing a root produce byte-identical games, so a harness that forked one root per RUN would measure a single game 874 times and report it as a sample of 50,045. Both entry points seed per game.",
+      "theROSTERROTATES": "sim:game plays kids 0-8 against 9-17, so twelve of the thirty never bat -- and every rate here is a roster average over a stat span of 1-10. The window slides by 7 kids a game (coprime with 30, so it cycles fully) and the run is still deterministic.",
+      "whatItCannotSee": [
+        "A HOME RUN AND AN INSIDE-THE-PARKER are one thing. tally.homeRuns has always meant 'the batter scored on his own ball', and splitting them needs play.ts's {t:'homeRun'} event, which runPlay does not harvest.",
+        "ANY HUMAN INPUT. Both sides are CPU, so this measures the sim's own physics and policies -- not what a six-year-old holding the device produces. The difficulty ladder, the fielding assist and the swing cursor are all outside it.",
+        "ERRORS AS A SEPARATE OUTCOME. A ball a fielder drops and a ball he never reached both arrive as a hit; v1's playground scoring rule (reaching on contact is a hit, errors included) is inherited deliberately, and stats.ts owns it.",
+        "SPRAY. The event stream carries the launch spec, so spray IS available, but nothing aggregates it yet -- pull/oppo balance is unmeasured."
+      ],
+      "theASSERTIONSWITHTEETH": "Ordering, not levels: a bad-contact lineup must strike out more and chase more than a good-contact one, and a high-power lineup must hit the ball harder and score more. Those are true of baseball and of any model worth shipping, and they need no band. Everything else in harness.test.ts is either internal consistency (the split sums to one; BABIP is hits over balls in play) or a pin.",
+      "costDiscipline": "#45's rule applies and was followed: remove the waste, then state a budget. PR 7's two fixes (the release solve memoised to a cache hit; the defence re-READING the ball without re-TRACING it) took a game from 1.7s to 0.14s, and the roster rotation plus warm memo now put it at 84ms. rng.ts promised 50k PA when it chose sfc32 over mulberry32; the run costs 73.5s, inside that. The full run carries RUN_BUDGET_MS (420s) as a hard ceiling -- a per-game timeout would miss a change that made every game four times slower.",
+      "ours": {
+        "constant": "src/v2/sim/harness.ts; src/v2/sim/harness.test.ts; scripts/v2/harness.mjs (npm run sim:harness)",
+        "value": {
+          "plateAppearances": 50045,
+          "fullRunSec": 73.5
+        }
+      },
+      "whatWouldClose": "It does not close -- it is a `note` describing an instrument, the way instrument.* records describe the video one. It changes when the harness does.",
+      "informs": "src/v2/sim/harness.ts"
     }
   },
   "defense": {

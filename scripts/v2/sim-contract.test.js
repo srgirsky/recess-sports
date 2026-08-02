@@ -32,7 +32,7 @@ import { FLIGHT_HZ } from '../../src/v2/sim/flight.ts';
 import { VENUE_GEOMETRY, fenceDistAt } from '../../src/v2/sim/field.ts';
 import { BAT, BOUNCE, PITCH } from '../../src/v2/sim/params.ts';
 import { groundCor } from '../../src/v2/sim/bounce.ts';
-import { collisionEfficiency, exitVelocity } from '../../src/v2/sim/contact.ts';
+import { collisionEfficiency, exitVelocity, resolveSwing } from '../../src/v2/sim/contact.ts';
 import {
   batSpeedFts,
   reachFt,
@@ -42,26 +42,24 @@ import {
   sprintTimeSec,
   sprintTopSpeedFts,
   throwSpeedFts,
+  zoneBandFt,
+  zoneHalfWidthFt,
+  plateJudgementFt,
+  swingTimingSigmaFrac,
 } from '../../src/v2/sim/athletes.ts';
-import { DEFENSE, RUN } from '../../src/v2/sim/params.ts';
+import { ATBAT, DEFENSE, PLAY, RUN } from '../../src/v2/sim/params.ts';
 import { BASEPATH, FIELD_MARGIN, FIELD_POSITIONS, FIRST, dist } from '../../src/v2/sim/field.ts';
 import { maxThrowFt } from '../../src/v2/sim/fielders.ts';
 import { beginPlay, finishPlay, simulatePlay, stepPlay } from '../../src/v2/sim/play.ts';
-import { PLAY } from '../../src/v2/sim/params.ts';
-import { VENUE_GEOMETRY } from '../../src/v2/sim/field.ts';
+import { classifyLaunch, LAUNCH_CUTS } from '../../src/v2/sim/harness.ts';
 import { makeRng } from '../../src/v2/sim/rng.ts';
 import { autoAssign } from '../../src/systems/lineup.ts';
-import { getCharacter } from '../../src/data/characters.ts';
-import { ATBAT } from '../../src/v2/sim/params.ts';
-import { zoneBandFt, zoneHalfWidthFt, plateJudgementFt, swingTimingSigmaFrac } from '../../src/v2/sim/athletes.ts';
-import { inToFt } from '../../src/v2/sim/units.ts';
-import { BALL_RADIUS_FT as R_BALL } from '../../src/v2/sim/ball.ts';
+import { ROSTER, getCharacter } from '../../src/data/characters.ts';
 import { planDefence, throwDemandFt } from '../../src/v2/sim/lineup.ts';
 import { simulateGame } from '../../src/v2/sim/game.ts';
 import { makeRunner } from '../../src/v2/sim/runners.ts';
 import { REFERENCE_HEIGHT_FT } from '../../src/v2/render/skeleton.ts';
-import { ftsToMph, v1PxToFt } from '../../src/v2/sim/units.ts';
-import { ROSTER } from '../../src/data/characters.ts';
+import { ftsToMph, inToFt, v1PxToFt } from '../../src/v2/sim/units.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const M = JSON.parse(readFileSync(join(here, '..', 'measures.json'), 'utf8'));
@@ -875,7 +873,7 @@ describe('sim.strikeZone', () => {
   });
 
   it('★ recomputes the zone from the plate and the ball, not from itself', () => {
-    expect(zoneHalfWidthFt()).toBeCloseTo(inToFt(ATBAT.PLATE_HALF_WIDTH_IN) + R_BALL, 10);
+    expect(zoneHalfWidthFt()).toBeCloseTo(inToFt(ATBAT.PLATE_HALF_WIDTH_IN) + BALL_RADIUS_FT, 10);
     expect(zoneHalfWidthFt() * 2 * 12).toBeCloseTo(rec.measured.widthIn, 1);
     const [lo, hi] = zoneBandFt(rec.measured.onBatterOfHeightFt);
     expect(lo).toBeCloseTo(rec.measured.bottomFt, 2);
@@ -894,9 +892,26 @@ describe('sim.plateDiscipline', () => {
 
   it('is a well-formed record and claims no rate at all', () => {
     wellFormed(rec, { reference: 'derived', status: 'awaiting-measurement' });
+    // ★ STILL `awaiting-measurement` AFTER THE HARNESS RAN, and the reason is
+    // the point: the harness measured OURS, not the reference class. `measured`
+    // is where an external reading goes, and there is no published
+    // plate-discipline data for four-to-eight-year-olds to put in it.
     expect(rec.measured).toBeNull();
     expect(rec.partialReading.n).toBe(0);
-    expect(rec.whatWouldClose).toMatch(/PR 8's harness/);
+    expect(rec.partialReading.why).toMatch(/AFTER PR 8's harness ran/);
+    expect(rec.whatWouldClose).toMatch(/closed the OURS column, not the record/);
+  });
+
+  it('★ records the strikeout rate the geometry fix exposed, and names the dial', () => {
+    // 43% of plate appearances ending in a K is wrong for this age group by any
+    // reading. The record has to say so, say which constant it lands on, and say
+    // that PR 8 did not touch it — the same standing gameShape's BABIP has.
+    expect(rec.ours.value.strikeoutPct).toBeGreaterThan(0.4);
+    expect(rec.whatTheHARNESSEXPOSED).toMatch(/UNDERCUT_FROM_JUDGE/);
+    expect(rec.whatTheHARNESSEXPOSED).toMatch(/PR 9 owns it/);
+    // And that the OLD, comfortable-looking number was the broken one.
+    expect(rec.whatTheHARNESSEXPOSED).toMatch(/arithmetic over a defect/);
+    expect(M.sim.contactGeometry.status).toBe('conformed');
   });
 
   it('★ pins the one thing that IS asserted: the noise is sized against the window', () => {
@@ -947,6 +962,14 @@ describe('sim.gameShape', () => {
     expect(rec.why).toMatch(/TO BE READ, NOT TO BE MET/);
     // The warning it answers to, quoted from the category it lives in.
     expect(M.sim.note).toMatch(/four-to-eight/);
+  });
+
+  it('★ keeps the reading it superseded, because the old one was a different sim', () => {
+    // Not a bigger sample — a sample taken over broken geometry. Both are kept.
+    expect(rec.measured.n).toBeGreaterThan(50_000);
+    expect(rec.supersedes.reading.n).toBe(1166);
+    expect(rec.supersedes.why).toMatch(/A DIFFERENT SIM/);
+    expect(rec.supersedes.reading.babip).toBeLessThan(rec.measured.babip);
   });
 
   it('★ names BABIP as the number that is wrong, rather than burying it', () => {
@@ -1004,5 +1027,149 @@ describe('sim.lineupArm', () => {
     expect(rec.whyNotTheBestArm).toMatch(/the mound takes the best arm/);
     // The record it discharges.
     expect(M.sim.gapBallOutcome.theArmAtShort).toMatch(/v2's own lineup planner is PR 7's/);
+  });
+});
+
+describe('sim.contactGeometry', () => {
+  const rec = M.sim.contactGeometry;
+
+  it('is a well-formed record and earns its n=1 high confidence', () => {
+    wellFormed(rec, { reference: 'physics', status: 'conformed' });
+    // The sim category's exemption: a geometric identity is not a sample, but a
+    // record may only claim it while NAMING its source.
+    expect(rec.measured.n).toBe(1);
+    expect(rec.measured.confidence).toBe('high');
+    expect(rec.source).toBeTruthy();
+    expect(rec.theGeometry).toMatch(/intersection condition/);
+  });
+
+  it('★ recomputes the separation from the constants, rather than reading it back', () => {
+    const centreSep = BALL_RADIUS_FT + BAT.BARREL_RADIUS_FT;
+    expect(centreSep).toBeCloseTo(rec.measured.centreSepFt, 3);
+    expect(centreSep * 12).toBeCloseTo(rec.measured.centreSepIn, 2);
+    expect(centreSep / ATBAT.UNDERCUT_FROM_JUDGE).toBeCloseTo(rec.measured.missBeyondJudgeErrorFt, 3);
+  });
+
+  it('★ recomputes how much of each kid\'s read used to saturate', () => {
+    // The claim that made it worth fixing: a contact-1 kid saturated beyond
+    // 0.74 sigma, so 46% of his swings became vertical pop-ups instead of
+    // whiffs. Recomputed from `plateJudgementFt`, not read back.
+    const centreSep = BALL_RADIUS_FT + BAT.BARREL_RADIUS_FT;
+    for (const [stat, sigmas] of Object.entries(rec.measured.sigmaToSaturateByContactStat)) {
+      const got = centreSep / ATBAT.UNDERCUT_FROM_JUDGE / plateJudgementFt(Number(stat));
+      expect(got, `contact ${stat}`).toBeCloseTo(sigmas, 2);
+    }
+    // And `Rng.bell` is bounded at 3, so anything under 3 sigma really did occur.
+    expect(rec.measured.sigmaToSaturateByContactStat['1']).toBeLessThan(3);
+  });
+
+  it('★ holds: no swing resolves to a batted ball at the vertical', () => {
+    const centreSep = BALL_RADIUS_FT + BAT.BARREL_RADIUS_FT;
+    const ordinary = ROSTER.find((k) => k.ability === 'none');
+    for (const u of [centreSep * 1.001, centreSep * 4, -centreSep * 4]) {
+      const r = resolveSwing(
+        {
+          timingErrorSec: 0,
+          undercutFt: u,
+          batter: ordinary,
+          travelSec: 1.2,
+          pitchSpeedFts: 35,
+        },
+        makeRng('geom').fork(String(u))
+      );
+      expect(r.kind, `undercut ${u}`).toBe('miss');
+    }
+  });
+
+  it('★ says what the fix cost, rather than only what it bought', () => {
+    expect(rec.whatItMoved).toMatch(/WRONG SHAPE FOR A WRONG RATE/);
+    expect(rec.howItHid).toMatch(/Every TOTAL stayed plausible/);
+    expect(rec.theOneCaseTheCLAMPSURVIVES).toMatch(/never_strikes_out/);
+  });
+});
+
+describe('sim.battedBallSplit', () => {
+  const rec = M.sim.battedBallSplit;
+
+  it('claims no band, and quarantines the MLB one it is not claiming', () => {
+    wellFormed(rec, { reference: 'baseball', status: 'awaiting-measurement' });
+    expect(rec.measured).toBeNull();
+    expect(rec.partialReading.n).toBe(0);
+    expect(rec.partialReading.why).toMatch(/QUARANTINED/);
+    // The bin edges are borrowed too, and the record has to say so — changing
+    // them changes the split without changing the sim.
+    expect(rec.partialReading.andTheBINEDGESAREBORROWEDTOO).toMatch(/Nothing about them is physics/);
+  });
+
+  it('★ binds the cuts to the record, rather than to themselves', () => {
+    // ★ THE FIRST VERSION OF THIS TEST WAS TAUTOLOGICAL and the gate sweep
+    // caught it: `classifyLaunch(LAUNCH_CUTS.ground - 0.001) === 'ground'` is
+    // true for ANY value of LAUNCH_CUTS, so moving 10/25/50 to 25/40/60 changed
+    // the split and the assertion never noticed. The record has to carry the
+    // numbers for the comparison to mean anything.
+    const cuts = rec.ours.value.launchCutsDeg;
+    expect(LAUNCH_CUTS.ground).toBe(cuts.ground);
+    expect(LAUNCH_CUTS.line).toBe(cuts.line);
+    expect(LAUNCH_CUTS.fly).toBe(cuts.fly);
+    // And the classifier still honours them at the boundary.
+    expect(classifyLaunch(cuts.ground - 0.001)).toBe('ground');
+    expect(classifyLaunch(cuts.line)).toBe('fly');
+    expect(classifyLaunch(cuts.fly)).toBe('popup');
+  });
+
+  it('keeps our split a split', () => {
+    const v = rec.ours.value;
+    expect(v.ground + v.line + v.fly + v.popup).toBeCloseTo(1, 2);
+    // Ground-heavier than the adult game, which is the only comparison drawn.
+    expect(v.ground).toBeGreaterThan(rec.partialReading.mlbSplitForScale.ground);
+  });
+
+  it('★ refuses a hard-hit rate, and says why rather than omitting it silently', () => {
+    expect(rec.thereIsNoHardHitRate).toMatch(/95mph/);
+    expect(rec.thereIsNoHardHitRate).toMatch(/zero for every kid forever/);
+    // The exit velocity that makes it meaningless, recomputed.
+    expect(ftsToMph(batSpeedFts(10))).toBeLessThan(95);
+    expect(rec.ours.value.exitVelocityP90Mph).toBeLessThan(95);
+  });
+
+  it('★ records the foul-to-fair ratio as a finding for PR 9', () => {
+    const { foulBalls, fairBalls } = rec.ours.value;
+    expect(foulBalls / fairBalls).toBeGreaterThan(3);
+    expect(rec.theFOULTOFAIRRATIOISAFINDING).toMatch(/TWO_STRIKE_PROTECT_FT/);
+    expect(rec.theFOULTOFAIRRATIOISAFINDING).toMatch(/not tuned here/);
+  });
+});
+
+describe('sim.harnessMethod', () => {
+  const rec = M.sim.harnessMethod;
+
+  it('is a NOTE describing an instrument', () => {
+    wellFormed(rec, { reference: 'derived', status: 'note' });
+    expect(rec.measured.plateAppearances).toBeGreaterThanOrEqual(50_000);
+  });
+
+  it("★ keeps rng.ts's promise, and the cost that made it affordable", () => {
+    // "50k plate appearances across 8 seeds" is why the sim uses sfc32.
+    expect(rec.measured.seeds).toBe(8);
+    expect(rec.measured.fullRunSec).toBeLessThan(113);
+    expect(rec.costDiscipline).toMatch(/remove the waste, then state a budget/);
+  });
+
+  it('★ names the seeding trap it had to avoid', () => {
+    // Forking one root per RUN would measure one game 874 times.
+    expect(rec.everyGameGetsItsOwnROOT).toMatch(/byte-identical games/);
+    expect(rec.theROSTERROTATES).toMatch(/twelve of the thirty never bat/);
+  });
+
+  it('★ lists what the harness cannot see, which is the ratchet guard', () => {
+    expect(rec.why).toMatch(/A RATCHET, NOT A GATE/);
+    expect(Array.isArray(rec.whatItCannotSee)).toBe(true);
+    expect(rec.whatItCannotSee.length).toBeGreaterThanOrEqual(4);
+    expect(rec.theASSERTIONSWITHTEETH).toMatch(/Ordering, not levels/);
+  });
+
+  it('★ pins the slice against the full run, since they share one aggregator', () => {
+    expect(rec.theSLICEAGREESWITHTHERUN).toMatch(/one aggregator/);
+    expect(rec.measured.sliceGames).toBeLessThan(rec.measured.games);
   });
 });

@@ -30,8 +30,9 @@
 
 import type { Character } from '../../data/types';
 import { GAME, PLAY } from './params';
-import { pitchAndSwing, type PitchResult } from './atbat';
+import { isStrike, pitchAndSwing, type PitchResult } from './atbat';
 import { beginPlay, finishPlay, stepPlay, type PlayOutcome } from './play';
+import type { LaunchSpec } from './launch';
 import { planDefence, type DefencePlan } from './lineup';
 import { DEFAULT_GEOMETRY, type FieldGeometry, type PositionId } from './field';
 import type { Rng } from './rng';
@@ -47,12 +48,58 @@ export interface TeamSpec {
   ids: string[];
 }
 
+/**
+ * What a batted ball turned into, from the batter's point of view.
+ *
+ * `'out'` covers every way the defence retired him; the extra-base cases are
+ * DERIVED from where he ended up rather than decided anywhere, which is the
+ * same discipline `PlayOutcome` follows for everything else.
+ */
+export type HitType = 'out' | '1B' | '2B' | '3B' | 'HR';
+
+/**
+ * Everything the sim knows and then throws away.
+ *
+ * ★ WHY AN OBSERVER RATHER THAN A RETURN VALUE. `GameTally` is nine integers,
+ * and every batted ball's launch angle, exit velocity, spray and spin is
+ * computed, handed to the play, and dropped two lines later. The harness needs
+ * all of it — but a `GameResult` carrying 32,000 batted balls would make every
+ * caller pay for a measurement only one of them wants, and 50,000 plate
+ * appearances of retained objects is a memory bill for nothing. A callback
+ * streams them: the aggregator buckets each event and keeps none.
+ *
+ * It is also the shape `play.ts` already uses for `PlayEvent`, so there is one
+ * idiom for "the sim is telling you what happened" rather than two.
+ */
+export type SimEvent =
+  | {
+      t: 'pitch';
+      kind: PitchResult['kind'];
+      /** Where it ACTUALLY crossed, per the umpire — not where it was aimed. */
+      inZone: boolean;
+      swung: boolean;
+      balls: number;
+      strikes: number;
+    }
+  | {
+      t: 'contact';
+      launch: LaunchSpec;
+      hit: HitType;
+      flyCaught: boolean;
+      foul: boolean;
+    };
+
 export interface GameSpec {
   away: TeamSpec;
   home: TeamSpec;
   lookup: (id: string) => Character;
   geo?: FieldGeometry;
   regulationInnings?: number;
+  /**
+   * Optional observer. Called synchronously as the game unfolds; nothing is
+   * retained. `harness.ts` is its only consumer.
+   */
+  onEvent?: (e: SimEvent) => void;
 }
 
 export interface GameResult {
@@ -142,10 +189,11 @@ function playAtBat(
     tally: GameTally;
     stats: StatEvent[];
     log: string[];
+    onEvent?: (e: SimEvent) => void;
   },
   rng: Rng
 ): void {
-  const { half, tally, stats, log } = args;
+  const { half, tally, stats, log, onEvent } = args;
   let pitches = 0;
 
   for (;;) {
@@ -161,6 +209,21 @@ function playAtBat(
       { pitcher: args.pitcher, batter: args.batter, count: half.state.count },
       rng.fork(`p${pitches}`)
     );
+
+    // ★ THE COUNT IS READ BEFORE THE FOLD. `applyAtBat` resets it to 0-0 on
+    // every batter-done branch, so an observer told afterwards would see every
+    // strikeout arrive on an 0-0 count.
+    const before = { balls: half.state.count.balls, strikes: half.state.count.strikes };
+    const swung =
+      result.kind === 'swingingStrike' || result.kind === 'foulTip' || result.kind === 'inPlay';
+    onEvent?.({
+      t: 'pitch',
+      kind: result.kind,
+      inZone: isStrike(result.crossing),
+      swung,
+      balls: before.balls,
+      strikes: before.strikes,
+    });
 
     if (result.kind !== 'inPlay') {
       const folded = applyAtBat(half.state, asAtBatResult(result)!);
@@ -212,6 +275,7 @@ function playAtBat(
     );
 
     if (outcome.foul) {
+      onEvent?.({ t: 'contact', launch: result.launch, hit: 'out', flyCaught: false, foul: true });
       // ★ A FOUL IS A STRIKE, AND `applyAtBat` OWNS THE "never the third" RULE.
       // Restating it here would be a second source of truth for a rule v1
       // already has a test for.
@@ -221,6 +285,13 @@ function playAtBat(
     }
 
     tally.ballsInPlay += 1;
+    onEvent?.({
+      t: 'contact',
+      launch: result.launch,
+      hit: hitTypeOf(outcome, scored, args.batter.id),
+      flyCaught: outcome.flyCaught,
+      foul: false,
+    });
     // ★ TAKE THE IDENTITIES BEFORE FOLDING. `applyLivePlay` reads four fields
     // and `baseIds` is not one of them.
     half.occupants = [...outcome.baseIds] as [string | null, string | null, string | null];
@@ -271,6 +342,26 @@ function applyWalk(
     }
   }
   half.occupants[0] = batterId;
+}
+
+/**
+ * What the batter got out of it — DERIVED, not decided.
+ *
+ * `PlayOutcome.baseIds` says which base he ended on, and the play's own `score`
+ * events say whether he came all the way round. Nothing in the sim ever labels a
+ * hit a double; it is a double because he is standing on second.
+ *
+ * ★ A HOME RUN AND AN INSIDE-THE-PARKER ARE THE SAME THING HERE, deliberately.
+ * `tally.homeRuns` has always counted "the batter scored on his own ball", and
+ * splitting them would need the `{t:'homeRun'}` play event, which `runPlay` does
+ * not harvest. Recorded in `sim.harnessMethod` as something the harness cannot
+ * see rather than quietly conflated.
+ */
+function hitTypeOf(outcome: PlayOutcome, scored: string[], batterId: string): HitType {
+  if (scored.includes(batterId)) return 'HR';
+  if (outcome.batterOut) return 'out';
+  const at = outcome.baseIds.indexOf(batterId);
+  return at === 0 ? '1B' : at === 1 ? '2B' : at === 2 ? '3B' : 'out';
 }
 
 /** Step a play to its end, keeping the identities of whoever scored. */
@@ -354,6 +445,7 @@ export function simulateGame(spec: GameSpec, rng: Rng): GameResult {
           tally,
           stats,
           log,
+          onEvent: spec.onEvent,
         },
         rng.fork(`${inning}${half}${bat.lineupIdx}`)
       );
