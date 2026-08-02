@@ -334,6 +334,94 @@ describe('the batted ball', () => {
   });
 });
 
+describe('★ a bat that misses the ball misses the ball', () => {
+  // ★ WHY THIS TEST EXISTS. `resolveSwing` clamped the undercut into the barrel
+  // for three PRs, so a bat passing a foot below the ball was resolved as a
+  // graze at `asin(1)` — a batted ball leaving at exactly 90 degrees. The whole
+  // suite stayed green: `contact.test.ts` asserts Nathan's identity, which is
+  // about SPEED and says nothing about where the bat was, and the game tests
+  // count balls in play, which these were.
+  //
+  // What found it was PR 8's histogram — 22% of fair balls in one 5-degree bin
+  // at the top of the scale, 8% more at the bottom. So the gate is written
+  // against the DISTRIBUTION as well as the boundary, because a boundary test
+  // alone would not have been written by anyone who had not already seen it.
+  const centreSep = BALL.CIRCUMFERENCE_IN / (2 * Math.PI) / 12 + BAT.BARREL_RADIUS_FT;
+  // ★ THE DEFAULT SUBJECT IS EXPLICITLY ABILITY-FREE. `ROSTER[0]` IS the
+  // `never_strikes_out` kid, so a test written against index 0 measures the one
+  // exemption and calls it the rule.
+  // Resolved lazily: `describe` bodies run at COLLECT time, before the roster
+  // module has finished evaluating.
+  // NB `ability: 'none'` is a truthy STRING, so the predicate is an equality
+  // and not a falsiness check.
+  const ordinary = () => ROSTER.find((k) => k.ability === 'none')!.id;
+  const swing = (undercutFt: number, id?: string) =>
+    resolveSwing(
+      {
+        timingErrorSec: 0,
+        undercutFt,
+        batter: getCharacter(id ?? ordinary()),
+        travelSec: 1.2,
+        pitchSpeedFts: 35,
+      },
+      rng.fork(`miss${undercutFt}`)
+    );
+
+  it('makes contact right up to the edge of the barrel', () => {
+    for (const frac of [0, 0.5, 0.9, 0.99]) {
+      expect(swing(centreSep * frac).kind, `undercut ${frac} of the separation`).toBe('contact');
+      expect(swing(-centreSep * frac).kind, `undercut -${frac}`).toBe('contact');
+    }
+  });
+
+  it('★ misses past it, rather than resolving a 90-degree pop-up', () => {
+    for (const frac of [1.01, 1.5, 3, 12]) {
+      expect(swing(centreSep * frac).kind, `undercut ${frac}x the separation`).toBe('miss');
+      expect(swing(-centreSep * frac).kind, `undercut -${frac}x`).toBe('miss');
+    }
+  });
+
+  it('★ leaves no batted ball stacked at the vertical, over the whole roster', () => {
+    // The launch angle is a continuous function of the undercut, so a real
+    // distribution cannot have a spike at its own boundary. Sweeping undercuts
+    // WELL past the barrel is the point: those are the swings that used to
+    // saturate.
+    const angles: number[] = [];
+    // ★ SHE IS EXCLUDED BY NAME, not by the sweep happening to miss her. The
+    // `never_strikes_out` clamp lands exactly ON 90 by design (see below), so
+    // including her would make this assertion fail for the one correct reason
+    // and tempt whoever hit it to loosen the threshold instead.
+    for (const c of ROSTER.filter((k) => k.ability !== 'never_strikes_out')) {
+      for (let u = -1.2; u <= 1.2; u += 0.02) {
+        const r = swing(u, c.id);
+        if (r.kind === 'contact') angles.push(r.launch.launchAngleDeg);
+      }
+    }
+    expect(angles.length).toBeGreaterThan(100);
+    const vertical = angles.filter((a) => Math.abs(a) > 89).length;
+    expect(vertical, 'batted balls at |angle| > 89 degrees').toBe(0);
+    expect(Math.max(...angles.map(Math.abs))).toBeLessThan(90);
+  });
+
+  it('★ keeps never_strikes_out honest, which is the one case the clamp survives', () => {
+    // A vertical miss would strike her out through the other door. The ability
+    // pulls her back to the edge of the barrel — a real graze, and the worst
+    // contact the geometry allows — rather than exempting her from geometry.
+    const her = ROSTER.find((c) => c.ability === 'never_strikes_out')!;
+    expect(her, 'the roster still has a never_strikes_out kid').toBeTruthy();
+    const r = swing(centreSep * 6, her.id);
+    expect(r.kind).toBe('contact');
+    if (r.kind !== 'contact') return;
+    // At the edge exactly, not past it.
+    expect(Math.abs(r.launch.launchAngleDeg)).toBeCloseTo(90, 6);
+    // And she is alone in it.
+    for (const c of ROSTER) {
+      if (c.id === her.id) continue;
+      expect(swing(centreSep * 6, c.id).kind, c.id).toBe('miss');
+    }
+  });
+});
+
 describe('★ the roster, which is what sim.carryVsFence asked for', () => {
   const parkLine = fenceDistAt(PARK, -45);
   const parkCf = fenceDistAt(PARK, 0);

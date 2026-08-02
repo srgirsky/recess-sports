@@ -565,10 +565,61 @@ awaiting measurement, the 3ft reach, and the tag-ups PR 7 deferred), and
 Nothing was tuned to make the number look better; PR 8 measures it and PR 9 moves
 it.
 
-Next: the statistical conformance harness (headless, no art, no graphics) which
-asserts emergent BABIP / launch-angle split / exit-velocity shape against real
-baseball bands instead of pinning constants; then the retune, with tag-ups,
-rundowns and steals.
+### PR 8 — the statistical conformance harness
+
+50,045 plate appearances across 874 games, 8 seeds, 3 venues and a rotating
+roster so all 30 kids bat, in **73.5 seconds**. `sim/harness.ts` is a pure
+aggregator fed by an optional observer on `GameSpec`; the CI slice and
+`npm run sim:harness` run through the same one, the way the layout audit and the
+dev overlay share `layout.browser.js`.
+
+**★ One correction to what this section used to promise.** It said the harness
+would assert BABIP, the launch-angle split and exit-velocity shape *"against real
+baseball bands"*. **For most of those quantities there is no band.** Published
+youth data is thin and starts at 9U; nothing found measures four-to-eight-year-
+olds, and `sim.note` says plainly that borrowing MLB's numbers is *the* failure
+the `reference` field exists to prevent. So the harness does what this project's
+own discipline requires: **measures, pins, and says what would close it**. What
+it asserts outright is the part that needs no band — internal consistency,
+ordering (a bad-contact lineup must strike out and chase more; a high-power one
+must hit it harder and score more), and shape.
+
+**★ And shape is what found the bug.** `resolveSwing` turned the undercut into a
+launch angle through `asin(offset / centreSep)` and **clamped** the offset into
+that separation first. The comment beside the clamp said *"beyond that separation
+the bat misses the ball entirely, which is what the clamp means"* — but a clamp
+means the opposite of a miss. `asin(±1)` is exactly ±90°, so every swing that had
+actually gone by underneath the ball was recorded as one hit perfectly straight
+up or straight down. A kid with contact 1 saturated beyond **0.74σ** of his own
+vertical read: 46% of his swings.
+
+Every *total* stayed plausible — 982 tests passed over it, `contact.test.ts`
+asserts Nathan's identity symbolically (a claim about exit *speed*, silent about
+where the bat was), and the old `sim.gameShape` reported an unremarkable 25.6%
+strikeout rate. What it could not survive was a distribution: **22% of fair balls
+in one 5° bin** at the top of the launch-angle scale, 8% more at the bottom.
+
+The fix traded a wrong *shape* for a wrong *rate*, deliberately. Strikeouts went
+20.6% → **43.0%** and BABIP .624 → **.713**, and the batted-ball split became
+baseball-shaped (60/15/15/10 ground/line/fly/pop-up). The old 20.6% was never
+right — it was arithmetic over a defect, since 30% of the balls it counted in
+play were swings that had missed. A wrong rate is one number a retune moves; a
+spike at a boundary is a discontinuity no tuning constant can reach.
+
+**Nothing here was tuned.** The two numbers that are wrong now have names against
+them: `ATBAT.UNDERCUT_FROM_JUDGE` turns a vertical *read* error into a bat
+*placement* error at nearly half strength against a barrel that forgives 2.70
+inches, and the foul-to-fair ratio is **3.4:1** where baseball is nearer 1:1.
+Both are PR 9's.
+
+The harness also had to be able to *fail*: a sweep breaks each new gate and
+demands the specific rejection, including moving a tuning constant to prove the
+pinned rates notice. It found three weaknesses in its own gates — a tautological
+cut-boundary test that was true for any cut values, and two `SimEvent` fields
+(the count, the hit type) that were emitted and read by nothing.
+
+Next: the retune. BABIP, the strikeout rate, the foul ratio, the
+`sim.venueRollFeel` drift, and tag-ups, rundowns and steals.
 
 ---
 

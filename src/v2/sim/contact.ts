@@ -143,10 +143,35 @@ export function resolveSwing(spec: SwingSpec, rng: Rng): SwingResult {
 
   // 2. Contact geometry. The bat's centre passes `undercutFt` below the ball's,
   //    so the line of centres — along which the ball leaves — is tilted up by
-  //    asin(undercut / (r_ball + r_barrel)). Beyond that separation the bat
-  //    misses the ball entirely, which is what the clamp means.
+  //    asin(undercut / (r_ball + r_barrel)).
+  //
+  // ★ BEYOND THAT SEPARATION THE BAT MISSES THE BALL, and for three PRs this
+  // line CLAMPED instead. The sentence above is what the code always said it
+  // meant; a clamp means the opposite. A bat passing more than 2.70 inches from
+  // the ball's centre does not graze it at the steepest angle two circles can
+  // touch at — it goes by underneath. `asin(±1)` is exactly ±90 degrees, so
+  // every one of those swings was recorded as a ball hit perfectly straight up
+  // or straight down.
+  //
+  // PR 8's harness is what saw it, and it is the reason a distribution is worth
+  // more than a total: `GameTally` counted these as balls in play and was right
+  // to, `sim.gameShape` reported a plausible strikeout rate, and nothing looked
+  // wrong until 22% of fair balls stacked into a single 5-degree bin at the top
+  // of the histogram and 8% more at the bottom. Measured before the fix: a kid
+  // with contact 1 saturates beyond 0.74 sigma of his own vertical read, so
+  // 46% of his swings were arriving as vertical pop-ups.
   const centreSep = BALL_RADIUS_FT + BAT.BARREL_RADIUS_FT;
-  const offset = clamp(spec.undercutFt, -centreSep, centreSep);
+  let offset = spec.undercutFt;
+  if (Math.abs(offset) > centreSep) {
+    // ★ THE ONE CASE THE CLAMP SURVIVES, because the content asks for it.
+    // `never_strikes_out` already floors timing quality above; a bat that misses
+    // on the VERTICAL axis would strike her out through the other door and make
+    // the ability a half-promise. She is pulled back to the edge of the barrel —
+    // a real graze, and the worst contact the geometry allows — rather than
+    // exempted from geometry.
+    if (ability !== 'never_strikes_out') return { kind: 'miss' };
+    offset = clamp(offset, -centreSep, centreSep);
+  }
   const launchAngleDeg = (Math.asin(offset / centreSep) * 180) / Math.PI;
 
   // 3. Exit velocity, Nathan Eq. 3.
