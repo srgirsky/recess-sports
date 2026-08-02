@@ -210,6 +210,54 @@ continuous across a v1↔v2 switch in the same browser.
   (`sim.cutoffRelay`). Three v1 invariants DO carry over: `ThrowTarget` stays a
   discriminated union, the `kind: 'fielder'` branch **returns before the runner
   loop** (*"do not restructure it away"*), and the leg count is capped.
+- **★ THE STRIKE ZONE IS THE RULEBOOK'S, IN FEET — v1's HAS NO UNITS AT ALL.**
+  `PLATE_ZONE` is `{W:96, H:100}` in "plate coords", a space `plateView.ts` maps
+  to screen at ~1.8× and which relates to the field by *nothing*. Not a wrong
+  size; no size. v2 derives: 17in plate + a ball each side (`zoneHalfWidthFt`),
+  knees-to-letters as FRACTIONS of the batter's height (`zoneBandFt`), so a
+  taller kid has a taller zone. And `isStrike` asks the **trajectory** —
+  `flyToPlate`'s real crossing — where v1 sets `inZone` on an aim point before
+  the ball moves. A curve that breaks out of the zone is a ball *because it
+  broke*.
+- **★ THE BATTER HAS ONE FACULTY, NOT TWO.** `plateJudgementFt` and
+  `swingTimingSigmaFrac` are the same misjudgement in space and time, both from
+  `contact`. He swings when he BELIEVES it is a strike, so chases and takes are
+  consequences; the temporal half becomes `SwingSpec.timingErrorSec`, so whiffs
+  are too. **There is no chase rate and no whiff rate anywhere** — v1 has five
+  such constants in `resolveCpuPitch`. The temporal half is a FRACTION of the
+  flight, never ms (`pace.swingWindows`); two-strike protection
+  (`TWO_STRIKE_PROTECT_FT`) is what stops a poor-contact kid becoming a
+  strikeout machine instead of a foul-ball machine.
+- **★ `Rng.bell()` IS BOUNDED, AND THAT HID A MISSING MECHANIC.** Irwin–Hall over
+  three uniforms — `+` and `/` only, so bit-stable; still not a `normal()`, which
+  needs the banned `Math.log`. Support is ±3σ. At the first draft's sigma a
+  swinging strike needed 2.5σ and the measurement was **zero whiffs over 4,000
+  pitches at every stat**. Size any `bell`-driven band AGAINST the window it is
+  judged by, and assert the relationship rather than the values.
+- **★ `isFair` HAD NO CALLER, so every batted ball in v2 was fair.** `play.ts`
+  now asks it at first touchdown and at the fence (a ball hooked over the pole is
+  a foul, not a home run). The rule is deliberately the SHORT version — where it
+  first lands decides — and `sim.foulBalls` records that rather than pretending.
+  Adding it moved PR 6's records, which were re-run rather than left describing
+  older code.
+- **★ TWO PERFORMANCE FINDINGS THAT ARE MODELLING FINDINGS.** (1) `releasePitch`
+  is a secant over a bisection: **13.6ms**, 350× the flight it produces. A
+  pitcher aims at a **SPOT** (`PITCH_SPOTS`, `releaseAtSpot`'s pure memo) and his
+  error lands on the RELEASE, not the intention — one integration per pitch
+  instead of ninety. (2) The reducer **re-read** the ball by **re-tracing** it,
+  but the trajectory does not change between ticks; only the fielders move. Both
+  together: 1.7s per game → 0.14s, and PR 8's 50k plate appearances from 49
+  minutes to 113 seconds. `PITCH.ELEV_ITERATIONS` 26 → 14 measured *better* aim
+  error (1.11ft → 0.87), because the residual is a weak arm's changeup
+  saturating, not the bisection.
+- **★ THE GAME LOOP DOES NOT RESTATE v1's RULES.** `inning.applyAtBat` owns the
+  count and the walk, `gameflow.decideAfterHalf` owns extras, `stats.foldStats`
+  owns what an at-bat is — the first real value-use of the pure whitelist. Three
+  seams bite and each has a test: `applyLivePlay` **drops `baseIds`** (take run
+  identities off the play's events BEFORE folding); `decideAfterHalf` takes
+  **away then home** while `shouldSkipBottom`/`isWalkOff` take **home then
+  away**; and `shouldSkipBottom` must be asked **after the top half**, not before
+  it, or the game skips the visitors' final at-bats.
 - **★ A PLAY CLOCK THAT FIRES IS A SOFT-LOCK THAT WAS CAUGHT.** v1's
   `MAX_PLAY_MS` is "NOT measured — scaled with `RUNNER_SPEED`" and nothing
   asserts a real play stays under it. `play.test.ts` sweeps 180 plays and
@@ -621,12 +669,15 @@ continuous across a v1↔v2 switch in the same browser.
 | `src/v2/sim/contact.ts` | ★ v2. Bat meets ball: Nathan's Eq. 3 identity for exit velocity, `e_A` derived from the recoil factor, the undercut geometry for launch angle, and the same grip result `bounce.ts` uses for backspin. Replaces v1's categorical grounder/liner/fly roll. |
 | `src/v2/sim/pitch.ts` | ★ v2. The pitch as a real trajectory — break is EMERGENT Magnus, not a drawn bow. Release speed and elevation are SOLVED from the measured flight time, because aiming straight at the plate arrives 26ft underground. |
 | `src/v2/sim/play.ts` | ★ v2. The play reducer: a batted ball, nine fielders and up to four runners stepped to a `PlayOutcome` shaped exactly like v1's `LiveOutcome`. Owns possession (`secureBall`, the single choke point), throws and the emergent relay, base covering that self-heals when the conventional coverer is chasing, force-outs, tags at `reachFt()`, the CPU running policy, and the play clock. CPU-only; `PlayInputs` is a typed seam. |
+| `src/v2/sim/atbat.ts` | ★ v2. One pitch: the pitcher picks a kind and a SPOT, execution error nudges the release, `flyToPlate` says where it crossed, the umpire reads that, and the batter's single judgement error decides swing-or-take AND how well he timed it. No chase rate, no whiff rate. |
+| `src/v2/sim/game.ts` | ★ v2. Plate appearance → half → inning → game, headless. The first real value-use of `inning`/`gameflow`/`stats`; keeps base OCCUPANTS itself because `applyLivePlay` drops `baseIds`. Returns a line score, per-kid lines, a play-by-play and the counting stats PR 8 aggregates. |
+| `src/v2/sim/lineup.ts` | ★ v2. `planDefence` — the arm-aware planner `sim.gapBallOutcome.theArmAtShort` asked for. Each position's arm weight is DERIVED from `FIELD_POSITIONS` (distance from post to the bag it throws to), so nobody has to remember that left field needs an arm. v1's `autoAssign` is untouched. |
 | `scripts/v2/purity.lint.test.js` | ★ v2. **★ There is exactly ONE kid speed in the sim** (textual: only `athletes.ts` may read a raw band; functional: `makeFielder` and `makeRunner` agree over 30 kids and stats 1-10). Plus: `src/v2/sim/**` imports only sim/data/config/**five** pure systems (`inning`·`gameflow`·`stats`·`lineup`·`draft`); no three, no DOM, no `Math.random`, no `Date.now`, **no module-scope `Rng`**; every sim file must import in plain Node; whole-statement `import type` gets a separate wider lane; **the whitelist itself is checked** (each named system must be browser-free, random-free, and value-import only pure modules); and **nothing outside `src/v2/**` may import v2**, which is what actually guarantees a v2 edit cannot reach v1's bundle. Two files claimed this gate existed before it did, and it then spent its first life vacuously satisfied. |
 | `scripts/measures.json` | ★ The measurement records + `conformance.test.js`'s gate. Every record names the `src/config.ts` constant it informs, so the audit trail runs source → record → constant, and carries a `status`: `conformed` (ours inside the band), `known-drift` (outside, and the test pins the drift's SIZE so it can't grow or be half-fixed unnoticed), `awaiting-measurement` (BB not measured yet — pins only OUR value, claims nothing about BB), `note` (a finding about the measurement itself). Read this before tuning any "Backyard feel" constant. |
 
 ## Commands
 
-`npm run dev` (play locally) · `npm test` (logic tests) · `npm run build` (→ `dist/`). v2 assets: `npm run export:skeleton` (emit the rig) · `npm run export:proxy-kid` (stand-in characters; `-- all` for the whole roster) · `npm run manifest:models` (rebuild the delivery manifest) · `npm run sync:decoders` (refresh the committed Draco/Basis decoders after a `three` bump) · `npm run validate:models` (gate a delivery; needs Node ≥22.6 — CI runs the same rules through vitest). Full details + deploy in `README.md`.
+`npm run dev` (play locally) · `npm test` (logic tests) · `npm run build` (→ `dist/`). v2 assets: `npm run export:skeleton` (emit the rig) · `npm run export:proxy-kid` (stand-in characters; `-- all` for the whole roster) · `npm run manifest:models` (rebuild the delivery manifest) · `npm run sync:decoders` (refresh the committed Draco/Basis decoders after a `three` bump) · `npm run validate:models` (gate a delivery; needs Node ≥22.6 — CI runs the same rules through vitest) · `npm run sim:game` (play a whole v2 game headless: line score, box score, play-by-play). Full details + deploy in `README.md`.
 
 ## Shipping changes (the standard delivery process)
 

@@ -149,6 +149,88 @@ export function releasePitch(opts: {
   return { p: { ...from }, v: velocityAt(final.elev, azRad, s1), w: spin };
 }
 
+// --- Aiming at a SPOT, which is what makes this affordable -------------------
+
+/**
+ * A release, decomposed — so a caller can perturb it without re-solving.
+ *
+ * ★ THE SOLVE IS EXPENSIVE AND THE PITCHER DOES NOT DO IT TWICE. `releasePitch`
+ * runs a secant over a bisection, each iteration a full 240Hz integration:
+ * measured at **13.6ms**, three hundred and fifty times the cost of the flight
+ * it produces. PR 8's harness runs ~200,000 pitches, which at that price is
+ * forty-nine minutes of solving to produce eight seconds of baseball.
+ *
+ * The fix is not a faster solver, it is a better model. A pitcher aims at a
+ * SPOT — v1 knows this too; its mound UI is a 3x3 grid — and his execution error
+ * lands on his RELEASE, not on his intention. So the solve is a property of
+ * (kind, arm, spot), a small finite set, and scatter is an angular perturbation
+ * of the answer. `releaseAtSpot` memoises the first; `releaseFrom` applies the
+ * second. One integration per pitch instead of ninety.
+ */
+export interface ReleasePlan {
+  speedFts: number;
+  elevRad: number;
+  azRad: number;
+  spin: Vec3;
+  from: Vec3;
+}
+
+/**
+ * The nine places a pitcher tries to put it, as fractions of the zone's own
+ * half-width and half-height. Zone-relative rather than absolute feet, so the
+ * grid follows the batter's zone instead of assuming one.
+ */
+export const PITCH_SPOTS: ReadonlyArray<{ lateral: number; height: number }> = [
+  { lateral: -1, height: -1 }, { lateral: 0, height: -1 }, { lateral: 1, height: -1 },
+  { lateral: -1, height: 0 }, { lateral: 0, height: 0 }, { lateral: 1, height: 0 },
+  { lateral: -1, height: 1 }, { lateral: 0, height: 1 }, { lateral: 1, height: 1 },
+];
+
+/**
+ * A pure memo, keyed on everything the answer depends on.
+ *
+ * Module-level state, and safe: the solve is a deterministic function of its
+ * key, so the cache is unobservable except in time. It holds at most
+ * (kinds x stats x spots) entries.
+ */
+const releaseCache = new Map<string, ReleasePlan>();
+
+/** Solve — once — the release that puts `kind` on the given aim point. */
+export function releaseAtSpot(opts: {
+  kind: PitchKind;
+  pitchingStat: number;
+  aimHeightFt: number;
+  aimLateralFt: number;
+}): ReleasePlan {
+  const key = `${opts.kind}|${opts.pitchingStat}|${opts.aimHeightFt}|${opts.aimLateralFt}`;
+  const hit = releaseCache.get(key);
+  if (hit) return hit;
+
+  const state = releasePitch(opts);
+  const speedFts = Math.sqrt(
+    state.v.x * state.v.x + state.v.y * state.v.y + state.v.z * state.v.z
+  );
+  const horiz = Math.sqrt(state.v.x * state.v.x + state.v.z * state.v.z);
+  const plan: ReleasePlan = {
+    speedFts,
+    elevRad: Math.atan2(state.v.y, horiz),
+    azRad: Math.atan2(state.v.x, state.v.z),
+    spin: { ...state.w },
+    from: { ...state.p },
+  };
+  releaseCache.set(key, plan);
+  return plan;
+}
+
+/** Rebuild a ball from a plan, with the release angles nudged by execution error. */
+export function releaseFrom(plan: ReleasePlan, dElevRad = 0, dAzRad = 0): BallState {
+  return {
+    p: { ...plan.from },
+    v: velocityAt(plan.elevRad + dElevRad, plan.azRad + dAzRad, plan.speedFts),
+    w: { ...plan.spin },
+  };
+}
+
 /**
  * The release elevation that puts the ball at `aimHeightFt` when it crosses the
  * plate, for a given speed. Returns null when the plate cannot be reached at

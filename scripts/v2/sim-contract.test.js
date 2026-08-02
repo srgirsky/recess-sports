@@ -52,6 +52,12 @@ import { VENUE_GEOMETRY } from '../../src/v2/sim/field.ts';
 import { makeRng } from '../../src/v2/sim/rng.ts';
 import { autoAssign } from '../../src/systems/lineup.ts';
 import { getCharacter } from '../../src/data/characters.ts';
+import { ATBAT } from '../../src/v2/sim/params.ts';
+import { zoneBandFt, zoneHalfWidthFt, plateJudgementFt, swingTimingSigmaFrac } from '../../src/v2/sim/athletes.ts';
+import { inToFt } from '../../src/v2/sim/units.ts';
+import { BALL_RADIUS_FT as R_BALL } from '../../src/v2/sim/ball.ts';
+import { planDefence, throwDemandFt } from '../../src/v2/sim/lineup.ts';
+import { simulateGame } from '../../src/v2/sim/game.ts';
 import { makeRunner } from '../../src/v2/sim/runners.ts';
 import { REFERENCE_HEIGHT_FT } from '../../src/v2/render/skeleton.ts';
 import { ftsToMph, v1PxToFt } from '../../src/v2/sim/units.ts';
@@ -850,5 +856,153 @@ describe('sim.cutoffRelay', () => {
       finishPlay(s);
     }
     expect(sawRelay, 'the sweep must actually relay or it proves nothing').toBe(true);
+  });
+});
+
+// --- PR 7: the at-bat and the game loop -------------------------------------
+
+describe('sim.strikeZone', () => {
+  const rec = M.sim.strikeZone;
+
+  it('is a well-formed record, and pays for its confidence exemption', () => {
+    wellFormed(rec, { reference: 'baseball', status: 'conformed' });
+    // n=1 at high confidence is allowed for a RULEBOOK, but only if it names
+    // the source — the same price sim.ballPhysics pays.
+    expect(rec.measured.n).toBe(1);
+    expect(rec.measured.confidence).toBe('high');
+    expect(rec.derivation).toMatch(/Official Baseball Rules 2\.02/);
+    expect(rec.derivation).toMatch(/Little League Rulebook 1\.05/);
+  });
+
+  it('★ recomputes the zone from the plate and the ball, not from itself', () => {
+    expect(zoneHalfWidthFt()).toBeCloseTo(inToFt(ATBAT.PLATE_HALF_WIDTH_IN) + R_BALL, 10);
+    expect(zoneHalfWidthFt() * 2 * 12).toBeCloseTo(rec.measured.widthIn, 1);
+    const [lo, hi] = zoneBandFt(rec.measured.onBatterOfHeightFt);
+    expect(lo).toBeCloseTo(rec.measured.bottomFt, 2);
+    expect(hi).toBeCloseTo(rec.measured.topFt, 2);
+    expect((hi - lo) * 12).toBeCloseTo(rec.measured.heightIn, 1);
+  });
+
+  it('★ records that v1s zone has no size, which is the finding', () => {
+    expect(rec.why).toMatch(/It is not a wrong size; it has no size/);
+    expect(rec.theUmpireAsksTheTRAJECTORY).toMatch(/BECAUSE IT BROKE/);
+  });
+});
+
+describe('sim.plateDiscipline', () => {
+  const rec = M.sim.plateDiscipline;
+
+  it('is a well-formed record and claims no rate at all', () => {
+    wellFormed(rec, { reference: 'derived', status: 'awaiting-measurement' });
+    expect(rec.measured).toBeNull();
+    expect(rec.partialReading.n).toBe(0);
+    expect(rec.whatWouldClose).toMatch(/PR 8's harness/);
+  });
+
+  it('★ pins the one thing that IS asserted: the noise is sized against the window', () => {
+    // The bounded-support failure, in numbers rather than prose.
+    const [worstFt, bestFt] = rec.ours.value.judgeFt;
+    const [worstFrac, bestFrac] = rec.ours.value.judgeFrac;
+    expect(plateJudgementFt(1)).toBeCloseTo(worstFt, 6);
+    expect(plateJudgementFt(10)).toBeCloseTo(bestFt, 6);
+    expect(swingTimingSigmaFrac(1)).toBeCloseTo(worstFrac, 6);
+    expect(swingTimingSigmaFrac(10)).toBeCloseTo(bestFrac, 6);
+    // A miss needs CONTACT_WINDOW_FRAC of error, and `Rng.bell` stops at 3.
+    expect(BAT.CONTACT_WINDOW_FRAC / worstFrac, 'the worst eye must be able to miss').toBeLessThan(3);
+    expect(BAT.CONTACT_WINDOW_FRAC / bestFrac, 'and so must the best').toBeLessThan(3);
+    expect(rec.theBoundedNoiseFailedSilently).toMatch(/ZERO swinging strikes/);
+  });
+
+  it('★ has no chase rate and no whiff rate to tune', () => {
+    // The design claim, checked against the constants that exist.
+    for (const k of Object.keys(ATBAT)) {
+      expect(/CHASE|WHIFF|MISS_RATE/.test(k), `ATBAT.${k} looks like an outcome knob`).toBe(false);
+    }
+    expect(rec.why).toMatch(/ONE ERROR, TWO BEHAVIOURS/);
+  });
+});
+
+describe('sim.foulBalls', () => {
+  const rec = M.sim.foulBalls;
+
+  it('is a well-formed record', () => {
+    wellFormed(rec, { reference: 'derived', status: 'conformed' });
+    expect(rec.measured.n).toBeGreaterThan(1000);
+  });
+
+  it('★ records that isFair had NO CALLER, which is the finding', () => {
+    expect(rec.why).toMatch(/NOTHING CALLED IT/);
+    expect(rec.theRuleIsTHESHORTVERSION).toMatch(/deliberately the short version/);
+    // And that PR 6's records were re-run rather than left describing old code.
+    expect(rec.whatItMoved).toMatch(/re-run/);
+    expect(M.sim.gapBallOutcome.reMeasuredAt).toMatch(/PR 7/);
+  });
+});
+
+describe('sim.gameShape', () => {
+  const rec = M.sim.gameShape;
+
+  it('is a NOTE, because it is reported rather than met', () => {
+    wellFormed(rec, { reference: 'derived', status: 'note' });
+    expect(rec.why).toMatch(/TO BE READ, NOT TO BE MET/);
+    // The warning it answers to, quoted from the category it lives in.
+    expect(M.sim.note).toMatch(/four-to-eight/);
+  });
+
+  it('★ names BABIP as the number that is wrong, rather than burying it', () => {
+    expect(rec.measured.babip).toBeGreaterThan(0.5);
+    expect(rec.whatIsNot).toMatch(/Every second ball in play is a hit/);
+    // And points at the records that explain it rather than at a dial.
+    expect(rec.whatIsNot).toMatch(/sim\.throwSpeed/);
+    expect(rec.whatIsNot).toMatch(/sim\.catchRadius/);
+    expect(M.sim.throwSpeed.status).toBe('awaiting-measurement');
+  });
+
+  it('★ keeps its own numbers self-consistent, and says where the real check lives', () => {
+    // ★ THIS FILE DOES NOT PLAY A GAME, and that is a scope decision rather than
+    // a performance dodge. Its job, per its own header, is to reconcile records
+    // against the constants the code carries "by RECOMPUTING each figure from
+    // the imports". Whether a game produces strikeouts, walks, fouls, hits and
+    // runs is a claim about the SIM, and `game.test.ts` already asserts exactly
+    // that — playing a second game here duplicated it, and cost the one
+    // assertion in this file that could not finish inside vitest's default under
+    // the parallel suite's contention.
+    //
+    // What belongs here is that the record's own arithmetic holds.
+    const m = rec.measured;
+    expect(m.strikeoutPct + m.walkPct + m.ballsInPlayPct, 'K + BB + BIP should be most of a PA')
+      .toBeGreaterThan(95);
+    expect(m.strikeoutPct + m.walkPct + m.ballsInPlayPct).toBeLessThanOrEqual(100);
+    expect(m.babip).toBeGreaterThan(0);
+    expect(m.babip).toBeLessThanOrEqual(1);
+    expect(m.pitchesPerPlateAppearance).toBeGreaterThan(1);
+    expect(rec.performanceNote, 'and the cost of getting here is on the record').toMatch(
+      /1\.7s per game to 0\.14s/
+    );
+  });
+});
+
+describe('sim.lineupArm', () => {
+  const rec = M.sim.lineupArm;
+
+  it('is a well-formed record', () => {
+    wellFormed(rec, { reference: 'derived', status: 'conformed' });
+    expect(rec.v1IsUNTOUCHED).toMatch(/v1's bundle path/);
+  });
+
+  it('★ recomputes the arm demand from the field, and closes PR 6s finding', () => {
+    expect(throwDemandFt('SS')).toBeCloseTo(rec.measured.ssToFirstFt, 1);
+    expect(throwDemandFt('LF'), 'the outfield throws furthest').toBeGreaterThan(throwDemandFt('SS'));
+    const ids = ROSTER.slice(0, 9).map((c) => c.id);
+    const v1SS = Object.entries(autoAssign(ids).positions).find(([, p]) => p === 'SS')[0];
+    const v2SS = Object.entries(planDefence(ids, getCharacter).positions).find(([, p]) => p === 'SS')[0];
+    expect(maxThrowFt(getCharacter(v1SS).stats.pitching)).toBeCloseTo(rec.measured.v1ShortstopRangeFt, 0);
+    expect(maxThrowFt(getCharacter(v2SS).stats.pitching)).toBeCloseTo(rec.measured.v2ShortstopRangeFt, 0);
+    // ★ And it clears the throw it has to make, which v1's did not once the
+    // fielder had moved off his post to get the ball.
+    expect(maxThrowFt(getCharacter(v2SS).stats.pitching)).toBeGreaterThan(throwDemandFt('SS'));
+    expect(rec.whyNotTheBestArm).toMatch(/the mound takes the best arm/);
+    // The record it discharges.
+    expect(M.sim.gapBallOutcome.theArmAtShort).toMatch(/v2's own lineup planner is PR 7's/);
   });
 });

@@ -14,7 +14,8 @@
     "export:proxy-kid": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/export-proxy-kid.mjs",
     "manifest:models": "node scripts/v2/models-manifest.mjs",
     "sim:trajectory": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/trajectory.mjs",
-    "validate:models": "node --disable-warning=ExperimentalWarning scripts/v2/validate-models.mjs"
+    "validate:models": "node --disable-warning=ExperimentalWarning scripts/v2/validate-models.mjs",
+    "sim:game": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/game.mjs"
   },
   "dependencies": {
     "peerjs": "^1.5.5",

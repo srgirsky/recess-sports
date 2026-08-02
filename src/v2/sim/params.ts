@@ -323,10 +323,31 @@ export const PITCH = {
   AIM_ITERATIONS: 6,
   /** Close enough on flight time, seconds. */
   AIM_TOL_SEC: 0.005,
-  /** Bisection steps for the elevation solve. */
-  ELEV_ITERATIONS: 26,
-  /** Coarse scan points used to find the reachable peak before bisecting. */
-  ELEV_SCAN: 12,
+  /**
+   * Bisection steps for the elevation solve, and the coarse scan that brackets
+   * it.
+   *
+   * ★ 26 WAS MEASURING NOTHING, the same way `INTEGRATOR.FLIGHT_HZ`'s first
+   * convergence test was. The bracket is 1.6 rad wide, so 26 halvings resolve
+   * 2.4e-8 rad — at the 46ft mound, a millionth of a foot of crossing height.
+   *
+   * ★ AND THE MEASUREMENT SAID SOMETHING BETTER THAN THE ARGUMENT. Swept over 64
+   * solves (4 kinds x 4 arms x 4 aim heights), the worst aim error at 26/12 is
+   * **1.114 ft** and at 14/8 it is **0.870**: cutting the iterations did not
+   * degrade the aim, it improved it slightly. Both numbers are the same residual
+   * and it is not the bisection — it is a weak arm throwing a CHANGEUP, where
+   * `wantSec` is long enough that no reachable release both takes that long and
+   * arrives that low, so the solve saturates and the ball crosses under its
+   * target. That is the saturation `sim.throwSpeed.comparedWithThePitch` already
+   * records, seen from the other end, and it is why a pitcher's intent is not a
+   * promise. Recorded rather than tuned away.
+   *
+   * The edit is worth making because the solve costs 13.6ms — three hundred and
+   * fifty times the flight it produces — and `releaseAtSpot` must warm a memo of
+   * (kind x arm x spot) before a game can be played. 8.6ms now.
+   */
+  ELEV_ITERATIONS: 14,
+  ELEV_SCAN: 8,
   /** A pitch that has not reached the plate by now is not going to. */
   MAX_FLIGHT_SEC: 5,
 } as const;
@@ -626,6 +647,156 @@ export const PLAY = {
    * measured; kept at three seconds because it reads as "kids notice".
    */
   RUNNER_PATIENCE_SEC: 3,
+} as const;
+
+/**
+ * The plate appearance.
+ *
+ * ★ THE STRIKE ZONE IS THE THIRD v1 CONSTANT WITH NO UNITS, and it is the
+ * purest case of the three. `LIVE.CATCH_RADIUS` was 34 PIXELS, which converts to
+ * a wrong number of feet (11.36). `RUN2.TAG_RADIUS` was 26 px, likewise (8.7ft).
+ * v1's `PLATE_ZONE` is `{ W: 96, H: 100 }` in "plate coords" — a space
+ * `art/plateView.ts` maps to the screen at about 1.8x and which **nothing
+ * relates to the field at all**. It is not a wrong size. It has no size. v1
+ * never needed the zone to be a place, only a rectangle to test a rolled
+ * crossing point against, so the question never came up.
+ *
+ * Here the ball's crossing is a FACT ABOUT ITS TRAJECTORY — `flyToPlate`
+ * integrates it — so the zone has to be somewhere real.
+ */
+export const ATBAT = {
+  /**
+   * Half-width of the strike zone at the plate, ft.
+   *
+   * DERIVED, not chosen. `Official Baseball Rules` 2.02 and Little League
+   * Rulebook 1.05 both specify a 17-inch plate, and the strike is defined over
+   * "any part of home plate" — so the BALL'S CENTRE may sit a ball-radius
+   * outside each edge and still be a strike. Half-width is therefore
+   * `8.5in + r_ball`, which `zoneHalfWidthFt()` computes rather than restating.
+   */
+  PLATE_HALF_WIDTH_IN: 8.5,
+  /**
+   * Zone floor and ceiling as FRACTIONS of the batter's height — the rulebook
+   * definition ("the hollow beneath the kneecap" to "the midpoint between the
+   * top of the shoulders and the top of the uniform pants"), which is why they
+   * are fractions rather than feet: the zone belongs to the kid, not the park.
+   *
+   * On the 4.0ft reference kid these are 1.12ft and 2.48ft. Anthropometric
+   * knee height runs about 0.28 of stature and the sternum notch about 0.62,
+   * and those are the two numbers.
+   */
+  ZONE_BOTTOM_FRAC: 0.28,
+  ZONE_TOP_FRAC: 0.62,
+  /**
+   * ★ HOW BADLY A BATTER MISJUDGES A PITCH — and it is ONE quantity, which is
+   * the whole design.
+   *
+   * The obvious build gives the batter a chase rate and a timing sigma, tuned
+   * separately. But a real batter does not have two faculties; he has one, and
+   * it is "where and when is that ball going to be". Give him a single
+   * judgement error and both behaviours fall out: he swings when he BELIEVES
+   * the pitch is a strike (so chases and takes are consequences, not
+   * constants), and the same error in time becomes `SwingSpec.timingErrorSec`
+   * (so whiffs and weak contact come out of `contact.ts`'s existing window).
+   *
+   * A better `contact` kid then chases less AND times better, from one number,
+   * without either being asserted anywhere.
+   *
+   * The spatial band is in FEET at the plate: a stat-1 kid's read is off by
+   * about eight inches, a stat-10 kid's by two.
+   */
+  JUDGE_FT_WORST: 0.68,
+  JUDGE_FT_BEST: 0.17,
+  /**
+   * The temporal half of the same error, as a FRACTION of the pitch's flight.
+   *
+   * ★ A FRACTION, NEVER MILLISECONDS. `pace.swingWindows` records what absolute
+   * windows cost: v1's 380ms CONTACT band sat over a 270ms flight, so "a tap at
+   * the instant of release still connects, and timing stops being a skill".
+   * `BAT.CONTACT_WINDOW_FRAC` is a fraction for that reason, and a batter noise
+   * measured in ms would reintroduce the same failure from the other side —
+   * scale-free error against a scale-free window is the only combination that
+   * cannot drift apart when the pitch corridor is re-measured.
+   */
+  JUDGE_FRAC_WORST: 0.2,
+  JUDGE_FRAC_BEST: 0.09,
+  /**
+   * ★ THESE TWO ARE SIZED AGAINST `BAT.CONTACT_WINDOW_FRAC` (0.24), NOT PICKED
+   * IN ISOLATION, and the first draft got that wrong in a way worth keeping.
+   *
+   * At 0.115/0.035 a miss needed 2.5 sigma of timing error, and `Rng.bell` has
+   * BOUNDED SUPPORT (±3, by construction — see rng.ts). Measured over 4,000
+   * pitches: **zero swinging strikes, at every contact stat**. Not rare — none.
+   * A game in which nobody can swing through a pitch is not a broken tuning, it
+   * is a missing mechanic, and a bounded noise makes that failure silent rather
+   * than merely unlikely.
+   *
+   * At 0.20/0.09 a stat-3 kid misses on about 1.4 sigma and a stat-10 kid on
+   * 2.7, so whiffing exists and scales with the stat. The RATE is not claimed:
+   * nothing measures it, `sim.plateDiscipline` says so, and PR 8 is what will.
+   */
+  /**
+   * With two strikes a batter protects: he offers at anything he reads as this
+   * close to the zone rather than taking a call. Feet, outside the zone edge.
+   *
+   * ★ THIS IS WHAT BALANCES STRIKEOUTS AGAINST FOULS, and leaving it out is not
+   * neutral — a batter who only ever swings at what he reads as a strike takes
+   * a third strike every time his read is wrong, which turns a bad-contact kid
+   * into a strikeout machine rather than a foul-ball machine. Real hitters,
+   * including six-year-olds, flail with two strikes.
+   */
+  TWO_STRIKE_PROTECT_FT: 0.55,
+  /**
+   * How far a pitcher misses his spot, ft at the plate, from the `pitching`
+   * stat. v1's equivalent (`PITCH_SCATTER`) is px and mixes in meter-timing
+   * error from a human; there is no human here, so this is execution alone.
+   */
+  PITCH_SCATTER_FT_WORST: 0.75,
+  PITCH_SCATTER_FT_BEST: 0.2,
+  /**
+   * How far under the ball the bat passes, ft, as a fraction of the judgement
+   * error. The batter is aiming at where he thinks the ball is; the vertical
+   * component of being wrong is the undercut `contact.ts` turns into a launch
+   * angle. Positive undercut lifts, so a batter who reads the pitch LOW
+   * (judged below actual) swings under it.
+   */
+  UNDERCUT_FROM_JUDGE: 0.45,
+  /**
+   * The two rings the 3x3 spot grid sits on, as fractions of the zone's half
+   * extents: one INSIDE the zone (working the corner) and one just OUTSIDE it
+   * (the waste pitch, thrown when ahead).
+   *
+   * ★ DISCRETE ON PURPOSE, and it is what makes the pitch affordable. A pitcher
+   * aims at a SPOT, so the release solve is a property of (kind, arm, spot) — a
+   * small finite set that is solved once and reused. A continuously-random aim
+   * would have to re-solve every pitch at 13.6ms a time. See `releaseAtSpot`.
+   */
+  SPOT_RING_IN: 0.62,
+  SPOT_RING_EDGE: 1.35,
+  /** Strikes to a strikeout, balls to a walk. The rulebook, and a test. */
+  STRIKES_PER_K: 3,
+  BALLS_PER_WALK: 4,
+} as const;
+
+/**
+ * The game above the plate appearance.
+ *
+ * Everything here is a RULE rather than a measurement, which is why the block is
+ * four lines. `systems/gameflow.ts` owns the between-halves decisions and
+ * `systems/inning.ts` owns the count — v2 does not restate either.
+ */
+export const GAME = {
+  /** Half-innings per side. v1's `INNINGS` is 2 for the vertical slice. */
+  REGULATION_INNINGS: 6,
+  /** Bonus innings allowed on a tie before it stands. v1's `MAX_EXTRA_INNINGS`. */
+  MAX_EXTRA_INNINGS: 1,
+  /**
+   * A safety net on the plate appearance, not a rule: no real at-bat lasts this
+   * long, and a game that hits it has a bug in the count. Same discipline as
+   * `PLAY.MAX_PLAY_SEC` — a cap that fires is a soft-lock that was caught, and
+   * a test asserts no legitimate plate appearance reaches it.
+   */
+  MAX_PITCHES_PER_PA: 40,
 } as const;
 
 /**
