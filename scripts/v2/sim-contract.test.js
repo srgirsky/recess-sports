@@ -52,6 +52,10 @@ import { BASEPATH, FIELD_MARGIN, FIELD_POSITIONS, FIRST, dist } from '../../src/
 import { maxThrowFt } from '../../src/v2/sim/fielders.ts';
 import { beginPlay, finishPlay, simulatePlay, stepPlay } from '../../src/v2/sim/play.ts';
 import { classifyLaunch, LAUNCH_CUTS } from '../../src/v2/sim/harness.ts';
+import { distFromHome } from '../../src/v2/sim/field.ts';
+import { electChaser, makeFielder } from '../../src/v2/sim/fielders.ts';
+import { launch } from '../../src/v2/sim/launch.ts';
+import { traceLooseBall } from '../../src/v2/sim/bounce.ts';
 import { resolvePlate } from '../../src/v2/sim/params.ts';
 import { PITCHES, releasePitch, flyToPlate } from '../../src/v2/sim/pitch.ts';
 import { makeRng } from '../../src/v2/sim/rng.ts';
@@ -61,7 +65,7 @@ import { planDefence, throwDemandFt } from '../../src/v2/sim/lineup.ts';
 import { simulateGame } from '../../src/v2/sim/game.ts';
 import { makeRunner } from '../../src/v2/sim/runners.ts';
 import { REFERENCE_HEIGHT_FT } from '../../src/v2/render/skeleton.ts';
-import { ftsToMph, inToFt, v1PxToFt } from '../../src/v2/sim/units.ts';
+import { ftsToMph, inToFt, mphToFts, v1PxToFt } from '../../src/v2/sim/units.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const M = JSON.parse(readFileSync(join(here, '..', 'measures.json'), 'utf8'));
@@ -701,7 +705,12 @@ describe('sim.chaserElectionGate', () => {
   });
 
   it('★ records that the ratio gate bought nothing measurable, and says so', () => {
-    const r = rec.measured.overrideRateByDefenceSpeed;
+    // ★ THE TWO-GATE COMPARISON LIVES IN THE SUPERSEDED READING, which is where
+    // it was taken. PR 10's first step moved the ratio gate's own numbers and
+    // did NOT re-measure the fixed gate — so asserting the comparison against
+    // the current reading would be asserting a measurement nobody made. The
+    // finding it supports is unchanged and the evidence stays where it is.
+    const r = rec.supersedes.reading.overrideRateByDefenceSpeed;
     // The two forms drift identically. That is the finding, and it CORRECTS a
     // reading of defense.chaserElection rather than confirming it.
     expect(r.ratioGate0_15.spreadPp).toBeCloseTo(r.fixedGate0_40sec.spreadPp, 1);
@@ -710,6 +719,23 @@ describe('sim.chaserElectionGate', () => {
     // And the record it corrects is left standing, not overwritten.
     expect(M.defense.chaserElection.measuredWindow.stabilityClaimCorrected).toMatch(/cannot be speed-neutral/);
     expect(rec.whatThisCorrects).toMatch(/stands and is not challenged here/);
+  });
+
+  it('★ re-measured in PR 10, and says the lineup is part of the measurement', () => {
+    // The first step barely moved the drift — 7.4pp to 6.0 — which is what the
+    // record's own mechanism predicts, since the gate is not the dominant term.
+    // ★ AND IN PR 10 THE METRIC CHANGED MEANING AGAIN, so the comparison is no
+    // longer spread-against-spread. `sim.chaserLeash` made the settle-zone owner
+    // the WRONG answer on most grounders, so a high override rate is now the
+    // intended behaviour rather than instability.
+    const now = rec.measured.overrideRateByDefenceSpeed.ratioGate0_15;
+    expect(now.x1).toBeGreaterThan(80);
+    expect(rec.theMETRICCHANGEDMEANINGINPR10).toMatch(/intended behaviour rather than instability/);
+    // ★ AND THE TRAP THAT NEARLY WENT ON THE RECORD AS A FINDING: measured with
+    // a different nine kids it reads 17.7pp and looks like a regression.
+    expect(rec.aMEASUREMENTTRAPWORTHRECORDING).toMatch(/17\.7pp/);
+    expect(rec.aMEASUREMENTTRAPWORTHRECORDING).toMatch(/It was a different defence/);
+    expect(rec.measured.grid).toMatch(/autoAssign/);
   });
 
   it('pins the constants, and that neither of them carries a unit', () => {
@@ -780,7 +806,12 @@ describe('sim.gapBallOutcome', () => {
     };
     expect(`${sweep(45)}/15`).toBe(rec.measured.gradient['31mph']);
     expect(`${sweep(80)}/15`).toBe(rec.measured.gradient['55mph']);
-    expect(sweep(45)).toBeLessThan(sweep(80)); // the gradient itself
+    expect(`${sweep(62)}/15`).toBe(rec.measured.gradient['42mph']);
+    expect(sweep(45)).toBeLessThan(sweep(62)); // the gradient itself
+    expect(sweep(62)).toBeLessThan(sweep(80));
+    // ★ RE-RUN IN PR 10 rather than left describing older code, and the middle
+    // is where it moved: 10/15 -> 5/15 at 42mph, from sim.chaserLeash.
+    expect(rec.measured.gradient.supersedes.why).toMatch(/RE-RUN IN PR 10/);
     expect(rec.notABabipClaim).toMatch(/THIS IS NOT BABIP/);
   });
 
@@ -911,22 +942,25 @@ describe('sim.plateDiscipline', () => {
     expect(rec.theProtectionCurveIsNotMonotonic).toMatch(/WRONG SIDE/);
     expect(rec.theProtectionCurveIsNotMonotonic).toMatch(/44\.4 \/ 40\.4 \/ 42\.5 \/ 45\.1 \/ 47\.4/);
     // And it must not quietly "fix" it — PR 9 shipped the swing plane alone.
-    expect(rec.theProtectionCurveIsNotMonotonic).toMatch(/NOT MOVED IN PR 9/);
-    expect(ATBAT.TWO_STRIKE_PROTECT_FT).toBe(0.55);
+    // ★ AND PR 10 ACTED ON IT — jointly, not by walking the constant to its own
+    // minimum, because 0.25 alone puts the walk rate outside its band.
+    expect(rec.theProtectionCurveIsNotMonotonic).toMatch(/PR 10 moved it to 0\.35/);
+    expect(rec.theProtectionCurveIsNotMonotonic).toMatch(/rather than walked to\s+its own minimum/);
+    expect(ATBAT.TWO_STRIKE_PROTECT_FT).toBe(0.35);
   });
 
   it('★ records the strikeout rate the geometry fix exposed, and names the dial', () => {
     // 43% of plate appearances ending in a K is wrong for this age group by any
     // reading. The record has to say so, say which constant it lands on, and say
     // that PR 8 did not touch it — the same standing gameShape's BABIP has.
-    expect(rec.ours.value.strikeoutPct).toBeGreaterThan(0.4);
     expect(rec.whatTheHARNESSEXPOSED).toMatch(/UNDERCUT_FROM_JUDGE/);
     // ★ PR 9 WAS SCOPED TO OWN THIS AND MEASURED THE REASON NOT TO. The record
     // has to carry that, or the deferral reads as a slip rather than a finding.
-    expect(rec.whatTheHARNESSEXPOSED).toMatch(/MEASURED THE REASON NOT TO/);
-    expect(rec.whatTheHARNESSEXPOSED).toMatch(/PR 10/);
+    expect(rec.whatTheHARNESSEXPOSED).toMatch(/measured the reason not to\s+fix it alone/);
+    expect(rec.whatTheHARNESSEXPOSED).toMatch(/17\.3%/);
+    expect(rec.ours.value.strikeoutPct).toBeLessThan(0.22);
     // And that the OLD, comfortable-looking number was the broken one.
-    expect(rec.whatTheHARNESSEXPOSED).toMatch(/arithmetic over a defect/);
+    expect(rec.whatTheHARNESSEXPOSED).toMatch(/arithmetic over a clamp/);
     expect(M.sim.contactGeometry.status).toBe('conformed');
   });
 
@@ -987,9 +1021,9 @@ describe('sim.gameShape', () => {
     // missing, the second with no swing plane, this one with both fixed.
     expect(rec.measured.n).toBeGreaterThan(50_000);
     expect(rec.supersedes.reading.n).toBeGreaterThan(50_000);
-    expect(rec.supersedes.andBefore.reading.n).toBe(1166);
-    expect(rec.supersedes.why).toMatch(/THE THREE READINGS TELL A STORY/);
-    expect(rec.supersedes.andBefore.why).toMatch(/A DIFFERENT SIM/);
+    expect(rec.supersedes.andBefore.reading.n).toBeGreaterThan(50_000);
+    expect(rec.supersedes.andBefore.andBefore.reading.n).toBe(1166);
+    expect(rec.supersedes.why).toMatch(/THE FOURTH READING/);
     // PR 9 lowered BABIP without touching the defence.
     expect(rec.measured.babip).toBeLessThan(rec.supersedes.reading.babip);
   });
@@ -998,9 +1032,11 @@ describe('sim.gameShape', () => {
     expect(rec.measured.babip).toBeGreaterThan(0.5);
     // ★ AND IT MUST DISCLAIM THE IMPROVEMENT IT DID NOT EARN. PR 9 moved BABIP
     // .713 -> .678 by changing the batted-ball MIX, not the defence.
-    expect(rec.whatIsNot).toMatch(/WITHOUT TOUCHING THE DEFENCE/);
-    expect(rec.whatIsNot).toMatch(/claims no credit/);
-    expect(rec.whatIsNot).toMatch(/LOAD-BEARING/);
+    // ★ PR 10 TRIED EVERY APPROVED LEVER AND REPORTS THE SHORTFALL rather than
+    // reaching for a fifth. That is the thing the record has to carry.
+    expect(rec.whatIsNot).toMatch(/TRIED ALL FOUR\s+APPROVED LEVERS AND REPORTS THE SHORTFALL/);
+    expect(rec.whatIsNot).toMatch(/sim\.chaserLeash/);
+    expect(rec.whatIsNot).toMatch(/awaiting-measurement bands this PR deliberately\s+did not touch/);
     // And points at the records that explain it rather than at a dial.
     expect(rec.whatIsNot).toMatch(/sim\.throwSpeed/);
     expect(rec.whatIsNot).toMatch(/sim\.catchRadius/);
@@ -1193,6 +1229,11 @@ describe('sim.harnessMethod', () => {
     expect(Array.isArray(rec.whatItCannotSee)).toBe(true);
     expect(rec.whatItCannotSee.length).toBeGreaterThanOrEqual(4);
     expect(rec.theASSERTIONSWITHTEETH).toMatch(/Ordering, not levels/);
+    // PR 10 added the defensive twin, and the finding that it must be controlled.
+    expect(rec.theASSERTIONSWITHTEETH).toMatch(/better-FIELDING defence/);
+    expect(rec.anORDERINGTESTMUSTCONTROLFORTHEROSTER).toMatch(/0\.721 against 0\.699/);
+    expect(rec.anORDERINGTESTMUSTCONTROLFORTHEROSTER).toMatch(/TOOK THREE TRIES/);
+    expect(rec.anORDERINGTESTMUSTCONTROLFORTHEROSTER).toMatch(/deriving a\s+seed FROM the variable/);
   });
 
   it('★ pins the slice against the full run, since they share one aggregator', () => {
@@ -1321,5 +1362,112 @@ describe('sim.retuneTargets', () => {
 
   it('does not claim BABIP as its own', () => {
     expect(rec.whatIsNOTATARGETHERE).toMatch(/belongs to the DEFENCE/);
+  });
+});
+
+describe('sim.chaserLeash', () => {
+  const rec = M.sim.chaserLeash;
+
+  it('is a well-formed record of a structural fix', () => {
+    wellFormed(rec, { reference: 'derived', status: 'conformed' });
+    expect(rec.why).toMatch(/NO TUNING CONSTANT COULD HAVE REACHED IT/);
+  });
+
+  it('★ recomputes the ball that exposed it — the SS really was in range', () => {
+    // The claim: a 51mph grounder passes 9.8ft from the shortstop's post while
+    // settling 205ft away, so the settle-keyed leash excluded him.
+    const tr = traceLooseBall(
+      launch({ exitVelocityFts: mphToFts(51), launchAngleDeg: 5, sprayDeg: -20, spinRpm: 800, heightFt: 2.5 }),
+      VENUE_GEOMETRY.park,
+      { horizonSec: DEFENSE.CHASE_HORIZON_SEC, samples: Math.round(DEFENSE.CHASE_HORIZON_SEC / DEFENSE.CHASE_STEP_SEC) }
+    );
+    expect(distFromHome(tr.settle)).toBeGreaterThan(190);
+    // His post is far outside his own leash of that settle point.
+    expect(dist(FIELD_POSITIONS.SS, tr.settle)).toBeGreaterThan(DEFENSE.LEASH_FT.SS);
+    // But the ball passes close to him early.
+    const near = Math.min(...tr.samples.map((s) => dist(FIELD_POSITIONS.SS, s.p)));
+    expect(near).toBeLessThan(12);
+  });
+
+  it('★ holds: infielders take the grounders, and the pitcher takes the middle', () => {
+    // The property the fix has to buy, and the one the ORIGINAL leash existed to
+    // protect — the pitcher must not poach everything.
+    const tally = {};
+    let n = 0;
+    for (let sprayDeg = -42; sprayDeg <= 42; sprayDeg += 6) {
+      for (const ev of [45, 62, 80]) {
+        const tr = traceLooseBall(
+          launch({ exitVelocityFts: ev, launchAngleDeg: -3, sprayDeg, spinRpm: -400, heightFt: 2.5 }),
+          VENUE_GEOMETRY.park,
+          { horizonSec: DEFENSE.CHASE_HORIZON_SEC, samples: Math.round(DEFENSE.CHASE_HORIZON_SEC / DEFENSE.CHASE_STEP_SEC) }
+        );
+        const fs = Object.entries(autoAssign(ROSTER.slice(0, 9).map((c) => c.id)).positions).map(
+          ([id, pos]) => makeFielder(getCharacter(id), pos, { nowSec: 0 })
+        );
+        const pos = fs[electChaser({ fielders: fs, trace: tr, inAir: false }).index].position;
+        tally[pos] = (tally[pos] ?? 0) + 1;
+        n++;
+      }
+    }
+    const infield = ['P', '1B', '2B', 'SS', '3B'].reduce((a, p) => a + (tally[p] ?? 0), 0);
+    expect(infield / n, 'infielders must chase most ground balls').toBeGreaterThan(0.7);
+    // And the outfield must not, which is what was broken.
+    const outfield = ['LF', 'CF', 'RF'].reduce((a, p) => a + (tally[p] ?? 0), 0);
+    expect(outfield / n).toBeLessThan(0.3);
+    expect(rec.measured.whoChasesAGrounderBefore.outfieldPct).toBeGreaterThan(60);
+  });
+
+  it('★ says why the first step looked like a failure until this landed', () => {
+    expect(rec.whyTHEFIRSTSTEPBOUGHTALMOSTNOTHINGUNTILTHIS).toMatch(/were not IN the election/);
+    expect(rec.measured.groundBallHitPct[1]).toBeLessThan(rec.measured.groundBallHitPct[0]);
+    expect(rec.measured.babip[1]).toBeLessThan(rec.measured.babip[0]);
+  });
+});
+
+describe('sim.firstStep', () => {
+  const rec = M.sim.firstStep;
+
+  it('claims no band and says the split-step is unmeasured for this age', () => {
+    wellFormed(rec, { reference: 'baseball', status: 'awaiting-measurement' });
+    expect(rec.measured).toBeNull();
+    expect(rec.partialReading.why).toMatch(/not for four-to-eight-year-olds/);
+  });
+
+  it('★ is a STATE, not an acceleration — the one-kid-speed rule still holds', () => {
+    expect(rec.itIsASTATENOTANACCELERATION).toMatch(/exactly one kid speed/);
+    for (const c of ROSTER) {
+      expect(makeFielder(c, 'SS').accelFtS2).toBe(makeRunner(c, 1).accelFtS2);
+    }
+  });
+
+  it('★ is a FRACTION of top speed, recomputed from the constant', () => {
+    expect(rec.ours.value).toBe(DEFENSE.FIRST_STEP_FRAC);
+    expect(DEFENSE.FIRST_STEP_FRAC).toBeGreaterThan(0);
+    for (const c of ROSTER) {
+      const f = makeFielder(c, 'CF');
+      expect(f.speedFts).toBeCloseTo(f.topFts * DEFENSE.FIRST_STEP_FRAC, 9);
+    }
+    expect(rec.aFRACTIONNEVERANABSOLUTE).toMatch(/7\.4pp to 12\.6/);
+  });
+
+  it('★ records that it bought almost nothing alone, which is the finding', () => {
+    expect(rec.whatItBOUGHTALONE).toMatch(/81\.4% to 83\.5%/);
+    expect(rec.whatItBOUGHTALONE).toMatch(/cannot help/);
+  });
+});
+
+describe('sim.dropRate', () => {
+  const rec = M.sim.dropRate;
+
+  it('is a well-formed record for a constant that had none', () => {
+    wellFormed(rec, { reference: 'baseball', status: 'awaiting-measurement' });
+    expect(rec.measured).toBeNull();
+    expect(rec.why).toMatch(/IT HAD NO RECORD AT ALL/);
+  });
+
+  it('★ records that it is NOT a lever, which is what stops it being reached for', () => {
+    expect(rec.whatItIsWORTH).toMatch(/it is not a lever/i);
+    expect(rec.whatItIsWORTH).toMatch(/within noise/);
+    expect(rec.ours.value.dropBase).toBe(DEFENSE.DROP_BASE);
   });
 });

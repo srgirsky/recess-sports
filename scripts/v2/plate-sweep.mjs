@@ -55,6 +55,10 @@ const TARGETS = {
   pitchesPerPlateAppearance: [3.6, 4.6],
   groundSharePct: [0.4, 0.5],
   launchAngleMedianDeg: [7, 14],
+  // Added in PR 10, when the defence targets were set. `runsPerGame` counts
+  // BOTH teams over 6 innings, so 8-12 is 4-6 a side.
+  babip: [0.4, 0.45],
+  runsPerGame: [8, 12],
 };
 
 /** Games per candidate. Small on purpose — this ranks, the full run confirms. */
@@ -131,11 +135,14 @@ function orderingHolds(over) {
   };
 }
 
+// ★ ATTACK IS SETTLED AT PR 9's 8 DEGREES and is not swept again: it is the one
+// axis anchored to a published band (`sim.swingPlane`) rather than to a target,
+// so re-fitting it here would turn a measurement into a dial.
 const grid = [];
-for (const attack of [0, 6, 9, 12, 15])
-  for (const undercut of [0.1, 0.16, 0.22, 0.3, 0.45])
-    for (const pull of [10, 16, 22, 26])
-      for (const protect of [0.25, 0.55, 0.9]) grid.push({ attack, undercut, pull, protect });
+for (const attack of [8])
+  for (const undercut of [0.1, 0.16, 0.22, 0.3, 0.38, 0.45])
+    for (const pull of [8, 12, 16, 21, 26])
+      for (const protect of [0.2, 0.35, 0.55, 0.8]) grid.push({ attack, undercut, pull, protect });
 
 console.log(`sweeping ${grid.length} combinations x ${GAMES} games...\n`);
 const started = Date.now();

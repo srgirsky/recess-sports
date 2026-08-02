@@ -668,11 +668,65 @@ centring a distribution whose *spread* is still too wide pushes its upper tail
 past 50°, and the spread is `ATBAT.UNDERCUT_FROM_JUDGE` — measured, narrowing it
 0.45 → 0.22 takes pop-ups 15.9% → 3.7%. PR 10 owns that dial.
 
-Next: PR 10, the defence and the plate rates together — BABIP, the strikeout
-rate and the foul ratio, with the pre-pitch creep (a fielder currently starts
-every play from a dead stop into a 1.736s ramp), CPU dives, re-derived fielder
-positioning, and the unmeasured `DROP_BASE`. Then the `sim.venueRollFeel` drift,
-and tag-ups and steals once `PlayInputs` has a player behind it.
+### PR 10 — the defence, and the shortstop who watched it go by
+
+The retune's other half, and the biggest defect in the sim so far.
+
+**★ Every infielder was excluded from the election on any grounder headed for
+the outfield.** `LEASH_FT` gated candidacy on how close a fielder's *post* is to
+where the ball **comes to rest**. A grounder that eventually rolls into the
+outfield settles 200ft from home — outside every infielder's leash — so the
+shortstop was not in the election at all for a ball passing **9.8ft from his
+post at t=1.05s**, comfortably inside his range. He stood and watched it go by;
+the left fielder collected it at t=2.90s and needed a relay to reach first.
+
+Measured: **outfielders were elected on 62.3% of all ground balls** and the
+pitcher on 0%. After the fix — candidacy is earned by the settle point *or* by
+an intercept near your own post, a strictly additional door — infielders take
+88%, the pitcher takes 87% of balls hit up the middle (a comebacker *is* his
+ball) and the corners take 82% down the lines. Ground-ball hits fell 81.4% →
+69.2% and BABIP .678 → .589.
+
+It also explains a change that looked like a failure. The **first step** —
+seeding every fielder with a head start, because `sprintAccelFtS2` is derived
+from a *batter's* leg out of a batting stance and was being applied to a kid in a
+ready crouch — bought almost nothing on grounders on its own (81.4% → 83.5%).
+A quicker fielder who is not in the election cannot help. Range and candidacy are
+different questions, and only one of them was broken.
+
+Two smaller mechanics landed with it: **`startDive` had no caller** (`isFair` in
+PR 7, `BASE_COVER` in PR 6, all over again), and it needed a gate — diving as
+soon as the ball entered the diving envelope meant *every routine fly ball was
+caught mid-dive*. And `DROP_BASE` finally got a record, which promptly showed it
+is **not a lever**: swept over a factor of seven, BABIP moves within noise.
+
+Then the three plate rates PR 9 deferred, swept jointly with the defence:
+
+| | before | after | target |
+|---|---|---|---|
+| strikeout rate | 42.4% | **17.3%** | 15–20 ✓ |
+| walk rate | 11.5% | **10.4%** | 8–14 ✓ |
+| foul : fair | 3.32 | **1.18** | 1–2 ✓ |
+| pitches per PA | 5.08 | **3.99** | 3.6–4.6 ✓ |
+| BABIP | .678 | **.660** | .40–.45 ✗ |
+| runs/game | 4.48 | **5.68** | 8–12 ✗ |
+
+**★ And the two it did not reach are reported, not papered over.** All four
+approved levers were tried and three are measurably not levers: the drop rate,
+positioning (the middle infield gap is 27.3° against 21.0° at the corners, and
+narrowing it moves BABIP within noise) and the dive. What is left is a *time
+budget* — four infielders cover 119ft of arc with roughly 20–26ft of range each
+once the read and the ramp are paid, so about a fifth of the cone cannot be
+covered by anybody. The two numbers that would move it, the arm and the reach,
+are both `awaiting-measurement` bands this PR ruled out of scope precisely so
+they could not be fitted to an outcome.
+
+A game now reads 3–2 over six innings, against #50's 1–0 with fourteen
+strikeouts.
+
+Next: the `sim.venueRollFeel` drift — the blacktop is the springiest surface and
+plays shortest, and a venue cannot be both. Then tag-ups, sac flies and steals,
+once `PlayInputs` has a player behind it.
 
 ---
 

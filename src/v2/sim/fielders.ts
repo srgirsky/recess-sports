@@ -92,7 +92,7 @@ export interface FielderState {
 export function makeFielder(
   char: Character,
   position: PositionId,
-  opts: { nowSec?: number; at?: Vec2 } = {}
+  opts: { nowSec?: number; at?: Vec2; firstStepFrac?: number } = {}
 ): FielderState {
   const home = FIELD_POSITIONS[position];
   const now = opts.nowSec ?? 0;
@@ -101,7 +101,10 @@ export function makeFielder(
     position,
     home: { ...home },
     p: { ...(opts.at ?? home) },
-    speedFts: 0,
+    // ★ NOT ZERO. A fielder is not standing flat-footed when the ball is struck;
+    // he is in a ready crouch having taken a split-step with the pitch. See
+    // `DEFENSE.FIRST_STEP_FTS` for why this is a STATE and not a faster ramp.
+    speedFts: sprintTopSpeedFts(char.stats.speed) * (opts.firstStepFrac ?? DEFENSE.FIRST_STEP_FRAC),
     topFts: sprintTopSpeedFts(char.stats.speed),
     accelFtS2: sprintAccelFtS2(char.stats.speed),
     speed: char.stats.speed,
@@ -194,7 +197,28 @@ export function reachOf(f: FielderState, nowSec: number): number {
  */
 export function canReach(f: FielderState, ball: Vec3, nowSec: number): boolean {
   if (isFrozen(f, nowSec)) return false;
-  const r = reachOf(f, nowSec);
+  return withinReach(f, ball, reachOf(f, nowSec));
+}
+
+/**
+ * Would a DIVE get him there, when standing up will not?
+ *
+ * ★ THE QUESTION A CPU DEFENCE HAS TO ASK, and until PR 10 nothing asked it:
+ * `startDive` had no caller anywhere, so `DIVE_REACH_FT`, `DIVE_WINDOW_SEC` and
+ * `DIVE_WHIFF_SEC` were consumed only by tests. Same shape as `isFair` in PR 7
+ * and `BASE_COVER` in PR 6 — authored, tested, and reachable by nothing.
+ *
+ * The envelope is the standing one at the diving radius, so the capsule rule
+ * (`sim.catchRadius`) applies unchanged: a ball on the ground is reached by the
+ * cylinder, not by a sphere centred on the chest.
+ */
+export function couldReachDiving(f: FielderState, ball: Vec3, nowSec: number): boolean {
+  if (isFrozen(f, nowSec) || f.diveUntilSec !== null) return false;
+  return withinReach(f, ball, reachFt() + DEFENSE.DIVE_REACH_FT);
+}
+
+/** The catch envelope at an explicit reach: cylinder below the chest, sphere above. */
+function withinReach(f: FielderState, ball: Vec3, r: number): boolean {
   const dx = ball.x - f.p.x;
   const dz = ball.z - f.p.z;
   const flat = Math.sqrt(dx * dx + dz * dz);
@@ -209,8 +233,13 @@ export function canReach(f: FielderState, ball: Vec3, nowSec: number): boolean {
  * `rng.bool` always draws, even at a degenerate probability, so a mode that
  * happens to make errors impossible cannot shift the stream for everyone else.
  */
-export function tryCatch(f: FielderState, kind: 'fly' | 'grounder', rng: Rng): boolean {
-  const base = Math.max(0.01, DEFENSE.DROP_BASE - (f.glove - 5) * DEFENSE.DROP_PER_GLOVE);
+export function tryCatch(
+  f: FielderState,
+  kind: 'fly' | 'grounder',
+  rng: Rng,
+  dropBase: number = DEFENSE.DROP_BASE
+): boolean {
+  const base = Math.max(0.01, dropBase - (f.glove - 5) * DEFENSE.DROP_PER_GLOVE);
   const drop = kind === 'fly' ? base : base * DEFENSE.BOBBLE_FACTOR;
   return !rng.bool(drop);
 }
@@ -382,8 +411,34 @@ export function electChaser(args: {
 
   // ★ The pool falls back to EVERYONE when the leash excludes everyone, so the
   // election can never return nobody. v1 carries the same fallback.
+  //
+  // ★ AND CANDIDACY IS ALSO EARNED BY THE INTERCEPT, NOT ONLY BY THE SETTLE.
+  // The leash keys on where the ball COMES TO REST, and that silently excluded
+  // every infielder from any grounder destined for the outfield — including
+  // ones passing within arm's length of them. Measured: a 51mph grounder at -20
+  // degrees passes 9.8ft from the shortstop's post at t=1.05s, comfortably
+  // inside his range, and settles 205ft away in left. His post is 129ft from
+  // that settle point against an 84ft leash, so he was not a candidate at all;
+  // the LEFT FIELDER collected it at t=2.90 and had to relay. That is the real
+  // reason ground balls were 83.5% hits, and it is why PR 10's first step bought
+  // almost nothing on grounders — the infielders were never in the election.
+  //
+  // The settle key is KEPT, because it is what stops the pitcher poaching every
+  // grounder (he is nearest the early path at every spray angle, which is the
+  // failure `LEASH_FT` was introduced for). A fielder is now eligible if the
+  // ball settles in his zone OR he can intercept it near his own post — the
+  // second is a strictly additional door, so nothing that used to qualify stops
+  // qualifying.
   const eligible: number[] = [];
-  for (let i = 0; i < fielders.length; i++) if (withinLeash(fielders[i], settle)) eligible.push(i);
+  for (let i = 0; i < fielders.length; i++) {
+    const f = fielders[i];
+    if (withinLeash(f, settle)) {
+      eligible.push(i);
+      continue;
+    }
+    const hit = cutOff(f, trace.samples, nowSec);
+    if (hit && withinLeash(f, hit.p)) eligible.push(i);
+  }
   const pool = eligible.length > 0 ? eligible : fielders.map((_, i) => i);
 
   const scored = pool.map((i) => {

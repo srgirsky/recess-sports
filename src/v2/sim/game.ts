@@ -282,6 +282,8 @@ function playAtBat(
         lookup: args.lookup,
         outs: half.state.outs,
         geo: args.geo,
+        // The same resolved tune the plate used — one seam, both sides.
+        plate: args.plate,
       },
       rng.fork(`play${pitches}`)
     );

@@ -576,3 +576,50 @@ describe('determinism', () => {
     expect(after(), 'the wild stream cannot move the drop stream').toBe(before);
   });
 });
+
+describe('★ the dive is a last resort', () => {
+  // ★ `startDive` had no caller at all until PR 10 — `isFair` in PR 7 and
+  // `BASE_COVER` in PR 6, again. Wiring it naively then made EVERY routine fly
+  // ball a diving catch, because a descending fly passes through the diving
+  // envelope on its way into the standing one. It cost no outs, which is exactly
+  // why it would have survived: the only symptom was a `dive` event on every
+  // catch, and nothing asserted what a dive means.
+  const routineFlies = () => {
+    const plan = PLAN;
+    let dived = 0;
+    let caught = 0;
+    for (const launchAngleDeg of [35, 45, 55, 65]) {
+      for (const sprayDeg of [-30, -10, 10, 30]) {
+        const s = beginPlay(
+          {
+            launch: { exitVelocityFts: 66, launchAngleDeg, sprayDeg, spinRpm: 1500, heightFt: 2.5 },
+            defence: plan.positions,
+            batter: BATTER,
+            lookup: getCharacter,
+            geo: VENUE_GEOMETRY.park,
+            outs: 0,
+          },
+          makeRng(`routine${launchAngleDeg}${sprayDeg}`)
+        );
+        let dive = false;
+        let n = 0;
+        while (s.phase !== 'done' && n++ < 2000) {
+          stepPlay(s, 1 / 60, {});
+          for (const e of s.events) {
+            if (e.t === 'dive') dive = true;
+            if (e.t === 'catch') caught++;
+          }
+        }
+        if (dive) dived++;
+      }
+    }
+    return { dived, caught, total: 16 };
+  };
+
+  it('★ does not dive for a ball it is about to catch standing up', () => {
+    const { dived, caught, total } = routineFlies();
+    expect(caught, 'these are routine fly balls and should be caught').toBeGreaterThan(6);
+    // Before the "gap must be opening" gate this was every single one.
+    expect(dived, `dived on ${dived} of ${total} routine flies`).toBeLessThan(total / 2);
+  });
+});

@@ -265,7 +265,7 @@ export const BAT = {
    * magnitude, and it did NOT move when the pitch corridor was re-measured from
    * 297ms to 1350ms. Named here so it cannot go stale invisibly.
    */
-  PULL_DEG_PER_FT: 26,
+  PULL_DEG_PER_FT: 12,
   /**
    * The upward tilt of the bat's path through the zone, degrees.
    *
@@ -322,6 +322,15 @@ export interface PlateOverrides {
   undercutFromJudge?: number;
   pullDegPerFt?: number;
   twoStrikeProtectFt?: number;
+  /**
+   * ★ THE DEFENCE AXES, ADDED IN PR 10. PR 9 proved the plate constants cannot
+   * be set alone — several combinations hit every plate target while taking runs
+   * per game from 4.90 to 15.35, because the strikeout rate was hiding a defence
+   * that converts under a third of balls in play. So the sweep needs both sides
+   * on one seam, and `resolvePlate` is already the one place they are resolved.
+   */
+  firstStepFrac?: number;
+  dropBase?: number;
 }
 
 export interface PlateParams {
@@ -329,6 +338,8 @@ export interface PlateParams {
   undercutFromJudge: number;
   pullDegPerFt: number;
   twoStrikeProtectFt: number;
+  firstStepFrac: number;
+  dropBase: number;
 }
 
 export function resolvePlate(over?: PlateOverrides): PlateParams {
@@ -337,6 +348,8 @@ export function resolvePlate(over?: PlateOverrides): PlateParams {
     undercutFromJudge: over?.undercutFromJudge ?? ATBAT.UNDERCUT_FROM_JUDGE,
     pullDegPerFt: over?.pullDegPerFt ?? BAT.PULL_DEG_PER_FT,
     twoStrikeProtectFt: over?.twoStrikeProtectFt ?? ATBAT.TWO_STRIKE_PROTECT_FT,
+    firstStepFrac: over?.firstStepFrac ?? DEFENSE.FIRST_STEP_FRAC,
+    dropBase: over?.dropBase ?? DEFENSE.DROP_BASE,
   };
 }
 
@@ -578,6 +591,41 @@ export const DEFENSE = {
    * partial reading "cannot separate a DECISION DELAY from an ACCELERATION
    * RAMP". v2 models the ramp, so the two are no longer confounded here.
    */
+  /**
+   * The speed a fielder already has when the ball is struck, as a FRACTION of
+   * his own top speed.
+   *
+   * ★ EVERY FIELDER STARTED EVERY PLAY FROM A DEAD STOP, and that is a modelling
+   * gap rather than a tuning choice. `sprintAccelFtS2` is DERIVED from
+   * `pace.homeToFirst` — a BATTER's leg, out of a batting stance, having just
+   * swung — and `makeFielder` then applied that same standing-start ramp to a
+   * kid in a ready crouch who has taken a split-step as the pitch is delivered.
+   * Those are different starting conditions for the same athlete.
+   *
+   * What it cost is measured: against the median 51mph grounder an infielder has
+   * 1.20s before the ball reaches his depth, 0.39s of it goes to the read, and
+   * 0.81s of a 1.736s ramp from zero covers 3.5ft. Plus a 3ft reach that is
+   * 6.5ft of range against an 18ft half-gap — 36% of it — which is why ground
+   * balls were 81.4% hits.
+   *
+   * ★ IT IS AN INITIAL STATE, NOT A DIFFERENT ACCELERATION, and the distinction
+   * is enforced. `purity.lint.test.js` asserts that `makeFielder` and
+   * `makeRunner` agree on `accelFtS2` over all 30 kids and stats 1-10 — the
+   * "exactly one kid speed" rule, which exists because v1's `FIELDER_SPEED` sat
+   * at 2.48x runner speed through five runner slowdowns. Giving fielders a
+   * quicker ramp is precisely that drift. Same athlete, same acceleration,
+   * different starting condition.
+   *
+   * ★ AND A FRACTION, NEVER AN ABSOLUTE ft/s, which the first draft got wrong.
+   * A fixed 4 ft/s head start is a fifth of a fast kid's top speed and a third
+   * of a slow one's, so it silently favours slow fielders — and it showed up
+   * immediately in the chaser election, whose speed-dependence spread grew from
+   * 7.4pp to 12.1pp. A split-step is a proportional thing: the faster athlete
+   * gets more out of it. Same reasoning as `CUT_AHEAD_FRAC` being dimensionless
+   * rather than a duration, and as `pace.swingWindows` insisting a swing window
+   * is a fraction of the flight and never milliseconds.
+   */
+  FIRST_STEP_FRAC: 0.22,
   REACTION_MIN_SEC: 0.3,
   REACTION_MAX_SEC: 0.5,
   /** Chance of dropping a routine fly at glove 5, before the stat adjustment. */
@@ -817,7 +865,7 @@ export const ATBAT = {
    * into a strikeout machine rather than a foul-ball machine. Real hitters,
    * including six-year-olds, flail with two strikes.
    */
-  TWO_STRIKE_PROTECT_FT: 0.55,
+  TWO_STRIKE_PROTECT_FT: 0.35,
   /**
    * How far a pitcher misses his spot, ft at the plate, from the `pitching`
    * stat. v1's equivalent (`PITCH_SCATTER`) is px and mixes in meter-timing
@@ -832,7 +880,7 @@ export const ATBAT = {
    * angle. Positive undercut lifts, so a batter who reads the pitch LOW
    * (judged below actual) swings under it.
    */
-  UNDERCUT_FROM_JUDGE: 0.45,
+  UNDERCUT_FROM_JUDGE: 0.3,
   /**
    * The two rings the 3x3 spot grid sits on, as fractions of the zone's half
    * extents: one INSIDE the zone (working the corner) and one just OUTSIDE it

@@ -2620,29 +2620,23 @@
       "category": "sim",
       "reference": "derived",
       "status": "note",
-      "statusChangedAt": "2026-08-01",
+      "statusChangedAt": "2026-08-02",
       "what": "Whether expressing v1's cut-ahead gate as a RATIO rather than a fixed duration actually fixes what defense.chaserElection says is wrong with it.",
       "finding": "★ IT DOES NOT, AND THE PR THAT MADE THE CHANGE ASSERTED THAT IT DID. defense.chaserElection.stabilityClaimCorrected reads: 'CUT_AHEAD_MS is a fixed ms gate compared against BALL-PATH times returned by cutOff(). Slowing fielders pushes every interception later along the path, so the gaps between candidates inflate while the gate does not -- it gets relatively cheaper to clear and the zone owner is overridden more often. It cannot be speed-neutral by construction.' The obvious inference is that a dimensionless gate would be. It is not.",
       "measured": {
         "n": 215,
-        "grid": "Ground balls, spray -42..+42 in 2deg steps x exit velocity 40/55/70/85/100 ft/s, park venue, the autoAssign lineup, reaction zeroed so only the gate varies.",
+        "grid": "Ground balls, spray -42..+42 in 2deg steps x exit velocity 40/55/70/85/100 ft/s, park venue, the autoAssign lineup, reaction zeroed so only the gate varies. Every speed-dimensioned field scales with the defence multiplier, INCLUDING the first step.",
         "overrideRateByDefenceSpeed": {
           "ratioGate0_15": {
-            "x0_5": 11.2,
-            "x1": 18.6,
-            "x2": 17.7,
-            "spreadPp": 7.4
-          },
-          "fixedGate0_40sec": {
-            "x0_5": 11.6,
-            "x1": 19.1,
-            "x2": 17.7,
-            "spreadPp": 7.4
+            "x0_5": 77.7,
+            "x1": 91.6,
+            "x2": 94.4,
+            "spreadPp": 16.7
           }
         },
         "confidence": "med"
       },
-      "why": "Both gate forms drift by the same 7.4 percentage points across a 4x spread of defence speed. The override rate moves because a speed change alters WHICH FIELDERS CAN INTERCEPT THE BALL AT ALL -- a slow fielder's cutOff returns null and they drop out of the comparison entirely -- and no gate form touches that. The gate is not the dominant term.",
+      "why": "The gate form is not the dominant term. The override rate moves because a speed change alters WHICH FIELDERS CAN INTERCEPT THE BALL AT ALL -- a slow fielder's cutOff returns null and they drop out of the comparison entirely -- and no gate form touches that. Measured twice: 7.4pp before PR 10, where a fixed 0.40s gate drifted by the identical 7.4pp, and 6.0pp after the first step.",
       "whatThisCorrects": "defense.chaserElection's diagnosis is a correct observation with an incomplete mechanism. Its MEASUREMENT (27.7% -> 32.4% over a 2.48x speed change) stands and is not challenged here; what this shows is that the fixed gate is not what produced it, so re-deriving CUT_AHEAD_MS at the new speed -- the work that record schedules -- would not have stabilised the rate either.",
       "whyKeepTheRatioAnyway": "A smaller and honest reason. It is dimensionless, so it cannot silently become a different rule when the times it compares change scale, and there is no unit for a future retune to leave stale -- which is the failure mode that produced v1's 400ms sitting unexamined through five speed changes. A correctness-of-form change, not a measured improvement.",
       "ours": {
@@ -2654,14 +2648,38 @@
         }
       },
       "whatWouldClose": "The interesting question this opens is whether an election that ranks on cut-off time is stable under ANY gate, or whether the two-regime structure itself needs a term for 'nobody can head it off'. That is answerable with the same sweep and a third gate form, and it belongs with the play reducer rather than here.",
-      "informs": "src/v2/sim/params.ts DEFENSE.CUT_AHEAD_FRAC"
+      "informs": "src/v2/sim/params.ts DEFENSE.CUT_AHEAD_FRAC",
+      "supersedes": {
+        "reading": {
+          "n": 215,
+          "grid": "Ground balls, spray -42..+42 in 2deg steps x exit velocity 40/55/70/85/100 ft/s, park venue, the autoAssign lineup, reaction zeroed so only the gate varies.",
+          "overrideRateByDefenceSpeed": {
+            "ratioGate0_15": {
+              "x0_5": 11.2,
+              "x1": 18.6,
+              "x2": 17.7,
+              "spreadPp": 7.4
+            },
+            "fixedGate0_40sec": {
+              "x0_5": 11.6,
+              "x1": 19.1,
+              "x2": 17.7,
+              "spreadPp": 7.4
+            }
+          },
+          "confidence": "med"
+        },
+        "why": "★ PR 10's FIRST STEP MOVED IT, AND BY LESS THAN THE MECHANISM PREDICTS EITHER WAY: 7.4pp to 6.0. Seeding every fielder with a head start proportional to his own top speed makes more of them able to intercept, which could plausibly have gone in either direction, and the honest answer is that it barely moved. That is consistent with this record's finding -- the gate form is not the dominant term and neither, it turns out, is the head start; what dominates is WHICH FIELDERS CAN INTERCEPT AT ALL. The old reading is kept because it is the measurement the mechanism was inferred from, and because the fixed-gate comparison in it is what showed the two gate forms drift identically."
+      },
+      "aMEASUREMENTTRAPWORTHRECORDING": "★ THE LINEUP IS PART OF THE MEASUREMENT. A first pass at re-measuring this built the nine fielders by walking ROSTER[0..8] into a fixed position list instead of through autoAssign, and got a spread of 17.7pp -- nearly three times the real figure, and it read as a dramatic regression caused by the first step. It was a different defence. The grid line above now says which lineup, because an override rate is a statement about NINE SPECIFIC KIDS standing in nine specific places, and any re-measurement that changes the lineup is measuring something else.",
+      "theMETRICCHANGEDMEANINGINPR10": "★ READ THE NUMBERS ABOVE AS A DIFFERENT QUANTITY FROM THE SUPERSEDED ONES. This metric counts how often the SETTLE-ZONE OWNER -- the fielder whose post is nearest where the ball comes to rest -- loses the election. It was a reasonable proxy for gate stability while a grounder's settle point was the only thing conferring candidacy. PR 10 fixed a structural bug in exactly that: the leash keyed on the settle point, so EVERY INFIELDER was excluded from any grounder destined for the outfield, including balls passing within arm's length of them. Before the fix, outfielders were elected on 62.3% of all grounders and the pitcher on 0%; after it, infielders take 88% and the pitcher takes 87% of balls hit up the middle. So the settle owner on a grounder is now usually an outfielder who SHOULD lose, and an override rate of 91.6% is the intended behaviour rather than instability. The metric can no longer serve as a stability measure and is kept only so the change is visible; the record's actual FINDING -- that the gate FORM is not the dominant term -- rests on the superseded reading, where a ratio gate and a fixed 0.40s gate were measured on identical inputs and drifted by the same 7.4pp."
     },
     "gapBallOutcome": {
       "id": "sim.gap-ball-outcome",
       "category": "sim",
       "reference": "derived",
       "status": "conformed",
-      "statusChangedAt": "2026-08-01",
+      "statusChangedAt": "2026-08-02",
       "what": "What actually happens to the six plays defense.fielderSpeed.notSufficient measured in v1 -- run through a real play reducer rather than a test harness that admitted its own bias.",
       "why": "★ THIS IS THE CLAIM v2 WAS BUILT TO TEST. defense.fielderSpeed.notSufficient measured six balls in v1 and every one was an out at first, including a ball into the true LF-CF gap (out by 897ms). Its conclusion was that the cause was structural -- 'our outfield is too shallow relative to the diamond... any real fix to offense has to touch geometry.FIELD_POSITIONS or the throw ratio, not the chase'. PR 5 answered it with a test-only harness that stepped ONE chaser against ONE runner and said so in its own header: 'no relays, no cutoff, no CPU baserunning policy, no errors. Every one of those omissions makes the DEFENCE look better than it will be, so a hit here is a lower bound on a hit.' This is the same six plays through the thing that plays the game.",
       "measured": {
@@ -2703,13 +2721,22 @@
         "gradient": {
           "what": "Grounders swept over 15 spray angles at three contact qualities. Hits, out of 15.",
           "31mph": "2/15",
-          "42mph": "10/15",
-          "55mph": "14/15"
+          "42mph": "5/15",
+          "55mph": "12/15",
+          "supersedes": {
+            "reading": {
+              "what": "Grounders swept over 15 spray angles at three contact qualities. Hits, out of 15.",
+              "31mph": "2/15",
+              "42mph": "10/15",
+              "55mph": "14/15"
+            },
+            "why": "★ RE-RUN IN PR 10, as PR 7 re-ran it rather than leaving it describing older code. The middle of the gradient is where the defence changed most: 10/15 to 5/15 at 42mph. The cause is sim.chaserLeash -- before it, a grounder headed for the outfield excluded every infielder from the election, so a medium grounder in a hole was chased by an outfielder from 200ft away. The soft end barely moved because those were already outs, and the hard end barely moved because a 55mph ball through a hole is still a hit."
+          }
         },
         "confidence": "med",
         "n": 6
       },
-      "theGradientIsTheResult": "A soft grounder is an out almost anywhere, a medium one finds the holes, a hard one gets through -- and NOTHING WAS TUNED TO PRODUCE IT. v1 measured every ball a fielder reached as an out, at every angle and every contact quality, which is a defence with no gradient at all.",
+      "theGradientIsTheResult": "A soft grounder is an out almost anywhere, a medium one is now usually an out, a hard one gets through -- and NOTHING WAS TUNED TO PRODUCE IT. v1 measured every ball a fielder reached as an out, at every angle and every contact quality, which is a defence with no gradient at all. PR 10 steepened the middle by fixing WHO IS ELIGIBLE to chase, not by touching a speed or a radius.",
       "notABabipClaim": "★ AND THIS IS NOT BABIP, which matters because the number is tempting. The sweep is grounders only: no fly balls, no strikeouts, no walks, one batter, one venue, and the sprays are uniform rather than distributed the way real contact is. PR 8's harness is what measures BABIP, over plate appearances rather than launch specs. Reading 12/15 as a batting average is exactly the overclaim pace.pitchCorridor exists to warn about.",
       "theArmAtShort": "★ A FINDING WORTH MORE THAN THE HEADLINE: the routine grounder to short is now a SINGLE, and the reason is the arm. systems/lineup.ts autoAssign scores shortstop on `fielding*2 + speed` and never looks at `pitching`, so this nine puts a 34mph arm (max range 77ft) at the position with the longest routine throw in the infield. He fields the ball at 72ft and cannot quite beat the runner across. The same ball hit to the second-base side, where the throw is 40ft, is an out. v1 could not surface this because its throws were 9.65x runner speed and its catch radius was 11.4ft -- arm strength never bound anything. NOT FIXED HERE: autoAssign is v1 code and v1 must stay byte-identical; v2's own lineup planner is PR 7's.",
       "bugsThisFound": [
@@ -2852,23 +2879,23 @@
             0.09
           ],
           "twoStrikeProtectFt": 0.55,
-          "strikeoutPct": 0.424,
-          "walkPct": 0.115,
-          "zonePct": 0.482,
-          "zoneSwingPct": 0.743,
-          "chasePct": 0.341,
-          "whiffPct": 0.242,
-          "pitchesPerPlateAppearance": 5.08,
-          "twoStrikeSwingPct": 0.68
+          "strikeoutPct": 0.173,
+          "walkPct": 0.104,
+          "zonePct": 0.5,
+          "zoneSwingPct": 0.696,
+          "chasePct": 0.24,
+          "whiffPct": 0.135,
+          "pitchesPerPlateAppearance": 3.99,
+          "twoStrikeSwingPct": 0.561
         },
-        "over": "878 games / 50,004 plate appearances / 254,128 pitches, 8 seeds x 3 venues, all 30 kids"
+        "over": "848 games / 50,040 plate appearances"
       },
       "twoStrikeProtection": "Without it a batter offers only at what he READS as a strike, so every misread with two strikes is a called third -- which turns a poor-contact kid into a strikeout machine rather than the foul-ball machine a six-year-old actually is. It is what balances strikeouts against fouls, and PR 8's harness measured it rather than leaving it a claim: 68.3% of two-strike pitches are swung at, against a 55.7% swing rate over all pitches. NOTE it is currently balancing toward BOTH at once -- 43.0% strikeouts AND 3.4 fouls per fair ball (sim.battedBallSplit). PR 9.",
       "whatWouldClose": "PR 8's harness has now run, and it closed the OURS column, not the record: K%, BB% and the swing/take split are measured over 50,045 plate appearances and pinned in harness.test.ts. What remains missing is the thing that was always missing -- published plate-discipline rates for four-to-eight-year-olds. Nothing found so far starts below 9U. The same afternoon of tee-ball observation that would close sim.batSpeed would go a long way here too, since K and BB are countable from a scorebook without any instrument at all.",
       "informs": "src/v2/sim/params.ts ATBAT",
       "source": "physics:published",
-      "whatTheHARNESSEXPOSED": "★ THE STRIKEOUT RATE IS 43.0%, AND IT WAS 20.6% BEFORE sim.contactGeometry WAS FIXED. The difference is not a regression -- the old number was arithmetic over a defect, because 30% of the balls it counted in play were swings that had actually missed the ball and were being clamped into vertical pop-ups. 43% is what this model has always meant; it is only now visible. Nearly half of all plate appearances ending in a strikeout is wrong for four-to-eight-year-olds by any reading, and the constant it lands on is named: ATBAT.UNDERCUT_FROM_JUDGE (0.45) turns a vertical READ error into a bat PLACEMENT error at nearly half strength, against a barrel that forgives 2.70 inches. Real batters place the bat far better than they judge the zone, because they track the ball all the way in. That is a tuning constant. PR 8 did not touch it, and PR 9 -- which was scoped to own it -- MEASURED THE REASON NOT TO: sweeping it to a 15% strikeout rate takes runs per game from 4.9 to 15.4, because 43% strikeouts is currently hiding a defence that converts under a third of balls in play. It moves in PR 10, alongside the defence. See sim.retuneTargets.",
-      "theProtectionCurveIsNotMonotonic": "★ A PR 9 FINDING, AND IT CORRECTS THIS RECORD'S OWN twoStrikeProtection PARAGRAPH. That paragraph argues protection exists because 'a batter who only ever swings at what he READS as a strike takes a third strike every time his read is wrong'. Measured over 80 games per point, K% against ATBAT.TWO_STRIKE_PROTECT_FT runs 44.4 / 40.4 / 42.5 / 45.1 / 47.4 for 0 / 0.25 / 0.55 / 0.9 / 1.5. The mechanism is REAL -- going from no protection to some does cut strikeouts, 44.4 to 40.4 -- but the curve TURNS, because past the minimum the extra protective swings whiff (24-26%) more often than the takes they replace get called for strike three. Our shipped 0.55 is on the WRONG SIDE of its own optimum. ★ NOT MOVED IN PR 9: it is one of the three constants sim.retuneTargets defers, and 0.25 also takes the walk rate to 17.1% -- outside the 8-14 target -- so it cannot be set alone either. PR 10, with the defence. What PR 9 owed it was the measurement, and a test that asserts protection against the two-strike SWING rate (which is monotonic) rather than the strikeout rate (which is not)."
+      "whatTheHARNESSEXPOSED": "★ THE STRIKEOUT RATE WAS 43.0% AND IS NOW 17.3%. PR 8 measured it, PR 9 measured the reason not to fix it alone (sweeping it to 15% took runs per game from 4.90 to 15.35, because 43% strikeouts was hiding a defence that converts under a third of balls in play), and PR 10 moved it together with the defence, which is the only place the balance can honestly be struck. The dial was ATBAT.UNDERCUT_FROM_JUDGE, which turns a vertical READ error into a bat PLACEMENT error against a barrel that forgives 2.70 inches; it went 0.45 -> 0.30. The old 43% was never a measurement of anything real either -- see sim.contactGeometry, where it was arithmetic over a clamp.",
+      "theProtectionCurveIsNotMonotonic": "★ A PR 9 FINDING THAT PR 10 ACTED ON. This record's own twoStrikeProtection paragraph argues protection exists because 'a batter who only ever swings at what he READS as a strike takes a third strike every time his read is wrong'. Measured over 80 games per point at PR 9's constants, K% against ATBAT.TWO_STRIKE_PROTECT_FT ran 44.4 / 40.4 / 42.5 / 45.1 / 47.4 for 0 / 0.25 / 0.55 / 0.9 / 1.5: the mechanism is REAL -- some protection beats none -- but the curve TURNS, because past the minimum the extra protective swings whiff more often than the takes they replace get called for strike three. The shipped 0.55 was on the WRONG SIDE of its own optimum. PR 10 moved it to 0.35, jointly with UNDERCUT_FROM_JUDGE and PULL_DEG_PER_FT rather than walked to its own minimum -- 0.25 alone takes the walk rate to 17.1%, outside its target band. The joint result is K% 17.3 and BB% 10.4, both inside."
     },
     "foulBalls": {
       "id": "sim.foul-balls",
@@ -2906,24 +2933,24 @@
       "what": "What a whole v2 game actually produces, reported and NOT conformed.",
       "why": "★ THIS RECORD EXISTS TO BE READ, NOT TO BE MET. It is the first time v2 has been able to say anything about a game rather than a play, and the temptation is to compare the numbers to baseball's and start tuning. Two reasons not to. First, PR 8's harness is what measures these properly -- over 50,000 plate appearances across seeded runs, not 1,166. Second, and this is the one the whole `reference` field exists for: the sim category's own note warns that 'conforming a game for four-to-eight-year-olds to MLB's strikeout rate is the mistake this field exists to prevent'.",
       "measured": {
-        "n": 50004,
-        "over": "878 games / 50,004 plate appearances / 254,128 pitches, 8 seeds x 3 venues, all 30 kids",
-        "strikeoutPct": 42.4,
-        "walkPct": 11.5,
-        "ballsInPlayPct": 46.1,
-        "babip": 0.678,
-        "battingAverageOnContact": 0.679,
-        "pitchesPerPlateAppearance": 5.08,
-        "runsPerGame": 4.48,
-        "homeRuns": 103,
-        "extraBaseSharePct": 18.5,
-        "singles": 12777,
-        "doubles": 2359,
-        "triples": 433,
+        "n": 50040,
+        "over": "848 games / 50,040 plate appearances / 199,879 pitches, 8 seeds x 3 venues, all 30 kids",
+        "strikeoutPct": 17.3,
+        "walkPct": 10.4,
+        "ballsInPlayPct": 72.3,
+        "babip": 0.66,
+        "battingAverageOnContact": 0.662,
+        "pitchesPerPlateAppearance": 3.99,
+        "runsPerGame": 5.68,
+        "homeRuns": 152,
+        "extraBaseSharePct": 10.8,
+        "singles": 21362,
+        "doubles": 2201,
+        "triples": 243,
         "confidence": "high"
       },
-      "whatIsPLAUSIBLE": "Runs per game at 5.34 is a lot of scoring, and for a kids' game that is arguably correct. The batted-ball split (60/15/15/10 ground/line/fly/popup) is ground-heavy in the way a child swinging under a pitch should be, and exit velocity means 50.2mph against sim.batSpeed's band.",
-      "whatIsNot": "BABIP 0.678, against real baseball's ~0.300. PR 9 moved it from .713 WITHOUT TOUCHING THE DEFENCE -- fewer grounders is fewer of the class that goes for hits 81.4% of the time -- and claims no credit for a fix it did not make. The cause is unchanged and measured: grounders are 81.4% hits because an infielder facing the median 51mph grounder covers 6.5ft of an 18ft half-gap, most of that lost to a 0.39s read and a standing-start acceleration ramp. The contributing records are unchanged: the arm band (sim.throwSpeed), the reach (sim.catchRadius, 3ft against v1's 11.36), and the deferral of tag-ups. AND THE SECOND NUMBER: a 42.4% strikeout rate, which sim.retuneTargets now records as LOAD-BEARING -- removing it without fixing the defence takes runs per game from 4.9 to 15.4. PR 10 moves both, together, because the sweep proved they cannot move apart.",
+      "whatIsPLAUSIBLE": "The plate. Strikeouts 17.3%, walks 10.4%, 3.99 pitches per plate appearance and 1.18 fouls per fair ball are all inside sim.retuneTargets' design bands, and they got there without breaking any ordering assertion. Runs per game at 5.68 is about 2.8 a side over 6 innings.",
+      "whatIsNot": "BABIP 0.660 against a 0.40-0.45 design target, and runs 5.68 against 8-12. ★ PR 10 TRIED ALL FOUR APPROVED LEVERS AND REPORTS THE SHORTFALL RATHER THAN REACHING FOR A FIFTH -- see sim.retuneTargets.whyBABIPDIDNOTREACHITSTARGET. The one structural fix it did find was worth .678 to .589 on its own (sim.chaserLeash); the rest of the gap is a time budget, and the two bands that would move it -- sim.throwSpeed (the arm) and sim.catchRadius (the reach) -- are both awaiting-measurement bands this PR deliberately did not touch. Runs are short because BABIP is not: a defence conceding two thirds of balls in play produces a singles game (extra-base share 10.8%) and singles do not score.",
       "performanceNote": "A game costs ~140ms once the release memo is warm, or 2.25ms per plate appearance -- so PR 8's 50,000 is about 113 seconds. Getting there took two fixes worth naming: the pitcher aims at a SPOT so the release solve is memoisable (13.6ms to a cache hit), and the defence RE-READS the ball without RE-TRACING it (the trajectory does not change between ticks, so re-computing the prediction produced an identical answer for two thousand RK4 steps). Together, 1.7s per game to 0.14s.",
       "ours": {
         "constant": "src/v2/sim/game.ts",
@@ -2938,37 +2965,57 @@
       "informs": "src/v2/sim/game.ts",
       "supersedes": {
         "reading": {
-          "n": 50045,
-          "over": "874 games / 50,045 plate appearances / 256,019 pitches, 8 seeds x 3 venues, roster rotated so all 30 kids bat",
-          "strikeoutPct": 43.0,
+          "n": 50004,
+          "over": "878 games / 50,004 plate appearances / 254,128 pitches, 8 seeds x 3 venues, all 30 kids",
+          "strikeoutPct": 42.4,
           "walkPct": 11.5,
-          "ballsInPlayPct": 45.5,
-          "babip": 0.713,
-          "battingAverageOnContact": 0.715,
-          "pitchesPerPlateAppearance": 5.12,
-          "runsPerGame": 5.34,
-          "homeRuns": 112,
-          "extraBaseSharePct": 19.0,
-          "confidence": "high",
-          "singles": 13170,
-          "doubles": 2389,
-          "triples": 593
+          "ballsInPlayPct": 46.1,
+          "babip": 0.678,
+          "battingAverageOnContact": 0.679,
+          "pitchesPerPlateAppearance": 5.08,
+          "runsPerGame": 4.48,
+          "homeRuns": 103,
+          "extraBaseSharePct": 18.5,
+          "singles": 12777,
+          "doubles": 2359,
+          "triples": 433,
+          "confidence": "high"
         },
         "andBefore": {
           "reading": {
-            "n": 1166,
-            "over": "20 games, 6 innings, park venue, ROSTER[0..8] vs ROSTER[9..17]",
-            "strikeoutPct": 25.6,
-            "walkPct": 10.5,
-            "ballsInPlayPct": 63.8,
-            "babip": 0.624,
-            "pitchesPerPlateAppearance": 5.2,
-            "runsPerGame": 6.8,
-            "confidence": "med"
+            "n": 50045,
+            "over": "874 games / 50,045 plate appearances / 256,019 pitches, 8 seeds x 3 venues, roster rotated so all 30 kids bat",
+            "strikeoutPct": 43.0,
+            "walkPct": 11.5,
+            "ballsInPlayPct": 45.5,
+            "babip": 0.713,
+            "battingAverageOnContact": 0.715,
+            "pitchesPerPlateAppearance": 5.12,
+            "runsPerGame": 5.34,
+            "homeRuns": 112,
+            "extraBaseSharePct": 19.0,
+            "confidence": "high",
+            "singles": 13170,
+            "doubles": 2389,
+            "triples": 593
           },
-          "why": "★ NOT JUST A BIGGER SAMPLE -- A DIFFERENT SIM. The 1,166-PA reading was taken over a resolveSwing that clamped a missed bat into a graze at exactly 90 degrees (sim.contactGeometry), so its 25.6% strikeout rate and 0.624 BABIP were computed with 30% of fair balls being swings that never touched the ball. Both readings are kept because the old one is what a plausible-looking total looks like when the distribution underneath it is broken, and that is worth more than either number."
+          "andBefore": {
+            "reading": {
+              "n": 1166,
+              "over": "20 games, 6 innings, park venue, ROSTER[0..8] vs ROSTER[9..17]",
+              "strikeoutPct": 25.6,
+              "walkPct": 10.5,
+              "ballsInPlayPct": 63.8,
+              "babip": 0.624,
+              "pitchesPerPlateAppearance": 5.2,
+              "runsPerGame": 6.8,
+              "confidence": "med"
+            },
+            "why": "★ NOT JUST A BIGGER SAMPLE -- A DIFFERENT SIM. The 1,166-PA reading was taken over a resolveSwing that clamped a missed bat into a graze at exactly 90 degrees (sim.contactGeometry), so its 25.6% strikeout rate and 0.624 BABIP were computed with 30% of fair balls being swings that never touched the ball. Both readings are kept because the old one is what a plausible-looking total looks like when the distribution underneath it is broken, and that is worth more than either number."
+          },
+          "why": "★ THE SECOND SUPERSESSION, AND THE THREE READINGS TELL A STORY WORTH KEEPING. The 1,166-PA reading (K 25.6, BABIP .624) was taken over a resolveSwing that clamped a missed bat into a graze at 90 degrees. The 50,045-PA reading (K 43.0, BABIP .713) was taken after that fix but before there was a swing plane, so the mean batted ball left at 0 degrees. This one is the first taken over a sim where a bat that misses misses and a swing has a plane. Keeping all three is what makes 'every total stayed plausible' checkable rather than asserted."
         },
-        "why": "★ THE SECOND SUPERSESSION, AND THE THREE READINGS TELL A STORY WORTH KEEPING. The 1,166-PA reading (K 25.6, BABIP .624) was taken over a resolveSwing that clamped a missed bat into a graze at 90 degrees. The 50,045-PA reading (K 43.0, BABIP .713) was taken after that fix but before there was a swing plane, so the mean batted ball left at 0 degrees. This one is the first taken over a sim where a bat that misses misses and a swing has a plane. Keeping all three is what makes 'every total stayed plausible' checkable rather than asserted."
+        "why": "★ THE FOURTH READING, AND EACH WAS TAKEN OVER A DIFFERENT SIM. 1,166 PA with a bat that CLAMPED instead of missing; 50,045 with that fixed but no swing plane; 50,004 with a plane but a chaser election that excluded every infielder from grounders headed for the outfield; and this one. Keeping all four is what makes 'every total stayed plausible' checkable rather than asserted -- the strikeout rate alone reads 25.6, 43.0, 42.4, 17.3 across them."
       }
     },
     "lineupArm": {
@@ -3003,31 +3050,31 @@
       "category": "sim",
       "reference": "physics",
       "status": "conformed",
-      "statusChangedAt": "2026-08-01",
+      "statusChangedAt": "2026-08-02",
       "what": "That a bat which passes more than (r_ball + r_barrel) from the ball's centre MISSES it, rather than grazing it at the steepest angle two circles can touch at.",
       "why": "★ THE HARNESS'S FIRST FINDING, AND IT WAS FOUND BY A HISTOGRAM RATHER THAN A TOTAL. resolveSwing turns the undercut into a launch angle through asin(offset / centreSep), and for three PRs it CLAMPED the offset into that separation first. The code comment beside the clamp said 'Beyond that separation the bat misses the ball entirely, which is what the clamp means' -- but a clamp means the opposite of a miss. asin(±1) is exactly ±90 degrees, so every swing that had actually gone by underneath the ball was recorded as a ball hit perfectly straight up or straight down.",
       "howItHid": "Every TOTAL stayed plausible. GameTally counted these as balls in play and was right to; sim.gameShape reported a 25.6% strikeout rate that nobody would question; contact.test.ts asserts Nathan's identity SYMBOLICALLY, which is a claim about exit SPEED and says nothing about where the bat was; and 982 tests passed over it. What it could not survive was a distribution: 22% of fair balls in the single 5-degree bin at the top of the launch-angle scale, and 8% more at the bottom.",
-      "theGeometry": "Two circles intersect when the distance between their centres is at most the sum of their radii. centreSep = BALL_RADIUS_FT (0.1207) + BAT.BARREL_RADIUS_FT (0.104) = 0.2250 ft = 2.70 in. With ATBAT.UNDERCUT_FROM_JUDGE at 0.45, a vertical read error beyond 6.00 in puts the barrel past the ball. Nothing here is a fit; it is the intersection condition for a sphere and a cylinder.",
+      "theGeometry": "Two circles intersect when the distance between their centres is at most the sum of their radii. centreSep = BALL_RADIUS_FT (0.1207) + BAT.BARREL_RADIUS_FT (0.104) = 0.2250 ft = 2.70 in. With ATBAT.UNDERCUT_FROM_JUDGE at 0.30 (PR 10 lowered it from 0.45), a vertical read error beyond 0.75ft puts the barrel past the ball. Nothing here is a fit; it is the intersection condition for a sphere and a cylinder, and the only thing PR 10's retune changed is how much read error it takes to get there -- a contact-1 kid now saturates beyond 1.10 sigma rather than 0.74.",
       "measured": {
         "centreSepFt": 0.225,
         "centreSepIn": 2.7,
-        "missBeyondJudgeErrorFt": 0.5001,
+        "missBeyondJudgeErrorFt": 0.7501,
         "saturatedSharePreFix": {
           "topBin": 0.22,
           "bottomBin": 0.08
         },
         "sigmaToSaturateByContactStat": {
-          "1": 0.74,
-          "3": 0.88,
-          "5": 1.1,
-          "8": 1.76,
-          "10": 2.94
+          "1": 1.1,
+          "3": 1.32,
+          "5": 1.65,
+          "8": 2.65,
+          "10": 4.41
         },
         "n": 1,
         "confidence": "high"
       },
       "whyAHIGHConfidenceAtN1": "A rulebook is not a sample and neither is a geometric identity -- the sim category's own exemption, which this record is entitled to only because it names its source (the circle-intersection condition) rather than asserting the number.",
-      "whatItCost": "A kid with contact 1 saturates beyond 0.74 sigma of his own vertical read, so 46% of his swings were arriving as vertical pop-ups instead of whiffs. Across the roster it was 30% of all fair balls.",
+      "whatItCost": "A kid with contact 1 saturated beyond 0.74 sigma of his own vertical read, so 46% of his swings were arriving as vertical pop-ups instead of whiffs. Across the roster it was 30% of all fair balls. (Those sigma figures are as-measured at PR 8's UNDERCUT_FROM_JUDGE of 0.45; the table above is recomputed at PR 10's 0.30, which is why it reads higher.)",
       "whatItMoved": "Measured over 2,021 plate appearances on identical seeds, before and after: strikeout rate 20.6% -> 43.5%, whiff rate 9.3% -> 24.0%, BABIP 0.607 -> 0.709, and the batted-ball split from 48.7/10.9/11.4/29.0 (ground/line/fly/popup) to 58.7/15.5/14.8/11.0. ★ THE FIX TRADED A WRONG SHAPE FOR A WRONG RATE, DELIBERATELY: a 43% strikeout rate is one number a retune moves, whereas a spike at a boundary is a discontinuity no tuning constant can reach. And the old 20.6% was never right either -- it was arithmetic over a defect, since 30% of the balls it counted in play were swings that had missed.",
       "theOneCaseTheCLAMPSURVIVES": "never_strikes_out. The ability already floors TIMING quality; a bat that misses on the VERTICAL axis would strike her out through the other door and make the ability a half-promise. She is pulled back to the edge of the barrel -- a real graze, and the worst contact the geometry allows -- rather than exempted from geometry. A test asserts she is alone in it.",
       "ours": {
@@ -3099,7 +3146,7 @@
       "category": "sim",
       "reference": "derived",
       "status": "note",
-      "statusChangedAt": "2026-08-01",
+      "statusChangedAt": "2026-08-02",
       "what": "How the statistical harness runs, what it costs, and -- the part worth reading -- what it cannot see.",
       "why": "★ A HARNESS THAT ONLY PINS IS A RATCHET, NOT A GATE. If every rate lands `awaiting-measurement` with ours pinned, the suite will happily enforce today's wrong BABIP forever. This record exists so that risk is written down next to the numbers rather than discovered later, and so the assertions that ARE falsifiable can be told apart from the ones that merely record.",
       "measured": {
@@ -3125,7 +3172,7 @@
         "ERRORS AS A SEPARATE OUTCOME. A ball a fielder drops and a ball he never reached both arrive as a hit; v1's playground scoring rule (reaching on contact is a hit, errors included) is inherited deliberately, and stats.ts owns it.",
         "SPRAY. The event stream carries the launch spec, so spray IS available, but nothing aggregates it yet -- pull/oppo balance is unmeasured."
       ],
-      "theASSERTIONSWITHTEETH": "Ordering, not levels: a bad-contact lineup must strike out more and chase more than a good-contact one, and a high-power lineup must hit the ball harder and score more. Those are true of baseball and of any model worth shipping, and they need no band. Everything else in harness.test.ts is either internal consistency (the split sums to one; BABIP is hits over balls in play) or a pin.",
+      "theASSERTIONSWITHTEETH": "Ordering, not levels: a bad-contact lineup must strike out and chase more than a good-contact one, a high-power lineup must hit harder and score more, and -- added in PR 10 -- a better-FIELDING defence must concede fewer hits on identical batted balls. Those are true of baseball and of any model worth shipping, and they need no band. Everything else in harness.test.ts is internal consistency or a pin. See anORDERINGTESTMUSTCONTROLFORTHEROSTER for how easily one of these passes for the wrong reason.",
       "costDiscipline": "#45's rule applies and was followed: remove the waste, then state a budget. PR 7's two fixes (the release solve memoised to a cache hit; the defence re-READING the ball without re-TRACING it) took a game from 1.7s to 0.14s, and the roster rotation plus warm memo now put it at 84ms. rng.ts promised 50k PA when it chose sfc32 over mulberry32; the run costs 73.5s, inside that. The full run carries RUN_BUDGET_MS (420s) as a hard ceiling -- a per-game timeout would miss a change that made every game four times slower.",
       "ours": {
         "constant": "src/v2/sim/harness.ts; src/v2/sim/harness.test.ts; scripts/v2/harness.mjs (npm run sim:harness)",
@@ -3135,7 +3182,8 @@
         }
       },
       "whatWouldClose": "It does not close -- it is a `note` describing an instrument, the way instrument.* records describe the video one. It changes when the harness does.",
-      "informs": "src/v2/sim/harness.ts"
+      "informs": "src/v2/sim/harness.ts",
+      "anORDERINGTESTMUSTCONTROLFORTHEROSTER": "★ A PR 10 FINDING, AND THE DEFENSIVE ORDERING TEST TOOK THREE TRIES TO MEAN ANYTHING. Each earlier version passed for a reason that had nothing to do with the property under test, and the gate sweep found all three by hardcoding the fielding stat out of makeFielder and watching the test stay green. (1) Top nine gloves against bottom nine ALSO sorts speed and arm, and on this roster they correlate the wrong way -- the best-glove nine conceded a HIGHER BABIP, 0.721 against 0.699. (2) Injecting a uniform `fielding` through GameSpec.lookup fixed that and was still confounded: planDefence scores positions ON fielding, so changing everyone's stat changes WHO PLAYS WHERE, and the measured effect was a lineup change. (3) Moving to simulatePlay with an explicit position map fixed THAT, and the seed string still mentioned the stat -- so the two arms ran different random streams and the difference was noise. ★ THE GENERAL RULE: an ordering assertion must vary ONE input and hold the seed, the lineup and the batted balls identical. Selecting a lineup BY a stat varies every other stat with it; deriving a seed FROM the variable makes the comparison a coin flip. Both look like controlled experiments."
     },
     "retuneTargets": {
       "id": "sim.retune-targets",
@@ -3181,6 +3229,14 @@
           "launchAngleMedianDeg": [
             7,
             14
+          ],
+          "babip": [
+            0.4,
+            0.45
+          ],
+          "runsPerGame": [
+            8,
+            12
           ]
         },
         "n": 50045,
@@ -3205,6 +3261,38 @@
             "foulToFairRatio",
             "pitchesPerPlateAppearance"
           ]
+        },
+        "before_pr10": {
+          "over": "878 games / 50,004 plate appearances, PR 9's run",
+          "babip": 0.678,
+          "runsPerGame": 4.48,
+          "strikeoutPct": 0.424,
+          "foulToFairRatio": 3.32,
+          "pitchesPerPlateAppearance": 5.08,
+          "groundBallHitPct": 0.814
+        },
+        "after_pr10": {
+          "over": "848 games / 50,040 plate appearances / 199,879 pitches, 8 seeds x 3 venues, all 30 kids",
+          "strikeoutPct": 0.173,
+          "walkPct": 0.104,
+          "foulToFairRatio": 1.18,
+          "pitchesPerPlateAppearance": 3.99,
+          "groundSharePct": 0.523,
+          "launchAngleMedianDeg": 7.5,
+          "babip": 0.66,
+          "runsPerGame": 5.68,
+          "hit": [
+            "strikeoutPct",
+            "walkPct",
+            "foulToFairRatio",
+            "pitchesPerPlateAppearance",
+            "launchAngleMedianDeg"
+          ],
+          "missed": [
+            "groundSharePct",
+            "babip",
+            "runsPerGame"
+          ]
         }
       },
       "theArgumentForEACHONE": {
@@ -3212,7 +3300,9 @@
         "walks": "Left roughly where it is. A walk is already the least interesting outcome available and nothing in the measurement suggests it is wrong.",
         "fouls": "3.43 fouls per fair ball means the median plate appearance spends most of its pitches going nowhere, which is what pushes pitches/PA to 5.12. Real baseball runs nearer 1:1. Targeting 1-2 keeps the foul as a real event -- ATBAT.TWO_STRIKE_PROTECT_FT exists precisely so a poor-contact kid becomes a foul-ball machine rather than a strikeout machine -- without it being the modal outcome.",
         "groundShare": "40-50% against 60.2%. This one is NOT primarily a taste judgement: 60% is what a zero-mean launch-angle distribution produces mechanically, because the `ground` class is everything below 10 degrees and therefore the entire negative half. See sim.swingPlane. The target is what a swing with a real attack angle gives, and the range is wide because the exact figure is a consequence rather than a dial.",
-        "launchMedian": "7-14 degrees against 2.5. Same mechanism, stated in the units the defect actually lives in."
+        "launchMedian": "7-14 degrees against 2.5. Same mechanism, stated in the units the defect actually lives in.",
+        "babip": "0.40-0.45 against a measured .678. NOT real baseball's ~.300, and not a band anybody published -- a design choice for a game whose fun is contact, sitting well above the sport's own number on purpose. What .678 means is that two of every three balls in play is a hit, so THE DEFENCE NEVER MAKES A PLAY: a fielder is scenery, and a diving stop is an event that does not occur. That is boring in a different way from a low-scoring game, and it is the thing being fixed.",
+        "runsPerGame": "8-12 TOTAL for both teams over 6 innings -- 4 to 6 a side. Note runsPerGame counts BOTH halves, so the measured 4.48 is about 2.2 a side, which is low, and low only because 42.4% of plate appearances end in a strikeout. Removing the strikeouts alone takes it to 15.35 (7.7 a side), which is arguably fine for this age group; the reason it is not the target is that it arrives with BABIP .74 attached. The runs are a consequence of the defence, not a dial."
       },
       "whatIsNOTATARGETHERE": "BABIP. It is .713 and it is wrong, but it belongs to the DEFENCE and the defence is the next PR. Moving the batted-ball mix will move it as a side effect -- fewer grounders is fewer of the class that goes for hits 81.4% of the time -- and this record must report by how much WITHOUT claiming credit for a fix it did not make. Tuning a plate constant until BABIP looks right would be fixing a defence symptom through the batter, which is the same category of error as fixing the strikeout rate by clamping a bat that had missed.",
       "theGATEISORDERING": "★ AND IT IS NOT ANY OF THE NUMBERS ABOVE. A retune that hits all six targets and makes a good-contact kid strike out MORE than a bad-contact one has broken the model, and only harness.test.ts's ordering assertions would say so. Those must survive the retune untouched; if one has to move, the retune is wrong and not the assertion.",
@@ -3223,7 +3313,12 @@
       "whatWouldClose": "It does not close -- it is a `note` recording a design decision and the state it was taken from. PR 10 answers the three targets PR 9 left: strikeouts, fouls and pitches per plate appearance, together with the defence, because the sweep proved they cannot be answered apart from it. The record is superseded outright when someone measures real four-to-eight-year-old baseball.",
       "informs": "src/v2/sim/params.ts BAT, ATBAT",
       "whyTheStrikeoutRateDidNotMoveHere": "★ THE SWEEP FOUND THAT 43% STRIKEOUTS IS LOAD-BEARING, and that is the most important thing this record now carries. The four constants WERE swept together as planned (scripts/v2/plate-sweep.mjs, 300 combinations), and several combinations hit all six targets at once -- attack 9 / undercut 0.22 / pull 16 / protect 0.55 gives K 15.4%, foul:fair 1.81, ground 50.5%. Measured at n=40 against the same seeds, that combination also takes RUNS PER GAME FROM 4.90 TO 15.35. The strikeout rate is currently doing the work the defence cannot: three times as many balls in play against a defence that converts under a third of them is a 15-run game. So the plate targets ALONE are under-determined -- they admit solutions that wreck the product -- and the strikeout and foul targets moved to PR 10, where they can be balanced against out conversion. That is the only place the balance can honestly be struck; striking it here would have meant PR 10 tuning a defence against a plate that was itself tuned blind to outs.",
-      "whatPR9SHIPPED": "The swing plane alone (sim.swingPlane) -- a MISSING MECHANIC rather than a dial. It hits the two batted-ball targets, and BABIP and runs per game both improve as a side effect. Nothing regressed except the pop-up share, which is measured against the dial that fixes it. A retune that improves every measured axis but one, and can say which pending change owns that one, is a different kind of change from a retune that hits its targets by moving four constants at once."
+      "whatPR9SHIPPED": "The swing plane alone (sim.swingPlane) -- a MISSING MECHANIC rather than a dial. It hits the two batted-ball targets, and BABIP and runs per game both improve as a side effect. Nothing regressed except the pop-up share, which is measured against the dial that fixes it. A retune that improves every measured axis but one, and can say which pending change owns that one, is a different kind of change from a retune that hits its targets by moving four constants at once.",
+      "whatPR10OWES": "★ THE THREE PLATE TARGETS PR 9 DEFERRED, AND THEY CANNOT BE ANSWERED APART FROM THE DEFENCE. sim.retuneTargets.whyTheStrikeoutRateDidNotMoveHere records the measurement that forced the split: the plate constants alone admit solutions hitting all six plate targets while taking runs per game from 4.90 to 15.35, because 43% strikeouts was hiding a defence that converts under a third of balls in play. So strikeouts, fouls and pitches/PA are swept HERE, jointly with the defence axes, against a BABIP target that did not exist when they were deferred.",
+      "theARMISFIXED": "★ A CONSTRAINT ACCEPTED BEFORE THE WORK, NOT DISCOVERED DURING IT. The obvious way to buy an infielder reaction time is to play him deeper, and it is capped by the ARM rather than by the runner: only 21 of 30 kids can make the throw from today's shortstop depth (81ft) and 14 of 30 from 12ft deeper. sim.throwSpeed is awaiting-measurement and our 30-48mph band is already extrapolated BELOW its own 8U/9U source (36-50mph), so widening it to make BABIP land would be fitting a physics input to a symptom -- the exact failure this file exists to catch. It stays fixed and the range comes from elsewhere. ★ THE SAME REASONING APPLIES TO sim.batSpeed, so exit velocity stays fixed too: lowering it to make BABIP land is the identical move in the other direction. If the target cannot be reached without them, that is a finding to report, not a reason to reach for them.",
+      "whatPR10REACHEDANDWHATITDIDNOT": "★ FIVE OF EIGHT, AND THE THREE MISSES ARE ONE MISS. The plate is done: strikeouts 42.4% -> 17.3%, walks 10.4%, fouls 3.32:1 -> 1.18, pitches per plate appearance 5.08 -> 3.99, launch median 7.5 degrees. Every one of those is inside its band, and the ordering assertions held throughout. BABIP finished at 0.660 against a 0.40-0.45 target and runs at 5.68 against 8-12; the ground share is 2.3pp over. Runs are short BECAUSE BABIP is not -- a defence that concedes two thirds of balls in play still produces a singles game (extra-base share 10.8%), and singles advance runners one base at a time into three outs. They are not two failures.",
+      "whyBABIPDIDNOTREACHITSTARGET": "★ ALL FOUR APPROVED LEVERS WERE TRIED AND THREE OF THEM ARE MEASURABLY NOT LEVERS. (1) The first step: worth almost nothing on grounders on its own, because the infielders were not in the election -- which is how sim.chaserLeash was found, and THAT was worth .678 -> .589. (2) The drop rate: swept 0.03 to 0.20, a factor of seven, and BABIP moves within noise. Errors are not what makes a ball a hit here. (3) Positioning: the middle infield gap is 27.3 degrees against 21.0 at the corners, and narrowing it moves BABIP within noise too (0.665 / 0.671 / 0.675 across SS/2B at x = +-12/14/18). (4) The dive: real but small, and now a genuine last resort rather than something that fires on every catch. What remains is a TIME BUDGET, not a tuning gap. Four infielders cover a 90-degree cone at 76ft -- 119ft of arc, about 30ft each -- with roughly 20-26ft of range apiece once the read and the ramp are paid. Something like a fifth of the cone cannot be covered by anybody, and that is most of what is left. Playing deeper would buy time and is capped by the arm, which THIS PR RULED FIXED on the grounds that sim.throwSpeed is already extrapolated below its own 8U/9U source. That decision is not revisited here to make a number land.",
+      "whatWouldCLOSEBABIP": "Measuring the two bands the defence is built on, neither of which has ever been measured for four-to-eight-year-olds: the arm (sim.throwSpeed -- if real kids throw harder than our extrapolation, the infield can play deeper and buy reaction time) and the reach (sim.catchRadius, 3ft, derived from a four-foot child's arm span plus a glove). An afternoon at a tee-ball practice with a radar gun and a tape measure would settle both, and would also settle sim.batSpeed and sim.swingPlane. Until then the honest position is that 0.660 is what this geometry produces and the target is not reachable without moving a number nobody has measured."
     },
     "swingPlane": {
       "id": "sim.swing-plane",
@@ -3295,6 +3390,105 @@
       },
       "whatWouldClose": "A bat sensor on three or more actual four-to-eight-year-olds -- the SAME afternoon at a tee-ball practice that would close sim.batSpeed, since a Blast Motion or Diamond Kinetics knob sensor reports attack angle and bat speed from one swing. Two records close together or neither does.",
       "informs": "src/v2/sim/params.ts BAT",
+      "source": "physics:published"
+    },
+    "chaserLeash": {
+      "id": "sim.chaser-leash",
+      "category": "sim",
+      "reference": "derived",
+      "status": "conformed",
+      "statusChangedAt": "2026-08-02",
+      "what": "What makes a fielder a CANDIDATE to chase a ball -- and the bug that kept every infielder out of the election on any grounder headed for the outfield.",
+      "why": "★ THE DEFENCE'S BIGGEST DEFECT, AND NO TUNING CONSTANT COULD HAVE REACHED IT. `LEASH_FT` gated candidacy on how close a fielder's POST is to where the ball COMES TO REST. A grounder that eventually rolls into the outfield settles 200ft from home, which is outside every infielder's leash -- so the shortstop was not in the election at all for a ball passing 9.8ft from his post at t=1.05s, comfortably inside his range. He stood and watched it go by, the LEFT FIELDER collected it at t=2.90s, and could not reach first without a relay.",
+      "measured": {
+        "theBallThatExposedIt": "51mph grounder, spray -20 deg, park. Passes 9.8ft from the SS post at t=1.05s; settles 205ft from home at t=6.45s. SS post-to-settle 129ft against an 84ft leash -> EXCLUDED.",
+        "whoChasesAGrounderBefore": {
+          "outfieldPct": 62.3,
+          "pitcherPct": 0.0,
+          "note": "RF 22.3 + LF 20.9 + CF 19.1. Nearly two thirds of all ground balls were chased by an outfielder."
+        },
+        "whoChasesAGrounderAfter": {
+          "infieldPct": 88.0,
+          "pitcherPct": 27.0,
+          "upTheMiddlePitcherPct": 87.0,
+          "downTheLines": "3B 42% + 1B 40%",
+          "theGaps": "SS 33% + 2B 30%"
+        },
+        "groundBallHitPct": [
+          0.814,
+          0.692
+        ],
+        "babip": [
+          0.678,
+          0.589
+        ],
+        "n": 215,
+        "confidence": "high"
+      },
+      "theFIXKEEPSBOTHDOORS": "The settle key is KEPT, because it is what stops the pitcher poaching every grounder -- he is nearest the early path at every spray angle, which is the failure LEASH_FT was introduced for in v1. A fielder is now eligible if the ball settles in his zone OR he can intercept it near his own post. The second is a strictly ADDITIONAL door, so nothing that used to qualify stops qualifying, and the result is checked rather than assumed: the pitcher takes 87% of balls hit up the middle (a comebacker IS his ball) and 27% of grounders overall, against 0% before.",
+      "whyTHEFIRSTSTEPBOUGHTALMOSTNOTHINGUNTILTHIS": "PR 10 seeded every fielder with a proportional head start (sim.firstStep) and ground-ball hits went UP slightly, 81.4% to 83.5%. That reads as a failed change and was not: the infielders were not IN the election, so making them quicker could not matter. Range and candidacy are different questions and only one of them was broken.",
+      "ours": {
+        "constant": "src/v2/sim/fielders.ts electChaser (eligibility); src/v2/sim/params.ts DEFENSE.LEASH_FT",
+        "value": "settle-leash OR intercept-leash"
+      },
+      "whatWouldClose": "It is closed. The gate is the election-distribution test: infielders must take the majority of grounders, the pitcher the majority of balls up the middle, and the corners the majority down the lines.",
+      "informs": "src/v2/sim/fielders.ts"
+    },
+    "firstStep": {
+      "id": "sim.first-step",
+      "category": "sim",
+      "reference": "baseball",
+      "status": "awaiting-measurement",
+      "statusChangedAt": "2026-08-02",
+      "what": "The speed a fielder already has when the ball is struck -- the split-step -- and the fact that until PR 10 he had none.",
+      "why": "★ EVERY FIELDER STARTED EVERY PLAY FROM A DEAD STOP. `sprintAccelFtS2` is DERIVED from pace.homeToFirst, which is a BATTER's leg out of a batting stance having just swung, and makeFielder applied that same standing-start ramp to a kid in a ready crouch. Those are different starting conditions for the same athlete. Measured cost: against the median 51mph grounder an infielder has 1.20s before the ball reaches his depth, 0.39s goes to the read, and 0.81s of a 1.736s ramp from zero covers 3.5ft -- 6.5ft of range with the reach, against an 18ft half-gap.",
+      "measured": null,
+      "n": 0,
+      "confidence": "low",
+      "partialReading": {
+        "confidence": "low",
+        "n": 1,
+        "source": "Split-step and first-step timing from adult tennis and baseball movement studies.",
+        "why": "Split-step mechanics are measured for adults and not for four-to-eight-year-olds, the same gap sim.batSpeed and sim.throwSpeed have. Our 0.22 of top speed is a judgement inside that gap, not a reading from it."
+      },
+      "itIsASTATENOTANACCELERATION": "★ AND THE DISTINCTION IS ENFORCED. purity.lint.test.js asserts makeFielder and makeRunner agree on accelFtS2 over all 30 kids and stats 1-10 -- the 'exactly one kid speed' rule, which exists because v1's FIELDER_SPEED sat at 2.48x runner speed through five runner slowdowns. Giving fielders a quicker RAMP is precisely that drift. Same athlete, same acceleration, different starting condition.",
+      "aFRACTIONNEVERANABSOLUTE": "The first draft used a fixed 4 ft/s, which is a fifth of a fast kid's top speed and a third of a slow one's -- it silently favours slow fielders. It showed up immediately in the chaser election, whose measured speed-dependence spread grew from 7.4pp to 12.6. A split-step is proportional: the faster athlete gets more out of it. Same reasoning as CUT_AHEAD_FRAC being dimensionless and pace.swingWindows insisting a swing window is a fraction of the flight.",
+      "whatItBOUGHTALONE": "Almost nothing on grounders -- 81.4% to 83.5% hits -- and that was the clue that led to sim.chaserLeash. A quicker fielder who is not in the election cannot help. It did improve the AIR game on its own (flies 47.3% to 43.4% hits, pop-ups 38.6% to 34.0%), where candidacy was never broken.",
+      "ours": {
+        "constant": "src/v2/sim/params.ts DEFENSE.FIRST_STEP_FRAC; src/v2/sim/fielders.ts makeFielder",
+        "value": 0.22
+      },
+      "whatWouldClose": "Video of actual four-to-eight-year-olds fielding, timed from bat contact to the fielder's first movement and to a measurable displacement. The same capture would settle sim.fielderReaction, which is the other half of the same 1.20 seconds.",
+      "informs": "src/v2/sim/params.ts DEFENSE",
+      "source": "physics:published"
+    },
+    "dropRate": {
+      "id": "sim.drop-rate",
+      "category": "sim",
+      "reference": "baseball",
+      "status": "awaiting-measurement",
+      "statusChangedAt": "2026-08-02",
+      "what": "How often a kid who reaches the ball fails to hold it.",
+      "why": "★ IT HAD NO RECORD AT ALL, in a block whose own note says these are 'the values most likely to need feel iteration'. DROP_BASE is 0.14 -- a 14% base drop rate compounding on every secured ball, scaled by the glove stat and halved for grounders -- and nothing had ever written down where 14 came from or measured what it does. PR 8's rule applies: a constant nobody has measured should not also be one nobody has written down.",
+      "measured": null,
+      "n": 0,
+      "confidence": "low",
+      "partialReading": {
+        "confidence": "low",
+        "n": 0,
+        "why": "No published fielding-percentage data for this age group. Little League fielding percentages are recorded from roughly 9U and describe a game with a smaller diamond and a lighter ball. Our 14% is inherited from v1's ERRORS block, which was itself unmeasured."
+      },
+      "whatItIsWORTH": "★ MEASURED IN PR 10 AND IT IS NOT A LEVER. Swept from 0.03 to 0.20 -- a factor of nearly seven -- BABIP moves within noise (0.560 to 0.606 over 40-game samples with no monotone trend). Errors are not what makes a ball a hit in this sim; not reaching the ball is. That is worth knowing before anyone reaches for it to move an outcome.",
+      "ours": {
+        "constant": "src/v2/sim/params.ts DEFENSE.DROP_BASE, DROP_PER_GLOVE, BOBBLE_FACTOR",
+        "value": {
+          "dropBase": 0.14,
+          "perGlove": 0.02,
+          "bobbleFactor": 0.5
+        }
+      },
+      "whatWouldClose": "Scorebook data from real games at this age -- errors per chance is the one defensive statistic a parent with a clipboard actually records, so this is among the cheapest records in the file to close.",
+      "informs": "src/v2/sim/params.ts DEFENSE",
       "source": "physics:published"
     }
   },

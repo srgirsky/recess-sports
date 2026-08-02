@@ -83,7 +83,17 @@ describe('★ a full game always terminates with a score', () => {
     expect(Number.isFinite(g.awayScore + g.homeScore), where).toBe(true);
     expect(g.awayScore, where).toBeGreaterThanOrEqual(0);
     expect(g.innings, where).toBeGreaterThanOrEqual(innings);
-    expect(g.tally.plateAppearances, `${where} played nobody`).toBeGreaterThan(innings * 5);
+    // ★ THE STRUCTURAL FLOOR, NOT A ROUND NUMBER. A half-inning cannot end in
+    // fewer than three batters, and `shouldSkipBottom` can delete the last
+    // bottom half entirely — so the least a legal N-inning game can produce is
+    // 3N for the visitors plus 3(N-1) for the home side. The old guard asked for
+    // more than 5N, which is tighter than that for N=1, and PR 10's defence
+    // retune duly produced a legitimate 1-inning, 5-plate-appearance game where
+    // the home team led and never batted. The guard is meant to catch "nobody
+    // played", so it is set to what nobody-played actually means.
+    expect(g.tally.plateAppearances, `${where} played nobody`).toBeGreaterThanOrEqual(
+      3 * innings + 3 * Math.max(0, innings - 1)
+    );
     // `playAtBat` THROWS rather than looping, so a runaway count is a failure
     // and not a hang — but a plate appearance creeping toward the cap is the
     // warning sign, so it is asserted rather than left to the throw.

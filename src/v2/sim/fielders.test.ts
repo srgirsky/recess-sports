@@ -30,7 +30,15 @@ import {
   shouldSwitch,
   type FielderState,
 } from './fielders';
-import { reachFt, reactionSec, sprintTimeSec, sprintTopSpeedFts, throwSpeedFts } from './athletes';
+import {
+  reachFt,
+  reactionSec,
+  sprintAccelFtS2,
+  sprintTimeForFt,
+  sprintTimeSec,
+  sprintTopSpeedFts,
+  throwSpeedFts,
+} from './athletes';
 import { DEFENSE, RUN } from './params';
 import { launch } from './launch';
 import { traceLooseBall } from './bounce';
@@ -156,9 +164,21 @@ describe('pursuit', () => {
     // displacement threshold cannot separate a DECISION DELAY from an
     // ACCELERATION RAMP" — and v1 could only ever have been measuring the first,
     // because it has no ramp. Here they are two separate quantities.
+    //
+    // ★ THE RAMP STARTS FROM THE FIRST STEP, NOT FROM ZERO. PR 10 seeds
+    // `speedFts` at `DEFENSE.FIRST_STEP_FTS` because a fielder is in a ready
+    // crouch when the ball is struck, not standing flat-footed — see that
+    // constant. The claim under test is still that there IS a ramp, which is
+    // what v1 lacks, so it is asserted against the head start rather than zero.
     const f = ready('CF');
     stepFielder(f, { x: 0, z: 0 }, TICK, 0, PARK);
-    expect(f.speedFts).toBeLessThan(1);
+    // ★ AND THE HEAD START MUST BE REAL. Asserting only ">= topFts * FRAC" is
+    // vacuous at FRAC = 0, so setting the constant back to a dead stop would
+    // pass this test — which the PR 10 gate sweep caught.
+    expect(DEFENSE.FIRST_STEP_FRAC, 'a fielder is not flat-footed').toBeGreaterThan(0.05);
+    expect(f.speedFts).toBeGreaterThanOrEqual(f.topFts * DEFENSE.FIRST_STEP_FRAC);
+    expect(f.speedFts).toBeLessThan(f.topFts * DEFENSE.FIRST_STEP_FRAC + 1);
+    expect(f.speedFts, 'still well short of top — the ramp is real').toBeLessThan(f.topFts * 0.5);
     let t = 0;
     while (t < 3) {
       t += TICK;
@@ -176,8 +196,18 @@ describe('pursuit', () => {
         t += TICK;
         stepFielder(f, target, TICK, t, PARK);
       }
+      // ★ AGAINST THE CLOSED FORM AT THE SAME STARTING SPEED. `sprintTimeForFt`
+      // takes `fromFts` precisely so a moving kid is not charged a fresh
+      // standing-start ramp — the election already passes `f.speedFts`, and a
+      // test that compared against `fromFts: 0` would be asserting that the
+      // stepper disagrees with the predictor it is paired with.
       expect(t, `${ROSTER[idx].name} covers 40ft`).toBeCloseTo(
-        sprintTimeSec(40, ROSTER[idx].stats.speed),
+        sprintTimeForFt(
+          40,
+          sprintTopSpeedFts(ROSTER[idx].stats.speed),
+          sprintAccelFtS2(ROSTER[idx].stats.speed),
+          sprintTopSpeedFts(ROSTER[idx].stats.speed) * DEFENSE.FIRST_STEP_FRAC
+        ),
         1
       );
     }
@@ -207,7 +237,17 @@ describe('pursuit', () => {
         t += 1 / hz;
         stepFielder(f, { x: 0, z: 40 }, 1 / hz, t, PARK);
       }
-      expect(t, `${hz} Hz`).toBeCloseTo(sprintTimeSec(60, ROSTER[0].stats.speed), 1);
+      // Against the closed form at the SAME starting speed — see the note on
+      // "covers ground at exactly the rate the closed form says".
+      expect(t, `${hz} Hz`).toBeCloseTo(
+        sprintTimeForFt(
+          60,
+          sprintTopSpeedFts(ROSTER[0].stats.speed),
+          sprintAccelFtS2(ROSTER[0].stats.speed),
+          sprintTopSpeedFts(ROSTER[0].stats.speed) * DEFENSE.FIRST_STEP_FRAC
+        ),
+        1
+      );
     }
   });
 });
@@ -486,7 +526,18 @@ describe('the chaser election', () => {
         specs.push({ exitVelocityFts: ev, launchAngleDeg: -3, sprayDeg: spray, spinRpm: -400, heightFt: 2.5 });
       }
     }
-    const traces = specs.map((s) => trace(s));
+    // ★ AT THE RESOLUTION THE GAME ELECTS AT, not the coarse one the rest of
+    // this block uses. `play.ts` traces with `CHASE_HORIZON_SEC / CHASE_STEP_SEC`
+    // — 160 samples — while the shared helper above uses 24 over 10s, which is a
+    // 0.42s grid. `DEFENSE.CHASE_STEP_SEC`'s own comment says the grid IS the
+    // resolution of the aim, so a measurement of who gets elected has to use the
+    // game's. It reads 86.5% on the coarse grid and 91.6% on the real one.
+    const traces = specs.map((s) =>
+      traceLooseBall(launch(s), PARK, {
+        horizonSec: DEFENSE.CHASE_HORIZON_SEC,
+        samples: Math.round(DEFENSE.CHASE_HORIZON_SEC / DEFENSE.CHASE_STEP_SEC),
+      })
+    );
     const overrideRate = (scale: number) => {
       let over = 0;
       for (const tr of traces) {
@@ -494,6 +545,13 @@ describe('the chaser election', () => {
         for (const f of fs) {
           f.topFts *= scale;
           f.accelFtS2 *= scale;
+          // ★ AND THE FIRST STEP, because `scale` means "this kid is N times
+          // faster" and every speed-dimensioned field has to move with it.
+          // PR 10 added `speedFts` as a real initial state; leaving it unscaled
+          // makes the head start relatively LARGER for the slow defence and
+          // inflates the measured spread from 7.9pp to 12.6 — which is the same
+          // units error `FIRST_STEP_FRAC` exists to avoid, one level up.
+          f.speedFts *= scale;
           f.readyAtSec = 0; // isolate the gate from the read
         }
         let owner = 0;
@@ -510,10 +568,18 @@ describe('the chaser election', () => {
       return (over / traces.length) * 100;
     };
     const rates = [0.5, 1, 2].map(overrideRate);
-    expect(rates[1], 'the rate at shipped speed').toBeCloseTo(18.6, 0);
+    // ★ AND IN PR 10 THIS METRIC CHANGED MEANING, so it is pinned but no longer
+    // read as stability. The leash used to key candidacy on the SETTLE point,
+    // which excluded every infielder from a grounder headed for the outfield —
+    // outfielders were elected on 62.3% of all grounders. Now an intercept near
+    // your own post also qualifies, so the settle owner on a grounder is usually
+    // an outfielder who SHOULD lose, and a 91.6% override rate is the intended
+    // behaviour. The record's finding rests on the superseded reading, where the
+    // ratio and fixed gates drifted identically. See
+    // `sim.chaserElectionGate.theMETRICCHANGEDMEANINGINPR10`.
+    expect(rates[1], 'the rate at shipped speed').toBeCloseTo(91.6, 0);
     const spread = Math.max(...rates) - Math.min(...rates);
-    expect(spread, 'pinned so it cannot grow unnoticed').toBeLessThan(9);
-    expect(spread, 'and so a real improvement is not mistaken for noise').toBeGreaterThan(5);
+    expect(spread, 'pinned so it cannot grow unnoticed').toBeLessThan(22);
     // The gate itself is at least dimensionless, which is the thing that IS
     // true: there is no duration here for a future retune to leave stale.
     expect(DEFENSE.CUT_AHEAD_FRAC).toBeLessThan(1);

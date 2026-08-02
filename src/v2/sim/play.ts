@@ -37,7 +37,7 @@
 // ---------------------------------------------------------------------------
 
 import type { Character } from '../../data/types';
-import { DEFENSE, PLAY } from './params';
+import { DEFENSE, PLAY, resolvePlate, type PlateOverrides, type PlateParams } from './params';
 import { reachFt, sprintTimeForFt } from './athletes';
 import { launch, type LaunchSpec } from './launch';
 import type { BallState } from './flight';
@@ -50,6 +50,9 @@ import {
 } from './bounce';
 import {
   canReach,
+  couldReachDiving,
+  startDive,
+  settleDive,
   chaseTarget,
   electChaser,
   fumble,
@@ -117,6 +120,11 @@ export type PlayEvent =
   | { t: 'catch'; fielder: string }
   | { t: 'pickup'; fielder: string }
   | { t: 'error'; kind: 'drop' | 'bobble'; fielder: string }
+  // A dive, and a dive that came up empty. Separate events because the second
+  // costs a freeze and the first does not — v1's renderer distinguishes them
+  // too (`diveMiss` drives the face-down fumble pose).
+  | { t: 'dive'; fielder: string }
+  | { t: 'diveMiss'; fielder: string }
   | { t: 'throw'; toBase: 1 | 2 | 3 | 4; fielder: string }
   // A relay leg. Deliberately NOT an overloaded `throw` with an optional base:
   // every `throw` event carries a bag, and a relay has none.
@@ -187,6 +195,8 @@ export interface PlayState {
   traceAtSec: number;
   events: PlayEvent[];
   rng: { drop: Rng; wild: Rng };
+  /** Resolved retune constants for this play. */
+  tune: PlateParams;
 }
 
 /**
@@ -223,14 +233,17 @@ export interface PlaySpec {
   lookup: (id: string) => Character;
   outs?: number;
   geo: FieldGeometry;
+  /** Retune overrides. Omit for the shipped constants. */
+  plate?: PlateOverrides;
 }
 
 // --- Setup ------------------------------------------------------------------
 
 export function beginPlay(spec: PlaySpec, rng: Rng): PlayState {
   const ball = launch(spec.launch);
+  const tune = resolvePlate(spec.plate);
   const fielders = Object.entries(spec.defence).map(([id, pos]) =>
-    makeFielder(spec.lookup(id), pos, { nowSec: 0 })
+    makeFielder(spec.lookup(id), pos, { nowSec: 0, firstStepFrac: tune.firstStepFrac })
   );
   const runners: RunnerState[] = [
     ...(spec.runners ?? []).map((r) => makeRunner(r.char, r.base, 0)),
@@ -272,6 +285,7 @@ export function beginPlay(spec: PlaySpec, rng: Rng): PlayState {
     traceAtSec: 0,
     events: [],
     rng: { drop: rng.fork('drop'), wild: rng.fork('wild') },
+    tune,
   };
 
   // The batter always runs. A runner FORCED by the batter must too — but on a
@@ -304,7 +318,12 @@ export function stepPlay(s: PlayState, dtSec: number, _inputs: PlayInputs = {}):
   else if (stale && s.heldBy === null && !s.throw) reelect(s, false);
 
   moveFielders(s, dtSec);
+  tryDive(s);
   tryGrab(s);
+  // Close any dive window that has run out. An empty one freezes him.
+  for (const f of s.fielders) {
+    if (settleDive(f, s.elapsedSec)) s.events.push({ t: 'diveMiss', fielder: f.charId });
+  }
   // ...and again for anything the grab phase shook loose.
   if (s.pendingReelect) reelect(s, true);
 
@@ -606,6 +625,49 @@ function secureBall(s: PlayState, idx: number): void {
   assignCover(s);
 }
 
+/**
+ * The CPU dive.
+ *
+ * ★ NOTHING EVER CALLED `startDive`. It, `DIVE_REACH_FT`, `DIVE_WINDOW_SEC` and
+ * `DIVE_WHIFF_SEC` were authored in PR 5, tested, and reachable from no code
+ * path in the game — `isFair` in PR 7 and `BASE_COVER` in PR 6 all over again.
+ * The measured cost was 1.6ft of reach on every play where it would have
+ * mattered, against an infielder covering 6.5ft of an 18ft half-gap.
+ *
+ * The policy is the narrowest one that is obviously right: dive when the ball is
+ * out of reach standing and INSIDE reach diving. He is not guessing — the ball
+ * is already there — so this adds no prediction and no rng. An empty dive still
+ * costs the `DIVE_WHIFF_SEC` freeze via `settleDive`, which is what stops it
+ * being free; it comes up empty when the ball moves on before the grab.
+ *
+ * Only the elected chaser dives. The others are covering bags or backing up, and
+ * a kid who dives out of position is a kid who is not where the throw is going.
+ *
+ * ★ AND IT MUST BE A LAST RESORT, WHICH THE FIRST VERSION WAS NOT. Diving as
+ * soon as the ball entered the diving envelope meant every routine fly ball was
+ * caught mid-dive: a descending fly passes through `reach + DIVE_REACH_FT` on
+ * its way into `reach`, so the kid threw himself at a ball he was about to catch
+ * standing up. It did not cost an out — he caught it either way — which is
+ * exactly why it would have survived: the only visible symptom was a `dive`
+ * event on every catch, and nothing asserts what a dive MEANS.
+ *
+ * The gate is that the gap must be OPENING. If the ball is still closing on him
+ * he will have it standing up shortly and a dive buys nothing; if it is moving
+ * away — a grounder past his left, a sinking liner — this is the last chance.
+ */
+function tryDive(s: PlayState): void {
+  if (s.heldBy !== null || s.throw || s.homeRun) return;
+  const f = s.fielders[s.active];
+  if (canReach(f, s.ball.p, s.elapsedSec)) return;
+  if (!couldReachDiving(f, s.ball.p, s.elapsedSec)) return;
+  // Radial velocity of the ball about the fielder. Positive is opening.
+  const rx = s.ball.p.x - f.p.x;
+  const rz = s.ball.p.z - f.p.z;
+  const opening = s.ball.v.x * rx + s.ball.v.z * rz;
+  if (opening < 0) return;
+  if (startDive(f, s.elapsedSec)) s.events.push({ t: 'dive', fielder: f.charId });
+}
+
 function tryGrab(s: PlayState): void {
   if (s.heldBy !== null || s.throw || s.homeRun) return;
   const f = s.fielders[s.active];
@@ -616,7 +678,7 @@ function tryGrab(s: PlayState): void {
   // catchable in this last fraction of its flight" — a timing constant standing
   // in for the geometry `canReach` now has.
   const isFly = s.landedAtSec === null && s.ballPhase === 'flight';
-  if (!tryCatch(f, isFly ? 'fly' : 'grounder', s.rng.drop)) {
+  if (!tryCatch(f, isFly ? 'fly' : 'grounder', s.rng.drop, s.tune.dropBase)) {
     fumble(f, s.elapsedSec);
     s.ball = settleBallAt(s.ball, s.geo);
     s.ballPhase = 'atRest';
