@@ -338,6 +338,43 @@ continuous across a v1↔v2 switch in the same browser.
   to the defence PR, where they can be balanced against out conversion. A target
   written after a sweep is not a target, it is a description; that is why
   `sim.retuneTargets` exists and why it is dated before the run.
+- **★ THE LEASH KEYED ON WHERE THE BALL STOPPED, SO NO INFIELDER WAS EVER A
+  CANDIDATE FOR A GROUNDER HEADED OUT.** `DEFENSE.LEASH_FT` gated candidacy on
+  the distance from a fielder's POST to where the ball SETTLES. A grounder that
+  rolls into the outfield settles ~200ft from home, outside every infielder's
+  leash — so the shortstop was not in the election for a ball passing **9.8ft
+  from his post at t=1.05s**, inside his range. Measured: **outfielders were
+  elected on 62.3% of all grounders and the pitcher on 0%**. `electChaser` now
+  also admits a fielder whose INTERCEPT is near his own post — a strictly
+  additional door, so nothing that qualified stops qualifying — and the settle
+  key is KEPT because it is what stops the pitcher poaching everything. After:
+  infielders 88%, P 87% of balls up the middle, corners 82% down the lines;
+  ground-ball hits 81.4% → 69.2%, BABIP .678 → .589. `sim.chaserLeash`.
+- **★ RANGE AND CANDIDACY ARE DIFFERENT QUESTIONS, and confusing them makes a
+  real fix look like a failure.** PR 10's first step (`FIRST_STEP_FRAC` — a
+  fielder is in a ready crouch, not standing flat-footed, and `sprintAccelFtS2`
+  is derived from a BATTER's leg out of a batting stance) bought almost nothing
+  on grounders alone: 81.4% → 83.5% hits. A quicker fielder who is not in the
+  election cannot help. ★ It must also be an initial STATE and a FRACTION of top
+  speed — `purity.lint.test.js` pins `makeFielder.accelFtS2 === makeRunner`'s, so
+  a quicker ramp is exactly the drift that lint exists to catch, and a fixed
+  ft/s head start silently favours slow kids (it inflated the chaser election's
+  measured speed-spread from 7.4pp to 12.6). `sim.firstStep`.
+- **★ AN ORDERING TEST MUST CONTROL FOR THE ROSTER.** The harness's ordering
+  assertions are the gate no target-hitting can satisfy by accident — but
+  selecting a lineup BY a stat varies every other stat with it. Taking the top
+  nine gloves against the bottom nine ALSO sorts speed and arm, and on this
+  roster the best-glove nine conceded a HIGHER BABIP (.721 vs .699), so the
+  assertion failed for a reason unrelated to fielding. Inject the stat through
+  `GameSpec.lookup` instead — same kids, same seeds, one variable — and it is
+  cleanly monotone (.709/.697/.654/.606/.577 at fielding 1/3/5/8/10).
+- **★ A DIVE MUST BE A LAST RESORT, OR EVERY CATCH IS ONE.** `startDive` had no
+  caller at all until PR 10 (`isFair` in PR 7, `BASE_COVER` in PR 6). Wiring it
+  naively — dive whenever the ball is outside standing reach and inside diving
+  reach — made every routine fly ball a diving catch, because a descending fly
+  passes through the diving envelope on its way into the standing one. It cost
+  no outs, which is exactly why it would have survived. The gate is that the gap
+  must be OPENING.
 - **★ A HARNESS THAT ONLY PINS IS A RATCHET, NOT A GATE.** Most of what PR 8
   measures has no band to answer to — published youth data starts at 9U and
   `sim.note` is explicit that borrowing MLB's numbers is THE failure the
@@ -742,7 +779,7 @@ continuous across a v1↔v2 switch in the same browser.
 
 ## Commands
 
-`npm run dev` (play locally) · `npm test` (logic tests) · `npm run build` (→ `dist/`). v2 assets: `npm run export:skeleton` (emit the rig) · `npm run export:proxy-kid` (stand-in characters; `-- all` for the whole roster) · `npm run manifest:models` (rebuild the delivery manifest) · `npm run sync:decoders` (refresh the committed Draco/Basis decoders after a `three` bump) · `npm run sim:harness` (50,000 plate appearances: rates, splits, histograms, ~75s) · `npm run sim:plate-sweep` (search the coupled plate constants) · `npm run validate:models` (gate a delivery; needs Node ≥22.6 — CI runs the same rules through vitest) · `npm run sim:game` (play a whole v2 game headless: line score, box score, play-by-play). Full details + deploy in `README.md`.
+`npm run dev` (play locally) · `npm test` (logic tests) · `npm run build` (→ `dist/`). v2 assets: `npm run export:skeleton` (emit the rig) · `npm run export:proxy-kid` (stand-in characters; `-- all` for the whole roster) · `npm run manifest:models` (rebuild the delivery manifest) · `npm run sync:decoders` (refresh the committed Draco/Basis decoders after a `three` bump) · `npm run sim:harness` (50,000 plate appearances: rates, splits, histograms, ~75s) · `npm run sim:plate-sweep` (search the coupled plate + defence constants against `sim.retuneTargets`) · `npm run validate:models` (gate a delivery; needs Node ≥22.6 — CI runs the same rules through vitest) · `npm run sim:game` (play a whole v2 game headless: line score, box score, play-by-play). Full details + deploy in `README.md`.
 
 ## Shipping changes (the standard delivery process)
 

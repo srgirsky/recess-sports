@@ -44,6 +44,8 @@ import {
 } from './harness';
 import { makeRng } from './rng';
 import { VENUE_GEOMETRY, type VenueId } from './field';
+import { simulatePlay } from './play';
+import { planDefence } from './lineup';
 import { ATBAT, BAT, resolvePlate } from './params';
 import { ROSTER, getCharacter } from '../../data/characters';
 
@@ -248,6 +250,67 @@ describe('★ the assertions that need no band', () => {
     expect(good.chasePct).toBeLessThan(bad.chasePct);
   }, SLICE_MS);
 
+  it('★ converts more balls in play with a better-fielding defence', () => {
+    // ★ THE DEFENSIVE TWIN, ADDED IN PR 10, AND IT TOOK THREE TRIES TO MAKE IT
+    // MEAN ANYTHING. The offensive orderings have been the real gate since PR 8
+    // because they need no band; a defence retune needs the same thing pointing
+    // at it. Both earlier versions passed for the wrong reason:
+    //
+    //   1. Top nine gloves vs bottom nine ALSO sorts speed and arm, and on this
+    //      roster they correlate the wrong way — the best-glove nine conceded a
+    //      HIGHER BABIP (.721 vs .699) and the assertion failed for a reason
+    //      unrelated to fielding.
+    //   2. Injecting a uniform `fielding` through `lookup` fixed that, and was
+    //      still confounded: `planDefence` scores positions on `fielding`, so
+    //      changing everyone's stat changes WHO PLAYS WHERE. The gate sweep
+    //      proved it — hardcoding `glove` AND the reaction inside `makeFielder`,
+    //      so the stat could not reach the defence at all, and the test STILL
+    //      passed.
+    //
+    // So it is asserted at the PLAY level, where the position map is an explicit
+    // input and cannot move. Same nine kids, same posts, same seeds, same balls;
+    // the only thing that varies is the stat.
+    const ids = ROSTER.slice(0, 9).map((c) => c.id);
+    const positions = planDefence(ids, getCharacter).positions;
+    const hitRate = (fielding: number) => {
+      const look = (id: string) => {
+        const c = getCharacter(id);
+        return { ...c, stats: { ...c.stats, fielding } };
+      };
+      let hits = 0;
+      let n = 0;
+      for (let sprayDeg = -40; sprayDeg <= 40; sprayDeg += 8) {
+        for (const ev of [50, 62, 74]) {
+          for (const launchAngleDeg of [-2, 8, 22]) {
+            const o = simulatePlay(
+              {
+                launch: { exitVelocityFts: ev, launchAngleDeg, sprayDeg, spinRpm: 600, heightFt: 2.5 },
+                defence: positions,
+                batter: getCharacter(ids[0]),
+                lookup: look,
+                geo: VENUE_GEOMETRY.park,
+                outs: 0,
+              },
+              // ★ THE SEED MUST NOT MENTION `fielding`. The first version keyed
+              // it on the stat, so the two arms ran different random streams and
+              // the "difference" was noise — the gate sweep caught it by
+              // hardcoding the stat out of `makeFielder` entirely and watching
+              // the test still pass. Same seed, same balls, one variable.
+              makeRng(`glove:${sprayDeg}:${ev}:${launchAngleDeg}`),
+              1 / 60
+            );
+            n++;
+            if (!o.batterOut && o.outs === 0) hits++;
+          }
+        }
+      }
+      return hits / n;
+    };
+    const clumsy = hitRate(1);
+    const sure = hitRate(10);
+    expect(sure, `sure-handed ${sure.toFixed(3)} vs clumsy ${clumsy.toFixed(3)}`).toBeLessThan(clumsy);
+  }, SLICE_MS);
+
   it('★ hits the ball harder with more power', () => {
     const byPower = [...ROSTER].sort((a, b) => b.stats.power - a.stats.power);
     const one = (ids: string[], tag: string) => {
@@ -342,15 +405,15 @@ describe('★ the pin — today, in bands a retune has to come and move', () => 
   };
 
   it('pins the plate', () => {
-    // ★ BARELY MOVED BY PR 9, AND THAT IS CORRECT. The swing plane changes
-    // where a struck ball GOES, not whether it is struck, so 43.0 -> 42.4 is the
-    // expected non-effect. The strikeout rate is PR 10's, together with the
-    // defence — see `sim.retuneTargets.whyTheStrikeoutRateDidNotMoveHere`.
-    near(r.strikeoutPct, 0.424, 0.06, 'strikeout rate');
-    near(r.walkPct, 0.115, 0.05, 'walk rate');
-    near(r.zonePct, 0.482, 0.06, 'share of pitches in the zone');
-    near(r.whiffPct, 0.242, 0.06, 'whiff rate');
-    near(r.pitchesPerPlateAppearance, 5.08, 0.6, 'pitches per PA');
+    // ★ PR 10 MOVED THIS, AND IT IS THE HEADLINE: 42.4% -> 17.3%, inside the
+    // 15-20% design band in `sim.retuneTargets`. It could only be moved together
+    // with the defence — PR 9 measured that doing it alone takes runs per game
+    // from 4.90 to 15.35 — and the dial was `ATBAT.UNDERCUT_FROM_JUDGE`.
+    near(r.strikeoutPct, 0.173, 0.06, 'strikeout rate');
+    near(r.walkPct, 0.104, 0.05, 'walk rate');
+    near(r.zonePct, 0.500, 0.06, 'share of pitches in the zone');
+    near(r.whiffPct, 0.135, 0.06, 'whiff rate');
+    near(r.pitchesPerPlateAppearance, 3.99, 0.6, 'pitches per PA');
   });
 
   it('★ pins the count-aware and hit-type numbers the gate sweep found unread', () => {
@@ -364,10 +427,10 @@ describe('★ the pin — today, in bands a retune has to come and move', () => 
     expect(r.twoStrikeSwingPct, 'protection widens the swing').toBeGreaterThan(
       slice.swings / slice.pitches
     );
-    near(r.twoStrikeSwingPct, 0.680, 0.12, 'two-strike swing rate');
+    near(r.twoStrikeSwingPct, 0.561, 0.12, 'two-strike swing rate');
     // Hit type is DERIVED from where the batter ended up; if it collapsed to
     // "everyone gets a single", this is the number that would notice.
-    near(r.extraBasePct, 0.185, 0.09, 'extra-base share of hits');
+    near(r.extraBasePct, 0.108, 0.09, 'extra-base share of hits');
     expect(slice.byHit['2B'] + slice.byHit['3B'], 'extra-base hits occur').toBeGreaterThan(5);
   });
 
@@ -376,17 +439,17 @@ describe('★ the pin — today, in bands a retune has to come and move', () => 
     // having pinned them. Before: 60.2 / 14.7 / 15.1 / 10.0 with a launch median
     // of 2.5 degrees. The ground share fell 10 points because the distribution
     // is no longer centred on zero, which is `sim.swingPlane`.
-    near(r.split.ground, 0.498, 0.06, 'ground-ball share');
-    near(r.split.line, 0.160, 0.05, 'line-drive share');
-    near(r.split.fly, 0.182, 0.05, 'fly-ball share');
+    near(r.split.ground, 0.523, 0.06, 'ground-ball share');
+    near(r.split.line, 0.209, 0.05, 'line-drive share');
+    near(r.split.fly, 0.186, 0.05, 'fly-ball share');
     // ★ THE ONE NUMBER THAT GOT WORSE, and it is attributable rather than
     // mysterious: 10.0 -> 16.0. Centring a distribution whose SPREAD is still
     // too wide pushes its upper tail past 50 degrees. The spread is
     // `ATBAT.UNDERCUT_FROM_JUDGE`, which PR 10 owns; measured at attack 8, it
     // takes pop-ups from 15.9% to 3.7% as the undercut narrows 0.45 -> 0.22.
-    near(r.split.popup, 0.160, 0.06, 'pop-up share');
-    near(r.exitVelocityMeanMph, 50.0, 3, 'mean exit velocity, mph');
-    near(r.launchAngleMedianDeg, 12.5, 5, 'launch angle median, deg');
+    near(r.split.popup, 0.083, 0.06, 'pop-up share');
+    near(r.exitVelocityMeanMph, 50.3, 3, 'mean exit velocity, mph');
+    near(r.launchAngleMedianDeg, 7.5, 5, 'launch angle median, deg');
   });
 
   it('★ pins the BABIP this PR deliberately does not fix', () => {
@@ -394,10 +457,14 @@ describe('★ the pin — today, in bands a retune has to come and move', () => 
     // — `sim.throwSpeed` is unmeasured, the reach is 3ft, tag-ups are deferred —
     // and PR 9 is the retune. Pinning it is what makes that PR's "before"
     // exist; leaving it unpinned is what would let it drift instead of move.
-    // .713 -> .678: PR 9 did not TOUCH the defence, but fewer grounders is
-    // fewer of the class that goes for hits 81.4% of the time. The record must
-    // report that side effect without claiming credit for a fix it did not make.
-    near(r.babip, 0.678, 0.08, 'BABIP');
+    // ★ .678 -> .660, AND THE TARGET WAS .40-.45. PR 10 tried every approved
+    // lever and reports the shortfall: `sim.chaserLeash` was worth .678 -> .589
+    // on its own, and the plate retune put some back by turning strikeouts into
+    // balls in play. The drop rate, positioning and the dive all move it within
+    // noise. What is left is a time budget, and the two bands that would move it
+    // — the arm and the reach — are `awaiting-measurement` and were ruled out of
+    // scope. See `sim.retuneTargets.whyBABIPDIDNOTREACHITSTARGET`.
+    near(r.babip, 0.660, 0.08, 'BABIP');
     expect(r.babip, 'still far above real baseball — PR 9 owns this').toBeGreaterThan(0.5);
   });
 });
