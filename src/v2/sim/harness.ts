@@ -90,6 +90,8 @@ export interface HarnessTotals {
   twoStrikeSwings: number;
   strikeouts: number;
   walks: number;
+  stealAttempts: number;
+  stealsSafe: number;
   foulsSeen: number;
 
   // --- the batted ball ---
@@ -120,6 +122,8 @@ export function newTotals(): HarnessTotals {
     twoStrikeSwings: 0,
     strikeouts: 0,
     walks: 0,
+    stealAttempts: 0,
+    stealsSafe: 0,
     foulsSeen: 0,
     battedFair: 0,
     battedFoul: 0,
@@ -182,6 +186,8 @@ export function observeGame(t: HarnessTotals, g: GameResult): void {
   t.plateAppearances += g.tally.plateAppearances;
   t.strikeouts += g.tally.strikeouts;
   t.walks += g.tally.walks;
+  t.stealAttempts += g.tally.stealAttempts;
+  t.stealsSafe += g.tally.stealsSafe;
   t.runs += g.tally.runs;
 }
 
@@ -225,6 +231,9 @@ export interface HarnessRates {
    */
   extraBasePct: number;
   runsPerGame: number;
+  /** Steal attempts per game, and how many of them were safe. */
+  stealAttemptsPerGame: number;
+  stealSuccessPct: number;
   exitVelocityMeanMph: number;
   exitVelocityMedianMph: number;
   exitVelocityP90Mph: number;
@@ -270,6 +279,8 @@ export function rates(t: HarnessTotals): HarnessRates {
     },
     extraBasePct: (t.byHit['2B'] + t.byHit['3B'] + t.byHit.HR) / Math.max(1, hits),
     runsPerGame: t.runs / Math.max(1, t.games),
+    stealAttemptsPerGame: t.stealAttempts / Math.max(1, t.games),
+    stealSuccessPct: t.stealsSafe / Math.max(1, t.stealAttempts),
     exitVelocityMeanMph: t.evSumMph / fair,
     exitVelocityMedianMph: percentileFromBins(t.evBins, EV_BIN_MPH, 0, 0.5),
     exitVelocityP90Mph: percentileFromBins(t.evBins, EV_BIN_MPH, 0, 0.9),

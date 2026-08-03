@@ -25,6 +25,7 @@ import { DEFENSE, PLAY } from './params';
 import { sprintTimeSec } from './athletes';
 import { BASEPATH, FIELD_POSITIONS, VENUE_GEOMETRY, type VenueId } from './field';
 import { makeRng } from './rng';
+import { mphToFts } from './units';
 import { autoAssign } from '../../systems/lineup';
 import { ROSTER, getCharacter } from '../../data/characters';
 
@@ -621,5 +622,129 @@ describe('★ the dive is a last resort', () => {
     expect(caught, 'these are routine fly balls and should be caught').toBeGreaterThan(6);
     // Before the "gap must be opening" gate this was every single one.
     expect(dived, `dived on ${dived} of ${total} routine flies`).toBeLessThan(total / 2);
+  });
+});
+
+describe('★ the caught fly — tag-ups, sac flies, and the batter', () => {
+  const runnerAt = (base: 1 | 2 | 3, idx = 12) => ({
+    base,
+    char: getCharacter(ROSTER[idx].id),
+  });
+  const fly = (launchAngleDeg: number, ev: number, runners: ReturnType<typeof runnerAt>[] = []) =>
+    simulatePlay(
+      {
+        launch: { exitVelocityFts: mphToFts(ev), launchAngleDeg, sprayDeg: -5, spinRpm: 1600, heightFt: 2.5 },
+        defence: PLAN.positions,
+        batter: BATTER,
+        runners,
+        lookup: getCharacter,
+        geo: VENUE_GEOMETRY.park,
+        outs: 0,
+      },
+      makeRng(`fly${launchAngleDeg}${ev}${runners.length}`),
+      1 / 60
+    );
+
+  it('★ ALWAYS retires the batter, however long it hung', () => {
+    // ★ THE RULES BUG PR 12 FOUND. `retireBatterOnCatch` identified the batter
+    // by `from === 0`, and a batter-runner who has TOUCHED FIRST is at
+    // `from === 1`. Measured: a 50-degree pop-up caught at t=4.17s, after he
+    // reached first at t=4.08, produced a caught fly and ZERO outs. A caught fly
+    // retires the batter however long it hung — that cannot be said positionally.
+    // ★ THE SWEEP MUST REACH THE HANG TIMES THAT TRIGGER IT. The batter's leg
+    // is 4.2s, so only a fly that stays up LONGER exposes the bug — measured, it
+    // needs 55-65 degrees. A sweep that stopped at 50 passed against the broken
+    // code, which the gate sweep caught.
+    let caught = 0;
+    let hungPastFirst = 0;
+    for (const la of [30, 40, 50, 55, 60, 65]) {
+      for (const ev of [50, 54, 58]) {
+        const o = fly(la, ev);
+        if (!o.flyCaught) continue;
+        caught++;
+        expect(o.batterOut, `${la}deg ${ev}mph: caught but batter safe`).toBe(true);
+        expect(o.outs, `${la}deg ${ev}mph: caught but no out recorded`).toBeGreaterThanOrEqual(1);
+        if (la >= 55) hungPastFirst++;
+      }
+    }
+    expect(caught, 'the sweep has to actually catch some').toBeGreaterThan(4);
+    expect(hungPastFirst, 'and some must hang past the 4.2s leg — that is the case').toBeGreaterThan(2);
+  });
+
+  it('★ doubles off a runner caught off his bag', () => {
+    // ★ READ OFF THE EVENT'S BASE, because the outcome alone cannot tell this
+    // apart from its opposite. A runner who TAGS and is thrown out also makes
+    // two outs and also leaves the bases empty — the gate sweep caught two
+    // versions that counted him. A double-off is an out recorded at the base he
+    // came FROM; a thrown-out tagger is out at the base ahead.
+    let doubled = 0;
+    let catches = 0;
+    for (const la of [25, 30, 35, 40, 45, 50]) {
+      for (const ev of [48, 54, 60, 66]) {
+        for (const from of [1, 2, 3] as const) {
+          const runner = getCharacter(ROSTER[12].id);
+          const st = beginPlay(
+            {
+              launch: { exitVelocityFts: mphToFts(ev), launchAngleDeg: la, sprayDeg: -20, spinRpm: 1500, heightFt: 2.5 },
+              defence: PLAN.positions,
+              batter: BATTER,
+              runners: [{ base: from, char: runner }],
+              lookup: getCharacter,
+              geo: VENUE_GEOMETRY.park,
+              outs: 0,
+            },
+            makeRng(`dbl${la}${ev}${from}`)
+          );
+          let caught = false;
+          let n = 0;
+          while (st.phase !== 'done' && n++ < 2000) {
+            stepPlay(st, 1 / 60, {});
+            for (const e of st.events) {
+              if (e.t === 'catch') caught = true;
+              // Retired at his own bag, after the catch: he never got back.
+              if (caught && e.t === 'out' && e.runner === runner.id && e.base === from) doubled++;
+            }
+          }
+          if (caught) catches++;
+        }
+      }
+    }
+    expect(catches).toBeGreaterThan(20);
+    // ★ AND IT IS ZERO TODAY, WHICH IS THE FINDING. The branch is the correct
+    // rule and it is currently UNREACHABLE: the CPU running policy never commits
+    // a runner off his bag on a catchable fly, so nobody is ever caught out
+    // there. An earlier version of this test counted `outs >= 2` and read 2 of
+    // 50 as double-offs — those were runners who TAGGED and were thrown out at
+    // the next base, the opposite play.
+    //
+    // Pinned at zero rather than deleted, and pinned rather than left silent:
+    // `isFair`, `startDive` and `BASE_COVER` were all authored and reachable by
+    // nothing, and each cost a PR to find. This one is named. It becomes
+    // reachable the moment `PlayInputs` lets a human send a runner, and this
+    // assertion will start failing then — which is the point.
+    expect(doubled, 'unreachable today — see the note; PlayInputs makes it live').toBe(0);
+  });
+
+  it('★ scores the runner from third — and that is the ARM band, not a mechanic', () => {
+    // 0 of 30 kids can throw 180ft and 1 of 30 can reach 150ft, so a tag from
+    // third is not a contest. Asserted AS the finding: anyone who makes this
+    // fail has changed `sim.throwSpeed`, and `sim.tagUp` says what that means.
+    let scored = 0;
+    let caught = 0;
+    for (const la of [35, 40, 45, 50]) {
+      const o = fly(la, 58, [runnerAt(3)]);
+      if (!o.flyCaught) continue;
+      caught++;
+      if (o.runs >= 1) scored++;
+    }
+    expect(caught).toBeGreaterThan(2);
+    expect(scored, 'a deep fly with a runner on third should score him').toBe(caught);
+  });
+
+  it('holds a runner on a fly too shallow to tag', () => {
+    // The other half: the tag-up is a RACE, so a short fly must not score him.
+    const o = fly(28, 44, [runnerAt(3)]);
+    if (!o.flyCaught) return;
+    expect(o.runs).toBe(0);
   });
 });
