@@ -724,9 +724,49 @@ they could not be fitted to an outcome.
 A game now reads 3–2 over six innings, against #50's 1–0 with fourteen
 strikeouts.
 
-Next: the `sim.venueRollFeel` drift — the blacktop is the springiest surface and
-plays shortest, and a venue cannot be both. Then tag-ups, sac flies and steals,
-once `PlayInputs` has a player behind it.
+### PR 11 — the venue record measured the wrong quantity
+
+`sim.venueRollFeel` had been `known-drift` since PR 3: the blacktop, authored as
+*"hot asphalt — the ball SPRINGS"*, comes to rest **shortest** of the three
+venues, and the record blamed the bounce — *"the ball spends its energy BOUNCING
+rather than rolling."*
+
+**Resting distance is not speed.** At `rollFriction` 0.10 the blacktop's roll is
+`v²/(2μg)` ≈ **411ft against its own 188ft fence**, so the ball reaches the wall,
+`containRoll` caroms it back, and it stops short. The resting place is set by the
+**fence**, not the surface — and `containRoll` is correct, deliberate, and was
+itself a bug fix.
+
+Measured over 60 conditions on quantities that actually mean "fast":
+
+| | park | sandlot | **blacktop** |
+|---|---|---|---|
+| mean resting distance | 176ft | 171ft | **120ft** |
+| time to reach 150ft | 2.75s | 2.92s | **2.70s** |
+| time the ball stays live | 5.68s | 4.57s | **7.78s** |
+
+The blacktop was already the fast park: quickest out, and the ball stays live
+**37% longer than the park and 70% longer than the sandlot**. It rests short
+*because* it travelled fast enough to hit the wall.
+
+**No constant changed.** `npm run sim:harness` is byte-identical across the fix —
+BABIP .660, 5.68 runs, the same singles/doubles/triples — which is how you know
+the diagnosis moved and the physics did not.
+
+Two traps are pinned in `bounce.test.ts`, including the guard that asserts the
+blacktop rests **shortest** while being fastest, so anyone who tries to "fix"
+that number has to delete the test and read why. The record's own proposed fix
+would have made it worse (lowering `bounceMult` takes it 120ft → 76ft), and the
+ordering could not have been bought at any price: the blacktop's fence is 188ft
+at every angle against the park's 185–212, so it is simply a smaller park.
+
+⚠️ The 411ft roll is now load-bearing and `sim.rollFriction` is still
+`awaiting-measurement`. Measuring it would change the venue's whole character,
+and the record says so.
+
+Next: tag-ups, sac flies and steals — the last items `play.ts`'s scope note
+defers — once `PlayInputs` has a player behind it. Then v2's render and input
+membrane.
 
 ---
 

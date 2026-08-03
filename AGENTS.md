@@ -428,16 +428,24 @@ continuous across a v1↔v2 switch in the same browser.
   (20 → 7.4 ft/s), not reversed. Cross (Am. J. Phys. 70(11), 2002) measured that
   real balls GRIP rather than roll and spin MORE than the rolling prediction, so
   our grip branch is a lower bound — recorded in `sim.bounceModel`, not glossed.
-- **★ `sim.venueRollFeel` is a `known-drift` you will trip over: the BLACKTOP
-  PLAYS SHORTEST.** It has the lowest rolling friction (0.10 vs 0.28 and 0.36)
-  and in isolation rolls 3.6× as far — but end to end a batted ball rests
-  shortest there, because its restitution is the highest (0.65) so the ball
-  spends its energy bouncing (6–7 hops vs 3–4) and every landing costs
-  tangential speed. `data/venues.ts` calls it the fast park. **A surface cannot
-  be both the springiest and the fastest**, and v1 only held both because its
-  `bounceMult` and `rollMult` were independent renderer knobs with no physics
-  between them. Resolve it in a venue-feel pass, explicitly — do not quietly
-  retune a constant to make the assertion flip.
+- **★ RESTING DISTANCE IS NOT SPEED, and reading it as speed inverted a record
+  for three PRs.** `sim.venueRollFeel` was `known-drift` because the BLACKTOP —
+  authored as "hot asphalt, the ball SPRINGS" — comes to rest SHORTEST (120ft
+  against 176 and 171), and it blamed the bounce. It is the opposite: at
+  `rollFriction` 0.10 the blacktop's roll is `v²/(2μg)` ≈ **411ft against its own
+  188ft fence**, so the ball reaches the wall, `containRoll` caroms it, and it
+  comes back. **The resting place is set by the FENCE, not the surface.**
+  Measured on quantities that mean "fast" it already WAS the fast park: soonest
+  to 150ft (2.70s vs 2.75 / 2.92) and the ball stays live 37% longer than the
+  park and 70% longer than the sandlot (7.78s vs 5.68 / 4.57). **No constant was
+  changed** — the diagnosis was, and `npm run sim:harness` is byte-identical
+  across the fix, which is how you know. Two traps pinned in `bounce.test.ts`:
+  the old proposed fix (lower `bounceMult`) moves the number the WRONG way
+  (120ft → 76ft), and the ordering cannot be bought at any price anyway — the
+  blacktop's fence is 188ft at every angle against the park's 185–212, so it is
+  simply a smaller park. ⚠️ The 411ft roll is now LOAD-BEARING and
+  `sim.rollFriction` is still `awaiting-measurement`: measuring it would change
+  the venue's whole character.
 - **Rolling containment lives inside `rollStep`, not in the caller.**
   `stepFlight`'s guards only run while the ball is AIRBORNE, so once it settles
   into a roll nothing else is watching the fence — a grounder down the line

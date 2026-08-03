@@ -14,7 +14,9 @@ import {
   obstacleGuard,
   rollStep,
   settleBallAt,
+  traceLooseBall,
   wallCarom,
+  type PathSample,
 } from './bounce';
 import { BOUNCE } from './params';
 import { BALL_RADIUS_FT } from './ball';
@@ -509,5 +511,96 @@ describe('determinism', () => {
       return out;
     };
     expect(run()).toEqual(run());
+  });
+});
+
+describe('★ which venue plays FAST — and what "fast" is measured in', () => {
+  // ★ THE TRAP THIS BLOCK EXISTS TO PIN. `sim.venueRollFeel` was `known-drift`
+  // for three PRs because the blacktop — authored as "hot asphalt, the ball
+  // SPRINGS" — comes to rest SHORTEST. It read that as "plays slowest" and
+  // blamed the bounce: "the ball spends its energy BOUNCING rather than
+  // rolling."
+  //
+  // Resting distance is not speed. A ball that stops sooner may have travelled
+  // FURTHER and hit something: at `rollFriction` 0.10 the blacktop's roll is
+  // v²/(2μg) ≈ 411ft against its own 188ft fence, so it reaches the wall,
+  // `containRoll` caroms it, and it comes back. The resting place is set by the
+  // FENCE, not the surface.
+  //
+  // Measured on quantities that mean "fast", the blacktop already was the fast
+  // park. Nothing about the physics was wrong; the record was.
+  const CONDS: Array<{ ev: number; la: number; sp: number }> = [];
+  for (const ev of [45, 55, 62, 70])
+    for (const la of [3, 8, 14]) for (const sp of [-35, -20, 0, 20, 35]) CONDS.push({ ev, la, sp });
+
+  const feel = (venue: VenueId) => {
+    const geo = VENUE_GEOMETRY[venue];
+    let rest = 0;
+    let live = 0;
+    let to150 = 0;
+    for (const c of CONDS) {
+      const tr = traceLooseBall(
+        launch({
+          exitVelocityFts: mphToFts(c.ev),
+          launchAngleDeg: c.la,
+          sprayDeg: c.sp,
+          spinRpm: 1200,
+          heightFt: 2.5,
+        }),
+        geo
+      );
+      rest += distFromHome(tr.settle);
+      live += tr.restAtSec;
+      const hit = tr.samples.find((s: PathSample) => distFromHome(s.p) >= 150);
+      if (hit) to150 += hit.tSec;
+    }
+    const n = CONDS.length;
+    return { restFt: rest / n, liveSec: live / n, to150Sec: to150 / n };
+  };
+
+  const park = feel('park');
+  const sandlot = feel('sandlot');
+  const blacktop = feel('blacktop');
+
+  it('★ the blacktop gets the ball out soonest and keeps it live longest', () => {
+    expect(blacktop.to150Sec).toBeLessThan(park.to150Sec);
+    expect(blacktop.to150Sec).toBeLessThan(sandlot.to150Sec);
+    expect(blacktop.liveSec).toBeGreaterThan(park.liveSec);
+    expect(blacktop.liveSec).toBeGreaterThan(sandlot.liveSec);
+    // A real margin rather than a rounding: 37% longer live than the park.
+    expect(blacktop.liveSec / park.liveSec).toBeGreaterThan(1.2);
+  });
+
+  it('★ and it rests SHORTEST while doing so — the metric-confusion guard', () => {
+    // Deliberately asserting the thing that LOOKS like a bug, so that anyone
+    // who "fixes" it has to delete this test and read why it was here.
+    expect(blacktop.restFt).toBeLessThan(park.restFt);
+    expect(blacktop.restFt).toBeLessThan(sandlot.restFt);
+  });
+
+  it('★ because its roll is longer than its own park', () => {
+    // The mechanism, recomputed rather than asserted. `sim.rollFriction` is
+    // awaiting-measurement and 0.10 was never measured; the venue's whole
+    // character currently rests on it.
+    const entrySpeed = 51.4; // ft/s off the last bounce on the record's condition
+    const rollFt =
+      (entrySpeed * entrySpeed) / (2 * VENUE_GEOMETRY.blacktop.rollFriction * G);
+    expect(rollFt).toBeGreaterThan(fenceDistAt(VENUE_GEOMETRY.blacktop, 0) * 2);
+    // The park's own roll fits comfortably inside it, which is why it is not
+    // dominated by caroms.
+    expect((entrySpeed * entrySpeed) / (2 * VENUE_GEOMETRY.park.rollFriction * G)).toBeLessThan(
+      fenceDistAt(VENUE_GEOMETRY.park, 0)
+    );
+  });
+
+  it('★ the surface really is both the slickest and the springiest', () => {
+    // Both halves of the contradiction the old record named. Real physics
+    // couples them (Pennbounce: COR tracks surface hardness); what was wrong was
+    // only the expectation that hard also means far.
+    for (const v of VENUES) {
+      if (v === 'blacktop') continue;
+      expect(VENUE_GEOMETRY.blacktop.rollFriction).toBeLessThan(VENUE_GEOMETRY[v].rollFriction);
+      expect(VENUE_GEOMETRY.blacktop.bounceMult).toBeGreaterThan(VENUE_GEOMETRY[v].bounceMult);
+    }
   });
 });
