@@ -384,27 +384,93 @@ describe('sim.rollFriction and sim.wallRestitution', () => {
 describe('sim.venueRollFeel', () => {
   const rec = M.sim.venueRollFeel;
 
-  it('is a well-formed record', () => {
-    wellFormed(rec, { reference: 'derived', status: 'known-drift' });
-    expect(rec.whatWouldClose).toBeTruthy();
+  it('is a well-formed record, and CONFORMED now that it measures the right thing', () => {
+    // ★ CLOSED IN PR 11, and not by changing a constant. It was `known-drift`
+    // because the blacktop rested shortest; the drift was in the METRIC.
+    wellFormed(rec, { reference: 'derived', status: 'conformed' });
+    expect(rec.theFinding).toMatch(/Resting distance is not speed/);
+    expect(rec.supersedes.why).toMatch(/THE MEASUREMENT THE WRONG MECHANISM WAS INFERRED FROM/);
   });
 
-  it('records the contradiction rather than resolving it quietly', () => {
-    const d = rec.measured.restingDistanceFt;
-    expect(d.blacktop).toBeLessThan(d.park);
-    expect(d.blacktop).toBeLessThan(d.sandlot);
-    // The blacktop has the LOWEST friction and still plays shortest — the
-    // record has to hold both halves or it reads as a simple tuning miss.
+  it('★ recomputes all four metrics from the venues, not from the record', () => {
+    const conds = [];
+    for (const ev of [45, 55, 62, 70])
+      for (const launchAngleDeg of [3, 8, 14])
+        for (const sprayDeg of [-35, -20, 0, 20, 35]) conds.push({ ev, launchAngleDeg, sprayDeg });
+    for (const [id, geo] of Object.entries(VENUE_GEOMETRY)) {
+      let rest = 0;
+      let live = 0;
+      let t150 = 0;
+      for (const c of conds) {
+        const tr = traceLooseBall(
+          launch({
+            exitVelocityFts: mphToFts(c.ev),
+            launchAngleDeg: c.launchAngleDeg,
+            sprayDeg: c.sprayDeg,
+            spinRpm: 1200,
+            heightFt: 2.5,
+          }),
+          geo
+        );
+        rest += distFromHome(tr.settle);
+        live += tr.restAtSec;
+        const hit = tr.samples.find((s) => distFromHome(s.p) >= 150);
+        if (hit) t150 += hit.tSec;
+      }
+      const got = rec.measured.byVenue[id];
+      expect(rest / conds.length, `${id} rest`).toBeCloseTo(got.restFt, 0);
+      expect(live / conds.length, `${id} live`).toBeCloseTo(got.liveSec, 1);
+      expect(t150 / conds.length, `${id} to 150ft`).toBeCloseTo(got.timeTo150Sec, 1);
+    }
+  });
+
+  it('★ THE BLACKTOP IS THE FAST PARK — soonest out, longest live', () => {
+    const v = rec.measured.byVenue;
+    // The two metrics that mean "fast".
+    expect(v.blacktop.timeTo150Sec).toBeLessThan(v.park.timeTo150Sec);
+    expect(v.blacktop.timeTo150Sec).toBeLessThan(v.sandlot.timeTo150Sec);
+    expect(v.blacktop.liveSec).toBeGreaterThan(v.park.liveSec);
+    expect(v.blacktop.liveSec).toBeGreaterThan(v.sandlot.liveSec);
+    // And it is a real margin, not a rounding — 37% over the park.
+    expect(v.blacktop.liveSec / v.park.liveSec).toBeGreaterThan(1.2);
+  });
+
+  it('★ THE METRIC-CONFUSION GUARD: it rests SHORTEST while being fastest', () => {
+    // ★ THIS IS THE TRAP, PINNED SO NOBODY WALKS BACK INTO IT. For three PRs the
+    // record read the short resting distance as "plays slowest" and blamed the
+    // bounce. A ball that stops sooner may have travelled FURTHER and hit
+    // something: `containRoll` caroms a rolling ball off the wall, so on a small
+    // slick park the resting place is set by the FENCE, not the surface.
+    //
+    // If you are here because you want to make the blacktop rest further: read
+    // `whyRESTINGDISTANCEISTHEWRONGMETRIC` first. It cannot be bought anyway —
+    // the record's sweep shows its best is 161ft against the park's 176.
+    const v = rec.measured.byVenue;
+    expect(v.blacktop.restFt).toBeLessThan(v.park.restFt);
+    expect(v.blacktop.restFt).toBeLessThan(v.sandlot.restFt);
+    expect(rec.whyRESTINGDISTANCEISTHEWRONGMETRIC).toMatch(/set by the FENCE, not by the surface/);
+    // The blacktop really is the slickest and the springiest — both halves held.
     expect(VENUE_GEOMETRY.blacktop.rollFriction).toBeLessThan(VENUE_GEOMETRY.park.rollFriction);
     expect(VENUE_GEOMETRY.blacktop.bounceMult).toBeGreaterThan(VENUE_GEOMETRY.park.bounceMult);
-    expect(rec.whyNotJustRetune).toMatch(/tuning a constant to make a test pass/);
   });
 
-  it('pins the drift so it can neither grow nor be half-fixed', () => {
-    const ratio = rec.measured.restingDistanceFt.sandlot / rec.measured.restingDistanceFt.blacktop;
-    expect(ratio).toBeCloseTo(rec.drift.shaggyOverAsphalt, 1);
-    expect(ratio).toBeGreaterThan(1.5);
-    expect(ratio).toBeLessThan(2.5);
+  it('★ records that the old proposed fix moved the number the wrong way', () => {
+    expect(rec.whatTHEOLDPROPOSEDFIXWOULDHAVEDONE).toMatch(/120ft -> 76ft/);
+    expect(rec.whatTHEOLDPROPOSEDFIXWOULDHAVEDONE).toMatch(/smaller park/);
+    // And that refusing to retune in PR 3 was right.
+    expect(rec.whyNotJustRetune).toMatch(/refused to tune a constant to\s+make a test pass/);
+    expect(rec.whyNotJustRetune).toMatch(/not even the\s+TERM/);
+  });
+
+  it('★ keeps the 411ft roll visible, since the venue now depends on it', () => {
+    // `sim.rollFriction` is awaiting-measurement and 0.10 was never measured.
+    const G = 32.174;
+    const roll = (51.4 * 51.4) / (2 * VENUE_GEOMETRY.blacktop.rollFriction * G);
+    expect(roll).toBeGreaterThan(400);
+    expect(roll).toBeGreaterThan(fenceDistAt(VENUE_GEOMETRY.blacktop, 0) * 2);
+    expect(rec.theRollIsLongerThanThePark).toMatch(/411ft/);
+    expect(rec.theRollIsLongerThanThePark).toMatch(/no measurement to change it\s+TOWARD/);
+    expect(M.sim.rollFriction.status).toBe('awaiting-measurement');
   });
 });
 

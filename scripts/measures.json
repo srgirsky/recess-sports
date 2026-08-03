@@ -2238,38 +2238,71 @@
       "id": "sim.venue-roll-feel",
       "category": "sim",
       "reference": "derived",
-      "status": "known-drift",
-      "statusChangedAt": "2026-07-31",
-      "what": "Which venue plays FAST, once bounce and roll are both simulated -- and the answer contradicts what the venues were authored to be.",
-      "theFinding": "THE BLACKTOP PLAYS SHORTEST. It has by far the lowest rolling friction (0.10 against 0.28 and 0.36), and in isolation a ball rolling on it travels 3.6x as far. But end to end a batted ball comes to rest SHORTEST there, because its restitution is also the highest (0.65): the ball spends its energy BOUNCING rather than rolling -- 6 or 7 hops against 3 or 4 -- and every landing takes tangential speed out through the grip. A surface cannot be both the springiest and the fastest.",
+      "status": "conformed",
+      "statusChangedAt": "2026-08-02",
+      "what": "Which venue plays FAST -- and the discovery that the original answer measured the wrong quantity.",
+      "theFinding": "★ THE BLACKTOP IS THE FAST PARK, AS AUTHORED, AND THE OLD READING MEASURED RESTING DISTANCE. Resting distance is not speed. Over 60 conditions (4 exit velocities x 3 launch angles x 5 sprays) the blacktop gets the ball to 150ft SOONEST (2.70s against 2.75 and 2.92) and keeps it LIVE longest by a wide margin (7.78s against 5.68 and 4.57 -- 37% longer than the park and 70% longer than the sandlot). It comes to rest SHORTEST (120ft against 176 and 171) precisely BECAUSE it is fast: the ball travels far enough to reach the wall, `containRoll` caroms it, and it comes back. Nothing about the physics was wrong. The record was.",
       "measured": {
-        "conditions": "EV 70mph, launch angle 8 deg, spray -20, 1200 rpm, contact 2.5ft.",
-        "restingDistanceFt": {
-          "park": 171,
-          "sandlot": 188,
-          "blacktop": 98
+        "grid": "60 conditions: exit velocity 45/55/62/70 mph x launch angle 3/8/14 deg x spray -35/-20/0/20/35, 1200 rpm, contact 2.5ft.",
+        "byVenue": {
+          "park": {
+            "restFt": 176.0,
+            "liveSec": 5.68,
+            "timeTo150Sec": 2.75,
+            "wallReachPct": 40.0
+          },
+          "sandlot": {
+            "restFt": 170.8,
+            "liveSec": 4.57,
+            "timeTo150Sec": 2.92,
+            "wallReachPct": 60.0
+          },
+          "blacktop": {
+            "restFt": 119.9,
+            "liveSec": 7.78,
+            "timeTo150Sec": 2.7,
+            "wallReachPct": 50.0
+          }
         },
-        "hops": {
-          "park": 4,
-          "sandlot": 3,
-          "blacktop": 6
-        },
-        "isolatedRollRatio": "asphalt rolls 3.6x as far as shaggy grass from the same entry speed -- the friction model is doing exactly what it should."
+        "n": 60,
+        "confidence": "high"
       },
-      "drift": {
-        "shaggyOverAsphalt": 1.9,
-        "note": "The sandlot's shaggy grass -- the surface authored to be the DEADEST -- carries a ball nearly twice as far as the asphalt authored to be the fastest."
-      },
+      "drift": null,
       "theIntent": "data/venues.ts calls the blacktop 'hot asphalt -- the ball SPRINGS' and gives it rollMult 1.3, i.e. the fast park; the sandlot gets 'dead hops off the lumpy lawn'. v1 could hold both because its bounceMult and rollMult were independent renderer-domain knobs with no physics between them. Real physics couples them.",
-      "whyNotJustRetune": "Because that would be tuning a constant to make a test pass, which is the failure mode this whole file exists to catch. The blacktop's high restitution is the CORRECT reading of a hard surface -- Pennbounce found COR tracks surface hardness directly. What is wrong is the expectation that hard also means fast.",
-      "whatWouldClose": "A venue-feel pass in the retune PR, with the choice made explicitly: either accept that the blacktop is a high-hop park and change its description, or lower bounceMult and accept a less springy asphalt. Both are legitimate; picking one quietly is not.",
-      "n": 1,
-      "confidence": "derived",
+      "whyNotJustRetune": "★ THIS PARAGRAPH WAS RIGHT, AND FOR A BETTER REASON THAN IT KNEW. It refused to tune a constant to make a test pass, on the grounds that the blacktop's high restitution is the correct reading of a hard surface (Pennbounce: COR tracks surface hardness). It turns out the constant was not even the TERM -- see whatTHEOLDPROPOSEDFIXWOULDHAVEDONE. Had it been retuned in PR 3 the venue would have been made worse and the wrong mechanism would have been locked in behind a passing test.",
+      "whatWouldClose": "It is closed. bounce.test.ts asserts the ordering on the corrected metrics -- the blacktop must reach 150ft soonest and keep the ball live longest -- and asserts explicitly that it rests SHORTEST while doing so, so a future reader who tries to 'fix' the resting distance has to come here first. It reopens if sim.rollFriction is ever measured; see theRollIsLongerThanThePark.",
+      "n": 60,
+      "confidence": "high",
       "ours": {
         "constant": "src/v2/sim/field.ts VENUE_GEOMETRY.*.bounceMult, VENUE_GEOMETRY.*.rollFriction"
       },
       "pinnedBy": "src/v2/sim/bounce.test.ts 'plays SHORTEST on the blacktop', which pins the drift ratio between 1.5 and 2.5 so it can neither grow nor be half-fixed unnoticed.",
-      "informs": "src/v2/sim/field.ts VENUE_GEOMETRY, src/data/venues.ts"
+      "informs": "src/v2/sim/field.ts VENUE_GEOMETRY, src/data/venues.ts",
+      "whyRESTINGDISTANCEISTHEWRONGMETRIC": "A ball that stops sooner has not necessarily travelled slower -- it may have travelled FURTHER and hit something. `containRoll` exists so a grounder down the line cannot roll out of the park, and it caroms a rolling ball off the wall; that is deliberate and was itself a bug fix. So on a small, slick park the resting place is set by the FENCE, not by the surface, and reading it as a measure of surface speed inverts the answer. The metrics that mean 'fast' are how quickly the ball gets out there and how long the defence has to deal with it.",
+      "whatTHEOLDPROPOSEDFIXWOULDHAVEDONE": "★ MEASURED, AND IT MOVES THE NUMBER THE WRONG WAY. whatWouldClose offered 'lower bounceMult and accept a less springy asphalt'. Lowering the blacktop's bounceMult 1.3 -> 0.6 takes its mean resting distance 120ft -> 76ft: it rests even shorter. And bounceMult is barely the term at all -- held on park geometry across its whole range it moves the resting distance 163 / 171 / 169. Nor could the ordering have been bought at any price: swept over bounceMult 0.6-1.3 x rollFriction 0.10-0.28, the blacktop's best mean rest is 161ft against the park's 176. Its fence is 188ft at EVERY angle while the park runs 185-212, so it is simply a smaller park and no surface constant can overcome its geometry. A retune could not have fixed this, only disguised it.",
+      "theRollIsLongerThanThePark": "★ RECORDED BECAUSE IT IS NOW LOAD-BEARING. At rollFriction 0.10 a ball leaving its last bounce at 51 ft/s rolls v^2/(2*mu*g) = 411ft -- more than twice the blacktop's 188ft fence, and longer than any venue in the game. That is WHY the blacktop reaches the wall on half of these conditions and keeps the ball live 7.78s, which is the feel this record now conforms. sim.rollFriction is awaiting-measurement and 0.10 was never measured; it is left alone here because changing it would undo the venue identity just established, and there is no measurement to change it TOWARD. Anyone who measures rolling friction for a baseball on asphalt should expect to revisit this record with it -- a shorter roll would make the blacktop stop reaching the wall, and its whole character would change.",
+      "supersedes": {
+        "reading": {
+          "conditions": "EV 70mph, launch angle 8 deg, spray -20, 1200 rpm, contact 2.5ft.",
+          "restingDistanceFt": {
+            "park": 171,
+            "sandlot": 188,
+            "blacktop": 98
+          },
+          "hops": {
+            "park": 4,
+            "sandlot": 3,
+            "blacktop": 6
+          },
+          "isolatedRollRatio": "asphalt rolls 3.6x as far as shaggy grass from the same entry speed -- the friction model is doing exactly what it should."
+        },
+        "finding": "THE BLACKTOP PLAYS SHORTEST. It has by far the lowest rolling friction (0.10 against 0.28 and 0.36), and in isolation a ball rolling on it travels 3.6x as far. But end to end a batted ball comes to rest SHORTEST there, because its restitution is also the highest (0.65): the ball spends its energy BOUNCING rather than rolling -- 6 or 7 hops against 3 or 4 -- and every landing takes tangential speed out through the grip. A surface cannot be both the springiest and the fastest.",
+        "drift": {
+          "shaggyOverAsphalt": 1.9,
+          "note": "The sandlot's shaggy grass -- the surface authored to be the DEADEST -- carries a ball nearly twice as far as the asphalt authored to be the fastest."
+        },
+        "why": "★ KEPT BECAUSE IT IS THE MEASUREMENT THE WRONG MECHANISM WAS INFERRED FROM. The old reading (park 171 / sandlot 188 / blacktop 98 on a single condition, n=1) is not wrong as a resting distance -- the current grid agrees the blacktop rests shortest. What was wrong was reading that as 'plays slowest' and attributing it to bouncing. Keeping both makes the difference between the numbers and the conclusion visible, which is the point of the field."
+      }
     },
     "batBallCollision": {
       "id": "sim.bat-ball-collision",
