@@ -375,6 +375,36 @@ continuous across a v1↔v2 switch in the same browser.
   passes through the diving envelope on its way into the standing one. It cost
   no outs, which is exactly why it would have survived. The gate is that the gap
   must be OPENING.
+- **★ A STEAL IS A RACE, NOT A ROLL — and the lead is what makes it a contest.**
+  v1's `systems/steal.ts` is `p = 0.5 + (speed−5)·0.05 − (arm−5)·0.05 + 0.12 if
+  slow stuff`. `src/v2/sim/steal.ts` races the runner's leg against pitch flight
+  + catcher read + release + `throwFlightSec`, all quantities the sim already
+  owned. ★ Raced from a standing start ON the bag it is DEGENERATE — the runner
+  loses to any arm that can reach second by 1.1–2.4s and beats any arm that
+  cannot — so `RUN.LEAD_FT` is load-bearing and unmeasured, the standing
+  `sim.rollFriction` has. **v1's +0.12 for slow stuff is emergent**: the catcher
+  cannot start until the ball reaches him, so a changeup's 1.33s flight hands
+  the runner exactly 0.31s over a fastball's 1.02s — which is why
+  `PitchResult.travelSec` is now on EVERY branch and not just `inPlay`.
+- **★ A THRESHOLD CANNOT DECLINE A FREE STEAL, so the limit is situational.**
+  "Go when you project to win" gave **15.4 attempts a game at 94% safe** —
+  because only **14 of 30** kids can throw the 90ft to second, so against half
+  the roster's catchers the margin is literally INFINITE. A confidence gate cut
+  attempts only 70%→60%; a 3ft lead still left 9.0. What works is a decision
+  model: second is scoring position and worth taking, third adds almost nothing
+  while the out costs the same, and with two outs an out ends the inning. That
+  is 10.29/game — still too many, recorded in `sim.stealRace` as the arm band's
+  THIRD consequence rather than fitted. **`sim.throwSpeed` is one unmeasured
+  number now setting four different rates**; PR 10 ruled it fixed so it could
+  not be tuned to an outcome, and that decision gets more valuable each PR.
+- **★ A CAUGHT FLY RETIRES THE BATTER HOWEVER LONG IT HUNG, and that cannot be
+  said positionally.** `retireBatterOnCatch` identified him with `from === 0`,
+  and a batter-runner who has TOUCHED FIRST is at `from === 1` — so a 50° pop-up
+  caught at t=4.17s, after he reached first at t=4.08, produced a caught fly and
+  **zero outs**. `PlayState.batterId` fixes it. Found while discharging the
+  free-return deferral, which is the general lesson: `worthTaking` already
+  answered the tag-up question, and the three features `play.ts` said "need a
+  player" needed a DECISION. `sim.tagUp`.
 - **★ A HARNESS THAT ONLY PINS IS A RATCHET, NOT A GATE.** Most of what PR 8
   measures has no band to answer to — published youth data starts at 9U and
   `sim.note` is explicit that borrowing MLB's numbers is THE failure the
@@ -779,6 +809,7 @@ continuous across a v1↔v2 switch in the same browser.
 | `src/v2/sim/atbat.ts` | ★ v2. One pitch: the pitcher picks a kind and a SPOT, execution error nudges the release, `flyToPlate` says where it crossed, the umpire reads that, and the batter's single judgement error decides swing-or-take AND how well he timed it. No chase rate, no whiff rate. |
 | `src/v2/sim/game.ts` | ★ v2. Plate appearance → half → inning → game, headless. The first real value-use of `inning`/`gameflow`/`stats`; keeps base OCCUPANTS itself because `applyLivePlay` drops `baseIds`. Returns a line score, per-kid lines, a play-by-play and the counting stats PR 8 aggregates. |
 | `src/v2/sim/lineup.ts` | ★ v2. `planDefence` — the arm-aware planner `sim.gapBallOutcome.theArmAtShort` asked for. Each position's arm weight is DERIVED from `FIELD_POSITIONS` (distance from post to the bag it throws to), so nobody has to remember that left field needs an arm. v1's `autoAssign` is untouched. |
+| `src/v2/sim/steal.ts` | ★ v2. The stolen base as a RACE — runner's leg vs pitch flight + catcher read + release + `throwFlightSec` — replacing v1's probability formula. The JUMP is the only randomness (one error in TIME, the `plateJudgementFt` pattern) and there is **no attempt rate and no success rate**; the limit on frequency is situational, because a threshold cannot decline a steal whose margin is infinite. `sim.stealRace`. |
 | `src/v2/sim/harness.ts` | ★ v2. The statistical harness's PURE aggregator — it plays nothing, it is FED, by an optional `onEvent` observer on `GameSpec`. Counters and histograms only (50k plate appearances of retained objects is a memory bill for nothing). ONE implementation, TWO front ends — the CI slice and `npm run sim:harness` — the way `layout.browser.js` serves both the dev overlay and the CI audit. **`LAUNCH_CUTS` are BORROWED bin edges, not physics**, and `sim.battedBallSplit` says so; there is deliberately **no `hardHitPct`**, because MLB's 95mph threshold reads zero for every kid forever and a statistic that cannot vary is not a measurement. |
 | `scripts/v2/harness.mjs` | ★ v2. `npm run sim:harness` — 874 games / 50,045 PA / 8 seeds / 3 venues in 73.5s, the cheque `rng.ts` wrote when it chose sfc32. Two traps it has to avoid and both are recorded: **every game gets its own root seed** (the per-PA fork key is `${inning}${half}${lineupIdx}`, which is NOT unique across games — one root per RUN measures one game 874 times), and **the roster ROTATES** (`sim:game` plays kids 0-8 vs 9-17, so twelve of thirty never bat and every rate is an average over 60% of a 1-10 stat span). `RUN_BUDGET_MS` is a hard ceiling, not a per-game timeout — the case a per-game timeout misses is every game getting four times slower. |
 | `scripts/v2/plate-sweep.mjs` | ★ v2. `npm run sim:plate-sweep` — searches the four COUPLED plate constants (`ATTACK_ANGLE_DEG` · `UNDERCUT_FROM_JUDGE` · `PULL_DEG_PER_FT` · `TWO_STRIKE_PROTECT_FT`) against `sim.retuneTargets`, which was written BEFORE it ran. It RANKS and never writes `params.ts` — overrides go through `PlateOverrides`, because PR 7's sweep patched files and left two injected values in the tree across two interrupted runs. It checks ORDERING per candidate, not once on the winner. |

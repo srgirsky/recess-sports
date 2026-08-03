@@ -486,6 +486,36 @@ export const RUN = {
    * finishes and the policy runs later in the SAME tick, so without it a runner
    * relaunches with zero frames on the base.
    */
+  /**
+   * How far off the bag a runner leads, ft.
+   *
+   * ★ LOAD-BEARING AND UNMEASURED, the standing `sim.rollFriction` has. Raced
+   * from a standing start ON the bag the steal is degenerate — the runner loses
+   * to any arm that can reach second by 1.1-2.4s and beats any arm that cannot,
+   * so nobody ever steals and no tuning fixes it, because the SHAPE is wrong.
+   * Ten feet is a modest primary lead for a small child; nobody has measured one.
+   * `sim.stealRace` says so rather than burying it here.
+   */
+  LEAD_FT: 10,
+  /**
+   * How badly a runner can misjudge the pitcher's first move, seconds.
+   *
+   * The jump, and the ONLY randomness in a steal. An error in TIME rather than a
+   * coin weighted by the outcome — the `plateJudgementFt` pattern — so a fast
+   * kid with a bad jump can be thrown out.
+   */
+  JUMP_SIGMA_WORST_SEC: 0.22,
+  JUMP_SIGMA_BEST_SEC: 0.08,
+  /**
+   * How clear the race must be before a runner on SECOND takes third, seconds.
+   *
+   * ★ NOT A RATE. Second is scoring position — from there he scores on a single
+   * — so third adds very little while the out costs exactly as much. He takes it
+   * only when it is nearly free. Raising this makes him more conservative about
+   * one specific base, which is a baseball judgement; there is no constant
+   * anywhere that makes steals in general more or less frequent.
+   */
+  STEAL_THIRD_MARGIN_SEC: 0.6,
   BASE_DWELL_SEC: 0.4,
   /**
    * A reversal cannot be undone this soon. v1's `RUN2.REVERSE_COOLDOWN_MS` —

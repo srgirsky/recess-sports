@@ -764,9 +764,56 @@ at every angle against the park's 185–212, so it is simply a smaller park.
 `awaiting-measurement`. Measuring it would change the venue's whole character,
 and the record says so.
 
-Next: tag-ups, sac flies and steals — the last items `play.ts`'s scope note
-defers — once `PlayInputs` has a player behind it. Then v2's render and input
-membrane.
+### PR 12 — the last three deferrals
+
+`play.ts`'s scope note had said since PR 6 that the dive verb, tag-ups, sac
+flies and steals *"every one of them needs a player"*. PR 10 shipped the dive
+with a CPU policy; this ships the rest. What they needed was a **decision**, and
+v2 writes CPU decisions everywhere else.
+
+**Tag-ups** are `worthTaking` asked from a standing start on a base — the same
+function `maybeRoundBag` already used. A runner tags and goes when he beats the
+throw, holds when he does not, and is **doubled off** if he was off the bag.
+
+That work exposed a rules bug. `retireBatterOnCatch` identified the batter by
+`from === 0`, and a batter-runner who has touched first is at `from === 1` — so
+a 50° pop-up caught at t=4.17s, after he reached first at t=4.08, produced **a
+caught fly and zero outs**. A caught fly retires the batter however long it hung,
+and that cannot be expressed positionally.
+
+**A sac fly is automatic**, and that is the arm band talking: **0 of 30 kids can
+throw 180ft home**. Recorded rather than designed around — no mechanic was
+invented to make it contested.
+
+**A steal is a race, not a roll.** v1 rolls `p = 0.5 + (speed−5)·0.05 −
+(arm−5)·0.05 + 0.12 if slow stuff`; v2 races the runner's leg against pitch
+flight + catcher read + release + throw. The lead is what makes it a contest —
+from a standing start on the bag it is degenerate — and **v1's +0.12 for slow
+stuff falls out for free**: a changeup's 1.33s flight hands the runner exactly
+0.31s over a fastball's 1.02s.
+
+| | before | after |
+|---|---|---|
+| BABIP | .660 | **.624** |
+| runs per game | 5.68 | **7.18** |
+| extra-base share | 10.8% | 14.9% |
+
+Runs moved toward `sim.retuneTargets`' 8–12 **without a tuning constant being
+touched**, which is the only way that record accepts a target being approached.
+
+**★ And one number is reported rather than defended.** "Go when you project to
+win" produced **15.4 steal attempts a game at 94% safe**, because only **14 of
+30** kids can throw the 90ft to second — against half the roster's catchers the
+margin is literally infinite and no confidence threshold can decline it. A
+situational decision model (second is scoring position; third adds little while
+the out costs the same; two outs ends the inning) cut it to 10.29, which is
+still too many. `sim.throwSpeed` is now **one unmeasured number setting four
+different rates** — the relay, ground-ball BABIP, the automatic sac fly, and the
+free steal. PR 10 ruled it fixed so it could not be fitted to an outcome, and
+that decision gets more valuable with each consequence.
+
+Next: v2's render and input membrane — after which the human verbs (steering,
+the throw meter, manual sends) attach to seams that already exist.
 
 ---
 

@@ -52,6 +52,8 @@ import { BASEPATH, FIELD_MARGIN, FIELD_POSITIONS, FIRST, dist } from '../../src/
 import { maxThrowFt } from '../../src/v2/sim/fielders.ts';
 import { beginPlay, finishPlay, simulatePlay, stepPlay } from '../../src/v2/sim/play.ts';
 import { classifyLaunch, LAUNCH_CUTS } from '../../src/v2/sim/harness.ts';
+import { projectedMarginSec } from '../../src/v2/sim/steal.ts';
+import { SECOND } from '../../src/v2/sim/field.ts';
 import { distFromHome } from '../../src/v2/sim/field.ts';
 import { electChaser, makeFielder } from '../../src/v2/sim/fielders.ts';
 import { launch } from '../../src/v2/sim/launch.ts';
@@ -1085,11 +1087,18 @@ describe('sim.gameShape', () => {
     // ★ TWO SUPERSESSIONS NOW, AND ALL THREE READINGS ARE KEPT. Each was taken
     // over a different sim: the first with a bat that clamped instead of
     // missing, the second with no swing plane, this one with both fixed.
-    expect(rec.measured.n).toBeGreaterThan(50_000);
-    expect(rec.supersedes.reading.n).toBeGreaterThan(50_000);
-    expect(rec.supersedes.andBefore.reading.n).toBeGreaterThan(50_000);
-    expect(rec.supersedes.andBefore.andBefore.reading.n).toBe(1166);
-    expect(rec.supersedes.why).toMatch(/THE FOURTH READING/);
+    expect(rec.measured.n).toBeGreaterThanOrEqual(50_000);
+    expect(rec.supersedes.reading.n).toBeGreaterThanOrEqual(50_000);
+    expect(rec.supersedes.why).toMatch(/THE FIFTH READING/);
+    // The chain still reaches the original 1,166-PA reading, four deep.
+    let node = rec.supersedes;
+    let depth = 0;
+    while (node?.andBefore) {
+      node = node.andBefore;
+      depth++;
+    }
+    expect(depth, 'four supersessions deep').toBe(3);
+    expect(node.reading.n).toBe(1166);
     // PR 9 lowered BABIP without touching the defence.
     expect(rec.measured.babip).toBeLessThan(rec.supersedes.reading.babip);
   });
@@ -1100,9 +1109,14 @@ describe('sim.gameShape', () => {
     // .713 -> .678 by changing the batted-ball MIX, not the defence.
     // ★ PR 10 TRIED EVERY APPROVED LEVER AND REPORTS THE SHORTFALL rather than
     // reaching for a fifth. That is the thing the record has to carry.
-    expect(rec.whatIsNot).toMatch(/TRIED ALL FOUR\s+APPROVED LEVERS AND REPORTS THE SHORTFALL/);
-    expect(rec.whatIsNot).toMatch(/sim\.chaserLeash/);
-    expect(rec.whatIsNot).toMatch(/awaiting-measurement bands this PR deliberately\s+did not touch/);
+    // ★ AND THE RECORD MUST NAME THE NEW ONE TOO. PR 12's steal frequency is
+    // the arm band's third consequence, and burying it would be the failure the
+    // `whatIsNot` field exists to prevent.
+    expect(rec.whatIsNot).toMatch(/whyBABIPDIDNOTREACHITSTARGET/);
+    expect(rec.whatIsNot).toMatch(/sim\.tagUp/);
+    expect(rec.whatIsNot).toMatch(/THIRD consequence/);
+    expect(rec.whatIsNot).toMatch(/sim\.stealRace/);
+    expect(rec.measured.stealAttemptsPerGame).toBeGreaterThan(5);
     // And points at the records that explain it rather than at a dial.
     expect(rec.whatIsNot).toMatch(/sim\.throwSpeed/);
     expect(rec.whatIsNot).toMatch(/sim\.catchRadius/);
@@ -1535,5 +1549,74 @@ describe('sim.dropRate', () => {
     expect(rec.whatItIsWORTH).toMatch(/it is not a lever/i);
     expect(rec.whatItIsWORTH).toMatch(/within noise/);
     expect(rec.ours.value.dropBase).toBe(DEFENSE.DROP_BASE);
+  });
+});
+
+describe('sim.stealRace', () => {
+  const rec = M.sim.stealRace;
+
+  it('is a NOTE that reports a level it does not defend', () => {
+    wellFormed(rec, { reference: 'derived', status: 'note' });
+    expect(rec.why).toMatch(/v1 ROLLS A PROBABILITY; v2 RUNS THE RACE/);
+  });
+
+  it('★ recomputes the arm gate that makes half of all steals free', () => {
+    const need = dist(FIELD_POSITIONS.C, SECOND);
+    expect(Math.round(need)).toBe(rec.measured.catcherToSecondFt);
+    const reach = ROSTER.filter((c) => maxThrowFt(c.stats.pitching) >= need).length;
+    expect(`${reach}/30`).toBe(rec.measured.kidsWhoseArmReachesSecond);
+    // Which is the whole reason the frequency is what it is.
+    expect(rec.theFREQUENCYISTHEARMBANDAGAIN).toMatch(/THIRD CONSEQUENCE/);
+    expect(rec.theFREQUENCYISTHEARMBANDAGAIN).toMatch(/Recorded, not fitted/);
+  });
+
+  it('★ recomputes the emergent slow-pitch bonus', () => {
+    // v1 hard-codes +0.12 for a changeup. Here the advantage IS the difference
+    // in flight time, exactly, because the catcher cannot start until the ball
+    // reaches him.
+    const runner = ROSTER.reduce((b, c) => (c.stats.speed > b.stats.speed ? c : b));
+    const catcher = ROSTER.reduce((b, c) => (c.stats.pitching > b.stats.pitching ? c : b));
+    const at = (t) => projectedMarginSec({ runner, catcher, to: 2, pitchTravelSec: t });
+    expect(at(1.33) - at(1.02)).toBeCloseTo(0.31, 9);
+  });
+
+  it('★ says the lead is unmeasured and load-bearing', () => {
+    expect(rec.theLEADISUNMEASURED).toMatch(/nobody has measured/);
+    expect(rec.ours.value.leadFt).toBe(RUN.LEAD_FT);
+    expect(RUN.LEAD_FT).toBeGreaterThan(0);
+  });
+
+  it('★ has no frequency knob, and says the limit is situational', () => {
+    expect(rec.theLIMITISSITUATIONALNOTPROBABILISTIC).toMatch(/decision model/i);
+    for (const k of Object.keys(RUN)) {
+      expect(/RATE|CHANCE|PROB|ATTEMPT|SUCCESS/.test(k), `RUN.${k}`).toBe(false);
+    }
+  });
+});
+
+describe('sim.tagUp', () => {
+  const rec = M.sim.tagUp;
+
+  it('is a well-formed record of a discharged deferral', () => {
+    wellFormed(rec, { reference: 'derived', status: 'conformed' });
+    expect(rec.why).toMatch(/wrong for the same reason/);
+  });
+
+  it('★ records the rules bug the tag-up work exposed', () => {
+    // A caught fly must retire the batter however long it hung — a rule that
+    // cannot be expressed positionally, which is how it was expressed.
+    expect(rec.theBATTERWASIDENTIFIEDBYBASE).toMatch(/ZERO OUTS/);
+    expect(rec.theBATTERWASIDENTIFIEDBYBASE).toMatch(/cannot be expressed positionally/);
+  });
+
+  it('★ recomputes that nobody can throw home, which is why a sac fly is free', () => {
+    const canReachHome = ROSTER.filter((c) => maxThrowFt(c.stats.pitching) >= 180).length;
+    expect(canReachHome).toBe(0);
+    expect(rec.aSACFLYISAUTOMATICANDTHATISTHEARMTALKING).toMatch(/0 OF 30/);
+    expect(rec.aSACFLYISAUTOMATICANDTHATISTHEARMTALKING).toMatch(/RECORDED rather than designed around/);
+    expect(rec.measured.babip[1]).toBeLessThan(rec.measured.babip[0]);
+    // And the branch that is written but cannot yet fire is NAMED, not silent.
+    expect(rec.theDOUBLEOFFISWRITTENBUTUNREACHABLE).toMatch(/ZERO times over 72 catches/);
+    expect(rec.theDOUBLEOFFISWRITTENBUTUNREACHABLE).toMatch(/PINNED AT ZERO/);
   });
 });

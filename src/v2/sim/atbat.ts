@@ -68,15 +68,25 @@ export interface Crossing {
   y: number;
 }
 
+/**
+ * What one pitch did.
+ *
+ * ★ `travelSec` IS ON EVERY BRANCH, not just `inPlay`. `flyToPlate` integrates
+ * it for every pitch anyway, and the steal race needs it on the pitches the
+ * batter does NOT hit — a catcher cannot start his throw to second until the
+ * ball reaches him, so the pitch's own flight time is what gives a runner his
+ * jump. That is how `sim.stealRace` gets v1's hard-coded "+0.12 off slow stuff"
+ * for free instead of as a constant.
+ */
 export type PitchResult =
   /** Taken, and outside the zone. */
-  | { kind: 'ball'; crossing: Crossing; pitch: PitchKind }
+  | { kind: 'ball'; crossing: Crossing; pitch: PitchKind; travelSec: number }
   /** Taken, and over the plate. */
-  | { kind: 'calledStrike'; crossing: Crossing; pitch: PitchKind }
+  | { kind: 'calledStrike'; crossing: Crossing; pitch: PitchKind; travelSec: number }
   /** Offered at and missed. */
-  | { kind: 'swingingStrike'; crossing: Crossing; pitch: PitchKind }
+  | { kind: 'swingingStrike'; crossing: Crossing; pitch: PitchKind; travelSec: number }
   /** Nicked it. A strike, but never the third. */
-  | { kind: 'foulTip'; crossing: Crossing; pitch: PitchKind }
+  | { kind: 'foulTip'; crossing: Crossing; pitch: PitchKind; travelSec: number }
   /** Hit it. Fair or foul is the play's to decide, not the swing's. */
   | {
       kind: 'inPlay';
@@ -210,7 +220,7 @@ export function pitchAndSwing(spec: PitchSpec, rng: Rng): PitchResult {
 
   if (!swings) {
     const kind = isStrike(crossing) ? 'calledStrike' : 'ball';
-    return { kind, crossing, pitch: plan.kind };
+    return { kind, crossing, pitch: plan.kind, travelSec: flown.travelSec };
   }
 
   // He offered. The same read decides how well.
@@ -231,8 +241,10 @@ export function pitchAndSwing(spec: PitchSpec, rng: Rng): PitchResult {
     rng.fork('swing')
   );
 
-  if (swing.kind === 'miss') return { kind: 'swingingStrike', crossing, pitch: plan.kind };
-  if (swing.kind === 'foulTip') return { kind: 'foulTip', crossing, pitch: plan.kind };
+  if (swing.kind === 'miss')
+    return { kind: 'swingingStrike', crossing, pitch: plan.kind, travelSec: flown.travelSec };
+  if (swing.kind === 'foulTip')
+    return { kind: 'foulTip', crossing, pitch: plan.kind, travelSec: flown.travelSec };
   return {
     kind: 'inPlay',
     crossing,

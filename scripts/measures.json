@@ -2603,7 +2603,8 @@
       "comparedWithThePitch": "sim.pitchCorridorV2 solves a pitch to a measured FLIGHT TIME and produces a 33.5 mph release at stat 5, against 38 mph here for a max-effort throw by the same arm. Those are consistent -- a game-pace pitch to a four-year-old is not a max-effort throw -- but the pitch solve also SATURATES: at a 2.4ft aim the slowest reachable flight is ~1.14s, so ARM_MULT_MIN/MAX request flights it cannot deliver and stat 1 and stat 10 end up 78ms apart and not in the order wantSec asks for. Recorded here because it is the same arm; it belongs to sim.pitchCorridorV2 to fix.",
       "whatWouldWork": "Unchanged from defense.throwSpeed: the infield-throw family, plays 03/04/12/13/15/17, located via BB's yellow throw-lane affordance, one 33ms sheet on the bracket. Failing that, a radar gun at a tee-ball practice, n>=3, which would measure the population this game is actually for.",
       "informs": "src/v2/sim/params.ts DEFENSE.THROW_SPEED_MIN_MPH",
-      "source": "physics:published"
+      "source": "physics:published",
+      "theARMBANDSCONSEQUENCES": "★ THIS BAND IS NOW LOAD-BEARING IN FOUR PLACES, and every one of them was discovered rather than designed. (1) 27 of 30 cannot make CF-to-first, which is why the cutoff relay is a consequence rather than an invented mechanic (sim.cutoffRelay). (2) Ground balls are 69% hits, because a fielder who reaches the ball still has to throw it (sim.gameShape). (3) 0 of 30 can throw 180ft home, so a sac fly from third is automatic (sim.tagUp). (4) Only 14 of 30 can throw the 90ft to second, so half the roster's catchers make a stolen base FREE (sim.stealRace). PR 10 ruled this band fixed so it could not be fitted to an outcome, and that decision is worth more with every consequence: a single unmeasured number is now setting four different rates."
     },
     "fielderReaction": {
       "id": "sim.fielder-reaction",
@@ -2962,28 +2963,27 @@
       "category": "sim",
       "reference": "derived",
       "status": "note",
-      "statusChangedAt": "2026-08-02",
+      "statusChangedAt": "2026-08-03",
       "what": "What a whole v2 game actually produces, reported and NOT conformed.",
       "why": "★ THIS RECORD EXISTS TO BE READ, NOT TO BE MET. It is the first time v2 has been able to say anything about a game rather than a play, and the temptation is to compare the numbers to baseball's and start tuning. Two reasons not to. First, PR 8's harness is what measures these properly -- over 50,000 plate appearances across seeded runs, not 1,166. Second, and this is the one the whole `reference` field exists for: the sim category's own note warns that 'conforming a game for four-to-eight-year-olds to MLB's strikeout rate is the mistake this field exists to prevent'.",
       "measured": {
-        "n": 50040,
-        "over": "848 games / 50,040 plate appearances / 199,879 pitches, 8 seeds x 3 venues, all 30 kids",
+        "n": 50000,
+        "over": "848 games / ~50,000 plate appearances, 8 seeds x 3 venues, all 30 kids",
         "strikeoutPct": 17.3,
         "walkPct": 10.4,
         "ballsInPlayPct": 72.3,
-        "babip": 0.66,
-        "battingAverageOnContact": 0.662,
+        "babip": 0.624,
+        "battingAverageOnContact": 0.625,
         "pitchesPerPlateAppearance": 3.99,
-        "runsPerGame": 5.68,
-        "homeRuns": 152,
-        "extraBaseSharePct": 10.8,
-        "singles": 21362,
-        "doubles": 2201,
-        "triples": 243,
+        "runsPerGame": 7.18,
+        "homeRuns": 155,
+        "extraBaseSharePct": 14.9,
+        "stealAttemptsPerGame": 10.29,
+        "stealSuccessPct": 95.8,
         "confidence": "high"
       },
-      "whatIsPLAUSIBLE": "The plate. Strikeouts 17.3%, walks 10.4%, 3.99 pitches per plate appearance and 1.18 fouls per fair ball are all inside sim.retuneTargets' design bands, and they got there without breaking any ordering assertion. Runs per game at 5.68 is about 2.8 a side over 6 innings.",
-      "whatIsNot": "BABIP 0.660 against a 0.40-0.45 design target, and runs 5.68 against 8-12. ★ PR 10 TRIED ALL FOUR APPROVED LEVERS AND REPORTS THE SHORTFALL RATHER THAN REACHING FOR A FIFTH -- see sim.retuneTargets.whyBABIPDIDNOTREACHITSTARGET. The one structural fix it did find was worth .678 to .589 on its own (sim.chaserLeash); the rest of the gap is a time budget, and the two bands that would move it -- sim.throwSpeed (the arm) and sim.catchRadius (the reach) -- are both awaiting-measurement bands this PR deliberately did not touch. Runs are short because BABIP is not: a defence conceding two thirds of balls in play produces a singles game (extra-base share 10.8%) and singles do not score.",
+      "whatIsPLAUSIBLE": "The plate is unchanged and still inside its design bands (K 17.3%, BB 10.4%, 3.99 pitches per plate appearance). Runs per game rose 5.68 -> 7.18 on tag-ups, sac flies and steals, which is INSIDE striking distance of sim.retuneTargets' 8-12 and got there without a tuning constant moving.",
+      "whatIsNot": "BABIP 0.624 against a 0.40-0.45 design target. PR 12 improved it from .660 -- a caught fly now ALWAYS retires the batter, which it did not when he had already touched first (sim.tagUp has that rules bug) -- but it is short for the reasons sim.retuneTargets.whyBABIPDIDNOTREACHITSTARGET gives, and the contributing records are unchanged: the arm band (sim.throwSpeed) and the reach (sim.catchRadius, 3ft against v1's 11.36), both still awaiting-measurement and both deliberately left alone so they could not be fitted to an outcome. AND THE NEW ONE: 10.29 steal attempts a game at 95.8% safe is too many. That is sim.throwSpeed's THIRD consequence -- only 14 of 30 kids can throw the 90ft to second, so half the roster's catchers make a steal free and no confidence threshold can decline an infinite margin. sim.stealRace has the measurements, including that the situational rules already cut it from 15.4.",
       "performanceNote": "A game costs ~140ms once the release memo is warm, or 2.25ms per plate appearance -- so PR 8's 50,000 is about 113 seconds. Getting there took two fixes worth naming: the pitcher aims at a SPOT so the release solve is memoisable (13.6ms to a cache hit), and the defence RE-READS the ball without RE-TRACING it (the trajectory does not change between ticks, so re-computing the prediction produced an identical answer for two thousand RK4 steps). Together, 1.7s per game to 0.14s.",
       "ours": {
         "constant": "src/v2/sim/game.ts",
@@ -2998,57 +2998,77 @@
       "informs": "src/v2/sim/game.ts",
       "supersedes": {
         "reading": {
-          "n": 50004,
-          "over": "878 games / 50,004 plate appearances / 254,128 pitches, 8 seeds x 3 venues, all 30 kids",
-          "strikeoutPct": 42.4,
-          "walkPct": 11.5,
-          "ballsInPlayPct": 46.1,
-          "babip": 0.678,
-          "battingAverageOnContact": 0.679,
-          "pitchesPerPlateAppearance": 5.08,
-          "runsPerGame": 4.48,
-          "homeRuns": 103,
-          "extraBaseSharePct": 18.5,
-          "singles": 12777,
-          "doubles": 2359,
-          "triples": 433,
+          "n": 50040,
+          "over": "848 games / 50,040 plate appearances / 199,879 pitches, 8 seeds x 3 venues, all 30 kids",
+          "strikeoutPct": 17.3,
+          "walkPct": 10.4,
+          "ballsInPlayPct": 72.3,
+          "babip": 0.66,
+          "battingAverageOnContact": 0.662,
+          "pitchesPerPlateAppearance": 3.99,
+          "runsPerGame": 5.68,
+          "homeRuns": 152,
+          "extraBaseSharePct": 10.8,
+          "singles": 21362,
+          "doubles": 2201,
+          "triples": 243,
           "confidence": "high"
         },
         "andBefore": {
           "reading": {
-            "n": 50045,
-            "over": "874 games / 50,045 plate appearances / 256,019 pitches, 8 seeds x 3 venues, roster rotated so all 30 kids bat",
-            "strikeoutPct": 43.0,
+            "n": 50004,
+            "over": "878 games / 50,004 plate appearances / 254,128 pitches, 8 seeds x 3 venues, all 30 kids",
+            "strikeoutPct": 42.4,
             "walkPct": 11.5,
-            "ballsInPlayPct": 45.5,
-            "babip": 0.713,
-            "battingAverageOnContact": 0.715,
-            "pitchesPerPlateAppearance": 5.12,
-            "runsPerGame": 5.34,
-            "homeRuns": 112,
-            "extraBaseSharePct": 19.0,
-            "confidence": "high",
-            "singles": 13170,
-            "doubles": 2389,
-            "triples": 593
+            "ballsInPlayPct": 46.1,
+            "babip": 0.678,
+            "battingAverageOnContact": 0.679,
+            "pitchesPerPlateAppearance": 5.08,
+            "runsPerGame": 4.48,
+            "homeRuns": 103,
+            "extraBaseSharePct": 18.5,
+            "singles": 12777,
+            "doubles": 2359,
+            "triples": 433,
+            "confidence": "high"
           },
           "andBefore": {
             "reading": {
-              "n": 1166,
-              "over": "20 games, 6 innings, park venue, ROSTER[0..8] vs ROSTER[9..17]",
-              "strikeoutPct": 25.6,
-              "walkPct": 10.5,
-              "ballsInPlayPct": 63.8,
-              "babip": 0.624,
-              "pitchesPerPlateAppearance": 5.2,
-              "runsPerGame": 6.8,
-              "confidence": "med"
+              "n": 50045,
+              "over": "874 games / 50,045 plate appearances / 256,019 pitches, 8 seeds x 3 venues, roster rotated so all 30 kids bat",
+              "strikeoutPct": 43.0,
+              "walkPct": 11.5,
+              "ballsInPlayPct": 45.5,
+              "babip": 0.713,
+              "battingAverageOnContact": 0.715,
+              "pitchesPerPlateAppearance": 5.12,
+              "runsPerGame": 5.34,
+              "homeRuns": 112,
+              "extraBaseSharePct": 19.0,
+              "confidence": "high",
+              "singles": 13170,
+              "doubles": 2389,
+              "triples": 593
             },
-            "why": "★ NOT JUST A BIGGER SAMPLE -- A DIFFERENT SIM. The 1,166-PA reading was taken over a resolveSwing that clamped a missed bat into a graze at exactly 90 degrees (sim.contactGeometry), so its 25.6% strikeout rate and 0.624 BABIP were computed with 30% of fair balls being swings that never touched the ball. Both readings are kept because the old one is what a plausible-looking total looks like when the distribution underneath it is broken, and that is worth more than either number."
+            "andBefore": {
+              "reading": {
+                "n": 1166,
+                "over": "20 games, 6 innings, park venue, ROSTER[0..8] vs ROSTER[9..17]",
+                "strikeoutPct": 25.6,
+                "walkPct": 10.5,
+                "ballsInPlayPct": 63.8,
+                "babip": 0.624,
+                "pitchesPerPlateAppearance": 5.2,
+                "runsPerGame": 6.8,
+                "confidence": "med"
+              },
+              "why": "★ NOT JUST A BIGGER SAMPLE -- A DIFFERENT SIM. The 1,166-PA reading was taken over a resolveSwing that clamped a missed bat into a graze at exactly 90 degrees (sim.contactGeometry), so its 25.6% strikeout rate and 0.624 BABIP were computed with 30% of fair balls being swings that never touched the ball. Both readings are kept because the old one is what a plausible-looking total looks like when the distribution underneath it is broken, and that is worth more than either number."
+            },
+            "why": "★ THE SECOND SUPERSESSION, AND THE THREE READINGS TELL A STORY WORTH KEEPING. The 1,166-PA reading (K 25.6, BABIP .624) was taken over a resolveSwing that clamped a missed bat into a graze at 90 degrees. The 50,045-PA reading (K 43.0, BABIP .713) was taken after that fix but before there was a swing plane, so the mean batted ball left at 0 degrees. This one is the first taken over a sim where a bat that misses misses and a swing has a plane. Keeping all three is what makes 'every total stayed plausible' checkable rather than asserted."
           },
-          "why": "★ THE SECOND SUPERSESSION, AND THE THREE READINGS TELL A STORY WORTH KEEPING. The 1,166-PA reading (K 25.6, BABIP .624) was taken over a resolveSwing that clamped a missed bat into a graze at 90 degrees. The 50,045-PA reading (K 43.0, BABIP .713) was taken after that fix but before there was a swing plane, so the mean batted ball left at 0 degrees. This one is the first taken over a sim where a bat that misses misses and a swing has a plane. Keeping all three is what makes 'every total stayed plausible' checkable rather than asserted."
+          "why": "★ THE FOURTH READING, AND EACH WAS TAKEN OVER A DIFFERENT SIM. 1,166 PA with a bat that CLAMPED instead of missing; 50,045 with that fixed but no swing plane; 50,004 with a plane but a chaser election that excluded every infielder from grounders headed for the outfield; and this one. Keeping all four is what makes 'every total stayed plausible' checkable rather than asserted -- the strikeout rate alone reads 25.6, 43.0, 42.4, 17.3 across them."
         },
-        "why": "★ THE FOURTH READING, AND EACH WAS TAKEN OVER A DIFFERENT SIM. 1,166 PA with a bat that CLAMPED instead of missing; 50,045 with that fixed but no swing plane; 50,004 with a plane but a chaser election that excluded every infielder from grounders headed for the outfield; and this one. Keeping all four is what makes 'every total stayed plausible' checkable rather than asserted -- the strikeout rate alone reads 25.6, 43.0, 42.4, 17.3 across them."
+        "why": "★ THE FIFTH READING. Each was taken over a different sim: a bat that CLAMPED instead of missing; that fixed but no swing plane; a plane but an election that excluded infielders from grounders; the defence fixed; and now with tag-ups, sac flies and steals. The strikeout rate alone reads 25.6 / 43.0 / 42.4 / 17.3 / 17.3 across them, and BABIP .624 / .713 / .678 / .660 / .624 — which is why the conclusions were always worth more than the numbers."
       }
     },
     "lineupArm": {
@@ -3326,6 +3346,14 @@
             "babip",
             "runsPerGame"
           ]
+        },
+        "after_pr12": {
+          "over": "848 games / ~50,000 plate appearances, 8 seeds x 3 venues, all 30 kids",
+          "babip": 0.624,
+          "runsPerGame": 7.18,
+          "strikeoutPct": 0.173,
+          "stealAttemptsPerGame": 10.29,
+          "note": "Tag-ups, sac flies and steals moved runs 5.68 -> 7.18 toward the 8-12 target WITHOUT a tuning constant being touched, which is the only way this record accepts a target being approached."
         }
       },
       "theArgumentForEACHONE": {
@@ -3523,6 +3551,82 @@
       "whatWouldClose": "Scorebook data from real games at this age -- errors per chance is the one defensive statistic a parent with a clipboard actually records, so this is among the cheapest records in the file to close.",
       "informs": "src/v2/sim/params.ts DEFENSE",
       "source": "physics:published"
+    },
+    "stealRace": {
+      "id": "sim.steal-race",
+      "category": "sim",
+      "reference": "derived",
+      "status": "note",
+      "statusChangedAt": "2026-08-03",
+      "what": "The stolen base as a race between the runner's leg and the catcher's throw -- and what happens when the throw cannot be made.",
+      "why": "★ v1 ROLLS A PROBABILITY; v2 RUNS THE RACE. systems/steal.ts is `p = 0.5 + (speed-5)*0.05 - (arm-5)*0.05 - reactBonus*0.06 + 0.12 if slow stuff`, clamped 0.08..0.92 -- the 'outcome distribution rather than a kid' model sim.plateDiscipline describes replacing. Every term it approximates, v2 already owns as a real quantity: sprintTimeForFt, reactionSec, DEFENSE.RELEASE_SEC and throwFlightSec, which returns NULL when the arm simply cannot reach the bag.",
+      "theLEADANDTHEJUMPAREWHATMAKEITACONTEST": "★ AND LEAVING THEM OUT IS THE TRAP. Raced from a standing start ON the bag it is degenerate: the runner loses to any arm that can reach second by 1.1-2.4s and beats any arm that cannot, so nobody would ever steal and no tuning would fix it -- the SHAPE is wrong, not the level. With a 10ft lead and a break at release the margins run from out by 0.59s to safe by 0.82s across the roster, monotone in both speed and arm.",
+      "theSLOWPITCHBONUSISEMERGENT": "v1 adds a flat +0.12 for a changeup or curve. Here the catcher cannot begin until the ball reaches him, so a changeup's 1.33s flight hands the runner 0.31s more than a fastball's 1.02s -- enough to flip a speed-5 runner against a strong arm from OUT by 0.18 to SAFE by 0.13. Nothing says so; it falls out of PitchResult.travelSec, which PR 12 hoisted onto every branch for exactly this.",
+      "measured": {
+        "over": "848 games / ~50,000 plate appearances, 8 seeds x 3 venues, all 30 kids",
+        "attemptsPerGame": 10.29,
+        "successPct": 95.8,
+        "catcherToSecondFt": 90,
+        "kidsWhoseArmReachesSecond": "14/30",
+        "marginsSec": {
+          "worst": -0.59,
+          "best": 0.82
+        },
+        "n": 50000,
+        "confidence": "high"
+      },
+      "theFREQUENCYISTHEARMBANDAGAIN": "★ 10.29 ATTEMPTS A GAME AT 95.8% IS TOO MANY, AND IT IS sim.throwSpeed's THIRD CONSEQUENCE. Only 14 of 30 kids can throw the 90ft to second, so against half the roster's catchers a steal is FREE -- the projected margin is literally infinite and no confidence threshold can decline it. Measured: 'go when you project to win' gave 15.4 attempts a game; a 1.0-sigma threshold cut attempts only 70% to 60%; shrinking the lead 10ft to 3ft still left 9.0. The situational rules below took it to 10.29. What would actually move it is measuring the arm, which PR 10 ruled out of scope so it could not be fitted to an outcome. Recorded, not fitted -- the standing BABIP has.",
+      "theLIMITISSITUATIONALNOTPROBABILISTIC": "Since a threshold cannot decline a free steal, the runner's restraint is a DECISION MODEL: second is scoring position and worth taking; third adds almost nothing (he already scores on a single) while the out costs the same, so it is taken only when nearly free; and with two outs an out ends the inning while the base buys nothing, so he holds. Nothing here can make steals rarer without also making them worse baseball, which is the property a frequency knob would not have.",
+      "ours": {
+        "constant": "src/v2/sim/steal.ts; src/v2/sim/params.ts RUN.LEAD_FT, RUN.JUMP_SIGMA_WORST_SEC, RUN.JUMP_SIGMA_BEST_SEC, RUN.STEAL_THIRD_MARGIN_SEC",
+        "value": {
+          "leadFt": 10,
+          "jumpSigmaSec": [
+            0.22,
+            0.08
+          ],
+          "stealThirdMarginSec": 0.6
+        }
+      },
+      "theLEADISUNMEASURED": "RUN.LEAD_FT is load-bearing and nobody has measured a six-year-old's primary lead -- the standing sim.rollFriction has after PR 11. Without it the mechanic is degenerate; with it the mechanic works. Ten feet is a modest lead for a small child and it is a judgement, not a reading.",
+      "whatWouldClose": "Measuring the arm (sim.throwSpeed) would settle the frequency, since that is what makes half of all steals free. Measuring a real lead would settle the margins. Neither is closeable from footage v1 already has -- defense.throwSpeed records that the contested catcher-to-second steal it planned to measure never happens in the BB2001 capture.",
+      "informs": "src/v2/sim/steal.ts"
+    },
+    "tagUp": {
+      "id": "sim.tag-up",
+      "category": "sim",
+      "reference": "derived",
+      "status": "conformed",
+      "statusChangedAt": "2026-08-03",
+      "what": "What a caught fly ball does to the runners -- and the rules bug that hid inside the old free return.",
+      "why": "★ THE FREE RETURN WAS A DEFERRAL AND play.ts SAID SO. Its note claimed real tag-ups 'need a send decision, so they belong with the game loop that has a player in it' -- the same claim startDive made before PR 10, and wrong for the same reason. The send decision is `worthTaking`, which already existed and already asks exactly this question: can this runner beat the ball to the next bag. A tag-up is that question asked from a standing start on a base.",
+      "theBATTERWASIDENTIFIEDBYBASE": "★ A RULES BUG THE TAG-UP WORK EXPOSED. `retireBatterOnCatch` found the batter with `from === 0`, and a batter-runner who has TOUCHED FIRST is at `from === 1`. So a fly that hung longer than his leg did not retire him: measured, a 50-degree pop-up caught at t=4.17s after he reached first at t=4.08 produced a caught fly and ZERO OUTS. A caught fly retires the batter however long it hung, and that rule cannot be expressed positionally -- PlayState now carries `batterId`.",
+      "measured": {
+        "over": "848 games / ~50,000 plate appearances, 8 seeds x 3 venues, all 30 kids",
+        "babip": [
+          0.66,
+          0.624
+        ],
+        "runsPerGame": [
+          5.68,
+          7.18
+        ],
+        "flyBallsCaught": [
+          7539,
+          7605
+        ],
+        "sacFlyFrom3rdIsAutomatic": true,
+        "n": 50000,
+        "confidence": "high"
+      },
+      "aSACFLYISAUTOMATICANDTHATISTHEARMTALKING": "★ 0 OF 30 KIDS CAN THROW 180ft AND 1 OF 30 CAN REACH 150ft. A runner tagging from third scores essentially every time, and it is not close -- his leg is 3.8-4.5s and the throw needs a relay. This is sim.throwSpeed's second consequence after the CF-to-first finding, and it is RECORDED rather than designed around: no sac-fly mechanic was invented to make it contested. The contested case is the shorter tag, second to third, and it falls out of the same race with no extra code.",
+      "ours": {
+        "constant": "src/v2/sim/play.ts retireBatterOnCatch",
+        "value": "worthTaking + ballSecTo, the same pair maybeRoundBag uses"
+      },
+      "whatWouldClose": "It is closed. play.test.ts asserts a caught fly always retires the batter (including when he has already touched first), that a runner on third tags and scores, and that a runner off his bag can be doubled off.",
+      "informs": "src/v2/sim/play.ts",
+      "theDOUBLEOFFISWRITTENBUTUNREACHABLE": "★ NAMED RATHER THAN LEFT SILENT. The rule is implemented -- a runner off his bag when the ball is caught must beat it back or be retired -- and it fires ZERO times over 72 catches, because the CPU running policy never commits a runner off his base on a catchable fly. So there is nobody out there to double off. It is kept because it is the correct rule and it becomes live the moment PlayInputs lets a human send a runner; it is PINNED AT ZERO in play.test.ts so that the day it starts happening, the assertion fails and somebody looks. isFair, startDive and BASE_COVER were each authored and reachable by nothing, and each cost a PR to discover -- this one is on the record from the start. NOTE an earlier version of that test counted `outs >= 2` and read 2 of 50 catches as double-offs: those were runners who TAGGED and were thrown out at the next base, which is the opposite play."
     }
   },
   "defense": {

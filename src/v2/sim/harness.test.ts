@@ -142,7 +142,11 @@ describe('the aggregator says what it means', () => {
   it('keeps every rate inside [0, 1]', () => {
     for (const [k, v] of Object.entries(r)) {
       if (typeof v !== 'number') continue;
-      if (['games', 'plateAppearances', 'pitchesPerPlateAppearance', 'runsPerGame'].includes(k))
+      // Per-GAME counts are not rates. `stealAttemptsPerGame` joined them in
+      // PR 12; `stealSuccessPct` is a rate and stays in the check.
+      if (
+        ['games', 'plateAppearances', 'pitchesPerPlateAppearance', 'runsPerGame', 'stealAttemptsPerGame'].includes(k)
+      )
         continue;
       if (k.endsWith('Mph') || k.endsWith('Deg')) continue;
       expect(v, k).toBeGreaterThanOrEqual(0);
@@ -430,8 +434,19 @@ describe('★ the pin — today, in bands a retune has to come and move', () => 
     near(r.twoStrikeSwingPct, 0.561, 0.12, 'two-strike swing rate');
     // Hit type is DERIVED from where the batter ended up; if it collapsed to
     // "everyone gets a single", this is the number that would notice.
-    near(r.extraBasePct, 0.108, 0.09, 'extra-base share of hits');
+    near(r.extraBasePct, 0.149, 0.09, 'extra-base share of hits');
     expect(slice.byHit['2B'] + slice.byHit['3B'], 'extra-base hits occur').toBeGreaterThan(5);
+  });
+
+  it('★ pins the steal, which is a level this PR reports rather than defends', () => {
+    // ★ 10.29 ATTEMPTS A GAME AT 95.8% IS TOO MANY, and it is pinned exactly so
+    // that stays visible. The cause is `sim.throwSpeed`'s band reaching a third
+    // consequence — only 14 of 30 kids can throw the 90ft to second — and no
+    // confidence threshold can decline a steal whose margin is infinite. The
+    // situational rules already cut it from 15.4. See `sim.stealRace`.
+    expect(slice.stealAttempts, 'steals happen at all').toBeGreaterThan(20);
+    near(r.stealSuccessPct, 0.958, 0.1, 'steal success rate');
+    expect(r.stealAttemptsPerGame, 'still too many — sim.stealRace records why').toBeGreaterThan(4);
   });
 
   it('pins the batted ball', () => {
@@ -457,14 +472,15 @@ describe('★ the pin — today, in bands a retune has to come and move', () => 
     // — `sim.throwSpeed` is unmeasured, the reach is 3ft, tag-ups are deferred —
     // and PR 9 is the retune. Pinning it is what makes that PR's "before"
     // exist; leaving it unpinned is what would let it drift instead of move.
-    // ★ .678 -> .660, AND THE TARGET WAS .40-.45. PR 10 tried every approved
+    // ★ .660 -> .624 in PR 12: a caught fly now ALWAYS retires the batter, which
+    // it did not when he had already touched first. The target was .40-.45. PR 10 tried every approved
     // lever and reports the shortfall: `sim.chaserLeash` was worth .678 -> .589
     // on its own, and the plate retune put some back by turning strikeouts into
     // balls in play. The drop rate, positioning and the dive all move it within
     // noise. What is left is a time budget, and the two bands that would move it
     // — the arm and the reach — are `awaiting-measurement` and were ruled out of
     // scope. See `sim.retuneTargets.whyBABIPDIDNOTREACHITSTARGET`.
-    near(r.babip, 0.660, 0.08, 'BABIP');
+    near(r.babip, 0.624, 0.08, 'BABIP');
     expect(r.babip, 'still far above real baseball — PR 9 owns this').toBeGreaterThan(0.5);
   });
 });

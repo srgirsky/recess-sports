@@ -7,13 +7,19 @@
 // tests, `BASE_COVER` was read by nothing at all, and the only thing that put a
 // chase next to a runner was a test-only harness that declared its own bias.
 //
-// ★ WHAT IS DELIBERATELY NOT HERE. Human steering, the throw-charge meter, the
-// dive verb, the fielding assist, tag-ups, sac flies and steals. Every one of
-// them needs a player, and v2 has no input membrane yet; shipping them now would
-// repeat what `field.ts` did with its four venue fields — authored, tested, and
-// consumed by nothing for months. `PlayInputs` is here as a typed seam so the
-// signature does not change when they land. Everything below is CPU-driven, on
-// both sides, which is exactly what PR 8's harness needs.
+// ★ WHAT IS DELIBERATELY NOT HERE, and the list is now SHORT. Human steering,
+// the throw-charge meter and the fielding assist — those genuinely need a
+// player, and v2 has no input membrane yet. `PlayInputs` is here as a typed seam
+// so the signature does not change when they land.
+//
+// ★ THE OTHER THREE WERE NOT WAITING ON A PLAYER AFTER ALL. This paragraph used
+// to name the dive verb, tag-ups, sac flies and steals alongside them, on the
+// grounds that "every one of them needs a player". PR 10 shipped the dive with a
+// CPU policy and PR 12 shipped the rest: a tag-up is `worthTaking` asked from a
+// standing start, a sac fly is that with a runner on third, and a steal is a
+// race the sim already had every term for. What they needed was a DECISION, and
+// v2 writes CPU decisions everywhere else. Everything below is still CPU-driven
+// on both sides, which is what the harness needs.
 //
 // ★ THE TICK ORDER IS v1's, VERBATIM, and it is load-bearing rather than
 // arbitrary. `systems/liveplay.ts` runs
@@ -197,6 +203,17 @@ export interface PlayState {
   rng: { drop: Rng; wild: Rng };
   /** Resolved retune constants for this play. */
   tune: PlateParams;
+  /**
+   * Who the batter is.
+   *
+   * ★ BY IDENTITY, NEVER BY BASE. `retireBatterOnCatch` used to find him with
+   * `from === 0`, and a batter-runner who has TOUCHED FIRST is at `from === 1` —
+   * so a fly that hung longer than his leg did not retire him. Measured: a 50deg
+   * pop-up caught at t=4.17s after he reached first at t=4.08 left the defence
+   * with a caught fly and ZERO outs. A caught fly retires the batter however
+   * long it hung; that is the rule, and it cannot be expressed positionally.
+   */
+  batterId: string;
 }
 
 /**
@@ -286,6 +303,7 @@ export function beginPlay(spec: PlaySpec, rng: Rng): PlayState {
     events: [],
     rng: { drop: rng.fork('drop'), wild: rng.fork('wild') },
     tune,
+    batterId: spec.batter.id,
   };
 
   // The batter always runs. A runner FORCED by the batter must too — but on a
@@ -699,21 +717,53 @@ function tryGrab(s: PlayState): void {
 }
 
 /**
- * A caught fly retires the batter and sends everyone else back.
+ * A caught fly retires the batter; everyone else tags, holds, or is doubled off.
  *
- * ★ THE FREE RETURN IS v1's KID RULE, AND IT IS A DEFERRAL. Real tag-up rules —
- * a runner who left early can be doubled off, and one who tags may be sent for
- * a sac fly — need a send decision, so they belong with the game loop that has
- * a player in it. Recorded rather than silently simplified: this makes the
- * OFFENSE slightly better than it will be, which is the opposite bias to the
- * one the old test harness carried.
+ * ★ THE FREE RETURN WAS v1's KID RULE AND PR 12 DISCHARGES IT. The old note said
+ * real tag-ups "need a send decision, so they belong with the game loop that has
+ * a player in it" — the same claim `startDive` made before PR 10, and wrong for
+ * the same reason. The send decision is `worthTaking`, which already exists and
+ * already asks exactly this question: can this runner beat the ball to the next
+ * bag. A tag-up is that question asked from a standing start on a base.
+ *
+ * Three outcomes, and none of them is new machinery:
+ *
+ *   - SETTLED ON A BAG. He may tag and go if `worthTaking` says the race is his
+ *     and the bag ahead is free. A runner on third almost always goes, and
+ *     `sim.tagUp` records why that is the ARM band talking rather than a choice:
+ *     nobody on this roster can throw home from the outfield.
+ *   - OFF THE BAG. He was mid-leg when the ball was caught, so he has to get
+ *     back, and the ball can beat him there. That is the double-off.
+ *   - THE BATTER. Out, as before.
  */
 function retireBatterOnCatch(s: PlayState): void {
   for (const r of s.runners) {
     if (r.done !== null) continue;
-    if (r.from === 0) {
+    if (r.charId === s.batterId) {
       r.done = 'out';
       recordOut(s, 1, r.charId);
+      continue;
+    }
+
+    // ★ OFF THE BAG WHEN IT WAS CAUGHT. He must retouch. `settleBase` is
+    // `min(from, to)`, so this is the base he legally occupies.
+    if (!isSettled(r)) {
+      const home = Math.min(r.from, r.to) as Base;
+      const backFt = dist(runnerPos(r), basePos(home));
+      const mine = sprintTimeForFt(backFt, r.topFts, r.accelFtS2, r.speedFts);
+      if (home >= 1 && mine > ballSecTo(s, home as 1 | 2 | 3 | 4)) {
+        r.done = 'out';
+        recordOut(s, home as 1 | 2 | 3 | 4, r.charId);
+        continue;
+      }
+      settleRunner(r);
+      continue;
+    }
+
+    // On a bag: tag and go, or hold.
+    const next = (r.from + 1) as Base;
+    if (r.from < 4 && worthTaking(s, r, next) && baseIsOpen(s, r, next)) {
+      send(s, r, next);
       continue;
     }
     settleRunner(r);

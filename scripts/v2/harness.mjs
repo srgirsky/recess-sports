@@ -155,6 +155,7 @@ console.log(`  singles/doubles/triples  ${t.byHit['1B']} / ${t.byHit['2B']} / ${
 console.log(`  home runs           ${t.byHit.HR}`);
 console.log(`  runs per game       ${num(r.runsPerGame, 2)}`);
 console.log(`  fly balls caught    ${t.flyCaught}`);
+console.log(`  steal attempts      ${num(r.stealAttemptsPerGame, 2)} per game, ${pct(r.stealSuccessPct)} safe`);
 
 console.log('\n=== THE HISTOGRAMS ===');
 bar('exit velocity, mph', t.evBins, EV_BIN_MPH, 0);

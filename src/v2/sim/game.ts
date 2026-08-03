@@ -31,6 +31,8 @@
 import type { Character } from '../../data/types';
 import { GAME, PLAY } from './params';
 import { isStrike, pitchAndSwing, type PitchResult } from './atbat';
+import { catcherOf, cpuWantsSteal, stealRace, type StealTarget } from './steal';
+import { flyToPlate, releasePitch } from './pitch';
 import { resolvePlate, type PlateOverrides, type PlateParams } from './params';
 import { beginPlay, finishPlay, stepPlay, type PlayOutcome } from './play';
 import type { LaunchSpec } from './launch';
@@ -38,7 +40,7 @@ import { planDefence, type DefencePlan } from './lineup';
 import { DEFAULT_GEOMETRY, type FieldGeometry, type PositionId } from './field';
 import type { Rng } from './rng';
 
-import { applyAtBat, applyLivePlay, isHalfOver, newHalfInning } from '../../systems/inning';
+import { applyAtBat, applyLivePlay, applySteal, isHalfOver, newHalfInning } from '../../systems/inning';
 import { decideAfterHalf, isWalkOff, shouldSkipBottom } from '../../systems/gameflow';
 import { foldStats, type KidStats, type StatEvent } from '../../systems/stats';
 import type { AtBatResult } from '../../systems/atbat';
@@ -135,6 +137,8 @@ export interface GameTally {
   strikeouts: number;
   walks: number;
   fouls: number;
+  stealAttempts: number;
+  stealsSafe: number;
   ballsInPlay: number;
   hits: number;
   homeRuns: number;
@@ -147,6 +151,8 @@ const EMPTY_TALLY = (): GameTally => ({
   strikeouts: 0,
   walks: 0,
   fouls: 0,
+  stealAttempts: 0,
+  stealsSafe: 0,
   ballsInPlay: 0,
   hits: 0,
   homeRuns: 0,
@@ -225,6 +231,20 @@ function playAtBat(
     // ★ THE COUNT IS READ BEFORE THE FOLD. `applyAtBat` resets it to 0-0 on
     // every batter-done branch, so an observer told afterwards would see every
     // strikeout arrive on an 0-0 count.
+    // ★ THE STEAL DECISION IS MADE BEFORE THE PITCH AND RESOLVED AFTER IT, and
+    // the two use DIFFERENT flight times on purpose. A baserunner commits
+    // without knowing what is coming, so he projects against the pitcher's
+    // FASTBALL — his own worst case. The race then runs on what was actually
+    // thrown, which is how a changeup becomes a gift rather than an assumption:
+    // `sim.stealRace` measures the same runner out by 0.18s on a fastball and
+    // safe by 0.13s on a changeup, with nothing anywhere saying so.
+    const steal = tryStealBefore(half, args, result.travelSec, rng.fork(`steal${pitches}`));
+    if (steal) {
+      tally.stealAttempts += 1;
+      if (steal.safe) tally.stealsSafe += 1;
+      log.push(steal.line);
+    }
+
     const before = { balls: half.state.count.balls, strikes: half.state.count.strikes };
     const swung =
       result.kind === 'swingingStrike' || result.kind === 'foulTip' || result.kind === 'inPlay';
@@ -376,6 +396,70 @@ function hitTypeOf(outcome: PlayOutcome, scored: string[], batterId: string): Hi
   if (outcome.batterOut) return 'out';
   const at = outcome.baseIds.indexOf(batterId);
   return at === 0 ? '1B' : at === 1 ? '2B' : at === 2 ? '3B' : 'out';
+}
+
+/**
+ * How long this pitcher's FASTBALL takes to reach the plate.
+ *
+ * Memoised per arm, the way `releaseAtSpot` memoises the release solve, because
+ * every plate appearance with a runner on asks for it and the answer depends on
+ * nothing else.
+ */
+const fastballCache = new Map<number, number>();
+function fastballFlightSec(pitchingStat: number): number {
+  const hit = fastballCache.get(pitchingStat);
+  if (hit !== undefined) return hit;
+  const rel = releasePitch({ kind: 'fastball', pitchingStat, aimHeightFt: 2.5, aimLateralFt: 0 });
+  const { travelSec } = flyToPlate(rel);
+  fastballCache.set(pitchingStat, travelSec);
+  return travelSec;
+}
+
+/**
+ * A stolen base, folded through v1's `inning.applySteal`.
+ *
+ * Only on a pitch the batter did not put in play — with a ball in play the
+ * runner is simply running, and `play.ts` owns him. `applySteal` already knows
+ * the rule (the bag ahead must be free, an out is an out) and is on the pure
+ * whitelist, so v2 does not restate it.
+ */
+function tryStealBefore(
+  half: HalfState,
+  args: {
+    defence: Record<string, PositionId>;
+    lookup: (id: string) => Character;
+    pitcher: Character;
+  },
+  pitchTravelSec: number,
+  rng: Rng
+): { safe: boolean; line: string } | null {
+  const catcher = catcherOf(args.defence, args.lookup);
+  if (!catcher) return null;
+  // Nearest bag first: a runner on second stealing third, else first to second.
+  for (const from of [2, 1] as const) {
+    const who = half.occupants[from - 1];
+    if (!who || half.occupants[from]) continue;
+    const runner = args.lookup(who);
+    const to = (from + 1) as StealTarget;
+    // He commits against the pitcher's fastest, not against what is thrown.
+    const expected = fastballFlightSec(args.pitcher.stats.pitching);
+    const sit = { outs: half.state.outs, nextBagOccupied: half.occupants[from] !== null };
+    if (!cpuWantsSteal({ runner, catcher, to, pitchTravelSec: expected }, sit)) continue;
+    const race = stealRace({ runner, catcher, to, pitchTravelSec }, rng);
+    const folded = applySteal(half.state, from, race.safe);
+    half.state = folded.state;
+    if (race.safe) {
+      half.occupants[from - 1] = null;
+      half.occupants[from] = who;
+    } else {
+      half.occupants[from - 1] = null;
+    }
+    return {
+      safe: race.safe,
+      line: `${runner.name} ${race.safe ? 'STEALS' : 'is caught stealing at'} ${to === 2 ? 'second' : 'third'}`,
+    };
+  }
+  return null;
 }
 
 /** Step a play to its end, keeping the identities of whoever scored. */
