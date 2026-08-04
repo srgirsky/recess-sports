@@ -1,0 +1,1577 @@
+[
+  {
+    "anchor": "/v2/",
+    "claim": "v1 — / v2 — /v2/",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "★ WHICH TREE AM I IN? (read before touching anything)"
+  },
+  {
+    "anchor": "src/v2/main.ts",
+    "claim": "index.html → src/main.ts v2/index.html → src/v2/main.ts",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "★ WHICH TREE AM I IN? (read before touching anything)"
+  },
+  {
+    "anchor": "Phaser 3, 2D, affine fake-3D",
+    "claim": "three.js",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "★ WHICH TREE AM I IN? (read before touching anything)"
+  },
+  {
+    "anchor": "arbitrary 960×640 screen px",
+    "claim": "real feet",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "★ WHICH TREE AM I IN? (read before touching anything)"
+  },
+  {
+    "anchor": "landing spot decided at contact",
+    "claim": "landing spot decided at contact real gravity + drag + Magnus, RK4",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "★ WHICH TREE AM I IN? (read before touching anything)"
+  },
+  {
+    "anchor": "docs/OVERVIEW.md",
+    "claim": "shipped and live — do not disturb",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "★ WHICH TREE AM I IN? (read before touching anything)"
+  },
+  {
+    "anchor": "src/systems/**",
+    "claim": "src/v2/sim/",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "fork('a').fork('b')",
+    "claim": "★ The Rng is INJECTED and FORKED, never module-scope",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "C_D = 0.297 + 0.0292·(ω/1000rpm)",
+    "claim": "★ THE AERO MODEL NEEDED NO TABLES, and that is why the ban above is affordable.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "defense.fielderSpeed",
+    "claim": "★ THERE IS EXACTLY ONE KID SPEED, AND A LINT SAYS SO.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "defense.cpuReaction",
+    "claim": "★ THE SPRINT MODEL IS SOLVED FROM THE ANCHOR, NOT PICKED — and the anchor alone cannot determine it.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "FIELD_MARGIN − BOUNCE.BALL_SETTLE_MARGIN_FT",
+    "claim": "★ A FIELDER'S REACH IS 3 ft, AND IT IS A CAPSULE, NOT A SPHERE.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "t = (2v/g)·√((1 − √(1 − k²))/2)",
+    "claim": "★ AN ARM HAS A RANGE, SO THE RELAY IS A CONSEQUENCE RATHER THAN A MECHANIC.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "defense.chaserElection",
+    "claim": "★ THE CHASER ELECTION MUST INCLUDE THE READ, AND ITS GATE BOUGHT LESS THAN CLAIMED.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "stepLooseBallFull",
+    "claim": "★ THE PLAY REDUCER IS AN ORCHESTRATOR, AND THE BALL IS ONE FUNCTION.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "systems/inning.ts",
+    "claim": "★ PlayOutcome IS v1's LiveOutcome , structurally.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "CATCH_CENTRE_FT + reachFt()",
+    "claim": "★ A GROUNDER IS A BALL THAT NEVER RISES ABOVE A GLOVE, not one whose phase says flight .",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "sprintTimeForFt",
+    "claim": "★ THE ELECTION MUST KNOW A RUNNING KID IS RUNNING.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "CPU_RUNNER_GREED_DIST",
+    "claim": "★ THE RUNNER ASKS A RACE, NOT A DISTANCE.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "finishPlay",
+    "claim": "★ startLeg HAS NO OCCUPANCY CHECK, AND MUST NOT.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "RelayState.committed",
+    "claim": "★ THE RELAY IS A CONSEQUENCE AND THE LOOK-BACK RULE IS NOT PORTED.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "zoneHalfWidthFt",
+    "claim": "★ THE STRIKE ZONE IS THE RULEBOOK'S, IN FEET — v1's HAS NO UNITS AT ALL.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "SwingSpec.timingErrorSec",
+    "claim": "★ THE BATTER HAS ONE FACULTY, NOT TWO.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "Rng.bell()",
+    "claim": "★ Rng.bell() IS BOUNDED, AND THAT HID A MISSING MECHANIC.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "sim.foulBalls",
+    "claim": "★ isFair HAD NO CALLER, so every batted ball in v2 was fair.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "PITCH.ELEV_ITERATIONS",
+    "claim": "★ TWO PERFORMANCE FINDINGS THAT ARE MODELLING FINDINGS.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "gameflow.decideAfterHalf",
+    "claim": "★ THE GAME LOOP DOES NOT RESTATE v1's RULES.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "halfHasThreeOuts",
+    "claim": "★ A PLAY CLOCK THAT FIRES IS A SOFT-LOCK THAT WAS CAUGHT.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "defense.fielderSpeed.exposed",
+    "claim": "Two v1 baserunning bugs are pinned before they can happen again",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "sim.integratorStep",
+    "claim": "FLIGHT_HZ = 240 is NOT an accuracy choice",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "v_f = e_A·v_ball + (1 + e_A)·v_bat",
+    "claim": "★ THE BAT-BALL COLLISION IS AN IDENTITY, NOT A FIT.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "asin(offset / centreSep)",
+    "claim": "★ A CLAMP IS NOT A MISS, AND A HISTOGRAM IS WHAT SAW IT.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "crossing.y + bell() × judgeFt",
+    "claim": "★ THE SWING HAD NO PLANE, AND A MEAN IS WHAT SAW IT.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "sim.retuneTargets",
+    "claim": "★ THE STRIKEOUT RATE IS LOAD-BEARING, WHICH IS WHY PR 9 DID NOT TOUCH IT.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "DEFENSE.LEASH_FT",
+    "claim": "★ THE LEASH KEYED ON WHERE THE BALL STOPPED, SO NO INFIELDER WAS EVER A CANDIDATE FOR A GROUNDER HEADED OUT.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "makeFielder.accelFtS2 === makeRunner",
+    "claim": "★ RANGE AND CANDIDACY ARE DIFFERENT QUESTIONS, and confusing them makes a real fix look like a failure.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "GameSpec.lookup",
+    "claim": "★ AN ORDERING TEST MUST CONTROL FOR THE ROSTER.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "BASE_COVER",
+    "claim": "★ A DIVE MUST BE A LAST RESORT, OR EVERY CATCH IS ONE.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "PitchResult.travelSec",
+    "claim": "★ A STEAL IS A RACE, NOT A ROLL — and the lead is what makes it a contest.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "sim.throwSpeed",
+    "claim": "★ A THRESHOLD CANNOT DECLINE A FREE STEAL, so the limit is situational.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "retireBatterOnCatch",
+    "claim": "★ A CAUGHT FLY RETIRES THE BATTER HOWEVER LONG IT HUNG, and that cannot be said positionally.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "simulateGameLive",
+    "claim": "★ THE GAME FLOW IS A GENERATOR, so the headless run and the live view are ONE implementation.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "phase: 'contact'",
+    "claim": "★ A CAMERA PRESET THAT HAS NEVER SEEN A SCENE IS A GUESS.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": ".claude/skills/verify",
+    "claim": "⚠️ rAF IS THROTTLED WHEN THE CHROME WINDOW IS BACKGROUNDED, and v2 has the same trap v1 does.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "PlayInputs",
+    "claim": "★ PlayInputs WAS ACCEPTED AND IGNORED FOR EIGHT PRs.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "throwFlightSec(from, to, carrier.arm)",
+    "claim": "★ THERE IS NO THROW METER IN v2, BECAUSE THERE IS NO POWER.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "defense.fieldingAssist",
+    "claim": "★ AND NO FIELDING ASSIST, MEASURED RATHER THAN ASSUMED.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "sim.harnessMethod",
+    "claim": "★ A HARNESS THAT ONLY PINS IS A RATCHET, NOT A GATE.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "pace.pitchCorridor",
+    "claim": "★ THE MEASURED PITCH QUANTITY IS A TIME, NOT A SPEED.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "pace.swingWindows",
+    "claim": "The swing window is a FRACTION of the flight, not a duration.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "sim.aeroModelLowSpeed",
+    "claim": "★ sim.aeroModelLowSpeed is no longer a footnote.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "v' = (5v − 2ωR)/7",
+    "claim": "★ THE BOUNCE MODEL'S FORM IS DERIVED; ITS COEFFICIENTS ARE CITED OR PENDING.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "awaiting-measurement",
+    "claim": "★ RESTING DISTANCE IS NOT SPEED, and reading it as speed inverted a record for three PRs.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "stepFlight",
+    "claim": "Rolling containment lives inside rollStep , not in the caller.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "event.state",
+    "claim": "Two flight.ts contracts a bounce caller must honour.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "Events are BISECTED, never stepped onto.",
+    "claim": "Events are BISECTED, never stepped onto.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "bb2001 | baseball | physics | derived",
+    "claim": "Every measures.json record now declares reference",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "(root seed, label)",
+    "claim": "★ THE PITCH IS YIELDED BEFORE IT IS RESOLVED, AND THAT IS WHY A PERSON CAN BAT.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "TWO_STRIKE_PROTECT_FT",
+    "claim": "★ A HUMAN SUPPLIES THE MODEL'S OWN TWO ERROR TERMS, and two CPU rules deliberately do not apply to him.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "timingErrorSec",
+    "claim": "★ AIM IS A HEIGHT, NOT A POINT.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "SWING_TAIL_SEC",
+    "claim": "★ THE VIEW MUST HOLD THE PITCH PAST THE CROSSING",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "render.pitchFraming",
+    "claim": "★ A PROJECTION TEST CANNOT SEE OCCLUSION, and the pitch camera could not see the plate.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "sim.humanPitch",
+    "claim": "★ PITCHING IS CHOOSING, AND THERE IS NO METER ON THE MOUND EITHER.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "FLOW.PITCH_CLOCK_MS",
+    "claim": "★ LiveFrame HAS A windup PHASE BECAUSE A CHOICE MUST BE COLLECTED BEFORE THE THING IT DECIDES.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "sim.runnerSends",
+    "claim": "★ A SEND OVERRIDES JUDGEMENT, NEVER TRAFFIC — and the verb only bites on a ball in the air.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "humanPitches",
+    "claim": "★ THE HUMAN NEEDS A SIDE, OR THE TAP VERBS COLLIDE.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "src/v2/render/**",
+    "claim": "src/v2/render/",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "render/cameraCues.ts",
+    "claim": "Camera POLICY is pure",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "pointer-events: none",
+    "claim": "The one CSS rule that replaces a whole gotcha class:",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "render.characterPresence",
+    "claim": "Render-only exaggeration must never leak into the sim.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "fenceIsConvex",
+    "claim": "The fence profile must stay CONVEX",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "scripts/v2/validate-models.mjs",
+    "claim": "Character art",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "heightFt × CHARACTER_SCALE",
+    "claim": "The rig must sum to the height it claims.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "hair: 'bald', accessory: 'none'",
+    "claim": "★ Summing to the right height did NOT make the drawing right, and the bounding-box test could not tell.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "skeleton.test.ts",
+    "claim": "★ A feature you cannot SEE is the other half of the same bug, and the bbox tests cannot see it either",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "docs/v2/animation-brief.md",
+    "claim": "The clip library is src/v2/render/clips.ts , and the two v2 docs are MIRRORS of it.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "AnimationDirector.test.ts",
+    "claim": "A marker frame is DERIVED from the motion, not read from the file.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "playToMarker(clip, secUntilEvent)",
+    "claim": "AnimationDirector is the only place clips are played",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "setInterpolation(InterpolateSmooth)",
+    "claim": "Quaternion tracks are LINEAR only.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "render/proceduralClips.ts",
+    "claim": "Nothing is blocked on the animator either.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "render/CharacterFactory.ts",
+    "claim": "★ THE CHARACTER PIPELINE IS THE RUNTIME HALF OF THE ASSET CONTRACT'S §4",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "scripts/v2/sync-decoders.mjs --check",
+    "claim": "render/modelLoader.ts is the only file that loads a .glb",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "npm run validate:models",
+    "claim": "Two asset directories, two jobs, and conflating them is the mistake.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "npm run manifest:models",
+    "claim": "The delivery manifest is a generated manifest.json , NOT import.meta.glob .",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "npm run export:proxy-kid",
+    "claim": "npm run export:proxy-kid writes a contract-legal kid_<id>.glb from the proxy",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": ".glb",
+    "claim": "A model's bones must be parented to the character root, OUTSIDE the LOD.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "lodDistancesFt",
+    "claim": "lodBias DROPS the nearest levels, it does not scale distances.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "render.characterDrawCost",
+    "claim": "⚠️ A delivered model costs up to 8 draw calls where a proxy costs 2",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "asset-contract.md",
+    "claim": "Expression is face_atlas , and ONLY on delivered models.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "attachOutline",
+    "claim": "Outline hulls are SIBLINGS, never children.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "v2 architecture rules"
+  },
+  {
+    "anchor": "src/systems/logic.test.ts",
+    "claim": "Pure game logic lives in src/systems/ with NO Phaser imports.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Architecture rules — v1 (follow these)"
+  },
+  {
+    "anchor": "ApplyResult.movements",
+    "claim": "Scenes are the thin view layer.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Architecture rules — v1 (follow these)"
+  },
+  {
+    "anchor": "LiveInputs.sendRunner/holdRunner",
+    "claim": "Balls in play run through the live-play sim",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Architecture rules — v1 (follow these)"
+  },
+  {
+    "anchor": "setTeamVariant(ids, teamSuffix(color, logo))",
+    "claim": "Team jerseys ride a texture-VARIANT resolver in art/textureFactory.ts",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Architecture rules — v1 (follow these)"
+  },
+  {
+    "anchor": "GRAD.HAIR_LITE/HAIR_DARK",
+    "claim": "Character art is generated once in BootScene",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Architecture rules — v1 (follow these)"
+  },
+  {
+    "anchor": "resolveLiveParams(mode, overrides, difficulty)",
+    "claim": "All \"feel\" tunables live in src/config.ts",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Architecture rules — v1 (follow these)"
+  },
+  {
+    "anchor": "BattingView.swingBatter(whiff)",
+    "claim": "Reusable juice",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Architecture rules — v1 (follow these)"
+  },
+  {
+    "anchor": "public/fonts/fredoka.woff2",
+    "claim": "Shared UI kit",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Architecture rules — v1 (follow these)"
+  },
+  {
+    "anchor": "scripts/goldlog.browser.js",
+    "claim": "GameScene runs on a two-SEAT model.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Architecture rules — v1 (follow these)"
+  },
+  {
+    "anchor": "applyFrame(lerpFrames(prev, next, α))",
+    "claim": "Two-device play",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Architecture rules — v1 (follow these)"
+  },
+  {
+    "anchor": "config.PASSPLAY.SPLASH_GUARD_MS",
+    "claim": "Pass-and-play 2P",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Architecture rules — v1 (follow these)"
+  },
+  {
+    "anchor": "window.__game",
+    "claim": "Phaser game config + scene list. Exposes window.__game in dev.",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "src/config.ts",
+    "claim": "★ All tunables.",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "chatterLines",
+    "claim": "★ The 30 kids (content). Stats 1–10 (contact/power/speed/pitching/fielding); 3 signature kids use ability ; ev",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "BodySpec",
+    "claim": "Character / Stats / VisualParams (+ the three clamped per-kid spec objects BodySpec / FaceSpec / HairSpec ) / ",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "chooseBestPick",
+    "claim": "Alternating pick + greedy value function; chooseBestPick picks for either side (CPU turns + the ⚡ AUTO fast-fo",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "SchoolyardScene.update()",
+    "claim": "The recess stream-out crowd sim: door-metered launches, seek + pairwise separation, stair/wall-gap constraints",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "features.swingChoice",
+    "claim": "Swing types",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "LiveInputs.pointerActive",
+    "claim": "THE CUTOFF RELAY",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "LivePlayState.reelect",
+    "claim": "★ PURE chaser election (no Phaser, no rng). A ball in the AIR goes to whoever is nearest its landing spot; a b",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "FieldGeometry",
+    "claim": "Field screen coords (bases, mound, 9 fielding spots, fence) shared by sim + scene; the bases sit exactly on th",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "warningTrack",
+    "claim": "★ The 3 venues (content): park / sandlot (short right porch + the oak) / blacktop (fast asphalt), each with fe",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "getFieldGeometry",
+    "claim": "Venue persistence (localStorage recess_venue ) + getFieldGeometry .",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "getPitchBaseMs(mode, half, tee)",
+    "claim": "difficulty ladder",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "resolveCpuPitchLocated",
+    "claim": "Defense half: throw timing→pitch band + the CPU batter's take/swing plan (band-based for kid mode, location-aw",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "travelMs = base ÷ speedMult × armTravelMult(stat)",
+    "claim": "Main-mode pitch types + strike-zone aiming: PitchPlan (kind/target/actual/inZone/travelMs), scatter from meter",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "applyLivePlay",
+    "claim": "Count/outs/bases state machine + walk advancement (+ movements ); applyLivePlay folds live plays in; applyStea",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "cpuPickSpecialPitch",
+    "claim": "Main-mode juice meter: gain table (perfect swings, Ks, catches, steals, DPs...), the SpendKind shop — 💥 power",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "validateLineup",
+    "claim": "PURE lineup planning: autoAssign (best arm pitches, up-the-middle defense priority, classic 1-2 table-setters ",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "{playerTeam, aiTeam, playerPlan?, aiPlan?}",
+    "claim": "CLASSIC-only screen between draft and game: tap-tap swap chips for batting order (1-9 column) + position pads ",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "effectivePitching",
+    "claim": "PURE pitcher stamina: drainPitch per pitch (all juice specials — crazy/fireball/freezeball — cost triple), eff",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "config.DIFFICULTY",
+    "claim": "PURE CPU ramp from games played (picklog tally): rampLevel (capped), rampedArm (tighter CPU pitches), rampedCp",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "RIVAL_PRESETS",
+    "claim": "Team identity ( recess_team , versioned): uniform-color index + logo index; teamName speaks \"THE RED ROCKETS\" ",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "scenes/SettingsScene.ts",
+    "claim": "Player settings ( recess_settings , versioned): independent sfx / voice volumes (audio.ts setSfxVolume rides t",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "Schoolyard {straightToDraft}",
+    "claim": "GAME SETUP",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "registry.seasonDraft",
+    "claim": "★ Recess Week ( recess_season , versioned): 5 games vs preset rivals (never the player's color; benches drawn ",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "StatEvent",
+    "claim": "PURE per-kid stat lines ( KidStats ab/h/hr/r/k) folded from StatEvent s the scene emits at its three settle se",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "scenes/AwardsScene.ts",
+    "claim": "PURE end-of-week awards from ACCUMULATED season stats (Week MVP / Homer King / K Machine; deterministic ties b",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "scenes/AlbumScene.ts",
+    "claim": "The sticker album ( recess_album ): drafted / won-with (foil) / trophies per kid, updated by every Result + th",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "src/scenes/SeasonScene.ts",
+    "claim": "The chalkboard standings hub: Mon–Fri rival logos, chalk W/L/T marks, record, PLAY <day> / AWARDS / QUIT. View",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "LivePlayView.render",
+    "claim": "📼 instant replay (PURE): per-tick position SNAPSHOTS of the live play ( snapshotLive / applyFrame — never inp",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "cpuWantsSteal",
+    "claim": "Main-mode steal race roll: runner speed vs catcher arm, better jump off slow stuff, throw-down reaction bonus;",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "src/systems/gameflow.ts",
+    "claim": "Between-halves decisions: skip pointless bottoms, walk-offs, one bonus inning on a tie.",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "src/systems/picklog.ts",
+    "claim": "The \"voting machine\" — localStorage pick tally.",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "say(text, profile?, mode?)",
+    "claim": "Web Audio SFX + SpeechSynthesis + mute. say(text, profile?, mode?) takes a VoiceProfile and a mode: flush (big",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "config.VOICE.KID.GENDER_PITCH",
+    "claim": "Voice profiles (pure): the two booth commentators' fixed profiles + kidVoice — each character's stable pitch/r",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "AnnounceLine[]",
+    "claim": "The booth: TWO kid commentators (Pip 'A' hyped / Rocco 'B' deadpan) who alternate calls; line() returns Announ",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "pick(moment, now, kid)",
+    "claim": "Backyard-style field chatter (pure, Announcer-shaped): pick(moment, now, kid) maybe returns a line ('batterUp'",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "ZOOM",
+    "claim": "The 3/4 camera: trapezoid pinch toward the fence + depth-scaled kids + the ZOOM field dolly, render-side only.",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "grassFlecks",
+    "claim": "Deterministic field-texture kit shared by drawField + the rig backdrop: shadeInt / lightenInt tones, hash01 , ",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "protocol.test.ts",
+    "claim": "PURE two-device wire format: NetMsg union, HudSnap , validating encode / decode , Sequencer (dup/stale), the T",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "NetSession",
+    "claim": "The ONLY peerjs import: module-singleton NetSession (host/join/active/drop), envelope+sequencing, heartbeat/st",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "joinWithCode(hex)",
+    "claim": "🔗 host/join screens: MAKE shows 4 giant emoji, JOIN is the 16-emoji tap grid; hello (host's mode/innings/venu",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "{net: 'waiting' | 'peer'}",
+    "claim": "Spectator (WATCH)",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "src/ui/*",
+    "claim": "Button, statbars (equalizer bars + dot ratings), PlayerCard (draft hover tag + baseball card), MuteButton, eff",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "space-between",
+    "claim": "★ PURE layout solver (no Phaser, vitest-tested, render-side like plateView.ts ): solveRow (spends the gap to m",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "columnGroups()",
+    "claim": "Measure-then-place, never build-and-place",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "layoutAuditScene(key)",
+    "claim": "★ The in-page layout audit (dependency-free, goldlog.browser.js shape; pasteable into a dev tab as layoutAudit",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "npm run audit:layout",
+    "claim": "fails loudly if the font didn't resolve",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "worldBox",
+    "claim": "L",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "src/scenes/ui/PitchSelectUI.ts",
+    "claim": "Main-mode mound UI: the right-edge pitch card stack (base 4 + juice specials, locked when broke — GameScene su",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "makeCardStack",
+    "claim": "The Backyard-style right-edge card-stack factory ( makeCardStack , geometry HUD.CARDS ): icon + word label, go",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "onUpdate(ball, t, u)",
+    "claim": "Per-kind pitch-flight dressing ( createPitchFx → onUpdate(ball, t, u) / destroy ): speed lines/loop/crescent/s",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "art/fieldTexture.ts",
+    "claim": "★ The behind-home-plate pitch view (the rig): opaque venue backdrop (textured via art/fieldTexture.ts — speckl",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "begin/release/cancelCharge",
+    "claim": "★ The live-play sprite layer (sim-blind view): fielder/runner LiveSprite s, ball+shadow, the Backyard steering",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "plateToScreen",
+    "claim": "The frontal plate↔screen mapping ( plateToScreen / screenToPlate /cursor clamp), pure + render-side like proje",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "HUD.STRIP",
+    "claim": "The Backyard-style bottom scoreboard strip ( HUD.STRIP ): team rows (logo/name/score + batting ▶), AT BAT bloc",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "homerSpectacle",
+    "claim": "Big-moment effects director (view-only, depths 60-66 — clears the rig): homerSpectacle (star-trail ball + fire",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "src/dev/PickRateOverlay.ts",
+    "claim": "D",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "distinctFrameRate",
+    "claim": "throws",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "locomotionRateFor",
+    "claim": "★ v2. The ANIMATION CONTRACT, in code and PURE (no three, like cameraCues.ts ): 35 clips × frames / loop / mar",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "setLocomotionSpeed",
+    "claim": "★ v2. The only place clips are played. AnimationMixer + the contract: playToMarker warps playback so a marker ",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "ProxyCharacter",
+    "claim": "★ v2. Crude stand-ins for all 35 clips, so no engineering is blocked on the animator — ProxyCharacter 's argum",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "/v2/?anims=1",
+    "claim": "★ v2 at /v2/?anims=1 . The acceptance surface for docs/v2/animation-brief.md : clip list, 0.6/1.0/1.4× rates, ",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "skeleton.ts",
+    "claim": "★ v2. Dependency-free glTF 2.0 read AND write. Hand-rolled because a playback loader is built to be FORGIVING ",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "assets/v2/skeleton_recess_v1.glb",
+    "claim": "★ v2. npm run export:skeleton → assets/v2/skeleton_recess_v1.glb , emitted from SKELETON and never hand-edited",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "?proxy=1",
+    "claim": "★ v2. The ONE seam that decides model-or-proxy ( ?proxy=1 / undelivered / load failure), returning the shared ",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "MaterialRegistry",
+    "claim": "★ v2. A delivered kid_<id>.glb made playable: three LOD nodes + the proxy as LOD3, material slots rebound onto",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "public/v2/decoders/",
+    "claim": "★ v2. The only GLTFLoader , with Draco + KTX2 wired to public/v2/decoders/ . Configured with the live renderer",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "document.baseURI",
+    "claim": "★ v2. Runtime asset URLs resolved against document.baseURI , plus the fetched delivery manifest.",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "faceAtlas.test.ts",
+    "claim": "★ v2. PURE (no three). The 4×4 expression grid from the asset contract §4 and faceCellUv ; faceAtlas.test.ts p",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "public/v2/models/",
+    "claim": "★ v2. npm run export:proxy-kid → contract-legal kid_<id>.glb stand-ins in public/v2/models/ , emitted from Pro",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "public/v2/models/manifest.json",
+    "claim": "★ v2. npm run manifest:models — writes public/v2/models/manifest.json from the directory, with a --check mode ",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "npm run sync:decoders",
+    "claim": "★ v2. npm run sync:decoders — copies the Draco/Basis decoders out of three into public/v2/decoders/ , with a -",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "import './skeleton'",
+    "claim": "★ v2. A Node resolution hook so a build script can import './skeleton' and find skeleton.ts . Only fires after",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "validate-models.test.js",
+    "claim": "★ v2. npm run validate:models — the gate both v2 docs promise. Pure rule engine (contract passed in, no TS imp",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "(seed, label)",
+    "claim": "injected never module-scope",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "conformance.test.js",
+    "claim": "★ v2. The sim's tunables in FEET and SECONDS — BALL · AIR · AERO · INTEGRATOR . Deliberately not src/config.ts",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "BALL_K_PER_FT",
+    "claim": "★ v2. The published ball, and the two aero coefficients. Everything folds into BALL_K_PER_FT = ½ρA/m, which is",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "sampleAt",
+    "claim": "bisection",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "contact.ts",
+    "claim": "★ v2. Describes-a-batted-ball → BallState . Its own file because it is the ONE place an authored ANGLE becomes",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "traceLooseBall",
+    "claim": "stepLooseBall / stepLooseBallFull / traceLooseBall",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "purity.lint.test.js",
+    "claim": "★ v2. Where a 1-10 STAT becomes a physical quantity, and the ONE place each does: batSpeedFts · sprintTopSpeed",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "fielding",
+    "claim": "null",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "min(from, to)",
+    "claim": "★ v2. Baserunning off the same two speed functions: legs measured in feet with a standing start, momentum kept",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "bounce.ts",
+    "claim": "★ v2. Bat meets ball: Nathan's Eq. 3 identity for exit velocity, e_A derived from the recoil factor, the under",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "src/v2/sim/pitch.ts",
+    "claim": "★ v2. The pitch as a real trajectory — break is EMERGENT Magnus, not a drawn bow. Release speed and elevation ",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "PlayOutcome",
+    "claim": "★ v2. The play reducer: a batted ball, nine fielders and up to four runners stepped to a PlayOutcome shaped ex",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "pitchAndSwing",
+    "claim": "★ v2. One pitch, in TWO acts so a person can bat: throwPitch (choose a kind and a SPOT, execution error nudges",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "gameflow",
+    "claim": "★ v2. Plate appearance → half → inning → game, headless. The first real value-use of inning / gameflow / stats",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "sim.gapBallOutcome.theArmAtShort",
+    "claim": "★ v2. planDefence — the arm-aware planner sim.gapBallOutcome.theArmAtShort asked for. Each position's arm weig",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "plateJudgementFt",
+    "claim": "no attempt rate and no success rate",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "npm run sim:harness",
+    "claim": "LAUNCH_CUTS are BORROWED bin edges, not physics",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "${inning}${half}${lineupIdx}",
+    "claim": "every game gets its own root seed",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "npm run sim:plate-sweep",
+    "claim": "★ v2. npm run sim:plate-sweep — searches the four COUPLED plate constants ( ATTACK_ANGLE_DEG · UNDERCUT_FROM_J",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "AnimationDirector",
+    "claim": "reads sim state and never writes it",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "scripts/simclock.lint.test.js",
+    "claim": "fixed-step accumulator, never the render delta",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "src/v2/sim/**",
+    "claim": "★ There is exactly ONE kid speed in the sim",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "known-drift",
+    "claim": "★ The measurement records + conformance.test.js 's gate. Every record names the src/config.ts constant it info",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "Key files"
+  },
+  {
+    "anchor": "gameScene.resolvePlayerSwing(band, false)",
+    "claim": "Background tabs pause the game.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "gameScene.setLivePointer(x, y)",
+    "claim": "Live plays are stepped from GameScene.update() on the game-loop clock — never tween anything the sim owns",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "phase === 'cutscene'",
+    "claim": "The Schoolyard stream-out is sim-owned, like live plays.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "scenes/ui/LivePlayView.ts",
+    "claim": "Stop runCycle timers before destroying their sprite.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "w = max(minW, label.width + 32)",
+    "claim": "NEVER place UI at a hardcoded pitch — pills size themselves to MEASURED text.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "bunt[(x / 56) % len]",
+    "claim": "Phaser polygon points must be 0-based (no negative coords).",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "sessionStorage('goldlog_last')",
+    "claim": "The pitch-flight counters are LINEAR on purpose.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "InvalidCharacterError",
+    "claim": "SVG textures need base64 data URIs.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "textures.getTextureKeys()",
+    "claim": "textures.getTextureKeys() is polluted",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "RUN2.CPU_PANIC_DIST",
+    "claim": "The diamond is glued to the foul lines.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "c.ms + CUT_AHEAD_MS >= ownerMs",
+    "claim": "LIVE.CHASE.CUT_AHEAD_MS is a fixed-ms gate over quantities that scale as 1/fielderSpeed, so it can never be sp",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "fenceBulge ≥ 0",
+    "claim": "The fence arc must bulge AWAY from home ( fenceBulge ≥ 0 ).",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "setOrigin(0.5, 1)",
+    "claim": "All pose art must bottom out on the same ground line",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "wrapHeadBack(c, h.back)",
+    "claim": "Head geometry only scales through the headGroup-internal wrapper.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "clearTeamVariant()",
+    "claim": "Never clearTeamVariant() on the Schoolyard without re-arming :sc .",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "heroKey",
+    "claim": "Character textures are sized near their display size on purpose",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "cameras.main.getWorldPoint(p.x, p.y)",
+    "claim": "Phaser camera zoom ignores setScrollFactor",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "e.stopPropagation()",
+    "claim": "GameScene has a scene-level pointerdown that swings/throws on ANY tap.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "'Sine.easeInOut'",
+    "claim": "Camera effects ( cam.pan / zoomTo ) need exact EaseMap keys",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "lastScreenPointer",
+    "claim": "Everything drawn during a pitch must sit ABOVE PLATE_VIEW.DEPTH (50)",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "audio.unlock()",
+    "claim": "Audio needs a user gesture",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "NetSession.onMessage/onStatus",
+    "claim": "Net gotchas.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "AUDIO.masterVolume",
+    "claim": "SpeechSynthesis is quirky.",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Gotchas (things that will bite you)"
+  },
+  {
+    "anchor": "README.md",
+    "claim": "New/changed commands or deploy steps",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Keeping docs current (do this as part of each change)"
+  },
+  {
+    "anchor": "New scene/system/module, changed architecture, or a new gotcha",
+    "claim": "New scene/system/module, changed architecture, or a new gotcha",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Keeping docs current (do this as part of each change)"
+  },
+  {
+    "anchor": "Product direction / roadmap shifts",
+    "claim": "Product direction / roadmap shifts",
+    "owner": "AGENTS.md",
+    "kind": "bullet",
+    "section": "Keeping docs current (do this as part of each change)"
+  }
+]
