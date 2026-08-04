@@ -3670,6 +3670,43 @@
       "whatWouldClose": "It is closed. play.test.ts asserts a caught fly always retires the batter (including when he has already touched first), that a runner on third tags and scores, and that a runner off his bag can be doubled off.",
       "informs": "src/v2/sim/play.ts",
       "theDOUBLEOFFISWRITTENBUTUNREACHABLE": "★ NAMED RATHER THAN LEFT SILENT. The rule is implemented -- a runner off his bag when the ball is caught must beat it back or be retired -- and it fires ZERO times over 72 catches, because the CPU running policy never commits a runner off his base on a catchable fly. So there is nobody out there to double off. It is kept because it is the correct rule and it becomes live the moment PlayInputs lets a human send a runner; it is PINNED AT ZERO in play.test.ts so that the day it starts happening, the assertion fails and somebody looks. isFair, startDive and BASE_COVER were each authored and reachable by nothing, and each cost a PR to discover -- this one is on the record from the start. NOTE an earlier version of that test counted `outs >= 2` and read 2 of 50 catches as double-offs: those were runners who TAGGED and were thrown out at the next base, which is the opposite play."
+    },
+    "fieldingInput": {
+      "id": "sim.fielding-input",
+      "category": "sim",
+      "reference": "derived",
+      "status": "note",
+      "statusChangedAt": "2026-08-03",
+      "what": "What steering a fielder is actually worth in v2, measured before deciding whether it needs an assist.",
+      "why": "★ v1's ASSIST WAS THE WHOLE PLAY AND v2's SITUATION IS THE OPPOSITE. defense.fieldingAssist records that v1's flat 0.5 magnet left a deliberate perpendicular mis-steer 5.3px from the landing spot, inside a 39px reach -- 'the game caught the ball for you no matter where you pointed, so defense had no skill in it'. v2's reach is 3ft against v1's 11.36ft, so porting that constant would have meant nothing. PR 14 ran v1's own experiment against v2 instead.",
+      "measured": {
+        "grid": "27 fly balls: launch 25/35/45 deg x exit 55/62/70 mph x spray -25/0/25, park, the planDefence nine.",
+        "reachFt": 3.0,
+        "caughtByAimError": {
+          "cpuNoInput": "16/27",
+          "perfectAim": "16/27",
+          "off3ft": "5/27",
+          "off8ft": "2/27",
+          "off15ft": "1/27",
+          "perpendicular": "0/27"
+        },
+        "perpendicularMissFt": {
+          "median": 72.5,
+          "min": 47.1,
+          "max": 77.4
+        },
+        "n": 27,
+        "confidence": "high"
+      },
+      "theFINDING": "★ STEERING IS ENTIRELY LOAD-BEARING, WHICH IS v1's PROBLEM INVERTED. A perpendicular mis-steer catches NOTHING (0/27, median 72.5ft adrift) where v1 caught it anyway. And a player who steers perfectly fields exactly as well as the CPU -- 16/27 both -- so the input is neither decorative nor a handicap: it is the whole job, done well.",
+      "theTOLERANCEISTHEREACH": "★ AND THAT IS THE PART TO WORRY ABOUT. Catches fall 16 -> 5 -> 2 -> 1 at 3ft, 8ft and 15ft of aim error. Three feet of error is a miss because three feet IS the reach; there is no forgiveness band at all, by construction. For an eight-year-old on a touchscreen that is plausibly unplayable, and it is the argument for an assist -- but an assist SIZED FROM THIS TABLE rather than carried over from a game whose reach was nearly four times larger.",
+      "whatPR14DIDNOTDO": "No assist was added. The plan was to ship raw steering and measure, and the measurement is above; PR 15 decides the assist with a number behind it. Adding one here would have meant tuning a feel constant in the same PR that first made the feel possible to have.",
+      "ours": {
+        "constant": "src/v2/sim/play.ts moveFielders (PlayInputs.pointer)",
+        "value": "no assist: the pointer IS the target"
+      },
+      "whatWouldClose": "A child actually playing it. Every number here is a synthetic aim error; what it cannot say is how far off a real seven-year-old's finger lands, which is the quantity an assist would be sized against. Until then the table says what any given error costs, which is the most that can be known without a player.",
+      "informs": "src/v2/sim/play.ts"
     }
   },
   "defense": {

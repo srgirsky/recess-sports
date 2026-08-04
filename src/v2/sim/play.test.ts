@@ -18,12 +18,20 @@
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
-import { beginPlay, finishPlay, simulatePlay, stepPlay, type PlaySpec, type PlayState } from './play';
+import {
+  beginPlay,
+  finishPlay,
+  simulatePlay,
+  stepPlay,
+  type PlayInputs,
+  type PlaySpec,
+  type PlayState,
+} from './play';
 import { traceLooseBall } from './bounce';
 import { launch, type LaunchSpec } from './launch';
 import { DEFENSE, PLAY } from './params';
 import { sprintTimeSec } from './athletes';
-import { BASEPATH, FIELD_POSITIONS, VENUE_GEOMETRY, type VenueId } from './field';
+import { BASEPATH, FIELD_POSITIONS, VENUE_GEOMETRY, dist, type VenueId } from './field';
 import { makeRng } from './rng';
 import { mphToFts } from './units';
 import { autoAssign } from '../../systems/lineup';
@@ -746,5 +754,159 @@ describe('★ the caught fly — tag-ups, sac flies, and the batter', () => {
     const o = fly(28, 44, [runnerAt(3)]);
     if (!o.flyCaught) return;
     expect(o.runs).toBe(0);
+  });
+});
+
+describe('★ PlayInputs is finally read', () => {
+  // ★ IT EXISTED FROM PR 6 AND `stepPlay` NEVER READ IT — the parameter was
+  // literally `_inputs`, defaulted and referenced nowhere in 1,300 lines. Its
+  // own header called it "a typed seam so the signature does not change when
+  // they land". These assert BEHAVIOUR rather than that a field is read,
+  // because "wired but inert" is the exact failure this closes.
+  const fly = (inputs: PlayInputs, seed = 'in') => {
+    const s = beginPlay(
+      {
+        launch: { exitVelocityFts: 66, launchAngleDeg: 35, sprayDeg: -20, spinRpm: 1500, heightFt: 2.5 },
+        defence: PLAN.positions,
+        batter: BATTER,
+        lookup: getCharacter,
+        geo: VENUE_GEOMETRY.park,
+        outs: 0,
+      },
+      makeRng(seed)
+    );
+    let n = 0;
+    while (s.phase !== 'done' && n++ < 1500) stepPlay(s, 1 / 60, inputs);
+    return s;
+  };
+
+  it('★ steering moves the fielder somewhere the CPU would not have gone', () => {
+    const cpu = fly({});
+    const cpuAt = { ...cpu.fielders[cpu.active].p };
+    // Held hard away from the ball for the whole play.
+    const away = fly({ pointer: { x: -120, z: 60 } });
+    const awayAt = away.fielders[away.active].p;
+    expect(dist(cpuAt, awayAt), 'the pointer has to actually move him').toBeGreaterThan(30);
+
+    // ★ AND IT COSTS CATCHES, which is the point: steering is load-bearing.
+    // Asserted over a sweep rather than one launch — a single fly the CPU
+    // happens not to catch says nothing, and that is what the first version of
+    // this assertion tripped over. `sim.fieldingInput` has the full table:
+    // 16/27 for the CPU and for perfect aim, 0/27 steering perpendicular.
+    let cpuCaught = 0;
+    let misSteered = 0;
+    for (const la of [25, 35, 45]) {
+      for (const ev of [55, 62, 70]) {
+        const one = (mis: boolean) => {
+          const st = beginPlay(
+            {
+              launch: { exitVelocityFts: ev, launchAngleDeg: la, sprayDeg: -20, spinRpm: 1500, heightFt: 2.5 },
+              defence: PLAN.positions,
+              batter: BATTER,
+              lookup: getCharacter,
+              geo: VENUE_GEOMETRY.park,
+              outs: 0,
+            },
+            makeRng(`sweep${la}${ev}`)
+          );
+          // ★ PERPENDICULAR TO THIS BALL, not at a fixed corner. A corner is a
+          // mis-steer for most launches and an accident for one of them — the
+          // first version caught 1 of 9 that way, which is a broken test rather
+          // than a finding. `defense.fieldingAssist`'s own experiment is
+          // perpendicular, and so is `sim.fieldingInput`'s.
+          const at = { ...st.fielders[st.active].p };
+          const m = Math.hypot(st.ball.v.x, st.ball.v.z) || 1;
+          const perp = { x: at.x + (-st.ball.v.z / m) * 60, z: at.z + (st.ball.v.x / m) * 60 };
+          const inputs: PlayInputs = mis ? { pointer: perp } : {};
+          let n = 0;
+          while (st.phase !== 'done' && n++ < 1500) stepPlay(st, 1 / 60, inputs);
+          return st.flyCaught;
+        };
+        if (one(false)) cpuCaught++;
+        if (one(true)) misSteered++;
+      }
+    }
+    expect(cpuCaught, 'the CPU catches a fair share').toBeGreaterThan(3);
+    // ★ NOT "catches nothing", AND THE EXCEPTION IS INSTRUCTIVE. One of these
+    // nine is a shallow bloop (apex 11.6ft) that a RE-ELECTION hands to a
+    // fielder already standing under it — steering the previous chaser away
+    // cannot save a ball somebody else was always going to reach. That is the
+    // election working, not the input failing, so the claim is that mis-steering
+    // costs most of the catches rather than all of them.
+    expect(misSteered, 'a deliberate mis-steer must cost most catches').toBeLessThan(
+      cpuCaught / 2
+    );
+  });
+
+  it('★ a human dive fires where the CPU declines', () => {
+    // The CPU dives only when the gap is OPENING; a player may dive whenever
+    // the ball is inside the diving envelope, because that gate is its
+    // judgement and a player is allowed a worse one.
+    let cpuDives = 0;
+    let humanDives = 0;
+    for (const seed of ['d1', 'd2', 'd3', 'd4']) {
+      for (const ev of [58, 66]) {
+        const mk = (inputs: PlayInputs) => {
+          const s = beginPlay(
+            {
+              launch: { exitVelocityFts: ev, launchAngleDeg: 12, sprayDeg: -18, spinRpm: 900, heightFt: 2.5 },
+              defence: PLAN.positions,
+              batter: BATTER,
+              lookup: getCharacter,
+              geo: VENUE_GEOMETRY.park,
+              outs: 0,
+            },
+            makeRng(seed + ev)
+          );
+          let n = 0;
+          let dives = 0;
+          while (s.phase !== 'done' && n++ < 1500) {
+            stepPlay(s, 1 / 60, inputs);
+            for (const e of s.events) if (e.t === 'dive') dives++;
+          }
+          return dives;
+        };
+        cpuDives += mk({});
+        humanDives += mk({ dive: true });
+      }
+    }
+    expect(humanDives, 'a held dive input must dive more than the CPU chooses to').toBeGreaterThan(
+      cpuDives
+    );
+  });
+
+  it('★ a thrown-to base is the one the ball goes to', () => {
+    // And out of range still means out of range — a player cannot will a ball
+    // across the diamond, so the relay stays a consequence of the arm.
+    const s = beginPlay(
+      {
+        launch: { exitVelocityFts: 52, launchAngleDeg: 6, sprayDeg: -15, spinRpm: 800, heightFt: 2.5 },
+        defence: PLAN.positions,
+        batter: BATTER,
+        lookup: getCharacter,
+        geo: VENUE_GEOMETRY.park,
+        outs: 0,
+      },
+      makeRng('throw')
+    );
+    let n = 0;
+    const thrown: number[] = [];
+    while (s.phase !== 'done' && n++ < 1500) {
+      // Ask for third on every tick; only the carrier can act on it.
+      stepPlay(s, 1 / 60, { throwTo: { base: 3 } });
+      for (const e of s.events) if (e.t === 'throw') thrown.push(e.toBase);
+    }
+    expect(thrown.length, 'somebody threw').toBeGreaterThan(0);
+    expect(thrown.every((b) => b === 3), `threw to ${thrown.join(',')} — not the asked-for bag`).toBe(
+      true
+    );
+  });
+
+  it('the CPU still plays a whole game when nothing is asked of it', () => {
+    // The compatibility claim, in one line: `{}` is the old behaviour.
+    const a = fly({}, 'compat');
+    const b = fly({}, 'compat');
+    expect(a.outs).toBe(b.outs);
+    expect(a.flyCaught).toBe(b.flyCaught);
   });
 });

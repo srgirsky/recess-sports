@@ -455,3 +455,43 @@ describe('★ the bridge reads sim state and never writes it', () => {
     expect(bridge).not.toMatch(/document\./);
   });
 });
+
+describe('★ PlayInputs is read, not merely accepted', () => {
+  // ★ FOR EIGHT PRs `stepPlay` TOOK `_inputs` AND IGNORED IT. The underscore
+  // was honest — the parameter was defaulted and referenced nowhere — and the
+  // seam's own header called it "a typed seam so the signature does not change
+  // when they land". PR 14 landed them. This is the regression guard, in the
+  // shape `isFair` and `startDive` earned: a mechanism can be authored, typed
+  // and documented while no code path reaches it.
+  const play = readFileSync(join(repo, 'src/v2/sim/play.ts'), 'utf8');
+
+  it('★ stepPlay does not take an underscored, ignored input', () => {
+    const sig = play.match(/export function stepPlay\([^)]*\)/s)?.[0] ?? '';
+    expect(sig, 'stepPlay signature not found').toBeTruthy();
+    expect(sig, 'a leading underscore means nobody reads it').not.toMatch(/_inputs/);
+  });
+
+  it('★ each verb reaches the decision it overrides', () => {
+    // Presence of the field name is not enough — it has to appear where the
+    // CPU would otherwise decide. Behaviour is asserted in `play.test.ts`;
+    // this catches the field being read into a variable and dropped.
+    expect(play, 'pointer must reach the chase target').toMatch(
+      /inputs\.pointer[\s\S]{0,200}chaseTarget/
+    );
+    expect(play, 'dive must reach startDive').toMatch(/inputs\.dive[\s\S]{0,200}startDive/);
+    expect(play, 'throwTo must reach release').toMatch(/inputs\.throwTo[\s\S]{0,300}release\(/);
+  });
+
+  it('the scope note no longer promises a throw meter', () => {
+    // v2 has no throw POWER — `release` computes flight from the arm, which is
+    // a measured quantity. v1 needed a meter because its throws were arbitrary.
+    //
+    // ★ SCOPED TO THE HEADER, not the whole file. `maybeThrow`'s comment QUOTES
+    // the old promise in order to explain why it is gone, and a blunt
+    // whole-file match failed on that — which would have pushed the next person
+    // to delete the explanation rather than the promise.
+    const header = play.slice(0, play.indexOf('\nimport '));
+    expect(header).not.toMatch(/throw-charge meter/);
+    expect(header, 'and it should say why there is none').toMatch(/THERE IS NO THROW METER/);
+  });
+});

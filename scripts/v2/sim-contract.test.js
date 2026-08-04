@@ -1654,3 +1654,37 @@ describe('render.v1BundleInvariant', () => {
     expect(rec.whyNotDuplicateInSource).toMatch(/own baseball's RULES/);
   });
 });
+
+describe('sim.fieldingInput', () => {
+  const rec = M.sim.fieldingInput;
+
+  it('is a NOTE that measured before deciding, rather than porting', () => {
+    wellFormed(rec, { reference: 'derived', status: 'note' });
+    expect(rec.why).toMatch(/v2's SITUATION IS THE OPPOSITE/);
+    expect(rec.whatPR14DIDNOTDO).toMatch(/No assist was added/);
+  });
+
+  it('★ recomputes the reach the whole finding turns on', () => {
+    expect(reachFt()).toBeCloseTo(rec.measured.reachFt, 6);
+    // v1's assist was measured against a 39px reach; ours is a third of that in
+    // real terms, which is why the constant could not be carried over.
+    expect(M.sim.catchRadius.measured.reachFt).toBe(rec.measured.reachFt);
+  });
+
+  it('★ records that steering is load-bearing, which v1 could not say', () => {
+    const c = rec.measured.caughtByAimError;
+    expect(c.perpendicular).toBe('0/27');
+    // Perfect aim must equal the CPU — the input is neither decorative nor a
+    // handicap, which is the pair of claims that makes it a real verb.
+    expect(c.perfectAim).toBe(c.cpuNoInput);
+    expect(rec.theFINDING).toMatch(/v1's PROBLEM INVERTED/);
+  });
+
+  it('★ flags the tolerance rather than burying it', () => {
+    // Three feet of aim error is a miss because three feet is the reach. That
+    // is the number an assist would be sized against, and PR 14 did not add one.
+    expect(rec.theTOLERANCEISTHEREACH).toMatch(/three feet IS the reach/);
+    expect(rec.theTOLERANCEISTHEREACH).toMatch(/SIZED FROM THIS TABLE/);
+    expect(rec.whatWouldClose).toMatch(/child actually playing it/);
+  });
+});

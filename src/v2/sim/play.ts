@@ -7,10 +7,22 @@
 // tests, `BASE_COVER` was read by nothing at all, and the only thing that put a
 // chase next to a runner was a test-only harness that declared its own bias.
 //
-// ★ WHAT IS DELIBERATELY NOT HERE, and the list is now SHORT. Human steering,
-// the throw-charge meter and the fielding assist — those genuinely need a
-// player, and v2 has no input membrane yet. `PlayInputs` is here as a typed seam
-// so the signature does not change when they land.
+// ★ WHAT IS NOT HERE IS NOW ONE LINE. Runner sends, which belong with the plate
+// verbs and the offence half. Everything else has landed.
+//
+// ★ AND THERE IS NO THROW METER, BECAUSE THERE IS NO POWER. This paragraph used
+// to promise one. `release` computes flight from `throwFlightSec(from, to,
+// carrier.arm)` and the arm is a MEASURED quantity (`sim.throwSpeed`), not a
+// dial a player charges — v1 needed a meter because its throws were arbitrary.
+// The human verb is choosing the bag, and out of range still means out of range,
+// so the relay stays a consequence of an arm rather than a mechanic.
+//
+// ★ NOR IS THERE A FIELDING ASSIST, and that was measured rather than assumed.
+// `sim.fieldingInput` ran v1's own experiment here: a deliberate perpendicular
+// mis-steer catches 0 of 27 and finishes a median 72.5ft adrift, where v1's flat
+// magnet caught it anyway. Steering is the whole job — and perfect aim fields
+// exactly as well as the CPU, 16/27 both. What that record flags is the
+// TOLERANCE: three feet of aim error is a miss, because three feet is the reach.
 //
 // ★ THE OTHER THREE WERE NOT WAITING ON A PLAYER AFTER ALL. This paragraph used
 // to name the dive verb, tag-ups, sac flies and steals alongside them, on the
@@ -86,6 +98,7 @@ import {
 import {
   BASE_COVER,
   basePos,
+  clampToField,
   dist,
   isFair,
   FIELD_POSITIONS,
@@ -316,7 +329,7 @@ export function beginPlay(spec: PlaySpec, rng: Rng): PlayState {
 
 // --- The tick ---------------------------------------------------------------
 
-export function stepPlay(s: PlayState, dtSec: number, _inputs: PlayInputs = {}): PlayState {
+export function stepPlay(s: PlayState, dtSec: number, inputs: PlayInputs = {}): PlayState {
   s.events = [];
   if (s.phase === 'done' || dtSec <= 0) return s;
   s.elapsedSec += dtSec;
@@ -335,8 +348,8 @@ export function stepPlay(s: PlayState, dtSec: number, _inputs: PlayInputs = {}):
   if (moved) reelect(s, true);
   else if (stale && s.heldBy === null && !s.throw) reelect(s, false);
 
-  moveFielders(s, dtSec);
-  tryDive(s);
+  moveFielders(s, dtSec, inputs);
+  tryDive(s, inputs);
   tryGrab(s);
   // Close any dive window that has run out. An empty one freezes him.
   for (const f of s.fielders) {
@@ -345,7 +358,7 @@ export function stepPlay(s: PlayState, dtSec: number, _inputs: PlayInputs = {}):
   // ...and again for anything the grab phase shook loose.
   if (s.pendingReelect) reelect(s, true);
 
-  maybeThrow(s);
+  maybeThrow(s, inputs);
   moveRunners(s, dtSec);
   carrierTouchesBags(s);
   decideRunning(s);
@@ -580,16 +593,28 @@ function assignCover(s: PlayState): void {
 
 // --- Fielders ---------------------------------------------------------------
 
-function moveFielders(s: PlayState, dtSec: number): void {
+function moveFielders(s: PlayState, dtSec: number, inputs: PlayInputs = {}): void {
   const ballP = { x: s.ball.p.x, z: s.ball.p.z };
   const inAir = s.ballPhase === 'flight' && s.heldBy === null && !s.throw;
   for (let i = 0; i < s.fielders.length; i++) {
     const f = s.fielders[i];
     let target: Vec2;
     if (i === s.active && s.heldBy === null && !s.throw) {
-      // ★ Through `chaseTarget`, never at the ball. Aiming at a rolling ball is
-      // pure pursuit, which trails it instead of heading it off.
-      target = chaseTarget(s.trace, ballP, s.chase, inAir);
+      // ★ THE HUMAN STEERS THE ELECTED CHASER, AND ONLY HIM. Everyone else is
+      // covering a bag or backing up, and a defence where one tap moves nine
+      // kids is not a defence. This is the whole of `PlayInputs.pointer`: a
+      // destination, in feet, replacing the one the CPU would have picked.
+      //
+      // ★ NO ASSIST, DELIBERATELY. `defense.fieldingAssist` records that v1's
+      // flat 0.5 magnet "was not a mild helper — it was the whole play": a
+      // perpendicular mis-steer over a whole hang time still finished 5.3px
+      // from the landing spot, inside a 39px reach. v2's reach is 3ft against
+      // v1's 11.36ft, so that constant means something entirely different here
+      // and porting it would be the unit confusion v2 exists to delete.
+      // `sim.fieldingInput` measures what raw steering actually costs.
+      target = inputs.pointer
+        ? clampToField(s.geo, inputs.pointer)
+        : chaseTarget(s.trace, ballP, s.chase, inAir);
     } else if (i === s.heldBy) {
       target = carrierTarget(s, f);
     } else {
@@ -673,11 +698,19 @@ function secureBall(s: PlayState, idx: number): void {
  * he will have it standing up shortly and a dive buys nothing; if it is moving
  * away — a grounder past his left, a sinking liner — this is the last chance.
  */
-function tryDive(s: PlayState): void {
+function tryDive(s: PlayState, inputs: PlayInputs = {}): void {
   if (s.heldBy !== null || s.throw || s.homeRun) return;
   const f = s.fielders[s.active];
   if (canReach(f, s.ball.p, s.elapsedSec)) return;
   if (!couldReachDiving(f, s.ball.p, s.elapsedSec)) return;
+  // ★ A HUMAN DIVE SKIPS THE OPENING-GAP GATE, because that gate is the CPU's
+  // JUDGEMENT and a player is allowed a worse one. He still cannot dive at a
+  // ball outside the diving envelope, and an empty dive still costs the
+  // `DIVE_WHIFF_SEC` freeze — the geometry and the price are not his to skip.
+  if (inputs.dive) {
+    if (startDive(f, s.elapsedSec)) s.events.push({ t: 'dive', fielder: f.charId });
+    return;
+  }
   // Radial velocity of the ball about the fielder. Positive is opening.
   const rx = s.ball.p.x - f.p.x;
   const rz = s.ball.p.z - f.p.z;
@@ -863,10 +896,25 @@ function release(s: PlayState, target: ThrowTarget, at: Vec2): void {
   assignCover(s);
 }
 
-function maybeThrow(s: PlayState): void {
+function maybeThrow(s: PlayState, inputs: PlayInputs = {}): void {
   if (s.heldBy === null || s.throw || s.phase === 'done') return;
   if (s.elapsedSec - s.heldAtSec < DEFENSE.RELEASE_SEC) return;
   const carrier = s.fielders[s.heldBy];
+
+  // ★ THE HUMAN PICKS A BAG, NOT A POWER — AND v2 HAS NO METER TO GIVE HIM.
+  // v1 charges a throw, and `play.ts`'s own scope note used to list "the
+  // throw-charge meter" among the deferred features. There is nothing to
+  // charge: `release` computes flight from `throwFlightSec(from, to, arm)`,
+  // and the arm is a MEASURED quantity (`sim.throwSpeed`), not a dial. v1
+  // needed a meter because its throws were arbitrary.
+  //
+  // Out of range still means out of range — `release` returns without throwing
+  // — so a player cannot will a ball across the diamond, and the relay stays a
+  // consequence of the arm rather than a mechanic he can override.
+  if (inputs.throwTo) {
+    release(s, { kind: 'base', base: inputs.throwTo.base }, basePos(inputs.throwTo.base));
+    return;
+  }
 
   const base = bestBeatableBase(s, carrier.p, carrier.arm);
   if (base !== null) {

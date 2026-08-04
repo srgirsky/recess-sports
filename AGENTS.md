@@ -446,6 +446,31 @@ continuous across a v1↔v2 switch in the same browser.
   just not calling it. Drive it by hand instead: `__spike.tick(t)` with a
   monotonically increasing `t`, which is what `.claude/skills/verify` already
   says for v1's Phaser clock.
+- **★ `PlayInputs` WAS ACCEPTED AND IGNORED FOR EIGHT PRs.** `stepPlay`'s
+  parameter was literally `_inputs` — defaulted, and referenced nowhere in 1,300
+  lines — while its own header called it *"a typed seam so the signature does not
+  change when they land"*. Fourth instance of the pattern, after `isFair`,
+  `startDive` and `bridge.ts` not existing. PR 14 wired **steer, dive and
+  throw**; runner sends stay with the offence half. A lint now fails an
+  underscored input, and the gates assert BEHAVIOUR (a different fielder path)
+  rather than that a field is read, because "wired but inert" is the failure.
+- **★ THERE IS NO THROW METER IN v2, BECAUSE THERE IS NO POWER.** v1 charges a
+  throw; `release` computes flight from `throwFlightSec(from, to, carrier.arm)`
+  and the arm is a MEASURED quantity (`sim.throwSpeed`). v1 needed a meter
+  because its throws were arbitrary. The human verb is **choosing the bag**, and
+  out of range still means out of range — so the relay stays a consequence of an
+  arm rather than a mechanic a player can override.
+- **★ AND NO FIELDING ASSIST, MEASURED RATHER THAN ASSUMED.**
+  `defense.fieldingAssist` records that v1's flat 0.5 magnet *"was not a mild
+  helper — it was the whole play"*: a perpendicular mis-steer still finished
+  5.3px from the landing spot inside a **39px** reach. v2's reach is **3ft**, so
+  the constant means something else entirely. Running v1's own experiment here
+  (`sim.fieldingInput`) gives the inverse: a perpendicular mis-steer catches
+  **0 of 27** and finishes a median **72.5ft** adrift, while perfect aim fields
+  exactly as well as the CPU — **16/27 both**. ⚠️ The number to worry about is
+  the TOLERANCE: catches fall 16 → 5 → 2 at **3ft, 8ft and 15ft** of aim error,
+  because three feet IS the reach. If an assist is ever added it is sized from
+  that table, never from v1's.
 - **★ A HARNESS THAT ONLY PINS IS A RATCHET, NOT A GATE.** Most of what PR 8
   measures has no band to answer to — published youth data starts at 9U and
   `sim.note` is explicit that borrowing MLB's numbers is THE failure the
