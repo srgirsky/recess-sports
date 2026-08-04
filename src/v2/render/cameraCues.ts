@@ -77,7 +77,13 @@ export interface CameraRig {
  * the classic looking-across-the-yard framing.
  */
 export const RIGS: Record<CameraPreset, CameraRig> = {
-  PITCH: { eye: [0, 4.6, -13], target: [0, 2.4, 1], fov: 40 },
+  // ★ RAISED IN PR 13, THE FIRST TIME THIS RIG SAW A REAL SCENE. At eye 4.6ft
+  // the camera sat at a standing catcher's own height, eight feet behind him —
+  // so he filled the middle of the frame and the pitch, the one thing this view
+  // exists to show, was behind his head. The preset's own comment always said
+  // "behind-the-catcher view"; it now actually looks OVER him. Found by
+  // watching `/v2/?play=1`, which is what that page is for.
+  PITCH: { eye: [0, 8.2, -18], target: [0, 2.6, 6], fov: 42 },
   PITCH_HERO: { eye: [3.6, 4.4, -11], target: [0, 2.6, 2], fov: 36 },
   // ★ SOLVED, not chosen. See FIELD_SOLVE below and cameraCues.test.ts.
   // The ESTABLISHING shot: conforms to `geometry.fieldScale`, shows the whole

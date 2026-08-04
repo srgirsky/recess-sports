@@ -302,9 +302,13 @@ describe('the pure-systems whitelist keeps its own promises', () => {
 
 describe('v1 has no path to v2', () => {
   it('is never imported by anything outside src/v2', () => {
-    // The structural guarantee behind AGENTS.md's "a v2 change that alters
-    // dist/assets/main-*.js is a bug". Reviewing diffs cannot provide it; a
-    // one-way dependency can — if v1's module graph cannot REACH v2, no v2
+    // ★ SINCE PR 13 THIS IS *THE* GUARANTEE, not a backstop for a bundle-hash
+    // check. AGENTS.md used to add "a v2 change that alters
+    // dist/assets/main-*.js is a bug"; that proxy expired the moment v2's play
+    // view imported the sim and Rollup hoisted `systems/inning` into a chunk
+    // both entries share — see `render.v1BundleInvariant`. Reviewing diffs
+    // cannot prove v1 is unaffected; a one-way dependency can — if v1's module
+    // graph cannot REACH v2, no v2
     // edit can appear in v1's bundle, and the two games stay independent by
     // construction rather than by care. (`scripts/v2/*` is build and test
     // tooling, not bundled, and imports v2 freely.)
@@ -413,5 +417,41 @@ describe('★ there is exactly ONE kid speed in the sim', () => {
       expect(makeFielder(kid, 'CF').topFts, `stat ${stat}`).toBe(makeRunner(kid, 0).topFts);
       expect(makeFielder(kid, 'CF').accelFtS2, `stat ${stat}`).toBe(makeRunner(kid, 0).accelFtS2);
     }
+  });
+});
+
+describe('★ the bridge reads sim state and never writes it', () => {
+  // ★ THE RULE AGENTS.md STATES FOR `src/v2/render/**`, made structural. The
+  // bridge is the single named coupling point, and the whole value of having
+  // ONE named seam is that the sim cannot be perturbed by anything the camera
+  // or the animation wants. Reviewing a render diff for stray assignments is
+  // exactly the kind of care this file exists to replace.
+  //
+  // Checked textually rather than by types: `PlayState` is a mutable object and
+  // TypeScript will happily let the render layer write to it.
+  const bridge = readFileSync(join(repo, 'src/v2/render/bridge.ts'), 'utf8');
+
+  it('never assigns into a frame, a play, a fielder or a runner', () => {
+    // Any `x.y = ...` where the root is sim-owned. Reads, calls and destructuring
+    // are all fine; only assignment is not.
+    const roots = ['frame', 'play', 'f', 'r', 'p', 'cur'];
+    const offenders = [];
+    for (const line of bridge.split('\n')) {
+      const code = line.replace(/\/\/.*$/, '');
+      for (const root of roots) {
+        // `root.a.b = ` or `root.a = `, but not `===`, `<=`, `>=`, `!=`.
+        const re = new RegExp(`\\b${root}(\\.[A-Za-z_$][\\w$]*)+\\s*(\\+|-|\\*|/)?=(?!=)`);
+        if (re.test(code)) offenders.push(line.trim());
+      }
+    }
+    expect(offenders, 'the bridge must not write sim state').toEqual([]);
+  });
+
+  it('touches the scene only through the objects it was handed', () => {
+    // `SceneRefs` is the whole surface. A bridge that reached into the scene
+    // graph directly would be a second place that decides what is on screen.
+    expect(bridge).toMatch(/refs\.ball/);
+    expect(bridge).not.toMatch(/new Scene\(/);
+    expect(bridge).not.toMatch(/document\./);
   });
 });

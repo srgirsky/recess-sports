@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { PerspectiveCamera, Vector3 } from 'three';
 import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { FIELD_SOLVE, RIGS, chooseCamera, damp, type CameraPreset } from './cameraCues';
 import { FIRST, HOME, SECOND, THIRD, VENUE_GEOMETRY, fenceDistAt, pointAt } from '../sim/field';
 
@@ -205,5 +207,61 @@ describe('damp', () => {
     };
     // 1 second of settling at 60fps vs 30fps.
     expect(run(1 / 60, 60)).toBeCloseTo(run(1 / 30, 30), 1);
+  });
+});
+
+describe('★ the policy finally has a caller', () => {
+  // ★ `chooseCamera` WAS COMPLETE, TESTED AND INVOKED BY NOTHING until PR 13.
+  // Same shape as `isFair` before PR 7 and `startDive` before PR 10: a whole
+  // mechanism, argued from v1 and BB2001, that no code path reached. This test
+  // is the regression guard for the calling, not the choosing.
+  const playView = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), '../spike/PlayView.ts'),
+    'utf8'
+  );
+
+  it('★ is called by the play view, through the bridge', () => {
+    expect(playView).toMatch(/chooseCamera\(/);
+    expect(playView).toMatch(/cameraInputFor\(/);
+    // And its cue actually drives the camera, rather than being computed and
+    // dropped — which is how a mechanism ends up "wired" but inert.
+    expect(playView).toMatch(/RIGS\[[^\]]*preset\]/);
+  });
+
+  it('★ honours the hard cut rather than blending across it', () => {
+    // The policy's own rule: PITCH -> FIELD is instantaneous, never a blend,
+    // because "a blend across that much distance takes ~400ms during which a
+    // six-year-old cannot tell where the ball is".
+    const pitch = chooseCamera({ phase: 'pitch' });
+    const contact = chooseCamera(
+      { phase: 'contact', ball: [10, 12, 120], chaser: [20, 130] },
+      pitch
+    );
+    const after = chooseCamera(
+      { phase: 'live', ball: [12, 8, 140], chaser: [22, 140] },
+      contact
+    );
+    expect(pitch.preset).toBe('PITCH');
+    expect(contact.transition, 'contact is THE cut').toBe('cut');
+    expect(after.transition, 'and everything after it is a damped move').not.toBe('cut');
+    // The view must branch on it, not smooth everything uniformly.
+    expect(playView).toMatch(/transition === 'cut'/);
+    // ★ AND THE BRIDGE MUST ACTUALLY EMIT `contact`, or the cut is unreachable
+    // while looking wired — which is exactly what it did until this assertion.
+    const bridge = readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), 'bridge.ts'),
+      'utf8'
+    );
+    // ★ STRUCTURALLY, NOT "the word appears somewhere". The first version
+    // matched /'contact'/ and was satisfied by the explanatory COMMENT, so
+    // deleting the branch changed nothing — the gate sweep caught it.
+    expect(bridge).toMatch(/phase:\s*[^\n]*\?\s*'contact'\s*:\s*'live'/);
+  });
+
+  it('★ damps only when the cue asks for a blend', () => {
+    expect(playView).toMatch(/damp\(/);
+    // A cut zeroes the velocities; carrying them over is how a "cut" turns
+    // into a lurch on the following frames.
+    expect(playView).toMatch(/eyeVel\.set\(0, 0, 0\)/);
   });
 });

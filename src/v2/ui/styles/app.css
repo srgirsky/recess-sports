@@ -105,3 +105,23 @@ body {
   white-space: pre;
   pointer-events: none;
 }
+
+/*
+ * The play view's scoreboard.
+ *
+ * Inherits `#hud`'s `pointer-events: none` — nothing here is `.interactive`,
+ * so every tap falls through to the canvas by construction.
+ */
+.play-hud {
+  position: absolute;
+  left: 50%;
+  bottom: 1.25rem;
+  transform: translateX(-50%);
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(16, 24, 40, 0.72);
+  color: #fff;
+  font: 600 clamp(0.75rem, 2.6vw, 1rem) / 1.2 Fredoka, system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}

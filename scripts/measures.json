@@ -935,6 +935,48 @@
       "n": 1,
       "confidence": "derived",
       "informs": "src/v2/render/CharacterModel.ts (attachOutline per primitive), src/v2/render/ProxyCharacter.ts (the 2-draw-calls-per-character header claim, now true only of proxies), src/v2/spike/LookSpike.ts (the on-screen budget line)"
+    },
+    "v1BundleInvariant": {
+      "id": "render.v1-bundle-invariant",
+      "category": "render",
+      "reference": "derived",
+      "status": "note",
+      "statusChangedAt": "2026-08-03",
+      "what": "Why v1's bundle hash is no longer pinned, and what carries the guarantee instead.",
+      "why": "★ THE HASH WAS A PROXY AND IT EXPIRED. AGENTS.md said 'a v2 change that alters dist/assets/main-*.js is a bug' from the day v2 started, and it held for twelve PRs. PR 13's play view is the first v2 code to import src/v2/sim/game.ts, which value-imports the pure systems/inning — one of the five modules the whitelist deliberately shares. For the first time BOTH entry points needed the same v1 module, Rollup hoisted it into a shared chunk, and v1's emitted bundle changed without a line of v1 changing.",
+      "measured": {
+        "before": {
+          "file": "main-3zKSTReH.js",
+          "kB": 1889.83,
+          "sharedChunks": 0
+        },
+        "after": {
+          "file": "main-DB77BL7M.js",
+          "kB": 1886.99,
+          "sharedChunk": "inning-*.js, 21.34kB"
+        },
+        "attemptsToPreserveIt": [
+          "manualChunks forcing src/v2/** into its own chunk: perturbed v1 FURTHER, adding a modulepreload-polyfill chunk and moving the hash again.",
+          "Building v1 as its own Vite invocation: main-CkyHVRun.js at 1907.91kB — a different hash AND 18kB larger than the combined build.",
+          "Duplicating the five pure modules into the v2 chunk: Rollup places a module in exactly one chunk, so the only way is duplicating them IN SOURCE."
+        ],
+        "n": 3,
+        "confidence": "high"
+      },
+      "theDECISIVEFINDING": "★ `main-3zKSTReH.js` WAS NEVER A FINGERPRINT OF v1's SOURCE. It is a property of the COMBINED two-entry build: building v1 by itself does not reproduce it, and is 18kB larger. So no build configuration preserves the old hash, and pinning it was pinning the bundler's chunking strategy rather than v1's integrity.",
+      "whyNotDuplicateInSource": "The five shared modules — inning, gameflow, stats, lineup, draft — own baseball's RULES, and PR 7's entire argument was that v2's game loop does not restate them ('inning.applyAtBat owns the count and the walk'). Two source copies is two places for a rule to be fixed and one place for it to be forgotten. Paying that to keep a hash constant would be trading a real guarantee for a symbolic one.",
+      "whatCARRIESITNOW": [
+        "`git diff main -- src ':!src/v2'` is empty — v1's SOURCE is untouched, which is the thing the hash was standing in for. Checked every PR.",
+        "purity.lint.test.js § 'v1 has no path to v2' — v1's module graph cannot REACH v2, so no v2 edit can change what v1 does whatever the bundler does with chunks. Automatic, and in CI on every push. Its own comment already called itself the structural guarantee behind the hash rule.",
+        "A bundle-size band, added in PR 13: the residual thing the hash incidentally caught was accidental bloat, and that is worth keeping even though the exact bytes are not."
+      ],
+      "theBUNDLEMOVINGISEVIDENCE": "Worth stating plainly: v2 sharing v1's pure modules at RUNTIME is what broke the hash, and that is the sharing working. Had `systems/inning` been decorative — imported for types, or copied — the chunk would never have been hoisted and the hash would still be pinned. The invariant broke because the architecture is real.",
+      "ours": {
+        "constant": "AGENTS.md § WHICH TREE AM I IN; scripts/v2/purity.lint.test.js",
+        "value": "source-diff + one-way-import lint + size band"
+      },
+      "whatWouldClose": "It does not close — it is a `note` recording why a rule changed. It would be revisited if v1 and v2 were ever built as fully independent artefacts, which would make bundle identity meaningful again.",
+      "informs": "AGENTS.md"
     }
   },
   "art": {
@@ -2968,7 +3010,7 @@
       "why": "★ THIS RECORD EXISTS TO BE READ, NOT TO BE MET. It is the first time v2 has been able to say anything about a game rather than a play, and the temptation is to compare the numbers to baseball's and start tuning. Two reasons not to. First, PR 8's harness is what measures these properly -- over 50,000 plate appearances across seeded runs, not 1,166. Second, and this is the one the whole `reference` field exists for: the sim category's own note warns that 'conforming a game for four-to-eight-year-olds to MLB's strikeout rate is the mistake this field exists to prevent'.",
       "measured": {
         "n": 50000,
-        "over": "848 games / ~50,000 plate appearances, 8 seeds x 3 venues, all 30 kids",
+        "over": "861 games / 50,054 plate appearances / 200,383 pitches, 8 seeds x 3 venues, all 30 kids",
         "strikeoutPct": 17.3,
         "walkPct": 10.4,
         "ballsInPlayPct": 72.3,
@@ -3069,7 +3111,8 @@
           "why": "★ THE FOURTH READING, AND EACH WAS TAKEN OVER A DIFFERENT SIM. 1,166 PA with a bat that CLAMPED instead of missing; 50,045 with that fixed but no swing plane; 50,004 with a plane but a chaser election that excluded every infielder from grounders headed for the outfield; and this one. Keeping all four is what makes 'every total stayed plausible' checkable rather than asserted -- the strikeout rate alone reads 25.6, 43.0, 42.4, 17.3 across them."
         },
         "why": "★ THE FIFTH READING. Each was taken over a different sim: a bat that CLAMPED instead of missing; that fixed but no swing plane; a plane but an election that excluded infielders from grounders; the defence fixed; and now with tag-ups, sac flies and steals. The strikeout rate alone reads 25.6 / 43.0 / 42.4 / 17.3 / 17.3 across them, and BABIP .624 / .713 / .678 / .660 / .624 — which is why the conclusions were always worth more than the numbers."
-      }
+      },
+      "aCORRECTIONTOTHERUNDESCRIPTION": "★ PR 12 RECORDED '848 games' AND THE RUN IS 861. The figure was carried forward from PR 10's run description rather than re-read off PR 12's output -- steals and tag-ups change how long a game lasts, so the game count moved while the plate-appearance target (50,000) stayed fixed. Every RATE and every absolute count in those records was correct and is unchanged; only the description of the run was stale. Corrected in PR 13, which found it by comparing harness output across a refactor that was required to change nothing."
     },
     "lineupArm": {
       "id": "sim.lineup-arm",
@@ -3348,7 +3391,7 @@
           ]
         },
         "after_pr12": {
-          "over": "848 games / ~50,000 plate appearances, 8 seeds x 3 venues, all 30 kids",
+          "over": "861 games / 50,054 plate appearances / 200,383 pitches, 8 seeds x 3 venues, all 30 kids",
           "babip": 0.624,
           "runsPerGame": 7.18,
           "strikeoutPct": 0.173,
@@ -3563,7 +3606,7 @@
       "theLEADANDTHEJUMPAREWHATMAKEITACONTEST": "★ AND LEAVING THEM OUT IS THE TRAP. Raced from a standing start ON the bag it is degenerate: the runner loses to any arm that can reach second by 1.1-2.4s and beats any arm that cannot, so nobody would ever steal and no tuning would fix it -- the SHAPE is wrong, not the level. With a 10ft lead and a break at release the margins run from out by 0.59s to safe by 0.82s across the roster, monotone in both speed and arm.",
       "theSLOWPITCHBONUSISEMERGENT": "v1 adds a flat +0.12 for a changeup or curve. Here the catcher cannot begin until the ball reaches him, so a changeup's 1.33s flight hands the runner 0.31s more than a fastball's 1.02s -- enough to flip a speed-5 runner against a strong arm from OUT by 0.18 to SAFE by 0.13. Nothing says so; it falls out of PitchResult.travelSec, which PR 12 hoisted onto every branch for exactly this.",
       "measured": {
-        "over": "848 games / ~50,000 plate appearances, 8 seeds x 3 venues, all 30 kids",
+        "over": "861 games / 50,054 plate appearances / 200,383 pitches, 8 seeds x 3 venues, all 30 kids",
         "attemptsPerGame": 10.29,
         "successPct": 95.8,
         "catcherToSecondFt": 90,
@@ -3602,7 +3645,7 @@
       "why": "★ THE FREE RETURN WAS A DEFERRAL AND play.ts SAID SO. Its note claimed real tag-ups 'need a send decision, so they belong with the game loop that has a player in it' -- the same claim startDive made before PR 10, and wrong for the same reason. The send decision is `worthTaking`, which already existed and already asks exactly this question: can this runner beat the ball to the next bag. A tag-up is that question asked from a standing start on a base.",
       "theBATTERWASIDENTIFIEDBYBASE": "★ A RULES BUG THE TAG-UP WORK EXPOSED. `retireBatterOnCatch` found the batter with `from === 0`, and a batter-runner who has TOUCHED FIRST is at `from === 1`. So a fly that hung longer than his leg did not retire him: measured, a 50-degree pop-up caught at t=4.17s after he reached first at t=4.08 produced a caught fly and ZERO OUTS. A caught fly retires the batter however long it hung, and that rule cannot be expressed positionally -- PlayState now carries `batterId`.",
       "measured": {
-        "over": "848 games / ~50,000 plate appearances, 8 seeds x 3 venues, all 30 kids",
+        "over": "861 games / 50,054 plate appearances / 200,383 pitches, 8 seeds x 3 venues, all 30 kids",
         "babip": [
           0.66,
           0.624
