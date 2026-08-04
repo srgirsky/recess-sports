@@ -973,8 +973,63 @@ retuning the eye until a screenshot looks better: the binding constraint is
 occlusion, and only a raycast can see it. A projection test never could —
 a point behind a catcher projects to exactly the same pixel as one in front.
 
-Next: PR 16 — pitching and runner sends; then the assist, sized from a real
-child's aim error rather than a synthetic one.
+### PR 16 — the mound and the baselines: the last two verbs
+
+**★ Two more fields declared and read by nothing.** `sendRunner` and
+`holdRunner` have been on `PlayInputs` since PR 6 — sixth and seventh instance of
+the pattern, after `isFair`, `startDive`, `bridge.ts`, `PlayInputs` itself and
+`swing`. A mechanism can be authored, typed and documented while no code path
+reaches it, which is why every one of these ships with a lint.
+
+**Pitching is choosing, exactly as fielding is.** A human replaces `choosePitch`
+— a **kind** and a **spot** — and nothing else. The execution error stays
+downstream and is scaled by the pitcher's `pitching` stat, so a player cannot
+out-throw his own kid's arm. **There is no meter**, for the reason `play.ts`
+already gives about throws: how hard the ball leaves the hand is
+`throwSpeedFts`, a *measured* quantity, so a meter would be a second source for
+something the roster already decides.
+
+| arm | miss from the spot | strikes |
+|---|---|---|
+| 1 | 0.754 ft | 64.3% |
+| 5 | 0.566 ft | 83.3% |
+| 10 | 0.222 ft | 100% |
+
+The gradient is monotone over the **same plan and the same seeds**, which is also
+what proves the plan is not being ignored — a wired-but-inert plan shows every
+arm missing identically. **★ And a person who grooves it throws far more strikes
+than the CPU** (83.3% against 44.5% at the same arm), because `choosePitch`
+deliberately aims *off* the edge when ahead to tempt a chase. That gap is the
+size of the decision the verb hands over, not a defect in either.
+`sim.humanPitch`.
+
+**★ A pitch has to be decided before it is thrown**, so `LiveFrame` gains a
+`windup` phase. Without it the only yield preceding a throw is the *previous*
+pitch's, and a player would be choosing pitch N during pitch N−1's flight. It
+cannot hang: v1's pitch-clock rule applies — dither and the ball is thrown for
+you.
+
+**Sends override judgement, never traffic.** A send skips `worthTaking` — the CPU
+declines races it projects to lose and a person is allowed to gamble — but
+`send` keeps `baseIsOpen`, because that guard is about traffic. A **forced**
+runner cannot be held: the batter is coming and the bag is not his to keep.
+
+**★ And the verb only has teeth on a ball still in the air**, which took a sweep
+to find. On anything on the ground the CPU already sends every runner from every
+base at every speed, so a human send is a no-op there — the first version of the
+gate asserted `3 > 3` and passed for the wrong reason. On a catchable fly the CPU
+correctly makes him tag, and a send is a real gamble: from second on a popup it
+gets him thrown out. `sim.runnerSends`.
+
+**★ The human needs a SIDE, or the two tap verbs collide** — the same tap on a
+base means *throw there* when fielding and *send him there* when batting. v1
+answers this with seats; v2's sim has no seat concept yet, so the spike bats in
+the top half and pitches in the bottom, and both verbs stay reachable in one
+game.
+
+Next: the fielding and batting assists, sized from a real child's aim error
+rather than a synthetic one; then seats, so the side is the sim's answer rather
+than the view's.
 
 ---
 

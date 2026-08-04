@@ -3851,6 +3851,128 @@
    "theTAILISWHATMAKESLATESWINGSREACHABLE": "★ A SYMMETRIC MODEL THAT ONLY PUNISHED BEING EARLY. The view advanced the instant the ball reached the plate, so the latest swing a player could express was exactly on time and the entire late half of the window was unreachable BY CONSTRUCTION. SWING_TAIL_SEC holds the pitch frame 0.35s past the crossing, above the measured 0.22s edge, so the whole window is playable. swing.test.ts sweeps both signs for this reason -- a one-sided sweep passes for the broken build.",
    "whatWouldClose": "A real child, holding a real mouse or a real touchscreen, swinging at real pitches -- the aim error of a four-to-eight-year-old is the missing quantity and no amount of self-play produces it. Until then the assist stays unbuilt rather than guessed, which is the same call defense.fieldingAssist and sim.fieldingInput made for steering.",
    "informs": "src/v2/sim/atbat.ts resolvePitch, src/v2/spike/PlayView.ts SWING_TAIL_SEC"
+  },
+  "humanPitch": {
+   "id": "sim.human-pitch",
+   "category": "sim",
+   "reference": "derived",
+   "status": "note",
+   "statusChangedAt": "2026-08-04",
+   "what": "What a person on the mound is worth: he picks the KIND and the SPOT, and misses it by his own arm.",
+   "why": "★ THE SAME SHAPE AS THE SWING — supply the model's INPUTS, never its outcomes. `choosePitch` already returned exactly a kind and a spot, so a human replaces that one function and NOTHING else: the execution error downstream is untouched, and it is scaled by the pitcher's `pitching` stat. That is what keeps the 30 characters meaningful on the mound rather than making every kid an equally good pitcher the moment a person is holding the controls.",
+   "thereISNOMETER": "★ AND THAT IS v2's NO-THROW-POWER RULE ARRIVING AT THE MOUND. `play.ts` already says it for fielders: 'THERE IS NO THROW METER IN v2, BECAUSE THERE IS NO POWER' — flight comes from `throwSpeedFts`, a MEASURED quantity of the kid. The same argument holds here. A meter would be a second source for something the roster already decides, and it would let a player out-throw his own arm. The human verb is CHOOSING, exactly as the fielder's verb is choosing the bag.",
+   "measured": {
+    "over": "400 pitches per arm, fastball aimed at the middle of the zone, park.",
+    "zoneFt": {
+     "lo": 1.12,
+     "hi": 2.48,
+     "halfWidth": 0.829
+    },
+    "aimedAtTheMiddle": [
+     {
+      "arm": 1,
+      "missFt": 0.754,
+      "strikePct": 64.3
+     },
+     {
+      "arm": 3,
+      "missFt": 0.693,
+      "strikePct": 69.0
+     },
+     {
+      "arm": 5,
+      "missFt": 0.566,
+      "strikePct": 83.3
+     },
+     {
+      "arm": 7,
+      "missFt": 0.407,
+      "strikePct": 97.3
+     },
+     {
+      "arm": 10,
+      "missFt": 0.222,
+      "strikePct": 100.0
+     }
+    ],
+    "cpuChoosingItsOwnSpots": [
+     {
+      "arm": 1,
+      "strikePct": 34.0
+     },
+     {
+      "arm": 5,
+      "strikePct": 44.5
+     },
+     {
+      "arm": 10,
+      "strikePct": 62.3
+     }
+    ],
+    "n": 400,
+    "confidence": "high"
+   },
+   "theFINDING": "★ A PERSON WHO GROOVES IT THROWS FAR MORE STRIKES THAN THE CPU — 83.3% against 44.5% at the same arm — and that is not a bug in either. `choosePitch` deliberately aims OFF the edge when ahead in the count, tempting a chase, which is v1's `chooseCpuPitch` reasoning kept verbatim. A human who always aims down the middle is choosing a different strategy, and the cost is the batter: the ball is in the zone, which is where it gets hit. The gap is the size of the decision the verb hands over.",
+   "theARMISTHEONLYERRORTERM": "Miss distance falls monotonically 0.754ft to 0.222ft across the stat, with the SAME plan and the same seeds — which is also what proves the plan is not being ignored. A wired-but-inert plan would show every arm missing identically, the failure mode `PlayInputs` itself shipped for eight PRs. ⚠️ Arm 10 aiming at the middle is 100% strikes over 400 pitches; the target is 1.66ft x 1.36ft from 46ft, so that is arithmetic rather than a surprise, but it means a great arm has no command variance left to express.",
+   "ours": {
+    "humanReplaces": "choosePitch only",
+    "executionError": "unchanged, scaled by stats.pitching",
+    "meter": "none"
+   },
+   "whatWouldClose": "A child actually pitching: whether picking a spot with a pointer is a verb a six-year-old enjoys, or whether it wants v1's 3x3 zone grid instead of continuous aim. That is a playtest, not a measurement.",
+   "informs": "src/v2/sim/atbat.ts throwPitch, src/v2/spike/PlayView.ts"
+  },
+  "runnerSends": {
+   "id": "sim.runner-sends",
+   "category": "sim",
+   "reference": "derived",
+   "status": "note",
+   "statusChangedAt": "2026-08-04",
+   "what": "What sending and holding a runner is actually worth, and where the verb has any teeth at all.",
+   "why": "★ `sendRunner` AND `holdRunner` WERE DECLARED IN PR 6 AND READ BY NOTHING FOR TEN PRs. Sixth and seventh instance of the pattern after `isFair`, `startDive`, `bridge.ts`, `PlayInputs` itself and `swing` — a mechanism authored, typed and documented while no code path reaches it. A send overrides `worthTaking`, which is the point: the CPU declines a race it projects to lose, and a person is allowed to gamble.",
+   "measured": {
+    "method": "Same play, same seed, run twice — once with no input and once sending the runner — across launch types, bases and runner speeds.",
+    "onAGrounderTheCPUSENDSEVERYBODY": "At bases 1, 2 and 3 and speeds 2, 5 and 9, the CPU already sends the runner on a soft grounder and he is thrown out in every one of the nine cells. A send changes nothing there.",
+    "whereTheVerbBites": [
+     {
+      "ball": "popup",
+      "base": 2,
+      "cpuReaches": 2,
+      "sentReaches": 3,
+      "sentOutcome": "thrown out"
+     },
+     {
+      "ball": "popup",
+      "base": 3,
+      "cpuReaches": 3,
+      "sentReaches": 4
+     },
+     {
+      "ball": "shallow fly",
+      "base": 2,
+      "cpuReaches": 2,
+      "sentReaches": 3
+     },
+     {
+      "ball": "shallow fly",
+      "base": 3,
+      "cpuReaches": 3,
+      "sentReaches": 4
+     }
+    ],
+    "n": 9,
+    "confidence": "medium"
+   },
+   "theFINDING": "★ THE VERB ONLY HAS TEETH ON A BALL STILL IN THE AIR, and finding that took a sweep rather than an assumption. On anything on the ground the CPU is already sending every runner from every base at every speed — forced, or `worthTaking`, or `unattended` — so the human send is a no-op and the FIRST version of the gate asserted `3 > 3` and passed for the wrong reason. On a catchable fly the CPU correctly makes him tag, and a send is a real gamble: from second on a popup it gets him thrown out.",
+   "twoRULESAPERSONDOESNOTGET": "A FORCED runner cannot be held — the batter is coming and the bag is not his to keep, which is `isForced` and the line v1 draws too. And `send` keeps its occupancy guard, because that guard is about TRAFFIC rather than judgement: without it two runners settle on one base, `finishPlay` writes one `baseIds` entry, and the fold is handed back fewer runners than it sent — which reads as a runner VANISHING rather than as a baserunning bug.",
+   "aTRANSIENTSHAREDBAGISLEGAL": "⚠️ Worth knowing before writing a test here. At tick 1 of EVERY play the batter is running to first while a forced runner is still standing on it, so two runners share a `to` — legal, transient, and pre-existing. The invariant that actually holds is that no two runners are SETTLED on the same base, and home is excluded from even that, because `baseIsOpen`'s own rule is that home takes everybody.",
+   "ours": {
+    "sendOverrides": "worthTaking",
+    "sendNeverOverrides": "baseIsOpen",
+    "holdNeverOverrides": "isForced"
+   },
+   "whatWouldClose": "Whether a child can pick the right moment to send on a fly — the decision is a tag-up read, which is the hardest judgement in youth baseball. A playtest, not a measurement.",
+   "informs": "src/v2/sim/play.ts decideRunning"
   }
  },
  "defense": {

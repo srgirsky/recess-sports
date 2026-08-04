@@ -24,6 +24,7 @@ import type { Object3D } from 'three';
 import type { LiveFrame } from '../sim/game';
 import type { PlayState } from '../sim/play';
 import { FIELD_POSITIONS, HOME, basePos } from '../sim/field';
+import { DEFENSE } from '../sim/params';
 import { isSettled, runnerPos } from '../sim/runners';
 import { cloneState, sampleAt, stepFlight, type BallState } from '../sim/flight';
 import type { KidView } from './CharacterModel';
@@ -60,6 +61,7 @@ export function applyFrame(
     // afterwards. A fielder is on the field the whole time.
     applyIdleDefence(refs, frame);
     if (frame.phase === 'pitch' && frame.pitch) applyPitch(refs, frame, pitchElapsedSec);
+    else if (frame.phase === 'windup') restBall(refs);
   }
   for (const d of refs.directors.values()) d.update(dtSec);
 }
@@ -165,6 +167,18 @@ function applyPitch(refs: SceneRefs, frame: LiveFrame, elapsedSec: number): void
 }
 
 /**
+ * The ball in the pitcher's hand, during the windup.
+ *
+ * Without this it sits wherever the last pitch left it — on the ground at the
+ * plate, or out in the outfield where the play ended — which reads as a second
+ * ball on the field.
+ */
+function restBall(refs: SceneRefs): void {
+  const at = FIELD_POSITIONS.P;
+  refs.ball.position.set(at.x, DEFENSE.CATCH_CENTRE_FT, at.z);
+}
+
+/**
  * What the camera policy needs, out of a frame.
  *
  * Kept here rather than in `cameraCues.ts` because that file is PURE and must
@@ -190,6 +204,10 @@ export function cameraInputFor(frame: LiveFrame): CameraInput {
       homer: p.homeRun,
     };
   }
-  if (frame.phase === 'pitch') return { phase: 'pitch' };
+  // ★ THE WINDUP IS PART OF THE PITCH, TO THE CAMERA. Falling through to
+  // `between` would cut to the field preset and back for one frame before every
+  // single delivery — a flicker per pitch, which no test would see and any
+  // watcher would.
+  if (frame.phase === 'pitch' || frame.phase === 'windup') return { phase: 'pitch' };
   return { phase: 'between' };
 }

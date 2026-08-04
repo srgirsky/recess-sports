@@ -509,12 +509,37 @@ describe('★ the swing is a person supplying the model own two error terms', ()
     // The whole architectural change. If `resolvePitch` runs before the yield,
     // the view animates a ball whose fate is already settled and a human cannot
     // bat at it — which is what the single `pitchAndSwing` call did.
+    // ★ ASSERTED ON THE SLICE, NOT ON FIRST INDEXES. The first version compared
+    // `indexOf('yield frame')` against `indexOf('throwPitch(')`, which broke the
+    // moment PR 16 added the `windup` yield BEFORE the throw — the property was
+    // still true and the test said otherwise. Ask the real question: is there a
+    // yield between the throw and the resolve?
     const thrown = game.indexOf('throwPitch(');
-    const yielded = game.indexOf('yield frame');
     const resolved = game.indexOf('resolvePitch(');
     expect(thrown, 'throwPitch not called').toBeGreaterThan(-1);
-    expect(yielded).toBeGreaterThan(thrown);
-    expect(resolved, 'the pitch must resolve AFTER the yield').toBeGreaterThan(yielded);
+    expect(resolved, 'the pitch must resolve after it is thrown').toBeGreaterThan(thrown);
+    expect(
+      game.slice(thrown, resolved),
+      'the pitch must be yielded BETWEEN the throw and the resolve'
+    ).toMatch(/yield frame/);
+  });
+
+  it('★ the pitcher decides on a windup frame, BEFORE the ball is thrown', () => {
+    // Same property one step earlier: a choice a person makes has to be
+    // collected before the thing it decides happens. Without the windup yield
+    // the only yield preceding a throw is the previous pitch's, so a player
+    // would be choosing pitch N during pitch N-1's flight.
+    const windup = game.indexOf("'windup'");
+    const thrown = game.indexOf('throwPitch(');
+    expect(windup, 'no windup phase').toBeGreaterThan(-1);
+    expect(thrown).toBeGreaterThan(windup);
+    expect(
+      game.slice(windup, thrown),
+      'the windup must be yielded before the throw'
+    ).toMatch(/yield frame/);
+    expect(game, 'and the chosen plan must reach throwPitch').toMatch(
+      /throwPitch\([^)]*\bchosen\b[^)]*\)/
+    );
   });
 
   it('★ the swing arrives through the yield and reaches the resolve', () => {
@@ -568,6 +593,76 @@ describe('★ the swing is a person supplying the model own two error terms', ()
     expect(view).toMatch(/zoneHalfWidthFt\(\)/);
     expect(view, 'the aim bar must be drawn at the real tolerance').toMatch(
       /BALL_RADIUS_FT \+ BAT\.BARREL_RADIUS_FT/
+    );
+  });
+});
+
+describe('★ the mound and the baselines are read, not merely accepted', () => {
+  // ★ SIXTH AND SEVENTH INSTANCE OF THE PATTERN. `sendRunner`/`holdRunner` were
+  // declared in PR 6 and read by NOTHING for ten PRs, after `isFair`,
+  // `startDive`, `bridge.ts`, `PlayInputs` itself and `swing`. Behaviour is
+  // asserted in `play.test.ts` and `mound.test.ts`; these catch the wiring going
+  // away, because "wired but inert" is the failure mode.
+  const atbat = readFileSync(join(repo, 'src/v2/sim/atbat.ts'), 'utf8');
+  const play = readFileSync(join(repo, 'src/v2/sim/play.ts'), 'utf8');
+  const view = readFileSync(join(repo, 'src/v2/spike/PlayView.ts'), 'utf8');
+
+  it('★ a human plan replaces choosePitch and NOTHING else', () => {
+    // The execution error must stay downstream of the plan, or a player would
+    // out-throw his own kid's arm — the thing that makes the roster matter.
+    const body = atbat.slice(atbat.indexOf('export function throwPitch'));
+    const chosen = body.indexOf('human ?? choosePitch');
+    const release = body.indexOf('releaseAtSpot');
+    expect(chosen, 'the human plan must replace choosePitch').toBeGreaterThan(-1);
+    expect(release, 'and the execution error must still run after it').toBeGreaterThan(chosen);
+  });
+
+  it('★ there is no pitch meter, and no accuracy constant for a person', () => {
+    // v2 has no throw power anywhere: how hard it leaves the hand is the kid's
+    // arm, and how far it misses is his `pitching` stat.
+    // ★ ASSERTED ON CODE, NOT PROSE — PR 14's lesson, which cost a red build
+    // there too. The comment explaining WHY there is no meter contains the word
+    // "meter", and a blunt whole-file match pushes the next person to delete the
+    // explanation rather than the thing. Strip comments and ask again.
+    const code = view.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+    expect(code).not.toMatch(/pitchPower|pitchMeter|chargePitch/i);
+    const iface = atbat.slice(atbat.indexOf('export interface PitchPlan'));
+    const decl = iface.slice(0, iface.indexOf('}'));
+    expect(decl).toMatch(/aimLateralFt/);
+    expect(decl, 'a power or speed field would be a second source').not.toMatch(
+      /power|speedFts|velocity|effort/i
+    );
+  });
+
+  it('★ a send overrides the CPU judgement but never the traffic guard', () => {
+    expect(play, 'sendRunner must reach send()').toMatch(
+      /inputs\.sendRunner[\s\S]{0,200}send\(s, r, next\)/
+    );
+    // `send` keeps `baseIsOpen` — that guard is about traffic, not judgement,
+    // and without it a runner VANISHES out of `baseIds`.
+    const send = play.slice(play.indexOf('function send('));
+    expect(send.slice(0, send.indexOf('\n}'))).toMatch(/baseIsOpen/);
+  });
+
+  it('★ a forced runner cannot be held', () => {
+    // The batter is coming and the bag is not the runner's to keep.
+    expect(play).toMatch(/inputs\.holdRunner === r\.charId && !isForced\(s, r\)/);
+  });
+
+  it('★ the pitcher decides before the throw, and cannot hang the game', () => {
+    // v1's `FLOW.PITCH_CLOCK_MS` rule: dither and the game throws for you.
+    expect(view).toMatch(/PITCH_CLOCK_SEC/);
+    expect(view, 'the windup must time out').toMatch(
+      /windupElapsed >= PITCH_CLOCK_SEC/
+    );
+  });
+
+  it('★ the human has a SIDE, or the two tap verbs collide', () => {
+    // The same tap on a base means THROW THERE when fielding and SEND HIM THERE
+    // when batting. Without a side, one of them is unreachable.
+    expect(view).toMatch(/humanBats/);
+    expect(view, 'sends belong to the batting side').toMatch(
+      /this\.humanBats[\s\S]{0,120}tapBaseAsRunner/
     );
   });
 });
