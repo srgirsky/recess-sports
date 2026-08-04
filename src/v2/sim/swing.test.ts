@@ -14,7 +14,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { resolvePitch, throwPitch, type PitchInFlight } from './atbat';
-import { makeRng } from './rng';
+import { makeRng, type Rng } from './rng';
 import { ATBAT, resolvePlate } from './params';
 import { ROSTER } from '../../data/characters';
 
@@ -29,14 +29,25 @@ const spec = (batter = BATTER) => ({
   count: { balls: 0, strikes: 0 },
 });
 
-/** N pitches, each with its own seed, so a sweep sees a real spread. */
-function pitches(n: number, batter = BATTER): Array<{ rng: () => ReturnType<typeof makeRng>; inF: PitchInFlight }> {
-  const out = [];
-  for (let i = 0; i < n; i++) {
-    const seed = `swing-${i}`;
-    out.push({ rng: () => makeRng(seed), inF: throwPitch(spec(batter), makeRng(seed)) });
-  }
-  return out;
+/**
+ * N pitches, each with its own seed, so a sweep sees a real spread.
+ *
+ * ★ MEMOISED, because throwing a pitch is the expensive half. `releasePitch`
+ * runs a secant solve per pitch (`sim.pitchCorridorV2`: 13.6ms, 350x the flight
+ * it produces, which is why PR 8 memoised it in the sim too), and every sweep
+ * cell below re-threw the SAME seeded pitches just to swing at them differently.
+ * The pitch does not depend on the swing, so it is thrown once per seed.
+ */
+const PITCH_CACHE = new Map<string, PitchInFlight[]>();
+function pitches(n: number, batter = BATTER): Array<{ rng: () => Rng; inF: PitchInFlight }> {
+  const key = batter.id;
+  let got = PITCH_CACHE.get(key);
+  if (!got) PITCH_CACHE.set(key, (got = []));
+  for (let i = got.length; i < n; i++) got.push(throwPitch(spec(batter), makeRng(`swing-${i}`)));
+  return Array.from({ length: n }, (_, i) => ({
+    rng: () => makeRng(`swing-${i}`),
+    inF: got![i],
+  }));
 }
 
 /** Swing at every pitch with the given timing offset and aim, and count. */
