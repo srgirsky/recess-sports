@@ -23,7 +23,18 @@
 // them would be a second park that drifts from the reviewed one.
 // ---------------------------------------------------------------------------
 
-import { Fog, PerspectiveCamera, Scene, SphereGeometry, Mesh, MeshStandardMaterial, Vector3 } from 'three';
+import {
+  Fog,
+  Mesh,
+  MeshStandardMaterial,
+  PerspectiveCamera,
+  Plane,
+  Raycaster,
+  Scene,
+  SphereGeometry,
+  Vector2,
+  Vector3,
+} from 'three';
 import { Renderer } from '../render/Renderer';
 import { Lighting } from '../render/Lighting';
 import { OutlineRegistry } from '../render/materials/outline';
@@ -37,6 +48,8 @@ import { buildProceduralClips } from '../render/proceduralClips';
 import { RIGS, chooseCamera, damp, type CameraCue } from '../render/cameraCues';
 import { applyFrame, cameraInputFor, type SceneRefs } from '../render/bridge';
 import { simulateGameLive, type LiveFrame } from '../sim/game';
+import type { PlayInputs } from '../sim/play';
+import { FIRST, SECOND, THIRD, HOME, dist, type Vec2 } from '../sim/field';
 import { makeRng } from '../sim/rng';
 import { VENUE_GEOMETRY, type VenueId } from '../sim/field';
 import { planDefence } from '../sim/lineup';
@@ -47,6 +60,30 @@ import type { KidView } from '../render/CharacterModel';
 const BETWEEN_SEC = 2.55;
 /** The sim's own tick. Never the render delta — see the header. */
 const SIM_HZ = 60;
+/** Below this a pointer press is a TAP (a verb), above it a drag (steering). */
+const TAP_MAX_MS = 220;
+/** How close a tap must land to a bag to mean "throw there", ft. */
+const BAG_TAP_FT = 14;
+
+/** Which bag a tap meant, or null for "somewhere on the field". */
+function nearestBase(at: Vec2): 1 | 2 | 3 | 4 | null {
+  const bags: Array<[1 | 2 | 3 | 4, Vec2]> = [
+    [1, FIRST],
+    [2, SECOND],
+    [3, THIRD],
+    [4, HOME],
+  ];
+  let best: 1 | 2 | 3 | 4 | null = null;
+  let bestD = BAG_TAP_FT;
+  for (const [n, p] of bags) {
+    const d = dist(at, p);
+    if (d < bestD) {
+      bestD = d;
+      best = n;
+    }
+  }
+  return best;
+}
 
 export class PlayView {
   private readonly scene = new Scene();
@@ -60,7 +97,20 @@ export class PlayView {
   private fence!: FenceBuild;
   private refs: SceneRefs = { kids: new Map(), directors: new Map(), ball: new Mesh() };
 
-  private game: Generator<LiveFrame, unknown, void> | null = null;
+  private game: Generator<LiveFrame, unknown, PlayInputs> | null = null;
+  /**
+   * What the player is asking for this tick.
+   *
+   * ★ `PlayInputs` HAS EXISTED SINCE PR 6 AND `stepPlay` NEVER READ IT — the
+   * parameter was literally `_inputs`. Its own header called it "a typed seam
+   * so the signature does not change when they land". This is them landing, and
+   * the signature did not change.
+   */
+  private inputs: PlayInputs = {};
+  private readonly ray = new Raycaster();
+  private readonly ground = new Plane(new Vector3(0, 1, 0), 0);
+  private readonly ndc = new Vector2();
+  private pointerDownAt = 0;
   private frame: LiveFrame | null = null;
   private cue: CameraCue | null = null;
 
@@ -92,7 +142,60 @@ export class PlayView {
     // Aerial haze is most of what sells DISTANCE in a flat-shaded scene.
     this.scene.fog = new Fog(0xcfe9f7, 260, 900);
     window.addEventListener('resize', this.onResize);
+    // ★ ON THE CANVAS, which already receives every non-HUD tap by
+    // construction: `#hud` is `pointer-events: none` and nothing on the
+    // scoreboard is `.interactive`. v1's gotcha — "a scene-level pointerdown
+    // swings on ANY tap, so corner buttons must stopPropagation" — cannot
+    // happen here, and that is the one CSS rule doing it.
+    canvas.addEventListener('pointerdown', this.onPointerDown);
+    canvas.addEventListener('pointermove', this.onPointerMove);
+    canvas.addEventListener('pointerup', this.onPointerUp);
   }
+
+  /**
+   * Screen to field, by raycasting the ground plane.
+   *
+   * v2's answer to v1's `unproject`, and render-side for the same reason
+   * `art/projection.ts` is: the sim stays in feet and only this membrane knows
+   * about pixels.
+   */
+  private toField(e: PointerEvent): Vec2 | null {
+    const r = this.canvas.getBoundingClientRect();
+    this.ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    this.ray.setFromCamera(this.ndc, this.camera);
+    const hit = new Vector3();
+    if (!this.ray.ray.intersectPlane(this.ground, hit)) return null;
+    return { x: hit.x, z: hit.z };
+  }
+
+  private readonly onPointerDown = (e: PointerEvent): void => {
+    this.pointerDownAt = performance.now();
+    const at = this.toField(e);
+    if (at) this.inputs.pointer = at;
+  };
+
+  private readonly onPointerMove = (e: PointerEvent): void => {
+    if (e.buttons === 0) return;
+    const at = this.toField(e);
+    if (at) this.inputs.pointer = at;
+  };
+
+  /**
+   * A short tap is a verb; a drag is steering.
+   *
+   * ★ v1's RULE, AND ITS REASON. `LIVE.DIVE.TAP_MAX_MS` distinguishes "I am
+   * pointing there" from "go now" — without it every steer would also dive.
+   * Tapping a BASE throws to it; tapping anywhere else, while chasing, dives.
+   */
+  private readonly onPointerUp = (e: PointerEvent): void => {
+    const quick = performance.now() - this.pointerDownAt < TAP_MAX_MS;
+    if (!quick) return;
+    const at = this.toField(e);
+    if (!at) return;
+    const bag = nearestBase(at);
+    if (bag !== null) this.inputs.throwTo = { base: bag };
+    else this.inputs.dive = true;
+  };
 
   async start(): Promise<void> {
     const geo = VENUE_GEOMETRY[this.venue];
@@ -148,7 +251,12 @@ export class PlayView {
   /** Pull the next frame out of the sim. Null once the game is over. */
   private advance(): void {
     if (!this.game) return;
-    const r = this.game.next();
+    const r = this.game.next(this.inputs);
+    // ★ THE ONE-SHOTS ARE CONSUMED, the pointer is not. A dive or a throw is an
+    // instant; steering is a state that persists until the player moves it. v1
+    // makes the same split, and conflating them means either a dive that fires
+    // every tick or a fielder who forgets where he was sent.
+    this.inputs = { pointer: this.inputs.pointer };
     this.frame = r.done ? null : r.value;
     if (!this.frame) return;
     if (this.frame.phase === 'pitch') this.pitchElapsed = 0;

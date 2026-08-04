@@ -855,8 +855,45 @@ keeps the one thing the hash incidentally caught. `render.v1BundleInvariant`
 records all three attempts. **The bundle moving is evidence the sharing is real
 rather than decorative.**
 
-Next: PR 14, the input membrane — steering, the throw meter, per-runner sends —
-attaching to `PlayInputs`, which has been a typed seam since PR 6.
+### PR 14 — the input membrane: you can field
+
+`PlayInputs` has existed since PR 6 and **`stepPlay` never read it** — the
+parameter was literally `_inputs`, defaulted and referenced nowhere in 1,300
+lines, while its own header called it *"a typed seam so the signature does not
+change when they land"*. This is them landing, and the signature did not change:
+the generator's third type parameter carries them in through `.next(inputs)`, so
+the headless path is unchanged **by construction** and PR 13's golden
+fingerprints prove it.
+
+Three verbs: **steer** the elected chaser with the pointer, **dive**, and
+**throw to a bag**. Runner sends stay with the offence half and the plate verbs.
+
+**Two things v1 has that v2 will not.** There is **no throw meter**, because
+there is no power — `release` computes flight from the arm, a measured quantity,
+where v1 needed a meter because its throws were arbitrary. And there is **no
+fielding assist**, because the measurement said not to port one.
+
+**★ The measurement.** `defense.fieldingAssist` records that v1's flat 0.5 magnet
+*"was not a mild helper — it was the whole play"*: a deliberate perpendicular
+mis-steer still finished 5.3px from the landing spot, inside a 39px reach. v2's
+reach is 3ft. Running the same experiment here inverts it:
+
+| aim | caught |
+|---|---|
+| CPU, no input | 16/27 |
+| perfect | **16/27** |
+| 3ft off | 5/27 |
+| 8ft off | 2/27 |
+| perpendicular | **0/27** (median 72.5ft adrift) |
+
+Steering is the whole job, and done well it fields exactly as well as the CPU.
+⚠️ What that table flags is the **tolerance**: three feet of aim error is a miss,
+because three feet is the reach. For a seven-year-old on a touchscreen that is
+plausibly unplayable — and it is the argument for an assist, sized from these
+numbers rather than carried over from a game with nearly four times the reach.
+`sim.fieldingInput` records it; PR 15 decides.
+
+Next: PR 15 — the plate verbs (swing timing, pitch selection) and runner sends.
 
 ---
 

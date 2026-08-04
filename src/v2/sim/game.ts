@@ -36,7 +36,14 @@ import type { BallState } from './flight';
 import type { PitchKind } from './pitch';
 import { flyToPlate, releasePitch } from './pitch';
 import { resolvePlate, type PlateOverrides, type PlateParams } from './params';
-import { beginPlay, finishPlay, stepPlay, type PlayOutcome, type PlayState } from './play';
+import {
+  beginPlay,
+  finishPlay,
+  stepPlay,
+  type PlayInputs,
+  type PlayOutcome,
+  type PlayState,
+} from './play';
 import type { LaunchSpec } from './launch';
 import { planDefence, type DefencePlan } from './lineup';
 import { DEFAULT_GEOMETRY, type FieldGeometry, type PositionId } from './field';
@@ -264,7 +271,7 @@ function* playAtBatLive(
     frame: LiveFrame;
   },
   rng: Rng
-): Generator<LiveFrame, void, void> {
+): Generator<LiveFrame, void, PlayInputs> {
   const { half, tally, stats, log, onEvent, frame } = args;
   let pitches = 0;
   frame.batterId = args.batter.id;
@@ -552,17 +559,24 @@ function* runPlayLive(
   rng: Rng,
   frame: LiveFrame,
   out: { outcome: PlayOutcome | null; scored: string[] }
-): Generator<LiveFrame, void, void> {
+): Generator<LiveFrame, void, PlayInputs> {
   const s = beginPlay(spec, rng);
   const dt = 1 / 60;
   let guard = 0;
   frame.phase = 'live';
   frame.play = s;
   frame.pitch = null;
+  let inputs: PlayInputs = {};
   while (s.phase === 'live' && guard++ < Math.ceil(PLAY.MAX_PLAY_SEC / dt) + 8) {
-    stepPlay(s, dt);
+    stepPlay(s, dt, inputs);
     for (const e of s.events) if (e.t === 'score') out.scored.push(e.runner);
-    yield frame;
+    // ★ WHAT THE CALLER PASSED TO `.next()`. The generator's third type
+    // parameter has been `void` since PR 13 and is what makes a live driver
+    // able to steer without a second implementation of the flow existing.
+    // `simulateGame` drains with a bare `.next()`, which yields `undefined` and
+    // falls back to `{}` — so the headless path is unchanged BY CONSTRUCTION,
+    // and PR 13's golden fingerprints are what prove it.
+    inputs = (yield frame) ?? {};
   }
   out.outcome = finishPlay(s);
   frame.play = null;
@@ -597,7 +611,7 @@ interface HalfState {
  * A separate live driver would be a second implementation of the game flow, and
  * the harness would have no way to know when the two drifted.
  */
-export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame, GameResult, void> {
+export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame, GameResult, PlayInputs> {
   const geo = spec.geo ?? DEFAULT_GEOMETRY;
   const regulation = spec.regulationInnings ?? GAME.REGULATION_INNINGS;
   const mk = (t: TeamSpec): Side => ({
