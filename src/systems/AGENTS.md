@@ -181,3 +181,22 @@ or the queue state desyncs. **Never call `speechSynthesis` directly.**
   so distinctness comes from the `GENDER_PITCH` bands on the mixed list.
   SpeechSynthesis has no gender API — `voices.ts` partitions by name regex.
 - **Speech volume is NOT governed by `AUDIO.masterVolume`** — use `VOICE.VOLUME`.
+
+## Where things live
+
+Most names here predict the job. These do not:
+
+| File | What it owns |
+|---|---|
+| `src/systems/mode.ts` | mode + difficulty persistence, `resolveLiveParams`, `getFeatures`, `getPitchBaseMs` |
+| `src/systems/fielding.ts` | the chaser election (pure, no rng) |
+| `src/systems/gameflow.ts` | between-halves decisions: skip pointless bottoms, walk-offs, the one bonus inning |
+| `src/systems/difficulty.ts` | the CPU ramp derived from games played, CLASSIC only |
+| `src/systems/replay.ts` | per-tick position SNAPSHOTS + the `isReplayWorthy` classifier — never input re-simulation |
+| `src/systems/crowd.ts` | the recess stream-out crowd sim, stepped from the Schoolyard |
+| `src/systems/picklog.ts` | the voting machine — the localStorage pick tally that is the product |
+| `src/systems/juice.ts` | the meter, the `SpendKind` shop, and the CPU spend policy |
+| `src/systems/fatigue.ts` | pitcher stamina; `effectivePitching` sags the stat and feeds pitchkind's scatter |
+| `src/systems/voices.ts` | per-kid derived voice profiles + the childlike-suitability ranking of the browser inventory |
+| `src/systems/announcer.ts` / `src/systems/chatter.ts` | the two booth commentators, and field chatter |
+| `src/systems/season.ts` / `src/systems/awards.ts` / `src/systems/album.ts` | Recess Week, the end-of-week awards, the sticker album |

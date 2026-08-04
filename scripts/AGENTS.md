@@ -55,3 +55,18 @@ the record id rather than the value — a value copied into a brief agrees with 
 stale record forever. `measure/conformance.test.js` gates the link from record to
 constant, and it is the only walk that visits each record once, so it is where
 the `reference` and `status` rules are enforced.
+
+## Where things live
+
+| File | What it owns |
+|---|---|
+| `scripts/measure/lib.js` | PURE measurement math: robust stats, `summarize`, DERIVED confidence, ratio->constant |
+| `scripts/measure/video.js` | the ffmpeg I/O, the play indexer, and the `clockFidelity` gate |
+| `scripts/measure/screenshot.js` | the EXACT-COLOUR path; throws if the window blit is not exact |
+| `scripts/measure/conformance.test.js` | the record->constant gate, and the only walk that visits each record once |
+| `scripts/layout.browser.js` | the in-page layout audit, pasteable into a dev tab |
+| `scripts/layout-audit.mjs` | `npm run audit:layout` — the Playwright gate over the scene x CONTENT matrix |
+| `scripts/goldlog.browser.js` | the seeded v1 game drive whose fingerprint must stay byte-identical |
+| `scripts/v2/glb.mjs` | dependency-free glTF read AND write — hand-rolled because a playback loader forgives what a validator must reject |
+| `scripts/v2/modelRules.mjs` | the pure rule engine behind both `validate:models` front ends |
+| `scripts/v2/harness.mjs` / `scripts/v2/plate-sweep.mjs` | the 50k-plate-appearance run, and the coupled-constant search |

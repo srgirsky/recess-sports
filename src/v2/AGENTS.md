@@ -345,3 +345,21 @@ for v1's Phaser clock.
 with a **fixed-step accumulator, never the render delta**
 (`scripts/simclock.lint.test.js` exists because a tempo scalar once broke a
 measured pace record while every test stayed green).
+
+## Where things live
+
+| File | What it owns |
+|---|---|
+| `src/v2/sim/params.ts` | the tunables, in feet and seconds |
+| `src/v2/sim/ball.ts` | the published ball and the two aero coefficients |
+| `src/v2/sim/flight.ts` | RK4 + bisected events — it integrates and REPORTS, it never decides what an event means |
+| `src/v2/sim/launch.ts` | the one place an authored ANGLE becomes a vector, which is why trig lives here |
+| `src/v2/sim/bounce.ts` | what a crossing MEANS, plus the one loose-ball tick |
+| `src/v2/sim/athletes.ts` | where a 1-10 stat becomes a physical quantity |
+| `src/v2/sim/field.ts` | venue geometry, the convex fence, `isFair` |
+| `src/v2/sim/play.ts` | the play reducer |
+| `src/v2/sim/atbat.ts` | one pitch in two acts: `throwPitch` and `resolvePitch` |
+| `src/v2/sim/game.ts` | plate appearance -> half -> inning -> game, headless |
+| `src/v2/sim/lineup.ts` | `planDefence`, with each position's arm weight DERIVED from the throw it must make |
+| `src/v2/sim/harness.ts` | the pure aggregator — it plays nothing, it is fed |
+| `src/v2/spike/PlayView.ts` | `/v2/?play=1`, the first page on which v2 plays baseball |

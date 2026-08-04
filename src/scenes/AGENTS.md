@@ -172,3 +172,24 @@ seeded stream and breaks the fingerprint — keep feedback-text calls on the sam
 side of the resolve they are on today. When REGENERATING, launch `goldLogRun`
 fire-and-forget and poll `sessionStorage`; an awaited eval that times out
 mid-drive pollutes the fingerprint.
+
+## Where things live
+
+| File | What it owns |
+|---|---|
+| `src/scenes/LineupScene.ts` | batting order + position pads; emits `GameInitData`, the ONE extended payload GameScene consumes |
+| `src/scenes/GameSetupScene.ts` | the setup page: game type, difficulty ladder, innings, oopsies, helpers, venue |
+| `src/scenes/SeasonScene.ts` | the chalkboard standings hub, view-only over `season.ts` |
+| `src/scenes/SettingsScene.ts` | volumes and innings; the game-setup fields live on the setup page |
+| `src/scenes/AwardsScene.ts` | the end-of-week podium |
+| `src/scenes/AlbumScene.ts` | the 30-slot sticker grid |
+| `src/scenes/PauseScene.ts` | the pause overlay, incl. the two net variants |
+| `src/scenes/LobbyScene.ts` | host/join over emoji room codes; dev hooks `codeHex`, `joinWithCode` |
+| `src/scenes/ui/LivePlayView.ts` | the sim-owned sprite layer and the Backyard steering read |
+| `src/scenes/ui/BattingView.ts` | the behind-home-plate rig |
+| `src/scenes/ui/Scoreboard.ts` | the bottom strip: team rows, AT BAT block, B-S-OUT pips, mini-diamond, umpire calls |
+| `src/scenes/ui/PitchSelectUI.ts` | the mound UI: pitch card stack + 3x3 zone grid |
+| `src/scenes/ui/EdgeCards.ts` | the right-edge card-stack factory shared by pitch and swing pickers |
+| `src/scenes/ui/PitchFx.ts` | per-kind pitch-flight dressing — STRICTLY rng-free |
+| `src/scenes/ui/Spectacle.ts` | big-moment set pieces at depths above the rig |
+| `src/scenes/ui/HandoffSplash.ts` | the pass-and-play tap gate |

@@ -79,6 +79,18 @@ tween.
 
 ## Dev tooling
 
-`src/dev/LayoutOverlay.ts` (press **L** on a menu scene) draws chrome boxes,
+`src/dev/LayoutOverlay.ts` (press **L** on a menu scene) and
+`src/dev/PickRateOverlay.ts` (press **D** on the title) draws chrome boxes,
 tap targets and collisions using the SAME predicates as the CI gate. Menu scenes
 only — its render path calls `add.text`, which is on the goldlog's rng path.
+
+## Where things live
+
+| File | What it owns |
+|---|---|
+| `src/ui/theme.ts` | the brand font, outline, and the rounded-chrome helpers |
+| `src/ui/layoutMath.ts` | the PURE solver and the overlap predicates |
+| `src/ui/layout.ts` | the Phaser side: `tagUi`, `worldBox`, `row`/`column`/`columnGroups`, `hitFromBox`, `MIN_TOUCH` |
+| `src/ui/statbars.ts` | the equalizer bars and the 1-10 dot ratings |
+| `src/ui/PlayerCard.ts` | the draft's two scouting tiers: hover tag and full baseball card |
+| `src/ui/effects.ts` / `src/ui/anim.ts` | reusable juice; character animation helpers |
