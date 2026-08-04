@@ -198,3 +198,21 @@ popping" checkable).
 a HUD control falls through to the canvas *by construction*, so v1's "a
 scene-level pointerdown fires on ANY tap, so corner buttons must stop
 propagation" simply cannot happen here.
+
+## Where things live
+
+| File | What it owns |
+|---|---|
+| `src/v2/render/clips.ts` | the animation contract, in code and pure |
+| `src/v2/render/AnimationDirector.ts` | the only place clips are played |
+| `src/v2/render/proceduralClips.ts` | crude stand-ins for every clip name, so nothing is blocked on the animator |
+| `src/v2/render/CharacterFactory.ts` | the one seam that decides model-or-proxy |
+| `src/v2/render/CharacterModel.ts` | a delivered `.glb` made playable: LODs, material slots, face atlas, outlines |
+| `src/v2/render/ProxyCharacter.ts` | a kid built from primitives — the acceptance test for the skeleton spec |
+| `src/v2/render/modelLoader.ts` | the only `GLTFLoader`, with Draco and KTX2 wired |
+| `src/v2/render/assets.ts` | runtime URLs against `document.baseURI`, and the delivery manifest |
+| `src/v2/render/faceAtlas.ts` | the 4x4 expression grid, pure |
+| `src/v2/render/skeleton.ts` | the rig spec that `docs/v2/asset-contract.md` mirrors |
+| `src/v2/render/bridge.ts` | the single sim<->scene coupling point |
+| `src/v2/render/cameraCues.ts` | camera POLICY, pure |
+| `spike/AnimSpike.ts` | `/v2/?anims=1`, the acceptance surface for the animation brief |

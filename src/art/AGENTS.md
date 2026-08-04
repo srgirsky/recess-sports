@@ -173,3 +173,13 @@ and the rig backdrop. **RNG-free by contract** — index-hash math ONLY, never
 
 ⚠️ **SVG textures need base64 data URIs.** Phaser's `load.svg` calls `atob` on
 them, so URL-encoding throws `InvalidCharacterError`.
+
+## Where things live
+
+| File | What it owns |
+|---|---|
+| `src/art/CharacterArt.ts` | the SVG builder: `VisualParams` + pose -> string |
+| `src/art/textureFactory.ts` | pose -> Phaser texture, and the team/street variant resolver (`poseKey`, `heroKey`) |
+| `src/art/projection.ts` | the 3/4 camera — render-side only |
+| `src/art/plateView.ts` | the frontal plate<->screen mapping, pure and render-side like `src/art/projection.ts` |
+| `src/art/fieldTexture.ts` | the deterministic field-dressing kit, shared with v2 through a Canvas2D shim |

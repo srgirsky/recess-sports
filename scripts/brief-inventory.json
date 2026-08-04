@@ -709,504 +709,504 @@
   {
     "anchor": "window.__game",
     "claim": "Phaser game config + scene list. Exposes window.__game in dev.",
-    "owner": "AGENTS.md",
+    "owner": ".claude/skills/verify/SKILL.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "src/config.ts",
     "claim": "★ All tunables.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "chatterLines",
     "claim": "★ The 30 kids (content). Stats 1–10 (contact/power/speed/pitching/fielding); 3 signature kids use ability ; ev",
-    "owner": "AGENTS.md",
+    "owner": "src/data/characters.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "BodySpec",
     "claim": "Character / Stats / VisualParams (+ the three clamped per-kid spec objects BodySpec / FaceSpec / HairSpec ) / ",
-    "owner": "AGENTS.md",
+    "owner": "src/art/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "chooseBestPick",
     "claim": "Alternating pick + greedy value function; chooseBestPick picks for either side (CPU turns + the ⚡ AUTO fast-fo",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/SchoolyardScene.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "SchoolyardScene.update()",
     "claim": "The recess stream-out crowd sim: door-metered launches, seek + pairwise separation, stair/wall-gap constraints",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "features.swingChoice",
     "claim": "Swing types",
-    "owner": "AGENTS.md",
+    "owner": "src/config.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "LiveInputs.pointerActive",
     "claim": "THE CUTOFF RELAY",
-    "owner": "AGENTS.md",
+    "owner": "docs/OVERVIEW.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "LivePlayState.reelect",
     "claim": "★ PURE chaser election (no Phaser, no rng). A ball in the AIR goes to whoever is nearest its landing spot; a b",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "FieldGeometry",
     "claim": "Field screen coords (bases, mound, 9 fielding spots, fence) shared by sim + scene; the bases sit exactly on th",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/GameScene.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "warningTrack",
     "claim": "★ The 3 venues (content): park / sandlot (short right porch + the oak) / blacktop (fast asphalt), each with fe",
-    "owner": "AGENTS.md",
+    "owner": "src/data/venues.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "getFieldGeometry",
     "claim": "Venue persistence (localStorage recess_venue ) + getFieldGeometry .",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/GameScene.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "getPitchBaseMs(mode, half, tee)",
     "claim": "difficulty ladder",
-    "owner": "AGENTS.md",
+    "owner": "scripts/pitchbase.lint.test.js",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "resolveCpuPitchLocated",
     "claim": "Defense half: throw timing→pitch band + the CPU batter's take/swing plan (band-based for kid mode, location-aw",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/GameScene.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
-    "anchor": "travelMs = base ÷ speedMult × armTravelMult(stat)",
+    "anchor": "armTravelMult",
     "claim": "Main-mode pitch types + strike-zone aiming: PitchPlan (kind/target/actual/inZone/travelMs), scatter from meter",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/pitchkind.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "applyLivePlay",
     "claim": "Count/outs/bases state machine + walk advancement (+ movements ); applyLivePlay folds live plays in; applyStea",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "cpuPickSpecialPitch",
     "claim": "Main-mode juice meter: gain table (perfect swings, Ks, catches, steals, DPs...), the SpendKind shop — 💥 power",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/GameScene.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "validateLineup",
     "claim": "PURE lineup planning: autoAssign (best arm pitches, up-the-middle defense priority, classic 1-2 table-setters ",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/LineupScene.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
-    "anchor": "{playerTeam, aiTeam, playerPlan?, aiPlan?}",
+    "anchor": "aiPlan",
     "claim": "CLASSIC-only screen between draft and game: tap-tap swap chips for batting order (1-9 column) + position pads ",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/LineupScene.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "effectivePitching",
     "claim": "PURE pitcher stamina: drainPitch per pitch (all juice specials — crazy/fireball/freezeball — cost triple), eff",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
-    "anchor": "config.DIFFICULTY",
+    "anchor": "rampLevel",
     "claim": "PURE CPU ramp from games played (picklog tally): rampLevel (capped), rampedArm (tighter CPU pitches), rampedCp",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/difficulty.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "RIVAL_PRESETS",
     "claim": "Team identity ( recess_team , versioned): uniform-color index + logo index; teamName speaks \"THE RED ROCKETS\" ",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/season.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "scenes/SettingsScene.ts",
     "claim": "Player settings ( recess_settings , versioned): independent sfx / voice volumes (audio.ts setSfxVolume rides t",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
-    "anchor": "Schoolyard {straightToDraft}",
+    "anchor": "straightToDraft",
     "claim": "GAME SETUP",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/GameSetupScene.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
-    "anchor": "registry.seasonDraft",
+    "anchor": "seasonDraft",
     "claim": "★ Recess Week ( recess_season , versioned): 5 games vs preset rivals (never the player's color; benches drawn ",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/SchoolyardScene.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "StatEvent",
     "claim": "PURE per-kid stat lines ( KidStats ab/h/hr/r/k) folded from StatEvent s the scene emits at its three settle se",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/GameScene.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "scenes/AwardsScene.ts",
     "claim": "PURE end-of-week awards from ACCUMULATED season stats (Week MVP / Homer King / K Machine; deterministic ties b",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "scenes/AlbumScene.ts",
     "claim": "The sticker album ( recess_album ): drafted / won-with (foil) / trophies per kid, updated by every Result + th",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "src/scenes/SeasonScene.ts",
     "claim": "The chalkboard standings hub: Mon–Fri rival logos, chalk W/L/T marks, record, PLAY <day> / AWARDS / QUIT. View",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
-    "anchor": "LivePlayView.render",
+    "anchor": "snapshotLive",
     "claim": "📼 instant replay (PURE): per-tick position SNAPSHOTS of the live play ( snapshotLive / applyFrame — never inp",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/replay.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "cpuWantsSteal",
     "claim": "Main-mode steal race roll: runner speed vs catcher arm, better jump off slow stuff, throw-down reaction bonus;",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/GameScene.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "src/systems/gameflow.ts",
     "claim": "Between-halves decisions: skip pointless bottoms, walk-offs, one bonus inning on a tie.",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "src/systems/picklog.ts",
     "claim": "The \"voting machine\" — localStorage pick tally.",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
-    "anchor": "say(text, profile?, mode?)",
+    "anchor": "VoiceProfile",
     "claim": "Web Audio SFX + SpeechSynthesis + mute. say(text, profile?, mode?) takes a VoiceProfile and a mode: flush (big",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/audio.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
-    "anchor": "config.VOICE.KID.GENDER_PITCH",
+    "anchor": "GENDER_PITCH",
     "claim": "Voice profiles (pure): the two booth commentators' fixed profiles + kidVoice — each character's stable pitch/r",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/voices.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "AnnounceLine[]",
     "claim": "The booth: TWO kid commentators (Pip 'A' hyped / Rocco 'B' deadpan) who alternate calls; line() returns Announ",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/announcer.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
-    "anchor": "pick(moment, now, kid)",
+    "anchor": "ChatterMoment",
     "claim": "Backyard-style field chatter (pure, Announcer-shaped): pick(moment, now, kid) maybe returns a line ('batterUp'",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/chatter.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "ZOOM",
     "claim": "The 3/4 camera: trapezoid pinch toward the fence + depth-scaled kids + the ZOOM field dolly, render-side only.",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "grassFlecks",
     "claim": "Deterministic field-texture kit shared by drawField + the rig backdrop: shadeInt / lightenInt tones, hash01 , ",
-    "owner": "AGENTS.md",
+    "owner": "src/art/fieldTexture.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
-    "anchor": "protocol.test.ts",
+    "anchor": "FakeTransport",
     "claim": "PURE two-device wire format: NetMsg union, HudSnap , validating encode / decode , Sequencer (dup/stale), the T",
-    "owner": "AGENTS.md",
+    "owner": "src/net/protocol.test.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "NetSession",
     "claim": "The ONLY peerjs import: module-singleton NetSession (host/join/active/drop), envelope+sequencing, heartbeat/st",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "joinWithCode(hex)",
     "claim": "🔗 host/join screens: MAKE shows 4 giant emoji, JOIN is the 16-emoji tap grid; hello (host's mode/innings/venu",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/LobbyScene.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
-    "anchor": "{net: 'waiting' | 'peer'}",
+    "anchor": "PauseScene",
     "claim": "Spectator (WATCH)",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/PauseScene.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
-    "anchor": "src/ui/*",
+    "anchor": "src/ui/statbars.ts",
     "claim": "Button, statbars (equalizer bars + dot ratings), PlayerCard (draft hover tag + baseball card), MuteButton, eff",
-    "owner": "AGENTS.md",
+    "owner": "src/ui/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "space-between",
     "claim": "★ PURE layout solver (no Phaser, vitest-tested, render-side like plateView.ts ): solveRow (spends the gap to m",
-    "owner": "AGENTS.md",
+    "owner": "src/ui/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "columnGroups()",
     "claim": "Measure-then-place, never build-and-place",
-    "owner": "AGENTS.md",
+    "owner": "src/ui/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
-    "anchor": "layoutAuditScene(key)",
+    "anchor": "layoutAuditScene",
     "claim": "★ The in-page layout audit (dependency-free, goldlog.browser.js shape; pasteable into a dev tab as layoutAudit",
-    "owner": "AGENTS.md",
+    "owner": "scripts/layout.browser.js",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "npm run audit:layout",
     "claim": "fails loudly if the font didn't resolve",
-    "owner": "AGENTS.md",
+    "owner": "src/ui/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "worldBox",
     "claim": "L",
-    "owner": "AGENTS.md",
+    "owner": "src/ui/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "src/scenes/ui/PitchSelectUI.ts",
     "claim": "Main-mode mound UI: the right-edge pitch card stack (base 4 + juice specials, locked when broke — GameScene su",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "makeCardStack",
     "claim": "The Backyard-style right-edge card-stack factory ( makeCardStack , geometry HUD.CARDS ): icon + word label, go",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/GameScene.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
-    "anchor": "onUpdate(ball, t, u)",
+    "anchor": "createPitchFx",
     "claim": "Per-kind pitch-flight dressing ( createPitchFx → onUpdate(ball, t, u) / destroy ): speed lines/loop/crescent/s",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/ui/PitchFx.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "art/fieldTexture.ts",
     "claim": "★ The behind-home-plate pitch view (the rig): opaque venue backdrop (textured via art/fieldTexture.ts — speckl",
-    "owner": "AGENTS.md",
+    "owner": "src/art/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
-    "anchor": "begin/release/cancelCharge",
+    "anchor": "cancelCharge",
     "claim": "★ The live-play sprite layer (sim-blind view): fielder/runner LiveSprite s, ball+shadow, the Backyard steering",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/ui/LivePlayView.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "plateToScreen",
     "claim": "The frontal plate↔screen mapping ( plateToScreen / screenToPlate /cursor clamp), pure + render-side like proje",
-    "owner": "AGENTS.md",
+    "owner": "src/art/plateView.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "HUD.STRIP",
     "claim": "The Backyard-style bottom scoreboard strip ( HUD.STRIP ): team rows (logo/name/score + batting ▶), AT BAT bloc",
-    "owner": "AGENTS.md",
+    "owner": "scripts/measures.json",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "homerSpectacle",
     "claim": "Big-moment effects director (view-only, depths 60-66 — clears the rig): homerSpectacle (star-trail ball + fire",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/GameScene.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "src/dev/PickRateOverlay.ts",
     "claim": "D",
-    "owner": "AGENTS.md",
+    "owner": "src/ui/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "distinctFrameRate",
     "claim": "throws",
-    "owner": "AGENTS.md",
+    "owner": "scripts/measure/video.js",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "locomotionRateFor",
     "claim": "★ v2. The ANIMATION CONTRACT, in code and PURE (no three, like cameraCues.ts ): 35 clips × frames / loop / mar",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AnimationDirector.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "setLocomotionSpeed",
     "claim": "★ v2. The only place clips are played. AnimationMixer + the contract: playToMarker warps playback so a marker ",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AnimationDirector.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "ProxyCharacter",
     "claim": "★ v2. Crude stand-ins for all 35 clips, so no engineering is blocked on the animator — ProxyCharacter 's argum",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "/v2/?anims=1",
     "claim": "★ v2 at /v2/?anims=1 . The acceptance surface for docs/v2/animation-brief.md : clip list, 0.6/1.0/1.4× rates, ",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "skeleton.ts",
     "claim": "★ v2. Dependency-free glTF 2.0 read AND write. Hand-rolled because a playback loader is built to be FORGIVING ",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "assets/v2/skeleton_recess_v1.glb",
     "claim": "★ v2. npm run export:skeleton → assets/v2/skeleton_recess_v1.glb , emitted from SKELETON and never hand-edited",
-    "owner": "AGENTS.md",
+    "owner": "README.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "?proxy=1",
     "claim": "★ v2. The ONE seam that decides model-or-proxy ( ?proxy=1 / undelivered / load failure), returning the shared ",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "MaterialRegistry",
     "claim": "★ v2. A delivered kid_<id>.glb made playable: three LOD nodes + the proxy as LOD3, material slots rebound onto",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/materials/registry.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "public/v2/decoders/",
     "claim": "★ v2. The only GLTFLoader , with Draco + KTX2 wired to public/v2/decoders/ . Configured with the live renderer",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "document.baseURI",
     "claim": "★ v2. Runtime asset URLs resolved against document.baseURI , plus the fetched delivery manifest.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "faceAtlas.test.ts",
     "claim": "★ v2. PURE (no three). The 4×4 expression grid from the asset contract §4 and faceCellUv ; faceAtlas.test.ts p",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/faceAtlas.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "public/v2/models/",
     "claim": "★ v2. npm run export:proxy-kid → contract-legal kid_<id>.glb stand-ins in public/v2/models/ , emitted from Pro",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "public/v2/models/manifest.json",
     "claim": "★ v2. npm run manifest:models — writes public/v2/models/manifest.json from the directory, with a --check mode ",
-    "owner": "AGENTS.md",
+    "owner": "scripts/v2/models-manifest.mjs",
     "kind": "row",
     "section": "Key files"
   },
@@ -1220,175 +1220,175 @@
   {
     "anchor": "import './skeleton'",
     "claim": "★ v2. A Node resolution hook so a build script can import './skeleton' and find skeleton.ts . Only fires after",
-    "owner": "AGENTS.md",
+    "owner": "scripts/v2/ts-resolve.hooks.mjs",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "validate-models.test.js",
     "claim": "★ v2. npm run validate:models — the gate both v2 docs promise. Pure rule engine (contract passed in, no TS imp",
-    "owner": "AGENTS.md",
+    "owner": "scripts/v2/modelRules.mjs",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "(seed, label)",
     "claim": "injected never module-scope",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/sim/contact.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "conformance.test.js",
     "claim": "★ v2. The sim's tunables in FEET and SECONDS — BALL · AIR · AERO · INTEGRATOR . Deliberately not src/config.ts",
-    "owner": "AGENTS.md",
+    "owner": "src/art/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "BALL_K_PER_FT",
     "claim": "★ v2. The published ball, and the two aero coefficients. Everything folds into BALL_K_PER_FT = ½ρA/m, which is",
-    "owner": "AGENTS.md",
+    "owner": "scripts/measures.json",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "sampleAt",
     "claim": "bisection",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/bridge.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "contact.ts",
     "claim": "★ v2. Describes-a-batted-ball → BallState . Its own file because it is the ONE place an authored ANGLE becomes",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "traceLooseBall",
     "claim": "stepLooseBall / stepLooseBallFull / traceLooseBall",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "purity.lint.test.js",
     "claim": "★ v2. Where a 1-10 STAT becomes a physical quantity, and the ONE place each does: batSpeedFts · sprintTopSpeed",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "fielding",
     "claim": "null",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "min(from, to)",
     "claim": "★ v2. Baserunning off the same two speed functions: legs measured in feet with a standing start, momentum kept",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "bounce.ts",
     "claim": "★ v2. Bat meets ball: Nathan's Eq. 3 identity for exit velocity, e_A derived from the recoil factor, the under",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "src/v2/sim/pitch.ts",
     "claim": "★ v2. The pitch as a real trajectory — break is EMERGENT Magnus, not a drawn bow. Release speed and elevation ",
-    "owner": "AGENTS.md",
+    "owner": "scripts/v2/sim-contract.test.js",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "PlayOutcome",
     "claim": "★ v2. The play reducer: a batted ball, nine fielders and up to four runners stepped to a PlayOutcome shaped ex",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "pitchAndSwing",
     "claim": "★ v2. One pitch, in TWO acts so a person can bat: throwPitch (choose a kind and a SPOT, execution error nudges",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/sim/atbat.ts",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "gameflow",
     "claim": "★ v2. Plate appearance → half → inning → game, headless. The first real value-use of inning / gameflow / stats",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "sim.gapBallOutcome.theArmAtShort",
     "claim": "★ v2. planDefence — the arm-aware planner sim.gapBallOutcome.theArmAtShort asked for. Each position's arm weig",
-    "owner": "AGENTS.md",
+    "owner": "scripts/measures.json",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "plateJudgementFt",
     "claim": "no attempt rate and no success rate",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "npm run sim:harness",
     "claim": "LAUNCH_CUTS are BORROWED bin edges, not physics",
-    "owner": "AGENTS.md",
+    "owner": "scripts/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "${inning}${half}${lineupIdx}",
     "claim": "every game gets its own root seed",
-    "owner": "AGENTS.md",
+    "owner": "scripts/measures.json",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "npm run sim:plate-sweep",
     "claim": "★ v2. npm run sim:plate-sweep — searches the four COUPLED plate constants ( ATTACK_ANGLE_DEG · UNDERCUT_FROM_J",
-    "owner": "AGENTS.md",
+    "owner": "scripts/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "AnimationDirector",
     "claim": "reads sim state and never writes it",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "scripts/simclock.lint.test.js",
     "claim": "fixed-step accumulator, never the render delta",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "src/v2/sim/**",
     "claim": "★ There is exactly ONE kid speed in the sim",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
   {
     "anchor": "known-drift",
     "claim": "★ The measurement records + conformance.test.js 's gate. Every record names the src/config.ts constant it info",
-    "owner": "AGENTS.md",
+    "owner": "src/art/AGENTS.md",
     "kind": "row",
     "section": "Key files"
   },
@@ -1416,7 +1416,7 @@
   {
     "anchor": "scenes/ui/LivePlayView.ts",
     "claim": "Stop runCycle timers before destroying their sprite.",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/AGENTS.md",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
