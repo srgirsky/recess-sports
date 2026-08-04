@@ -893,7 +893,88 @@ plausibly unplayable — and it is the argument for an assist, sized from these
 numbers rather than carried over from a game with nearly four times the reach.
 `sim.fieldingInput` records it; PR 15 decides.
 
-Next: PR 15 — the plate verbs (swing timing, pitch selection) and runner sends.
+### PR 15 — the swing: you can bat
+
+★ **A pitch had to be yielded before it resolved.** `pitchAndSwing` did
+everything in one call — choose, release, fly, judge, swing — so PR 13's
+`playAtBatLive` yielded its `pitch` frame *after* the outcome was already
+settled: the view animated a ball whose fate was decided, and no human could bat
+at it. It splits at the seam the model already had, `throwPitch` →
+`resolvePitch`, with the yield between them.
+
+★ **And the split provably could not move a draw.** `rng.ts`'s substreams derive
+from `(root seed, label)` and never from position in the parent stream, so — in
+its own words — *"forking in a different order gives the same streams"* and *"a
+substream that is never drawn from costs nothing and shifts nothing"*. Two
+functions forking the same labels off the same parent are indistinguishable from
+one that forked both. PR 13's golden fingerprints and 30-game checksum are what
+prove it, and the harness re-ran to the same 861 games / 50,054 plate
+appearances / 200,383 pitches.
+
+**A person supplies the model's own two error terms, and nothing new is invented
+for him.** The CPU batter has exactly two — `plateJudgementFt` (where he thinks
+the ball is) and `swingTimingSigmaFrac` (when he swings). A **tap** gives the
+second (`timingErrorSec = tapAt − travelSec`) and the **pointer** gives the first
+(`undercutFt = crossingY − aimY`), and from there both go through the same
+`offer` path. **There is no human whiff rate and no human contact rate anywhere.**
+
+**★ Two CPU rules deliberately do not apply, and both are statements about an AI
+rather than about baseball.** `UNDERCUT_FROM_JUDGE` converts a *read* error into
+a *placement* error — it exists because the CPU's aim is a misjudgement it is
+unaware of, and a player's pointer **is** the placement. `TWO_STRIKE_PROTECT_FT`
+exists so a poor-contact CPU kid is a foul-ball machine rather than a strikeout
+machine. `swing.test.ts` asserts both by showing each constant moves the CPU's
+outcomes and not the human's — the second half is what stops the first being
+vacuous.
+
+**★ Aim is a HEIGHT, not a point, and that is a modelling result.** `resolveSwing`
+reads when the bat arrived and how far under the ball's centre it passed; where
+the ball goes *laterally* is already decided, because `contact.ts` derives
+`sprayDeg` from `timingErrorSec` — pulling it is what being early **means**. A
+lateral aim term would be a second, independent source for the same quantity, so
+a two-axis cursor would have put a field on the wire that nothing reads — the
+defect PR 8 shipped twice. A lint asserts `HumanSwing` carries no lateral field.
+
+**★ The measurement.** Timing is generous and aim is tight, and only one of them
+is a choice:
+
+| | value | is it tunable? |
+|---|---|---|
+| timing window | ±0.22s on a 1.17s flight (**18% of the flight**) | a fraction, by construction |
+| aim tolerance | **2.70 in** | no — it is `BALL_RADIUS_FT + BAT.BARREL_RADIUS_FT` |
+| crossing-height spread | 1.80 ft (p05–p95) | — |
+| never moving the cursor | 30% in play | — |
+| tracking the ball | 100% in play | — |
+
+At the pitch rig the zone draws 89px tall, so 2.70in is about **22px** — a real
+mouse target, and the skill gradient is real rather than pass/fail. Whether a
+*child's* finger lands inside 22px is not known and is not claimed;
+`sim.humanSwing` says so, and the assist stays unbuilt rather than guessed — the
+same call `sim.fieldingInput` made for steering.
+
+**★ A tail, because otherwise you could only ever be early.** The view advanced
+the instant the ball reached the plate, so the latest expressible swing was
+exactly on time and the whole late half of the window was unreachable *by
+construction*. `SWING_TAIL_SEC` (0.35s) holds the frame past the crossing. The
+timing test sweeps **both** signs for that reason — a one-sided sweep passes for
+the broken build.
+
+**★ And the camera could not see the plate at all.** Measured by raycasting
+seven points across the strike zone against the live scene: from the centred
+`RIGS.PITCH` the catcher is hit first at **all seven**. He posts 5ft behind home
+and draws 6.43ft tall, so height cannot fix it — an eye at 16.5ft is still
+blocked, and clearing him over the top needs a 53° bird's-eye view of a
+*vertical* zone. 7.5ft of lateral offset is the smallest that clears all seven;
+7.0 still loses the low inside corner. ⚠️ The zone is now visible and **the
+framing is not good** — the shot reads from the first-base side and the catcher
+crowds the zone's right edge. That is recorded as a `known-drift` in
+`render.pitchFraming`, to be resolved in a camera pass rather than by quietly
+retuning the eye until a screenshot looks better: the binding constraint is
+occlusion, and only a raycast can see it. A projection test never could —
+a point behind a catcher projects to exactly the same pixel as one in front.
+
+Next: PR 16 — pitching and runner sends; then the assist, sized from a real
+child's aim error rather than a synthetic one.
 
 ---
 

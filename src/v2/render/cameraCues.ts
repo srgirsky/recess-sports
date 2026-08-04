@@ -83,7 +83,21 @@ export const RIGS: Record<CameraPreset, CameraRig> = {
   // exists to show, was behind his head. The preset's own comment always said
   // "behind-the-catcher view"; it now actually looks OVER him. Found by
   // watching `/v2/?play=1`, which is what that page is for.
-  PITCH: { eye: [0, 8.2, -18], target: [0, 2.6, 6], fov: 42 },
+  // ★ OFFSET BECAUSE A CENTRED CAMERA CANNOT SEE THE PLATE. The catcher posts
+  // 5ft behind home and stands 6.43ft in drawn feet, so from a rig on the
+  // z-axis he covers the STRIKE ZONE ENTIRELY — measured by raycasting the
+  // camera at seven points across the zone and asking what is hit first: from
+  // [0, 8.2, -18] the answer is the catcher at all seven. Height cannot fix it
+  // (an eye at 16.5ft is still blocked; raising the eye steepens the ray but he
+  // is close and tall), so the sightline has to go around him. 7.5ft is the
+  // smallest offset at which all seven clear — 7.0 still loses the low inside
+  // corner. `render.pitchFraming`.
+  //
+  // The +x side is not arbitrary: the batter stands at -2.2, so the far side
+  // keeps him out of the sightline too, and `PITCH_HERO` was already offset
+  // this way. Nothing in the policy changes — `chooseCamera` focuses PITCH at
+  // [0, 2.4, 1] and always did; only where it watches from moved.
+  PITCH: { eye: [7.5, 8.2, -18], target: [0, 2.6, 6], fov: 42 },
   PITCH_HERO: { eye: [3.6, 4.4, -11], target: [0, 2.6, 2], fov: 36 },
   // ★ SOLVED, not chosen. See FIELD_SOLVE below and cameraCues.test.ts.
   // The ESTABLISHING shot: conforms to `geometry.fieldScale`, shows the whole

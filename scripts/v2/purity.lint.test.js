@@ -495,3 +495,79 @@ describe('★ PlayInputs is read, not merely accepted', () => {
     expect(header, 'and it should say why there is none').toMatch(/THERE IS NO THROW METER/);
   });
 });
+
+describe('★ the swing is a person supplying the model own two error terms', () => {
+  // ★ THE SHAPE PR 14 EARNED, POINTED AT BATTING. `PlayInputs.swing` can be
+  // authored, typed and documented while nothing reaches it — which is exactly
+  // what `isFair`, `startDive` and `PlayInputs` itself each did for several PRs.
+  // Behaviour is asserted in `swing.test.ts`; these catch the wiring going away.
+  const atbat = readFileSync(join(repo, 'src/v2/sim/atbat.ts'), 'utf8');
+  const game = readFileSync(join(repo, 'src/v2/sim/game.ts'), 'utf8');
+  const view = readFileSync(join(repo, 'src/v2/spike/PlayView.ts'), 'utf8');
+
+  it('★ the pitch is yielded BEFORE it is resolved', () => {
+    // The whole architectural change. If `resolvePitch` runs before the yield,
+    // the view animates a ball whose fate is already settled and a human cannot
+    // bat at it — which is what the single `pitchAndSwing` call did.
+    const thrown = game.indexOf('throwPitch(');
+    const yielded = game.indexOf('yield frame');
+    const resolved = game.indexOf('resolvePitch(');
+    expect(thrown, 'throwPitch not called').toBeGreaterThan(-1);
+    expect(yielded).toBeGreaterThan(thrown);
+    expect(resolved, 'the pitch must resolve AFTER the yield').toBeGreaterThan(yielded);
+  });
+
+  it('★ the swing arrives through the yield and reaches the resolve', () => {
+    expect(game).toMatch(/\(\(yield frame\)[\s\S]{0,80}\)\.swing/);
+    expect(game, 'the swing must reach resolvePitch').toMatch(
+      /resolvePitch\([^)]*\bswing\b[^)]*\)/
+    );
+  });
+
+  it('★ a human gets neither the judge error nor two-strike protection', () => {
+    // Both are CPU decision rules, not rules of baseball. The human branch must
+    // return before either is computed.
+    const body = atbat.slice(atbat.indexOf('export function resolvePitch'));
+    const human = body.indexOf('if (human)');
+    const judge = body.indexOf("fork('judge')");
+    const protect = body.indexOf('twoStrikeProtectFt');
+    expect(human).toBeGreaterThan(-1);
+    expect(judge, 'the CPU read must come after the human branch').toBeGreaterThan(human);
+    expect(protect).toBeGreaterThan(human);
+    expect(
+      body.slice(human, judge),
+      'the human branch must return, not fall through into the read'
+    ).toMatch(/return offer\(/);
+  });
+
+  it('★ aim is a HEIGHT, so no lateral intent is put on the wire', () => {
+    // `contact.ts` derives `sprayDeg` from `timingErrorSec` — pulling it is what
+    // being early MEANS — so a lateral aim term would be a second, independent
+    // source for the same quantity. A field nobody reads is a field nobody can
+    // trust: PR 8 shipped two of them.
+    const iface = atbat.slice(atbat.indexOf('export interface HumanSwing'));
+    const decl = iface.slice(0, iface.indexOf('}'));
+    expect(decl).toMatch(/aimHeightFt/);
+    expect(decl, 'a two-axis aim would be unread').not.toMatch(/aimFt|\bx\s*:|lateral/i);
+  });
+
+  it('★ the view holds the pitch past the crossing, so late swings exist', () => {
+    // Without the tail the latest reachable swing is exactly on time, and half
+    // the timing window is unreachable BY CONSTRUCTION — the model would look
+    // symmetric while the game only ever punished being early.
+    expect(view).toMatch(/SWING_TAIL_SEC/);
+    expect(view, 'the hold must extend past travelSec').toMatch(
+      /pitchElapsed >= [^\n]*travelSec \+ SWING_TAIL_SEC/
+    );
+  });
+
+  it('★ the zone the player is shown is the zone he is judged against', () => {
+    // Drawn from `zoneBandFt`/`zoneHalfWidthFt`, the same functions `isStrike`
+    // asks. A second copy would be a drawing that could disagree with the call.
+    expect(view).toMatch(/zoneBandFt\(\)/);
+    expect(view).toMatch(/zoneHalfWidthFt\(\)/);
+    expect(view, 'the aim bar must be drawn at the real tolerance').toMatch(
+      /BALL_RADIUS_FT \+ BAT\.BARREL_RADIUS_FT/
+    );
+  });
+});
