@@ -1042,9 +1042,66 @@ answers this with seats; v2's sim has no seat concept yet, so the spike bats in
 the top half and pitches in the bottom, and both verbs stay reachable in one
 game.
 
-Next: the fielding and batting assists, sized from a real child's aim error
-rather than a synthetic one; then seats, so the side is the sim's answer rather
-than the view's.
+### PR 17 — the crouch that levitated, and the camera record it was being paid for
+
+**★ Nothing had ever asked whether a clip touches the ground.** `skeleton.ts`'s
+tests assert the BIND pose stands on the floor, and say why it matters — "a rig
+whose toes float or sink is a rig every foot-plant in the library is authored
+wrong on". Nobody then asked it of the library. Thirty-five clips are written as
+joint angles, and bending a knee without also dropping the hips does not lower a
+kid: **it lifts his feet.**
+
+So the whole fielding family levitated. On the 4.0ft reference rig, `field_ready`
+held both toes **0.451ft** off the grass — 11% of a body height — and every pose
+derived from it (`field_scoop`, `catch_low`, `catch_chest`, `catch_jump`,
+`throw_quick`) inherited the float. `bat_stance` and its three swings hovered
+0.081ft. The hand-authored `hips` drops had the opposite sign problem: `slide`
+buried a toe **1.141ft under the field**, `getup` 0.888, the dives 0.792.
+
+**★ And it was already being paid for under someone else's name.**
+`render.pitchFraming` recorded the PITCH camera as unable to see its own strike
+zone and blamed a catcher who is "close and TALL" at 6.43 drawn feet. That is his
+*standing* height. `bridge.ts` had been playing him `field_ready` since PR 13 —
+the line's own comment says "he simply does what a catcher does" — and he had
+been standing at full height with his feet in the air the whole time. A camera
+record was describing an animation bug, which is what an unmeasured quantity
+does: it turns up as somebody else's number.
+
+The correction is **one rigid Y translation per clip, solved rather than picked**
+— find the lowest bone over the whole clip and subtract it. Rigid is what makes
+it safe: the vertical motion the author wrote is preserved exactly, so a run
+keeps its 0.25ft flight phase and `catch_jump` its 1.75ft apex. Planting per
+*key* would have glued the lower foot down and deleted both. And because the
+offset is constant within a clip it contributes no velocity, so the peak-hand-
+speed marker derivations were untouched — all 1204 existing tests passed
+unchanged.
+
+Two traps worth keeping. The first solve moved **nothing** while reporting
+success, because `Root` sits at the origin by definition and pinned every clip's
+minimum to zero. And the catcher's bounding box still read 6.43ft afterwards:
+on a `SkinnedMesh`, `geometry.attributes.position` holds BIND-pose vertices and
+the CPU never sees the skinned result, so a `Box3` reads a crouching kid at his
+standing height. `Raycaster` applies the bone transform; that is why the ray
+answers moved and the box did not.
+
+The catcher now draws **5.33ft posed, 82.9% of standing**, and the re-measured
+sweep finds **52** occlusion-free eyes where it had found essentially one. The
+framing record stays `known-drift` and the eye deliberately stays put: where the
+camera *should* go is a composition judgement that deserves its own change. The
+pass now inherits two measured constraints rather than rediscovering them — the
+offset may come down to 7.25 and either sign works, and **pulling back with a
+longer lens is a dead end**, because occlusion is angular and the offset needed
+scales as ~0.4×distance.
+
+Also: **the batter had never taken a stance.** `bat_stance` is in the clip
+contract and every swing names it as its `returnsTo`, and nothing had ever played
+it — so the one kid the camera is pointed at waited for the pitch in `idle` and
+settled out of a swing into a pose he had never been in. Same class as the
+defence standing in bind pose before PR 13 drew it.
+
+Next: the camera pass itself; then the fielding and batting assists, sized from a
+real child's aim error rather than a synthetic one; then seats, so the side is
+the sim's answer rather than the view's.
 
 ---
 

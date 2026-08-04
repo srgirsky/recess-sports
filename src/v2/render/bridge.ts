@@ -82,12 +82,18 @@ function applyIdleDefence(refs: SceneRefs, frame: LiveFrame): void {
     const at = FIELD_POSITIONS[pos];
     kid.setPosition(at.x, at.z);
     kid.setFacing(Math.atan2(HOME.x - at.x, HOME.z - at.z));
-    // ★ THE CATCHER CROUCHES, AND IT IS FRAMING RATHER THAN FLAVOUR. The PITCH
-    // rig sits at z -13 and his post is z -5, so a standing catcher is eight
-    // feet from a 40-degree lens and fills the middle of the frame — measured
-    // by watching, which is the only way this kind of thing is ever found.
-    // v1 solves the same problem by cropping its catcher at the frame bottom;
-    // here he simply does what a catcher does. `field_ready` is the crouch.
+    // ★ THE CATCHER CROUCHES, AND IT IS FRAMING RATHER THAN FLAVOUR. His post
+    // is z -5 and the PITCH rig watches from z -18, so he is the nearest thing
+    // to the lens by a factor of three and a standing catcher fills the middle
+    // of the frame — measured by watching, which is the only way this kind of
+    // thing is ever found. v1 solves the same problem by cropping its catcher
+    // at the frame bottom; here he simply does what a catcher does.
+    //
+    // ⚠️ ASKING FOR THE CLIP IS NOT THE SAME AS GETTING THE CROUCH. This line
+    // has been here since PR 13 and he went on drawing 6.43ft — his full
+    // standing height — because `field_ready` bent his knees without dropping
+    // his hips, which lifts a kid's feet rather than lowering his head. See
+    // `proceduralClips.ts`'s ground solve and `groundContact.test.ts`.
     const dir = refs.directors.get(id);
     if (pos === 'C') dir?.play('field_ready');
     else dir?.setLocomotionSpeed(0);
@@ -96,7 +102,13 @@ function applyIdleDefence(refs: SceneRefs, frame: LiveFrame): void {
   if (batter) {
     batter.setPosition(-2.2, 1.2);
     batter.setFacing(Math.PI);
-    refs.directors.get(frame.batterId)?.setLocomotionSpeed(0);
+    // ★ AND THE BATTER STANDS IN. `bat_stance` is in the clip contract, every
+    // swing clip names it as its `returnsTo`, and nothing had ever played it —
+    // so the one kid the camera is pointed at waited for the pitch in `idle`,
+    // arms at his sides, and settled out of a swing into a pose he had never
+    // been in. Same class as the defence standing in bind pose before PR 13
+    // drew it: a clip that exists, is documented, and has no caller.
+    refs.directors.get(frame.batterId)?.play('bat_stance');
   }
 }
 

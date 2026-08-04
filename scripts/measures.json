@@ -986,42 +986,54 @@
    "statusChangedAt": "2026-08-03",
    "what": "Whether the PITCH camera can actually see the strike zone, measured by raycast rather than by looking.",
    "why": "★ A CENTRED RIG COULD NOT SEE THE PLATE AT ALL, AND NO TEST COULD HAVE TOLD. cameraCues.test.ts projects the bases through a preset's matrix and asserts they land in frame -- a projection test cannot see OCCLUSION, because a point behind a catcher projects to exactly the same pixel as one in front of him. This is the same blind spot render.proxyFace found in the bbox tests: they measure the silhouette's outside, and something swallowed by what is in front of it changes no extreme.",
+   "remeasuredAt": "2026-08-04",
+   "★ theCATCHERWASNEVERCROUCHING": "The 2026-08-03 reading blamed a catcher who is 'close and TALL' at 6.43 drawn feet. That IS his standing height: bridge.ts had been asking for `field_ready` since PR 13, and the clip bent his knees without dropping his hips, which lifts a kid's feet rather than lowering his head -- he hovered 0.72 drawn feet off the grass at essentially full height. A framing record was describing an animation bug. Fixed by the ground solve in proceduralClips.ts and gated by groundContact.test.ts; the numbers below are the re-measurement.",
    "measured": {
-    "method": "Raycast from the candidate eye to seven points spanning the strike zone (corners, edges, centre) against the live scene, and report what is hit first. Ground truth, unlike an AABB estimate -- the catcher's box is 4.84ft wide because his arms are out, but rays pass between them.",
-    "catcherBoxFt": {
-     "width": 4.84,
-     "height": 6.43,
-     "z": [
-      -6.07,
-      -3.93
-     ],
+    "method": "Raycast from the candidate eye to seven points spanning the strike zone (corners, edges, centre) against the live scene, and report what is hit first. Ground truth, unlike an AABB estimate -- the catcher's box is 4.84ft wide because his arms are out, but rays pass between them. ⚠️ MEASURE THE POSED SILHOUETTE, NEVER geometry.attributes.position: on a SkinnedMesh those are BIND-pose vertices and the CPU never sees the skinned result, so a bounding box reads a crouching kid at his standing height. three's Raycaster does apply the bone transform, which is why the ray answers changed here and the box did not.",
+    "catcherCrouchFt": {
+     "standingCrown": 6.43,
+     "posedCrown": 5.33,
+     "wasPosedCrown": 6.05,
+     "fracOfStanding": 0.829,
+     "posedWidth": 3.15,
      "post": [
       0,
       -5
      ]
     },
-    "zoneOnScreenPx": {
-     "top": 384,
-     "bottom": 473,
-     "centre": 429,
-     "canvasHeight": 768
+    "fieldReadyOnReferenceRig": {
+     "note": "The same defect on the 4.0ft reference rig, where it is exact and testable in CI rather than per-kid.",
+     "toesWas": [0.451, 0.495],
+     "toesNow": [0.0, 0.044],
+     "crownWas": [3.733, 3.815],
+     "crownNow": [3.282, 3.364]
     },
-    "catcherCrownOnScreenPx": 222,
     "blockedZonePointsByEye": {
+     "note": "After the crouch. The 2026-08-03 values are in `was`.",
      "[0,8.2,-18]": "7/7",
      "[3,8.2,-18]": "4/7",
+     "[5,8.2,-18]": "2/7",
      "[7,8.2,-18]": "1/7",
+     "[7.25,8.2,-18]": "0/7",
      "[7.5,8.2,-18]": "0/7",
-     "[9,8.2,-18]": "0/7",
-     "[-7.5,8.2,-18]": "1/7",
-     "[0,13,-12]": "7/7",
-     "[0,16.5,-14]": "7/7"
+     "[-7.5,8.2,-18]": "0/7",
+     "[0,13,-12]": "4/7",
+     "[0,16.5,-14]": "4/7",
+     "[0,20,-18]": "4/7",
+     "was": {
+      "[0,13,-12]": "7/7",
+      "[0,16.5,-14]": "7/7",
+      "[-7.5,8.2,-18]": "1/7"
+     }
     },
+    "minClearingOffsetFt": 7.25,
+    "clearEyesInSweep": 52,
     "n": 7,
     "confidence": "high"
    },
-   "theFINDING": "★ HEIGHT CANNOT FIX IT; ONLY GOING AROUND HIM CAN. The catcher posts 5ft behind home and draws 6.43ft tall at CHARACTER_SCALE 1.6, so from anywhere on the z-axis he covers the whole zone -- an eye at 16.5ft is still blocked, because raising the eye steepens the ray but he is both close and tall. Clearing him over the top needs an eye above roughly 10.8ft placed within 7ft of the plate, which is a 53-degree bird's-eye view of a VERTICAL zone: readable geometry traded for an unreadable one. 7.5ft of lateral offset is the smallest that clears all seven points; 7.0 still loses the low inside corner.",
-   "whyTHEPLUSXSIDE": "The batter stands at x -2.2, so the +x side keeps him out of the sightline as well, and PITCH_HERO was already offset +3.6. Measured asymmetry, not preference: -7.5 still loses one point to the catcher.",
+   "theFINDING": "★ HEIGHT CANNOT FIX IT; ONLY GOING AROUND HIM CAN, AND THAT SURVIVED THE CROUCH. The zone is the batter's knees-to-letters in feet -- 1.12 to 2.48 for a 4ft kid -- so it sits LOW, and clearing a 5.33ft crown posted 5ft in front of it still needs about 43 degrees of look-down from the z-axis: readable geometry traded for an unreadable one. The crouch did move the boundary (a centred high eye went 7/7 -> 4/7, the minimum lateral offset 7.5 -> 7.25, and the sweep now finds 52 clear eyes where it found essentially one), but it did not change the shape of the answer.",
+   "★ theTRAPFORTHECAMERAPASS": "PULLING BACK WITH A LONGER LENS DOES NOT HELP, and it is the first thing anyone will try -- it is the standard fix for a foreground object dwarfing the subject. Occlusion is ANGULAR, so the sightline to the plate passes the catcher's z at lateral x*5/d and the offset needed to clear him scales with distance: x_min ~ 0.4*d. At 40ft back that is a 16ft offset, which is a worse shot than the current one, not a better one. Measured over a sweep of x in [0,6], y in [6,16], z in [-26,-50], fov in [20,32]: ZERO configurations clear all seven points with a readable zone.",
+   "whyTHEPLUSXSIDE": "The batter stands at x -2.2, so the +x side keeps him out of the sightline as well, and PITCH_HERO was already offset +3.6. The measured asymmetry that originally decided it (-7.5 losing one point to the catcher) is GONE now that he crouches -- -7.5 reads 0/7. The +x side is now a composition choice rather than a forced one, which is itself something the camera pass gets to spend.",
    "ours": {
     "RIGS.PITCH.eye": [
      7.5,
@@ -1040,8 +1052,8 @@
      1
     ]
    },
-   "theDRIFT": "★ THE ZONE IS VISIBLE AND THE FRAMING IS NOT GOOD. The shot now reads from the first-base side: the foul line runs diagonally, the catcher crowds the zone's right edge, and the batter is partly behind his head. That is a real cost and it is recorded rather than dressed up -- the swing is playable, which is what PR 15 claims, and the shot is not yet the behind-the-plate rig v1 has. Resolve it in a camera pass, explicitly, the way sim.venueRollFeel is to be resolved: do not quietly retune the eye until a screenshot looks better, because the constraint that binds is occlusion and only a raycast can see it.",
-   "whatWouldClose": "A camera pass that treats the catcher as part of the composition rather than an obstacle -- v1 crops him at the frame bottom, which is a framing decision this rig has never made. render.characterPresence already records that BB2001's field scale and character scale are jointly unsatisfiable at real units and that the answer is camera distance; the catcher at 5ft from the lens is that finding arriving at the plate.",
+   "theDRIFT": "★ THE ZONE IS VISIBLE AND THE FRAMING IS NOT GOOD -- still, after the crouch. The shot reads from the first-base side: the foul line runs diagonally and the catcher's back occupies 15% of the frame. The crouch bought a real improvement -- the batter's head is no longer behind the catcher's helmet, which it was -- and it did not make the shot the behind-the-plate rig v1 has. The eye has deliberately NOT been moved on this pass: the sweep says where it may go, but where it SHOULD go is a composition judgement that deserves its own change and its own screenshots. Do not quietly retune it until a screenshot looks better, because the constraint that binds is occlusion and only a raycast can see it.",
+   "whatWouldClose": "A camera pass that treats the catcher as part of the composition rather than an obstacle -- v1 crops him at the frame bottom, which is a framing decision this rig has never made. Two constraints are now measured and should be spent rather than rediscovered: the offset may come down to 7.25 and either sign is available, and pulling back is a dead end (see theTRAPFORTHECAMERAPASS). What is left unexplored is moving the catcher's POST, which is a sim change -- FIELD_POSITIONS.C at z -5 sets the steal race through throwFlightSec, so it may not be nudged for a camera.",
    "informs": "src/v2/render/cameraCues.ts RIGS.PITCH"
   }
  },
