@@ -166,7 +166,12 @@ const COLLECT = (hostId) => `(() => {
     walk(child);
   }
   const interactives = [...hud.querySelectorAll('.interactive')].filter(vis).map(box);
-  return { blocks, leaves, interactives,
+  // The SCROLLER is usually a child (\`.screen--draft\` carries the overflow),
+  // not the host, so asking the host alone answers "no" for a board that very
+  // much does scroll -- and then every card below the fold is reported off-frame.
+  const canScroll = (n) => n.scrollHeight > n.clientHeight + 1;
+  const scrolls = canScroll(hud) || [...hud.querySelectorAll('*')].some(canScroll);
+  return { blocks, leaves, interactives, scrolls,
            frame: { w: window.innerWidth, h: window.innerHeight },
            rootFontPx: parseFloat(getComputedStyle(document.documentElement).fontSize) };
 })()`;
@@ -335,6 +340,15 @@ const SHOW_RESULT = `(async () => {
 
 const SCREENS = [
   { name: 'title', reach: null, mustSee: '.screen--title .btn' },
+  {
+    name: 'draft',
+    reach: `(async () => {
+      document.querySelector('.screen--title .btn').click();
+      await new Promise((r) => setTimeout(r, 300));
+      return document.querySelectorAll('.kid').length === 30 ? 'ok' : 'no draft board';
+    })()`,
+    mustSee: '.screen--draft .kid',
+  },
   { name: 'result', reach: SHOW_RESULT, mustSee: '.screen--result .btn' },
 ];
 
@@ -359,8 +373,16 @@ async function auditScreen(page, vp, screen) {
   }
   const frame = { w: r.frame.w, h: r.frame.h };
   for (const b of r.leaves) {
-    if (!insideFrame(asBox(b), frame.w, frame.h, -0.5)) {
-      fail(where, `"${b.label}" is off-frame at ${Math.round(b.x)},${Math.round(b.y)} ${Math.round(b.w)}x${Math.round(b.h)} in ${frame.w}x${frame.h}`);
+    // ★ A SCROLLING SCREEN CHANGES WHAT "OFF-FRAME" MEANS, and pretending it
+    // does not would either fail the draft board for having thirty cards or
+    // force it to fit thirty kids on a phone at a size nobody can tap. Below the
+    // fold is REACHABLE; off the side and above the top are not. So the rule
+    // splits: horizontal containment always, vertical only when the screen does
+    // not scroll, plus "nothing starts above the scroller" either way.
+    const horizontal = b.x >= -0.5 && b.x + b.w <= frame.w + 0.5;
+    const vertical = r.scrolls ? b.y >= -0.5 : insideFrame(asBox(b), frame.w, frame.h, -0.5);
+    if (!horizontal || !vertical) {
+      fail(where, `"${b.label}" is off-frame at ${Math.round(b.x)},${Math.round(b.y)} ${Math.round(b.w)}x${Math.round(b.h)} in ${frame.w}x${frame.h}${r.scrolls ? ' (scrolling screen)' : ''}`);
     }
   }
   for (let i = 0; i < r.blocks.length; i++) {
