@@ -23,9 +23,17 @@
 // Every clip is authored on the 4.0ft reference rig in feet and radians.
 // ---------------------------------------------------------------------------
 
-import { AnimationClip, Euler, Quaternion, QuaternionKeyframeTrack, VectorKeyframeTrack } from 'three';
+import {
+  AnimationClip,
+  Euler,
+  type Interpolant,
+  Quaternion,
+  QuaternionKeyframeTrack,
+  Vector3,
+  VectorKeyframeTrack,
+} from 'three';
 import { CLIPS, FPS, type ClipSpec } from './clips';
-import { bindWorld } from './skeleton';
+import { SKELETON, bindWorld } from './skeleton';
 
 const D = Math.PI / 180;
 
@@ -75,6 +83,104 @@ function quat(e: [number, number, number]): [number, number, number, number] {
 }
 
 /**
+ * How many times per frame the ground solve samples a clip.
+ *
+ * ★ SAMPLING THE KEYS IS NOT ENOUGH. The mixer SLERPS between them, and the
+ * composed world Y of a toe is not monotone along that arc — solving on keys
+ * alone left `pitch_stride` dipping 0.029ft under the field between two keys
+ * that were both exactly on it. Four samples a frame is 120Hz against a 30fps
+ * library, which drives the residual to float32 storage precision.
+ */
+const GROUND_SUBSAMPLES = 4;
+
+/** How far below the field a bone may sit: float32 track storage, not slack. */
+export const GROUND_EPSILON_FT = 1e-4;
+
+/**
+ * The lowest world Y any bone reaches, given each bone's rotation and the hips'
+ * position — the pose forward-kinematically resolved.
+ *
+ * The bind pose's answer is 0: `skeleton.test.ts` § "stands the rig on the
+ * floor" asserts the toes sit exactly there, and its comment already says why it
+ * matters — "a rig whose toes float or sink is a rig every foot-plant in the
+ * library is authored wrong on". This asks that same question of a POSED
+ * skeleton, which is the half nothing was asking.
+ *
+ * All bones, not just the toes: a prone dive is held up by a forearm, and a rule
+ * that only watched the feet would let a chest through the grass.
+ */
+function lowestBoneY(rot: Map<string, Quaternion>, hips: Vector3): number {
+  const worldPos = new Map<string, Vector3>();
+  const worldRot = new Map<string, Quaternion>();
+  let lowest = Infinity;
+
+  for (const b of SKELETON) {
+    const local = b.name === 'Hips' ? hips.clone() : new Vector3(b.pos[0], b.pos[1], b.pos[2]);
+    const parentPos = b.parent ? worldPos.get(b.parent)! : new Vector3();
+    const parentRot = b.parent ? worldRot.get(b.parent)! : new Quaternion();
+
+    const at = local.applyQuaternion(parentRot).add(parentPos);
+    worldPos.set(b.name, at);
+    worldRot.set(b.name, parentRot.clone().multiply(rot.get(b.name) ?? new Quaternion()));
+    // ★ EVERY BONE EXCEPT `Root`, WHICH IS THE FLOOR ITSELF. It sits at the
+    // origin by definition and is never keyed, so counting it pins the solve at
+    // zero for every clip in the library — the offset comes out 0, the test goes
+    // green, and nothing moves. That is exactly what happened on the first
+    // attempt. Excluding it is not a tolerance: in the bind pose the
+    // next-lowest bones are the two toes, at exactly 0.
+    if (b.name !== 'Root') lowest = Math.min(lowest, at.y);
+  }
+  return lowest;
+}
+
+/**
+ * The lowest the assembled tracks ever put a bone, sampled through the clip's
+ * OWN interpolants.
+ *
+ * ★ THROUGH THE INTERPOLANTS, not through the keys, for the same reason
+ * `bridge.ts` draws the pitch through the sim's integrator rather than lerping
+ * release to crossing: the thing being measured has to be the thing that will
+ * actually play.
+ *
+ * `InterpolantFactoryMethodLinear` rather than `createInterpolant`, which three
+ * assigns at runtime and does not declare in its types. They are the same object
+ * here — nothing in this file calls `setInterpolation`, so LINEAR is what every
+ * track already resolves to — and naming it makes the assumption the header
+ * states ("LINEAR (slerp) only") checkable instead of implicit. On a quaternion
+ * track the linear factory is the SLERP one, which is the whole point.
+ */
+function lowestOverClip(tracks: readonly (QuaternionKeyframeTrack | VectorKeyframeTrack)[], frames: number): number {
+  const spin = new Map<string, Interpolant>();
+  let hipsTrack: Interpolant | null = null;
+  for (const t of tracks) {
+    const [bone, path] = t.name.split('.');
+    if (path === 'quaternion') spin.set(bone, t.InterpolantFactoryMethodLinear());
+    else if (t.name === 'Hips.position') hipsTrack = t.InterpolantFactoryMethodLinear();
+  }
+
+  const rot = new Map<string, Quaternion>();
+  const hips = new Vector3();
+  let lowest = Infinity;
+  const steps = frames * GROUND_SUBSAMPLES;
+  for (let i = 0; i <= steps; i++) {
+    const t = i / GROUND_SUBSAMPLES / FPS;
+    rot.clear();
+    for (const [bone, interp] of spin) {
+      const v = interp.evaluate(t);
+      rot.set(bone, new Quaternion(v[0], v[1], v[2], v[3]));
+    }
+    if (hipsTrack) {
+      const v = hipsTrack.evaluate(t);
+      hips.set(v[0], v[1], v[2]);
+    } else {
+      hips.set(0, HIPS_BIND_Y, 0);
+    }
+    lowest = Math.min(lowest, lowestBoneY(rot, hips));
+  }
+  return lowest;
+}
+
+/**
  * Build a clip from keyframes.
  *
  * Every bone mentioned in ANY key gets a track sampled at EVERY key time —
@@ -100,14 +206,44 @@ function build(spec: ClipSpec, keys: Key[]): AnimationClip {
     tracks.push(new QuaternionKeyframeTrack(`${BONE[a]}.quaternion`, times, values));
   }
 
-  if (keys.some((k) => k.hips)) {
-    const values: number[] = [];
-    for (const k of keys) {
-      const [x, y, z] = k.hips ?? [0, 0, 0];
-      values.push(x, HIPS_BIND_Y + y, z);
-    }
-    tracks.push(new VectorKeyframeTrack('Hips.position', times, values));
+  // ★ ALWAYS A HIPS TRACK, not only when a key authored one. The ground offset
+  // lives on it, and a clip that authored no `hips` is exactly the case that
+  // needed it most — `field_ready` authors none and floated the furthest.
+  const hipsValues: number[] = [];
+  for (const k of keys) {
+    const [x, y, z] = k.hips ?? [0, 0, 0];
+    hipsValues.push(x, HIPS_BIND_Y + y, z);
   }
+  const hipsTrack = new VectorKeyframeTrack('Hips.position', times, hipsValues);
+  tracks.push(hipsTrack);
+
+  // ★ A CLIP IS AUTHORED FREELY AND THEN SET DOWN ON THE GROUND.
+  //
+  // Every pose in this file is written as joint angles, and bending a knee
+  // without also dropping the hips does not lower a kid — it LIFTS HIS FEET.
+  // Nothing measured that, so the whole fielding family levitated: `field_ready`
+  // held both toes 0.48ft (12% of body height) off the grass, and every pose
+  // derived from it — `field_scoop`, `catch_low`, `catch_chest`, `catch_jump`,
+  // `throw_quick` — inherited the float. `bat_stance` and the three swings off
+  // it hovered 0.08ft. The hand-authored `hips` drops on `dive`, `getup` and
+  // `slide` had the opposite sign problem and buried a toe 1.14ft UNDER the
+  // field.
+  //
+  // ★ AND IT COST MORE THAN A LOOK. `render.pitchFraming` recorded the PITCH
+  // camera as unable to see its own strike zone and blamed a catcher who is
+  // "close and TALL" — 6.43 drawn feet, which is his STANDING height. He was
+  // tall because his crouch levitated him instead of lowering him: a framing
+  // record describing an animation bug.
+  //
+  // The correction is ONE rigid Y translation for the whole clip, solved rather
+  // than picked. Being rigid is what makes it safe — the vertical motion the
+  // author wrote is preserved EXACTLY, so a run keeps its flight phase and
+  // `catch_jump` keeps its apex. Planting per KEY would have glued the lower
+  // foot down and deleted both. A clip already on the ground solves to zero and
+  // is untouched.
+  const lift = -lowestOverClip(tracks, spec.frames);
+  for (let i = 1; i < hipsValues.length; i += 3) hipsValues[i] += lift;
+  hipsTrack.values = new Float32Array(hipsValues);
 
   const clip = new AnimationClip(spec.name, spec.frames / FPS, tracks);
   clip.resetDuration();

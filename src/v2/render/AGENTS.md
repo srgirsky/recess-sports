@@ -109,6 +109,16 @@ popping" checkable).
   take-off, several frames before the ball. `modelRules.mjs` and
   `AnimationDirector.test.ts` run the same derivation on purpose; if they
   disagree the gate is checking something the engine does not believe.
+- **A clip is authored freely and then SET DOWN**, by one solved rigid Y offset —
+  bending a knee without dropping the hips lifts a kid's feet rather than lowering
+  him. Keep it **per clip, never per key**: a per-key plant glues the lower foot
+  down and deletes a run's flight phase. Never hand-tune a `hips` height to fake
+  contact.
+- **Measure the POSED skeleton, never a geometry's raw `position` attribute.**
+  Those are BIND vertices and the CPU never sees the skinned result, so a `Box3`
+  reads a crouching kid at his STANDING height — how `render.pitchFraming` came to
+  blame a camera for an animation bug. `Raycaster` applies the bone transform;
+  `Box3` does not.
 - **Quaternion tracks are LINEAR only.** Setting smooth interpolation on a
   quaternion track logs "unsupported interpolation" and silently falls back —
   console noise that invites believing the curve is smoothed when it is slerped.
