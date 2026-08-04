@@ -180,7 +180,60 @@ export function choosePitch(
  * `Rng.fork` exists to delete. The caller forks per plate appearance and this
  * forks per decision inside it.
  */
-export function pitchAndSwing(spec: PitchSpec, rng: Rng): PitchResult {
+/**
+ * A pitch that has been thrown but not yet judged.
+ *
+ * ★ THE SPLIT EXISTS SO A PERSON CAN BAT. `pitchAndSwing` did everything in one
+ * call, so `playAtBatLive` could only yield a frame AFTER the outcome was
+ * decided — the view animated a ball whose fate was already settled, which no
+ * human can swing at. Throwing and judging are separate acts in the world and
+ * are now separate here.
+ */
+export interface PitchInFlight {
+  kind: PitchKind;
+  release: BallState;
+  crossing: Crossing;
+  travelSec: number;
+  plateSpeedFts: number;
+}
+
+/**
+ * What a person did, instead of what the CPU's two error terms did.
+ *
+ * ★ AIM IS A HEIGHT, NOT A POINT, AND THAT IS A MODELLING RESULT RATHER THAN A
+ * SIMPLIFICATION. `resolveSwing` reads exactly two things: when the bat arrived
+ * and how far under the ball's centre it passed. Where the ball GOES laterally
+ * is already decided — `contact.ts` derives `sprayDeg` from `timingErrorSec`,
+ * so pulling is what being early MEANS. A lateral aim term would be a second,
+ * independent source for the same quantity, and the two would disagree.
+ *
+ * So a 2D cursor would have put a field on the wire that nothing downstream
+ * reads. `sim.humanSwing` records it, and `atbat.test.ts` asserts that lateral
+ * intent has no channel — this repo has shipped an unread field before (PR 8's
+ * count and hit type), and "a field nobody reads is a field nobody can trust".
+ */
+export interface HumanSwing {
+  /** Seconds into the flight at which they swung. */
+  atSec: number;
+  /**
+   * The height they aimed the barrel at, ft above the plate. Aiming BELOW the
+   * ball is an undercut, which lifts it.
+   */
+  aimHeightFt: number;
+}
+
+/**
+ * Throw it. No batter is involved.
+ *
+ * ★ SPLITTING THIS COULD NOT MOVE A DRAW, and that is a property rather than a
+ * hope. `rng.ts`'s substreams derive from `(root seed, label)` and never from
+ * position in the parent stream, so — in its own words — "forking in a different
+ * order gives the same streams" and "a substream that is never drawn from costs
+ * nothing and shifts nothing". Two functions forking the same labels off the
+ * same parent are indistinguishable from one that forked both. PR 13's golden
+ * fingerprints and 30-game checksum are what prove it rather than assert it.
+ */
+export function throwPitch(spec: PitchSpec, rng: Rng): PitchInFlight {
   const plan = choosePitch(spec, rng.fork('choose'));
 
   // ★ THE SOLVE IS FOR THE SPOT; THE ERROR IS ON THE RELEASE. Perturbing the
@@ -207,6 +260,57 @@ export function pitchAndSwing(spec: PitchSpec, rng: Rng): PitchResult {
       flown.state.v.y * flown.state.v.y +
       flown.state.v.z * flown.state.v.z
   );
+  return { kind: plan.kind, release: released, crossing, travelSec: flown.travelSec, plateSpeedFts };
+}
+
+/**
+ * Judge it, and swing or don't.
+ *
+ * With no `human` this is the CPU batter exactly as before. With one, the two
+ * error terms it would have rolled are supplied by a person instead.
+ */
+export function resolvePitch(
+  inFlight: PitchInFlight,
+  spec: PitchSpec,
+  rng: Rng,
+  human?: HumanSwing
+): PitchResult {
+  const { kind: pitchKind, release: released, crossing, travelSec, plateSpeedFts } = inFlight;
+  const plate = spec.plate ?? resolvePlate();
+
+  // ★ ONE OFFER, TWO WAYS OF ARRIVING AT IT. The CPU rolls its two error terms
+  // and a person supplies them; from there the swing is resolved by exactly the
+  // same code. Keeping two copies of these three branches is how a human path
+  // quietly acquires different physics from the CPU's.
+  const offer = (timingErrorSec: number, undercutFt: number): PitchResult => {
+    const swing = resolveSwing(
+      { timingErrorSec, undercutFt, batter: spec.batter, travelSec, pitchSpeedFts: plateSpeedFts, plate },
+      rng.fork('swing')
+    );
+    const base = { crossing, pitch: pitchKind, travelSec, release: released };
+    if (swing.kind === 'miss') return { kind: 'swingingStrike', ...base };
+    if (swing.kind === 'foulTip') return { kind: 'foulTip', ...base };
+    return { kind: 'inPlay', launch: swing.launch, plateSpeedFts, ...base };
+  };
+
+  if (human) {
+    // ★ A PERSON SUPPLIES THE MODEL'S OWN TWO ERROR TERMS, and nothing new is
+    // invented for him: `timingQuality` grades the WHEN exactly as it grades the
+    // CPU's, and the undercut geometry turns the WHERE into a launch angle
+    // exactly as it does for the CPU. There is no human hit rate anywhere.
+    //
+    // ★ `UNDERCUT_FROM_JUDGE` DELIBERATELY DOES NOT APPLY. That constant turns a
+    // READ error into a PLACEMENT error, and it exists because the CPU's aim is
+    // a misjudgement it is unaware of. A player's pointer IS the placement;
+    // there is nothing to convert. Scaling it would model a human as if he were
+    // guessing at his own intention.
+    //
+    // ★ NOR DOES TWO-STRIKE PROTECTION, and for the same kind of reason. It
+    // exists so a poor-contact CPU kid is a foul-ball machine rather than a
+    // strikeout machine — a statement about an AI's decision rule, not a rule of
+    // baseball. A person decides for himself whether to offer.
+    return offer(human.atSec - travelSec, crossing.y - human.aimHeightFt);
+  }
 
   // The read. One error, in space and in time.
   const eye = rng.fork('judge');
@@ -220,44 +324,27 @@ export function pitchAndSwing(spec: PitchSpec, rng: Rng): PitchResult {
   // he READS as a strike, so every misread with two strikes is a called third —
   // which turns a poor-contact kid into a strikeout machine instead of the
   // foul-ball machine a six-year-old actually is.
-  const plate = spec.plate ?? resolvePlate();
   const protectFt = spec.count.strikes >= ATBAT.STRIKES_PER_K - 1 ? plate.twoStrikeProtectFt : 0;
   const swings = distOutsideZone(judged, undefined) <= protectFt;
 
   if (!swings) {
     const kind = isStrike(crossing) ? 'calledStrike' : 'ball';
-    return { kind, crossing, pitch: plan.kind, travelSec: flown.travelSec, release: released };
+    return { kind, crossing, pitch: pitchKind, travelSec: travelSec, release: released };
   }
 
   // He offered. The same read decides how well.
   const timingErrorSec =
-    eye.bell() * swingTimingSigmaFrac(spec.batter.stats.contact) * flown.travelSec;
+    eye.bell() * swingTimingSigmaFrac(spec.batter.stats.contact) * travelSec;
   // Reading the ball LOW means swinging under it, which lifts it.
-  const undercutFt = (crossing.y - judged.y) * plate.undercutFromJudge;
+  return offer(timingErrorSec, (crossing.y - judged.y) * plate.undercutFromJudge);
+}
 
-  const swing = resolveSwing(
-    {
-      timingErrorSec,
-      undercutFt,
-      batter: spec.batter,
-      travelSec: flown.travelSec,
-      pitchSpeedFts: plateSpeedFts,
-      plate,
-    },
-    rng.fork('swing')
-  );
-
-  if (swing.kind === 'miss')
-    return { kind: 'swingingStrike', crossing, pitch: plan.kind, travelSec: flown.travelSec, release: released };
-  if (swing.kind === 'foulTip')
-    return { kind: 'foulTip', crossing, pitch: plan.kind, travelSec: flown.travelSec, release: released };
-  return {
-    kind: 'inPlay',
-    crossing,
-    pitch: plan.kind,
-    launch: swing.launch,
-    travelSec: flown.travelSec,
-    plateSpeedFts,
-    release: released,
-  };
+/**
+ * Throw it, judge it, and swing or don't — the CPU path, unchanged.
+ *
+ * Kept as a thin wrapper so every existing caller and test is untouched by the
+ * split, which is what lets the checksum mean something.
+ */
+export function pitchAndSwing(spec: PitchSpec, rng: Rng): PitchResult {
+  return resolvePitch(throwPitch(spec, rng), spec, rng);
 }

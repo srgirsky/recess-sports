@@ -29,6 +29,7 @@ import {
   liftCoeff,
 } from '../../src/v2/sim/ball.ts';
 import { FLIGHT_HZ } from '../../src/v2/sim/flight.ts';
+import { RIGS } from '../../src/v2/render/cameraCues.ts';
 import { VENUE_GEOMETRY, fenceDistAt } from '../../src/v2/sim/field.ts';
 import { BAT, BOUNCE, PITCH } from '../../src/v2/sim/params.ts';
 import { groundCor } from '../../src/v2/sim/bounce.ts';
@@ -73,11 +74,11 @@ const here = dirname(fileURLToPath(import.meta.url));
 const M = JSON.parse(readFileSync(join(here, '..', 'measures.json'), 'utf8'));
 
 /** Every sim record must declare what standard it answers to. */
-function wellFormed(rec, { reference, status }) {
+function wellFormed(rec, { reference, status, category = 'sim' }) {
   expect(Object.keys(M.statuses)).toContain(rec.status);
   expect(rec.status).toBe(status);
   expect(rec.reference).toBe(reference);
-  expect(rec.category).toBe('sim');
+  expect(rec.category).toBe(category);
   expect(rec.informs).toBeTruthy();
 }
 
@@ -1686,5 +1687,103 @@ describe('sim.fieldingInput', () => {
     expect(rec.theTOLERANCEISTHEREACH).toMatch(/three feet IS the reach/);
     expect(rec.theTOLERANCEISTHEREACH).toMatch(/SIZED FROM THIS TABLE/);
     expect(rec.whatWouldClose).toMatch(/child actually playing it/);
+  });
+});
+
+describe('sim.humanSwing', () => {
+  const rec = M.sim.humanSwing;
+
+  it('is a NOTE that measures a person, and claims no rate', () => {
+    wellFormed(rec, { reference: 'derived', status: 'note' });
+    expect(rec.measured.n).toBeGreaterThanOrEqual(3000);
+    expect(rec.whatWouldClose).toMatch(/four-to-eight-year-old/);
+  });
+
+  it('★ recomputes the aim tolerance from the bat, not from the record', () => {
+    // ★ THE TOLERANCE IS A REAL DIMENSION AND THIS IS WHAT PROVES IT. If the
+    // half-width were a tuning constant somebody could move it and the record
+    // would still read true; deriving it from the ball and the barrel means the
+    // record fails the moment either changes.
+    const half = BALL_RADIUS_FT + BAT.BARREL_RADIUS_FT;
+    expect(rec.measured.aimToleranceFt.halfWidth).toBeCloseTo(half, 3);
+    expect(rec.measured.aimToleranceFt.halfWidthIn).toBeCloseTo(half * 12, 2);
+
+    // And the model must actually MISS past it, in both directions — PR 8's
+    // clamp bug stated as a requirement rather than as prose.
+    const batter = ROSTER.find((c) => c.stats.contact === 5) ?? ROSTER[0];
+    const swing = (undercutFt) =>
+      resolveSwing(
+        { timingErrorSec: 0, undercutFt, batter, travelSec: 1.17, pitchSpeedFts: 60 },
+        makeRng('tol')
+      ).kind;
+    expect(swing(half * 1.05)).toBe('miss');
+    expect(swing(-half * 1.05)).toBe('miss');
+    expect(swing(0)).not.toBe('miss');
+  });
+
+  it('★ keeps the timing window a FRACTION of the flight, which is what pace.swingWindows demands', () => {
+    // The record's edge is quoted as both a duration and a fraction; they have
+    // to agree with the flight it was measured on, or the number is decorative.
+    const w = rec.measured.timingWindowSec;
+    expect(w.edgeSec / rec.measured.pitchTravelSec.p50).toBeCloseTo(w.edgeAsFractionOfFlight, 2);
+
+    // ★ AND THE WINDOW MUST SCALE WITH THE FLIGHT, not sit at a fixed ms — the
+    // v1 failure `pace.swingWindows` records, where a 380ms window ended up
+    // wider than a 270ms flight.
+    //
+    // ★ IT HAS TO STRADDLE THE EDGE, AND ON A SHORT FLIGHT, OR IT HAS NO TEETH.
+    // The gate sweep caught the first version doing neither: it sampled 5% and
+    // 12% of the flight, both comfortably INSIDE the window, so replacing
+    // `travelSec` with a hardcoded 1.17 changed no verdict and the test passed
+    // over the very defect it names. That is `pace.swingWindows`'s own warning —
+    // "hardcode the window and only long flights still pass" — arriving in
+    // person. Sampling just inside and just outside the edge is what bites: a
+    // fixed window is 1.46x too generous on a 0.8s flight, so the swing that
+    // must miss connects instead.
+    const batter = ROSTER.find((c) => c.stats.contact === 5) ?? ROSTER[0];
+    const at = (travelSec, frac) =>
+      resolveSwing(
+        { timingErrorSec: travelSec * frac, undercutFt: 0, batter, travelSec, pitchSpeedFts: 60 },
+        makeRng('frac')
+      ).kind;
+    const edge = BAT.CONTACT_WINDOW_FRAC;
+    for (const travelSec of [0.8, 1.17, 1.6]) {
+      expect(at(travelSec, edge * 0.9), `inside the window at ${travelSec}s`).not.toBe('miss');
+      expect(at(travelSec, edge * 1.1), `outside the window at ${travelSec}s`).toBe('miss');
+    }
+  });
+
+  it('★ pins the swing tail above the measured window edge', () => {
+    // Below the edge, the late half of the window is unreachable in the view
+    // and the game only ever punishes being early.
+    const view = readFileSync(join(here, '../../src/v2/spike/PlayView.ts'), 'utf8');
+    const tail = Number(view.match(/const SWING_TAIL_SEC = ([\d.]+)/)?.[1]);
+    expect(tail).toBe(rec.ours.SWING_TAIL_SEC);
+    expect(tail).toBeGreaterThan(rec.measured.timingWindowSec.edgeSec);
+  });
+});
+
+describe('render.pitchFraming', () => {
+  const rec = M.render.pitchFraming;
+
+  it('is a KNOWN-DRIFT that pins the eye it moved to', () => {
+    wellFormed(rec, { reference: 'derived', status: 'known-drift', category: 'render' });
+    expect(rec.theDRIFT).toMatch(/the framing is not good/i);
+    expect(rec.theDRIFT).toMatch(/only a raycast can see it/);
+  });
+
+  it('★ binds the offset to the rig, and keeps it above the measured threshold', () => {
+    // ★ THE RECORD CARRIES THE NUMBERS, per sim.battedBallSplit's tautology
+    // lesson: asserting "the eye is offset" is true of any offset, including
+    // the 7.0 that was measured to still lose the low inside corner.
+    expect(RIGS.PITCH.eye).toEqual(rec.ours['RIGS.PITCH.eye']);
+    const blocked = rec.measured.blockedZonePointsByEye;
+    expect(blocked[`[${RIGS.PITCH.eye.join(',')}]`], 'the shipped eye must be the clear one').toBe(
+      '0/7'
+    );
+    expect(blocked['[7,8.2,-18]'], 'and 7.0 must still be recorded as blocked').toBe('1/7');
+    // A centred rig is the thing this record exists to say cannot work.
+    expect(blocked['[0,8.2,-18]']).toBe('7/7');
+    expect(RIGS.PITCH.eye[0]).toBeGreaterThan(7);
   });
 });

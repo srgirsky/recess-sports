@@ -106,6 +106,7 @@ import {
   type PositionId,
   type Vec2,
 } from './field';
+import type { HumanSwing } from './atbat';
 import type { Rng } from './rng';
 
 // --- Types ------------------------------------------------------------------
@@ -162,6 +163,15 @@ export interface PlayInputs {
   throwTo?: { base: 1 | 2 | 3 | 4 };
   sendRunner?: string;
   holdRunner?: string;
+  /**
+   * A person's swing at the pitch currently in flight.
+   *
+   * ★ IT LIVES HERE BECAUSE `PlayInputs` IS THE GENERATOR'S INPUT TYPE, not
+   * because a swing is part of a ball in play — it is read by `playAtBatLive`
+   * before any play exists, and `stepPlay` never sees it. One input channel for
+   * the whole live loop is what keeps the view's seam a single type.
+   */
+  swing?: HumanSwing;
 }
 
 export interface PlayState {

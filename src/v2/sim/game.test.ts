@@ -430,9 +430,17 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
    */
   const CHECKSUM_30 = 1745365359;
 
-  it('★ checksums thirty games, which is what catches a subtle drift', () => {
+  // ★ ASYNC, AND IT YIELDS BETWEEN GAMES — a CI fix, not a style choice.
+  // Thirty games is ~15s of UNBROKEN synchronous work, which starves the vitest
+  // worker's event loop for the whole of it, so the reporter's `onTaskUpdate`
+  // RPC times out and the run fails with every single test passing. It had been
+  // failing intermittently on `main` since the checksum landed in PR 13, and the
+  // symptom is maximally misleading: "1081 passed, 1 error". One macrotask turn
+  // per game costs nothing and lets the worker answer.
+  it('★ checksums thirty games, which is what catches a subtle drift', async () => {
     let acc = 0;
     for (let i = 0; i < 30; i++) {
+      await new Promise((r) => setTimeout(r, 0));
       const off = (i * 7) % ROSTER.length;
       const at = (j: number) => ROSTER[(off + j) % ROSTER.length].id;
       const g = simulateGame(

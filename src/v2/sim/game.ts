@@ -30,7 +30,7 @@
 
 import type { Character } from '../../data/types';
 import { GAME, PLAY } from './params';
-import { isStrike, pitchAndSwing, type PitchResult } from './atbat';
+import { isStrike, resolvePitch, throwPitch, type PitchResult } from './atbat';
 import { catcherOf, cpuWantsSteal, stealRace, type StealTarget } from './steal';
 import type { BallState } from './flight';
 import type { PitchKind } from './pitch';
@@ -288,12 +288,35 @@ function* playAtBatLive(
     tally.pitches += 1;
     syncFrame(frame, half, 'pitch');
     frame.play = null;
-    const result = pitchAndSwing(
-      { pitcher: args.pitcher, batter: args.batter, count: half.state.count, plate: args.plate },
-      rng.fork(`p${pitches}`)
-    );
-    frame.pitch = { release: result.release, travelSec: result.travelSec, kind: result.pitch };
-    yield frame;
+    // ★ THE PITCH IS THROWN, YIELDED, AND ONLY THEN JUDGED — and that ordering
+    // is the whole architectural change. `pitchAndSwing` did all three in one
+    // call, so the frame the view animated described a ball whose fate was
+    // already settled: a human could watch it and could not bat at it. Throwing
+    // and judging are separate acts in the world, so they are separate here.
+    //
+    // ★ SPLITTING THE CALL CANNOT MOVE A DRAW, and that is a property of
+    // `rng.ts` rather than a hope. Substreams derive from `(root seed, label)`
+    // and never from position in the parent stream — "forking in a different
+    // order gives the same streams", and "a substream that is never drawn from
+    // costs nothing and shifts nothing". Two functions forking the same labels
+    // off the same parent are indistinguishable from one that forked both.
+    // PR 13's golden fingerprints and 30-game checksum are what prove it.
+    const pitchRng = rng.fork(`p${pitches}`);
+    const spec = {
+      pitcher: args.pitcher,
+      batter: args.batter,
+      count: half.state.count,
+      plate: args.plate,
+    };
+    const inFlight = throwPitch(spec, pitchRng);
+    frame.pitch = { release: inFlight.release, travelSec: inFlight.travelSec, kind: inFlight.kind };
+    // ★ AND THE SWING ARRIVES THROUGH THE YIELD. The view holds this frame for
+    // the ball's whole flight — it already did, to animate it — so the tap has
+    // somewhere to land. A CPU batter passes nothing and draws `judge` and
+    // `swing` exactly as before; a human draws neither, which again shifts
+    // nothing for anybody else.
+    const swing = ((yield frame) ?? {}).swing;
+    const result = resolvePitch(inFlight, spec, pitchRng, swing);
 
     // ★ THE COUNT IS READ BEFORE THE FOLD. `applyAtBat` resets it to 0-0 on
     // every batter-done branch, so an observer told afterwards would see every

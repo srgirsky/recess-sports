@@ -567,6 +567,55 @@ continuous across a v1↔v2 switch in the same browser.
   provenance). A `reference: 'physics'` record may claim high confidence at n=1
   — a rulebook is not a sample — **but only if it names its source**, so the
   exemption cannot become "call it physics and claim anything".
+- **★ THE PITCH IS YIELDED BEFORE IT IS RESOLVED, AND THAT IS WHY A PERSON CAN
+  BAT.** `pitchAndSwing` did choose → release → fly → judge → swing in one call,
+  so `playAtBatLive` could only yield its `pitch` frame AFTER the outcome was
+  settled: the view animated a ball whose fate was decided. `throwPitch` /
+  `resolvePitch` split it at the seam the model already had. **Splitting it could
+  not move a draw** — `fork` is keyed on `(root seed, label)` and never on
+  position, so two functions forking the same labels off the same parent are
+  indistinguishable from one that forked both; the golden fingerprints and the
+  30-game checksum are what prove it rather than assert it. A human never draws
+  `judge` or `swing`, which shifts nothing for anyone else for the same reason.
+- **★ A HUMAN SUPPLIES THE MODEL'S OWN TWO ERROR TERMS, and two CPU rules
+  deliberately do not apply to him.** The tap is `timingErrorSec`, the pointer is
+  `undercutFt`, and both go through the same `offer` path the CPU does.
+  `UNDERCUT_FROM_JUDGE` converts a READ error into a PLACEMENT error and exists
+  because the CPU's aim is a misjudgement it is unaware of — a player's pointer
+  IS the placement, so scaling it would model a person as guessing at his own
+  intention. `TWO_STRIKE_PROTECT_FT` is a decision rule that keeps a poor-contact
+  CPU kid a foul-ball machine; a person decides for himself, and not tapping IS
+  the take. `swing.test.ts` shows each constant moves the CPU's outcomes and not
+  the human's — the second half is what stops the first being vacuous.
+- **★ AIM IS A HEIGHT, NOT A POINT.** `resolveSwing` reads when the bat arrived
+  and how far under the ball's centre it passed; `contact.ts` derives `sprayDeg`
+  from `timingErrorSec`, so pulling it is what being EARLY MEANS. A lateral aim
+  term would be a second, independent source for the same quantity, so a 2D
+  cursor would put a field on the wire that nothing reads — the defect PR 8
+  shipped twice. A lint asserts `HumanSwing` carries no lateral field. **The aim
+  tolerance is 2.70in and is NOT tunable**: it is `BALL_RADIUS_FT +
+  BAT.BARREL_RADIUS_FT`, the distance at which a bat and a ball stop overlapping,
+  and past it the swing is a MISS (PR 8's clamp bug stated as a requirement).
+  Timing, by contrast, is generous — ±0.22s, 18% of the flight, a FRACTION by
+  construction. `sim.humanSwing`; the assist stays unbuilt rather than guessed.
+- **★ THE VIEW MUST HOLD THE PITCH PAST THE CROSSING** (`SWING_TAIL_SEC`), or the
+  latest expressible swing is exactly on time and the whole late half of the
+  window is unreachable BY CONSTRUCTION — a model that looks symmetric while the
+  game only ever punishes being early. Any test of swing timing must sweep BOTH
+  signs; a one-sided sweep passes for the broken build.
+- **★ A PROJECTION TEST CANNOT SEE OCCLUSION, and the pitch camera could not see
+  the plate.** `cameraCues.test.ts` projects the bases through a preset and
+  asserts they land in frame — but a point behind a catcher projects to exactly
+  the same pixel as one in front of him. Raycasting seven points across the
+  strike zone against the live scene found the centred `RIGS.PITCH` hitting the
+  CATCHER at all seven: he posts 5ft behind home and draws 6.43ft tall, so height
+  cannot fix it (an eye at 16.5ft is still blocked) and clearing him over the top
+  needs a 53° bird's-eye of a VERTICAL zone. The eye is offset 7.5ft — the
+  smallest that clears all seven; 7.0 loses the low inside corner. The framing
+  that buys is honestly poor and is a `known-drift` (`render.pitchFraming`) for a
+  camera pass: do not retune the eye until a screenshot looks better, because the
+  binding constraint is occlusion and only a raycast can see it. Same blind spot
+  `render.proxyFace` found in the bbox tests.
 - **`src/v2/render/**` reads sim state and never writes it.** `render/bridge.ts`
   is the single named coupling point.
 - **Camera POLICY is pure** (`render/cameraCues.ts`, no three import) — the heir
@@ -872,7 +921,7 @@ continuous across a v1↔v2 switch in the same browser.
 | `src/v2/sim/contact.ts` | ★ v2. Bat meets ball: Nathan's Eq. 3 identity for exit velocity, `e_A` derived from the recoil factor, the undercut geometry for launch angle, and the same grip result `bounce.ts` uses for backspin. Replaces v1's categorical grounder/liner/fly roll. |
 | `src/v2/sim/pitch.ts` | ★ v2. The pitch as a real trajectory — break is EMERGENT Magnus, not a drawn bow. Release speed and elevation are SOLVED from the measured flight time, because aiming straight at the plate arrives 26ft underground. |
 | `src/v2/sim/play.ts` | ★ v2. The play reducer: a batted ball, nine fielders and up to four runners stepped to a `PlayOutcome` shaped exactly like v1's `LiveOutcome`. Owns possession (`secureBall`, the single choke point), throws and the emergent relay, base covering that self-heals when the conventional coverer is chasing, force-outs, tags at `reachFt()`, the CPU running policy, and the play clock. CPU-only; `PlayInputs` is a typed seam. |
-| `src/v2/sim/atbat.ts` | ★ v2. One pitch: the pitcher picks a kind and a SPOT, execution error nudges the release, `flyToPlate` says where it crossed, the umpire reads that, and the batter's single judgement error decides swing-or-take AND how well he timed it. No chase rate, no whiff rate. |
+| `src/v2/sim/atbat.ts` | ★ v2. One pitch, in TWO acts so a person can bat: `throwPitch` (choose a kind and a SPOT, execution error nudges the release, `flyToPlate` says where it crossed) and `resolvePitch` (the umpire reads the crossing; the batter's single judgement error decides swing-or-take AND how well he timed it). `pitchAndSwing` is the thin wrapper that keeps every CPU caller unchanged. A human passes a `HumanSwing` and supplies those same two error terms himself — no chase rate, no whiff rate, and no human hit rate either. |
 | `src/v2/sim/game.ts` | ★ v2. Plate appearance → half → inning → game, headless. The first real value-use of `inning`/`gameflow`/`stats`; keeps base OCCUPANTS itself because `applyLivePlay` drops `baseIds`. Returns a line score, per-kid lines, a play-by-play and the counting stats PR 8 aggregates. |
 | `src/v2/sim/lineup.ts` | ★ v2. `planDefence` — the arm-aware planner `sim.gapBallOutcome.theArmAtShort` asked for. Each position's arm weight is DERIVED from `FIELD_POSITIONS` (distance from post to the bag it throws to), so nobody has to remember that left field needs an arm. v1's `autoAssign` is untouched. |
 | `src/v2/sim/steal.ts` | ★ v2. The stolen base as a RACE — runner's leg vs pitch flight + catcher read + release + `throwFlightSec` — replacing v1's probability formula. The JUMP is the only randomness (one error in TIME, the `plateJudgementFt` pattern) and there is **no attempt rate and no success rate**; the limit on frequency is situational, because a threshold cannot decline a steal whose margin is infinite. `sim.stealRace`. |
@@ -880,7 +929,7 @@ continuous across a v1↔v2 switch in the same browser.
 | `scripts/v2/harness.mjs` | ★ v2. `npm run sim:harness` — 874 games / 50,045 PA / 8 seeds / 3 venues in 73.5s, the cheque `rng.ts` wrote when it chose sfc32. Two traps it has to avoid and both are recorded: **every game gets its own root seed** (the per-PA fork key is `${inning}${half}${lineupIdx}`, which is NOT unique across games — one root per RUN measures one game 874 times), and **the roster ROTATES** (`sim:game` plays kids 0-8 vs 9-17, so twelve of thirty never bat and every rate is an average over 60% of a 1-10 stat span). `RUN_BUDGET_MS` is a hard ceiling, not a per-game timeout — the case a per-game timeout misses is every game getting four times slower. |
 | `scripts/v2/plate-sweep.mjs` | ★ v2. `npm run sim:plate-sweep` — searches the four COUPLED plate constants (`ATTACK_ANGLE_DEG` · `UNDERCUT_FROM_JUDGE` · `PULL_DEG_PER_FT` · `TWO_STRIKE_PROTECT_FT`) against `sim.retuneTargets`, which was written BEFORE it ran. It RANKS and never writes `params.ts` — overrides go through `PlateOverrides`, because PR 7's sweep patched files and left two injected values in the tree across two interrupted runs. It checks ORDERING per candidate, not once on the winner. |
 | `src/v2/render/bridge.ts` | ★ v2. The SINGLE coupling point between sim and scene — the file this document claimed existed for twelve PRs before PR 13 wrote it. Takes a `LiveFrame` and positions the ball, nine fielders and the runners; **reads sim state and never writes it**, enforced by a lint rather than by review. Owns no policy: the camera is `cameraCues`, the clips are `AnimationDirector`. It also draws the defence BETWEEN pitches — skipping that left the park empty until contact and every kid in its bind pose, which no test saw and one screenshot did. |
-| `src/v2/spike/PlayView.ts` | ★ v2 at `/v2/?play=1`. The first page on which v2 plays baseball. Pumps `simulateGameLive` — the sim's OWN generator — against a real clock with a **fixed-step accumulator, never the render delta** (`scripts/simclock.lint.test.js` exists because a tempo scalar once put home→1B at 6995ms against a record asserting 4197). Scene built by the SAME functions the Look Spike uses; HUD under `#hud`'s `pointer-events: none` so it cannot eat PR 14's input. |
+| `src/v2/spike/PlayView.ts` | ★ v2 at `/v2/?play=1`. The first page on which v2 plays baseball. Pumps `simulateGameLive` — the sim's OWN generator — against a real clock with a **fixed-step accumulator, never the render delta** (`scripts/simclock.lint.test.js` exists because a tempo scalar once put home→1B at 6995ms against a record asserting 4197). Scene built by the SAME functions the Look Spike uses; HUD under `#hud`'s `pointer-events: none` so it cannot eat PR 14's input. Owns the two membranes where pixels become feet: the GROUND plane (fielding) and the PLATE's vertical plane (batting). |
 | `scripts/v2/purity.lint.test.js` | ★ v2. **★ There is exactly ONE kid speed in the sim** (textual: only `athletes.ts` may read a raw band; functional: `makeFielder` and `makeRunner` agree over 30 kids and stats 1-10). Plus: `src/v2/sim/**` imports only sim/data/config/**five** pure systems (`inning`·`gameflow`·`stats`·`lineup`·`draft`); no three, no DOM, no `Math.random`, no `Date.now`, **no module-scope `Rng`**; every sim file must import in plain Node; whole-statement `import type` gets a separate wider lane; **the whitelist itself is checked** (each named system must be browser-free, random-free, and value-import only pure modules); and **nothing outside `src/v2/**` may import v2**, which is what actually guarantees a v2 edit cannot reach v1's bundle. Two files claimed this gate existed before it did, and it then spent its first life vacuously satisfied. |
 | `scripts/measures.json` | ★ The measurement records + `conformance.test.js`'s gate. Every record names the `src/config.ts` constant it informs, so the audit trail runs source → record → constant, and carries a `status`: `conformed` (ours inside the band), `known-drift` (outside, and the test pins the drift's SIZE so it can't grow or be half-fixed unnoticed), `awaiting-measurement` (BB not measured yet — pins only OUR value, claims nothing about BB), `note` (a finding about the measurement itself). Read this before tuning any "Backyard feel" constant. |
 
