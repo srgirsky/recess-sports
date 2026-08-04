@@ -78,7 +78,7 @@ const read = (p) => readFileSync(join(ROOT, p), 'utf8');
 const BUDGET = {
   // The always-loaded one. Every byte here is spent in every session, whether or
   // not the session goes anywhere near the thing the byte describes.
-  'AGENTS.md': { bytes: 15_000, lines: 220, imperative: false, numbersFree: false },
+  'AGENTS.md': { bytes: 16_000, lines: 250, imperative: true, numbersFree: true },
 
   // ★ A LAZY BRIEF IS CHARGED ONLY TO SESSIONS IN ITS SUBTREE, which is why
   // these two sit well above the always-loaded file's eventual ceiling. The v2

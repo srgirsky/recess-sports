@@ -1561,14 +1561,14 @@
     "section": "Keeping docs current (do this as part of each change)"
   },
   {
-    "anchor": "New scene/system/module, changed architecture, or a new gotcha",
+    "anchor": "Gate C — is it a rule, a number, or a story?",
     "claim": "New scene/system/module, changed architecture, or a new gotcha",
     "owner": "AGENTS.md",
     "kind": "bullet",
     "section": "Keeping docs current (do this as part of each change)"
   },
   {
-    "anchor": "Product direction / roadmap shifts",
+    "anchor": "**Product\ndirection and roadmap** → `docs/OVERVIEW.md`",
     "claim": "Product direction / roadmap shifts",
     "owner": "AGENTS.md",
     "kind": "bullet",
