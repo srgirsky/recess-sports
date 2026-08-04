@@ -1207,10 +1207,67 @@ because `sim.humanSwing`'s rule is that a human's pointer IS the placement and t
 model must not reinterpret it. Deliberately not narrowed toward the zone: that
 would be a batting assist, and there is none.
 
-Next: the router, title and result screens that turn v2 from a spike into an app;
-then the draft, which is the actual product. After those, the fielding and batting
-assists sized from a real child's aim error, and seats, so the side is the sim's
-answer rather than the view's.
+### PR 20 — v2 becomes an app: a title, a result, and a game you can finish
+
+v2 could play a whole game and had no way to **start** one and no way to
+**finish** one. `/v2/` put you in a spike; `/v2/?play=1` dropped you mid-pitch
+into a game already in progress; and when it ended the page simply stopped
+moving. Every verb worked and there was no product around them.
+
+**★ The result was being thrown away.** `simulateGameLive` *returns* a
+`GameResult` — the line score, every kid's line, the tally — and the view read
+`r.done` to decide whether to keep the frame and dropped `r.value` on the floor.
+What looked like a hang was a completed game with nobody listening.
+
+There is a title, a result screen and a router now, and the file that plays
+baseball moved out of `spike/` to `game/GameView.ts` — it is what the product
+runs on, and it should not be filed under a word that says otherwise. The two
+review spikes stay where they are, because they really are spikes.
+
+**★ The world is never torn down to show a screen.** v1 is five Phaser scenes and
+a transition is a scene swap. Here the canvas is *always* the game and a screen
+is DOM over it, so the title shows the real park with a game playing behind it,
+PLAY AGAIN costs one generator instead of a model reload, and there is no Boot
+screen because there is nothing to boot between screens. That has a consequence
+worth stating: **the attract game can finish while the title is up**, which would
+put a Result screen for a game nobody played over the PLAY button. Anything
+reacting to the sim asks whether a screen is showing first.
+
+`#hud` and `#screens` carry deliberately **opposite** pointer rules — the HUD is
+`pointer-events: none` so taps reach the field, a screen is modal and takes every
+tap — as two elements rather than one with a mode flag, so neither can be left in
+the wrong state. The HUD hides behind a screen off a single `body.screen-open`
+class, because a scoreboard reporting `▲1 · YOU BAT` under the wordmark is a lie
+about a game that has not started.
+
+The Result screen says **"GOOD GAME!"** and never "you lose". v1's online mode
+already made that call for a disconnect and it is the right one for a losing
+scoreline: the score is right there and says who won, and the next decision a
+six-year-old makes is whether to press PLAY AGAIN. Its MVP comes from v1's own
+`computeAwards`, imported rather than reimplemented, so a kid who is MVP here is
+MVP by the same arithmetic as in the sticker album.
+
+**★ And the layout gate PR 18 built found a bug in itself.** Extended to the two
+new screens, it reported four elements off-frame that were plainly inside it.
+`layoutMath`'s `Box` documents its x,y as *the centre* (matching Phaser's
+`setOrigin(0.5)`); `getBoundingClientRect` returns the *top-left*. The audit had
+been handing one to the other since the day it was written — shifting every box
+by half its own size — and passed anyway, because the HUD is a centred strip
+whose displacement happened not to push anything over an edge. A wrong rule
+agreed with a right one until new content arrived. **Shared predicates are only
+shared if the units are too.**
+
+With the units fixed it found a genuine one: on a 740×320 phone held sideways the
+result card is taller than the viewport — the verdict ran off the top at y −3 and
+PLAY AGAIN off the bottom — and at that height `tokens.css`'s clamp is already
+pinned to its 14px floor, so the scalar cannot rescue it. Compressed rather than
+scrolled: a six-year-old should not have to discover that the button they need is
+below the fold.
+
+Next: the draft, which is the actual product — every pick is a vote, and v2 has
+no way to cast one yet. Then the fielding and batting assists sized from a real
+child's aim error, and seats, so the side is the sim's answer rather than the
+view's.
 
 ---
 

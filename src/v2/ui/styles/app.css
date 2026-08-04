@@ -342,3 +342,227 @@ body {
   color: var(--ink);
   opacity: 1;
 }
+
+/* ---------------------------------------------------------------------------
+ * SCREENS — modal DOM over the live 3D world.
+ *
+ * The exact opposite rule to `#hud`: a screen is `pointer-events: auto` and
+ * takes every tap, because the game behind it must not receive input while it is
+ * up. Two elements with two opposite rules rather than one with a mode flag, so
+ * neither can be left in the wrong state.
+ *
+ * The scrim is deliberately light. The park is the product's first impression
+ * and the title is meant to sit IN it, not over a black wash.
+ * ------------------------------------------------------------------------- */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--s6);
+  padding: var(--s5);
+  background: linear-gradient(180deg, rgb(20 32 46 / 0.42), rgb(20 32 46 / 0.68));
+  text-align: center;
+}
+
+/* ---- Buttons ---- */
+.btn {
+  font-family: var(--font);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  background: var(--gold);
+  border: var(--stroke) solid var(--outline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  padding: var(--s3) var(--s6);
+  font-size: 1.1rem;
+  cursor: pointer;
+  /* The press moves the button down onto its own shadow — the whole of v1's
+     `makeButton` bottom lip, in two declarations. */
+  transition: transform 90ms ease, box-shadow 90ms ease;
+}
+.btn:active {
+  transform: translateY(calc(0.3rem * var(--motion-scale)));
+  box-shadow: 0 0 0 var(--outline);
+}
+.btn:focus-visible {
+  outline: 0.2rem solid var(--cream);
+  outline-offset: 0.2rem;
+}
+.btn--hero {
+  font-size: 1.7rem;
+  padding: var(--s4) var(--s8);
+}
+.btn--quiet {
+  background: var(--cream);
+}
+
+/* ---- Title ---- */
+.title-card {
+  display: grid;
+  justify-items: center;
+  gap: var(--s1);
+}
+.title-card__mark {
+  margin: 0;
+  font-size: clamp(2.4rem, 9vw, 4.6rem);
+  line-height: 0.92;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--cream);
+  /* The brand contour, as a text shadow — the same `--outline` the 3D inverted
+     hulls use, which is what makes the UI and the characters read as one piece. */
+  -webkit-text-stroke: 0.09em var(--outline);
+  paint-order: stroke fill;
+}
+.title-card__mark--two {
+  color: var(--gold);
+}
+.title-card__tag {
+  margin: var(--s2) 0 0;
+  font-size: 0.9rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cream);
+  opacity: 0.85;
+}
+
+/* ---- Result ---- */
+.result-card {
+  display: grid;
+  justify-items: center;
+  gap: var(--s3);
+  padding: var(--s5) var(--s7);
+  border-radius: var(--radius-lg);
+  border: var(--stroke) solid var(--outline);
+  background: rgb(20 32 46 / 0.86);
+  box-shadow: var(--shadow-soft);
+  min-inline-size: min(22rem, 86vw);
+}
+.result-card__verdict {
+  margin: 0;
+  font-size: clamp(1.8rem, 6vw, 3rem);
+  color: var(--gold);
+  -webkit-text-stroke: 0.06em var(--outline);
+  paint-order: stroke fill;
+}
+.screen--result.is-loss .result-card__verdict {
+  color: var(--cream);
+}
+.result-score {
+  display: grid;
+  gap: var(--s2);
+  inline-size: 100%;
+}
+.result-score__row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: var(--s4);
+  opacity: 0.7;
+}
+.result-score__row.is-mine {
+  opacity: 1;
+}
+.result-score__name {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-align: left;
+}
+.result-score__runs {
+  font-size: 1.9rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.result-card__note {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+.result-stars {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s2);
+}
+.result-star {
+  display: grid;
+  justify-items: center;
+  gap: 0.1rem;
+  padding: var(--s2) var(--s3);
+  border-radius: var(--radius);
+  background: rgb(255 244 222 / 0.1);
+}
+.result-star__icon {
+  font-size: 1.2rem;
+}
+.result-star__who {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.result-star__label {
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  opacity: 0.7;
+}
+.result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s4);
+}
+
+/*
+ * The HUD belongs to the GAME, so it goes away with it.
+ *
+ * A game runs behind the title as attract mode; without this the scoreboard
+ * sits under the wordmark reporting a game the player has not started. Declared
+ * once here rather than remembered by every screen.
+ */
+body.screen-open #hud {
+  visibility: hidden;
+}
+
+/* ---------------------------------------------------------------------------
+ * SHORT LANDSCAPE. A phone held sideways is ~320 CSS px tall, and at that
+ * height `tokens.css`'s clamp is already pinned to its 14px floor — so the
+ * scalar cannot shrink any further and the Result card simply does not fit: the
+ * verdict ran off the top at y -3 and PLAY AGAIN off the bottom. Caught by
+ * `npm run audit:v2-layout`, which exists for exactly this: the failure lives at
+ * the END of the clamp, never at the size the screen was authored at.
+ *
+ * Compressed rather than scrolled. A six-year-old should not have to discover
+ * that the button they need is below the fold, and `place-content: center` plus
+ * an overflow puts it somewhere they cannot reach anyway.
+ * ------------------------------------------------------------------------- */
+@media (max-height: 460px) {
+  .screen {
+    gap: var(--s3);
+    padding: var(--s3);
+  }
+  .result-card {
+    gap: var(--s2);
+    padding: var(--s3) var(--s5);
+  }
+  .result-card__verdict {
+    font-size: clamp(1.3rem, 5vw, 1.9rem);
+  }
+  .result-score__runs {
+    font-size: 1.4rem;
+  }
+  .result-star__icon {
+    font-size: 1rem;
+  }
+  .btn--hero {
+    font-size: 1.2rem;
+    padding: var(--s3) var(--s5);
+  }
+  .title-card__mark {
+    font-size: clamp(1.9rem, 7vh, 3rem);
+  }
+}

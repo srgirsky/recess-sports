@@ -487,7 +487,7 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
   }, PLAYS_GAMES);
 
   it('★ survives being pumped at a fixed step, as the view does', () => {
-    // ★ THE VIEW'S OWN LOOP, HEADLESS. `PlayView` accumulates real time and
+    // ★ THE VIEW'S OWN LOOP, HEADLESS. `GameView` accumulates real time and
     // pulls one frame per sim tick; a `pitch` frame is held for its flight and a
     // `between` frame for the beat. That means the generator is advanced on a
     // SCHEDULE rather than drained, and this asserts the schedule terminates

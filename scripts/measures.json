@@ -3923,7 +3923,7 @@
    },
    "theTAILISWHATMAKESLATESWINGSREACHABLE": "\u2605 A SYMMETRIC MODEL THAT ONLY PUNISHED BEING EARLY. The view advanced the instant the ball reached the plate, so the latest swing a player could express was exactly on time and the entire late half of the window was unreachable BY CONSTRUCTION. SWING_TAIL_SEC holds the pitch frame 0.35s past the crossing, above the measured 0.22s edge, so the whole window is playable. swing.test.ts sweeps both signs for this reason -- a one-sided sweep passes for the broken build.",
    "whatWouldClose": "A real child, holding a real mouse or a real touchscreen, swinging at real pitches -- the aim error of a four-to-eight-year-old is the missing quantity and no amount of self-play produces it. Until then the assist stays unbuilt rather than guessed, which is the same call defense.fieldingAssist and sim.fieldingInput made for steering.",
-   "informs": "src/v2/sim/atbat.ts resolvePitch, src/v2/spike/PlayView.ts SWING_TAIL_SEC"
+   "informs": "src/v2/sim/atbat.ts resolvePitch, src/v2/game/GameView.ts SWING_TAIL_SEC"
   },
   "humanPitch": {
    "id": "sim.human-pitch",
@@ -3993,7 +3993,7 @@
     "meter": "none"
    },
    "whatWouldClose": "A child actually pitching: whether picking a spot with a pointer is a verb a six-year-old enjoys, or whether it wants v1's 3x3 zone grid instead of continuous aim. That is a playtest, not a measurement.",
-   "informs": "src/v2/sim/atbat.ts throwPitch, src/v2/spike/PlayView.ts"
+   "informs": "src/v2/sim/atbat.ts throwPitch, src/v2/game/GameView.ts"
   },
   "runnerSends": {
    "id": "sim.runner-sends",

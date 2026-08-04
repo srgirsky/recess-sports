@@ -333,6 +333,23 @@ an optional `onEvent` observer. Counters and histograms only.
 tape measure or a paper. Provenance goes in `scripts/measures.json`, whose rules
 are in `scripts/AGENTS.md`; cite the record id rather than the value.
 
+## The screens
+
+`/v2/` is the game — title, play, result — and `App.ts` owns that order.
+`?play=1`, `?spike=1` and `?anims=1` stay reachable as review surfaces.
+
+- **The world is never torn down to show a screen.** The canvas is always the
+  game and a screen is DOM over it, so the title shows the real park and PLAY
+  AGAIN costs one generator rather than a model reload. There is no Boot.
+- **`#hud` and `#screens` have OPPOSITE pointer rules** — the HUD is
+  `pointer-events: none` so taps reach the field, a screen is modal and takes
+  every tap. Two elements, not one with a mode flag.
+- **A game runs behind the title as attract mode**, so anything reacting to the
+  sim must ask whether a screen is up first — an end-of-game that fires behind
+  one is ignored, or a Result appears for a game nobody played.
+- **A control is `.interactive`**: one class opts it into pointer events AND
+  applies the `--tap-min` floor, so tappable and big-enough cannot diverge.
+
 ## The render membrane
 
 `src/v2/render/**` reads sim state and never writes it, through the single
@@ -346,7 +363,7 @@ frozen mid-pitch with NO console error. Drive it by hand with `__spike.tick(t)`
 and a monotonically increasing `t` — the same rule `.claude/skills/verify` gives
 for v1's Phaser clock.
 
-`src/v2/spike/PlayView.ts` pumps the sim's own generator against a real clock
+`src/v2/game/GameView.ts` pumps the sim's own generator against a real clock
 with a **fixed-step accumulator, never the render delta**
 (`scripts/simclock.lint.test.js` exists because a tempo scalar once broke a
 measured pace record while every test stayed green).
@@ -367,4 +384,4 @@ measured pace record while every test stayed green).
 | `src/v2/sim/game.ts` | plate appearance -> half -> inning -> game, headless |
 | `src/v2/sim/lineup.ts` | `planDefence`, with each position's arm weight DERIVED from the throw it must make |
 | `src/v2/sim/harness.ts` | the pure aggregator — it plays nothing, it is fed |
-| `src/v2/spike/PlayView.ts` | `/v2/?play=1`, the first page on which v2 plays baseball |
+| `src/v2/game/GameView.ts` | the game: the field, the verbs, the pump. `/v2/?play=1` |

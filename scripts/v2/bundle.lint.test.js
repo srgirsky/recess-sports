@@ -27,9 +27,22 @@ import { fileURLToPath } from 'node:url';
 const repo = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const assets = join(repo, 'dist', 'assets');
 
-/** Measured at PR 13, kB. The band is +-2%: bloat is the thing worth catching. */
+/**
+ * Measured at PR 13, kB. The band is +-2%: bloat is the thing worth catching.
+ *
+ * V1 has not moved since it was pinned and must not; every raise below is v2's.
+ *
+ * V2 RAISES, each a reviewed act with what earned it:
+ *   782 -> 799   PR 20, the app shell. `App`, `Router`, the title and result
+ *                screens, the DOM helpers and the pure `resultModel` -- plus
+ *                v1's `systems/awards`, which the result screen IMPORTS rather
+ *                than reimplementing so a kid who is MVP here is MVP by the
+ *                same arithmetic as in the sticker album. 17kB for the whole
+ *                front end of the game, and it is the last thing standing
+ *                between v2 and being playable end to end.
+ */
 const V1_KB = 1887;
-const V2_KB = 782;
+const V2_KB = 799;
 const TOLERANCE = 0.02;
 
 const sizeKb = (prefix) => {

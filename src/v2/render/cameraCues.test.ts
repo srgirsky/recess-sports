@@ -216,7 +216,7 @@ describe('★ the policy finally has a caller', () => {
   // mechanism, argued from v1 and BB2001, that no code path reached. This test
   // is the regression guard for the calling, not the choosing.
   const playView = readFileSync(
-    join(dirname(fileURLToPath(import.meta.url)), '../spike/PlayView.ts'),
+    join(dirname(fileURLToPath(import.meta.url)), '../game/GameView.ts'),
     'utf8'
   );
 

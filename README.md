@@ -205,14 +205,16 @@ the Fredoka and font-blocked states. Deliberate exceptions live in
 While playing locally, **press `L` on any menu screen** for the same check as an
 overlay: chrome boxes in green, tap targets in blue, collisions flashing red.
 
-v2's HUD is DOM rather than a Phaser display list, so it has its own gate:
+v2's HUD and screens are DOM rather than a Phaser display list, so they have
+their own gate:
 
 ```bash
 npm run audit:v2-layout
 ```
 
-It walks `#hud` at six viewports × three game states and applies the *same*
-`ui/layoutMath.ts` overlap predicates. The matrix is viewports rather than
+It walks `#hud` and `#screens` at six viewports × five states — three in-game
+plus the title and result screens — and applies the *same* `ui/layoutMath.ts`
+overlap predicates. The matrix is viewports rather than
 content because v2 sizes everything off one `clamp()` in `tokens.css` — the
 interesting sizes are the ones that pin that clamp at either end. It drives the
 sim clock by hand, since a headless page throttles `requestAnimationFrame`.

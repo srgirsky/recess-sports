@@ -443,7 +443,7 @@
   {
     "anchor": "FLOW.PITCH_CLOCK_MS",
     "claim": "★ LiveFrame HAS A windup PHASE BECAUSE A CHOICE MUST BE COLLECTED BEFORE THE THING IT DECIDES.",
-    "owner": "src/v2/spike/PlayView.ts",
+    "owner": "src/v2/game/GameView.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
@@ -457,7 +457,7 @@
   {
     "anchor": "humanPitches",
     "claim": "★ THE HUMAN NEEDS A SIDE, OR THE TAP VERBS COLLIDE.",
-    "owner": "src/v2/spike/PlayView.ts",
+    "owner": "src/v2/game/GameView.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
