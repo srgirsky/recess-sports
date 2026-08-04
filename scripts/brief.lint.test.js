@@ -97,7 +97,7 @@ const BUDGET = {
   'src/ui/AGENTS.md': { bytes: 5_600, lines: 105, imperative: true, numbersFree: false },
 
   // The measurement instrument and the lints.
-  'scripts/AGENTS.md': { bytes: 4_400, lines: 80, imperative: true, numbersFree: false },
+  'scripts/AGENTS.md': { bytes: 5_300, lines: 95, imperative: true, numbersFree: false },
 };
 
 /** Under this fraction of its budget, a brief has earned a lower one. */

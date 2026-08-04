@@ -42,6 +42,21 @@ census, not a copy — it restates no rule's content, and it is never auto-loade
 **Do not regenerate it.** It was extracted once and is hand-maintained after
 that; a regenerator would clobber the `owner` edits that are the whole point.
 
+### ★ There is deliberately no path-scoped rules file, and that was checked
+
+A nested brief is **dropped after context compaction** until a file in its
+subtree is read again; only the root brief is re-injected. The obvious guard is a
+path-scoped rule file under the .claude directory (the feature is real and
+documented). It does not work: a rule carrying a
+`paths:` frontmatter has **exactly the same compaction behaviour** as a nested
+brief. Only an UNSCOPED rule survives — and an unscoped rule loads in every
+session, which is the cost this whole arrangement exists to remove.
+
+The root brief already survives compaction and already carries the instruction to
+re-read the brief for the tree you are in. A rules file would be a second copy of
+it. Do not add one thinking it closes the gap; it closes nothing and duplicates
+something.
+
 ## Commands that live here
 
 `npm run sim:harness` · `npm run sim:plate-sweep` · `npm run sim:game` ·

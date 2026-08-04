@@ -2,6 +2,21 @@
 
 The deep-context doc: what we're making, why, and how it's put together. For the quick AI on-ramp see `../AGENTS.md` (`CLAUDE.md` symlinks to it); for run/build/deploy see `../README.md`.
 
+> **★ THIS FILE IS THE PAST TENSE, and that is what keeps it from duplicating the
+> briefs.** It owns the STORY: what we believed, what the symptom looked like,
+> which change fixed it, and what it cost. The briefs own the RULE — imperative,
+> present tense, and lint-checked to contain no `PR <n>` and no "used to".
+> `scripts/measures.json` owns the NUMBER with its provenance, and a brief cites
+> the record id rather than the value.
+>
+> So a finding lands here once and is *pointed at* from the brief for the tree it
+> governs. Writing the story into a brief as well is the duplication that made
+> the root brief 161 kB; `../AGENTS.md` § "Keeping docs current" has the full
+> routing, and `scripts/AGENTS.md` has the discipline for the records.
+>
+> This file is **not** auto-loaded, so length costs nothing per session. Be as
+> generous here as the finding deserves.
+
 ---
 
 ## The product
