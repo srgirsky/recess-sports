@@ -616,6 +616,38 @@ continuous across a v1↔v2 switch in the same browser.
   camera pass: do not retune the eye until a screenshot looks better, because the
   binding constraint is occlusion and only a raycast can see it. Same blind spot
   `render.proxyFace` found in the bbox tests.
+- **★ PITCHING IS CHOOSING, AND THERE IS NO METER ON THE MOUND EITHER.** A human
+  supplies a `PitchPlan` — a KIND and a SPOT — which replaces `choosePitch` and
+  NOTHING else: the execution error stays downstream and is scaled by the
+  pitcher's `pitching` stat, so a player cannot out-throw his own kid's arm.
+  Measured: miss falls 0.754ft → 0.222ft across the arm band on the SAME plan and
+  seeds, which is also what proves the plan is not ignored (an inert plan shows
+  every arm missing identically). ★ A person who grooves it throws 83.3% strikes
+  against the CPU's 44.5%, because `choosePitch` aims OFF the edge when ahead to
+  tempt a chase — the gap is the size of the decision, not a defect.
+  `sim.humanPitch`.
+- **★ `LiveFrame` HAS A `windup` PHASE BECAUSE A CHOICE MUST BE COLLECTED BEFORE
+  THE THING IT DECIDES.** Without it the only yield preceding a throw is the
+  PREVIOUS pitch's, so a player would choose pitch N during pitch N-1's flight.
+  It cannot hang — v1's `FLOW.PITCH_CLOCK_MS` rule applies, and the view throws
+  for you. The camera must treat `windup` as part of the pitch or it cuts to the
+  field preset and back for one frame before every delivery.
+- **★ A SEND OVERRIDES JUDGEMENT, NEVER TRAFFIC — and the verb only bites on a
+  ball in the air.** `sendRunner` skips `worthTaking` (the CPU declines races it
+  projects to lose; a person may gamble) but `send` keeps `baseIsOpen`, because
+  that guard is about traffic and losing it reads as a runner VANISHING out of
+  `baseIds`. A FORCED runner cannot be held. ★ On anything on the ground the CPU
+  already sends every runner from every base at every speed, so a human send is a
+  no-op there — the first gate asserted `3 > 3` and passed. Test the verb on a
+  catchable fly, where the CPU makes him tag. ⚠️ And a transient shared bag is
+  LEGAL: at tick 1 of every play the batter runs to first while a forced runner
+  still stands on it. The invariant is that no two runners are SETTLED on one
+  base, home excluded. `sim.runnerSends`.
+- **★ THE HUMAN NEEDS A SIDE, OR THE TAP VERBS COLLIDE.** The same tap on a base
+  means THROW THERE when fielding and SEND HIM THERE when batting. v1 answers
+  this with seats (`humanBats`/`humanPitches`); v2's sim has no seat concept, so
+  `PlayView` bats in the top half and pitches in the bottom. Both verbs stay
+  reachable in one game, which is what that page exists to test.
 - **`src/v2/render/**` reads sim state and never writes it.** `render/bridge.ts`
   is the single named coupling point.
 - **Camera POLICY is pure** (`render/cameraCues.ts`, no three import) — the heir
@@ -921,7 +953,7 @@ continuous across a v1↔v2 switch in the same browser.
 | `src/v2/sim/contact.ts` | ★ v2. Bat meets ball: Nathan's Eq. 3 identity for exit velocity, `e_A` derived from the recoil factor, the undercut geometry for launch angle, and the same grip result `bounce.ts` uses for backspin. Replaces v1's categorical grounder/liner/fly roll. |
 | `src/v2/sim/pitch.ts` | ★ v2. The pitch as a real trajectory — break is EMERGENT Magnus, not a drawn bow. Release speed and elevation are SOLVED from the measured flight time, because aiming straight at the plate arrives 26ft underground. |
 | `src/v2/sim/play.ts` | ★ v2. The play reducer: a batted ball, nine fielders and up to four runners stepped to a `PlayOutcome` shaped exactly like v1's `LiveOutcome`. Owns possession (`secureBall`, the single choke point), throws and the emergent relay, base covering that self-heals when the conventional coverer is chasing, force-outs, tags at `reachFt()`, the CPU running policy, and the play clock. CPU-only; `PlayInputs` is a typed seam. |
-| `src/v2/sim/atbat.ts` | ★ v2. One pitch, in TWO acts so a person can bat: `throwPitch` (choose a kind and a SPOT, execution error nudges the release, `flyToPlate` says where it crossed) and `resolvePitch` (the umpire reads the crossing; the batter's single judgement error decides swing-or-take AND how well he timed it). `pitchAndSwing` is the thin wrapper that keeps every CPU caller unchanged. A human passes a `HumanSwing` and supplies those same two error terms himself — no chase rate, no whiff rate, and no human hit rate either. |
+| `src/v2/sim/atbat.ts` | ★ v2. One pitch, in TWO acts so a person can bat: `throwPitch` (choose a kind and a SPOT, execution error nudges the release, `flyToPlate` says where it crossed) and `resolvePitch` (the umpire reads the crossing; the batter's single judgement error decides swing-or-take AND how well he timed it). `pitchAndSwing` is the thin wrapper that keeps every CPU caller unchanged. A human may also pass a `PitchPlan` to `throwPitch`, which replaces `choosePitch` and nothing else. A human passes a `HumanSwing` and supplies those same two error terms himself — no chase rate, no whiff rate, and no human hit rate either. |
 | `src/v2/sim/game.ts` | ★ v2. Plate appearance → half → inning → game, headless. The first real value-use of `inning`/`gameflow`/`stats`; keeps base OCCUPANTS itself because `applyLivePlay` drops `baseIds`. Returns a line score, per-kid lines, a play-by-play and the counting stats PR 8 aggregates. |
 | `src/v2/sim/lineup.ts` | ★ v2. `planDefence` — the arm-aware planner `sim.gapBallOutcome.theArmAtShort` asked for. Each position's arm weight is DERIVED from `FIELD_POSITIONS` (distance from post to the bag it throws to), so nobody has to remember that left field needs an arm. v1's `autoAssign` is untouched. |
 | `src/v2/sim/steal.ts` | ★ v2. The stolen base as a RACE — runner's leg vs pitch flight + catcher read + release + `throwFlightSec` — replacing v1's probability formula. The JUMP is the only randomness (one error in TIME, the `plateJudgementFt` pattern) and there is **no attempt rate and no success rate**; the limit on frequency is situational, because a threshold cannot decline a steal whose margin is infinite. `sim.stealRace`. |

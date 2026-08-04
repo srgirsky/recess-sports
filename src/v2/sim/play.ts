@@ -90,6 +90,7 @@ import {
   remainingFt,
   runnerPos,
   settleRunner,
+  reverseLeg,
   startLeg,
   stepRunner,
   type Base,
@@ -106,7 +107,7 @@ import {
   type PositionId,
   type Vec2,
 } from './field';
-import type { HumanSwing } from './atbat';
+import type { HumanSwing, PitchPlan } from './atbat';
 import type { Rng } from './rng';
 
 // --- Types ------------------------------------------------------------------
@@ -161,6 +162,14 @@ export interface PlayInputs {
   pointer?: Vec2;
   dive?: boolean;
   throwTo?: { base: 1 | 2 | 3 | 4 };
+  /**
+   * Send this runner, or hold him. Character ids, v1's two verbs.
+   *
+   * ★ DECLARED IN PR 6 AND READ BY NOTHING UNTIL PR 16 — the fifth instance of
+   * the pattern after `isFair`, `startDive`, `bridge.ts` and `PlayInputs`
+   * itself. A send overrides `worthTaking`, which is the point: the CPU declines
+   * a race it projects to lose, and a person is allowed to gamble.
+   */
   sendRunner?: string;
   holdRunner?: string;
   /**
@@ -172,6 +181,14 @@ export interface PlayInputs {
    * the whole live loop is what keeps the view's seam a single type.
    */
   swing?: HumanSwing;
+  /**
+   * A person's pitch, chosen on the `windup` frame before it is thrown.
+   *
+   * Here for the reason `swing` is: `PlayInputs` is the generator's input type
+   * for the whole live loop, not a description of a ball in play. `stepPlay`
+   * never sees either.
+   */
+  pitch?: PitchPlan;
 }
 
 export interface PlayState {
@@ -371,7 +388,7 @@ export function stepPlay(s: PlayState, dtSec: number, inputs: PlayInputs = {}): 
   maybeThrow(s, inputs);
   moveRunners(s, dtSec);
   carrierTouchesBags(s);
-  decideRunning(s);
+  decideRunning(s, inputs);
   checkTermination(s);
   return s;
 }
@@ -1166,7 +1183,7 @@ function carrierTouchesBags(s: PlayState): void {
  * `startLeg` refuses an occupied bag, and asking in the wrong order means the
  * trailing runner holds when the lead one was about to vacate.
  */
-function decideRunning(s: PlayState): void {
+function decideRunning(s: PlayState, inputs: PlayInputs): void {
   if (s.flyCaught || s.homeRun) return;
   const loose = s.heldBy === null && !s.throw;
   const landed = !isCatchableFly(s);
@@ -1183,12 +1200,34 @@ function decideRunning(s: PlayState): void {
   for (const r of settled) {
     if (!mayBeSent(r, s.elapsedSec)) continue;
     const next = Math.min(4, r.from + 1) as Base;
+    // ★ A HELD RUNNER STAYS, UNLESS HE IS FORCED. Holding a forced runner is not
+    // a decision a player is allowed to make — the batter is coming and the bag
+    // is his, which is what `isForced` means. v1 draws the same line.
+    if (inputs.holdRunner === r.charId && !isForced(s, r)) continue;
+    // ★ A SENT RUNNER GOES WITHOUT ASKING `worthTaking`. The CPU declines races
+    // it projects to lose; a person is allowed to gamble, and being thrown out
+    // is the cost. `send` still refuses an occupied bag, because that guard is
+    // about traffic rather than judgement — two runners on one base does not
+    // read as a baserunning bug, it reads as a runner VANISHING.
+    if (inputs.sendRunner === r.charId) {
+      send(s, r, next);
+      continue;
+    }
     if (isForced(s, r) && landed) {
       send(s, r, next);
       continue;
     }
     if (!landed) continue;
     if (unattended || worthTaking(s, r, next)) send(s, r, next);
+  }
+
+  // ★ AND A RUNNER ALREADY MOVING CAN BE TURNED BACK. `reverseLeg` owns the two
+  // v1 bugs `defense.fielderSpeed.exposed` found — it refuses `from <= 0`, so a
+  // batter-runner cannot be turned toward the plate — and it costs the runner
+  // his speed, which is what makes the decision a real one.
+  if (inputs.holdRunner) {
+    const r = s.runners.find((x) => x.charId === inputs.holdRunner && x.done === null);
+    if (r && !isSettled(r) && !isForced(s, r)) reverseLeg(r, s.elapsedSec);
   }
 }
 

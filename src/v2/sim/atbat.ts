@@ -146,10 +146,24 @@ export function distOutsideZone(c: Crossing, batterHeightFt?: number): number {
  * comment says it plainly: "Ahead in the count it wastes pitches off the edge to
  * tempt a chase; behind, it grooves one." The numbers are re-expressed in feet.
  */
-export function choosePitch(
-  spec: PitchSpec,
-  rng: Rng
-): { kind: PitchKind; aimLateralFt: number; aimHeightFt: number } {
+/**
+ * What the pitcher decided: a KIND and a SPOT.
+ *
+ * ★ THIS IS THE WHOLE OF PITCHING, and it is deliberately not a meter. v2 has
+ * no throw power (`play.ts`'s header: "THERE IS NO THROW METER IN v2, BECAUSE
+ * THERE IS NO POWER"), and the same argument holds on the mound — how hard the
+ * ball leaves the hand is `throwSpeedFts`, a MEASURED quantity of the kid, and
+ * how far it misses the spot is his `pitching` stat. A meter would be a second
+ * source for a thing the roster already decides, and it would let a player
+ * out-throw his own arm.
+ */
+export interface PitchPlan {
+  kind: PitchKind;
+  aimLateralFt: number;
+  aimHeightFt: number;
+}
+
+export function choosePitch(spec: PitchSpec, rng: Rng): PitchPlan {
   const kinds = Object.keys(PITCHES) as PitchKind[];
   const kind = rng.pick(kinds);
   const [lo, hi] = zoneBandFt();
@@ -233,8 +247,17 @@ export interface HumanSwing {
  * same parent are indistinguishable from one that forked both. PR 13's golden
  * fingerprints and 30-game checksum are what prove it rather than assert it.
  */
-export function throwPitch(spec: PitchSpec, rng: Rng): PitchInFlight {
-  const plan = choosePitch(spec, rng.fork('choose'));
+export function throwPitch(spec: PitchSpec, rng: Rng, human?: PitchPlan): PitchInFlight {
+  // ★ A PERSON PICKS THE PLAN AND STILL MISSES BY HIS OWN ARM. `choosePitch` is
+  // the only thing a human replaces: the execution error below is untouched, so
+  // a weak-armed kid scatters exactly as far whoever chose the spot. That is
+  // what keeps the 30 characters meaningful on the mound, and it is the same
+  // shape as the swing — supply the model's inputs, never its outcomes.
+  //
+  // Not drawing from `fork('choose')` shifts nothing for anybody: substreams are
+  // keyed on (root seed, label), so "a substream that is never drawn from costs
+  // nothing and shifts nothing".
+  const plan = human ?? choosePitch(spec, rng.fork('choose'));
 
   // ★ THE SOLVE IS FOR THE SPOT; THE ERROR IS ON THE RELEASE. Perturbing the
   // AIM and re-solving costs 13.6ms a pitch — measured, and forty-nine minutes

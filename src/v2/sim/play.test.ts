@@ -910,3 +910,169 @@ describe('★ PlayInputs is finally read', () => {
     expect(a.flyCaught).toBe(b.flyCaught);
   });
 });
+
+describe('★ the runner verbs: a person may send, and may hold', () => {
+  // ★ `sendRunner`/`holdRunner` WERE DECLARED IN PR 6 AND READ BY NOTHING until
+  // PR 16 — the fifth instance of the pattern after `isFair`, `startDive`,
+  // `bridge.ts` and `PlayInputs` itself. So these gates assert BEHAVIOUR (a
+  // runner who moves when the CPU would not have moved him), never that a field
+  // is referenced: "wired but inert" is the failure mode this shape exists for.
+
+  // ★ A CATCHABLE FLY IS THE ONLY PLACE THE CPU RELIABLY HOLDS, and finding that
+  // took a sweep. On a grounder it sends EVERY runner from every base at every
+  // speed — forced or `worthTaking` — so a send changes nothing and the first
+  // version of this test asserted `3 > 3`. The verb only has teeth where the CPU
+  // would have declined, which is a fly still in the air: he must tag.
+  const SHALLOW_FLY: LaunchSpec = {
+    exitVelocityFts: 62,
+    launchAngleDeg: 35,
+    sprayDeg: -15,
+    spinRpm: 1500,
+    heightFt: 2.5,
+  };
+
+  /** One play with a runner aboard, and whatever the player asked for. */
+  function withRunner(
+    inputs: PlayInputs,
+    base: 1 | 2 | 3 = 2,
+    l: LaunchSpec = SHALLOW_FLY,
+    seed = 'send'
+  ) {
+    const runner = ROSTER.find((c) => c.stats.speed === 5) ?? ROSTER[0];
+    const sp = spec(l, { runners: [{ base, char: runner }] });
+    const s = beginPlay(sp, makeRng(seed));
+    const me = s.runners.find((r) => r.charId === runner.id)!;
+    let n = 0;
+    const reached: number[] = [];
+    const startedAt = me.from;
+    let everLeftBag = false;
+    while (s.phase === 'live' && n++ < Math.ceil(PLAY.MAX_PLAY_SEC / TICK) + 8) {
+      stepPlay(s, TICK, inputs);
+      reached.push(me.to);
+      if (me.from !== startedAt || me.alongFt > 0) everLeftBag = true;
+    }
+    return { s, me, outcome: finishPlay(s), maxTo: Math.max(...reached), everLeftBag };
+  }
+
+  it('★ sends a runner the CPU would have held', () => {
+    // The whole point of the verb: `worthTaking` declines a race it projects to
+    // lose, and a person is allowed to gamble. If the send were inert these two
+    // would be identical.
+    const held = withRunner({});
+    const sent = withRunner({ sendRunner: held.me.charId });
+    expect(sent.maxTo).toBeGreaterThan(held.maxTo);
+  });
+
+  it('★ holds a runner the CPU would have sent, and he never leaves the bag', () => {
+    // The mirror, so it needs the mirror situation: a grounder, where the CPU
+    // sends him off second on `worthTaking`. A hold must override that.
+    //
+    // ★ AND IT HAS TO ASSERT HE NEVER LEFT, not just where he ended up. The
+    // first version compared the furthest base reached, and the gate sweep
+    // showed it passing with the hold DELETED: without it he is sent and then
+    // turned back by `reverseLeg` in the same tick, so the sampled `to` never
+    // sees the base he was sent to. Two different behaviours, one number. A
+    // held runner should not move at all — being turned back costs him his
+    // speed and his position, which is a strictly worse outcome.
+    const free = withRunner({}, 2, GROUNDER(-22));
+    const held = withRunner({ holdRunner: free.me.charId }, 2, GROUNDER(-22));
+    expect(held.maxTo).toBeLessThan(free.maxTo);
+    expect(held.everLeftBag, 'a held runner must never start a leg at all').toBe(false);
+    expect(held.me.done, 'and holding him keeps him alive').not.toBe('out');
+  });
+
+  it('★ cannot hold a FORCED runner, because the bag is not his to keep', () => {
+    // The batter is coming. `isForced` is the rule, and a player does not get to
+    // suspend it — v1 draws the same line.
+    const runner = ROSTER.find((c) => c.stats.speed === 5) ?? ROSTER[0];
+    const sp = spec(GROUNDER(-22), { runners: [{ base: 1, char: runner }] });
+    const s = beginPlay(sp, makeRng('forced'));
+    const me = s.runners.find((r) => r.charId === runner.id)!;
+    let n = 0;
+    while (s.phase === 'live' && n++ < Math.ceil(PLAY.MAX_PLAY_SEC / TICK) + 8) {
+      stepPlay(s, TICK, { holdRunner: runner.id });
+    }
+    expect(me.to, 'a forced runner leaves first regardless').toBeGreaterThan(1);
+  });
+
+  it('never lets a send put two runners on one bag', () => {
+    // `send` keeps the occupancy guard, because that guard is about TRAFFIC
+    // rather than judgement — and two runners on one base does not read as a
+    // baserunning bug, it reads as a runner VANISHING out of `baseIds`.
+    //
+    // ★ NOT THE GUARD, AND THE SWEEP SAID SO. Deleting `baseIsOpen` from `send`
+    // is caught by the ACCOUNTING sweep ("never leaves a runner at the plate, or
+    // on base 4, or nowhere"), which is the test built for this invariant and
+    // sweeps every venue and spray to find it. This one only covers the case a
+    // human send can reach, and it did not fire on that mutation. Kept because
+    // it is the cheap direct check, labelled so nobody mistakes it for the line
+    // being held.
+    const a = ROSTER[3];
+    const b = ROSTER[4];
+    const sp = spec(GROUNDER(-22), {
+      runners: [
+        { base: 1, char: a },
+        { base: 2, char: b },
+      ],
+    });
+    const s = beginPlay(sp, makeRng('traffic'));
+    let n = 0;
+    while (s.phase === 'live' && n++ < Math.ceil(PLAY.MAX_PLAY_SEC / TICK) + 8) {
+      // Ask for BOTH to be sent every tick — the worst case for the guard.
+      stepPlay(s, TICK, { sendRunner: n % 2 ? a.id : b.id });
+      // ★ THE INVARIANT IS "TWO KIDS STANDING ON ONE BAG", NOT "two kids aiming
+      // at one bag", and getting that wrong made this test fail on the most
+      // ordinary state in baseball: at tick 1 the batter is running to first
+      // while the forced runner is still standing on it. That is legal and
+      // transient — he is leaving. Two runners SETTLED on the same base is the
+      // thing that cannot happen, because `finishPlay` writes one `baseIds`
+      // entry and the fold is handed back fewer runners than it sent.
+      //
+      // Home is excluded for `baseIsOpen`'s own stated reason: it takes everybody.
+      const parked = s.runners
+        .filter((r) => r.done === null && r.to === r.from && r.from < 4)
+        .map((r) => r.from);
+      expect(new Set(parked).size, 'two runners standing on one bag').toBe(parked.length);
+    }
+    const out = finishPlay(s);
+    const onBase = out.baseIds.filter(Boolean);
+    expect(new Set(onBase).size).toBe(onBase.length);
+  });
+
+  it('★ turns a moving runner back, and it costs him his speed', () => {
+    // `reverseLeg` owns v1's two `defense.fielderSpeed.exposed` bugs: it refuses
+    // `from <= 0`, so a batter-runner can never be turned toward the plate.
+    const runner = ROSTER.find((c) => c.stats.speed === 5) ?? ROSTER[0];
+    const sp = spec(GAP, { runners: [{ base: 1, char: runner }] });
+    const s = beginPlay(sp, makeRng('turn'));
+    const me = s.runners.find((r) => r.charId === runner.id)!;
+    let turned = false;
+    let n = 0;
+    while (s.phase === 'live' && n++ < Math.ceil(PLAY.MAX_PLAY_SEC / TICK) + 8) {
+      const moving = !turned && me.to > me.from && me.from >= 1;
+      stepPlay(s, TICK, moving ? { holdRunner: runner.id } : {});
+      if (moving && me.to < me.from) turned = true;
+      expect(me.from, 'never turned toward the plate').toBeGreaterThanOrEqual(0);
+    }
+    // He must never end up at base 4 having not scored, or at a negative bag.
+    expect(me.from).toBeGreaterThanOrEqual(0);
+    expect(me.from).toBeLessThanOrEqual(4);
+  });
+
+  it('the batter-runner is never turned back by a hold', () => {
+    // `from === 0` is refused inside `reverseLeg`, and the CPU rundown rule
+    // skips forced runners. A hold aimed at the batter must be a no-op.
+    const { s, outcome } = (() => {
+      const sp = spec(GROUNDER(-22));
+      const st = beginPlay(sp, makeRng('batter'));
+      let n = 0;
+      while (st.phase === 'live' && n++ < Math.ceil(PLAY.MAX_PLAY_SEC / TICK) + 8) {
+        stepPlay(st, TICK, { holdRunner: BATTER.id });
+      }
+      return { s: st, outcome: finishPlay(st) };
+    })();
+    const batter = s.runners.find((r) => r.charId === s.batterId)!;
+    expect(batter.from).toBeGreaterThanOrEqual(0);
+    expect(outcome.baseIds.filter(Boolean).length + (outcome.batterOut ? 1 : 0)).toBeGreaterThan(0);
+  });
+});

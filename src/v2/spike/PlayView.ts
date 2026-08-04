@@ -53,6 +53,7 @@ import { RIGS, chooseCamera, damp, type CameraCue } from '../render/cameraCues';
 import { applyFrame, cameraInputFor, type SceneRefs } from '../render/bridge';
 import { simulateGameLive, type LiveFrame } from '../sim/game';
 import type { PlayInputs } from '../sim/play';
+import type { PitchKind } from '../sim/pitch';
 import { FIRST, SECOND, THIRD, HOME, dist, type Vec2 } from '../sim/field';
 import { makeRng } from '../sim/rng';
 import { VENUE_GEOMETRY, type VenueId } from '../sim/field';
@@ -73,6 +74,19 @@ import type { KidView } from '../render/CharacterModel';
  * ±0.22s, measured) so the whole of it is playable.
  */
 const SWING_TAIL_SEC = 0.35;
+
+/**
+ * How long the pitcher may take before the ball is thrown for him, seconds.
+ *
+ * ★ NOTHING MAY HANG WAITING FOR A PERSON. v1's `FLOW.PITCH_CLOCK_MS` exists for
+ * the same reason and its note is the rule: "dither on the pitch menu and the
+ * game throws a fastball for you; nothing on the batting side waits for input,
+ * so no mode can hang".
+ */
+const PITCH_CLOCK_SEC = 8;
+
+/** The four kinds, in the order the picker shows them. */
+const KINDS: PitchKind[] = ['fastball', 'changeup', 'curve', 'screwball'];
 
 /** How long a between-pitch beat lasts, seconds. v1's `FLOW.BETWEEN_PITCH_MS`. */
 const BETWEEN_SEC = 2.55;
@@ -137,8 +151,14 @@ export class PlayView {
   private readonly platePlane = new Plane(new Vector3(0, 0, 1), 0);
   /** Where the player is holding the barrel, ft above the plate. */
   private aimHeightFt = 2;
+  /** Where the player is aiming the PITCH, in plate coordinates, ft. */
+  private spot = { x: 0, y: 2 };
+  private pitchKind: PitchKind = 'fastball';
+  /** Real seconds spent on the current windup, so it can never hang. */
+  private windupElapsed = 0;
   private zoneBox: LineSegments | null = null;
   private aimBar: Mesh | null = null;
+  private spotMarker: Mesh | null = null;
   private readonly ndc = new Vector2();
   private pointerDownAt = 0;
   private frame: LiveFrame | null = null;
@@ -180,6 +200,7 @@ export class PlayView {
     canvas.addEventListener('pointerdown', this.onPointerDown);
     canvas.addEventListener('pointermove', this.onPointerMove);
     canvas.addEventListener('pointerup', this.onPointerUp);
+    window.addEventListener('keydown', this.onKeyDown);
   }
 
   /**
@@ -207,6 +228,15 @@ export class PlayView {
    * MEANS. So the cursor is a bar, not a dot — a two-axis cursor would have put
    * a lateral intent on the wire that nothing downstream reads. `sim.humanSwing`.
    */
+  private toPlate(e: PointerEvent): { x: number; y: number } | null {
+    const r = this.canvas.getBoundingClientRect();
+    this.ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    this.ray.setFromCamera(this.ndc, this.camera);
+    const hit = new Vector3();
+    if (!this.ray.ray.intersectPlane(this.platePlane, hit)) return null;
+    return { x: hit.x, y: hit.y };
+  }
+
   private toPlateHeight(e: PointerEvent): number | null {
     const r = this.canvas.getBoundingClientRect();
     this.ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
@@ -216,9 +246,28 @@ export class PlayView {
     return hit.y;
   }
 
-  /** Is the player batting right now? Only during a pitch in flight. */
+  /**
+   * ★ THE HUMAN BATS IN THE TOP HALF AND TAKES THE MOUND IN THE BOTTOM.
+   *
+   * A spike decision, and it has to be made somewhere: the same tap on a base
+   * means THROW THERE when you are fielding and SEND HIM THERE when you are
+   * batting, so without a side the two verbs collide. v1 answers this with
+   * seats (`humanBats`/`humanPitches` on `SeatState`); v2's sim has no seat
+   * concept yet, so the view picks the half. Both verbs stay reachable in one
+   * game, which is what this page exists to test.
+   */
+  private get humanBats(): boolean {
+    return this.frame?.half === 'top';
+  }
+
+  /** Is the player swinging right now? Only during a pitch he is batting at. */
   private get batting(): boolean {
-    return this.frame?.phase === 'pitch';
+    return this.frame?.phase === 'pitch' && this.humanBats;
+  }
+
+  /** Is the player choosing a pitch right now? */
+  private get onTheMound(): boolean {
+    return this.frame?.phase === 'windup' && !this.humanBats;
   }
 
   private readonly onPointerDown = (e: PointerEvent): void => {
@@ -226,6 +275,11 @@ export class PlayView {
     if (this.batting) {
       const h = this.toPlateHeight(e);
       if (h !== null) this.aimHeightFt = h;
+      return;
+    }
+    if (this.onTheMound) {
+      const at = this.toPlate(e);
+      if (at) this.spot = at;
       return;
     }
     const at = this.toField(e);
@@ -240,6 +294,11 @@ export class PlayView {
     if (this.batting) {
       const h = this.toPlateHeight(e);
       if (h !== null) this.aimHeightFt = h;
+      return;
+    }
+    if (this.onTheMound) {
+      const at = this.toPlate(e);
+      if (at) this.spot = at;
       return;
     }
     if (e.buttons === 0) return;
@@ -265,11 +324,54 @@ export class PlayView {
       this.inputs.swing ??= { atSec: this.pitchElapsed, aimHeightFt: this.aimHeightFt };
       return;
     }
+    if (this.onTheMound) {
+      // ★ THE TAP RELEASES IT. There is no meter to fill — `sim.humanPitch`:
+      // how hard it leaves the hand is the kid's arm and how far it misses the
+      // spot is his `pitching` stat, so a meter would be a second source for
+      // something the roster already decides.
+      this.inputs.pitch = {
+        kind: this.pitchKind,
+        aimLateralFt: this.spot.x,
+        aimHeightFt: this.spot.y,
+      };
+      return;
+    }
     const at = this.toField(e);
     if (!at) return;
+    if (this.humanBats) return this.tapBaseAsRunner(at);
     const bag = nearestBase(at);
     if (bag !== null) this.inputs.throwTo = { base: bag };
     else this.inputs.dive = true;
+  };
+
+  /**
+   * v1's baserunning verb, unchanged: tap a base AHEAD of a runner to send him,
+   * tap one BEHIND him to turn him back.
+   *
+   * The runner is chosen by the base rather than by tapping the kid, because a
+   * kid at 40px is a smaller target than a bag and there may be three of them
+   * converging on the same spot.
+   */
+  private tapBaseAsRunner(at: Vec2): void {
+    const play = this.frame?.play;
+    const bag = nearestBase(at);
+    if (!play || bag === null) return;
+    const live = play.runners.filter((r) => r.done === null);
+    const ahead = live.find((r) => r.from + 1 === bag);
+    if (ahead) {
+      this.inputs.sendRunner = ahead.charId;
+      return;
+    }
+    const behind = live.find((r) => r.from >= bag && r.from > 0);
+    if (behind) this.inputs.holdRunner = behind.charId;
+  }
+
+  /** Number keys pick the pitch. Labelled in the HUD, so nothing is hidden. */
+  private readonly onKeyDown = (e: KeyboardEvent): void => {
+    const i = KINDS.indexOf(KINDS[Number(e.key) - 1]);
+    if (Number(e.key) >= 1 && Number(e.key) <= KINDS.length && i >= 0) {
+      this.pitchKind = KINDS[Number(e.key) - 1];
+    }
   };
 
   async start(): Promise<void> {
@@ -351,15 +453,30 @@ export class PlayView {
     );
     this.aimBar.position.set(HOME.x, this.aimHeightFt, HOME.z);
     this.scene.add(this.aimBar);
+
+    // The pitcher's spot. A point, not a bar — he aims in two axes, and unlike
+    // the batter his lateral intent IS read (`aimLateralFt` reaches the release).
+    this.spotMarker = new Mesh(
+      new BoxGeometry(0.35, 0.35, 0.02),
+      new MeshStandardMaterial({ color: 0xff5470, emissive: 0x66131f })
+    );
+    this.spot = { x: 0, y: (lo + hi) / 2 };
+    this.spotMarker.position.set(this.spot.x, this.spot.y, HOME.z);
+    this.scene.add(this.spotMarker);
   }
 
   /** Show the plate cues only while a pitch is in the air. */
   private paintPlateCues(): void {
-    const on = this.batting;
-    if (this.zoneBox) this.zoneBox.visible = on;
+    // The zone is shown to whoever is being asked to aim at it — the batter
+    // while the ball is in the air, the pitcher while he is choosing.
+    if (this.zoneBox) this.zoneBox.visible = this.batting || this.onTheMound;
     if (this.aimBar) {
-      this.aimBar.visible = on;
+      this.aimBar.visible = this.batting;
       this.aimBar.position.y = this.aimHeightFt;
+    }
+    if (this.spotMarker) {
+      this.spotMarker.visible = this.onTheMound;
+      this.spotMarker.position.set(this.spot.x, this.spot.y, HOME.z);
     }
   }
 
@@ -375,6 +492,7 @@ export class PlayView {
     this.frame = r.done ? null : r.value;
     if (!this.frame) return;
     if (this.frame.phase === 'pitch') this.pitchElapsed = 0;
+    if (this.frame.phase === 'windup') this.windupElapsed = 0;
     if (this.frame.phase === 'between') this.wait = BETWEEN_SEC;
     this.showOnly(this.frame);
   }
@@ -419,6 +537,13 @@ export class PlayView {
     if (this.frame.phase === 'between') {
       this.wait -= step;
       if (this.wait <= 0) this.advance();
+      return;
+    }
+    if (this.frame.phase === 'windup') {
+      this.windupElapsed += step;
+      // A person gets until the pitch clock; the CPU throws straight away.
+      const waiting = this.onTheMound && !this.inputs.pitch;
+      if (!waiting || this.windupElapsed >= PITCH_CLOCK_SEC) this.advance();
       return;
     }
     if (this.frame.phase === 'pitch') {
@@ -495,7 +620,12 @@ export class PlayView {
     const half = frame.half === 'top' ? '▲' : '▼';
     const outs = '●'.repeat(frame.outs) + '○'.repeat(Math.max(0, 3 - frame.outs));
     const bases = frame.bases.map((b) => (b ? '◆' : '◇')).join('');
-    const line = `${half}${frame.inning}  ROCKETS ${frame.awayScore} – ${frame.homeScore} COMETS   ${frame.balls}-${frame.strikes}  ${outs}  ${bases}`;
+    // ★ THE PICKER IS SHOWN, NOT HIDDEN BEHIND A KEYBINDING NOBODY KNOWS.
+    const picker = this.onTheMound
+      ? '   ' + KINDS.map((k, i) => (k === this.pitchKind ? `[${i + 1} ${k}]` : `${i + 1} ${k}`)).join(' ')
+      : '';
+    const verb = this.humanBats ? '  🏏 YOU BAT' : '  ⚾ YOU PITCH';
+    const line = `${half}${frame.inning}  ROCKETS ${frame.awayScore} – ${frame.homeScore} COMETS   ${frame.balls}-${frame.strikes}  ${outs}  ${bases}${verb}${picker}`;
     if (line !== this.hudText) {
       this.hudEl.textContent = line;
       this.hudText = line;

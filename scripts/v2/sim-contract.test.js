@@ -30,6 +30,7 @@ import {
 } from '../../src/v2/sim/ball.ts';
 import { FLIGHT_HZ } from '../../src/v2/sim/flight.ts';
 import { RIGS } from '../../src/v2/render/cameraCues.ts';
+import { throwPitch } from '../../src/v2/sim/atbat.ts';
 import { VENUE_GEOMETRY, fenceDistAt } from '../../src/v2/sim/field.ts';
 import { BAT, BOUNCE, PITCH } from '../../src/v2/sim/params.ts';
 import { groundCor } from '../../src/v2/sim/bounce.ts';
@@ -1785,5 +1786,81 @@ describe('render.pitchFraming', () => {
     // A centred rig is the thing this record exists to say cannot work.
     expect(blocked['[0,8.2,-18]']).toBe('7/7');
     expect(RIGS.PITCH.eye[0]).toBeGreaterThan(7);
+  });
+});
+
+describe('sim.humanPitch', () => {
+  const rec = M.sim.humanPitch;
+
+  it('is a NOTE, and refuses a meter in words as well as in code', () => {
+    wellFormed(rec, { reference: 'derived', status: 'note' });
+    expect(rec.thereISNOMETER).toMatch(/THERE IS NO THROW METER IN v2/);
+    expect(rec.ours.meter).toBe('none');
+  });
+
+  it('★ recomputes the arm gradient from the sim, not from the record', () => {
+    // ★ AND IT IS ALSO WHAT PROVES THE PLAN IS NOT IGNORED. A wired-but-inert
+    // plan shows every arm missing identically — the failure mode `PlayInputs`
+    // shipped for eight PRs — so a monotone gradient over the SAME plan and the
+    // SAME seeds is the honest check.
+    const [lo, hi] = zoneBandFt();
+    const plan = { kind: 'fastball', aimLateralFt: 0, aimHeightFt: (lo + hi) / 2 };
+    const byArm = (v) =>
+      ROSTER.reduce((b, c) =>
+        Math.abs(c.stats.pitching - v) < Math.abs(b.stats.pitching - v) ? c : b
+      );
+    const miss = (arm) => {
+      const pitcher = byArm(arm);
+      let sum = 0;
+      const N = 120;
+      for (let i = 0; i < N; i++) {
+        const inF = throwPitch(
+          { pitcher, batter: ROSTER[0], count: { balls: 0, strikes: 0 } },
+          makeRng(`a${i}`),
+          plan
+        );
+        const dx = inF.crossing.x - plan.aimLateralFt;
+        const dy = inF.crossing.y - plan.aimHeightFt;
+        sum += Math.sqrt(dx * dx + dy * dy);
+      }
+      return sum / N;
+    };
+    let prev = Infinity;
+    for (const row of rec.measured.aimedAtTheMiddle) {
+      const got = miss(row.arm);
+      expect(got, `arm ${row.arm}`).toBeLessThan(prev);
+      prev = got;
+    }
+    // The zone the record quotes is the zone the umpire uses.
+    expect(rec.measured.zoneFt.lo).toBeCloseTo(lo, 2);
+    expect(rec.measured.zoneFt.hi).toBeCloseTo(hi, 2);
+  });
+
+  it('★ keeps the finding that a groover out-strikes the CPU', () => {
+    // Not a defect in either: `choosePitch` aims OFF the edge when ahead, which
+    // is v1's reasoning kept. The gap is the size of the decision handed over.
+    const human = rec.measured.aimedAtTheMiddle.find((r) => r.arm === 5).strikePct;
+    const cpu = rec.measured.cpuChoosingItsOwnSpots.find((r) => r.arm === 5).strikePct;
+    expect(human).toBeGreaterThan(cpu);
+    expect(rec.theFINDING).toMatch(/tempting a chase/);
+  });
+});
+
+describe('sim.runnerSends', () => {
+  const rec = M.sim.runnerSends;
+
+  it('is a NOTE that records where the verb has teeth', () => {
+    wellFormed(rec, { reference: 'derived', status: 'note' });
+    expect(rec.why).toMatch(/READ BY NOTHING FOR TEN PRs/);
+    expect(rec.measured.onAGrounderTheCPUSENDSEVERYBODY).toMatch(/thrown out in every one/);
+  });
+
+  it('★ pins the two rules a person does not get', () => {
+    expect(rec.ours.sendOverrides).toBe('worthTaking');
+    expect(rec.ours.sendNeverOverrides).toBe('baseIsOpen');
+    expect(rec.ours.holdNeverOverrides).toBe('isForced');
+    // And the trap that made the first gate wrong is written down, because it
+    // is the thing the next person will hit.
+    expect(rec.aTRANSIENTSHAREDBAGISLEGAL).toMatch(/tick 1 of EVERY play/);
   });
 });

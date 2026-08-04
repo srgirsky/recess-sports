@@ -124,7 +124,14 @@ export type SimEvent =
  * the only consumer and a lint holds it read-only.
  */
 export interface LiveFrame {
-  phase: 'pitch' | 'live' | 'between';
+  /**
+   * ★ `windup` IS THE BEAT IN WHICH THE PITCHER DECIDES, and it exists for the
+   * same reason the pitch is now yielded before it resolves: a choice a person
+   * makes must be collected BEFORE the thing it decides happens. Without it the
+   * only yield preceding a throw is the PREVIOUS pitch's, so a player would be
+   * choosing pitch N during pitch N-1's flight.
+   */
+  phase: 'windup' | 'pitch' | 'live' | 'between';
   inning: number;
   half: 'top' | 'bottom';
   outs: number;
@@ -286,8 +293,13 @@ function* playAtBatLive(
       throw new Error(`plate appearance exceeded ${GAME.MAX_PITCHES_PER_PA} pitches`);
     }
     tally.pitches += 1;
-    syncFrame(frame, half, 'pitch');
+    syncFrame(frame, half, 'windup');
     frame.play = null;
+    frame.pitch = null;
+    // The mound's decision, if a person is making it. A CPU pitcher passes
+    // nothing and `choosePitch` runs exactly as before.
+    const chosen = ((yield frame) ?? {}).pitch;
+    syncFrame(frame, half, 'pitch');
     // ★ THE PITCH IS THROWN, YIELDED, AND ONLY THEN JUDGED — and that ordering
     // is the whole architectural change. `pitchAndSwing` did all three in one
     // call, so the frame the view animated described a ball whose fate was
@@ -308,7 +320,7 @@ function* playAtBatLive(
       count: half.state.count,
       plate: args.plate,
     };
-    const inFlight = throwPitch(spec, pitchRng);
+    const inFlight = throwPitch(spec, pitchRng, chosen);
     frame.pitch = { release: inFlight.release, travelSec: inFlight.travelSec, kind: inFlight.kind };
     // ★ AND THE SWING ARRIVES THROUGH THE YIELD. The view holds this frame for
     // the ball's whole flight — it already did, to animate it — so the tap has
