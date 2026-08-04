@@ -97,7 +97,28 @@ export const RIGS: Record<CameraPreset, CameraRig> = {
   // keeps him out of the sightline too, and `PITCH_HERO` was already offset
   // this way. Nothing in the policy changes — `chooseCamera` focuses PITCH at
   // [0, 2.4, 1] and always did; only where it watches from moved.
-  PITCH: { eye: [7.5, 8.2, -18], target: [0, 2.6, 6], fov: 42 },
+  //
+  // ★ THE CAMERA PASS `render.pitchFraming` ASKED FOR, AND THE TWO THINGS IT
+  // TURNED OUT TO BE. Sweeping 233 occlusion-free eyes × fov × target found the
+  // shipped shot was wrong in ways the offset was never going to fix:
+  //
+  //   * THE TARGET, not the eye, was putting the zone off-centre. The rig
+  //     looked 6ft IN FRONT of the plate, so with the eye offset +7.5 the zone
+  //     landed at x +0.13 of frame — pushed toward the batter and the catcher,
+  //     which is most of why the shot read as crowded. Looking AT the plate
+  //     (z 0) centres it exactly, and costs nothing.
+  //   * THE ZONE WAS TOO SMALL TO JUDGE. 8.3% of frame height for the one
+  //     rectangle a six-year-old has to read. Coming in to 16ft on a longer
+  //     lens (34° from 42°) puts it at 12.3%, up 48%.
+  //
+  // ★ AND CLOSER IS NOT BETTER, which is what the sweep had to be run to learn.
+  // The obvious move — get near the plate so the zone is big — makes the
+  // CATCHER the subject: at 11ft he spans 52% of frame width against 23% here,
+  // and every close candidate was worse-composed than what it replaced. Depth
+  // is what keeps him a foreground element, so the zone is bought with FOV
+  // rather than with distance. The eye stays offset 7.5 for the reason above
+  // it; occlusion is angular and no amount of dolly or lens changes that.
+  PITCH: { eye: [7.5, 5, -16], target: [0, 3.2, 0], fov: 34 },
   PITCH_HERO: { eye: [3.6, 4.4, -11], target: [0, 2.6, 2], fov: 36 },
   // ★ SOLVED, not chosen. See FIELD_SOLVE below and cameraCues.test.ts.
   // The ESTABLISHING shot: conforms to `geometry.fieldScale`, shows the whole

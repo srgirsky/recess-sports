@@ -1163,10 +1163,54 @@ tweens follow wall-clock `Date.now()`" — with CSS as the second clock. The aud
 disables transitions, which is right rather than a workaround: it measures
 layout, and a transition is not layout.
 
-Next: the camera pass; then the router, title and result screens that turn v2
-from a spike into an app; then the draft, which is the actual product. After
-those, the fielding and batting assists sized from a real child's aim error, and
-seats, so the side is the sim's answer rather than the view's.
+### PR 19 — the camera pass: the target was the problem, not the eye
+
+`render.pitchFraming` had asked for this explicitly, and warned against doing it
+by nudging the eye until a screenshot improved. Done as a solve instead, and it
+turned out to be two things, neither of which was the offset everyone was looking
+at.
+
+**★ The TARGET was pushing the zone off-centre.** The rig looked six feet *in
+front of* the plate, so with the eye offset +7.5 the zone landed at x +0.13 of
+frame — shoved toward the batter and the catcher, which is most of why the shot
+read as crowded. Looking *at* the plate centres it at +0.03 and costs nothing at
+all. Nobody had swept the target because it had never been treated as a free
+parameter.
+
+**★ And the zone was too small to judge.** 8.3% of frame height, for the one
+rectangle a six-year-old has to read. Coming in to 16ft on a 34° lens instead of
+18ft on 42° puts it at **12.2%, up 48%**, and the catcher grows only 23% → 25% of
+frame width.
+
+**★ Closer is not better, and the sweep had to be run to learn it.** The obvious
+move is to get near the plate so the zone is big. It makes the *catcher* the
+subject: at an 11ft eye he spans **52%** of frame width, and every close candidate
+was worse-composed than the thing it replaced while scoring better on zone size.
+Depth is what keeps him a foreground element, so the zone is bought with FOV
+rather than with distance. Method worth keeping: occlusion depends only on the
+eye, so 490 eyes were raycast first (233 clear) and the 1,343 surviving
+eye × fov × target combinations were scored on pure projection — 270× cheaper
+than sweeping all four together, which simply timed out.
+
+The record stays `known-drift`, honestly: the shot still reads from the first-base
+side, because the eye must stay offset and a centred one is 5/7 blocked. Both ways
+out are bigger than a camera change — moving the catcher's post is a sim change
+(it sets the steal race), and composing him as a deliberate foreground crop is art
+direction rather than arithmetic.
+
+**And the new framing immediately exposed something else: the player's barrel was
+unclamped.** The plate plane a pointer is cast against is infinite, so a pointer
+out at the fence set the barrel **5.97ft** up — above the batter's own head —
+drawing the aim bar floating in the sky while every swing missed for a reason
+nothing on screen explained. It clamps to the kid's own height now, in the *view*,
+because `sim.humanSwing`'s rule is that a human's pointer IS the placement and the
+model must not reinterpret it. Deliberately not narrowed toward the zone: that
+would be a batting assist, and there is none.
+
+Next: the router, title and result screens that turn v2 from a spike into an app;
+then the draft, which is the actual product. After those, the fielding and batting
+assists sized from a real child's aim error, and seats, so the side is the sim's
+answer rather than the view's.
 
 ---
 
