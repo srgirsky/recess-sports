@@ -12,6 +12,17 @@
 // scene that subscribes MUST unsubscribe on its shutdown event; torn down by
 // ResultScene exit, the reconnect timeout, and defensively by
 // SchoolyardScene.create().
+//
+// ⚠️ PEERJS IDS MUST BE ALPHANUMERIC. The emoji room code is UI-ONLY; the wire
+// id is `recess-` + 4 hex digits, and net/protocol.ts's emojiToRoomId is the one
+// conversion. Handing a broker an emoji id fails at connect time, not at build.
+//
+// ⚠️ BUMP NET.PROTOCOL_VERSION ON ANY WIRE CHANGE. An old deployed build must be
+// rejected at hello rather than desyncing mid-game — GitHub Pages serves
+// whatever the other player last loaded, so two versions WILL meet.
+//
+// Scene-side rules (guest never simulates, draft-pick acks and retransmits, what
+// resolves on which device) are in src/scenes/AGENTS.md.
 // ---------------------------------------------------------------------------
 
 import Peer, { type DataConnection } from 'peerjs';

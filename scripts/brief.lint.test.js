@@ -78,7 +78,7 @@ const read = (p) => readFileSync(join(ROOT, p), 'utf8');
 const BUDGET = {
   // The always-loaded one. Every byte here is spent in every session, whether or
   // not the session goes anywhere near the thing the byte describes.
-  'AGENTS.md': { bytes: 105_000, lines: 290, imperative: false, numbersFree: false },
+  'AGENTS.md': { bytes: 56_000, lines: 290, imperative: false, numbersFree: false },
 
   // ★ A LAZY BRIEF IS CHARGED ONLY TO SESSIONS IN ITS SUBTREE, which is why
   // these two sit well above the always-loaded file's eventual ceiling. The v2
@@ -88,6 +88,13 @@ const BUDGET = {
   // exists to give for bytes that no v1 session ever pays.
   'src/v2/AGENTS.md': { bytes: 23_300, lines: 370, imperative: true, numbersFree: false },
   'src/v2/render/AGENTS.md': { bytes: 13_400, lines: 215, imperative: true, numbersFree: false },
+
+  // v1's four trees. Same argument as the v2 pair: lazily loaded, so the cost
+  // falls only on sessions editing that layer.
+  'src/systems/AGENTS.md': { bytes: 11_500, lines: 200, imperative: true, numbersFree: false },
+  'src/scenes/AGENTS.md': { bytes: 10_500, lines: 190, imperative: true, numbersFree: false },
+  'src/art/AGENTS.md': { bytes: 10_300, lines: 190, imperative: true, numbersFree: false },
+  'src/ui/AGENTS.md': { bytes: 5_000, lines: 95, imperative: true, numbersFree: false },
 
   // The measurement instrument and the lints.
   'scripts/AGENTS.md': { bytes: 3_500, lines: 70, imperative: true, numbersFree: false },

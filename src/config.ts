@@ -2,6 +2,46 @@
 // Central tuning knobs. When something needs to "feel" different — swing timing,
 // game length, colors — change it HERE, not buried in a scene. This is the file
 // you'll edit most while dialing in the fun.
+//
+// ★ READ `scripts/measures.json` BEFORE TUNING ANY "BACKYARD FEEL" CONSTANT.
+// It is the enforced record, narrated in docs/research/backyard-2001-video-notes.md:
+// every entry names the constant here that it informs, and carries an `n`, a
+// DERIVED confidence and a `status` that scripts/measure/conformance.test.js
+// asserts on every `npm test`. Add a record rather than only a paragraph — the
+// audit trail runs source -> record -> constant, and a constant with no record
+// is exactly how FIELDER_SPEED spent five consecutive retunes at 2.48x runner
+// speed with nothing to catch it.
+//
+// ★ THE `pace.*` RECORDS ARE REAL-MILLISECOND CLAIMS, and that is only true
+// because sim-ms IS real-ms — GameScene steps the live sim on Phaser's raw
+// delta. A global tempo scalar would change what the game does and change
+// nothing the conformance test computes, so a closed attempt at one put real
+// home-to-first far outside the value the record went on asserting, with every
+// test green. `scripts/simclock.lint.test.js` is the guard that actually fires;
+// a tempo dial may still be added, but its header says what has to be taught to
+// the records first.
+//
+// ⚠️ THREE FAMILIES HERE ARE DERIVED, NOT MEASURED, and are the first dials to
+// reach for if the game plays wrong:
+//   1. Swing windows (TIMING, MODES.*.swingTiming, SWING_TYPES deltas). A timing
+//      window is an internal tolerance with NO on-screen representation, so the
+//      reference game's can never be read off footage. They are set as a
+//      FRACTION of the flight they judge and must move with it. See
+//      `pace.swingWindows` — and note a test enforces that CONTACT stays below
+//      the FASTEST possible travelMs in every mode, or timing stops being a
+//      skill.
+//   2. Every FLOW beat except BETWEEN_PITCH_MS and UMP_CALL_DELAY_MS.
+//   3. The whole `defense` block.
+//
+// ★ THE DIFFICULTY TIER VARIES YOUR DEFENCE, NOT JUST THE CPU.
+// DIFFICULTY_TIERS[d].fielding holds per-tier multipliers onto LIVE.ASSIST,
+// resolved into LiveParams by resolveLiveParams(mode, overrides, difficulty).
+// Read the assist off LiveParams in the sim, NEVER straight from LIVE.ASSIST, or
+// the tier silently stops applying. Rules for that live in src/systems/AGENTS.md.
+//
+// Assist strength is DERIVED and unmeasurable from footage — it has no on-screen
+// representation — so `defense.fieldingAssist` pins our values and records why
+// the reference game cannot be read for it.
 // ---------------------------------------------------------------------------
 
 /** The game's internal resolution. Phaser's Scale.FIT scales this to any screen. */

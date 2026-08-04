@@ -632,77 +632,77 @@
   {
     "anchor": "src/systems/logic.test.ts",
     "claim": "Pure game logic lives in src/systems/ with NO Phaser imports.",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/AGENTS.md",
     "kind": "bullet",
     "section": "Architecture rules — v1 (follow these)"
   },
   {
     "anchor": "ApplyResult.movements",
     "claim": "Scenes are the thin view layer.",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/AGENTS.md",
     "kind": "bullet",
     "section": "Architecture rules — v1 (follow these)"
   },
   {
     "anchor": "LiveInputs.sendRunner/holdRunner",
     "claim": "Balls in play run through the live-play sim",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/AGENTS.md",
     "kind": "bullet",
     "section": "Architecture rules — v1 (follow these)"
   },
   {
     "anchor": "setTeamVariant(ids, teamSuffix(color, logo))",
     "claim": "Team jerseys ride a texture-VARIANT resolver in art/textureFactory.ts",
-    "owner": "AGENTS.md",
+    "owner": "src/art/AGENTS.md",
     "kind": "bullet",
     "section": "Architecture rules — v1 (follow these)"
   },
   {
     "anchor": "GRAD.HAIR_LITE/HAIR_DARK",
     "claim": "Character art is generated once in BootScene",
-    "owner": "AGENTS.md",
+    "owner": "src/art/AGENTS.md",
     "kind": "bullet",
     "section": "Architecture rules — v1 (follow these)"
   },
   {
     "anchor": "resolveLiveParams(mode, overrides, difficulty)",
     "claim": "All \"feel\" tunables live in src/config.ts",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/AGENTS.md",
     "kind": "bullet",
     "section": "Architecture rules — v1 (follow these)"
   },
   {
     "anchor": "BattingView.swingBatter(whiff)",
     "claim": "Reusable juice",
-    "owner": "AGENTS.md",
+    "owner": "src/ui/AGENTS.md",
     "kind": "bullet",
     "section": "Architecture rules — v1 (follow these)"
   },
   {
     "anchor": "public/fonts/fredoka.woff2",
     "claim": "Shared UI kit",
-    "owner": "AGENTS.md",
+    "owner": "src/ui/AGENTS.md",
     "kind": "bullet",
     "section": "Architecture rules — v1 (follow these)"
   },
   {
     "anchor": "scripts/goldlog.browser.js",
     "claim": "GameScene runs on a two-SEAT model.",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/AGENTS.md",
     "kind": "bullet",
     "section": "Architecture rules — v1 (follow these)"
   },
   {
     "anchor": "applyFrame(lerpFrames(prev, next, α))",
     "claim": "Two-device play",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/AGENTS.md",
     "kind": "bullet",
     "section": "Architecture rules — v1 (follow these)"
   },
   {
     "anchor": "config.PASSPLAY.SPLASH_GUARD_MS",
     "claim": "Pass-and-play 2P",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/AGENTS.md",
     "kind": "bullet",
     "section": "Architecture rules — v1 (follow these)"
   },
@@ -1395,21 +1395,21 @@
   {
     "anchor": "gameScene.resolvePlayerSwing(band, false)",
     "claim": "Background tabs pause the game.",
-    "owner": "AGENTS.md",
+    "owner": ".claude/skills/verify/SKILL.md",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
   {
     "anchor": "gameScene.setLivePointer(x, y)",
     "claim": "Live plays are stepped from GameScene.update() on the game-loop clock — never tween anything the sim owns",
-    "owner": "AGENTS.md",
+    "owner": ".claude/skills/verify/SKILL.md",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
   {
     "anchor": "phase === 'cutscene'",
     "claim": "The Schoolyard stream-out is sim-owned, like live plays.",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/AGENTS.md",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
@@ -1423,28 +1423,28 @@
   {
     "anchor": "w = max(minW, label.width + 32)",
     "claim": "NEVER place UI at a hardcoded pitch — pills size themselves to MEASURED text.",
-    "owner": "AGENTS.md",
+    "owner": "src/ui/AGENTS.md",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
   {
     "anchor": "bunt[(x / 56) % len]",
     "claim": "Phaser polygon points must be 0-based (no negative coords).",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/AGENTS.md",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
   {
     "anchor": "sessionStorage('goldlog_last')",
     "claim": "The pitch-flight counters are LINEAR on purpose.",
-    "owner": "AGENTS.md",
+    "owner": "scripts/goldlogs.json",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
   {
     "anchor": "InvalidCharacterError",
     "claim": "SVG textures need base64 data URIs.",
-    "owner": "AGENTS.md",
+    "owner": "src/art/AGENTS.md",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
@@ -1458,98 +1458,98 @@
   {
     "anchor": "RUN2.CPU_PANIC_DIST",
     "claim": "The diamond is glued to the foul lines.",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/AGENTS.md",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
   {
     "anchor": "c.ms + CUT_AHEAD_MS >= ownerMs",
     "claim": "LIVE.CHASE.CUT_AHEAD_MS is a fixed-ms gate over quantities that scale as 1/fielderSpeed, so it can never be sp",
-    "owner": "AGENTS.md",
+    "owner": "scripts/measures.json",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
   {
     "anchor": "fenceBulge ≥ 0",
     "claim": "The fence arc must bulge AWAY from home ( fenceBulge ≥ 0 ).",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/AGENTS.md",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
   {
     "anchor": "setOrigin(0.5, 1)",
     "claim": "All pose art must bottom out on the same ground line",
-    "owner": "AGENTS.md",
+    "owner": "src/art/AGENTS.md",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
   {
     "anchor": "wrapHeadBack(c, h.back)",
     "claim": "Head geometry only scales through the headGroup-internal wrapper.",
-    "owner": "AGENTS.md",
+    "owner": "src/art/AGENTS.md",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
   {
     "anchor": "clearTeamVariant()",
     "claim": "Never clearTeamVariant() on the Schoolyard without re-arming :sc .",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/AGENTS.md",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
   {
     "anchor": "heroKey",
     "claim": "Character textures are sized near their display size on purpose",
-    "owner": "AGENTS.md",
+    "owner": "src/art/AGENTS.md",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
   {
     "anchor": "cameras.main.getWorldPoint(p.x, p.y)",
     "claim": "Phaser camera zoom ignores setScrollFactor",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/GameScene.ts",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
   {
     "anchor": "e.stopPropagation()",
     "claim": "GameScene has a scene-level pointerdown that swings/throws on ANY tap.",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/GameScene.ts",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
   {
     "anchor": "'Sine.easeInOut'",
     "claim": "Camera effects ( cam.pan / zoomTo ) need exact EaseMap keys",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/AGENTS.md",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
   {
     "anchor": "lastScreenPointer",
     "claim": "Everything drawn during a pitch must sit ABOVE PLATE_VIEW.DEPTH (50)",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/AGENTS.md",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
   {
     "anchor": "audio.unlock()",
     "claim": "Audio needs a user gesture",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/GameSetupScene.ts",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
   {
     "anchor": "NetSession.onMessage/onStatus",
     "claim": "Net gotchas.",
-    "owner": "AGENTS.md",
+    "owner": "src/scenes/AGENTS.md",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },
   {
     "anchor": "AUDIO.masterVolume",
     "claim": "SpeechSynthesis is quirky.",
-    "owner": "AGENTS.md",
+    "owner": "src/systems/AGENTS.md",
     "kind": "bullet",
     "section": "Gotchas (things that will bite you)"
   },

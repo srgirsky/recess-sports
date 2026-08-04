@@ -63,3 +63,8 @@ State to assert: `s.phase`, `s.state.playerTeam/aiTeam/pool/turn`,
 
 GameScene has its own headless hooks — see AGENTS.md gotchas
 (`resolvePlayerSwing`, `resolvePlayerPitch`, `setLivePointer`, ...).
+Concretely: force a swing with `gameScene.resolvePlayerSwing(band, false)` in the
+top half, or a pitch with `gameScene.resolvePlayerPitch(band)` in the bottom
+(wait for `phase === 'aiming'`). Drive a live play with
+`gameScene.setLivePointer(x, y)`, `commandThrow(base, power)` and `commandRun()`,
+and inspect it with `getLivePlay()` while pumping the loop.
