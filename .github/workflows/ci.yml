@@ -24,7 +24,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # ★ 22, NOT 20. `scripts/v2/ts-resolve.mjs` lets a build script import the
+          # contract from its ONE home in `src/` instead of a copied-out JSON, and
+          # that rests on Node's TYPE STRIPPING, which needs >= 22.6 and is
+          # unflagged from 22.18. On 20 every such script dies with
+          # ERR_UNKNOWN_FILE_EXTENSION for ".ts". Nothing caught it because none of
+          # them ran in CI until `audit:v2-layout` did.
+          node-version: 22
           cache: npm
       - run: npm ci
       - run: npm test
@@ -40,7 +46,13 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # ★ 22, NOT 20. `scripts/v2/ts-resolve.mjs` lets a build script import the
+          # contract from its ONE home in `src/` instead of a copied-out JSON, and
+          # that rests on Node's TYPE STRIPPING, which needs >= 22.6 and is
+          # unflagged from 22.18. On 20 every such script dies with
+          # ERR_UNKNOWN_FILE_EXTENSION for ".ts". Nothing caught it because none of
+          # them ran in CI until `audit:v2-layout` did.
+          node-version: 22
           cache: npm
       - run: npm ci
       # Chromium only — the audit reads AABBs, it does not need cross-browser.

@@ -90,8 +90,8 @@ const c = { red: '\x1b[31m', green: '\x1b[32m', dim: '\x1b[2m', off: '\x1b[0m' }
 
 /** The dev server, tracked at module scope so every exit path can kill it. */
 let viteProc = null;
-function stopVite() {
-  viteProc?.kill();
+function stopVite(signal = 'SIGTERM') {
+  viteProc?.kill(signal);
   viteProc = null;
 }
 
@@ -320,30 +320,44 @@ async function main() {
 
   if (failures.length) {
     console.log(`\n${c.red}v2 HUD layout FAILED${c.off} — ${failures.length} problem(s)`);
-    process.exit(1);
+    return 1;
   }
   console.log(
     `\n${c.green}v2 HUD layout clean${c.off} across ${VIEWPORTS.length} viewports x ${STATES.length} states ${c.dim}(${audited} boxes)${c.off}`
   );
+  return 0;
 }
 
 const budget = setTimeout(() => {
-  console.error('audit:v2-layout exceeded its run budget');
-  // ⚠️ KILL VITE FIRST. `process.exit` skips `main`'s `finally`, so bailing on
-  // the budget used to leave a dev server holding the port — and the NEXT run
-  // then died with "vite did not start in 30s", which reads as a broken gate
-  // rather than as the previous run's litter.
-  stopVite();
+  console.error(`${c.red}audit:v2-layout exceeded ${RUN_BUDGET_MS / 1000}s — killing.${c.off}`);
+  stopVite('SIGKILL');
   process.exit(1);
 }, RUN_BUDGET_MS);
 budget.unref?.();
 
-// Same reason: a Ctrl-C must not leave the port held either.
+// A Ctrl-C must not leave the port held either.
 for (const sig of ['SIGINT', 'SIGTERM']) {
   process.on(sig, () => {
-    stopVite();
+    stopVite('SIGKILL');
     process.exit(130);
   });
 }
 
-await main();
+let code = 1;
+try {
+  code = await main();
+} catch (err) {
+  console.error(`${c.red}audit failed to run:${c.off} ${err.message}`);
+  code = 1;
+} finally {
+  clearTimeout(budget);
+  stopVite('SIGKILL');
+  // ★ EXIT EXPLICITLY. `scripts/layout-audit.mjs` learned this first and says
+  // why: "Playwright and the vite child can both leave handles open; the exit
+  // code is already decided, so leaving would just stall the runner." Not
+  // hypothetical here — this gate printed "v2 HUD layout clean" on CI and then
+  // sat for three minutes until its own budget timer killed it with exit 1, so
+  // a PASSING run reported as a failure. `unref()` on the budget is not enough
+  // when a spawned child still owns a pipe.
+  process.exit(code);
+}

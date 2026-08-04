@@ -62,6 +62,17 @@ function sweep(seed: string, visit: (f: LiveFrame) => void): number {
 
 const SEEDS = ['a', 'b', 'c', 'd', 'e'];
 
+/**
+ * Timeout for the tests that play whole games.
+ *
+ * Explicit because vitest's 5s default is a claim about a UNIT test and these
+ * are not: each sweeps every tick of five complete games. It failed on a CI
+ * runner while passing locally, which is the only kind of timeout that costs an
+ * afternoon. Generous rather than tight — the point is to catch a HANG, and a
+ * sweep that has genuinely stopped will not finish in thirty seconds either.
+ */
+const SWEEP_MS = 30_000;
+
 function sweepAll(visit: (f: LiveFrame) => void): number {
   return SEEDS.reduce((n, s) => n + sweep(s, visit), 0);
 }
@@ -78,15 +89,22 @@ describe("★ the pip capacities are the sim's, not a guess", () => {
     // permanently dark is indistinguishable, to a six-year-old, from one that
     // is dark right now.
     const peak = { balls: 0, strikes: 0, outs: 0 };
+    // ★ COMPARE IN THE LOOP, ASSERT ONCE AFTER IT. `expect` is far more
+    // expensive than the comparison it wraps, and this visits every tick of five
+    // whole games — three `expect`s a frame put the sweep over vitest's default
+    // 5s and it failed on CI while passing locally. Collecting the mismatches
+    // and asserting the collection is the same rule with a readable failure.
+    const clamped: string[] = [];
     const frames = sweepAll((f) => {
       const m = scoreboardModel(f, TEAMS, names);
-      expect(m.balls.lit, `balls ${f.balls} exceeds ${MAX_BALLS}`).toBe(f.balls);
-      expect(m.strikes.lit, `strikes ${f.strikes} exceeds ${MAX_STRIKES}`).toBe(f.strikes);
-      expect(m.outs.lit, `outs ${f.outs} exceeds ${MAX_OUTS}`).toBe(f.outs);
+      if (m.balls.lit !== f.balls) clamped.push(`balls ${f.balls} > ${MAX_BALLS}`);
+      if (m.strikes.lit !== f.strikes) clamped.push(`strikes ${f.strikes} > ${MAX_STRIKES}`);
+      if (m.outs.lit !== f.outs) clamped.push(`outs ${f.outs} > ${MAX_OUTS}`);
       peak.balls = Math.max(peak.balls, f.balls);
       peak.strikes = Math.max(peak.strikes, f.strikes);
       peak.outs = Math.max(peak.outs, f.outs);
     });
+    expect([...new Set(clamped)], 'the model had to clamp a real frame').toEqual([]);
 
     expect(peak.balls).toBe(MAX_BALLS);
     expect(peak.strikes).toBe(MAX_STRIKES);
@@ -97,7 +115,7 @@ describe("★ the pip capacities are the sim's, not a guess", () => {
 
     // A sweep that saw nothing proves nothing.
     expect(frames).toBeGreaterThan(5_000);
-  });
+  }, SWEEP_MS);
 
   it('★ yields one reused frame, which is why this file never keeps one', () => {
     // Pins the contract `LiveFrame` documents, so a change to fresh-per-yield is
@@ -108,7 +126,7 @@ describe("★ the pip capacities are the sim's, not a guess", () => {
       if (kept.length < 50) kept.push(f);
     });
     expect(new Set(kept).size, 'the generator is documented as reusing its frame').toBe(1);
-  });
+  }, SWEEP_MS);
 });
 
 describe('the model reads a frame', () => {
@@ -119,13 +137,17 @@ describe('the model reads a frame', () => {
   });
 
   it('marks exactly one side as batting, and it is the one the half says', () => {
+    const wrong: string[] = [];
     sweepAll((f) => {
       const m = scoreboardModel(f, TEAMS, names);
-      expect(m.away.batting !== m.home.batting, 'exactly one side bats').toBe(true);
-      expect(m.away.batting).toBe(f.half === 'top');
-      expect(battingSide(f.half)).toBe(f.half === 'top' ? 'away' : 'home');
+      if (m.away.batting === m.home.batting) wrong.push('both or neither side batting');
+      if (m.away.batting !== (f.half === 'top')) wrong.push(`away batting in the ${f.half}`);
+      if (battingSide(f.half) !== (f.half === 'top' ? 'away' : 'home')) {
+        wrong.push(`battingSide disagrees in the ${f.half}`);
+      }
     });
-  });
+    expect([...new Set(wrong)]).toEqual([]);
+  }, SWEEP_MS);
 
   it('carries the scores under the right names', () => {
     const m = scoreboardModel(frame, TEAMS, names);
@@ -154,7 +176,7 @@ describe('the model reads a frame', () => {
     expect(m.bases).toEqual(on);
     // A COPY, not the frame's own array — the frame is reused and mutated.
     expect(m.bases).not.toBe(stub.bases);
-  });
+  }, SWEEP_MS);
 
   it('says which side the human is on, because the tap verbs collide without it', () => {
     expect(scoreboardModel(frame, TEAMS, names, 'bat').you).toBe('bat');
