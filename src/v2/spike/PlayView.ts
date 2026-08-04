@@ -59,9 +59,10 @@ import { makeRng } from '../sim/rng';
 import { VENUE_GEOMETRY, type VenueId } from '../sim/field';
 import { planDefence } from '../sim/lineup';
 import { ROSTER, getCharacter } from '../../data/characters';
-import { zoneBandFt, zoneHalfWidthFt } from '../sim/athletes';
+import { clampBarrelFt, zoneBandFt, zoneHalfWidthFt } from '../sim/athletes';
 import { BALL_RADIUS_FT } from '../sim/ball';
-import { BAT } from '../sim/params';
+import { BAT, DEFENSE } from '../sim/params';
+import { kidHeightFt } from '../render/ProxyCharacter';
 import type { KidView } from '../render/CharacterModel';
 import { Scoreboard } from '../ui/Scoreboard';
 import { scoreboardModel, type ScoreboardTeams } from '../ui/scoreboardModel';
@@ -240,13 +241,37 @@ export class PlayView {
     return { x: hit.x, y: hit.y };
   }
 
+  /**
+   * Where the player is holding the barrel, ft above the plate.
+   *
+   * ★ CLAMPED TO WHERE A KID CAN ACTUALLY HOLD A BAT, and that is a physical
+   * fact rather than a tolerance. The raw raycast is unbounded: the plate plane
+   * is infinite, so a pointer on the outfield fence set the barrel SIX FEET up —
+   * above the batter's own head — and drew the aim bar floating in the sky while
+   * every swing missed for a reason nothing on screen explained. Found by
+   * looking at the new PITCH framing, which is exactly what a camera pass is for.
+   *
+   * ★ AND IT IS CLAMPED HERE, IN THE VIEW, NOT IN THE SIM. `sim.humanSwing`'s
+   * rule is that a human's pointer IS the placement and the model must not
+   * reinterpret it — so the sim keeps receiving an honest number, and the
+   * membrane that already turns pixels into feet is the thing that knows a bat
+   * cannot be held above its owner. The band is the batter's OWN height, so a
+   * tall kid really can reach higher; it is deliberately not tightened toward
+   * the zone, because narrowing it would be a batting assist and there is none.
+   */
   private toPlateHeight(e: PointerEvent): number | null {
     const r = this.canvas.getBoundingClientRect();
     this.ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
     this.ray.setFromCamera(this.ndc, this.camera);
     const hit = new Vector3();
     if (!this.ray.ray.intersectPlane(this.platePlane, hit)) return null;
-    return hit.y;
+    return clampBarrelFt(hit.y, this.batterHeightFt());
+  }
+
+  /** The batter's own height in feet, or the reference kid's if he is unknown. */
+  private batterHeightFt(): number {
+    const id = this.frame?.batterId;
+    return id ? kidHeightFt(getCharacter(id).visual) : DEFENSE.REFERENCE_HEIGHT_FT;
   }
 
   /**

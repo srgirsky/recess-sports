@@ -31,6 +31,8 @@ import {
   plateJudgementFt,
   pitchScatterFt,
   swingTimingSigmaFrac,
+  barrelBandFt,
+  clampBarrelFt,
   zoneBandFt,
   zoneHalfWidthFt,
 } from './athletes';
@@ -97,6 +99,31 @@ describe('★ the strike zone, which v1 does not have in any units', () => {
     expect((hi - lo) * 12).toBeLessThan(19);
     const [lo2, hi2] = zoneBandFt(5);
     expect(hi2 - lo2, 'a taller batter, a taller zone').toBeGreaterThan(hi - lo);
+  });
+
+  it('★ holds the barrel where a kid can reach, and no higher', () => {
+    // ★ THE PLATE PLANE IS INFINITE, so the pointer->feet raycast is unbounded:
+    // a pointer on the outfield fence set the barrel 5.97ft up — above the
+    // batter's own head — and drew the aim bar floating in the sky while every
+    // swing missed for a reason nothing on screen explained. Found by looking
+    // at the new PITCH framing, which is what a camera pass is for.
+    const h = DEFENSE.REFERENCE_HEIGHT_FT;
+    expect(clampBarrelFt(5.97, h), 'above his own head').toBe(h);
+    expect(clampBarrelFt(-3, h), 'below the ground').toBe(0);
+    expect(clampBarrelFt(1.8, h), 'a real barrel height is untouched').toBe(1.8);
+
+    // ★ AND IT IS NOT NARROWED TOWARD THE ZONE. Pulling the band in would help
+    // a player put the bat near the ball, and `sim.humanSwing` is explicit that
+    // there is no batting assist. Every height between the ground and the crown
+    // stays expressible, including the ones that miss.
+    const [lo, hi] = barrelBandFt(h);
+    const [zLo, zHi] = zoneBandFt(h);
+    expect(lo, 'the band reaches the ground, well under the zone').toBeLessThan(zLo);
+    expect(hi, 'and well over it').toBeGreaterThan(zHi);
+    expect(hi - lo).toBeGreaterThan((zHi - zLo) * 2);
+
+    // A taller kid reaches higher, for the same reason his zone is taller.
+    expect(barrelBandFt(5)[1]).toBeGreaterThan(hi);
   });
 
   it('★ has a SIZE at all, which v1s PLATE_ZONE does not', () => {

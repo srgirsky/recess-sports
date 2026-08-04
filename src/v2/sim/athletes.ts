@@ -255,3 +255,32 @@ export function zoneHalfWidthFt(): number {
 export function zoneBandFt(heightFt: number = DEFENSE.REFERENCE_HEIGHT_FT): [number, number] {
   return [heightFt * ATBAT.ZONE_BOTTOM_FRAC, heightFt * ATBAT.ZONE_TOP_FRAC];
 }
+
+/**
+ * How high a batter can hold the barrel, ft: the ground to his own crown.
+ *
+ * ★ A PHYSICAL LIMIT, NOT A TOLERANCE, and the distinction decides where it may
+ * be used. The plate plane a pointer is cast against is INFINITE, so a player
+ * whose pointer wanders to the outfield fence sets the barrel six feet up —
+ * above his own head — and every swing misses for a reason nothing on screen
+ * explains. Clamping to the kid's own height says only that a bat cannot be
+ * held above its owner.
+ *
+ * It is deliberately NOT narrowed toward the strike zone. Pulling the band in
+ * would help a player put the bat near the ball, and `sim.humanSwing` is explicit
+ * that there is no batting assist; the aim tolerance is the distance at which a
+ * bat and a ball stop overlapping and nothing else. A taller kid reaches higher
+ * because he is taller, which is the same reason his zone is taller.
+ */
+export function barrelBandFt(heightFt: number = DEFENSE.REFERENCE_HEIGHT_FT): [number, number] {
+  return [0, heightFt];
+}
+
+/** Hold the barrel where the batter can actually reach. */
+export function clampBarrelFt(
+  ft: number,
+  heightFt: number = DEFENSE.REFERENCE_HEIGHT_FT
+): number {
+  const [lo, hi] = barrelBandFt(heightFt);
+  return ft < lo ? lo : ft > hi ? hi : ft;
+}
