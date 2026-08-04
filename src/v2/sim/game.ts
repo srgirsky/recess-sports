@@ -123,6 +123,26 @@ export type SimEvent =
  * against a caller that does not exist is a cost with no buyer. `bridge.ts` is
  * the only consumer and a lint holds it read-only.
  */
+/**
+ * One tick, as the view sees it.
+ *
+ * ⚠️ ★ THE SAME OBJECT IS YIELDED EVERY TICK, MUTATED IN PLACE. Read it and be
+ * done with it; **never retain it**. Push frames into an array and you get N
+ * references to one object holding whatever the LAST tick left behind — every
+ * historical reading silently becomes the present one. There is no error and no
+ * test failure, because every field is a plausible value; a sweep collecting
+ * 5,000 frames and then asking for the peak ball count answers 0.
+ *
+ * That is not hypothetical: it is what `scoreboardModel.test.ts` hit while
+ * trying to establish the pip capacities, and the trap survived because
+ * `runPlayLive` already said "the `frame` object is REUSED across ticks — see
+ * `LiveFrame`" and this interface, the thing it pointed at, did not say so.
+ *
+ * The reuse is DELIBERATE and stays: this yields once per sim tick through a
+ * 50,000-plate-appearance harness, and the allocation is the one cost the
+ * generator refactor was measured against (see `simulateGameLive`). Fold as you
+ * iterate, or copy the fields you need.
+ */
 export interface LiveFrame {
   /**
    * ★ `windup` IS THE BEAT IN WHICH THE PITCHER DECIDES, and it exists for the

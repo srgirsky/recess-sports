@@ -106,22 +106,239 @@ body {
   pointer-events: none;
 }
 
-/*
- * The play view's scoreboard.
+/* ---------------------------------------------------------------------------
+ * THE SCOREBOARD — a bottom strip, the way v1's is and the way BB2001's is.
  *
- * Inherits `#hud`'s `pointer-events: none` — nothing here is `.interactive`,
- * so every tap falls through to the canvas by construction.
- */
-.play-hud {
-  position: absolute;
-  left: 50%;
-  bottom: 1.25rem;
-  transform: translateX(-50%);
-  padding: 0.4rem 0.9rem;
-  border-radius: 999px;
-  background: rgba(16, 24, 40, 0.72);
-  color: #fff;
-  font: 600 clamp(0.75rem, 2.6vw, 1rem) / 1.2 Fredoka, system-ui, sans-serif;
-  letter-spacing: 0.02em;
+ * It inherits `#hud`'s `pointer-events: none` and nothing in it is
+ * `.interactive`, so every tap over it falls through to the canvas. That is
+ * load-bearing: the strip spans the full width along the bottom edge, which on a
+ * phone is exactly where a thumb rests.
+ *
+ * Sized entirely in `rem` off the one `--u`-style scalar in tokens.css, so the
+ * whole strip scales with the viewport and nothing is positioned by hand. This
+ * is what v1's solveRow/solveColumn existed to compute and CSS grid does for
+ * free — see the v2 block in docs/OVERVIEW.md.
+ * ------------------------------------------------------------------------- */
+.sb {
+  grid-area: bottom;
+  justify-self: center;
+  align-self: end;
+  margin-block-end: var(--s3);
+  display: grid;
+  grid-template-columns: auto auto auto auto;
+  align-items: center;
+  gap: var(--s4);
+  padding: var(--s2) var(--s4);
+  border-radius: var(--radius-lg);
+  border: var(--stroke) solid var(--outline);
+  background: rgb(20 32 46 / 0.82);
+  box-shadow: var(--shadow-soft);
+  color: var(--cream);
+  line-height: 1.15;
   white-space: nowrap;
+}
+
+/* ---- Teams: two stacked rows, the batting one marked with a ▶ ---- */
+.sb__teams {
+  display: grid;
+  gap: var(--s1);
+}
+.sb-side {
+  display: grid;
+  grid-template-columns: 0.9rem 1fr auto;
+  align-items: baseline;
+  gap: var(--s2);
+  opacity: 0.62;
+}
+.sb-side.is-batting {
+  opacity: 1;
+}
+.sb-side__mark {
+  color: var(--gold);
+  font-size: 0.7rem;
+  visibility: hidden;
+}
+.sb-side.is-batting .sb-side__mark {
+  visibility: visible;
+}
+.sb-side__name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.sb-side__runs {
+  justify-self: end;
+  min-inline-size: 1.2rem;
+  text-align: right;
+  font-size: 1.35rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- The middle block: inning, who is up, and what YOU are doing ---- */
+.sb__middle {
+  display: grid;
+  justify-items: center;
+  gap: var(--s1);
+}
+.sb__inning {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}
+.sb__batter {
+  font-size: 0.8rem;
+  font-weight: 600;
+  max-inline-size: 9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sb__verb {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--gold);
+}
+.sb__verb.is-hidden {
+  visibility: hidden;
+}
+
+/* ---- Pips ---- */
+.sb__counts {
+  display: grid;
+  gap: var(--s1);
+}
+.sb-pips {
+  display: grid;
+  grid-template-columns: 1.9rem auto;
+  align-items: center;
+  gap: var(--s2);
+}
+.sb-pips__label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+}
+.sb-pips__track {
+  display: flex;
+  gap: 0.22rem;
+}
+.sb-pip {
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border-radius: 50%;
+  background: rgb(255 244 222 / 0.2);
+  border: 0.08rem solid rgb(255 244 222 / 0.28);
+}
+.sb-pips--balls .sb-pip.is-lit {
+  background: var(--conf-easy);
+  border-color: var(--conf-easy);
+}
+.sb-pips--strikes .sb-pip.is-lit {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+.sb-pips--outs .sb-pip.is-lit {
+  background: var(--red);
+  border-color: var(--red);
+}
+
+/*
+ * The pulse. Motion is the whole point — a pip that merely CHANGES COLOUR is
+ * invisible to a six-year-old watching the ball. `--motion-scale` is 0 under
+ * `prefers-reduced-motion`, and the token file's rule applies: never remove the
+ * feedback, swap the movement for something static. The colour change above IS
+ * that fallback, so this animation is free to be motion-only.
+ */
+@keyframes sb-pip-pop {
+  from {
+    transform: scale(calc(1 + 1.1 * var(--motion-scale)));
+  }
+  to {
+    transform: scale(1);
+  }
+}
+.sb-pip.is-new {
+  animation: sb-pip-pop 260ms cubic-bezier(0.22, 1.2, 0.36, 1);
+}
+
+/* ---- The base diamond ----
+   Three bags on the corners of a square rotated 45°, so first is on the right,
+   second at the top and third on the left — the layout on the field, from the
+   camera's own side of it. */
+.sb__diamond {
+  position: relative;
+  inline-size: 2.4rem;
+  block-size: 2.4rem;
+}
+.sb-bag {
+  position: absolute;
+  inline-size: 0.66rem;
+  block-size: 0.66rem;
+  transform: translate(-50%, -50%) rotate(45deg);
+  border-radius: 0.12rem;
+  background: rgb(255 244 222 / 0.18);
+  border: 0.08rem solid rgb(255 244 222 / 0.3);
+  transition: background-color 140ms ease;
+}
+.sb-bag--first {
+  inset-inline-start: 82%;
+  inset-block-start: 50%;
+}
+.sb-bag--second {
+  inset-inline-start: 50%;
+  inset-block-start: 18%;
+}
+.sb-bag--third {
+  inset-inline-start: 18%;
+  inset-block-start: 50%;
+}
+.sb-bag.is-on {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+
+/* ---------------------------------------------------------------------------
+ * The pitch picker — a READOUT, not a menu.
+ *
+ * Deliberately not `.interactive`: the pitch is chosen with the number keys and
+ * this shows which one is armed. Making the chips tappable would put four live
+ * targets over the field during the one beat the player may also want to steer,
+ * and `sim.humanPitch` is clear that the verb is CHOOSING rather than aiming a
+ * control. It appears only on the windup, which is the only beat the choice is
+ * collectable — see `LiveFrame`'s `windup` phase.
+ * ------------------------------------------------------------------------- */
+.pitch-picker {
+  grid-area: right;
+  align-self: center;
+  justify-self: end;
+  margin-inline-end: var(--s4);
+  display: grid;
+  gap: var(--s2);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 120ms ease;
+}
+.pitch-picker.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+.pitch-picker__chip {
+  padding: var(--s2) var(--s3);
+  border-radius: var(--radius);
+  border: var(--stroke) solid var(--outline);
+  background: rgb(20 32 46 / 0.82);
+  color: var(--cream);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.65;
+}
+.pitch-picker__chip.is-picked {
+  background: var(--gold);
+  color: var(--ink);
+  opacity: 1;
 }

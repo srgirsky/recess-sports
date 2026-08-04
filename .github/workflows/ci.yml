@@ -49,3 +49,8 @@ jobs:
       # element, hit-area collision, or too-small tap target. Findings that are
       # deliberate live in scripts/layout-audit.json with a reason.
       - run: npm run audit:layout
+      # And the same predicates over v2's DOM HUD. A separate step rather than a
+      # separate job so it reuses the browser install, which dominates the time.
+      # Its matrix is VIEWPORTS, not content: v2 sizes everything off one
+      # clamp() in tokens.css, so the failures live at the ends of that clamp.
+      - run: npm run audit:v2-layout
