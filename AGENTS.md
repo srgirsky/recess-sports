@@ -965,6 +965,21 @@ continuous across a v1↔v2 switch in the same browser.
 | `scripts/v2/purity.lint.test.js` | ★ v2. **★ There is exactly ONE kid speed in the sim** (textual: only `athletes.ts` may read a raw band; functional: `makeFielder` and `makeRunner` agree over 30 kids and stats 1-10). Plus: `src/v2/sim/**` imports only sim/data/config/**five** pure systems (`inning`·`gameflow`·`stats`·`lineup`·`draft`); no three, no DOM, no `Math.random`, no `Date.now`, **no module-scope `Rng`**; every sim file must import in plain Node; whole-statement `import type` gets a separate wider lane; **the whitelist itself is checked** (each named system must be browser-free, random-free, and value-import only pure modules); and **nothing outside `src/v2/**` may import v2**, which is what actually guarantees a v2 edit cannot reach v1's bundle. Two files claimed this gate existed before it did, and it then spent its first life vacuously satisfied. |
 | `scripts/measures.json` | ★ The measurement records + `conformance.test.js`'s gate. Every record names the `src/config.ts` constant it informs, so the audit trail runs source → record → constant, and carries a `status`: `conformed` (ours inside the band), `known-drift` (outside, and the test pins the drift's SIZE so it can't grow or be half-fixed unnoticed), `awaiting-measurement` (BB not measured yet — pins only OUR value, claims nothing about BB), `note` (a finding about the measurement itself). Read this before tuning any "Backyard feel" constant. |
 
+## Deep briefs (read the one for the tree you are in)
+
+This file is loaded into EVERY session, so it carries only what binds before you
+open anything. A brief lower in the tree carries the rules for that tree and is
+loaded when you touch a file inside it — read it before you write there.
+
+| Brief | Covers |
+|---|---|
+| `scripts/AGENTS.md` | the measurement instrument, the lints, and the brief budgets |
+
+More briefs land as the sections above move out; `scripts/brief.lint.test.js`
+fails if one exists without being budgeted and listed here. If your context was
+compacted, re-read the brief for the tree you are in before your next decision —
+only this file reloads automatically.
+
 ## Commands
 
 `npm run dev` (play locally) · `npm test` (logic tests) · `npm run build` (→ `dist/`). v2 assets: `npm run export:skeleton` (emit the rig) · `npm run export:proxy-kid` (stand-in characters; `-- all` for the whole roster) · `npm run manifest:models` (rebuild the delivery manifest) · `npm run sync:decoders` (refresh the committed Draco/Basis decoders after a `three` bump) · `npm run sim:harness` (50,000 plate appearances: rates, splits, histograms, ~75s) · `npm run sim:plate-sweep` (search the coupled plate + defence constants against `sim.retuneTargets`) · `npm run validate:models` (gate a delivery; needs Node ≥22.6 — CI runs the same rules through vitest) · `npm run sim:game` (play a whole v2 game headless: line score, box score, play-by-play). Full details + deploy in `README.md`.
