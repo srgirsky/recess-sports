@@ -503,7 +503,7 @@ describe('★ the swing is a person supplying the model own two error terms', ()
   // Behaviour is asserted in `swing.test.ts`; these catch the wiring going away.
   const atbat = readFileSync(join(repo, 'src/v2/sim/atbat.ts'), 'utf8');
   const game = readFileSync(join(repo, 'src/v2/sim/game.ts'), 'utf8');
-  const view = readFileSync(join(repo, 'src/v2/spike/PlayView.ts'), 'utf8');
+  const view = readFileSync(join(repo, 'src/v2/game/GameView.ts'), 'utf8');
 
   it('★ the pitch is yielded BEFORE it is resolved', () => {
     // The whole architectural change. If `resolvePitch` runs before the yield,
@@ -605,7 +605,7 @@ describe('★ the mound and the baselines are read, not merely accepted', () => 
   // away, because "wired but inert" is the failure mode.
   const atbat = readFileSync(join(repo, 'src/v2/sim/atbat.ts'), 'utf8');
   const play = readFileSync(join(repo, 'src/v2/sim/play.ts'), 'utf8');
-  const view = readFileSync(join(repo, 'src/v2/spike/PlayView.ts'), 'utf8');
+  const view = readFileSync(join(repo, 'src/v2/game/GameView.ts'), 'utf8');
 
   it('★ a human plan replaces choosePitch and NOTHING else', () => {
     // The execution error must stay downstream of the plan, or a player would

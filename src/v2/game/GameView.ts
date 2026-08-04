@@ -1,12 +1,14 @@
 // ---------------------------------------------------------------------------
-// `/v2/?play=1` — the first page on which v2 plays baseball.
+// The game. v2's field, its nine fielders, its batter and every verb you have.
 //
-// ★ WHAT THIS IS FOR. Twelve PRs built a complete headless sim and a render
-// layer with a park, characters, animation, materials and a camera policy, and
-// the two had never met. The Look Spike answers "does this look right?"; the
-// Anim Spike answers "does this move right?". This one answers the question
-// neither can: DOES IT PLAY RIGHT — which is the only acceptance criterion for
-// a game, and the one no test can express.
+// ★ IT LIVED IN `spike/` UNTIL IT STOPPED BEING ONE. Twelve PRs built a complete
+// headless sim and a render layer that had never met, and this was the page that
+// introduced them: the Look Spike answers "does this look right?", the Anim
+// Spike "does this move right?", and this one answered the question neither can
+// — DOES IT PLAY RIGHT. It still answers it, at `/v2/?play=1`, but it is now
+// also what `App.ts` mounts when a player presses PLAY, and a file the product
+// runs on should not be filed under `spike/`. The two review pages stay where
+// they are, because they really are spikes.
 //
 // ★ IT PUMPS THE SIM'S OWN GENERATOR. `simulateGameLive` is the ONE
 // implementation of the game flow; `simulateGame` drains it and this pumps it
@@ -51,7 +53,7 @@ import { AnimationDirector } from '../render/AnimationDirector';
 import { buildProceduralClips } from '../render/proceduralClips';
 import { RIGS, chooseCamera, damp, type CameraCue } from '../render/cameraCues';
 import { applyFrame, cameraInputFor, type SceneRefs } from '../render/bridge';
-import { simulateGameLive, type LiveFrame } from '../sim/game';
+import { simulateGameLive, type GameResult, type LiveFrame } from '../sim/game';
 import type { PlayInputs } from '../sim/play';
 import type { PitchKind } from '../sim/pitch';
 import { FIRST, SECOND, THIRD, HOME, dist, type Vec2 } from '../sim/field';
@@ -120,7 +122,7 @@ function nearestBase(at: Vec2): 1 | 2 | 3 | 4 | null {
   return best;
 }
 
-export class PlayView {
+export class GameView {
   private readonly scene = new Scene();
   private readonly camera: PerspectiveCamera;
   private readonly renderer: Renderer;
@@ -182,6 +184,18 @@ export class PlayView {
   private readonly board = new Scoreboard();
   private pickerEl: HTMLElement | null = null;
   private teamNames: ScoreboardTeams = { away: 'ROCKETS', home: 'COMETS' };
+
+  /**
+   * Called once, when the game ends.
+   *
+   * ★ THE RESULT WAS BEING THROWN AWAY. `simulateGameLive` RETURNS a
+   * `GameResult` — the line score, every kid's line, the tally — and `advance`
+   * read `r.done` to decide whether to keep the frame and dropped `r.value` on
+   * the floor. The page simply froze on the last pitch, which looked like a
+   * hang and was in fact a completed game with nobody listening.
+   */
+  private onEnd: ((result: GameResult) => void) | null = null;
+  private ended = false;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     const params = new URLSearchParams(location.search);
@@ -438,15 +452,7 @@ export class PlayView {
       })
     );
 
-    const away = { name: 'ROCKETS', ids: ROSTER.slice(0, 9).map((c) => c.id) };
-    const home = { name: 'COMETS', ids: ROSTER.slice(9, 18).map((c) => c.id) };
-    this.teamNames = { away: away.name, home: home.name };
-    void planDefence(away.ids, getCharacter);
-    this.game = simulateGameLive(
-      { away, home, lookup: getCharacter, geo },
-      makeRng(new URLSearchParams(location.search).get('seed') ?? 'play')
-    );
-    this.advance();
+    this.newGame(new URLSearchParams(location.search).get('seed') ?? 'play');
 
     this.buildPlateCues();
     this.mountHud();
@@ -509,6 +515,47 @@ export class PlayView {
     }
   }
 
+  /**
+   * Start a game. Called by `start`, and again by PLAY AGAIN.
+   *
+   * ★ IT REBUILDS THE GENERATOR AND NOTHING ELSE. The park, the fence, the
+   * thirty characters and their mixers are all still here and still correct, so
+   * a rematch costs one object instead of a scene rebuild and a model reload —
+   * which is the difference between an instant PLAY AGAIN and a visible stall
+   * on the one button a kid presses most.
+   */
+  newGame(seed: string): void {
+    const geo = VENUE_GEOMETRY[this.venue];
+    const away = { name: 'ROCKETS', ids: ROSTER.slice(0, 9).map((c) => c.id) };
+    const home = { name: 'COMETS', ids: ROSTER.slice(9, 18).map((c) => c.id) };
+    this.teamNames = { away: away.name, home: home.name };
+    void planDefence(away.ids, getCharacter);
+    this.game = simulateGameLive({ away, home, lookup: getCharacter, geo }, makeRng(seed));
+    this.ended = false;
+    this.inputs = {};
+    this.wait = 0;
+    this.pitchElapsed = 0;
+    this.windupElapsed = 0;
+    this.cue = null;
+    this.advance();
+  }
+
+  /** The two team names, for the scoreboard and the Result screen. */
+  get teams(): ScoreboardTeams {
+    return this.teamNames;
+  }
+
+  /** Who the human is playing as, for the Result screen's verdict. */
+  get humanSide(): 'away' | 'home' {
+    // The spike bats the top half, and the top half is the AWAY team's.
+    return 'away';
+  }
+
+  /** Register the end-of-game callback. */
+  onGameEnd(fn: (result: GameResult) => void): void {
+    this.onEnd = fn;
+  }
+
   /** Pull the next frame out of the sim. Null once the game is over. */
   private advance(): void {
     if (!this.game) return;
@@ -518,8 +565,19 @@ export class PlayView {
     // makes the same split, and conflating them means either a dive that fires
     // every tick or a fielder who forgets where he was sent.
     this.inputs = { pointer: this.inputs.pointer };
-    this.frame = r.done ? null : r.value;
-    if (!this.frame) return;
+    if (r.done) {
+      this.frame = null;
+      // ★ ONCE. The tick loop keeps running after the game ends (the park is
+      // still on screen behind the Result screen), and `advance` is reachable
+      // from `pump`, so an unguarded call would re-fire the callback every
+      // frame — which reads as a Result screen that will not go away.
+      if (!this.ended) {
+        this.ended = true;
+        this.onEnd?.(r.value as GameResult);
+      }
+      return;
+    }
+    this.frame = r.value;
     if (this.frame.phase === 'pitch') this.pitchElapsed = 0;
     if (this.frame.phase === 'windup') this.windupElapsed = 0;
     if (this.frame.phase === 'between') this.wait = BETWEEN_SEC;

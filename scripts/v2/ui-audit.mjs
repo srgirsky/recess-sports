@@ -35,9 +35,27 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { overlaps, insideFrame } from '../../src/ui/layoutMath.ts';
 
+/**
+ * A DOMRect as a `layoutMath` Box.
+ *
+ * ⚠️ ★ THE CONVENTIONS DISAGREE, AND SILENTLY. `layoutMath`'s `Box` documents
+ * its x,y as "the CENTER (matching Phaser's setOrigin(0.5))"; `getBoundingClientRect`
+ * returns the TOP-LEFT. Handing one to the other shifts every box by half its
+ * own size, so `insideFrame` measures a rectangle that is not where the element
+ * is and `overlaps` compares two boxes each displaced by a DIFFERENT amount.
+ *
+ * This file did exactly that from the day it was written, and it passed: the
+ * HUD is a centred strip whose displacement happened not to push anything over
+ * an edge, so a wrong rule agreed with a right one until the title and result
+ * screens arrived and it reported four elements off-frame that are plainly
+ * inside it. Shared predicates are only shared if the units are too.
+ */
+const asBox = (b) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2, w: b.w, h: b.h });
+
 const here = dirname(fileURLToPath(import.meta.url));
 const PORT = 5178;
-const URL = `http://localhost:${PORT}/v2/?play=1&seed=audit`;
+const GAME_URL = `http://localhost:${PORT}/v2/?play=1&seed=audit`;
+const APP_URL = `http://localhost:${PORT}/v2/`;
 
 /** A gate that can hang is worse than no gate — it burns a runner in silence. */
 const RUN_BUDGET_MS = 8 * 60_000;
@@ -67,7 +85,7 @@ const VIEWPORTS = [
  * ★ `mustSee` IS NOT DECORATION — WITHOUT IT THIS GATE AUDITED NOTHING. The
  * picker is the only state-dependent chrome here, and the first version of this
  * file reached it by pumping to `phase === 'windup'` and stopping. That is the
- * TOP of the first inning, where the human BATS: `PlayView.onTheMound` is
+ * TOP of the first inning, where the human BATS: `GameView.onTheMound` is
  * `windup && !humanBats`, so the picker stayed hidden and the audit measured the
  * scoreboard three times while its own row said "picker open". Sabotaging the
  * CSS to drop the picker straight onto the scoreboard produced a clean run.
@@ -121,9 +139,9 @@ function startVite() {
  * are compared against each other; the leaves are what must stay in frame and
  * what must be big enough to tap.
  */
-const COLLECT = `(() => {
-  const hud = document.getElementById('hud');
-  if (!hud) return { error: 'no #hud' };
+const COLLECT = (hostId) => `(() => {
+  const hud = document.getElementById(${JSON.stringify(hostId)});
+  if (!hud) return { error: 'no #${hostId}' };
   const vis = (el) => {
     const s = getComputedStyle(el);
     if (s.display === 'none' || s.visibility === 'hidden' || Number(s.opacity) === 0) return false;
@@ -245,7 +263,7 @@ async function auditOne(page, vp, state) {
     fail(where, `reached ${got.phase}/${got.half} but "${state.mustSee}" is not visible`);
     return 0;
   }
-  const r = await page.evaluate(COLLECT);
+  const r = await page.evaluate(COLLECT('hud'));
   if (r.error) {
     fail(where, r.error);
     return 0;
@@ -287,6 +305,83 @@ async function auditOne(page, vp, state) {
   return r.leaves.length;
 }
 
+/**
+ * Reach a SCREEN and audit it.
+ *
+ * The title is simply where the app starts. The result screen would otherwise
+ * need a whole game driven by hand -- about forty minutes of sim time, which is
+ * 24,000 renders and wedges the tab -- so it is mounted from a REAL headless
+ * `simulateGame`, the same function the 50,000-plate-appearance harness drains.
+ * The data is a genuine finished game and the screen is the shipping one; only
+ * the forty minutes are skipped.
+ */
+const SHOW_RESULT = `(async () => {
+  const [{ simulateGame }, { makeRng }, chars] = await Promise.all([
+    import('/src/v2/sim/game.ts'), import('/src/v2/sim/rng.ts'), import('/src/data/characters.ts')]);
+  const { ROSTER, getCharacter } = chars;
+  const result = simulateGame({
+    away: { name: 'ROCKETS', ids: ROSTER.slice(0, 9).map((c) => c.id) },
+    home: { name: 'COMETS',  ids: ROSTER.slice(9, 18).map((c) => c.id) },
+    lookup: getCharacter }, makeRng('audit'));
+  const [{ resultModel }, { ResultScreen }, { Router }] = await Promise.all([
+    import('/src/v2/ui/resultModel.ts'), import('/src/v2/ui/screens/ResultScreen.ts'),
+    import('/src/v2/ui/Router.ts')]);
+  const m = resultModel(result, { away: 'ROCKETS', home: 'COMETS', you: 'away' },
+    ROSTER.map((c) => c.id));
+  new Router(document.getElementById('screens'))
+    .show(new ResultScreen(m, (id) => getCharacter(id).name, () => {}, () => {}));
+  return document.querySelector('.screen--result') ? 'ok' : 'no result screen';
+})()`;
+
+const SCREENS = [
+  { name: 'title', reach: null, mustSee: '.screen--title .btn' },
+  { name: 'result', reach: SHOW_RESULT, mustSee: '.screen--result .btn' },
+];
+
+async function auditScreen(page, vp, screen) {
+  const where = `${vp.name} / ${screen.name}`;
+  if (screen.reach) {
+    const got = await page.evaluate(screen.reach);
+    if (got !== 'ok') {
+      fail(where, `could not reach the screen: ${got}`);
+      return 0;
+    }
+  }
+  const seen = await page.evaluate(`!!document.querySelector(${JSON.stringify(screen.mustSee)})`);
+  if (!seen) {
+    fail(where, `"${screen.mustSee}" is not present`);
+    return 0;
+  }
+  const r = await page.evaluate(COLLECT('screens'));
+  if (r.error) {
+    fail(where, r.error);
+    return 0;
+  }
+  const frame = { w: r.frame.w, h: r.frame.h };
+  for (const b of r.leaves) {
+    if (!insideFrame(asBox(b), frame.w, frame.h, -0.5)) {
+      fail(where, `"${b.label}" is off-frame at ${Math.round(b.x)},${Math.round(b.y)} ${Math.round(b.w)}x${Math.round(b.h)} in ${frame.w}x${frame.h}`);
+    }
+  }
+  for (let i = 0; i < r.blocks.length; i++) {
+    for (let j = i + 1; j < r.blocks.length; j++) {
+      if (overlaps(asBox(r.blocks[i]), asBox(r.blocks[j]), 1)) {
+        fail(where, `"${r.blocks[i].label}" overlaps "${r.blocks[j].label}"`);
+      }
+    }
+  }
+  // ★ AND THIS IS WHERE THE TAP-TARGET RULE STOPS BEING VACUOUS. Nothing in the
+  // HUD is interactive; every button in the game is on a screen.
+  const floor = tapMinPx(r.rootFontPx);
+  if (r.interactives.length === 0) fail(where, 'a screen with no tappable control');
+  for (const b of r.interactives) {
+    if (b.w + 0.5 < floor || b.h + 0.5 < floor) {
+      fail(where, `tap target "${b.label}" is ${Math.round(b.w)}x${Math.round(b.h)}, floor is ${Math.round(floor)}`);
+    }
+  }
+  return r.leaves.length;
+}
+
 async function main() {
   await startVite();
   const browser = await chromium.launch({ args: process.env.CI ? ['--no-sandbox'] : [] });
@@ -296,7 +391,7 @@ async function main() {
       const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
       const errors = [];
       page.on('pageerror', (e) => errors.push(String(e)));
-      await page.goto(URL, { waitUntil: 'load' });
+      await page.goto(GAME_URL, { waitUntil: 'load' });
       await page.addStyleTag({ content: NO_MOTION });
       // The renderer sizes its drawing buffer on resize, not on a CSS change,
       // so the shrink above only takes effect once it is told to look again.
@@ -309,6 +404,19 @@ async function main() {
         console.log(`  ${mark} ${(vp.name + ' / ' + state.name).padEnd(34)} ${c.dim}${n} boxes${c.off}`);
         for (const b of bad) console.log(`      ${c.red}${b.split(': ').slice(1).join(': ')}${c.off}`);
       }
+      // The screens, on the app entry point rather than the bare game view.
+      await page.goto(APP_URL, { waitUntil: 'load' });
+      await page.addStyleTag({ content: NO_MOTION });
+      await page.waitForSelector('.screen--title', { timeout: 30_000 }).catch(() => {});
+      for (const screen of SCREENS) {
+        const n = await auditScreen(page, vp, screen);
+        audited += n;
+        const bad = failures.filter((f) => f.startsWith(`${vp.name} / ${screen.name}:`));
+        const mark = bad.length ? `${c.red}✗${c.off}` : `${c.green}✓${c.off}`;
+        console.log(`  ${mark} ${(vp.name + ' / ' + screen.name).padEnd(34)} ${c.dim}${n} boxes${c.off}`);
+        for (const b of bad) console.log(`      ${c.red}${b.split(': ').slice(1).join(': ')}${c.off}`);
+      }
+
       // A page error is a failure even if the boxes happened to land right.
       for (const e of errors) fail(vp.name, `page error: ${e}`);
       await page.close();
@@ -323,7 +431,7 @@ async function main() {
     return 1;
   }
   console.log(
-    `\n${c.green}v2 HUD layout clean${c.off} across ${VIEWPORTS.length} viewports x ${STATES.length} states ${c.dim}(${audited} boxes)${c.off}`
+    `\n${c.green}v2 layout clean${c.off} across ${VIEWPORTS.length} viewports x ${STATES.length + SCREENS.length} states ${c.dim}(${audited} boxes)${c.off}`
   );
   return 0;
 }

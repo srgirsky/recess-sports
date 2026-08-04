@@ -1757,7 +1757,7 @@ describe('sim.humanSwing', () => {
   it('★ pins the swing tail above the measured window edge', () => {
     // Below the edge, the late half of the window is unreachable in the view
     // and the game only ever punishes being early.
-    const view = readFileSync(join(here, '../../src/v2/spike/PlayView.ts'), 'utf8');
+    const view = readFileSync(join(here, '../../src/v2/game/GameView.ts'), 'utf8');
     const tail = Number(view.match(/const SWING_TAIL_SEC = ([\d.]+)/)?.[1]);
     expect(tail).toBe(rec.ours.SWING_TAIL_SEC);
     expect(tail).toBeGreaterThan(rec.measured.timingWindowSec.edgeSec);
