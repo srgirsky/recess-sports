@@ -4,8 +4,14 @@
  * Same brand, different mechanism: v1 had to compute rounded corners, stroke
  * bleed and drop-shadow footprints by hand because Phaser rectangles can't
  * round. CSS does all of that natively, which is why `ui/layoutMath.ts`'s
- * solver has no v2 equivalent (its overlap PREDICATES still gate CI — see
- * scripts/v2/ui-audit.mjs).
+ * solver has no v2 equivalent — but its overlap PREDICATES do gate this tree,
+ * via `npm run audit:v2-layout` (scripts/v2/ui-audit.mjs).
+ *
+ * ⚠️ That sentence was a LIE until the audit was written: the file it named did
+ * not exist, so nothing checked v2's HUD for overlap while this comment told
+ * every reader it did. A claim about a gate is the worst kind of rotted pointer,
+ * because it stops anyone looking. Do not add one here for a check you have not
+ * run.
  *
  * THE ONE SCALAR: `--u` below drives the entire HUD's size. Everything else is
  * expressed in `rem`, so one clamp() replaces v1's solveRow/solveColumn.
@@ -36,8 +42,11 @@
   --key-warm: #fffae8;
   --shade-cool: #2c3e66;
 
-  /* Throw-target confidence colours (§7.3). Shared by the DOM legend and the
-     3D base pucks so a kid never has to learn two colour languages. */
+  /* Throw-target confidence colours. Shared by the DOM chrome and the 3D base
+     pucks so a kid never has to learn two colour languages — the scoreboard's
+     ball pips use `--conf-easy` for exactly that reason. (This cited a "§7.3"
+     of a UI spec that was never written; the pointer is removed rather than
+     left to look authoritative.) */
   --conf-easy: #46c66a;
   --conf-bang: #ffce3a;
   --conf-none: #e8524a;

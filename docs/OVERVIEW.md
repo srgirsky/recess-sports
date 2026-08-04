@@ -1099,9 +1099,74 @@ it — so the one kid the camera is pointed at waited for the pitch in `idle` an
 settled out of a swing into a pose he had never been in. Same class as the
 defence standing in bind pose before PR 13 drew it.
 
-Next: the camera pass itself; then the fielding and batting assists, sized from a
-real child's aim error rather than a synthetic one; then seats, so the side is
-the sim's answer rather than the view's.
+### PR 18 — a scoreboard instead of a debug string, and the gate the CSS claimed
+
+v2 had been printing its whole game state into one pill:
+`▲1 ROCKETS 0 – 0 COMETS 0-0 ●○○ ◇◇◇ 🏏 YOU BAT`. Honest about being a debug
+readout, and not something you hand a six-year-old — the count is two digits that
+mean nothing before you can read, the bases are three identical glyphs in a row,
+and nothing about it changes *visibly* when a pitch changes it. It is now a
+bottom strip: both teams with a ▶ on whoever bats, the inning, who is up, B/S/OUT
+as coloured pips that pop when one lights, and a real base diamond. The pitch
+picker moved out of the same string onto the right rail, and appears only on the
+windup, which is the only beat the choice is collectable.
+
+**★ The pip capacities are measured, and the obvious guess is wrong.** A pip row's
+length is a claim about the rules, and a wrong one does not crash — it silently
+clamps, so the count stops moving on the pitch that walked you, with nothing in
+the console. Swept over five full games: balls stop at **3** and strikes at
+**2**, because the fourth and the third end the plate appearance. **Outs are not
+symmetric with that** — three really does occur, on the `between` frame that
+reports the side retired. Writing `MAX_OUTS = 2` by analogy would have dropped a
+pip on every half-inning.
+
+**★ And the sweep that measured them read zeros, which found a real trap:
+`simulateGameLive` yields the SAME object every tick, mutated in place.** Collect
+frames in an array and you hold N references to one object carrying the last
+tick's state — no error, no red test, every field a plausible value. The reuse is
+deliberate and stays (it yields once per sim tick through a 50,000-plate-appearance
+harness), but it was documented in exactly one place: `runPlayLive` said "the
+`frame` object is REUSED across ticks — see `LiveFrame`", and `LiveFrame`, the
+thing it pointed at, did not say so. The pointer is now real, and a test pins the
+contract so a change to fresh-per-yield is a reviewed act.
+
+**★ `tokens.css` had been claiming a gate that did not exist.** Its header read
+"its overlap PREDICATES still gate CI — see scripts/v2/ui-audit.mjs", and that
+file had never been written, so nothing checked v2's HUD for overlap while the
+comment told every reader it did. Same class as `isFair` having no caller and
+`bridge.ts` being documented before it existed — but worse, because a claim about
+a *gate* is what stops the next person looking. It also explains why the root
+brief lists `ui/layoutMath.ts`'s overlap predicates as "shared, never copied":
+they were shared with nobody. `npm run audit:v2-layout` now imports the real ones,
+so v1's chrome and v2's HUD are judged by the same arithmetic.
+
+Its matrix is **viewports, not content**, because v2's layout strategy inverts
+v1's: one `clamp()` drives every size in `rem`, which deletes `solveRow`/
+`solveColumn` but moves the failure rather than removing it — a rem-scaled strip
+collides at the ends of that clamp, on a short landscape phone and on a large
+display, never at the size it was authored at.
+
+Writing it was worth it three times over. It caught a name collision introduced
+in the same change (a `scoreboard` field shadowing PlayView's `scoreboard()`
+method) **on its first run**. Then it caught its own version of the defect it
+exists to find: the "picker open" state pumped to `phase === 'windup'` and
+stopped — which is the *top* of the first, where the human bats, so the picker
+stayed hidden and the audit measured the scoreboard three times under a row
+labelled "picker open". Sabotaging the CSS to drop the picker straight onto the
+scoreboard produced a clean run. A state now names a selector it must be able to
+see, and fails rather than passing quietly. And once it could see the picker,
+**a CSS transition never advanced**: the class was applied, `visibility` computed
+`visible`, the box had real width and height, and `opacity` sat at 0 forever,
+because a transition runs on animation frames and a headless page composites on
+its own schedule. That is v1's clock split — "timers follow the loop clock while
+tweens follow wall-clock `Date.now()`" — with CSS as the second clock. The audit
+disables transitions, which is right rather than a workaround: it measures
+layout, and a transition is not layout.
+
+Next: the camera pass; then the router, title and result screens that turn v2
+from a spike into an app; then the draft, which is the actual product. After
+those, the fielding and batting assists sized from a real child's aim error, and
+seats, so the side is the sim's answer rather than the view's.
 
 ---
 

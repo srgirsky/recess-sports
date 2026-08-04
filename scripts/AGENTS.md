@@ -81,6 +81,7 @@ the `reference` and `status` rules are enforced.
 | `scripts/measure/conformance.test.js` | the record->constant gate, and the only walk that visits each record once |
 | `scripts/layout.browser.js` | the in-page layout audit, pasteable into a dev tab |
 | `scripts/layout-audit.mjs` | `npm run audit:layout` — the Playwright gate over the scene x CONTENT matrix |
+| `scripts/v2/ui-audit.mjs` | `npm run audit:v2-layout` — the same predicates over v2's DOM HUD, on a VIEWPORT matrix |
 | `scripts/goldlog.browser.js` | the seeded v1 game drive whose fingerprint must stay byte-identical |
 | `scripts/v2/glb.mjs` | dependency-free glTF read AND write — hand-rolled because a playback loader forgives what a validator must reject |
 | `scripts/v2/modelRules.mjs` | the pure rule engine behind both `validate:models` front ends |

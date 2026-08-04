@@ -63,6 +63,8 @@ import { zoneBandFt, zoneHalfWidthFt } from '../sim/athletes';
 import { BALL_RADIUS_FT } from '../sim/ball';
 import { BAT } from '../sim/params';
 import type { KidView } from '../render/CharacterModel';
+import { Scoreboard } from '../ui/Scoreboard';
+import { scoreboardModel, type ScoreboardTeams } from '../ui/scoreboardModel';
 
 /**
  * How long the pitch frame is held PAST the crossing, seconds.
@@ -176,8 +178,9 @@ export class PlayView {
   /** Real seconds still to wait on a `between` beat. */
   private wait = 0;
   private readonly venue: VenueId;
-  private hudEl: HTMLElement | null = null;
-  private hudText = '';
+  private readonly board = new Scoreboard();
+  private pickerEl: HTMLElement | null = null;
+  private teamNames: ScoreboardTeams = { away: 'ROCKETS', home: 'COMETS' };
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     const params = new URLSearchParams(location.search);
@@ -412,6 +415,7 @@ export class PlayView {
 
     const away = { name: 'ROCKETS', ids: ROSTER.slice(0, 9).map((c) => c.id) };
     const home = { name: 'COMETS', ids: ROSTER.slice(9, 18).map((c) => c.id) };
+    this.teamNames = { away: away.name, home: home.name };
     void planDefence(away.ids, getCharacter);
     this.game = simulateGameLive(
       { away, home, lookup: getCharacter, geo },
@@ -598,37 +602,47 @@ export class PlayView {
   };
 
   /**
-   * The scoreboard, as DOM under `#hud`.
+   * The scoreboard and the pitch picker, as DOM under `#hud`.
    *
-   * ★ IT INHERITS THE ONE CSS RULE. `#hud` is `pointer-events: none` and only
+   * ★ THEY INHERIT THE ONE CSS RULE. `#hud` is `pointer-events: none` and only
    * `.interactive` children opt back in, which is what makes every non-HUD tap
-   * fall through to the canvas BY CONSTRUCTION — so this cannot eat the input
-   * PR 14 is about to add. v1's equivalent gotcha ("a scene-level pointerdown
-   * swings on ANY tap, so corner buttons must stopPropagation") simply cannot
-   * happen here, and nothing on this scoreboard is interactive.
+   * fall through to the canvas BY CONSTRUCTION. v1's equivalent gotcha ("a
+   * scene-level pointerdown swings on ANY tap, so corner buttons must
+   * stopPropagation") simply cannot happen here, and nothing mounted here is
+   * interactive — the picker is a READOUT of the number keys, not a menu.
    */
   private mountHud(): void {
     const hud = document.getElementById('hud');
     if (!hud) return;
-    this.hudEl = document.createElement('div');
-    this.hudEl.className = 'play-hud';
-    hud.appendChild(this.hudEl);
+    hud.appendChild(this.board.root);
+    this.pickerEl = document.createElement('div');
+    this.pickerEl.className = 'pitch-picker';
+    for (const kind of KINDS) {
+      const chip = document.createElement('span');
+      chip.className = 'pitch-picker__chip';
+      chip.dataset.kind = kind;
+      chip.textContent = `${KINDS.indexOf(kind) + 1} ${kind}`;
+      this.pickerEl.appendChild(chip);
+    }
+    hud.appendChild(this.pickerEl);
   }
 
   private paintHud(frame: LiveFrame): void {
-    if (!this.hudEl) return;
-    const half = frame.half === 'top' ? '▲' : '▼';
-    const outs = '●'.repeat(frame.outs) + '○'.repeat(Math.max(0, 3 - frame.outs));
-    const bases = frame.bases.map((b) => (b ? '◆' : '◇')).join('');
+    this.board.update(
+      scoreboardModel(
+        frame,
+        this.teamNames,
+        (id) => getCharacter(id).name,
+        this.humanBats ? 'bat' : 'pitch'
+      )
+    );
     // ★ THE PICKER IS SHOWN, NOT HIDDEN BEHIND A KEYBINDING NOBODY KNOWS.
-    const picker = this.onTheMound
-      ? '   ' + KINDS.map((k, i) => (k === this.pitchKind ? `[${i + 1} ${k}]` : `${i + 1} ${k}`)).join(' ')
-      : '';
-    const verb = this.humanBats ? '  🏏 YOU BAT' : '  ⚾ YOU PITCH';
-    const line = `${half}${frame.inning}  ROCKETS ${frame.awayScore} – ${frame.homeScore} COMETS   ${frame.balls}-${frame.strikes}  ${outs}  ${bases}${verb}${picker}`;
-    if (line !== this.hudText) {
-      this.hudEl.textContent = line;
-      this.hudText = line;
+    if (!this.pickerEl) return;
+    this.pickerEl.classList.toggle('is-open', this.onTheMound);
+    if (!this.onTheMound) return;
+    for (const chip of this.pickerEl.children) {
+      const el = chip as HTMLElement;
+      el.classList.toggle('is-picked', el.dataset.kind === this.pitchKind);
     }
   }
 

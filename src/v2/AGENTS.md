@@ -284,6 +284,11 @@ produce a byte-identical `GameResult`, because every record rests on it.
   split at the seam the model already had. Splitting it cannot move a draw —
   `fork` keys on the label, not position — and the golden fingerprints prove that
   rather than assert it.
+- **⚠️ The SAME `LiveFrame` is yielded every tick, mutated in place — read it and
+  drop it, NEVER retain it.** Collect frames in an array and you hold N
+  references to one object carrying the last tick's state: no error, no red test,
+  every field a plausible value. A sweep of 5,000 frames asking for the peak ball
+  count answers 0. Fold as you iterate, or copy the fields you want.
 - **`LiveFrame` has a `windup` phase** because a choice must be collected before
   the thing it decides; without it a player chooses pitch N during pitch N−1's
   flight. It cannot hang — the view throws for you.
