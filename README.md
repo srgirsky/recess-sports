@@ -110,6 +110,7 @@ VERBOSE=1 npm run validate:models                     # also print measurements
 npm run sim:trajectory     # carry tables, printed next to the fences to clear
 npm run sim:game           # a whole v2 game, headless: line score, box score, play-by-play
 npm run sim:game <seed>    # ...with a chosen seed
+npm run dev                # then /v2/?play=1 watches a real v2 game in 3D
 npm run sim:harness        # 50,000 plate appearances: rates, splits, histograms (~75s)
 npm run sim:plate-sweep    # search the coupled plate constants against sim.retuneTargets
 ```

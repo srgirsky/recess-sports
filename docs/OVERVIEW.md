@@ -812,8 +812,51 @@ different rates** — the relay, ground-ball BABIP, the automatic sac fly, and t
 free steal. PR 10 ruled it fixed so it could not be fitted to an outcome, and
 that decision gets more valuable with each consequence.
 
-Next: v2's render and input membrane — after which the human verbs (steering,
-the throw meter, manual sends) attach to seams that already exist.
+### PR 13 — the render membrane: v2 plays baseball
+
+Twelve PRs built a complete headless sim and a render layer with a park,
+characters, animation, materials and a camera policy. **They had never met.**
+`/v2/?play=1` is the third page, and the first on which v2 plays a game.
+
+Two things this document already described turned out not to be wired:
+**`render/bridge.ts` did not exist** — it is called *"the single named coupling
+point"* — and **`cameraCues.chooseCamera` was called by nothing**, a complete,
+tested two-view policy with a hard cut that no code path reached. Both now
+exist and are gated, in the shape `isFair` and `startDive` established.
+
+**One architectural change.** `simulateGame` is four nested synchronous loops,
+and rendering means the innermost is driven by the frame loop. Rather than write
+a second live driver — which would drift from the 50,000-plate-appearance
+harness silently — the flow became a **generator**: `simulateGameLive` yields and
+`simulateGame` drains it. Measured before committing to it, a per-tick `yield`
+costs **9ns**, ~0.7% of the harness's real work. The gate is **output identity**,
+proven byte-for-byte across three venues × three seeds.
+
+**Watching it found three things no test did:** the defence vanished between
+pitches (the bridge only drew a live `PlayState`), every character stood in its
+**bind pose** (nothing ever started a clip), and the pitch camera sat at a
+standing catcher's own height so he filled the frame — a preset that had never
+been looked through.
+
+**★ And the v1 bundle invariant expired.** *"A v2 change that alters
+`dist/assets/main-*.js` is a bug"* has stood since v2 began. The play view is the
+first v2 code to import the sim, which value-imports the pure `systems/inning`,
+so both entry points needed the same module, Rollup hoisted it into a shared
+chunk, and v1's bundle moved without a line of v1 changing. Three fixes were
+measured and none preserves the hash — **building v1 alone gives a different hash
+and 18kB more**, which proves the hash was a property of the combined build
+rather than a fingerprint of v1's source. The only literal fix is duplicating
+those five modules *in source*, which is the drift PR 7 existed to prevent.
+
+So the proxy was retired and the guarantee moved to what already enforced it:
+the empty v1 source diff, and the lint asserting v1's module graph **cannot
+reach** v2 — automatic, in CI, and always the real guarantee. A bundle-size band
+keeps the one thing the hash incidentally caught. `render.v1BundleInvariant`
+records all three attempts. **The bundle moving is evidence the sharing is real
+rather than decorative.**
+
+Next: PR 14, the input membrane — steering, the throw meter, per-runner sends —
+attaching to `PlayInputs`, which has been a typed seam since PR 6.
 
 ---
 

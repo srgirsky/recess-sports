@@ -32,9 +32,11 @@ import type { Character } from '../../data/types';
 import { GAME, PLAY } from './params';
 import { isStrike, pitchAndSwing, type PitchResult } from './atbat';
 import { catcherOf, cpuWantsSteal, stealRace, type StealTarget } from './steal';
+import type { BallState } from './flight';
+import type { PitchKind } from './pitch';
 import { flyToPlate, releasePitch } from './pitch';
 import { resolvePlate, type PlateOverrides, type PlateParams } from './params';
-import { beginPlay, finishPlay, stepPlay, type PlayOutcome } from './play';
+import { beginPlay, finishPlay, stepPlay, type PlayOutcome, type PlayState } from './play';
 import type { LaunchSpec } from './launch';
 import { planDefence, type DefencePlan } from './lineup';
 import { DEFAULT_GEOMETRY, type FieldGeometry, type PositionId } from './field';
@@ -91,6 +93,57 @@ export type SimEvent =
       flyCaught: boolean;
       foul: boolean;
     };
+
+/**
+ * One resumable instant of a game.
+ *
+ * ★ WHY THE FLOW IS A GENERATOR. `simulateGame` is four nested synchronous
+ * loops, and rendering live means the INNERMOST one is driven by the frame loop
+ * — so the outer three have to become resumable. Writing a separate live driver
+ * would be a SECOND IMPLEMENTATION of the game flow, which is exactly what
+ * `bounce.ts`'s `stepLooseBall` note exists to prevent ("where is it going" and
+ * "where did it go" are one implementation) and what would drift silently from
+ * the 50,000-plate-appearance harness every record now rests on.
+ *
+ * So the flow yields and `simulateGame` drains it: one implementation, two
+ * drivers, the way `layout.browser.js` serves both the dev overlay and the CI
+ * audit. Measured before committing to it — a per-tick `yield` costs 9ns,
+ * about 0.7% of the harness's real per-tick work.
+ *
+ * ★ THE FRAME IS A VIEW, NOT A COPY. `play` is the live `PlayState` itself, not
+ * a clone: the render layer reads it within the tick and keeps nothing, and
+ * cloning nine fielders and four runners sixty times a second to protect
+ * against a caller that does not exist is a cost with no buyer. `bridge.ts` is
+ * the only consumer and a lint holds it read-only.
+ */
+export interface LiveFrame {
+  phase: 'pitch' | 'live' | 'between';
+  inning: number;
+  half: 'top' | 'bottom';
+  outs: number;
+  balls: number;
+  strikes: number;
+  awayScore: number;
+  homeScore: number;
+  bases: [boolean, boolean, boolean];
+  /** The batter and the pitcher, for the view to pose. */
+  batterId: string;
+  pitcherId: string;
+  /**
+   * Who is fielding where.
+   *
+   * ★ THE FRAME CARRIES THIS BECAUSE THE DEFENCE EXISTS BETWEEN PITCHES TOO.
+   * Without it the view can only draw whoever is in a live `PlayState`, so the
+   * nine fielders vanish the moment a play ends and reappear on contact — which
+   * is exactly what the first watch of `/v2/?play=1` showed: an empty park with
+   * one enormous batter in it.
+   */
+  defence: Record<string, PositionId>;
+  /** Live only: the play in progress. Null between pitches. */
+  play: PlayState | null;
+  /** On a `pitch` frame: the released ball and how long it flies. */
+  pitch: { release: BallState; travelSec: number; kind: PitchKind } | null;
+}
 
 export interface GameSpec {
   away: TeamSpec;
@@ -195,7 +248,7 @@ function asAtBatResult(r: PitchResult): AtBatResult | null {
  * Returns when `inning.applyAtBat` (or the play) says the batter is done. The
  * count lives in `HalfInningState` and nothing here duplicates it.
  */
-function playAtBat(
+function* playAtBatLive(
   args: {
     batter: Character;
     pitcher: Character;
@@ -208,11 +261,15 @@ function playAtBat(
     log: string[];
     onEvent?: (e: SimEvent) => void;
     plate?: PlateParams;
+    frame: LiveFrame;
   },
   rng: Rng
-): void {
-  const { half, tally, stats, log, onEvent } = args;
+): Generator<LiveFrame, void, void> {
+  const { half, tally, stats, log, onEvent, frame } = args;
   let pitches = 0;
+  frame.batterId = args.batter.id;
+  frame.pitcherId = args.pitcher.id;
+  frame.defence = args.defence;
 
   for (;;) {
     if (pitches++ >= GAME.MAX_PITCHES_PER_PA) {
@@ -222,11 +279,14 @@ function playAtBat(
       throw new Error(`plate appearance exceeded ${GAME.MAX_PITCHES_PER_PA} pitches`);
     }
     tally.pitches += 1;
-
+    syncFrame(frame, half, 'pitch');
+    frame.play = null;
     const result = pitchAndSwing(
       { pitcher: args.pitcher, batter: args.batter, count: half.state.count, plate: args.plate },
       rng.fork(`p${pitches}`)
     );
+    frame.pitch = { release: result.release, travelSec: result.travelSec, kind: result.pitch };
+    yield frame;
 
     // ★ THE COUNT IS READ BEFORE THE FOLD. `applyAtBat` resets it to 0-0 on
     // every batter-done branch, so an observer told afterwards would see every
@@ -293,7 +353,8 @@ function playAtBat(
     half.occupants.forEach((id, i) => {
       if (id) runners.push({ base: (i + 1) as 1 | 2 | 3, char: args.lookup(id) });
     });
-    const { outcome, scored } = runPlay(
+    const out: { outcome: PlayOutcome | null; scored: string[] } = { outcome: null, scored: [] };
+    yield* runPlayLive(
       {
         launch: result.launch,
         batter: args.batter,
@@ -305,8 +366,12 @@ function playAtBat(
         // The same resolved tune the plate used — one seam, both sides.
         plate: args.plate,
       },
-      rng.fork(`play${pitches}`)
+      rng.fork(`play${pitches}`),
+      frame,
+      out
     );
+    const outcome = out.outcome!;
+    const scored = out.scored;
 
     if (outcome.foul) {
       onEvent?.({ t: 'contact', launch: result.launch, hit: 'out', flyCaught: false, foul: true });
@@ -463,19 +528,44 @@ function tryStealBefore(
 }
 
 /** Step a play to its end, keeping the identities of whoever scored. */
-function runPlay(
+/**
+ * Step a play to its end, yielding every tick.
+ *
+ * The `frame` object is REUSED across ticks — see `LiveFrame`. `out` collects
+ * the result because a generator's `return` value is awkward to reach through
+ * `yield*`, and the caller needs both.
+ */
+/**
+ * Copy the scoreboard onto the frame. The play and the pitch are set by whoever
+ * owns them; everything else is read straight off the half-inning.
+ */
+function syncFrame(frame: LiveFrame, half: HalfState, phase: LiveFrame['phase']): void {
+  frame.phase = phase;
+  frame.outs = half.state.outs;
+  frame.balls = half.state.count.balls;
+  frame.strikes = half.state.count.strikes;
+  frame.bases = [...half.state.bases] as [boolean, boolean, boolean];
+}
+
+function* runPlayLive(
   spec: Parameters<typeof beginPlay>[0],
-  rng: Rng
-): { outcome: PlayOutcome; scored: string[] } {
+  rng: Rng,
+  frame: LiveFrame,
+  out: { outcome: PlayOutcome | null; scored: string[] }
+): Generator<LiveFrame, void, void> {
   const s = beginPlay(spec, rng);
-  const scored: string[] = [];
   const dt = 1 / 60;
   let guard = 0;
+  frame.phase = 'live';
+  frame.play = s;
+  frame.pitch = null;
   while (s.phase === 'live' && guard++ < Math.ceil(PLAY.MAX_PLAY_SEC / dt) + 8) {
     stepPlay(s, dt);
-    for (const e of s.events) if (e.t === 'score') scored.push(e.runner);
+    for (const e of s.events) if (e.t === 'score') out.scored.push(e.runner);
+    yield frame;
   }
-  return { outcome: finishPlay(s), scored };
+  out.outcome = finishPlay(s);
+  frame.play = null;
 }
 
 interface HalfState {
@@ -500,7 +590,14 @@ interface HalfState {
  * The loop is `gameflow.ts`'s, not ours: it decides what follows a half, when a
  * bottom is pointless, and when a tie has run out of bonus innings.
  */
-export function simulateGame(spec: GameSpec, rng: Rng): GameResult {
+/**
+ * A whole game, yielding every tick — the ONE implementation of the flow.
+ *
+ * `simulateGame` drains this; the render layer pumps it against a real clock.
+ * A separate live driver would be a second implementation of the game flow, and
+ * the harness would have no way to know when the two drifted.
+ */
+export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame, GameResult, void> {
   const geo = spec.geo ?? DEFAULT_GEOMETRY;
   const regulation = spec.regulationInnings ?? GAME.REGULATION_INNINGS;
   const mk = (t: TeamSpec): Side => ({
@@ -524,7 +621,26 @@ export function simulateGame(spec: GameSpec, rng: Rng): GameResult {
   /** Innings actually PLAYED, which is not the same as the inning reached. */
   let played = 1;
 
+  const frame: LiveFrame = {
+    phase: 'between',
+    inning: 1,
+    half: 'top',
+    outs: 0,
+    balls: 0,
+    strikes: 0,
+    awayScore: 0,
+    homeScore: 0,
+    bases: [false, false, false],
+    batterId: '',
+    pitcherId: '',
+    defence: {},
+    play: null,
+    pitch: null,
+  };
+
   for (;;) {
+    frame.inning = inning;
+    frame.half = half;
     const bat = half === 'top' ? away : home;
     const field = half === 'top' ? home : away;
     const hs: HalfState = { state: newHalfInning(), score: 0, occupants: [null, null, null] };
@@ -532,7 +648,7 @@ export function simulateGame(spec: GameSpec, rng: Rng): GameResult {
 
     while (!isHalfOver(hs.state)) {
       const batter = spec.lookup(bat.plan.order[bat.lineupIdx % bat.plan.order.length]);
-      playAtBat(
+      yield* playAtBatLive(
         {
           batter,
           pitcher: spec.lookup(field.plan.pitcherId),
@@ -545,9 +661,14 @@ export function simulateGame(spec: GameSpec, rng: Rng): GameResult {
           log,
           onEvent: spec.onEvent,
           plate: resolvePlate(spec.plate),
+          frame,
         },
         rng.fork(`${inning}${half}${bat.lineupIdx}`)
       );
+      syncFrame(frame, hs, 'between');
+      frame.awayScore = away.score + (half === 'top' ? hs.score : 0);
+      frame.homeScore = home.score + (half === 'bottom' ? hs.score : 0);
+      yield frame;
       // ★ The caller advances the order, and only on a completed batter. Every
       // path out of `playAtBat` is a completed batter, which is what makes that
       // safe here and is why v1 has to repeat the check at four call sites.
@@ -616,5 +737,20 @@ export function simulateGame(spec: GameSpec, rng: Rng): GameResult {
     log,
     tally,
   };
+}
+
+/**
+ * The headless game: drain the generator.
+ *
+ * ★ THE GATE ON THIS REFACTOR IS OUTPUT IDENTITY. `sim.gameShape` and every
+ * harness pin rest on what this function returns, so `game.test.ts` asserts the
+ * same seed yields byte-identical results across seeds and venues. If one
+ * differs, the refactor is wrong — there is nothing to interpret.
+ */
+export function simulateGame(spec: GameSpec, rng: Rng): GameResult {
+  const it = simulateGameLive(spec, rng);
+  let r = it.next();
+  while (!r.done) r = it.next();
+  return r.value;
 }
 

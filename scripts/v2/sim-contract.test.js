@@ -1620,3 +1620,37 @@ describe('sim.tagUp', () => {
     expect(rec.theDOUBLEOFFISWRITTENBUTUNREACHABLE).toMatch(/PINNED AT ZERO/);
   });
 });
+
+describe('render.v1BundleInvariant', () => {
+  const rec = M.render.v1BundleInvariant;
+
+  it('is a NOTE recording why a project-wide rule changed', () => {
+    expect(rec.category).toBe('render');
+    expect(rec.status).toBe('note');
+    expect(rec.why).toMatch(/THE HASH WAS A PROXY AND IT EXPIRED/);
+  });
+
+  it('★ keeps all three attempts to preserve it, not just the conclusion', () => {
+    // A rule this old should not be retired on an assertion. Each attempt is
+    // recorded with what it actually produced.
+    expect(rec.measured.attemptsToPreserveIt).toHaveLength(3);
+    expect(rec.measured.attemptsToPreserveIt.join(' ')).toMatch(/1907\.91kB/);
+    expect(rec.theDECISIVEFINDING).toMatch(/NEVER A FINGERPRINT OF v1's SOURCE/);
+  });
+
+  it('★ names what carries the guarantee now, and it is automatic', () => {
+    expect(rec.whatCARRIESITNOW).toHaveLength(3);
+    const all = rec.whatCARRIESITNOW.join(' ');
+    expect(all).toMatch(/v1 has no path to v2/);
+    expect(all).toMatch(/in CI/);
+    // And AGENTS.md must actually say so, rather than the record saying it does.
+    const agents = readFileSync(join(here, '..', '..', 'AGENTS.md'), 'utf8');
+    expect(agents).toMatch(/v1 has no path to v2/);
+    expect(agents).not.toMatch(/a v2 change that alters `dist\/assets\/main-\*\.js`\nis a bug/);
+  });
+
+  it('★ says the bundle moving is evidence rather than damage', () => {
+    expect(rec.theBUNDLEMOVINGISEVIDENCE).toMatch(/the architecture is real/);
+    expect(rec.whyNotDuplicateInSource).toMatch(/own baseball's RULES/);
+  });
+});

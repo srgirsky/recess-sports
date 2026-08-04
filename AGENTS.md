@@ -23,8 +23,23 @@ This repo now builds **two games from one Vite config** (`rollupOptions.input`):
 | status | **shipped and live — do not disturb** | in progress (see `docs/OVERVIEW.md` § v2) |
 
 **v1 is live and stays live until cutover.** Its files, tests, goldlogs and
-layout audit are untouched by v2 work; a v2 change that alters `dist/assets/main-*.js`
-is a bug. v2 lives entirely under `src/v2/**` plus `v2/index.html`.
+layout audit are untouched by v2 work. v2 lives entirely under `src/v2/**` plus
+`v2/index.html`, and two AUTOMATIC checks carry that guarantee: **`git diff main
+-- src ':!src/v2'` must be empty**, and **v1's module graph must not be able to
+reach v2** (`purity.lint.test.js` § "v1 has no path to v2", which runs in CI).
+
+★ **THIS RULE USED TO SAY "a v2 change that alters `dist/assets/main-*.js` is a
+bug", AND THAT PROXY EXPIRED IN PR 13.** The play view is the first v2 code to
+import `sim/game.ts`, which value-imports the pure `systems/inning` — so for the
+first time BOTH entry points needed the same v1 module, Rollup hoisted it into a
+shared chunk, and v1's bundle moved (1,889.83kB → 1,886.99kB) without a line of
+v1 changing. Three fixes were measured and none preserves the hash: forcing
+chunks perturbs v1 further, and **building v1 alone produces a different hash
+AND 18kB more** — so `main-3zKSTReH.js` was never a fingerprint of v1's source,
+only of the combined two-entry build. The one literal fix is duplicating those
+five modules IN SOURCE, which is the drift PR 7 existed to prevent. The bundle
+moving is evidence the sharing below is REAL rather than decorative.
+`render.v1BundleInvariant` has the arithmetic and the three attempts.
 
 **Shared, never copied:** `src/data/**`, `src/config.ts` (import-free constants),
 `src/net/**`, **`src/art/fieldTexture.ts`** (its `TexGraphics` is a structural
@@ -55,10 +70,11 @@ without opening the value door to v1's pixel-domain `geometry.ts`. A MIXED
 statement (`import { type A, B }`) counts as a value import — it has a value
 binding, so it is exactly as capable of carrying pixels as any other.
 
-**v1 may never import v2.** A lint enforces the one-way edge over all of `src/`.
-That is the structural guarantee behind "a v2 change that alters
-`dist/assets/main-*.js` is a bug": reviewing diffs cannot provide it, but an
-unreachable module graph can.
+**v1 may never import v2.** A lint enforces the one-way edge over all of `src/`,
+and since PR 13 it is THE guarantee rather than a backstop for a bundle-hash
+check: reviewing diffs cannot prove v1 is unaffected by v2 work, but an
+unreachable module graph can. If v1 cannot reach v2, no v2 edit can change what
+v1 does — whatever the bundler decides to do with the chunks.
 
 Storage keys `recess_pickcounts` / `recess_games_played` / `recess_album` /
 `recess_team` are **shared on purpose** — the votes are the product and must stay
@@ -405,6 +421,31 @@ continuous across a v1↔v2 switch in the same browser.
   free-return deferral, which is the general lesson: `worthTaking` already
   answered the tag-up question, and the three features `play.ts` said "need a
   player" needed a DECISION. `sim.tagUp`.
+- **★ THE GAME FLOW IS A GENERATOR, so the headless run and the live view are
+  ONE implementation.** `simulateGame` is four nested synchronous loops and
+  rendering means the innermost is driven by the frame loop — so
+  `simulateGameLive` yields and `simulateGame` drains it. A separate live driver
+  would be a second implementation of the flow (`bounce.ts`'s `stepLooseBall`
+  note, one level up) and would drift from the 50k-plate-appearance harness
+  silently. Measured first: a per-tick `yield` costs **9ns**, ~0.7% of the
+  harness's real per-tick work. **The gate is OUTPUT IDENTITY** — the same seed
+  must produce a byte-identical `GameResult`, asserted over seeds and venues,
+  because every record from `sim.gameShape` down rests on it.
+- **★ A CAMERA PRESET THAT HAS NEVER SEEN A SCENE IS A GUESS.** `RIGS.PITCH` sat
+  at eye 4.6ft — a standing catcher's own height, eight feet behind him — so the
+  catcher filled the middle of the frame and the pitch, the one thing that view
+  exists to show, was behind his head. Its comment said "behind-the-catcher
+  view" the whole time. Raised to 8.2ft in PR 13, the first time it was looked
+  through. Corollary: `chooseCamera` must actually be told `phase: 'contact'` —
+  the bridge reported every live tick as `'live'` at first, which left the hard
+  cut (the policy's headline rule, argued from v1 and BB2001) unreachable while
+  looking wired.
+- **⚠️ rAF IS THROTTLED WHEN THE CHROME WINDOW IS BACKGROUNDED, and v2 has the
+  same trap v1 does.** `/v2/?play=1` will appear frozen with `pitchElapsed`
+  stuck mid-pitch and NO console error — the loop is not dead, the browser is
+  just not calling it. Drive it by hand instead: `__spike.tick(t)` with a
+  monotonically increasing `t`, which is what `.claude/skills/verify` already
+  says for v1's Phaser clock.
 - **★ A HARNESS THAT ONLY PINS IS A RATCHET, NOT A GATE.** Most of what PR 8
   measures has no band to answer to — published youth data starts at 9U and
   `sim.note` is explicit that borrowing MLB's numbers is THE failure the
@@ -813,6 +854,8 @@ continuous across a v1↔v2 switch in the same browser.
 | `src/v2/sim/harness.ts` | ★ v2. The statistical harness's PURE aggregator — it plays nothing, it is FED, by an optional `onEvent` observer on `GameSpec`. Counters and histograms only (50k plate appearances of retained objects is a memory bill for nothing). ONE implementation, TWO front ends — the CI slice and `npm run sim:harness` — the way `layout.browser.js` serves both the dev overlay and the CI audit. **`LAUNCH_CUTS` are BORROWED bin edges, not physics**, and `sim.battedBallSplit` says so; there is deliberately **no `hardHitPct`**, because MLB's 95mph threshold reads zero for every kid forever and a statistic that cannot vary is not a measurement. |
 | `scripts/v2/harness.mjs` | ★ v2. `npm run sim:harness` — 874 games / 50,045 PA / 8 seeds / 3 venues in 73.5s, the cheque `rng.ts` wrote when it chose sfc32. Two traps it has to avoid and both are recorded: **every game gets its own root seed** (the per-PA fork key is `${inning}${half}${lineupIdx}`, which is NOT unique across games — one root per RUN measures one game 874 times), and **the roster ROTATES** (`sim:game` plays kids 0-8 vs 9-17, so twelve of thirty never bat and every rate is an average over 60% of a 1-10 stat span). `RUN_BUDGET_MS` is a hard ceiling, not a per-game timeout — the case a per-game timeout misses is every game getting four times slower. |
 | `scripts/v2/plate-sweep.mjs` | ★ v2. `npm run sim:plate-sweep` — searches the four COUPLED plate constants (`ATTACK_ANGLE_DEG` · `UNDERCUT_FROM_JUDGE` · `PULL_DEG_PER_FT` · `TWO_STRIKE_PROTECT_FT`) against `sim.retuneTargets`, which was written BEFORE it ran. It RANKS and never writes `params.ts` — overrides go through `PlateOverrides`, because PR 7's sweep patched files and left two injected values in the tree across two interrupted runs. It checks ORDERING per candidate, not once on the winner. |
+| `src/v2/render/bridge.ts` | ★ v2. The SINGLE coupling point between sim and scene — the file this document claimed existed for twelve PRs before PR 13 wrote it. Takes a `LiveFrame` and positions the ball, nine fielders and the runners; **reads sim state and never writes it**, enforced by a lint rather than by review. Owns no policy: the camera is `cameraCues`, the clips are `AnimationDirector`. It also draws the defence BETWEEN pitches — skipping that left the park empty until contact and every kid in its bind pose, which no test saw and one screenshot did. |
+| `src/v2/spike/PlayView.ts` | ★ v2 at `/v2/?play=1`. The first page on which v2 plays baseball. Pumps `simulateGameLive` — the sim's OWN generator — against a real clock with a **fixed-step accumulator, never the render delta** (`scripts/simclock.lint.test.js` exists because a tempo scalar once put home→1B at 6995ms against a record asserting 4197). Scene built by the SAME functions the Look Spike uses; HUD under `#hud`'s `pointer-events: none` so it cannot eat PR 14's input. |
 | `scripts/v2/purity.lint.test.js` | ★ v2. **★ There is exactly ONE kid speed in the sim** (textual: only `athletes.ts` may read a raw band; functional: `makeFielder` and `makeRunner` agree over 30 kids and stats 1-10). Plus: `src/v2/sim/**` imports only sim/data/config/**five** pure systems (`inning`·`gameflow`·`stats`·`lineup`·`draft`); no three, no DOM, no `Math.random`, no `Date.now`, **no module-scope `Rng`**; every sim file must import in plain Node; whole-statement `import type` gets a separate wider lane; **the whitelist itself is checked** (each named system must be browser-free, random-free, and value-import only pure modules); and **nothing outside `src/v2/**` may import v2**, which is what actually guarantees a v2 edit cannot reach v1's bundle. Two files claimed this gate existed before it did, and it then spent its first life vacuously satisfied. |
 | `scripts/measures.json` | ★ The measurement records + `conformance.test.js`'s gate. Every record names the `src/config.ts` constant it informs, so the audit trail runs source → record → constant, and carries a `status`: `conformed` (ours inside the band), `known-drift` (outside, and the test pins the drift's SIZE so it can't grow or be half-fixed unnoticed), `awaiting-measurement` (BB not measured yet — pins only OUR value, claims nothing about BB), `note` (a finding about the measurement itself). Read this before tuning any "Backyard feel" constant. |
 

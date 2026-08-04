@@ -18,7 +18,7 @@
 // ---------------------------------------------------------------------------
 
 import { beforeAll, describe, it, expect } from 'vitest';
-import { simulateGame, type GameResult, type GameSpec } from './game';
+import { simulateGame, simulateGameLive, type GameResult, type GameSpec } from './game';
 import { battingOrder, planDefence, throwDemandFt } from './lineup';
 import { GAME } from './params';
 import { maxThrowFt } from './fielders';
@@ -354,5 +354,197 @@ describe('determinism', () => {
     const b = makeRng('seed');
     b.fork('somethingElse')();
     expect(simulateGame(spec(), a).tally).toEqual(simulateGame(spec(), b).tally);
+  }, PLAYS_GAMES);
+});
+
+describe('★ the flow is a generator, and draining it changes nothing', () => {
+  // ★ THE GATE ON PR 13's REFACTOR. `simulateGame` became a drain of
+  // `simulateGameLive` so the render layer could pump the same flow against a
+  // real clock instead of a second implementation of it existing. Every record
+  // in `measures.json` from `sim.gameShape` down rests on what `simulateGame`
+  // returns, so the requirement is not "close" — it is IDENTICAL.
+  const fingerprint = (g: GameResult) =>
+    [
+      g.awayScore,
+      g.homeScore,
+      g.innings,
+      g.tie,
+      g.walkOff,
+      JSON.stringify(g.lineScore),
+      JSON.stringify(g.tally),
+      g.log.length,
+    ].join('|');
+
+  /**
+   * ★ THE VALUES `main` PRODUCED BEFORE THE REFACTOR, captured by running the
+   * fingerprint on both sides of the change.
+   *
+   * ★ AND WITHOUT THESE THE IDENTITY GATE IS VACUOUS, which the gate sweep
+   * caught. Comparing `simulateGame` against a hand-pump of `simulateGameLive`
+   * proves only that the drain and the pump agree — they are ONE generator, so
+   * they agree by construction, and a change to the sim moves both together.
+   * The only thing that can detect a behaviour change is a golden value.
+   */
+  const GOLDEN: Record<string, string> = {
+    'park:a': '1-2 i6 pa50 h21 k13 r3 s7',
+    'park:b': '2-1 i6 pa53 h18 k14 r3 s8',
+    'park:c': '9-11 i6 pa74 h40 k13 r20 s13',
+    'sandlot:a': '1-0 i6 pa47 h18 k11 r1 s9',
+    'sandlot:b': '1-0 i6 pa53 h20 k14 r1 s10',
+    'sandlot:c': '0-3 i6 pa53 h28 k15 r3 s11',
+    'blacktop:a': '2-0 i6 pa47 h11 k10 r2 s3',
+    'blacktop:b': '1-2 i6 pa47 h15 k13 r3 s7',
+    'blacktop:c': '5-8 i6 pa61 h28 k13 r13 s3',
+  };
+
+  it('★ still produces what it produced before the generator refactor', () => {
+    for (const venue of VENUES) {
+      for (const seed of ['a', 'b', 'c']) {
+        const g = game(seed, { geo: VENUE_GEOMETRY[venue] });
+        const got = `${g.awayScore}-${g.homeScore} i${g.innings} pa${g.tally.plateAppearances} h${g.tally.hits} k${g.tally.strikeouts} r${g.tally.runs} s${g.tally.stealAttempts}`;
+        expect(got, `${venue}:${seed}`).toBe(GOLDEN[`${venue}:${seed}`]);
+      }
+    }
+  }, PLAYS_GAMES);
+
+  /**
+   * ★ A CHECKSUM OVER THIRTY GAMES, because nine is not sensitive enough.
+   *
+   * The gate sweep injected one extra `stepPlay` per play — a real behaviour
+   * change — and the nine-game golden above did not notice: a single 16ms tick
+   * early in a play rarely flips a discrete outcome, and nine games is not
+   * enough samples for "rarely" to show up. The harness (861 games) does notice,
+   * but it is a script rather than a test.
+   *
+   * So this folds thirty seeded games into one number. It cannot say WHAT
+   * changed — that is what the nine explicit fingerprints are for — but it is
+   * far harder to slip past.
+   *
+   * ★ AND THE ORIGINAL PERTURBATION TURNED OUT TO BE THE WEAK THING, NOT THE
+   * GATE. An extra `stepPlay` 50ms into every play changes NOTHING measurable
+   * across thirty games: the ball moves 0.9ft further on a 50mph grounder while
+   * the races it feeds have margins ten times that, so no discrete outcome
+   * flips. The play reducer is genuinely robust to a single tick early in a
+   * play, which is worth knowing. Both gates fire immediately on a real change
+   * — dt 1/60 to 1/50 — which is what verified them.
+   */
+  const CHECKSUM_30 = 1745365359;
+
+  it('★ checksums thirty games, which is what catches a subtle drift', () => {
+    let acc = 0;
+    for (let i = 0; i < 30; i++) {
+      const off = (i * 7) % ROSTER.length;
+      const at = (j: number) => ROSTER[(off + j) % ROSTER.length].id;
+      const g = simulateGame(
+        {
+          away: { name: 'A', ids: Array.from({ length: 9 }, (_, j) => at(j)) },
+          home: { name: 'B', ids: Array.from({ length: 9 }, (_, j) => at(j + 9)) },
+          lookup: getCharacter,
+          geo: VENUE_GEOMETRY[VENUES[i % VENUES.length]],
+        },
+        makeRng(`golden${i}`)
+      );
+      const t = g.tally;
+      acc =
+        (acc * 31 +
+          g.awayScore * 7 +
+          g.homeScore * 13 +
+          t.plateAppearances * 17 +
+          t.hits * 19 +
+          t.strikeouts * 23 +
+          t.runs * 29 +
+          t.stealAttempts * 37 +
+          g.innings * 41) %
+        2147483647;
+    }
+    expect(acc, 'the sim changed behaviour — if deliberate, re-run and move this').toBe(CHECKSUM_30);
+  }, PLAYS_GAMES);
+
+  it('★ drains to the same result the live pump produces, seed for seed', () => {
+    for (const venue of VENUES) {
+      for (const seed of ['a', 'b', 'c']) {
+        const drained = game(seed, { geo: VENUE_GEOMETRY[venue] });
+        // Pump it by hand, exactly as the render driver does.
+        const it = simulateGameLive(spec({ geo: VENUE_GEOMETRY[venue] }), makeRng(seed));
+        let r = it.next();
+        let frames = 0;
+        while (!r.done) {
+          frames++;
+          r = it.next();
+        }
+        expect(fingerprint(r.value), `${venue}:${seed}`).toBe(fingerprint(drained));
+        expect(frames, 'and it actually yielded').toBeGreaterThan(100);
+      }
+    }
+  }, PLAYS_GAMES);
+
+  it('★ survives being pumped at a fixed step, as the view does', () => {
+    // ★ THE VIEW'S OWN LOOP, HEADLESS. `PlayView` accumulates real time and
+    // pulls one frame per sim tick; a `pitch` frame is held for its flight and a
+    // `between` frame for the beat. That means the generator is advanced on a
+    // SCHEDULE rather than drained, and this asserts the schedule terminates
+    // and lands on the same score — the failure mode being a phase the pump
+    // never leaves.
+    const it = simulateGameLive(spec(), makeRng('pumped'));
+    const STEP = 1 / 60;
+    let r = it.next();
+    let clock = 0;
+    let held = 0;
+    let ticks = 0;
+    while (!r.done && ticks++ < 4_000_000) {
+      const f = r.value;
+      if (f.phase === 'pitch') {
+        held += STEP;
+        if (held < f.pitch!.travelSec) continue;
+      } else if (f.phase === 'between') {
+        held += STEP;
+        if (held < 2.55) continue;
+      }
+      held = 0;
+      clock += STEP;
+      r = it.next();
+    }
+    expect(r.done, 'the pump has to finish the game').toBe(true);
+    const drained = game('pumped');
+    expect((r.value as GameResult).awayScore).toBe(drained.awayScore);
+    expect((r.value as GameResult).homeScore).toBe(drained.homeScore);
+    // And a game is a plausible length of real time, not seconds or an hour.
+    expect(clock, 'sim-seconds of a whole game').toBeGreaterThan(120);
+    expect(clock).toBeLessThan(3600);
+  }, PLAYS_GAMES);
+
+  it('★ yields a frame the render layer can read', () => {
+    // The bridge's contract, asserted here rather than in the render layer, so
+    // a change to the sim that breaks it fails on the sim's own tests.
+    const it = simulateGameLive(spec(), makeRng('frames'));
+    let sawPitch = false;
+    let sawLive = false;
+    let sawBetween = false;
+    for (let r = it.next(), n = 0; !r.done && n < 40_000; r = it.next(), n++) {
+      const f = r.value;
+      expect(f.inning).toBeGreaterThanOrEqual(1);
+      expect(f.outs).toBeGreaterThanOrEqual(0);
+      // 3 is legal on a `between` frame: the half has just ended.
+      expect(f.outs).toBeLessThanOrEqual(3);
+      if (f.phase === 'pitch') {
+        sawPitch = true;
+        expect(f.pitch, 'a pitch frame carries the release').toBeTruthy();
+        expect(f.pitch!.travelSec).toBeGreaterThan(0);
+        expect(f.play, 'and no play yet').toBeNull();
+      }
+      if (f.phase === 'live') {
+        sawLive = true;
+        expect(f.play, 'a live frame carries the play').toBeTruthy();
+        expect(f.play!.fielders.length).toBe(9);
+      }
+      // ★ THE DEFENCE IS ON EVERY FRAME, because the fielders are on the field
+      // between pitches too. Without it the view can only draw a live play, and
+      // the park empties the moment one ends — the first thing watching found.
+      expect(Object.keys(f.defence).length, 'nine fielders, always').toBe(9);
+      if (f.phase === 'between') sawBetween = true;
+      expect(f.batterId).toBeTruthy();
+      expect(f.pitcherId).toBeTruthy();
+    }
+    expect(sawPitch && sawLive && sawBetween, 'all three phases occur').toBe(true);
   }, PLAYS_GAMES);
 });

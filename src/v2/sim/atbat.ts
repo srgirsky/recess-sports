@@ -61,6 +61,7 @@ import { MOUND_DIST } from './field';
 import { resolveSwing } from './contact';
 import type { LaunchSpec } from './launch';
 import type { Rng } from './rng';
+import type { BallState } from './flight';
 
 /** Where a pitch crossed the plate: lateral offset and height, both ft. */
 export interface Crossing {
@@ -77,16 +78,20 @@ export interface Crossing {
  * ball reaches him, so the pitch's own flight time is what gives a runner his
  * jump. That is how `sim.stealRace` gets v1's hard-coded "+0.12 off slow stuff"
  * for free instead of as a constant.
+ *
+ * `release` rides along for the RENDER: `flight.sampleAt` was "the render seam,
+ * exposed before any renderer exists", and a view that wants to draw the ball
+ * flying to the plate needs the state it flew from. Both are computed already.
  */
 export type PitchResult =
   /** Taken, and outside the zone. */
-  | { kind: 'ball'; crossing: Crossing; pitch: PitchKind; travelSec: number }
+  | { kind: 'ball'; crossing: Crossing; pitch: PitchKind; travelSec: number; release: BallState }
   /** Taken, and over the plate. */
-  | { kind: 'calledStrike'; crossing: Crossing; pitch: PitchKind; travelSec: number }
+  | { kind: 'calledStrike'; crossing: Crossing; pitch: PitchKind; travelSec: number; release: BallState }
   /** Offered at and missed. */
-  | { kind: 'swingingStrike'; crossing: Crossing; pitch: PitchKind; travelSec: number }
+  | { kind: 'swingingStrike'; crossing: Crossing; pitch: PitchKind; travelSec: number; release: BallState }
   /** Nicked it. A strike, but never the third. */
-  | { kind: 'foulTip'; crossing: Crossing; pitch: PitchKind; travelSec: number }
+  | { kind: 'foulTip'; crossing: Crossing; pitch: PitchKind; travelSec: number; release: BallState }
   /** Hit it. Fair or foul is the play's to decide, not the swing's. */
   | {
       kind: 'inPlay';
@@ -95,6 +100,7 @@ export type PitchResult =
       launch: LaunchSpec;
       travelSec: number;
       plateSpeedFts: number;
+      release: BallState;
     };
 
 export interface PitchSpec {
@@ -220,7 +226,7 @@ export function pitchAndSwing(spec: PitchSpec, rng: Rng): PitchResult {
 
   if (!swings) {
     const kind = isStrike(crossing) ? 'calledStrike' : 'ball';
-    return { kind, crossing, pitch: plan.kind, travelSec: flown.travelSec };
+    return { kind, crossing, pitch: plan.kind, travelSec: flown.travelSec, release: released };
   }
 
   // He offered. The same read decides how well.
@@ -242,9 +248,9 @@ export function pitchAndSwing(spec: PitchSpec, rng: Rng): PitchResult {
   );
 
   if (swing.kind === 'miss')
-    return { kind: 'swingingStrike', crossing, pitch: plan.kind, travelSec: flown.travelSec };
+    return { kind: 'swingingStrike', crossing, pitch: plan.kind, travelSec: flown.travelSec, release: released };
   if (swing.kind === 'foulTip')
-    return { kind: 'foulTip', crossing, pitch: plan.kind, travelSec: flown.travelSec };
+    return { kind: 'foulTip', crossing, pitch: plan.kind, travelSec: flown.travelSec, release: released };
   return {
     kind: 'inPlay',
     crossing,
@@ -252,5 +258,6 @@ export function pitchAndSwing(spec: PitchSpec, rng: Rng): PitchResult {
     launch: swing.launch,
     travelSec: flown.travelSec,
     plateSpeedFts,
+    release: released,
   };
 }
