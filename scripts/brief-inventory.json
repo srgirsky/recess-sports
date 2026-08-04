@@ -44,588 +44,588 @@
   {
     "anchor": "src/systems/**",
     "claim": "src/v2/sim/",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "fork('a').fork('b')",
     "claim": "★ The Rng is INJECTED and FORKED, never module-scope",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "C_D = 0.297 + 0.0292·(ω/1000rpm)",
     "claim": "★ THE AERO MODEL NEEDED NO TABLES, and that is why the ban above is affordable.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "defense.fielderSpeed",
     "claim": "★ THERE IS EXACTLY ONE KID SPEED, AND A LINT SAYS SO.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "defense.cpuReaction",
     "claim": "★ THE SPRINT MODEL IS SOLVED FROM THE ANCHOR, NOT PICKED — and the anchor alone cannot determine it.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/sim/fielders.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "FIELD_MARGIN − BOUNCE.BALL_SETTLE_MARGIN_FT",
     "claim": "★ A FIELDER'S REACH IS 3 ft, AND IT IS A CAPSULE, NOT A SPHERE.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "t = (2v/g)·√((1 − √(1 − k²))/2)",
     "claim": "★ AN ARM HAS A RANGE, SO THE RELAY IS A CONSEQUENCE RATHER THAN A MECHANIC.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "defense.chaserElection",
     "claim": "★ THE CHASER ELECTION MUST INCLUDE THE READ, AND ITS GATE BOUGHT LESS THAN CLAIMED.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "stepLooseBallFull",
     "claim": "★ THE PLAY REDUCER IS AN ORCHESTRATOR, AND THE BALL IS ONE FUNCTION.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "systems/inning.ts",
     "claim": "★ PlayOutcome IS v1's LiveOutcome , structurally.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/sim/params.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "CATCH_CENTRE_FT + reachFt()",
     "claim": "★ A GROUNDER IS A BALL THAT NEVER RISES ABOVE A GLOVE, not one whose phase says flight .",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/sim/play.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "sprintTimeForFt",
     "claim": "★ THE ELECTION MUST KNOW A RUNNING KID IS RUNNING.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "CPU_RUNNER_GREED_DIST",
     "claim": "★ THE RUNNER ASKS A RACE, NOT A DISTANCE.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/sim/params.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "finishPlay",
     "claim": "★ startLeg HAS NO OCCUPANCY CHECK, AND MUST NOT.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "RelayState.committed",
     "claim": "★ THE RELAY IS A CONSEQUENCE AND THE LOOK-BACK RULE IS NOT PORTED.",
-    "owner": "AGENTS.md",
+    "owner": "scripts/measures.json",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "zoneHalfWidthFt",
     "claim": "★ THE STRIKE ZONE IS THE RULEBOOK'S, IN FEET — v1's HAS NO UNITS AT ALL.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/sim/atbat.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "SwingSpec.timingErrorSec",
     "claim": "★ THE BATTER HAS ONE FACULTY, NOT TWO.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/sim/atbat.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "Rng.bell()",
     "claim": "★ Rng.bell() IS BOUNDED, AND THAT HID A MISSING MECHANIC.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "sim.foulBalls",
     "claim": "★ isFair HAD NO CALLER, so every batted ball in v2 was fair.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "PITCH.ELEV_ITERATIONS",
     "claim": "★ TWO PERFORMANCE FINDINGS THAT ARE MODELLING FINDINGS.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/sim/pitch.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "gameflow.decideAfterHalf",
     "claim": "★ THE GAME LOOP DOES NOT RESTATE v1's RULES.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "halfHasThreeOuts",
     "claim": "★ A PLAY CLOCK THAT FIRES IS A SOFT-LOCK THAT WAS CAUGHT.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/sim/play.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "defense.fielderSpeed.exposed",
     "claim": "Two v1 baserunning bugs are pinned before they can happen again",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "sim.integratorStep",
     "claim": "FLIGHT_HZ = 240 is NOT an accuracy choice",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "v_f = e_A·v_ball + (1 + e_A)·v_bat",
     "claim": "★ THE BAT-BALL COLLISION IS AN IDENTITY, NOT A FIT.",
-    "owner": "AGENTS.md",
+    "owner": "docs/OVERVIEW.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "asin(offset / centreSep)",
     "claim": "★ A CLAMP IS NOT A MISS, AND A HISTOGRAM IS WHAT SAW IT.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/sim/contact.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "crossing.y + bell() × judgeFt",
     "claim": "★ THE SWING HAD NO PLANE, AND A MEAN IS WHAT SAW IT.",
-    "owner": "AGENTS.md",
+    "owner": "docs/OVERVIEW.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "sim.retuneTargets",
     "claim": "★ THE STRIKEOUT RATE IS LOAD-BEARING, WHICH IS WHY PR 9 DID NOT TOUCH IT.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "DEFENSE.LEASH_FT",
     "claim": "★ THE LEASH KEYED ON WHERE THE BALL STOPPED, SO NO INFIELDER WAS EVER A CANDIDATE FOR A GROUNDER HEADED OUT.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/sim/fielders.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "makeFielder.accelFtS2 === makeRunner",
     "claim": "★ RANGE AND CANDIDACY ARE DIFFERENT QUESTIONS, and confusing them makes a real fix look like a failure.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "GameSpec.lookup",
     "claim": "★ AN ORDERING TEST MUST CONTROL FOR THE ROSTER.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "BASE_COVER",
     "claim": "★ A DIVE MUST BE A LAST RESORT, OR EVERY CATCH IS ONE.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/sim/field.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "PitchResult.travelSec",
     "claim": "★ A STEAL IS A RACE, NOT A ROLL — and the lead is what makes it a contest.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "sim.throwSpeed",
     "claim": "★ A THRESHOLD CANNOT DECLINE A FREE STEAL, so the limit is situational.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "retireBatterOnCatch",
     "claim": "★ A CAUGHT FLY RETIRES THE BATTER HOWEVER LONG IT HUNG, and that cannot be said positionally.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/sim/play.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "simulateGameLive",
     "claim": "★ THE GAME FLOW IS A GENERATOR, so the headless run and the live view are ONE implementation.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "phase: 'contact'",
     "claim": "★ A CAMERA PRESET THAT HAS NEVER SEEN A SCENE IS A GUESS.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/cameraCues.test.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": ".claude/skills/verify",
     "claim": "⚠️ rAF IS THROTTLED WHEN THE CHROME WINDOW IS BACKGROUNDED, and v2 has the same trap v1 does.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "PlayInputs",
     "claim": "★ PlayInputs WAS ACCEPTED AND IGNORED FOR EIGHT PRs.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "throwFlightSec(from, to, carrier.arm)",
     "claim": "★ THERE IS NO THROW METER IN v2, BECAUSE THERE IS NO POWER.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "defense.fieldingAssist",
     "claim": "★ AND NO FIELDING ASSIST, MEASURED RATHER THAN ASSUMED.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "sim.harnessMethod",
     "claim": "★ A HARNESS THAT ONLY PINS IS A RATCHET, NOT A GATE.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "pace.pitchCorridor",
     "claim": "★ THE MEASURED PITCH QUANTITY IS A TIME, NOT A SPEED.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "pace.swingWindows",
     "claim": "The swing window is a FRACTION of the flight, not a duration.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "sim.aeroModelLowSpeed",
     "claim": "★ sim.aeroModelLowSpeed is no longer a footnote.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "v' = (5v − 2ωR)/7",
     "claim": "★ THE BOUNCE MODEL'S FORM IS DERIVED; ITS COEFFICIENTS ARE CITED OR PENDING.",
-    "owner": "AGENTS.md",
+    "owner": "docs/OVERVIEW.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "awaiting-measurement",
     "claim": "★ RESTING DISTANCE IS NOT SPEED, and reading it as speed inverted a record for three PRs.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/sim/params.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "stepFlight",
     "claim": "Rolling containment lives inside rollStep , not in the caller.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "event.state",
     "claim": "Two flight.ts contracts a bounce caller must honour.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "Events are BISECTED, never stepped onto.",
     "claim": "Events are BISECTED, never stepped onto.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "bb2001 | baseball | physics | derived",
     "claim": "Every measures.json record now declares reference",
-    "owner": "AGENTS.md",
+    "owner": "docs/OVERVIEW.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "(root seed, label)",
     "claim": "★ THE PITCH IS YIELDED BEFORE IT IS RESOLVED, AND THAT IS WHY A PERSON CAN BAT.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "TWO_STRIKE_PROTECT_FT",
     "claim": "★ A HUMAN SUPPLIES THE MODEL'S OWN TWO ERROR TERMS, and two CPU rules deliberately do not apply to him.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/sim/harness.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "timingErrorSec",
     "claim": "★ AIM IS A HEIGHT, NOT A POINT.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "SWING_TAIL_SEC",
     "claim": "★ THE VIEW MUST HOLD THE PITCH PAST THE CROSSING",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "render.pitchFraming",
     "claim": "★ A PROJECTION TEST CANNOT SEE OCCLUSION, and the pitch camera could not see the plate.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "sim.humanPitch",
     "claim": "★ PITCHING IS CHOOSING, AND THERE IS NO METER ON THE MOUND EITHER.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "FLOW.PITCH_CLOCK_MS",
     "claim": "★ LiveFrame HAS A windup PHASE BECAUSE A CHOICE MUST BE COLLECTED BEFORE THE THING IT DECIDES.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/spike/PlayView.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "sim.runnerSends",
     "claim": "★ A SEND OVERRIDES JUDGEMENT, NEVER TRAFFIC — and the verb only bites on a ball in the air.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "humanPitches",
     "claim": "★ THE HUMAN NEEDS A SIDE, OR THE TAP VERBS COLLIDE.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/spike/PlayView.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "src/v2/render/**",
     "claim": "src/v2/render/",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "render/cameraCues.ts",
     "claim": "Camera POLICY is pure",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "pointer-events: none",
     "claim": "The one CSS rule that replaces a whole gotcha class:",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "render.characterPresence",
     "claim": "Render-only exaggeration must never leak into the sim.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "fenceIsConvex",
     "claim": "The fence profile must stay CONVEX",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "scripts/v2/validate-models.mjs",
     "claim": "Character art",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "heightFt × CHARACTER_SCALE",
     "claim": "The rig must sum to the height it claims.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "hair: 'bald', accessory: 'none'",
     "claim": "★ Summing to the right height did NOT make the drawing right, and the bounding-box test could not tell.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/skeleton.test.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "skeleton.test.ts",
     "claim": "★ A feature you cannot SEE is the other half of the same bug, and the bbox tests cannot see it either",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "docs/v2/animation-brief.md",
     "claim": "The clip library is src/v2/render/clips.ts , and the two v2 docs are MIRRORS of it.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "AnimationDirector.test.ts",
     "claim": "A marker frame is DERIVED from the motion, not read from the file.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "playToMarker(clip, secUntilEvent)",
     "claim": "AnimationDirector is the only place clips are played",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "setInterpolation(InterpolateSmooth)",
     "claim": "Quaternion tracks are LINEAR only.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/proceduralClips.ts",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "render/proceduralClips.ts",
     "claim": "Nothing is blocked on the animator either.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "render/CharacterFactory.ts",
     "claim": "★ THE CHARACTER PIPELINE IS THE RUNTIME HALF OF THE ASSET CONTRACT'S §4",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "scripts/v2/sync-decoders.mjs --check",
     "claim": "render/modelLoader.ts is the only file that loads a .glb",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "npm run validate:models",
     "claim": "Two asset directories, two jobs, and conflating them is the mistake.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "npm run manifest:models",
     "claim": "The delivery manifest is a generated manifest.json , NOT import.meta.glob .",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "npm run export:proxy-kid",
     "claim": "npm run export:proxy-kid writes a contract-legal kid_<id>.glb from the proxy",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": ".glb",
     "claim": "A model's bones must be parented to the character root, OUTSIDE the LOD.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "lodDistancesFt",
     "claim": "lodBias DROPS the nearest levels, it does not scale distances.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "render.characterDrawCost",
     "claim": "⚠️ A delivered model costs up to 8 draw calls where a proxy costs 2",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "asset-contract.md",
     "claim": "Expression is face_atlas , and ONLY on delivered models.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },
   {
     "anchor": "attachOutline",
     "claim": "Outline hulls are SIBLINGS, never children.",
-    "owner": "AGENTS.md",
+    "owner": "src/v2/render/AGENTS.md",
     "kind": "bullet",
     "section": "v2 architecture rules"
   },

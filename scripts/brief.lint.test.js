@@ -78,7 +78,16 @@ const read = (p) => readFileSync(join(ROOT, p), 'utf8');
 const BUDGET = {
   // The always-loaded one. Every byte here is spent in every session, whether or
   // not the session goes anywhere near the thing the byte describes.
-  'AGENTS.md': { bytes: 165_000, lines: 1_050, imperative: false, numbersFree: false },
+  'AGENTS.md': { bytes: 105_000, lines: 290, imperative: false, numbersFree: false },
+
+  // ★ A LAZY BRIEF IS CHARGED ONLY TO SESSIONS IN ITS SUBTREE, which is why
+  // these two sit well above the always-loaded file's eventual ceiling. The v2
+  // rules were 57,812 B in the root brief and are 34,559 B here — the stories
+  // went to the records and the source headers that already held them, and the
+  // rules did not. Compressing further would trade the guarantee the inventory
+  // exists to give for bytes that no v1 session ever pays.
+  'src/v2/AGENTS.md': { bytes: 23_300, lines: 370, imperative: true, numbersFree: false },
+  'src/v2/render/AGENTS.md': { bytes: 13_400, lines: 215, imperative: true, numbersFree: false },
 
   // The measurement instrument and the lints.
   'scripts/AGENTS.md': { bytes: 3_500, lines: 70, imperative: true, numbersFree: false },
@@ -283,6 +292,18 @@ describe('no rule was lost', () => {
     expect(new Set(anchors).size, 'anchors must be unique — they identify the entry').toBe(
       inventory.length,
     );
+
+    // The inventory contains every anchor BY CONSTRUCTION, so an entry that
+    // owns itself is vacuously satisfied forever. Same for a CLAUDE.md, which
+    // is a symlink to the AGENTS.md beside it and so vouches for nothing extra.
+    const selfOwning = inventory.filter(
+      (e) => e.owner === 'scripts/brief-inventory.json' || /(^|\/)CLAUDE\.md$/.test(e.owner),
+    );
+    expect(
+      selfOwning.map((e) => e.anchor),
+      `an entry may not be owned by the inventory itself or by a CLAUDE.md symlink — it would\n` +
+        `satisfy the check without any file actually carrying the rule.`,
+    ).toEqual([]);
   });
 
   it('every rule is still somewhere', () => {
