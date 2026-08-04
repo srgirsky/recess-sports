@@ -21,9 +21,12 @@
 import { GameView } from './game/GameView';
 import { Router } from './ui/Router';
 import { TitleScreen } from './ui/screens/TitleScreen';
+import { DraftScreen } from './ui/screens/DraftScreen';
 import { ResultScreen } from './ui/screens/ResultScreen';
 import { resultModel } from './ui/resultModel';
 import { ROSTER, getCharacter } from '../data/characters';
+import { makeRng } from './sim/rng';
+import { recordGamePlayed } from '../systems/picklog';
 import type { GameResult } from './sim/game';
 
 export class App {
@@ -38,6 +41,8 @@ export class App {
    * game exactly, and the rematches walk from there.
    */
   private gameNo = 0;
+  /** The teams the player drafted, kept so PLAY AGAIN is a rematch. */
+  private rosters: { away: string[]; home: string[] } | null = null;
 
   constructor(canvas: HTMLCanvasElement, screens: HTMLElement) {
     this.router = new Router(screens);
@@ -53,18 +58,45 @@ export class App {
   }
 
   private showTitle(): void {
-    this.router.show(new TitleScreen(() => this.playBall()));
+    this.rosters = null;
+    this.router.show(new TitleScreen(() => this.showDraft()));
+  }
+
+  /**
+   * The draft — and the reason the whole project exists.
+   *
+   * ★ EVERY TAP HERE IS A VOTE. `picklog.recordPick` tallies the human's picks
+   * and never the CPU's, which is what makes pick rates mean preference rather
+   * than mean the greedy value function. `draftSession.ts` owns that rule and a
+   * test asserts the exact set of ids counted.
+   */
+  private showDraft(): void {
+    this.router.show(
+      new DraftScreen(
+        ROSTER.map((c) => c.id),
+        makeRng(`draft-${this.seedBase()}-${this.gameNo}`),
+        (playerTeam, aiTeam) => {
+          this.rosters = { away: playerTeam, home: aiTeam };
+          this.playBall();
+        }
+      )
+    );
   }
 
   private playBall(): void {
     this.gameNo += 1;
-    this.game.newGame(this.seed());
+    this.game.newGame(this.seed(), this.rosters ?? undefined);
+    // The denominator for a pick rate: how many games this browser has played.
+    recordGamePlayed();
     this.router.hide();
   }
 
+  private seedBase(): string {
+    return new URLSearchParams(location.search).get('seed') ?? 'play';
+  }
+
   private seed(): string {
-    const pinned = new URLSearchParams(location.search).get('seed') ?? 'play';
-    return this.gameNo <= 1 ? pinned : `${pinned}-${this.gameNo}`;
+    return this.gameNo <= 1 ? this.seedBase() : `${this.seedBase()}-${this.gameNo}`;
   }
 
   private showResult(result: GameResult): void {
@@ -83,6 +115,8 @@ export class App {
       new ResultScreen(
         model,
         (id) => getCharacter(id).name,
+        // PLAY AGAIN is a REMATCH — same nine kids, so a player is not made to
+        // re-draft to have another go at a team they just built.
         () => this.playBall(),
         () => this.showTitle()
       )

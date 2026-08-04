@@ -1264,10 +1264,60 @@ pinned to its 14px floor, so the scalar cannot rescue it. Compressed rather than
 scrolled: a six-year-old should not have to discover that the button they need is
 below the fold.
 
-Next: the draft, which is the actual product — every pick is a vote, and v2 has
-no way to cast one yet. Then the fielding and batting assists sized from a real
-child's aim error, and seats, so the side is the sim's answer rather than the
-view's.
+### PR 21 — the draft: v2 can finally cast a vote
+
+The root brief's first paragraph says the game is a **voting machine** — every
+draft pick is tallied, and pick rates reveal which kids become toys and shows.
+v2 played beautifully and had shipped the demo without the product: there was no
+way to pick a team, so there was no way to cast a vote.
+
+Thirty kids on a board, you take nine, the CPU alternates, and **every human tap
+is a vote**. The tally goes through v1's own `systems/picklog.ts` — the storage
+keys are shared on purpose, so a kid who switches between `/` and `/v2/` in the
+same browser keeps one continuous ledger. The draft state and the CPU's greedy
+value are v1's `systems/draft.ts`, imported rather than reimplemented, so leaving
+a stud on the board costs exactly what it costs in v1.
+
+**★ The one invariant is which picks count**, and `picklog` states it: *"AI picks
+are intentionally NOT counted — we only want human preference."* A CPU pick that
+got tallied does not look like anything — no crash, no wrong number, no red test
+— it just quietly poisons the one dataset the project exists to gather, and
+nobody finds out until someone asks which characters to make toys of. So the
+recorder is **injected**, which is what lets a test assert the exact set of ids
+counted instead of trusting that the right branch called the right function.
+Verified in the running UI too: nine picks, nine votes, none of the CPU's.
+
+**★ And thirty kids came up in identical green.** The portraits are v1's own
+`art/CharacterArt.ts` — the same thirty faces, imported, not a second set
+commissioned — and the first board drew each one as inline SVG. `CharacterArt`
+refers to its gradients by **id** (`url(#jerseyG)`, `url(#skinG)`), which is
+correct and unremarkable while each drawing is its own document; v1 never sees it
+because every kid becomes a separate Phaser texture. Inline thirty into one page
+and the document holds thirty elements called `jerseyG`, every reference resolves
+to the **first**, and all thirty kids wear the first kid's shirt, skin and hair.
+Nothing errors. It reads as a palette bug in the art, and the art is fine.
+
+Fixed structurally rather than by discipline: a portrait is an `<img>` with a
+data URI, so each drawing is its own document and the collision is not avoided —
+it is unrepresentable.
+
+**The bundle gate fired, and was measuring the wrong thing.** Pulling in
+`CharacterArt` made Rollup hoist 62kB *out* of v1's entry into the shared chunk,
+so `main-*.js` "shrank" 1887 → 1824 and the gate reported a 3.3% drift on a build
+where **v1's real payload moved by 0.3kB** (1908.4 → 1908.7). Measuring one file
+is the retired bundle-hash's mistake in another form: chunk *boundaries* are a
+property of the combined build, and only the total an entry pulls down is a
+property of the entry. It reads the built HTML now and sums what each entry
+actually loads.
+
+The layout audit covers the draft too, which needed one honest change: it is the
+first screen that **scrolls**, and below the fold is reachable where off the side
+is not. Horizontal containment is asserted always, vertical only for screens that
+do not scroll.
+
+Next: the fielding and batting assists sized from a real child's aim error, and
+seats, so the side is the sim's answer rather than the view's. Then the cutover
+that points `/` at v2.
 
 ---
 

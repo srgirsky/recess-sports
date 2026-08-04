@@ -212,9 +212,9 @@ their own gate:
 npm run audit:v2-layout
 ```
 
-It walks `#hud` and `#screens` at six viewports × five states — three in-game
-plus the title and result screens — and applies the *same* `ui/layoutMath.ts`
-overlap predicates. The matrix is viewports rather than
+It walks `#hud` and `#screens` at six viewports × six states — three in-game
+plus the title, draft and result screens — and applies the *same*
+`ui/layoutMath.ts` overlap predicates. The matrix is viewports rather than
 content because v2 sizes everything off one `clamp()` in `tokens.css` — the
 interesting sizes are the ones that pin that clamp at either end. It drives the
 sim clock by hand, since a headless page throttles `requestAnimationFrame`.

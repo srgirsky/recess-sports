@@ -170,6 +170,8 @@ costs no ground. Do not restructure it.
 - **A caught fly retires the batter however long it hung**, and that cannot be
   said positionally: a batter-runner who has touched first is no longer at base
   0. `PlayState.batterId` is the identity. `sim.tagUp`.
+- **The reducer must not re-read the ball by RE-TRACING it** — the trajectory
+  does not change between ticks, only the fielders move.
 - **A play clock that fires is a soft-lock.** `play.test.ts` sweeps plays and
   requires ZERO reach the cap. Three guards in `play.ts` are honestly labelled
   belt-and-braces because deleting them breaks no test.
@@ -297,15 +299,6 @@ produce a byte-identical `GameResult`, because every record rests on it.
   window is unreachable by construction. Any test of swing timing must sweep BOTH
   signs; a one-sided sweep passes for the broken build.
 
-## Two performance findings that are modelling findings
-
-`releasePitch` is a secant over a bisection: a pitcher aims at a **SPOT** and his
-error lands on the RELEASE, not the intention, so it is one integration per pitch
-instead of ninety. And the reducer must not re-read the ball by RE-TRACING it —
-the trajectory does not change between ticks, only the fielders move. Fewer
-elevation iterations measured BETTER aim error, because the residual is a weak
-arm's changeup saturating.
-
 ## Measuring
 
 `src/v2/sim/harness.ts` is the PURE aggregator — it plays nothing, it is FED by
@@ -335,20 +328,26 @@ are in `scripts/AGENTS.md`; cite the record id rather than the value.
 
 ## The screens
 
-`/v2/` is the game — title, play, result — and `App.ts` owns that order.
+`/v2/` is the game — title, draft, play, result — and `App.ts` owns that order.
 `?play=1`, `?spike=1` and `?anims=1` stay reachable as review surfaces.
 
-- **The world is never torn down to show a screen.** The canvas is always the
-  game and a screen is DOM over it, so the title shows the real park and PLAY
-  AGAIN costs one generator rather than a model reload. There is no Boot.
+- **Never tear the world down to show a screen.** The canvas is always the game
+  and a screen is DOM over it, so the title shows the real park and PLAY AGAIN
+  costs one generator, not a model reload. There is no Boot.
 - **`#hud` and `#screens` have OPPOSITE pointer rules** — the HUD is
-  `pointer-events: none` so taps reach the field, a screen is modal and takes
-  every tap. Two elements, not one with a mode flag.
-- **A game runs behind the title as attract mode**, so anything reacting to the
-  sim must ask whether a screen is up first — an end-of-game that fires behind
-  one is ignored, or a Result appears for a game nobody played.
+  `pointer-events: none` so taps reach the field; a screen is modal. Two
+  elements, never one with a mode flag.
+- **A game runs behind the title**, so anything reacting to the sim must ask
+  whether a screen is up — an end-of-game that fires behind one is ignored, or a
+  Result appears for a game nobody played.
 - **A control is `.interactive`**: one class opts it into pointer events AND
   applies the `--tap-min` floor, so tappable and big-enough cannot diverge.
+- **★ Only a PERSON'S draft pick votes** (`ui/draftSession.ts`; `picklog.ts` is
+  shared with v1 so the tally is continuous). A counted CPU pick looks like
+  nothing and poisons the one dataset the game exists to gather.
+- **A portrait is an `<img>`, never inline SVG** (`ui/portrait.ts`):
+  `CharacterArt` names its gradients by id, so thirty inlined kids silently all
+  wear the first kid's shirt.
 
 ## The render membrane
 

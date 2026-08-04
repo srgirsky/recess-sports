@@ -524,10 +524,14 @@ export class GameView {
    * which is the difference between an instant PLAY AGAIN and a visible stall
    * on the one button a kid presses most.
    */
-  newGame(seed: string): void {
+  newGame(seed: string, rosters?: { away: string[]; home: string[] }): void {
     const geo = VENUE_GEOMETRY[this.venue];
-    const away = { name: 'ROCKETS', ids: ROSTER.slice(0, 9).map((c) => c.id) };
-    const home = { name: 'COMETS', ids: ROSTER.slice(9, 18).map((c) => c.id) };
+    // ★ THE DRAFTED TEAM, WHEN THERE IS ONE. `/v2/?play=1` has no draft in front
+    // of it and must still play, so the first eighteen of the roster stay the
+    // fallback — which is also what every measurement sweep and the layout audit
+    // drive, and what keeps a seeded game reproducible without a draft.
+    const away = { name: 'ROCKETS', ids: rosters?.away ?? ROSTER.slice(0, 9).map((c) => c.id) };
+    const home = { name: 'COMETS', ids: rosters?.home ?? ROSTER.slice(9, 18).map((c) => c.id) };
     this.teamNames = { away: away.name, home: home.name };
     void planDefence(away.ids, getCharacter);
     this.game = simulateGameLive({ away, home, lookup: getCharacter, geo }, makeRng(seed));
