@@ -54,7 +54,11 @@ const asBox = (b) => ({ x: b.x + b.w / 2, y: b.y + b.h / 2, w: b.w, h: b.h });
 
 const here = dirname(fileURLToPath(import.meta.url));
 const PORT = 5178;
-const GAME_URL = `http://localhost:${PORT}/v2/?play=1&seed=audit`;
+// `break=1`: every between-beat shows the inning board (its real trigger is
+// a half-inning of sim away — 78 measured seconds of pumping per viewport,
+// after which the tab would not even navigate. Same reach class SHOW_RESULT
+// solves for the result screen: real component, synthetic trigger).
+const GAME_URL = `http://localhost:${PORT}/v2/?play=1&seed=audit&break=1`;
 const APP_URL = `http://localhost:${PORT}/v2/`;
 
 /** A gate that can hang is worse than no gate — it burns a runner in silence.
@@ -113,6 +117,13 @@ const STATES = [
     mustSee: '.pitch-picker.is-open',
   },
   { name: 'live play', until: (f) => f.phase === 'live', mustSee: '.sb' },
+  {
+    name: 'inning break',
+    // Any between-beat — `break=1` above makes each one a break, so this is
+    // one pitch of pumping rather than a half-inning of it.
+    until: (f) => f.phase === 'between',
+    mustSee: '.inning-board.is-open',
+  },
 ];
 
 const c = { red: '\x1b[31m', green: '\x1b[32m', dim: '\x1b[2m', off: '\x1b[0m' };

@@ -395,6 +395,87 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
+ * The inning-break board — BB2026's green scoreboard beat, over the live park.
+ *
+ * `body.inning-break` hides the rest of the HUD the way `body.screen-open`
+ * does: the reference frame is the BOARD standing over the park, not the
+ * board fighting the strip that duplicates its numbers. The board itself is
+ * `.interactive` — a tap skips the visuals; the sim's `between` beat idles on
+ * regardless, so skipping costs nothing and waiting costs ~2.5s.
+ * ------------------------------------------------------------------------- */
+.inning-board {
+  grid-area: center;
+  place-self: center;
+  display: grid;
+  gap: var(--s2);
+  padding: var(--s4) calc(var(--s4) * 1.4);
+  border-radius: var(--radius-lg);
+  border: var(--stroke) solid var(--outline);
+  /* Scoreboard green — darker than the venue felt so the gold pops. */
+  background: #1d4d33;
+  box-shadow: 0 0.4rem 0 rgb(20 32 46 / 0.4);
+  color: var(--cream);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 140ms ease;
+}
+.inning-board.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+body.inning-break #hud > *:not(.inning-board):not(.btn--mute) {
+  visibility: hidden;
+}
+.inning-board__caption {
+  justify-self: center;
+  font-size: clamp(0.6rem, 2.2svh, 0.8rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+}
+.inning-board__table {
+  display: grid;
+  gap: 0.15rem;
+}
+.inning-board__row {
+  display: flex;
+  gap: 0.15rem;
+}
+.inning-board__cell {
+  min-inline-size: clamp(1.1rem, 3.4svh, 1.5rem);
+  block-size: clamp(1.1rem, 3.4svh, 1.5rem);
+  display: grid;
+  place-items: center;
+  border-radius: 0.3rem;
+  background: rgb(0 0 0 / 0.28);
+  font-size: clamp(0.55rem, 2svh, 0.75rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #ffe9a8;
+}
+.inning-board__cell--head {
+  background: none;
+  color: var(--cream);
+  opacity: 0.75;
+}
+.inning-board__cell--name {
+  min-inline-size: clamp(3.6rem, 12svh, 5.5rem);
+  justify-content: start;
+  padding-inline: var(--s2);
+  background: none;
+  color: var(--cream);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.inning-board__cell--total {
+  background: rgb(255 206 58 / 0.22);
+  color: var(--gold);
+}
+
+/* ---------------------------------------------------------------------------
  * The matchup plate — batter vs pitcher with today-lines (BB's corner plate).
  *
  * Top-LEFT because the mute owns the top-right corner. A readout, never

@@ -69,6 +69,7 @@ import { BAT, DEFENSE } from '../sim/params';
 import { kidHeightFt } from '../render/ProxyCharacter';
 import type { KidView } from '../render/CharacterModel';
 import { Scoreboard } from '../ui/Scoreboard';
+import { InningBreak } from '../ui/InningBreak';
 import { Matchup } from '../ui/Matchup';
 import { MatchupTally } from '../ui/matchupModel';
 import { scoreboardModel, type ScoreboardTeams } from '../ui/scoreboardModel';
@@ -224,6 +225,9 @@ export class GameView {
   private readonly venue: VenueId;
   private readonly board = new Scoreboard();
   private readonly matchup = new Matchup();
+  private readonly inningBreak = new InningBreak({
+    forceEvery: new URLSearchParams(location.search).get('break') === '1',
+  });
   private readonly matchupTally = new MatchupTally();
   private pickerEl: HTMLElement | null = null;
   private teamNames: ScoreboardTeams = { away: 'ROCKETS', home: 'COMETS' };
@@ -645,6 +649,7 @@ export class GameView {
           'Every id a roster can name must be built in start() — see the note there.'
       );
     }
+    this.inningBreak.setTeams(this.teamNames, innings);
     this.matchupTally.reset();
     this.placeSpectators(geo, [...away.ids, ...home.ids]);
     void planDefence(away.ids, getCharacter);
@@ -937,6 +942,7 @@ export class GameView {
     if (!hud) return;
     hud.appendChild(this.board.root);
     hud.appendChild(this.matchup.root);
+    hud.appendChild(this.inningBreak.root);
     this.pickerEl = document.createElement('div');
     this.pickerEl.className = 'pitch-picker';
     KINDS.forEach((kind, i) => {
@@ -966,6 +972,7 @@ export class GameView {
         this.humanBats ? 'bat' : 'pitch'
       )
     );
+    this.inningBreak.update(frame);
     this.matchup.update(
       frame.batterId,
       frame.pitcherId,

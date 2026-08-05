@@ -1635,6 +1635,21 @@ drop shadow, icon-first with one short word (🔥 FAST / 🐢 SLOW / 🌈 CURVE 
 🌀 TWISTY), a keyboard hint that hides on coarse pointers, and ±1.4° of
 rotation so the stack reads placed-by-hand.
 
+### PR 34 — the inning break: the green board over the live park
+
+Second slice of gap item 6. BB2026 fills the frame between halves with a park
+scoreboard; ours now rides the sim's own beat — the trigger is the yield after
+a half's third out (`phase === 'between' && outs >= 3`), which lands BEFORE
+the game loop re-tops, so it is sim-paced and the audit's headless pump can
+never strand it open. `LiveFrame` gained `lineScore` (the same accumulating
+array the result publishes, shared by reference — additive, so the live/drain
+identity gate never moved), and the board derives the JUST-finished half's
+runs from the totals because the sim's push happens after this yield.
+`body.inning-break` hides the rest of the HUD the way `body.screen-open`
+does, a tap skips, and the audit gained an `inning break` state so the board
+is measured at every viewport. On-deck panels wait for a lineup the frame
+does not yet carry.
+
 ### PR 33 — the matchup plate, and the event it needed
 
 First slice of gap item 6 (presentation beats): BB2001's corner plates and
