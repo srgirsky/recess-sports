@@ -57,8 +57,16 @@ const PORT = 5178;
 const GAME_URL = `http://localhost:${PORT}/v2/?play=1&seed=audit`;
 const APP_URL = `http://localhost:${PORT}/v2/`;
 
-/** A gate that can hang is worse than no gate — it burns a runner in silence. */
-const RUN_BUDGET_MS = 8 * 60_000;
+/** A gate that can hang is worse than no gate — it burns a runner in silence.
+ *
+ * Raised 8 → 11 minutes 2026-08-05, and here is what earned it: after the
+ * neighborhood scenery (PR 28) the run streams every scenario green on a
+ * 4-vCPU CI runner and was killed at 480s with 39 of 42 done — the kill was
+ * the only failure. The local run burns ~38 CPU-minutes across 14 cores;
+ * four cores simply need longer, not fewer assertions. The real repayment is
+ * booting each entry point ONCE and auditing the viewport matrix by
+ * `setViewportSize` reflow (12 boots → 2), which shrinks this budget back. */
+const RUN_BUDGET_MS = 11 * 60_000;
 
 /**
  * The viewport matrix.
