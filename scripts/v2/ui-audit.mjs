@@ -266,6 +266,15 @@ const NO_MOTION = `*, *::before, *::after {
  */
 #stage { inline-size: 2px !important; block-size: 2px !important; }`;
 
+/** The document-start stage shrink, shared by every page the audit opens. */
+const INIT_SHRINK = `new MutationObserver((_, obs) => {
+  if (!document.documentElement) return;
+  const s = document.createElement('style');
+  s.textContent = ${JSON.stringify(NO_MOTION)};
+  document.documentElement.appendChild(s);
+  obs.disconnect();
+}).observe(document, { childList: true, subtree: true });`;
+
 const failures = [];
 function fail(where, msg) {
   failures.push(`${where}: ${msg}`);
@@ -479,7 +488,7 @@ async function main() {
   let audited = 0;
   try {
     for (const vp of VIEWPORTS) {
-      const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
+      let page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
       const errors = [];
       page.on('pageerror', (e) => errors.push(String(e)));
       // ★ The stage shrink must beat the FIRST frame, not follow it. Applied
@@ -492,13 +501,7 @@ async function main() {
       // script installs the same style at document start, so the first frame
       // is already 2px; the post-goto tag below stays as the belt to this
       // brace (navigations inside a scenario would otherwise lose it).
-      await page.addInitScript(`new MutationObserver((_, obs) => {
-        if (!document.documentElement) return;
-        const s = document.createElement('style');
-        s.textContent = ${JSON.stringify(NO_MOTION)};
-        document.documentElement.appendChild(s);
-        obs.disconnect();
-      }).observe(document, { childList: true, subtree: true });`);
+      await page.addInitScript(INIT_SHRINK);
       // ★ 'domcontentloaded', NEVER 'load'. Every flake this gate has had was
       // `page.goto` timing out on 'load' — which waits for every subresource
       // on the page, none of which this file measures. What it DOES need is
@@ -530,9 +533,18 @@ async function main() {
         console.log(`  ${mark} ${(vp.name + ' / ' + state.name).padEnd(34)} ${c.dim}${n} boxes${c.off}`);
         for (const b of bad) console.log(`      ${c.red}${b.split(': ').slice(1).join(': ')}${c.off}`);
       }
-      // The screens, on the app entry point rather than the bare game view.
-      // Same rule as above: 'domcontentloaded' plus the things actually
-      // measured — this goto was the one that burned the runners.
+      // The screens, on the app entry point rather than the bare game view —
+      // and on a FRESH page. Navigating the game page away is a 50-SECOND
+      // stall, measured: the unload of a page whose sim was pumped through
+      // four states blocks the next document's commit (about:blank absorbed
+      // the whole 50s and the app then booted in 82ms), which is what every
+      // ‘/v2/’ goto timeout in this gate's history actually was. The pumped
+      // page is fire-and-forget closed; its teardown runs off the audit's
+      // critical path.
+      void page.close().catch(() => {});
+      page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
+      page.on('pageerror', (e) => errors.push(String(e)));
+      await page.addInitScript(INIT_SHRINK);
       await page.goto(APP_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 });
       // Bounded: in an occluded headless page `fonts.ready` can wait for a
       // rendering opportunity that never comes — the uncapped version hung a
@@ -555,7 +567,7 @@ async function main() {
 
       // A page error is a failure even if the boxes happened to land right.
       for (const e of errors) fail(vp.name, `page error: ${e}`);
-      await page.close();
+      void page.close().catch(() => {});
     }
   } finally {
     await browser.close();
