@@ -13,10 +13,18 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        // v1 — the shipped Phaser game. Untouched.
+        // ★ THE CUTOVER. v2 is the front door; v1 is preserved at /classic/.
+        //
+        // Nothing was deleted: v1 still builds, still ships, and still holds
+        // Recess Week, the sticker album, pass-and-play and the WebRTC online
+        // mode, none of which v2 has yet. Moving it is not retiring it.
         main: resolve(__dirname, 'index.html'),
-        // v2 — the three.js rebuild. Ships alongside v1 at /v2/ until cutover.
+        // The permanent alias. Every measurement script, `npm run
+        // audit:v2-layout` and `.claude/skills/verify` drive /v2/ by URL, and
+        // an alias costs one HTML file against breaking all of them.
         v2: resolve(__dirname, 'v2/index.html'),
+        // v1 — the shipped Phaser game, unchanged, one directory down.
+        classic: resolve(__dirname, 'classic/index.html'),
       },
     },
     // Phaser is a big bundle (~1MB) — this is expected, silence the warning.

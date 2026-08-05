@@ -30,16 +30,18 @@ in `localStorage` for now.
 
 This repo builds **two games from one Vite config** (`rollupOptions.input`):
 
-| | v1 — `/` | v2 — `/v2/` |
+| | v1 — `/classic/` | v2 — `/` (and `/v2/`) |
 |---|---|---|
-| entry | `index.html` → `src/main.ts` | `v2/index.html` → `src/v2/main.ts` |
+| entry | `classic/index.html` → `src/main.ts` | `index.html` → `src/v2/main.ts` |
 | renderer | Phaser 3, 2D, affine fake-3D | **three.js**, real 3D, DOM/CSS for all HUD + menus |
 | units | arbitrary 960×640 screen px | **real feet** (60ft basepaths, 46ft mound, ~200ft fences) |
 | physics | landing spot decided at contact | real gravity + drag + Magnus, RK4 |
-| status | **shipped and live — do not disturb** | in progress (`docs/OVERVIEW.md` § v2) |
+| status | **shipped and live — do not disturb** | **the front door** (`docs/OVERVIEW.md` § v2) |
 
-**v1 is live and stays live until cutover.** v2 lives entirely under `src/v2/**`
-plus `v2/index.html`.
+**★ v2 TOOK THE FRONT DOOR AND v1 WAS NOT RETIRED** — it still ships, and still
+holds Recess Week, the album, pass-and-play and online play. Moving it is not
+deleting it; every rule below stands. `/v2/` stays a permanent alias of `/`
+because the scripts, the v2 audit and `.claude/skills/verify` drive it by URL.
 
 **v1 may never import v2**, and that one-way edge is THE guarantee. Reviewing a
 diff cannot prove v1 is unaffected by v2 work; an unreachable module graph can.

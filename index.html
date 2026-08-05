@@ -7,8 +7,16 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <title>Recess Sports</title>
+    <!--
+      THE FRONT DOOR. This is v2, and it is the same page as /v2/index.html —
+      that one stays as a permanent alias because every measurement script, the
+      layout audit and `.claude/skills/verify` drive it by URL.
+
+      NOTE the `./fonts/` path, which is the one difference between the two
+      files: URLs here resolve against the site ROOT, where the alias resolves
+      against /v2/.
+    -->
     <style>
-      /* Self-hosted Fredoka (SIL OFL) — rounded, friendly, on-brand. Variable weight. */
       @font-face {
         font-family: 'Fredoka';
         font-style: normal;
@@ -16,31 +24,23 @@
         font-display: swap;
         src: url('./fonts/fredoka.woff2') format('woff2');
       }
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        background: #0d1b2a;
-        overflow: hidden;
-        /* Kill double-tap-zoom / long-press select so taps register as swings on tablets */
-        touch-action: none;
-        -webkit-user-select: none;
-        user-select: none;
-        -webkit-tap-highlight-color: transparent;
-      }
-      #game {
-        width: 100%;
-        height: 100%;
-      }
-      #game canvas {
-        display: block;
-        margin: 0 auto;
-      }
     </style>
+    <link rel="stylesheet" href="./src/v2/ui/styles/tokens.css" />
+    <link rel="stylesheet" href="./src/v2/ui/styles/app.css" />
   </head>
   <body>
-    <div id="game"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <div id="app">
+      <!-- The 3D world. The ONLY element that listens for pointer input. -->
+      <canvas id="stage"></canvas>
+      <!--
+        HUD is pointer-events:none; only children marked .interactive opt in.
+        That one rule is what makes every non-HUD tap fall through to the
+        canvas by construction — no hit-testing, no stopPropagation discipline.
+      -->
+      <div id="hud" aria-live="polite"></div>
+      <div id="screens"></div>
+      <div id="toasts"></div>
+    </div>
+    <script type="module" src="./src/v2/main.ts"></script>
   </body>
 </html>
