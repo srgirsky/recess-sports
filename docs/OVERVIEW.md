@@ -1579,14 +1579,19 @@ Scenery colours are authored bright on purpose.
 
 ### PR 29a — the audit pays for its own boots
 
-The neighborhood made `audit:v2-layout` flake: the gate shrinks the 3D canvas
-to 2px because "a headless WebGL frame costs its pixel count" — but it applied
-that style only AFTER `page.goto` waited for `load`, so all 12 boots per run
-still rendered the full scene at full viewport in software GL. PR 28's extra
-triangles pushed that past the run budget on CI runners; two PRs flaked on
-`goto` timeouts with every completed scenario green. An `addInitScript` now
-installs the same style at document start, and the run came back at 4:49
-against ~8 minutes. The gate's assertions are untouched.
+The neighborhood made `audit:v2-layout` flake, and the fix came in two halves
+because the first was measured insufficient. First: the gate shrinks the 3D
+canvas to 2px ("a headless WebGL frame costs its pixel count") but applied
+that style only AFTER `page.goto`, so all 12 boots per run still rendered the
+full scene at full viewport in software GL — an `addInitScript` now installs
+it at document start, and the local run came back at 4:49 against ~8 minutes.
+Then the very PR carrying that fix flaked the same way, which exposed the real
+head of the class: every flake was `goto` timing out on **'load'**, which
+waits for every subresource on a page this file measures none of. The gotos
+now wait for 'domcontentloaded' plus the things the audit actually reads —
+`__spike` present, `document.fonts.ready` settled (a text box measured
+mid-`font-display: swap` is measured in the wrong font), and the existing
+screen selector. The gate's assertions are untouched.
 
 ### PR 29 — the vivid sky
 

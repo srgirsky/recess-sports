@@ -471,7 +471,18 @@ async function main() {
         document.documentElement.appendChild(s);
         obs.disconnect();
       }).observe(document, { childList: true, subtree: true });`);
-      await page.goto(GAME_URL, { waitUntil: 'load' });
+      // ★ 'domcontentloaded', NEVER 'load'. Every flake this gate has had was
+      // `page.goto` timing out on 'load' — which waits for every subresource
+      // on the page, none of which this file measures. What it DOES need is
+      // named explicitly instead: modules executed (`__spike` exists; module
+      // scripts run before DOMContentLoaded, so the wait below is a
+      // formality that also covers the app's async boot) and FONTS SETTLED,
+      // because `font-display: swap` re-layouts every text box when Fredoka
+      // lands, and a box measured mid-swap is a box measured in the wrong
+      // font.
+      await page.goto(GAME_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+      await page.waitForFunction('!!window.__spike', { timeout: 30_000 });
+      await page.evaluate('document.fonts.ready.then(() => true)');
       await page.addStyleTag({ content: NO_MOTION });
       // The renderer sizes its drawing buffer on resize, not on a CSS change,
       // so the shrink above only takes effect once it is told to look again.
@@ -485,7 +496,10 @@ async function main() {
         for (const b of bad) console.log(`      ${c.red}${b.split(': ').slice(1).join(': ')}${c.off}`);
       }
       // The screens, on the app entry point rather than the bare game view.
-      await page.goto(APP_URL, { waitUntil: 'load' });
+      // Same rule as above: 'domcontentloaded' plus the things actually
+      // measured — this goto was the one that burned the runners.
+      await page.goto(APP_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+      await page.evaluate('document.fonts.ready.then(() => true)');
       await page.addStyleTag({ content: NO_MOTION });
       await page.waitForSelector('.screen--title', { timeout: 30_000 }).catch(() => {});
       for (const screen of SCREENS) {
