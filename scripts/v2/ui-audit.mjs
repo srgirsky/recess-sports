@@ -79,9 +79,12 @@ const APP_URL = `http://localhost:${PORT}/v2/`;
  * every completed row green, twice. The same session found and fixed the real
  * flake (the 50s pumped-page unload stall — see the fresh-page note in main)
  * and re-tried the reflow refactor WITH that fix; it still lost. A page whose
- * sim has been pumped degrades everything done on or to it, which is worth
- * its own investigation — but the gate's budget must fit the assertions it
- * actually runs on the runners it actually gets. */
+ * sim has been pumped degrades everything done on or to it — INVESTIGATED
+ * and resolved headless-only: real Chrome pumps the same 564 ticks in 1.16s
+ * and navigates away instantly, so this is SwiftShader resource churn, not a
+ * product leak, and the fresh-page rule is the complete mitigation. The
+ * gate's budget must fit the assertions it actually runs on the runners it
+ * actually gets. */
 const RUN_BUDGET_MS = 15 * 60_000;
 
 /**
