@@ -57,8 +57,16 @@ const PORT = 5178;
 const GAME_URL = `http://localhost:${PORT}/v2/?play=1&seed=audit`;
 const APP_URL = `http://localhost:${PORT}/v2/`;
 
-/** A gate that can hang is worse than no gate — it burns a runner in silence. */
-const RUN_BUDGET_MS = 8 * 60_000;
+/** A gate that can hang is worse than no gate — it burns a runner in silence.
+ *
+ * Raised 8 → 11 minutes 2026-08-05, and here is what earned it: after the
+ * neighborhood scenery (PR 28) the run streams every scenario green on a
+ * 4-vCPU CI runner and was killed at 480s with 39 of 42 done — the kill was
+ * the only failure. The local run burns ~38 CPU-minutes across 14 cores;
+ * four cores simply need longer, not fewer assertions. The real repayment is
+ * booting each entry point ONCE and auditing the viewport matrix by
+ * `setViewportSize` reflow (12 boots → 2), which shrinks this budget back. */
+const RUN_BUDGET_MS = 11 * 60_000;
 
 /**
  * The viewport matrix.
@@ -454,7 +462,42 @@ async function main() {
       const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
       const errors = [];
       page.on('pageerror', (e) => errors.push(String(e)));
-      await page.goto(GAME_URL, { waitUntil: 'load' });
+      // ★ The stage shrink must beat the FIRST frame, not follow it. Applied
+      // only after `goto` resolves, the boot renders the full 3D scene at the
+      // real viewport size in software GL — which is exactly the cost the
+      // shrink exists to delete, paid 12 times per run (2 gotos x 6
+      // viewports). The neighborhood scenery (PR 28) pushed those boots past
+      // the run budget on CI runners and this gate started flaking on
+      // `page.goto` timeouts with every scenario it DID run green. An init
+      // script installs the same style at document start, so the first frame
+      // is already 2px; the post-goto tag below stays as the belt to this
+      // brace (navigations inside a scenario would otherwise lose it).
+      await page.addInitScript(`new MutationObserver((_, obs) => {
+        if (!document.documentElement) return;
+        const s = document.createElement('style');
+        s.textContent = ${JSON.stringify(NO_MOTION)};
+        document.documentElement.appendChild(s);
+        obs.disconnect();
+      }).observe(document, { childList: true, subtree: true });`);
+      // ★ 'domcontentloaded', NEVER 'load'. Every flake this gate has had was
+      // `page.goto` timing out on 'load' — which waits for every subresource
+      // on the page, none of which this file measures. What it DOES need is
+      // named explicitly instead: modules executed (`__spike` exists; module
+      // scripts run before DOMContentLoaded, so the wait below is a
+      // formality that also covers the app's async boot) and FONTS SETTLED,
+      // because `font-display: swap` re-layouts every text box when Fredoka
+      // lands, and a box measured mid-swap is a box measured in the wrong
+      // font.
+      await page.goto(GAME_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+      await page.waitForFunction('!!window.__spike', { timeout: 30_000 });
+      // Bounded: in an occluded headless page `fonts.ready` can wait for a
+      // rendering opportunity that never comes — the uncapped version hung a
+      // CI run for its whole 480s budget with no output and no error. A font
+      // that has not settled in 5s falls back to measuring the fallback,
+      // which a failed run cannot measure at all.
+      await page.evaluate(
+        'Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 5000))]).then(() => true)'
+      );
       await page.addStyleTag({ content: NO_MOTION });
       // The renderer sizes its drawing buffer on resize, not on a CSS change,
       // so the shrink above only takes effect once it is told to look again.
@@ -468,7 +511,17 @@ async function main() {
         for (const b of bad) console.log(`      ${c.red}${b.split(': ').slice(1).join(': ')}${c.off}`);
       }
       // The screens, on the app entry point rather than the bare game view.
-      await page.goto(APP_URL, { waitUntil: 'load' });
+      // Same rule as above: 'domcontentloaded' plus the things actually
+      // measured — this goto was the one that burned the runners.
+      await page.goto(APP_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 });
+      // Bounded: in an occluded headless page `fonts.ready` can wait for a
+      // rendering opportunity that never comes — the uncapped version hung a
+      // CI run for its whole 480s budget with no output and no error. A font
+      // that has not settled in 5s falls back to measuring the fallback,
+      // which a failed run cannot measure at all.
+      await page.evaluate(
+        'Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 5000))]).then(() => true)'
+      );
       await page.addStyleTag({ content: NO_MOTION });
       await page.waitForSelector('.screen--title', { timeout: 30_000 }).catch(() => {});
       for (const screen of SCREENS) {

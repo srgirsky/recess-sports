@@ -32,7 +32,20 @@ void main() {
 }
 `;
 
-export function buildSky(topHex = 0x3f8fd4, bottomHex = 0xcfe9f7, radius = 900): Mesh {
+/**
+ * The daytime palette, exported because FOG MUST MATCH THE HORIZON — aerial
+ * haze is the horizon colour thickening with distance, so a fog authored apart
+ * from the sky splits into a visible seam at the fence line. Every `new Fog`
+ * cites `SKY_HORIZON` instead of restating it.
+ *
+ * Vivid on purpose (BB2026's sky band is a saturated cyan-blue; the first
+ * values here read gray-lavender in every screenshot) — see
+ * `docs/research/backyard-2026-reference.md` item 2.
+ */
+export const SKY_TOP = 0x3d92e0;
+export const SKY_HORIZON = 0xb9e4fa;
+
+export function buildSky(topHex = SKY_TOP, bottomHex = SKY_HORIZON, radius = 900): Mesh {
   const geom = new SphereGeometry(radius, 24, 16);
   const mat = new ShaderMaterial({
     vertexShader: VERT,
