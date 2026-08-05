@@ -1403,9 +1403,35 @@ priority-1 line after the first is dropped and the booth looks broken. It is v1'
 "timers follow the loop clock, tweens follow `Date.now()`" trap for the third
 time in this arc, now wearing a rate limiter.
 
-Next: the fielding and batting assists sized from a real child's aim error, and
-seats, so the side is the sim's answer rather than the view's. Then the cutover
-that points `/` at v2.
+### PR 24 — the players you could not see
+
+The draft shipped a bug one PR earlier and nothing caught it. `GameView.start()`
+built `ROSTER.slice(0, 18)`, which was the **entire cast** for as long as the two
+teams *were* the first eighteen in roster order. The moment a player picks their
+own nine, the teams scatter across all thirty — and a kid the scene never built
+has no body.
+
+**★ And nothing says so.** `showOnly` and `applyIdleDefence` both do
+`refs.kids.get(id)` and skip a miss, so he bats, he fields, he is announced by
+the booth, and there is nobody standing there. No error, no warning, no red test.
+Drafting from the **back** of the board put two invisible players on the field —
+Peaches and Flash Gordon Jr. — which is exactly the shape of test a "tap the
+first available kid" sweep never produces.
+
+The scene builds every kid on the roster now. It costs build time and memory and
+**not draw calls**: they are hidden until a frame names them, and a hidden object
+draws nothing, so `render.characterDrawCost`'s budget — which is about what is
+*visible* — is untouched at ten on the field.
+
+The rule is a throw rather than a comment, because the failure mode is silence:
+any roster naming a kid the scene lacks stops the game with his name in the
+message. `missingFromScene` is static and pure so a test can drive it without a
+GPU, and the test pins **both halves** — that the old eighteen-kid scene fails a
+real back-of-the-board draft, and that the whole roster passes it — so the fix
+cannot be undone quietly.
+
+Next: team identity (a colour, a logo and the spoken team name), the lineup, then
+the cutover that points `/` at v2 and keeps v1 at `/classic/`.
 
 ---
 

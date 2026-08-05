@@ -432,12 +432,26 @@ export class GameView {
     this.scene.add(ball);
     this.refs.ball = ball;
 
-    // ★ EVERY KID ON BOTH ROSTERS, built once. A substitution mid-game would
-    // otherwise stall the frame on a model load, and `CharacterFactory` already
-    // falls back to a proxy silently for anyone undelivered.
-    const ids = [...ROSTER.slice(0, 9), ...ROSTER.slice(9, 18)];
+    // ★ EVERY KID ON THE ROSTER, built once — all THIRTY, not the first
+    // eighteen. A substitution mid-game would otherwise stall the frame on a
+    // model load, and `CharacterFactory` already falls back to a proxy silently
+    // for anyone undelivered.
+    //
+    // ⚠️ IT USED TO BUILD ROSTER[0..17], AND THE DRAFT MADE THAT A BUG. Before
+    // there was a draft the two teams WERE the first eighteen in roster order,
+    // so the slice was the whole cast. The moment a player picks their own nine,
+    // the teams are scattered across all thirty — and a kid the scene never
+    // built simply does not appear. He bats, he fields, he is announced, and
+    // there is nobody there. No error, no warning: `showOnly` asks
+    // `refs.kids.get(id)` and skips a miss. Drafting from the back of the board
+    // put two invisible players on the field. `game.test.ts` pins the whole
+    // roster now, because the failure is silent and the slice looked harmless.
+    //
+    // Cost: they are hidden until the frame names them, and a hidden object
+    // draws nothing — so twelve more kids cost build time and memory, not draw
+    // calls. `render.characterDrawCost` is about what is VISIBLE.
     await Promise.all(
-      ids.map(async (c, i) => {
+      ROSTER.map(async (c, i) => {
         const made = await createCharacter(c, {
           forceProxy: proxyForced(),
           outlines: this.outlines,
@@ -526,6 +540,19 @@ export class GameView {
    * which is the difference between an instant PLAY AGAIN and a visible stall
    * on the one button a kid presses most.
    */
+  /**
+   * Anyone this game can field that the scene never built.
+   *
+   * ★ THE FAILURE IS SILENT, WHICH IS WHY IT IS A THROW AND NOT A WARNING.
+   * `showOnly` and `applyIdleDefence` both do `refs.kids.get(id)` and skip a
+   * miss, so a kid with no scene object bats, fields, gets announced and is
+   * simply not there. Nothing errors and the game plays on. Exported so a test
+   * can drive the rule without a GPU.
+   */
+  static missingFromScene(rosterIds: readonly string[], built: ReadonlySet<string>): string[] {
+    return rosterIds.filter((id) => !built.has(id));
+  }
+
   newGame(seed: string, rosters?: { away: string[]; home: string[] }): void {
     const geo = VENUE_GEOMETRY[this.venue];
     // ★ THE DRAFTED TEAM, WHEN THERE IS ONE. `/v2/?play=1` has no draft in front
@@ -535,6 +562,13 @@ export class GameView {
     const away = { name: 'ROCKETS', ids: rosters?.away ?? ROSTER.slice(0, 9).map((c) => c.id) };
     const home = { name: 'COMETS', ids: rosters?.home ?? ROSTER.slice(9, 18).map((c) => c.id) };
     this.teamNames = { away: away.name, home: home.name };
+    const missing = GameView.missingFromScene([...away.ids, ...home.ids], new Set(this.refs.kids.keys()));
+    if (missing.length > 0) {
+      throw new Error(
+        `GameView: ${missing.join(', ')} would play with no scene object. ` +
+          'Every id a roster can name must be built in start() — see the note there.'
+      );
+    }
     void planDefence(away.ids, getCharacter);
     this.game = simulateGameLive(
       { away, home, lookup: getCharacter, geo, onEvent: (e) => this.simEvent?.(e) },
