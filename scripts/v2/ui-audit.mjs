@@ -84,8 +84,14 @@ const APP_URL = `http://localhost:${PORT}/v2/`;
  * and navigates away instantly, so this is SwiftShader resource churn, not a
  * product leak, and the fresh-page rule is the complete mitigation. The
  * gate's budget must fit the assertions it actually runs on the runners it
- * actually gets. */
-const RUN_BUDGET_MS = 15 * 60_000;
+ * actually gets.
+ *
+ * And LOWERED again 15 → 11 the same day, paid for by subtraction: the game
+ * states now run at the clamp-pinning viewports only (GAME_VIEWPORTS), which
+ * halved the repeated sim pumping — 4:19 local against 7:19 for the full
+ * matrix, same screens coverage, and the assertions the mid viewports carried
+ * for the HUD were interpolations between measured extremes. */
+const RUN_BUDGET_MS = 11 * 60_000;
 
 /**
  * The viewport matrix.
@@ -104,6 +110,22 @@ const VIEWPORTS = [
   { name: 'desktop', width: 1440, height: 900 },
   { name: 'large display', width: 2560, height: 1440 },
 ];
+
+/**
+ * ★ The GAME states run at the clamp-PINNING viewports only. Every game boot
+ * repeats the same sim pumping, and the doctrine above says the informative
+ * sizes are where the `clamp()` binds: the floor with the least room (short
+ * landscape), the floor with portrait proportions (phone portrait, where the
+ * matchup plate's own height media-query flips), and the ceiling (large
+ * display). For a HUD of edge-anchored strips and cards, the mid sizes are
+ * interpolations between measured extremes — the SCREENS, whose scrollers and
+ * thirty-card draft do change shape in the middle, keep the full matrix.
+ * This is what returned the run to its budget after the inning-break state
+ * (the fourth per-boot pump) pushed slow runners past 900s.
+ */
+const GAME_VIEWPORTS = VIEWPORTS.filter((v) =>
+  ['phone portrait', 'short landscape', 'large display'].includes(v.name)
+);
 
 /**
  * The states worth auditing, how to reach each, and what each must actually be
@@ -500,8 +522,11 @@ async function main() {
   let audited = 0;
   try {
     for (const vp of VIEWPORTS) {
-      let page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
       const errors = [];
+      let page = null;
+      // ★ Game states at the clamp-PINNING viewports only — see GAME_VIEWPORTS.
+      if (GAME_VIEWPORTS.includes(vp)) {
+      page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
       page.on('pageerror', (e) => errors.push(String(e)));
       // ★ The stage shrink must beat the FIRST frame, not follow it. Applied
       // only after `goto` resolves, the boot renders the full 3D scene at the
@@ -554,6 +579,7 @@ async function main() {
       // page is fire-and-forget closed; its teardown runs off the audit's
       // critical path.
       void page.close().catch(() => {});
+      }
       page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
       page.on('pageerror', (e) => errors.push(String(e)));
       await page.addInitScript(INIT_SHRINK);
@@ -591,7 +617,7 @@ async function main() {
     return 1;
   }
   console.log(
-    `\n${c.green}v2 layout clean${c.off} across ${VIEWPORTS.length} viewports x ${STATES.length + SCREENS.length} states ${c.dim}(${audited} boxes)${c.off}`
+    `\n${c.green}v2 layout clean${c.off} across ${GAME_VIEWPORTS.length}x${STATES.length} game + ${VIEWPORTS.length}x${SCREENS.length} screen scenarios ${c.dim}(${audited} boxes)${c.off}`
   );
   return 0;
 }
