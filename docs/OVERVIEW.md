@@ -1635,6 +1635,17 @@ drop shadow, icon-first with one short word (🔥 FAST / 🐢 SLOW / 🌈 CURVE 
 🌀 TWISTY), a keyboard hint that hides on coarse pointers, and ±1.4° of
 rotation so the stack reads placed-by-hand.
 
+### PR 39 — the light towers
+
+The night key light finally hangs from something. Four towers join the
+scenery plan at fixed sprays (±14° and ±42°, installed rather than
+scattered — no jitter), pole + crossarm + a 2x3 lamp bank facing home,
+merged into the neighborhood mesh for zero added draw calls. The lamp paint
+keys on the night option: grey glass by day, bright warm at night. The
+plate camera's ~11° frame top ruled here too — 42ft heads crossed the frame
+as bare poles, so the towers stand 36ft with the corner pair pulled wide to
+the foul poles.
+
 ### PR 38 — fireworks for a night homer
 
 BB2026's night mode answers a home run with fireworks, and it is the right

@@ -48,7 +48,7 @@ import { makeToonMaterial } from './materials/toon';
 // --- The plan: pure, deterministic, testable --------------------------------
 
 export interface SceneryItem {
-  kind: 'house' | 'tree' | 'bush' | 'pole' | 'shed';
+  kind: 'house' | 'tree' | 'bush' | 'pole' | 'shed' | 'tower';
   /** Spray angle from home, degrees (negative = left field). */
   sprayDeg: number;
   /** Distance from home, ft — always beyond the fence at that spray. */
@@ -193,6 +193,20 @@ export function sceneryPlan(geo: FieldGeometry, venue: VenueId): SceneryItem[] {
     });
   }
 
+  // Four light towers, close behind the fence — the floods the night key
+  // light claims to hang from, and honest daytime park furniture. Fixed
+  // sprays, no jitter: towers are INSTALLED, not scattered.
+  for (const spray of [-42, -14, 14, 42]) {
+    items.push({
+      kind: 'tower',
+      sprayDeg: spray,
+      distFt: fenceDistAt(geo, spray) + CLEARANCE_FT + 4,
+      radiusFt: 2,
+      rotY: Math.atan2(-pointAt(spray, 1).x, -pointAt(spray, 1).z),
+      seed: hash01(spray + 100, 113),
+    });
+  }
+
   // One garden shed on the left side — the BB staple.
   const shedSpray = -38;
   items.push({
@@ -290,6 +304,7 @@ export function buildScenery(geo: FieldGeometry, venue: VenueId, opts: SceneryOp
     else if (it.kind === 'tree') addTree(parts, cfg, p.x, p.z, it.rotY, it.seed);
     else if (it.kind === 'bush') addBush(parts, cfg, p.x, p.z, it.seed);
     else if (it.kind === 'shed') addShed(parts, p.x, p.z, it.rotY);
+    else if (it.kind === 'tower') addLightTower(parts, p.x, p.z, it.rotY, opts.night === true);
   }
   addPrivacyRing(parts, geo, cfg);
   addPoleRun(
@@ -392,6 +407,28 @@ function addShed(parts: BufferGeometry[], x: number, z: number, rotY: number): v
   roof.applyMatrix4(new Matrix4().makeRotationZ(Math.PI / 4));
   roof.applyMatrix4(new Matrix4().makeScale(1, 0.5, 1));
   parts.push(place(paint(roof, 0x9a6b47), x, 9, z, rotY));
+}
+
+// A ballpark light tower: lattice-suggesting pole, crossarm, and a 2x3 lamp
+// bank facing home. The lamps are the point — at night they paint BRIGHT
+// warm and visibly justify the flood-white key light's direction; by day
+// they are grey glass. Merged like everything else: zero extra draw calls.
+function addLightTower(parts: BufferGeometry[], x: number, z: number, rotY: number, night: boolean): void {
+  const H = 36;
+  parts.push(place(paint(new CylinderGeometry(0.55, 0.8, H, 6), 0x6f7a84), x, H / 2, z));
+  // Crossarm, facing home.
+  parts.push(placeLocal(paint(new BoxGeometry(9, 1.1, 0.9), 0x5a636c), x, z, rotY, 0, H - 1.5, 0));
+  const lamp = night ? 0xfff4c8 : 0xcfd6da;
+  for (const row of [0, 1]) {
+    for (const colIdx of [-1, 0, 1]) {
+      parts.push(
+        placeLocal(
+          paint(new BoxGeometry(2.2, 1.6, 0.7), lamp),
+          x, z, rotY, colIdx * 2.9, H - 0.6 + row * 1.9, 0.5
+        )
+      );
+    }
+  }
 }
 
 // The privacy-fence ring: per-plank thin boxes with jittered wood tones, so
