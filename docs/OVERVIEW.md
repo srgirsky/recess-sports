@@ -1365,6 +1365,44 @@ That also made the audit's tap-target rule stop being vacuous: the mute is the
 first `.interactive` element the HUD has ever had, and until now nothing measured
 the only persistent button in the game.
 
+### PR 23 — the booth, and a rarity that is not a bug
+
+v1 has two kid commentators — Pip, hyped, and Rocco, deadpan — with line pools per
+moment, a no-repeat rule, a rate limiter, strict speaker alternation and an
+occasional two-line exchange on the big calls. `systems/announcer.ts` is pure-ish
+and Phaser-free, so v2 gets the booth by wiring rather than writing.
+
+**★ The sim needed no change to be commentated; it was already saying enough.**
+`SimEvent.pitch` carries `balls` and `strikes` *as they were before the pitch* —
+fields the harness added because "a field nobody reads is a field nobody can
+trust" — so a strikeout is a strike thrown at `strikes === 2` and a walk is ball
+four at `balls === 3`. Seven of the booth's eighteen moments fall straight out of
+events that already existed.
+
+Homers and strikeouts are **priority 2**, which is the booth's "always speak"
+lane: those are the calls a kid is waiting for, so they jump the rate limiter and
+can come back as an exchange. Fouls are deliberately *not* a moment — a booth that
+calls the most common contact event there is says nothing else all game.
+
+**★ And a sweep of three whole games found no home run, which is not a bug.**
+It is one in thirty at the park, and that is *measured and deliberate*:
+`sim.carryVsFence` sets the fences so a power-10 kid clears the 185ft line and
+**nobody** clears the 212ft centre, and `sim.gameShape` counted 155 across 861
+games — a record whose own header says it "exists to be READ, not to be met",
+because conforming a four-to-eight-year-olds' game to MLB's rates is precisely
+the mistake the `reference` field exists to prevent.
+
+So the test was wrong, not the sim. The rarest moment in the game is proven on a
+constructed event, with the reason written next to it so the next person does not
+"fix" the fences to make a test pass. A sweep is the right tool for *does the sim
+emit this*; it is the wrong tool for *is the rarest moment wired up*.
+
+One measurement trap worth keeping: driving the game by hand freezes the **wall**
+clock, and the booth's rate limiter reads wall time. Hand-pumped, every
+priority-1 line after the first is dropped and the booth looks broken. It is v1's
+"timers follow the loop clock, tweens follow `Date.now()`" trap for the third
+time in this arc, now wearing a rate limiter.
+
 Next: the fielding and batting assists sized from a real child's aim error, and
 seats, so the side is the sim's answer rather than the view's. Then the cutover
 that points `/` at v2.
