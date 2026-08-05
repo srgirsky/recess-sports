@@ -34,7 +34,17 @@ export class TitleScreen implements Screen {
     // SETUP page are a later screen's problem, not the front door's.
     const play = button('⚾  PLAY', this.onPlay, 'btn--hero');
 
-    root.append(card, play);
+    // ★ THE WAY BACK TO v1, AND IT IS DELIBERATELY SMALL. v2 took the front
+    // door at the cutover, but v1 still holds Recess Week, the sticker album,
+    // pass-and-play and the online mode — none of which v2 has yet, and none of
+    // which anyone should have to guess the URL for. It is the only text on this
+    // screen a four-year-old is not expected to read, which is why it is last,
+    // quiet, and below the thing they came for.
+    const classic = button('🕹  CLASSIC GAME', () => {
+      location.href = './classic/';
+    }, 'btn--quiet btn--small');
+
+    root.append(card, play, classic);
     return root;
   }
 }

@@ -183,6 +183,19 @@ npm run sync:decoders
 
 `npm test` fails if they drift from the installed `three`.
 
+## Where the two games live
+
+The site ships **two games from one build**:
+
+| URL | Game |
+|---|---|
+| `/` | **v2** — the three.js rebuild. The front door. |
+| `/v2/` | the same page, kept as a permanent alias: every measurement script, `npm run audit:v2-layout` and `.claude/skills/verify` drive it by URL. |
+| `/classic/` | **v1** — the shipped Phaser game, unchanged. Still holds Recess Week, the sticker album, pass-and-play and online play. |
+
+Each links to the other, so nothing is reachable only by typing a URL. v1 was
+**moved, not retired**; `src/` outside `src/v2/**` is still frozen.
+
 ## Checking the layout
 
 Every menu screen is a fixed 960×640 absolute layout, and pills size themselves

@@ -80,8 +80,11 @@ const entryKb = (html) => {
 
 describe('the built bundles stay the size they were', () => {
   it.runIf(existsSync(assets))('★ v1 has not silently gained weight', () => {
-    const kb = entryKb('index.html');
-    expect(kb, 'no v1 entry in dist/').not.toBeNull();
+    // ★ /classic/, since the cutover. `dist/index.html` is v2 now, and reading
+    // it here would pin v1's budget against v2's bundle -- a green gate
+    // measuring the wrong game.
+    const kb = entryKb('classic/index.html');
+    expect(kb, 'no v1 entry in dist/classic/').not.toBeNull();
     const drift = Math.abs(kb - V1_KB) / V1_KB;
     expect(
       drift,

@@ -894,3 +894,14 @@ body.screen-open #hud > *:not(.btn--mute) {
   font-size: 0.62rem;
   opacity: 0.75;
 }
+
+/*
+ * The quiet way out of the front door. Still `.interactive`, so it still meets
+ * `--tap-min` — a small-looking control is not a small tap target, which is the
+ * whole lesson of the team picker's scaled swatches.
+ */
+.btn--small {
+  font-size: 0.78rem;
+  padding: var(--s2) var(--s4);
+  letter-spacing: 0.08em;
+}

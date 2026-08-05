@@ -1504,7 +1504,45 @@ its viewport at **both** ends; the picker is start-aligned and scrollable now, s
 growth goes downward. Third time in this arc that rule has bitten, and the first
 time it was already written down.
 
-Next: the cutover that points `/` at v2 and keeps v1 at `/classic/`.
+### PR 27 — the cutover
+
+`/` is v2. `/classic/` is v1. Each links to the other.
+
+**★ v1 was moved, not retired**, and that is the whole shape of this change. It
+still builds, still ships, and still holds Recess Week, the sticker album,
+pass-and-play and the WebRTC online mode — none of which v2 has yet. Its source
+is untouched: the back-link on the classic page lives in `classic/index.html`,
+the SHELL, so `git diff main -- src ':!src/v2'` stays empty exactly as it has for
+every PR of this rebuild.
+
+**`/v2/` stays as a permanent alias.** Every measurement script,
+`npm run audit:v2-layout` and `.claude/skills/verify` drive that URL, and an
+alias costs one HTML file against breaking all of them.
+
+Two gates had to follow the move, and both would have gone green while measuring
+the wrong game:
+
+- **`npm run audit:layout`** boots v1's menu screens and pointed at `/`. After
+  the cutover that is v2's DOM, which has no Phaser display list at all — it
+  would have found nothing and said so cheerfully. It points at `/classic/`.
+- **`scripts/v2/bundle.lint.test.js`** read `dist/index.html` for v1's payload.
+  That file is v2 now, so v1's budget would have been pinned against v2's
+  bundle. It reads `dist/classic/index.html`. This is the second time that gate
+  has been saved by measuring what an ENTRY loads rather than a file by name:
+  the chunk called `main-*.js` is v2's now, and v1's is `classic-*.js`, and the
+  gate did not notice because it never asked for either by name.
+
+Verified after the move: `/` and `/v2/` both serve `src/v2/main.ts`, `/classic/`
+serves `src/main.ts`, v1 boots its schoolyard at 960×640 with the font resolved,
+and both layout audits are green.
+
+**Where this leaves the rebuild.** v2 is the front door with the whole product
+loop — title, draft with the voting machine, team naming, a 3D game with sound
+and commentary, and a result. What v1 still has and v2 does not: Recess Week and
+the sticker album, Practice and Watch, pass-and-play and online play, the juice
+meter and its specials, the batting cursor and pitch aiming, instant replay, the
+pause menu, the lineup screen, and the venue picker. Those are the next arc, and
+`/classic/` is why none of them had to block the cutover.
 
 ---
 

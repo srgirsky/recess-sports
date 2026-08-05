@@ -28,7 +28,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 const CFG = JSON.parse(readFileSync(join(here, 'layout-audit.json'), 'utf8'));
 const AUDIT_JS = readFileSync(join(here, 'layout.browser.js'), 'utf8');
 const PORT = 5177;
-const URL = `http://localhost:${PORT}/`;
+// ★ /classic/, NOT /. This gate boots v1's menu screens, and v1 moved down one
+// directory at the v2 cutover; pointed at the root it would silently audit v2's
+// DOM screens with Phaser rules and find no display list at all.
+const URL = `http://localhost:${PORT}/classic/`;
 /**
  * Hard ceiling on the whole run. A gate that can hang is worse than no gate —
  * it burns a CI runner until the 6-hour default and tells you nothing. Locally
