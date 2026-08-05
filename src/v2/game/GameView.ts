@@ -52,7 +52,7 @@ import { createCharacter, proxyForced } from '../render/CharacterFactory';
 import { configureModelLoader } from '../render/modelLoader';
 import { AnimationDirector } from '../render/AnimationDirector';
 import { buildProceduralClips } from '../render/proceduralClips';
-import { RIGS, chooseCamera, damp, type CameraCue } from '../render/cameraCues';
+import { RIGS, chooseCamera, damp, type CameraCue, type CameraPreset } from '../render/cameraCues';
 import { applyFrame, cameraInputFor, type SceneRefs } from '../render/bridge';
 import { simulateGameLive, type GameResult, type LiveFrame, type SimEvent } from '../sim/game';
 import type { PlayInputs } from '../sim/play';
@@ -888,7 +888,39 @@ export class GameView {
    * tested and invoked by nothing since it was written. The hard cut is
    * honoured as it specifies — instant, no blend across contact.
    */
+  /**
+   * A SCREEN's camera, overriding the play policy while one is up.
+   *
+   * BB2026's menus are 3D scenes; ours are DOM over the live park, and this
+   * is the "camera cue per screen" half of that equivalence — the draft looks
+   * down the whole diamond, the team picker frames the defence whose jerseys
+   * the swatches recolour, the result settles low behind the plate. Null
+   * hands the camera back to `chooseCamera`. Eased through the same damp as
+   * every other move, so showing a screen PANS rather than teleports.
+   */
+  private screenCue: CameraPreset | null = null;
+
+  setScreenCue(preset: CameraPreset | null): void {
+    this.screenCue = preset;
+  }
+
   private driveCamera(frame: LiveFrame, dt: number): void {
+    if (this.screenCue) {
+      const rig = RIGS[this.screenCue];
+      const wantEye = new Vector3(rig.eye[0], rig.eye[1], rig.eye[2]);
+      const wantTgt = new Vector3(rig.target[0], rig.target[1], rig.target[2]);
+      for (const ax of ['x', 'y', 'z'] as const) {
+        [this.eye[ax], this.eyeVel[ax]] = damp(this.eye[ax], wantEye[ax], this.eyeVel[ax], dt);
+        [this.target[ax], this.targetVel[ax]] = damp(this.target[ax], wantTgt[ax], this.targetVel[ax], dt);
+      }
+      this.camera.fov = rig.fov;
+      this.camera.position.copy(this.eye);
+      this.camera.lookAt(this.target);
+      this.camera.updateProjectionMatrix();
+      // The play cue is dropped so leaving the screen re-cuts cleanly.
+      this.cue = null;
+      return;
+    }
     const next = chooseCamera(cameraInputFor(frame), this.cue ?? undefined);
     const cut = next.transition === 'cut' || !this.cue;
     this.cue = next;

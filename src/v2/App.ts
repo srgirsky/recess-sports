@@ -84,6 +84,7 @@ export class App {
   }
 
   private showTitle(): void {
+    this.game.setScreenCue(null);
     this.rosters = null;
     this.router.show(
       new TitleScreen(() => {
@@ -105,6 +106,7 @@ export class App {
    * test asserts the exact set of ids counted.
    */
   private showDraft(): void {
+    this.game.setScreenCue('DEEP');
     this.router.show(
       new DraftScreen(
         ROSTER.map((c) => c.id),
@@ -120,6 +122,7 @@ export class App {
 
   /** Colours and a logo, which together are the team's spoken name. */
   private showTeam(): void {
+    this.game.setScreenCue('PLAY');
     this.router.show(
       new TeamScreen(
         this.identity,
@@ -167,6 +170,7 @@ export class App {
   }
 
   private async playBall(): Promise<void> {
+    this.game.setScreenCue(null);
     this.gameNo += 1;
     this.sound.reset();
     this.game.setTeamNames(this.names());
@@ -188,6 +192,7 @@ export class App {
   }
 
   private showResult(result: GameResult): void {
+    this.game.setScreenCue('PITCH_HERO');
     // ★ THE ATTRACT GAME MUST NOT INTERRUPT THE TITLE. A game is already running
     // behind the front screen so the park is alive, and it can reach the ninth
     // while a kid is deciding — which would slap a Result screen for a game
