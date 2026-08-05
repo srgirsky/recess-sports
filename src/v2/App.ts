@@ -18,7 +18,7 @@
 // hands the harness — not because the view guessed the game looked over.
 // ---------------------------------------------------------------------------
 
-import { GameView } from './game/GameView';
+import { DEFAULT_INNINGS, GameView } from './game/GameView';
 import { Router } from './ui/Router';
 import { TitleScreen } from './ui/screens/TitleScreen';
 import { DraftScreen } from './ui/screens/DraftScreen';
@@ -59,6 +59,7 @@ export class App {
    * a kid who named their team at `/` finds it already named at `/v2/`.
    */
   private identity: TeamIdentity = getTeamIdentity() ?? { color: 5, logo: 0 };
+  private innings = DEFAULT_INNINGS;
 
   constructor(canvas: HTMLCanvasElement, screens: HTMLElement) {
     this.router = new Router(screens);
@@ -120,6 +121,10 @@ export class App {
     this.router.show(
       new TeamScreen(
         this.identity,
+        this.innings,
+        (n) => {
+          this.innings = n;
+        },
         (t) => {
           this.identity = t;
           void this.dress();
@@ -137,7 +142,7 @@ export class App {
   private async dress(): Promise<void> {
     if (!this.rosters) return;
     this.game.setTeamNames(this.names());
-    await this.game.newGame(this.seed(), this.rosters, this.uniforms());
+    await this.game.newGame(this.seed(), this.rosters, this.uniforms(), this.innings);
   }
 
   private rival(): TeamIdentity {
@@ -156,7 +161,7 @@ export class App {
     this.gameNo += 1;
     this.sound.reset();
     this.game.setTeamNames(this.names());
-    await this.game.newGame(this.seed(), this.rosters ?? undefined, this.uniforms());
+    await this.game.newGame(this.seed(), this.rosters ?? undefined, this.uniforms(), this.innings);
     // ★ THE BOOTH SAYS THE NAME. It is the payoff for the whole screen, and it
     // is why the name is a spoken colour and a spoken animal rather than text.
     this.sound.sayTeam(teamName(this.identity));

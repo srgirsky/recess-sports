@@ -766,8 +766,26 @@ body.screen-open #hud > *:not(.btn--mute) {
 }
 
 /* ---- The team picker ---- */
+/*
+ * ★ START-ALIGNED AND SCROLLABLE, like the draft board and for the same reason.
+ * `place-content: center` clips a screen that outgrows the viewport at BOTH
+ * ends, and the top half is unreachable — adding the game-length row pushed the
+ * title to y -2 on a 740x320 phone. Growth has to go DOWNWARD, where a scroll
+ * can still get to it. Caught by `audit:v2-layout`, whose rule for a scrolling
+ * screen is exactly this: below the fold is reachable, above the top is not.
+ */
 .screen--team {
+  place-content: start center;
+  align-content: start;
   gap: var(--s4);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-block: var(--s4);
+}
+@media (max-height: 460px) {
+  .screen--team {
+    gap: var(--s2);
+  }
 }
 .team-name {
   margin: 0;
@@ -845,4 +863,34 @@ body.screen-open #hud > *:not(.btn--mute) {
   box-shadow:
     0 0 0 0.22rem var(--gold),
     var(--shadow);
+}
+
+/* ---- Game length: the choice is in MINUTES, not innings ---- */
+.team-row--length {
+  gap: var(--s2);
+}
+.length {
+  display: grid;
+  gap: 0;
+  padding: var(--s2) var(--s4);
+  min-inline-size: 5.5rem;
+  background: var(--cream);
+  color: var(--ink);
+  opacity: 0.72;
+}
+.length.is-picked {
+  opacity: 1;
+  background: var(--gold);
+  box-shadow:
+    0 0 0 0.18rem var(--outline),
+    var(--shadow);
+}
+.length__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.length__mins {
+  font-size: 0.62rem;
+  opacity: 0.75;
 }
