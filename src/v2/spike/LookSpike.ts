@@ -23,6 +23,7 @@ import { Lighting } from '../render/Lighting';
 import { OutlineRegistry } from '../render/materials/outline';
 import { VENUE_LOOKS, buildField, type FieldBuild } from '../render/Field';
 import { buildFence, type FenceBuild } from '../render/Fence';
+import { buildScenery, type SceneryBuild } from '../render/Scenery';
 import { buildSky } from '../render/Sky';
 import { CharacterModel, type KidView } from '../render/CharacterModel';
 import { createCharacter, proxyForced, type KidSource } from '../render/CharacterFactory';
@@ -48,6 +49,7 @@ export class LookSpike {
 
   private field!: FieldBuild;
   private fence!: FenceBuild;
+  private scenery!: SceneryBuild;
   private kids: KidView[] = [];
   private directors: AnimationDirector[] = [];
   /** How each kid on the field was resolved — the review readout's whole point. */
@@ -109,11 +111,15 @@ export class LookSpike {
     this.field?.dispose();
     this.fence?.root.removeFromParent();
     this.fence?.dispose();
+    this.scenery?.root.removeFromParent();
+    this.scenery?.dispose();
 
     this.field = buildField(geo, look, this.outlines, { anisotropy: this.renderer.tier.anisotropy });
     this.fence = buildFence(geo, look, this.outlines);
+    this.scenery = buildScenery(geo, id);
     this.scene.add(this.field.root);
     this.scene.add(this.fence.root);
+    this.scene.add(this.scenery.root);
   }
 
   /**

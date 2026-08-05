@@ -1546,6 +1546,37 @@ pause menu, the lineup screen, and the venue picker. Those are the next arc, and
 
 ---
 
+### PR 28 — the neighborhood: a world behind the fence
+
+The first pass of the "on par with Backyard Baseball (2026)" push. Side-by-side
+frames (reference notes in `docs/research/backyard-2026-reference.md`) made the
+gap concrete: our camera, zone, scoreboard and play all had counterparts in the
+BB2026 pitching view, but their park is a PLACE — houses, trees, a privacy
+fence, telephone wires, background clutter — and ours was a green screen: turf,
+wall, sky, nothing. Every establishing shot and every behind-plate frame showed
+it.
+
+`render/Scenery.ts` is that world. Pure set dressing outside the fence — a
+plank-by-plank privacy fence ring, gabled houses with doors and windows,
+tree clusters, bushes in the fence gap, telephone poles with sagging catenary
+wires, one shed, puffy clouds — keyed per venue (`park` suburban, `sandlot`
+warmer and treed, `blacktop` flat-roofed city blocks).
+
+Two decisions carry the cost model. Everything bakes its transform and colour
+into shared vertex-coloured BufferGeometries and merges into ONE mesh (plus one
+for clouds): the whole neighborhood is 2 draw calls and ~10k triangles, spike-
+measured at 46 draws / 94.9k tris against the 90/180k budget. And placement is
+`sceneryPlan`, a pure function jittered by the shared `hash01` — deterministic,
+Node-testable, no `Math.random`. `Scenery.test.ts` pins the three ways a prop
+stops being scenery: a footprint inside the fence clearance (the sim cannot see
+a house, so a fielder would run through the porch), a prop off the finite turf
+plane (a floating box in the flyover), and an unmerged part spending its own
+draw call.
+
+One palette lesson worth keeping: the toon ramp's shadow step eats ~40%, so a
+"slate" roof authored at its real-world value reads as BLACK from the plate.
+Scenery colours are authored bright on purpose.
+
 ## The 30 characters
 
 Defined in `src/data/characters.ts` (pure content — edit freely). Each has stats (contact/power/speed/pitching, 1–10), a look (`VisualParams`), and an optional `ability`. Three signature kids are implemented via **ability hooks** so they're data-driven, not special-cased in scene code:

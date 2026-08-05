@@ -46,6 +46,7 @@ import { Lighting } from '../render/Lighting';
 import { OutlineRegistry } from '../render/materials/outline';
 import { VENUE_LOOKS, buildField, type FieldBuild } from '../render/Field';
 import { buildFence, type FenceBuild } from '../render/Fence';
+import { buildScenery, type SceneryBuild } from '../render/Scenery';
 import { buildSky } from '../render/Sky';
 import { createCharacter, proxyForced } from '../render/CharacterFactory';
 import { configureModelLoader } from '../render/modelLoader';
@@ -156,6 +157,7 @@ export class GameView {
 
   private field!: FieldBuild;
   private fence!: FenceBuild;
+  private scenery!: SceneryBuild;
   private refs: SceneRefs = { kids: new Map(), directors: new Map(), ball: new Mesh() };
 
   private game: Generator<LiveFrame, unknown, PlayInputs> | null = null;
@@ -454,7 +456,8 @@ export class GameView {
     const look = VENUE_LOOKS[this.venue];
     this.field = buildField(geo, look, this.outlines, { anisotropy: this.renderer.tier.anisotropy });
     this.fence = buildFence(geo, look, this.outlines);
-    this.scene.add(this.field.root, this.fence.root);
+    this.scenery = buildScenery(geo, this.venue);
+    this.scene.add(this.field.root, this.fence.root, this.scenery.root);
 
     const ball = new Mesh(
       new SphereGeometry(0.12, 12, 8),

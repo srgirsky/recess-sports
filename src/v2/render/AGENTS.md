@@ -20,7 +20,7 @@ rule that projection stays render-side and testable.
   character scale are jointly unsatisfiable at real units, and why the answer is
   camera distance rather than giant kids.
 - **A camera preset that has never seen a scene is a guess.** Look through it
-  before trusting a comment that describes what it shows.
+  before trusting its comment.
 - **⚠️ A projection test cannot see OCCLUSION.** Projecting the bases through a
   preset and asserting they land in frame passes for a view where a catcher fills
   the middle of the frame, because a point behind him projects to the same pixel
@@ -215,7 +215,7 @@ propagation" simply cannot happen here.
 |---|---|
 | `src/v2/render/clips.ts` | the animation contract, in code and pure |
 | `src/v2/render/AnimationDirector.ts` | the only place clips are played |
-| `src/v2/render/proceduralClips.ts` | crude stand-ins for every clip name, so nothing is blocked on the animator |
+| `src/v2/render/proceduralClips.ts` | crude stand-ins for every clip name |
 | `src/v2/render/CharacterFactory.ts` | the one seam that decides model-or-proxy |
 | `src/v2/render/CharacterModel.ts` | a delivered `.glb` made playable: LODs, material slots, face atlas, outlines |
 | `src/v2/render/ProxyCharacter.ts` | a kid built from primitives — the acceptance test for the skeleton spec |
@@ -223,6 +223,7 @@ propagation" simply cannot happen here.
 | `src/v2/render/assets.ts` | runtime URLs against `document.baseURI`, and the delivery manifest |
 | `src/v2/render/faceAtlas.ts` | the 4x4 expression grid, pure |
 | `src/v2/render/skeleton.ts` | the rig spec that `docs/v2/asset-contract.md` mirrors |
+| `src/v2/render/Scenery.ts` | the merged, deterministic neighborhood beyond the fence |
 | `src/v2/render/bridge.ts` | the single sim<->scene coupling point |
 | `src/v2/render/cameraCues.ts` | camera POLICY, pure |
 | `spike/AnimSpike.ts` | `/v2/?anims=1`, the acceptance surface for the animation brief |
