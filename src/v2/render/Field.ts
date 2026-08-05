@@ -22,9 +22,11 @@
 
 import {
   BoxGeometry,
+  BufferGeometry,
   CircleGeometry,
   Color,
   DoubleSide,
+  Float32BufferAttribute,
   Group,
   LatheGeometry,
   Mesh,
@@ -145,7 +147,7 @@ export function buildField(
 
   // ---- Foul lines out to the poles (geometry, not texture) ---------------
   for (const side of [-1, 1] as const) {
-    const line = buildFoulLine(geo, side);
+    const line = buildFoulLine(geo, look, side);
     root.add(line);
     disposers.push(() => line.geometry.dispose());
   }
@@ -579,16 +581,63 @@ function drawInfield(
 
 // --- Foul lines beyond the overlay -----------------------------------------
 
-function buildFoulLine(geo: FieldGeometry, side: -1 | 1): Mesh {
+/**
+ * The far foul line, hand-limed.
+ *
+ * This was one solid `BoxGeometry` stripe — the single most synthetic object
+ * on the field, sitting right next to an overlay whose every chalk mark goes
+ * through the kit's worn `chalkLine`. The LINE stays straight (a real foul
+ * line is; the rule line in `sim/field.ts` certainly is) — the hand-limed
+ * read comes from the same variation the kit uses: per-dash width and wear,
+ * plus an inch or two of lateral drift, the wobble of a pushed chalker.
+ *
+ * Wear is a TINT toward the venue's grass rather than alpha — a transparent
+ * ribbon would need alpha sorting against the overlay below it, and "chalk
+ * thinning out" and "grass showing through" are the same pixel.
+ */
+function buildFoulLine(geo: FieldGeometry, look: VenueLook, side: -1 | 1): Mesh {
   const from = 100;
   const to = fenceDistAt(geo, side * 45);
-  const len = to - from;
-  const geom = new BoxGeometry(CHALK_W, 0.02, len);
-  const mat = makeToonMaterial({ color: 0xfffdf5, rimStrength: 0 });
+  const dashFt = 2.5;
+  const n = Math.max(24, Math.round((to - from) / dashFt));
+  const spray = (side * 45 * Math.PI) / 180;
+  const dir = { x: Math.sin(spray), z: Math.cos(spray) };
+  const perp = { x: Math.cos(spray), z: -Math.sin(spray) };
+
+  const chalk = new Color(0xfffdf5).convertSRGBToLinear();
+  const grass = new Color(look.grass).convertSRGBToLinear();
+  const seed = side > 0 ? 47 : 53;
+
+  const pos: number[] = [];
+  const col: number[] = [];
+  const idx: number[] = [];
+  for (let i = 0; i <= n; i++) {
+    const d = from + ((to - from) * i) / n;
+    // Slow incommensurate sines — the mown-edge rule: a chalker wanders, it
+    // does not zigzag, so no per-vertex hash on the OFFSET.
+    const drift = (Math.sin(d * 0.09 + seed) * 0.6 + Math.sin(d * 0.031 + seed * 2.1) * 0.4) * 0.14;
+    const half = (CHALK_W / 2) * (0.75 + hash01(i, seed) * 0.55);
+    const cx = dir.x * d + perp.x * drift;
+    const cz = dir.z * d + perp.z * drift;
+    pos.push(cx - perp.x * half, 0, cz - perp.z * half, cx + perp.x * half, 0, cz + perp.z * half);
+    const c = chalk.clone().lerp(grass, hash01(i + 61, seed) * 0.38);
+    col.push(c.r, c.g, c.b, c.r, c.g, c.b);
+    if (i < n) {
+      const a = i * 2;
+      idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2);
+    }
+  }
+
+  const geom = new BufferGeometry();
+  geom.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  geom.setAttribute('color', new Float32BufferAttribute(col, 3));
+  geom.setIndex(idx);
+  geom.computeVertexNormals();
+
+  const mat = makeToonMaterial({ color: 0xffffff, rimStrength: 0 });
+  mat.vertexColors = true;
   const mesh = new Mesh(geom, mat);
-  const mid = pointAt(side * 45, from + len / 2);
-  mesh.position.set(mid.x, Y_CHALK, mid.z);
-  mesh.rotation.y = side * -Math.PI / 4;
+  mesh.position.y = Y_CHALK;
   mesh.name = `foulLine${side > 0 ? 'R' : 'L'}`;
   mesh.receiveShadow = false;
   return mesh;

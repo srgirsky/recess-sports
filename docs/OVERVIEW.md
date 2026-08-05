@@ -1604,6 +1604,19 @@ distance and a fog authored apart from the sky splits into a seam at the fence
 line. One source of truth; the gray can never come back in only one of the four
 places.
 
+### PR 30 — the hand-limed foul line
+
+Item 3 of the BB2026 gap list, scoped to its worst offender. The overlay's
+every chalk mark already goes through the kit's worn `chalkLine`, but the foul
+line beyond 100ft was one solid `BoxGeometry` stripe — the most synthetic
+object on the field, touching the most hand-crafted one. It is now a ribbon
+with the kit's own character: per-dash width and wear (hash-varied, no
+`Math.random`), a slow two-sine lateral drift like a pushed chalker — the line
+itself stays straight, and `sim/field.ts`'s rule line is untouched — and wear
+as a TINT toward the venue's grass rather than alpha, because "chalk thinning
+out" and "grass showing through" are the same pixel and a transparent ribbon
+would need alpha sorting against the overlay below it.
+
 ## The 30 characters
 
 Defined in `src/data/characters.ts` (pure content — edit freely). Each has stats (contact/power/speed/pitching, 1–10), a look (`VisualParams`), and an optional `ability`. Three signature kids are implemented via **ability hooks** so they're data-driven, not special-cased in scene code:
