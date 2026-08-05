@@ -88,9 +88,9 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
    ~~inning-break scoreboard~~ (PR 34). Open: diegetic menu styling — our
    screens are DOM-over-canvas by design, so the equivalent is styling + a
    camera cue per screen, not a rebuild.
-7. ~~Day/night, first pass~~ — PR 35's `?night=1` (sky/fog/lights/lit
-   windows). Open as polish: light towers, the sun/moon toggle chip,
-   per-venue night looks, HR fireworks.
+7. ~~Day/night~~ — PR 35's `?night=1` (sky/fog/lights/lit windows), PR 36's
+   sun/moon chip on the team screen with a live park flip. Open as polish:
+   light towers, per-venue night looks, HR fireworks.
 
 Gameplay: their new modes (Backyard Derby, Backyard Bash, Wiggle Ball, T-Ball)
 map to our roadmap's Practice/modes arc, and their 10-point skill system

@@ -1635,6 +1635,17 @@ drop shadow, icon-first with one short word (🔥 FAST / 🐢 SLOW / 🌈 CURVE 
 🌀 TWISTY), a keyboard hint that hides on coarse pointers, and ±1.4° of
 rotation so the stack reads placed-by-hand.
 
+### PR 36 — the sun and the moon on the team screen
+
+Night stops being a URL parameter. The team screen gains BB2026's sun/moon
+pair as a fourth chip row, and the choice obeys the screen's own preview rule
+— the park behind the picker IS the park the game starts in, so tapping the
+moon flips the real sky, fog, lights and scenery live via
+`GameView.applyNight` (sky mesh swapped and disposed, lighting rebuilt,
+scenery re-merged; the sim never knows what time it is). `?night=1` remains
+as the review seed. The NIGHT chip stays cream rather than dark: the picked
+state is the gold wash, and a dark chip beside it would read as disabled.
+
 ### PR 35 — night at the park, first pass
 
 Gap item 7 — BB2026's headline "first since 2005" feature — as a review

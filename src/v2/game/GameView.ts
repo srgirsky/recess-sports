@@ -167,15 +167,16 @@ export class GameView {
   private readonly scene = new Scene();
   private readonly camera: PerspectiveCamera;
   private readonly renderer: Renderer;
-  private readonly lighting: Lighting;
+  private lighting: Lighting;
   private readonly outlines = new OutlineRegistry();
   private readonly clipLibrary = buildProceduralClips();
 
   private field!: FieldBuild;
   private fence!: FenceBuild;
   private scenery!: SceneryBuild;
-  /** `?night=1` — BB2026's headline mode, as a review surface first. */
-  private readonly night: boolean;
+  /** Day or night. `?night=1` seeds it; the team screen's chip flips it live. */
+  private night: boolean;
+  private sky!: Mesh;
   private refs: SceneRefs = { kids: new Map(), directors: new Map(), ball: new Mesh() };
 
   private game: Generator<LiveFrame, unknown, PlayInputs> | null = null;
@@ -265,7 +266,8 @@ export class GameView {
     this.camera = new PerspectiveCamera(RIGS.PITCH.fov, 1, 0.5, 900);
     this.lighting = new Lighting({ shadowMapSize: this.renderer.tier.shadowMapSize, night: this.night });
     this.scene.add(this.lighting.root);
-    this.scene.add(this.night ? buildSky(NIGHT_TOP, NIGHT_HORIZON) : buildSky());
+    this.sky = this.night ? buildSky(NIGHT_TOP, NIGHT_HORIZON) : buildSky();
+    this.scene.add(this.sky);
     // Aerial haze is most of what sells DISTANCE in a flat-shaded scene —
     // and it must match the horizon it thickens toward, day or night.
     this.scene.fog = new Fog(this.night ? NIGHT_HORIZON : SKY_HORIZON, 260, 900);
@@ -992,6 +994,39 @@ export class GameView {
       const el = chip as HTMLElement;
       el.classList.toggle('is-picked', el.dataset.kind === this.pitchKind);
     }
+  }
+
+  /**
+   * Flip the park between day and night, live.
+   *
+   * The team screen's sun/moon chip calls this so the preview rule holds —
+   * the park behind the picker IS the park the game starts in. Sky, fog,
+   * lights and scenery swap; the sim never knows what time it is.
+   */
+  applyNight(night: boolean): void {
+    if (night === this.night) return;
+    this.night = night;
+
+    this.scene.remove(this.sky);
+    this.sky.geometry.dispose();
+    (this.sky.material as { dispose(): void }).dispose();
+    this.sky = night ? buildSky(NIGHT_TOP, NIGHT_HORIZON) : buildSky();
+    this.scene.add(this.sky);
+
+    (this.scene.fog as Fog).color.set(night ? NIGHT_HORIZON : SKY_HORIZON);
+
+    this.scene.remove(this.lighting.root);
+    this.lighting.key.dispose();
+    this.lighting.fill.dispose();
+    this.lighting.hemi.dispose();
+    this.lighting = new Lighting({ shadowMapSize: this.renderer.tier.shadowMapSize, night });
+    this.scene.add(this.lighting.root);
+
+    const geo = VENUE_GEOMETRY[this.venue];
+    this.scenery.root.removeFromParent();
+    this.scenery.dispose();
+    this.scenery = buildScenery(geo, this.venue, { night });
+    this.scene.add(this.scenery.root);
   }
 
   /** What the HUD shows. Read-only, like everything else on this side. */

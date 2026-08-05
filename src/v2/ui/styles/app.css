@@ -1072,6 +1072,36 @@ body.screen-open #hud > *:not(.btn--mute) {
 .team-row--length {
   gap: var(--s2);
 }
+/* Day or night — the sun/moon pair, same chip language as the lengths. The
+   NIGHT chip stays cream: the picked state is the gold wash, and a dark chip
+   would read as disabled next to it. */
+.timechip {
+  display: grid;
+  justify-items: center;
+  gap: 0;
+  padding: var(--s2) var(--s4);
+  min-inline-size: 5.5rem;
+  background: var(--cream);
+  color: var(--ink);
+  opacity: 0.72;
+}
+.timechip.is-picked {
+  opacity: 1;
+  background: var(--gold);
+  box-shadow:
+    0 0 0 0.18rem var(--outline),
+    var(--shadow);
+}
+.timechip__icon {
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+.timechip__label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
 .length {
   display: grid;
   gap: 0;
