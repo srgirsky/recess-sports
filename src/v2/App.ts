@@ -60,6 +60,8 @@ export class App {
    */
   private identity: TeamIdentity = getTeamIdentity() ?? { color: 5, logo: 0 };
   private innings = DEFAULT_INNINGS;
+  /** Day or night, chosen on the team screen. `?night=1` seeds it for review. */
+  private night = new URLSearchParams(location.search).get('night') === '1';
 
   constructor(canvas: HTMLCanvasElement, screens: HTMLElement) {
     this.router = new Router(screens);
@@ -122,8 +124,15 @@ export class App {
       new TeamScreen(
         this.identity,
         this.innings,
+        this.night,
         (n) => {
           this.innings = n;
+        },
+        (night) => {
+          this.night = night;
+          // The same preview rule as the colours: the park behind the screen
+          // IS the park the game starts in.
+          this.game.applyNight(night);
         },
         (t) => {
           this.identity = t;

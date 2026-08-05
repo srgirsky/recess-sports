@@ -31,15 +31,20 @@ export class TeamScreen implements Screen {
 
   private innings: number;
 
+  private night: boolean;
+
   constructor(
     start: TeamIdentity,
     startInnings: number,
+    startNight: boolean,
     private readonly onInnings: (n: number) => void,
+    private readonly onNight: (night: boolean) => void,
     private readonly onPreview: (t: TeamIdentity) => void,
     private readonly onReady: (t: TeamIdentity) => void
   ) {
     this.choice = { ...start };
     this.innings = startInnings;
+    this.night = startNight;
   }
 
   mount(): HTMLElement {
@@ -84,15 +89,36 @@ export class TeamScreen implements Screen {
       lengths.appendChild(b);
     }
 
+    // ★ DAY OR NIGHT — BB2026's sun/moon, and the same preview rule as the
+    // colours: tapping the moon flips the REAL park behind this screen,
+    // because it is the park the game is about to start in.
+    const times = el('div', 'team-row team-row--time');
+    for (const t of [
+      { night: false, icon: '☀️', label: 'DAY' },
+      { night: true, icon: '🌙', label: 'NIGHT' },
+    ]) {
+      const b = button('', () => this.setNight(t.night), 'timechip');
+      b.dataset.night = String(t.night);
+      b.append(el('span', 'timechip__icon', t.icon), el('span', 'timechip__label', t.label));
+      times.appendChild(b);
+    }
+
     this.root.append(
       head,
       colours,
       logos,
       lengths,
+      times,
       button('⚾  PLAY BALL', () => this.onReady(this.choice), 'btn--hero')
     );
     this.paint();
     return this.root;
+  }
+
+  private setNight(night: boolean): void {
+    this.night = night;
+    this.onNight(night);
+    this.paint();
   }
 
   private setInnings(n: number): void {
@@ -120,6 +146,9 @@ export class TeamScreen implements Screen {
     }
     for (const node of this.root.querySelectorAll<HTMLElement>('.length')) {
       node.classList.toggle('is-picked', Number(node.dataset.innings) === this.innings);
+    }
+    for (const node of this.root.querySelectorAll<HTMLElement>('.timechip')) {
+      node.classList.toggle('is-picked', (node.dataset.night === 'true') === this.night);
     }
   }
 }
