@@ -58,7 +58,10 @@ export class App {
     await this.game.start();
     this.game.onGameEnd((r) => this.showResult(r));
     this.game.onSimEvent((e) => this.sound.onEvent(e));
-    this.game.onFrame((f) => this.sound.onFrame(f));
+    this.game.onFrame((f) => {
+      this.sound.setBatter(getCharacter(f.batterId).name);
+      this.sound.onFrame(f);
+    });
     new MuteButton(this.sound).mount();
     this.showTitle();
   }

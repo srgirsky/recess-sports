@@ -28,9 +28,10 @@ import {
   unlock,
   whiff,
 } from '../../systems/audio';
-import { kidVoice } from '../../systems/voices';
+import { commentatorProfile, kidVoice } from '../../systems/voices';
+import { Announcer } from '../../systems/announcer';
 import type { Character } from '../../data/types';
-import { cuesForChange, cuesForEvent, snapshot, type Cue, type Snapshot } from './soundCues';
+import { announceFor, cuesForChange, cuesForEvent, snapshot, type Cue, type Snapshot } from './soundCues';
 import type { LiveFrame, SimEvent } from '../sim/game';
 
 /**
@@ -52,6 +53,28 @@ export class Sound {
    */
   private last: Snapshot | null = null;
 
+  /**
+   * The booth. v1's `Announcer` — two kid commentators with line pools, a
+   * no-repeat rule, a rate limiter and strict speaker alternation.
+   *
+   * ★ IT IS SEEDED FROM NOTHING, deliberately: `Math.random` is the default and
+   * this is the VIEW. `sim/rng.ts`'s injected-and-forked rule exists so the SIM
+   * is reproducible, and commentary that varied with the game seed would make
+   * "watch that again" mean hearing the same jokes.
+   */
+  private readonly booth = new Announcer();
+
+  /**
+   * Who is at the plate, for `{name}` in a call.
+   *
+   * ★ THE FRAME IS BEHIND THE EVENT BY ONE STEP, AND THAT IS CORRECT HERE.
+   * `advance()` runs the generator — firing events — and only then publishes the
+   * new frame, so at event time this still holds the batter the event is ABOUT.
+   * A batter cannot change mid-plate-appearance, which is the only span these
+   * moments cover.
+   */
+  private batter = '';
+
   /** Unlock the audio context. Call from a real user gesture and nowhere else. */
   start(): void {
     unlock();
@@ -69,6 +92,19 @@ export class Sound {
   /** A plate event, straight off the sim's own observer. */
   onEvent(e: SimEvent): void {
     this.fire(cuesForEvent(e));
+    const moment = announceFor(e);
+    if (!moment) return;
+    const lines = this.booth.line(moment.kind, performance.now(), { name: this.batter }, moment.priority);
+    if (!lines) return;
+    // ★ THE FIRST LINE FLUSHES, THE REACTION QUEUES. `audio.say` reserves the
+    // speaking slot on a flush precisely so the second half of an exchange lines
+    // up behind it instead of jumping in front during the deferred gap.
+    lines.forEach((l, i) => say(l.text, commentatorProfile(l.speaker), i === 0 ? 'flush' : 'queue'));
+  }
+
+  /** Who to name in a call. Fed from the frame tap. */
+  setBatter(name: string): void {
+    this.batter = name;
   }
 
   /** One tick of state. Cheap enough to call every frame; usually silent. */
@@ -85,6 +121,7 @@ export class Sound {
    */
   reset(): void {
     this.last = null;
+    this.batter = '';
   }
 
   /**

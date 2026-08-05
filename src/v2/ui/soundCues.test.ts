@@ -18,7 +18,8 @@ import { describe, expect, it } from 'vitest';
 import { simulateGame, type SimEvent } from '../sim/game';
 import { makeRng } from '../sim/rng';
 import { ROSTER, getCharacter } from '../../data/characters';
-import { cuesForChange, cuesForEvent, snapshot, type Cue, type Snapshot } from './soundCues';
+import { announceFor, cuesForChange, cuesForEvent, snapshot, type Cue, type Snapshot } from './soundCues';
+import { poolSizes } from '../../systems/announcer';
 
 /** Every event of a real game, in order. Events are values, so keeping is safe. */
 function eventsOf(seed: string): SimEvent[] {
@@ -166,5 +167,89 @@ describe('the vocabulary', () => {
       'out',
     ]);
     for (const e of EVENTS) for (const c of cuesForEvent(e)) expect(known.has(c)).toBe(true);
+  });
+});
+
+describe('★ the booth calls the moments a kid is waiting for', () => {
+  it('★ finds strikeouts, walks, homers, catches and hits in a real game', () => {
+    // The mapping is only worth anything if the sim actually produces the
+    // events it keys on. Asserting the switch handles seven names proves
+    // nothing; asserting the sweep SAW them does.
+    const seen = new Map<string, number>();
+    for (const e of EVENTS) {
+      const m = announceFor(e);
+      if (m) seen.set(m.kind, (seen.get(m.kind) ?? 0) + 1);
+    }
+    for (const kind of ['strikeoutSwinging', 'strikeoutPitched', 'walk', 'catch', 'hitSafe', 'outRace']) {
+      expect(seen.get(kind) ?? 0, `the booth never got to say "${kind}"`).toBeGreaterThan(0);
+    }
+  });
+
+  it('★ calls a home run — which three games will not show you', () => {
+    // ⚠️ DO NOT "FIX" THE SIM BECAUSE THIS SWEEP FINDS NO HOMERS. It found one
+    // in thirty games at the park, and that is DELIBERATE and measured:
+    // `sim.carryVsFence` sets the fences so a power-10 kid clears the 185ft line
+    // and NOBODY clears the 212ft centre, and `sim.gameShape` counted 155 across
+    // 861 games -- a record whose own header says it "exists to be READ, not to
+    // be met", because conforming a four-to-eight-year-olds' game to MLB's rates
+    // is the mistake the `reference` field exists to prevent.
+    //
+    // So the mapping is proven on a constructed event. A sweep is the right tool
+    // for "does the sim emit this"; it is the wrong tool for "is the rarest
+    // moment in the game wired up".
+    const hr = { t: 'contact', launch: EVENTS.find((e) => e.t === 'contact')!.launch,
+                 hit: 'HR', flyCaught: false, foul: false } as SimEvent;
+    expect(announceFor(hr)).toEqual({ kind: 'homer', priority: 2 });
+    expect(cuesForEvent(hr)).toContain('cheer');
+  });
+
+  it('★ never calls a foul ball, which is most contact there is', () => {
+    const fouls = EVENTS.filter((e) => e.t === 'contact' && e.foul);
+    expect(fouls.length, 'no fouls in three games').toBeGreaterThan(10);
+    for (const e of fouls) expect(announceFor(e)).toBeNull();
+  });
+
+  it('★ calls a third strike and not a first or second', () => {
+    // The whole mapping rests on `strikes` being the count BEFORE the pitch.
+    // Off by one and the booth calls a strikeout on every 1-1 count.
+    for (const e of EVENTS) {
+      if (e.t !== 'pitch') continue;
+      const m = announceFor(e);
+      const isK = m?.kind === 'strikeoutSwinging' || m?.kind === 'strikeoutPitched';
+      if (isK) expect(e.strikes, 'called a K on the wrong count').toBe(2);
+      if (e.strikes < 2) expect(isK, `a K called on ${e.balls}-${e.strikes}`).toBe(false);
+    }
+  });
+
+  it('★ calls ball four and not ball two', () => {
+    for (const e of EVENTS) {
+      if (e.t !== 'pitch') continue;
+      if (announceFor(e)?.kind === 'walk') expect(e.balls).toBe(3);
+    }
+  });
+
+  it('lets the big moments jump the rate limiter, and nothing else', () => {
+    // `Announcer` drops priority-1 lines while the booth is still talking. A
+    // homer or a strikeout that got dropped is the one call a kid was waiting
+    // for, so those are the only ones allowed through.
+    const loud = new Set<string>();
+    const withHomer: SimEvent[] = [
+      ...EVENTS,
+      { t: 'contact', launch: EVENTS.find((e) => e.t === 'contact')!.launch,
+        hit: 'HR', flyCaught: false, foul: false } as SimEvent,
+    ];
+    for (const e of withHomer) {
+      const m = announceFor(e);
+      if (m?.priority === 2) loud.add(m.kind);
+    }
+    expect([...loud].sort()).toEqual(['homer', 'strikeoutPitched', 'strikeoutSwinging']);
+  });
+
+  it('names a moment the booth actually has lines for', () => {
+    const pools = poolSizes();
+    for (const e of EVENTS) {
+      const m = announceFor(e);
+      if (m) expect(pools[m.kind], `no lines for "${m.kind}"`).toBeGreaterThan(0);
+    }
   });
 });

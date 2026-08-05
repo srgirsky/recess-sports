@@ -24,6 +24,7 @@
 // ---------------------------------------------------------------------------
 
 import type { LiveFrame, SimEvent } from '../sim/game';
+import type { AnnounceKind } from '../../systems/announcer';
 
 export type Cue =
   /** The ball leaving the hand. */
@@ -126,4 +127,40 @@ export function cuesForChange(prev: Snapshot, next: Snapshot): Cue[] {
   if (runs > 0) cues.push('cheer');
 
   return cues;
+}
+
+// --- The booth --------------------------------------------------------------
+
+/**
+ * Which of the booth's moments this event is, and how loudly it counts.
+ *
+ * ★ THE COUNT ARRIVES WITH THE PITCH, WHICH IS WHY THIS WORKS WITHOUT NEW SIM
+ * EVENTS. `SimEvent.pitch` carries `balls` and `strikes` as they were BEFORE the
+ * pitch — a field `harness.ts` added because "a field nobody reads is a field
+ * nobody can trust" — so a third strike is a strike thrown at `strikes === 2`,
+ * and ball four is a ball thrown at `balls === 3`. The sim needed no change to
+ * be commentated; it was already saying enough.
+ *
+ * ★ PRIORITY 2 IS "ALWAYS SPEAK". `Announcer` drops priority-1 lines while the
+ * booth is still talking, which is what stops it babbling at this pace. A homer
+ * and a strikeout are the calls a kid is waiting for, so they jump the queue and
+ * may come back as a two-line exchange.
+ */
+export function announceFor(e: SimEvent): { kind: AnnounceKind; priority: 1 | 2 } | null {
+  if (e.t === 'pitch') {
+    if (e.strikes === 2 && e.kind === 'swingingStrike')
+      return { kind: 'strikeoutSwinging', priority: 2 };
+    if (e.strikes === 2 && e.kind === 'calledStrike')
+      return { kind: 'strikeoutPitched', priority: 2 };
+    if (e.balls === 3 && e.kind === 'ball') return { kind: 'walk', priority: 1 };
+    return null;
+  }
+
+  // ★ A FOUL IS NOT A MOMENT. It is the most common contact event there is, and
+  // a booth that calls every one of them says nothing else all game.
+  if (e.foul) return null;
+  if (e.hit === 'HR') return { kind: 'homer', priority: 2 };
+  if (e.flyCaught) return { kind: 'catch', priority: 1 };
+  if (e.hit === 'out') return { kind: 'outRace', priority: 1 };
+  return { kind: 'hitSafe', priority: 1 };
 }
