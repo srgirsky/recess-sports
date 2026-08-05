@@ -1635,6 +1635,19 @@ drop shadow, icon-first with one short word (🔥 FAST / 🐢 SLOW / 🌈 CURVE 
 🌀 TWISTY), a keyboard hint that hides on coarse pointers, and ±1.4° of
 rotation so the stack reads placed-by-hand.
 
+### PR 38 — fireworks for a night homer
+
+BB2026's night mode answers a home run with fireworks, and it is the right
+reward for this audience: no reading, just the sky agreeing with you.
+`render/Fireworks.ts` is one pooled additive `Points` — a burst is a
+golden-angle shell fan under gentle gravity, hash-free and deterministic-ish
+(the pool cursor phases shells apart), one draw call. GameView reacts to the
+same homer event the booth calls — three staggered bursts over the outfield
+in the batting team's jersey colour, night games only, built lazily so a day
+game never pays. The burst HEIGHT is the clouds' lesson re-applied: a
+"realistic" 60ft shell pops above the plate camera's ~11° frame top, so the
+shells pop at fence-top height, where the reference's do.
+
 ### PR 37 — a camera cue per screen
 
 The other half of the diegetic-menus equivalence (`docs/research` item 6):
