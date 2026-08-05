@@ -482,7 +482,14 @@ async function main() {
       // font.
       await page.goto(GAME_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 });
       await page.waitForFunction('!!window.__spike', { timeout: 30_000 });
-      await page.evaluate('document.fonts.ready.then(() => true)');
+      // Bounded: in an occluded headless page `fonts.ready` can wait for a
+      // rendering opportunity that never comes — the uncapped version hung a
+      // CI run for its whole 480s budget with no output and no error. A font
+      // that has not settled in 5s falls back to measuring the fallback,
+      // which a failed run cannot measure at all.
+      await page.evaluate(
+        'Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 5000))]).then(() => true)'
+      );
       await page.addStyleTag({ content: NO_MOTION });
       // The renderer sizes its drawing buffer on resize, not on a CSS change,
       // so the shrink above only takes effect once it is told to look again.
@@ -499,7 +506,14 @@ async function main() {
       // Same rule as above: 'domcontentloaded' plus the things actually
       // measured — this goto was the one that burned the runners.
       await page.goto(APP_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 });
-      await page.evaluate('document.fonts.ready.then(() => true)');
+      // Bounded: in an occluded headless page `fonts.ready` can wait for a
+      // rendering opportunity that never comes — the uncapped version hung a
+      // CI run for its whole 480s budget with no output and no error. A font
+      // that has not settled in 5s falls back to measuring the fallback,
+      // which a failed run cannot measure at all.
+      await page.evaluate(
+        'Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 5000))]).then(() => true)'
+      );
       await page.addStyleTag({ content: NO_MOTION });
       await page.waitForSelector('.screen--title', { timeout: 30_000 }).catch(() => {});
       for (const screen of SCREENS) {
