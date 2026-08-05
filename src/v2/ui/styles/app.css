@@ -311,14 +311,17 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
- * The pitch picker — a READOUT, not a menu.
+ * The pitch picker — BB's edge cards, tappable.
  *
- * Deliberately not `.interactive`: the pitch is chosen with the number keys and
- * this shows which one is armed. Making the chips tappable would put four live
- * targets over the field during the one beat the player may also want to steer,
- * and `sim.humanPitch` is clear that the verb is CHOOSING rather than aiming a
- * control. It appears only on the windup, which is the only beat the choice is
- * collectable — see `LiveFrame`'s `windup` phase.
+ * This section used to argue the opposite ("a READOUT, not a menu") on the
+ * grounds that tappable chips would put four live targets over the field
+ * during a steer beat. That left a touch player with NO way to choose a pitch
+ * — the number keys were the only input — so the answer is placement and
+ * timing rather than dead chips: the cards hug the right EDGE (BB2001 and
+ * BB2026 both put the pitch cards exactly there), and the picker mounts only
+ * during `windup`, the one beat with nothing to steer. The verb is still
+ * CHOOSING — `sim.humanPitch` unchanged. Sticker language: cream card, thick
+ * outline, hard shadow, a touch of rotation so they read placed-by-hand.
  * ------------------------------------------------------------------------- */
 .pitch-picker {
   grid-area: right;
@@ -326,7 +329,13 @@ body {
   justify-self: end;
   margin-inline-end: var(--s4);
   display: grid;
-  gap: var(--s2);
+  /* ⚠️ Sized in svh as well as rem. `visibility: hidden` still occupies
+     layout, so four full-size cards inside a 320px-tall viewport would
+     stretch the HUD grid and shove the SCOREBOARD row off-frame — the audit
+     caught exactly that, in every play scenario at short landscape, hidden
+     picker included. Everything vertical about a card breathes with the
+     viewport so the stack always fits the row it sits in. */
+  gap: clamp(0.3rem, 1.2svh, 0.75rem);
   opacity: 0;
   visibility: hidden;
   transition: opacity 120ms ease;
@@ -335,22 +344,54 @@ body {
   opacity: 1;
   visibility: visible;
 }
-.pitch-picker__chip {
-  padding: var(--s2) var(--s3);
+.pitch-card {
+  display: grid;
+  justify-items: center;
+  gap: clamp(0.02rem, 0.3svh, 0.1rem);
+  padding: clamp(0.2rem, 1svh, 0.5rem) var(--s3);
   border-radius: var(--radius);
   border: var(--stroke) solid var(--outline);
-  background: rgb(20 32 46 / 0.82);
-  color: var(--cream);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  opacity: 0.65;
-}
-.pitch-picker__chip.is-picked {
-  background: var(--gold);
+  background: var(--cream);
   color: var(--ink);
-  opacity: 1;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 0.28rem 0 rgb(20 32 46 / 0.35);
+  transition: transform 100ms ease, background 100ms ease;
+}
+.pitch-card:nth-child(odd) {
+  rotate: -1.4deg;
+}
+.pitch-card:nth-child(even) {
+  rotate: 1.4deg;
+}
+.pitch-card__icon {
+  font-size: clamp(0.95rem, 4.2svh, 1.35rem);
+  line-height: 1.1;
+}
+.pitch-card__name {
+  font-size: clamp(0.45rem, 1.8svh, 0.58rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.pitch-card__key {
+  font-family: inherit;
+  font-size: clamp(0.4rem, 1.5svh, 0.5rem);
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.12rem 0.3rem;
+  border-radius: 0.35rem;
+  border: 1px solid rgb(20 32 46 / 0.35);
+  background: rgb(20 32 46 / 0.08);
+}
+/* The key hint is for keyboards; on a touch screen it is noise. */
+@media (hover: none) and (pointer: coarse) {
+  .pitch-card__key {
+    display: none;
+  }
+}
+.pitch-card.is-picked {
+  background: var(--gold);
+  transform: scale(1.07);
 }
 
 /* ---------------------------------------------------------------------------
