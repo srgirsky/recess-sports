@@ -99,6 +99,23 @@ export function cuesForEvent(e: SimEvent): Cue[] {
     }
   }
 
+  // The plate appearance resolving. Two of these are the same instant as a
+  // pitch/contact cue and DEDUPE (`MAX_PER_TICK` stacks identical waveforms
+  // into one); the other two were genuinely silent moments before this event
+  // existed — nobody cheered a single, and a groundout's putout had no mitt.
+  if (e.t === 'pa') {
+    switch (e.result) {
+      case 'hit':
+        return ['cheer'];
+      case 'out':
+        return ['pop'];
+      case 'k':
+        return ['call:strike'];
+      case 'walk':
+        return ['call:ball'];
+    }
+  }
+
   // Contact — the ball that was actually put in play, or fouled away.
   if (e.foul) return ['crack', 'call:foul'];
   const cues: Cue[] = ['crack'];
@@ -155,6 +172,11 @@ export function announceFor(e: SimEvent): { kind: AnnounceKind; priority: 1 | 2 
     if (e.balls === 3 && e.kind === 'ball') return { kind: 'walk', priority: 1 };
     return null;
   }
+
+  // The booth already called this PA off its pitch and contact events — the
+  // `pa` restatement is for tallies, and announcing it would say everything
+  // twice.
+  if (e.t === 'pa') return null;
 
   // ★ A FOUL IS NOT A MOMENT. It is the most common contact event there is, and
   // a booth that calls every one of them says nothing else all game.

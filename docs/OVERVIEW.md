@@ -1635,6 +1635,39 @@ drop shadow, icon-first with one short word (🔥 FAST / 🐢 SLOW / 🌈 CURVE 
 🌀 TWISTY), a keyboard hint that hides on coarse pointers, and ±1.4° of
 rotation so the stack reads placed-by-hand.
 
+### PR 33 — the matchup plate, and the event it needed
+
+First slice of gap item 6 (presentation beats): BB2001's corner plates and
+BB2026's VS chips exist because a today-line — "1 FOR 2 TODAY" — tells a
+six-year-old the story of the game in four words. Three layers, each thin:
+
+- **The sim gained a `pa` observer event** at the two places a plate
+  appearance ends, deliberately a RESTATEMENT of the `stats` pushes at the
+  same sites rather than a second computation — `result: 'hit'` iff a hit
+  stat was pushed, and so on, with the mapping written at the event
+  definition. Events are not in `GameResult`, so the golden fingerprints
+  never moved. The harness ignores it (it counts PAs from the result) and the
+  booth ignores it (it already called the moment off pitch/contact); the
+  sound table gives it cues, two of which dedupe with the same instant's
+  pitch cue and two of which were genuinely silent moments before — nobody
+  cheered a single, and a groundout's putout had no mitt pop.
+- **`ui/matchupModel.ts`** is the pure fold; its sweep test plays a whole
+  seeded game and asserts the fold equals the result's own per-kid lines,
+  because nobody can eyeball "1 FOR 3" against the sim.
+- **`ui/Matchup.ts`** is the plate: cream chips, portraits, VS wedge,
+  top-LEFT because the mute owns top-right, svh-breathing for the same
+  short-landscape reason as the pitch cards, hidden during live plays — both
+  reference games collapse their HUD the moment the ball is in play — and
+  `display: none` under 430px of height, where its row + the picker's + the
+  scoreboard's exceed the frame outright.
+
+Being the first HUD chrome near a frame EDGE, the plate also flushed out a
+dormant audit bug of the exact class `asBox`'s own header records: the HUD
+path passed raw top-left rects into the centre-convention predicates, so the
+plate read as off-frame while 20px inside — and, corrected, the check briefly
+surfaced a real 5px scoreboard overflow the displaced arithmetic had been
+HIDING at short landscape. Both paths now go through `asBox`.
+
 ### PR 32 — the yard kids
 
 Item 5 of the BB2026 gap list, and the cheapest one on it: BB's parks read as
