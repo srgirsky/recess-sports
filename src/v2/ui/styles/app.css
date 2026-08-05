@@ -69,6 +69,16 @@ body {
   z-index: 20;
   display: none;
 }
+
+/*
+ * The HUD sits ABOVE screens so the mute button survives them. Everything else
+ * in it is hidden by `body.screen-open`, and the element itself is
+ * `pointer-events: none`, so raising it cannot steal a tap from a screen — only
+ * `.interactive` children take one, and the mute is the only one.
+ */
+#hud {
+  z-index: 24;
+}
 #screens.open {
   display: block;
 }
@@ -518,13 +528,20 @@ body {
 }
 
 /*
- * The HUD belongs to the GAME, so it goes away with it.
+ * The GAME's chrome belongs to the game, so it goes away with it.
  *
- * A game runs behind the title as attract mode; without this the scoreboard
- * sits under the wordmark reporting a game the player has not started. Declared
- * once here rather than remembered by every screen.
+ * A game runs behind the title as attract mode; without this the scoreboard sits
+ * under the wordmark reporting a game the player has not started.
+ *
+ * ⚠️ THE MUTE IS EXEMPT, and the first version of this rule was not. Hiding the
+ * whole of `#hud` hides its children too, so the one control that has to work on
+ * every screen -- the title, the draft, the result -- was invisible on all three
+ * while its own header said otherwise. Caught by `audit:v2-layout` the first time
+ * it was pointed at the HUD on the app route. Stated as "everything except",
+ * rather than by listing the things to hide, so a new piece of game chrome is
+ * hidden by default and a new persistent control is a deliberate exemption.
  */
-body.screen-open #hud {
+body.screen-open #hud > *:not(.btn--mute) {
   visibility: hidden;
 }
 
@@ -718,4 +735,32 @@ body.screen-open #hud {
 
 .is-hidden {
   display: none;
+}
+
+/*
+ * The mute, top-right, on every screen.
+ *
+ * The first `.interactive` element in `#hud` — which is what makes that
+ * element's pointer-events design do real work rather than describe a plan. It
+ * sits above screens deliberately: sound needs turning off at the title, in the
+ * draft and mid-pitch alike, so `body.screen-open` hides the scoreboard and not
+ * this.
+ */
+.btn--mute {
+  grid-area: topright;
+  align-self: start;
+  justify-self: end;
+  margin: var(--s3);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.4rem;
+  line-height: 1;
+  background: rgb(20 32 46 / 0.82);
+  color: var(--cream);
+  border-radius: 50%;
+  z-index: 25;
+}
+.btn--mute.is-muted {
+  background: var(--red);
 }

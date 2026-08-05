@@ -94,7 +94,8 @@ weaken one to make a change pass.**
 | `src/systems/venue.test.ts` | a concave fence, which breaks containment silently |
 | `src/art/art.test.ts` | a bat through a kid's skull, hair layered wrong, a pose off the ground line |
 | `npm run audit:layout` | overlaps, off-frame chrome, undersized taps, an unresolved font |
-| `npm run audit:v2-layout` | the same, for v2's DOM HUD, at the sizes its `clamp()` pins |
+| `npm run audit:v2-layout` | the same, for v2's DOM HUD and screens, at the sizes its `clamp()` pins |
+| `src/v2/ui/soundCues.test.ts` | a sim event that makes no sound — silence and a working mute are the same |
 | `scripts/goldlog.browser.js` | a v1 refactor that changes the seeded game (manual, not CI) |
 
 ## Only one place

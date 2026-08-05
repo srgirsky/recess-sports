@@ -1315,6 +1315,56 @@ first screen that **scrolls**, and below the fold is reachable where off the sid
 is not. Horizontal containment is asserted always, vertical only for screens that
 do not scroll.
 
+### PR 22 — v2 makes a noise
+
+v2 was **completely silent**. v1 synthesizes every sound in code — Web Audio SFX,
+browser speech, a stable derived voice per character, no files and no cost — and
+none of it had ever been pointed at v2. It is `systems/audio.ts` and
+`systems/voices.ts`, Phaser-free and importable, so the fix is wiring rather than
+writing: a second bat crack would be a second sound for the same event that
+drifts from the one v1 ships.
+
+Bat crack, whiff, glove pop, the pitch leaving the hand, a cheer on a run, and
+**every kid says their own name in their own voice when you draft them** — which
+is the most characterful thing v1 does and costs one call. The mute is v1's mute,
+persisted to the same key, so a parent who silenced the game at `/` does not have
+to find the button again at `/v2/`.
+
+**★ The decision is pure, because silence is what a broken cue table and a
+working mute both sound like.** Every other view layer can be checked by looking
+at it; this one cannot. A cue that never fires produces exactly nothing — which
+is also the correct output when muted, when the tab has not been clicked, and
+when there is no audio device. That is three ways to convince yourself it works
+while it does not, so `soundCues.ts` is a function and the test drives it with
+real games.
+
+It caught its own first draft. The table keyed a whiff on `hit === 'miss'`, and
+there is no such `HitType`: **a swing and a miss emits no `contact` event at
+all**, it is a `pitch` with `kind: 'swingingStrike'`. The table was silent on
+every whiff in the game and nothing but a sweep of the sim's actual output was
+going to say so.
+
+Two seams that already existed got their second consumer. `GameSpec.onEvent` has
+carried the sim's own event stream since PR 8 with a comment reading
+"`harness.ts` is its only consumer" — sound wants exactly what the harness wants,
+*what happened*, synchronously, because by the time a frame is yielded a swing
+and a take are indistinguishable. And runs and outs are **state**, so they come
+from comparing snapshots — copied scalars, never the reused frame, or every
+comparison is a thing against itself.
+
+**★ And the layout audit caught a bug in this change, immediately.** The mute
+lives in `#hud` so it survives every screen — but `body.screen-open #hud
+{ visibility: hidden }` hides children too, so the one control that has to work
+on the title, the draft and the result was invisible on all three, while its own
+header claimed the opposite. Pointing the audit at the HUD on the app route
+found it on the first run. The rule is stated as "everything except the mute"
+rather than as a list of things to hide, so new game chrome is hidden by default
+and a new persistent control is a deliberate exemption.
+
+That also made the audit's tap-target rule stop being vacuous: the mute is the
+first `.interactive` element the HUD has ever had, and until now nothing measured
+the only persistent button in the game.
+
 Next: the fielding and batting assists sized from a real child's aim error, and
 seats, so the side is the sim's answer rather than the view's. Then the cutover
 that points `/` at v2.

@@ -24,6 +24,8 @@ import { TitleScreen } from './ui/screens/TitleScreen';
 import { DraftScreen } from './ui/screens/DraftScreen';
 import { ResultScreen } from './ui/screens/ResultScreen';
 import { resultModel } from './ui/resultModel';
+import { Sound } from './ui/Sound';
+import { MuteButton } from './ui/MuteButton';
 import { ROSTER, getCharacter } from '../data/characters';
 import { makeRng } from './sim/rng';
 import { recordGamePlayed } from '../systems/picklog';
@@ -41,6 +43,7 @@ export class App {
    * game exactly, and the rematches walk from there.
    */
   private gameNo = 0;
+  private readonly sound = new Sound();
   /** The teams the player drafted, kept so PLAY AGAIN is a rematch. */
   private rosters: { away: string[]; home: string[] } | null = null;
 
@@ -54,12 +57,23 @@ export class App {
     // so PLAY is instant and the title has something real behind it.
     await this.game.start();
     this.game.onGameEnd((r) => this.showResult(r));
+    this.game.onSimEvent((e) => this.sound.onEvent(e));
+    this.game.onFrame((f) => this.sound.onFrame(f));
+    new MuteButton(this.sound).mount();
     this.showTitle();
   }
 
   private showTitle(): void {
     this.rosters = null;
-    this.router.show(new TitleScreen(() => this.showDraft()));
+    this.router.show(
+      new TitleScreen(() => {
+        // ★ THE GESTURE. Audio cannot start without one, and this is the only
+        // tap guaranteed to happen before anything makes a noise. v1 unlocks on
+        // the same button for the same reason.
+        this.sound.start();
+        this.showDraft();
+      })
+    );
   }
 
   /**
@@ -75,6 +89,7 @@ export class App {
       new DraftScreen(
         ROSTER.map((c) => c.id),
         makeRng(`draft-${this.seedBase()}-${this.gameNo}`),
+        (c) => this.sound.sayName(c),
         (playerTeam, aiTeam) => {
           this.rosters = { away: playerTeam, home: aiTeam };
           this.playBall();
@@ -85,6 +100,7 @@ export class App {
 
   private playBall(): void {
     this.gameNo += 1;
+    this.sound.reset();
     this.game.newGame(this.seed(), this.rosters ?? undefined);
     // The denominator for a pick rate: how many games this browser has played.
     recordGamePlayed();

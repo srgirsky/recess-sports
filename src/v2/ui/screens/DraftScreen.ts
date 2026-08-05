@@ -23,6 +23,7 @@ import { isDraftComplete, pickByCpu, pickByHuman, startDraft, type DraftState } 
 import { portrait } from '../portrait';
 import { getCharacter } from '../../../data/characters';
 import type { Rng } from '../../sim/rng';
+import type { Character } from '../../../data/types';
 
 /** How long the board shows the CPU's pick before it clears, ms. */
 const CPU_BEAT_MS = 620;
@@ -49,6 +50,7 @@ export class DraftScreen implements Screen {
   constructor(
     allIds: string[],
     private readonly rng: Rng,
+    private readonly onPicked: (c: Character) => void,
     private readonly onReady: (playerTeam: string[], aiTeam: string[]) => void
   ) {
     this.state = startDraft(allIds);
@@ -115,6 +117,10 @@ export class DraftScreen implements Screen {
     if (next === this.state) return;
     this.state = next;
     this.busy = true;
+    // ★ THE KID SAYS THEIR OWN NAME, in their own derived voice. It is the most
+    // characterful thing v1 does and it costs one call — and it is the moment
+    // the vote is cast, so it is also the feedback that the tap registered.
+    this.onPicked(getCharacter(id));
     this.paint();
 
     // ★ THE CPU'S PICK IS SHOWN, NOT SILENT. v1 wanders a "?" spotlight across
