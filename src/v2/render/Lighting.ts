@@ -41,6 +41,13 @@ export interface LightingOptions {
   shadowMapSize: number;
   /** How far past the action bbox the shadow frustum reaches, ft. */
   shadowPadFt?: number;
+  /**
+   * Evening: cool flood-white key, dim navy sky bounce, warm sodium fill.
+   * The key KEEPS its upper-left azimuth — the art convention above is
+   * load-bearing day or night; at night that direction is simply where the
+   * main flood bank hangs.
+   */
+  night?: boolean;
 }
 
 export class Lighting {
@@ -59,7 +66,12 @@ export class Lighting {
     this.pad = opts.shadowPadFt ?? 12;
     this.root.name = 'lights';
 
-    this.hemi = new HemisphereLight(new Color(SKY_TINT), new Color(GROUND_BOUNCE), 0.55);
+    const night = opts.night === true;
+    this.hemi = new HemisphereLight(
+      new Color(night ? 0x2c3e66 : SKY_TINT),
+      new Color(night ? 0x1f2e1f : GROUND_BOUNCE),
+      night ? 0.32 : 0.55
+    );
     this.root.add(this.hemi);
 
     // Azimuth measured from +Z toward +X; elevation from the ground plane.
@@ -69,7 +81,7 @@ export class Lighting {
       .set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el))
       .normalize();
 
-    this.key = new DirectionalLight(new Color(KEY_TINT), 1.5);
+    this.key = new DirectionalLight(new Color(night ? 0xdcebff : KEY_TINT), night ? 0.95 : 1.5);
     this.key.position.copy(this.dir).multiplyScalar(140);
     this.key.castShadow = opts.shadowMapSize > 0;
     if (this.key.castShadow) {
@@ -87,7 +99,7 @@ export class Lighting {
     // The opposite-side fill keeps the shadow side from going to flat navy.
     // Explicitly NOT a shadow caster — a second shadow map would double the
     // per-frame cost for a light nobody can point to on screen.
-    this.fill = new DirectionalLight(new Color(SKY_TINT), 0.25);
+    this.fill = new DirectionalLight(new Color(night ? 0xffb066 : SKY_TINT), night ? 0.18 : 0.25);
     this.fill.position.set(-this.dir.x, 0.6, -this.dir.z).multiplyScalar(120);
     this.fill.castShadow = false;
     this.root.add(this.fill);

@@ -44,6 +44,11 @@ void main() {
  */
 export const SKY_TOP = 0x3d92e0;
 export const SKY_HORIZON = 0xb9e4fa;
+/** The evening palette. The horizon is the brand's own cool-shadow tone
+ *  (`SHADE_COOL` in materials/toon.ts) — night IS the shadow mix, full-frame,
+ *  which is what keeps the toon art reading as one piece after dark. */
+export const NIGHT_TOP = 0x101c34;
+export const NIGHT_HORIZON = 0x2c3e66;
 
 export function buildSky(topHex = SKY_TOP, bottomHex = SKY_HORIZON, radius = 900): Mesh {
   const geom = new SphereGeometry(radius, 24, 16);

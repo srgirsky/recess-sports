@@ -1635,6 +1635,21 @@ drop shadow, icon-first with one short word (🔥 FAST / 🐢 SLOW / 🌈 CURVE 
 🌀 TWISTY), a keyboard hint that hides on coarse pointers, and ±1.4° of
 rotation so the stack reads placed-by-hand.
 
+### PR 35 — night at the park, first pass
+
+Gap item 7 — BB2026's headline "first since 2005" feature — as a review
+surface: `?night=1`. The parameterisation paid for itself: `buildSky` already
+took colours, so night is `NIGHT_TOP`/`NIGHT_HORIZON` exported beside the day
+pair — the horizon is the brand's own cool-shadow tone (`SHADE_COOL`), night
+being the shadow mix full-frame — with every fog citing the mode's horizon.
+`Lighting` gains `night`: a dimmer flood-white key that KEEPS the upper-left
+azimuth (the art convention is load-bearing after dark too; that is simply
+where the flood bank hangs), navy sky bounce, a low warm sodium fill. The
+scenery paints house windows LIT (vertex colour, not emissive — one merged
+material serves the neighborhood) and the clouds slate. The day path passes no
+option anywhere and stays byte-identical. Not yet: light towers with visible
+cones, the sun/moon toggle chip, per-venue night looks.
+
 ### PR 34 — the inning break: the green board over the live park
 
 Second slice of gap item 6. BB2026 fills the frame between halves with a park

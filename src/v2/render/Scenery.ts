@@ -274,14 +274,19 @@ export interface SceneryBuild {
   dispose(): void;
 }
 
-export function buildScenery(geo: FieldGeometry, venue: VenueId): SceneryBuild {
+export interface SceneryOptions {
+  /** Evening: house windows paint LIT (warm) instead of glass-blue. */
+  night?: boolean;
+}
+
+export function buildScenery(geo: FieldGeometry, venue: VenueId, opts: SceneryOptions = {}): SceneryBuild {
   const cfg = VENUE_SCENERY[venue];
   const plan = sceneryPlan(geo, venue);
   const parts: BufferGeometry[] = [];
 
   for (const it of plan) {
     const p = pointAt(it.sprayDeg, it.distFt);
-    if (it.kind === 'house') addHouse(parts, cfg, p.x, p.z, it.rotY, it.seed);
+    if (it.kind === 'house') addHouse(parts, cfg, p.x, p.z, it.rotY, it.seed, opts.night === true);
     else if (it.kind === 'tree') addTree(parts, cfg, p.x, p.z, it.rotY, it.seed);
     else if (it.kind === 'bush') addBush(parts, cfg, p.x, p.z, it.seed);
     else if (it.kind === 'shed') addShed(parts, p.x, p.z, it.rotY);
@@ -305,7 +310,7 @@ export function buildScenery(geo: FieldGeometry, venue: VenueId): SceneryBuild {
   mesh.receiveShadow = false;
   root.add(mesh);
 
-  const clouds = buildClouds();
+  const clouds = buildClouds(opts.night === true);
   root.add(clouds);
 
   return {
@@ -318,7 +323,7 @@ export function buildScenery(geo: FieldGeometry, venue: VenueId): SceneryBuild {
 }
 
 // A house: body + gable roof + door + two windows (+ chimney on some).
-function addHouse(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: number, rotY: number, seed: number): void {
+function addHouse(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: number, rotY: number, seed: number, night = false): void {
   const w = 22 + seed * 10;
   const h = cfg.cityBlocks ? 22 + seed * 14 : 12 + seed * 4;
   const d = 18 + seed * 6;
@@ -348,8 +353,14 @@ function addHouse(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: numb
   const face = d / 2 + 0.15;
   parts.push(placeLocal(paint(new BoxGeometry(3.4, 6.5, 0.4), 0x6b4a33), x, z, rotY, 0, 3.25, face));
   for (const side of [-1, 1]) {
+    // Day: glass reflecting sky. Night: somebody is home. (Vertex colour, not
+    // emissive — one merged material serves the whole neighborhood, and under
+    // the dim night key a bright warm paint reads lit enough at 250ft.)
     parts.push(
-      placeLocal(paint(new BoxGeometry(3.6, 3.2, 0.4), 0xdff0f8), x, z, rotY, side * w * 0.28, h * 0.55, face)
+      placeLocal(
+        paint(new BoxGeometry(3.6, 3.2, 0.4), night ? 0xffdf8a : 0xdff0f8),
+        x, z, rotY, side * w * 0.28, h * 0.55, face
+      )
     );
   }
 }
@@ -433,7 +444,7 @@ function addPoleRun(parts: BufferGeometry[], poles: Array<{ x: number; z: number
 
 // Puffy clouds: flattened sphere clusters far up in the dome. Their own mesh —
 // they must not fog like ground objects, and white wants no vertex jitter.
-function buildClouds(): Mesh {
+function buildClouds(night = false): Mesh {
   const parts: BufferGeometry[] = [];
   const N = 6;
   for (let i = 0; i < N; i++) {
@@ -454,7 +465,7 @@ function buildClouds(): Mesh {
       const rr = r * (0.55 + hash01(i * 7 + k, 109) * 0.5);
       const ball = new SphereGeometry(rr, 8, 6);
       ball.applyMatrix4(new Matrix4().makeScale(1, 0.55, 1));
-      parts.push(place(paint(ball, 0xffffff), x + dx, y, z + dz));
+      parts.push(place(paint(ball, night ? 0x8593b0 : 0xffffff), x + dx, y, z + dz));
     }
   }
   const merged = mergeGeometries(parts, false);

@@ -47,7 +47,7 @@ import { OutlineRegistry } from '../render/materials/outline';
 import { VENUE_LOOKS, buildField, type FieldBuild } from '../render/Field';
 import { buildFence, type FenceBuild } from '../render/Fence';
 import { buildScenery, type SceneryBuild } from '../render/Scenery';
-import { SKY_HORIZON, buildSky } from '../render/Sky';
+import { NIGHT_HORIZON, NIGHT_TOP, SKY_HORIZON, buildSky } from '../render/Sky';
 import { createCharacter, proxyForced } from '../render/CharacterFactory';
 import { configureModelLoader } from '../render/modelLoader';
 import { AnimationDirector } from '../render/AnimationDirector';
@@ -174,6 +174,8 @@ export class GameView {
   private field!: FieldBuild;
   private fence!: FenceBuild;
   private scenery!: SceneryBuild;
+  /** `?night=1` — BB2026's headline mode, as a review surface first. */
+  private readonly night: boolean;
   private refs: SceneRefs = { kids: new Map(), directors: new Map(), ball: new Mesh() };
 
   private game: Generator<LiveFrame, unknown, PlayInputs> | null = null;
@@ -256,15 +258,17 @@ export class GameView {
   constructor(private readonly canvas: HTMLCanvasElement) {
     const params = new URLSearchParams(location.search);
     this.venue = (params.get('venue') as VenueId) ?? 'park';
+    this.night = params.get('night') === '1';
     this.renderer = new Renderer(canvas);
     this.renderer.bindOutlines(this.outlines);
     configureModelLoader(this.renderer.gl);
     this.camera = new PerspectiveCamera(RIGS.PITCH.fov, 1, 0.5, 900);
-    this.lighting = new Lighting({ shadowMapSize: this.renderer.tier.shadowMapSize });
+    this.lighting = new Lighting({ shadowMapSize: this.renderer.tier.shadowMapSize, night: this.night });
     this.scene.add(this.lighting.root);
-    this.scene.add(buildSky());
-    // Aerial haze is most of what sells DISTANCE in a flat-shaded scene.
-    this.scene.fog = new Fog(SKY_HORIZON, 260, 900);
+    this.scene.add(this.night ? buildSky(NIGHT_TOP, NIGHT_HORIZON) : buildSky());
+    // Aerial haze is most of what sells DISTANCE in a flat-shaded scene —
+    // and it must match the horizon it thickens toward, day or night.
+    this.scene.fog = new Fog(this.night ? NIGHT_HORIZON : SKY_HORIZON, 260, 900);
     window.addEventListener('resize', this.onResize);
     // ★ ON THE CANVAS, which already receives every non-HUD tap by
     // construction: `#hud` is `pointer-events: none` and nothing on the
@@ -477,7 +481,7 @@ export class GameView {
     const look = VENUE_LOOKS[this.venue];
     this.field = buildField(geo, look, this.outlines, { anisotropy: this.renderer.tier.anisotropy });
     this.fence = buildFence(geo, look, this.outlines);
-    this.scenery = buildScenery(geo, this.venue);
+    this.scenery = buildScenery(geo, this.venue, { night: this.night });
     this.scene.add(this.field.root, this.fence.root, this.scenery.root);
 
     const ball = new Mesh(
