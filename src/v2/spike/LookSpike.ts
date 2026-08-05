@@ -24,7 +24,7 @@ import { OutlineRegistry } from '../render/materials/outline';
 import { VENUE_LOOKS, buildField, type FieldBuild } from '../render/Field';
 import { buildFence, type FenceBuild } from '../render/Fence';
 import { buildScenery, type SceneryBuild } from '../render/Scenery';
-import { buildSky } from '../render/Sky';
+import { SKY_HORIZON, buildSky } from '../render/Sky';
 import { CharacterModel, type KidView } from '../render/CharacterModel';
 import { createCharacter, proxyForced, type KidSource } from '../render/CharacterFactory';
 import { configureModelLoader } from '../render/modelLoader';
@@ -89,7 +89,7 @@ export class LookSpike {
     this.scene.add(buildSky());
     // Aerial haze cools the deep outfield and is most of what sells DISTANCE
     // in a flat-shaded scene — without it a 200ft fence reads as 40ft away.
-    this.scene.fog = new Fog(0xcfe9f7, 260, 900);
+    this.scene.fog = new Fog(SKY_HORIZON, 260, 900);
 
     this.buildVenue();
     void this.buildKids();

@@ -1577,6 +1577,17 @@ One palette lesson worth keeping: the toon ramp's shadow step eats ~40%, so a
 "slate" roof authored at its real-world value reads as BLACK from the plate.
 Scenery colours are authored bright on purpose.
 
+### PR 29 — the vivid sky
+
+Item 2 of the BB2026 gap list: their sky band is a saturated cyan-blue, ours
+read gray-lavender in every screenshot. The colour was duplicated — the sky's
+horizon stop in `Sky.ts` and a `new Fog(0xcfe9f7, …)` in three scenes — so the
+fix exports `SKY_TOP` / `SKY_HORIZON` from `Sky.ts` and every fog cites
+`SKY_HORIZON`, because aerial haze IS the horizon colour thickening with
+distance and a fog authored apart from the sky splits into a seam at the fence
+line. One source of truth; the gray can never come back in only one of the four
+places.
+
 ## The 30 characters
 
 Defined in `src/data/characters.ts` (pure content — edit freely). Each has stats (contact/power/speed/pitching, 1–10), a look (`VisualParams`), and an optional `ability`. Three signature kids are implemented via **ability hooks** so they're data-driven, not special-cased in scene code:
