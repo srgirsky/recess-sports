@@ -395,6 +395,87 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
+ * The matchup plate — batter vs pitcher with today-lines (BB's corner plate).
+ *
+ * Top-LEFT because the mute owns the top-right corner. A readout, never
+ * `.interactive`. Hidden during live plays by `Matchup.update` — both
+ * reference games collapse the HUD when the ball is in play — and on screens
+ * by the `body.screen-open` rule every HUD child shares. Vertical sizes
+ * breathe in svh for the same reason the pitch cards' do: a hidden element
+ * still occupies layout, and the short-landscape row cannot stretch.
+ * ------------------------------------------------------------------------- */
+.matchup {
+  grid-area: topleft;
+  align-self: start;
+  justify-self: start;
+  margin: var(--s3) 0 0 var(--s3);
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 120ms ease;
+}
+.matchup.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+/* On a short landscape phone there is no row to give: the plate's top row +
+   the picker's middle row + the scoreboard exceed the frame and the grid
+   overflows out the BOTTOM (the corrected audit caught the scoreboard's
+   lower row 5px off-frame). `display: none` — not visibility — so the row
+   collapses to zero. BB collapses its HUD on small screens too. */
+@media (max-height: 430px) {
+  .matchup {
+    display: none;
+  }
+}
+.matchup-chip {
+  display: grid;
+  justify-items: center;
+  gap: 0.08rem;
+  padding: clamp(0.2rem, 1svh, 0.4rem) var(--s3);
+  border-radius: var(--radius);
+  border: var(--stroke) solid var(--outline);
+  background: var(--cream);
+  color: var(--ink);
+  box-shadow: 0 0.22rem 0 rgb(20 32 46 / 0.3);
+}
+.matchup-chip--bat {
+  rotate: -1.2deg;
+}
+.matchup-chip--pit {
+  rotate: 1.2deg;
+}
+.matchup-chip__art .portrait {
+  inline-size: auto;
+  block-size: clamp(1.7rem, 7svh, 2.6rem);
+  display: block;
+}
+.matchup-chip__name {
+  font-size: clamp(0.42rem, 1.7svh, 0.55rem);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  max-inline-size: 6rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.matchup-chip__line {
+  font-size: clamp(0.4rem, 1.5svh, 0.5rem);
+  font-weight: 700;
+  color: var(--red);
+  letter-spacing: 0.04em;
+}
+.matchup__vs {
+  font-size: clamp(0.55rem, 2svh, 0.75rem);
+  font-weight: 700;
+  color: var(--cream);
+  text-shadow: 0 0.1rem 0 rgb(20 32 46 / 0.6);
+  rotate: -4deg;
+}
+
+/* ---------------------------------------------------------------------------
  * SCREENS — modal DOM over the live 3D world.
  *
  * The exact opposite rule to `#hud`: a screen is `pointer-events: auto` and

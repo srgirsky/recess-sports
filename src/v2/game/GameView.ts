@@ -69,6 +69,8 @@ import { BAT, DEFENSE } from '../sim/params';
 import { kidHeightFt } from '../render/ProxyCharacter';
 import type { KidView } from '../render/CharacterModel';
 import { Scoreboard } from '../ui/Scoreboard';
+import { Matchup } from '../ui/Matchup';
+import { MatchupTally } from '../ui/matchupModel';
 import { scoreboardModel, type ScoreboardTeams } from '../ui/scoreboardModel';
 
 /**
@@ -221,6 +223,8 @@ export class GameView {
   private wait = 0;
   private readonly venue: VenueId;
   private readonly board = new Scoreboard();
+  private readonly matchup = new Matchup();
+  private readonly matchupTally = new MatchupTally();
   private pickerEl: HTMLElement | null = null;
   private teamNames: ScoreboardTeams = { away: 'ROCKETS', home: 'COMETS' };
 
@@ -641,6 +645,7 @@ export class GameView {
           'Every id a roster can name must be built in start() — see the note there.'
       );
     }
+    this.matchupTally.reset();
     this.placeSpectators(geo, [...away.ids, ...home.ids]);
     void planDefence(away.ids, getCharacter);
     this.game = simulateGameLive(
@@ -650,7 +655,10 @@ export class GameView {
         lookup: getCharacter,
         geo,
         regulationInnings: innings,
-        onEvent: (e) => this.simEvent?.(e),
+        onEvent: (e) => {
+          this.matchupTally.onEvent(e);
+          this.simEvent?.(e);
+        },
       },
       makeRng(seed)
     );
@@ -928,6 +936,7 @@ export class GameView {
     const hud = document.getElementById('hud');
     if (!hud) return;
     hud.appendChild(this.board.root);
+    hud.appendChild(this.matchup.root);
     this.pickerEl = document.createElement('div');
     this.pickerEl.className = 'pitch-picker';
     KINDS.forEach((kind, i) => {
@@ -956,6 +965,13 @@ export class GameView {
         (id) => getCharacter(id).name,
         this.humanBats ? 'bat' : 'pitch'
       )
+    );
+    this.matchup.update(
+      frame.batterId,
+      frame.pitcherId,
+      this.matchupTally.lines(frame.batterId, frame.pitcherId),
+      // Both reference games collapse the HUD the moment the ball is live.
+      frame.phase !== 'live'
     );
     // ★ THE PICKER IS SHOWN, NOT HIDDEN BEHIND A KEYBINDING NOBODY KNOWS.
     if (!this.pickerEl) return;

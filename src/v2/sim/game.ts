@@ -99,6 +99,20 @@ export type SimEvent =
       hit: HitType;
       flyCaught: boolean;
       foul: boolean;
+    }
+  | {
+      /**
+       * The plate appearance is DONE. Mirrors the `stats` pushes at the same
+       * two sites — an observer restatement, never a second source of truth:
+       * `result: 'hit'` iff a `{t:'hit'}` stat was pushed, `'k'|'out'` iff an
+       * `{t:'atBat'}` was pushed with the batter out, `'walk'` iff neither
+       * (a walk is not an official at-bat). The HUD's today-lines read this;
+       * `GameResult` does not carry events, so the golden fingerprints hold.
+       */
+      t: 'pa';
+      batterId: string;
+      pitcherId: string;
+      result: 'k' | 'walk' | 'hit' | 'out';
     };
 
 /**
@@ -401,11 +415,13 @@ function* playAtBatLive(
         stats.push({ t: 'atBat', kid: args.batter.id });
         stats.push({ t: 'kThrown', kid: args.pitcher.id });
         log.push(`  ${args.batter.name} strikes out`);
+        onEvent?.({ t: 'pa', batterId: args.batter.id, pitcherId: args.pitcher.id, result: 'k' });
       } else {
         tally.walks += 1;
         tally.plateAppearances += 1;
         // No `atBat` event: a walk is not an official at-bat.
         log.push(`  ${args.batter.name} walks`);
+        onEvent?.({ t: 'pa', batterId: args.batter.id, pitcherId: args.pitcher.id, result: 'walk' });
       }
       return;
     }
@@ -467,6 +483,12 @@ function* playAtBatLive(
       stats.push({ t: 'hit', kid: args.batter.id, homer: scored.includes(args.batter.id) });
       if (scored.includes(args.batter.id)) tally.homeRuns += 1;
     }
+    onEvent?.({
+      t: 'pa',
+      batterId: args.batter.id,
+      pitcherId: args.pitcher.id,
+      result: outcome.batterOut ? 'out' : 'hit',
+    });
     // ★ RUN ATTRIBUTION COMES OFF THE PLAY, NOT THE FOLD. `applyLivePlay`
     // returns a count of runs and drops `baseIds` entirely, so a run folded
     // through it has no owner. The play's own `score` events do.

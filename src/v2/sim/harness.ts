@@ -158,6 +158,11 @@ export function observe(t: HarnessTotals, e: SimEvent): void {
     return;
   }
 
+  // The `pa` event restates the stats stream for the HUD; the harness already
+  // counts plate appearances from the result, so counting it here would
+  // double-book every one.
+  if (e.t !== 'contact') return;
+
   if (e.foul) {
     t.battedFoul += 1;
     t.foulsSeen += 1;

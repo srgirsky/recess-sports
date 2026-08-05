@@ -289,8 +289,14 @@ async function auditOne(page, vp, state) {
 
   // 1. NOTHING LEAVES THE FRAME. A strip that overflows on a short landscape
   //    phone is the classic rem-scaling failure and is invisible at desk size.
+  //    ⚠️ Through `asBox` — the HUD path passed RAW top-left rects into the
+  //    centre-convention predicates from the day it was written, the exact bug
+  //    `asBox`'s header records for the screens path. It never fired because
+  //    the HUD was one centred strip nowhere near an edge; the matchup plate
+  //    is top-left, and the displaced box read as crossing the frame top
+  //    while sitting 20px inside it.
   for (const b of r.leaves) {
-    if (!insideFrame({ x: b.x, y: b.y, w: b.w, h: b.h }, frame.w, frame.h, -0.5)) {
+    if (!insideFrame(asBox(b), frame.w, frame.h, -0.5)) {
       fail(where, `"${b.label}" is off-frame at ${Math.round(b.x)},${Math.round(b.y)} ${Math.round(b.w)}x${Math.round(b.h)} in ${frame.w}x${frame.h}`);
     }
   }
@@ -298,12 +304,12 @@ async function auditOne(page, vp, state) {
   // 2. NO TWO HUD BLOCKS OVERLAP. Siblings of `#hud` occupy named grid areas,
   //    so an overlap means two areas have collided — exactly what the scoreboard
   //    and the pitch picker would do if the strip grew into the right rail.
+  //    (`asBox` here too: two raw boxes are displaced by DIFFERENT amounts, so
+  //    the raw comparison was measuring rectangles where neither element is.)
   for (let i = 0; i < r.blocks.length; i++) {
     for (let j = i + 1; j < r.blocks.length; j++) {
-      const a = r.blocks[i];
-      const b = r.blocks[j];
-      if (overlaps({ x: a.x, y: a.y, w: a.w, h: a.h }, { x: b.x, y: b.y, w: b.w, h: b.h }, 1)) {
-        fail(where, `"${a.label}" overlaps "${b.label}"`);
+      if (overlaps(asBox(r.blocks[i]), asBox(r.blocks[j]), 1)) {
+        fail(where, `"${r.blocks[i].label}" overlaps "${r.blocks[j].label}"`);
       }
     }
   }
