@@ -231,7 +231,7 @@ export class GameView {
   private pitchElapsed = 0;
   /** Real seconds still to wait on a `between` beat. */
   private wait = 0;
-  private readonly venue: VenueId;
+  private venue: VenueId;
   private readonly board = new Scoreboard();
   private readonly matchup = new Matchup();
   private readonly inningBreak = new InningBreak({
@@ -1084,6 +1084,33 @@ export class GameView {
     this.scenery.dispose();
     this.scenery = buildScenery(geo, this.venue, { night });
     this.scene.add(this.scenery.root);
+  }
+
+  /**
+   * Swap the park itself, live — the venue chips' preview.
+   *
+   * Visual layers rebuild NOW (field, fence, scenery — the same trio
+   * `LookSpike.buildVenue` swaps); the SIM keeps its current geometry until
+   * `newGame` re-reads `VENUE_GEOMETRY[this.venue]`. That mismatch window is
+   * deliberate and safe: the chips only exist on the team screen, which
+   * covers the field, and PLAY BALL always starts a fresh game on the new
+   * geometry.
+   */
+  applyVenue(id: VenueId): void {
+    if (id === this.venue) return;
+    this.venue = id;
+    const geo = VENUE_GEOMETRY[id];
+    const look = VENUE_LOOKS[id];
+    this.field.root.removeFromParent();
+    this.field.dispose();
+    this.fence.root.removeFromParent();
+    this.fence.dispose();
+    this.scenery.root.removeFromParent();
+    this.scenery.dispose();
+    this.field = buildField(geo, look, this.outlines, { anisotropy: this.renderer.tier.anisotropy });
+    this.fence = buildFence(geo, look, this.outlines);
+    this.scenery = buildScenery(geo, id, { night: this.night });
+    this.scene.add(this.field.root, this.fence.root, this.scenery.root);
   }
 
   /** Three staggered team-colour bursts over the outfield. */

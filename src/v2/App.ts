@@ -19,6 +19,7 @@
 // ---------------------------------------------------------------------------
 
 import { DEFAULT_INNINGS, GameView } from './game/GameView';
+import type { VenueId } from './sim/field';
 import { Router } from './ui/Router';
 import { TitleScreen } from './ui/screens/TitleScreen';
 import { DraftScreen } from './ui/screens/DraftScreen';
@@ -62,6 +63,8 @@ export class App {
   private innings = DEFAULT_INNINGS;
   /** Day or night, chosen on the team screen. `?night=1` seeds it for review. */
   private night = new URLSearchParams(location.search).get('night') === '1';
+  /** Where we play, chosen on the team screen. `?venue=` seeds it. */
+  private venue = (new URLSearchParams(location.search).get('venue') as VenueId) ?? 'park';
 
   constructor(canvas: HTMLCanvasElement, screens: HTMLElement) {
     this.router = new Router(screens);
@@ -128,6 +131,7 @@ export class App {
         this.identity,
         this.innings,
         this.night,
+        this.venue,
         (n) => {
           this.innings = n;
         },
@@ -136,6 +140,10 @@ export class App {
           // The same preview rule as the colours: the park behind the screen
           // IS the park the game starts in.
           this.game.applyNight(night);
+        },
+        (v) => {
+          this.venue = v;
+          this.game.applyVenue(v);
         },
         (t) => {
           this.identity = t;

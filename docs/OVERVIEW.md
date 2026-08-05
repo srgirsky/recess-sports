@@ -1635,6 +1635,20 @@ drop shadow, icon-first with one short word (🔥 FAST / 🐢 SLOW / 🌈 CURVE 
 🌀 TWISTY), a keyboard hint that hides on coarse pointers, and ±1.4° of
 rotation so the stack reads placed-by-hand.
 
+### PR 40 — the venue chips
+
+BB2026 headlines eleven fields behind a binocular select; we had three full
+venues — geometry, looks, scenery, sim behaviour — reachable only by URL
+parameter. The team screen now carries a venue row (🌳 PARK · 🪵 SANDLOT ·
+🏙️ BLACKTOP) under the same preview rule as everything else on it: tapping
+rebuilds the field, fence and scenery live behind the screen
+(`GameView.applyVenue`, the LookSpike's swap trio with the night option
+carried through). The SIM keeps its current geometry until PLAY BALL —
+`newGame` re-reads `VENUE_GEOMETRY` — and that mismatch window is deliberate:
+the chips only exist on a screen that covers the field. The sandlot's short
+porch, dead walls and oak, and the blacktop's springy chain-link all become
+reachable play, not just review surfaces.
+
 ### PR 39 — the light towers
 
 The night key light finally hangs from something. Four towers join the

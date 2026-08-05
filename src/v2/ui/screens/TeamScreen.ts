@@ -23,6 +23,7 @@ import {
 } from '../../../systems/team';
 import { UNIFORM_COLORS } from '../../../art/palette';
 import { GAME_LENGTHS } from '../../game/GameView';
+import type { VenueId } from '../../sim/field';
 
 export class TeamScreen implements Screen {
   private choice: TeamIdentity;
@@ -32,19 +33,23 @@ export class TeamScreen implements Screen {
   private innings: number;
 
   private night: boolean;
+  private venue: VenueId;
 
   constructor(
     start: TeamIdentity,
     startInnings: number,
     startNight: boolean,
+    startVenue: VenueId,
     private readonly onInnings: (n: number) => void,
     private readonly onNight: (night: boolean) => void,
+    private readonly onVenue: (v: VenueId) => void,
     private readonly onPreview: (t: TeamIdentity) => void,
     private readonly onReady: (t: TeamIdentity) => void
   ) {
     this.choice = { ...start };
     this.innings = startInnings;
     this.night = startNight;
+    this.venue = startVenue;
   }
 
   mount(): HTMLElement {
@@ -103,16 +108,37 @@ export class TeamScreen implements Screen {
       times.appendChild(b);
     }
 
+    // ★ WHERE we play — BB2026's field select, as chips. Same preview rule:
+    // the park behind this screen rebuilds as you tap.
+    const venues = el('div', 'team-row team-row--venue');
+    for (const v of [
+      { id: 'park' as VenueId, icon: '🌳', label: 'PARK' },
+      { id: 'sandlot' as VenueId, icon: '🪵', label: 'SANDLOT' },
+      { id: 'blacktop' as VenueId, icon: '🏙️', label: 'BLACKTOP' },
+    ]) {
+      const b = button('', () => this.setVenue(v.id), 'timechip venuechip');
+      b.dataset.venue = v.id;
+      b.append(el('span', 'timechip__icon', v.icon), el('span', 'timechip__label', v.label));
+      venues.appendChild(b);
+    }
+
     this.root.append(
       head,
       colours,
       logos,
+      venues,
       lengths,
       times,
       button('⚾  PLAY BALL', () => this.onReady(this.choice), 'btn--hero')
     );
     this.paint();
     return this.root;
+  }
+
+  private setVenue(v: VenueId): void {
+    this.venue = v;
+    this.onVenue(v);
+    this.paint();
   }
 
   private setNight(night: boolean): void {
@@ -147,8 +173,11 @@ export class TeamScreen implements Screen {
     for (const node of this.root.querySelectorAll<HTMLElement>('.length')) {
       node.classList.toggle('is-picked', Number(node.dataset.innings) === this.innings);
     }
-    for (const node of this.root.querySelectorAll<HTMLElement>('.timechip')) {
+    for (const node of this.root.querySelectorAll<HTMLElement>('.timechip:not(.venuechip)')) {
       node.classList.toggle('is-picked', (node.dataset.night === 'true') === this.night);
+    }
+    for (const node of this.root.querySelectorAll<HTMLElement>('.venuechip')) {
+      node.classList.toggle('is-picked', node.dataset.venue === this.venue);
     }
   }
 }
