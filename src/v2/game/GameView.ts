@@ -57,7 +57,8 @@ import { applyFrame, cameraInputFor, type SceneRefs } from '../render/bridge';
 import { simulateGameLive, type GameResult, type LiveFrame, type SimEvent } from '../sim/game';
 import type { PlayInputs } from '../sim/play';
 import type { PitchKind } from '../sim/pitch';
-import { FIRST, SECOND, THIRD, HOME, dist, type Vec2 } from '../sim/field';
+import { FIRST, SECOND, THIRD, HOME, dist, fenceDistAt, pointAt, type FieldGeometry, type Vec2 } from '../sim/field';
+import { hash01 } from '../../art/fieldTexture';
 import { makeRng } from '../sim/rng';
 import { VENUE_GEOMETRY, type VenueId } from '../sim/field';
 import { planDefence } from '../sim/lineup';
@@ -640,6 +641,7 @@ export class GameView {
           'Every id a roster can name must be built in start() — see the note there.'
       );
     }
+    this.placeSpectators(geo, [...away.ids, ...home.ids]);
     void planDefence(away.ids, getCharacter);
     this.game = simulateGameLive(
       {
@@ -763,7 +765,7 @@ export class GameView {
     this.showOnly(this.frame);
   }
 
-  /** Only the kids actually on the field are visible. */
+  /** Only the kids actually on the field are visible — plus the yard kids. */
   private showOnly(frame: LiveFrame): void {
     const live = new Set<string>(Object.keys(frame.defence));
     if (frame.play) {
@@ -772,7 +774,47 @@ export class GameView {
     }
     live.add(frame.batterId);
     live.add(frame.pitcherId);
-    for (const [id, view] of this.refs.kids) view.root.visible = live.has(id);
+    for (const [id, view] of this.refs.kids) {
+      view.root.visible = live.has(id) || this.spectators.has(id);
+    }
+  }
+
+  /**
+   * The kids the draft left behind, watching from beyond the fence.
+   *
+   * BB's parks read as a neighborhood partly because somebody is always
+   * WATCHING (`docs/research/backyard-2026-reference.md` item 5). We already
+   * build all thirty kids — the twelve nobody drafted were sitting invisible
+   * in the scene. They now stand in the fence-to-privacy-ring band, facing
+   * home, idling on the shared directors (`applyFrame` updates every director
+   * and repositions only live ids, so this costs nothing per frame).
+   *
+   * Placement is hash-jittered off the roster INDEX, never random — the same
+   * game shows the same crowd. Render-side set dressing only: the sim never
+   * knows they are there, and the fence keeps them out of every play. Cost:
+   * twelve proxies at 2 draws each against the measured 46-draw scene — and
+   * they are wall-occluded in the plate cameras, visible from the aerial ones.
+   */
+  private readonly spectators = new Set<string>();
+
+  private placeSpectators(geo: FieldGeometry, playing: string[]): void {
+    const inGame = new Set(playing);
+    this.spectators.clear();
+    const bench = ROSTER.map((c) => c.id).filter((id) => !inGame.has(id));
+    bench.forEach((id, i) => {
+      const view = this.refs.kids.get(id);
+      if (!view) return;
+      const spray = -44 + (88 * i) / Math.max(1, bench.length - 1) + (hash01(i, 131) - 0.5) * 6;
+      const distFt = fenceDistAt(geo, spray) + 5 + hash01(i, 137) * 9;
+      const p = pointAt(spray, distFt);
+      view.setPosition(p.x, p.z);
+      view.setFacing(Math.atan2(HOME.x - p.x, HOME.z - p.z));
+      this.spectators.add(id);
+      const dir = this.refs.directors.get(id);
+      dir?.play(i % 3 === 0 ? 'field_ready' : 'idle');
+      // Staggered phase, so the crowd does not breathe in unison.
+      dir?.update(hash01(i, 139) * 1.7);
+    });
   }
 
   private readonly tick = (now: number): void => {

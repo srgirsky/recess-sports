@@ -1635,6 +1635,21 @@ drop shadow, icon-first with one short word (🔥 FAST / 🐢 SLOW / 🌈 CURVE 
 🌀 TWISTY), a keyboard hint that hides on coarse pointers, and ±1.4° of
 rotation so the stack reads placed-by-hand.
 
+### PR 32 — the yard kids
+
+Item 5 of the BB2026 gap list, and the cheapest one on it: BB's parks read as
+a neighborhood partly because somebody is always WATCHING, and we were
+already building all thirty kids — the twelve nobody drafted sat invisible in
+the scene. `GameView.placeSpectators` now stands them in the
+fence-to-privacy-ring band, facing home, idling with hash-staggered phase so
+the crowd does not breathe in unison. Placement is hash-jittered off the
+roster index, never random; recomputed per game so a rematch's new bench
+watches the new game. The sim never knows they exist and the fence keeps them
+out of every play. Twelve proxies at two draws each against the measured
+46-draw scene — wall-occluded from the plate cameras (an 8ft fence hides a
+kid-height kid, correctly), fully visible from the title, flyover and
+live-play rigs, with the odd head peeking over a low corner.
+
 ## The 30 characters
 
 Defined in `src/data/characters.ts` (pure content — edit freely). Each has stats (contact/power/speed/pitching, 1–10), a look (`VisualParams`), and an optional `ability`. Three signature kids are implemented via **ability hooks** so they're data-driven, not special-cased in scene code:
