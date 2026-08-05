@@ -84,10 +84,10 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
 4. ~~HUD sticker language, first instalment~~ — PR 31's tappable pitch cards.
    The scoreboard is still a dark slab; restyling it rides with item 6.
 5. ~~Background kids~~ — PR 32: the undrafted twelve watch from the yards.
-6. **Presentation beats**, two of three shipped: ~~matchup plate~~ (PR 33),
-   ~~inning-break scoreboard~~ (PR 34). Open: diegetic menu styling — our
-   screens are DOM-over-canvas by design, so the equivalent is styling + a
-   camera cue per screen, not a rebuild.
+6. ~~Presentation beats~~: ~~matchup plate~~ (PR 33), ~~inning-break
+   scoreboard~~ (PR 34), ~~a camera cue per screen~~ (PR 37 — draft over
+   DEEP, team over PLAY, result into PITCH_HERO). Open as polish: wooden-sign
+   screen headers, the draft card-pop moment.
 7. ~~Day/night~~ — PR 35's `?night=1` (sky/fog/lights/lit windows), PR 36's
    sun/moon chip on the team screen with a live park flip. Open as polish:
    light towers, per-venue night looks, HR fireworks.

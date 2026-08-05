@@ -1635,6 +1635,19 @@ drop shadow, icon-first with one short word (🔥 FAST / 🐢 SLOW / 🌈 CURVE 
 🌀 TWISTY), a keyboard hint that hides on coarse pointers, and ±1.4° of
 rotation so the stack reads placed-by-hand.
 
+### PR 37 — a camera cue per screen
+
+The other half of the diegetic-menus equivalence (`docs/research` item 6):
+BB2026 builds its menus as 3D scenes; ours are DOM over the live park, so the
+park should COMPOSE for each screen. `GameView.setScreenCue` lets a screen
+pin a camera preset that overrides `chooseCamera` while it is up, eased
+through the same damp as every play move so showing a screen pans rather
+than teleports. The title keeps the behind-plate hero shot; the draft looks
+down the whole diamond from DEEP; the team picker frames the defence from
+PLAY — the nine kids whose jerseys the swatches recolour, visible around the
+chips; the result settles into PITCH_HERO. Null hands the camera back, and
+starting the game always clears the cue.
+
 ### PR 36 — the sun and the moon on the team screen
 
 Night stops being a URL parameter. The team screen gains BB2026's sun/moon
