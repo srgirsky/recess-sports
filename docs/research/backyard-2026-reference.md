@@ -84,11 +84,13 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
 4. ~~HUD sticker language, first instalment~~ — PR 31's tappable pitch cards.
    The scoreboard is still a dark slab; restyling it rides with item 6.
 5. ~~Background kids~~ — PR 32: the undrafted twelve watch from the yards.
-6. **Presentation beats**: inning-break scoreboard scene, matchup plate,
-   diegetic menus. Our screens are DOM-over-canvas by design — the equivalent
-   is styling + a camera cue per screen, not a rebuild.
-7. **Day/night** per venue — their headline "first since 2005" feature; our
-   sky/lighting are already parameterised for it (`buildSky` takes colours).
+6. **Presentation beats**, two of three shipped: ~~matchup plate~~ (PR 33),
+   ~~inning-break scoreboard~~ (PR 34). Open: diegetic menu styling — our
+   screens are DOM-over-canvas by design, so the equivalent is styling + a
+   camera cue per screen, not a rebuild.
+7. ~~Day/night, first pass~~ — PR 35's `?night=1` (sky/fog/lights/lit
+   windows). Open as polish: light towers, the sun/moon toggle chip,
+   per-venue night looks, HR fireworks.
 
 Gameplay: their new modes (Backyard Derby, Backyard Bash, Wiggle Ball, T-Ball)
 map to our roadmap's Practice/modes arc, and their 10-point skill system
