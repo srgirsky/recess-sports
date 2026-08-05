@@ -173,6 +173,14 @@ export interface LiveFrame {
   strikes: number;
   awayScore: number;
   homeScore: number;
+  /**
+   * Runs per inning so far, `[[awayTop, homeBottomOrNull], …]` — the SAME
+   * accumulating array `GameResult.lineScore` publishes at the end, shared by
+   * reference. The frame is already mutated in place every tick and views
+   * read-and-drop, so a snapshot copy per tick would spend allocation on a
+   * guarantee nobody uses.
+   */
+  lineScore: ReadonlyArray<readonly [number, number | null]>;
   bases: [boolean, boolean, boolean];
   /** The batter and the pitcher, for the view to pose. */
   batterId: string;
@@ -721,6 +729,7 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
     strikes: 0,
     awayScore: 0,
     homeScore: 0,
+    lineScore,
     bases: [false, false, false],
     batterId: '',
     pitcherId: '',
