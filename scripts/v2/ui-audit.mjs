@@ -72,8 +72,17 @@ const APP_URL = `http://localhost:${PORT}/v2/`;
  * against 4:49 wall, 59 against 38 CPU-minutes, identical 2568 boxes): the
  * document-start stage shrink had already deleted the boot cost, and holding
  * one page open runs the title's background game for the whole run. This
- * budget is the honest price of the assertions. */
-const RUN_BUDGET_MS = 11 * 60_000;
+ * budget is the honest price of the assertions.
+ *
+ * Raised again 11 → 15 minutes 2026-08-05, after the inning-break state
+ * (PR 34) added a fourth game scenario: CI was budget-killed at 660s with
+ * every completed row green, twice. The same session found and fixed the real
+ * flake (the 50s pumped-page unload stall — see the fresh-page note in main)
+ * and re-tried the reflow refactor WITH that fix; it still lost. A page whose
+ * sim has been pumped degrades everything done on or to it, which is worth
+ * its own investigation — but the gate's budget must fit the assertions it
+ * actually runs on the runners it actually gets. */
+const RUN_BUDGET_MS = 15 * 60_000;
 
 /**
  * The viewport matrix.
