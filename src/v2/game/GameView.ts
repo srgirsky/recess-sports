@@ -94,6 +94,18 @@ const PITCH_CLOCK_SEC = 8;
 /** The four kinds, in the order the picker shows them. */
 const KINDS: PitchKind[] = ['fastball', 'changeup', 'curve', 'screwball'];
 
+/**
+ * What each pitch card shows. Icon first, one short word — the design pillar
+ * is minimal reading, and BB2001/BB2026 both sell the pitch with the card art
+ * (HEAT's flame, the hooks' curved path) rather than the label.
+ */
+const PITCH_CARDS: Record<PitchKind, { icon: string; label: string }> = {
+  fastball: { icon: '🔥', label: 'FAST' },
+  changeup: { icon: '🐢', label: 'SLOW' },
+  curve: { icon: '🌈', label: 'CURVE' },
+  screwball: { icon: '🌀', label: 'TWISTY' },
+};
+
 /** How long a between-pitch beat lasts, seconds. v1's `FLOW.BETWEEN_PITCH_MS`. */
 const BETWEEN_SEC = 2.55;
 /** The sim's own tick. Never the render delta — see the header. */
@@ -859,8 +871,16 @@ export class GameView {
    * `.interactive` children opt back in, which is what makes every non-HUD tap
    * fall through to the canvas BY CONSTRUCTION. v1's equivalent gotcha ("a
    * scene-level pointerdown swings on ANY tap, so corner buttons must
-   * stopPropagation") simply cannot happen here, and nothing mounted here is
-   * interactive — the picker is a READOUT of the number keys, not a menu.
+   * stopPropagation") simply cannot happen here.
+   *
+   * ★ THE PITCH CARDS ARE TAPPABLE, which reverses an earlier deliberate call
+   * ("the picker is a READOUT of the number keys, not a menu"). What changed:
+   * a touch player had NO way to choose a pitch at all — the number keys were
+   * the only input, so every phone game was all fastballs. The old rationale
+   * (four live targets over the field during a steer beat) is answered by
+   * placement and timing rather than by keeping the cards dead: they sit at
+   * the right EDGE, and only during `windup`, the one beat with nothing to
+   * steer. The verb is still CHOOSING — `sim.humanPitch` is unchanged.
    */
   private mountHud(): void {
     const hud = document.getElementById('hud');
@@ -868,13 +888,21 @@ export class GameView {
     hud.appendChild(this.board.root);
     this.pickerEl = document.createElement('div');
     this.pickerEl.className = 'pitch-picker';
-    for (const kind of KINDS) {
-      const chip = document.createElement('span');
-      chip.className = 'pitch-picker__chip';
-      chip.dataset.kind = kind;
-      chip.textContent = `${KINDS.indexOf(kind) + 1} ${kind}`;
-      this.pickerEl.appendChild(chip);
-    }
+    KINDS.forEach((kind, i) => {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'pitch-card interactive';
+      card.dataset.kind = kind;
+      const art = PITCH_CARDS[kind];
+      card.innerHTML =
+        `<span class="pitch-card__icon">${art.icon}</span>` +
+        `<span class="pitch-card__name">${art.label}</span>` +
+        `<kbd class="pitch-card__key">${i + 1}</kbd>`;
+      card.addEventListener('pointerdown', () => {
+        this.pitchKind = kind;
+      });
+      this.pickerEl?.appendChild(card);
+    });
     hud.appendChild(this.pickerEl);
   }
 

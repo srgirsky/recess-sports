@@ -1617,6 +1617,24 @@ as a TINT toward the venue's grass rather than alpha, because "chalk thinning
 out" and "grass showing through" are the same pixel and a transparent ribbon
 would need alpha sorting against the overlay below it.
 
+### PR 31 — the pitch cards: tappable, and in the sticker language
+
+Item 4 of the BB2026 gap list, and a reversal worth recording. The pitch
+picker was a deliberate READOUT — text chips echoing the number keys — with a
+written rationale: tappable chips would put four live targets over the field
+during a steer beat. What that rationale missed is that the number keys were
+the ONLY input, so a touch player could not choose a pitch at all; every phone
+game was all fastballs, silently.
+
+The reversal answers the objection with placement and timing instead of dead
+chips: the cards hug the right EDGE — where BB2001 and BB2026 both put them —
+and the picker only exists during `windup`, the one beat with nothing to
+steer. The verb is still choosing (`sim.humanPitch` untouched). The look is
+the sticker language the reference notes name: cream card, thick outline, hard
+drop shadow, icon-first with one short word (🔥 FAST / 🐢 SLOW / 🌈 CURVE /
+🌀 TWISTY), a keyboard hint that hides on coarse pointers, and ±1.4° of
+rotation so the stack reads placed-by-hand.
+
 ## The 30 characters
 
 Defined in `src/data/characters.ts` (pure content — edit freely). Each has stats (contact/power/speed/pitching, 1–10), a look (`VisualParams`), and an optional `ability`. Three signature kids are implemented via **ability hooks** so they're data-driven, not special-cased in scene code:
