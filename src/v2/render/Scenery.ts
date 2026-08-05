@@ -438,10 +438,15 @@ function buildClouds(): Mesh {
   const N = 6;
   for (let i = 0; i < N; i++) {
     const ang = -1.2 + (2.6 * i) / (N - 1) + (hash01(i, 91) - 0.5) * 0.3;
-    const dist = 480 + hash01(i, 93) * 220;
+    const dist = 470 + hash01(i, 93) * 180;
     const x = Math.sin(ang) * dist;
     const z = Math.cos(ang) * dist * 0.9 + 80;
-    const y = 170 + hash01(i, 97) * 120;
+    // Horizon-hugging on purpose. The behind-plate camera pitches DOWN at the
+    // plate, so its frame top is only ~11° of elevation — clouds authored at a
+    // "realistic" 170-290ft projected to NDC y 1.8-3.5, an empty sky in the
+    // money shot (measured by projecting the vertices). ~50-100ft at this
+    // distance sits at 4-8°: in frame, layered behind the rooftops.
+    const y = 48 + hash01(i, 97) * 55;
     const r = 22 + hash01(i, 101) * 18;
     for (let k = 0; k < 4; k++) {
       const dx = (hash01(i * 7 + k, 103) - 0.5) * r * 2.4;
