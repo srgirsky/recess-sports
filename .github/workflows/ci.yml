@@ -41,7 +41,7 @@ jobs:
     runs-on: ubuntu-latest
     # Belt and braces: the driver has its own run budget, but a wedged browser
     # must never hold a runner for the 6-hour default.
-    timeout-minutes: 15
+    timeout-minutes: 18
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
