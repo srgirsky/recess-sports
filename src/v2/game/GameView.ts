@@ -47,7 +47,7 @@ import { OutlineRegistry } from '../render/materials/outline';
 import { VENUE_LOOKS, buildField, type FieldBuild } from '../render/Field';
 import { buildFence, type FenceBuild } from '../render/Fence';
 import { buildScenery, type SceneryBuild } from '../render/Scenery';
-import { buildSky } from '../render/Sky';
+import { SKY_HORIZON, buildSky } from '../render/Sky';
 import { createCharacter, proxyForced } from '../render/CharacterFactory';
 import { configureModelLoader } from '../render/modelLoader';
 import { AnimationDirector } from '../render/AnimationDirector';
@@ -255,7 +255,7 @@ export class GameView {
     this.scene.add(this.lighting.root);
     this.scene.add(buildSky());
     // Aerial haze is most of what sells DISTANCE in a flat-shaded scene.
-    this.scene.fog = new Fog(0xcfe9f7, 260, 900);
+    this.scene.fog = new Fog(SKY_HORIZON, 260, 900);
     window.addEventListener('resize', this.onResize);
     // ★ ON THE CANVAS, which already receives every non-HUD tap by
     // construction: `#hud` is `pointer-events: none` and nothing on the

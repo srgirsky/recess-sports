@@ -33,7 +33,7 @@ import { Renderer } from '../render/Renderer';
 import { Lighting } from '../render/Lighting';
 import { OutlineRegistry } from '../render/materials/outline';
 import { VENUE_LOOKS, buildField, type FieldBuild } from '../render/Field';
-import { buildSky } from '../render/Sky';
+import { SKY_HORIZON, buildSky } from '../render/Sky';
 import { ProxyCharacter } from '../render/ProxyCharacter';
 import { AnimationDirector } from '../render/AnimationDirector';
 import { buildProceduralClips } from '../render/proceduralClips';
@@ -84,7 +84,7 @@ export class AnimSpike {
     this.lighting = new Lighting({ shadowMapSize: this.renderer.tier.shadowMapSize });
     this.scene.add(this.lighting.root);
     this.scene.add(buildSky());
-    this.scene.fog = new Fog(0xcfe9f7, 260, 900);
+    this.scene.fog = new Fog(SKY_HORIZON, 260, 900);
 
     const geo = VENUE_GEOMETRY.park;
     this.field = buildField(geo, VENUE_LOOKS.park, this.outlines, { anisotropy: this.renderer.tier.anisotropy });

@@ -1577,6 +1577,46 @@ One palette lesson worth keeping: the toon ramp's shadow step eats ~40%, so a
 "slate" roof authored at its real-world value reads as BLACK from the plate.
 Scenery colours are authored bright on purpose.
 
+### PR 29a — the audit pays for its own boots
+
+The neighborhood made `audit:v2-layout` flake, and the fix came in two halves
+because the first was measured insufficient. First: the gate shrinks the 3D
+canvas to 2px ("a headless WebGL frame costs its pixel count") but applied
+that style only AFTER `page.goto`, so all 12 boots per run still rendered the
+full scene at full viewport in software GL — an `addInitScript` now installs
+it at document start, and the local run came back at 4:49 against ~8 minutes.
+Then the very PR carrying that fix flaked the same way, which exposed the real
+head of the class: every flake was `goto` timing out on **'load'**, which
+waits for every subresource on a page this file measures none of. The gotos
+now wait for 'domcontentloaded' plus the things the audit actually reads —
+`__spike` present, `document.fonts.ready` settled (a text box measured
+mid-`font-display: swap` is measured in the wrong font), and the existing
+screen selector. The gate's assertions are untouched.
+
+### PR 29 — the vivid sky
+
+Item 2 of the BB2026 gap list: their sky band is a saturated cyan-blue, ours
+read gray-lavender in every screenshot. The colour was duplicated — the sky's
+horizon stop in `Sky.ts` and a `new Fog(0xcfe9f7, …)` in three scenes — so the
+fix exports `SKY_TOP` / `SKY_HORIZON` from `Sky.ts` and every fog cites
+`SKY_HORIZON`, because aerial haze IS the horizon colour thickening with
+distance and a fog authored apart from the sky splits into a seam at the fence
+line. One source of truth; the gray can never come back in only one of the four
+places.
+
+### PR 30 — the hand-limed foul line
+
+Item 3 of the BB2026 gap list, scoped to its worst offender. The overlay's
+every chalk mark already goes through the kit's worn `chalkLine`, but the foul
+line beyond 100ft was one solid `BoxGeometry` stripe — the most synthetic
+object on the field, touching the most hand-crafted one. It is now a ribbon
+with the kit's own character: per-dash width and wear (hash-varied, no
+`Math.random`), a slow two-sine lateral drift like a pushed chalker — the line
+itself stays straight, and `sim/field.ts`'s rule line is untouched — and wear
+as a TINT toward the venue's grass rather than alpha, because "chalk thinning
+out" and "grass showing through" are the same pixel and a transparent ribbon
+would need alpha sorting against the overlay below it.
+
 ### PR 31 — the pitch cards: tappable, and in the sticker language
 
 Item 4 of the BB2026 gap list, and a reversal worth recording. The pitch
