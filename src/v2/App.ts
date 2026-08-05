@@ -22,6 +22,14 @@ import { GameView } from './game/GameView';
 import { Router } from './ui/Router';
 import { TitleScreen } from './ui/screens/TitleScreen';
 import { DraftScreen } from './ui/screens/DraftScreen';
+import { TeamScreen } from './ui/screens/TeamScreen';
+import {
+  getTeamIdentity,
+  pickRival,
+  setTeamIdentity,
+  teamName,
+  type TeamIdentity,
+} from '../systems/team';
 import { ResultScreen } from './ui/screens/ResultScreen';
 import { resultModel } from './ui/resultModel';
 import { Sound } from './ui/Sound';
@@ -46,6 +54,11 @@ export class App {
   private readonly sound = new Sound();
   /** The teams the player drafted, kept so PLAY AGAIN is a rematch. */
   private rosters: { away: string[]; home: string[] } | null = null;
+  /**
+   * The player's colours. Read from `recess_team` — the SAME key v1 writes, so
+   * a kid who named their team at `/` finds it already named at `/v2/`.
+   */
+  private identity: TeamIdentity = getTeamIdentity() ?? { color: 5, logo: 0 };
 
   constructor(canvas: HTMLCanvasElement, screens: HTMLElement) {
     this.router = new Router(screens);
@@ -56,6 +69,7 @@ export class App {
     // The park is built and the characters are loaded BEFORE the title shows,
     // so PLAY is instant and the title has something real behind it.
     await this.game.start();
+    this.game.setTeamNames(this.names());
     this.game.onGameEnd((r) => this.showResult(r));
     this.game.onSimEvent((e) => this.sound.onEvent(e));
     this.game.onFrame((f) => {
@@ -95,16 +109,57 @@ export class App {
         (c) => this.sound.sayName(c),
         (playerTeam, aiTeam) => {
           this.rosters = { away: playerTeam, home: aiTeam };
-          this.playBall();
+          this.showTeam();
         }
       )
     );
   }
 
-  private playBall(): void {
+  /** Colours and a logo, which together are the team's spoken name. */
+  private showTeam(): void {
+    this.router.show(
+      new TeamScreen(
+        this.identity,
+        (t) => {
+          this.identity = t;
+          void this.dress();
+        },
+        (t) => {
+          this.identity = t;
+          setTeamIdentity(t);
+          void this.playBall();
+        }
+      )
+    );
+  }
+
+  /** Put the drafted nine in the chosen colour, live behind the picker. */
+  private async dress(): Promise<void> {
+    if (!this.rosters) return;
+    this.game.setTeamNames(this.names());
+    await this.game.newGame(this.seed(), this.rosters, this.uniforms());
+  }
+
+  private rival(): TeamIdentity {
+    return pickRival(this.identity, this.gameNo);
+  }
+
+  private names() {
+    return { away: teamName(this.identity), home: teamName(this.rival()) };
+  }
+
+  private uniforms() {
+    return { away: this.identity.color, home: this.rival().color };
+  }
+
+  private async playBall(): Promise<void> {
     this.gameNo += 1;
     this.sound.reset();
-    this.game.newGame(this.seed(), this.rosters ?? undefined);
+    this.game.setTeamNames(this.names());
+    await this.game.newGame(this.seed(), this.rosters ?? undefined, this.uniforms());
+    // ★ THE BOOTH SAYS THE NAME. It is the payoff for the whole screen, and it
+    // is why the name is a spoken colour and a spoken animal rather than text.
+    this.sound.sayTeam(teamName(this.identity));
     // The denominator for a pick rate: how many games this browser has played.
     recordGamePlayed();
     this.router.hide();
@@ -136,7 +191,7 @@ export class App {
         (id) => getCharacter(id).name,
         // PLAY AGAIN is a REMATCH — same nine kids, so a player is not made to
         // re-draft to have another go at a team they just built.
-        () => this.playBall(),
+        () => void this.playBall(),
         () => this.showTitle()
       )
     );

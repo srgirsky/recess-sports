@@ -764,3 +764,85 @@ body.screen-open #hud > *:not(.btn--mute) {
 .btn--mute.is-muted {
   background: var(--red);
 }
+
+/* ---- The team picker ---- */
+.screen--team {
+  gap: var(--s4);
+}
+.team-name {
+  margin: 0;
+  font-size: clamp(1.2rem, 4.5vw, 2rem);
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: 0.04em;
+  -webkit-text-stroke: 0.05em var(--outline);
+  paint-order: stroke fill;
+}
+.team-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s3);
+}
+/*
+ * ⚠️ THE BUTTON NEVER SHRINKS — ONLY ITS SKIN DOES.
+ *
+ * Unpicked options sit back and the chosen one comes forward, and the obvious
+ * way to do that is `transform: scale()` on the control. A transform scales the
+ * HIT BOX with it, so a 77px target renders and measures 66 and a thumb misses
+ * it. `tokens.css` had already written this lesson down — "chips render at
+ * scale(0.86) when unselected, so the floor must clear 44px even shrunk" — and
+ * this reintroduced it anyway; `audit:v2-layout` failed 78 targets on the first
+ * run of the new screen.
+ *
+ * So the button holds `--tap-min` and the scale moves to `::before`, which is
+ * paint and not geometry. The tap target is the same size whichever option is
+ * picked, which is also the only behaviour a kid can predict.
+ */
+.swatch,
+.logo {
+  position: relative;
+  inline-size: var(--tap-min);
+  block-size: var(--tap-min);
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  border-radius: 50%;
+  font-size: 1.6rem;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+.swatch::before,
+.logo::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: var(--stroke) solid var(--outline);
+  background: inherit;
+  transform: scale(calc(1 - 0.14 * var(--motion-scale)));
+  opacity: 0.72;
+  transition: transform 110ms ease, opacity 110ms ease;
+}
+.logo::before {
+  background: var(--cream);
+}
+/* The emoji rides above its own disc. */
+.logo {
+  color: var(--ink);
+  z-index: 0;
+}
+.logo > * ,
+.swatch > * {
+  position: relative;
+}
+.swatch.is-picked::before,
+.logo.is-picked::before {
+  transform: scale(1);
+  opacity: 1;
+  box-shadow:
+    0 0 0 0.22rem var(--gold),
+    var(--shadow);
+}

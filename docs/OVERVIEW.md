@@ -1430,8 +1430,47 @@ GPU, and the test pins **both halves** — that the old eighteen-kid scene fails
 real back-of-the-board draft, and that the whole roster passes it — so the fix
 cannot be undone quietly.
 
-Next: team identity (a colour, a logo and the spoken team name), the lineup, then
-the cutover that points `/` at v2 and keeps v1 at `/classic/`.
+### PR 25 — a colour, a logo, and the name that falls out of them
+
+**★ Naming with no reading and no typing.** `systems/team.ts` already had the
+idea and v2 gets it whole: a team's *name* is the spoken colour plus the spoken
+logo — **"THE PURPLE TIGERS"** — so a four-year-old names their team by pointing
+at a colour they like and an animal they like. There is no text field anywhere in
+this game and there should not be. It persists to `recess_team`, the same key v1
+writes, so a kid who named their team at `/` finds it already named at `/v2/`.
+
+**And the colour is not decoration — it fixes something the draft broke.** Before
+there was a draft, the two sides *were* roster halves, so a uniform keyed on
+roster index happened to match the team. Once a player picks their own nine that
+coincidence is gone and each side wears a mixture of both colours: you cannot
+tell the teams apart. Now your nine wear your colour and `pickRival` puts the CPU
+in something that does not clash.
+
+The uniforms are **rebuilt, not recoloured**. `ProxyCharacter` bakes its palette
+into geometry at construction, so a colour change means re-running the builder —
+measured at **2.2 ms a kid, 39 ms for a whole game's eighteen**, which is
+imperceptible behind the button that starts the game. A `setUniform` that rewrote
+vertex colours would be more code for a saving nobody can perceive. The picker
+previews on the **real characters** standing behind it, so there is no mock-up
+that can drift from the game.
+
+**★ And the layout audit caught a bug the design tokens had already warned
+about.** Unpicked options sat back via `transform: scale()` on the button — and a
+transform scales the **hit box** with it, so a 77 px target rendered and measured
+66. `tokens.css` says, in a comment written for v1: *"chips render at scale(0.86)
+when unselected, so the floor must clear 44px even shrunk."* I reintroduced the
+exact bug the note exists to prevent, and the gate failed **78 tap targets** on
+the first run of the new screen. The scale moved to `::before`, which is paint
+rather than geometry, so the target is the same size whichever option is picked —
+the only behaviour a kid can predict.
+
+The audit also needed each screen's `reach` rewritten as *"get to my screen from
+any screen"* rather than *"from the front door"*: the screen states run in
+sequence on one page, so by the time the team picker runs, the draft has already
+left the title behind.
+
+Next: the lineup, then the cutover that points `/` at v2 and keeps v1 at
+`/classic/`.
 
 ---
 

@@ -185,6 +185,11 @@ export class GameView {
   private pickerEl: HTMLElement | null = null;
   private teamNames: ScoreboardTeams = { away: 'ROCKETS', home: 'COMETS' };
 
+  /** Name the two sides. Set before `newGame`, or the scoreboard lies. */
+  setTeamNames(t: ScoreboardTeams): void {
+    this.teamNames = t;
+  }
+
   /**
    * Called once, when the game ends.
    *
@@ -197,6 +202,8 @@ export class GameView {
   private onEnd: ((result: GameResult) => void) | null = null;
   private simEvent: ((e: SimEvent) => void) | null = null;
   private frameTap: ((f: LiveFrame) => void) | null = null;
+  /** charId -> the uniform they are currently wearing, so a rematch is cheap. */
+  private readonly dressed = new Map<string, number>();
   private ended = false;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
@@ -468,7 +475,7 @@ export class GameView {
       })
     );
 
-    this.newGame(new URLSearchParams(location.search).get('seed') ?? 'play');
+    await this.newGame(new URLSearchParams(location.search).get('seed') ?? 'play');
 
     this.buildPlateCues();
     this.mountHud();
@@ -553,16 +560,40 @@ export class GameView {
     return rosterIds.filter((id) => !built.has(id));
   }
 
-  newGame(seed: string, rosters?: { away: string[]; home: string[] }): void {
+  async newGame(
+    seed: string,
+    rosters?: { away: string[]; home: string[] },
+    uniforms: { away: number; home: number } = { away: 0, home: 1 }
+  ): Promise<void> {
     const geo = VENUE_GEOMETRY[this.venue];
     // ★ THE DRAFTED TEAM, WHEN THERE IS ONE. `/v2/?play=1` has no draft in front
     // of it and must still play, so the first eighteen of the roster stay the
     // fallback — which is also what every measurement sweep and the layout audit
     // drive, and what keeps a seeded game reproducible without a draft.
-    const away = { name: 'ROCKETS', ids: rosters?.away ?? ROSTER.slice(0, 9).map((c) => c.id) };
-    const home = { name: 'COMETS', ids: rosters?.home ?? ROSTER.slice(9, 18).map((c) => c.id) };
-    this.teamNames = { away: away.name, home: home.name };
-    const missing = GameView.missingFromScene([...away.ids, ...home.ids], new Set(this.refs.kids.keys()));
+    const away = {
+      name: this.teamNames.away,
+      ids: rosters?.away ?? ROSTER.slice(0, 9).map((c) => c.id),
+    };
+    const home = {
+      name: this.teamNames.home,
+      ids: rosters?.home ?? ROSTER.slice(9, 18).map((c) => c.id),
+    };
+    // ★ THE UNIFORMS ARE REBUILT, NOT RECOLOURED, because a rebuild is free and
+    // a recolour is not. `ProxyCharacter` bakes its palette into geometry at
+    // construction, so changing a shirt colour means re-running the builder —
+    // measured at 2.2ms a kid, 39ms for a whole game's eighteen, which is
+    // imperceptible behind the button that starts the game. A `setUniform` that
+    // rewrote vertex colours would be more code for a saving nobody can see.
+    //
+    // ⚠️ AND IT HAS TO HAPPEN AT ALL, or you cannot tell the teams apart. Before
+    // the draft the two sides WERE roster halves, so a uniform keyed on roster
+    // index happened to match the team; once a player picks their own nine that
+    // coincidence is gone and each team wears a mixture of both colours.
+    await this.dressTeams(away.ids, home.ids, uniforms);
+    const missing = GameView.missingFromScene(
+      [...away.ids, ...home.ids],
+      new Set(this.refs.kids.keys())
+    );
     if (missing.length > 0) {
       throw new Error(
         `GameView: ${missing.join(', ')} would play with no scene object. ` +
@@ -581,6 +612,46 @@ export class GameView {
     this.windupElapsed = 0;
     this.cue = null;
     this.advance();
+  }
+
+  /**
+   * Put each team in its own colour.
+   *
+   * Only the eighteen in this game are rebuilt; the rest of the roster keeps
+   * whatever it was built with and is never shown. The old view is disposed
+   * before the new one is added, or every rematch leaks a scene graph.
+   */
+  private async dressTeams(
+    away: string[],
+    home: string[],
+    uniforms: { away: number; home: number }
+  ): Promise<void> {
+    const wanted = [
+      ...away.map((id) => [id, uniforms.away] as const),
+      ...home.map((id) => [id, uniforms.home] as const),
+    ];
+    await Promise.all(
+      wanted.map(async ([id, uniform]) => {
+        if (this.dressed.get(id) === uniform) return;
+        const character = getCharacter(id);
+        const made = await createCharacter(character, {
+          forceProxy: proxyForced(),
+          outlines: this.outlines,
+          uniform,
+        });
+        const old = this.refs.kids.get(id);
+        if (old) {
+          this.scene.remove(old.root);
+          old.dispose();
+        }
+        const view: KidView = made.view;
+        this.scene.add(view.root);
+        view.root.visible = false;
+        this.refs.kids.set(id, view);
+        this.refs.directors.set(id, new AnimationDirector(view.mesh, { fallback: this.clipLibrary }));
+        this.dressed.set(id, uniform);
+      })
+    );
   }
 
   /** The two team names, for the scoreboard and the Result screen. */
