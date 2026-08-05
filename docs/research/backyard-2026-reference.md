@@ -89,8 +89,9 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
    DEEP, team over PLAY, result into PITCH_HERO). Open as polish: wooden-sign
    screen headers, the draft card-pop moment.
 7. ~~Day/night~~ — PR 35's `?night=1` (sky/fog/lights/lit windows), PR 36's
-   sun/moon chip on the team screen with a live park flip. Open as polish:
-   per-venue night looks. ~~Light towers~~ (PR 39). ~~HR fireworks~~ (PR 38).
+   sun/moon chip on the team screen with a live park flip. All named polish shipped:
+   ~~per-venue night looks~~ (PR 41), ~~light towers~~ (PR 39),
+   ~~HR fireworks~~ (PR 38).
 
 Gameplay: their new modes (Backyard Derby, Backyard Bash, Wiggle Ball, T-Ball)
 map to our roadmap's Practice/modes arc, and their 10-point skill system
