@@ -63,9 +63,12 @@ const APP_URL = `http://localhost:${PORT}/v2/`;
  * neighborhood scenery (PR 28) the run streams every scenario green on a
  * 4-vCPU CI runner and was killed at 480s with 39 of 42 done — the kill was
  * the only failure. The local run burns ~38 CPU-minutes across 14 cores;
- * four cores simply need longer, not fewer assertions. The real repayment is
- * booting each entry point ONCE and auditing the viewport matrix by
- * `setViewportSize` reflow (12 boots → 2), which shrinks this budget back. */
+ * four cores simply need longer, not fewer assertions. A boot-once /
+ * reflow-the-viewport-matrix refactor was tried and MEASURED SLOWER (6:40
+ * against 4:49 wall, 59 against 38 CPU-minutes, identical 2568 boxes): the
+ * document-start stage shrink had already deleted the boot cost, and holding
+ * one page open runs the title's background game for the whole run. This
+ * budget is the honest price of the assertions. */
 const RUN_BUDGET_MS = 11 * 60_000;
 
 /**
