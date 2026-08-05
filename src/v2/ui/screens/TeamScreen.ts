@@ -22,18 +22,24 @@ import {
   type TeamIdentity,
 } from '../../../systems/team';
 import { UNIFORM_COLORS } from '../../../art/palette';
+import { GAME_LENGTHS } from '../../game/GameView';
 
 export class TeamScreen implements Screen {
   private choice: TeamIdentity;
   private nameEl!: HTMLElement;
   private root!: HTMLElement;
 
+  private innings: number;
+
   constructor(
     start: TeamIdentity,
+    startInnings: number,
+    private readonly onInnings: (n: number) => void,
     private readonly onPreview: (t: TeamIdentity) => void,
     private readonly onReady: (t: TeamIdentity) => void
   ) {
     this.choice = { ...start };
+    this.innings = startInnings;
   }
 
   mount(): HTMLElement {
@@ -63,9 +69,36 @@ export class TeamScreen implements Screen {
       logos.appendChild(b);
     });
 
-    this.root.append(head, colours, logos, button('⚾  PLAY BALL', () => this.onReady(this.choice), 'btn--hero'));
+    // ★ HOW LONG, IN MINUTES RATHER THAN INNINGS. "Three innings" means nothing
+    // to a six-year-old or to the adult deciding whether there is time before
+    // dinner; "9 min" means something to both. The numbers are measured, not
+    // guessed — see GAME_LENGTHS.
+    const lengths = el('div', 'team-row team-row--length');
+    for (const choice of GAME_LENGTHS) {
+      const b = button('', () => this.setInnings(choice.innings), 'length');
+      b.dataset.innings = String(choice.innings);
+      b.append(
+        el('span', 'length__label', choice.label),
+        el('span', 'length__mins', `${choice.minutes} min`)
+      );
+      lengths.appendChild(b);
+    }
+
+    this.root.append(
+      head,
+      colours,
+      logos,
+      lengths,
+      button('⚾  PLAY BALL', () => this.onReady(this.choice), 'btn--hero')
+    );
     this.paint();
     return this.root;
+  }
+
+  private setInnings(n: number): void {
+    this.innings = n;
+    this.onInnings(n);
+    this.paint();
   }
 
   private set(patch: Partial<TeamIdentity>): void {
@@ -84,6 +117,9 @@ export class TeamScreen implements Screen {
     }
     for (const node of this.root.querySelectorAll<HTMLElement>('.logo')) {
       node.classList.toggle('is-picked', Number(node.dataset.logo) === this.choice.logo);
+    }
+    for (const node of this.root.querySelectorAll<HTMLElement>('.length')) {
+      node.classList.toggle('is-picked', Number(node.dataset.innings) === this.innings);
     }
   }
 }

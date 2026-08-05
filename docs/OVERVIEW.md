@@ -1469,8 +1469,42 @@ any screen"* rather than *"from the front door"*: the screen states run in
 sequence on one page, so by the time the team picker runs, the draft has already
 left the title behind.
 
-Next: the lineup, then the cutover that points `/` at v2 and keeps v1 at
-`/classic/`.
+### PR 26 — a seventeen-minute game for a six-year-old
+
+The root brief lists three design pillars, and one of them is **short games**.
+v1 ships `INNINGS = 2`. v2 had been defaulting to the *sim's*
+`GAME.REGULATION_INNINGS` of **6** — a constant chosen for the harness, not for a
+player — and nobody had ever measured what that costs in minutes.
+
+| innings | pitches | minutes |
+|---|---|---|
+| 2 (v1's shipped default) | 60 | **~5** |
+| 3 | 111 | ~9 |
+| 6 (v2's default) | 217 | **~17** |
+
+Three and a half times the sitting, for an audience that is four to eight, from a
+number nobody chose.
+
+**★ The two defaults stay different on purpose.** Every harness record —
+`sim.gameShape`'s 861 games, the 50,000-plate-appearance sweep — was measured at
+six innings, and moving the sim's default would silently restate all of them
+without re-running anything. So the sim keeps its measurement default and the
+*product* passes its own through `GameSpec.regulationInnings`, which is exactly
+what that field is for. A test pins both, so neither can drift into the other.
+
+The choice is offered **in minutes rather than innings**: "three innings" means
+nothing to a six-year-old or to the adult deciding whether there is time before
+dinner, and "9 min" means something to both. The numbers on the buttons are the
+measured ones, and a test asserts the lengths really are ordered and separated —
+a button labelled "5 min" that plays for seventeen is worse than no button.
+
+And the layout audit caught the new row overflowing a 740×320 phone at the *top*,
+where a scroll cannot reach. `place-content: center` clips a screen that outgrows
+its viewport at **both** ends; the picker is start-aligned and scrollable now, so
+growth goes downward. Third time in this arc that rule has bitten, and the first
+time it was already written down.
+
+Next: the cutover that points `/` at v2 and keeps v1 at `/classic/`.
 
 ---
 

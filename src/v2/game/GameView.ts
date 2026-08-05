@@ -102,6 +102,30 @@ const TAP_MAX_MS = 220;
 /** How close a tap must land to a bag to mean "throw there", ft. */
 const BAG_TAP_FT = 14;
 
+/**
+ * How long a game is, in innings, and what that costs in minutes.
+ *
+ * ★ THE SIM'S DEFAULT IS SIX AND THE PRODUCT'S IS TWO, DELIBERATELY.
+ * `GAME.REGULATION_INNINGS` is 6 and every harness record — `sim.gameShape`'s
+ * 861 games, the 50,000-plate-appearance sweep — was measured at it; changing it
+ * would silently restate all of them. So the SIM keeps its measurement default
+ * and the PRODUCT chooses its own, which is what `GameSpec.regulationInnings`
+ * is for.
+ *
+ * ★ AND THE PRODUCT'S ANSWER IS SHORT, BECAUSE THE BRIEF SAYS SO. "Short games"
+ * is one of three design pillars for a four-to-eight-year-old audience, and v1
+ * ships `INNINGS = 2`. v2 had been defaulting to the sim's 6 — measured at 217
+ * pitches and about 17 minutes, against v1's 60 pitches and 5. Three and a half
+ * times the sitting, from a constant nobody chose.
+ */
+const INNINGS_CHOICES = [
+  { innings: 2, label: 'SHORT', minutes: 5 },
+  { innings: 3, label: 'NORMAL', minutes: 9 },
+  { innings: 6, label: 'LONG', minutes: 17 },
+] as const;
+export const GAME_LENGTHS = INNINGS_CHOICES;
+export const DEFAULT_INNINGS = 2;
+
 /** Which bag a tap meant, or null for "somewhere on the field". */
 function nearestBase(at: Vec2): 1 | 2 | 3 | 4 | null {
   const bags: Array<[1 | 2 | 3 | 4, Vec2]> = [
@@ -563,7 +587,8 @@ export class GameView {
   async newGame(
     seed: string,
     rosters?: { away: string[]; home: string[] },
-    uniforms: { away: number; home: number } = { away: 0, home: 1 }
+    uniforms: { away: number; home: number } = { away: 0, home: 1 },
+    innings = DEFAULT_INNINGS
   ): Promise<void> {
     const geo = VENUE_GEOMETRY[this.venue];
     // ★ THE DRAFTED TEAM, WHEN THERE IS ONE. `/v2/?play=1` has no draft in front
@@ -602,7 +627,14 @@ export class GameView {
     }
     void planDefence(away.ids, getCharacter);
     this.game = simulateGameLive(
-      { away, home, lookup: getCharacter, geo, onEvent: (e) => this.simEvent?.(e) },
+      {
+        away,
+        home,
+        lookup: getCharacter,
+        geo,
+        regulationInnings: innings,
+        onEvent: (e) => this.simEvent?.(e),
+      },
       makeRng(seed)
     );
     this.ended = false;
