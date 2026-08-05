@@ -76,19 +76,14 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
 ## What this yields as a gap list (ranked, art first)
 
 1. ~~A world behind the fence~~ — PR 28's `render/Scenery.ts`.
-2. **Sky**: theirs is vivid blue with clouds; ours reads gray-lavender. The
-   sky top/horizon colours and the fog colour are one coupled change (fog is
-   deliberately matched to the horizon in GameView and LookSpike).
-3. **Ground character**: wobbly chalk, worn patches, tufts — our chalk is
-   ruler-straight and our dirt uniform. `art/fieldTexture.ts` already owns
-   speckle/wear language; the wobble is not expressed in v2's overlay.
-4. **HUD sticker language**: their every control is an illustrated card;
-   our scoreboard is a dark slab and our pitch choice is number keys. The
-   pitch-card stack (with per-kind illustrations) is the highest-value HUD
-   steal, exactly as it was in BB2001 (see `backyard-2001-video-notes.md` —
-   EdgeCards were modeled on it).
-5. **Background kids**: idle spectators beyond the fence — we build all 30
-   roster kids already; the bench players could stand in the yards.
+2. ~~Sky~~ — PR 29: `SKY_TOP`/`SKY_HORIZON` exported from `Sky.ts`, every fog
+   cites the horizon.
+3. ~~Ground character~~ — PR 30 took the worst offender (the ruler-straight
+   far foul line, now hand-limed). Dirt tufts/wear beyond that remain open as
+   polish, not a ranked gap.
+4. ~~HUD sticker language, first instalment~~ — PR 31's tappable pitch cards.
+   The scoreboard is still a dark slab; restyling it rides with item 6.
+5. ~~Background kids~~ — PR 32: the undrafted twelve watch from the yards.
 6. **Presentation beats**: inning-break scoreboard scene, matchup plate,
    diegetic menus. Our screens are DOM-over-canvas by design — the equivalent
    is styling + a camera cue per screen, not a rebuild.
