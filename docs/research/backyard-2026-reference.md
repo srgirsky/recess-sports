@@ -90,7 +90,7 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
    screen headers, the draft card-pop moment.
 7. ~~Day/night~~ — PR 35's `?night=1` (sky/fog/lights/lit windows), PR 36's
    sun/moon chip on the team screen with a live park flip. Open as polish:
-   light towers, per-venue night looks, HR fireworks.
+   light towers, per-venue night looks. ~~HR fireworks~~ (PR 38).
 
 Gameplay: their new modes (Backyard Derby, Backyard Bash, Wiggle Ball, T-Ball)
 map to our roadmap's Practice/modes arc, and their 10-point skill system

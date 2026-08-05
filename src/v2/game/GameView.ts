@@ -67,8 +67,10 @@ import { clampBarrelFt, zoneBandFt, zoneHalfWidthFt } from '../sim/athletes';
 import { BALL_RADIUS_FT } from '../sim/ball';
 import { BAT, DEFENSE } from '../sim/params';
 import { kidHeightFt } from '../render/ProxyCharacter';
+import { UNIFORM_COLORS } from '../../art/palette';
 import type { KidView } from '../render/CharacterModel';
 import { Scoreboard } from '../ui/Scoreboard';
+import { Fireworks } from '../render/Fireworks';
 import { InningBreak } from '../ui/InningBreak';
 import { Matchup } from '../ui/Matchup';
 import { MatchupTally } from '../ui/matchupModel';
@@ -177,6 +179,10 @@ export class GameView {
   /** Day or night. `?night=1` seeds it; the team screen's chip flips it live. */
   private night: boolean;
   private sky!: Mesh;
+  /** Built lazily on the first night homer — a day game never pays for it. */
+  private fireworks: Fireworks | null = null;
+  private burstQueue: Array<{ delay: number; x: number; z: number; h: number; color: number }> = [];
+  private uniformIdx = { away: 0, home: 1 };
   private refs: SceneRefs = { kids: new Map(), directors: new Map(), ball: new Mesh() };
 
   private game: Generator<LiveFrame, unknown, PlayInputs> | null = null;
@@ -644,6 +650,7 @@ export class GameView {
     // the draft the two sides WERE roster halves, so a uniform keyed on roster
     // index happened to match the team; once a player picks their own nine that
     // coincidence is gone and each team wears a mixture of both colours.
+    this.uniformIdx = { ...uniforms };
     await this.dressTeams(away.ids, home.ids, uniforms);
     const missing = GameView.missingFromScene(
       [...away.ids, ...home.ids],
@@ -668,6 +675,9 @@ export class GameView {
         regulationInnings: innings,
         onEvent: (e) => {
           this.matchupTally.onEvent(e);
+          // ★ THE SKY AGREES WITH A NIGHT HOMER. Render-side chrome reacting
+          // to the same event the booth calls; the sim never knows.
+          if (e.t === 'contact' && e.hit === 'HR' && !e.foul && this.night) this.queueFireworks();
           this.simEvent?.(e);
         },
       },
@@ -847,6 +857,21 @@ export class GameView {
       this.acc -= step;
       this.pump(step);
     }
+
+    // Fireworks are chrome: stepped here, never tweened, built on demand.
+    if (this.burstQueue.length > 0) {
+      for (const b of this.burstQueue) b.delay -= dt;
+      const due = this.burstQueue.filter((b) => b.delay <= 0);
+      if (due.length > 0) {
+        if (!this.fireworks) {
+          this.fireworks = new Fireworks();
+          this.scene.add(this.fireworks.points);
+        }
+        for (const b of due) this.fireworks.spawn(b.x, b.z, b.h, b.color);
+        this.burstQueue = this.burstQueue.filter((b) => b.delay > 0);
+      }
+    }
+    this.fireworks?.update(dt);
 
     if (this.frame) {
       this.frameTap?.(this.frame);
@@ -1059,6 +1084,23 @@ export class GameView {
     this.scenery.dispose();
     this.scenery = buildScenery(geo, this.venue, { night });
     this.scene.add(this.scenery.root);
+  }
+
+  /** Three staggered team-colour bursts over the outfield. */
+  private queueFireworks(): void {
+    const side = this.frame?.half === 'bottom' ? 'home' : 'away';
+    const hex = Number(
+      (UNIFORM_COLORS[this.uniformIdx[side]]?.jersey ?? '#ffce3a').replace('#', '0x')
+    );
+    const geo = VENUE_GEOMETRY[this.venue];
+    [-24, 2, 26].forEach((spray, i) => {
+      const d = fenceDistAt(geo, spray) + 34;
+      const p = pointAt(spray, d);
+      // Low on purpose — the clouds' lesson (PR 28): the plate camera's
+      // frame top is ~11° of elevation, so a "realistic" 60ft shell pops
+      // OFFSCREEN. Fence-top height is where the reference's bursts read.
+      this.burstQueue.push({ delay: 0.25 + i * 0.45, x: p.x, z: p.z, h: 26 + i * 6, color: hex });
+    });
   }
 
   /** What the HUD shows. Read-only, like everything else on this side. */
