@@ -136,12 +136,18 @@ export class DraftScreen implements Screen {
     }, CPU_BEAT_MS);
   }
 
+  /** How many of the nine were filled at the last paint — the newest pops. */
+  private painted = 0;
+
   private paint(cpuTook: string | null = null): void {
-    // Your nine slots, filled left to right.
+    // Your nine slots, filled left to right. The slot that JUST filled pops —
+    // BB's trading-card beat, spent on the moment the vote lands in the tray.
+    const filled = this.state.playerTeam.filter(Boolean).length;
     this.slots.replaceChildren();
     for (let i = 0; i < 9; i++) {
       const id = this.state.playerTeam[i];
-      const slot = el('div', `draft-slot${id ? ' is-filled' : ''}`);
+      const isNew = id !== undefined && i === filled - 1 && filled > this.painted;
+      const slot = el('div', `draft-slot${id ? ' is-filled' : ''}${isNew ? ' is-new' : ''}`);
       if (id) {
         const art = el('div', 'draft-slot__art');
         art.appendChild(portrait(getCharacter(id).visual, getCharacter(id).name, { uniform: 0 }));
@@ -149,6 +155,7 @@ export class DraftScreen implements Screen {
       }
       this.slots.appendChild(slot);
     }
+    this.painted = filled;
 
     // The board: whoever is left.
     this.board.replaceChildren();

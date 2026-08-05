@@ -86,8 +86,11 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
 5. ~~Background kids~~ — PR 32: the undrafted twelve watch from the yards.
 6. ~~Presentation beats~~: ~~matchup plate~~ (PR 33), ~~inning-break
    scoreboard~~ (PR 34), ~~a camera cue per screen~~ (PR 37 — draft over
-   DEEP, team over PLAY, result into PITCH_HERO). Open as polish: wooden-sign
-   screen headers, the draft card-pop moment.
+   DEEP, team over PLAY, result into PITCH_HERO). ~~Wooden-sign
+   headers~~ and ~~the draft's card-pop beat~~ landed as PR 42 — every
+   engineering-side line in this list is now struck; the remaining parity
+   ceiling is the commissioned character models (pipeline ready, delivery
+   external).
 7. ~~Day/night~~ — PR 35's `?night=1` (sky/fog/lights/lit windows), PR 36's
    sun/moon chip on the team screen with a live park flip. All named polish shipped:
    ~~per-venue night looks~~ (PR 41), ~~light towers~~ (PR 39),

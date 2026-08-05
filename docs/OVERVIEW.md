@@ -1635,6 +1635,18 @@ drop shadow, icon-first with one short word (🔥 FAST / 🐢 SLOW / 🌈 CURVE 
 🌀 TWISTY), a keyboard hint that hides on coarse pointers, and ±1.4° of
 rotation so the stack reads placed-by-hand.
 
+### PR 42 — the plank and the pop
+
+The last two flourishes item 6 left open. The draft and team headers become
+BB's wooden sign — the "Pick-Up Window" plank, in one CSS rule with a degree
+of tilt. And the draft gains its trading-card beat, spent where our flow
+actually has a moment: the tray slot the vote lands in POPS (the scoreboard
+pips' motion contract — `--motion-scale` zeroes the movement, the is-filled
+colour change is the reduced-motion fallback). With these, every
+engineering-side line in `docs/research/backyard-2026-reference.md` is
+struck; what parity still awaits is the commissioned models, whose
+validation pipeline has been ready since before this push began.
+
 ### PR 41 — each park owns its night
 
 The venue chips made night-at-the-sandlot a place a player can actually

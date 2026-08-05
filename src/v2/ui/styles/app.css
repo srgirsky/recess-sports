@@ -810,11 +810,18 @@ body.screen-open #hud > *:not(.btn--mute) {
   gap: var(--s1);
 }
 .draft-head__title {
+  /* The wooden sign — BB's "Pick-Up Window" plank, in one rule. */
   margin: 0;
+  padding: var(--s2) var(--s4);
   font-size: clamp(1.3rem, 4.5vw, 2rem);
   color: var(--cream);
   -webkit-text-stroke: 0.06em var(--outline);
   paint-order: stroke fill;
+  background: linear-gradient(180deg, #a5732f, #8a5e28 55%, #7a5222);
+  border: var(--stroke) solid var(--outline);
+  border-radius: var(--radius);
+  box-shadow: 0 0.3rem 0 rgb(20 32 46 / 0.4);
+  rotate: -1deg;
 }
 .draft-head__status {
   margin: 0;
@@ -823,6 +830,21 @@ body.screen-open #hud > *:not(.btn--mute) {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--gold);
+}
+
+/* The just-filled slot pops — same motion contract as the scoreboard pips:
+   `--motion-scale` zeroes the movement and the is-filled colour change is the
+   reduced-motion fallback. */
+@keyframes draft-slot-pop {
+  from {
+    transform: scale(calc(1 + 0.5 * var(--motion-scale)));
+  }
+  to {
+    transform: scale(1);
+  }
+}
+.draft-slot.is-new {
+  animation: draft-slot-pop 320ms cubic-bezier(0.22, 1.2, 0.36, 1);
 }
 
 /* Your nine slots — the team filling up is the progress bar. */
