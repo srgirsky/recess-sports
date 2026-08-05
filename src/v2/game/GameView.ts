@@ -53,7 +53,7 @@ import { AnimationDirector } from '../render/AnimationDirector';
 import { buildProceduralClips } from '../render/proceduralClips';
 import { RIGS, chooseCamera, damp, type CameraCue } from '../render/cameraCues';
 import { applyFrame, cameraInputFor, type SceneRefs } from '../render/bridge';
-import { simulateGameLive, type GameResult, type LiveFrame } from '../sim/game';
+import { simulateGameLive, type GameResult, type LiveFrame, type SimEvent } from '../sim/game';
 import type { PlayInputs } from '../sim/play';
 import type { PitchKind } from '../sim/pitch';
 import { FIRST, SECOND, THIRD, HOME, dist, type Vec2 } from '../sim/field';
@@ -195,6 +195,8 @@ export class GameView {
    * hang and was in fact a completed game with nobody listening.
    */
   private onEnd: ((result: GameResult) => void) | null = null;
+  private simEvent: ((e: SimEvent) => void) | null = null;
+  private frameTap: ((f: LiveFrame) => void) | null = null;
   private ended = false;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
@@ -534,7 +536,10 @@ export class GameView {
     const home = { name: 'COMETS', ids: rosters?.home ?? ROSTER.slice(9, 18).map((c) => c.id) };
     this.teamNames = { away: away.name, home: home.name };
     void planDefence(away.ids, getCharacter);
-    this.game = simulateGameLive({ away, home, lookup: getCharacter, geo }, makeRng(seed));
+    this.game = simulateGameLive(
+      { away, home, lookup: getCharacter, geo, onEvent: (e) => this.simEvent?.(e) },
+      makeRng(seed)
+    );
     this.ended = false;
     this.inputs = {};
     this.wait = 0;
@@ -558,6 +563,24 @@ export class GameView {
   /** Register the end-of-game callback. */
   onGameEnd(fn: (result: GameResult) => void): void {
     this.onEnd = fn;
+  }
+
+  /**
+   * Listen to the sim's own event stream.
+   *
+   * ★ THE OBSERVER `GameSpec` HAS CARRIED SINCE PR 8, WITH ONE CONSUMER. Its
+   * comment says "`harness.ts` is its only consumer"; sound is the second, and
+   * it wants exactly what the harness wants — what HAPPENED, synchronously,
+   * rather than what the frame looks like afterwards. By the time a frame is
+   * yielded a swing and a take are indistinguishable.
+   */
+  onSimEvent(fn: (e: SimEvent) => void): void {
+    this.simEvent = fn;
+  }
+
+  /** Read every rendered frame. Read-only, like everything on this side. */
+  onFrame(fn: (f: LiveFrame) => void): void {
+    this.frameTap = fn;
   }
 
   /** Pull the next frame out of the sim. Null once the game is over. */
@@ -613,6 +636,7 @@ export class GameView {
     }
 
     if (this.frame) {
+      this.frameTap?.(this.frame);
       applyFrame(this.refs, this.frame, dt, this.pitchElapsed);
       this.paintPlateCues();
       this.driveCamera(this.frame, dt);

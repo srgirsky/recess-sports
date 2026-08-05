@@ -396,12 +396,29 @@ async function auditScreen(page, vp, screen) {
   // HUD is interactive; every button in the game is on a screen.
   const floor = tapMinPx(r.rootFontPx);
   if (r.interactives.length === 0) fail(where, 'a screen with no tappable control');
-  for (const b of r.interactives) {
+
+  // ★ AND THE HUD'S OWN CONTROLS, ON THIS ROUTE. The mute lives in `#hud` so it
+  // survives every screen, which means auditing `#screens` alone never measures
+  // it -- and `/v2/?play=1`, where the in-game states run, does not mount the app
+  // shell at all. Between the two, the only persistent button in the game was
+  // checked by nothing. It is also the first `.interactive` element the HUD has
+  // ever had, so this is where that rule stops being vacuous.
+  const hud = await page.evaluate(COLLECT('hud'));
+  const controls = [...r.interactives, ...(hud.error ? [] : hud.interactives)];
+  if (!hud.error) {
+    if (hud.interactives.length === 0) fail(where, 'the HUD has no mute control');
+    for (const b of hud.interactives) {
+      if (!insideFrame(asBox(b), r.frame.w, r.frame.h, -0.5)) {
+        fail(where, `HUD control "${b.label}" is off-frame at ${Math.round(b.x)},${Math.round(b.y)}`);
+      }
+    }
+  }
+  for (const b of controls) {
     if (b.w + 0.5 < floor || b.h + 0.5 < floor) {
       fail(where, `tap target "${b.label}" is ${Math.round(b.w)}x${Math.round(b.h)}, floor is ${Math.round(floor)}`);
     }
   }
-  return r.leaves.length;
+  return r.leaves.length + (hud.error ? 0 : hud.interactives.length);
 }
 
 async function main() {
