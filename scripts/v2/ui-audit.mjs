@@ -343,11 +343,35 @@ const SCREENS = [
   {
     name: 'draft',
     reach: `(async () => {
-      document.querySelector('.screen--title .btn').click();
+      document.querySelector('.screen--title .btn')?.click();
       await new Promise((r) => setTimeout(r, 300));
       return document.querySelectorAll('.kid').length === 30 ? 'ok' : 'no draft board';
     })()`,
     mustSee: '.screen--draft .kid',
+  },
+  {
+    name: 'team',
+    // Straight through a whole draft — nine taps and nine CPU beats. The team
+    // picker is the only screen you cannot reach without finishing one.
+    // ★ REACHES FROM WHEREVER IT IS. The screen states run in sequence on ONE
+    // page, so by the time this runs the draft state has already left the title
+    // behind and a blind click on the title button throws. Each reach must be
+    // written as "get to my screen from any screen", not "from the front door".
+    reach: `(async () => {
+      document.querySelector('.screen--title .btn')?.click();
+      await new Promise((r) => setTimeout(r, 300));
+      for (let i = 0; i < 9; i++) {
+        if (document.querySelector('.screen--team')) break;
+        const card = document.querySelector('.draft-board:not(.is-locked) .kid');
+        if (!card) { await new Promise((r) => setTimeout(r, 200)); i--; continue; }
+        card.click();
+        await new Promise((r) => setTimeout(r, 680));
+      }
+      document.querySelector('.screen--draft .btn--hero')?.click();
+      await new Promise((r) => setTimeout(r, 500));
+      return document.querySelector('.screen--team') ? 'ok' : 'never reached the team picker';
+    })()`,
+    mustSee: '.screen--team .swatch',
   },
   { name: 'result', reach: SHOW_RESULT, mustSee: '.screen--result .btn' },
 ];

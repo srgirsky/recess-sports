@@ -136,6 +136,11 @@ export class Sound {
     say(c.name, kidVoice(c), 'flush');
   }
 
+  /** "THE TEAL ROCKETS!" — said by the booth, at the top of the game. */
+  sayTeam(name: string): void {
+    say(`${name}!`, commentatorProfile('A'), 'flush');
+  }
+
   private fire(cues: Cue[]): void {
     const seen = new Map<Cue, number>();
     for (const cue of cues) {
