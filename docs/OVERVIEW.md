@@ -1635,6 +1635,17 @@ drop shadow, icon-first with one short word (🔥 FAST / 🐢 SLOW / 🌈 CURVE 
 🌀 TWISTY), a keyboard hint that hides on coarse pointers, and ±1.4° of
 rotation so the stack reads placed-by-hand.
 
+### PR 41 — each park owns its night
+
+The venue chips made night-at-the-sandlot a place a player can actually
+stand, so the venues stop sharing one night. `VenueLook` grows an optional
+`nightSky` pair — the city court's horizon carries the sodium wash of
+streets past the brownstones; the rural sandlot goes deeper and colder; the
+park keeps the default navy. One `applySky()` helper now owns every sky/fog
+change (boot, the sun/moon flip, the venue swap — which previously would
+have kept the old venue's night sky), because the fog-matches-horizon rule
+is only safe while there is exactly one place that enforces it.
+
 ### PR 40 — the venue chips
 
 BB2026 headlines eleven fields behind a binocular select; we had three full

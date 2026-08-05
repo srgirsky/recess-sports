@@ -47,7 +47,7 @@ import { OutlineRegistry } from '../render/materials/outline';
 import { VENUE_LOOKS, buildField, type FieldBuild } from '../render/Field';
 import { buildFence, type FenceBuild } from '../render/Fence';
 import { buildScenery, type SceneryBuild } from '../render/Scenery';
-import { NIGHT_HORIZON, NIGHT_TOP, SKY_HORIZON, buildSky } from '../render/Sky';
+import { NIGHT_HORIZON, NIGHT_TOP, SKY_HORIZON, SKY_TOP, buildSky } from '../render/Sky';
 import { createCharacter, proxyForced } from '../render/CharacterFactory';
 import { configureModelLoader } from '../render/modelLoader';
 import { AnimationDirector } from '../render/AnimationDirector';
@@ -272,11 +272,13 @@ export class GameView {
     this.camera = new PerspectiveCamera(RIGS.PITCH.fov, 1, 0.5, 900);
     this.lighting = new Lighting({ shadowMapSize: this.renderer.tier.shadowMapSize, night: this.night });
     this.scene.add(this.lighting.root);
-    this.sky = this.night ? buildSky(NIGHT_TOP, NIGHT_HORIZON) : buildSky();
+    const skyc = this.skyColours();
+    this.sky = buildSky(skyc.top, skyc.horizon);
     this.scene.add(this.sky);
     // Aerial haze is most of what sells DISTANCE in a flat-shaded scene —
-    // and it must match the horizon it thickens toward, day or night.
-    this.scene.fog = new Fog(this.night ? NIGHT_HORIZON : SKY_HORIZON, 260, 900);
+    // and it must match the horizon it thickens toward, day or night, and
+    // per venue (the city's night horizon is a sodium wash, not navy).
+    this.scene.fog = new Fog(skyc.horizon, 260, 900);
     window.addEventListener('resize', this.onResize);
     // ★ ON THE CANVAS, which already receives every non-HUD tap by
     // construction: `#hud` is `pointer-events: none` and nothing on the
@@ -1064,13 +1066,7 @@ export class GameView {
     if (night === this.night) return;
     this.night = night;
 
-    this.scene.remove(this.sky);
-    this.sky.geometry.dispose();
-    (this.sky.material as { dispose(): void }).dispose();
-    this.sky = night ? buildSky(NIGHT_TOP, NIGHT_HORIZON) : buildSky();
-    this.scene.add(this.sky);
-
-    (this.scene.fog as Fog).color.set(night ? NIGHT_HORIZON : SKY_HORIZON);
+    this.applySky();
 
     this.scene.remove(this.lighting.root);
     this.lighting.key.dispose();
@@ -1084,6 +1080,23 @@ export class GameView {
     this.scenery.dispose();
     this.scenery = buildScenery(geo, this.venue, { night });
     this.scene.add(this.scenery.root);
+  }
+
+  /** This venue's sky pair for the current time of day. */
+  private skyColours(): { top: number; horizon: number } {
+    if (!this.night) return { top: SKY_TOP, horizon: SKY_HORIZON };
+    return VENUE_LOOKS[this.venue].nightSky ?? { top: NIGHT_TOP, horizon: NIGHT_HORIZON };
+  }
+
+  /** Rebuild the sky and re-tint the fog from current (venue, night) state. */
+  private applySky(): void {
+    const { top, horizon } = this.skyColours();
+    this.scene.remove(this.sky);
+    this.sky.geometry.dispose();
+    (this.sky.material as { dispose(): void }).dispose();
+    this.sky = buildSky(top, horizon);
+    this.scene.add(this.sky);
+    (this.scene.fog as Fog).color.set(horizon);
   }
 
   /**
@@ -1111,6 +1124,8 @@ export class GameView {
     this.fence = buildFence(geo, look, this.outlines);
     this.scenery = buildScenery(geo, id, { night: this.night });
     this.scene.add(this.field.root, this.fence.root, this.scenery.root);
+    // A venue owns its night sky, so switching parks after dark re-tints it.
+    this.applySky();
   }
 
   /** Three staggered team-colour bursts over the outfield. */

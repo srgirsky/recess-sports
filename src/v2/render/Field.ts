@@ -62,6 +62,10 @@ export interface VenueLook {
   fence: number;
   fenceTrim: number;
   mowPattern: 'stripes' | 'checker' | 'tufts' | 'court';
+  /** This venue's night sky, when it differs from the default navy pair —
+   *  a city court glows sodium at the horizon; a rural lot goes darker and
+   *  colder. Fog follows whichever horizon is in force (Sky.ts's rule). */
+  nightSky?: { top: number; horizon: number };
 }
 
 export const VENUE_LOOKS: Record<string, VenueLook> = {
@@ -80,6 +84,9 @@ export const VENUE_LOOKS: Record<string, VenueLook> = {
     fence: 0x8a5a33,
     fenceTrim: 0x6d4426,
     mowPattern: 'tufts',
+    // Rural dark: no streetlights past the yard, so the sky goes deeper and
+    // the horizon colder than the park's default navy.
+    nightSky: { top: 0x0a1326, horizon: 0x22314e },
   },
   blacktop: {
     grass: 0x4a4f5a,
@@ -88,6 +95,9 @@ export const VENUE_LOOKS: Record<string, VenueLook> = {
     fence: 0x9aa4ad,
     fenceTrim: 0x7b8790,
     mowPattern: 'court',
+    // City night: the horizon carries the sodium wash of streets past the
+    // brownstones; the zenith stays deep.
+    nightSky: { top: 0x141625, horizon: 0x54465a },
   },
 };
 
