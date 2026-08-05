@@ -1577,6 +1577,17 @@ One palette lesson worth keeping: the toon ramp's shadow step eats ~40%, so a
 "slate" roof authored at its real-world value reads as BLACK from the plate.
 Scenery colours are authored bright on purpose.
 
+### PR 29a — the audit pays for its own boots
+
+The neighborhood made `audit:v2-layout` flake: the gate shrinks the 3D canvas
+to 2px because "a headless WebGL frame costs its pixel count" — but it applied
+that style only AFTER `page.goto` waited for `load`, so all 12 boots per run
+still rendered the full scene at full viewport in software GL. PR 28's extra
+triangles pushed that past the run budget on CI runners; two PRs flaked on
+`goto` timeouts with every completed scenario green. An `addInitScript` now
+installs the same style at document start, and the run came back at 4:49
+against ~8 minutes. The gate's assertions are untouched.
+
 ### PR 29 — the vivid sky
 
 Item 2 of the BB2026 gap list: their sky band is a saturated cyan-blue, ours

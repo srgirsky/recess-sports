@@ -454,6 +454,23 @@ async function main() {
       const page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
       const errors = [];
       page.on('pageerror', (e) => errors.push(String(e)));
+      // ★ The stage shrink must beat the FIRST frame, not follow it. Applied
+      // only after `goto` resolves, the boot renders the full 3D scene at the
+      // real viewport size in software GL — which is exactly the cost the
+      // shrink exists to delete, paid 12 times per run (2 gotos x 6
+      // viewports). The neighborhood scenery (PR 28) pushed those boots past
+      // the run budget on CI runners and this gate started flaking on
+      // `page.goto` timeouts with every scenario it DID run green. An init
+      // script installs the same style at document start, so the first frame
+      // is already 2px; the post-goto tag below stays as the belt to this
+      // brace (navigations inside a scenario would otherwise lose it).
+      await page.addInitScript(`new MutationObserver((_, obs) => {
+        if (!document.documentElement) return;
+        const s = document.createElement('style');
+        s.textContent = ${JSON.stringify(NO_MOTION)};
+        document.documentElement.appendChild(s);
+        obs.disconnect();
+      }).observe(document, { childList: true, subtree: true });`);
       await page.goto(GAME_URL, { waitUntil: 'load' });
       await page.addStyleTag({ content: NO_MOTION });
       // The renderer sizes its drawing buffer on resize, not on a CSS change,
