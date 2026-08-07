@@ -341,7 +341,7 @@ export const BASE_COVER: Record<1 | 2 | 3 | 4, PositionId> = {
 
 // --- The venues -------------------------------------------------------------
 
-export type VenueId = 'park' | 'sandlot' | 'blacktop';
+export type VenueId = 'park' | 'sandlot' | 'blacktop' | 'tin_can' | 'cement';
 
 export const VENUE_GEOMETRY: Record<VenueId, FieldGeometry> = {
   /** The classic park: symmetric, a real arc to centre. */
@@ -384,6 +384,33 @@ export const VENUE_GEOMETRY: Record<VenueId, FieldGeometry> = {
     wallRestitution: 0.62, // chain-link twangs it back
     rollFriction: 0.1, // asphalt
     bounceMult: 1.3,
+    obstacles: [],
+  },
+  /**
+   * Tin Can Alley: a tight brick canyon on worn asphalt. The high wall keeps
+   * liners in play and the short, slightly crooked footprint makes gap control
+   * matter more than raw carry. Blacktop remains the slickest/springiest park;
+   * this is rough service-lane asphalt, not the same surface with new scenery.
+   */
+  tin_can: {
+    fence: { lf: 158, lcf: 176, cf: 182, rcf: 174, rf: 156 },
+    fenceHeight: 16,
+    wallRestitution: 0.58,
+    rollFriction: 0.13,
+    bounceMult: 1.22,
+    obstacles: [],
+  },
+  /**
+   * Cement Gardens: a broad apartment parking court. Its low kerb and concrete
+   * play quicker than grass but slower than the purpose-built blacktop, while
+   * the deeper centre rewards line drives into the painted parking lanes.
+   */
+  cement: {
+    fence: { lf: 175, lcf: 190, cf: 196, rcf: 190, rf: 175 },
+    fenceHeight: 4,
+    wallRestitution: 0.48,
+    rollFriction: 0.15,
+    bounceMult: 1.15,
     obstacles: [],
   },
 };

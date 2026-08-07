@@ -2443,6 +2443,18 @@
       "liveSec": 7.78,
       "timeTo150Sec": 2.7,
       "wallReachPct": 50.0
+     },
+     "tin_can": {
+      "restFt": 122.2,
+      "liveSec": 7.7,
+      "timeTo150Sec": 2.7,
+      "wallReachPct": 31.7
+     },
+     "cement": {
+      "restFt": 155.2,
+      "liveSec": 7.0,
+      "timeTo150Sec": 2.67,
+      "wallReachPct": 20.0
      }
     },
     "n": 60,

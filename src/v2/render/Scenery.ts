@@ -48,7 +48,7 @@ import { makeToonMaterial } from './materials/toon';
 // --- The plan: pure, deterministic, testable --------------------------------
 
 export interface SceneryItem {
-  kind: 'house' | 'tree' | 'bush' | 'pole' | 'shed' | 'tower';
+  kind: 'house' | 'tree' | 'bush' | 'pole' | 'shed' | 'tower' | 'dumpster' | 'kiosk';
   /** Spray angle from home, degrees (negative = left field). */
   sprayDeg: number;
   /** Distance from home, ft — always beyond the fence at that spray. */
@@ -81,6 +81,8 @@ interface VenueScenery {
   ringColor: number;
   /** Blacktop swaps gable houses for flat-roofed brick blocks. */
   cityBlocks: boolean;
+  /** Extra silhouette/prop language that makes two city courts different. */
+  theme: 'suburb' | 'city' | 'alley' | 'gardens';
 }
 
 const VENUE_SCENERY: Record<VenueId, VenueScenery> = {
@@ -96,6 +98,7 @@ const VENUE_SCENERY: Record<VenueId, VenueScenery> = {
     foliagePalette: [0x4e9e4e, 0x3f8f46, 0x63ad52, 0x57a04b],
     ringColor: 0xc9a56a,
     cityBlocks: false,
+    theme: 'suburb',
   },
   sandlot: {
     houses: 5,
@@ -107,6 +110,7 @@ const VENUE_SCENERY: Record<VenueId, VenueScenery> = {
     foliagePalette: [0x5aa04b, 0x4a8f43, 0x6bad52, 0x3f7f3c],
     ringColor: 0xb08a52,
     cityBlocks: false,
+    theme: 'suburb',
   },
   blacktop: {
     houses: 8,
@@ -118,6 +122,31 @@ const VENUE_SCENERY: Record<VenueId, VenueScenery> = {
     foliagePalette: [0x4e9e4e, 0x57a04b],
     ringColor: 0xb0b8bd,
     cityBlocks: true,
+    theme: 'city',
+  },
+  tin_can: {
+    houses: 11,
+    trees: 1,
+    bushes: 0,
+    poles: 5,
+    housePalette: [0x9b503e, 0xb56349, 0x7e463a, 0xc27a56, 0x8b5450],
+    roofPalette: [0x50565c, 0x64696c, 0x454b52],
+    foliagePalette: [0x4f7848],
+    ringColor: 0x6d7275,
+    cityBlocks: true,
+    theme: 'alley',
+  },
+  cement: {
+    houses: 10,
+    trees: 4,
+    bushes: 8,
+    poles: 5,
+    housePalette: [0xb67858, 0xd0a079, 0x9f6754, 0xc38b6a, 0xaa7462],
+    roofPalette: [0x77736e, 0x8d8175, 0x686b70],
+    foliagePalette: [0x538c4f, 0x629a58, 0x477f48],
+    ringColor: 0xc3a05e,
+    cityBlocks: true,
+    theme: 'gardens',
   },
 };
 
@@ -218,6 +247,36 @@ export function sceneryPlan(geo: FieldGeometry, venue: VenueId): SceneryItem[] {
     seed: hash01(7, 71),
   });
 
+  // Tin Can Alley earns its name at ground level: recycling dumpsters hug the
+  // brick wall instead of being implied by a grey palette.
+  if (cfg.theme === 'alley') {
+    for (const [i, spray] of [-28, 3, 31].entries()) {
+      items.push({
+        kind: 'dumpster',
+        sprayDeg: spray,
+        distFt: fenceDistAt(geo, spray) + CLEARANCE_FT + 4,
+        radiusFt: 4,
+        rotY: Math.atan2(-pointAt(spray, 1).x, -pointAt(spray, 1).z),
+        seed: hash01(i, 149),
+      });
+    }
+  }
+
+  // Cement Gardens is a commandeered shopping-court car park. The espresso
+  // kiosk is the prop that survives every camera and separates it from the
+  // brick alley before a player reads the chip label.
+  if (cfg.theme === 'gardens') {
+    const spray = -30;
+    items.push({
+      kind: 'kiosk',
+      sprayDeg: spray,
+      distFt: fenceDistAt(geo, spray) + CLEARANCE_FT + 7,
+      radiusFt: 7,
+      rotY: Math.atan2(-pointAt(spray, 1).x, -pointAt(spray, 1).z),
+      seed: hash01(3, 151),
+    });
+  }
+
   // Clamp everything onto the turf plane, preserving the fence clearance.
   return items.map((it) => {
     let p = pointAt(it.sprayDeg, it.distFt);
@@ -305,6 +364,8 @@ export function buildScenery(geo: FieldGeometry, venue: VenueId, opts: SceneryOp
     else if (it.kind === 'bush') addBush(parts, cfg, p.x, p.z, it.seed);
     else if (it.kind === 'shed') addShed(parts, p.x, p.z, it.rotY);
     else if (it.kind === 'tower') addLightTower(parts, p.x, p.z, it.rotY, opts.night === true);
+    else if (it.kind === 'dumpster') addDumpster(parts, p.x, p.z, it.rotY, it.seed);
+    else if (it.kind === 'kiosk') addKiosk(parts, p.x, p.z, it.rotY, opts.night === true);
   }
   addPrivacyRing(parts, geo, cfg);
   addPoleRun(
@@ -378,6 +439,24 @@ function addHouse(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: numb
       )
     );
   }
+
+  if (cfg.theme === 'alley') {
+    // Fire-escape platforms and ladders, proud of the home-facing brick wall.
+    // Blocky silhouettes are intentional at 180ft and stay in the merged draw.
+    for (const y of [8, 14, 20].filter((v) => v < h - 1)) {
+      parts.push(placeLocal(paint(new BoxGeometry(w * 0.56, 0.45, 3), 0x4d555b), x, z, rotY, 0, y, face + 1.2));
+      for (const side of [-1, 1]) {
+        parts.push(placeLocal(paint(new BoxGeometry(0.35, 3.2, 0.35), 0x42494f), x, z, rotY, side * w * 0.26, y + 1.6, face + 2.4));
+      }
+    }
+  } else if (cfg.theme === 'gardens') {
+    // Shopfront awning and window boxes: warmer, lower street furniture than
+    // the alley's vertical steel, so both city venues read at silhouette range.
+    parts.push(placeLocal(paint(new BoxGeometry(w * 0.72, 0.65, 3.6), 0xe7c24b), x, z, rotY, 0, 7.2, face + 1.6));
+    for (const side of [-1, 1]) {
+      parts.push(placeLocal(paint(new BoxGeometry(4.4, 0.9, 1.2), 0x5f9b55), x, z, rotY, side * w * 0.28, h * 0.39, face + 0.7));
+    }
+  }
 }
 
 // A tree: trunk + 3 foliage balls. Low-poly spheres; the toon ramp does the rest.
@@ -407,6 +486,42 @@ function addShed(parts: BufferGeometry[], x: number, z: number, rotY: number): v
   roof.applyMatrix4(new Matrix4().makeRotationZ(Math.PI / 4));
   roof.applyMatrix4(new Matrix4().makeScale(1, 0.5, 1));
   parts.push(place(paint(roof, 0x9a6b47), x, 9, z, rotY));
+}
+
+/** Recycling dumpster: body, sloped lid, wheels, and a bright side badge. */
+function addDumpster(
+  parts: BufferGeometry[],
+  x: number,
+  z: number,
+  rotY: number,
+  seed: number
+): void {
+  const body = seed > 0.5 ? 0x2f7b67 : 0x397760;
+  parts.push(place(paint(new BoxGeometry(7.5, 4.5, 4.8), body), x, 2.25, z, rotY));
+  const lid = new BoxGeometry(8, 0.55, 5.2);
+  lid.applyMatrix4(new Matrix4().makeRotationX(-0.12));
+  parts.push(place(paint(lid, 0x39464a), x, 4.8, z, rotY));
+  for (const side of [-1, 1]) {
+    parts.push(placeLocal(paint(new CylinderGeometry(0.55, 0.55, 0.7, 8), 0x30343a), x, z, rotY, side * 2.6, 0.65, 2.25));
+  }
+  parts.push(placeLocal(paint(new BoxGeometry(3.1, 1.5, 0.2), 0xe8e0c4), x, z, rotY, 0, 2.7, 2.5));
+}
+
+/** Cement Gardens' espresso kiosk: striped canopy, serving window, roof sign. */
+function addKiosk(
+  parts: BufferGeometry[],
+  x: number,
+  z: number,
+  rotY: number,
+  night: boolean
+): void {
+  parts.push(place(paint(new BoxGeometry(12, 9, 9), 0xefd7aa), x, 4.5, z, rotY));
+  parts.push(placeLocal(paint(new BoxGeometry(7.5, 4.2, 0.35), night ? 0xffdf8a : 0x82b8c5), x, z, rotY, 0, 5.1, 4.65));
+  parts.push(placeLocal(paint(new BoxGeometry(13.5, 0.7, 3.5), 0xd9584c), x, z, rotY, 0, 8.7, 5.5));
+  for (const side of [-1, 1]) {
+    parts.push(placeLocal(paint(new BoxGeometry(2.2, 0.72, 3.6), 0xf5e2b7), x, z, rotY, side * 4.2, 8.75, 5.55));
+  }
+  parts.push(placeLocal(paint(new BoxGeometry(8.5, 2.4, 0.6), 0x4d775f), x, z, rotY, 0, 11.2, 0));
 }
 
 // A ballpark light tower: lattice-suggesting pole, crossarm, and a 2x3 lamp

@@ -34,7 +34,7 @@ import type { AnimName } from '../render/clips';
 import { RIGS, damp, type CameraPreset } from '../render/cameraCues';
 
 const PRESET_ORDER: CameraPreset[] = ['PLAY', 'FIELD', 'PITCH', 'DEEP', 'PITCH_HERO'];
-const VENUE_ORDER: VenueId[] = ['park', 'sandlot', 'blacktop'];
+const VENUE_ORDER = Object.keys(VENUE_GEOMETRY) as VenueId[];
 
 /** Away team colour index vs home team colour index (from art/palette.ts). */
 const AWAY_UNIFORM = 1; // blue

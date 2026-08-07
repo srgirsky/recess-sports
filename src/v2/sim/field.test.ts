@@ -116,6 +116,16 @@ describe('the fence', () => {
     }
   });
 
+  it('makes the new city fields physical places, not palette aliases', () => {
+    const tin = VENUE_GEOMETRY.tin_can;
+    const cement = VENUE_GEOMETRY.cement;
+    expect(tin.fenceHeight).toBeGreaterThan(VENUE_GEOMETRY.blacktop.fenceHeight);
+    expect(tin.fence.cf).toBeLessThan(cement.fence.cf);
+    expect(cement.rollFriction).toBeLessThan(VENUE_GEOMETRY.park.rollFriction);
+    expect(cement.rollFriction).toBeGreaterThan(VENUE_GEOMETRY.blacktop.rollFriction);
+    expect(cement.bounceMult).toBeLessThan(VENUE_GEOMETRY.blacktop.bounceMult);
+  });
+
   it('rejects a fence that spikes at the foul pole', () => {
     // The sandlot's first draft. Deepest-at-the-pole is concave at
     // left-centre; keep the counterexample so nobody re-introduces it while

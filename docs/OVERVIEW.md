@@ -1647,6 +1647,24 @@ engineering-side line in `docs/research/backyard-2026-reference.md` is
 struck; what parity still awaits is the commissioned models, whose
 validation pipeline has been ready since before this push began.
 
+### 2026 parity pass — two city parks, not two palettes
+
+The BB2026 video only exposes two of its eleven fields clearly, so those are the
+next two Recess venues: **Tin Can Alley** and **Cement Gardens**. Both are hard
+city surfaces, but sharing `blacktop`'s numbers and swapping colours would erase
+the reason to pick one. Tin Can is the tight high-wall game—rough service-lane
+asphalt, a 16ft brick canyon, fire escapes and three recycling dumpsters.
+Cement Gardens is the broader apartment parking court—quicker-than-grass
+concrete, a low painted kerb, shop awnings, flower boxes and an espresso kiosk.
+The original blacktop remains the slickest and springiest surface in the sim.
+
+They use the existing one-source venue path end to end: `VenueId` and
+`VENUE_GEOMETRY` own physical play, `VENUE_LOOKS` owns ground/fence/night colour,
+`sceneryPlan` owns deterministic set dressing, and `VENUE_OPTIONS` is tested to
+name every playable geometry exactly once. The neighborhood still merges to one
+mesh plus clouds. The picker now exposes five parks; six of BB2026's eleven-field
+breadth remain intentionally open until they have equally distinct place stories.
+
 ### PR 41 — each park owns its night
 
 The venue chips made night-at-the-sandlot a place a player can actually

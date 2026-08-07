@@ -162,9 +162,13 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
    leaves vote semantics untouched. BB still owns the larger diegetic beat—a
    full-screen schoolyard bench and physical walk-off rather than our live 3D
    window beside a searchable board.
-4. **Venue breadth.** Recess has three mechanically distinct venues with day and
-   night; BB ships eleven. Add places only when each brings a unique ground,
-   fence, skyline and prop story—not palette variants.
+4. **Venue breadth.** Recess now has five mechanically distinct venues with day
+   and night; BB ships eleven. The second parity pass adds the two places shown
+   in the reference: **Tin Can Alley** is a short, high-walled brick canyon with
+   rough asphalt, fire escapes and recycling dumpsters; **Cement Gardens** is a
+   broader concrete parking court with low kerbs, brownstone shopfronts, window
+   boxes and an espresso kiosk. Six fields remain. Add them only when each brings
+   a unique ground, fence, skyline and prop story—not palette variants.
 5. **Diegetic front-end and retention shell.** Treehouse stations, strategy,
    custom player, schedule/season, records, card collection and the extra modes
    remain absent from v2. Some mature versions still live in `/classic/`; port

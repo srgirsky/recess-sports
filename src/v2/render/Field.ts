@@ -43,6 +43,7 @@ import {
   SECOND,
   THIRD,
   type FieldGeometry,
+  type VenueId,
   type Vec2,
   fenceDistAt,
   pointAt,
@@ -68,7 +69,7 @@ export interface VenueLook {
   nightSky?: { top: number; horizon: number };
 }
 
-export const VENUE_LOOKS: Record<string, VenueLook> = {
+export const VENUE_LOOKS: Record<VenueId, VenueLook> = {
   park: {
     grass: 0x5bbf5a,
     grassDark: 0x4aa84a,
@@ -98,6 +99,26 @@ export const VENUE_LOOKS: Record<string, VenueLook> = {
     // City night: the horizon carries the sodium wash of streets past the
     // brownstones; the zenith stays deep.
     nightSky: { top: 0x141625, horizon: 0x54465a },
+  },
+  tin_can: {
+    grass: 0x4b4544,
+    grassDark: 0x3e3939,
+    dirt: 0x625957,
+    fence: 0x934f3d,
+    fenceTrim: 0x69747b,
+    mowPattern: 'court',
+    // Brick canyon: warm street glow caught between tall buildings.
+    nightSky: { top: 0x171724, horizon: 0x624852 },
+  },
+  cement: {
+    grass: 0x85827a,
+    grassDark: 0x74716b,
+    dirt: 0x9a9387,
+    fence: 0xc6a15e,
+    fenceTrim: 0xf2ca3f,
+    mowPattern: 'court',
+    // Apartment windows and storefronts warm the low city sky.
+    nightSky: { top: 0x171a29, horizon: 0x66515a },
   },
 };
 

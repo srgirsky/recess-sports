@@ -395,6 +395,15 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
     'blacktop:a': '2-0 i6 pa47 h11 k10 r2 s3',
     'blacktop:b': '1-2 i6 pa47 h15 k13 r3 s7',
     'blacktop:c': '5-8 i6 pa61 h28 k13 r13 s3',
+    // Added with the venues: there is no pre-generator result for content that
+    // did not exist then, so these are their birth fingerprints and ratchet
+    // from here exactly as the first three do.
+    'tin_can:a': '2-2 i7 pa64 h28 k17 r4 s12',
+    'tin_can:b': '2-1 i6 pa53 h21 k16 r3 s12',
+    'tin_can:c': '1-11 i6 pa61 h28 k13 r12 s9',
+    'cement:a': '2-1 i6 pa50 h14 k15 r3 s4',
+    'cement:b': '1-2 i7 pa59 h21 k15 r3 s12',
+    'cement:c': '4-3 i6 pa59 h28 k16 r7 s8',
   };
 
   it('★ still produces what it produced before the generator refactor', () => {
@@ -429,6 +438,10 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
    * — dt 1/60 to 1/50 — which is what verified them.
    */
   const CHECKSUM_30 = 1745365359;
+  // Keep the original thirty-game ratchet on the venues it was born with.
+  // New venues get explicit birth fingerprints above; adding content must not
+  // silently rewrite the baseline that catches drift in the existing game.
+  const CHECKSUM_VENUES: VenueId[] = ['park', 'sandlot', 'blacktop'];
 
   // ★ ASYNC, AND IT YIELDS BETWEEN GAMES — a CI fix, not a style choice.
   // Thirty games is ~15s of UNBROKEN synchronous work, which starves the vitest
@@ -448,7 +461,7 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
           away: { name: 'A', ids: Array.from({ length: 9 }, (_, j) => at(j)) },
           home: { name: 'B', ids: Array.from({ length: 9 }, (_, j) => at(j + 9)) },
           lookup: getCharacter,
-          geo: VENUE_GEOMETRY[VENUES[i % VENUES.length]],
+          geo: VENUE_GEOMETRY[CHECKSUM_VENUES[i % CHECKSUM_VENUES.length]],
         },
         makeRng(`golden${i}`)
       );

@@ -63,6 +63,15 @@ describe('sceneryPlan', () => {
       expect(sceneryPlan(geo, venue)).toEqual(sceneryPlan(geo, venue));
     }
   });
+
+  it('gives the two reference city parks their own prop story', () => {
+    const tin = sceneryPlan(VENUE_GEOMETRY.tin_can, 'tin_can');
+    const cement = sceneryPlan(VENUE_GEOMETRY.cement, 'cement');
+    expect(tin.filter((p) => p.kind === 'dumpster')).toHaveLength(3);
+    expect(tin.some((p) => p.kind === 'kiosk')).toBe(false);
+    expect(cement.filter((p) => p.kind === 'kiosk')).toHaveLength(1);
+    expect(cement.some((p) => p.kind === 'dumpster')).toBe(false);
+  });
 });
 
 describe('buildScenery', () => {
