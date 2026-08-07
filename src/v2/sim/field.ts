@@ -341,7 +341,18 @@ export const BASE_COVER: Record<1 | 2 | 3 | 4, PositionId> = {
 
 // --- The venues -------------------------------------------------------------
 
-export type VenueId = 'park' | 'sandlot' | 'blacktop' | 'tin_can' | 'cement';
+export type VenueId =
+  | 'park'
+  | 'sandlot'
+  | 'blacktop'
+  | 'tin_can'
+  | 'cement'
+  | 'steele'
+  | 'playground'
+  | 'eckman'
+  | 'dirt_yards'
+  | 'big_city'
+  | 'dome';
 
 export const VENUE_GEOMETRY: Record<VenueId, FieldGeometry> = {
   /** The classic park: symmetric, a real arc to centre. */
@@ -411,6 +422,60 @@ export const VENUE_GEOMETRY: Record<VenueId, FieldGeometry> = {
     wallRestitution: 0.48,
     rollFriction: 0.15,
     bounceMult: 1.15,
+    obstacles: [],
+  },
+  /** Steele Stadium: the compact backyard park, shallow throughout centre. */
+  steele: {
+    fence: { lf: 180, lcf: 188, cf: 194, rcf: 188, rf: 180 },
+    fenceHeight: 6,
+    wallRestitution: 0.52,
+    rollFriction: 0.25,
+    bounceMult: 0.92,
+    obstacles: [],
+  },
+  /** Playground Commons: short wooden left, the long school fence in right. */
+  playground: {
+    fence: { lf: 152, lcf: 176, cf: 198, rcf: 210, rf: 216 },
+    fenceHeight: 10,
+    wallRestitution: 0.5,
+    rollFriction: 0.24,
+    bounceMult: 0.98,
+    obstacles: [],
+  },
+  /** Eckman Acres: the biggest, softest grass in the neighborhood. */
+  eckman: {
+    fence: { lf: 210, lcf: 214, cf: 216, rcf: 214, rf: 210 },
+    fenceHeight: 7,
+    wallRestitution: 0.45,
+    rollFriction: 0.32,
+    bounceMult: 0.82,
+    obstacles: [],
+  },
+  /** Dirt Yards: a cheap homer down the short left line, acres everywhere else. */
+  dirt_yards: {
+    fence: { lf: 154, lcf: 194, cf: 216, rcf: 212, rf: 204 },
+    fenceHeight: 3,
+    wallRestitution: 0.4,
+    rollFriction: 0.3,
+    bounceMult: 0.72,
+    obstacles: [],
+  },
+  /** Big City Stadium: regulation-like dimensions and a lively maintained lawn. */
+  big_city: {
+    fence: { lf: 204, lcf: 212, cf: 216, rcf: 212, rf: 204 },
+    fenceHeight: 8,
+    wallRestitution: 0.55,
+    rollFriction: 0.22,
+    bounceMult: 1,
+    obstacles: [],
+  },
+  /** Super Colossal Dome: high padded walls over quick artificial turf. */
+  dome: {
+    fence: { lf: 208, lcf: 214, cf: 216, rcf: 214, rf: 208 },
+    fenceHeight: 12,
+    wallRestitution: 0.6,
+    rollFriction: 0.12,
+    bounceMult: 1.18,
     obstacles: [],
   },
 };

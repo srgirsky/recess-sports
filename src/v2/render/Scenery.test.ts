@@ -72,15 +72,33 @@ describe('sceneryPlan', () => {
     expect(cement.filter((p) => p.kind === 'kiosk')).toHaveLength(1);
     expect(cement.some((p) => p.kind === 'dumpster')).toBe(false);
   });
+
+  it('gives every added classic park one unmistakable silhouette prop', () => {
+    const expected: Array<[VenueId, string, number]> = [
+      ['steele', 'pool', 1],
+      ['playground', 'playset', 1],
+      ['eckman', 'barn', 1],
+      ['dirt_yards', 'tires', 3],
+      ['big_city', 'bleacher', 2],
+      ['dome', 'dome_portal', 1],
+    ];
+    for (const [venue, kind, count] of expected) {
+      const own = sceneryPlan(VENUE_GEOMETRY[venue], venue);
+      expect(own.filter((p) => p.kind === kind), venue).toHaveLength(count);
+      for (const other of VENUES.filter((v) => v !== venue)) {
+        expect(sceneryPlan(VENUE_GEOMETRY[other], other).some((p) => p.kind === kind), `${kind} leaked to ${other}`).toBe(false);
+      }
+    }
+  });
 });
 
 describe('buildScenery', () => {
-  it('merges the whole neighborhood into two draw calls, inside a triangle budget', () => {
+  it('merges the whole neighborhood into at most two draw calls, inside a triangle budget', () => {
     for (const venue of VENUES) {
       const build = buildScenery(VENUE_GEOMETRY[venue], venue);
-      // One merged neighborhood mesh + one cloud mesh. A third child means a
-      // prop escaped the merge and is spending a draw call on its own.
-      expect(build.root.children.length, venue).toBe(2);
+      // One merged neighborhood mesh + one cloud mesh. The indoor dome has no
+      // cloud draw at all; a third child means a prop escaped the merge.
+      expect(build.root.children.length, venue).toBe(venue === 'dome' ? 1 : 2);
       let tris = 0;
       build.root.traverse((obj) => {
         const geom = (obj as { geometry?: { index?: { count: number } | null } }).geometry;

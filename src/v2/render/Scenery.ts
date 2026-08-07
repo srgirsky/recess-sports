@@ -48,7 +48,21 @@ import { makeToonMaterial } from './materials/toon';
 // --- The plan: pure, deterministic, testable --------------------------------
 
 export interface SceneryItem {
-  kind: 'house' | 'tree' | 'bush' | 'pole' | 'shed' | 'tower' | 'dumpster' | 'kiosk';
+  kind:
+    | 'house'
+    | 'tree'
+    | 'bush'
+    | 'pole'
+    | 'shed'
+    | 'tower'
+    | 'dumpster'
+    | 'kiosk'
+    | 'pool'
+    | 'playset'
+    | 'barn'
+    | 'tires'
+    | 'bleacher'
+    | 'dome_portal';
   /** Spray angle from home, degrees (negative = left field). */
   sprayDeg: number;
   /** Distance from home, ft — always beyond the fence at that spray. */
@@ -82,7 +96,17 @@ interface VenueScenery {
   /** Blacktop swaps gable houses for flat-roofed brick blocks. */
   cityBlocks: boolean;
   /** Extra silhouette/prop language that makes two city courts different. */
-  theme: 'suburb' | 'city' | 'alley' | 'gardens';
+  theme:
+    | 'suburb'
+    | 'city'
+    | 'alley'
+    | 'gardens'
+    | 'backyard'
+    | 'playground'
+    | 'acres'
+    | 'dirt'
+    | 'stadium'
+    | 'dome';
 }
 
 const VENUE_SCENERY: Record<VenueId, VenueScenery> = {
@@ -147,6 +171,78 @@ const VENUE_SCENERY: Record<VenueId, VenueScenery> = {
     ringColor: 0xc3a05e,
     cityBlocks: true,
     theme: 'gardens',
+  },
+  steele: {
+    houses: 8,
+    trees: 10,
+    bushes: 12,
+    poles: 4,
+    housePalette: [0xe6d6aa, 0x91b7d4, 0xca735d, 0xa9c690],
+    roofPalette: [0xa67555, 0x8799a8, 0xb56758],
+    foliagePalette: [0x4c9947, 0x61ab52, 0x3f8741],
+    ringColor: 0xb98a56,
+    cityBlocks: false,
+    theme: 'backyard',
+  },
+  playground: {
+    houses: 3,
+    trees: 8,
+    bushes: 6,
+    poles: 5,
+    housePalette: [0xc96c58, 0xe6cf9f, 0x779cc2],
+    roofPalette: [0x768696, 0xa16b55],
+    foliagePalette: [0x4b984c, 0x61aa56],
+    ringColor: 0x547f9e,
+    cityBlocks: false,
+    theme: 'playground',
+  },
+  eckman: {
+    houses: 3,
+    trees: 18,
+    bushes: 12,
+    poles: 3,
+    housePalette: [0xe0cf9f, 0xc58d5d, 0xb6c59a],
+    roofPalette: [0x8c6d50, 0x9e7b58],
+    foliagePalette: [0x628f42, 0x769f48, 0x4d7f3f],
+    ringColor: 0x9a7a4d,
+    cityBlocks: false,
+    theme: 'acres',
+  },
+  dirt_yards: {
+    houses: 4,
+    trees: 4,
+    bushes: 2,
+    poles: 4,
+    housePalette: [0xa96848, 0xc28a5e, 0x8c5c48],
+    roofPalette: [0x765747, 0x8a6450],
+    foliagePalette: [0x6f8540, 0x5c793b],
+    ringColor: 0x8b5736,
+    cityBlocks: false,
+    theme: 'dirt',
+  },
+  big_city: {
+    houses: 12,
+    trees: 3,
+    bushes: 4,
+    poles: 6,
+    housePalette: [0x9a796d, 0xb2907a, 0x7e8796, 0xa76f63],
+    roofPalette: [0x626b76, 0x77716b],
+    foliagePalette: [0x468b4f, 0x57995b],
+    ringColor: 0x425c7c,
+    cityBlocks: true,
+    theme: 'stadium',
+  },
+  dome: {
+    houses: 0,
+    trees: 0,
+    bushes: 0,
+    poles: 0,
+    housePalette: [0x777777],
+    roofPalette: [0x777777],
+    foliagePalette: [0x447755],
+    ringColor: 0x625c96,
+    cityBlocks: false,
+    theme: 'dome',
   },
 };
 
@@ -236,16 +332,19 @@ export function sceneryPlan(geo: FieldGeometry, venue: VenueId): SceneryItem[] {
     });
   }
 
-  // One garden shed on the left side — the BB staple.
-  const shedSpray = -38;
-  items.push({
-    kind: 'shed',
-    sprayDeg: shedSpray,
-    distFt: fenceDistAt(geo, shedSpray) + RING_OFFSET_FT + 14,
-    radiusFt: 9,
-    rotY: Math.atan2(-pointAt(shedSpray, 1).x, -pointAt(shedSpray, 1).z) + 0.2,
-    seed: hash01(7, 71),
-  });
+  // One garden shed on neighborhood fields — stadiums, the farm and the dome
+  // have a larger signature structure instead.
+  if (!['acres', 'stadium', 'dome'].includes(cfg.theme)) {
+    const shedSpray = -38;
+    items.push({
+      kind: 'shed',
+      sprayDeg: shedSpray,
+      distFt: fenceDistAt(geo, shedSpray) + RING_OFFSET_FT + 14,
+      radiusFt: 9,
+      rotY: Math.atan2(-pointAt(shedSpray, 1).x, -pointAt(shedSpray, 1).z) + 0.2,
+      seed: hash01(7, 71),
+    });
+  }
 
   // Tin Can Alley earns its name at ground level: recycling dumpsters hug the
   // brick wall instead of being implied by a grey palette.
@@ -276,6 +375,33 @@ export function sceneryPlan(geo: FieldGeometry, venue: VenueId): SceneryItem[] {
       seed: hash01(3, 151),
     });
   }
+
+  const signature = (
+    kind: SceneryItem['kind'],
+    sprayDeg: number,
+    radiusFt: number,
+    extra = 0
+  ) => items.push({
+    kind,
+    sprayDeg,
+    distFt: fenceDistAt(geo, sprayDeg) + CLEARANCE_FT + radiusFt + extra,
+    radiusFt,
+    rotY: Math.atan2(-pointAt(sprayDeg, 1).x, -pointAt(sprayDeg, 1).z),
+    seed: hash01(radiusFt, sprayDeg + 173),
+  });
+  if (cfg.theme === 'backyard') signature('pool', -27, 10, 2);
+  if (cfg.theme === 'playground') signature('playset', 28, 9, 2);
+  if (cfg.theme === 'acres') signature('barn', -24, 14, 4);
+  if (cfg.theme === 'dirt') {
+    signature('tires', -24, 4);
+    signature('tires', 4, 4);
+    signature('tires', 29, 4);
+  }
+  if (cfg.theme === 'stadium') {
+    signature('bleacher', -25, 13, 2);
+    signature('bleacher', 25, 13, 2);
+  }
+  if (cfg.theme === 'dome') signature('dome_portal', 0, 18, 2);
 
   // Clamp everything onto the turf plane, preserving the fence clearance.
   return items.map((it) => {
@@ -366,6 +492,12 @@ export function buildScenery(geo: FieldGeometry, venue: VenueId, opts: SceneryOp
     else if (it.kind === 'tower') addLightTower(parts, p.x, p.z, it.rotY, opts.night === true);
     else if (it.kind === 'dumpster') addDumpster(parts, p.x, p.z, it.rotY, it.seed);
     else if (it.kind === 'kiosk') addKiosk(parts, p.x, p.z, it.rotY, opts.night === true);
+    else if (it.kind === 'pool') addPool(parts, p.x, p.z, it.rotY);
+    else if (it.kind === 'playset') addPlayset(parts, p.x, p.z, it.rotY);
+    else if (it.kind === 'barn') addBarn(parts, p.x, p.z, it.rotY);
+    else if (it.kind === 'tires') addTires(parts, p.x, p.z, it.rotY);
+    else if (it.kind === 'bleacher') addBleacher(parts, p.x, p.z, it.rotY);
+    else if (it.kind === 'dome_portal') addDomePortal(parts, p.x, p.z, it.rotY);
   }
   addPrivacyRing(parts, geo, cfg);
   addPoleRun(
@@ -386,14 +518,15 @@ export function buildScenery(geo: FieldGeometry, venue: VenueId, opts: SceneryOp
   mesh.receiveShadow = false;
   root.add(mesh);
 
-  const clouds = buildClouds(opts.night === true);
-  root.add(clouds);
+  // The dome's ceiling light must never have outdoor clouds drifting through it.
+  const clouds = cfg.theme === 'dome' ? null : buildClouds(opts.night === true);
+  if (clouds) root.add(clouds);
 
   return {
     root,
     dispose() {
       merged.dispose();
-      clouds.geometry.dispose();
+      clouds?.geometry.dispose();
     },
   };
 }
@@ -522,6 +655,77 @@ function addKiosk(
     parts.push(placeLocal(paint(new BoxGeometry(2.2, 0.72, 3.6), 0xf5e2b7), x, z, rotY, side * 4.2, 8.75, 5.55));
   }
   parts.push(placeLocal(paint(new BoxGeometry(8.5, 2.4, 0.6), 0x4d775f), x, z, rotY, 0, 11.2, 0));
+}
+
+/** Steele's unmistakable backyard pool and diving board. */
+function addPool(parts: BufferGeometry[], x: number, z: number, rotY: number): void {
+  parts.push(place(paint(new CylinderGeometry(10, 10, 0.35, 24), 0x58cce0), x, 0.18, z, rotY));
+  for (const side of [-1, 1]) {
+    parts.push(placeLocal(paint(new BoxGeometry(1.2, 0.55, 19), 0xe9e1cd), x, z, rotY, side * 9.7, 0.35, 0));
+    parts.push(placeLocal(paint(new BoxGeometry(19, 0.55, 1.2), 0xe9e1cd), x, z, rotY, 0, 0.35, side * 9.7));
+  }
+  parts.push(placeLocal(paint(new BoxGeometry(2.2, 0.35, 7), 0xf2f0e7), x, z, rotY, 0, 1.2, -7));
+}
+
+/** Playground Commons' slide, deck and swing frame. */
+function addPlayset(parts: BufferGeometry[], x: number, z: number, rotY: number): void {
+  for (const side of [-1, 1]) {
+    parts.push(placeLocal(paint(new BoxGeometry(0.7, 10, 0.7), 0x3d74a5), x, z, rotY, side * 3.5, 5, 0));
+  }
+  parts.push(placeLocal(paint(new BoxGeometry(8, 0.7, 6), 0xe5b43f), x, z, rotY, 0, 6.2, 0));
+  const slide = new BoxGeometry(3.2, 0.55, 10);
+  slide.applyMatrix4(new Matrix4().makeRotationX(-0.55));
+  parts.push(placeLocal(paint(slide, 0xd9504d), x, z, rotY, 0, 3.7, 6));
+  parts.push(placeLocal(paint(new BoxGeometry(12, 0.65, 0.65), 0x3d74a5), x, z, rotY, 0, 10, -4));
+  for (const side of [-1, 1]) {
+    parts.push(placeLocal(paint(new BoxGeometry(0.28, 6, 0.28), 0xd9d2bc), x, z, rotY, side * 3.2, 6.8, -4));
+  }
+}
+
+/** Eckman Acres' broad red barn. */
+function addBarn(parts: BufferGeometry[], x: number, z: number, rotY: number): void {
+  parts.push(place(paint(new BoxGeometry(24, 12, 18), 0xb6463e), x, 6, z, rotY));
+  parts.push(placeLocal(paint(new BoxGeometry(7, 8, 0.5), 0xf0dfbf), x, z, rotY, 0, 4, 9.25));
+  for (const side of [-1, 1]) {
+    const roof = new BoxGeometry(15, 0.8, 20);
+    roof.applyMatrix4(new Matrix4().makeRotationZ(side * 0.48));
+    parts.push(placeLocal(paint(roof, 0x6f574b), x, z, rotY, side * 5.6, 13.7, 0));
+  }
+}
+
+/** Dirt Yards' stacks of discarded tires. */
+function addTires(parts: BufferGeometry[], x: number, z: number, rotY: number): void {
+  for (let i = 0; i < 3; i++) {
+    parts.push(placeLocal(paint(new CylinderGeometry(2.2, 2.2, 0.9, 14), 0x2d3032), x, z, rotY, 0, 0.5 + i * 0.85, 0));
+  }
+  parts.push(placeLocal(paint(new CylinderGeometry(0.8, 0.8, 3, 12), 0xb96f42), x, z, rotY, 0, 1.4, 0));
+}
+
+/** Big City Stadium's two compact banks of bleachers. */
+function addBleacher(parts: BufferGeometry[], x: number, z: number, rotY: number): void {
+  for (let i = 0; i < 4; i++) {
+    parts.push(placeLocal(paint(new BoxGeometry(24, 0.65, 4), 0xa9b4bd), x, z, rotY, 0, 1.2 + i * 1.7, -4 + i * 2.2));
+    parts.push(placeLocal(paint(new BoxGeometry(22, 1.2 + i * 1.7, 0.55), 0x66717a), x, z, rotY, 0, (1.2 + i * 1.7) / 2, -5.8 + i * 2.2));
+  }
+}
+
+/** The dome's glowing centre-field structural arch. */
+function addDomePortal(parts: BufferGeometry[], x: number, z: number, rotY: number): void {
+  // Three concentric roof ribs make a CANOPY at gameplay distance; the first
+  // pass used a 32ft portal that vanished behind the 12ft wall from the plate.
+  for (const [span, height, depth, color] of [
+    [56, 48, 14, 0x65d9df],
+    [47, 42, 3, 0x7068aa],
+    [38, 35, -8, 0x65d9df],
+  ] as const) {
+    const curve = new QuadraticBezierCurve3(
+      new Vector3(-span, 0, 0),
+      new Vector3(0, height, 0),
+      new Vector3(span, 0, 0)
+    );
+    parts.push(placeLocal(paint(new TubeGeometry(curve, 24, 1.15, 7, false), color), x, z, rotY, 0, 0, depth));
+  }
+  parts.push(placeLocal(paint(new BoxGeometry(22, 7, 1), 0x282d55), x, z, rotY, 0, 17, 1));
 }
 
 // A ballpark light tower: lattice-suggesting pole, crossarm, and a 2x3 lamp

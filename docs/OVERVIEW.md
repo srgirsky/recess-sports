@@ -1537,12 +1537,12 @@ serves `src/main.ts`, v1 boots its schoolyard at 960×640 with the font resolved
 and both layout audits are green.
 
 **Where this leaves the rebuild.** v2 is the front door with the whole product
-loop — title, draft with the voting machine, team naming, a 3D game with sound
-and commentary, and a result. What v1 still has and v2 does not: Recess Week and
-the sticker album, Practice and Watch, pass-and-play and online play, the juice
-meter and its specials, the batting cursor and pitch aiming, instant replay, the
-pause menu, the lineup screen, and the venue picker. Those are the next arc, and
-`/classic/` is why none of them had to block the cutover.
+loop — title, character-first draft with the voting machine, team naming and
+batting order, eleven selectable parks, a 3D game with sound and commentary, a
+result, the shared sticker clubhouse, and Recess Week. What v1 still has and v2
+does not: Practice and Watch, pass-and-play and online play, the juice meter and
+its specials, instant replay, and the pause menu. `/classic/` is why none of
+them had to block the cutover.
 
 ---
 
@@ -1662,8 +1662,35 @@ They use the existing one-source venue path end to end: `VenueId` and
 `VENUE_GEOMETRY` own physical play, `VENUE_LOOKS` owns ground/fence/night colour,
 `sceneryPlan` owns deterministic set dressing, and `VENUE_OPTIONS` is tested to
 name every playable geometry exactly once. The neighborhood still merges to one
-mesh plus clouds. The picker now exposes five parks; six of BB2026's eleven-field
-breadth remain intentionally open until they have equally distinct place stories.
+mesh plus clouds. That pass exposed five parks; the breadth pass below completes
+the eleven-field roster with equally distinct place stories.
+
+### 2026 parity pass — eleven parks, eleven kinds of baseball
+
+The venue picker now reaches eleven parks. The existing park and sandlot become
+**Parks Dept #2** and **Sandy Flats** in the player-facing roster, while the
+original fast **Blacktop** remains Recess's own eleventh field. Six additions
+close the reference game's breadth: **Steele Stadium**, **Playground Commons**,
+**Eckman Acres**, **Dirt Yards**, **Big City Stadium**, and **Super Colossal
+Dome**.
+
+They are not six colour presets. Steele is a compact backyard with a pool;
+Playground has a 64ft left-to-right fence swing and a school playset; Eckman is
+the deepest soft-grass farm with a barn; Dirt Yards pairs a short left line with
+bare earth and tire stacks; Big City has maintained quick grass, a block skyline
+and bleachers; and the Dome has the quickest turf outside the Blacktop, the
+highest padded wall, no outdoor clouds, and a neon structural canopy. Every
+profile remains convex, every defensive post remains in bounds, and every
+signature prop is planned outside the physical fence and merged into the same
+one-scenery-draw budget (plus clouds outdoors).
+
+The sim records each park at birth rather than trusting the adjectives. The
+three-seed game fingerprints cover every venue, and `sim.venueRollFeel`
+recomputes 60 identical contacts per park. Those measurements make the intended
+differences concrete: Eckman produces the longest mean resting ball; the Dome
+keeps one live longest; asymmetrical fields change which foul line is cheap.
+The original three-venue checksum remains deliberately unchanged, so added
+content cannot rewrite the established game baseline.
 
 ### 2026 parity pass — the clubhouse remembers
 

@@ -162,13 +162,20 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
    leaves vote semantics untouched. BB still owns the larger diegetic beat—a
    full-screen schoolyard bench and physical walk-off rather than our live 3D
    window beside a searchable board.
-4. **Venue breadth.** Recess now has five mechanically distinct venues with day
-   and night; BB ships eleven. The second parity pass adds the two places shown
-   in the reference: **Tin Can Alley** is a short, high-walled brick canyon with
-   rough asphalt, fire escapes and recycling dumpsters; **Cement Gardens** is a
-   broader concrete parking court with low kerbs, brownstone shopfronts, window
-   boxes and an espresso kiosk. Six fields remain. Add them only when each brings
-   a unique ground, fence, skyline and prop story—not palette variants.
+4. ~~**Venue breadth.**~~ Recess now exposes eleven mechanically distinct parks
+   with day and night. The first pass added the two places shown in the video:
+   **Tin Can Alley** is a short, high-walled brick canyon with rough asphalt,
+   fire escapes and recycling dumpsters; **Cement Gardens** is a broader
+   concrete parking court with low kerbs, brownstone shopfronts, window boxes
+   and an espresso kiosk. The breadth pass maps the original park and sandlot to
+   **Parks Dept #2** and **Sandy Flats**, then adds **Steele Stadium** (backyard
+   pool), **Playground Commons** (school playset and a 64ft left/right split),
+   **Eckman Acres** (deep soft grass and barn), **Dirt Yards** (short left line,
+   bare earth and tire stacks), **Big City Stadium** (maintained lawn, skyline
+   and bleachers), and **Super Colossal Dome** (quick turf, high padded wall and
+   an indoor neon roof). Recess's original **Blacktop** supplies the eleventh.
+   Every park changes geometry and surface play as well as palette and skyline;
+   `sim.venueRollFeel` records the derived 60-contact profile for all eleven.
 5. **Diegetic front-end and retention shell.** The title now opens a real
    Clubhouse backed by the shared stores: games played, collection progress,
    foil wins, trophies, favorite picks and all thirty stickers; completed v2

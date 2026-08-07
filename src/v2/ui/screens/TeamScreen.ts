@@ -27,11 +27,17 @@ import type { VenueId } from '../../sim/field';
 
 /** Every playable geometry must have one reachable, icon-first chip. */
 export const VENUE_OPTIONS: ReadonlyArray<{ id: VenueId; icon: string; label: string }> = [
-  { id: 'park', icon: '🌳', label: 'PARK' },
-  { id: 'sandlot', icon: '🪵', label: 'SANDLOT' },
+  { id: 'park', icon: '🌳', label: 'PARKS #2' },
+  { id: 'sandlot', icon: '🏖️', label: 'SANDY FLATS' },
   { id: 'blacktop', icon: '🏙️', label: 'BLACKTOP' },
   { id: 'tin_can', icon: '🧱', label: 'TIN CANS' },
   { id: 'cement', icon: '🏪', label: 'CEMENT' },
+  { id: 'steele', icon: '🏡', label: 'STEELE' },
+  { id: 'playground', icon: '🛝', label: 'COMMONS' },
+  { id: 'eckman', icon: '🌾', label: 'ECKMAN' },
+  { id: 'dirt_yards', icon: '🛞', label: 'DIRT YARDS' },
+  { id: 'big_city', icon: '🏟️', label: 'BIG CITY' },
+  { id: 'dome', icon: '🌐', label: 'THE DOME' },
 ];
 
 export class TeamScreen implements Screen {

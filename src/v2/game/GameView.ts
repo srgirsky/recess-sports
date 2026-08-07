@@ -1334,7 +1334,7 @@ export class GameView {
 
   /** This venue's sky pair for the current time of day. */
   private skyColours(): { top: number; horizon: number } {
-    if (!this.night) return { top: SKY_TOP, horizon: SKY_HORIZON };
+    if (!this.night) return VENUE_LOOKS[this.venue].daySky ?? { top: SKY_TOP, horizon: SKY_HORIZON };
     return VENUE_LOOKS[this.venue].nightSky ?? { top: NIGHT_TOP, horizon: NIGHT_HORIZON };
   }
 

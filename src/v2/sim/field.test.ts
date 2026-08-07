@@ -126,6 +126,23 @@ describe('the fence', () => {
     expect(cement.bounceMult).toBeLessThan(VENUE_GEOMETRY.blacktop.bounceMult);
   });
 
+  it('gives the six neighborhood parks distinct geometry and surface play', () => {
+    const steele = VENUE_GEOMETRY.steele;
+    const playground = VENUE_GEOMETRY.playground;
+    const eckman = VENUE_GEOMETRY.eckman;
+    const dirt = VENUE_GEOMETRY.dirt_yards;
+    const city = VENUE_GEOMETRY.big_city;
+    const dome = VENUE_GEOMETRY.dome;
+
+    expect(steele.fence.cf).toBeLessThan(eckman.fence.cf);
+    expect(playground.fence.rf - playground.fence.lf).toBeGreaterThanOrEqual(60);
+    expect(dirt.fence.lcf - dirt.fence.lf).toBeGreaterThanOrEqual(40);
+    expect(city.rollFriction).toBeLessThan(eckman.rollFriction);
+    expect(dome.fenceHeight).toBeGreaterThan(city.fenceHeight);
+    expect(dome.rollFriction).toBeLessThan(city.rollFriction);
+    expect(dome.bounceMult).toBeGreaterThan(city.bounceMult);
+  });
+
   it('rejects a fence that spikes at the foul pole', () => {
     // The sandlot's first draft. Deepest-at-the-pole is concave at
     // left-centre; keep the counterexample so nobody re-introduces it while

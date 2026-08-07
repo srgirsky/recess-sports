@@ -27,7 +27,7 @@
 //                   what makes "watch that again" possible at all. A rematch
 //                   walks from it rather than re-rolling, so a session stays
 //                   reproducible from one flag.
-//   ?venue=park|sandlot|blacktop|tin_can|cement   where the game is played.
+//   ?venue=<VenueId>  where the game is played; TeamScreen owns the full list.
 // ---------------------------------------------------------------------------
 
 import { App } from './App';

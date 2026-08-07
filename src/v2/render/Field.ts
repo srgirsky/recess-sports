@@ -63,6 +63,8 @@ export interface VenueLook {
   fence: number;
   fenceTrim: number;
   mowPattern: 'stripes' | 'checker' | 'tufts' | 'court';
+  /** An indoor venue can own the apparent daytime canopy as well as night. */
+  daySky?: { top: number; horizon: number };
   /** This venue's night sky, when it differs from the default navy pair —
    *  a city court glows sodium at the horizon; a rural lot goes darker and
    *  colder. Fog follows whichever horizon is in force (Sky.ts's rule). */
@@ -119,6 +121,61 @@ export const VENUE_LOOKS: Record<VenueId, VenueLook> = {
     mowPattern: 'court',
     // Apartment windows and storefronts warm the low city sky.
     nightSky: { top: 0x171a29, horizon: 0x66515a },
+  },
+  steele: {
+    grass: 0x64b957,
+    grassDark: 0x4e9f49,
+    dirt: 0xc58b53,
+    fence: 0x8e623d,
+    fenceTrim: 0xe5c08a,
+    mowPattern: 'stripes',
+  },
+  playground: {
+    grass: 0x58ad62,
+    grassDark: 0x438f55,
+    dirt: 0xbc8751,
+    fence: 0x4b7897,
+    fenceTrim: 0xe34e4e,
+    mowPattern: 'checker',
+  },
+  eckman: {
+    grass: 0x7faf50,
+    grassDark: 0x6b9845,
+    dirt: 0xb78a55,
+    fence: 0x8d7352,
+    fenceTrim: 0xf2e0a5,
+    mowPattern: 'tufts',
+    nightSky: { top: 0x091528, horizon: 0x263550 },
+  },
+  dirt_yards: {
+    grass: 0xa77a45,
+    grassDark: 0x91663b,
+    dirt: 0xb86f3f,
+    fence: 0x8e4d32,
+    fenceTrim: 0xd9a466,
+    mowPattern: 'tufts',
+    nightSky: { top: 0x111628, horizon: 0x49352f },
+  },
+  big_city: {
+    grass: 0x4ca968,
+    grassDark: 0x398d59,
+    dirt: 0xc58a55,
+    fence: 0x315f91,
+    fenceTrim: 0xf2d04f,
+    mowPattern: 'stripes',
+    nightSky: { top: 0x10182c, horizon: 0x5f5068 },
+  },
+  dome: {
+    grass: 0x3d9b78,
+    grassDark: 0x2d8068,
+    dirt: 0xb98d62,
+    fence: 0x655b99,
+    fenceTrim: 0x57d5d8,
+    mowPattern: 'checker',
+    // This is roof light, not weather. Without a daytime pair the dome reads
+    // as a purple outdoor court even though its structural ribs are present.
+    daySky: { top: 0x292b55, horizon: 0x6967a0 },
+    nightSky: { top: 0x17162e, horizon: 0x333467 },
   },
 };
 

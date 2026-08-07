@@ -2455,6 +2455,42 @@
       "liveSec": 7.0,
       "timeTo150Sec": 2.67,
       "wallReachPct": 20.0
+     },
+     "steele": {
+      "restFt": 161.6,
+      "liveSec": 5.81,
+      "timeTo150Sec": 2.7,
+      "wallReachPct": 11.7
+     },
+     "playground": {
+      "restFt": 169.7,
+      "liveSec": 5.95,
+      "timeTo150Sec": 2.7,
+      "wallReachPct": 13.3
+     },
+     "eckman": {
+      "restFt": 190.0,
+      "liveSec": 5.22,
+      "timeTo150Sec": 2.75,
+      "wallReachPct": 8.3
+     },
+     "dirt_yards": {
+      "restFt": 184.1,
+      "liveSec": 5.22,
+      "timeTo150Sec": 2.72,
+      "wallReachPct": 5.0
+     },
+     "big_city": {
+      "restFt": 180.1,
+      "liveSec": 6.6,
+      "timeTo150Sec": 2.7,
+      "wallReachPct": 8.3
+     },
+     "dome": {
+      "restFt": 155.7,
+      "liveSec": 7.91,
+      "timeTo150Sec": 2.67,
+      "wallReachPct": 11.7
      }
     },
     "n": 60,
