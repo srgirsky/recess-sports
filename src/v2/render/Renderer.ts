@@ -7,7 +7,7 @@
 // any future headless screenshot harness can share this file unchanged.
 // ---------------------------------------------------------------------------
 
-import { ACESFilmicToneMapping, PCFSoftShadowMap, SRGBColorSpace, WebGLRenderer } from 'three';
+import { ACESFilmicToneMapping, Color, PCFSoftShadowMap, SRGBColorSpace, WebGLRenderer } from 'three';
 import type { Camera, Scene } from 'three';
 import { DynamicResolution, detectTier, type TierSettings } from './perfTier';
 import type { OutlineRegistry } from './materials/outline';
@@ -53,6 +53,10 @@ export class Renderer {
     this.gl.outputColorSpace = SRGBColorSpace;
     this.gl.toneMapping = ACESFilmicToneMapping;
     this.gl.toneMappingExposure = 1.05;
+    // The draft renders one clipped character view after the world. Keep the
+    // counters cumulative across both passes so the perf readout still reports
+    // the frame's real cost rather than only whichever pass rendered last.
+    this.gl.info.autoReset = false;
 
     if (this.tier.shadowMapSize > 0) {
       this.gl.shadowMap.enabled = true;
@@ -93,6 +97,9 @@ export class Renderer {
   }
 
   render(scene: Scene, camera: Camera, nowMs: number): void {
+    this.gl.info.reset();
+    this.gl.setScissorTest(false);
+    this.gl.setViewport(0, 0, this.cssW, this.cssH);
     this.gl.render(scene, camera);
 
     if (this.lastFrame > 0) {
@@ -102,6 +109,39 @@ export class Renderer {
       if (this.dyn.sample(dt)) this.applyScale();
     }
     this.lastFrame = nowMs;
+  }
+
+  /**
+   * Render a second camera into a DOM-sized window in the same canvas.
+   *
+   * This is still the one renderer and one scene: the draft card is a clear
+   * patch in the DOM above it, not a second WebGL context with another asset
+   * cache. Coordinates arrive in CSS pixels and are clipped to the canvas.
+   */
+  renderInset(scene: Scene, camera: Camera, rect: DOMRect): boolean {
+    const canvas = this.gl.domElement;
+    const bounds = canvas.getBoundingClientRect();
+    const left = Math.max(0, rect.left - bounds.left);
+    const top = Math.max(0, rect.top - bounds.top);
+    const right = Math.min(bounds.width, rect.right - bounds.left);
+    const bottom = Math.min(bounds.height, rect.bottom - bounds.top);
+    const width = right - left;
+    const height = bottom - top;
+    if (width < 2 || height < 2) return false;
+
+    const oldClear = this.gl.getClearColor(new Color()).clone();
+    const oldAlpha = this.gl.getClearAlpha();
+    const y = bounds.height - bottom;
+    this.gl.setScissorTest(true);
+    this.gl.setViewport(left, y, width, height);
+    this.gl.setScissor(left, y, width, height);
+    this.gl.setClearColor(0x71ad62, 1);
+    this.gl.clear(true, true, false);
+    this.gl.render(scene, camera);
+    this.gl.setClearColor(oldClear, oldAlpha);
+    this.gl.setScissorTest(false);
+    this.gl.setViewport(0, 0, this.cssW, this.cssH);
+    return true;
   }
 
   stats(): RendererStats {

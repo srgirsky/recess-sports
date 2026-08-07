@@ -25,8 +25,10 @@
 //
 // ⚠️ THE CLOCK IS DRIVEN BY HAND. `/v2/?play=1` is a rAF loop, and a headless
 // page is frequently treated as backgrounded — the same trap `src/v2/AGENTS.md`
-// records for a manual playtest. Every state below is reached by pumping
-// `__spike.tick(t)` with a monotonic `t`, never by waiting.
+// records for a manual playtest. Every state below is reached through
+// `GameView.devStepFixedClock`, the live pump's exact 60Hz path without the
+// discarded intermediate WebGL frames; one real `tick` paints the reached state
+// before a single box is measured.
 // ---------------------------------------------------------------------------
 
 import { chromium } from 'playwright';
@@ -233,26 +235,24 @@ const COLLECT = (hostId) => `(() => {
 })()`;
 
 /**
- * Pump the rAF loop by hand until the sim reaches `phase`.
+ * Pump the fixed game clock by hand until the sim reaches `phase`.
  *
- * ★ 100ms A CALL, NOT ONE FRAME A CALL, AND THAT IS NOT A SHORTCUT. `tick`
- * RENDERS, and a headless WebGL render is the entire cost of this gate — at one
- * frame per call the run blew its own budget before the last viewport. The loop
- * clamps its delta at 0.1s and then steps a FIXED-RATE accumulator, so the sim
- * takes exactly the same number of 60Hz steps either way and only the number of
- * renders changes. Stepping past the clamp would silently drop sim time instead,
- * which is why 100 is the number and not 250.
+ * ★ SIX FIXED STEPS A CALL, THEN ONE DRAW AT THE DESTINATION. The former driver
+ * called `tick` for every 100ms and therefore rendered every intermediate state
+ * in software WebGL. Once full pitch deliveries landed, those intentionally
+ * longer timelines pushed a completely-green CI run past the 660s watchdog.
+ * `devStepFixedClock(6)` invokes the same `pump(1 / SIM_HZ)` six times without
+ * drawing; the final `tick(performance.now())` paints the real shipping HUD
+ * before visibility and geometry are read. Layout assertions are unchanged.
  */
 const PUMP = (untilSrc, mustSee) => `(async () => {
   const s = window.__spike;
   const until = ${untilSrc};
   for (let i = 0; i < 100 && !s.scoreboard(); i++) await new Promise((r) => setTimeout(r, 50));
-  let t = performance.now();
   for (let i = 0; i < 4000; i++) {
-    t += 100;
-    s.tick(t);
-    const f = s.scoreboard();
+    const f = s.devStepFixedClock(6);
     if (f && i > 4 && until(f)) {
+      s.tick(performance.now());
       const el = document.querySelector(${JSON.stringify(mustSee)});
       const r = el && el.getBoundingClientRect();
       const vs = el && getComputedStyle(el);
@@ -291,12 +291,11 @@ const NO_MOTION = `*, *::before, *::after {
 }
 /*
  * ★ AND THE 3D SURFACE IS SHRUNK TO NOTHING, because this gate measures DOM.
- * Every pump call RENDERS, and a headless WebGL frame costs its pixel count: at
- * 2560x1440 the last viewport alone ran past the whole run budget, and the gate
- * died on the same state every time. The HUD is laid out against the VIEWPORT,
- * not against the canvas, so a 2px drawing buffer changes nothing this file
- * looks at and makes the renders free. The viewport itself is untouched -- it is
- * the variable under test.
+ * The audit now draws only the reached state, but even those twelve software
+ * WebGL frames should not scale to 2560x1440. The HUD is laid out against the
+ * VIEWPORT, not against the canvas, so a 2px drawing buffer changes nothing this
+ * file looks at and makes the destination renders free. The viewport itself is
+ * untouched -- it is the variable under test.
  */
 #stage { inline-size: 2px !important; block-size: 2px !important; }`;
 

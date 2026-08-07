@@ -26,6 +26,7 @@ import { portrait } from '../portrait';
 import { getCharacter } from '../../../data/characters';
 import type { Rng } from '../../sim/rng';
 import type { Character } from '../../../data/types';
+import type { DraftSpotlightMode } from '../../render/draftPresentation';
 
 /** How long the board shows the CPU's pick before it clears, ms. */
 const CPU_BEAT_MS = 620;
@@ -46,8 +47,6 @@ const SPOTLIGHT_STATS = [
   ['fielding', '🧤', 'GLOVE'],
 ] as const;
 
-type SpotlightMode = 'pick' | 'mine' | 'cpu';
-
 export class DraftScreen implements Screen {
   private state: DraftState;
   private root!: HTMLElement;
@@ -60,13 +59,20 @@ export class DraftScreen implements Screen {
   /** Set while the CPU is picking, so a fast second tap cannot double-pick. */
   private busy = false;
   private spotlightId: string | null;
-  private spotlightMode: SpotlightMode = 'pick';
+  private spotlightMode: DraftSpotlightMode = 'pick';
 
   constructor(
     allIds: string[],
     private readonly rng: Rng,
     private readonly onPicked: (c: Character) => void,
-    private readonly onReady: (playerTeam: string[], aiTeam: string[]) => void
+    private readonly onReady: (playerTeam: string[], aiTeam: string[]) => void,
+    /** Lets the one three.js scene perform inside the card's clear window. */
+    private readonly onSpotlight?: (
+      id: string | null,
+      pool: readonly string[],
+      host: HTMLElement | null,
+      mode: DraftSpotlightMode
+    ) => void
   ) {
     this.state = startDraft(allIds);
     this.spotlightId = this.state.pool[0] ?? null;
@@ -97,6 +103,7 @@ export class DraftScreen implements Screen {
   unmount(): void {
     if (this.timer !== null) clearTimeout(this.timer);
     this.timer = null;
+    this.onSpotlight?.(null, [], null, 'pick');
   }
 
   /** One card. */
@@ -228,7 +235,14 @@ export class DraftScreen implements Screen {
           : 'PICK?'
     );
     const art = el('div', 'draft-preview__art');
-    art.appendChild(portrait(c.visual, c.name, { street: true }));
+    if (this.onSpotlight) {
+      art.classList.add('is-live');
+      art.setAttribute('role', 'img');
+      art.setAttribute('aria-label', `${c.name} performing in 3D`);
+    } else {
+      // Standalone/tests can still use the shared portrait without a scene.
+      art.appendChild(portrait(c.visual, c.name, { street: true }));
+    }
     const identity = el('div', 'draft-preview__identity');
     identity.append(
       el('h2', 'draft-preview__name', `${c.emoji ?? '⭐'} ${c.name}`),
@@ -254,6 +268,7 @@ export class DraftScreen implements Screen {
       !this.busy;
     if (canPick) this.spotlight.appendChild(button('⭐  PICK ME!', () => this.take(id), 'draft-preview__pick'));
     else this.spotlight.appendChild(el('div', `draft-preview__stamp is-${this.spotlightMode}`, this.spotlightMode === 'mine' ? 'ON YOUR TEAM!' : 'OFF THE BOARD'));
+    this.onSpotlight?.(id, this.state.pool, art, this.spotlightMode);
   }
 
   private finish(): void {

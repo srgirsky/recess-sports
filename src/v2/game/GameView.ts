@@ -40,6 +40,7 @@ import {
   SphereGeometry,
   Vector2,
   Vector3,
+  type Quaternion,
 } from 'three';
 import { Renderer } from '../render/Renderer';
 import { Lighting } from '../render/Lighting';
@@ -77,6 +78,12 @@ import { BAT, DEFENSE } from '../sim/params';
 import { kidHeightFt } from '../render/ProxyCharacter';
 import { UNIFORM_COLORS } from '../../art/palette';
 import type { KidView } from '../render/CharacterModel';
+import {
+  DRAFT_CAST_POSITIONS,
+  draftCast,
+  draftHeroPose,
+  type DraftSpotlightMode,
+} from '../render/draftPresentation';
 import { Scoreboard } from '../ui/Scoreboard';
 import { Fireworks } from '../render/Fireworks';
 import { InningBreak } from '../ui/InningBreak';
@@ -177,6 +184,8 @@ function nearestBase(at: Vec2): 1 | 2 | 3 | 4 | null {
 export class GameView {
   private readonly scene = new Scene();
   private readonly camera: PerspectiveCamera;
+  /** The same scene through the draft card's clipped presentation window. */
+  private readonly draftCamera = new PerspectiveCamera(32, 1, 0.25, 160);
   private readonly renderer: Renderer;
   private lighting: Lighting;
   private readonly outlines = new OutlineRegistry();
@@ -278,6 +287,16 @@ export class GameView {
   private actionPlay: LiveFrame['play'] = null;
   private readonly slidLegs = new Set<string>();
   private readonly diveClips = new Map<string, AnimName>();
+  private draftSpotlight: {
+    id: string;
+    pool: readonly string[];
+    host: HTMLElement;
+    mode: DraftSpotlightMode;
+    ageSec: number;
+    walkIn: boolean;
+    cast: string[];
+  } | null = null;
+  private readonly draftProtected = new Set<string>();
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     const params = new URLSearchParams(location.search);
@@ -809,6 +828,39 @@ export class GameView {
     this.frameTap = fn;
   }
 
+  /**
+   * Put the candidate and a waiting group into the draft card's live 3D window.
+   * The screen reports identity and bounds; this view keeps all model and clip
+   * work on the render side and uses the characters loaded during `start()`.
+   */
+  setDraftSpotlight(
+    id: string | null,
+    pool: readonly string[],
+    host: HTMLElement | null,
+    mode: DraftSpotlightMode
+  ): void {
+    if (!id || !host) {
+      this.draftSpotlight = null;
+      this.draftProtected.clear();
+      return;
+    }
+    const previous = this.draftSpotlight;
+    const sameKid = previous?.id === id;
+    const sameBeat = sameKid && previous?.mode === mode;
+    const cast = draftCast(id, pool);
+    this.draftSpotlight = {
+      id,
+      pool: [...pool],
+      host,
+      mode,
+      ageSec: sameBeat ? previous.ageSec : 0,
+      walkIn: sameBeat ? previous.walkIn : !sameKid,
+      cast,
+    };
+    this.draftProtected.clear();
+    for (const castId of cast) this.draftProtected.add(castId);
+  }
+
   /** Pull the next frame out of the sim. Null once the game is over. */
   private advance(): void {
     if (!this.game) return;
@@ -958,6 +1010,80 @@ export class GameView {
     });
   }
 
+  /** Keep the front-end clips authoritative while the live sim remains scenery. */
+  private updateDraftPresentation(dt: number): void {
+    const draft = this.draftSpotlight;
+    if (!draft) return;
+    draft.ageSec += dt;
+    const hero = draftHeroPose(draft.ageSec, draft.mode, draft.walkIn);
+    this.refs.directors.get(draft.id)?.play(hero.clip);
+    for (const id of draft.cast.slice(1)) this.refs.directors.get(id)?.play('idle');
+  }
+
+  /**
+   * Draw the selected kid and a waiting group through the transparent DOM card.
+   *
+   * No character is cloned and no second loader exists. Their transforms and
+   * visibility are borrowed for one clipped render pass after the world has
+   * already drawn, then restored before the next simulation frame.
+   */
+  private renderDraftPresentation(): void {
+    const draft = this.draftSpotlight;
+    if (!draft || !draft.host.isConnected) return;
+    const rect = draft.host.getBoundingClientRect();
+    if (rect.width < 2 || rect.height < 2) return;
+
+    const saved = new Map<
+      string,
+      { visible: boolean; position: Vector3; quaternion: Quaternion }
+    >();
+    for (const [id, view] of this.refs.kids) {
+      saved.set(id, {
+        visible: view.root.visible,
+        position: view.root.position.clone(),
+        quaternion: view.root.quaternion.clone(),
+      });
+      view.root.visible = false;
+    }
+    const ballVisible = this.refs.ball.visible;
+    this.refs.ball.visible = false;
+
+    try {
+      const hero = draftHeroPose(draft.ageSec, draft.mode, draft.walkIn);
+      const selected = this.refs.kids.get(draft.id);
+      if (!selected) return;
+      selected.root.visible = true;
+      selected.setPosition(hero.xFt, 0);
+      // Proxy/model facial geometry is +Z at rotation zero. The card camera is
+      // behind home on -Z, so PI turns that face toward the presentation lens.
+      selected.setFacing(Math.PI);
+
+      draft.cast.slice(1).forEach((id, i) => {
+        const view = this.refs.kids.get(id);
+        const at = DRAFT_CAST_POSITIONS[i];
+        if (!view || !at) return;
+        view.root.visible = true;
+        view.setPosition(at[0], at[1]);
+        view.setFacing(Math.PI);
+      });
+
+      this.draftCamera.aspect = rect.width / rect.height;
+      this.draftCamera.position.set(0, 3.7, -11.5);
+      this.draftCamera.lookAt(0, 2.3, 2.4);
+      this.draftCamera.updateProjectionMatrix();
+      this.renderer.renderInset(this.scene, this.draftCamera, rect);
+    } finally {
+      this.refs.ball.visible = ballVisible;
+      for (const [id, state] of saved) {
+        const view = this.refs.kids.get(id);
+        if (!view) continue;
+        view.root.visible = state.visible;
+        view.root.position.copy(state.position);
+        view.root.quaternion.copy(state.quaternion);
+      }
+    }
+  }
+
   private readonly tick = (now: number): void => {
     const dt = Math.min((now - this.last) / 1000, 0.1);
     this.last = now;
@@ -987,13 +1113,15 @@ export class GameView {
 
     if (this.frame) {
       this.frameTap?.(this.frame);
-      applyFrame(this.refs, this.frame, dt, this.pitchElapsed);
+      applyFrame(this.refs, this.frame, dt, this.pitchElapsed, this.draftProtected);
+      this.updateDraftPresentation(dt);
       this.animateCpuSwing();
       this.paintPlateCues();
       this.driveCamera(this.frame, dt);
       this.paintHud(this.frame);
     }
     this.renderer.render(this.scene, this.camera, now);
+    this.renderDraftPresentation();
     requestAnimationFrame(this.tick);
   };
 
@@ -1266,6 +1394,22 @@ export class GameView {
 
   /** What the HUD shows. Read-only, like everything else on this side. */
   scoreboard(): LiveFrame | null {
+    return this.frame;
+  }
+
+  /**
+   * Advance the fixed clock without drawing, for the DOM layout audit only.
+   *
+   * The audit needs a settled HUD at four game states; rendering every
+   * intermediate frame in software WebGL spent the CI watchdog on pixels it
+   * immediately discarded. This uses the exact `pump(1 / SIM_HZ)` path the
+   * live tick uses, is inert in production, and the audit still calls `tick`
+   * once at the reached state before measuring any box.
+   */
+  devStepFixedClock(ticks = 6): LiveFrame | null {
+    if (!import.meta.env.DEV) return this.frame;
+    const count = Math.max(0, Math.floor(ticks));
+    for (let i = 0; i < count; i++) this.pump(1 / SIM_HZ);
     return this.frame;
   }
 }

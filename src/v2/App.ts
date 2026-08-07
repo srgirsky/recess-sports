@@ -118,7 +118,8 @@ export class App {
         (playerTeam, aiTeam) => {
           this.rosters = { away: playerTeam, home: aiTeam };
           this.showTeam();
-        }
+        },
+        (id, pool, host, mode) => this.game.setDraftSpotlight(id, pool, host, mode)
       )
     );
   }

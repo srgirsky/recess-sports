@@ -132,9 +132,12 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
    STRIKEOUT calls, and EARLY/LATE feedback from the swing's real signed timing
    error. The outcome comes from `SimEvent`; the view never re-judges it.
 9. ~~A character-first draft~~ — the same pass replaces the immediate-vote card
-   wall with a large candidate spotlight: street portrait, tagline, five 1–10
-   dot ratings and an explicit PICK ME confirmation. Confirmed kids speak their
-   authored `draftLine`; the CPU pick gets the same reveal rather than vanishing.
+   wall with a large candidate spotlight: live 3D candidate and waiting group,
+   tagline, five 1–10 dot ratings and an explicit PICK ME confirmation. Each new
+   candidate walks on and holds `pose_card`; a confirmed kid reacts and speaks
+   their authored `draftLine`. The CPU pick gets the same reveal rather than
+   vanishing. Compact board and team-slot portraits stay illustrated for fast
+   comparison.
 10. ~~Characters on the front door and after the play~~ — the title lockup now
     frames the wordmark with signature kids, and batter/pitcher play opposing
     cheer/upset reactions after every plate appearance.
@@ -152,11 +155,13 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
    event tick; dives preserve their own catch marker; and slides fit their end
    to the sim-owned basepath leg. The action clips remain procedural stand-ins
    until authored motion is delivered, but they are no longer review-page-only.
-3. **A true draft environment.** The spotlight closes the information and voting
-   gap, but BB's candidates occupy a 3D bench and physically react/walk off. The
-   next step is a dedicated presentation rig that arranges the already-loaded
-   roster in the schoolyard and drives `walk_on` / `pose_card` without changing
-   the draft rules.
+3. **A full draft environment.** The second parity pass now uses a clipped
+   second camera on the one existing scene: the selected already-loaded kid
+   walks into `pose_card`, picked kids cheer, and six remaining kids wait behind
+   them. It adds no renderer, model loader or duplicate character instance, and
+   leaves vote semantics untouched. BB still owns the larger diegetic beat—a
+   full-screen schoolyard bench and physical walk-off rather than our live 3D
+   window beside a searchable board.
 4. **Venue breadth.** Recess has three mechanically distinct venues with day and
    night; BB ships eleven. Add places only when each brings a unique ground,
    fence, skyline and prop story—not palette variants.
