@@ -55,6 +55,15 @@ import {
 } from '../systems/season';
 import { SeasonScreen } from './ui/screens/SeasonScreen';
 import { statEventsFromLines } from './ui/seasonModel';
+import { CustomPlayerScreen } from './ui/screens/CustomPlayerScreen';
+import {
+  customPlayerCharacter,
+  loadCustomPlayer,
+  saveCustomPlayer,
+  type CustomPlayerProfile,
+} from './ui/customPlayer';
+import { EXTRA_MODES, ModeScreen, type ExtraModeId } from './ui/screens/ModeScreen';
+import type { Character } from '../data/types';
 
 export class App {
   private readonly router: Router;
@@ -86,6 +95,11 @@ export class App {
   private night = new URLSearchParams(location.search).get('night') === '1';
   /** Where we play, chosen on the team screen. `?venue=` seeds it. */
   private venue = (new URLSearchParams(location.search).get('venue') as VenueId) ?? 'park';
+  private customProfile: CustomPlayerProfile | null = loadCustomPlayer();
+  private customPlayer: Character | null = this.customProfile
+    ? customPlayerCharacter(this.customProfile)
+    : null;
+  private activeMode: 'pickup' | 'season' | ExtraModeId = 'pickup';
 
   constructor(canvas: HTMLCanvasElement, screens: HTMLElement) {
     this.router = new Router(screens);
@@ -96,11 +110,12 @@ export class App {
     // The park is built and the characters are loaded BEFORE the title shows,
     // so PLAY is instant and the title has something real behind it.
     await this.game.start();
+    if (this.customPlayer) await this.game.setCustomPlayer(this.customPlayer);
     this.game.setTeamNames(this.names());
     this.game.onGameEnd((r) => this.showResult(r));
     this.game.onSimEvent((e) => this.sound.onEvent(e));
     this.game.onFrame((f) => {
-      this.sound.setBatter(getCharacter(f.batterId).name);
+      this.sound.setBatter(this.lookup(f.batterId).name);
       this.sound.onFrame(f);
     });
     new MuteButton(this.sound).mount();
@@ -118,6 +133,8 @@ export class App {
     this.seasonDraft = false;
     this.seasonGame = false;
     this.season = null;
+    this.activeMode = 'pickup';
+    this.game.setControlMode('both');
     this.router.show(
       new TitleScreen(
         () => {
@@ -140,6 +157,10 @@ export class App {
             this.seasonDraft = true;
             this.showDraft();
           }
+        },
+        () => {
+          this.sound.start();
+          this.showModes();
         }
       )
     );
@@ -169,6 +190,8 @@ export class App {
     if (isWeekOver(season)) return;
     this.season = season;
     this.seasonGame = true;
+    this.activeMode = 'season';
+    this.game.setControlMode('both');
     this.identity = season.identity;
     this.rosters = {
       away: [...season.playerTeam],
@@ -185,10 +208,63 @@ export class App {
       new ClubhouseScreen(
         clubhouseModel(getAlbum(), getGamesPlayed(), readPickRates(), rosterOrder),
         ROSTER,
+        this.customPlayer,
         (c) => this.sound.sayDraft(c),
+        () => this.showCustomPlayer(),
         () => this.showTitle()
       )
     );
+  }
+
+  private showCustomPlayer(): void {
+    this.game.setScreenCue('PLAY');
+    this.router.show(
+      new CustomPlayerScreen(
+        this.customProfile,
+        (profile) => void this.finishCustomPlayer(profile),
+        () => this.showClubhouse()
+      )
+    );
+  }
+
+  private async finishCustomPlayer(profile: CustomPlayerProfile): Promise<void> {
+    saveCustomPlayer(profile);
+    this.customProfile = profile;
+    this.customPlayer = customPlayerCharacter(profile);
+    await this.game.setCustomPlayer(this.customPlayer);
+    this.sound.sayDraft(this.customPlayer);
+    this.showClubhouse();
+  }
+
+  /** Pickup stays one tap away; focused practice and watch live behind this door. */
+  private showModes(): void {
+    this.game.setScreenCue('PLAY');
+    this.router.show(new ModeScreen((mode) => void this.startExtraMode(mode), () => this.showTitle()));
+  }
+
+  private async startExtraMode(mode: ExtraModeId): Promise<void> {
+    this.activeMode = mode;
+    this.seasonDraft = false;
+    this.seasonGame = false;
+    this.season = null;
+    const option = EXTRA_MODES.find((entry) => entry.id === mode)!;
+    this.game.setControlMode(option.controls);
+    this.innings = 1;
+
+    const ids = ROSTER.map((c) => c.id);
+    const rng = makeRng(`mode-${mode}-${this.seedBase()}-${this.gameNo}`);
+    for (let i = ids.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      [ids[i], ids[j]] = [ids[j], ids[i]];
+    }
+    const away = ids.slice(0, 9);
+    const home = ids.slice(9, 18);
+    if (this.customPlayer && mode !== 'watch') {
+      if (mode === 'pitching') home[0] = this.customPlayer.id;
+      else away[0] = this.customPlayer.id;
+    }
+    this.rosters = { away, home };
+    await this.playBall();
   }
 
   /**
@@ -200,6 +276,8 @@ export class App {
    * test asserts the exact set of ids counted.
    */
   private showDraft(): void {
+    this.activeMode = this.seasonDraft ? 'season' : 'pickup';
+    this.game.setControlMode('both');
     this.game.setScreenCue('DEEP');
     this.router.show(
       new DraftScreen(
@@ -210,7 +288,10 @@ export class App {
           this.rosters = { away: playerTeam, home: aiTeam };
           this.showStrategy();
         },
-        (id, pool, host, mode) => this.game.setDraftSpotlight(id, pool, host, mode)
+        (id, pool, playerTeam, aiTeam, host, mode) =>
+          this.game.setDraftSpotlight(id, pool, playerTeam, aiTeam, host, mode),
+        (id) => this.lookup(id),
+        !this.seasonDraft ? this.customPlayer?.id : undefined
       )
     );
   }
@@ -220,12 +301,16 @@ export class App {
     if (!this.rosters) return;
     this.game.setScreenCue('PLAY');
     this.router.show(
-      new StrategyScreen(this.rosters.away, (order) => {
-        if (!this.rosters) return;
-        this.rosters.away = order;
-        if (this.seasonGame) void this.playBall();
-        else this.showTeam();
-      })
+      new StrategyScreen(
+        this.rosters.away,
+        (order) => {
+          if (!this.rosters) return;
+          this.rosters.away = order;
+          if (this.seasonGame) void this.playBall();
+          else this.showTeam();
+        },
+        (id) => this.lookup(id)
+      )
     );
   }
 
@@ -307,8 +392,9 @@ export class App {
     // ★ THE BOOTH SAYS THE NAME. It is the payoff for the whole screen, and it
     // is why the name is a spoken colour and a spoken animal rather than text.
     this.sound.sayTeam(teamName(this.identity));
-    // The denominator for a pick rate: how many games this browser has played.
-    recordGamePlayed();
+    // Only drafted games advance the pick-rate denominator. Practice/watch has
+    // no votes, so counting it would quietly depress every authored pick rate.
+    if (this.activeMode === 'pickup' || this.activeMode === 'season') recordGamePlayed();
     this.router.hide();
   }
 
@@ -318,6 +404,10 @@ export class App {
 
   private seed(): string {
     return this.gameNo <= 1 ? this.seedBase() : `${this.seedBase()}-${this.gameNo}`;
+  }
+
+  private lookup(id: string): Character {
+    return this.customPlayer?.id === id ? this.customPlayer : getCharacter(id);
   }
 
   private showResult(result: GameResult): void {
@@ -331,14 +421,18 @@ export class App {
     const model = resultModel(
       result,
       { ...this.game.teams, you: this.game.humanSide },
-      ROSTER.map((c) => c.id)
+      [...ROSTER.map((c) => c.id), ...(this.customPlayer ? [this.customPlayer.id] : [])]
     );
     // One completed v2 game advances the SAME sticker book v1 shows. Only the
     // human roster counts: CPU picks are neither votes nor earned stickers.
     const playerIds = this.rosters?.[this.game.humanSide] ?? [];
-    recordAlbumGame(playerIds, model.verdict === 'win');
+    const isProgressGame = this.activeMode === 'pickup' || this.activeMode === 'season';
+    if (isProgressGame) {
+      const authored = new Set(ROSTER.map((c) => c.id));
+      recordAlbumGame(playerIds.filter((id) => authored.has(id)), model.verdict === 'win');
+    }
     let completedWeek: SeasonState | null = null;
-    if (this.seasonGame && this.season) {
+    if (this.activeMode === 'season' && this.seasonGame && this.season) {
       completedWeek = recordSeasonGame(
         this.season,
         model.verdict === 'win' ? 'W' : model.verdict === 'loss' ? 'L' : 'T',
@@ -351,12 +445,18 @@ export class App {
     this.router.show(
       new ResultScreen(
         model,
-        (id) => getCharacter(id).name,
+        (id) => this.lookup(id).name,
         // PLAY AGAIN is a REMATCH — same nine kids, so a player is not made to
         // re-draft to have another go at a team they just built.
         () => completedWeek ? this.showSeason(completedWeek) : void this.playBall(),
         () => this.showTitle(),
-        completedWeek ? { again: '📅  BACK TO WEEK' } : undefined
+        completedWeek
+          ? { again: '📅  BACK TO WEEK' }
+          : this.activeMode === 'watch'
+            ? { headline: 'FINAL SCORE', again: '🍿  WATCH AGAIN' }
+            : this.activeMode === 'batting' || this.activeMode === 'pitching'
+              ? { headline: 'NICE WORK!', again: '🎯  PRACTICE AGAIN' }
+              : undefined
       )
     );
   }

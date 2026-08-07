@@ -155,13 +155,14 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
    event tick; dives preserve their own catch marker; and slides fit their end
    to the sim-owned basepath leg. The action clips remain procedural stand-ins
    until authored motion is delivered, but they are no longer review-page-only.
-3. **A full draft environment.** The second parity pass now uses a clipped
-   second camera on the one existing scene: the selected already-loaded kid
-   walks into `pose_card`, picked kids cheer, and six remaining kids wait behind
-   them. It adds no renderer, model loader or duplicate character instance, and
-   leaves vote semantics untouched. BB still owns the larger diegetic beat—a
-   full-screen schoolyard bench and physical walk-off rather than our live 3D
-   window beside a searchable board.
+3. ~~**A full draft environment.**~~ The full-width schoolyard bench now leads
+   the screen: the selected already-loaded kid walks into `pose_card`, six
+   remaining kids wait behind them, and the last four picks on each side stay
+   physically staged under YOUR BENCH / THEIR BENCH. Confirmation plays the
+   reaction and a real `walk_on` trip to the correct side before the CPU picks.
+   The horizontal search bench sits below the environment. It remains the one
+   renderer, one scene and one instance per kid, and vote semantics are
+   unchanged.
 4. ~~**Venue breadth.**~~ Recess now exposes eleven mechanically distinct parks
    with day and night. The first pass added the two places shown in the video:
    **Tin Can Alley** is a short, high-walled brick canyon with rough asphalt,
@@ -176,7 +177,7 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
    an indoor neon roof). Recess's original **Blacktop** supplies the eleventh.
    Every park changes geometry and surface play as well as palette and skyline;
    `sim.venueRollFeel` records the derived 60-contact profile for all eleven.
-5. **Diegetic front-end and retention shell.** The title now opens a real
+5. ~~**Diegetic front-end and retention shell.**~~ The title now opens a real
    Clubhouse backed by the shared stores: games played, collection progress,
    foil wins, trophies, favorite picks and all thirty stickers; completed v2
    games advance the same album as `/classic/`, and unlocked kids speak when
@@ -184,14 +185,19 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
    hitters and hands that exact order to the sim; defence still uses its
    measured planner. Recess Week now resumes the shared five-day schedule,
    rotates its saved rivals, records each v2 result and stat line, awards a
-   three-win pennant, and puts week trophies into the shared album. Custom player
-   and the extra modes remain.
+   three-win pennant, and puts week trophies into the shared album. The
+   Clubhouse now makes and edits a persistent custom captain through icon,
+   swatch and nickname choices. That captain begins on the pickup bench, plays
+   through the ordinary character/sim/render paths, and never becomes a 31st
+   vote or sticker. MORE GAMES adds one-inning batting practice, one-inning
+   pitching practice and a hands-free watch game through the live sim's control
+   policy; CPU-only halves expose no hidden input or false YOU PITCH label.
    Some mature versions still live in `/classic/`; port shared rules rather than
    cloning them, and keep pickup play as the one-tap front door for ages four to
    eight.
 
 Gameplay: their new modes (Backyard Derby, Backyard Bash, Wiggle Ball, T-Ball)
-map to our roadmap's Practice/modes arc, and their 10-point skill system
+map to the focused practice/watch arc Recess now ships, and their 10-point skill system
 matches our 1-10 stats already. Their named FAULTS — batting either trivial or
 impossible per difficulty, "slower and inferior" fielding — are exactly the
 two systems our sim solves from measurement (`sim.humanSwing`,

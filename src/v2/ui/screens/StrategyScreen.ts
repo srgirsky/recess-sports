@@ -7,6 +7,7 @@
 // ---------------------------------------------------------------------------
 
 import { getCharacter } from '../../../data/characters';
+import type { Character } from '../../../data/types';
 import { button, el } from '../dom';
 import { portrait } from '../portrait';
 import type { Screen } from '../Router';
@@ -15,7 +16,11 @@ export class StrategyScreen implements Screen {
   private readonly order: string[];
   private list!: HTMLElement;
 
-  constructor(ids: readonly string[], private readonly onReady: (order: string[]) => void) {
+  constructor(
+    ids: readonly string[],
+    private readonly onReady: (order: string[]) => void,
+    private readonly lookup: (id: string) => Character = getCharacter
+  ) {
     this.order = [...ids];
   }
 
@@ -42,7 +47,7 @@ export class StrategyScreen implements Screen {
   private paint(): void {
     this.list.replaceChildren();
     this.order.forEach((id, index) => {
-      const c = getCharacter(id);
+      const c = this.lookup(id);
       const row = el('div', 'strategy-row');
       row.dataset.id = id;
       row.appendChild(el('strong', 'strategy-row__slot', String(index + 1)));

@@ -36,8 +36,22 @@ export { isDraftComplete };
 /** Records a vote. Injected so a test can see exactly what was counted. */
 export type VoteRecorder = (characterId: string) => void;
 
-export function startDraft(allIds: string[]): DraftState {
-  return createDraft(allIds);
+/** A custom captain starts on each bench; only the authored eight are votes. */
+export interface DraftCaptains {
+  player: string;
+  rng: () => number;
+}
+
+export function startDraft(allIds: string[], captains?: DraftCaptains): DraftState {
+  const fresh = createDraft(allIds);
+  if (!captains) return fresh;
+  // Give the CPU a real roster captain too, so both sides still draft eight
+  // turns and finish together. The custom id never enters `pool`, therefore it
+  // cannot be voted for or taken by the CPU.
+  const cpuTurn: DraftState = { ...fresh, turn: 'ai' };
+  const cpuCaptain = chooseBestPick(cpuTurn, captains.rng);
+  const afterCpu = applyPick(cpuTurn, cpuCaptain);
+  return { ...afterCpu, playerTeam: [captains.player] };
 }
 
 /**

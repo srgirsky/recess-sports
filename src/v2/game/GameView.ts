@@ -71,7 +71,8 @@ import { hash01 } from '../../art/fieldTexture';
 import { makeRng } from '../sim/rng';
 import { VENUE_GEOMETRY, type VenueId } from '../sim/field';
 import { planDefence } from '../sim/lineup';
-import { ROSTER, getCharacter } from '../../data/characters';
+import { CUSTOM_PLAYER_ID, ROSTER, getCharacter } from '../../data/characters';
+import type { Character } from '../../data/types';
 import { clampBarrelFt, zoneBandFt, zoneHalfWidthFt } from '../sim/athletes';
 import { BALL_RADIUS_FT } from '../sim/ball';
 import { BAT, DEFENSE } from '../sim/params';
@@ -80,8 +81,11 @@ import { UNIFORM_COLORS } from '../../art/palette';
 import type { KidView } from '../render/CharacterModel';
 import {
   DRAFT_CAST_POSITIONS,
-  draftCast,
+  DRAFT_CPU_POSITIONS,
+  DRAFT_PLAYER_POSITIONS,
   draftHeroPose,
+  draftStageCast,
+  type DraftStageCast,
   type DraftSpotlightMode,
 } from '../render/draftPresentation';
 import { Scoreboard } from '../ui/Scoreboard';
@@ -91,6 +95,7 @@ import { Matchup } from '../ui/Matchup';
 import { MatchupTally } from '../ui/matchupModel';
 import { PlayCallouts } from '../ui/PlayCallouts';
 import { scoreboardModel, type ScoreboardTeams } from '../ui/scoreboardModel';
+import { controlsAt, type PlayerControlMode } from './controlMode';
 
 /**
  * How long the pitch frame is held PAST the crossing, seconds.
@@ -184,7 +189,7 @@ function nearestBase(at: Vec2): 1 | 2 | 3 | 4 | null {
 export class GameView {
   private readonly scene = new Scene();
   private readonly camera: PerspectiveCamera;
-  /** The same scene through the draft card's clipped presentation window. */
+  /** The same scene through the draft schoolyard's full-width clipped camera. */
   private readonly draftCamera = new PerspectiveCamera(32, 1, 0.25, 160);
   private readonly renderer: Renderer;
   private lighting: Lighting;
@@ -255,7 +260,7 @@ export class GameView {
   private wait = 0;
   private venue: VenueId;
   private readonly board = new Scoreboard();
-  private readonly matchup = new Matchup();
+  private readonly matchup = new Matchup((id) => this.character(id));
   private readonly inningBreak = new InningBreak({
     forceEvery: new URLSearchParams(location.search).get('break') === '1',
   });
@@ -263,6 +268,8 @@ export class GameView {
   private readonly callouts: PlayCallouts;
   private pickerEl: HTMLElement | null = null;
   private teamNames: ScoreboardTeams = { away: 'ROCKETS', home: 'COMETS' };
+  private customPlayer: Character | null = null;
+  private controlMode: PlayerControlMode = 'both';
 
   /** Name the two sides. Set before `newGame`, or the scoreboard lies. */
   setTeamNames(t: ScoreboardTeams): void {
@@ -294,7 +301,7 @@ export class GameView {
     mode: DraftSpotlightMode;
     ageSec: number;
     walkIn: boolean;
-    cast: string[];
+    cast: DraftStageCast;
   } | null = null;
   private readonly draftProtected = new Set<string>();
 
@@ -394,7 +401,7 @@ export class GameView {
   /** The batter's own height in feet, or the reference kid's if he is unknown. */
   private batterHeightFt(): number {
     const id = this.frame?.batterId;
-    return id ? kidHeightFt(getCharacter(id).visual) : DEFENSE.REFERENCE_HEIGHT_FT;
+    return id ? kidHeightFt(this.character(id).visual) : DEFENSE.REFERENCE_HEIGHT_FT;
   }
 
   /**
@@ -408,7 +415,7 @@ export class GameView {
    * game, which is what this page exists to test.
    */
   private get humanBats(): boolean {
-    return this.frame?.half === 'top';
+    return this.frame ? controlsAt(this.controlMode, this.frame.half).bat : false;
   }
 
   /** Is the player swinging right now? Only during a pitch he is batting at. */
@@ -418,7 +425,14 @@ export class GameView {
 
   /** Is the player choosing a pitch right now? */
   private get onTheMound(): boolean {
-    return this.frame?.phase === 'windup' && !this.humanBats;
+    return this.frame?.phase === 'windup' && controlsAt(this.controlMode, this.frame.half).pitch;
+  }
+
+  /** Live-ball steering/taps exist only in the halves this mode promises. */
+  private get liveControl(): 'run' | 'field' | null {
+    if (!this.frame || this.frame.phase !== 'live') return null;
+    const controls = controlsAt(this.controlMode, this.frame.half);
+    return controls.run ? 'run' : controls.field ? 'field' : null;
   }
 
   private readonly onPointerDown = (e: PointerEvent): void => {
@@ -433,6 +447,7 @@ export class GameView {
       if (at) this.spot = at;
       return;
     }
+    if (!this.liveControl) return;
     const at = this.toField(e);
     if (at) this.inputs.pointer = at;
   };
@@ -452,6 +467,7 @@ export class GameView {
       if (at) this.spot = at;
       return;
     }
+    if (!this.liveControl) return;
     if (e.buttons === 0) return;
     const at = this.toField(e);
     if (at) this.inputs.pointer = at;
@@ -494,9 +510,13 @@ export class GameView {
       this.beginPitchDelivery();
       return;
     }
+    const liveControl = this.liveControl;
+    if (!liveControl) return;
     const at = this.toField(e);
     if (!at) return;
-    if (this.humanBats) return this.tapBaseAsRunner(at);
+    // Keep the batting-side invariant explicit at the tap dispatch. The mode
+    // policy can remove a verb, but it must never move that verb to a new side.
+    if (liveControl === 'run' && this.humanBats) return this.tapBaseAsRunner(at);
     const bag = nearestBase(at);
     if (bag !== null) this.inputs.throwTo = { base: bag };
     else this.inputs.dive = true;
@@ -590,6 +610,47 @@ export class GameView {
     this.onResize();
     this.last = performance.now();
     requestAnimationFrame(this.tick);
+  }
+
+  /** Resolve the dynamic captain through the same membrane as authored kids. */
+  private character(id: string): Character {
+    if (id === CUSTOM_PLAYER_ID && this.customPlayer) return this.customPlayer;
+    return getCharacter(id);
+  }
+
+  /** Public name/portrait lookup for app-shell screens and sound. */
+  getCharacter(id: string): Character {
+    return this.character(id);
+  }
+
+  /**
+   * Install or replace the one dynamic captain. They deliberately use the
+   * factory's undelivered-proxy path: no second loader and no pretend GLB.
+   */
+  async setCustomPlayer(character: Character | null): Promise<void> {
+    const old = this.refs.kids.get(CUSTOM_PLAYER_ID);
+    if (old) {
+      this.scene.remove(old.root);
+      old.dispose();
+      this.refs.kids.delete(CUSTOM_PLAYER_ID);
+      this.refs.directors.delete(CUSTOM_PLAYER_ID);
+      this.dressed.delete(CUSTOM_PLAYER_ID);
+    }
+    this.customPlayer = character;
+    if (!character) return;
+    const made = await createCharacter(character, {
+      forceProxy: proxyForced(),
+      outlines: this.outlines,
+      uniform: character.visual.uniform,
+    });
+    made.view.root.visible = false;
+    this.scene.add(made.view.root);
+    this.refs.kids.set(character.id, made.view);
+    this.refs.directors.set(character.id, new AnimationDirector(made.view.mesh, { fallback: this.clipLibrary }));
+  }
+
+  setControlMode(mode: PlayerControlMode): void {
+    this.controlMode = mode;
   }
 
   /**
@@ -716,12 +777,12 @@ export class GameView {
     this.inningBreak.setTeams(this.teamNames, innings);
     this.matchupTally.reset();
     this.placeSpectators(geo, [...away.ids, ...home.ids]);
-    void planDefence(away.ids, getCharacter);
+    void planDefence(away.ids, (id) => this.character(id));
     this.game = simulateGameLive(
       {
         away,
         home,
-        lookup: getCharacter,
+        lookup: (id) => this.character(id),
         geo,
         regulationInnings: innings,
         onEvent: (e) => {
@@ -776,7 +837,7 @@ export class GameView {
     await Promise.all(
       wanted.map(async ([id, uniform]) => {
         if (this.dressed.get(id) === uniform) return;
-        const character = getCharacter(id);
+        const character = this.character(id);
         const made = await createCharacter(character, {
           forceProxy: proxyForced(),
           outlines: this.outlines,
@@ -804,8 +865,7 @@ export class GameView {
 
   /** Who the human is playing as, for the Result screen's verdict. */
   get humanSide(): 'away' | 'home' {
-    // The spike bats the top half, and the top half is the AWAY team's.
-    return 'away';
+    return this.controlMode === 'pitching' ? 'home' : 'away';
   }
 
   /** Register the end-of-game callback. */
@@ -832,13 +892,15 @@ export class GameView {
   }
 
   /**
-   * Put the candidate and a waiting group into the draft card's live 3D window.
+   * Put the candidate, waiting group and two benches into the draft's live 3D yard.
    * The screen reports identity and bounds; this view keeps all model and clip
    * work on the render side and uses the characters loaded during `start()`.
    */
   setDraftSpotlight(
     id: string | null,
     pool: readonly string[],
+    playerTeam: readonly string[],
+    aiTeam: readonly string[],
     host: HTMLElement | null,
     mode: DraftSpotlightMode
   ): void {
@@ -850,7 +912,7 @@ export class GameView {
     const previous = this.draftSpotlight;
     const sameKid = previous?.id === id;
     const sameBeat = sameKid && previous?.mode === mode;
-    const cast = draftCast(id, pool);
+    const cast = draftStageCast(id, pool, playerTeam, aiTeam);
     this.draftSpotlight = {
       id,
       pool: [...pool],
@@ -861,7 +923,7 @@ export class GameView {
       cast,
     };
     this.draftProtected.clear();
-    for (const castId of cast) this.draftProtected.add(castId);
+    for (const castId of cast.all) this.draftProtected.add(castId);
   }
 
   /** Pull the next frame out of the sim. Null once the game is over. */
@@ -1020,11 +1082,13 @@ export class GameView {
     draft.ageSec += dt;
     const hero = draftHeroPose(draft.ageSec, draft.mode, draft.walkIn);
     this.refs.directors.get(draft.id)?.play(hero.clip);
-    for (const id of draft.cast.slice(1)) this.refs.directors.get(id)?.play('idle');
+    for (const id of draft.cast.waiting) this.refs.directors.get(id)?.play('idle');
+    for (const id of draft.cast.player) this.refs.directors.get(id)?.play('cheer');
+    for (const id of draft.cast.cpu) this.refs.directors.get(id)?.play('field_ready');
   }
 
   /**
-   * Draw the selected kid and a waiting group through the transparent DOM card.
+   * Draw the selected kid, waiting group and benches through the transparent DOM yard.
    *
    * No character is cloned and no second loader exists. Their transforms and
    * visibility are borrowed for one clipped render pass after the world has
@@ -1059,9 +1123,12 @@ export class GameView {
       selected.setPosition(hero.xFt, 0);
       // Proxy/model facial geometry is +Z at rotation zero. The card camera is
       // behind home on -Z, so PI turns that face toward the presentation lens.
-      selected.setFacing(Math.PI);
+      const walkingOff = draft.mode !== 'pick' && hero.clip === 'walk_on';
+      selected.setFacing(
+        walkingOff ? (draft.mode === 'mine' ? -Math.PI / 2 : Math.PI / 2) : Math.PI
+      );
 
-      draft.cast.slice(1).forEach((id, i) => {
+      draft.cast.waiting.forEach((id, i) => {
         const view = this.refs.kids.get(id);
         const at = DRAFT_CAST_POSITIONS[i];
         if (!view || !at) return;
@@ -1070,9 +1137,26 @@ export class GameView {
         view.setFacing(Math.PI);
       });
 
+      const placeBench = (
+        ids: readonly string[],
+        positions: ReadonlyArray<readonly [number, number]>,
+        face: number
+      ) => ids.forEach((id, i) => {
+        const view = this.refs.kids.get(id);
+        const at = positions[i];
+        if (!view || !at) return;
+        view.root.visible = true;
+        view.setPosition(at[0], at[1]);
+        view.setFacing(face);
+      });
+      placeBench(draft.cast.player, DRAFT_PLAYER_POSITIONS, Math.PI * 0.78);
+      placeBench(draft.cast.cpu, DRAFT_CPU_POSITIONS, Math.PI * 1.22);
+
       this.draftCamera.aspect = rect.width / rect.height;
-      this.draftCamera.position.set(0, 3.7, -11.5);
-      this.draftCamera.lookAt(0, 2.3, 2.4);
+      const portraitStage = this.draftCamera.aspect < 0.9;
+      this.draftCamera.fov = portraitStage ? 42 : 34;
+      this.draftCamera.position.set(0, portraitStage ? 4.5 : 4.1, portraitStage ? -21 : -17.5);
+      this.draftCamera.lookAt(0, 2.35, 2.9);
       this.draftCamera.updateProjectionMatrix();
       this.renderer.renderInset(this.scene, this.draftCamera, rect);
     } finally {
@@ -1279,12 +1363,13 @@ export class GameView {
   }
 
   private paintHud(frame: LiveFrame): void {
+    const controls = controlsAt(this.controlMode, frame.half);
     this.board.update(
       scoreboardModel(
         frame,
         this.teamNames,
-        (id) => getCharacter(id).name,
-        this.humanBats ? 'bat' : 'pitch'
+        (id) => this.character(id).name,
+        controls.bat ? 'bat' : controls.pitch ? 'pitch' : null
       )
     );
     this.inningBreak.update(frame);

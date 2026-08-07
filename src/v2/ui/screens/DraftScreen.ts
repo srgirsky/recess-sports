@@ -12,11 +12,11 @@
 // thirty kids wear the first kid's shirt. See that file; it is not a style
 // choice.
 //
-// ★ THE SPOTLIGHT IS THE VOTE EARNING ITS MOMENT. A wall of thirty equally small
-// cards makes the cast read as inventory. BB2026 stops on one kid, lets them fill
-// the frame, and asks PICK?; ours now does the same with the portrait art and
-// taglines the roster already owns. The board finds a kid, the big card confirms
-// them, and only that confirmation calls `pickByHuman` and records the vote.
+// ★ THE SCHOOLYARD IS THE VOTE EARNING ITS MOMENT. A wall of thirty equally
+// small cards makes the cast read as inventory. The full-width live bench stops
+// on one kid, keeps both teams physically staged, and asks PICK?; the horizontal
+// roster below finds a kid, the big beat confirms them, and only that
+// confirmation calls `pickByHuman` and records the vote.
 // ---------------------------------------------------------------------------
 
 import { button, el } from '../dom';
@@ -29,7 +29,7 @@ import type { Character } from '../../../data/types';
 import type { DraftSpotlightMode } from '../../render/draftPresentation';
 
 /** How long the board shows the CPU's pick before it clears, ms. */
-const CPU_BEAT_MS = 620;
+const CPU_BEAT_MS = 1_720;
 
 /** The four stats a card shows, in the order they read. */
 const CARD_STATS = [
@@ -66,15 +66,19 @@ export class DraftScreen implements Screen {
     private readonly rng: Rng,
     private readonly onPicked: (c: Character) => void,
     private readonly onReady: (playerTeam: string[], aiTeam: string[]) => void,
-    /** Lets the one three.js scene perform inside the card's clear window. */
+    /** Lets the one three.js scene perform across the full schoolyard bench. */
     private readonly onSpotlight?: (
       id: string | null,
       pool: readonly string[],
+      playerTeam: readonly string[],
+      aiTeam: readonly string[],
       host: HTMLElement | null,
       mode: DraftSpotlightMode
-    ) => void
+    ) => void,
+    private readonly lookup: (id: string) => Character = getCharacter,
+    playerCaptainId?: string
   ) {
-    this.state = startDraft(allIds);
+    this.state = startDraft(allIds, playerCaptainId ? { player: playerCaptainId, rng } : undefined);
     this.spotlightId = this.state.pool[0] ?? null;
   }
 
@@ -90,7 +94,9 @@ export class DraftScreen implements Screen {
     this.board = el('div', 'draft-board');
     this.spotlight = el('aside', 'draft-preview');
     const workbench = el('div', 'draft-workbench');
-    workbench.append(this.board, this.spotlight);
+    // The place comes first: the board is a horizontal bench below the live
+    // schoolyard, not a wall a child must cross before reaching the character.
+    workbench.append(this.spotlight, this.board);
 
     this.go = button('⚾  PLAY BALL', () => this.finish(), 'btn--hero');
     this.go.classList.add('is-hidden');
@@ -103,12 +109,12 @@ export class DraftScreen implements Screen {
   unmount(): void {
     if (this.timer !== null) clearTimeout(this.timer);
     this.timer = null;
-    this.onSpotlight?.(null, [], null, 'pick');
+    this.onSpotlight?.(null, [], [], [], null, 'pick');
   }
 
   /** One card. */
   private card(id: string): HTMLElement {
-    const c = getCharacter(id);
+    const c = this.lookup(id);
     const node = el('button', 'kid interactive');
     node.type = 'button';
     node.dataset.id = id;
@@ -158,7 +164,7 @@ export class DraftScreen implements Screen {
     // ★ THE KID SAYS THEIR OWN NAME, in their own derived voice. It is the most
     // characterful thing v1 does and it costs one call — and it is the moment
     // the vote is cast, so it is also the feedback that the tap registered.
-    this.onPicked(getCharacter(id));
+    this.onPicked(this.lookup(id));
     this.paint();
 
     // ★ THE CPU'S PICK IS SHOWN, NOT SILENT. v1 wanders a "?" spotlight across
@@ -192,7 +198,8 @@ export class DraftScreen implements Screen {
       const slot = el('div', `draft-slot${id ? ' is-filled' : ''}${isNew ? ' is-new' : ''}`);
       if (id) {
         const art = el('div', 'draft-slot__art');
-        art.appendChild(portrait(getCharacter(id).visual, getCharacter(id).name, { uniform: 0 }));
+        const kid = this.lookup(id);
+        art.appendChild(portrait(kid.visual, kid.name, { uniform: 0 }));
         slot.appendChild(art);
       }
       this.slots.appendChild(slot);
@@ -206,7 +213,7 @@ export class DraftScreen implements Screen {
 
     const done = isDraftComplete(this.state);
     this.status.textContent = cpuTook
-      ? `they took ${getCharacter(cpuTook).name}`
+      ? `they took ${this.lookup(cpuTook).name}`
       : done
         ? 'your team is ready!'
         : this.busy
@@ -223,7 +230,7 @@ export class DraftScreen implements Screen {
     this.spotlight.replaceChildren();
     const id = this.spotlightId;
     if (!id) return;
-    const c = getCharacter(id);
+    const c = this.lookup(id);
 
     const ribbon = el(
       'div',
@@ -260,7 +267,14 @@ export class DraftScreen implements Screen {
       ratings.appendChild(row);
     }
 
-    this.spotlight.append(ribbon, art, identity, ratings);
+    this.spotlight.append(
+      ribbon,
+      el('div', 'draft-preview__bench is-mine', '⭐ YOUR BENCH'),
+      el('div', 'draft-preview__bench is-cpu', '⚾ THEIR BENCH'),
+      art,
+      identity,
+      ratings
+    );
     const canPick =
       this.spotlightMode === 'pick' &&
       this.state.turn === 'player' &&
@@ -268,7 +282,14 @@ export class DraftScreen implements Screen {
       !this.busy;
     if (canPick) this.spotlight.appendChild(button('⭐  PICK ME!', () => this.take(id), 'draft-preview__pick'));
     else this.spotlight.appendChild(el('div', `draft-preview__stamp is-${this.spotlightMode}`, this.spotlightMode === 'mine' ? 'ON YOUR TEAM!' : 'OFF THE BOARD'));
-    this.onSpotlight?.(id, this.state.pool, art, this.spotlightMode);
+    this.onSpotlight?.(
+      id,
+      this.state.pool,
+      this.state.playerTeam,
+      this.state.aiTeam,
+      art,
+      this.spotlightMode
+    );
   }
 
   private finish(): void {

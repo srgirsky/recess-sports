@@ -13,6 +13,7 @@
 // ---------------------------------------------------------------------------
 
 import { getCharacter } from '../../data/characters';
+import type { Character } from '../../data/types';
 import { portrait } from './portrait';
 import type { MatchupLines } from './matchupModel';
 
@@ -24,7 +25,7 @@ export class Matchup {
   /** Which kid each chip currently draws, so a portrait rebuilds on change only. */
   private shown: [string, string] = ['', ''];
 
-  constructor() {
+  constructor(private readonly lookup: (id: string) => Character = getCharacter) {
     this.root.className = 'matchup';
     const build = (mod: string): { chip: HTMLElement; art: HTMLElement; name: HTMLElement; line: HTMLElement } => {
       const chip = document.createElement('div');
@@ -55,7 +56,7 @@ export class Matchup {
     [batterId, pitcherId].forEach((id, i) => {
       if (this.shown[i] !== id) {
         this.shown[i] = id;
-        const c = getCharacter(id);
+        const c = this.lookup(id);
         this.arts[i].replaceChildren(portrait(c.visual, c.name));
         this.names[i].textContent = c.name.toUpperCase();
       }
