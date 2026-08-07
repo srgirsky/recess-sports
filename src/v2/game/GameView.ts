@@ -52,6 +52,14 @@ import { createCharacter, proxyForced } from '../render/CharacterFactory';
 import { configureModelLoader } from '../render/modelLoader';
 import { AnimationDirector } from '../render/AnimationDirector';
 import { buildProceduralClips } from '../render/proceduralClips';
+import {
+  PITCH_DELIVERY_RELEASE_SEC,
+  cpuSwingCue,
+  diveClip,
+  playEventCue,
+  slideCue,
+} from '../render/actionCues';
+import type { AnimName } from '../render/clips';
 import { RIGS, chooseCamera, damp, type CameraCue, type CameraPreset } from '../render/cameraCues';
 import { applyFrame, cameraInputFor, type SceneRefs } from '../render/bridge';
 import { simulateGameLive, type GameResult, type LiveFrame, type SimEvent } from '../sim/game';
@@ -213,6 +221,10 @@ export class GameView {
   private pitchKind: PitchKind = 'fastball';
   /** Real seconds spent on the current windup, so it can never hang. */
   private windupElapsed = 0;
+  /** The visible delivery runs before the sim releases the ball. */
+  private deliveryElapsed = 0;
+  private deliveryStarted = false;
+  private cpuSwingStarted = false;
   private zoneBox: LineSegments | null = null;
   private aimBar: Mesh | null = null;
   private spotMarker: Mesh | null = null;
@@ -263,6 +275,9 @@ export class GameView {
   /** charId -> the uniform they are currently wearing, so a rematch is cheap. */
   private readonly dressed = new Map<string, number>();
   private ended = false;
+  private actionPlay: LiveFrame['play'] = null;
+  private readonly slidLegs = new Set<string>();
+  private readonly diveClips = new Map<string, AnimName>();
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     const params = new URLSearchParams(location.search);
@@ -438,7 +453,13 @@ export class GameView {
       // rather than firing immediately: the pitch resolves when the frame ends,
       // so `atSec` is what preserves WHEN he went. Swinging twice at one pitch
       // keeps the first — a bat cannot be un-swung.
-      this.inputs.swing ??= { atSec: this.pitchElapsed, aimHeightFt: this.aimHeightFt };
+      if (!this.inputs.swing) {
+        this.inputs.swing = { atSec: this.pitchElapsed, aimHeightFt: this.aimHeightFt };
+        // The human's tap IS the simulated swing instant. We learn it now, so
+        // the director seeks the CONTACT marker onto this rendered tick and
+        // plays the follow-through rather than drawing contact late.
+        this.refs.directors.get(this.frame!.batterId)?.playToMarker('swing_contact', 0);
+      }
       return;
     }
     if (this.onTheMound) {
@@ -451,6 +472,7 @@ export class GameView {
         aimLateralFt: this.spot.x,
         aimHeightFt: this.spot.y,
       };
+      this.beginPitchDelivery();
       return;
     }
     const at = this.toField(e);
@@ -694,6 +716,9 @@ export class GameView {
     );
     this.ended = false;
     this.callouts.reset();
+    this.actionPlay = null;
+    this.slidLegs.clear();
+    this.diveClips.clear();
     this.inputs = {};
     this.wait = 0;
     this.pitchElapsed = 0;
@@ -807,9 +832,78 @@ export class GameView {
     }
     this.frame = r.value;
     if (this.frame.phase === 'pitch') this.pitchElapsed = 0;
-    if (this.frame.phase === 'windup') this.windupElapsed = 0;
+    if (this.frame.phase === 'pitch') this.cpuSwingStarted = false;
+    if (this.frame.phase === 'windup') {
+      this.windupElapsed = 0;
+      this.deliveryElapsed = 0;
+      this.deliveryStarted = false;
+      // The CPU has no picker to wait for; its visible delivery is the wait.
+      if (!this.onTheMound) this.beginPitchDelivery();
+    }
     if (this.frame.phase === 'between') this.wait = BETWEEN_SEC;
     this.showOnly(this.frame);
+    if (this.frame.phase === 'live' && this.frame.play) this.animatePlayActions(this.frame.play);
+  }
+
+  /** Start the complete windup -> stride -> release chain once. */
+  private beginPitchDelivery(): void {
+    if (this.deliveryStarted || !this.frame) return;
+    this.deliveryStarted = true;
+    this.deliveryElapsed = 0;
+    this.refs.directors.get(this.frame.pitcherId)?.play('pitch_windup', { restart: true });
+  }
+
+  /** Schedule the CPU bat only when the authored pre-roll can land on its read. */
+  private animateCpuSwing(): void {
+    if (!this.frame || this.frame.phase !== 'pitch' || this.humanBats) return;
+    const cue = cpuSwingCue(
+      this.frame.batterId,
+      this.pitchElapsed,
+      this.frame.pitch!.cpuSwingAtSec,
+      this.cpuSwingStarted
+    );
+    if (!cue) return;
+    this.refs.directors
+      .get(cue.characterId)
+      ?.playToMarker(cue.clip, cue.secUntilEvent);
+    this.cpuSwingStarted = true;
+  }
+
+  /** Consume each sim event once, and fit runner slides to their current leg. */
+  private animatePlayActions(play: NonNullable<LiveFrame['play']>): void {
+    if (this.actionPlay !== play) {
+      this.actionPlay = play;
+      this.slidLegs.clear();
+      this.diveClips.clear();
+    }
+
+    for (const event of play.events) {
+      if (event.t === 'dive') {
+        const clip = diveClip(play, event.fielder);
+        this.diveClips.set(event.fielder, clip);
+        this.refs.directors.get(event.fielder)?.play(clip, { restart: true });
+        continue;
+      }
+      if (event.t === 'diveMiss') {
+        this.diveClips.delete(event.fielder);
+        continue;
+      }
+      const cue = playEventCue(event, play);
+      if (!cue) continue;
+      const clip = event.t === 'catch' ? (this.diveClips.get(event.fielder) ?? cue.clip) : cue.clip;
+      this.refs.directors.get(cue.characterId)?.playToMarker(clip, cue.secUntilEvent);
+      if (event.t === 'catch') this.diveClips.delete(event.fielder);
+    }
+
+    for (const runner of play.runners) {
+      const cue = slideCue(runner);
+      if (!cue || this.slidLegs.has(cue.key)) continue;
+      this.slidLegs.add(cue.key);
+      this.refs.directors.get(cue.characterId)?.play(cue.clip, {
+        rate: cue.rate,
+        restart: true,
+      });
+    }
   }
 
   /** Only the kids actually on the field are visible — plus the yard kids. */
@@ -894,6 +988,7 @@ export class GameView {
     if (this.frame) {
       this.frameTap?.(this.frame);
       applyFrame(this.refs, this.frame, dt, this.pitchElapsed);
+      this.animateCpuSwing();
       this.paintPlateCues();
       this.driveCamera(this.frame, dt);
       this.paintHud(this.frame);
@@ -912,9 +1007,17 @@ export class GameView {
     }
     if (this.frame.phase === 'windup') {
       this.windupElapsed += step;
-      // A person gets until the pitch clock; the CPU throws straight away.
-      const waiting = this.onTheMound && !this.inputs.pitch;
-      if (!waiting || this.windupElapsed >= PITCH_CLOCK_SEC) this.advance();
+      // A person gets until the pitch clock to choose. Once chosen (or timed
+      // out), the complete visible delivery reaches RELEASE before the sim is
+      // advanced, so the ball cannot leave a stationary pitcher's hand.
+      if (!this.deliveryStarted) {
+        const waiting = this.onTheMound && !this.inputs.pitch;
+        const timedOut = this.windupElapsed >= PITCH_CLOCK_SEC;
+        if (waiting && !timedOut) return;
+        this.beginPitchDelivery();
+      }
+      this.deliveryElapsed += step;
+      if (this.deliveryElapsed >= PITCH_DELIVERY_RELEASE_SEC) this.advance();
       return;
     }
     if (this.frame.phase === 'pitch') {

@@ -151,7 +151,11 @@ function applyLive(refs: SceneRefs, play: PlayState): void {
       kid.setFacing(Math.atan2(to.x - p.x, to.z - p.z));
     }
     const dir = refs.directors.get(r.charId);
-    if (!holdsOneShot(dir)) dir?.setLocomotionSpeed(r.speedFts);
+    // Once the ball is live, the batter has left the box. Let the sim-owned
+    // run interrupt a batting follow-through; fielding actions and slides still
+    // finish while their root continues along the sim track.
+    const battingShot = !!dir?.playing && clipSpec(dir.playing).group === 'batting';
+    if (!holdsOneShot(dir) || battingShot) dir?.setLocomotionSpeed(r.speedFts);
   }
 }
 

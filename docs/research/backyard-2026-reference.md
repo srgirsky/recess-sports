@@ -145,11 +145,13 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
    LODs, face atlas and fallback path exist, but the shipping manifest contains
    five of thirty kids. The other twenty-five still render as geometric proxies;
    no UI or lighting pass can close that silhouette and expression gap.
-2. **Marker-synchronised action animation in the game.** Locomotion, idle and
-   the new result reactions play, and all 35 contract clips have procedural
-   stand-ins. Swing, pitch release, catch, throw and slide still need live call
-   sites that use `AnimationDirector.playToMarker` against simulated instants.
-   This is the largest remaining gameplay-presentation gap in the video.
+2. ~~**Marker-synchronised action animation in the game.**~~ The follow-up
+   parity pass wires the existing contract into live play: pitchers complete
+   windup/stride/release before the ball leaves; deterministic CPU swing reads
+   provide pre-roll; human swings, catches and throws seek their marker on the
+   event tick; dives preserve their own catch marker; and slides fit their end
+   to the sim-owned basepath leg. The action clips remain procedural stand-ins
+   until authored motion is delivered, but they are no longer review-page-only.
 3. **A true draft environment.** The spotlight closes the information and voting
    gap, but BB's candidates occupy a 3D bench and physically react/walk off. The
    next step is a dedicated presentation rig that arranges the already-loaded

@@ -30,7 +30,7 @@
 
 import type { Character } from '../../data/types';
 import { GAME, PLAY } from './params';
-import { isStrike, resolvePitch, throwPitch, type PitchResult } from './atbat';
+import { cpuSwingAtSec, isStrike, resolvePitch, throwPitch, type PitchResult } from './atbat';
 import { catcherOf, cpuWantsSteal, stealRace, type StealTarget } from './steal';
 import type { BallState } from './flight';
 import type { PitchKind } from './pitch';
@@ -202,7 +202,13 @@ export interface LiveFrame {
   /** Live only: the play in progress. Null between pitches. */
   play: PlayState | null;
   /** On a `pitch` frame: the released ball and how long it flies. */
-  pitch: { release: BallState; travelSec: number; kind: PitchKind } | null;
+  pitch: {
+    release: BallState;
+    travelSec: number;
+    kind: PitchKind;
+    /** CPU-only preview for render timing. Null means the CPU takes. */
+    cpuSwingAtSec: number | null;
+  } | null;
 }
 
 export interface GameSpec {
@@ -367,7 +373,12 @@ function* playAtBatLive(
       plate: args.plate,
     };
     const inFlight = throwPitch(spec, pitchRng, chosen);
-    frame.pitch = { release: inFlight.release, travelSec: inFlight.travelSec, kind: inFlight.kind };
+    frame.pitch = {
+      release: inFlight.release,
+      travelSec: inFlight.travelSec,
+      kind: inFlight.kind,
+      cpuSwingAtSec: cpuSwingAtSec(inFlight, spec, pitchRng),
+    };
     // ★ AND THE SWING ARRIVES THROUGH THE YIELD. The view holds this frame for
     // the ball's whole flight — it already did, to animate it — so the tap has
     // somewhere to land. A CPU batter passes nothing and draws `judge` and
