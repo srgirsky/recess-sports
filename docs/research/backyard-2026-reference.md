@@ -175,7 +175,10 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
    games advance the same album as `/classic/`, and unlocked kids speak when
    tapped. A real pre-game strategy screen now lets the player order all nine
    hitters and hands that exact order to the sim; defence still uses its
-   measured planner. Custom player, schedule/season and the extra modes remain.
+   measured planner. Recess Week now resumes the shared five-day schedule,
+   rotates its saved rivals, records each v2 result and stat line, awards a
+   three-win pennant, and puts week trophies into the shared album. Custom player
+   and the extra modes remain.
    Some mature versions still live in `/classic/`; port shared rules rather than
    cloning them, and keep pickup play as the one-tap front door for ages four to
    eight.

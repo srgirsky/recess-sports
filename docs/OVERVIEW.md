@@ -1690,6 +1690,23 @@ omits an order retain the existing stat-derived lineup. Field-position strategy
 waits until it can present nine jobs without turning the game into a reading
 test.
 
+### 2026 parity pass — Recess Week crosses the front door
+
+The v2 title now starts or resumes the same `recess_season` week that classic
+owns: one draft, five weekday rivals, persistent W/L/T, accumulated kid stats,
+a three-win pennant and Friday awards. A new week passes through the ordinary
+draft, batting-order and team setup once. Each scheduled game then returns to
+the chalkboard, lets the player adjust that game's order, and runs through the
+same live v2 sim rather than a season-specific game implementation.
+
+The sim already returns folded `KidStats`, while the shared season reducer owns
+`StatEvent[]`. `seasonModel.statEventsFromLines` is the explicit tested adapter:
+folding its output reproduces the result lines exactly, so v2 does not create a
+second stats merge. Completing a game saves the shared state and album progress;
+finishing Friday computes the existing shared awards, records each trophy, and
+clears the week. A week begun in one renderer can therefore be resumed in the
+other without a migration or duplicate storage key.
+
 ### PR 41 — each park owns its night
 
 The venue chips made night-at-the-sandlot a place a player can actually

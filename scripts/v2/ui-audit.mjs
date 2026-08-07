@@ -321,6 +321,16 @@ const INIT_CLUBHOUSE = `(() => {
     wonWith: { nostrike: 2, turbo: 1 },
     trophies: { nostrike: 1, wheelchair_ace: 2 }
   }));
+  localStorage.setItem('recess_season', JSON.stringify({
+    v: 1,
+    gameIndex: 2,
+    results: ['W', 'L'],
+    playerTeam: ['nostrike', 'calls_shot', 'wheelchair_ace', 'big_lou', 'tank', 'mimi_mash', 'turbo', 'sprout', 'zippy'],
+    identity: { color: 5, logo: 0 },
+    rivals: [{ color: 0, logo: 1 }, { color: 1, logo: 2 }, { color: 2, logo: 3 }, { color: 3, logo: 4 }, { color: 4, logo: 5 }],
+    rivalTeams: Array.from({ length: 5 }, () => ['ace_kid', 'penny', 'dex', 'lefty', 'smokey', 'bend_it', 'noodle', 'bubbles', 'sniffles']),
+    stats: {}
+  }));
 })();`;
 
 const failures = [];
@@ -435,9 +445,21 @@ const SCREENS = [
     mustSee: '.screen--clubhouse .clubhouse-back',
   },
   {
+    name: 'season',
+    reach: `(async () => {
+      document.querySelector('.screen--clubhouse .clubhouse-back')?.click();
+      await new Promise((r) => setTimeout(r, 100));
+      document.querySelector('.screen--title .btn--season')?.click();
+      await new Promise((r) => setTimeout(r, 150));
+      return document.querySelectorAll('.season-day').length === 5 ? 'ok' : 'no five-day schedule';
+    })()`,
+    mustSee: '.screen--season .season-play',
+  },
+  {
     name: 'draft',
     reach: `(async () => {
       document.querySelector('.screen--clubhouse .clubhouse-back')?.click();
+      document.querySelector('.screen--season .season-back')?.click();
       await new Promise((r) => setTimeout(r, 100));
       document.querySelector('.screen--title .btn')?.click();
       await new Promise((r) => setTimeout(r, 300));

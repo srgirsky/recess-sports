@@ -741,6 +741,10 @@ body.inning-break #hud > *:not(.inning-board):not(.btn--mute) {
   font-size: 1rem;
   padding-inline: var(--s5);
 }
+.btn--season {
+  font-size: 1rem;
+  padding-inline: var(--s5);
+}
 
 /* ---- Clubhouse: one scrollable home for records and the sticker book ---- */
 .screen--clubhouse {
@@ -908,6 +912,145 @@ button.clubhouse-sticker {
 @media (max-width: 540px) {
   .clubhouse-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---- Recess Week: a chalk schedule, five large day marks, real awards ---- */
+.screen--season {
+  place-content: start center;
+  align-content: start;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-block: var(--s4);
+}
+.season-board {
+  display: grid;
+  justify-items: center;
+  gap: var(--s4);
+  inline-size: min(58rem, 92vw);
+  padding: var(--s5);
+  border: 0.5rem solid #8a6a48;
+  border-radius: var(--radius-lg);
+  background: #2c4b3c;
+  box-shadow: var(--shadow-soft);
+}
+.season-head {
+  display: grid;
+  justify-items: center;
+  gap: var(--s1);
+}
+.season-head__title {
+  margin: 0;
+  color: var(--gold);
+  font-size: clamp(1.45rem, 5vw, 2.7rem);
+  -webkit-text-stroke: 0.05em var(--outline);
+  paint-order: stroke fill;
+}
+.season-head__team,
+.season-head__record {
+  margin: 0;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.season-head__team {
+  font-size: 0.8rem;
+}
+.season-head__record {
+  font-size: 1rem;
+  color: var(--cream);
+}
+.season-days {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--s2);
+  inline-size: 100%;
+}
+.season-day {
+  display: grid;
+  justify-items: center;
+  gap: var(--s1);
+  padding: var(--s2);
+  border: 0.14rem solid rgb(255 244 222 / 0.28);
+  border-radius: var(--radius);
+  background: rgb(20 32 46 / 0.3);
+  opacity: 0.68;
+}
+.season-day.is-next {
+  border-color: var(--gold);
+  opacity: 1;
+  box-shadow: 0 0 0.8rem rgb(255 206 58 / 0.25);
+}
+.season-day.is-played {
+  opacity: 0.82;
+}
+.season-day__name {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+}
+.season-day__rival {
+  display: grid;
+  place-items: center;
+  inline-size: 3.4rem;
+  block-size: 3.4rem;
+  border: 0.13rem solid var(--outline);
+  border-radius: 50%;
+  background: var(--team-color);
+  font-size: 1.5rem;
+}
+.season-day__result {
+  min-block-size: 1.5em;
+  color: var(--gold);
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+.season-awards {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s3);
+}
+.season-award {
+  display: grid;
+  grid-template-rows: auto 6rem auto;
+  justify-items: center;
+  gap: var(--s1);
+  min-inline-size: 8rem;
+  padding: var(--s2);
+  border: 0.13rem solid var(--outline);
+  border-radius: var(--radius);
+  background: var(--cream);
+  color: var(--ink);
+}
+.season-award__label,
+.season-award__name {
+  font-size: 0.68rem;
+}
+.season-award__art {
+  block-size: 6rem;
+}
+.season-back {
+  position: fixed;
+  inset-block-start: var(--s3);
+  inset-inline-start: var(--s3);
+  z-index: 2;
+  inline-size: var(--tap-min);
+  padding: 0;
+  font-size: 1.35rem;
+}
+@media (max-width: 540px) {
+  .season-board {
+    padding: var(--s3);
+  }
+  .season-days {
+    gap: var(--s1);
+  }
+  .season-day {
+    padding-inline: var(--s1);
+  }
+  .season-day__rival {
+    inline-size: 2.7rem;
+    block-size: 2.7rem;
+    font-size: 1.2rem;
   }
 }
 

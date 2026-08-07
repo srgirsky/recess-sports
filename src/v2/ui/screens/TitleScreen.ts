@@ -22,7 +22,8 @@ import { portrait } from '../portrait';
 export class TitleScreen implements Screen {
   constructor(
     private readonly onPlay: () => void,
-    private readonly onClubhouse: () => void
+    private readonly onClubhouse: () => void,
+    private readonly onSeason: () => void
   ) {}
 
   mount(): HTMLElement {
@@ -53,7 +54,8 @@ export class TitleScreen implements Screen {
     const actions = el('div', 'title-actions');
     actions.append(
       button('⚾  PLAY', this.onPlay, 'btn--hero'),
-      button('🏠  CLUBHOUSE', this.onClubhouse, 'btn--quiet btn--clubhouse')
+      button('🏠  CLUBHOUSE', this.onClubhouse, 'btn--quiet btn--clubhouse'),
+      button('🏆  RECESS WEEK', this.onSeason, 'btn--quiet btn--season')
     );
 
     // ★ THE WAY BACK TO v1, AND IT IS DELIBERATELY SMALL. v2 took the front
