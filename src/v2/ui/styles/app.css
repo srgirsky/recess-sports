@@ -90,6 +90,70 @@ body {
   pointer-events: none;
 }
 
+/* Broadcast-sized verdicts. The play has already resolved before these mount;
+   they explain it without covering or delaying the action. */
+.play-callout {
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-start: 45%;
+  display: grid;
+  justify-items: center;
+  transform: translate(-50%, -50%) scale(0.7) rotate(-2deg);
+  opacity: 0;
+  visibility: hidden;
+  text-align: center;
+  filter: drop-shadow(0 0.45rem 0 rgb(20 32 46 / 0.62));
+}
+.play-callout.is-open {
+  visibility: visible;
+  animation: play-callout-beat 1050ms cubic-bezier(0.18, 0.86, 0.2, 1) both;
+}
+.play-callout__label {
+  font-size: clamp(2.8rem, 11vw, 7.4rem);
+  font-weight: 700;
+  line-height: 0.88;
+  letter-spacing: -0.04em;
+  color: var(--cream);
+  -webkit-text-stroke: 0.11em var(--outline);
+  paint-order: stroke fill;
+  white-space: nowrap;
+}
+.play-callout__detail {
+  margin-block-start: var(--s2);
+  padding: 0.16em 0.7em;
+  border: 0.13em solid var(--outline);
+  border-radius: 999px;
+  background: var(--cream);
+  color: var(--ink);
+  font-size: clamp(0.85rem, 2.8vw, 1.45rem);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+.play-callout__detail.is-empty {
+  display: none;
+}
+.play-callout.is-strike .play-callout__label,
+.play-callout.is-out .play-callout__label {
+  color: var(--red);
+}
+.play-callout.is-safe .play-callout__label,
+.play-callout.is-ball .play-callout__label {
+  color: #66bfff;
+}
+.play-callout.is-foul .play-callout__label,
+.play-callout.is-homer .play-callout__label {
+  color: var(--gold);
+}
+body.screen-open .play-callout {
+  visibility: hidden;
+}
+@keyframes play-callout-beat {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7) rotate(-2deg); }
+  16% { opacity: 1; transform: translate(-50%, -50%) scale(calc(1 + 0.12 * var(--motion-scale))) rotate(1deg); }
+  28%, 78% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(-1deg); }
+  100% { opacity: 0; transform: translate(-50%, -56%) scale(0.98) rotate(-1deg); }
+}
+
 /* ---- Minimum tap target, enforced once rather than per-component ---- */
 .interactive {
   min-inline-size: var(--tap-min);
@@ -613,10 +677,35 @@ body.inning-break #hud > *:not(.inning-board):not(.btn--mute) {
 }
 
 /* ---- Title ---- */
+.title-lockup {
+  display: grid;
+  grid-template-columns: clamp(4.8rem, 14vw, 9rem) auto clamp(4.8rem, 14vw, 9rem);
+  align-items: end;
+  gap: clamp(0.2rem, 1.4vw, 1rem);
+}
+.title-hero {
+  align-self: end;
+  aspect-ratio: 3 / 4;
+  filter: drop-shadow(0 0.45rem 0 rgb(20 32 46 / 0.55));
+}
+.title-hero--left {
+  rotate: -4deg;
+}
+.title-hero--right {
+  rotate: 4deg;
+}
 .title-card {
   display: grid;
   justify-items: center;
   gap: var(--s1);
+  padding: var(--s4) var(--s6) var(--s5);
+  border: var(--stroke) solid var(--outline);
+  border-radius: 48% 52% 18% 18% / 18% 18% 22% 22%;
+  background:
+    linear-gradient(90deg, transparent 49%, rgb(255 244 222 / 0.12) 50%, transparent 51%),
+    linear-gradient(180deg, #a97834, #8a5d28 58%, #71491f);
+  box-shadow: 0 0.45rem 0 rgb(20 32 46 / 0.55);
+  rotate: -0.7deg;
 }
 .title-card__mark {
   margin: 0;
@@ -785,6 +874,12 @@ body.screen-open #hud > *:not(.btn--mute) {
   .title-card__mark {
     font-size: clamp(1.9rem, 7vh, 3rem);
   }
+  .title-card {
+    padding: var(--s2) var(--s4) var(--s3);
+  }
+  .title-lockup {
+    grid-template-columns: 3.5rem auto 3.5rem;
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -886,7 +981,7 @@ body.screen-open #hud > *:not(.btn--mute) {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(5.4rem, 1fr));
   gap: var(--s2);
-  inline-size: min(64rem, 94vw);
+  inline-size: 100%;
 }
 .draft-board.is-locked {
   pointer-events: none;
@@ -912,6 +1007,11 @@ body.screen-open #hud > *:not(.btn--mute) {
 .kid:focus-visible {
   outline: 0.2rem solid var(--gold);
   outline-offset: 0.15rem;
+}
+.kid[aria-pressed='true'] {
+  background: #fff8bd;
+  box-shadow: 0 0 0 0.18rem var(--gold), var(--shadow);
+  transform: translateY(-0.12rem);
 }
 .kid__art {
   inline-size: 100%;
@@ -956,6 +1056,138 @@ body.screen-open #hud > *:not(.btn--mute) {
   block-size: 100%;
   border-radius: 999px;
   background: var(--grass);
+}
+
+/* The board finds; the spotlight sells. Keeping the large card beside the
+   roster preserves fast comparison while giving one character the frame. */
+.draft-workbench {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 19rem);
+  align-items: start;
+  gap: var(--s4);
+  inline-size: min(76rem, 94vw);
+}
+.draft-preview {
+  position: sticky;
+  inset-block-start: var(--s4);
+  display: grid;
+  justify-items: center;
+  gap: clamp(0.2rem, 0.7svh, var(--s2));
+  padding: clamp(0.45rem, 1.2svh, var(--s3));
+  border: var(--stroke) solid var(--outline);
+  border-radius: var(--radius-lg);
+  background: var(--cream);
+  color: var(--ink);
+  box-shadow: var(--shadow);
+  rotate: 0.7deg;
+}
+.draft-preview__ribbon {
+  margin-block-start: calc(-1 * var(--s4));
+  padding: var(--s1) var(--s4);
+  border: 0.13rem solid var(--outline);
+  border-radius: 999px;
+  background: var(--gold);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+.draft-preview__ribbon.is-cpu {
+  background: var(--red);
+  color: var(--cream);
+}
+.draft-preview__ribbon.is-mine {
+  background: var(--grass);
+}
+.draft-preview__art {
+  inline-size: min(9rem, 100%);
+  block-size: clamp(7rem, 22svh, 10.5rem);
+}
+.draft-preview__identity {
+  display: grid;
+  justify-items: center;
+  gap: var(--s1);
+  text-align: center;
+}
+.draft-preview__name {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+.draft-preview__tagline {
+  margin: 0;
+  min-block-size: 2.4em;
+  font-size: 0.78rem;
+  line-height: 1.2;
+  font-weight: 600;
+}
+.draft-preview__ratings {
+  display: grid;
+  gap: 0.22rem;
+  inline-size: 100%;
+}
+.draft-rating {
+  display: grid;
+  grid-template-columns: 1rem 2.7rem 1fr;
+  align-items: center;
+  gap: 0.2rem;
+}
+.draft-rating__icon {
+  font-size: 0.72rem;
+}
+.draft-rating__label {
+  font-size: 0.52rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.draft-rating__dots {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 0.1rem;
+}
+.draft-rating__dot {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 0.06rem solid rgb(20 32 46 / 0.35);
+  background: rgb(20 32 46 / 0.12);
+}
+.draft-rating__dot.is-on {
+  background: var(--grass);
+  border-color: var(--outline);
+}
+.draft-preview__pick {
+  inline-size: 100%;
+  padding-inline: var(--s3);
+  background: var(--gold);
+}
+.draft-preview__stamp {
+  padding: var(--s2) var(--s3);
+  border: 0.13rem dashed var(--outline);
+  border-radius: var(--radius);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--grass-dark);
+}
+.draft-preview__stamp.is-cpu {
+  color: var(--red);
+}
+@media (max-width: 720px) {
+  .draft-workbench {
+    grid-template-columns: 1fr;
+  }
+  .draft-preview {
+    position: relative;
+    inset-block-start: auto;
+    grid-row: 1;
+    inline-size: min(20rem, calc(94vw - 2 * var(--s3)));
+    justify-self: center;
+  }
+  .draft-board {
+    grid-row: 2;
+  }
+  .draft-preview__art {
+    block-size: clamp(7rem, 18svh, 8.5rem);
+  }
 }
 
 .is-hidden {

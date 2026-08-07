@@ -89,9 +89,24 @@ export type PitchResult =
   /** Taken, and over the plate. */
   | { kind: 'calledStrike'; crossing: Crossing; pitch: PitchKind; travelSec: number; release: BallState }
   /** Offered at and missed. */
-  | { kind: 'swingingStrike'; crossing: Crossing; pitch: PitchKind; travelSec: number; release: BallState }
+  | {
+      kind: 'swingingStrike';
+      crossing: Crossing;
+      pitch: PitchKind;
+      travelSec: number;
+      release: BallState;
+      /** Signed against the plate crossing: negative is early, positive late. */
+      timingErrorSec: number;
+    }
   /** Nicked it. A strike, but never the third. */
-  | { kind: 'foulTip'; crossing: Crossing; pitch: PitchKind; travelSec: number; release: BallState }
+  | {
+      kind: 'foulTip';
+      crossing: Crossing;
+      pitch: PitchKind;
+      travelSec: number;
+      release: BallState;
+      timingErrorSec: number;
+    }
   /** Hit it. Fair or foul is the play's to decide, not the swing's. */
   | {
       kind: 'inPlay';
@@ -101,6 +116,7 @@ export type PitchResult =
       travelSec: number;
       plateSpeedFts: number;
       release: BallState;
+      timingErrorSec: number;
     };
 
 export interface PitchSpec {
@@ -310,7 +326,7 @@ export function resolvePitch(
       { timingErrorSec, undercutFt, batter: spec.batter, travelSec, pitchSpeedFts: plateSpeedFts, plate },
       rng.fork('swing')
     );
-    const base = { crossing, pitch: pitchKind, travelSec, release: released };
+    const base = { crossing, pitch: pitchKind, travelSec, release: released, timingErrorSec };
     if (swing.kind === 'miss') return { kind: 'swingingStrike', ...base };
     if (swing.kind === 'foulTip') return { kind: 'foulTip', ...base };
     return { kind: 'inPlay', launch: swing.launch, plateSpeedFts, ...base };

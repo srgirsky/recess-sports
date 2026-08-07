@@ -15,6 +15,8 @@
 
 import { button, el } from '../dom';
 import type { Screen } from '../Router';
+import { getCharacter } from '../../../data/characters';
+import { portrait } from '../portrait';
 
 export class TitleScreen implements Screen {
   constructor(private readonly onPlay: () => void) {}
@@ -22,12 +24,24 @@ export class TitleScreen implements Screen {
   mount(): HTMLElement {
     const root = el('div', 'screen screen--title');
 
+    // The game is a character product. Put the cast on the front door rather
+    // than asking a wordmark and an empty field to sell them by implication.
+    const lockup = el('div', 'title-lockup');
+    const hero = (id: string, mod: string): HTMLElement => {
+      const c = getCharacter(id);
+      const frame = el('div', `title-hero title-hero--${mod}`);
+      frame.setAttribute('aria-hidden', 'true');
+      frame.appendChild(portrait(c.visual, '', { street: true }));
+      return frame;
+    };
+
     const card = el('div', 'title-card');
     card.append(
       el('h1', 'title-card__mark', 'RECESS'),
       el('h1', 'title-card__mark title-card__mark--two', 'SPORTS'),
       el('p', 'title-card__tag', 'pick your team · play ball')
     );
+    lockup.append(hero('nostrike', 'left'), card, hero('wheelchair_ace', 'right'));
 
     // ★ THE ONE VERB. `⚾ PLAY` rather than a menu of modes: choosing a mode is
     // reading, and the difficulty ladder and venue picker v1 puts on a GAME
@@ -44,7 +58,7 @@ export class TitleScreen implements Screen {
       location.href = './classic/';
     }, 'btn--quiet btn--small');
 
-    root.append(card, play, classic);
+    root.append(lockup, play, classic);
     return root;
   }
 }

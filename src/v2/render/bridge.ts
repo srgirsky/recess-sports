@@ -30,6 +30,7 @@ import { cloneState, sampleAt, stepFlight, type BallState } from '../sim/flight'
 import type { KidView } from './CharacterModel';
 import { AnimationDirector } from './AnimationDirector';
 import type { CameraInput } from './cameraCues';
+import { clipSpec } from './clips';
 
 /** Everything the bridge is allowed to move. */
 export interface SceneRefs {
@@ -66,6 +67,13 @@ export function applyFrame(
   for (const d of refs.directors.values()) d.update(dtSec);
 }
 
+/** A reaction or action gets to finish before an idle/locomotion loop replaces
+ * it. Position still comes from the sim every tick; this protects motion only. */
+function holdsOneShot(dir: AnimationDirector | undefined): boolean {
+  const name = dir?.playing;
+  return !!name && !clipSpec(name).loop;
+}
+
 /**
  * Nine fielders at their posts, facing the plate, idling.
  *
@@ -95,8 +103,10 @@ function applyIdleDefence(refs: SceneRefs, frame: LiveFrame): void {
     // his hips, which lifts a kid's feet rather than lowering his head. See
     // `proceduralClips.ts`'s ground solve and `groundContact.test.ts`.
     const dir = refs.directors.get(id);
-    if (pos === 'C') dir?.play('field_ready');
-    else dir?.setLocomotionSpeed(0);
+    if (!holdsOneShot(dir)) {
+      if (pos === 'C') dir?.play('field_ready');
+      else dir?.setLocomotionSpeed(0);
+    }
   }
   const batter = refs.kids.get(frame.batterId);
   if (batter) {
@@ -108,7 +118,8 @@ function applyIdleDefence(refs: SceneRefs, frame: LiveFrame): void {
     // arms at his sides, and settled out of a swing into a pose he had never
     // been in. Same class as the defence standing in bind pose before PR 13
     // drew it: a clip that exists, is documented, and has no caller.
-    refs.directors.get(frame.batterId)?.play('bat_stance');
+    const dir = refs.directors.get(frame.batterId);
+    if (!holdsOneShot(dir)) dir?.play('bat_stance');
   }
 }
 
@@ -126,7 +137,8 @@ function applyLive(refs: SceneRefs, play: PlayState): void {
     kid.setFacing(Math.atan2(play.ball.p.x - f.p.x, play.ball.p.z - f.p.z));
     // Playback rate follows the SIM's speed, which is what stops feet skating —
     // see `clips.ts`'s `authoredSpeedFts`.
-    refs.directors.get(f.charId)?.setLocomotionSpeed(f.speedFts);
+    const dir = refs.directors.get(f.charId);
+    if (!holdsOneShot(dir)) dir?.setLocomotionSpeed(f.speedFts);
   }
 
   for (const r of play.runners) {
@@ -138,7 +150,8 @@ function applyLive(refs: SceneRefs, play: PlayState): void {
       const to = basePos(r.to);
       kid.setFacing(Math.atan2(to.x - p.x, to.z - p.z));
     }
-    refs.directors.get(r.charId)?.setLocomotionSpeed(r.speedFts);
+    const dir = refs.directors.get(r.charId);
+    if (!holdsOneShot(dir)) dir?.setLocomotionSpeed(r.speedFts);
   }
 }
 

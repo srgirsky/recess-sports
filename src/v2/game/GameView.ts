@@ -74,6 +74,7 @@ import { Fireworks } from '../render/Fireworks';
 import { InningBreak } from '../ui/InningBreak';
 import { Matchup } from '../ui/Matchup';
 import { MatchupTally } from '../ui/matchupModel';
+import { PlayCallouts } from '../ui/PlayCallouts';
 import { scoreboardModel, type ScoreboardTeams } from '../ui/scoreboardModel';
 
 /**
@@ -238,6 +239,7 @@ export class GameView {
     forceEvery: new URLSearchParams(location.search).get('break') === '1',
   });
   private readonly matchupTally = new MatchupTally();
+  private readonly callouts: PlayCallouts;
   private pickerEl: HTMLElement | null = null;
   private teamNames: ScoreboardTeams = { away: 'ROCKETS', home: 'COMETS' };
 
@@ -264,6 +266,9 @@ export class GameView {
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     const params = new URLSearchParams(location.search);
+    const toasts = document.getElementById('toasts');
+    if (!toasts) throw new Error('GameView: missing #toasts host');
+    this.callouts = new PlayCallouts(toasts);
     this.venue = (params.get('venue') as VenueId) ?? 'park';
     this.night = params.get('night') === '1';
     this.renderer = new Renderer(canvas);
@@ -677,6 +682,8 @@ export class GameView {
         regulationInnings: innings,
         onEvent: (e) => {
           this.matchupTally.onEvent(e);
+          this.callouts.onEvent(e);
+          if (e.t === 'pa') this.reactToPlateAppearance(e);
           // ★ THE SKY AGREES WITH A NIGHT HOMER. Render-side chrome reacting
           // to the same event the booth calls; the sim never knows.
           if (e.t === 'contact' && e.hit === 'HR' && !e.foul && this.night) this.queueFireworks();
@@ -686,12 +693,21 @@ export class GameView {
       makeRng(seed)
     );
     this.ended = false;
+    this.callouts.reset();
     this.inputs = {};
     this.wait = 0;
     this.pitchElapsed = 0;
     this.windupElapsed = 0;
     this.cue = null;
     this.advance();
+  }
+
+  /** Let both principals react to the plate appearance they just finished.
+   * The bridge protects these one-shots from its idle loops until they settle. */
+  private reactToPlateAppearance(e: Extract<SimEvent, { t: 'pa' }>): void {
+    const batterWon = e.result === 'hit' || e.result === 'walk';
+    this.refs.directors.get(e.batterId)?.play(batterWon ? 'cheer' : 'upset', { restart: true });
+    this.refs.directors.get(e.pitcherId)?.play(batterWon ? 'upset' : 'cheer', { restart: true });
   }
 
   /**

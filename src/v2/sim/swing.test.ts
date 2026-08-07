@@ -184,6 +184,21 @@ describe('★ a person is not the CPU batter, and two constants prove it', () =>
     expect(r.kind).not.toBe('ball');
     expect(r.kind).not.toBe('calledStrike');
   });
+
+  it('carries his real timing error through to presentation', () => {
+    // The field is feedback, not another judgement: the UI may say EARLY or
+    // LATE, but it must read the exact error the shared swing model resolved.
+    const early = resolvePitch(inF, spec(), makeRng('early-feedback'), {
+      atSec: inF.travelSec - 0.08,
+      aimHeightFt: inF.crossing.y,
+    });
+    const late = resolvePitch(inF, spec(), makeRng('late-feedback'), {
+      atSec: inF.travelSec + 0.06,
+      aimHeightFt: inF.crossing.y,
+    });
+    expect('timingErrorSec' in early && early.timingErrorSec).toBeCloseTo(-0.08, 10);
+    expect('timingErrorSec' in late && late.timingErrorSec).toBeCloseTo(0.06, 10);
+  });
 });
 
 describe('★ the ordering gate: skill beats a kid who has none', () => {

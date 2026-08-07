@@ -422,8 +422,11 @@ const SCREENS = [
   },
   {
     name: 'team',
-    // Straight through a whole draft — nine taps and nine CPU beats. The team
-    // picker is the only screen you cannot reach without finishing one.
+    // Straight through a whole draft — nine inspections, nine confirmations
+    // and nine CPU beats. The confirmation is load-bearing: tapping a roster
+    // thumbnail now PREVIEWS a kid, and only PICK ME records the person's vote.
+    // A driver that skips it both fails to reach this screen and quietly stops
+    // proving the product's most important interaction.
     // ★ REACHES FROM WHEREVER IT IS. The screen states run in sequence on ONE
     // page, so by the time this runs the draft state has already left the title
     // behind and a blind click on the title button throws. Each reach must be
@@ -436,6 +439,9 @@ const SCREENS = [
         const card = document.querySelector('.draft-board:not(.is-locked) .kid');
         if (!card) { await new Promise((r) => setTimeout(r, 200)); i--; continue; }
         card.click();
+        const confirm = document.querySelector('.draft-preview__pick');
+        if (!confirm) return 'draft preview never offered PICK ME';
+        confirm.click();
         await new Promise((r) => setTimeout(r, 680));
       }
       document.querySelector('.screen--draft .btn--hero')?.click();

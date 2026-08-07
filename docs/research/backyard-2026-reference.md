@@ -2,18 +2,21 @@
 
 Source: the six Steam store screenshots for app 3935020 (captured at 1920×1080,
 2026-08-04), the Steam feature copy, the Wikipedia article, and review coverage
-(IGN 5/10, Metacritic 58 PC). Video context: "The New Backyard Baseball is
-Amazing!" — Not The Expert, YouTube `A3DyDMkx17c` (41:26; playback was blocked
-in the capture session, so frame-level pacing numbers from it are still owed —
-only its title card was captured).
+(IGN 5/10, Metacritic 58 PC). The full 41:26 Not The Expert video "The New
+Backyard Baseball is Amazing!" (`A3DyDMkx17c`) was audited 2026-08-06 through
+its 249 high-resolution storyboard frames at a 10-second cadence: team creation
+0:35–2:39, draft 2:39–11:19, and gameplay 11:19–41:26. The cadence is enough to
+establish screen structure, camera vocabulary and repeated feedback, but not to
+measure sub-second animation timing.
 
 Purpose: the concrete target list for the "art, graphics and gameplay on par
 with the new Backyard Baseball" push. This file records what BB2026 *shows*,
 screen by screen, so each gap can be closed as its own PR and checked against
 something more specific than memory. It is the BB2026 counterpart to
 `backyard-2001-video-notes.md`, and far shallower — store screenshots, not
-frame-stepped capture. Facts here are observations of six posed marketing
-frames; treat densities and layouts as representative, not measured.
+frame-stepped capture. Facts here are observations of marketing frames plus the
+10-second video storyboard; treat densities and layouts as representative, not
+pixel measurements.
 
 The game: Playground Productions + Mega Cat Studios, released 2026-07-09, PC/Mac,
 $39.99. 30 classic kids + ~10 more (MLB-players-as-kids, unlockables), 24 team
@@ -73,6 +76,38 @@ markings, espresso kiosk, comic shop, brownstones, window flower boxes). Both
 are DENSE with props to their edges, and both read instantly as a specific
 place kids commandeered — bases are improvised (a plank, a chalk X).
 
+## What the video adds
+
+- **The title sells a place and a cast before it sells a mode.** The logo sits
+  over the treehouse, the camera travels through physical menu stations, and
+  team creation gives a coach icon, logo, colours and a constructed name before
+  the draft. Recess had only two floating words and a PLAY button over its park.
+- **The draft is one child at a time, never an inventory grid.** A candidate
+  fills roughly half the frame, talks and reacts; a large trading card carries
+  nickname, birthday, personality copy and five dot ratings; PICK? receives an
+  explicit yes/no. The bench remains visible behind the card, so the cast feels
+  like a group of children waiting to be chosen.
+- **Gameplay cuts between two cameras on nearly every ball:** a close plate view
+  for pitch choice and swing, then a high oblique diamond view for the live
+  race. Close character inserts punctuate pitching, batting and celebrations.
+  The high view is a gameplay tool: it keeps ball, chaser, runners and target
+  bags readable at the same time.
+- **Every resolution is written over the field.** STRIKE carries EARLY/LATE,
+  SAFE and OUT fill the centre of the frame, fly distance floats in the sky,
+  and the line score takes over between innings. Audio and animation reinforce
+  the same verdict; the player never has to infer an outcome from a small pip.
+- **Animation is constant rather than occasional.** Batters waggle and load,
+  pitchers perform a complete delivery, fielders crouch, run, throw and catch,
+  runners slide, and principals react after the play. Camera changes are timed
+  to those motions. A moving character is the normal state.
+- **Venue identity survives every camera.** The suburban yard and school field
+  use different ground, fence, skyline and prop languages; neither is a palette
+  swap. The video shows two of the eleven fields and day/night presentation.
+- **The product shell is much wider:** custom player, team strategy/positions,
+  season schedule, records, collectible cards, multiple modes and game summary.
+  These are retention and expression systems, not prerequisites for one good
+  two-inning pickup game, but they are real parity gaps.
+
 ## What this yields as a gap list (ranked, art first)
 
 1. ~~A world behind the fence~~ — PR 28's `render/Scenery.ts`.
@@ -84,17 +119,50 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
 4. ~~HUD sticker language, first instalment~~ — PR 31's tappable pitch cards.
    The scoreboard is still a dark slab; restyling it rides with item 6.
 5. ~~Background kids~~ — PR 32: the undrafted twelve watch from the yards.
-6. ~~Presentation beats~~: ~~matchup plate~~ (PR 33), ~~inning-break
+6. ~~Presentation beats, first pass~~: ~~matchup plate~~ (PR 33), ~~inning-break
    scoreboard~~ (PR 34), ~~a camera cue per screen~~ (PR 37 — draft over
    DEEP, team over PLAY, result into PITCH_HERO). ~~Wooden-sign
-   headers~~ and ~~the draft's card-pop beat~~ landed as PR 42 — every
-   engineering-side line in this list is now struck; the remaining parity
-   ceiling is the commissioned character models (pipeline ready, delivery
-   external).
+   headers~~ and ~~the draft's card-pop beat~~ landed as PR 42.
 7. ~~Day/night~~ — PR 35's `?night=1` (sky/fog/lights/lit windows), PR 36's
    sun/moon chip on the team screen with a live park flip. All named polish shipped:
    ~~per-venue night looks~~ (PR 41), ~~light towers~~ (PR 39),
    ~~HR fireworks~~ (PR 38).
+8. ~~Readable play verdicts~~ — the 2026-08-06 parity pass adds broadcast-sized
+   BALL / STRIKE / FOUL / SAFE / OUT / HOME RUN overlays, count-ending WALK and
+   STRIKEOUT calls, and EARLY/LATE feedback from the swing's real signed timing
+   error. The outcome comes from `SimEvent`; the view never re-judges it.
+9. ~~A character-first draft~~ — the same pass replaces the immediate-vote card
+   wall with a large candidate spotlight: street portrait, tagline, five 1–10
+   dot ratings and an explicit PICK ME confirmation. Confirmed kids speak their
+   authored `draftLine`; the CPU pick gets the same reveal rather than vanishing.
+10. ~~Characters on the front door and after the play~~ — the title lockup now
+    frames the wordmark with signature kids, and batter/pitcher play opposing
+    cheer/upset reactions after every plate appearance.
+
+## Remaining parity backlog, in dependency order
+
+1. **Roster-quality 3D character delivery.** The runtime contract, validator,
+   LODs, face atlas and fallback path exist, but the shipping manifest contains
+   five of thirty kids. The other twenty-five still render as geometric proxies;
+   no UI or lighting pass can close that silhouette and expression gap.
+2. **Marker-synchronised action animation in the game.** Locomotion, idle and
+   the new result reactions play, and all 35 contract clips have procedural
+   stand-ins. Swing, pitch release, catch, throw and slide still need live call
+   sites that use `AnimationDirector.playToMarker` against simulated instants.
+   This is the largest remaining gameplay-presentation gap in the video.
+3. **A true draft environment.** The spotlight closes the information and voting
+   gap, but BB's candidates occupy a 3D bench and physically react/walk off. The
+   next step is a dedicated presentation rig that arranges the already-loaded
+   roster in the schoolyard and drives `walk_on` / `pose_card` without changing
+   the draft rules.
+4. **Venue breadth.** Recess has three mechanically distinct venues with day and
+   night; BB ships eleven. Add places only when each brings a unique ground,
+   fence, skyline and prop story—not palette variants.
+5. **Diegetic front-end and retention shell.** Treehouse stations, strategy,
+   custom player, schedule/season, records, card collection and the extra modes
+   remain absent from v2. Some mature versions still live in `/classic/`; port
+   shared rules rather than cloning them, and keep the pickup game as the one-tap
+   front door for ages four to eight.
 
 Gameplay: their new modes (Backyard Derby, Backyard Bash, Wiggle Ball, T-Ball)
 map to our roadmap's Practice/modes arc, and their 10-point skill system

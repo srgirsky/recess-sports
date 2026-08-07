@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// The draft. Thirty kids on a board; you take nine.
+// The draft. A roster board feeds one big character spotlight; you take nine.
 //
 // ★ THE PORTRAITS ARE v1's OWN ART, INLINED. `art/CharacterArt.ts` hand-draws
 // each kid as an SVG STRING from their `VisualParams`, which is exactly what a
@@ -12,9 +12,11 @@
 // thirty kids wear the first kid's shirt. See that file; it is not a style
 // choice.
 //
-// ★ THE STAT BARS ARE THE WHOLE READ. Design pillar: minimal reading, ages four
-// to eight. A four-year-old cannot compare "contact 7" with "contact 4", and can
-// compare two bars instantly. The name is there for the adult in the room.
+// ★ THE SPOTLIGHT IS THE VOTE EARNING ITS MOMENT. A wall of thirty equally small
+// cards makes the cast read as inventory. BB2026 stops on one kid, lets them fill
+// the frame, and asks PICK?; ours now does the same with the portrait art and
+// taglines the roster already owns. The board finds a kid, the big card confirms
+// them, and only that confirmation calls `pickByHuman` and records the vote.
 // ---------------------------------------------------------------------------
 
 import { button, el } from '../dom';
@@ -29,23 +31,36 @@ import type { Character } from '../../../data/types';
 const CPU_BEAT_MS = 620;
 
 /** The four stats a card shows, in the order they read. */
-const STATS = [
+const CARD_STATS = [
   ['contact', '🎯'],
   ['power', '💪'],
   ['speed', '💨'],
   ['pitching', '⚾'],
 ] as const;
 
+const SPOTLIGHT_STATS = [
+  ['contact', '🎯', 'HIT'],
+  ['power', '💪', 'POWER'],
+  ['speed', '💨', 'RUN'],
+  ['pitching', '⚾', 'PITCH'],
+  ['fielding', '🧤', 'GLOVE'],
+] as const;
+
+type SpotlightMode = 'pick' | 'mine' | 'cpu';
+
 export class DraftScreen implements Screen {
   private state: DraftState;
   private root!: HTMLElement;
   private board!: HTMLElement;
+  private spotlight!: HTMLElement;
   private slots!: HTMLElement;
   private status!: HTMLElement;
   private go!: HTMLButtonElement;
   private timer: ReturnType<typeof setTimeout> | null = null;
   /** Set while the CPU is picking, so a fast second tap cannot double-pick. */
   private busy = false;
+  private spotlightId: string | null;
+  private spotlightMode: SpotlightMode = 'pick';
 
   constructor(
     allIds: string[],
@@ -54,6 +69,7 @@ export class DraftScreen implements Screen {
     private readonly onReady: (playerTeam: string[], aiTeam: string[]) => void
   ) {
     this.state = startDraft(allIds);
+    this.spotlightId = this.state.pool[0] ?? null;
   }
 
   mount(): HTMLElement {
@@ -66,11 +82,14 @@ export class DraftScreen implements Screen {
 
     this.slots = el('div', 'draft-slots');
     this.board = el('div', 'draft-board');
+    this.spotlight = el('aside', 'draft-preview');
+    const workbench = el('div', 'draft-workbench');
+    workbench.append(this.board, this.spotlight);
 
     this.go = button('⚾  PLAY BALL', () => this.finish(), 'btn--hero');
     this.go.classList.add('is-hidden');
 
-    this.root.append(head, this.slots, this.board, this.go);
+    this.root.append(head, this.slots, workbench, this.go);
     this.paint();
     return this.root;
   }
@@ -86,6 +105,8 @@ export class DraftScreen implements Screen {
     const node = el('button', 'kid interactive');
     node.type = 'button';
     node.dataset.id = id;
+    node.setAttribute('aria-label', `${c.name}: ${c.tagline}`);
+    node.setAttribute('aria-pressed', String(this.spotlightMode === 'pick' && this.spotlightId === id));
 
     const art = el('div', 'kid__art');
     art.appendChild(portrait(c.visual, c.name, { street: true }));
@@ -93,7 +114,7 @@ export class DraftScreen implements Screen {
     node.appendChild(el('span', 'kid__name', c.name));
 
     const bars = el('div', 'kid__bars');
-    for (const [key, icon] of STATS) {
+    for (const [key, icon] of CARD_STATS) {
       const row = el('div', 'kid__bar');
       row.appendChild(el('span', 'kid__bar-icon', icon));
       const track = el('span', 'kid__bar-track');
@@ -107,8 +128,16 @@ export class DraftScreen implements Screen {
     }
     node.appendChild(bars);
 
-    node.addEventListener('click', () => this.take(id));
+    node.addEventListener('click', () => this.inspect(id));
     return node;
+  }
+
+  /** Put one kid on the big card. Looking is free; confirming is the vote. */
+  private inspect(id: string): void {
+    if (this.busy || this.state.turn !== 'player' || !this.state.pool.includes(id)) return;
+    this.spotlightId = id;
+    this.spotlightMode = 'pick';
+    this.paint();
   }
 
   private take(id: string): void {
@@ -117,6 +146,8 @@ export class DraftScreen implements Screen {
     if (next === this.state) return;
     this.state = next;
     this.busy = true;
+    this.spotlightId = id;
+    this.spotlightMode = 'mine';
     // ★ THE KID SAYS THEIR OWN NAME, in their own derived voice. It is the most
     // characterful thing v1 does and it costs one call — and it is the moment
     // the vote is cast, so it is also the feedback that the tap registered.
@@ -131,6 +162,10 @@ export class DraftScreen implements Screen {
       const { state, id: taken } = pickByCpu(this.state, this.rng);
       this.state = state;
       this.busy = false;
+      if (taken) {
+        this.spotlightId = taken;
+        this.spotlightMode = 'cpu';
+      }
       this.paint(taken);
       this.timer = null;
     }, CPU_BEAT_MS);
@@ -160,6 +195,7 @@ export class DraftScreen implements Screen {
     // The board: whoever is left.
     this.board.replaceChildren();
     for (const id of this.state.pool) this.board.appendChild(this.card(id));
+    this.paintSpotlight();
 
     const done = isDraftComplete(this.state);
     this.status.textContent = cpuTook
@@ -168,10 +204,56 @@ export class DraftScreen implements Screen {
         ? 'your team is ready!'
         : this.busy
           ? 'they’re picking…'
-          : `tap a kid — ${9 - this.state.playerTeam.length} to go`;
+          : this.spotlightMode === 'pick'
+            ? `pick your favorite — ${9 - this.state.playerTeam.length} to go`
+            : `tap a kid — ${9 - this.state.playerTeam.length} to go`;
 
     this.go.classList.toggle('is-hidden', !done);
     this.board.classList.toggle('is-locked', this.busy || done);
+  }
+
+  private paintSpotlight(): void {
+    this.spotlight.replaceChildren();
+    const id = this.spotlightId;
+    if (!id) return;
+    const c = getCharacter(id);
+
+    const ribbon = el(
+      'div',
+      `draft-preview__ribbon is-${this.spotlightMode}`,
+      this.spotlightMode === 'mine'
+        ? 'YOU PICKED'
+        : this.spotlightMode === 'cpu'
+          ? 'THEY PICKED'
+          : 'PICK?'
+    );
+    const art = el('div', 'draft-preview__art');
+    art.appendChild(portrait(c.visual, c.name, { street: true }));
+    const identity = el('div', 'draft-preview__identity');
+    identity.append(
+      el('h2', 'draft-preview__name', `${c.emoji ?? '⭐'} ${c.name}`),
+      el('p', 'draft-preview__tagline', c.tagline)
+    );
+
+    const ratings = el('div', 'draft-preview__ratings');
+    for (const [key, icon, label] of SPOTLIGHT_STATS) {
+      const row = el('div', 'draft-rating');
+      row.setAttribute('aria-label', `${label} ${c.stats[key]} out of 10`);
+      row.append(el('span', 'draft-rating__icon', icon), el('span', 'draft-rating__label', label));
+      const dots = el('span', 'draft-rating__dots');
+      for (let i = 1; i <= 10; i++) dots.appendChild(el('i', `draft-rating__dot${i <= c.stats[key] ? ' is-on' : ''}`));
+      row.appendChild(dots);
+      ratings.appendChild(row);
+    }
+
+    this.spotlight.append(ribbon, art, identity, ratings);
+    const canPick =
+      this.spotlightMode === 'pick' &&
+      this.state.turn === 'player' &&
+      this.state.pool.includes(id) &&
+      !this.busy;
+    if (canPick) this.spotlight.appendChild(button('⭐  PICK ME!', () => this.take(id), 'draft-preview__pick'));
+    else this.spotlight.appendChild(el('div', `draft-preview__stamp is-${this.spotlightMode}`, this.spotlightMode === 'mine' ? 'ON YOUR TEAM!' : 'OFF THE BOARD'));
   }
 
   private finish(): void {

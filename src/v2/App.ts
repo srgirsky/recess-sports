@@ -114,7 +114,7 @@ export class App {
       new DraftScreen(
         ROSTER.map((c) => c.id),
         makeRng(`draft-${this.seedBase()}-${this.gameNo}`),
-        (c) => this.sound.sayName(c),
+        (c) => this.sound.sayDraft(c),
         (playerTeam, aiTeam) => {
           this.rosters = { away: playerTeam, home: aiTeam };
           this.showTeam();

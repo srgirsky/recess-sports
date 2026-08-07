@@ -90,6 +90,8 @@ export type SimEvent =
       /** Where it ACTUALLY crossed, per the umpire — not where it was aimed. */
       inZone: boolean;
       swung: boolean;
+      /** Signed swing timing. Null when the batter took the pitch. */
+      timingErrorSec: number | null;
       balls: number;
       strikes: number;
     }
@@ -99,6 +101,8 @@ export type SimEvent =
       hit: HitType;
       flyCaught: boolean;
       foul: boolean;
+      /** The same signed timing error that produced this contact. */
+      timingErrorSec: number;
     }
   | {
       /**
@@ -397,6 +401,7 @@ function* playAtBatLive(
       kind: result.kind,
       inZone: isStrike(result.crossing),
       swung,
+      timingErrorSec: 'timingErrorSec' in result ? result.timingErrorSec : null,
       balls: before.balls,
       strikes: before.strikes,
     });
@@ -460,7 +465,14 @@ function* playAtBatLive(
     const scored = out.scored;
 
     if (outcome.foul) {
-      onEvent?.({ t: 'contact', launch: result.launch, hit: 'out', flyCaught: false, foul: true });
+      onEvent?.({
+        t: 'contact',
+        launch: result.launch,
+        hit: 'out',
+        flyCaught: false,
+        foul: true,
+        timingErrorSec: result.timingErrorSec,
+      });
       // ★ A FOUL IS A STRIKE, AND `applyAtBat` OWNS THE "never the third" RULE.
       // Restating it here would be a second source of truth for a rule v1
       // already has a test for.
@@ -476,6 +488,7 @@ function* playAtBatLive(
       hit: hitTypeOf(outcome, scored, args.batter.id),
       flyCaught: outcome.flyCaught,
       foul: false,
+      timingErrorSec: result.timingErrorSec,
     });
     // ★ TAKE THE IDENTITIES BEFORE FOLDING. `applyLivePlay` reads four fields
     // and `baseIds` is not one of them.
@@ -853,4 +866,3 @@ export function simulateGame(spec: GameSpec, rng: Rng): GameResult {
   while (!r.done) r = it.next();
   return r.value;
 }
-
