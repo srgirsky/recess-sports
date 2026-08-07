@@ -23,11 +23,14 @@
 //                   to get a deterministic scene with no network in it.
 //   ?perf=low|mid|high   force a device tier (see `render/perfTier.ts`).
 //   ?kids=N         how many characters the Look Spike builds (default 13).
+//   ?kid=<id>        fill the Look Spike with one roster model for close review.
+//   ?roster=1        arrange all 30 models in one front-facing review grid.
+//   ?face=<cell>      force an expression atlas cell on a model review.
 //   ?seed=S         the game seed. The same seed is the same game, which is
 //                   what makes "watch that again" possible at all. A rematch
 //                   walks from it rather than re-rolling, so a session stays
 //                   reproducible from one flag.
-//   ?venue=park|sandlot|blacktop   where the game is played.
+//   ?venue=<VenueId>  where the game is played; TeamScreen owns the full list.
 // ---------------------------------------------------------------------------
 
 import { App } from './App';

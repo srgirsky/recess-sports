@@ -13,7 +13,7 @@
 // ---------------------------------------------------------------------------
 
 import { describe, it, expect } from 'vitest';
-import { resolvePitch, throwPitch, type PitchInFlight } from './atbat';
+import { cpuSwingAtSec, resolvePitch, throwPitch, type PitchInFlight } from './atbat';
 import { makeRng, type Rng } from './rng';
 import { ATBAT, resolvePlate } from './params';
 import { ROSTER } from '../../data/characters';
@@ -183,6 +183,37 @@ describe('★ a person is not the CPU batter, and two constants prove it', () =>
     // Never a called strike or a ball — those are outcomes of NOT swinging.
     expect(r.kind).not.toBe('ball');
     expect(r.kind).not.toBe('calledStrike');
+  });
+
+  it('carries his real timing error through to presentation', () => {
+    // The field is feedback, not another judgement: the UI may say EARLY or
+    // LATE, but it must read the exact error the shared swing model resolved.
+    const early = resolvePitch(inF, spec(), makeRng('early-feedback'), {
+      atSec: inF.travelSec - 0.08,
+      aimHeightFt: inF.crossing.y,
+    });
+    const late = resolvePitch(inF, spec(), makeRng('late-feedback'), {
+      atSec: inF.travelSec + 0.06,
+      aimHeightFt: inF.crossing.y,
+    });
+    expect('timingErrorSec' in early && early.timingErrorSec).toBeCloseTo(-0.08, 10);
+    expect('timingErrorSec' in late && late.timingErrorSec).toBeCloseTo(0.06, 10);
+  });
+});
+
+describe('the CPU swing preview', () => {
+  it('is the exact decision later resolved, never a second animation guess', () => {
+    for (let i = 0; i < 120; i++) {
+      const rng = makeRng(`preview-${i}`);
+      const inF = throwPitch(spec(), rng);
+      const atSec = cpuSwingAtSec(inF, spec(), rng);
+      const result = resolvePitch(inF, spec(), rng);
+      if ('timingErrorSec' in result) {
+        expect(atSec).toBeCloseTo(result.travelSec + result.timingErrorSec, 12);
+      } else {
+        expect(atSec).toBeNull();
+      }
+    }
   });
 });
 

@@ -1,5 +1,6 @@
 // ---------------------------------------------------------------------------
-// The app: title -> game -> result -> title.
+// The app: title -> draft -> strategy -> setup -> game -> result, with the
+// persistent Recess Week schedule wrapping five trips through that same game.
 //
 // ★ WHAT THIS REPLACES IS NOTHING, WHICH WAS THE PROBLEM. v2 could play a whole
 // game and had no way to START one and no way to FINISH one. Loading `/v2/` put
@@ -37,8 +38,23 @@ import { Sound } from './ui/Sound';
 import { MuteButton } from './ui/MuteButton';
 import { ROSTER, getCharacter } from '../data/characters';
 import { makeRng } from './sim/rng';
-import { recordGamePlayed } from '../systems/picklog';
+import { getGamesPlayed, readPickRates, recordGamePlayed } from '../systems/picklog';
+import { getAlbum, recordAlbumGame, recordTrophy } from '../systems/album';
 import type { GameResult } from './sim/game';
+import { ClubhouseScreen } from './ui/screens/ClubhouseScreen';
+import { clubhouseModel } from './ui/clubhouseModel';
+import { StrategyScreen } from './ui/screens/StrategyScreen';
+import {
+  clearSeason,
+  getSeason,
+  isWeekOver,
+  newSeason,
+  recordSeasonGame,
+  saveSeason,
+  type SeasonState,
+} from '../systems/season';
+import { SeasonScreen } from './ui/screens/SeasonScreen';
+import { statEventsFromLines } from './ui/seasonModel';
 
 export class App {
   private readonly router: Router;
@@ -55,6 +71,11 @@ export class App {
   private readonly sound = new Sound();
   /** The teams the player drafted, kept so PLAY AGAIN is a rematch. */
   private rosters: { away: string[]; home: string[] } | null = null;
+  /** The draft/setup is creating a new week rather than an exhibition. */
+  private seasonDraft = false;
+  /** The game currently under the canvas belongs to this week. */
+  private seasonGame = false;
+  private season: SeasonState | null = null;
   /**
    * The player's colours. Read from `recess_team` — the SAME key v1 writes, so
    * a kid who named their team at `/` finds it already named at `/v2/`.
@@ -86,17 +107,87 @@ export class App {
     this.showTitle();
   }
 
+  /** The app-shell form of the existing dev-only fixed-clock verifier seam. */
+  devStepFixedClock(ticks = 6) {
+    return this.game.devStepFixedClock(ticks);
+  }
+
   private showTitle(): void {
     this.game.setScreenCue(null);
     this.rosters = null;
+    this.seasonDraft = false;
+    this.seasonGame = false;
+    this.season = null;
     this.router.show(
-      new TitleScreen(() => {
-        // ★ THE GESTURE. Audio cannot start without one, and this is the only
-        // tap guaranteed to happen before anything makes a noise. v1 unlocks on
-        // the same button for the same reason.
-        this.sound.start();
-        this.showDraft();
-      })
+      new TitleScreen(
+        () => {
+          // ★ THE GESTURE. Audio cannot start without one, and this is the only
+          // tap guaranteed to happen before anything makes a noise. v1 unlocks on
+          // the same button for the same reason.
+          this.sound.start();
+          this.seasonDraft = false;
+          this.showDraft();
+        },
+        () => {
+          this.sound.start();
+          this.showClubhouse();
+        },
+        () => {
+          this.sound.start();
+          const saved = getSeason();
+          if (saved) this.showSeason(saved);
+          else {
+            this.seasonDraft = true;
+            this.showDraft();
+          }
+        }
+      )
+    );
+  }
+
+  /** The five-day schedule, resumed from the shared `recess_season` key. */
+  private showSeason(season: SeasonState): void {
+    this.game.setScreenCue('DEEP');
+    this.season = season;
+    this.seasonGame = false;
+    this.identity = season.identity;
+    this.router.show(
+      new SeasonScreen(
+        season,
+        () => this.startSeasonGame(season),
+        (awardIds) => {
+          for (const id of awardIds) recordTrophy(id);
+          clearSeason();
+          this.showTitle();
+        },
+        () => this.showTitle()
+      )
+    );
+  }
+
+  private startSeasonGame(season: SeasonState): void {
+    if (isWeekOver(season)) return;
+    this.season = season;
+    this.seasonGame = true;
+    this.identity = season.identity;
+    this.rosters = {
+      away: [...season.playerTeam],
+      home: [...season.rivalTeams[season.gameIndex]],
+    };
+    this.showStrategy();
+  }
+
+  /** Personal records and stickers, read from the same stores v1 maintains. */
+  private showClubhouse(): void {
+    this.game.setScreenCue('PITCH_HERO');
+    const rosterOrder = ROSTER.map((c) => c.id);
+    this.router.show(
+      new ClubhouseScreen(
+        clubhouseModel(getAlbum(), getGamesPlayed(), readPickRates(), rosterOrder),
+        ROSTER,
+        (c) => this.sound.sayDraft(c),
+        () => this.showTitle()
+      )
     );
   }
 
@@ -114,12 +205,27 @@ export class App {
       new DraftScreen(
         ROSTER.map((c) => c.id),
         makeRng(`draft-${this.seedBase()}-${this.gameNo}`),
-        (c) => this.sound.sayName(c),
+        (c) => this.sound.sayDraft(c),
         (playerTeam, aiTeam) => {
           this.rosters = { away: playerTeam, home: aiTeam };
-          this.showTeam();
-        }
+          this.showStrategy();
+        },
+        (id, pool, host, mode) => this.game.setDraftSpotlight(id, pool, host, mode)
       )
+    );
+  }
+
+  /** One real strategy decision: the human batting order handed to the sim. */
+  private showStrategy(): void {
+    if (!this.rosters) return;
+    this.game.setScreenCue('PLAY');
+    this.router.show(
+      new StrategyScreen(this.rosters.away, (order) => {
+        if (!this.rosters) return;
+        this.rosters.away = order;
+        if (this.seasonGame) void this.playBall();
+        else this.showTeam();
+      })
     );
   }
 
@@ -152,7 +258,19 @@ export class App {
         (t) => {
           this.identity = t;
           setTeamIdentity(t);
-          void this.playBall();
+          if (this.seasonDraft && this.rosters) {
+            const season = newSeason(
+              this.rosters.away,
+              t,
+              ROSTER.map((c) => c.id),
+              makeRng(`season-${this.seedBase()}-${this.gameNo}`)
+            );
+            saveSeason(season);
+            this.seasonDraft = false;
+            this.showSeason(season);
+          } else {
+            void this.playBall();
+          }
         }
       )
     );
@@ -166,6 +284,9 @@ export class App {
   }
 
   private rival(): TeamIdentity {
+    if (this.seasonGame && this.season) {
+      return this.season.rivals[this.season.gameIndex] ?? pickRival(this.identity, this.gameNo);
+    }
     return pickRival(this.identity, this.gameNo);
   }
 
@@ -212,14 +333,30 @@ export class App {
       { ...this.game.teams, you: this.game.humanSide },
       ROSTER.map((c) => c.id)
     );
+    // One completed v2 game advances the SAME sticker book v1 shows. Only the
+    // human roster counts: CPU picks are neither votes nor earned stickers.
+    const playerIds = this.rosters?.[this.game.humanSide] ?? [];
+    recordAlbumGame(playerIds, model.verdict === 'win');
+    let completedWeek: SeasonState | null = null;
+    if (this.seasonGame && this.season) {
+      completedWeek = recordSeasonGame(
+        this.season,
+        model.verdict === 'win' ? 'W' : model.verdict === 'loss' ? 'L' : 'T',
+        statEventsFromLines(result.lines)
+      );
+      saveSeason(completedWeek);
+      this.season = completedWeek;
+      this.seasonGame = false;
+    }
     this.router.show(
       new ResultScreen(
         model,
         (id) => getCharacter(id).name,
         // PLAY AGAIN is a REMATCH — same nine kids, so a player is not made to
         // re-draft to have another go at a team they just built.
-        () => void this.playBall(),
-        () => this.showTitle()
+        () => completedWeek ? this.showSeason(completedWeek) : void this.playBall(),
+        () => this.showTitle(),
+        completedWeek ? { again: '📅  BACK TO WEEK' } : undefined
       )
     );
   }

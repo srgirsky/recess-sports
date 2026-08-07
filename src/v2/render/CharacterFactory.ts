@@ -2,7 +2,7 @@
 // ★ THE ONE SEAM between "a character" and "which of the two things is drawing
 // it". Render-side only.
 //
-// Nothing else in the codebase is allowed to decide between a commissioned
+// Nothing else in the codebase is allowed to decide between a production
 // model and a proxy, because that decision has four inputs — a URL flag, what
 // has been delivered, whether the file loaded, and whether it was
 // well-formed — and any call site that reimplements even part of it will get a
@@ -16,11 +16,9 @@
 //                         the stand-in it replaced without editing anything,
 //                         and how you get a deterministic scene for a CI
 //                         screenshot.
-//   2. not delivered      -> proxy, silently. This is the NORMAL state for most
-//                         of the roster during a batched delivery (§5 ships in
-//                         batches of 5-6), so it must not be a warning: 25
-//                         console lines a game teaches everyone to ignore the
-//                         console, and then the real failure below is invisible.
+//   2. not delivered      -> proxy, silently. The committed manifest is complete,
+//                         but a partial deploy or stale cached manifest must
+//                         remain a cosmetic downgrade rather than a crash.
 //   3. load/parse failed  -> proxy, and warn ONCE per character. A 404 or a
 //                         malformed file IS a defect, and it is the one thing
 //                         here that somebody has to fix.

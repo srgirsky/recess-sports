@@ -338,6 +338,13 @@ describe('★ the v2 lineup planner, closing PR 6s own finding', () => {
     const rest = order.slice(2).reduce((a, c) => a + c.stats.contact, 0) / 7;
     expect(topTwo, 'the top of the order gets on base').toBeGreaterThan(rest);
   });
+
+  it('uses a player batting order exactly, and rejects a fake one', () => {
+    const chosen = [...AWAY].reverse();
+    expect(planDefence(AWAY, getCharacter, chosen).order).toEqual(chosen);
+    expect(() => planDefence(AWAY, getCharacter, [...AWAY.slice(0, 8), AWAY[0]])).toThrow(/exactly once/);
+    expect(() => planDefence(AWAY, getCharacter, [...AWAY.slice(0, 8), 'not-a-kid'])).toThrow(/exactly once/);
+  });
 });
 
 describe('determinism', () => {
@@ -395,6 +402,33 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
     'blacktop:a': '2-0 i6 pa47 h11 k10 r2 s3',
     'blacktop:b': '1-2 i6 pa47 h15 k13 r3 s7',
     'blacktop:c': '5-8 i6 pa61 h28 k13 r13 s3',
+    // Added with the venues: there is no pre-generator result for content that
+    // did not exist then, so these are their birth fingerprints and ratchet
+    // from here exactly as the first three do.
+    'tin_can:a': '2-2 i7 pa64 h28 k17 r4 s12',
+    'tin_can:b': '2-1 i6 pa53 h21 k16 r3 s12',
+    'tin_can:c': '1-11 i6 pa61 h28 k13 r12 s9',
+    'cement:a': '2-1 i6 pa50 h14 k15 r3 s4',
+    'cement:b': '1-2 i7 pa59 h21 k15 r3 s12',
+    'cement:c': '4-3 i6 pa59 h28 k16 r7 s8',
+    'steele:a': '2-0 i6 pa48 h18 k13 r2 s7',
+    'steele:b': '1-2 i6 pa49 h17 k13 r3 s8',
+    'steele:c': '9-3 i6 pa63 h32 k15 r12 s11',
+    'playground:a': '1-2 i6 pa53 h27 k10 r3 s8',
+    'playground:b': '2-3 i7 pa60 h24 k15 r5 s10',
+    'playground:c': '11-4 i6 pa63 h33 k14 r15 s9',
+    'eckman:a': '1-0 i6 pa48 h17 k13 r1 s8',
+    'eckman:b': '1-0 i6 pa53 h20 k14 r1 s10',
+    'eckman:c': '6-4 i6 pa59 h31 k16 r10 s9',
+    'dirt_yards:a': '0-0 i7 pa60 h22 k15 r0 s8',
+    'dirt_yards:b': '1-0 i6 pa53 h20 k14 r1 s11',
+    'dirt_yards:c': '8-9 i6 pa65 h42 k13 r17 s17',
+    'big_city:a': '2-3 i6 pa53 h22 k11 r5 s7',
+    'big_city:b': '3-4 i7 pa59 h19 k15 r7 s8',
+    'big_city:c': '7-4 i6 pa60 h32 k16 r11 s5',
+    'dome:a': '4-2 i6 pa50 h14 k16 r6 s3',
+    'dome:b': '3-2 i6 pa52 h19 k12 r5 s9',
+    'dome:c': '8-9 i6 pa63 h32 k13 r17 s2',
   };
 
   it('★ still produces what it produced before the generator refactor', () => {
@@ -429,6 +463,10 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
    * — dt 1/60 to 1/50 — which is what verified them.
    */
   const CHECKSUM_30 = 1745365359;
+  // Keep the original thirty-game ratchet on the venues it was born with.
+  // New venues get explicit birth fingerprints above; adding content must not
+  // silently rewrite the baseline that catches drift in the existing game.
+  const CHECKSUM_VENUES: VenueId[] = ['park', 'sandlot', 'blacktop'];
 
   // ★ ASYNC, AND IT YIELDS BETWEEN GAMES — a CI fix, not a style choice.
   // Thirty games is ~15s of UNBROKEN synchronous work, which starves the vitest
@@ -448,7 +486,7 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
           away: { name: 'A', ids: Array.from({ length: 9 }, (_, j) => at(j)) },
           home: { name: 'B', ids: Array.from({ length: 9 }, (_, j) => at(j + 9)) },
           lookup: getCharacter,
-          geo: VENUE_GEOMETRY[VENUES[i % VENUES.length]],
+          geo: VENUE_GEOMETRY[CHECKSUM_VENUES[i % CHECKSUM_VENUES.length]],
         },
         makeRng(`golden${i}`)
       );

@@ -43,6 +43,9 @@ judging the art direction). Useful query flags:
 |---|---|
 | `?anims=1` | the **Animation Spike** — review every clip (see below) |
 | `?kids=18` | force the worst-case character count for a perf read |
+| `?kid=<id>` | fill the Look Spike with one character for close model review |
+| `?roster=1` | arrange all 30 models in one front-facing review grid |
+| `?face=<cell>` | force an expression atlas cell during model review |
 | `?perf=low\|mid\|high` | override the auto-detected device tier |
 | `?proxy=1` | force primitive proxy characters everywhere |
 
@@ -92,10 +95,10 @@ npm test
 
 ## Checking a 3D asset delivery (v2)
 
-Character models and the animation library are commissioned against a strict
-contract (`docs/v2/asset-contract.md`, `docs/v2/animation-brief.md`). The
-validator is the first line of acceptance — rejections are automatic and free,
-and a file that passes is accepted:
+Character models and the animation library follow strict delivery contracts
+(`docs/v2/asset-contract.md`, `docs/v2/animation-brief.md`). The validator is
+the first line of acceptance — rejections are automatic and free, and a file
+that passes is accepted:
 
 ```bash
 npm run export:skeleton    # emit assets/v2/skeleton_recess_v1.glb from skeleton.ts
@@ -157,7 +160,23 @@ Step 4 is not optional: the manifest is what the page fetches to know which
 characters have models. A `.glb` in the directory without a manifest entry never
 loads and renders as a proxy forever, silently. A test fails if they drift.
 
-### Playing before the art exists
+### Regenerating the roster models
+
+All 30 roster models are committed. They are deterministic first-party
+deliveries generated from each character's authored body, face, hair and
+accessory data: three LODs, the canonical skin, a per-character 4×4 expression
+atlas and the four material slots expected by the runtime.
+
+```bash
+npm run export:roster-kid              # regenerate all 30 production models
+npm run export:roster-kid -- turbo zippy  # regenerate selected characters
+npm run validate:models                # validate the complete delivery
+```
+
+`/v2/?spike=1&roster=1` is the one-frame roster review; use
+`/v2/?spike=1&kid=turbo` for a single-character field review.
+
+### Rebuilding the permanent fallback proxies
 
 Nothing waits on the modeller. Stand-in characters are generated from the
 primitive proxies, in the real delivery format:
@@ -168,9 +187,10 @@ npm run export:proxy-kid -- all    # the whole roster (~8MB, not committed)
 npm run export:proxy-kid -- moose sprout
 ```
 
-Five are committed so a fresh clone has something to load. Compare models
-against proxies at `/v2/` with the 🎨 MODELS button, or `?proxy=1` to force
-proxies everywhere.
+The proxy command is for rebuilding contract fixtures and fallback comparisons;
+it is not the production-model exporter. Compare models against proxies in the
+Look Spike with the 🎨 MODELS button, or use `?proxy=1` to force proxies
+everywhere.
 
 ### After bumping `three`
 

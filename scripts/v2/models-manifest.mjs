@@ -9,8 +9,8 @@
 // EVERY MODEL TWICE. Vite copies `public/` verbatim into `dist/` and then, on
 // seeing the glob, emits each matched file a second time as a hashed bundle
 // asset. Measured: 1.34MB of `.glb` in `dist/assets/` next to the same 1.34MB
-// in `dist/v2/models/`, for five stand-ins. At thirty commissioned characters
-// that is roughly eight megabytes of duplicate download on a free static host,
+// in `dist/v2/models/`, for five early stand-ins. At the complete roster that
+// is megabytes of duplicate download on a free static host,
 // and nothing in the build output says the two lists are the same files.
 //
 // So the manifest is generated instead: one small JSON the page fetches once,

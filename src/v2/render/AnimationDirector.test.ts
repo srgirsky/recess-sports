@@ -123,6 +123,16 @@ describe('the director', () => {
     kid.dispose();
   });
 
+  it('seeks to the marker when the sim reports the event on this tick', () => {
+    const kid = proxy();
+    const dir = new AnimationDirector(kid.mesh, { fallback: clips });
+    const result = dir.playToMarker('catch_chest' as AnimName, 0);
+    expect(result).toEqual({ rate: 1, clamped: false });
+    expect(dir.action!.time).toBeCloseTo(clipSpec('catch_chest').marker!.frame / FPS, 6);
+    dir.dispose();
+    kid.dispose();
+  });
+
   it('settles a one-shot into the clip it names', () => {
     const kid = proxy();
     const dir = new AnimationDirector(kid.mesh, { fallback: clips });

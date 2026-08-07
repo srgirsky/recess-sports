@@ -40,6 +40,7 @@ import {
   SphereGeometry,
   Vector2,
   Vector3,
+  type Quaternion,
 } from 'three';
 import { Renderer } from '../render/Renderer';
 import { Lighting } from '../render/Lighting';
@@ -52,6 +53,14 @@ import { createCharacter, proxyForced } from '../render/CharacterFactory';
 import { configureModelLoader } from '../render/modelLoader';
 import { AnimationDirector } from '../render/AnimationDirector';
 import { buildProceduralClips } from '../render/proceduralClips';
+import {
+  PITCH_DELIVERY_RELEASE_SEC,
+  cpuSwingCue,
+  diveClip,
+  playEventCue,
+  slideCue,
+} from '../render/actionCues';
+import type { AnimName } from '../render/clips';
 import { RIGS, chooseCamera, damp, type CameraCue, type CameraPreset } from '../render/cameraCues';
 import { applyFrame, cameraInputFor, type SceneRefs } from '../render/bridge';
 import { simulateGameLive, type GameResult, type LiveFrame, type SimEvent } from '../sim/game';
@@ -69,11 +78,18 @@ import { BAT, DEFENSE } from '../sim/params';
 import { kidHeightFt } from '../render/ProxyCharacter';
 import { UNIFORM_COLORS } from '../../art/palette';
 import type { KidView } from '../render/CharacterModel';
+import {
+  DRAFT_CAST_POSITIONS,
+  draftCast,
+  draftHeroPose,
+  type DraftSpotlightMode,
+} from '../render/draftPresentation';
 import { Scoreboard } from '../ui/Scoreboard';
 import { Fireworks } from '../render/Fireworks';
 import { InningBreak } from '../ui/InningBreak';
 import { Matchup } from '../ui/Matchup';
 import { MatchupTally } from '../ui/matchupModel';
+import { PlayCallouts } from '../ui/PlayCallouts';
 import { scoreboardModel, type ScoreboardTeams } from '../ui/scoreboardModel';
 
 /**
@@ -168,6 +184,8 @@ function nearestBase(at: Vec2): 1 | 2 | 3 | 4 | null {
 export class GameView {
   private readonly scene = new Scene();
   private readonly camera: PerspectiveCamera;
+  /** The same scene through the draft card's clipped presentation window. */
+  private readonly draftCamera = new PerspectiveCamera(32, 1, 0.25, 160);
   private readonly renderer: Renderer;
   private lighting: Lighting;
   private readonly outlines = new OutlineRegistry();
@@ -212,6 +230,10 @@ export class GameView {
   private pitchKind: PitchKind = 'fastball';
   /** Real seconds spent on the current windup, so it can never hang. */
   private windupElapsed = 0;
+  /** The visible delivery runs before the sim releases the ball. */
+  private deliveryElapsed = 0;
+  private deliveryStarted = false;
+  private cpuSwingStarted = false;
   private zoneBox: LineSegments | null = null;
   private aimBar: Mesh | null = null;
   private spotMarker: Mesh | null = null;
@@ -238,6 +260,7 @@ export class GameView {
     forceEvery: new URLSearchParams(location.search).get('break') === '1',
   });
   private readonly matchupTally = new MatchupTally();
+  private readonly callouts: PlayCallouts;
   private pickerEl: HTMLElement | null = null;
   private teamNames: ScoreboardTeams = { away: 'ROCKETS', home: 'COMETS' };
 
@@ -261,9 +284,25 @@ export class GameView {
   /** charId -> the uniform they are currently wearing, so a rematch is cheap. */
   private readonly dressed = new Map<string, number>();
   private ended = false;
+  private actionPlay: LiveFrame['play'] = null;
+  private readonly slidLegs = new Set<string>();
+  private readonly diveClips = new Map<string, AnimName>();
+  private draftSpotlight: {
+    id: string;
+    pool: readonly string[];
+    host: HTMLElement;
+    mode: DraftSpotlightMode;
+    ageSec: number;
+    walkIn: boolean;
+    cast: string[];
+  } | null = null;
+  private readonly draftProtected = new Set<string>();
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     const params = new URLSearchParams(location.search);
+    const toasts = document.getElementById('toasts');
+    if (!toasts) throw new Error('GameView: missing #toasts host');
+    this.callouts = new PlayCallouts(toasts);
     this.venue = (params.get('venue') as VenueId) ?? 'park';
     this.night = params.get('night') === '1';
     this.renderer = new Renderer(canvas);
@@ -433,7 +472,13 @@ export class GameView {
       // rather than firing immediately: the pitch resolves when the frame ends,
       // so `atSec` is what preserves WHEN he went. Swinging twice at one pitch
       // keeps the first — a bat cannot be un-swung.
-      this.inputs.swing ??= { atSec: this.pitchElapsed, aimHeightFt: this.aimHeightFt };
+      if (!this.inputs.swing) {
+        this.inputs.swing = { atSec: this.pitchElapsed, aimHeightFt: this.aimHeightFt };
+        // The human's tap IS the simulated swing instant. We learn it now, so
+        // the director seeks the CONTACT marker onto this rendered tick and
+        // plays the follow-through rather than drawing contact late.
+        this.refs.directors.get(this.frame!.batterId)?.playToMarker('swing_contact', 0);
+      }
       return;
     }
     if (this.onTheMound) {
@@ -446,6 +491,7 @@ export class GameView {
         aimLateralFt: this.spot.x,
         aimHeightFt: this.spot.y,
       };
+      this.beginPitchDelivery();
       return;
     }
     const at = this.toField(e);
@@ -636,6 +682,9 @@ export class GameView {
     const away = {
       name: this.teamNames.away,
       ids: rosters?.away ?? ROSTER.slice(0, 9).map((c) => c.id),
+      // The drafted human side arrives in the order the strategy screen owns.
+      // Bare-game and measurement routes omit it and keep the stat planner.
+      order: rosters?.away,
     };
     const home = {
       name: this.teamNames.home,
@@ -677,6 +726,8 @@ export class GameView {
         regulationInnings: innings,
         onEvent: (e) => {
           this.matchupTally.onEvent(e);
+          this.callouts.onEvent(e);
+          if (e.t === 'pa') this.reactToPlateAppearance(e);
           // ★ THE SKY AGREES WITH A NIGHT HOMER. Render-side chrome reacting
           // to the same event the booth calls; the sim never knows.
           if (e.t === 'contact' && e.hit === 'HR' && !e.foul && this.night) this.queueFireworks();
@@ -686,12 +737,24 @@ export class GameView {
       makeRng(seed)
     );
     this.ended = false;
+    this.callouts.reset();
+    this.actionPlay = null;
+    this.slidLegs.clear();
+    this.diveClips.clear();
     this.inputs = {};
     this.wait = 0;
     this.pitchElapsed = 0;
     this.windupElapsed = 0;
     this.cue = null;
     this.advance();
+  }
+
+  /** Let both principals react to the plate appearance they just finished.
+   * The bridge protects these one-shots from its idle loops until they settle. */
+  private reactToPlateAppearance(e: Extract<SimEvent, { t: 'pa' }>): void {
+    const batterWon = e.result === 'hit' || e.result === 'walk';
+    this.refs.directors.get(e.batterId)?.play(batterWon ? 'cheer' : 'upset', { restart: true });
+    this.refs.directors.get(e.pitcherId)?.play(batterWon ? 'upset' : 'cheer', { restart: true });
   }
 
   /**
@@ -768,6 +831,39 @@ export class GameView {
     this.frameTap = fn;
   }
 
+  /**
+   * Put the candidate and a waiting group into the draft card's live 3D window.
+   * The screen reports identity and bounds; this view keeps all model and clip
+   * work on the render side and uses the characters loaded during `start()`.
+   */
+  setDraftSpotlight(
+    id: string | null,
+    pool: readonly string[],
+    host: HTMLElement | null,
+    mode: DraftSpotlightMode
+  ): void {
+    if (!id || !host) {
+      this.draftSpotlight = null;
+      this.draftProtected.clear();
+      return;
+    }
+    const previous = this.draftSpotlight;
+    const sameKid = previous?.id === id;
+    const sameBeat = sameKid && previous?.mode === mode;
+    const cast = draftCast(id, pool);
+    this.draftSpotlight = {
+      id,
+      pool: [...pool],
+      host,
+      mode,
+      ageSec: sameBeat ? previous.ageSec : 0,
+      walkIn: sameBeat ? previous.walkIn : !sameKid,
+      cast,
+    };
+    this.draftProtected.clear();
+    for (const castId of cast) this.draftProtected.add(castId);
+  }
+
   /** Pull the next frame out of the sim. Null once the game is over. */
   private advance(): void {
     if (!this.game) return;
@@ -791,9 +887,78 @@ export class GameView {
     }
     this.frame = r.value;
     if (this.frame.phase === 'pitch') this.pitchElapsed = 0;
-    if (this.frame.phase === 'windup') this.windupElapsed = 0;
+    if (this.frame.phase === 'pitch') this.cpuSwingStarted = false;
+    if (this.frame.phase === 'windup') {
+      this.windupElapsed = 0;
+      this.deliveryElapsed = 0;
+      this.deliveryStarted = false;
+      // The CPU has no picker to wait for; its visible delivery is the wait.
+      if (!this.onTheMound) this.beginPitchDelivery();
+    }
     if (this.frame.phase === 'between') this.wait = BETWEEN_SEC;
     this.showOnly(this.frame);
+    if (this.frame.phase === 'live' && this.frame.play) this.animatePlayActions(this.frame.play);
+  }
+
+  /** Start the complete windup -> stride -> release chain once. */
+  private beginPitchDelivery(): void {
+    if (this.deliveryStarted || !this.frame) return;
+    this.deliveryStarted = true;
+    this.deliveryElapsed = 0;
+    this.refs.directors.get(this.frame.pitcherId)?.play('pitch_windup', { restart: true });
+  }
+
+  /** Schedule the CPU bat only when the authored pre-roll can land on its read. */
+  private animateCpuSwing(): void {
+    if (!this.frame || this.frame.phase !== 'pitch' || this.humanBats) return;
+    const cue = cpuSwingCue(
+      this.frame.batterId,
+      this.pitchElapsed,
+      this.frame.pitch!.cpuSwingAtSec,
+      this.cpuSwingStarted
+    );
+    if (!cue) return;
+    this.refs.directors
+      .get(cue.characterId)
+      ?.playToMarker(cue.clip, cue.secUntilEvent);
+    this.cpuSwingStarted = true;
+  }
+
+  /** Consume each sim event once, and fit runner slides to their current leg. */
+  private animatePlayActions(play: NonNullable<LiveFrame['play']>): void {
+    if (this.actionPlay !== play) {
+      this.actionPlay = play;
+      this.slidLegs.clear();
+      this.diveClips.clear();
+    }
+
+    for (const event of play.events) {
+      if (event.t === 'dive') {
+        const clip = diveClip(play, event.fielder);
+        this.diveClips.set(event.fielder, clip);
+        this.refs.directors.get(event.fielder)?.play(clip, { restart: true });
+        continue;
+      }
+      if (event.t === 'diveMiss') {
+        this.diveClips.delete(event.fielder);
+        continue;
+      }
+      const cue = playEventCue(event, play);
+      if (!cue) continue;
+      const clip = event.t === 'catch' ? (this.diveClips.get(event.fielder) ?? cue.clip) : cue.clip;
+      this.refs.directors.get(cue.characterId)?.playToMarker(clip, cue.secUntilEvent);
+      if (event.t === 'catch') this.diveClips.delete(event.fielder);
+    }
+
+    for (const runner of play.runners) {
+      const cue = slideCue(runner);
+      if (!cue || this.slidLegs.has(cue.key)) continue;
+      this.slidLegs.add(cue.key);
+      this.refs.directors.get(cue.characterId)?.play(cue.clip, {
+        rate: cue.rate,
+        restart: true,
+      });
+    }
   }
 
   /** Only the kids actually on the field are visible — plus the yard kids. */
@@ -848,6 +1013,80 @@ export class GameView {
     });
   }
 
+  /** Keep the front-end clips authoritative while the live sim remains scenery. */
+  private updateDraftPresentation(dt: number): void {
+    const draft = this.draftSpotlight;
+    if (!draft) return;
+    draft.ageSec += dt;
+    const hero = draftHeroPose(draft.ageSec, draft.mode, draft.walkIn);
+    this.refs.directors.get(draft.id)?.play(hero.clip);
+    for (const id of draft.cast.slice(1)) this.refs.directors.get(id)?.play('idle');
+  }
+
+  /**
+   * Draw the selected kid and a waiting group through the transparent DOM card.
+   *
+   * No character is cloned and no second loader exists. Their transforms and
+   * visibility are borrowed for one clipped render pass after the world has
+   * already drawn, then restored before the next simulation frame.
+   */
+  private renderDraftPresentation(): void {
+    const draft = this.draftSpotlight;
+    if (!draft || !draft.host.isConnected) return;
+    const rect = draft.host.getBoundingClientRect();
+    if (rect.width < 2 || rect.height < 2) return;
+
+    const saved = new Map<
+      string,
+      { visible: boolean; position: Vector3; quaternion: Quaternion }
+    >();
+    for (const [id, view] of this.refs.kids) {
+      saved.set(id, {
+        visible: view.root.visible,
+        position: view.root.position.clone(),
+        quaternion: view.root.quaternion.clone(),
+      });
+      view.root.visible = false;
+    }
+    const ballVisible = this.refs.ball.visible;
+    this.refs.ball.visible = false;
+
+    try {
+      const hero = draftHeroPose(draft.ageSec, draft.mode, draft.walkIn);
+      const selected = this.refs.kids.get(draft.id);
+      if (!selected) return;
+      selected.root.visible = true;
+      selected.setPosition(hero.xFt, 0);
+      // Proxy/model facial geometry is +Z at rotation zero. The card camera is
+      // behind home on -Z, so PI turns that face toward the presentation lens.
+      selected.setFacing(Math.PI);
+
+      draft.cast.slice(1).forEach((id, i) => {
+        const view = this.refs.kids.get(id);
+        const at = DRAFT_CAST_POSITIONS[i];
+        if (!view || !at) return;
+        view.root.visible = true;
+        view.setPosition(at[0], at[1]);
+        view.setFacing(Math.PI);
+      });
+
+      this.draftCamera.aspect = rect.width / rect.height;
+      this.draftCamera.position.set(0, 3.7, -11.5);
+      this.draftCamera.lookAt(0, 2.3, 2.4);
+      this.draftCamera.updateProjectionMatrix();
+      this.renderer.renderInset(this.scene, this.draftCamera, rect);
+    } finally {
+      this.refs.ball.visible = ballVisible;
+      for (const [id, state] of saved) {
+        const view = this.refs.kids.get(id);
+        if (!view) continue;
+        view.root.visible = state.visible;
+        view.root.position.copy(state.position);
+        view.root.quaternion.copy(state.quaternion);
+      }
+    }
+  }
+
   private readonly tick = (now: number): void => {
     const dt = Math.min((now - this.last) / 1000, 0.1);
     this.last = now;
@@ -877,12 +1116,15 @@ export class GameView {
 
     if (this.frame) {
       this.frameTap?.(this.frame);
-      applyFrame(this.refs, this.frame, dt, this.pitchElapsed);
+      applyFrame(this.refs, this.frame, dt, this.pitchElapsed, this.draftProtected);
+      this.updateDraftPresentation(dt);
+      this.animateCpuSwing();
       this.paintPlateCues();
       this.driveCamera(this.frame, dt);
       this.paintHud(this.frame);
     }
     this.renderer.render(this.scene, this.camera, now);
+    this.renderDraftPresentation();
     requestAnimationFrame(this.tick);
   };
 
@@ -896,9 +1138,17 @@ export class GameView {
     }
     if (this.frame.phase === 'windup') {
       this.windupElapsed += step;
-      // A person gets until the pitch clock; the CPU throws straight away.
-      const waiting = this.onTheMound && !this.inputs.pitch;
-      if (!waiting || this.windupElapsed >= PITCH_CLOCK_SEC) this.advance();
+      // A person gets until the pitch clock to choose. Once chosen (or timed
+      // out), the complete visible delivery reaches RELEASE before the sim is
+      // advanced, so the ball cannot leave a stationary pitcher's hand.
+      if (!this.deliveryStarted) {
+        const waiting = this.onTheMound && !this.inputs.pitch;
+        const timedOut = this.windupElapsed >= PITCH_CLOCK_SEC;
+        if (waiting && !timedOut) return;
+        this.beginPitchDelivery();
+      }
+      this.deliveryElapsed += step;
+      if (this.deliveryElapsed >= PITCH_DELIVERY_RELEASE_SEC) this.advance();
       return;
     }
     if (this.frame.phase === 'pitch') {
@@ -1084,7 +1334,7 @@ export class GameView {
 
   /** This venue's sky pair for the current time of day. */
   private skyColours(): { top: number; horizon: number } {
-    if (!this.night) return { top: SKY_TOP, horizon: SKY_HORIZON };
+    if (!this.night) return VENUE_LOOKS[this.venue].daySky ?? { top: SKY_TOP, horizon: SKY_HORIZON };
     return VENUE_LOOKS[this.venue].nightSky ?? { top: NIGHT_TOP, horizon: NIGHT_HORIZON };
   }
 
@@ -1147,6 +1397,22 @@ export class GameView {
 
   /** What the HUD shows. Read-only, like everything else on this side. */
   scoreboard(): LiveFrame | null {
+    return this.frame;
+  }
+
+  /**
+   * Advance the fixed clock without drawing, for the DOM layout audit only.
+   *
+   * The audit needs a settled HUD at four game states; rendering every
+   * intermediate frame in software WebGL spent the CI watchdog on pixels it
+   * immediately discarded. This uses the exact `pump(1 / SIM_HZ)` path the
+   * live tick uses, is inert in production, and the audit still calls `tick`
+   * once at the reached state before measuring any box.
+   */
+  devStepFixedClock(ticks = 6): LiveFrame | null {
+    if (!import.meta.env.DEV) return this.frame;
+    const count = Math.max(0, Math.floor(ticks));
+    for (let i = 0; i < count; i++) this.pump(1 / SIM_HZ);
     return this.frame;
   }
 }

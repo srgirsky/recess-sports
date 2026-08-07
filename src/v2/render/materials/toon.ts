@@ -151,7 +151,9 @@ export function makeToonMaterial(opts: ToonOptions = {}): MeshToonMaterial {
         shader.uniforms.uFaceAtlas = { value: faceAtlas };
         // xy = cell offset, zw = cell size. `faceAtlas.ts` computes it; the
         // default is the resting cell, so an un-driven face is not a blank one.
-        shader.uniforms.uFaceCell = { value: faceCellDefault() };
+        shader.uniforms.uFaceCell = {
+          value: (mat.userData.faceCell as [number, number, number, number] | undefined) ?? faceCellDefault(),
+        };
 
         shader.fragmentShader = shader.fragmentShader
           .replace(
@@ -246,6 +248,10 @@ export function setFaceCell(
   material: MeshToonMaterial,
   cell: readonly [number, number, number, number]
 ): void {
+  // CharacterModel sets the resting face before the first render compiles the
+  // shader. Persist it on the material as well as updating a live uniform, or
+  // every kid boots with neutral and only later reactions work.
+  material.userData.faceCell = [...cell];
   const shader = material.userData.shader as { uniforms?: Record<string, { value: unknown }> } | undefined;
   const uniform = shader?.uniforms?.uFaceCell;
   if (uniform) uniform.value = [...cell];

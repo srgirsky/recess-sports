@@ -30,7 +30,7 @@
 
 import type { Character } from '../../data/types';
 import { GAME, PLAY } from './params';
-import { isStrike, resolvePitch, throwPitch, type PitchResult } from './atbat';
+import { cpuSwingAtSec, isStrike, resolvePitch, throwPitch, type PitchResult } from './atbat';
 import { catcherOf, cpuWantsSteal, stealRace, type StealTarget } from './steal';
 import type { BallState } from './flight';
 import type { PitchKind } from './pitch';
@@ -56,8 +56,10 @@ import type { AtBatResult } from '../../systems/atbat';
 
 export interface TeamSpec {
   name: string;
-  /** Nine ids. `planDefence` decides where they stand and when they bat. */
+  /** Nine ids. `planDefence` decides where they stand. */
   ids: string[];
+  /** Optional player-chosen batting order; omitted teams use the stat planner. */
+  order?: string[];
 }
 
 /**
@@ -90,6 +92,8 @@ export type SimEvent =
       /** Where it ACTUALLY crossed, per the umpire — not where it was aimed. */
       inZone: boolean;
       swung: boolean;
+      /** Signed swing timing. Null when the batter took the pitch. */
+      timingErrorSec: number | null;
       balls: number;
       strikes: number;
     }
@@ -99,6 +103,8 @@ export type SimEvent =
       hit: HitType;
       flyCaught: boolean;
       foul: boolean;
+      /** The same signed timing error that produced this contact. */
+      timingErrorSec: number;
     }
   | {
       /**
@@ -198,7 +204,13 @@ export interface LiveFrame {
   /** Live only: the play in progress. Null between pitches. */
   play: PlayState | null;
   /** On a `pitch` frame: the released ball and how long it flies. */
-  pitch: { release: BallState; travelSec: number; kind: PitchKind } | null;
+  pitch: {
+    release: BallState;
+    travelSec: number;
+    kind: PitchKind;
+    /** CPU-only preview for render timing. Null means the CPU takes. */
+    cpuSwingAtSec: number | null;
+  } | null;
 }
 
 export interface GameSpec {
@@ -363,7 +375,12 @@ function* playAtBatLive(
       plate: args.plate,
     };
     const inFlight = throwPitch(spec, pitchRng, chosen);
-    frame.pitch = { release: inFlight.release, travelSec: inFlight.travelSec, kind: inFlight.kind };
+    frame.pitch = {
+      release: inFlight.release,
+      travelSec: inFlight.travelSec,
+      kind: inFlight.kind,
+      cpuSwingAtSec: cpuSwingAtSec(inFlight, spec, pitchRng),
+    };
     // ★ AND THE SWING ARRIVES THROUGH THE YIELD. The view holds this frame for
     // the ball's whole flight — it already did, to animate it — so the tap has
     // somewhere to land. A CPU batter passes nothing and draws `judge` and
@@ -397,6 +414,7 @@ function* playAtBatLive(
       kind: result.kind,
       inZone: isStrike(result.crossing),
       swung,
+      timingErrorSec: 'timingErrorSec' in result ? result.timingErrorSec : null,
       balls: before.balls,
       strikes: before.strikes,
     });
@@ -460,7 +478,14 @@ function* playAtBatLive(
     const scored = out.scored;
 
     if (outcome.foul) {
-      onEvent?.({ t: 'contact', launch: result.launch, hit: 'out', flyCaught: false, foul: true });
+      onEvent?.({
+        t: 'contact',
+        launch: result.launch,
+        hit: 'out',
+        flyCaught: false,
+        foul: true,
+        timingErrorSec: result.timingErrorSec,
+      });
       // ★ A FOUL IS A STRIKE, AND `applyAtBat` OWNS THE "never the third" RULE.
       // Restating it here would be a second source of truth for a rule v1
       // already has a test for.
@@ -476,6 +501,7 @@ function* playAtBatLive(
       hit: hitTypeOf(outcome, scored, args.batter.id),
       flyCaught: outcome.flyCaught,
       foul: false,
+      timingErrorSec: result.timingErrorSec,
     });
     // ★ TAKE THE IDENTITIES BEFORE FOLDING. `applyLivePlay` reads four fields
     // and `baseIds` is not one of them.
@@ -701,7 +727,7 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
   const regulation = spec.regulationInnings ?? GAME.REGULATION_INNINGS;
   const mk = (t: TeamSpec): Side => ({
     spec: t,
-    plan: planDefence(t.ids, spec.lookup),
+    plan: planDefence(t.ids, spec.lookup, t.order),
     lineupIdx: 0,
     score: 0,
   });
@@ -853,4 +879,3 @@ export function simulateGame(spec: GameSpec, rng: Rng): GameResult {
   while (!r.done) r = it.next();
   return r.value;
 }
-

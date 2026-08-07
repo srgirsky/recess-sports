@@ -25,6 +25,21 @@ import { UNIFORM_COLORS } from '../../../art/palette';
 import { GAME_LENGTHS } from '../../game/GameView';
 import type { VenueId } from '../../sim/field';
 
+/** Every playable geometry must have one reachable, icon-first chip. */
+export const VENUE_OPTIONS: ReadonlyArray<{ id: VenueId; icon: string; label: string }> = [
+  { id: 'park', icon: '🌳', label: 'PARKS #2' },
+  { id: 'sandlot', icon: '🏖️', label: 'SANDY FLATS' },
+  { id: 'blacktop', icon: '🏙️', label: 'BLACKTOP' },
+  { id: 'tin_can', icon: '🧱', label: 'TIN CANS' },
+  { id: 'cement', icon: '🏪', label: 'CEMENT' },
+  { id: 'steele', icon: '🏡', label: 'STEELE' },
+  { id: 'playground', icon: '🛝', label: 'COMMONS' },
+  { id: 'eckman', icon: '🌾', label: 'ECKMAN' },
+  { id: 'dirt_yards', icon: '🛞', label: 'DIRT YARDS' },
+  { id: 'big_city', icon: '🏟️', label: 'BIG CITY' },
+  { id: 'dome', icon: '🌐', label: 'THE DOME' },
+];
+
 export class TeamScreen implements Screen {
   private choice: TeamIdentity;
   private nameEl!: HTMLElement;
@@ -111,11 +126,7 @@ export class TeamScreen implements Screen {
     // ★ WHERE we play — BB2026's field select, as chips. Same preview rule:
     // the park behind this screen rebuilds as you tap.
     const venues = el('div', 'team-row team-row--venue');
-    for (const v of [
-      { id: 'park' as VenueId, icon: '🌳', label: 'PARK' },
-      { id: 'sandlot' as VenueId, icon: '🪵', label: 'SANDLOT' },
-      { id: 'blacktop' as VenueId, icon: '🏙️', label: 'BLACKTOP' },
-    ]) {
+    for (const v of VENUE_OPTIONS) {
       const b = button('', () => this.setVenue(v.id), 'timechip venuechip');
       b.dataset.venue = v.id;
       b.append(el('span', 'timechip__icon', v.icon), el('span', 'timechip__label', v.label));

@@ -30,6 +30,7 @@ import { cloneState, sampleAt, stepFlight, type BallState } from '../sim/flight'
 import type { KidView } from './CharacterModel';
 import { AnimationDirector } from './AnimationDirector';
 import type { CameraInput } from './cameraCues';
+import { clipSpec } from './clips';
 
 /** Everything the bridge is allowed to move. */
 export interface SceneRefs {
@@ -39,6 +40,8 @@ export interface SceneRefs {
   directors: Map<string, AnimationDirector>;
   ball: Object3D;
 }
+
+const NO_PROTECTED_IDS: ReadonlySet<string> = new Set();
 
 /**
  * Position the scene from one frame.
@@ -50,20 +53,29 @@ export function applyFrame(
   refs: SceneRefs,
   frame: LiveFrame,
   dtSec: number,
-  pitchElapsedSec = 0
+  pitchElapsedSec = 0,
+  /** Front-end presenters whose clip is owned by the active screen. */
+  protectedIds: ReadonlySet<string> = NO_PROTECTED_IDS
 ): void {
   if (frame.phase === 'live' && frame.play) {
-    applyLive(refs, frame.play);
+    applyLive(refs, frame.play, protectedIds);
   } else {
     // ★ THE DEFENCE STANDS AT ITS POSTS BETWEEN PITCHES. Skipping this was the
     // first thing watching the page found: with no live `PlayState` the view
     // drew nobody but the batter, so the park was empty until contact and full
     // afterwards. A fielder is on the field the whole time.
-    applyIdleDefence(refs, frame);
+    applyIdleDefence(refs, frame, protectedIds);
     if (frame.phase === 'pitch' && frame.pitch) applyPitch(refs, frame, pitchElapsedSec);
     else if (frame.phase === 'windup') restBall(refs);
   }
   for (const d of refs.directors.values()) d.update(dtSec);
+}
+
+/** A reaction or action gets to finish before an idle/locomotion loop replaces
+ * it. Position still comes from the sim every tick; this protects motion only. */
+function holdsOneShot(dir: AnimationDirector | undefined): boolean {
+  const name = dir?.playing;
+  return !!name && !clipSpec(name).loop;
 }
 
 /**
@@ -75,7 +87,11 @@ export function applyFrame(
  * stood in its BIND POSE with its arms out — visible in the first screenshot,
  * invisible to every test.
  */
-function applyIdleDefence(refs: SceneRefs, frame: LiveFrame): void {
+function applyIdleDefence(
+  refs: SceneRefs,
+  frame: LiveFrame,
+  protectedIds: ReadonlySet<string>
+): void {
   for (const [id, pos] of Object.entries(frame.defence)) {
     const kid = refs.kids.get(id);
     if (!kid) continue;
@@ -95,8 +111,10 @@ function applyIdleDefence(refs: SceneRefs, frame: LiveFrame): void {
     // his hips, which lifts a kid's feet rather than lowering his head. See
     // `proceduralClips.ts`'s ground solve and `groundContact.test.ts`.
     const dir = refs.directors.get(id);
-    if (pos === 'C') dir?.play('field_ready');
-    else dir?.setLocomotionSpeed(0);
+    if (!protectedIds.has(id) && !holdsOneShot(dir)) {
+      if (pos === 'C') dir?.play('field_ready');
+      else dir?.setLocomotionSpeed(0);
+    }
   }
   const batter = refs.kids.get(frame.batterId);
   if (batter) {
@@ -108,12 +126,17 @@ function applyIdleDefence(refs: SceneRefs, frame: LiveFrame): void {
     // arms at his sides, and settled out of a swing into a pose he had never
     // been in. Same class as the defence standing in bind pose before PR 13
     // drew it: a clip that exists, is documented, and has no caller.
-    refs.directors.get(frame.batterId)?.play('bat_stance');
+    const dir = refs.directors.get(frame.batterId);
+    if (!protectedIds.has(frame.batterId) && !holdsOneShot(dir)) dir?.play('bat_stance');
   }
 }
 
 /** A ball in play: nine fielders, the runners, and the ball itself. */
-function applyLive(refs: SceneRefs, play: PlayState): void {
+function applyLive(
+  refs: SceneRefs,
+  play: PlayState,
+  protectedIds: ReadonlySet<string>
+): void {
   refs.ball.position.set(play.ball.p.x, play.ball.p.y, play.ball.p.z);
 
   for (const f of play.fielders) {
@@ -126,7 +149,8 @@ function applyLive(refs: SceneRefs, play: PlayState): void {
     kid.setFacing(Math.atan2(play.ball.p.x - f.p.x, play.ball.p.z - f.p.z));
     // Playback rate follows the SIM's speed, which is what stops feet skating —
     // see `clips.ts`'s `authoredSpeedFts`.
-    refs.directors.get(f.charId)?.setLocomotionSpeed(f.speedFts);
+    const dir = refs.directors.get(f.charId);
+    if (!protectedIds.has(f.charId) && !holdsOneShot(dir)) dir?.setLocomotionSpeed(f.speedFts);
   }
 
   for (const r of play.runners) {
@@ -138,7 +162,14 @@ function applyLive(refs: SceneRefs, play: PlayState): void {
       const to = basePos(r.to);
       kid.setFacing(Math.atan2(to.x - p.x, to.z - p.z));
     }
-    refs.directors.get(r.charId)?.setLocomotionSpeed(r.speedFts);
+    const dir = refs.directors.get(r.charId);
+    // Once the ball is live, the batter has left the box. Let the sim-owned
+    // run interrupt a batting follow-through; fielding actions and slides still
+    // finish while their root continues along the sim track.
+    const battingShot = !!dir?.playing && clipSpec(dir.playing).group === 'batting';
+    if (!protectedIds.has(r.charId) && (!holdsOneShot(dir) || battingShot)) {
+      dir?.setLocomotionSpeed(r.speedFts);
+    }
   }
 }
 

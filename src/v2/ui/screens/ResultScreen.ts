@@ -17,7 +17,8 @@ export class ResultScreen implements Screen {
     private readonly model: ResultModel,
     private readonly names: (id: string) => string,
     private readonly onAgain: () => void,
-    private readonly onHome: () => void
+    private readonly onHome: () => void,
+    private readonly labels: { again?: string; home?: string } = {}
   ) {}
 
   mount(): HTMLElement {
@@ -64,8 +65,8 @@ export class ResultScreen implements Screen {
 
     const actions = el('div', 'result-actions');
     actions.append(
-      button('⚾  PLAY AGAIN', this.onAgain, 'btn--hero'),
-      button('🏠  HOME', this.onHome, 'btn--quiet')
+      button(this.labels.again ?? '⚾  PLAY AGAIN', this.onAgain, 'btn--hero'),
+      button(this.labels.home ?? '🏠  HOME', this.onHome, 'btn--quiet')
     );
 
     root.append(card, actions);

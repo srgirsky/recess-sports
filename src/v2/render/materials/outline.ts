@@ -23,7 +23,8 @@
 // what a naive 3D port loses first.
 // ---------------------------------------------------------------------------
 
-import { BackSide, Color, Mesh, ShaderMaterial, SkinnedMesh } from 'three';
+import { BackSide, Color, Mesh, Object3D, ShaderMaterial, SkinnedMesh } from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 /** The character-art contour colour. Shared with the CSS `--outline` token. */
 export const OUTLINE_COLOR = 0x26333f;
@@ -196,6 +197,55 @@ export function attachOutline(
   hull.position.copy(mesh.position);
   hull.quaternion.copy(mesh.quaternion);
   hull.scale.copy(mesh.scale);
+  parent.add(hull);
+  return hull;
+}
+
+/**
+ * One hull around several compatible skinned primitives.
+ *
+ * Material slots need separate colour draws, but their inner outline shells
+ * are completely hidden. Generated roster models share a skeleton, transform
+ * and attribute layout, so their geometries can be merged for the contour
+ * without changing the delivery's four-slot contract. Returns null for a
+ * general artist delivery that is not merge-compatible; callers then use the
+ * ordinary per-mesh path.
+ */
+export function attachMergedOutline(
+  meshes: readonly SkinnedMesh[],
+  parent: Object3D,
+  registry: OutlineRegistry,
+  opts: OutlineOptions = {}
+): SkinnedMesh | null {
+  if (meshes.length < 2) return null;
+  const first = meshes[0];
+  if (
+    meshes.some(
+      (mesh) =>
+        mesh.skeleton !== first.skeleton ||
+        !mesh.position.equals(first.position) ||
+        !mesh.quaternion.equals(first.quaternion) ||
+        !mesh.scale.equals(first.scale)
+    )
+  ) {
+    return null;
+  }
+
+  const copies = meshes.map((mesh) => mesh.geometry.clone());
+  const geometry = mergeGeometries(copies, false);
+  for (const copy of copies) copy.dispose();
+  if (!geometry) return null;
+
+  const hull = new SkinnedMesh(geometry, registry.create(opts));
+  hull.bind(first.skeleton, first.bindMatrix);
+  hull.name = `${parent.name || 'mesh'}__outline`;
+  hull.position.copy(first.position);
+  hull.quaternion.copy(first.quaternion);
+  hull.scale.copy(first.scale);
+  hull.castShadow = false;
+  hull.receiveShadow = false;
+  hull.userData.isOutline = true;
+  hull.raycast = () => {};
   parent.add(hull);
   return hull;
 }

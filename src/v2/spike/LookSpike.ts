@@ -31,10 +31,11 @@ import { configureModelLoader } from '../render/modelLoader';
 import { AnimationDirector } from '../render/AnimationDirector';
 import { buildProceduralClips } from '../render/proceduralClips';
 import type { AnimName } from '../render/clips';
+import { FACE_CELLS, type FaceCell } from '../render/faceAtlas';
 import { RIGS, damp, type CameraPreset } from '../render/cameraCues';
 
 const PRESET_ORDER: CameraPreset[] = ['PLAY', 'FIELD', 'PITCH', 'DEEP', 'PITCH_HERO'];
-const VENUE_ORDER: VenueId[] = ['park', 'sandlot', 'blacktop'];
+const VENUE_ORDER = Object.keys(VENUE_GEOMETRY) as VenueId[];
 
 /** Away team colour index vs home team colour index (from art/palette.ts). */
 const AWAY_UNIFORM = 1; // blue
@@ -61,6 +62,8 @@ export class LookSpike {
   // 18 mixers can play the same one. Building per character would be 18x the
   // memory for identical tracks.
   private readonly clipLibrary = buildProceduralClips();
+  private readonly rosterReview = new URLSearchParams(location.search).has('roster');
+  private readonly singleReviewId = new URLSearchParams(location.search).get('kid');
 
   private venueIdx = 0;
   private presetIdx = 0;
@@ -74,15 +77,30 @@ export class LookSpike {
   private lastStats = 0;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
+    const rosterReview = this.rosterReview;
+    if (rosterReview) this.presetIdx = PRESET_ORDER.indexOf('PITCH');
+    else if (this.singleReviewId) this.presetIdx = PRESET_ORDER.indexOf('PITCH_HERO');
+    const initialPreset = PRESET_ORDER[this.presetIdx];
     this.renderer = new Renderer(canvas);
     this.renderer.bindOutlines(this.outlines);
     // Before any load: KTX2 textures cannot transcode without asking the GPU
     // which compressed formats it takes.
     configureModelLoader(this.renderer.gl);
 
-    this.camera = new PerspectiveCamera(RIGS.PLAY.fov, 1, 0.5, 1600);
-    this.eye.set(...RIGS.PLAY.eye);
-    this.target.set(...RIGS.PLAY.target);
+    this.camera = new PerspectiveCamera(RIGS[initialPreset].fov, 1, 0.5, 1600);
+    this.eye.set(...RIGS[initialPreset].eye);
+    this.target.set(...RIGS[initialPreset].target);
+    if (rosterReview) {
+      // Elevated contact sheet: enough pitch to separate all five rows while
+      // preserving the face-on read the model review exists to judge.
+      this.camera.fov = 37;
+      this.eye.set(0, 15, -28);
+      this.target.set(0, 2.5, 12);
+    } else if (this.singleReviewId) {
+      this.camera.fov = 32;
+      this.eye.set(0, 4.2, -10);
+      this.target.set(0, 2.8, 2);
+    }
 
     this.lighting = new Lighting({ shadowMapSize: this.renderer.tier.shadowMapSize });
     this.scene.add(this.lighting.root);
@@ -143,6 +161,9 @@ export class LookSpike {
     this.sources = [];
 
     const want = Number(new URLSearchParams(location.search).get('kids') ?? '13');
+    const rosterReview = new URLSearchParams(location.search).has('roster');
+    const reviewId = this.singleReviewId;
+    const reviewCharacter = reviewId ? ROSTER.find((c) => c.id === reviewId) : undefined;
     const positions = Object.keys(FIELD_POSITIONS) as PositionId[];
 
     /**
@@ -182,6 +203,10 @@ export class LookSpike {
         lodBias: this.renderer.tier.lodBias,
         forceProxy: this.forceProxy,
       });
+      const requestedFace = new URLSearchParams(location.search).get('face');
+      if (requestedFace && FACE_CELLS.includes(requestedFace as FaceCell)) {
+        view.setExpression(requestedFace as FaceCell);
+      }
       view.setPosition(x, z);
       view.setFacing(facing);
       this.scene.add(view.root);
@@ -189,6 +214,33 @@ export class LookSpike {
       this.sources.push(source);
       animate(view, clip, offset);
     };
+
+    if (reviewCharacter) {
+      await place(reviewCharacter, HOME_UNIFORM, 0, 2, Math.PI, 'idle', 0);
+      this.building = false;
+      return;
+    }
+
+    if (rosterReview) {
+      // One evidence frame for the whole delivery: six columns by five rows,
+      // all facing the camera and all resolved through the real model factory.
+      // This is a content review surface, not gameplay layout.
+      for (const [i, character] of ROSTER.entries()) {
+        const col = i % 6;
+        const row = Math.floor(i / 6);
+        await place(
+          character,
+          i % 2 ? AWAY_UNIFORM : HOME_UNIFORM,
+          -8.5 + col * 3.4,
+          1 + row * 5.2,
+          Math.PI,
+          'idle',
+          i * 0.11
+        );
+      }
+      this.building = false;
+      return;
+    }
 
     for (const [i, pos] of positions.entries()) {
       const p = FIELD_POSITIONS[pos];
@@ -290,7 +342,7 @@ export class LookSpike {
       return b;
     };
 
-    const camBtn = btn('📷 PLAY', () => {
+    const camBtn = btn(`📷 ${PRESET_ORDER[this.presetIdx]}`, () => {
       this.presetIdx = (this.presetIdx + 1) % PRESET_ORDER.length;
       camBtn.textContent = `📷 ${PRESET_ORDER[this.presetIdx]}`;
     });
@@ -350,7 +402,11 @@ export class LookSpike {
 
   private update(now: number): void {
     const dt = 1 / 60;
-    const rig = RIGS[PRESET_ORDER[this.presetIdx]];
+    const rig = this.rosterReview
+      ? { eye: [0, 15, -28], target: [0, 2.5, 12], fov: 37 }
+      : this.singleReviewId
+        ? { eye: [0, 4.2, -10], target: [0, 2.8, 2], fov: 32 }
+      : RIGS[PRESET_ORDER[this.presetIdx]];
 
     for (const d of this.directors) d.update(dt);
 

@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // ★ THE CANONICAL SKELETON — the single most load-bearing spec in v2.
 //
-// All 30 characters are commissioned individually, but every one of them is
+// All 30 production characters are authored individually, but every one is
 // bound to THIS skeleton with THIS bind pose. That is what makes the animation
 // library a single shared asset instead of a per-character cost: ~33 clips
 // authored once, played by all 30 kids and by the primitive proxy alike.

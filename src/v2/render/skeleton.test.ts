@@ -575,26 +575,14 @@ describe('the proxy draws a kid, not a bobblehead', () => {
     }
   }, 20_000);
 
-  it('shows the brow except where something is meant to cover it', () => {
-    // `long`'s fringe reaches lowest of any style, and a headband is worn
-    // exactly where a brow is. Both are what those things do. The waivers are
-    // NAMED so they cannot quietly grow to cover the next style someone edits,
-    // and each is re-checked below to still be a real exception — a waiver for
-    // something no longer covered is just a stale comment.
-    const waived: [HairStyle, Accessory][] = [['long', 'none']];
+  it('shows the brow on every hairstyle and accessory', () => {
+    // Long hair and the headband both used to carry named exceptions. The
+    // face-clear hairline and forehead-set headband removed those exceptions;
+    // no waiver remains to grow around the next occlusion bug.
     const bald = faceOf(kidWith('bald', 'none'), 'bald|none').brow;
     expect(bald).toBeGreaterThan(0.2);
     for (const [hair, accessory] of COVERS) {
       const seen = faceOf(kidWith(hair, accessory), `${hair}|${accessory}`).brow;
-      const isWaived =
-        accessory === 'headband' || waived.some(([h, a]) => h === hair && a === accessory);
-      if (isWaived) {
-        expect(
-          seen / bald,
-          `${hair} + ${accessory} is waived but nothing covers the brow`
-        ).toBeLessThan(KEEPS);
-        continue;
-      }
       expect(
         seen / bald,
         `${hair} + ${accessory} leaves ${(seen * 100).toFixed(0)}% of the brow against ${(bald * 100).toFixed(0)}% bare`

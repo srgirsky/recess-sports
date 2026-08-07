@@ -49,9 +49,16 @@ const assets = join(repo, 'dist', 'assets');
  *                v1 already paid for it, so the shared chunk it moves into is
  *                loaded by both entries and v1's own payload is unchanged
  *                (1908.4 -> 1908.7kB).
+ *   887 -> 971   The parity-finish branch: the live 30-kid park, play callouts,
+ *                batting-order strategy, clubhouse/season flow, Recess Week,
+ *                and eleven distinct venues with their scenery plans.
+ *   971 -> 977   The complete production roster: richer proxy geometry, the
+ *                roster review modes, face-atlas state, and the compatible
+ *                vertex-palette merge path. The 30 GLBs live in `public/` and
+ *                are not counted in this JavaScript figure.
  */
 const V1_KB = 1909;
-const V2_KB = 887;
+const V2_KB = 977;
 const TOLERANCE = 0.02;
 
 /**

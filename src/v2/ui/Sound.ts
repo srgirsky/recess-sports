@@ -125,15 +125,15 @@ export class Sound {
   }
 
   /**
-   * A kid saying their own name, in their own voice.
+   * A kid delivering their authored draft line, in their own voice.
    *
    * ★ THE SINGLE MOST CHARACTERFUL THING v1 DOES, and it costs one call: every
    * character has a stable derived voice (`systems/voices.ts`), so drafting
    * Junebug means hearing Junebug. `flush` rather than `queue` because a fast
    * drafter should hear the kid they just tapped, not a backlog of the last four.
    */
-  sayName(c: Character): void {
-    say(c.name, kidVoice(c), 'flush');
+  sayDraft(c: Character): void {
+    say(c.draftLine ?? c.name, kidVoice(c), 'flush');
   }
 
   /** "THE TEAL ROCKETS!" — said by the booth, at the top of the game. */

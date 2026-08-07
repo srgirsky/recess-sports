@@ -89,9 +89,24 @@ export type PitchResult =
   /** Taken, and over the plate. */
   | { kind: 'calledStrike'; crossing: Crossing; pitch: PitchKind; travelSec: number; release: BallState }
   /** Offered at and missed. */
-  | { kind: 'swingingStrike'; crossing: Crossing; pitch: PitchKind; travelSec: number; release: BallState }
+  | {
+      kind: 'swingingStrike';
+      crossing: Crossing;
+      pitch: PitchKind;
+      travelSec: number;
+      release: BallState;
+      /** Signed against the plate crossing: negative is early, positive late. */
+      timingErrorSec: number;
+    }
   /** Nicked it. A strike, but never the third. */
-  | { kind: 'foulTip'; crossing: Crossing; pitch: PitchKind; travelSec: number; release: BallState }
+  | {
+      kind: 'foulTip';
+      crossing: Crossing;
+      pitch: PitchKind;
+      travelSec: number;
+      release: BallState;
+      timingErrorSec: number;
+    }
   /** Hit it. Fair or foul is the play's to decide, not the swing's. */
   | {
       kind: 'inPlay';
@@ -101,6 +116,7 @@ export type PitchResult =
       travelSec: number;
       plateSpeedFts: number;
       release: BallState;
+      timingErrorSec: number;
     };
 
 export interface PitchSpec {
@@ -310,7 +326,7 @@ export function resolvePitch(
       { timingErrorSec, undercutFt, batter: spec.batter, travelSec, pitchSpeedFts: plateSpeedFts, plate },
       rng.fork('swing')
     );
-    const base = { crossing, pitch: pitchKind, travelSec, release: released };
+    const base = { crossing, pitch: pitchKind, travelSec, release: released, timingErrorSec };
     if (swing.kind === 'miss') return { kind: 'swingingStrike', ...base };
     if (swing.kind === 'foulTip') return { kind: 'foulTip', ...base };
     return { kind: 'inPlay', launch: swing.launch, plateSpeedFts, ...base };
@@ -335,6 +351,33 @@ export function resolvePitch(
     return offer(human.atSec - travelSec, crossing.y - human.aimHeightFt);
   }
 
+  const decision = cpuSwingDecision(inFlight, spec, rng, plate);
+  if (!decision) {
+    const kind = isStrike(crossing) ? 'calledStrike' : 'ball';
+    return { kind, crossing, pitch: pitchKind, travelSec: travelSec, release: released };
+  }
+  return offer(decision.timingErrorSec, decision.undercutFt);
+}
+
+interface CpuSwingDecision {
+  timingErrorSec: number;
+  undercutFt: number;
+}
+
+/**
+ * The CPU's read, factored so the live frame may preview WHEN its bat moves.
+ *
+ * Calling this twice is deterministic and does not consume a parent stream:
+ * `fork('judge')` derives from the root seed and label, never draw position.
+ * The later resolution therefore produces the exact same decision and outcome.
+ */
+function cpuSwingDecision(
+  inFlight: PitchInFlight,
+  spec: PitchSpec,
+  rng: Rng,
+  plate: PlateParams
+): CpuSwingDecision | null {
+  const { crossing, travelSec } = inFlight;
   // The read. One error, in space and in time.
   const eye = rng.fork('judge');
   const judgeFt = plateJudgementFt(spec.batter.stats.contact);
@@ -349,17 +392,26 @@ export function resolvePitch(
   // foul-ball machine a six-year-old actually is.
   const protectFt = spec.count.strikes >= ATBAT.STRIKES_PER_K - 1 ? plate.twoStrikeProtectFt : 0;
   const swings = distOutsideZone(judged, undefined) <= protectFt;
-
-  if (!swings) {
-    const kind = isStrike(crossing) ? 'calledStrike' : 'ball';
-    return { kind, crossing, pitch: pitchKind, travelSec: travelSec, release: released };
-  }
+  if (!swings) return null;
 
   // He offered. The same read decides how well.
   const timingErrorSec =
     eye.bell() * swingTimingSigmaFrac(spec.batter.stats.contact) * travelSec;
   // Reading the ball LOW means swinging under it, which lifts it.
-  return offer(timingErrorSec, (crossing.y - judged.y) * plate.undercutFromJudge);
+  return {
+    timingErrorSec,
+    undercutFt: (crossing.y - judged.y) * plate.undercutFromJudge,
+  };
+}
+
+/**
+ * When the CPU intends its bat to meet the pitch, seconds from release.
+ * Null means a take. This is presentation data only; `resolvePitch` remains the
+ * one place that turns the same decision into an outcome.
+ */
+export function cpuSwingAtSec(inFlight: PitchInFlight, spec: PitchSpec, rng: Rng): number | null {
+  const decision = cpuSwingDecision(inFlight, spec, rng, spec.plate ?? resolvePlate());
+  return decision ? inFlight.travelSec + decision.timingErrorSec : null;
 }
 
 /**

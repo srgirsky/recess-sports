@@ -30,6 +30,7 @@ import {
   LOOP_MIN_RATE,
   clipSpec,
   locomotionRateFor,
+  markerLeadSec,
   pickLocomotion,
   warpRateFor,
   type AnimName,
@@ -148,6 +149,19 @@ export class AnimationDirector {
    * and the bat is still on the ball at the right instant.
    */
   playToMarker(name: AnimName, secUntilEvent: number, opts: PlayOptions = {}): { rate: number; clamped: boolean } {
+    // Some sim facts (a catch, a throw release, a human tap) are learned on the
+    // event tick itself. Starting the clip at frame zero would put its marker
+    // visibly late; seek to the authored marker and let the follow-through play
+    // at 1x. The pose on this rendered tick is then the physical pose the sim
+    // just resolved, without predicting an uncertain catch or throw.
+    if (secUntilEvent <= 0) {
+      const action = this.play(name, { ...opts, rate: 1, restart: true });
+      if (action) {
+        action.time = markerLeadSec(name);
+        this.mixer.update(0);
+      }
+      return { rate: 1, clamped: false };
+    }
     const { rate, clamped } = warpRateFor(name, secUntilEvent);
     this.play(name, { ...opts, rate, restart: true });
     return { rate, clamped };

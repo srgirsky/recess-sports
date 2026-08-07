@@ -216,6 +216,14 @@ never been re-derived against a scene with models in it. Recorded as
 `render.characterDrawCost` with the three ways to close it, rather than shipped
 quietly over budget.
 
+The roster production pass below closes that recorded drift without dropping
+outlines or changing the asset contract. First-party deliveries keep the four
+named slots in each GLB but mark their compatible vertex palette; at load time
+the team tint is baked and all four primitives merge into one skinned colour
+pass plus one merged hull. The same 13-model foreground review now measures
+**66 draws against 90**, exactly matching 13 proxies, while using 59.9k rather
+than 147.9k triangles.
+
 **The sim core has started, and the first thing it needed was a fence** (2026-07-31).
 `src/v2/sim/` was two files — unit conversion and field geometry — and 477 lines
 against the render tree's 8,792. There was no ball, no integrator, no contact
@@ -1537,12 +1545,12 @@ serves `src/main.ts`, v1 boots its schoolyard at 960×640 with the font resolved
 and both layout audits are green.
 
 **Where this leaves the rebuild.** v2 is the front door with the whole product
-loop — title, draft with the voting machine, team naming, a 3D game with sound
-and commentary, and a result. What v1 still has and v2 does not: Recess Week and
-the sticker album, Practice and Watch, pass-and-play and online play, the juice
-meter and its specials, the batting cursor and pitch aiming, instant replay, the
-pause menu, the lineup screen, and the venue picker. Those are the next arc, and
-`/classic/` is why none of them had to block the cutover.
+loop — title, character-first draft with the voting machine, team naming and
+batting order, eleven selectable parks, a 3D game with sound and commentary, a
+result, the shared sticker clubhouse, and Recess Week. What v1 still has and v2
+does not: Practice and Watch, pass-and-play and online play, the juice meter and
+its specials, instant replay, and the pause menu. `/classic/` is why none of
+them had to block the cutover.
 
 ---
 
@@ -1644,8 +1652,114 @@ actually has a moment: the tray slot the vote lands in POPS (the scoreboard
 pips' motion contract — `--motion-scale` zeroes the movement, the is-filled
 colour change is the reduced-motion fallback). With these, every
 engineering-side line in `docs/research/backyard-2026-reference.md` is
-struck; what parity still awaits is the commissioned models, whose
-validation pipeline has been ready since before this push began.
+struck. Character production was the remaining visual line; the roster pass
+below closes it without weakening the delivery contract.
+
+### Roster production pass — thirty faces, not five stand-ins
+
+The five committed `.glb` files were contract fixtures labelled `STAND-IN`, so
+the apparent "25 models remaining" understated the actual gap: no roster member
+had a production delivery. The first-party roster exporter now writes all 30
+from the same authored character data that already owns their proportions,
+hair, accessories and face personality. Each file carries three LODs on the
+canonical 33-bone skin, a UV-mapped body and its own 4×4 expression atlas;
+Zoom's silhouette includes the sport chair instead of rendering as a standing
+kid. Hair and cap geometry were moved clear of the face after the first full
+roster review exposed dark bands and visors through the eyes.
+
+The distinction is executable. Production files never carry the `STAND-IN`
+generator marker, `manifest.test.js` requires exactly the 30 `ROSTER` ids and
+re-validates every committed GLB under 400KB, and `?spike=1&roster=1` renders a
+front-facing contact sheet of the complete batch. `?spike=1&kid=<id>` keeps the
+single-character field review, while `?proxy=1` remains the honest A/B against
+the permanent cheap fallback.
+
+### 2026 parity pass — two city parks, not two palettes
+
+The BB2026 video only exposes two of its eleven fields clearly, so those are the
+next two Recess venues: **Tin Can Alley** and **Cement Gardens**. Both are hard
+city surfaces, but sharing `blacktop`'s numbers and swapping colours would erase
+the reason to pick one. Tin Can is the tight high-wall game—rough service-lane
+asphalt, a 16ft brick canyon, fire escapes and three recycling dumpsters.
+Cement Gardens is the broader apartment parking court—quicker-than-grass
+concrete, a low painted kerb, shop awnings, flower boxes and an espresso kiosk.
+The original blacktop remains the slickest and springiest surface in the sim.
+
+They use the existing one-source venue path end to end: `VenueId` and
+`VENUE_GEOMETRY` own physical play, `VENUE_LOOKS` owns ground/fence/night colour,
+`sceneryPlan` owns deterministic set dressing, and `VENUE_OPTIONS` is tested to
+name every playable geometry exactly once. The neighborhood still merges to one
+mesh plus clouds. That pass exposed five parks; the breadth pass below completes
+the eleven-field roster with equally distinct place stories.
+
+### 2026 parity pass — eleven parks, eleven kinds of baseball
+
+The venue picker now reaches eleven parks. The existing park and sandlot become
+**Parks Dept #2** and **Sandy Flats** in the player-facing roster, while the
+original fast **Blacktop** remains Recess's own eleventh field. Six additions
+close the reference game's breadth: **Steele Stadium**, **Playground Commons**,
+**Eckman Acres**, **Dirt Yards**, **Big City Stadium**, and **Super Colossal
+Dome**.
+
+They are not six colour presets. Steele is a compact backyard with a pool;
+Playground has a 64ft left-to-right fence swing and a school playset; Eckman is
+the deepest soft-grass farm with a barn; Dirt Yards pairs a short left line with
+bare earth and tire stacks; Big City has maintained quick grass, a block skyline
+and bleachers; and the Dome has the quickest turf outside the Blacktop, the
+highest padded wall, no outdoor clouds, and a neon structural canopy. Every
+profile remains convex, every defensive post remains in bounds, and every
+signature prop is planned outside the physical fence and merged into the same
+one-scenery-draw budget (plus clouds outdoors).
+
+The sim records each park at birth rather than trusting the adjectives. The
+three-seed game fingerprints cover every venue, and `sim.venueRollFeel`
+recomputes 60 identical contacts per park. Those measurements make the intended
+differences concrete: Eckman produces the longest mean resting ball; the Dome
+keeps one live longest; asymmetrical fields change which foul line is cheap.
+The original three-venue checksum remains deliberately unchanged, so added
+content cannot rewrite the established game baseline.
+
+### 2026 parity pass — the clubhouse remembers
+
+The pickup game remains the largest button on the front door, but the quiet
+Clubhouse door now leads somewhere real: it folds the shared pick tally and
+`recess_album` into games played, sticker completion, foil wins, trophies and
+the player's three most-drafted kids. All thirty roster slots are present;
+locked stickers stay mysterious, while an unlocked kid uses the existing street
+portrait and speaks their authored line when tapped.
+
+v2 now advances that same album after a completed human game. It records only
+the human roster and only after the sim returns a result, so CPU picks remain
+neither votes nor earned stickers and an attract-mode game behind a screen cannot
+farm the book. The fold is pure (`clubhouseModel.ts`), the stores remain shared
+systems rather than v2 copies, and the responsive audit reaches the new scrolling
+screen at all six viewport extremes. Strategy, custom player, a season/schedule
+and extra modes are still open product-shell work.
+
+The first strategy station is equally concrete: after the draft, all nine kids
+appear in a movable batting order with contact, power and speed cues. The chosen
+array is passed as `TeamSpec.order`; `planDefence` validates that it is an exact
+permutation before using it, while the CPU and every headless measurement that
+omits an order retain the existing stat-derived lineup. Field-position strategy
+waits until it can present nine jobs without turning the game into a reading
+test.
+
+### 2026 parity pass — Recess Week crosses the front door
+
+The v2 title now starts or resumes the same `recess_season` week that classic
+owns: one draft, five weekday rivals, persistent W/L/T, accumulated kid stats,
+a three-win pennant and Friday awards. A new week passes through the ordinary
+draft, batting-order and team setup once. Each scheduled game then returns to
+the chalkboard, lets the player adjust that game's order, and runs through the
+same live v2 sim rather than a season-specific game implementation.
+
+The sim already returns folded `KidStats`, while the shared season reducer owns
+`StatEvent[]`. `seasonModel.statEventsFromLines` is the explicit tested adapter:
+folding its output reproduces the result lines exactly, so v2 does not create a
+second stats merge. Completing a game saves the shared state and album progress;
+finishing Friday computes the existing shared awards, records each trophy, and
+clears the week. A week begun in one renderer can therefore be resumed in the
+other without a migration or duplicate storage key.
 
 ### PR 41 — each park owns its night
 

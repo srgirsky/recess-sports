@@ -25,8 +25,10 @@
 //
 // ⚠️ THE CLOCK IS DRIVEN BY HAND. `/v2/?play=1` is a rAF loop, and a headless
 // page is frequently treated as backgrounded — the same trap `src/v2/AGENTS.md`
-// records for a manual playtest. Every state below is reached by pumping
-// `__spike.tick(t)` with a monotonic `t`, never by waiting.
+// records for a manual playtest. Every state below is reached through
+// `GameView.devStepFixedClock`, the live pump's exact 60Hz path without the
+// discarded intermediate WebGL frames; one real `tick` paints the reached state
+// before a single box is measured.
 // ---------------------------------------------------------------------------
 
 import { chromium } from 'playwright';
@@ -233,26 +235,24 @@ const COLLECT = (hostId) => `(() => {
 })()`;
 
 /**
- * Pump the rAF loop by hand until the sim reaches `phase`.
+ * Pump the fixed game clock by hand until the sim reaches `phase`.
  *
- * ★ 100ms A CALL, NOT ONE FRAME A CALL, AND THAT IS NOT A SHORTCUT. `tick`
- * RENDERS, and a headless WebGL render is the entire cost of this gate — at one
- * frame per call the run blew its own budget before the last viewport. The loop
- * clamps its delta at 0.1s and then steps a FIXED-RATE accumulator, so the sim
- * takes exactly the same number of 60Hz steps either way and only the number of
- * renders changes. Stepping past the clamp would silently drop sim time instead,
- * which is why 100 is the number and not 250.
+ * ★ SIX FIXED STEPS A CALL, THEN ONE DRAW AT THE DESTINATION. The former driver
+ * called `tick` for every 100ms and therefore rendered every intermediate state
+ * in software WebGL. Once full pitch deliveries landed, those intentionally
+ * longer timelines pushed a completely-green CI run past the 660s watchdog.
+ * `devStepFixedClock(6)` invokes the same `pump(1 / SIM_HZ)` six times without
+ * drawing; the final `tick(performance.now())` paints the real shipping HUD
+ * before visibility and geometry are read. Layout assertions are unchanged.
  */
 const PUMP = (untilSrc, mustSee) => `(async () => {
   const s = window.__spike;
   const until = ${untilSrc};
   for (let i = 0; i < 100 && !s.scoreboard(); i++) await new Promise((r) => setTimeout(r, 50));
-  let t = performance.now();
   for (let i = 0; i < 4000; i++) {
-    t += 100;
-    s.tick(t);
-    const f = s.scoreboard();
+    const f = s.devStepFixedClock(6);
     if (f && i > 4 && until(f)) {
+      s.tick(performance.now());
       const el = document.querySelector(${JSON.stringify(mustSee)});
       const r = el && el.getBoundingClientRect();
       const vs = el && getComputedStyle(el);
@@ -291,12 +291,11 @@ const NO_MOTION = `*, *::before, *::after {
 }
 /*
  * ★ AND THE 3D SURFACE IS SHRUNK TO NOTHING, because this gate measures DOM.
- * Every pump call RENDERS, and a headless WebGL frame costs its pixel count: at
- * 2560x1440 the last viewport alone ran past the whole run budget, and the gate
- * died on the same state every time. The HUD is laid out against the VIEWPORT,
- * not against the canvas, so a 2px drawing buffer changes nothing this file
- * looks at and makes the renders free. The viewport itself is untouched -- it is
- * the variable under test.
+ * The audit now draws only the reached state, but even those twelve software
+ * WebGL frames should not scale to 2560x1440. The HUD is laid out against the
+ * VIEWPORT, not against the canvas, so a 2px drawing buffer changes nothing this
+ * file looks at and makes the destination renders free. The viewport itself is
+ * untouched -- it is the variable under test.
  */
 #stage { inline-size: 2px !important; block-size: 2px !important; }`;
 
@@ -308,6 +307,31 @@ const INIT_SHRINK = `new MutationObserver((_, obs) => {
   document.documentElement.appendChild(s);
   obs.disconnect();
 }).observe(document, { childList: true, subtree: true });`;
+
+/** Exercise the clubhouse's unlocked, foil, trophy and favorite branches. The
+ * browser context is throwaway, so these shared-key writes never leave the
+ * audit. An empty album would measure thirty identical locked placeholders and
+ * miss every tappable sticker the product actually grows into. */
+const INIT_CLUBHOUSE = `(() => {
+  localStorage.setItem('recess_games_played', '7');
+  localStorage.setItem('recess_pickcounts', JSON.stringify({ nostrike: 5, big_lou: 3, turbo: 2 }));
+  localStorage.setItem('recess_album', JSON.stringify({
+    v: 1,
+    drafted: { nostrike: 4, big_lou: 2, turbo: 1, wheelchair_ace: 1 },
+    wonWith: { nostrike: 2, turbo: 1 },
+    trophies: { nostrike: 1, wheelchair_ace: 2 }
+  }));
+  localStorage.setItem('recess_season', JSON.stringify({
+    v: 1,
+    gameIndex: 2,
+    results: ['W', 'L'],
+    playerTeam: ['nostrike', 'calls_shot', 'wheelchair_ace', 'big_lou', 'tank', 'mimi_mash', 'turbo', 'sprout', 'zippy'],
+    identity: { color: 5, logo: 0 },
+    rivals: [{ color: 0, logo: 1 }, { color: 1, logo: 2 }, { color: 2, logo: 3 }, { color: 3, logo: 4 }, { color: 4, logo: 5 }],
+    rivalTeams: Array.from({ length: 5 }, () => ['ace_kid', 'penny', 'dex', 'lefty', 'smokey', 'bend_it', 'noodle', 'bubbles', 'sniffles']),
+    stats: {}
+  }));
+})();`;
 
 const failures = [];
 function fail(where, msg) {
@@ -412,8 +436,31 @@ const SHOW_RESULT = `(async () => {
 const SCREENS = [
   { name: 'title', reach: null, mustSee: '.screen--title .btn' },
   {
+    name: 'clubhouse',
+    reach: `(async () => {
+      document.querySelector('.screen--title .btn--clubhouse')?.click();
+      await new Promise((r) => setTimeout(r, 150));
+      return document.querySelectorAll('.clubhouse-sticker').length === 30 ? 'ok' : 'no sticker book';
+    })()`,
+    mustSee: '.screen--clubhouse .clubhouse-back',
+  },
+  {
+    name: 'season',
+    reach: `(async () => {
+      document.querySelector('.screen--clubhouse .clubhouse-back')?.click();
+      await new Promise((r) => setTimeout(r, 100));
+      document.querySelector('.screen--title .btn--season')?.click();
+      await new Promise((r) => setTimeout(r, 150));
+      return document.querySelectorAll('.season-day').length === 5 ? 'ok' : 'no five-day schedule';
+    })()`,
+    mustSee: '.screen--season .season-play',
+  },
+  {
     name: 'draft',
     reach: `(async () => {
+      document.querySelector('.screen--clubhouse .clubhouse-back')?.click();
+      document.querySelector('.screen--season .season-back')?.click();
+      await new Promise((r) => setTimeout(r, 100));
       document.querySelector('.screen--title .btn')?.click();
       await new Promise((r) => setTimeout(r, 300));
       return document.querySelectorAll('.kid').length === 30 ? 'ok' : 'no draft board';
@@ -421,14 +468,39 @@ const SCREENS = [
     mustSee: '.screen--draft .kid',
   },
   {
+    name: 'strategy',
+    reach: `(async () => {
+      for (let i = 0; i < 9; i++) {
+        const card = document.querySelector('.draft-board:not(.is-locked) .kid');
+        if (!card) { await new Promise((r) => setTimeout(r, 200)); i--; continue; }
+        card.click();
+        document.querySelector('.draft-preview__pick')?.click();
+        await new Promise((r) => setTimeout(r, 680));
+      }
+      document.querySelector('.screen--draft .btn--hero')?.click();
+      await new Promise((r) => setTimeout(r, 200));
+      const before = document.querySelector('.strategy-row')?.dataset.id;
+      document.querySelector('.strategy-move--down')?.click();
+      const after = document.querySelector('.strategy-row')?.dataset.id;
+      return document.querySelector('.screen--strategy') && before !== after ? 'ok' : 'no working strategy screen';
+    })()`,
+    mustSee: '.screen--strategy .strategy-row',
+  },
+  {
     name: 'team',
-    // Straight through a whole draft — nine taps and nine CPU beats. The team
-    // picker is the only screen you cannot reach without finishing one.
+    // Straight through a whole draft — nine inspections, nine confirmations
+    // and nine CPU beats. The confirmation is load-bearing: tapping a roster
+    // thumbnail now PREVIEWS a kid, and only PICK ME records the person's vote.
+    // A driver that skips it both fails to reach this screen and quietly stops
+    // proving the product's most important interaction.
     // ★ REACHES FROM WHEREVER IT IS. The screen states run in sequence on ONE
     // page, so by the time this runs the draft state has already left the title
     // behind and a blind click on the title button throws. Each reach must be
     // written as "get to my screen from any screen", not "from the front door".
     reach: `(async () => {
+      document.querySelector('.screen--strategy .btn--hero')?.click();
+      await new Promise((r) => setTimeout(r, 150));
+      if (document.querySelector('.screen--team')) return 'ok';
       document.querySelector('.screen--title .btn')?.click();
       await new Promise((r) => setTimeout(r, 300));
       for (let i = 0; i < 9; i++) {
@@ -436,10 +508,15 @@ const SCREENS = [
         const card = document.querySelector('.draft-board:not(.is-locked) .kid');
         if (!card) { await new Promise((r) => setTimeout(r, 200)); i--; continue; }
         card.click();
+        const confirm = document.querySelector('.draft-preview__pick');
+        if (!confirm) return 'draft preview never offered PICK ME';
+        confirm.click();
         await new Promise((r) => setTimeout(r, 680));
       }
       document.querySelector('.screen--draft .btn--hero')?.click();
       await new Promise((r) => setTimeout(r, 500));
+      document.querySelector('.screen--strategy .btn--hero')?.click();
+      await new Promise((r) => setTimeout(r, 200));
       return document.querySelector('.screen--team') ? 'ok' : 'never reached the team picker';
     })()`,
     mustSee: '.screen--team .swatch',
@@ -583,6 +660,7 @@ async function main() {
       page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
       page.on('pageerror', (e) => errors.push(String(e)));
       await page.addInitScript(INIT_SHRINK);
+      await page.addInitScript(INIT_CLUBHOUSE);
       await page.goto(APP_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 });
       // Bounded: in an occluded headless page `fonts.ready` can wait for a
       // rendering opportunity that never comes — the uncapped version hung a
