@@ -730,6 +730,186 @@ body.inning-break #hud > *:not(.inning-board):not(.btn--mute) {
   color: var(--cream);
   opacity: 0.85;
 }
+.title-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: var(--s3);
+}
+.btn--clubhouse {
+  font-size: 1rem;
+  padding-inline: var(--s5);
+}
+
+/* ---- Clubhouse: one scrollable home for records and the sticker book ---- */
+.screen--clubhouse {
+  place-content: start center;
+  align-content: start;
+  gap: var(--s3);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-block: var(--s4);
+}
+.clubhouse-panel {
+  display: grid;
+  gap: var(--s3);
+  inline-size: min(58rem, 92vw);
+  padding: var(--s4);
+  border: var(--stroke) solid var(--outline);
+  border-radius: var(--radius-lg);
+  background: rgb(20 32 46 / 0.9);
+  box-shadow: var(--shadow-soft);
+}
+.clubhouse-head {
+  display: grid;
+  justify-items: center;
+  gap: var(--s1);
+}
+.clubhouse-head__title {
+  margin: 0;
+  color: var(--gold);
+  font-size: clamp(1.5rem, 5vw, 2.6rem);
+  -webkit-text-stroke: 0.05em var(--outline);
+  paint-order: stroke fill;
+}
+.clubhouse-head__tag {
+  margin: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  opacity: 0.72;
+}
+.clubhouse-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s2);
+}
+.clubhouse-stat {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: center;
+  align-items: center;
+  gap: 0 var(--s1);
+  padding: var(--s2);
+  border-radius: var(--radius);
+  background: rgb(255 244 222 / 0.1);
+}
+.clubhouse-stat__icon {
+  font-size: 1.1rem;
+}
+.clubhouse-stat__value {
+  color: var(--gold);
+  font-size: 1.05rem;
+}
+.clubhouse-stat__label {
+  grid-column: 1 / -1;
+  font-size: 0.55rem;
+  letter-spacing: 0.09em;
+  opacity: 0.72;
+}
+.clubhouse-section__title {
+  margin: 0;
+  font-size: 0.82rem;
+  letter-spacing: 0.1em;
+}
+.clubhouse-favorites {
+  display: grid;
+  gap: var(--s2);
+}
+.clubhouse-favorites__row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--s2);
+}
+.clubhouse-favorite {
+  display: flex;
+  align-items: center;
+  gap: var(--s1);
+  padding: var(--s1) var(--s3);
+  border-radius: 999px;
+  background: rgb(255 206 58 / 0.18);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.clubhouse-favorite__emoji {
+  font-size: 1rem;
+}
+.clubhouse-favorite__count {
+  color: var(--gold);
+  font-size: 0.62rem;
+}
+.clubhouse-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.7rem, 1fr));
+  gap: var(--s2);
+}
+.clubhouse-sticker {
+  min-inline-size: 4.7rem;
+  min-block-size: 6.6rem;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  place-items: center;
+  gap: 0.08rem;
+  overflow: hidden;
+  padding: var(--s1);
+  border: 0.12rem solid var(--outline);
+  border-radius: var(--radius);
+  background: var(--cream);
+  color: var(--ink);
+  box-shadow: 0 0.2rem 0 rgb(20 32 46 / 0.65);
+  font-family: var(--font);
+}
+button.clubhouse-sticker {
+  cursor: pointer;
+}
+.clubhouse-sticker.is-foil {
+  background: linear-gradient(135deg, #fff8d8 0%, #b9eff1 45%, #ffe08a 100%);
+  border-color: var(--gold);
+}
+.clubhouse-sticker.is-locked {
+  grid-template-rows: 1fr auto;
+  background: rgb(44 55 67 / 0.92);
+  color: rgb(255 244 222 / 0.45);
+  border-style: dashed;
+}
+.clubhouse-sticker__art {
+  min-block-size: 0;
+  block-size: 4.2rem;
+}
+.clubhouse-sticker__mystery {
+  align-self: end;
+  font-size: 2rem;
+  font-weight: 700;
+}
+.clubhouse-sticker__name {
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.65rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.clubhouse-sticker__line {
+  font-size: 0.52rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.clubhouse-back {
+  position: fixed;
+  inset-block-start: var(--s3);
+  inset-inline-start: var(--s3);
+  z-index: 2;
+  inline-size: var(--tap-min);
+  padding: 0;
+  font-size: 1.35rem;
+}
+
+@media (max-width: 540px) {
+  .clubhouse-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
 
 /* ---- Result ---- */
 .result-card {

@@ -37,8 +37,11 @@ import { Sound } from './ui/Sound';
 import { MuteButton } from './ui/MuteButton';
 import { ROSTER, getCharacter } from '../data/characters';
 import { makeRng } from './sim/rng';
-import { recordGamePlayed } from '../systems/picklog';
+import { getGamesPlayed, readPickRates, recordGamePlayed } from '../systems/picklog';
+import { getAlbum, recordAlbumGame } from '../systems/album';
 import type { GameResult } from './sim/game';
+import { ClubhouseScreen } from './ui/screens/ClubhouseScreen';
+import { clubhouseModel } from './ui/clubhouseModel';
 
 export class App {
   private readonly router: Router;
@@ -90,13 +93,33 @@ export class App {
     this.game.setScreenCue(null);
     this.rosters = null;
     this.router.show(
-      new TitleScreen(() => {
-        // ★ THE GESTURE. Audio cannot start without one, and this is the only
-        // tap guaranteed to happen before anything makes a noise. v1 unlocks on
-        // the same button for the same reason.
-        this.sound.start();
-        this.showDraft();
-      })
+      new TitleScreen(
+        () => {
+          // ★ THE GESTURE. Audio cannot start without one, and this is the only
+          // tap guaranteed to happen before anything makes a noise. v1 unlocks on
+          // the same button for the same reason.
+          this.sound.start();
+          this.showDraft();
+        },
+        () => {
+          this.sound.start();
+          this.showClubhouse();
+        }
+      )
+    );
+  }
+
+  /** Personal records and stickers, read from the same stores v1 maintains. */
+  private showClubhouse(): void {
+    this.game.setScreenCue('PITCH_HERO');
+    const rosterOrder = ROSTER.map((c) => c.id);
+    this.router.show(
+      new ClubhouseScreen(
+        clubhouseModel(getAlbum(), getGamesPlayed(), readPickRates(), rosterOrder),
+        ROSTER,
+        (c) => this.sound.sayDraft(c),
+        () => this.showTitle()
+      )
     );
   }
 
@@ -213,6 +236,10 @@ export class App {
       { ...this.game.teams, you: this.game.humanSide },
       ROSTER.map((c) => c.id)
     );
+    // One completed v2 game advances the SAME sticker book v1 shows. Only the
+    // human roster counts: CPU picks are neither votes nor earned stickers.
+    const playerIds = this.rosters?.[this.game.humanSide] ?? [];
+    recordAlbumGame(playerIds, model.verdict === 'win');
     this.router.show(
       new ResultScreen(
         model,

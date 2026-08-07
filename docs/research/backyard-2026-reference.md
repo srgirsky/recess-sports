@@ -169,11 +169,14 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
    broader concrete parking court with low kerbs, brownstone shopfronts, window
    boxes and an espresso kiosk. Six fields remain. Add them only when each brings
    a unique ground, fence, skyline and prop story—not palette variants.
-5. **Diegetic front-end and retention shell.** Treehouse stations, strategy,
-   custom player, schedule/season, records, card collection and the extra modes
-   remain absent from v2. Some mature versions still live in `/classic/`; port
-   shared rules rather than cloning them, and keep the pickup game as the one-tap
-   front door for ages four to eight.
+5. **Diegetic front-end and retention shell.** The title now opens a real
+   Clubhouse backed by the shared stores: games played, collection progress,
+   foil wins, trophies, favorite picks and all thirty stickers; completed v2
+   games advance the same album as `/classic/`, and unlocked kids speak when
+   tapped. Strategy, custom player, schedule/season and the extra modes remain.
+   Some mature versions still live in `/classic/`; port shared rules rather than
+   cloning them, and keep pickup play as the one-tap front door for ages four to
+   eight.
 
 Gameplay: their new modes (Backyard Derby, Backyard Bash, Wiggle Ball, T-Ball)
 map to our roadmap's Practice/modes arc, and their 10-point skill system

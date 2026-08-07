@@ -308,6 +308,21 @@ const INIT_SHRINK = `new MutationObserver((_, obs) => {
   obs.disconnect();
 }).observe(document, { childList: true, subtree: true });`;
 
+/** Exercise the clubhouse's unlocked, foil, trophy and favorite branches. The
+ * browser context is throwaway, so these shared-key writes never leave the
+ * audit. An empty album would measure thirty identical locked placeholders and
+ * miss every tappable sticker the product actually grows into. */
+const INIT_CLUBHOUSE = `(() => {
+  localStorage.setItem('recess_games_played', '7');
+  localStorage.setItem('recess_pickcounts', JSON.stringify({ nostrike: 5, big_lou: 3, turbo: 2 }));
+  localStorage.setItem('recess_album', JSON.stringify({
+    v: 1,
+    drafted: { nostrike: 4, big_lou: 2, turbo: 1, wheelchair_ace: 1 },
+    wonWith: { nostrike: 2, turbo: 1 },
+    trophies: { nostrike: 1, wheelchair_ace: 2 }
+  }));
+})();`;
+
 const failures = [];
 function fail(where, msg) {
   failures.push(`${where}: ${msg}`);
@@ -411,8 +426,19 @@ const SHOW_RESULT = `(async () => {
 const SCREENS = [
   { name: 'title', reach: null, mustSee: '.screen--title .btn' },
   {
+    name: 'clubhouse',
+    reach: `(async () => {
+      document.querySelector('.screen--title .btn--clubhouse')?.click();
+      await new Promise((r) => setTimeout(r, 150));
+      return document.querySelectorAll('.clubhouse-sticker').length === 30 ? 'ok' : 'no sticker book';
+    })()`,
+    mustSee: '.screen--clubhouse .clubhouse-back',
+  },
+  {
     name: 'draft',
     reach: `(async () => {
+      document.querySelector('.screen--clubhouse .clubhouse-back')?.click();
+      await new Promise((r) => setTimeout(r, 100));
       document.querySelector('.screen--title .btn')?.click();
       await new Promise((r) => setTimeout(r, 300));
       return document.querySelectorAll('.kid').length === 30 ? 'ok' : 'no draft board';
@@ -588,6 +614,7 @@ async function main() {
       page = await browser.newPage({ viewport: { width: vp.width, height: vp.height } });
       page.on('pageerror', (e) => errors.push(String(e)));
       await page.addInitScript(INIT_SHRINK);
+      await page.addInitScript(INIT_CLUBHOUSE);
       await page.goto(APP_URL, { waitUntil: 'domcontentloaded', timeout: 60_000 });
       // Bounded: in an occluded headless page `fonts.ready` can wait for a
       // rendering opportunity that never comes — the uncapped version hung a

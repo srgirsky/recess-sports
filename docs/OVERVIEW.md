@@ -1665,6 +1665,23 @@ name every playable geometry exactly once. The neighborhood still merges to one
 mesh plus clouds. The picker now exposes five parks; six of BB2026's eleven-field
 breadth remain intentionally open until they have equally distinct place stories.
 
+### 2026 parity pass — the clubhouse remembers
+
+The pickup game remains the largest button on the front door, but the quiet
+Clubhouse door now leads somewhere real: it folds the shared pick tally and
+`recess_album` into games played, sticker completion, foil wins, trophies and
+the player's three most-drafted kids. All thirty roster slots are present;
+locked stickers stay mysterious, while an unlocked kid uses the existing street
+portrait and speaks their authored line when tapped.
+
+v2 now advances that same album after a completed human game. It records only
+the human roster and only after the sim returns a result, so CPU picks remain
+neither votes nor earned stickers and an attract-mode game behind a screen cannot
+farm the book. The fold is pure (`clubhouseModel.ts`), the stores remain shared
+systems rather than v2 copies, and the responsive audit reaches the new scrolling
+screen at all six viewport extremes. Strategy, custom player, a season/schedule
+and extra modes are still open product-shell work.
+
 ### PR 41 — each park owns its night
 
 The venue chips made night-at-the-sandlot a place a player can actually
