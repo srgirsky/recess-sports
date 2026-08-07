@@ -446,6 +446,25 @@ const SCREENS = [
     mustSee: '.screen--draft .kid',
   },
   {
+    name: 'strategy',
+    reach: `(async () => {
+      for (let i = 0; i < 9; i++) {
+        const card = document.querySelector('.draft-board:not(.is-locked) .kid');
+        if (!card) { await new Promise((r) => setTimeout(r, 200)); i--; continue; }
+        card.click();
+        document.querySelector('.draft-preview__pick')?.click();
+        await new Promise((r) => setTimeout(r, 680));
+      }
+      document.querySelector('.screen--draft .btn--hero')?.click();
+      await new Promise((r) => setTimeout(r, 200));
+      const before = document.querySelector('.strategy-row')?.dataset.id;
+      document.querySelector('.strategy-move--down')?.click();
+      const after = document.querySelector('.strategy-row')?.dataset.id;
+      return document.querySelector('.screen--strategy') && before !== after ? 'ok' : 'no working strategy screen';
+    })()`,
+    mustSee: '.screen--strategy .strategy-row',
+  },
+  {
     name: 'team',
     // Straight through a whole draft — nine inspections, nine confirmations
     // and nine CPU beats. The confirmation is load-bearing: tapping a roster
@@ -457,6 +476,9 @@ const SCREENS = [
     // behind and a blind click on the title button throws. Each reach must be
     // written as "get to my screen from any screen", not "from the front door".
     reach: `(async () => {
+      document.querySelector('.screen--strategy .btn--hero')?.click();
+      await new Promise((r) => setTimeout(r, 150));
+      if (document.querySelector('.screen--team')) return 'ok';
       document.querySelector('.screen--title .btn')?.click();
       await new Promise((r) => setTimeout(r, 300));
       for (let i = 0; i < 9; i++) {
@@ -471,6 +493,8 @@ const SCREENS = [
       }
       document.querySelector('.screen--draft .btn--hero')?.click();
       await new Promise((r) => setTimeout(r, 500));
+      document.querySelector('.screen--strategy .btn--hero')?.click();
+      await new Promise((r) => setTimeout(r, 200));
       return document.querySelector('.screen--team') ? 'ok' : 'never reached the team picker';
     })()`,
     mustSee: '.screen--team .swatch',

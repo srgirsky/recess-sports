@@ -56,8 +56,10 @@ import type { AtBatResult } from '../../systems/atbat';
 
 export interface TeamSpec {
   name: string;
-  /** Nine ids. `planDefence` decides where they stand and when they bat. */
+  /** Nine ids. `planDefence` decides where they stand. */
   ids: string[];
+  /** Optional player-chosen batting order; omitted teams use the stat planner. */
+  order?: string[];
 }
 
 /**
@@ -725,7 +727,7 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
   const regulation = spec.regulationInnings ?? GAME.REGULATION_INNINGS;
   const mk = (t: TeamSpec): Side => ({
     spec: t,
-    plan: planDefence(t.ids, spec.lookup),
+    plan: planDefence(t.ids, spec.lookup, t.order),
     lineupIdx: 0,
     score: 0,
   });

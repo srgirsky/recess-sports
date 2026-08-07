@@ -1682,6 +1682,14 @@ systems rather than v2 copies, and the responsive audit reaches the new scrollin
 screen at all six viewport extremes. Strategy, custom player, a season/schedule
 and extra modes are still open product-shell work.
 
+The first strategy station is equally concrete: after the draft, all nine kids
+appear in a movable batting order with contact, power and speed cues. The chosen
+array is passed as `TeamSpec.order`; `planDefence` validates that it is an exact
+permutation before using it, while the CPU and every headless measurement that
+omits an order retain the existing stat-derived lineup. Field-position strategy
+waits until it can present nine jobs without turning the game into a reading
+test.
+
 ### PR 41 — each park owns its night
 
 The venue chips made night-at-the-sandlot a place a player can actually

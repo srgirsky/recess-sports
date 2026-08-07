@@ -78,7 +78,11 @@ const RANGE: Record<PositionId, number> = {
  * without the best arm on it — then greedy over the remaining posts in order of
  * how much arm they demand, which is what `autoAssign` never asks.
  */
-export function planDefence(ids: readonly string[], lookup: (id: string) => Character): DefencePlan {
+export function planDefence(
+  ids: readonly string[],
+  lookup: (id: string) => Character,
+  chosenOrder?: readonly string[]
+): DefencePlan {
   const kids = ids.map(lookup);
   if (kids.length < POSITIONS.length) {
     throw new RangeError(`planDefence needs ${POSITIONS.length} kids, got ${kids.length}`);
@@ -110,7 +114,16 @@ export function planDefence(ids: readonly string[], lookup: (id: string) => Char
     left.delete(best!);
   }
 
-  return { order: battingOrder(ids, lookup), positions, pitcherId: pitcher.id };
+  let order = battingOrder(ids, lookup);
+  if (chosenOrder) {
+    const roster = new Set(ids);
+    const picked = new Set(chosenOrder);
+    if (chosenOrder.length !== ids.length || picked.size !== ids.length || [...picked].some((id) => !roster.has(id))) {
+      throw new RangeError('chosen batting order must contain every roster id exactly once');
+    }
+    order = [...chosenOrder];
+  }
+  return { order, positions, pitcherId: pitcher.id };
 }
 
 /**

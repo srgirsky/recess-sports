@@ -911,6 +911,90 @@ button.clubhouse-sticker {
   }
 }
 
+/* ---- Strategy: the one lineup decision a pre-reader can see and control ---- */
+.screen--strategy {
+  place-content: start center;
+  align-content: start;
+  gap: var(--s3);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-block: var(--s4);
+}
+.strategy-head {
+  display: grid;
+  justify-items: center;
+  gap: var(--s1);
+}
+.strategy-head__title {
+  margin: 0;
+  color: var(--gold);
+  font-size: clamp(1.4rem, 4.5vw, 2.2rem);
+  -webkit-text-stroke: 0.05em var(--outline);
+  paint-order: stroke fill;
+}
+.strategy-head__tag {
+  margin: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.13em;
+}
+.strategy-list {
+  display: grid;
+  gap: var(--s1);
+  inline-size: min(38rem, 92vw);
+}
+.strategy-row {
+  display: grid;
+  grid-template-columns: 1.8rem 3rem minmax(5rem, 1fr) auto auto;
+  align-items: center;
+  gap: var(--s2);
+  min-block-size: var(--tap-min);
+  padding: var(--s1) var(--s2);
+  border: 0.11rem solid var(--outline);
+  border-radius: var(--radius);
+  background: rgb(20 32 46 / 0.9);
+  text-align: left;
+}
+.strategy-row__slot {
+  color: var(--gold);
+  font-size: 1.2rem;
+  text-align: center;
+}
+.strategy-row__art {
+  block-size: 3rem;
+}
+.strategy-row__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.strategy-row__stats {
+  font-size: 0.65rem;
+  white-space: nowrap;
+}
+.strategy-row__moves {
+  display: flex;
+  gap: var(--s1);
+}
+.strategy-move {
+  inline-size: var(--tap-min);
+  padding: 0;
+  font-size: 1.25rem;
+}
+.strategy-move:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+@media (max-width: 540px) {
+  .strategy-row {
+    grid-template-columns: 1.4rem 2.7rem minmax(4rem, 1fr) auto;
+  }
+  .strategy-row__stats {
+    display: none;
+  }
+}
+
 /* ---- Result ---- */
 .result-card {
   display: grid;

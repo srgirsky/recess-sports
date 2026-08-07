@@ -42,6 +42,7 @@ import { getAlbum, recordAlbumGame } from '../systems/album';
 import type { GameResult } from './sim/game';
 import { ClubhouseScreen } from './ui/screens/ClubhouseScreen';
 import { clubhouseModel } from './ui/clubhouseModel';
+import { StrategyScreen } from './ui/screens/StrategyScreen';
 
 export class App {
   private readonly router: Router;
@@ -140,10 +141,23 @@ export class App {
         (c) => this.sound.sayDraft(c),
         (playerTeam, aiTeam) => {
           this.rosters = { away: playerTeam, home: aiTeam };
-          this.showTeam();
+          this.showStrategy();
         },
         (id, pool, host, mode) => this.game.setDraftSpotlight(id, pool, host, mode)
       )
+    );
+  }
+
+  /** One real strategy decision: the human batting order handed to the sim. */
+  private showStrategy(): void {
+    if (!this.rosters) return;
+    this.game.setScreenCue('PLAY');
+    this.router.show(
+      new StrategyScreen(this.rosters.away, (order) => {
+        if (!this.rosters) return;
+        this.rosters.away = order;
+        this.showTeam();
+      })
     );
   }
 

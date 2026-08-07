@@ -173,7 +173,9 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
    Clubhouse backed by the shared stores: games played, collection progress,
    foil wins, trophies, favorite picks and all thirty stickers; completed v2
    games advance the same album as `/classic/`, and unlocked kids speak when
-   tapped. Strategy, custom player, schedule/season and the extra modes remain.
+   tapped. A real pre-game strategy screen now lets the player order all nine
+   hitters and hands that exact order to the sim; defence still uses its
+   measured planner. Custom player, schedule/season and the extra modes remain.
    Some mature versions still live in `/classic/`; port shared rules rather than
    cloning them, and keep pickup play as the one-tap front door for ages four to
    eight.

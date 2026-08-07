@@ -338,6 +338,13 @@ describe('★ the v2 lineup planner, closing PR 6s own finding', () => {
     const rest = order.slice(2).reduce((a, c) => a + c.stats.contact, 0) / 7;
     expect(topTwo, 'the top of the order gets on base').toBeGreaterThan(rest);
   });
+
+  it('uses a player batting order exactly, and rejects a fake one', () => {
+    const chosen = [...AWAY].reverse();
+    expect(planDefence(AWAY, getCharacter, chosen).order).toEqual(chosen);
+    expect(() => planDefence(AWAY, getCharacter, [...AWAY.slice(0, 8), AWAY[0]])).toThrow(/exactly once/);
+    expect(() => planDefence(AWAY, getCharacter, [...AWAY.slice(0, 8), 'not-a-kid'])).toThrow(/exactly once/);
+  });
 });
 
 describe('determinism', () => {

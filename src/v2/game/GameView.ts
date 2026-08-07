@@ -682,6 +682,9 @@ export class GameView {
     const away = {
       name: this.teamNames.away,
       ids: rosters?.away ?? ROSTER.slice(0, 9).map((c) => c.id),
+      // The drafted human side arrives in the order the strategy screen owns.
+      // Bare-game and measurement routes omit it and keep the stat planner.
+      order: rosters?.away,
     };
     const home = {
       name: this.teamNames.home,
