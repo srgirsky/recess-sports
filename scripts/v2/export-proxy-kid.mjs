@@ -35,6 +35,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { bounds, f32, u16, writeGlb } from './glb.mjs';
 import { writeManifest } from './models-manifest.mjs';
+import { makeFaceAtlasPng, makeWhitePng } from './face-atlas.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = join(here, '..', '..');
@@ -52,6 +53,14 @@ export const RUNTIME_DIR = join(repo, 'public', 'v2', 'models');
  * the way a comment could.
  */
 export const LOD_DETAIL = [1.0, 0.62, 0.34];
+
+/**
+ * Roster files also carry UVs and a face atlas, so their geometry budget has
+ * to leave room under the same 400KB delivery cap. At the game's closest
+ * camera 0.82 still gives heads 11x8 sphere segments; more tessellation
+ * changes neither the silhouette nor a 2.5px outline, it only inflates bytes.
+ */
+export const ROSTER_LOD_DETAIL = [0.82, 0.5, 0.28];
 
 /** §4's per-level triangle budgets, nearest first. */
 export const LOD_BUDGET = [7000, 3000, 1200];
@@ -107,14 +116,16 @@ export async function loadProxySpec() {
  * `slots` index spans — so there is no second description of what a kid looks
  * like or of which triangles are jersey.
  */
-function buildLevels(spec, character) {
+function buildLevels(spec, character, fidelity = 'proxy') {
   const { ProxyCharacter, withDetail } = spec;
+  const levels = fidelity === 'roster' ? ROSTER_LOD_DETAIL : LOD_DETAIL;
 
-  return LOD_DETAIL.map((detail, level) => {
-    const kid = withDetail(detail, () => new ProxyCharacter(character.visual, {}));
+  return levels.map((detail, level) => {
+    const kid = withDetail(detail, () => new ProxyCharacter(character.visual, { fidelity }));
     const g = kid.mesh.geometry;
     const pos = g.attributes.position.array;
     const nor = g.attributes.normal.array;
+    const uv = g.attributes.uv.array;
     const col = g.attributes.color.array;
     const joints = g.attributes.skinIndex.array;
     const weights = g.attributes.skinWeight.array;
@@ -144,7 +155,7 @@ function buildLevels(spec, character) {
     }
 
     kid.dispose();
-    return { pos, nor, col, joints, weights, perSlot, triangles };
+    return { pos, nor, uv, col, joints, weights, perSlot, triangles };
   });
 }
 
@@ -186,7 +197,34 @@ function shadeRatios(spec, character, level) {
   return out;
 }
 
-export async function buildProxyKidGlb(id, outPath, spec) {
+/**
+ * Production vertex palette. Non-team slots bake their authored linear colour
+ * so body, hair and accessories can collapse into one draw at runtime; uniform
+ * vertices keep a greyscale shade ratio so the drafting team's colour remains
+ * dynamic. Slot membership is still preserved as real glTF primitives and
+ * material names in the delivery contract.
+ */
+function rosterVertexColors(spec, character, level) {
+  const out = new Float32Array(level.pos.length).fill(1);
+  const uniformBase = Math.max(1e-4, luminance(spec.jerseyHex(character.visual.uniform)));
+  for (const [slot, indices] of level.perSlot) {
+    for (const i of indices) {
+      if (slot === 'M_Uniform') {
+        const lum =
+          0.2126 * level.col[i * 3] + 0.7152 * level.col[i * 3 + 1] + 0.0722 * level.col[i * 3 + 2];
+        const ratio = Math.min(2, lum / uniformBase);
+        out[i * 3] = out[i * 3 + 1] = out[i * 3 + 2] = ratio;
+      } else {
+        out[i * 3] = level.col[i * 3];
+        out[i * 3 + 1] = level.col[i * 3 + 1];
+        out[i * 3 + 2] = level.col[i * 3 + 2];
+      }
+    }
+  }
+  return out;
+}
+
+export async function buildProxyKidGlb(id, outPath, spec, options = {}) {
   const { SKELETON, ROSTER, skinHex, hairHex, trimHex, REFERENCE_HEIGHT_FT, crownHeightFt, bindPoseHash } =
     spec;
 
@@ -198,7 +236,8 @@ export async function buildProxyKidGlb(id, outPath, spec) {
     throw new Error(`skeleton.ts is inconsistent: crown ${crown.toFixed(4)}ft vs ${REFERENCE_HEIGHT_FT}`);
   }
 
-  const levels = buildLevels(spec, character);
+  const delivery = options.delivery === true;
+  const levels = buildLevels(spec, character, delivery ? 'roster' : 'proxy');
 
   // --- Bones, exactly as export-skeleton.mjs writes them ---------------------
   const byName = new Map(SKELETON.map((b, i) => [b.name, i]));
@@ -255,8 +294,17 @@ export async function buildProxyKidGlb(id, outPath, spec) {
       count: vertexCount,
       type: 'VEC3',
     });
+    const uvA = pushAccessor({
+      bufferView: pushView(f32(Array.from(level.uv)), 34962),
+      componentType: 5126,
+      count: vertexCount,
+      type: 'VEC2',
+    });
     const colA = pushAccessor({
-      bufferView: pushView(f32(Array.from(shadeRatios(spec, character, level))), 34962),
+      bufferView: pushView(
+        f32(Array.from(delivery ? rosterVertexColors(spec, character, level) : shadeRatios(spec, character, level))),
+        34962
+      ),
       componentType: 5126,
       count: vertexCount,
       type: 'VEC3',
@@ -279,7 +327,14 @@ export async function buildProxyKidGlb(id, outPath, spec) {
       const indices = level.perSlot.get(slot);
       if (!indices.length) continue; // a bald kid has no M_Hair triangles
       primitives.push({
-        attributes: { POSITION: posA, NORMAL: norA, COLOR_0: colA, JOINTS_0: jntA, WEIGHTS_0: wgtA },
+        attributes: {
+          POSITION: posA,
+          NORMAL: norA,
+          TEXCOORD_0: uvA,
+          COLOR_0: colA,
+          JOINTS_0: jntA,
+          WEIGHTS_0: wgtA,
+        },
         indices: pushAccessor({
           bufferView: pushView(u16(indices), 34963),
           componentType: 5123,
@@ -302,6 +357,12 @@ export async function buildProxyKidGlb(id, outPath, spec) {
     type: 'MAT4',
   });
 
+  // A delivered model carries a real albedo binding plus its individualized
+  // expression atlas. `CharacterModel` deliberately refuses an atlas without
+  // an albedo map because three only emits the UV varying when a map uses it.
+  const whiteImageView = delivery ? pushView(makeWhitePng()) : undefined;
+  const faceImageView = delivery ? pushView(makeFaceAtlasPng(character)) : undefined;
+
   const lodFirst = nodes.length;
   nodes.push(...lodNodes);
 
@@ -309,7 +370,9 @@ export async function buildProxyKidGlb(id, outPath, spec) {
   const json = {
     asset: {
       version: '2.0',
-      generator: `recess-sports export-proxy-kid (STAND-IN, bindPoseHash ${bindPoseHash()})`,
+      generator: delivery
+        ? `recess-sports roster-model pipeline (bindPoseHash ${bindPoseHash()})`
+        : `recess-sports export-proxy-kid (STAND-IN, bindPoseHash ${bindPoseHash()})`,
     },
     scene: 0,
     scenes: [{ nodes: [0, ...lodNodes.map((_, i) => lodFirst + i)] }],
@@ -324,15 +387,32 @@ export async function buildProxyKidGlb(id, outPath, spec) {
     ],
     meshes,
     materials: [
-      material('M_Body', linearFromHex(skinHex(v.skin))),
+      material(
+        'M_Body',
+        delivery ? [1, 1, 1] : linearFromHex(skinHex(v.skin)),
+        delivery ? { bodyTextures: true, vertexPalette: true } : undefined
+      ),
       // ★ GREYSCALE, per §4. Team colour is applied at runtime as a multiply,
       // and that is the entire team-identity system.
-      material('M_Uniform', [UNIFORM_GREY, UNIFORM_GREY, UNIFORM_GREY]),
-      material('M_Hair', linearFromHex(hairHex(v.hairColor))),
-      material('M_Accessory', linearFromHex(trimHex(v.uniform))),
+      material('M_Uniform', [UNIFORM_GREY, UNIFORM_GREY, UNIFORM_GREY], delivery ? { vertexPalette: true } : undefined),
+      material('M_Hair', delivery ? [1, 1, 1] : linearFromHex(hairHex(v.hairColor)), delivery ? { vertexPalette: true } : undefined),
+      material('M_Accessory', delivery ? [1, 1, 1] : linearFromHex(trimHex(v.uniform)), delivery ? { vertexPalette: true } : undefined),
     ],
     accessors,
     bufferViews,
+    ...(delivery
+      ? {
+          images: [
+            { name: 'albedo', bufferView: whiteImageView, mimeType: 'image/png' },
+            { name: 'face_atlas', bufferView: faceImageView, mimeType: 'image/png' },
+          ],
+          samplers: [{ magFilter: 9729, minFilter: 9987, wrapS: 10497, wrapT: 10497 }],
+          textures: [
+            { name: 'albedo', sampler: 0, source: 0 },
+            { name: 'face_atlas', sampler: 0, source: 1 },
+          ],
+        }
+      : {}),
   };
 
   // Byte offsets, once every chunk's length is known.
@@ -347,8 +427,8 @@ export async function buildProxyKidGlb(id, outPath, spec) {
   return { bytes, triangles: levels.map((l) => l.triangles) };
 }
 
-function material(name, linearRgb) {
-  return {
+function material(name, linearRgb, options = {}) {
+  const out = {
     name,
     // No normal map, no metallic-roughness map — the toon shader ignores both
     // and the validator rejects them (§4).
@@ -358,6 +438,14 @@ function material(name, linearRgb) {
       roughnessFactor: 1,
     },
   };
+  if (options.bodyTextures) {
+    out.pbrMetallicRoughness.baseColorTexture = { index: 0 };
+    out.emissiveTexture = { index: 1 };
+    out.emissiveFactor = [0, 0, 0];
+    out.alphaMode = 'OPAQUE';
+  }
+  if (options.vertexPalette) out.extras = { recessVertexPalette: true };
+  return out;
 }
 
 async function main() {

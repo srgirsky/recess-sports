@@ -134,12 +134,9 @@ popping" checkable).
 ## Characters and models
 
 - **`render/CharacterFactory.ts` is the ONE place that decides model-or-proxy**:
-  `?proxy=1` → proxy; not in the manifest → proxy, **SILENTLY** (most of the
-  roster is undelivered, and a warning per kid teaches everyone to ignore the
-  console); load failure → proxy plus ONE warning per character, because that is
-  the branch somebody has to fix. Nothing downstream branches on which it got —
-  `KidView` is the same surface either way, which is what makes a delivery land
-  with no code change.
+  `?proxy=1` or absent manifest entry → proxy silently; load failure → proxy plus
+  ONE warning per character. Nothing downstream branches on the result — both
+  implement `KidView`.
 - **`modelLoader.ts` is the only file that loads a `.glb`**, the same way
   `net/peer.ts` is the only one that imports peerjs. A second loader silently
   gets no Draco decoder and no KTX2 support detection, and fails on the first
@@ -159,12 +156,9 @@ popping" checkable).
   never draw them. The switch distances are DERIVED from apparent PIXEL size
   (`lodDistancesFt`), so they follow the kid being drawn rather than one camera
   and one screen.
-- **⚠️ A delivered model costs up to 8 draw calls where a proxy costs 2** — two
-  per POPULATED material slot, mesh plus inverted hull. `render.characterDrawCost`
-  has the arithmetic and the three ways to close it; the draw budget was set
-  against a proxy-only scene and has never been re-derived with models in it. **Do
-  not close it by dropping outlines at distance** — a small character is where the
-  contour does the most work.
+- **Generated roster deliveries must keep the 2-draw character cost** — one
+  merged colour pass plus one hull. Preserve all four GLB slots and the explicit
+  `recessVertexPalette` opt-in; see `render.characterDrawCost`.
 - **Outline hulls are SIBLINGS, never children.** A skinned hull parented under
   its skinned mesh inherits the already-posed world matrix and skins a second
   time — every character renders as a solid blob. `attachOutline` throws if the
@@ -197,6 +191,10 @@ popping" checkable).
   blocked on art. `npm run export:proxy-kid` writes a contract-legal stand-in
   `.glb` from it, and refuses to write a level over its triangle budget rather
   than renaming a level.
+- **`export-roster-kid` is the deterministic first-party delivery path.** It
+  emits three LODs plus each kid's face atlas and never marks output `STAND-IN`.
+  `manifest.test.js` requires every `ROSTER` id. Review with
+  `?spike=1&roster=1` or `?spike=1&kid=<id>`.
 - The artist-facing copy is `docs/v2/asset-contract.md`;
   `scripts/v2/validate-models.mjs` is its teeth, and a failure names the rule AND
   why it exists.

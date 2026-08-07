@@ -216,6 +216,14 @@ never been re-derived against a scene with models in it. Recorded as
 `render.characterDrawCost` with the three ways to close it, rather than shipped
 quietly over budget.
 
+The roster production pass below closes that recorded drift without dropping
+outlines or changing the asset contract. First-party deliveries keep the four
+named slots in each GLB but mark their compatible vertex palette; at load time
+the team tint is baked and all four primitives merge into one skinned colour
+pass plus one merged hull. The same 13-model foreground review now measures
+**66 draws against 90**, exactly matching 13 proxies, while using 59.9k rather
+than 147.9k triangles.
+
 **The sim core has started, and the first thing it needed was a fence** (2026-07-31).
 `src/v2/sim/` was two files — unit conversion and field geometry — and 477 lines
 against the render tree's 8,792. There was no ball, no integrator, no contact
@@ -1644,8 +1652,27 @@ actually has a moment: the tray slot the vote lands in POPS (the scoreboard
 pips' motion contract — `--motion-scale` zeroes the movement, the is-filled
 colour change is the reduced-motion fallback). With these, every
 engineering-side line in `docs/research/backyard-2026-reference.md` is
-struck; what parity still awaits is the commissioned models, whose
-validation pipeline has been ready since before this push began.
+struck. Character production was the remaining visual line; the roster pass
+below closes it without weakening the delivery contract.
+
+### Roster production pass — thirty faces, not five stand-ins
+
+The five committed `.glb` files were contract fixtures labelled `STAND-IN`, so
+the apparent "25 models remaining" understated the actual gap: no roster member
+had a production delivery. The first-party roster exporter now writes all 30
+from the same authored character data that already owns their proportions,
+hair, accessories and face personality. Each file carries three LODs on the
+canonical 33-bone skin, a UV-mapped body and its own 4×4 expression atlas;
+Zoom's silhouette includes the sport chair instead of rendering as a standing
+kid. Hair and cap geometry were moved clear of the face after the first full
+roster review exposed dark bands and visors through the eyes.
+
+The distinction is executable. Production files never carry the `STAND-IN`
+generator marker, `manifest.test.js` requires exactly the 30 `ROSTER` ids and
+re-validates every committed GLB under 400KB, and `?spike=1&roster=1` renders a
+front-facing contact sheet of the complete batch. `?spike=1&kid=<id>` keeps the
+single-character field review, while `?proxy=1` remains the honest A/B against
+the permanent cheap fallback.
 
 ### 2026 parity pass — two city parks, not two palettes
 

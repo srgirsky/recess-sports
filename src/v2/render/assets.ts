@@ -66,14 +66,14 @@ export function animationUrl(): string {
  *
  * It is NOT `import.meta.glob`, which was the first implementation and which
  * ships every model TWICE: Vite copies `public/` verbatim into `dist/` and then
- * emits each globbed file again as a hashed bundle asset. Five stand-ins
- * measured 1.34MB duplicated; thirty commissioned characters would be around
- * eight. `scripts/v2/models-manifest.mjs` writes the file and a test keeps it
- * in step with the directory.
+ * emits each globbed file again as a hashed bundle asset. Five early stand-ins
+ * measured 1.34MB duplicated; the complete roster would duplicate megabytes.
+ * `scripts/v2/models-manifest.mjs` writes the file and a test keeps it in step
+ * with the directory.
  *
  * A character with no entry is not an error — they fall back to a proxy. That
- * is what makes §5's delivery batches of 5-6 shippable one batch at a time
- * instead of all-or-nothing.
+ * is what keeps a partial deploy or a future roster addition playable instead
+ * of turning missing cosmetics into a boot failure.
  */
 let manifest: Set<string> | null = null;
 let pending: Promise<Set<string>> | null = null;

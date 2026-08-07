@@ -899,26 +899,26 @@
    "id": "render.character-draw-cost",
    "category": "render",
    "reference": "bb2001",
-   "status": "known-drift",
-   "statusChangedAt": "2026-07-30",
-   "what": "A DELIVERED model costs 8 draw calls where a proxy costs 2, and 13 characters put the Look Spike at 122 draws against a budget of 90. LOD pays for itself on triangles in the same measurement (93.3k -> 47.6k, -49%), so the trade is real and one-directional: the character pipeline buys triangles with draw calls.",
-   "why": "ProxyCharacter's header states the budget as '1 mesh + 1 outline hull -- exactly the 2-draw-calls-per-character the perf budget allows'. That sentence is true of a PROXY and was read as a statement about characters. A commissioned model carries the four material slots the asset contract mandates (M_Body / M_Uniform / M_Hair / M_Accessory); three.js splits a multi-primitive mesh into one Mesh per primitive; and the inverted hull needs a sibling per Mesh. 4 x 2 = 8. Neither number was wrong -- they had simply never been measured in the same scene.",
+   "status": "note",
+   "statusChangedAt": "2026-08-07",
+   "what": "A generated roster delivery now costs the same two draws as its proxy: one merged skinned colour pass plus one merged outline. The standard 13-character Look Spike measures 66 draws against a budget of 90, with all 13 characters using delivered models.",
+   "why": "The GLB still preserves the four contract slots (M_Body / M_Uniform / M_Hair / M_Accessory) for validation and external-tool clarity. The first-party exporter marks its vertex-palette materials explicitly; CharacterModel then bakes the instance's team colour into the greyscale uniform vertices and merges the compatible primitives after load. General artist deliveries keep the four-slot path unless they opt into that marker.",
    "measured": {
-    "when": "2026-07-30",
-    "how": "Look Spike at /v2/?kids=13, PLAY rig, park venue, high tier, toggling forceProxy between reads so nothing else in the scene changed. Rendered SYNCHRONOUSLY from the page: a backgrounded tab stops requestAnimationFrame, which freezes renderer.stats() and is what made the first three readings identical and wrong.",
+    "when": "2026-08-07",
+    "how": "Look Spike at /v2/?spike=1&kids=13, PLAY rig, park venue, high tier, toggling MODELS/PROXIES between synchronous foreground reads so nothing else in the scene changed. Model read: 120fps, p95 9.1ms. Proxy read: 120fps, p95 9.4ms.",
     "kids": 13,
     "models": {
-     "drawCalls": 122,
-     "trianglesK": 47.6,
+     "drawCalls": 66,
+     "trianglesK": 59.9,
      "lodSplit": "LOD0:3 LOD1:7 LOD2:3"
     },
     "proxies": {
-     "drawCalls": 46,
-     "trianglesK": 93.3
+     "drawCalls": 66,
+     "trianglesK": 147.9
     },
     "perCharacter": {
-     "modelMax": 8,
-     "modelNote": "8 is the MAXIMUM -- two draws per POPULATED material slot. The measured total is 76 extra draws over 13 kids, not the 78 that 13 x 6 would predict, because one of the thirteen is bald and so carries no M_Hair primitive at all. The exporter skips empty slots and three.js never makes a Mesh for a primitive that does not exist; an accessory-less kid is 6 the same way.",
+     "modelMax": 2,
+     "modelNote": "Two is specific to compatible first-party vertex-palette deliveries: one merged toon mesh and one merged inverted hull. An external delivery without the explicit recessVertexPalette material extra remains on the general per-slot path.",
      "proxy": 2
     },
     "budget": {
@@ -927,14 +927,13 @@
     }
    },
    "drift": {
-    "drawCallsOver": 32,
-    "emptySlotCharacters": 1,
-    "note": "The triangle budget is comfortable in both modes; only draw calls are at risk, and only with models."
+    "drawCallsUnder": 24,
+    "note": "The previous known drift is closed. Models and proxies have identical draw cost in the same scene; LOD leaves the delivered models at 40% of the proxy triangle count."
    },
-   "whatWouldClose": "One of: (a) ONE outline hull per LOD level instead of one per primitive -- the inner hulls are entirely hidden behind the character, but merging primitives is only trivial when they share attribute buffers, which a real delivery need not do; (b) fewer material slots per character, which is a contract change that costs either the team-colour multiply or the face atlas; (c) re-derive the 90, which was set against a proxy-only scene and has never been measured on a target device with models on it. Do NOT close it by dropping outlines at distance: a 20px character is where the contour does the most work.",
-   "n": 1,
-   "confidence": "derived",
-   "informs": "src/v2/render/CharacterModel.ts (attachOutline per primitive), src/v2/render/ProxyCharacter.ts (the 2-draw-calls-per-character header claim, now true only of proxies), src/v2/spike/LookSpike.ts (the on-screen budget line)"
+   "whatWouldClose": "Closed on 2026-08-07 by the explicit vertex-palette merge path; keep the standard 13-kid foreground reading at or below the on-screen 90-draw budget.",
+   "n": 2,
+   "confidence": "high",
+   "informs": "src/v2/render/CharacterModel.ts (collapseVertexPalette and merged outline), scripts/v2/export-proxy-kid.mjs (recessVertexPalette opt-in), src/v2/spike/LookSpike.ts (the on-screen budget line)"
   },
   "v1BundleInvariant": {
    "id": "render.v1-bundle-invariant",

@@ -47,15 +47,23 @@ const tmp = mkdtempSync(join(tmpdir(), 'recess-model-'));
  *  Its shape is asserted by `scripts/v2/validate-models.test.js`. */
 const EXPORTER = '../../../scripts/v2/export-proxy-kid.mjs';
 
+// GLTFLoader's browser texture path only needs a decoded image-shaped object
+// for this scene-graph test. Node supplies Blob/object URLs but no `self` or
+// createImageBitmap, so provide the two narrow platform shims before parsing a
+// production fixture with embedded PNGs.
+const loaderGlobals = globalThis as unknown as Record<string, unknown>;
+loaderGlobals.self ??= globalThis;
+loaderGlobals.createImageBitmap ??= async () => ({ width: 1, height: 1, close() {} } as ImageBitmap);
+
 interface Exporter {
-  buildProxyKidGlb(id: string, out: string, spec: unknown): Promise<unknown>;
+  buildProxyKidGlb(id: string, out: string, spec: unknown, options?: { delivery?: boolean }): Promise<unknown>;
   loadProxySpec(): Promise<unknown>;
 }
 
-async function build(id: string): Promise<GLTF> {
+async function build(id: string, delivery = false): Promise<GLTF> {
   const { buildProxyKidGlb, loadProxySpec } = (await import(/* @vite-ignore */ EXPORTER)) as Exporter;
-  const path = join(tmp, `kid_${id}.glb`);
-  await buildProxyKidGlb(id, path, await loadProxySpec());
+  const path = join(tmp, `kid_${id}${delivery ? '-roster' : ''}.glb`);
+  await buildProxyKidGlb(id, path, await loadProxySpec(), { delivery });
   const bytes = readFileSync(path);
   const buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
   return new Promise((resolve, reject) => {
@@ -72,8 +80,10 @@ function meshes(root: Object3D): Mesh[] {
 }
 
 let gltf: GLTF;
+let rosterGltf: GLTF;
 beforeAll(async () => {
   gltf = await build(ID);
+  rosterGltf = await build(ID, true);
 });
 
 describe('a delivered model becomes a playable character', () => {
@@ -216,6 +226,44 @@ describe('material slots', () => {
     );
     expect(after).toEqual(before);
     kid.dispose();
+  });
+});
+
+describe('generated roster delivery', () => {
+  it('collapses every populated slot to one skinned draw per LOD', () => {
+    const outlines = new OutlineRegistry();
+    const kid = new CharacterModel(ID, rosterGltf, character.visual, {
+      uniform: 2,
+      outlines,
+      noProxyLevel: true,
+    });
+    const lod = kid.root.children.find((child) => (child as LOD).isLOD) as LOD;
+
+    for (const level of lod.levels) {
+      const levelMeshes = meshes(level.object);
+      const colourPasses = levelMeshes.filter((mesh) => !mesh.userData.isOutline);
+      const hulls = levelMeshes.filter((mesh) => mesh.userData.isOutline);
+      expect(colourPasses, `${level.object.name} colour passes`).toHaveLength(1);
+      expect(hulls, `${level.object.name} outline passes`).toHaveLength(1);
+      expect(colourPasses[0].material).not.toBeInstanceOf(Array);
+      expect((colourPasses[0].material as { name: string }).name).toBe('M_Body');
+      expect((colourPasses[0].material as { userData: Record<string, unknown> }).userData.hasFaceAtlas).toBe(true);
+    }
+
+    kid.dispose();
+    outlines.dispose();
+  });
+
+  it('bakes the drafting team into uniform vertices before merging', () => {
+    const first = new CharacterModel(ID, rosterGltf, character.visual, { uniform: 0, noProxyLevel: true });
+    const second = new CharacterModel(ID, rosterGltf, character.visual, { uniform: 2, noProxyLevel: true });
+    const colours = (kid: CharacterModel) => {
+      const lod = kid.root.children.find((child) => (child as LOD).isLOD) as LOD;
+      return Array.from(meshes(lod.levels[0].object)[0].geometry.getAttribute('color').array as ArrayLike<number>);
+    };
+    expect(colours(first)).not.toEqual(colours(second));
+    first.dispose();
+    second.dispose();
   });
 });
 

@@ -13,6 +13,7 @@
     "sync:decoders": "node scripts/v2/sync-decoders.mjs",
     "export:skeleton": "node --disable-warning=ExperimentalWarning scripts/v2/export-skeleton.mjs",
     "export:proxy-kid": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/export-proxy-kid.mjs",
+    "export:roster-kid": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/export-roster-kid.mjs",
     "manifest:models": "node scripts/v2/models-manifest.mjs",
     "sim:trajectory": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/trajectory.mjs",
     "validate:models": "node --disable-warning=ExperimentalWarning scripts/v2/validate-models.mjs",

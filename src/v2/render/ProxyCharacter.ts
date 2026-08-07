@@ -25,15 +25,12 @@
 // rather than in separate materials, so a proxy costs 1 mesh + 1 outline hull
 // — 2 draw calls per character.
 //
-// ★ THAT IS A FACT ABOUT PROXIES, NOT ABOUT CHARACTERS, and this comment used
-// to end "— exactly the 2-draw-calls-per-character the perf budget allows",
-// which read as the latter. A COMMISSIONED model carries the four material
-// slots the asset contract mandates, three.js splits a multi-primitive mesh
-// into one Mesh per primitive, and the inverted hull needs a sibling per Mesh:
-// up to 8 draws, two per populated slot. Measured at 122 draws for 13 models
-// against 46 for 13 proxies, on a budget of 90. See
-// `render.characterDrawCost` in `scripts/measures.json` — the budget has never
-// been re-derived against a scene with real models in it.
+// Production GLBs still preserve all four material slots required by the asset
+// contract. First-party roster files opt into a compatible vertex palette, so
+// CharacterModel can bake the team colour and merge those slots at load time:
+// one colour pass plus one merged hull, the same 2 draws as a proxy. The
+// foreground 13-kid review measures 66 draws against the 90-draw budget; see
+// `render.characterDrawCost` in `scripts/measures.json`.
 // ---------------------------------------------------------------------------
 
 import {
@@ -44,12 +41,14 @@ import {
   CapsuleGeometry,
   Color,
   ConeGeometry,
+  CylinderGeometry,
   Group,
   Matrix4,
   Quaternion,
   Skeleton,
   SkinnedMesh,
   SphereGeometry,
+  TorusGeometry,
   Vector3,
 } from 'three';
 import type { Accessory, HairStyle, VisualParams } from '../../data/types';
@@ -312,6 +311,12 @@ interface Part {
   bone: string;
   color: number;
   /**
+   * Map this primitive's native UVs into the body material's face island.
+   * Only the roster model's skull uses it; the permanent proxy keeps its
+   * geometry face and pays no texture cost.
+   */
+  faceUv?: boolean;
+  /**
    * ★ What this primitive IS, for tests that ask whether it can be seen.
    *
    * Colour cannot answer that question. The nose is drawn in skin colour on a
@@ -377,6 +382,7 @@ function mergeParts(
   const position = new Float32Array(vCount * 3);
   const normal = new Float32Array(vCount * 3);
   const color = new Float32Array(vCount * 3);
+  const uv = new Float32Array(vCount * 2);
   const skinIndex = new Uint16Array(vCount * 4);
   const skinWeight = new Float32Array(vCount * 4);
   const index = new Uint32Array(iCount);
@@ -390,6 +396,7 @@ function mergeParts(
     if (bone === undefined) throw new Error(`Proxy part names an unknown bone: ${p.bone}`);
     const pos = p.geom.attributes.position;
     const nor = p.geom.attributes.normal;
+    const srcUv = p.geom.attributes.uv;
     c.setHex(p.color).convertSRGBToLinear();
 
     for (let i = 0; i < pos.count; i++) {
@@ -403,6 +410,19 @@ function mergeParts(
       color[v * 3 + 0] = c.r;
       color[v * 3 + 1] = c.g;
       color[v * 3 + 2] = c.b;
+      if (p.faceUv && srcUv) {
+        // `FACE_ISLAND` is [0..0.5, 0.5..1]. Keep that arithmetic local to
+        // the geometry generator so the exported UVs and shader contract
+        // cannot drift independently.
+        uv[v * 2 + 0] = srcUv.getX(i) * 0.5;
+        uv[v * 2 + 1] = 0.5 + srcUv.getY(i) * 0.5;
+      } else {
+        // A point outside the face island. The body base map is white, so the
+        // exact texel is immaterial; what matters is that an expression never
+        // paints a neck or hand.
+        uv[v * 2 + 0] = 0.75;
+        uv[v * 2 + 1] = 0.25;
+      }
       // Rigid binding: full weight on one bone. This is what lets a primitive
       // pile follow a real skeletal clip without any skin weighting work.
       skinIndex[v * 4 + 0] = bone;
@@ -424,6 +444,7 @@ function mergeParts(
   g.setAttribute('position', new BufferAttribute(position, 3));
   g.setAttribute('normal', new BufferAttribute(normal, 3));
   g.setAttribute('color', new BufferAttribute(color, 3));
+  g.setAttribute('uv', new BufferAttribute(uv, 2));
   g.setAttribute('skinIndex', new BufferAttribute(skinIndex, 4));
   g.setAttribute('skinWeight', new BufferAttribute(skinWeight, 4));
   g.setIndex(new BufferAttribute(index, 1));
@@ -436,6 +457,11 @@ export interface ProxyOptions {
   /** Team colour index. A kid wears whoever drafted them, not their own. */
   uniform?: number;
   outlines?: OutlineRegistry;
+  /**
+   * `roster` adds the data needed by an exported delivery (UV face island and
+   * authored silhouette details). Runtime fallbacks always use `proxy`.
+   */
+  fidelity?: 'proxy' | 'roster';
 }
 
 /**
@@ -476,6 +502,7 @@ export class ProxyCharacter {
   readonly slots: SlotRange[] = [];
 
   constructor(visual: VisualParams, opts: ProxyOptions = {}) {
+    const rosterFidelity = opts.fidelity === 'roster';
     const b = visual.body ?? {};
     // v1 authored `height` as a 0.82-1.0 scale; map that band onto the real
     // 3.6-4.4ft range so 30 existing kids get sensible real-world statures
@@ -527,10 +554,32 @@ export class ProxyCharacter {
       bone: 'Head',
       color: skinC,
       slot: 'M_Body',
+      faceUv: rosterFidelity,
     });
-    parts.push(...hairParts(visual.hair, headC, headR, headW, headH, hairC));
+    parts.push(...hairParts(visual, headC, headR, headW, headH, hairC));
     parts.push(...accessoryParts(visual.accessory, headC, headR, headW, headH, jersey));
-    parts.push(...facingCue(headC, headR, headW, headH, skinC, shadeInt(hairC, BROW_SHADE)));
+    // Delivered roster models paint the full expression into their atlas.
+    // The permanent proxy still carries its cheap geometry facing cue.
+    if (!rosterFidelity) {
+      parts.push(...facingCue(headC, headR, headW, headH, skinC, shadeInt(hairC, BROW_SHADE)));
+    } else {
+      // The atlas supplies the front; small ears keep the head from reading as
+      // a texture pasted onto a ball in the three-quarter hero camera.
+      for (const sgn of [-1, 1]) {
+        parts.push({
+          geom: ball(
+            headC.clone().add(new Vector3(sgn * headR * headW * 0.96, -headR * 0.23, 0)),
+            headR * 0.16,
+            new Vector3(0.52, 1, 0.72),
+            10,
+            7
+          ),
+          bone: 'Head',
+          color: skinC,
+          slot: 'M_Body',
+        });
+      }
+    }
 
     // ---- Torso ----
     // Bounded by BIND-POSE LANDMARKS rather than magic numbers: the ellipsoid's
@@ -552,6 +601,44 @@ export class ProxyCharacter {
       color: jersey,
       slot: 'M_Uniform',
     });
+    if (rosterFidelity) {
+      // Moulded-uniform detail: collar, waist piping and a chest badge. These
+      // stay in the greyscale team slot, so a drafted kid still wears whoever
+      // picked them instead of a baked personal jersey colour.
+      const collar = new TorusGeometry(torsoW * 0.34, 0.045, seg(6, 4), seg(16, 8));
+      collar.rotateX(Math.PI / 2);
+      collar.translate(0, torsoTop - 0.08, 0);
+      parts.push({
+        geom: collar,
+        bone: 'Spine2',
+        color: shadeInt(jersey, 0.3),
+        slot: 'M_Uniform',
+      });
+
+      const waist = new TorusGeometry(torsoW * 0.58, 0.035, seg(5, 3), seg(16, 8));
+      waist.rotateX(Math.PI / 2);
+      waist.scale(1, 1, 0.75);
+      waist.translate(0, hips.y + 0.12, 0);
+      parts.push({
+        geom: waist,
+        bone: 'Hips',
+        color: shadeInt(pants, 0.28),
+        slot: 'M_Uniform',
+      });
+
+      parts.push({
+        geom: ball(
+          new Vector3(0, chest.y - 0.12, torsoW * 0.72),
+          0.13,
+          new Vector3(1, 1.15, 0.22),
+          12,
+          8
+        ),
+        bone: 'Spine1',
+        color: 0xf5e9b8,
+        slot: 'M_Uniform',
+      });
+    }
 
     // ---- Neck ----
     // Nothing was bound to `Neck` or `Spine2` at all, which left 0.23ft of open
@@ -603,16 +690,32 @@ export class ProxyCharacter {
     }
 
     // ---- Legs ----
-    for (const side of ['Left', 'Right'] as const) {
-      parts.push({ geom: limb(at(`${side}UpLeg`), at(`${side}Leg`), 0.171 * hip), bone: `${side}UpLeg`, color: pants, slot: 'M_Uniform' });
-      parts.push({ geom: limb(at(`${side}Leg`), at(`${side}Foot`), 0.135), bone: `${side}Leg`, color: pants, slot: 'M_Uniform' });
-      const foot = at(`${side}Foot`);
-      parts.push({
-        geom: box(foot.clone().add(new Vector3(0, -0.059, 0.106)), 0.282, 0.153, 0.494),
-        bone: `${side}Foot`,
-        color: shoe,
-        slot: 'M_Accessory',
-      });
+    if (visual.accessory === 'wheelchair') {
+      // Zoom's lower body stays tucked behind the chair instead of running in
+      // place through its wheels. The shared upper-body clips still read, and
+      // the chair travels with the sim-owned character root.
+      for (const side of ['Left', 'Right'] as const) {
+        const upper = at(`${side}UpLeg`);
+        parts.push({
+          geom: limb(upper, upper.clone().add(new Vector3(0, -0.12, 0.34)), 0.16 * hip),
+          bone: `${side}UpLeg`,
+          color: pants,
+          slot: 'M_Uniform',
+        });
+      }
+      parts.push(...wheelchairParts(hips, jersey));
+    } else {
+      for (const side of ['Left', 'Right'] as const) {
+        parts.push({ geom: limb(at(`${side}UpLeg`), at(`${side}Leg`), 0.171 * hip), bone: `${side}UpLeg`, color: pants, slot: 'M_Uniform' });
+        parts.push({ geom: limb(at(`${side}Leg`), at(`${side}Foot`), 0.135), bone: `${side}Leg`, color: pants, slot: 'M_Uniform' });
+        const foot = at(`${side}Foot`);
+        parts.push({
+          geom: box(foot.clone().add(new Vector3(0, -0.059, 0.106)), 0.282, 0.153, 0.494),
+          bone: `${side}Foot`,
+          color: shoe,
+          slot: 'M_Accessory',
+        });
+      }
     }
 
     // Every part must name a slot, or the exported stand-in silently loses
@@ -708,7 +811,7 @@ function headAnchors(c: Vector3, r: number): { crown: Vector3; jaw: Vector3 } {
  * kid with hair and becomes hair with a kid under it.
  */
 function hairParts(
-  style: HairStyle,
+  visual: VisualParams,
   /** ★ The head SPHERE's centre, not the Head bone — see `headAnchors`. */
   c: Vector3,
   r: number,
@@ -716,28 +819,51 @@ function hairParts(
   headH: number,
   color: number
 ): Part[] {
+  const style: HairStyle = visual.hair;
+  const spec = visual.hairSpec ?? {};
+  const volume = clamp(spec.volume ?? 1, 0.88, 1.1);
+  const length = clamp(spec.length ?? 1, 0.8, 1.25);
+  const part = clamp(spec.part ?? 0, -1, 1);
+  const wisps = Math.round(clamp(spec.wisps ?? 0, 0, 3));
   const { crown, jaw } = headAnchors(c, r);
-  const sx = headW;
+  const sx = headW * volume;
   const sy = headH;
   const out: Part[] = [];
   const add = (g: BufferGeometry, bone = 'Head') =>
     out.push({ geom: g, bone, color, slot: 'M_Hair' });
+  // A full ellipsoid centred on the crown crosses the face at eye height —
+  // the old "cap" was literally a dark band through every kid's eyes. Pull
+  // the hair mass behind the skull and flatten its depth. The silhouette stays
+  // full from the side and above while the face owns the front surface.
+  const cap = (scale = 1.04, yScale = 0.74) =>
+    ball(
+      crown.clone().add(new Vector3(part * r * 0.1, 0, -r * 0.28)),
+      r * scale,
+      new Vector3(sx, sy * yScale, sx * 0.82)
+    );
 
   switch (style) {
     case 'bald':
       break;
     case 'buzz':
-      add(ball(crown, r * 1.02, new Vector3(sx, sy * 0.62, sx)));
+      add(cap(1.02, 0.62));
       break;
     case 'short':
-      add(ball(crown, r * 1.06, new Vector3(sx, sy * 0.78, sx)));
+      add(cap(1.06, 0.78));
       break;
     case 'curly':
-      for (let i = 0; i < 7; i++) {
-        const a = (i / 7) * Math.PI * 2;
-        add(ball(crown.clone().add(new Vector3(Math.cos(a) * r * 0.62, r * 0.1, Math.sin(a) * r * 0.55)), r * 0.42));
+      for (let i = 0; i < 7 + wisps; i++) {
+        const a = (i / (7 + wisps)) * Math.PI * 2;
+        add(
+          ball(
+            crown.clone().add(
+              new Vector3(Math.cos(a) * r * 0.62, r * 0.1, (-0.15 + Math.sin(a) * 0.35) * r)
+            ),
+            r * 0.42 * volume
+          )
+        );
       }
-      add(ball(crown, r * 0.95, new Vector3(sx, sy * 0.7, sx)));
+      add(cap(0.95, 0.7));
       break;
     case 'afro':
       // Sat 14.2% of body height above the crown — half a head of hair above
@@ -757,21 +883,21 @@ function hairParts(
       // exactly what they were.
       add(
         ball(
-          crown.clone().add(new Vector3(0, -r * 0.08, -r * 0.15)),
+          crown.clone().add(new Vector3(0, -r * 0.08, -r * 0.27)),
           r * 1.34,
-          new Vector3(sx, sy * 0.82, sx * 0.75)
+          new Vector3(sx, sy * 0.82, sx * 0.68)
         )
       );
-      add(ball(crown, r * 1.06, new Vector3(sx, sy * 0.78, sx)));
+      add(cap(1.06, 0.78));
       break;
     case 'mohawk':
-      add(ball(crown, r * 1.0, new Vector3(sx, sy * 0.5, sx)));
+      add(cap(1.0, 0.5));
       // The fin's width was 0.165 ABSOLUTE feet in an otherwise r-relative
       // system, so it stopped scaling the moment the head did.
-      add(box(crown.clone().add(new Vector3(0, r * 0.5, -0.024)), r * 0.26, r * 0.99, r * 1.7));
+      add(box(crown.clone().add(new Vector3(0, r * 0.5, -r * 0.25)), r * 0.26, r * 0.99, r * 1.5));
       break;
     case 'spiky': {
-      add(ball(crown, r * 1.02, new Vector3(sx, sy * 0.66, sx)));
+      add(cap(1.02, 0.66));
       // ★ These spikes were BURIED. Absolute-size cones (0.106 × 0.353ft) at
       // +0.42r topped out inside the skull, so `spiky` rendered as a plain cap
       // — one of eleven silhouettes was a duplicate of `short`, on a proxy
@@ -785,23 +911,51 @@ function hairParts(
       break;
     }
     case 'ponytail':
-      add(ball(crown, r * 1.06, new Vector3(sx, sy * 0.78, sx)));
-      add(ball(jaw.clone().add(new Vector3(0, r * 0.5, -r * 1.05)), r * 0.5, new Vector3(0.8, 1.5, 0.8)));
+      add(cap(1.06, 0.78));
+      add(
+        ball(
+          jaw.clone().add(new Vector3(part * r * 0.12, r * 0.5, -r * 1.05)),
+          r * 0.5,
+          new Vector3(0.8 * volume, 1.5 * length, 0.8)
+        )
+      );
       break;
     case 'pigtails':
-      add(ball(crown, r * 1.06, new Vector3(sx, sy * 0.76, sx)));
+      add(cap(1.06, 0.76));
       for (const sgn of [-1, 1]) {
-        add(ball(jaw.clone().add(new Vector3(sgn * r * 1.05, r * 0.42, -r * 0.2)), r * 0.42, new Vector3(0.85, 1.3, 0.85)));
+        add(
+          ball(
+            jaw.clone().add(new Vector3(sgn * r * 1.05 * volume, r * 0.42, -r * 0.2)),
+            r * 0.42,
+            new Vector3(0.85 * volume, 1.3 * length, 0.85)
+          )
+        );
       }
       break;
     case 'bun':
-      add(ball(crown, r * 1.04, new Vector3(sx, sy * 0.76, sx)));
-      add(ball(crown.clone().add(new Vector3(0, r * 0.5, -r * 0.55)), r * 0.42));
+      add(cap(1.04, 0.76));
+      add(ball(crown.clone().add(new Vector3(part * r * 0.2, r * 0.5, -r * 0.55)), r * 0.42 * volume));
       break;
     case 'long':
-      add(ball(crown, r * 1.08, new Vector3(sx, sy * 0.82, sx)));
-      add(ball(jaw.clone().add(new Vector3(0, -r * 0.1, -r * 0.5)), r * 0.66, new Vector3(1.05, 1.5, 0.7)));
+      add(cap(1.08, 0.82));
+      add(
+        ball(
+          jaw.clone().add(new Vector3(part * r * 0.08, -r * 0.1, -r * 0.5)),
+          r * 0.66,
+          new Vector3(1.05 * volume, 1.5 * length, 0.7)
+        )
+      );
       break;
+  }
+
+  // `wisps` is the per-kid difference between otherwise identical style
+  // silhouettes. Keep them below the crown budget and above the brows: small
+  // hairline clumps, never spikes that silently make the kid taller.
+  if (style !== 'bald' && style !== 'buzz') {
+    for (let i = 0; i < wisps; i++) {
+      const x = (i - (wisps - 1) / 2 + part * 0.6) * r * 0.22;
+      add(ball(crown.clone().add(new Vector3(x, r * 0.08, r * 0.48)), r * 0.13 * volume));
+    }
   }
   return out;
 }
@@ -919,11 +1073,22 @@ function accessoryParts(
   headH: number,
   teamColor: number
 ): Part[] {
-  const { crown, jaw } = headAnchors(c, r);
+  const { crown } = headAnchors(c, r);
   switch (acc) {
     case 'cap': {
-      const dome = ball(crown.clone().add(new Vector3(0, r * 0.14, 0)), r * 1.08, new Vector3(headW, headH * 0.6, headW));
-      const brim = box(crown.clone().add(new Vector3(0, -r * 0.05, r * 0.62)), r * 1.2, 0.071, r * 0.8);
+      const dome = ball(
+        crown.clone().add(new Vector3(0, r * 0.14, -r * 0.18)),
+        r * 1.08,
+        new Vector3(headW, headH * 0.6, headW * 0.82)
+      );
+      // High, short bill: it shades the forehead without becoming a visor
+      // across both eyes when `idle` nods the head toward the camera.
+      const brim = box(
+        crown.clone().add(new Vector3(0, r * 0.18, r * 0.45)),
+        r * 1.12,
+        0.058,
+        r * 0.5
+      );
       return [
         { geom: dome, bone: 'Head', color: teamColor, slot: 'M_Accessory' as const },
         { geom: brim, bone: 'Head', color: teamColor, slot: 'M_Accessory' as const },
@@ -932,7 +1097,13 @@ function accessoryParts(
     case 'headband':
       return [
         {
-          geom: ball(jaw.clone().add(new Vector3(0, r * 0.62, 0)), r * 1.1, new Vector3(headW, headH * 0.16, headW)),
+          // Forehead, not eyes. The old jaw-relative centre landed the lower
+          // edge directly across the atlas pupils once a real face arrived.
+          geom: ball(
+            c.clone().add(new Vector3(0, r * 0.3, -r * 0.04)),
+            r * 1.05,
+            new Vector3(headW, headH * 0.1, headW * 0.9)
+          ),
           bone: 'Head',
           color: 0xffffff,
           slot: 'M_Accessory' as const,
@@ -959,4 +1130,58 @@ function accessoryParts(
     default:
       return [];
   }
+}
+
+/**
+ * Zoom's sport chair, built around the canonical bind pose.
+ *
+ * It is root-space equipment, not a second locomotion system: the simulation
+ * still owns the kid's position and every clip still targets the shared rig.
+ * Large side wheels and the forward casters are the silhouette that has to
+ * survive at 40px; the frame and hubs keep the close camera from reading two
+ * unattached rings.
+ */
+function wheelchairParts(hips: Vector3, teamColor: number): Part[] {
+  const out: Part[] = [];
+  const dark = 0x263445;
+  const metal = 0xaeb9c5;
+  const add = (geom: BufferGeometry, color: number) => {
+    out.push({ geom, bone: 'Root', color, slot: 'M_Accessory' });
+  };
+
+  for (const sgn of [-1, 1]) {
+    const wheel = new TorusGeometry(0.5, 0.065, seg(6, 4), seg(18, 8));
+    wheel.rotateY(Math.PI / 2);
+    wheel.translate(sgn * 0.53, 0.55, -0.04);
+    add(wheel, dark);
+
+    const hub = new CylinderGeometry(0.11, 0.11, 0.12, seg(10, 6));
+    hub.rotateZ(Math.PI / 2);
+    hub.translate(sgn * 0.53, 0.55, -0.04);
+    add(hub, metal);
+
+    const caster = new TorusGeometry(0.14, 0.045, seg(5, 3), seg(12, 6));
+    caster.rotateY(Math.PI / 2);
+    caster.translate(sgn * 0.34, 0.18, 0.58);
+    add(caster, dark);
+
+    add(
+      limb(
+        new Vector3(sgn * 0.34, 0.32, 0.5),
+        new Vector3(sgn * 0.42, 0.76, 0.1),
+        0.035
+      ),
+      metal
+    );
+  }
+
+  add(box(new Vector3(0, 0.82, 0.05), 0.72, 0.12, 0.67), teamColor);
+  add(box(new Vector3(0, hips.y + 0.05, -0.31), 0.72, 0.72, 0.12), teamColor);
+
+  const axle = new CylinderGeometry(0.045, 0.045, 1.06, seg(8, 5));
+  axle.rotateZ(Math.PI / 2);
+  axle.translate(0, 0.55, -0.04);
+  add(axle, metal);
+
+  return out;
 }

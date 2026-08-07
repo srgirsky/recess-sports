@@ -27,7 +27,7 @@ import {
   HEAD_RISE,
   ProxyCharacter,
 } from '../../src/v2/render/ProxyCharacter.ts';
-import { SLOT_NAMES, hairHex, skinHex } from '../../src/v2/render/materials/registry.ts';
+import { hairHex, skinHex } from '../../src/v2/render/materials/registry.ts';
 import { shadeInt } from '../../src/art/fieldTexture.ts';
 import { ROSTER } from '../../src/data/characters.ts';
 import { CLIPS, RUN_SPEED_FTS, clipSpec } from '../../src/v2/render/clips.ts';
@@ -223,38 +223,23 @@ describe('render.characterDrawCost', () => {
 
   it('is a well-formed record', () => {
     expect(Object.keys(M.statuses)).toContain(rec.status);
-    expect(rec.status).toBe('known-drift');
+    expect(rec.status).toBe('note');
     expect(rec.informs).toContain('CharacterModel.ts');
     expect(rec.whatWouldClose).toBeTruthy();
   });
 
   it('states arithmetic that adds up', () => {
-    // The whole claim is that four material slots x (mesh + hull) is eight
-    // draws, and that thirteen of those plus the field is what busts the
-    // budget. If either half stops being derivable the record is folklore.
+    // The four delivery slots remain in the GLB, but the explicit generated
+    // palette path merges them to the same mesh+hull cost as a proxy.
     const m = rec.measured;
-    expect(m.perCharacter.modelMax).toBe(SLOT_NAMES.length * 2);
+    expect(m.perCharacter.modelMax).toBe(2);
     expect(m.perCharacter.proxy).toBe(2);
-
-    // Models minus proxies is the extra hulls-and-primitives, and nothing else
-    // in the scene changed between the two reads. It comes to 76 rather than
-    // the 78 the maximum predicts, and the two missing draws are the point:
-    // one of the thirteen is bald, so has no M_Hair primitive and no hull for
-    // it. Cost is per POPULATED slot, which the record has to say out loud or
-    // the next person recomputes 78 and calls the measurement wrong.
-    const extra = m.models.drawCalls - m.proxies.drawCalls;
-    const perSlotPair = 2;
-    expect(extra).toBe(m.kids * (m.perCharacter.modelMax - m.perCharacter.proxy) -
-      rec.drift.emptySlotCharacters * perSlotPair);
-
-    // The drift is the size the record says it is.
-    expect(m.models.drawCalls - m.budget.drawCalls).toBe(rec.drift.drawCallsOver);
-    expect(m.models.drawCalls).toBeGreaterThan(m.budget.drawCalls);
+    expect(m.models.drawCalls).toBe(m.proxies.drawCalls);
+    expect(m.budget.drawCalls - m.models.drawCalls).toBe(rec.drift.drawCallsUnder);
+    expect(m.models.drawCalls).toBeLessThanOrEqual(m.budget.drawCalls);
   });
 
-  it('records LOD paying for itself on the axis it is for', () => {
-    // A draw-call regression that bought nothing would be a reason to delete
-    // the LOD, not to record a budget overrun.
+  it('records LOD paying for itself without a draw-call penalty', () => {
     const m = rec.measured;
     expect(m.models.trianglesK).toBeLessThan(m.proxies.trianglesK * 0.6);
     expect(m.models.trianglesK).toBeLessThan(m.budget.trianglesK);

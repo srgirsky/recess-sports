@@ -226,3 +226,19 @@ them are exercised against a real file before any model exists. **Your delivery
 replaces one of these**, kid by kid, with no code change. Stand-ins live in
 `public/v2/models/` and are marked `STAND-IN` in the glTF `generator` string;
 they are not deliveries and are never sent to anyone.
+
+### First-party roster production
+
+The repository also has a deterministic production path for the shipped roster:
+
+```bash
+npm run export:roster-kid              # all 30
+npm run export:roster-kid -- turbo zippy
+npm run validate:models
+```
+
+Unlike the fallback exporter, these files carry a UV-mapped `M_Body`, an
+individual 4×4 `face_atlas` derived from the character's authored face data,
+roster-fidelity silhouette details, and no `STAND-IN` marker. They are held to
+the same rig, LOD, material, height and 400KB rules as an external delivery.
+`manifest.test.js` requires a validated production file for every roster id.

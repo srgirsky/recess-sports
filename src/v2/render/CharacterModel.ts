@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// ★ THE DELIVERED CHARACTER — a commissioned `kid_<id>.glb`, made playable.
+// ★ THE DELIVERED CHARACTER — a production `kid_<id>.glb`, made playable.
 //
 // Everything the asset contract's §4 promises at RUNTIME happens here: the
 // three LOD nodes become a real `LOD`, the four named material slots are rebound
@@ -9,10 +9,10 @@
 //
 // ★ IT PRESENTS EXACTLY THE SAME SURFACE AS `ProxyCharacter`, and that is the
 // design, not a convenience. `AnimationDirector`, the spikes and (later) the
-// game bind to `KidView`, so a kid whose model has not been commissioned yet,
+// game bind to `KidView`, so a kid whose production file is missing,
 // or whose file 404s, is not a special case anywhere downstream — it is the
 // same object with cruder geometry. That is what makes §5's "batches of 5-6"
-// delivery schedule shippable one batch at a time.
+// delivery schedule remains shippable one batch at a time.
 //
 // FOUR RULES WORTH KNOWING BEFORE EDITING:
 //
@@ -34,6 +34,7 @@
 
 import {
   Bone,
+  BufferGeometry,
   Group,
   LOD,
   Mesh,
@@ -45,10 +46,11 @@ import {
   type Material,
 } from 'three';
 import { clone as cloneSkinned } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import type { VisualParams } from '../../data/types';
 import { CHARACTER_SCALE, ProxyCharacter, kidHeightFt, kidRootScale } from './ProxyCharacter';
-import { attachOutline, type OutlineRegistry } from './materials/outline';
+import { attachMergedOutline, attachOutline, type OutlineRegistry } from './materials/outline';
 import { hairHex, jerseyHex, skinHex, trimHex, type SlotName } from './materials/registry';
 import { makeToonMaterial, setFaceCell } from './materials/toon';
 import { faceCellUv, restingCell, type FaceCell } from './faceAtlas';
@@ -63,7 +65,7 @@ export interface KidView {
   readonly skeleton: Skeleton;
   /** Real stature, floor to `HeadTop_End`, in feet. */
   readonly heightFt: number;
-  /** True when this is a stand-in rather than a commissioned model. */
+  /** True when this is a stand-in rather than a production model. */
   readonly isProxy: boolean;
   setPosition(x: number, z: number): void;
   setFacing(radians: number): void;
@@ -103,6 +105,7 @@ export class CharacterModel implements KidView {
   private readonly proxy: ProxyCharacter | null = null;
   private readonly bodyMaterials: MeshToonMaterial[] = [];
   private readonly owned: Material[] = [];
+  private readonly ownedGeometry: BufferGeometry[] = [];
 
   constructor(
     readonly id: string,
@@ -138,10 +141,13 @@ export class CharacterModel implements KidView {
       node.traverse((o) => {
         const m = o as Mesh;
         if (!m.isMesh) return;
-        m.material = this.rebind(m.material, { skin: visual, uniformIndex, faceAtlas });
+        const source = Array.isArray(m.material) ? m.material : [m.material];
+        const vertexPalette = source.some((material) => material.userData.recessVertexPalette === true);
+        m.material = this.rebind(m.material, { skin: visual, uniformIndex, faceAtlas, vertexPalette });
         m.castShadow = true;
         m.receiveShadow = false;
       });
+      this.collapseVertexPalette(node);
     }
 
     // The skeleton is shared by every level (one skin, per §4), so any skinned
@@ -222,7 +228,14 @@ export class CharacterModel implements KidView {
           const m = o as Mesh;
           if (m.isMesh && !m.userData.isOutline) meshes.push(m);
         });
-        for (const m of meshes) attachOutline(m, opts.outlines);
+        const skinned = meshes.filter((mesh): mesh is SkinnedMesh => (mesh as SkinnedMesh).isSkinnedMesh);
+        const commonParent = skinned[0]?.parent;
+        const mergedHull =
+          commonParent && skinned.length === meshes.length && skinned.every((mesh) => mesh.parent === commonParent)
+            ? attachMergedOutline(skinned, commonParent, opts.outlines)
+            : null;
+        if (mergedHull) this.ownedGeometry.push(mergedHull.geometry);
+        else for (const m of meshes) attachOutline(m, opts.outlines);
       }
       if (this.proxy) attachOutline(this.proxy.mesh, opts.outlines);
     }
@@ -262,7 +275,9 @@ export class CharacterModel implements KidView {
     // other eight kids on the field. Only the materials this instance minted
     // are ours to free.
     for (const m of this.owned) m.dispose();
+    for (const geometry of this.ownedGeometry) geometry.dispose();
     this.owned.length = 0;
+    this.ownedGeometry.length = 0;
     this.bodyMaterials.length = 0;
     this.proxy?.dispose();
   }
@@ -280,13 +295,13 @@ export class CharacterModel implements KidView {
    */
   private rebind(
     source: Material | Material[],
-    ctx: { skin: VisualParams; uniformIndex: number; faceAtlas: Texture | null }
+    ctx: { skin: VisualParams; uniformIndex: number; faceAtlas: Texture | null; vertexPalette: boolean }
   ): Material | Material[] {
     if (Array.isArray(source)) return source.map((m) => this.rebind(m, ctx) as Material);
 
     const slot = source.name as SlotName | string;
     const map = (source as { map?: Texture | null }).map ?? null;
-    const { skin, uniformIndex, faceAtlas } = ctx;
+    const { skin, uniformIndex, faceAtlas, vertexPalette } = ctx;
 
     let material: MeshToonMaterial;
     switch (slot) {
@@ -294,7 +309,7 @@ export class CharacterModel implements KidView {
         // The face atlas rides the body material — it is the only slot whose UVs
         // contain the face island.
         material = makeToonMaterial({
-          color: skinHex(skin.skin),
+          color: vertexPalette ? 0xffffff : skinHex(skin.skin),
           map,
           faceAtlas: map ? faceAtlas : null,
           rimStrength: 0.16,
@@ -315,7 +330,7 @@ export class CharacterModel implements KidView {
         break;
       case 'M_Hair':
         material = makeToonMaterial({
-          color: hairHex(skin.hairColor),
+          color: vertexPalette ? 0xffffff : hairHex(skin.hairColor),
           map,
           rimStrength: 0.34,
           rimPower: 2.6,
@@ -324,15 +339,73 @@ export class CharacterModel implements KidView {
       case 'M_Accessory':
         // Trim colour, so a cap and a headband read as team kit rather than as
         // a third palette nobody chose.
-        material = makeToonMaterial({ color: trimHex(uniformIndex), map, rimStrength: 0.22 });
+        material = makeToonMaterial({ color: vertexPalette ? 0xffffff : trimHex(uniformIndex), map, rimStrength: 0.22 });
         break;
       default:
         return source;
     }
 
     material.name = slot;
+    material.vertexColors = vertexPalette;
+    material.userData.recessVertexPalette = vertexPalette;
     this.owned.push(material);
     return material;
+  }
+
+  /**
+   * Generated roster files preserve all four delivery slots, but their final
+   * linear colours live in COLOR_0. Bake this instance's team multiply into the
+   * greyscale uniform vertices, then merge every primitive so a roster kid costs
+   * one colour pass and one shadow pass. Team identity is fixed when a KidView is
+   * constructed, so this loses no runtime behaviour. External deliveries without
+   * the explicit material extra keep the general four-slot path unchanged.
+   */
+  private collapseVertexPalette(root: Object3D): void {
+    const meshes: SkinnedMesh[] = [];
+    root.traverse((object) => {
+      const mesh = object as SkinnedMesh;
+      if (!mesh.isSkinnedMesh || Array.isArray(mesh.material)) return;
+      if (mesh.material.userData.recessVertexPalette === true) meshes.push(mesh);
+    });
+    if (meshes.length < 2) return;
+
+    const parent = meshes[0].parent;
+    const body = meshes.find((mesh) => !Array.isArray(mesh.material) && mesh.material.name === 'M_Body');
+    if (!parent || !body || meshes.some((mesh) => mesh.parent !== parent)) return;
+    if (meshes.some((mesh) => !mesh.position.equals(meshes[0].position) || !mesh.quaternion.equals(meshes[0].quaternion) || !mesh.scale.equals(meshes[0].scale))) {
+      return;
+    }
+
+    const copies = meshes.map((mesh) => {
+      const copy = mesh.geometry.clone();
+      const material = mesh.material as MeshToonMaterial;
+      if (material.name === 'M_Uniform') {
+        const colour = copy.getAttribute('color');
+        const tint = material.color;
+        if (colour) {
+          for (let i = 0; i < colour.count; i++) {
+            colour.setXYZ(i, colour.getX(i) * tint.r, colour.getY(i) * tint.g, colour.getZ(i) * tint.b);
+          }
+          colour.needsUpdate = true;
+        }
+      }
+      return copy;
+    });
+    const geometry = mergeGeometries(copies, false);
+    for (const copy of copies) copy.dispose();
+    if (!geometry) return;
+
+    const merged = new SkinnedMesh(geometry, body.material as Material);
+    merged.name = `${root.name || 'LOD'}__palette`;
+    merged.position.copy(meshes[0].position);
+    merged.quaternion.copy(meshes[0].quaternion);
+    merged.scale.copy(meshes[0].scale);
+    merged.bind(meshes[0].skeleton, meshes[0].bindMatrix);
+    merged.castShadow = true;
+    merged.receiveShadow = false;
+    parent.add(merged);
+    for (const mesh of meshes) mesh.removeFromParent();
+    this.ownedGeometry.push(geometry);
   }
 }
 
