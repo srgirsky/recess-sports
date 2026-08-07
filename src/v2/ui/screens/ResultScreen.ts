@@ -18,7 +18,7 @@ export class ResultScreen implements Screen {
     private readonly names: (id: string) => string,
     private readonly onAgain: () => void,
     private readonly onHome: () => void,
-    private readonly labels: { again?: string; home?: string } = {}
+    private readonly labels: { headline?: string; again?: string; home?: string } = {}
   ) {}
 
   mount(): HTMLElement {
@@ -26,7 +26,7 @@ export class ResultScreen implements Screen {
     const root = el('div', `screen screen--result is-${m.verdict}`);
 
     const card = el('div', 'result-card');
-    card.appendChild(el('h1', 'result-card__verdict', verdictLine(m.verdict)));
+    card.appendChild(el('h1', 'result-card__verdict', this.labels.headline ?? verdictLine(m.verdict)));
 
     // The score, the player's side first — the same order the model fixed.
     const score = el('div', 'result-score');

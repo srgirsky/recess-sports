@@ -23,7 +23,8 @@ export class TitleScreen implements Screen {
   constructor(
     private readonly onPlay: () => void,
     private readonly onClubhouse: () => void,
-    private readonly onSeason: () => void
+    private readonly onSeason: () => void,
+    private readonly onModes: () => void
   ) {}
 
   mount(): HTMLElement {
@@ -55,12 +56,13 @@ export class TitleScreen implements Screen {
     actions.append(
       button('⚾  PLAY', this.onPlay, 'btn--hero'),
       button('🏠  CLUBHOUSE', this.onClubhouse, 'btn--quiet btn--clubhouse'),
-      button('🏆  RECESS WEEK', this.onSeason, 'btn--quiet btn--season')
+      button('🏆  RECESS WEEK', this.onSeason, 'btn--quiet btn--season'),
+      button('🎯  MORE GAMES', this.onModes, 'btn--quiet btn--modes')
     );
 
     // ★ THE WAY BACK TO v1, AND IT IS DELIBERATELY SMALL. v2 took the front
-    // door at the cutover, but v1 still holds Recess Week, pass-and-play and the
-    // online mode — none of which anyone should have to guess the URL for. It is
+    // door at the cutover, but v1 still holds pass-and-play, online play and its
+    // mature setup shell — none of which anyone should have to guess the URL for. It is
     // the only text on this screen a four-year-old is not expected to read,
     // which is why it is last, quiet, and below the thing they came for.
     const classic = button('🕹  CLASSIC GAME', () => {

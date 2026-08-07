@@ -17,7 +17,9 @@ export class ClubhouseScreen implements Screen {
   constructor(
     private readonly model: ClubhouseModel,
     private readonly roster: Character[],
+    private readonly customPlayer: Character | null,
     private readonly onSpeak: (character: Character) => void,
+    private readonly onEditPlayer: () => void,
     private readonly onBack: () => void
   ) {}
 
@@ -46,7 +48,27 @@ export class ClubhouseScreen implements Screen {
       stats.appendChild(item);
     }
 
-    panel.append(head, stats);
+    const player = button('', this.onEditPlayer, 'clubhouse-player');
+    const playerArt = el('span', 'clubhouse-player__art');
+    if (this.customPlayer) {
+      playerArt.appendChild(portrait(this.customPlayer.visual, '', { street: true }));
+      player.append(
+        playerArt,
+        el('span', 'clubhouse-player__copy', `⭐ ${this.customPlayer.name}\nYOUR CAPTAIN`),
+        el('span', 'clubhouse-player__edit', '✏️')
+      );
+      player.setAttribute('aria-label', `Edit ${this.customPlayer.name}, your custom captain`);
+    } else {
+      playerArt.appendChild(el('span', 'clubhouse-player__plus', '+'));
+      player.append(
+        playerArt,
+        el('span', 'clubhouse-player__copy', '⭐ MAKE YOUR PLAYER'),
+        el('span', 'clubhouse-player__edit', '→')
+      );
+      player.setAttribute('aria-label', 'Make your custom player');
+    }
+
+    panel.append(head, stats, player);
 
     if (this.model.favorites.length > 0) {
       const favorites = el('section', 'clubhouse-favorites');

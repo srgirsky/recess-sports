@@ -13,7 +13,7 @@
 // ---------------------------------------------------------------------------
 
 import { describe, expect, it } from 'vitest';
-import { ROSTER } from '../../data/characters';
+import { CUSTOM_PLAYER_ID, ROSTER } from '../../data/characters';
 import { makeRng } from '../sim/rng';
 import { isDraftComplete, pickByCpu, pickByHuman, startDraft } from './draftSession';
 
@@ -104,5 +104,29 @@ describe('the CPU', () => {
     expect(both).toHaveLength(18);
     expect(new Set(both).size, 'a kid was drafted by both teams').toBe(18);
     for (const id of both) expect(state.pool).not.toContain(id);
+  });
+});
+
+describe('a custom captain', () => {
+  it('starts one captain on each side and records only eight authored picks', () => {
+    const votes: string[] = [];
+    const rng = makeRng('captains');
+    let state = startDraft(ALL, { player: CUSTOM_PLAYER_ID, rng });
+    expect(state.playerTeam).toEqual([CUSTOM_PLAYER_ID]);
+    expect(state.aiTeam).toHaveLength(1);
+    expect(state.pool).not.toContain(state.aiTeam[0]);
+    expect(state.pool).not.toContain(CUSTOM_PLAYER_ID);
+
+    let guard = 0;
+    while (!isDraftComplete(state) && guard++ < 200) {
+      state = state.turn === 'player'
+        ? pickByHuman(state, state.pool[0], (id) => votes.push(id))
+        : pickByCpu(state, rng).state;
+    }
+    expect(isDraftComplete(state)).toBe(true);
+    expect(state.playerTeam).toHaveLength(9);
+    expect(state.aiTeam).toHaveLength(9);
+    expect(votes).toEqual(state.playerTeam.slice(1));
+    expect(votes).toHaveLength(8);
   });
 });

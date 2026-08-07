@@ -18,6 +18,14 @@
 
 import type { Character } from './types';
 
+/**
+ * The one runtime-created kid id. It lives beside the authored roster ids so
+ * character identity still has one source, but is deliberately not in
+ * `ROSTER`: custom captains do not become a 31st vote candidate or a model
+ * delivery requirement.
+ */
+export const CUSTOM_PLAYER_ID = 'custom_player';
+
 export const ROSTER: Character[] = [
   // --- The 3 signature kids -------------------------------------------------
   {

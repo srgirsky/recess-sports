@@ -206,11 +206,26 @@ const COLLECT = (hostId) => `(() => {
     const r = el.getBoundingClientRect();
     return r.width > 0 && r.height > 0;
   };
+  // A leaf may sit beyond the right edge only when a specific ancestor is an
+  // intentional horizontal scroller. Requiring both scrollable overflow CSS
+  // and real overflow keeps accidental page-width spills visible to the gate.
+  const canScrollX = (el) => {
+    const s = getComputedStyle(el);
+    return (s.overflowX === 'auto' || s.overflowX === 'scroll') &&
+      el.scrollWidth > el.clientWidth + 1;
+  };
+  const reachableByHorizontalScroll = (el) => {
+    for (let n = el.parentElement; n && n !== hud.parentElement; n = n.parentElement) {
+      if (canScrollX(n)) return true;
+    }
+    return false;
+  };
   const box = (el) => {
     const r = el.getBoundingClientRect();
     return { x: r.x, y: r.y, w: r.width, h: r.height,
              label: el.className || el.tagName.toLowerCase(),
-             interactive: el.classList.contains('interactive') };
+             interactive: el.classList.contains('interactive'),
+             reachableByHorizontalScroll: reachableByHorizontalScroll(el) };
   };
   const blocks = [], leaves = [];
   for (const child of hud.children) {
@@ -331,6 +346,10 @@ const INIT_CLUBHOUSE = `(() => {
     rivalTeams: Array.from({ length: 5 }, () => ['ace_kid', 'penny', 'dex', 'lefty', 'smokey', 'bend_it', 'noodle', 'bubbles', 'sniffles']),
     stats: {}
   }));
+  localStorage.setItem('recess_custom_player_v2', JSON.stringify({
+    v: 1, name: 2, voice: 'girl', style: 'speedster', skin: 3,
+    hair: 'pigtails', hairColor: 5, accessory: 'glasses'
+  }));
 })();`;
 
 const failures = [];
@@ -445,9 +464,32 @@ const SCREENS = [
     mustSee: '.screen--clubhouse .clubhouse-back',
   },
   {
+    name: 'custom player',
+    reach: `(async () => {
+      document.querySelector('.screen--clubhouse .clubhouse-player')?.click();
+      await new Promise((r) => setTimeout(r, 100));
+      return document.querySelectorAll('.custom-choice').length >= 20 ? 'ok' : 'no custom-player choices';
+    })()`,
+    mustSee: '.screen--custom-player .custom-player-save',
+  },
+  {
+    name: 'extra modes',
+    reach: `(async () => {
+      document.querySelector('.screen--custom-player .custom-player-back')?.click();
+      await new Promise((r) => setTimeout(r, 60));
+      document.querySelector('.screen--clubhouse .clubhouse-back')?.click();
+      await new Promise((r) => setTimeout(r, 60));
+      document.querySelector('.screen--title .btn--modes')?.click();
+      await new Promise((r) => setTimeout(r, 100));
+      return document.querySelectorAll('.mode-card').length === 3 ? 'ok' : 'no three-mode menu';
+    })()`,
+    mustSee: '.screen--modes .mode-card',
+  },
+  {
     name: 'season',
     reach: `(async () => {
       document.querySelector('.screen--clubhouse .clubhouse-back')?.click();
+      document.querySelector('.screen--modes .mode-back')?.click();
       await new Promise((r) => setTimeout(r, 100));
       document.querySelector('.screen--title .btn--season')?.click();
       await new Promise((r) => setTimeout(r, 150));
@@ -460,22 +502,26 @@ const SCREENS = [
     reach: `(async () => {
       document.querySelector('.screen--clubhouse .clubhouse-back')?.click();
       document.querySelector('.screen--season .season-back')?.click();
+      document.querySelector('.screen--modes .mode-back')?.click();
       await new Promise((r) => setTimeout(r, 100));
       document.querySelector('.screen--title .btn')?.click();
       await new Promise((r) => setTimeout(r, 300));
-      return document.querySelectorAll('.kid').length === 30 ? 'ok' : 'no draft board';
+      const cards = document.querySelectorAll('.kid').length;
+      const captains = document.querySelectorAll('.draft-slot.is-filled').length;
+      return cards === 29 && captains === 1 ? 'ok' : 'no 29-kid board plus custom captain';
     })()`,
     mustSee: '.screen--draft .kid',
   },
   {
     name: 'strategy',
     reach: `(async () => {
-      for (let i = 0; i < 9; i++) {
+      for (let i = 0; i < 10 && document.querySelector('.screen--draft'); i++) {
+        if (document.querySelector('.screen--draft .btn--hero:not(.is-hidden)')) break;
         const card = document.querySelector('.draft-board:not(.is-locked) .kid');
         if (!card) { await new Promise((r) => setTimeout(r, 200)); i--; continue; }
         card.click();
         document.querySelector('.draft-preview__pick')?.click();
-        await new Promise((r) => setTimeout(r, 680));
+        await new Promise((r) => setTimeout(r, 1780));
       }
       document.querySelector('.screen--draft .btn--hero')?.click();
       await new Promise((r) => setTimeout(r, 200));
@@ -488,8 +534,8 @@ const SCREENS = [
   },
   {
     name: 'team',
-    // Straight through a whole draft — nine inspections, nine confirmations
-    // and nine CPU beats. The confirmation is load-bearing: tapping a roster
+    // Straight through a whole custom-captain draft — eight inspections,
+    // confirmations and CPU beats. The confirmation is load-bearing: tapping a roster
     // thumbnail now PREVIEWS a kid, and only PICK ME records the person's vote.
     // A driver that skips it both fails to reach this screen and quietly stops
     // proving the product's most important interaction.
@@ -503,15 +549,16 @@ const SCREENS = [
       if (document.querySelector('.screen--team')) return 'ok';
       document.querySelector('.screen--title .btn')?.click();
       await new Promise((r) => setTimeout(r, 300));
-      for (let i = 0; i < 9; i++) {
+      for (let i = 0; i < 10; i++) {
         if (document.querySelector('.screen--team')) break;
+        if (document.querySelector('.screen--draft .btn--hero:not(.is-hidden)')) break;
         const card = document.querySelector('.draft-board:not(.is-locked) .kid');
         if (!card) { await new Promise((r) => setTimeout(r, 200)); i--; continue; }
         card.click();
         const confirm = document.querySelector('.draft-preview__pick');
         if (!confirm) return 'draft preview never offered PICK ME';
         confirm.click();
-        await new Promise((r) => setTimeout(r, 680));
+        await new Promise((r) => setTimeout(r, 1780));
       }
       document.querySelector('.screen--draft .btn--hero')?.click();
       await new Promise((r) => setTimeout(r, 500));
@@ -548,10 +595,11 @@ async function auditScreen(page, vp, screen) {
     // ★ A SCROLLING SCREEN CHANGES WHAT "OFF-FRAME" MEANS, and pretending it
     // does not would either fail the draft board for having thirty cards or
     // force it to fit thirty kids on a phone at a size nobody can tap. Below the
-    // fold is REACHABLE; off the side and above the top are not. So the rule
-    // splits: horizontal containment always, vertical only when the screen does
-    // not scroll, plus "nothing starts above the scroller" either way.
-    const horizontal = b.x >= -0.5 && b.x + b.w <= frame.w + 0.5;
+    // fold is REACHABLE. Off the side is reachable only inside an intentional
+    // horizontal scroller; above the top is never reachable. So the rule splits
+    // by axis without exempting accidental page-width overflow.
+    const horizontal = b.reachableByHorizontalScroll ||
+      (b.x >= -0.5 && b.x + b.w <= frame.w + 0.5);
     const vertical = r.scrolls ? b.y >= -0.5 : insideFrame(asBox(b), frame.w, frame.h, -0.5);
     if (!horizontal || !vertical) {
       fail(where, `"${b.label}" is off-frame at ${Math.round(b.x)},${Math.round(b.y)} ${Math.round(b.w)}x${Math.round(b.h)} in ${frame.w}x${frame.h}${r.scrolls ? ' (scrolling screen)' : ''}`);

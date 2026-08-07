@@ -2,9 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import {
   DRAFT_REACT_SEC,
+  DRAFT_BENCH_X_FT,
+  DRAFT_WALK_OFF_SEC,
   DRAFT_WALK_SEC,
   draftCast,
   draftHeroPose,
+  draftStageCast,
 } from './draftPresentation';
 
 describe('draft presentation policy', () => {
@@ -19,13 +22,33 @@ describe('draft presentation policy', () => {
 
   it('reacts in place when the same candidate is picked', () => {
     expect(draftHeroPose(0, 'mine', false)).toEqual({ clip: 'cheer', xFt: 0 });
-    expect(draftHeroPose(DRAFT_REACT_SEC, 'mine', false)).toEqual({ clip: 'pose_card', xFt: 0 });
+    expect(draftHeroPose(DRAFT_REACT_SEC, 'mine', false)).toEqual({ clip: 'walk_on', xFt: 0 });
+    const leaving = draftHeroPose(DRAFT_REACT_SEC + DRAFT_WALK_OFF_SEC / 2, 'mine', false);
+    expect(leaving.clip).toBe('walk_on');
+    expect(leaving.xFt).toBeGreaterThan(0);
+    expect(draftHeroPose(DRAFT_REACT_SEC + DRAFT_WALK_OFF_SEC, 'mine', false)).toEqual({
+      clip: 'pose_card', xFt: DRAFT_BENCH_X_FT,
+    });
     expect(draftHeroPose(0, 'cpu', false).clip).toBe('cheer');
   });
 
   it('puts the selected kid first and never duplicates the waiting cast', () => {
     expect(draftCast('c', ['a', 'b', 'c', 'd'], 3)).toEqual(['c', 'a', 'b']);
     expect(draftCast('c', ['c', 'c', 'a'], 7)).toEqual(['c', 'a']);
+  });
+
+  it('stages waiting kids and both benches once, within the visible cap', () => {
+    const cast = draftStageCast(
+      'c',
+      ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
+      ['mine-0', 'mine-1', 'c'],
+      ['cpu-0', 'cpu-1']
+    );
+    expect(cast.waiting).toEqual(['a', 'b', 'd', 'e', 'f', 'g']);
+    expect(cast.player).toEqual(['mine-1', 'mine-0']);
+    expect(cast.cpu).toEqual(['cpu-1', 'cpu-0']);
+    expect(new Set(cast.all).size).toBe(cast.all.length);
+    expect(cast.all).toHaveLength(11);
   });
 
   it('is connected from the draft screen to the one scene and renderer', () => {

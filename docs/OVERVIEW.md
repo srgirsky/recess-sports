@@ -1733,8 +1733,8 @@ the human roster and only after the sim returns a result, so CPU picks remain
 neither votes nor earned stickers and an attract-mode game behind a screen cannot
 farm the book. The fold is pure (`clubhouseModel.ts`), the stores remain shared
 systems rather than v2 copies, and the responsive audit reaches the new scrolling
-screen at all six viewport extremes. Strategy, custom player, a season/schedule
-and extra modes are still open product-shell work.
+screen at all six viewport extremes. The strategy, custom-player,
+season/schedule and focused-modes shell is completed by the passes below.
 
 The first strategy station is equally concrete: after the draft, all nine kids
 appear in a movable batting order with contact, power and speed cues. The chosen
@@ -1760,6 +1760,35 @@ second stats merge. Completing a game saves the shared state and album progress;
 finishing Friday computes the existing shared awards, records each trophy, and
 clears the week. A week begun in one renderer can therefore be resumed in the
 other without a migration or duplicate storage key.
+
+### 2026 parity pass — the pickup bench becomes a place
+
+The draft's clipped side card became the full-width schoolyard bench. The live
+candidate owns most of the frame, six available kids wait behind them, and the
+four most recent picks for each side remain physically visible under YOUR BENCH
+and THEIR BENCH. A confirmed kid reacts, then plays the existing `walk_on` clip
+across the chalk to the correct side before the CPU takes its turn. The roster
+search became a horizontal bench below the place instead of the place being a
+small window beside a thirty-card wall. This still borrows the already-loaded
+scene objects for one clipped camera pass: no character clone, second renderer,
+loader or model instance was introduced.
+
+The Clubhouse gained an icon-first custom-player station: six nicknames, four
+play styles, palette swatches, hair, gear and two voices. Its v1-independent
+`recess_custom_player_v2` profile materializes as an ordinary `Character` and
+uses the existing sim, strategy, matchup and permanent proxy path. It is a
+non-voting captain rather than a 31st neighborhood kid: pickup begins with that
+captain and a CPU captain already on the two benches, so the player makes eight
+authored-character votes; the custom id never enters the draft pool, shared
+pick tally, sticker album, production-model manifest or cross-renderer Recess
+Week state.
+
+Pickup remains the large one-tap title verb. The quieter MORE GAMES door adds
+one-inning batting practice, one-inning pitching practice and a hands-free watch
+game. All three pump `simulateGameLive`; a pure control policy decides whether
+the top or bottom half exposes human batting/pitching verbs. CPU-only halves
+therefore neither wait on invisible input nor claim YOU PITCH on the scoreboard,
+and practice/watch games do not dilute the drafted-game pick-rate denominator.
 
 ### PR 41 — each park owns its night
 
