@@ -27,15 +27,19 @@
 
 import {
   BoxGeometry,
+  CircleGeometry,
+  DoubleSide,
   EdgesGeometry,
   Fog,
   LineBasicMaterial,
   LineSegments,
   Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
   PerspectiveCamera,
   Plane,
   Raycaster,
+  RingGeometry,
   Scene,
   SphereGeometry,
   Vector2,
@@ -566,6 +570,44 @@ export class GameView {
     );
     this.scene.add(ball);
     this.refs.ball = ball;
+
+    // BB2026's two load-bearing live-play cues: a ground shadow that makes
+    // height readable and a ring around the one fielder receiving steering.
+    // Both are depth-write-free chrome, never collision or fielding assists.
+    const shadowGeometry = new CircleGeometry(1.05, 24);
+    shadowGeometry.rotateX(-Math.PI / 2);
+    const ballShadow = new Mesh(
+      shadowGeometry,
+      new MeshBasicMaterial({
+        color: 0x14202e,
+        transparent: true,
+        opacity: 0.24,
+        depthWrite: false,
+        side: DoubleSide,
+      })
+    );
+    ballShadow.name = 'ball-shadow-cue';
+    ballShadow.visible = false;
+    ballShadow.renderOrder = 12;
+
+    const ringGeometry = new RingGeometry(3.15, 3.75, 32);
+    ringGeometry.rotateX(-Math.PI / 2);
+    const activeFielderRing = new Mesh(
+      ringGeometry,
+      new MeshBasicMaterial({
+        color: 0xffce3a,
+        transparent: true,
+        opacity: 0.92,
+        depthWrite: false,
+        side: DoubleSide,
+      })
+    );
+    activeFielderRing.name = 'active-fielder-cue';
+    activeFielderRing.visible = false;
+    activeFielderRing.renderOrder = 13;
+    this.scene.add(ballShadow, activeFielderRing);
+    this.refs.ballShadow = ballShadow;
+    this.refs.activeFielderRing = activeFielderRing;
 
     // ★ EVERY KID ON THE ROSTER, built once — all THIRTY, not the first
     // eighteen. A substitution mid-game would otherwise stall the frame on a
@@ -1200,7 +1242,10 @@ export class GameView {
 
     if (this.frame) {
       this.frameTap?.(this.frame);
-      applyFrame(this.refs, this.frame, dt, this.pitchElapsed, this.draftProtected);
+      applyFrame(this.refs, this.frame, dt, this.pitchElapsed, this.draftProtected, {
+        readability: this.screenCue === null,
+        fieldingFocus: this.liveControl === 'field',
+      });
       this.updateDraftPresentation(dt);
       this.animateCpuSwing();
       this.paintPlateCues();

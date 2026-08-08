@@ -31,6 +31,7 @@ import type { KidView } from './CharacterModel';
 import { AnimationDirector } from './AnimationDirector';
 import type { CameraInput } from './cameraCues';
 import { clipSpec } from './clips';
+import { activeFielderCue, ballShadowCue } from './readabilityCues';
 
 /** Everything the bridge is allowed to move. */
 export interface SceneRefs {
@@ -39,6 +40,16 @@ export interface SceneRefs {
   /** charId -> its director, so locomotion and one-shots stay in one place. */
   directors: Map<string, AnimationDirector>;
   ball: Object3D;
+  /** Render-only field chrome. Optional so non-game review surfaces stay cheap. */
+  ballShadow?: Object3D;
+  activeFielderRing?: Object3D;
+}
+
+export interface FrameViewOptions {
+  /** Screens use the live park as scenery but must not inherit gameplay chrome. */
+  readability?: boolean;
+  /** True only when this live half routes human input to the defence. */
+  fieldingFocus?: boolean;
 }
 
 const NO_PROTECTED_IDS: ReadonlySet<string> = new Set();
@@ -55,7 +66,8 @@ export function applyFrame(
   dtSec: number,
   pitchElapsedSec = 0,
   /** Front-end presenters whose clip is owned by the active screen. */
-  protectedIds: ReadonlySet<string> = NO_PROTECTED_IDS
+  protectedIds: ReadonlySet<string> = NO_PROTECTED_IDS,
+  view: FrameViewOptions = {}
 ): void {
   if (frame.phase === 'live' && frame.play) {
     applyLive(refs, frame.play, protectedIds);
@@ -68,7 +80,28 @@ export function applyFrame(
     if (frame.phase === 'pitch' && frame.pitch) applyPitch(refs, frame, pitchElapsedSec);
     else if (frame.phase === 'windup') restBall(refs);
   }
+  applyReadability(refs, frame, view);
   for (const d of refs.directors.values()) d.update(dtSec);
+}
+
+/** Field chrome reads the already-positioned ball and active fielder. */
+function applyReadability(refs: SceneRefs, frame: LiveFrame, view: FrameViewOptions): void {
+  const enabled = view.readability !== false;
+  if (refs.ballShadow) {
+    const cue = ballShadowCue(
+      { x: refs.ball.position.x, y: refs.ball.position.y, z: refs.ball.position.z },
+      frame.phase,
+      enabled
+    );
+    refs.ballShadow.visible = cue.visible;
+    refs.ballShadow.position.set(cue.x, 0.055, cue.z);
+    refs.ballShadow.scale.setScalar(cue.scale);
+  }
+  if (refs.activeFielderRing) {
+    const cue = activeFielderCue(frame.phase === 'live' ? frame.play : null, view.fieldingFocus === true, enabled);
+    refs.activeFielderRing.visible = cue.visible;
+    refs.activeFielderRing.position.set(cue.x, 0.075, cue.z);
+  }
 }
 
 /** A reaction or action gets to finish before an idle/locomotion loop replaces

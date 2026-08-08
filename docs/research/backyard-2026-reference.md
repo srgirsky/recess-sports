@@ -116,8 +116,8 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
 3. ~~Ground character~~ — PR 30 took the worst offender (the ruler-straight
    far foul line, now hand-limed). Dirt tufts/wear beyond that remain open as
    polish, not a ranked gap.
-4. ~~HUD sticker language, first instalment~~ — PR 31's tappable pitch cards.
-   The scoreboard is still a dark slab; restyling it rides with item 6.
+4. ~~HUD sticker language~~ — PR 31's tappable pitch cards, followed by the
+   cream outlined scoreboard treatment in the 2026-08-08 readability pass.
 5. ~~Background kids~~ — PR 32: the undrafted twelve watch from the yards.
 6. ~~Presentation beats, first pass~~: ~~matchup plate~~ (PR 33), ~~inning-break
    scoreboard~~ (PR 34), ~~a camera cue per screen~~ (PR 37 — draft over
@@ -141,6 +141,10 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
 10. ~~Characters on the front door and after the play~~ — the title lockup now
     frames the wordmark with signature kids, and batter/pitcher play opposing
     cheer/upset reactions after every plate appearance.
+11. ~~Live-play depth and control cues~~ — the 2026-08-08 readability pass adds
+    a height-responsive ground shadow under the ball and a gold ring under
+    exactly the fielder receiving human steering. Both read the render membrane
+    after the sim has stepped; neither changes reach, routes or outcomes.
 
 ## Remaining parity backlog, in dependency order
 

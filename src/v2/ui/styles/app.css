@@ -181,7 +181,7 @@ body.screen-open .play-callout {
 }
 
 /* ---------------------------------------------------------------------------
- * THE SCOREBOARD — a bottom strip, the way v1's is and the way BB2001's is.
+ * THE SCOREBOARD — a bottom sticker, the way BB2026's field chrome reads.
  *
  * It inherits `#hud`'s `pointer-events: none` and nothing in it is
  * `.interactive`, so every tap over it falls through to the canvas. That is
@@ -205,11 +205,12 @@ body.screen-open .play-callout {
   padding: var(--s2) var(--s4);
   border-radius: var(--radius-lg);
   border: var(--stroke) solid var(--outline);
-  background: rgb(20 32 46 / 0.82);
-  box-shadow: var(--shadow-soft);
-  color: var(--cream);
+  background: rgb(255 244 222 / 0.95);
+  box-shadow: 0 0.34rem 0 rgb(20 32 46 / 0.48);
+  color: var(--ink);
   line-height: 1.15;
   white-space: nowrap;
+  rotate: 0.35deg;
 }
 
 /* ---- Teams: two stacked rows, the batting one marked with a ▶ ---- */
@@ -228,7 +229,7 @@ body.screen-open .play-callout {
   opacity: 1;
 }
 .sb-side__mark {
-  color: var(--gold);
+  color: var(--red);
   font-size: 0.7rem;
   visibility: hidden;
 }
@@ -258,7 +259,7 @@ body.screen-open .play-callout {
 .sb__inning {
   font-size: 0.95rem;
   font-weight: 700;
-  color: var(--gold);
+  color: var(--red);
   font-variant-numeric: tabular-nums;
 }
 .sb__batter {
@@ -272,7 +273,7 @@ body.screen-open .play-callout {
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: var(--gold);
+  color: var(--grass-dark);
 }
 .sb__verb.is-hidden {
   visibility: hidden;
@@ -303,8 +304,8 @@ body.screen-open .play-callout {
   inline-size: 0.5rem;
   block-size: 0.5rem;
   border-radius: 50%;
-  background: rgb(255 244 222 / 0.2);
-  border: 0.08rem solid rgb(255 244 222 / 0.28);
+  background: rgb(20 32 46 / 0.12);
+  border: 0.08rem solid rgb(20 32 46 / 0.28);
 }
 .sb-pips--balls .sb-pip.is-lit {
   background: var(--conf-easy);
@@ -353,8 +354,8 @@ body.screen-open .play-callout {
   block-size: 0.66rem;
   transform: translate(-50%, -50%) rotate(45deg);
   border-radius: 0.12rem;
-  background: rgb(255 244 222 / 0.18);
-  border: 0.08rem solid rgb(255 244 222 / 0.3);
+  background: rgb(20 32 46 / 0.12);
+  border: 0.08rem solid rgb(20 32 46 / 0.3);
   transition: background-color 140ms ease;
 }
 .sb-bag--first {
