@@ -288,6 +288,14 @@ the same five high-frequency baseball clips plus `idle_fidget`, `pose_card`,
 `npm run export:signature-performance -- calls_shot` and review its nine `★`
 rows at `/v2/?anims=1&kid=calls_shot`.
 
+Zoom Ramirez completes the signature trio. `anims_wheelchair_ace_v1.glb`
+contains the five high-frequency baseball clips plus `idle_fidget`, a seated
+`field_ready`, `cheer_cool` and `upset_cool`. His `run` is a wheel-propulsion
+cycle authored through hands, shoulders and torso; the sport chair remains
+root-space equipment owned by the simulation. Regenerate it with
+`npm run export:signature-performance -- wheelchair_ace` and review its nine
+`★` rows at `/v2/?anims=1&kid=wheelchair_ace`.
+
 ## Suggested order of delivery
 
 `idle` → `run` → `bat_stance` → `swing_contact` → `swing_follow` first, as a
@@ -295,8 +303,8 @@ rows at `/v2/?anims=1&kid=calls_shot`.
 player actually watches, and agreeing the movement language on them costs far
 less than re-timing forty-three clips.
 
-Junebug and Theo's priority sets are now complete. Next deliver Zoom's priority
-takes from the character-performance packet as a separate partial file. Review with
-`/v2/?anims=1&kid=<id>`: `★` is the character take, `▪` is shared and `▫` is
-procedural fallback. Sign off their model, motion and draft read together before
-expanding to the remaining roster batches.
+All three signature priority sets are complete. Next deliver Batch 1—Big Lou,
+Tank and Mimi Mash—from the character-performance packet, keeping separate
+partial files and review evidence per kid. Review with `/v2/?anims=1&kid=<id>`:
+`★` is the character take, `▪` is shared and `▫` is procedural fallback. Sign
+off each model, motion and draft read together before starting the next batch.

@@ -771,6 +771,145 @@ function theoUpsetGoofy(spec: ClipSpec): AnimationClip {
   ]);
 }
 
+// --- Zoom Ramirez takes ---------------------------------------------------
+//
+// Zoom's chair remains root-space equipment owned by the simulation. His
+// authored locomotion therefore comes from hands, shoulders and torso rather
+// than a standing run cycle or animation-driven chair travel.
+
+const ZOOM_IDLE_POSE: Pose = {
+  hp: [-3, -3, 0], sp: [-2, -4, 0], s2: [-4, -6, 0], nk: [1, 4, 0], hd: [-2, 9, 1],
+  la: [18, 0, 54], lf: [0, -58, 0], ra: [18, 0, -54], rf: [0, 58, 0],
+};
+
+const ZOOM_FIELD_POSE: Pose = shift(ZOOM_IDLE_POSE, {
+  hp: [8, 0, 0], sp: [8, 0, 0], s2: [7, 0, 0], hd: [-10, -8, 0],
+  la: [22, 0, -14], lf: [0, 20, 0], ra: [22, 0, 14], rf: [0, -20, 0],
+});
+
+const ZOOM_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
+  hp: [-2, -5, 0], sp: [-2, -7, 0], s2: [-3, -8, 0], hd: [-1, 10, 1],
+  lu: [0, 0, 0], ll: [0, 0, 0], lt: [0, 0, 0],
+  ru: [0, 0, 0], rl: [0, 0, 0], rt: [0, 0, 0],
+});
+
+const ZOOM_CONTACT_END: Pose = shift(ZOOM_STANCE_POSE, {
+  hp: [0, 70, 0], sp: [0, 53, 0], s2: [0, 72, 0], hd: [-2, -18, -1],
+  ra: [35, 0, 82], rf: [0, -28, 0], la: [29, 0, -66], lf: [0, 25, 0],
+});
+
+function zoomIdle(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: ZOOM_IDLE_POSE },
+    { f: 16, pose: shift(ZOOM_IDLE_POSE, { sp: [2, 0, 0], s2: [3, 0, 0], hd: [-1, -5, 0], la: [3, 0, -3], ra: [3, 0, 3] }) },
+    { f: 31, pose: shift(ZOOM_IDLE_POSE, { hd: [0, 12, -1], lf: [0, 5, 0], rf: [0, -5, 0] }) },
+    { f: 45, pose: shift(ZOOM_IDLE_POSE, { sp: [1, 0, 0], s2: [2, 0, 0], hd: [0, -6, 0] }) },
+    { f: spec.frames, pose: ZOOM_IDLE_POSE },
+  ]);
+}
+
+function zoomRun(spec: ClipSpec): AnimationClip {
+  const pushLeft = shift(ZOOM_FIELD_POSE, {
+    hp: [1, -10, -3], sp: [2, -9, -3], s2: [3, -8, -2], hd: [1, 7, 1],
+    la: [35, 0, -16], lf: [0, 42, 0], ra: [-18, 0, 20], rf: [0, -34, 0],
+  });
+  const pushRight = shift(ZOOM_FIELD_POSE, {
+    hp: [1, 10, 3], sp: [2, 9, 3], s2: [3, 8, 2], hd: [1, -7, -1],
+    la: [-18, 0, -20], lf: [0, 34, 0], ra: [35, 0, 16], rf: [0, -42, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: pushLeft },
+    { f: 6, pose: ZOOM_FIELD_POSE },
+    { f: 12, pose: pushRight },
+    { f: 18, pose: ZOOM_FIELD_POSE },
+    { f: spec.frames, pose: pushLeft },
+  ]);
+}
+
+function zoomBatStance(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: ZOOM_STANCE_POSE },
+    { f: 15, pose: shift(ZOOM_STANCE_POSE, { s2: [0, -5, 0], hd: [0, 4, 0], la: [-3, 0, 4], ra: [-3, 0, -4] }) },
+    { f: 30, pose: shift(ZOOM_STANCE_POSE, { s2: [0, 6, 0], hd: [0, -8, 0], la: [4, 0, -5], ra: [4, 0, 5] }) },
+    { f: 45, pose: shift(ZOOM_STANCE_POSE, { s2: [0, -4, 0], hd: [0, 6, 0] }) },
+    { f: spec.frames, pose: ZOOM_STANCE_POSE },
+  ]);
+}
+
+function zoomSwingContact(spec: ClipSpec): AnimationClip {
+  const loaded = shift(ZOOM_STANCE_POSE, { hp: [0, -11, 0], sp: [0, -8, 0], s2: [0, -18, 0], ra: [-10, 0, -14], la: [-5, 0, 7], hd: [0, 6, 0] });
+  return build(spec, [
+    { f: 0, pose: loaded },
+    { f: 3, pose: shift(loaded, { hp: [0, 4, 0], s2: [0, 5, 0] }) },
+    { f: 5, pose: shift(loaded, { hp: [0, 14, 0], sp: [0, 9, 0], s2: [0, 13, 0], ra: [5, 0, 10], la: [3, 0, -6] }) },
+    { f: 6, pose: shift(loaded, { hp: [0, 31, 0], sp: [0, 22, 0], s2: [0, 29, 0], ra: [16, 0, 29], la: [12, 0, -21] }) },
+    { f: 7, pose: shift(loaded, { hp: [0, 48, 0], sp: [0, 35, 0], s2: [0, 46, 0], ra: [27, 0, 51], la: [20, 0, -38] }) },
+    { f: 8, pose: shift(loaded, { hp: [0, 64, 0], sp: [0, 47, 0], s2: [0, 62, 0], ra: [37, 0, 72], la: [27, 0, -55] }) },
+    { f: 12, pose: shift(ZOOM_CONTACT_END, { hp: [0, -5, 0], s2: [0, -6, 0] }) },
+    { f: spec.frames - 1, pose: ZOOM_CONTACT_END },
+  ]);
+}
+
+function zoomSwingFollow(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: ZOOM_CONTACT_END },
+    { f: 6, pose: shift(ZOOM_CONTACT_END, { hp: [0, 8, 0], s2: [0, 6, 0], hd: [-2, -7, 0] }) },
+    { f: 12, pose: shift(ZOOM_STANCE_POSE, { hp: [-5, 8, 0], sp: [-4, 7, 0], s2: [-6, 10, 0], hd: [-4, -17, 3], ra: [-18, 0, -30], la: [-12, 0, 22] }) },
+    { f: 18, pose: shift(ZOOM_STANCE_POSE, { hd: [-2, -12, 2], ra: [-6, 0, -9] }) },
+    { f: spec.frames - 1, pose: ZOOM_STANCE_POSE },
+  ]);
+}
+
+function zoomFieldReady(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: ZOOM_FIELD_POSE },
+    { f: 10, pose: shift(ZOOM_FIELD_POSE, { sp: [2, -4, 0], s2: [3, -5, 0], hd: [-2, 6, 0], la: [4, 0, -5], ra: [4, 0, 5] }) },
+    { f: 20, pose: shift(ZOOM_FIELD_POSE, { sp: [3, 4, 0], s2: [4, 5, 0], hd: [-3, -8, 0], la: [6, 0, 7], ra: [6, 0, -7] }) },
+    { f: 30, pose: shift(ZOOM_FIELD_POSE, { sp: [1, -3, 0], s2: [2, -4, 0], hd: [-1, 5, 0] }) },
+    { f: spec.frames, pose: ZOOM_FIELD_POSE },
+  ]);
+}
+
+function zoomIdleFidget(spec: ClipSpec): AnimationClip {
+  const pivot = shift(ZOOM_IDLE_POSE, {
+    hp: [0, -18, -3], sp: [2, -14, -2], s2: [3, -12, -2], hd: [-4, 24, 4],
+    la: [28, 0, -14], lf: [0, 32, 0], ra: [-24, 0, 16], rf: [0, -38, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: ZOOM_IDLE_POSE },
+    { f: 8, pose: pivot },
+    { f: 16, pose: shift(pivot, { hp: [0, 22, 5], sp: [0, 18, 4], hd: [0, -35, -6], la: [-40, 0, 20], ra: [38, 0, -18] }) },
+    { f: 27, pose: shift(ZOOM_IDLE_POSE, { hd: [-3, -17, 3], s2: [-2, -6, 0], ra: [-10, 0, 12] }) },
+    { f: 43, pose: shift(ZOOM_IDLE_POSE, { hd: [-1, 9, -1] }) },
+    { f: spec.frames - 1, pose: ZOOM_IDLE_POSE },
+  ]);
+}
+
+function zoomCheerCool(spec: ClipSpec): AnimationClip {
+  const quickTurn = shift(ZOOM_IDLE_POSE, { hp: [-2, 20, 3], sp: [-3, 16, 2], s2: [-5, 14, 2], hd: [-5, -25, 4], la: [-42, 0, 16], lf: [0, -36, 0], ra: [24, 0, -18], rf: [0, 42, 0] });
+  const secret = shift(ZOOM_IDLE_POSE, { hp: [-4, -8, -2], sp: [-3, -6, -1], s2: [-5, -7, -1], hd: [-6, 18, 4], la: [-24, 0, 28], lf: [0, -44, 0], ra: [-78, 0, -18], rf: [0, 92, 0] });
+  return build(spec, [
+    { f: 0, pose: ZOOM_IDLE_POSE },
+    { f: 6, pose: quickTurn },
+    { f: 12, pose: shift(quickTurn, { hp: [0, -12, -3], hd: [-2, 19, 2], la: [18, 0, -8], ra: [-20, 0, 10] }) },
+    { f: 20, pose: secret },
+    { f: 28, pose: shift(ZOOM_IDLE_POSE, { hd: [-3, 16, 3], s2: [-2, -4, 0] }) },
+    { f: spec.frames - 1, pose: ZOOM_IDLE_POSE },
+  ]);
+}
+
+function zoomUpsetCool(spec: ClipSpec): AnimationClip {
+  const check = shift(ZOOM_IDLE_POSE, { hp: [4, 9, 1], sp: [6, 7, 1], s2: [5, 6, 1], hd: [14, -18, -3], la: [12, 0, 12], lf: [0, -18, 0], ra: [12, 0, -12], rf: [0, 18, 0] });
+  return build(spec, [
+    { f: 0, pose: ZOOM_IDLE_POSE },
+    { f: 7, pose: check },
+    { f: 15, pose: shift(check, { hp: [0, -18, -3], hd: [-5, 34, 5], la: [-28, 0, 20], ra: [30, 0, -18] }) },
+    { f: 24, pose: shift(ZOOM_IDLE_POSE, { hp: [5, 0, 0], sp: [5, 0, 0], hd: [12, -8, -2], la: [10, 0, 8], ra: [10, 0, -8] }) },
+    { f: 32, pose: shift(ZOOM_IDLE_POSE, { hd: [-2, 12, 2] }) },
+    { f: spec.frames - 1, pose: ZOOM_IDLE_POSE },
+  ]);
+}
+
 /**
  * Release is frame 4 and frame 11 respectively; same peak-speed rule as the
  * swing. `arm` is the euler the throwing arm whips through.
@@ -1287,6 +1426,26 @@ export function buildTheoPilotClips(): AnimationClip[] {
   return Object.entries(builders).map(([name, make]) => {
     const spec = CLIPS.find((candidate) => candidate.name === name);
     if (!spec) throw new Error(`Theo pilot names unknown contract clip "${name}"`);
+    return make(spec as ClipSpec);
+  });
+}
+
+/** Zoom's signed-off seated-athlete pass, exported as a partial delivery. */
+export function buildZoomPilotClips(): AnimationClip[] {
+  const builders: Readonly<Record<string, (spec: ClipSpec) => AnimationClip>> = {
+    idle: zoomIdle,
+    idle_fidget: zoomIdleFidget,
+    run: zoomRun,
+    bat_stance: zoomBatStance,
+    swing_contact: zoomSwingContact,
+    swing_follow: zoomSwingFollow,
+    field_ready: zoomFieldReady,
+    cheer_cool: zoomCheerCool,
+    upset_cool: zoomUpsetCool,
+  };
+  return Object.entries(builders).map(([name, make]) => {
+    const spec = CLIPS.find((candidate) => candidate.name === name);
+    if (!spec) throw new Error(`Zoom pilot names unknown contract clip "${name}"`);
     return make(spec as ClipSpec);
   });
 }

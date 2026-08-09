@@ -19,8 +19,9 @@ describe('v2 public asset URLs', () => {
 
   it('names and exposes optional character-performance deliveries explicitly', () => {
     expect(characterAnimationFile('nostrike')).toBe('anims_nostrike_v1.glb');
-    primeManifest(['nostrike', 'calls_shot'], ['nostrike', 'calls_shot']);
+    primeManifest(['nostrike', 'calls_shot', 'wheelchair_ace'], ['nostrike', 'calls_shot', 'wheelchair_ace']);
     expect(hasDeliveredPerformance('nostrike')).toBe(true);
     expect(hasDeliveredPerformance('calls_shot')).toBe(true);
+    expect(hasDeliveredPerformance('wheelchair_ace')).toBe(true);
   });
 });

@@ -12,7 +12,7 @@ import { describe, it, expect } from 'vitest';
 import { AnimationClip, Object3D, Vector3, VectorKeyframeTrack } from 'three';
 import { AnimationDirector } from './AnimationDirector';
 import { OutlineRegistry, attachOutline } from './materials/outline';
-import { buildDirectedReactionClips, buildJunebugPilotClips, buildProceduralClips, buildTheoPilotClips } from './proceduralClips';
+import { buildDirectedReactionClips, buildJunebugPilotClips, buildProceduralClips, buildTheoPilotClips, buildZoomPilotClips } from './proceduralClips';
 import { CLIPS, CLIP_NAMES, FPS, LOOP_MAX_RATE, LOOP_MIN_RATE, clipSpec, type AnimName } from './clips';
 import { ProxyCharacter } from './ProxyCharacter';
 import { ROSTER } from '../../data/characters';
@@ -179,6 +179,47 @@ describe('the Big Talk Theo character pass', () => {
 
   it('returns every personality beat to its opening pose', () => {
     for (const name of ['idle_fidget', 'cheer_goofy', 'upset_goofy']) {
+      const clip = pilot.find((candidate) => candidate.name === name)!;
+      for (const track of clip.tracks) {
+        const stride = track.getValueSize();
+        const last = track.values.length - stride;
+        for (let i = 0; i < stride; i++) {
+          expect(track.values[i], `${name} ${track.name}[${i}]`).toBeCloseTo(track.values[last + i], 6);
+        }
+      }
+    }
+  });
+});
+
+describe('the Zoom Ramirez character pass', () => {
+  const pilot = buildZoomPilotClips();
+
+  it('overrides five high-frequency clips plus Zoom fielding and reaction priorities', () => {
+    expect(pilot.map((clip) => clip.name)).toEqual([
+      'idle', 'idle_fidget', 'run', 'bat_stance', 'swing_contact', 'swing_follow',
+      'field_ready', 'cheer_cool', 'upset_cool',
+    ]);
+  });
+
+  it('closes seated loops, derives contact on frame 7 and carries no root motion', () => {
+    for (const clip of pilot.filter((candidate) => clipSpec(candidate.name).loop)) {
+      for (const track of clip.tracks) {
+        const stride = track.getValueSize();
+        const last = track.values.length - stride;
+        for (let i = 0; i < stride; i++) {
+          expect(track.values[i], `${clip.name} ${track.name}[${i}]`).toBeCloseTo(track.values[last + i], 6);
+        }
+      }
+    }
+    const swing = pilot.find((clip) => clip.name === 'swing_contact')!;
+    expect(markerFrameOf(swing, 'CONTACT', clipSpec('swing_contact').frames)).toBe(7);
+    for (const clip of pilot) {
+      expect(clip.tracks.some((track) => track.name.startsWith('Root.')), clip.name).toBe(false);
+    }
+  });
+
+  it('returns every personality beat to its opening pose', () => {
+    for (const name of ['idle_fidget', 'cheer_cool', 'upset_cool']) {
       const clip = pilot.find((candidate) => candidate.name === name)!;
       for (const track of clip.tracks) {
         const stride = track.getValueSize();

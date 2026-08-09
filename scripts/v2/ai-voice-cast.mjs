@@ -51,6 +51,14 @@ export const AI_VOICE_CAST = {
     runtimeSha256: 'f1eec07cc30b93d89470972b4fb1397491f3a1d48a044c4500d09c8c345c4503',
     direction: 'Bright and elastic; delighted self-belief, with the final boast landing as a grin rather than a yell.',
   },
+  wheelchair_ace: {
+    candidates: ['am_michael', 'am_fenrir', 'am_puck'],
+    voice: 'am_michael',
+    speed: 0.98,
+    masterSha256: 'd6998dca97e5290493df209c1a6b7203d200183989c2be70b9da723a968adafe',
+    runtimeSha256: '150935b4220b8ce5252246da56693f69f1b2ad5accb42e2a8fcd016ae08d569a',
+    direction: 'Relaxed and inventive; share the first sentence like a secret, make the second Nobody conspiratorial, and finish with a contained half-smile rather than added laughter.',
+  },
 };
 
 export function aiVoiceCard(id) {

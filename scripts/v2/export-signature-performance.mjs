@@ -8,7 +8,7 @@
 
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { buildJunebugPilotClips, buildTheoPilotClips } from '../../src/v2/render/proceduralClips.ts';
+import { buildJunebugPilotClips, buildTheoPilotClips, buildZoomPilotClips } from '../../src/v2/render/proceduralClips.ts';
 import { writeAnimationClipsGlb } from './export-animation-library.mjs';
 import { scanPerformances, writeManifest } from './models-manifest.mjs';
 
@@ -16,6 +16,7 @@ const here = fileURLToPath(new URL('.', import.meta.url));
 const BUILDERS = {
   nostrike: { name: 'Junebug', build: buildJunebugPilotClips },
   calls_shot: { name: 'Big Talk Theo', build: buildTheoPilotClips },
+  wheelchair_ace: { name: 'Zoom Ramirez', build: buildZoomPilotClips },
 };
 
 export function buildSignaturePerformanceGlb(id, outPath = join(here, '..', '..', 'public', 'v2', 'models', `anims_${id}_v1.glb`)) {
