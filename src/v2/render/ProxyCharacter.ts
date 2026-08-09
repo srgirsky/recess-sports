@@ -514,21 +514,45 @@ function outfitSculpt(
       break;
     }
     case 'hoodie': {
-      const hood = new TorusGeometry(torsoW * 0.5, 0.105, seg(8, 4), seg(18, 8));
+      const mimi = productionId === 'mimi_mash';
+      const hood = new TorusGeometry(torsoW * (mimi ? 0.56 : 0.5), mimi ? 0.12 : 0.105, seg(8, 4), seg(18, 8));
       hood.scale(1, 1.14, 0.86);
       hood.translate(0, torsoTop + 0.13, -torsoW * 0.37);
       push(hood, 'Spine2');
 
       push(
         blob(
-          new Vector3(0, hipsY + 0.34, front),
-          torsoW * 0.44,
-          0.18,
-          0.075
+          new Vector3(0, hipsY + (mimi ? 0.36 : 0.34), front + (mimi ? 0.015 : 0)),
+          torsoW * (mimi ? 0.54 : 0.44),
+          mimi ? 0.22 : 0.18,
+          mimi ? 0.09 : 0.075
         ),
         'Spine1',
         trim
       );
+      if (mimi) {
+        // Mimi's pocket is a broad constructed shape with visible diagonal
+        // openings, not a generic belly patch. The ribbed hem keeps the
+        // hoodie spring-loaded above the jeans in her forward hero poses.
+        for (const sgn of [-1, 1]) {
+          push(
+            slantedBox(
+              new Vector3(sgn * torsoW * 0.27, hipsY + 0.39, front + 0.095),
+              0.035,
+              0.27,
+              0.035,
+              sgn * 0.62
+            ),
+            'Spine1',
+            shadeInt(jersey, 0.42)
+          );
+        }
+        const hem = new TorusGeometry(torsoW * 0.68, 0.05, seg(6, 4), seg(18, 8));
+        hem.rotateX(Math.PI / 2);
+        hem.scale(1, 1, 0.76);
+        hem.translate(0, hipsY + 0.12, 0);
+        push(hem, 'Hips', shadeInt(jersey, 0.38));
+      }
       for (const x of [-0.105, 0.105]) {
         push(
           limb(
@@ -872,9 +896,10 @@ export class ProxyCharacter {
     const shoe = 0x33404f;
 
     const parts: Part[] = [];
-    const organic = rosterFidelity && ['nostrike', 'calls_shot', 'wheelchair_ace', 'big_lou', 'tank'].includes(opts.productionId ?? '');
+    const organic = rosterFidelity && ['nostrike', 'calls_shot', 'wheelchair_ace', 'big_lou', 'tank', 'mimi_mash'].includes(opts.productionId ?? '');
     const bigLou = opts.productionId === 'big_lou';
     const tank = opts.productionId === 'tank';
+    const mimi = opts.productionId === 'mimi_mash';
     const blendTo = (bone: string, atPoint: Vector3, radius: number): Part['jointBlend'] =>
       organic ? { bone, at: atPoint, radius, strength: 0.88 } : undefined;
 
@@ -892,7 +917,7 @@ export class ProxyCharacter {
     parts.push({
       geom: opts.productionId === 'calls_shot'
         ? wedgeHead(headC, headR, headW, headH)
-        : ball(headC, headR, new Vector3(headW * (bigLou ? 1.04 : tank ? 1.03 : 1), headH * (bigLou ? 0.96 : tank ? 1.02 : 1), headW * 0.95)),
+        : ball(headC, headR, new Vector3(headW * (bigLou ? 1.04 : tank || mimi ? 1.03 : 1), headH * (bigLou ? 0.96 : tank ? 1.02 : mimi ? 0.98 : 1), headW * 0.95)),
       bone: 'Head',
       color: skinC,
       slot: 'M_Body',
@@ -945,13 +970,13 @@ export class ProxyCharacter {
     const chest = at('Spine2');
     const torsoTop = at('LeftShoulder').y + 0.06;
     const torsoBot = hips.y - 0.05;
-    const torsoW = 0.59 * shoulder * (bigLou ? 0.94 : tank ? 1.08 : 1);
+    const torsoW = 0.59 * shoulder * (bigLou ? 0.94 : tank ? 1.08 : mimi ? 1.04 : 1);
     parts.push({
       geom: blob(
         new Vector3(0, (torsoTop + torsoBot) / 2, 0),
-        torsoW * (bigLou ? 1.02 : tank ? 1.06 : 1),
+        torsoW * (bigLou ? 1.02 : tank ? 1.06 : mimi ? 1.03 : 1),
         (torsoTop - torsoBot) / 2 * (bigLou ? 0.96 : tank ? 0.95 : 1),
-        torsoW * (bigLou ? 0.79 : tank ? 0.82 : 0.72)
+        torsoW * (bigLou ? 0.79 : tank ? 0.82 : mimi ? 0.76 : 0.72)
       ),
       bone: 'Spine1',
       color: jersey,
@@ -1027,13 +1052,13 @@ export class ProxyCharacter {
         jointBlend: blendTo(`${side}ForeArm`, at(`${side}ForeArm`), 0.36),
       });
       parts.push({
-        geom: limb(at(`${side}ForeArm`), at(`${side}Hand`), bigLou ? 0.136 : tank ? 0.14 : 0.112),
+        geom: limb(at(`${side}ForeArm`), at(`${side}Hand`), bigLou ? 0.136 : tank ? 0.14 : mimi ? 0.137 : 0.112),
         bone: `${side}ForeArm`,
         color: skinC,
         slot: 'M_Body',
         jointBlend: blendTo(`${side}Hand`, at(`${side}Hand`), 0.3),
       });
-      parts.push({ geom: ball(at(`${side}Hand`), bigLou || tank ? 0.164 : 0.147, new Vector3(1, 0.9, 0.85)), bone: `${side}Hand`, color: skinC, slot: 'M_Body' });
+      parts.push({ geom: ball(at(`${side}Hand`), bigLou || tank ? 0.164 : mimi ? 0.158 : 0.147, new Vector3(1, 0.9, 0.85)), bone: `${side}Hand`, color: skinC, slot: 'M_Body' });
       if (rosterFidelity) {
         // Moulded sleeve and wrist seams stop the limbs reading as two tubes
         // pushed together in the close draft camera.
@@ -1263,18 +1288,24 @@ function hairParts(
       add(cap(1.06, 0.78));
       break;
     case 'curly':
-      for (let i = 0; i < 7 + wisps; i++) {
-        const a = (i / (7 + wisps)) * Math.PI * 2;
+      for (let i = 0; i < (productionId === 'mimi_mash' ? 11 : 7 + wisps); i++) {
+        const count = productionId === 'mimi_mash' ? 11 : 7 + wisps;
+        const a = (i / count) * Math.PI * 2;
+        const mimi = productionId === 'mimi_mash';
+        const offset = mimi
+          ? new Vector3(Math.cos(a) * r * 1.05, Math.sin(a) * r * 0.52, -r * 0.2)
+          : new Vector3(Math.cos(a) * r * 0.62, r * 0.1, (-0.15 + Math.sin(a) * 0.35) * r);
         add(
           ball(
-            crown.clone().add(
-              new Vector3(Math.cos(a) * r * 0.62, r * 0.1, (-0.15 + Math.sin(a) * 0.35) * r)
-            ),
-            r * 0.42 * volume
+            crown.clone().add(offset),
+            r * (mimi ? 0.44 : 0.42) * volume,
+            new Vector3(1, mimi ? 0.9 : 1, 1),
+            mimi ? 10 : 14,
+            mimi ? 7 : 10
           )
         );
       }
-      add(cap(0.95, 0.7));
+      add(cap(productionId === 'mimi_mash' ? 1.02 : 0.95, productionId === 'mimi_mash' ? 0.74 : 0.7));
       break;
     case 'afro':
       // Sat 14.2% of body height above the crown — half a head of hair above

@@ -18,6 +18,7 @@ NAMES = {
     "wheelchair_ace": "zoom",
     "big_lou": "big-lou",
     "tank": "tank",
+    "mimi_mash": "mimi-mash",
 }
 
 
@@ -28,7 +29,7 @@ def point_at(obj: bpy.types.Object, target: Vector) -> None:
 def main() -> None:
     args = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     if len(args) != 1 or args[0] not in NAMES:
-        raise RuntimeError("pass one produced character id: nostrike, calls_shot, wheelchair_ace, big_lou or tank")
+        raise RuntimeError("pass one produced character id: nostrike, calls_shot, wheelchair_ace, big_lou, tank or mimi_mash")
     character_id = args[0]
     model = REPO / "public/v2/models" / f"kid_{character_id}.glb"
     output = REPO / "docs/v2/concepts" / f"{NAMES[character_id]}-in-game-review.png"

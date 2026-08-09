@@ -75,6 +75,14 @@ export const AI_VOICE_CAST = {
     runtimeSha256: '15b7a32d6aacc172aacdc5cb8f2feba11bca0ce77fb9bda6a9e1ab91644cebf3',
     direction: 'Small, blunt and comfortable; make Tank smash an honest declaration, pause fully, then soften and slightly quicken After snacks.',
   },
+  mimi_mash: {
+    candidates: ['af_nicole', 'af_bella', 'af_nova'],
+    voice: 'af_nicole',
+    speed: 1.08,
+    masterSha256: '897fc4467dbf2954703a3710f0cf032bee694a0c7e6f7346b00b080a1d07a829',
+    runtimeSha256: '76e15d4ee9b702061c1a9dd8a4fe3fb2d4c6d5dc850d08ed16a6ab3caadcccd1',
+    direction: 'Powerful young-girl ignition with a playful rasp; explode into MASH TIME, reset once, then make Point me at the fence a joyful practical instruction rather than a sustained yell.',
+  },
 };
 
 export function aiVoiceCard(id) {

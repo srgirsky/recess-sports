@@ -312,6 +312,15 @@ anticipation, a full-frame release, and a heavy settle that is calm rather than
 menacing. Regenerate it with `npm run export:signature-performance -- tank`
 and review its eight `★` rows at `/v2/?anims=1&kid=tank`.
 
+Mimi Mash completes Batch 1. `anims_mimi_mash_v1.glb` contains the five
+high-frequency baseball clips plus `idle_fidget`, `cheer_fierce` and
+`upset_fierce`; `bat_stance` is also one of her four priority takes. She
+ignites quickly, drives every pose through both feet, lets the bat pull her
+whole torso around, then rebounds once before settling. The size is delighted
+and competitive, never angry. Regenerate it with
+`npm run export:signature-performance -- mimi_mash` and review its eight `★`
+rows at `/v2/?anims=1&kid=mimi_mash`.
+
 ## Suggested order of delivery
 
 `idle` → `run` → `bat_stance` → `swing_contact` → `swing_follow` first, as a
@@ -319,8 +328,8 @@ and review its eight `★` rows at `/v2/?anims=1&kid=tank`.
 player actually watches, and agreeing the movement language on them costs far
 less than re-timing forty-three clips.
 
-All three signature priority sets, Big Lou and Tank are complete. Finish Batch 1
-with Mimi Mash from the character-performance packet, keeping separate
+All three signature priority sets and Batch 1 are complete. Start Batch 2 with
+Turbo, Sprout and Zippy from the character-performance packet, keeping separate
 partial files and review evidence per kid. Review with `/v2/?anims=1&kid=<id>`:
 `★` is the character take, `▪` is shared and `▫` is procedural fallback. Sign
 off each model, motion and draft read together before starting the next batch.

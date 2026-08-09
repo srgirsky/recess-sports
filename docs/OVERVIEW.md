@@ -1774,8 +1774,27 @@ full commitment and heavy settles communicate strength without monster,
 caveman or tough-guy acting; contact remains derived on frame 7. His exact
 draft line is generated locally with Kokoro's named `am_eric` stock voice at
 0.9×, promoted to the fingerprinted lossless master and runtime MP3, and
-covered by the player-facing AI-performance disclosure. Batch 1 now finishes
-with Mimi Mash.
+covered by the player-facing AI-performance disclosure.
+
+### Mimi Mash character pass — every shape points forward
+
+Mimi completes Batch 1. Her approved turnaround at
+`docs/v2/concepts/mimi-mash-turnaround.png` resolves the brief into a dense
+curly halo, proud chin, broad constructed hoodie pocket, strong childlike
+forearms and a spring-loaded stance. The production model retains that read in
+three useful LODs under the 400 KB contract, with organic two-bone joint bands;
+its delivered review is `docs/v2/concepts/mimi-mash-in-game-review.png`, and
+`mimi-mash-pilot.blend` packs the target for future source work.
+
+`anims_mimi_mash_v1.glb` replaces eight clips: the five high-frequency
+baseball beats, her fence-pointing `idle_fidget`, and fierce win/loss
+reactions. Fast ignition, whole-body rotation and one elastic rebound make the
+performance enormous without turning competitive joy into anger; contact
+remains derived on frame 7. Her exact draft line is generated locally with
+Kokoro's named `af_nicole` stock voice at 1.08×, promoted to the fingerprinted
+lossless master and runtime MP3, and covered by the existing player-facing AI
+disclosure. Batch 1 is complete; production next moves to Turbo, Sprout and
+Zippy.
 
 ### 2026 parity pass — two city parks, not two palettes
 
@@ -2162,8 +2181,9 @@ in this order:
    partial animation files let those individual takes override the shared
    library kid by kid. Commission the shared movement language first, pilot
    Junebug, Theo and Zoom as complete performances, then replace the roster in
-   reviewed batches through the existing validator and A/B page. Big Lou and
-   Tank now prove that first batch handoff; Mimi Mash is next.
+   reviewed batches through the existing validator and A/B page. Big Lou,
+   Tank and Mimi Mash now complete that first batch handoff; Turbo, Sprout and
+   Zippy are next.
 2. **Venue art density.** Eleven parks now play differently and carry signature
    props, but their houses, foliage and ground are low-poly procedural forms.
    The reference layers hand-authored buildings, vegetation, decals, litter,
@@ -2171,7 +2191,8 @@ in this order:
    modular environment kit, prove it on Parks Dept #2, then roll the kit through
    the other ten without breaking the scenery draw/triangle gate.
 3. **Audio identity.** Recess has complete cue coverage, a free local AI voice
-   production path and promoted masters for Junebug, Theo, Zoom, Big Lou and Tank;
+   production path and promoted masters for Junebug, Theo, Zoom, Big Lou, Tank
+   and Mimi Mash;
    BB2026 still has richer commentary, music, bespoke impacts and crowd
    reactions. Cast the roster from
    named stock voices after each character batch establishes its personality,

@@ -11,6 +11,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   buildBigLouPilotClips,
   buildJunebugPilotClips,
+  buildMimiMashPilotClips,
   buildTankPilotClips,
   buildTheoPilotClips,
   buildZoomPilotClips,
@@ -25,6 +26,7 @@ const BUILDERS = {
   wheelchair_ace: { name: 'Zoom Ramirez', build: buildZoomPilotClips },
   big_lou: { name: 'Big Lou', build: buildBigLouPilotClips },
   tank: { name: 'Tank', build: buildTankPilotClips },
+  mimi_mash: { name: 'Mimi Mash', build: buildMimiMashPilotClips },
 };
 
 export function buildSignaturePerformanceGlb(id, outPath = join(here, '..', '..', 'public', 'v2', 'models', `anims_${id}_v1.glb`)) {

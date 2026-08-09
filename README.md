@@ -117,6 +117,7 @@ npm run export:signature-performance -- calls_shot # emit Theo's nine clips
 npm run export:signature-performance -- wheelchair_ace # emit Zoom's nine clips
 npm run export:signature-performance -- big_lou # emit Big Lou's nine clips
 npm run export:signature-performance -- tank # emit Tank's eight clips
+npm run export:signature-performance -- mimi_mash # emit Mimi Mash's eight clips
 npm run export:audio       # emit stable v2 impact/crowd audio masters
 npm run export:voices      # macOS maintainer tool: pre-render commentator + roster lines
 npm run export:performance-brief # regenerate the 30-character production packet
@@ -124,7 +125,7 @@ npm run audition:voices    # print the non-shipping all-cast audition sheet
 npm run generate:ai-voice # print the free local AI cast and commands
 npm run generate:ai-voice -- --audition nostrike
 npm run generate:ai-voice -- --ship nostrike
-npm run validate:voice-delivery -- nostrike calls_shot wheelchair_ace big_lou tank
+npm run validate:voice-delivery -- nostrike calls_shot wheelchair_ace big_lou tank mimi_mash
 npm run validate:models    # check every .glb in assets/v2/
 npm run validate:models path/to/anims_recess_v1.glb   # or one file
 VERBOSE=1 npm run validate:models                     # also print measurements
@@ -230,7 +231,7 @@ blender --background --factory-startup --python scripts/v2/blender/build-signatu
 blender --background --factory-startup --python scripts/v2/blender/render-signature-review.py -- calls_shot
 ```
 
-The id selects Junebug, Theo, Zoom, Big Lou or Tank and writes the matching pilot
+The id selects Junebug, Theo, Zoom, Big Lou, Tank or Mimi Mash and writes the matching pilot
 `.blend` under `assets/v2/source/` with its turnaround packed inside. Use the Node
 exporter for the shipping GLB; Blender's stock exporter reorders the canonical
 joints and therefore is not the delivery path. The second command writes the
@@ -384,6 +385,6 @@ scripts/v2/          The asset gates: glb read/write, exporter, validator, lints
 ## What's next
 
 - A real backend to aggregate pick rates across all players
-- Finish Batch 1 with Mimi Mash through the proven character process
+- Start Batch 2—Turbo, Sprout and Zippy—through the proven character process
 - Online-play polish: remote steal-reaction taps, guest relief, rematch
 - Eventually… the dinosaurs 🦖
