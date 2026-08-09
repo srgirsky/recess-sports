@@ -29,9 +29,8 @@ function paddedLength(bytes) {
   return bytes + ((4 - (bytes % 4)) % 4);
 }
 
-export function buildAnimationLibraryGlb(outPath = DEFAULT_OUT) {
-  const directed = new Map(buildDirectedReactionClips().map((clip) => [clip.name, clip]));
-  const clips = buildProceduralClips().map((clip) => directed.get(clip.name) ?? clip);
+/** Write any contract-named full or partial clip set through the same GLB path. */
+export function writeAnimationClipsGlb(clips, outPath, generator) {
   const byName = new Map(SKELETON.map((bone, index) => [bone.name, index]));
   const nodes = SKELETON.map((bone) => ({
     name: bone.name,
@@ -98,7 +97,7 @@ export function buildAnimationLibraryGlb(outPath = DEFAULT_OUT) {
   const json = {
     asset: {
       version: '2.0',
-      generator: `recess-sports shared animation library (bindPoseHash ${bindPoseHash()})`,
+      generator: `${generator} (bindPoseHash ${bindPoseHash()})`,
     },
     scene: 0,
     scenes: [{ nodes: [byName.get('Root')] }],
@@ -111,6 +110,12 @@ export function buildAnimationLibraryGlb(outPath = DEFAULT_OUT) {
   mkdirSync(dirname(outPath), { recursive: true });
   const { bytes } = writeGlb(outPath, json, chunks);
   return { bytes, clips: animations.length, tracks: animations.reduce((n, clip) => n + clip.channels.length, 0) };
+}
+
+export function buildAnimationLibraryGlb(outPath = DEFAULT_OUT) {
+  const directed = new Map(buildDirectedReactionClips().map((clip) => [clip.name, clip]));
+  const clips = buildProceduralClips().map((clip) => directed.get(clip.name) ?? clip);
+  return writeAnimationClipsGlb(clips, outPath, 'recess-sports shared animation library');
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

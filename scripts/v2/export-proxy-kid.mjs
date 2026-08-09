@@ -124,7 +124,10 @@ function buildLevels(spec, character, fidelity = 'proxy') {
   const levels = fidelity === 'roster' ? ROSTER_LOD_DETAIL : LOD_DETAIL;
 
   return levels.map((detail, level) => {
-    const kid = withDetail(detail, () => new ProxyCharacter(character.visual, { fidelity }));
+    const kid = withDetail(detail, () => new ProxyCharacter(character.visual, {
+      fidelity,
+      productionId: fidelity === 'roster' ? character.id : undefined,
+    }));
     const g = kid.mesh.geometry;
     const pos = g.attributes.position.array;
     const nor = g.attributes.normal.array;

@@ -368,14 +368,15 @@ function outfitSculpt(
   torsoBot: number,
   hipsY: number,
   jersey: number,
-  pants: number
+  pants: number,
+  productionId?: string
 ): Part[] {
   const pieces: Part[] = [];
   const front = torsoW * 0.72 + 0.045;
   const dark = shadeInt(jersey, 0.3);
   const trim = shadeInt(pants, 0.28);
-  const push = (geom: BufferGeometry, bone: string, color = dark) => {
-    pieces.push({ geom, bone, color, slot: 'M_Uniform' });
+  const push = (geom: BufferGeometry, bone: string, color = dark, slot: SlotName = 'M_Uniform') => {
+    pieces.push({ geom, bone, color, slot });
   };
   const collar = () => {
     const g = new TorusGeometry(torsoW * 0.34, 0.045, seg(6, 4), seg(16, 8));
@@ -395,6 +396,32 @@ function outfitSculpt(
     case 'stripeTee': {
       collar();
       waist();
+      if (productionId === 'nostrike') {
+        // Junebug's pilot sculpt replaces the generic floating chest bands
+        // with topology-friendly athletic piping. The pale strips live in the
+        // accessory palette so team tint can recolour the jersey without
+        // turning its trim muddy.
+        for (const sgn of [-1, 1]) {
+          push(
+            slantedBox(
+              new Vector3(sgn * torsoW * 0.67, torsoTop - 0.29, front + 0.006),
+              0.052,
+              0.5,
+              0.045,
+              sgn * 0.12
+            ),
+            'Spine2',
+            0xf5efe2,
+            'M_Accessory'
+          );
+        }
+        const hem = new TorusGeometry(torsoW * 0.63, 0.028, seg(5, 3), seg(18, 8));
+        hem.rotateX(Math.PI / 2);
+        hem.scale(1, 1, 0.74);
+        hem.translate(0, torsoBot + 0.09, 0);
+        push(hem, 'Spine1', 0xf5efe2, 'M_Accessory');
+        break;
+      }
       for (const y of [torsoTop - 0.38, torsoTop - 0.69]) {
         const band = new TorusGeometry(torsoW * 0.78, 0.055, seg(5, 3), seg(18, 8));
         band.rotateX(Math.PI / 2);
@@ -640,6 +667,8 @@ export interface ProxyOptions {
    * authored silhouette details). Runtime fallbacks always use `proxy`.
    */
   fidelity?: 'proxy' | 'roster';
+  /** Production-only sculpt variant; runtime proxies never branch on ids. */
+  productionId?: string;
 }
 
 /**
@@ -734,7 +763,7 @@ export class ProxyCharacter {
       slot: 'M_Body',
       faceUv: rosterFidelity,
     });
-    parts.push(...hairParts(visual, headC, headR, headW, headH, hairC));
+    parts.push(...hairParts(visual, headC, headR, headW, headH, hairC, rosterFidelity ? opts.productionId : undefined));
     parts.push(...accessoryParts(visual.accessory, headC, headR, headW, headH, jersey));
     // Delivered roster models paint the full expression into their atlas.
     // The permanent proxy still carries its cheap geometry facing cue.
@@ -799,7 +828,8 @@ export class ProxyCharacter {
         torsoBot,
         hips.y,
         jersey,
-        pants
+        pants,
+        opts.productionId
       ));
     }
 
@@ -1012,7 +1042,8 @@ function hairParts(
   r: number,
   headW: number,
   headH: number,
-  color: number
+  color: number,
+  productionId?: string
 ): Part[] {
   const style: HairStyle = visual.hair;
   const spec = visual.hairSpec ?? {};
@@ -1107,6 +1138,20 @@ function hairParts(
     }
     case 'ponytail':
       add(cap(1.06, 0.78));
+      if (productionId === 'nostrike') {
+        // A deliberate three-piece arrow rather than the generic hanging
+        // ellipsoid: compact knot, swept shaft, tapered point. It is the
+        // silhouette called out by Junebug's production direction and remains
+        // legible from the side and back at gameplay scale.
+        const knot = c.clone().add(new Vector3(part * r * 0.08, r * 0.16, -r * 0.92));
+        add(ball(knot, r * 0.25, new Vector3(1.08, 0.82, 0.9), 10, 7));
+        add(limb(knot, knot.clone().add(new Vector3(0, -r * 0.68, -r * 0.1)), r * 0.22));
+        const point = new ConeGeometry(r * 0.34, r * 0.72, seg(10, 5));
+        point.rotateZ(Math.PI);
+        point.translate(knot.x, knot.y - r * 0.95, knot.z - r * 0.1);
+        add(point);
+        break;
+      }
       add(
         ball(
           jaw.clone().add(new Vector3(part * r * 0.12, r * 0.5, -r * 1.05)),

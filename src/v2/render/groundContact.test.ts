@@ -41,7 +41,7 @@
 import { describe, expect, it } from 'vitest';
 import { AnimationClip, AnimationMixer, Object3D, Vector3 } from 'three';
 import { CLIPS, FPS, type ClipSpec } from './clips';
-import { GROUND_EPSILON_FT, buildProceduralClips } from './proceduralClips';
+import { GROUND_EPSILON_FT, buildJunebugPilotClips, buildProceduralClips } from './proceduralClips';
 import { buildSkeleton } from './ProxyCharacter';
 
 /** Sub-frame samples, so a slerped dip between two grounded keys is seen. */
@@ -110,6 +110,17 @@ describe('every clip stands on the ground', () => {
       expect(lowestFt).toBeGreaterThan(-GROUND_EPSILON_FT);
       // AND SOMETHING TOUCHES. Without this half the rule is satisfied by
       // hovering, which is exactly the defect that shipped.
+      expect(lowestFt).toBeLessThan(GROUND_EPSILON_FT);
+    });
+  }
+});
+
+describe('Junebug pilot ground contact', () => {
+  for (const clip of buildJunebugPilotClips()) {
+    it(`${clip.name} touches the field without sinking`, () => {
+      const spec = CLIPS.find((candidate) => candidate.name === clip.name)! as ClipSpec;
+      const { lowestFt } = measure(clip, spec);
+      expect(lowestFt).toBeGreaterThan(-GROUND_EPSILON_FT);
       expect(lowestFt).toBeLessThan(GROUND_EPSILON_FT);
     });
   }

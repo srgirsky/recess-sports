@@ -12,7 +12,7 @@ import { describe, it, expect } from 'vitest';
 import { AnimationClip, Object3D, Vector3, VectorKeyframeTrack } from 'three';
 import { AnimationDirector } from './AnimationDirector';
 import { OutlineRegistry, attachOutline } from './materials/outline';
-import { buildDirectedReactionClips, buildProceduralClips } from './proceduralClips';
+import { buildDirectedReactionClips, buildJunebugPilotClips, buildProceduralClips } from './proceduralClips';
 import { CLIPS, CLIP_NAMES, FPS, LOOP_MAX_RATE, LOOP_MIN_RATE, clipSpec, type AnimName } from './clips';
 import { ProxyCharacter } from './ProxyCharacter';
 import { ROSTER } from '../../data/characters';
@@ -102,6 +102,36 @@ describe('the procedural stand-in library', () => {
         Math.abs(found - spec.marker.frame),
         `${spec.name}: motion says ${found}, contract says ${spec.marker.frame}`
       ).toBeLessThanOrEqual(1);
+    }
+  });
+});
+
+describe('the Junebug vertical slice', () => {
+  const pilot = buildJunebugPilotClips();
+
+  it('overrides exactly the five approved high-frequency clips', () => {
+    expect(pilot.map((clip) => clip.name)).toEqual([
+      'idle', 'run', 'bat_stance', 'swing_contact', 'swing_follow',
+    ]);
+  });
+
+  it('closes its three loops and derives contact on frame 7', () => {
+    for (const clip of pilot.filter((candidate) => clipSpec(candidate.name).loop)) {
+      for (const track of clip.tracks) {
+        const stride = track.getValueSize();
+        const last = track.values.length - stride;
+        for (let i = 0; i < stride; i++) {
+          expect(track.values[i], `${clip.name} ${track.name}[${i}]`).toBeCloseTo(track.values[last + i], 6);
+        }
+      }
+    }
+    const swing = pilot.find((clip) => clip.name === 'swing_contact')!;
+    expect(markerFrameOf(swing, 'CONTACT', clipSpec('swing_contact').frames)).toBe(7);
+  });
+
+  it('contains no root motion', () => {
+    for (const clip of pilot) {
+      expect(clip.tracks.some((track) => track.name.startsWith('Root.')), clip.name).toBe(false);
     }
   });
 });

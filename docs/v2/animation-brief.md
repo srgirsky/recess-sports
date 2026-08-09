@@ -275,6 +275,12 @@ same procedural clips remain available only as load-failure fallbacks. A partial
 delivery is therefore testable the day it lands, and the pilot batch below can
 be signed off on its own.
 
+The first-party Junebug vertical slice proves that partial path in production:
+`anims_nostrike_v1.glb` contains `idle`, `run`, `bat_stance`,
+`swing_contact` and `swing_follow`; every other name still resolves to the
+shared library. Regenerate it with `npm run export:pilot-performance` and review
+the five `★` rows at `/v2/?anims=1&kid=nostrike`.
+
 ## Suggested order of delivery
 
 `idle` → `run` → `bat_stance` → `swing_contact` → `swing_follow` first, as a
