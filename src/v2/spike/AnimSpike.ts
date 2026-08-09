@@ -37,7 +37,12 @@ import { SKY_HORIZON, buildSky } from '../render/Sky';
 import { ProxyCharacter } from '../render/ProxyCharacter';
 import { AnimationDirector } from '../render/AnimationDirector';
 import { buildProceduralClips } from '../render/proceduralClips';
-import { configureModelLoader, loadAnimationLibrary } from '../render/modelLoader';
+import {
+  configureModelLoader,
+  loadAnimationLibrary,
+  loadCharacterAnimationLibrary,
+} from '../render/modelLoader';
+import { hasDeliveredPerformance, loadManifest } from '../render/assets';
 import { CLIPS, FPS, clipSpec, type AnimName, type ClipSpec } from '../render/clips';
 
 /** The three rates the brief requires loops to survive. */
@@ -57,10 +62,12 @@ export class AnimSpike {
   private kid!: ProxyCharacter;
   private director!: AnimationDirector;
   private deliveredClips: AnimationClip[] = [];
+  private performanceClips: AnimationClip[] = [];
 
   private clipIndex = 0;
   private rate: number = 1;
   private kidIndex = 0;
+  private kidLoadVersion = 0;
   private raf = 0;
   private lastNow = 0;
   private statsEl: HTMLElement | null = null;
@@ -73,6 +80,10 @@ export class AnimSpike {
   private readonly size = new Vector2();
 
   constructor(private readonly canvas: HTMLCanvasElement) {
+    const requestedId = new URLSearchParams(location.search).get('kid');
+    const requestedIndex = requestedId ? ROSTER.findIndex((character) => character.id === requestedId) : -1;
+    if (requestedIndex >= 0) this.kidIndex = requestedIndex;
+
     this.renderer = new Renderer(canvas);
     this.renderer.bindOutlines(this.outlines);
     configureModelLoader(this.renderer.gl);
@@ -127,6 +138,7 @@ export class AnimSpike {
 
     this.director = new AnimationDirector(this.kid.mesh, {
       clips: this.deliveredClips,
+      performanceClips: this.performanceClips,
       fallback: buildProceduralClips(),
     });
     this.playCurrent();
@@ -208,9 +220,10 @@ export class AnimSpike {
       rateBtn.textContent = `${this.rate.toFixed(1)}×`;
       this.playCurrent();
     });
-    btn('👤 KID', () => {
+    const kidBtn = btn(`👤 ${ROSTER[this.kidIndex % ROSTER.length].name}`, () => {
       this.kidIndex++;
-      this.buildKid();
+      kidBtn.textContent = `👤 ${ROSTER[this.kidIndex % ROSTER.length].name}`;
+      void this.rebuildKid();
     });
 
     hud.appendChild(bar);
@@ -236,7 +249,8 @@ export class AnimSpike {
     CLIPS.forEach((c, i) => {
       const row = document.createElement('button');
       const on = i === this.clipIndex;
-      const placeholder = this.director?.isProcedural(c.name) ?? true;
+      const source = this.director?.sourceFor(c.name) ?? 'procedural';
+      const placeholder = source === 'procedural';
       row.className = 'interactive';
       row.style.cssText =
         'display:block; width:100%; text-align:left; border:0; cursor:pointer; padding:.15rem .35rem;' +
@@ -244,7 +258,8 @@ export class AnimSpike {
         `background:${on ? 'var(--cream)' : 'transparent'}; color:${on ? 'var(--ink)' : 'var(--cream)'};` +
         `opacity:${placeholder ? 0.72 : 1};`;
       const marker = c.marker ? ` ●${c.marker.frame}` : '';
-      row.textContent = `${placeholder ? '▫' : '▪'} ${c.name.padEnd(15)}${String(c.frames).padStart(3)}f${c.loop ? ' ↻' : '  '}${marker}`;
+      const sourceMark = source === 'character' ? '★' : source === 'shared' ? '▪' : '▫';
+      row.textContent = `${sourceMark} ${c.name.padEnd(15)}${String(c.frames).padStart(3)}f${c.loop ? ' ↻' : '  '}${marker}`;
       row.addEventListener('click', () => {
         this.clipIndex = i;
         this.playCurrent();
@@ -278,9 +293,9 @@ export class AnimSpike {
   // --- Loop -----------------------------------------------------------------
 
   async start(): Promise<void> {
+    await loadManifest();
     try {
       this.deliveredClips = await loadAnimationLibrary();
-      this.buildKid();
     } catch (error) {
       console.warn(
         `[AnimSpike] shared animation library unavailable; reviewing procedural fallbacks: ${
@@ -288,11 +303,33 @@ export class AnimSpike {
         }`
       );
     }
+    await this.rebuildKid();
     const tick = (now: number) => {
       this.raf = requestAnimationFrame(tick);
       this.update(now);
     };
     this.raf = requestAnimationFrame(tick);
+  }
+
+  /** Load the selected kid's optional partial take, then rebuild atomically. */
+  private async rebuildKid(): Promise<void> {
+    const version = ++this.kidLoadVersion;
+    const character = ROSTER[this.kidIndex % ROSTER.length];
+    let performanceClips: AnimationClip[] = [];
+    if (hasDeliveredPerformance(character.id)) {
+      try {
+        performanceClips = await loadCharacterAnimationLibrary(character.id);
+      } catch (error) {
+        console.warn(
+          `[AnimSpike] ${character.id} performance unavailable; reviewing shared motion: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      }
+    }
+    if (version !== this.kidLoadVersion) return;
+    this.performanceClips = performanceClips;
+    this.buildKid();
   }
 
   private update(now: number): void {
@@ -383,7 +420,7 @@ export class AnimSpike {
     // loop it settled into — which is the seam that would pop forever in game.
     const seam = playing.loop ? this.seamError() : null;
     this.statsEl.textContent =
-      `clip   ${reviewed.name}${this.director.isProcedural(reviewed.name) ? '  (procedural stand-in)' : '  (delivered)'}\n` +
+      `clip   ${reviewed.name}  (${this.director.sourceFor(reviewed.name)})\n` +
       (settled ? `now    ${playing.name}  (settled via returnsTo)\n` : '') +
       `frames ${playing.frames}  loop ${playing.loop ? 'yes' : 'no'}  blend ${playing.blendMs}ms` +
       `${playing.returnsTo ? `  settles into ${playing.returnsTo}` : ''}\n` +

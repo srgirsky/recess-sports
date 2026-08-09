@@ -2054,7 +2054,7 @@ in this order:
 1. **Characters and animation.** The thirty generated GLBs satisfy the asset
    contract and keep every kid distinct, but they are still primitive authored
    stand-ins beside BB2026's sculpted faces, clothing, hair and expression. The
-   The base clips are timing-correct procedural motion, not final character
+   base clips are timing-correct procedural motion, not final character
    acting. The first performance pass now gives all 30 kids explicit hero stance,
    emotional spirit and tempo direction, coordinates body clips with the face
    atlas, de-synchronizes blinks/fidgets, and expands the contract with four
@@ -2063,8 +2063,12 @@ in this order:
    kits before teams exist. This removes the synchronized-mannequin failure
    while leaving the dominant quality gap honest: externally sculpted models,
    animator-authored motion and human-performed voices still need a production
-   pipeline. Commission the shared animation library first, then replace the
-   roster in batches of five or six through the existing validator and A/B page.
+   pipeline. A generated 30-character production packet now directs each kid's
+   sculpt, motion, casting, read and anti-caricature boundaries, and optional
+   partial animation files let those individual takes override the shared
+   library kid by kid. Commission the shared movement language first, pilot
+   Junebug, Theo and Zoom as complete performances, then replace the roster in
+   batches of five or six through the existing validator and A/B page.
 2. **Venue art density.** Eleven parks now play differently and carry signature
    props, but their houses, foliage and ground are low-poly procedural forms.
    The reference layers hand-authored buildings, vegetation, decals, litter,
@@ -2102,9 +2106,10 @@ The five-phase plan above was executed as one production pass on 2026-08-08:
    LOD/size contract. A single delivered `anims_recess_v1.glb` now carries the
    forty-three marker-compatible clips; the runtime and animation spike load it
    first and retain the procedural clips only as a per-clip failure fallback.
-   This establishes the batchable shared-library pipeline. It does not pretend
-   the generated meshes or motion are a substitute for a future sculptor and
-   character animator.
+   Optional partial `anims_<id>_v1.glb` files now replace named clips for one kid
+   at a time, with all thirty performances directed in a generated production
+   packet. This establishes a batchable character-acting pipeline. It does not
+   pretend generated meshes or motion replace a sculptor and animator.
 2. **Venue art density:** one reusable scenery-detail kit—benches, bicycles,
    flowerbeds, mailboxes, chalkboards, crates and pennants—was proved with five
    distinct modules at Parks Dept #2, then composed deterministically across all

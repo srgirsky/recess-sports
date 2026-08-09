@@ -61,9 +61,11 @@ const assets = join(repo, 'dist', 'assets');
  *                reaction contracts. Authored keys stay in the public GLB.
  *   982 -> 983   Draft identity: race-safe personal-colour model swaps keep the
  *                undrafted cast from reading as two synchronized teams.
+ *   983 -> 1005  Bespoke performance delivery: per-kid partial clip loading,
+ *                manifest discovery and source-labelled animation review.
  */
 const V1_KB = 1909;
-const V2_KB = 983;
+const V2_KB = 1005;
 const TOLERANCE = 0.02;
 
 /**

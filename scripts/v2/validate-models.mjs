@@ -12,7 +12,8 @@
 //
 // File kind is inferred from the name, because that is what the contract names:
 //   skeleton_recess_v1.glb   the rig
-//   anims_recess_v1.glb      the animation library
+//   anims_recess_v1.glb      the shared animation library
+//   anims_<id>_v1.glb        optional partial takes for one character
 //   kid_<id>.glb             a character
 //
 // NODE >= 22.6 REQUIRED, because this imports the spec straight out of
@@ -91,7 +92,9 @@ export function validateFile(path, contract) {
     // NOT skeleton-checked: an animation file's node rest transforms are
     // whatever frame 0 baked, not the bind pose, so hashing them would reject
     // every correct delivery.
-    checkAnimations(gltf, contract, report);
+    checkAnimations(gltf, contract, report, {
+      partial: !basename(path).startsWith('anims_recess_'),
+    });
   } else {
     const id = basename(path).replace(/^kid_/, '').replace(/\.glb$/, '');
     checkSkeleton(gltf, contract, report);

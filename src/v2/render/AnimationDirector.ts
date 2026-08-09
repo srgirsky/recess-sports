@@ -14,10 +14,10 @@
 //   2. THE BLEND GRAPH. Every one-shot names the clip it settles into and the
 //      crossfade to use, so "no popping" is a property of the data rather than
 //      of every call site remembering to schedule a follow-up.
-//   3. GRACEFUL PARTIAL DELIVERY. Clips resolve from the loaded
-//      `anims_recess_v1.glb` first and fall back to the procedural stand-in
-//      per clip — so the animator's pilot batch of five is playable the day it
-//      lands, next to thirty placeholders, with no code change.
+//   3. GRACEFUL PARTIAL DELIVERY. Clips resolve character take → shared
+//      `anims_recess_v1.glb` → procedural stand-in, by name. An animator can
+//      replace one kid's hero/reaction/idle work without cloning all 43 clips
+//      or changing the rest of the cast.
 //
 // It reads sim state and never writes it: the sim owns position, facing and
 // every timing decision, and this file owns only what is drawn.
@@ -60,8 +60,10 @@ export interface PlayOptions {
 }
 
 export interface DirectorOptions {
-  /** Clips from a delivered `.glb`. Anything missing falls back to `fallback`. */
+  /** Shared clips from `anims_recess_v1.glb`. */
   clips?: AnimationClip[];
+  /** Optional kid-specific takes. These win over shared clips, name by name. */
+  performanceClips?: AnimationClip[];
   /** The procedural stand-in library. */
   fallback?: AnimationClip[];
   /** Called once per clip name that had to fall back. */
@@ -83,6 +85,7 @@ export class AnimationDirector {
 
   private readonly byName = new Map<string, AnimationClip>();
   private readonly procedural = new Set<string>();
+  private readonly sources = new Map<string, 'procedural' | 'shared' | 'character'>();
   private readonly actions = new Map<string, AnimationAction>();
   private current: AnimName | null = null;
   private pending: (() => void) | null = null;
@@ -104,11 +107,19 @@ export class AnimationDirector {
     for (const clip of opts.fallback ?? []) {
       this.byName.set(clip.name, clip);
       this.procedural.add(clip.name);
+      this.sources.set(clip.name, 'procedural');
     }
     // A delivered clip always wins over its stand-in, name by name.
     for (const clip of opts.clips ?? []) {
       this.byName.set(clip.name, clip);
       this.procedural.delete(clip.name);
+      this.sources.set(clip.name, 'shared');
+    }
+    // A bespoke character take is the final word for the names it contains.
+    for (const clip of opts.performanceClips ?? []) {
+      this.byName.set(clip.name, clip);
+      this.procedural.delete(clip.name);
+      this.sources.set(clip.name, 'character');
     }
     if (opts.onFallback) for (const name of this.procedural) opts.onFallback(name);
 
@@ -118,6 +129,11 @@ export class AnimationDirector {
   /** Which clips are still placeholder motion — the review surface shows it. */
   isProcedural(name: string): boolean {
     return this.procedural.has(name);
+  }
+
+  /** Which delivery tier supplied this name — shown on the animation review. */
+  sourceFor(name: string): 'procedural' | 'shared' | 'character' | 'missing' {
+    return this.sources.get(name) ?? 'missing';
   }
 
   get playing(): AnimName | null {

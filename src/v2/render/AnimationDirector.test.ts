@@ -107,6 +107,23 @@ describe('the procedural stand-in library', () => {
 });
 
 describe('the director', () => {
+  it('lets a character take override shared and procedural motion by name', () => {
+    const kid = proxy();
+    const shared = new AnimationClip('idle', 1, []);
+    const character = new AnimationClip('idle', 2, []);
+    const dir = new AnimationDirector(kid.mesh, {
+      fallback: clips,
+      clips: [shared],
+      performanceClips: [character],
+    });
+    dir.play('idle');
+    expect(dir.action!.getClip()).toBe(character);
+    expect(dir.sourceFor('idle')).toBe('character');
+    expect(dir.sourceFor('run')).toBe('procedural');
+    dir.dispose();
+    kid.dispose();
+  });
+
   it('plays a clip and reports it', () => {
     const kid = proxy();
     const dir = new AnimationDirector(kid.mesh, { fallback: clips });

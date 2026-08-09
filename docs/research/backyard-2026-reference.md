@@ -163,8 +163,9 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
    to the sim-owned basepath leg. A single validated static GLB now delivers all
    forty-three canonical clips to gameplay and the review page, including four
    directed win and loss takes, with procedural motion retained only as a
-   per-clip failure fallback. Character acting can replace the shared file
-   without changing its runtime contract.
+   per-clip failure fallback. Optional partial `anims_<id>_v1.glb` deliveries
+   now override named clips for one kid only; the 30-character performance
+   packet supplies the sculpt, acting and casting direction for that pass.
 3. ~~**A full draft environment.**~~ The full-width schoolyard bench now leads
    the screen: the selected already-loaded kid walks into `pose_card`, six
    remaining kids wait behind them, and the last four picks on each side stay

@@ -62,7 +62,8 @@ computed **loop-seam** error — a seam that is merely nearly closed pops once p
 stride and gets blamed on the playback rate instead.
 
 Keys: `←`/`→` or space step through clips, `1`–`3` set the rate, `R` replays.
-Clips marked `▫` are procedural stand-ins; `▪` means a delivered clip.
+Add `&kid=<id>` to review a particular kid's takes. Clips marked `▫` are
+procedural stand-ins, `▪` are shared delivery and `★` are that kid's overrides.
 
 Until the commissioned library arrives every clip is a crude stand-in generated
 in `src/v2/render/proceduralClips.ts` — correct about timing and contract,
@@ -105,24 +106,33 @@ npm run export:skeleton    # emit assets/v2/skeleton_recess_v1.glb from skeleton
 npm run export:animations  # emit the shared 43-clip runtime library
 npm run export:audio       # emit stable v2 impact/crowd audio masters
 npm run export:voices      # macOS maintainer tool: pre-render commentator + roster lines
-npm run audition:voices    # print the non-shipping signature-trio casting sheet
+npm run export:performance-brief # regenerate the 30-character production packet
+npm run audition:voices    # print the non-shipping all-cast audition sheet
+npm run validate:voice-delivery -- nostrike calls_shot wheelchair_ace
 npm run validate:models    # check every .glb in assets/v2/
 npm run validate:models path/to/anims_recess_v1.glb   # or one file
 VERBOSE=1 npm run validate:models                     # also print measurements
 ```
 
-The committed voice bank is the stable system-voice fallback. To audition
-individually directed speech for Junebug, Theo and Zoom without changing what
-ships, set `OPENAI_API_KEY` and run:
+The committed voice bank is the stable system-voice fallback. The production
+packet at `docs/v2/character-performance-brief.md` gives every kid separate
+sculpt, motion, casting, read and anti-caricature direction. To audition its
+directed speech without changing what ships, set `OPENAI_API_KEY` and start with
+the signature trio:
 
 ```bash
 npm run audition:voices -- --generate
 npm run audition:voices -- --generate nostrike
 ```
 
-Auditions land in `assets/v2/voice-auditions/`, never `public/`. Listen and
-cast them before any runtime swap; shipping AI-generated speech also requires a
-clear player-facing disclosure.
+Auditions land in `assets/v2/voice-auditions/`, never `public/`. Omitting ids
+requests all thirty and incurs usage. Listen and cast them before any runtime
+swap; shipping AI-generated speech also requires a clear player-facing
+disclosure.
+
+Human-performed masters land in `assets/v2/voice-delivery/kids/<id>.wav` as
+48 kHz/24-bit mono PCM WAV. Validate a batch with the command above, or omit ids
+to require all thirty, before acting review and runtime encoding.
 
 ### Seeing what the v2 ball does
 

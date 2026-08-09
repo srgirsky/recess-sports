@@ -55,7 +55,12 @@ import { buildFence, type FenceBuild } from '../render/Fence';
 import { buildScenery, type SceneryBuild } from '../render/Scenery';
 import { NIGHT_HORIZON, NIGHT_TOP, SKY_HORIZON, SKY_TOP, buildSky } from '../render/Sky';
 import { createCharacter, proxyForced } from '../render/CharacterFactory';
-import { configureModelLoader, loadAnimationLibrary } from '../render/modelLoader';
+import {
+  configureModelLoader,
+  loadAnimationLibrary,
+  loadCharacterAnimationLibrary,
+} from '../render/modelLoader';
+import { hasDeliveredPerformance } from '../render/assets';
 import { AnimationDirector } from '../render/AnimationDirector';
 import { buildProceduralClips } from '../render/proceduralClips';
 import { heroClipFor, performanceFor } from '../render/performance';
@@ -204,6 +209,9 @@ export class GameView {
   private readonly clipLibrary = buildProceduralClips();
   /** Delivered shared motion. The procedural library remains a per-clip fallback. */
   private deliveredClips: AnimationClip[] = [];
+  /** Optional authored takes, loaded only for ids named by the asset manifest. */
+  private readonly performanceClips = new Map<string, AnimationClip[]>();
+  private readonly performanceWarnings = new Set<string>();
   /** Last applied and currently requested kit, kept separate for async swaps. */
   private readonly dressed = new Map<string, number>();
   private readonly dressTargets = new Map<string, number>();
@@ -657,6 +665,7 @@ export class GameView {
           outlines: this.outlines,
           uniform: i < 9 ? 0 : 1,
         });
+        await this.prepareCharacterPerformance(c.id);
         const view: KidView = made.view;
         this.scene.add(view.root);
         view.root.visible = false;
@@ -683,10 +692,11 @@ export class GameView {
     return getCharacter(id);
   }
 
-  /** Bind shared motion to this kid's authored face and acting direction. */
+  /** Bind procedural → shared → character motion to authored face direction. */
   private directorFor(character: Character, view: KidView): AnimationDirector {
     return new AnimationDirector(view.mesh, {
       clips: this.deliveredClips,
+      performanceClips: this.performanceClips.get(character.id),
       fallback: this.clipLibrary,
       actor: {
         id: character.id,
@@ -695,6 +705,26 @@ export class GameView {
         setExpression: (cell) => view.setExpression(cell),
       },
     });
+  }
+
+  /**
+   * Load a character take only when the generated manifest advertises it.
+   * Failure is cosmetic: the shared library remains complete and playable.
+   */
+  private async prepareCharacterPerformance(id: string): Promise<void> {
+    if (!hasDeliveredPerformance(id) || this.performanceClips.has(id)) return;
+    try {
+      this.performanceClips.set(id, await loadCharacterAnimationLibrary(id));
+    } catch (error) {
+      if (!this.performanceWarnings.has(id)) {
+        this.performanceWarnings.add(id);
+        console.warn(
+          `[GameView] ${id} performance unavailable; using shared motion: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      }
+    }
   }
 
   /** Public name/portrait lookup for app-shell screens and sound. */

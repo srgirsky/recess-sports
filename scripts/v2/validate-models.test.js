@@ -169,6 +169,16 @@ describe('the assets this repo generates clear their own contract', () => {
     expect(failures(report).map((f) => `${f.rule}: ${f.message}`)).toEqual([]);
   });
 
+  it('accepts a partial, contract-valid character performance file', () => {
+    const path = join(tmp, 'anims_nostrike_v1.glb');
+    writeAnimGlb(path, [buildProceduralClips().find((clip) => clip.name === 'idle_fidget')]);
+    const gltf = readGlb(path);
+    const report = makeReport();
+    checkContainer(gltf, report);
+    checkAnimations(gltf, contract, report, { partial: true });
+    expect(failures(report).map((failure) => `${failure.rule}: ${failure.message}`)).toEqual([]);
+  });
+
   it('confirms every marker frame from the motion alone', () => {
     // The derivation the contract commits to, run over 35 real clips.
     const report = validate(animPath, 'animations');

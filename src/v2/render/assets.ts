@@ -64,6 +64,15 @@ export function animationUrl(): string {
   return assetUrl(MODELS + ANIMATION_FILE);
 }
 
+/** Optional character-authored clip overrides; missing names keep shared motion. */
+export function characterAnimationFile(id: string): string {
+  return `anims_${id}_v1.glb`;
+}
+
+export function characterAnimationUrl(id: string): string {
+  return assetUrl(MODELS + characterAnimationFile(id));
+}
+
 /**
  * ★ The delivery manifest: which character ids have a model in `public/v2/`.
  *
@@ -83,6 +92,7 @@ export function animationUrl(): string {
  * of turning missing cosmetics into a boot failure.
  */
 let manifest: Set<string> | null = null;
+let performances: Set<string> | null = null;
 let pending: Promise<Set<string>> | null = null;
 
 /**
@@ -93,10 +103,11 @@ let pending: Promise<Set<string>> | null = null;
 export function loadManifest(): Promise<Set<string>> {
   if (manifest) return Promise.resolve(manifest);
   pending ??= fetch(assetUrl(MODELS + 'manifest.json'))
-    .then((r) => (r.ok ? r.json() : { characters: [] }))
-    .catch(() => ({ characters: [] }))
-    .then((json: { characters?: string[] }) => {
+    .then((r) => (r.ok ? r.json() : { characters: [], performances: [] }))
+    .catch(() => ({ characters: [], performances: [] }))
+    .then((json: { characters?: string[]; performances?: string[] }) => {
       manifest = new Set(json.characters ?? []);
+      performances = new Set(json.performances ?? []);
       return manifest;
     });
   return pending;
@@ -107,13 +118,19 @@ export function hasDeliveredModel(id: string): boolean {
   return manifest?.has(id) ?? false;
 }
 
+/** Whether an optional kid-specific animation take is present in the manifest. */
+export function hasDeliveredPerformance(id: string): boolean {
+  return performances?.has(id) ?? false;
+}
+
 /** Every delivered id, sorted — the review page reports this. */
 export function deliveredIds(): string[] {
   return manifest ? [...manifest].sort() : [];
 }
 
 /** Test seam: seed the manifest without a network. */
-export function primeManifest(ids: readonly string[]): void {
+export function primeManifest(ids: readonly string[], performanceIds: readonly string[] = []): void {
   manifest = new Set(ids);
+  performances = new Set(performanceIds);
   pending = Promise.resolve(manifest);
 }

@@ -38,8 +38,21 @@ export function scanModels() {
     .sort();
 }
 
+/** Character ids with an optional `anims_<id>_v1.glb` override on disk. */
+export function scanPerformances() {
+  if (!existsSync(MODELS_DIR)) return [];
+  return readdirSync(MODELS_DIR)
+    .map(performanceIdFromFile)
+    .filter((id) => id && id !== 'recess')
+    .sort();
+}
+
+export function performanceIdFromFile(file) {
+  return /^anims_(.+)_v1\.glb$/.exec(file)?.[1];
+}
+
 export function manifestBody() {
-  return JSON.stringify({ characters: scanModels() }, null, 2) + '\n';
+  return JSON.stringify({ characters: scanModels(), performances: scanPerformances() }, null, 2) + '\n';
 }
 
 /** @returns true when the file on disk already matches the directory. */

@@ -277,7 +277,7 @@ function addRotated(p, q, v) {
  * The animation library: clip set, frame rate, root motion, loop seams, body
  * travel, and the derived marker frames.
  */
-export function checkAnimations(gltf, spec, report) {
+export function checkAnimations(gltf, spec, report, opts = {}) {
   const { CLIPS, CLIP_NAMES, BODY_TRAVEL_TOLERANCE_FT } = spec;
   const nodes = readNodes(gltf);
   const anims = readAnimations(gltf);
@@ -285,7 +285,12 @@ export function checkAnimations(gltf, spec, report) {
 
   const missing = CLIP_NAMES.filter((n) => !byName.has(n));
   const extra = anims.map((a) => a.name).filter((n) => !CLIP_NAMES.includes(n));
-  if (missing.length) report.fail('clips.missing', `${missing.length} clip(s) not delivered: ${missing.join(', ')}`);
+  if (!opts.partial && missing.length) {
+    report.fail('clips.missing', `${missing.length} clip(s) not delivered: ${missing.join(', ')}`);
+  }
+  if (opts.partial && !anims.some((anim) => CLIP_NAMES.includes(anim.name))) {
+    report.fail('clips.empty', 'character performance file contains no clip from the animation contract');
+  }
   for (const n of extra) report.warn('clips.extra', `"${n}" is not in the contract — it will never be played`);
   report.info('clips.count', `${anims.length} animation(s) in the file, ${CLIP_NAMES.length} in the contract`);
 
