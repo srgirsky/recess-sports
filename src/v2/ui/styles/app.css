@@ -763,6 +763,18 @@ body.inning-break #hud > *:not(.inning-board):not(.btn--mute) {
   font-size: 1rem;
   padding-inline: var(--s5);
 }
+.title-voice-note {
+  position: absolute;
+  right: var(--s3);
+  bottom: var(--s2);
+  max-width: min(19rem, 72vw);
+  margin: 0;
+  color: var(--cream);
+  font-size: 0.7rem;
+  line-height: 1.2;
+  opacity: 0.82;
+  text-align: right;
+}
 
 /* ---- Extra games: three big illustrated verbs, never a second front door. ---- */
 .screen--modes {

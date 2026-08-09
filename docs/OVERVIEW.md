@@ -1708,6 +1708,15 @@ can improve in place rather than waiting for a new 43-clip monolith. The
 direction-to-ship gates learned from this pilot are now captured in
 `docs/v2/character-production-playbook.md` for the rest of the roster.
 
+The follow-through pass closes the pilot's two remaining production gaps.
+Junebug's shipping mesh now uses two-bone skinning bands at the neck, elbows,
+wrists, knees and ankles plus rounded child-bound kneecaps, while the permanent
+proxy stays rigid. Her roster line is generated locally with the pinned
+Apache-licensed Kokoro model and a named stock voice, promoted through the same
+48 kHz/24-bit master contract and disclosed on the title. The production
+playbook now carries the literal A-to-Z operator sequence from roster audit
+through merge.
+
 ### 2026 parity pass — two city parks, not two palettes
 
 The BB2026 video only exposes two of its eleven fields clearly, so those are the
@@ -2085,9 +2094,9 @@ in this order:
    distinct win and loss takes. The schoolyard also restores each undrafted
    kid's authored personal colour instead of flattening the cast into two team
    kits before teams exist. This removes the synchronized-mannequin failure
-   while leaving the dominant quality gap honest: externally sculpted models,
-   animator-authored motion and human-performed voices still need a production
-   pipeline. A generated 30-character production packet now directs each kid's
+   while leaving the dominant quality gap honest: bespoke organic models and
+   animator-authored motion still need to roll through the roster. A generated
+   30-character production packet now directs each kid's
    sculpt, motion, casting, read and anti-caricature boundaries, and optional
    partial animation files let those individual takes override the shared
    library kid by kid. Commission the shared movement language first, pilot
@@ -2099,11 +2108,12 @@ in this order:
    flowers, weathering and small story props to every edge. Build one production
    modular environment kit, prove it on Parks Dept #2, then roll the kit through
    the other ten without breaking the scenery draw/triangle gate.
-3. **Audio identity.** Recess has complete cue coverage and speech synthesis;
-   BB2026 has recorded voices, music, bespoke impacts and crowd reactions. Record
-   the two commentators and a small reusable line set per kid after the character
-   batch establishes their personalities. Keep the existing cue map as the
-   executable coverage contract.
+3. **Audio identity.** Recess has complete cue coverage, a free local AI voice
+   production path and Junebug's first promoted master; BB2026 still has richer
+   commentary, music, bespoke impacts and crowd reactions. Cast the roster from
+   named stock voices after each character batch establishes its personality,
+   and produce the two commentators through the same disclosed path. Keep the
+   existing cue map as the executable coverage contract.
 4. **Diegetic shell art.** Recess's DOM screens are usable and complete, but the
    reference's treehouse stations, floating trading cards and field-select
    binocular view feel like physical places. Replace generic emoji/card art with
@@ -2143,8 +2153,9 @@ The five-phase plan above was executed as one production pass on 2026-08-08:
    and one draft line for every roster kid now ship as compressed runtime
    assets. They play through the existing cue and mute contracts, with the Web
    Audio synthesizer and browser speech kept as graceful fallbacks. The voice
-   exporter is reproducible on macOS; human-performed casting remains a later
-   creative upgrade, not a runtime dependency.
+   exporter is reproducible on macOS; the newer Kokoro path adds free local
+   stock-voice auditions, promoted lossless masters and player-facing AI
+   disclosure without making a cloud service a runtime dependency.
 4. **Diegetic shell art:** commissioned raster art now gives the title,
    Clubhouse and mode screens a treehouse setting and frames draft/collection
    choices as physical trading cards. The venue chooser reads as a wooden field

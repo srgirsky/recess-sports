@@ -720,4 +720,30 @@ describe('the proxy draws a kid, not a bobblehead', () => {
     generic.dispose();
     pilot.dispose();
   });
+
+  it('gives Junebug smooth two-bone deformation at production joints', () => {
+    const visual = ROSTER.find((character) => character.id === 'nostrike')!.visual;
+    const generic = new ProxyCharacter(visual, { fidelity: 'roster' });
+    const pilot = new ProxyCharacter(visual, { fidelity: 'roster', productionId: 'nostrike' });
+    const genericWeights = generic.mesh.geometry.attributes.skinWeight;
+    const pilotWeights = pilot.mesh.geometry.attributes.skinWeight;
+
+    let genericBlended = 0;
+    let pilotBlended = 0;
+    for (let i = 0; i < genericWeights.count; i++) {
+      if (genericWeights.getY(i) > 0) genericBlended++;
+    }
+    for (let i = 0; i < pilotWeights.count; i++) {
+      const sum = pilotWeights.getX(i) + pilotWeights.getY(i);
+      expect(sum).toBeCloseTo(1, 6);
+      if (pilotWeights.getY(i) > 0.01) pilotBlended++;
+    }
+
+    // The fallback remains the rigid CI baseline. Junebug's shipping mesh has
+    // a meaningful skinning band, not one token vertex added to satisfy a test.
+    expect(genericBlended).toBe(0);
+    expect(pilotBlended).toBeGreaterThan(100);
+    generic.dispose();
+    pilot.dispose();
+  });
 });

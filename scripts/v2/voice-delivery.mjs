@@ -1,8 +1,9 @@
 // ---------------------------------------------------------------------------
-// Technical intake for HUMAN-PERFORMED roster voice masters.
+// Technical intake for roster voice masters, human-performed or locally
+// generated from an approved stock AI voice.
 //
 // The system-voice exporter is a stable runtime fallback, not a casting path.
-// Actors deliver lossless masters to `assets/v2/voice-delivery/kids/`; this
+// Production delivers lossless masters to `assets/v2/voice-delivery/kids/`; this
 // check catches the cheap round trips (wrong kid id, stereo, compressed audio,
 // wrong sample rate/bit depth, or an implausibly short/long take) before anyone
 // reviews acting. It never writes shipping audio.

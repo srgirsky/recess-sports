@@ -17,6 +17,41 @@ or animation contracts.
 If two of these disagree, fix the owning source rather than copying the fact
 into another file.
 
+## A-to-Z operator checklist
+
+This is the literal desk checklist. The gates below define what approval means;
+this list defines the order in which a producer moves one character through
+them.
+
+| Step | Action |
+|---|---|
+| A | Audit the roster entry and character id. |
+| B | Brief sculpt, motion, voice, read and “avoid” direction. |
+| C | Create the front/side/back concept target. |
+| D | Direction-lock the concept and any roster-copy change. |
+| E | Establish the editable Blender source. |
+| F | Form the large silhouette before small detail. |
+| G | Groom hair and accessories against the field-scale read. |
+| H | Hold a face/expression review at hero scale. |
+| I | Integrate the canonical rig without changing its contract. |
+| J | Joint-test shoulders, elbows, wrists, hips, knees and ankles. |
+| K | Keep useful LODs and the four material slots. |
+| L | Look-review the delivered model and proxy A/B. |
+| M | Manifest the validated runtime model. |
+| N | Nail rest, run, stance, contact and follow-through language. |
+| O | Override only the approved character-specific clips. |
+| P | Performance-review transitions, markers, feet and 40 px read. |
+| Q | Quality-gate models, motion and ground contact. |
+| R | Rights-check the voice tool, model, stock voice and disclosure. |
+| S | Shortlist at least two non-cloned stock AI voices. |
+| T | Test local auditions against the exact roster-authored line. |
+| U | Update the selected voice and speed in the AI cast source. |
+| V | Validate the promoted lossless voice master. |
+| W | Write the runtime MP3 and player-facing AI disclosure. |
+| X | Experience the complete character in draft and gameplay. |
+| Y | Yield screenshots, audio evidence and gate results in the pull request. |
+| Z | Zero open production follow-ups, then merge to ship. |
+
 ## Production rule
 
 Finish one character through every gate before starting a batch. Junebug is the
@@ -99,12 +134,33 @@ Approval means:
 
 Review the expressions selected for the character's hero, focus, win and loss
 beats. Then review the authored draft line inside the draft flow with the model,
-motion and face together. Voice delivery may remain on the stable system-voice
-fallback until an approved master exists; never ship an audition as a master.
+motion and face together.
+
+The default production voice path is the free, local Kokoro model pinned by the
+repository. It uses named stock voices only—no voice cloning, no imitation of a
+named real person and no recording of a minor as model input. Run the complete
+voice pass as:
+
+```bash
+npm run generate:ai-voice -- --audition <id>
+# listen in assets/v2/voice-auditions/local/<id>/ and record the selection
+# in scripts/v2/ai-voice-cast.mjs
+npm run generate:ai-voice -- --ship <id>
+npm run validate:voice-delivery -- <id>
+```
+
+The first run downloads the pinned q8 model into the ignored `.cache/`
+directory. Later generation is local and needs no API key or per-line payment.
+`--ship` promotes the selected take to the clean 48 kHz/24-bit mono master and
+encodes the 24 kHz mono runtime MP3 from that master. Keep auditions outside
+`public/`; never rename an audition into a master. Record the model, generator,
+stock voice, speed, license check and review result in the pull request. Keep
+the player-facing AI-voice disclosure visible before merging.
 
 Approval means the face remains legible in motion, the line follows the
 performance brief, and none of the character's listed caricatures or stereotypes
-has entered through acting or casting.
+has entered through acting or casting. Listen both in isolation and in the
+actual draft flow; technically valid audio is not approved acting.
 
 ## Gate 6 — game integration
 
@@ -136,7 +192,8 @@ Character: <name> (<id>)
 Direction: approved — <concept link>
 Sculpt: approved — <look-review screenshot>
 Motion: approved — <animation-review screenshot or recording>
-Face/voice: approved | fallback retained — <draft-flow evidence>
+Face/voice: approved AI master | fallback retained — <draft-flow + audio evidence>
+AI voice: <model · generator · stock voice · speed · license/disclosure check>
 Integration: approved — <gameplay evidence>
 Automated gates: <commands and results>
 Known follow-up: none | <explicitly scoped item>
