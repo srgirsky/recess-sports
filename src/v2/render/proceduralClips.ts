@@ -1051,6 +1051,57 @@ function louUpsetGoofy(spec: ClipSpec): AnimationClip {
   ]);
 }
 
+// --- Tank takes -----------------------------------------------------------
+// Tank spends as little motion as possible, then commits the whole low, wide
+// frame. Slow anticipations and heavy settles carry power without aggression.
+
+const TANK_IDLE_POSE: Pose = {
+  hp: [12, 0, 0], sp: [8, 0, 0], s2: [11, 0, 0], hd: [4, 3, 0],
+  la: [12, 0, 72], lf: [0, -12, 0], ra: [12, 0, -72], rf: [0, 12, 0],
+  lu: [12, 0, 10], ll: [-18, 0, 0], ru: [12, 0, -10], rl: [-18, 0, 0],
+};
+const TANK_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
+  hp: [17, -10, 0], sp: [12, -7, 0], s2: [16, -12, 0], hd: [5, 7, 0],
+  lu: [10, 0, 4], ll: [-15, 0, 0], ru: [10, 0, -4], rl: [-15, 0, 0],
+});
+const TANK_CONTACT_END: Pose = shift(TANK_STANCE_POSE, {
+  hp: [0, 96, 0], sp: [0, 68, 0], s2: [0, 91, 0], hd: [8, -34, 0],
+  ra: [47, 0, 100], la: [39, 0, -80], rt: [0, 0, 62],
+});
+
+function tankSwingContact(spec: ClipSpec): AnimationClip {
+  const load = shift(TANK_STANCE_POSE, { hp: [0, -22, 0], s2: [0, -29, 0], ra: [-17, 0, -22], hd: [0, 12, 0] });
+  return build(spec, [
+    { f: 0, pose: load },
+    { f: 4, pose: shift(load, { hp: [0, 4, 0], s2: [0, 5, 0] }) },
+    { f: 6, pose: shift(load, { hp: [0, 38, 0], sp: [0, 27, 0], s2: [0, 35, 0], ra: [20, 0, 38], la: [15, 0, -28] }) },
+    { f: 7, pose: shift(load, { hp: [0, 61, 0], sp: [0, 43, 0], s2: [0, 57, 0], ra: [34, 0, 65], la: [25, 0, -48] }) },
+    { f: 8, pose: shift(load, { hp: [0, 83, 0], sp: [0, 59, 0], s2: [0, 79, 0], ra: [48, 0, 92], la: [35, 0, -68] }) },
+    { f: 13, pose: TANK_CONTACT_END },
+    { f: spec.frames - 1, pose: TANK_CONTACT_END },
+  ]);
+}
+
+function tankSwingFollow(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: TANK_CONTACT_END },
+    { f: 7, pose: shift(TANK_CONTACT_END, { hp: [8, 9, 0], s2: [6, 8, 0], hd: [4, -9, 0] }) },
+    { f: 14, pose: shift(TANK_STANCE_POSE, { hp: [17, 4, 0], sp: [12, 3, 0], hd: [12, -16, 0], ra: [-14, 0, -24] }), hips: [0, -0.08, 0] },
+    { f: 20, pose: shift(TANK_STANCE_POSE, { hp: [8, 0, 0], hd: [6, -6, 0] }) },
+    { f: spec.frames - 1, pose: TANK_STANCE_POSE },
+  ]);
+}
+
+function tankIdleFidget(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: TANK_IDLE_POSE },
+    { f: 18, pose: shift(TANK_IDLE_POSE, { hp: [8, 0, 0], sp: [5, 0, 0], hd: [10, -14, 0], ra: [-82, 0, -34], rf: [0, 84, 0] }) },
+    { f: 34, pose: shift(TANK_IDLE_POSE, { hp: [18, 0, 0], sp: [12, 0, 0], hd: [18, 12, 0], ra: [-50, 0, -50], rf: [0, 54, 0] }), hips: [0, -0.12, 0] },
+    { f: 55, pose: shift(TANK_IDLE_POSE, { hp: [14, 0, 0], hd: [8, -7, 0] }) },
+    { f: spec.frames - 1, pose: TANK_IDLE_POSE },
+  ]);
+}
+
 /**
  * Release is frame 4 and frame 11 respectively; same peak-speed rule as the
  * swing. `arm` is the euler the throwing arm whips through.
@@ -1607,6 +1658,25 @@ export function buildBigLouPilotClips(): AnimationClip[] {
   return Object.entries(builders).map(([name, make]) => {
     const spec = CLIPS.find((candidate) => candidate.name === name);
     if (!spec) throw new Error(`Big Lou pass names unknown contract clip "${name}"`);
+    return make(spec as ClipSpec);
+  });
+}
+
+/** Tank's complete Batch 1 pass, exported as a partial delivery. */
+export function buildTankPilotClips(): AnimationClip[] {
+  const builders: Readonly<Record<string, (spec: ClipSpec) => AnimationClip>> = {
+    idle: (spec) => breathe(spec, TANK_IDLE_POSE, 0.7),
+    idle_fidget: tankIdleFidget,
+    run: (spec) => runCycle(spec, 7, 34, 32),
+    bat_stance: (spec) => breathe(spec, TANK_STANCE_POSE, 0.75),
+    swing_contact: tankSwingContact,
+    swing_follow: tankSwingFollow,
+    cheer_fierce: (spec) => directedReaction(spec, true, 'fierce'),
+    upset_fierce: (spec) => directedReaction(spec, false, 'fierce'),
+  };
+  return Object.entries(builders).map(([name, make]) => {
+    const spec = CLIPS.find((candidate) => candidate.name === name);
+    if (!spec) throw new Error(`Tank pass names unknown contract clip "${name}"`);
     return make(spec as ClipSpec);
   });
 }

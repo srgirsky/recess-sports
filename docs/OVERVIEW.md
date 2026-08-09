@@ -1758,6 +1758,25 @@ covered by the player-facing AI-performance disclosure. With all three
 signature passes complete, production moves to Batch 1: Big Lou, Tank and Mimi
 Mash.
 
+### Tank character pass — enormous impact, economical effort
+
+Tank is the second completed Batch 1 character. His approved turnaround at
+`docs/v2/concepts/tank-turnaround.png` resolves the brief into a low, wide,
+bald silhouette with a massive tee, short planted legs and sleepy compact
+features. The production-only model broadens and rounds those forms while
+keeping organic two-bone bands at every major joint; its delivered neutral
+review is `docs/v2/concepts/tank-in-game-review.png`, and the editable
+`tank-pilot.blend` packs the target for later source work.
+
+`anims_tank_v1.glb` replaces eight clips: the five high-frequency baseball
+beats, his economical `idle_fidget`, and fierce win/loss reactions. Slow loads,
+full commitment and heavy settles communicate strength without monster,
+caveman or tough-guy acting; contact remains derived on frame 7. His exact
+draft line is generated locally with Kokoro's named `am_eric` stock voice at
+0.9×, promoted to the fingerprinted lossless master and runtime MP3, and
+covered by the player-facing AI-performance disclosure. Batch 1 now finishes
+with Mimi Mash.
+
 ### 2026 parity pass — two city parks, not two palettes
 
 The BB2026 video only exposes two of its eleven fields clearly, so those are the
@@ -2143,8 +2162,8 @@ in this order:
    partial animation files let those individual takes override the shared
    library kid by kid. Commission the shared movement language first, pilot
    Junebug, Theo and Zoom as complete performances, then replace the roster in
-   reviewed batches through the existing validator and A/B page. Big Lou now
-   proves that first batch handoff; Tank and Mimi Mash are next.
+   reviewed batches through the existing validator and A/B page. Big Lou and
+   Tank now prove that first batch handoff; Mimi Mash is next.
 2. **Venue art density.** Eleven parks now play differently and carry signature
    props, but their houses, foliage and ground are low-poly procedural forms.
    The reference layers hand-authored buildings, vegetation, decals, litter,
@@ -2152,7 +2171,7 @@ in this order:
    modular environment kit, prove it on Parks Dept #2, then roll the kit through
    the other ten without breaking the scenery draw/triangle gate.
 3. **Audio identity.** Recess has complete cue coverage, a free local AI voice
-   production path and promoted masters for Junebug, Theo, Zoom and Big Lou;
+   production path and promoted masters for Junebug, Theo, Zoom, Big Lou and Tank;
    BB2026 still has richer commentary, music, bespoke impacts and crowd
    reactions. Cast the roster from
    named stock voices after each character batch establishes its personality,

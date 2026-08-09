@@ -304,6 +304,14 @@ is delighted by his own power rather than tough-guy swagger. Regenerate it
 with `npm run export:signature-performance -- big_lou` and review its nine `★`
 rows at `/v2/?anims=1&kid=big_lou`.
 
+Tank is the second Batch 1 pass. `anims_tank_v1.glb` contains the five
+high-frequency baseball clips plus `idle_fidget`, `cheer_fierce` and
+`upset_fierce`; `bat_stance` is both a high-frequency clip and one of his four
+priority takes. His movement spends almost nothing until it matters: slow
+anticipation, a full-frame release, and a heavy settle that is calm rather than
+menacing. Regenerate it with `npm run export:signature-performance -- tank`
+and review its eight `★` rows at `/v2/?anims=1&kid=tank`.
+
 ## Suggested order of delivery
 
 `idle` → `run` → `bat_stance` → `swing_contact` → `swing_follow` first, as a
@@ -311,8 +319,8 @@ rows at `/v2/?anims=1&kid=big_lou`.
 player actually watches, and agreeing the movement language on them costs far
 less than re-timing forty-three clips.
 
-All three signature priority sets and Big Lou are complete. Continue Batch 1
-with Tank and Mimi Mash from the character-performance packet, keeping separate
+All three signature priority sets, Big Lou and Tank are complete. Finish Batch 1
+with Mimi Mash from the character-performance packet, keeping separate
 partial files and review evidence per kid. Review with `/v2/?anims=1&kid=<id>`:
 `★` is the character take, `▪` is shared and `▫` is procedural fallback. Sign
 off each model, motion and draft read together before starting the next batch.

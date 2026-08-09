@@ -872,8 +872,9 @@ export class ProxyCharacter {
     const shoe = 0x33404f;
 
     const parts: Part[] = [];
-    const organic = rosterFidelity && ['nostrike', 'calls_shot', 'wheelchair_ace', 'big_lou'].includes(opts.productionId ?? '');
+    const organic = rosterFidelity && ['nostrike', 'calls_shot', 'wheelchair_ace', 'big_lou', 'tank'].includes(opts.productionId ?? '');
     const bigLou = opts.productionId === 'big_lou';
+    const tank = opts.productionId === 'tank';
     const blendTo = (bone: string, atPoint: Vector3, radius: number): Part['jointBlend'] =>
       organic ? { bone, at: atPoint, radius, strength: 0.88 } : undefined;
 
@@ -891,7 +892,7 @@ export class ProxyCharacter {
     parts.push({
       geom: opts.productionId === 'calls_shot'
         ? wedgeHead(headC, headR, headW, headH)
-        : ball(headC, headR, new Vector3(headW * (bigLou ? 1.04 : 1), headH * (bigLou ? 0.96 : 1), headW * 0.95)),
+        : ball(headC, headR, new Vector3(headW * (bigLou ? 1.04 : tank ? 1.03 : 1), headH * (bigLou ? 0.96 : tank ? 1.02 : 1), headW * 0.95)),
       bone: 'Head',
       color: skinC,
       slot: 'M_Body',
@@ -944,13 +945,13 @@ export class ProxyCharacter {
     const chest = at('Spine2');
     const torsoTop = at('LeftShoulder').y + 0.06;
     const torsoBot = hips.y - 0.05;
-    const torsoW = 0.59 * shoulder * (bigLou ? 0.94 : 1);
+    const torsoW = 0.59 * shoulder * (bigLou ? 0.94 : tank ? 1.08 : 1);
     parts.push({
       geom: blob(
         new Vector3(0, (torsoTop + torsoBot) / 2, 0),
-        torsoW * (bigLou ? 1.02 : 1),
-        (torsoTop - torsoBot) / 2 * (bigLou ? 0.96 : 1),
-        torsoW * (bigLou ? 0.79 : 0.72)
+        torsoW * (bigLou ? 1.02 : tank ? 1.06 : 1),
+        (torsoTop - torsoBot) / 2 * (bigLou ? 0.96 : tank ? 0.95 : 1),
+        torsoW * (bigLou ? 0.79 : tank ? 0.82 : 0.72)
       ),
       bone: 'Spine1',
       color: jersey,
@@ -1000,9 +1001,9 @@ export class ProxyCharacter {
     if (belly > 0.05) {
       parts.push({
         geom: ball(
-          new Vector3(0, hips.y + (bigLou ? 0.27 : 0.188), bigLou ? 0.105 : 0.047),
-          0.353 * (1 + belly * (bigLou ? 0.72 : 0.5)),
-          new Vector3(bigLou ? 1.13 : 1, bigLou ? 0.88 : 0.78, bigLou ? 1.02 : 0.9)
+          new Vector3(0, hips.y + (bigLou ? 0.27 : tank ? 0.23 : 0.188), bigLou ? 0.105 : tank ? 0.08 : 0.047),
+          0.353 * (1 + belly * (bigLou ? 0.72 : tank ? 0.58 : 0.5)),
+          new Vector3(bigLou ? 1.13 : tank ? 1.1 : 1, bigLou ? 0.88 : tank ? 0.84 : 0.78, bigLou ? 1.02 : tank ? 0.98 : 0.9)
         ),
         bone: 'Spine',
         color: jersey,
@@ -1019,20 +1020,20 @@ export class ProxyCharacter {
     // ---- Arms ----
     for (const side of ['Left', 'Right'] as const) {
       parts.push({
-        geom: limb(at(`${side}Arm`), at(`${side}ForeArm`), bigLou ? 0.153 : 0.129),
+        geom: limb(at(`${side}Arm`), at(`${side}ForeArm`), bigLou ? 0.153 : tank ? 0.16 : 0.129),
         bone: `${side}Arm`,
         color: jersey,
         slot: 'M_Uniform',
         jointBlend: blendTo(`${side}ForeArm`, at(`${side}ForeArm`), 0.36),
       });
       parts.push({
-        geom: limb(at(`${side}ForeArm`), at(`${side}Hand`), bigLou ? 0.136 : 0.112),
+        geom: limb(at(`${side}ForeArm`), at(`${side}Hand`), bigLou ? 0.136 : tank ? 0.14 : 0.112),
         bone: `${side}ForeArm`,
         color: skinC,
         slot: 'M_Body',
         jointBlend: blendTo(`${side}Hand`, at(`${side}Hand`), 0.3),
       });
-      parts.push({ geom: ball(at(`${side}Hand`), bigLou ? 0.164 : 0.147, new Vector3(1, 0.9, 0.85)), bone: `${side}Hand`, color: skinC, slot: 'M_Body' });
+      parts.push({ geom: ball(at(`${side}Hand`), bigLou || tank ? 0.164 : 0.147, new Vector3(1, 0.9, 0.85)), bone: `${side}Hand`, color: skinC, slot: 'M_Body' });
       if (rosterFidelity) {
         // Moulded sleeve and wrist seams stop the limbs reading as two tubes
         // pushed together in the close draft camera.
@@ -1070,14 +1071,14 @@ export class ProxyCharacter {
     } else {
       for (const side of ['Left', 'Right'] as const) {
         parts.push({
-          geom: limb(at(`${side}UpLeg`), at(`${side}Leg`), (bigLou ? 0.205 : 0.171) * hip),
+          geom: limb(at(`${side}UpLeg`), at(`${side}Leg`), (bigLou ? 0.205 : tank ? 0.22 : 0.171) * hip),
           bone: `${side}UpLeg`,
           color: pants,
           slot: 'M_Uniform',
           jointBlend: blendTo(`${side}Leg`, at(`${side}Leg`), 0.44),
         });
         parts.push({
-          geom: limb(at(`${side}Leg`), at(`${side}Foot`), bigLou ? 0.17 : 0.135),
+          geom: limb(at(`${side}Leg`), at(`${side}Foot`), bigLou ? 0.17 : tank ? 0.18 : 0.135),
           bone: `${side}Leg`,
           color: pants,
           slot: 'M_Uniform',
@@ -1088,7 +1089,7 @@ export class ProxyCharacter {
           // upper surface carries the bend into it. This is the production
           // difference between a hinge made of tubes and one rounded form.
           parts.push({
-            geom: ball(at(`${side}Leg`), (bigLou ? 0.205 : 0.176) * hip, new Vector3(1.02, 0.9, 1.02), 12, 8),
+            geom: ball(at(`${side}Leg`), (bigLou ? 0.205 : tank ? 0.22 : 0.176) * hip, new Vector3(1.02, 0.9, 1.02), 12, 8),
             bone: `${side}Leg`,
             color: pants,
             slot: 'M_Uniform',
@@ -1098,9 +1099,9 @@ export class ProxyCharacter {
         parts.push({
           geom: box(
             foot.clone().add(new Vector3(0, -0.059, 0.106)),
-            bigLou ? 0.325 : 0.282,
-            bigLou ? 0.168 : 0.153,
-            bigLou ? 0.525 : 0.494
+            bigLou ? 0.325 : tank ? 0.34 : 0.282,
+            bigLou ? 0.168 : tank ? 0.18 : 0.153,
+            bigLou ? 0.525 : tank ? 0.54 : 0.494
           ),
           bone: `${side}Foot`,
           color: shoe,

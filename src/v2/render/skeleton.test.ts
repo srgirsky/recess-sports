@@ -813,4 +813,21 @@ describe('the proxy draws a kid, not a bobblehead', () => {
     generic.dispose();
     lou.dispose();
   });
+
+  it('gives Tank a production-only low, wide silhouette and organic joints', () => {
+    const visual = ROSTER.find((character) => character.id === 'tank')!.visual;
+    const generic = new ProxyCharacter(visual, { fidelity: 'roster' });
+    const tank = new ProxyCharacter(visual, { fidelity: 'roster', productionId: 'tank' });
+    const weights = tank.mesh.geometry.attributes.skinWeight;
+    let blended = 0;
+    for (let i = 0; i < weights.count; i++) {
+      expect(weights.getX(i) + weights.getY(i)).toBeCloseTo(1, 6);
+      if (weights.getY(i) > 0.01) blended++;
+    }
+    expect(tank.mesh.geometry.attributes.position.count - generic.mesh.geometry.attributes.position.count)
+      .toBeGreaterThan(80);
+    expect(blended).toBeGreaterThan(100);
+    generic.dispose();
+    tank.dispose();
+  });
 });

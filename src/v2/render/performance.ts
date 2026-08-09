@@ -27,6 +27,7 @@ export interface PerformanceProfile {
   hero: HeroStance;
   spirit: Spirit;
   tempo: Tempo;
+  restFace?: FaceCell;
 }
 
 /**
@@ -61,7 +62,12 @@ const ROSTER_PERFORMANCES: readonly PerformanceProfile[] = DIRECTION_CODES.map((
 
 const DEFAULT_PROFILE: PerformanceProfile = { hero: 'swagger', spirit: 'sunny', tempo: 'steady' };
 
-const BY_ID = new Map(ROSTER.map((character, i) => [character.id, ROSTER_PERFORMANCES[i]] as const));
+const BY_ID = new Map(ROSTER.map((character, i) => [
+  character.id,
+  character.id === 'tank'
+    ? { ...ROSTER_PERFORMANCES[i], restFace: 'sleepy' as const }
+    : ROSTER_PERFORMANCES[i],
+] as const));
 
 export function performanceFor(id: string): PerformanceProfile {
   return BY_ID.get(id) ?? DEFAULT_PROFILE;
@@ -93,7 +99,7 @@ export function faceForClip(
   clip: AnimName,
   authoredRest: Expression | undefined
 ): FaceCell {
-  const rest = restingCell(authoredRest);
+  const rest = profile.restFace ?? restingCell(authoredRest);
 
   if (clip.startsWith('cheer')) {
     return { sunny: 'cheer', cool: 'wink', fierce: 'determined', goofy: 'tongue', tender: 'surprised' }[profile.spirit] as FaceCell;
