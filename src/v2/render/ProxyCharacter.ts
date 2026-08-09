@@ -287,6 +287,20 @@ function ball(at: Vector3, r: number, scale = new Vector3(1, 1, 1), segments = 1
   return g;
 }
 
+/** Theo's production head: a broad cap line tapering into a smaller jaw. */
+function wedgeHead(at: Vector3, r: number, headW: number, headH: number): BufferGeometry {
+  const g = ball(at, r, new Vector3(headW, headH, headW * 0.95), 18, 12);
+  const pos = g.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const y = clamp((pos.getY(i) - (at.y - r * headH)) / (2 * r * headH), 0, 1);
+    const taper = 0.86 + y * 0.17;
+    pos.setX(i, at.x + (pos.getX(i) - at.x) * taper);
+  }
+  pos.needsUpdate = true;
+  g.computeVertexNormals();
+  return g;
+}
+
 /**
  * ★ An ellipsoid stated in HALF-EXTENTS (feet) rather than radius × factor.
  *
@@ -562,7 +576,32 @@ function outfitSculpt(
     }
     case 'jacket': {
       waist();
-      collar();
+      if (productionId === 'calls_shot') {
+        // Theo's jacket stays visibly OPEN: a pale shirt panel separates two
+        // outward lapels, with striped cuffs/hem carrying the varsity read.
+        push(
+          box(new Vector3(0, (torsoTop + torsoBot) / 2, front + 0.012), torsoW * 0.58, torsoTop - torsoBot - 0.08, 0.055),
+          'Spine1',
+          0xf5efe2,
+          'M_Accessory'
+        );
+        for (const sgn of [-1, 1]) {
+          push(
+            slantedBox(
+              new Vector3(sgn * torsoW * 0.29, torsoTop - 0.31, front + 0.045),
+              torsoW * 0.22,
+              0.58,
+              0.07,
+              -sgn * 0.18
+            ),
+            'Spine2',
+            0xf1e5c6,
+            'M_Accessory'
+          );
+        }
+      } else {
+        collar();
+      }
       for (const x of [-torsoW * 0.36, torsoW * 0.36]) {
         push(
           slantedBox(
@@ -576,11 +615,13 @@ function outfitSculpt(
           dark
         );
       }
-      push(
-        box(new Vector3(0, (torsoTop + torsoBot) / 2, front + 0.018), 0.025, torsoTop - torsoBot - 0.18, 0.05),
-        'Spine1',
-        0xf5e9b8
-      );
+      if (productionId !== 'calls_shot') {
+        push(
+          box(new Vector3(0, (torsoTop + torsoBot) / 2, front + 0.018), 0.025, torsoTop - torsoBot - 0.18, 0.05),
+          'Spine1',
+          0xf5e9b8
+        );
+      }
       break;
     }
     case 'tee':
@@ -818,7 +859,7 @@ export class ProxyCharacter {
     const shoe = 0x33404f;
 
     const parts: Part[] = [];
-    const organic = rosterFidelity && opts.productionId === 'nostrike';
+    const organic = rosterFidelity && ['nostrike', 'calls_shot', 'wheelchair_ace'].includes(opts.productionId ?? '');
     const blendTo = (bone: string, atPoint: Vector3, radius: number): Part['jointBlend'] =>
       organic ? { bone, at: atPoint, radius, strength: 0.88 } : undefined;
 
@@ -834,14 +875,16 @@ export class ProxyCharacter {
     const headR = (crownHeightFt() - head.y) / (HEAD_RISE + headH);
     const headC = head.clone().add(new Vector3(0, headR * HEAD_RISE, 0));
     parts.push({
-      geom: ball(headC, headR, new Vector3(headW, headH, headW * 0.95)),
+      geom: opts.productionId === 'calls_shot'
+        ? wedgeHead(headC, headR, headW, headH)
+        : ball(headC, headR, new Vector3(headW, headH, headW * 0.95)),
       bone: 'Head',
       color: skinC,
       slot: 'M_Body',
       faceUv: rosterFidelity,
     });
     parts.push(...hairParts(visual, headC, headR, headW, headH, hairC, rosterFidelity ? opts.productionId : undefined));
-    parts.push(...accessoryParts(visual.accessory, headC, headR, headW, headH, jersey));
+    parts.push(...accessoryParts(visual.accessory, headC, headR, headW, headH, jersey, rosterFidelity ? opts.productionId : undefined));
     // Delivered roster models paint the full expression into their atlas.
     // The permanent proxy still carries its cheap geometry facing cue.
     if (!rosterFidelity) {
@@ -1425,28 +1468,45 @@ function accessoryParts(
   r: number,
   headW: number,
   headH: number,
-  teamColor: number
+  teamColor: number,
+  productionId?: string
 ): Part[] {
   const { crown } = headAnchors(c, r);
   switch (acc) {
     case 'cap': {
+      const theo = productionId === 'calls_shot';
+      const capColor = theo ? 0x175a70 : teamColor;
       const dome = ball(
-        crown.clone().add(new Vector3(0, r * 0.14, -r * 0.18)),
-        r * 1.08,
-        new Vector3(headW, headH * 0.6, headW * 0.82)
+        crown.clone().add(new Vector3(theo ? -r * 0.18 : 0, r * 0.14, theo ? r * 0.12 : -r * 0.18)),
+        r * (theo ? 1.14 : 1.08),
+        new Vector3(headW * (theo ? 1.25 : 1), headH * 0.6, headW * 0.82)
       );
       // High, short bill: it shades the forehead without becoming a visor
       // across both eyes when `idle` nods the head toward the camera.
-      const brim = box(
-        crown.clone().add(new Vector3(0, r * 0.18, r * 0.45)),
-        r * 1.12,
-        0.058,
-        r * 0.5
-      );
-      return [
-        { geom: dome, bone: 'Head', color: teamColor, slot: 'M_Accessory' as const },
-        { geom: brim, bone: 'Head', color: teamColor, slot: 'M_Accessory' as const },
+      const brim = new BoxGeometry(r * (theo ? 1.9 : 1.12), 0.058, r * (theo ? 0.78 : 0.5));
+      if (theo) brim.rotateY(-0.18);
+      brim.translate(theo ? -r * 0.65 : 0, crown.y + r * 0.18, crown.z + r * (theo ? 0.65 : 0.45));
+      const pieces: Part[] = [
+        { geom: dome, bone: 'Head', color: capColor, slot: 'M_Accessory' as const },
+        { geom: brim, bone: 'Head', color: capColor, slot: 'M_Accessory' as const },
       ];
+      if (theo) {
+        // The cream crown panel is the field-scale proof that this is a cap,
+        // even when the dark team colour and Theo's hair share a value range.
+        pieces.push({
+          geom: ball(
+            crown.clone().add(new Vector3(-r * 0.42, r * 0.4, r * 0.66)),
+            r * 0.48,
+            new Vector3(0.62, 0.72, 0.18),
+            10,
+            7
+          ),
+          bone: 'Head',
+          color: 0xf5efe2,
+          slot: 'M_Accessory',
+        });
+      }
+      return pieces;
     }
     case 'headband':
       return [

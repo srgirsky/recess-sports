@@ -649,6 +649,128 @@ function junebugUpsetFierce(spec: ClipSpec): AnimationClip {
   ]);
 }
 
+// --- Big Talk Theo takes ---------------------------------------------------
+//
+// Theo leads with his chest and lets each idea run one beat too long. His
+// partial delivery carries the five high-frequency baseball clips plus the
+// complete priority set from the performance packet.
+
+const THEO_IDLE_POSE: Pose = {
+  hp: [-5, -8, 0], sp: [-6, -8, 0], s2: [-8, -10, 0], nk: [2, 5, 0], hd: [-3, 13, 2],
+  la: [-8, 0, 65], lf: [0, -24, 0], ra: [-8, 0, -65], rf: [0, 24, 0],
+  lu: [-3, 0, 9], ru: [3, 0, -9],
+};
+
+const THEO_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
+  hp: [-3, -7, 0], sp: [-4, -8, 0], s2: [-5, -11, 0], hd: [-2, 12, 3],
+  la: [-8, 0, 8], lf: [0, -8, 0], ra: [-8, 0, -8], rf: [0, 10, 0],
+  lu: [2, 0, 2], ru: [-2, 0, -2],
+});
+
+const THEO_CONTACT_END: Pose = shift(THEO_STANCE_POSE, {
+  hp: [0, 83, 0], sp: [0, 58, 0], s2: [0, 78, 0], hd: [-3, -21, -2],
+  ra: [41, 0, 90], rf: [0, -30, 0], la: [33, 0, -71], lf: [0, 27, 0],
+  lu: [-9, 0, 0], ru: [9, 0, 0], rt: [0, 0, 55],
+});
+
+function theoIdle(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: THEO_IDLE_POSE },
+    { f: 15, pose: shift(THEO_IDLE_POSE, { sp: [2, 0, 0], s2: [3, 0, 0], hd: [-1, -5, 0] }), hips: [0, 0.015, 0] },
+    { f: 28, pose: shift(THEO_IDLE_POSE, { hd: [0, -17, -2], ra: [-12, 0, 18], rf: [0, -22, 0] }) },
+    { f: 38, pose: shift(THEO_IDLE_POSE, { hd: [0, 14, 2], la: [-8, 0, -10], lf: [0, 15, 0] }) },
+    { f: 49, pose: shift(THEO_IDLE_POSE, { sp: [1, 0, 0], s2: [2, 0, 0] }), hips: [0, 0.01, 0] },
+    { f: spec.frames, pose: THEO_IDLE_POSE },
+  ]);
+}
+
+function theoBatStance(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: THEO_STANCE_POSE },
+    { f: 12, pose: shift(THEO_STANCE_POSE, { s2: [0, -5, 0], ra: [-5, 0, -8], hd: [0, 5, 0] }), hips: [0, -0.02, 0] },
+    { f: 25, pose: shift(THEO_STANCE_POSE, { s2: [0, 7, 0], ra: [5, 0, 10], hd: [0, -12, 0] }), hips: [0, 0.018, 0] },
+    { f: 38, pose: shift(THEO_STANCE_POSE, { s2: [0, -7, 0], ra: [-6, 0, -11], hd: [0, 11, 0] }), hips: [0, -0.022, 0] },
+    { f: 50, pose: shift(THEO_STANCE_POSE, { s2: [0, 3, 0], ra: [2, 0, 5], hd: [0, -4, 0] }) },
+    { f: spec.frames, pose: THEO_STANCE_POSE },
+  ]);
+}
+
+function theoSwingContact(spec: ClipSpec): AnimationClip {
+  const loaded = shift(THEO_STANCE_POSE, { hp: [0, -12, 0], s2: [0, -20, 0], ra: [-11, 0, -15], la: [-6, 0, 7], hd: [0, 7, 0] });
+  return build(spec, [
+    { f: 0, pose: loaded },
+    { f: 3, pose: shift(loaded, { hp: [0, 4, 0], s2: [0, 4, 0] }) },
+    { f: 5, pose: shift(loaded, { hp: [0, 14, 0], sp: [0, 8, 0], s2: [0, 12, 0], ra: [5, 0, 10], la: [3, 0, -6] }) },
+    { f: 6, pose: shift(loaded, { hp: [0, 34, 0], sp: [0, 23, 0], s2: [0, 30, 0], ra: [17, 0, 31], la: [12, 0, -22], rt: [0, 0, 25] }) },
+    { f: 7, pose: shift(loaded, { hp: [0, 52, 0], sp: [0, 36, 0], s2: [0, 48, 0], ra: [28, 0, 54], la: [20, 0, -40], rt: [0, 0, 40] }) },
+    { f: 8, pose: shift(loaded, { hp: [0, 70, 0], sp: [0, 49, 0], s2: [0, 65, 0], ra: [39, 0, 76], la: [28, 0, -58], rt: [0, 0, 54] }) },
+    { f: 12, pose: shift(THEO_CONTACT_END, { hp: [0, -5, 0], s2: [0, -6, 0] }) },
+    { f: spec.frames - 1, pose: THEO_CONTACT_END },
+  ]);
+}
+
+function theoSwingFollow(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: THEO_CONTACT_END },
+    { f: 6, pose: shift(THEO_CONTACT_END, { hp: [0, 9, 0], s2: [0, 7, 0], hd: [-3, -8, 0] }) },
+    { f: 12, pose: shift(THEO_STANCE_POSE, { hp: [-8, 10, 0], sp: [-6, 8, 0], s2: [-8, 12, 0], hd: [-5, -22, 4], ra: [-22, 0, -35], la: [-14, 0, 25] }) },
+    // He admires the imaginary homer before remembering the next pitch.
+    { f: 18, pose: shift(THEO_STANCE_POSE, { hp: [-5, -4, 0], hd: [-2, -15, 2], ra: [-8, 0, -12] }) },
+    { f: spec.frames - 1, pose: THEO_STANCE_POSE },
+  ]);
+}
+
+function theoIdleFidget(spec: ClipSpec): AnimationClip {
+  const call = shift(THEO_IDLE_POSE, {
+    hp: [-5, -7, 0], sp: [-5, -8, 0], s2: [-7, -12, 0], hd: [-4, -15, 4],
+    ra: [-82, 0, -22], rf: [0, 112, 0], la: [-24, 0, 32], lf: [0, -48, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: THEO_IDLE_POSE },
+    { f: 12, pose: shift(call, { ra: [18, 0, -12], rf: [0, -18, 0] }) },
+    { f: 23, pose: call },
+    { f: 34, pose: shift(call, { hd: [0, 30, -3], ra: [-8, 0, 8], rf: [0, 10, 0] }) },
+    { f: 46, pose: shift(THEO_IDLE_POSE, { hp: [-8, 0, 0], sp: [-8, 0, 0], s2: [-9, 0, 0], hd: [-5, 10, 2] }) },
+    { f: 61, pose: shift(THEO_IDLE_POSE, { hd: [0, -12, 0], la: [-16, 0, 18], lf: [0, -25, 0] }) },
+    { f: 75, pose: THEO_IDLE_POSE },
+    { f: spec.frames - 1, pose: THEO_IDLE_POSE },
+  ]);
+}
+
+function theoPoseCard(spec: ClipSpec): AnimationClip {
+  const hero = shift(THEO_IDLE_POSE, {
+    hp: [-3, -9, 0], sp: [-4, -10, 0], s2: [-6, -13, 0], hd: [-3, 17, 4],
+    la: [-42, 0, 45], lf: [0, -72, 0], ra: [-118, 0, -24], rf: [0, 88, 0],
+    ru: [-5, 0, -5], rl: [-12, 0, 0],
+  });
+  return build(spec, [{ f: 0, pose: hero }, { f: 1, pose: hero }]);
+}
+
+function theoCheerGoofy(spec: ClipSpec): AnimationClip {
+  const point = shift(THEO_IDLE_POSE, { hp: [-10, -4, 0], s2: [-12, -8, 0], hd: [-8, -22, 6], la: [-86, 0, 22], lf: [0, -106, 0], ra: [-26, 0, -50], rf: [0, 70, 0] });
+  const wobble = shift(THEO_IDLE_POSE, { hp: [28, 0, 15], sp: [18, 0, 10], hd: [15, 22, -10], la: [-20, 0, 76], ra: [-70, 0, -34], lu: [26, 0, 8], ll: [-42, 0, 0], ru: [-18, 0, -8], rl: [30, 0, 0] });
+  return build(spec, [
+    { f: 0, pose: THEO_IDLE_POSE },
+    { f: 7, pose: point, hips: [0, 0.08, 0] },
+    { f: 13, pose: shift(point, { la: [-34, 0, -10], hd: [-2, 10, 0] }), hips: [0, 0.48, 0] },
+    { f: 18, pose: wobble, hips: [0.12, 0.04, 0] },
+    { f: 24, pose: shift(THEO_IDLE_POSE, { hp: [-8, 0, 0], hd: [-5, -15, 3] }) },
+    { f: spec.frames - 1, pose: THEO_IDLE_POSE },
+  ]);
+}
+
+function theoUpsetGoofy(spec: ClipSpec): AnimationClip {
+  const disbelief = shift(THEO_IDLE_POSE, { hp: [10, 0, 0], sp: [12, 0, 0], s2: [10, 0, 0], hd: [22, -18, 10], la: [-15, 0, 82], lf: [0, -68, 0], ra: [-15, 0, -82], rf: [0, 68, 0] });
+  return build(spec, [
+    { f: 0, pose: THEO_IDLE_POSE },
+    { f: 7, pose: disbelief, hips: [0, 0.08, 0] },
+    { f: 15, pose: shift(disbelief, { hd: [-8, 34, -18], hp: [8, 0, -12] }), hips: [-0.08, 0.03, 0] },
+    { f: 24, pose: shift(THEO_IDLE_POSE, { hp: [18, 0, 0], sp: [12, 0, 0], hd: [25, 0, 0], la: [12, 0, 72], ra: [12, 0, -72] }) },
+    { f: 34, pose: shift(THEO_IDLE_POSE, { hd: [4, -9, 2] }) },
+    { f: spec.frames - 1, pose: THEO_IDLE_POSE },
+  ]);
+}
+
 /**
  * Release is frame 4 and frame 11 respectively; same peak-speed rule as the
  * swing. `arm` is the euler the throwing arm whips through.
@@ -1145,6 +1267,26 @@ export function buildJunebugPilotClips(): AnimationClip[] {
   return Object.entries(builders).map(([name, make]) => {
     const spec = CLIPS.find((candidate) => candidate.name === name);
     if (!spec) throw new Error(`Junebug pilot names unknown contract clip "${name}"`);
+    return make(spec as ClipSpec);
+  });
+}
+
+/** Theo's signed-off character pass, exported as a partial delivery. */
+export function buildTheoPilotClips(): AnimationClip[] {
+  const builders: Readonly<Record<string, (spec: ClipSpec) => AnimationClip>> = {
+    idle: theoIdle,
+    idle_fidget: theoIdleFidget,
+    run: (spec) => runCycle(spec, 16, 50, 48),
+    bat_stance: theoBatStance,
+    swing_contact: theoSwingContact,
+    swing_follow: theoSwingFollow,
+    pose_card: theoPoseCard,
+    cheer_goofy: theoCheerGoofy,
+    upset_goofy: theoUpsetGoofy,
+  };
+  return Object.entries(builders).map(([name, make]) => {
+    const spec = CLIPS.find((candidate) => candidate.name === name);
+    if (!spec) throw new Error(`Theo pilot names unknown contract clip "${name}"`);
     return make(spec as ClipSpec);
   });
 }

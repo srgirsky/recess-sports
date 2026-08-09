@@ -32,6 +32,7 @@
     "zippy"
   ],
   "performances": [
+    "calls_shot",
     "nostrike"
   ]
 }

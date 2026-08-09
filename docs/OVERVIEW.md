@@ -1717,6 +1717,26 @@ Apache-licensed Kokoro model and a named stock voice, promoted through the same
 playbook now carries the literal A-to-Z operator sequence from roster audit
 through merge.
 
+### Big Talk Theo character pass — swagger without the salesman
+
+Theo is the second complete signature-character proof. His approved turnaround
+at `docs/v2/concepts/theo-turnaround.png` resolves the performance packet into a
+broad tapered face, deliberately oversized cap and constructed open varsity
+jacket. Those changes exist only in `kid_calls_shot.glb`; the permanent fallback
+stays generic. The production mesh also uses the same two-bone joint bands that
+made Junebug's close-up bends read as connected forms. The delivered geometry
+review is recorded at `docs/v2/concepts/theo-in-game-review.png`.
+
+`anims_calls_shot_v1.glb` replaces nine clips: the five high-frequency baseball
+beats, his wandering `idle_fidget`, the held `pose_card`, and goofy win/loss
+reactions that overcommit and catch their balance late. Contact remains derived
+on frame 7, all loops close, and every take passes the shared ground solver. His
+draft line is generated locally with Kokoro's named `am_puck` stock voice at
+1.06×, promoted through the lossless master contract and covered by the same
+AI-performance disclosure. The editable `theo-pilot.blend` packs the approved
+turnaround for future sculpt iteration while the deterministic Node exporter
+remains the contract-safe shipping path.
+
 ### 2026 parity pass — two city parks, not two palettes
 
 The BB2026 video only exposes two of its eleven fields clearly, so those are the

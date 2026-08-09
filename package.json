@@ -14,6 +14,7 @@
     "export:skeleton": "node --disable-warning=ExperimentalWarning scripts/v2/export-skeleton.mjs",
     "export:animations": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/export-animation-library.mjs",
     "export:pilot-performance": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/export-pilot-performance.mjs",
+    "export:signature-performance": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/export-signature-performance.mjs",
     "export:audio": "node scripts/v2/export-audio.mjs",
     "export:voices": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/export-voices.mjs",
     "export:performance-brief": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/character-directions.mjs",

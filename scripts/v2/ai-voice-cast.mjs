@@ -43,6 +43,14 @@ export const AI_VOICE_CAST = {
     runtimeSha256: '052202a9e93183617912232277933397e490cb7cddb33847d6920b2b6eb0f9e6',
     direction: 'Grounded and precise; dry confidence first, smallest smile on the final word.',
   },
+  calls_shot: {
+    candidates: ['am_puck', 'am_fenrir', 'am_michael'],
+    voice: 'am_puck',
+    speed: 1.06,
+    masterSha256: 'fc53b54a44020c41efb5f34b8f0b15fa8b73c82bbd3fb648ffddf4361fbbed8e',
+    runtimeSha256: 'f1eec07cc30b93d89470972b4fb1397491f3a1d48a044c4500d09c8c345c4503',
+    direction: 'Bright and elastic; delighted self-belief, with the final boast landing as a grin rather than a yell.',
+  },
 };
 
 export function aiVoiceCard(id) {
@@ -160,8 +168,8 @@ function printCast() {
     selected: card.voice,
     speed: card.speed,
   })));
-  console.log('\nAudition: npm run generate:ai-voice -- --audition nostrike');
-  console.log('Ship:     npm run generate:ai-voice -- --ship nostrike');
+  console.log('\nAudition: npm run generate:ai-voice -- --audition <character-id>');
+  console.log('Ship:     npm run generate:ai-voice -- --ship <character-id>');
 }
 
 async function main() {
