@@ -2033,6 +2033,49 @@ Two kids, one device. GameScene now runs on a **two-seat model** (`SeatState` �
 
 Two kids, two devices, zero backend: WebRTC through the free PeerJS cloud broker — the site is still pure static files. Kids exchange a **four-emoji room code** (the wire id is alphanumeric hex; the emoji are just its kid-readable rendering), then draft face-to-face over the wire (each device tallies only its own picks — real votes; picks are ack'd and retransmitted until confirmed, so a transient connection blip can't strand the draft), set lineups concurrently, and play a full game. The **host runs the one true sim**; the remote player's decisions enter at the exact seams the CPU used to fill (their pitch meter and swing timing resolve on *their* device — latency can never eat a timing window), and the **guest never simulates**: it mirrors semantic beats and renders live plays by streaming positions-only `ReplayFrame`s at 20 Hz through the same `LivePlayView` the instant replay uses, interpolated to 60 fps with `lerpFrames`. No free text travels on the wire (identities are color/logo indexes). Disconnects pause under a "Looking for your friend… 🔍" overlay with a 30-second wall-clock reconnect window; a lost friend mid-play is finished by the CPU policies, and a timeout ends in a no-blame "GOOD GAME!". Pure pieces in `src/net/protocol.ts` (+ `lerpFrames` in `systems/replay.ts`), the only peerjs import in `src/net/peer.ts`, entry via `scenes/LobbyScene.ts`.
 
+## 2026-08-08 BB2026 production re-audit — parity is not polish
+
+The 41-minute reference video was compared again against the deployed v2 at the
+same 1280×720 frame. The engineering checklist above was honest but insufficient:
+it proved that the right *systems* existed, while the side-by-side still looked
+like a prototype next to a shipped game. The remaining gap is production value,
+in this order:
+
+1. **Characters and animation.** The thirty generated GLBs satisfy the asset
+   contract and keep every kid distinct, but they are still primitive authored
+   stand-ins beside BB2026's sculpted faces, clothing, hair and expression. The
+   35 clips are timing-correct procedural motion, not character acting. This is
+   the largest gap and it needs an art/animation production pipeline, not another
+   UI pass. Commission the shared animation library first, then replace the
+   roster in batches of five or six through the existing validator and A/B page.
+2. **Venue art density.** Eleven parks now play differently and carry signature
+   props, but their houses, foliage and ground are low-poly procedural forms.
+   The reference layers hand-authored buildings, vegetation, decals, litter,
+   flowers, weathering and small story props to every edge. Build one production
+   modular environment kit, prove it on Parks Dept #2, then roll the kit through
+   the other ten without breaking the scenery draw/triangle gate.
+3. **Audio identity.** Recess has complete cue coverage and speech synthesis;
+   BB2026 has recorded voices, music, bespoke impacts and crowd reactions. Record
+   the two commentators and a small reusable line set per kid after the character
+   batch establishes their personalities. Keep the existing cue map as the
+   executable coverage contract.
+4. **Diegetic shell art.** Recess's DOM screens are usable and complete, but the
+   reference's treehouse stations, floating trading cards and field-select
+   binocular view feel like physical places. Replace generic emoji/card art with
+   commissioned icons and a small set of reusable 3D clubhouse props; do not
+   rebuild the already-tested navigation or storage models.
+5. **Spectacle and optional arcade systems.** The reference adds slow-motion hit
+   cameras, stronger impact staging, hustle, defensive shifts, juice/stamina and
+   special pitches. Recess already has the healthier measured core—timing,
+   location, steering, dives, throws and manual sends—so add spectacle first.
+   Treat power-ups and shifts as product choices, not automatic parity work.
+
+The first engineering slice from this re-audit is deliberately small and broad:
+the gameplay scoreboard now uses the cream outlined sticker language, the ball
+casts a height-responsive readability shadow, and the one human-controlled
+fielder carries a gold ground ring. These close visible inference costs without
+changing a single sim outcome.
+
 ## What's explicitly not built yet
 
 Real recorded audio, a cross-player pick-rate backend, more characters/richer art, the Phase 3 dinosaurs. Online-play v1 leaves a few edges for later: remote steal-reaction taps (wire fields reserved), guest-side manual relief, and a net rematch button.
