@@ -450,7 +450,7 @@ function swingContact(spec: ClipSpec): AnimationClip {
 
 // --- Junebug pilot takes ----------------------------------------------------
 //
-// These five are the first first-party performance pass, not generic schedule
+// These are the first first-party performance pass, not generic schedule
 // stand-ins. They stay in this module because `build()` is the one contract-
 // aware track assembler and ground solver; a second animation builder would be
 // a second interpretation of the same rig. The character delivery exporter
@@ -563,6 +563,89 @@ function junebugSwingFollow(spec: ClipSpec): AnimationClip {
     { f: 15, pose: shift(JUNEBUG_STANCE_POSE, { s2: [-5, 0, -2], hd: [1, -5, 0], ra: [-4, 0, -3] }) },
     { f: 20, pose: shift(JUNEBUG_STANCE_POSE, { s2: [-2, 0, -1], hd: [0, -2, 0] }) },
     { f: spec.frames - 1, pose: JUNEBUG_STANCE_POSE },
+  ]);
+}
+
+/**
+ * Junebug squares her jersey collar, scuffs her back foot into place, then
+ * becomes completely still again. The action is practical rather than
+ * decorative: every adjustment prepares the next pitch.
+ */
+function junebugIdleFidget(spec: ClipSpec): AnimationClip {
+  const check = shift(JUNEBUG_IDLE_POSE, {
+    hd: [-4, -7, -2], nk: [2, -3, 0], s2: [2, -3, 0],
+    ra: [-100, 0, -28], rf: [0, 104, 0], la: [2, 0, -2],
+  });
+  const plant = shift(JUNEBUG_IDLE_POSE, {
+    hp: [4, -5, 0], sp: [2, -3, 0], hd: [-3, 4, 0],
+    ru: [-6, 0, -2], rl: [8, 0, 0], rt: [-6, 0, 0],
+    la: [-2, 0, 1], ra: [1, 0, -1],
+  });
+  return build(spec, [
+    { f: 0, pose: JUNEBUG_IDLE_POSE },
+    { f: 12, pose: shift(check, { ra: [8, 0, 0], rf: [0, -8, 0] }) },
+    { f: 22, pose: check },
+    { f: 31, pose: check },
+    { f: 43, pose: shift(JUNEBUG_IDLE_POSE, { hd: [-1, -3, 0], ra: [-18, 0, 12], rf: [0, 18, 0] }) },
+    { f: 56, pose: plant, hips: [0, 0.035, 0] },
+    { f: 65, pose: shift(plant, { ru: [9, 0, 0], rl: [-12, 0, 0], rt: [9, 0, 0], hd: [1, -3, 0] }) },
+    { f: 76, pose: shift(JUNEBUG_IDLE_POSE, { hd: [0, -2, 0] }) },
+    { f: spec.frames - 1, pose: JUNEBUG_IDLE_POSE },
+  ]);
+}
+
+/**
+ * A fierce win without a broad victory dance: compact load, one clean jump,
+ * one fist, then the tiny shoulder release from her direction sheet.
+ */
+function junebugCheerFierce(spec: ClipSpec): AnimationClip {
+  const load = shift(JUNEBUG_IDLE_POSE, {
+    hp: [20, 0, 0], sp: [8, 0, 0], s2: [6, 0, 0], hd: [-20, 0, 0],
+    lu: [34, 0, 4], ll: [-48, 0, 0], ru: [34, 0, -4], rl: [-48, 0, 0],
+    la: [24, 0, -24], lf: [0, 42, 0], ra: [18, 0, 28], rf: [0, -48, 0],
+  });
+  const punch = shift(JUNEBUG_IDLE_POSE, {
+    hp: [-8, 0, 0], sp: [-5, 0, 0], s2: [-8, 0, 0], hd: [-12, 0, -2],
+    la: [-128, 0, 30], lf: [0, -38, 0], ra: [-72, 0, -28], rf: [0, 92, 0],
+    lu: [-22, 0, 4], ll: [36, 0, 0], ru: [-18, 0, -4], rl: [30, 0, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: JUNEBUG_IDLE_POSE },
+    { f: 5, pose: load, hips: [0, 0.03, 0] },
+    { f: 11, pose: punch, hips: [0, 0.64, 0] },
+    { f: 15, pose: shift(punch, { la: [12, 0, -8], hd: [-2, 0, 0] }), hips: [0, 0.42, 0] },
+    { f: 19, pose: shift(load, { hp: [-4, 0, 0], la: [-42, 0, 30], ra: [-30, 0, -24] }), hips: [0, 0.02, 0] },
+    { f: 24, pose: shift(JUNEBUG_IDLE_POSE, { s2: [-5, 0, -2], hd: [1, -5, 0], ra: [-4, 0, -3] }) },
+    { f: 28, pose: shift(JUNEBUG_IDLE_POSE, { s2: [-2, 0, -1], hd: [0, -2, 0] }) },
+    { f: spec.frames - 1, pose: JUNEBUG_IDLE_POSE },
+  ]);
+}
+
+/** Recoil, one planted stomp, and a visible breath back under control. */
+function junebugUpsetFierce(spec: ClipSpec): AnimationClip {
+  const recoil = shift(JUNEBUG_IDLE_POSE, {
+    hp: [-9, 0, 0], sp: [-8, 0, 0], s2: [-10, 0, 0], hd: [12, -5, 0],
+    la: [20, 0, -16], lf: [0, 34, 0], ra: [20, 0, 16], rf: [0, -34, 0],
+  });
+  const lift = shift(JUNEBUG_IDLE_POSE, {
+    hp: [12, 0, 0], sp: [8, 0, 0], hd: [-18, 0, 0],
+    ru: [-44, 0, -4], rl: [68, 0, 0], rt: [-16, 0, 0],
+    la: [8, 0, -10], lf: [0, 22, 0], ra: [8, 0, 10], rf: [0, -22, 0],
+  });
+  const planted = shift(JUNEBUG_IDLE_POSE, {
+    hp: [28, 0, 0], sp: [16, 0, 0], s2: [11, 0, 0], hd: [-26, 0, 0],
+    lu: [35, 0, 5], ll: [-49, 0, 0], ru: [37, 0, -5], rl: [-52, 0, 0],
+    la: [18, 0, -18], lf: [0, 36, 0], ra: [18, 0, 18], rf: [0, -36, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: JUNEBUG_IDLE_POSE },
+    { f: 6, pose: recoil, hips: [0, 0.08, 0] },
+    { f: 13, pose: lift, hips: [0, 0.12, 0] },
+    { f: 18, pose: planted, hips: [0, 0.025, 0] },
+    { f: 24, pose: shift(planted, { hd: [10, 0, 0], s2: [-4, 0, 0] }) },
+    { f: 31, pose: shift(JUNEBUG_IDLE_POSE, { hp: [7, 0, 0], sp: [5, 0, 0], s2: [4, 0, 0], hd: [16, 0, 0] }) },
+    { f: 38, pose: shift(JUNEBUG_IDLE_POSE, { sp: [2, 0, 0], s2: [2, 0, 0], hd: [6, 0, 0] }) },
+    { f: spec.frames - 1, pose: JUNEBUG_IDLE_POSE },
   ]);
 }
 
@@ -1047,14 +1130,17 @@ export function buildDirectedReactionClips(): AnimationClip[] {
   });
 }
 
-/** Junebug's signed-off vertical-slice names, exported as a partial delivery. */
+/** Junebug's signed-off first character pass, exported as a partial delivery. */
 export function buildJunebugPilotClips(): AnimationClip[] {
   const builders: Readonly<Record<string, (spec: ClipSpec) => AnimationClip>> = {
     idle: junebugIdle,
+    idle_fidget: junebugIdleFidget,
     run: junebugRun,
     bat_stance: junebugBatStance,
     swing_contact: junebugSwingContact,
     swing_follow: junebugSwingFollow,
+    cheer_fierce: junebugCheerFierce,
+    upset_fierce: junebugUpsetFierce,
   };
   return Object.entries(builders).map(([name, make]) => {
     const spec = CLIPS.find((candidate) => candidate.name === name);

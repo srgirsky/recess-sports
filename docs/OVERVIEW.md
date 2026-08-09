@@ -1695,14 +1695,18 @@ stays untouched. The visual target is recorded at
 `docs/v2/concepts/junebug-turnaround.png`, so the sculpt has something concrete
 to agree with rather than another adjective.
 
-Motion uses the same narrow seam. `anims_nostrike_v1.glb` is a 36KB partial
-delivery containing the five clips players watch most — `idle`, `run`,
-`bat_stance`, `swing_contact`, `swing_follow` — with economy and held beats in
-place of the shared sine-driven motion. Contact remains physically derived on
-frame 7, the three loops close exactly, and the ground solve is the same one
-used by the shared library. The animation review labels those five `★` and
-leaves all 38 omitted names on shared `▪`, proving a character can improve in
-place rather than waiting for a new 43-clip monolith.
+Motion uses the same narrow seam. `anims_nostrike_v1.glb` began as the five clips
+players watch most — `idle`, `run`, `bat_stance`, `swing_contact`,
+`swing_follow` — with economy and held beats in place of the shared sine-driven
+motion. Her next pass completes the performance packet's priority set with a
+practical collar-and-foot `idle_fidget`, a compact `cheer_fierce`, and an
+`upset_fierce` that stomps once and breathes the frustration back down. Contact
+remains physically derived on frame 7, the loops close exactly, and the ground
+solve is the same one used by the shared library. The animation review labels
+all eight `★` and leaves the omitted names on shared `▪`, proving a character
+can improve in place rather than waiting for a new 43-clip monolith. The
+direction-to-ship gates learned from this pilot are now captured in
+`docs/v2/character-production-playbook.md` for the rest of the roster.
 
 ### 2026 parity pass — two city parks, not two palettes
 

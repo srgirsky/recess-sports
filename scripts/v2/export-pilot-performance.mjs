@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // Export the first first-party character-performance vertical slice.
 //
-// This is deliberately a PARTIAL animations-only GLB: the five included names
+// This is deliberately a PARTIAL animations-only GLB: the included names
 // override the shared library for Junebug, while all other names continue to
 // resolve shared -> procedural. That is the same delivery seam an external
 // animator would use and keeps the pilot honest about its scope.

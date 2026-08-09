@@ -394,26 +394,66 @@ function outfitSculpt(
 
   switch (kind) {
     case 'stripeTee': {
-      collar();
       waist();
       if (productionId === 'nostrike') {
-        // Junebug's pilot sculpt replaces the generic floating chest bands
-        // with topology-friendly athletic piping. The pale strips live in the
-        // accessory palette so team tint can recolour the jersey without
-        // turning its trim muddy.
+        // Junebug's production sculpt replaces the generic round collar and
+        // floating chest bands with a constructed baseball jersey: V-neck,
+        // placket, buttons, shoulder piping and a tucked hem. The pale pieces
+        // live in the accessory palette so team tint can recolour the jersey
+        // without turning its trim muddy.
         for (const sgn of [-1, 1]) {
           push(
             slantedBox(
-              new Vector3(sgn * torsoW * 0.67, torsoTop - 0.29, front + 0.006),
+              new Vector3(sgn * torsoW * 0.15, torsoTop - 0.12, front + 0.018),
               0.052,
-              0.5,
-              0.045,
-              sgn * 0.12
+              0.27,
+              0.05,
+              -sgn * 0.55
             ),
             'Spine2',
             0xf5efe2,
             'M_Accessory'
           );
+        }
+        push(
+          box(
+            new Vector3(0, torsoTop - 0.43, front + 0.02),
+            0.035,
+            0.48,
+            0.045
+          ),
+          'Spine1',
+          0xf5efe2,
+          'M_Accessory'
+        );
+        for (const y of [torsoTop - 0.28, torsoTop - 0.45, torsoTop - 0.62]) {
+          push(
+            ball(
+              new Vector3(0, y, front + 0.052),
+              0.032,
+              new Vector3(1, 1, 0.42),
+              8,
+              5
+            ),
+            'Spine1',
+            0xd9d1c2,
+            'M_Accessory'
+          );
+        }
+        for (const sgn of [-1, 1]) {
+          for (let stripe = 0; stripe < 2; stripe++) {
+            const drop = stripe * 0.065;
+            push(
+              limb(
+                new Vector3(sgn * torsoW * 0.19, torsoTop - 0.035 - drop, front + 0.018),
+                new Vector3(sgn * torsoW * 0.82, torsoTop - 0.18 - drop, front + 0.012),
+                0.022
+              ),
+              'Spine2',
+              0xf5efe2,
+              'M_Accessory'
+            );
+          }
         }
         const hem = new TorusGeometry(torsoW * 0.63, 0.028, seg(5, 3), seg(18, 8));
         hem.rotateX(Math.PI / 2);
@@ -422,6 +462,7 @@ function outfitSculpt(
         push(hem, 'Spine1', 0xf5efe2, 'M_Accessory');
         break;
       }
+      collar();
       for (const y of [torsoTop - 0.38, torsoTop - 0.69]) {
         const band = new TorusGeometry(torsoW * 0.78, 0.055, seg(5, 3), seg(18, 8));
         band.rotateX(Math.PI / 2);
