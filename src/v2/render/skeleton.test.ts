@@ -746,4 +746,28 @@ describe('the proxy draws a kid, not a bobblehead', () => {
     generic.dispose();
     pilot.dispose();
   });
+
+  it('gives Theo a production-only wedge face, open jacket and oversized cap', () => {
+    const visual = ROSTER.find((character) => character.id === 'calls_shot')!.visual;
+    const generic = new ProxyCharacter(visual, { fidelity: 'roster' });
+    const theo = new ProxyCharacter(visual, { fidelity: 'roster', productionId: 'calls_shot' });
+
+    expect(Math.abs(theo.mesh.geometry.attributes.position.count - generic.mesh.geometry.attributes.position.count))
+      .toBeGreaterThan(20);
+    generic.dispose();
+    theo.dispose();
+  });
+
+  it('gives Theo smooth two-bone deformation at production joints', () => {
+    const visual = ROSTER.find((character) => character.id === 'calls_shot')!.visual;
+    const theo = new ProxyCharacter(visual, { fidelity: 'roster', productionId: 'calls_shot' });
+    const weights = theo.mesh.geometry.attributes.skinWeight;
+    let blended = 0;
+    for (let i = 0; i < weights.count; i++) {
+      expect(weights.getX(i) + weights.getY(i)).toBeCloseTo(1, 6);
+      if (weights.getY(i) > 0.01) blended++;
+    }
+    expect(blended).toBeGreaterThan(100);
+    theo.dispose();
+  });
 });

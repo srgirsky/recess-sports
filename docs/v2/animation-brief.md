@@ -282,6 +282,12 @@ name still resolves to the shared library. Regenerate it with
 `npm run export:pilot-performance` and review the eight `★` rows at
 `/v2/?anims=1&kid=nostrike`.
 
+Big Talk Theo is the second complete pass. `anims_calls_shot_v1.glb` contains
+the same five high-frequency baseball clips plus `idle_fidget`, `pose_card`,
+`cheer_goofy` and `upset_goofy`. Regenerate it with
+`npm run export:signature-performance -- calls_shot` and review its nine `★`
+rows at `/v2/?anims=1&kid=calls_shot`.
+
 ## Suggested order of delivery
 
 `idle` → `run` → `bat_stance` → `swing_contact` → `swing_follow` first, as a
@@ -289,10 +295,8 @@ name still resolves to the shared library. Regenerate it with
 player actually watches, and agreeing the movement language on them costs far
 less than re-timing forty-three clips.
 
-Junebug's priority set is now complete: the pilot already supplied
-`bat_stance`, and her partial file adds `idle_fidget`, `cheer_fierce` and
-`upset_fierce`. Next deliver Theo and Zoom's priority takes from the
-character-performance packet as separate partial files. Review each with
+Junebug and Theo's priority sets are now complete. Next deliver Zoom's priority
+takes from the character-performance packet as a separate partial file. Review with
 `/v2/?anims=1&kid=<id>`: `★` is the character take, `▪` is shared and `▫` is
 procedural fallback. Sign off their model, motion and draft read together before
 expanding to the remaining roster batches.

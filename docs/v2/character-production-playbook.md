@@ -54,10 +54,10 @@ them.
 
 ## Production rule
 
-Finish one character through every gate before starting a batch. Junebug is the
-gold-standard pilot; Theo and Zoom are the next two signature-character proofs.
-After those three agree in quality and movement language, produce the rest of
-the roster in the batches defined by the performance brief.
+Finish one character through every gate before starting a batch. Junebug and
+Theo are completed gold-standard passes; Zoom is the remaining signature-
+character proof. After all three agree in quality and movement language,
+produce the rest of the roster in the batches defined by the performance brief.
 
 Use one pull request per signature character. Later production batches may
 share a pull request when every character has separate review evidence.
