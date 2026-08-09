@@ -42,6 +42,15 @@ describe('character performance direction', () => {
     expect(faceForClip(lou, 'pose_card', 'goofy')).toBe('tongue');
   });
 
+  it('gives Tank a planted hero pose and fierce reactions without changing his calm tempo', () => {
+    const tank = performanceFor('tank');
+    expect(heroClipFor(tank)).toBe('bat_stance');
+    expect(reactionClipFor(tank, true)).toBe('cheer_fierce');
+    expect(reactionClipFor(tank, false)).toBe('upset_fierce');
+    expect(actingRateFor(tank, 'idle')).toBeLessThan(1);
+    expect(faceForClip(tank, 'bat_stance', 'determined')).toBe('sleepy');
+  });
+
   it('does not let acting tempo retime a marker or locomotion calculation', () => {
     const fast = performanceFor('boomer');
     expect(actingRateFor(fast, 'cheer')).toBeGreaterThan(1);

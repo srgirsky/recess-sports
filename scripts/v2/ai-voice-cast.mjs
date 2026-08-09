@@ -67,6 +67,14 @@ export const AI_VOICE_CAST = {
     runtimeSha256: 'a7501309106ad782880259368eacbad135f410632473d02b74535448a1bf941d',
     direction: 'Warm and roomy without forced depth; take a tiny breath before Moon shot, then toss baby away with an effortless playground grin.',
   },
+  tank: {
+    candidates: ['am_eric', 'am_liam', 'am_michael'],
+    voice: 'am_eric',
+    speed: 0.9,
+    masterSha256: '9e6846dfb560985c531628137a8b162e94ca52e745ee05bac16eec333efbe16c',
+    runtimeSha256: '15b7a32d6aacc172aacdc5cb8f2feba11bca0ce77fb9bda6a9e1ab91644cebf3',
+    direction: 'Small, blunt and comfortable; make Tank smash an honest declaration, pause fully, then soften and slightly quicken After snacks.',
+  },
 };
 
 export function aiVoiceCard(id) {
