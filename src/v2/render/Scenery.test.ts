@@ -90,6 +90,16 @@ describe('sceneryPlan', () => {
       }
     }
   });
+
+  it('proves the production detail kit on Parks #2 and composes it into every venue', () => {
+    const detailKinds = new Set(['bench', 'bike', 'flowerbed', 'mailbox', 'chalkboard', 'crates', 'pennant']);
+    const park = sceneryPlan(VENUE_GEOMETRY.park, 'park').filter((item) => detailKinds.has(item.kind));
+    expect(new Set(park.map((item) => item.kind)).size).toBeGreaterThanOrEqual(5);
+    for (const venue of VENUES) {
+      const details = sceneryPlan(VENUE_GEOMETRY[venue], venue).filter((item) => detailKinds.has(item.kind));
+      expect(details.length, venue).toBeGreaterThanOrEqual(3);
+    }
+  });
 });
 
 describe('buildScenery', () => {

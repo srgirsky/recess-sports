@@ -26,7 +26,7 @@
 // proxy, the answer is yes, and it is known before anyone is paid.
 // ---------------------------------------------------------------------------
 
-import { Fog, PerspectiveCamera, Quaternion, Scene, Vector2 } from 'three';
+import { Fog, PerspectiveCamera, Quaternion, Scene, Vector2, type AnimationClip } from 'three';
 import { ROSTER } from '../../data/characters';
 import { VENUE_GEOMETRY } from '../sim/field';
 import { Renderer } from '../render/Renderer';
@@ -37,6 +37,7 @@ import { SKY_HORIZON, buildSky } from '../render/Sky';
 import { ProxyCharacter } from '../render/ProxyCharacter';
 import { AnimationDirector } from '../render/AnimationDirector';
 import { buildProceduralClips } from '../render/proceduralClips';
+import { configureModelLoader, loadAnimationLibrary } from '../render/modelLoader';
 import { CLIPS, FPS, clipSpec, type AnimName, type ClipSpec } from '../render/clips';
 
 /** The three rates the brief requires loops to survive. */
@@ -55,6 +56,7 @@ export class AnimSpike {
   private field!: FieldBuild;
   private kid!: ProxyCharacter;
   private director!: AnimationDirector;
+  private deliveredClips: AnimationClip[] = [];
 
   private clipIndex = 0;
   private rate: number = 1;
@@ -73,6 +75,7 @@ export class AnimSpike {
   constructor(private readonly canvas: HTMLCanvasElement) {
     this.renderer = new Renderer(canvas);
     this.renderer.bindOutlines(this.outlines);
+    configureModelLoader(this.renderer.gl);
 
     // Close, slightly above eye level, looking at the chest — the framing an
     // animator reviews in. Not a gameplay rig; nothing here is a gameplay rig.
@@ -122,7 +125,10 @@ export class AnimSpike {
     this.kid.setFacing(Math.PI * 0.5);
     this.scene.add(this.kid.root);
 
-    this.director = new AnimationDirector(this.kid.mesh, { fallback: buildProceduralClips() });
+    this.director = new AnimationDirector(this.kid.mesh, {
+      clips: this.deliveredClips,
+      fallback: buildProceduralClips(),
+    });
     this.playCurrent();
   }
 
@@ -271,7 +277,17 @@ export class AnimSpike {
 
   // --- Loop -----------------------------------------------------------------
 
-  start(): void {
+  async start(): Promise<void> {
+    try {
+      this.deliveredClips = await loadAnimationLibrary();
+      this.buildKid();
+    } catch (error) {
+      console.warn(
+        `[AnimSpike] shared animation library unavailable; reviewing procedural fallbacks: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
     const tick = (now: number) => {
       this.raf = requestAnimationFrame(tick);
       this.update(now);

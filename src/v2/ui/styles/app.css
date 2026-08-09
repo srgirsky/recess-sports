@@ -644,6 +644,19 @@ body.inning-break #hud > *:not(.inning-board):not(.btn--mute) {
   text-align: center;
 }
 
+/* Commissioned, text-free clubhouse art turns shell screens into one physical
+   place. The dark wash is paint-order first and keeps every existing contrast
+   and layout assertion intact; navigation remains ordinary DOM above it. */
+.screen--title,
+.screen--clubhouse,
+.screen--modes {
+  background-image:
+    linear-gradient(180deg, rgb(20 32 46 / 0.28), rgb(20 32 46 / 0.72)),
+    var(--clubhouse-art);
+  background-size: cover;
+  background-position: center;
+}
+
 /* ---- Buttons ---- */
 .btn {
   font-family: var(--font);
@@ -789,7 +802,10 @@ body.inning-break #hud > *:not(.inning-board):not(.btn--mute) {
   min-block-size: 13rem;
   padding: var(--s4);
   color: var(--ink);
-  background: var(--cream);
+  background-color: var(--cream);
+  background-image: var(--trading-card-art);
+  background-size: 100% 100%;
+  background-position: center;
   border: var(--stroke) solid var(--outline);
   box-shadow: var(--shadow);
 }
@@ -797,8 +813,8 @@ body.inning-break #hud > *:not(.inning-board):not(.btn--mute) {
 .mode-card__title { font-size: clamp(0.9rem, 2.2vw, 1.25rem); text-align: center; }
 .mode-card__line { font-size: 0.62rem; letter-spacing: 0.08em; text-align: center; }
 .mode-card__go { color: var(--grass-dark); font-size: 0.72rem; font-weight: 700; }
-.mode-card[data-mode='pitching'] { background: #fff0de; }
-.mode-card[data-mode='watch'] { background: #e9f4ff; }
+.mode-card[data-mode='pitching'] { background-color: #fff0de; }
+.mode-card[data-mode='watch'] { background-color: #e9f4ff; }
 @media (max-width: 680px) {
   .screen--modes { place-content: start center; }
   .mode-cards { grid-template-columns: 1fr; }
@@ -825,7 +841,8 @@ body.inning-break #hud > *:not(.inning-board):not(.btn--mute) {
   padding: var(--s4);
   border: var(--stroke) solid var(--outline);
   border-radius: var(--radius-lg);
-  background: rgb(20 32 46 / 0.9);
+  background: rgb(20 32 46 / 0.82);
+  backdrop-filter: blur(0.22rem);
   box-shadow: var(--shadow-soft);
 }
 .clubhouse-head {
@@ -1006,7 +1023,9 @@ body.inning-break #hud > *:not(.inning-board):not(.btn--mute) {
   padding: var(--s1);
   border: 0.12rem solid var(--outline);
   border-radius: var(--radius);
-  background: var(--cream);
+  background-color: var(--cream);
+  background-image: var(--trading-card-art);
+  background-size: 100% 100%;
   color: var(--ink);
   box-shadow: 0 0.2rem 0 rgb(20 32 46 / 0.65);
   font-family: var(--font);
@@ -1555,7 +1574,9 @@ body.screen-open #hud > *:not(.btn--mute) {
   padding: var(--s2) var(--s1);
   border-radius: var(--radius);
   border: var(--stroke) solid var(--outline);
-  background: var(--cream);
+  background-color: var(--cream);
+  background-image: var(--trading-card-art);
+  background-size: 100% 100%;
   color: var(--ink);
   font-family: var(--font);
   cursor: pointer;
@@ -1934,6 +1955,27 @@ body.screen-open #hud > *:not(.btn--mute) {
 /* ---- Game length: the choice is in MINUTES, not innings ---- */
 .team-row--length {
   gap: var(--s2);
+}
+
+/* Field select as a physical clubhouse viewing station: a wood shelf carrying
+   venue postcards over the REAL live park preview. The chips keep their tested
+   semantics and tap geometry; only their shell becomes diegetic. */
+.team-row--venue {
+  inline-size: min(66rem, 94vw);
+  padding: var(--s3);
+  border: var(--stroke) solid var(--outline);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(90deg, transparent 49%, rgb(255 244 222 / 0.1) 50%, transparent 51%),
+    linear-gradient(180deg, #a97834, #74491f);
+  box-shadow: var(--shadow-soft);
+}
+.team-row--venue .venuechip {
+  border-radius: 0.35rem;
+  rotate: -0.6deg;
+}
+.team-row--venue .venuechip:nth-child(even) {
+  rotate: 0.7deg;
 }
 /* Day or night — the sun/moon pair, same chip language as the lengths. The
    NIGHT chip stays cream: the picked state is the gold wash, and a dark chip

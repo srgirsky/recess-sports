@@ -60,7 +60,10 @@ export const LOD_DETAIL = [1.0, 0.62, 0.34];
  * camera 0.82 still gives heads 11x8 sphere segments; more tessellation
  * changes neither the silhouette nor a 2.5px outline, it only inflates bytes.
  */
-export const ROSTER_LOD_DETAIL = [0.82, 0.5, 0.28];
+// Leaves enough of the 400KB delivery cap for moulded clothing/shoe/face
+// detail on the densest hair and accessory combinations, rather than making
+// those three characters special-case the shared production path.
+export const ROSTER_LOD_DETAIL = [0.72, 0.44, 0.25];
 
 /** §4's per-level triangle budgets, nearest first. */
 export const LOD_BUDGET = [7000, 3000, 1200];

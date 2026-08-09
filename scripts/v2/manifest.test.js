@@ -14,10 +14,24 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROSTER } from '../../src/data/characters.ts';
 import { readGlb } from './glb.mjs';
-import { checkCharacter, checkContainer, checkSkeleton, makeReport } from './modelRules.mjs';
+import { checkAnimations, checkCharacter, checkContainer, checkSkeleton, makeReport } from './modelRules.mjs';
 import * as skeletonSpec from '../../src/v2/render/skeleton.ts';
+import * as animationSpec from '../../src/v2/render/clips.ts';
 
 describe('public/v2/models/manifest.json', () => {
+  it('ships the validated shared animation library that the runtime loads', () => {
+    const path = join(MODELS_DIR, 'anims_recess_v1.glb');
+    expect(existsSync(path), 'run: npm run export:animations').toBe(true);
+    const gltf = readGlb(path);
+    const report = makeReport();
+    checkContainer(gltf, report);
+    checkAnimations(gltf, animationSpec, report);
+    const failures = report.items
+      .filter((item) => item.severity === 'fail')
+      .map((item) => `${item.rule}: ${item.message}`);
+    expect(failures).toEqual([]);
+  });
+
   it('matches what is actually in the directory', () => {
     expect(manifestIsCurrent(), `stale ${MANIFEST_PATH} — run: npm run manifest:models`).toBe(true);
   });

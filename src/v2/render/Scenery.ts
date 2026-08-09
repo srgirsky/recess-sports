@@ -62,7 +62,14 @@ export interface SceneryItem {
     | 'barn'
     | 'tires'
     | 'bleacher'
-    | 'dome_portal';
+    | 'dome_portal'
+    | 'bench'
+    | 'bike'
+    | 'flowerbed'
+    | 'mailbox'
+    | 'chalkboard'
+    | 'crates'
+    | 'pennant';
   /** Spray angle from home, degrees (negative = left field). */
   sprayDeg: number;
   /** Distance from home, ft — always beyond the fence at that spray. */
@@ -403,6 +410,19 @@ export function sceneryPlan(geo: FieldGeometry, venue: VenueId): SceneryItem[] {
   }
   if (cfg.theme === 'dome') signature('dome_portal', 0, 18, 2);
 
+  // The production environment kit: small story props shared as a vocabulary,
+  // composed differently per park. Parks #2 is the proof scene and carries the
+  // densest set; the other ten use the same affordable modules without becoming
+  // palette swaps of one neighborhood.
+  const kit: SceneryItem['kind'][] = [
+    'bench', 'bike', 'flowerbed', 'mailbox', 'chalkboard', 'crates', 'pennant',
+  ];
+  const venueIndex = Object.keys(VENUE_SCENERY).indexOf(venue);
+  const detailCount = venue === 'park' ? 5 : 3;
+  for (let i = 0; i < detailCount; i++) {
+    signature(kit[(venueIndex * 2 + i) % kit.length], -40 + i * (80 / (detailCount - 1)), 5, 3);
+  }
+
   // Clamp everything onto the turf plane, preserving the fence clearance.
   return items.map((it) => {
     let p = pointAt(it.sprayDeg, it.distFt);
@@ -498,6 +518,13 @@ export function buildScenery(geo: FieldGeometry, venue: VenueId, opts: SceneryOp
     else if (it.kind === 'tires') addTires(parts, p.x, p.z, it.rotY);
     else if (it.kind === 'bleacher') addBleacher(parts, p.x, p.z, it.rotY);
     else if (it.kind === 'dome_portal') addDomePortal(parts, p.x, p.z, it.rotY);
+    else if (it.kind === 'bench') addBench(parts, p.x, p.z, it.rotY);
+    else if (it.kind === 'bike') addBike(parts, p.x, p.z, it.rotY, it.seed);
+    else if (it.kind === 'flowerbed') addFlowerbed(parts, cfg, p.x, p.z, it.rotY, it.seed);
+    else if (it.kind === 'mailbox') addMailbox(parts, p.x, p.z, it.rotY, it.seed);
+    else if (it.kind === 'chalkboard') addChalkboard(parts, p.x, p.z, it.rotY, it.seed);
+    else if (it.kind === 'crates') addCrates(parts, p.x, p.z, it.rotY, it.seed);
+    else if (it.kind === 'pennant') addPennant(parts, p.x, p.z, it.rotY, it.seed);
   }
   addPrivacyRing(parts, geo, cfg);
   addPoleRun(
@@ -561,6 +588,11 @@ function addHouse(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: numb
   // Door and windows on the home-facing wall — tiny boxes proud of the face.
   const face = d / 2 + 0.15;
   parts.push(placeLocal(paint(new BoxGeometry(3.4, 6.5, 0.4), 0x6b4a33), x, z, rotY, 0, 3.25, face));
+  // Foundation, sill/crossbars and imperfect facade patches create readable
+  // material history without another texture or draw. They are modules, not a
+  // random-noise shader, so the same house stays the same between visits.
+  parts.push(placeLocal(paint(new BoxGeometry(w + 0.25, 1.05, 0.32), shade(body, 0.72)), x, z, rotY, 0, 0.55, face));
+  parts.push(placeLocal(paint(new SphereGeometry(0.18, 6, 4), 0xe0b64d), x, z, rotY, 1.05, 3.25, face + 0.28));
   for (const side of [-1, 1]) {
     // Day: glass reflecting sky. Night: somebody is home. (Vertex colour, not
     // emissive — one merged material serves the whole neighborhood, and under
@@ -571,6 +603,13 @@ function addHouse(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: numb
         x, z, rotY, side * w * 0.28, h * 0.55, face
       )
     );
+    parts.push(placeLocal(paint(new BoxGeometry(0.22, 3.4, 0.46), 0xf3ead5), x, z, rotY, side * w * 0.28, h * 0.55, face + 0.08));
+    parts.push(placeLocal(paint(new BoxGeometry(3.8, 0.22, 0.46), 0xf3ead5), x, z, rotY, side * w * 0.28, h * 0.55, face + 0.08));
+  }
+  for (let i = 0; i < 3; i++) {
+    const px = (hash01(i, Math.floor(seed * 997)) - 0.5) * w * 0.72;
+    const py = 2 + hash01(i, Math.floor(seed * 619)) * Math.max(2, h - 4);
+    parts.push(placeLocal(paint(new BoxGeometry(2.2 + i * 0.5, 0.32, 0.28), shade(body, 0.82)), x, z, rotY, px, py, face + 0.04));
   }
 
   if (cfg.theme === 'alley') {
@@ -726,6 +765,97 @@ function addDomePortal(parts: BufferGeometry[], x: number, z: number, rotY: numb
     parts.push(placeLocal(paint(new TubeGeometry(curve, 24, 1.15, 7, false), color), x, z, rotY, 0, 0, depth));
   }
   parts.push(placeLocal(paint(new BoxGeometry(22, 7, 1), 0x282d55), x, z, rotY, 0, 17, 1));
+}
+
+// --- Production environment kit -------------------------------------------
+
+function addBench(parts: BufferGeometry[], x: number, z: number, rotY: number): void {
+  const wood = 0xb87845;
+  for (const y of [1.5, 3.2]) {
+    parts.push(placeLocal(paint(new BoxGeometry(7.5, 0.55, 1.05), wood), x, z, rotY, 0, y, 0));
+  }
+  for (const side of [-1, 1]) {
+    parts.push(placeLocal(paint(new BoxGeometry(0.45, 3.4, 0.45), 0x59636b), x, z, rotY, side * 2.8, 1.7, -0.15));
+  }
+}
+
+function addBike(parts: BufferGeometry[], x: number, z: number, rotY: number, seed: number): void {
+  const ink = 0x303944;
+  const frame = seed > 0.5 ? 0xe75b53 : 0x4f8fc7;
+  for (const side of [-1, 1]) {
+    const wheel = new CylinderGeometry(1.35, 1.35, 0.12, 12);
+    wheel.rotateX(Math.PI / 2);
+    parts.push(placeLocal(paint(wheel, ink), x, z, rotY, side * 1.65, 1.45, 0));
+  }
+  const bar = (ax: number, ay: number, bx: number, by: number, color = frame) => {
+    const dx = bx - ax;
+    const dy = by - ay;
+    const len = Math.hypot(dx, dy);
+    const g = new CylinderGeometry(0.09, 0.09, len, 5);
+    g.rotateZ(Math.atan2(-dx, dy));
+    g.translate((ax + bx) / 2, (ay + by) / 2, 0);
+    parts.push(placeLocal(paint(g, color), x, z, rotY, 0, 0, 0));
+  };
+  bar(-1.65, 1.45, 0, 2.65);
+  bar(0, 2.65, 1.65, 1.45);
+  bar(-1.65, 1.45, 0.45, 1.45);
+  bar(0.45, 1.45, 0, 2.65);
+  bar(0, 2.65, 0.75, 3.3, ink);
+}
+
+function addFlowerbed(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: number, rotY: number, seed: number): void {
+  parts.push(placeLocal(paint(new BoxGeometry(8, 0.7, 3.2), 0x76533d), x, z, rotY, 0, 0.35, 0));
+  const flowers = [0xf7d44a, 0xf06b72, 0x8d79d8, 0xf4efe2];
+  for (let i = 0; i < 7; i++) {
+    const lx = -3 + i;
+    const lz = (hash01(i, Math.floor(seed * 401)) - 0.5) * 1.8;
+    const h = 0.7 + hash01(i, 409) * 0.6;
+    parts.push(placeLocal(paint(new CylinderGeometry(0.06, 0.08, h, 4), 0x4d8b4b), x, z, rotY, lx, 0.7 + h / 2, lz));
+    parts.push(placeLocal(paint(new SphereGeometry(0.24, 6, 4), pick(flowers, hash01(i, 419))), x, z, rotY, lx, 0.72 + h, lz));
+  }
+  parts.push(placeLocal(paint(new SphereGeometry(1.15, 7, 5), pick(cfg.foliagePalette, seed)), x, z, rotY, 0, 0.85, -0.4));
+}
+
+function addMailbox(parts: BufferGeometry[], x: number, z: number, rotY: number, seed: number): void {
+  const body = seed > 0.5 ? 0x5c84a7 : 0xd96355;
+  parts.push(placeLocal(paint(new BoxGeometry(0.45, 4.5, 0.45), 0x7c5b3d), x, z, rotY, 0, 2.25, 0));
+  parts.push(placeLocal(paint(new BoxGeometry(2.5, 1.4, 1.8), body), x, z, rotY, 0, 4.4, 0.35));
+  parts.push(placeLocal(paint(new BoxGeometry(0.14, 1.5, 0.14), 0xe6c24a), x, z, rotY, 1.1, 5.3, 0.7));
+}
+
+function addChalkboard(parts: BufferGeometry[], x: number, z: number, rotY: number, seed: number): void {
+  for (const side of [-1, 1]) {
+    parts.push(placeLocal(paint(new BoxGeometry(0.45, 6.4, 0.45), 0x7d593b), x, z, rotY, side * 3, 3.2, 0));
+  }
+  parts.push(placeLocal(paint(new BoxGeometry(7, 4.4, 0.42), 0x33574b), x, z, rotY, 0, 4.4, 0));
+  // Chalk inning marks: the crooked rhythm reads as hand-made at field range.
+  for (let i = 0; i < 4; i++) {
+    parts.push(placeLocal(paint(new BoxGeometry(0.16, 1.7, 0.48), 0xf1ead8), x, z, rotY, -1.7 + i * 0.85, 4.5 + (hash01(i, Math.floor(seed * 211)) - 0.5) * 0.25, 0.03));
+  }
+}
+
+function addCrates(parts: BufferGeometry[], x: number, z: number, rotY: number, seed: number): void {
+  const colors = [0xb77a43, 0x9c673b, 0xc28a52];
+  for (let i = 0; i < 3; i++) {
+    const s = 1.8 + hash01(i, Math.floor(seed * 307)) * 0.7;
+    const lx = (i - 1) * 2.1;
+    const y = i === 1 ? s * 1.35 : s / 2;
+    parts.push(placeLocal(paint(new BoxGeometry(s, s, s), colors[i]), x, z, rotY, lx, y, i === 1 ? 0.2 : 0));
+    parts.push(placeLocal(paint(new BoxGeometry(s * 0.78, 0.16, s + 0.08), 0xe0b06d), x, z, rotY, lx, y, i === 1 ? 0.2 : 0));
+  }
+}
+
+function addPennant(parts: BufferGeometry[], x: number, z: number, rotY: number, seed: number): void {
+  for (const side of [-1, 1]) {
+    parts.push(placeLocal(paint(new CylinderGeometry(0.12, 0.16, 8, 5), 0x68727b), x, z, rotY, side * 5.2, 4, 0));
+  }
+  parts.push(placeLocal(paint(new BoxGeometry(10.4, 0.08, 0.08), 0xe4dcc8), x, z, rotY, 0, 7.2, 0));
+  const colors = [0xe95852, 0xf2c84b, 0x4c91c6, 0x64a85b];
+  for (let i = 0; i < 7; i++) {
+    const flag = new BoxGeometry(0.72, 1.05, 0.12);
+    flag.rotateZ(-0.18);
+    parts.push(placeLocal(paint(flag, pick(colors, hash01(i, Math.floor(seed * 503)))), x, z, rotY, -4.5 + i * 1.5, 6.55, 0));
+  }
 }
 
 // A ballpark light tower: lattice-suggesting pole, crossarm, and a 2x3 lamp
