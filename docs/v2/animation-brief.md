@@ -1,6 +1,6 @@
 # Commission brief — shared animation library
 
-**Deliverable:** one file, `anims_recess_v1.glb`. 35 clips on a supplied
+**Deliverable:** one file, `anims_recess_v1.glb`. 43 clips on a supplied
 skeleton, no mesh.
 
 Send this document, plus `docs/v2/asset-contract.md` and
@@ -229,7 +229,15 @@ These sell the characters, which *is* the product. Worth extra attention.
 | clip | frames | loop | settles into | notes |
 |---|---|---|---|---|
 | `cheer` | 45 | — | `idle` | Arms up, jump. Pure joy. |
+| `cheer_cool` | 36 | — | `idle` | Contained fist pump and nod. The kid owns the win without asking the room to watch. |
+| `cheer_fierce` | 32 | — | `idle` | Explosive crouch, jump, hard landing and two quick pumps. |
+| `cheer_goofy` | 54 | — | `idle` | Off-balance victory dance: windmill, hop, catch, grin. |
+| `cheer_tender` | 45 | — | `idle` | Hands to heart, then an open wave that shares the win with the team. |
 | `upset` | 60 | — | `idle` | Struck out. Slumps, turns to camera, deflates. |
+| `upset_cool` | 40 | — | `idle` | One small shrug, eyes away, done. |
+| `upset_fierce` | 45 | — | `idle` | Recoil, stomp the frustration into the dirt, breathe it back down. |
+| `upset_goofy` | 50 | — | `idle` | Freeze, inspect both hands, then offer a tiny apologetic bow. |
+| `upset_tender` | 65 | — | `idle` | Cover the face, peek out, and recover slowly. Let the miss hurt. |
 | `nervous` | 60 | ✔ | — | Bases loaded. Fidgets, glances around, shifts weight. |
 | `dodge` | 24 | — | `bat_stance` | Flinch away from an inside pitch. Hip-pivot lean, fast in, slow recover. |
 
@@ -263,4 +271,4 @@ be signed off on its own.
 `idle` → `run` → `bat_stance` → `swing_contact` → `swing_follow` first, as a
 **pilot batch**, for feel sign-off before the rest. Those five are ~70% of what a
 player actually watches, and agreeing the movement language on them costs far
-less than re-timing thirty-five clips.
+less than re-timing forty-three clips.

@@ -26,10 +26,14 @@ import { portrait } from '../portrait';
 import { getCharacter } from '../../../data/characters';
 import type { Rng } from '../../sim/rng';
 import type { Character } from '../../../data/types';
-import type { DraftSpotlightMode } from '../../render/draftPresentation';
+import {
+  DRAFT_REACT_SEC,
+  DRAFT_WALK_OFF_SEC,
+  type DraftSpotlightMode,
+} from '../../render/draftPresentation';
 
-/** How long the board shows the CPU's pick before it clears, ms. */
-const CPU_BEAT_MS = 1_720;
+/** Let the acting beat and walk-off finish before the CPU owns the spotlight. */
+const CPU_BEAT_MS = (DRAFT_REACT_SEC + DRAFT_WALK_OFF_SEC) * 1000 + 120;
 
 /** The four stats a card shows, in the order they read. */
 const CARD_STATS = [

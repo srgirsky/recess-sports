@@ -55,7 +55,7 @@ Keys on the spike page: `1`–`5` switch camera preset, `V` cycles venue.
 
 The acceptance surface for `docs/v2/animation-brief.md`. Three of that brief's
 four acceptance criteria are things you have to *watch*, so they need somewhere
-to be watched: it plays any of the 35 clips on a proxy character, at 0.6×, 1.0×
+to be watched: it plays any of the 43 clips on a proxy character, at 0.6×, 1.0×
 or 1.4×, flashes the frame a clip's marker lands on, renders the same character
 in a real **40 px** viewport (that is criterion 4, literally), and prints a
 computed **loop-seam** error — a seam that is merely nearly closed pops once per
@@ -102,13 +102,27 @@ that passes is accepted:
 
 ```bash
 npm run export:skeleton    # emit assets/v2/skeleton_recess_v1.glb from skeleton.ts
-npm run export:animations  # emit the shared 35-clip runtime library
+npm run export:animations  # emit the shared 43-clip runtime library
 npm run export:audio       # emit stable v2 impact/crowd audio masters
 npm run export:voices      # macOS maintainer tool: pre-render commentator + roster lines
+npm run audition:voices    # print the non-shipping signature-trio casting sheet
 npm run validate:models    # check every .glb in assets/v2/
 npm run validate:models path/to/anims_recess_v1.glb   # or one file
 VERBOSE=1 npm run validate:models                     # also print measurements
 ```
+
+The committed voice bank is the stable system-voice fallback. To audition
+individually directed speech for Junebug, Theo and Zoom without changing what
+ships, set `OPENAI_API_KEY` and run:
+
+```bash
+npm run audition:voices -- --generate
+npm run audition:voices -- --generate nostrike
+```
+
+Auditions land in `assets/v2/voice-auditions/`, never `public/`. Listen and
+cast them before any runtime swap; shipping AI-generated speech also requires a
+clear player-facing disclosure.
 
 ### Seeing what the v2 ball does
 

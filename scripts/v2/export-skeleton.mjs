@@ -5,7 +5,7 @@
 // Generated, never hand-authored, and that is the whole point. The brief opens
 // with "1 unit = 1 foot, the reference kid is 4.0ft"; if the file that ships
 // with it were maintained by hand it could disagree with the code, and it
-// would disagree silently, and 35 clips would come back authored against the
+// would disagree silently, and 43 clips would come back authored against the
 // wrong proportions. (The engine-side version of exactly that bug is why
 // `REFERENCE_HEIGHT_FT` said 4.0 while the bone table summed to 3.4.)
 //

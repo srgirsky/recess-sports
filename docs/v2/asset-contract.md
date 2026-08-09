@@ -87,13 +87,15 @@ Authored **once**, on the canonical skeleton, **with no mesh**. 30 fps.
 **No root motion in any clip.** The game owns position; a clip that translates
 `Root` will be rejected. Run cycles run in place.
 
-35 clips: `idle` · `idle_fidget` · `run` · `run_fast` · `trot` · `jog_back` ·
+43 clips: `idle` · `idle_fidget` · `run` · `run_fast` · `trot` · `jog_back` ·
 `shuffle_left` · `shuffle_right` · `bat_stance` · `bat_load` · `swing_contact` ·
 `swing_follow` · `swing_whiff` · `bunt` · `pitch_windup` · `pitch_stride` ·
 `pitch_release` · `field_ready` · `field_scoop` · `catch_high` · `catch_chest` ·
 `catch_low` · `catch_jump` · `dive_left` · `dive_right` · `getup` ·
-`throw_overhand` · `throw_quick` · `slide` · `cheer` · `upset` · `nervous` ·
-`dodge` · `walk_on` · `pose_card`
+`throw_overhand` · `throw_quick` · `slide` · `cheer` · `cheer_cool` ·
+`cheer_fierce` · `cheer_goofy` · `cheer_tender` · `upset` · `upset_cool` ·
+`upset_fierce` · `upset_goofy` · `upset_tender` · `nervous` · `dodge` ·
+`walk_on` · `pose_card`
 
 Full frame counts, loop flags, authored ground speeds and blend targets are in
 `docs/v2/animation-brief.md`, which is the artist-facing copy of the same table.

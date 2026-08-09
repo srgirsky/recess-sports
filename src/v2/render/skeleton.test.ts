@@ -9,7 +9,7 @@
 // That would not have stayed cheap. `docs/v2/animation-brief.md` hands the rig
 // to an animator with "1 unit = 1 foot, the reference kid is 4.0ft" printed at
 // the top, and stride length, foot plants and dive travel are authored in
-// absolute feet against whatever they are given. A 3.4ft rig buys 35 clips
+// absolute feet against whatever they are given. A 3.4ft rig buys 43 clips
 // whose every distance is 17% wrong — discovered after the invoice.
 //
 // So this file asserts the two ends of that claim against each other:

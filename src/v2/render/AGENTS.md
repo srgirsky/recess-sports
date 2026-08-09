@@ -130,6 +130,8 @@ popping" checkable).
   clip under REVIEW and the clip actually PLAYING separately: a one-shot settles
   into its `returnsTo` when it ends, and counting the settle clip's time against
   the reviewed clip's frame count prints a frame past the end.
+- **Character acting belongs in `performance.ts`; `AnimationDirector` joins body
+  and face.** No call-site clip or expression policy.
 
 ## Characters and models
 

@@ -36,6 +36,17 @@ import {
   type AnimName,
   type ClipSpec,
 } from './clips';
+import type { Expression } from '../../data/types';
+import type { FaceCell } from './faceAtlas';
+import {
+  actingRateFor,
+  blinkEverySec,
+  faceForClip,
+  fidgetEverySec,
+  performancePhase,
+  reactionClipFor,
+  type PerformanceProfile,
+} from './performance';
 
 export interface PlayOptions {
   /** Crossfade in, ms. Defaults to the clip's own `blendMs`. */
@@ -55,6 +66,16 @@ export interface DirectorOptions {
   fallback?: AnimationClip[];
   /** Called once per clip name that had to fall back. */
   onFallback?: (name: string) => void;
+  /**
+   * The kid behind the rig. When present, the director coordinates face,
+   * reaction tempo, blinks and fidgets with the body clip it alone controls.
+   */
+  actor?: {
+    id: string;
+    profile: PerformanceProfile;
+    authoredRest?: Expression;
+    setExpression: (cell: FaceCell) => void;
+  };
 }
 
 export class AnimationDirector {
@@ -66,9 +87,19 @@ export class AnimationDirector {
   private current: AnimName | null = null;
   private pending: (() => void) | null = null;
   private warned = new Set<string>();
+  private readonly actor: DirectorOptions['actor'];
+  private nextBlinkSec = Infinity;
+  private nextFidgetSec = Infinity;
+  private blinkLeftSec = 0;
+  private ageSec = 0;
 
   constructor(root: Object3D, opts: DirectorOptions = {}) {
     this.mixer = new AnimationMixer(root);
+    this.actor = opts.actor;
+    if (this.actor) {
+      this.nextBlinkSec = blinkEverySec(this.actor.profile) * (0.55 + performancePhase(this.actor.id, 17));
+      this.nextFidgetSec = fidgetEverySec(this.actor.profile) * (0.65 + performancePhase(this.actor.id, 29));
+    }
 
     for (const clip of opts.fallback ?? []) {
       this.byName.set(clip.name, clip);
@@ -124,7 +155,7 @@ export class AnimationDirector {
 
     const next = this.actionFor(name, clip, spec);
     next.reset();
-    next.timeScale = opts.rate ?? 1;
+    next.timeScale = opts.rate ?? (this.actor ? actingRateFor(this.actor.profile, name) : 1);
     next.enabled = true;
 
     const fade = (opts.fadeMs ?? spec.blendMs) / 1000;
@@ -138,6 +169,7 @@ export class AnimationDirector {
 
     this.current = name;
     this.pending = opts.onDone ?? null;
+    this.applyExpression(name);
     return next;
   }
 
@@ -184,6 +216,13 @@ export class AnimationDirector {
     return name;
   }
 
+  /** Play this kid's directed win/loss beat, or the broad default for a proxy. */
+  playReaction(won: boolean, opts: PlayOptions = {}): AnimName {
+    const name = this.actor ? reactionClipFor(this.actor.profile, won) : (won ? 'cheer' : 'upset');
+    this.play(name, opts);
+    return name;
+  }
+
   /** Cancel any pending settle and hold whatever is playing. */
   hold(): void {
     this.pending = null;
@@ -191,6 +230,7 @@ export class AnimationDirector {
 
   update(dtSec: number): void {
     this.mixer.update(dtSec);
+    this.updatePresence(dtSec);
   }
 
   dispose(): void {
@@ -235,6 +275,39 @@ export class AnimationDirector {
     const settle = clipSpec(name).returnsTo;
     if (settle && this.current === name) this.play(settle as AnimName);
   };
+
+  /**
+   * Quiet life between actions. Timers advance only with the render clock, so
+   * a backgrounded tab cannot return to a crowd that fidgeted for an hour.
+   */
+  private updatePresence(dtSec: number): void {
+    if (!this.actor || !this.current || !(dtSec > 0)) return;
+    this.ageSec += dtSec;
+
+    if (this.blinkLeftSec > 0) {
+      this.blinkLeftSec -= dtSec;
+      if (this.blinkLeftSec <= 0) this.applyExpression(this.current);
+    } else if (this.ageSec >= this.nextBlinkSec && this.canBlink(this.current)) {
+      this.actor.setExpression('blink');
+      this.blinkLeftSec = 0.12;
+      this.nextBlinkSec = this.ageSec + blinkEverySec(this.actor.profile) * (0.82 + performancePhase(this.actor.id, Math.floor(this.ageSec * 10) + 41) * 0.36);
+    }
+
+    if (this.current === 'idle' && this.ageSec >= this.nextFidgetSec) {
+      this.nextFidgetSec = this.ageSec + fidgetEverySec(this.actor.profile) * (0.82 + performancePhase(this.actor.id, Math.floor(this.ageSec * 10) + 73) * 0.36);
+      this.play('idle_fidget', { restart: true });
+    }
+  }
+
+  private canBlink(name: AnimName): boolean {
+    return name === 'idle' || name === 'field_ready' || name === 'bat_stance' || name === 'walk_on' || name === 'pose_card';
+  }
+
+  private applyExpression(name: AnimName): void {
+    if (!this.actor) return;
+    this.blinkLeftSec = 0;
+    this.actor.setExpression(faceForClip(this.actor.profile, name, this.actor.authoredRest));
+  }
 
   private warnOnce(key: string, message: string): void {
     if (this.warned.has(key)) return;
