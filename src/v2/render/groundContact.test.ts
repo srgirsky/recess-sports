@@ -41,7 +41,7 @@
 import { describe, expect, it } from 'vitest';
 import { AnimationClip, AnimationMixer, Object3D, Vector3 } from 'three';
 import { CLIPS, FPS, type ClipSpec } from './clips';
-import { GROUND_EPSILON_FT, buildJunebugPilotClips, buildProceduralClips, buildTheoPilotClips } from './proceduralClips';
+import { GROUND_EPSILON_FT, buildJunebugPilotClips, buildProceduralClips, buildTheoPilotClips, buildZoomPilotClips } from './proceduralClips';
 import { buildSkeleton } from './ProxyCharacter';
 
 /** Sub-frame samples, so a slerped dip between two grounded keys is seen. */
@@ -128,6 +128,17 @@ describe('Junebug pilot ground contact', () => {
 
 describe('Theo character-pass ground contact', () => {
   for (const clip of buildTheoPilotClips()) {
+    it(`${clip.name} touches the field without sinking`, () => {
+      const spec = CLIPS.find((candidate) => candidate.name === clip.name)! as ClipSpec;
+      const { lowestFt } = measure(clip, spec);
+      expect(lowestFt).toBeGreaterThan(-GROUND_EPSILON_FT);
+      expect(lowestFt).toBeLessThan(GROUND_EPSILON_FT);
+    });
+  }
+});
+
+describe('Zoom character-pass ground contact', () => {
+  for (const clip of buildZoomPilotClips()) {
     it(`${clip.name} touches the field without sinking`, () => {
       const spec = CLIPS.find((candidate) => candidate.name === clip.name)! as ClipSpec;
       const { lowestFt } = measure(clip, spec);

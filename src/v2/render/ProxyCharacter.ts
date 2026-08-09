@@ -1046,7 +1046,7 @@ export class ProxyCharacter {
           slot: 'M_Uniform',
         });
       }
-      parts.push(...wheelchairParts(hips, jersey));
+      parts.push(...wheelchairParts(hips, jersey, pants, opts.productionId === 'wheelchair_ace'));
     } else {
       for (const side of ['Left', 'Right'] as const) {
         parts.push({
@@ -1281,6 +1281,23 @@ function hairParts(
       break;
     case 'spiky': {
       add(cap(1.02, 0.66));
+      if (productionId === 'wheelchair_ace') {
+        // Zoom's crown is one quick forward sweep, not the fallback's even
+        // hedgehog ring. Five overlapping tapered locks keep the direction
+        // legible from the front, side and draft-card three-quarter cameras.
+        for (let i = 0; i < 4; i++) {
+          const g = new ConeGeometry(r * (0.26 - i * 0.014), r * (0.86 - i * 0.045), seg(6, 4));
+          g.rotateZ(-0.7 + i * 0.055);
+          g.rotateX(-0.08 + i * 0.035);
+          g.translate(
+            crown.x - r * 0.55 + i * r * 0.25,
+            crown.y + r * (0.67 - Math.abs(1.5 - i) * 0.035),
+            crown.z - r * 0.05 + (i - 1.5) * r * 0.065
+          );
+          add(g);
+        }
+        break;
+      }
       // ★ These spikes were BURIED. Absolute-size cones (0.106 × 0.353ft) at
       // +0.42r topped out inside the skull, so `spiky` rendered as a plain cap
       // — one of eleven silhouettes was a duplicate of `short`, on a proxy
@@ -1555,7 +1572,7 @@ function accessoryParts(
  * survive at 40px; the frame and hubs keep the close camera from reading two
  * unattached rings.
  */
-function wheelchairParts(hips: Vector3, teamColor: number): Part[] {
+function wheelchairParts(hips: Vector3, teamColor: number, pantsColor: number, production: boolean): Part[] {
   const out: Part[] = [];
   const dark = 0x263445;
   const metal = 0xaeb9c5;
@@ -1564,33 +1581,60 @@ function wheelchairParts(hips: Vector3, teamColor: number): Part[] {
   };
 
   for (const sgn of [-1, 1]) {
-    const wheel = new TorusGeometry(0.5, 0.065, seg(6, 4), seg(18, 8));
+    const radius = production ? 0.55 : 0.5;
+    const wheelX = production ? 0.57 : 0.53;
+    const wheel = new TorusGeometry(radius, production ? 0.057 : 0.065, seg(6, 4), seg(18, 8));
     wheel.rotateY(Math.PI / 2);
-    wheel.translate(sgn * 0.53, 0.55, -0.04);
+    if (production) wheel.rotateZ(sgn * 0.11);
+    wheel.translate(sgn * wheelX, 0.57, -0.06);
     add(wheel, dark);
+
+    if (production) {
+      const pushRim = new TorusGeometry(radius * 0.84, 0.022, seg(5, 3), seg(18, 6));
+      pushRim.rotateY(Math.PI / 2);
+      pushRim.rotateZ(sgn * 0.11);
+      pushRim.translate(sgn * (wheelX + 0.045), 0.57, -0.06);
+      add(pushRim, teamColor);
+    }
 
     const hub = new CylinderGeometry(0.11, 0.11, 0.12, seg(10, 6));
     hub.rotateZ(Math.PI / 2);
-    hub.translate(sgn * 0.53, 0.55, -0.04);
+    hub.translate(sgn * wheelX, 0.57, -0.06);
     add(hub, metal);
 
     const caster = new TorusGeometry(0.14, 0.045, seg(5, 3), seg(12, 6));
     caster.rotateY(Math.PI / 2);
-    caster.translate(sgn * 0.34, 0.18, 0.58);
+    caster.translate(sgn * 0.34, production ? 0.16 : 0.18, production ? 0.66 : 0.58);
     add(caster, dark);
 
     add(
       limb(
-        new Vector3(sgn * 0.34, 0.32, 0.5),
+        new Vector3(sgn * 0.34, 0.3, production ? 0.6 : 0.5),
         new Vector3(sgn * 0.42, 0.76, 0.1),
         0.035
       ),
       metal
     );
+
+    if (production) {
+      // Two angled rails make the chair read as a purpose-built sport frame,
+      // while the tucked leg and shoe complete the seated-athlete silhouette.
+      add(limb(new Vector3(sgn * 0.3, 1.37, 0.08), new Vector3(sgn * 0.34, 0.28, 0.61), 0.038), metal);
+      add(limb(new Vector3(sgn * 0.3, 1.36, 0.02), new Vector3(sgn * 0.46, 0.56, -0.08), 0.034), metal);
+      add(limb(new Vector3(sgn * 0.17, 1.55, 0.13), new Vector3(sgn * 0.18, 1.04, 0.5), 0.135), pantsColor);
+      add(limb(new Vector3(sgn * 0.18, 1.04, 0.5), new Vector3(sgn * 0.18, 0.43, 0.68), 0.115), pantsColor);
+      add(box(new Vector3(sgn * 0.18, 0.36, 0.78), 0.25, 0.14, 0.39), dark);
+    }
   }
 
-  add(box(new Vector3(0, 0.82, 0.05), 0.72, 0.12, 0.67), teamColor);
-  add(box(new Vector3(0, hips.y + 0.05, -0.31), 0.72, 0.72, 0.12), teamColor);
+  add(box(new Vector3(0, production ? 1.38 : 0.82, 0.05), production ? 0.68 : 0.72, 0.12, production ? 0.62 : 0.67), teamColor);
+  add(box(new Vector3(0, production ? 1.65 : hips.y + 0.05, production ? -0.25 : -0.31), production ? 0.66 : 0.72, production ? 0.55 : 0.72, 0.12), teamColor);
+
+  if (production) {
+    // A low front footplate closes the chassis and keeps the tucked shoes from
+    // reading as loose geometry at gameplay scale.
+    add(box(new Vector3(0, 0.28, 0.76), 0.55, 0.055, 0.33), metal);
+  }
 
   const axle = new CylinderGeometry(0.045, 0.045, 1.06, seg(8, 5));
   axle.rotateZ(Math.PI / 2);

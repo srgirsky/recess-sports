@@ -770,4 +770,30 @@ describe('the proxy draws a kid, not a bobblehead', () => {
     expect(blended).toBeGreaterThan(100);
     theo.dispose();
   });
+
+  it('integrates Zoom with a production sport chair and swept crown', () => {
+    const visual = ROSTER.find((character) => character.id === 'wheelchair_ace')!.visual;
+    const generic = new ProxyCharacter(visual, { fidelity: 'roster' });
+    const zoom = new ProxyCharacter(visual, { fidelity: 'roster', productionId: 'wheelchair_ace' });
+
+    // Cambered wheels, separate push rims, a low bucket, tucked legs and the
+    // directional crown are material geometry—not a manifest-only promotion.
+    expect(zoom.mesh.geometry.attributes.position.count - generic.mesh.geometry.attributes.position.count)
+      .toBeGreaterThan(100);
+    generic.dispose();
+    zoom.dispose();
+  });
+
+  it('gives Zoom smooth upper-body deformation while the chair stays root-bound', () => {
+    const visual = ROSTER.find((character) => character.id === 'wheelchair_ace')!.visual;
+    const zoom = new ProxyCharacter(visual, { fidelity: 'roster', productionId: 'wheelchair_ace' });
+    const weights = zoom.mesh.geometry.attributes.skinWeight;
+    let blended = 0;
+    for (let i = 0; i < weights.count; i++) {
+      expect(weights.getX(i) + weights.getY(i)).toBeCloseTo(1, 6);
+      if (weights.getY(i) > 0.01) blended++;
+    }
+    expect(blended).toBeGreaterThan(100);
+    zoom.dispose();
+  });
 });

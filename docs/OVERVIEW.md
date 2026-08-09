@@ -1737,6 +1737,27 @@ AI-performance disclosure. The editable `theo-pilot.blend` packs the approved
 turnaround for future sculpt iteration while the deterministic Node exporter
 remains the contract-safe shipping path.
 
+### Zoom Ramirez character pass — the chair is part of the athlete
+
+Zoom completes the three-character production proof. His approved turnaround
+at `docs/v2/concepts/zoom-turnaround.png` treats the child and compact sport
+chair as one fast silhouette: cambered drive wheels, bright push rims, forward
+casters, a low bucket, tucked legs and a swept spiky crown. The shipping model
+keeps the chair root-bound to the sim while the upper body retains the organic
+two-bone deformation bands used by Junebug and Theo. Its neutral delivery
+review is recorded at `docs/v2/concepts/zoom-in-game-review.png`, and the
+editable `zoom-pilot.blend` packs the direction target for later sculpt work.
+
+`anims_wheelchair_ace_v1.glb` replaces nine clips. Wheel propulsion, quick
+pivots and field readiness are authored through hands, shoulders and torso;
+batting keeps contact derived on frame 7; and the cool win/loss reactions end
+on the small inside-joke glance from his performance brief. His exact draft
+line is generated locally with Kokoro's named `am_michael` stock voice at
+0.98×, promoted to the lossless master and runtime MP3, fingerprinted, and
+covered by the player-facing AI-performance disclosure. With all three
+signature passes complete, production moves to Batch 1: Big Lou, Tank and Mimi
+Mash.
+
 ### 2026 parity pass — two city parks, not two palettes
 
 The BB2026 video only exposes two of its eleven fields clearly, so those are the

@@ -66,10 +66,10 @@ Add `&kid=<id>` to review a particular kid's takes. Clips marked `▫` are
 procedural stand-ins, `▪` are shared delivery and `★` are that kid's overrides.
 
 The shared library is still generated from timing-correct stand-ins. Junebug's
-eight-clip pass and Theo's nine-clip pass now resolve from their partial
-performance files and appear with `★`; Theo adds his held `pose_card`,
-`cheer_goofy` and `upset_goofy` to the five high-frequency baseball clips and
-`idle_fidget`.
+eight-clip pass plus Theo and Zoom's nine-clip passes now resolve from their
+partial performance files and appear with `★`. Zoom's seated `run` and
+`field_ready` author propulsion and readiness through hands, shoulders and
+torso while the simulation owns the sport chair.
 Deliveries replace motion **clip by clip**, so a character's priority takes are
 reviewable without waiting for all 43. Her production mesh also blends the
 neck, elbow, wrist, knee and ankle surfaces across two bones so those forms bend
@@ -113,6 +113,7 @@ npm run export:skeleton    # emit assets/v2/skeleton_recess_v1.glb from skeleton
 npm run export:animations  # emit the shared 43-clip runtime library
 npm run export:pilot-performance # emit Junebug's eight-clip partial performance
 npm run export:signature-performance -- calls_shot # emit Theo's nine clips
+npm run export:signature-performance -- wheelchair_ace # emit Zoom's nine clips
 npm run export:audio       # emit stable v2 impact/crowd audio masters
 npm run export:voices      # macOS maintainer tool: pre-render commentator + roster lines
 npm run export:performance-brief # regenerate the 30-character production packet
@@ -380,6 +381,6 @@ scripts/v2/          The asset gates: glb read/write, exporter, validator, lints
 ## What's next
 
 - A real backend to aggregate pick rates across all players
-- Finish Zoom's signature-character pass, then roll the proven process through the cast
+- Produce Batch 1—Big Lou, Tank and Mimi Mash—through the proven character process
 - Online-play polish: remote steal-reaction taps, guest relief, rematch
 - Eventually… the dinosaurs 🦖
