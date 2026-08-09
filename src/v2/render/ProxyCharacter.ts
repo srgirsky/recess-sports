@@ -51,7 +51,7 @@ import {
   TorusGeometry,
   Vector3,
 } from 'three';
-import type { Accessory, HairStyle, VisualParams } from '../../data/types';
+import type { Accessory, HairStyle, OutfitKind, VisualParams } from '../../data/types';
 import {
   BONE_INDEX,
   HEIGHT_MAX_FT,
@@ -306,6 +306,13 @@ function box(at: Vector3, w: number, h: number, d: number): BufferGeometry {
   return g;
 }
 
+function slantedBox(at: Vector3, w: number, h: number, d: number, angle: number): BufferGeometry {
+  const g = new BoxGeometry(w, h, d);
+  g.rotateZ(angle);
+  g.translate(at.x, at.y, at.z);
+  return g;
+}
+
 interface Part {
   geom: BufferGeometry;
   bone: string;
@@ -344,6 +351,177 @@ interface Part {
 }
 
 export type FeatureTag = 'eye' | 'brow' | 'nose' | 'glasses';
+
+/**
+ * Team-uniform reinterpretations of the six outfit identities already
+ * authored for the roster. These are geometry, not paint: a hoodie keeps its
+ * hood and pocket, overalls keep their bib, and a dress keeps its flare after
+ * every kid is recoloured for the team that drafted them.
+ *
+ * Every piece remains in M_Uniform so the first-party vertex-palette merge
+ * still collapses the delivery to one colour pass plus one outline hull.
+ */
+function outfitSculpt(
+  kind: OutfitKind,
+  torsoW: number,
+  torsoTop: number,
+  torsoBot: number,
+  hipsY: number,
+  jersey: number,
+  pants: number
+): Part[] {
+  const pieces: Part[] = [];
+  const front = torsoW * 0.72 + 0.045;
+  const dark = shadeInt(jersey, 0.3);
+  const trim = shadeInt(pants, 0.28);
+  const push = (geom: BufferGeometry, bone: string, color = dark) => {
+    pieces.push({ geom, bone, color, slot: 'M_Uniform' });
+  };
+  const collar = () => {
+    const g = new TorusGeometry(torsoW * 0.34, 0.045, seg(6, 4), seg(16, 8));
+    g.rotateX(Math.PI / 2);
+    g.translate(0, torsoTop - 0.08, 0);
+    push(g, 'Spine2');
+  };
+  const waist = () => {
+    const g = new TorusGeometry(torsoW * 0.58, 0.035, seg(5, 3), seg(16, 8));
+    g.rotateX(Math.PI / 2);
+    g.scale(1, 1, 0.75);
+    g.translate(0, hipsY + 0.12, 0);
+    push(g, 'Hips', trim);
+  };
+
+  switch (kind) {
+    case 'stripeTee': {
+      collar();
+      waist();
+      for (const y of [torsoTop - 0.38, torsoTop - 0.69]) {
+        const band = new TorusGeometry(torsoW * 0.78, 0.055, seg(5, 3), seg(18, 8));
+        band.rotateX(Math.PI / 2);
+        band.scale(1, 1, 0.72);
+        band.translate(0, y, 0);
+        push(band, 'Spine1', trim);
+      }
+      break;
+    }
+    case 'hoodie': {
+      const hood = new TorusGeometry(torsoW * 0.5, 0.105, seg(8, 4), seg(18, 8));
+      hood.scale(1, 1.14, 0.86);
+      hood.translate(0, torsoTop + 0.13, -torsoW * 0.37);
+      push(hood, 'Spine2');
+
+      push(
+        blob(
+          new Vector3(0, hipsY + 0.34, front),
+          torsoW * 0.44,
+          0.18,
+          0.075
+        ),
+        'Spine1',
+        trim
+      );
+      for (const x of [-0.105, 0.105]) {
+        push(
+          limb(
+            new Vector3(x, torsoTop - 0.12, front + 0.02),
+            new Vector3(x * 1.08, torsoTop - 0.33, front + 0.025),
+            0.015
+          ),
+          'Spine2',
+          0xf1e5c6
+        );
+      }
+      break;
+    }
+    case 'overalls': {
+      push(
+        box(new Vector3(0, hipsY + 0.51, front), torsoW * 1.03, 0.48, 0.09),
+        'Spine1',
+        trim
+      );
+      for (const x of [-torsoW * 0.35, torsoW * 0.35]) {
+        push(
+          slantedBox(
+            new Vector3(x, torsoTop - 0.29, front + 0.01),
+            0.12,
+            0.54,
+            0.08,
+            x < 0 ? -0.13 : 0.13
+          ),
+          'Spine2',
+          trim
+        );
+        push(
+          ball(new Vector3(x * 0.92, hipsY + 0.7, front + 0.075), 0.055, new Vector3(1, 1, 0.35), 8, 5),
+          'Spine1',
+          0xf5e9b8
+        );
+      }
+      break;
+    }
+    case 'dress': {
+      collar();
+      const skirt = new CylinderGeometry(
+        torsoW * 0.58,
+        torsoW * 0.96,
+        0.7,
+        seg(20, 8),
+        1,
+        false
+      );
+      skirt.translate(0, hipsY - 0.17, 0);
+      push(skirt, 'Hips', jersey);
+      const sash = new TorusGeometry(torsoW * 0.61, 0.055, seg(6, 4), seg(18, 8));
+      sash.rotateX(Math.PI / 2);
+      sash.scale(1, 1, 0.76);
+      sash.translate(0, hipsY + 0.16, 0);
+      push(sash, 'Hips', trim);
+      break;
+    }
+    case 'jacket': {
+      waist();
+      collar();
+      for (const x of [-torsoW * 0.36, torsoW * 0.36]) {
+        push(
+          slantedBox(
+            new Vector3(x, hipsY + 0.38, front),
+            torsoW * 0.42,
+            0.065,
+            0.075,
+            x < 0 ? -0.2 : 0.2
+          ),
+          'Spine1',
+          dark
+        );
+      }
+      push(
+        box(new Vector3(0, (torsoTop + torsoBot) / 2, front + 0.018), 0.025, torsoTop - torsoBot - 0.18, 0.05),
+        'Spine1',
+        0xf5e9b8
+      );
+      break;
+    }
+    case 'tee':
+    default: {
+      collar();
+      waist();
+      push(
+        ball(
+          new Vector3(0, torsoTop - 0.45, front),
+          0.13,
+          new Vector3(1, 1.15, 0.22),
+          12,
+          8
+        ),
+        'Spine1',
+        0xf5e9b8
+      );
+      break;
+    }
+  }
+
+  return pieces;
+}
 
 /** Index-buffer span of a tagged part in the merged geometry. */
 export interface FeatureRange {
@@ -614,42 +792,15 @@ export class ProxyCharacter {
       slot: 'M_Uniform',
     });
     if (rosterFidelity) {
-      // Moulded-uniform detail: collar, waist piping and a chest badge. These
-      // stay in the greyscale team slot, so a drafted kid still wears whoever
-      // picked them instead of a baked personal jersey colour.
-      const collar = new TorusGeometry(torsoW * 0.34, 0.045, seg(6, 4), seg(16, 8));
-      collar.rotateX(Math.PI / 2);
-      collar.translate(0, torsoTop - 0.08, 0);
-      parts.push({
-        geom: collar,
-        bone: 'Spine2',
-        color: shadeInt(jersey, 0.3),
-        slot: 'M_Uniform',
-      });
-
-      const waist = new TorusGeometry(torsoW * 0.58, 0.035, seg(5, 3), seg(16, 8));
-      waist.rotateX(Math.PI / 2);
-      waist.scale(1, 1, 0.75);
-      waist.translate(0, hips.y + 0.12, 0);
-      parts.push({
-        geom: waist,
-        bone: 'Hips',
-        color: shadeInt(pants, 0.28),
-        slot: 'M_Uniform',
-      });
-
-      parts.push({
-        geom: ball(
-          new Vector3(0, chest.y - 0.12, torsoW * 0.72),
-          0.13,
-          new Vector3(1, 1.15, 0.22),
-          12,
-          8
-        ),
-        bone: 'Spine1',
-        color: 0xf5e9b8,
-        slot: 'M_Uniform',
-      });
+      parts.push(...outfitSculpt(
+        visual.outfit?.kind ?? 'tee',
+        torsoW,
+        torsoTop,
+        torsoBot,
+        hips.y,
+        jersey,
+        pants
+      ));
     }
 
     // ---- Neck ----

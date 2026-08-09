@@ -223,8 +223,8 @@ outlines or changing the asset contract. First-party deliveries keep the four
 named slots in each GLB but mark their compatible vertex palette; at load time
 the team tint is baked and all four primitives merge into one skinned colour
 pass plus one merged hull. The same 13-model foreground review now measures
-**66 draws against 90**, exactly matching 13 proxies, while using 59.9k rather
-than 147.9k triangles.
+**66 draws against 90**, exactly matching 13 proxies, while using 58.5k rather
+than 149.6k triangles.
 
 **The sim core has started, and the first thing it needed was a fence** (2026-07-31).
 `src/v2/sim/` was two files — unit conversion and field geometry — and 477 lines
@@ -1668,6 +1668,14 @@ canonical 33-bone skin, a UV-mapped body and its own 4×4 expression atlas;
 Zoom's silhouette includes the sport chair instead of rendering as a standing
 kid. Hair and cap geometry were moved clear of the face after the first full
 roster review exposed dark bands and visors through the eyes.
+
+The next contact-sheet pass exposed a different erasure: every kid wore the
+same moulded collar, waistband and chest badge after team tinting, even though
+the roster already authored six outfit identities. Those identities now shape
+the delivered geometry — striped bands, hood and pocket, overall bib and
+buttons, dress flare, jacket zip and pockets, or the original tee — while all
+pieces remain in the mergeable team-uniform slot. The clothes therefore survive
+both recolouring and field distance without spending another draw call.
 
 The distinction is executable. Production files never carry the `STAND-IN`
 generator marker, `manifest.test.js` requires exactly the 30 `ROSTER` ids and

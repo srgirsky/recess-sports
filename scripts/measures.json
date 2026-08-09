@@ -900,21 +900,21 @@
    "category": "render",
    "reference": "bb2001",
    "status": "note",
-   "statusChangedAt": "2026-08-07",
+   "statusChangedAt": "2026-08-08",
    "what": "A generated roster delivery now costs the same two draws as its proxy: one merged skinned colour pass plus one merged outline. The standard 13-character Look Spike measures 66 draws against a budget of 90, with all 13 characters using delivered models.",
    "why": "The GLB still preserves the four contract slots (M_Body / M_Uniform / M_Hair / M_Accessory) for validation and external-tool clarity. The first-party exporter marks its vertex-palette materials explicitly; CharacterModel then bakes the instance's team colour into the greyscale uniform vertices and merges the compatible primitives after load. General artist deliveries keep the four-slot path unless they opt into that marker.",
    "measured": {
-    "when": "2026-08-07",
-    "how": "Look Spike at /v2/?spike=1&kids=13, PLAY rig, park venue, high tier, toggling MODELS/PROXIES between synchronous foreground reads so nothing else in the scene changed. Model read: 120fps, p95 9.1ms. Proxy read: 120fps, p95 9.4ms.",
+    "when": "2026-08-08",
+    "how": "Look Spike at /v2/?spike=1&kids=13, PLAY rig, park venue, high tier, toggling MODELS/PROXIES between synchronous foreground reads so nothing else in the scene changed. Model read: 120fps, p95 9.1ms. Proxy read: 120fps, p95 9.6ms.",
     "kids": 13,
     "models": {
      "drawCalls": 66,
-     "trianglesK": 59.9,
+     "trianglesK": 58.5,
      "lodSplit": "LOD0:3 LOD1:7 LOD2:3"
     },
     "proxies": {
      "drawCalls": 66,
-     "trianglesK": 147.9
+     "trianglesK": 149.6
     },
     "perCharacter": {
      "modelMax": 2,
