@@ -490,6 +490,19 @@ function outfitSculpt(
         push(hem, 'Spine1', 0xf5efe2, 'M_Accessory');
         break;
       }
+      if (productionId === 'big_lou') {
+        // Three broad knitted bands turn Lou's shirt into a field-scale
+        // identity mark. They stay pale while the base shirt takes team tint.
+        collar();
+        for (const y of [torsoTop - 0.3, torsoTop - 0.58, torsoTop - 0.86]) {
+          const band = new TorusGeometry(torsoW * 0.83, 0.085, seg(7, 4), seg(20, 9));
+          band.rotateX(Math.PI / 2);
+          band.scale(1, 1, 0.79);
+          band.translate(0, y, 0);
+          push(band, 'Spine1', 0xf3e5bf, 'M_Accessory');
+        }
+        break;
+      }
       collar();
       for (const y of [torsoTop - 0.38, torsoTop - 0.69]) {
         const band = new TorusGeometry(torsoW * 0.78, 0.055, seg(5, 3), seg(18, 8));
@@ -859,7 +872,8 @@ export class ProxyCharacter {
     const shoe = 0x33404f;
 
     const parts: Part[] = [];
-    const organic = rosterFidelity && ['nostrike', 'calls_shot', 'wheelchair_ace'].includes(opts.productionId ?? '');
+    const organic = rosterFidelity && ['nostrike', 'calls_shot', 'wheelchair_ace', 'big_lou'].includes(opts.productionId ?? '');
+    const bigLou = opts.productionId === 'big_lou';
     const blendTo = (bone: string, atPoint: Vector3, radius: number): Part['jointBlend'] =>
       organic ? { bone, at: atPoint, radius, strength: 0.88 } : undefined;
 
@@ -877,12 +891,14 @@ export class ProxyCharacter {
     parts.push({
       geom: opts.productionId === 'calls_shot'
         ? wedgeHead(headC, headR, headW, headH)
-        : ball(headC, headR, new Vector3(headW, headH, headW * 0.95)),
+        : ball(headC, headR, new Vector3(headW * (bigLou ? 1.04 : 1), headH * (bigLou ? 0.96 : 1), headW * 0.95)),
       bone: 'Head',
       color: skinC,
       slot: 'M_Body',
       faceUv: rosterFidelity,
     });
+    // Lou's slightly wider, lower skull carries friendly cheeks as one clean
+    // silhouette. Separate cheek balls read as muzzle bumps in profile.
     parts.push(...hairParts(visual, headC, headR, headW, headH, hairC, rosterFidelity ? opts.productionId : undefined));
     parts.push(...accessoryParts(visual.accessory, headC, headR, headW, headH, jersey, rosterFidelity ? opts.productionId : undefined));
     // Delivered roster models paint the full expression into their atlas.
@@ -928,13 +944,13 @@ export class ProxyCharacter {
     const chest = at('Spine2');
     const torsoTop = at('LeftShoulder').y + 0.06;
     const torsoBot = hips.y - 0.05;
-    const torsoW = 0.59 * shoulder;
+    const torsoW = 0.59 * shoulder * (bigLou ? 0.94 : 1);
     parts.push({
       geom: blob(
         new Vector3(0, (torsoTop + torsoBot) / 2, 0),
-        torsoW,
-        (torsoTop - torsoBot) / 2,
-        torsoW * 0.72
+        torsoW * (bigLou ? 1.02 : 1),
+        (torsoTop - torsoBot) / 2 * (bigLou ? 0.96 : 1),
+        torsoW * (bigLou ? 0.79 : 0.72)
       ),
       bone: 'Spine1',
       color: jersey,
@@ -983,7 +999,11 @@ export class ProxyCharacter {
     // Belly rounds the lower torso — v1's `belly` knob, in 3D.
     if (belly > 0.05) {
       parts.push({
-        geom: ball(new Vector3(0, hips.y + 0.188, 0.047), 0.353 * (1 + belly * 0.5), new Vector3(1, 0.78, 0.9)),
+        geom: ball(
+          new Vector3(0, hips.y + (bigLou ? 0.27 : 0.188), bigLou ? 0.105 : 0.047),
+          0.353 * (1 + belly * (bigLou ? 0.72 : 0.5)),
+          new Vector3(bigLou ? 1.13 : 1, bigLou ? 0.88 : 0.78, bigLou ? 1.02 : 0.9)
+        ),
         bone: 'Spine',
         color: jersey,
         slot: 'M_Uniform',
@@ -999,20 +1019,20 @@ export class ProxyCharacter {
     // ---- Arms ----
     for (const side of ['Left', 'Right'] as const) {
       parts.push({
-        geom: limb(at(`${side}Arm`), at(`${side}ForeArm`), 0.129),
+        geom: limb(at(`${side}Arm`), at(`${side}ForeArm`), bigLou ? 0.153 : 0.129),
         bone: `${side}Arm`,
         color: jersey,
         slot: 'M_Uniform',
         jointBlend: blendTo(`${side}ForeArm`, at(`${side}ForeArm`), 0.36),
       });
       parts.push({
-        geom: limb(at(`${side}ForeArm`), at(`${side}Hand`), 0.112),
+        geom: limb(at(`${side}ForeArm`), at(`${side}Hand`), bigLou ? 0.136 : 0.112),
         bone: `${side}ForeArm`,
         color: skinC,
         slot: 'M_Body',
         jointBlend: blendTo(`${side}Hand`, at(`${side}Hand`), 0.3),
       });
-      parts.push({ geom: ball(at(`${side}Hand`), 0.147, new Vector3(1, 0.9, 0.85)), bone: `${side}Hand`, color: skinC, slot: 'M_Body' });
+      parts.push({ geom: ball(at(`${side}Hand`), bigLou ? 0.164 : 0.147, new Vector3(1, 0.9, 0.85)), bone: `${side}Hand`, color: skinC, slot: 'M_Body' });
       if (rosterFidelity) {
         // Moulded sleeve and wrist seams stop the limbs reading as two tubes
         // pushed together in the close draft camera.
@@ -1050,14 +1070,14 @@ export class ProxyCharacter {
     } else {
       for (const side of ['Left', 'Right'] as const) {
         parts.push({
-          geom: limb(at(`${side}UpLeg`), at(`${side}Leg`), 0.171 * hip),
+          geom: limb(at(`${side}UpLeg`), at(`${side}Leg`), (bigLou ? 0.205 : 0.171) * hip),
           bone: `${side}UpLeg`,
           color: pants,
           slot: 'M_Uniform',
           jointBlend: blendTo(`${side}Leg`, at(`${side}Leg`), 0.44),
         });
         parts.push({
-          geom: limb(at(`${side}Leg`), at(`${side}Foot`), 0.135),
+          geom: limb(at(`${side}Leg`), at(`${side}Foot`), bigLou ? 0.17 : 0.135),
           bone: `${side}Leg`,
           color: pants,
           slot: 'M_Uniform',
@@ -1068,7 +1088,7 @@ export class ProxyCharacter {
           // upper surface carries the bend into it. This is the production
           // difference between a hinge made of tubes and one rounded form.
           parts.push({
-            geom: ball(at(`${side}Leg`), 0.176 * hip, new Vector3(1.02, 0.9, 1.02), 12, 8),
+            geom: ball(at(`${side}Leg`), (bigLou ? 0.205 : 0.176) * hip, new Vector3(1.02, 0.9, 1.02), 12, 8),
             bone: `${side}Leg`,
             color: pants,
             slot: 'M_Uniform',
@@ -1076,7 +1096,12 @@ export class ProxyCharacter {
         }
         const foot = at(`${side}Foot`);
         parts.push({
-          geom: box(foot.clone().add(new Vector3(0, -0.059, 0.106)), 0.282, 0.153, 0.494),
+          geom: box(
+            foot.clone().add(new Vector3(0, -0.059, 0.106)),
+            bigLou ? 0.325 : 0.282,
+            bigLou ? 0.168 : 0.153,
+            bigLou ? 0.525 : 0.494
+          ),
           bone: `${side}Foot`,
           color: shoe,
           slot: 'M_Accessory',
@@ -1229,7 +1254,9 @@ function hairParts(
     case 'bald':
       break;
     case 'buzz':
-      add(cap(1.02, 0.62));
+      // Lou's tiny crown is deliberate negative space above the cheeks, not
+      // the taller generic buzz silhouette scaled onto a larger face.
+      add(cap(productionId === 'big_lou' ? 1.04 : 1.02, productionId === 'big_lou' ? 0.47 : 0.62));
       break;
     case 'short':
       add(cap(1.06, 0.78));

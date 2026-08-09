@@ -910,6 +910,147 @@ function zoomUpsetCool(spec: ClipSpec): AnimationClip {
   ]);
 }
 
+// --- Big Lou takes --------------------------------------------------------
+//
+// Lou gathers slowly, then lets the stored turn escape all at once. His head
+// trails the bat and his feet do the recovery work; the joke is his delighted
+// surprise at the power, never his body or intelligence.
+
+const LOU_IDLE_POSE: Pose = {
+  hp: [6, -3, 0], sp: [5, -2, 0], s2: [8, -3, 0], nk: [-2, 2, 0], hd: [-4, 7, 1],
+  la: [8, 0, 67], lf: [0, -18, 0], ra: [8, 0, -67], rf: [0, 18, 0],
+  lu: [5, 0, 8], ll: [-7, 0, 0], ru: [5, 0, -8], rl: [-7, 0, 0],
+};
+
+const LOU_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
+  hp: [10, -7, 0], sp: [8, -6, 0], s2: [11, -8, 0], hd: [-2, 10, 2],
+  la: [-2, 0, 7], lf: [0, -6, 0], ra: [-2, 0, -7], rf: [0, 7, 0],
+  lu: [6, 0, 3], ll: [-8, 0, 0], ru: [6, 0, -3], rl: [-8, 0, 0],
+});
+
+const LOU_CONTACT_END: Pose = shift(LOU_STANCE_POSE, {
+  hp: [0, 91, 0], sp: [0, 62, 0], s2: [0, 85, 0], hd: [6, -30, -2],
+  ra: [44, 0, 96], rf: [0, -34, 0], la: [36, 0, -77], lf: [0, 30, 0],
+  lu: [-12, 0, 2], ll: [15, 0, 0], ru: [10, 0, -4], rl: [-13, 0, 0], rt: [0, 0, 58],
+});
+
+function louIdle(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: LOU_IDLE_POSE },
+    { f: 17, pose: shift(LOU_IDLE_POSE, { hp: [2, 0, 0], sp: [2, 0, 0], s2: [3, 0, 0], hd: [-1, -3, 0] }), hips: [0, -0.015, 0] },
+    { f: 31, pose: shift(LOU_IDLE_POSE, { hd: [1, 11, 0], ra: [-3, 0, 4] }) },
+    { f: 46, pose: shift(LOU_IDLE_POSE, { hp: [1, 0, 0], sp: [1, 0, 0], s2: [2, 0, 0], hd: [0, -4, 0] }) },
+    { f: spec.frames, pose: LOU_IDLE_POSE },
+  ]);
+}
+
+function louBatStance(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: LOU_STANCE_POSE },
+    { f: 15, pose: shift(LOU_STANCE_POSE, { hp: [0, -5, 0], s2: [0, -8, 0], ra: [-5, 0, -9], hd: [0, 4, 0] }), hips: [0, -0.035, 0] },
+    { f: 31, pose: shift(LOU_STANCE_POSE, { hp: [0, -9, 0], sp: [0, -5, 0], s2: [0, -13, 0], ra: [-8, 0, -13], hd: [0, 7, 0] }), hips: [0, -0.06, 0] },
+    { f: 45, pose: shift(LOU_STANCE_POSE, { hp: [0, -4, 0], s2: [0, -6, 0], ra: [-3, 0, -6] }), hips: [0, -0.025, 0] },
+    { f: spec.frames, pose: LOU_STANCE_POSE },
+  ]);
+}
+
+function louSwingContact(spec: ClipSpec): AnimationClip {
+  const loaded = shift(LOU_STANCE_POSE, {
+    hp: [0, -18, 0], sp: [0, -10, 0], s2: [0, -25, 0], hd: [-2, 12, 0],
+    ra: [-15, 0, -20], la: [-8, 0, 10], lu: [8, 0, 0], ru: [8, 0, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: loaded },
+    { f: 3, pose: shift(loaded, { hp: [0, 3, 0], s2: [0, 4, 0], hd: [0, 2, 0] }) },
+    { f: 5, pose: shift(loaded, { hp: [0, 12, 0], sp: [0, 7, 0], s2: [0, 11, 0], ra: [5, 0, 10], la: [3, 0, -7], hd: [0, -3, 0] }) },
+    { f: 6, pose: shift(loaded, { hp: [0, 35, 0], sp: [0, 24, 0], s2: [0, 32, 0], ra: [18, 0, 34], la: [13, 0, -25], hd: [0, -7, 0] }) },
+    // The hand sweep peaks around frame 7 while Lou's gaze is still catching
+    // up to the torso. The marker therefore remains derived, not declared.
+    { f: 7, pose: shift(loaded, { hp: [0, 56, 0], sp: [0, 39, 0], s2: [0, 52, 0], ra: [31, 0, 59], la: [23, 0, -44], hd: [0, -11, 0] }) },
+    { f: 8, pose: shift(loaded, { hp: [0, 76, 0], sp: [0, 54, 0], s2: [0, 72, 0], ra: [43, 0, 84], la: [32, 0, -63], hd: [0, -17, 0] }) },
+    { f: 12, pose: shift(LOU_CONTACT_END, { hp: [0, -7, 0], s2: [0, -8, 0], hd: [0, 8, 0] }) },
+    { f: spec.frames - 1, pose: LOU_CONTACT_END },
+  ]);
+}
+
+function louSwingFollow(spec: ClipSpec): AnimationClip {
+  const scrambleA = shift(LOU_CONTACT_END, {
+    hp: [0, 15, 0], s2: [0, 12, 0], hd: [3, -8, 0],
+    lu: [22, 0, 2], ll: [-34, 0, 0], ru: [-18, 0, -4], rl: [29, 0, 0],
+  });
+  const scrambleB = shift(LOU_STANCE_POSE, {
+    hp: [8, 20, 0], sp: [6, 13, 0], s2: [8, 18, 0], hd: [-5, -25, 3],
+    lu: [-20, 0, 3], ll: [30, 0, 0], ru: [18, 0, -3], rl: [-27, 0, 0],
+    ra: [-20, 0, -34], la: [-14, 0, 25],
+  });
+  return build(spec, [
+    { f: 0, pose: LOU_CONTACT_END },
+    { f: 5, pose: scrambleA, hips: [0.07, 0.04, 0] },
+    { f: 10, pose: scrambleB, hips: [-0.09, 0.025, 0] },
+    { f: 15, pose: shift(LOU_STANCE_POSE, { hp: [5, 3, 0], s2: [4, 4, 0], hd: [-3, -18, 2], ra: [-9, 0, -14] }) },
+    { f: 20, pose: shift(LOU_STANCE_POSE, { hd: [-1, -8, 1] }) },
+    { f: spec.frames - 1, pose: LOU_STANCE_POSE },
+  ]);
+}
+
+function louPoseCard(spec: ClipSpec): AnimationClip {
+  const hero = shift(LOU_IDLE_POSE, {
+    hp: [-5, -8, 0], sp: [-4, -7, 0], s2: [-7, -10, 0], hd: [-4, 14, 3],
+    la: [-38, 0, 47], lf: [0, -68, 0], ra: [-104, 0, -25], rf: [0, 80, 0],
+    lu: [3, 0, 4], ll: [-5, 0, 0], ru: [-2, 0, -4], rl: [4, 0, 0],
+  });
+  return build(spec, [{ f: 0, pose: hero }, { f: 1, pose: hero }]);
+}
+
+function louIdleFidget(spec: ClipSpec): AnimationClip {
+  const squareShirt = shift(LOU_IDLE_POSE, {
+    hp: [7, 0, 0], sp: [4, 0, 0], hd: [8, -12, 3],
+    la: [-72, 0, 34], lf: [0, -68, 0], ra: [-72, 0, -34], rf: [0, 68, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: LOU_IDLE_POSE },
+    { f: 12, pose: squareShirt },
+    { f: 24, pose: shift(squareShirt, { hd: [-4, 24, -5], la: [-8, 0, 4], ra: [-8, 0, -4] }) },
+    { f: 38, pose: shift(LOU_IDLE_POSE, { hp: [4, -5, 0], s2: [4, -5, 0], hd: [-6, -15, 4], ra: [-20, 0, 16] }) },
+    { f: 53, pose: shift(LOU_IDLE_POSE, { hd: [-2, 9, -2] }) },
+    { f: spec.frames - 1, pose: LOU_IDLE_POSE },
+  ]);
+}
+
+function louCheerGoofy(spec: ClipSpec): AnimationClip {
+  const surprise = shift(LOU_IDLE_POSE, {
+    hp: [-18, -3, 0], sp: [-13, -2, 0], s2: [-16, -4, 0], hd: [-22, 0, 0],
+    la: [-72, 0, 50], lf: [0, -50, 0], ra: [-72, 0, -50], rf: [0, 50, 0],
+  });
+  const delight = shift(LOU_IDLE_POSE, {
+    hp: [-7, 8, 0], sp: [-6, 6, 0], s2: [-9, 8, 0], hd: [-10, -17, 6],
+    la: [-128, 0, 34], lf: [0, -35, 0], ra: [-128, 0, -34], rf: [0, 35, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: LOU_IDLE_POSE },
+    { f: 7, pose: surprise, hips: [0, 0.1, 0] },
+    { f: 14, pose: shift(surprise, { hp: [8, 0, 0], hd: [12, 0, 0], la: [-18, 0, 8], ra: [-18, 0, -8] }), hips: [0, 0.36, 0] },
+    { f: 21, pose: delight, hips: [0, 0.08, 0] },
+    { f: 30, pose: shift(LOU_IDLE_POSE, { hd: [-5, -15, 4], s2: [-3, -4, 0] }) },
+    { f: spec.frames - 1, pose: LOU_IDLE_POSE },
+  ]);
+}
+
+function louUpsetGoofy(spec: ClipSpec): AnimationClip {
+  const where = shift(LOU_IDLE_POSE, {
+    hp: [12, 0, 0], sp: [9, 0, 0], hd: [-18, 0, 0],
+    la: [-45, 0, 57], lf: [0, -45, 0], ra: [-45, 0, -57], rf: [0, 45, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: LOU_IDLE_POSE },
+    { f: 8, pose: where },
+    { f: 16, pose: shift(where, { hd: [4, -28, 7], hp: [3, 0, 0], la: [12, 0, -10], ra: [12, 0, 10] }) },
+    { f: 25, pose: shift(LOU_IDLE_POSE, { hp: [15, 0, 0], sp: [11, 0, 0], hd: [20, 0, 0], la: [-8, 0, 74], ra: [-8, 0, -74] }) },
+    { f: 36, pose: shift(LOU_IDLE_POSE, { hd: [-2, -9, 2] }) },
+    { f: spec.frames - 1, pose: LOU_IDLE_POSE },
+  ]);
+}
+
 /**
  * Release is frame 4 and frame 11 respectively; same peak-speed rule as the
  * swing. `arm` is the euler the throwing arm whips through.
@@ -1446,6 +1587,26 @@ export function buildZoomPilotClips(): AnimationClip[] {
   return Object.entries(builders).map(([name, make]) => {
     const spec = CLIPS.find((candidate) => candidate.name === name);
     if (!spec) throw new Error(`Zoom pilot names unknown contract clip "${name}"`);
+    return make(spec as ClipSpec);
+  });
+}
+
+/** Big Lou's complete Batch 1 pass, exported as a partial delivery. */
+export function buildBigLouPilotClips(): AnimationClip[] {
+  const builders: Readonly<Record<string, (spec: ClipSpec) => AnimationClip>> = {
+    idle: louIdle,
+    idle_fidget: louIdleFidget,
+    run: (spec) => runCycle(spec, 10, 38, 36),
+    bat_stance: louBatStance,
+    swing_contact: louSwingContact,
+    swing_follow: louSwingFollow,
+    pose_card: louPoseCard,
+    cheer_goofy: louCheerGoofy,
+    upset_goofy: louUpsetGoofy,
+  };
+  return Object.entries(builders).map(([name, make]) => {
+    const spec = CLIPS.find((candidate) => candidate.name === name);
+    if (!spec) throw new Error(`Big Lou pass names unknown contract clip "${name}"`);
     return make(spec as ClipSpec);
   });
 }

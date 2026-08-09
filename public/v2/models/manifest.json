@@ -32,6 +32,7 @@
     "zippy"
   ],
   "performances": [
+    "big_lou",
     "calls_shot",
     "nostrike",
     "wheelchair_ace"
