@@ -102,6 +102,9 @@ that passes is accepted:
 
 ```bash
 npm run export:skeleton    # emit assets/v2/skeleton_recess_v1.glb from skeleton.ts
+npm run export:animations  # emit the shared 35-clip runtime library
+npm run export:audio       # emit stable v2 impact/crowd audio masters
+npm run export:voices      # macOS maintainer tool: pre-render commentator + roster lines
 npm run validate:models    # check every .glb in assets/v2/
 npm run validate:models path/to/anims_recess_v1.glb   # or one file
 VERBOSE=1 npm run validate:models                     # also print measurements
@@ -312,14 +315,15 @@ scripts/v2/          The asset gates: glb read/write, exporter, validator, lints
 - **Add/rebalance kids** in `src/data/characters.ts`. Stats are 1–10. The three
   signature kids use `ability` hooks (`never_strikes_out`, `calls_shot`,
   `unhittable_pitch`); everyone else is `none`.
-- **Sound is free & code-generated** (no audio files) — SFX via Web Audio, voice
-  via the browser. A 🔊/🔇 toggle (persisted) sits on Title/Game/Result.
+- **Sound ships as static local assets** — six generated impact/crowd masters,
+  commentator calls and one draft line per kid. Web Audio and browser speech
+  remain graceful fallbacks. A 🔊/🔇 toggle (persisted) sits on Title/Game/Result.
 - **See the "voting machine"**: on the title screen (dev mode only) press **D**
   to see which kids you've drafted most; **R** resets the tally.
 
 ## What's next
 
 - A real backend to aggregate pick rates across all players
-- More characters, richer art, recorded audio
+- More characters, externally sculpted art, human-performed voice acting
 - Online-play polish: remote steal-reaction taps, guest relief, rematch
 - Eventually… the dinosaurs 🦖

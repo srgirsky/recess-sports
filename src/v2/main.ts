@@ -37,6 +37,19 @@ import { App } from './App';
 import { LookSpike } from './spike/LookSpike';
 import { AnimSpike } from './spike/AnimSpike';
 import { GameView } from './game/GameView';
+import { assetUrl } from './render/assets';
+
+// CSS cannot resolve `public/v2/` from both `/` and the permanent `/v2/` alias
+// by itself. Route shell art through the same page-aware resolver as models and
+// audio so a working alias can never conceal a broken front door again.
+document.documentElement.style.setProperty(
+  '--clubhouse-art',
+  `url("${assetUrl('art/clubhouse-treehouse.webp')}")`
+);
+document.documentElement.style.setProperty(
+  '--trading-card-art',
+  `url("${assetUrl('art/trading-card-frame.webp')}")`
+);
 
 const canvas = document.getElementById('stage') as HTMLCanvasElement | null;
 if (!canvas) throw new Error('#stage canvas is missing from v2/index.html');

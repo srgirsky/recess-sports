@@ -131,9 +131,11 @@ bind-pose drift, height band, root motion, off-grid frame rate, unclosed loop
 seams, measured body travel and derived marker frames — and every one of those
 rules has a test that deliberately breaks something and demands the specific
 rejection, because a rule that never fires is indistinguishable from no rule.
-Crude **procedural stand-ins** cover all 35 clips, so the proxy characters move
-today and a real delivery replaces them clip by clip; `/v2/?anims=1` is where
-they get reviewed. The Look Spike's defence now crouches in `field_ready` and
+Crude **procedural motion** covers all 35 clips and is exported into the shipped
+shared GLB, so the real delivery path runs today rather than waiting on a
+commission. A future acting pass replaces that file clip by clip, with the
+in-bundle procedural clips retained only as load-failure fallbacks;
+`/v2/?anims=1` is where both get reviewed. The Look Spike's defence now crouches in `field_ready` and
 its batter takes a stance instead of standing in bind pose, and the animation
 costs essentially nothing: 18 mixers measured at **0.063 ms/frame**, 0.4% of a
 16.7 ms budget, with the scene at 56 draws / 109k triangles against 90 / 180k.
@@ -2076,6 +2078,48 @@ casts a height-responsive readability shadow, and the one human-controlled
 fielder carries a gold ground ring. These close visible inference costs without
 changing a single sim outcome.
 
+### Production plan delivered
+
+The five-phase plan above was executed as one production pass on 2026-08-08:
+
+1. **Characters and animation:** all thirty roster GLBs were regenerated with
+   richer face, clothing and footwear detail while remaining inside the shipped
+   LOD/size contract. A single delivered `anims_recess_v1.glb` now carries the
+   thirty-five marker-compatible clips; the runtime and animation spike load it
+   first and retain the procedural clips only as a per-clip failure fallback.
+   This establishes the batchable shared-library pipeline. It does not pretend
+   the generated meshes or motion are a substitute for a future sculptor and
+   character animator.
+2. **Venue art density:** one reusable scenery-detail kit—benches, bicycles,
+   flowerbeds, mailboxes, chalkboards, crates and pennants—was proved with five
+   distinct modules at Parks Dept #2, then composed deterministically across all
+   eleven parks. Houses gained foundations, window construction, door hardware
+   and facade weathering without adding a second scenery draw.
+3. **Audio identity:** six static impact/crowd masters, seven commentator calls
+   and one draft line for every roster kid now ship as compressed runtime
+   assets. They play through the existing cue and mute contracts, with the Web
+   Audio synthesizer and browser speech kept as graceful fallbacks. The voice
+   exporter is reproducible on macOS; human-performed casting remains a later
+   creative upgrade, not a runtime dependency.
+4. **Diegetic shell art:** commissioned raster art now gives the title,
+   Clubhouse and mode screens a treehouse setting and frames draft/collection
+   choices as physical trading cards. The venue chooser reads as a wooden field
+   viewing station. Navigation, tap targets, storage and game-mode semantics are
+   unchanged.
+5. **Spectacle before systems:** hard contact now gets a 3D contact burst and
+   strength-scaled render-only lens punch, layered on the existing home
+   run camera and fireworks. The effect reads only resolved contact data and
+   cannot alter the simulation. Defensive shifts, stamina and power-up systems
+   were deliberately not added: without playtest evidence they would make the
+   measured core less legible rather than more complete.
+
+Every generated asset has a deterministic exporter or a checked-in art master,
+and the model, animation, audio, scenery, layout and simulation gates remain the
+acceptance contract for replacements.
+
 ## What's explicitly not built yet
 
-Real recorded audio, a cross-player pick-rate backend, more characters/richer art, the Phase 3 dinosaurs. Online-play v1 leaves a few edges for later: remote steal-reaction taps (wire fields reserved), guest-side manual relief, and a net rematch button.
+Human-performed voice acting, a cross-player pick-rate backend, externally
+sculpted/animated character replacements, more characters, and the Phase 3
+dinosaurs. Online-play v1 leaves a few edges for later: remote steal-reaction
+taps (wire fields reserved), guest-side manual relief, and a net rematch button.

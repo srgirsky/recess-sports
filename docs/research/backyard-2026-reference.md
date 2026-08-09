@@ -148,17 +148,22 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
 
 ## Remaining parity backlog, in dependency order
 
-1. **Roster-quality 3D character delivery.** The runtime contract, validator,
-   LODs, face atlas and fallback path exist, but the shipping manifest contains
-   five of thirty kids. The other twenty-five still render as geometric proxies;
-   no UI or lighting pass can close that silhouette and expression gap.
+1. ~~**Roster-quality 3D character delivery, production pipeline pass.**~~ All
+   thirty roster ids now have validated, size-bounded GLBs with three LODs and
+   enhanced face, ear, clothing-seam and footwear construction. The runtime
+   manifest is complete and geometric proxies are failure-only. These remain
+   generated art rather than externally sculpted hero models, so the validator,
+   A/B page and roster-fidelity factory are the replacement path when a character
+   art team is commissioned.
 2. ~~**Marker-synchronised action animation in the game.**~~ The follow-up
    parity pass wires the existing contract into live play: pitchers complete
    windup/stride/release before the ball leaves; deterministic CPU swing reads
    provide pre-roll; human swings, catches and throws seek their marker on the
    event tick; dives preserve their own catch marker; and slides fit their end
-   to the sim-owned basepath leg. The action clips remain procedural stand-ins
-   until authored motion is delivered, but they are no longer review-page-only.
+   to the sim-owned basepath leg. A single validated static GLB now delivers all
+   thirty-five canonical clips to gameplay and the review page, with procedural
+   motion retained only as a per-clip failure fallback. Character acting can
+   replace the shared file without changing its runtime contract.
 3. ~~**A full draft environment.**~~ The full-width schoolyard bench now leads
    the screen: the selected already-loaded kid walks into `pose_card`, six
    remaining kids wait behind them, and the last four picks on each side stay
@@ -199,6 +204,24 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
    Some mature versions still live in `/classic/`; port shared rules rather than
    cloning them, and keep pickup play as the one-tap front door for ages four to
    eight.
+6. ~~**Production environment kit.**~~ Benches, bicycles, flowerbeds,
+   mailboxes, chalkboards, crates and pennants form one deterministic modular
+   kit. Parks Dept #2 proves five distinct modules and every other venue uses at
+   least three, while enriched house construction and weathering stay inside
+   the single scenery draw and its triangle budget.
+7. ~~**Static audio identity.**~~ Six bespoke impact/crowd masters, seven
+   commentator calls and thirty kid draft lines ship as local assets through
+   the established cue and mute contracts. Synthesized Web Audio and browser
+   speech remain failure fallbacks; human-performed casting is still available
+   as a creative replacement rather than missing infrastructure.
+8. ~~**Diegetic shell art.**~~ The treehouse and trading-card art now carry the
+   title, Clubhouse, modes, draft and album surfaces, while field selection reads
+   as a wooden viewing station. Existing navigation, stores and tap semantics
+   did not move.
+9. ~~**Contact spectacle before optional systems.**~~ Contact now drives a
+   render-only 3D burst and strength-scaled lens punch before the existing
+   home-run camera and fireworks. Shifts, stamina and power-ups were reviewed and
+   deliberately left out until playtesting establishes a product need.
 
 Gameplay: their new modes (Backyard Derby, Backyard Bash, Wiggle Ball, T-Ball)
 map to the focused practice/watch arc Recess now ships, and their 10-point skill system

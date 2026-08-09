@@ -578,6 +578,18 @@ export class ProxyCharacter {
           color: skinC,
           slot: 'M_Body',
         });
+        parts.push({
+          geom: ball(
+            headC.clone().add(new Vector3(sgn * headR * headW * 1.005, -headR * 0.23, headR * 0.015)),
+            headR * 0.09,
+            new Vector3(0.35, 0.78, 0.4),
+            8,
+            5
+          ),
+          bone: 'Head',
+          color: shadeInt(skinC, 0.18),
+          slot: 'M_Body',
+        });
       }
     }
 
@@ -687,6 +699,22 @@ export class ProxyCharacter {
       parts.push({ geom: limb(at(`${side}Arm`), at(`${side}ForeArm`), 0.129), bone: `${side}Arm`, color: jersey, slot: 'M_Uniform' });
       parts.push({ geom: limb(at(`${side}ForeArm`), at(`${side}Hand`), 0.112), bone: `${side}ForeArm`, color: skinC, slot: 'M_Body' });
       parts.push({ geom: ball(at(`${side}Hand`), 0.147, new Vector3(1, 0.9, 0.85)), bone: `${side}Hand`, color: skinC, slot: 'M_Body' });
+      if (rosterFidelity) {
+        // Moulded sleeve and wrist seams stop the limbs reading as two tubes
+        // pushed together in the close draft camera.
+        parts.push({
+          geom: ball(at(`${side}ForeArm`), 0.143, new Vector3(1.08, 0.42, 1.08), 8, 5),
+          bone: `${side}Arm`,
+          color: shadeInt(jersey, 0.22),
+          slot: 'M_Uniform',
+        });
+        parts.push({
+          geom: ball(at(`${side}Hand`).clone().lerp(at(`${side}ForeArm`), 0.28), 0.119, new Vector3(1.05, 0.28, 1.05), 8, 5),
+          bone: `${side}ForeArm`,
+          color: 0xf1e5c6,
+          slot: 'M_Accessory',
+        });
+      }
     }
 
     // ---- Legs ----
@@ -715,6 +743,22 @@ export class ProxyCharacter {
           color: shoe,
           slot: 'M_Accessory',
         });
+        if (rosterFidelity) {
+          parts.push({
+            geom: box(foot.clone().add(new Vector3(0, -0.13, 0.13)), 0.3, 0.055, 0.52),
+            bone: `${side}Foot`,
+            color: 0xf3eee3,
+            slot: 'M_Accessory',
+          });
+          for (const dz of [0.04, 0.13, 0.22]) {
+            parts.push({
+              geom: box(foot.clone().add(new Vector3(0, 0.028, dz)), 0.22, 0.025, 0.035),
+              bone: `${side}Foot`,
+              color: 0xf3eee3,
+              slot: 'M_Accessory',
+            });
+          }
+        }
       }
     }
 

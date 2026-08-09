@@ -33,6 +33,7 @@ import { Announcer } from '../../systems/announcer';
 import type { Character } from '../../data/types';
 import { announceFor, cuesForChange, cuesForEvent, snapshot, type Cue, type Snapshot } from './soundCues';
 import type { LiveFrame, SimEvent } from '../sim/game';
+import { RecordedAudio } from './RecordedAudio';
 
 /**
  * How many of the same cue may sound in one tick.
@@ -44,6 +45,7 @@ import type { LiveFrame, SimEvent } from '../sim/game';
 const MAX_PER_TICK = 1;
 
 export class Sound {
+  private readonly recorded = new RecordedAudio();
   /**
    * The last snapshot, COPIED.
    *
@@ -94,12 +96,15 @@ export class Sound {
     this.fire(cuesForEvent(e));
     const moment = announceFor(e);
     if (!moment) return;
-    const lines = this.booth.line(moment.kind, performance.now(), { name: this.batter }, moment.priority);
-    if (!lines) return;
-    // ★ THE FIRST LINE FLUSHES, THE REACTION QUEUES. `audio.say` reserves the
-    // speaking slot on a flush precisely so the second half of an exchange lines
-    // up behind it instead of jumping in front during the deferred gap.
-    lines.forEach((l, i) => say(l.text, commentatorProfile(l.speaker), i === 0 ? 'flush' : 'queue'));
+    const fallback = (): void => {
+      const lines = this.booth.line(moment.kind, performance.now(), { name: this.batter }, moment.priority);
+      if (!lines) return;
+      // ★ THE FIRST LINE FLUSHES, THE REACTION QUEUES. `audio.say` reserves the
+      // speaking slot on a flush precisely so the second half of an exchange lines
+      // up behind it instead of jumping in front during the deferred gap.
+      lines.forEach((l, i) => say(l.text, commentatorProfile(l.speaker), i === 0 ? 'flush' : 'queue'));
+    };
+    this.recorded.playCommentary(moment.kind, fallback);
   }
 
   /** Who to name in a call. Fed from the frame tap. */
@@ -133,7 +138,8 @@ export class Sound {
    * drafter should hear the kid they just tapped, not a backlog of the last four.
    */
   sayDraft(c: Character): void {
-    say(c.draftLine ?? c.name, kidVoice(c), 'flush');
+    const fallback = (): void => say(c.draftLine ?? c.name, kidVoice(c), 'flush');
+    this.recorded.playKid(c.id, fallback);
   }
 
   /** "THE TEAL ROCKETS!" — said by the booth, at the top of the game. */
@@ -147,7 +153,7 @@ export class Sound {
       const n = seen.get(cue) ?? 0;
       if (n >= MAX_PER_TICK) continue;
       seen.set(cue, n + 1);
-      PLAY[cue]();
+      this.recorded.play(cue, PLAY[cue]);
     }
   }
 }

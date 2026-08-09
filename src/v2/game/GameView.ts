@@ -44,6 +44,7 @@ import {
   SphereGeometry,
   Vector2,
   Vector3,
+  type AnimationClip,
   type Quaternion,
 } from 'three';
 import { Renderer } from '../render/Renderer';
@@ -54,9 +55,10 @@ import { buildFence, type FenceBuild } from '../render/Fence';
 import { buildScenery, type SceneryBuild } from '../render/Scenery';
 import { NIGHT_HORIZON, NIGHT_TOP, SKY_HORIZON, SKY_TOP, buildSky } from '../render/Sky';
 import { createCharacter, proxyForced } from '../render/CharacterFactory';
-import { configureModelLoader } from '../render/modelLoader';
+import { configureModelLoader, loadAnimationLibrary } from '../render/modelLoader';
 import { AnimationDirector } from '../render/AnimationDirector';
 import { buildProceduralClips } from '../render/proceduralClips';
+import { impactStrength } from '../render/impactCues';
 import {
   PITCH_DELIVERY_RELEASE_SEC,
   cpuSwingCue,
@@ -199,6 +201,8 @@ export class GameView {
   private lighting: Lighting;
   private readonly outlines = new OutlineRegistry();
   private readonly clipLibrary = buildProceduralClips();
+  /** Delivered shared motion. The procedural library remains a per-clip fallback. */
+  private deliveredClips: AnimationClip[] = [];
 
   private field!: FieldBuild;
   private fence!: FenceBuild;
@@ -209,6 +213,7 @@ export class GameView {
   /** Built lazily on the first night homer — a day game never pays for it. */
   private fireworks: Fireworks | null = null;
   private burstQueue: Array<{ delay: number; x: number; z: number; h: number; color: number }> = [];
+  private impactPunch = 0;
   private uniformIdx = { away: 0, home: 1 };
   private refs: SceneRefs = { kids: new Map(), directors: new Map(), ball: new Mesh() };
 
@@ -557,6 +562,18 @@ export class GameView {
   };
 
   async start(): Promise<void> {
+    // One library for the entire roster. A missing/corrupt delivery is a
+    // cosmetic downgrade, exactly like a missing character model.
+    try {
+      this.deliveredClips = await loadAnimationLibrary();
+    } catch (error) {
+      console.warn(
+        `[GameView] shared animation library unavailable; using procedural fallbacks: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+
     const geo = VENUE_GEOMETRY[this.venue];
     const look = VENUE_LOOKS[this.venue];
     this.field = buildField(geo, look, this.outlines, { anisotropy: this.renderer.tier.anisotropy });
@@ -640,7 +657,7 @@ export class GameView {
         this.refs.kids.set(c.id, view);
         this.refs.directors.set(
           c.id,
-          new AnimationDirector(view.mesh, { fallback: this.clipLibrary })
+          new AnimationDirector(view.mesh, { clips: this.deliveredClips, fallback: this.clipLibrary })
         );
       })
     );
@@ -688,7 +705,10 @@ export class GameView {
     made.view.root.visible = false;
     this.scene.add(made.view.root);
     this.refs.kids.set(character.id, made.view);
-    this.refs.directors.set(character.id, new AnimationDirector(made.view.mesh, { fallback: this.clipLibrary }));
+    this.refs.directors.set(
+      character.id,
+      new AnimationDirector(made.view.mesh, { clips: this.deliveredClips, fallback: this.clipLibrary })
+    );
   }
 
   setControlMode(mode: PlayerControlMode): void {
@@ -834,6 +854,13 @@ export class GameView {
           // ★ THE SKY AGREES WITH A NIGHT HOMER. Render-side chrome reacting
           // to the same event the booth calls; the sim never knows.
           if (e.t === 'contact' && e.hit === 'HR' && !e.foul && this.night) this.queueFireworks();
+          if (e.t === 'contact') {
+            const strength = impactStrength(e.launch.exitVelocityFts, e.hit, e.foul);
+            // Reuse the existing deterministic particle system at the plate;
+            // home-run sky bursts remain queued separately above the fence.
+            this.burstQueue.push({ delay: 0, x: 0, z: 0, h: e.launch.heightFt, color: 0xffce3a });
+            this.impactPunch = strength;
+          }
           this.simEvent?.(e);
         },
       },
@@ -1250,6 +1277,14 @@ export class GameView {
       this.animateCpuSwing();
       this.paintPlateCues();
       this.driveCamera(this.frame, dt);
+      if (this.impactPunch > 0) {
+        const punch = this.impactPunch;
+        this.impactPunch = Math.max(0, punch - dt * 3.4);
+        // A brief lens punch, never a sim slowdown. The contact frame remains
+        // the physical instant and the following camera still tracks the real ball.
+        this.camera.fov *= 1 - punch * 0.035;
+        this.camera.updateProjectionMatrix();
+      }
       this.paintHud(this.frame);
     }
     this.renderer.render(this.scene, this.camera, now);

@@ -251,10 +251,12 @@ These sell the characters, which *is* the product. Worth extra attention.
 3. Loops are seamless at 0.6×, 1.0× and 1.4×; marker clips hold up at 0.5×–2.5×.
 4. Thumbnail review: every clip readable at 40 px tall.
 
-The engine ships crude **procedural stand-ins** for all 35 clips, so every one of
-these checks already runs today against placeholder motion. Your delivery
-replaces them clip by clip — which means a partial delivery is testable the day
-it lands, and the pilot batch below can be signed off on its own.
+The engine exports its crude **procedural motion** into the shipped shared GLB,
+so every one of these checks and the real runtime loader already run today
+against placeholder motion. Your delivery replaces that file clip by clip; the
+same procedural clips remain available only as load-failure fallbacks. A partial
+delivery is therefore testable the day it lands, and the pilot batch below can
+be signed off on its own.
 
 ## Suggested order of delivery
 

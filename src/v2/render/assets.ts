@@ -19,11 +19,11 @@
 //
 // `vite.config.ts` sets `base: './'` so the built site works from any static
 // host path (the GitHub Pages sub-path is the live case). Under a relative
-// base, `import.meta.url` points at the hashed JS bundle in `dist/v2/assets/`,
-// while `public/v2/models/` lands at `dist/v2/models/` — one directory level
-// apart in the build and *the same* level in dev, which is precisely the kind
-// of difference that works locally and 404s in production. `document.baseURI`
-// is the page, and the page is `/v2/` in both.
+// base, `import.meta.url` points at the hashed JS bundle while `public/v2/`
+// lands beside the two HTML entry points. The front door therefore needs
+// `v2/<path>` and the permanent `/v2/` alias needs `<path>`. Resolve that one
+// difference here; models, decoders, audio and shell art must never each invent
+// their own URL rule.
 // ---------------------------------------------------------------------------
 
 /** Runtime asset root, relative to the page. */
@@ -38,7 +38,14 @@ const MODELS = 'models/';
  */
 export function assetUrl(path: string): string {
   if (typeof document === 'undefined' || !document.baseURI) return path;
-  return new URL(path, document.baseURI).href;
+  return assetUrlForPage(path, document.baseURI);
+}
+
+/** Resolve one `public/v2/` asset from either shipped HTML entry point. */
+export function assetUrlForPage(path: string, pageBase: string): string {
+  const pageDir = new URL('.', pageBase);
+  const assetPath = pageDir.pathname.endsWith('/v2/') ? path : `v2/${path}`;
+  return new URL(assetPath, pageDir).href;
 }
 
 /** `kid_<id>.glb` — the per-character file named in the asset contract §4. */
