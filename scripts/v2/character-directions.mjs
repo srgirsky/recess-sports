@@ -29,7 +29,8 @@ export const PERFORMANCE_BRIEF_PATH = join(here, '..', '..', 'docs', 'v2', 'char
 /**
  * `auditionVoice` is only the scratch TTS instrument used by
  * audition-voices.mjs. It is not a casting decision and never ships from this
- * file. The human brief is `casting`; `read` directs the roster-authored line.
+ * file. The production brief is `casting`; `read` directs the roster-authored
+ * line whether the approved performance is a stock AI voice or a human actor.
  */
 const DIRECTIONS = [
   {
@@ -320,8 +321,9 @@ export function performanceBrief() {
     '',
     '- Models replace `public/v2/models/kid_<id>.glb` and must pass `npm run validate:models`; deliver in batches of five or six after one signed-off pilot.',
     '- Shared baseball mechanics remain in `anims_recess_v1.glb`. Bespoke takes go in a partial `anims_<id>_v1.glb`; included clip names override shared motion for that kid only, and omitted names keep the shared library.',
-    '- Voice masters are 48 kHz/24-bit mono PCM WAV with room tone and no processing, delivered as `assets/v2/voice-delivery/kids/<id>.wav` and checked with `npm run validate:voice-delivery -- <ids>`. Runtime copies are mono MP3 named `public/v2/audio/voices/kids/<id>.mp3`; preserve the authored line exactly.',
-    '- Human performers may be adult voice actors. If a minor performs, obtain guardian consent and follow the production jurisdiction’s child-performer and data-retention rules.',
+    '- The default voice path is free local Kokoro inference through `npm run generate:ai-voice`: audition named stock voices, record the selected voice and speed in `scripts/v2/ai-voice-cast.mjs`, then use `--ship <ids>`. Never clone, imitate or condition on a real person’s voice without documented rights and consent.',
+    '- Voice masters are clean 48 kHz/24-bit mono PCM WAV, delivered as `assets/v2/voice-delivery/kids/<id>.wav` and checked with `npm run validate:voice-delivery -- <ids>`. Runtime copies are mono MP3 named `public/v2/audio/voices/kids/<id>.mp3`; preserve the authored line exactly and disclose AI-generated performances in the product.',
+    '- A human performer remains an optional future replacement. Adults may perform; if a minor performs, obtain guardian consent and follow the production jurisdiction’s child-performer and data-retention rules.',
     '- Review every model and motion at hero scale and at 40 px. Review every voice line in the draft flow, not only in isolation.',
     '',
     '## Review order',

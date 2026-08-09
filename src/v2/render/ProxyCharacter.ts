@@ -2,8 +2,10 @@
 // ★ THE PROXY CHARACTER — the schedule de-risker, and the skeleton's own test.
 //
 // A kid built entirely from three.js primitives, skinned to the SAME canonical
-// skeleton the 30 commissioned models are bound to, with each primitive
-// rigidly weighted to exactly one bone. The consequence is the whole point:
+// skeleton the 30 commissioned models are bound to. Runtime proxies keep each
+// primitive rigidly weighted to one bone; first-party production variants may
+// blend a narrow joint zone onto the child bone so close hero shots do not
+// reveal a pile of disconnected capsules. The consequence is the whole point:
 //
 //   * Proxies play every clip in the shared animation library CORRECTLY.
 //     Animation authoring, camera work, gameplay tuning, the whole statistical
@@ -318,6 +320,18 @@ interface Part {
   bone: string;
   color: number;
   /**
+   * Optional production skinning across one joint. The proxy path omits this
+   * and stays the deterministic rigid baseline; a delivered roster sculpt may
+   * use it to carry the parent surface into the child at elbows, wrists, knees
+   * and ankles without adding another mesh or draw call.
+   */
+  jointBlend?: {
+    bone: string;
+    at: Vector3;
+    radius: number;
+    strength: number;
+  };
+  /**
    * Map this primitive's native UVs into the body material's face island.
    * Only the roster model's skull uses it; the permanent proxy keeps its
    * geometry face and pays no texture cost.
@@ -606,8 +620,9 @@ export interface SlotRange {
 }
 
 /**
- * Merge parts into ONE skinned geometry: every vertex rigidly weighted to its
- * part's bone, and tinted by its part's colour.
+ * Merge parts into ONE skinned geometry: every vertex follows its part's bone,
+ * with an optional narrow two-bone blend at production joints, and is tinted
+ * by its part's colour.
  *
  * Hand-rolled rather than pulled from BufferGeometryUtils because we need to
  * write skin and colour attributes per source geometry anyway, and this way
@@ -640,6 +655,10 @@ function mergeParts(
   for (const p of parts) {
     const bone = BONE_INDEX[p.bone];
     if (bone === undefined) throw new Error(`Proxy part names an unknown bone: ${p.bone}`);
+    const blendBone = p.jointBlend ? BONE_INDEX[p.jointBlend.bone] : undefined;
+    if (p.jointBlend && blendBone === undefined) {
+      throw new Error(`Proxy joint blend names an unknown bone: ${p.jointBlend.bone}`);
+    }
     const pos = p.geom.attributes.position;
     const nor = p.geom.attributes.normal;
     const srcUv = p.geom.attributes.uv;
@@ -669,10 +688,24 @@ function mergeParts(
         uv[v * 2 + 0] = 0.75;
         uv[v * 2 + 1] = 0.25;
       }
-      // Rigid binding: full weight on one bone. This is what lets a primitive
-      // pile follow a real skeletal clip without any skin weighting work.
-      skinIndex[v * 4 + 0] = bone;
-      skinWeight[v * 4 + 0] = 1;
+      if (p.jointBlend && blendBone !== undefined) {
+        const dx = pos.getX(i) - p.jointBlend.at.x;
+        const dy = pos.getY(i) - p.jointBlend.at.y;
+        const dz = pos.getZ(i) - p.jointBlend.at.z;
+        const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        const linear = clamp(1 - distance / p.jointBlend.radius, 0, 1);
+        const smooth = linear * linear * (3 - 2 * linear);
+        const childWeight = smooth * p.jointBlend.strength;
+        skinIndex[v * 4 + 0] = bone;
+        skinIndex[v * 4 + 1] = blendBone;
+        skinWeight[v * 4 + 0] = 1 - childWeight;
+        skinWeight[v * 4 + 1] = childWeight;
+      } else {
+        // The permanent proxy remains rigid: full weight on one bone is what
+        // keeps the fallback cheap and deterministic.
+        skinIndex[v * 4 + 0] = bone;
+        skinWeight[v * 4 + 0] = 1;
+      }
     }
 
     const src = p.geom.index;
@@ -785,6 +818,9 @@ export class ProxyCharacter {
     const shoe = 0x33404f;
 
     const parts: Part[] = [];
+    const organic = rosterFidelity && opts.productionId === 'nostrike';
+    const blendTo = (bone: string, atPoint: Vector3, radius: number): Part['jointBlend'] =>
+      organic ? { bone, at: atPoint, radius, strength: 0.88 } : undefined;
 
     // ---- Head ----
     const head = at('Head');
@@ -889,6 +925,7 @@ export class ProxyCharacter {
       bone: 'Neck',
       color: skinC,
       slot: 'M_Body',
+      jointBlend: blendTo('Head', head, neckR * 2.4),
     });
 
     this.proportions = {
@@ -918,15 +955,27 @@ export class ProxyCharacter {
 
     // ---- Arms ----
     for (const side of ['Left', 'Right'] as const) {
-      parts.push({ geom: limb(at(`${side}Arm`), at(`${side}ForeArm`), 0.129), bone: `${side}Arm`, color: jersey, slot: 'M_Uniform' });
-      parts.push({ geom: limb(at(`${side}ForeArm`), at(`${side}Hand`), 0.112), bone: `${side}ForeArm`, color: skinC, slot: 'M_Body' });
+      parts.push({
+        geom: limb(at(`${side}Arm`), at(`${side}ForeArm`), 0.129),
+        bone: `${side}Arm`,
+        color: jersey,
+        slot: 'M_Uniform',
+        jointBlend: blendTo(`${side}ForeArm`, at(`${side}ForeArm`), 0.36),
+      });
+      parts.push({
+        geom: limb(at(`${side}ForeArm`), at(`${side}Hand`), 0.112),
+        bone: `${side}ForeArm`,
+        color: skinC,
+        slot: 'M_Body',
+        jointBlend: blendTo(`${side}Hand`, at(`${side}Hand`), 0.3),
+      });
       parts.push({ geom: ball(at(`${side}Hand`), 0.147, new Vector3(1, 0.9, 0.85)), bone: `${side}Hand`, color: skinC, slot: 'M_Body' });
       if (rosterFidelity) {
         // Moulded sleeve and wrist seams stop the limbs reading as two tubes
         // pushed together in the close draft camera.
         parts.push({
           geom: ball(at(`${side}ForeArm`), 0.143, new Vector3(1.08, 0.42, 1.08), 8, 5),
-          bone: `${side}Arm`,
+          bone: organic ? `${side}ForeArm` : `${side}Arm`,
           color: shadeInt(jersey, 0.22),
           slot: 'M_Uniform',
         });
@@ -935,6 +984,7 @@ export class ProxyCharacter {
           bone: `${side}ForeArm`,
           color: 0xf1e5c6,
           slot: 'M_Accessory',
+          jointBlend: blendTo(`${side}Hand`, at(`${side}Hand`), 0.24),
         });
       }
     }
@@ -956,8 +1006,31 @@ export class ProxyCharacter {
       parts.push(...wheelchairParts(hips, jersey));
     } else {
       for (const side of ['Left', 'Right'] as const) {
-        parts.push({ geom: limb(at(`${side}UpLeg`), at(`${side}Leg`), 0.171 * hip), bone: `${side}UpLeg`, color: pants, slot: 'M_Uniform' });
-        parts.push({ geom: limb(at(`${side}Leg`), at(`${side}Foot`), 0.135), bone: `${side}Leg`, color: pants, slot: 'M_Uniform' });
+        parts.push({
+          geom: limb(at(`${side}UpLeg`), at(`${side}Leg`), 0.171 * hip),
+          bone: `${side}UpLeg`,
+          color: pants,
+          slot: 'M_Uniform',
+          jointBlend: blendTo(`${side}Leg`, at(`${side}Leg`), 0.44),
+        });
+        parts.push({
+          geom: limb(at(`${side}Leg`), at(`${side}Foot`), 0.135),
+          bone: `${side}Leg`,
+          color: pants,
+          slot: 'M_Uniform',
+          jointBlend: blendTo(`${side}Foot`, at(`${side}Foot`), 0.34),
+        });
+        if (organic) {
+          // A child-bound kneecap overlaps both capsules while the blended
+          // upper surface carries the bend into it. This is the production
+          // difference between a hinge made of tubes and one rounded form.
+          parts.push({
+            geom: ball(at(`${side}Leg`), 0.176 * hip, new Vector3(1.02, 0.9, 1.02), 12, 8),
+            bone: `${side}Leg`,
+            color: pants,
+            slot: 'M_Uniform',
+          });
+        }
         const foot = at(`${side}Foot`);
         parts.push({
           geom: box(foot.clone().add(new Vector3(0, -0.059, 0.106)), 0.282, 0.153, 0.494),

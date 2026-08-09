@@ -215,8 +215,9 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
 7. ~~**Static audio identity.**~~ Six bespoke impact/crowd masters, seven
    commentator calls and thirty kid draft lines ship as local assets through
    the established cue and mute contracts. Synthesized Web Audio and browser
-   speech remain failure fallbacks; human-performed casting is still available
-   as a creative replacement rather than missing infrastructure.
+   speech remain failure fallbacks; locally generated, disclosed stock AI
+   voices now provide the default production path, while a rights-cleared human
+   take can still replace one through the same contract.
 8. ~~**Diegetic shell art.**~~ The treehouse and trading-card art now carry the
    title, Clubhouse, modes, draft and album surfaces, while field selection reads
    as a wooden viewing station. Existing navigation, stores and tap semantics

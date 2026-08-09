@@ -70,7 +70,9 @@ Junebug now has the first first-party character pass: `idle`, `idle_fidget`,
 `run`, `bat_stance`, `swing_contact`, `swing_follow`, `cheer_fierce` and
 `upset_fierce` resolve from her partial performance file and appear with `★`.
 Deliveries replace motion **clip by clip**, so a character's priority takes are
-reviewable without waiting for all 43.
+reviewable without waiting for all 43. Her production mesh also blends the
+neck, elbow, wrist, knee and ankle surfaces across two bones so those forms bend
+instead of separating like rigid capsules.
 
 The on-screen readout shows fps, p95 frame time, draw calls and triangles
 against the budget (≤90 draws, ≤180k tris). **Read it with the tab focused** —
@@ -113,31 +115,40 @@ npm run export:audio       # emit stable v2 impact/crowd audio masters
 npm run export:voices      # macOS maintainer tool: pre-render commentator + roster lines
 npm run export:performance-brief # regenerate the 30-character production packet
 npm run audition:voices    # print the non-shipping all-cast audition sheet
+npm run generate:ai-voice # print the free local AI cast and commands
+npm run generate:ai-voice -- --audition nostrike
+npm run generate:ai-voice -- --ship nostrike
 npm run validate:voice-delivery -- nostrike calls_shot wheelchair_ace
 npm run validate:models    # check every .glb in assets/v2/
 npm run validate:models path/to/anims_recess_v1.glb   # or one file
 VERBOSE=1 npm run validate:models                     # also print measurements
 ```
 
-The committed voice bank is the stable system-voice fallback. The production
-packet at `docs/v2/character-performance-brief.md` gives every kid separate
-sculpt, motion, casting, read and anti-caricature direction. To audition its
-directed speech without changing what ships, set `OPENAI_API_KEY` and start with
-the signature trio:
+The committed voice bank remains the stable fallback. The production packet at
+`docs/v2/character-performance-brief.md` gives every kid separate sculpt,
+motion, casting, read and anti-caricature direction. The production path is the
+free local Kokoro model: no API key and no per-line charge. It uses a pinned q8
+model and named stock voices—never cloning or imitating a real person. Start by
+auditioning the character's recorded short list, then promote the selected take:
 
 ```bash
-npm run audition:voices -- --generate
-npm run audition:voices -- --generate nostrike
+npm run generate:ai-voice -- --audition nostrike
+# record the selected stock voice + speed in scripts/v2/ai-voice-cast.mjs
+npm run generate:ai-voice -- --ship nostrike
+npm run validate:voice-delivery -- nostrike
 ```
 
-Auditions land in `assets/v2/voice-auditions/`, never `public/`. Omitting ids
-requests all thirty and incurs usage. Listen and cast them before any runtime
-swap; shipping AI-generated speech also requires a clear player-facing
-disclosure.
+The first run downloads the model into ignored `.cache/`; later inference runs
+locally. Auditions land in `assets/v2/voice-auditions/`, never `public/`.
+`--ship` writes the 48 kHz/24-bit mono PCM master under
+`assets/v2/voice-delivery/kids/` and the runtime MP3 under `public/`. Listen in
+the draft flow before approval. The title carries the required player-facing
+AI-performance disclosure.
 
-Human-performed masters land in `assets/v2/voice-delivery/kids/<id>.wav` as
-48 kHz/24-bit mono PCM WAV. Validate a batch with the command above, or omit ids
-to require all thirty, before acting review and runtime encoding.
+The older `npm run audition:voices -- --generate <ids>` command remains an
+optional paid cloud comparison and needs `OPENAI_API_KEY`; it is not the default
+production path. A future human performance can replace an AI master through
+the same technical contract when rights and consent are documented.
 
 ### Seeing what the v2 ball does
 
@@ -364,6 +375,6 @@ scripts/v2/          The asset gates: glb read/write, exporter, validator, lints
 ## What's next
 
 - A real backend to aggregate pick rates across all players
-- More characters, externally sculpted art, human-performed voice acting
+- Roll Junebug's organic sculpt and free local AI-voice process through the cast
 - Online-play polish: remote steal-reaction taps, guest relief, rematch
 - Eventually… the dinosaurs 🦖

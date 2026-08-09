@@ -69,7 +69,11 @@ export class TitleScreen implements Screen {
       location.href = './classic/';
     }, 'btn--quiet btn--small');
 
-    root.append(lockup, actions, classic);
+    // Small, persistent production disclosure. It is not a decision a child
+    // must read, so it stays outside the one-dominant-verb hierarchy.
+    const voiceDisclosure = el('p', 'title-voice-note', 'Character voices include AI-generated performances.');
+
+    root.append(lockup, actions, classic, voiceDisclosure);
     return root;
   }
 }
