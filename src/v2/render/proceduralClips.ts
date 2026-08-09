@@ -448,6 +448,124 @@ function swingContact(spec: ClipSpec): AnimationClip {
   ]);
 }
 
+// --- Junebug pilot takes ----------------------------------------------------
+//
+// These five are the first first-party performance pass, not generic schedule
+// stand-ins. They stay in this module because `build()` is the one contract-
+// aware track assembler and ground solver; a second animation builder would be
+// a second interpretation of the same rig. The character delivery exporter
+// writes only these names to `anims_nostrike_v1.glb`, so every other kid and
+// every other clip continues to use the shared library.
+
+const JUNEBUG_IDLE_POSE: Pose = {
+  hp: [-2, -4, 0], sp: [-2, -2, 0], s2: [-3, -4, 0], nk: [2, 0, 0], hd: [1, 7, -1],
+  la: [-3, 0, 72], lf: [0, -15, 0], ra: [-3, 0, -72], rf: [0, 15, 0],
+  lu: [2, 0, 8], ru: [-2, 0, -8],
+};
+
+const JUNEBUG_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
+  hp: [5, -4, 0], sp: [3, -5, 0], s2: [2, -8, 0], hd: [-2, 7, -2],
+  lu: [8, 0, 1], ll: [-5, 0, 0], ru: [-3, 0, -1], rl: [4, 0, 0],
+  la: [-4, 0, 3], lf: [0, -5, 0], ra: [-6, 0, -5], rf: [0, 6, 0],
+});
+
+const JUNEBUG_CONTACT_END: Pose = shift(JUNEBUG_STANCE_POSE, {
+  hp: [0, 78, 0], sp: [0, 54, 0], s2: [0, 74, 0], hd: [2, -18, 0],
+  ra: [38, 0, 86], rf: [0, -28, 0], la: [30, 0, -68], lf: [0, 24, 0],
+  lu: [-10, 0, 0], ru: [8, 0, 0], rt: [0, 0, 52],
+});
+
+function junebugIdle(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: JUNEBUG_IDLE_POSE },
+    { f: 14, pose: shift(JUNEBUG_IDLE_POSE, { sp: [0.7, 0, 0], s2: [0.8, 0, 0], hd: [-0.5, -1.5, 0] }), hips: [0, 0.008, 0] },
+    // She checks once, then goes still again. Confidence comes from economy.
+    { f: 28, pose: shift(JUNEBUG_IDLE_POSE, { hd: [0, -7, 0], nk: [0, -3, 0], ra: [0, 0, 2] }) },
+    { f: 39, pose: shift(JUNEBUG_IDLE_POSE, { hd: [0, -7, 0], nk: [0, -3, 0], ra: [0, 0, 2] }) },
+    { f: 49, pose: shift(JUNEBUG_IDLE_POSE, { sp: [0.5, 0, 0], s2: [0.6, 0, 0], hd: [-0.3, -1, 0] }), hips: [0, 0.006, 0] },
+    { f: spec.frames, pose: JUNEBUG_IDLE_POSE },
+  ]);
+}
+
+function junebugRun(spec: ClipSpec): AnimationClip {
+  const reachA: Pose = {
+    hp: [7, 0, 0], sp: [6, -3, 0], s2: [5, 5, 0], hd: [-9, 2, 0],
+    lu: [-46, 0, 5], ll: [-12, 0, 0], lt: [18, 0, 0],
+    ru: [48, 0, -5], rl: [-76, 0, 0], rt: [9, 0, 0],
+    la: [42, 0, 70], lf: [0, -62, 0], ra: [-40, 0, -70], rf: [0, 62, 0],
+  };
+  const passA: Pose = {
+    hp: [9, 0, 0], sp: [7, 4, 0], s2: [6, -5, 0], hd: [-10, -1, 0],
+    lu: [4, 0, 4], ll: [-42, 0, 0], lt: [8, 0, 0],
+    ru: [2, 0, -4], rl: [-24, 0, 0], rt: [20, 0, 0],
+    la: [4, 0, 70], lf: [0, -58, 0], ra: [-3, 0, -70], rf: [0, 58, 0],
+  };
+  const reachB: Pose = {
+    hp: [7, 0, 0], sp: [6, 3, 0], s2: [5, -5, 0], hd: [-9, -2, 0],
+    lu: [48, 0, 5], ll: [-76, 0, 0], lt: [9, 0, 0],
+    ru: [-46, 0, -5], rl: [-12, 0, 0], rt: [18, 0, 0],
+    la: [-40, 0, 70], lf: [0, -62, 0], ra: [42, 0, -70], rf: [0, 62, 0],
+  };
+  const passB = shift(passA, {
+    sp: [0, -8, 0], s2: [0, 10, 0], lu: [-2, 0, 0], ru: [2, 0, 0],
+    la: [-8, 0, 0], ra: [8, 0, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: reachA },
+    { f: 3, pose: shift(passA, { hp: [-2, 0, 0] }), hips: [0, 0.045, 0] },
+    { f: 6, pose: passA, hips: [0, 0.085, 0] },
+    { f: 9, pose: shift(reachB, { hp: [-2, 0, 0] }), hips: [0, 0.035, 0] },
+    { f: 12, pose: reachB },
+    { f: 15, pose: shift(passB, { hp: [-2, 0, 0] }), hips: [0, 0.045, 0] },
+    { f: 18, pose: passB, hips: [0, 0.085, 0] },
+    { f: 21, pose: shift(reachA, { hp: [-2, 0, 0] }), hips: [0, 0.035, 0] },
+    { f: spec.frames, pose: reachA },
+  ]);
+}
+
+function junebugBatStance(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: JUNEBUG_STANCE_POSE },
+    { f: 13, pose: shift(JUNEBUG_STANCE_POSE, { s2: [0, -2, 0], ra: [-2, 0, -3], hd: [0, 1, 0] }), hips: [0, -0.012, 0] },
+    { f: 24, pose: shift(JUNEBUG_STANCE_POSE, { s2: [0, -4, 0], ra: [-4, 0, -5], rf: [0, 5, 0], hd: [0, -2, 0] }), hips: [0, -0.018, 0] },
+    // The waggle stops here: she has decided.
+    { f: 36, pose: shift(JUNEBUG_STANCE_POSE, { s2: [0, -4, 0], ra: [-4, 0, -5], rf: [0, 5, 0], hd: [0, -2, 0] }), hips: [0, -0.018, 0] },
+    { f: 49, pose: shift(JUNEBUG_STANCE_POSE, { s2: [0, -1, 0], ra: [-1, 0, -2] }), hips: [0, -0.007, 0] },
+    { f: spec.frames, pose: JUNEBUG_STANCE_POSE },
+  ]);
+}
+
+function junebugSwingContact(spec: ClipSpec): AnimationClip {
+  const loaded = shift(JUNEBUG_STANCE_POSE, {
+    hp: [0, -10, 0], sp: [0, -5, 0], s2: [0, -18, 0],
+    ra: [-10, 0, -13], la: [-5, 0, 6], lu: [-8, 0, 0], hd: [0, 4, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: loaded },
+    { f: 3, pose: shift(loaded, { hp: [0, 3, 0], s2: [0, 3, 0], hd: [0, -2, 0] }) },
+    { f: 5, pose: shift(loaded, { hp: [0, 12, 0], sp: [0, 7, 0], s2: [0, 10, 0], ra: [4, 0, 8], la: [2, 0, -5] }) },
+    { f: 6, pose: shift(loaded, { hp: [0, 31, 0], sp: [0, 21, 0], s2: [0, 28, 0], ra: [15, 0, 28], la: [11, 0, -20], rt: [0, 0, 23] }) },
+    // Contact: the widest hand sweep is centred on 6 -> 8, making frame 7
+    // the derived bat marker rather than merely a number in the brief.
+    { f: 7, pose: shift(loaded, { hp: [0, 48, 0], sp: [0, 33, 0], s2: [0, 44, 0], ra: [25, 0, 49], la: [18, 0, -37], rt: [0, 0, 37] }) },
+    { f: 8, pose: shift(loaded, { hp: [0, 65, 0], sp: [0, 45, 0], s2: [0, 60, 0], ra: [35, 0, 70], la: [25, 0, -54], rt: [0, 0, 51] }) },
+    { f: 12, pose: shift(JUNEBUG_CONTACT_END, { hp: [0, -5, 0], sp: [0, -4, 0], s2: [0, -5, 0] }) },
+    { f: spec.frames - 1, pose: JUNEBUG_CONTACT_END },
+  ]);
+}
+
+function junebugSwingFollow(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: JUNEBUG_CONTACT_END },
+    { f: 5, pose: shift(JUNEBUG_CONTACT_END, { hp: [0, 7, 0], s2: [0, 5, 0], hd: [-2, -4, 0], ra: [-4, 0, -8] }) },
+    { f: 10, pose: shift(JUNEBUG_CONTACT_END, { hp: [0, -8, 0], sp: [0, -8, 0], s2: [0, -11, 0], ra: [-12, 0, -24], la: [-8, 0, 18] }) },
+    // One small shoulder release carries the satisfaction; no victory dance.
+    { f: 15, pose: shift(JUNEBUG_STANCE_POSE, { s2: [-5, 0, -2], hd: [1, -5, 0], ra: [-4, 0, -3] }) },
+    { f: 20, pose: shift(JUNEBUG_STANCE_POSE, { s2: [-2, 0, -1], hd: [0, -2, 0] }) },
+    { f: spec.frames - 1, pose: JUNEBUG_STANCE_POSE },
+  ]);
+}
+
 /**
  * Release is frame 4 and frame 11 respectively; same peak-speed rule as the
  * swing. `arm` is the euler the throwing arm whips through.
@@ -926,5 +1044,21 @@ export function buildDirectedReactionClips(): AnimationClip[] {
   return directions.map(([name, won, style]) => {
     const spec = CLIPS.find((candidate) => candidate.name === name)!;
     return directedReaction(spec as ClipSpec, won, style);
+  });
+}
+
+/** Junebug's signed-off vertical-slice names, exported as a partial delivery. */
+export function buildJunebugPilotClips(): AnimationClip[] {
+  const builders: Readonly<Record<string, (spec: ClipSpec) => AnimationClip>> = {
+    idle: junebugIdle,
+    run: junebugRun,
+    bat_stance: junebugBatStance,
+    swing_contact: junebugSwingContact,
+    swing_follow: junebugSwingFollow,
+  };
+  return Object.entries(builders).map(([name, make]) => {
+    const spec = CLIPS.find((candidate) => candidate.name === name);
+    if (!spec) throw new Error(`Junebug pilot names unknown contract clip "${name}"`);
+    return make(spec as ClipSpec);
   });
 }

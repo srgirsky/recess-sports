@@ -704,4 +704,20 @@ describe('the proxy draws a kid, not a bobblehead', () => {
 
     expect(new Set(signatures).size, signatures.join('\n')).toBe(kinds.length);
   });
+
+  it('gives Junebug a production-only arrow silhouette and athletic piping', () => {
+    const visual = ROSTER.find((character) => character.id === 'nostrike')!.visual;
+    const generic = new ProxyCharacter(visual, { fidelity: 'roster' });
+    const pilot = new ProxyCharacter(visual, { fidelity: 'roster', productionId: 'nostrike' });
+    const genericVertices = generic.mesh.geometry.attributes.position.count;
+    const pilotVertices = pilot.mesh.geometry.attributes.position.count;
+
+    // The runtime fallback remains generic; only the delivered roster mesh
+    // substitutes the arrow ponytail and pale shoulder piping. The pilot is
+    // allowed to be cheaper — its athletic piping replaces two dense torus
+    // bands — but it must be a materially different mesh.
+    expect(Math.abs(pilotVertices - genericVertices)).toBeGreaterThan(20);
+    generic.dispose();
+    pilot.dispose();
+  });
 });

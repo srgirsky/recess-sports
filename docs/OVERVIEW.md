@@ -1684,6 +1684,26 @@ front-facing contact sheet of the complete batch. `?spike=1&kid=<id>` keeps the
 single-character field review, while `?proxy=1` remains the honest A/B against
 the permanent cheap fallback.
 
+### Junebug vertical slice — direction becomes geometry and motion
+
+The roster pass proved that thirty contract-legal models could ship; it did not
+prove that one kid could receive a deliberately art-directed pass without
+forking the rig or the runtime. Junebug is that proof. Her production-only mesh
+replaces the generic ponytail and floating stripe bands with the performance
+packet's clean arrow silhouette and athletic piping, while her fallback proxy
+stays untouched. The visual target is recorded at
+`docs/v2/concepts/junebug-turnaround.png`, so the sculpt has something concrete
+to agree with rather than another adjective.
+
+Motion uses the same narrow seam. `anims_nostrike_v1.glb` is a 36KB partial
+delivery containing the five clips players watch most — `idle`, `run`,
+`bat_stance`, `swing_contact`, `swing_follow` — with economy and held beats in
+place of the shared sine-driven motion. Contact remains physically derived on
+frame 7, the three loops close exactly, and the ground solve is the same one
+used by the shared library. The animation review labels those five `★` and
+leaves all 38 omitted names on shared `▪`, proving a character can improve in
+place rather than waiting for a new 43-clip monolith.
+
 ### 2026 parity pass — two city parks, not two palettes
 
 The BB2026 video only exposes two of its eleven fields clearly, so those are the

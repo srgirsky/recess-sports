@@ -65,10 +65,11 @@ Keys: `←`/`→` or space step through clips, `1`–`3` set the rate, `R` repla
 Add `&kid=<id>` to review a particular kid's takes. Clips marked `▫` are
 procedural stand-ins, `▪` are shared delivery and `★` are that kid's overrides.
 
-Until the commissioned library arrives every clip is a crude stand-in generated
-in `src/v2/render/proceduralClips.ts` — correct about timing and contract,
-deliberately not about look. A real delivery replaces them **clip by clip**, so
-the animator's pilot batch is reviewable the day it lands.
+The shared library is still generated from timing-correct stand-ins, but
+Junebug now has the first first-party vertical slice: `idle`, `run`,
+`bat_stance`, `swing_contact` and `swing_follow` resolve from her partial
+performance file and appear with `★`. Deliveries replace motion **clip by
+clip**, so a pilot batch is reviewable without waiting for all 43.
 
 The on-screen readout shows fps, p95 frame time, draw calls and triangles
 against the budget (≤90 draws, ≤180k tris). **Read it with the tab focused** —
@@ -104,6 +105,7 @@ that passes is accepted:
 ```bash
 npm run export:skeleton    # emit assets/v2/skeleton_recess_v1.glb from skeleton.ts
 npm run export:animations  # emit the shared 43-clip runtime library
+npm run export:pilot-performance # emit Junebug's five-clip partial performance
 npm run export:audio       # emit stable v2 impact/crowd audio masters
 npm run export:voices      # macOS maintainer tool: pre-render commentator + roster lines
 npm run export:performance-brief # regenerate the 30-character production packet
@@ -199,6 +201,17 @@ npm run export:roster-kid              # regenerate all 30 production models
 npm run export:roster-kid -- turbo zippy  # regenerate selected characters
 npm run validate:models                # validate the complete delivery
 ```
+
+Junebug's editable pilot source is rebuilt after her runtime model and concept
+sheet with:
+
+```bash
+blender --background --factory-startup --python scripts/v2/blender/build-junebug-source.py
+```
+
+It writes `assets/v2/source/junebug-pilot.blend` with the turnaround packed
+inside. Use the Node exporter for the shipping GLB; Blender's stock exporter
+reorders the canonical joints and therefore is not the delivery path.
 
 `/v2/?spike=1&roster=1` is the one-frame roster review; use
 `/v2/?spike=1&kid=turbo` for a single-character field review.
