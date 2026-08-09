@@ -55,10 +55,10 @@ them.
 ## Production rule
 
 Finish one character through every gate before starting the next. Junebug,
-Theo and Zoom are completed gold-standard signature passes; Big Lou and Tank
-have completed Batch 1 passes. Their shared quality and movement language is
-the approval baseline for the remaining roster; Batch 1 finishes with Mimi
-Mash.
+Theo and Zoom are completed gold-standard signature passes; Big Lou, Tank and
+Mimi Mash complete Batch 1. Their shared quality and movement language is the
+approval baseline for the remaining roster; Batch 2 starts with Turbo, Sprout
+and Zippy.
 
 Use one pull request per signature character. Later production batches may
 share a pull request when every character has separate review evidence.

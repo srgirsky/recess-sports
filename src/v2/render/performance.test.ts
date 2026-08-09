@@ -51,6 +51,14 @@ describe('character performance direction', () => {
     expect(faceForClip(tank, 'bat_stance', 'determined')).toBe('sleepy');
   });
 
+  it('gives Mimi a batter hero, fierce reactions and quick ignition', () => {
+    const mimi = performanceFor('mimi_mash');
+    expect(heroClipFor(mimi)).toBe('bat_stance');
+    expect(reactionClipFor(mimi, true)).toBe('cheer_fierce');
+    expect(reactionClipFor(mimi, false)).toBe('upset_fierce');
+    expect(actingRateFor(mimi, 'idle')).toBeGreaterThan(1);
+  });
+
   it('does not let acting tempo retime a marker or locomotion calculation', () => {
     const fast = performanceFor('boomer');
     expect(actingRateFor(fast, 'cheer')).toBeGreaterThan(1);

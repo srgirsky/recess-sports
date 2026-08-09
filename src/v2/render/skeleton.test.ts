@@ -830,4 +830,24 @@ describe('the proxy draws a kid, not a bobblehead', () => {
     generic.dispose();
     tank.dispose();
   });
+
+  it('gives Mimi a production-only curly halo, broad hoodie and organic joints', () => {
+    const visual = ROSTER.find((character) => character.id === 'mimi_mash')!.visual;
+    const generic = new ProxyCharacter(visual, { fidelity: 'roster' });
+    const mimi = new ProxyCharacter(visual, { fidelity: 'roster', productionId: 'mimi_mash' });
+    const weights = mimi.mesh.geometry.attributes.skinWeight;
+    let blended = 0;
+    for (let i = 0; i < weights.count; i++) {
+      expect(weights.getX(i) + weights.getY(i)).toBeCloseTo(1, 6);
+      if (weights.getY(i) > 0.01) blended++;
+    }
+    // The production halo is deliberately lower-density than the fallback's
+    // buried curls so the complete GLB stays under 400KB. Materially different
+    // topology—not a larger vertex count—is the invariant.
+    expect(Math.abs(mimi.mesh.geometry.attributes.position.count - generic.mesh.geometry.attributes.position.count))
+      .toBeGreaterThan(80);
+    expect(blended).toBeGreaterThan(100);
+    generic.dispose();
+    mimi.dispose();
+  });
 });

@@ -21,13 +21,14 @@ CHARACTERS = {
     "wheelchair_ace": ("Zoom Ramirez", "zoom-turnaround.png", "zoom-pilot.blend"),
     "big_lou": ("Big Lou", "big-lou-turnaround.png", "big-lou-pilot.blend"),
     "tank": ("Tank", "tank-turnaround.png", "tank-pilot.blend"),
+    "mimi_mash": ("Mimi Mash", "mimi-mash-turnaround.png", "mimi-mash-pilot.blend"),
 }
 
 
 def requested_id() -> str:
     args = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     if len(args) != 1 or args[0] not in CHARACTERS:
-        raise RuntimeError("pass one produced character id: nostrike, calls_shot, wheelchair_ace, big_lou or tank")
+        raise RuntimeError("pass one produced character id: nostrike, calls_shot, wheelchair_ace, big_lou, tank or mimi_mash")
     return args[0]
 
 

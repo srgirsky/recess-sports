@@ -1102,6 +1102,75 @@ function tankIdleFidget(spec: ClipSpec): AnimationClip {
   ]);
 }
 
+// --- Mimi Mash takes ------------------------------------------------------
+// Mimi attacks every pose with both feet. Quick ignition, whole-torso intent
+// and one elastic rebound keep the size joyful instead of angry.
+
+const MIMI_IDLE_POSE: Pose = {
+  hp: [9, -5, 0], sp: [5, -4, 0], s2: [8, -7, 0], hd: [-5, 7, 0],
+  la: [7, 0, 62], lf: [0, -9, 0], ra: [7, 0, -62], rf: [0, 9, 0],
+  lu: [11, 0, 8], ll: [-16, 0, 0], ru: [11, 0, -8], rl: [-16, 0, 0],
+};
+const MIMI_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
+  hp: [21, -15, 0], sp: [15, -11, 0], s2: [20, -18, 0], hd: [-7, 14, 0],
+  la: [-8, 0, 10], ra: [-12, 0, -15],
+  lu: [14, 0, 6], ll: [-20, 0, 0], ru: [14, 0, -6], rl: [-20, 0, 0],
+});
+const MIMI_CONTACT_END: Pose = shift(MIMI_STANCE_POSE, {
+  hp: [0, 107, 0], sp: [0, 79, 0], s2: [0, 102, 0], hd: [3, -42, -3],
+  ra: [52, 0, 108], rf: [0, -31, 0], la: [43, 0, -88], lf: [0, 27, 0],
+  rt: [0, 0, 69], lu: [-9, 0, 2], ll: [12, 0, 0], ru: [9, 0, -3], rl: [-13, 0, 0],
+});
+
+function mimiSwingContact(spec: ClipSpec): AnimationClip {
+  const load = shift(MIMI_STANCE_POSE, {
+    hp: [0, -25, 0], sp: [0, -16, 0], s2: [0, -31, 0], hd: [-3, 17, 0],
+    ra: [-19, 0, -25], la: [-11, 0, 14], lu: [7, 0, 0], ru: [7, 0, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: load },
+    { f: 2, pose: shift(load, { hp: [0, -4, 0], s2: [0, -6, 0], hd: [0, 4, 0] }), hips: [0, -0.06, 0] },
+    { f: 5, pose: shift(load, { hp: [0, 17, 0], sp: [0, 12, 0], s2: [0, 16, 0], ra: [9, 0, 18], la: [7, 0, -13] }) },
+    { f: 6, pose: shift(load, { hp: [0, 43, 0], sp: [0, 31, 0], s2: [0, 40, 0], ra: [25, 0, 47], la: [18, 0, -35], hd: [0, -8, 0] }) },
+    { f: 7, pose: shift(load, { hp: [0, 69, 0], sp: [0, 50, 0], s2: [0, 65, 0], ra: [41, 0, 76], la: [30, 0, -57], hd: [0, -15, 0] }) },
+    { f: 8, pose: shift(load, { hp: [0, 94, 0], sp: [0, 69, 0], s2: [0, 90, 0], ra: [57, 0, 105], la: [42, 0, -79], hd: [0, -23, 0] }), hips: [0.04, 0.06, 0] },
+    { f: 12, pose: shift(MIMI_CONTACT_END, { hp: [0, 8, 0], s2: [0, 7, 0], hd: [0, -7, 0] }), hips: [0.09, 0.09, 0] },
+    { f: spec.frames - 1, pose: MIMI_CONTACT_END },
+  ]);
+}
+
+function mimiSwingFollow(spec: ClipSpec): AnimationClip {
+  const pulledAround = shift(MIMI_CONTACT_END, {
+    hp: [0, 18, 0], sp: [0, 13, 0], s2: [0, 17, 0], hd: [4, -12, 3],
+    lu: [20, 0, 2], ll: [-29, 0, 0], ru: [-16, 0, -3], rl: [25, 0, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: MIMI_CONTACT_END },
+    { f: 4, pose: pulledAround, hips: [0.12, 0.14, 0] },
+    { f: 8, pose: shift(pulledAround, { hp: [8, -13, 0], s2: [7, -11, 0], hd: [-9, 22, -4], lu: [-28, 0, 0], ru: [24, 0, 0] }), hips: [-0.09, -0.04, 0] },
+    { f: 13, pose: shift(MIMI_STANCE_POSE, { hp: [8, 9, 0], s2: [6, 8, 0], hd: [-5, -18, 3], ra: [-15, 0, -24] }), hips: [0.03, 0.08, 0] },
+    { f: 18, pose: shift(MIMI_STANCE_POSE, { hp: [-3, 0, 0], s2: [-2, 0, 0], hd: [2, 8, -1] }) },
+    { f: spec.frames - 1, pose: MIMI_STANCE_POSE },
+  ]);
+}
+
+function mimiIdleFidget(spec: ClipSpec): AnimationClip {
+  const pointFence = shift(MIMI_IDLE_POSE, {
+    hp: [10, 18, 0], sp: [8, 14, 0], s2: [12, 21, 0], hd: [-9, -28, 5],
+    la: [-72, 0, 42], lf: [0, -48, 0], ra: [-112, 0, -49], rf: [0, 14, 0],
+    lu: [8, 0, 4], ll: [-12, 0, 0], ru: [18, 0, -4], rl: [-27, 0, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: MIMI_IDLE_POSE },
+    { f: 8, pose: shift(MIMI_IDLE_POSE, { hp: [10, -8, 0], s2: [8, -11, 0], hd: [5, 12, 0] }), hips: [0, -0.1, 0] },
+    { f: 15, pose: pointFence, hips: [0.08, 0.1, 0] },
+    { f: 24, pose: shift(pointFence, { hp: [-8, 0, 0], s2: [-7, 0, 0], hd: [8, 0, 0] }), hips: [-0.04, -0.04, 0] },
+    { f: 36, pose: shift(MIMI_IDLE_POSE, { hp: [5, 3, 0], s2: [4, 4, 0], hd: [-4, -12, 3] }) },
+    { f: 51, pose: shift(MIMI_IDLE_POSE, { hp: [-2, 0, 0], hd: [2, 7, -2] }) },
+    { f: spec.frames - 1, pose: MIMI_IDLE_POSE },
+  ]);
+}
+
 /**
  * Release is frame 4 and frame 11 respectively; same peak-speed rule as the
  * swing. `arm` is the euler the throwing arm whips through.
@@ -1677,6 +1746,25 @@ export function buildTankPilotClips(): AnimationClip[] {
   return Object.entries(builders).map(([name, make]) => {
     const spec = CLIPS.find((candidate) => candidate.name === name);
     if (!spec) throw new Error(`Tank pass names unknown contract clip "${name}"`);
+    return make(spec as ClipSpec);
+  });
+}
+
+/** Mimi Mash's complete Batch 1 pass, exported as a partial delivery. */
+export function buildMimiMashPilotClips(): AnimationClip[] {
+  const builders: Readonly<Record<string, (spec: ClipSpec) => AnimationClip>> = {
+    idle: (spec) => breathe(spec, MIMI_IDLE_POSE, 1.2),
+    idle_fidget: mimiIdleFidget,
+    run: (spec) => runCycle(spec, 15, 48, 46),
+    bat_stance: (spec) => breathe(spec, MIMI_STANCE_POSE, 1.15),
+    swing_contact: mimiSwingContact,
+    swing_follow: mimiSwingFollow,
+    cheer_fierce: (spec) => directedReaction(spec, true, 'fierce'),
+    upset_fierce: (spec) => directedReaction(spec, false, 'fierce'),
+  };
+  return Object.entries(builders).map(([name, make]) => {
+    const spec = CLIPS.find((candidate) => candidate.name === name);
+    if (!spec) throw new Error(`Mimi Mash pass names unknown contract clip "${name}"`);
     return make(spec as ClipSpec);
   });
 }
