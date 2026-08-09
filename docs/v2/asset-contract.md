@@ -224,6 +224,10 @@ rejects any model that has them.
 
 ## 5. Delivery sequence
 
+The stage gates, visual evidence and pull-request handoff for this sequence live
+in `docs/v2/character-production-playbook.md`; this section owns only the asset
+delivery order.
+
 1. Spec + validator written; the engine team builds a primitive **proxy**
    against the skeleton. The proxy is the acceptance test for the spec — if a
    clip reads correctly on it, the skeleton can express it.

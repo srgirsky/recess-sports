@@ -275,11 +275,12 @@ same procedural clips remain available only as load-failure fallbacks. A partial
 delivery is therefore testable the day it lands, and the pilot batch below can
 be signed off on its own.
 
-The first-party Junebug vertical slice proves that partial path in production:
-`anims_nostrike_v1.glb` contains `idle`, `run`, `bat_stance`,
-`swing_contact` and `swing_follow`; every other name still resolves to the
-shared library. Regenerate it with `npm run export:pilot-performance` and review
-the five `★` rows at `/v2/?anims=1&kid=nostrike`.
+The first-party Junebug character pass proves that partial path in production:
+`anims_nostrike_v1.glb` contains `idle`, `idle_fidget`, `run`, `bat_stance`,
+`swing_contact`, `swing_follow`, `cheer_fierce` and `upset_fierce`; every other
+name still resolves to the shared library. Regenerate it with
+`npm run export:pilot-performance` and review the eight `★` rows at
+`/v2/?anims=1&kid=nostrike`.
 
 ## Suggested order of delivery
 
@@ -288,8 +289,10 @@ the five `★` rows at `/v2/?anims=1&kid=nostrike`.
 player actually watches, and agreeing the movement language on them costs far
 less than re-timing forty-three clips.
 
-After the shared pilot is approved, deliver Junebug, Theo and Zoom's priority
-takes from the character-performance packet as three partial files. Review each
-with `/v2/?anims=1&kid=<id>`: `★` is the character take, `▪` is shared and `▫`
-is procedural fallback. Sign off their model, motion and draft read together
-before expanding to the remaining roster batches.
+Junebug's priority set is now complete: the pilot already supplied
+`bat_stance`, and her partial file adds `idle_fidget`, `cheer_fierce` and
+`upset_fierce`. Next deliver Theo and Zoom's priority takes from the
+character-performance packet as separate partial files. Review each with
+`/v2/?anims=1&kid=<id>`: `★` is the character take, `▪` is shared and `▫` is
+procedural fallback. Sign off their model, motion and draft read together before
+expanding to the remaining roster batches.

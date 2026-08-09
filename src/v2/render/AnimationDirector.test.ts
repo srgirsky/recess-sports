@@ -109,9 +109,10 @@ describe('the procedural stand-in library', () => {
 describe('the Junebug vertical slice', () => {
   const pilot = buildJunebugPilotClips();
 
-  it('overrides exactly the five approved high-frequency clips', () => {
+  it('overrides the five high-frequency clips and all Junebug priority takes', () => {
     expect(pilot.map((clip) => clip.name)).toEqual([
-      'idle', 'run', 'bat_stance', 'swing_contact', 'swing_follow',
+      'idle', 'idle_fidget', 'run', 'bat_stance', 'swing_contact', 'swing_follow',
+      'cheer_fierce', 'upset_fierce',
     ]);
   });
 
@@ -132,6 +133,19 @@ describe('the Junebug vertical slice', () => {
   it('contains no root motion', () => {
     for (const clip of pilot) {
       expect(clip.tracks.some((track) => track.name.startsWith('Root.')), clip.name).toBe(false);
+    }
+  });
+
+  it('settles each bespoke personality beat back into its opening pose', () => {
+    for (const name of ['idle_fidget', 'cheer_fierce', 'upset_fierce']) {
+      const clip = pilot.find((candidate) => candidate.name === name)!;
+      for (const track of clip.tracks) {
+        const stride = track.getValueSize();
+        const last = track.values.length - stride;
+        for (let i = 0; i < stride; i++) {
+          expect(track.values[i], `${name} ${track.name}[${i}]`).toBeCloseTo(track.values[last + i], 6);
+        }
+      }
     }
   });
 });

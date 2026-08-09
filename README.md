@@ -66,10 +66,11 @@ Add `&kid=<id>` to review a particular kid's takes. Clips marked `▫` are
 procedural stand-ins, `▪` are shared delivery and `★` are that kid's overrides.
 
 The shared library is still generated from timing-correct stand-ins, but
-Junebug now has the first first-party vertical slice: `idle`, `run`,
-`bat_stance`, `swing_contact` and `swing_follow` resolve from her partial
-performance file and appear with `★`. Deliveries replace motion **clip by
-clip**, so a pilot batch is reviewable without waiting for all 43.
+Junebug now has the first first-party character pass: `idle`, `idle_fidget`,
+`run`, `bat_stance`, `swing_contact`, `swing_follow`, `cheer_fierce` and
+`upset_fierce` resolve from her partial performance file and appear with `★`.
+Deliveries replace motion **clip by clip**, so a character's priority takes are
+reviewable without waiting for all 43.
 
 The on-screen readout shows fps, p95 frame time, draw calls and triangles
 against the budget (≤90 draws, ≤180k tris). **Read it with the tab focused** —
@@ -98,14 +99,16 @@ npm test
 ## Checking a 3D asset delivery (v2)
 
 Character models and the animation library follow strict delivery contracts
-(`docs/v2/asset-contract.md`, `docs/v2/animation-brief.md`). The validator is
-the first line of acceptance — rejections are automatic and free, and a file
-that passes is accepted:
+(`docs/v2/asset-contract.md`, `docs/v2/animation-brief.md`). The repeatable
+direction → sculpt → motion → integration review is defined in
+`docs/v2/character-production-playbook.md`. The validator is the first line of
+technical acceptance — rejections are automatic and free, and a file that
+passes can move to visual review:
 
 ```bash
 npm run export:skeleton    # emit assets/v2/skeleton_recess_v1.glb from skeleton.ts
 npm run export:animations  # emit the shared 43-clip runtime library
-npm run export:pilot-performance # emit Junebug's five-clip partial performance
+npm run export:pilot-performance # emit Junebug's eight-clip partial performance
 npm run export:audio       # emit stable v2 impact/crowd audio masters
 npm run export:voices      # macOS maintainer tool: pre-render commentator + roster lines
 npm run export:performance-brief # regenerate the 30-character production packet
