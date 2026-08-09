@@ -24,6 +24,7 @@ describe('draft presentation policy', () => {
     expect(draftHeroPose(DRAFT_WALK_SEC, 'pick', true, 'nostrike').clip).toBe('bat_stance');
     expect(draftHeroPose(DRAFT_WALK_SEC, 'pick', true, 'calls_shot').clip).toBe('pose_card');
     expect(draftHeroPose(DRAFT_WALK_SEC, 'pick', true, 'wheelchair_ace').clip).toBe('field_ready');
+    expect(draftHeroPose(DRAFT_WALK_SEC, 'pick', true, 'big_lou').clip).toBe('pose_card');
   });
 
   it('reacts in place when the same candidate is picked', () => {
@@ -42,6 +43,7 @@ describe('draft presentation policy', () => {
     expect(draftHeroPose(0, 'mine', false, 'nostrike').clip).toBe('cheer_fierce');
     expect(draftHeroPose(0, 'mine', false, 'calls_shot').clip).toBe('cheer_goofy');
     expect(draftHeroPose(0, 'cpu', false, 'wheelchair_ace').clip).toBe('cheer_cool');
+    expect(draftHeroPose(0, 'mine', false, 'big_lou').clip).toBe('cheer_goofy');
   });
 
   it('puts the selected kid first and never duplicates the waiting cast', () => {

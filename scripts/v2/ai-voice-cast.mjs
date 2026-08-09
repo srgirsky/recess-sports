@@ -59,6 +59,14 @@ export const AI_VOICE_CAST = {
     runtimeSha256: '150935b4220b8ce5252246da56693f69f1b2ad5accb42e2a8fcd016ae08d569a',
     direction: 'Relaxed and inventive; share the first sentence like a secret, make the second Nobody conspiratorial, and finish with a contained half-smile rather than added laughter.',
   },
+  big_lou: {
+    candidates: ['am_liam', 'am_eric', 'am_fenrir'],
+    voice: 'am_liam',
+    speed: 0.92,
+    masterSha256: 'db127a755d61692a78509bcd4ec9c92d1d039aee0e525513351c767a32025e28',
+    runtimeSha256: 'a7501309106ad782880259368eacbad135f410632473d02b74535448a1bf941d',
+    direction: 'Warm and roomy without forced depth; take a tiny breath before Moon shot, then toss baby away with an effortless playground grin.',
+  },
 };
 
 export function aiVoiceCard(id) {

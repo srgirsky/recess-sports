@@ -66,12 +66,13 @@ Add `&kid=<id>` to review a particular kid's takes. Clips marked `▫` are
 procedural stand-ins, `▪` are shared delivery and `★` are that kid's overrides.
 
 The shared library is still generated from timing-correct stand-ins. Junebug's
-eight-clip pass plus Theo and Zoom's nine-clip passes now resolve from their
-partial performance files and appear with `★`. Zoom's seated `run` and
+eight-clip pass plus Theo, Zoom and Big Lou's nine-clip passes now resolve from
+their partial performance files and appear with `★`. Zoom's seated `run` and
 `field_ready` author propulsion and readiness through hands, shoulders and
 torso while the simulation owns the sport chair.
+
 Deliveries replace motion **clip by clip**, so a character's priority takes are
-reviewable without waiting for all 43. Her production mesh also blends the
+reviewable without waiting for all 43. Each produced mesh also blends the
 neck, elbow, wrist, knee and ankle surfaces across two bones so those forms bend
 instead of separating like rigid capsules.
 
@@ -114,6 +115,7 @@ npm run export:animations  # emit the shared 43-clip runtime library
 npm run export:pilot-performance # emit Junebug's eight-clip partial performance
 npm run export:signature-performance -- calls_shot # emit Theo's nine clips
 npm run export:signature-performance -- wheelchair_ace # emit Zoom's nine clips
+npm run export:signature-performance -- big_lou # emit Big Lou's nine clips
 npm run export:audio       # emit stable v2 impact/crowd audio masters
 npm run export:voices      # macOS maintainer tool: pre-render commentator + roster lines
 npm run export:performance-brief # regenerate the 30-character production packet
@@ -121,7 +123,7 @@ npm run audition:voices    # print the non-shipping all-cast audition sheet
 npm run generate:ai-voice # print the free local AI cast and commands
 npm run generate:ai-voice -- --audition nostrike
 npm run generate:ai-voice -- --ship nostrike
-npm run validate:voice-delivery -- nostrike calls_shot wheelchair_ace
+npm run validate:voice-delivery -- nostrike calls_shot wheelchair_ace big_lou
 npm run validate:models    # check every .glb in assets/v2/
 npm run validate:models path/to/anims_recess_v1.glb   # or one file
 VERBOSE=1 npm run validate:models                     # also print measurements
@@ -219,7 +221,7 @@ npm run export:roster-kid -- turbo zippy  # regenerate selected characters
 npm run validate:models                # validate the complete delivery
 ```
 
-Editable signature-character sources are rebuilt after their runtime model and
+Editable produced-character sources are rebuilt after their runtime model and
 concept sheet with:
 
 ```bash
@@ -227,8 +229,8 @@ blender --background --factory-startup --python scripts/v2/blender/build-signatu
 blender --background --factory-startup --python scripts/v2/blender/render-signature-review.py -- calls_shot
 ```
 
-The id selects Junebug, Theo or Zoom and writes the matching pilot `.blend`
-under `assets/v2/source/` with its turnaround packed inside. Use the Node
+The id selects Junebug, Theo, Zoom or Big Lou and writes the matching pilot
+`.blend` under `assets/v2/source/` with its turnaround packed inside. Use the Node
 exporter for the shipping GLB; Blender's stock exporter reorders the canonical
 joints and therefore is not the delivery path. The second command writes the
 matching deterministic `docs/v2/concepts/<name>-in-game-review.png` evidence.
@@ -381,6 +383,6 @@ scripts/v2/          The asset gates: glb read/write, exporter, validator, lints
 ## What's next
 
 - A real backend to aggregate pick rates across all players
-- Produce Batch 1—Big Lou, Tank and Mimi Mash—through the proven character process
+- Finish Batch 1—Tank and Mimi Mash—through the proven character process
 - Online-play polish: remote steal-reaction taps, guest relief, rematch
 - Eventually… the dinosaurs 🦖

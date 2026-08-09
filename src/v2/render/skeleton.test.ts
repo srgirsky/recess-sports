@@ -796,4 +796,21 @@ describe('the proxy draws a kid, not a bobblehead', () => {
     expect(blended).toBeGreaterThan(100);
     zoom.dispose();
   });
+
+  it('gives Big Lou a production-only soft crescent, broad face and organic joints', () => {
+    const visual = ROSTER.find((character) => character.id === 'big_lou')!.visual;
+    const generic = new ProxyCharacter(visual, { fidelity: 'roster' });
+    const lou = new ProxyCharacter(visual, { fidelity: 'roster', productionId: 'big_lou' });
+    const weights = lou.mesh.geometry.attributes.skinWeight;
+    let blended = 0;
+    for (let i = 0; i < weights.count; i++) {
+      expect(weights.getX(i) + weights.getY(i)).toBeCloseTo(1, 6);
+      if (weights.getY(i) > 0.01) blended++;
+    }
+    expect(lou.mesh.geometry.attributes.position.count - generic.mesh.geometry.attributes.position.count)
+      .toBeGreaterThan(80);
+    expect(blended).toBeGreaterThan(100);
+    generic.dispose();
+    lou.dispose();
+  });
 });

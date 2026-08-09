@@ -1,4 +1,4 @@
-"""Render a deterministic sculpt-review still from a shipped signature GLB.
+"""Render a deterministic sculpt-review still from a shipped character GLB.
 
 Usage:
   blender --background --factory-startup --python scripts/v2/blender/render-signature-review.py -- calls_shot
@@ -16,6 +16,7 @@ NAMES = {
     "nostrike": "junebug",
     "calls_shot": "theo",
     "wheelchair_ace": "zoom",
+    "big_lou": "big-lou",
 }
 
 
@@ -26,7 +27,7 @@ def point_at(obj: bpy.types.Object, target: Vector) -> None:
 def main() -> None:
     args = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     if len(args) != 1 or args[0] not in NAMES:
-        raise RuntimeError("pass one signature id: nostrike, calls_shot or wheelchair_ace")
+        raise RuntimeError("pass one produced character id: nostrike, calls_shot, wheelchair_ace or big_lou")
     character_id = args[0]
     model = REPO / "public/v2/models" / f"kid_{character_id}.glb"
     output = REPO / "docs/v2/concepts" / f"{NAMES[character_id]}-in-game-review.png"

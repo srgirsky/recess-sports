@@ -1,4 +1,4 @@
-"""Build an editable Blender review scene for a signature character.
+"""Build an editable Blender review scene for a produced character.
 
 Run from the repository root:
   blender --background --factory-startup --python scripts/v2/blender/build-signature-source.py -- calls_shot
@@ -19,13 +19,14 @@ CHARACTERS = {
     "nostrike": ("Junebug", "junebug-turnaround.png", "junebug-pilot.blend"),
     "calls_shot": ("Big Talk Theo", "theo-turnaround.png", "theo-pilot.blend"),
     "wheelchair_ace": ("Zoom Ramirez", "zoom-turnaround.png", "zoom-pilot.blend"),
+    "big_lou": ("Big Lou", "big-lou-turnaround.png", "big-lou-pilot.blend"),
 }
 
 
 def requested_id() -> str:
     args = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     if len(args) != 1 or args[0] not in CHARACTERS:
-        raise RuntimeError("pass one signature id: nostrike, calls_shot or wheelchair_ace")
+        raise RuntimeError("pass one produced character id: nostrike, calls_shot, wheelchair_ace or big_lou")
     return args[0]
 
 
@@ -70,7 +71,7 @@ def main() -> None:
 
     notes = bpy.data.texts.new("READ_ME_FIRST")
     notes.write(
-        f"{name} signature-character pass\n\n"
+        f"{name} produced-character pass\n\n"
         "1 unit = 1 foot; +Y up; +Z forward.\n"
         "Do not rename, reorder or move canonical bones.\n"
         "LOD0/1/2 must remain under 7000/3000/1200 triangles.\n"

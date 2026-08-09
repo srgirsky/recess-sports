@@ -34,6 +34,14 @@ describe('character performance direction', () => {
       .toEqual(['upset_fierce', 'upset_goofy', 'upset_cool']);
   });
 
+  it('starts Batch 1 with Big Lou\'s swagger-goofy character read', () => {
+    const lou = performanceFor('big_lou');
+    expect(heroClipFor(lou)).toBe('pose_card');
+    expect(reactionClipFor(lou, true)).toBe('cheer_goofy');
+    expect(reactionClipFor(lou, false)).toBe('upset_goofy');
+    expect(faceForClip(lou, 'pose_card', 'goofy')).toBe('tongue');
+  });
+
   it('does not let acting tempo retime a marker or locomotion calculation', () => {
     const fast = performanceFor('boomer');
     expect(actingRateFor(fast, 'cheer')).toBeGreaterThan(1);

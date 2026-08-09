@@ -2126,23 +2126,25 @@ like a prototype next to a shipped game. The remaining gap is production value,
 in this order:
 
 1. **Characters and animation.** The thirty generated GLBs satisfy the asset
-   contract and keep every kid distinct, but they are still primitive authored
-   stand-ins beside BB2026's sculpted faces, clothing, hair and expression. The
-   base clips are timing-correct procedural motion, not final character
-   acting. The first performance pass now gives all 30 kids explicit hero stance,
+   contract and keep every kid distinct. Junebug, Theo, Zoom and Big Lou now
+   have production silhouettes, organic joint weighting and character-authored
+   partial motion; the remaining roster models and shared clips are still
+   primitive fallbacks beside BB2026's sculpted faces, clothing, hair and
+   expression. The first performance pass gives all 30 kids explicit hero stance,
    emotional spirit and tempo direction, coordinates body clips with the face
    atlas, de-synchronizes blinks/fidgets, and expands the contract with four
    distinct win and loss takes. The schoolyard also restores each undrafted
    kid's authored personal colour instead of flattening the cast into two team
    kits before teams exist. This removes the synchronized-mannequin failure
-   while leaving the dominant quality gap honest: bespoke organic models and
-   animator-authored motion still need to roll through the roster. A generated
+   while leaving the dominant quality gap honest: organic models and
+   character-authored motion still need to roll through the roster. A generated
    30-character production packet now directs each kid's
    sculpt, motion, casting, read and anti-caricature boundaries, and optional
    partial animation files let those individual takes override the shared
    library kid by kid. Commission the shared movement language first, pilot
    Junebug, Theo and Zoom as complete performances, then replace the roster in
-   batches of five or six through the existing validator and A/B page.
+   reviewed batches through the existing validator and A/B page. Big Lou now
+   proves that first batch handoff; Tank and Mimi Mash are next.
 2. **Venue art density.** Eleven parks now play differently and carry signature
    props, but their houses, foliage and ground are low-poly procedural forms.
    The reference layers hand-authored buildings, vegetation, decals, litter,
@@ -2150,8 +2152,9 @@ in this order:
    modular environment kit, prove it on Parks Dept #2, then roll the kit through
    the other ten without breaking the scenery draw/triangle gate.
 3. **Audio identity.** Recess has complete cue coverage, a free local AI voice
-   production path and Junebug's first promoted master; BB2026 still has richer
-   commentary, music, bespoke impacts and crowd reactions. Cast the roster from
+   production path and promoted masters for Junebug, Theo, Zoom and Big Lou;
+   BB2026 still has richer commentary, music, bespoke impacts and crowd
+   reactions. Cast the roster from
    named stock voices after each character batch establishes its personality,
    and produce the two commentators through the same disclosed path. Keep the
    existing cue map as the executable coverage contract.
@@ -2181,10 +2184,11 @@ The five-phase plan above was executed as one production pass on 2026-08-08:
    LOD/size contract. A single delivered `anims_recess_v1.glb` now carries the
    forty-three marker-compatible clips; the runtime and animation spike load it
    first and retain the procedural clips only as a per-clip failure fallback.
-   Optional partial `anims_<id>_v1.glb` files now replace named clips for one kid
-   at a time, with all thirty performances directed in a generated production
-   packet. This establishes a batchable character-acting pipeline. It does not
-   pretend generated meshes or motion replace a sculptor and animator.
+   Optional partial `anims_<id>_v1.glb` files replace named clips for one kid at
+   a time, with all thirty performances directed in a generated production
+   packet. This establishes the batchable character-acting pipeline now proven
+   on the signature trio and Big Lou; shared fallbacks remain visibly labelled
+   until each remaining kid completes the same gates.
 2. **Venue art density:** one reusable scenery-detail kit—benches, bicycles,
    flowerbeds, mailboxes, chalkboards, crates and pennants—was proved with five
    distinct modules at Parks Dept #2, then composed deterministically across all

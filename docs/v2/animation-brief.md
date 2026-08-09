@@ -296,6 +296,14 @@ root-space equipment owned by the simulation. Regenerate it with
 `npm run export:signature-performance -- wheelchair_ace` and review its nine
 `★` rows at `/v2/?anims=1&kid=wheelchair_ace`.
 
+Big Lou opens Batch 1. `anims_big_lou_v1.glb` contains the same five
+high-frequency baseball clips plus `idle_fidget`, `pose_card`, `cheer_goofy`
+and `upset_goofy`. His swing gathers slowly, releases at once, lets the head
+trail contact and uses two recovery steps in the follow-through; his win take
+is delighted by his own power rather than tough-guy swagger. Regenerate it
+with `npm run export:signature-performance -- big_lou` and review its nine `★`
+rows at `/v2/?anims=1&kid=big_lou`.
+
 ## Suggested order of delivery
 
 `idle` → `run` → `bat_stance` → `swing_contact` → `swing_follow` first, as a
@@ -303,8 +311,8 @@ root-space equipment owned by the simulation. Regenerate it with
 player actually watches, and agreeing the movement language on them costs far
 less than re-timing forty-three clips.
 
-All three signature priority sets are complete. Next deliver Batch 1—Big Lou,
-Tank and Mimi Mash—from the character-performance packet, keeping separate
+All three signature priority sets and Big Lou are complete. Continue Batch 1
+with Tank and Mimi Mash from the character-performance packet, keeping separate
 partial files and review evidence per kid. Review with `/v2/?anims=1&kid=<id>`:
 `★` is the character take, `▪` is shared and `▫` is procedural fallback. Sign
 off each model, motion and draft read together before starting the next batch.
