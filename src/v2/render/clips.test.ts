@@ -4,7 +4,7 @@
 // `clips.ts` is the source; `docs/v2/animation-brief.md` is what the animator
 // works from; `docs/v2/asset-contract.md` is what the validator's rules are
 // written against. Two of those are markdown, which means nothing stops them
-// rotting — and a brief that quietly disagrees with the engine buys 35 clips
+// rotting — and a brief that quietly disagrees with the engine buys 43 clips
 // that fail acceptance for reasons nobody wrote down.
 //
 // So the docs are PARSED here and compared field by field. This is the same
@@ -39,9 +39,9 @@ const brief = readFileSync(join(docs, 'animation-brief.md'), 'utf8');
 const contract = readFileSync(join(docs, 'asset-contract.md'), 'utf8');
 
 describe('the clip library', () => {
-  it('is 35 uniquely-named clips', () => {
-    expect(CLIPS).toHaveLength(35);
-    expect(new Set(CLIP_NAMES).size).toBe(35);
+  it('is 43 uniquely-named clips', () => {
+    expect(CLIPS).toHaveLength(43);
+    expect(new Set(CLIP_NAMES).size).toBe(43);
   });
 
   it('puts every marker inside its own clip', () => {
@@ -236,8 +236,8 @@ describe('docs/v2 mirrors clips.ts', () => {
     for (const name of CLIP_NAMES) {
       expect(contract.includes(`\`${name}\``), `${name} missing from asset-contract.md`).toBe(true);
     }
-    expect(contract).toMatch(/\b35 clips\b/);
-    expect(brief).toMatch(/\b35 clips\b/);
+    expect(contract).toMatch(/\b43 clips\b/);
+    expect(brief).toMatch(/\b43 clips\b/);
   });
 
   it('tells the animator the wider warp band, not just the loop band', () => {

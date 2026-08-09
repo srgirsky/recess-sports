@@ -30,7 +30,7 @@ import type { AnimationClip, WebGLRenderer } from 'three';
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js';
-import { animationUrl, assetUrl, characterUrl } from './assets';
+import { animationUrl, assetUrl, characterAnimationUrl, characterUrl } from './assets';
 
 let loader: GLTFLoader | null = null;
 let draco: DRACOLoader | null = null;
@@ -38,6 +38,7 @@ let ktx2: KTX2Loader | null = null;
 
 const characters = new Map<string, Promise<GLTF>>();
 let animations: Promise<AnimationClip[]> | null = null;
+const characterAnimations = new Map<string, Promise<AnimationClip[]>>();
 
 /**
  * Wire the loader to a live renderer. Call once, from `Renderer`'s owner,
@@ -106,6 +107,24 @@ export function loadAnimationLibrary(): Promise<AnimationClip[]> {
   return animations;
 }
 
+/**
+ * Load one kid's optional authored takes. The caller decides whether the
+ * manifest advertises a delivery and layers these over the shared library.
+ */
+export function loadCharacterAnimationLibrary(id: string): Promise<AnimationClip[]> {
+  const cached = characterAnimations.get(id);
+  if (cached) return cached;
+
+  const pending = loadUrl(characterAnimationUrl(id))
+    .then((gltf) => gltf.animations)
+    .catch((e: unknown) => {
+      characterAnimations.delete(id);
+      throw e;
+    });
+  characterAnimations.set(id, pending);
+  return pending;
+}
+
 function loadUrl(url: string): Promise<GLTF> {
   const active = loader;
   if (!active) {
@@ -128,5 +147,6 @@ export function disposeModelLoader(): void {
   ktx2 = null;
   loader = null;
   characters.clear();
+  characterAnimations.clear();
   animations = null;
 }

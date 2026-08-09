@@ -9,7 +9,14 @@
 // ---------------------------------------------------------------------------
 
 import { describe, expect, it } from 'vitest';
-import { MANIFEST_PATH, MODELS_DIR, manifestIsCurrent, scanModels } from './models-manifest.mjs';
+import {
+  MANIFEST_PATH,
+  MODELS_DIR,
+  manifestIsCurrent,
+  performanceIdFromFile,
+  scanModels,
+  scanPerformances,
+} from './models-manifest.mjs';
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { ROSTER } from '../../src/data/characters.ts';
@@ -38,8 +45,29 @@ describe('public/v2/models/manifest.json', () => {
 
   it('lists every model on disk, and nothing else', () => {
     expect(existsSync(MANIFEST_PATH)).toBe(true);
-    const listed = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8')).characters;
-    expect(listed).toEqual(scanModels());
+    const listed = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
+    expect(listed.characters).toEqual(scanModels());
+    expect(listed.performances).toEqual(scanPerformances());
+    expect(performanceIdFromFile('anims_nostrike_v1.glb')).toBe('nostrike');
+    expect(performanceIdFromFile('anims_recess_v1.glb')).toBe('recess');
+    expect(performanceIdFromFile('kid_nostrike.glb')).toBeUndefined();
+  });
+
+  it('accepts partial character takes only for roster ids', () => {
+    const delivered = scanPerformances();
+    const roster = new Set(ROSTER.map((character) => character.id));
+    expect(delivered.filter((id) => !roster.has(id))).toEqual([]);
+
+    for (const id of delivered) {
+      const gltf = readGlb(join(MODELS_DIR, `anims_${id}_v1.glb`));
+      const report = makeReport();
+      checkContainer(gltf, report);
+      checkAnimations(gltf, animationSpec, report, { partial: true });
+      const failures = report.items
+        .filter((item) => item.severity === 'fail')
+        .map((item) => `${item.rule}: ${item.message}`);
+      expect(failures, id).toEqual([]);
+    }
   });
 
   it('ships one validated, non-stand-in model for every roster character', () => {

@@ -55,9 +55,15 @@ import { buildFence, type FenceBuild } from '../render/Fence';
 import { buildScenery, type SceneryBuild } from '../render/Scenery';
 import { NIGHT_HORIZON, NIGHT_TOP, SKY_HORIZON, SKY_TOP, buildSky } from '../render/Sky';
 import { createCharacter, proxyForced } from '../render/CharacterFactory';
-import { configureModelLoader, loadAnimationLibrary } from '../render/modelLoader';
+import {
+  configureModelLoader,
+  loadAnimationLibrary,
+  loadCharacterAnimationLibrary,
+} from '../render/modelLoader';
+import { hasDeliveredPerformance } from '../render/assets';
 import { AnimationDirector } from '../render/AnimationDirector';
 import { buildProceduralClips } from '../render/proceduralClips';
+import { heroClipFor, performanceFor } from '../render/performance';
 import { impactStrength } from '../render/impactCues';
 import {
   PITCH_DELIVERY_RELEASE_SEC,
@@ -203,6 +209,16 @@ export class GameView {
   private readonly clipLibrary = buildProceduralClips();
   /** Delivered shared motion. The procedural library remains a per-clip fallback. */
   private deliveredClips: AnimationClip[] = [];
+  /** Optional authored takes, loaded only for ids named by the asset manifest. */
+  private readonly performanceClips = new Map<string, AnimationClip[]>();
+  private readonly performanceWarnings = new Set<string>();
+  /** Last applied and currently requested kit, kept separate for async swaps. */
+  private readonly dressed = new Map<string, number>();
+  private readonly dressTargets = new Map<string, number>();
+  private readonly dressPending = new Map<string, Promise<void>>();
+  private readonly dressVersions = new Map<string, number>();
+  private readonly teamUniforms = new Map<string, number>();
+  private readonly draftPersonal = new Set<string>();
 
   private field!: FieldBuild;
   private fence!: FenceBuild;
@@ -297,8 +313,6 @@ export class GameView {
   private onEnd: ((result: GameResult) => void) | null = null;
   private simEvent: ((e: SimEvent) => void) | null = null;
   private frameTap: ((f: LiveFrame) => void) | null = null;
-  /** charId -> the uniform they are currently wearing, so a rematch is cheap. */
-  private readonly dressed = new Map<string, number>();
   private ended = false;
   private actionPlay: LiveFrame['play'] = null;
   private readonly slidLegs = new Set<string>();
@@ -651,13 +665,14 @@ export class GameView {
           outlines: this.outlines,
           uniform: i < 9 ? 0 : 1,
         });
+        await this.prepareCharacterPerformance(c.id);
         const view: KidView = made.view;
         this.scene.add(view.root);
         view.root.visible = false;
         this.refs.kids.set(c.id, view);
         this.refs.directors.set(
           c.id,
-          new AnimationDirector(view.mesh, { clips: this.deliveredClips, fallback: this.clipLibrary })
+          this.directorFor(c, view)
         );
       })
     );
@@ -677,6 +692,41 @@ export class GameView {
     return getCharacter(id);
   }
 
+  /** Bind procedural → shared → character motion to authored face direction. */
+  private directorFor(character: Character, view: KidView): AnimationDirector {
+    return new AnimationDirector(view.mesh, {
+      clips: this.deliveredClips,
+      performanceClips: this.performanceClips.get(character.id),
+      fallback: this.clipLibrary,
+      actor: {
+        id: character.id,
+        profile: performanceFor(character.id),
+        authoredRest: character.visual.expression,
+        setExpression: (cell) => view.setExpression(cell),
+      },
+    });
+  }
+
+  /**
+   * Load a character take only when the generated manifest advertises it.
+   * Failure is cosmetic: the shared library remains complete and playable.
+   */
+  private async prepareCharacterPerformance(id: string): Promise<void> {
+    if (!hasDeliveredPerformance(id) || this.performanceClips.has(id)) return;
+    try {
+      this.performanceClips.set(id, await loadCharacterAnimationLibrary(id));
+    } catch (error) {
+      if (!this.performanceWarnings.has(id)) {
+        this.performanceWarnings.add(id);
+        console.warn(
+          `[GameView] ${id} performance unavailable; using shared motion: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+      }
+    }
+  }
+
   /** Public name/portrait lookup for app-shell screens and sound. */
   getCharacter(id: string): Character {
     return this.character(id);
@@ -689,6 +739,7 @@ export class GameView {
   async setCustomPlayer(character: Character | null): Promise<void> {
     const old = this.refs.kids.get(CUSTOM_PLAYER_ID);
     if (old) {
+      this.refs.directors.get(CUSTOM_PLAYER_ID)?.dispose();
       this.scene.remove(old.root);
       old.dispose();
       this.refs.kids.delete(CUSTOM_PLAYER_ID);
@@ -707,7 +758,7 @@ export class GameView {
     this.refs.kids.set(character.id, made.view);
     this.refs.directors.set(
       character.id,
-      new AnimationDirector(made.view.mesh, { clips: this.deliveredClips, fallback: this.clipLibrary })
+      this.directorFor(character, made.view)
     );
   }
 
@@ -883,8 +934,8 @@ export class GameView {
    * The bridge protects these one-shots from its idle loops until they settle. */
   private reactToPlateAppearance(e: Extract<SimEvent, { t: 'pa' }>): void {
     const batterWon = e.result === 'hit' || e.result === 'walk';
-    this.refs.directors.get(e.batterId)?.play(batterWon ? 'cheer' : 'upset', { restart: true });
-    this.refs.directors.get(e.pitcherId)?.play(batterWon ? 'upset' : 'cheer', { restart: true });
+    this.refs.directors.get(e.batterId)?.playReaction(batterWon, { restart: true });
+    this.refs.directors.get(e.pitcherId)?.playReaction(!batterWon, { restart: true });
   }
 
   /**
@@ -903,28 +954,48 @@ export class GameView {
       ...away.map((id) => [id, uniforms.away] as const),
       ...home.map((id) => [id, uniforms.home] as const),
     ];
-    await Promise.all(
-      wanted.map(async ([id, uniform]) => {
-        if (this.dressed.get(id) === uniform) return;
-        const character = this.character(id);
-        const made = await createCharacter(character, {
-          forceProxy: proxyForced(),
-          outlines: this.outlines,
-          uniform,
-        });
-        const old = this.refs.kids.get(id);
-        if (old) {
-          this.scene.remove(old.root);
-          old.dispose();
-        }
-        const view: KidView = made.view;
-        this.scene.add(view.root);
-        view.root.visible = false;
-        this.refs.kids.set(id, view);
-        this.refs.directors.set(id, new AnimationDirector(view.mesh, { fallback: this.clipLibrary }));
-        this.dressed.set(id, uniform);
-      })
-    );
+    for (const [id, uniform] of wanted) this.teamUniforms.set(id, uniform);
+    await Promise.all(wanted.map(([id, uniform]) => this.dressCharacter(id, uniform)));
+  }
+
+  /**
+   * Swap one cached character clone without letting a slower, older request
+   * overwrite a later screen's kit. Draft browsing and game setup can overlap.
+   */
+  private dressCharacter(id: string, uniform: number): Promise<void> {
+    if (this.dressed.get(id) === uniform) return Promise.resolve();
+    if (this.dressTargets.get(id) === uniform) return this.dressPending.get(id) ?? Promise.resolve();
+    this.dressTargets.set(id, uniform);
+    const serial = (this.dressVersions.get(id) ?? 0) + 1;
+    this.dressVersions.set(id, serial);
+    const task = (async () => {
+      const character = this.character(id);
+      const made = await createCharacter(character, {
+        forceProxy: proxyForced(),
+        outlines: this.outlines,
+        uniform,
+      });
+      if (this.dressTargets.get(id) !== uniform || this.dressVersions.get(id) !== serial) {
+        made.view.dispose();
+        return;
+      }
+      const old = this.refs.kids.get(id);
+      this.refs.directors.get(id)?.dispose();
+      if (old) {
+        this.scene.remove(old.root);
+        old.dispose();
+      }
+      const view = made.view;
+      this.scene.add(view.root);
+      view.root.visible = false;
+      this.refs.kids.set(id, view);
+      this.refs.directors.set(id, this.directorFor(character, view));
+      this.dressed.set(id, uniform);
+    })().finally(() => {
+      if (this.dressPending.get(id) === task) this.dressPending.delete(id);
+    });
+    this.dressPending.set(id, task);
+    return task;
   }
 
   /** The two team names, for the scoreboard and the Result screen. */
@@ -976,6 +1047,11 @@ export class GameView {
     if (!id || !host) {
       this.draftSpotlight = null;
       this.draftProtected.clear();
+      const restore = [...this.draftPersonal]
+        .map((castId) => [castId, this.teamUniforms.get(castId)] as const)
+        .filter((entry): entry is readonly [string, number] => entry[1] !== undefined);
+      this.draftPersonal.clear();
+      void Promise.all(restore.map(([castId, uniform]) => this.dressCharacter(castId, uniform)));
       return;
     }
     const previous = this.draftSpotlight;
@@ -992,7 +1068,16 @@ export class GameView {
       cast,
     };
     this.draftProtected.clear();
-    for (const castId of cast.all) this.draftProtected.add(castId);
+    for (const castId of cast.all) {
+      this.draftProtected.add(castId);
+      this.draftPersonal.add(castId);
+    }
+    // The draft is about individuals, not two teams that do not exist yet.
+    // Reuse the kid's authored personal colour; newGame restores team kits.
+    void Promise.all(cast.all.map((castId) => {
+      const character = this.character(castId);
+      return this.dressCharacter(castId, character.visual.uniform);
+    }));
   }
 
   /** Pull the next frame out of the sim. Null once the game is over. */
@@ -1149,11 +1234,12 @@ export class GameView {
     const draft = this.draftSpotlight;
     if (!draft) return;
     draft.ageSec += dt;
-    const hero = draftHeroPose(draft.ageSec, draft.mode, draft.walkIn);
+    const hero = draftHeroPose(draft.ageSec, draft.mode, draft.walkIn, draft.id);
     this.refs.directors.get(draft.id)?.play(hero.clip);
     for (const id of draft.cast.waiting) this.refs.directors.get(id)?.play('idle');
-    for (const id of draft.cast.player) this.refs.directors.get(id)?.play('cheer');
-    for (const id of draft.cast.cpu) this.refs.directors.get(id)?.play('field_ready');
+    for (const id of [...draft.cast.player, ...draft.cast.cpu]) {
+      this.refs.directors.get(id)?.play(heroClipFor(performanceFor(id)));
+    }
   }
 
   /**
@@ -1185,7 +1271,7 @@ export class GameView {
     this.refs.ball.visible = false;
 
     try {
-      const hero = draftHeroPose(draft.ageSec, draft.mode, draft.walkIn);
+      const hero = draftHeroPose(draft.ageSec, draft.mode, draft.walkIn, draft.id);
       const selected = this.refs.kids.get(draft.id);
       if (!selected) return;
       selected.root.visible = true;

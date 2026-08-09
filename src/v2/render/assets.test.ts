@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { assetUrlForPage } from './assets';
+import {
+  assetUrlForPage,
+  characterAnimationFile,
+  hasDeliveredPerformance,
+  primeManifest,
+} from './assets';
 
 describe('v2 public asset URLs', () => {
   it('resolves from the front door into the v2 asset directory', () => {
@@ -10,5 +15,12 @@ describe('v2 public asset URLs', () => {
   it('resolves the permanent v2 alias without duplicating its directory', () => {
     expect(assetUrlForPage('audio/bat-crack.wav', 'https://host.test/recess-sports/v2/'))
       .toBe('https://host.test/recess-sports/v2/audio/bat-crack.wav');
+  });
+
+  it('names and exposes optional character-performance deliveries explicitly', () => {
+    expect(characterAnimationFile('nostrike')).toBe('anims_nostrike_v1.glb');
+    primeManifest(['nostrike'], ['nostrike']);
+    expect(hasDeliveredPerformance('nostrike')).toBe(true);
+    expect(hasDeliveredPerformance('calls_shot')).toBe(false);
   });
 });

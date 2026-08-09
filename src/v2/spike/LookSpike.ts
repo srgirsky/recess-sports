@@ -29,6 +29,7 @@ import { CharacterModel, type KidView } from '../render/CharacterModel';
 import { createCharacter, proxyForced, type KidSource } from '../render/CharacterFactory';
 import { configureModelLoader } from '../render/modelLoader';
 import { AnimationDirector } from '../render/AnimationDirector';
+import { performanceFor } from '../render/performance';
 import { buildProceduralClips } from '../render/proceduralClips';
 import type { AnimName } from '../render/clips';
 import { FACE_CELLS, type FaceCell } from '../render/faceAtlas';
@@ -177,8 +178,17 @@ export class LookSpike {
      *
      * `offset` staggers the phase so 13 kids do not breathe in unison.
      */
-    const animate = (kid: KidView, clip: AnimName, offset: number): void => {
-      const dir = new AnimationDirector(kid.mesh, { fallback: this.clipLibrary });
+    const animate = (kid: KidView, character: (typeof ROSTER)[number], clip: AnimName, offset: number): void => {
+      const requestedFace = new URLSearchParams(location.search).get('face');
+      const dir = new AnimationDirector(kid.mesh, {
+        fallback: this.clipLibrary,
+        actor: requestedFace ? undefined : {
+          id: character.id,
+          profile: performanceFor(character.id),
+          authoredRest: character.visual.expression,
+          setExpression: (cell) => kid.setExpression(cell),
+        },
+      });
       dir.play(clip);
       dir.update(offset);
       this.directors.push(dir);
@@ -212,7 +222,7 @@ export class LookSpike {
       this.scene.add(view.root);
       this.kids.push(view);
       this.sources.push(source);
-      animate(view, clip, offset);
+      animate(view, c, clip, offset);
     };
 
     if (reviewCharacter) {

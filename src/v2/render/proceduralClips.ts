@@ -607,6 +607,58 @@ function slide(spec: ClipSpec): AnimationClip {
 
 // --- The library -------------------------------------------------------------
 
+type ReactionStyle = 'cool' | 'fierce' | 'goofy' | 'tender';
+type ReactionBeat = [Pose, Pose, Key['hips']?, Key['hips']?];
+
+/** Two authored accents are enough for a stand-in to carry a distinct read. */
+function directedReaction(spec: ClipSpec, won: boolean, style: ReactionStyle): AnimationClip {
+  let beat: ReactionBeat;
+  if (won) {
+    if (style === 'cool') beat = [
+      { hd: [8, 10, 0], ra: [-90, 0, -28], rf: [0, 100, 0] },
+      { hd: [-10, 12, 0], ra: [-55, 0, -18], rf: [0, 65, 0] },
+    ];
+    else if (style === 'fierce') beat = [
+      { hp: [-10, 0, 0], hd: [-14, 0, 0], la: [-170, 0, 18], ra: [-170, 0, -18], lu: [-24, 0, 8], ru: [-24, 0, -8] },
+      { hp: [18, 0, 0], la: [-110, 0, 28], ra: [-110, 0, -28], ll: [-44, 0, 0], rl: [-44, 0, 0] },
+      [0, 0.72, 0], [0, -0.2, 0],
+    ];
+    else if (style === 'goofy') beat = [
+      { hp: [8, 22, 10], hd: [10, -18, 12], la: [-120, 0, 34], ra: [22, 0, -54], ll: [52, 0, 0] },
+      { hp: [-12, -28, -10], hd: [-12, 24, -10], la: [26, 0, 54], ra: [-142, 0, -30], rl: [58, 0, 0] },
+      [0, 0.32, 0], [0, 0.44, 0],
+    ];
+    else beat = [
+      { hd: [7, 8, 0], la: [-72, 0, 44], lf: [0, -82, 0], ra: [-72, 0, -44], rf: [0, 82, 0] },
+      { hd: [-6, -8, 0], la: [-118, 0, 28], lf: [0, -42, 0], ra: [-72, 0, -48], rf: [0, 76, 0] },
+    ];
+  } else {
+    if (style === 'cool') beat = [
+      { hd: [5, -26, 0], ls: [0, 0, 12], rs: [0, 0, -12], la: [-28, 0, 54], ra: [-28, 0, -54] },
+      { hd: [10, 28, 0], la: [-10, 0, 64], ra: [-10, 0, -64] },
+    ];
+    else if (style === 'fierce') beat = [
+      { hp: [-8, 0, 0], hd: [-12, 0, 0], la: [24, 0, 50], ra: [24, 0, -50], lu: [-42, 0, 10], ll: [66, 0, 0] },
+      { hp: [30, 0, 0], hd: [26, 0, 0], lu: [30, 0, 10], ll: [-46, 0, 0] },
+      [0, 0.22, 0], [0, -0.25, 0],
+    ];
+    else if (style === 'goofy') beat = [
+      { hd: [-12, -22, 8], la: [-74, 0, 44], lf: [0, -62, 0], ra: [-74, 0, -44], rf: [0, 62, 0] },
+      { hp: [28, 0, 0], sp: [18, 0, 0], hd: [16, 0, 0], la: [-12, 0, 62], ra: [-12, 0, -62] },
+    ];
+    else beat = [
+      { hd: [18, 0, 0], la: [-112, 0, 30], lf: [0, -94, 0], ra: [-112, 0, -30], rf: [0, 94, 0] },
+      { hd: [28, -12, 0], la: [-74, 0, 48], lf: [0, -66, 0], ra: [-112, 0, -28], rf: [0, 88, 0] },
+    ];
+  }
+  return build(spec, [
+    { f: 0, pose: {} },
+    { f: Math.round(spec.frames * 0.28), pose: beat[0], hips: beat[2] },
+    { f: Math.round(spec.frames * 0.62), pose: beat[1], hips: beat[3] },
+    { f: spec.frames - 1, pose: {} },
+  ]);
+}
+
 const BUILDERS: Record<string, (spec: ClipSpec) => AnimationClip> = {
   idle,
   idle_fidget: (s) =>
@@ -781,6 +833,12 @@ const BUILDERS: Record<string, (spec: ClipSpec) => AnimationClip> = {
       { f: 32, pose: { hp: [14, 0, 0], hd: [-6, 0, 0], la: [-150, 0, 26], ra: [-150, 0, -26], lu: [22, 0, 10], ll: [-30, 0, 0], ru: [22, 0, -10], rl: [-30, 0, 0] } },
       { f: s.frames - 1, pose: {} },
     ]),
+  // Failure-only browser fallbacks reuse the broad beats. The first-party GLB
+  // gets the richer directed keys through buildDirectedReactionClips below.
+  cheer_cool: (s) => BUILDERS.cheer(s),
+  cheer_fierce: (s) => BUILDERS.cheer(s),
+  cheer_goofy: (s) => BUILDERS.cheer(s),
+  cheer_tender: (s) => BUILDERS.cheer(s),
   upset: (s) =>
     build(s, [
       { f: 0, pose: BAT_STANCE_POSE },
@@ -789,6 +847,10 @@ const BUILDERS: Record<string, (spec: ClipSpec) => AnimationClip> = {
       { f: 44, pose: { hp: [12, 0, 0], sp: [16, 0, 0], hd: [34, 0, 0], la: [10, 0, 72], ra: [10, 0, -72] } },
       { f: s.frames - 1, pose: { hp: [6, 0, 0], sp: [8, 0, 0], hd: [18, 0, 0], la: [4, 0, 68], ra: [4, 0, -68] } },
     ]),
+  upset_cool: (s) => BUILDERS.upset(s),
+  upset_fierce: (s) => BUILDERS.upset(s),
+  upset_goofy: (s) => BUILDERS.upset(s),
+  upset_tender: (s) => BUILDERS.upset(s),
   nervous: (s) =>
     cycle(s, (p) => {
       const sway = sin(p) * 5;
@@ -850,5 +912,19 @@ export function buildProceduralClips(): AnimationClip[] {
     const make = BUILDERS[spec.name];
     if (!make) throw new Error(`No procedural stand-in for "${spec.name}"`);
     return make(spec as ClipSpec);
+  });
+}
+
+/** Richer first-party reaction takes for the exported runtime GLB. */
+export function buildDirectedReactionClips(): AnimationClip[] {
+  const directions: readonly [string, boolean, ReactionStyle][] = [
+    ['cheer_cool', true, 'cool'], ['cheer_fierce', true, 'fierce'],
+    ['cheer_goofy', true, 'goofy'], ['cheer_tender', true, 'tender'],
+    ['upset_cool', false, 'cool'], ['upset_fierce', false, 'fierce'],
+    ['upset_goofy', false, 'goofy'], ['upset_tender', false, 'tender'],
+  ];
+  return directions.map(([name, won, style]) => {
+    const spec = CLIPS.find((candidate) => candidate.name === name)!;
+    return directedReaction(spec as ClipSpec, won, style);
   });
 }

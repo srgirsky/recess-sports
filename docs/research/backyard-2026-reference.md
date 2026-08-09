@@ -161,13 +161,16 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
    provide pre-roll; human swings, catches and throws seek their marker on the
    event tick; dives preserve their own catch marker; and slides fit their end
    to the sim-owned basepath leg. A single validated static GLB now delivers all
-   thirty-five canonical clips to gameplay and the review page, with procedural
-   motion retained only as a per-clip failure fallback. Character acting can
-   replace the shared file without changing its runtime contract.
+   forty-three canonical clips to gameplay and the review page, including four
+   directed win and loss takes, with procedural motion retained only as a
+   per-clip failure fallback. Optional partial `anims_<id>_v1.glb` deliveries
+   now override named clips for one kid only; the 30-character performance
+   packet supplies the sculpt, acting and casting direction for that pass.
 3. ~~**A full draft environment.**~~ The full-width schoolyard bench now leads
    the screen: the selected already-loaded kid walks into `pose_card`, six
    remaining kids wait behind them, and the last four picks on each side stay
-   physically staged under YOUR BENCH / THEIR BENCH. Confirmation plays the
+   physically staged under YOUR BENCH / THEIR BENCH in their personal colours,
+   rather than two premature team uniforms. Confirmation plays the
    reaction and a real `walk_on` trip to the correct side before the CPU picks.
    The horizontal search bench sits below the environment. It remains the one
    renderer, one scene and one instance per kid, and vote semantics are

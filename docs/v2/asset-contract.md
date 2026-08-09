@@ -17,9 +17,10 @@ this file and fail on drift, so it cannot stay wrong for long.
 ## Why the rules are strict
 
 All 30 characters are modelled individually, but they are all bound to **one
-skeleton** and animated by **one shared clip library**. That is what makes
-animation a single fixed cost instead of a per-character cost, and what makes
-character #31 cheap. Every hard rule below exists to protect that.
+skeleton** and animated by **one shared clip library**. Optional per-kid takes
+can replace selected clips without forking the mechanics. That keeps character
+#31 cheap while allowing the cast to stop moving like one performer. Every hard
+rule below exists to protect that.
 
 ---
 
@@ -87,16 +88,31 @@ Authored **once**, on the canonical skeleton, **with no mesh**. 30 fps.
 **No root motion in any clip.** The game owns position; a clip that translates
 `Root` will be rejected. Run cycles run in place.
 
-35 clips: `idle` · `idle_fidget` · `run` · `run_fast` · `trot` · `jog_back` ·
+43 clips: `idle` · `idle_fidget` · `run` · `run_fast` · `trot` · `jog_back` ·
 `shuffle_left` · `shuffle_right` · `bat_stance` · `bat_load` · `swing_contact` ·
 `swing_follow` · `swing_whiff` · `bunt` · `pitch_windup` · `pitch_stride` ·
 `pitch_release` · `field_ready` · `field_scoop` · `catch_high` · `catch_chest` ·
 `catch_low` · `catch_jump` · `dive_left` · `dive_right` · `getup` ·
-`throw_overhand` · `throw_quick` · `slide` · `cheer` · `upset` · `nervous` ·
-`dodge` · `walk_on` · `pose_card`
+`throw_overhand` · `throw_quick` · `slide` · `cheer` · `cheer_cool` ·
+`cheer_fierce` · `cheer_goofy` · `cheer_tender` · `upset` · `upset_cool` ·
+`upset_fierce` · `upset_goofy` · `upset_tender` · `nervous` · `dodge` ·
+`walk_on` · `pose_card`
 
 Full frame counts, loop flags, authored ground speeds and blend targets are in
 `docs/v2/animation-brief.md`, which is the artist-facing copy of the same table.
+
+### Character takes — `anims_<id>_v1.glb`
+
+A character animator may deliver a **partial**, animations-only file for any
+roster id, for example `anims_nostrike_v1.glb`. Every included clip uses the
+same skeleton, naming, marker and motion rules as the shared library. It need
+not repeat all 43 clips: at runtime its included names override the shared
+version for that kid, while omitted names retain shared motion. A partial file
+with no recognised contract clip is rejected.
+
+Put the validated file in `public/v2/models/`, run `npm run manifest:models`,
+then review it at `/v2/?anims=1&kid=<id>`. The review page marks character takes
+with `★`, shared clips with `▪` and procedural failure fallbacks with `▫`.
 
 ### Marker frames (load-bearing)
 

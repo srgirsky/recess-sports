@@ -20,6 +20,12 @@ describe('draft presentation policy', () => {
     expect(draftHeroPose(DRAFT_WALK_SEC, 'pick', true)).toEqual({ clip: 'pose_card', xFt: 0 });
   });
 
+  it('lets each candidate own the held hero silhouette', () => {
+    expect(draftHeroPose(DRAFT_WALK_SEC, 'pick', true, 'nostrike').clip).toBe('bat_stance');
+    expect(draftHeroPose(DRAFT_WALK_SEC, 'pick', true, 'calls_shot').clip).toBe('pose_card');
+    expect(draftHeroPose(DRAFT_WALK_SEC, 'pick', true, 'wheelchair_ace').clip).toBe('field_ready');
+  });
+
   it('reacts in place when the same candidate is picked', () => {
     expect(draftHeroPose(0, 'mine', false)).toEqual({ clip: 'cheer', xFt: 0 });
     expect(draftHeroPose(DRAFT_REACT_SEC, 'mine', false)).toEqual({ clip: 'walk_on', xFt: 0 });
@@ -30,6 +36,12 @@ describe('draft presentation policy', () => {
       clip: 'pose_card', xFt: DRAFT_BENCH_X_FT,
     });
     expect(draftHeroPose(0, 'cpu', false).clip).toBe('cheer');
+  });
+
+  it('uses the picked kid\'s directed reaction instead of a shared cheer', () => {
+    expect(draftHeroPose(0, 'mine', false, 'nostrike').clip).toBe('cheer_fierce');
+    expect(draftHeroPose(0, 'mine', false, 'calls_shot').clip).toBe('cheer_goofy');
+    expect(draftHeroPose(0, 'cpu', false, 'wheelchair_ace').clip).toBe('cheer_cool');
   });
 
   it('puts the selected kid first and never duplicates the waiting cast', () => {

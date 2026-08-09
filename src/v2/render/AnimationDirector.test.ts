@@ -12,10 +12,12 @@ import { describe, it, expect } from 'vitest';
 import { AnimationClip, Object3D, Vector3, VectorKeyframeTrack } from 'three';
 import { AnimationDirector } from './AnimationDirector';
 import { OutlineRegistry, attachOutline } from './materials/outline';
-import { buildProceduralClips } from './proceduralClips';
+import { buildDirectedReactionClips, buildProceduralClips } from './proceduralClips';
 import { CLIPS, CLIP_NAMES, FPS, LOOP_MAX_RATE, LOOP_MIN_RATE, clipSpec, type AnimName } from './clips';
 import { ProxyCharacter } from './ProxyCharacter';
 import { ROSTER } from '../../data/characters';
+import { performanceFor } from './performance';
+import type { FaceCell } from './faceAtlas';
 
 const clips = buildProceduralClips();
 const byName = new Map(clips.map((c) => [c.name, c]));
@@ -29,6 +31,13 @@ describe('the procedural stand-in library', () => {
     // A missing stand-in is a clip that silently falls back to idle — i.e. one
     // nobody ever notices is not being reviewed.
     expect(clips.map((c) => c.name).sort()).toEqual([...CLIP_NAMES].sort());
+  });
+
+  it('exports all eight directed reaction takes into the first-party GLB', () => {
+    expect(buildDirectedReactionClips().map((clip) => clip.name)).toEqual([
+      'cheer_cool', 'cheer_fierce', 'cheer_goofy', 'cheer_tender',
+      'upset_cool', 'upset_fierce', 'upset_goofy', 'upset_tender',
+    ]);
   });
 
   it('never translates Root', () => {
@@ -98,12 +107,78 @@ describe('the procedural stand-in library', () => {
 });
 
 describe('the director', () => {
+  it('lets a character take override shared and procedural motion by name', () => {
+    const kid = proxy();
+    const shared = new AnimationClip('idle', 1, []);
+    const character = new AnimationClip('idle', 2, []);
+    const dir = new AnimationDirector(kid.mesh, {
+      fallback: clips,
+      clips: [shared],
+      performanceClips: [character],
+    });
+    dir.play('idle');
+    expect(dir.action!.getClip()).toBe(character);
+    expect(dir.sourceFor('idle')).toBe('character');
+    expect(dir.sourceFor('run')).toBe('procedural');
+    dir.dispose();
+    kid.dispose();
+  });
+
   it('plays a clip and reports it', () => {
     const kid = proxy();
     const dir = new AnimationDirector(kid.mesh, { fallback: clips });
     dir.play('run' as AnimName);
     expect(dir.playing).toBe('run');
     expect(dir.action!.isRunning()).toBe(true);
+    dir.dispose();
+    kid.dispose();
+  });
+
+  it('acts with face, tempo, blink and a staggered idle fidget', () => {
+    const kid = proxy();
+    const faces: FaceCell[] = [];
+    const profile = performanceFor('calls_shot');
+    const dir = new AnimationDirector(kid.mesh, {
+      fallback: clips,
+      actor: {
+        id: 'calls_shot',
+        profile,
+        authoredRest: 'grin',
+        setExpression: (cell) => faces.push(cell),
+      },
+    });
+
+    dir.play('cheer');
+    expect(faces[faces.length - 1]).toBe('tongue');
+    expect(dir.action!.timeScale).toBeCloseTo(1.12, 6);
+
+    dir.play('idle');
+    let sawFidget = false;
+    for (let i = 0; i < 240; i++) {
+      dir.update(0.05);
+      sawFidget ||= dir.playing === 'idle_fidget';
+    }
+    expect(faces).toContain('blink');
+    expect(sawFidget).toBe(true);
+    expect(faces).toContain('tongue');
+    dir.dispose();
+    kid.dispose();
+  });
+
+  it('casts reactions from the actor profile rather than replaying one shared take', () => {
+    const kid = proxy();
+    const dir = new AnimationDirector(kid.mesh, {
+      fallback: clips,
+      actor: {
+        id: 'calls_shot',
+        profile: performanceFor('calls_shot'),
+        setExpression: () => {},
+      },
+    });
+    expect(dir.playReaction(true)).toBe('cheer_goofy');
+    expect(dir.playing).toBe('cheer_goofy');
+    expect(dir.playReaction(false, { restart: true })).toBe('upset_goofy');
+    expect(dir.playing).toBe('upset_goofy');
     dir.dispose();
     kid.dispose();
   });

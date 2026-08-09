@@ -14,7 +14,10 @@ import { mkdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { f32, writeGlb } from './glb.mjs';
-import { buildProceduralClips } from '../../src/v2/render/proceduralClips.ts';
+import {
+  buildDirectedReactionClips,
+  buildProceduralClips,
+} from '../../src/v2/render/proceduralClips.ts';
 import { CLIP_BY_NAME } from '../../src/v2/render/clips.ts';
 import { SKELETON, bindPoseHash } from '../../src/v2/render/skeleton.ts';
 
@@ -27,7 +30,8 @@ function paddedLength(bytes) {
 }
 
 export function buildAnimationLibraryGlb(outPath = DEFAULT_OUT) {
-  const clips = buildProceduralClips();
+  const directed = new Map(buildDirectedReactionClips().map((clip) => [clip.name, clip]));
+  const clips = buildProceduralClips().map((clip) => directed.get(clip.name) ?? clip);
   const byName = new Map(SKELETON.map((bone, index) => [bone.name, index]));
   const nodes = SKELETON.map((bone) => ({
     name: bone.name,

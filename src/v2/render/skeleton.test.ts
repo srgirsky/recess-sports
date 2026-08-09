@@ -9,7 +9,7 @@
 // That would not have stayed cheap. `docs/v2/animation-brief.md` hands the rig
 // to an animator with "1 unit = 1 foot, the reference kid is 4.0ft" printed at
 // the top, and stride length, foot plants and dive travel are authored in
-// absolute feet against whatever they are given. A 3.4ft rig buys 35 clips
+// absolute feet against whatever they are given. A 3.4ft rig buys 43 clips
 // whose every distance is 17% wrong — discovered after the invoice.
 //
 // So this file asserts the two ends of that claim against each other:
@@ -48,7 +48,7 @@ import { RIGS } from './cameraCues';
 import { shadeInt } from '../../art/fieldTexture';
 import { hairHex, skinHex } from './materials/registry';
 import { ROSTER } from '../../data/characters';
-import type { Accessory, HairStyle, VisualParams } from '../../data/types';
+import type { Accessory, HairStyle, OutfitKind, VisualParams } from '../../data/types';
 
 const FT = 1e-9;
 
@@ -665,5 +665,43 @@ describe('the proxy draws a kid, not a bobblehead', () => {
     expect(p.neckBottomFt).toBeLessThan(p.torsoTopFt);
     expect(p.neckTopFt).toBeGreaterThan(p.headBottomFt);
     kid.dispose();
+  });
+
+  it('sculpts all six authored outfit identities into distinct roster geometry', () => {
+    // ★ Team recolouring used to erase the roster's clothes completely: all
+    // six outfit kinds exported the same collar, waistband and chest badge.
+    // Hold every other visual knob fixed so any difference here has to be
+    // geometry — not a texture or palette that vanishes at field distance.
+    const kinds: OutfitKind[] = ['tee', 'stripeTee', 'hoodie', 'overalls', 'dress', 'jacket'];
+    const signatures = kinds.map((kind) => {
+      const kid = new ProxyCharacter(
+        {
+          ...base,
+          hair: 'bald',
+          accessory: 'none',
+          outfit: { kind, top: 0 },
+          body: { height: 1 },
+        },
+        { fidelity: 'roster' }
+      );
+      const pos = kid.mesh.geometry.attributes.position;
+      let absX = 0;
+      let absY = 0;
+      let absZ = 0;
+      let cross = 0;
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const y = pos.getY(i);
+        const z = pos.getZ(i);
+        absX += Math.abs(x);
+        absY += Math.abs(y);
+        absZ += Math.abs(z);
+        cross += Math.abs(x * y * z);
+      }
+      kid.dispose();
+      return [pos.count, absX, absY, absZ, cross].map((n) => n.toFixed(3)).join('/');
+    });
+
+    expect(new Set(signatures).size, signatures.join('\n')).toBe(kinds.length);
   });
 });

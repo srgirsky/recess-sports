@@ -125,13 +125,13 @@ the shared clip library (`docs/v2/animation-brief.md`) cited four acceptance
 gates, three of which did not exist: `npm run validate:models`, the
 `skeleton_recess_v1.glb` it tells you to send with it, and any way at all to
 *watch* a delivered clip. All three exist now. `src/v2/render/clips.ts` is the
-35-clip contract in code and the two markdown copies are parsed and checked
+43-clip contract in code and the two markdown copies are parsed and checked
 against it; `scripts/v2/validate-models.mjs` rejects a delivery on bone order,
 bind-pose drift, height band, root motion, off-grid frame rate, unclosed loop
 seams, measured body travel and derived marker frames — and every one of those
 rules has a test that deliberately breaks something and demands the specific
 rejection, because a rule that never fires is indistinguishable from no rule.
-Crude **procedural motion** covers all 35 clips and is exported into the shipped
+Crude **procedural motion** covers all 43 clips and is exported into the shipped
 shared GLB, so the real delivery path runs today rather than waiting on a
 commission. A future acting pass replaces that file clip by clip, with the
 in-bundle procedural clips retained only as load-failure fallbacks;
@@ -223,8 +223,8 @@ outlines or changing the asset contract. First-party deliveries keep the four
 named slots in each GLB but mark their compatible vertex palette; at load time
 the team tint is baked and all four primitives merge into one skinned colour
 pass plus one merged hull. The same 13-model foreground review now measures
-**66 draws against 90**, exactly matching 13 proxies, while using 59.9k rather
-than 147.9k triangles.
+**66 draws against 90**, exactly matching 13 proxies, while using 58.5k rather
+than 149.6k triangles.
 
 **The sim core has started, and the first thing it needed was a fence** (2026-07-31).
 `src/v2/sim/` was two files — unit conversion and field geometry — and 477 lines
@@ -1669,6 +1669,14 @@ Zoom's silhouette includes the sport chair instead of rendering as a standing
 kid. Hair and cap geometry were moved clear of the face after the first full
 roster review exposed dark bands and visors through the eyes.
 
+The next contact-sheet pass exposed a different erasure: every kid wore the
+same moulded collar, waistband and chest badge after team tinting, even though
+the roster already authored six outfit identities. Those identities now shape
+the delivered geometry — striped bands, hood and pocket, overall bib and
+buttons, dress flare, jacket zip and pockets, or the original tee — while all
+pieces remain in the mergeable team-uniform slot. The clothes therefore survive
+both recolouring and field distance without spending another draw call.
+
 The distinction is executable. Production files never carry the `STAND-IN`
 generator marker, `manifest.test.js` requires exactly the 30 `ROSTER` ids and
 re-validates every committed GLB under 400KB, and `?spike=1&roster=1` renders a
@@ -2046,10 +2054,21 @@ in this order:
 1. **Characters and animation.** The thirty generated GLBs satisfy the asset
    contract and keep every kid distinct, but they are still primitive authored
    stand-ins beside BB2026's sculpted faces, clothing, hair and expression. The
-   35 clips are timing-correct procedural motion, not character acting. This is
-   the largest gap and it needs an art/animation production pipeline, not another
-   UI pass. Commission the shared animation library first, then replace the
-   roster in batches of five or six through the existing validator and A/B page.
+   base clips are timing-correct procedural motion, not final character
+   acting. The first performance pass now gives all 30 kids explicit hero stance,
+   emotional spirit and tempo direction, coordinates body clips with the face
+   atlas, de-synchronizes blinks/fidgets, and expands the contract with four
+   distinct win and loss takes. The schoolyard also restores each undrafted
+   kid's authored personal colour instead of flattening the cast into two team
+   kits before teams exist. This removes the synchronized-mannequin failure
+   while leaving the dominant quality gap honest: externally sculpted models,
+   animator-authored motion and human-performed voices still need a production
+   pipeline. A generated 30-character production packet now directs each kid's
+   sculpt, motion, casting, read and anti-caricature boundaries, and optional
+   partial animation files let those individual takes override the shared
+   library kid by kid. Commission the shared movement language first, pilot
+   Junebug, Theo and Zoom as complete performances, then replace the roster in
+   batches of five or six through the existing validator and A/B page.
 2. **Venue art density.** Eleven parks now play differently and carry signature
    props, but their houses, foliage and ground are low-poly procedural forms.
    The reference layers hand-authored buildings, vegetation, decals, litter,
@@ -2085,11 +2104,12 @@ The five-phase plan above was executed as one production pass on 2026-08-08:
 1. **Characters and animation:** all thirty roster GLBs were regenerated with
    richer face, clothing and footwear detail while remaining inside the shipped
    LOD/size contract. A single delivered `anims_recess_v1.glb` now carries the
-   thirty-five marker-compatible clips; the runtime and animation spike load it
+   forty-three marker-compatible clips; the runtime and animation spike load it
    first and retain the procedural clips only as a per-clip failure fallback.
-   This establishes the batchable shared-library pipeline. It does not pretend
-   the generated meshes or motion are a substitute for a future sculptor and
-   character animator.
+   Optional partial `anims_<id>_v1.glb` files now replace named clips for one kid
+   at a time, with all thirty performances directed in a generated production
+   packet. This establishes a batchable character-acting pipeline. It does not
+   pretend generated meshes or motion replace a sculptor and animator.
 2. **Venue art density:** one reusable scenery-detail kit—benches, bicycles,
    flowerbeds, mailboxes, chalkboards, crates and pennants—was proved with five
    distinct modules at Parks Dept #2, then composed deterministically across all

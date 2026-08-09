@@ -1,7 +1,8 @@
-# Commission brief — shared animation library
+# Commission brief — shared animation and character takes
 
-**Deliverable:** one file, `anims_recess_v1.glb`. 35 clips on a supplied
-skeleton, no mesh.
+**Base deliverable:** one file, `anims_recess_v1.glb`. 43 clips on a supplied
+skeleton, no mesh. Character acting passes may add partial
+`anims_<id>_v1.glb` files after the base movement language is approved.
 
 Send this document, plus `docs/v2/asset-contract.md` and
 `skeleton_recess_v1.glb`, to the animator. Everything here is machine-checked by
@@ -21,12 +22,20 @@ chibi proportions, cel shading, heavy navy contour lines. Think *Paw Patrol* or
 the 2026 *Backyard Baseball* remake, not a simulation. The characters are the
 product: the whole game exists to find out which kids people love.
 
-## Why this is one library and not thirty
+## Why the mechanics are one library
 
 All thirty characters are modelled separately, but every one binds to the **same
-skeleton** and plays **these same clips**. Your file animates the entire cast,
-now and for every character added later. That is why the skeleton spec is rigid
-and why the marker frames below are non-negotiable.
+skeleton** and can play **these same clips**. The shared file establishes every
+baseball verb for the entire cast. A later character file replaces only named
+takes for one kid, which allows individual acting without duplicating the whole
+library. That is why the skeleton spec is rigid and why the marker frames below
+are non-negotiable.
+
+The character-performance packet in `docs/v2/character-performance-brief.md`
+names each kid's priority takes and acting direction. Deliver a character pass
+as `anims_<id>_v1.glb`, containing only the clips worth replacing. Included
+names override shared clips; missing names keep the shared delivery. The same
+technical rules below apply to both files.
 
 ---
 
@@ -38,7 +47,7 @@ and why the marker frames below are non-negotiable.
 | Scale | 1 unit = **1 foot**. The reference kid is **4.0 ft** tall, floor to `HeadTop_End`. |
 | Facing | +Z. Up is +Y. |
 | Frame rate | **30 fps** |
-| Output | one `.glb`, **animations only, no mesh, no skin** |
+| Output | `.glb`, **animations only, no mesh, no skin** |
 | **Root motion** | **NONE.** The `Root` bone must stay at the origin on every keyframe of every clip. |
 
 The supplied rig contains a two-triangle placeholder mesh bound to `Hips`. It
@@ -229,7 +238,15 @@ These sell the characters, which *is* the product. Worth extra attention.
 | clip | frames | loop | settles into | notes |
 |---|---|---|---|---|
 | `cheer` | 45 | — | `idle` | Arms up, jump. Pure joy. |
+| `cheer_cool` | 36 | — | `idle` | Contained fist pump and nod. The kid owns the win without asking the room to watch. |
+| `cheer_fierce` | 32 | — | `idle` | Explosive crouch, jump, hard landing and two quick pumps. |
+| `cheer_goofy` | 54 | — | `idle` | Off-balance victory dance: windmill, hop, catch, grin. |
+| `cheer_tender` | 45 | — | `idle` | Hands to heart, then an open wave that shares the win with the team. |
 | `upset` | 60 | — | `idle` | Struck out. Slumps, turns to camera, deflates. |
+| `upset_cool` | 40 | — | `idle` | One small shrug, eyes away, done. |
+| `upset_fierce` | 45 | — | `idle` | Recoil, stomp the frustration into the dirt, breathe it back down. |
+| `upset_goofy` | 50 | — | `idle` | Freeze, inspect both hands, then offer a tiny apologetic bow. |
+| `upset_tender` | 65 | — | `idle` | Cover the face, peek out, and recover slowly. Let the miss hurt. |
 | `nervous` | 60 | ✔ | — | Bases loaded. Fidgets, glances around, shifts weight. |
 | `dodge` | 24 | — | `bat_stance` | Flinch away from an inside pitch. Hip-pivot lean, fast in, slow recover. |
 
@@ -263,4 +280,10 @@ be signed off on its own.
 `idle` → `run` → `bat_stance` → `swing_contact` → `swing_follow` first, as a
 **pilot batch**, for feel sign-off before the rest. Those five are ~70% of what a
 player actually watches, and agreeing the movement language on them costs far
-less than re-timing thirty-five clips.
+less than re-timing forty-three clips.
+
+After the shared pilot is approved, deliver Junebug, Theo and Zoom's priority
+takes from the character-performance packet as three partial files. Review each
+with `/v2/?anims=1&kid=<id>`: `★` is the character take, `▪` is shared and `▫`
+is procedural fallback. Sign off their model, motion and draft read together
+before expanding to the remaining roster batches.

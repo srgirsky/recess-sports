@@ -257,7 +257,15 @@ const CLIP_TABLE = [
 
   // --- Reactions — the personality set ------------------------------------
   { name: 'cheer', group: 'reaction', frames: 45, loop: false, blendMs: 120, returnsTo: 'idle' },
+  { name: 'cheer_cool', group: 'reaction', frames: 36, loop: false, blendMs: 120, returnsTo: 'idle' },
+  { name: 'cheer_fierce', group: 'reaction', frames: 32, loop: false, blendMs: 80, returnsTo: 'idle' },
+  { name: 'cheer_goofy', group: 'reaction', frames: 54, loop: false, blendMs: 100, returnsTo: 'idle' },
+  { name: 'cheer_tender', group: 'reaction', frames: 45, loop: false, blendMs: 140, returnsTo: 'idle' },
   { name: 'upset', group: 'reaction', frames: 60, loop: false, blendMs: 150, returnsTo: 'idle' },
+  { name: 'upset_cool', group: 'reaction', frames: 40, loop: false, blendMs: 150, returnsTo: 'idle' },
+  { name: 'upset_fierce', group: 'reaction', frames: 45, loop: false, blendMs: 90, returnsTo: 'idle' },
+  { name: 'upset_goofy', group: 'reaction', frames: 50, loop: false, blendMs: 120, returnsTo: 'idle' },
+  { name: 'upset_tender', group: 'reaction', frames: 65, loop: false, blendMs: 180, returnsTo: 'idle' },
   { name: 'nervous', group: 'reaction', frames: 60, loop: true, blendMs: 200 },
   { name: 'dodge', group: 'reaction', frames: 24, loop: false, blendMs: 40, returnsTo: 'bat_stance' },
 

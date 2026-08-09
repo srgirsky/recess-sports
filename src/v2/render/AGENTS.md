@@ -130,6 +130,8 @@ popping" checkable).
   clip under REVIEW and the clip actually PLAYING separately: a one-shot settles
   into its `returnsTo` when it ends, and counting the settle clip's time against
   the reviewed clip's frame count prints a frame past the end.
+- **Character acting belongs in `performance.ts`; `AnimationDirector` joins body
+  and face.** No call-site clip or expression policy.
 
 ## Characters and models
 
@@ -180,12 +182,13 @@ popping" checkable).
 - **Runtime URLs resolve against `document.baseURI`, never `import.meta.url`.**
   Under the relative base those differ in the build and agree in dev — the bug
   that works locally and 404s in production.
-- **The delivery manifest is a generated `manifest.json`, NOT `import.meta.glob`.**
-  Vite copies `public/` verbatim and then emits every globbed file AGAIN as a
-  hashed bundle asset, which is megabytes of duplicate `.glb` at roster scale.
-  `npm run manifest:models` writes it and `manifest.test.js` fails if it drifts — a real model dropped
-  in without a manifest entry renders as a proxy forever, silently and
-  correctly-looking.
+- **The delivery manifest is generated, NOT `import.meta.glob`.** Vite copies
+  `public/` verbatim, then a glob emits every `.glb` again. `npm run manifest:models`
+  writes it and its test catches drift; an unlisted model
+  correctly falls back to a proxy.
+- **Animation precedence is character → shared → procedural.** Manifested
+  partial `anims_<id>_v1.glb` files override matching names only;
+  `AnimationDirector` remains the only clip player.
 - **`ProxyCharacter.ts` builds a kid from primitives on the shared skeleton** — it
   is both the acceptance test for the spec and the reason no engineering is ever
   blocked on art. `npm run export:proxy-kid` writes a contract-legal stand-in

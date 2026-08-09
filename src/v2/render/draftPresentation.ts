@@ -6,13 +6,14 @@
 // ---------------------------------------------------------------------------
 
 import type { AnimName } from './clips';
+import { heroClipFor, performanceFor, reactionClipFor } from './performance';
 
 export type DraftSpotlightMode = 'pick' | 'mine' | 'cpu';
 
 /** A short, readable entrance before the candidate holds their card pose. */
 export const DRAFT_WALK_SEC = 0.55;
 /** A picked kid gets a reaction before returning to the authored hero pose. */
-export const DRAFT_REACT_SEC = 0.8;
+export const DRAFT_REACT_SEC = 1.55;
 /** The physical walk from the chalk mark to the picked side's bench. */
 export const DRAFT_WALK_OFF_SEC = 0.85;
 /** Where the two benches sit around the centre mark, render-only feet. */
@@ -32,7 +33,8 @@ export interface DraftHeroPose {
 export function draftHeroPose(
   ageSec: number,
   mode: DraftSpotlightMode,
-  walkIn: boolean
+  walkIn: boolean,
+  characterId?: string
 ): DraftHeroPose {
   const age = Math.max(0, ageSec);
   if (walkIn && age < DRAFT_WALK_SEC) {
@@ -43,7 +45,10 @@ export function draftHeroPose(
   }
   const afterWalk = age - (walkIn ? DRAFT_WALK_SEC : 0);
   if (mode !== 'pick' && afterWalk < DRAFT_REACT_SEC) {
-    return { clip: 'cheer', xFt: 0 };
+    return {
+      clip: characterId ? reactionClipFor(performanceFor(characterId), true) : 'cheer',
+      xFt: 0,
+    };
   }
   if (mode !== 'pick') {
     const walkAge = afterWalk - DRAFT_REACT_SEC;
@@ -55,9 +60,15 @@ export function draftHeroPose(
       const eased = t * t * (3 - 2 * t);
       return { clip: 'walk_on', xFt: eased === 0 ? 0 : side * DRAFT_BENCH_X_FT * eased };
     }
-    return { clip: 'pose_card', xFt: side * DRAFT_BENCH_X_FT };
+    return {
+      clip: characterId ? heroClipFor(performanceFor(characterId)) : 'pose_card',
+      xFt: side * DRAFT_BENCH_X_FT,
+    };
   }
-  return { clip: 'pose_card', xFt: 0 };
+  return {
+    clip: characterId ? heroClipFor(performanceFor(characterId)) : 'pose_card',
+    xFt: 0,
+  };
 }
 
 /**
