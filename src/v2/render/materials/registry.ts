@@ -4,8 +4,8 @@
 // The named-slot contract the commissioned models are built against:
 //
 //   M_Body       skin + face (face UVs in their own atlas island)
-//   M_Uniform    jersey + pants, AUTHORED WHITE/GREYSCALE — team colour is a
-//                runtime multiply. This is the entire team-identity system.
+//   M_Uniform    jersey + pants. Procedural kits are white/greyscale and take a
+//                team multiply; finished identity palettes keep COLOR_0.
 //   M_Hair
 //   M_Accessory  cap / glasses / headband / glove. May be absent.
 //
@@ -34,9 +34,8 @@ export interface CharacterLook {
   /** Index into HAIR_COLORS. */
   hairColor: number;
   /**
-   * Index into UNIFORM_COLORS — the TEAM's colour, not the character's. A kid
-   * wears whichever team drafted them, which is why this is passed in at
-   * build time rather than read off the character.
+   * Index into UNIFORM_COLORS — the TEAM's colour. Procedural kits use it all
+   * over; a reference-authored character confines it to an explicit accent.
    */
   uniform: number;
 }

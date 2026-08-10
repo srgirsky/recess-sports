@@ -262,9 +262,11 @@ These sell the characters, which *is* the product. Worth extra attention.
 
 1. `npm run validate:models` passes (bone set, no root motion, no morph targets,
    frame rate, marker frames, body travel, loop seams).
-2. Every clip plays on the supplied **proxy character** — a primitive stand-in on
-   the same skeleton — without popping between clips or into the clip it settles
-   into.
+2. Every clip first plays on the supplied **proxy character** — a primitive
+   skeleton diagnostic — without popping between clips or into the clip it
+   settles into. Character approval then repeats the review on the delivered
+   model; `/v2/?anims=1&kid=<id>` must report `model  model`, and the evidence
+   set must include hero, run and contact frames from that model.
 3. Loops are seamless at 0.6×, 1.0× and 1.4×; marker clips hold up at 0.5×–2.5×.
 4. Thumbnail review: every clip readable at 40 px tall.
 
@@ -328,8 +330,10 @@ rows at `/v2/?anims=1&kid=mimi_mash`.
 player actually watches, and agreeing the movement language on them costs far
 less than re-timing forty-three clips.
 
-All three signature priority sets and Batch 1 are complete. Start Batch 2 with
-Turbo, Sprout and Zippy from the character-performance packet, keeping separate
-partial files and review evidence per kid. Review with `/v2/?anims=1&kid=<id>`:
-`★` is the character take, `▪` is shared and `▫` is procedural fallback. Sign
-off each model, motion and draft read together before starting the next batch.
+All three signature priority sets and Batch 1 have animation deliveries, but
+their character-model fidelity is not yet approved. Batch 2 remains paused
+while Junebug proves the corrected Blender-to-runtime path; then retrofit the
+six delivered characters before starting Turbo, Sprout and Zippy. Review with
+`/v2/?anims=1&kid=<id>`: `★` is the character take, `▪` is shared and `▫` is
+procedural fallback. Sign off each model, motion and draft read together before
+starting the next batch.

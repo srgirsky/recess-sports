@@ -155,6 +155,92 @@ function normalizeSkinOrder(gltf, boneNames) {
   return bin;
 }
 
+/**
+ * Blender 5.2 writes white COLOR_0 values for later material primitives when a
+ * mesh combines imported glTF materials and authored point colours. The custom
+ * attribute is the unambiguous artist value; promote it to the standard glTF
+ * semantic and remove the transport-only name before validation/runtime.
+ */
+function promoteAuthoredColors(gltf) {
+  for (const mesh of gltf.json.meshes ?? []) {
+    for (const primitive of mesh.primitives ?? []) {
+      const authored = primitive.attributes?._RECESS_COLOR;
+      if (authored === undefined) continue;
+      primitive.attributes.COLOR_0 = authored;
+      delete primitive.attributes._RECESS_COLOR;
+    }
+  }
+}
+
+/** Give the image carrying M_Body's emissive atlas its contract name. */
+function normalizeFaceAtlasName(gltf) {
+  const body = gltf.json.materials?.find((material) => material.name === 'M_Body');
+  const textureIndex = body?.emissiveTexture?.index;
+  const imageIndex = textureIndex === undefined ? undefined : gltf.json.textures?.[textureIndex]?.source;
+  if (imageIndex !== undefined && gltf.json.images?.[imageIndex]) {
+    gltf.json.images[imageIndex].name = 'face_atlas';
+  }
+}
+
+/** Remove transport attributes and the white COLOR_0 buffers they replaced. */
+function pruneUnusedAccessorsAndViews(gltf) {
+  const usedAccessors = new Set();
+  for (const mesh of gltf.json.meshes ?? []) {
+    for (const primitive of mesh.primitives ?? []) {
+      if (primitive.indices !== undefined) usedAccessors.add(primitive.indices);
+      for (const index of Object.values(primitive.attributes ?? {})) usedAccessors.add(index);
+    }
+  }
+  for (const skin of gltf.json.skins ?? []) {
+    if (skin.inverseBindMatrices !== undefined) usedAccessors.add(skin.inverseBindMatrices);
+  }
+  for (const animation of gltf.json.animations ?? []) {
+    for (const sampler of animation.samplers ?? []) {
+      usedAccessors.add(sampler.input);
+      usedAccessors.add(sampler.output);
+    }
+  }
+
+  const accessorOrder = [...usedAccessors].sort((a, b) => a - b);
+  const accessorMap = new Map(accessorOrder.map((old, index) => [old, index]));
+  const remapAccessor = (old) => accessorMap.get(old);
+  for (const mesh of gltf.json.meshes ?? []) {
+    for (const primitive of mesh.primitives ?? []) {
+      if (primitive.indices !== undefined) primitive.indices = remapAccessor(primitive.indices);
+      for (const semantic of Object.keys(primitive.attributes ?? {})) {
+        primitive.attributes[semantic] = remapAccessor(primitive.attributes[semantic]);
+      }
+    }
+  }
+  for (const skin of gltf.json.skins ?? []) {
+    if (skin.inverseBindMatrices !== undefined) skin.inverseBindMatrices = remapAccessor(skin.inverseBindMatrices);
+  }
+  for (const animation of gltf.json.animations ?? []) {
+    for (const sampler of animation.samplers ?? []) {
+      sampler.input = remapAccessor(sampler.input);
+      sampler.output = remapAccessor(sampler.output);
+    }
+  }
+  gltf.json.accessors = accessorOrder.map((old) => gltf.json.accessors[old]);
+
+  const usedViews = new Set();
+  for (const accessor of gltf.json.accessors) {
+    if (accessor.bufferView !== undefined) usedViews.add(accessor.bufferView);
+  }
+  for (const image of gltf.json.images ?? []) {
+    if (image.bufferView !== undefined) usedViews.add(image.bufferView);
+  }
+  const viewOrder = [...usedViews].sort((a, b) => a - b);
+  const viewMap = new Map(viewOrder.map((old, index) => [old, index]));
+  for (const accessor of gltf.json.accessors) {
+    if (accessor.bufferView !== undefined) accessor.bufferView = viewMap.get(accessor.bufferView);
+  }
+  for (const image of gltf.json.images ?? []) {
+    if (image.bufferView !== undefined) image.bufferView = viewMap.get(image.bufferView);
+  }
+  gltf.json.bufferViews = viewOrder.map((old) => gltf.json.bufferViews[old]);
+}
+
 /** Compact Blender's float vertex colours/weights into glTF-normalized bytes. */
 function quantizePaletteAndWeights(gltf, sourceBin) {
   const wanted = new Map();
@@ -255,6 +341,9 @@ export async function exportAuthoredCharacter(id, { blender = process.env.BLENDE
     }
 
     const gltf = readGlb(intermediate);
+    promoteAuthoredColors(gltf);
+    normalizeFaceAtlasName(gltf);
+    pruneUnusedAccessorsAndViews(gltf);
     const normalizedBin = normalizeSkinOrder(gltf, contract.BONE_NAMES);
     const compactBin = quantizePaletteAndWeights(gltf, normalizedBin);
     gltf.json.asset = {

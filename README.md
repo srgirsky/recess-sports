@@ -55,15 +55,18 @@ Keys on the spike page: `1`–`5` switch camera preset, `V` cycles venue.
 
 The acceptance surface for `docs/v2/animation-brief.md`. Three of that brief's
 four acceptance criteria are things you have to *watch*, so they need somewhere
-to be watched: it plays any of the 43 clips on a proxy character, at 0.6×, 1.0×
-or 1.4×, flashes the frame a clip's marker lands on, renders the same character
-in a real **40 px** viewport (that is criterion 4, literally), and prints a
+to be watched: it plays any of the 43 clips on the selected delivered model (or
+an honestly labelled fallback), at 0.6×, 1.0× or 1.4×, flashes the frame a clip's
+marker lands on, renders the same character in a real **40 px** viewport (that
+is criterion 4, literally), and prints a
 computed **loop-seam** error — a seam that is merely nearly closed pops once per
 stride and gets blamed on the playback rate instead.
 
 Keys: `←`/`→` or space step through clips, `1`–`3` set the rate, `R` replays.
 Add `&kid=<id>` to review a particular kid's takes. Clips marked `▫` are
 procedural stand-ins, `▪` are shared delivery and `★` are that kid's overrides.
+The stats panel must say `model model` for authored-model evidence; append
+`&proxy=1` only for the deliberate proxy comparison.
 
 The shared library is still generated from timing-correct stand-ins. Junebug's
 eight-clip pass plus Theo, Zoom and Big Lou's nine-clip passes now resolve from
@@ -230,18 +233,21 @@ authored-character test rejects it if it overwrites a finished Blender delivery.
 Finished characters ship from their editable Blender source with:
 
 ```bash
-npm run export:authored-character -- mimi_mash
-npm run review:character-fidelity -- mimi_mash
+npm run generate:junebug-face-atlas
+npm run export:authored-character -- nostrike
+npm run review:character-fidelity -- nostrike
 npm run validate:models
 ```
 
-The first command loads `assets/v2/source/<name>-pilot.blend`, exports its mesh,
+The atlas command reproduces Junebug's character-specific 16-expression source
+texture. The export command loads `assets/v2/source/<name>-pilot.blend`, exports its mesh,
 remaps Blender's skin order to the canonical rig without changing deformation,
 compacts vertex colours/weights, stamps source and concept hashes, validates the
 result and promotes it to `public/v2/models/`. The second writes deterministic
-front/profile, hero and 40-pixel evidence to
-`docs/v2/concepts/<name>-fidelity-review.png`. A raw Blender export is not the
-delivery path.
+front/profile, authored-model hero, run/contact and 40-pixel evidence to
+`docs/v2/concepts/<name>-fidelity-review.png`. The builder may mark that board
+`candidate`; final `approved` status requires a named human approver and a hash
+of the exact board. A raw Blender export is not the delivery path.
 
 `/v2/?spike=1&roster=1` is the one-frame roster review; use
 `/v2/?spike=1&kid=turbo` for a single-character field review.

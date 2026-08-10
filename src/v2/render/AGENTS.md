@@ -139,20 +139,12 @@ popping" checkable).
   `?proxy=1` or absent manifest entry → proxy silently; load failure → proxy plus
   ONE warning per character. Nothing downstream branches on the result — both
   implement `KidView`.
-- **`modelLoader.ts` is the only file that loads a `.glb`**, the same way
-  `net/peer.ts` is the only one that imports peerjs. A second loader silently
-  gets no Draco decoder and no KTX2 support detection, and fails on the first
-  compressed model at runtime on whichever device fielded that kid. The decoders
-  are **committed** under `public/v2/decoders/` (they are fetched by URL, so a
-  bundler never sees them and `node_modules` 404s in the built site) and
-  `scripts/v2/sync-decoders.mjs --check` runs in `npm test`.
-- **A model's bones must be parented to the character root, OUTSIDE the LOD.** In
-  a `.glb` the joints are siblings of the meshes, so lifting the LOD nodes into a
-  new group orphans the skeleton: world matrices never update, every vertex skins
-  against a stale bind matrix, and the character draws NOTHING while still
-  reporting a mesh, a LOD level and a shadow caster. Inside a level is equally
-  wrong — a LOD hides every level but the active one, so the kid vanishes on
-  walking away.
+- **Only `modelLoader.ts` loads `.glb` files.** A second loader misses Draco and
+  KTX2 detection. Keep URL-fetched decoders committed under
+  `public/v2/decoders/`; `scripts/v2/sync-decoders.mjs --check` gates them.
+- **Parent model bones to the character root, OUTSIDE the LOD.** Moving only the
+  mesh levels orphans glTF's sibling joints; parenting bones inside a level hides
+  them when that LOD switches.
 - **`lodBias` DROPS the nearest levels, it does not scale distances.** Scaling
   distances would still upload the finest level's triangles to a device that must
   never draw them. The switch distances are DERIVED from apparent PIXEL size
@@ -161,6 +153,9 @@ popping" checkable).
 - **Generated roster deliveries must keep the 2-draw character cost** — one
   merged colour pass plus one hull. Preserve all four GLB slots and the explicit
   `recessVertexPalette` opt-in; see `render.characterDrawCost`.
+- **A finished signature palette is identity, not team paint.** With
+  `recessIdentityPalette`, keep COLOR_0 and tint only `recessTeamAccent`; retain
+  the four-slot/two-draw budget.
 - **Outline hulls are SIBLINGS, never children.** A skinned hull parented under
   its skinned mesh inherits the already-posed world matrix and skins a second
   time — every character renders as a solid blob. `attachOutline` throws if the
@@ -197,7 +192,8 @@ popping" checkable).
 - **`export-roster-kid` is the procedural roster baseline, never sculpt
   approval.** Finished meshes ship only from their upstream `.blend` through
   `export:authored-character`, whose source/concept/runtime hashes and fidelity
-  board are gated. Review with `?spike=1&roster=1` or `?spike=1&kid=<id>`.
+  board are gated. Review the spikes and `?anims=1&kid=<id>`; approval evidence
+  requires `model model`, never `?proxy=1`.
 - The artist-facing copy is `docs/v2/asset-contract.md`;
   `scripts/v2/validate-models.mjs` is its teeth, and a failure names the rule AND
   why it exists.
