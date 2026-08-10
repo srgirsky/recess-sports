@@ -91,7 +91,9 @@ function face(name) {
   if (blink || sleepy || wink) lips = `<path d="M53 89.5 Q64 86.5 75 89.5 Q69 94.5 64 94.5 Q59 94.5 53 89.5Z" fill="${mouth}"/>
     <path d="M56 91.5 Q64 94 72 91.5 Q68 94.3 64 94.3 Q60 94.3 56 91.5Z" fill="${lipLow}"/>`;
 
-  return `${brows}${eyes}${lips}`;
+  // The mouth reads its emotion from across the diamond, so it gets a 1.35x
+  // scale about its own centre — authored small, displayed legible.
+  return `${brows}${eyes}<g transform="translate(64 92) scale(1.35) translate(-64 -92)">${lips}</g>`;
 }
 
 const contents = cells.map((name, index) => {

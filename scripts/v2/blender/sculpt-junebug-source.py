@@ -243,7 +243,7 @@ class MeshBuilder:
                 behind = max(0.0, sin(theta))
                 blend = behind * behind * (3.0 - 2.0 * behind)
                 phi = (0.37 + 0.35 * blend) * pi * row / rings
-                x = 0.60 * sin(phi) * cos(theta)
+                x = 0.65 * sin(phi) * cos(theta)
                 y = 0.52 * sin(phi) * sin(theta)
                 z = 0.66 * cos(phi)
                 ring.append(self.vertex(center + Vector((x, y, z)), HAIR, "Head"))
@@ -264,7 +264,7 @@ class MeshBuilder:
         retopology while remaining welded visually to the same head volume.
         """
         cx, cy, cz = (0.0, -0.015, 3.45)
-        rx, ry, rz = (0.56, 0.47, 0.61)
+        rx, ry, rz = (0.605, 0.47, 0.585)
         grid: list[list[int]] = []
         for row in range(rows + 1):
             vf = row / rows
@@ -484,13 +484,16 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         )
 
     # Pants are fuller through the thigh and taper into deliberate cuffs.
-    builder.ellipsoid((0.0, 0.0, 1.66), (0.43, 0.27, 0.25), 1, PANTS_DARK, "Hips", segments, rings)
+    builder.ellipsoid((0.0, 0.0, 1.66), (0.44, 0.27, 0.25), 1, PANTS_DARK, "Hips", segments, rings)
     for side, prefix in ((-1, "Left"), (1, "Right")):
-        builder.ellipsoid((0.21 * side, 0.0, 1.30), (0.23, 0.23, 0.43), 1, PANTS, f"{prefix}UpLeg", segments, rings)
-        builder.ellipsoid((0.21 * side, 0.0, 0.72), (0.19, 0.20, 0.39), 1, PANTS, f"{prefix}Leg", segments, rings)
+        # Thighs at 0.21 with 0.23 radius CROSSED the midline — the legs read as
+        # one mass in idle and run. Outward centres and slimmer radii leave a
+        # visible gap between the legs, as legs have.
+        builder.ellipsoid((0.235 * side, 0.0, 1.30), (0.195, 0.22, 0.43), 1, PANTS, f"{prefix}UpLeg", segments, rings)
+        builder.ellipsoid((0.235 * side, 0.0, 0.72), (0.16, 0.19, 0.39), 1, PANTS, f"{prefix}Leg", segments, rings)
         if detail >= 1:
             builder.tube(
-                torus_points((0.21 * side, 0.0, 0.38), 0.18, 0.18, max(8, segments // 2)),
+                torus_points((0.235 * side, 0.0, 0.38), 0.155, 0.165, max(8, segments // 2)),
                 [0.026] * max(8, segments // 2),
                 1,
                 PANTS_DARK,
@@ -502,21 +505,21 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         if detail == 0:
             # At LOD2 the shoe is six pixels tall: preserve the toe/sole read,
             # not invisible panel topology.
-            builder.ellipsoid((0.21 * side, -0.16, 0.20), (0.25, 0.38, 0.17), 1, SHOE, f"{prefix}Foot", segments, rings, flatten_sole=True)
-            builder.ellipsoid((0.21 * side, -0.17, 0.075), (0.265, 0.40, 0.065), 1, SOLE, f"{prefix}Foot", segments, rings, flatten_sole=True)
+            builder.ellipsoid((0.235 * side, -0.16, 0.20), (0.25, 0.38, 0.17), 1, SHOE, f"{prefix}Foot", segments, rings, flatten_sole=True)
+            builder.ellipsoid((0.235 * side, -0.17, 0.075), (0.265, 0.40, 0.065), 1, SOLE, f"{prefix}Foot", segments, rings, flatten_sole=True)
         else:
             # Layered sneaker: ankle collar, heel counter, long toe box, toe
             # cap and separate outsole. These overlap as manufactured panels.
-            builder.ellipsoid((0.21 * side, 0.015, 0.27), (0.205, 0.21, 0.18), 1, SHOE, f"{prefix}Foot", segments, rings, flatten_sole=True)
-            builder.ellipsoid((0.21 * side, 0.10, 0.255), (0.20, 0.16, 0.155), 1, SHIRT_DARK, f"{prefix}Foot", segments, rings, flatten_sole=True)
-            builder.ellipsoid((0.21 * side, -0.17, 0.19), (0.24, 0.32, 0.145), 1, SHOE, f"{prefix}Foot", segments, rings, flatten_sole=True)
-            builder.ellipsoid((0.21 * side, -0.405, 0.16), (0.215, 0.085, 0.078), 1, WHITE, f"{prefix}Foot", segments, max(4, rings // 2), flatten_sole=True)
-            builder.ellipsoid((0.21 * side, -0.14, 0.075), (0.255, 0.36, 0.065), 1, SOLE, f"{prefix}Foot", segments, max(4, rings // 2), flatten_sole=True)
+            builder.ellipsoid((0.235 * side, 0.015, 0.27), (0.205, 0.21, 0.18), 1, SHOE, f"{prefix}Foot", segments, rings, flatten_sole=True)
+            builder.ellipsoid((0.235 * side, 0.10, 0.255), (0.20, 0.16, 0.155), 1, SHIRT_DARK, f"{prefix}Foot", segments, rings, flatten_sole=True)
+            builder.ellipsoid((0.235 * side, -0.17, 0.19), (0.24, 0.32, 0.145), 1, SHOE, f"{prefix}Foot", segments, rings, flatten_sole=True)
+            builder.ellipsoid((0.235 * side, -0.405, 0.16), (0.215, 0.085, 0.078), 1, WHITE, f"{prefix}Foot", segments, max(4, rings // 2), flatten_sole=True)
+            builder.ellipsoid((0.235 * side, -0.14, 0.075), (0.255, 0.36, 0.065), 1, SOLE, f"{prefix}Foot", segments, max(4, rings // 2), flatten_sole=True)
             lace_rows = (-0.12, -0.21, -0.30) if detail >= 2 else (-0.22,)
             for lace_y in lace_rows:
                 lace_z = 0.315 - 0.22 * max(0.0, -lace_y - 0.12)
                 builder.tube(
-                    [(-0.12 + 0.21 * side, lace_y, lace_z), (0.12 + 0.21 * side, lace_y, lace_z)],
+                    [(-0.12 + 0.235 * side, lace_y, lace_z), (0.12 + 0.235 * side, lace_y, lace_z)],
                     [0.014, 0.014],
                     1,
                     WHITE,
@@ -526,7 +529,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
             if detail >= 2:
                 # A sidewall stripe survives at hero scale; LOD1 keeps the
                 # panel/toe/sole silhouette without this small tube.
-                outer_x = 0.21 * side + 0.235 * side
+                outer_x = 0.235 * side + 0.235 * side
                 builder.tube(
                     [(outer_x, -0.02, 0.18), (outer_x, -0.24, 0.15), (outer_x, -0.42, 0.135)],
                     [0.014, 0.014, 0.012],
@@ -550,7 +553,8 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         SKIN,
         max(9, segments // 2),
     )
-    builder.ellipsoid((0.0, -0.015, 3.45), (0.56, 0.47, 0.61), 0, SKIN, "Head", segments + 4, rings + 2, face_shape=True)
+    # Broader through the cheeks: the turnaround face is wider than tall.
+    builder.ellipsoid((0.0, -0.015, 3.45), (0.605, 0.47, 0.585), 0, SKIN, "Head", segments + 4, rings + 2, face_shape=True)
     builder.face_patch(max(6, segments // 2), max(5, rings // 2))
     if detail >= 2:
         # The nose is a FORM, not only an atlas mark — a flat decal face reads
@@ -562,22 +566,22 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         # and a lobe. A bare ellipsoid bump fails rubric 3.10; it reads as a
         # knob at every angle.
         for side in (-1, 1):
-            builder.ellipsoid((0.55 * side, 0.02, 3.43), (0.06, 0.085, 0.115), 0, SKIN, "Head", max(8, segments // 3), max(4, rings // 2))
+            builder.ellipsoid((0.60 * side, 0.02, 3.43), (0.06, 0.085, 0.115), 0, SKIN, "Head", max(8, segments // 3), max(4, rings // 2))
             if detail >= 2:
                 rim_points = []
                 for step in range(6):
                     angle = -0.45 * pi + (1.35 * pi) * step / 5
-                    rim_points.append((0.605 * side, 0.02 + 0.075 * cos(angle), 3.42 + 0.100 * sin(angle)))
+                    rim_points.append((0.655 * side, 0.02 + 0.075 * cos(angle), 3.42 + 0.100 * sin(angle)))
                 builder.tube(rim_points, [0.016, 0.022, 0.024, 0.024, 0.022, 0.016], 0, SKIN, "Head", 5, axis=Vector((1.0, 0.0, 0.0)))
-                builder.ellipsoid((0.585 * side, 0.035, 3.42), (0.035, 0.05, 0.068), 0, SKIN_SHADOW, "Head", 8, 5)
-                builder.ellipsoid((0.575 * side, 0.005, 3.325), (0.032, 0.042, 0.04), 0, SKIN, "Head", 7, 5)
+                builder.ellipsoid((0.635 * side, 0.035, 3.42), (0.035, 0.05, 0.068), 0, SKIN_SHADOW, "Head", 8, 5)
+                builder.ellipsoid((0.625 * side, 0.005, 3.325), (0.032, 0.042, 0.04), 0, SKIN, "Head", 7, 5)
 
     # Hair is one designed mass: full slicked-back crown + high swept ponytail.
     # The headband sits across the hairline, so the crown's front edge tucks
     # just beneath it; there is deliberately no fringe — the turnaround pulls
     # everything back into the ponytail.
     builder.hair_cap(max(12, segments + 4), max(6, rings // 2 + 2))
-    headband_points = torus_points((0.0, 0.0, 3.80), 0.545, 0.42, max(12, segments))
+    headband_points = torus_points((0.0, 0.0, 3.80), 0.595, 0.42, max(12, segments))
     builder.tube(headband_points, [0.035] * len(headband_points), 1, WHITE, "Head", max(5, segments // 3), cyclic=True, axis=Vector((0.0, 0.0, 1.0)))
     ponytail_points = [
         (0.0, 0.39, 3.72),
@@ -615,7 +619,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
                 phi = (1 - t) * (1 - t) * 1.08 + 2 * t * (1 - t) * 0.30 + t * t * 0.66
                 strand.append(
                     crown_center
-                    + Vector((0.609 * sin(phi) * cos(theta), 0.527 * sin(phi) * sin(theta), 0.670 * cos(phi)))
+                    + Vector((0.660 * sin(phi) * cos(theta), 0.527 * sin(phi) * sin(theta), 0.670 * cos(phi)))
                 )
             builder.tube(strand, [0.020, 0.026, 0.028, 0.026, 0.020], 2, HAIR_SHINE, "Head", 4)
 
