@@ -32,7 +32,7 @@
         "hairMass": {
           "label": "hair mass",
           "score": 5,
-          "note": "Full crown with sculpted strand ridges, hairline tucked under the headband, a gather knot, and grooved strand grouping down the swept ponytail \u2014 hair is a designed mass with visible construction, not a smooth blob."
+          "note": "Full crown with warm-sheen strand ridges, hairline tucked under the headband, a gather knot, and two-tone grooved strand grouping down the swept ponytail."
         },
         "clothingConstruction": {
           "label": "clothing construction",
@@ -41,8 +41,8 @@
         },
         "faceExpressionRead": {
           "label": "face/expression read",
-          "score": 4,
-          "note": "Bold concept-weight brows, larger almond eyes, and a sculpted 3D nose that breaks the profile over the corrected warm-brown skin; constructed ears with rim, concha and lobe. The faint decal-island edge is the remaining gap to 5."
+          "score": 5,
+          "note": "Eyes with sclera, iris, pupil and lash-weighted lids; tapered concept-weight brows; a sculpted nose that owns the feature (no drawn double); a tapered neck column; constructed ears with rim, concha and lobe. The face reads as a form, not a sticker."
         },
         "heroAndFieldScale": {
           "label": "hero + 40px read",

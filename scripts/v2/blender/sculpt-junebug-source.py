@@ -58,6 +58,8 @@ SHOE = rgba("9B252B")
 WHITE = rgba("F3E9D5")
 SOLE = rgba("EEE5D8")
 TEAM_MASK = rgba("B8B8B8")
+# Warm sheen for strand ridges — near-black hair reads flat without a second tone.
+HAIR_SHINE = rgba("3B2517")
 
 
 @dataclass
@@ -275,11 +277,14 @@ class MeshBuilder:
                 ny = -cos(horizontal) * cos(vertical)
                 nz = sin(vertical)
                 width = 1.03 + 0.04 * (1.0 - abs(nz)) - 0.12 * max(-nz, 0.0)
-                # Just proud of the skull — 0.014 read as a shadowed step at the
-                # island edge on the fidelity board; 0.006 still clears z-fight.
+                # Proud of the skull by an offset that FEATHERS to ~zero at the
+                # island border, so the edge never casts the step-shadow seam a
+                # constant offset drew around the face.
+                edge = min(uf, 1.0 - uf, vf, 1.0 - vf)
+                proud = 0.003 + 0.004 * min(1.0, edge * 5.0)
                 point = (
                     cx + rx * nx * width,
-                    cy + 0.86 * ry * ny - 0.006,
+                    cy + 0.86 * ry * ny - proud,
                     cz + rz * nz,
                 )
                 # Contract island: forehead V=1, chin V=.5. Blender's exporter
@@ -522,13 +527,25 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
                 )
 
     # Neck, ears and a face whose cheek-to-chin taper follows the turnaround.
-    builder.ellipsoid((0.0, 0.0, 2.69), (0.18, 0.16, 0.20), 0, SKIN_SHADOW, "Neck", segments, rings)
+    # A tapered skin column, not a dark ball — the shadow-toned ellipsoid read
+    # as a separate object wedged between chin and collar.
+    builder.loft(
+        [
+            (2.50, 0.16, 0.145, "Spine2"),
+            (2.62, 0.135, 0.12, "Neck"),
+            (2.76, 0.125, 0.115, "Neck"),
+            (2.92, 0.145, 0.135, "Head"),
+        ],
+        0,
+        SKIN,
+        max(9, segments // 2),
+    )
     builder.ellipsoid((0.0, -0.015, 3.45), (0.56, 0.47, 0.61), 0, SKIN, "Head", segments + 4, rings + 2, face_shape=True)
     builder.face_patch(max(6, segments // 2), max(5, rings // 2))
     if detail >= 2:
         # The nose is a FORM, not only an atlas mark — a flat decal face reads
         # as a sticker the moment the head turns (rubric 3.5's bar for 5/5).
-        builder.ellipsoid((0.0, -0.395, 3.415), (0.055, 0.055, 0.07), 0, SKIN, "Head", 8, 6)
+        builder.ellipsoid((0.0, -0.385, 3.41), (0.048, 0.05, 0.078), 0, SKIN, "Head", 8, 6)
     if detail >= 1:
         # A constructed ear: base shell against the skull, then — at hero scale
         # only, for the LOD budget — an outer rim arc, an inner concha shadow
@@ -588,9 +605,9 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
                 phi = (1 - t) * (1 - t) * 1.08 + 2 * t * (1 - t) * 0.30 + t * t * 0.66
                 strand.append(
                     crown_center
-                    + Vector((0.617 * sin(phi) * cos(theta), 0.535 * sin(phi) * sin(theta), 0.679 * cos(phi)))
+                    + Vector((0.609 * sin(phi) * cos(theta), 0.527 * sin(phi) * sin(theta), 0.670 * cos(phi)))
                 )
-            builder.tube(strand, [0.028, 0.034, 0.036, 0.034, 0.028], 2, HAIR, "Head", 4)
+            builder.tube(strand, [0.020, 0.026, 0.028, 0.026, 0.020], 2, HAIR_SHINE, "Head", 4)
 
         tail = [Vector(point) for point in ponytail_points]
         tail_radii = [0.18, 0.23, 0.27, 0.26, 0.22, 0.12]
@@ -603,13 +620,13 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
                 tangent = (after - before).normalized()
                 outward = Vector((0.0, -tangent.z, tangent.y))
                 direction = (Vector((1.0, 0.0, 0.0)) * lateral + outward * (1.0 - 0.45 * abs(lateral))).normalized()
-                riding = point + direction * radius
+                riding = point + direction * radius * 0.97
                 # The contract lets hair rise only 4% above the crown bone, and
                 # the outward strand tops the tail's apex — hold it under.
                 riding.z = min(riding.z, 4.09)
                 strand.append(riding)
-                radii.append(max(0.022, radius * 0.16))
-            builder.tube(strand, radii, 2, HAIR, "Head", 4)
+                radii.append(max(0.018, radius * 0.14))
+            builder.tube(strand, radii, 2, HAIR_SHINE, "Head", 4)
 
     if detail >= 2:
         # White athletic piping is geometry, not a texture that disappears at
