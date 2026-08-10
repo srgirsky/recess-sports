@@ -12,19 +12,20 @@ const cells = [
   'spare1', 'spare2', 'spare3', 'spare4',
 ];
 
-const ink = '#2b170e';
-const iris = '#3b2414';
+const ink = '#26130d';
+const iris = '#84502a';
 const white = '#fff7e4';
-const mouth = '#681e25';
+const mouth = '#57201c';
+const nose = '#6d3826';
 
 function eye(x, y, { closed = false, wink = false } = {}) {
-  if (closed || wink) return `<path d="M${x - 15} ${y} Q${x} ${y + 8} ${x + 15} ${y}" fill="none" stroke="${ink}" stroke-width="6" stroke-linecap="round"/>`;
-  return `<path d="M${x - 17} ${y} Q${x} ${y - 15} ${x + 17} ${y} Q${x} ${y + 15} ${x - 17} ${y}Z" fill="${white}" stroke="${ink}" stroke-width="4"/>
-    <ellipse cx="${x}" cy="${y + 1}" rx="7" ry="10" fill="${iris}"/><circle cx="${x - 2}" cy="${y - 2}" r="2.4" fill="${white}"/>`;
+  if (closed || wink) return `<path d="M${x - 12} ${y} Q${x} ${y + 6} ${x + 12} ${y}" fill="none" stroke="${ink}" stroke-width="5" stroke-linecap="round"/>`;
+  return `<path d="M${x - 18} ${y} Q${x} ${y - 12} ${x + 18} ${y} Q${x} ${y + 12} ${x - 18} ${y}Z" fill="${iris}" stroke="${ink}" stroke-width="3.5"/>
+    <ellipse cx="${x}" cy="${y + 1}" rx="5.5" ry="7.5" fill="${ink}"/><circle cx="${x - 2}" cy="${y - 2}" r="2.2" fill="${white}"/>`;
 }
 
 function brow(x, y, tilt) {
-  return `<path d="M${x - 18} ${y - tilt} Q${x} ${y - 5} ${x + 18} ${y + tilt}" fill="none" stroke="${ink}" stroke-width="7" stroke-linecap="round"/>`;
+  return `<path d="M${x - 16} ${y - tilt} Q${x} ${y - 4} ${x + 16} ${y + tilt}" fill="none" stroke="${ink}" stroke-width="6" stroke-linecap="round"/>`;
 }
 
 function face(name) {
@@ -34,21 +35,22 @@ function face(name) {
   const determined = name === 'determined' || name === 'angry';
   const worried = name === 'worried' || name === 'upset';
   const eyes =
-    eye(39, 55, { closed: blink || sleepy }) +
-    eye(89, 55, { closed: blink || sleepy, wink });
+    eye(42, 55, { closed: blink || sleepy }) +
+    eye(86, 55, { closed: blink || sleepy, wink });
   const brows =
-    brow(39, 29, determined ? 7 : worried ? -6 : 1) +
-    brow(89, 29, determined ? -7 : worried ? 6 : -1);
+    brow(42, 32, determined ? 6 : worried ? -5 : 1) +
+    brow(86, 32, determined ? -6 : worried ? 5 : -1);
+  const noseMark = `<path d="M63 68 Q61 73 65 74" fill="none" stroke="${nose}" stroke-width="2.5" stroke-linecap="round"/>`;
 
-  let lips = `<path d="M50 91 Q64 98 78 91" fill="none" stroke="${mouth}" stroke-width="6" stroke-linecap="round"/>`;
-  if (name === 'grin' || name === 'cheer') lips = `<path d="M43 86 Q64 111 85 86 Q64 99 43 86Z" fill="${mouth}" stroke="${ink}" stroke-width="3"/><path d="M48 88 Q64 98 80 88" fill="none" stroke="${white}" stroke-width="6"/>`;
-  if (name === 'determined' || name === 'angry') lips = `<path d="M50 94 L78 92" fill="none" stroke="${mouth}" stroke-width="6" stroke-linecap="round"/>`;
-  if (name === 'worried' || name === 'upset') lips = `<path d="M48 101 Q64 84 80 101" fill="none" stroke="${mouth}" stroke-width="6" stroke-linecap="round"/>`;
-  if (name === 'surprised') lips = `<ellipse cx="64" cy="93" rx="10" ry="14" fill="${mouth}"/>`;
-  if (name === 'tongue') lips = `<path d="M43 86 Q64 108 85 86 Q64 99 43 86Z" fill="${mouth}" stroke="${ink}" stroke-width="3"/><ellipse cx="64" cy="99" rx="10" ry="7" fill="#df6c78"/>`;
-  if (blink || sleepy || wink) lips = `<path d="M51 94 Q64 98 77 94" fill="none" stroke="${mouth}" stroke-width="5" stroke-linecap="round"/>`;
+  let lips = `<path d="M51 89 Q64 93 77 89" fill="none" stroke="${mouth}" stroke-width="5" stroke-linecap="round"/>`;
+  if (name === 'grin' || name === 'cheer') lips = `<path d="M47 84 Q64 103 81 84 Q64 94 47 84Z" fill="${mouth}" stroke="${ink}" stroke-width="3"/><path d="M51 86 Q64 93 77 86" fill="none" stroke="${white}" stroke-width="5"/>`;
+  if (name === 'determined' || name === 'angry') lips = `<path d="M53 91 L75 89" fill="none" stroke="${mouth}" stroke-width="5" stroke-linecap="round"/>`;
+  if (name === 'worried' || name === 'upset') lips = `<path d="M51 96 Q64 82 77 96" fill="none" stroke="${mouth}" stroke-width="5" stroke-linecap="round"/>`;
+  if (name === 'surprised') lips = `<ellipse cx="64" cy="90" rx="8" ry="11" fill="${mouth}"/>`;
+  if (name === 'tongue') lips = `<path d="M47 84 Q64 103 81 84 Q64 94 47 84Z" fill="${mouth}" stroke="${ink}" stroke-width="3"/><ellipse cx="64" cy="95" rx="8" ry="6" fill="#df6c78"/>`;
+  if (blink || sleepy || wink) lips = `<path d="M54 90 Q64 93 74 90" fill="none" stroke="${mouth}" stroke-width="4" stroke-linecap="round"/>`;
 
-  return `${brows}${eyes}${lips}`;
+  return `${brows}${eyes}${noseMark}${lips}`;
 }
 
 const contents = cells.map((name, index) => {
