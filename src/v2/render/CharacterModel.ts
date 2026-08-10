@@ -75,7 +75,7 @@ export interface KidView {
 }
 
 export interface CharacterModelOptions {
-  /** Team colour index. A kid wears whoever drafted them, not their own. */
+  /** Team colour index: full procedural kit or authored accent surface. */
   uniform?: number;
   outlines?: OutlineRegistry;
   /**
@@ -318,11 +318,12 @@ export class CharacterModel implements KidView {
         this.bodyMaterials.push(material);
         break;
       case 'M_Uniform':
-        // ★ The entire team-identity system, in one line. The jersey is
-        // authored white/greyscale and this multiplies the team's colour
-        // through it, where v1 baked 315 texture variants per team.
+        // Procedural roster kits remain greyscale and take the team's colour.
+        // A reference-authored character may instead declare an identity
+        // palette: its COLOR_0 is the character design, not a tint mask.
+        // Team colour then lives only on a recessTeamAccent surface.
         material = makeToonMaterial({
-          color: jerseyHex(uniformIndex),
+          color: vertexPalette && source.userData.recessIdentityPalette === true ? 0xffffff : jerseyHex(uniformIndex),
           map,
           rimStrength: 0.26,
           rimPower: 3.0,
@@ -337,9 +338,14 @@ export class CharacterModel implements KidView {
         });
         break;
       case 'M_Accessory':
-        // Trim colour, so a cap and a headband read as team kit rather than as
-        // a third palette nobody chose.
-        material = makeToonMaterial({ color: vertexPalette ? 0xffffff : trimHex(uniformIndex), map, rimStrength: 0.22 });
+        material = makeToonMaterial({
+          color:
+            source.userData.recessTeamAccent === true || !vertexPalette
+              ? trimHex(uniformIndex)
+              : 0xffffff,
+          map,
+          rimStrength: 0.22,
+        });
         break;
       default:
         return source;
@@ -354,11 +360,13 @@ export class CharacterModel implements KidView {
 
   /**
    * Generated roster files preserve all four delivery slots, but their final
-   * linear colours live in COLOR_0. Bake this instance's team multiply into the
-   * greyscale uniform vertices, then merge every primitive so a roster kid costs
-   * one colour pass and one shadow pass. Team identity is fixed when a KidView is
-   * constructed, so this loses no runtime behaviour. External deliveries without
-   * the explicit material extra keep the general four-slot path unchanged.
+   * linear colours live in COLOR_0. Bake each slot's remaining material tint
+   * into those vertices, then merge every primitive so a roster kid costs one
+   * colour pass and one shadow pass. This covers both the procedural all-over
+   * team multiply and an authored character's small team-accent surface. Team
+   * identity is fixed when a KidView is constructed, so this loses no runtime
+   * behaviour. External deliveries without the explicit material extra keep the
+   * general four-slot path unchanged.
    */
   private collapseVertexPalette(root: Object3D): void {
     const meshes: SkinnedMesh[] = [];
@@ -379,15 +387,13 @@ export class CharacterModel implements KidView {
     const copies = meshes.map((mesh) => {
       const copy = mesh.geometry.clone();
       const material = mesh.material as MeshToonMaterial;
-      if (material.name === 'M_Uniform') {
-        const colour = copy.getAttribute('color');
-        const tint = material.color;
-        if (colour) {
-          for (let i = 0; i < colour.count; i++) {
-            colour.setXYZ(i, colour.getX(i) * tint.r, colour.getY(i) * tint.g, colour.getZ(i) * tint.b);
-          }
-          colour.needsUpdate = true;
+      const colour = copy.getAttribute('color');
+      const tint = material.color;
+      if (colour) {
+        for (let i = 0; i < colour.count; i++) {
+          colour.setXYZ(i, colour.getX(i) * tint.r, colour.getY(i) * tint.g, colour.getZ(i) * tint.b);
         }
+        colour.needsUpdate = true;
       }
       return copy;
     });

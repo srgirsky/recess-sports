@@ -144,6 +144,11 @@ def main() -> None:
         export_lights=False,
         export_materials="EXPORT",
         export_attributes=True,
+        # Authored deliveries use material extras to distinguish a character's
+        # signature palette from the small surface that accepts team colour.
+        # Dropping these props turns a Blender-authored look back into the
+        # procedural all-over team multiply at runtime.
+        export_extras=True,
         export_skins=True,
         export_def_bones=True,
         # JOINTS_0 stays uncompressed so the Node promotion step can remap

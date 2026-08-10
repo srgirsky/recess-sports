@@ -55,11 +55,13 @@ them.
 
 ## Production rule
 
-Finish one character through every gate before starting the next. Mimi is the
-Blender-authoritative fidelity pilot. Junebug, Theo, Zoom, Big Lou and Tank are
-retrofitted to the source/export path but remain explicitly `needs-polish` in
-the fidelity record. Batch 2 (Turbo, Sprout and Zippy) stays paused until those
-five boards reach approval; procedural validity is not sculpt completion.
+Finish one character through every gate before starting the next. Mimi's earlier
+approval was revoked because Blender provenance and manually entered scores did
+not prove visual fidelity. Junebug is the rebuilt reference-sculpt pilot and is
+`candidate` until the human art director approves the current board. Theo, Zoom,
+Big Lou, Tank and Mimi remain `needs-polish`. Batch 2 (Turbo, Sprout and Zippy)
+stays paused until all six boards reach approval; procedural validity is not
+sculpt completion.
 
 Use one pull request per signature character. Later production batches may
 share a pull request when every character has separate review evidence.
@@ -92,14 +94,17 @@ Generate the side-by-side board and score all six mandatory categories:
 front/profile silhouette, head/body proportions, hair mass, clothing
 construction, face/expression read, and hero plus 40-pixel gameplay read. Name
 exactly five defining traits in the production receipt; approval requires every
-trait to survive the delivered model and every category to score at least 4/5.
+trait to survive the delivered model, every category to score at least 4/5, and
+an explicit human approver/timestamp bound to the current board hash. A score
+entered by the agent that built the asset can only produce `candidate`.
 
 Approval means:
 
 - the large silhouette matches the approved target;
 - shoulders, elbows, wrists, hips, knees and ankles read as connected forms;
 - face, hair and accessories remain clear at both hero scale and field scale;
-- clothing reads as constructed clothing after team recolouring;
+- signature clothing keeps its authored palette, with team colour confined to
+  a deliberate accent surface;
 - hands, shoes and props support the character rather than becoming the focal
   point;
 - the model deforms cleanly through stance, contact, run and a deep crouch.
@@ -126,8 +131,10 @@ author the character's priority takes from the performance brief in their
 partial animation delivery.
 
 Review each character take on the animation page at all supported review rates
-and at 40 px. Watch transitions into the clip and into its declared settle clip;
-the pose at one attractive frame is not enough.
+and at 40 px. The page must report `model model`; `?proxy=1` is the deliberate
+A/B fallback and is never fidelity evidence. Save at least a run and contact
+frame. Watch transitions into the clip and into its declared settle clip; the
+pose at one attractive frame is not enough.
 
 Approval means:
 

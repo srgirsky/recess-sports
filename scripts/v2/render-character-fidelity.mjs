@@ -2,7 +2,7 @@
 // scores live in assets/v2/source/character-fidelity.json; this file renders
 // evidence and never decides whether a character passed.
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -49,8 +49,13 @@ async function board(id) {
   const profilePath = join(concepts, `${slug}-profile-review.png`);
   const front = await fit(frontPath, 300, 420);
   const profile = await fit(profilePath, 300, 420);
-  const heroName = id === 'mimi_mash' ? 'mimi-mash-runtime-hero.png' : `${slug}-in-game-review.png`;
+  const heroName = review.heroEvidence ?? (id === 'mimi_mash' ? 'mimi-mash-runtime-hero.png' : `${slug}-in-game-review.png`);
   const hero = await fit(join(concepts, heroName), 760, 430);
+  const animationPaths = (review.animationEvidence ?? []).map((name) => join(concepts, name));
+  const animationImages = [];
+  for (const path of animationPaths.slice(0, 2)) {
+    if (existsSync(path)) animationImages.push(await fit(path, 320, 180));
+  }
   const field40 = await sharp(frontPath).resize({ height: 40, fit: 'contain' }).png().toBuffer();
   const fieldZoom = await sharp(field40).resize({ height: 280, kernel: 'nearest' }).png().toBuffer();
   const categoryLines = Object.values(review.categories).map((category, index) =>
@@ -64,6 +69,7 @@ async function board(id) {
     <text class="label" x="840" y="78">Delivered front / profile silhouette</text>
     <text class="label" x="40" y="500">Runtime hero read</text>
     <text class="label" x="840" y="500">40-pixel gameplay read</text>
+    ${animationImages.length ? '<text class="label" x="840" y="825">Authored model deformation — run / contact</text>' : ''}
     ${categoryLines}
   `);
 
@@ -76,6 +82,7 @@ async function board(id) {
       { input: hero, left: 40, top: 520 },
       { input: field40, left: 960, top: 560 },
       { input: fieldZoom, left: 850, top: 620 },
+      ...animationImages.map((input, index) => ({ input, left: 840 + index * 340, top: 840 })),
       { input: labels, left: 0, top: 0 },
     ]).png().toFile(output);
   console.log(`✓ ${output}`);

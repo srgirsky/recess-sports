@@ -81,9 +81,17 @@ function meshes(root: Object3D): Mesh[] {
 
 let gltf: GLTF;
 let rosterGltf: GLTF;
+let identityGltf: GLTF;
 beforeAll(async () => {
   gltf = await build(ID);
   rosterGltf = await build(ID, true);
+  identityGltf = await build(ID, true);
+  for (const mesh of meshes(identityGltf.scene)) {
+    for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+      if (material.name === 'M_Uniform') material.userData.recessIdentityPalette = true;
+      if (material.name === 'M_Accessory') material.userData.recessTeamAccent = true;
+    }
+  }
 });
 
 describe('a delivered model becomes a playable character', () => {
@@ -262,6 +270,29 @@ describe('generated roster delivery', () => {
       return Array.from(meshes(lod.levels[0].object)[0].geometry.getAttribute('color').array as ArrayLike<number>);
     };
     expect(colours(first)).not.toEqual(colours(second));
+    first.dispose();
+    second.dispose();
+  });
+
+  it('preserves an authored identity palette while changing only its team accent', () => {
+    const first = new CharacterModel(ID, identityGltf, character.visual, { uniform: 0, noProxyLevel: true });
+    // Red and green both use white trim, so compare against blue/gold to prove
+    // the explicit accent surface—not merely the identity palette—changes.
+    const second = new CharacterModel(ID, identityGltf, character.visual, { uniform: 1, noProxyLevel: true });
+    const colours = (kid: CharacterModel) => {
+      const lod = kid.root.children.find((child) => (child as LOD).isLOD) as LOD;
+      return Array.from(meshes(lod.levels[0].object)[0].geometry.getAttribute('color').array as ArrayLike<number>);
+    };
+    const a = colours(first);
+    const b = colours(second);
+    let same = 0;
+    let different = 0;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] === b[i]) same++;
+      else different++;
+    }
+    expect(same).toBeGreaterThan(0); // body, hair and signature clothes
+    expect(different).toBeGreaterThan(0); // recessTeamAccent only
     first.dispose();
     second.dispose();
   });

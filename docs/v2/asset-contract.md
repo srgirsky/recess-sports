@@ -191,13 +191,16 @@ contour can taper into a fingertip.
 | slot | contents |
 |---|---|
 | `M_Body` | skin + face. Face UVs must occupy their own island covering UV `[0..0.5, 0.5..1]`. |
-| `M_Uniform` | jersey + pants, **authored white/greyscale with the logo area masked**. |
+| `M_Uniform` | jersey + pants. Procedural/default deliveries are white/greyscale; a finished identity-palette delivery carries literal `COLOR_0` plus material extra `recessIdentityPalette: true`. |
 | `M_Hair` | |
 | `M_Accessory` | cap / glasses / headband / glove. May be absent. |
 
-`M_Uniform` being greyscale is not a style note — team colour is applied at
-runtime as a multiply, and that is the entire team-identity system. A model
-that bakes in a jersey colour cannot wear the team that drafts it.
+The procedural/default path multiplies all of `M_Uniform` by team colour. A
+finished character may preserve the signature wardrobe from their approved
+turnaround by opting into `recessIdentityPalette`; in that case the literal
+vertex colour survives and one small `M_Accessory` surface declares
+`recessTeamAccent: true` to receive the drafting team's trim. This keeps team
+readability without repainting the product's character identity.
 
 ### Textures
 
@@ -218,8 +221,9 @@ rejects any model that has them.
 - Single scene, single skin, **no cameras, no lights**, no unlit extension
 - **Compression:** direct external deliveries use Draco position 14, normal 10,
   uv 12. The repository's authored Blender path instead keeps geometry in core
-  accessors so it can remap joint indices, then byte-normalizes colours and
-  weights; both paths must stay under the same file cap.
+  accessors so it can remap joint indices, promotes Blender's transport-only
+  `_RECESS_COLOR` into `COLOR_0`, removes unused buffers, then byte-normalizes
+  colours and weights; both paths must stay under the same file cap.
 - **KTX2 / Basis** textures: ETC1S q200 for `albedo` and `mask`, UASTC for `face_atlas`
 - **≤ 400 KB per `.glb`**
 
@@ -273,8 +277,8 @@ delivery.
 Finished character meshes are exported from `assets/v2/source/*.blend` with:
 
 ```bash
-npm run export:authored-character -- mimi_mash
-npm run review:character-fidelity -- mimi_mash
+npm run export:authored-character -- nostrike
+npm run review:character-fidelity -- nostrike
 npm run validate:models
 ```
 
@@ -283,6 +287,7 @@ evaluate the authored geometry, remaps `JOINTS_0` and inverse-bind matrices
 together, compacts palette/weight accessors and stamps the source and turnaround
 hashes into the GLB. `character-production.json` binds those hashes to the
 runtime file. `character-fidelity.json` and the generated review board record
-front/profile silhouette, proportions, hair, clothing, face and both hero and
-40-pixel reads. A finished character cannot be approved from validator output
-alone.
+front/profile silhouette, proportions, hair, clothing, face, hero/40-pixel read,
+and authored-model run/contact deformation. Approval also requires a named
+human approver and current evidence hash. A finished character cannot be
+approved from validator output or a builder-entered score alone.

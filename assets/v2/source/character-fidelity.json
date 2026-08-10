@@ -11,15 +11,17 @@
   ],
   "characters": {
     "nostrike": {
-      "status": "needs-polish",
+      "status": "candidate",
       "evidence": "junebug-fidelity-review.png",
+      "heroEvidence": "junebug-runtime-hero.png",
+      "animationEvidence": ["junebug-runtime-run.png", "junebug-runtime-swing.png"],
       "categories": {
-        "frontProfileSilhouette": { "label": "front/profile silhouette", "score": 3, "note": "Arrow ponytail and athletic taper survive; organic surface polish remains." },
-        "headBodyProportions": { "label": "head/body proportions", "score": 3, "note": "The compact athletic proportion reads but the forms remain geometric." },
+        "frontProfileSilhouette": { "label": "front/profile silhouette", "score": 4, "note": "The rebuilt head taper, high ponytail, athletic torso and cuffed legs follow the locked front/profile hierarchy." },
+        "headBodyProportions": { "label": "head/body proportions", "score": 4, "note": "The compact four-head child proportion and shoulder-to-hip taper now follow the turnaround rather than the proxy." },
         "hairMass": { "label": "hair mass", "score": 3, "note": "The directional ponytail reads; hairline integration needs sculpt polish." },
-        "clothingConstruction": { "label": "clothing construction", "score": 3, "note": "Piping survives recolour; garment seams remain simplified." },
-        "faceExpressionRead": { "label": "face/expression read", "score": 3, "note": "Atlas expressions read, with a simplified facial silhouette." },
-        "heroAndFieldScale": { "label": "hero + 40px read", "score": 3, "note": "Identity survives at field scale; hero close-up still exposes primitive construction." }
+        "clothingConstruction": { "label": "clothing construction", "score": 4, "note": "Signature red shirt, coral pants, white piping, cuffs and constructed shoes survive without an all-over team tint." },
+        "faceExpressionRead": { "label": "face/expression read", "score": 3, "note": "A Junebug-specific expression atlas restores determined brows and almond eyes; final art-direction signoff remains." },
+        "heroAndFieldScale": { "label": "hero + 40px read", "score": 4, "note": "The authored model is now shown at hero and 40-pixel scale and keeps its ponytail, palette and athletic silhouette." }
       }
     },
     "calls_shot": {
@@ -71,15 +73,15 @@
       }
     },
     "mimi_mash": {
-      "status": "approved",
+      "status": "needs-polish",
       "evidence": "mimi-mash-fidelity-review.png",
       "categories": {
-        "frontProfileSilhouette": { "label": "front/profile silhouette", "score": 4, "note": "Curl-ring halo, proud face and spring-loaded taper survive in both views." },
-        "headBodyProportions": { "label": "head/body proportions", "score": 4, "note": "Large expressive head, compact hoodie torso and grounded legs match the intended hierarchy." },
-        "hairMass": { "label": "hair mass", "score": 4, "note": "A dense cap plus visible curl perimeter frames the face without swallowing it." },
-        "clothingConstruction": { "label": "clothing construction", "score": 4, "note": "Hood, broad kangaroo pocket, ribbed hem and jeans remain distinct after team tint." },
-        "faceExpressionRead": { "label": "face/expression read", "score": 4, "note": "Proud chin, large eyes and expression atlas read in the live toon shader." },
-        "heroAndFieldScale": { "label": "hero + 40px read", "score": 4, "note": "Hair, hoodie pocket and forward energy survive the 40-pixel reduction." }
+        "frontProfileSilhouette": { "label": "front/profile silhouette", "score": 2, "note": "The ring halo and proxy torso still diverge substantially from the soft turnaround silhouette." },
+        "headBodyProportions": { "label": "head/body proportions", "score": 2, "note": "The runtime remains a proxy-derived bobblehead instead of the grounded child proportion in the art." },
+        "hairMass": { "label": "hair mass", "score": 2, "note": "Individual rings do not reproduce the dense organic curl mass." },
+        "clothingConstruction": { "label": "clothing construction", "score": 2, "note": "The hoodie and jeans remain primitive volumes rather than constructed garments." },
+        "faceExpressionRead": { "label": "face/expression read", "score": 2, "note": "The generic face does not yet preserve Mimi's proud, joyful expression design." },
+        "heroAndFieldScale": { "label": "hero + 40px read", "score": 2, "note": "The broad color blocks survive at 40 pixels, but the hero-scale character is not a faithful translation." }
       }
     }
   }

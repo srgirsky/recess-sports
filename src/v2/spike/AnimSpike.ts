@@ -4,7 +4,8 @@
 // `docs/v2/animation-brief.md` ends with four acceptance criteria, and three of
 // them are things you have to WATCH:
 //
-//   2. every clip plays on the proxy without popping into what it settles into
+//   2. every clip plays on the selected production model (or its honest proxy
+//      fallback) without popping into what it settles into
 //   3. loops are seamless at 0.6x, 1.0x and 1.4x
 //   4. every clip is readable at 40px tall
 //
@@ -22,8 +23,9 @@
 //   * the marker frame, flashed on the frame it actually lands on.
 //
 // It also answers the question the whole brief exists to de-risk: does the
-// canonical skeleton EXPRESS these clips? If a clip reads right on a primitive
-// proxy, the answer is yes, and it is known before anyone is paid.
+// canonical skeleton EXPRESS these clips on the geometry that will ship? The
+// proxy remains reachable with `?proxy=1`, but it must never impersonate an
+// authored model on the review surface.
 // ---------------------------------------------------------------------------
 
 import { Fog, PerspectiveCamera, Quaternion, Scene, Vector2, type AnimationClip } from 'three';
@@ -35,6 +37,8 @@ import { OutlineRegistry } from '../render/materials/outline';
 import { VENUE_LOOKS, buildField, type FieldBuild } from '../render/Field';
 import { SKY_HORIZON, buildSky } from '../render/Sky';
 import { ProxyCharacter } from '../render/ProxyCharacter';
+import { createCharacter, type KidSource } from '../render/CharacterFactory';
+import type { KidView } from '../render/CharacterModel';
 import { AnimationDirector } from '../render/AnimationDirector';
 import { buildProceduralClips } from '../render/proceduralClips';
 import {
@@ -59,7 +63,8 @@ export class AnimSpike {
   private readonly outlines = new OutlineRegistry();
 
   private field!: FieldBuild;
-  private kid!: ProxyCharacter;
+  private kid!: KidView;
+  private kidSource: KidSource = 'proxy-undelivered';
   private director!: AnimationDirector;
   private deliveredClips: AnimationClip[] = [];
   private performanceClips: AnimationClip[] = [];
@@ -104,7 +109,7 @@ export class AnimSpike {
     this.field = buildField(geo, VENUE_LOOKS.park, this.outlines, { anisotropy: this.renderer.tier.anisotropy });
     this.scene.add(this.field.root);
 
-    this.buildKid();
+    this.buildInitialProxy();
     this.mountUi();
     this.onResize();
 
@@ -114,14 +119,14 @@ export class AnimSpike {
 
   // --- Build ---------------------------------------------------------------
 
-  private buildKid(): void {
+  private installKid(kid: KidView, source: KidSource): void {
     if (this.kid) {
       this.director.dispose();
       this.kid.root.removeFromParent();
       this.kid.dispose();
     }
-    const character = ROSTER[this.kidIndex % ROSTER.length];
-    this.kid = new ProxyCharacter(character.visual, { uniform: 1, outlines: this.outlines });
+    this.kid = kid;
+    this.kidSource = source;
     // Stand at the origin, turned so a lateral dive travels ACROSS the frame
     // rather than into it — but three-quarters toward the camera, not away
     // from it.
@@ -132,16 +137,24 @@ export class AnimSpike {
     // the dot is +0.49 — a true three-quarter view with both eyes in shot —
     // and the lateral component is still 0.87 of maximum, so a dive crosses
     // the frame very nearly as well as it did.
-    this.kid.setPosition(0, 0);
-    this.kid.setFacing(Math.PI * 0.5);
-    this.scene.add(this.kid.root);
+    kid.setPosition(0, 0);
+    kid.setFacing(Math.PI * 0.5);
+    this.scene.add(kid.root);
 
-    this.director = new AnimationDirector(this.kid.mesh, {
+    this.director = new AnimationDirector(kid.mesh, {
       clips: this.deliveredClips,
       performanceClips: this.performanceClips,
       fallback: buildProceduralClips(),
     });
     this.playCurrent();
+  }
+
+  private buildInitialProxy(): void {
+    const character = ROSTER[this.kidIndex % ROSTER.length];
+    this.installKid(
+      new ProxyCharacter(character.visual, { uniform: 1, outlines: this.outlines }),
+      'proxy-undelivered'
+    );
   }
 
   /** The clip the reviewer SELECTED. */
@@ -315,6 +328,7 @@ export class AnimSpike {
   private async rebuildKid(): Promise<void> {
     const version = ++this.kidLoadVersion;
     const character = ROSTER[this.kidIndex % ROSTER.length];
+    const made = await createCharacter(character, { uniform: 1, outlines: this.outlines });
     let performanceClips: AnimationClip[] = [];
     if (hasDeliveredPerformance(character.id)) {
       try {
@@ -327,9 +341,12 @@ export class AnimSpike {
         );
       }
     }
-    if (version !== this.kidLoadVersion) return;
+    if (version !== this.kidLoadVersion) {
+      made.view.dispose();
+      return;
+    }
     this.performanceClips = performanceClips;
-    this.buildKid();
+    this.installKid(made.view, made.source);
   }
 
   private update(now: number): void {
@@ -420,6 +437,7 @@ export class AnimSpike {
     // loop it settled into — which is the seam that would pop forever in game.
     const seam = playing.loop ? this.seamError() : null;
     this.statsEl.textContent =
+      `model  ${this.kidSource}\n` +
       `clip   ${reviewed.name}  (${this.director.sourceFor(reviewed.name)})\n` +
       (settled ? `now    ${playing.name}  (settled via returnsTo)\n` : '') +
       `frames ${playing.frames}  loop ${playing.loop ? 'yes' : 'no'}  blend ${playing.blendMs}ms` +

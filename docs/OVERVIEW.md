@@ -1812,14 +1812,22 @@ overwrite fail CI. Deterministic review boards place the approved turnaround
 beside front/profile renders, the live toon-shaded hero and a native 40-pixel
 read, with scored gates for silhouette, proportions, hair, clothing and face.
 
-Mimi is the first approved fidelity pilot: her source now carries a fuller dark
-curl halo, proud lower face, taller constructed hoodie and pocket, stronger
-forearms and fuller jeans while remaining under the 400KB cap. Her roster hair
-colour changed from auburn to dark brown so the shared classic and v2 portraits
-agree with the approved turnaround. Junebug, Theo, Zoom, Big Lou and Tank have
-been migrated to the authoritative source/export path, but their boards remain
-honestly marked `needs-polish`. Batch 2—Turbo, Sprout and Zippy—is paused until
-those five organic topology reviews reach approval.
+The first board exposed a second failure: provenance was correct, but Mimi's
+"sculpt" still scaled proxy vertices and added ring curls, while builder-entered
+4/5 scores could call that approved. Her approval is revoked. Approval now
+requires authored-model hero plus run/contact evidence and a named human signoff
+bound to the current board hash.
+
+Junebug is the replacement reference-sculpt pilot. Her three LODs were rebuilt
+against the turnaround rather than deformed from the proxy: tapered head and
+body proportions, skull-hugging hair and swept ponytail, signature red/coral
+kit, piping, cuffs and shoes, plus a character-specific 16-expression atlas.
+The runtime preserves that personal palette and applies team colour only to a
+small accent surface. The animation spike now loads the delivered model through
+`CharacterFactory`—and prints its source—instead of always showing a proxy, so
+its hero, 40px, run and contact evidence finally measure the asset that ships.
+Junebug is `candidate`, pending human art-direction approval; Theo, Zoom, Big
+Lou, Tank and Mimi remain `needs-polish`. Batch 2 stays paused until all six pass.
 
 ### 2026 parity pass — two city parks, not two palettes
 

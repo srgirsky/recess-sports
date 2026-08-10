@@ -19,7 +19,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
-import { readGlb } from './glb.mjs';
+import { readAccessor, readGlb } from './glb.mjs';
 import { AUTHORED_CHARACTERS } from './export-authored-character.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -45,6 +45,9 @@ function stateErrors(production, reviews) {
     const review = reviews.characters?.[id];
     if (!record) { errors.push(`${id}: missing production receipt`); continue; }
     if (!review) { errors.push(`${id}: missing fidelity review`); continue; }
+    if (!['needs-polish', 'candidate', 'approved'].includes(review.status)) {
+      errors.push(`${id}: unknown fidelity status ${review.status}`);
+    }
     if (record.definingTraits?.length !== 5) errors.push(`${id}: expected exactly five defining traits`);
     const source = join(sourceDir, config.source);
     const concept = join(conceptsDir, config.concept);
@@ -53,6 +56,13 @@ function stateErrors(production, reviews) {
     if (!existsSync(concept) || sha(concept) !== record.conceptSha256) errors.push(`${id}: concept hash differs`);
     if (!existsSync(output) || sha(output) !== record.outputSha256) errors.push(`${id}: runtime hash differs`);
     if (!existsSync(join(conceptsDir, review.evidence ?? ''))) errors.push(`${id}: fidelity evidence is missing`);
+    if (review.status === 'candidate' || review.status === 'approved') {
+      if (!existsSync(join(conceptsDir, review.heroEvidence ?? ''))) errors.push(`${id}: authored-model hero evidence is missing`);
+      const animationEvidence = review.animationEvidence ?? [];
+      if (animationEvidence.length < 2 || animationEvidence.some((name) => !existsSync(join(conceptsDir, name)))) {
+        errors.push(`${id}: run/contact authored-model evidence is missing`);
+      }
+    }
 
     const categoryNames = Object.keys(review.categories ?? {}).sort();
     if (categoryNames.join('|') !== [...expectedCategories].sort().join('|')) {
@@ -67,6 +77,15 @@ function stateErrors(production, reviews) {
         errors.push(`${id}: approved with ${name} below 4/5`);
       }
     }
+    if (review.status === 'approved') {
+      const evidencePath = join(conceptsDir, review.evidence ?? '');
+      if (!review.approvedBy?.trim() || !review.approvedAt?.trim()) {
+        errors.push(`${id}: approval requires an explicit human approver and timestamp`);
+      }
+      if (!existsSync(evidencePath) || review.approvedEvidenceSha256 !== sha(evidencePath)) {
+        errors.push(`${id}: approval is not bound to the current fidelity board`);
+      }
+    }
     if (review.status !== 'approved') pending.push(id);
 
     if (existsSync(output)) {
@@ -74,6 +93,30 @@ function stateErrors(production, reviews) {
       const authored = gltf.json.asset?.extras?.recessAuthoring;
       if (authored?.sourceSha256 !== record.sourceSha256 || authored?.conceptSha256 !== record.conceptSha256) {
         errors.push(`${id}: GLB provenance differs from its receipt`);
+      }
+      if (id === 'nostrike') {
+        const materials = gltf.json.materials ?? [];
+        const uniformIndex = materials.findIndex((material) => material.name === 'M_Uniform');
+        const accessory = materials.find((material) => material.name === 'M_Accessory');
+        if (materials[uniformIndex]?.extras?.recessIdentityPalette !== true) {
+          errors.push(`${id}: signature palette is not declared on M_Uniform`);
+        }
+        if (accessory?.extras?.recessTeamAccent !== true) {
+          errors.push(`${id}: no deliberate team-accent surface is declared`);
+        }
+        const colours = new Set();
+        for (const mesh of gltf.json.meshes ?? []) {
+          for (const primitive of mesh.primitives ?? []) {
+            if (primitive.material !== uniformIndex || primitive.attributes?._RECESS_COLOR !== undefined) continue;
+            const accessorIndex = primitive.attributes?.COLOR_0;
+            if (accessorIndex === undefined) continue;
+            const accessor = gltf.json.accessors[accessorIndex];
+            const parts = accessor.type === 'VEC4' ? 4 : 3;
+            const values = readAccessor(gltf, accessorIndex);
+            for (let at = 0; at < values.length; at += parts) colours.add(values.slice(at, at + parts).join(','));
+          }
+        }
+        if (colours.size < 3) errors.push(`${id}: signature wardrobe colour blocks did not survive export`);
       }
     }
   }
@@ -107,5 +150,11 @@ describe('Blender-authored character provenance and fidelity gate', () => {
     const broken = structuredClone(fidelity);
     broken.batch2Status = 'active';
     expect(stateErrors(receipt, broken).some((error) => error.startsWith('Batch 2 must stay paused'))).toBe(true);
+  });
+
+  it('does not let a numeric score impersonate human art-direction approval', () => {
+    const broken = structuredClone(fidelity);
+    broken.characters.nostrike.status = 'approved';
+    expect(stateErrors(receipt, broken)).toContain('nostrike: approval requires an explicit human approver and timestamp');
   });
 });
