@@ -120,10 +120,16 @@ class MeshBuilder:
                 if face_shape:
                     # Cheek width HOLDS through the jawbone (down to nz -0.35)
                     # and only then tapers to the chin — a linear taper from
-                    # the cheeks melts the jaw into a point.
+                    # the cheeks melts the jaw into a point. A cheekbone bump
+                    # marks where the face plane turns into the side plane.
                     taper = max(0.0, (-nz - 0.35) / 0.65)
-                    width = 1.03 + 0.04 * (1.0 - abs(nz)) - 0.20 * taper**1.5
-                    depth = 0.86 if ny < 0 else 1.02
+                    cheekbone = max(0.0, 1.0 - ((nz + 0.12) / 0.20) ** 2)
+                    width = 1.03 + 0.04 * (1.0 - abs(nz)) - 0.20 * taper**1.5 + 0.035 * cheekbone
+                    # A real face is a PLANE in front, not a continuation of
+                    # the ball: flatten the central face and let the curve
+                    # return toward the sides. This is what "too round" was.
+                    face_flat = max(0.0, -sin(theta)) ** 2
+                    depth = (0.86 - 0.16 * face_flat) if ny < 0 else 1.02
                 x = cx + rx * nx * width
                 y = cy + ry * ny * depth
                 z = cz + rz * nz
@@ -290,7 +296,8 @@ class MeshBuilder:
                 ny = -cos(horizontal) * cos(vertical)
                 nz = sin(vertical)
                 taper = max(0.0, (-nz - 0.35) / 0.65)
-                width = 1.03 + 0.04 * (1.0 - abs(nz)) - 0.20 * taper**1.5
+                cheekbone = max(0.0, 1.0 - ((nz + 0.12) / 0.20) ** 2)
+                width = 1.03 + 0.04 * (1.0 - abs(nz)) - 0.20 * taper**1.5 + 0.035 * cheekbone
                 # Proud of the skull by an offset that FEATHERS to ~zero at the
                 # island border — and applied RADIALLY from the head centre, so
                 # the patch stays parallel to the skull. A forward (-y) push
@@ -304,7 +311,7 @@ class MeshBuilder:
                 # one that is physically beneath the face.
                 edge = min(uf, 1.0 - uf, vf, 1.0 - vf)
                 proud = -0.006 + 0.013 * min(1.0, edge * 5.0)
-                base = Vector((rx * nx * width, 0.86 * ry * ny, rz * nz))
+                base = Vector((rx * nx * width, (0.86 - 0.16 * cos(horizontal) ** 2) * ry * ny, rz * nz))
                 radial = base.normalized()
                 # The patch rides the skull's chin push with the identical
                 # terms (frontness there is -sin(theta), which equals
@@ -584,7 +591,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     if detail >= 2:
         # The nose is a FORM, not only an atlas mark — a flat decal face reads
         # as a sticker the moment the head turns (rubric 3.5's bar for 5/5).
-        builder.ellipsoid((0.0, -0.385, 3.41), (0.048, 0.05, 0.078), 0, SKIN, "Head", 8, 6)
+        builder.ellipsoid((0.0, -0.335, 3.41), (0.048, 0.055, 0.078), 0, SKIN, "Head", 8, 6)
     if detail >= 1:
         # A constructed ear: base shell against the skull, then — at hero scale
         # only, for the LOD budget — an outer rim arc, an inner concha shadow
