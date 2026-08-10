@@ -23,13 +23,28 @@ from mathutils import Vector
 REPO = Path.cwd()
 OUTPUT = REPO / "assets/v2/source/junebug-pilot.blend"
 FACE_ATLAS = REPO / "assets/v2/source/junebug-face-atlas.png"
-REVISION = "junebug-anatomy-polish-v2"
+REVISION = "junebug-palette-crown-v3"
 SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 
 
 def rgba(value: str) -> tuple[float, float, float, float]:
     value = value.removeprefix("#")
     return tuple(int(value[i : i + 2], 16) / 255 for i in (0, 2, 4)) + (1.0,)
+
+
+def srgb_to_linear(color: tuple[float, float, float, float]) -> tuple[float, float, float, float]:
+    """Decode an sRGB swatch into scene-linear for FLOAT_COLOR/glTF COLOR_0.
+
+    The hex palette above is authored in sRGB. Blender's FLOAT_COLOR attribute
+    and glTF's COLOR_0 are both LINEAR; writing the raw sRGB fractions into
+    them ships every colour about one stop too bright (0xB9 = 0.725 as linear
+    displays as ~0.87 — pale beige where warm brown was authored).
+    `palette.lint.test.js` holds the shipped GLB to the authored swatches.
+    """
+    def channel(value: float) -> float:
+        return value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4
+
+    return (channel(color[0]), channel(color[1]), channel(color[2]), color[3])
 
 
 SKIN = rgba("B96835")
@@ -160,6 +175,7 @@ class MeshBuilder:
         sides: int,
         *,
         cyclic: bool = False,
+        axis: Vector | None = None,
     ) -> None:
         centers = [Vector(point) for point in points]
         if isinstance(bone, list) and len(bone) != len(centers):
@@ -173,10 +189,17 @@ class MeshBuilder:
             before = centers[index - 1] if index else (centers[-1] if cyclic else centers[index])
             after = centers[(index + 1) % len(centers)] if index + 1 < len(centers) or cyclic else centers[index]
             tangent = (after - before).normalized()
-            axis = Vector((1.0, 0.0, 0.0))
-            if abs(tangent.dot(axis)) > 0.92:
-                axis = Vector((0.0, 1.0, 0.0))
-            normal = tangent.cross(axis).normalized()
+            if axis is None:
+                # Per-row axis switching flips the frame mid-path and twists a
+                # quad — the visible kink the headband wore. A ring whose
+                # tangents stay in one plane should pass the plane's normal as
+                # `axis` so every row shares one frame.
+                row_axis = Vector((1.0, 0.0, 0.0))
+                if abs(tangent.dot(row_axis)) > 0.92:
+                    row_axis = Vector((0.0, 1.0, 0.0))
+            else:
+                row_axis = axis
+            normal = tangent.cross(row_axis).normalized()
             binormal = tangent.cross(normal).normalized()
             row = []
             for side in range(sides):
@@ -199,24 +222,36 @@ class MeshBuilder:
                 self.face((end, rows[-1][nxt], rows[-1][side]), material)
 
     def hair_cap(self, segments: int, rings: int) -> None:
+        """A full crown of hair, not a back-half shell.
+
+        The first pass swept theta over only the back half of the skull, so
+        from the front the crown above the headband read as bare skin — the
+        'cap brim' defect on the fidelity board. The crown now covers the full
+        circumference; each column's reach is solved so hair ends just under
+        the headband in front (a natural hairline) and flows to the nape
+        behind the ponytail.
+        """
         center = Vector((0.0, 0.08, 3.48))
         top = self.vertex((0.0, 0.08, 4.14), HAIR, "Head")
         rows: list[list[int]] = []
         for row in range(1, rings + 1):
-            phi = 0.72 * pi * row / rings
             ring = []
-            for column in range(segments + 1):
-                theta = pi * column / segments
+            for column in range(segments):
+                theta = 2 * pi * column / segments
+                behind = max(0.0, sin(theta))
+                blend = behind * behind * (3.0 - 2.0 * behind)
+                phi = (0.37 + 0.35 * blend) * pi * row / rings
                 x = 0.60 * sin(phi) * cos(theta)
-                y = 0.50 * sin(phi) * sin(theta)
+                y = 0.52 * sin(phi) * sin(theta)
                 z = 0.66 * cos(phi)
                 ring.append(self.vertex(center + Vector((x, y, z)), HAIR, "Head"))
             rows.append(ring)
         for column in range(segments):
-            self.face((top, rows[0][column], rows[0][column + 1]), 2)
+            self.face((top, rows[0][column], rows[0][(column + 1) % segments]), 2)
         for upper, lower in zip(rows, rows[1:]):
             for column in range(segments):
-                self.face((upper[column], lower[column], lower[column + 1], upper[column + 1]), 2)
+                nxt = (column + 1) % segments
+                self.face((upper[column], lower[column], lower[nxt], upper[nxt]), 2)
 
     def face_patch(self, columns: int, rows: int) -> None:
         """A separate face-atlas island, set just proud of the head surface.
@@ -240,9 +275,11 @@ class MeshBuilder:
                 ny = -cos(horizontal) * cos(vertical)
                 nz = sin(vertical)
                 width = 1.03 + 0.04 * (1.0 - abs(nz)) - 0.12 * max(-nz, 0.0)
+                # Just proud of the skull — 0.014 read as a shadowed step at the
+                # island edge on the fidelity board; 0.006 still clears z-fight.
                 point = (
                     cx + rx * nx * width,
-                    cy + 0.86 * ry * ny - 0.014,
+                    cy + 0.86 * ry * ny - 0.006,
                     cz + rz * nz,
                 )
                 # Contract island: forehead V=1, chin V=.5. Blender's exporter
@@ -322,8 +359,8 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         segments,
     )
     if detail >= 1:
-        builder.tube(torus_points((0, 0, 1.76), 0.40, 0.26, segments), [0.035] * segments, 1, SHIRT_DARK, "Hips", max(5, segments // 2), cyclic=True)
-        builder.tube(torus_points((0, 0, 2.57), 0.25, 0.18, segments), [0.030] * segments, 1, WHITE, "Spine2", max(5, segments // 2), cyclic=True)
+        builder.tube(torus_points((0, 0, 1.76), 0.40, 0.26, segments), [0.035] * segments, 1, SHIRT_DARK, "Hips", max(5, segments // 2), cyclic=True, axis=Vector((0.0, 0.0, 1.0)))
+        builder.tube(torus_points((0, 0, 2.57), 0.25, 0.18, segments), [0.030] * segments, 1, WHITE, "Spine2", max(5, segments // 2), cyclic=True, axis=Vector((0.0, 0.0, 1.0)))
 
     # Sleeves, tapered arms and articulated hand silhouettes. The exposed limb
     # is one weighted surface across the elbow instead of three overlapping
@@ -438,6 +475,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
                 f"{prefix}Leg",
                 max(5, segments // 3),
                 cyclic=True,
+                axis=Vector((0.0, 0.0, 1.0)),
             )
         if detail == 0:
             # At LOD2 the shoe is six pixels tall: preserve the toe/sole read,
@@ -484,18 +522,13 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         builder.ellipsoid((-0.55, 0.0, 3.43), (0.105, 0.07, 0.13), 0, SKIN, "Head", max(10, segments // 2), max(6, rings // 2))
         builder.ellipsoid((0.55, 0.0, 3.43), (0.105, 0.07, 0.13), 0, SKIN, "Head", max(10, segments // 2), max(6, rings // 2))
 
-    # Hair is one designed mass: skull cap + hairline + high swept ponytail.
-    builder.hair_cap(max(10, segments // 2), max(5, rings // 2))
-    builder.tube(
-        [(-0.48, -0.37, 3.76), (-0.25, -0.49, 3.83), (0.0, -0.53, 3.85), (0.25, -0.49, 3.83), (0.48, -0.37, 3.76)],
-        [0.075, 0.085, 0.09, 0.085, 0.075],
-        2,
-        HAIR,
-        "Head",
-        max(6, segments // 2),
-    )
-    headband_points = torus_points((0.0, 0.0, 3.82), 0.49, 0.405, max(12, segments))
-    builder.tube(headband_points, [0.035] * len(headband_points), 1, WHITE, "Head", max(5, segments // 3), cyclic=True)
+    # Hair is one designed mass: full slicked-back crown + high swept ponytail.
+    # The headband sits across the hairline, so the crown's front edge tucks
+    # just beneath it; there is deliberately no fringe — the turnaround pulls
+    # everything back into the ponytail.
+    builder.hair_cap(max(12, segments + 4), max(6, rings // 2 + 2))
+    headband_points = torus_points((0.0, 0.0, 3.80), 0.545, 0.42, max(12, segments))
+    builder.tube(headband_points, [0.035] * len(headband_points), 1, WHITE, "Head", max(5, segments // 3), cyclic=True, axis=Vector((0.0, 0.0, 1.0)))
     ponytail_points = [
         (0.0, 0.39, 3.72),
         (0.0, 0.54, 3.84),
@@ -551,7 +584,7 @@ def build_lod(name: str, armature: bpy.types.Object, segments: int, rings: int, 
     authored_color = mesh.color_attributes.new(name="_RECESS_COLOR", type="FLOAT_COLOR", domain="POINT")
     for vertex_index, color in enumerate(builder.colors):
         color_layer.data[vertex_index].color_srgb = color
-        authored_color.data[vertex_index].color = color
+        authored_color.data[vertex_index].color = srgb_to_linear(color)
     for polygon in mesh.polygons:
         for loop_index in polygon.loop_indices:
             vertex_index = mesh.loops[loop_index].vertex_index

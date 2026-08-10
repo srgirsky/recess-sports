@@ -235,6 +235,7 @@ Finished characters ship from their editable Blender source with:
 ```bash
 npm run generate:junebug-face-atlas
 npm run export:authored-character -- nostrike
+npm run capture:character-evidence -- nostrike
 npm run review:character-fidelity -- nostrike
 npm run validate:models
 ```
@@ -243,11 +244,16 @@ The atlas command reproduces Junebug's character-specific 16-expression source
 texture. The export command loads `assets/v2/source/<name>-pilot.blend`, exports its mesh,
 remaps Blender's skin order to the canonical rig without changing deformation,
 compacts vertex colours/weights, stamps source and concept hashes, validates the
-result and promotes it to `public/v2/models/`. The second writes deterministic
-front/profile, authored-model hero, run/contact and 40-pixel evidence to
-`docs/v2/concepts/<name>-fidelity-review.png`. The builder may mark that board
-`candidate`; final `approved` status requires a named human approver and a hash
-of the exact board. A raw Blender export is not the delivery path.
+result and promotes it to `public/v2/models/`. The capture command drives the
+live review page (`/v2/?anims=1&kid=<id>`) in headless Chromium and refreshes
+the runtime hero, run and contact stills — re-run it whenever the delivered
+model changes, or the board composites stale captures. The review command then
+writes deterministic front/profile, authored-model hero, run/contact and
+40-pixel evidence to `docs/v2/concepts/<name>-fidelity-review.png`. The builder
+may mark that board `candidate`; final `approved` status requires a named human
+approver and a hash of the exact board. A raw Blender export is not the
+delivery path. The full checklist that defines a finished character is
+`docs/v2/character-quality-rubric.md`.
 
 `/v2/?spike=1&roster=1` is the one-frame roster review; use
 `/v2/?spike=1&kid=turbo` for a single-character field review.

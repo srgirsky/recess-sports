@@ -17,7 +17,7 @@ const fidelityPath = join(repo, 'assets', 'v2', 'source', 'character-fidelity.js
 const renderer = join(here, 'blender', 'render-fidelity-views.py');
 const fidelity = JSON.parse(readFileSync(fidelityPath, 'utf8'));
 
-const SLUGS = {
+export const SLUGS = {
   nostrike: 'junebug', calls_shot: 'theo', wheelchair_ace: 'zoom',
   big_lou: 'big-lou', tank: 'tank', mimi_mash: 'mimi-mash',
 };
