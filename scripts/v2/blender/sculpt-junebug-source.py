@@ -278,14 +278,24 @@ class MeshBuilder:
                 nz = sin(vertical)
                 width = 1.03 + 0.04 * (1.0 - abs(nz)) - 0.12 * max(-nz, 0.0)
                 # Proud of the skull by an offset that FEATHERS to ~zero at the
-                # island border, so the edge never casts the step-shadow seam a
-                # constant offset drew around the face.
+                # island border — and applied RADIALLY from the head centre, so
+                # the patch stays parallel to the skull. A forward (-y) push
+                # tilted the patch surface against the skull's, and the normal
+                # mismatch shaded the island a different tone than the face
+                # around it; parallel surfaces shade identically and the seam
+                # disappears instead of being merely thin.
+                # The border rows dive UNDER the skull (negative offset): an
+                # open mesh edge always shades a hair differently than the
+                # surface around it, so the only seam that cannot be seen is
+                # one that is physically beneath the face.
                 edge = min(uf, 1.0 - uf, vf, 1.0 - vf)
-                proud = 0.003 + 0.004 * min(1.0, edge * 5.0)
+                proud = -0.006 + 0.013 * min(1.0, edge * 5.0)
+                base = Vector((rx * nx * width, 0.86 * ry * ny, rz * nz))
+                radial = base.normalized()
                 point = (
-                    cx + rx * nx * width,
-                    cy + 0.86 * ry * ny - proud,
-                    cz + rz * nz,
+                    cx + base.x + radial.x * proud,
+                    cy + base.y + radial.y * proud - 0.002,
+                    cz + base.z + radial.z * proud,
                 )
                 # Contract island: forehead V=1, chin V=.5. Blender's exporter
                 # flips authored loop V, so author its inverse here. The runtime
