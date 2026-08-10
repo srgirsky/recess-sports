@@ -62,6 +62,9 @@ Plus five binary board checks:
 | 3.9 | The 40 px zoom strip still shows the character's one memorable read | BOARD |
 | 3.10 | Ears are constructed — an outer rim, an inner shadow and a lobe against the skull, never a bare ellipsoid bump | BOARD |
 | 3.11 | Arms read naturally at every clip angle — the shoulder stays a round deltoid form when the arm drops from bind pose, the elbow line stays continuous, and no pose reads as a stiff hinged cylinder | EYES — run + idle on the review page |
+| 3.12 | Legs are two legs — daylight visible between the thighs and between the calves in bind pose, idle and run; overlapping leg volumes read as one mass | BOARD + EYES |
+| 3.13 | The face's aspect ratio matches the turnaround's (measure both, don't eyeball) — a head sculpted narrower than its concept never reads as the same kid | BOARD vs turnaround |
+| 3.14 | The mouth's emotion is readable at draft-card distance, not only in close-up — lips, teeth and tongue where a cell opens the mouth, never a stroke that collapses to a line | EYES — expression cells in gameplay lighting |
 
 ## 4 · Deformation and motion — AUTO + EYES
 
