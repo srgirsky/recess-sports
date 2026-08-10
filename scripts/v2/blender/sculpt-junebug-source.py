@@ -118,11 +118,24 @@ class MeshBuilder:
                 width = 1.0
                 depth = 1.0
                 if face_shape:
-                    width = 1.03 + 0.04 * (1.0 - abs(nz)) - 0.12 * max(-nz, 0.0)
+                    # Cheek width HOLDS through the jawbone (down to nz -0.35)
+                    # and only then tapers to the chin — a linear taper from
+                    # the cheeks melts the jaw into a point.
+                    taper = max(0.0, (-nz - 0.35) / 0.65)
+                    width = 1.03 + 0.04 * (1.0 - abs(nz)) - 0.20 * taper**1.5
                     depth = 0.86 if ny < 0 else 1.02
                 x = cx + rx * nx * width
                 y = cy + ry * ny * depth
                 z = cz + rz * nz
+                if face_shape and nz < -0.30:
+                    # The turnaround gives Junebug a small determined chin and
+                    # a jawline; a bare ellipsoid curves away to nothing under
+                    # the mouth. Push the lower-front surface forward and
+                    # slightly up, faded by frontness so the sides stay smooth.
+                    chin = min(1.0, (-nz - 0.30) / 0.55)
+                    frontness = max(0.0, -sin(theta))
+                    y -= 0.11 * (chin**1.8) * frontness
+                    z += 0.04 * (chin**1.8) * frontness
                 if flatten_sole:
                     z = max(z, cz - rz * 0.74)
                 uv = (0.75, 0.25)
@@ -264,7 +277,7 @@ class MeshBuilder:
         retopology while remaining welded visually to the same head volume.
         """
         cx, cy, cz = (0.0, -0.015, 3.45)
-        rx, ry, rz = (0.605, 0.47, 0.585)
+        rx, ry, rz = (0.585, 0.47, 0.60)
         grid: list[list[int]] = []
         for row in range(rows + 1):
             vf = row / rows
@@ -276,7 +289,8 @@ class MeshBuilder:
                 nx = sin(horizontal) * cos(vertical)
                 ny = -cos(horizontal) * cos(vertical)
                 nz = sin(vertical)
-                width = 1.03 + 0.04 * (1.0 - abs(nz)) - 0.12 * max(-nz, 0.0)
+                taper = max(0.0, (-nz - 0.35) / 0.65)
+                width = 1.03 + 0.04 * (1.0 - abs(nz)) - 0.20 * taper**1.5
                 # Proud of the skull by an offset that FEATHERS to ~zero at the
                 # island border — and applied RADIALLY from the head centre, so
                 # the patch stays parallel to the skull. A forward (-y) push
@@ -292,10 +306,21 @@ class MeshBuilder:
                 proud = -0.006 + 0.013 * min(1.0, edge * 5.0)
                 base = Vector((rx * nx * width, 0.86 * ry * ny, rz * nz))
                 radial = base.normalized()
+                # The patch rides the skull's chin push with the identical
+                # terms (frontness there is -sin(theta), which equals
+                # cos(horizontal) here) — without this the pushed skull
+                # swallows the island below the mouth and the crossing line
+                # shades as an arc under the lips.
+                chin_y = 0.0
+                chin_z = 0.0
+                if nz < -0.30:
+                    chin = min(1.0, (-nz - 0.30) / 0.55)
+                    chin_y = -0.11 * (chin**1.8) * cos(horizontal)
+                    chin_z = 0.04 * (chin**1.8) * cos(horizontal)
                 point = (
                     cx + base.x + radial.x * proud,
-                    cy + base.y + radial.y * proud - 0.002,
-                    cz + base.z + radial.z * proud,
+                    cy + base.y + radial.y * proud - 0.002 + chin_y,
+                    cz + base.z + radial.z * proud + chin_z,
                 )
                 # Contract island: forehead V=1, chin V=.5. Blender's exporter
                 # flips authored loop V, so author its inverse here. The runtime
@@ -554,7 +579,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         max(9, segments // 2),
     )
     # Broader through the cheeks: the turnaround face is wider than tall.
-    builder.ellipsoid((0.0, -0.015, 3.45), (0.605, 0.47, 0.585), 0, SKIN, "Head", segments + 4, rings + 2, face_shape=True)
+    builder.ellipsoid((0.0, -0.015, 3.45), (0.585, 0.47, 0.60), 0, SKIN, "Head", segments + 4, rings + 2, face_shape=True)
     builder.face_patch(max(6, segments // 2), max(5, rings // 2))
     if detail >= 2:
         # The nose is a FORM, not only an atlas mark — a flat decal face reads
