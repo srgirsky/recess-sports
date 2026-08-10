@@ -77,18 +77,29 @@ export function lathe(mat: THREE.Material, profile: [number, number][], segs = 2
   return new THREE.Mesh(new THREE.LatheGeometry(pts, segs), mat);
 }
 
-/** Chunky mitt hand: fat palm + real thumb + two knuckle bumps so fingers read
- * in silhouette. side: -1 right, +1 left (thumb faces in). */
+/** Chunky cartoon hand: fat palm, THREE distinct fingers hanging off it with
+ * real grooves between them, and a thumb angled well clear of the palm so the
+ * split notches the SILHOUETTE — verdict-003 still read the knuckle-bump
+ * version as a mitten because nothing broke the outline. side: -1 right,
+ * +1 left (thumb faces in, toward the body). */
 export function mittenHand(skin: THREE.Material, side: number): THREE.Group {
   const g = new THREE.Group();
-  g.add(blob(skin, 0.2, [0.9, 1.05, 1.0], [0, -0.09, 0]));
-  // Thumb: a stubby capsule angled off the palm, not a pea.
-  const thumb = blob(skin, 0.1, [0.85, 1.35, 0.85], [-side * 0.17, -0.04, 0.1], 12);
-  thumb.rotation.z = side * 0.55;
+  // Palm: slightly flattened front-to-back so fingers read as its edge.
+  g.add(blob(skin, 0.17, [1.0, 0.95, 0.8], [0, -0.06, 0]));
+  // Fingers: fat sausages fanned across the palm bottom, ~0.04ft gaps —
+  // enough for the shading groove to survive at batter distance. Middle
+  // finger longest, outer shortest, like every BB-style hand.
+  const fingerLen = [0.94, 1.05, 0.9];
+  for (let i = 0; i < 3; i++) {
+    const f = blob(skin, 0.08, [0.9, 1.55 * fingerLen[i], 0.9], [side * (0.1 - i * 0.1), -0.22, 0.03], 10);
+    f.rotation.z = side * (0.14 - i * 0.14); // fan: outer fingers splay outward
+    g.add(f);
+  }
+  // Thumb: long, chunky, and rotated far enough off the palm that a clear
+  // notch opens between them in outline.
+  const thumb = blob(skin, 0.095, [0.9, 1.5, 0.9], [-side * 0.2, -0.08, 0.07], 12);
+  thumb.rotation.z = side * 0.85;
   g.add(thumb);
-  // Knuckle bumps along the outer edge — finger hint at distance.
-  g.add(blob(skin, 0.085, [1, 1.1, 1], [side * 0.13, -0.22, 0.05], 10));
-  g.add(blob(skin, 0.075, [1, 1.05, 1], [side * 0.04, -0.27, 0.06], 10));
   return g;
 }
 

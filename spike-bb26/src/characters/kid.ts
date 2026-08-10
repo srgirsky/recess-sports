@@ -1,6 +1,6 @@
 // OWNER: characters agent. The kid assembler: one chunky stylized child as a
 // THREE.Group of named, poseable parts. Proportions are the BB2026 read — head
-// ~1/3 of body height, thick limbs, mitten hands, big face — built from merged
+// ~1/3 of body height, thick limbs, split-finger hands, big face — built from merged
 // rounded forms (lathe torso, capsule limbs, blob everything), never boxes.
 //
 // Skeleton (pivot groups, all rotations start at 0 = standing straight,
@@ -14,8 +14,8 @@
 //       ├─ torso        shirt lathe + shorts + hood
 //       ├─ armL / armR  shoulder pivots (x=±0.46, y=1.24 in hips space)
 //       │   └─ elbowL/elbowR (y -0.6)
-//       │       └─ handL/handR (y -0.52) — mitten; bat/glove/ball parent here
-//       └─ head         neck pivot (y=1.52 in hips space); skull center +0.78
+//       │       └─ handL/handR (y -0.52) — fingered hand; bat/glove/ball parent here
+//       └─ head         neck pivot (y=1.52 in hips space); skull center +1.02
 //           ├─ face (face.ts) · hairstyle (hair.ts) · cap
 //
 // userData: { recipe, hipsY } — poses use hipsY to restore crouch offsets.
@@ -229,14 +229,19 @@ export function buildKid(mats: MatCache, rng: KidRng, outfit: OutfitSpec = {}): 
   const head = new THREE.Group();
   head.name = 'head';
   head.position.y = 1.52;
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.185, 0.46, 12), skin);
-  neck.position.y = 0.0;
+  // Neck column: slimmer than the 0.26 collar ring so the silhouette PINCHES
+  // between shoulders and skull — that pinch, not the skin color, is what
+  // reads as "has a neck" at second-base distance.
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.2, 0.62, 14), skin);
+  neck.position.y = 0.1;
   head.add(neck);
-  // Skull rides at 0.88 (was 0.78): a ~0.1ft skin sliver shows between collar
-  // and chin — verdict-002 still called the read "neckless" at 0.78.
-  head.add(blob(skin, 1, [0.84, 0.78, 0.76], [0, 0.88, 0], 26)); // skull
+  // Skull rides at 1.02 (was 0.88): verdicts 001-003 called the read
+  // "neckless" three times running — the 0.88 chin left a ~0.1ft sliver the
+  // collar swallowed. At 1.02 a ~0.27ft skin column (≈6% of kid height, the
+  // steam-02 proportion) stays visible between collar top and chin.
+  head.add(blob(skin, 1, [0.84, 0.78, 0.76], [0, 1.02, 0], 26)); // skull
   const skullCenter = new THREE.Group();
-  skullCenter.position.y = 0.88;
+  skullCenter.position.y = 1.02;
   skullCenter.add(buildFace(mats, r.skin, r.hairColor, r.face));
   skullCenter.add(buildHair(mats, r.hairColor, r.cap && !capIsHairSafe ? 'crew' : r.hairStyle, rng));
   if (r.cap) skullCenter.add(buildCap(mats, r.cap));

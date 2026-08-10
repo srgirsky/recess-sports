@@ -71,9 +71,14 @@ export function buildFace(mats: MatCache, skinKey: string, hairKey: string, f: F
 
   // Mouth — sized to survive a ~60px head (verdict-002 spec), not a close-up.
   if (f.mouth === 'open') {
-    g.add(blob(ink, 0.26, [1.25, 0.85, 0.35], [0, -0.4, 0.56])); // dark interior
-    g.add(blob(mats.glow('cloudLit', 1, 0.45), 0.15, [1.55, 0.42, 0.42], [0, -0.26, 0.6], 12)); // teeth strip
-    g.add(blob(mats.get('hudRed', 0.85), 0.13, [1.15, 0.55, 0.5], [0, -0.5, 0.58], 10)); // tongue
+    // Verdict-003: the old teeth strip sat nearly FLUSH with the interior
+    // (0.01 proud) and only 0.13ft tall, so the dark mass swallowed it at
+    // distance. Now 0.18ft tall (~7px on the 60px head), pushed ~0.06ft proud
+    // of the interior's front face, and brighter (glow 0.75 vs 0.45) — the
+    // white bar must read INSIDE the dark mouth, steam-04 style.
+    g.add(blob(ink, 0.26, [1.2, 0.8, 0.35], [0, -0.44, 0.56])); // dark interior
+    g.add(blob(mats.glow('cloudLit', 1, 0.75), 0.16, [1.5, 0.55, 0.55], [0, -0.27, 0.62], 12)); // teeth strip
+    g.add(blob(mats.get('hudRed', 0.85), 0.13, [1.1, 0.5, 0.5], [0, -0.55, 0.57], 10)); // tongue
   } else if (f.mouth === 'smile') {
     const arc = new THREE.Mesh(new THREE.TorusGeometry(0.23, 0.065, 8, 20, 2.1), ink);
     arc.position.set(0, -0.26, 0.64);
