@@ -1,8 +1,10 @@
 // OWNER: field agent. Everything man-made beyond the fence — the neighborhood
-// that makes steam-02 read as a place: candy-colored houses with pitched roofs
-// and real windows, a shed with X-brace doors, a scrap truck, telephone poles
-// with sagging catenary wires crossing the upper frame, a badminton net, a
-// swing set, and the garden hose coiled inside the yard.
+// that makes steam-02 read as a place: two depth rows of candy-colored houses
+// with pitched roofs and real windows, a shed with X-brace doors, a scrap
+// truck, a laundry line and doghouse, telephone poles with sagging catenary
+// wires crossing the upper frame, a badminton net, a swing set — plus the
+// in-yard kit (hose, picnic table, cooler, sandbox, wheelbarrow) that keeps
+// the foul-ground lawn corners from reading empty.
 //
 // Frame geography: the cameras face +z, so world +x projects onto the LEFT
 // half of the frame (see render/cameras.ts). steam-02's blue two-story is
@@ -332,6 +334,175 @@ function swingSet(m: MaterialsApi, x: number, z: number, rotY: number): THREE.Gr
   return g;
 }
 
+function laundryLine(m: MaterialsApi, rng: Rng, x: number, z: number, rotY: number): THREE.Group {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  g.rotation.y = rotY;
+  const span = 26;
+  const ropeY = 11.2; // high enough that the hung wash clears the 6.5 ft fence
+  const postMat = flat(m, 'woodDark');
+  for (const side of [-1, 1]) {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, ropeY + 0.6, 8), postMat);
+    post.position.set((side * span) / 2, (ropeY + 0.6) / 2, 0);
+    post.castShadow = true;
+    g.add(post);
+    const cross = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.3, 0.3), postMat);
+    cross.position.set((side * span) / 2, ropeY, 0);
+    g.add(cross);
+  }
+  // Sagging rope.
+  const a = new THREE.Vector3(-span / 2, ropeY, 0);
+  const b = new THREE.Vector3(span / 2, ropeY, 0);
+  const mid = new THREE.Vector3(0, ropeY - 1.6, 0);
+  const rope = new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(a, mid, b), 16, 0.09, 5),
+    flat(m, 'ropeCream'),
+  );
+  g.add(rope);
+  // Pinned wash: shirts and towels in the bunting colors, hung along the sag.
+  const wash: [t: number, w: number, h: number, key: string][] = [
+    [0.14, 3.8, 4.2, 'buntRed'],
+    [0.36, 3.0, 5.4, 'cloverWhite'],
+    [0.58, 4.0, 3.5, 'buntBlue'],
+    [0.8, 3.2, 4.5, 'buntYellow'],
+  ];
+  const curve = new THREE.QuadraticBezierCurve3(a, mid, b);
+  for (const [t, w, h, key] of wash) {
+    const mat = flat(m, key);
+    mat.side = THREE.DoubleSide;
+    const cloth = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
+    const p = curve.getPoint(t);
+    cloth.position.set(p.x, p.y - h / 2, p.z);
+    cloth.rotation.z = rng.range(-0.06, 0.06);
+    cloth.castShadow = true;
+    g.add(cloth);
+  }
+  return g;
+}
+
+function doghouse(m: MaterialsApi, x: number, z: number, rotY: number): THREE.Group {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  g.rotation.y = rotY;
+  const W = 6.2;
+  const D = 7;
+  const H = 5.6;
+  const body = new THREE.Mesh(new THREE.BoxGeometry(W, H, D), m.siding('houseRed', { worldSize: [W, H] }));
+  body.position.y = H / 2;
+  body.castShadow = true;
+  g.add(body);
+  const rise = 2.2;
+  const slope = Math.hypot(W / 2 + 0.5, rise);
+  const pitch = Math.atan2(rise, W / 2 + 0.5);
+  for (const side of [-1, 1]) {
+    const panel = new THREE.Mesh(
+      new THREE.BoxGeometry(slope, 0.22, D + 1),
+      m.roof('roofSlate', { worldSize: [slope, D + 1] }),
+    );
+    panel.position.set((side * (W + 1)) / 4, H + rise / 2, 0);
+    panel.rotation.z = -side * pitch;
+    panel.castShadow = true;
+    g.add(panel);
+  }
+  const arch = new THREE.Mesh(new THREE.CylinderGeometry(1.15, 1.15, 0.3, 12, 1, false, 0, Math.PI), flat(m, 'hudInk'));
+  arch.rotation.x = Math.PI / 2;
+  arch.position.set(0, 1.7, -(D / 2 + 0.05));
+  g.add(arch);
+  const doorBase = new THREE.Mesh(new THREE.BoxGeometry(2.3, 1.7, 0.3), flat(m, 'hudInk'));
+  doorBase.position.set(0, 0.85, -(D / 2 + 0.05));
+  g.add(doorBase);
+  return g;
+}
+
+// ---------------------------------------------------- in-yard corner kit ---
+
+function picnicTable(m: MaterialsApi, x: number, z: number, rotY: number): THREE.Group {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  g.rotation.y = rotY;
+  const wood = (w: number, h: number) => m.wood(undefined, { weather: 0.25, worldSize: [w, h] });
+  const top = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.35, 3.2), wood(7.5, 3.2));
+  top.position.y = 2.5;
+  top.castShadow = true;
+  g.add(top);
+  for (const side of [-1, 1]) {
+    const bench = new THREE.Mesh(new THREE.BoxGeometry(7.5, 0.28, 1.1), wood(7.5, 1.1));
+    bench.position.set(0, 1.45, side * 2.5);
+    bench.castShadow = true;
+    g.add(bench);
+    for (const end of [-1, 1]) {
+      const leg = new THREE.Mesh(new THREE.BoxGeometry(0.4, 2.6, 0.35), flat(m, 'woodDark'));
+      leg.position.set(end * 3.1, 1.25, side * 1.1);
+      leg.rotation.x = side * 0.42;
+      g.add(leg);
+    }
+  }
+  return g;
+}
+
+function cooler(m: MaterialsApi, x: number, z: number, rotY: number): THREE.Group {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  g.rotation.y = rotY;
+  const body = new THREE.Mesh(new THREE.BoxGeometry(2.6, 1.7, 1.6), flat(m, 'buntRed'));
+  body.position.y = 0.85;
+  body.castShadow = true;
+  g.add(body);
+  const lid = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.45, 1.8), flat(m, 'cloverWhite'));
+  lid.position.y = 1.9;
+  g.add(lid);
+  return g;
+}
+
+function sandbox(m: MaterialsApi, rng: Rng, x: number, z: number, rotY: number): THREE.Group {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  g.rotation.y = rotY;
+  const S = 7;
+  const railMat = m.wood(undefined, { weather: 0.25, worldSize: [S, 1] });
+  for (let i = 0; i < 4; i++) {
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(S, 1, 0.5), railMat);
+    rail.rotation.y = (i * Math.PI) / 2;
+    rail.position.set(Math.sin((i * Math.PI) / 2) * (S / 2 - 0.25), 0.5, Math.cos((i * Math.PI) / 2) * (S / 2 - 0.25));
+    rail.castShadow = true;
+    g.add(rail);
+  }
+  const sand = new THREE.Mesh(
+    new THREE.PlaneGeometry(S - 0.9, S - 0.9).rotateX(-Math.PI / 2),
+    flat(m, 'dirtLight'),
+  );
+  sand.position.y = 0.72;
+  g.add(sand);
+  const pail = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.42, 0.95, 10), flat(m, 'buntBlue'));
+  pail.position.set(rng.range(-1.4, 1.4), 1.2, rng.range(-1.4, 1.4));
+  g.add(pail);
+  return g;
+}
+
+function wheelbarrow(m: MaterialsApi, x: number, z: number, rotY: number): THREE.Group {
+  const g = new THREE.Group();
+  g.position.set(x, 0, z);
+  g.rotation.y = rotY;
+  const tub = new THREE.Mesh(new THREE.BoxGeometry(3.4, 1.2, 2.1), m.metal(undefined, { worldSize: [3.4, 1.2] }));
+  tub.position.set(0, 1.5, 0);
+  tub.rotation.z = -0.09;
+  tub.castShadow = true;
+  g.add(tub);
+  const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.4, 12).rotateX(Math.PI / 2), flat(m, 'hudInk'));
+  wheel.position.set(2, 0.7, 0);
+  g.add(wheel);
+  for (const side of [-1, 1]) {
+    const handle = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.22, 0.22), flat(m, 'woodDark'));
+    handle.position.set(-0.4, 1.15, side * 0.85);
+    handle.rotation.z = 0.14;
+    g.add(handle);
+    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.22, 1.0, 0.22), flat(m, 'woodDark'));
+    leg.position.set(-1.6, 0.5, side * 0.7);
+    g.add(leg);
+  }
+  return g;
+}
+
 function hose(m: MaterialsApi, x: number, z: number): THREE.Group {
   const g = new THREE.Group();
   const mat = flat(m, 'buntRed');
@@ -363,8 +534,24 @@ export function buildYard(m: MaterialsApi, rng: Rng): THREE.Group {
     house(m, { x: -158, z: 258, rotY: -0.25, w: 26, d: 22, wallH: 18, siding: 'houseRed', roofC: 'roofSlate', windows: [2, 2] }),
   );
 
+  // Back row — the second depth layer (verdict-004 fix 1). Taller, varied
+  // silhouettes whose upper stories and chimneys peek over the near roofs and
+  // between the tree crowns, so the horizon reads street-behind-a-street.
+  group.add(
+    house(m, { x: 232, z: 322, rotY: -0.15, w: 28, d: 22, wallH: 24, siding: 'houseCream', roofC: 'roofRed', windows: [3, 2], chimney: true }),
+    house(m, { x: 176, z: 370, rotY: 0.1, w: 32, d: 24, wallH: 16, siding: 'houseRed', roofC: 'roofSlate', moss: true, windows: [3, 1], door: true }),
+    house(m, { x: 10, z: 392, rotY: 0.05, w: 26, d: 20, wallH: 22, siding: 'houseTeal', roofC: 'roofBlue', windows: [2, 2], chimney: true }),
+    house(m, { x: -108, z: 366, rotY: -0.12, w: 36, d: 26, wallH: 14, siding: 'houseBlue', roofC: 'roofRed', windows: [4, 1], door: true }),
+    house(m, { x: -234, z: 338, rotY: 0.18, w: 24, d: 20, wallH: 26, siding: 'houseCream', roofC: 'roofSlate', moss: true, windows: [2, 2], chimney: true }),
+  );
+
   group.add(shed(m, -62, 218, -0.06));
-  group.add(truck(m, -104, 224, 0.18));
+  group.add(truck(m, -122, 228, 0.18));
+
+  // Backyard clutter behind the fence: a wash line strung before the cream
+  // house (cloth reads against the siding), a doghouse by the blue one.
+  group.add(laundryLine(m, rng, -30, 258, 0.35));
+  group.add(doghouse(m, 138, 230, -0.2));
 
   // Telephone poles + the sagging wires that cross the whole upper frame.
   const poleSpots: [number, number, number][] = [
@@ -395,6 +582,16 @@ export function buildYard(m: MaterialsApi, rng: Rng): THREE.Group {
   group.add(badmintonNet(m, 56, 219, 0.25 + rng.range(-0.05, 0.05)));
   group.add(swingSet(m, 182, 252, 0.3));
   group.add(hose(m, -46, 57));
+
+  // In-yard corner kit: the deep lawn corners inside the fence were empty
+  // green to the frame edge. Solved against both plate frustums (pitching
+  // sees yaw -43°..+31°, batting -21°..+51°, +x = frame-left): the picnic
+  // spot hugs the fence base deep left where BOTH cameras see it; the
+  // sandbox and wheelbarrow fill pitching's deep right.
+  group.add(picnicTable(m, 86, 156, 0.45));
+  group.add(cooler(m, 77, 147, -0.3));
+  group.add(sandbox(m, rng, -86, 138, 0.2));
+  group.add(wheelbarrow(m, -74, 126, 0.55));
 
   return group;
 }
