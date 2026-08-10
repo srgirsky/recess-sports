@@ -42,11 +42,22 @@ export const PRESETS: Record<string, CameraPreset> = {
   //     them (0.58, 0.94), pitcher sx≈0.46 over the batter's shoulder,
   //     horizon sy≈0.44. Eye dropped 6.0→5.0 ft, fov 50→46, eye pulled in a
   //     foot — "lower and tighter", per the verdict.
-  //   batting — mirror of the same solve: batter sx≈0.42 at 46% height,
-  //     pitcher sx≈0.55, catcher pushed to the frame edge so the swing
-  //     silhouette stays clean.
+  //   batting — re-solved for verdict-003 fix 1 (its second assignment): the
+  //     catcher at (0.9, -3.6) sat ~8 ft off the old eye and could only ever
+  //     be a clipped cap-dome eating the bottom-left corner. Fitting his
+  //     whole crouch is impossible without shrinking the batter below the
+  //     anchor, so per the verdict ("accept losing him entirely over keeping
+  //     the blob") the eye is pulled right (-x), up and a touch back, with
+  //     the pan and fov re-balanced, until every catcher extremity — cap
+  //     bulge, raised mitt, leaning torso, wide knee — projects off-frame
+  //     with real margin (worst case sx≈-0.12; a first, tighter solve at
+  //     ≈-0.05 modelled margin still leaked a cap sliver on capture, so the
+  //     projected extents under-read the built mesh by ~0.1 sx — keep that
+  //     allowance if this is ever re-solved). Batter lands sx≈0.22 at ~43%
+  //     frame height, feet and plate in frame (frame-080 has him
+  //     left-of-center), pitcher sx≈0.54 over his shoulder, horizon sy≈0.43.
   pitching: { pos: [2.6, 5.0, -11.2], look: [-3.5, 2.0, 46], fov: 46, swayScale: 1 },
-  batting: { pos: [-6.2, 5.0, -10.8], look: [4.5, 2.0, 46], fov: 46, swayScale: 1 },
+  batting: { pos: [-12.2, 6.4, -11.8], look: [3.6, 1.8, 46], fov: 44, swayScale: 1 },
   high: { pos: [-42, 88, -34], look: [6, 0, 52], fov: 55, swayScale: 0 },
   menu: { pos: [0, 5.5, -13], look: [0, 4.6, 8], fov: 55, swayScale: 0.5 },
   draft: { pos: [-4, 4.8, -14], look: [1.5, 3.2, 4], fov: 50, swayScale: 0.5 },
