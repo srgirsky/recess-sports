@@ -2,10 +2,10 @@
 // +z toward the mound (46 ft) and center field, +x toward first base. Presets
 // are derived from the anchors:
 //
-//   pitching — steam-02: camera low behind home on the third-base side, so the
-//     righty batter at the third-base box reads LARGE frame-right in rear 3/4
-//     (~40% of frame height at ~13 ft), pitcher small near center, horizon in
-//     the upper third. Camera eye ~6 ft (just above a kid's head) pitched down
+//   pitching — steam-02: camera low behind home, so the righty batter at the
+//     third-base box reads LARGE center-right in rear 3/4 (~44% of frame
+//     height at ~13 ft), pitcher small near center over his shoulder, horizon
+//     in the upper third. Camera eye 5 ft (a kid's head height) pitched down
 //     a touch — that is what keeps the batter low-and-large while the yard
 //     stays visible behind the fence.
 //   batting — frame-080: same plate, mirrored offset (first-base side) so the
@@ -33,9 +33,20 @@ export const PRESETS: Record<string, CameraPreset> = {
   // NOTE on screen sides: the camera faces +z, so world +x lands on the LEFT
   // half of the frame. A +x camera offset therefore puts the batter (third-base
   // box, x≈-2.6) frame-RIGHT — the steam-02 pitching look — and a -x offset
-  // mirrors it for frame-080's batting look. Verified against iter002/iter001.
-  pitching: { pos: [4.9, 6.0, -12.2], look: [1.6, 1.3, 46], fov: 50, swayScale: 1 },
-  batting: { pos: [-5.5, 5.9, -13.5], look: [-1.4, 1.5, 46], fov: 48, swayScale: 1 },
+  // mirrors it for frame-080's batting look.
+  //
+  // Numbers solved against verdict-001 fix 2 with a projection check
+  // (batter feet/head, catcher, plate, pitcher as screen fractions):
+  //   pitching — batter sx≈0.71, 44% of frame height, feet at sy≈0.91 (in
+  //     frame), catcher separated at sx≈0.58 with the plate visible between
+  //     them (0.58, 0.94), pitcher sx≈0.46 over the batter's shoulder,
+  //     horizon sy≈0.44. Eye dropped 6.0→5.0 ft, fov 50→46, eye pulled in a
+  //     foot — "lower and tighter", per the verdict.
+  //   batting — mirror of the same solve: batter sx≈0.42 at 46% height,
+  //     pitcher sx≈0.55, catcher pushed to the frame edge so the swing
+  //     silhouette stays clean.
+  pitching: { pos: [2.6, 5.0, -11.2], look: [-3.5, 2.0, 46], fov: 46, swayScale: 1 },
+  batting: { pos: [-6.2, 5.0, -10.8], look: [4.5, 2.0, 46], fov: 46, swayScale: 1 },
   high: { pos: [-42, 88, -34], look: [6, 0, 52], fov: 55, swayScale: 0 },
   menu: { pos: [0, 5.5, -13], look: [0, 4.6, 8], fov: 55, swayScale: 0.5 },
   draft: { pos: [-4, 4.8, -14], look: [1.5, 3.2, 4], fov: 50, swayScale: 0.5 },
