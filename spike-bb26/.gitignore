@@ -1,0 +1,8 @@
+# Copyrighted reference footage/screenshots stay out of git (bb2001 precedent:
+# media lives locally, a committed index/manifest records what exists).
+reference/
+# Per-iteration captures are bulky and regenerable; boards the critic cites are
+# copied into critic/ when a verdict references them.
+shots/
+node_modules/
+dist/

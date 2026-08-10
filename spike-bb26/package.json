@@ -1,0 +1,25 @@
+{
+  "name": "spike-bb26",
+  "private": true,
+  "type": "module",
+  "description": "Isolated one-shot spike: a Backyard Baseball 2026 visual replica. Never ships; exists to discover techniques worth harvesting into src/v2. See prompt.md and ARCHITECTURE.md.",
+  "scripts": {
+    "dev": "vite --port 5299 --strictPort",
+    "build": "tsc --noEmit && vite build",
+    "fetch:reference": "node tools/fetch-reference.mjs",
+    "capture": "node tools/capture.mjs",
+    "compare": "node tools/compare.mjs"
+  },
+  "dependencies": {
+    "three": "^0.180.0"
+  },
+  "devDependencies": {
+    "@types/three": "^0.180.0",
+    "typescript": "^5.6.0",
+    "vite": "^6.0.0",
+    "playwright": "^1.62.0",
+    "pixelmatch": "^6.0.0",
+    "pngjs": "^7.0.0",
+    "sharp": "^0.33.0"
+  }
+}

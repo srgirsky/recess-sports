@@ -1,0 +1,16 @@
+{
+  "comment": "Versioned anchor map (reference/ itself is gitignored). Paths are relative to reference/. Frame numbers follow frame N ≈ t=(N-1)*10s of A3DyDMkx17c. Anchors verified against the actual fetched images before Run 1; adjust here, in one place, if an anchor is wrong.",
+  "views": {
+    "pitching": { "anchor": "steam/steam-02.jpg", "v2": "v2-baseline/pitching.png" },
+    "batting": { "anchor": "steam/steam-06.jpg", "v2": "v2-baseline/batting.png" },
+    "menu": { "anchor": "steam/steam-01.jpg", "v2": "v2-baseline/menu.png" },
+    "draft": { "anchor": "steam/steam-04.jpg", "v2": "v2-baseline/draft.png" }
+  },
+  "dimensions": {
+    "character": ["frames/frame-020.jpg", "frames/frame-034.jpg", "frames/frame-050.jpg"],
+    "motion": ["frames/frame-080.jpg", "frames/frame-117.jpg", "frames/frame-150.jpg"],
+    "venue": ["frames/frame-070.jpg", "frames/frame-130.jpg"],
+    "hud": ["steam/steam-02.jpg"],
+    "shell": ["steam/steam-01.jpg", "frames/frame-005.jpg", "frames/frame-025.jpg"]
+  }
+}
