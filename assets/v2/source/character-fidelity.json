@@ -22,7 +22,7 @@
         "frontProfileSilhouette": {
           "label": "front/profile silhouette",
           "score": 4,
-          "note": "The rebuilt head taper, full hair crown, high ponytail, athletic torso and cuffed legs follow the locked front/profile hierarchy."
+          "note": "Head taper, strand-grouped crown, high ponytail, deltoid-capped shoulders, athletic torso and cuffed legs follow the locked front/profile hierarchy."
         },
         "headBodyProportions": {
           "label": "head/body proportions",
@@ -31,8 +31,8 @@
         },
         "hairMass": {
           "label": "hair mass",
-          "score": 4,
-          "note": "The crown now covers the full skull with the hairline tucked under the headband; the swept ponytail reads from every review angle. Organic strand grouping remains the gap to 5."
+          "score": 5,
+          "note": "Full crown with sculpted strand ridges, hairline tucked under the headband, a gather knot, and grooved strand grouping down the swept ponytail \u2014 hair is a designed mass with visible construction, not a smooth blob."
         },
         "clothingConstruction": {
           "label": "clothing construction",
@@ -42,7 +42,7 @@
         "faceExpressionRead": {
           "label": "face/expression read",
           "score": 4,
-          "note": "Warm almond eyes, brows, nose and mouth read at hero scale over the corrected warm-brown skin (palette.lint gates COLOR_0 against the authored swatches); likeness still needs final art-direction signoff."
+          "note": "Bold concept-weight brows, larger almond eyes, and a sculpted 3D nose that breaks the profile over the corrected warm-brown skin; constructed ears with rim, concha and lobe. The faint decal-island edge is the remaining gap to 5."
         },
         "heroAndFieldScale": {
           "label": "hero + 40px read",

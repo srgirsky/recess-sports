@@ -44,22 +44,24 @@ The authored hex swatches in the sculpt script are the palette of record.
 
 The six scored categories (each 1–5; **approval requires every one ≥ 4**):
 
-| # | Category | What 4/5 means |
+| # | Category | What 4/5 means — and what 5/5 adds |
 |---|---|---|
-| 3.1 | Front/profile silhouette | Matches the locked turnaround's large read; recognisable with no colour |
+| 3.1 | Front/profile silhouette | Matches the locked turnaround's large read; recognisable with no colour. **5**: transitions between forms are organic, not butt-joined primitives |
 | 3.2 | Head/body proportions | Child proportion per the turnaround, not the proxy; joints read as connected forms |
-| 3.3 | Hair mass | One designed mass; hairline reads from the front as well as the side; no bare-skull read from any gameplay angle |
+| 3.3 | Hair mass | One designed mass; hairline reads from the front as well as the side; no bare-skull read from any gameplay angle. **5**: sculpted strand grouping — a smooth featureless blob caps at 4 however correct its silhouette |
 | 3.4 | Clothing construction | Garments read as constructed (cuffs, hems, soles, laces), not primitive volumes |
-| 3.5 | Face/expression read | Features legible at hero scale; expression survives motion; face visible in the front board view |
+| 3.5 | Face/expression read | Features legible at hero scale; expression survives motion; face visible in the front board view. **5**: the face is a form, not a sticker — a real nose breaks the profile, no visible decal-island seam, features integrated with the skull's planes |
 | 3.6 | Hero + 40 px read | Identity survives both the hero close-up and the 40 px field sprite |
 
-Plus three binary board checks:
+Plus five binary board checks:
 
 | # | Item | Check |
 |---|---|---|
 | 3.7 | No holes, gaps or open interiors visible in front or profile silhouette | BOARD |
 | 3.8 | Accessories (headband, cap, chair…) sit on the body — no floating, no interpenetration that reads at hero scale | BOARD |
 | 3.9 | The 40 px zoom strip still shows the character's one memorable read | BOARD |
+| 3.10 | Ears are constructed — an outer rim, an inner shadow and a lobe against the skull, never a bare ellipsoid bump | BOARD |
+| 3.11 | Arms read naturally at every clip angle — the shoulder stays a round deltoid form when the arm drops from bind pose, the elbow line stays continuous, and no pose reads as a stiff hinged cylinder | EYES — run + idle on the review page |
 
 ## 4 · Deformation and motion — AUTO + EYES
 

@@ -19,13 +19,15 @@ const mouth = '#57201c';
 const nose = '#6d3826';
 
 function eye(x, y, { closed = false, wink = false } = {}) {
-  if (closed || wink) return `<path d="M${x - 12} ${y} Q${x} ${y + 6} ${x + 12} ${y}" fill="none" stroke="${ink}" stroke-width="5" stroke-linecap="round"/>`;
-  return `<path d="M${x - 18} ${y} Q${x} ${y - 12} ${x + 18} ${y} Q${x} ${y + 12} ${x - 18} ${y}Z" fill="${iris}" stroke="${ink}" stroke-width="3.5"/>
-    <ellipse cx="${x}" cy="${y + 1}" rx="5.5" ry="7.5" fill="${ink}"/><circle cx="${x - 2}" cy="${y - 2}" r="2.2" fill="${white}"/>`;
+  if (closed || wink) return `<path d="M${x - 13} ${y} Q${x} ${y + 7} ${x + 13} ${y}" fill="none" stroke="${ink}" stroke-width="6" stroke-linecap="round"/>`;
+  return `<path d="M${x - 19} ${y} Q${x} ${y - 13} ${x + 19} ${y} Q${x} ${y + 13} ${x - 19} ${y}Z" fill="${iris}" stroke="${ink}" stroke-width="3.5"/>
+    <ellipse cx="${x}" cy="${y + 1}" rx="6.5" ry="8.5" fill="${ink}"/><circle cx="${x - 2.2}" cy="${y - 2.4}" r="2.5" fill="${white}"/>`;
 }
 
 function brow(x, y, tilt) {
-  return `<path d="M${x - 16} ${y - tilt} Q${x} ${y - 4} ${x + 16} ${y + tilt}" fill="none" stroke="${ink}" stroke-width="6" stroke-linecap="round"/>`;
+  // The turnaround's brows are the boldest mark on the face — graphic weight
+  // is most of Junebug's "determined" likeness at hero scale.
+  return `<path d="M${x - 17} ${y - tilt} Q${x} ${y - 4} ${x + 17} ${y + tilt}" fill="none" stroke="${ink}" stroke-width="8.5" stroke-linecap="round"/>`;
 }
 
 function face(name) {
@@ -60,5 +62,7 @@ const contents = cells.map((name, index) => {
 }).join('');
 
 const svg = `<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">${contents}</svg>`;
-await sharp(Buffer.from(svg)).png().toFile(output);
+// Indexed PNG: the atlas is flat-colour line art, and the palette encoding
+// roughly halves its share of the 400KB GLB budget.
+await sharp(Buffer.from(svg)).png({ compressionLevel: 9, palette: true }).toFile(output);
 console.log(`wrote ${output}`);

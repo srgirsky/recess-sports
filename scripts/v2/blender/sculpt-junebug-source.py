@@ -380,6 +380,13 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
             max(7, segments // 2),
         )
         if detail >= 1:
+            # Deltoid cap over the sleeve root. The straight sleeve tube meets
+            # the torso as a butt joint, which opens into a hinge crease the
+            # moment a clip drops the arm from bind pose (rubric 3.11). A round
+            # cap that follows the arm keeps the shoulder a shoulder at every
+            # angle. LOD2 keeps the plain tube — the cap is sub-pixel there.
+            builder.ellipsoid((0.46 * side, 0.0, 2.46), (0.17, 0.25, 0.225), 1, SHIRT, f"{prefix}Arm", max(8, segments // 2), max(4, rings // 2))
+        if detail >= 1:
             builder.tube(
                 arm_ring_points((0.72 * side, 0.0, 2.43), 0.178, 0.178, max(10, segments)),
                 [0.022] * max(10, segments),
@@ -518,9 +525,25 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     builder.ellipsoid((0.0, 0.0, 2.69), (0.18, 0.16, 0.20), 0, SKIN_SHADOW, "Neck", segments, rings)
     builder.ellipsoid((0.0, -0.015, 3.45), (0.56, 0.47, 0.61), 0, SKIN, "Head", segments + 4, rings + 2, face_shape=True)
     builder.face_patch(max(6, segments // 2), max(5, rings // 2))
+    if detail >= 2:
+        # The nose is a FORM, not only an atlas mark — a flat decal face reads
+        # as a sticker the moment the head turns (rubric 3.5's bar for 5/5).
+        builder.ellipsoid((0.0, -0.395, 3.415), (0.055, 0.055, 0.07), 0, SKIN, "Head", 8, 6)
     if detail >= 1:
-        builder.ellipsoid((-0.55, 0.0, 3.43), (0.105, 0.07, 0.13), 0, SKIN, "Head", max(10, segments // 2), max(6, rings // 2))
-        builder.ellipsoid((0.55, 0.0, 3.43), (0.105, 0.07, 0.13), 0, SKIN, "Head", max(10, segments // 2), max(6, rings // 2))
+        # A constructed ear: base shell against the skull, then — at hero scale
+        # only, for the LOD budget — an outer rim arc, an inner concha shadow
+        # and a lobe. A bare ellipsoid bump fails rubric 3.10; it reads as a
+        # knob at every angle.
+        for side in (-1, 1):
+            builder.ellipsoid((0.55 * side, 0.02, 3.43), (0.06, 0.085, 0.115), 0, SKIN, "Head", max(8, segments // 3), max(4, rings // 2))
+            if detail >= 2:
+                rim_points = []
+                for step in range(6):
+                    angle = -0.45 * pi + (1.35 * pi) * step / 5
+                    rim_points.append((0.605 * side, 0.02 + 0.075 * cos(angle), 3.42 + 0.100 * sin(angle)))
+                builder.tube(rim_points, [0.016, 0.022, 0.024, 0.024, 0.022, 0.016], 0, SKIN, "Head", 5, axis=Vector((1.0, 0.0, 0.0)))
+                builder.ellipsoid((0.585 * side, 0.035, 3.42), (0.035, 0.05, 0.068), 0, SKIN_SHADOW, "Head", 8, 5)
+                builder.ellipsoid((0.575 * side, 0.005, 3.325), (0.032, 0.042, 0.04), 0, SKIN, "Head", 7, 5)
 
     # Hair is one designed mass: full slicked-back crown + high swept ponytail.
     # The headband sits across the hairline, so the crown's front edge tucks
@@ -546,6 +569,47 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         max(8, segments // 2),
     )
     builder.ellipsoid((0.0, 1.18, 2.97), (0.27, 0.16, 0.31), 2, HAIR, "Head", max(10, segments // 2), max(6, rings // 2))
+    if detail >= 2:
+        # The gather knot the turnaround shows where the crown meets the tail —
+        # without it the ponytail emerges from nowhere. Hero-scale only.
+        builder.ellipsoid((0.0, 0.42, 3.79), (0.155, 0.14, 0.125), 2, HAIR, "Head", max(8, segments // 3), max(5, rings // 2))
+
+    if detail >= 2:
+        # Strand grouping is what separates hair from a smooth blob (rubric
+        # 3.3's bar for 5/5). Ridges ride just proud of the crown from the
+        # hairline back to the gather, and grooves run the tail's length.
+        crown_center = Vector((0.0, 0.08, 3.48))
+        for theta_start in (-2.35, -1.95, -1.19, -0.79):
+            theta_end = 0.5 * pi if theta_start > -0.5 * pi else 0.5 * pi - 2 * pi
+            strand = []
+            for step in range(5):
+                t = step / 4
+                theta = theta_start + (theta_end - theta_start) * t
+                phi = (1 - t) * (1 - t) * 1.08 + 2 * t * (1 - t) * 0.30 + t * t * 0.66
+                strand.append(
+                    crown_center
+                    + Vector((0.617 * sin(phi) * cos(theta), 0.535 * sin(phi) * sin(theta), 0.679 * cos(phi)))
+                )
+            builder.tube(strand, [0.028, 0.034, 0.036, 0.034, 0.028], 2, HAIR, "Head", 4)
+
+        tail = [Vector(point) for point in ponytail_points]
+        tail_radii = [0.18, 0.23, 0.27, 0.26, 0.22, 0.12]
+        for lateral in (-0.85, 0.0, 0.85):
+            strand = []
+            radii = []
+            for index, (point, radius) in enumerate(zip(tail, tail_radii)):
+                before = tail[max(0, index - 1)]
+                after = tail[min(len(tail) - 1, index + 1)]
+                tangent = (after - before).normalized()
+                outward = Vector((0.0, -tangent.z, tangent.y))
+                direction = (Vector((1.0, 0.0, 0.0)) * lateral + outward * (1.0 - 0.45 * abs(lateral))).normalized()
+                riding = point + direction * radius
+                # The contract lets hair rise only 4% above the crown bone, and
+                # the outward strand tops the tail's apex — hold it under.
+                riding.z = min(riding.z, 4.09)
+                strand.append(riding)
+                radii.append(max(0.022, radius * 0.16))
+            builder.tube(strand, radii, 2, HAIR, "Head", 4)
 
     if detail >= 2:
         # White athletic piping is geometry, not a texture that disappears at
