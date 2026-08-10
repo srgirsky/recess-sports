@@ -246,8 +246,9 @@ class MeshBuilder:
                     cy + ry * ny - 0.012,
                     cz + rz * nz,
                 )
-                # Desired runtime island is U [0..0.5], V [.5..1]. Blender's
-                # exporter flips V, so author its inverse here.
+                # Contract island: forehead V=1, chin V=.5. Blender's exporter
+                # flips authored loop V, so author its inverse here. The runtime
+                # shader—not this mesh—owns the embedded-image origin fix.
                 uv = (0.5 * uf, 0.5 * (1.0 - vf))
                 line.append(self.vertex(point, SKIN, "Head", uv))
             grid.append(line)

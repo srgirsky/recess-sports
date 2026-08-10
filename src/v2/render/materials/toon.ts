@@ -176,7 +176,13 @@ export function makeToonMaterial(opts: ToonOptions = {}): MeshToonMaterial {
                  // does not decode its own sample: the texture is uploaded as
                  // SRGB8_ALPHA8 and the SAMPLER decodes it. Decoding again in
                  // the shader would wash every face out.
-                 vec4 faceTexel = texture2D( uFaceAtlas, uFaceCell.xy + island * uFaceCell.zw );
+                 vec2 faceUv = uFaceCell.xy + island * uFaceCell.zw;
+                 // GLTFLoader keeps embedded textures at flipY=false, while
+                 // faceCellUv is deliberately expressed in ordinary bottom-
+                 // origin atlas coordinates. Cross that boundary exactly once
+                 // here; otherwise every expression is upside down in its cell.
+                 faceUv.y = 1.0 - faceUv.y;
+                 vec4 faceTexel = texture2D( uFaceAtlas, faceUv );
                  // Alpha lets a cell leave skin showing through — an expression
                  // is eyes and a mouth, not a repaint of the whole head.
                  diffuseColor.rgb = mix( diffuseColor.rgb, faceTexel.rgb, faceTexel.a );
