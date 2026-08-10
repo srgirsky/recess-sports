@@ -6,12 +6,13 @@
 // 4x4 expression atlas) and use the richer roster geometry path. The permanent
 // primitive proxy remains LOD3 and the load-failure fallback at runtime.
 //
-//   npm run export:roster-kid          all 30
+//   npm run export:roster-kid          every unproduced roster kid
 //   npm run export:roster-kid -- turbo zippy
 // ---------------------------------------------------------------------------
 
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { existsSync, readFileSync } from 'node:fs';
 import {
   LOD_BUDGET,
   RUNTIME_DIR,
@@ -29,7 +30,22 @@ async function main() {
 
   const spec = await loadProxySpec();
   const args = process.argv.slice(2);
-  const ids = args.length ? args : spec.ROSTER.map((c) => c.id);
+  const receiptPath = resolve('assets/v2/source/character-production.json');
+  const protectedIds = existsSync(receiptPath)
+    ? new Set(Object.keys(JSON.parse(readFileSync(receiptPath, 'utf8')).characters ?? {}))
+    : new Set();
+  const requested = args.length ? args : spec.ROSTER.map((c) => c.id);
+  const protectedRequested = requested.filter((id) => protectedIds.has(id));
+  if (args.length && protectedRequested.length) {
+    throw new Error(
+      `refusing to overwrite Blender-authored character(s): ${protectedRequested.join(', ')}. ` +
+      'Use npm run export:authored-character -- <id>.'
+    );
+  }
+  const ids = requested.filter((id) => !protectedIds.has(id));
+  if (!args.length && protectedRequested.length) {
+    console.log(`Skipping ${protectedRequested.length} Blender-authored character(s): ${protectedRequested.join(', ')}`);
+  }
   let failed = 0;
 
   for (const id of ids) {
@@ -53,4 +69,9 @@ async function main() {
   if (failed) process.exit(1);
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) await main();
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main().catch((error) => {
+    console.error(`✗ ${error.message}`);
+    process.exit(1);
+  });
+}

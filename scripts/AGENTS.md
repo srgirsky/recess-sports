@@ -60,8 +60,9 @@ something.
 ## Commands that live here
 
 `npm run sim:harness` · `npm run sim:plate-sweep` · `npm run sim:game` ·
-`npm run validate:models` · `npm run audit:layout` · the `export:*` and
-`manifest:models` asset scripts. Details in `README.md`.
+`npm run validate:models` · `npm run export:authored-character` ·
+`npm run review:character-fidelity` · `npm run audit:layout` · the other
+`export:*` and `manifest:models` asset scripts. Details in `README.md`.
 
 ## `measures.json` is the record, not the prose
 

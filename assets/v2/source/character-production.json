@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "characters": {
+    "mimi_mash": {
+      "source": "mimi-mash-pilot.blend",
+      "sourceSha256": "9d4fbed99de11deaf653e0adfd0bfc7e2bdffc9674eb5b08500d486a08296348",
+      "concept": "mimi-mash-turnaround.png",
+      "conceptSha256": "a372e490bfa94712c4d9f902128098c4facfccd247dab52063eb3a4072b5451d",
+      "output": "kid_mimi_mash.glb",
+      "outputSha256": "2e8fe50b06c7e95f510c09c1e653c7efb2de58bf59a8c4429d2452389f26704d",
+      "definingTraits": [
+        "dense curly halo",
+        "proud chin",
+        "constructed hoodie and pocket",
+        "strong childlike forearms",
+        "spring-loaded stance"
+      ]
+    },
+    "nostrike": {
+      "source": "junebug-pilot.blend",
+      "sourceSha256": "6a90e89f2159f877b391dd23494f5a286e86eebdc06332327d09535802c0a13b",
+      "concept": "junebug-turnaround.png",
+      "conceptSha256": "f5d4e21c161e43406381c07f3d2acb981b5e7abf56775385b9549c8e825abc56",
+      "output": "kid_nostrike.glb",
+      "outputSha256": "7324e40893a606adc2603bfd9d696fe99fc3bc3f86283274b86882ff98438362",
+      "definingTraits": [
+        "arrow ponytail",
+        "athletic piping",
+        "compact focused face",
+        "clean joint flow",
+        "economical ready posture"
+      ]
+    },
+    "calls_shot": {
+      "source": "theo-pilot.blend",
+      "sourceSha256": "4a9982f39838c53127466abd860d0885f4db704016150422ebb7df69f68a8c92",
+      "concept": "theo-turnaround.png",
+      "conceptSha256": "f93d976869f437a92be482302db4124c064d33b708bb22a7e16fcfc51e403e66",
+      "output": "kid_calls_shot.glb",
+      "outputSha256": "a3e997e271d7b04310c5c5d568a930d63521bbf2f7850b8823d8572d29972834",
+      "definingTraits": [
+        "oversized cap",
+        "broad tapered face",
+        "open varsity jacket",
+        "confident chest",
+        "kid-sized swagger"
+      ]
+    },
+    "wheelchair_ace": {
+      "source": "zoom-pilot.blend",
+      "sourceSha256": "ed6b64ee63e846cd99194b6d7fc200286c64ffc2f69789880c127da7baa0d86d",
+      "concept": "zoom-turnaround.png",
+      "conceptSha256": "ab2ddf9b07a00ad095b4583046164edb23c26e542465ab4b2f7663fe8a38b296",
+      "output": "kid_wheelchair_ace.glb",
+      "outputSha256": "adf49cf305e0d98da582f53ae440723324c4a49a4a37e56825942bbff61e7d79",
+      "definingTraits": [
+        "compact sport chair",
+        "cambered wheels",
+        "bright push rims",
+        "swept spiky crown",
+        "forward athletic posture"
+      ]
+    },
+    "big_lou": {
+      "source": "big-lou-pilot.blend",
+      "sourceSha256": "482cee5f1cf09fe4a66d7ea9d172ee97091abc4023a7720ab4694e48e0e4d050",
+      "concept": "big-lou-turnaround.png",
+      "conceptSha256": "8e613340d5955ce7af1a8c9b2ac381514c0c7b577129202d8843bb35e13d2a45",
+      "output": "kid_big_lou.glb",
+      "outputSha256": "6e9e0e647ea05e654b6e258ddf906d9ff957f11f7eb4a5bd11e7e02d29a0486c",
+      "definingTraits": [
+        "gentle broad silhouette",
+        "soft rounded face",
+        "layered casual shirt",
+        "relaxed shoulders",
+        "grounded friendly stance"
+      ]
+    },
+    "tank": {
+      "source": "tank-pilot.blend",
+      "sourceSha256": "cdc27119c05f6aa6513fc30f370129e49c7cfccae3cac4e0c214894520fc8e90",
+      "concept": "tank-turnaround.png",
+      "conceptSha256": "32d3e55d0bb1f56fa6edacf9d87f7d53cc516cd3877740042f9c82e0c5756bd4",
+      "output": "kid_tank.glb",
+      "outputSha256": "e82dc8457c4fdd93dc9a02aae1871c91d1dcfb255d73a376e34c4acc4dd9e06f",
+      "definingTraits": [
+        "low wide silhouette",
+        "bald round crown",
+        "massive tee",
+        "short planted legs",
+        "sleepy compact face"
+      ]
+    }
+  }
+}

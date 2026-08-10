@@ -194,10 +194,10 @@ popping" checkable).
   blocked on art. `npm run export:proxy-kid` writes a contract-legal stand-in
   `.glb` from it, and refuses to write a level over its triangle budget rather
   than renaming a level.
-- **`export-roster-kid` is the deterministic first-party delivery path.** It
-  emits three LODs plus each kid's face atlas and never marks output `STAND-IN`.
-  `manifest.test.js` requires every `ROSTER` id. Review with
-  `?spike=1&roster=1` or `?spike=1&kid=<id>`.
+- **`export-roster-kid` is the procedural roster baseline, never sculpt
+  approval.** Finished meshes ship only from their upstream `.blend` through
+  `export:authored-character`, whose source/concept/runtime hashes and fidelity
+  board are gated. Review with `?spike=1&roster=1` or `?spike=1&kid=<id>`.
 - The artist-facing copy is `docs/v2/asset-contract.md`;
   `scripts/v2/validate-models.mjs` is its teeth, and a failure names the rule AND
   why it exists.

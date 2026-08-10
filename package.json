@@ -23,6 +23,8 @@
     "validate:voice-delivery": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/voice-delivery.mjs",
     "export:proxy-kid": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/export-proxy-kid.mjs",
     "export:roster-kid": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/export-roster-kid.mjs",
+    "export:authored-character": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/export-authored-character.mjs",
+    "review:character-fidelity": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/render-character-fidelity.mjs",
     "manifest:models": "node scripts/v2/models-manifest.mjs",
     "sim:trajectory": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/trajectory.mjs",
     "validate:models": "node --disable-warning=ExperimentalWarning scripts/v2/validate-models.mjs",
