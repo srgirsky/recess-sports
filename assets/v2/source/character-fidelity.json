@@ -17,11 +17,11 @@
       "animationEvidence": ["junebug-runtime-run.png", "junebug-runtime-swing.png"],
       "categories": {
         "frontProfileSilhouette": { "label": "front/profile silhouette", "score": 4, "note": "The rebuilt head taper, high ponytail, athletic torso and cuffed legs follow the locked front/profile hierarchy." },
-        "headBodyProportions": { "label": "head/body proportions", "score": 4, "note": "The compact four-head child proportion and shoulder-to-hip taper now follow the turnaround rather than the proxy." },
+        "headBodyProportions": { "label": "head/body proportions", "score": 4, "note": "The compact four-head child proportion, broader jaw and shoulder-to-hip taper now follow the turnaround rather than the proxy." },
         "hairMass": { "label": "hair mass", "score": 3, "note": "The directional ponytail reads; hairline integration needs sculpt polish." },
-        "clothingConstruction": { "label": "clothing construction", "score": 4, "note": "Signature red shirt, coral pants, white piping, cuffs and constructed shoes survive without an all-over team tint." },
-        "faceExpressionRead": { "label": "face/expression read", "score": 3, "note": "A Junebug-specific expression atlas restores determined brows and almond eyes; final art-direction signoff remains." },
-        "heroAndFieldScale": { "label": "hero + 40px read", "score": 4, "note": "The authored model is now shown at hero and 40-pixel scale and keeps its ponytail, palette and athletic silhouette." }
+        "clothingConstruction": { "label": "clothing construction", "score": 4, "note": "Signature kit, corrected sleeve cuffs and layered sneakers now include readable soles, toe caps, laces and sidewall definition." },
+        "faceExpressionRead": { "label": "face/expression read", "score": 3, "note": "A refined atlas and facial plane add warm almond eyes, pupils, brows, nose and mouth; likeness still needs final art-direction signoff." },
+        "heroAndFieldScale": { "label": "hero + 40px read", "score": 4, "note": "Hero evidence now shows tapered arms, continuous elbows, palms, fingers and layered shoes; the field-scale silhouette stays clean." }
       }
     },
     "calls_shot": {

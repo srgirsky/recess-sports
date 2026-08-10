@@ -23,7 +23,7 @@ from mathutils import Vector
 REPO = Path.cwd()
 OUTPUT = REPO / "assets/v2/source/junebug-pilot.blend"
 FACE_ATLAS = REPO / "assets/v2/source/junebug-face-atlas.png"
-REVISION = "junebug-reference-sculpt-v1"
+REVISION = "junebug-anatomy-polish-v2"
 SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 
 
@@ -81,7 +81,7 @@ class MeshBuilder:
         segments: int,
         rings: int,
         *,
-        face_uv: bool = False,
+        face_shape: bool = False,
         flatten_sole: bool = False,
     ) -> None:
         cx, cy, cz = center
@@ -100,22 +100,15 @@ class MeshBuilder:
                 # small determined chin, unlike the proxy's round ball.
                 width = 1.0
                 depth = 1.0
-                if face_uv:
-                    width = 1.04 + 0.07 * (1.0 - abs(nz)) - 0.10 * max(-nz, 0.0)
-                    depth = 0.90 if ny < 0 else 1.02
+                if face_shape:
+                    width = 1.03 + 0.04 * (1.0 - abs(nz)) - 0.12 * max(-nz, 0.0)
+                    depth = 0.86 if ny < 0 else 1.02
                 x = cx + rx * nx * width
                 y = cy + ry * ny * depth
                 z = cz + rz * nz
                 if flatten_sole:
                     z = max(z, cz - rz * 0.74)
                 uv = (0.75, 0.25)
-                if face_uv and ny < -0.42 and abs(nx) < 0.82 and -0.72 < nz < 0.56:
-                    u = 0.25 + 0.25 * (nx / 0.82)
-                    v = 0.50 + 0.50 * ((nz + 0.72) / 1.28)
-                    # Blender's glTF exporter flips V. Author the inverse so
-                    # the runtime receives the contract's [0..0.5, .5..1]
-                    # face island instead of silently placing it below .5.
-                    uv = (max(0.0, min(0.5, u)), 1.0 - max(0.5, min(1.0, v)))
                 row_vertices.append(self.vertex((x, y, z), color, bone, uv))
             rows.append(row_vertices)
         bottom_z = cz - rz * (0.74 if flatten_sole else 1.0)
@@ -163,12 +156,18 @@ class MeshBuilder:
         radii: list[float],
         material: int,
         color: tuple[float, float, float, float],
-        bone: str,
+        bone: str | dict[str, float] | list[str | dict[str, float]],
         sides: int,
         *,
         cyclic: bool = False,
     ) -> None:
         centers = [Vector(point) for point in points]
+        if isinstance(bone, list) and len(bone) != len(centers):
+            raise ValueError("tube needs one weight map per center")
+
+        def weight_at(index: int) -> str | dict[str, float]:
+            return bone[index] if isinstance(bone, list) else bone
+
         rows: list[list[int]] = []
         for index, center in enumerate(centers):
             before = centers[index - 1] if index else (centers[-1] if cyclic else centers[index])
@@ -183,7 +182,7 @@ class MeshBuilder:
             for side in range(sides):
                 angle = 2 * pi * side / sides
                 point = center + radii[index] * (normal * cos(angle) + binormal * sin(angle))
-                row.append(self.vertex(point, color, bone))
+                row.append(self.vertex(point, color, weight_at(index)))
             rows.append(row)
         pairs = len(rows) if cyclic else len(rows) - 1
         for index in range(pairs):
@@ -192,8 +191,8 @@ class MeshBuilder:
                 nxt = (side + 1) % sides
                 self.face((rows[index][side], rows[index][nxt], rows[nxt_row][nxt], rows[nxt_row][side]), material)
         if not cyclic:
-            start = self.vertex(centers[0], color, bone)
-            end = self.vertex(centers[-1], color, bone)
+            start = self.vertex(centers[0], color, weight_at(0))
+            end = self.vertex(centers[-1], color, weight_at(len(centers) - 1))
             for side in range(sides):
                 nxt = (side + 1) % sides
                 self.face((start, rows[0][side], rows[0][nxt]), material)
@@ -227,23 +226,23 @@ class MeshBuilder:
         This patch supplies the UV seam that a production model would cut during
         retopology while remaining welded visually to the same head volume.
         """
-        cx, cy, cz = (0.0, -0.015, 3.43)
-        rx, ry, rz = (0.58, 0.49, 0.67)
+        cx, cy, cz = (0.0, -0.015, 3.45)
+        rx, ry, rz = (0.56, 0.47, 0.61)
         grid: list[list[int]] = []
         for row in range(rows + 1):
             vf = row / rows
-            vertical = -0.63 + vf * 1.14
+            vertical = -0.46 + vf * 0.92
             line = []
             for column in range(columns + 1):
                 uf = column / columns
-                horizontal = -0.76 + uf * 1.52
+                horizontal = -0.60 + uf * 1.20
                 nx = sin(horizontal) * cos(vertical)
                 ny = -cos(horizontal) * cos(vertical)
                 nz = sin(vertical)
-                width = 1.04 + 0.07 * (1.0 - abs(nz)) - 0.10 * max(-nz, 0.0)
+                width = 1.03 + 0.04 * (1.0 - abs(nz)) - 0.12 * max(-nz, 0.0)
                 point = (
                     cx + rx * nx * width,
-                    cy + ry * ny - 0.012,
+                    cy + 0.86 * ry * ny - 0.014,
                     cz + rz * nz,
                 )
                 # Contract island: forehead V=1, chin V=.5. Blender's exporter
@@ -262,6 +261,14 @@ def torus_points(
 ) -> list[tuple[float, float, float]]:
     cx, cy, cz = center
     return [(cx + rx * cos(2 * pi * i / count), cy + ry * sin(2 * pi * i / count), cz) for i in range(count)]
+
+
+def arm_ring_points(
+    center: tuple[float, float, float], ry: float, rz: float, count: int
+) -> list[tuple[float, float, float]]:
+    """A ring perpendicular to the bind-pose arm, whose long axis is X."""
+    cx, cy, cz = center
+    return [(cx, cy + ry * cos(2 * pi * i / count), cz + rz * sin(2 * pi * i / count)) for i in range(count)]
 
 
 def rebuild_palette_material(material: bpy.types.Material) -> None:
@@ -318,30 +325,98 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         builder.tube(torus_points((0, 0, 1.76), 0.40, 0.26, segments), [0.035] * segments, 1, SHIRT_DARK, "Hips", max(5, segments // 2), cyclic=True)
         builder.tube(torus_points((0, 0, 2.57), 0.25, 0.18, segments), [0.030] * segments, 1, WHITE, "Spine2", max(5, segments // 2), cyclic=True)
 
-    # Sleeves, exposed arms and hands. Overlap is intentional: the pieces bend
-    # on their own canonical pivots without opening the proxy's joint gaps.
+    # Sleeves, tapered arms and articulated hand silhouettes. The exposed limb
+    # is one weighted surface across the elbow instead of three overlapping
+    # ellipsoids; that keeps the arm human when a clip bends it.
     for side, prefix in ((-1, "Left"), (1, "Right")):
-        builder.ellipsoid((0.55 * side, 0.0, 2.43), (0.25, 0.24, 0.22), 1, SHIRT, f"{prefix}Arm", segments, rings)
+        sleeve_points = [
+            (0.40 * side, 0.0, 2.43),
+            (0.56 * side, 0.0, 2.43),
+            (0.72 * side, 0.0, 2.43),
+        ]
+        builder.tube(
+            sleeve_points,
+            [0.235, 0.215, 0.175],
+            1,
+            SHIRT,
+            f"{prefix}Arm",
+            max(7, segments // 2),
+        )
         if detail >= 1:
             builder.tube(
-                torus_points((0.73 * side, 0.0, 2.43), 0.17, 0.17, max(8, segments // 2)),
-                [0.022] * max(8, segments // 2),
+                arm_ring_points((0.72 * side, 0.0, 2.43), 0.178, 0.178, max(10, segments)),
+                [0.022] * max(10, segments),
                 1,
                 WHITE,
                 f"{prefix}Arm",
                 max(5, segments // 3),
                 cyclic=True,
             )
-        builder.ellipsoid((0.86 * side, 0.0, 2.43), (0.30, 0.15, 0.16), 0, SKIN, f"{prefix}Arm", segments, rings)
-        builder.ellipsoid((1.18 * side, 0.0, 2.43), (0.25, 0.14, 0.15), 0, SKIN, f"{prefix}ForeArm", segments, rings)
-        builder.ellipsoid((1.46 * side, -0.015, 2.42), (0.19, 0.15, 0.17), 0, SKIN, f"{prefix}Hand", segments, rings)
+        arm_points = [
+            (0.68 * side, 0.0, 2.43),
+            (0.82 * side, 0.0, 2.43),
+            (0.98 * side, 0.0, 2.43),
+            (1.10 * side, 0.0, 2.43),
+            (1.24 * side, -0.005, 2.43),
+            (1.37 * side, -0.012, 2.425),
+        ]
+        arm_weights: list[str | dict[str, float]] = [
+            f"{prefix}Arm",
+            f"{prefix}Arm",
+            {f"{prefix}Arm": 0.72, f"{prefix}ForeArm": 0.28},
+            {f"{prefix}Arm": 0.30, f"{prefix}ForeArm": 0.70},
+            f"{prefix}ForeArm",
+            {f"{prefix}ForeArm": 0.65, f"{prefix}Hand": 0.35},
+        ]
+        builder.tube(
+            arm_points,
+            [0.145, 0.15, 0.132, 0.118, 0.112, 0.105],
+            0,
+            SKIN,
+            arm_weights,
+            max(7, segments // 2),
+        )
+
+        # Palm, four readable finger volumes and a separately rooted thumb.
+        # LOD2 keeps a mitten; the closer levels get silhouette definition.
+        builder.ellipsoid((1.43 * side, -0.015, 2.425), (0.16, 0.125, 0.145), 0, SKIN, f"{prefix}Hand", segments, rings)
+        if detail >= 1:
+            finger_count = 4 if detail >= 2 else 3
+            finger_offsets = (-0.075, -0.025, 0.025, 0.075) if finger_count == 4 else (-0.060, 0.0, 0.060)
+            finger_lengths = (0.115, 0.14, 0.135, 0.105) if finger_count == 4 else (0.115, 0.14, 0.11)
+            for z_offset, length in zip(finger_offsets, finger_lengths):
+                start_x = 1.50 * side
+                builder.tube(
+                    [
+                        (start_x, -0.025, 2.425 + z_offset),
+                        ((1.50 + length * 0.62) * side, -0.030, 2.425 + z_offset),
+                        ((1.50 + length) * side, -0.025, 2.425 + z_offset),
+                    ],
+                    [0.042, 0.040, 0.028],
+                    0,
+                    SKIN,
+                    f"{prefix}HandIndex1",
+                    6,
+                )
+            builder.tube(
+                [
+                    (1.40 * side, -0.075, 2.36),
+                    (1.47 * side, -0.12, 2.32),
+                    (1.54 * side, -0.13, 2.30),
+                ],
+                [0.050, 0.043, 0.026],
+                0,
+                SKIN,
+                f"{prefix}HandThumb1",
+                6,
+            )
 
     # A small drafting-team wrist band provides team identity without repainting
     # Junebug's signature red kit.
     if detail >= 1:
         builder.tube(
-            torus_points((-1.31, 0.0, 2.43), 0.14, 0.14, max(8, segments // 2)),
-            [0.025] * max(8, segments // 2),
+            arm_ring_points((-1.31, -0.005, 2.43), 0.115, 0.115, max(10, segments)),
+            [0.023] * max(10, segments),
             3,
             TEAM_MASK,
             "LeftForeArm",
@@ -364,26 +439,50 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
                 max(5, segments // 3),
                 cyclic=True,
             )
-        builder.ellipsoid((0.21 * side, -0.10, 0.22), (0.24, 0.34, 0.18), 1, SHOE, f"{prefix}Foot", segments, rings, flatten_sole=True)
-        builder.ellipsoid((0.21 * side, -0.15, 0.105), (0.25, 0.35, 0.075), 1, SOLE, f"{prefix}Foot", segments, max(5, rings // 2), flatten_sole=True)
-        if detail >= 1:
-            builder.tube(
-                [(-0.10 + 0.21 * side, -0.40, 0.26), (0.10 + 0.21 * side, -0.40, 0.26)],
-                [0.018, 0.018],
-                1,
-                WHITE,
-                f"{prefix}Foot",
-                5,
-            )
+        if detail == 0:
+            # At LOD2 the shoe is six pixels tall: preserve the toe/sole read,
+            # not invisible panel topology.
+            builder.ellipsoid((0.21 * side, -0.16, 0.20), (0.25, 0.38, 0.17), 1, SHOE, f"{prefix}Foot", segments, rings, flatten_sole=True)
+            builder.ellipsoid((0.21 * side, -0.17, 0.075), (0.265, 0.40, 0.065), 1, SOLE, f"{prefix}Foot", segments, rings, flatten_sole=True)
+        else:
+            # Layered sneaker: ankle collar, heel counter, long toe box, toe
+            # cap and separate outsole. These overlap as manufactured panels.
+            builder.ellipsoid((0.21 * side, 0.015, 0.27), (0.205, 0.21, 0.18), 1, SHOE, f"{prefix}Foot", segments, rings, flatten_sole=True)
+            builder.ellipsoid((0.21 * side, 0.10, 0.255), (0.20, 0.16, 0.155), 1, SHIRT_DARK, f"{prefix}Foot", segments, rings, flatten_sole=True)
+            builder.ellipsoid((0.21 * side, -0.17, 0.19), (0.24, 0.32, 0.145), 1, SHOE, f"{prefix}Foot", segments, rings, flatten_sole=True)
+            builder.ellipsoid((0.21 * side, -0.405, 0.16), (0.215, 0.085, 0.078), 1, WHITE, f"{prefix}Foot", segments, max(4, rings // 2), flatten_sole=True)
+            builder.ellipsoid((0.21 * side, -0.14, 0.075), (0.255, 0.36, 0.065), 1, SOLE, f"{prefix}Foot", segments, max(4, rings // 2), flatten_sole=True)
+            lace_rows = (-0.12, -0.21, -0.30) if detail >= 2 else (-0.22,)
+            for lace_y in lace_rows:
+                lace_z = 0.315 - 0.22 * max(0.0, -lace_y - 0.12)
+                builder.tube(
+                    [(-0.12 + 0.21 * side, lace_y, lace_z), (0.12 + 0.21 * side, lace_y, lace_z)],
+                    [0.014, 0.014],
+                    1,
+                    WHITE,
+                    f"{prefix}Foot",
+                    5,
+                )
+            if detail >= 2:
+                # A sidewall stripe survives at hero scale; LOD1 keeps the
+                # panel/toe/sole silhouette without this small tube.
+                outer_x = 0.21 * side + 0.235 * side
+                builder.tube(
+                    [(outer_x, -0.02, 0.18), (outer_x, -0.24, 0.15), (outer_x, -0.42, 0.135)],
+                    [0.014, 0.014, 0.012],
+                    1,
+                    WHITE,
+                    f"{prefix}Foot",
+                    5,
+                )
 
     # Neck, ears and a face whose cheek-to-chin taper follows the turnaround.
     builder.ellipsoid((0.0, 0.0, 2.69), (0.18, 0.16, 0.20), 0, SKIN_SHADOW, "Neck", segments, rings)
-    builder.ellipsoid((0.0, -0.015, 3.43), (0.58, 0.49, 0.67), 0, SKIN, "Head", segments + 4, rings + 2)
-    builder.face_patch(max(5, segments // 2), max(4, rings // 2))
+    builder.ellipsoid((0.0, -0.015, 3.45), (0.56, 0.47, 0.61), 0, SKIN, "Head", segments + 4, rings + 2, face_shape=True)
+    builder.face_patch(max(6, segments // 2), max(5, rings // 2))
     if detail >= 1:
-        builder.ellipsoid((-0.57, 0.0, 3.38), (0.11, 0.075, 0.15), 0, SKIN, "Head", max(10, segments // 2), max(6, rings // 2))
-        builder.ellipsoid((0.57, 0.0, 3.38), (0.11, 0.075, 0.15), 0, SKIN, "Head", max(10, segments // 2), max(6, rings // 2))
-        builder.ellipsoid((0.0, -0.475, 3.33), (0.075, 0.055, 0.10), 0, SKIN_SHADOW, "Head", max(10, segments // 2), max(6, rings // 2))
+        builder.ellipsoid((-0.55, 0.0, 3.43), (0.105, 0.07, 0.13), 0, SKIN, "Head", max(10, segments // 2), max(6, rings // 2))
+        builder.ellipsoid((0.55, 0.0, 3.43), (0.105, 0.07, 0.13), 0, SKIN, "Head", max(10, segments // 2), max(6, rings // 2))
 
     # Hair is one designed mass: skull cap + hairline + high swept ponytail.
     builder.hair_cap(max(10, segments // 2), max(5, rings // 2))
@@ -485,7 +584,7 @@ def main() -> None:
 
     settings = {
         "kid_nostrike_LOD0": (14, 8, 2),
-        "kid_nostrike_LOD1": (9, 5, 1),
+        "kid_nostrike_LOD1": (8, 4, 1),
         "kid_nostrike_LOD2": (5, 3, 0),
     }
     built = [build_lod(name, armature, *config) for name, config in settings.items()]

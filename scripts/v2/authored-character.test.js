@@ -117,6 +117,38 @@ function stateErrors(production, reviews) {
           }
         }
         if (colours.size < 3) errors.push(`${id}: signature wardrobe colour blocks did not survive export`);
+
+        const skin = gltf.json.skins?.[0];
+        const jointNames = skin?.joints?.map((nodeIndex) => gltf.json.nodes?.[nodeIndex]?.name) ?? [];
+        const fingerInfluence = new Map(
+          ['LeftHandThumb1', 'LeftHandIndex1', 'RightHandThumb1', 'RightHandIndex1'].map((name) => [name, 0])
+        );
+        let blendedArmVertices = 0;
+        for (const mesh of gltf.json.meshes ?? []) {
+          if (!mesh.name?.includes('LOD0')) continue;
+          for (const primitive of mesh.primitives ?? []) {
+            const jointAccessor = primitive.attributes?.JOINTS_0;
+            const weightAccessor = primitive.attributes?.WEIGHTS_0;
+            if (jointAccessor === undefined || weightAccessor === undefined) continue;
+            const joints = readAccessor(gltf, jointAccessor);
+            const weights = readAccessor(gltf, weightAccessor);
+            for (let vertex = 0; vertex < joints.length / 4; vertex++) {
+              let active = 0;
+              for (let part = 0; part < 4; part++) {
+                const at = vertex * 4 + part;
+                if (weights[at] <= 0) continue;
+                active++;
+                const name = jointNames[joints[at]];
+                if (fingerInfluence.has(name)) fingerInfluence.set(name, fingerInfluence.get(name) + 1);
+              }
+              if (active > 1) blendedArmVertices++;
+            }
+          }
+        }
+        for (const [name, count] of fingerInfluence) {
+          if (count < 6) errors.push(`${id}: ${name} has no authored finger volume`);
+        }
+        if (blendedArmVertices < 20) errors.push(`${id}: arms have no continuous two-bone deformation bands`);
       }
     }
   }

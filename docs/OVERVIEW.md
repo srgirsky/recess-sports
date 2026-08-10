@@ -1822,6 +1822,11 @@ Junebug is the replacement reference-sculpt pilot. Her three LODs were rebuilt
 against the turnaround rather than deformed from the proxy: tapered head and
 body proportions, skull-hugging hair and swept ponytail, signature red/coral
 kit, piping, cuffs and shoes, plus a character-specific 16-expression atlas.
+The anatomy polish replaces intersecting arm blobs with tapered two-bone
+surfaces, corrects cuff orientation, adds palm/finger/thumb silhouettes, builds
+layered sneakers with real soles and toe caps, and refines the jaw and facial
+feature construction. Lower LODs retain the read without carrying hero-only
+finger, lace or sidewall topology.
 The runtime preserves that personal palette and applies team colour only to a
 small accent surface. The animation spike now loads the delivered model through
 `CharacterFactory`—and prints its source—instead of always showing a proxy, so
