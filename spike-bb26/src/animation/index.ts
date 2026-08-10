@@ -50,10 +50,19 @@ export function init(ctx: Ctx): void {
   // uncoil that carries arms and bat together.
   chars.pose(cast.batter, 'stanceBat');
   const stance = batter.capture();
+  // Load: coil deeper over the flexed back leg AND gather the front knee —
+  // verdict-001 wanted flexed knees and a real weight shift, not a mannequin.
   const load = derive(
     stance,
-    { hips: [-0.05, -0.36, 0], legR: [-0.5, 0, 0], kneeR: [0.55, 0, 0], head: [0, 0.32, 0] },
-    [0, -0.07, 0],
+    {
+      hips: [-0.05, -0.36, 0],
+      legR: [-0.4, 0, 0],
+      kneeR: [0.5, 0, 0],
+      legL: [-0.08, 0, 0],
+      kneeL: [0.22, 0, 0],
+      head: [0, 0.32, 0],
+    },
+    [0, -0.12, 0],
   );
   const contact = derive(
     stance,
@@ -94,6 +103,14 @@ export function init(ctx: Ctx): void {
   // follow-through are authored as deltas over the zeroed 'stand' pose.
   chars.pose(cast.pitcher, 'windup');
   const windup = pitcher.capture();
+  // End state of the capture-window hold: knee tucked higher, back arched a
+  // touch more, up on the planted toes — beat.ts drifts windup → windupPeak
+  // across 2600–3600ms so the held peak never photographs frozen.
+  const windupPeak = derive(
+    windup,
+    { legL: [-0.22, 0, 0], kneeL: [0.12, 0, 0], hips: [-0.09, 0, 0] },
+    [0, 0.05, 0],
+  );
   chars.pose(cast.pitcher, 'stand');
   const zero = pitcher.capture();
   const set = derive(zero, {
@@ -142,8 +159,17 @@ export function init(ctx: Ctx): void {
     [0, -0.35, 0],
   );
 
-  // Everyone else keeps the pose the characters owner placed them in.
+  // Everyone else keeps the pose the characters owner placed them in — except
+  // the catcher's glove arm: the crouch preset's solver puts the mitt at chest
+  // height, which reads as a hanging arm from the behind-plate cameras
+  // (verdict-001: "catcher stands"). Override with an authored mitt-up-beside-
+  // the-head arm — the signature catcher silhouette (absolute joints, same
+  // trick as the contact/follow arms above).
   const catcherBase = catcher.capture();
+  catcherBase.rot.armL = [-2.25, 0, 0.32]; // up-forward (negative x raises a hanging limb)
+  catcherBase.rot.elbowL = [-0.45, 0, 0];
+  catcherBase.rot.handL = [0, 0, 0];
+  catcherBase.rot.head = [-0.18, 0, 0]; // chin up under the mitt, eyes on the pitch
   const fielderBases = fielders.map((r) => r.capture());
   const watcherBases = watchers.map((r) => r.capture());
 
@@ -167,7 +193,10 @@ export function init(ctx: Ctx): void {
     spots.push({
       to: new THREE.Vector3(Math.sin(angle) * r, 0.19, Math.cos(angle) * r),
       apexFt: rng.range(26, 42),
-      durMs: rng.range(1900, 2350),
+      // Short enough that contact (4300) + flight lands INSIDE the 6000ms
+      // cycle — the crowd head-tracks the whole flight instead of snapping
+      // back mid-air at the cycle wrap.
+      durMs: rng.range(1450, 1700),
     });
   }
 
@@ -181,7 +210,7 @@ export function init(ctx: Ctx): void {
     emit: (event, payload) => ctx.emit(event, payload),
     batter,
     pitcher,
-    snaps: { stance, load, contact, follow, set, windup, release, followP },
+    snaps: { stance, load, contact, follow, set, windup, windupPeak, release, followP },
     ball,
     pitcherHand,
     pitcherHandBall,
@@ -198,17 +227,38 @@ export function init(ctx: Ctx): void {
     z: rig.kid.position.z,
     yaw: rig.kid.rotation.y,
   }));
+  // Catcher rises to meet the incoming pitch — mitt lifts, hips come up a
+  // touch — then settles after contact. Additive, called AFTER the idle
+  // re-bases the crouch each tick.
+  const catcherRise = (tMs: number): void => {
+    const c = beat.cycleTime(tMs);
+    const env =
+      c < T.release
+        ? 0
+        : c < T.contact
+          ? easeInOut((c - T.release) / (T.contact - T.release))
+          : c < T.contact + 500
+            ? 1 - easeInOut((c - T.contact) / 500)
+            : 0;
+    if (env <= 0) return;
+    catcher.addHipsPos(0, 0.14 * env);
+    catcher.add('armL', -0.28 * env, 0, 0);
+    catcher.add('hips', -0.08 * env, 0, 0);
+  };
+
   const trackBall = (tMs: number): void => {
     const cycle = Math.floor(tMs / PERIOD_MS);
     const c = tMs - cycle * PERIOD_MS;
     const spot = spots[cycle % spots.length];
     const landAt = T.contact + spot.durMs;
-    if (c < T.contact + 60 || c > landAt + 600) return;
+    // Fade completes by the cycle wrap, however late the ball lands.
+    const fadeMs = Math.max(200, Math.min(600, PERIOD_MS - landAt));
+    if (c < T.contact + 60 || c > landAt + fadeMs) return;
     const env =
       c < T.contact + 360
         ? easeInOut((c - T.contact - 60) / 300)
         : c > landAt
-          ? 1 - easeInOut((c - landAt) / 600)
+          ? 1 - easeInOut((c - landAt) / fadeMs)
           : 1;
     for (const tr of trackers) {
       const want = wrap(Math.atan2(spot.to.x - tr.x, spot.to.z - tr.z) - tr.yaw);
@@ -228,6 +278,7 @@ export function init(ctx: Ctx): void {
     batterIdle.apply(tMs);
     pitcherIdle.apply(tMs);
     catcherIdle.apply(tMs);
+    catcherRise(tMs);
     for (const idle of fielderIdles) idle.apply(tMs);
     for (const idle of watcherIdles) idle.apply(tMs);
 

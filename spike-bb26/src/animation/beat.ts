@@ -3,37 +3,45 @@
 // pitcher rigs every tick, with edge-triggered events (each fires once per
 // cycle, in ascending time order, so even a 100ms clamped dt cannot skip one).
 //
-// Timeline (ms into the cycle) — chosen so the default capture settle
-// (180 × 16.7ms ≈ 3006ms) photographs the pitcher at the TOP of his windup and
-// the batter mid-load: the two best anticipation silhouettes in the beat.
+// Timeline (ms into the cycle) — built around the CAPTURE WINDOW, not a
+// capture instant. The capture settle is 180 × 16.7ms ≈ 3006ms of manual
+// steps, but the rAF loop free-runs on real time between page-ready and the
+// first manual step (main.ts), so the photograph actually lands anywhere in
+// ≈[3000, 3650] (measured ~3400 on this machine). Verdict-001 caught the
+// consequence: a timeline tuned to exactly 3006 photographed the pitcher
+// mid release-blend — a weak nothing pose. So the two best anticipation
+// silhouettes are now HELD across the whole window: the pitcher's knee-up
+// windup peak spans 2600–3600 (drifting higher the whole time, so it never
+// reads frozen), and the batter's coil spans 2600–4100 with a residual
+// waggle riding it (no two capture instants show identical arms).
 //
 //     0        set / stance + waggle (idle life on top)
-//  2000  ───  pitch:windup   pitcher: set → leg-lift windup (hold at peak)
-//  2450        batter starts coiling (load)
-//  3050        pitcher drives: windup → release stride
-//  3300  ───  pitch:release  ball leaves the hand → plate (450ms)
-//  3550  ───  bat:swing      load → contact whip (200ms)
-//  3750  ───  bat:contact    ball relaunches plate → outfield (~2.1s)
-//  3900        both settle into follow-through holds
-//  5850ish ─  ball:land      (emitted by index.ts when the hit flight ends)
-//  4900–6000   unwind back to set / stance — the cycle breathes out.
+//  2000  ───  pitch:windup   pitcher: set → leg-lift windup
+//  2600        windup peak hold begins (knee keeps creeping up); batter coils
+//  3600        pitcher drives: peak → release stride
+//  3850  ───  pitch:release  ball leaves the hand → plate (450ms)
+//  4100  ───  bat:swing      load → contact whip (200ms)
+//  4300  ───  bat:contact    ball relaunches plate → outfield (~1.6s)
+//  4450        both settle into follow-through holds
+//  5750–6000   ball:land     (emitted by index.ts when the hit flight ends)
+//  5300–6000   unwind back to set / stance — the cycle breathes out.
 
 import * as THREE from 'three';
-import { Rig, Snapshot, easeIn, easeInOut, easeOut, clamp01 } from './rig';
+import { Rig, Snapshot, easeIn, easeInOut, easeOut } from './rig';
 import { FlightBall } from './ball';
 
 export const PERIOD_MS = 6000;
 
 export const T = {
   windup: 2000,
-  loadStart: 2450,
-  drive: 3050,
-  release: 3300,
+  loadStart: 2600,
+  drive: 3600,
+  release: 3850,
   pitchMs: 450,
-  swing: 3550,
-  contact: 3750,
-  swingEnd: 3900,
-  unwind: 4900,
+  swing: 4100,
+  contact: 4300,
+  swingEnd: 4450,
+  unwind: 5300,
 } as const;
 
 /** Where the bat meets the ball, in feet over the plate. */
@@ -54,6 +62,7 @@ export type BeatDeps = {
     // pitcher family
     set: Snapshot;
     windup: Snapshot;
+    windupPeak: Snapshot; // windup + the hold drift's end state — drive blends FROM here, no pop
     release: Snapshot;
     followP: Snapshot;
   };
@@ -108,25 +117,31 @@ export function makeBeat(d: BeatDeps) {
     } else if (c < 2600) {
       p.blend(s.set, s.windup, easeInOut((c - T.windup) / 600));
     } else if (c < T.drive) {
-      // Hold the peak with a balance tremble — a held pose that still lives.
-      p.apply(s.windup);
-      const w = Math.sin(tMs * 0.02) * 0.018;
+      // The capture-window hold: the knee CREEPS higher and the back arches
+      // for the full second (windup → windupPeak), a balance tremble rides on
+      // top — any instant in here photographs as a live mid-windup.
+      const u = (c - 2600) / (T.drive - 2600);
+      p.blend(s.windup, s.windupPeak, u);
+      const w = Math.sin(tMs * 0.02) * 0.02;
       p.add('hips', 0, 0, w);
       p.add('armL', 0, 0, -w * 1.5);
       p.add('armR', 0, 0, w * 1.5);
     } else if (c < T.release) {
-      p.blend(s.windup, s.release, easeIn((c - T.drive) / (T.release - T.drive)));
+      p.blend(s.windupPeak, s.release, easeIn((c - T.drive) / (T.release - T.drive)));
     } else if (c < T.swingEnd) {
       p.blend(s.release, s.followP, easeOut((c - T.release) / (T.swingEnd - T.release)));
-    } else if (c < 5200) {
+    } else if (c < 5400) {
       p.apply(s.followP);
       // Straighten up a little while holding.
-      const u = easeInOut((c - T.swingEnd) / 1300);
+      const u = easeInOut((c - T.swingEnd) / 950);
       p.add('hips', -0.25 * u, 0, 0);
       p.addHipsPos(0, 0.12 * u);
     } else {
-      const from = c - 5200;
-      p.blend(s.followP, s.set, easeInOut(from / (PERIOD_MS - 5200)));
+      const u = easeInOut((c - 5400) / (PERIOD_MS - 5400));
+      p.blend(s.followP, s.set, u);
+      // Carry the hold's straighten out with the blend so 5400 doesn't pop.
+      p.add('hips', -0.25 * (1 - u), 0, 0);
+      p.addHipsPos(0, 0.12 * (1 - u));
     }
   };
 
@@ -141,22 +156,36 @@ export function makeBeat(d: BeatDeps) {
     bat.quaternion.copy(QH.invert().multiply(QD));
   };
 
+  // Continuous bat waggle, weight w ∈ [0,1]: the bat TIP circles (the classic
+  // read — verdict-001 wanted no two captures showing identical arms), the
+  // hips micro-twist under it, knees pulse. Stacked additively AFTER a
+  // blend/apply, so it rides the stance AND the load.
+  const waggle = (w: number, tMs: number): void => {
+    if (w <= 0) return;
+    const b = d.batter;
+    const t = tMs / 1000;
+    b.add('hips', 0, 0.06 * w * Math.sin(TAU * 0.7 * t), 0);
+    b.add('armR', 0.05 * w * Math.sin(TAU * 0.9 * t + 1.3), 0, 0.04 * w * Math.sin(TAU * 0.7 * t));
+    b.add('armL', 0.05 * w * Math.sin(TAU * 0.9 * t + 1.3), 0, 0);
+    b.add('elbowR', 0.05 * w * Math.sin(TAU * 0.8 * t + 0.6), 0, 0);
+    b.add('kneeL', 0.05 * w * Math.sin(TAU * 0.5 * t + 0.4), 0, 0);
+    b.add('kneeR', 0.06 * w * Math.sin(TAU * 0.5 * t + 2.1), 0, 0);
+    // The visible part: circle the barrel around its cocked rest orientation.
+    b.add('bat', 0.14 * w * Math.sin(TAU * 0.75 * t), 0, 0.14 * w * Math.cos(TAU * 0.75 * t));
+  };
+
   const batterPose = (c: number, tMs: number): void => {
     const b = d.batter;
     const s = d.snaps;
     if (c < T.loadStart) {
       b.apply(s.stance);
-      // Continuous bat waggle: hips micro-twist + arm circles move the tip.
-      const w = clamp01((T.loadStart - c) / 300); // fade out into the load
-      const t = tMs / 1000;
-      b.add('hips', 0, 0.055 * w * Math.sin(TAU * 0.8 * t), 0);
-      b.add('armR', 0.055 * w * Math.sin(TAU * 0.9 * t + 1.3), 0, 0.04 * w * Math.sin(TAU * 0.7 * t));
-      b.add('armL', 0.055 * w * Math.sin(TAU * 0.9 * t + 1.3), 0, 0);
-      b.add('kneeL', 0.05 * w * Math.sin(TAU * 0.5 * t + 0.4), 0, 0);
-      b.add('kneeR', 0.05 * w * Math.sin(TAU * 0.5 * t + 2.1), 0, 0);
+      waggle(1, tMs);
     } else if (c < T.swing) {
       // Load: coil away from the pitcher, front knee gathers — anticipation.
-      b.blend(s.stance, s.load, easeInOut((c - T.loadStart) / (T.swing - T.loadStart)));
+      // The waggle fades but never dies: mid-load captures stay alive too.
+      const u = easeInOut((c - T.loadStart) / (T.swing - T.loadStart));
+      b.blend(s.stance, s.load, u);
+      waggle(1 - 0.65 * u, tMs);
     } else if (c < T.contact) {
       const u = easeIn((c - T.swing) / (T.contact - T.swing));
       b.blend(s.load, s.contact, u);
