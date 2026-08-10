@@ -630,16 +630,22 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
 
     if detail >= 2:
         # White athletic piping is geometry, not a texture that disappears at
-        # 40 pixels. It traces the shirt's shoulder line from either side.
+        # 40 pixels — and it lives ON THE SLEEVES, as the turnaround draws it.
+        # Chest-run piping was bound to Spine2 while the deltoid caps follow
+        # the Arm bones, so no path could stay on the cloth through a clip;
+        # sleeve stripes share the sleeve's own bone and surface, so they
+        # cannot separate from it in any pose.
         for side in (-1, 1):
-            builder.tube(
-                [(0.14 * side, -0.275, 2.54), (0.38 * side, -0.255, 2.48), (0.58 * side, -0.20, 2.41)],
-                [0.022, 0.022, 0.020],
-                1,
-                WHITE,
-                "Spine2",
-                6,
-            )
+            for lateral in (-0.062, 0.062):
+                stripe = []
+                for step in range(4):
+                    t = step / 3
+                    x_abs = 0.455 + (0.705 - 0.455) * t
+                    sleeve_r = 0.235 + (0.175 - 0.235) * max(0.0, (x_abs - 0.40) / 0.32)
+                    lift = (max(0.0, sleeve_r**2 - lateral**2) ** 0.5) - 0.007
+                    stripe.append((x_abs * side, lateral, 2.43 + lift))
+                bone = ("Left" if side < 0 else "Right") + "Arm"
+                builder.tube(stripe, [0.014] * 4, 1, WHITE, bone, 5)
 
 
 def build_lod(name: str, armature: bpy.types.Object, segments: int, rings: int, detail: int) -> bpy.types.Object:

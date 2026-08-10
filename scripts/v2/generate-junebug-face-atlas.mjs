@@ -59,14 +59,16 @@ function face(name) {
   // No drawn nose: the sculpt carries a real nose form, and a mark on top of
   // it doubled the feature and read as a sticker.
 
-  let lips = `<path d="M51 89 Q64 94 77 89" fill="none" stroke="${mouth}" stroke-width="5" stroke-linecap="round"/>
-    <path d="M56 96 Q64 99 72 96" fill="none" stroke="${nose}" stroke-width="2" opacity="0.5" stroke-linecap="round"/>`;
+  // Closed lips are a SHAPE — an upper edge with a soft cupid's bow over a
+  // fuller lower lip — never a single stroke, which reads as a drawn-on line.
+  let lips = `<path d="M50 88 Q57 85.5 64 87.2 Q71 85.5 78 88 Q71 93 64 93 Q57 93 50 88Z" fill="${mouth}"/>
+    <path d="M55 96 Q64 99.5 73 96" fill="none" stroke="${nose}" stroke-width="2" opacity="0.45" stroke-linecap="round"/>`;
   if (name === 'grin' || name === 'cheer') lips = `<path d="M47 84 Q64 103 81 84 Q64 94 47 84Z" fill="${mouth}" stroke="${ink}" stroke-width="3"/><path d="M51 86 Q64 93 77 86" fill="none" stroke="${white}" stroke-width="5"/>`;
-  if (name === 'determined' || name === 'angry') lips = `<path d="M53 91 L75 89" fill="none" stroke="${mouth}" stroke-width="5" stroke-linecap="round"/>`;
+  if (name === 'determined' || name === 'angry') lips = `<path d="M52 90.5 Q64 88 76 89.5 Q64 94 52 90.5Z" fill="${mouth}"/>`;
   if (name === 'worried' || name === 'upset') lips = `<path d="M51 96 Q64 82 77 96" fill="none" stroke="${mouth}" stroke-width="5" stroke-linecap="round"/>`;
   if (name === 'surprised') lips = `<ellipse cx="64" cy="90" rx="8" ry="11" fill="${mouth}"/>`;
   if (name === 'tongue') lips = `<path d="M47 84 Q64 103 81 84 Q64 94 47 84Z" fill="${mouth}" stroke="${ink}" stroke-width="3"/><ellipse cx="64" cy="95" rx="8" ry="6" fill="#df6c78"/>`;
-  if (blink || sleepy || wink) lips = `<path d="M54 90 Q64 93 74 90" fill="none" stroke="${mouth}" stroke-width="4" stroke-linecap="round"/>`;
+  if (blink || sleepy || wink) lips = `<path d="M54 89 Q64 87 74 89 Q64 92.5 54 89Z" fill="${mouth}"/>`;
 
   return `${brows}${eyes}${lips}`;
 }
