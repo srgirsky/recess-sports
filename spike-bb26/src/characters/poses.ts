@@ -157,24 +157,27 @@ export function pose(kid: THREE.Group, name: PoseName): void {
       break;
 
     case 'stanceBat': {
-      // Open cartoon stance (steam-02): feet spread, knees flexed, both hands
-      // stacked at the back shoulder, bat cocked high, eyes on the mound.
-      set(j.legL, -0.12, 0, 0.3);
-      set(j.legR, -0.12, 0, -0.3);
-      set(j.kneeL, 0.28);
-      set(j.kneeR, 0.28);
-      plant(j.footL, -0.12, 0.28);
-      plant(j.footR, -0.12, 0.28);
+      // Open cartoon stance (steam-02 / frame-080): ASYMMETRIC on purpose —
+      // verdict-001 called the old capture a symmetric mannequin. Front (L)
+      // foot open with a straighter leg, back (R) knee deeply flexed with the
+      // weight coiled over it, shoulders turned in, bat cocked ~45° over the
+      // rear shoulder, back elbow high, eyes on the mound.
+      set(j.legL, -0.06, 0.28, 0.34); // front foot open, toe toward the mound
+      set(j.legR, -0.22, 0, -0.26);
+      set(j.kneeL, 0.14);
+      set(j.kneeR, 0.46); // weight sits on the bent back leg
+      plant(j.footL, -0.06, 0.14);
+      plant(j.footR, -0.22, 0.46);
       if (j.hips) {
-        j.hips.position.y -= 0.09;
-        j.hips.rotation.set(-0.06, -0.12, 0.02);
+        j.hips.position.y -= 0.11;
+        j.hips.rotation.set(-0.05, -0.24, -0.07); // coiled + tipped over the back leg
       }
-      const batDir = new THREE.Vector3(-0.42, 0.82, -0.45).normalize();
-      const rHand = new THREE.Vector3(-0.58, 1.42, -0.18); // by the back shoulder
+      const batDir = new THREE.Vector3(-0.62, 0.66, -0.48).normalize(); // ~45° cock
+      const rHand = new THREE.Vector3(-0.62, 1.5, -0.22); // back elbow HIGH
       const chainR = solveArm(j, 'R', rHand);
       aimBat(j, chainR, batDir);
-      solveArm(j, 'L', rHand.clone().addScaledVector(batDir, 0.26).add(V1.set(0.06, 0, 0.04)));
-      set(j.head, -0.06, -0.35, 0.04);
+      solveArm(j, 'L', rHand.clone().addScaledVector(batDir, 0.26).add(V1.set(0.06, -0.04, 0.06)));
+      set(j.head, -0.06, -0.38, 0.05);
       break;
     }
 

@@ -41,10 +41,12 @@ export function buildHair(mats: MatCache, colorKey: string, style: HairStyle, rn
 
   switch (style) {
     case 'crew':
-      g.add(shell(mat, [0.88, 0.83, 0.8], 1.8, -0.3));
+      // Theta 2.05: the shell must wrap the lower back of the skull, or a
+      // forward-pitched head (catcher, fielders) shows bare scalp under a cap.
+      g.add(shell(mat, [0.88, 0.83, 0.8], 2.05, -0.3));
       g.add(fringe(mat));
-      // Nape mass — pokes out under a cap so capped kids keep their hair color.
-      g.add(blob(mat, 1, [0.52, 0.42, 0.3], [0, -0.28, -0.62], 14));
+      // Nape mass — wide, so the whole under-cap back edge stays hair-colored.
+      g.add(blob(mat, 1, [0.72, 0.48, 0.34], [0, -0.3, -0.58], 14));
       break;
     case 'afro': {
       g.add(shell(mat, [0.88, 0.83, 0.8], 1.9, -0.25));
@@ -111,21 +113,23 @@ export function buildHair(mats: MatCache, colorKey: string, style: HairStyle, rn
   return g;
 }
 
-/** Ball cap: crown shell over the hair, half-disc brim, button. The crown must
- * reach below the skull equator at the back or the hair shows as a second cap
- * color (the two-tone-beret bug of the first capture). */
+/** Ball cap: crown shell riding HIGH on the skull (verdict-001: the old
+ * near-sphere crown swallowed the head to the shoulders — a neckless dome),
+ * with a chunky blob brim as a separate mass, a crown seam, and a button. The
+ * crown still dips below the hair shell at the back so hair never reads as a
+ * second cap color (the two-tone-beret bug of the first capture). */
 export function buildCap(mats: MatCache, colorKey: string): THREE.Group {
   const g = new THREE.Group();
   g.name = 'cap';
   const mat = mats.get(colorKey);
-  const crown = shell(mat, [0.99, 0.91, 0.95], 1.58, -0.24);
-  crown.position.y = -0.02;
+  const crown = shell(mat, [0.95, 0.86, 0.9], 1.78, -0.28);
+  crown.position.y = 0.03;
   g.add(crown);
-  const brim = new THREE.Mesh(new THREE.CircleGeometry(0.55, 18, Math.PI, Math.PI), mats.get(colorKey, 0.92, true));
-  brim.position.set(0, 0.3, 0.68);
-  brim.rotation.x = -Math.PI / 2 + 0.32;
-  brim.scale.set(1.1, 1.3, 1);
+  // Brim: a fat squashed blob, not a paper disc — it must read as its own mass.
+  const brim = blob(mats.get(colorKey, 0.94), 0.5, [1.12, 0.16, 0.92], [0, 0.34, 0.88], 16);
+  brim.rotation.x = 0.3;
   g.add(brim);
-  g.add(blob(mats.get(colorKey, 0.8), 0.07, [1, 0.7, 1], [0, 0.86, -0.04], 8));
+  // Front seam panel + button in a darker shade — construction lines.
+  g.add(blob(mats.get(colorKey, 0.85), 0.09, [1, 0.65, 1], [0, 0.9, 0.02], 8));
   return g;
 }

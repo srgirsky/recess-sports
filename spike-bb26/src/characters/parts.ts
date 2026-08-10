@@ -30,6 +30,24 @@ export class MatCache {
     }
     return m;
   }
+
+  /** Self-lit variant for face features (sclera, teeth): partly emissive so eye
+   * whites stay WHITE on the shadow side of the head — verdict-001's "faces are
+   * unreadable dark smudges at gameplay distance" was mostly Lambert shading. */
+  glow(key: string, shade = 1, strength = 0.55): THREE.MeshLambertMaterial {
+    const id = `${key}|${shade}|g${strength}`;
+    let m = this.cache.get(id);
+    if (!m) {
+      const c = new THREE.Color(this.materials.rawColor(key));
+      if (shade !== 1) c.multiplyScalar(shade);
+      m = new THREE.MeshLambertMaterial({
+        color: c.clone().multiplyScalar(1 - strength * 0.55),
+        emissive: c.clone().multiplyScalar(strength),
+      });
+      this.cache.set(id, m);
+    }
+    return m;
+  }
 }
 
 /** Squashed-sphere blob — the core rounded form. */
@@ -59,20 +77,29 @@ export function lathe(mat: THREE.Material, profile: [number, number][], segs = 2
   return new THREE.Mesh(new THREE.LatheGeometry(pts, segs), mat);
 }
 
-/** Mitten hand: palm blob + thumb bump. side: -1 right, +1 left (thumb faces in). */
+/** Chunky mitt hand: fat palm + real thumb + two knuckle bumps so fingers read
+ * in silhouette. side: -1 right, +1 left (thumb faces in). */
 export function mittenHand(skin: THREE.Material, side: number): THREE.Group {
   const g = new THREE.Group();
-  g.add(blob(skin, 0.165, [0.88, 1.05, 1.0], [0, -0.07, 0]));
-  g.add(blob(skin, 0.078, [1, 1, 1], [-side * 0.12, -0.02, 0.08], 12));
+  g.add(blob(skin, 0.2, [0.9, 1.05, 1.0], [0, -0.09, 0]));
+  // Thumb: a stubby capsule angled off the palm, not a pea.
+  const thumb = blob(skin, 0.1, [0.85, 1.35, 0.85], [-side * 0.17, -0.04, 0.1], 12);
+  thumb.rotation.z = side * 0.55;
+  g.add(thumb);
+  // Knuckle bumps along the outer edge — finger hint at distance.
+  g.add(blob(skin, 0.085, [1, 1.1, 1], [side * 0.13, -0.22, 0.05], 10));
+  g.add(blob(skin, 0.075, [1, 1.05, 1], [side * 0.04, -0.27, 0.06], 10));
   return g;
 }
 
-/** Chunky cartoon sneaker, toe pointing +z, ankle at origin, sole at y=-0.2. */
+/** Chunky cartoon sneaker, toe pointing +z, ankle at origin, sole at y=-0.2.
+ * Oversized on purpose — shoe mass is a silhouette anchor (verdict-001). */
 export function sneaker(body: THREE.Material, trim: THREE.Material): THREE.Group {
   const g = new THREE.Group();
-  g.add(blob(body, 0.26, [0.92, 0.72, 1.3], [0, -0.02, 0.1]));
-  g.add(blob(trim, 0.27, [0.9, 0.3, 1.32], [0, -0.13, 0.1]));
-  g.add(blob(trim, 0.14, [1.05, 0.72, 0.8], [0, -0.09, 0.42], 14));
+  g.add(blob(body, 0.3, [0.95, 0.75, 1.35], [0, 0.0, 0.12]));
+  g.add(blob(trim, 0.31, [0.94, 0.34, 1.4], [0, -0.13, 0.12])); // fat white sole
+  g.add(blob(trim, 0.17, [1.05, 0.78, 0.85], [0, -0.06, 0.48], 14)); // toe cap
+  g.add(blob(body, 0.16, [1, 0.9, 0.8], [0, 0.06, -0.22], 12)); // heel collar
   return g;
 }
 
@@ -113,9 +140,19 @@ export function glove(leather: THREE.Material, dark: THREE.Material, side: numbe
   return g;
 }
 
-/** Baseball for the pitcher's hand. */
-export function ball(white: THREE.Material): THREE.Mesh {
-  const b = new THREE.Mesh(new THREE.SphereGeometry(0.12, 14, 10), white);
-  b.name = 'ball';
-  return b;
+/** Baseball for the pitcher's hand — white with two red stitch arcs. */
+export function ball(white: THREE.Material, stitch?: THREE.Material): THREE.Group {
+  const g = new THREE.Group();
+  g.name = 'ball';
+  g.add(new THREE.Mesh(new THREE.SphereGeometry(0.12, 14, 10), white));
+  if (stitch) {
+    for (const s of [-1, 1]) {
+      const arc = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.014, 6, 16, 2.2), stitch);
+      arc.position.x = s * 0.045;
+      arc.rotation.y = s * 0.7;
+      arc.rotation.z = -1.1;
+      g.add(arc);
+    }
+  }
+  return g;
 }

@@ -15,7 +15,7 @@
 //       ├─ armL / armR  shoulder pivots (x=±0.46, y=1.24 in hips space)
 //       │   └─ elbowL/elbowR (y -0.6)
 //       │       └─ handL/handR (y -0.52) — mitten; bat/glove/ball parent here
-//       └─ head         neck pivot (y=1.42 in hips space); skull center +0.78
+//       └─ head         neck pivot (y=1.52 in hips space); skull center +0.78
 //           ├─ face (face.ts) · hairstyle (hair.ts) · cap
 //
 // userData: { recipe, hipsY } — poses use hipsY to restore crouch offsets.
@@ -88,7 +88,9 @@ export function buildKid(mats: MatCache, rng: KidRng, outfit: OutfitSpec = {}): 
   const skin = mats.get(r.skin);
   const shirt = mats.get(r.shirt);
   const shirtDark = mats.get(r.shirt, 0.85);
+  const shirtTrim = mats.get(r.shirt, 0.68); // construction lines: collar/cuff/hem
   const bottoms = mats.get(r.bottoms);
+  const bottomsTrim = mats.get(r.bottoms, 0.7);
   const sock = mats.get('cloudLit');
   const capIsHairSafe = r.hairStyle === 'crew' || r.hairStyle === 'curls';
 
@@ -102,19 +104,32 @@ export function buildKid(mats: MatCache, rng: KidRng, outfit: OutfitSpec = {}): 
     leg.position.set(side * 0.27, hipY, 0);
     leg.add(limbSegment(pantsOn ? bottoms : skin, 0.2 * r.bulk, 0.72));
     if (!pantsOn) {
-      // Shorts cuff riding the thigh.
-      const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.26 * r.bulk, 0.24 * r.bulk, 0.34, 14), bottoms);
-      cuff.position.y = -0.18;
+      // Shorts cuff riding the thigh, with a darker hem band — a real garment edge.
+      const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.26 * r.bulk, 0.24 * r.bulk, 0.3, 14), bottoms);
+      cuff.position.y = -0.16;
       leg.add(cuff);
+      const hem = new THREE.Mesh(new THREE.CylinderGeometry(0.25 * r.bulk, 0.24 * r.bulk, 0.08, 14), bottomsTrim);
+      hem.position.y = -0.33;
+      leg.add(hem);
     }
     const knee = new THREE.Group();
     knee.name = L ? 'kneeL' : 'kneeR';
     knee.position.y = -0.7;
     knee.add(limbSegment(pantsOn ? bottoms : skin, 0.165 * r.bulk, 0.55));
-    if (r.socks) {
-      const s = new THREE.Mesh(new THREE.CylinderGeometry(0.175 * r.bulk, 0.17 * r.bulk, 0.2, 12), sock);
-      s.position.y = -0.42;
+    if (pantsOn) {
+      // Pants ankle cuff so the leg doesn't pour straight into the shoe.
+      const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.18 * r.bulk, 0.18 * r.bulk, 0.09, 12), bottomsTrim);
+      cuff.position.y = -0.44;
+      knee.add(cuff);
+    } else if (r.socks) {
+      // Tall white sock + team-color band above the sneaker (verdict-001's
+      // "sock bands above the shoes" construction line).
+      const s = new THREE.Mesh(new THREE.CylinderGeometry(0.18 * r.bulk, 0.175 * r.bulk, 0.28, 12), sock);
+      s.position.y = -0.38;
       knee.add(s);
+      const band = new THREE.Mesh(new THREE.CylinderGeometry(0.182 * r.bulk, 0.18 * r.bulk, 0.07, 12), bottoms);
+      band.position.y = -0.27;
+      knee.add(band);
     }
     const foot = new THREE.Group();
     foot.name = L ? 'footL' : 'footR';
@@ -160,6 +175,14 @@ export function buildKid(mats: MatCache, rng: KidRng, outfit: OutfitSpec = {}): 
       [0.01, 0.0],
     ]),
   );
+  // Construction lines: ribbed collar ring + shirt hem band in a darker shade.
+  const collar = new THREE.Mesh(new THREE.TorusGeometry(0.21, 0.05, 8, 18), shirtTrim);
+  collar.position.y = 1.44;
+  collar.rotation.x = Math.PI / 2;
+  torso.add(collar);
+  const hemBand = new THREE.Mesh(new THREE.CylinderGeometry(0.485 * w, 0.49 * w, 0.09, 22), shirtTrim);
+  hemBand.position.y = 0.02;
+  torso.add(hemBand);
   if (r.hood) {
     torso.add(blob(shirtDark, 0.26, [1.35, 0.75, 0.7], [0, 1.28, -0.42], 14));
   }
@@ -175,11 +198,12 @@ export function buildKid(mats: MatCache, rng: KidRng, outfit: OutfitSpec = {}): 
     arm.add(blob(r.sleeves === 'tank' ? skin : shirt, 0.17 * w, [1, 1, 1], [0, 0, 0], 14)); // shoulder ball
     arm.add(limbSegment(longSleeves ? shirt : skin, 0.15 * w, 0.62));
     if (r.sleeves === 'short') {
-      const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.2 * w, 0.185 * w, 0.34, 14), shirt);
-      sleeve.position.y = -0.14;
+      const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.2 * w, 0.185 * w, 0.3, 14), shirt);
+      sleeve.position.y = -0.13;
       arm.add(sleeve);
-      const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.19 * w, 0.19 * w, 0.05, 14), shirtDark);
-      cuff.position.y = -0.32;
+      // Fat contrast cuff — the sleeve/arm boundary must read at distance.
+      const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.195 * w, 0.19 * w, 0.09, 14), shirtTrim);
+      cuff.position.y = -0.31;
       arm.add(cuff);
     }
     const elbow = new THREE.Group();
@@ -187,8 +211,8 @@ export function buildKid(mats: MatCache, rng: KidRng, outfit: OutfitSpec = {}): 
     elbow.position.y = -0.6;
     elbow.add(limbSegment(longSleeves ? shirt : skin, 0.13 * w, 0.5));
     if (longSleeves) {
-      const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.14 * w, 0.14 * w, 0.08, 12), shirtDark);
-      cuff.position.y = -0.46;
+      const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.145 * w, 0.145 * w, 0.11, 12), shirtTrim);
+      cuff.position.y = -0.44;
       elbow.add(cuff);
     }
     const hand = mittenHand(skin, side);
@@ -200,11 +224,13 @@ export function buildKid(mats: MatCache, rng: KidRng, outfit: OutfitSpec = {}): 
   }
 
   // ---- head ----
+  // Raised so a real NECK gap shows between collar and chin — verdict-001's
+  // "neckless capsule" was the skull sitting directly on the torso.
   const head = new THREE.Group();
   head.name = 'head';
-  head.position.y = 1.42;
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.19, 0.24, 12), skin);
-  neck.position.y = 0.04;
+  head.position.y = 1.52;
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.185, 0.36, 12), skin);
+  neck.position.y = -0.04;
   head.add(neck);
   head.add(blob(skin, 1, [0.84, 0.78, 0.76], [0, 0.78, 0], 26)); // skull
   const skullCenter = new THREE.Group();
@@ -227,7 +253,7 @@ export function buildKid(mats: MatCache, rng: KidRng, outfit: OutfitSpec = {}): 
     gl.position.set(0, -0.05, 0.05);
   }
   if (r.ball) {
-    const bl = ball(mats.get('ballWhite'));
+    const bl = ball(mats.get('ballWhite'), mats.get('ballStitch'));
     kid.getObjectByName('handR')!.add(bl);
     bl.position.set(0, -0.12, 0.08);
   }
