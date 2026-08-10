@@ -229,12 +229,14 @@ export function buildKid(mats: MatCache, rng: KidRng, outfit: OutfitSpec = {}): 
   const head = new THREE.Group();
   head.name = 'head';
   head.position.y = 1.52;
-  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.185, 0.36, 12), skin);
-  neck.position.y = -0.04;
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.185, 0.46, 12), skin);
+  neck.position.y = 0.0;
   head.add(neck);
-  head.add(blob(skin, 1, [0.84, 0.78, 0.76], [0, 0.78, 0], 26)); // skull
+  // Skull rides at 0.88 (was 0.78): a ~0.1ft skin sliver shows between collar
+  // and chin — verdict-002 still called the read "neckless" at 0.78.
+  head.add(blob(skin, 1, [0.84, 0.78, 0.76], [0, 0.88, 0], 26)); // skull
   const skullCenter = new THREE.Group();
-  skullCenter.position.y = 0.78;
+  skullCenter.position.y = 0.88;
   skullCenter.add(buildFace(mats, r.skin, r.hairColor, r.face));
   skullCenter.add(buildHair(mats, r.hairColor, r.cap && !capIsHairSafe ? 'crew' : r.hairStyle, rng));
   if (r.cap) skullCenter.add(buildCap(mats, r.cap));

@@ -177,7 +177,10 @@ export function pose(kid: THREE.Group, name: PoseName): void {
       const chainR = solveArm(j, 'R', rHand);
       aimBat(j, chainR, batDir);
       solveArm(j, 'L', rHand.clone().addScaledVector(batDir, 0.26).add(V1.set(0.06, -0.04, 0.06)));
-      set(j.head, -0.06, -0.38, 0.05);
+      // Head in rear-3/4 (verdict-002): yawed toward the plate camera so the
+      // cheek, nose tip and near eye break the silhouette — steam-02's batter
+      // shows a face sliver in the main view; a dead-away head shows none.
+      set(j.head, -0.04, 0.85, 0.08);
       break;
     }
 

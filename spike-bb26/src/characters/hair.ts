@@ -28,9 +28,11 @@ function shell(
   return m;
 }
 
-/** Bang mass peeking out under a cap / over the forehead. */
+/** Bang mass peeking out under a cap / over the forehead. Pinned HIGH: its
+ * lower edge stays above y ≈ 0.45 — the old mass dipped to y 0.22, crossing
+ * the eye tops and reading as verdict-002's "featureless dark smudge". */
 export function fringe(mat: THREE.Material): THREE.Mesh {
-  return blob(mat, 1, [0.58, 0.2, 0.32], [0, 0.42, 0.56], 16);
+  return blob(mat, 1, [0.6, 0.15, 0.22], [0, 0.5, 0.52], 16);
 }
 
 export function buildHair(mats: MatCache, colorKey: string, style: HairStyle, rng: KidRng): THREE.Group {
@@ -122,14 +124,18 @@ export function buildCap(mats: MatCache, colorKey: string): THREE.Group {
   const g = new THREE.Group();
   g.name = 'cap';
   const mat = mats.get(colorKey);
-  const crown = shell(mat, [0.95, 0.86, 0.9], 1.78, -0.28);
-  crown.position.y = 0.03;
+  // Crown a touch WIDER than every hair shell (0.97 > 0.92 bob) — a raised
+  // crown over a tighter shell let the hair rim poke through as a dark band.
+  const crown = shell(mat, [0.97, 0.88, 0.92], 1.78, -0.28);
+  crown.position.y = 0.05;
   g.add(crown);
   // Brim: a fat squashed blob, not a paper disc — it must read as its own mass.
-  const brim = blob(mats.get(colorKey, 0.94), 0.5, [1.12, 0.16, 0.92], [0, 0.34, 0.88], 16);
-  brim.rotation.x = 0.3;
+  // Riding HIGH (y 0.46, shallow tilt): the old brim sat on the eye line and
+  // occluded/shadowed the whites from every camera below head height.
+  const brim = blob(mats.get(colorKey, 0.94), 0.5, [1.12, 0.16, 0.92], [0, 0.46, 0.86], 16);
+  brim.rotation.x = 0.2;
   g.add(brim);
   // Front seam panel + button in a darker shade — construction lines.
-  g.add(blob(mats.get(colorKey, 0.85), 0.09, [1, 0.65, 1], [0, 0.9, 0.02], 8));
+  g.add(blob(mats.get(colorKey, 0.85), 0.09, [1, 0.65, 1], [0, 0.95, 0.02], 8));
   return g;
 }

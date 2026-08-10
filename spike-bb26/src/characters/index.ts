@@ -90,12 +90,17 @@ export function init(ctx: Ctx): void {
     heightScale: 1.02,
   });
   place(batter, -2.6, 0.5, 'stanceBat');
-  batter.rotation.y = 0.42; // open to the mound, turned a touch toward the plate
+  // Open stance, swung toward the plate cameras: with the stanceBat head yaw
+  // this puts the head in rear-3/4 — cheek, nose and near eye on screen in the
+  // pitching view (verdict-002 fix 1), like steam-02's batter.
+  batter.rotation.y = 0.72;
 
   // --- the fielding team: orange tees (frame-080's team), varied everything else.
   const team: OutfitSpec = { shirt: 'jerseyOrange', sleeves: 'short', glove: true };
 
-  const pitcher = makeKid(1001, { ...team, glove: false, ball: true, cap: 'jerseyBlue' });
+  // Forced OPEN mouth: the pitcher is the one face looking at the batting
+  // camera — a rolled thin 'grim' line vanishes at his ~60px head size.
+  const pitcher = makeKid(1001, { ...team, glove: false, ball: true, cap: 'jerseyBlue', face: { mouth: 'open' } });
   place(pitcher, 0, 46, 'windup');
   faceToward(pitcher, 0, 0);
 
