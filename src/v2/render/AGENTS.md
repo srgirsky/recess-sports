@@ -163,7 +163,8 @@ popping" checkable).
 - **Expression is `face_atlas`, and ONLY on delivered models.** `faceAtlas.ts` is
   pure (no `three`) and owns the cell order; the asset contract is parsed against
   it. **Cell 0 is TOP-left, so the row index is V-flipped** — getting that
-  backwards is not a crash, it is a roster wearing the wrong expression. The
+  backwards is not a crash, it is a roster wearing the wrong expression.
+  `toon.ts` alone corrects glTF's embedded-texture origin. The
   atlas rides the body material's emissive channel, because glTF has no second
   albedo channel and emissive is the one map the toon shader otherwise ignores.
   `setExpression` is a deliberate no-op on a proxy.

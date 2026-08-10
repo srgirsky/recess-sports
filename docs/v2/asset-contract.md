@@ -210,6 +210,10 @@ readability without repainting the product's character identity.
 | `face_atlas` | 512² | 4×4 grid, cells in this order: neutral · grin · determined · worried · upset · surprised · blink · wink · sleepy · angry · tongue · cheer · +4 spare. Ships in `M_Body`'s **`emissiveTexture`** slot — glTF has no second-albedo channel, and emissive is the one map the toon shader otherwise ignores. Cells read left-to-right, top-to-bottom, and a transparent pixel leaves the skin below it showing. |
 | `mask` | 512² | optional. R = team-colour mask, G = outline-width, B = spare |
 
+In the face island, the forehead is `V=1` and the chin is `V=0.5`. Do not
+pre-flip the atlas or exported UVs to compensate for glTF texture loading;
+`toon.ts` owns the single embedded-texture origin correction.
+
 **No normal maps. No metalness/roughness.** The toon shader ignores them and
 they would double the download for nothing.
 

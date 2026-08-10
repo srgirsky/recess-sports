@@ -123,6 +123,15 @@ describe('the shader agrees with the atlas', () => {
     expect(shader.uniforms.uFaceCell.value).toEqual(faceCellUv('neutral'));
   });
 
+  it('crosses glTF embedded-texture orientation exactly once', () => {
+    // GLTFLoader sets embedded textures to flipY=false. The atlas cell maths is
+    // bottom-origin, so the shader—not every authored mesh—owns the one flip.
+    const mat = makeToonMaterial({ map: new Texture(), faceAtlas: new Texture() });
+    const shader = { uniforms: {} as Record<string, { value: unknown }>, fragmentShader: '#include <common>\n#include <map_fragment>\n#include <opaque_fragment>', vertexShader: '' };
+    mat.onBeforeCompile?.(shader as never, null as never);
+    expect(shader.fragmentShader).toContain('faceUv.y = 1.0 - faceUv.y');
+  });
+
   it('refuses a face atlas with no albedo, rather than rendering a black face', () => {
     // three names its UV varying after the map that needs it (`vMapUv`), so
     // with no albedo there is no varying to test the island against.
