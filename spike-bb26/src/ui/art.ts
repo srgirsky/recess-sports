@@ -497,6 +497,76 @@ export function juiceCarton(t: Theme): HTMLCanvasElement {
   return cv;
 }
 
+/** The giant bendy JUICE straw the pitch-card stack hangs off (steam-02 right
+ *  rail): a tall orange tube rising from the carton at bottom-right, ribbed
+ *  accordion elbow at the top bending toward the cards, open tip. */
+export function strawPole(t: Theme): HTMLCanvasElement {
+  const W = 150;
+  const H = 780;
+  const { cv, g } = mk(W, H);
+  const cx = 96; // tube centerline
+  const bendY = 168; // elbow starts here; straight tube below
+  // path: straight up the tube, then curve up-left to the open tip
+  const tube = (): void => {
+    g.beginPath();
+    g.moveTo(cx, H + 20); // run past the bottom edge — the carton overlaps the base
+    g.lineTo(cx, bendY);
+    g.quadraticCurveTo(cx, bendY - 66, cx - 56, bendY - 104);
+  };
+  // outline pass, then gradient body pass
+  tube();
+  g.strokeStyle = t.dark('hudOrange', 0.5);
+  g.lineWidth = 34;
+  g.stroke();
+  const grad = g.createLinearGradient(cx - 15, 0, cx + 15, 0);
+  grad.addColorStop(0, t.light('hudOrange', 0.42));
+  grad.addColorStop(0.5, t.c('hudOrange'));
+  grad.addColorStop(1, t.dark('hudOrange', 0.28));
+  tube();
+  g.strokeStyle = grad;
+  g.lineWidth = 27;
+  g.stroke();
+  // glossy highlight down the straight run
+  g.strokeStyle = t.light('hudOrange', 0.62);
+  g.lineWidth = 5;
+  g.beginPath();
+  g.moveTo(cx - 8, bendY + 26);
+  g.lineTo(cx - 8, H - 40);
+  g.stroke();
+  // accordion ribs across the elbow (perpendicular ticks along the curve)
+  g.strokeStyle = t.dark('hudOrange', 0.42);
+  g.lineWidth = 3.5;
+  for (let i = 0; i < 5; i += 1) {
+    const k = 0.12 + i * 0.17;
+    const omk = 1 - k;
+    // quadratic Bezier point + tangent (P0=(cx,bendY), C=(cx,bendY-66), P1=(cx-56,bendY-104))
+    const px = omk * omk * cx + 2 * omk * k * cx + k * k * (cx - 56);
+    const py = omk * omk * bendY + 2 * omk * k * (bendY - 66) + k * k * (bendY - 104);
+    const txv = 2 * k * -56;
+    const tyv = 2 * omk * -66 + 2 * k * -38;
+    const len = Math.hypot(txv, tyv) || 1;
+    const nx = -tyv / len;
+    const ny = txv / len;
+    g.beginPath();
+    g.moveTo(px - nx * 14, py - ny * 14);
+    g.lineTo(px + nx * 14, py + ny * 14);
+    g.stroke();
+  }
+  // open tip: angled ellipse mouth at the end of the bend
+  g.save();
+  g.translate(cx - 56, bendY - 104);
+  g.rotate(-0.98);
+  g.fillStyle = t.dark('hudOrange', 0.5);
+  g.strokeStyle = t.light('hudOrange', 0.45);
+  g.lineWidth = 3.5;
+  g.beginPath();
+  g.ellipse(0, 0, 14.5, 9, 0, 0, Math.PI * 2);
+  g.fill();
+  g.stroke();
+  g.restore();
+  return cv;
+}
+
 /** Round team logo: star kid or bear critter. */
 export function teamLogo(t: Theme, kind: 'star' | 'bear'): HTMLCanvasElement {
   const S = 44;

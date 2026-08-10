@@ -26,6 +26,7 @@ import {
   buildPitchStack,
   buildScoreboard,
   buildStanceChip,
+  buildStrawPole,
 } from './widgets';
 
 const DESIGN_W = 1920;
@@ -126,7 +127,9 @@ export function init(ctx: Ctx): void {
   window.addEventListener('resize', fit);
   fit();
 
-  // Build once, toggle per view.
+  // Build once, toggle per view. Straw pole first so the card stack and the
+  // JUICE carton (whose gable its base plugs into) draw over it.
+  const strawPole = buildStrawPole(t);
   const miniDiamond = buildMiniDiamond(t);
   const matchup = buildMatchup(t);
   const pitchStack = buildPitchStack(t);
@@ -135,7 +138,7 @@ export function init(ctx: Ctx): void {
   const juice = buildJuice(t);
   const scoreboard = buildScoreboard(t);
   const verdict = new Verdict(t);
-  root.append(miniDiamond, matchup, pitchStack, changePitch, stance, juice, scoreboard, verdict.el);
+  root.append(strawPole, miniDiamond, matchup, pitchStack, changePitch, stance, juice, scoreboard, verdict.el);
 
   const setView = (view: string): void => {
     const gameplay = view === 'pitching' || view === 'batting';
@@ -149,6 +152,7 @@ export function init(ctx: Ctx): void {
     show(matchup, gameplay);
     show(scoreboard, gameplay);
     show(juice, gameplay);
+    show(strawPole, gameplay); // the JUICE straw stands in both views (frame-080 keeps it)
     show(pitchStack, view === 'pitching');
     show(changePitch, view === 'pitching');
     show(stance, view === 'batting');

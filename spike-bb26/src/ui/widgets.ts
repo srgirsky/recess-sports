@@ -10,6 +10,7 @@ import {
   miniDiamond,
   pitchArt,
   portrait,
+  strawPole,
   teamLogo,
   whistleIcon,
   type PitchKind,
@@ -167,10 +168,19 @@ function pitchCard(
   return card;
 }
 
+/** The straw pole the card stack hangs off — rises from the JUICE carton at
+ *  bottom-right, elbow bending over the top of the stack (steam-02 right rail).
+ *  Appended BEFORE the stack/carton so both draw over its base. */
+export function buildStrawPole(t: Theme): HTMLElement {
+  const wrap = shadowed(strawPole(t), t, 0);
+  abs(wrap, { right: '36px', top: '150px' });
+  return wrap;
+}
+
 export function buildPitchStack(t: Theme): HTMLElement {
   const col = document.createElement('div');
   abs(col, {
-    right: '30px',
+    right: '124px', // right edges land ~17px left of the straw pole they hang off
     top: '244px',
     display: 'flex',
     flexDirection: 'column',
@@ -179,17 +189,18 @@ export function buildPitchStack(t: Theme): HTMLElement {
   });
   // top row: SPECIAL tucks left of the (selected) HEAT card
   const rowTop = document.createElement('div');
-  Object.assign(rowTop.style, { display: 'flex', alignItems: 'flex-start', gap: '14px' });
+  Object.assign(rowTop.style, { display: 'flex', alignItems: 'flex-start', gap: '14px', marginRight: '2px' });
   rowTop.append(
-    pitchCard(t, 'SPECIAL', 'special', 'hudInk', 152, 112, -2.5, false),
-    pitchCard(t, 'HEAT', 'heat', 'hudBlue', 170, 128, 1.6, true),
+    pitchCard(t, 'SPECIAL', 'special', 'hudInk', 152, 112, -3, false),
+    pitchCard(t, 'HEAT', 'heat', 'hudBlue', 170, 128, 2.2, true),
   );
-  col.append(
-    rowTop,
-    pitchCard(t, 'RIGHT HOOK', 'rightHook', 'hudPurple', 164, 116, -1.2, false),
-    pitchCard(t, 'LEFT HOOK', 'leftHook', 'hudPurple', 164, 116, 1.8, false),
-    pitchCard(t, 'SLOW BALL', 'slow', 'hudPurple', 164, 116, -1.6, false),
-  );
+  // ±2-3° rotation and a few px of horizontal stagger — hand-hung, not machine-aligned
+  const rHook = pitchCard(t, 'RIGHT HOOK', 'rightHook', 'hudPurple', 164, 116, -2.4, false);
+  rHook.style.marginRight = '8px';
+  const lHook = pitchCard(t, 'LEFT HOOK', 'leftHook', 'hudPurple', 164, 116, 2.6, false);
+  const slow = pitchCard(t, 'SLOW BALL', 'slow', 'hudPurple', 164, 116, -2.8, false);
+  slow.style.marginRight = '12px';
+  col.append(rowTop, rHook, lHook, slow);
   return col;
 }
 
@@ -209,8 +220,9 @@ function darkPill(t: Theme, rotDeg: number): HTMLElement {
 }
 
 export function buildChangePitchChip(t: Theme): HTMLElement {
-  const pill = darkPill(t, -1);
-  abs(pill, { right: '244px', top: '818px' });
+  // docked directly beneath the pitch-card stack (steam-02), not mid-frame
+  const pill = darkPill(t, -1.2);
+  abs(pill, { right: '148px', top: '796px' });
   pill.appendChild(keyCluster(t));
   pill.appendChild(chunkyText(t, 'CHANGE PITCH', 24, t.c('hudCream'), 0));
   return pill;
@@ -234,7 +246,7 @@ export function buildJuice(t: Theme): HTMLElement {
 function pipRow(t: Theme, letter: string, n: number, litColor: string, lit: number): HTMLElement {
   const row = document.createElement('div');
   Object.assign(row.style, { display: 'flex', alignItems: 'center', gap: '5px' });
-  const l = chunkyText(t, letter, 15, t.c('hudCream'), 0);
+  const l = chunkyText(t, letter, 15, t.light('hudGreen', 0.45), 0);
   l.style.width = '14px';
   row.appendChild(l);
   for (let i = 0; i < n; i += 1) {
@@ -269,24 +281,39 @@ export function buildScoreboard(t: Theme): HTMLElement {
   };
   chips.append(chip(gearIcon(t), 'ESC', -1.5), chip(whistleIcon(t), 'T', 1.2));
 
-  // main panel
+  // main panel — cream notebook paper chassis with dark-green boards inset
+  // (steam-02 reads white/cream at a squint, never green felt edge to edge)
   const panel = document.createElement('div');
   sticker(t, panel, {
-    bg: `linear-gradient(180deg, ${t.mix('hudGreen', 'hudInk', 0.45)} 0%, ${t.mix('hudGreen', 'hudInk', 0.62)} 100%)`,
-    border: t.c('hudCream'),
-    borderW: 4,
-    radius: 16,
+    bg: `linear-gradient(180deg, ${t.light('hudCream', 0.55)} 0%, ${t.c('hudCream')} 100%)`,
+    border: t.dark('hudCream', 0.16),
+    borderW: 5,
+    radius: 18,
     rotDeg: -1,
-    pad: '8px 12px',
+    pad: '9px 9px',
   });
   Object.assign(panel.style, {
     position: 'relative',
-    width: '296px',
+    width: '300px',
     display: 'flex',
     flexDirection: 'column',
     gap: '6px',
   });
 
+  /** Dark-green inset board — the chalkboard bits INSIDE the paper panel. */
+  const board = (pad: string): HTMLElement => {
+    const b = document.createElement('div');
+    Object.assign(b.style, {
+      background: `linear-gradient(180deg, ${t.mix('hudGreen', 'hudInk', 0.5)} 0%, ${t.mix('hudGreen', 'hudInk', 0.66)} 100%)`,
+      border: `2px solid ${t.mix('hudGreen', 'hudInk', 0.78)}`,
+      borderRadius: '10px',
+      padding: pad,
+      boxSizing: 'border-box',
+    });
+    return b;
+  };
+
+  const scoreBoard = board('5px 8px');
   const scoreRow = document.createElement('div');
   Object.assign(scoreRow.style, { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' });
   const score = (v: string): HTMLElement => {
@@ -303,23 +330,29 @@ export function buildScoreboard(t: Theme): HTMLElement {
   };
   const dash = chunkyText(t, '·', 22, t.rgba('hudCream', 0.6), 0);
   scoreRow.append(teamLogo(t, 'star'), score('00'), dash, score('00'), teamLogo(t, 'bear'));
+  scoreBoard.appendChild(scoreRow);
 
-  const inning = document.createElement('div');
-  Object.assign(inning.style, {
-    background: t.rgba('hudShadow', 0.4),
-    border: `2px solid ${t.rgba('hudCream', 0.22)}`,
-    borderRadius: '9px',
-    padding: '3px 0',
-    display: 'flex',
-    justifyContent: 'center',
-  });
+  // team-color accent stripe between the boards (red half / blue half)
+  const stripe = document.createElement('div');
+  Object.assign(stripe.style, { display: 'flex', height: '6px', borderRadius: '3px', overflow: 'hidden', margin: '0 2px' });
+  const half = (key: string): HTMLElement => {
+    const s = document.createElement('span');
+    Object.assign(s.style, { flex: '1', background: t.c(key) });
+    return s;
+  };
+  stripe.append(half('hudRed'), half('hudBlue'));
+
+  const inning = board('4px 0');
+  Object.assign(inning.style, { display: 'flex', justifyContent: 'center' });
   inning.appendChild(chunkyText(t, 'TOP OF INNING 1', 16, t.c('hudCream'), 0));
 
+  const pipBoard = board('4px 10px');
   const pips = document.createElement('div');
-  Object.assign(pips.style, { display: 'flex', justifyContent: 'space-between', padding: '0 10px 2px' });
+  Object.assign(pips.style, { display: 'flex', justifyContent: 'space-between' });
   pips.append(pipRow(t, 'B', 3, 'hudBlue', 0), pipRow(t, 'S', 2, 'hudYellow', 0), pipRow(t, 'O', 2, 'hudRed', 0));
+  pipBoard.appendChild(pips);
 
-  panel.append(scoreRow, inning, pips);
+  panel.append(scoreBoard, stripe, inning, pipBoard);
   group.append(chips, panel);
   return group;
 }
