@@ -13,6 +13,7 @@ or animation contracts.
 | What may a model or animation file contain? | `docs/v2/asset-contract.md` and `docs/v2/animation-brief.md` |
 | How does personality select body and face acting at runtime? | `src/v2/render/performance.ts` |
 | How are assets generated, checked and reviewed? | `README.md` |
+| Which source/runtime hashes and visual scores were approved? | `assets/v2/source/character-production.json` and `character-fidelity.json` |
 
 If two of these disagree, fix the owning source rather than copying the fact
 into another file.
@@ -29,14 +30,14 @@ them.
 | B | Brief sculpt, motion, voice, read and “avoid” direction. |
 | C | Create the front/side/back concept target. |
 | D | Direction-lock the concept and any roster-copy change. |
-| E | Establish the editable Blender source. |
+| E | Establish Blender as the upstream editable mesh source. |
 | F | Form the large silhouette before small detail. |
 | G | Groom hair and accessories against the field-scale read. |
 | H | Hold a face/expression review at hero scale. |
 | I | Integrate the canonical rig without changing its contract. |
 | J | Joint-test shoulders, elbows, wrists, hips, knees and ankles. |
 | K | Keep useful LODs and the four material slots. |
-| L | Look-review the delivered model and proxy A/B. |
+| L | Generate the concept/runtime front, profile, hero and 40 px fidelity board. |
 | M | Manifest the validated runtime model. |
 | N | Nail rest, run, stance, contact and follow-through language. |
 | O | Override only the approved character-specific clips. |
@@ -54,11 +55,11 @@ them.
 
 ## Production rule
 
-Finish one character through every gate before starting the next. Junebug,
-Theo and Zoom are completed gold-standard signature passes; Big Lou, Tank and
-Mimi Mash complete Batch 1. Their shared quality and movement language is the
-approval baseline for the remaining roster; Batch 2 starts with Turbo, Sprout
-and Zippy.
+Finish one character through every gate before starting the next. Mimi is the
+Blender-authoritative fidelity pilot. Junebug, Theo, Zoom, Big Lou and Tank are
+retrofitted to the source/export path but remain explicitly `needs-polish` in
+the fidelity record. Batch 2 (Turbo, Sprout and Zippy) stays paused until those
+five boards reach approval; procedural validity is not sculpt completion.
 
 Use one pull request per signature character. Later production batches may
 share a pull request when every character has separate review evidence.
@@ -87,6 +88,12 @@ Build the character on the canonical skeleton and keep an editable Blender
 source under `assets/v2/source/`. Review the bind pose from the front, side,
 three-quarter and back before spending time on animation polish.
 
+Generate the side-by-side board and score all six mandatory categories:
+front/profile silhouette, head/body proportions, hair mass, clothing
+construction, face/expression read, and hero plus 40-pixel gameplay read. Name
+exactly five defining traits in the production receipt; approval requires every
+trait to survive the delivered model and every category to score at least 4/5.
+
 Approval means:
 
 - the large silhouette matches the approved target;
@@ -102,7 +109,7 @@ validation is the next gate, not a substitute for this one.
 
 ## Gate 3 — asset acceptance
 
-Export through the repository's canonical delivery path, regenerate the model
+Export through `npm run export:authored-character -- <id>`, regenerate the model
 manifest and run the model validator. Review the delivered file in the single-
 character look page, not only inside Blender.
 
@@ -192,6 +199,7 @@ Use this review block in each character pull request:
 Character: <name> (<id>)
 Direction: approved — <concept link>
 Sculpt: approved — <look-review screenshot>
+Fidelity: approved — <side-by-side board and six scores>
 Motion: approved — <animation-review screenshot or recording>
 Face/voice: approved AI master | fallback retained — <draft-flow + audio evidence>
 AI voice: <model · generator · stock voice · speed · license/disclosure check>

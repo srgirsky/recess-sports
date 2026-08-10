@@ -218,24 +218,30 @@ accessory data: three LODs, the canonical skin, a per-character 4×4 expression
 atlas and the four material slots expected by the runtime.
 
 ```bash
-npm run export:roster-kid              # regenerate all 30 production models
+npm run export:roster-kid              # regenerate every unproduced roster model
 npm run export:roster-kid -- turbo zippy  # regenerate selected characters
 npm run validate:models                # validate the complete delivery
 ```
 
-Editable produced-character sources are rebuilt after their runtime model and
-concept sheet with:
+`export:roster-kid` is the procedural roster baseline, not the finished sculpt
+path. It may be used for unproduced characters and fallback recovery; the
+authored-character test rejects it if it overwrites a finished Blender delivery.
+
+Finished characters ship from their editable Blender source with:
 
 ```bash
-blender --background --factory-startup --python scripts/v2/blender/build-signature-source.py -- calls_shot
-blender --background --factory-startup --python scripts/v2/blender/render-signature-review.py -- calls_shot
+npm run export:authored-character -- mimi_mash
+npm run review:character-fidelity -- mimi_mash
+npm run validate:models
 ```
 
-The id selects Junebug, Theo, Zoom, Big Lou, Tank or Mimi Mash and writes the matching pilot
-`.blend` under `assets/v2/source/` with its turnaround packed inside. Use the Node
-exporter for the shipping GLB; Blender's stock exporter reorders the canonical
-joints and therefore is not the delivery path. The second command writes the
-matching deterministic `docs/v2/concepts/<name>-in-game-review.png` evidence.
+The first command loads `assets/v2/source/<name>-pilot.blend`, exports its mesh,
+remaps Blender's skin order to the canonical rig without changing deformation,
+compacts vertex colours/weights, stamps source and concept hashes, validates the
+result and promotes it to `public/v2/models/`. The second writes deterministic
+front/profile, hero and 40-pixel evidence to
+`docs/v2/concepts/<name>-fidelity-review.png`. A raw Blender export is not the
+delivery path.
 
 `/v2/?spike=1&roster=1` is the one-frame roster review; use
 `/v2/?spike=1&kid=turbo` for a single-character field review.

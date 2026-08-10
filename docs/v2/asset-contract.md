@@ -216,7 +216,10 @@ rejects any model that has them.
 ### Export settings
 - glTF 2.0 binary, Y-up, +Z forward
 - Single scene, single skin, **no cameras, no lights**, no unlit extension
-- **Draco** compression: position 14, normal 10, uv 12
+- **Compression:** direct external deliveries use Draco position 14, normal 10,
+  uv 12. The repository's authored Blender path instead keeps geometry in core
+  accessors so it can remap joint indices, then byte-normalizes colours and
+  weights; both paths must stay under the same file cap.
 - **KTX2 / Basis** textures: ETC1S q200 for `albedo` and `mask`, UASTC for `face_atlas`
 - **≤ 400 KB per `.glb`**
 
@@ -247,12 +250,12 @@ replaces one of these**, kid by kid, with no code change. Stand-ins live in
 `public/v2/models/` and are marked `STAND-IN` in the glTF `generator` string;
 they are not deliveries and are never sent to anyone.
 
-### First-party roster production
+### Procedural roster baseline
 
-The repository also has a deterministic production path for the shipped roster:
+The repository has a deterministic procedural path for unproduced roster kids:
 
 ```bash
-npm run export:roster-kid              # all 30
+npm run export:roster-kid              # every unproduced roster kid
 npm run export:roster-kid -- turbo zippy
 npm run validate:models
 ```
@@ -261,4 +264,25 @@ Unlike the fallback exporter, these files carry a UV-mapped `M_Body`, an
 individual 4×4 `face_atlas` derived from the character's authored face data,
 roster-fidelity silhouette details, and no `STAND-IN` marker. They are held to
 the same rig, LOD, material, height and 400KB rules as an external delivery.
-`manifest.test.js` requires a validated production file for every roster id.
+`manifest.test.js` requires a validated production file for every roster id,
+but this path is not sculpt approval and must not overwrite an authored source
+delivery.
+
+### Blender-authored finished production
+
+Finished character meshes are exported from `assets/v2/source/*.blend` with:
+
+```bash
+npm run export:authored-character -- mimi_mash
+npm run review:character-fidelity -- mimi_mash
+npm run validate:models
+```
+
+The wrapper supplies the canonical joint order from `skeleton.ts`, lets Blender
+evaluate the authored geometry, remaps `JOINTS_0` and inverse-bind matrices
+together, compacts palette/weight accessors and stamps the source and turnaround
+hashes into the GLB. `character-production.json` binds those hashes to the
+runtime file. `character-fidelity.json` and the generated review board record
+front/profile silhouette, proportions, hair, clothing, face and both hero and
+40-pixel reads. A finished character cannot be approved from validator output
+alone.

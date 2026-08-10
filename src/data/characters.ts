@@ -116,7 +116,7 @@ export const ROSTER: Character[] = [
     tagline: 'Swings for the fence. Only the fence.',
     voiceGender: 'girl',
     stats: { contact: 4, power: 9, speed: 4, pitching: 2, fielding: 3 },
-    visual: { skin: 0, hair: 'curly', hairColor: 5, uniform: 0, accessory: 'none', expression: 'grin', stance: 'high',
+    visual: { skin: 0, hair: 'curly', hairColor: 0, uniform: 0, accessory: 'none', expression: 'grin', stance: 'high',
       body: { height: 0.96, shoulderW: 50, hipW: 4, headW: 1.04 },
       face: { eyeGap: 17, eyeSize: 1.15, mouthW: 1.15 },
       hairSpec: { volume: 1.08, wisps: 2 },

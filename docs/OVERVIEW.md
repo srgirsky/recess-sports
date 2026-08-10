@@ -1793,8 +1793,33 @@ performance enormous without turning competitive joy into anger; contact
 remains derived on frame 7. Her exact draft line is generated locally with
 Kokoro's named `af_nicole` stock voice at 1.08×, promoted to the fingerprinted
 lossless master and runtime MP3, and covered by the existing player-facing AI
-disclosure. Batch 1 is complete; production next moves to Turbo, Sprout and
-Zippy.
+disclosure.
+
+### Blender-authoritative fidelity correction — art direction reaches runtime
+
+The six character passes above proved the rig, performance and delivery
+contracts, but their editable `.blend` files were downstream review containers:
+they imported GLBs produced by the procedural roster generator. The approved
+turnarounds therefore influenced primitive choices without ever becoming the
+shipping mesh source, which left a visible gap between concept art and motion.
+
+Finished meshes now travel in the other direction. Blender evaluates the
+upstream source geometry; the promotion wrapper remaps Blender's hierarchy-ordered
+skin indices and inverse-bind matrices together into the existing canonical
+order, compacts vertex colours and weights, stamps source and concept hashes,
+then runs the unchanged model validator. A receipt makes any later procedural
+overwrite fail CI. Deterministic review boards place the approved turnaround
+beside front/profile renders, the live toon-shaded hero and a native 40-pixel
+read, with scored gates for silhouette, proportions, hair, clothing and face.
+
+Mimi is the first approved fidelity pilot: her source now carries a fuller dark
+curl halo, proud lower face, taller constructed hoodie and pocket, stronger
+forearms and fuller jeans while remaining under the 400KB cap. Her roster hair
+colour changed from auburn to dark brown so the shared classic and v2 portraits
+agree with the approved turnaround. Junebug, Theo, Zoom, Big Lou and Tank have
+been migrated to the authoritative source/export path, but their boards remain
+honestly marked `needs-polish`. Batch 2—Turbo, Sprout and Zippy—is paused until
+those five organic topology reviews reach approval.
 
 ### 2026 parity pass — two city parks, not two palettes
 

@@ -85,7 +85,7 @@ weaken one to make a change pass.**
 | `scripts/pitchbase.lint.test.js` | the pitch corridor being read from the wrong base |
 | `scripts/v2/bundle.lint.test.js` | v1 bundle bloat |
 | `scripts/v2/manifest.test.js` | a delivered model that renders as a proxy forever |
-| `scripts/v2/validate-models.test.js` | a `.glb` that breaks the asset contract |
+| `scripts/v2/validate-models.test.js` / `authored-character.test.js` | a `.glb` breaking its contract, Blender source or visual approval |
 | `src/v2/render/skeleton.test.ts` | a rig that misses its own height, a bobblehead, an invisible face |
 | `src/v2/render/clips.test.ts` | the clip table drifting from the two v2 docs |
 | `src/v2/render/groundContact.test.ts` | a clip that hovers above the field or sinks through it |

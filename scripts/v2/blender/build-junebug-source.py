@@ -3,9 +3,9 @@
 Run from the repository root:
   blender --background --factory-startup --python scripts/v2/blender/build-junebug-source.py
 
-The .blend is an authoring and review source, not the shipping exporter. A raw
-Blender glTF round-trip reorders the canonical joints; the deterministic Node
-packager remains responsible for the contract-legal runtime GLB.
+Bootstrap/migration utility only. The finished .blend is authoritative and
+ships through ``npm run export:authored-character -- nostrike``; this script
+refuses to replace an existing source.
 """
 
 from pathlib import Path
@@ -22,6 +22,8 @@ OUTPUT = REPO / "assets/v2/source/junebug-pilot.blend"
 def main() -> None:
     if not MODEL.exists() or not TURNAROUND.exists():
         raise RuntimeError("export Junebug and generate her turnaround before building the Blender source")
+    if OUTPUT.exists():
+        raise RuntimeError(f"refusing to overwrite authoritative Blender source {OUTPUT}")
 
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.context.scene.name = "Junebug_Pilot"
@@ -61,7 +63,7 @@ def main() -> None:
         "Do not rename, reorder or move canonical bones.\n"
         "LOD0/1/2 must remain under 7000/3000/1200 triangles.\n"
         "The packed turnaround is the visual target.\n"
-        "Use npm run export:roster-kid -- nostrike for the shipping GLB; "
+        "Use npm run export:authored-character -- nostrike for the shipping GLB; "
         "raw Blender export is not contract-safe.\n"
     )
 

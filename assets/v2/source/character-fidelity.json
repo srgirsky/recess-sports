@@ -1,0 +1,86 @@
+{
+  "version": 1,
+  "batch2Status": "paused",
+  "categories": [
+    "frontProfileSilhouette",
+    "headBodyProportions",
+    "hairMass",
+    "clothingConstruction",
+    "faceExpressionRead",
+    "heroAndFieldScale"
+  ],
+  "characters": {
+    "nostrike": {
+      "status": "needs-polish",
+      "evidence": "junebug-fidelity-review.png",
+      "categories": {
+        "frontProfileSilhouette": { "label": "front/profile silhouette", "score": 3, "note": "Arrow ponytail and athletic taper survive; organic surface polish remains." },
+        "headBodyProportions": { "label": "head/body proportions", "score": 3, "note": "The compact athletic proportion reads but the forms remain geometric." },
+        "hairMass": { "label": "hair mass", "score": 3, "note": "The directional ponytail reads; hairline integration needs sculpt polish." },
+        "clothingConstruction": { "label": "clothing construction", "score": 3, "note": "Piping survives recolour; garment seams remain simplified." },
+        "faceExpressionRead": { "label": "face/expression read", "score": 3, "note": "Atlas expressions read, with a simplified facial silhouette." },
+        "heroAndFieldScale": { "label": "hero + 40px read", "score": 3, "note": "Identity survives at field scale; hero close-up still exposes primitive construction." }
+      }
+    },
+    "calls_shot": {
+      "status": "needs-polish",
+      "evidence": "theo-fidelity-review.png",
+      "categories": {
+        "frontProfileSilhouette": { "label": "front/profile silhouette", "score": 3, "note": "Cap, tapered face and jacket silhouette survive; transitions remain blocky." },
+        "headBodyProportions": { "label": "head/body proportions", "score": 3, "note": "The broad-headed swagger read is present but not organically resolved." },
+        "hairMass": { "label": "hair mass", "score": 3, "note": "Hair supports the cap without becoming the read." },
+        "clothingConstruction": { "label": "clothing construction", "score": 3, "note": "Open varsity jacket survives recolour; lapel and sleeve construction need polish." },
+        "faceExpressionRead": { "label": "face/expression read", "score": 3, "note": "The face atlas reads, though the concept's tapered cheek planes are simplified." },
+        "heroAndFieldScale": { "label": "hero + 40px read", "score": 3, "note": "Cap and jacket identify Theo at 40px; hero scale remains procedural." }
+      }
+    },
+    "wheelchair_ace": {
+      "status": "needs-polish",
+      "evidence": "zoom-fidelity-review.png",
+      "categories": {
+        "frontProfileSilhouette": { "label": "front/profile silhouette", "score": 3, "note": "Child and compact chair remain one fast silhouette; wheel construction needs polish." },
+        "headBodyProportions": { "label": "head/body proportions", "score": 3, "note": "Upper-body scale reads correctly against the sport chair." },
+        "hairMass": { "label": "hair mass", "score": 3, "note": "Swept crown direction survives with simplified strand grouping." },
+        "clothingConstruction": { "label": "clothing construction", "score": 3, "note": "Athletic top reads; chair upholstery and clothing layers remain simplified." },
+        "faceExpressionRead": { "label": "face/expression read", "score": 3, "note": "The cool expression read survives in motion." },
+        "heroAndFieldScale": { "label": "hero + 40px read", "score": 3, "note": "Chair silhouette is unmistakable at 40px; hero joins need organic polish." }
+      }
+    },
+    "big_lou": {
+      "status": "needs-polish",
+      "evidence": "big-lou-fidelity-review.png",
+      "categories": {
+        "frontProfileSilhouette": { "label": "front/profile silhouette", "score": 3, "note": "Broad gentle silhouette survives; torso and shoulder transitions remain geometric." },
+        "headBodyProportions": { "label": "head/body proportions", "score": 3, "note": "Large friendly head and grounded body read at both views." },
+        "hairMass": { "label": "hair mass", "score": 3, "note": "The small crown preserves negative space above the cheeks." },
+        "clothingConstruction": { "label": "clothing construction", "score": 3, "note": "Layered casual shirt reads, with simplified hems and folds." },
+        "faceExpressionRead": { "label": "face/expression read", "score": 3, "note": "Soft face and atlas expressions read; cheek/chin sculpt needs refinement." },
+        "heroAndFieldScale": { "label": "hero + 40px read", "score": 3, "note": "Lou's breadth reads at 40px; hero scale remains procedural." }
+      }
+    },
+    "tank": {
+      "status": "needs-polish",
+      "evidence": "tank-fidelity-review.png",
+      "categories": {
+        "frontProfileSilhouette": { "label": "front/profile silhouette", "score": 3, "note": "Low wide body and planted legs survive; organic muscle and cloth transitions remain." },
+        "headBodyProportions": { "label": "head/body proportions", "score": 3, "note": "The bald crown and massive torso ratio read immediately." },
+        "hairMass": { "label": "hair mass", "score": 5, "note": "The approved bald negative space is preserved exactly." },
+        "clothingConstruction": { "label": "clothing construction", "score": 3, "note": "Massive tee silhouette survives; sleeves and hem need sculpt polish." },
+        "faceExpressionRead": { "label": "face/expression read", "score": 3, "note": "Sleepy compact face reads, with simplified cheek and brow forms." },
+        "heroAndFieldScale": { "label": "hero + 40px read", "score": 3, "note": "Tank is unmistakable at field scale; close-up topology remains geometric." }
+      }
+    },
+    "mimi_mash": {
+      "status": "approved",
+      "evidence": "mimi-mash-fidelity-review.png",
+      "categories": {
+        "frontProfileSilhouette": { "label": "front/profile silhouette", "score": 4, "note": "Curl-ring halo, proud face and spring-loaded taper survive in both views." },
+        "headBodyProportions": { "label": "head/body proportions", "score": 4, "note": "Large expressive head, compact hoodie torso and grounded legs match the intended hierarchy." },
+        "hairMass": { "label": "hair mass", "score": 4, "note": "A dense cap plus visible curl perimeter frames the face without swallowing it." },
+        "clothingConstruction": { "label": "clothing construction", "score": 4, "note": "Hood, broad kangaroo pocket, ribbed hem and jeans remain distinct after team tint." },
+        "faceExpressionRead": { "label": "face/expression read", "score": 4, "note": "Proud chin, large eyes and expression atlas read in the live toon shader." },
+        "heroAndFieldScale": { "label": "hero + 40px read", "score": 4, "note": "Hair, hoodie pocket and forward energy survive the 40-pixel reduction." }
+      }
+    }
+  }
+}

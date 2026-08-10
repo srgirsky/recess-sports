@@ -3,9 +3,9 @@
 Run from the repository root:
   blender --background --factory-startup --python scripts/v2/blender/build-signature-source.py -- calls_shot
 
-The .blend is a review/authoring source. The deterministic Node exporter still
-owns the contract-legal runtime GLB because a raw Blender round-trip reorders
-canonical joints.
+Bootstrap/migration utility only. Finished .blend files are authoritative and
+must ship through ``npm run export:authored-character -- <id>``; this script
+refuses to replace an existing source.
 """
 
 from pathlib import Path
@@ -40,6 +40,8 @@ def main() -> None:
     output = REPO / "assets/v2/source" / output_name
     if not model.exists() or not turnaround.exists():
         raise RuntimeError(f"export {name} and generate {turnaround_name} before building the Blender source")
+    if output.exists():
+        raise RuntimeError(f"refusing to overwrite authoritative Blender source {output}")
 
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.context.scene.name = f"{name.replace(' ', '_')}_Pilot"
@@ -78,7 +80,7 @@ def main() -> None:
         "Do not rename, reorder or move canonical bones.\n"
         "LOD0/1/2 must remain under 7000/3000/1200 triangles.\n"
         "The packed turnaround is the visual target.\n"
-        f"Use npm run export:roster-kid -- {character_id} for the shipping GLB; "
+        f"Use npm run export:authored-character -- {character_id} for the shipping GLB; "
         "raw Blender export is not contract-safe.\n"
     )
 
