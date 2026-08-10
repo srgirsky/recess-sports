@@ -180,7 +180,9 @@ export function pose(kid: THREE.Group, name: PoseName): void {
       // Head in rear-3/4 (verdict-002): yawed toward the plate camera so the
       // cheek, nose tip and near eye break the silhouette — steam-02's batter
       // shows a face sliver in the main view; a dead-away head shows none.
-      set(j.head, -0.04, 0.85, 0.08);
+      // Chin lifted (-x) so the near eye clears the cap brim — verdict-005
+      // still read it as "a sliver under the brim" at the old -0.04.
+      set(j.head, -0.14, 0.95, 0.08);
       break;
     }
 
@@ -195,10 +197,11 @@ export function pose(kid: THREE.Group, name: PoseName): void {
         j.hips.position.y -= 0.06;
         j.hips.rotation.set(-0.14, 0.1, 0.05);
       }
-      // Hands together OVERHEAD — the windup silhouette that still reads at
-      // 60 ft from the plate cameras (a lifted knee alone foreshortens away).
-      solveArm(j, 'R', V1.set(0.14, 2.45, 0.08).clone());
-      solveArm(j, 'L', V1.set(-0.14, 2.45, 0.08).clone());
+      // ASYMMETRIC arms (verdict-005: the hands-together version read as
+      // hugging a barrel): glove tucked at the chest, throwing hand trailing
+      // low behind the hip — the frame-080 mid-windup silhouette.
+      solveArm(j, 'L', V1.set(0.3, 1.02, 0.52).clone()); // glove at the chest
+      solveArm(j, 'R', V1.set(-0.52, 0.24, -0.58).clone()); // ball hand trails behind the hip
       set(j.head, 0.02, 0, -0.04);
       break;
     }
@@ -224,20 +227,24 @@ export function pose(kid: THREE.Group, name: PoseName): void {
     }
 
     case 'ready': {
-      // Fielder athletic crouch: feet wide, hands low and forward.
-      set(j.legL, -0.32, 0, 0.24);
-      set(j.legR, -0.32, 0, -0.24);
-      set(j.kneeL, 0.5);
-      set(j.kneeR, 0.5);
-      plant(j.footL, -0.32, 0.5);
-      plant(j.footR, -0.32, 0.5);
+      // Fielder athletic crouch, LOUD enough for second-base distance —
+      // verdict-005 still read fielders as "capsules with hats" out there.
+      // Wider feet, deeper knees, hips folded forward, and hands driven
+      // down-and-OUT so the elbow gap notches the silhouette either side of
+      // the torso (the notch, not the joint itself, is what survives 45px).
+      set(j.legL, -0.4, 0, 0.3);
+      set(j.legR, -0.4, 0, -0.3);
+      set(j.kneeL, 0.7);
+      set(j.kneeR, 0.7);
+      plant(j.footL, -0.4, 0.7);
+      plant(j.footR, -0.4, 0.7);
       if (j.hips) {
-        j.hips.position.y -= 0.14;
-        j.hips.rotation.set(0.2, 0, 0);
+        j.hips.position.y -= 0.22;
+        j.hips.rotation.set(0.32, 0, 0);
       }
-      solveArm(j, 'L', V1.set(0.42, 0.55, 0.55).clone());
-      solveArm(j, 'R', V1.set(-0.42, 0.55, 0.55).clone());
-      set(j.head, -0.24);
+      solveArm(j, 'L', V1.set(0.62, 0.3, 0.48).clone());
+      solveArm(j, 'R', V1.set(-0.62, 0.3, 0.48).clone());
+      set(j.head, -0.34);
       break;
     }
 

@@ -138,16 +138,32 @@ export function bat(wood: THREE.Material, tape: THREE.Material): THREE.Group {
   return g;
 }
 
-/** Fielder's glove worn over a hand: fat pad + finger bumps + thumb. */
+/** Fielder's mitt worn IN PLACE of the hand (kid.ts hides the skin hand under
+ * it): ONE contiguous leather mass — fat pad, a finger ridge sunk half-deep
+ * into the pad edge so it reads as creases rather than balls, a hugging thumb,
+ * and a cuff cone that swallows the wrist so no skin shows between mitt and
+ * sleeve. Verdict-005 read the old version as "knuckle balls on a skin wrist";
+ * contiguity beats anatomy at every camera distance. */
 export function glove(leather: THREE.Material, dark: THREE.Material, side: number): THREE.Group {
   const g = new THREE.Group();
   g.name = 'glove';
-  g.add(blob(leather, 0.24, [1.0, 1.12, 0.62], [0, -0.08, 0.04]));
-  for (let i = 0; i < 3; i++) {
-    g.add(blob(leather, 0.095, [1, 1.25, 1], [(i - 1) * 0.13, 0.14, 0.05], 10));
+  // Cuff: forearm girth up top, pad girth below; overlaps the forearm capsule
+  // cap so mitt and arm fuse into one outline.
+  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.155, 0.24, 0.44, 14), leather);
+  cuff.position.y = 0.16;
+  g.add(cuff);
+  // The pad: one fat mass centered on the hand.
+  g.add(blob(leather, 0.3, [1.0, 1.1, 0.72], [0, -0.12, 0.02], 18));
+  // Finger ridge: bumps buried to ~half depth along the pad's far edge.
+  for (let i = 0; i < 4; i++) {
+    g.add(blob(leather, 0.1, [1, 1.2, 0.9], [side * (0.17 - i * 0.113), -0.34, 0.0], 10));
   }
-  g.add(blob(leather, 0.1, [1.15, 1, 1], [side * 0.22, -0.05, 0.08], 10));
-  g.add(blob(dark, 0.13, [1, 1, 0.4], [0, -0.05, 0.16], 10)); // pocket shadow
+  // Thumb hugging the pad, angled with it — never floating clear.
+  const thumb = blob(leather, 0.11, [1, 1.35, 0.9], [-side * 0.26, -0.14, 0.03], 12);
+  thumb.rotation.z = -side * 0.7;
+  g.add(thumb);
+  // Pocket shadow on the palm face.
+  g.add(blob(dark, 0.16, [1.05, 1.1, 0.35], [0, -0.14, 0.18], 12));
   return g;
 }
 

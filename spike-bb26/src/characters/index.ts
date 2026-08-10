@@ -100,7 +100,8 @@ export function init(ctx: Ctx): void {
 
   // Forced OPEN mouth: the pitcher is the one face looking at the batting
   // camera — a rolled thin 'grim' line vanishes at his ~60px head size.
-  const pitcher = makeKid(1001, { ...team, glove: false, ball: true, cap: 'jerseyBlue', face: { mouth: 'open' } });
+  // Glove stays ON (team default): the windup pose tucks it at his chest.
+  const pitcher = makeKid(1001, { ...team, ball: true, cap: 'jerseyBlue', face: { mouth: 'open' } });
   place(pitcher, 0, 46, 'windup');
   faceToward(pitcher, 0, 0);
 

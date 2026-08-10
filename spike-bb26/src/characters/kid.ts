@@ -198,18 +198,27 @@ export function buildKid(mats: MatCache, rng: KidRng, outfit: OutfitSpec = {}): 
     arm.add(blob(r.sleeves === 'tank' ? skin : shirt, 0.17 * w, [1, 1, 1], [0, 0, 0], 14)); // shoulder ball
     arm.add(limbSegment(longSleeves ? shirt : skin, 0.15 * w, 0.62));
     if (r.sleeves === 'short') {
-      const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.2 * w, 0.185 * w, 0.3, 14), shirt);
-      sleeve.position.y = -0.13;
+      // Sleeve runs the whole upper arm to the elbow — verdict-005 read the
+      // bare-skin upper arm on the catcher's raised arm as a doll joint.
+      const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(0.2 * w, 0.185 * w, 0.52, 14), shirt);
+      sleeve.position.y = -0.26;
       arm.add(sleeve);
       // Fat contrast cuff — the sleeve/arm boundary must read at distance.
       const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.195 * w, 0.19 * w, 0.09, 14), shirtTrim);
-      cuff.position.y = -0.31;
+      cuff.position.y = -0.53;
       arm.add(cuff);
     }
     const elbow = new THREE.Group();
     elbow.name = L ? 'elbowL' : 'elbowR';
     elbow.position.y = -0.6;
+    // Joint filler at the pivot: sleeve-colored on sleeved arms (the sleeve
+    // wraps PAST the elbow and bends with the forearm, so no seam can open in
+    // any pose — verdict-005's elbow-seam fix), skin on tank tops.
+    elbow.add(blob(r.sleeves === 'tank' ? skin : shirt, 0.155 * w, [1, 1, 1], [0, 0.02, 0], 14));
     elbow.add(limbSegment(longSleeves ? shirt : skin, 0.13 * w, 0.5));
+    // Wrist filler: fuses the forearm cap into the hand so the wrist seam
+    // disappears (swallowed by the mitt cuff when a glove is worn).
+    elbow.add(blob(skin, 0.125 * w, [1, 1, 1], [0, -0.5, 0], 12));
     if (longSleeves) {
       const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.145 * w, 0.145 * w, 0.11, 12), shirtTrim);
       cuff.position.y = -0.44;
@@ -255,8 +264,13 @@ export function buildKid(mats: MatCache, rng: KidRng, outfit: OutfitSpec = {}): 
     b.position.set(0, -0.12, 0.05);
   }
   if (r.glove) {
+    // The mitt REPLACES the skin hand: hiding the fingers/thumb underneath is
+    // what makes it one contiguous brown shape (verdict-005) — the old version
+    // let skin knuckles poke out around the leather.
+    const handL = kid.getObjectByName('handL')!;
+    for (const child of handL.children) child.visible = false;
     const gl = glove(mats.get('gloveBrown'), mats.get('gloveBrown', 0.6), 1);
-    kid.getObjectByName('handL')!.add(gl);
+    handL.add(gl);
     gl.position.set(0, -0.05, 0.05);
   }
   if (r.ball) {
