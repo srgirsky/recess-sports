@@ -36,10 +36,13 @@ const VIEWPORT = { width: 1059, height: 804 };
 const CAPTURES = [
   { clip: 'idle', out: 'hero', settleMs: 1500 },
   { clip: 'run', out: 'run', settleMs: 1200 },
-  // '◉ MARKER' is the flash the readout paints ON the marker frame; the
-  // static '· CONTACT@7' annotation is present from frame 0 and must not
-  // satisfy the wait, or the still shows the load instead of the contact.
-  { clip: 'swing_contact', out: 'swing', waitForMarker: '◉ MARKER' },
+  // Screenshot at the marker: wait until the readout's CURRENT frame reaches
+  // the clip's declared marker frame. The spike's '◉ MARKER' flash fires on
+  // an exact frame-equality check, and a headless renderer running below full
+  // rate can step 5→8 and never equal 7 — waiting for the flash was flaky in
+  // exactly that way. The static '· CONTACT@7' annotation alone must never
+  // satisfy the wait either, or the still shows the load instead of contact.
+  { clip: 'swing_contact', out: 'swing', atMarker: true },
 ];
 
 function startVite() {
@@ -77,17 +80,17 @@ async function captureCharacter(page, id, slug) {
   for (const capture of CAPTURES) {
     const row = page.locator('.anim-list button', { hasText: capture.clip }).first();
     await row.click();
-    if (capture.waitForMarker) {
-      // The readout flashes the marker name on the frame it lands. Catch it
-      // live so the still shows the bat AT the ball, not the follow-through.
+    if (capture.atMarker) {
       await page
         .waitForFunction(
-          (marker) => (document.body.textContent ?? '').includes(marker),
-          capture.waitForMarker,
+          () => {
+            const readout = (document.body.textContent ?? '').match(/frame\s*(\d+)\s*\/\s*\d+[^@]*@(\d+)/);
+            return readout !== null && Number(readout[1]) >= Number(readout[2]);
+          },
           { timeout: 8_000 }
         )
         .catch(() => {
-          console.warn(`  ⚠ ${capture.clip}: marker flash not observed; capturing current frame`);
+          console.warn(`  ⚠ ${capture.clip}: marker frame not reached; capturing current frame`);
         });
     } else {
       await page.waitForTimeout(capture.settleMs);
