@@ -23,7 +23,7 @@ from mathutils import Vector
 REPO = Path.cwd()
 OUTPUT = REPO / "assets/v2/source/junebug-pilot.blend"
 FACE_ATLAS = REPO / "assets/v2/source/junebug-face-atlas.png"
-REVISION = "junebug-turnaround-fidelity-v9"
+REVISION = "junebug-turnaround-fidelity-v10"
 SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 
 
@@ -67,13 +67,16 @@ SHIRT_DARK = rgba("6E1F1B")
 PANTS = rgba("EC8D7C")
 PANTS_DARK = rgba("CC6B5E")
 SHOE = rgba("9B252B")
-WHITE = rgba("F3E9D5")
+# Brighter than the old F3E9D5: at a true 40px downscale the headband kept
+# reading light GREY, and the toon ramp eats ~a step of luminance — the trim
+# white has to start nearer paper-white for the band to anchor identity.
+WHITE = rgba("F8F2E4")
 SOLE = rgba("EEE5D8")
 TEAM_MASK = rgba("B8B8B8")
-# Warm sheen for strand grooves — dark hair reads flat without a second tone,
-# but the tone stays CLOSE to the hair's (one soft step, not scratch-line
-# contrast) so the grooves read as grooming, not marks drawn on the mass.
-HAIR_SHINE = rgba("46301E")
+# Warm sheen for strand grooves — dark hair reads flat without a second tone.
+# One READABLE step up (the 46301E grooves vanished on the round-2 board and
+# the critic scored "no strand grouping"), still far from scratch-line white.
+HAIR_SHINE = rgba("523A22")
 
 
 @dataclass
@@ -373,9 +376,11 @@ class MeshBuilder:
                 # temple term (peaking where the columns turn from front to
                 # side) lets the hair dip toward the ear tops the way the
                 # turnaround's does, which visually closes the gap from the
-                # sides as well.
+                # sides as well. Doubled 0.040 -> 0.080: at the old amplitude
+                # the dip was under half a row and the round-2 board still
+                # scored "no temple dip below the band" (brief item 7).
                 temple = (4.0 * front * (1.0 - front)) ** 2
-                reach = 0.50 - 0.054 * front**1.5 + 0.23 * blend + 0.018 * front**8 + 0.040 * temple
+                reach = 0.50 - 0.054 * front**1.5 + 0.23 * blend + 0.018 * front**8 + 0.080 * temple
                 phi = reach * pi * row / rings
                 # 0.16, LOCKED to the skull's own front relaxation: at 0.20
                 # the cap's forehead dipped 0.004 BEHIND the (v9-softened)
@@ -450,12 +455,17 @@ class MeshBuilder:
                 # underside shadow read as a moustache. It lives on the dense
                 # patch (not the coarse skull) so its curve is actually sampled,
                 # and it breaks the profile silhouette, rubric 3.5's bar for 5.
-                # Amplitude 0.115 (was 0.075): the round-2 profile board still
-                # read "no nose breaks the silhouette" — at 0.075 the bump was
-                # absorbed by the face flattening it rides on. Narrower in x
-                # (0.17) so the taller push stays a nose, not a muzzle.
-                nose = max(0.0, 1.0 - ((nz + 0.58) / 0.32) ** 2) * max(0.0, 1.0 - (nx / 0.17) ** 2)
-                nose_y = -0.115 * (nose**1.5) * max(0.0, cos(horizontal))
+                # Amplitude 0.145 (0.075 -> 0.115 -> here): each round's
+                # profile board kept reading "the nose barely breaks the
+                # profile" — the bump rides a flattened surface that absorbs
+                # most of it. SHORTER vertically (half-span 0.24, was 0.32,
+                # centre lifted to -0.56): the old base ran to nz -0.90, dead
+                # against the atlas mouth line, and nose shading + lip stroke
+                # fused into the board's "mustache smudge". The base now stops
+                # at nz -0.80 (atlas y~103), a clear philtrum above the y~114.5
+                # mouth.
+                nose = max(0.0, 1.0 - ((nz + 0.56) / 0.24) ** 2) * max(0.0, 1.0 - (nx / 0.18) ** 2)
+                nose_y = -0.145 * (nose**1.5) * max(0.0, cos(horizontal))
                 # The patch rides the skull's chin push with the identical
                 # terms (frontness there is -sin(theta), which equals
                 # cos(horizontal) here) — without this the pushed skull
@@ -481,13 +491,6 @@ class MeshBuilder:
         for lower, upper in zip(grid, grid[1:]):
             for column in range(columns):
                 self.face((lower[column], lower[column + 1], upper[column + 1], upper[column]), 0)
-
-
-def torus_points(
-    center: tuple[float, float, float], rx: float, ry: float, count: int
-) -> list[tuple[float, float, float]]:
-    cx, cy, cz = center
-    return [(cx + rx * cos(2 * pi * i / count), cy + ry * sin(2 * pi * i / count), cz) for i in range(count)]
 
 
 def catmull_rom(
@@ -565,15 +568,20 @@ def install_face_atlas() -> None:
     image.name = "face_atlas"
 
 
-# The hem stops at 1.82, ABOVE the painted belt band (1.695-1.80 on the pelvis
-# loft): the v8 hem ran to 1.75 and covered the belt entirely — the board's
-# "no belt reads at the waist" was a jersey one notch too long, not a missing
-# belt.
+# The hem stops at 1.82, ABOVE the painted belt band (1.725-1.81 visible on
+# the pelvis loft): the v8 hem ran to 1.75 and covered the belt entirely — the
+# board's "no belt reads at the waist" was a jersey one notch too long, not a
+# missing belt.
 TORSO_LEVELS = [
     (1.82, 0.43, 0.265, "Hips"),
     (1.86, 0.43, 0.27, "Spine"),
     (2.18, 0.49, 0.29, "Spine1"),
     (2.43, 0.47, 0.28, "Spine2"),
+    # The 2.555 level exists for the SHOULDER SLOPE: jumping 0.47->0.315 in
+    # one 0.24ft step drew the square boxed shoulder and the hard back crease
+    # the round-2 profile board flagged; an intermediate ring turns both into
+    # a slope the concept draws.
+    (2.555, 0.415, 0.25, "Spine2"),
     (2.67, 0.315, 0.21, "Spine2"),
 ]
 
@@ -604,11 +612,14 @@ def vneck_half_width(z: float) -> float:
     return knots[-1][1]
 
 
-# Twin white stripes along the sleeve's upper-front quadrant, shoulder seam to
-# cuff, as the turnaround draws them. They are PAINTED bands on the sleeve's own
-# surface: round 1 built them as thin tubes riding the cloth and the board
-# showed them as cracked fins on every silhouette.
-ARM_STRIPE_SPANS = ((pi / 2 + 0.14, pi / 2 + 0.36), (pi / 2 + 0.52, pi / 2 + 0.74))
+# Twin white stripes along the sleeve, shoulder seam to cuff, as the turnaround
+# draws them. They are PAINTED bands on the sleeve's own surface: round 1 built
+# them as thin tubes riding the cloth and the board showed them as cracked fins.
+# The spans sit on the FRONT-TOP diagonal (0.45-1.10 past the +z crown toward
+# -y), not the crown itself: at the old 0.14-0.74 the front board saw the
+# stripes edge-on across the top of the T-pose arm and they collapsed to
+# shoulder dashes — a band must FACE the camera that grades it.
+ARM_STRIPE_SPANS = ((pi / 2 + 0.45, pi / 2 + 0.70), (pi / 2 + 0.85, pi / 2 + 1.10))
 
 
 def arm_angles(base: int, stripes: bool) -> list[float]:
@@ -792,7 +803,11 @@ def build_shoe(builder: MeshBuilder, side: int, prefix: str, detail: int, segmen
         builder.ellipsoid((x0, -0.16, 0.20), (0.25, 0.38, 0.17), 1, SHOE, foot, segments, rings, flatten_sole=True)
         builder.ellipsoid((x0, -0.15, 0.065), (0.24, 0.355, 0.052), 1, SOLE, foot, segments, rings, flatten_sole=True)
         return
-    seg = 12 if detail >= 2 else 9
+    # 14x6 at hero (was 12x6): the round-2 board still read "heavily faceted
+    # shoe bodies" — the ankle quarter and toe box are the two most silhouette-
+    # exposed curved forms below the knee, and 30-degree columns polygonise
+    # them at board scale.
+    seg = 14 if detail >= 2 else 9
     rng = 6 if detail >= 2 else 4
     # Ankle quarter with the dark inner collar painted on its own crown.
     builder.ellipsoid(
@@ -811,8 +826,10 @@ def build_shoe(builder: MeshBuilder, side: int, prefix: str, detail: int, segmen
     # Sole tucked at the heel (ry 0.335, centre -0.115; was 0.37 at -0.10):
     # the old plate ran 0.04 past the upper all round and the profile read a
     # skateboard flange behind the heel. It stays slightly proud at the toe,
-    # where the art draws the lip.
-    builder.ellipsoid((x0, -0.115, 0.065), (0.228, 0.335, 0.052), 1, SOLE, foot, seg, max(3, rng - 2), flatten_sole=True)
+    # where the art draws the lip. Thickened rz 0.052 -> 0.060: the round-2
+    # board called the thinner lens a "flat plate" — the concept's sole is a
+    # rounded slab with a visible white sidewall.
+    builder.ellipsoid((x0, -0.115, 0.068), (0.228, 0.335, 0.060), 1, SOLE, foot, seg, max(4, rng - 2), flatten_sole=True)
     lace_rows = (-0.10, -0.19, -0.28) if detail >= 2 else (-0.20,)
     for lace_y in lace_rows:
         along = min(1.0, abs(lace_y + 0.13) / 0.30)
@@ -834,40 +851,47 @@ def build_ear(builder: MeshBuilder, side: int, detail: int) -> None:
     swells at its lower-front arc into a lobe. Round 1 composed the ear from
     four butted primitives and the board read faceted bracket tabs."""
     points = 12 if detail >= 2 else 8
-    cy, cz = 0.035, 3.27
-    ry, rz = 0.078, 0.108
+    cy, cz = 0.035, 3.275
+    # SMALL (0.071/0.098): at 0.080/0.110 the first v10 board's front view
+    # still read the ears as oversized tabs — the concept's front ears are
+    # barely-there nubs half hidden by the temple hair.
+    ry, rz = 0.071, 0.098
 
     def outline(t: float, scale: float) -> tuple[float, float]:
-        lobe = 1.0 + 0.22 * max(0.0, -sin(t)) ** 2
+        # The swell is centred at the LOWER-FRONT of the outline (t ~ -2.2:
+        # cos negative = forward, sin negative = down), not the bottom pole —
+        # the round-2 profile read a radially uniform "lobeless donut" because
+        # the old -sin(t)^2 term fattened the whole underside evenly. A tight
+        # cubic falloff makes one hanging lobe the profile can actually see.
+        lobe = 1.0 + 0.34 * max(0.0, cos(t + 2.2)) ** 3
         return (cy + ry * scale * lobe * cos(t), cz + rz * scale * lobe * sin(t))
 
     # FIVE rows at hero detail: base under the skull, a BULGED mid row, the
-    # rim peak, then the turn down into the concha. The v8 three-row ear put
-    # base and rim at nearly the same outline scale, so from the front the ear
-    # was a flat plate on a stick — the board's "flat slab tab". The bulge row
-    # is what rounds the rim silhouette front-on, and the extra x travel
-    # (0.408 -> 0.487) is what rounds it in depth.
+    # rim peak, then the turn down into the concha. Each row past the base
+    # also shifts BACK (+y): a rim stacked at constant y is a flat plate seen
+    # from the front — the round-2 "paddle tab" — while a swept-back rim
+    # foreshortens into the skull the way a real ear does.
     rows_spec = (
-        (0.408, 0.98, SKIN),
-        (0.442, 1.08, SKIN),
-        (0.472, 1.02, SKIN),
-        (0.487, 0.78, SKIN),
-        (0.470, 0.50, SKIN_SHADOW),
+        (0.406, 0.96, 0.000, SKIN),
+        (0.440, 1.07, 0.012, SKIN),
+        (0.468, 1.00, 0.022, SKIN),
+        (0.482, 0.74, 0.028, SKIN),
+        (0.464, 0.46, 0.018, SKIN_SHADOW),
     ) if detail >= 2 else (
-        (0.415, 1.00, SKIN),
-        (0.484, 0.92, SKIN),
-        (0.468, 0.56, SKIN_SHADOW),
+        (0.415, 1.00, 0.000, SKIN),
+        (0.484, 0.90, 0.022, SKIN),
+        (0.468, 0.54, 0.014, SKIN_SHADOW),
     )
     rows: list[list[int]] = []
-    for x_abs, scale, color in rows_spec:
+    for x_abs, scale, back, color in rows_spec:
         row = []
         for index in range(points):
             t = 2 * pi * index / points
             ear_y, ear_z = outline(t, scale)
-            row.append(builder.vertex((x_abs * side, ear_y, ear_z), color, "Head"))
+            row.append(builder.vertex((x_abs * side, ear_y + back, ear_z), color, "Head"))
         rows.append(row)
     builder.grid(rows, 0, flip=side < 0)
-    center = builder.vertex((0.452 * side, cy + 0.008, cz - 0.005), SKIN_SHADOW, "Head")
+    center = builder.vertex((0.446 * side, cy + 0.030, cz - 0.005), SKIN_SHADOW, "Head")
     for index in range(points):
         nxt = (index + 1) % points
         face = (center, rows[-1][index], rows[-1][nxt]) if side > 0 else (center, rows[-1][nxt], rows[-1][index])
@@ -905,7 +929,9 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
             # no gap shadow behind the trim to read as a cracked edge.
             pinch = 1.0 - 0.42 * dip
             collar_points.append((rx * cos(theta) * pinch, ry * 1.01 * sin(theta) - 0.004, z + 0.008))
-        builder.tube(collar_points, [0.034] * collar_count, 1, WHITE, "Spine2", 6 if detail >= 2 else max(5, segments // 3), cyclic=True, axis=Vector((0.0, 0.0, 1.0)))
+        # 0.030, was 0.034: the fatter cord read as a "lumpy rolled chunk" on
+        # the shoulders in profile — the concept's trim is a flat narrow band.
+        builder.tube(collar_points, [0.030] * collar_count, 1, WHITE, "Spine2", 6 if detail >= 2 else max(5, segments // 3), cyclic=True, axis=Vector((0.0, 0.0, 1.0)))
     if detail >= 2:
         # Buttoned placket: a dark seam down the chest with three buttons, as
         # the front view draws them. Geometry, not texture — it must survive
@@ -914,18 +940,21 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         # and read as a detached red strip in the profile silhouette.
         # Ends at 1.84, just above the raised 1.82 hem — a placket running past
         # the hem would float in front of the belt.
+        # THIN seam (0.006, was 0.010): at the old width the placket line and
+        # its same-colour buttons fused into one dark dash column — the round-2
+        # board's "placket shows only dark dashes". The buttons must be the
+        # larger, ROUNDER mark of the two or they read as more stitching.
         placket = []
         for z in (2.40, 2.15, 1.98, 1.84):
             _, ry = torso_radii(z)
             placket.append((0.0, -ry - 0.002, z))
-        builder.tube(placket, [0.010] * 4, 1, SHIRT_DARK, "Spine1", 5)
-        # ROUND buttons the front view can actually read as buttons — at 0.018
-        # across they rendered as more stitch dashes on the placket line.
-        # Sunk to 0.009 proud (was 0.019): at the old stand-off they broke the
-        # profile silhouette as the round-2 board's "dark lumps".
+        builder.tube(placket, [0.006] * 4, 1, SHIRT_DARK, "Spine1", 5)
+        # ROUND buttons, clearly wider (0.028) than the 0.006 seam they sit on
+        # so each reads as a disc, not a dash. Kept nearly flush (0.010 proud):
+        # a taller stand-off broke the profile silhouette as "dark lumps".
         for z in (2.26, 2.08, 1.90):
             _, ry = torso_radii(z)
-            builder.ellipsoid((0.0, -ry - 0.001, z), (0.022, 0.010, 0.022), 1, SHIRT_DARK, "Spine1", 6, 4)
+            builder.ellipsoid((0.0, -ry - 0.002, z), (0.028, 0.011, 0.028), 1, SHIRT_DARK, "Spine1", 7, 4)
 
     # Each arm is ONE stitched surface — sleeve, painted stripes, painted white
     # cuff band and bare skin as colour bands on shared rings (build_arm). A
@@ -956,14 +985,17 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
             finger_lengths = (0.115, 0.14, 0.135, 0.105) if finger_count == 4 else (0.115, 0.14, 0.11)
             for z_offset, length in zip(finger_offsets, finger_lengths):
                 start_x = 1.50 * side
-                # Fingers CURL slightly toward the palm: dead-straight axial
-                # fingers seen down the T-pose arm rendered as concentric
-                # stacked rings inside the cuff (the board's profile defect).
+                # Fingers CURL toward the palm — DEEPER than v9's token bend
+                # (tip drop 0.016 -> 0.038, forward curl 0.052 -> 0.070): the
+                # round-2 profile still read the hand end-on as a "cinnamon
+                # roll" of concentric rings because near-axial fingers present
+                # only their cap rings to that camera. A real drop and curl
+                # gives the profile a curved hand mass instead.
                 builder.tube(
                     [
                         (start_x, -0.025, 2.425 + z_offset),
-                        ((1.50 + length * 0.62) * side, -0.038, 2.425 + z_offset - 0.006),
-                        ((1.50 + length) * side, -0.052, 2.425 + z_offset - 0.016),
+                        ((1.50 + length * 0.62) * side, -0.045, 2.425 + z_offset - 0.016),
+                        ((1.50 + length) * side, -0.070, 2.425 + z_offset - 0.038),
                     ],
                     [0.042, 0.040, 0.028],
                     0,
@@ -1010,12 +1042,16 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     # belt reads". The pelvis is now a LOFT: full-depth walls (ry 0.24) bury
     # the thigh tops on every side, the underside is a low flat crotch at
     # 1.38 with daylight between the thighs below it (rubric 3.12), and the
-    # belt is painted rows at 1.70-1.795, fully visible under the raised hem.
+    # belt is painted rows at 1.725-1.81, fully visible under the raised hem.
     # The band paints THROUGH the hem line (to 1.85, hem at 1.82): stopping it
     # at 1.80 left a lit salmon sliver between hem and belt on the first v9
     # board. The rows above 1.85 stay PANTS and are buried inside the jersey.
+    # The belt is a THIN strap (visible 1.725-1.81 under the 1.82 hem, ~0.09ft
+    # like the concept's), not the 0.155ft cummerbund of v9 — the wide dark
+    # band was the middle tier of the round-2 board's "three hard-stepped
+    # cylinders / skirt over leggings" read.
     def pelvis_color(theta: float, z: float):
-        return SHIRT_DARK if 1.695 <= z <= 1.85 else PANTS
+        return SHIRT_DARK if 1.725 <= z <= 1.85 else PANTS
 
     # The floor sits at 1.50 with FULL depth — the concept's own crotch height
     # (~0.39 of the figure). A first v9 pass tapered the loft down to 1.38,
@@ -1029,34 +1065,39 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     # thigh circle — at the centreline both pass with room, and the first two
     # v9 boards each showed the graze as pale thigh strips surfacing through
     # the seat.
+    # rx eased 0.450 -> 0.442 through the seat: the 0.035 ledge where the
+    # pelvis wall overhung the thighs' outer line (0.225 + 0.194) was the
+    # bottom step of the skirt read. 0.442 keeps the thigh-shoulder margin
+    # (wall depth at x 0.31 is 0.178 vs the thigh's 0.163 reach) while the
+    # hip-to-leg transition narrows to a crease.
     if detail >= 1:
         pelvis_levels = [
-            (1.50, 0.450, 0.250, "Hips"),
-            (1.56, 0.450, 0.248, "Hips"),
-            (1.62, 0.447, 0.243, "Hips"),
-            (1.685, 0.443, 0.239, "Hips"),
-            (1.70, 0.442, 0.239, "Hips"),
-            (1.795, 0.427, 0.233, "Hips"),
-            (1.81, 0.425, 0.232, "Hips"),
+            (1.50, 0.442, 0.250, "Hips"),
+            (1.56, 0.442, 0.248, "Hips"),
+            (1.62, 0.440, 0.243, "Hips"),
+            (1.71, 0.436, 0.239, "Hips"),
+            (1.725, 0.435, 0.238, "Hips"),
+            (1.795, 0.428, 0.234, "Hips"),
+            (1.81, 0.426, 0.232, "Hips"),
             (1.88, 0.400, 0.220, "Hips"),
         ]
         if detail == 1:
             pelvis_levels = [
-                (1.50, 0.450, 0.250, "Hips"),
-                (1.62, 0.447, 0.243, "Hips"),
-                (1.685, 0.443, 0.239, "Hips"),
-                (1.70, 0.442, 0.239, "Hips"),
-                (1.795, 0.427, 0.233, "Hips"),
-                (1.81, 0.425, 0.232, "Hips"),
+                (1.50, 0.442, 0.250, "Hips"),
+                (1.62, 0.440, 0.243, "Hips"),
+                (1.71, 0.436, 0.239, "Hips"),
+                (1.725, 0.435, 0.238, "Hips"),
+                (1.795, 0.428, 0.234, "Hips"),
+                (1.81, 0.426, 0.232, "Hips"),
                 (1.88, 0.400, 0.220, "Hips"),
             ]
         builder.loft(pelvis_levels, 1, PANTS, segments, color_fn=pelvis_color)
     else:
         builder.ellipsoid((0.0, 0.0, 1.62), (0.45, 0.225, 0.27), 1, PANTS, "Hips", segments, rings)
-    if detail >= 2:
-        # The tiny buckle — the one piece of belt that is genuinely geometry —
-        # centred ON the painted band.
-        builder.ellipsoid((0.0, -0.243, 1.75), (0.026, 0.010, 0.022), 1, WHITE, "Hips", 6, 4)
+    # No buckle geometry. The white ellipsoid that stood here read as a "stray
+    # white button centred on the belt" on the round-2 board — the concept's
+    # belt is a plain strap, and the only white at the waist is the placket's
+    # absence of it. The painted band IS the whole belt.
 
     # Each leg is ONE stitched surface from hip to ankle (build_leg): salmon
     # pant with the pouf into the gathered knicker cuff, the darker cuff band
@@ -1101,8 +1142,11 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     builder.ellipsoid((0.0, -0.015, 3.40), (0.435, 0.44, 0.615), 0, SKIN, "Head", skull_segments, skull_rings, face_shape=True)
     # A DENSE patch at hero scale: 7x7 mapped the whole face across a handful
     # of quads and linear UV interpolation over that curvature sheared the
-    # atlas's round irises into the angular wedges the board showed.
-    builder.face_patch(max(16, segments + 2) if detail >= 2 else max(6, segments // 2), max(12, rings + 4) if detail >= 2 else max(5, rings // 2))
+    # atlas's round irises into the angular wedges the board showed. 20x13
+    # (was 16x12): the taller v10 nose spans only ~0.36 rad of the patch, and
+    # at 16 columns three vertices carried the whole bump — a pyramid, not a
+    # nose.
+    builder.face_patch(20 if detail >= 2 else max(6, segments // 2), 13 if detail >= 2 else max(5, rings // 2))
     # The nose is sculpted INTO the face patch (see face_patch's nose term) —
     # no mounted ellipsoid, no muzzle block. Ears ride LOW (centre 3.27) like
     # the art's, and SMALL, one continuous smoothed form each (build_ear).
@@ -1118,7 +1162,12 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     # +6 columns over the round-1 cap: the hairline's front edge is the one
     # curve the front board reads against bare skin, and at segments+4 its
     # polygonal scallops were visible at hero scale.
-    builder.hair_cap(max(12, segments + 6), max(6, rings // 2 + 2), shine=detail >= 2)
+    # 24x8 at hero (was 20x6): the dome's polygonal silhouette was the round-2
+    # board's most-repeated faceting note, and rows are the only cure smooth
+    # shading cannot fake. LOD1/2 keep the round-1 density.
+    cap_columns = max(12, segments + (10 if detail >= 2 else 6))
+    cap_rows = max(6, rings // 2 + (4 if detail >= 2 else 2))
+    builder.hair_cap(cap_columns, cap_rows, shine=detail >= 2)
     # The headband is a flat RIBBON with a closed rectangular cross-section,
     # not a round tube: the v6 tube read as a rolled beanie brim from the
     # front, and the art draws a wide flat band (~0.11ft tall). It rides the
@@ -1166,8 +1215,12 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         # 4.155 vs the cap's 4.045, under the 4.16 hair ceiling. The v6 knot
         # crested 0.045 and the front silhouette swallowed it — half the
         # board's beanie misread.
-        knot_segments = max(10, segments // 2) if detail >= 2 else 6
-        knot_rings = max(6, rings // 2) if detail >= 2 else 3
+        # 13x7 at hero (was 10x6): the bun is the head's crowning silhouette
+        # form and the round-2 board read it visibly polygonal with a seam
+        # ridge against the dome — denser rows shade the flare crossing as the
+        # soft gather crease it is meant to be.
+        knot_segments = 13 if detail >= 2 else 6
+        knot_rings = 7 if detail >= 2 else 3
         # Widened to 0.34 (from 0.32): the 40 px front read shrank the bun to
         # a faint cap. Height cannot grow (4.16 hair ceiling), so the mass
         # that survives downscale has to come from width. The underside FLARES
@@ -1199,10 +1252,12 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     ]
     # The tail is the profile's signature curve, and the board showed it as
     # hard planar panels: 13 samples × 10 sides polygonises a 1.5ft sweep.
-    # LOD0 spends real geometry here (21 × 14) because rubric 3.3's 5 needs a
-    # smooth swept mass, and the tail is most of what the profile view IS.
+    # LOD0 spends real geometry here (20 × 14 — sides raised from 13, the odd
+    # count left one true edge on the profile silhouette that read as the
+    # round-2 "flat hard-edged ribbon") because rubric 3.3's 5 needs a smooth
+    # swept mass, and the tail is most of what the profile view IS.
     tail_samples = 20 if detail >= 2 else (11 if detail == 1 else 7)
-    tail_sides = 13 if detail >= 2 else (10 if detail == 1 else 8)
+    tail_sides = 14 if detail >= 2 else (10 if detail == 1 else 8)
     tail = catmull_rom(ponytail_controls, tail_samples)
     builder.tube([tuple(p) for p, _ in tail], [r for _, r in tail], 2, HAIR, "Head", tail_sides)
     # The arrowhead tip — the turnaround's most memorable hair note. A rounded
@@ -1228,15 +1283,24 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
             builder.face(face, 2)
     if detail >= 2:
         # The white tie wrapped around the tail root, as the profile draws it.
+        # The ring lives in the X-Z plane at y 0.46, PERPENDICULAR to the
+        # tail's near-+y tangent there and hugging its ~0.153 radius. The v9
+        # tie was a torus_points loop — a HORIZONTAL ring — so it sliced the
+        # tail lengthwise and its escaped far side read on the round-2 board
+        # as "a white headband sliver poking through at the tail root".
+        tie_points = [
+            (0.158 * cos(2 * pi * i / 8), 0.46, 3.945 + 0.158 * sin(2 * pi * i / 8))
+            for i in range(8)
+        ]
         builder.tube(
-            torus_points((0.0, 0.42, 3.90), 0.15, 0.13, 8),
-            [0.026] * 8,
+            tie_points,
+            [0.024] * 8,
             1,
             WHITE,
             "Head",
             5,
             cyclic=True,
-            axis=Vector((0.0, 0.5, 1.0)),
+            axis=Vector((0.0, 1.0, 0.0)),
         )
 
     # Strand grouping (rubric 3.3's bar for 5/5) is painted INTO hair_cap's
