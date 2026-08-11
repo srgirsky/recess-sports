@@ -13,28 +13,54 @@ const cells = [
 ];
 
 const ink = '#26130d';
-// Near-black warm brown: the turnaround's eyes are essentially all dark
-// iris/pupil. #5a3116 read as light-brown rings, and even #31180c against
-// the #26130d lid stroke split into an outline-and-interior two-tone on the
-// board — the disc is now a single tone one step off the ink.
-const iris = '#2a140b';
+// Sampled off junebug-turnaround.png's front head, not inferred: the sclera
+// reads #d1b294 in lid shadow and lifts toward cream in the light, so the flat
+// fill sits between the two; the iris body is #33190d and its centre bottoms
+// out at #110c07.
+const sclera = '#ddc9ac';
+const irisBrown = '#33190d';
+const pupil = '#120c07';
 const white = '#fff7e4';
 const mouth = '#57201c';
 const mouthDark = '#3a1512';
 const tongue = '#df6c78';
 
-function eye(x, y, { closed = false, wink = false } = {}) {
-  if (closed || wink) return `<path d="M${x - 16} ${y} Q${x} ${y + 9} ${x + 16} ${y}" fill="none" stroke="${ink}" stroke-width="7" stroke-linecap="round"/>`;
-  // The turnaround's eyes are big CLEAN ROUND near-black discs with ONE small
-  // catch-light set high, and essentially no sclera. The v9 disc was right but
-  // its catch-light was oversized (r 4.6 on an r 16 iris) and sat mid-height,
-  // and the round-2 board read her walleyed/blank — a big centred white blob
-  // is a sclera, not a glint. The glint is now SMALL and tucked up under the
-  // lid stroke, where the concept paints it; determination comes back the
-  // moment the iris reads solid dark.
-  return `<circle cx="${x}" cy="${y + 2}" r="16" fill="${iris}"/>
-    <path d="M${x - 14.5} ${y - 6} Q${x} ${y - 13} ${x + 14.5} ${y - 6}" fill="none" stroke="${ink}" stroke-width="5" stroke-linecap="round"/>
-    <circle cx="${x - 5.5}" cy="${y - 5.5}" r="3.1" fill="${white}"/>`;
+// Eye geometry. Scale is fixed by the one ratio that survives the trip from a
+// concept render to a shipped GLB — iris diameter over iris SPACING, read off
+// both images with the same dark-pixel detector: the concept measures 30/98.5
+// = 0.305, and a build tuned by cell-width arithmetic instead measured 0.221,
+// i.e. eyes 38% too small. Eye box is then 1.567x the iris (concept 47/30),
+// the iris fills the box's HEIGHT, and each iris rides toward the nose so the
+// cream survives as an outer crescent — which is what the concept does, and
+// what separates a pair of eyes from a pair of holes.
+const EYE_HALF_W = 18;
+const EYE_HALF_H = 11.5;
+const IRIS_R = 11.5;
+// The concept's flat front view carries a ~7.75px nasal offset, but the atlas
+// lands on a rounded face patch that turns both eyes toward the centre line
+// again, and the two convergences stack into a cross-eyed read. Most of the
+// determination is carried by the brows regardless, so the offset is kept as a
+// hint rather than reproduced literally.
+const IRIS_INWARD = 2;
+// A quadratic's extremum sits at (P0 + 2*P1 + P2)/4, so a half-height of h
+// needs its control point 2h off the corner line.
+const almond = (x, y) =>
+  `M${x - EYE_HALF_W} ${y} Q${x} ${y - EYE_HALF_H * 2} ${x + EYE_HALF_W} ${y} Q${x} ${y + EYE_HALF_H * 2} ${x - EYE_HALF_W} ${y}Z`;
+
+function eye(x, y, uid, { closed = false, wink = false, inward = 0 } = {}) {
+  if (closed || wink) return `<path d="M${x - 17} ${y} Q${x} ${y + 9} ${x + 17} ${y}" fill="none" stroke="${ink}" stroke-width="6" stroke-linecap="round"/>`;
+  const id = `iris${uid}`;
+  const cx = x + inward;
+  // The iris is clipped to the almond so a converged pupil can ride toward the
+  // nose without bulging past the lid, which is what reads as walleyed.
+  return `<clipPath id="${id}"><path d="${almond(x, y)}"/></clipPath>
+    <path d="${almond(x, y)}" fill="${sclera}"/>
+    <g clip-path="url(#${id})">
+      <circle cx="${cx}" cy="${y + 1}" r="${IRIS_R}" fill="${irisBrown}"/>
+      <circle cx="${cx}" cy="${y + 1}" r="6.2" fill="${pupil}"/>
+      <circle cx="${cx - 3.6}" cy="${y - 4.5}" r="2.8" fill="${white}"/>
+    </g>
+    <path d="M${x - EYE_HALF_W} ${y} Q${x} ${y - EYE_HALF_H * 2} ${x + EYE_HALF_W} ${y}" fill="none" stroke="${ink}" stroke-width="5.5" stroke-linecap="round"/>`;
 }
 
 function brow(x, y, tilt, inner) {
@@ -50,7 +76,7 @@ function brow(x, y, tilt, inner) {
     L${x + 19} ${y + tilt + right} Q${x} ${y + 1.5} ${x - 19} ${y - tilt + left}Z" fill="${ink}"/>`;
 }
 
-function face(name) {
+function face(name, index) {
   const blink = name === 'blink';
   const wink = name === 'wink';
   const sleepy = name === 'sleepy';
@@ -58,45 +84,48 @@ function face(name) {
   const worried = name === 'worried' || name === 'upset';
   // Feature placement is MEASURED off the turnaround front head against the
   // sculpt's face patch (vertical span -1.10..0.44 rad, horizontal ±0.92):
-  // brows y~40 (z~3.37), eyes y~71 (z~3.15), mouth y~114.5 (z~2.91) — and the
+  // brows y~40 (z~3.37), eyes y~71 (z~3.15), mouth y~110 (z~2.94) — and the
   // eyes sit far APART (centres ±34px), outer edges near the face's sides,
   // which is also what keeps them visible from the profile. The v6 face
   // clustered everything at centre: eyes 26px apart with bare cheeks, mouth
-  // crammed under the nose. A clear 7px skin gap separates brow from eye so
-  // the runtime toon ramp cannot merge them into one smudge.
+  // crammed under the nose. The brow-to-eye skin gap works out at ~14px, which
+  // is the concept's 23px carried across at the same 68/114 scale.
   // Junebug's NEUTRAL is the determined scowl: the brows always angle down
   // toward the nose; 'determined' only deepens what is already there.
   const eyes =
-    eye(30, 71, { closed: blink || sleepy }) +
-    eye(98, 71, { closed: blink || sleepy, wink });
+    eye(30, 71, index * 2, { closed: blink || sleepy, inward: IRIS_INWARD }) +
+    eye(98, 71, index * 2 + 1, { closed: blink || sleepy, wink, inward: -IRIS_INWARD });
+  // Brows ride at 37, not 40: the concept holds 23px of skin between brow and
+  // eye against a 30px eye box, and the taller eye box would otherwise close
+  // that gap to nothing and let the toon ramp merge brow into lash.
   const brows =
-    brow(30, 40, determined ? 7 : worried ? -5 : 4, 1) +
-    brow(98, 40, determined ? -7 : worried ? 5 : -4, -1);
+    brow(30, 37, determined ? 7 : worried ? -5 : 4, 1) +
+    brow(98, 37, determined ? -7 : worried ? 5 : -4, -1);
   // No drawn nose: the sculpt carries a real nose form, and a mark on top of
   // it doubled the feature and read as a sticker.
 
   // The neutral mouth is the turnaround's firm line — wide enough to read at
-  // draft-card distance (rubric 3.14), and moved DOWN 3px in step with the
-  // sculpt's shortened nose: at y 111.5 the stroke butted the old nose bump's
-  // base (nose bottom mapped to y~112) and the round-2 board read the pair as
-  // one mustache smudge. The nose now bottoms out at y~103, so a clear
-  // philtrum of skin separates it from the lip line. Still no under-stroke:
-  // the v6 one shaded the chin and read as a beard patch at hero distance.
-  let lips = `<path d="M50 114.5 Q64 112 78 114.5" fill="none" stroke="${ink}" stroke-width="7.5" stroke-linecap="round"/>`;
+  // draft-card distance (rubric 3.14). The concept sets it 52px below the eyes
+  // against a 30px eye box; at atlas scale that is y~110, and anything lower
+  // migrates onto the chin, which is where the round-2 board left it. The
+  // control point rides ABOVE the corners so the line turns down at the ends.
+  // Still no under-stroke: the v6 one shaded the chin and read as a beard
+  // patch at hero distance.
+  let lips = `<path d="M50 110.5 Q64 108 78 110.5" fill="none" stroke="${ink}" stroke-width="7.5" stroke-linecap="round"/>`;
   // An open smile is a MOUTH, not a crescent sticker: inner cavity, a band of
   // upper teeth, a tongue resting low, and a catch-light lower lip.
-  if (name === 'grin' || name === 'cheer') lips = `<path d="M48 104 Q64 109 80 104 Q74 119 64 119 Q54 119 48 104Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
-    <path d="M50.5 105.5 Q64 110 77.5 105.5 Q73 111.6 64 111.9 Q55 111.6 50.5 105.5Z" fill="${white}"/>
-    <path d="M56.5 117 Q64 120 71.5 117 Q69 113.4 64 113.4 Q59 113.4 56.5 117Z" fill="${tongue}"/>`;
-  if (name === 'determined' || name === 'angry') lips = `<path d="M48 117.5 Q64 109 80 117.5" fill="none" stroke="${ink}" stroke-width="7.5" stroke-linecap="round"/>`;
-  if (name === 'worried' || name === 'upset') lips = `<path d="M52 117 Q64 107 76 117 Q64 112.5 52 117Z" fill="${mouth}"/>`;
-  if (name === 'surprised') lips = `<ellipse cx="64" cy="110" rx="10.5" ry="11.5" fill="${mouth}"/>
-    <ellipse cx="64" cy="110" rx="7.5" ry="8.7" fill="${mouthDark}" stroke="${ink}" stroke-width="1.8"/>
-    <path d="M57.5 106 Q64 103.8 70.5 106 Q69 109 64 109.2 Q59 109 57.5 106Z" fill="${white}"/>`;
-  if (name === 'tongue') lips = `<path d="M48 104 Q64 109 80 104 Q74 118 64 118 Q54 118 48 104Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
-    <path d="M50.5 105.5 Q64 110 77.5 105.5 Q73 111 64 111.3 Q55 111 50.5 105.5Z" fill="${white}"/>
-    <path d="M57 113 Q56.5 121.5 64 122.5 Q71.5 121.5 71 113 Q64 116 57 113Z" fill="${tongue}" stroke="${ink}" stroke-width="1.8"/>`;
-  if (blink || sleepy || wink) lips = `<path d="M50 115 Q64 112.5 78 115" fill="none" stroke="${ink}" stroke-width="7" stroke-linecap="round"/>`;
+  if (name === 'grin' || name === 'cheer') lips = `<path d="M48 100 Q64 105 80 100 Q74 115 64 115 Q54 115 48 100Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
+    <path d="M50.5 101.5 Q64 106 77.5 101.5 Q73 107.6 64 107.9 Q55 107.6 50.5 101.5Z" fill="${white}"/>
+    <path d="M56.5 113 Q64 116 71.5 113 Q69 109.4 64 109.4 Q59 109.4 56.5 113Z" fill="${tongue}"/>`;
+  if (name === 'determined' || name === 'angry') lips = `<path d="M48 113.5 Q64 105 80 113.5" fill="none" stroke="${ink}" stroke-width="7.5" stroke-linecap="round"/>`;
+  if (name === 'worried' || name === 'upset') lips = `<path d="M52 113 Q64 103 76 113 Q64 108.5 52 113Z" fill="${mouth}"/>`;
+  if (name === 'surprised') lips = `<ellipse cx="64" cy="106" rx="10.5" ry="11.5" fill="${mouth}"/>
+    <ellipse cx="64" cy="106" rx="7.5" ry="8.7" fill="${mouthDark}" stroke="${ink}" stroke-width="1.8"/>
+    <path d="M57.5 102 Q64 99.8 70.5 102 Q69 105 64 105.2 Q59 105 57.5 102Z" fill="${white}"/>`;
+  if (name === 'tongue') lips = `<path d="M48 100 Q64 105 80 100 Q74 114 64 114 Q54 114 48 100Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
+    <path d="M50.5 101.5 Q64 106 77.5 101.5 Q73 107 64 107.3 Q55 107 50.5 101.5Z" fill="${white}"/>
+    <path d="M57 109 Q56.5 117.5 64 118.5 Q71.5 117.5 71 109 Q64 112 57 109Z" fill="${tongue}" stroke="${ink}" stroke-width="1.8"/>`;
+  if (blink || sleepy || wink) lips = `<path d="M50 111 Q64 108.5 78 111" fill="none" stroke="${ink}" stroke-width="7" stroke-linecap="round"/>`;
 
   return `${brows}${eyes}${lips}`;
 }
@@ -104,7 +133,7 @@ function face(name) {
 const contents = cells.map((name, index) => {
   const x = (index % 4) * 128;
   const y = Math.floor(index / 4) * 128;
-  return `<g transform="translate(${x} ${y})">${face(name)}</g>`;
+  return `<g transform="translate(${x} ${y})">${face(name, index)}</g>`;
 }).join('');
 
 const svg = `<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">${contents}</svg>`;
