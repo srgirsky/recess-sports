@@ -252,6 +252,24 @@ of the exact board. A raw Blender export is not the delivery path.
 `/v2/?spike=1&roster=1` is the one-frame roster review; use
 `/v2/?spike=1&kid=turbo` for a single-character field review.
 
+### Pinning BB2026 parity stills
+
+```bash
+npm run capture:parity-stills                  # delivered ids default to nostrike
+npm run capture:parity-stills -- nostrike tank # hero stills for these ids
+```
+
+Drives the live v2 surfaces (play, roster grid, venue wide day/night, character
+heroes) in headless Chromium and writes the stills to `docs/v2/parity/`
+(gitignored — per-run review output, not committed evidence). When the local
+BB2026 reference corpus is checked out beside this repo
+(`../recess-spike-bb26/spike-bb26`, indexed frame by frame in
+`docs/research/bb2026-storyboard-index.md`), it also composites a
+reference | v2 | spike contact sheet per dimension; without the corpus it skips
+the sheets with a warning. Parity judgements for
+`docs/research/backyard-2026-reference.md` are made from these stills, never
+from memory.
+
 ### Rebuilding the permanent fallback proxies
 
 Nothing waits on the modeller. Stand-in characters are generated from the

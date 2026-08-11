@@ -7,7 +7,8 @@ Backyard Baseball is Amazing!" (`A3DyDMkx17c`) was audited 2026-08-06 through
 its 249 high-resolution storyboard frames at a 10-second cadence: team creation
 0:35–2:39, draft 2:39–11:19, and gameplay 11:19–41:26. The cadence is enough to
 establish screen structure, camera vocabulary and repeated feedback, but not to
-measure sub-second animation timing.
+measure sub-second animation timing. `bb2026-storyboard-index.md` maps the
+corpus frame by frame — which frame to pull to check any claim made here.
 
 Purpose: the concrete target list for the "art, graphics and gameplay on par
 with the new Backyard Baseball" push. This file records what BB2026 *shows*,
