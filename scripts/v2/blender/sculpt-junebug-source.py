@@ -23,7 +23,7 @@ from mathutils import Vector
 REPO = Path.cwd()
 OUTPUT = REPO / "assets/v2/source/junebug-pilot.blend"
 FACE_ATLAS = REPO / "assets/v2/source/junebug-face-atlas.png"
-REVISION = "junebug-turnaround-fidelity-v14"
+REVISION = "junebug-turnaround-fidelity-v15"
 SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 
 
@@ -136,26 +136,70 @@ def cap_lateral(sin_phi: float, above_equator: bool) -> float:
 # the ear. So the reach may descend as far as it likes provided the ear is
 # outside it, and a smooth ramp then costs nothing.
 #
-# Solved against this build's ear (rim peak 0.556-0.569 over z 2.981..3.248):
-# the cap's front-view envelope with the table below peaks at 0.532 (z 3.20)
-# and ends at 0.525 (z 3.119) — under the ear at every one of those heights.
-# The traced front values are unchanged; only the temple-to-side run is
-# re-fitted, monotone, with the concept's own temple RISE (reach 0.350 at 45
-# degrees off the nose, z 3.647 against the concept's measured 3.63) kept.
+# ★ ROUND 3'S RAMP SOLVED THE GAP AND BUILT A WEDGE, and the numbers say so.
+# Both boards re-measured in MODEL FEET rather than in fractions of head
+# height — the delivered figure spans 578px over 4.142ft and the concept's 881
+# over 4.147, so every row of one converts to a z the other can be read at —
+# and the quantity that matters is the HAIR BAND: the horizontal distance from
+# the head's silhouette edge to the first face pixel, per side, per z.
+#
+#   z      3.575  3.500  3.450  3.400  3.350  3.300  3.250
+#   concept 0.069  0.052  0.045  0.042  0.036  0.031  0.024   ft
+#   round-3 0.158  0.115  0.107  0.093  0.072  0.057  0.000   ft
+#
+# Round 3 shipped a strip two to three times the concept's, with a hard
+# straight diagonal edge running from the temple to a point at cheek level —
+# which is also the "hard vertical seam dropping from the outer brow" the
+# round-3 critic read on the HERO, where it is a hair edge and not a UV seam
+# at all. It is what the ramp below costs: reach 0.602 at the pure side puts
+# the cap's rim at z 3.119, so the cap's FRONT half is admissible over every
+# brow and cheek row and paints hair across the outer sixth of the face.
+#
+# ★ THE RIM IS NOT FREE TO END WHEREVER THE HAIRLINE WANTS, and that is the
+# constraint round 3 was really solving. glTF materials are SINGLE-SIDED by
+# default, so wherever the cap's front half has ended and its back half still
+# projects wider than the skull, the board draws BACKGROUND — the enclosed
+# 112px pocket recorded above. Round 3 paid for that by driving the rim down
+# to the ear. The cheaper currency is the cap's own WIDTH: `hair_proud` clamps
+# the cap's projected half-width to the head's silhouette plus a measured
+# allowance, so the back half can never out-reach the front half and the rim
+# may then stop at the hairline the concept actually draws. Solved over the
+# whole surface at 720 bearings x 240 rows, the delivered band comes out
+# 0.044/0.042/0.045/0.042/0.037/0.032/0.028 ft against the concept's row
+# above, and the cap's outer edge falls under the skull's before the rim ends.
+#
+# The traced FRONT values move as one: the delivered centre hairline measured
+# z 3.519 against the concept's 3.557, so every front-facing entry is lifted
+# by the 0.019 of reach that 0.038ft costs. The temple RISE is deeper and
+# peaks LATER than v12 believed — the concept's hairline tops out at z 3.76
+# around 60% of the head's half-width, not at 45 degrees off the nose.
+# ★ AND THE TEMPLE BRANCH IS AUTHORED AGAINST 26 COLUMNS, NOT AGAINST THE
+# CURVE. The first round-4 board still measured a 0.186ft hair strip at
+# z 3.650 against the concept's 0.098, with the designed rim 0.04ft higher
+# than the board drew it. The rim is a POLYLINE of `cap_columns` segments —
+# 13.8 degrees apart at hero — so a peak two columns wide is chorded off, and
+# the chord is the hairline the board reads. The front branch is therefore
+# authored 0.012 of reach ABOVE where the concept's curve runs, which lands
+# the delivered chord on it: peak z 3.738 authored, ~3.71 drawn, against the
+# concept's measured 3.755.
 HAIRLINE_REACH = (
-    (1.000, 0.402),
-    (0.966, 0.392),
-    (0.866, 0.377),
-    (0.760, 0.356),
-    (0.707, 0.350),
-    (0.640, 0.372),
-    (0.560, 0.408),
-    (0.470, 0.452),
-    (0.380, 0.495),
-    (0.280, 0.535),
-    (0.180, 0.568),
-    (0.090, 0.590),
-    (0.000, 0.602),
+    (1.000, 0.390),
+    (0.966, 0.379),
+    (0.866, 0.356),
+    (0.760, 0.332),
+    (0.707, 0.322),
+    (0.640, 0.308),
+    (0.560, 0.300),
+    (0.470, 0.326),
+    (0.400, 0.372),
+    (0.340, 0.417),
+    (0.300, 0.456),
+    (0.260, 0.488),
+    (0.220, 0.514),
+    (0.170, 0.535),
+    (0.110, 0.552),
+    (0.050, 0.562),
+    (0.000, 0.566),
 )
 
 
@@ -167,6 +211,47 @@ def hairline_reach(front: float) -> float:
     for (f0, r0), (f1, r1) in zip(table, table[1:]):
         if front >= f1:
             return r0 + (r1 - r0) * (f0 - front) / (f0 - f1)
+    return table[-1][1]
+
+
+# ★ HOW FAR THE HAIR MAY STAND PROUD OF THE HEAD'S OWN SILHOUETTE, in feet,
+# by height — MEASURED on junebug-turnaround.png's front figure as (silhouette
+# edge - first face pixel) per row, averaged over the two sides. The classifier
+# is deliberately strict about skin (r-b > 55) because the hair carries a lit
+# rim at the head's edge that a loose warm-pixel test reads as cheek.
+#
+# It is a CEILING enforced on the cap's projected half-width, which is what
+# makes the whole hairline above safe: with it, the widest thing the cap can
+# draw at any height is the head plus this allowance, so the cap's outer edge
+# passes under the skull's before its rim ends and no single-sided back half is
+# ever left carrying the silhouette on its own.
+HAIR_PROUD = (
+    (3.700, 0.098),
+    (3.650, 0.098),
+    (3.600, 0.075),
+    (3.550, 0.059),
+    (3.500, 0.052),
+    (3.450, 0.045),
+    (3.400, 0.042),
+    (3.350, 0.036),
+    # 0.020 and 0.011 against the concept's measured 0.031 and 0.024: these two
+    # rows are the EAR'S STEP, not the hair's. The concept's silhouette waists
+    # to 0.508 at z 3.250 and jumps to 0.586 by z 3.175 — 13.3% of head width
+    # in 16 rows — and a hair strip at its own measured width there fills half
+    # of that waist in, which is how the round-3 board came to gain only 8.4%.
+    (3.300, 0.020),
+    (3.250, 0.011),
+)
+
+
+def hair_proud(z: float) -> float:
+    """The measured hair allowance over the head silhouette at this height."""
+    table = HAIR_PROUD
+    if z >= table[0][0]:
+        return table[0][1]
+    for (z0, p0), (z1, p1) in zip(table, table[1:]):
+        if z >= z1:
+            return p0 + (p1 - p0) * (z0 - z) / (z0 - z1)
     return table[-1][1]
 
 # (nz, half-width in feet) sampled down the concept's front silhouette. Above
@@ -303,8 +388,19 @@ def nose_push(nx: float, nz: float) -> float:
     Returned as an OUTWARD magnitude; the caller multiplies by frontness and
     subtracts it from y, because -y is the front in this build.
     """
-    bridge = max(0.0, 1.0 - ((nz + 0.400) / 0.135) ** 2) * max(
-        0.0, 1.0 - (nx / 0.060) ** 2
+    # ★ ROUND 4 RE-MEASURED IT AS A REGION MEAN, WHICH IS THE READ. Sampling
+    # the nose's own footprint (|x| <= 0.075ft over z 2.93..3.06) against two
+    # cheek boxes at |x| 0.20..0.36 on the same rows, one detector, both
+    # boards: the concept's nose means 137.9 against cheeks of 128.7 and 125.4
+    # — up on BOTH by 9 and 13 — while the round-3 build means 117.8 against
+    # 92.9 and 131.6, i.e. it beats the shadowed cheek by 25 and LOSES to the
+    # lit one by 14. A peak-pixel test never saw it (the tip hits 159 against
+    # the concept's 165); what is missing is lit AREA. Every span below grows
+    # about a fifth, so the same three forms present more surface square to the
+    # key light, and the two undersides lengthen so less of the box is the hard
+    # shadow that was pulling the mean down.
+    bridge = max(0.0, 1.0 - ((nz + 0.400) / 0.140) ** 2) * max(
+        0.0, 1.0 - (nx / 0.072) ** 2
     )
     # ASYMMETRIC in nz, and that is the whole head-on read. A symmetric cap
     # fades out below the tip as gently as it rises into it, which is a sphere:
@@ -312,17 +408,36 @@ def nose_push(nx: float, nz: float) -> float:
     # airbrushed shadow smudge with no highlight anywhere on it". Above the tip
     # the cap is long (0.105) so the bridge runs smoothly into it and LIGHTS;
     # below it the cap is half as long (0.048) so the underside turns hard.
-    tip_span = 0.105 if nz >= -0.520 else 0.048
+    # ★ AND THE MEAN IS SPENT BY THE UNDERSIDE, NOT EARNED BY THE TIP. A
+    # 13x12 luminance grid over the nose at 0.015ft steps settles it. On the
+    # lit flank the delivered nose ALREADY beats its cheek — 154-160 against
+    # 141 at x +0.09 — while the concept's tip peaks at 164 against 143. What
+    # differs is the shadow: the concept's nostril dip is a BAND 0.03ft tall
+    # that floors at 95-115, and the delivered one is a WEDGE running z
+    # 2.938-3.010 across the whole left half and flooring at 50. Growing the
+    # nose (the first round-4 attempt) grew the wedge with it and took the box
+    # mean DOWN from 117.8 to 113.1.
+    #
+    # So the undersides lengthen and the amplitudes come back: below the tip
+    # 0.080 rather than 0.048, which is a 47-degree fall instead of 60, and
+    # 0.075 under the wings. The tip keeps the ROUND-3 push (0.062) and spends
+    # its new budget on WIDTH, which adds lit area and no shadow at all.
+    tip_span = 0.110 if nz >= -0.520 else 0.080
     tip = max(0.0, 1.0 - ((nz + 0.520) / tip_span) ** 2) * max(
-        0.0, 1.0 - (nx / 0.088) ** 2
+        0.0, 1.0 - (nx / 0.100) ** 2
     )
-    wing_span = 0.070 if nz >= -0.548 else 0.045
+    wing_span = 0.072 if nz >= -0.548 else 0.075
     wing = max(0.0, 1.0 - ((nz + 0.548) / wing_span) ** 2) * max(
-        0.0, 1.0 - ((abs(nx) - 0.085) / 0.038) ** 2
+        0.0, 1.0 - ((abs(nx) - 0.096) / 0.040) ** 2
     )
     # No **1.5 anywhere: that exponent is what sharpened the old ridge. A plain
     # quadratic cap is a rounded surface.
-    return 0.018 * bridge + 0.062 * tip + 0.030 * wing
+    # The tip carries 0.074 rather than 0.062 and the wings 0.028 rather than
+    # 0.030: the concept's tip stands 0.067ft in front of the cheek plane and
+    # the wings are a soft swell, not a crease — pushing the wings harder than
+    # the tip is what turns them into the two dark commas the round-2 board
+    # read either side of the nose.
+    return 0.026 * bridge + 0.074 * tip + 0.028 * wing
 
 
 def face_island_uv(bearing: float, latitude: float) -> tuple[float, float]:
@@ -672,7 +787,11 @@ class MeshBuilder:
                 # puts the centre hairline at z 3.547 against the concept's
                 # measured 3.543 — that number was never the defect; what the
                 # table replaces is the temple bump that buried both temples.
-                reach = hairline_reach(front) + 0.24 * blend
+                # 0.276, was 0.24: the traced table's side value came up from
+                # 0.602 to 0.566, and the nape is authored against the FINAL
+                # colatitude, not the increment — 0.566 + 0.276 lands the back
+                # rim at z 2.732, exactly where the shipped one was.
+                reach = hairline_reach(front) + 0.276 * blend
                 phi = reach * pi * row / rings
                 # ★ STRAND GROOVES ARE A SMOOTH PERIODIC FUNCTION OF BEARING,
                 # sampled by EVERY column. v11 built them as six cos^6 windows
@@ -763,9 +882,10 @@ class MeshBuilder:
                 #
                 # It is confined to phi > pi/2 ON PURPOSE: the cap's widest
                 # latitude IS the equator, so the head's measured hair width
-                # (0.2653 of figure height, against the concept's 0.2664) is
-                # untouched, and the traced front hairline sits at reach 0.402
-                # — above the equator — so it does not move either.
+                # untouched by IT — the silhouette clamp below is what now
+                # sets the widest hair, to the head plus `hair_proud` — and the
+                # traced front hairline sits at reach 0.390, above the equator,
+                # so it does not move either.
                 edge = reach * pi
                 if phi > pi / 2 and edge > pi / 2:
                     t = min(1.0, (phi - pi / 2) / (edge - pi / 2))
@@ -773,9 +893,36 @@ class MeshBuilder:
                 # Fade the cut out where the surface is narrower than the cut
                 # itself, so the pole cannot invert.
                 lateral -= 0.015 * groove * min(1.0, lateral / 0.12)
+                z = cap_rz * cos(phi)
+                # ★ THE SILHOUETTE CLAMP — see `HAIR_PROUD`. The cap's
+                # PROJECTED half-width, not its radius, is what the front board
+                # measures and what a single-sided back half can leave a hole
+                # under, so the bound is applied to `lateral * cos(theta)` and
+                # divided back out. It is therefore inert at the nose and at
+                # the nape (cos -> 0, the bound goes to infinity) and bites
+                # only across the sides, where it flattens the cap's section
+                # onto the head instead of shrinking the whole ring — the
+                # depth term below reads the clamped value, so the hair stays
+                # as proud in FRONT of the skull as it ever was.
+                #
+                # ⚠️ AND IT STOPS AT z 3.71, which is not a taste. The clamp
+                # exists only where the cap's front half may already have
+                # ended; the highest rim in HAIRLINE_REACH is reach 0.313 at
+                # z 3.738, so ABOVE that every bearing still carries front-
+                # facing surface and nothing can be left holding the
+                # silhouette from behind. Applied all the way up it instead
+                # measured the cap against a skull that has already closed
+                # over: the first round-4 board came out 0.294 half-width at
+                # z 3.850 against the concept's 0.410 and 0.380 against 0.452
+                # at 3.800 — the crown pinched into a waist under the bun.
+                world_z = HAIR_CAP_CENTER[2] + z
+                across = abs(cos(theta))
+                if across > 1e-6 and world_z <= 3.745:
+                    nz_head = (world_z - HEAD_CENTER[2]) / HEAD_RADII[2]
+                    limit = face_half_width(nz_head) + hair_proud(world_z)
+                    lateral = min(lateral, limit / across)
                 x = lateral * cos(theta)
                 y = lateral * sin(theta) * depth
-                z = cap_rz * cos(phi)
                 ring.append(self.vertex(center + Vector((x, y, z)), HAIR, "Head"))
             rows.append(ring)
         # ★ THE HAIRLINE ENDS IN A FLANGE, NOT A KNIFE EDGE. Round 3 scored
@@ -1308,19 +1455,40 @@ def build_shoe(builder: MeshBuilder, side: int, prefix: str, detail: int, segmen
     # on a hard free edge — the same triangles buy far more there.
     seg = 12 if detail >= 2 else 9
     rng = 6 if detail >= 2 else 4
-    # Ankle quarter with the dark inner collar painted on its own crown.
+    # ★ THE SHOE WAS INSIDE OUT AGAINST THE APPROVED ART, and it is one of the
+    # few defects on this character that is a straight contract violation
+    # rather than a matter of degree. junebug-turnaround.png draws a CREAM
+    # sneaker: a big cream toe cap over the front ~45% of the shoe, a red vamp
+    # and quarter behind it, a cream heel counter, cream laces and a cream
+    # sole, with red returning only around the collar's top rim. The shipped
+    # model had that exactly backwards — a red shoe wearing a small white oval
+    # at the toe. Measured with one classifier over the same box, the concept's
+    # front view is 44.9% cream to 40.7% red and the round-3 build 34.6% to
+    # 48.6%.
+    #
+    # ⚠️ AND CREAM-DOMINANT IS NOT CREAM-EVERYWHERE. The first round-4 shoe
+    # painted the whole ankle quarter cream and ran the toe cap back to the
+    # box's equator, and the same classifier scored it 62.1% cream to 18.3%
+    # red — an overshoot of the same size as the defect it replaced. The
+    # concept keeps a red vamp and a red quarter and spends its cream on the
+    # toe cap, the heel counter, the laces and the sole.
+    #
+    # Ankle quarter: red, with the cream heel counter behind dy 0.30.
     builder.ellipsoid(
         (x0, 0.03, 0.26), (0.20, 0.20, 0.17), 1, SHOE, foot, seg, rng,
         flatten_sole=True,
-        color_fn=lambda dx, dy, dz: SHIRT_DARK if dz > 0.60 else SHOE,
+        color_fn=lambda dx, dy, dz: SOLE if dy > 0.30 else SHOE,
     )
     # Toe box with its POLE at the toe (pole="-y"), so latitude rows ring the
-    # toe and the white cap boundary lands exactly on a clustered row pair.
-    cap_phis = [0.30, 0.58, 0.79, 0.85, 1.10, 1.45, 1.85, 2.30, 2.75] if detail >= 2 else [0.45, 0.79, 0.85, 1.35, 1.90, 2.50]
+    # toe and the cream cap boundary lands exactly on a clustered row pair.
+    # The pair moved from 0.79/0.85 to 1.20/1.26 — the cap now ends at dy
+    # -0.33 instead of -0.68, covering the front third of the box, which is
+    # the concept's cap length rather than a painted toe-nail.
+    cap_phis = [0.30, 0.62, 0.96, 1.20, 1.26, 1.70, 2.20, 2.70] if detail >= 2 else [0.45, 1.20, 1.26, 1.80, 2.45]
     builder.ellipsoid(
         (x0, -0.13, 0.175), (0.215, 0.30, 0.145), 1, SHOE, foot, seg, rng,
         flatten_sole=True, pole="-y", phis=cap_phis,
-        color_fn=lambda dx, dy, dz: WHITE if dy < -0.68 else SHOE,
+        color_fn=lambda dx, dy, dz: SOLE if dy < -0.33 else SHOE,
     )
     # Sole tucked at the heel (ry 0.335, centre -0.115; was 0.37 at -0.10):
     # the old plate ran 0.04 past the upper all round and the profile read a
@@ -1386,8 +1554,19 @@ def build_ear(builder: MeshBuilder, side: int, detail: int) -> None:
     # 16 outline points at hero, not 12: from the front an ear this size is a
     # 5px sliver, and 30-degree steps in the outline are the "straight-edged
     # slabs" the round-3 board read.
-    points = 14 if detail >= 2 else 8
-    cy, cz = 0.045, 3.128
+    # ★ AND IT IS 0.028ft TOO LOW, re-measured in MODEL FEET on both boards.
+    # The concept's silhouette waists to 0.508 half-width at z 3.250, steps to
+    # 0.568 by 3.225 and PEAKS at 0.586-0.588 over z 3.150-3.175. The round-3
+    # build peaks at 0.595 — the width is right, round 3's narrowing landed —
+    # but it peaks at z 3.125, a quarter of the ear's own height low, which is
+    # what stretched the step over 23 rows where the concept takes 16. 3.156
+    # puts the peak at 3.153 and the top at 3.276.
+    # 16 outline points at hero, not 14: with the temple wedge gone (see
+    # HAIRLINE_REACH) the ear is no longer half-buried in hair, and the rim it
+    # now shows against sky is the one the round-3 board called a straight
+    # faceted edge at 14.
+    points = 16 if detail >= 2 else 8
+    cy, cz = 0.045, 3.156
     ry, rz = 0.108, 0.1206
 
     def outline(t: float, scale: float) -> tuple[float, float]:
@@ -1981,7 +2160,54 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     # Inner corners deepened -0.020 -> -0.038: the crown now carries 0.015ft
     # strand grooves, and a band whose inner face sat only 0.020 under the
     # smooth cap surface would surface through the bottom of every groove.
-    band_section = ((0.026, -0.052), (-0.038, -0.068), (-0.038, 0.068), (0.026, 0.052))
+    # ★ AND THE BAND WAS GREY BECAUSE ITS OUTER FACE HAD NO INTERIOR.
+    #
+    # The board renders (202,200,198) median where the concept's band is
+    # (252,243,234), and the swatch is already paper-white — round 3 read that
+    # 20% as the toon ramp and authored the swatch brighter, which cannot work
+    # twice. It is not the ramp. `render-fidelity-views.py` sets
+    # `polygon.use_smooth = True` on every polygon, and with FOUR points in the
+    # section every vertex of the outer face is also a vertex of the top or
+    # bottom face — so the whole lit face is shaded by normals averaged with a
+    # surface that faces down or inward and gets no key light at all. There is
+    # no interior vertex anywhere on it to carry the outward normal.
+    #
+    # TWO points inserted down the outer face fix it without moving the band:
+    # neither is shared with the top or the underside, so both shade at very
+    # nearly the full radial normal, and standing them 0.006ft proud rounds the
+    # face so its top edge becomes a facet tilted about 40 degrees up toward
+    # the key at (4, -5.5, 7) — worth another 11% of N.L over a purely radial
+    # face. Two and not three because the GLB has 1KB of headroom and 16 band
+    # columns cost 96 triangles a point; the middle of the outer face is the
+    # part that was already right. The list order is the tube frame's:
+    # outer-bottom, in along the underside, up the inner face, out along the
+    # top, then DOWN the outer face, which is why the new entries descend.
+    #
+    # ★ AND THE ROLL IS AIMED, because the arithmetic says how much is even
+    # available. The board's key sits at (4, -5.5, 7), so from the band's
+    # front the unit light is (0.560, -0.700, 0.444) and a purely radial face
+    # there collects N.L = 0.700 for the (203,202,200) the first round-4 board
+    # measured — linear 0.583 against the swatch's 0.93, i.e. the rig delivers
+    # 0.896 of full at N.L = 1. A facet aimed dead at the key therefore tops
+    # out near sRGB 236 and the concept's 249-252 is out of reach of ANY
+    # diffuse orientation in this rig, swatch notwithstanding. What IS
+    # reachable is the roll below: the upper facet runs n = (0.61, 0.79) for
+    # N.L 0.778 and the one under it (0.94, 0.34) for 0.809, against 0.700
+    # flat. It is also what the art draws — the concept's band is a rounded
+    # strip with a bright top, not a flat ribbon.
+    # And 14% SHORTER, measured: the concept's band runs 0.076 of head height
+    # thick at the centre column and the round-4 board 0.089 — 0.103ft against
+    # 0.120 — which at a 40px downscale is what turns the white from a stroke
+    # across a dark crown into a pale cap wrapping the whole head.
+    band_section = (
+        (0.022, -0.048),
+        (-0.038, -0.058),
+        (-0.038, 0.058),
+        (0.004, 0.053),
+        (0.022, 0.041),
+        (0.032, 0.017),
+        (0.032, -0.015),
+    )
     cap_rx, _cap_ry, cap_rz = HAIR_CAP_RADII
     for i in range(band_count):
         theta = 2 * pi * i / band_count
@@ -2014,10 +2240,11 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
                 z,
             ), WHITE, "Head"))
         band_rows.append(row)
+    corners = len(band_section)
     for i in range(band_count):
         nxt_row = (i + 1) % band_count
-        for s in range(4):
-            nxt = (s + 1) % 4
+        for s in range(corners):
+            nxt = (s + 1) % corners
             builder.face((band_rows[i][s], band_rows[i][nxt], band_rows[nxt_row][nxt], band_rows[nxt_row][s]), 1)
     if detail >= 1:
         # The gather BUN at the crown — in the art's front view it is a big
