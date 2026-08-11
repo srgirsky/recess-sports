@@ -27,32 +27,32 @@
         "frontProfileSilhouette": {
           "label": "front/profile silhouette",
           "score": 3,
-          "note": "Human review: body detail falls well short of the turnaround \u2014 no V-neck placket or buttons, no belt, sleeve stripes reduced to shoulder patches, legs read as stacked capsule segments with visible seam rings, and the profile shows an open sleeve-cuff interior."
+          "note": "Critic (cycle-final): Large read (headband + hooked ponytail + kid in kit) now matches the turnaround, and the run still's ponytail silhouette is genuinely strong. But transitions are still butt-joined primitives, not organic: junebug-front-review.png shows hard faceted planes on cheeks, pants and shoes, cracked-edge white trim breaking the outline at collar, shoulders, cuffs and soles, and junebug-profile-review.png still shows the rejection brief's open sleeve-cuff interior \u2014 a dark crescent gap between the white cuff ring and the forearm \u2014 plus a pink nub protruding at the waist front. Listed defects (shoulder-patch stripes, open cuff interior) remain visible, so this cannot rise past 3."
         },
         "headBodyProportions": {
           "label": "head/body proportions",
           "score": 3,
-          "note": "Human review: the front head reads as a tall egg with an oversized bare forehead; the turnaround's wider head with a low hairline is not matched."
+          "note": "Critic (cycle-final): Measured per 3.13: face-skin bbox w:h is ~0.85 on the turnaround front view vs ~0.83 on junebug-front-review.png \u2014 the width mismatch is fixed, credit where due. But the rejection's 'oversized bare forehead' is still visible: brow-to-headband is bare skin roughly twice the concept's gap, with none of the concept's hair dipping below the band at the temples. The temples pinch inward and the chin is a tiny faceted wedge where the turnaround has full round cheeks tapering gently; junebug-profile-review.png also shows a longer neck with a visible collar seam ring where it meets the jersey. Head:body ratio itself is right."
         },
         "hairMass": {
           "label": "hair mass",
-          "score": 3,
-          "note": "Human review: the hairline sits behind the headband so the front view reads bald above the brows; the ponytail is faceted with a hard ridge, not the art's smooth tapered sweep."
+          "score": 4,
+          "note": "Critic (cycle-final): The category that actually answered the brief. In junebug-front-review.png the headband sits at the hairline with a full brown hair dome and bun above it \u2014 the 'reads bald above the brows' defect is gone, and the hairline reads from the front. In junebug-profile-review.png and junebug-runtime-run.png the ponytail is a smooth tapered sweep into the concept's arrow tip, no longer the hard-ridged facet the brief called out. Held at 4, not 5: the bun in the front-review close crop is lumpy polygonal shelves, and the strand grouping is painted highlight streaks (junebug-runtime-hero.png) more than sculpted form; the concept's slicked strands below/around the band are absent."
         },
         "clothingConstruction": {
           "label": "clothing construction",
           "score": 3,
-          "note": "Human review: jersey lacks the concept's V-neck trim, placket buttons and triple sleeve stripes; pants lack the below-knee cuff into long red socks; the hip band reads as separate shorts."
+          "note": "Critic (cycle-final): Three of the brief's four listed defects are still visible. junebug-front-review.png: the placket is an incised line with stitch dashes \u2014 the turnaround's round buttons are still not there; the triple sleeve stripes are still short chevrons sitting on the shoulder only ('claw marks' in junebug-runtime-hero.png) instead of running the sleeve length; the hip band is still a distinct dark maroon layer reading as separate shorts between jersey hem and pants, with no belt loops. Pants run to mid-calf so the long red socks of the concept read as short ankle socks. New defect: every white trim element \u2014 collar V, chevrons, sleeve cuffs, shoe soles and toes \u2014 has jagged, cracked edges that read as torn paper, and the crotch is a protruding faceted wedge. V-neck trim and cuff trim do now exist, which is why this is a solid 3 rather than a 2."
         },
         "faceExpressionRead": {
           "label": "face/expression read",
           "score": 3,
-          "note": "Human review: brows too thin, eyes too small and sclera-forward versus the concept's large dark eyes; the determined frown is not readable; the headband should cross the mid-forehead with slicked hair visible above it."
+          "note": "Critic (cycle-final): Brows are now thick and angled (fixed) and the eyes are large and dark (fixed in size). But in junebug-front-review.png the eyes are irregular black tadpole shapes with white glints pooled at the bottom edge \u2014 they read cross-eyed/teary next to the turnaround's clean brown irises. The mouth is a small frown that reads at hero crop but sits on a protruding faceted muzzle block with visible plane seams \u2014 exactly the 'decal-island' read 3.5's five-level definition forbids; the nose is a hard triangular wedge. Ears fail 3.10: faceted bracket tabs front-on, a spiral decal at the hero angle (junebug-runtime-hero.png). In gameplay lighting (junebug-runtime-hero.png, junebug-runtime-run.png) the eye collapses to one dark smudge and the determined expression does not survive motion."
         },
         "heroAndFieldScale": {
           "label": "hero + 40px read",
           "score": 3,
-          "note": "Human review: at 40 px the T-pose reads as a red smudge \u2014 the headband + dark ponytail + crimson kit identity does not survive field scale."
+          "note": "Critic (cycle-final): Hero read: junebug-runtime-hero.png and junebug-runtime-run.png carry the headband + ponytail + crimson kit identity well at hero distance \u2014 this is much better than the 'red smudge' verdict. Field read: a true 40 px downscale of junebug-front-review.png resolves headband, red jersey, salmon pants and red shoes as separate blocks, but the number-one identity mark \u2014 the dark hooked ponytail \u2014 is invisible from the front, and the headband reads as a grey cap; the fidelity board's own 40 px strip (junebug-fidelity-review.png) shows the same T-pose problem. Identity partially survives; the memorable read does not fully."
         }
       }
     },
