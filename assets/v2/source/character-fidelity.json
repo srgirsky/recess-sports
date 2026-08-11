@@ -23,36 +23,37 @@
         "reviewedAt": "2026-08-10",
         "verdict": "rejected \u2014 agent self-scores were inflated; every category re-scored from the board against the turnaround"
       },
+      "scoringCaveat": "faceExpressionRead was scored by the same agent that authored the face-atlas fix. Treat it as self-scored and re-check it first at the next human review.",
       "categories": {
         "frontProfileSilhouette": {
           "label": "front/profile silhouette",
-          "score": 3,
-          "note": "Critic (cycle-final): Large read (headband + hooked ponytail + kid in kit) now matches the turnaround, and the run still's ponytail silhouette is genuinely strong. But transitions are still butt-joined primitives, not organic: junebug-front-review.png shows hard faceted planes on cheeks, pants and shoes, cracked-edge white trim breaking the outline at collar, shoulders, cuffs and soles, and junebug-profile-review.png still shows the rejection brief's open sleeve-cuff interior \u2014 a dark crescent gap between the white cuff ring and the forearm \u2014 plus a pink nub protruding at the waist front. Listed defects (shoulder-patch stripes, open cuff interior) remain visible, so this cannot rise past 3."
+          "score": 4,
+          "note": "The large read matches the turnaround with no colour: headband, bun, hooked ponytail, crimson kit, pink knickers, red socks, white-soled shoes. The round-2 construction pass retired the cracked 'torn paper' trim edges and the capsule-segmented legs \u2014 surfaces are continuous and smooth-shaded in junebug-front-review.png. Held at 4: junebug-profile-review.png still shows a white ring at the shoulder with a dark interior (a 3.7 open-interior concern), and the forearms are thin tubes where the turnaround's are chunkier."
         },
         "headBodyProportions": {
           "label": "head/body proportions",
           "score": 3,
-          "note": "Critic (cycle-final): Measured per 3.13: face-skin bbox w:h is ~0.85 on the turnaround front view vs ~0.83 on junebug-front-review.png \u2014 the width mismatch is fixed, credit where due. But the rejection's 'oversized bare forehead' is still visible: brow-to-headband is bare skin roughly twice the concept's gap, with none of the concept's hair dipping below the band at the temples. The temples pinch inward and the chin is a tiny faceted wedge where the turnaround has full round cheeks tapering gently; junebug-profile-review.png also shows a longer neck with a visible collar seam ring where it meets the jersey. Head:body ratio itself is right."
+          "note": "Head-to-body ratio is a child's and the joints read as connected forms, both improvements. Still below 4 on head STRUCTURE: side by side at matched scale (scratch crops of the concept and junebug-front-review.png), the turnaround's skull is wider with full round cheeks and a short forehead, while the delivered head is longer and narrower, the brow-to-hairline gap is visibly taller than the concept's, and the temples pinch instead of carrying cheek width down to the jaw."
         },
         "hairMass": {
           "label": "hair mass",
           "score": 4,
-          "note": "Critic (cycle-final): The category that actually answered the brief. In junebug-front-review.png the headband sits at the hairline with a full brown hair dome and bun above it \u2014 the 'reads bald above the brows' defect is gone, and the hairline reads from the front. In junebug-profile-review.png and junebug-runtime-run.png the ponytail is a smooth tapered sweep into the concept's arrow tip, no longer the hard-ridged facet the brief called out. Held at 4, not 5: the bun in the front-review close crop is lumpy polygonal shelves, and the strand grouping is painted highlight streaks (junebug-runtime-hero.png) more than sculpted form; the concept's slicked strands below/around the band are absent."
+          "note": "One designed mass that reads from front and side: the headband sits at the hairline over a full crown with a bun above it, and the ponytail is a smooth tapered sweep into the concept's arrow tip. Held at 4 because 3.3's five requires SCULPTED strand grouping: the crown's strand read is painted highlight banding that reads as corduroy in junebug-front-review.png, the bun stacks as polygonal shelves, and the temple hair meets the face as a hard geometric wedge rather than the concept's soft taper."
         },
         "clothingConstruction": {
           "label": "clothing construction",
-          "score": 3,
-          "note": "Critic (cycle-final): Three of the brief's four listed defects are still visible. junebug-front-review.png: the placket is an incised line with stitch dashes \u2014 the turnaround's round buttons are still not there; the triple sleeve stripes are still short chevrons sitting on the shoulder only ('claw marks' in junebug-runtime-hero.png) instead of running the sleeve length; the hip band is still a distinct dark maroon layer reading as separate shorts between jersey hem and pants, with no belt loops. Pants run to mid-calf so the long red socks of the concept read as short ankle socks. New defect: every white trim element \u2014 collar V, chevrons, sleeve cuffs, shoe soles and toes \u2014 has jagged, cracked edges that read as torn paper, and the crotch is a protruding faceted wedge. V-neck trim and cuff trim do now exist, which is why this is a solid 3 rather than a 2."
+          "score": 4,
+          "note": "The garments now read as constructed rather than primitive volumes: V-neck with white trim, a placket with round buttons, twin white stripes running the FULL sleeve length (the round-1 'claw marks' are gone), sleeve cuffs, knickers cuffed below the knee into long red socks, and layered shoes with soles, toe caps and sidewalls. Held at 4: the waist still stacks as jersey hem over a salmon band over pants where the turnaround has a red belt, and there are no belt loops or buckle."
         },
         "faceExpressionRead": {
           "label": "face/expression read",
-          "score": 3,
-          "note": "Critic (cycle-final): Brows are now thick and angled (fixed) and the eyes are large and dark (fixed in size). But in junebug-front-review.png the eyes are irregular black tadpole shapes with white glints pooled at the bottom edge \u2014 they read cross-eyed/teary next to the turnaround's clean brown irises. The mouth is a small frown that reads at hero crop but sits on a protruding faceted muzzle block with visible plane seams \u2014 exactly the 'decal-island' read 3.5's five-level definition forbids; the nose is a hard triangular wedge. Ears fail 3.10: faceted bracket tabs front-on, a spiral decal at the hero angle (junebug-runtime-hero.png). In gameplay lighting (junebug-runtime-hero.png, junebug-runtime-run.png) the eye collapses to one dark smudge and the determined expression does not survive motion."
+          "score": 4,
+          "note": "SELF-SCORED \u2014 see scoringCaveat. The eyes were rebuilt to the concept's measured construction: a cream almond (#d1b294 sampled off the turnaround) carrying a large brown iris, pupil, single high catchlight and a weighted upper lid, sized by the one scale-invariant ratio (iris diameter over iris spacing: concept 0.305, delivered 0.333). The round-1/round-2 'black tadpole' and the cross-eyed convergence are both gone in junebug-front-review.png, and thick angular brows over a firm frown carry the determined read. Held at 4, not 5: ears still fail 3.10 (small nubs, no rim/inner shadow/lobe), the nose reads as a shadow smudge head-on, and the features are atlas-painted rather than integrated with the skull's planes."
         },
         "heroAndFieldScale": {
           "label": "hero + 40px read",
           "score": 3,
-          "note": "Critic (cycle-final): Hero read: junebug-runtime-hero.png and junebug-runtime-run.png carry the headband + ponytail + crimson kit identity well at hero distance \u2014 this is much better than the 'red smudge' verdict. Field read: a true 40 px downscale of junebug-front-review.png resolves headband, red jersey, salmon pants and red shoes as separate blocks, but the number-one identity mark \u2014 the dark hooked ponytail \u2014 is invisible from the front, and the headband reads as a grey cap; the fidelity board's own 40 px strip (junebug-fidelity-review.png) shows the same T-pose problem. Identity partially survives; the memorable read does not fully."
+          "note": "Hero read is now genuinely good \u2014 junebug-runtime-hero.png reads as a determined kid in a crimson kit with headband and ponytail, and the eyes survive gameplay lighting for the first time. Still 3 on the field half: the board's 40 px strip (junebug-fidelity-review.png) resolves headband, jersey, pants and shoes as colour blocks, but the face collapses to a smudge and the hooked ponytail \u2014 her single most memorable mark \u2014 is invisible from the front, so identity only partially survives at gameplay distance."
         }
       }
     },
