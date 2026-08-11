@@ -2295,6 +2295,18 @@ Every generated asset has a deterministic exporter or a checked-in art master,
 and the model, animation, audio, scenery, layout and simulation gates remain the
 acceptance contract for replacements.
 
+**2026-08-10 addendum.** The procedural-art spike this re-audit motivated has
+run its course: three orchestrated runs on branch `spike/bb26-one-shot`,
+critic-scored against the reference each lap, exited at
+spike-vs-v2-baseline scores of 7v2 silhouette, 7v2 face, 8v3 motion, 8v2
+venue, 9v1 HUD and 8v2 vibe against the reference's fixed 10. Every
+harvested mechanism — face ratios, parts assembly, pose extremes, camera
+presets, the HUD rail, the backdrop kit — is written up with its numbers and
+its v2 port target in `docs/research/spike-harvest.md`. The follow-up is the
+character-batch production sweep: feed the harvested specs into the Blender
+pipeline and roll them through the roster in the same reviewed batches the
+plan above established.
+
 ## What's explicitly not built yet
 
 Human-performed voice acting, a cross-player pick-rate backend, externally
