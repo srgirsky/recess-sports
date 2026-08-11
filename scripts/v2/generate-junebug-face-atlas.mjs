@@ -12,7 +12,24 @@ const cells = [
   'spare1', 'spare2', 'spare3', 'spare4',
 ];
 
-const ink = '#26130d';
+// ★ THE BROWS AND LASHES ARE NEAR-BLACK NOW, AND THAT IS A MEASUREMENT.
+// Junebug's one memorable read is her scowl, and rubric 3.9 asks whether it
+// survives a 40px downscale. Run one dark-pixel detector over both front views:
+// the concept's brow bottoms out at luminance 0.0 and 1.2, the round-4 build at
+// 26.2 and 39.1. A mark that never reaches black loses contrast to the skin it
+// sits on the moment the sprite is resampled, which is why the delivered 40px
+// face read BLANK while the concept's reads angry. #26130d decodes to linear
+// 0.0117; the board's own key delivers ~0.63 of authored luminance, so the
+// darkest a brow could ever render was 24-30. #0b0603 decodes to 0.0024, which
+// lands the delivered mark at 5-9 — inside the concept's own range.
+//
+// ⚠️ THE MOUTH IS NOT ALLOWED TO FOLLOW IT DOWN. Measured the same way, the
+// concept's mouth seam bottoms at 53 while the round-4 build's bottomed at 23 —
+// her mouth is a soft warm crease, NOT a black slot, and painting it with the
+// brow's ink is what made the 40px strip read "a fat dark rectangle" competing
+// with the eyes. `mouthInk` is a separate, warm swatch for that reason.
+const ink = '#0b0603';
+const mouthInk = '#5a2c21';
 // Sampled off junebug-turnaround.png's front head, not inferred: the sclera
 // reads #d1b294 in lid shadow and lifts toward cream in the light, so the flat
 // fill sits between the two; the iris body is #33190d and its centre bottoms
@@ -28,7 +45,14 @@ const ink = '#26130d';
 // its sclera is brighter: its own front view counts 477/421, a 1.13 ratio,
 // while carrying an even more lopsided catchlight (147/30). A 10% lift puts
 // both of Junebug's sides clear of the same threshold.
-const sclera = '#ecdfc6';
+// ★ AND AGAIN, #ecdfc6 -> #f6ecd8, because the round-4 board measured the
+// sclera as AREA rather than as brightness and the area had collapsed. Counting
+// pixels over luminance 175 inside each eye box, normalised by head area: the
+// concept carries 371 and 194 (left/right), the round-4 build 17 and 80 — an
+// order of magnitude less white in the eye. Half of that is the iris and the
+// lash (see IRIS_R and the lid stroke below) and half is that the shaded side
+// of the face renders the cream just under any threshold the lit side clears.
+const sclera = '#f6ecd8';
 const irisBrown = '#33190d';
 const pupil = '#120c07';
 const white = '#fff7e4';
@@ -62,22 +86,29 @@ const tongue = '#df6c78';
 // `proud` block), so anything drawn inside cell x < 7 or > 121 is painted on
 // buried geometry and simply disappears. Every mark below stays clear of it:
 // eyes 8..48, brows 8..52.
+// ★ THE IRIS SHRANK AND MOVED, AND THE EYE BOX DID NOT. At IRIS_R 11.5 the iris
+// was exactly as tall as the aperture (EYE_HALF_H 11.5), so it touched both lids
+// and the only cream left anywhere was two corner slivers. The concept does the
+// opposite: its iris measures 30px in a 47x40 eye, i.e. 75% of the aperture's
+// height, and the cream survives as a large field on the OUTER side plus a ring
+// above and below. 10.0 restores that ring; IRIS_INWARD 2 -> 5 restores the
+// field, at the cost of the inner crescent the concept also does not draw.
 const EYE_HALF_W = 20;
 const EYE_HALF_H = 11.5;
-const IRIS_R = 11.5;
+const IRIS_R = 10.0;
 // The concept's flat front view carries a ~7.75px nasal offset, but the atlas
 // lands on a rounded face patch that turns both eyes toward the centre line
 // again, and the two convergences stack into a cross-eyed read. Most of the
 // determination is carried by the brows regardless, so the offset is kept as a
 // hint rather than reproduced literally.
-const IRIS_INWARD = 2;
+const IRIS_INWARD = 5;
 // A quadratic's extremum sits at (P0 + 2*P1 + P2)/4, so a half-height of h
 // needs its control point 2h off the corner line.
 const almond = (x, y) =>
   `M${x - EYE_HALF_W} ${y} Q${x} ${y - EYE_HALF_H * 2} ${x + EYE_HALF_W} ${y} Q${x} ${y + EYE_HALF_H * 2} ${x - EYE_HALF_W} ${y}Z`;
 
 function eye(x, y, uid, { closed = false, wink = false, inward = 0 } = {}) {
-  if (closed || wink) return `<path d="M${x - 17} ${y} Q${x} ${y + 9} ${x + 17} ${y}" fill="none" stroke="${ink}" stroke-width="6" stroke-linecap="round"/>`;
+  if (closed || wink) return `<path d="M${x - 17} ${y} Q${x} ${y + 9} ${x + 17} ${y}" fill="none" stroke="${ink}" stroke-width="4.5" stroke-linecap="round"/>`;
   const id = `iris${uid}`;
   const cx = x + inward;
   // The iris is clipped to the almond so a converged pupil can ride toward the
@@ -86,10 +117,10 @@ function eye(x, y, uid, { closed = false, wink = false, inward = 0 } = {}) {
     <path d="${almond(x, y)}" fill="${sclera}"/>
     <g clip-path="url(#${id})">
       <circle cx="${cx}" cy="${y + 1}" r="${IRIS_R}" fill="${irisBrown}"/>
-      <circle cx="${cx}" cy="${y + 1}" r="6.2" fill="${pupil}"/>
-      <circle cx="${cx - 3.6}" cy="${y - 4.5}" r="2.8" fill="${white}"/>
+      <circle cx="${cx}" cy="${y + 1}" r="5.4" fill="${pupil}"/>
+      <circle cx="${cx - 3.2}" cy="${y - 4.0}" r="2.5" fill="${white}"/>
     </g>
-    <path d="M${x - EYE_HALF_W} ${y} Q${x} ${y - EYE_HALF_H * 2} ${x + EYE_HALF_W} ${y}" fill="none" stroke="${ink}" stroke-width="5.5" stroke-linecap="round"/>`;
+    <path d="M${x - EYE_HALF_W} ${y} Q${x} ${y - EYE_HALF_H * 2} ${x + EYE_HALF_W} ${y}" fill="none" stroke="${ink}" stroke-width="3.6" stroke-linecap="round"/>`;
 }
 
 function brow(x, y, tilt, inner) {
@@ -97,8 +128,15 @@ function brow(x, y, tilt, inner) {
   // bars, low over the eyes, tapering from the nose outward. The old 5.2px
   // half-thickness measured barely half the concept's bar. `inner` is +1 when
   // the nose side is the +x end.
-  const thick = 8.0;
-  const thin = 3.8;
+  // ★ THINNER, AND THAT IS MEASURED PERPENDICULAR. Both front views, one
+  // dark-pixel detector, each brow's vertical extent divided by its own head
+  // width: the concept reads 9.3% and 9.4% at a 23-degree tilt, so its TRUE
+  // thickness is 9.3 * cos(23) = 8.6%; the round-4 build read 13.9% and 13.6%
+  // at 6 degrees, i.e. 13.8% true — 60% too fat. Halving the half-thicknesses
+  // to 6.0/3.0 lands the delivered bar at ~9.9% true, and the taper (thick at
+  // the nose, thin at the temple) is the concept's own.
+  const thick = 6.0;
+  const thin = 3.0;
   const left = inner > 0 ? thin : thick;
   const right = inner > 0 ? thick : thin;
   // 22, was 17. The bar's rendered length measured 0.215ft against the
@@ -160,9 +198,20 @@ function face(name, index) {
   // Centres 30/98, was 29/99: with the longer bar this puts the brow's
   // geometric centre at model x 0.235ft against the concept's measured 0.242,
   // and holds its outer tip at cell 8 — clear of the buried outer cell.
+  // ★ THE TILT IS THE SCOWL, AND IT WAS AT A THIRD OF THE CONCEPT'S ANGLE.
+  //
+  // The bar's top edge falls by `2*tilt + thin - thick` cells across its 44-cell
+  // length, so tilt 4 with the old 3.8/8.0 half-thicknesses gave 3.8 cells =
+  // 4.9 degrees AUTHORED. Measured on the boards, the face patch's own
+  // curvature amplifies that by 1.30 (tan 6.4 deg delivered / tan 4.9 deg
+  // authored) — and 6.4 degrees is what the round-4 critic scored, against the
+  // concept's 22.7 and 23.0 measured by the same line fit. Solving the same
+  // arithmetic backwards for 21 degrees delivered: authored tan 0.295, i.e. a
+  // 13.0-cell drop, i.e. tilt 8 with the new 3.0/6.0 pair. `determined` then
+  // deepens what neutral already carries, as it always has.
   const brows =
-    brow(30, 35, determined ? 7 : worried ? -5 : 4, 1) +
-    brow(98, 35, determined ? -7 : worried ? 5 : -4, -1);
+    brow(30, 35, determined ? 11 : worried ? -6 : 8, 1) +
+    brow(98, 35, determined ? -11 : worried ? 6 : -8, -1);
   // No drawn nose: the sculpt carries a real nose form, and a mark on top of
   // it doubled the feature and read as a sticker.
 
@@ -198,9 +247,20 @@ function face(name, index) {
   // the front board is 3.5px before the toon ramp and under 1px on the draft
   // card. 6.0 cells at the fullest holds ~2px at card distance and still
   // tapers to points at the corners, which is what stops it reading as a dash.
-  const seam = (y, bow, drop) => `<path d="M41 ${y + drop} Q50 ${y - 2.0} 57 ${y - bow}
-    Q64 ${y - bow + 2.0} 71 ${y - bow} Q78 ${y - 2.0} 87 ${y + drop}
-    Q78 ${y + 6.0} 71 ${y + 4.8} Q64 ${y + 6.6} 57 ${y + 4.8} Q50 ${y + 6.0} 41 ${y + drop}Z" fill="${ink}"/>`;
+  // ★ ROUND 4 OVERSHOT IT. v13's 3-cell seam was scored "collapses to a ~2px
+  // stroke with no lip volume"; doubling it to 6.0 cells produced the opposite
+  // failure and the numbers say so. Measured with one dark detector on both
+  // front views, the mouth mark's WIDTH is right (36.1% of head width delivered
+  // against the concept's 36.0%) and its DEPTH is not: the concept's seam is
+  // ~1.0% of head width and the delivered one 3.0%, three times over, which is
+  // the "fat dark rectangle" the 40px strip read and the "dark slot with no lip
+  // form" the hero read. 4.2 cells at the fullest is ~2x the concept — enough to
+  // survive the draft card, which is all 3.14 ever asked for — and the centre
+  // control comes in from 2.0 to 1.0 because a 2-cell cupid's bow on a 4-cell
+  // seam is not a bow, it is a lump.
+  const seam = (y, bow, drop) => `<path d="M41 ${y + drop} Q50 ${y - 1.2} 57 ${y - bow}
+    Q64 ${y - bow + 1.0} 71 ${y - bow} Q78 ${y - 1.2} 87 ${y + drop}
+    Q78 ${y + 3.4} 71 ${y + 2.6} Q64 ${y + 3.8} 57 ${y + 2.6} Q50 ${y + 3.4} 41 ${y + drop}Z" fill="${mouthInk}"/>`;
   // The lower lip is a form, not a mark: a warm shape lighter than the skin
   // under the seam, which is what the concept's own render shows once the dark
   // line is discounted. No under-STROKE — the v6 one shaded the chin and read
@@ -212,8 +272,9 @@ function face(name, index) {
   // lit lower lip samples (226,163,116) against a chin of (196,138,98), a
   // 27-unit lift; #e5a069 is 26 above SKIN. It also starts BELOW the thicker
   // seam rather than under the old thin one.
-  const lowerLip = (y) => `<path d="M46 ${y + 4.6} Q64 ${y + 6.2} 82 ${y + 4.6}
-    Q73 ${y + 11.2} 64 ${y + 11.4} Q55 ${y + 11.2} 46 ${y + 4.6}Z" fill="#e5a069"/>`;
+  // Raised to start under the THINNER seam (was y+4.6, sized to the 6-cell one).
+  const lowerLip = (y) => `<path d="M46 ${y + 2.8} Q64 ${y + 4.2} 82 ${y + 2.8}
+    Q73 ${y + 9.6} 64 ${y + 9.8} Q55 ${y + 9.6} 46 ${y + 2.8}Z" fill="#e5a069"/>`;
   let lips = lowerLip(102.5) + seam(102.5, 1.2, 1.0);
   // An open smile is a MOUTH, not a crescent sticker: inner cavity, a band of
   // upper teeth, a tongue resting low, and a catch-light lower lip.
@@ -221,7 +282,7 @@ function face(name, index) {
     <path d="M47.5 93.5 Q64 98 80.5 93.5 Q75 100.1 64 100.4 Q53 100.1 47.5 93.5Z" fill="${white}"/>
     <path d="M55.5 106 Q64 109 72.5 106 Q69.5 102 64 102 Q58.5 102 55.5 106Z" fill="${tongue}"/>`;
   // Determined: the same two lips, pressed and turned DOWN at the corners.
-  if (name === 'determined' || name === 'angry') lips = lowerLip(104.5) + seam(103.5, 5.0, 2.6);
+  if (name === 'determined' || name === 'angry') lips = lowerLip(104.5) + seam(103.5, 3.5, 2.2);
   if (name === 'worried' || name === 'upset') lips = `<path d="M49 105 Q64 94.5 79 105 Q64 100.3 49 105Z" fill="${mouth}"/>`;
   if (name === 'surprised') lips = `<ellipse cx="64" cy="98" rx="11.5" ry="12.5" fill="${mouth}"/>
     <ellipse cx="64" cy="98" rx="8.2" ry="9.4" fill="${mouthDark}" stroke="${ink}" stroke-width="1.8"/>

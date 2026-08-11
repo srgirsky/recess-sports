@@ -23,7 +23,7 @@ from mathutils import Vector
 REPO = Path.cwd()
 OUTPUT = REPO / "assets/v2/source/junebug-pilot.blend"
 FACE_ATLAS = REPO / "assets/v2/source/junebug-face-atlas.png"
-REVISION = "junebug-turnaround-fidelity-v15"
+REVISION = "junebug-turnaround-fidelity-v16"
 SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 
 
@@ -182,6 +182,32 @@ def cap_lateral(sin_phi: float, above_equator: bool) -> float:
 # authored 0.012 of reach ABOVE where the concept's curve runs, which lands
 # the delivered chord on it: peak z 3.738 authored, ~3.71 drawn, against the
 # concept's measured 3.755.
+#
+# ★ ROUND 4: THE FLANK BRANCH IS LIFTED, AND IT IS THE EAR THAT PAYS FOR IT.
+# Two measurements, both on the round-4 boards with one dark-hair detector
+# (luminance < 105 inside the silhouette, run in from each edge):
+#
+#   * the strip beside the face still runs 0.021-0.039ft per side over
+#     z 3.55-3.30 where the concept's runs 0.000-0.005 — the concept's hair at
+#     those rows is a LIT rim, not a dark mass, which is why the critic's
+#     "0-1px against 6-8px" and a warm-skin classifier's "0.045 against 0.047"
+#     disagree so violently. The dark detector is the honest one, and it says
+#     the wedge is real;
+#   * at the pure side the rim landed at z 3.193 against an ear top of 3.276,
+#     so the hair ran 0.083ft PAST the ear and terminated in the squared notch
+#     visible at 14x on junebug-front-review.png — the "hard straight top edge"
+#     3.10 was scored on and the "point above the ear" the wedge was scored on
+#     are the same object.
+#
+# The branch from `front` 0.47 inward is therefore lifted so the flank rim
+# lands at z 3.240: 0.544 * pi is colatitude 1.709, and 3.335 + 0.685*cos of
+# that is 3.240. It stops INSIDE the ear's upper third on purpose rather than
+# at its top — the ear is what seals the cap's rim against the single-sided
+# back half (see `HAIR_PROUD`), and a rim ending 0.006 above the ear's top
+# leaves a 1px background sliver where a rim ending 0.036 inside it cannot.
+# Delivered band at z 3.55 is predicted to fall from 0.039 to 0.029: the rim's
+# bearing there moves from front 0.395 to 0.342, and the projected strip is
+# (1 - sqrt(1 - front**2)) of the head's half-width.
 HAIRLINE_REACH = (
     (1.000, 0.390),
     (0.966, 0.379),
@@ -190,16 +216,16 @@ HAIRLINE_REACH = (
     (0.707, 0.322),
     (0.640, 0.308),
     (0.560, 0.300),
-    (0.470, 0.326),
-    (0.400, 0.372),
-    (0.340, 0.417),
-    (0.300, 0.456),
-    (0.260, 0.488),
-    (0.220, 0.514),
-    (0.170, 0.535),
-    (0.110, 0.552),
-    (0.050, 0.562),
-    (0.000, 0.566),
+    (0.470, 0.320),
+    (0.400, 0.360),
+    (0.340, 0.400),
+    (0.300, 0.436),
+    (0.260, 0.464),
+    (0.220, 0.490),
+    (0.170, 0.512),
+    (0.110, 0.530),
+    (0.050, 0.540),
+    (0.000, 0.544),
 )
 
 
@@ -329,9 +355,29 @@ def socket_push(nx: float, nz: float) -> float:
     0.056ft. The eyes sit at nz -0.278, inside this window, so the atlas's irises
     land in a recession instead of on a sphere (rubric 3.5's "features
     integrated with the skull's planes").
+
+    ★ AND ITS BOUNDARY IS THE "STICKER" — the seam three rounds looked for on
+    the UV island and one round looked for on the hair. A plain quadratic cap
+    `1 - u**2` reaches zero with a SLOPE of -2/w, so the surface has a crease
+    ring exactly where the socket runs out: an ellipse in (nx, nz) whose lower
+    outer arc crosses the face diagonally from under the eye to the jaw and
+    whose lateral edge drops vertically from the outer brow. That is verbatim
+    what the round-4 verdict measured on junebug-runtime-hero.png — "a
+    hard-edged lighter tonal island ... bounded by a straight diagonal running
+    from under the eye to the jaw, a vertical seam dropping from the outer
+    brow". A toon ramp does not invent a boundary; it darkens one, and this is
+    the one it found.
+
+    Squaring each window makes it C1 at both ends (value 1 and slope 0 at the
+    centre, value 0 and slope 0 at the rim), so there is nothing left to darken.
+    The widths are re-solved rather than kept, so the socket itself does not
+    move: `(1-u**2)**2` is at half amplitude at u = 0.541 where `1-u**2` is at
+    0.707, and 0.14 * 0.707 / 0.541 = 0.183, 0.52 * 0.707 / 0.541 = 0.68. Peak
+    depth, half-depth latitude and half-depth bearing are all unchanged; only
+    the last few thousandths of the falloff differ.
     """
-    band = max(0.0, 1.0 - ((nz + 0.20) / 0.14) ** 2)
-    across = max(0.0, 1.0 - (nx / 0.52) ** 2)
+    band = max(0.0, 1.0 - ((nz + 0.20) / 0.183) ** 2) ** 2
+    across = max(0.0, 1.0 - (nx / 0.68) ** 2) ** 2
     return 0.050 * band * across
 
 
@@ -521,8 +567,28 @@ SOCK = rgba("8A2620")
 # costs ~20% of the authored luminance, and at a true 40px downscale the band
 # was reading light GREY rather than the white that anchors her identity at
 # field scale. Starting at paper-white lands the rendered band near 215.
-WHITE = rgba("FFFBF2")
-SOLE = rgba("EEE5D8")
+# ★ AND THE LAST 4% OF IT, WITH THE ARITHMETIC THAT SAYS THAT IS ALL THERE IS.
+# The board's key sits at (4, -5.5, 7) and its unit direction at the band is
+# (0.556, -0.700, 0.444); the rig delivers 0.896 of full diffuse at N.L = 1,
+# measured back out of the shipped band (199.5 sRGB = 0.583 linear against the
+# swatch's 0.930, i.e. N.L 0.627/0.896 = 0.70). Solved over the section, the
+# best mean N.L any orientation of a rounded strip can hold here is 0.83, which
+# tops the band out near sRGB 217 — the concept's 242.6 is not reachable by
+# geometry OR by swatch, and the remaining honest move is the swatch's own last
+# 4% of luminance. FFFDF4 is 0.968 linear against FFFBF2's 0.930.
+WHITE = rgba("FFFDF4")
+# ★ THE SOLE/CAP CREAM WAS A NEUTRAL GREY ON THE BOARD, and that is the other
+# half of the shoe's colour defect (the first half — a red shoe with a white toe
+# — was corrected in `build_shoe`). MEASURED on the round-4 board: the shoe body
+# renders rgb(188,185,180), saturation 7, against junebug-turnaround.png's
+# rgb(227,208,191), saturation 35 — the right VALUE family and no warmth at all.
+# The board's ramp costs each channel 0.788/0.793/0.814 of the authored swatch,
+# which compresses chroma toward neutral, so a cream that survives it has to be
+# authored with 1.3x the concept's channel spread. FFE9CE predicts a delivered
+# (201,185,168): saturation 16.4 against the concept's 15.9, R-B 33 against 36.
+# Its luminance still lands ~188 against the concept's 211, for the same reason
+# the band cannot reach 242 — that difference is the rig, not the paint.
+SOLE = rgba("FFE9CE")
 # ★ THE TEAM ACCENT MOVED ONTO A FORM THE CONCEPT ACTUALLY DRAWS.
 # `authored-character.test.js` requires a surface carrying `recessTeamAccent`,
 # and v12 paid for it with a grey ring on the LEFT forearm only. The round-3
@@ -787,11 +853,13 @@ class MeshBuilder:
                 # puts the centre hairline at z 3.547 against the concept's
                 # measured 3.543 — that number was never the defect; what the
                 # table replaces is the temple bump that buried both temples.
-                # 0.276, was 0.24: the traced table's side value came up from
-                # 0.602 to 0.566, and the nape is authored against the FINAL
-                # colatitude, not the increment — 0.566 + 0.276 lands the back
-                # rim at z 2.732, exactly where the shipped one was.
-                reach = hairline_reach(front) + 0.276 * blend
+                # 0.298, was 0.276: the traced table's side value came DOWN from
+                # 0.566 to 0.544 (see HAIRLINE_REACH's round-4 block), and the
+                # nape is authored against the FINAL colatitude, not the
+                # increment — 0.544 + 0.298 is the same 0.842 that lands the
+                # back rim at z 2.732, so lifting the flank leaves the nape and
+                # the whole back mass exactly where they were.
+                reach = hairline_reach(front) + 0.298 * blend
                 phi = reach * pi * row / rings
                 # ★ STRAND GROOVES ARE A SMOOTH PERIODIC FUNCTION OF BEARING,
                 # sampled by EVERY column. v11 built them as six cos^6 windows
@@ -1496,7 +1564,16 @@ def build_shoe(builder: MeshBuilder, side: int, prefix: str, detail: int, segmen
     # where the art draws the lip. Thickened rz 0.052 -> 0.060: the round-2
     # board called the thinner lens a "flat plate" — the concept's sole is a
     # rounded slab with a visible white sidewall.
-    builder.ellipsoid((x0, -0.115, 0.068), (0.228, 0.335, 0.060), 1, SOLE, foot, seg, max(4, rng - 2), flatten_sole=True)
+    # ★ THE OUTSOLE IS A WELT, NOT A PLATE. rx 0.228 stood 0.013 proud of the toe
+    # box (0.215) and 0.028 proud of the ankle quarter (0.20) on every bearing,
+    # which is the "two stacked flat discs protruding past the shoe body on every
+    # side with hard straight edges" the round-4 board read at 10x. The concept
+    # draws it the other way round: flush under the cream toe cap, and showing as
+    # a thin cream lip only where the red quarter curves in above it. 0.214 x
+    # 0.318 is inside the toe box and 0.014 proud of the quarter, so the lip
+    # appears exactly where the art puts it; rz 0.066 about 0.072 keeps the
+    # rounded sidewall and leaves the tread 0.006ft off the ground plane.
+    builder.ellipsoid((x0, -0.115, 0.072), (0.214, 0.318, 0.066), 1, SOLE, foot, seg, max(4, rng - 2), flatten_sole=True)
     lace_rows = (-0.10, -0.19, -0.28) if detail >= 2 else (-0.20,)
     for lace_y in lace_rows:
         along = min(1.0, abs(lace_y + 0.13) / 0.30)
@@ -1588,6 +1665,36 @@ def build_ear(builder: MeshBuilder, side: int, detail: int) -> None:
             return 0.0
         return cos(delta / 2.55 * (pi / 2)) ** 1.4
 
+    def front_deep(t: float) -> float:
+        """★ HOW MUCH OF THE DISH THE FRONT CAMERA IS ALLOWED TO SEE.
+
+        The round-4 board scored the ear "a flat faceted skin nub ... no outer
+        rim, no inner concha shadow, no lobe" — rubric 3.10's forbidden bare
+        bump, verbatim, and it is not a paint problem. Measured off the rows
+        below, the dish was 0.073 - 0.056 = 0.017ft deep, which is 2.4px on the
+        front board. Smooth shading has nothing to darken at 2.4px, so the ear
+        renders as one lit plane however many rings it carries. The concept's
+        own front-view ear (junebug-turnaround.png, x 390-440) shows the
+        opposite: a lit helix rim with a clearly shadowed groove running inside
+        it, and that groove is what makes it read as an ear at 6x rather than a
+        pad.
+
+        The dish could not simply be deepened, and `build_ear`'s header says
+        why: at the ear's upper-BACK bearings the concha is inside the hair cap
+        by 0.021-0.030ft, which is the black hole round 3 found. But that is a
+        statement about ONE arc. Walking both surfaces at the upper-FRONT
+        bearing the front camera actually sees (t 2.4, model y 0.035, z 3.207),
+        the ear stands 0.0426ft clear of the cap, and at t 1.6 it stands 0.0241
+        — so the depth is available exactly where it is needed and absent
+        exactly where it is not. This window is centred on t 2.4 with a
+        half-width of 1.6rad, which is zero by t 0.8 and therefore zero across
+        the whole 15-30 degree arc the collision lives on.
+        """
+        delta = (t - 2.4 + pi) % (2 * pi) - pi
+        if abs(delta) >= 1.35:
+            return 0.0
+        return cos(delta / 1.35 * (pi / 2)) ** 2
+
     # ★ EVERY ROW IS AN OFFSET FROM THE SKULL AT ITS OWN (y, z), never an
     # absolute x. The head narrows 0.10ft between the ear's top and its bottom,
     # so one absolute base ring cannot be buried at both ends — the first v12
@@ -1628,14 +1735,40 @@ def build_ear(builder: MeshBuilder, side: int, detail: int) -> None:
     # the concha against (203,145,101) on the helix, a 24-unit dip and not a
     # hole — and SKIN_SHADOW survives only on the deepest inner ring, where the
     # concept's own dip is.
+    # ★ AND THE WHOLE DISC IS FLARED, WHICH IS THE OTHER HALF OF 3.10's FRONT
+    # VIEW. Deepening the dish (see `front_deep`) buys nothing if the dish faces
+    # sideways, because the front camera then sees the disc EDGE-ON and a
+    # 0.047ft hollow projects to nothing. Measured off the concept's own front
+    # figure, its ear occupies x 390..417 — 27px of visible ear surface inboard
+    # of a silhouette edge the skull alone would put at 417 — because the disc
+    # is rotated so its opening faces forward-and-out. The delivered ear showed
+    # ~12px and read, correctly, as a pad.
+    #
+    # `back` is what rotates it: the outer rim rides 0.072ft further back than
+    # the base ring across 0.103ft of standoff, which is 35 degrees off the
+    # head's side, so the dish's normal is (0.82, -0.57, 0) and 57% of it faces
+    # the front camera. The MEAN of the four rim rows moves by 0.003 only, so
+    # the ear does not migrate backward on the profile board — it pivots.
+    # ⚠️ AND THE FLARE HAS TO BE PAID FOR IN STANDOFF, which the first flared
+    # board proved by measuring it. `skull_surface_x` FALLS as a row moves back
+    # (that is the whole reason ear rows are offsets from the skull rather than
+    # absolute x), so rotating the disc 35 degrees pulled the rim's projected
+    # half-width in with it: head max width fell 166px -> 162 and the ear's
+    # silhouette step 12.0% -> 9.9% of head width, against a concept step of
+    # 13.6%. Offsets are therefore re-solved at the flared geometry — 0.090 at
+    # the rim rather than 0.073 — which buys the step back without touching the
+    # skull. Note what that trade cannot do: the concept's waist is 0.245 of its
+    # figure height against this build's 0.253, so a 13.6% step and a 0.284
+    # head width are not simultaneously reachable here. Head width is the
+    # measured category and keeps its 166px.
     if detail >= 2:
-        rim_rows = ((-0.030, 0.90, 0.000), (0.020, 1.04, 0.014), (0.052, 1.06, 0.024), (0.073, 0.98, 0.032))
-        concha_rows = ((0.066, 0.78, 0.040), (0.056, 0.44, 0.034))
-        lobe_rows = ((0.070, 0.90, 0.038), (0.058, 0.64, 0.030))
+        rim_rows = ((-0.030, 0.90, -0.012), (0.022, 1.04, 0.008), (0.058, 1.06, 0.028), (0.090, 0.98, 0.046))
+        concha_rows = ((0.066, 0.78, 0.044), (0.056, 0.44, 0.038))
+        lobe_rows = ((0.072, 0.90, 0.042), (0.058, 0.64, 0.034))
     else:
-        rim_rows = ((-0.026, 0.96, 0.000), (0.068, 1.00, 0.026))
-        concha_rows = ((0.058, 0.50, 0.020),)
-        lobe_rows = ((0.062, 0.70, 0.020),)
+        rim_rows = ((-0.026, 0.96, -0.010), (0.080, 1.00, 0.036))
+        concha_rows = ((0.058, 0.50, 0.026),)
+        lobe_rows = ((0.062, 0.70, 0.024),)
 
     rows: list[list[int]] = []
 
@@ -1662,9 +1795,24 @@ def build_ear(builder: MeshBuilder, side: int, detail: int) -> None:
             # TRAGUS: the small flap in front of the canal, a local outward
             # push on the front bearing of the inner rows.
             tragus = 0.038 * max(0.0, cos(t - pi)) ** 6
-            colour = SKIN_SHADOW if (w > 0.55 and cs < 0.60) else SKIN
+            # ★ THE SINK IS NOT GATED ON `well`, and the first round-4 rebuild is
+            # why. Gated, it delivered 0.026 * w * front_deep = 0.012 at the
+            # window's centre, because `well` is only 0.46 there — the concha's
+            # own centre is at t 0.85 (the upper BACK) and the front is nearly
+            # all lobe. The board then measured what a 0.012ft dip in a form that
+            # spans 11px from the front is: nothing. The groove the front camera
+            # needs runs just inside the helix, so it is authored against the
+            # camera's own window and nothing else.
+            #
+            # 0.032 is a CLEARANCE. Walking the ear's rows against the cap's
+            # surface: 0.0426ft of room at t 2.4 (sink 0.0136 there, 0.029 left)
+            # and 0.0241 at t 1.6 (sink 0.0114, 0.0127 left). The 15-30 degree
+            # arc that carries the round-3 collision is outside the window
+            # entirely and takes no sink at all.
+            sink = 0.032 * front_deep(t)
+            colour = SKIN_SHADOW if (cs < 0.85 and front_deep(t) > 0.30) else SKIN
             return (
-                lo + (co - lo) * w + tragus,
+                lo + (co - lo) * w + tragus - sink,
                 ls + (cs - ls) * w,
                 lb + (cb - lb) * w,
                 colour,
@@ -1674,8 +1822,12 @@ def build_ear(builder: MeshBuilder, side: int, detail: int) -> None:
     # The floor of the dish. SKIN, not SKIN_SHADOW, and 0.033ft under the rim
     # peak rather than 0.069 — see the rim/concha block above for why the deep
     # painted version rendered as a hole at the gameplay camera.
+    # 0.042, was 0.060: the dish floor drops with the front rows above it (see
+    # `front_deep`). Solved for hair, not guessed — at (y 0.083, z 3.152) the
+    # cap's rim has already ended (its colatitude there is 1.792 against the
+    # 1.839 this point needs), so there is no hair over this vertex at all.
     center = builder.vertex(
-        ((skull_surface_x(cy + 0.038, cz - 0.004) + 0.060) * side, cy + 0.038, cz - 0.004),
+        ((skull_surface_x(cy + 0.038, cz - 0.004) + 0.042) * side, cy + 0.038, cz - 0.004),
         SKIN, "Head",
     )
     for index in range(points):
