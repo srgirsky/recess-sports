@@ -187,13 +187,16 @@ export function buildPitchStack(t: Theme): HTMLElement {
     alignItems: 'flex-end',
     gap: '16px',
   });
-  // top row: SPECIAL tucks left of the (selected) HEAT card
+  // top row: SPECIAL tucks INTO the (selected) HEAT card — verdict-005 read
+  // the 14px gap + mild tilt as "floats unrotated off-stack", so it now
+  // overlaps the stack edge, hangs a touch lower and carries a loud tilt.
   const rowTop = document.createElement('div');
-  Object.assign(rowTop.style, { display: 'flex', alignItems: 'flex-start', gap: '14px', marginRight: '2px' });
-  rowTop.append(
-    pitchCard(t, 'SPECIAL', 'special', 'hudInk', 152, 112, -3, false),
-    pitchCard(t, 'HEAT', 'heat', 'hudBlue', 170, 128, 2.2, true),
-  );
+  Object.assign(rowTop.style, { display: 'flex', alignItems: 'flex-start', marginRight: '2px' });
+  const special = pitchCard(t, 'SPECIAL', 'special', 'hudInk', 152, 112, -4.6, false);
+  Object.assign(special.style, { marginRight: '-10px', marginTop: '14px', zIndex: '0' });
+  const heat = pitchCard(t, 'HEAT', 'heat', 'hudBlue', 170, 128, 2.2, true);
+  heat.style.zIndex = '1';
+  rowTop.append(special, heat);
   // ±2-3° rotation and a few px of horizontal stagger — hand-hung, not machine-aligned
   const rHook = pitchCard(t, 'RIGHT HOOK', 'rightHook', 'hudPurple', 164, 116, -2.4, false);
   rHook.style.marginRight = '8px';
