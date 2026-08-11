@@ -530,8 +530,34 @@ def srgb_to_linear(color: tuple[float, float, float, float]) -> tuple[float, flo
 # #CD864C at the lit face, pants #D55A4C (salmon — a full step lighter than the
 # jersey, which the board kept collapsing into one crimson), socks #76221D
 # (darker than the jersey, so the below-knee break reads), jersey #993430 lit.
-SKIN = rgba("C9814A")
-SKIN_SHADOW = rgba("A25A2C")
+# ★ THE SKIN WENT GREY AT FIELD SCALE, AND IT IS THE SAME AgX SHOULDER AS THE
+# BAND — measured on both boards the same way (skin-hued pixels of the forearm
+# and the face, brightest 20% by red):
+#
+#   junebug-turnaround.png  face (214.4, 142.0,  81.8)  r-b 132
+#   junebug-front-review.png face (197.3, 148.3, 113.3)  r-b  84
+#
+# A 48-point chroma miss, and the round-4 critic saw it exactly where it costs
+# the most: at a true 40px downscale the delivered cheek reads (175,131,98)
+# against the concept's (157,102,59). Blue is the channel that will not come
+# down — AgX desaturates toward the top of its range, so #C9814A's 74 counts of
+# blue land at 119 on a sphere rendered through the board's own rig.
+# CALIBRATED, not guessed: ten candidate swatches rendered on one 0.30ft sphere
+# at the head's height through the board's exact lights and view transform,
+# each read with the same brightest-20% statistic. #C9814A returned
+# (198.3, 151.5, 119.2), which is within 3 counts of what the real head
+# measures — so the sphere is a trustworthy stand-in — and the sweep bottoms
+# out at #E07C28 -> (210.8, 147.7, 104.5), r-b 106.
+#
+# That is 55% of the chroma gap and all of it that exists: pushing on to
+# #FF8C14 (blue = 20 counts authored) still renders 110 counts of blue and only
+# adds red. Recorded so the next round does not re-spend the budget: the
+# remaining 26 points of r-b are the board's view transform.
+SKIN = rgba("E07C28")
+# Moved with SKIN by the same per-channel ratio (R x1.114, G x0.961, B x0.541)
+# so the ear's deepest ring keeps its measured 24-count dip below the helix
+# rather than becoming a hole under a warmer skin.
+SKIN_SHADOW = rgba("B45718")
 # Warm dark brown, not near-black: #2A1912 shipped as jet black under the toon
 # shader's shading ramp (the hero read the critic called "jet black with a
 # blue-gray outline"), while the turnaround's hair is a readable warm brown.
@@ -576,7 +602,13 @@ SOCK = rgba("8A2620")
 # tops the band out near sRGB 217 — the concept's 242.6 is not reachable by
 # geometry OR by swatch, and the remaining honest move is the swatch's own last
 # 4% of luminance. FFFDF4 is 0.968 linear against FFFBF2's 0.930.
-WHITE = rgba("FFFDF4")
+# ★ AND NOW THE LAST 3% OF IT. FFFFFF is 1.000 linear against FFFDF4's 0.968,
+# worth about +1 sRGB on the delivered band by the AgX transfer curve measured
+# in `band_section` — the whole remaining budget, spent, so that the shortfall
+# that is left can be attributed to the rig with nothing held back. There is no
+# brighter swatch; a white that renders at 203 against the concept board's 231
+# is the board's view transform, not this paint.
+WHITE = rgba("FFFFFF")
 # ★ THE SOLE/CAP CREAM WAS A NEUTRAL GREY ON THE BOARD, and that is the other
 # half of the shoe's colour defect (the first half — a red shoe with a white toe
 # — was corrected in `build_shoe`). MEASURED on the round-4 board: the shoe body
@@ -1783,11 +1815,37 @@ def build_ear(builder: MeshBuilder, side: int, detail: int) -> None:
             row.append(builder.vertex((x_abs * side, ear_y, ear_z), colour, "Head"))
         rows.append(row)
 
+    def helix_root(t: float) -> float:
+        """The helix ROOTS into the skull at the ear's crown and only stands
+        clear lower down: the positive standoff tapers by 38% at t = pi/2, and
+        not at all at the front and back bearings (t = 0, pi) where the ear
+        reaches its widest, nor at the lobe. Negative offsets — the buried base
+        ring — are left alone, because scaling one pushes the base OUT of the
+        skull.
+
+        ⚠️ WHAT THIS DOES AND DOES NOT DO, MEASURED, so it is not re-attempted
+        as a silhouette fix. It softens the squared corner at the top of the
+        ear's own surface, which is real and visible at 8x. It changes the
+        front-view SILHOUETTE by zero pixels, and the reason is worth keeping:
+        the front outline at the ear's latitudes is set by the ear's WIDEST
+        bearings, where this taper is 1.0 by construction, while at the ear's
+        crown the outline belongs to the hair cap. Walking both boards with one
+        alpha/background silhouette detector over rows 0.50-0.75 of head height:
+        the delivered ear step runs 146 -> 152px of a 164px head (89.0% -> 92.7%
+        of head max) and the concept's runs 225 -> 235 of 250 (90.0% -> 94.0%),
+        with a largest single-row jump of 2px on BOTH. The front step is within
+        1.3% of the concept and is not what still holds 3.10; the ear is 20px
+        tall on this board and what is missing at that size is rim, concha and
+        lobe DEPTH, which is a separate pass.
+        """
+        return 1.0 - 0.38 * max(0.0, sin(t)) ** 1.2
+
     for offset, scale, back in rim_rows:
         # ANTIHELIX: a low ridge inside the rim on the upper-back arc, so the
         # rim is not one uniform-width band the whole way round.
         emit(lambda t, o=offset, s=scale, b=back: (
-            o + (0.016 * max(0.0, cos(t - 0.55)) ** 4 if o > 0 else 0.0), s, b, SKIN
+            (o * helix_root(t) + 0.016 * max(0.0, cos(t - 0.55)) ** 4) if o > 0 else o,
+            s, b, SKIN
         ))
     for (co, cs, cb), (lo, ls, lb) in zip(concha_rows, lobe_rows):
         def spec(t: float, co=co, cs=cs, cb=cb, lo=lo, ls=ls, lb=lb):
@@ -2351,14 +2409,69 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     # thick at the centre column and the round-4 board 0.089 — 0.103ft against
     # 0.120 — which at a 40px downscale is what turns the white from a stroke
     # across a dark crown into a pale cap wrapping the whole head.
+    # ★ ROUND 4 CYCLE 3: THE ROLL IS RE-AIMED FROM A MEASURED TRANSFER CURVE,
+    # AND THE SAME CURVE SAYS THE CONCEPT'S BAND IS NOT REACHABLE HERE.
+    #
+    # Every previous round solved the band in LINEAR light and predicted values
+    # (236, 242) the board never produced. The board does not render in linear
+    # light: `render-fidelity-views.py` runs `--factory-startup`, and Blender's
+    # factory view transform is **AgX**, whose shoulder crushes the top of the
+    # range. Calibrated by rendering one white plane at the band's own position
+    # (0, -0.32, 3.80) through the board's exact rig, one render per
+    # orientation, tilt measured up from radial:
+    #
+    #   tilt  -20   -10    0    +10   +20   +30   +45   +60   +70
+    #   sRGB  189   196   200   203   205   205   205   203   202
+    #
+    # Six degrees of tilt is worth one sRGB point at the top of that curve and
+    # NOTHING is worth more than 205 at the band's centre column. The brightest
+    # white pixel anywhere on the whole round-4 figure is 219.9. So the
+    # concept's 231 mean / 255 peak is a property of the board that rendered
+    # junebug-turnaround.png, not of this geometry, and no swatch or normal
+    # reaches it. What IS reachable is the part of the curve the band was
+    # spending on its underside: weighting the facets below by the height each
+    # projects to the ortho camera, the shipped section ran
+    # 54.5deg/26.6/0.0/-16.9 for a predicted 198.6 against a MEASURED 198.2 —
+    # a third of its projected height on the -16.9 facet, which the curve
+    # prices at 190.
+    #
+    # The section below rolls the same 0.100ft of projected height through
+    # 54.5/26.6/11.3/-2.9 instead, predicted 202.2. The outer face's widest
+    # point moves down 0.02ft and grows 0.004; it is still the concept's
+    # rounded strip and its silhouette height is unchanged, so the 40px stroke
+    # keeps its thickness.
+    #
+    # ⚠️ THE REMAINING SHORTFALL IS A SMOOTH-SHADING AVERAGE, AND IT IS PRICED.
+    # DO NOT RE-ATTEMPT IT WITHOUT FIRST FINDING 1KB.
+    #
+    # Re-aiming the facets moved the measured band mean 198.2 -> 198.9 where
+    # the facet arithmetic predicted +4, and the gap is `use_smooth = True`:
+    # the board shades the INTERPOLATED VERTEX normal, and the outer face's
+    # bottom corner is shared with the underside, so its vertex normal is the
+    # mean of the outer-bottom facet (0.999, -0.048) and an underside facing
+    # nearly straight down (0.138, -0.990) — tilt -42deg, which the curve above
+    # prices at 180. The lowest 40% of the band's projected height interpolates
+    # toward that.
+    #
+    # The fix is a SECOND COINCIDENT CORNER: the outer face ends on its own
+    # copy of the bottom point and the underside starts on the original, which
+    # is a hard crease with no gap, and it predicts +3.9 on the band mean
+    # (Michelson 0.560 -> 0.573). It was built and measured and then REVERTED,
+    # because it costs `band_count` vertices — about 1KB — and
+    # `export:authored-character` failed on "401KB exceeds the 400KB budget".
+    # LOD0 also has 140 triangles of headroom and LOD2 has 4. So the trade is:
+    # 1KB of container budget for 13 thousandths of a Michelson number, on a
+    # target (0.635) the transfer curve above says is unreachable by any
+    # amount of either. Not worth a gate, and recorded so the next round does
+    # not spend a rebuild finding this out again.
     band_section = (
-        (0.022, -0.048),
+        (0.034, -0.048),
         (-0.038, -0.058),
         (-0.038, 0.058),
-        (0.004, 0.053),
-        (0.022, 0.041),
-        (0.032, 0.017),
-        (0.032, -0.015),
+        (0.006, 0.052),
+        (0.020, 0.042),
+        (0.030, 0.022),
+        (0.036, -0.008),
     )
     cap_rx, _cap_ry, cap_rz = HAIR_CAP_RADII
     for i in range(band_count):
@@ -2397,6 +2510,13 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         nxt_row = (i + 1) % band_count
         for s in range(corners):
             nxt = (s + 1) % corners
+            # A coincident section corner (see the crease note above) would
+            # bridge to itself with a zero-area quad. Kept as a guard so a
+            # future split cannot ship 16 degenerate faces with undefined
+            # normals; skipping one leaves no hole, because the two rings it
+            # would have joined are the same ring of points.
+            if band_section[s] == band_section[nxt]:
+                continue
             builder.face((band_rows[i][s], band_rows[i][nxt], band_rows[nxt_row][nxt], band_rows[nxt_row][s]), 1)
     if detail >= 1:
         # The gather BUN at the crown — in the art's front view it is a big
@@ -2577,11 +2697,33 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     near = builder.vertex((-barb_half, hub_y, hub_z), HAIR, "Head")
     far = builder.vertex((barb_half, hub_y, hub_z), HAIR, "Head")
     count = len(outline)
+    # ★ AND EVERY ONE OF ITS FACES WAS WOUND INSIDE OUT, WHICH IS WHY THE BARB
+    # RENDERED AS A NAVY SHARD IN THE GAME AND AS BROWN HAIR ON THE BOARD.
+    #
+    # Four rounds read "a flat navy-grey wedge" as a shading or a silhouette
+    # note. It is neither: sampling junebug-runtime-hero.png inside the barb
+    # gives rgb(38.9, 50.8, 61.3) and `materials/outline.ts` declares
+    # OUTLINE_COLOR = 0x26333f = rgb(38, 51, 63). The barb was not shaded badly,
+    # it was not being drawn at all — every visible pixel of it belonged to the
+    # inverted hull.
+    #
+    # `corners` walks CLOCKWISE in the (y, z) plane (shoelace area -0.0587), so
+    # `grid`'s (lower[i], lower[i+1], upper[i+1], upper[i]) and both pole fans
+    # produced normals pointing at the hub: 24/24 grid quads and 24/24 fan
+    # triangles inward, checked by walking the same construction offline. The
+    # runtime colour pass is FrontSide, so it culled the near surface and drew
+    # the far one; the hull is BackSide and offset only in clip XY, so ITS near
+    # surface survived at the near depth and covered the whole form. EEVEE
+    # flips a backfacing normal for shading and renders double-sided, which is
+    # exactly why three fidelity boards showed a correctly rounded brown barb.
+    # Reversed here rather than by reordering `corners`, because the corner list
+    # is the measured drawing and its first entry has to stay welded into the
+    # shaft (see above).
     for column in range(count):
         nxt = (column + 1) % count
-        builder.face((near, barb_rows[0][nxt], barb_rows[0][column]), 2)
-        builder.face((barb_rows[-1][column], barb_rows[-1][nxt], far), 2)
-    builder.grid(barb_rows, 2)
+        builder.face((near, barb_rows[0][column], barb_rows[0][nxt]), 2)
+        builder.face((barb_rows[-1][nxt], barb_rows[-1][column], far), 2)
+    builder.grid(barb_rows, 2, flip=True)
     if detail >= 1:
         # ★ THE TIE IS A WRAPPED CUFF, NOT A HOOP IN A FIXED PLANE.
         #
