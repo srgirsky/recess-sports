@@ -106,8 +106,23 @@ function brow(x, y, tilt, inner) {
   // 0.00432ft along the face, so the missing 0.076ft is 8.8 cells across the
   // pair — half 17 -> 22 and the delivered bar lands at 0.278ft.
   const half = 22; // spans 8..52 about the centres below
+  // ★ THE ENDS ARE ROUNDED, AND THEY ROUND INWARD. Round 3 scored the brows
+  // "flat black parallelograms with hard corners sitting on the surface" — the
+  // bar was closed by two vertical L segments, so each end was a squared-off
+  // cut where the concept's own brow (junebug-turnaround.png's front head)
+  // tapers to a soft point at the outer end and a rolled one at the nose. The
+  // caps are quadratics whose control point sits INSIDE `half` rather than
+  // outside it, so the bar's measured length is unchanged and nothing moves
+  // toward the cell's no-paint margin — see EYE_HALF_W's block for why that
+  // margin now has to hold: the sculpt paints this atlas on the SKULL, whose
+  // UV is clamped at the island edge, so ink near cell x 0 would be dragged
+  // around the whole back of the head.
+  const capL = left * 0.45;
+  const capR = right * 0.45;
   return `<path d="M${x - half} ${y - tilt - left} Q${x} ${y - 10} ${x + half} ${y + tilt - right}
-    L${x + half} ${y + tilt + right} Q${x} ${y + 1.5} ${x - half} ${y - tilt + left}Z" fill="${ink}"/>`;
+    Q${x + half - capR} ${y + tilt} ${x + half} ${y + tilt + right}
+    Q${x} ${y + 1.5} ${x - half} ${y - tilt + left}
+    Q${x - half + capL} ${y - tilt} ${x - half} ${y - tilt - left}Z" fill="${ink}"/>`;
 }
 
 function face(name, index) {
@@ -173,15 +188,32 @@ function face(name, index) {
   // The concept's own seam is barely 3 cells thick and would vanish at draft
   // scale, so the seam here is 4.4 at its fullest: enough to survive the card,
   // shaped enough not to read as a dash.
-  const seam = (y, bow, drop) => `<path d="M42 ${y + drop} Q50 ${y - 1.4} 57 ${y - bow}
-    Q64 ${y - bow + 1.6} 71 ${y - bow} Q78 ${y - 1.4} 86 ${y + drop}
-    Q78 ${y + 2.6} 71 ${y + 1.9} Q64 ${y + 3.2} 57 ${y + 1.9} Q50 ${y + 2.6} 42 ${y + drop}Z" fill="${ink}"/>`;
-  // The lower lip is a form, not a mark: a warm shape a shade lighter than the
-  // skin under the seam, which is what the concept's own render shows once the
-  // dark line is discounted. No under-STROKE — the v6 one shaded the chin and
-  // read as a beard patch.
-  const lowerLip = (y) => `<path d="M47 ${y + 2.4} Q64 ${y + 4.2} 81 ${y + 2.4}
-    Q73 ${y + 9.4} 64 ${y + 9.6} Q55 ${y + 9.4} 47 ${y + 2.4}Z" fill="#d28a55"/>`;
+  // ★ AND IT IS TWICE AS THICK, BECAUSE 3 CELLS IS 3 PIXELS. The v13 seam ran
+  // from `y - bow` to `y + 1.9` — 3.1 cells at its fullest — and round 3 scored
+  // it exactly: "the mouth collapses to a ~2px stroke with no lip volume even
+  // at 6x, failing 3.14 outright". 3.14 is not asking for a wider mouth; the
+  // width is measured and correct (the concept's mark runs 39px on a 233px
+  // head = 44 cells, and this spans 41..87). It is asking for the mark to
+  // survive a downscale, and a 3-cell mark on a face that occupies ~150px of
+  // the front board is 3.5px before the toon ramp and under 1px on the draft
+  // card. 6.0 cells at the fullest holds ~2px at card distance and still
+  // tapers to points at the corners, which is what stops it reading as a dash.
+  const seam = (y, bow, drop) => `<path d="M41 ${y + drop} Q50 ${y - 2.0} 57 ${y - bow}
+    Q64 ${y - bow + 2.0} 71 ${y - bow} Q78 ${y - 2.0} 87 ${y + drop}
+    Q78 ${y + 6.0} 71 ${y + 4.8} Q64 ${y + 6.6} 57 ${y + 4.8} Q50 ${y + 6.0} 41 ${y + drop}Z" fill="${ink}"/>`;
+  // The lower lip is a form, not a mark: a warm shape lighter than the skin
+  // under the seam, which is what the concept's own render shows once the dark
+  // line is discounted. No under-STROKE — the v6 one shaded the chin and read
+  // as a beard patch.
+  // ★ #e5a069, was #d28a55. MEASURED against the skin it sits on: the sculpt
+  // authors SKIN as #C9814A and the old lip at #d28a55 was 9 luminance units
+  // above it, which the board's own key light swamps — the round-3 verdict
+  // found "no lip volume" for the same reason it found no mouth. The concept's
+  // lit lower lip samples (226,163,116) against a chin of (196,138,98), a
+  // 27-unit lift; #e5a069 is 26 above SKIN. It also starts BELOW the thicker
+  // seam rather than under the old thin one.
+  const lowerLip = (y) => `<path d="M46 ${y + 4.6} Q64 ${y + 6.2} 82 ${y + 4.6}
+    Q73 ${y + 11.2} 64 ${y + 11.4} Q55 ${y + 11.2} 46 ${y + 4.6}Z" fill="#e5a069"/>`;
   let lips = lowerLip(102.5) + seam(102.5, 1.2, 1.0);
   // An open smile is a MOUTH, not a crescent sticker: inner cavity, a band of
   // upper teeth, a tongue resting low, and a catch-light lower lip.
