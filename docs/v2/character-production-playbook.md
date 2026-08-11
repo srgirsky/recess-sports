@@ -8,6 +8,7 @@ or animation contracts.
 
 | Question | Owner |
 |---|---|
+| What must all hold for a character to be done? | `docs/v2/character-quality-rubric.md` |
 | Who is the character? | `src/data/characters.ts` |
 | What should their sculpt, motion and voice communicate? | `docs/v2/character-performance-brief.md` |
 | What may a model or animation file contain? | `docs/v2/asset-contract.md` and `docs/v2/animation-brief.md` |
@@ -132,9 +133,12 @@ partial animation delivery.
 
 Review each character take on the animation page at all supported review rates
 and at 40 px. The page must report `model model`; `?proxy=1` is the deliberate
-A/B fallback and is never fidelity evidence. Save at least a run and contact
-frame. Watch transitions into the clip and into its declared settle clip; the
-pose at one attractive frame is not enough.
+A/B fallback and is never fidelity evidence. Refresh the hero, run and contact
+stills with `npm run capture:character-evidence -- <id>` — it drives the same
+review page headless, refuses a proxy fallback, and catches the contact marker
+flash, so the board never composites stale hand-shot captures. Watch
+transitions into the clip and into its declared settle clip; the pose at one
+attractive frame is not enough.
 
 Approval means:
 

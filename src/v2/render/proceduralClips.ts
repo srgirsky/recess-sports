@@ -283,8 +283,11 @@ function idle(spec: ClipSpec): AnimationClip {
       hd: [-b * 0.3, sin(p, 0.25) * 1.2, 0],
       la: [0, 0, 74 + b],
       ra: [0, 0, -74 - b],
-      lf: [0, -12, 0],
-      rf: [0, 12, 0],
+      // Elbow flexion is +Y left / -Y right once the arm hangs: the mirrored
+      // opposite signs bent every elbow BACKWARDS (hands behind the hip line,
+      // verified forward-kinematically: hand z = -0.38 with the old signs).
+      lf: [0, 12, 0],
+      rf: [0, -12, 0],
     };
   });
 }
@@ -308,9 +311,9 @@ function runCycle(spec: ClipSpec, lean: number, reach: number, armDrive: number)
       rl: [-Math.max(0, -o) * reach * 1.5 - 12, 0, 0],
       rt: [Math.max(0, o) * 18, 0, 0],
       la: [o * armDrive, 0, 72],
-      lf: [0, -58, 0],
+      lf: [0, 58, 0],
       ra: [s * armDrive, 0, -72],
-      rf: [0, 58, 0],
+      rf: [0, -58, 0],
     };
   });
 }
@@ -347,8 +350,8 @@ function shuffle(spec: ClipSpec, dir: number): AnimationClip {
       rl: [-34, 0, 0],
       la: [-20, 0, 58],
       ra: [-20, 0, -58],
-      lf: [0, -34, 0],
-      rf: [0, 34, 0],
+      lf: [0, 34, 0],
+      rf: [0, -34, 0],
     };
   });
 }
@@ -459,7 +462,7 @@ function swingContact(spec: ClipSpec): AnimationClip {
 
 const JUNEBUG_IDLE_POSE: Pose = {
   hp: [-2, -4, 0], sp: [-2, -2, 0], s2: [-3, -4, 0], nk: [2, 0, 0], hd: [1, 7, -1],
-  la: [-3, 0, 72], lf: [0, -15, 0], ra: [-3, 0, -72], rf: [0, 15, 0],
+  la: [-3, 0, 72], lf: [0, 15, 0], ra: [-3, 0, -72], rf: [0, -15, 0],
   lu: [2, 0, 8], ru: [-2, 0, -8],
 };
 
@@ -492,19 +495,19 @@ function junebugRun(spec: ClipSpec): AnimationClip {
     hp: [7, 0, 0], sp: [6, -3, 0], s2: [5, 5, 0], hd: [-9, 2, 0],
     lu: [-46, 0, 5], ll: [-12, 0, 0], lt: [18, 0, 0],
     ru: [48, 0, -5], rl: [-76, 0, 0], rt: [9, 0, 0],
-    la: [42, 0, 70], lf: [0, -62, 0], ra: [-40, 0, -70], rf: [0, 62, 0],
+    la: [42, 0, 70], lf: [0, 62, 0], ra: [-40, 0, -70], rf: [0, -62, 0],
   };
   const passA: Pose = {
     hp: [9, 0, 0], sp: [7, 4, 0], s2: [6, -5, 0], hd: [-10, -1, 0],
     lu: [4, 0, 4], ll: [-42, 0, 0], lt: [8, 0, 0],
     ru: [2, 0, -4], rl: [-24, 0, 0], rt: [20, 0, 0],
-    la: [4, 0, 70], lf: [0, -58, 0], ra: [-3, 0, -70], rf: [0, 58, 0],
+    la: [4, 0, 70], lf: [0, 58, 0], ra: [-3, 0, -70], rf: [0, -58, 0],
   };
   const reachB: Pose = {
     hp: [7, 0, 0], sp: [6, 3, 0], s2: [5, -5, 0], hd: [-9, -2, 0],
     lu: [48, 0, 5], ll: [-76, 0, 0], lt: [9, 0, 0],
     ru: [-46, 0, -5], rl: [-12, 0, 0], rt: [18, 0, 0],
-    la: [-40, 0, 70], lf: [0, -62, 0], ra: [42, 0, -70], rf: [0, 62, 0],
+    la: [-40, 0, 70], lf: [0, 62, 0], ra: [42, 0, -70], rf: [0, -62, 0],
   };
   const passB = shift(passA, {
     sp: [0, -8, 0], s2: [0, 10, 0], lu: [-2, 0, 0], ru: [2, 0, 0],
