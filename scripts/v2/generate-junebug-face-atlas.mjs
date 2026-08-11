@@ -17,7 +17,18 @@ const ink = '#26130d';
 // reads #d1b294 in lid shadow and lifts toward cream in the light, so the flat
 // fill sits between the two; the iris body is #33190d and its centre bottoms
 // out at #110c07.
-const sclera = '#ddc9ac';
+// ★ LIFTED #ddc9ac -> #ecdfc6, and the reason is the board's key light, not
+// the art. The round-3 verdict measured the eyes as "not a pair": 188 sclera
+// pixels left against 753 right. The atlas is EXACTLY symmetric (76/76 cream
+// pixels per cell, counted), and so is the face patch — what differs is that
+// the board lights her from camera-right, so the left cheek renders 103 mean
+// luminance against the right's 120. At #ddc9ac (luminance 201) the shaded
+// side's sclera lands just UNDER any threshold the lit side clears, so a
+// symmetric drawing counts 4:1. The concept survives the same lighting because
+// its sclera is brighter: its own front view counts 477/421, a 1.13 ratio,
+// while carrying an even more lopsided catchlight (147/30). A 10% lift puts
+// both of Junebug's sides clear of the same threshold.
+const sclera = '#ecdfc6';
 const irisBrown = '#33190d';
 const pupil = '#120c07';
 const white = '#fff7e4';
@@ -33,7 +44,25 @@ const tongue = '#df6c78';
 // the iris fills the box's HEIGHT, and each iris rides toward the nose so the
 // cream survives as an outer crescent — which is what the concept does, and
 // what separates a pair of eyes from a pair of holes.
-const EYE_HALF_W = 18;
+// ★ ROUND-3 RE-MEASUREMENT, ON THE DELIVERED BOARD RATHER THAN ON ARITHMETIC.
+// Both front views were run through one connected-component detector at
+// luminance < 95, then divided by each figure's own head width (concept 251px
+// on an 882px figure, delivered 172px on a 578px figure):
+//   eye mark   concept 52px wide = 0.207 of head width; delivered 29px = 0.169
+//   brow bar   concept 62px wide = 0.247;                delivered 30px = 0.174
+// The eye is 18% narrow and the brow 30% SHORT, and that is most of why the
+// round-3 40px strip read "a mottled brown lump with four or five competing
+// dark marks" where the concept reads as a bright face with two clean dark
+// dots: the concept's brow and eye are bold enough to fuse into ONE mark per
+// side at field scale, and these were not. Heights already match (concept
+// 40px eye / 33px brow = 0.188 / 0.155 ft; delivered 26 / 21 = 0.186 / 0.151),
+// so only the horizontal grows.
+// ⚠️ AND THE CELL HAS A NO-PAINT MARGIN NOW. The sculpt's face patch dives its
+// outer CELL under the skull to kill the island seam (see `face_patch`'s
+// `proud` block), so anything drawn inside cell x < 7 or > 121 is painted on
+// buried geometry and simply disappears. Every mark below stays clear of it:
+// eyes 8..48, brows 8..52.
+const EYE_HALF_W = 20;
 const EYE_HALF_H = 11.5;
 const IRIS_R = 11.5;
 // The concept's flat front view carries a ~7.75px nasal offset, but the atlas
@@ -68,11 +97,15 @@ function brow(x, y, tilt, inner) {
   // bars, low over the eyes, tapering from the nose outward. The old 5.2px
   // half-thickness measured barely half the concept's bar. `inner` is +1 when
   // the nose side is the +x end.
-  const thick = 7.5;
-  const thin = 3.5;
+  const thick = 8.0;
+  const thin = 3.8;
   const left = inner > 0 ? thin : thick;
   const right = inner > 0 ? thick : thin;
-  const half = 17;
+  // 22, was 17. The bar's rendered length measured 0.215ft against the
+  // concept's 0.291 (see EYE_HALF_W's block); at this latitude one cell is
+  // 0.00432ft along the face, so the missing 0.076ft is 8.8 cells across the
+  // pair — half 17 -> 22 and the delivered bar lands at 0.278ft.
+  const half = 22; // spans 8..52 about the centres below
   return `<path d="M${x - half} ${y - tilt - left} Q${x} ${y - 10} ${x + half} ${y + tilt - right}
     L${x + half} ${y + tilt + right} Q${x} ${y + 1.5} ${x - half} ${y - tilt + left}Z" fill="${ink}"/>`;
 }
@@ -109,9 +142,12 @@ function face(name, index) {
   // outer end to 0.135ft at the inner one, which is a half-length of 17 cells
   // about a centre at 29 — the old 19 reached past the concept's inner tip and
   // ran the two brows toward each other over the nose.
+  // Centres 30/98, was 29/99: with the longer bar this puts the brow's
+  // geometric centre at model x 0.235ft against the concept's measured 0.242,
+  // and holds its outer tip at cell 8 — clear of the buried outer cell.
   const brows =
-    brow(29, 35, determined ? 7 : worried ? -5 : 4, 1) +
-    brow(99, 35, determined ? -7 : worried ? 5 : -4, -1);
+    brow(30, 35, determined ? 7 : worried ? -5 : 4, 1) +
+    brow(98, 35, determined ? -7 : worried ? 5 : -4, -1);
   // No drawn nose: the sculpt carries a real nose form, and a mark on top of
   // it doubled the feature and read as a sticker.
 

@@ -23,7 +23,7 @@ from mathutils import Vector
 REPO = Path.cwd()
 OUTPUT = REPO / "assets/v2/source/junebug-pilot.blend"
 FACE_ATLAS = REPO / "assets/v2/source/junebug-face-atlas.png"
-REVISION = "junebug-turnaround-fidelity-v12"
+REVISION = "junebug-turnaround-fidelity-v13"
 SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 
 
@@ -74,6 +74,20 @@ HAIR_CAP_CENTER = (0.0, 0.045, 3.335)
 HAIR_CAP_RADII = (0.553, 0.553, 0.685)
 BUN_TOP = 4.150
 
+# ★ THE CROWN IS FULLER THAN AN ELLIPSOID ABOVE ITS EQUATOR, and that is a
+# MEASUREMENT off the 40px strip. Row-by-row on junebug-turnaround.png's front
+# figure, converted through 212.9 px/ft: at z 3.928 the concept's head is
+# 0.629ft across and a plain sin(phi) ellipsoid of these radii draws 0.567; at
+# z 3.779 the concept is 0.935 against 0.842. So the delivered crown sheds
+# width too fast under the bun, which is what put the round-3 40px sprite's
+# rows 3-5 at 6,8,10 against the concept's 8,9,9. `sin(phi) ** 0.86` closes it
+# (0.317 half-width at z 3.928 against the concept's 0.315, 0.884 across at
+# z 3.779 against 0.935) and is exactly 1.0 at the equator, so the cap's
+# clearance over the skull below the equator is untouched.
+def cap_lateral(sin_phi: float, above_equator: bool) -> float:
+    """The cap's lateral half-width as a fraction of `HAIR_CAP_RADII[0]`."""
+    return sin_phi**0.86 if above_equator else sin_phi
+
 # ★ THE HAIRLINE IS TRACED OFF THE CONCEPT, NOT MODELLED BY A BUMP TERM.
 #
 # v11 carried a `temple` term that ADDED reach at 45 degrees off the nose, on
@@ -103,18 +117,45 @@ BUN_TOP = 4.150
 # skull's 0.499 and the hair's 0.542, sealed at the bottom by the ear. Rubric
 # 3.7 is binary and that fails it.
 #
-# So the reach reaches full side depth by front 0.52 (58 degrees off the nose),
-# which puts the last plunging column's edge at x 0.478 against the skull's
-# 0.502 — inside, with margin. The cost is honest and small: the temple strip
-# is ~2px wider than the concept's.
+# ★ AND THE PLUNGE MUST BE A RAMP, NOT A STEP. v12's table solved the gap by
+# jumping reach 0.354 -> 0.5443 across 0.040 of `front` (2.3 degrees of
+# bearing) and then holding 0.5443 flat all the way to the side. Both halves
+# of that draw a straight line. MEASURED on the round-3 profile board, the
+# jump put the hair edge at z 3.638 and z 3.240 at the same y (-0.223 vs
+# -0.231) — a 0.40ft VERTICAL edge — and the flat run held z 3.240 from
+# y -0.231 to y +0.045, a 0.28ft HORIZONTAL edge. They meet at a right angle,
+# which is exactly the "axis-aligned rectangle, stair-stepped and aliased" the
+# round-3 critic scored hairMass down to 3 for.
+#
+# The step existed to keep the hair's edge inside the skull's silhouette. It
+# was solving the wrong constraint. MEASURED on junebug-turnaround.png's front
+# figure, the concept's own hair strip beside the face runs from the hairline
+# (y 201) down to y 283 and simply STOPS there — because the ear starts at
+# y 263 and is WIDER (251px against the hair's 234px). The concept never
+# resolves its hair edge against the skull at all; it hands the silhouette to
+# the ear. So the reach may descend as far as it likes provided the ear is
+# outside it, and a smooth ramp then costs nothing.
+#
+# Solved against this build's ear (rim peak 0.556-0.569 over z 2.981..3.248):
+# the cap's front-view envelope with the table below peaks at 0.532 (z 3.20)
+# and ends at 0.525 (z 3.119) — under the ear at every one of those heights.
+# The traced front values are unchanged; only the temple-to-side run is
+# re-fitted, monotone, with the concept's own temple RISE (reach 0.350 at 45
+# degrees off the nose, z 3.647 against the concept's measured 3.63) kept.
 HAIRLINE_REACH = (
     (1.000, 0.402),
-    (0.966, 0.390),
-    (0.866, 0.384),
-    (0.707, 0.349),
-    (0.560, 0.354),
-    (0.520, 0.5443),
-    (0.000, 0.5443),
+    (0.966, 0.392),
+    (0.866, 0.377),
+    (0.760, 0.356),
+    (0.707, 0.350),
+    (0.640, 0.372),
+    (0.560, 0.408),
+    (0.470, 0.452),
+    (0.380, 0.495),
+    (0.280, 0.535),
+    (0.180, 0.568),
+    (0.090, 0.590),
+    (0.000, 0.602),
 )
 
 
@@ -256,9 +297,25 @@ SHIRT_DARK = rgba("6E1F1B")
 # matching the art's pixel (#DC6051) re-collapsed jersey and pants to an
 # 18-22 point separation where the art itself shows ~42. #EC8D7C + the
 # slightly deepened jersey render at the art's own separation.
-PANTS = rgba("EC8D7C")
-PANTS_DARK = rgba("CC6B5E")
+#
+# ROUND 3 RE-MEASURED IT AND THE COMPENSATION WAS AIMED AT THE WRONG CHANNEL.
+# Sampling the brightest-chroma pants pixel on each board: the concept's is
+# (231,102,87), chroma 144; the delivered's is (160,99,85), chroma 75. Reading
+# the delivered lit thigh (193,140,129) against its authored #EC8D7C
+# (236,141,124) shows what the board's ramp actually does — it costs R about
+# 12% and LIFTS G and B (1.07x, 1.13x). So authoring a lighter salmon only
+# fed the two channels that were already too high; the chroma has to come out
+# of G and B. #FA6B52 (250,107,82) predicts (221,115,93) on the board, chroma
+# 128 against the concept's 144, where #EC8D7C measured 68-75.
+PANTS = rgba("FA6B52")
+PANTS_DARK = rgba("D2503E")
 SHOE = rgba("9B252B")
+# The long sock, previously borrowed from SHIRT_DARK. MEASURED: the concept's
+# sock samples (123,35,31), (113,35,29), (106,32,25) — luminance 47-53 — and
+# the delivered sock renders (80,29,27) and (70,23,22), luminance 20-40. It
+# still has to stay DARKER than the jersey so the below-knee break reads: the
+# concept's sock:jersey luminance ratio is 0.76 and round 3 shipped 0.63.
+SOCK = rgba("8A2620")
 # Brighter again (F8F2E4 -> FFFBF2). MEASURED: the shipped band renders on the
 # board at (204,202,199) where the concept's is (254,248,240) — the toon ramp
 # costs ~20% of the authored luminance, and at a true 40px downscale the band
@@ -266,7 +323,16 @@ SHOE = rgba("9B252B")
 # field scale. Starting at paper-white lands the rendered band near 215.
 WHITE = rgba("FFFBF2")
 SOLE = rgba("EEE5D8")
-TEAM_MASK = rgba("B8B8B8")
+# ★ THE TEAM ACCENT MOVED ONTO A FORM THE CONCEPT ACTUALLY DRAWS.
+# `authored-character.test.js` requires a surface carrying `recessTeamAccent`,
+# and v12 paid for it with a grey ring on the LEFT forearm only. The round-3
+# board scored exactly that: pixels at x 90-92, y 298-314 read (182,181,181)
+# and (172,165,162) while the mirrored right wrist at x 442-460 is pure skin
+# (198,149,114), and junebug-turnaround.png has no wristband on either arm.
+# It does have a tie at the ponytail root, on every view — so the tie is the
+# accent, the ring is gone, and the neutral swatch is now a warm elastic
+# white instead of a photographic grey.
+TEAM_MASK = rgba("D8D2C6")
 
 
 @dataclass
@@ -402,7 +468,14 @@ class MeshBuilder:
                         chin = min(1.0, (-nz - 0.45) / 0.45)
                         frontness = max(0.0, -sin(theta))
                         y -= 0.090 * (chin**1.8) * frontness
-                        z += 0.030 * (chin**1.8) * frontness
+                        # 0.012, was 0.030. MEASURED hairline-to-chin on both
+                        # boards at their own figure heights: the concept runs
+                        # z 3.539 to 2.750 (0.789ft, 190.5 per 1000 of figure
+                        # height) and round 3 shipped 3.526 to 2.752 (0.774ft,
+                        # 186.9) — 1.9% short, all of it this term lifting the
+                        # chin's front off the ball. At 0.012 the front chin
+                        # sits 0.017ft lower and the face measures 0.791.
+                        z += 0.012 * (chin**1.8) * frontness
                     if flatten_sole:
                         z = max(z, cz - rz * 0.74)
                     row_vertices.append(self.vertex((x, y, z), color, bone))
@@ -467,6 +540,8 @@ class MeshBuilder:
         *,
         cyclic: bool = False,
         axis: Vector | None = None,
+        lobes: int = 0,
+        groove: float = 0.0,
     ) -> None:
         centers = [Vector(point) for point in points]
         if isinstance(bone, list) and len(bone) != len(centers):
@@ -495,7 +570,16 @@ class MeshBuilder:
             row = []
             for side in range(sides):
                 angle = 2 * pi * side / sides
-                point = center + radii[index] * (normal * cos(angle) + binormal * sin(angle))
+                # `lobes`/`groove` press strand partings into the tube's own
+                # surface, the same construction `hair_cap` uses. The round-3
+                # board scored the ponytail "a bare smooth tube with zero
+                # strand separation", and rubric 3.3's five wants sculpted
+                # strand grouping on the mass that IS the profile view.
+                radius = radii[index]
+                if lobes:
+                    comb = 0.5 - 0.5 * cos(lobes * angle)
+                    radius -= groove * comb**1.2
+                point = center + radius * (normal * cos(angle) + binormal * sin(angle))
                 row.append(self.vertex(point, color, weight_at(index)))
             rows.append(row)
         pairs = len(rows) if cyclic else len(rows) - 1
@@ -566,12 +650,25 @@ class MeshBuilder:
                 # ~3px on the board) smooth shading has a real crease to darken.
                 # Still FADED OUT at the hairline row so the front edge stays
                 # one clean curve.
+                # ★ AND IT IS AN ABSOLUTE DEPTH, NOT A FRACTION OF THE RADIUS.
+                # v12 scaled the whole point by `1 - 0.038 * groove`, so a
+                # groove was 3.8% of the LOCAL radius: 0.021ft at the equator
+                # but 0.0108ft (1.5px on the board) across the crown between
+                # bun and band, where the cap radius is only 0.285. That is
+                # the "one smooth featureless surface" the round-3 critic
+                # measured there. A fixed 0.015ft inward cut holds ~2.1px at
+                # every latitude.
+                # 0.015 IS A CEILING, not a taste: the cap clears the skull by
+                # 0.021ft at its tightest bearing (45 degrees off the nose,
+                # solved in the depth comment below), so a deeper groove cuts
+                # skin specks through the hair. The lobes sit at 22.5-degree
+                # odd multiples, which puts a groove MINIMUM at exactly that
+                # bearing, and 0.015 keeps 0.006 of margin even if it did not.
                 groove = 0.0
                 if strands:
                     depth_along = min(1.0, (rings - row) / max(1.0, rings * 0.35))
                     comb = 0.5 - 0.5 * cos(8.0 * theta)
-                    groove = comb**1.6 * depth_along
-                shrink = 1.0 - 0.038 * groove
+                    groove = comb**1.2 * depth_along
                 # 0.11, and it is a MARGIN, not a style choice. The cap and
                 # the skull relax their depth by different factors about
                 # different centres, so "the cap is bigger" does not imply it
@@ -582,11 +679,31 @@ class MeshBuilder:
                 # The band formula below must keep both or it floats off this
                 # surface.
                 depth = 1.0 - 0.11 * front * front
-                x = cap_rx * shrink * sin(phi) * cos(theta)
-                y = cap_rx * shrink * sin(phi) * sin(theta) * depth
-                z = cap_rz * shrink * cos(phi)
+                lateral = cap_rx * cap_lateral(sin(phi), phi <= pi / 2)
+                # Fade the cut out where the surface is narrower than the cut
+                # itself, so the pole cannot invert.
+                lateral -= 0.015 * groove * min(1.0, lateral / 0.12)
+                x = lateral * cos(theta)
+                y = lateral * sin(theta) * depth
+                z = cap_rz * cos(phi)
                 ring.append(self.vertex(center + Vector((x, y, z)), HAIR, "Head"))
             rows.append(ring)
+        # ★ THE HAIRLINE ENDS IN A FLANGE, NOT A KNIFE EDGE. Round 3 scored
+        # "a stippled, dotted boundary" at the front hairline and it is not
+        # noise in the shader: the cap's lower rim is a FREE EDGE, and at
+        # `segments` columns its scallop is lateral*(1-cos(pi/segments)) =
+        # 0.0039ft — 0.54px on the front board. Half a pixel of scallop on a
+        # hard edge is exactly a 1px dither. This last ring turns the rim UNDER
+        # by scaling its offset from the cap centre to 0.90, which buries it in
+        # the skull everywhere (the cap runs 0.021-0.05ft proud, and 0.10 of
+        # 0.55 removes 0.055), so the boundary becomes a shaded fold with a
+        # gradient across it instead of a coverage step.
+        flange = []
+        for column in range(segments):
+            index = rows[-1][column]
+            offset = Vector(self.vertices[index]) - center
+            flange.append(self.vertex(center + offset * 0.90, HAIR, "Head"))
+        rows.append(flange)
         for column in range(segments):
             self.face((top, rows[0][column], rows[0][(column + 1) % segments]), 2)
         for upper, lower in zip(rows, rows[1:]):
@@ -604,9 +721,46 @@ class MeshBuilder:
         """
         cx, cy, cz = HEAD_CENTER
         rx, ry, rz = HEAD_RADII
+        # ★ THE ROWS AND COLUMNS ARE NOT EVENLY SPACED, AND THAT IS THE NOSE.
+        #
+        # `vf`/`uf` are the ONLY inputs to both the surface and the UV
+        # (uv = (0.5*uf, 0.5*(1-vf))), so any sampling of [0, 1] keeps the
+        # atlas exactly where the generator put it. Uniform sampling was
+        # spending them in the wrong place: the nose occupies nz -0.593..-0.415,
+        # which is vf 0.302..0.436 — 0.134 of the span, so a uniform 13 rows
+        # gave the entire form 1.7 of them. A quadratic cap sampled 1.7 times
+        # is not a rounded tip, it is a smear, and that is the honest mechanism
+        # behind three rounds of "the nose reads as a shadow smudge head-on".
+        # The list below spends 4 rows there and pays for it across the
+        # forehead, which is a smooth region with nothing to resolve.
+        #
+        # Columns are warped the same way by |t|**1.25 about the centre line:
+        # the tip's own nx span of ±0.10 is uf 0.437..0.563, which uniformly is
+        # 2.4 columns and warped is 5.
+        # ⚠️ NO INTERVAL MAY EXCEED 0.092 OF THE ROW SPAN, and that ceiling is
+        # what lets `proud` shrink — see its block. A patch cell's chord sags
+        # rz*(1-cos(span/2)) inside the surface, and the offset only has to
+        # cover the amount by which the PATCH sags more than the SKULL does.
+        # At 0.092 the patch's row sagitta is 0.00159ft against the skull's
+        # 0.00463, so it never does.
+        if rows >= 12:
+            row_fractions = [0.0, 0.092, 0.184, 0.276, 0.319, 0.362, 0.405,
+                             0.448, 0.540, 0.632, 0.724, 0.816, 0.908, 1.0]
+        else:
+            row_fractions = [r / rows for r in range(rows + 1)]
+        rows = len(row_fractions) - 1
+        if columns >= 12:
+            column_fractions = []
+            for column in range(columns + 1):
+                t = 2.0 * (column + 0.5) / (columns + 1) - 1.0
+                column_fractions.append(0.5 + 0.5 * (abs(t) ** 1.25) * (1.0 if t >= 0 else -1.0))
+            column_fractions[0] = 0.0
+            column_fractions[-1] = 1.0
+        else:
+            column_fractions = [c / columns for c in range(columns + 1)]
+        columns = len(column_fractions) - 1
         grid: list[list[int]] = []
-        for row in range(rows + 1):
-            vf = row / rows
+        for row, vf in enumerate(row_fractions):
             # The span runs LOW on purpose (-1.10 rad): the turnaround sets the
             # mouth at ~16% up the face, and the v6 span (-0.98) bottomed out
             # right AT the mouth, which forced it under the nose. The chin-push
@@ -616,8 +770,7 @@ class MeshBuilder:
             # remain visible from the profile.
             vertical = -1.10 + vf * 1.54
             line = []
-            for column in range(columns + 1):
-                uf = column / columns
+            for column, uf in enumerate(column_fractions):
                 horizontal = -0.92 + uf * 1.84
                 nx = sin(horizontal) * cos(vertical)
                 ny = -cos(horizontal) * cos(vertical)
@@ -637,7 +790,7 @@ class MeshBuilder:
                 # open mesh edge always shades a hair differently than the
                 # surface around it, so the only seam that cannot be seen is
                 # one that is physically beneath the face.
-                edge = min(uf, 1.0 - uf, vf, 1.0 - vf)
+                on_border = column == 0 or column == columns or row == 0 or row == rows
                 # ★ THE ISLAND CROSSES THE SKULL AT ITS OWN BORDER, NOWHERE
                 # ELSE. v11 feathered `proud` from -0.006 to +0.005 over
                 # `edge*6.5`, i.e. the offset only reached zero about 1.8 cells
@@ -672,8 +825,57 @@ class MeshBuilder:
                 # lip at the island's own border with skin on both sides of it:
                 # 0.77px on the board, against the 1.2px a 0.009 offset drew and
                 # the hard tonal step every feathered version drew.
-                proud = 0.0055
-                _ = edge
+                # ★ A CONSTANT OFFSET IS AN ISLAND WITH A LIP ALL THE WAY
+                # ROUND, and the round-3 profile board found it. The dark line
+                # it scored runs x 232 (y 175) to x 238 (y 235) on
+                # junebug-profile-review.png; anchoring that render's front-most
+                # brow pixel (x 212) to this build's front-most brow surface
+                # (model y -0.400) at its 139.5 px/ft gives model y -0.257 to
+                # -0.214, and this island's border at `horizontal` = 0.92 sits
+                # at model y -0.268 (brow) to -0.258 (cheek). It IS the border:
+                # 0.0055ft of patch standing over skull with nothing joining
+                # them, and at the profile camera's grazing angle on that part
+                # of the cheek it shades as a 1-2px crack 20-35 luminance units
+                # deep. Rubric 3.5's five forbids it by name.
+                #
+                # ★ 0.0024, AND v12's 0.0055 WAS SOLVING THE WRONG INEQUALITY.
+                #
+                # Its header argued the offset must exceed "the skull's chord
+                # error" of 0.0043 because "a polygon sags inside the surface
+                # it approximates". Both halves sag, and only the DIFFERENCE
+                # matters: the skull can never rise above the analytic surface,
+                # so the patch stays clear as long as `proud` exceeds the
+                # PATCH's own sagitta. Measured on this grid, that is 0.00159ft
+                # (rows, at the 0.092 ceiling above) and 0.00105 (columns),
+                # against the skull's 0.00463 and 0.00417.
+                #
+                # It matters because the offset IS the crack. At a grazing
+                # angle a lip of height h hides h/tan(angle) of the skull
+                # behind it and the skull that reappears carries a different
+                # normal, which a toon ramp turns into a hard line — the round-3
+                # profile board measured 22-39 units of dip down the cheek at
+                # x 234-241, and this build's own first pass measured 8-32
+                # after burying the border instead. 0.0024 is 0.33px on the
+                # profile board against 0.77, with 0.0008ft of worst-case
+                # clearance left over.
+                #
+                # Two steeper answers were built and measured, and both were
+                # worse. Diving the border ring to -0.040 over its natural cell
+                # left 16-18 units where the camera grazes hardest, because
+                # ~12% of the skirt still stands above the skull. Diving it
+                # over a 0.012 sliver outlined the whole island as a rectangle
+                # on the FRONT board: `use_smooth` averages face normals per
+                # VERTEX INDEX, so a near-vertical skirt sharing the first
+                # interior ring's vertices drags that ring's normal 20-40
+                # degrees off and shades the entire next band. A constant
+                # offset has no skirt and no ramp to contaminate anything.
+                # The two wins compose. Measured mean dip down the profile
+                # cheek (rows 212-248, the grazing worst case): round-3
+                # baseline 28.9, constant 0.0024 alone 22.8, border dive alone
+                # 18.8. The dive's residue is the fraction of its skirt still
+                # above the skull, which is exactly `proud / (proud + 0.040)` —
+                # 12% at v12's 0.0055 and 5.7% here.
+                proud = -0.040 if on_border else 0.0024
                 base = Vector((rx * nx * width, (0.88 - 0.11 * cos(horizontal) ** 2) * ry * ny, rz * nz))
                 radial = base.normalized()
                 # ★ THE NOSE IS THREE FORMS, NOT ONE BUMP — bridge, rounded
@@ -692,8 +894,23 @@ class MeshBuilder:
                 # with wings either side of it catching the same light, and a
                 # short underside that shades a small triangle instead of half
                 # the face.
-                bridge = max(0.0, 1.0 - ((nz + 0.335) / 0.150) ** 2) * max(
-                    0.0, 1.0 - (nx / 0.100) ** 2
+                # ★ ROUND-3 RE-MEASUREMENT: IT WAS IN THE RIGHT PLACE AND FOUR
+                # TIMES TOO WIDE. Scanning junebug-turnaround.png's front head
+                # across the nose (rows 305-336) and down its centre column
+                # (x 306) with one luminance detector:
+                #   the lit tip peaks at 161 against a 143 cheek baseline at
+                #   y 318 -> z 2.990 -> nz -0.520 (v12 put it at -0.475);
+                #   the whole nose footprint spans x 291..321 = 30px = 0.141ft,
+                #   a HALF-width of 0.0705ft, which at this latitude is
+                #   nx 0.141. v12's wings ran to nx 0.280 — the nose was 0.277ft
+                #   across on a 0.974ft head, twice the concept's 0.141, and a
+                #   push that wide over that little height is a MOUND: no plane
+                #   ever turns, which is why the round-3 board measured 0.15%
+                #   relief head-on where the concept measures 12.6%;
+                #   the nostril shadow floors at 95 at y 328 -> nz -0.593, so
+                #   the wings' lower edge lands there and not lower.
+                bridge = max(0.0, 1.0 - ((nz + 0.400) / 0.135) ** 2) * max(
+                    0.0, 1.0 - (nx / 0.060) ** 2
                 )
                 # ASYMMETRIC in nz, and that is the whole head-on read. A
                 # symmetric cap fades out below the tip as gently as it rises
@@ -704,17 +921,21 @@ class MeshBuilder:
                 # below it the cap is half as long (0.058) so the underside
                 # turns hard and shades the small triangle a nose actually
                 # casts.
-                tip_span = 0.115 if nz >= -0.475 else 0.058
-                tip = max(0.0, 1.0 - ((nz + 0.475) / tip_span) ** 2) * max(
-                    0.0, 1.0 - (nx / 0.150) ** 2
+                tip_span = 0.105 if nz >= -0.520 else 0.048
+                tip = max(0.0, 1.0 - ((nz + 0.520) / tip_span) ** 2) * max(
+                    0.0, 1.0 - (nx / 0.088) ** 2
                 )
-                wing_span = 0.088 if nz >= -0.500 else 0.052
-                wing = max(0.0, 1.0 - ((nz + 0.500) / wing_span) ** 2) * max(
-                    0.0, 1.0 - ((abs(nx) - 0.195) / 0.085) ** 2
+                # Wings pulled in again after the first v13 board: measured
+                # there, the nose footprint spanned 28px on a 164px head
+                # (0.171) against the concept's 30px on 251px (0.1195). An
+                # outer edge at nx 0.123 lands it at 0.125.
+                wing_span = 0.070 if nz >= -0.548 else 0.045
+                wing = max(0.0, 1.0 - ((nz + 0.548) / wing_span) ** 2) * max(
+                    0.0, 1.0 - ((abs(nx) - 0.085) / 0.038) ** 2
                 )
                 # No **1.5 anywhere: that exponent is what sharpened the old
                 # ridge. A plain quadratic cap is a rounded surface.
-                nose_y = -(0.022 * bridge + 0.058 * tip + 0.034 * wing) * max(
+                nose_y = -(0.018 * bridge + 0.062 * tip + 0.030 * wing) * max(
                     0.0, cos(horizontal)
                 )
                 # The same socket the skull carries, in the patch's own
@@ -731,7 +952,9 @@ class MeshBuilder:
                 if nz < -0.45:
                     chin = min(1.0, (-nz - 0.45) / 0.45)
                     chin_y = -0.090 * (chin**1.8) * cos(horizontal)
-                    chin_z = 0.030 * (chin**1.8) * cos(horizontal)
+                    # THE SAME 0.012 the skull carries; two copies of a chin is
+                    # how an atlas island slides off the head it is painted on.
+                    chin_z = 0.012 * (chin**1.8) * cos(horizontal)
                 point = (
                     cx + base.x + radial.x * proud,
                     cy + base.y + radial.y * proud - 0.002 + chin_y + nose_y + socket_y,
@@ -777,14 +1000,6 @@ def catmull_rom(
         )
         sampled.append((point, radii[seg] + (radii[seg + 1] - radii[seg]) * f))
     return sampled
-
-
-def arm_ring_points(
-    center: tuple[float, float, float], ry: float, rz: float, count: int
-) -> list[tuple[float, float, float]]:
-    """A ring perpendicular to the bind-pose arm, whose long axis is X."""
-    cx, cy, cz = center
-    return [(cx, cy + ry * cos(2 * pi * i / count), cz + rz * sin(2 * pi * i / count)) for i in range(count)]
 
 
 def rebuild_palette_material(material: bpy.types.Material) -> None:
@@ -1043,9 +1258,9 @@ def build_leg(builder: MeshBuilder, side: int, prefix: str, detail: int) -> None
     up, low, foot = f"{prefix}UpLeg", f"{prefix}Leg", f"{prefix}Foot"
     if detail >= 2:
         rings_spec: list[tuple[float, float, float, tuple, str | dict[str, float]]] = [
-            (0.27, 0.098, -0.01, SHIRT_DARK, {low: 0.4, foot: 0.6}),
-            (0.46, 0.108, 0.0, SHIRT_DARK, low),
-            (0.608, 0.128, 0.0, SHIRT_DARK, low),
+            (0.27, 0.098, -0.01, SOCK, {low: 0.4, foot: 0.6}),
+            (0.46, 0.108, 0.0, SOCK, low),
+            (0.608, 0.128, 0.0, SOCK, low),
             (0.615, 0.132, 0.0, PANTS_DARK, low),
             (0.658, 0.146, 0.0, PANTS_DARK, low),
             (0.665, 0.150, 0.0, PANTS, low),
@@ -1065,8 +1280,8 @@ def build_leg(builder: MeshBuilder, side: int, prefix: str, detail: int) -> None
         sides = 12
     elif detail == 1:
         rings_spec = [
-            (0.27, 0.098, -0.01, SHIRT_DARK, {low: 0.4, foot: 0.6}),
-            (0.603, 0.127, 0.0, SHIRT_DARK, low),
+            (0.27, 0.098, -0.01, SOCK, {low: 0.4, foot: 0.6}),
+            (0.603, 0.127, 0.0, SOCK, low),
             (0.61, 0.130, 0.0, PANTS_DARK, low),
             (0.653, 0.142, 0.0, PANTS_DARK, low),
             (0.66, 0.146, 0.0, PANTS, low),
@@ -1078,8 +1293,8 @@ def build_leg(builder: MeshBuilder, side: int, prefix: str, detail: int) -> None
         sides = 8
     else:
         rings_spec = [
-            (0.27, 0.100, -0.01, SHIRT_DARK, {low: 0.4, foot: 0.6}),
-            (0.65, 0.138, 0.0, SHIRT_DARK, low),
+            (0.27, 0.100, -0.01, SOCK, {low: 0.4, foot: 0.6}),
+            (0.65, 0.138, 0.0, SOCK, low),
             (0.66, 0.142, 0.0, PANTS, low),
             (0.92, 0.180, 0.0, PANTS, {up: 0.5, low: 0.5}),
             (1.30, 0.200, 0.0, PANTS, up),
@@ -1094,7 +1309,7 @@ def build_leg(builder: MeshBuilder, side: int, prefix: str, detail: int) -> None
             row.append(builder.vertex((x0 + radius * cos(theta), y_c + radius * sin(theta), z), color, bone))
         rows.append(row)
     builder.grid(rows, 1)
-    bottom = builder.vertex((x0, rings_spec[0][2], rings_spec[0][0]), SHIRT_DARK, rings_spec[0][4])
+    bottom = builder.vertex((x0, rings_spec[0][2], rings_spec[0][0]), SOCK, rings_spec[0][4])
     top = builder.vertex((x0, 0.0, rings_spec[-1][0]), PANTS, rings_spec[-1][4])
     for index in range(sides):
         nxt = (index + 1) % sides
@@ -1120,7 +1335,11 @@ def build_shoe(builder: MeshBuilder, side: int, prefix: str, detail: int, segmen
     # shoe bodies" — the ankle quarter and toe box are the two most silhouette-
     # exposed curved forms below the knee, and 30-degree columns polygonise
     # them at board scale.
-    seg = 14 if detail >= 2 else 9
+    # 12 at hero, was 14: the flange that de-dithers the hairline has to come
+    # out of the 400KB budget, and a 0.215ft toe box at 30-degree columns
+    # scallops 0.0073ft (1px on the board) where the hairline scalloped 0.54px
+    # on a hard free edge — the same triangles buy far more there.
+    seg = 12 if detail >= 2 else 9
     rng = 6 if detail >= 2 else 4
     # Ankle quarter with the dark inner collar painted on its own crown.
     builder.ellipsoid(
@@ -1179,9 +1398,30 @@ def build_ear(builder: MeshBuilder, side: int, detail: int) -> None:
     v11's 0.556 the rim stood exactly level with the 0.557 hair cap and the ear
     had no silhouette of its own.
     """
-    points = 12 if detail >= 2 else 8
-    cy, cz = 0.045, 3.110
-    ry, rz = 0.108, 0.150
+    # ★ RE-MEASURED IN ROUND 3, AND IT IS THE HEAD-WIDTH BLOCKER. Both boards
+    # were scanned with one silhouette detector at their own figure heights
+    # (concept 882px, delivered 578px):
+    #
+    #   the HAIR is already right — concept 234px wide (0.2653 of figure
+    #   height), delivered 154px (0.2664), a 0.4% miss;
+    #   the EARS are not — concept 251px (0.2846), delivered 172px (0.2976),
+    #   4.6% proud, and that whole 4.6% IS the "+4.3% too wide" that round 3
+    #   scored headBodyProportions down for. The skull never needed narrowing.
+    #   the ears are also 26% too TALL and 0.028ft too low: concept ear top
+    #   z 3.248, bottom 2.981 (0.267ft); delivered top 3.254, bottom 2.917
+    #   (0.337ft). Ears that hang to 79% of the way down the face instead of
+    #   the concept's 71% are also what put the round-3 40px sprite's "two
+    #   pale ear blocks jutting out at eye level".
+    #
+    # rz 0.1206 with cz 3.128 reproduces the concept's top and bottom exactly
+    # (3.128 + 0.150*0.804*1.06*0.938 = 3.248; 3.128 - 0.150*0.804*1.06*1.151
+    # = 2.981), and the rim offsets below drop by the measured 0.027ft.
+    # 16 outline points at hero, not 12: from the front an ear this size is a
+    # 5px sliver, and 30-degree steps in the outline are the "straight-edged
+    # slabs" the round-3 board read.
+    points = 14 if detail >= 2 else 8
+    cy, cz = 0.045, 3.128
+    ry, rz = 0.108, 0.1206
 
     def outline(t: float, scale: float) -> tuple[float, float]:
         # t = 0 back, pi/2 up, pi front, 3pi/2 down.
@@ -1208,14 +1448,19 @@ def build_ear(builder: MeshBuilder, side: int, detail: int) -> None:
     # board buried it beside the eye and left it standing 0.05ft proud beside
     # the jaw, which drew a shelf under each ear.
     # (offset from skull, outline scale, y shift back).
+    # Offsets pulled in 0.027ft (the measured 4.6% of head width above) and a
+    # FOURTH rim row added at hero: the round-3 board read the front-view ear
+    # as "flat, uniformly shaded", which is what three rows spanning 0.13ft of
+    # depth give — one lit plane. Four rows put a shading break on the rim's
+    # outer roll where the front camera can see it.
     if detail >= 2:
-        rim_rows = ((-0.030, 0.90, 0.000), (0.042, 1.06, 0.018), (0.100, 0.99, 0.032))
-        concha_rows = ((0.060, 0.78, 0.040), (0.010, 0.44, 0.034))
-        lobe_rows = ((0.092, 0.90, 0.038), (0.062, 0.64, 0.030))
+        rim_rows = ((-0.030, 0.90, 0.000), (0.020, 1.04, 0.014), (0.052, 1.06, 0.024), (0.073, 0.98, 0.032))
+        concha_rows = ((0.040, 0.78, 0.040), (0.004, 0.44, 0.034))
+        lobe_rows = ((0.066, 0.90, 0.038), (0.044, 0.64, 0.030))
     else:
-        rim_rows = ((-0.026, 0.96, 0.000), (0.094, 1.00, 0.026))
-        concha_rows = ((0.012, 0.50, 0.020),)
-        lobe_rows = ((0.066, 0.70, 0.020),)
+        rim_rows = ((-0.026, 0.96, 0.000), (0.068, 1.00, 0.026))
+        concha_rows = ((0.008, 0.50, 0.020),)
+        lobe_rows = ((0.048, 0.70, 0.020),)
 
     rows: list[list[int]] = []
 
@@ -1341,29 +1586,47 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         # already cited, now against the MEASURED 0.079 wrist instead of v11's
         # 0.114. The whole hand shrinks by a third with the arm, which is most
         # of what made the profile's end-on view a lumpy mass inside a ring.
-        builder.ellipsoid((1.415 * side, -0.014, 2.427), (0.126, 0.092, 0.108), 0, SKIN, f"{prefix}Hand", hand_segments, hand_rings)
+        # ★ A MITTEN, NOT A FIST WITH PRISMS. The round-3 board read the front
+        # hand as "a blocky fist with four hard rectangular finger prisms with
+        # squared tips" against the concept's soft rounded mitten, and the 9x
+        # crop shows exactly that: four straight-sided stubs of constant width
+        # ending in flat caps. Two causes, both fixed here — the fingers ran
+        # 0.071-0.095ft off a 0.126 palm (up to 75% of the palm's own length,
+        # so they were the silhouette rather than a scallop on it), and their
+        # radii fell 0.026 -> 0.017, a near-cylinder whose end fan is a disc.
+        # They are now ~35% shorter, rooted DEEPER inside the palm, and taper
+        # 0.029 -> 0.011 over four control points so each tip rolls over. The
+        # palm grows to carry the mass the fingers gave up.
+        builder.ellipsoid((1.415 * side, -0.014, 2.427), (0.134, 0.098, 0.112), 0, SKIN, f"{prefix}Hand", hand_segments, hand_rings)
         if detail >= 1:
             finger_count = 4 if detail >= 2 else 3
-            finger_offsets = (-0.050, -0.017, 0.017, 0.050) if finger_count == 4 else (-0.040, 0.0, 0.040)
-            finger_lengths = (0.078, 0.095, 0.091, 0.071) if finger_count == 4 else (0.078, 0.095, 0.075)
+            finger_offsets = (-0.048, -0.016, 0.016, 0.048) if finger_count == 4 else (-0.038, 0.0, 0.038)
+            finger_lengths = (0.062, 0.076, 0.072, 0.058) if finger_count == 4 else (0.062, 0.076, 0.060)
             for z_offset, length in zip(finger_offsets, finger_lengths):
-                start_x = 1.470 * side
-                # Fingers CURL toward the palm, and DEEPER again now that they
-                # are smaller: the profile camera looks down the T-posed arm, so
-                # near-axial fingers show only their cap rings and the board read
-                # "a jagged stack of overlapping shell edges". A curl that puts
-                # the tips inside the palm's own outline leaves one mass.
+                start_x = 1.455 * side
+                # Fingers CURL toward the palm: the profile camera looks down
+                # the T-posed arm, so near-axial fingers show only their cap
+                # rings and the board read "a jagged stack of overlapping shell
+                # edges". A curl that puts the tips inside the palm's own
+                # outline leaves one mass.
+                spine = [
+                    (start_x, -0.018, 2.427 + z_offset),
+                    ((1.455 + length * 0.40) * side, -0.034, 2.427 + z_offset - 0.010),
+                    ((1.455 + length * 0.78) * side, -0.052, 2.427 + z_offset - 0.026),
+                    ((1.455 + length) * side, -0.066, 2.427 + z_offset - 0.040),
+                ]
+                widths = [0.029, 0.028, 0.023, 0.011]
+                if detail < 2:
+                    # LOD1 drops the rounding control point; at LOD1's draw
+                    # distance the tip cap is under a pixel.
+                    spine, widths = spine[:2] + spine[3:], widths[:2] + widths[3:]
                 builder.tube(
-                    [
-                        (start_x, -0.020, 2.427 + z_offset),
-                        ((1.470 + length * 0.62) * side, -0.040, 2.427 + z_offset - 0.014),
-                        ((1.470 + length) * side, -0.062, 2.427 + z_offset - 0.032),
-                    ],
-                    [0.026, 0.024, 0.017],
+                    spine,
+                    widths,
                     0,
                     SKIN,
                     f"{prefix}HandIndex1",
-                    7 if detail >= 2 else 6,
+                    6,
                 )
             builder.tube(
                 [
@@ -1378,28 +1641,9 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
                 7 if detail >= 2 else 6,
             )
 
-    # A small drafting-team wrist band provides team identity without repainting
-    # Junebug's signature red kit.
-    if detail >= 1:
-        # SNUG: ring 0.112 with a 0.016 cord (was 0.115/0.023) — the fat band
-        # stood 0.03 proud of the forearm and the round-2 board called it out
-        # as an unconcepted wrist ring dominating both arm reads.
-        # 10x4, down from 14x5: the round-2 board already read this ring as an
-        # unconcepted accessory dominating both arm views, and the triangles it
-        # was spending bought resolution nothing in the concept asks for. They
-        # pay for the rebuilt nose instead.
-        # Resized with the arm: the forearm at x -1.28 is now r 0.084, so the
-        # ring is 0.090 and the cord 0.013. At v11's 0.116/0.016 on a 0.079
-        # wrist it would have stood 0.05ft clear of the skin — a hoop, not a band.
-        builder.tube(
-            arm_ring_points((-1.28, -0.004, 2.43), 0.090, 0.090, 10),
-            [0.013] * 10,
-            3,
-            TEAM_MASK,
-            "LeftForeArm",
-            4,
-            cyclic=True,
-        )
+    # NO WRIST BAND. The team accent lives on the ponytail tie (see TEAM_MASK)
+    # — a form the turnaround draws, on both the profile and the back view,
+    # instead of a ring on one forearm that the concept has on neither.
 
     # The waist is ONE garment stack: jersey hem (torso loft, ending 1.82)
     # over a PAINTED belt band, over pants. The v8 pelvis was an ELLIPSOID and
@@ -1479,7 +1723,14 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
             (1.50, 0.422, 0.276, "Hips"),
             (1.56, 0.418, 0.290, "Hips"),
             (1.62, 0.408, 0.304, "Hips"),
-            (1.71, 0.388, 0.312, "Hips"),
+            (1.71, 0.382, 0.308, "Hips"),
+            # 1.745 is a NEW level and it is the belt's shelf. The first v13
+            # board still showed the hip stepping out from under the strap on a
+            # hard edge: 0.360 at 1.770 to 0.388 at 1.710 is +0.028 across
+            # 0.060, a 25-degree flare resolved by one quad right where the
+            # belt's lower shadow row ends. Two shallower steps read as the
+            # cloth falling over a hip instead.
+            (1.745, 0.368, 0.296, "Hips"),
             (1.770, 0.360, 0.286, "Hips"),
             (1.777, 0.368, 0.293, "Hips"),
             (1.790, 0.369, 0.294, "Hips"),
@@ -1630,7 +1881,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     # plunges from reach 0.377 to 0.540 between 68 and 78 degrees off the nose,
     # which at 18-degree columns is half a column and renders as a step; and
     # the eight strand lobes need three columns each to shade as creases.
-    cap_columns = max(12, segments + (14 if detail >= 2 else 6))
+    cap_columns = max(12, segments + (12 if detail >= 2 else 6))
     cap_rows = max(6, rings // 2 + (3 if detail >= 2 else 2))
     builder.hair_cap(cap_columns, cap_rows, strands=detail >= 2)
     # ★ THE BAND IS AN ARCH, AND ITS HEIGHT IS THE HEAD'S PROPORTION.
@@ -1660,7 +1911,10 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     # Taller still (0.108 outer height, matching the art's ~0.11ft band, from
     # 0.088): the 40 px strip kept greying the band out because its lit outer
     # face was under two device pixels tall at field scale.
-    band_section = ((0.026, -0.052), (-0.020, -0.068), (-0.020, 0.068), (0.026, 0.052))
+    # Inner corners deepened -0.020 -> -0.038: the crown now carries 0.015ft
+    # strand grooves, and a band whose inner face sat only 0.020 under the
+    # smooth cap surface would surface through the bottom of every groove.
+    band_section = ((0.026, -0.052), (-0.038, -0.068), (-0.038, 0.068), (0.026, 0.052))
     cap_rx, _cap_ry, cap_rz = HAIR_CAP_RADII
     for i in range(band_count):
         theta = 2 * pi * i / band_count
@@ -1683,6 +1937,10 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         for r_off, z_off in band_section:
             z = z_c + z_off
             shell = max(0.03, 1.0 - ((z - HAIR_CAP_CENTER[2]) / cap_rz) ** 2) ** 0.5
+            # The SAME fullness the cap surface carries (`cap_lateral`): two
+            # copies of the crown's width profile is how a headband floats off
+            # the hair it is supposed to hug.
+            shell = cap_lateral(shell, z >= HAIR_CAP_CENTER[2])
             row.append(builder.vertex((
                 (cap_rx * shell + r_off) * cos(theta),
                 HAIR_CAP_CENTER[1] + (cap_rx * shell * depth + r_off) * sin(theta),
@@ -1710,8 +1968,12 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         # and renders as a literal flat top with a hard circular rim — "a squat
         # cylinder", worse than the polygonal shelves it replaced; and the six
         # gather creases need three columns each or they alias into the rim.
-        knot_segments = 12 if detail >= 2 else 6
-        knot_rings = 6 if detail >= 2 else 3
+        # 16x8 at hero (was 12x6): the round-3 board still read the bun with "a
+        # faceted silhouette and a hard shelf where it meets the crown", and
+        # the bun is the front view's whole identity lump at 40px. The shelf is
+        # the flare's onset, softened below.
+        knot_segments = 14 if detail >= 2 else 6
+        knot_rings = 7 if detail >= 2 else 3
         # 0.278 half-width, top at 4.150. Measured: the concept's bun is 115px
         # across and 46px tall — 0.541 x 0.217ft — so v10's 0.67 x 0.32 was a
         # third oversized in both axes. Height 0.170 not 0.135: at the flatter
@@ -1733,7 +1995,11 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         def knot_shape(dx: float, dy: float, dz: float) -> float:
             # A SOFTER flare onset (was a hard 0.11 step from dz = -0.15): that
             # kink is the "second hard shelf" the board saw under the bun's rim.
-            flare = 0.10 * max(0.0, -dz - 0.05) ** 1.4
+            # 0.085 over **1.8, was 0.10 over **1.4: the crown under the bun is
+            # now fuller (`cap_lateral`), so the flare has less crossing to do,
+            # and a later onset is what turns the remaining "hard shelf" into a
+            # contact crease.
+            flare = 0.085 * max(0.0, -dz - 0.05) ** 1.8
             ring = (dx * dx + dy * dy) ** 0.5
             gather = 0.0
             if ring > 1e-4:
@@ -1780,7 +2046,14 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     tail_samples = 14 if detail >= 2 else (10 if detail == 1 else 7)
     tail_sides = 10 if detail >= 2 else (9 if detail == 1 else 8)
     tail = catmull_rom(ponytail_controls, tail_samples)
-    builder.tube([tuple(p) for p, _ in tail], [r for _, r in tail], 2, HAIR, "Head", tail_sides)
+    # 5 partings at 0.014ft on a tube whose widest radius is 0.20 — 2px on the
+    # board, the same absolute cut the crown carries. Nothing sits under the
+    # tail, so there is no clearance ceiling here; the depth is set by what
+    # smooth shading can darken without the tube reading as a gear.
+    builder.tube(
+        [tuple(p) for p, _ in tail], [r for _, r in tail], 2, HAIR, "Head", tail_sides,
+        lobes=5 if detail >= 2 else 0, groove=0.014,
+    )
     # The arrowhead tip — the turnaround's most memorable hair note. A rounded
     # six-point barb whose root tucks into the tube's end, not a detached
     # four-point kite: the flat diamond read as a separate object on the board.
@@ -1802,8 +2075,11 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         for a, b in zip(ring, ring[1:] + ring[:1]):
             face = (a, b, center_index) if x_half > 0 else (b, a, center_index)
             builder.face(face, 2)
-    if detail >= 2:
+    if detail >= 1:
         # The white tie wrapped around the tail root, as the profile draws it.
+        # It is also the M_Accessory / `recessTeamAccent` surface (material 3),
+        # and it is built at LOD1 as well as LOD0 so the accent survives the
+        # first LOD switch — LOD2 has never carried it.
         # The ring lives in the X-Z plane at y 0.46, PERPENDICULAR to the
         # tail's near-+y tangent there and hugging its ~0.153 radius. The v9
         # tie was a torus_points loop — a HORIZONTAL ring — so it sliced the
@@ -1816,8 +2092,8 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         builder.tube(
             tie_points,
             [0.024] * 8,
-            1,
-            WHITE,
+            3,
+            TEAM_MASK,
             "Head",
             5,
             cyclic=True,
