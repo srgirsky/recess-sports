@@ -25,18 +25,17 @@ const tongue = '#df6c78';
 
 function eye(x, y, { closed = false, wink = false } = {}) {
   if (closed || wink) return `<path d="M${x - 16} ${y} Q${x} ${y + 9} ${x + 16} ${y}" fill="none" stroke="${ink}" stroke-width="7" stroke-linecap="round"/>`;
-  // The turnaround's eyes are LARGE and nearly all dark: one rounded-square
-  // mass — flat-ish heavy-lidded top, round bottom — darker pupil low in it,
-  // ONE small catch-light. Drawn as a SINGLE closed path: the v6 ellipse plus
-  // a wider overhanging lid stroke left winged tips either side, and the
-  // board rendered them as angular wedges that merged into the brows.
-  // Top corners are ROUNDED via quadratic shoulders — square path corners
-  // rendered as tiny upturned horns at board distance.
-  return `<path d="M${x - 12} ${y - 9} Q${x} ${y - 13} ${x + 12} ${y - 9}
-      Q${x + 16} ${y - 7} ${x + 16} ${y + 2} Q${x + 16} ${y + 17} ${x} ${y + 17} Q${x - 16} ${y + 17} ${x - 16} ${y + 2} Q${x - 16} ${y - 7} ${x - 12} ${y - 9} Z" fill="${iris}"/>
-    <circle cx="${x}" cy="${y + 6}" r="8.5" fill="${ink}"/>
-    <path d="M${x - 12} ${y - 9} Q${x} ${y - 13} ${x + 12} ${y - 9}" fill="none" stroke="${ink}" stroke-width="4.5" stroke-linecap="round"/>
-    <circle cx="${x - 5.5}" cy="${y - 1}" r="2.8" fill="${white}" opacity="0.95"/>`;
+  // The turnaround's eyes are big CLEAN ROUND near-black discs with ONE small
+  // catch-light set high, and essentially no sclera. The v7 rounded-square
+  // path sheared into angular wedges over the patch's UV grid, and its
+  // bottom-set glints pooled low and read cross-eyed on the board — a round
+  // disc survives interpolation, and a top-placed light reads as focus.
+  // A heavy lid stroke flattens the top arc so she stays determined, never
+  // startled.
+  return `<circle cx="${x}" cy="${y + 2}" r="15.5" fill="${iris}"/>
+    <circle cx="${x}" cy="${y + 5}" r="9.5" fill="${ink}"/>
+    <path d="M${x - 14} ${y - 6} Q${x} ${y - 14} ${x + 14} ${y - 6}" fill="none" stroke="${ink}" stroke-width="4.5" stroke-linecap="round"/>
+    <circle cx="${x - 4.5}" cy="${y - 4}" r="3.4" fill="${white}" opacity="0.95"/>`;
 }
 
 function brow(x, y, tilt, inner) {
