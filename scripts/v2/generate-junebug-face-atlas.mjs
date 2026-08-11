@@ -123,13 +123,37 @@ function face(name, index) {
   // makes rubric 3.14 hard at draft-card distance. The control point rides
   // ABOVE the corners so the line turns down at the ends. Still no
   // under-stroke: the v6 one shaded the chin and read as a beard patch.
-  let lips = `<path d="M46 102.5 Q64 100 82 102.5" fill="none" stroke="${ink}" stroke-width="7.5" stroke-linecap="round"/>`;
+  // ★ A CLOSED MOUTH IS STILL TWO LIPS. v11 drew the neutral and determined
+  // mouths as one round-capped stroke, and the board scored exactly that: "a
+  // solid black rounded-rectangle bar of uniform thickness with flat ends, no
+  // lips, no corners, no curve" — rubric 3.14's "stroke that collapses to a
+  // line". A stroke cannot taper, so the seam is now a FILLED path: corners
+  // that come to a point, a cupid's bow dipping at the centre of the upper
+  // edge, and its greatest thickness a third of the way in from each corner.
+  //
+  // The width is measured, not chosen. The concept's mouth mark runs 39px on a
+  // 233px head; at the mouth's latitude this face patch's 128 cells cover
+  // 0.537ft, so 39px = 0.184ft = 44 cells — x 42..86 about the centre line.
+  // The concept's own seam is barely 3 cells thick and would vanish at draft
+  // scale, so the seam here is 4.4 at its fullest: enough to survive the card,
+  // shaped enough not to read as a dash.
+  const seam = (y, bow, drop) => `<path d="M42 ${y + drop} Q50 ${y - 1.4} 57 ${y - bow}
+    Q64 ${y - bow + 1.6} 71 ${y - bow} Q78 ${y - 1.4} 86 ${y + drop}
+    Q78 ${y + 2.6} 71 ${y + 1.9} Q64 ${y + 3.2} 57 ${y + 1.9} Q50 ${y + 2.6} 42 ${y + drop}Z" fill="${ink}"/>`;
+  // The lower lip is a form, not a mark: a warm shape a shade lighter than the
+  // skin under the seam, which is what the concept's own render shows once the
+  // dark line is discounted. No under-STROKE — the v6 one shaded the chin and
+  // read as a beard patch.
+  const lowerLip = (y) => `<path d="M47 ${y + 2.4} Q64 ${y + 4.2} 81 ${y + 2.4}
+    Q73 ${y + 9.4} 64 ${y + 9.6} Q55 ${y + 9.4} 47 ${y + 2.4}Z" fill="#d28a55"/>`;
+  let lips = lowerLip(102.5) + seam(102.5, 1.2, 1.0);
   // An open smile is a MOUTH, not a crescent sticker: inner cavity, a band of
   // upper teeth, a tongue resting low, and a catch-light lower lip.
   if (name === 'grin' || name === 'cheer') lips = `<path d="M45 92 Q64 97 83 92 Q76 108 64 108 Q52 108 45 92Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
     <path d="M47.5 93.5 Q64 98 80.5 93.5 Q75 100.1 64 100.4 Q53 100.1 47.5 93.5Z" fill="${white}"/>
     <path d="M55.5 106 Q64 109 72.5 106 Q69.5 102 64 102 Q58.5 102 55.5 106Z" fill="${tongue}"/>`;
-  if (name === 'determined' || name === 'angry') lips = `<path d="M46 105.5 Q64 96.5 82 105.5" fill="none" stroke="${ink}" stroke-width="7.5" stroke-linecap="round"/>`;
+  // Determined: the same two lips, pressed and turned DOWN at the corners.
+  if (name === 'determined' || name === 'angry') lips = lowerLip(104.5) + seam(103.5, 5.0, 2.6);
   if (name === 'worried' || name === 'upset') lips = `<path d="M49 105 Q64 94.5 79 105 Q64 100.3 49 105Z" fill="${mouth}"/>`;
   if (name === 'surprised') lips = `<ellipse cx="64" cy="98" rx="11.5" ry="12.5" fill="${mouth}"/>
     <ellipse cx="64" cy="98" rx="8.2" ry="9.4" fill="${mouthDark}" stroke="${ink}" stroke-width="1.8"/>
@@ -137,7 +161,7 @@ function face(name, index) {
   if (name === 'tongue') lips = `<path d="M45 92 Q64 97 83 92 Q76 107 64 107 Q52 107 45 92Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
     <path d="M47.5 93.5 Q64 98 80.5 93.5 Q75 99.5 64 99.8 Q53 99.5 47.5 93.5Z" fill="${white}"/>
     <path d="M56 101.5 Q55.5 110.5 64 111.5 Q72.5 110.5 72 101.5 Q64 104.5 56 101.5Z" fill="${tongue}" stroke="${ink}" stroke-width="1.8"/>`;
-  if (blink || sleepy || wink) lips = `<path d="M46 103 Q64 100.5 82 103" fill="none" stroke="${ink}" stroke-width="7" stroke-linecap="round"/>`;
+  if (blink || sleepy || wink) lips = lowerLip(103) + seam(103, 1.6, 0.8);
 
   return `${brows}${eyes}${lips}`;
 }
