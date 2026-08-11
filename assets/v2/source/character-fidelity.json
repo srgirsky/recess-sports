@@ -11,43 +11,48 @@
   ],
   "characters": {
     "nostrike": {
-      "status": "candidate",
+      "status": "needs-polish",
       "evidence": "junebug-fidelity-review.png",
       "heroEvidence": "junebug-runtime-hero.png",
       "animationEvidence": [
         "junebug-runtime-run.png",
         "junebug-runtime-swing.png"
       ],
+      "humanReview": {
+        "reviewer": "Seth Girsky",
+        "reviewedAt": "2026-08-10",
+        "verdict": "rejected \u2014 agent self-scores were inflated; every category re-scored from the board against the turnaround"
+      },
       "categories": {
         "frontProfileSilhouette": {
           "label": "front/profile silhouette",
-          "score": 4,
-          "note": "Head taper, strand-grouped crown, high ponytail, deltoid-capped shoulders, athletic torso and cuffed legs follow the locked front/profile hierarchy."
+          "score": 3,
+          "note": "Human review: body detail falls well short of the turnaround \u2014 no V-neck placket or buttons, no belt, sleeve stripes reduced to shoulder patches, legs read as stacked capsule segments with visible seam rings, and the profile shows an open sleeve-cuff interior."
         },
         "headBodyProportions": {
           "label": "head/body proportions",
-          "score": 4,
-          "note": "Head is width~height with held cheek width through the jawbone, a sculpted chin that breaks the profile, and a tapered neck \u2014 the four-head child proportion with real facial structure, not an egg."
+          "score": 3,
+          "note": "Human review: the front head reads as a tall egg with an oversized bare forehead; the turnaround's wider head with a low hairline is not matched."
         },
         "hairMass": {
           "label": "hair mass",
-          "score": 5,
-          "note": "Full crown with warm-sheen strand ridges, hairline tucked under the headband, a gather knot, and two-tone grooved strand grouping down the swept ponytail."
+          "score": 3,
+          "note": "Human review: the hairline sits behind the headband so the front view reads bald above the brows; the ponytail is faceted with a hard ridge, not the art's smooth tapered sweep."
         },
         "clothingConstruction": {
           "label": "clothing construction",
-          "score": 4,
-          "note": "Signature crimson kit in the authored palette, corrected sleeve cuffs and layered sneakers with readable soles, toe caps, laces and sidewall definition; the headband ring is now twist-free."
+          "score": 3,
+          "note": "Human review: jersey lacks the concept's V-neck trim, placket buttons and triple sleeve stripes; pants lack the below-knee cuff into long red socks; the hip band reads as separate shorts."
         },
         "faceExpressionRead": {
           "label": "face/expression read",
-          "score": 5,
-          "note": "Eyes with sclera, iris, pupil and lash-weighted lids; tapered concept-weight brows; a sculpted nose that owns the feature (no drawn double); a tapered neck column; constructed ears with rim, concha and lobe. The face reads as a form, not a sticker."
+          "score": 3,
+          "note": "Human review: brows too thin, eyes too small and sclera-forward versus the concept's large dark eyes; the determined frown is not readable; the headband should cross the mid-forehead with slicked hair visible above it."
         },
         "heroAndFieldScale": {
           "label": "hero + 40px read",
-          "score": 4,
-          "note": "Hero and 40px evidence recaptured from the live review page by capture:character-evidence; the concept palette and silhouette both survive at field scale."
+          "score": 3,
+          "note": "Human review: at 40 px the T-pose reads as a red smudge \u2014 the headband + dark ponytail + crimson kit identity does not survive field scale."
         }
       }
     },
