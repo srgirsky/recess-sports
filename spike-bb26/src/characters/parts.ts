@@ -15,17 +15,34 @@ export type MaterialsLike = {
 };
 
 export class MatCache {
-  private cache = new Map<string, THREE.MeshLambertMaterial>();
-  constructor(private readonly materials: MaterialsLike) {}
+  private cache = new Map<string, THREE.MeshToonMaterial>();
+  private ramp: THREE.DataTexture;
 
-  /** Lambert material for a palette key, optionally shaded (0..1 darkens, >1 lightens). */
-  get(key: string, shade = 1, doubleSide = false): THREE.MeshLambertMaterial {
+  constructor(private readonly materials: MaterialsLike) {
+    // Two-tone toon ramp shared by every kid material: shadow side one hard
+    // step darker, lit side full — verdict-005 fix 2, the "flat plastic" note
+    // that capped vibe since verdict-002. steam-04's charm is 80% this ramp
+    // under the same geometry. 168/255 ≈ 0.66: dark but never muddy (BB2026
+    // has no true darks anywhere).
+    const tones = new Uint8Array([168, 255]);
+    this.ramp = new THREE.DataTexture(tones, 2, 1, THREE.RedFormat);
+    this.ramp.minFilter = THREE.NearestFilter;
+    this.ramp.magFilter = THREE.NearestFilter;
+    this.ramp.needsUpdate = true;
+  }
+
+  /** Toon material for a palette key, optionally shaded (0..1 darkens, >1 lightens). */
+  get(key: string, shade = 1, doubleSide = false): THREE.MeshToonMaterial {
     const id = `${key}|${shade}|${doubleSide ? 'd' : 's'}`;
     let m = this.cache.get(id);
     if (!m) {
       const c = new THREE.Color(this.materials.rawColor(key));
       if (shade !== 1) c.multiplyScalar(shade);
-      m = new THREE.MeshLambertMaterial({ color: c, side: doubleSide ? THREE.DoubleSide : THREE.FrontSide });
+      m = new THREE.MeshToonMaterial({
+        color: c,
+        gradientMap: this.ramp,
+        side: doubleSide ? THREE.DoubleSide : THREE.FrontSide,
+      });
       this.cache.set(id, m);
     }
     return m;
@@ -33,16 +50,17 @@ export class MatCache {
 
   /** Self-lit variant for face features (sclera, teeth): partly emissive so eye
    * whites stay WHITE on the shadow side of the head — verdict-001's "faces are
-   * unreadable dark smudges at gameplay distance" was mostly Lambert shading. */
-  glow(key: string, shade = 1, strength = 0.55): THREE.MeshLambertMaterial {
+   * unreadable dark smudges at gameplay distance" was mostly diffuse shading. */
+  glow(key: string, shade = 1, strength = 0.55): THREE.MeshToonMaterial {
     const id = `${key}|${shade}|g${strength}`;
     let m = this.cache.get(id);
     if (!m) {
       const c = new THREE.Color(this.materials.rawColor(key));
       if (shade !== 1) c.multiplyScalar(shade);
-      m = new THREE.MeshLambertMaterial({
+      m = new THREE.MeshToonMaterial({
         color: c.clone().multiplyScalar(1 - strength * 0.55),
         emissive: c.clone().multiplyScalar(strength),
+        gradientMap: this.ramp,
       });
       this.cache.set(id, m);
     }

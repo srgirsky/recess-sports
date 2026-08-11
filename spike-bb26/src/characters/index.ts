@@ -65,9 +65,57 @@ export function init(ctx: Ctx): void {
   const root = new THREE.Group();
   root.name = 'characters';
 
+  // Soft blob contact shadow under every placed kid (verdict-005 fix 2: the
+  // mound pitcher "floats on flat green" — the sun's 2048px shadow map spreads
+  // too thin over the ±260ft box to ground a distant kid). One shared
+  // radial-alpha texture; tint derives from the palette via ctx materials, so
+  // no color literal lives here.
+  const shadowMat = (() => {
+    const c = document.createElement('canvas');
+    c.width = c.height = 128;
+    const g = c.getContext('2d')!;
+    const ink = new THREE.Color(materials.rawColor('hudInk'));
+    const rgb = `${Math.round(ink.r * 255)},${Math.round(ink.g * 255)},${Math.round(ink.b * 255)}`;
+    // Bold on purpose: the low gameplay cameras compress the disc to a few
+    // rows of pixels, so a subtle 0.4-alpha smudge disappears — BB's own blob
+    // shadows are hard dark ellipses.
+    const grad = g.createRadialGradient(64, 64, 8, 64, 64, 62);
+    grad.addColorStop(0, `rgba(${rgb},0.8)`);
+    grad.addColorStop(0.6, `rgba(${rgb},0.62)`);
+    grad.addColorStop(1, `rgba(${rgb},0)`);
+    g.fillStyle = grad;
+    g.fillRect(0, 0, 128, 128);
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    // No mipmaps: at the gameplay cameras' grazing angles the mip chain
+    // averages the mostly-transparent texture toward zero alpha and the
+    // shadow vanishes entirely (measured: invisible at 0.72 alpha WITH mips,
+    // solid at 1.0 only because its average survived the chain).
+    tex.generateMipmaps = false;
+    tex.minFilter = THREE.LinearFilter;
+    return new THREE.MeshBasicMaterial({
+      map: tex,
+      transparent: true,
+      depthWrite: false,
+      // Just enough offset to beat the lawn (and the dirt patches' -1): -4
+      // was so strong the pitcher's disc drew OVER the rubber slab above it.
+      polygonOffset: true,
+      polygonOffsetFactor: -1.5,
+      polygonOffsetUnits: -2,
+    });
+  })();
+
   const place = (kid: THREE.Group, x: number, z: number, poseName: PoseName): THREE.Group => {
     kid.position.set(x, field.groundYAt(x, z), z);
     pose(kid, poseName);
+    const disc = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 3.2), shadowMat);
+    disc.rotation.x = -Math.PI / 2;
+    // ~1.7in off the ground: high enough to win the depth test against the
+    // lawn/dirt at 100ft grazing distances (0.04-0.06 lost to precision and
+    // needed a rubber-stomping polygonOffset), low enough that no gap reads.
+    disc.position.y = 0.14;
+    disc.renderOrder = 1; // draw after the ground; depthWrite off keeps the kid over it
+    kid.add(disc);
     root.add(kid);
     return kid;
   };
