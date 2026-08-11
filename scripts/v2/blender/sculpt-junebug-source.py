@@ -23,7 +23,7 @@ from mathutils import Vector
 REPO = Path.cwd()
 OUTPUT = REPO / "assets/v2/source/junebug-pilot.blend"
 FACE_ATLAS = REPO / "assets/v2/source/junebug-face-atlas.png"
-REVISION = "junebug-palette-crown-v3"
+REVISION = "junebug-turnaround-fidelity-v4"
 SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 
 
@@ -167,13 +167,20 @@ class MeshBuilder:
         material: int,
         color: tuple[float, float, float, float],
         segments: int,
+        color_fn=None,
     ) -> None:
+        """`color_fn(theta, z)` may override the ring-vertex colour — how the
+        jersey's V-neck shows skin inside the trim without a second surface.
+        Cap centres keep the base colour: the top fan's centre is hidden by the
+        neck column, and a skin-toned centre would wash the shoulder fan."""
         rows: list[list[int]] = []
         for z, rx, ry, bone in levels:
             row = []
             for column in range(segments):
                 theta = 2 * pi * column / segments
-                row.append(self.vertex((rx * cos(theta), ry * sin(theta), z), color, bone))
+                at = (rx * cos(theta), ry * sin(theta), z)
+                vertex_color = color_fn(theta, z) if color_fn else color
+                row.append(self.vertex(at, vertex_color, bone))
             rows.append(row)
         bottom = self.vertex((0.0, 0.0, levels[0][0]), color, levels[0][3])
         top = self.vertex((0.0, 0.0, levels[-1][0]), color, levels[-1][3])
@@ -243,28 +250,36 @@ class MeshBuilder:
                 self.face((end, rows[-1][nxt], rows[-1][side]), material)
 
     def hair_cap(self, segments: int, rings: int) -> None:
-        """A full crown of hair, not a back-half shell.
+        """A slicked crown with the turnaround's LOW hairline.
 
-        The first pass swept theta over only the back half of the skull, so
-        from the front the crown above the headband read as bare skin — the
-        'cap brim' defect on the fidelity board. The crown now covers the full
-        circumference; each column's reach is solved so hair ends just under
-        the headband in front (a natural hairline) and flows to the nape
-        behind the ponytail.
+        The board's 'bald above the brows' read came from a front reach that
+        stopped near the crown: the hairline must land at MID-FOREHEAD
+        (z ~3.70, just under the tilted headband's front edge), dip to a soft
+        widow's peak at centre, brush the ear tops at the sides and flow to
+        the nape behind. The front columns also take the skull's own face
+        flattening, slightly relaxed — a full ellipsoid there shelves ~0.14
+        proud of the flattened forehead and reads as a helmet in profile.
         """
-        center = Vector((0.0, 0.08, 3.48))
-        top = self.vertex((0.0, 0.08, 4.14), HAIR, "Head")
+        # The crown surface stops at 4.10 — deliberately BELOW the 4.16 hair
+        # ceiling — so the gather knot can rise above it and read as the
+        # turnaround's topknot bump from the front instead of being swallowed
+        # by the cap's own silhouette.
+        center = Vector((0.0, 0.06, 3.50))
+        top = self.vertex((0.0, 0.06, 4.10), HAIR, "Head")
         rows: list[list[int]] = []
         for row in range(1, rings + 1):
             ring = []
             for column in range(segments):
                 theta = 2 * pi * column / segments
                 behind = max(0.0, sin(theta))
+                front = max(0.0, -sin(theta))
                 blend = behind * behind * (3.0 - 2.0 * behind)
-                phi = (0.37 + 0.35 * blend) * pi * row / rings
-                x = 0.65 * sin(phi) * cos(theta)
-                y = 0.52 * sin(phi) * sin(theta)
-                z = 0.66 * cos(phi)
+                reach = 0.50 - 0.10 * front**1.5 + 0.23 * blend
+                phi = reach * pi * row / rings
+                depth = 1.0 - 0.20 * front * front
+                x = 0.685 * sin(phi) * cos(theta)
+                y = 0.55 * sin(phi) * sin(theta) * depth
+                z = 0.60 * cos(phi)
                 ring.append(self.vertex(center + Vector((x, y, z)), HAIR, "Head"))
             rows.append(ring)
         for column in range(segments):
@@ -282,12 +297,16 @@ class MeshBuilder:
         This patch supplies the UV seam that a production model would cut during
         retopology while remaining welded visually to the same head volume.
         """
-        cx, cy, cz = (0.0, -0.015, 3.45)
-        rx, ry, rz = (0.585, 0.47, 0.60)
+        cx, cy, cz = (0.0, -0.015, 3.47)
+        rx, ry, rz = (0.62, 0.475, 0.575)
         grid: list[list[int]] = []
         for row in range(rows + 1):
             vf = row / rows
-            vertical = -0.46 + vf * 0.92
+            # The span runs LOW on purpose (-0.98 rad): the turnaround sets the
+            # mouth close above the chin, and a symmetric span forced it to
+            # mid-face. The chin-push terms below keep the low rows on the
+            # pushed surface instead of curling under the ball.
+            vertical = -0.98 + vf * 1.42
             line = []
             for column in range(columns + 1):
                 uf = column / columns
@@ -347,6 +366,37 @@ def torus_points(
     return [(cx + rx * cos(2 * pi * i / count), cy + ry * sin(2 * pi * i / count), cz) for i in range(count)]
 
 
+def catmull_rom(
+    controls: list[tuple[tuple[float, float, float], float]], samples: int
+) -> list[tuple[Vector, float]]:
+    """Sample a smooth curve (with per-point radius) through control points.
+
+    The ponytail is the profile's signature curve; a raw polyline through its
+    controls kinks at every knot and the tube shows each kink as a shading
+    break — the 'faceted panels' defect. Catmull-Rom keeps the authored shape
+    while giving the tube a genuinely smooth spine."""
+    points = [Vector(point) for point, _ in controls]
+    radii = [radius for _, radius in controls]
+    count = len(points)
+    sampled: list[tuple[Vector, float]] = []
+    for i in range(samples):
+        t = i / (samples - 1) * (count - 1)
+        seg = min(int(t), count - 2)
+        f = t - seg
+        p0 = points[max(0, seg - 1)]
+        p1 = points[seg]
+        p2 = points[seg + 1]
+        p3 = points[min(count - 1, seg + 2)]
+        point = 0.5 * (
+            2 * p1
+            + (-p0 + p2) * f
+            + (2 * p0 - 5 * p1 + 4 * p2 - p3) * (f * f)
+            + (-p0 + 3 * p1 - 3 * p2 + p3) * (f * f * f)
+        )
+        sampled.append((point, radii[seg] + (radii[seg + 1] - radii[seg]) * f))
+    return sampled
+
+
 def arm_ring_points(
     center: tuple[float, float, float], ry: float, rz: float, count: int
 ) -> list[tuple[float, float, float]]:
@@ -391,23 +441,82 @@ def install_face_atlas() -> None:
     image.name = "face_atlas"
 
 
+TORSO_LEVELS = [
+    (1.72, 0.39, 0.25, "Hips"),
+    (1.86, 0.43, 0.27, "Spine"),
+    (2.18, 0.49, 0.29, "Spine1"),
+    (2.43, 0.47, 0.28, "Spine2"),
+    (2.64, 0.33, 0.215, "Spine2"),
+]
+
+
+def torso_radii(z: float) -> tuple[float, float]:
+    """Interpolate the torso loft's (rx, ry) at height z, for trim that must
+    ride the jersey surface instead of guessing at it."""
+    levels = TORSO_LEVELS
+    if z <= levels[0][0]:
+        return levels[0][1], levels[0][2]
+    for (z0, rx0, ry0, _), (z1, rx1, ry1, _) in zip(levels, levels[1:]):
+        if z <= z1:
+            t = (z - z0) / (z1 - z0)
+            return rx0 + (rx1 - rx0) * t, ry0 + (ry1 - ry0) * t
+    return levels[-1][1], levels[-1][2]
+
+
+def vneck_half_width(z: float) -> float:
+    """Half-width of the V opening at height z — matches the trim path below
+    so the skin/jersey colour boundary lands under the white tube. NARROW: a
+    wide V exposed a bib of chest and made the neck read as a stalk."""
+    knots = [(2.40, 0.0), (2.49, 0.10), (2.585, 0.155), (2.645, 0.21)]
+    if z <= knots[0][0]:
+        return 0.0
+    for (z0, w0), (z1, w1) in zip(knots, knots[1:]):
+        if z <= z1:
+            return w0 + (w1 - w0) * (z - z0) / (z1 - z0)
+    return knots[-1][1]
+
+
 def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) -> None:
-    # Constructed torso: wider shoulders, real waist and a visible tucked hem.
-    builder.loft(
-        [
-            (1.72, 0.39, 0.25, "Hips"),
-            (1.86, 0.43, 0.27, "Spine"),
-            (2.18, 0.49, 0.29, "Spine1"),
-            (2.43, 0.47, 0.28, "Spine2"),
-            (2.58, 0.36, 0.23, "Spine2"),
-        ],
-        1,
-        SHIRT,
-        segments,
-    )
+    # Constructed torso. The turnaround's jersey is a V-NECK: inside the white
+    # trim the chest reads as skin, authored by recolouring the torso's own
+    # front-top vertices rather than wedging a second surface through the cloth.
+    def vneck_color(theta: float, z: float):
+        rx, _ = torso_radii(z)
+        if -sin(theta) > 0.35 and abs(rx * cos(theta)) < vneck_half_width(z):
+            return SKIN
+        return SHIRT
+
+    builder.loft(TORSO_LEVELS, 1, SHIRT, segments, color_fn=vneck_color)
     if detail >= 1:
-        builder.tube(torus_points((0, 0, 1.76), 0.40, 0.26, segments), [0.035] * segments, 1, SHIRT_DARK, "Hips", max(5, segments // 2), cyclic=True, axis=Vector((0.0, 0.0, 1.0)))
-        builder.tube(torus_points((0, 0, 2.57), 0.25, 0.18, segments), [0.030] * segments, 1, WHITE, "Spine2", max(5, segments // 2), cyclic=True, axis=Vector((0.0, 0.0, 1.0)))
+        # One cyclic tube is both collar and V-trim: it rides the jersey
+        # surface, level around the back of the neck and diving to the V's
+        # point at centre-chest — the construction the turnaround draws.
+        collar_points = []
+        collar_count = max(12, segments) if detail >= 2 else 8
+        for i in range(collar_count):
+            theta = 2 * pi * i / collar_count
+            dip = max(0.0, -sin(theta)) ** 4
+            # The jersey's neck opening sits HIGH (2.635) — the board's long
+            # bare neck came as much from a low collar as from the neck itself.
+            z = 2.635 - 0.235 * dip
+            rx, ry = torso_radii(z)
+            # The trim hugs the neck opening, not the torso's full width: pull
+            # the ring toward centre so the V stays a V and not a boat neck.
+            pinch = 1.0 - 0.42 * dip
+            collar_points.append((rx * 1.03 * cos(theta) * pinch, ry * 1.06 * sin(theta) - 0.008, z + 0.01))
+        builder.tube(collar_points, [0.032] * collar_count, 1, WHITE, "Spine2", max(5, segments // 3), cyclic=True, axis=Vector((0.0, 0.0, 1.0)))
+    if detail >= 2:
+        # Buttoned placket: a dark seam down the chest with three buttons, as
+        # the front view draws them. Geometry, not texture — it must survive
+        # the toon shader and the 40 px zoom.
+        placket = []
+        for z in (2.38, 2.15, 1.95, 1.80):
+            _, ry = torso_radii(z)
+            placket.append((0.0, -ry - 0.010, z))
+        builder.tube(placket, [0.012] * 4, 1, SHIRT_DARK, "Spine1", 5)
+        for z in (2.26, 2.08, 1.90):
+            _, ry = torso_radii(z)
+            builder.ellipsoid((0.0, -ry - 0.014, z), (0.022, 0.014, 0.022), 1, SHIRT_DARK, "Spine1", 5, 3)
 
     # Sleeves, tapered arms and articulated hand silhouettes. The exposed limb
     # is one weighted surface across the elbow instead of three overlapping
@@ -415,12 +524,18 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     for side, prefix in ((-1, "Left"), (1, "Right")):
         sleeve_points = [
             (0.40 * side, 0.0, 2.43),
-            (0.56 * side, 0.0, 2.43),
-            (0.72 * side, 0.0, 2.43),
+            (0.55 * side, 0.0, 2.43),
+            (0.66 * side, 0.0, 2.43),
+            (0.75 * side, 0.0, 2.43),
         ]
+        # The sleeve TAPERS all the way onto the arm (0.150 vs the arm's
+        # 0.148): the old open 0.175 end read as a ring of interior looking
+        # down the T-pose arm — rubric 3.7 — and even a capped annulus shades
+        # as a hole from that angle. Closing to the arm's own radius deletes
+        # the annulus; the white cuff band covers the junction.
         builder.tube(
             sleeve_points,
-            [0.235, 0.215, 0.175],
+            [0.235, 0.225, 0.19, 0.150],
             1,
             SHIRT,
             f"{prefix}Arm",
@@ -434,9 +549,10 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
             # angle. LOD2 keeps the plain tube — the cap is sub-pixel there.
             builder.ellipsoid((0.46 * side, 0.0, 2.46), (0.17, 0.25, 0.225), 1, SHIRT, f"{prefix}Arm", max(8, segments // 2), max(4, rings // 2))
         if detail >= 1:
+            # White cuff band snug over the sleeve-arm junction, as drawn.
             builder.tube(
-                arm_ring_points((0.72 * side, 0.0, 2.43), 0.178, 0.178, max(10, segments)),
-                [0.022] * max(10, segments),
+                arm_ring_points((0.72 * side, 0.0, 2.43), 0.162, 0.162, max(10, segments)),
+                [0.026] * max(10, segments),
                 1,
                 WHITE,
                 f"{prefix}Arm",
@@ -444,7 +560,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
                 cyclic=True,
             )
         arm_points = [
-            (0.68 * side, 0.0, 2.43),
+            (0.64 * side, 0.0, 2.43),
             (0.82 * side, 0.0, 2.43),
             (0.98 * side, 0.0, 2.43),
             (1.10 * side, 0.0, 2.43),
@@ -461,7 +577,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         ]
         builder.tube(
             arm_points,
-            [0.145, 0.15, 0.132, 0.118, 0.112, 0.105],
+            [0.148, 0.15, 0.132, 0.118, 0.112, 0.105],
             0,
             SKIN,
             arm_weights,
@@ -515,43 +631,95 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
             cyclic=True,
         )
 
-    # Pants are fuller through the thigh and taper into deliberate cuffs.
-    builder.ellipsoid((0.0, 0.0, 1.66), (0.44, 0.27, 0.25), 1, PANTS_DARK, "Hips", segments, rings)
+    # The waist and legs are the turnaround's, constructed: a BELT between the
+    # jersey hem and the pants (the dark hip ellipsoid used to read as separate
+    # shorts), then each pant leg as ONE weighted tube from hip to a gathered
+    # knicker cuff below the knee — the stacked thigh/calf ellipsoids left
+    # visible seam rings, which rubric 3.1's 5 forbids — into long red socks.
+    builder.ellipsoid((0.0, 0.0, 1.60), (0.415, 0.265, 0.27), 1, PANTS, "Hips", segments, rings)
+    if detail >= 1:
+        builder.tube(
+            torus_points((0, 0, 1.755), 0.402, 0.262, segments),
+            [0.045] * segments,
+            1,
+            PANTS_DARK,
+            "Hips",
+            max(5, segments // 3),
+            cyclic=True,
+            axis=Vector((0.0, 0.0, 1.0)),
+        )
     for side, prefix in ((-1, "Left"), (1, "Right")):
-        # Thighs at 0.21 with 0.23 radius CROSSED the midline — the legs read as
-        # one mass in idle and run. Outward centres and slimmer radii leave a
-        # visible gap between the legs, as legs have.
-        builder.ellipsoid((0.235 * side, 0.0, 1.30), (0.195, 0.22, 0.43), 1, PANTS, f"{prefix}UpLeg", segments, rings)
-        builder.ellipsoid((0.235 * side, 0.0, 0.72), (0.16, 0.19, 0.39), 1, PANTS, f"{prefix}Leg", segments, rings)
+        x0 = 0.225 * side
+        up = f"{prefix}UpLeg"
+        low = f"{prefix}Leg"
+        if detail >= 2:
+            pant_points = [(x0, 0.0, 1.62), (x0, 0.0, 1.34), (x0, 0.0, 1.04), (x0, 0.0, 0.84), (x0, 0.0, 0.70), (x0, 0.0, 0.615), (x0, 0.0, 0.56)]
+            pant_radii = [0.20, 0.205, 0.19, 0.17, 0.165, 0.175, 0.13]
+            pant_weights: list[str | dict[str, float]] = [
+                {"Hips": 0.5, up: 0.5},
+                up,
+                {up: 0.75, low: 0.25},
+                {up: 0.3, low: 0.7},
+                low,
+                low,
+                low,
+            ]
+            leg_sides = 10
+        elif detail == 1:
+            pant_points = [(x0, 0.0, 1.62), (x0, 0.0, 1.32), (x0, 0.0, 0.95), (x0, 0.0, 0.68), (x0, 0.0, 0.56)]
+            pant_radii = [0.20, 0.205, 0.185, 0.163, 0.135]
+            pant_weights = [{"Hips": 0.5, up: 0.5}, up, {up: 0.55, low: 0.45}, low, low]
+            leg_sides = 7
+        else:
+            pant_points = [(x0, 0.0, 1.62), (x0, 0.0, 1.30), (x0, 0.0, 0.90), (x0, 0.0, 0.56)]
+            pant_radii = [0.20, 0.205, 0.18, 0.14]
+            pant_weights = [{"Hips": 0.5, up: 0.5}, up, {up: 0.5, low: 0.5}, low]
+            leg_sides = 5
+        builder.tube(pant_points, pant_radii, 1, PANTS, pant_weights, leg_sides)
         if detail >= 1:
+            # The gathered cuff band just below the knee (z 0.565 — the art's
+            # cuff sits at ~0.59, leaving a long visible sock).
             builder.tube(
-                torus_points((0.235 * side, 0.0, 0.38), 0.155, 0.165, max(8, segments // 2)),
-                [0.026] * max(8, segments // 2),
+                torus_points((x0, 0.0, 0.565), 0.148, 0.158, max(8, segments // 2)),
+                [0.020] * max(8, segments // 2),
                 1,
                 PANTS_DARK,
-                f"{prefix}Leg",
+                low,
                 max(5, segments // 3),
                 cyclic=True,
                 axis=Vector((0.0, 0.0, 1.0)),
             )
+        # Long crimson socks from cuff to shoe — an identity anchor the 40 px
+        # read keeps, so every LOD carries them.
+        if detail >= 1:
+            sock_points = [(x0, 0.0, 0.60), (x0, 0.0, 0.42), (x0, -0.01, 0.27)]
+            sock_radii = [0.105, 0.10, 0.098]
+            sock_weights: list[str | dict[str, float]] = [low, low, {low: 0.4, f"{prefix}Foot": 0.6}]
+            sock_sides = 8 if detail >= 2 else 5
+        else:
+            sock_points = [(x0, 0.0, 0.60), (x0, -0.01, 0.28)]
+            sock_radii = [0.105, 0.098]
+            sock_weights = [low, {low: 0.4, f"{prefix}Foot": 0.6}]
+            sock_sides = 5
+        builder.tube(sock_points, sock_radii, 1, SHIRT, sock_weights, sock_sides)
         if detail == 0:
             # At LOD2 the shoe is six pixels tall: preserve the toe/sole read,
             # not invisible panel topology.
-            builder.ellipsoid((0.235 * side, -0.16, 0.20), (0.25, 0.38, 0.17), 1, SHOE, f"{prefix}Foot", segments, rings, flatten_sole=True)
-            builder.ellipsoid((0.235 * side, -0.17, 0.075), (0.265, 0.40, 0.065), 1, SOLE, f"{prefix}Foot", segments, rings, flatten_sole=True)
+            builder.ellipsoid((x0, -0.16, 0.20), (0.25, 0.38, 0.17), 1, SHOE, f"{prefix}Foot", segments, rings, flatten_sole=True)
+            builder.ellipsoid((x0, -0.17, 0.075), (0.265, 0.40, 0.065), 1, SOLE, f"{prefix}Foot", segments, rings, flatten_sole=True)
         else:
             # Layered sneaker: ankle collar, heel counter, long toe box, toe
             # cap and separate outsole. These overlap as manufactured panels.
-            builder.ellipsoid((0.235 * side, 0.015, 0.27), (0.205, 0.21, 0.18), 1, SHOE, f"{prefix}Foot", segments, rings, flatten_sole=True)
-            builder.ellipsoid((0.235 * side, 0.10, 0.255), (0.20, 0.16, 0.155), 1, SHIRT_DARK, f"{prefix}Foot", segments, rings, flatten_sole=True)
-            builder.ellipsoid((0.235 * side, -0.17, 0.19), (0.24, 0.32, 0.145), 1, SHOE, f"{prefix}Foot", segments, rings, flatten_sole=True)
-            builder.ellipsoid((0.235 * side, -0.405, 0.16), (0.215, 0.085, 0.078), 1, WHITE, f"{prefix}Foot", segments, max(4, rings // 2), flatten_sole=True)
-            builder.ellipsoid((0.235 * side, -0.14, 0.075), (0.255, 0.36, 0.065), 1, SOLE, f"{prefix}Foot", segments, max(4, rings // 2), flatten_sole=True)
+            builder.ellipsoid((x0, 0.015, 0.27), (0.205, 0.21, 0.18), 1, SHOE, f"{prefix}Foot", segments, rings, flatten_sole=True)
+            builder.ellipsoid((x0, 0.10, 0.255), (0.20, 0.16, 0.155), 1, SHIRT_DARK, f"{prefix}Foot", segments, rings, flatten_sole=True)
+            builder.ellipsoid((x0, -0.17, 0.19), (0.24, 0.32, 0.145), 1, SHOE, f"{prefix}Foot", segments, rings, flatten_sole=True)
+            builder.ellipsoid((x0, -0.405, 0.16), (0.215, 0.085, 0.078), 1, WHITE, f"{prefix}Foot", segments, max(4, rings // 2), flatten_sole=True)
+            builder.ellipsoid((x0, -0.14, 0.075), (0.255, 0.36, 0.065), 1, SOLE, f"{prefix}Foot", segments, max(4, rings // 2), flatten_sole=True)
             lace_rows = (-0.12, -0.21, -0.30) if detail >= 2 else (-0.22,)
             for lace_y in lace_rows:
                 lace_z = 0.315 - 0.22 * max(0.0, -lace_y - 0.12)
                 builder.tube(
-                    [(-0.12 + 0.235 * side, lace_y, lace_z), (0.12 + 0.235 * side, lace_y, lace_z)],
+                    [(-0.12 + x0, lace_y, lace_z), (0.12 + x0, lace_y, lace_z)],
                     [0.014, 0.014],
                     1,
                     WHITE,
@@ -561,7 +729,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
             if detail >= 2:
                 # A sidewall stripe survives at hero scale; LOD1 keeps the
                 # panel/toe/sole silhouette without this small tube.
-                outer_x = 0.235 * side + 0.235 * side
+                outer_x = x0 * 2
                 builder.tube(
                     [(outer_x, -0.02, 0.18), (outer_x, -0.24, 0.15), (outer_x, -0.42, 0.135)],
                     [0.014, 0.014, 0.012],
@@ -574,104 +742,157 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     # Neck, ears and a face whose cheek-to-chin taper follows the turnaround.
     # A tapered skin column, not a dark ball — the shadow-toned ellipsoid read
     # as a separate object wedged between chin and collar.
+    # SHORT and thick: the head must sit close on the shoulders as the
+    # turnaround draws it — a slender column read as a periscope on the board.
     builder.loft(
         [
-            (2.50, 0.16, 0.145, "Spine2"),
-            (2.62, 0.135, 0.12, "Neck"),
-            (2.76, 0.125, 0.115, "Neck"),
-            (2.92, 0.145, 0.135, "Head"),
+            (2.52, 0.185, 0.17, "Spine2"),
+            (2.62, 0.165, 0.15, "Neck"),
+            (2.76, 0.16, 0.145, "Neck"),
+            (2.94, 0.18, 0.165, "Head"),
         ],
         0,
         SKIN,
         max(9, segments // 2),
     )
-    # Broader through the cheeks: the turnaround face is wider than tall.
-    builder.ellipsoid((0.0, -0.015, 3.45), (0.585, 0.47, 0.60), 0, SKIN, "Head", segments + 4, rings + 2, face_shape=True)
-    builder.face_patch(max(6, segments // 2), max(5, rings // 2))
+    # WIDER than tall (0.62 × 0.575 radii): rubric 3.13 measures the face
+    # aspect against the turnaround, whose head is a full-cheeked round, not
+    # the tall egg the board showed.
+    builder.ellipsoid((0.0, -0.015, 3.47), (0.62, 0.475, 0.575), 0, SKIN, "Head", segments + 4, rings + 2, face_shape=True)
+    builder.face_patch(max(6, segments // 2), max(5, rings - 1) if detail >= 2 else max(5, rings // 2))
     if detail >= 2:
         # The nose is a FORM, not only an atlas mark — a flat decal face reads
         # as a sticker the moment the head turns (rubric 3.5's bar for 5/5).
-        builder.ellipsoid((0.0, -0.335, 3.41), (0.048, 0.055, 0.078), 0, SKIN, "Head", 8, 6)
+        # It sits between the low-set eyes and the near-chin mouth.
+        builder.ellipsoid((0.0, -0.345, 3.20), (0.055, 0.06, 0.08), 0, SKIN, "Head", 8, 6)
     if detail >= 1:
         # A constructed ear: base shell against the skull, then — at hero scale
         # only, for the LOD budget — an outer rim arc, an inner concha shadow
         # and a lobe. A bare ellipsoid bump fails rubric 3.10; it reads as a
-        # knob at every angle.
+        # knob at every angle. Ears ride LOW (centre 3.38) like the art's.
         for side in (-1, 1):
-            builder.ellipsoid((0.60 * side, 0.02, 3.43), (0.06, 0.085, 0.115), 0, SKIN, "Head", max(8, segments // 3), max(4, rings // 2))
+            builder.ellipsoid((0.64 * side, 0.02, 3.38), (0.065, 0.09, 0.12), 0, SKIN, "Head", max(8, segments // 3), max(4, rings // 2))
             if detail >= 2:
                 rim_points = []
                 for step in range(6):
                     angle = -0.45 * pi + (1.35 * pi) * step / 5
-                    rim_points.append((0.655 * side, 0.02 + 0.075 * cos(angle), 3.42 + 0.100 * sin(angle)))
+                    rim_points.append((0.695 * side, 0.02 + 0.082 * cos(angle), 3.37 + 0.105 * sin(angle)))
                 builder.tube(rim_points, [0.016, 0.022, 0.024, 0.024, 0.022, 0.016], 0, SKIN, "Head", 5, axis=Vector((1.0, 0.0, 0.0)))
-                builder.ellipsoid((0.635 * side, 0.035, 3.42), (0.035, 0.05, 0.068), 0, SKIN_SHADOW, "Head", 8, 5)
-                builder.ellipsoid((0.625 * side, 0.005, 3.325), (0.032, 0.042, 0.04), 0, SKIN, "Head", 7, 5)
+                builder.ellipsoid((0.675 * side, 0.035, 3.37), (0.035, 0.05, 0.068), 0, SKIN_SHADOW, "Head", 8, 5)
+                builder.ellipsoid((0.665 * side, 0.005, 3.27), (0.032, 0.042, 0.04), 0, SKIN, "Head", 7, 5)
 
-    # Hair is one designed mass: full slicked-back crown + high swept ponytail.
-    # The headband sits across the hairline, so the crown's front edge tucks
-    # just beneath it; there is deliberately no fringe — the turnaround pulls
-    # everything back into the ponytail.
+    # Hair is one designed mass: slicked crown to a mid-forehead hairline, a
+    # gather knot at the crown-back, and one smooth swept ponytail ending in
+    # the turnaround's arrowhead tip. The white headband is TILTED — across
+    # the upper forehead in front, under the gather to the nape behind — and
+    # hugs the skull/hair surface instead of ringing the crown like a halo.
     builder.hair_cap(max(12, segments + 4), max(6, rings // 2 + 2))
-    headband_points = torus_points((0.0, 0.0, 3.80), 0.595, 0.42, max(12, segments))
-    builder.tube(headband_points, [0.035] * len(headband_points), 1, WHITE, "Head", max(5, segments // 3), cyclic=True, axis=Vector((0.0, 0.0, 1.0)))
-    ponytail_points = [
-        (0.0, 0.39, 3.72),
-        (0.0, 0.54, 3.84),
-        (0.0, 0.78, 3.88),
-        (0.0, 1.00, 3.72),
-        (0.0, 1.12, 3.42),
-        (0.0, 1.17, 3.13),
+    headband_points = []
+    headband_count = max(12, segments)
+    for i in range(headband_count):
+        theta = 2 * pi * i / headband_count
+        z = 3.51 - 0.25 * sin(theta)
+        shell = max(0.04, 1.0 - ((z - 3.47) / 0.575) ** 2) ** 0.5
+        front = max(0.0, -sin(theta))
+        behind = max(0.0, sin(theta))
+        depth = 1.0 - 0.20 * front * front
+        inflate = 1.075 + 0.31 * behind * behind * (3.0 - 2.0 * behind)
+        headband_points.append((
+            0.62 * shell * inflate * cos(theta),
+            -0.015 + 0.475 * shell * inflate * depth * sin(theta),
+            z,
+        ))
+    builder.tube(headband_points, [0.058] * headband_count, 1, WHITE, "Head", max(5, segments // 3), cyclic=True, axis=Vector((0.0, 0.5, 1.0)))
+    if detail >= 1:
+        # The gather knot at the crown-back — from the front it is the topknot
+        # bump the turnaround shows above the band; from the side it is where
+        # the tail roots. LOD1 keeps a cheap one so the silhouette holds.
+        knot_segments = max(10, segments // 2) if detail >= 2 else 6
+        knot_rings = max(6, rings // 2) if detail >= 2 else 3
+        builder.ellipsoid((0.0, 0.26, 3.995), (0.30, 0.27, 0.155), 2, HAIR, "Head", knot_segments, knot_rings)
+    # Apex controls stay clear of the 4% hair ceiling WITH the tube radius and
+    # the spline's overshoot counted — 3.97 at the root put the shipped top at
+    # 4.161ft against the 4.16 ceiling.
+    ponytail_controls: list[tuple[tuple[float, float, float], float]] = [
+        ((0.0, 0.32, 3.88), 0.12),
+        ((0.0, 0.54, 3.93), 0.17),
+        ((0.0, 0.80, 3.90), 0.22),
+        ((0.0, 1.02, 3.74), 0.245),
+        ((0.0, 1.17, 3.50), 0.245),
+        ((0.0, 1.25, 3.22), 0.215),
+        ((0.0, 1.24, 2.96), 0.165),
+        ((0.0, 1.14, 2.73), 0.10),
+        ((0.0, 1.02, 2.585), 0.05),
     ]
-    builder.tube(
-        ponytail_points,
-        [0.18, 0.23, 0.27, 0.26, 0.22, 0.12],
-        2,
-        HAIR,
-        "Head",
-        max(8, segments // 2),
-    )
-    builder.ellipsoid((0.0, 1.18, 2.97), (0.27, 0.16, 0.31), 2, HAIR, "Head", max(10, segments // 2), max(6, rings // 2))
+    tail_samples = 13 if detail >= 2 else (8 if detail == 1 else 6)
+    tail_sides = 10 if detail >= 2 else 8
+    tail = catmull_rom(ponytail_controls, tail_samples)
+    builder.tube([tuple(p) for p, _ in tail], [r for _, r in tail], 2, HAIR, "Head", tail_sides)
+    # The arrowhead tip — a flat kite in the profile plane, the turnaround's
+    # most memorable hair note. Cheap enough for every LOD.
+    arrow_outline = [(0.0, 1.01, 2.60), (0.0, 1.21, 2.48), (0.0, 1.00, 2.20), (0.0, 0.83, 2.44)]
+    for x_half in (0.055, -0.055):
+        center_index = builder.vertex((x_half, 1.01, 2.43), HAIR, "Head")
+        ring = [builder.vertex(point, HAIR, "Head") for point in arrow_outline]
+        for a, b in zip(ring, ring[1:] + ring[:1]):
+            face = (a, b, center_index) if x_half > 0 else (b, a, center_index)
+            builder.face(face, 2)
     if detail >= 2:
-        # The gather knot the turnaround shows where the crown meets the tail —
-        # without it the ponytail emerges from nowhere. Hero-scale only.
-        builder.ellipsoid((0.0, 0.42, 3.79), (0.155, 0.14, 0.125), 2, HAIR, "Head", max(8, segments // 3), max(5, rings // 2))
+        # The white tie wrapped around the tail root, as the profile draws it.
+        builder.tube(
+            torus_points((0.0, 0.44, 3.93), 0.15, 0.13, 8),
+            [0.026] * 8,
+            1,
+            WHITE,
+            "Head",
+            5,
+            cyclic=True,
+            axis=Vector((0.0, 0.5, 1.0)),
+        )
 
     if detail >= 2:
         # Strand grouping is what separates hair from a smooth blob (rubric
-        # 3.3's bar for 5/5). Ridges ride just proud of the crown from the
-        # hairline back to the gather, and grooves run the tail's length.
-        crown_center = Vector((0.0, 0.08, 3.48))
+        # 3.3's bar for 5/5) — but it must read as GROOMED GROOVES, not the
+        # hard ridge the first pass wore: the strands are thin, nearly flush
+        # (0.985 of the radius, +0.006 proud on the crown) sheen lines that
+        # follow the mass instead of breaking its silhouette.
+        crown_center = Vector((0.0, 0.06, 3.50))
         for theta_start in (-2.35, -1.95, -1.19, -0.79):
             theta_end = 0.5 * pi if theta_start > -0.5 * pi else 0.5 * pi - 2 * pi
             strand = []
             for step in range(5):
                 t = step / 4
                 theta = theta_start + (theta_end - theta_start) * t
-                phi = (1 - t) * (1 - t) * 1.08 + 2 * t * (1 - t) * 0.30 + t * t * 0.66
+                phi = (1 - t) * (1 - t) * 1.10 + 2 * t * (1 - t) * 0.35 + t * t * 0.70
+                front = max(0.0, -sin(theta))
+                depth = 1.0 - 0.20 * front * front
                 strand.append(
                     crown_center
-                    + Vector((0.660 * sin(phi) * cos(theta), 0.527 * sin(phi) * sin(theta), 0.670 * cos(phi)))
+                    + Vector((0.692 * sin(phi) * cos(theta), 0.556 * sin(phi) * sin(theta) * depth, 0.606 * cos(phi)))
                 )
-            builder.tube(strand, [0.020, 0.026, 0.028, 0.026, 0.020], 2, HAIR_SHINE, "Head", 4)
+            builder.tube(strand, [0.015, 0.020, 0.022, 0.020, 0.015], 2, HAIR_SHINE, "Head", 4)
 
-        tail = [Vector(point) for point in ponytail_points]
-        tail_radii = [0.18, 0.23, 0.27, 0.26, 0.22, 0.12]
-        for lateral in (-0.85, 0.0, 0.85):
+        strand_samples = catmull_rom(ponytail_controls, 9)[1:]
+        strand_path = [point for point, _ in strand_samples]
+        strand_radii_base = [radius for _, radius in strand_samples]
+        # Side grooves only: a strand riding the OUTER silhouette line put the
+        # hard ridge right back on the tail's profile edge.
+        for lateral in (-0.85, 0.85):
             strand = []
             radii = []
-            for index, (point, radius) in enumerate(zip(tail, tail_radii)):
-                before = tail[max(0, index - 1)]
-                after = tail[min(len(tail) - 1, index + 1)]
+            for index, (point, radius) in enumerate(zip(strand_path, strand_radii_base)):
+                before = strand_path[max(0, index - 1)]
+                after = strand_path[min(len(strand_path) - 1, index + 1)]
                 tangent = (after - before).normalized()
                 outward = Vector((0.0, -tangent.z, tangent.y))
                 direction = (Vector((1.0, 0.0, 0.0)) * lateral + outward * (1.0 - 0.45 * abs(lateral))).normalized()
-                riding = point + direction * radius * 0.97
-                # The contract lets hair rise only 4% above the crown bone, and
-                # the outward strand tops the tail's apex — hold it under.
-                riding.z = min(riding.z, 4.09)
+                riding = point + direction * radius * 0.985
+                # The contract lets hair rise only 4% above the crown bone; the
+                # clamp must leave room for the strand tube's own radius, which
+                # the export measures — 4.145 here shipped a 4.161 top.
+                riding.z = min(riding.z, 4.128)
                 strand.append(riding)
-                radii.append(max(0.018, radius * 0.14))
+                radii.append(max(0.014, radius * 0.10))
             builder.tube(strand, radii, 2, HAIR_SHINE, "Head", 4)
 
     if detail >= 2:
@@ -682,12 +903,13 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         # sleeve stripes share the sleeve's own bone and surface, so they
         # cannot separate from it in any pose.
         for side in (-1, 1):
-            for lateral in (-0.062, 0.062):
+            # THREE stripes per sleeve — the turnaround's athletic piping.
+            for lateral in (-0.068, 0.0, 0.068):
                 stripe = []
                 for step in range(4):
                     t = step / 3
-                    x_abs = 0.455 + (0.705 - 0.455) * t
-                    sleeve_r = 0.235 + (0.175 - 0.235) * max(0.0, (x_abs - 0.40) / 0.32)
+                    x_abs = 0.455 + (0.715 - 0.455) * t
+                    sleeve_r = 0.235 + (0.16 - 0.235) * max(0.0, (x_abs - 0.40) / 0.35)
                     lift = (max(0.0, sleeve_r**2 - lateral**2) ** 0.5) - 0.007
                     stripe.append((x_abs * side, lateral, 2.43 + lift))
                 bone = ("Left" if side < 0 else "Right") + "Arm"
