@@ -219,7 +219,7 @@ export function init(ctx: Ctx): void {
   const batterIdle = new IdleLife(rng, batter, null, { sway: 0.35, glance: 0 });
   const pitcherIdle = new IdleLife(rng, pitcher, null, { sway: 0.3, glance: 0 });
   const catcherIdle = new IdleLife(rng, catcher, catcherBase, { breath: 0.8, sway: 0.3, glance: 0.35 });
-  const fielderIdles = fielders.map((r, i) => new IdleLife(rng, r, fielderBases[i], { sway: 0.8 }));
+  const fielderIdles = fielders.map((r, i) => new IdleLife(rng, r, fielderBases[i], { sway: 0.8, bob: 1 }));
   const watcherIdles = watchers.map((r, i) => new IdleLife(rng, r, watcherBases[i]));
 
   // ---- landing spots: a fixed rota drawn at init, cycled per beat --------

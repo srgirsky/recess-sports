@@ -19,6 +19,7 @@ export type IdleScales = {
   breath?: number; // torso swell amplitude ×
   sway?: number; // weight-shift amplitude ×
   glance?: number; // head-glance amplitude × (0 = eyes stay on the game)
+  bob?: number; // ready-crouch pump amplitude × (0 = off): knees pulse, elbows flex
 };
 
 export class IdleLife {
@@ -39,6 +40,10 @@ export class IdleLife {
 
   private readonly fidgetPhase: number;
 
+  private readonly bobAmp: number;
+  private readonly bobHz: number;
+  private readonly bobPhase: number;
+
   constructor(rng: Rng, rig: Rig, base: Snapshot | null, scales: IdleScales = {}) {
     this.rig = rig;
     this.base = base;
@@ -58,6 +63,11 @@ export class IdleLife {
     this.glancePeriodMs = rng.range(4600, 9200);
     this.glanceOffsetMs = rng.range(0, this.glancePeriodMs);
     this.fidgetPhase = rng.range(0, TAU);
+    // Ready-crouch pump (fielders): drawn unconditionally so every instance
+    // consumes the same rng count whatever its scales say.
+    this.bobAmp = rng.range(0.07, 0.13) * (scales.bob ?? 0);
+    this.bobHz = rng.range(0.13, 0.21);
+    this.bobPhase = rng.range(0, TAU);
   }
 
   /** Piecewise glance: ease out to the side, hold, ease back, rest. */
@@ -94,6 +104,20 @@ export class IdleLife {
     const f = Math.sin(TAU * 0.19 * t + this.fidgetPhase) * 0.035;
     rig.add('armL', 0, 0, f);
     rig.add('armR', 0, 0, -f);
+
+    // Ready-crouch pump (verdict-005 fix 3): knees pulse, hips dip with them,
+    // elbows flex against the pulse — each fielder on his own rng phase, so no
+    // two ever photograph in the same instant of the bounce.
+    if (this.bobAmp > 0) {
+      const p = Math.sin(TAU * this.bobHz * t + this.bobPhase);
+      rig.add('kneeL', this.bobAmp * p, 0, 0);
+      rig.add('kneeR', this.bobAmp * p, 0, 0);
+      rig.add('legL', -this.bobAmp * 0.5 * p, 0, 0);
+      rig.add('legR', -this.bobAmp * 0.5 * p, 0, 0);
+      rig.addHipsPos(0, -this.bobAmp * 0.55 * (p + 1) * 0.5);
+      rig.add('elbowL', -this.bobAmp * 1.3 * Math.sin(TAU * this.bobHz * t + this.bobPhase + 0.9), 0, 0);
+      rig.add('elbowR', -this.bobAmp * 1.3 * Math.sin(TAU * this.bobHz * t + this.bobPhase + 1.4), 0, 0);
+    }
 
     // Glances.
     rig.add('head', 0, this.glance(tMs), 0);
