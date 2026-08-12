@@ -278,6 +278,20 @@ previous build shipped eyes 38% too small. Use it to settle the questions eye
 scoring keeps getting wrong: the same Junebug board drew 4,4,4,4,4,3 from one
 reviewer and 3,4,3,3,3,3 from the next.
 
+Two of its outputs need reading correctly. `NOT MEASURED` is **not** a pass: it
+means the detector could not take that measurement on this character — the
+head/neck metrics report it when the silhouette has no pinch between crown and
+shoulders, which is a fact about a kid drawn without much neck. And the command
+refuses outright, rather than reporting, when it cannot separate the turnaround's
+front view from the rest of the sheet; fix the sheet, never the tolerance,
+because the alternative is eight numbers measured across three collaged views.
+
+The id a character is registered under and the slug their art was drawn under
+differ for eleven of the thirty. `scripts/v2/character-registry.json` is the one
+place that mapping lives — the `.mjs` tooling, the two Blender scripts and
+`measure:fidelity` all read it, and `character-registry.test.js` binds it to
+`ROSTER`. Add a character there before expecting any tool to find their board.
+
 `/v2/?spike=1&roster=1` is the one-frame roster review; use
 `/v2/?spike=1&kid=turbo` for a single-character field review.
 
@@ -469,6 +483,7 @@ scripts/v2/          The asset gates: glb read/write, exporter, validator, lints
 ## What's next
 
 - A real backend to aggregate pick rates across all players
-- Start Batch 2—Turbo, Sprout and Zippy—through the proven character process
+- Sculpt the other 29 characters in batches of five (Tank, Grizz, Sprout, Bubbles
+  and Chip first — they retire the most shared hair, garment and accessory work)
 - Online-play polish: remote steal-reaction taps, guest relief, rematch
 - Eventually… the dinosaurs 🦖
