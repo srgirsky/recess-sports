@@ -2,15 +2,38 @@
 // ★ A Blender source that is downstream of its runtime GLB is not a source.
 //
 // This gate binds each finished delivery to the exact .blend and approved
-// turnaround that produced it, requires a six-category side-by-side review,
-// and keeps Batch 2 paused while any of the six already-produced characters is
-// still labelled needs-polish. It also makes `export:roster-kid` unable to
-// silently overwrite an authored character: the runtime hash goes red.
+// turnaround that produced it, and requires a six-category side-by-side review.
+// It also makes `export:roster-kid` unable to silently overwrite an authored
+// character: the runtime hash goes red.
 //
-// Broken deliberately while writing the gate: changing Mimi's receipt hash
-// reported "runtime hash differs"; removing hairMass reported the missing
-// category; setting batch2Status to active while Tank needed polish reported
-// the unsafe unlock. The tests below retain those mutations as fixtures.
+// ★ DELIBERATE RULE CHANGE, 2026-08-12: the serialization clause is gone and the
+// review clauses got stronger.
+//
+// This file used to hold `batch2Status`, which required the flag to read
+// 'paused' while any character was not yet approved. Two things were wrong with
+// it. It could only ever hold one value, because the condition stays true until
+// all thirty are approved, at which point there is no batch to pause — a flag
+// with one reachable value is a sentence of prose in a test's clothing. And it
+// was believed to be what serialized production, which it never was: `baseline`
+// is the registry's authored set, so registering a new character makes them a
+// member rather than an `extra`, and one-character-per-PR lived only in the
+// playbook's prose. Production now runs in batches of five; see
+// `docs/v2/character-production-playbook.md`.
+//
+// What replaces it is per character and enforces the thing the flag was reaching
+// for — that a character cannot be CALLED finished on evidence that does not
+// describe it. `scoredBoardSha256` binds the six scores to the board's bytes,
+// and `measuredFidelity` must record a real `measure:fidelity` run against that
+// same board. That is the Mimi failure made mechanical instead of remembered.
+// The four finished-work mesh checks stop being keyed on Junebug's id and follow
+// the claim instead, so the second sculpt is checked as hard as the first.
+//
+// Broken deliberately, each demanding its own message: changing Mimi's receipt
+// hash reported "runtime hash differs"; removing hairMass reported the missing
+// category; re-rendering the board after scoring reported the unbound scores;
+// deleting `measuredFidelity` reported the missing run; and pointing it at
+// another character's board reported the mismatch. The tests below retain those
+// mutations as fixtures.
 // ---------------------------------------------------------------------------
 
 import { createHash } from 'node:crypto';
@@ -38,7 +61,6 @@ function sha(path) {
 function stateErrors(production, reviews) {
   const errors = [];
   const expectedCategories = reviews.categories ?? [];
-  const pending = [];
   for (const id of baseline) {
     const config = AUTHORED_CHARACTERS[id];
     const record = production.characters?.[id];
@@ -55,12 +77,42 @@ function stateErrors(production, reviews) {
     if (!existsSync(source) || sha(source) !== record.sourceSha256) errors.push(`${id}: Blender source hash differs`);
     if (!existsSync(concept) || sha(concept) !== record.conceptSha256) errors.push(`${id}: concept hash differs`);
     if (!existsSync(output) || sha(output) !== record.outputSha256) errors.push(`${id}: runtime hash differs`);
-    if (!existsSync(join(conceptsDir, review.evidence ?? ''))) errors.push(`${id}: fidelity evidence is missing`);
-    if (review.status === 'candidate' || review.status === 'approved') {
+    const evidencePath = join(conceptsDir, review.evidence ?? '');
+    if (!existsSync(evidencePath)) errors.push(`${id}: fidelity evidence is missing`);
+    const claimsFinished = review.status === 'candidate' || review.status === 'approved';
+    if (claimsFinished) {
       if (!existsSync(join(conceptsDir, review.heroEvidence ?? ''))) errors.push(`${id}: authored-model hero evidence is missing`);
       const animationEvidence = review.animationEvidence ?? [];
       if (animationEvidence.length < 2 || animationEvidence.some((name) => !existsSync(join(conceptsDir, name)))) {
         errors.push(`${id}: run/contact authored-model evidence is missing`);
+      }
+      // ★ THE SCORES ARE BOUND TO THE BOARD THEY WERE READ OFF.
+      //
+      // This is the Mimi failure made mechanical. Her approval was revoked
+      // because manually entered scores did not prove visual fidelity — and the
+      // structural half of that is that a score can outlive the asset it
+      // describes. Re-sculpt, re-export, do not re-score, and the record still
+      // reads 4/5 with a note describing a mesh that no longer exists. Nothing
+      // caught it, because every hash in the receipt tracked the ASSET and no
+      // hash tracked the REVIEW.
+      //
+      // The board renders the shipped GLB, so binding the scores to the board's
+      // bytes binds them to the delivery. Note the ordering trap this creates
+      // and does not remove: the board PRINTS the scores and the status, so the
+      // hash has to be taken from a board rendered AFTER the scores are written.
+      if (!existsSync(evidencePath) || review.scoredBoardSha256 !== sha(evidencePath)) {
+        errors.push(`${id}: the six scores are not bound to the current fidelity board`);
+      }
+      // Rubric §6b: the measurement settles what it covers BEFORE a 1-5 score is
+      // discussed. Four rounds on Junebug produced 4,4,4,4,4,3 from one reviewer
+      // and 3,4,3,3,3,3 from the next on barely-changed evidence, and a verdict
+      // asserted a shoe colour nobody had measured. Requiring the run is what
+      // makes "where a number exists, the number wins" checkable.
+      const measured = review.measuredFidelity;
+      if (!measured?.ranAt?.trim() || !measured?.result?.trim()) {
+        errors.push(`${id}: no measure:fidelity run recorded — run it before scoring §3`);
+      } else if (measured.board !== review.evidence) {
+        errors.push(`${id}: the measure:fidelity run cites a different board than the review`);
       }
     }
 
@@ -78,15 +130,20 @@ function stateErrors(production, reviews) {
       }
     }
     if (review.status === 'approved') {
-      const evidencePath = join(conceptsDir, review.evidence ?? '');
       if (!review.approvedBy?.trim() || !review.approvedAt?.trim()) {
         errors.push(`${id}: approval requires an explicit human approver and timestamp`);
       }
       if (!existsSync(evidencePath) || review.approvedEvidenceSha256 !== sha(evidencePath)) {
         errors.push(`${id}: approval is not bound to the current fidelity board`);
       }
+      // An agent may only ever write `candidate` (the playbook's rule). The
+      // record of who looked and what they said is therefore the one field an
+      // agent cannot manufacture, and it was carried by Junebug and checked by
+      // nobody.
+      if (!review.humanReview?.reviewer?.trim() || !review.humanReview?.verdict?.trim()) {
+        errors.push(`${id}: approval requires a humanReview reviewer and verdict`);
+      }
     }
-    if (review.status !== 'approved') pending.push(id);
 
     if (existsSync(output)) {
       const gltf = readGlb(output);
@@ -94,7 +151,23 @@ function stateErrors(production, reviews) {
       if (authored?.sourceSha256 !== record.sourceSha256 || authored?.conceptSha256 !== record.conceptSha256) {
         errors.push(`${id}: GLB provenance differs from its receipt`);
       }
-      if (id === 'nostrike') {
+      // ★ THESE ARE FINISHED-CHARACTER RULES, NOT JUNEBUG FACTS.
+      //
+      // They were gated on `id === 'nostrike'` because she was the only one who
+      // could pass them — the other five are procedural bootstraps with no
+      // authored wardrobe blocks and no finger volumes. But "a signature palette
+      // is declared", "team colour is confined to one accent surface", "the hands
+      // have knuckles" and "the arms deform across two bones" are the rubric's
+      // items 2.3, 3.11 and 4.3 for every character, and pinning them to one id
+      // meant the second sculpt would have been checked by nothing.
+      //
+      // So the gate follows the CLAIM instead of the name: anything marked
+      // `candidate` or `approved` is asserting it is finished and gets the
+      // finished-work checks. `needs-polish` is exempt by definition, which is
+      // what it means. This is strictly stronger than the id test it replaces —
+      // today it covers the same one character, and it covers each new one the
+      // moment a sculptor claims it is done.
+      if (claimsFinished) {
         const materials = gltf.json.materials ?? [];
         const uniformIndex = materials.findIndex((material) => material.name === 'M_Uniform');
         const accessory = materials.find((material) => material.name === 'M_Accessory');
@@ -153,11 +226,29 @@ function stateErrors(production, reviews) {
     }
   }
 
+  // ★ `batch2Status` IS RETIRED, AND THE REASON IS THAT IT COULD ONLY EVER HOLD
+  // ONE VALUE.
+  //
+  // It read: if anything is not `approved`, `batch2Status` must be `'paused'`.
+  // `pending` counts `candidate` too, so the field was pinned to `'paused'`
+  // until all thirty characters were approved — at which point there is no batch
+  // 2 left to pause. A flag with one reachable value is not a gate; it is a
+  // sentence from the playbook copied into a test, and it read as protection
+  // that was not there.
+  //
+  // What it never did was stop parallel work, which is what everyone believed it
+  // did. `baseline` is the registry's authored set, so registering a new kid
+  // makes them a baseline member rather than an `extra`, and the serialization
+  // rule this was standing in for lived only in the playbook's prose. That rule
+  // is now deliberately changed (batches of five), and the protection it was
+  // reaching for — that a character cannot be called finished on stale or
+  // unmeasured evidence — is enforced above, per character, by the board hash
+  // and the measurement record.
+  //
+  // The `extras` check stays: a production receipt for a character with no
+  // registry entry is a file nothing can render, score or ship.
   const extras = Object.keys(production.characters ?? {}).filter((id) => !baseline.includes(id));
-  if ((pending.length || extras.length) && reviews.batch2Status !== 'paused') {
-    errors.push(`Batch 2 must stay paused; pending=${pending.join(',')} extra=${extras.join(',')}`);
-  }
-  if (extras.length && pending.length) errors.push(`new characters exported before retrofit approval: ${extras.join(',')}`);
+  if (extras.length) errors.push(`production receipts with no registry entry: ${extras.join(',')}`);
   return errors;
 }
 
@@ -178,10 +269,61 @@ describe('Blender-authored character provenance and fidelity gate', () => {
     expect(stateErrors(receipt, broken)).toContain('mimi_mash: fidelity categories differ from the required set');
   });
 
-  it('fires when Batch 2 is unlocked before the retrofit is approved', () => {
+  it('fires on a production receipt for a character the registry does not know', () => {
+    const broken = structuredClone(receipt);
+    broken.characters.not_a_kid = structuredClone(broken.characters.nostrike);
+    expect(stateErrors(broken, fidelity)).toContain('production receipts with no registry entry: not_a_kid');
+  });
+
+  // ★ The Mimi failure, mechanised: scores that outlive the asset they describe.
+  it('does not let the six scores float free of the board they were read off', () => {
     const broken = structuredClone(fidelity);
-    broken.batch2Status = 'active';
-    expect(stateErrors(receipt, broken).some((error) => error.startsWith('Batch 2 must stay paused'))).toBe(true);
+    broken.characters.nostrike.scoredBoardSha256 = '0'.repeat(64);
+    expect(stateErrors(receipt, broken)).toContain(
+      'nostrike: the six scores are not bound to the current fidelity board',
+    );
+  });
+
+  it('refuses a scored character with no measure:fidelity run behind it', () => {
+    const broken = structuredClone(fidelity);
+    delete broken.characters.nostrike.measuredFidelity;
+    expect(stateErrors(receipt, broken)).toContain(
+      'nostrike: no measure:fidelity run recorded — run it before scoring §3',
+    );
+  });
+
+  it('refuses a measurement taken against another character’s board', () => {
+    const broken = structuredClone(fidelity);
+    broken.characters.nostrike.measuredFidelity.board = 'tank-fidelity-review.png';
+    expect(stateErrors(receipt, broken)).toContain(
+      'nostrike: the measure:fidelity run cites a different board than the review',
+    );
+  });
+
+  it('refuses an approval with no human reviewer behind it', () => {
+    const broken = structuredClone(fidelity);
+    delete broken.characters.nostrike.humanReview;
+    expect(stateErrors(receipt, broken)).toContain(
+      'nostrike: approval requires a humanReview reviewer and verdict',
+    );
+  });
+
+  // The four mesh rules used to be keyed on `id === 'nostrike'`. Promoting a
+  // procedural bootstrap without sculpting it must now fail on the GEOMETRY,
+  // rather than pass because it is not Junebug.
+  //
+  // ⚠️ Asserting merely that some `tank:` error appears would be tautological:
+  // flipping the status also trips the hero, animation, board-hash and
+  // measurement clauses, so the test would stay green with the mesh rules
+  // deleted. It names them.
+  it('applies the finished-work mesh rules to any character that claims to be finished', () => {
+    const broken = structuredClone(fidelity);
+    broken.characters.tank.status = 'candidate';
+    const errors = stateErrors(receipt, broken);
+    expect(errors).toContain('tank: signature palette is not declared on M_Uniform');
+    expect(errors).toContain('tank: no deliberate team-accent surface is declared');
+    expect(errors).toContain('tank: signature wardrobe colour blocks did not survive export');
+    expect(errors).toContain('tank: LeftHandThumb1 has no authored finger volume');
   });
 
   // ⚠️ THIS FIXTURE STRIPS THE APPROVAL FIELDS ON PURPOSE. It used to flip
