@@ -23,7 +23,7 @@ from mathutils import Vector
 REPO = Path.cwd()
 OUTPUT = REPO / "assets/v2/source/junebug-pilot.blend"
 FACE_ATLAS = REPO / "assets/v2/source/junebug-face-atlas.png"
-REVISION = "junebug-turnaround-fidelity-v16"
+REVISION = "junebug-turnaround-fidelity-v17"
 SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 
 
@@ -1463,12 +1463,42 @@ def build_arm(builder: MeshBuilder, side: int, prefix: str, detail: int) -> None
             builder.face((tip, rows[-1][nxt], rows[-1][index]), 0)
 
 
+# --- The stance ---------------------------------------------------------------
+#
+# ★ THE LEGS SPLAY, AND THE SPLAY IS MEASURED OFF THE TURNAROUND. Every ring
+# below used to sit on a vertical line at x 0.225, which put the ankles as far
+# apart as the hip joints, and `npm run measure:fidelity -- nostrike` read 30.2%
+# ankle daylight against the concept's 46.9% — the one metric the round-4 build
+# could not clear. Fitting a line through the concept's drawn leg centreline
+# gives 0.2075ft at the hip and 0.386ft at the ankle: a 6.75° splay, and a hip
+# end that lands on the canonical rig's own hip joint. So the drawing and the
+# rig disagreed about exactly one thing and it was this.
+#
+# `src/v2/render/skeleton.ts` now carries the same splay in the bone chain, so
+# the mesh sits on its bones rather than beside them. The 0.025ft the mesh has
+# always run OUTBOARD of the bone is preserved by anchoring here at 0.225 rather
+# than at the joint's 0.20, which is also what keeps every pelvis margin the
+# seat loft earned below intact.
+#
+# Nothing at or above HIP_Z moves: the thigh tops are buried in the seat, and
+# two v9 boards showed what happens to that burial when the margin goes.
+LEG_HIP_X = 0.225
+LEG_HIP_Z = 1.600  # the Hips->UpLeg joint, in the same feet as the rig
+LEG_ANKLE_Z = 0.095  # the Leg->Foot joint
+LEG_SPLAY = 0.1184  # feet outboard per foot of drop; atan -> 6.75 degrees
+
+
+def leg_x(z: float) -> float:
+    """The leg's centreline at height `z` — one straight splayed line, so the
+    knee is a point ON it rather than a kink in it."""
+    return LEG_HIP_X + LEG_SPLAY * max(0.0, LEG_HIP_Z - z)
+
+
 def build_leg(builder: MeshBuilder, side: int, prefix: str, detail: int) -> None:
     """Hip-to-ankle as ONE stitched surface: salmon pant, gathered darker
     knicker cuff and long red sock are colour bands with boundary ring pairs.
     Round 1 stacked pant tube + cuff torus + sock tube, and each junction was
     a visible seam ring or an open shell edge."""
-    x0 = 0.225 * side
     up, low, foot = f"{prefix}UpLeg", f"{prefix}Leg", f"{prefix}Foot"
     if detail >= 2:
         rings_spec: list[tuple[float, float, float, tuple, str | dict[str, float]]] = [
@@ -1517,14 +1547,17 @@ def build_leg(builder: MeshBuilder, side: int, prefix: str, detail: int) -> None
         sides = 6
     rows: list[list[int]] = []
     for z, radius, y_c, color, bone in rings_spec:
+        cx = leg_x(z) * side
         row = []
         for index in range(sides):
             theta = 2 * pi * index / sides
-            row.append(builder.vertex((x0 + radius * cos(theta), y_c + radius * sin(theta), z), color, bone))
+            row.append(builder.vertex((cx + radius * cos(theta), y_c + radius * sin(theta), z), color, bone))
         rows.append(row)
     builder.grid(rows, 1)
-    bottom = builder.vertex((x0, rings_spec[0][2], rings_spec[0][0]), SOCK, rings_spec[0][4])
-    top = builder.vertex((x0, 0.0, rings_spec[-1][0]), PANTS, rings_spec[-1][4])
+    bottom = builder.vertex(
+        (leg_x(rings_spec[0][0]) * side, rings_spec[0][2], rings_spec[0][0]), SOCK, rings_spec[0][4]
+    )
+    top = builder.vertex((leg_x(rings_spec[-1][0]) * side, 0.0, rings_spec[-1][0]), PANTS, rings_spec[-1][4])
     for index in range(sides):
         nxt = (index + 1) % sides
         builder.face((bottom, rows[0][nxt], rows[0][index]), 1)
@@ -1539,7 +1572,9 @@ def build_shoe(builder: MeshBuilder, side: int, prefix: str, detail: int, segmen
     and a same-colour overlap has no visible seam. The outsole stays real
     geometry, deliberately PROUD of the upper all round — an outsole lip the
     art draws, not a z-fight."""
-    x0 = 0.225 * side
+    # The whole shoe is one rigid form on `Foot`, so it takes the leg's
+    # centreline at the ANKLE and does not splay within itself.
+    x0 = leg_x(LEG_ANKLE_Z) * side
     foot = f"{prefix}Foot"
     if detail == 0:
         builder.ellipsoid((x0, -0.16, 0.20), (0.25, 0.38, 0.17), 1, SHOE, foot, segments, rings, flatten_sole=True)
@@ -2095,7 +2130,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     # (~0.39 of the figure). A first v9 pass tapered the loft down to 1.38,
     # and everywhere the shrinking ellipse got shallower than the thigh tubes
     # the thighs surfaced through the front wall as pale "bottle" shapes. At
-    # every level here the wall at the thigh's centreline (x 0.225) is deeper
+    # every level here the wall at the thigh's centreline (x leg_x(z)) is deeper
     # than the thigh's 0.20 front reach, so the seat is always the front
     # surface and the thighs emerge only at the flat underside.
     # ry 0.25 low down, not 0.235: the binding margin is at the thigh's OUTER
@@ -2104,7 +2139,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     # v9 boards each showed the graze as pale thigh strips surfacing through
     # the seat.
     # rx eased 0.450 -> 0.442 through the seat: the 0.035 ledge where the
-    # pelvis wall overhung the thighs' outer line (0.225 + 0.194) was the
+    # pelvis wall overhung the thighs' outer line (leg_x(z) + 0.194) was the
     # bottom step of the skirt read. 0.442 keeps the thigh-shoulder margin
     # (wall depth at x 0.31 is 0.178 vs the thigh's 0.163 reach) while the
     # hip-to-leg transition narrows to a crease.
@@ -2121,19 +2156,31 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         # a flat disc at z 1.50 that the thigh tubes butted into.
         #
         # ⚠️ ONLY THE RINGS ABOVE z 1.72 MAY NARROW. Everything at or below it
-        # has to bury the thigh tops (top ring z 1.72, r 0.184 at x 0.225), and
+        # has to bury the thigh tops (top ring z 1.72, r 0.184 at x leg_x(1.72),
+        # which the splay leaves at 0.225 because it starts at the hip joint), and
         # the two previous v9 boards each showed what happens when that margin
         # goes: pale thigh strips surfacing through the seat. So the waist is cut
         # entirely above the legs, and the seat's underside gets a two-ring
         # chamfer instead — small enough at x 0.31 to stay inside the thigh, so
         # the hip-to-leg transition becomes a crease rather than a butt joint.
+        # ⚠️ THE RINGS BELOW THE HIP JOINT FOLLOW THE THIGHS OUT. Every rx from
+        # 1.418 to 1.56 carries `+ LEG_SPLAY * (LEG_HIP_Z - z)` — the exact
+        # distance the thigh's centreline moved when the legs gained their
+        # splay. Holding them still would have spent the whole burial margin at
+        # once: the seat's binding constraint is the thigh's OUTER shoulder, and
+        # at 1.50 the clearance is 0.019, so a thigh moving out 0.012 with a
+        # wall that did not leaves 0.007 — the "pale thigh strips surfacing
+        # through the seat" both v9 boards showed. Moving the wall by the same
+        # amount keeps the margin AND keeps the overhang, which is the other
+        # thing these numbers are tuned against (0.035 of ledge read as the
+        # bottom step of a skirt).
         pelvis_levels = [
-            (1.418, 0.232, 0.158, "Hips"),
-            (1.442, 0.322, 0.216, "Hips"),
-            (1.462, 0.376, 0.250, "Hips"),
-            (1.480, 0.404, 0.266, "Hips"),
-            (1.50, 0.422, 0.276, "Hips"),
-            (1.56, 0.418, 0.290, "Hips"),
+            (1.418, 0.232 + LEG_SPLAY * (LEG_HIP_Z - 1.418), 0.158, "Hips"),
+            (1.442, 0.322 + LEG_SPLAY * (LEG_HIP_Z - 1.442), 0.216, "Hips"),
+            (1.462, 0.376 + LEG_SPLAY * (LEG_HIP_Z - 1.462), 0.250, "Hips"),
+            (1.480, 0.404 + LEG_SPLAY * (LEG_HIP_Z - 1.480), 0.266, "Hips"),
+            (1.50, 0.422 + LEG_SPLAY * (LEG_HIP_Z - 1.50), 0.276, "Hips"),
+            (1.56, 0.418 + LEG_SPLAY * (LEG_HIP_Z - 1.56), 0.290, "Hips"),
             (1.62, 0.408, 0.304, "Hips"),
             (1.71, 0.382, 0.308, "Hips"),
             # 1.745 is a NEW level and it is the belt's shelf. The first v13
@@ -2168,8 +2215,8 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         ]
         if detail == 1:
             pelvis_levels = [
-                (1.460, 0.350, 0.246, "Hips"),
-                (1.50, 0.422, 0.276, "Hips"),
+                (1.460, 0.350 + LEG_SPLAY * (LEG_HIP_Z - 1.460), 0.246, "Hips"),
+                (1.50, 0.422 + LEG_SPLAY * (LEG_HIP_Z - 1.50), 0.276, "Hips"),
                 (1.62, 0.408, 0.304, "Hips"),
                 (1.770, 0.360, 0.286, "Hips"),
                 (1.777, 0.368, 0.293, "Hips"),

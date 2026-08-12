@@ -110,7 +110,32 @@ describe('the canonical skeleton', () => {
   it('pins the bind pose against a 2mm nudge', () => {
     // The validator hashes a delivered model against this. Changing the rig is
     // allowed; changing it silently, after clips exist, is not.
-    expect(bindPoseHash()).toBe('75b5610f');
+    // 75b5610f -> ea5ecbcd on 2026-08-11: the legs gained their 6.75° splay.
+    expect(bindPoseHash()).toBe('ea5ecbcd');
+  });
+
+  it('plants the feet as wide as the concept art draws them', () => {
+    // The rig ran both legs straight down for months, so every kid's ankles sat
+    // exactly as far apart as her hip JOINTS and the shipped model measured 30%
+    // ankle daylight against the turnaround's 47%. This is the assertion that
+    // stops it reverting to vertical during an unrelated leg edit, and it is a
+    // BAND rather than a value so the splay can be re-measured without a
+    // re-write. Provenance: `render.legStance` in scripts/measures.json.
+    const w = bindWorld();
+    const hip = Math.abs(w.get('LeftUpLeg')![0]);
+    const ankle = Math.abs(w.get('LeftFoot')![0]);
+    expect(ankle).toBeGreaterThan(hip * 1.6);
+    expect(ankle).toBeLessThan(hip * 2.2);
+
+    // Splayed, not bent: one straight line from hip to ankle, or the knee reads
+    // as a kink and every clip inherits it.
+    const knee = Math.abs(w.get('LeftLeg')![0]);
+    const t = (w.get('LeftUpLeg')![1] - w.get('LeftLeg')![1]) /
+      (w.get('LeftUpLeg')![1] - w.get('LeftFoot')![1]);
+    expect(knee).toBeCloseTo(hip + t * (ankle - hip), 3);
+
+    // The toes still point straight down the +Z the contract promises.
+    expect(w.get('LeftToeBase')![0]).toBeCloseTo(w.get('LeftFoot')![0], 9);
   });
 
   it('lands every prop anchor on the body part it is named for', () => {
@@ -495,7 +520,12 @@ describe('the proxy draws a kid, not a bobblehead', () => {
     // ends and the narrow neck does not reach — correctly — so the claim is
     // about the LOWEST span only: one unbroken run of shoe, shin, thigh and
     // pelvis from the ground to the hip joint.
-    const spans = spansOf(kidWith('bald', 'none'), -0.2, 0.011);
+    //
+    // Sampled at the KNEE's x, not the hip's: since the legs splay the leg is a
+    // diagonal, and a vertical ray dropped from the hip joint now leaves the
+    // shin before it reaches the floor — which is a fact about the ray, not a
+    // hole in the kid. The knee is the one column inside all three volumes.
+    const spans = spansOf(kidWith('bald', 'none'), bindWorld().get('LeftLeg')![0], 0.011);
     const [bottom, top] = spans[0];
     expect(bottom, `shoe off the ground; spans break at ${gapsIn(spans)}`).toBeLessThan(0.05);
     expect(top, `the leg breaks at ${gapsIn(spans)}`).toBeGreaterThan(bindWorld().get('Hips')![1]);

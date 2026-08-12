@@ -269,6 +269,31 @@ reviewer and 3,4,3,3,3,3 from the next.
 `/v2/?spike=1&roster=1` is the one-frame roster review; use
 `/v2/?spike=1&kid=turbo` for a single-character field review.
 
+### Changing the canonical rig
+
+`src/v2/render/skeleton.ts` is the bind pose every delivered model is hashed
+against, so editing it makes all 30 deliveries and all six authored `.blend`
+sources stale at once. The order that works:
+
+```bash
+npm run retarget:rig -- --dry-run   # what would move, in mm, per source
+npm run retarget:rig                # move the .blend armatures AND their skins
+npm run export:skeleton             # the rig the artist is handed
+npm run export:roster-kid           # the 24 procedural kids follow the table
+npm run export:authored-character -- <id>   # once per authored character
+npm run export:animations && npm run manifest:models && npm run validate:models
+```
+
+`retarget:rig` is the step with no substitute. A mesh is bound to the rest pose
+it was skinned against; move the bones out from under it and the bind-pose board
+looks unchanged, `validate:models` is satisfied by the new bind pose, and every
+clip afterwards rotates those vertices about a pivot that is no longer inside
+them. So it moves each vertex by the weighted sum of its own bones'
+displacement. It is idempotent — a source already on-spec reports nothing to
+move — and `-- --dry-run` changes nothing. Note that `export:proxy-kid` writes
+five sample kids including `wheelchair_ace`, which is authored, so re-run
+`export:authored-character -- wheelchair_ace` after it.
+
 ### Pinning BB2026 parity stills
 
 ```bash
