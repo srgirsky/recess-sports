@@ -460,10 +460,23 @@ function swingContact(spec: ClipSpec): AnimationClip {
 // writes only these names to `anims_nostrike_v1.glb`, so every other kid and
 // every other clip continues to use the shared library.
 
+// ⚠️ NO Z-ROLL ON THE UPPER LEGS. This pose carried `lu: [2, 0, 8]` and
+// `ru: [-2, 0, -8]`, authored when the rig ran both legs straight down from the
+// hip: an 8-degree adduction read as a relaxed stance back then. The rig now
+// carries the concept's own 6.75-degree splay (`render.leg-stance` in
+// scripts/measures.json), and against it that roll is a 57% CLOSURE — FK on the
+// delivered clip measured the ankles at 0.325ft against the bind pose's 0.756,
+// which put the thighs and calves into one fused mass and failed rubric 3.12 in
+// idle while the bind pose and the run both passed.
+//
+// It is worth knowing how it hid: 3.12's AUTO half is `measure:fidelity`, which
+// reads the BIND-pose front render, and that render was and is correct. Only a
+// reviewer looking at the idle still could see it. If the splay is ever
+// re-tuned, sweep the signature poses for leg z-terms first.
 const JUNEBUG_IDLE_POSE: Pose = {
   hp: [-2, -4, 0], sp: [-2, -2, 0], s2: [-3, -4, 0], nk: [2, 0, 0], hd: [1, 7, -1],
   la: [-3, 0, 72], lf: [0, 15, 0], ra: [-3, 0, -72], rf: [0, -15, 0],
-  lu: [2, 0, 8], ru: [-2, 0, -8],
+  lu: [2, 0, 0], ru: [-2, 0, 0],
 };
 
 const JUNEBUG_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
@@ -682,10 +695,17 @@ function junebugUpsetFierce(spec: ClipSpec): AnimationClip {
 // partial delivery carries the five high-frequency baseball clips plus the
 // complete priority set from the performance packet.
 
+// The same leg z-roll Junebug's idle carried (see the note there) was authored
+// into all five signature idles when the rig ran its legs straight down. FK over
+// the delivered clips measured what it costs now that the rig splays: Theo -60%,
+// Big Lou -56%, Tank -68%, Mimi -55% of bind-pose ankle separation, every one of
+// them a fused-leg mass in idle against a turnaround that draws the stance wide
+// (Theo's own drawn leg centreline is the widest on the roster at 0.398ft).
+// Removed on all of them together, because they are one defect.
 const THEO_IDLE_POSE: Pose = {
   hp: [-5, -8, 0], sp: [-6, -8, 0], s2: [-8, -10, 0], nk: [2, 5, 0], hd: [-3, 13, 2],
   la: [-8, 0, 65], lf: [0, -24, 0], ra: [-8, 0, -65], rf: [0, 24, 0],
-  lu: [-3, 0, 9], ru: [3, 0, -9],
+  lu: [-3, 0, 0], ru: [3, 0, 0],
 };
 
 const THEO_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
@@ -946,7 +966,7 @@ function zoomUpsetCool(spec: ClipSpec): AnimationClip {
 const LOU_IDLE_POSE: Pose = {
   hp: [6, -3, 0], sp: [5, -2, 0], s2: [8, -3, 0], nk: [-2, 2, 0], hd: [-4, 7, 1],
   la: [8, 0, 67], lf: [0, -18, 0], ra: [8, 0, -67], rf: [0, 18, 0],
-  lu: [5, 0, 8], ll: [-7, 0, 0], ru: [5, 0, -8], rl: [-7, 0, 0],
+  lu: [5, 0, 0], ll: [-7, 0, 0], ru: [5, 0, 0], rl: [-7, 0, 0],
 };
 
 const LOU_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
@@ -1085,7 +1105,7 @@ function louUpsetGoofy(spec: ClipSpec): AnimationClip {
 const TANK_IDLE_POSE: Pose = {
   hp: [12, 0, 0], sp: [8, 0, 0], s2: [11, 0, 0], hd: [4, 3, 0],
   la: [12, 0, 72], lf: [0, -12, 0], ra: [12, 0, -72], rf: [0, 12, 0],
-  lu: [12, 0, 10], ll: [-18, 0, 0], ru: [12, 0, -10], rl: [-18, 0, 0],
+  lu: [12, 0, 0], ll: [-18, 0, 0], ru: [12, 0, 0], rl: [-18, 0, 0],
 };
 const TANK_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
   hp: [17, -10, 0], sp: [12, -7, 0], s2: [16, -12, 0], hd: [5, 7, 0],
@@ -1136,7 +1156,7 @@ function tankIdleFidget(spec: ClipSpec): AnimationClip {
 const MIMI_IDLE_POSE: Pose = {
   hp: [9, -5, 0], sp: [5, -4, 0], s2: [8, -7, 0], hd: [-5, 7, 0],
   la: [7, 0, 62], lf: [0, -9, 0], ra: [7, 0, -62], rf: [0, 9, 0],
-  lu: [11, 0, 8], ll: [-16, 0, 0], ru: [11, 0, -8], rl: [-16, 0, 0],
+  lu: [11, 0, 0], ll: [-16, 0, 0], ru: [11, 0, 0], rl: [-16, 0, 0],
 };
 const MIMI_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
   hp: [21, -15, 0], sp: [15, -11, 0], s2: [20, -18, 0], hd: [-7, 14, 0],

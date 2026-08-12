@@ -42,7 +42,13 @@ const CAPTURES = [
   // level with no swing" off frame 16/24, which is a PASS, where straight arms
   // are what the pose means. Every run cycle in proceduralClips.ts now peaks a
   // quarter of the way through, so frame 25% is a full stretch for all of them.
-  { clip: 'run', out: 'run', settleMs: 1200, atFrameFrac: 0.25 },
+  // ⚠️ TARGETED TWO FRAMES EARLY ON PURPOSE. `page.screenshot()` is not
+  // instantaneous and the clip keeps running underneath it: aiming at the
+  // reach (frame 6 of 24) delivered frame 8, a near-crossing pose whose foot
+  // split is 0.36ft against the cycle's own 2.89ft maximum — the least
+  // informative frame in the loop, and the second round in a row where the
+  // still argued against the animation. 0.17 lands the SHOT on the reach.
+  { clip: 'run', out: 'run', settleMs: 1200, atFrameFrac: 0.17 },
   // Screenshot at the marker: wait until the readout's CURRENT frame reaches
   // the clip's declared marker frame. The spike's '◉ MARKER' flash fires on
   // an exact frame-equality check, and a headless renderer running below full
@@ -50,6 +56,17 @@ const CAPTURES = [
   // exactly that way. The static '· CONTACT@7' annotation alone must never
   // satisfy the wait either, or the still shows the load instead of contact.
   { clip: 'swing_contact', out: 'swing', atMarker: true },
+  // ★ THE EXPRESSION SHEET, which rubric 3.14 asks for by name and which no
+  // surface produced until now: "lips, teeth and tongue where a cell opens the
+  // mouth, never a stroke that collapses to a line", judged in gameplay
+  // lighting. Two consecutive reviews had to record 3.14 as unverifiable — not
+  // a finding about any character, a hole in the instrument. `grin`, `cheer`
+  // and `tongue` are the three cells that open the mouth; `angry` is here
+  // because it is the beat the draft card and the pitch reaction lean on.
+  { clip: 'idle', out: 'face-grin', settleMs: 500, face: 'grin' },
+  { clip: 'idle', out: 'face-cheer', settleMs: 500, face: 'cheer' },
+  { clip: 'idle', out: 'face-tongue', settleMs: 500, face: 'tongue' },
+  { clip: 'idle', out: 'face-angry', settleMs: 500, face: 'angry' },
 ];
 
 function startVite() {
@@ -87,6 +104,19 @@ async function captureCharacter(page, id, slug) {
   for (const capture of CAPTURES) {
     const row = page.locator('.anim-list button', { hasText: capture.clip }).first();
     await row.click();
+    if (capture.face) {
+      // Click the face button round to the named cell. It cycles FACE_CELLS in
+      // order and prints the current cell, so this is a wait-and-press rather
+      // than an index guess — a reordered atlas moves the button, not this.
+      const faceBtn = page.locator('button', { hasText: /^😐/ }).first();
+      for (let press = 0; press < 20; press++) {
+        if ((await faceBtn.textContent())?.includes(capture.face)) break;
+        await faceBtn.click();
+      }
+      if (!(await faceBtn.textContent())?.includes(capture.face)) {
+        throw new Error(`could not reach face cell "${capture.face}" — is it still in FACE_CELLS?`);
+      }
+    }
     if (capture.atMarker) {
       await page
         .waitForFunction(
