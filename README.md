@@ -248,9 +248,21 @@ compacts vertex colours/weights, stamps source and concept hashes, validates the
 result and promotes it to `public/v2/models/`. The capture command drives the
 live review page (`/v2/?anims=1&kid=<id>`) in headless Chromium and refreshes
 the runtime hero, run and contact stills — re-run it whenever the delivered
-model changes, or the board composites stale captures. The review command then
-writes deterministic front/profile, authored-model hero, run/contact and
-40-pixel evidence to `docs/v2/concepts/<name>-fidelity-review.png`. The builder
+model changes, or the board composites stale captures. It also writes four
+expression stills (`grin`, `cheer`, `tongue`, `angry`), which is what rubric
+3.14 is scored from — the review page's face button cycles the atlas cells, and
+before it existed there was no surface anywhere that showed an open mouth in
+gameplay lighting. Two consecutive reviews had to record 3.14 as unverifiable
+for want of it. The review command then writes deterministic front/profile,
+authored-model hero, run/contact and 40-pixel evidence to
+`docs/v2/concepts/<name>-fidelity-review.png`.
+
+⚠️ **A still of a looping clip shows one instant, not the cycle**, and reading it
+as the cycle has cost two review rounds: a run captured mid-PASS was twice
+scored as "the arms do not swing", when near-vertical arms are what a pass IS.
+The run capture therefore pins a deterministic frame at a REACH, and every run
+cycle in `proceduralClips.ts` peaks a quarter of the way through so one rule
+holds for all of them. The builder
 may mark that board `candidate`; final `approved` status requires a named human
 approver and a hash of the exact board. A raw Blender export is not the
 delivery path. The full checklist that defines a finished character is

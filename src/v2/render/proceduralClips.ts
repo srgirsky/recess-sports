@@ -460,10 +460,23 @@ function swingContact(spec: ClipSpec): AnimationClip {
 // writes only these names to `anims_nostrike_v1.glb`, so every other kid and
 // every other clip continues to use the shared library.
 
+// ⚠️ NO Z-ROLL ON THE UPPER LEGS. This pose carried `lu: [2, 0, 8]` and
+// `ru: [-2, 0, -8]`, authored when the rig ran both legs straight down from the
+// hip: an 8-degree adduction read as a relaxed stance back then. The rig now
+// carries the concept's own 6.75-degree splay (`render.leg-stance` in
+// scripts/measures.json), and against it that roll is a 57% CLOSURE — FK on the
+// delivered clip measured the ankles at 0.325ft against the bind pose's 0.756,
+// which put the thighs and calves into one fused mass and failed rubric 3.12 in
+// idle while the bind pose and the run both passed.
+//
+// It is worth knowing how it hid: 3.12's AUTO half is `measure:fidelity`, which
+// reads the BIND-pose front render, and that render was and is correct. Only a
+// reviewer looking at the idle still could see it. If the splay is ever
+// re-tuned, sweep the signature poses for leg z-terms first.
 const JUNEBUG_IDLE_POSE: Pose = {
   hp: [-2, -4, 0], sp: [-2, -2, 0], s2: [-3, -4, 0], nk: [2, 0, 0], hd: [1, 7, -1],
   la: [-3, 0, 72], lf: [0, 15, 0], ra: [-3, 0, -72], rf: [0, -15, 0],
-  lu: [2, 0, 8], ru: [-2, 0, -8],
+  lu: [2, 0, 0], ru: [-2, 0, 0],
 };
 
 const JUNEBUG_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
@@ -490,39 +503,63 @@ function junebugIdle(spec: ClipSpec): AnimationClip {
   ]);
 }
 
+// ★ THE ARM SWING IS SHALLOWER THAN IT LOOKS ON THE PAGE, and that is worth
+// stating because the authored numbers lie about it. These poses are Euler XYZ
+// applied in order, and the arm carries a 70-degree Z abduction, so most of a
+// large X term becomes TWIST about the arm's own axis rather than a
+// forward-and-back swing. The first version authored +/-41 on X and measured
+// only 33 degrees of actual swing at the shoulder — and its forearm never moved
+// at all, 62 degrees of elbow held flat through every key. Round 5 read the
+// result exactly right ("a stiff hinged read, not a run's arm action") off a
+// PASS frame, where near-vertical arms are correct and the missing thing is
+// everything either side of it.
+//
+// So the shoulder drives harder AND the elbow pumps: the arm that is forward
+// closes to 78, the arm going back opens to 40. Measure this the way the defect
+// was found — extract the X swing from the built quaternion track, do not read
+// it off the degrees below.
 function junebugRun(spec: ClipSpec): AnimationClip {
   const reachA: Pose = {
     hp: [7, 0, 0], sp: [6, -3, 0], s2: [5, 5, 0], hd: [-9, 2, 0],
     lu: [-46, 0, 5], ll: [-12, 0, 0], lt: [18, 0, 0],
     ru: [48, 0, -5], rl: [-76, 0, 0], rt: [9, 0, 0],
-    la: [42, 0, 70], lf: [0, 62, 0], ra: [-40, 0, -70], rf: [0, -62, 0],
+    la: [64, 0, 70], lf: [0, 78, 0], ra: [-58, 0, -70], rf: [0, -40, 0],
   };
   const passA: Pose = {
     hp: [9, 0, 0], sp: [7, 4, 0], s2: [6, -5, 0], hd: [-10, -1, 0],
     lu: [4, 0, 4], ll: [-42, 0, 0], lt: [8, 0, 0],
     ru: [2, 0, -4], rl: [-24, 0, 0], rt: [20, 0, 0],
-    la: [4, 0, 70], lf: [0, 58, 0], ra: [-3, 0, -70], rf: [0, -58, 0],
+    la: [6, 0, 70], lf: [0, 58, 0], ra: [-5, 0, -70], rf: [0, -58, 0],
   };
   const reachB: Pose = {
     hp: [7, 0, 0], sp: [6, 3, 0], s2: [5, -5, 0], hd: [-9, -2, 0],
     lu: [48, 0, 5], ll: [-76, 0, 0], lt: [9, 0, 0],
     ru: [-46, 0, -5], rl: [-12, 0, 0], rt: [18, 0, 0],
-    la: [-40, 0, 70], lf: [0, 62, 0], ra: [42, 0, -70], rf: [0, -62, 0],
+    la: [-58, 0, 70], lf: [0, 40, 0], ra: [64, 0, -70], rf: [0, -78, 0],
   };
   const passB = shift(passA, {
     sp: [0, -8, 0], s2: [0, 10, 0], lu: [-2, 0, 0], ru: [2, 0, 0],
-    la: [-8, 0, 0], ra: [8, 0, 0],
+    la: [-11, 0, 0], ra: [11, 0, 0], lf: [0, -6, 0], rf: [0, 6, 0],
   });
+  // ★ PHASED SO THE REACH LANDS AT 25% AND 75%, which is `runCycle`'s own
+  // convention (its `sin(p)` peaks a quarter of the way through). It used to
+  // start ON a reach, so the two run cycles in this file disagreed about where
+  // in the loop their extremes were — and a single still captured at a fixed
+  // frame therefore caught one at full stretch and the other mid-pass. That is
+  // not cosmetic: `capture-character-evidence.mjs` photographs one frame of
+  // this loop as the deformation evidence a reviewer scores 3.11 from, and a
+  // pass frame shows arms hanging straight because that is what a pass IS.
+  // Same poses, same ground contacts, rotated six frames.
   return build(spec, [
-    { f: 0, pose: reachA },
-    { f: 3, pose: shift(passA, { hp: [-2, 0, 0] }), hips: [0, 0.045, 0] },
-    { f: 6, pose: passA, hips: [0, 0.085, 0] },
-    { f: 9, pose: shift(reachB, { hp: [-2, 0, 0] }), hips: [0, 0.035, 0] },
-    { f: 12, pose: reachB },
-    { f: 15, pose: shift(passB, { hp: [-2, 0, 0] }), hips: [0, 0.045, 0] },
-    { f: 18, pose: passB, hips: [0, 0.085, 0] },
-    { f: 21, pose: shift(reachA, { hp: [-2, 0, 0] }), hips: [0, 0.035, 0] },
-    { f: spec.frames, pose: reachA },
+    { f: 0, pose: passA, hips: [0, 0.085, 0] },
+    { f: 3, pose: shift(reachB, { hp: [-2, 0, 0] }), hips: [0, 0.035, 0] },
+    { f: 6, pose: reachB },
+    { f: 9, pose: shift(passB, { hp: [-2, 0, 0] }), hips: [0, 0.045, 0] },
+    { f: 12, pose: passB, hips: [0, 0.085, 0] },
+    { f: 15, pose: shift(reachA, { hp: [-2, 0, 0] }), hips: [0, 0.035, 0] },
+    { f: 18, pose: reachA },
+    { f: 21, pose: shift(passA, { hp: [-2, 0, 0] }), hips: [0, 0.045, 0] },
+    { f: spec.frames, pose: passA, hips: [0, 0.085, 0] },
   ]);
 }
 
@@ -658,10 +695,17 @@ function junebugUpsetFierce(spec: ClipSpec): AnimationClip {
 // partial delivery carries the five high-frequency baseball clips plus the
 // complete priority set from the performance packet.
 
+// The same leg z-roll Junebug's idle carried (see the note there) was authored
+// into all five signature idles when the rig ran its legs straight down. FK over
+// the delivered clips measured what it costs now that the rig splays: Theo -60%,
+// Big Lou -56%, Tank -68%, Mimi -55% of bind-pose ankle separation, every one of
+// them a fused-leg mass in idle against a turnaround that draws the stance wide
+// (Theo's own drawn leg centreline is the widest on the roster at 0.398ft).
+// Removed on all of them together, because they are one defect.
 const THEO_IDLE_POSE: Pose = {
   hp: [-5, -8, 0], sp: [-6, -8, 0], s2: [-8, -10, 0], nk: [2, 5, 0], hd: [-3, 13, 2],
   la: [-8, 0, 65], lf: [0, -24, 0], ra: [-8, 0, -65], rf: [0, 24, 0],
-  lu: [-3, 0, 9], ru: [3, 0, -9],
+  lu: [-3, 0, 0], ru: [3, 0, 0],
 };
 
 const THEO_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
@@ -922,7 +966,7 @@ function zoomUpsetCool(spec: ClipSpec): AnimationClip {
 const LOU_IDLE_POSE: Pose = {
   hp: [6, -3, 0], sp: [5, -2, 0], s2: [8, -3, 0], nk: [-2, 2, 0], hd: [-4, 7, 1],
   la: [8, 0, 67], lf: [0, -18, 0], ra: [8, 0, -67], rf: [0, 18, 0],
-  lu: [5, 0, 8], ll: [-7, 0, 0], ru: [5, 0, -8], rl: [-7, 0, 0],
+  lu: [5, 0, 0], ll: [-7, 0, 0], ru: [5, 0, 0], rl: [-7, 0, 0],
 };
 
 const LOU_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
@@ -1061,7 +1105,7 @@ function louUpsetGoofy(spec: ClipSpec): AnimationClip {
 const TANK_IDLE_POSE: Pose = {
   hp: [12, 0, 0], sp: [8, 0, 0], s2: [11, 0, 0], hd: [4, 3, 0],
   la: [12, 0, 72], lf: [0, -12, 0], ra: [12, 0, -72], rf: [0, 12, 0],
-  lu: [12, 0, 10], ll: [-18, 0, 0], ru: [12, 0, -10], rl: [-18, 0, 0],
+  lu: [12, 0, 0], ll: [-18, 0, 0], ru: [12, 0, 0], rl: [-18, 0, 0],
 };
 const TANK_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
   hp: [17, -10, 0], sp: [12, -7, 0], s2: [16, -12, 0], hd: [5, 7, 0],
@@ -1112,7 +1156,7 @@ function tankIdleFidget(spec: ClipSpec): AnimationClip {
 const MIMI_IDLE_POSE: Pose = {
   hp: [9, -5, 0], sp: [5, -4, 0], s2: [8, -7, 0], hd: [-5, 7, 0],
   la: [7, 0, 62], lf: [0, -9, 0], ra: [7, 0, -62], rf: [0, 9, 0],
-  lu: [11, 0, 8], ll: [-16, 0, 0], ru: [11, 0, -8], rl: [-16, 0, 0],
+  lu: [11, 0, 0], ll: [-16, 0, 0], ru: [11, 0, 0], rl: [-16, 0, 0],
 };
 const MIMI_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
   hp: [21, -15, 0], sp: [15, -11, 0], s2: [20, -18, 0], hd: [-7, 14, 0],

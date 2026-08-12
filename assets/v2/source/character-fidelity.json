@@ -21,47 +21,53 @@
       "humanReview": {
         "reviewer": "Seth Girsky",
         "reviewedAt": "2026-08-10",
-        "verdict": "rejected \u2014 agent self-scores were inflated; every category re-scored from the board against the turnaround"
+        "verdict": "rejected \u2014 agent self-scores were inflated; every category re-scored from the board against the turnaround. Rounds 5-7 rebuilt the shoe, the ear, the run and the face columns against that rejection; awaiting a fresh look."
       },
       "measuredFidelity": {
         "command": "npm run measure:fidelity -- nostrike",
-        "ranAt": "2026-08-11",
+        "ranAt": "2026-08-12",
         "board": "junebug-fidelity-review.png",
         "result": "all eight metrics inside tolerance",
-        "note": "Ankle daylight was the last one outside it -- 30.2% against the turnaround's 46.9% -- and it was a RIG fact, not a sculpt one: the leg width at that height already matched (0.245ft vs 0.241ft), the leg CENTRELINE did not. The canonical rig now carries the concept's 6.75 degree leg splay; see render.legStance in scripts/measures.json. Delivered 48.5%. The six 1-5 scores below are the round-4 critic's and are untouched by this pass -- the sculptor does not score its own work."
+        "note": "The rig's 6.75-degree leg splay (render.leg-stance) settled ankle daylight at 48.5% against the concept's 46.9%. Round 7 then found that Junebug's SIGNATURE idle pose carried an 8-degree inward leg roll, authored when the rig ran its legs straight down, which closed the ankles to 0.325ft against the bind pose's 0.756 and failed rubric 3.12 in idle while the bind-pose render this command reads stayed correct. The same roll was in all five signature idles and was removed from all of them; an FK sweep now reads every idle within 2% of bind."
       },
       "categories": {
         "frontProfileSilhouette": {
           "label": "front/profile silhouette",
-          "score": 3,
-          "note": "Critic (round 4 final): Front large-read is right: head silhouette width at the brow row / head height = 0.777 in junebug-front-review.png (150px over 193px) against the turnaround's 0.774 (229/296) \u2014 within 0.4%. The ear silhouette step is correctly PLACED but shallow: it starts at y=188 = 63.2% of head height (concept y=263 = 64.5%), takes 36 rows = 18.7% of head height (concept 57 rows = 19.3%), and gains only 7px per side = 4.7% of head width against the concept's 13px = 5.8%. Profile departs: in junebug-profile-review.png the headband ends in a flat-cut stub on the crown (x=309, y=143), above and behind the ear, where the turnaround's band sweeps down behind the ear to the jaw; the nape hair ends in a hard triangular spike; the ponytail ends in a blunt club instead of the concept's tapered flick; the shoe is a cream toe blob butt-joined to a spherical cream heel bulb over a floating slab midsole. The profile nose is no longer a blocker: 12px protrusion (silhouette min x=209 at y=225 against x=221 at y=205), where the concept's 14px scales to 9px at this head size."
+          "score": 4,
+          "note": "Critic (round 7, independent): large read matches by measurement \u2014 head 34.0% of figure height vs the turnaround's 34.0%, head aspect 0.82 vs 0.84, profile waist depth 13.77% vs 13.69% and hip 14.11% vs 13.81%. Held off 5 by three butt-joined terminations, all in junebug-profile-review.png: the ponytail tip is a faceted wedge butt-joined to the tail with a notch either side (x 370-400, y 245-290), the headband ends in a flat-cut stub inside the hair mass 37px above the ear top (band last appears y 150, x 302..324) where the concept sweeps it behind the ear to the jaw, and the bun cap meets the crown ring on a hard shelf (front view y 78-88, x 235-305)."
         },
         "headBodyProportions": {
           "label": "head/body proportions",
           "score": 4,
-          "note": "Critic (round 4 final): Measurably the strongest category. Head height / figure height = 193/578 = 33.4% in junebug-front-review.png against the turnaround's 296/879 = 33.7%; brow-to-chin / head height = 0.591 in both, to three decimals. What blocks 5 is joint form, not proportion: junebug-runtime-run.png shows a visible ring seam at the shoulder where the sleeve meets the deltoid, an elbow that reads as two stacked tapered cylinders, and hands whose fingers are splayed separated spikes with outline gaps between them \u2014 rakes, not child hands. The jersey sleeve is also a cap that ends at the shoulder in junebug-front-review.png where the turnaround's sleeve reaches mid-upper-arm, which shortens the arm's read."
+          "note": "Critic (round 7, independent): child proportion is exact \u2014 head height delta -0.01, head width/figure height 0.279 vs the concept's 0.285, face-skin component aspect 1.266 vs 1.256. Held off 5 by the pelvis-to-thigh transition, which reads as a slab set on two cylinders: a straight horizontal edge across both thigh tops at junebug-front-review.png y 437 with a lateral overhang notch at x 215 and x 325. One interpolated ring between the pelvis bottom and the thigh top would close it."
         },
         "hairMass": {
           "label": "hair mass",
-          "score": 3,
-          "note": "Critic (round 4 final): Capped by the rubric's own words before any measurement: the mass is smooth and featureless with zero strand grouping anywhere in junebug-runtime-hero.png or junebug-profile-review.png, and 3.3 says a smooth blob caps at 4. It scores below that because the named round-4 blocker is not fixed \u2014 at the brow row (y=145) of junebug-front-review.png the right temple carries 11px of hair = 7.2% of the 152px head width and the left 6px = 3.9%, against the ~2.8% target and the turnaround's 2px = 0.87% (measured identically at its brow row y=193 across a 230px head). The two sides differ by 5px, so the head reads lopsided. In junebug-profile-review.png the mass covers the whole back skull and terminates at the nape in a hard triangular point where the turnaround's nape hairline is a rounded arc."
+          "score": 4,
+          "note": "Critic (round 7, independent): one designed mass, hairline reads front and side, no bare skull in any of the gameplay renders, and the round-4 lopsided-temple blocker is measurably gone (0.00 face asymmetry from the shipped detector). Capped at 4 by the rubric's own words \u2014 a smooth featureless blob caps at 4 however correct its silhouette. Quantified: contrast-stretched at 6x the concept's bun carries 4-10 strand minima per row at 3.8-4.6 counts of prominence, the delivered 1-4 at 1.8-4.1, and what is there is polygon faceting rather than periodic grooves. The authored 8-lobe 0.015ft groove is at its clearance ceiling, so the contrast has to come from a sharper crease profile or more columns, not more depth."
         },
         "clothingConstruction": {
           "label": "clothing construction",
-          "score": 3,
-          "note": "Critic (round 4 final): Real construction exists \u2014 V-neck trim, two shoulder stripes per side, a sleeve cuff ring, belt loops with a buckle and a button placket all read in junebug-front-review.png \u2014 but three things fail. Laces: one flat white rectangle bar in junebug-front-review.png and two grey pin nubs in junebug-profile-review.png, against the turnaround's three rounded lace straps plus tongue and collar. Shoe colour is inverted: over the lower third of the shoe body junebug-front-review.png measures 3.1% red / 60.4% cream against the turnaround's 55.2% red / 29.2% cream. Belt: the delivered belt sits 20.1 luminance counts from the pants it crosses, where the turnaround's dark-red belt sits 56.7 counts from its salmon pants \u2014 the belt has lost its identity as a separate garment. Kit separation is generally flat too: jersey-vs-pants luminance gap 36.3 against the concept's 59.2."
+          "score": 4,
+          "note": "Critic (round 7, independent): genuinely constructed \u2014 V-neck trim, sleeve cuffs and shoulder stripes, three-button placket, belt with loops, pant hem cuffs, socks, and a shoe that is now ONE lasted upper with a painted toe cap, collar band and midsole plus three swept lace straps. Shoe colour split measured 39.5% red / 49.2% cream against the concept's 37.3 / 46.2, both inside tolerance, and shoe length is not a defect (0.62ft delivered against ~0.67ft for the concept's near shoe). Held off 5 by shoe detailing: the three laces still read as detached pegs standing proud of the vamp rather than straps lying on it, the midsole vanishes under the toe cap so there is no sole line at the front, and there is no heel counter panel or ankle collar (junebug-profile-review.png x 245-275, y 605-625)."
         },
         "faceExpressionRead": {
           "label": "face/expression read",
-          "score": 3,
-          "note": "Critic (round 4 final): The profile-nose blocker is genuinely fixed (12px break, above the 9px scale-equivalent of the concept's 14px). Everything else short of 4. The front nose still misses its number: at the scale-matched sampling band (junebug-front-review.png rows 218-228, nose half-width 9px, cheeks at \u00b145px) the nose reads 131.8 against a lit-side cheek of 126.5 = +5.3, short of the +8 target and of the turnaround's +11.3/+13.2 at the equivalent band; over the tip rows 222-232 it inverts to -3.1. The image-left cheek carries an unexplained dark patch \u2014 a 44.5-count left-right cheek delta against a global render asymmetry of only 15.8 at the forehead and 15.8 at the jaw, where the turnaround's cheeks differ by 2.0. In junebug-profile-review.png the eye is a white decal wedge sitting on the face's silhouette edge under a floating black brow slab, and there is no mouth and no chin break at all, where the turnaround's profile carries a lip line, a chin and a mentolabial crease. The mouth itself is fine in front (dark run 26px = 21.3% of face width, min L 46, against the concept's 31px = 14.0%, min L 51)."
+          "score": 4,
+          "note": "Critic (round 7, independent): both round-6 blockers retired and measured. The left/right face shading split is 6.4 / 6.3 / 8.1 / 5.4 counts (forehead/eye/cheek/jaw) against the concept's 6.7 / 2.8 / 4.9 / 2.5, where round 6 measured 30.8 and 39.9 \u2014 the cause was two things, an unmirrored face column in head_surface (the head skin now mirrors to 0.0000 milli-ft, verified from the shipped GLB) and the board's own fill light, which keyed from +x and filled from BEHIND on -x. Nose relief re-measures +26.2 counts against the concept's +20.5, and on the profile silhouette the tip stands 0.064ft off the local face plane against an authored target of 0.067 and the concept's own 0.048-0.053 \u2014 round 6's '+6.5 vs +14.7' was measured through the lopsided light and does not survive. All three of the rubric's named 5/5 clauses are met (real nose breaks the profile, no decal-island seam under a Sobel map, features integrated with the skull); the 5 is withheld for cheek tessellation at hero, which is not a named clause."
         },
         "heroAndFieldScale": {
           "label": "hero + 40px read",
-          "score": 3,
-          "note": "Critic (round 4 final): At a true 40px downscale (front review and turnaround front figure both extracted to their alpha bbox and lanczos-resized to 40px tall) the identity survives: white band stripe, dark red jersey, salmon pants, dark socks, pale shoes. It survives less well than the concept given the same treatment \u2014 the temple wedge darkens the face so it reads as a dark-framed mask rather than the concept's open oval, the two feet fuse into one pale blob (ankle daylight 3% of leg-pair width against the turnaround's 40-48%), and the legs read as one column. At hero scale junebug-runtime-hero.png shows hard posterized shading facets across the cheek and jaw, the far eye collapsing to a smudge behind the nose mass, an ear that is a plain oval pad, and a hair mass with no internal detail."
+          "score": 4,
+          "note": "Critic (round 7, independent): identity survives both ends \u2014 at hero the brows, headband, bun and ponytail all read, and at 40px the light headband over a dark bun on a red top survives the pixel zoom. Both round-4 reasons for a 3 here are measurably gone: the feet no longer fuse (ankle daylight 48.5% against the concept's 46.9%, from 3%) and the face is no longer a dark-framed mask (36.4% visible face per side against 31.1/31.9)."
         }
-      }
+      },
+      "expressionEvidence": [
+        "junebug-runtime-face-grin.png",
+        "junebug-runtime-face-cheer.png",
+        "junebug-runtime-face-tongue.png",
+        "junebug-runtime-face-angry.png"
+      ]
     },
     "calls_shot": {
       "status": "needs-polish",
