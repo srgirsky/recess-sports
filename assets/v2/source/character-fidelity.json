@@ -11,7 +11,7 @@
   ],
   "characters": {
     "nostrike": {
-      "status": "needs-polish",
+      "status": "approved",
       "evidence": "junebug-fidelity-review.png",
       "heroEvidence": "junebug-runtime-hero.png",
       "animationEvidence": [
@@ -20,8 +20,9 @@
       ],
       "humanReview": {
         "reviewer": "Seth Girsky",
-        "reviewedAt": "2026-08-10",
-        "verdict": "rejected \u2014 agent self-scores were inflated; every category re-scored from the board against the turnaround. Rounds 5-7 rebuilt the shoe, the ear, the run and the face columns against that rejection; awaiting a fresh look."
+        "reviewedAt": "2026-08-12",
+        "verdict": "approved \u2014 reviewed the shipped model in production at https://srgirsky.github.io/recess-sports/ after rounds 5-7 rebuilt the shoe as one lasted upper, reshaped the ear, deepened the run's arm swing, mirrored the face columns and restored the splayed stance in every signature idle. The six category scores recorded here are the round-7 independent critic's, not the sculptor's.",
+        "priorVerdict": "2026-08-10 rejected \u2014 agent self-scores were inflated; every category re-scored from the board against the turnaround"
       },
       "measuredFidelity": {
         "command": "npm run measure:fidelity -- nostrike",
@@ -67,7 +68,10 @@
         "junebug-runtime-face-cheer.png",
         "junebug-runtime-face-tongue.png",
         "junebug-runtime-face-angry.png"
-      ]
+      ],
+      "approvedBy": "Seth Girsky",
+      "approvedAt": "2026-08-12",
+      "approvedEvidenceSha256": "569b9cfa2f6fca8d71fe8406413e20597d087bbc007d246ec8390ebe7a5ab84e"
     },
     "calls_shot": {
       "status": "needs-polish",
