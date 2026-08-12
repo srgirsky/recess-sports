@@ -131,16 +131,37 @@ def main() -> None:
     camera.data.ortho_scale = 5.15
     bpy.context.scene.camera = camera
 
+    # ★ THE FILL IS A MIRROR OF THE KEY, AND IT HAS TO BE, because this board's
+    # ONLY job is comparison against the concept sheet. The old rig keyed from
+    # +x at 950 and filled from BEHIND on -x at 550, which sank the left of
+    # every face: measured left-vs-right luminance split across the delivered
+    # front render was 27.9 counts at the forehead and 29.6 at the cheek, where
+    # the same measurement on junebug-turnaround.png reads 3.2 and 3.6. The
+    # concept is lit almost flat and frontal; the board was not.
+    #
+    # That cost a whole review round. Round 6 measured the split, correctly
+    # ruled it larger than the concept's, and concluded the FACE PLANES were
+    # carved asymmetrically — a reasonable inference that happened to be wrong,
+    # and one no sculpting could ever have satisfied. (There WAS a real
+    # asymmetry underneath it, an unmirrored face column, and it is fixed in
+    # sculpt-junebug-source.py's head_surface; it accounted for about a third
+    # of the split. The rest was this.)
+    #
+    # So the fill mirrors the key's position and carries 78% of its energy:
+    # enough imbalance to keep the form reading, little enough that a reviewer
+    # comparing the two sheets is comparing SCULPT rather than lighting. Any
+    # future change here changes every character's board — re-measure the split
+    # against the concept's before landing one.
     bpy.ops.object.light_add(type="AREA", location=(4.0, -5.5, 7.0))
     key = bpy.context.object
     key.data.energy = 950
     key.data.size = 5.0
     point_at(key, Vector((0, 0, 2.1)))
-    bpy.ops.object.light_add(type="AREA", location=(-4.0, 2.0, 4.0))
+    bpy.ops.object.light_add(type="AREA", location=(-4.0, -5.5, 7.0))
     fill = bpy.context.object
-    fill.data.energy = 550
-    fill.data.size = 4.0
-    point_at(fill, Vector((0, 0, 2.0)))
+    fill.data.energy = 740
+    fill.data.size = 5.0
+    point_at(fill, Vector((0, 0, 2.1)))
 
     scene = bpy.context.scene
     scene.render.engine = "BLENDER_EEVEE"

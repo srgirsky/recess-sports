@@ -1094,13 +1094,35 @@ class MeshBuilder:
         rx, ry, rz = HEAD_RADII
 
         # --- longitudes, as BEARINGS off the nose in (-pi, pi] ---------------
+        # ★ THE FACE COLUMNS MUST MIRROR, AND FOR FIVE ROUNDS ONE OF THEM DID
+        # NOT. The old spacing was `2*(c+0.5)/(n+1) - 1`, which for an even `n`
+        # produces the set {-20,-18,...,+18}/21 — every column matched except
+        # the outermost left one — and then forced the two ENDS to +/-1, which
+        # overwrote +0.857 while leaving -0.857 in place. The result was a
+        # single unmatched longitude down the left temple: eight LOD0 vertices
+        # 35-46 milli-ft off their own mirror image, and a hard planar break
+        # running temple-to-jaw that round 6 measured as a 39.9-count left/right
+        # cheek shading split against the concept's 15.6.
+        #
+        # It was invisible to every gate on purpose-built evidence: the
+        # SILHOUETTE is symmetric (`measure:fidelity` reports 0.00 face
+        # asymmetry, correctly — it measures the width of visible skin, not its
+        # shading), so nothing that keys on outline could ever see it.
+        #
+        # `2*c/(n-1) - 1` spans exactly -1..+1 and mirrors for any n; an ODD n
+        # additionally puts a column on t=0, i.e. on the nose ridge, which is
+        # where the face wants its resolution anyway. Both are required, so an
+        # even count is refused rather than silently un-mirrored.
+        if face_columns % 2 == 0:
+            raise ValueError(
+                f"face_columns must be ODD (got {face_columns}) so a column lands on the nose "
+                "ridge and every other column has a mirror partner"
+            )
         bearings: list[float] = []
         for column in range(face_columns):
-            t = 2.0 * (column + 0.5) / (face_columns + 1) - 1.0
+            t = 2.0 * column / (face_columns - 1) - 1.0
             warped = (abs(t) ** 1.25) * (1.0 if t >= 0 else -1.0)
             bearings.append(FACE_BEARING * warped)
-        bearings[0] = -FACE_BEARING
-        bearings[-1] = FACE_BEARING
         # The back run, and the sliver pair that confines the UV wrap.
         rear = pi - FACE_BEARING
         for step in range(1, back_columns + 1):
@@ -2521,9 +2543,9 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     # the merge adds is the back columns and the crown/chin rows; what it
     # refunds is the whole patch mesh, and with it the decal seam.
     if detail >= 2:
-        builder.head_surface(20, 4, FACE_ROWS, 2, 1)
+        builder.head_surface(21, 4, FACE_ROWS, 2, 1)
     elif detail == 1:
-        builder.head_surface(8, 2, [0.0, 0.184, 0.319, 0.448, 0.632, 1.0], 1, 1)
+        builder.head_surface(9, 2, [0.0, 0.184, 0.319, 0.448, 0.632, 1.0], 1, 1)
     else:
         builder.head_surface(5, 1, [0.0, 0.32, 0.60, 1.0], 1, 1)
     # The nose is sculpted INTO the head surface (see `nose_push`) — no mounted
