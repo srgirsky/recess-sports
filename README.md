@@ -237,6 +237,7 @@ npm run generate:junebug-face-atlas
 npm run export:authored-character -- nostrike
 npm run capture:character-evidence -- nostrike
 npm run review:character-fidelity -- nostrike
+npm run measure:fidelity -- nostrike
 npm run validate:models
 ```
 
@@ -254,6 +255,16 @@ may mark that board `candidate`; final `approved` status requires a named human
 approver and a hash of the exact board. A raw Blender export is not the
 delivery path. The full checklist that defines a finished character is
 `docs/v2/character-quality-rubric.md`.
+
+`measure:fidelity` reads the same board's front render and the approved
+turnaround with ONE detector and prints each metric as concept vs delivered vs
+delta, exiting non-zero when any is outside tolerance. Every target is derived
+from the turnaround at run time, so it carries to any character with a concept
+sheet, and every metric is a ratio against something in its own image — the two
+renders are different pixel sizes, and comparing raw counts across them is how a
+previous build shipped eyes 38% too small. Use it to settle the questions eye
+scoring keeps getting wrong: the same Junebug board drew 4,4,4,4,4,3 from one
+reviewer and 3,4,3,3,3,3 from the next.
 
 `/v2/?spike=1&roster=1` is the one-frame roster review; use
 `/v2/?spike=1&kid=turbo` for a single-character field review.

@@ -27,6 +27,7 @@
     "review:character-fidelity": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/render-character-fidelity.mjs",
     "capture:character-evidence": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/capture-character-evidence.mjs",
     "capture:parity-stills": "node scripts/v2/capture-parity-stills.mjs",
+    "measure:fidelity": "node scripts/v2/measure-fidelity.mjs",
     "generate:junebug-face-atlas": "node scripts/v2/generate-junebug-face-atlas.mjs",
     "manifest:models": "node scripts/v2/models-manifest.mjs",
     "sim:trajectory": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/trajectory.mjs",

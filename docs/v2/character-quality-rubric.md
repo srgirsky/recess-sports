@@ -97,6 +97,26 @@ Meet the character everywhere a player does, desktop and phone viewport:
 | 6.5 | Win and loss presentation |
 | 6.6 | Fielder does not vanish against grass/dirt at gameplay camera |
 
+## 6b · Measured fidelity — AUTO
+
+`npm run measure:fidelity -- <id>` reads the delivered front render and the
+approved turnaround with one detector and reports each metric as concept vs
+delivered vs delta. Targets are derived from the turnaround at run time; nothing
+is hardcoded per character.
+
+Run it **before** scoring §3, and let it settle anything it covers. Four rounds
+on Junebug produced 4,4,4,4,4,3 from one reviewer and 3,4,3,3,3,3 from the next
+on barely-changed evidence, and a verdict that asserted the concept's shoe was
+"white with a red toe cap" — unmeasured, wrong, and it regressed a shoe that had
+been closer to the art. Where a number exists, the number wins over the score.
+
+| # | Item | Check |
+|---|---|---|
+| 6b.1 | Head height as % of figure height, and head width:height, within tolerance of the concept | AUTO |
+| 6b.2 | Signature garment colours split as the concept splits them (e.g. shoe red vs cream) | AUTO |
+| 6b.3 | Visible face at the brow line, per side, and left/right asymmetry | AUTO |
+| 6b.4 | Daylight between the ankles — compares a bind pose to a posed drawing, so read a failure as "look at the stance", and never widen the tolerance to clear it | AUTO |
+
 ## 7 · Evidence and sign-off — AUTO + EYES
 
 | # | Item | Check |

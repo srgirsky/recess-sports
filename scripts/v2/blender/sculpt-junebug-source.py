@@ -1588,7 +1588,7 @@ def build_shoe(builder: MeshBuilder, side: int, prefix: str, detail: int, segmen
     builder.ellipsoid(
         (x0, -0.13, 0.175), (0.215, 0.30, 0.145), 1, SHOE, foot, seg, rng,
         flatten_sole=True, pole="-y", phis=cap_phis,
-        color_fn=lambda dx, dy, dz: SOLE if dy < -0.33 else SHOE,
+        color_fn=lambda dx, dy, dz: SOLE if dy < -0.68 else SHOE,
     )
     # Sole tucked at the heel (ry 0.335, centre -0.115; was 0.37 at -0.10):
     # the old plate ran 0.04 past the upper all round and the profile read a
