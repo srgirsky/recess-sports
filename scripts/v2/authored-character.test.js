@@ -184,9 +184,35 @@ describe('Blender-authored character provenance and fidelity gate', () => {
     expect(stateErrors(receipt, broken).some((error) => error.startsWith('Batch 2 must stay paused'))).toBe(true);
   });
 
+  // ⚠️ THIS FIXTURE STRIPS THE APPROVAL FIELDS ON PURPOSE. It used to flip
+  // `nostrike.status` to 'approved' and rely on that character having no
+  // approver — which held only while nobody had approved anyone. Junebug was
+  // approved on 2026-08-12 and the assertion silently stopped exercising its
+  // own rule: the flip produced no error because the fields were now really
+  // there. Deleting them makes the test say what it means, and keeps saying it
+  // however many characters get approved later.
   it('does not let a numeric score impersonate human art-direction approval', () => {
     const broken = structuredClone(fidelity);
     broken.characters.nostrike.status = 'approved';
+    delete broken.characters.nostrike.approvedBy;
+    delete broken.characters.nostrike.approvedAt;
     expect(stateErrors(receipt, broken)).toContain('nostrike: approval requires an explicit human approver and timestamp');
+  });
+
+  it('does not let an approval float free of the board it was given on', () => {
+    // The other half of the same rule, and it had no test at all: an approver
+    // and a date with a stale (or absent) board hash is an approval of
+    // something nobody looked at.
+    const broken = structuredClone(fidelity);
+    broken.characters.nostrike.status = 'approved';
+    broken.characters.nostrike.approvedEvidenceSha256 = '0'.repeat(64);
+    expect(stateErrors(receipt, broken)).toContain('nostrike: approval is not bound to the current fidelity board');
+  });
+
+  it('does not let a sub-4 category ship as approved', () => {
+    const broken = structuredClone(fidelity);
+    broken.characters.nostrike.status = 'approved';
+    broken.characters.nostrike.categories.hairMass.score = 3;
+    expect(stateErrors(receipt, broken)).toContain('nostrike: approved with hairMass below 4/5');
   });
 });
