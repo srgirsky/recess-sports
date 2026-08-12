@@ -9,32 +9,34 @@ refuses to replace an existing source.
 """
 
 from pathlib import Path
+import json
 import sys
 
 import bpy
 
 
 REPO = Path.cwd()
-CHARACTERS = {
-    "nostrike": ("Junebug", "junebug-turnaround.png", "junebug-pilot.blend"),
-    "calls_shot": ("Big Talk Theo", "theo-turnaround.png", "theo-pilot.blend"),
-    "wheelchair_ace": ("Zoom Ramirez", "zoom-turnaround.png", "zoom-pilot.blend"),
-    "big_lou": ("Big Lou", "big-lou-turnaround.png", "big-lou-pilot.blend"),
-    "tank": ("Tank", "tank-turnaround.png", "tank-pilot.blend"),
-    "mimi_mash": ("Mimi Mash", "mimi-mash-turnaround.png", "mimi-mash-pilot.blend"),
-}
+# One place for the id -> name/slug/.blend mapping: scripts/v2/character-registry.json.
+# Python cannot import the TypeScript roster, so the registry is JSON precisely so
+# this script and the .mjs tooling read the same bytes instead of each keeping a
+# copy that drifts. See that file's .mjs sibling for what the three copies cost.
+CHARACTERS = json.loads((REPO / "scripts/v2/character-registry.json").read_text())["characters"]
 
 
 def requested_id() -> str:
     args = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     if len(args) != 1 or args[0] not in CHARACTERS:
-        raise RuntimeError("pass one produced character id: nostrike, calls_shot, wheelchair_ace, big_lou, tank or mimi_mash")
+        raise RuntimeError(f"pass one roster character id, one of: {', '.join(sorted(CHARACTERS))}")
     return args[0]
 
 
 def main() -> None:
     character_id = requested_id()
-    name, turnaround_name, output_name = CHARACTERS[character_id]
+    record = CHARACTERS[character_id]
+    name = record["name"]
+    turnaround_name = f"{record['slug']}-turnaround.png"
+    # A kid nobody has sculpted has no .blend name yet; derive the conventional one.
+    output_name = record.get("source") or f"{record['slug']}-pilot.blend"
     model = REPO / "public/v2/models" / f"kid_{character_id}.glb"
     turnaround = REPO / "docs/v2/concepts" / turnaround_name
     output = REPO / "assets/v2/source" / output_name

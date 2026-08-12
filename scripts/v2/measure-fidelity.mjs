@@ -35,8 +35,9 @@ import { join } from 'node:path';
 import process from 'node:process';
 import sharp from 'sharp';
 
+import { slugFor } from './character-registry.mjs';
+
 const CONCEPTS = 'docs/v2/concepts';
-const SLUGS = { nostrike: 'junebug', calls_shot: 'theo', wheelchair_ace: 'zoom', big_lou: 'big-lou', tank: 'tank', mimi_mash: 'mimi-mash' };
 
 const lum = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
 const sat = (c) => { const mx = Math.max(c[0], c[1], c[2]), mn = Math.min(c[0], c[1], c[2]); return mx ? (mx - mn) / mx : 0; };
@@ -203,8 +204,11 @@ const CHECKS = [
   ['faceSkinRightPct', 6.0, 'visible face right of centre, % of head width'],
 ];
 
+// ⚠️ NOT `SLUGS[id] ?? id`. That fallback is how six characters silently
+// resolved to turnarounds that do not exist and reported it as a missing render.
+// `slugFor` throws on an unknown id instead of inventing a path for it.
 const id = process.argv[2] ?? 'nostrike';
-const slug = SLUGS[id] ?? id;
+const slug = slugFor(id);
 const turnaround = join(CONCEPTS, `${slug}-turnaround.png`);
 const delivered = join(CONCEPTS, `${slug}-front-review.png`);
 for (const p of [turnaround, delivered]) {

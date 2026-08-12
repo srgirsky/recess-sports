@@ -8,7 +8,7 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import sharp from 'sharp';
 
-import { AUTHORED_CHARACTERS } from './export-authored-character.mjs';
+import { AUTHORED_CHARACTERS, slugFor } from './character-registry.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '..', '..');
@@ -17,10 +17,6 @@ const fidelityPath = join(repo, 'assets', 'v2', 'source', 'character-fidelity.js
 const renderer = join(here, 'blender', 'render-fidelity-views.py');
 const fidelity = JSON.parse(readFileSync(fidelityPath, 'utf8'));
 
-export const SLUGS = {
-  nostrike: 'junebug', calls_shot: 'theo', wheelchair_ace: 'zoom',
-  big_lou: 'big-lou', tank: 'tank', mimi_mash: 'mimi-mash',
-};
 
 function svgText(width, height, content) {
   return Buffer.from(`<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
@@ -36,8 +32,8 @@ async function fit(path, width, height, background = { r: 18, g: 27, b: 39, alph
 async function board(id) {
   const character = AUTHORED_CHARACTERS[id];
   const review = fidelity.characters[id];
-  const slug = SLUGS[id];
-  if (!character || !review || !slug) throw new Error(`missing fidelity configuration for ${id}`);
+  const slug = slugFor(id);
+  if (!character || !review) throw new Error(`missing fidelity configuration for ${id}`);
 
   const run = spawnSync(process.env.BLENDER ?? 'blender', [
     '--background', '--factory-startup', '--python', renderer, '--', id, slug,

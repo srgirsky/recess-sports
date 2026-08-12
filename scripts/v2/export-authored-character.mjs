@@ -15,6 +15,7 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { AUTHORED_CHARACTERS } from './character-registry.mjs';
 import { readGlb, writeGlb } from './glb.mjs';
 import { checkCharacter, checkContainer, checkSkeleton, makeReport } from './modelRules.mjs';
 import { loadContract, RUNTIME_DIR } from './validate-models.mjs';
@@ -27,32 +28,10 @@ const conceptsDir = join(repo, 'docs', 'v2', 'concepts');
 const receiptPath = join(sourceDir, 'character-production.json');
 const blenderScript = join(here, 'blender', 'export-authored-character.py');
 
-export const AUTHORED_CHARACTERS = {
-  nostrike: {
-    name: 'Junebug', source: 'junebug-pilot.blend', concept: 'junebug-turnaround.png',
-    traits: ['arrow ponytail', 'athletic piping', 'compact focused face', 'clean joint flow', 'economical ready posture'],
-  },
-  calls_shot: {
-    name: 'Big Talk Theo', source: 'theo-pilot.blend', concept: 'theo-turnaround.png',
-    traits: ['oversized cap', 'broad tapered face', 'open varsity jacket', 'confident chest', 'kid-sized swagger'],
-  },
-  wheelchair_ace: {
-    name: 'Zoom Ramirez', source: 'zoom-pilot.blend', concept: 'zoom-turnaround.png',
-    traits: ['compact sport chair', 'cambered wheels', 'bright push rims', 'swept spiky crown', 'forward athletic posture'],
-  },
-  big_lou: {
-    name: 'Big Lou', source: 'big-lou-pilot.blend', concept: 'big-lou-turnaround.png',
-    traits: ['gentle broad silhouette', 'soft rounded face', 'layered casual shirt', 'relaxed shoulders', 'grounded friendly stance'],
-  },
-  tank: {
-    name: 'Tank', source: 'tank-pilot.blend', concept: 'tank-turnaround.png',
-    traits: ['low wide silhouette', 'bald round crown', 'massive tee', 'short planted legs', 'sleepy compact face'],
-  },
-  mimi_mash: {
-    name: 'Mimi Mash', source: 'mimi-mash-pilot.blend', concept: 'mimi-mash-turnaround.png',
-    traits: ['dense curly halo', 'proud chin', 'constructed hoodie and pocket', 'strong childlike forearms', 'spring-loaded stance'],
-  },
-};
+// Re-exported so the many importers of this name keep working; the records
+// themselves live in `character-registry.json`, which is also what the two
+// Blender scripts and the loader-less `measure:fidelity` read.
+export { AUTHORED_CHARACTERS };
 
 function sha(path) {
   return createHash('sha256').update(readFileSync(path)).digest('hex');

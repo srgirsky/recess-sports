@@ -22,7 +22,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
 
-import { SLUGS } from './render-character-fidelity.mjs';
+import { CHARACTERS, slugFor } from './character-registry.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '..', '..');
@@ -171,13 +171,15 @@ async function main() {
   const ids = process.argv.slice(2);
   if (!ids.length) throw new Error('pass one or more authored character ids');
   for (const id of ids) {
-    if (!SLUGS[id]) throw new Error(`no evidence slug for "${id}" — add it to SLUGS in render-character-fidelity.mjs`);
+    if (!CHARACTERS[id]) {
+      throw new Error(`unknown character "${id}" — add it to scripts/v2/character-registry.json`);
+    }
   }
   const vite = await startVite();
   const browser = await chromium.launch({ args: process.env.CI ? ['--no-sandbox'] : [] });
   try {
     const page = await browser.newPage({ viewport: VIEWPORT });
-    for (const id of ids) await captureCharacter(page, id, SLUGS[id]);
+    for (const id of ids) await captureCharacter(page, id, slugFor(id));
   } finally {
     await browser.close();
     vite.kill();
