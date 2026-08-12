@@ -3,11 +3,11 @@
   "characters": {
     "mimi_mash": {
       "source": "mimi-mash-pilot.blend",
-      "sourceSha256": "9d4fbed99de11deaf653e0adfd0bfc7e2bdffc9674eb5b08500d486a08296348",
+      "sourceSha256": "5a1b19dda34b943b9507ee0c0c5140cfbc58885a8693b5d40164f99830731326",
       "concept": "mimi-mash-turnaround.png",
       "conceptSha256": "a372e490bfa94712c4d9f902128098c4facfccd247dab52063eb3a4072b5451d",
       "output": "kid_mimi_mash.glb",
-      "outputSha256": "2e8fe50b06c7e95f510c09c1e653c7efb2de58bf59a8c4429d2452389f26704d",
+      "outputSha256": "548bcff03b153dc56a64027ff995697404089665080ecb5ffd0e92021de60954",
       "definingTraits": [
         "dense curly halo",
         "proud chin",
@@ -18,11 +18,11 @@
     },
     "nostrike": {
       "source": "junebug-pilot.blend",
-      "sourceSha256": "3667bfc49c72cfd85344863fb0a74986ff0e8af01fb73cd9492d5fbbce94a2f8",
+      "sourceSha256": "f81cbab2b3f04b7706d40b216e78ad6ddd83401a1731fd318246253758a1f6c6",
       "concept": "junebug-turnaround.png",
       "conceptSha256": "f5d4e21c161e43406381c07f3d2acb981b5e7abf56775385b9549c8e825abc56",
       "output": "kid_nostrike.glb",
-      "outputSha256": "e03470ddcda73cca864123e88fb5ad42672f9a0918d00c13b9a57d7142001fb7",
+      "outputSha256": "ce67b9b05f45796a35ed3c4fe02a175628b4240acca01f43c17f5e2f8d5930cd",
       "definingTraits": [
         "arrow ponytail",
         "athletic piping",
@@ -33,11 +33,11 @@
     },
     "calls_shot": {
       "source": "theo-pilot.blend",
-      "sourceSha256": "4a9982f39838c53127466abd860d0885f4db704016150422ebb7df69f68a8c92",
+      "sourceSha256": "07d9cccdd5afd5c5a9e075a12202818c43374cfee706a2912a7794149e0e1c45",
       "concept": "theo-turnaround.png",
       "conceptSha256": "f93d976869f437a92be482302db4124c064d33b708bb22a7e16fcfc51e403e66",
       "output": "kid_calls_shot.glb",
-      "outputSha256": "a3e997e271d7b04310c5c5d568a930d63521bbf2f7850b8823d8572d29972834",
+      "outputSha256": "52b230666c3eb92be352193c75f0e166be050ae9d66cb9040f9082c650a732f7",
       "definingTraits": [
         "oversized cap",
         "broad tapered face",
@@ -48,11 +48,11 @@
     },
     "wheelchair_ace": {
       "source": "zoom-pilot.blend",
-      "sourceSha256": "ed6b64ee63e846cd99194b6d7fc200286c64ffc2f69789880c127da7baa0d86d",
+      "sourceSha256": "4a35ffa594b309a230830e4b14b5e0349f844d7127cd60f848294c2cbf976067",
       "concept": "zoom-turnaround.png",
       "conceptSha256": "ab2ddf9b07a00ad095b4583046164edb23c26e542465ab4b2f7663fe8a38b296",
       "output": "kid_wheelchair_ace.glb",
-      "outputSha256": "adf49cf305e0d98da582f53ae440723324c4a49a4a37e56825942bbff61e7d79",
+      "outputSha256": "af9a867b4080402d3bda0030e12d4ab6049e183666722395837d468513cda70a",
       "definingTraits": [
         "compact sport chair",
         "cambered wheels",
@@ -63,11 +63,11 @@
     },
     "big_lou": {
       "source": "big-lou-pilot.blend",
-      "sourceSha256": "482cee5f1cf09fe4a66d7ea9d172ee97091abc4023a7720ab4694e48e0e4d050",
+      "sourceSha256": "8ee359f9f1dbb02025877ff00993352c113a546dc6238b033a63109d2622e130",
       "concept": "big-lou-turnaround.png",
       "conceptSha256": "8e613340d5955ce7af1a8c9b2ac381514c0c7b577129202d8843bb35e13d2a45",
       "output": "kid_big_lou.glb",
-      "outputSha256": "6e9e0e647ea05e654b6e258ddf906d9ff957f11f7eb4a5bd11e7e02d29a0486c",
+      "outputSha256": "29f6b9dad31e1d875095bc91355bfac0bec1a9850f4d7331cfc85226e271e7ff",
       "definingTraits": [
         "gentle broad silhouette",
         "soft rounded face",
@@ -78,11 +78,11 @@
     },
     "tank": {
       "source": "tank-pilot.blend",
-      "sourceSha256": "cdc27119c05f6aa6513fc30f370129e49c7cfccae3cac4e0c214894520fc8e90",
+      "sourceSha256": "5e2a59437322d7ba39c89ee9ccdf25d375bf7021477feeff63bf303aa2bee7a4",
       "concept": "tank-turnaround.png",
       "conceptSha256": "32d3e55d0bb1f56fa6edacf9d87f7d53cc516cd3877740042f9c82e0c5756bd4",
       "output": "kid_tank.glb",
-      "outputSha256": "e82dc8457c4fdd93dc9a02aae1871c91d1dcfb255d73a376e34c4acc4dd9e06f",
+      "outputSha256": "95a908544290e4aeab3b0c17667193c82086b570d43473554dd540147e4c32d5",
       "definingTraits": [
         "low wide silhouette",
         "bald round crown",
