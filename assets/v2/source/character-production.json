@@ -18,11 +18,11 @@
     },
     "nostrike": {
       "source": "junebug-pilot.blend",
-      "sourceSha256": "caacde8ad74deea92e33b87dad1806c1c8a43af146375d5328070f1860ecd868",
+      "sourceSha256": "3667bfc49c72cfd85344863fb0a74986ff0e8af01fb73cd9492d5fbbce94a2f8",
       "concept": "junebug-turnaround.png",
       "conceptSha256": "f5d4e21c161e43406381c07f3d2acb981b5e7abf56775385b9549c8e825abc56",
       "output": "kid_nostrike.glb",
-      "outputSha256": "5af1b26d7f071ec220d85571769b92ac6fb12517a39b2a371a67facdc19361ba",
+      "outputSha256": "e03470ddcda73cca864123e88fb5ad42672f9a0918d00c13b9a57d7142001fb7",
       "definingTraits": [
         "arrow ponytail",
         "athletic piping",
