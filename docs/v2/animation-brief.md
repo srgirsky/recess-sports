@@ -331,9 +331,9 @@ player actually watches, and agreeing the movement language on them costs far
 less than re-timing forty-three clips.
 
 All three signature priority sets and Batch 1 have animation deliveries, but
-their character-model fidelity is not yet approved. Batch 2 remains paused
-while Junebug proves the corrected Blender-to-runtime path; then retrofit the
-six delivered characters before starting Turbo, Sprout and Zippy. Review with
+only Junebug's character-model fidelity is approved. Sculpts now run in batches
+of at most five chosen to retire shared construction, not in roster order — see
+`docs/v2/character-production-playbook.md`. Review with
 `/v2/?anims=1&kid=<id>`: `★` is the character take, `▪` is shared and `▫` is
 procedural fallback. Sign off each model, motion and draft read together before
 starting the next batch.

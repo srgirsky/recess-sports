@@ -15,6 +15,7 @@ or animation contracts.
 | How does personality select body and face acting at runtime? | `src/v2/render/performance.ts` |
 | How are assets generated, checked and reviewed? | `README.md` |
 | Which source/runtime hashes and visual scores were approved? | `assets/v2/source/character-production.json` and `character-fidelity.json` |
+| Which concept file, `.blend` and traits belong to an id? | `scripts/v2/character-registry.json` |
 
 If two of these disagree, fix the owning source rather than copying the fact
 into another file.
@@ -56,16 +57,27 @@ them.
 
 ## Production rule
 
-Finish one character through every gate before starting the next. Mimi's earlier
-approval was revoked because Blender provenance and manually entered scores did
-not prove visual fidelity. Junebug is the rebuilt reference-sculpt pilot and is
-`candidate` until the human art director approves the current board. Theo, Zoom,
-Big Lou, Tank and Mimi remain `needs-polish`. Batch 2 (Turbo, Sprout and Zippy)
-stays paused until all six boards reach approval; procedural validity is not
-sculpt completion.
+Produce characters in batches of at most five, chosen so no two sculpts in a
+batch touch the same file. Mimi's earlier approval was revoked because Blender
+provenance and manually entered scores did not prove visual fidelity. Junebug is
+the reference sculpt and the only approved character; procedural validity is not
+sculpt completion, so a generated GLB is a placeholder however cleanly it
+validates.
 
-Use one pull request per signature character. Later production batches may
-share a pull request when every character has separate review evidence.
+One pull request per batch, carrying a separate review block per character. Two
+rules make a batch as safe as the single-character pass it replaces:
+
+- **The sculptor never scores its own work.** An independent critic scores §3
+  from freshly rendered boards, and every score cites the evidence file it was
+  read off.
+- **`npm run measure:fidelity -- <id>` runs first** and settles anything it
+  covers before a 1–5 score is discussed. `authored-character.test.js` requires
+  the run to be recorded against the same board the scores are bound to.
+
+Batches are chosen to retire the roster's shared vocabulary — eleven hair
+styles, five accessories, six garment kinds across thirty kids — rather than by
+roster order, so each batch teaches the shared sculpt library something the next
+one reuses.
 
 ## Gate 1 — direction lock
 
@@ -83,7 +95,13 @@ Approval means:
   character source before modelling begins.
 
 Save approved targets under `docs/v2/concepts/` and link them from the pull
-request.
+request. The thirty roster turnarounds merged in PR #119 are direction-locked as
+a set; a change to one of them re-opens this gate for that character only.
+
+The id a character is registered under and the slug its art was drawn under
+differ for eleven of the thirty (`ace_kid` is drawn as `ace`). That mapping has
+exactly one home, `scripts/v2/character-registry.json`; add a character there
+before expecting any tool to find their board.
 
 ## Gate 2 — sculpt review
 
@@ -91,13 +109,26 @@ Build the character on the canonical skeleton and keep an editable Blender
 source under `assets/v2/source/`. Review the bind pose from the front, side,
 three-quarter and back before spending time on animation polish.
 
-Generate the side-by-side board and score all six mandatory categories:
+Run `npm run measure:fidelity -- <id>` before scoring anything. It reads the
+delivered front render and the approved turnaround with one detector and settles
+head proportion, garment colour split, visible face and ankle daylight; where it
+reports a number, the number wins over an eye score. A metric it reports as
+`NOT MEASURED` is not a pass — it means the detector could not take that
+measurement on this character, and §3 is scored without it.
+
+Then generate the side-by-side board and score all six mandatory categories:
 front/profile silhouette, head/body proportions, hair mass, clothing
 construction, face/expression read, and hero plus 40-pixel gameplay read. Name
 exactly five defining traits in the production receipt; approval requires every
 trait to survive the delivered model, every category to score at least 4/5, and
 an explicit human approver/timestamp bound to the current board hash. A score
 entered by the agent that built the asset can only produce `candidate`.
+
+Record the board's hash beside the scores as `scoredBoardSha256`. The board
+prints the scores and the status, so take that hash from a board rendered
+**after** the scores are written — the same ordering trap the approval hash has.
+A score that is not bound to the current board is the Mimi failure, and it is now
+an automated one.
 
 Approval means:
 
@@ -204,13 +235,14 @@ the pull request contains visual evidence for direction, sculpt, motion and
 integration approval. Merging deploys the character—an open pull request does
 not.
 
-Use this review block in each character pull request:
+Use this review block **once per character** in a batch pull request:
 
 ```text
 Character: <name> (<id>)
 Direction: approved — <concept link>
 Sculpt: approved — <look-review screenshot>
-Fidelity: approved — <side-by-side board and six scores>
+Measured fidelity: <n>/<n> metrics inside tolerance — <measure:fidelity output>
+Fidelity: approved — <side-by-side board and six scores, critic ≠ sculptor>
 Motion: approved — <animation-review screenshot or recording>
 Face/voice: approved AI master | fallback retained — <draft-flow + audio evidence>
 AI voice: <model · generator · stock voice · speed · license/disclosure check>
