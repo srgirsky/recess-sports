@@ -6,3 +6,7 @@ dist/
 .cache/
 assets/v2/voice-auditions/
 *.blend1
+
+# Python bytecode — Blender writes these when a --python script imports sculptlib.
+__pycache__/
+*.pyc
