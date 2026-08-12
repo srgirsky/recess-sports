@@ -1502,7 +1502,16 @@ def build_leg(builder: MeshBuilder, side: int, prefix: str, detail: int) -> None
     up, low, foot = f"{prefix}UpLeg", f"{prefix}Leg", f"{prefix}Foot"
     if detail >= 2:
         rings_spec: list[tuple[float, float, float, tuple, str | dict[str, float]]] = [
-            (0.27, 0.098, -0.01, SOCK, {low: 0.4, foot: 0.6}),
+            # ★ THE SOCK ENDS INSIDE THE SHOE. This ring is the leg's bottom
+            # CAP — the sock simply stops here — so it has to sit where the
+            # shoe still encloses it. At the old 0.27 it stopped level with the
+            # collar, which forced the last to hold an un-shoe-like width right
+            # up to its topline just to contain a disc nobody can see. At 0.15
+            # it is
+            # buried with room (the last is 0.298..0.508 there against the
+            # cap's 0.325..0.469), and the visible sock above the collar is
+            # unchanged.
+            (0.15, 0.072, -0.01, SOCK, {low: 0.4, foot: 0.6}),
             (0.46, 0.108, 0.0, SOCK, low),
             (0.608, 0.128, 0.0, SOCK, low),
             (0.615, 0.132, 0.0, PANTS_DARK, low),
@@ -1524,7 +1533,7 @@ def build_leg(builder: MeshBuilder, side: int, prefix: str, detail: int) -> None
         sides = 12
     elif detail == 1:
         rings_spec = [
-            (0.27, 0.098, -0.01, SOCK, {low: 0.4, foot: 0.6}),
+            (0.15, 0.072, -0.01, SOCK, {low: 0.4, foot: 0.6}),
             (0.603, 0.127, 0.0, SOCK, low),
             (0.61, 0.130, 0.0, PANTS_DARK, low),
             (0.653, 0.142, 0.0, PANTS_DARK, low),
@@ -1537,7 +1546,7 @@ def build_leg(builder: MeshBuilder, side: int, prefix: str, detail: int) -> None
         sides = 8
     else:
         rings_spec = [
-            (0.27, 0.100, -0.01, SOCK, {low: 0.4, foot: 0.6}),
+            (0.15, 0.074, -0.01, SOCK, {low: 0.4, foot: 0.6}),
             (0.65, 0.138, 0.0, SOCK, low),
             (0.66, 0.142, 0.0, PANTS, low),
             (0.92, 0.180, 0.0, PANTS, {up: 0.5, low: 0.5}),
@@ -1564,95 +1573,235 @@ def build_leg(builder: MeshBuilder, side: int, prefix: str, detail: int) -> None
         builder.face((top, rows[-1][index], rows[-1][nxt]), 1)
 
 
+# --- The shoe -----------------------------------------------------------------
+#
+# ★ ONE LASTED UPPER. Every earlier shoe was a UNION OF BALLS — an ankle
+# quarter, a toe box and an outsole plate — and round 5 read it exactly as
+# built: "a cream sphere toe and a cream sphere heel butt-joined to the red
+# vamp at hard straight seams, three grey pin-nubs for laces, a midsole slab
+# visibly separated from the shoe body". The seams were real. A painted cap on
+# ball A meets a painted counter on ball B along their INTERSECTION CURVE, and
+# an intersection curve between two different colours is a crease however
+# carefully each ball is painted. Same lesson as the round-1 trim shells, one
+# level up: the cure is not better painting, it is one surface.
+#
+# So the shoe is now a LAST — cross-sections stationed along the foot's length,
+# stitched into a single continuous skin, with the toe cap, the collar band and
+# the midsole as painted REGIONS of it. There is no second shell and therefore
+# no seam, anywhere, ever.
+#
+# ★ AND IT WAS A BOOT. Scanning both profile boards for fore-aft silhouette
+# length at matched heights (same detector, each against its own figure
+# height) says the footprint was always right and the HEIGHT never was:
+#
+#     z ft    concept   delivered(v17)
+#     0.166    0.661       0.641      <- ground footprint, correct
+#     0.208    0.623       0.633      <- correct
+#     0.250    0.444       0.590      <- +33%
+#     0.291    0.338       0.511      <- +51%
+#     0.333    0.294       0.345
+#
+# The concept's upper collapses away between 0.21 and 0.29; ours carried a
+# 0.43ft-tall ankle quarter, so it was a bootie wearing a sneaker's paint. The
+# stations below are tuned against that column, which is why the topline peaks
+# at 0.312 over the mid-foot and the toe box tops out at 0.215.
+SHOE_FLOOR = 0.006  # the tread, just off the ground plane
+
+# ★ THE LATERAL PROFILE IS MEASURED, NOT STYLED, and measuring it needed the
+# right VIEW. A profile board shows two overlapping shoes, so its silhouette
+# length is the union of both and the first rebuild tuned against it came out a
+# flat wedge. One leg's silhouette WIDTH in the FRONT view has no such problem —
+# the shoe is wider than the sock, so the step in that column is the topline,
+# and the whole curve belongs to one shoe:
+#
+#     z ft   concept leg width   the old union
+#     0.05        0.496              0.423     <- widest, a flared midsole
+#     0.10        0.373              0.423     <- the union held its width
+#     0.20        0.293              0.373
+#     0.28        0.217              0.251
+#     0.32        0.189 (sock)       0.208     <- both tops end here
+#
+# The height was nearly right all along; the shoe was too NARROW at the sole and
+# too WIDE everywhere above it — a slab where the concept draws a chunky midsole
+# flaring out under an upper that tapers all the way to the collar. These are
+# those numbers, halved and normalised to the widest.
+SHOE_FLARE = [
+    (0.006, 0.821), (0.050, 1.000), (0.100, 0.752), (0.160, 0.685),
+    (0.200, 0.591), (0.240, 0.524), (0.280, 0.438), (0.320, 0.401),
+]
+# ★ THE FEET ARE TURNED OUT, AND MISSING THAT COST TWO REBUILDS. The concept's
+# front view shows each shoe rotated about 22 degrees outward, so its 0.496ft
+# "width" is a PROJECTION of a long shoe seen partly side-on, not the width of
+# a shoe. Matching that number head-on — which the first two passes did — gives
+# a 0.50ft-wide clog, and the board duly read a flared bell with the toe cap
+# facing the camera. A 0.60ft x 0.30ft shoe (foot length is about 0.15 of a
+# child's height, so 0.60ft on a 4.0ft kid) toed out 22 degrees projects
+# 0.60*sin22 + 0.30*cos22 = 0.503ft, which is the measurement, from a shoe that
+# is actually shoe-shaped.
+#
+# Only the MESH turns. `LeftToeBase` still points down +Z, so the rig convention
+# in skeleton.ts and the asset contract is untouched and a foot-plant clip
+# rotates the Foot bone exactly as before — the shoe just rides it with the
+# stance the art draws.
+SHOE_TOE_OUT = 22.0 * pi / 180.0
+#   (y, half-width at z 0.05, topline z).  -y is forward, so the toe is first.
+SHOE_STATIONS = [
+    (-0.375, 0.033, 0.115),
+    (-0.323, 0.079, 0.165),
+    (-0.267, 0.112, 0.200),
+    (-0.202, 0.136, 0.228),
+    (-0.122, 0.149, 0.258),
+    (-0.042, 0.150, 0.295),
+    (0.033, 0.147, 0.315),
+    (0.103, 0.140, 0.318),
+    (0.169, 0.129, 0.310),
+    (0.225, 0.091, 0.280),
+]
+
+
+def shoe_flare(z: float) -> float:
+    """The measured width profile, linearly interpolated and held at the ends."""
+    if z <= SHOE_FLARE[0][0]:
+        return SHOE_FLARE[0][1]
+    for (za, wa), (zb, wb) in zip(SHOE_FLARE, SHOE_FLARE[1:]):
+        if z <= zb:
+            return wa + (wb - wa) * (z - za) / (zb - za)
+    return SHOE_FLARE[-1][1]
+
+
+def shoe_half_width(hw: float, z: float, ztop: float) -> float:
+    """Half-width at height `z` — the measured flare, rolled off to zero at the
+    crown. The 8th power is what keeps the roll-off a CROWN rather than a taper:
+    it holds the measured width until the last few hundredths of a foot, so the
+    shoe does not pinch inward over its whole upper the way a circular section
+    does."""
+    span = max(1e-6, ztop - SHOE_FLOOR)
+    ratio = min(1.0, max(0.0, (z - SHOE_FLOOR) / span))
+    return hw * shoe_flare(z) * (max(0.0, 1.0 - ratio ** 8)) ** 0.5
+
+
+def shoe_section(hw: float, ztop: float, dome: int, base: int) -> list[tuple[float, float]]:
+    """One cross-section as (x, z), walked as a closed ring: down the outer
+    side from the crown, across the FLAT sole, back up the inner side. The
+    crown is one shared point on the centreline and the sole is a straight
+    line, so neither is sampled twice."""
+    def at(step: int) -> tuple[float, float]:
+        z = ztop - (ztop - SHOE_FLOOR) * step / (dome - 1)
+        return (shoe_half_width(hw, z, ztop), z)
+
+    points = [at(step) for step in range(dome)]
+    edge = points[-1][0]
+    for index in range(1, base + 1):
+        points.append((edge - 2.0 * edge * index / (base + 1), SHOE_FLOOR))
+    for step in range(dome - 2, 0, -1):
+        x, z = at(step)
+        points.append((-x, z))
+    return points
+
+
+def shoe_place(x0: float, side: int, sx: float, y: float, z: float) -> tuple[float, float, float]:
+    """Section-local (sx, y) onto the toed-out last, in world feet."""
+    angle = SHOE_TOE_OUT * side
+    return (x0 + sx * cos(angle) - y * sin(angle), sx * sin(angle) + y * cos(angle), z)
+
+
 def build_shoe(builder: MeshBuilder, side: int, prefix: str, detail: int, segments: int, rings: int) -> None:
-    """A sneaker whose white toe cap is a PAINTED latitude band on the toe box
-    itself. Round 1 pushed a separate white shell through the red toe box and
-    the intersection curve rendered as the cracked cap edge. Red-on-red
-    overlaps (ankle collar into toe box) are the only interpenetrations left,
-    and a same-colour overlap has no visible seam. The outsole stays real
-    geometry, deliberately PROUD of the upper all round — an outsole lip the
-    art draws, not a z-fight."""
+    """A low sneaker built as ONE continuous last: painted cream toe cap,
+    collar band and midsole, plus three raised lace straps.
+
+    ★ IT IS NOT A UNION OF BALLS ANY MORE, and that was the whole defect. Every
+    earlier shoe stacked an ankle quarter, a toe box and an outsole plate, and
+    round 5 read it exactly as built: "a cream sphere toe and a cream sphere
+    heel butt-joined to the red vamp at hard straight seams, three grey pin-nubs
+    for laces, a midsole slab visibly separated from the shoe body". Those seams
+    were real and no amount of painting could remove them: a cap painted on ball
+    A meets a counter painted on ball B along their INTERSECTION CURVE, and an
+    intersection curve between two colours is a crease. Same lesson as the
+    round-1 trim shells, one level up — the cure is not better painting, it is
+    one surface."""
     # The whole shoe is one rigid form on `Foot`, so it takes the leg's
     # centreline at the ANKLE and does not splay within itself.
     x0 = leg_x(LEG_ANKLE_Z) * side
     foot = f"{prefix}Foot"
     if detail == 0:
-        builder.ellipsoid((x0, -0.16, 0.20), (0.25, 0.38, 0.17), 1, SHOE, foot, segments, rings, flatten_sole=True)
-        builder.ellipsoid((x0, -0.15, 0.065), (0.24, 0.355, 0.052), 1, SOLE, foot, segments, rings, flatten_sole=True)
+        builder.ellipsoid((x0, -0.16, 0.17), (0.22, 0.33, 0.14), 1, SHOE, foot, segments, rings, flatten_sole=True)
+        builder.ellipsoid((x0, -0.15, 0.055), (0.235, 0.32, 0.048), 1, SOLE, foot, segments, rings, flatten_sole=True)
         return
-    # 14x6 at hero (was 12x6): the round-2 board still read "heavily faceted
-    # shoe bodies" — the ankle quarter and toe box are the two most silhouette-
-    # exposed curved forms below the knee, and 30-degree columns polygonise
-    # them at board scale.
-    # 12 at hero, was 14: the flange that de-dithers the hairline has to come
-    # out of the 400KB budget, and a 0.215ft toe box at 30-degree columns
-    # scallops 0.0073ft (1px on the board) where the hairline scalloped 0.54px
-    # on a hard free edge — the same triangles buy far more there.
-    seg = 12 if detail >= 2 else 9
-    rng = 6 if detail >= 2 else 4
-    # ★ THE SHOE WAS INSIDE OUT AGAINST THE APPROVED ART, and it is one of the
-    # few defects on this character that is a straight contract violation
-    # rather than a matter of degree. junebug-turnaround.png draws a CREAM
-    # sneaker: a big cream toe cap over the front ~45% of the shoe, a red vamp
-    # and quarter behind it, a cream heel counter, cream laces and a cream
-    # sole, with red returning only around the collar's top rim. The shipped
-    # model had that exactly backwards — a red shoe wearing a small white oval
-    # at the toe. Measured with one classifier over the same box, the concept's
-    # front view is 44.9% cream to 40.7% red and the round-3 build 34.6% to
-    # 48.6%.
+    # ★ LOD1 TAKES EVERY OTHER STATION. A continuous skin is not free: the first
+    # build of it came out 82 triangles over LOD1's 3000 budget and 6KB over the
+    # 400KB file budget, because the old union's balls dropped to 9x4 rings at
+    # LOD1 while the last still wanted all ten stations. Five stations keep
+    # every silhouette event (toe tip, toe box, waist, topline peak, heel) and
+    # the board renders LOD0 anyway. Halving the stations is the honest fix;
+    # raising the budget is not.
+    dome = 7 if detail >= 2 else 5
+    base = 3 if detail >= 2 else 2
+    stations = SHOE_STATIONS if detail >= 2 else SHOE_STATIONS[::2]
+
+    # ★ THE CREAM REGIONS, AND WHY THEIR EXTENT IS NOT FREE. Round 3 asserted
+    # the concept's shoe was "white with a red toe cap" without measuring it and
+    # the sculptor faithfully inverted a shoe that had been closer to the art;
+    # the first round-4 repair then overshot to 62.1% cream against 18.3% red.
+    # The concept measures 37.3% red / 46.2% cream over the front view's shoe
+    # band and `npm run measure:fidelity -- nostrike` reads exactly that band on
+    # both images. Change the SHAPE of these regions freely; re-measure before
+    # changing how much of the shoe they cover.
     #
-    # ⚠️ AND CREAM-DOMINANT IS NOT CREAM-EVERYWHERE. The first round-4 shoe
-    # painted the whole ankle quarter cream and ran the toe cap back to the
-    # box's equator, and the same classifier scored it 62.1% cream to 18.3%
-    # red — an overshoot of the same size as the defect it replaced. The
-    # concept keeps a red vamp and a red quarter and spends its cream on the
-    # toe cap, the heel counter, the laces and the sole.
-    #
-    # Ankle quarter: red, with the cream heel counter behind dy 0.30.
-    builder.ellipsoid(
-        (x0, 0.03, 0.26), (0.20, 0.20, 0.17), 1, SHOE, foot, seg, rng,
-        flatten_sole=True,
-        color_fn=lambda dx, dy, dz: SOLE if dy > 0.30 else SHOE,
-    )
-    # Toe box with its POLE at the toe (pole="-y"), so latitude rows ring the
-    # toe and the cream cap boundary lands exactly on a clustered row pair.
-    # The pair moved from 0.79/0.85 to 1.20/1.26 — the cap now ends at dy
-    # -0.33 instead of -0.68, covering the front third of the box, which is
-    # the concept's cap length rather than a painted toe-nail.
-    cap_phis = [0.30, 0.62, 0.96, 1.20, 1.26, 1.70, 2.20, 2.70] if detail >= 2 else [0.45, 1.20, 1.26, 1.80, 2.45]
-    builder.ellipsoid(
-        (x0, -0.13, 0.175), (0.215, 0.30, 0.145), 1, SHOE, foot, seg, rng,
-        flatten_sole=True, pole="-y", phis=cap_phis,
-        color_fn=lambda dx, dy, dz: SOLE if dy < -0.68 else SHOE,
-    )
-    # Sole tucked at the heel (ry 0.335, centre -0.115; was 0.37 at -0.10):
-    # the old plate ran 0.04 past the upper all round and the profile read a
-    # skateboard flange behind the heel. It stays slightly proud at the toe,
-    # where the art draws the lip. Thickened rz 0.052 -> 0.060: the round-2
-    # board called the thinner lens a "flat plate" — the concept's sole is a
-    # rounded slab with a visible white sidewall.
-    # ★ THE OUTSOLE IS A WELT, NOT A PLATE. rx 0.228 stood 0.013 proud of the toe
-    # box (0.215) and 0.028 proud of the ankle quarter (0.20) on every bearing,
-    # which is the "two stacked flat discs protruding past the shoe body on every
-    # side with hard straight edges" the round-4 board read at 10x. The concept
-    # draws it the other way round: flush under the cream toe cap, and showing as
-    # a thin cream lip only where the red quarter curves in above it. 0.214 x
-    # 0.318 is inside the toe box and 0.014 proud of the quarter, so the lip
-    # appears exactly where the art puts it; rz 0.066 about 0.072 keeps the
-    # rounded sidewall and leaves the tread 0.006ft off the ground plane.
-    builder.ellipsoid((x0, -0.115, 0.072), (0.214, 0.318, 0.066), 1, SOLE, foot, seg, max(4, rng - 2), flatten_sole=True)
-    lace_rows = (-0.10, -0.19, -0.28) if detail >= 2 else (-0.20,)
+    # The cap boundary leans BACK as it rises (+0.30 per foot of height),
+    # because the concept's does: it meets the sole ahead of where it meets the
+    # lace line.
+    def shoe_color(y: float, z: float, ztop: float):
+        if z < SHOE_FLOOR + 0.055:
+            return SOLE  # the flared midsole, all the way round
+        if y < -0.300 + 0.30 * (z - SHOE_FLOOR):
+            return SOLE  # toe cap
+        if y > -0.05 and z > ztop - 0.030:
+            return SOLE  # collar band, mid-foot back around the heel
+        return SHOE
+
+    rows: list[list[int]] = []
+    for y, hw, ztop in stations:
+        row = []
+        for sx, sz in shoe_section(hw, ztop, dome, base):
+            row.append(builder.vertex(shoe_place(x0, side, sx, y, sz), shoe_color(y, sz, ztop), foot))
+        rows.append(row)
+    builder.grid(rows, 1)
+    # Caps. Both end stations are already narrow, so one fan each closes the
+    # last without a readable facet.
+    toe = builder.vertex(shoe_place(x0, side, 0.0, stations[0][0] - 0.038, stations[0][2] * 0.55), SOLE, foot)
+    heel = builder.vertex(shoe_place(x0, side, 0.0, stations[-1][0] + 0.021, stations[-1][2] * 0.52), SHOE, foot)
+    for index in range(len(rows[0])):
+        nxt = (index + 1) % len(rows[0])
+        builder.face((toe, rows[0][nxt], rows[0][index]), 1)
+        builder.face((heel, rows[-1][index], rows[-1][nxt]), 1)
+
+    # ★ LACES ARE STRAPS, NOT PINS. The old three were 0.014ft tubes laid flat
+    # across the vamp and the board read them as "three grey pin-nubs, 1-2px,
+    # two of them sitting proud" — at 40px they were noise, and at hero they
+    # were pegs standing off the surface. The concept draws three chunky rounded
+    # straps of about the sleeve trim's cross-section, arching over the vamp.
+    # Each one is swept along the LAST'S OWN SECTION at its station and pushed
+    # out a hair, so it lies on the shoe instead of hovering over it.
+    lace_rows = (-0.196, -0.135, -0.074) if detail >= 2 else ()
     for lace_y in lace_rows:
-        along = min(1.0, abs(lace_y + 0.13) / 0.30)
-        lace_z = 0.175 + 0.145 * (1.0 - along * along) ** 0.5 + 0.012
-        builder.tube(
-            [(-0.12 + x0, lace_y, lace_z), (0.12 + x0, lace_y, lace_z)],
-            [0.014, 0.014],
-            1,
-            WHITE,
-            foot,
-            5,
-        )
+        hw = 0.136 + (lace_y + 0.202) * (0.150 - 0.136) / 0.160
+        ztop = 0.228 + (lace_y + 0.202) * (0.295 - 0.228) / 0.160
+        centre = SHOE_FLOOR + 0.42 * (ztop - SHOE_FLOOR)
+        path, radii = [], []
+        # Three points per half, five sides. The first pass swept nine points
+        # at six sides and the three straps alone cost 288 triangles a shoe,
+        # which put LOD0 220 over its 7000 budget — a strap has to read at hero
+        # and vanish by LOD1, not out-detail the last it sits on.
+        for index, u in enumerate((0.56, 0.32, 0.09)):
+            z = SHOE_FLOOR + (ztop - SHOE_FLOOR) * (1.0 - u)
+            x = shoe_half_width(hw, z, ztop)
+            push = 0.011
+            length = max(1e-6, (x * x + (z - centre) ** 2) ** 0.5)
+            path.append((x * (1 + push / length), centre + (z - centre) * (1 + push / length)))
+            radii.append(0.022 if index == 1 else 0.017)
+        full = [shoe_place(x0, side, dx, lace_y, z) for dx, z in path]
+        full += [shoe_place(x0, side, -dx, lace_y, z) for dx, z in reversed(path[:-1])]
+        builder.tube(full, radii + list(reversed(radii[:-1])), 1, SOLE, foot, 5)
 
 
 def build_ear(builder: MeshBuilder, side: int, detail: int) -> None:
@@ -1710,13 +1859,28 @@ def build_ear(builder: MeshBuilder, side: int, detail: int) -> None:
     # now shows against sky is the one the round-3 board called a straight
     # faceted edge at 14.
     points = 16 if detail >= 2 else 8
-    cy, cz = 0.045, 3.156
-    ry, rz = 0.108, 0.1206
+    # ★ THE EAR WAS ROUND AND AN EAR IS NOT. Round 5 read it as "a raised
+    # ellipsoid pad with one shallow crescent groove" — the helix, concha and
+    # lobe below are all really there, and the reason they did not read is one
+    # number: aspect. Measuring both crops with the same detector, the concept's
+    # profile ear is 1.42 tall to wide and this one was 1.03. A circle with a
+    # groove in it is a doughnut whatever the groove is doing, which is also
+    # what killed v11.
+    #
+    # ⚠️ THE HEIGHT WAS BOUGHT DOWNWARD, ON PURPOSE. Growing the ear UP pushes
+    # its upper-back bearings straight into the hair cap, which is the
+    # "black hole punched in the side of her head" documented at length below —
+    # a collision, not a shading bug, and it cost three rounds. The top ring
+    # therefore does not move at all (3.2763 before and after); the bottom drops
+    # from 3.0354 to 2.9797, into jaw the hair never reaches, and `lobe` swells
+    # harder to spend that reach on the thing 3.10 actually asks for.
+    cy, cz = 0.045, 3.128
+    ry, rz = 0.1044, 0.1483
 
     def outline(t: float, scale: float) -> tuple[float, float]:
         # t = 0 back, pi/2 up, pi front, 3pi/2 down.
         # LOBE: a tight cubic swell centred on the lower-front arc.
-        lobe = 1.0 + 0.26 * max(0.0, cos(t - 4.13)) ** 3
+        lobe = 1.0 + 0.34 * max(0.0, cos(t - 4.13)) ** 3
         # HELIX ROOT: at the upper front the rim dives into the face rather
         # than standing off it, which is the taper 3.10 asked for by name.
         root = 1.0 - 0.20 * max(0.0, cos(t - 2.55)) ** 2

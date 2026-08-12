@@ -35,7 +35,14 @@ const VIEWPORT = { width: 1059, height: 804 };
 
 const CAPTURES = [
   { clip: 'idle', out: 'hero', settleMs: 1500 },
-  { clip: 'run', out: 'run', settleMs: 1200 },
+  // ★ AT A REACH, NOT WHEREVER THE CLOCK LANDED. This still is the deformation
+  // evidence rubric 3.11 and 4.3 are scored from, and a fixed 1200ms wait
+  // photographed an arbitrary frame of a 24-frame loop. Round 5 drew exactly
+  // the wrong conclusion from one — "both arms hang nearly straight at hip
+  // level with no swing" off frame 16/24, which is a PASS, where straight arms
+  // are what the pose means. Every run cycle in proceduralClips.ts now peaks a
+  // quarter of the way through, so frame 25% is a full stretch for all of them.
+  { clip: 'run', out: 'run', settleMs: 1200, atFrameFrac: 0.25 },
   // Screenshot at the marker: wait until the readout's CURRENT frame reaches
   // the clip's declared marker frame. The spike's '◉ MARKER' flash fires on
   // an exact frame-equality check, and a headless renderer running below full
@@ -92,12 +99,41 @@ async function captureCharacter(page, id, slug) {
         .catch(() => {
           console.warn(`  ⚠ ${capture.clip}: marker frame not reached; capturing current frame`);
         });
+    } else if (capture.atFrameFrac !== undefined) {
+      // ⚠️ A `>=` WAIT ON A LOOPING CLIP OVERSHOOTS, and by enough to matter: a
+      // first attempt targeted frame 6 of 24 and the screenshot landed on 9,
+      // because the page keeps animating between the predicate resolving and
+      // the shot being taken. Drop to the slowest rate the page offers (0.6x,
+      // the '1' key) and poll for EXACT equality, which at that rate the frame
+      // readout holds for two render ticks or so. The rate goes back to 1.0x
+      // afterwards so the remaining captures are unaffected.
+      await page.keyboard.press('1');
+      await page.locator('.anim-list button', { hasText: capture.clip }).first().click();
+      await page
+        .waitForFunction(
+          (frac) => {
+            const readout = (document.body.textContent ?? '').match(/frame\s*(\d+)\s*\/\s*(\d+)/);
+            if (readout === null) return false;
+            return Number(readout[1]) === Math.round(Number(readout[2]) * frac);
+          },
+          capture.atFrameFrac,
+          { timeout: 12_000, polling: 'raf' }
+        )
+        .catch(() => {
+          console.warn(`  ⚠ ${capture.clip}: exact target frame not caught; capturing current frame`);
+        });
     } else {
       await page.waitForTimeout(capture.settleMs);
     }
     const output = join(concepts, `${slug}-runtime-${capture.out}.png`);
+    // Read the frame BEFORE the shot and before restoring the rate: the rate
+    // keys call playCurrent(), which restarts the clip, so a reading taken
+    // afterwards reports frame 1 of a fresh loop and says nothing about the
+    // still that was just saved.
+    const landed = (await page.textContent('body'))?.match(/frame\s*(\d+)\s*\/\s*(\d+)/);
     await page.screenshot({ path: output });
-    console.log(`✓ ${output}`);
+    if (capture.atFrameFrac !== undefined) await page.keyboard.press('2');
+    console.log(`✓ ${output}${landed ? `  (frame ${landed[1]}/${landed[2]})` : ''}`);
   }
 }
 

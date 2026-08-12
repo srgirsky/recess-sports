@@ -490,39 +490,63 @@ function junebugIdle(spec: ClipSpec): AnimationClip {
   ]);
 }
 
+// ★ THE ARM SWING IS SHALLOWER THAN IT LOOKS ON THE PAGE, and that is worth
+// stating because the authored numbers lie about it. These poses are Euler XYZ
+// applied in order, and the arm carries a 70-degree Z abduction, so most of a
+// large X term becomes TWIST about the arm's own axis rather than a
+// forward-and-back swing. The first version authored +/-41 on X and measured
+// only 33 degrees of actual swing at the shoulder — and its forearm never moved
+// at all, 62 degrees of elbow held flat through every key. Round 5 read the
+// result exactly right ("a stiff hinged read, not a run's arm action") off a
+// PASS frame, where near-vertical arms are correct and the missing thing is
+// everything either side of it.
+//
+// So the shoulder drives harder AND the elbow pumps: the arm that is forward
+// closes to 78, the arm going back opens to 40. Measure this the way the defect
+// was found — extract the X swing from the built quaternion track, do not read
+// it off the degrees below.
 function junebugRun(spec: ClipSpec): AnimationClip {
   const reachA: Pose = {
     hp: [7, 0, 0], sp: [6, -3, 0], s2: [5, 5, 0], hd: [-9, 2, 0],
     lu: [-46, 0, 5], ll: [-12, 0, 0], lt: [18, 0, 0],
     ru: [48, 0, -5], rl: [-76, 0, 0], rt: [9, 0, 0],
-    la: [42, 0, 70], lf: [0, 62, 0], ra: [-40, 0, -70], rf: [0, -62, 0],
+    la: [64, 0, 70], lf: [0, 78, 0], ra: [-58, 0, -70], rf: [0, -40, 0],
   };
   const passA: Pose = {
     hp: [9, 0, 0], sp: [7, 4, 0], s2: [6, -5, 0], hd: [-10, -1, 0],
     lu: [4, 0, 4], ll: [-42, 0, 0], lt: [8, 0, 0],
     ru: [2, 0, -4], rl: [-24, 0, 0], rt: [20, 0, 0],
-    la: [4, 0, 70], lf: [0, 58, 0], ra: [-3, 0, -70], rf: [0, -58, 0],
+    la: [6, 0, 70], lf: [0, 58, 0], ra: [-5, 0, -70], rf: [0, -58, 0],
   };
   const reachB: Pose = {
     hp: [7, 0, 0], sp: [6, 3, 0], s2: [5, -5, 0], hd: [-9, -2, 0],
     lu: [48, 0, 5], ll: [-76, 0, 0], lt: [9, 0, 0],
     ru: [-46, 0, -5], rl: [-12, 0, 0], rt: [18, 0, 0],
-    la: [-40, 0, 70], lf: [0, 62, 0], ra: [42, 0, -70], rf: [0, -62, 0],
+    la: [-58, 0, 70], lf: [0, 40, 0], ra: [64, 0, -70], rf: [0, -78, 0],
   };
   const passB = shift(passA, {
     sp: [0, -8, 0], s2: [0, 10, 0], lu: [-2, 0, 0], ru: [2, 0, 0],
-    la: [-8, 0, 0], ra: [8, 0, 0],
+    la: [-11, 0, 0], ra: [11, 0, 0], lf: [0, -6, 0], rf: [0, 6, 0],
   });
+  // ★ PHASED SO THE REACH LANDS AT 25% AND 75%, which is `runCycle`'s own
+  // convention (its `sin(p)` peaks a quarter of the way through). It used to
+  // start ON a reach, so the two run cycles in this file disagreed about where
+  // in the loop their extremes were — and a single still captured at a fixed
+  // frame therefore caught one at full stretch and the other mid-pass. That is
+  // not cosmetic: `capture-character-evidence.mjs` photographs one frame of
+  // this loop as the deformation evidence a reviewer scores 3.11 from, and a
+  // pass frame shows arms hanging straight because that is what a pass IS.
+  // Same poses, same ground contacts, rotated six frames.
   return build(spec, [
-    { f: 0, pose: reachA },
-    { f: 3, pose: shift(passA, { hp: [-2, 0, 0] }), hips: [0, 0.045, 0] },
-    { f: 6, pose: passA, hips: [0, 0.085, 0] },
-    { f: 9, pose: shift(reachB, { hp: [-2, 0, 0] }), hips: [0, 0.035, 0] },
-    { f: 12, pose: reachB },
-    { f: 15, pose: shift(passB, { hp: [-2, 0, 0] }), hips: [0, 0.045, 0] },
-    { f: 18, pose: passB, hips: [0, 0.085, 0] },
-    { f: 21, pose: shift(reachA, { hp: [-2, 0, 0] }), hips: [0, 0.035, 0] },
-    { f: spec.frames, pose: reachA },
+    { f: 0, pose: passA, hips: [0, 0.085, 0] },
+    { f: 3, pose: shift(reachB, { hp: [-2, 0, 0] }), hips: [0, 0.035, 0] },
+    { f: 6, pose: reachB },
+    { f: 9, pose: shift(passB, { hp: [-2, 0, 0] }), hips: [0, 0.045, 0] },
+    { f: 12, pose: passB, hips: [0, 0.085, 0] },
+    { f: 15, pose: shift(reachA, { hp: [-2, 0, 0] }), hips: [0, 0.035, 0] },
+    { f: 18, pose: reachA },
+    { f: 21, pose: shift(passA, { hp: [-2, 0, 0] }), hips: [0, 0.045, 0] },
+    { f: spec.frames, pose: passA, hips: [0, 0.085, 0] },
   ]);
 }
 
