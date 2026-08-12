@@ -15,7 +15,8 @@
 //
 // Conventions (also stated in docs/v2/asset-contract.md, for the artist):
 //   * 1 unit = 1 FOOT. Origin on the floor between the feet.
-//   * Character faces +Z. T-pose: arms along ±X, palms down, feet parallel.
+//   * Character faces +Z. T-pose: arms along ±X, palms down, feet pointing +Z
+//     and PARALLEL — but the legs carry a 6.75° A-splay (see the leg chain).
 //   * Mixamo-style bone names, so off-the-shelf retargeting tools work.
 //   * NO root motion in any clip — the sim owns position, always.
 // ---------------------------------------------------------------------------
@@ -113,15 +114,36 @@ export const SKELETON: readonly BoneSpec[] = [
 
   // Leg chain: 1.671 - 0.071 - 0.776 - 0.729 = 0.095 at the ankle, and the toe
   // offset is exactly -0.095 so the toes sit ON the floor plane. A rig whose
-  // feet float is a rig every foot-plant is authored wrong against.
+  // feet float is a rig every foot-plant is authored wrong against. The Y drops
+  // are what the height sum reads, so the splay below costs the crown nothing.
+  //
+  // ★ THE LEGS SPLAY 6.75°, AND THAT IS MEASURED, NOT STYLED. The rig used to
+  // run both legs straight down from the hip joint, so every kid stood with her
+  // ankles as far apart as her hip JOINTS — 0.4ft — while all four concept
+  // turnarounds that can be parsed draw a kid planted much wider. Fitting a line
+  // through the drawn leg centreline on junebug-turnaround.png puts the hip end
+  // at 0.2075ft, which is the hip joint this table already had, and the ankle
+  // end at 0.386ft. So the drawing and the rig disagreed about ONE thing and it
+  // was the splay. `render.legStance` carries the four measurements.
+  //
+  // Consequences worth knowing before editing these numbers back:
+  //   * A clip rotating LeftUpLeg about X still swings the leg forward — the
+  //     bind pose is translation-only, so bone axes stay world-aligned and the
+  //     splay simply rides along. No clip had to be re-authored.
+  //   * A kid therefore RUNS wide-legged unless a clip adducts. That is the
+  //     look the turnarounds draw; it is not drift.
+  //   * `ProxyCharacter` builds every limb between `at(bone)` positions, so the
+  //     31 procedural kids follow this table for free. An AUTHORED .blend does
+  //     not: its mesh is bound to the old rest pose and has to be retargeted
+  //     with it (`scripts/v2/blender/retarget-rig.py`).
   { name: 'LeftUpLeg', parent: 'Hips', pos: [-0.2, -0.071, 0] },
-  { name: 'LeftLeg', parent: 'LeftUpLeg', pos: [0, -0.776, 0] },
-  { name: 'LeftFoot', parent: 'LeftLeg', pos: [0, -0.729, 0] },
+  { name: 'LeftLeg', parent: 'LeftUpLeg', pos: [-0.092, -0.776, 0] },
+  { name: 'LeftFoot', parent: 'LeftLeg', pos: [-0.086, -0.729, 0] },
   { name: 'LeftToeBase', parent: 'LeftFoot', pos: [0, -0.095, 0.259] },
 
   { name: 'RightUpLeg', parent: 'Hips', pos: [0.2, -0.071, 0] },
-  { name: 'RightLeg', parent: 'RightUpLeg', pos: [0, -0.776, 0] },
-  { name: 'RightFoot', parent: 'RightLeg', pos: [0, -0.729, 0] },
+  { name: 'RightLeg', parent: 'RightUpLeg', pos: [0.092, -0.776, 0] },
+  { name: 'RightFoot', parent: 'RightLeg', pos: [0.086, -0.729, 0] },
   { name: 'RightToeBase', parent: 'RightFoot', pos: [0, -0.095, 0.259] },
 
   // Prop anchors. The AnimationDirector parents the bat/glove/ball to these,

@@ -40,6 +40,10 @@ rule that projection stays render-side and testable.
   the constant and believed it — and stride, foot plants and dive travel are all
   authored in absolute feet. `render.rigHeight`. Corollary: the proxy DERIVES its
   head radius from the crown; never hardcode it back.
+- **Changing the rig means MOVING the authored .blends, not just re-exporting
+  them** — `npm run retarget:rig`. A mesh bound to the old rest pose renders
+  right at rest and animates about a pivot outside itself, and no gate sees it.
+  `render.legStance`.
 - **Summing to the right height does not make the drawing right, and a
   bounding-box test cannot tell.** It measures one point of one fixture, so it
   stays green over a bobblehead, a torso wider than it is tall, open air where

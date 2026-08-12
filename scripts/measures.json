@@ -760,6 +760,51 @@
    "confidence": "n/a",
    "informs": "src/v2/render/skeleton.ts REFERENCE_HEIGHT_FT and SKELETON, src/v2/render/ProxyCharacter.ts CHARACTER_SCALE"
   },
+  "legStance": {
+   "id": "render.leg-stance",
+   "category": "render",
+   "reference": "derived",
+   "status": "note",
+   "statusChangedAt": "2026-08-11",
+   "what": "The canonical rig ran both legs straight down from the hip joint, so every kid's ankles sat exactly as far apart as her hip JOINTS while every approved turnaround draws a kid planted much wider. Recorded because the number was sitting in the art everyone was sculpting against for months, and only a measurement went looking for it.",
+   "found": "npm run measure:fidelity -- nostrike read 30.2% ankle daylight on the shipped Junebug against 46.9% on junebug-turnaround.png -- the one metric of eight outside tolerance, and the only one no amount of sculpting had moved. Measuring the leg WIDTH at the same height ruled out the obvious cause: 0.245ft delivered against the concept's 0.241ft. The legs were the right thickness in the wrong place.",
+   "method": "Front view of each turnaround, backdrop-keyed, sampled at 13% of figure height (just above the shoe). Columns are split into views on per-column occupancy > 4%, not on 'any non-background pixel', because a soft contact shadow spans the whole sheet and merges every view into one figure 1592px wide. Reported as gap/span so it is scale-invariant, plus the leg centreline in feet against a 4.16ft drawn crown.",
+   "measurements": {
+    "junebugConcept": {
+     "ankleDaylightPct": 46.9,
+     "legWidthFt": 0.241,
+     "legCentreFt": 0.333
+    },
+    "theoConcept": {
+     "ankleDaylightPct": 56.9,
+     "legWidthFt": 0.218,
+     "legCentreFt": 0.398
+    },
+    "bigLouConcept": {
+     "ankleDaylightPct": 31.0,
+     "legWidthFt": 0.35,
+     "legCentreFt": 0.333
+    },
+    "mimiMashConcept": {
+     "ankleDaylightPct": 35.7,
+     "legWidthFt": 0.414,
+     "legCentreFt": 0.437
+    },
+    "rigBefore": {
+     "ankleDaylightPct": 30.2,
+     "legWidthFt": 0.245,
+     "legCentreFt": 0.226
+    },
+    "unmeasured": "tank's sheet does not split into views under this method and zoom is a wheelchair user, so neither is measured here. Four of six is what the claim rests on."
+   },
+   "whyItMattered": "This is a rig fact, not a Junebug fact, and that is the point of the record: all four measurable turnarounds put the leg centreline between 0.33ft and 0.44ft while the rig put it at 0.20ft. Sculpting around it per character would have meant meshes bound to bones that do not sit inside them -- a rest pose that renders correctly and animates about a pivot outside the leg, which no test in this repo can see.",
+   "fix": "Fitting a line through junebug-turnaround.png's drawn leg centreline gives 0.2075ft at the hip and 0.386ft at the ankle: a 6.75-degree splay whose hip end lands on the hip joint the SKELETON table already had. So the rig gained the splay and nothing else moved -- LeftLeg -0.092 and LeftFoot -0.086 in x, Y drops untouched so the crown still sums to 4.000 exactly. scripts/v2/blender/retarget-rig.py moved the six authored .blend sources with their skinned vertices; the 24 procedural kids follow the table for free through ProxyCharacter.",
+   "result": "48.5% delivered against the concept's 46.9%, inside the 12-point tolerance, with the other seven metrics unchanged.",
+   "trap": "Moving bones WITHOUT their vertices is the version of this that passes every gate and is wrong: the armature modifier is identity at rest, so the bind-pose board is unchanged and validate:models is satisfied by the new bind pose, while every clip afterwards rotates leg vertices about a pivot that has left the leg.",
+   "n": 4,
+   "confidence": "n/a",
+   "informs": "src/v2/render/skeleton.ts SKELETON leg chain, scripts/v2/blender/sculpt-junebug-source.py LEG_SPLAY"
+  },
   "proxySilhouette": {
    "id": "render.proxy-silhouette",
    "category": "render",

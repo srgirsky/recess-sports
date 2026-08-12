@@ -32,7 +32,7 @@ rule below exists to protect that.
 | **Up axis** | +Y |
 | **Facing** | +Z |
 | **Origin** | on the floor, between the feet |
-| **Pose** | T-pose: arms along ±X, palms down, feet parallel |
+| **Pose** | T-pose: arms along ±X, palms down, feet pointing +Z and parallel — but the LEGS splay 6.75° outward from the hip joint, so the ankles land at ±0.378 ft, not under the hips |
 | **Height** | floor to `HeadTop_End`, **3.6–4.4 ft** (see the per-kid manifest); the reference rig is exactly **4.0 ft** |
 | **Format** | glTF 2.0 binary (`.glb`), single scene, single skin |
 

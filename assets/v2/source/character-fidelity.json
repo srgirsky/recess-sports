@@ -23,6 +23,13 @@
         "reviewedAt": "2026-08-10",
         "verdict": "rejected \u2014 agent self-scores were inflated; every category re-scored from the board against the turnaround"
       },
+      "measuredFidelity": {
+        "command": "npm run measure:fidelity -- nostrike",
+        "ranAt": "2026-08-11",
+        "board": "junebug-fidelity-review.png",
+        "result": "all eight metrics inside tolerance",
+        "note": "Ankle daylight was the last one outside it -- 30.2% against the turnaround's 46.9% -- and it was a RIG fact, not a sculpt one: the leg width at that height already matched (0.245ft vs 0.241ft), the leg CENTRELINE did not. The canonical rig now carries the concept's 6.75 degree leg splay; see render.legStance in scripts/measures.json. Delivered 48.5%. The six 1-5 scores below are the round-4 critic's and are untouched by this pass -- the sculptor does not score its own work."
+      },
       "categories": {
         "frontProfileSilhouette": {
           "label": "front/profile silhouette",
