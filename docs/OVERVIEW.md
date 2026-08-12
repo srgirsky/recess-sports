@@ -2307,6 +2307,139 @@ character-batch production sweep: feed the harvested specs into the Blender
 pipeline and roll them through the roster in the same reviewed batches the
 plan above established.
 
+## 2026-08-12 — the other 29 characters, and what the pilot actually bought
+
+Junebug was approved on 2026-08-12: **1 of 30**, seven review rounds, and a
+3,096-line sculpt script. The obvious reading is that the roster costs
+twenty-nine more of those, and it is wrong.
+
+**Her script is 1,467 lines of code and 1,629 lines of comment**, and of the
+code only **193 lines are irreducibly hers** — the hair cap and its traced
+hairline table, the headband arch, the gather bun, the ponytail, the arrowhead
+barb and the tie. 456 lines are generic machinery that moves unchanged
+(`MeshBuilder`, `head_surface`, `build_lod`, the palette/UV/atlas plumbing) and
+818 are generic construction code driven by about twelve of her measured tables
+(arms, legs, shoes, ears, torso, pelvis, neck).
+
+Reading the ~55 `★` findings in her header the same way, they fall into three
+groups and only the third recurs per kid. **Renderer and format invariants you
+can only get wrong once**: single-sided glTF materials drawing background where
+the hair cap's front half ends, faces wound inside out, the AgX shoulder turning
+skin grey at field scale, a rim polyline chorded by its column count, and the
+fidelity board's own light rig keying from +x while filling from *behind*, which
+faked a sculpt asymmetry on every face. **Anatomy rules true of every child**: an
+ear is a helix, concha, tragus and lobe rather than a bump; a nose is three
+forms; the neck must be narrower than the jaw or the chin has nowhere to be; a
+shoe is one lasted upper and not a union of balls; the sock ends *inside* the
+shoe. And then the 193 lines. **The seven rounds bought a library, not a
+character** — it has simply never been extracted.
+
+The per-kid cost is also bounded by a small vocabulary rather than by thirty. The
+roster's authored `VisualParams` use **11 hair styles, 5 accessories (16 kids
+have none) and 6 garment kinds**, with `short` serving six kids and `stripeTee`
+seven. So the authored work is roughly 21 modules amortised across the roster
+plus a per-character spec, and Junebug already retired ponytail, headband and
+stripeTee. That is what changed the production rule from one-character-per-PR to
+batches of five chosen to *retire shared construction* rather than to walk the
+roster in order.
+
+### Three tools that reported success without doing their job
+
+Preparing for that batch found the same failure shape three times, and it is
+worth naming because none of them went red.
+
+**The concept-art slug map had drifted into a live bug.** A roster id and the
+filename its art was drawn under differ for 11 of the 30 (`ace_kid` is drawn as
+`ace`, `bend_it` as `bendy-bao`, `diva` as `dazzle`). The mapping lived in three
+places and all three knew only the six pilot characters. PR #119 then added 24
+turnarounds and changed no code, so `npm run measure:fidelity -- ace_kid` looked
+for a file that does not exist and `review:character-fidelity` threw — the tool
+the quality rubric names as the thing that must settle §3 *before* any eye score
+could not run at all for six characters. Nothing failed, because **a lookup that
+is never performed cannot fail**. It is one JSON file now, read by the `.mjs`
+tooling, the two Blender scripts and the loader-less `measure:fidelity` alike,
+with a test binding it to `ROSTER` so it stays a mapping and never becomes a
+second roster.
+
+**`measure:fidelity` claimed in its own header to "transfer to the other 29
+characters unchanged".** That was true of the targets and false of the detectors,
+and running it across the roster for the first time found four ways it produced
+numbers for characters it could not measure. Its backdrop came from one corner
+sample at ±16, but **seven of the thirty sheets are vignetted past that** — Tank's
+runs 240,225,208 at the edge against 251,239,226 in the middle — so the "front
+view" was the whole 1658px collage, 97% of the sheet, and the head was measured
+across three views at once. Its occupancy test asked whether a column held *any*
+non-backdrop pixel, which a drop shadow satisfies, so Bubbles' four figures
+merged into one run on a backdrop that is genuinely flat. Its garment metric
+asked `isRed` and `isCream`, which is Junebug's shoe: on a kid whose shoes are
+not red both counters read zero, both images agree at zero, and the check passes
+having measured nothing. And its head/neck detector returns the narrowest run in
+a window, so on a kid with no neck it returns **the window edge** — Tank measured
+15.2% head height against Junebug's 33.9%, the floor's own value dressed as a
+measurement, and the sculpt would have been told to shrink a head that was not
+too big.
+
+The backdrop is sampled per column now (a figure never touches the top edge, so
+each column's own first rows *are* its backdrop), occupancy is a fraction of
+column height, the two garment tones are read off the concept and applied to both
+images, and a boundary hit reports `NOT MEASURED` and exits non-zero. All 30
+sheets now resolve a single front figure of 190–343px. Junebug stayed green
+throughout and her shoe deltas *tightened*, +2.23/+2.93 to +0.43/−0.78.
+
+**And `batch2Status` could only ever hold one value.** The gate required it to
+read `'paused'` while any character was not approved; since `pending` counts
+`candidate` too, that stays true until all thirty are approved, at which point
+there is no batch left to pause. It was also believed to be what serialized
+production and never was — `baseline` is the registry's authored set, so
+registering a new character makes them a member rather than an `extra`. What
+replaced it is per character and enforces what the flag was reaching for:
+`scoredBoardSha256` binds the six scores to the board's bytes (the board renders
+the shipped GLB, so that binds them to the delivery), and a `measure:fidelity`
+run must be recorded against that same board. **That is the Mimi failure made
+mechanical rather than remembered.** The four finished-work mesh checks also
+stopped being keyed on Junebug's id and now follow the *claim*, so `needs-polish`
+is exempt by definition and the second sculpt is checked as hard as the first.
+
+### The image-to-3D experiment, written down before it disappears
+
+On 2026-08-11 a TripoSR run was done outside this repository, in a sibling
+directory (`../recess-img23d/`) with no branch, no gates and a `node_modules`
+symlinked into this tree — so a routine cleanup would erase it. It is recorded
+here because its finding is real and its only durable copy was a session
+transcript.
+
+Junebug's approved turnaround, front view only, through `stabilityai/TripoSR` on
+Apple Silicon: **1.2s forward pass on MPS, 10.7s to extract, 22,152 vertices,
+free and MIT.** The result splits cleanly and the split is the useful part.
+
+**On form it beat the hand-written build**, on exactly the axes that had cost the
+most rounds: real ears with a rim, an inner shadow and a lobe (rubric 3.10
+verbatim), a headband that wraps with hair visible above *and* below it, a skull
+that holds full cheek width and then falls away to a small chin, and a nose that
+reads as a form. **On face detail it loses badly** — the eyes are dark smears
+with no sclera, the brows are smudges, the mouth is a blur. Two limitations were
+recorded: the vertex colours carry the concept render's lighting baked in, and
+there is no ponytail, because a single front view cannot know what it cannot see.
+
+That split agrees, from the other direction, with the spike's own recorded
+ceiling: `spike-harvest.md` says thirty recognisable kids need authored hair
+volumes, accessories and body types, and that faces which act need authored blend
+states rather than ratio specs. Neither document cited the other. The natural
+reading of both is **let a generator make the form and keep the atlas for the
+face**.
+
+What has never been attempted is the step that decides it: retopologising the
+mesh, conforming it to the canonical rig's bone order and bind pose, splitting it
+across the four material slots, and generating LOD0/1/2 at 7000/3000/1200. Two
+gates stand in the way and one of them is new — `palette.lint.test.js` requires
+every vertex colour to be a *declared swatch*, and a photogrammetric colour field
+has thousands. A bounded experiment on branch `spike/img23d-conform` is scoped to
+answer exactly that question against Junebug, who is the only character with an
+approved baseline to be measured against. If it fails, the mesh is still useful
+as a **measuring instrument** — a real 3D form to read the per-character tables
+off, instead of tracing pixel columns off a PNG, which is what those 1,629
+comment lines largely are.
+
 ## What's explicitly not built yet
 
 Human-performed voice acting, a cross-player pick-rate backend, externally
