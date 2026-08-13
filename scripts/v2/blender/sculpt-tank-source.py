@@ -100,7 +100,19 @@ PANTS_DARK = rgba("121116")
 # cream midsole, not because it is saturated. Authored a little lighter than the
 # target to survive the board's ramp, as the cream above is.
 SHOE = rgba("3F5068")  # the slate the concept actually holds
-SOCK = rgba("FFE0B4")  # same ramp correction as SOLE
+# ★ THE SOCK IS COOLER AND BRIGHTER THAN THE SHOE, AND THIS WAS THE OPPOSITE.
+#
+# An independent review found "sock and shoe are the same cream, so they merge —
+# one continuous cream tube from mid-calf to the ground", against a concept that
+# separates them into three parts. Measured on the concept's own rows: its sock
+# at 12-13% of figure height runs rgb(233,216,192) and rgb(216,194,169), r-b of
+# 41 and 47, while its shoe cream at 3% and 7% runs r-b 52 and 57. The sock is
+# the cooler, brighter of the two.
+#
+# This shipped r-b 75 against a midsole of 45 — the sock WARMER than the shoe,
+# which is the separation backwards, and at board scale two warm creams of
+# similar value read as one surface.
+SOCK = rgba("FFF2E0")  # cooler and brighter than either shoe cream
 # ★ THE MIDSOLE IS LIGHTER BY VALUE, NOT BY BEING WHITE. A near-white band
 # counts as "cream" for the tone split while contributing nothing to the band's
 # chroma, which is how the two metrics ended up anti-correlated: every step that
@@ -136,7 +148,7 @@ WHITE = rgba("FFEDD2")  # the midsole: the lightest, warmest band
 #
 # Back to a cream with chroma in it. FFE9CE is the value solved on Junebug's
 # board for exactly this ramp.
-SOLE = rgba("F2D3A4")  # the collar and the toe mudguard: greyer, deeper
+SOLE = rgba("F3CE96")  # the collar and the toe mudguard: greyer, deeper
 # The one surface the drafting team's colour tints. Tank's kit is a plain tee
 # with no piping, so the accent goes on the shoe's collar band — the only
 # element the concept draws as a separate trim, and it reads at 40px because it
