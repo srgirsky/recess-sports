@@ -335,13 +335,29 @@ function face(name, index) {
     <path d="M55.5 106 Q64 109 72.5 106 Q69.5 102 64 102 Q58.5 102 55.5 106Z" fill="${tongue}"/>`;
   if (name === 'cheer') lips = spec.tongueOut
     ? `<path d="M48 89 Q64 98 80 89 Q86 118 64 119 Q42 118 48 89Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.6"/>
-    <path d="M50.5 90.5 Q64 98.5 77.5 90.5 Q71 97.5 64 97.8 Q57 97.5 50.5 90.5Z" fill="${white}"/>
+    <path d="M50 90 Q64 99.5 78 90 Q73.5 100.5 64 101 Q54.5 100.5 50 90Z" fill="${white}"/>
     <path d="M56 108 Q64 112 72 108 Q69 103.5 64 103.5 Q59 103.5 56 108Z" fill="${tongue}"/>`
     : `<path d="M45 92 Q64 97 83 92 Q76 108 64 108 Q52 108 45 92Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
     <path d="M47.5 93.5 Q64 98 80.5 93.5 Q75 100.1 64 100.4 Q53 100.1 47.5 93.5Z" fill="${white}"/>
     <path d="M55.5 106 Q64 109 72.5 106 Q69.5 102 64 102 Q58.5 102 55.5 106Z" fill="${tongue}"/>`;
   // Determined: the same two lips, pressed and turned DOWN at the corners.
-  if (name === 'determined' || name === 'angry') lips = lowerLip(my + 2) + seam(my + 1, 3.5, 2.2);
+  // ★ A PRESSED MOUTH IS STILL A MOUTH. `angry` was a lower lip plus a thin
+  // seam, and rubric 3.14's own prohibition is "never a stroke that collapses to
+  // a line" — which is exactly what an independent review measured it as at
+  // draft-card distance, a faint dark smudge carrying no emotion. The other
+  // three cells were separated by silhouette in the round before this one and
+  // this one was left behind.
+  //
+  // A frown has the corners BELOW the centre, so the arc bows upward in the
+  // middle, and it is drawn as a stroked path with a round cap so it keeps a
+  // measurable thickness at every scale instead of thinning to nothing.
+  if ((name === 'determined' || name === 'angry') && spec.tongueOut) {
+    lips = lowerLip(my + 3.5) +
+      `<path d="M47 ${my + 2} Q64 ${my - 6.5} 81 ${my + 2}" fill="none" stroke="${mouthInk}"
+        stroke-width="4.4" stroke-linecap="round"/>`;
+  } else if (name === 'determined' || name === 'angry') {
+    lips = lowerLip(my + 2) + seam(my + 1, 3.5, 2.2);
+  }
   if (name === 'worried' || name === 'upset') lips = `<path d="M49 105 Q64 94.5 79 105 Q64 100.3 49 105Z" fill="${mouth}"/>`;
   if (name === 'surprised') lips = `<ellipse cx="64" cy="98" rx="11.5" ry="12.5" fill="${mouth}"/>
     <ellipse cx="64" cy="98" rx="8.2" ry="9.4" fill="${mouthDark}" stroke="${ink}" stroke-width="1.8"/>
