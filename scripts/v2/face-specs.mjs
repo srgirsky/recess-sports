@@ -131,6 +131,29 @@ export const FACE_SPECS = {
     // closer to the drawing and what "heavy-lidded" means: the lid crops the
     // top of a big iris rather than a small one floating in white.
     // Eye width also comes back to the concept's measured 29.7% of head width.
+    // ⚠️ THE RUNTIME SCLERA IS NOT A SCULPT PROBLEM, AND THREE ROUNDS OF
+    // TREATING IT AS ONE ESTABLISHED THAT.
+    //
+    // An independent review found the eye crushing to a solid dark almond in
+    // gameplay while reading correctly on the board, and it is real: measured,
+    // the brightest NEUTRAL pixel anywhere near the runtime eye is rgb(50,25,7)
+    // at warmth 43, where the board reaches rgb(214,212,210) at warmth 4. A
+    // darkened white would still be neutral; warmth 43 is skin. The sclera texel
+    // is not reaching the pixel.
+    //
+    // What was tried and did NOT move it: brightening the swatch (the atlas
+    // replaces ALBEDO, so a white that is never sampled stays never sampled),
+    // shrinking the iris so it stops overflowing the aperture, and widening the
+    // aperture so there is more white to find. The last of those also pushed
+    // `visible face left` to 35.0 against a concept of 48.3 — outside tolerance
+    // on a metric that had been green — so it is reverted here.
+    //
+    // What IS established: the atlas HAS the sclera (353 near-white opaque
+    // pixels in the grin cell, of 1310 drawn), the Blender board material
+    // renders it, and `materials/toon.ts` does not. That is a mismatch between
+    // the board's mirror of the decal and the shader it mirrors, and it wants a
+    // renderer pass, not more face-spec numbers. It is very likely roster-wide
+    // rather than Tank's.
     eyeHalfW: 18.5,
     eyeHalfH: 4.6,
     irisR: 7.0,

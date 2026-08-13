@@ -458,9 +458,24 @@ TORSO_LEVELS = [
     # ★ THE CREW COLLAR IS A RIBBED RING, not the top of a cone. Three rings:
     # the shoulder narrowing, a ring that SWELLS proud of it, and the neck hole.
     # The swell is what makes it read as a separate piece of knitwear at 40px.
-    (2.790, 0.262, 0.212, "Spine2"),
-    (2.822, 0.278, 0.228, "Spine2"),  # collar rib, proud
-    (2.848, 0.244, 0.198, "Spine2"),  # neck hole
+    # ★ AND THE COLLAR HAS TO WRAP THE NECK IN BOTH AXES, WHICH IS WHY THIS
+    # FAILED TWICE.
+    #
+    # The first repair narrowed the neck in X and declared the crossing solved.
+    # It was solved in X. These rings are ELLIPSES, and in Y the neck ran
+    # 0.226 -> 0.223 against a collar of 0.258, 0.212, 0.228, 0.198 — inside,
+    # outside, inside, outside across four heights. Four sign changes are four
+    # intersection curves, and a front-facing camera sees them as a skin-coloured
+    # island fully enclosed by purple on the chest. An independent review found
+    # exactly that, measured it at rows 249-258 of the bind front, and named the
+    # axis.
+    #
+    # ⚠️ The neck's own depth is NOT the thing to shrink: the concept's profile
+    # gives a neck half-depth of ~0.227 at this height, which is what it already
+    # has. The collar is what was too shallow, so the collar is what moves.
+    (2.790, 0.262, 0.252, "Spine2"),
+    (2.822, 0.278, 0.262, "Spine2"),  # collar rib, proud
+    (2.848, 0.244, 0.242, "Spine2"),  # neck hole
 ]
 
 # The neck. Measured depth at z 2.85 is 0.477ft, and the front-view pinch at
