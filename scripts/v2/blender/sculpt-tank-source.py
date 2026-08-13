@@ -466,6 +466,17 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
         face = (cap, rows[0][nxt], rows[0][index]) if side > 0 else (cap, rows[0][index], rows[0][nxt])
         builder.face(face, 1)
 
+    # ★ AND THE FAR END IS CAPPED TOO. `grid` closes neither end, so capping
+    # only the shoulder left the wrist ring open — hidden inside the hand, but
+    # an open shell all the same, and the review counted 88 boundary edges over
+    # six of them. A hole that happens to be covered is still a hole; the ear,
+    # the arm and the leg all get their far end closed.
+    wrist_cap = builder.vertex((ARM_WRIST_X * side, 0.0, ARM_Z), SKIN, limb_bone("Hand", side), (0.75, 0.25))
+    for index in range(sides):
+        nxt = (index + 1) % sides
+        face = (wrist_cap, rows[-1][index], rows[-1][nxt]) if side > 0 else (wrist_cap, rows[-1][nxt], rows[-1][index])
+        builder.face(face, 1)
+
     # The mitten hand: a fat palm with a thumb and an index nub. At the 40px
     # field read a five-fingered hand is one blob and only the notch survives.
     hand_bone = limb_bone("Hand", side)
@@ -586,6 +597,11 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
         material = 3 if materials[index] == 3 and materials[index + 1] == 3 else 1
         builder.grid(rows[index:index + 2], material, flip=side < 0)
     top = builder.vertex((leg_x(1.600) * side, 0.0, 1.600), PANTS, limb_bone("UpLeg", side))
+    ankle_cap = builder.vertex((leg_x(0.150) * side, 0.0, 0.150), SOCK, limb_bone("Foot", side))
+    for index in range(sides):
+        nxt = (index + 1) % sides
+        face = (ankle_cap, rows[-1][index], rows[-1][nxt]) if side > 0 else (ankle_cap, rows[-1][nxt], rows[-1][index])
+        builder.face(face, 1)
     for index in range(sides):
         nxt = (index + 1) % sides
         face = (top, rows[0][index], rows[0][nxt]) if side > 0 else (top, rows[0][nxt], rows[0][index])
@@ -630,17 +646,37 @@ SHOE_STATIONS = [
     # the same one: a sneaker is oversized ON PURPOSE, because shoe mass is a
     # silhouette anchor and it is one of the few things that survives 40px.
     #
-    # (y along the foot, half-width, top z, colour)
-    (-0.420, 0.126, 0.232, SOLE),
-    (-0.330, 0.170, 0.286, SOLE),
-    (-0.240, 0.196, 0.300, SOLE),
-    (-0.100, 0.209, 0.298, SOLE),
-    (0.060, 0.210, 0.286, SOLE),
-    (0.230, 0.204, 0.262, SOLE),
-    (0.400, 0.190, 0.226, SOLE),
-    (0.550, 0.166, 0.184, SOLE),
-    (0.680, 0.126, 0.136, SOLE),
-    (0.770, 0.070, 0.092, SOLE),
+    # ★ ROUND 8: THE LAST WAS BUILT FROM A MEASUREMENT OF TWO FEET, AND ITS END
+    # CAPS WERE FURTHER AWAY THAN THE FOOT WAS LONG.
+    #
+    # The profile view reads 1.211ft of foot at z 0.05-0.30 and that went
+    # straight into the table. It is the NEAR foot and the FAR foot overlapping
+    # in a side view of a standing figure; the concept's own side pose shows
+    # them staggered, 27.7% of figure height between the pair. The delivered
+    # shoe measured 1.49ft — 37.2% of a 4.01ft figure against approved
+    # Junebug's 0.62ft (15.3%).
+    #
+    # ⚠️ SAME MISTAKE AS THE SOCK COLOUR, one measurement earlier: reading a
+    # quantity down a line that passes through TWO objects and taking the sum
+    # for one. A profile view superimposes the whole far side of the body onto
+    # the near side; anything paired must be measured on the FRONT view.
+    #
+    # And worse, the end caps were at y +0.455 and -0.800 while the rings they
+    # close sit at -0.420 and +0.770 — each cap stretched most of a foot past
+    # its own ring, which is the doorstop wedge the review kept describing.
+    #
+    # (y along the foot, half-width, top z, colour) — heel at -y, toe at +y,
+    # spanning 0.678ft.
+    (-0.239, 0.126, 0.232, SOLE),
+    (-0.188, 0.170, 0.286, SOLE),
+    (-0.137, 0.196, 0.300, SOLE),
+    (-0.057, 0.209, 0.298, SOLE),
+    (0.034, 0.210, 0.286, SOLE),
+    (0.131, 0.204, 0.262, SOLE),
+    (0.228, 0.190, 0.226, SOLE),
+    (0.314, 0.166, 0.184, SOLE),
+    (0.388, 0.126, 0.136, SOLE),
+    (0.439, 0.070, 0.092, SOLE),
 ]
 
 
@@ -704,9 +740,9 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             # 35% of the last as toe cap and another 19% as quarter panel —
             # about 54% of the shoe navy against a concept that measures 26.2%.
             # The band metric caught it as cream falling to 45.3%.
-            elif y < -0.585:
+            elif y > 0.352:
                 band = SHOE        # toe cap
-            elif 0.130 < y < 0.250:
+            elif -0.108 < y < -0.068:
                 band = SHOE        # quarter panel over the instep
             else:
                 band = colour
@@ -731,8 +767,8 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     builder.grid(rows, 1, flip=side > 0)
 
     # Cap both ends so the upper is closed — rubric 3.7 is binary about holes.
-    heel = builder.vertex(shoe_place(side, 0.455, 0.0, 0.130), SOLE, bone, (0.75, 0.25))  # navy heel counter
-    toe = builder.vertex(shoe_place(side, -0.800, 0.0, 0.052), SOLE, bone, (0.75, 0.25))
+    heel = builder.vertex(shoe_place(side, -0.286, 0.0, 0.126), SHOE, bone, (0.75, 0.25))  # heel counter
+    toe = builder.vertex(shoe_place(side, 0.470, 0.0, 0.050), SOLE, bone, (0.75, 0.25))
     for index in range(sides):
         nxt = (index + 1) % sides
         a = (heel, rows[0][nxt], rows[0][index])
@@ -743,7 +779,7 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     # Three lace straps lying ON the vamp, which is what the concept draws —
     # not pegs standing proud of it, the defect Junebug's round-5 board scored.
     if detail >= 2:
-        for lace_y in (-0.230, -0.090, 0.050):
+        for lace_y in (0.020, 0.100, 0.180):
             path = []
             radii = []
             for step in range(7):
