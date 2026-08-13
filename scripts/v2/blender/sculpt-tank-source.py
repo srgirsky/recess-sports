@@ -812,10 +812,16 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
 
 
 def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) -> None:
-    face_columns = 21 if detail >= 2 else (9 if detail == 1 else 5)
-    back_columns = 4 if detail >= 2 else (2 if detail == 1 else 1)
+    # ★ THE CROWN CARRIES HIS WHOLE SILHOUETTE, so it gets the density. Three
+    # reviews scored polygon faceting across the skull and cheek at hero scale,
+    # and on a bald character the cranium IS the design — there is no hair mass
+    # to hide a facet behind. 2 crown rows over a dome this size is a cone with
+    # a lid; 5 resolves it. The extra columns go to the face, where the same
+    # facets were breaking the cheek.
+    face_columns = 27 if detail >= 2 else (9 if detail == 1 else 5)
+    back_columns = 6 if detail >= 2 else (2 if detail == 1 else 1)
     if detail >= 2:
-        rows_spec, crown, chin = FACE_ROWS, 2, 1
+        rows_spec, crown, chin = FACE_ROWS, 5, 2
     elif detail == 1:
         rows_spec, crown, chin = [0.0, 0.184, 0.319, 0.448, 0.632, 1.0], 1, 1
     else:
