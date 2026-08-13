@@ -605,7 +605,7 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
         rows.append(row)
     for index in range(len(rows) - 1):
         material = 3 if materials[index] == 3 and materials[index + 1] == 3 else 1
-        builder.grid(rows[index:index + 2], material, flip=side < 0)
+        builder.grid(rows[index:index + 2], material, flip=side > 0)
     top = builder.vertex((leg_x(1.600) * side, 0.0, 1.600), PANTS, limb_bone("UpLeg", side))
     ankle_cap = builder.vertex((leg_x(0.150) * side, 0.0, 0.150), SOCK, limb_bone("Foot", side))
     for index in range(sides):
@@ -698,12 +698,28 @@ def shoe_place(side: int, y: float, x_off: float, z: float) -> tuple[float, floa
     camera; the concept draws both feet splayed, and the rotation has to be
     applied to the SECTION rather than to the finished mesh or the sole stops
     being flat on the ground.
+
+    ★ AND THE RIGHT SHOE WAS THE LEFT SHOE ROTATED, NOT MIRRORED.
+
+    `angle = SHOE_TOE_OUT * side` negates the rotation for the far foot but
+    leaves `x_off` alone, so the two shoes are genuinely different solids rather
+    than reflections. Three reviews saw the consequence and called it a lighting
+    difference; a fourth measured 263 of 284 mirrored foot pairs with opposing
+    normals and called it an inside-out mirror. Both were describing this: there
+    IS no mirror, so "the mirrored half" and "the same half rotated" disagree
+    wherever the rotation is not a reflection.
+
+    ⚠️ IT IS NOT A WINDING BUG, which cost a sweep to establish. Flipping the
+    `flip` predicate on the shoe grid and the leg grid through all four
+    combinations leaves the count at exactly 524 of 1832 every time, because
+    `flip` reverses quads and cannot turn a rotation into a reflection.
+
+    The frame is built once, unsigned, and then reflected as a whole — which is
+    what mirrors the toe-out as well, so both toes still point outward.
     """
-    angle = SHOE_TOE_OUT * side
-    cx = leg_x(LEG_ANKLE_Z) * side
-    rx = x_off * cos(angle) - y * sin(angle)
-    ry = x_off * sin(angle) + y * cos(angle)
-    return (cx + rx, ry, z)
+    lx = x_off * cos(SHOE_TOE_OUT) - y * sin(SHOE_TOE_OUT)
+    ly = x_off * sin(SHOE_TOE_OUT) + y * cos(SHOE_TOE_OUT)
+    return ((leg_x(LEG_ANKLE_Z) + lx) * side, ly, z)
 
 
 def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
@@ -767,14 +783,21 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     # Nothing caught it because both renders were honest. The fidelity board
     # draws the untinted GLB and looked right; only `/v2/?anims=1`, which
     # applies a team, could show it. That is what the runtime hero still is FOR.
-    # ★ THE WINDING FOLLOWS THE STATION ORDER, AND TURNING THE FOOT AROUND
-    # REVERSED IT. Pointing the toe at -y flipped the row sequence from
-    # heel-to-toe-in-+y to heel-to-toe-in--y, which reverses every quad's normal
-    # — the independent review found "a large black inverted-normal triangle"
-    # and "ribbon-shaped planes" on the board. Reversing the flip predicate
-    # restores it. glTF materials are single-sided, so an inverted face is not a
-    # shading artifact: it is a hole you can see the inside of.
-    builder.grid(rows, 1, flip=side > 0)
+    # ★ THE WINDING PREDICATE WAS FLIPPED FOR A REVERSAL THAT NEVER HAPPENED.
+    #
+    # Round 4 turned the foot around and flipped this to `side > 0` to match.
+    # The edit that was supposed to reverse the station table silently did not
+    # apply — the tuples kept running heel-at--y to toe-at-+y throughout — so
+    # the predicate was corrected for a change that was not there, and one
+    # side's feet have been inside out ever since.
+    #
+    # ⚠️ IT SURVIVED THREE REVIEWS AS "A LIGHTING DIFFERENCE". The mirror check
+    # I ran to dismiss it compared POSITION and COLOR_0 and never NORMAL: 2,182
+    # pairs matched on colour while 263 of 284 foot pairs pointed inward. The
+    # fourth review measured the normals and found it. Approved Junebug is 0 of
+    # 1,354; a near-zero threshold is safe, and `authored-character.test.js`
+    # gates it now.
+    builder.grid(rows, 1, flip=side < 0)
 
     # Cap both ends so the upper is closed — rubric 3.7 is binary about holes.
     heel = builder.vertex(shoe_place(side, -0.286, 0.0, 0.126), SHOE, bone, (0.75, 0.25))  # heel counter
@@ -798,6 +821,12 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
                 half = 0.196 * (1.0 - 0.18 * across * across)
                 path.append(shoe_place(side, lace_y, half * across, 0.300 - 0.052 * across * across))
                 radii.append(0.020)
+            # ★ `tube` HAS NO `flip`, so a path that has been mirrored comes
+            # out inside out. Reversing the point order reverses the winding,
+            # which is the same correction by other means.
+            if side < 0:
+                path = list(reversed(path))
+                radii = list(reversed(radii))
             builder.tube(path, radii, 1, SOLE, bone, 5)
 
     # ★ THE SHOE'S COLLAR BAND WAS A DETACHED SHELL, and 3.7 caught it: a

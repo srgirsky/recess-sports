@@ -137,6 +137,63 @@ function worstDominantBoneRank(gltf) {
   return { rank: worst, bone };
 }
 
+
+// ---------------------------------------------------------------------------
+// ★ A MIRRORED HALF WHOSE NORMALS POINT INWARD.
+//
+// Tank shipped with 312 of 1,256 mirrored vertex pairs — 263 of 284 in the feet
+// alone, and 100% of both far LODs — carrying normals related by
+// `n(-x) = -mirror(n(+x))`: one side of the character was inside out. glTF
+// materials are single-sided, so that is not a shading artifact. It renders as
+// an open shell you can see the interior of, and it produced a shoe that looked
+// like an open trough with a spike through the toe.
+//
+// ⚠️ IT SURVIVED THREE INDEPENDENT REVIEWS AS "A LIGHTING DIFFERENCE", and the
+// measurement that dismissed it was mine: I compared mirrored pairs on POSITION
+// and COLOR_0, found 2,182 matches and zero colour mismatches, and concluded
+// the mesh was symmetric. It was — in the two attributes I checked. Nobody had
+// asked about NORMAL.
+//
+// `validate:models` cannot see it either: bone order, budgets, height band and
+// palette are all indifferent to which way a face points.
+//
+// Calibrated on the delivered roster before being trusted: approved Junebug is
+// 0 of 1,354 pairs and Big Lou 1 of 809, so a small absolute allowance covers
+// honest tessellation noise while catching a mirrored half.
+// ---------------------------------------------------------------------------
+const MAX_INVERTED_MIRROR_PAIRS = 8;
+
+function invertedMirrorPairs(gltf) {
+  let worst = 0;
+  for (const mesh of gltf.json.meshes ?? []) {
+    for (const primitive of mesh.primitives ?? []) {
+      const positions = primitive.attributes?.POSITION;
+      const normals = primitive.attributes?.NORMAL;
+      if (positions === undefined || normals === undefined) continue;
+      const P = readAccessor(gltf, positions);
+      const N = readAccessor(gltf, normals);
+      const key = (x, y, z) => `${x.toFixed(3)}|${y.toFixed(3)}|${z.toFixed(3)}`;
+      const byMirror = new Map();
+      for (let v = 0; v < P.length / 3; v++) {
+        byMirror.set(key(-P[v * 3], P[v * 3 + 1], P[v * 3 + 2]), v);
+      }
+      let inverted = 0;
+      for (let v = 0; v < P.length / 3; v++) {
+        if (P[v * 3] <= 1e-4) continue; // walk one side only
+        const other = byMirror.get(key(P[v * 3], P[v * 3 + 1], P[v * 3 + 2]));
+        if (other === undefined) continue;
+        // A correctly mirrored normal is (-nx, ny, nz). Inverted is its negation.
+        const dx = -N[v * 3] - N[other * 3];
+        const dy = N[v * 3 + 1] - N[other * 3 + 1];
+        const dz = N[v * 3 + 2] - N[other * 3 + 2];
+        if (Math.hypot(dx, dy, dz) > 1.0) inverted++;
+      }
+      if (inverted > worst) worst = inverted;
+    }
+  }
+  return worst;
+}
+
 function stateErrors(production, reviews) {
   const errors = [];
   const expectedCategories = reviews.categories ?? [];
@@ -229,6 +286,18 @@ function stateErrors(production, reviews) {
       const authored = gltf.json.asset?.extras?.recessAuthoring;
       if (authored?.sourceSha256 !== record.sourceSha256 || authored?.conceptSha256 !== record.conceptSha256) {
         errors.push(`${id}: GLB provenance differs from its receipt`);
+      }
+      // Scoped to work that CLAIMS to be finished, like the other mesh rules:
+      // a needs-polish sculpt in progress should be reported by the reviewer,
+      // not blocked by CI. Tank sits at 258 today and is deliberately not
+      // claiming; the moment he is marked `candidate` this stops him.
+      const inverted = claimsFinished ? invertedMirrorPairs(gltf) : 0;
+      if (inverted > MAX_INVERTED_MIRROR_PAIRS) {
+        errors.push(
+          `${id}: ${inverted} mirrored vertex pairs have INVERTED normals — one side of the ` +
+          'mesh is inside out. glTF is single-sided, so those faces render as open shells. ' +
+          'Check the `flip` predicate on every grid() that is emitted per side.',
+        );
       }
       const bound = worstDominantBoneRank(gltf);
       if (bound.rank > MAX_BONE_RANK) {
