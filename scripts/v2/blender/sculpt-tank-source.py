@@ -997,10 +997,25 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
         (SOCK_TOP_Z + 0.014, 0.244, 0.95, SKIN, "Leg"),   # z 0.564
         (SOCK_TOP_Z, 0.272, 0.95, TEAM_MASK, "Leg"),      # the roll, team accent
         (SOCK_TOP_Z - 0.036, 0.264, 0.95, TEAM_MASK, "Leg"),
-        (SOCK_TOP_Z - 0.070, 0.248, 0.95, SOCK, "Leg"),   # z 0.480
-        (0.400, 0.238, 0.95, SOCK, "Leg"),
-        (0.280, 0.206, 0.95, SOCK, "Leg"),
-        (0.150, 0.168, 0.95, SOCK, "Foot"),
+        # ★ THE SOCK MUST FIT INSIDE THE SHOE, AND IT NEVER DID.
+        #
+        # Three rounds went into a topline, a heel counter and a collar rim and
+        # none of them read, and the nineteenth review found why in one
+        # comparison: the shoe's widest half-section is 0.214 and these rings
+        # were 0.248, 0.238 and 0.206. The sock was wider than the shoe at every
+        # height they share, so a wedge of it split the upper down the instep in
+        # both views — and the collar rim, at 0.138, was buried inside the sock
+        # with only its fore and aft lobes escaping as the tan cliff in profile.
+        #
+        # Not a depth-sort or a surface-height problem, which is how the two
+        # previous attempts framed it. A real sock COMPRESSES inside a shoe.
+        # The shoe's top is z 0.441, so only the first ring below is still
+        # outside it; everything under that is sized against the section at its
+        # own height (v 0.90 gives ~0.16, v 0.62 gives ~0.19).
+        (SOCK_TOP_Z - 0.070, 0.222, 0.95, SOCK, "Leg"),   # z 0.480, just clear
+        (0.400, 0.148, 0.95, SOCK, "Leg"),
+        (0.280, 0.138, 0.95, SOCK, "Leg"),
+        (0.150, 0.126, 0.95, SOCK, "Foot"),
     ]
     if detail < 1:
         stations = [station for index, station in enumerate(stations) if index % 2 == 0 or index == len(stations) - 1]
