@@ -63,10 +63,30 @@ const CAPTURES = [
   // a finding about any character, a hole in the instrument. `grin`, `cheer`
   // and `tongue` are the three cells that open the mouth; `angry` is here
   // because it is the beat the draft card and the pitch reaction lean on.
-  { clip: 'idle', out: 'face-grin', settleMs: 500, face: 'grin' },
-  { clip: 'idle', out: 'face-cheer', settleMs: 500, face: 'cheer' },
-  { clip: 'idle', out: 'face-tongue', settleMs: 500, face: 'tongue' },
-  { clip: 'idle', out: 'face-angry', settleMs: 500, face: 'angry' },
+  // ⚠️ AND THE EXPRESSION STILLS WALKED STRAIGHT INTO THE TRAP THIS FILE'S OWN
+  // HEADER DOCUMENTS, one capture higher up.
+  //
+  // A fixed `settleMs` on a looping clip photographs an arbitrary frame, and
+  // that is exactly what it did: Tank's four landed on frames 26, 36, 8 and 7
+  // of a 60-frame idle. Every idle in `proceduralClips.ts` now carries a BEAT
+  // where the kid checks once and goes still again — Junebug's, then Tank's at
+  // his own tempo — so a good share of the loop has the head yawed away from
+  // camera. Frame 36 sits inside Tank's held look (f30-46), and an independent
+  // review found three of the four stills showing the mouth behind a cheek and
+  // rated them visually indistinguishable. It marked 3.14 FAIL on the evidence
+  // rather than on the atlas, which it confirmed was good.
+  //
+  // ★ SO THE FACE STILL IS TARGETED AT THE HEAD-ON PART OF THE LOOP, and 0.05
+  // is a general answer rather than Tank's. Every idle is built starting from
+  // the character's own neutral pose at f0, so the opening of the loop is
+  // head-on by construction for every kid. Aiming early also absorbs the shot
+  // latency the run capture had to correct for: 0.05 of 60 targets frame 3 and
+  // the shot lands in the single digits, well inside Tank's f0-16 head-on
+  // window and inside the equivalent window on any character.
+  { clip: 'idle', out: 'face-grin', atFrameFrac: 0.05, face: 'grin' },
+  { clip: 'idle', out: 'face-cheer', atFrameFrac: 0.05, face: 'cheer' },
+  { clip: 'idle', out: 'face-tongue', atFrameFrac: 0.05, face: 'tongue' },
+  { clip: 'idle', out: 'face-angry', atFrameFrac: 0.05, face: 'angry' },
 ];
 
 function startVite() {
@@ -86,22 +106,36 @@ function startVite() {
   });
 }
 
-async function captureCharacter(page, id, slug) {
-  await page.goto(`http://localhost:${PORT}/v2/?anims=1&kid=${id}`, {
-    waitUntil: 'domcontentloaded',
-    timeout: 60_000,
-  });
+async function loadSurface(page, id, facecam) {
+  await page.goto(
+    `http://localhost:${PORT}/v2/?anims=1&kid=${id}${facecam ? '&facecam=1' : ''}`,
+    { waitUntil: 'domcontentloaded', timeout: 60_000 },
+  );
   await page.waitForFunction('!!window.__spike', { timeout: 30_000 });
-
   // `model model`: the delivered GLB on the shared skeleton. A proxy fallback
   // rendering here means the manifest or the model is broken — fail loudly
   // rather than photograph the wrong thing (playbook Gate 4).
   await page.waitForFunction(
     () => /model\s+model/.test(document.getElementById('devstats')?.textContent ?? ''),
-    { timeout: 30_000 }
+    { timeout: 30_000 },
   );
+}
+
+async function captureCharacter(page, id, slug) {
+  await loadSurface(page, id, false);
+
+  // ★ The expression stills are shot on a SECOND page load with `?facecam=1`,
+  // which turns the kid to face the camera. Reloading is the honest way to do
+  // it: the facing is decided once when the character is placed, so poking it
+  // afterwards would leave this script and the page disagreeing about where
+  // the kid is pointing.
+  let facecam = false;
 
   for (const capture of CAPTURES) {
+    if (Boolean(capture.face) !== facecam) {
+      facecam = Boolean(capture.face);
+      await loadSurface(page, id, facecam);
+    }
     const row = page.locator('.anim-list button', { hasText: capture.clip }).first();
     await row.click();
     if (capture.face) {

@@ -1125,9 +1125,26 @@ const TANK_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
   hp: [17, -10, 0], sp: [12, -7, 0], s2: [16, -12, 0], hd: [5, 7, 0],
   lu: [10, 0, 4], ll: [-15, 0, 0], ru: [10, 0, -4], rl: [-15, 0, 0],
 });
+// ★ BOTH ARMS WERE ABOVE SHOULDER HEIGHT AT CONTACT, AND ONE WENT THROUGH HIS
+// SKULL. An independent review caught it on the most-played clip in the game:
+// "the upper arm enters at the ear and the fist emerges on the opposite side
+// with a black interpenetration wedge at the cheek", failing 3.8 and 4.3 at
+// hero scale.
+//
+// The cause is visible once the shifts are resolved rather than read. Stance
+// holds `la` z +38 and `ra` z -26, and the shifts of -80 and +100 land them at
+// -42 and +74. Down is POSITIVE z for the left arm and NEGATIVE for the right
+// (`TANK_IDLE_POSE` hangs them at +72 and -72), so those two numbers are both
+// "raised well above the shoulder" — and with the torso twisted 96 degrees
+// underneath, the raised arm sweeps through the head rather than past it.
+//
+// A batter at contact has his hands out in front of his chest, not over his
+// head. Lowering both by about forty degrees keeps the swing's shape and its
+// arc while putting the arms where the swing actually puts them, and the head
+// turns less far so he is still looking at the ball he just hit.
 const TANK_CONTACT_END: Pose = shift(TANK_STANCE_POSE, {
-  hp: [0, 96, 0], sp: [0, 68, 0], s2: [0, 91, 0], hd: [8, -34, 0],
-  ra: [47, 0, 100], la: [39, 0, -80], rt: [0, 0, 62],
+  hp: [0, 96, 0], sp: [0, 68, 0], s2: [0, 91, 0], hd: [8, -18, 0],
+  ra: [47, 0, 62], la: [39, 0, -42], rt: [0, 0, 62],
 });
 
 function tankSwingContact(spec: ClipSpec): AnimationClip {
@@ -1135,9 +1152,11 @@ function tankSwingContact(spec: ClipSpec): AnimationClip {
   return build(spec, [
     { f: 0, pose: load },
     { f: 4, pose: shift(load, { hp: [0, 4, 0], s2: [0, 5, 0] }) },
-    { f: 6, pose: shift(load, { hp: [0, 38, 0], sp: [0, 27, 0], s2: [0, 35, 0], ra: [20, 0, 38], la: [15, 0, -28] }) },
-    { f: 7, pose: shift(load, { hp: [0, 61, 0], sp: [0, 43, 0], s2: [0, 57, 0], ra: [34, 0, 65], la: [25, 0, -48] }) },
-    { f: 8, pose: shift(load, { hp: [0, 83, 0], sp: [0, 59, 0], s2: [0, 79, 0], ra: [48, 0, 92], la: [35, 0, -68] }) },
+    // The mid-swing frames are scaled down with the end pose they run into, or
+    // the arm sweeps through the head on its way to a contact that clears it.
+    { f: 6, pose: shift(load, { hp: [0, 38, 0], sp: [0, 27, 0], s2: [0, 35, 0], ra: [20, 0, 24], la: [15, 0, -15] }) },
+    { f: 7, pose: shift(load, { hp: [0, 61, 0], sp: [0, 43, 0], s2: [0, 57, 0], ra: [34, 0, 40], la: [25, 0, -25] }) },
+    { f: 8, pose: shift(load, { hp: [0, 83, 0], sp: [0, 59, 0], s2: [0, 79, 0], ra: [48, 0, 57], la: [35, 0, -36] }) },
     { f: 13, pose: TANK_CONTACT_END },
     { f: spec.frames - 1, pose: TANK_CONTACT_END },
   ]);
