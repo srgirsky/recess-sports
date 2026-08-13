@@ -1453,6 +1453,20 @@ def toe_cap_v_low(y_unscaled: float) -> float:
     frac = min(1.0, max(0.0, (y_unscaled - 0.13) / 0.31))
     return 0.66 - 0.20 * frac
 
+
+def heel_counter_v_low(y_unscaled: float) -> float:
+    """The heel counter's lower edge, mirroring the toe cap's construction.
+
+    A sneaker's heel counter is a stiffened panel wrapping the back of the last,
+    and it is the other half of what makes a profile read as a shoe rather than
+    a loaf. Its edge rises toward the back the way the toe cap's dips toward the
+    front. Returns 2.0 — covering nothing — ahead of the counter's front edge.
+    """
+    if y_unscaled > -0.08:
+        return 2.0
+    frac = min(1.0, max(0.0, (-0.08 - y_unscaled) / 0.16))
+    return 0.60 - 0.22 * frac
+
 def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     ring = shoe_ring(detail)
     rows: list[list[int]] = []
@@ -1641,6 +1655,41 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             cap_rows.append(row)
         if len(cap_rows) >= 2:
             builder.grid(cap_rows, 1, cyclic=False, flip=side > 0)
+
+
+    # ★ THE HEEL COUNTER, built the same way as the toe cap and for the same
+    # reason: the eighteenth review found the sole curved but the UPPER still a
+    # slab — "no topline, no collar and no heel counter". A counter is the panel
+    # that stiffens the back of a shoe, and in profile it is most of what
+    # separates a sneaker from a slipper.
+    #
+    # It is NAVY rather than cream, which is also the colour the profile is short
+    # of: that view measured 11.6% slate against the concept's 24.5%, and the
+    # counter puts slate exactly where the concept holds it — on the back of the
+    # last, at mid-height.
+    if detail >= 1:
+        COUNTER_POINTS = 9
+        counter_rows: list[list[int]] = []
+        for y_s, half_s, ztop_s, _c in SHOE_STATIONS:
+            if y_s > -0.08:
+                continue
+            floor_s = shoe_floor_at(y_s)
+            ys = y_s * SHOE_LENGTH_SCALE
+            hs = half_s * SHOE_WIDTH_SCALE * 1.026
+            zt = SHOE_FLOOR + (ztop_s - SHOE_FLOOR) * SHOE_HEIGHT_SCALE
+            v_low = heel_counter_v_low(y_s)
+            row = []
+            for j in range(COUNTER_POINTS):
+                pp = -1.0 + 2.0 * j / (COUNTER_POINTS - 1)
+                v = 1.0 - (1.0 - v_low) * abs(pp)
+                u = shoe_u_at_v(v) * (1.0 if pp >= 0 else -1.0)
+                row.append(builder.vertex(
+                    shoe_place(side, ys, hs * u, floor_s + (zt - floor_s) * v),
+                    SHOE, bone, (0.75, 0.25),
+                ))
+            counter_rows.append(row)
+        if len(counter_rows) >= 2:
+            builder.grid(counter_rows, 1, cyclic=False, flip=side > 0)
 
     # Cap both ends so the upper is closed — rubric 3.7 is binary about holes.
     heel = builder.vertex(shoe_place(side, -0.286 * SHOE_LENGTH_SCALE, 0.0, 0.126 + 0.030), SHOE, bone, (0.75, 0.25))
