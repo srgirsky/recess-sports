@@ -1164,13 +1164,18 @@ SHOE_SECTION = [
     (0.000, 0.000, "midsole"),   # flat on the ground: a sole, not a tube bottom
     (0.620, 0.004, "midsole"),
     (0.940, 0.055, "midsole"),   # the welt
-    (1.000, 0.170, "midsole"),   # widest point, the midsole bulge
-    (0.997, 0.300, "midsole"),
-    (0.992, 0.510, "midsole"),   # last cream row — a tall midsole, as drawn
-    (0.984, 0.566, "quarter"),   # first navy row
-    (0.960, 0.640, "quarter"),
-    (0.934, 0.708, "quarter"),   # last navy row
-    (0.906, 0.762, "collar"),    # the cream collar trim around the ankle
+    (1.000, 0.260, "midsole"),   # the midsole at its widest — the flare
+    (0.998, 0.470, "midsole"),
+    (0.988, 0.510, "midsole"),   # last cream row — the top of the midsole
+    # ★ THE FOXING LINE. A sneaker's upper sits INSIDE its midsole, and the step
+    # between them is what makes it read as a shoe rather than a painted slab.
+    # This ran 0.997 -> 0.992 -> 0.984 across v 0.30 to 0.57: straight-sided,
+    # no step anywhere, which is why two reviews scored the colour split as
+    # correct and the CONSTRUCTION as absent. The upper now steps in 0.086.
+    (0.902, 0.556, "quarter"),   # first navy row, inboard of the midsole
+    (0.888, 0.640, "quarter"),
+    (0.862, 0.708, "quarter"),   # last navy row
+    (0.836, 0.762, "collar"),    # the cream collar trim around the ankle
     (0.760, 0.900, "collar"),
     (0.420, 0.978, "collar"),
     (0.000, 1.000, "collar"),    # instep centre
@@ -1184,10 +1189,10 @@ SHOE_SECTION = [
 SHOE_SECTION_MID = [
     (0.000, 0.000, "midsole"),
     (0.970, 0.070, "midsole"),
-    (0.992, 0.510, "midsole"),
-    (0.984, 0.566, "quarter"),
-    (0.934, 0.708, "quarter"),
-    (0.906, 0.762, "collar"),
+    (0.988, 0.510, "midsole"),
+    (0.902, 0.556, "quarter"),
+    (0.862, 0.708, "quarter"),
+    (0.836, 0.762, "collar"),
     (0.560, 0.968, "collar"),
     (0.000, 1.000, "collar"),
 ]
@@ -1197,9 +1202,9 @@ SHOE_SECTION_MID = [
 # refused it, which is the budget working. Five entries is a ring of eight.
 SHOE_SECTION_LOW = [
     (0.000, 0.000, "midsole"),
-    (0.992, 0.510, "midsole"),
-    (0.984, 0.566, "quarter"),
-    (0.934, 0.708, "quarter"),
+    (0.988, 0.510, "midsole"),
+    (0.902, 0.556, "quarter"),
+    (0.862, 0.708, "quarter"),
     (0.000, 1.000, "collar"),
 ]
 
@@ -1401,7 +1406,19 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     # Three lace straps lying ON the vamp, which is what the concept draws —
     # not pegs standing proud of it, the defect Junebug's round-5 board scored.
     if detail >= 2:
-        for lace_y in (0.020 * SHOE_LENGTH_SCALE, 0.100 * SHOE_LENGTH_SCALE, 0.180 * SHOE_LENGTH_SCALE):
+        # ★ ONE VELCRO STRAP, NOT THREE LACES. The concept fastens this shoe with
+        # a single broad cream strap across the instep with a stitched edge —
+        # visible at 40px as a band, which three 0.030 tubes never were. Two
+        # reviews listed "no velcro strap" among the missing construction while
+        # the laces were sitting right there, because at board resolution they
+        # read as texture rather than as a fastening.
+        #
+        # The second, thinner pass behind it is the stitch line: the strap has an
+        # edge in the drawing and an unbroken band reads as a sticker.
+        for lace_y, thickness in (
+            (0.086 * SHOE_LENGTH_SCALE, 0.058),
+            (0.150 * SHOE_LENGTH_SCALE, 0.020),
+        ):
             path = []
             radii = []
             for step in range(7):
@@ -1409,7 +1426,7 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
                 across = (t - 0.5) * 2.0
                 half = 0.196 * SHOE_WIDTH_SCALE * (1.0 - 0.18 * across * across)
                 path.append(shoe_place(side, lace_y, half * across, 0.300 - 0.052 * across * across))
-                radii.append(0.030)
+                radii.append(thickness)
             # ★ `tube` HAS NO `flip`, so a path that has been mirrored comes
             # out inside out. Reversing the point order reverses the winding,
             # which is the same correction by other means.
