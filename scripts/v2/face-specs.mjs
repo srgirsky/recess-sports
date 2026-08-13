@@ -108,20 +108,43 @@ export const FACE_SPECS = {
     // visible skin (48.3/40.8) than this delivery, which is only possible if
     // the ink is in the wrong place: the brows were taking the skin the eyes
     // should have. They come down as the eyes go up.
-    eyeHalfW: 21,
+    // ★ ROUND 10: THE SHAPE WAS RIGHT AND THE FILL WAS WRONG. Two independent
+    // reviews scored this face as "flat almond decals with no sclera/iris
+    // separation" reading "permanently angry", against a brief that says calm.
+    //
+    // Measured against the concept's own head — both scaled by head width, so
+    // the comparison is dimensionless — the BANDS were already right: brow band
+    // 9px against 9, brow-to-eye gap 19 against 19.6, eye band 12 against 10.5.
+    // Nothing about the layout needed moving, which is why five rounds of
+    // moving it did not help.
+    //
+    // What differs is inside the eye. The concept fills most of its aperture
+    // with a large dark iris and leaves white only at the corners; this shipped
+    // a 5.5 iris in a 42-wide opening — a small dot in a field of sclera, which
+    // at any distance reads as a stare. A wider iris in a narrower eye is both
+    // closer to the drawing and what "heavy-lidded" means: the lid crops the
+    // top of a big iris rather than a small one floating in white.
+    // Eye width also comes back to the concept's measured 29.7% of head width.
+    eyeHalfW: 18.5,
     eyeHalfH: 4.6,
-    irisR: 5.5,
+    irisR: 7.0,
     irisInward: 3,
     eyeX: [34, 94],
     eyeY: 52,
     // Thick and even, tapering less: his brows are the boldest mark on a face
     // with no hair to frame it.
-    browThick: 2.2,
-    browThin: 1.5,
-    browHalf: 9.5,
+    // Thinner and longer, and LEVEL. The concept draws a thin gently-arched
+    // brow well clear of the eye; this shipped a short thick wedge with a
+    // positive tilt, and positive tilt is the inner end DROPPING — Junebug's
+    // scowl, which is her memorable read and the opposite of his. Two reviews
+    // independently called the result angry. The taper carries the shape now,
+    // not the angle, so it still does not read as a printed bar.
+    browThick: 2.1,
+    browThin: 1.3,
+    browHalf: 12.5,
     browX: [35, 93],
     browY: 30,
-    browTilt: 2,
+    browTilt: 0,
     mouthY: 104,
     // See generate-face-atlas.mjs: distinct silhouettes for grin/cheer/tongue.
     tongueOut: true,

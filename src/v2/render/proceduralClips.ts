@@ -306,6 +306,7 @@ function runCycle(
   reach: number,
   armDrive: number,
   abduct = 72,
+  elbow = 58,
 ): AnimationClip {
   return cycle(spec, (p) => {
     const s = sin(p);
@@ -324,9 +325,9 @@ function runCycle(
       rl: [-Math.max(0, -o) * reach * 1.5 - 12, 0, 0],
       rt: [Math.max(0, o) * 18, 0, 0],
       la: [o * armDrive, 0, abduct],
-      lf: [0, 58, 0],
+      lf: [0, elbow, 0],
       ra: [s * armDrive, 0, -abduct],
-      rf: [0, -58, 0],
+      rf: [0, -elbow, 0],
     };
   });
 }
@@ -1884,9 +1885,13 @@ export function buildTankPilotClips(): AnimationClip[] {
     // That one is not an abduction problem and cannot be fixed here: the elbow
     // bend (`lf` 58 degrees, shared by every kid's run) carries the hand
     // forward, and his torso is 0.55ft deep at the belly against a 0.965ft arm.
-    // It needs the forearm held outboard for wide-bodied kids, which is a
-    // change to the shared cycle rather than to Tank's parameters.
-    run: (spec) => runCycle(spec, 7, 34, 24, 52),
+    // ★ AND THE ELBOW IS THE OTHER HALF, which is why `runCycle` now takes it.
+    // The shared 58-degree bend is sized for a normal torso; abducting the
+    // shoulder rotates the elbow's own bend axis outward with it, so on a wide
+    // kid a deep bend carries the hand ACROSS the belly rather than alongside
+    // it. Tank runs a shallower 30, which keeps the forearm outboard. Both
+    // parameters default to the roster's values, so no other kid moves.
+    run: (spec) => runCycle(spec, 7, 34, 24, 52, 30),
     bat_stance: (spec) => breathe(spec, TANK_STANCE_POSE, 0.75),
     swing_contact: tankSwingContact,
     swing_follow: tankSwingFollow,
