@@ -18,11 +18,11 @@
     },
     "nostrike": {
       "source": "junebug-pilot.blend",
-      "sourceSha256": "115d19ccad7d50e8e52e94331083ceac836a826b8e994bdad12b4222e49cffd2",
+      "sourceSha256": "1087ae9e5b2613b67a0ccc35e5c7813a780b27fe3444ec82e7ca284e435beea3",
       "concept": "junebug-turnaround.png",
       "conceptSha256": "f5d4e21c161e43406381c07f3d2acb981b5e7abf56775385b9549c8e825abc56",
       "output": "kid_nostrike.glb",
-      "outputSha256": "0e2176993564d9a45f9e7976a8009b8a267bf5f271111abc3c5284c0e013d8ed",
+      "outputSha256": "96dca6b508801435cd65dace51ec9ead99b3407b97cbdc44af0e48a101a84a3c",
       "definingTraits": [
         "arrow ponytail",
         "athletic piping",
@@ -78,11 +78,11 @@
     },
     "tank": {
       "source": "tank-pilot.blend",
-      "sourceSha256": "f68a84282377ea89c0b0b54fe769c444e665b9206c661c035bd20601b7e9b6e5",
+      "sourceSha256": "ca267bd32127e44e34f1f520489bfe0da87b2db5b237ff07cfd7c2e455f0979e",
       "concept": "tank-turnaround.png",
       "conceptSha256": "32d3e55d0bb1f56fa6edacf9d87f7d53cc516cd3877740042f9c82e0c5756bd4",
       "output": "kid_tank.glb",
-      "outputSha256": "9787aecfdab36ee6b7031d149776f857215756638ccdfae974a73e5cc95d1e9a",
+      "outputSha256": "bdfe60612c8f422be3a84aae3e4d5bf5d45c0f861244a08b89c9cf13ee90122c",
       "definingTraits": [
         "low wide silhouette",
         "bald round crown",

@@ -35,12 +35,24 @@ from .palette import Palette
 
 # ★ THE FACE UV ISLAND'S ANGULAR WINDOW, and it is now the SKULL'S OWN
 # PARAMETERISATION rather than a separate patch mesh's. See `head_surface`.
+#
+# ★ AND IT IS PER CHARACTER, WHICH TANK FOUND. The window decides where a
+# feature drawn in the atlas LANDS on the face, so a head with different
+# proportions puts the same cell coordinate somewhere else. Junebug's window
+# maps his measured brow, eye and mouth latitudes to cell y 15, 46 and 118 —
+# the mouth 10 cells from the bottom edge, where its own lower lip runs off the
+# cell. Nothing would have gone red: the atlas would simply have been drawn with
+# a clipped mouth.
 FACE_BEARING = 0.92   # radians off the nose at the island's u edges
 FACE_LOW = -1.10      # latitude (rad) at v = 0, below the chin
 FACE_SPAN = 1.54      # latitude sweep from v = 0 to v = 1
 
 
-def face_island_uv(bearing: float, latitude: float) -> tuple[float, float]:
+def face_island_uv(
+    bearing: float,
+    latitude: float,
+    window: tuple[float, float, float] = (FACE_BEARING, FACE_LOW, FACE_SPAN),
+) -> tuple[float, float]:
     """The face-atlas UV for a skull vertex, CLAMPED outside the island.
 
     `toon.ts` tests `island = (uv - (0, 0.5)) / (0.5, 0.5)` per FRAGMENT and
@@ -55,8 +67,9 @@ def face_island_uv(bearing: float, latitude: float) -> tuple[float, float]:
     loop V, so author its inverse here. The runtime shader — not this mesh —
     owns the embedded-image origin fix.
     """
-    uf = min(1.0, max(0.0, 0.5 + 0.5 * bearing / FACE_BEARING))
-    vf = min(1.0, max(0.0, (latitude - FACE_LOW) / FACE_SPAN))
+    face_bearing, face_low, face_span = window
+    uf = min(1.0, max(0.0, 0.5 + 0.5 * bearing / face_bearing))
+    vf = min(1.0, max(0.0, (latitude - face_low) / face_span))
     return (0.5 * uf, 0.5 * (1.0 - vf))
 
 
@@ -81,6 +94,9 @@ class HeadSpec:
     socket: Callable[[float, float], float]
     # (nx, nz) -> outward push, the nose's three forms.
     nose: Callable[[float, float], float]
+    # (bearing, low, span) of the face-atlas island. Per character: see the
+    # window's own note above for what Tank's head did to Junebug's values.
+    island: tuple[float, float, float] = (FACE_BEARING, FACE_LOW, FACE_SPAN)
 
 
 def head_surface(
@@ -94,6 +110,7 @@ def head_surface(
     spec: HeadSpec,
     palette: Palette,
 ) -> None:
+    face_bearing, _face_low, _face_span = spec.island
     """★ THE SKULL AND THE FACE-ATLAS ISLAND ARE ONE SURFACE.
 
     Four rounds shipped the face as a SEPARATE patch mesh laid over the
@@ -166,15 +183,15 @@ def head_surface(
     for column in range(face_columns):
         t = 2.0 * column / (face_columns - 1) - 1.0
         warped = (abs(t) ** 1.25) * (1.0 if t >= 0 else -1.0)
-        bearings.append(FACE_BEARING * warped)
+        bearings.append(face_bearing * warped)
     # The back run, and the sliver pair that confines the UV wrap.
-    rear = pi - FACE_BEARING
+    rear = pi - face_bearing
     for step in range(1, back_columns + 1):
-        bearings.append(FACE_BEARING + rear * step / (back_columns + 1))
+        bearings.append(face_bearing + rear * step / (back_columns + 1))
     bearings.append(pi - 0.004)
     bearings.append(-pi + 0.004)
     for step in range(back_columns, 0, -1):
-        bearings.append(-FACE_BEARING - rear * step / (back_columns + 1))
+        bearings.append(-face_bearing - rear * step / (back_columns + 1))
     bearings.sort()
 
     # --- latitudes -------------------------------------------------------
@@ -228,7 +245,7 @@ def head_surface(
             # shipped 186.9 — short, all of it this term lifting the chin's
             # front off the ball.
             z += 0.012 * (chin**1.8) * frontness
-        uv = face_island_uv(bearing, pi / 2 - phi)
+        uv = face_island_uv(bearing, pi / 2 - phi, spec.island)
         del theta
         return builder.vertex((x, y, z), palette.skin, "Head", uv)
 

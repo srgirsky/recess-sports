@@ -1,10 +1,44 @@
-// Junebug's character-specific 4x4 expression atlas. The cell order is owned
-// by faceAtlas.ts; this generator owns only her graphic construction.
+// ---------------------------------------------------------------------------
+// ★ ONE FACE-ATLAS GENERATOR FOR THE ROSTER.
+//
+// Junebug's atlas had its own 308-line script, and every number in it was won
+// the same way her sculpt was: measured off the turnaround, scored on a board,
+// re-measured. Almost none of that work is about HER. The cell order belongs to
+// `faceAtlas.ts`; the brow-must-reach-black finding, the mouth-must-not-follow-
+// it-down finding, the iris-to-spacing ratio, the no-paint margin at the cell
+// edge and the "a closed mouth is still two lips" finding are all facts about
+// drawing a legible face at 40px, and they are true of every kid on the roster.
+//
+// So the drawing is shared and a `FaceSpec` carries what differs: the palette,
+// where the features sit in the cell, and how big they are. Tank's spec exists
+// because his own head put his brow, eye and mouth at cell y 30, 52 and 104
+// where Junebug's sit at 35, 60 and 102.5 — see his sculpt script's island
+// window note for why those are not the same face in a different place.
+//
+// ⚠️ THE CELL COORDINATES ARE BOUND TO THE SKULL. A feature drawn at cell y 60
+// lands wherever that row of the face island lands on the head, so moving a
+// character's `island` window in their `HeadSpec` moves every mark on their
+// face. The two are solved together, per character, and neither is portable.
+//
+//   npm run generate:face-atlas -- tank
+// ---------------------------------------------------------------------------
 
 import { resolve } from 'node:path';
 import sharp from 'sharp';
 
-const output = resolve('assets/v2/source/junebug-face-atlas.png');
+import { CHARACTERS, slugFor } from './character-registry.mjs';
+import { FACE_SPECS } from './face-specs.mjs';
+
+const id = process.argv[2] ?? 'nostrike';
+if (!CHARACTERS[id]) throw new Error(`unknown character "${id}"`);
+const spec = FACE_SPECS[id];
+if (!spec) {
+  throw new Error(
+    `no face spec for "${id}" — add one to scripts/v2/face-specs.mjs. ` +
+    'It cannot be defaulted: the cell coordinates are bound to that head\'s atlas island window.',
+  );
+}
+const output = resolve(`assets/v2/source/${slugFor(id)}-face-atlas.png`);
 const cells = [
   'neutral', 'grin', 'determined', 'worried',
   'upset', 'surprised', 'blink', 'wink',
@@ -28,8 +62,8 @@ const cells = [
 // her mouth is a soft warm crease, NOT a black slot, and painting it with the
 // brow's ink is what made the 40px strip read "a fat dark rectangle" competing
 // with the eyes. `mouthInk` is a separate, warm swatch for that reason.
-const ink = '#0b0603';
-const mouthInk = '#5a2c21';
+const ink = spec.ink ?? '#0b0603';
+const mouthInk = spec.mouthInk ?? '#5a2c21';
 // Sampled off junebug-turnaround.png's front head, not inferred: the sclera
 // reads #d1b294 in lid shadow and lifts toward cream in the light, so the flat
 // fill sits between the two; the iris body is #33190d and its centre bottoms
@@ -52,13 +86,13 @@ const mouthInk = '#5a2c21';
 // order of magnitude less white in the eye. Half of that is the iris and the
 // lash (see IRIS_R and the lid stroke below) and half is that the shaded side
 // of the face renders the cream just under any threshold the lit side clears.
-const sclera = '#f6ecd8';
-const irisBrown = '#33190d';
-const pupil = '#120c07';
-const white = '#fff7e4';
-const mouth = '#57201c';
-const mouthDark = '#3a1512';
-const tongue = '#df6c78';
+const sclera = spec.sclera ?? '#f6ecd8';
+const irisBrown = spec.irisBrown ?? '#33190d';
+const pupil = spec.pupil ?? '#120c07';
+const white = spec.white ?? '#fff7e4';
+const mouth = spec.mouth ?? '#57201c';
+const mouthDark = spec.mouthDark ?? '#3a1512';
+const tongue = spec.tongue ?? '#df6c78';
 
 // Eye geometry. Scale is fixed by the one ratio that survives the trip from a
 // concept render to a shipped GLB — iris diameter over iris SPACING, read off
@@ -93,15 +127,15 @@ const tongue = '#df6c78';
 // height, and the cream survives as a large field on the OUTER side plus a ring
 // above and below. 10.0 restores that ring; IRIS_INWARD 2 -> 5 restores the
 // field, at the cost of the inner crescent the concept also does not draw.
-const EYE_HALF_W = 20;
-const EYE_HALF_H = 11.5;
-const IRIS_R = 10.0;
+const EYE_HALF_W = spec.eyeHalfW;
+const EYE_HALF_H = spec.eyeHalfH;
+const IRIS_R = spec.irisR;
 // The concept's flat front view carries a ~7.75px nasal offset, but the atlas
 // lands on a rounded face patch that turns both eyes toward the centre line
 // again, and the two convergences stack into a cross-eyed read. Most of the
 // determination is carried by the brows regardless, so the offset is kept as a
 // hint rather than reproduced literally.
-const IRIS_INWARD = 5;
+const IRIS_INWARD = spec.irisInward;
 // A quadratic's extremum sits at (P0 + 2*P1 + P2)/4, so a half-height of h
 // needs its control point 2h off the corner line.
 const almond = (x, y) =>
@@ -135,15 +169,15 @@ function brow(x, y, tilt, inner) {
   // at 6 degrees, i.e. 13.8% true — 60% too fat. Halving the half-thicknesses
   // to 6.0/3.0 lands the delivered bar at ~9.9% true, and the taper (thick at
   // the nose, thin at the temple) is the concept's own.
-  const thick = 6.0;
-  const thin = 3.0;
+  const thick = spec.browThick;
+  const thin = spec.browThin;
   const left = inner > 0 ? thin : thick;
   const right = inner > 0 ? thick : thin;
   // 22, was 17. The bar's rendered length measured 0.215ft against the
   // concept's 0.291 (see EYE_HALF_W's block); at this latitude one cell is
   // 0.00432ft along the face, so the missing 0.076ft is 8.8 cells across the
   // pair — half 17 -> 22 and the delivered bar lands at 0.278ft.
-  const half = 22; // spans 8..52 about the centres below
+  const half = spec.browHalf;
   // ★ THE ENDS ARE ROUNDED, AND THEY ROUND INWARD. Round 3 scored the brows
   // "flat black parallelograms with hard corners sitting on the surface" — the
   // bar was closed by two vertical L segments, so each end was a squared-off
@@ -186,9 +220,10 @@ function face(name, index) {
   // the v6 failure was 26px of separation, not this.
   // Junebug's NEUTRAL is the determined scowl: the brows always angle down
   // toward the nose; 'determined' only deepens what is already there.
+  const [eyeL, eyeR] = spec.eyeX;
   const eyes =
-    eye(28, 60, index * 2, { closed: blink || sleepy, inward: IRIS_INWARD }) +
-    eye(100, 60, index * 2 + 1, { closed: blink || sleepy, wink, inward: -IRIS_INWARD });
+    eye(eyeL, spec.eyeY, index * 2, { closed: blink || sleepy, inward: IRIS_INWARD }) +
+    eye(eyeR, spec.eyeY, index * 2 + 1, { closed: blink || sleepy, wink, inward: -IRIS_INWARD });
   // Brows ride 25px above the eye centres: the concept holds 23px of skin
   // between brow and eye against a 30px eye box, and closing that gap lets the
   // toon ramp merge brow into lash. Their bar runs from |x| 0.345ft at the
@@ -209,9 +244,11 @@ function face(name, index) {
   // arithmetic backwards for 21 degrees delivered: authored tan 0.295, i.e. a
   // 13.0-cell drop, i.e. tilt 8 with the new 3.0/6.0 pair. `determined` then
   // deepens what neutral already carries, as it always has.
+  const [browL, browR] = spec.browX;
+  const tilt = spec.browTilt;
   const brows =
-    brow(30, 35, determined ? 11 : worried ? -6 : 8, 1) +
-    brow(98, 35, determined ? -11 : worried ? 6 : -8, -1);
+    brow(browL, spec.browY, determined ? tilt + 3 : worried ? -(tilt - 2) : tilt, 1) +
+    brow(browR, spec.browY, determined ? -(tilt + 3) : worried ? tilt - 2 : -tilt, -1);
   // No drawn nose: the sculpt carries a real nose form, and a mark on top of
   // it doubled the feature and read as a sticker.
 
@@ -274,15 +311,16 @@ function face(name, index) {
   // seam rather than under the old thin one.
   // Raised to start under the THINNER seam (was y+4.6, sized to the 6-cell one).
   const lowerLip = (y) => `<path d="M46 ${y + 2.8} Q64 ${y + 4.2} 82 ${y + 2.8}
-    Q73 ${y + 9.6} 64 ${y + 9.8} Q55 ${y + 9.6} 46 ${y + 2.8}Z" fill="#e5a069"/>`;
-  let lips = lowerLip(102.5) + seam(102.5, 1.2, 1.0);
+    Q73 ${y + 9.6} 64 ${y + 9.8} Q55 ${y + 9.6} 46 ${y + 2.8}Z" fill="${spec.lowerLip}"/>`;
+  const my = spec.mouthY;
+  let lips = lowerLip(my) + seam(my, 1.2, 1.0);
   // An open smile is a MOUTH, not a crescent sticker: inner cavity, a band of
   // upper teeth, a tongue resting low, and a catch-light lower lip.
   if (name === 'grin' || name === 'cheer') lips = `<path d="M45 92 Q64 97 83 92 Q76 108 64 108 Q52 108 45 92Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
     <path d="M47.5 93.5 Q64 98 80.5 93.5 Q75 100.1 64 100.4 Q53 100.1 47.5 93.5Z" fill="${white}"/>
     <path d="M55.5 106 Q64 109 72.5 106 Q69.5 102 64 102 Q58.5 102 55.5 106Z" fill="${tongue}"/>`;
   // Determined: the same two lips, pressed and turned DOWN at the corners.
-  if (name === 'determined' || name === 'angry') lips = lowerLip(104.5) + seam(103.5, 3.5, 2.2);
+  if (name === 'determined' || name === 'angry') lips = lowerLip(my + 2) + seam(my + 1, 3.5, 2.2);
   if (name === 'worried' || name === 'upset') lips = `<path d="M49 105 Q64 94.5 79 105 Q64 100.3 49 105Z" fill="${mouth}"/>`;
   if (name === 'surprised') lips = `<ellipse cx="64" cy="98" rx="11.5" ry="12.5" fill="${mouth}"/>
     <ellipse cx="64" cy="98" rx="8.2" ry="9.4" fill="${mouthDark}" stroke="${ink}" stroke-width="1.8"/>
@@ -290,7 +328,7 @@ function face(name, index) {
   if (name === 'tongue') lips = `<path d="M45 92 Q64 97 83 92 Q76 107 64 107 Q52 107 45 92Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
     <path d="M47.5 93.5 Q64 98 80.5 93.5 Q75 99.5 64 99.8 Q53 99.5 47.5 93.5Z" fill="${white}"/>
     <path d="M56 101.5 Q55.5 110.5 64 111.5 Q72.5 110.5 72 101.5 Q64 104.5 56 101.5Z" fill="${tongue}" stroke="${ink}" stroke-width="1.8"/>`;
-  if (blink || sleepy || wink) lips = lowerLip(103) + seam(103, 1.6, 0.8);
+  if (blink || sleepy || wink) lips = lowerLip(my + 0.5) + seam(my + 0.5, 1.6, 0.8);
 
   return `${brows}${eyes}${lips}`;
 }

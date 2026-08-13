@@ -233,7 +233,7 @@ authored-character test rejects it if it overwrites a finished Blender delivery.
 Finished characters ship from their editable Blender source with:
 
 ```bash
-npm run generate:junebug-face-atlas
+npm run generate:face-atlas -- nostrike
 npm run export:authored-character -- nostrike
 npm run capture:character-evidence -- nostrike
 npm run review:character-fidelity -- nostrike
@@ -241,8 +241,11 @@ npm run measure:fidelity -- nostrike
 npm run validate:models
 ```
 
-The atlas command reproduces Junebug's character-specific 16-expression source
-texture. The export command loads `assets/v2/source/<name>-pilot.blend`, exports its mesh,
+The atlas command writes a character's 16-expression source texture from their
+entry in `scripts/v2/face-specs.mjs`. ⚠️ Those cell coordinates are bound to that
+head's atlas island window (`HeadSpec.island`), so they are NOT portable between
+characters — copying one kid's numbers to another draws a correct face in the
+wrong place. The two are solved together, per character. The export command loads `assets/v2/source/<name>-pilot.blend`, exports its mesh,
 remaps Blender's skin order to the canonical rig without changing deformation,
 compacts vertex colours/weights, stamps source and concept hashes, validates the
 result and promotes it to `public/v2/models/`. The capture command drives the
