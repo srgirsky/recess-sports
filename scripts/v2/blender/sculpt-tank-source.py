@@ -608,7 +608,7 @@ ARM_SHOULDER_X = 0.400
 ARM_ELBOW_X = 0.918
 ARM_WRIST_X = 1.365
 ARM_Z = 2.471
-SLEEVE_HEM_X = 0.760
+SLEEVE_HEM_X = 1.050
 
 
 def limb_bone(name: str, side: int) -> str:
@@ -686,19 +686,38 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
         # hem with an underside. A cuff needs the same three rings the tee hem
         # and the shorts hem already have: the band, its underside, and the arm
         # emerging from it.
-        (SLEEVE_HEM_X - 0.030, 0.188, SHIRT, "Arm"),
-        (SLEEVE_HEM_X, 0.198, SHIRT_DARK, "Arm"),          # cuff band, proud
-        (SLEEVE_HEM_X + 0.026, 0.192, SHIRT_DARK, "Arm"),
-        (SLEEVE_HEM_X + 0.042, 0.170, SHIRT_DARK, "Arm"),  # the cuff's underside
-        (SLEEVE_HEM_X + 0.058, 0.132, SKIN, "ForeArm"),
-        # ★ AND AN ELBOW, so the limb is two tapers with a break rather than
-        # one dead-straight cone from sleeve to fist — which is what every run
-        # and swing still has shown for seven rounds.
-        (0.868, 0.124, SKIN, "ForeArm"),
-        (ARM_ELBOW_X - 0.028, 0.134, SKIN, "ForeArm"),
-        (ARM_ELBOW_X, 0.140, SKIN, "ForeArm"),
-        (ARM_ELBOW_X + 0.030, 0.130, SKIN, "ForeArm"),
-        (1.080, 0.114, SKIN, "ForeArm"),
+        # ★ THE SLEEVE WAS A CAP SLEEVE ON A KID WEARING AN OVERSIZED TEE.
+        #
+        # Traced on the concept's front figure at 171.0 px/unit (685px over his
+        # 4.006-unit height, ground row 822), the left sleeve's purple run holds
+        # 56-119 at y 470 and 46-114 at y 490, then collapses through 70-111 at
+        # y 505 to 95-111 at y 515 and is gone by 525, where bare skin runs
+        # 63-100. So the hem plane crosses at y 505-515 — z 1.854 down to 1.795,
+        # which off a shoulder at ARM_Z is 0.617 to 0.676 along a hanging arm.
+        # SLEEVE_HEM_X 0.760 put it 0.360 down: a cap sleeve on the bicep where
+        # the drawing has a tee reaching past the elbow at 0.918. That is 0.29
+        # units, 7% of his height, and it was the largest single deviation from
+        # the concept left anywhere on the model.
+        #
+        # The widths come from the same rows: half 0.184 at y 470 (x 0.812),
+        # swelling to 0.199 at y 490 (x 0.929) where the sleeve passes over the
+        # elbow, and the bare forearm below the hem is half 0.108.
+        #
+        # ⚠ EXTENDING IT PAST THE ELBOW REORDERS THE TABLE, which is the one
+        # thing this table cannot survive — see the shoulder note above, where a
+        # ring out of order rendered as a bored socket three reviews argued
+        # about. The cuff stations are written off SLEEVE_HEM_X, so raising it
+        # moved them past the elbow rings that used to follow them. The elbow
+        # rings are gone rather than resorted: the sleeve now covers the elbow,
+        # so the break belongs in the garment, and the skin below the hem is
+        # forearm only — one taper, correctly.
+        (0.812, 0.184, SHIRT, "Arm"),
+        (ARM_ELBOW_X, 0.199, SHIRT, "Arm"),                # the sleeve over the elbow
+        (SLEEVE_HEM_X - 0.030, 0.170, SHIRT, "ForeArm"),
+        (SLEEVE_HEM_X, 0.180, SHIRT_DARK, "ForeArm"),      # cuff band, proud
+        (SLEEVE_HEM_X + 0.026, 0.174, SHIRT_DARK, "ForeArm"),
+        (SLEEVE_HEM_X + 0.042, 0.150, SHIRT_DARK, "ForeArm"),  # the cuff's underside
+        (SLEEVE_HEM_X + 0.058, 0.110, SKIN, "ForeArm"),
         (1.240, 0.104, SKIN, "ForeArm"),
         (ARM_WRIST_X, 0.098, SKIN, "Hand"),
         # ★ THE HAND IS PART OF THE ARM, NOT A BALL RESTING ON IT.
@@ -731,6 +750,20 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
     if detail < 1:
         stations = [station for index, station in enumerate(stations) if index % 2 == 0 or index == len(stations) - 1]
     rows: list[list[int]] = []
+    # ★ THE STATION TABLE MUST ASCEND, AND NOTHING USED TO CHECK. `grid` stitches
+    # rows in the order it is handed them and cannot know one belongs earlier, so
+    # a station out of order makes the strip travel outward, fold back, and
+    # travel out again. That surface renders as a hard annulus with a dark centre
+    # — the "bored socket" three independent reviews argued about, and the same
+    # class as the leg table's non-monotonic z further down this file. Raising
+    # SLEEVE_HEM_X past the elbow re-created it instantly, because the cuff
+    # stations are written off SLEEVE_HEM_X and the elbow rings were literals.
+    for lower, upper in zip(stations, stations[1:]):
+        assert upper[0] > lower[0], (
+            f"arm stations must ascend in x: {lower[0]:.3f} is followed by {upper[0]:.3f}. "
+            "A ring out of order folds the strip back on itself and renders as a "
+            "bored socket — resort the table, do not nudge the value."
+        )
     for x, radius, colour, bone in stations:
         bone_name = limb_bone(bone, side)
         # ★ THE SHOULDER RINGS ARE SHARED WITH THE TORSO, AND THAT IS THE WHOLE
