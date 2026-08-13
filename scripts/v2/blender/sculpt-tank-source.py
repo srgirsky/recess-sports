@@ -1406,8 +1406,8 @@ SHOE_TOP_MAX = max(ztop for _, _, ztop, _ in SHOE_STATIONS)
 SHOE_BANDS = [
     (0.000, "midsole"),
     (0.270, "quarter"),
-    (0.450, "collar"),
-    (0.770, "quarter"),
+    (0.620, "collar"),
+    (0.800, "quarter"),
 ]
 
 
