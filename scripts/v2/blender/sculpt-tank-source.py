@@ -1254,6 +1254,28 @@ def shoe_ring(detail: int) -> list[tuple[float, float, str]]:
     return half + [(-u, v, band) for u, v, band in reversed(half[1:-1])]
 
 
+
+# ★ THE SOLE CURVES, WHICH IS WHAT MAKES A PROFILE READ AS A SHOE.
+#
+# `SHOE_FLOOR` was a single constant, so every station's underside sat on the
+# same plane and the side view showed "one smooth khaki loaf" — a slab, in three
+# consecutive reviews. A real last lifts at both ends: the toe springs off the
+# ground so the shoe can roll, and the heel bevels up behind the strike point.
+# Those two curves are most of a shoe's profile silhouette.
+#
+# Measured off the concept's third view: its sole meets the ground over the
+# middle of the last and lifts visibly at the toe. These are fractions of the
+# shoe's own height added to the floor, in the last's own (unscaled) y.
+def shoe_floor_at(y_unscaled: float) -> float:
+    """The underside's height at a station — the toe spring and heel bevel."""
+    if y_unscaled >= 0.30:          # the toe springs
+        t = (y_unscaled - 0.30) / 0.14
+        return SHOE_FLOOR + 0.052 * min(1.0, t) ** 1.6
+    if y_unscaled <= -0.16:         # the heel bevels
+        t = (-0.16 - y_unscaled) / 0.08
+        return SHOE_FLOOR + 0.030 * min(1.0, t) ** 1.5
+    return SHOE_FLOOR
+
 def shoe_place(side: int, y: float, x_off: float, z: float) -> tuple[float, float, float]:
     """Place a shoe vertex, with the foot turned out.
 
@@ -1404,6 +1426,7 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     rows: list[list[int]] = []
     bone = limb_bone("ToeBase", side)
     for y, half, ztop, colour in SHOE_STATIONS:
+        floor = shoe_floor_at(y)
         y *= SHOE_LENGTH_SCALE
         half *= SHOE_WIDTH_SCALE
         ztop = SHOE_FLOOR + (ztop - SHOE_FLOOR) * SHOE_HEIGHT_SCALE
@@ -1418,7 +1441,7 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             # The difference now is that the profile says so directly instead of
             # being coaxed out of an exponent.
             x_off = half * u
-            z = SHOE_FLOOR + (ztop - SHOE_FLOOR) * v
+            z = floor + (ztop - floor) * v
             # The colour band follows the vertex's real height, not the
             # section's own fraction — see `shoe_band_at`.
             height = (z - SHOE_FLOOR) / (SHOE_TOP_MAX * SHOE_HEIGHT_SCALE - SHOE_FLOOR)
@@ -1537,8 +1560,8 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     builder.grid(rows, 1, flip=side > 0)
 
     # Cap both ends so the upper is closed — rubric 3.7 is binary about holes.
-    heel = builder.vertex(shoe_place(side, -0.286 * SHOE_LENGTH_SCALE, 0.0, 0.126), SHOE, bone, (0.75, 0.25))
-    toe = builder.vertex(shoe_place(side, 0.470 * SHOE_LENGTH_SCALE, 0.0, 0.050), SOLE, bone, (0.75, 0.25))
+    heel = builder.vertex(shoe_place(side, -0.286 * SHOE_LENGTH_SCALE, 0.0, 0.126 + 0.030), SHOE, bone, (0.75, 0.25))
+    toe = builder.vertex(shoe_place(side, 0.470 * SHOE_LENGTH_SCALE, 0.0, 0.050 + 0.052), SOLE, bone, (0.75, 0.25))
     for index in range(len(ring)):
         nxt = (index + 1) % len(ring)
         a = (heel, rows[0][nxt], rows[0][index])
