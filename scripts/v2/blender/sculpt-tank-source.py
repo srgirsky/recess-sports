@@ -87,7 +87,19 @@ SHIRT = rgba("6A4682")
 SHIRT_DARK = rgba("523464")
 PANTS = rgba("24242B")
 PANTS_DARK = rgba("121116")
-SHOE = rgba("2E4E86")  # navy with real blue in it, not a neutral dark
+# ★ HIS NAVY IS A SLATE, NOT A BRIGHT BLUE, AND THE CLASSIFIER SAID SO FIRST.
+#
+# `measure:fidelity` reads the concept's own two shoe tones at run time and gets
+# #e3d4c3 and #353c42 — a dark desaturated blue-grey. This was authored #2E4E86,
+# a saturated navy, and in chromaticity the two sit 50 apart: past the
+# membership threshold, so the delivered shoe's blue was being counted as
+# NEITHER tone. Widening the navy band made the measured second tone go DOWN,
+# which is the tell — more of a colour the classifier refuses to recognise.
+#
+# The concept's shoe reads navy to the eye because it is dark and cool against a
+# cream midsole, not because it is saturated. Authored a little lighter than the
+# target to survive the board's ramp, as the cream above is.
+SHOE = rgba("3F5068")  # the slate the concept actually holds
 SOCK = rgba("FFE0B4")  # same ramp correction as SOLE
 # ★ THE MIDSOLE IS LIGHTER BY VALUE, NOT BY BEING WHITE. A near-white band
 # counts as "cream" for the tone split while contributing nothing to the band's
@@ -1161,24 +1173,36 @@ SHOE_SECTION = [
     # Two earlier attempts missed it from opposite directions: the first put a
     # narrow band at 0.35-0.54 (right area, wrong place) and the second widened
     # it to 0.25-0.69 (right place, twice the area). Neither was the structure.
+    # ★ THE NAVY RUNS TO THE TOP OF THE SHOE, AND IT IS TWO BANDS, NOT ONE.
+    #
+    # Re-measured on the concept's front figure as cool% by row, normalised to
+    # figure height: 15 / 42 / 7 / 14 / 10 / 8 / 34 / 36 / 0 across 3-10%. Two
+    # navy zones — a quarter panel low and an ANKLE COLLAR high — with the cream
+    # toe overlay and strap between them. The delivery ran 17 / 25 / 25 and then
+    # 0 at every row above 6%, because this section put a single navy band low
+    # and a CREAM collar on top of it.
+    #
+    # ⚠️ The header above this one asserted the concept was "back under 11% above
+    # 0.56 of shoe height". That was mis-measured, and it is what produced the
+    # stripe: the navy does not stop, it resumes at the collar. An independent
+    # review caught it and the re-measurement agrees.
+    #
+    # The upper zone sits at 9-10% of figure height, which the shoe could not
+    # reach at all — it topped out at 8% — so SHOE_HEIGHT_SCALE goes up with it.
     (0.000, 0.000, "midsole"),   # flat on the ground: a sole, not a tube bottom
     (0.620, 0.004, "midsole"),
-    (0.940, 0.055, "midsole"),   # the welt
-    (1.000, 0.260, "midsole"),   # the midsole at its widest — the flare
-    (0.998, 0.470, "midsole"),
-    (0.988, 0.510, "midsole"),   # last cream row — the top of the midsole
-    # ★ THE FOXING LINE. A sneaker's upper sits INSIDE its midsole, and the step
-    # between them is what makes it read as a shoe rather than a painted slab.
-    # This ran 0.997 -> 0.992 -> 0.984 across v 0.30 to 0.57: straight-sided,
-    # no step anywhere, which is why two reviews scored the colour split as
-    # correct and the CONSTRUCTION as absent. The upper now steps in 0.086.
-    (0.902, 0.556, "quarter"),   # first navy row, inboard of the midsole
-    (0.888, 0.640, "quarter"),
-    (0.862, 0.708, "quarter"),   # last navy row
-    (0.836, 0.762, "collar"),    # the cream collar trim around the ankle
-    (0.760, 0.900, "collar"),
-    (0.420, 0.978, "collar"),
-    (0.000, 1.000, "collar"),    # instep centre
+    (0.950, 0.050, "midsole"),   # the welt
+    (1.000, 0.230, "midsole"),   # the midsole at its widest — the flare
+    (0.995, 0.455, "midsole"),   # last cream row — a tall midsole, as drawn
+    (0.905, 0.486, "quarter"),   # THE FOXING LINE: the upper steps in 0.090
+    (0.890, 0.545, "quarter"),
+    (0.878, 0.598, "quarter"),   # the quarter panel ends
+    (0.868, 0.632, "collar"),    # cream vamp — the toe overlay and strap sit here
+    (0.828, 0.790, "collar"),
+    (0.790, 0.850, "collar"),
+    (0.746, 0.906, "quarter"),   # the navy ankle collar begins
+    (0.600, 0.962, "quarter"),
+    (0.000, 1.000, "quarter"),   # instep centre, still the navy collar
 ]
 # ★ THE FAR LODS KEEP BOTH BAND EDGES AND DROP THE SHAPING ROWS BETWEEN THEM.
 # The navy is the one change on this shoe that resolves at 40px — the eighth
@@ -1189,12 +1213,13 @@ SHOE_SECTION = [
 SHOE_SECTION_MID = [
     (0.000, 0.000, "midsole"),
     (0.970, 0.070, "midsole"),
-    (0.988, 0.510, "midsole"),
-    (0.902, 0.556, "quarter"),
-    (0.862, 0.708, "quarter"),
-    (0.836, 0.762, "collar"),
-    (0.560, 0.968, "collar"),
-    (0.000, 1.000, "collar"),
+    (0.995, 0.455, "midsole"),
+    (0.905, 0.486, "quarter"),
+    (0.878, 0.598, "quarter"),
+    (0.868, 0.632, "collar"),
+    (0.792, 0.876, "collar"),
+    (0.746, 0.906, "quarter"),
+    (0.000, 1.000, "quarter"),
 ]
 # ⚠️ LOD2 IS 1200 TRIANGLES AND THE SHOE PAYS 40 PER RING VERTEX (18 grid quads
 # plus 2 end caps, doubled for two feet). The first cut of this section carried
@@ -1202,10 +1227,10 @@ SHOE_SECTION_MID = [
 # refused it, which is the budget working. Five entries is a ring of eight.
 SHOE_SECTION_LOW = [
     (0.000, 0.000, "midsole"),
-    (0.988, 0.510, "midsole"),
-    (0.902, 0.556, "quarter"),
-    (0.862, 0.708, "quarter"),
-    (0.000, 1.000, "collar"),
+    (0.995, 0.455, "midsole"),
+    (0.905, 0.486, "quarter"),
+    (0.878, 0.598, "quarter"),
+    (0.000, 1.000, "quarter"),
 ]
 
 
@@ -1288,7 +1313,7 @@ SHOE_WIDTH_SCALE = 1.02
 # navy in the wrong place by construction: the concept's navy reaches z 0.106 of
 # figure height (0.424ft) and a shoe topping out at 0.300ft cannot put anything
 # there at all, whatever its section says.
-SHOE_HEIGHT_SCALE = 1.08
+SHOE_HEIGHT_SCALE = 1.30
 
 
 def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:

@@ -230,6 +230,19 @@ const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
  * near every centroid — still abstain rather than being assigned at random.
  */
 const CHROMA_WEIGHT = 260;
+// ⚠️ AND THE VALUE TERM HAS TO STAY SMALL, OR IT DECIDES.
+//
+// At 0.25 this term outvoted hue at the dark end and the shoe's tone split was
+// being met partly by shadow: the outsole's rgb(57,52,44) sits 29 from the navy
+// centroid and 39.5 from the cream one, because darkening a cream moves it 157
+// luminance units from cream and only 6 from navy. In chromaticity that pixel
+// is unambiguous — warm, r > g > b — and at 0.06 it lands 11.4 from cream
+// against 29 from navy, which is the right answer.
+//
+// A luminance FLOOR was tried first and is the wrong tool: the concept's own
+// navy is #353c42 at luminance 59, so any floor high enough to exclude the
+// shadow also excludes the tone it is meant to find.
+const VALUE_WEIGHT = 0.06;
 const chromaticity = (c) => {
   const sum = c[0] + c[1] + c[2];
   return sum > 0 ? [c[0] / sum, c[1] / sum, c[2] / sum] : [1 / 3, 1 / 3, 1 / 3];
@@ -237,7 +250,7 @@ const chromaticity = (c) => {
 const toneDistance = (a, b) => {
   const ca = chromaticity(a), cb = chromaticity(b);
   const hue = Math.hypot(ca[0] - cb[0], ca[1] - cb[1], ca[2] - cb[2]);
-  return Math.hypot(CHROMA_WEIGHT * hue, 0.25 * (lum(a) - lum(b)));
+  return Math.hypot(CHROMA_WEIGHT * hue, VALUE_WEIGHT * (lum(a) - lum(b)));
 };
 
 /** Walk the figure pixels of a horizontal band given as fractions of figure height. */
@@ -259,10 +272,16 @@ function eachBandPixel(f, fromFrac, toFrac, visit) {
 // FIRST tone in shadow — cream and shadowed cream are 100+ apart in RGB — and
 // then both centroids name the same garment and the split measures nothing.
 // Cream to navy is ~83 in this space; cream to its own shadow is ~25.
-const TONE_SEPARATION = 45;
+// ⚠️ RESCALED WITH VALUE_WEIGHT. Dropping the value term from 0.25 to 0.06
+// shrinks every distance in this space by roughly 1.8x, and the old 45 then sat
+// ABOVE cream-to-navy (24.5) — so navy stopped being selected as a second tone
+// at all and the concept read 99.4% one colour. Cream to its own shadow is 11.4
+// in the same space, so 18 still separates a real second garment tone from one
+// tone's shading, which is what this constant is for.
+const TONE_SEPARATION = 18;
 // Past this, a pixel belongs to neither declared tone — a sock, a shadow, skin.
 // The old rule-based classifier abstained the same way by simply matching neither.
-const TONE_MEMBERSHIP = 55;
+const TONE_MEMBERSHIP = 30;
 
 /**
  * ★ THE TWO TONES ARE DERIVED FROM THE CONCEPT, NOT NAMED IN THIS FILE.
