@@ -670,10 +670,33 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
 
     # The tip closes the mitten. The wrist no longer needs a cap because the
     # tube never ends there any more.
+    # ★ THIS FAN WAS WOUND INWARD, AND IT IS THE HOLE THREE REVIEWS ARGUED ABOUT.
+    #
+    # The predicate was the SHOULDER cap's, copied to the hand. The two caps
+    # close opposite ends of the same tube, so they cannot share a rule: the
+    # shoulder cap's outward direction is -x on the right arm and the hand
+    # cap's is +x. Measured on the shipped GLB, every one of the 14 fan
+    # triangles at the +x apex had a geometric normal of (-1, 0, 0) and the
+    # authored NORMAL agreed, on all three LODs and both arms.
+    #
+    # glTF materials are single-sided, so those triangles are discarded and a
+    # ray down the arm's axis passes through the hand and lands on the tee. The
+    # bind profile shows it as a skin annulus round a cloth centre, and both
+    # `swing_contact` and `run` show the arm ending in an open cavity with a lit
+    # inner wall, at hero scale, in the clips the game plays most.
+    #
+    # ⚠️ AND I ARGUED IT WAS NOT A HOLE, WITH THE WRONG INSTRUMENT. I sampled
+    # ALPHA across the shoulder window, got 0 pixels under 250, and concluded
+    # the dark disc was shadow. Alpha can only ever find a hole in the OUTER
+    # silhouette; the torso sits behind the arm at every one of those pixels, so
+    # an interior hole is invisible to that test by construction. The reviewer
+    # who reproduced my numbers exactly and then showed they proved nothing was
+    # right, and `scripts/v2/capwinding.lint.test.js` now checks the geometry
+    # rather than the picture.
     tip = builder.vertex((1.664 * side, 0.0, ARM_Z), SKIN, limb_bone("Hand", side), (0.75, 0.25))
     for index in range(sides):
         nxt = (index + 1) % sides
-        face = (tip, rows[-1][index], rows[-1][nxt]) if side > 0 else (tip, rows[-1][nxt], rows[-1][index])
+        face = (tip, rows[-1][nxt], rows[-1][index]) if side > 0 else (tip, rows[-1][index], rows[-1][nxt])
         builder.face(face, 1)
 
     if detail >= 1:
