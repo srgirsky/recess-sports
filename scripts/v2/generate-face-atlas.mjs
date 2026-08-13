@@ -321,16 +321,22 @@ function face(name, index) {
   // A grin is a closed-jaw smile showing the upper teeth; a cheer is a wide
   // open shout with the jaw dropped and the tongue low. Different silhouettes,
   // not different shades.
+  // ★ ROUND 10: THE THREE OPEN CELLS DIFFERED BY 8 UNITS OF A 128-UNIT CELL,
+  // which is not a difference at draft-card size. An independent review found
+  // "four cells carrying two mouth states", with cheer and tongue reading as
+  // the same open cavity. They are now separated by SILHOUETTE, which is the
+  // only property that survives minifying: grin is wide and flat and closed,
+  // cheer is tall and round and open, tongue breaks the lip line entirely.
   if (name === 'grin') lips = spec.tongueOut
-    ? `<path d="M44 93 Q64 100 84 93 Q78 104 64 104 Q50 104 44 93Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
-    <path d="M46.5 94.5 Q64 101 81.5 94.5 Q76 99.6 64 99.9 Q52 99.6 46.5 94.5Z" fill="${white}"/>`
+    ? `<path d="M41 91 Q64 99 87 91 Q81 103 64 103 Q47 103 41 91Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
+    <path d="M43.5 92.6 Q64 100 84.5 92.6 Q79 99.2 64 99.5 Q49 99.2 43.5 92.6Z" fill="${white}"/>`
     : `<path d="M45 92 Q64 97 83 92 Q76 108 64 108 Q52 108 45 92Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
     <path d="M47.5 93.5 Q64 98 80.5 93.5 Q75 100.1 64 100.4 Q53 100.1 47.5 93.5Z" fill="${white}"/>
     <path d="M55.5 106 Q64 109 72.5 106 Q69.5 102 64 102 Q58.5 102 55.5 106Z" fill="${tongue}"/>`;
   if (name === 'cheer') lips = spec.tongueOut
-    ? `<path d="M43 90 Q64 98 85 90 Q80 115 64 115 Q48 115 43 90Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.6"/>
-    <path d="M46 91.5 Q64 99 82 91.5 Q76 98.5 64 98.8 Q52 98.5 46 91.5Z" fill="${white}"/>
-    <path d="M55 106 Q64 110 73 106 Q70 101 64 101 Q58 101 55 106Z" fill="${tongue}"/>`
+    ? `<path d="M48 89 Q64 98 80 89 Q86 118 64 119 Q42 118 48 89Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.6"/>
+    <path d="M50.5 90.5 Q64 98.5 77.5 90.5 Q71 97.5 64 97.8 Q57 97.5 50.5 90.5Z" fill="${white}"/>
+    <path d="M56 108 Q64 112 72 108 Q69 103.5 64 103.5 Q59 103.5 56 108Z" fill="${tongue}"/>`
     : `<path d="M45 92 Q64 97 83 92 Q76 108 64 108 Q52 108 45 92Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
     <path d="M47.5 93.5 Q64 98 80.5 93.5 Q75 100.1 64 100.4 Q53 100.1 47.5 93.5Z" fill="${white}"/>
     <path d="M55.5 106 Q64 109 72.5 106 Q69.5 102 64 102 Q58.5 102 55.5 106Z" fill="${tongue}"/>`;
@@ -354,9 +360,10 @@ function face(name, index) {
     // board hash. Her tongue cell has the same weakness and should take this
     // the next time she is re-rendered for other reasons; changing it here
     // would invalidate an approval to fix a defect nobody has scored her on.
-    ? `<path d="M45 92 Q64 97 83 92 Q76 107 64 107 Q52 107 45 92Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
-    <path d="M47.5 93.5 Q64 98 80.5 93.5 Q75 99.5 64 99.8 Q53 99.5 47.5 93.5Z" fill="${white}"/>
-    <path d="M55 100 Q53 116 64 118 Q75 116 73 100 Q64 104 55 100Z" fill="${tongue}" stroke="${ink}" stroke-width="2.0"/>`
+    ? `<path d="M47 92 Q64 97 81 92 Q75 105 64 105 Q53 105 47 92Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
+    <path d="M49.5 93.5 Q64 98 78.5 93.5 Q73 99 64 99.3 Q55 99 49.5 93.5Z" fill="${white}"/>
+    <path d="M55 99 Q52 120 64 124 Q76 120 73 99 Q64 104 55 99Z" fill="${tongue}" stroke="${ink}" stroke-width="2.0"/>
+    <path d="M64 107 L64 119" stroke="${mouthDark}" stroke-width="1.6" fill="none" opacity="0.55"/>`
     : `<path d="M45 92 Q64 97 83 92 Q76 107 64 107 Q52 107 45 92Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
     <path d="M47.5 93.5 Q64 98 80.5 93.5 Q75 99.5 64 99.8 Q53 99.5 47.5 93.5Z" fill="${white}"/>
     <path d="M56 101.5 Q55.5 110.5 64 111.5 Q72.5 110.5 72 101.5 Q64 104.5 56 101.5Z" fill="${tongue}" stroke="${ink}" stroke-width="1.8"/>`;
