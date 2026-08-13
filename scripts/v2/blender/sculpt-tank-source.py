@@ -1680,13 +1680,33 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     # Every row has the same point count by construction, so the grid cannot
     # stitch across a gap — the failure that made the earlier versions land
     # unevenly under the 21-degree toe-out.
+    # ★ AND THE OVERLAY ASKS ITS OWN EDGE FUNCTION WHICH END IT IS ON.
+    #
+    # This loop used to select stations with `if y_s < 0.13: continue`, a literal
+    # that encoded "the toe is at +y". Reversing `SHOE_STATIONS` to put the toe
+    # at -y — the fix that finally turned Tank's feet the right way round — moved
+    # the toe and left the literal, so the TOE cap was built on the HEEL, on top
+    # of the heel counter, and the toe got no cap at all.
+    #
+    # It did not fail quietly. `toe_cap_v_low` returns a 2.0 sentinel meaning
+    # "no cap at this station", so `v = 1 - (1 - v_low) * |p|` ran 1.0 -> 2.0;
+    # `shoe_u_at_v` clamps anything past the section's top to the INSTEP CENTRE,
+    # where u = 0, so all eleven points collapsed onto one vertical line, and the
+    # height reached 0.006 + 0.429 * 2.0 = 0.864 — twice the shoe's own topline.
+    # The board showed it as a tan card standing up the shin, and the background
+    # visible between that card and the shoe was the 45-pixel hole 3.7 caught.
+    #
+    # The repair is not a corrected literal — that is the same bug waiting for
+    # the next table edit. The edge function already knows which end it serves;
+    # both overlays ask it, and the assert makes a sentinel that reaches the loop
+    # a build failure instead of a fin.
     if detail >= 1:
         CAP_POINTS = 11
         cap_rows: list[list[int]] = []
         for y_s, half_s, ztop_s, _c in SHOE_STATIONS:
-            if y_s < 0.13:
-                continue
             v_low = toe_cap_v_low(y_s)          # the shared edge — see above
+            if v_low > 1.0:                     # this station is behind the cap
+                continue
             floor_s = shoe_floor_at(y_s)
             ys = y_s * SHOE_LENGTH_SCALE
             hs = half_s * SHOE_WIDTH_SCALE * 1.028
@@ -1695,6 +1715,7 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             for j in range(CAP_POINTS):
                 pp = -1.0 + 2.0 * j / (CAP_POINTS - 1)
                 v = 1.0 - (1.0 - v_low) * abs(pp)
+                assert 0.0 <= v <= 1.0, f"toe cap v={v:.3f} off-section at y={y_s}"
                 u = shoe_u_at_v(v) * (1.0 if pp >= 0 else -1.0)
                 row.append(builder.vertex(
                     shoe_place(side, ys, hs * u, floor_s + (zt - floor_s) * v),
@@ -1719,17 +1740,18 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
         COUNTER_POINTS = 9
         counter_rows: list[list[int]] = []
         for y_s, half_s, ztop_s, _c in SHOE_STATIONS:
-            if y_s < 0.08:
+            v_low = heel_counter_v_low(y_s)     # asks its edge, not a literal
+            if v_low > 1.0:                     # this station is ahead of it
                 continue
             floor_s = shoe_floor_at(y_s)
             ys = y_s * SHOE_LENGTH_SCALE
             hs = half_s * SHOE_WIDTH_SCALE * 1.026
             zt = SHOE_FLOOR + (ztop_s - SHOE_FLOOR) * SHOE_HEIGHT_SCALE
-            v_low = heel_counter_v_low(y_s)
             row = []
             for j in range(COUNTER_POINTS):
                 pp = -1.0 + 2.0 * j / (COUNTER_POINTS - 1)
                 v = 1.0 - (1.0 - v_low) * abs(pp)
+                assert 0.0 <= v <= 1.0, f"heel counter v={v:.3f} off-section at y={y_s}"
                 u = shoe_u_at_v(v) * (1.0 if pp >= 0 else -1.0)
                 row.append(builder.vertex(
                     shoe_place(side, ys, hs * u, floor_s + (zt - floor_s) * v),
