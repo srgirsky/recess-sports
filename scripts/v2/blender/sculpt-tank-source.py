@@ -1133,16 +1133,37 @@ SHOE_STATIONS = [
     # ⚠️ Three rounds of moving the navy band could not have fixed that, and two
     # of them made the art worse while chasing the tone split. The band was never
     # the problem; the last's silhouette was.
-    (-0.239, 0.126, 0.250, SOLE),
-    (-0.188, 0.170, 0.292, SOLE),
-    (-0.137, 0.196, 0.302, SOLE),
-    (-0.057, 0.209, 0.304, SOLE),
-    (0.034, 0.210, 0.302, SOLE),
-    (0.131, 0.204, 0.298, SOLE),
-    (0.228, 0.190, 0.290, SOLE),
-    (0.314, 0.166, 0.276, SOLE),
-    (0.388, 0.126, 0.252, SOLE),
-    (0.439, 0.070, 0.214, SOLE),
+    # ★ THE TOE IS AT -y, BECAUSE FORWARD IS -y AND THE REST OF HIM KNOWS THAT.
+    #
+    # This table ran heel-at--y to toe-at-+y for twenty reviews, under a comment
+    # asserting exactly that. It is backwards: `sculptlib/head.py` builds the
+    # nose at -y and the hands settle forward at -y, and Junebug's own shoe
+    # table runs -0.375 to +0.225 — long end at -y. Probed in the shipped GLBs,
+    # every character on the roster has the foot's long end on the same side as
+    # the nose except this one, which had it 180 degrees opposite, and opposite
+    # the ToeBase bone that skins it.
+    #
+    # It is most of what nineteen reviews described as "a loaf", "a chevron", "a
+    # pennant", "converging arrows": the front camera was looking at the HEEL
+    # COUNTER, and the toe cap was hidden round the back competing with the
+    # collar rim. Nothing gated it — `measure:fidelity` reads widths and tone
+    # ratios on the front view, and every one of those is invariant under a yaw
+    # flip.
+    #
+    # ⚠️ It also un-splays him. `shoe_place` rotates by `lx = x_off·cos21 -
+    # y·sin21`, so with the toe at +y the rotation carried it toward the
+    # centreline — pigeon-toed, not the toe-out the concept draws and this
+    # file's own comment claims. Negating y fixes the stance in the same edit.
+    (-0.439, 0.070, 0.214, SOLE),
+    (-0.388, 0.126, 0.252, SOLE),
+    (-0.314, 0.166, 0.276, SOLE),
+    (-0.228, 0.190, 0.290, SOLE),
+    (-0.131, 0.204, 0.298, SOLE),
+    (-0.034, 0.210, 0.302, SOLE),
+    (0.057, 0.209, 0.304, SOLE),
+    (0.137, 0.196, 0.302, SOLE),
+    (0.188, 0.170, 0.292, SOLE),
+    (0.239, 0.126, 0.250, SOLE),
 ]
 
 
@@ -1283,11 +1304,11 @@ def shoe_ring(detail: int) -> list[tuple[float, float, str]]:
 # shoe's own height added to the floor, in the last's own (unscaled) y.
 def shoe_floor_at(y_unscaled: float) -> float:
     """The underside's height at a station — the toe spring and heel bevel."""
-    if y_unscaled >= 0.30:          # the toe springs
-        t = (y_unscaled - 0.30) / 0.14
+    if y_unscaled <= -0.30:         # the toe springs
+        t = (-0.30 - y_unscaled) / 0.14
         return SHOE_FLOOR + 0.052 * min(1.0, t) ** 1.6
-    if y_unscaled <= -0.16:         # the heel bevels
-        t = (-0.16 - y_unscaled) / 0.08
+    if y_unscaled >= 0.16:          # the heel bevels
+        t = (y_unscaled - 0.16) / 0.08
         return SHOE_FLOOR + 0.030 * min(1.0, t) ** 1.5
     return SHOE_FLOOR
 
@@ -1463,10 +1484,10 @@ def toe_cap_v_low(y_unscaled: float) -> float:
     toward the sole as it nears the tip, which is what makes a mudguard wrap the
     toe rather than sit on top of it.
     """
-    if y_unscaled < 0.13:
+    if y_unscaled > -0.13:
         return 2.0
-    frac = min(1.0, max(0.0, (y_unscaled - 0.13) / 0.31))
-    return 0.66 - 0.20 * frac
+    frac = min(1.0, max(0.0, (-0.13 - y_unscaled) / 0.31))
+    return 0.82 - 0.10 * frac
 
 
 def heel_counter_v_low(y_unscaled: float) -> float:
@@ -1477,9 +1498,9 @@ def heel_counter_v_low(y_unscaled: float) -> float:
     a loaf. Its edge rises toward the back the way the toe cap's dips toward the
     front. Returns 2.0 — covering nothing — ahead of the counter's front edge.
     """
-    if y_unscaled > -0.08:
+    if y_unscaled < 0.08:
         return 2.0
-    frac = min(1.0, max(0.0, (-0.08 - y_unscaled) / 0.16))
+    frac = min(1.0, max(0.0, (y_unscaled - 0.08) / 0.16))
     return 0.60 - 0.22 * frac
 
 
@@ -1611,7 +1632,7 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             # being kept in step by hand.
             if band_name == "quarter" and v >= toe_cap_v_low(y_unscaled):
                 band = SOLE                # under the cream toe cap
-            elif band_name == "quarter" and -0.15 < y < 0.30 and 0.44 <= height <= 0.54:
+            elif band_name == "quarter" and -0.30 < y < 0.15 and 0.44 <= height <= 0.54:
                 band = SOLE                # under the cream strap
             elif band_name == "quarter":
                 band = SHOE                # the navy quarter, unbroken on the flanks
@@ -1698,7 +1719,7 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
         COUNTER_POINTS = 9
         counter_rows: list[list[int]] = []
         for y_s, half_s, ztop_s, _c in SHOE_STATIONS:
-            if y_s > -0.08:
+            if y_s < 0.08:
                 continue
             floor_s = shoe_floor_at(y_s)
             ys = y_s * SHOE_LENGTH_SCALE
@@ -1737,7 +1758,7 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
         for j in range(RIM_POINTS):
             phi = 2.0 * pi * j / RIM_POINTS
             for radial, target in ((0.86, inner_row), (1.04, outer_row)):
-                y_r = -0.020 + 0.150 * radial * cos(phi)
+                y_r = 0.020 - 0.150 * radial * cos(phi)
                 half_r, ztop_r = shoe_station_at(y_r)
                 floor_r = shoe_floor_at(y_r)
                 zt = SHOE_FLOOR + (ztop_r - SHOE_FLOOR) * SHOE_HEIGHT_SCALE
@@ -1750,8 +1771,8 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
         builder.grid([inner_row, outer_row], 1, flip=side > 0)
 
     # Cap both ends so the upper is closed — rubric 3.7 is binary about holes.
-    heel = builder.vertex(shoe_place(side, -0.286 * SHOE_LENGTH_SCALE, 0.0, 0.126 + 0.030), SHOE, bone, (0.75, 0.25))
-    toe = builder.vertex(shoe_place(side, 0.470 * SHOE_LENGTH_SCALE, 0.0, 0.050 + 0.052), SOLE, bone, (0.75, 0.25))
+    heel = builder.vertex(shoe_place(side, 0.286 * SHOE_LENGTH_SCALE, 0.0, 0.126 + 0.030), SHOE, bone, (0.75, 0.25))
+    toe = builder.vertex(shoe_place(side, -0.470 * SHOE_LENGTH_SCALE, 0.0, 0.050 + 0.052), SOLE, bone, (0.75, 0.25))
     for index in range(len(ring)):
         nxt = (index + 1) % len(ring)
         a = (heel, rows[0][nxt], rows[0][index])
@@ -1775,7 +1796,7 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
         if len(arc) >= 3:
             strap: list[list[int]] = []
             for y_s, half_s, ztop_s, _c in SHOE_STATIONS:
-                if not (-0.02 < y_s < 0.20):
+                if not (-0.20 < y_s < 0.02):
                     continue
                 floor_s = shoe_floor_at(y_s)
                 ys = y_s * SHOE_LENGTH_SCALE
