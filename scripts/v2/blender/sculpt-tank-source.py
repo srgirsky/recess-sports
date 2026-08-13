@@ -553,13 +553,26 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
         # also why it rendered dark: a thin cylinder turns its whole surface away
         # from the key where a broad deltoid faces it.
         (0.215, 0.286, SHIRT, "Arm"),
-        (0.330, 0.272, SHIRT, "Arm"),
         # ★ THE DELTOID. Seven reviews called this corner butt-joined: the
         # sleeve met the torso at a hard crease and the arm stepped out of it
         # NARROWER with a dark ring, so there was never a shoulder mass at all.
         # A ring that swells proud of both the torso and the sleeve below it is
         # what rubric 3.11 means by "the shoulder stays a round deltoid form".
-        (0.298, 0.292, SHIRT, "Arm"),
+        #
+        # ⚠️ AND WHEN IT WAS ADDED IT WENT IN OUT OF ORDER, WHICH IS WHY THE
+        # SHOULDER READ AS A SOCKET. The table ran x = 0.215, 0.330, 0.298,
+        # 0.400: the deltoid ring sat AFTER a station further out, so the quad
+        # strip travelled outward, folded back 0.032ft, and travelled out again.
+        # A surface that doubles over itself renders as a hard annulus with a
+        # dark centre — which three independent reviews then described as a
+        # bored socket, a bullseye and a doorknob on his chest, and which one
+        # measured as an "open interior" at 47% of the profile torso depth.
+        #
+        # It is the same class as the leg table's non-monotonic z, recorded
+        # further down this file: `grid` stitches rows in the order it is given
+        # them and cannot know that one of them belongs earlier.
+        (0.298, 0.292, SHIRT, "Arm"),   # deltoid peak
+        (0.330, 0.288, SHIRT, "Arm"),
         (ARM_SHOULDER_X, 0.262, SHIRT, "Arm"),
         (0.560, 0.216, SHIRT, "Arm"),
         # ★ THE CUFF IS A STEP AND A BAND. Rubric 3.4 asks for garments that read
@@ -631,6 +644,29 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
         nxt = (index + 1) % sides
         face = (cap, rows[0][nxt], rows[0][index]) if side > 0 else (cap, rows[0][index], rows[0][nxt])
         builder.face(face, 1)
+
+    # ★ A BALL AT THE JOINT, WHICH IS THE ONLY THING THAT SURVIVES ROTATION.
+    #
+    # The sleeve and the torso are two separate shells that overlap. In the bind
+    # pose the overlap hides the join, which is why nine rounds of boards showed
+    # no gap. Rotate the arm down to where the game actually holds it and the
+    # sleeve swings out of the torso, opening a dark notch at the top of the
+    # shoulder — visible the moment the A-pose render existed to show it.
+    #
+    # Widening the sleeve cannot fix that: whatever the overlap, some rotation
+    # exceeds it. A sphere CENTRED ON THE JOINT and weighted to the arm bone
+    # does, and it is the standard answer, because a sphere rotating about its
+    # own centre is visually stationary. It fills the corner at every angle the
+    # rig can reach, at the cost of one primitive per shoulder.
+    #
+    # Gated to detail >= 1: LOD2 has 1200 triangles and the shoe already spends
+    # 40 per ring vertex there. This is a near-LOD read.
+    if detail >= 1:
+        builder.ellipsoid(
+            (ARM_SHOULDER_X * side, 0.0, ARM_Z),
+            (0.286, 0.280, 0.276),
+            1, SHIRT, shoulder_bone, 16, 11,
+        )
 
     # The tip closes the mitten. The wrist no longer needs a cap because the
     # tube never ends there any more.
