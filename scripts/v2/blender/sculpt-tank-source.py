@@ -518,7 +518,11 @@ LEG_ANKLE_Z = 0.095
 # touching from crotch to knee, which on a kid this wide means the legs start
 # close and the width comes from their radius.
 SHORTS_HEM_Z = 0.694
-SOCK_TOP_Z = 0.640
+# ★ MEASURED: the concept shows 7% of figure height of bare shin between the
+# shorts hem and the sock top; round 5 shipped 2%, with the socks pulled nearly
+# twice as high as drawn. 0.28ft of shin below a hem at 0.694 puts the roll at
+# 0.414.
+SOCK_TOP_Z = 0.414
 
 
 def leg_x(z: float) -> float:
@@ -689,7 +693,23 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             # cream with no sole line at all. Painting the band as rows of the
             # SAME surface is the `grid` rule again: a separate sole slab would
             # meet the upper on an intersection curve and crease.
-            band = WHITE if z < SHOE_FLOOR + 0.072 else colour
+            # ★ THE SOLE IS A SIDEWALL, NOT A PAINTED LINE. The review scored
+            # this a 2 with "a shoe with no sole is not a shoe": the concept
+            # carries a thick cream midsole with a visible sidewall, a navy toe
+            # cap and a quarter panel. The band below is the sidewall, and the
+            # toe cap is the front third in the darker tone.
+            if z < SHOE_FLOOR + 0.084:
+                band = WHITE
+            # ⚠️ SIZED AGAINST THE MEASUREMENT. The first pass painted the front
+            # 35% of the last as toe cap and another 19% as quarter panel —
+            # about 54% of the shoe navy against a concept that measures 26.2%.
+            # The band metric caught it as cream falling to 45.3%.
+            elif y < -0.585:
+                band = SHOE        # toe cap
+            elif 0.130 < y < 0.250:
+                band = SHOE        # quarter panel over the instep
+            else:
+                band = colour
             row.append(builder.vertex(shoe_place(side, y, x_off, z), band, bone, (0.75, 0.25)))
         rows.append(row)
     # ★ MATERIAL 1, NOT 3. Round 4 built the whole shoe on M_Accessory, which
@@ -719,6 +739,20 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
         b = (toe, rows[-1][index], rows[-1][nxt])
         builder.face(a if side < 0 else (a[0], a[2], a[1]), 1)
         builder.face(b if side < 0 else (b[0], b[2], b[1]), 1)
+
+    # Three lace straps lying ON the vamp, which is what the concept draws —
+    # not pegs standing proud of it, the defect Junebug's round-5 board scored.
+    if detail >= 2:
+        for lace_y in (-0.230, -0.090, 0.050):
+            path = []
+            radii = []
+            for step in range(7):
+                t = step / 6.0
+                across = (t - 0.5) * 2.0
+                half = 0.196 * (1.0 - 0.18 * across * across)
+                path.append(shoe_place(side, lace_y, half * across, 0.300 - 0.052 * across * across))
+                radii.append(0.020)
+            builder.tube(path, radii, 1, SOLE, bone, 5)
 
     # ★ THE SHOE'S COLLAR BAND WAS A DETACHED SHELL, and 3.7 caught it: a
     # 100px floating component at the ankle, separated from the shoe by clear
