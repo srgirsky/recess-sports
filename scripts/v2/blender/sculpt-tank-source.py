@@ -1421,6 +1421,25 @@ def shoe_band_at(height_fraction: float) -> str:
             break
     return name
 
+
+def shoe_u_at_v(v: float) -> float:
+    """The section's lateral offset at a given height, on the right half.
+
+    `SHOE_SECTION`'s `v` rises monotonically from the sole to the instep, so a
+    height picks exactly one point on the upper — which is what lets an overlay
+    be parameterised in the SHOE's frame rather than borrowed from the ring's
+    index order. Three earlier overlay attempts took a slice of the ring and got
+    an arc whose extent drifted between stations; this returns a point.
+    """
+    pts = SHOE_SECTION
+    if v <= pts[0][1]:
+        return pts[0][0]
+    for (u0, v0, _a), (u1, v1, _b) in zip(pts, pts[1:]):
+        if v0 <= v <= v1:
+            t = 0.0 if v1 == v0 else (v - v0) / (v1 - v0)
+            return u0 + (u1 - u0) * t
+    return pts[-1][0]
+
 def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     ring = shoe_ring(detail)
     rows: list[list[int]] = []
@@ -1558,6 +1577,44 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     # 1,354; a near-zero threshold is safe, and `authored-character.test.js`
     # gates it now.
     builder.grid(rows, 1, flip=side > 0)
+
+
+    # ★ THE TOE CAP, PARAMETERISED IN THE SHOE'S OWN FRAME.
+    #
+    # Three earlier attempts built this from a slice of the section's RING, and
+    # the arc they got drifted between stations because the ring is an index
+    # order, not a coordinate. This walks the cap's own two parameters instead:
+    # `p` runs from one flank over the toe to the other, and the cap's LOWER EDGE
+    # dips toward the sole as it nears the tip, which is what makes a mudguard
+    # wrap rather than sit on top.
+    #
+    # Every row has the same point count by construction, so the grid cannot
+    # stitch across a gap — the failure that made the earlier versions land
+    # unevenly under the 21-degree toe-out.
+    if detail >= 1:
+        CAP_POINTS = 11
+        cap_rows: list[list[int]] = []
+        for y_s, half_s, ztop_s, _c in SHOE_STATIONS:
+            if y_s < 0.13:
+                continue
+            frac = min(1.0, max(0.0, (y_s - 0.13) / 0.31))
+            v_low = 0.66 - 0.36 * frac          # dips toward the sole at the tip
+            floor_s = shoe_floor_at(y_s)
+            ys = y_s * SHOE_LENGTH_SCALE
+            hs = half_s * SHOE_WIDTH_SCALE * 1.028
+            zt = SHOE_FLOOR + (ztop_s - SHOE_FLOOR) * SHOE_HEIGHT_SCALE
+            row = []
+            for j in range(CAP_POINTS):
+                pp = -1.0 + 2.0 * j / (CAP_POINTS - 1)
+                v = 1.0 - (1.0 - v_low) * abs(pp)
+                u = shoe_u_at_v(v) * (1.0 if pp >= 0 else -1.0)
+                row.append(builder.vertex(
+                    shoe_place(side, ys, hs * u, floor_s + (zt - floor_s) * v),
+                    SOLE, bone, (0.75, 0.25),
+                ))
+            cap_rows.append(row)
+        if len(cap_rows) >= 2:
+            builder.grid(cap_rows, 1, cyclic=False, flip=side > 0)
 
     # Cap both ends so the upper is closed — rubric 3.7 is binary about holes.
     heel = builder.vertex(shoe_place(side, -0.286 * SHOE_LENGTH_SCALE, 0.0, 0.126 + 0.030), SHOE, bone, (0.75, 0.25))
