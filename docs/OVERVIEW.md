@@ -2462,6 +2462,61 @@ as a **measuring instrument** — a real 3D form to read the per-character table
 off, instead of tracing pixel columns off a PNG, which is what those 1,629
 comment lines largely are.
 
+## 2026-08-12 — the second character, and the gate the first one never needed
+
+Tank is the roster's second authored sculpt and the reason the batch plan puts
+the bald kid first: with no hair to score, a failure anywhere else is provably a
+failure of the shared body library. He found four things in it, and the fourth
+is the one worth keeping.
+
+**Three were ordinary and each cost one round.** A bald character's procedural
+bootstrap has no `M_Hair`, so the sculpt died on a `KeyError` deep in the LOD
+builder against a contract that names four material slots. His ears sat at
+Junebug's centre at Junebug's size, because the first lift of `sculptlib.ear`
+shared the construction and kept her placement — his head measured 0.97 aspect
+against a concept's 1.12, and the concept's head aspect is measured across the
+EARS. And his face needed its own atlas island window: pushed through hers, his
+measured brow, eye and mouth latitudes land at cell y 15, 46 and 118, with the
+mouth's own lower lip running off the bottom of the cell.
+
+**The fourth is a hole in the gate stack.** Tank reached ALL EIGHT of
+`measure:fidelity`'s metrics inside tolerance, `validate:models` 38/38, a clean
+fidelity board and 1,516 passing tests — with his arms on the wrong side of his
+body and two feet from the bones that drive them.
+
+The canonical rig is a **T-pose**: `LeftForeArm` at x −0.918, `LeftHand` at
+−1.365, both at z 2.471. The sculpt authored arms hanging from shoulder to hip.
+Left bones live at **negative x**, and the sculpt called +x "Left", so each arm
+was driven by the opposite limb's bones. `LeftToeBase` sits at y −0.259, so
+forward is **−y**, and the shoes were built toe-forward in +y — his feet pointed
+backwards.
+
+Every gate that passed reads the **bind pose**, where a mesh sitting far from
+its bones looks exactly like a mesh sitting on them. The playbook has always
+said "reject a technically valid model that only works in the bind pose"; this
+is what that sentence was pointing at. Only the runtime run still showed it, as
+arms swinging like planks about pivots outside themselves — `render.legStance`'s
+failure mode reached from a new direction.
+
+What settled it was a comparison rather than a rule: Junebug's own `LeftHand`
+vertices measure x −1.618…−1.312, wrapped around her bone at −1.365. Tank's
+measured +0.654…+0.850.
+
+So it is a gate. A vertex's dominant bone must be among its nearest by rest
+distance — a **rank**, not a distance, because distance cannot separate them: a
+skull legitimately sits 1.3 ft above the `Head` bone, further than a misbound
+forearm sits from its own. Measured across the delivered roster: Junebug 5, Tank
+after the fix 6, Theo 9, Big Lou 8, Mimi 10 — and Tank before the fix **31**.
+`Root` is exempt because Zoom's wheelchair legitimately hangs off it at 28.
+
+**And one metric was being chased into that defect.** Rounds 1–3 moved Tank's
+hip separation to make ankle daylight come out right — moving a mesh off its
+bones to satisfy a number in a bind-pose render, which is precisely what that
+metric's own comment warns against ("read a failure here as *look at the
+stance*"). His concept draws his feet touching; the canonical stance splays
+every character's legs. It is a recorded drift for him, not a sculpt defect, and
+trying to close it is what caused the binding error.
+
 ## What's explicitly not built yet
 
 Human-performed voice acting, a cross-player pick-rate backend, externally

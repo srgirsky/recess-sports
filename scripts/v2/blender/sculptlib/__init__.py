@@ -21,6 +21,29 @@ with her constants baked in — produces a library that silently sculpts one kid
 thirty times, which is the exact failure `measure:fidelity`'s hardcoded
 `isRed`/`isCream` turned out to be.
 
+★ THE THREE CONVENTIONS THAT DECIDE WHETHER A SCULPT IS BOUND AT ALL, and all
+three are invisible in the bind pose. Tank shipped with every gate green while
+breaking all three, and only the runtime run still showed it:
+
+  * **The rig is a T-POSE.** `LeftArm` is at x -0.400, `LeftForeArm` at -0.918
+    and `LeftHand` at -1.365, all at z 2.471 — the arms run STRAIGHT OUT
+    SIDEWAYS. Author them there. A sculpt with the arms hanging at the hips
+    looks correct on every board and swings about pivots two feet away the
+    moment a clip plays.
+  * **LEFT IS NEGATIVE X.** So a `side` multiplier of +1 is the RIGHT side. Name
+    the bones accordingly; a symmetric pose hides the mistake completely and an
+    asymmetric clip then drives the wrong limb.
+  * **FORWARD IS -Y.** `LeftToeBase` sits at y -0.259 against `LeftFoot` at 0,
+    and `head_surface` puts the face at bearing 0 where `ny = -sin(phi)`. A shoe
+    built toe-forward in +y points the character's feet backwards, and a front
+    render cannot tell.
+
+The cheapest check is a comparison, not a rule: read the delivered GLB's
+vertices for one hand and confirm they wrap the bone that drives them.
+`authored-character.test.js` does this as a RANK — a vertex's dominant bone
+must be among its nearest — because distance alone cannot separate a misbound
+forearm from a skull that legitimately sits 1.3ft above the Head bone.
+
 ★ HOW TO KNOW A CHANGE HERE WAS SAFE. Re-run a character's sculpt script,
 re-export, and compare geometry:
 
