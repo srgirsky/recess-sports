@@ -54,8 +54,11 @@ async function board(id) {
   }
   const field40 = await sharp(frontPath).resize({ height: 40, fit: 'contain' }).png().toBuffer();
   const fieldZoom = await sharp(field40).resize({ height: 280, kernel: 'nearest' }).png().toBuffer();
+  // A null score is an abstention, not a zero — see authored-character.test.js.
+  // It has to print as such, because the board IS the evidence a reviewer reads.
   const categoryLines = Object.values(review.categories).map((category, index) =>
-    `<text class="small" x="1110" y="${630 + index * 30}">${category.label}: ${category.score}/5</text>`
+    `<text class="small" x="1110" y="${630 + index * 30}">${category.label}: ` +
+    `${category.score === null ? 'n/a' : `${category.score}/5`}</text>`
   ).join('');
   const statusClass = review.status === 'approved' ? 'pass' : 'hold';
   const labels = svgText(1600, 1050, `

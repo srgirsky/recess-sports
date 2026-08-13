@@ -94,7 +94,18 @@ SOCK = rgba("FFE0B4")  # same ramp correction as SOLE
 # chroma, which is how the two metrics ended up anti-correlated: every step that
 # made the sole read as a separate band also drained the shoe's colour. It is a
 # warm cream a little lighter than the upper.
-WHITE = rgba("FFE4B8")  # the midsole: warm, not paper
+# ★ ROUND 17: AND THE TWO CREAMS WERE THE SAME CREAM. FFE4B8 against FFDCA8 is
+# a difference of 8 in one channel — invisible at any scale, so the midsole, the
+# collar and the toe mudguard rendered as one undifferentiated cream lump no
+# matter which rows carried which swatch. An independent review named it: the
+# distinction has to be by VALUE, not by hue.
+#
+# Measured off the concept's own front figure, row by row, the two bands really
+# do differ: the midsole runs rgb(196,172,142) — the warmer, brighter band that
+# catches the ground bounce — and the collar/upper runs rgb(190,176,157), which
+# is greyer and a little deeper. Authored with the ~1.3x channel spread this
+# board's ramp costs (see the note below), that is FFEDD2 against F2D3A4.
+WHITE = rgba("FFEDD2")  # the midsole: the lightest, warmest band
 # ★ ROUND 3: AUTHORED WARMER THAN THE CONCEPT, ON PURPOSE. Sampled #F1E4D4 off
 # the turnaround, the first board rendered his shoe #AAA49D — the right value
 # family and no warmth at all, and only 42.4% of the band classified as the
@@ -113,7 +124,7 @@ WHITE = rgba("FFE4B8")  # the midsole: warm, not paper
 #
 # Back to a cream with chroma in it. FFE9CE is the value solved on Junebug's
 # board for exactly this ramp.
-SOLE = rgba("FFDCA8")
+SOLE = rgba("F2D3A4")  # the collar and the toe mudguard: greyer, deeper
 # The one surface the drafting team's colour tints. Tank's kit is a plain tee
 # with no piping, so the accent goes on the shoe's collar band — the only
 # element the concept draws as a separate trim, and it reads at 40px because it
@@ -782,6 +793,90 @@ SHOE_STATIONS = [
 ]
 
 
+# ★ THE SECTION IS AUTHORED AS A PROFILE, BECAUSE A BAND NEEDS A VERTEX TO LIVE
+# ON — and for six rounds there was no vertex anywhere near where the navy goes.
+#
+# The section used to be swept by a uniform angle with the sole and the instep
+# flattened by |sin|^0.40. That flattening is what a sneaker's cross-section
+# wants geometrically, but it does something fatal to the colour: raising a
+# sine to a low power pushes samples AWAY from the middle. Enumerated at the
+# 14 sides the near LODs used, the vertex heights come out as
+#
+#   .005 .005 .047 .047 .142 .142 .500 .500 .858 .858 .953 .953 .995 .995
+#
+# — eight of fourteen above 0.85 or below 0.15, and the whole sidewall between
+# them spanned by a single pair. The concept puts the navy quarter at 0.35-0.55
+# of shoe height (measured: cool pixels run 42%, 42%, 36% across those rows and
+# 0% below 0.33). There is no vertex within 0.20 of that band.
+#
+# So every round that moved the `sn` window was tuning a threshold against a
+# section with nothing in it to select, and the navy could only ever come out as
+# whatever slivers happened to touch the boundary — a 14x7px ribbon at 79-85%
+# height on the rear half of the last, which is what round 16 shipped and what
+# the eighth review measured at 1.14% of the band against the concept's 17.30%.
+#
+# Authoring the section as an explicit (lateral, height) profile puts vertices
+# exactly where the bands change. The rows still carry the colour, so this is
+# one stitched surface and not a stack of shells; the band edges are tight pairs
+# ~0.028 apart in height rather than coincident rows, because coincident rows
+# would be degenerate quads and `validate:models` is right to reject those.
+#
+# (u across the half-width, v up the shoe, band) for the RIGHT half, bottom to
+# top. The left half is this list reflected, so the section is symmetric by
+# construction — the same reflect-don't-rotate rule `shoe_place` records.
+SHOE_SECTION = [
+    (0.000, 0.000, "midsole"),   # flat on the ground: a sole, not a tube bottom
+    (0.620, 0.004, "midsole"),
+    (0.940, 0.055, "midsole"),   # the welt
+    (1.000, 0.190, "midsole"),   # widest point, the midsole bulge
+    (0.995, 0.320, "midsole"),   # last cream row
+    (0.990, 0.348, "quarter"),   # first navy row
+    (0.970, 0.450, "quarter"),
+    (0.955, 0.540, "quarter"),   # last navy row
+    (0.945, 0.568, "collar"),    # first cream row above
+    (0.900, 0.690, "collar"),
+    (0.800, 0.815, "collar"),
+    (0.620, 0.920, "collar"),
+    (0.340, 0.985, "collar"),
+    (0.000, 1.000, "collar"),    # instep centre
+]
+# ★ THE FAR LODS KEEP BOTH BAND EDGES AND DROP THE SHAPING ROWS BETWEEN THEM.
+# The navy is the one change on this shoe that resolves at 40px — the eighth
+# review's note is explicit that it is "the one change that WOULD have shown as
+# a colour block at field scale" — so decimating it away costs exactly the read
+# it exists for. Every entry dropped below is a shaping row; the four rows that
+# define where the navy starts and stops are in all three tiers.
+SHOE_SECTION_MID = [
+    (0.000, 0.000, "midsole"),
+    (0.970, 0.070, "midsole"),
+    (0.995, 0.320, "midsole"),
+    (0.990, 0.348, "quarter"),
+    (0.955, 0.540, "quarter"),
+    (0.945, 0.568, "collar"),
+    (0.720, 0.880, "collar"),
+    (0.000, 1.000, "collar"),
+]
+# ⚠️ LOD2 IS 1200 TRIANGLES AND THE SHOE PAYS 40 PER RING VERTEX (18 grid quads
+# plus 2 end caps, doubled for two feet). The first cut of this section carried
+# the 8-entry list at every LOD below 0 and came out at 1290 — the export
+# refused it, which is the budget working. Five entries is a ring of eight.
+SHOE_SECTION_LOW = [
+    (0.000, 0.000, "midsole"),
+    (0.995, 0.320, "midsole"),
+    (0.990, 0.348, "quarter"),
+    (0.955, 0.540, "quarter"),
+    (0.000, 1.000, "collar"),
+]
+
+
+def shoe_ring(detail: int) -> list[tuple[float, float, str]]:
+    """The closed section, right half then left half reflected."""
+    half = SHOE_SECTION if detail >= 2 else SHOE_SECTION_MID if detail >= 1 else SHOE_SECTION_LOW
+    # The two centre entries (u = 0, at the sole and the instep) are shared by
+    # both halves, so the reflection skips them and the ring closes cleanly.
+    return half + [(-u, v, band) for u, v, band in reversed(half[1:-1])]
+
+
 def shoe_place(side: int, y: float, x_off: float, z: float) -> tuple[float, float, float]:
     """Place a shoe vertex, with the foot turned out.
 
@@ -815,32 +910,22 @@ def shoe_place(side: int, y: float, x_off: float, z: float) -> tuple[float, floa
 
 
 def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
-    sides = 14 if detail >= 2 else 6
+    ring = shoe_ring(detail)
     rows: list[list[int]] = []
     bone = limb_bone("ToeBase", side)
     for y, half, ztop, colour in SHOE_STATIONS:
         row = []
-        for index in range(sides):
-            theta = 2 * pi * index / sides
-            # A section that is flat underneath and domed on top: the sole is a
-            # real plane on the ground, not the bottom of a cylinder.
-            # ★ THE SECTION IS A SUPERELLIPSE, BECAUSE A SNEAKER HAS A FLAT
-            # SOLE. A circular section is a tube with a rounded underside, and
-            # from the front camera half of it faces down-and-out at a grazing
-            # angle and renders dark. Measured on the board: an all-cream shoe
-            # built that way put only 48.7% of the band in the concept's cream
-            # against 61.8%, with the missing share sitting in shadow rather
-            # than in another colour.
-            #
-            # Flattening the bottom and the top — |sin| and |cos| raised to
-            # powers below 1 — turns the section into a sole, a sidewall and a
-            # domed upper, which is both what a shoe IS and what puts its
-            # largest surfaces where the key light can reach them.
-            c, sn = cos(theta), sin(theta)
-            x_off = half * (1.0 if c >= 0 else -1.0) * abs(c) ** 0.70
-            span = ztop - SHOE_FLOOR
-            shaped = (1.0 if sn >= 0 else -1.0) * abs(sn) ** 0.40
-            z = SHOE_FLOOR + span * (0.5 + 0.5 * shaped)
+        for u, v, band_name in ring:
+            # The section is authored, not swept — see SHOE_SECTION. It is still
+            # flat underneath and domed on top, which is what a sneaker IS and
+            # what keeps its largest surfaces facing the key light: an earlier
+            # circular section put half the shoe at a grazing angle and only
+            # 48.7% of the band in the concept's cream against 61.8%, with the
+            # missing share sitting in shadow rather than in another colour.
+            # The difference now is that the profile says so directly instead of
+            # being coaxed out of an exponent.
+            x_off = half * u
+            z = SHOE_FLOOR + (ztop - SHOE_FLOOR) * v
             # ★ THE SHOE IS HORIZONTAL BANDS, and keying its colour on
             # position ALONG the foot was why it read as a cream lump with blue
             # smears. Held against the concept's own feet at 4x, the structure
@@ -869,19 +954,24 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             # wrong place" were the same finding arriving from two directions.
             # The metric was corroborating the eye, not fighting it.
             #
-            # The concept's stack, read off its own feet at 4x: a thick cream
-            # midsole occupying roughly the bottom third of the shoe, the navy
-            # quarter ABOVE it, a cream collar over the instep, and a cream
-            # mudguard wrapping the toe. The midsole is the tallest band, and it
-            # was the thinnest here.
-            if sn < 0.26:
-                band = WHITE               # the midsole, underneath
-            elif sn > 0.42:
-                band = SOLE                # collar and tongue over the instep
-            elif y < 0.120:
-                band = SHOE                # navy quarter on the flanks
+            # The concept's stack, read off its own front figure row by row:
+            # cool pixels are 0% below 0.33 of shoe height, 42/42/36% across
+            # 0.37-0.52, and back under 11% above 0.56. So a thick cream midsole
+            # in the bottom third, the navy quarter directly above it, and a
+            # cream collar over the instep — which is what SHOE_SECTION encodes.
+            #
+            # The band is now chosen by the section entry rather than by a
+            # threshold, so the only rule left here is the toe: the concept
+            # wraps the front of the last in a cream mudguard, and it interrupts
+            # the navy where it does. The stations run heel at -y to toe at +y.
+            if band_name == "quarter" and y > 0.300:
+                band = SOLE                # the cream mudguard wrapping the toe
+            elif band_name == "quarter":
+                band = SHOE                # the navy quarter on the flanks
+            elif band_name == "midsole":
+                band = WHITE
             else:
-                band = SOLE                # cream mudguard wrapping the toe
+                band = SOLE                # collar and tongue over the instep
             row.append(builder.vertex(shoe_place(side, y, x_off, z), band, bone, (0.75, 0.25)))
         rows.append(row)
     # ★ MATERIAL 1, NOT 3. Round 4 built the whole shoe on M_Accessory, which
@@ -912,8 +1002,8 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     # Cap both ends so the upper is closed — rubric 3.7 is binary about holes.
     heel = builder.vertex(shoe_place(side, -0.286, 0.0, 0.126), SHOE, bone, (0.75, 0.25))  # heel counter
     toe = builder.vertex(shoe_place(side, 0.470, 0.0, 0.050), SOLE, bone, (0.75, 0.25))
-    for index in range(sides):
-        nxt = (index + 1) % sides
+    for index in range(len(ring)):
+        nxt = (index + 1) % len(ring)
         a = (heel, rows[0][nxt], rows[0][index])
         b = (toe, rows[-1][index], rows[-1][nxt])
         builder.face(a if side < 0 else (a[0], a[2], a[1]), 1)

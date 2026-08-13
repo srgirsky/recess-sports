@@ -44,6 +44,7 @@ import { describe, expect, it } from 'vitest';
 
 import { readAccessor, readGlb } from './glb.mjs';
 import { AUTHORED_CHARACTERS } from './export-authored-character.mjs';
+import { ROSTER } from '../../src/data/characters.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '..', '..');
@@ -256,12 +257,33 @@ function stateErrors(production, reviews) {
     if (categoryNames.join('|') !== [...expectedCategories].sort().join('|')) {
       errors.push(`${id}: fidelity categories differ from the required set`);
     }
+    // ★ A CATEGORY WITH NOTHING TO JUDGE SCORES NULL, NOT 5.
+    //
+    // Tank is bald, so rubric 3.3 (hair mass) has no subject on his board. The
+    // record scored it 5/5 — "the approved bald negative space is preserved
+    // exactly" — and an independent review named it as exactly the free point
+    // the rubric warns about: it is one sixth of his average, it can never go
+    // down, and it made a character with no category above 3 look like one
+    // with a 5 in the bag.
+    //
+    // Abstaining has to be mechanical or it becomes the same problem in
+    // reverse — a sculptor could abstain from whatever is going badly. So the
+    // ONLY category that may abstain is `hairMass`, and only when the ROSTER
+    // says the character has no hair. That is data, not opinion, and it is the
+    // same `visual.hair` the sculpt script reads.
+    const bald = ROSTER.find((entry) => entry.id === id)?.visual?.hair === 'bald';
     for (const name of expectedCategories) {
       const category = review.categories?.[name];
-      if (!category || !Number.isInteger(category.score) || category.score < 1 || category.score > 5 || !category.note?.trim()) {
+      const abstains = category?.score === null;
+      if (abstains && !(name === 'hairMass' && bald)) {
+        errors.push(`${id}: ${name} may not abstain — only hairMass, and only for a bald character`);
+      } else if (!category || !category.note?.trim()
+        || (!abstains && (!Number.isInteger(category.score) || category.score < 1 || category.score > 5))) {
         errors.push(`${id}: ${name} needs a 1-5 score and review note`);
       }
-      if (review.status === 'approved' && category?.score < 4) {
+      // An abstention is not a pass. `< 4` is false for null, so the check has
+      // to ask for a number rather than ask for the absence of a low one.
+      if (review.status === 'approved' && !abstains && !(category?.score >= 4)) {
         errors.push(`${id}: approved with ${name} below 4/5`);
       }
     }
@@ -423,6 +445,40 @@ describe('Blender-authored character provenance and fidelity gate', () => {
     const broken = structuredClone(fidelity);
     delete broken.characters.mimi_mash.categories.hairMass;
     expect(stateErrors(receipt, broken)).toContain('mimi_mash: fidelity categories differ from the required set');
+  });
+
+  // ★ Abstention is for a category with no subject, and it is not a back door.
+  // Broken three ways, because the rule has three edges: only this category,
+  // only this kind of character, and never as a substitute for a passing score.
+  it('refuses an abstention in a category that always has a subject', () => {
+    const broken = structuredClone(fidelity);
+    broken.characters.tank.categories.clothingConstruction.score = null;
+    expect(stateErrors(receipt, broken)).toContain(
+      'tank: clothingConstruction may not abstain — only hairMass, and only for a bald character',
+    );
+  });
+
+  it('refuses an abstention on hair for a character who has hair', () => {
+    const broken = structuredClone(fidelity);
+    broken.characters.nostrike.categories.hairMass.score = null;
+    expect(stateErrors(receipt, broken)).toContain(
+      'nostrike: hairMass may not abstain — only hairMass, and only for a bald character',
+    );
+  });
+
+  // ⚠️ ABSTAINING DOES NOT BLOCK APPROVAL, AND MUST NOT — requiring hairMass
+  // >= 4 from a character with no hair would make every bald kid permanently
+  // unapprovable. What it must not do is launder the categories that DO have a
+  // subject, so that is what this pins: hair abstained, one real category
+  // short, approval still refused.
+  it('does not let an abstention launder the categories that do have a subject', () => {
+    const broken = structuredClone(fidelity);
+    broken.characters.tank.status = 'approved';
+    for (const [name, category] of Object.entries(broken.characters.tank.categories)) {
+      category.score = name === 'hairMass' ? null : 5;
+    }
+    broken.characters.tank.categories.faceExpressionRead.score = 3;
+    expect(stateErrors(receipt, broken)).toContain('tank: approved with faceExpressionRead below 4/5');
   });
 
   it('fires on a production receipt for a character the registry does not know', () => {

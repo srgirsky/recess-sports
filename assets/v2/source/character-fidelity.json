@@ -187,33 +187,33 @@
       "categories": {
         "frontProfileSilhouette": {
           "label": "front/profile silhouette",
-          "score": 3,
-          "note": "Low wide body and planted legs survive; organic muscle and cloth transitions remain."
+          "score": 2,
+          "note": "Eighth independent review: the arm meets the torso as a capped tube against a shell, so end-on it reads as a boss on the chest rather than a shoulder; the tee is a smooth cone with no boxy hem."
         },
         "headBodyProportions": {
           "label": "head/body proportions",
           "score": 3,
-          "note": "The bald crown and massive torso ratio read immediately."
+          "note": "Eighth independent review: head geometry is measured-correct (26.1% of figure, w:h 1.10) but joints do not read as connected forms — hard shoulder seam, undifferentiated mitten hands."
         },
         "hairMass": {
           "label": "hair mass",
-          "score": 5,
-          "note": "The approved bald negative space is preserved exactly."
+          "score": null,
+          "note": "Not applicable: Tank is bald (roster visual.hair = 'bald'), so this category has no subject on his board. Previously scored 5/5, which an independent review correctly identified as a free point inflating the average."
         },
         "clothingConstruction": {
           "label": "clothing construction",
-          "score": 3,
-          "note": "Massive tee silhouette survives; sleeves and hem need sculpt polish."
+          "score": 2,
+          "note": "Eighth independent review scored 2 on a board whose shoe banding had not landed. Round 17 rebuilt the shoe section so the navy quarter exists as real geometry (cool pixels 1.44% -> 13.96% front, concept 12.26%); unscored since."
         },
         "faceExpressionRead": {
           "label": "face/expression read",
-          "score": 3,
-          "note": "Sleepy compact face reads, with simplified cheek and brow forms."
+          "score": 2,
+          "note": "Eighth independent review: the nose now breaks the profile, but the eyes are flat almond decals with no sclera/iris separation and the brows read permanently angry against a 'sleepy' brief."
         },
         "heroAndFieldScale": {
           "label": "hero + 40px read",
           "score": 3,
-          "note": "Tank is unmistakable at field scale; close-up topology remains geometric."
+          "note": "Eighth independent review: the colour block survives at 40px, but the concept's low wide heavy stance does not — the outline is the same taper as every other kid."
         }
       }
     },

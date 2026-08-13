@@ -207,6 +207,39 @@ const isSkin = (c) => c[0] > c[1] + 12 && c[1] >= c[2] && sat(c) > 0.22 && lum(c
 
 const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 
+/**
+ * ★ SHADING CHANGES VALUE, NOT HUE — so membership is decided in CHROMATICITY.
+ *
+ * `bandSplit` classified a pixel by raw RGB distance to the two centroids, and
+ * an independent review caught what that lets through. Tank's delivered shoe
+ * reported its second tone at 18.5% against the concept's 26.2% and PASSED,
+ * while the pixels being counted as navy were `rgb(75,65,54)` and
+ * `rgb(73,63,48)` — r > g > b, warm cream in shadow, with no blue in them at
+ * all. Counting only genuinely cool pixels put the delivered band at 1.14%
+ * against the concept's 17.30%: a 15x shortfall the metric reported as green.
+ *
+ * The arithmetic shows why it is not a tolerance problem. That shadowed cream
+ * sits 86 units from the navy centroid and 190 from the cream one, because
+ * DARKENING a cream moves it toward every dark colour at once. No threshold on
+ * a distance that is dominated by brightness can separate "this is navy" from
+ * "this is cream with the light off it".
+ *
+ * Normalising out brightness settles it outright: in chromaticity the same
+ * pixel is 0.018 from cream and 0.32 from navy. A small value term stays in the
+ * mix so that black and white — which have no chromaticity to speak of and land
+ * near every centroid — still abstain rather than being assigned at random.
+ */
+const CHROMA_WEIGHT = 260;
+const chromaticity = (c) => {
+  const sum = c[0] + c[1] + c[2];
+  return sum > 0 ? [c[0] / sum, c[1] / sum, c[2] / sum] : [1 / 3, 1 / 3, 1 / 3];
+};
+const toneDistance = (a, b) => {
+  const ca = chromaticity(a), cb = chromaticity(b);
+  const hue = Math.hypot(ca[0] - cb[0], ca[1] - cb[1], ca[2] - cb[2]);
+  return Math.hypot(CHROMA_WEIGHT * hue, 0.25 * (lum(a) - lum(b)));
+};
+
 /** Walk the figure pixels of a horizontal band given as fractions of figure height. */
 function eachBandPixel(f, fromFrac, toFrac, visit) {
   const ya = Math.round(f.y1 - toFrac * f.figH);
@@ -219,14 +252,17 @@ function eachBandPixel(f, fromFrac, toFrac, visit) {
   }
 }
 
-// Two colours are "different garment tones" past this much RGB distance. Junebug's
-// shoe runs red (~186,63,58) against cream (~253,250,240), which is 265 apart, so
-// 60 separates real two-tone construction while refusing to split one tone's own
-// shading into two.
-const TONE_SEPARATION = 60;
+// Two colours are "different garment tones" past this much TONE distance (see
+// `toneDistance` — chromaticity-dominated, so this is mostly a hue question).
+// ★ THIS ALSO HAD TO MOVE TO CHROMATICITY, and for the same reason the split
+// did. Picked by raw RGB distance, the concept's "second tone" could be its
+// FIRST tone in shadow — cream and shadowed cream are 100+ apart in RGB — and
+// then both centroids name the same garment and the split measures nothing.
+// Cream to navy is ~83 in this space; cream to its own shadow is ~25.
+const TONE_SEPARATION = 45;
 // Past this, a pixel belongs to neither declared tone — a sock, a shadow, skin.
 // The old rule-based classifier abstained the same way by simply matching neither.
-const TONE_MEMBERSHIP = 90;
+const TONE_MEMBERSHIP = 55;
 
 /**
  * ★ THE TWO TONES ARE DERIVED FROM THE CONCEPT, NOT NAMED IN THIS FILE.
@@ -260,7 +296,7 @@ function bandPalette(f, fromFrac, toFrac) {
     .map((bin) => [bin.r / bin.n, bin.g / bin.n, bin.b / bin.n]);
   if (!ranked.length) return null;
   const primary = ranked[0];
-  const secondary = ranked.find((c) => dist(c, primary) > TONE_SEPARATION) ?? null;
+  const secondary = ranked.find((c) => toneDistance(c, primary) > TONE_SEPARATION) ?? null;
   return { primary, secondary };
 }
 
@@ -294,8 +330,8 @@ function bandSplit(f, fromFrac, toFrac, palette) {
   let primary = 0, secondary = 0, total = 0;
   eachBandPixel(f, fromFrac, toFrac, (c) => {
     total++;
-    const dp = dist(c, palette.primary);
-    const ds = palette.secondary ? dist(c, palette.secondary) : Infinity;
+    const dp = toneDistance(c, palette.primary);
+    const ds = palette.secondary ? toneDistance(c, palette.secondary) : Infinity;
     if (Math.min(dp, ds) > TONE_MEMBERSHIP) return;
     if (dp <= ds) primary++; else secondary++;
   });
