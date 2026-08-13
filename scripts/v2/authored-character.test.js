@@ -312,18 +312,41 @@ describe('Blender-authored character provenance and fidelity gate', () => {
   // procedural bootstrap without sculpting it must now fail on the GEOMETRY,
   // rather than pass because it is not Junebug.
   //
-  // ⚠️ Asserting merely that some `tank:` error appears would be tautological:
+  // ⚠️ Asserting merely that some `<id>:` error appears would be tautological:
   // flipping the status also trips the hero, animation, board-hash and
   // measurement clauses, so the test would stay green with the mesh rules
   // deleted. It names them.
+  //
+  // ★ AND THE FIXTURE IS CHOSEN AT RUN TIME, BECAUSE A COUNTEREXAMPLE STOPS
+  // BEING ONE. This test first used Tank, and sculpting Tank broke it — his GLB
+  // now declares the identity palette and the team accent, so two of the four
+  // errors correctly stopped firing and the assertion failed. That is the same
+  // class as approving Junebug silently disarming the approver test: a rule's
+  // guinea pig graduates, and the rule quietly stops being exercised.
+  //
+  // So the fixture is whichever character still lacks the declarations. When
+  // none is left, that is not a failure to paper over — it means every authored
+  // character satisfies the rules and this test has nothing left to prove, and
+  // it should be deleted in favour of the green path rather than kept alive
+  // with a synthetic fixture nobody ships.
   it('applies the finished-work mesh rules to any character that claims to be finished', () => {
+    const unsculpted = baseline.find((id) => {
+      const output = join(modelsDir, `kid_${id}.glb`);
+      if (!existsSync(output)) return false;
+      const materials = readGlb(output).json.materials ?? [];
+      return materials.find((m) => m.name === 'M_Uniform')?.extras?.recessIdentityPalette !== true;
+    });
+    if (!unsculpted) {
+      expect(baseline.length).toBeGreaterThan(0);
+      return; // every authored character now declares them — see the note above.
+    }
     const broken = structuredClone(fidelity);
-    broken.characters.tank.status = 'candidate';
+    broken.characters[unsculpted].status = 'candidate';
     const errors = stateErrors(receipt, broken);
-    expect(errors).toContain('tank: signature palette is not declared on M_Uniform');
-    expect(errors).toContain('tank: no deliberate team-accent surface is declared');
-    expect(errors).toContain('tank: signature wardrobe colour blocks did not survive export');
-    expect(errors).toContain('tank: LeftHandThumb1 has no authored finger volume');
+    expect(errors).toContain(`${unsculpted}: signature palette is not declared on M_Uniform`);
+    expect(errors).toContain(`${unsculpted}: no deliberate team-accent surface is declared`);
+    expect(errors).toContain(`${unsculpted}: signature wardrobe colour blocks did not survive export`);
+    expect(errors).toContain(`${unsculpted}: LeftHandThumb1 has no authored finger volume`);
   });
 
   // ⚠️ THIS FIXTURE STRIPS THE APPROVAL FIELDS ON PURPOSE. It used to flip

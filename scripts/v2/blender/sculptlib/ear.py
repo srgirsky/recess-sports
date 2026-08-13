@@ -23,8 +23,34 @@ from __future__ import annotations
 from collections.abc import Callable
 from math import cos, pi, sin
 
+from dataclasses import dataclass
+
 from .mesh import MeshBuilder
 from .palette import Palette
+
+
+@dataclass(frozen=True)
+class EarSpec:
+    """Where one character's ear sits and how big it is.
+
+    ★ THE FIRST LIFT OF THIS MODULE SHARED THE CONSTRUCTION AND KEPT JUNEBUG'S
+    PLACEMENT, and Tank is what found it. His board came back with a head
+    aspect of 0.97 against the concept's 1.12 — too narrow — and the cause was
+    not his skull, which measures right. It was that the concept's head aspect
+    is measured across the EARS, they are the widest point of a child's head,
+    and his were still sitting at her centre (0.045, 3.128) at her size.
+
+    That is the exact failure the package doc warns about: lifting a function
+    with one character's constants baked in produces a library that sculpts one
+    kid thirty times. It survived review because the geometry was byte-identical
+    for the character it was extracted from, which proves the lift was faithful
+    and says nothing about whether it was general.
+    """
+
+    # (y, z) of the ear's centre on the head, in feet.
+    center: tuple[float, float]
+    # (fore-aft, vertical) radii of the ear's outline, in feet.
+    radii: tuple[float, float]
 
 
 def build_ear(
@@ -34,6 +60,7 @@ def build_ear(
     *,
     palette: Palette,
     skull_at: Callable[[float, float], float],
+    spec: EarSpec,
 ) -> None:
     """One continuous ear with a helix, a concha, a tragus and a real LOBE.
 
@@ -104,8 +131,8 @@ def build_ear(
     # therefore does not move at all (3.2763 before and after); the bottom drops
     # from 3.0354 to 2.9797, into jaw the hair never reaches, and `lobe` swells
     # harder to spend that reach on the thing 3.10 actually asks for.
-    cy, cz = 0.045, 3.128
-    ry, rz = 0.1044, 0.1483
+    cy, cz = spec.center
+    ry, rz = spec.radii
 
     def outline(t: float, scale: float) -> tuple[float, float]:
         # t = 0 back, pi/2 up, pi front, 3pi/2 down.

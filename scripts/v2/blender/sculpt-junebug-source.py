@@ -25,7 +25,7 @@ from mathutils import Vector
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from sculptlib.atlas import install_face_atlas
-from sculptlib.ear import build_ear
+from sculptlib.ear import EarSpec, build_ear
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.color import rebuild_palette_material, rgba, srgb_to_linear
 from sculptlib.mesh import MeshBuilder, catmull_rom
@@ -622,6 +622,11 @@ PALETTE = Palette(
 # Junebug's skull: the four measurements `sculptlib.head` needs. Everything
 # else about the surface — rows, columns, the atlas island, the winding — is
 # shared, and this is the part that is hers.
+# Her ear, measured off the profile crop: 70px tall and 49px front-to-back at
+# 212.46 px/ft. These were module constants inside build_ear until Tank needed
+# his own.
+EAR_SPEC = EarSpec(center=(0.045, 3.128), radii=(0.1044, 0.1483))
+
 HEAD_SPEC = HeadSpec(
     center=HEAD_CENTER,
     radii=HEAD_RADII,
@@ -1845,7 +1850,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     # measured), one continuous smoothed form each (build_ear).
     if detail >= 1:
         for side in (-1, 1):
-            build_ear(builder, side, detail, palette=PALETTE, skull_at=skull_surface_x)
+            build_ear(builder, side, detail, palette=PALETTE, skull_at=skull_surface_x, spec=EAR_SPEC)
 
     # Hair is one designed mass: slicked crown to a mid-forehead hairline, a
     # gather knot at the crown-back, and one smooth swept ponytail ending in
