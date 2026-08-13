@@ -665,7 +665,12 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
         builder.ellipsoid(
             (ARM_SHOULDER_X * side, 0.0, ARM_Z),
             (0.286, 0.280, 0.276),
-            1, SHIRT, shoulder_bone, 16, 11,
+            # 12x8, not 16x11: the first cut spent 704 triangles on two joint
+            # fillers and pushed LOD0 to 7110 against its 7000 budget. The
+            # export refused it, which is the budget working. This ball is
+            # mostly buried in the torso and only its outboard crown is ever
+            # seen, so the segments were the cheapest thing in the change.
+            1, SHIRT, shoulder_bone, 12, 8,
         )
 
     # The tip closes the mitten. The wrist no longer needs a cap because the
@@ -796,7 +801,17 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
         (1.360, 0.264, 1.26, PANTS, "UpLeg"),
         (1.100, 0.298, 1.32, PANTS, "UpLeg"),
         (0.900, 0.352, 1.24, PANTS, "UpLeg"),
-        (SHORTS_HEM_Z, 0.332, 1.10, PANTS_DARK, "Leg"),   # hem, z 0.694
+        # ★ THE SHORTS HEM WAS A CUT EDGE, and the tee already records the fix.
+        # One ring stepping 0.332 straight to bare leg at 0.196 is a garment
+        # sliced off, not one that ends — an independent review scored 3.4 with
+        # "shorts as a featureless black slab with no hem, side seam or leg
+        # opening". The tee's own hem note says it in four rings: an underside,
+        # a band proud of what is above it, and the body above that. The same
+        # three rings buy a leg opening you can see into.
+        (0.760, 0.342, 1.16, PANTS, "UpLeg"),
+        (0.716, 0.358, 1.13, PANTS_DARK, "Leg"),          # hem band, proud
+        (SHORTS_HEM_Z, 0.350, 1.10, PANTS_DARK, "Leg"),   # hem underside, z 0.694
+        (0.686, 0.252, 1.02, PANTS_DARK, "Leg"),          # inner lip of the opening
         (0.680, 0.196, 0.98, SKIN, "Leg"),                # bare shin begins
         (0.520, 0.190, 0.96, SKIN, "Leg"),
         (SOCK_TOP_Z + 0.012, 0.186, 0.95, SKIN, "Leg"),
