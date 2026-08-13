@@ -607,11 +607,19 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
         # Continuing the same station list through the wrist into a mitten makes
         # it one surface, so there is no join to open. The palm swells, the
         # knuckle line is the widest ring, and the tip closes.
-        (1.418, 0.108, SKIN, "Hand"),
-        (1.474, 0.126, SKIN, "Hand"),
-        (1.530, 0.132, SKIN, "Hand"),
-        (1.586, 0.120, SKIN, "Hand"),
-        (1.628, 0.082, SKIN, "Hand"),
+        # ★ AND IT WAS HALF ITS OWN LENGTH, THE SAME MEASUREMENT JUNEBUG RECORDS.
+        # Her script solves it from the concept AND from anatomy: a child's hand
+        # runs about 10.6% of standing height from the wrist. On a 4ft rig with
+        # the wrist at 1.365 that puts the fingertip at 1.789, and this ended at
+        # 1.664 — 30% short, which is why three reviews read "undifferentiated
+        # mitten" where hers reads as a hand.
+        #
+        # The palm carries the first third and the FINGERS carry the rest. Three
+        # rings instead of five, because the digits below now do the work the
+        # extra rings were failing to do, and they pay for them.
+        (1.430, 0.116, SKIN, "Hand"),
+        (1.500, 0.134, SKIN, "Hand"),   # knuckle line, the widest ring
+        (1.556, 0.118, SKIN, "Hand"),
     ]
     if detail < 1:
         stations = [station for index, station in enumerate(stations) if index % 2 == 0 or index == len(stations) - 1]
@@ -698,22 +706,69 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
     # who reproduced my numbers exactly and then showed they proved nothing was
     # right, and `scripts/v2/capwinding.lint.test.js` now checks the geometry
     # rather than the picture.
-    tip = builder.vertex((1.664 * side, 0.0, ARM_Z), SKIN, limb_bone("Hand", side), (0.75, 0.25))
+    tip = builder.vertex((1.588 * side, 0.0, ARM_Z), SKIN, limb_bone("Hand", side), (0.75, 0.25))
     for index in range(sides):
         nxt = (index + 1) % sides
         face = (tip, rows[-1][nxt], rows[-1][index]) if side > 0 else (tip, rows[-1][index], rows[-1][nxt])
         builder.face(face, 1)
 
+    # ★ FINGERS, NOT TWO BEADS ON A MITTEN. The pair of ellipsoids these replace
+    # were a thumb and one knuckle sitting ON the mass rather than leaving it,
+    # and every review from the second onward called the result a mitten.
+    #
+    # Junebug's hand records what makes the difference and it is SPACING, not
+    # count: fingers on 0.050 centres under 0.026 radii leave a 0.024ft groove,
+    # where her shipped 0.032 centres under 0.029 radii overlapped and fused
+    # into one silhouette. Three digits on Tank rather than her four — he is the
+    # chunky kid and his hand is shorter and broader — but the groove is hers.
+    #
+    # ⚠️ THE TRIANGLES ARE BOUGHT, NOT BORROWED. LOD0 had 194 spare against its
+    # 7000 and this costs about 320, so it is paid for by the two ellipsoids it
+    # replaces and by the two palm rings above.
     if detail >= 1:
-        builder.ellipsoid(
-            (1.500 * side, 0.104, ARM_Z - 0.026),
-            (0.048, 0.046, 0.044),
-            0, SKIN, limb_bone("HandThumb1", side), 6, 4,
-        )
-        builder.ellipsoid(
-            (1.612 * side, 0.030, ARM_Z - 0.052),
-            (0.062, 0.058, 0.056),
-            0, SKIN, limb_bone("HandIndex1", side), 6, 4,
+        count = 3 if detail >= 2 else 2
+        # ⚠️ SIZED AGAINST HIS PALM, NOT COPIED FROM HERS. The first cut used
+        # Junebug's 0.026 radii on 0.050 centres and rendered three needles
+        # sticking out of a mitt: her palm is a 0.166 x 0.096 ellipsoid and his
+        # is a 0.134-radius tube, so the same digit is half the relative width
+        # on him. His fingers span the palm — three across 0.27ft of hand — and
+        # touch at their centres so the groove comes from the curvature, which
+        # is the arrangement her note actually describes.
+        offsets = (-0.080, 0.0, 0.080) if count == 3 else (-0.055, 0.055)
+        lengths = (0.170, 0.200, 0.178) if count == 3 else (0.186, 0.194)
+        for z_offset, length in zip(offsets, lengths):
+            root = 1.545
+            # The tips settle just forward and below, as a relaxed hand does.
+            # A deeper curl folds them inside the palm's own outline, which is
+            # how a hand becomes a fist — the trap Junebug's finger note records.
+            # ★ FOUR POINTS, BECAUSE THREE ENDS THE FINGER SQUARE. A tube's last
+            # width IS its end cap, so a spine that stops at 0.021 renders a
+            # blunt slab — which is what the second cut of this shipped. The
+            # extra control point near the tip is what rounds it, and it is why
+            # Junebug's fingers carry one.
+            spine = [
+                (root * side, -0.012, ARM_Z + z_offset),
+                ((root + length * 0.45) * side, -0.024, ARM_Z + z_offset - 0.006),
+                ((root + length * 0.82) * side, -0.035, ARM_Z + z_offset - 0.017),
+                ((root + length) * side, -0.041, ARM_Z + z_offset - 0.024),
+            ]
+            widths = [0.041, 0.039, 0.032, 0.012]
+            builder.tube(spine, widths, 0, SKIN, limb_bone("HandIndex1", side), 5)
+        # The thumb is the one digit that leaves the mass, and at 40px it is
+        # most of what makes a hand read as a hand.
+        builder.tube(
+            [
+                # ⚠️ FORWARD IS -y, AND THE FIRST CUT SENT THE THUMB BACKWARD.
+                # It was authored at +0.062 to +0.132 — behind the hand, where
+                # the front board cannot see it and no hand has one. Junebug's
+                # runs -0.056 to -0.100 for the same digit.
+                (1.452 * side, -0.058, ARM_Z - 0.030),
+                (1.524 * side, -0.096, ARM_Z - 0.048),
+                (1.578 * side, -0.118, ARM_Z - 0.059),
+                (1.610 * side, -0.128, ARM_Z - 0.065),
+            ],
+            [0.042, 0.038, 0.030, 0.012],
+            0, SKIN, limb_bone("HandThumb1", side), 5,
         )
 
 

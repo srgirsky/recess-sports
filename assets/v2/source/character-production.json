@@ -78,11 +78,11 @@
     },
     "tank": {
       "source": "tank-pilot.blend",
-      "sourceSha256": "dd3e01fd8af07fb1f1923cace6c7f8a1441d5d763601715a0cb9ccfb082e5177",
+      "sourceSha256": "937cf2e28629dd7840c9fdbc93037b1385cf7b945c9633782cd950715f4caec6",
       "concept": "tank-turnaround.png",
       "conceptSha256": "32d3e55d0bb1f56fa6edacf9d87f7d53cc516cd3877740042f9c82e0c5756bd4",
       "output": "kid_tank.glb",
-      "outputSha256": "f84fdfa8d86ec99e0661b813da231c280049e8f0cbf05eea98adb355f66e0904",
+      "outputSha256": "afe85757736f5f6a0b9baefc3c6320c34be2cae2ae6d8bea6fb0463f5674300e",
       "definingTraits": [
         "low wide silhouette",
         "bald round crown",
