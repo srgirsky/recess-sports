@@ -1440,12 +1440,26 @@ def shoe_u_at_v(v: float) -> float:
             return u0 + (u1 - u0) * t
     return pts[-1][0]
 
+
+def toe_cap_v_low(y_unscaled: float) -> float:
+    """The toe cap's lower edge at a station, in section height.
+
+    Returns 2.0 — covering nothing — behind the cap's back edge. The edge DIPS
+    toward the sole as it nears the tip, which is what makes a mudguard wrap the
+    toe rather than sit on top of it.
+    """
+    if y_unscaled < 0.13:
+        return 2.0
+    frac = min(1.0, max(0.0, (y_unscaled - 0.13) / 0.31))
+    return 0.66 - 0.20 * frac
+
 def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     ring = shoe_ring(detail)
     rows: list[list[int]] = []
     bone = limb_bone("ToeBase", side)
     for y, half, ztop, colour in SHOE_STATIONS:
         floor = shoe_floor_at(y)
+        y_unscaled = y
         y *= SHOE_LENGTH_SCALE
         half *= SHOE_WIDTH_SCALE
         ztop = SHOE_FLOOR + (ztop - SHOE_FLOOR) * SHOE_HEIGHT_SCALE
@@ -1541,10 +1555,23 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             # cream strap built as their own PROUD SURFACES over an unbroken
             # navy quarter, so they occlude the panel where they lie and nowhere
             # else. That is the next change here and it is geometry, not a band.
-            if band_name == "quarter" and y > 0.30:
-                band = SOLE                # the cream toe cap, front of the last
+            # ★ THE OVERLAY CUTS THE PANEL, IT DOES NOT SIT BESIDE IT.
+            #
+            # A band table can only cut the quarter along a horizontal line,
+            # and the sweep above traced a frontier of those that never
+            # satisfies both views. The concept resolves it differently: its
+            # toe cap has a lower edge that DIPS toward the sole as it runs
+            # forward, so the panel it interrupts shows a different extent from
+            # the front than from the side. That dip is the part every earlier
+            # attempt left out.
+            #
+            # `toe_cap_v_low` IS the cap geometry's own edge, so the paint and
+            # the surface agree by construction rather than by two numbers
+            # being kept in step by hand.
+            if band_name == "quarter" and v >= toe_cap_v_low(y_unscaled):
+                band = SOLE                # under the cream toe cap
             elif band_name == "quarter" and -0.15 < y < 0.30 and 0.44 <= height <= 0.66:
-                band = SOLE                # the cream strap across the instep
+                band = SOLE                # under the cream strap
             elif band_name == "quarter":
                 band = SHOE                # the navy quarter, unbroken on the flanks
             elif band_name == "midsole":
@@ -1597,8 +1624,7 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
         for y_s, half_s, ztop_s, _c in SHOE_STATIONS:
             if y_s < 0.13:
                 continue
-            frac = min(1.0, max(0.0, (y_s - 0.13) / 0.31))
-            v_low = 0.66 - 0.36 * frac          # dips toward the sole at the tip
+            v_low = toe_cap_v_low(y_s)          # the shared edge — see above
             floor_s = shoe_floor_at(y_s)
             ys = y_s * SHOE_LENGTH_SCALE
             hs = half_s * SHOE_WIDTH_SCALE * 1.028
