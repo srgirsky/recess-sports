@@ -941,6 +941,43 @@ def leg_x(z: float) -> float:
     return LEG_ANKLE_X
 
 
+# ★ HE HAD NO INSEAM, AND THE TWO SHORTS LEGS WERE ONE SOLID MASS.
+#
+# Each leg is a tube of half-width `radius` centred on `leg_x(z)`, and at EVERY
+# garment station the tube crossed the centreline: inner edge -0.043 at the hem,
+# -0.069 at z 0.900, -0.050 at the waist. The two legs did not nearly touch —
+# they interpenetrated by up to 0.138ft, so the front view showed one black
+# block. Measured on the delivered board, the shorts split into two runs on 1.4%
+# of their height; the concept splits on 74% of its.
+#
+# The overlap is the round-13 width fix landing on a circular section. That fix
+# was right — the shorts measured 22.5%H against the concept's 30.4-32.6% and
+# `bodyType: chunky` has to be IN the silhouette — but a circle wide enough to
+# be chunky on the outside is also wide enough to reach past the centreline on
+# the inside, and there is nowhere for an inseam to be.
+#
+# So the section is asymmetric: full `radius` outward, clamped inward. The outer
+# extreme stays exactly `leg_x(z) + radius`, so the front-view width round 13
+# measured is preserved to the float, and the profile depth is untouched because
+# depth rides `sin(theta)`. Baggy shorts pressed together really are D-shaped.
+#
+# Measured off the concept's front column at 250px/ft (686px over his 2.742ft):
+# solid to row 648, a 1-4px slit opening at row 654, 7-10px by rows 684-696, and
+# 23px at the hem. Those rows map to z 0.97 down to 0.694, and the slit widens
+# faster than linearly, hence the power curve.
+INSEAM_TOP_Z = 0.970          # the crotch — above this the legs meet, as drawn
+INSEAM_HEM_Z = SHORTS_HEM_Z   # z 0.694
+INSEAM_HEM_HALF = 0.046       # half of the concept's 23px hem gap
+
+
+def inseam_half(z: float) -> float:
+    """Half the daylight the concept draws between the shorts legs at height z."""
+    if z >= INSEAM_TOP_Z:
+        return 0.0
+    t = min(1.0, (INSEAM_TOP_Z - z) / (INSEAM_TOP_Z - INSEAM_HEM_Z))
+    return INSEAM_HEM_HALF * t ** 2.2
+
+
 def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
     """Shorts, bare shin and sock as one stitched surface."""
     sides = 14 if detail >= 2 else 6
@@ -1028,9 +1065,16 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
         # on the shoe. `grid` is emitted per row-pair so a pair whose lower row
         # is accent-coloured goes to M_Accessory and the skin stays continuous.
         materials.append(3 if colour == TEAM_MASK else 1)
+        # The inward reach that leaves the concept's inseam. `min` so a ring
+        # already clear of the centreline — every bare-shin and sock ring — is
+        # left exactly as it was; only the garment is ever clamped.
+        inner_radius = min(radius, leg_x(z) - inseam_half(z))
         row = []
         for index in range(sides):
             theta = 2 * pi * index / sides
+            # cos > 0 is the OUTER half for both sides, because the ring is
+            # reflected whole (see below), so one predicate serves both legs.
+            radius_x = radius if cos(theta) >= 0.0 else inner_radius
             row.append(
                 builder.vertex(
                     # ★ THE WHOLE RING IS REFLECTED, not just its centre. Writing
@@ -1040,7 +1084,7 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
                     # had. The board showed it as one shin lit and the other in
                     # shadow at the same height, which three reviews read as a
                     # colour difference between the socks.
-                    ((leg_x(z) + radius * cos(theta)) * side, radius * sin(theta) * depth, z),
+                    ((leg_x(z) + radius_x * cos(theta)) * side, radius * sin(theta) * depth, z),
                     colour,
                     bone_name,
                     (0.75, 0.25),
