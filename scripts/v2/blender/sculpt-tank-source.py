@@ -363,23 +363,74 @@ def torso_levels(detail: int) -> list[tuple[float, float, float, str]]:
     return [level for index, level in enumerate(TORSO_LEVELS) if index % 2 == 0 or index == len(TORSO_LEVELS) - 1]
 
 
+# ★ THE WIDTH COLUMN IS TRACED OFF THE CONCEPT NOW, AND FOR SEVENTEEN ROUNDS IT
+# WAS NOT. This is the table the whole provenance gate was built around; the
+# story is in scripts/v2/sculpt-provenance.lint.test.js and it is short: eight
+# independent reviews called this silhouette "a cone of revolution", "a
+# lampshade", "the bulk is gone" and "stick limbs", every round converted that
+# prose into a nudge, and nobody ever took the measurement those four phrases
+# were all describing.
+#
+# not-traceable: his torso width cannot be read from the front silhouette. The
+# concept draws his arms resting against his body in all five views, so every
+# row of every view has a run count of 1 from crown to ankle and a centre run
+# is arm-plus-torso. Junebug's table cites "once the arms have separated from
+# the torso at y=520", which is a trace her sheet allows and his does not.
+#
+# So the width is traced by GARMENT COLOUR instead. Between z 1.87 and z 2.11
+# his sleeves have ended and his arms are bare skin lying ON the tee, which
+# splits the purple into three runs and leaves the tee's own outer edge
+# readable. Scanning for the tee's purple (sampled rgb(103,68,127)) across the
+# front figure:
+#
+#   z 2.67  0.551      z 2.19  0.822
+#   z 2.51  0.656      z 2.03  0.892
+#   z 2.35  0.743      z 1.95  0.910   <- widest
+#   z 1.87  0.869
+#
+# ⚠️ AND ONLY THE 1.87-2.11 BAND IS THE TORSO ALONE. Above it the short sleeve
+# is inside the same silhouette, so a reading there is body-plus-sleeve and must
+# not be authored as a torso ring; below it his hands hide the tee's edges. The
+# shoulder rings are therefore left where they were — measured against the
+# silhouette they were already right, and it is the BELLY that was wrong.
+#
+# The old table ran 0.556 at the yoke to 0.574 at the belly: a garment that
+# barely flares at all, against a concept that goes 0.55 to 0.91. That is the
+# entire missing read.
+#
+# ⚠️ AND THE HEM TUCK BELOW z 1.87 IS AUTHORED, NOT TRACED. His hands rest at
+# hip height and hide the tee's edges from there down, so the widest reading is
+# the last honest one. The first cut extrapolated it FLAT and the board came out
+# a keg — 0.80 at the hem against 0.88 at the belly, with no tuck at all. The
+# taper below the belly is therefore a judgement, sized so the tee stays wider
+# than the shorts it covers and comes back in the way the drawing plainly does.
+#
+# The depth column was already close and is now cited rather than guessed.
+# measured: view2 z=1.240 halfWidth=0.5910
+# measured: view2 z=1.720 halfWidth=0.5473
+# measured: view2 z=1.960 halfWidth=0.5153
+# measured: view2 z=2.400 halfWidth=0.4250
+# measured: front z=1.960 runs=1
 TORSO_LEVELS = [
     # ★ THE HEM IS A BAND WITH THICKNESS, and the review named its absence: the
     # torso "widens monotonically with no hem step — a lampshade, not a tee".
     # Four rings buy an underside, a proud band and the body above it.
-    (1.070, 0.578, 0.540, "Hips"),    # hem underside
-    (1.096, 0.628, 0.602, "Hips"),    # hem band, proud
-    (1.130, 0.624, 0.598, "Hips"),
-    (1.240, 0.617, 0.590, "Hips"),
-    # ★ THE PROFILE WAS A CONE OF REVOLUTION — "no chest, no belly, no back
-    # curve", three reviews running. Width alone cannot fix that: the depth (the
-    # third column) has to carry a belly that bulges and a chest that comes back
-    # in above it, or the side view is a straight taper whatever the front does.
-    (1.480, 0.596, 0.582, "Hips"),
-    (1.720, 0.584, 0.596, "Spine"),   # belly, deepest point
-    (1.960, 0.574, 0.560, "Spine"),
-    (2.200, 0.556, 0.486, "Spine1"),
-    (2.400, 0.560, 0.470, "Spine1"),  # chest, comes back out
+    # The hem sits at z 1.108, which is where the centre column changes from
+    # the tee's purple to the shorts' near-black.
+    (1.070, 0.640, 0.470, "Hips"),    # hem underside
+    (1.096, 0.690, 0.500, "Hips"),    # hem band, proud
+    (1.130, 0.680, 0.560, "Hips"),
+    (1.240, 0.700, 0.591, "Hips"),    # deepest point, traced
+    # ★ THE PROFILE IS A TAPER, AND THAT ONE IS CORRECT. Three reviews called
+    # the side view a cone and asked for a belly that bulges. Traced, the
+    # concept's own profile runs 0.591 at z 1.24 down to 0.425 at z 2.40 — it
+    # narrows upward monotonically, because his mass is low and his tee is
+    # oversized. The side view was never the defect; the FRONT was.
+    (1.480, 0.780, 0.576, "Hips"),
+    (1.720, 0.850, 0.547, "Spine"),
+    (1.960, 0.880, 0.515, "Spine"),   # widest: traced 0.910, shipped a touch under
+    (2.200, 0.800, 0.475, "Spine1"),
+    (2.400, 0.660, 0.425, "Spine1"),
     # ★ THE SHOULDER WAS 21% TOO NARROW, measured: 0.75 head widths delivered
     # against the concept's 0.95. The tee climbed monotonically from collar to
     # hem — a truncated cone with no shoulder break anywhere — which is the
@@ -413,6 +464,11 @@ TORSO_LEVELS = [
 # ⚠️ AND IT STILL HAS TO BE NARROWER THAN THE JAW, which measures 0.260 at
 # z 2.96, or the chin has nowhere to sit. That is Junebug's rule and it is
 # anatomy: 0.238 at the top leaves 0.022 of clearance.
+# The neck's own ring, above the collar. The concept's silhouette at z 2.880 is
+# the neck plus the jaw behind it, so this table ships narrower than the trace
+# on purpose — a neck as wide as the reading would leave the chin nowhere to sit,
+# which is the rule Junebug's script records at her own neck.
+# measured: front z=2.880 halfWidth=0.2711
 NECK_LEVELS = [
     (2.760, 0.276, 0.256, "Spine2"),
     (2.880, 0.258, 0.240, "Neck"),
@@ -745,6 +801,7 @@ SHOE_TOE_OUT = 21.0 * pi / 180.0
 # and most of the upper are cream, and the navy is the eyestay panel and the
 # heel counter. The band metric is not a style opinion; it is the ratio, and it
 # was inverted.
+# measured: front z=0.150 halfWidth=0.8251
 SHOE_STATIONS = [
     # ★ ROUND 3: THE SHOE WAS HALF THE SIZE OF HIS FOOT. Measured off the
     # turnaround, his feet span ONE run 1.656ft across at z 0.15 — they touch,
@@ -820,6 +877,12 @@ SHOE_STATIONS = [
 # one stitched surface and not a stack of shells; the band edges are tight pairs
 # ~0.028 apart in height rather than coincident rows, because coincident rows
 # would be degenerate quads and `validate:models` is right to reject those.
+#
+# not-traceable: a cross-section is a fore-aft cut and a turnaround has no view
+# down the length of the foot. The BAND HEIGHTS in it are traced, off the
+# concept's own front figure row by row — cool pixels run 0% below 0.33 of shoe
+# height, 42/42/36% across 0.37-0.52, and under 11% above 0.56 — but the lateral
+# profile has no view that can give it.
 #
 # (u across the half-width, v up the shoe, band) for the RIGHT half, bottom to
 # top. The left half is this list reflected, so the section is symmetric by

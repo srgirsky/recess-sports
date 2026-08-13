@@ -875,6 +875,18 @@ class JunebugBuilder(MeshBuilder):
 # V-neck, the placket and the belt loops are all solved against this surface
 # and a finishing pass may not move all of them at once. Recorded honestly: at
 # z 2.04 this ships 0.83ft against the concept's 0.64.
+#
+# ★ Retrofitted with machine-checkable citations. Two of her three hand-traced
+# landmarks reproduce against the sheet — at z 1.92 and z 1.48 her arms have
+# separated, the run count is 3, and the centre run is the torso alone. The
+# THIRD does not: at z 2.04 the run count is 1, so the 0.640ft she records
+# there was isolated by hand rather than read off a centre run. That is a real
+# distinction and the gate is right to refuse to confirm it, so it is cited
+# where it is checkable and left as prose where it is not.
+# measured: front z=1.920 halfWidth=0.3273
+# measured: front z=1.920 runs=3
+# measured: front z=1.480 halfWidth=0.4045
+# measured: front z=2.040 runs=1
 TORSO_LEVELS = [
     (1.865, 0.392, 0.300, "Hips"),
     (1.90, 0.386, 0.288, "Spine"),
@@ -1251,6 +1263,12 @@ SHOE_FLARE = [
 # rotates the Foot bone exactly as before — the shoe just rides it with the
 # stance the art draws.
 SHOE_TOE_OUT = 22.0 * pi / 180.0
+# ★ Retrofitted with its citation when the provenance gate was built. Junebug is
+# the fixture that proves the gate, because she is the one character whose
+# numbers are known to be right: if the trace could not be reproduced against
+# her sheet, the gate would be measuring something other than the drawing.
+# measured: front z=0.100 halfWidth=0.1795
+# measured: front z=0.100 runs=2
 #   (y, half-width at z 0.05, topline z).  -y is forward, so the toe is first.
 SHOE_STATIONS = [
     (-0.375, 0.033, 0.115),
