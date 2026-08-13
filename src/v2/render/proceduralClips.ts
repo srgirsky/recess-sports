@@ -1146,14 +1146,28 @@ function louUpsetGoofy(spec: ClipSpec): AnimationClip {
 // measured. That is the same shape of failure as the mirrored arms this file's
 // round-4 note records, and it is why the runtime stills exist.
 //
-// The angle is traced, not chosen. His concept's bare forearm centres on 0.778
-// to 0.793ft from the centreline all the way down z 1.46-1.70, and
-// `0.400 + 0.965·sin(23°) = 0.78` at z 1.58 — which is where the drawing puts
-// it, to within the width of the arm. 25 degrees ships a little past that so
-// the arm's inner surface clears the garment rather than grazing it.
+// ★ AND THE UPPER ARM AND THE FOREARM WANT DIFFERENT ANGLES, WHICH IS WHY THIS
+// IS TWO NUMBERS AND NOT ONE.
+//
+// The traced target is the FOREARM: his concept's bare arm centres on 0.778 to
+// 0.793ft from the centreline all the way down z 1.46-1.70, and
+// `0.400 + 0.965·sin(23°) = 0.78` at z 1.58. A single 25-degree abduction hits
+// that and buries the SLEEVE, because the tee is much wider higher up. Worked
+// out against the torso table: at 25 degrees the sleeve's outer surface reaches
+// 0.747 where the tee is 0.818, and the arm does not clear the garment until
+// 0.70ft down the limb — past the elbow. An independent review saw exactly that
+// and wrote "the tee has no sleeve; the arm exits the side wall at elbow
+// height".
+//
+// At 40 degrees the sleeve clears (0.826 against 0.802) and the cuff is on the
+// outside of the silhouette where the concept draws it. So the upper arm goes
+// out to 40 and the forearm angles back in by 20, which lands the hand where it
+// was traced. That is also what a heavy kid's arm does — the bulk pushes the
+// upper arm out and the forearm returns under it — and it is what the drawing
+// shows.
 const TANK_IDLE_POSE: Pose = {
   hp: [6, 0, 0], sp: [3, 0, 0], s2: [5, 0, 0], hd: [-4, 3, 0],
-  la: [12, 0, 65], lf: [0, -12, 0], ra: [12, 0, -65], rf: [0, 12, 0],
+  la: [12, 0, 50], lf: [0, -12, 20], ra: [12, 0, -50], rf: [0, 12, -20],
   lu: [12, 0, 0], ll: [-18, 0, 0], ru: [12, 0, 0], rl: [-18, 0, 0],
 };
 const TANK_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {

@@ -114,6 +114,14 @@ def render_view(scene: bpy.types.Scene, camera: bpy.types.Object, location: tupl
 # `proceduralClips.ts` hangs an idle arm at, so the A-pose board shows the kid
 # in the pose the game actually draws him in most of the time.
 A_POSE_DEG = 72.0
+# ⚠️ AND IT IS PER CHARACTER WHERE THE CHARACTER SAYS SO. The board exists to be
+# compared against a drawing, so it has to hold the pose the character actually
+# rests in — and a wide-bodied kid does not rest at the roster's angle. Tank's
+# idle carries 40 degrees of abduction (a 50-degree rotation) because anything
+# less buries his sleeve inside his own tee; a board still rendering him at 72
+# would be scoring a pose the game never shows. Keep this in step with
+# `proceduralClips.ts`.
+A_POSE_BY_ID = {"tank": 50.0}
 
 
 def pose_arms_down(degrees: float) -> None:
@@ -233,7 +241,7 @@ def main() -> None:
     # that angle. An A-pose render can. This is the same class as the two other
     # instrument gaps this character exposed — a landmark that silently could
     # not be traced, and a face camera that could not see a face.
-    pose_arms_down(A_POSE_DEG)
+    pose_arms_down(A_POSE_BY_ID.get(character_id, A_POSE_DEG))
     render_view(scene, camera, (0, -12, 2.2), output_dir / f"{slug}-front-apose-review.png")
     render_view(scene, camera, (12, 0, 2.2), output_dir / f"{slug}-profile-apose-review.png")
     print(f"wrote {slug} front/profile fidelity views, bind and A-pose")
