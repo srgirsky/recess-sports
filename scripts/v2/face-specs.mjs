@@ -102,17 +102,23 @@ export const FACE_SPECS = {
     // — the concept holds eyes 29.7% of head width AND 48.3/40.8 visible face,
     // which is only consistent if the eye is a wide slit rather than a tall
     // almond. His upper lid covers the top third of the iris on the turnaround.
+    // ★ ROUND 13: THE APERTURE MEASURED 8.2% OF HEAD HEIGHT against the
+    // concept's 12.8% — a third too small, so the face read as a squint under a
+    // large blank forehead. The concept holds BOTH a bigger eye and MORE
+    // visible skin (48.3/40.8) than this delivery, which is only possible if
+    // the ink is in the wrong place: the brows were taking the skin the eyes
+    // should have. They come down as the eyes go up.
     eyeHalfW: 21,
-    eyeHalfH: 4.2,
-    irisR: 5.2,
+    eyeHalfH: 4.6,
+    irisR: 5.5,
     irisInward: 3,
     eyeX: [34, 94],
     eyeY: 52,
     // Thick and even, tapering less: his brows are the boldest mark on a face
     // with no hair to frame it.
-    browThick: 3.0,
-    browThin: 2.0,
-    browHalf: 11.0,
+    browThick: 2.2,
+    browThin: 1.5,
+    browHalf: 9.5,
     browX: [35, 93],
     browY: 30,
     browTilt: 2,

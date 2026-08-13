@@ -229,7 +229,13 @@ def nose_push(nx: float, nz: float) -> float:
     # raw push is not the projection: at the nose's own latitude the skull is
     # already receding, so most of a small push is spent catching up with the
     # forehead before any of it shows.
-    tip = 0.112 * across ** 0.7 * max(0.0, 1.0 - (dz / 0.11) ** 2) ** 0.8
+    # ★ ROUND 13: A BULB, NOT A MOUND. The nose broke the profile but read as
+    # "a soft brown smudge with no highlight and no shading terminator" from the
+    # front, which is the only angle the draft card and the 40px sprite ever
+    # see. A wide gentle push has no terminator to catch the key; a tighter one
+    # of the same height does. The falloff narrows and the exponent sharpens
+    # while the peak stays where the profile measurement put it.
+    tip = 0.118 * across ** 0.55 * max(0.0, 1.0 - (dz / 0.082) ** 2) ** 0.55
     # nostril shelf: the underside, which is what breaks the profile silhouette
     shelf = 0.034 * across * max(0.0, 1.0 - abs(dz + 0.13) / 0.06)
     return bridge + tip + shelf
@@ -587,27 +593,41 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
     """Shorts, bare shin and sock as one stitched surface."""
     sides = 14 if detail >= 2 else 6
     stations = [
-        (1.600, 0.244, PANTS, "UpLeg"),
-        (1.360, 0.248, PANTS, "UpLeg"),
-        (1.100, 0.244, PANTS, "UpLeg"),
-        (0.900, 0.234, PANTS, "UpLeg"),
-        (SHORTS_HEM_Z, 0.226, PANTS_DARK, "Leg"),
-        (0.688, 0.194, SKIN, "Leg"),
-        (SOCK_TOP_Z, 0.186, SKIN, "Leg"),
-        # ★ THE SOCK ROLLS. A crew sock's top is thicker than the leg and than
-        # the sock below it — the review named "ribbed roll-top crew socks" as
-        # missing. Two rings make the roll; one makes a painted line.
-        (0.634, 0.202, TEAM_MASK, "Leg"),   # the declared team-accent surface
-        (0.606, 0.196, TEAM_MASK, "Leg"),
-        (0.460, 0.176, SOCK, "Leg"),
-        (0.300, 0.160, SOCK, "Leg"),
-        (0.150, 0.148, SOCK, "Foot"),
+        # ★ THE SOCK WAS TWO DISCONNECTED RINGS, and the cause is that this
+        # table stopped descending. It ran ... 0.414 (sock top), then 0.634,
+        # 0.606 — back UP the leg — so the roll was authored ABOVE the skin band
+        # that was supposed to sit above it, and `grid` faithfully stitched the
+        # rows in the order given. The board showed a garter floating over a
+        # strip of bare shin, which the review measured as 21px of skin between
+        # the accent band and the sock.
+        #
+        # ★ AND THE SHORTS HAD NO VOLUME. Measured on the profile silhouettes,
+        # the concept's shorts are 0.228 of figure height deep and the delivery
+        # was 0.107 — the same as its own BARE LEG, so the garment added
+        # nothing. Tank is `bodyType: chunky`, `belly: 0.8`, power 9, and none
+        # of it was in the silhouette. A leg is round below the hem and a short
+        # is BAGGY above it, so the section carries its own depth factor.
+        #
+        # (z, half-width, depth factor, colour, bone) — strictly descending in z.
+        (1.600, 0.244, 1.86, PANTS, "UpLeg"),
+        (1.360, 0.248, 1.90, PANTS, "UpLeg"),
+        (1.100, 0.244, 1.86, PANTS, "UpLeg"),
+        (0.900, 0.234, 1.72, PANTS, "UpLeg"),
+        (SHORTS_HEM_Z, 0.226, 1.48, PANTS_DARK, "Leg"),   # hem, z 0.694
+        (0.680, 0.196, 0.98, SKIN, "Leg"),                # bare shin begins
+        (0.520, 0.190, 0.96, SKIN, "Leg"),
+        (SOCK_TOP_Z + 0.012, 0.186, 0.95, SKIN, "Leg"),   # z 0.426
+        (SOCK_TOP_Z, 0.208, 0.95, TEAM_MASK, "Leg"),      # roll, the team accent
+        (SOCK_TOP_Z - 0.034, 0.202, 0.95, TEAM_MASK, "Leg"),
+        (SOCK_TOP_Z - 0.066, 0.188, 0.95, SOCK, "Leg"),   # z 0.348
+        (0.260, 0.172, 0.95, SOCK, "Leg"),
+        (0.150, 0.156, 0.95, SOCK, "Foot"),
     ]
     if detail < 1:
         stations = [station for index, station in enumerate(stations) if index % 2 == 0 or index == len(stations) - 1]
     rows: list[list[int]] = []
     materials: list[int] = []
-    for z, radius, colour, bone in stations:
+    for z, radius, depth, colour, bone in stations:
         bone_name = limb_bone(bone, side)
         # ★ THE ACCENT RIDES THE SAME SURFACE. Its rows change MATERIAL, not
         # mesh: a separate band welded on is the detached shell 3.7 just caught
@@ -626,7 +646,7 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
                     # had. The board showed it as one shin lit and the other in
                     # shadow at the same height, which three reviews read as a
                     # colour difference between the socks.
-                    ((leg_x(z) + radius * cos(theta)) * side, radius * sin(theta) * 0.92, z),
+                    ((leg_x(z) + radius * cos(theta)) * side, radius * sin(theta) * depth, z),
                     colour,
                     bone_name,
                     (0.75, 0.25),
