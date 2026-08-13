@@ -185,13 +185,23 @@ export const FACE_SPECS = {
     //     indistinguishably from skin. It erases the eye ink and leaves no
     //     bright patch.
     //
-    // White specifically converging on skin, while magenta and green do not, is
-    // the signature of a warm, dim key light compressing the top of the value
-    // range — the same rig the review measured at roughly half the board's
-    // luminance. The sclera is very likely being drawn and then tone-mapped onto
-    // the skin it is meant to contrast with. That is a lighting/tone pass in the
-    // v2 render layer, it is roster-wide rather than Tank's, and it cannot be
-    // fixed from a face spec.
+    // White specifically converging on skin, while magenta and green do not,
+    // looked like a warm key light plus a filmic shoulder compressing the top of
+    // the value range.
+    //
+    // ⚠️ THAT WAS TESTED AND IT IS ALSO NOT THE CAUSE. `Renderer.ts` uses
+    // ACESFilmicToneMapping at exposure 1.05, which is a photographic HDR curve
+    // on a toon ramp that never exceeds 1.0 — a reasonable suspect. Swapping it
+    // for NoToneMapping moved the warmth of the brightest pixel near the eye
+    // from 103-116 down to 83-93 and left the luminance where it was: still
+    // skin, still no white. The experiment is reverted, because it changes the
+    // look of the whole game and it did not fix the defect.
+    //
+    // So the cause is still open. What is left unexamined is narrow: the toon
+    // ramp itself (`gradientMap`, 4 steps) and whether a near-white albedo can
+    // reach the top step at all under this key/fill balance. That is a
+    // lighting/material pass in the v2 render layer, roster-wide rather than
+    // Tank's, and it cannot be fixed from a face spec.
     eyeHalfW: 18.5,
     eyeHalfH: 4.6,
     irisR: 7.0,
