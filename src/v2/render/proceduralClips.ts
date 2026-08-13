@@ -307,6 +307,19 @@ function runCycle(
   armDrive: number,
   abduct = 72,
   elbow = 58,
+  // ★ A CONSTANT ELBOW IS A HINGE, NOT AN ARM. `elbow` never varied across the
+  // cycle, so the forearm held one angle for the whole run and the limb read as
+  // a single straight taper — an independent review scored 3.11 on exactly that
+  // and could not find an elbow in the silhouette at all.
+  //
+  // It is worst on Tank because he runs the shallowest bend on the roster (30
+  // against 58) to keep his forearm off a belly 0.55ft deep, so he has both the
+  // least bend AND no change in it. Extra flex when the arm is TRAILING costs
+  // nothing there — the belly is only in the way at the front of the swing —
+  // so the elbow can articulate without the hand crossing the torso.
+  //
+  // Defaults to 0, so every other kid's run is byte-identical.
+  elbowSwing = 0,
 ): AnimationClip {
   return cycle(spec, (p) => {
     const s = sin(p);
@@ -325,9 +338,9 @@ function runCycle(
       rl: [-Math.max(0, -o) * reach * 1.5 - 12, 0, 0],
       rt: [Math.max(0, o) * 18, 0, 0],
       la: [o * armDrive, 0, abduct],
-      lf: [0, elbow, 0],
+      lf: [0, elbow + Math.max(0, -o) * elbowSwing, 0],
       ra: [s * armDrive, 0, -abduct],
-      rf: [0, -elbow, 0],
+      rf: [0, -(elbow + Math.max(0, -s) * elbowSwing), 0],
     };
   });
 }
@@ -1905,7 +1918,11 @@ export function buildTankPilotClips(): AnimationClip[] {
     // kid a deep bend carries the hand ACROSS the belly rather than alongside
     // it. Tank runs a shallower 30, which keeps the forearm outboard. Both
     // parameters default to the roster's values, so no other kid moves.
-    run: (spec) => runCycle(spec, 7, 34, 24, 52, 30),
+    // ★ AND THE FLEX IS THE REST OF IT. 30 degrees held for the whole cycle is
+    // a bent stick; 30 rising to 64 as the arm trails puts an elbow in the
+    // silhouette without ever carrying the hand across the belly, because the
+    // extra bend happens behind him.
+    run: (spec) => runCycle(spec, 7, 34, 24, 52, 30, 34),
     bat_stance: (spec) => breathe(spec, TANK_STANCE_POSE, 0.75),
     swing_contact: tankSwingContact,
     swing_follow: tankSwingFollow,
