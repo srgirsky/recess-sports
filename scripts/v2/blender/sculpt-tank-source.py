@@ -1893,23 +1893,38 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
         # difference at board resolution.
         arc = [(u, v) for u, v, _b in ring if v >= 0.52]
         if len(arc) >= 3:
-            strap: list[list[int]] = []
-            for y_s, half_s, ztop_s, _c in SHOE_STATIONS:
-                if not (-0.20 < y_s < 0.02):
-                    continue
-                floor_s = shoe_floor_at(y_s)
-                ys = y_s * SHOE_LENGTH_SCALE
-                hs = half_s * SHOE_WIDTH_SCALE * 1.030
-                zt = SHOE_FLOOR + (ztop_s - SHOE_FLOOR) * SHOE_HEIGHT_SCALE
-                row = [
-                    builder.vertex(
-                        shoe_place(side, ys, hs * u, floor_s + (zt - floor_s) * v),
-                        SOLE, bone, (0.75, 0.25),
-                    )
-                    for u, v in arc
-                ]
-                strap.append(row)
-            if len(strap) >= 2:
+            # ★ THE CONCEPT DRAWS TWO STRAPS AND THIS DREW ONE. On the
+            # turnaround's profile pair the far shoe shows the fastening clearly:
+            # two cream bands with rounded ends, separated by a band of the
+            # upper, not one wide bar. An independent review scored 3.4 with "one
+            # strap where the concept has two" alongside the sleeve.
+            #
+            # ⚠ THE BANDS ARE NARROWER THAN THE BAR THEY REPLACE, deliberately.
+            # `measure:fidelity` gates the shoe's two tone SHARES, and cream is
+            # already the dominant one at 83.8% against the concept's 82.1%. Two
+            # straps at the old band's width would add half as much cream again
+            # and push a passing metric out. 0.050 each keeps the painted area
+            # within a thousandth of what shipped, so this changes the reading of
+            # the shoe without changing its measurement.
+            #
+            # Stations come from `shoe_station_at` rather than the table, because
+            # the table has only two entries across the whole instep — which is
+            # why this was one bar in the first place.
+            for front_y, back_y in ((-0.170, -0.120), (-0.065, -0.015)):
+                strap: list[list[int]] = []
+                for y_s in (front_y, back_y):
+                    half_s, ztop_s = shoe_station_at(y_s)
+                    floor_s = shoe_floor_at(y_s)
+                    ys = y_s * SHOE_LENGTH_SCALE
+                    hs = half_s * SHOE_WIDTH_SCALE * 1.030
+                    zt = SHOE_FLOOR + (ztop_s - SHOE_FLOOR) * SHOE_HEIGHT_SCALE
+                    strap.append([
+                        builder.vertex(
+                            shoe_place(side, ys, hs * u, floor_s + (zt - floor_s) * v),
+                            SOLE, bone, (0.75, 0.25),
+                        )
+                        for u, v in arc
+                    ])
                 builder.grid(strap, 1, cyclic=False, flip=side > 0)
 
     # ★ THE SHOE'S COLLAR BAND WAS A DETACHED SHELL, and 3.7 caught it: a
