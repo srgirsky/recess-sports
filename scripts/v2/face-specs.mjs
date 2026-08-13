@@ -84,20 +84,40 @@ export const FACE_SPECS = {
     // covering three times as much skin as his own art does. His eyes are
     // half-lidded (`expression: 'sleepy'`) and small (`eyeSize: 0.8`), so they
     // are a shallow almond rather than Junebug's round alert one.
-    eyeHalfW: 12,
-    eyeHalfH: 5.9,
-    irisR: 5.3,
-    irisInward: 2,
+    // ★ ROUND 6: THE EYES AND BROWS WERE INVERTED, AND IT IS MEASURED. Counting
+    // dark mass per row inside matched head boxes, the concept's EYES dominate
+    // (63px on a 212px head = 29.7% of head width) over lighter brows (38px =
+    // 17.9%). Round 5 delivered eyes at 14.4% and brows at 28.8% — an eyes:brows
+    // ratio of 0.50 against the concept's 1.66, a 3.3x inversion. That is why
+    // his NEUTRAL read as a scowl instead of the heavy-lidded calm the
+    // turnaround draws, and why the anti-caricature note ("sleepy must not
+    // become dim") was being violated from the wrong direction.
+    //
+    // The trade is deliberately near-neutral in total ink so `faceSkin` stays
+    // inside its band: the eyes roughly double and the brows come down by about
+    // as much.
+    // ⚠️ WIDE AND SHORT, which is what "heavy-lidded" MEANS and what lets both
+    // numbers be satisfied at once. The first attempt at the width also grew the
+    // height and dropped `faceSkin` to 33.1/33.8 against a band of [42.3, 46.8]
+    // — the concept holds eyes 29.7% of head width AND 48.3/40.8 visible face,
+    // which is only consistent if the eye is a wide slit rather than a tall
+    // almond. His upper lid covers the top third of the iris on the turnaround.
+    eyeHalfW: 21,
+    eyeHalfH: 5.1,
+    irisR: 5.9,
+    irisInward: 3,
     eyeX: [34, 94],
     eyeY: 52,
     // Thick and even, tapering less: his brows are the boldest mark on a face
     // with no hair to frame it.
-    browThick: 4.2,
-    browThin: 2.9,
-    browHalf: 14.5,
+    browThick: 3.0,
+    browThin: 2.0,
+    browHalf: 11.0,
     browX: [35, 93],
     browY: 30,
     browTilt: 2,
     mouthY: 104,
+    // See generate-face-atlas.mjs: distinct silhouettes for grin/cheer/tongue.
+    tongueOut: true,
   },
 };

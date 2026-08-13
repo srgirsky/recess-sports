@@ -337,9 +337,15 @@ TORSO_LEVELS = [
     (1.720, 0.580, 0.520, "Spine"),   # belly flare
     (1.960, 0.572, 0.486, "Spine"),
     (2.200, 0.556, 0.452, "Spine1"),
-    (2.400, 0.522, 0.412, "Spine1"),  # chest
-    (2.560, 0.470, 0.366, "Spine2"),
-    (2.640, 0.418, 0.318, "Spine2"),  # shoulder slope
+    (2.400, 0.560, 0.424, "Spine1"),  # chest
+    # ★ THE SHOULDER WAS 21% TOO NARROW, measured: 0.75 head widths delivered
+    # against the concept's 0.95. The tee climbed monotonically from collar to
+    # hem — a truncated cone with no shoulder break anywhere — which is the
+    # "lampshade" the review named and which loses the broad, heavy read his
+    # whole silhouette is built on. A yoke ring holds the width out to the
+    # deltoid before the collar takes it in.
+    (2.540, 0.556, 0.398, "Spine2"),  # yoke, holds the shoulder out
+    (2.640, 0.470, 0.336, "Spine2"),  # shoulder slope
     (2.740, 0.336, 0.258, "Spine2"),
     # ★ THE CREW COLLAR IS A RIBBED RING, not the top of a cone. Three rings:
     # the shoulder narrowing, a ring that SWELLS proud of it, and the neck hole.
@@ -408,7 +414,7 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
     docstring records why: a garment built as its own shell butted against the
     limb z-fights into the torn-paper edges Junebug's round-1 board showed.
     """
-    sides = 10 if detail >= 2 else 6
+    sides = 14 if detail >= 2 else 6
     stations = [
         (0.300, 0.196, SHIRT, "Arm"),
         (ARM_SHOULDER_X, 0.190, SHIRT, "Arm"),
@@ -530,7 +536,7 @@ def leg_x(z: float) -> float:
 
 def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
     """Shorts, bare shin and sock as one stitched surface."""
-    sides = 10 if detail >= 2 else 6
+    sides = 14 if detail >= 2 else 6
     stations = [
         (1.600, 0.244, PANTS, "UpLeg"),
         (1.360, 0.248, PANTS, "UpLeg"),
@@ -542,8 +548,8 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
         # ★ THE SOCK ROLLS. A crew sock's top is thicker than the leg and than
         # the sock below it — the review named "ribbed roll-top crew socks" as
         # missing. Two rings make the roll; one makes a painted line.
-        (0.634, 0.202, SOCK, "Leg"),
-        (0.606, 0.196, SOCK, "Leg"),
+        (0.634, 0.202, TEAM_MASK, "Leg"),   # the declared team-accent surface
+        (0.606, 0.196, TEAM_MASK, "Leg"),
         (0.460, 0.176, SOCK, "Leg"),
         (0.300, 0.160, SOCK, "Leg"),
         (0.150, 0.148, SOCK, "Foot"),
@@ -551,8 +557,14 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
     if detail < 1:
         stations = [station for index, station in enumerate(stations) if index % 2 == 0 or index == len(stations) - 1]
     rows: list[list[int]] = []
+    materials: list[int] = []
     for z, radius, colour, bone in stations:
         bone_name = limb_bone(bone, side)
+        # ★ THE ACCENT RIDES THE SAME SURFACE. Its rows change MATERIAL, not
+        # mesh: a separate band welded on is the detached shell 3.7 just caught
+        # on the shoe. `grid` is emitted per row-pair so a pair whose lower row
+        # is accent-coloured goes to M_Accessory and the skin stays continuous.
+        materials.append(3 if colour == TEAM_MASK else 1)
         cx = leg_x(z) * side
         row = []
         for index in range(sides):
@@ -566,7 +578,9 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
                 )
             )
         rows.append(row)
-    builder.grid(rows, 1, flip=side < 0)
+    for index in range(len(rows) - 1):
+        material = 3 if materials[index] == 3 and materials[index + 1] == 3 else 1
+        builder.grid(rows[index:index + 2], material, flip=side < 0)
     top = builder.vertex((leg_x(1.600) * side, 0.0, 1.600), PANTS, limb_bone("UpLeg", side))
     for index in range(sides):
         nxt = (index + 1) % sides
@@ -643,7 +657,7 @@ def shoe_place(side: int, y: float, x_off: float, z: float) -> tuple[float, floa
 
 
 def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
-    sides = 10 if detail >= 2 else 6
+    sides = 14 if detail >= 2 else 6
     rows: list[list[int]] = []
     bone = limb_bone("ToeBase", side)
     for y, half, ztop, colour in SHOE_STATIONS:
@@ -706,31 +720,15 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
         builder.face(a if side < 0 else (a[0], a[2], a[1]), 1)
         builder.face(b if side < 0 else (b[0], b[2], b[1]), 1)
 
-    # The collar band is the declared team-accent surface — see TEAM_MASK.
-    if detail >= 1:
-        band = []
-        for index in range(sides):
-            theta = 2 * pi * index / sides
-            band.append(
-                builder.vertex(
-                    shoe_place(side, 0.250, 0.206 * cos(theta), 0.302 + 0.032 * sin(theta)),
-                    TEAM_MASK,
-                    bone,
-                    (0.75, 0.25),
-                )
-            )
-        rim = []
-        for index in range(sides):
-            theta = 2 * pi * index / sides
-            rim.append(
-                builder.vertex(
-                    shoe_place(side, 0.250, 0.182 * cos(theta), 0.336 + 0.028 * sin(theta)),
-                    TEAM_MASK,
-                    bone,
-                    (0.75, 0.25),
-                )
-            )
-        builder.grid([band, rim], 3, flip=side > 0)
+    # ★ THE SHOE'S COLLAR BAND WAS A DETACHED SHELL, and 3.7 caught it: a
+    # 100px floating component at the ankle, separated from the shoe by clear
+    # background, with its concave inner surface visible. It was two rings
+    # stitched to each other and to nothing else.
+    #
+    # The team accent moves to the SOCK's roll-top instead, which is part of the
+    # leg's own continuous surface and cannot detach. It also reads better —
+    # a band around the ankle is visible from every gameplay angle where a strip
+    # inside the shoe collar is not.
 
 
 def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) -> None:
@@ -817,7 +815,7 @@ def main() -> None:
             bpy.data.objects.remove(old, do_unlink=True)
 
     settings = {
-        "kid_tank_LOD0": (14, 8, 2),
+        "kid_tank_LOD0": (20, 12, 2),
         "kid_tank_LOD1": (8, 4, 1),
         "kid_tank_LOD2": (5, 3, 0),
     }

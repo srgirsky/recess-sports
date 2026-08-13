@@ -316,7 +316,22 @@ function face(name, index) {
   let lips = lowerLip(my) + seam(my, 1.2, 1.0);
   // An open smile is a MOUTH, not a crescent sticker: inner cavity, a band of
   // upper teeth, a tongue resting low, and a catch-light lower lip.
-  if (name === 'grin' || name === 'cheer') lips = `<path d="M45 92 Q64 97 83 92 Q76 108 64 108 Q52 108 45 92Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
+  // ★ `grin` AND `cheer` ARE NOT THE SAME MOUTH. They were, and three of the
+  // four stills rubric 3.14 is scored from came back within 8% of each other.
+  // A grin is a closed-jaw smile showing the upper teeth; a cheer is a wide
+  // open shout with the jaw dropped and the tongue low. Different silhouettes,
+  // not different shades.
+  if (name === 'grin') lips = spec.tongueOut
+    ? `<path d="M44 93 Q64 100 84 93 Q78 104 64 104 Q50 104 44 93Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
+    <path d="M46.5 94.5 Q64 101 81.5 94.5 Q76 99.6 64 99.9 Q52 99.6 46.5 94.5Z" fill="${white}"/>`
+    : `<path d="M45 92 Q64 97 83 92 Q76 108 64 108 Q52 108 45 92Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
+    <path d="M47.5 93.5 Q64 98 80.5 93.5 Q75 100.1 64 100.4 Q53 100.1 47.5 93.5Z" fill="${white}"/>
+    <path d="M55.5 106 Q64 109 72.5 106 Q69.5 102 64 102 Q58.5 102 55.5 106Z" fill="${tongue}"/>`;
+  if (name === 'cheer') lips = spec.tongueOut
+    ? `<path d="M43 90 Q64 98 85 90 Q80 115 64 115 Q48 115 43 90Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.6"/>
+    <path d="M46 91.5 Q64 99 82 91.5 Q76 98.5 64 98.8 Q52 98.5 46 91.5Z" fill="${white}"/>
+    <path d="M55 106 Q64 110 73 106 Q70 101 64 101 Q58 101 55 106Z" fill="${tongue}"/>`
+    : `<path d="M45 92 Q64 97 83 92 Q76 108 64 108 Q52 108 45 92Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
     <path d="M47.5 93.5 Q64 98 80.5 93.5 Q75 100.1 64 100.4 Q53 100.1 47.5 93.5Z" fill="${white}"/>
     <path d="M55.5 106 Q64 109 72.5 106 Q69.5 102 64 102 Q58.5 102 55.5 106Z" fill="${tongue}"/>`;
   // Determined: the same two lips, pressed and turned DOWN at the corners.
@@ -325,7 +340,24 @@ function face(name, index) {
   if (name === 'surprised') lips = `<ellipse cx="64" cy="98" rx="11.5" ry="12.5" fill="${mouth}"/>
     <ellipse cx="64" cy="98" rx="8.2" ry="9.4" fill="${mouthDark}" stroke="${ink}" stroke-width="1.8"/>
     <path d="M56.8 93.6 Q64 91.2 71.2 93.6 Q69.6 96.9 64 97.1 Q58.4 96.9 56.8 93.6Z" fill="${white}"/>`;
-  if (name === 'tongue') lips = `<path d="M45 92 Q64 97 83 92 Q76 107 64 107 Q52 107 45 92Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
+  if (name === 'tongue') lips = spec.tongueOut
+    // ★ THE TONGUE MUST LEAVE THE MOUTH TO BE A DIFFERENT EXPRESSION.
+    //
+    // The original cell tucks it inside the lower lip, which at draft-card size
+    // is the same dark blob as `grin` and `cheer`. Measured on the runtime
+    // stills, the four captured expressions differed by 1-4 pixels of dark mass
+    // — "all emotion carried by eyebrow angle alone", and rubric 3.14 asks the
+    // MOUTH to carry it. A tongue that hangs BELOW the lip line changes the
+    // silhouette of the mark, which is the only thing that survives minifying.
+    //
+    // ⚠️ Opt-in, because Junebug is APPROVED and her atlas is bound to her
+    // board hash. Her tongue cell has the same weakness and should take this
+    // the next time she is re-rendered for other reasons; changing it here
+    // would invalidate an approval to fix a defect nobody has scored her on.
+    ? `<path d="M45 92 Q64 97 83 92 Q76 107 64 107 Q52 107 45 92Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
+    <path d="M47.5 93.5 Q64 98 80.5 93.5 Q75 99.5 64 99.8 Q53 99.5 47.5 93.5Z" fill="${white}"/>
+    <path d="M55 100 Q53 116 64 118 Q75 116 73 100 Q64 104 55 100Z" fill="${tongue}" stroke="${ink}" stroke-width="2.0"/>`
+    : `<path d="M45 92 Q64 97 83 92 Q76 107 64 107 Q52 107 45 92Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
     <path d="M47.5 93.5 Q64 98 80.5 93.5 Q75 99.5 64 99.8 Q53 99.5 47.5 93.5Z" fill="${white}"/>
     <path d="M56 101.5 Q55.5 110.5 64 111.5 Q72.5 110.5 72 101.5 Q64 104.5 56 101.5Z" fill="${tongue}" stroke="${ink}" stroke-width="1.8"/>`;
   if (blink || sleepy || wink) lips = lowerLip(my + 0.5) + seam(my + 0.5, 1.6, 0.8);
