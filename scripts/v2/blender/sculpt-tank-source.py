@@ -208,18 +208,24 @@ def nose_push(nx: float, nz: float) -> float:
     `nose: 'dot'` in the roster — so the bridge is nearly absent and almost all
     of the relief is in the tip.
     """
+    # ★ ROUND 4: IT WAS AT THE WRONG LATITUDE. Authored at nz -0.62, which is
+    # z 3.118 — below the mouth's own 3.00-3.02 band and nowhere near the
+    # measured feature line. His nose belongs between the eyes (z 3.40) and the
+    # mouth, at z ~3.20, i.e. nz -0.471. The profile board showed the
+    # consequence as an absence: rubric 3.5's 5/5 asks for "a real nose breaks
+    # the profile" and the silhouette ran unbroken from brow to lip.
     if abs(nx) > 0.26:
         return 0.0
-    dz = nz + 0.62
+    dz = nz + 0.471
     if dz < -0.16 or dz > 0.18:
         return 0.0
     across = 1.0 - (nx / 0.26) ** 2
     # bridge: a low ridge running up from the tip, barely there on a button nose
-    bridge = 0.012 * across * max(0.0, 1.0 - abs(dz - 0.10) / 0.12)
+    bridge = 0.016 * across * max(0.0, 1.0 - abs(dz - 0.10) / 0.12)
     # tip: the rounded ball that carries the form
-    tip = 0.040 * across ** 0.7 * max(0.0, 1.0 - (dz / 0.11) ** 2) ** 0.8
+    tip = 0.058 * across ** 0.7 * max(0.0, 1.0 - (dz / 0.11) ** 2) ** 0.8
     # nostril shelf: the underside, which is what breaks the profile silhouette
-    shelf = 0.014 * across * max(0.0, 1.0 - abs(dz + 0.13) / 0.06)
+    shelf = 0.019 * across * max(0.0, 1.0 - abs(dz + 0.13) / 0.06)
     return bridge + tip + shelf
 
 
@@ -322,8 +328,8 @@ TORSO_LEVELS = [
     (2.200, 0.556, 0.452, "Spine1"),
     (2.400, 0.522, 0.412, "Spine1"),  # chest
     (2.560, 0.470, 0.366, "Spine2"),
-    (2.680, 0.404, 0.310, "Spine2"),  # shoulder slope
-    (2.760, 0.330, 0.256, "Spine2"),
+    (2.640, 0.418, 0.318, "Spine2"),  # shoulder slope
+    (2.740, 0.336, 0.258, "Spine2"),
     (2.800, 0.250, 0.204, "Spine2"),  # collar
 ]
 
@@ -345,62 +351,69 @@ NECK_LEVELS = [
 # The sleeve hem sits at z 1.85 (see the torso block). Above it the arm is tee;
 # below it, bare skin to the hand. The shoulder is at z 2.52, x 0.44 — inboard
 # of the sleeve's outer edge because the sleeve flares away from the joint.
-ARM_SHOULDER = (0.402, 2.520)
-ARM_ELBOW = (0.560, 1.870)
-ARM_WRIST = (0.606, 1.420)
-ARM_HAND = (0.752, 1.300)
-SLEEVE_HEM_Z = 1.850
+# --- Arms ----------------------------------------------------------------------
+#
+# ★ THE RIG IS A T-POSE, AND ROUND 4 BUILT THE ARMS HANGING DOWN.
+#
+# The canonical bones run STRAIGHT OUT SIDEWAYS: LeftArm at x -0.400, LeftForeArm
+# at -0.918 and LeftHand at -1.365, all at z 2.471. Rounds 1-4 authored the arm
+# as a limb falling from the shoulder to the hip, so every forearm vertex sat
+# about two feet from the bone that drives it. Junebug's own LeftHand vertices
+# measure x -1.618..-1.312, wrapped around her bone at -1.365; Tank's measured
+# +0.654..+0.850.
+#
+# ⚠️ AND THE SIDES WERE MIRRORED. Left bones live at NEGATIVE x, so a `side` of
+# +1 is the RIGHT side. Rounds 1-4 named the +x arm "Left", which is invisible in
+# any symmetric pose and drives the wrong limb the moment a clip is asymmetric.
+#
+# ★ NEITHER SHOWED UP IN A SINGLE MEASURED METRIC. All eight of
+# `measure:fidelity`'s numbers were inside tolerance with the arms on the wrong
+# side of the body and two feet from their bones, because the board renders one
+# posed view and the metrics read that render. The playbook says it in words —
+# "reject a technically valid model that only works in the bind pose" — and this
+# is what it looks like. The runtime run still is what showed it.
+ARM_SHOULDER_X = 0.400
+ARM_ELBOW_X = 0.918
+ARM_WRIST_X = 1.365
+ARM_Z = 2.471
+SLEEVE_HEM_X = 0.760
+
+
+def limb_bone(name: str, side: int) -> str:
+    """Left bones are at NEGATIVE x, so side -1 is the left side."""
+    return f"Left{name}" if side < 0 else f"Right{name}"
 
 
 def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
-    """One stitched arm: sleeve, bare forearm and a mitten hand.
+    """One stitched arm along the rig's own axis: sleeve, bare forearm, mitten.
 
     ★ ONE SURFACE, NOT THREE. The sleeve does not end and the arm begin — the
     same tube changes vertex colour at the hem. `sculptlib.mesh`'s `grid`
     docstring records why: a garment built as its own shell butted against the
-    limb z-fights into the torn-paper edges Junebug's round-1 board showed, and
-    the cure is one surface rather than better painting.
+    limb z-fights into the torn-paper edges Junebug's round-1 board showed.
     """
     sides = 10 if detail >= 2 else 6
-    # ★ ROUND 3: THE ARM'S TOP RING WAS AN OPEN HOLE OUTSIDE THE TORSO.
-    #
-    # Round 1 started the arm at x 0.402, z 2.520 with a radius of 0.150, which
-    # puts its top ring at x 0.252..0.552 while the tee at that height only
-    # reaches 0.470. `grid` stitches rows and does not cap the ends, so the
-    # board drew the INSIDE of an open tube standing proud of the shoulder — the
-    # dark purple "wings" either side of the neck. Rubric 3.7 is binary about
-    # holes and that is one.
-    #
-    # Two fixes and both are needed: the shoulder ring now starts INSIDE the
-    # torso's own surface, and it is capped with a deltoid dome anyway, because
-    # an end that happens to be hidden is not the same as an end that is closed.
-    # ★ ROUND 3b: AND THEN THEY WERE HIDDEN INSIDE THE TEE. Reattaching the
-    # shoulder fixed the open hole and left the whole arm running at x 0.47-0.58
-    # against a tee whose own half-width is 0.56-0.62 — so the arm was inside
-    # the garment for its entire length and the board drew a poncho with two
-    # hands under it. Measured, his forearms hang at half-width 0.58 to 0.87
-    # (the hue scan's "full span" minus its "tee span" below the sleeve hem), so
-    # the arm belongs OUTSIDE the tee from the sleeve down.
     stations = [
-        (0.360, 2.560, 0.175, SHIRT, "LeftArm"),
-        (0.470, 2.350, 0.174, SHIRT, "LeftArm"),
-        (0.570, 2.100, 0.168, SHIRT, "LeftArm"),
-        (0.640, 1.950, 0.158, SHIRT, "LeftArm"),
-        (0.680, SLEEVE_HEM_Z, 0.152, SHIRT_DARK, "LeftForeArm"),
-        (0.700, 1.790, 0.120, SKIN, "LeftForeArm"),
-        (0.720, 1.640, 0.111, SKIN, "LeftForeArm"),
-        (0.735, 1.500, 0.102, SKIN, "LeftForeArm"),
-        (0.745, ARM_WRIST[1], 0.094, SKIN, "LeftHand"),
+        (0.300, 0.196, SHIRT, "Arm"),
+        (ARM_SHOULDER_X, 0.190, SHIRT, "Arm"),
+        (0.560, 0.178, SHIRT, "Arm"),
+        (SLEEVE_HEM_X, 0.168, SHIRT_DARK, "Arm"),
+        (0.830, 0.126, SKIN, "ForeArm"),
+        (ARM_ELBOW_X, 0.120, SKIN, "ForeArm"),
+        (1.080, 0.112, SKIN, "ForeArm"),
+        (1.240, 0.104, SKIN, "ForeArm"),
+        (ARM_WRIST_X, 0.098, SKIN, "Hand"),
     ]
     rows: list[list[int]] = []
-    for x, z, radius, colour, bone in stations:
-        bone_name = bone if side > 0 else bone.replace("Left", "Right")
+    for x, radius, colour, bone in stations:
+        bone_name = limb_bone(bone, side)
         row = []
         for index in range(sides):
             theta = 2 * pi * index / sides
+            # Rings in the YZ plane, because the limb's axis is X.
             row.append(
                 builder.vertex(
-                    (x * side + radius * cos(theta) * 0.92, radius * sin(theta), z),
+                    (x * side, radius * sin(theta), ARM_Z + radius * cos(theta) * 0.94),
                     colour,
                     bone_name,
                     (0.75, 0.25),
@@ -409,24 +422,12 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
         rows.append(row)
     builder.grid(rows, 1, flip=side < 0)
 
-    # The deltoid: a dome over the shoulder ring so the arm reads as a rounded
-    # form joining the torso rather than a cylinder pushed into it. Rubric 3.11
-    # asks for exactly this — "the shoulder stays a round deltoid form when the
-    # arm drops from bind pose".
-    shoulder_bone = "LeftArm" if side > 0 else "RightArm"
-    cap = builder.vertex((0.360 * side, 0.0, 2.560 + 0.120), SHIRT, shoulder_bone, (0.75, 0.25))
-    for index in range(sides):
-        nxt = (index + 1) % sides
-        face = (cap, rows[0][index], rows[0][nxt]) if side > 0 else (cap, rows[0][nxt], rows[0][index])
-        builder.face(face, 1)
-
-    # The hand is a mitten: a fat palm with a thumb notch, never fingers. At the
-    # 40px field read a five-fingered hand is one blob, and the notch is the
-    # only part of it that survives — the spike harvest records the same finding.
-    hand_bone = "LeftHand" if side > 0 else "RightHand"
+    # The mitten hand: a fat palm with a thumb and an index nub. At the 40px
+    # field read a five-fingered hand is one blob and only the notch survives.
+    hand_bone = limb_bone("Hand", side)
     builder.ellipsoid(
-        (ARM_HAND[0] * side, 0.012, ARM_HAND[1]),
-        (0.098, 0.078, 0.118),
+        ((ARM_WRIST_X + 0.115) * side, 0.010, ARM_Z),
+        (0.118, 0.082, 0.104),
         0,
         SKIN,
         hand_bone,
@@ -434,25 +435,15 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
         6 if detail >= 2 else 4,
     )
     if detail >= 1:
-        thumb_bone = "LeftHandThumb1" if side > 0 else "RightHandThumb1"
         builder.ellipsoid(
-            ((ARM_HAND[0] - 0.052) * side, 0.062, ARM_HAND[1] + 0.030),
-            (0.040, 0.048, 0.040),
-            0,
-            SKIN,
-            thumb_bone,
-            6,
-            4,
+            ((ARM_WRIST_X + 0.070) * side, 0.072, ARM_Z - 0.030),
+            (0.048, 0.046, 0.044),
+            0, SKIN, limb_bone("HandThumb1", side), 6, 4,
         )
-        index_bone = "LeftHandIndex1" if side > 0 else "RightHandIndex1"
         builder.ellipsoid(
-            ((ARM_HAND[0] + 0.018) * side, -0.010, ARM_HAND[1] - 0.086),
-            (0.062, 0.058, 0.052),
-            0,
-            SKIN,
-            index_bone,
-            6,
-            4,
+            ((ARM_WRIST_X + 0.212) * side, 0.008, ARM_Z - 0.014),
+            (0.062, 0.058, 0.056),
+            0, SKIN, limb_bone("HandIndex1", side), 6, 4,
         )
 
 
@@ -462,10 +453,18 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
 # no bare leg on the front view — his shorts are long and his socks are high,
 # which between them is why the concept's ankle daylight reads 0.636ft at
 # z 0.006 and essentially nothing above it.
-LEG_HIP_X = 0.150
-LEG_HIP_Z = 1.180
-LEG_ANKLE_Z = 0.180
-LEG_SPLAY = 0.1184   # feet outboard per foot of drop — the rig's own stance
+# ★ THE LEG FOLLOWS THE BONE CHAIN, NOT A GUESSED SPLAY. The canonical bones are
+# LeftUpLeg (-0.200, z 1.600), LeftLeg (-0.292, z 0.824) and LeftFoot (-0.378,
+# z 0.095) — the stance is already in the rig, measured across the roster's
+# concept art (`render.leg-stance`). Rounds 1-3 invented a hip separation and
+# then TUNED it against the ankle-daylight metric, which moved the mesh off its
+# own bones to make a number in a bind-pose render come out right.
+LEG_HIP_X = 0.200
+LEG_HIP_Z = 1.600
+LEG_KNEE_X = 0.292
+LEG_KNEE_Z = 0.824
+LEG_ANKLE_X = 0.378
+LEG_ANKLE_Z = 0.095
 # ★ ROUND 2: HIS LEGS STAND TOO FAR APART. The concept measures ZERO ankle
 # daylight at the metric's own sample height and round 1 delivered 31.5%. The
 # splay is NOT the thing to change — it is the canonical rig's stance
@@ -479,28 +478,37 @@ SOCK_TOP_Z = 0.640
 
 
 def leg_x(z: float) -> float:
-    """Lateral centre of a leg at height `z`, following the rig's splay."""
-    return LEG_HIP_X + (LEG_HIP_Z - z) * LEG_SPLAY
+    """Lateral centre of a leg at height `z`, interpolated along the bone chain."""
+    if z >= LEG_HIP_Z:
+        return LEG_HIP_X
+    if z >= LEG_KNEE_Z:
+        t = (LEG_HIP_Z - z) / (LEG_HIP_Z - LEG_KNEE_Z)
+        return LEG_HIP_X + (LEG_KNEE_X - LEG_HIP_X) * t
+    if z >= LEG_ANKLE_Z:
+        t = (LEG_KNEE_Z - z) / (LEG_KNEE_Z - LEG_ANKLE_Z)
+        return LEG_KNEE_X + (LEG_ANKLE_X - LEG_KNEE_X) * t
+    return LEG_ANKLE_X
 
 
 def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
     """Shorts, bare shin and sock as one stitched surface."""
     sides = 10 if detail >= 2 else 6
     stations = [
-        (1.180, 0.232, PANTS, "LeftUpLeg"),
-        (1.000, 0.238, PANTS, "LeftUpLeg"),
-        (0.860, 0.236, PANTS, "LeftUpLeg"),
-        (SHORTS_HEM_Z, 0.228, PANTS_DARK, "LeftLeg"),
-        (0.688, 0.196, SKIN, "LeftLeg"),
-        (SOCK_TOP_Z, 0.186, SKIN, "LeftLeg"),
-        (0.632, 0.190, SOCK, "LeftLeg"),
-        (0.480, 0.176, SOCK, "LeftLeg"),
-        (0.330, 0.162, SOCK, "LeftLeg"),
-        (LEG_ANKLE_Z, 0.150, SOCK, "LeftFoot"),
+        (1.600, 0.244, PANTS, "UpLeg"),
+        (1.360, 0.248, PANTS, "UpLeg"),
+        (1.100, 0.244, PANTS, "UpLeg"),
+        (0.900, 0.234, PANTS, "UpLeg"),
+        (SHORTS_HEM_Z, 0.226, PANTS_DARK, "Leg"),
+        (0.688, 0.194, SKIN, "Leg"),
+        (SOCK_TOP_Z, 0.186, SKIN, "Leg"),
+        (0.632, 0.190, SOCK, "Leg"),
+        (0.460, 0.176, SOCK, "Leg"),
+        (0.300, 0.160, SOCK, "Leg"),
+        (0.150, 0.148, SOCK, "Foot"),
     ]
     rows: list[list[int]] = []
     for z, radius, colour, bone in stations:
-        bone_name = bone if side > 0 else bone.replace("Left", "Right")
+        bone_name = limb_bone(bone, side)
         cx = leg_x(z) * side
         row = []
         for index in range(sides):
@@ -515,9 +523,7 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
             )
         rows.append(row)
     builder.grid(rows, 1, flip=side < 0)
-    top = builder.vertex(
-        (leg_x(1.180) * side, 0.0, 1.180), PANTS, "LeftUpLeg" if side > 0 else "RightUpLeg"
-    )
+    top = builder.vertex((leg_x(1.600) * side, 0.0, 1.600), PANTS, limb_bone("UpLeg", side))
     for index in range(sides):
         nxt = (index + 1) % sides
         face = (top, rows[0][index], rows[0][nxt]) if side > 0 else (top, rows[0][nxt], rows[0][index])
@@ -536,7 +542,7 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
 # Measured off the profile view: the foot spans 1.20ft front to back at z 0.15,
 # and the toe reaches 0.62ft ahead of the ankle.
 SHOE_FLOOR = 0.006
-SHOE_TOE_OUT = 27.0 * pi / 180.0
+SHOE_TOE_OUT = 21.0 * pi / 180.0
 # ★ ROUND 2: THE SHOE WAS BUILT INSIDE OUT, and it is the same mistake round 3
 # made on Junebug from the other direction. Her verdict asserted a shoe "white
 # with a red toe cap" that nobody had measured, and the sculptor inverted a shoe
@@ -595,7 +601,7 @@ def shoe_place(side: int, y: float, x_off: float, z: float) -> tuple[float, floa
 def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     sides = 10 if detail >= 2 else 6
     rows: list[list[int]] = []
-    bone = "LeftToeBase" if side > 0 else "RightToeBase"
+    bone = limb_bone("ToeBase", side)
     for y, half, ztop, colour in SHOE_STATIONS:
         row = []
         for index in range(sides):
@@ -617,21 +623,37 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             c, sn = cos(theta), sin(theta)
             x_off = half * (1.0 if c >= 0 else -1.0) * abs(c) ** 0.70
             span = ztop - SHOE_FLOOR
-            shaped = (1.0 if sn >= 0 else -1.0) * abs(sn) ** 0.55
+            shaped = (1.0 if sn >= 0 else -1.0) * abs(sn) ** 0.40
             z = SHOE_FLOOR + span * (0.5 + 0.5 * shaped)
-            row.append(builder.vertex(shoe_place(side, y, x_off, z), colour, bone, (0.75, 0.25)))
+            # ★ THE MIDSOLE IS A BAND, NOT A SECOND SHELL. Rubric 3.4 asks for
+            # garments that read as CONSTRUCTED — soles, cuffs, hems — and the
+            # round-3 board showed a shoe that was one uninterrupted wash of
+            # cream with no sole line at all. Painting the band as rows of the
+            # SAME surface is the `grid` rule again: a separate sole slab would
+            # meet the upper on an intersection curve and crease.
+            band = WHITE if z < SHOE_FLOOR + 0.072 else colour
+            row.append(builder.vertex(shoe_place(side, y, x_off, z), band, bone, (0.75, 0.25)))
         rows.append(row)
-    builder.grid(rows, 3, flip=side < 0)
+    # ★ MATERIAL 1, NOT 3. Round 4 built the whole shoe on M_Accessory, which
+    # is the DECLARED TEAM-ACCENT surface — so the drafting team's colour
+    # multiplied over the entire sneaker and the in-game hero rendered it
+    # bright yellow against a cream board. Rubric 2.3 is explicit: team colour
+    # is confined to the accent surface and everything else is identity.
+    #
+    # Nothing caught it because both renders were honest. The fidelity board
+    # draws the untinted GLB and looked right; only `/v2/?anims=1`, which
+    # applies a team, could show it. That is what the runtime hero still is FOR.
+    builder.grid(rows, 1, flip=side < 0)
 
     # Cap both ends so the upper is closed — rubric 3.7 is binary about holes.
-    heel = builder.vertex(shoe_place(side, -0.455, 0.0, 0.130), SOLE, bone, (0.75, 0.25))  # navy heel counter
-    toe = builder.vertex(shoe_place(side, 0.800, 0.0, 0.052), SOLE, bone, (0.75, 0.25))
+    heel = builder.vertex(shoe_place(side, 0.455, 0.0, 0.130), SOLE, bone, (0.75, 0.25))  # navy heel counter
+    toe = builder.vertex(shoe_place(side, -0.800, 0.0, 0.052), SOLE, bone, (0.75, 0.25))
     for index in range(sides):
         nxt = (index + 1) % sides
         a = (heel, rows[0][nxt], rows[0][index])
         b = (toe, rows[-1][index], rows[-1][nxt])
-        builder.face(a if side > 0 else (a[0], a[2], a[1]), 3)
-        builder.face(b if side > 0 else (b[0], b[2], b[1]), 3)
+        builder.face(a if side > 0 else (a[0], a[2], a[1]), 1)
+        builder.face(b if side > 0 else (b[0], b[2], b[1]), 1)
 
     # The collar band is the declared team-accent surface — see TEAM_MASK.
     if detail >= 1:
@@ -640,7 +662,7 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             theta = 2 * pi * index / sides
             band.append(
                 builder.vertex(
-                    shoe_place(side, -0.250, 0.206 * cos(theta), 0.302 + 0.032 * sin(theta)),
+                    shoe_place(side, 0.250, 0.206 * cos(theta), 0.302 + 0.032 * sin(theta)),
                     TEAM_MASK,
                     bone,
                     (0.75, 0.25),
@@ -651,7 +673,7 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             theta = 2 * pi * index / sides
             rim.append(
                 builder.vertex(
-                    shoe_place(side, -0.250, 0.182 * cos(theta), 0.336 + 0.028 * sin(theta)),
+                    shoe_place(side, 0.250, 0.182 * cos(theta), 0.336 + 0.028 * sin(theta)),
                     TEAM_MASK,
                     bone,
                     (0.75, 0.25),

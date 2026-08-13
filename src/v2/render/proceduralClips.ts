@@ -1102,8 +1102,22 @@ function louUpsetGoofy(spec: ClipSpec): AnimationClip {
 // Tank spends as little motion as possible, then commits the whole low, wide
 // frame. Slow anticipations and heavy settles carry power without aggression.
 
+// ★ HIS SLOUCH USED TO HIDE HIS FACE. The pose pitched hips 12, spine 8 and
+// spine2 11 — 31 degrees of cumulative forward lean, against Junebug's -7 — and
+// at that angle the review camera sees the top of his head. Rubric 3.14 is
+// scored from the four `tank-runtime-face-*.png` stills and every one of them
+// was a photograph of his scalp; 3.5 and 6.1 ask the same question at hero and
+// draft-card size.
+//
+// This is the round-7 finding on Junebug repeating with a different cause: a
+// SIGNATURE idle authored to carry personality, breaking a rubric item that no
+// measured metric watches. Her fix removed an 8-degree leg roll from all five
+// idles; this one keeps the slouch and halves it. 14 degrees still reads as
+// heavy and relaxed — the direction is "power outside, snacky calm inside", and
+// the anti-caricature note says sleepy must not become dim — while leaving the
+// face where a camera at chest height can see it. The knees keep their bend.
 const TANK_IDLE_POSE: Pose = {
-  hp: [12, 0, 0], sp: [8, 0, 0], s2: [11, 0, 0], hd: [4, 3, 0],
+  hp: [6, 0, 0], sp: [3, 0, 0], s2: [5, 0, 0], hd: [-4, 3, 0],
   la: [12, 0, 72], lf: [0, -12, 0], ra: [12, 0, -72], rf: [0, 12, 0],
   lu: [12, 0, 0], ll: [-18, 0, 0], ru: [12, 0, 0], rl: [-18, 0, 0],
 };

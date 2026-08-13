@@ -58,6 +58,85 @@ function sha(path) {
   return createHash('sha256').update(readFileSync(path)).digest('hex');
 }
 
+
+// ---------------------------------------------------------------------------
+// ★ A VERTEX MUST BE WEIGHTED TO A BONE THAT IS ACTUALLY NEAR IT.
+//
+// Tank shipped a mesh whose arms hung at his sides while the canonical rig is a
+// T-POSE — LeftForeArm at x -0.918, LeftHand at -1.365, both at z 2.471 — and
+// whose left and right were MIRRORED, because the left bones live at negative x
+// and the sculpt called +x "Left". Every forearm vertex was about two feet from
+// the bone driving it and on the wrong side of the body.
+//
+// ⚠️ ALL EIGHT `measure:fidelity` METRICS WERE GREEN WHILE THAT WAS TRUE, and so
+// was `validate:models` (38/38), and so was the fidelity board. Every one of
+// them reads the BIND POSE, where a mesh sitting far from its bones looks
+// exactly like a mesh sitting on them. The playbook says "reject a technically
+// valid model that only works in the bind pose"; this is that sentence with
+// teeth. It only became visible in the runtime run still, where the arms swung
+// like planks about pivots outside themselves — `render.legStance`'s failure
+// mode, arrived at from a different direction.
+//
+// The check is a RANK, not a distance, because distance cannot separate them: a
+// skull legitimately sits 1.3ft above the Head bone, further than a misbound
+// forearm sits from its own. But a correctly bound vertex is always near the
+// TOP of the list of bones sorted by distance. Measured over the delivered
+// roster: Junebug 5, Tank after the fix 6, Theo 9, Big Lou 8, Mimi 10 — and
+// Tank before the fix 31.
+//
+// `Root` is exempt: Zoom's wheelchair is geometry legitimately parented to it
+// and ranks 28 for that reason, which is a prop, not a misbinding.
+// ---------------------------------------------------------------------------
+const MAX_BONE_RANK = 12;
+
+function boneRestPositions(gltf) {
+  const world = new Map();
+  const walk = (index, px, py, pz) => {
+    const node = gltf.json.nodes[index];
+    const t = node.translation ?? [0, 0, 0];
+    const x = px + t[0], y = py + t[1], z = pz + t[2];
+    world.set(index, [x, y, z]);
+    for (const child of node.children ?? []) walk(child, x, y, z);
+  };
+  for (const root of gltf.json.scenes?.[0]?.nodes ?? []) walk(root, 0, 0, 0);
+  return world;
+}
+
+/** The worst rank, by rest-distance, of any vertex's dominant bone. */
+function worstDominantBoneRank(gltf) {
+  const skin = gltf.json.skins?.[0];
+  if (!skin) return { rank: 0, bone: null };
+  const rest = boneRestPositions(gltf);
+  const points = skin.joints.map((j) => rest.get(j));
+  let worst = 0, bone = null;
+  for (const mesh of gltf.json.meshes ?? []) {
+    if (!mesh.name?.includes('LOD0')) continue;
+    for (const primitive of mesh.primitives ?? []) {
+      const positions = primitive.attributes?.POSITION;
+      const jointsAttr = primitive.attributes?.JOINTS_0;
+      const weightsAttr = primitive.attributes?.WEIGHTS_0;
+      if (positions === undefined || jointsAttr === undefined || weightsAttr === undefined) continue;
+      const P = readAccessor(gltf, positions);
+      const J = readAccessor(gltf, jointsAttr);
+      const W = readAccessor(gltf, weightsAttr);
+      for (let v = 0; v < J.length / 4; v++) {
+        let best = -1, bestWeight = 0;
+        for (let k = 0; k < 4; k++) if (W[v * 4 + k] > bestWeight) { bestWeight = W[v * 4 + k]; best = J[v * 4 + k]; }
+        if (best < 0) continue;
+        const name = gltf.json.nodes[skin.joints[best]]?.name;
+        if (name === 'Root') continue;
+        const p = [P[v * 3], P[v * 3 + 1], P[v * 3 + 2]];
+        const distance = (q) => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
+        const mine = distance(points[best]);
+        let rank = 0;
+        for (let i = 0; i < points.length; i++) if (points[i] && distance(points[i]) < mine) rank++;
+        if (rank > worst) { worst = rank; bone = name; }
+      }
+    }
+  }
+  return { rank: worst, bone };
+}
+
 function stateErrors(production, reviews) {
   const errors = [];
   const expectedCategories = reviews.categories ?? [];
@@ -150,6 +229,14 @@ function stateErrors(production, reviews) {
       const authored = gltf.json.asset?.extras?.recessAuthoring;
       if (authored?.sourceSha256 !== record.sourceSha256 || authored?.conceptSha256 !== record.conceptSha256) {
         errors.push(`${id}: GLB provenance differs from its receipt`);
+      }
+      const bound = worstDominantBoneRank(gltf);
+      if (bound.rank > MAX_BONE_RANK) {
+        errors.push(
+          `${id}: mesh is not bound to the rig it ships with — a vertex's dominant bone ` +
+          `(${bound.bone}) is only the ${bound.rank}th nearest. Check the arms against the ` +
+          'T-pose and that Left bones are at NEGATIVE x.',
+        );
       }
       // ★ THESE ARE FINISHED-CHARACTER RULES, NOT JUNEBUG FACTS.
       //
