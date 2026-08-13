@@ -87,9 +87,9 @@ SHIRT = rgba("6A4682")
 SHIRT_DARK = rgba("523464")
 PANTS = rgba("24242B")
 PANTS_DARK = rgba("121116")
-SHOE = rgba("444C53")
-SOCK = rgba("FFFCF7")  # same ramp correction as SOLE
-WHITE = rgba("FFFFFF")
+SHOE = rgba("2E4E86")  # navy with real blue in it, not a neutral dark
+SOCK = rgba("FFE0B4")  # same ramp correction as SOLE
+WHITE = rgba("FFE8C4")  # the midsole: warm, not paper
 # ★ ROUND 3: AUTHORED WARMER THAN THE CONCEPT, ON PURPOSE. Sampled #F1E4D4 off
 # the turnaround, the first board rendered his shoe #AAA49D — the right value
 # family and no warmth at all, and only 42.4% of the band classified as the
@@ -98,7 +98,17 @@ WHITE = rgba("FFFFFF")
 # and compresses chroma toward neutral, so a cream that SURVIVES it has to be
 # authored with roughly 1.3x the concept's channel spread. FFE9CE is the value
 # that was solved for and proved on her board.
-SOLE = rgba("FFFCF5")
+# ★ ROUND 14: BRIGHTENED ALL THE WAY TO GREY, CHASING A METRIC THAT COULD NOT
+# SEE IT. Rounds 5-8 lifted this swatch step by step because each step moved the
+# shoe band's tone SPLIT toward the concept — and a split is a ratio between two
+# centroids, which near-white satisfies as happily as cream. The delivered band
+# measured 1.36% saturation against the concept's 21.5%, i.e. no cream and no
+# navy at all, while both split metrics read "ok". `measure:fidelity` now
+# reports chroma as its own number so that cannot happen again.
+#
+# Back to a cream with chroma in it. FFE9CE is the value solved on Junebug's
+# board for exactly this ramp.
+SOLE = rgba("FFDCA8")
 # The one surface the drafting team's colour tints. Tank's kit is a plain tee
 # with no piping, so the accent goes on the shoe's collar band — the only
 # element the concept draws as a separate trim, and it reads at 40px because it
@@ -473,6 +483,24 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
         (1.080, 0.112, SKIN, "ForeArm"),
         (1.240, 0.104, SKIN, "ForeArm"),
         (ARM_WRIST_X, 0.098, SKIN, "Hand"),
+        # ★ THE HAND IS PART OF THE ARM, NOT A BALL RESTING ON IT.
+        #
+        # It was a separate ellipsoid centred past the wrist, and it TOUCHED the
+        # forearm over eight scanlines of a thirty-pixel wrist — a tangency, not
+        # a weld. Rotate forty degrees and the studio background shows straight
+        # through the join (#595959 against a #575757 backdrop, both arms), which
+        # fails 3.7 outright and is the defect most visible at hero scale. It
+        # also fails 3.11: a flat-capped cylinder with a ball beside it is the
+        # "stiff hinged cylinder" that item names.
+        #
+        # Continuing the same station list through the wrist into a mitten makes
+        # it one surface, so there is no join to open. The palm swells, the
+        # knuckle line is the widest ring, and the tip closes.
+        (1.418, 0.108, SKIN, "Hand"),
+        (1.474, 0.126, SKIN, "Hand"),
+        (1.530, 0.132, SKIN, "Hand"),
+        (1.586, 0.120, SKIN, "Hand"),
+        (1.628, 0.082, SKIN, "Hand"),
     ]
     if detail < 1:
         stations = [station for index, station in enumerate(stations) if index % 2 == 0 or index == len(stations) - 1]
@@ -506,37 +534,22 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
         face = (cap, rows[0][nxt], rows[0][index]) if side > 0 else (cap, rows[0][index], rows[0][nxt])
         builder.face(face, 1)
 
-    # ★ AND THE FAR END IS CAPPED TOO. `grid` closes neither end, so capping
-    # only the shoulder left the wrist ring open — hidden inside the hand, but
-    # an open shell all the same, and the review counted 88 boundary edges over
-    # six of them. A hole that happens to be covered is still a hole; the ear,
-    # the arm and the leg all get their far end closed.
-    wrist_cap = builder.vertex((ARM_WRIST_X * side, 0.0, ARM_Z), SKIN, limb_bone("Hand", side), (0.75, 0.25))
+    # The tip closes the mitten. The wrist no longer needs a cap because the
+    # tube never ends there any more.
+    tip = builder.vertex((1.664 * side, 0.0, ARM_Z), SKIN, limb_bone("Hand", side), (0.75, 0.25))
     for index in range(sides):
         nxt = (index + 1) % sides
-        face = (wrist_cap, rows[-1][index], rows[-1][nxt]) if side > 0 else (wrist_cap, rows[-1][nxt], rows[-1][index])
+        face = (tip, rows[-1][index], rows[-1][nxt]) if side > 0 else (tip, rows[-1][nxt], rows[-1][index])
         builder.face(face, 1)
 
-    # The mitten hand: a fat palm with a thumb and an index nub. At the 40px
-    # field read a five-fingered hand is one blob and only the notch survives.
-    hand_bone = limb_bone("Hand", side)
-    builder.ellipsoid(
-        ((ARM_WRIST_X + 0.115) * side, 0.010, ARM_Z),
-        (0.118, 0.082, 0.104),
-        0,
-        SKIN,
-        hand_bone,
-        10 if detail >= 2 else 6,
-        6 if detail >= 2 else 4,
-    )
     if detail >= 1:
         builder.ellipsoid(
-            ((ARM_WRIST_X + 0.070) * side, 0.072, ARM_Z - 0.030),
+            (1.500 * side, 0.104, ARM_Z - 0.026),
             (0.048, 0.046, 0.044),
             0, SKIN, limb_bone("HandThumb1", side), 6, 4,
         )
         builder.ellipsoid(
-            ((ARM_WRIST_X + 0.212) * side, 0.008, ARM_Z - 0.014),
+            (1.612 * side, 0.030, ARM_Z - 0.052),
             (0.062, 0.058, 0.056),
             0, SKIN, limb_bone("HandIndex1", side), 6, 4,
         )
@@ -609,11 +622,24 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
         # is BAGGY above it, so the section carries its own depth factor.
         #
         # (z, half-width, depth factor, colour, bone) — strictly descending in z.
-        (1.600, 0.244, 1.86, PANTS, "UpLeg"),
-        (1.360, 0.248, 1.90, PANTS, "UpLeg"),
-        (1.100, 0.244, 1.86, PANTS, "UpLeg"),
-        (0.900, 0.234, 1.72, PANTS, "UpLeg"),
-        (SHORTS_HEM_Z, 0.226, 1.48, PANTS_DARK, "Leg"),   # hem, z 0.694
+        # ★ THE DEPTH FIX LANDED AND THE WIDTH DID NOT. Round 13 gave the shorts
+        # a depth factor and the profile came right (23.5%H against the
+        # concept's 22.8%), but the front view still measured 22.5-24.3%H across
+        # the pair where the concept runs 30.4-32.6% — about eight points of
+        # figure height missing, which is most of what "chunky" looks like from
+        # the front. The half-widths grow and the depth factor drops to keep the
+        # absolute depth the profile already agreed with.
+        # ⚠️ AND THE WIDTH ONLY BELONGS WHERE THE SHORTS ARE SEEN. Widening the
+        # whole leg pushed the upper rings THROUGH the tee — the board drew
+        # jagged dark spikes along the hem where the two surfaces intersect,
+        # which is worse than the narrow shorts were. Above the tee's hem
+        # (z 1.07) the shorts are hidden, so they stay inside it there and take
+        # their width in the band the concept actually measures.
+        (1.600, 0.250, 1.20, PANTS, "UpLeg"),
+        (1.360, 0.264, 1.26, PANTS, "UpLeg"),
+        (1.100, 0.298, 1.32, PANTS, "UpLeg"),
+        (0.900, 0.352, 1.24, PANTS, "UpLeg"),
+        (SHORTS_HEM_Z, 0.332, 1.10, PANTS_DARK, "Leg"),   # hem, z 0.694
         (0.680, 0.196, 0.98, SKIN, "Leg"),                # bare shin begins
         (0.520, 0.190, 0.96, SKIN, "Leg"),
         (SOCK_TOP_Z + 0.012, 0.186, 0.95, SKIN, "Leg"),   # z 0.426

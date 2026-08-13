@@ -264,6 +264,30 @@ function bandPalette(f, fromFrac, toFrac) {
   return { primary, secondary };
 }
 
+/**
+ * ★ A SPLIT CAN BE SATISFIED BY GREY, and it was.
+ *
+ * `bandSplit` asks which of two centroids each pixel is NEARER to, and near-white
+ * shading is nearer to a cream centroid than to a navy one — so a shoe with no
+ * chroma at all reported 59.1% "cream" and 19.2% "navy" against a concept's
+ * 61.8/26.2 and passed both metrics. An independent review measured the same
+ * delivered band at 1.1% saturation against the concept cream's 12.3% and found
+ * literally zero cream and zero navy pixels in it.
+ *
+ * The failure was self-inflicted in the worst way: the cream was brightened
+ * toward white over several rounds precisely BECAUSE that moved the split, and
+ * the metric rewarded each step. A ratio between two colours cannot notice that
+ * both colours have drained.
+ *
+ * So the band also reports its own CHROMA against the concept's. It is a
+ * separate question from the split and it is the one that catches this.
+ */
+function bandSaturation(f, fromFrac, toFrac) {
+  let total = 0, n = 0;
+  eachBandPixel(f, fromFrac, toFrac, (c) => { total += sat(c); n++; });
+  return n ? (100 * total) / n : 0;
+}
+
 /** The share of a band belonging to each of the concept's two declared tones. */
 function bandSplit(f, fromFrac, toFrac, palette) {
   if (!palette) return { primary: 0, secondary: 0 };
@@ -331,6 +355,7 @@ function metricsFor(f, palette) {
     headAspect: head.pinchFound ? head.width / head.height : null,
     shoePrimaryPct: shoes.primary,
     shoeSecondaryPct: shoes.secondary,
+    shoeChromaPct: bandSaturation(f, 0, 0.09),
     ankleDaylightPct: ankleDaylight(f),
     faceSkinLeftPct: face.left,
     faceSkinRightPct: face.right,
@@ -344,6 +369,7 @@ const CHECKS = [
   ['headAspect', 0.08, 'head width : head height'],
   ['shoePrimaryPct', 8.0, "the shoe band's dominant tone, % of the band"],
   ['shoeSecondaryPct', 8.0, "the shoe band's second tone, % of the band"],
+  ['shoeChromaPct', 4.0, "the shoe band's mean saturation (grey cannot pass)"],
   ['ankleDaylightPct', 12.0, 'daylight between the ankles'],
   ['faceSkinLeftPct', 6.0, 'visible face left of centre, % of head width'],
   ['faceSkinRightPct', 6.0, 'visible face right of centre, % of head width'],
