@@ -45,7 +45,20 @@ async function board(id) {
   const profilePath = join(concepts, `${slug}-profile-review.png`);
   const front = await fit(frontPath, 300, 420);
   const profile = await fit(profilePath, 300, 420);
-  const heroName = review.heroEvidence ?? (id === 'mimi_mash' ? 'mimi-mash-runtime-hero.png' : `${slug}-in-game-review.png`);
+  // ★ PREFER THE REGENERATED HERO OVER THE HAND-SHOT ONE.
+  //
+  // `<slug>-in-game-review.png` was captured by hand and nothing refreshes it,
+  // which is exactly the failure `capture-character-evidence.mjs` was written to
+  // end — and it recurred: an independent review found Tank's board compositing
+  // a hero eleven hours older than his GLB, showing a character that no longer
+  // existed. `<slug>-runtime-hero.png` is rewritten on every evidence capture,
+  // so it cannot go stale without the whole board going stale with it.
+  //
+  // Falls back to the hand-shot file for the characters that have no captured
+  // hero yet, so this fixes the ones it can and breaks none of the others.
+  const captured = `${slug}-runtime-hero.png`;
+  const heroName = review.heroEvidence
+    ?? (existsSync(join(concepts, captured)) ? captured : `${slug}-in-game-review.png`);
   const hero = await fit(join(concepts, heroName), 760, 430);
   const animationPaths = (review.animationEvidence ?? []).map((name) => join(concepts, name));
   const animationImages = [];

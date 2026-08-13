@@ -528,6 +528,17 @@ def limb_bone(name: str, side: int) -> str:
     return f"Left{name}" if side < 0 else f"Right{name}"
 
 
+# How much of each inboard arm ring belongs to the TORSO bone. Falls to zero by
+# the time the sleeve clears the body, so nothing outboard of the joint is
+# affected and the hand is untouched.
+SHOULDER_BLEND = {
+    0.215: 0.86,
+    0.298: 0.58,
+    0.330: 0.34,
+    0.400: 0.12,
+}
+
+
 def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
     """One stitched arm along the rig's own axis: sleeve, bare forearm, mitten.
 
@@ -626,6 +637,25 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
     rows: list[list[int]] = []
     for x, radius, colour, bone in stations:
         bone_name = limb_bone(bone, side)
+        # ★ THE SHOULDER RINGS ARE SHARED WITH THE TORSO, AND THAT IS THE WHOLE
+        # FIX FOR THE CRUMPLE.
+        #
+        # Eleven reviews described this corner as butt-joined, bored, bullseyed,
+        # gashed and — once the A-pose board existed to show it under rotation —
+        # "a crumpled accordion of hard-creased shards". Rings, deltoid balls and
+        # station reordering all failed on it, because none of them touched the
+        # cause: every ring of this arm was weighted 100% to the Arm bone,
+        # INCLUDING the ones buried inside the torso. Rotate the arm and those
+        # rings rotate with it, out of a shell that does not follow. There is no
+        # geometry spanning the joint, so the deltoid cannot round — it can only
+        # tear.
+        #
+        # Weight is the thing that spans a joint, not more polygons. The rings
+        # inboard of the shoulder now blend from mostly-Spine2 to all-Arm across
+        # the joint, which is ordinary skinning falloff and what makes a shoulder
+        # deform as one surface.
+        blend = SHOULDER_BLEND.get(round(x, 3))
+        weight = bone_name if blend is None else {"Spine2": blend, bone_name: 1.0 - blend}
         row = []
         for index in range(sides):
             theta = 2 * pi * index / sides
@@ -634,7 +664,7 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
                 builder.vertex(
                     (x * side, radius * sin(theta), ARM_Z + radius * cos(theta) * 0.94),
                     colour,
-                    bone_name,
+                    weight,
                     (0.75, 0.25),
                 )
             )
@@ -647,40 +677,31 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
     # bored through the shirt shell with a floating arm stub inside it". A
     # deltoid dome closes it AND gives 3.11 the round shoulder form it asks for.
     shoulder_bone = limb_bone("Arm", side)
-    cap = builder.vertex((0.170 * side, 0.0, ARM_Z), SHIRT, shoulder_bone, (0.75, 0.25))
+    cap = builder.vertex(
+        (0.170 * side, 0.0, ARM_Z), SHIRT,
+        {"Spine2": 0.94, shoulder_bone: 0.06},   # buried in the chest: it follows the body
+        (0.75, 0.25),
+    )
     for index in range(sides):
         nxt = (index + 1) % sides
         face = (cap, rows[0][nxt], rows[0][index]) if side > 0 else (cap, rows[0][index], rows[0][nxt])
         builder.face(face, 1)
 
-    # ★ A BALL AT THE JOINT, WHICH IS THE ONLY THING THAT SURVIVES ROTATION.
+    # ★ A BALL AT THE JOINT WAS THE WRONG FIX, AND THE RIGHT ONE COST NOTHING.
     #
-    # The sleeve and the torso are two separate shells that overlap. In the bind
-    # pose the overlap hides the join, which is why nine rounds of boards showed
-    # no gap. Rotate the arm down to where the game actually holds it and the
-    # sleeve swings out of the torso, opening a dark notch at the top of the
-    # shoulder — visible the moment the A-pose render existed to show it.
+    # A sphere centred on the joint and weighted to the arm bone does fill the
+    # notch that opens when the arm rotates — it was here for two rounds and it
+    # worked. But it is a second surface laid over a bad join, and it showed:
+    # the next review read it in profile as "a sunken oval plate pressed into
+    # the shirt — a badge or a dent", and it cost 380 triangles out of a 7000
+    # budget that the hand needed.
     #
-    # Widening the sleeve cannot fix that: whatever the overlap, some rotation
-    # exceeds it. A sphere CENTRED ON THE JOINT and weighted to the arm bone
-    # does, and it is the standard answer, because a sphere rotating about its
-    # own centre is visually stationary. It fills the corner at every angle the
-    # rig can reach, at the cost of one primitive per shoulder.
+    # The notch was never a geometry shortage. It was a WEIGHT problem, fixed
+    # above in SHOULDER_BLEND: the rings inboard of the joint belonged entirely
+    # to the arm, so they rotated out of a torso that stayed put. Once they share
+    # the torso bone there is nothing to fill, and both A-pose views came out
+    # smoother WITHOUT the ball than with it.
     #
-    # Gated to detail >= 1: LOD2 has 1200 triangles and the shoe already spends
-    # 40 per ring vertex there. This is a near-LOD read.
-    if detail >= 1:
-        builder.ellipsoid(
-            (ARM_SHOULDER_X * side, 0.0, ARM_Z),
-            (0.286, 0.280, 0.276),
-            # 12x8, not 16x11: the first cut spent 704 triangles on two joint
-            # fillers and pushed LOD0 to 7110 against its 7000 budget. The
-            # export refused it, which is the budget working. This ball is
-            # mostly buried in the torso and only its outboard crown is ever
-            # seen, so the segments were the cheapest thing in the change.
-            1, SHIRT, shoulder_bone, 12, 8,
-        )
-
     # The tip closes the mitten. The wrist no longer needs a cap because the
     # tube never ends there any more.
     # ★ THIS FAN WAS WOUND INWARD, AND IT IS THE HOLE THREE REVIEWS ARGUED ABOUT.
