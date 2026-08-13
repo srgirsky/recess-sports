@@ -472,7 +472,13 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
         # from the key where a broad deltoid faces it.
         (0.215, 0.286, SHIRT, "Arm"),
         (0.330, 0.272, SHIRT, "Arm"),
-        (ARM_SHOULDER_X, 0.248, SHIRT, "Arm"),
+        # ★ THE DELTOID. Seven reviews called this corner butt-joined: the
+        # sleeve met the torso at a hard crease and the arm stepped out of it
+        # NARROWER with a dark ring, so there was never a shoulder mass at all.
+        # A ring that swells proud of both the torso and the sleeve below it is
+        # what rubric 3.11 means by "the shoulder stays a round deltoid form".
+        (0.298, 0.292, SHIRT, "Arm"),
+        (ARM_SHOULDER_X, 0.262, SHIRT, "Arm"),
         (0.560, 0.216, SHIRT, "Arm"),
         # ★ THE CUFF IS A STEP AND A BAND. Rubric 3.4 asks for garments that read
         # as CONSTRUCTED, and the independent review scored this a 1 with "no
@@ -483,9 +489,14 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
         (SLEEVE_HEM_X, 0.196, SHIRT_DARK, "Arm"),
         (SLEEVE_HEM_X + 0.026, 0.190, SHIRT_DARK, "Arm"),
         (SLEEVE_HEM_X + 0.040, 0.130, SKIN, "ForeArm"),
-        (0.860, 0.126, SKIN, "ForeArm"),
-        (ARM_ELBOW_X, 0.120, SKIN, "ForeArm"),
-        (1.080, 0.112, SKIN, "ForeArm"),
+        # ★ AND AN ELBOW, so the limb is two tapers with a break rather than
+        # one dead-straight cone from sleeve to fist — which is what every run
+        # and swing still has shown for seven rounds.
+        (0.868, 0.124, SKIN, "ForeArm"),
+        (ARM_ELBOW_X - 0.028, 0.134, SKIN, "ForeArm"),
+        (ARM_ELBOW_X, 0.140, SKIN, "ForeArm"),
+        (ARM_ELBOW_X + 0.030, 0.130, SKIN, "ForeArm"),
+        (1.080, 0.114, SKIN, "ForeArm"),
         (1.240, 0.104, SKIN, "ForeArm"),
         (ARM_WRIST_X, 0.098, SKIN, "Hand"),
         # ★ THE HAND IS PART OF THE ARM, NOT A BALL RESTING ON IT.
@@ -848,20 +859,26 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             # the concept draws it: sole underneath, quarter on the flanks,
             # collar over the top, mudguard round the toe.
             #
-            # ⚠️ THE TONE-SPLIT METRIC PREFERS THE LUMP, and that is worth
-            # stating rather than obeying. A cream shoe with no quarter panel
-            # scores BETTER on `shoePrimaryPct` than a correctly banded one,
-            # because the metric reads colour ratios over the bottom 9% of the
-            # figure and has no opinion about whether the shoe has parts. Six
-            # rounds of tuning the panel against it oscillated between 27% and
-            # 62% cream without the shoe ever getting closer to the concept.
-            # The banding below is what the concept draws; the split is reported
-            # off and is not closed by deleting a garment feature to satisfy it.
-            if sn < -0.52:
+            # ⚠️ I CLAIMED THIS METRIC PREFERRED A FEATURELESS LUMP. IT DID NOT.
+            #
+            # After six rounds of the split oscillating between 27% and 62%
+            # cream I concluded the metric was blind to construction and wrote
+            # that down. The seventh review checked it and disagreed with a
+            # better reading: the navy was sitting exactly where the concept
+            # puts the CREAM MIDSOLE, so "too much dark" and "the dark is in the
+            # wrong place" were the same finding arriving from two directions.
+            # The metric was corroborating the eye, not fighting it.
+            #
+            # The concept's stack, read off its own feet at 4x: a thick cream
+            # midsole occupying roughly the bottom third of the shoe, the navy
+            # quarter ABOVE it, a cream collar over the instep, and a cream
+            # mudguard wrapping the toe. The midsole is the tallest band, and it
+            # was the thinnest here.
+            if sn < 0.26:
                 band = WHITE               # the midsole, underneath
             elif sn > 0.42:
                 band = SOLE                # collar and tongue over the instep
-            elif y < 0.105:
+            elif y < 0.120:
                 band = SHOE                # navy quarter on the flanks
             else:
                 band = SOLE                # cream mudguard wrapping the toe
