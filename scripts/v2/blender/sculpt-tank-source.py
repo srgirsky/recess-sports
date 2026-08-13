@@ -398,12 +398,27 @@ def torso_levels(detail: int) -> list[tuple[float, float, float, str]]:
 # barely flares at all, against a concept that goes 0.55 to 0.91. That is the
 # entire missing read.
 #
-# ⚠️ AND THE HEM TUCK BELOW z 1.87 IS AUTHORED, NOT TRACED. His hands rest at
-# hip height and hide the tee's edges from there down, so the widest reading is
-# the last honest one. The first cut extrapolated it FLAT and the board came out
-# a keg — 0.80 at the hem against 0.88 at the belly, with no tuck at all. The
-# taper below the belly is therefore a judgement, sized so the tee stays wider
-# than the shorts it covers and comes back in the way the drawing plainly does.
+# ★ AND THE HEM TUCK BELOW z 1.87 IS TRACED TOO — I WAS WRONG THAT IT COULD NOT
+# BE. The first cut called this region untraceable because his hands hide the
+# tee's edges, extrapolated it flat, and shipped a keg. The second cut guessed a
+# taper. Both were unnecessary: his forearms are BARE SKIN below the sleeve, and
+# skin against purple is a colour boundary like any other, so the tee's own edge
+# is readable right up to where the arm crosses it.
+#
+# Scanning the front figure for the tee's purple and his bare arm's skin
+# separately, the concept holds (all in ft from the centreline):
+#
+#   z 1.82   tee 0.781   arm inner 0.822   arm centre 0.854
+#   z 1.70   tee 0.612   arm inner 0.665   arm centre 0.784
+#   z 1.58   tee 0.624   arm inner 0.682   arm centre 0.793
+#   z 1.46   tee 0.618   arm inner 0.641   arm centre 0.778
+#
+# So the tee narrows HARD below the belly — 0.869 at z 1.87 to about 0.62 by
+# z 1.70 — and the arm hangs immediately outboard of it with barely any gap.
+# The second cut had 0.780 at z 1.480 against a traced 0.62: a quarter of a foot
+# too wide on each side, which is what buried the arms inside the garment in
+# every arms-down clip while the bind-pose board stayed green.
+# measured: front z=1.480 runs=1
 #
 # The depth column was already close and is now cited rather than guessed.
 # measured: view2 z=1.240 halfWidth=0.5910
@@ -417,17 +432,17 @@ TORSO_LEVELS = [
     # Four rings buy an underside, a proud band and the body above it.
     # The hem sits at z 1.108, which is where the centre column changes from
     # the tee's purple to the shorts' near-black.
-    (1.070, 0.640, 0.470, "Hips"),    # hem underside
-    (1.096, 0.690, 0.500, "Hips"),    # hem band, proud
-    (1.130, 0.680, 0.560, "Hips"),
-    (1.240, 0.700, 0.591, "Hips"),    # deepest point, traced
+    (1.070, 0.610, 0.470, "Hips"),    # hem underside
+    (1.096, 0.660, 0.500, "Hips"),    # hem band, proud
+    (1.130, 0.640, 0.560, "Hips"),
+    (1.240, 0.650, 0.591, "Hips"),    # deepest point, traced
     # ★ THE PROFILE IS A TAPER, AND THAT ONE IS CORRECT. Three reviews called
     # the side view a cone and asked for a belly that bulges. Traced, the
     # concept's own profile runs 0.591 at z 1.24 down to 0.425 at z 2.40 — it
     # narrows upward monotonically, because his mass is low and his tee is
     # oversized. The side view was never the defect; the FRONT was.
-    (1.480, 0.780, 0.576, "Hips"),
-    (1.720, 0.850, 0.547, "Spine"),
+    (1.480, 0.660, 0.576, "Hips"),
+    (1.720, 0.680, 0.547, "Spine"),
     (1.960, 0.880, 0.515, "Spine"),   # widest: traced 0.910, shipped a touch under
     (2.200, 0.800, 0.475, "Spine1"),
     (2.400, 0.660, 0.425, "Spine1"),

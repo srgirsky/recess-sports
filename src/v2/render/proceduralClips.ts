@@ -293,7 +293,20 @@ function idle(spec: ClipSpec): AnimationClip {
 }
 
 /** A run cycle. Reach -> pass -> crossover -> pass, with a forward lean. */
-function runCycle(spec: ClipSpec, lean: number, reach: number, armDrive: number): AnimationClip {
+// ★ `abduct` IS HOW FAR THE ARMS HANG FROM THE BODY, in degrees off the T-pose
+// horizontal, and it is a parameter because one kid's torso is not another's.
+// 72 (18 degrees of abduction) is what every clip used and it stays the default,
+// so passing nothing changes nothing. Tank needs more: the rig shares one
+// shoulder position across all thirty kids and his belly is the widest on the
+// roster, so at 72 his upper arm is inside his own tee and the run still showed
+// "a bare forearm exiting the middle of the belly like a peg".
+function runCycle(
+  spec: ClipSpec,
+  lean: number,
+  reach: number,
+  armDrive: number,
+  abduct = 72,
+): AnimationClip {
   return cycle(spec, (p) => {
     const s = sin(p);
     const o = sin(p, 0.5);
@@ -310,9 +323,9 @@ function runCycle(spec: ClipSpec, lean: number, reach: number, armDrive: number)
       ru: [o * reach, 0, -3],
       rl: [-Math.max(0, -o) * reach * 1.5 - 12, 0, 0],
       rt: [Math.max(0, o) * 18, 0, 0],
-      la: [o * armDrive, 0, 72],
+      la: [o * armDrive, 0, abduct],
       lf: [0, 58, 0],
-      ra: [s * armDrive, 0, -72],
+      ra: [s * armDrive, 0, -abduct],
       rf: [0, -58, 0],
     };
   });
@@ -1116,9 +1129,30 @@ function louUpsetGoofy(spec: ClipSpec): AnimationClip {
 // heavy and relaxed — the direction is "power outside, snacky calm inside", and
 // the anti-caricature note says sleepy must not become dim — while leaving the
 // face where a camera at chest height can see it. The knees keep their bend.
+// ★ TANK'S ARMS HANG WIDER THAN EVERY OTHER KID'S, BECAUSE HIS BELLY IS WIDER.
+//
+// The rig fixes the shoulder at |x| 0.400ft for all thirty (`LeftShoulder`
+// -0.165 plus `LeftArm` -0.235) with 0.965ft from shoulder to wrist, and that
+// is shared and must stay shared. At the 18 degrees of abduction this pose used
+// to hold (z 72, i.e. 72 degrees off the T-pose horizontal), the wrist lands at
+// x 0.698 — comfortably inside a tee that his own concept draws 0.62 to 0.88
+// wide. An independent review found the consequence: no shoulder, no sleeve, no
+// upper arm, "a single bare forearm exiting the middle of the belly like a peg".
+//
+// ⚠️ AND EVERY MEASURED METRIC STAYED GREEN THROUGH IT, because the fidelity
+// board renders the BIND pose, where the arms are horizontal and clear the
+// torso by construction. The character was armless only in the poses nothing
+// measured. That is the same shape of failure as the mirrored arms this file's
+// round-4 note records, and it is why the runtime stills exist.
+//
+// The angle is traced, not chosen. His concept's bare forearm centres on 0.778
+// to 0.793ft from the centreline all the way down z 1.46-1.70, and
+// `0.400 + 0.965·sin(23°) = 0.78` at z 1.58 — which is where the drawing puts
+// it, to within the width of the arm. 25 degrees ships a little past that so
+// the arm's inner surface clears the garment rather than grazing it.
 const TANK_IDLE_POSE: Pose = {
   hp: [6, 0, 0], sp: [3, 0, 0], s2: [5, 0, 0], hd: [-4, 3, 0],
-  la: [12, 0, 72], lf: [0, -12, 0], ra: [12, 0, -72], rf: [0, 12, 0],
+  la: [12, 0, 65], lf: [0, -12, 0], ra: [12, 0, -65], rf: [0, 12, 0],
   lu: [12, 0, 0], ll: [-18, 0, 0], ru: [12, 0, 0], rl: [-18, 0, 0],
 };
 const TANK_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
@@ -1840,7 +1874,19 @@ export function buildTankPilotClips(): AnimationClip[] {
   const builders: Readonly<Record<string, (spec: ClipSpec) => AnimationClip>> = {
     idle: tankIdle,
     idle_fidget: tankIdleFidget,
-    run: (spec) => runCycle(spec, 7, 34, 32),
+    // Wider and with less drive than the roster default: 52 is 38 degrees of
+    // abduction, which is what it takes to get his upper arm and shoulder out
+    // of his own tee, and a smaller `armDrive` keeps the swing from throwing
+    // the hand across his belly.
+    // ⚠️ PARTIAL, AND SAYING SO. This recovers the shoulder and upper arm — the
+    // review's "bare forearm exiting the middle of the belly like a peg" is
+    // gone — but the FOREARM still crosses the belly at the top of the swing.
+    // That one is not an abduction problem and cannot be fixed here: the elbow
+    // bend (`lf` 58 degrees, shared by every kid's run) carries the hand
+    // forward, and his torso is 0.55ft deep at the belly against a 0.965ft arm.
+    // It needs the forearm held outboard for wide-bodied kids, which is a
+    // change to the shared cycle rather than to Tank's parameters.
+    run: (spec) => runCycle(spec, 7, 34, 24, 52),
     bat_stance: (spec) => breathe(spec, TANK_STANCE_POSE, 0.75),
     swing_contact: tankSwingContact,
     swing_follow: tankSwingFollow,
