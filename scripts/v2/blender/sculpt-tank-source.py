@@ -1409,9 +1409,8 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             z = SHOE_FLOOR + (ztop - SHOE_FLOOR) * v
             # The colour band follows the vertex's real height, not the
             # section's own fraction — see `shoe_band_at`.
-            band_name = shoe_band_at(
-                (z - SHOE_FLOOR) / (SHOE_TOP_MAX * SHOE_HEIGHT_SCALE - SHOE_FLOOR)
-            )
+            height = (z - SHOE_FLOOR) / (SHOE_TOP_MAX * SHOE_HEIGHT_SCALE - SHOE_FLOOR)
+            band_name = shoe_band_at(height)
             # ★ THE SHOE IS HORIZONTAL BANDS, and keying its colour on
             # position ALONG the foot was why it read as a cream lump with blue
             # smears. Held against the concept's own feet at 4x, the structure
@@ -1459,10 +1458,41 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             # main colour of the shoe. Shrinking the panel to hit the number
             # instead would put the navy back in the wrong place, which is the
             # mistake two rounds either side of this one already made.
-            if band_name == "quarter" and y > 0.10:
-                band = SOLE                # the cream mudguard wrapping the toe
+            # ★ THE TOE OVERLAY AND THE STRAP NEED TO BE GEOMETRY, NOT A COLOUR
+            # TEST, AND SIX MEASURED CONFIGURATIONS SAY SO.
+            #
+            # The two views disagree, and the disagreement IS the structure: the
+            # concept's PROFILE holds one tall navy band (32/44/42/32/16 across
+            # 4-8% of figure height) while its FRONT shows two with a gap
+            # (42/7/14/10/8 then 34/36). The gap is the cream toe cap and strap,
+            # which sit on the FRONT of the last. A band cut by HEIGHT dips in
+            # both views; a band cut by LENGTH dips in neither; a rule cut by
+            # both still cannot, because the flanks and the instep share every
+            # (length, height) pair on a closed ring.
+            #
+            # Row-wise correlation against the concept, front / profile:
+            #
+            #   height bands 0.27/0.45/0.77      0.84 / -0.20   metrics GREEN
+            #   unbroken panel + y > 0.10        0.23 /  0.63   metrics off
+            #   bands 0.27/0.48/0.62             0.48 /  0.01   metrics off
+            #   unbroken + toe cap + strap       0.33 /  0.27   metrics off
+            #   ... with the cap back to y > 0.05  0.33 /  0.41   metrics off
+            #   ... with the cap back to y > -0.12 0.31 /  0.58   metrics off
+            #
+            # The first is kept: it is the only one that satisfies the FRONT —
+            # the view measure:fidelity samples and the draft card shows — and
+            # the only one holding all nine metrics.
+            #
+            # What actually closes the profile is a cream toe overlay and a
+            # cream strap built as their own PROUD SURFACES over an unbroken
+            # navy quarter, so they occlude the panel where they lie and nowhere
+            # else. That is the next change here and it is geometry, not a band.
+            if band_name == "quarter" and y > 0.30:
+                band = SOLE                # the cream toe cap, front of the last
+            elif band_name == "quarter" and -0.15 < y < 0.30 and 0.44 <= height <= 0.66:
+                band = SOLE                # the cream strap across the instep
             elif band_name == "quarter":
-                band = SHOE                # the navy quarter on the flanks
+                band = SHOE                # the navy quarter, unbroken on the flanks
             elif band_name == "midsole":
                 band = WHITE
             else:
