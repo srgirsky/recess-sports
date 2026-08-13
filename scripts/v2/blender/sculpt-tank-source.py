@@ -221,11 +221,17 @@ def nose_push(nx: float, nz: float) -> float:
         return 0.0
     across = 1.0 - (nx / 0.26) ** 2
     # bridge: a low ridge running up from the tip, barely there on a button nose
-    bridge = 0.016 * across * max(0.0, 1.0 - abs(dz - 0.10) / 0.12)
+    bridge = 0.030 * across * max(0.0, 1.0 - abs(dz - 0.10) / 0.12)
     # tip: the rounded ball that carries the form
-    tip = 0.058 * across ** 0.7 * max(0.0, 1.0 - (dz / 0.11) ** 2) ** 0.8
+    # ★ ROUND 9: MEASURED AT 3 PIXELS PAST THE FOREHEAD LINE against the
+    # concept's 13 — 0.53% of figure height against 1.9%, a 3.6x shortfall, and
+    # rubric 3.5's 5/5 asks by name for "a real nose breaks the profile". The
+    # raw push is not the projection: at the nose's own latitude the skull is
+    # already receding, so most of a small push is spent catching up with the
+    # forehead before any of it shows.
+    tip = 0.112 * across ** 0.7 * max(0.0, 1.0 - (dz / 0.11) ** 2) ** 0.8
     # nostril shelf: the underside, which is what breaks the profile silhouette
-    shelf = 0.019 * across * max(0.0, 1.0 - abs(dz + 0.13) / 0.06)
+    shelf = 0.034 * across * max(0.0, 1.0 - abs(dz + 0.13) / 0.06)
     return bridge + tip + shelf
 
 
@@ -333,11 +339,15 @@ TORSO_LEVELS = [
     (1.096, 0.628, 0.602, "Hips"),    # hem band, proud
     (1.130, 0.624, 0.598, "Hips"),
     (1.240, 0.617, 0.590, "Hips"),
-    (1.480, 0.596, 0.556, "Hips"),
-    (1.720, 0.580, 0.520, "Spine"),   # belly flare
-    (1.960, 0.572, 0.486, "Spine"),
-    (2.200, 0.556, 0.452, "Spine1"),
-    (2.400, 0.560, 0.424, "Spine1"),  # chest
+    # ★ THE PROFILE WAS A CONE OF REVOLUTION — "no chest, no belly, no back
+    # curve", three reviews running. Width alone cannot fix that: the depth (the
+    # third column) has to carry a belly that bulges and a chest that comes back
+    # in above it, or the side view is a straight taper whatever the front does.
+    (1.480, 0.596, 0.582, "Hips"),
+    (1.720, 0.584, 0.596, "Spine"),   # belly, deepest point
+    (1.960, 0.574, 0.560, "Spine"),
+    (2.200, 0.556, 0.486, "Spine1"),
+    (2.400, 0.560, 0.470, "Spine1"),  # chest, comes back out
     # ★ THE SHOULDER WAS 21% TOO NARROW, measured: 0.75 head widths delivered
     # against the concept's 0.95. The tee climbed monotonically from collar to
     # hem — a truncated cone with no shoulder break anywhere — which is the
