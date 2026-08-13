@@ -2374,10 +2374,32 @@ merged into one run on a backdrop that is genuinely flat. Its garment metric
 asked `isRed` and `isCream`, which is Junebug's shoe: on a kid whose shoes are
 not red both counters read zero, both images agree at zero, and the check passes
 having measured nothing. And its head/neck detector returns the narrowest run in
-a window, so on a kid with no neck it returns **the window edge** — Tank measured
+a window, so when the scan fails it returns **the window edge** — Tank measured
 15.2% head height against Junebug's 33.9%, the floor's own value dressed as a
 measurement, and the sculpt would have been told to shrink a head that was not
 too big.
+
+**★ The fourth was then diagnosed wrong, which is the most useful part of it.**
+Tank's boundary hit was written up as "a kid with no neck has no pinch to find,
+which is a fact about the drawing" — an explanation that fitted the evidence and
+was false. Measuring his silhouette row by row found the real cause: his backdrop
+is cream, the highlights on his eyes are pale enough to land inside the backdrop
+tolerance, and **two single pixels split his head's silhouette into three runs**
+— 114-188, 190-231, 233-308. The detector follows the run containing the figure's
+centre column, so it faithfully reported the 42px bridge *between his eyes* as
+the width of his head, against 211px on the row above.
+
+A hole cannot be told from the outside world by COLOUR, because it is the same
+colour as the outside world. It can be told by CONNECTIVITY. The figure mask is a
+flood fill inward from the frame edge now (`scripts/v2/figure-mask.mjs`), so
+anything the fill never reaches is figure whatever its colour — which retires the
+same near-miss for a white sock, a cream sole, a specular on a bald crown and
+every pale garment on the roster. Tank measures 27.6% head height against a
+delivered 32.3%, an actionable defect where `NOT MEASURED` was a shrug.
+
+The lesson is not about pixels. **A guard that refuses to report is not an
+explanation of why it refused**, and the guard being right made the wrong
+explanation comfortable to believe.
 
 The backdrop is sampled per column now (a figure never touches the top edge, so
 each column's own first rows *are* its backdrop), occupancy is a fraction of

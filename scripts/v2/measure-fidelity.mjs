@@ -61,6 +61,7 @@ import process from 'node:process';
 import sharp from 'sharp';
 
 import { slugFor } from './character-registry.mjs';
+import { floodFigureMask } from './figure-mask.mjs';
 
 const CONCEPTS = 'docs/v2/concepts';
 
@@ -115,21 +116,27 @@ async function loadFigure(path, { keyBackdrop = false, extract = null } = {}) {
   const at = (x, y) => { const i = (y * W + x) * C; return [data[i], data[i + 1], data[i + 2], data[i + 3]]; };
   // ⚠️ Keyed membership needs the pixel's COLUMN, so `inFigure` takes (c, x).
   // Passing only the colour is what forced one global backdrop in the first place.
+  // Keyed membership is CONNECTIVITY, not colour: the backdrop is flooded in
+  // from the frame edge, so a pale pixel enclosed by the figure stays figure.
+  // Deciding it per pixel measured the bridge between Tank's eyes as his head.
+  // See figure-mask.mjs. The delivered render has real alpha and needs none of
+  // this, which is why the two paths differ.
   const bgAt = keyBackdrop ? backdropSampler(at, W, H) : null;
+  const mask = keyBackdrop ? floodFigureMask(at, bgAt, W, H, BACKDROP_TOLERANCE) : null;
   const inFigure = keyBackdrop
-    ? (c, x) => !nearBackdrop(c, bgAt(x))
+    ? (_c, x, y) => mask(x, y)
     : (c) => c[3] > 128;
   let x0 = W, x1 = -1, y0 = H, y1 = -1;
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
-      if (!inFigure(at(x, y), x)) continue;
+      if (!inFigure(at(x, y), x, y)) continue;
       if (x < x0) x0 = x; if (x > x1) x1 = x;
       if (y < y0) y0 = y; if (y > y1) y1 = y;
     }
   }
   const rowSpan = (y) => {
     let a = -1, b = -1;
-    for (let x = x0; x <= x1; x++) if (inFigure(at(x, y), x)) { if (a < 0) a = x; b = x; }
+    for (let x = x0; x <= x1; x++) if (inFigure(at(x, y), x, y)) { if (a < 0) a = x; b = x; }
     return a < 0 ? null : [a, b];
   };
   /** The contiguous figure run on row `y` that contains column `xc` — the way to
@@ -137,10 +144,10 @@ async function loadFigure(path, { keyBackdrop = false, extract = null } = {}) {
   const rowRunContaining = (y, xc) => {
     if (y < y0 || y > y1) return null;
     const xs = Math.min(Math.max(xc, x0), x1);
-    if (!inFigure(at(xs, y), xs)) return null;
+    if (!inFigure(at(xs, y), xs, y)) return null;
     let a = xc, b = xc;
-    while (a > x0 && inFigure(at(a - 1, y), a - 1)) a--;
-    while (b < x1 && inFigure(at(b + 1, y), b + 1)) b++;
+    while (a > x0 && inFigure(at(a - 1, y), a - 1, y)) a--;
+    while (b < x1 && inFigure(at(b + 1, y), b + 1, y)) b++;
     return [a, b];
   };
   return { W, H, at, inFigure, x0, x1, y0, y1, figH: y1 - y0 + 1, figW: x1 - x0 + 1, rowSpan, rowRunContaining };
@@ -207,7 +214,7 @@ function eachBandPixel(f, fromFrac, toFrac, visit) {
   for (let y = Math.max(ya, f.y0); y <= Math.min(yb, f.y1); y++) {
     for (let x = f.x0; x <= f.x1; x++) {
       const c = f.at(x, y);
-      if (f.inFigure(c, x)) visit(c);
+      if (f.inFigure(c, x, y)) visit(c);
     }
   }
 }
@@ -288,7 +295,7 @@ function ankleDaylight(f) {
   if (!s) return 0;
   let best = 0, run = 0;
   for (let x = s[0]; x <= s[1]; x++) {
-    if (f.inFigure(f.at(x, y), x)) { run = 0; continue; }
+    if (f.inFigure(f.at(x, y), x, y)) { run = 0; continue; }
     run++; if (run > best) best = run;
   }
   return (100 * best) / (s[1] - s[0] + 1);

@@ -278,13 +278,19 @@ previous build shipped eyes 38% too small. Use it to settle the questions eye
 scoring keeps getting wrong: the same Junebug board drew 4,4,4,4,4,3 from one
 reviewer and 3,4,3,3,3,3 from the next.
 
-Two of its outputs need reading correctly. `NOT MEASURED` is **not** a pass: it
-means the detector could not take that measurement on this character — the
-head/neck metrics report it when the silhouette has no pinch between crown and
-shoulders, which is a fact about a kid drawn without much neck. And the command
-refuses outright, rather than reporting, when it cannot separate the turnaround's
-front view from the rest of the sheet; fix the sheet, never the tolerance,
-because the alternative is eight numbers measured across three collaged views.
+Two of its outputs need reading correctly. `NOT MEASURED` is **not** a pass and
+**not** a fact about the character: it means the head/neck detector found no
+silhouette pinch between crown and shoulders, and the first thing to suspect is
+the detector, not the drawing. Tank reported it and the cause was two pale
+pixels — highlights on his eyes, close enough to his cream backdrop to split his
+head's silhouette into three runs, so the scan measured the bridge between his
+eyes as his head. Membership in the figure is decided by connectivity now
+(`figure-mask.mjs`), which retires that whole class; if you still see
+`NOT MEASURED`, look at the mask before concluding anything about the art. And
+the command refuses outright, rather than reporting, when it cannot separate the
+turnaround's front view from the rest of the sheet; fix the sheet, never the
+tolerance, because the alternative is eight numbers measured across three
+collaged views.
 
 The id a character is registered under and the slug their art was drawn under
 differ for eleven of the thirty. `scripts/v2/character-registry.json` is the one

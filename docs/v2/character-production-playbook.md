@@ -113,8 +113,10 @@ Run `npm run measure:fidelity -- <id>` before scoring anything. It reads the
 delivered front render and the approved turnaround with one detector and settles
 head proportion, garment colour split, visible face and ankle daylight; where it
 reports a number, the number wins over an eye score. A metric it reports as
-`NOT MEASURED` is not a pass — it means the detector could not take that
-measurement on this character, and §3 is scored without it.
+`NOT MEASURED` is not a pass, and it is not a finding about the character
+either — it means the detector failed, and the detector is the first thing to
+check. Do not write it up as "this kid is drawn without much neck" until the
+mask has been looked at.
 
 Then generate the side-by-side board and score all six mandatory categories:
 front/profile silhouette, head/body proportions, hair mass, clothing
