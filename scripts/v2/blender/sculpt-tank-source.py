@@ -484,10 +484,26 @@ TORSO_LEVELS = [
 # on purpose — a neck as wide as the reading would leave the chin nowhere to sit,
 # which is the rule Junebug's script records at her own neck.
 # measured: front z=2.880 halfWidth=0.2711
+# ★ THE NECK MUST STAY INSIDE THE COLLAR ALL THE WAY UP, OR THE TWO CROSS.
+#
+# An independent review found "purple collar shards poking through the neck skin
+# on both sides", and the tables say why. The collar rib is 0.278 at z 2.822 and
+# its neck hole 0.244 at z 2.848; the neck was 0.267 and 0.263 across the same
+# span. So the collar starts OUTSIDE the neck and ends INSIDE it, and two
+# surfaces that swap sides have to intersect somewhere between — the shards are
+# that intersection curve, seen edge-on.
+#
+# It is not a hole and no amount of smoothing fixes it. The neck is now narrower
+# than the collar's hole at every height they share, so they never cross, and it
+# also takes the neck's own thickness down toward the concept's — the same
+# review measured this one 18% thicker than the drawing.
 NECK_LEVELS = [
-    (2.760, 0.276, 0.256, "Spine2"),
-    (2.880, 0.258, 0.240, "Neck"),
-    (2.980, 0.238, 0.224, "Neck"),
+    # Snug inside the hole rather than merely clear of it: at 0.236 the neck sat
+    # 0.010 inside a 0.244 collar hole and the daylight between them read as a
+    # slot. 0.004 closes it visually and still never crosses.
+    (2.760, 0.242, 0.226, "Spine2"),
+    (2.880, 0.238, 0.222, "Neck"),
+    (2.980, 0.228, 0.212, "Neck"),
 ]
 
 # --- Arms ----------------------------------------------------------------------
@@ -1005,16 +1021,27 @@ SHOE_STATIONS = [
     #
     # (y along the foot, half-width, top z, colour) — heel at -y, toe at +y,
     # spanning 0.678ft.
-    (-0.239, 0.126, 0.232, SOLE),
-    (-0.188, 0.170, 0.286, SOLE),
-    (-0.137, 0.196, 0.300, SOLE),
-    (-0.057, 0.209, 0.298, SOLE),
-    (0.034, 0.210, 0.286, SOLE),
-    (0.131, 0.204, 0.262, SOLE),
-    (0.228, 0.190, 0.226, SOLE),
-    (0.314, 0.166, 0.184, SOLE),
-    (0.388, 0.126, 0.136, SOLE),
-    (0.439, 0.070, 0.092, SOLE),
+    # ★ THE TOPLINE IS NEARLY FLAT, BECAUSE THE SHOE IS A BLOCK. Measured on the
+    # concept's profile view, its fore-aft length is the FULL 1.205ft at every
+    # row from z 0.26 down to the ground — vertical sides, a tall toe box and a
+    # tall heel counter. This table's topline fell away to 0.092 at the toe, so
+    # the delivery ramped 0.877 -> 0.984 -> 1.062 -> 1.134 -> 1.205 instead: a
+    # tapered wedge, which is why it rendered as a flat cream pancake with a
+    # stripe round it however the colour bands were set.
+    #
+    # ⚠️ Three rounds of moving the navy band could not have fixed that, and two
+    # of them made the art worse while chasing the tone split. The band was never
+    # the problem; the last's silhouette was.
+    (-0.239, 0.126, 0.250, SOLE),
+    (-0.188, 0.170, 0.292, SOLE),
+    (-0.137, 0.196, 0.302, SOLE),
+    (-0.057, 0.209, 0.304, SOLE),
+    (0.034, 0.210, 0.302, SOLE),
+    (0.131, 0.204, 0.298, SOLE),
+    (0.228, 0.190, 0.290, SOLE),
+    (0.314, 0.166, 0.276, SOLE),
+    (0.388, 0.126, 0.252, SOLE),
+    (0.439, 0.070, 0.214, SOLE),
 ]
 
 
@@ -1056,19 +1083,34 @@ SHOE_STATIONS = [
 # top. The left half is this list reflected, so the section is symmetric by
 # construction — the same reflect-don't-rotate rule `shoe_place` records.
 SHOE_SECTION = [
+    # ⚠️ THE BAND WAS TOO NARROW — THE AREA LANDED AND THE PLACEMENT DID NOT.
+    # A later review measured cool pixels by height inside the shoe zone: the
+    # concept's navy spans 0.25 to 0.72 of shoe height, a quarter panel over the
+    # whole upper, against a delivered 0.17 to 0.24 — a stripe just above the
+    # sole. The tone-split metric passed the whole time, because it counts how
+    # MUCH of each tone is in the band and never where it sits. Boundaries now
+    # run 0.225 and 0.690.
+    # ★ AND THE STACK WAS INVERTED. Held against the concept's own feet at 8x,
+    # his shoe is a thick CREAM MIDSOLE at the bottom and a NAVY UPPER over all
+    # the rest of its height, with a cream velcro strap and a cream toe overlay
+    # laid on top of the navy. This shipped cream-navy-cream, which makes the
+    # navy a stripe between two creams instead of the upper it is.
+    #
+    # Two earlier attempts missed it from opposite directions: the first put a
+    # narrow band at 0.35-0.54 (right area, wrong place) and the second widened
+    # it to 0.25-0.69 (right place, twice the area). Neither was the structure.
     (0.000, 0.000, "midsole"),   # flat on the ground: a sole, not a tube bottom
     (0.620, 0.004, "midsole"),
     (0.940, 0.055, "midsole"),   # the welt
-    (1.000, 0.190, "midsole"),   # widest point, the midsole bulge
-    (0.995, 0.320, "midsole"),   # last cream row
-    (0.990, 0.348, "quarter"),   # first navy row
-    (0.970, 0.450, "quarter"),
-    (0.955, 0.540, "quarter"),   # last navy row
-    (0.945, 0.568, "collar"),    # first cream row above
-    (0.900, 0.690, "collar"),
-    (0.800, 0.815, "collar"),
-    (0.620, 0.920, "collar"),
-    (0.340, 0.985, "collar"),
+    (1.000, 0.170, "midsole"),   # widest point, the midsole bulge
+    (0.997, 0.300, "midsole"),
+    (0.992, 0.510, "midsole"),   # last cream row — a tall midsole, as drawn
+    (0.984, 0.566, "quarter"),   # first navy row
+    (0.960, 0.640, "quarter"),
+    (0.934, 0.708, "quarter"),   # last navy row
+    (0.906, 0.762, "collar"),    # the cream collar trim around the ankle
+    (0.760, 0.900, "collar"),
+    (0.420, 0.978, "collar"),
     (0.000, 1.000, "collar"),    # instep centre
 ]
 # ★ THE FAR LODS KEEP BOTH BAND EDGES AND DROP THE SHAPING ROWS BETWEEN THEM.
@@ -1080,11 +1122,11 @@ SHOE_SECTION = [
 SHOE_SECTION_MID = [
     (0.000, 0.000, "midsole"),
     (0.970, 0.070, "midsole"),
-    (0.995, 0.320, "midsole"),
-    (0.990, 0.348, "quarter"),
-    (0.955, 0.540, "quarter"),
-    (0.945, 0.568, "collar"),
-    (0.720, 0.880, "collar"),
+    (0.992, 0.510, "midsole"),
+    (0.984, 0.566, "quarter"),
+    (0.934, 0.708, "quarter"),
+    (0.906, 0.762, "collar"),
+    (0.560, 0.968, "collar"),
     (0.000, 1.000, "collar"),
 ]
 # ⚠️ LOD2 IS 1200 TRIANGLES AND THE SHOE PAYS 40 PER RING VERTEX (18 grid quads
@@ -1093,9 +1135,9 @@ SHOE_SECTION_MID = [
 # refused it, which is the budget working. Five entries is a ring of eight.
 SHOE_SECTION_LOW = [
     (0.000, 0.000, "midsole"),
-    (0.995, 0.320, "midsole"),
-    (0.990, 0.348, "quarter"),
-    (0.955, 0.540, "quarter"),
+    (0.992, 0.510, "midsole"),
+    (0.984, 0.566, "quarter"),
+    (0.934, 0.708, "quarter"),
     (0.000, 1.000, "collar"),
 ]
 
@@ -1164,8 +1206,22 @@ def shoe_place(side: int, y: float, x_off: float, z: float) -> tuple[float, floa
 # reaches x -0.022 and the pair closes at the centreline. At the calf (z 0.50)
 # the legs are at x 0.330, so a 0.50ft calf leaves a 0.16ft gap. Closed feet,
 # open calves, and neither number was tuned to get there.
+# ⚠️ AND I DOUBLED THE WIDTH OFF A PROJECTION, WHICH IS THE MISTAKE TO AVOID
+# REPEATING. The concept's front view measures 1.60ft across both shoes, and
+# halving that to 0.80 per shoe gave a scale of 1.84 and a pair of cream slabs
+# the width of his hips. The feet are TURNED OUT 21 degrees, so that lateral
+# extent is not the shoe's width — it is `width·cos21 + length·sin21`. With a
+# 1.29ft last that solves to a true width of 0.40ft, which is what the shoe
+# already had. Only the LENGTH was short, and only the profile view (where the
+# same correction gives 1.29 against a shipped 0.76) could say so.
 SHOE_LENGTH_SCALE = 1.72
-SHOE_WIDTH_SCALE = 1.84
+SHOE_WIDTH_SCALE = 1.02
+# ⚠️ AND HEIGHT IS THE THIRD ONE, WHICH THE FIRST PASS FORGOT. Scaling a shoe
+# in two dimensions and not the third makes it a flat slab, and it also puts the
+# navy in the wrong place by construction: the concept's navy reaches z 0.106 of
+# figure height (0.424ft) and a shoe topping out at 0.300ft cannot put anything
+# there at all, whatever its section says.
+SHOE_HEIGHT_SCALE = 1.08
 
 
 def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
@@ -1175,6 +1231,7 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     for y, half, ztop, colour in SHOE_STATIONS:
         y *= SHOE_LENGTH_SCALE
         half *= SHOE_WIDTH_SCALE
+        ztop = SHOE_FLOOR + (ztop - SHOE_FLOOR) * SHOE_HEIGHT_SCALE
         row = []
         for u, v, band_name in ring:
             # The section is authored, not swept — see SHOE_SECTION. It is still
@@ -1225,7 +1282,16 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             # threshold, so the only rule left here is the toe: the concept
             # wraps the front of the last in a cream mudguard, and it interrupts
             # the navy where it does. The stations run heel at -y to toe at +y.
-            if band_name == "quarter" and y > 0.300:
+            # The cream toe overlay, and only the front of the last: the
+            # threshold is in SCALED feet, so it moves with SHOE_LENGTH_SCALE.
+            # ⚠️ AND THE TOE OVERLAY IS BIG. In the concept the navy upper is
+            # TALL and then largely covered — a cream toe cap over the whole
+            # front half of the last, plus the cream strap. That is why its
+            # visible navy measures only ~21% of the band while looking like the
+            # main colour of the shoe. Shrinking the panel to hit the number
+            # instead would put the navy back in the wrong place, which is the
+            # mistake two rounds either side of this one already made.
+            if band_name == "quarter" and y > 0.10:
                 band = SOLE                # the cream mudguard wrapping the toe
             elif band_name == "quarter":
                 band = SHOE                # the navy quarter on the flanks
