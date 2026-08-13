@@ -888,14 +888,17 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
         (0.716, 0.358, 1.13, PANTS_DARK, "Leg"),          # hem band, proud
         (SHORTS_HEM_Z, 0.350, 1.10, PANTS_DARK, "Leg"),   # hem underside, z 0.694
         (0.686, 0.252, 1.02, PANTS_DARK, "Leg"),          # inner lip of the opening
-        (0.680, 0.196, 0.98, SKIN, "Leg"),                # bare shin begins
-        (0.520, 0.190, 0.96, SKIN, "Leg"),
-        (SOCK_TOP_Z + 0.012, 0.186, 0.95, SKIN, "Leg"),
-        (SOCK_TOP_Z, 0.208, 0.95, TEAM_MASK, "Leg"),      # roll, the team accent
-        (SOCK_TOP_Z - 0.034, 0.202, 0.95, TEAM_MASK, "Leg"),
-        (SOCK_TOP_Z - 0.066, 0.188, 0.95, SOCK, "Leg"),   # z 0.348
-        (0.260, 0.172, 0.95, SOCK, "Leg"),
-        (0.150, 0.156, 0.95, SOCK, "Foot"),
+        # The calf carries his weight-read below the hem and measured 0.38ft
+        # against the concept's 0.50 — see SHOE_LENGTH_SCALE's note. Grown to
+        # the drawing, which also leaves the 0.16ft calf gap 3.12 asks for.
+        (0.680, 0.246, 0.98, SKIN, "Leg"),                # bare shin begins
+        (0.520, 0.248, 0.96, SKIN, "Leg"),
+        (SOCK_TOP_Z + 0.012, 0.244, 0.95, SKIN, "Leg"),
+        (SOCK_TOP_Z, 0.268, 0.95, TEAM_MASK, "Leg"),      # roll, the team accent
+        (SOCK_TOP_Z - 0.034, 0.262, 0.95, TEAM_MASK, "Leg"),
+        (SOCK_TOP_Z - 0.066, 0.246, 0.95, SOCK, "Leg"),   # z 0.348
+        (0.260, 0.228, 0.95, SOCK, "Leg"),
+        (0.150, 0.208, 0.95, SOCK, "Foot"),
     ]
     if detail < 1:
         stations = [station for index, station in enumerate(stations) if index % 2 == 0 or index == len(stations) - 1]
@@ -1137,11 +1140,41 @@ def shoe_place(side: int, y: float, x_off: float, z: float) -> tuple[float, floa
     return ((leg_x(LEG_ANKLE_Z) + lx) * side, ly, z)
 
 
+# ★ THE SHOE AND THE CALF CARRY TANK'S READ, AND THEY WERE HALF SIZE.
+#
+# Twelve reviews scored his upper body and it is now on-concept; the one metric
+# that has stayed red the whole time — ankle daylight — is about his LOWER body,
+# and nothing had ever been aimed at it. Measured on his own turnaround with the
+# same detector that grades the delivery:
+#
+#                       concept    shipped
+#   calf width (each)    0.50ft     0.38ft
+#   shoe width (each)    0.80ft     0.42ft
+#   shoe length          1.21ft     0.76ft
+#
+# ⚠️ AND THE FIX IS MASS, NOT STANCE, WHICH IS THE WHOLE POINT. §6b.4 wants the
+# ankles closed (the concept draws them touching — a single silhouette run at
+# every row below z 0.66) and rubric 3.12 wants daylight between the calves.
+# Narrowing the stance trades one failure for the other, and it is also the
+# round-1 mistake this file already records: moving the mesh off its bones to
+# make a bind-pose number come out right.
+#
+# Growing the limbs satisfies both at once, and the arithmetic says so before
+# the render does. At the ankle the legs sit at x 0.378, so a 0.80ft shoe
+# reaches x -0.022 and the pair closes at the centreline. At the calf (z 0.50)
+# the legs are at x 0.330, so a 0.50ft calf leaves a 0.16ft gap. Closed feet,
+# open calves, and neither number was tuned to get there.
+SHOE_LENGTH_SCALE = 1.72
+SHOE_WIDTH_SCALE = 1.84
+
+
 def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     ring = shoe_ring(detail)
     rows: list[list[int]] = []
     bone = limb_bone("ToeBase", side)
     for y, half, ztop, colour in SHOE_STATIONS:
+        y *= SHOE_LENGTH_SCALE
+        half *= SHOE_WIDTH_SCALE
         row = []
         for u, v, band_name in ring:
             # The section is authored, not swept — see SHOE_SECTION. It is still
@@ -1228,8 +1261,8 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     builder.grid(rows, 1, flip=side > 0)
 
     # Cap both ends so the upper is closed — rubric 3.7 is binary about holes.
-    heel = builder.vertex(shoe_place(side, -0.286, 0.0, 0.126), SHOE, bone, (0.75, 0.25))  # heel counter
-    toe = builder.vertex(shoe_place(side, 0.470, 0.0, 0.050), SOLE, bone, (0.75, 0.25))
+    heel = builder.vertex(shoe_place(side, -0.286 * SHOE_LENGTH_SCALE, 0.0, 0.126), SHOE, bone, (0.75, 0.25))
+    toe = builder.vertex(shoe_place(side, 0.470 * SHOE_LENGTH_SCALE, 0.0, 0.050), SOLE, bone, (0.75, 0.25))
     for index in range(len(ring)):
         nxt = (index + 1) % len(ring)
         a = (heel, rows[0][nxt], rows[0][index])
@@ -1240,13 +1273,13 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     # Three lace straps lying ON the vamp, which is what the concept draws —
     # not pegs standing proud of it, the defect Junebug's round-5 board scored.
     if detail >= 2:
-        for lace_y in (0.020, 0.100, 0.180):
+        for lace_y in (0.020 * SHOE_LENGTH_SCALE, 0.100 * SHOE_LENGTH_SCALE, 0.180 * SHOE_LENGTH_SCALE):
             path = []
             radii = []
             for step in range(7):
                 t = step / 6.0
                 across = (t - 0.5) * 2.0
-                half = 0.196 * (1.0 - 0.18 * across * across)
+                half = 0.196 * SHOE_WIDTH_SCALE * (1.0 - 0.18 * across * across)
                 path.append(shoe_place(side, lace_y, half * across, 0.300 - 0.052 * across * across))
                 radii.append(0.030)
             # ★ `tube` HAS NO `flip`, so a path that has been mirrored comes
