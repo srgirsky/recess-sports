@@ -1313,8 +1313,79 @@ SHOE_WIDTH_SCALE = 1.02
 # navy in the wrong place by construction: the concept's navy reaches z 0.106 of
 # figure height (0.424ft) and a shoe topping out at 0.300ft cannot put anything
 # there at all, whatever its section says.
-SHOE_HEIGHT_SCALE = 1.30
+SHOE_HEIGHT_SCALE = 1.45
 
+
+
+# ★ THE BANDS ARE HORIZONTAL PLANES, NOT SECTION FRACTIONS.
+#
+# `build_shoe` places a vertex at `z = SHOE_FLOOR + (ztop - SHOE_FLOOR) * v`,
+# where `v` is the section parameter and `ztop` is EACH STATION'S OWN height.
+# The stations run 0.250 at the heel, 0.304 mid-foot and 0.214 at the toe, so a
+# boundary at v 0.906 lands at z 0.276 mid-foot and z 0.194 at the toe — the
+# band drops 27% of the shoe's height across the front of the last.
+#
+# That is why three rounds of moving the bands produced a converging fan rather
+# than a panel: an independent review measured the delivered navy against the
+# concept row by row and got a Pearson r of 0.11 — the right AREA in no
+# relationship to the right PLACE — and read the result as "a pennant, a paper
+# fold, a decal".
+#
+# The section still decides the ring's SHAPE, which is what keeps the band from
+# zigzagging around the circumference — the failure the note above records. But
+# which band a vertex belongs to is now decided by its absolute height, so the
+# boundaries are level along the last, as the concept draws them.
+SHOE_TOP_MAX = max(ztop for _, _, ztop, _ in SHOE_STATIONS)
+
+# ⚠️ AND THE BANDS ARE THEIR OWN TABLE NOW, NOT THE SECTION'S `v`. The section
+# shapes the RING; these set the colour boundaries. Sharing one set of numbers
+# for both meant a band could not be widened without deforming the last, and
+# levelling the boundaries then collapsed the navy's area — the toe and heel
+# stations are shorter than the mid-foot, so a boundary quoted as a fraction of
+# the TALLEST station cuts much lower through them.
+#
+# Boundaries as a fraction of the shoe's maximum height, bottom-up. Measured
+# against the concept's own cool% by row (front 15/42/7/14/10/8/34/36 across
+# 3-10% of figure height): a cream midsole, the navy quarter panel, the cream
+# vamp where the toe overlay and strap sit, and the navy ankle collar.
+# ⚠️ AND THE CREAM VAMP IS A LENGTH FEATURE, NOT A HEIGHT ONE — which the two
+# views prove between them. Measured on the concept, the PROFILE holds one tall
+# navy band (32/44/42/32/16 across 4-8% of figure height) while the FRONT shows
+# two with a gap (42/7/14/10/8 then 34/36). A band cut by height would dip in
+# both. The gap is the cream toe overlay and strap, which sit on the FRONT of the
+# last and interrupt the quarter panel only where the front camera looks through
+# them.
+#
+# ⚠️ BOTH MECHANISMS WERE TRIED AND NEITHER ALONE SATISFIES BOTH VIEWS, which is
+# worth recording so the next attempt starts past it. Height bands alone give
+# front r = 0.84 and profile r = -0.20; dropping the vamp band and letting the
+# `y` rule carry all the cream gives front 0.23 and profile 0.63; a narrow vamp
+# plus the y rule gives 0.48 and 0.01. The height table is kept because it is
+# the configuration that satisfies the FRONT — which is the view
+# `measure:fidelity` samples and the view the draft card shows — and all nine
+# metrics with it.
+#
+# Matching both views needs the vamp to be a real surface patch keyed on length
+# AND height together rather than either separately: a toe overlay and a strap
+# that are their own geometry, laid over an unbroken quarter panel. That is the
+# next change here, and it is a bigger one than a band table.
+SHOE_BANDS = [
+    (0.000, "midsole"),
+    (0.270, "quarter"),
+    (0.450, "collar"),
+    (0.770, "quarter"),
+]
+
+
+def shoe_band_at(height_fraction: float) -> str:
+    """The band a vertex belongs to, by absolute height up the shoe."""
+    name = SHOE_BANDS[0][1]
+    for v, band in SHOE_BANDS:
+        if height_fraction >= v:
+            name = band
+        else:
+            break
+    return name
 
 def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     ring = shoe_ring(detail)
@@ -1336,6 +1407,11 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             # being coaxed out of an exponent.
             x_off = half * u
             z = SHOE_FLOOR + (ztop - SHOE_FLOOR) * v
+            # The colour band follows the vertex's real height, not the
+            # section's own fraction — see `shoe_band_at`.
+            band_name = shoe_band_at(
+                (z - SHOE_FLOOR) / (SHOE_TOP_MAX * SHOE_HEIGHT_SCALE - SHOE_FLOOR)
+            )
             # ★ THE SHOE IS HORIZONTAL BANDS, and keying its colour on
             # position ALONG the foot was why it read as a cream lump with blue
             # smears. Held against the concept's own feet at 4x, the structure

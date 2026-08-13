@@ -187,13 +187,13 @@
       "categories": {
         "frontProfileSilhouette": {
           "label": "front/profile silhouette",
-          "score": 3,
-          "note": "Fourteenth independent review: torso and hem track the concept, collar interpenetration cleared. Held at 3 by the tee reading as a bell rather than a box and the sleeve not carrying the upper arm; round 21 rebuilt the sleeve's clearance and is unscored since."
+          "score": 4,
+          "note": "Sixteenth independent review: the large read tracks the turnaround and is recognisable in pure silhouette. Held off 5 by the foot reading as a flat-topped slab butt-joined under the sock in profile."
         },
         "headBodyProportions": {
           "label": "head/body proportions",
-          "score": 3,
-          "note": "Fourteenth independent review: proportions measured-correct (head 26.3% vs 27.6%, aspect 1.09 vs 1.12) and the neck is now ~29% long rather than the 58% an earlier review measured. Held at 3 by the shoulder reading as a butt joint."
+          "score": 4,
+          "note": "Sixteenth independent review: head 26.3% vs 27.6%, aspect 1.09 vs 1.12, and the shoulder is a round deltoid cap under the sleeve with a raglan seam — the butt joint that held this at 3 is gone."
         },
         "hairMass": {
           "label": "hair mass",
@@ -203,17 +203,17 @@
         "clothingConstruction": {
           "label": "clothing construction",
           "score": 3,
-          "note": "Fourteenth independent review: shoe tone split is measured-correct (78.9/21.1 vs 78.4/20.7) but the CONSTRUCTION is not — no sole ledge, toe cap or strap reads at board resolution, and the sleeve cuff was absent. The sock is fixed. Round 21 restored the sleeve cuff; unscored since."
+          "note": "Sixteenth independent review: tee and shorts now PASS (rolled sleeve cuff, ribbed collar, hem lip, shorts hem band and centre crease). Held at 3 by the shoe alone. Round 24 levelled the colour bands, taking the front's row-wise correlation with the concept from r=0.11 to r=0.84; the profile view remains weak at r=-0.20 and is unscored since."
         },
         "faceExpressionRead": {
           "label": "face/expression read",
-          "score": 3,
-          "note": "Fourteenth independent review: face visible on the board and all four expression cells distinct. Held at 3 by the hero clause — at the runtime camera the nose loses its shading break and the far eye crushes to a dark slot (a renderer issue documented in face-specs.mjs, not a sculpt one)."
+          "score": 4,
+          "note": "Sixteenth independent review: face visible on the board, legible at hero, four distinct expression cells, and the ear has helix rim, concha shadow and lobe. Held off 5 by the nose not breaking the profile silhouette and facet banding on the skull."
         },
         "heroAndFieldScale": {
           "label": "hero + 40px read",
           "score": 4,
-          "note": "Fourteenth independent review, confirming the thirteenth: identity survives at both ends — unmistakably a bald heavy kid in a purple tee at hero, and the wide purple mass plus bald dome hold at 40px without being confusable with Junebug."
+          "note": "Sixteenth independent review: at 40px the bald dome, wide purple mass and dark shorts are unmistakable and not confusable with Junebug."
         }
       }
     },
