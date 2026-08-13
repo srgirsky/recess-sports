@@ -103,8 +103,8 @@ export const FACE_SPECS = {
     // which is only consistent if the eye is a wide slit rather than a tall
     // almond. His upper lid covers the top third of the iris on the turnaround.
     eyeHalfW: 21,
-    eyeHalfH: 5.1,
-    irisR: 5.9,
+    eyeHalfH: 4.2,
+    irisR: 5.2,
     irisInward: 3,
     eyeX: [34, 94],
     eyeY: 52,

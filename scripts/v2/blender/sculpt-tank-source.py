@@ -372,10 +372,19 @@ TORSO_LEVELS = [
 #
 # ⚠️ IT STILL HAS TO BE NARROWER THAN THE JAW or the chin has nowhere to be.
 # That rule is Junebug's and it is anatomy, not identity.
+# ★ THE COLLAR HAD A SLOT IN IT. The tee's collar hole is 0.244 across and the
+# neck was 0.218 there, so a 0.026 ring of nothing ran between them and the
+# board drew the torso's unlit interior through the gap — the "skin island
+# floating inside the purple collar" 3.7 was failed on. The neck fills the
+# collar now.
+#
+# ⚠️ AND IT STILL HAS TO BE NARROWER THAN THE JAW, which measures 0.260 at
+# z 2.96, or the chin has nowhere to sit. That is Junebug's rule and it is
+# anatomy: 0.238 at the top leaves 0.022 of clearance.
 NECK_LEVELS = [
-    (2.760, 0.250, 0.230, "Spine2"),
-    (2.880, 0.222, 0.212, "Neck"),
-    (2.980, 0.214, 0.206, "Neck"),
+    (2.760, 0.276, 0.256, "Spine2"),
+    (2.880, 0.258, 0.240, "Neck"),
+    (2.980, 0.238, 0.224, "Neck"),
 ]
 
 # --- Arms ----------------------------------------------------------------------
@@ -426,17 +435,32 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
     """
     sides = 14 if detail >= 2 else 6
     stations = [
-        (0.300, 0.196, SHIRT, "Arm"),
-        (ARM_SHOULDER_X, 0.190, SHIRT, "Arm"),
-        (0.560, 0.178, SHIRT, "Arm"),
+        # ★ THE SLEEVE MUST BE A SHOULDER THAT NARROWS, NOT A TUBE THAT STARTS.
+        #
+        # Four reviews described this corner as butt-joined primitives — "a
+        # discrete ellipsoid cap interpenetrating the torso and a free-floating
+        # sleeve torus the arm passes through" — and 3.1's 5/5 is literally
+        # "transitions between forms are organic, not butt-joined primitives".
+        #
+        # Held against approved Junebug's board at 3x the difference is not
+        # detail, it is TAPER: her sleeve leaves the torso at nearly the torso's
+        # own shoulder radius and narrows all the way to the cuff, so the garment
+        # reads as one surface crossing a joint. Tank's left at 0.196 against a
+        # tee whose shoulder ring is 0.556 — a rod out of a wide body, which is
+        # also why it rendered dark: a thin cylinder turns its whole surface away
+        # from the key where a broad deltoid faces it.
+        (0.215, 0.286, SHIRT, "Arm"),
+        (0.330, 0.272, SHIRT, "Arm"),
+        (ARM_SHOULDER_X, 0.248, SHIRT, "Arm"),
+        (0.560, 0.216, SHIRT, "Arm"),
         # ★ THE CUFF IS A STEP AND A BAND. Rubric 3.4 asks for garments that read
         # as CONSTRUCTED, and the independent review scored this a 1 with "no
         # folded sleeve cuff" named first. A colour change alone is a printed
         # stripe; a cuff is thicker than the sleeve above it and than the arm
         # below, so it takes three rings — swell, band, and the arm emerging.
-        (SLEEVE_HEM_X - 0.030, 0.172, SHIRT, "Arm"),
-        (SLEEVE_HEM_X, 0.180, SHIRT_DARK, "Arm"),
-        (SLEEVE_HEM_X + 0.026, 0.176, SHIRT_DARK, "Arm"),
+        (SLEEVE_HEM_X - 0.030, 0.188, SHIRT, "Arm"),
+        (SLEEVE_HEM_X, 0.196, SHIRT_DARK, "Arm"),
+        (SLEEVE_HEM_X + 0.026, 0.190, SHIRT_DARK, "Arm"),
         (SLEEVE_HEM_X + 0.040, 0.130, SKIN, "ForeArm"),
         (0.860, 0.126, SKIN, "ForeArm"),
         (ARM_ELBOW_X, 0.120, SKIN, "ForeArm"),
@@ -462,7 +486,7 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
                 )
             )
         rows.append(row)
-    builder.grid(rows, 1, flip=side < 0)
+    builder.grid(rows, 1, flip=side > 0)
 
     # ★ THE INBOARD END IS CAPPED, and rubric 3.7 is binary about that. `grid`
     # stitches rows and closes nothing, so the shoulder ring was an open
@@ -470,7 +494,7 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
     # bored through the shirt shell with a floating arm stub inside it". A
     # deltoid dome closes it AND gives 3.11 the round shoulder form it asks for.
     shoulder_bone = limb_bone("Arm", side)
-    cap = builder.vertex((0.230 * side, 0.0, ARM_Z), SHIRT, shoulder_bone, (0.75, 0.25))
+    cap = builder.vertex((0.170 * side, 0.0, ARM_Z), SHIRT, shoulder_bone, (0.75, 0.25))
     for index in range(sides):
         nxt = (index + 1) % sides
         face = (cap, rows[0][nxt], rows[0][index]) if side > 0 else (cap, rows[0][index], rows[0][nxt])
@@ -590,13 +614,19 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
         # on the shoe. `grid` is emitted per row-pair so a pair whose lower row
         # is accent-coloured goes to M_Accessory and the skin stays continuous.
         materials.append(3 if colour == TEAM_MASK else 1)
-        cx = leg_x(z) * side
         row = []
         for index in range(sides):
             theta = 2 * pi * index / sides
             row.append(
                 builder.vertex(
-                    (cx + radius * cos(theta), radius * sin(theta) * 0.92, z),
+                    # ★ THE WHOLE RING IS REFLECTED, not just its centre. Writing
+                    # `cx + r*cos(theta)` with `cx = leg_x*side` mirrors where the
+                    # leg IS and not which way round it is built, so the far leg
+                    # is the near leg translated — the same defect `shoe_place`
+                    # had. The board showed it as one shin lit and the other in
+                    # shadow at the same height, which three reviews read as a
+                    # colour difference between the socks.
+                    ((leg_x(z) + radius * cos(theta)) * side, radius * sin(theta) * 0.92, z),
                     colour,
                     bone_name,
                     (0.75, 0.25),
@@ -760,15 +790,15 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             # carries a thick cream midsole with a visible sidewall, a navy toe
             # cap and a quarter panel. The band below is the sidewall, and the
             # toe cap is the front third in the darker tone.
-            if z < SHOE_FLOOR + 0.084:
+            if z < SHOE_FLOOR + 0.152:
                 band = WHITE
             # ⚠️ SIZED AGAINST THE MEASUREMENT. The first pass painted the front
             # 35% of the last as toe cap and another 19% as quarter panel —
             # about 54% of the shoe navy against a concept that measures 26.2%.
             # The band metric caught it as cream falling to 45.3%.
-            elif y > 0.352:
+            elif y > 0.205:
                 band = SHOE        # toe cap
-            elif -0.108 < y < -0.068:
+            elif -0.200 < y < -0.058:
                 band = SHOE        # quarter panel over the instep
             else:
                 band = colour
@@ -797,7 +827,7 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     # fourth review measured the normals and found it. Approved Junebug is 0 of
     # 1,354; a near-zero threshold is safe, and `authored-character.test.js`
     # gates it now.
-    builder.grid(rows, 1, flip=side < 0)
+    builder.grid(rows, 1, flip=side > 0)
 
     # Cap both ends so the upper is closed — rubric 3.7 is binary about holes.
     heel = builder.vertex(shoe_place(side, -0.286, 0.0, 0.126), SHOE, bone, (0.75, 0.25))  # heel counter
