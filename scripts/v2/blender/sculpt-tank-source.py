@@ -1572,34 +1572,35 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
     # Three lace straps lying ON the vamp, which is what the concept draws —
     # not pegs standing proud of it, the defect Junebug's round-5 board scored.
     if detail >= 2:
-        # ★ ONE VELCRO STRAP, NOT THREE LACES. The concept fastens this shoe with
-        # a single broad cream strap across the instep with a stitched edge —
-        # visible at 40px as a band, which three 0.030 tubes never were. Two
-        # reviews listed "no velcro strap" among the missing construction while
-        # the laces were sitting right there, because at board resolution they
-        # read as texture rather than as a fastening.
+        # ★ THE STRAP IS A SURFACE, NOT TUBES. Two reviews running described it
+        # as "converging chevrons over the slate — a paper fold, not a
+        # fastening", and a tube laid along the vamp's curve is exactly that
+        # seen head-on: two lines that meet, with no width between them.
         #
-        # The second, thinner pass behind it is the stitch line: the strap has an
-        # edge in the drawing and an unbroken band reads as a sticker.
-        for lace_y, thickness in (
-            (0.086 * SHOE_LENGTH_SCALE, 0.058),
-            (0.150 * SHOE_LENGTH_SCALE, 0.020),
-        ):
-            path = []
-            radii = []
-            for step in range(7):
-                t = step / 6.0
-                across = (t - 0.5) * 2.0
-                half = 0.196 * SHOE_WIDTH_SCALE * (1.0 - 0.18 * across * across)
-                path.append(shoe_place(side, lace_y, half * across, 0.300 - 0.052 * across * across))
-                radii.append(thickness)
-            # ★ `tube` HAS NO `flip`, so a path that has been mirrored comes
-            # out inside out. Reversing the point order reverses the winding,
-            # which is the same correction by other means.
-            if side < 0:
-                path = list(reversed(path))
-                radii = list(reversed(radii))
-            builder.tube(path, radii, 1, SOLE, bone, 5)
+        # A velcro strap is a flat band lying ACROSS the instep. Built as two
+        # rows on the shoe's own upper arc, 3% proud so it occludes the panel
+        # under it, it has an area rather than an outline — which is the whole
+        # difference at board resolution.
+        arc = [(u, v) for u, v, _b in ring if v >= 0.52]
+        if len(arc) >= 3:
+            strap: list[list[int]] = []
+            for y_s, half_s, ztop_s, _c in SHOE_STATIONS:
+                if not (-0.02 < y_s < 0.20):
+                    continue
+                floor_s = shoe_floor_at(y_s)
+                ys = y_s * SHOE_LENGTH_SCALE
+                hs = half_s * SHOE_WIDTH_SCALE * 1.030
+                zt = SHOE_FLOOR + (ztop_s - SHOE_FLOOR) * SHOE_HEIGHT_SCALE
+                row = [
+                    builder.vertex(
+                        shoe_place(side, ys, hs * u, floor_s + (zt - floor_s) * v),
+                        SOLE, bone, (0.75, 0.25),
+                    )
+                    for u, v in arc
+                ]
+                strap.append(row)
+            if len(strap) >= 2:
+                builder.grid(strap, 1, cyclic=False, flip=side > 0)
 
     # ★ THE SHOE'S COLLAR BAND WAS A DETACHED SHELL, and 3.7 caught it: a
     # 100px floating component at the ankle, separated from the shoe by clear
