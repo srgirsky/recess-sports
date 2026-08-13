@@ -148,12 +148,29 @@ export const FACE_SPECS = {
     // `visible face left` to 35.0 against a concept of 48.3 — outside tolerance
     // on a metric that had been green — so it is reverted here.
     //
-    // What IS established: the atlas HAS the sclera (353 near-white opaque
-    // pixels in the grin cell, of 1310 drawn), the Blender board material
-    // renders it, and `materials/toon.ts` does not. That is a mismatch between
-    // the board's mirror of the decal and the shader it mirrors, and it wants a
-    // renderer pass, not more face-spec numbers. It is very likely roster-wide
-    // rather than Tank's.
+    // What IS established, and what has been ELIMINATED — recorded so the next
+    // person does not repeat the search:
+    //
+    //   - the atlas holds the sclera at rgb(255,250,240) ALPHA 255. Not dim,
+    //     not semi-transparent. Opaque white.
+    //   - the texture EMBEDDED IN THE SHIPPED GLB is identical to the source
+    //     PNG at that texel, so nothing is lost in export.
+    //   - the Blender board material renders it: rgb(214,212,210) at warmth 4.
+    //   - the runtime does not. Sampled tightly on the eye and the mouth, the
+    //     MAXIMUM luminance is 80-100 at warmth 103-116 — that is skin. A
+    //     darkened white would still be neutral, and under this light rig a
+    //     white texel should reach roughly rgb(166,148,94).
+    //   - it is not only the sclera: the `grin` cell's white TEETH are missing
+    //     from the runtime too, while the brows and lash lines render. Broad
+    //     dark marks survive; small light ones do not.
+    //   - RULED OUT: mipmap filtering. Forcing LinearFilter and
+    //     generateMipmaps=false on the atlas changed the rendered pixels not at
+    //     all — byte-identical — so the reduced-mip alpha-bleed theory is wrong.
+    //
+    // That leaves the seam between `findFaceAtlas`/`makeToonMaterial` and the
+    // injected `<map_fragment>` block in `materials/toon.ts`. It wants a live
+    // renderer session, not more face-spec numbers, and it is very likely
+    // roster-wide rather than Tank's.
     eyeHalfW: 18.5,
     eyeHalfH: 4.6,
     irisR: 7.0,
