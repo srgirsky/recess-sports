@@ -464,8 +464,21 @@ TORSO_LEVELS = [
     (1.480, 0.660, 0.576, "Hips"),
     (1.720, 0.680, 0.547, "Spine"),
     (1.960, 0.880, 0.515, "Spine"),   # widest: traced 0.910, shipped a touch under
-    (2.200, 0.800, 0.475, "Spine1"),
-    (2.400, 0.660, 0.425, "Spine1"),
+    # ⚠️ AND THE CHEST HAS TO LEAVE ROOM FOR THE SLEEVE, which round 15 took
+    # back without noticing. Narrowing the lower torso to the trace was right,
+    # but these two rings stayed where they were, and the sleeve descends
+    # THROUGH them when the arm drops. Worked out against the arm at its 40
+    # degrees of abduction, the sleeve's outer surface cleared the tee by 0.003
+    # to 0.041ft — technically outside it, and one to five pixels of purple at
+    # render scale. A review read the result as "no sleeve at all, a purple
+    # spur at the shoulder", which is exactly what a grazing surface looks like.
+    #
+    # The traced 0.822 at z 2.19 is the tee's OUTER silhouette and it includes
+    # the sleeve, so the BODY has to sit inside it by the sleeve's own
+    # thickness. At 0.720 the sleeve stands 0.06-0.10ft proud and reads as a
+    # sleeve.
+    (2.200, 0.720, 0.475, "Spine1"),
+    (2.400, 0.615, 0.425, "Spine1"),
     # ★ THE SHOULDER WAS 21% TOO NARROW, measured: 0.75 head widths delivered
     # against the concept's 0.95. The tee climbed monotonically from collar to
     # hem — a truncated cone with no shoulder break anywhere — which is the

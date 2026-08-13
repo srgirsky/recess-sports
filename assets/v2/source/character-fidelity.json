@@ -188,32 +188,32 @@
         "frontProfileSilhouette": {
           "label": "front/profile silhouette",
           "score": 3,
-          "note": "Twelfth independent review: profile depth now tracks the concept within 1% of figure height and both hems land within 0.003. Held at 3 by a sleeve-hem spike, collar poke-through at the neck, and (before this round) undersized lower limbs."
+          "note": "Fourteenth independent review: torso and hem track the concept, collar interpenetration cleared. Held at 3 by the tee reading as a bell rather than a box and the sleeve not carrying the upper arm; round 21 rebuilt the sleeve's clearance and is unscored since."
         },
         "headBodyProportions": {
           "label": "head/body proportions",
           "score": 3,
-          "note": "Twelfth independent review: measured-correct (head 26.1% vs 27.6%, aspect 1.10 vs 1.12) and the shoulder now reads as a connected form. Held by the neck being 58% longer than the concept's and the hand reading flat at hero scale."
+          "note": "Fourteenth independent review: proportions measured-correct (head 26.3% vs 27.6%, aspect 1.09 vs 1.12) and the neck is now ~29% long rather than the 58% an earlier review measured. Held at 3 by the shoulder reading as a butt joint."
         },
         "hairMass": {
           "label": "hair mass",
           "score": null,
-          "note": "Not applicable: Tank is bald (roster visual.hair = 'bald'), so this category has no subject. Abstains; does not pass."
+          "note": "Not applicable: Tank is bald (roster visual.hair = 'bald'). Abstains; does not pass."
         },
         "clothingConstruction": {
           "label": "clothing construction",
           "score": 3,
-          "note": "Twelfth independent review: rolled tee hem, collar rib, raglan seam, sleeve cuff, shorts hem cuff and sole ledge all present. Held at 3 because the shoe's navy sits at 0.17-0.24 of shoe height where the concept puts it at 0.25-0.72 — the area landed, the placement did not."
+          "note": "Fourteenth independent review: shoe tone split is measured-correct (78.9/21.1 vs 78.4/20.7) but the CONSTRUCTION is not — no sole ledge, toe cap or strap reads at board resolution, and the sleeve cuff was absent. The sock is fixed. Round 21 restored the sleeve cuff; unscored since."
         },
         "faceExpressionRead": {
           "label": "face/expression read",
           "score": 3,
-          "note": "Twelfth independent review: the eye is properly built (sclera, iris, catchlight, heavy lid) and the earlier 'flat almond decals' finding is struck. Held at 3 by the hero clause — under runtime lighting the eye crushes to a dark slot — and by brows drawn as wedges rather than arcs."
+          "note": "Fourteenth independent review: face visible on the board and all four expression cells distinct. Held at 3 by the hero clause — at the runtime camera the nose loses its shading break and the far eye crushes to a dark slot (a renderer issue documented in face-specs.mjs, not a sculpt one)."
         },
         "heroAndFieldScale": {
           "label": "hero + 40px read",
-          "score": 3,
-          "note": "Twelfth independent review: the 40px colour block survives and is unmistakably not Junebug. Held at 3 because the 'heavy kid' read was carried by limbs at ~40% of the concept's mass; round 15 grew them to the drawing and this is unscored since."
+          "score": 4,
+          "note": "Fourteenth independent review, confirming the thirteenth: identity survives at both ends — unmistakably a bald heavy kid in a purple tee at hero, and the wide purple mass plus bald dome hold at 40px without being confusable with Junebug."
         }
       }
     },
