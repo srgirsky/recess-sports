@@ -245,7 +245,7 @@ def nose_push(nx: float, nz: float) -> float:
     dz = nz + 0.471
     if dz < -0.16 or dz > 0.18:
         return 0.0
-    across = 1.0 - (nx / 0.26) ** 2
+    across = max(0.0, 1.0 - (nx / 0.26) ** 2)
     # bridge: a low ridge running up from the tip, barely there on a button nose
     bridge = 0.030 * across * max(0.0, 1.0 - abs(dz - 0.10) / 0.12)
     # tip: the rounded ball that carries the form
@@ -261,10 +261,30 @@ def nose_push(nx: float, nz: float) -> float:
     # see. A wide gentle push has no terminator to catch the key; a tighter one
     # of the same height does. The falloff narrows and the exponent sharpens
     # while the peak stays where the profile measurement put it.
-    tip = 0.118 * across ** 0.55 * max(0.0, 1.0 - (dz / 0.082) ** 2) ** 0.55
-    # nostril shelf: the underside, which is what breaks the profile silhouette
-    shelf = 0.034 * across * max(0.0, 1.0 - abs(dz + 0.13) / 0.06)
-    return bridge + tip + shelf
+    # ★ ROUND 20: IT WAS A BEAK, AND THE EXPONENTS SAY WHY.
+    #
+    # Two independent reviews called the profile nose "a sharp triangular point
+    # with a straight underside" against a concept that draws a soft round
+    # button with a nostril. Held side by side at 3x, the drawing is right.
+    #
+    # The cause is in the falloff, not the height. `(1 - t^2) ** 0.55` with an
+    # exponent BELOW ONE has an infinite slope at its edges: it is a tent with a
+    # rounded cap, not a dome, and it comes to a cusp in profile. And the
+    # nostril shelf was a SEPARATE linear tent centred at dz -0.13, where the
+    # tip's own falloff has already reached zero — so the nose was two lumps
+    # with a notch between them, which is exactly the straight underside the
+    # reviews described.
+    #
+    # One bulb now, with an exponent above one so the surface is a dome, and the
+    # underside carried by an ASYMMETRIC vertical falloff rather than a second
+    # form: a nose reaches further below its own centre than above it. The peak
+    # comes down a little because the concept's is a small button and the old
+    # height was solved against a shape that was throwing most of it into a
+    # point.
+    reach = 0.150 if dz >= 0.0 else 0.156
+    t = dz / reach
+    tip = 0.084 * across ** 1.10 * max(0.0, 1.0 - t * t) ** 1.30
+    return bridge + tip
 
 
 # ★ ROUND 2: HIS HEAD ASPECT IS MEASURED ACROSS THE EARS, which is why round 1
@@ -863,7 +883,12 @@ SHORTS_HEM_Z = 0.694
 # shorts hem and the sock top; round 5 shipped 2%, with the socks pulled nearly
 # twice as high as drawn. 0.28ft of shin below a hem at 0.694 puts the roll at
 # 0.414.
-SOCK_TOP_Z = 0.414
+# ★ MEASURED, AND IT WAS A THIRD OF A FOOT TOO LOW. An independent review found
+# "the concept's tall slouched ribbed crew sock reduced to a short grey ankle
+# cuff", and the drawing agrees: scanning his front figure row by row, bare skin
+# runs z 0.68 down to 0.56 and the cream sock holds z 0.53 to 0.44. His sock top
+# is 0.55, not 0.414.
+SOCK_TOP_Z = 0.550
 
 
 def leg_x(z: float) -> float:
@@ -931,12 +956,13 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
         # against the concept's 0.50 — see SHOE_LENGTH_SCALE's note. Grown to
         # the drawing, which also leaves the 0.16ft calf gap 3.12 asks for.
         (0.680, 0.246, 0.98, SKIN, "Leg"),                # bare shin begins
-        (0.520, 0.248, 0.96, SKIN, "Leg"),
-        (SOCK_TOP_Z + 0.012, 0.244, 0.95, SKIN, "Leg"),
-        (SOCK_TOP_Z, 0.268, 0.95, TEAM_MASK, "Leg"),      # roll, the team accent
-        (SOCK_TOP_Z - 0.034, 0.262, 0.95, TEAM_MASK, "Leg"),
-        (SOCK_TOP_Z - 0.066, 0.246, 0.95, SOCK, "Leg"),   # z 0.348
-        (0.260, 0.228, 0.95, SOCK, "Leg"),
+        (0.610, 0.247, 0.96, SKIN, "Leg"),
+        (SOCK_TOP_Z + 0.014, 0.244, 0.95, SKIN, "Leg"),   # z 0.564
+        (SOCK_TOP_Z, 0.272, 0.95, TEAM_MASK, "Leg"),      # the roll, team accent
+        (SOCK_TOP_Z - 0.036, 0.264, 0.95, TEAM_MASK, "Leg"),
+        (SOCK_TOP_Z - 0.070, 0.248, 0.95, SOCK, "Leg"),   # z 0.480
+        (0.400, 0.238, 0.95, SOCK, "Leg"),
+        (0.280, 0.224, 0.95, SOCK, "Leg"),
         (0.150, 0.208, 0.95, SOCK, "Foot"),
     ]
     if detail < 1:
