@@ -191,9 +191,24 @@ function brow(x, y, tilt, inner) {
   // around the whole back of the head.
   const capL = left * 0.45;
   const capR = right * 0.45;
-  return `<path d="M${x - half} ${y - tilt - left} Q${x} ${y - 10} ${x + half} ${y + tilt - right}
+  // ★ THE ARCH AND THE UNDERSIDE ARE PER CHARACTER, because they set how THICK
+  // the bar is at its centre and not just how curved.
+  //
+  // A quadratic's midpoint is (P0 + 2·P1 + P2)/4, so with the arch control at
+  // -10 and the underside at +1.5 the bar measures 7.45 cells through the
+  // middle — about 6.8% of head width against a concept brow of ~4.5%. Two
+  // independent reviews called Tank's "heavy angular wedges" against a drawing
+  // of "thin tapered arcs", and that arithmetic is why: the ENDS were already
+  // thin (2.1 and 1.3) and the centre was doing all the weight.
+  //
+  // Raising the underside thins the bar without flattening the arch, which
+  // keeps the curve the concept draws. Junebug's 10/1.5 are the defaults and
+  // she is untouched — her brows are her memorable read and she is approved.
+  const arch = spec.browArch ?? 10;
+  const base = spec.browBase ?? 1.5;
+  return `<path d="M${x - half} ${y - tilt - left} Q${x} ${y - arch} ${x + half} ${y + tilt - right}
     Q${x + half - capR} ${y + tilt} ${x + half} ${y + tilt + right}
-    Q${x} ${y + 1.5} ${x - half} ${y - tilt + left}
+    Q${x} ${y + base} ${x - half} ${y - tilt + left}
     Q${x - half + capL} ${y - tilt} ${x - half} ${y - tilt - left}Z" fill="${ink}"/>`;
 }
 

@@ -69,7 +69,13 @@ export const FACE_SPECS = {
   tank: {
     ink: '#120a05',
     mouthInk: '#5c3126',
-    sclera: '#f4e9d5',
+    // ★ BRIGHTER THAN THE BOARD NEEDS, BECAUSE THE GAME IS DARKER THAN THE
+    // BOARD. An independent review measured the runtime scene at roughly half
+    // the board's luminance (skin median 83 against 166) and found the eye
+    // crushing to "a solid dark slot with no iris and no catchlight" in the
+    // hero still while reading correctly on the board. The sclera has to carry
+    // that difference, because it is the only light value inside the eye.
+    sclera: '#fffaf0',
     irisBrown: '#3a2214',
     pupil: '#150d08',
     white: '#fff4e0',
@@ -145,6 +151,12 @@ export const FACE_SPECS = {
     browX: [35, 93],
     browY: 30,
     browTilt: 0,
+    // Thin through the middle, arch kept. See `brow()` in generate-face-atlas:
+    // at the default 10/1.5 the bar measures 7.45 cells through its centre,
+    // ~6.8% of head width against the concept's ~4.5%, which is what two
+    // reviews read as a wedge. 8 / -2.0 lands it near 4.7 and leaves the curve.
+    browArch: 8,
+    browBase: -2.0,
     mouthY: 104,
     // See generate-face-atlas.mjs: distinct silhouettes for grin/cheer/tongue.
     tongueOut: true,

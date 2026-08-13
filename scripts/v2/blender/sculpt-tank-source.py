@@ -607,10 +607,18 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
         # folded sleeve cuff" named first. A colour change alone is a printed
         # stripe; a cuff is thicker than the sleeve above it and than the arm
         # below, so it takes three rings — swell, band, and the arm emerging.
+        # ⚠️ THE CUFF ENDED IN A SPIKE, and an independent review found it on
+        # both sides at once — the tell that it is a table, not a stray vertex.
+        # The garment dropped 0.190 to 0.130 across 0.014ft of limb, a 4:1
+        # slope, so the sleeve's edge rendered as a hard point rather than a
+        # hem with an underside. A cuff needs the same three rings the tee hem
+        # and the shorts hem already have: the band, its underside, and the arm
+        # emerging from it.
         (SLEEVE_HEM_X - 0.030, 0.188, SHIRT, "Arm"),
-        (SLEEVE_HEM_X, 0.196, SHIRT_DARK, "Arm"),
-        (SLEEVE_HEM_X + 0.026, 0.190, SHIRT_DARK, "Arm"),
-        (SLEEVE_HEM_X + 0.040, 0.130, SKIN, "ForeArm"),
+        (SLEEVE_HEM_X, 0.198, SHIRT_DARK, "Arm"),          # cuff band, proud
+        (SLEEVE_HEM_X + 0.026, 0.192, SHIRT_DARK, "Arm"),
+        (SLEEVE_HEM_X + 0.042, 0.170, SHIRT_DARK, "Arm"),  # the cuff's underside
+        (SLEEVE_HEM_X + 0.058, 0.132, SKIN, "ForeArm"),
         # ★ AND AN ELBOW, so the limb is two tapers with a break rather than
         # one dead-straight cone from sleeve to fist — which is what every run
         # and swing still has shown for seven rounds.
