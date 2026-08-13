@@ -1153,6 +1153,30 @@ function tankSwingFollow(spec: ClipSpec): AnimationClip {
   ]);
 }
 
+// ★ HE HAS TO LOOK UP AT SOME POINT, and until he did, rubric 3.14 had no
+// evidence at all. Its four named stills — `tank-runtime-face-*.png` — are
+// captured off the idle clip, and a plain `breathe` cycle never turns the head,
+// so all four came back as the same rear-3/4 photograph of his scalp with only
+// the button label different. The independent review marked 3.14 UNVERIFIABLE
+// for exactly that reason.
+//
+// Junebug's idle already solved this and the solution is a BEAT rather than a
+// pose: "she checks once, then goes still again". Tank gets the same beat at
+// his own tempo — he is `calm`, so the turn is slower, held longer and smaller,
+// and he takes a breath rather than snapping back. The head yaw is negative
+// because that is the direction Junebug's own check turns.
+function tankIdle(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: TANK_IDLE_POSE },
+    { f: 16, pose: shift(TANK_IDLE_POSE, { sp: [0.6, 0, 0], s2: [0.7, 0, 0] }), hips: [0, 0.007, 0] },
+    // The look. Slower into it than Junebug and held nearly twice as long.
+    { f: 30, pose: shift(TANK_IDLE_POSE, { hd: [-2, -20, 0], nk: [-1, -8, 0] }) },
+    { f: 46, pose: shift(TANK_IDLE_POSE, { hd: [-2, -20, 0], nk: [-1, -8, 0] }) },
+    { f: 54, pose: shift(TANK_IDLE_POSE, { hd: [-1, -9, 0], nk: [0, -4, 0] }), hips: [0, 0.005, 0] },
+    { f: spec.frames, pose: TANK_IDLE_POSE },
+  ]);
+}
+
 function tankIdleFidget(spec: ClipSpec): AnimationClip {
   return build(spec, [
     { f: 0, pose: TANK_IDLE_POSE },
@@ -1795,7 +1819,7 @@ export function buildBigLouPilotClips(): AnimationClip[] {
 /** Tank's complete Batch 1 pass, exported as a partial delivery. */
 export function buildTankPilotClips(): AnimationClip[] {
   const builders: Readonly<Record<string, (spec: ClipSpec) => AnimationClip>> = {
-    idle: (spec) => breathe(spec, TANK_IDLE_POSE, 0.7),
+    idle: tankIdle,
     idle_fidget: tankIdleFidget,
     run: (spec) => runCycle(spec, 7, 34, 32),
     bat_stance: (spec) => breathe(spec, TANK_STANCE_POSE, 0.75),
