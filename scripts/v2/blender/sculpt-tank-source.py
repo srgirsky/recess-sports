@@ -999,8 +999,8 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
         (SOCK_TOP_Z - 0.036, 0.264, 0.95, TEAM_MASK, "Leg"),
         (SOCK_TOP_Z - 0.070, 0.248, 0.95, SOCK, "Leg"),   # z 0.480
         (0.400, 0.238, 0.95, SOCK, "Leg"),
-        (0.280, 0.224, 0.95, SOCK, "Leg"),
-        (0.150, 0.208, 0.95, SOCK, "Foot"),
+        (0.280, 0.206, 0.95, SOCK, "Leg"),
+        (0.150, 0.168, 0.95, SOCK, "Foot"),
     ]
     if detail < 1:
         stations = [station for index, station in enumerate(stations) if index % 2 == 0 or index == len(stations) - 1]
@@ -1406,7 +1406,7 @@ SHOE_TOP_MAX = max(ztop for _, _, ztop, _ in SHOE_STATIONS)
 SHOE_BANDS = [
     (0.000, "midsole"),
     (0.270, "quarter"),
-    (0.620, "collar"),
+    (0.640, "collar"),
     (0.800, "quarter"),
 ]
 
@@ -1570,7 +1570,7 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             # being kept in step by hand.
             if band_name == "quarter" and v >= toe_cap_v_low(y_unscaled):
                 band = SOLE                # under the cream toe cap
-            elif band_name == "quarter" and -0.15 < y < 0.30 and 0.44 <= height <= 0.66:
+            elif band_name == "quarter" and -0.15 < y < 0.30 and 0.44 <= height <= 0.54:
                 band = SOLE                # under the cream strap
             elif band_name == "quarter":
                 band = SHOE                # the navy quarter, unbroken on the flanks

@@ -188,12 +188,12 @@
         "frontProfileSilhouette": {
           "label": "front/profile silhouette",
           "score": 4,
-          "note": "Sixteenth independent review: the large read tracks the turnaround and is recognisable in pure silhouette. Held off 5 by the foot reading as a flat-topped slab butt-joined under the sock in profile."
+          "note": "Eighteenth independent review: reads as Tank with colour removed — bald dome, no neck, wide boxy tee, thick legs. Off 5 by the tee hem flaring more than the turnaround's and the sock/shoe junction still butt-joining."
         },
         "headBodyProportions": {
           "label": "head/body proportions",
           "score": 4,
-          "note": "Sixteenth independent review: head 26.3% vs 27.6%, aspect 1.09 vs 1.12, and the shoulder is a round deltoid cap under the sleeve with a raglan seam — the butt joint that held this at 3 is gone."
+          "note": "Eighteenth independent review: head 26.3% vs 27.6%, aspect 1.09 vs 1.12, and the shoulder is a round deltoid cap with a raglan seam rather than a butt-joined tube."
         },
         "hairMass": {
           "label": "hair mass",
@@ -203,17 +203,17 @@
         "clothingConstruction": {
           "label": "clothing construction",
           "score": 3,
-          "note": "Sixteenth independent review: tee and shorts now PASS (rolled sleeve cuff, ribbed collar, hem lip, shorts hem band and centre crease). Held at 3 by the shoe alone. Round 24 levelled the colour bands, taking the front's row-wise correlation with the concept from r=0.11 to r=0.84; the profile view remains weak at r=-0.20 and is unscored since."
+          "note": "Eighteenth independent review: tee, shorts and sock all PASS. Held at 3 by the shoe. Of its three findings the profile-colour one is CLOSED (that review measured profile r +0.69, the stronger of the two views); the curved sole half-closes the slab finding (19px toe lift, 13px heel) but the upper still has no collar and the sock interpenetrates it; the strap still reads as leftover navy rather than a band. Round 30 restored a navy stripe between strap and vamp — front/profile r now 0.57/0.60 — and is unscored since."
         },
         "faceExpressionRead": {
           "label": "face/expression read",
           "score": 4,
-          "note": "Sixteenth independent review: face visible on the board, legible at hero, four distinct expression cells, and the ear has helix rim, concha shadow and lobe. Held off 5 by the nose not breaking the profile silhouette and facet banding on the skull."
+          "note": "Eighteenth independent review: brow, iris, nose and lip legible at hero, and the nose genuinely breaks the profile silhouette with a nostril shadow. Off 5 by facet banding on the skull and the eye reading flat at exactly 90 degrees."
         },
         "heroAndFieldScale": {
           "label": "hero + 40px read",
           "score": 4,
-          "note": "Sixteenth independent review: at 40px the bald dome, wide purple mass and dark shorts are unmistakable and not confusable with Junebug."
+          "note": "Eighteenth independent review: at 40px the bald dome, wide purple block and dark shorts survive and are unmistakably not Junebug."
         }
       }
     },
