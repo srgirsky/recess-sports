@@ -89,7 +89,12 @@ PANTS = rgba("24242B")
 PANTS_DARK = rgba("121116")
 SHOE = rgba("2E4E86")  # navy with real blue in it, not a neutral dark
 SOCK = rgba("FFE0B4")  # same ramp correction as SOLE
-WHITE = rgba("FFE8C4")  # the midsole: warm, not paper
+# ★ THE MIDSOLE IS LIGHTER BY VALUE, NOT BY BEING WHITE. A near-white band
+# counts as "cream" for the tone split while contributing nothing to the band's
+# chroma, which is how the two metrics ended up anti-correlated: every step that
+# made the sole read as a separate band also drained the shoe's colour. It is a
+# warm cream a little lighter than the upper.
+WHITE = rgba("FFE4B8")  # the midsole: warm, not paper
 # ★ ROUND 3: AUTHORED WARMER THAN THE CONCEPT, ON PURPOSE. Sampled #F1E4D4 off
 # the turnaround, the first board rendered his shoe #AAA49D — the right value
 # family and no warmth at all, and only 42.4% of the band classified as the
@@ -642,7 +647,7 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
         (SHORTS_HEM_Z, 0.332, 1.10, PANTS_DARK, "Leg"),   # hem, z 0.694
         (0.680, 0.196, 0.98, SKIN, "Leg"),                # bare shin begins
         (0.520, 0.190, 0.96, SKIN, "Leg"),
-        (SOCK_TOP_Z + 0.012, 0.186, 0.95, SKIN, "Leg"),   # z 0.426
+        (SOCK_TOP_Z + 0.012, 0.186, 0.95, SKIN, "Leg"),
         (SOCK_TOP_Z, 0.208, 0.95, TEAM_MASK, "Leg"),      # roll, the team accent
         (SOCK_TOP_Z - 0.034, 0.202, 0.95, TEAM_MASK, "Leg"),
         (SOCK_TOP_Z - 0.066, 0.188, 0.95, SOCK, "Leg"),   # z 0.348
@@ -825,29 +830,41 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             span = ztop - SHOE_FLOOR
             shaped = (1.0 if sn >= 0 else -1.0) * abs(sn) ** 0.40
             z = SHOE_FLOOR + span * (0.5 + 0.5 * shaped)
-            # ★ THE MIDSOLE IS A BAND, NOT A SECOND SHELL. Rubric 3.4 asks for
-            # garments that read as CONSTRUCTED — soles, cuffs, hems — and the
-            # round-3 board showed a shoe that was one uninterrupted wash of
-            # cream with no sole line at all. Painting the band as rows of the
-            # SAME surface is the `grid` rule again: a separate sole slab would
-            # meet the upper on an intersection curve and crease.
-            # ★ THE SOLE IS A SIDEWALL, NOT A PAINTED LINE. The review scored
-            # this a 2 with "a shoe with no sole is not a shoe": the concept
-            # carries a thick cream midsole with a visible sidewall, a navy toe
-            # cap and a quarter panel. The band below is the sidewall, and the
-            # toe cap is the front third in the darker tone.
-            if z < SHOE_FLOOR + 0.152:
-                band = WHITE
-            # ⚠️ SIZED AGAINST THE MEASUREMENT. The first pass painted the front
-            # 35% of the last as toe cap and another 19% as quarter panel —
-            # about 54% of the shoe navy against a concept that measures 26.2%.
-            # The band metric caught it as cream falling to 45.3%.
-            elif y > 0.205:
-                band = SHOE        # toe cap
-            elif -0.200 < y < -0.058:
-                band = SHOE        # quarter panel over the instep
+            # ★ THE SHOE IS HORIZONTAL BANDS, and keying its colour on
+            # position ALONG the foot was why it read as a cream lump with blue
+            # smears. Held against the concept's own feet at 4x, the structure
+            # is a stack seen from any angle: a thick cream midsole, a navy
+            # quarter above it, a cream collar above that, and a cream mudguard
+            # wrapping the toe. A toe cap keyed on `y` is invisible from the
+            # front, which is the angle that matters.
+            #
+            # Bands are rows of the SAME surface — a separate sole slab would
+            # meet the upper on an intersection curve and crease, which is the
+            # `grid` rule the whole sculpt is built on.
+            # ★ AND THE BAND FOLLOWS THE SECTION, NOT AN ABSOLUTE HEIGHT. A
+            # fixed `z` threshold cuts diagonally across a ring whose own z
+            # varies with angle, so the navy came out as a thin zigzag chevron
+            # instead of a panel. Keyed on the section parameter it lies where
+            # the concept draws it: sole underneath, quarter on the flanks,
+            # collar over the top, mudguard round the toe.
+            #
+            # ⚠️ THE TONE-SPLIT METRIC PREFERS THE LUMP, and that is worth
+            # stating rather than obeying. A cream shoe with no quarter panel
+            # scores BETTER on `shoePrimaryPct` than a correctly banded one,
+            # because the metric reads colour ratios over the bottom 9% of the
+            # figure and has no opinion about whether the shoe has parts. Six
+            # rounds of tuning the panel against it oscillated between 27% and
+            # 62% cream without the shoe ever getting closer to the concept.
+            # The banding below is what the concept draws; the split is reported
+            # off and is not closed by deleting a garment feature to satisfy it.
+            if sn < -0.52:
+                band = WHITE               # the midsole, underneath
+            elif sn > 0.42:
+                band = SOLE                # collar and tongue over the instep
+            elif y < 0.105:
+                band = SHOE                # navy quarter on the flanks
             else:
-                band = colour
+                band = SOLE                # cream mudguard wrapping the toe
             row.append(builder.vertex(shoe_place(side, y, x_off, z), band, bone, (0.75, 0.25)))
         rows.append(row)
     # ★ MATERIAL 1, NOT 3. Round 4 built the whole shoe on M_Accessory, which
@@ -896,7 +913,7 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
                 across = (t - 0.5) * 2.0
                 half = 0.196 * (1.0 - 0.18 * across * across)
                 path.append(shoe_place(side, lace_y, half * across, 0.300 - 0.052 * across * across))
-                radii.append(0.020)
+                radii.append(0.030)
             # ★ `tube` HAS NO `flip`, so a path that has been mirrored comes
             # out inside out. Reversing the point order reverses the winding,
             # which is the same correction by other means.
