@@ -165,12 +165,33 @@ export const FACE_SPECS = {
     //     dark marks survive; small light ones do not.
     //   - RULED OUT: mipmap filtering. Forcing LinearFilter and
     //     generateMipmaps=false on the atlas changed the rendered pixels not at
-    //     all — byte-identical — so the reduced-mip alpha-bleed theory is wrong.
+    //     all — byte-identical offline, and pixel-identical again in a live A/B
+    //     on the GPU texture in the browser.
     //
-    // That leaves the seam between `findFaceAtlas`/`makeToonMaterial` and the
-    // injected `<map_fragment>` block in `materials/toon.ts`. It wants a live
-    // renderer session, not more face-spec numbers, and it is very likely
-    // roster-wide rather than Tank's.
+    // ★ A LIVE SESSION ON `/v2/?anims=1&kid=tank` NARROWED IT FURTHER, and the
+    // remaining suspect is the LIGHT RIG rather than anything in this file:
+    //
+    //   - the atlas IS applied. Swapping the texture for solid magenta turns the
+    //     whole head magenta, so the island, the uniform and the mix all work.
+    //   - the island covers the WHOLE SKULL, not a face patch.
+    //   - cell selection is correct. Painting a green bar into the left half of
+    //     the active cell puts it on the left half of the head. (Note the
+    //     resting cell is `determined` — PNG row 0, column 2 — because the
+    //     shader flips v; probing the `grin` cell while the page rests on
+    //     `determined` compares the wrong texels.)
+    //   - saturated colours render as themselves: magenta reads magenta, green
+    //     reads green.
+    //   - but an opaque pure-WHITE block painted over the eye renders
+    //     indistinguishably from skin. It erases the eye ink and leaves no
+    //     bright patch.
+    //
+    // White specifically converging on skin, while magenta and green do not, is
+    // the signature of a warm, dim key light compressing the top of the value
+    // range — the same rig the review measured at roughly half the board's
+    // luminance. The sclera is very likely being drawn and then tone-mapped onto
+    // the skin it is meant to contrast with. That is a lighting/tone pass in the
+    // v2 render layer, it is roster-wide rather than Tank's, and it cannot be
+    // fixed from a face spec.
     eyeHalfW: 18.5,
     eyeHalfH: 4.6,
     irisR: 7.0,
