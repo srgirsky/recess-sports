@@ -513,7 +513,16 @@ describe('Blender-authored character provenance and fidelity gate', () => {
   });
 
   it('refuses an approval with no human reviewer behind it', () => {
+    // ★ THE FIXTURE MUST CLAIM APPROVAL, because no character on the roster
+    // currently does. Junebug was demoted to `candidate` when the runtime
+    // face-atlas fix and the tone-mapping change re-rendered every hero and
+    // invalidated the board her approval was bound to. This rule is only
+    // reachable on an `approved` record, so the fixture asserts one — otherwise
+    // the demotion would have silently deleted the test along with the status.
     const broken = structuredClone(fidelity);
+    broken.characters.nostrike.status = 'approved';
+    broken.characters.nostrike.approvedBy = 'Someone';
+    broken.characters.nostrike.approvedAt = '2026-08-14';
     delete broken.characters.nostrike.humanReview;
     expect(stateErrors(receipt, broken)).toContain(
       'nostrike: approval requires a humanReview reviewer and verdict',

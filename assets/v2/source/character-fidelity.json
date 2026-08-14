@@ -10,24 +10,18 @@
   ],
   "characters": {
     "nostrike": {
-      "status": "approved",
+      "status": "candidate",
       "evidence": "junebug-fidelity-review.png",
       "heroEvidence": "junebug-runtime-hero.png",
       "animationEvidence": [
         "junebug-runtime-run.png",
         "junebug-runtime-swing.png"
       ],
-      "humanReview": {
-        "reviewer": "Seth Girsky",
-        "reviewedAt": "2026-08-12",
-        "verdict": "approved — reviewed the shipped model in production at https://srgirsky.github.io/recess-sports/ after rounds 5-7 rebuilt the shoe as one lasted upper, reshaped the ear, deepened the run's arm swing, mirrored the face columns and restored the splayed stance in every signature idle. The six category scores recorded here are the round-7 independent critic's, not the sculptor's.",
-        "priorVerdict": "2026-08-10 rejected — agent self-scores were inflated; every category re-scored from the board against the turnaround"
-      },
       "measuredFidelity": {
         "command": "npm run measure:fidelity -- nostrike",
-        "ranAt": "2026-08-12",
+        "ranAt": "2026-08-14",
         "board": "junebug-fidelity-review.png",
-        "result": "all eight metrics inside tolerance",
+        "result": "all nine metrics inside tolerance of the concept — unchanged by the runtime render fixes, which is the point: measure:fidelity grades the Blender board, not the runtime.",
         "note": "The rig's 6.75-degree leg splay (render.leg-stance) settled ankle daylight at 48.5% against the concept's 46.9%. Round 7 then found that Junebug's SIGNATURE idle pose carried an 8-degree inward leg roll, authored when the rig ran its legs straight down, which closed the ankles to 0.325ft against the bind pose's 0.756 and failed rubric 3.12 in idle while the bind-pose render this command reads stayed correct. The same roll was in all five signature idles and was removed from all of them; an FK sweep now reads every idle within 2% of bind. Re-measured 2026-08-12 after the detector itself was rebuilt to work for the whole roster: the backdrop is now sampled per column (seven sheets are vignetted past the old tolerance), a column counts as occupied by fraction rather than by any single pixel, and the shoe's two tones are read off the concept instead of the hardcoded red/cream that was Junebug's own shoe. Her shoe deltas TIGHTENED, from +2.23/+2.93 under the old classifier to +0.43/-0.78 as tone shares (41.2/25.5 concept against 41.6/24.8 delivered); the round-7 critic note below quotes the old red/cream figures and is left as the record of what was measured then."
       },
       "categories": {
@@ -62,16 +56,26 @@
           "note": "Critic (round 7, independent): identity survives both ends — at hero the brows, headband, bun and ponytail all read, and at 40px the light headband over a dark bun on a red top survives the pixel zoom. Both round-4 reasons for a 3 here are measurably gone: the feet no longer fuse (ankle daylight 48.5% against the concept's 46.9%, from 3%) and the face is no longer a dark-framed mask (36.4% visible face per side against 31.1/31.9)."
         }
       },
-      "scoredBoardSha256": "569b9cfa2f6fca8d71fe8406413e20597d087bbc007d246ec8390ebe7a5ab84e",
+      "scoredBoardSha256": "4e4adaedc7d69ef5b843f52226cc2b85134124f29866fecc616b77df9e8bf0d5",
       "expressionEvidence": [
         "junebug-runtime-face-grin.png",
         "junebug-runtime-face-cheer.png",
         "junebug-runtime-face-tongue.png",
         "junebug-runtime-face-angry.png"
       ],
-      "approvedBy": "Seth Girsky",
-      "approvedAt": "2026-08-12",
-      "approvedEvidenceSha256": "569b9cfa2f6fca8d71fe8406413e20597d087bbc007d246ec8390ebe7a5ab84e"
+      "priorHumanReview": {
+        "reviewer": "Seth Girsky",
+        "reviewedAt": "2026-08-12",
+        "verdict": "approved — reviewed the shipped model in production at https://srgirsky.github.io/recess-sports/ after rounds 5-7 rebuilt the shoe as one lasted upper, reshaped the ear, deepened the run's arm swing, mirrored the face columns and restored the splayed stance in every signature idle. The six category scores recorded here are the round-7 independent critic's, not the sculptor's.",
+        "priorVerdict": "2026-08-10 rejected — agent self-scores were inflated; every category re-scored from the board against the turnaround",
+        "appliedToBoardSha256": "569b9cfa2f6fca8d71fe8406413e20597d087bbc007d246ec8390ebe7a5ab84e"
+      },
+      "demotion": {
+        "at": "2026-08-14",
+        "by": "agent",
+        "reason": "The runtime face-atlas composite was fixed (it ran a shader chunk before the identity palette, so white x skin = skin and no character had eye whites) and the tone mapping moved from ACES to Neutral 1.25. Both re-render the runtime hero, which the fidelity board composites, so the board this approval was bound to no longer exists. Nothing about the sculpt changed and the GLB is byte-identical. This is a re-approval on better evidence, not a regression.",
+        "whatChangedInTheEvidence": "junebug-runtime-hero/run/swing and the four expression stills. Her face now renders sclera, teeth and tongue where it rendered dark blobs."
+      }
     },
     "calls_shot": {
       "status": "needs-polish",
