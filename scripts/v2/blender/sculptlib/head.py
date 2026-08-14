@@ -43,15 +43,21 @@ from .palette import Palette
 # the mouth 10 cells from the bottom edge, where its own lower lip runs off the
 # cell. Nothing would have gone red: the atlas would simply have been drawn with
 # a clipped mouth.
-FACE_BEARING = 0.92   # radians off the nose at the island's u edges
-FACE_LOW = -1.10      # latitude (rad) at v = 0, below the chin
-FACE_SPAN = 1.54      # latitude sweep from v = 0 to v = 1
+#
+# ⚠️ SO IT HAS NO DEFAULT, AND IT USED TO. Her three values sat right here as
+# module constants with `HeadSpec.island` defaulting to them — on a field this
+# very note calls per-character. She was correct only because they were hers;
+# every later kid who omitted the argument would have silently worn her face
+# mapping, and the failure mode described above is a clipped mouth with nothing
+# going red. The values now live in her sculpt script, beside the measurement
+# that produced them, and `sculptspec.lint.test.js` keeps this field and every
+# other spec field required.
 
 
 def face_island_uv(
     bearing: float,
     latitude: float,
-    window: tuple[float, float, float] = (FACE_BEARING, FACE_LOW, FACE_SPAN),
+    window: tuple[float, float, float],
 ) -> tuple[float, float]:
     """The face-atlas UV for a skull vertex, CLAMPED outside the island.
 
@@ -96,7 +102,7 @@ class HeadSpec:
     nose: Callable[[float, float], float]
     # (bearing, low, span) of the face-atlas island. Per character: see the
     # window's own note above for what Tank's head did to Junebug's values.
-    island: tuple[float, float, float] = (FACE_BEARING, FACE_LOW, FACE_SPAN)
+    island: tuple[float, float, float]
 
 
 def head_surface(
@@ -110,7 +116,7 @@ def head_surface(
     spec: HeadSpec,
     palette: Palette,
 ) -> None:
-    face_bearing, _face_low, _face_span = spec.island
+    face_bearing, face_low, face_span = spec.island
     """★ THE SKULL AND THE FACE-ATLAS ISLAND ARE ONE SURFACE.
 
     Four rounds shipped the face as a SEPARATE patch mesh laid over the
@@ -138,7 +144,7 @@ def head_surface(
     nothing. `face_island_uv` is that field.
 
     The face's UV RESOLUTION is preserved exactly rather than approximately:
-    `face_columns` spans the island's 2*FACE_BEARING with the patch's own
+    `face_columns` spans the island's own 2*bearing with the patch's own
     |t|**1.25 warp about the nose, and `face_rows` IS the patch's row table.
     At hero that is 20 columns and 14 rows over the same window the patch
     covered with 20 and 14. What the merge costs is `back_columns` and the
@@ -196,13 +202,33 @@ def head_surface(
 
     # --- latitudes -------------------------------------------------------
     # phi is colatitude from +z; the island's latitude is pi/2 - phi.
+    # ★ THE ROWS ARE LAID OUT ON THE CHARACTER'S OWN WINDOW, and for one
+    # character they were not. These three lines read the module constants that
+    # were Junebug's while `place` UV-mapped the same vertices through
+    # `spec.island`, so Tank's face rows were positioned on HER span and then
+    # addressed through HIS.
+    #
+    # ⚠️ AND THE OBVIOUS READING OF THAT IS WRONG, WHICH IS WHY IT IS WRITTEN
+    # DOWN. It does NOT put a feature at the wrong height. Composing her layout
+    # with his window gives v = (lowJ + spanJ*vf - lowT) / spanT, an affine map
+    # of vf — so a mark drawn at atlas v still lands at exactly the latitude his
+    # window declares for it. Both halves compose to his window either way.
+    #
+    # What it costs is COVERAGE and DENSITY. His rows reached only atlas
+    # v 0.123 to 0.823: the island's top 18% and bottom 12% carried no face row
+    # at all, and were left to the crown and chin CAP rows, which space evenly
+    # to the poles and are far sparser. The declared face span was resolved by
+    # 70% of the rows meant for it. His three marks — brow 0.750, eye 0.578,
+    # mouth 0.398 — all sit inside the covered band, so this is not why his
+    # features read low; that was the face-spec retrace. It is why the bald
+    # forehead above them was carried by cap rows.
     phis: list[float] = []
-    top_phi = pi / 2 - (FACE_LOW + FACE_SPAN)
+    top_phi = pi / 2 - (face_low + face_span)
     for step in range(1, crown_rows + 1):
         phis.append(top_phi * step / (crown_rows + 1))
     for vf in reversed(face_rows):
-        phis.append(pi / 2 - (FACE_LOW + vf * FACE_SPAN))
-    bottom_phi = pi / 2 - FACE_LOW
+        phis.append(pi / 2 - (face_low + vf * face_span))
+    bottom_phi = pi / 2 - face_low
     for step in range(1, chin_rows + 1):
         phis.append(bottom_phi + (pi - bottom_phi) * step / (chin_rows + 1))
 
@@ -251,11 +277,11 @@ def head_surface(
 
     columns = len(bearings)
     top = builder.vertex(
-        (cx, cy, cz + rz), palette.skin, "Head", face_island_uv(0.0, pi / 2)
+        (cx, cy, cz + rz), palette.skin, "Head", face_island_uv(0.0, pi / 2, spec.island)
     )
     rows = [[place(bearing, phi) for bearing in bearings] for phi in phis]
     bottom = builder.vertex(
-        (cx, cy, cz - rz), palette.skin, "Head", face_island_uv(0.0, -pi / 2)
+        (cx, cy, cz - rz), palette.skin, "Head", face_island_uv(0.0, -pi / 2, spec.island)
     )
     for column in range(columns):
         builder.face((top, rows[0][column], rows[0][(column + 1) % columns]), 0)
