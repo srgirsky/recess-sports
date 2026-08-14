@@ -1082,8 +1082,20 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
         # The shoe's top is z 0.441, so only the first ring below is still
         # outside it; everything under that is sized against the section at its
         # own height (v 0.90 gives ~0.16, v 0.62 gives ~0.19).
-        (SOCK_TOP_Z - 0.070, 0.222, 0.95, SOCK, "Leg"),   # z 0.480, just clear
-        (0.400, 0.148, 0.95, SOCK, "Leg"),
+        # ⚠️ AND THIS ONE COMES DOWN WITH THEM TOO. It is the ring just above the
+        # shoe's 0.438 topline, so it is what the eye reads as the sock ENTERING
+        # the shoe. At 0.222 against the narrowed shoe's 0.168 widest half it
+        # overhung the whole upper by a third and rendered as a mushroom sitting
+        # on the foot — the same "sock wider than the shoe" the nineteenth review
+        # caught, arriving from the other direction. 0.172 lands just proud of
+        # the upper, which is how the concept draws a slouched sock meeting a
+        # low collar. Still below `ankleDaylight`'s sample at 13% of figure
+        # height (z 0.521), which reads the two rings above this one.
+        (SOCK_TOP_Z - 0.070, 0.172, 0.95, SOCK, "Leg"),   # z 0.480, just clear
+        # Comes down with SHOE_WIDTH_SCALE: the one sock ring the narrowed shoe
+        # would otherwise be thinner than. The shoe's half-width here is
+        # 0.210 x 0.80 x u(v 0.91) = 0.125, so 0.115 keeps the sock inside it.
+        (0.400, 0.115, 0.95, SOCK, "Leg"),
         (0.280, 0.138, 0.95, SOCK, "Leg"),
         (0.150, 0.126, 0.95, SOCK, "Foot"),
     ]
@@ -1453,8 +1465,35 @@ def shoe_place(side: int, y: float, x_off: float, z: float) -> tuple[float, floa
 # 1.29ft last that solves to a true width of 0.40ft, which is what the shoe
 # already had. Only the LENGTH was short, and only the profile view (where the
 # same correction gives 1.29 against a shipped 0.76) could say so.
-SHOE_LENGTH_SCALE = 1.72
-SHOE_WIDTH_SCALE = 1.02
+# ★ AND THEN IT USED THE PROFILE LENGTH ANYWAY — the measurement ROUND 8 above
+# had already thrown out. That header rejects the 1.211 profile reading as the
+# near foot and the far foot overlapping in a side view, shrinks the station
+# table to a 0.678 span on the strength of it, and records approved Junebug's
+# shoe at 0.62 of a 4.01 figure (15.3%). Then this block solved a scale against
+# "a 1.29ft last" read off the same profile view, and 0.678 x 1.72 put the whole
+# error back: the delivered foot measures 1.214 fore-aft on a 4.006 figure —
+# 30.3%, twice approved Junebug's, and this file's own text calls 37.2% the bug.
+#
+# Re-measured on the turnaround, and NOT down a line through two feet. The
+# profile figure's near shoe (its sole is one continuous cream band, the far
+# shoe reads lighter behind it) spans 132-148px against the front figure's
+# 685px, so 19.3-21.6% of figure height; each front-view shoe is 80-88px wide,
+# 12.3%, which is the lateral extent of a foot turned out 21 degrees. The
+# delivered pair measure 30.3% and 16.0% the same way.
+#
+# So it is not mis-proportioned, it is uniformly about 40% too big: L:w is 1.89
+# delivered against the drawing's 1.74. Both scales come down together, because
+# shrinking only the length would leave a stubbier shoe than the concept draws
+# rather than a smaller one.
+#
+# ⚠️ THE WIDTH IS COUPLED TO THE SOCK AND THE SOCK IS COUPLED TO A GATE. A
+# narrower shoe re-opens "the sock is wider than the shoe" wherever the two
+# share a height — only the z 0.400 ring, which comes down with them. It does
+# NOT touch `ankleDaylight`, which samples at 13% of figure height, above this
+# shoe's 10.9% topline, so that metric sitting at +9.64 of a 12.0 tolerance is
+# not put at risk by any of this. Checked before the edit, not after.
+SHOE_LENGTH_SCALE = 1.22
+SHOE_WIDTH_SCALE = 0.80
 # ⚠️ AND HEIGHT IS THE THIRD ONE, WHICH THE FIRST PASS FORGOT. Scaling a shoe
 # in two dimensions and not the third makes it a flat slab, and it also puts the
 # navy in the wrong place by construction: the concept's navy reaches z 0.106 of
