@@ -1092,10 +1092,11 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
         # low collar. Still below `ankleDaylight`'s sample at 13% of figure
         # height (z 0.521), which reads the two rings above this one.
         (SOCK_TOP_Z - 0.070, 0.172, 0.95, SOCK, "Leg"),   # z 0.480, just clear
-        # Comes down with SHOE_WIDTH_SCALE: the one sock ring the narrowed shoe
-        # would otherwise be thinner than. The shoe's half-width here is
-        # 0.210 x 0.80 x u(v 0.91) = 0.125, so 0.115 keeps the sock inside it.
-        (0.400, 0.115, 0.95, SOCK, "Leg"),
+        # Sized against the shoe at its own height, which is what the
+        # nineteenth review's finding actually asks for: the shoe's half here is
+        # 0.210 x 0.95 x u(v 0.91) = 0.149, so 0.140 sits inside it without
+        # pinching the sock into the funnel a tighter value drew.
+        (0.400, 0.140, 0.95, SOCK, "Leg"),
         (0.280, 0.138, 0.95, SOCK, "Leg"),
         (0.150, 0.126, 0.95, SOCK, "Foot"),
     ]
@@ -1492,8 +1493,17 @@ def shoe_place(side: int, y: float, x_off: float, z: float) -> tuple[float, floa
 # NOT touch `ankleDaylight`, which samples at 13% of figure height, above this
 # shoe's 10.9% topline, so that metric sitting at +9.64 of a 12.0 tolerance is
 # not put at risk by any of this. Checked before the edit, not after.
+# ⚠️ AND THE WIDTH OVERSHOT ON THE FIRST TRY, off a mis-segmented row rather
+# than the drawing. Reading the concept's front shoes by "not background" put
+# each at 80-88px, because the ground shadow beside the right shoe reads as
+# figure and the run stops in the wrong place. Cropping the two shoes and
+# measuring them directly gives 96-99px each — 14.0-14.5% of figure height, not
+# 12.3% — and an independent review measured 14.0-14.7% the same way. 0.80 took
+# the shoe to 11.9% and made it NARROWER than the sock roll above it, which is
+# "the sock is wider than the shoe" for the third time in this file's history.
+# 0.95 lands 14.1%. The length, measured on a single isolated shoe, was right.
 SHOE_LENGTH_SCALE = 1.22
-SHOE_WIDTH_SCALE = 0.80
+SHOE_WIDTH_SCALE = 0.95
 # ⚠️ AND HEIGHT IS THE THIRD ONE, WHICH THE FIRST PASS FORGOT. Scaling a shoe
 # in two dimensions and not the third makes it a flat slab, and it also puts the
 # navy in the wrong place by construction: the concept's navy reaches z 0.106 of
