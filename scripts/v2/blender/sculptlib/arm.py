@@ -15,7 +15,7 @@ sculpt script beside its `# measured:` citation, where
 `sculpt-provenance.lint.test.js` governs it. So does the hand, because a hand is
 sized to its owner. This module reads them and knows nothing else about the kid.
 
-★ THE FOUR RIG CONSTANTS BELOW ARE NOT MEASUREMENTS AND DO NOT BELONG IN A SPEC.
+★ THE RIG CONSTANTS IT READS ARE NOT MEASUREMENTS AND DO NOT BELONG IN A SPEC.
 `LeftArm` at x -0.400, `LeftForeArm` at -0.918, `LeftHand` at -1.365, all at
 z 2.471 — that is the canonical skeleton every character shares, gated by
 `src/v2/render/skeleton.test.ts`. Putting them in `ArmSpec` would invite thirty
@@ -35,17 +35,9 @@ from dataclasses import dataclass
 from math import cos, pi, sin
 
 from .mesh import MeshBuilder
-
-# The canonical rig, shared by all thirty characters. See the header.
-ARM_SHOULDER_X = 0.400
-ARM_ELBOW_X = 0.918
-ARM_WRIST_X = 1.365
-ARM_Z = 2.471
+from .rig import ARM_Z, limb_bone
 
 
-def limb_bone(name: str, side: int) -> str:
-    """Left bones are at NEGATIVE x, so side -1 is the left side."""
-    return f"Left{name}" if side < 0 else f"Right{name}"
 
 
 @dataclass(frozen=True)

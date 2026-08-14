@@ -47,16 +47,17 @@ from mathutils import Vector
 # sys.path, so the package beside this file is unimportable without this.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from sculptlib.arm import (
-    ARM_ELBOW_X, ARM_SHOULDER_X, ARM_WRIST_X, ARM_Z,
-    ArmSpec, HandSpec, build_arm, limb_bone,
-)
+from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
 from sculptlib.ear import EarSpec, build_ear
 from sculptlib.head import HeadSpec, head_surface
+from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder
 from sculptlib.palette import Palette
+from sculptlib.rig import (
+    ARM_ELBOW_X, ARM_SHOULDER_X, ARM_WRIST_X, ARM_Z, LEG_ANKLE_Z, limb_bone,
+)
 from sculptlib.shoe import ShoeSpec, build_shoe
 
 REPO = Path.cwd()
@@ -893,12 +894,8 @@ TANK_ARM = ArmSpec(
 # concept art (`render.leg-stance`). Rounds 1-3 invented a hip separation and
 # then TUNED it against the ankle-daylight metric, which moved the mesh off its
 # own bones to make a number in a bind-pose render come out right.
-LEG_HIP_X = 0.200
-LEG_HIP_Z = 1.600
-LEG_KNEE_X = 0.292
-LEG_KNEE_Z = 0.824
-LEG_ANKLE_X = 0.378
-LEG_ANKLE_Z = 0.095
+# The bone chain this leg hangs on lives in `sculptlib.leg` — it is the rig,
+# not a measurement. See that module's header.
 # ★ ROUND 2: HIS LEGS STAND TOO FAR APART. The concept measures ZERO ankle
 # daylight at the metric's own sample height and round 1 delivered 31.5%. The
 # splay is NOT the thing to change — it is the canonical rig's stance
@@ -920,17 +917,6 @@ SHORTS_HEM_Z = 0.694
 SOCK_TOP_Z = 0.550
 
 
-def leg_x(z: float) -> float:
-    """Lateral centre of a leg at height `z`, interpolated along the bone chain."""
-    if z >= LEG_HIP_Z:
-        return LEG_HIP_X
-    if z >= LEG_KNEE_Z:
-        t = (LEG_HIP_Z - z) / (LEG_HIP_Z - LEG_KNEE_Z)
-        return LEG_HIP_X + (LEG_KNEE_X - LEG_HIP_X) * t
-    if z >= LEG_ANKLE_Z:
-        t = (LEG_KNEE_Z - z) / (LEG_KNEE_Z - LEG_ANKLE_Z)
-        return LEG_KNEE_X + (LEG_ANKLE_X - LEG_KNEE_X) * t
-    return LEG_ANKLE_X
 
 
 # ★ HE HAD NO INSEAM, AND THE TWO SHORTS LEGS WERE ONE SOLID MASS.
@@ -970,174 +956,147 @@ def inseam_half(z: float) -> float:
     return INSEAM_HEM_HALF * t ** 2.2
 
 
-def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
-    """Shorts, bare shin and sock as one stitched surface."""
-    sides = 14 if detail >= 2 else 6
-    stations = [
-        # ★ THE SOCK WAS TWO DISCONNECTED RINGS, and the cause is that this
-        # table stopped descending. It ran ... 0.414 (sock top), then 0.634,
-        # 0.606 — back UP the leg — so the roll was authored ABOVE the skin band
-        # that was supposed to sit above it, and `grid` faithfully stitched the
-        # rows in the order given. The board showed a garter floating over a
-        # strip of bare shin, which the review measured as 21px of skin between
-        # the accent band and the sock.
-        #
-        # ★ AND THE SHORTS HAD NO VOLUME. Measured on the profile silhouettes,
-        # the concept's shorts are 0.228 of figure height deep and the delivery
-        # was 0.107 — the same as its own BARE LEG, so the garment added
-        # nothing. Tank is `bodyType: chunky`, `belly: 0.8`, power 9, and none
-        # of it was in the silhouette. A leg is round below the hem and a short
-        # is BAGGY above it, so the section carries its own depth factor.
-        #
-        # (z, half-width, depth factor, colour, bone) — strictly descending in z.
-        # ★ THE DEPTH FIX LANDED AND THE WIDTH DID NOT. Round 13 gave the shorts
-        # a depth factor and the profile came right (23.5%H against the
-        # concept's 22.8%), but the front view still measured 22.5-24.3%H across
-        # the pair where the concept runs 30.4-32.6% — about eight points of
-        # figure height missing, which is most of what "chunky" looks like from
-        # the front. The half-widths grow and the depth factor drops to keep the
-        # absolute depth the profile already agreed with.
-        # ⚠️ AND THE WIDTH ONLY BELONGS WHERE THE SHORTS ARE SEEN. Widening the
-        # whole leg pushed the upper rings THROUGH the tee — the board drew
-        # jagged dark spikes along the hem where the two surfaces intersect,
-        # which is worse than the narrow shorts were. Above the tee's hem
-        # (z 1.07) the shorts are hidden, so they stay inside it there and take
-        # their width in the band the concept actually measures.
-        (1.600, 0.250, 1.20, PANTS, "UpLeg"),
-        (1.360, 0.264, 1.26, PANTS, "UpLeg"),
-        (1.100, 0.298, 1.32, PANTS, "UpLeg"),
-        (0.900, 0.352, 1.24, PANTS, "UpLeg"),
-        # ★ THE SHORTS HEM WAS A CUT EDGE, and the tee already records the fix.
-        # One ring stepping 0.332 straight to bare leg at 0.196 is a garment
-        # sliced off, not one that ends — an independent review scored 3.4 with
-        # "shorts as a featureless black slab with no hem, side seam or leg
-        # opening". The tee's own hem note says it in four rings: an underside,
-        # a band proud of what is above it, and the body above that. The same
-        # three rings buy a leg opening you can see into.
-        (0.760, 0.342, 1.16, PANTS, "UpLeg"),
-        (0.716, 0.358, 1.13, PANTS_DARK, "Leg"),          # hem band, proud
-        (SHORTS_HEM_Z, 0.350, 1.10, PANTS_DARK, "Leg"),   # hem underside, z 0.694
-        (0.686, 0.252, 1.02, PANTS_DARK, "Leg"),          # inner lip of the opening
-        # The calf carries his weight-read below the hem and measured 0.38ft
-        # against the concept's 0.50 — see SHOE_LENGTH_SCALE's note. Grown to
-        # the drawing, which also leaves the 0.16ft calf gap 3.12 asks for.
-        (0.680, 0.246, 0.98, SKIN, "Leg"),                # bare shin begins
-        (0.610, 0.247, 0.96, SKIN, "Leg"),
-        (SOCK_TOP_Z + 0.014, 0.244, 0.95, SKIN, "Leg"),   # z 0.564
-        # ★ HIS SOCK RENDERED GREY AND THE CONCEPT'S IS CREAM ALL THE WAY DOWN.
-        #
-        # Walking the concept's front figure down column x=140: shorts to
-        # z 0.702, bare shin to 0.544, then CREAM — rgb(212,182,152) — from
-        # 0.544 to 0.440, where the shoe's navy starts. There is no grey band in
-        # the drawing at all. This table had TEAM_MASK (a neutral D8D2C6) from
-        # 0.550 to 0.514, which with the shoe topping out at 0.438 meant the
-        # accent covered two thirds of the only sock anyone can see, and an
-        # independent review scored 3.4 with "the sock hue is neutral grey where
-        # the concept's is warm cream".
-        #
-        # The accent cannot simply go: `M_Accessory` is where team colour lands,
-        # and `build_leg` emits a band to slot 3 only when BOTH its rows are
-        # TEAM_MASK, so one accent row would leave the material with no geometry.
-        # A third ring makes the roll a thin stripe at the sock's top edge — which
-        # is what a rolled sock looks like anyway — and hands the rest to cream.
-        #
-        # ⚠️ THE WIDTHS HERE ARE LOAD-BEARING AND THE COLOURS ARE NOT.
-        # `ankleDaylight` samples at 13% of figure height, z 0.521, which falls
-        # between these rings, and it sits at +9.64 of a 12.0 tolerance. Dropping
-        # the 0.514 ring's half-width to open the accent would have taken it to
-        # 13.9% and broken the gate. So the new ring is interpolated ON the line
-        # the old two already described (0.532 -> 0.268), the sampled half-width
-        # moves 0.267 -> 0.266, and only the colour of the lower row changes.
-        (SOCK_TOP_Z, 0.272, 0.95, TEAM_MASK, "Leg"),      # the roll, team accent
-        (SOCK_TOP_Z - 0.018, 0.268, 0.95, TEAM_MASK, "Leg"),
-        (SOCK_TOP_Z - 0.036, 0.264, 0.95, SOCK, "Leg"),   # cream, as drawn
-        # ★ THE SOCK MUST FIT INSIDE THE SHOE, AND IT NEVER DID.
-        #
-        # Three rounds went into a topline, a heel counter and a collar rim and
-        # none of them read, and the nineteenth review found why in one
-        # comparison: the shoe's widest half-section is 0.214 and these rings
-        # were 0.248, 0.238 and 0.206. The sock was wider than the shoe at every
-        # height they share, so a wedge of it split the upper down the instep in
-        # both views — and the collar rim, at 0.138, was buried inside the sock
-        # with only its fore and aft lobes escaping as the tan cliff in profile.
-        #
-        # Not a depth-sort or a surface-height problem, which is how the two
-        # previous attempts framed it. A real sock COMPRESSES inside a shoe.
-        # The shoe's top is z 0.441, so only the first ring below is still
-        # outside it; everything under that is sized against the section at its
-        # own height (v 0.90 gives ~0.16, v 0.62 gives ~0.19).
-        # ⚠️ AND THIS ONE COMES DOWN WITH THEM TOO. It is the ring just above the
-        # shoe's 0.438 topline, so it is what the eye reads as the sock ENTERING
-        # the shoe. At 0.222 against the narrowed shoe's 0.168 widest half it
-        # overhung the whole upper by a third and rendered as a mushroom sitting
-        # on the foot — the same "sock wider than the shoe" the nineteenth review
-        # caught, arriving from the other direction. 0.172 lands just proud of
-        # the upper, which is how the concept draws a slouched sock meeting a
-        # low collar. Still below `ankleDaylight`'s sample at 13% of figure
-        # height (z 0.521), which reads the two rings above this one.
-        (SOCK_TOP_Z - 0.070, 0.172, 0.95, SOCK, "Leg"),   # z 0.480, just clear
-        # Sized against the shoe at its own height, which is what the
-        # nineteenth review's finding actually asks for. ⚠️ AND IT MOVES WHEN
-        # THE SECTION MOVES: retracing the foxing ledge stepped the upper in
-        # from u 0.905 to 0.815, so the shoe's half here fell from 0.149 to
-        # 0.210 x 0.95 x u(v 0.912) = 0.114 and the 0.140 that used to sit
-        # inside it started poking through. This is the fourth time a shoe
-        # number has moved and left the sock behind, which is why the numbers
-        # are derived in the comment rather than remembered.
-        (0.400, 0.100, 0.95, SOCK, "Leg"),
-        (0.280, 0.138, 0.95, SOCK, "Leg"),
-        (0.150, 0.126, 0.95, SOCK, "Foot"),
-    ]
-    if detail < 1:
-        stations = [station for index, station in enumerate(stations) if index % 2 == 0 or index == len(stations) - 1]
-    rows: list[list[int]] = []
-    materials: list[int] = []
-    for z, radius, depth, colour, bone in stations:
-        bone_name = limb_bone(bone, side)
-        # ★ THE ACCENT RIDES THE SAME SURFACE. Its rows change MATERIAL, not
-        # mesh: a separate band welded on is the detached shell 3.7 just caught
-        # on the shoe. `grid` is emitted per row-pair so a pair whose lower row
-        # is accent-coloured goes to M_Accessory and the skin stays continuous.
-        materials.append(3 if colour == TEAM_MASK else 1)
-        # The inward reach that leaves the concept's inseam. `min` so a ring
-        # already clear of the centreline — every bare-shin and sock ring — is
-        # left exactly as it was; only the garment is ever clamped.
-        inner_radius = min(radius, leg_x(z) - inseam_half(z))
-        row = []
-        for index in range(sides):
-            theta = 2 * pi * index / sides
-            # cos > 0 is the OUTER half for both sides, because the ring is
-            # reflected whole (see below), so one predicate serves both legs.
-            radius_x = radius if cos(theta) >= 0.0 else inner_radius
-            row.append(
-                builder.vertex(
-                    # ★ THE WHOLE RING IS REFLECTED, not just its centre. Writing
-                    # `cx + r*cos(theta)` with `cx = leg_x*side` mirrors where the
-                    # leg IS and not which way round it is built, so the far leg
-                    # is the near leg translated — the same defect `shoe_place`
-                    # had. The board showed it as one shin lit and the other in
-                    # shadow at the same height, which three reviews read as a
-                    # colour difference between the socks.
-                    ((leg_x(z) + radius_x * cos(theta)) * side, radius * sin(theta) * depth, z),
-                    colour,
-                    bone_name,
-                    (0.75, 0.25),
-                )
-            )
-        rows.append(row)
-    for index in range(len(rows) - 1):
-        material = 3 if materials[index] == 3 and materials[index + 1] == 3 else 1
-        builder.grid(rows[index:index + 2], material, flip=side > 0)
-    top = builder.vertex((leg_x(1.600) * side, 0.0, 1.600), PANTS, limb_bone("UpLeg", side))
-    ankle_cap = builder.vertex((leg_x(0.150) * side, 0.0, 0.150), SOCK, limb_bone("Foot", side))
-    for index in range(sides):
-        nxt = (index + 1) % sides
-        face = (ankle_cap, rows[-1][index], rows[-1][nxt]) if side > 0 else (ankle_cap, rows[-1][nxt], rows[-1][index])
-        builder.face(face, 1)
-    for index in range(sides):
-        nxt = (index + 1) % sides
-        face = (top, rows[0][index], rows[0][nxt]) if side > 0 else (top, rows[0][nxt], rows[0][index])
-        builder.face(face, 1)
+# not-traceable: HIS LEGS TOUCH, so every instrument this gate has spans both of
+# them. The gate verifies `halfWidth` with the SILHOUETTE, and at z 0.90 that
+# reads 0.6589 where one leg is 0.3178 — the same "quantity read down a line
+# through more than one object" that `runidentity.lint.test.js` exists for.
+# `runsAt` cannot rescue it either: it reports 1 at every station here, because
+# the two legs meet across a 2px seam at x 209. Even `namedRunAt`, the good
+# instrument, refuses with `ambiguous-parts` — two same-material runs and
+# nothing declaring which is which.
+#
+# So the widths below were traced PER RUN, not off the silhouette. Measured
+# front, z 0.90: the shorts are two runs at [99-208] and [211-320] px, both
+# 0.3178ft half at 171.5 px/ft; at z 0.95 they are 0.3090 and 0.3120. Re-check
+# them with `regionRunsAt`, never with `halfWidthAt`.
+LEG_STATIONS = [
+    # ★ THE SOCK WAS TWO DISCONNECTED RINGS, and the cause is that this
+    # table stopped descending. It ran ... 0.414 (sock top), then 0.634,
+    # 0.606 — back UP the leg — so the roll was authored ABOVE the skin band
+    # that was supposed to sit above it, and `grid` faithfully stitched the
+    # rows in the order given. The board showed a garter floating over a
+    # strip of bare shin, which the review measured as 21px of skin between
+    # the accent band and the sock.
+    #
+    # ★ AND THE SHORTS HAD NO VOLUME. Measured on the profile silhouettes,
+    # the concept's shorts are 0.228 of figure height deep and the delivery
+    # was 0.107 — the same as its own BARE LEG, so the garment added
+    # nothing. Tank is `bodyType: chunky`, `belly: 0.8`, power 9, and none
+    # of it was in the silhouette. A leg is round below the hem and a short
+    # is BAGGY above it, so the section carries its own depth factor.
+    #
+    # (z, half-width, depth factor, colour, bone) — strictly descending in z.
+    # ★ THE DEPTH FIX LANDED AND THE WIDTH DID NOT. Round 13 gave the shorts
+    # a depth factor and the profile came right (23.5%H against the
+    # concept's 22.8%), but the front view still measured 22.5-24.3%H across
+    # the pair where the concept runs 30.4-32.6% — about eight points of
+    # figure height missing, which is most of what "chunky" looks like from
+    # the front. The half-widths grow and the depth factor drops to keep the
+    # absolute depth the profile already agreed with.
+    # ⚠️ AND THE WIDTH ONLY BELONGS WHERE THE SHORTS ARE SEEN. Widening the
+    # whole leg pushed the upper rings THROUGH the tee — the board drew
+    # jagged dark spikes along the hem where the two surfaces intersect,
+    # which is worse than the narrow shorts were. Above the tee's hem
+    # (z 1.07) the shorts are hidden, so they stay inside it there and take
+    # their width in the band the concept actually measures.
+    (1.600, 0.250, 1.20, PANTS, "UpLeg"),
+    (1.360, 0.264, 1.26, PANTS, "UpLeg"),
+    (1.100, 0.298, 1.32, PANTS, "UpLeg"),
+    (0.900, 0.352, 1.24, PANTS, "UpLeg"),
+    # ★ THE SHORTS HEM WAS A CUT EDGE, and the tee already records the fix.
+    # One ring stepping 0.332 straight to bare leg at 0.196 is a garment
+    # sliced off, not one that ends — an independent review scored 3.4 with
+    # "shorts as a featureless black slab with no hem, side seam or leg
+    # opening". The tee's own hem note says it in four rings: an underside,
+    # a band proud of what is above it, and the body above that. The same
+    # three rings buy a leg opening you can see into.
+    (0.760, 0.342, 1.16, PANTS, "UpLeg"),
+    (0.716, 0.358, 1.13, PANTS_DARK, "Leg"),          # hem band, proud
+    (SHORTS_HEM_Z, 0.350, 1.10, PANTS_DARK, "Leg"),   # hem underside, z 0.694
+    (0.686, 0.252, 1.02, PANTS_DARK, "Leg"),          # inner lip of the opening
+    # The calf carries his weight-read below the hem and measured 0.38ft
+    # against the concept's 0.50 — see SHOE_LENGTH_SCALE's note. Grown to
+    # the drawing, which also leaves the 0.16ft calf gap 3.12 asks for.
+    (0.680, 0.246, 0.98, SKIN, "Leg"),                # bare shin begins
+    (0.610, 0.247, 0.96, SKIN, "Leg"),
+    (SOCK_TOP_Z + 0.014, 0.244, 0.95, SKIN, "Leg"),   # z 0.564
+    # ★ HIS SOCK RENDERED GREY AND THE CONCEPT'S IS CREAM ALL THE WAY DOWN.
+    #
+    # Walking the concept's front figure down column x=140: shorts to
+    # z 0.702, bare shin to 0.544, then CREAM — rgb(212,182,152) — from
+    # 0.544 to 0.440, where the shoe's navy starts. There is no grey band in
+    # the drawing at all. This table had TEAM_MASK (a neutral D8D2C6) from
+    # 0.550 to 0.514, which with the shoe topping out at 0.438 meant the
+    # accent covered two thirds of the only sock anyone can see, and an
+    # independent review scored 3.4 with "the sock hue is neutral grey where
+    # the concept's is warm cream".
+    #
+    # The accent cannot simply go: `M_Accessory` is where team colour lands,
+    # and `build_leg` emits a band to slot 3 only when BOTH its rows are
+    # TEAM_MASK, so one accent row would leave the material with no geometry.
+    # A third ring makes the roll a thin stripe at the sock's top edge — which
+    # is what a rolled sock looks like anyway — and hands the rest to cream.
+    #
+    # ⚠️ THE WIDTHS HERE ARE LOAD-BEARING AND THE COLOURS ARE NOT.
+    # `ankleDaylight` samples at 13% of figure height, z 0.521, which falls
+    # between these rings, and it sits at +9.64 of a 12.0 tolerance. Dropping
+    # the 0.514 ring's half-width to open the accent would have taken it to
+    # 13.9% and broken the gate. So the new ring is interpolated ON the line
+    # the old two already described (0.532 -> 0.268), the sampled half-width
+    # moves 0.267 -> 0.266, and only the colour of the lower row changes.
+    (SOCK_TOP_Z, 0.272, 0.95, TEAM_MASK, "Leg"),      # the roll, team accent
+    (SOCK_TOP_Z - 0.018, 0.268, 0.95, TEAM_MASK, "Leg"),
+    (SOCK_TOP_Z - 0.036, 0.264, 0.95, SOCK, "Leg"),   # cream, as drawn
+    # ★ THE SOCK MUST FIT INSIDE THE SHOE, AND IT NEVER DID.
+    #
+    # Three rounds went into a topline, a heel counter and a collar rim and
+    # none of them read, and the nineteenth review found why in one
+    # comparison: the shoe's widest half-section is 0.214 and these rings
+    # were 0.248, 0.238 and 0.206. The sock was wider than the shoe at every
+    # height they share, so a wedge of it split the upper down the instep in
+    # both views — and the collar rim, at 0.138, was buried inside the sock
+    # with only its fore and aft lobes escaping as the tan cliff in profile.
+    #
+    # Not a depth-sort or a surface-height problem, which is how the two
+    # previous attempts framed it. A real sock COMPRESSES inside a shoe.
+    # The shoe's top is z 0.441, so only the first ring below is still
+    # outside it; everything under that is sized against the section at its
+    # own height (v 0.90 gives ~0.16, v 0.62 gives ~0.19).
+    # ⚠️ AND THIS ONE COMES DOWN WITH THEM TOO. It is the ring just above the
+    # shoe's 0.438 topline, so it is what the eye reads as the sock ENTERING
+    # the shoe. At 0.222 against the narrowed shoe's 0.168 widest half it
+    # overhung the whole upper by a third and rendered as a mushroom sitting
+    # on the foot — the same "sock wider than the shoe" the nineteenth review
+    # caught, arriving from the other direction. 0.172 lands just proud of
+    # the upper, which is how the concept draws a slouched sock meeting a
+    # low collar. Still below `ankleDaylight`'s sample at 13% of figure
+    # height (z 0.521), which reads the two rings above this one.
+    (SOCK_TOP_Z - 0.070, 0.172, 0.95, SOCK, "Leg"),   # z 0.480, just clear
+    # Sized against the shoe at its own height, which is what the
+    # nineteenth review's finding actually asks for. ⚠️ AND IT MOVES WHEN
+    # THE SECTION MOVES: retracing the foxing ledge stepped the upper in
+    # from u 0.905 to 0.815, so the shoe's half here fell from 0.149 to
+    # 0.210 x 0.95 x u(v 0.912) = 0.114 and the 0.140 that used to sit
+    # inside it started poking through. This is the fourth time a shoe
+    # number has moved and left the sock behind, which is why the numbers
+    # are derived in the comment rather than remembered.
+    (0.400, 0.100, 0.95, SOCK, "Leg"),
+    (0.280, 0.138, 0.95, SOCK, "Leg"),
+    (0.150, 0.126, 0.95, SOCK, "Foot"),
+]
+
+
+# ★ HIS LEG, HANDED TO THE SHARED BUILDER. The table above is a measurement of
+# his turnaround and is governed here; the construction it drives lives in
+# `sculptlib/leg.py`, which reads no character's table.
+
+TANK_LEG = LegSpec(
+    stations=tuple(LEG_STATIONS),
+    inseam_half=inseam_half,
+    garment=PANTS,
+    sock=SOCK,
+    team_mask=TEAM_MASK,
+)
 
 
 # --- The shoe ------------------------------------------------------------------
@@ -1652,7 +1611,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
 
     for side in (1, -1):
         build_arm(builder, side, detail, spec=TANK_ARM)
-        build_leg(builder, side, detail)
+        build_leg(builder, side, detail, spec=TANK_LEG)
         build_shoe(builder, side, detail, spec=TANK_SHOE,
                    ankle_x=leg_x(LEG_ANKLE_Z), bone=limb_bone("ToeBase", side))
 

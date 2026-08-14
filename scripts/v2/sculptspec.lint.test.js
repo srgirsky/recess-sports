@@ -78,7 +78,7 @@ describe('a shared sculpt spec cannot carry one character in its defaults', () =
     for (const file of modules) {
       for (const f of specFields(readFileSync(join(LIB, file), 'utf8'))) found.add(f.cls);
     }
-    expect([...found].sort()).toEqual(['ArmSpec', 'EarSpec', 'HandSpec', 'HeadSpec', 'ShoeSpec']);
+    expect([...found].sort()).toEqual(['ArmSpec', 'EarSpec', 'HandSpec', 'HeadSpec', 'LegSpec', 'ShoeSpec']);
   });
 
   it('gives no spec field a default value', () => {
