@@ -62,11 +62,14 @@ import sharp from 'sharp';
 
 import { slugFor } from './character-registry.mjs';
 import { floodFigureMask } from './figure-mask.mjs';
+// ★ ONE RULER FOR COLOUR. These used to be defined here and reachable by
+// nothing else, so anything that needed to ask "is this pixel the same material
+// as that one" had to invent its own answer. The constants — and the defects
+// that earned each of them — live in `tone.mjs` now; this file is one reader of
+// two, and the analyser is the other.
+import { TONE_MEMBERSHIP, TONE_SEPARATION, isSkin, sat, toneDistance } from './tone.mjs';
 
 const CONCEPTS = 'docs/v2/concepts';
-
-const lum = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
-const sat = (c) => { const mx = Math.max(c[0], c[1], c[2]), mn = Math.min(c[0], c[1], c[2]); return mx ? (mx - mn) / mx : 0; };
 
 // ---------------------------------------------------------------------------
 // ★ THE BACKDROP IS SAMPLED PER COLUMN, BECAUSE IT IS NOT FLAT.
@@ -201,57 +204,7 @@ function headBox(f) {
   return { top, bottom, width: widest, height: bottom - top + 1, centerX, pinchFound };
 }
 
-// Warm, saturated and light: the skin of every character in this roster reads
-// r > g > b with real saturation, which separates it from both hair and cream.
-const isSkin = (c) => c[0] > c[1] + 12 && c[1] >= c[2] && sat(c) > 0.22 && lum(c) > 80;
-
 const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
-
-/**
- * ★ SHADING CHANGES VALUE, NOT HUE — so membership is decided in CHROMATICITY.
- *
- * `bandSplit` classified a pixel by raw RGB distance to the two centroids, and
- * an independent review caught what that lets through. Tank's delivered shoe
- * reported its second tone at 18.5% against the concept's 26.2% and PASSED,
- * while the pixels being counted as navy were `rgb(75,65,54)` and
- * `rgb(73,63,48)` — r > g > b, warm cream in shadow, with no blue in them at
- * all. Counting only genuinely cool pixels put the delivered band at 1.14%
- * against the concept's 17.30%: a 15x shortfall the metric reported as green.
- *
- * The arithmetic shows why it is not a tolerance problem. That shadowed cream
- * sits 86 units from the navy centroid and 190 from the cream one, because
- * DARKENING a cream moves it toward every dark colour at once. No threshold on
- * a distance that is dominated by brightness can separate "this is navy" from
- * "this is cream with the light off it".
- *
- * Normalising out brightness settles it outright: in chromaticity the same
- * pixel is 0.018 from cream and 0.32 from navy. A small value term stays in the
- * mix so that black and white — which have no chromaticity to speak of and land
- * near every centroid — still abstain rather than being assigned at random.
- */
-const CHROMA_WEIGHT = 260;
-// ⚠️ AND THE VALUE TERM HAS TO STAY SMALL, OR IT DECIDES.
-//
-// At 0.25 this term outvoted hue at the dark end and the shoe's tone split was
-// being met partly by shadow: the outsole's rgb(57,52,44) sits 29 from the navy
-// centroid and 39.5 from the cream one, because darkening a cream moves it 157
-// luminance units from cream and only 6 from navy. In chromaticity that pixel
-// is unambiguous — warm, r > g > b — and at 0.06 it lands 11.4 from cream
-// against 29 from navy, which is the right answer.
-//
-// A luminance FLOOR was tried first and is the wrong tool: the concept's own
-// navy is #353c42 at luminance 59, so any floor high enough to exclude the
-// shadow also excludes the tone it is meant to find.
-const VALUE_WEIGHT = 0.06;
-const chromaticity = (c) => {
-  const sum = c[0] + c[1] + c[2];
-  return sum > 0 ? [c[0] / sum, c[1] / sum, c[2] / sum] : [1 / 3, 1 / 3, 1 / 3];
-};
-const toneDistance = (a, b) => {
-  const ca = chromaticity(a), cb = chromaticity(b);
-  const hue = Math.hypot(ca[0] - cb[0], ca[1] - cb[1], ca[2] - cb[2]);
-  return Math.hypot(CHROMA_WEIGHT * hue, VALUE_WEIGHT * (lum(a) - lum(b)));
-};
 
 /** Walk the figure pixels of a horizontal band given as fractions of figure height. */
 function eachBandPixel(f, fromFrac, toFrac, visit) {
@@ -272,16 +225,6 @@ function eachBandPixel(f, fromFrac, toFrac, visit) {
 // FIRST tone in shadow — cream and shadowed cream are 100+ apart in RGB — and
 // then both centroids name the same garment and the split measures nothing.
 // Cream to navy is ~83 in this space; cream to its own shadow is ~25.
-// ⚠️ RESCALED WITH VALUE_WEIGHT. Dropping the value term from 0.25 to 0.06
-// shrinks every distance in this space by roughly 1.8x, and the old 45 then sat
-// ABOVE cream-to-navy (24.5) — so navy stopped being selected as a second tone
-// at all and the concept read 99.4% one colour. Cream to its own shadow is 11.4
-// in the same space, so 18 still separates a real second garment tone from one
-// tone's shading, which is what this constant is for.
-const TONE_SEPARATION = 18;
-// Past this, a pixel belongs to neither declared tone — a sock, a shadow, skin.
-// The old rule-based classifier abstained the same way by simply matching neither.
-const TONE_MEMBERSHIP = 30;
 
 /**
  * ★ THE TWO TONES ARE DERIVED FROM THE CONCEPT, NOT NAMED IN THIS FILE.

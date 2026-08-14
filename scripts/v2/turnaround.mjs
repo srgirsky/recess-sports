@@ -161,3 +161,188 @@ export function halfWidthAt(f, z) {
 export function torsoTraceable(f, z) {
   return runsAt(f, z) >= 3;
 }
+
+// ---------------------------------------------------------------------------
+// ★ RUN IDENTITY — WHICH OBJECT IS THIS RUN?
+//
+// `segmentsAt` answers "how many pieces of figure does this row cross" and
+// stops there, and every expensive failure on this project has been the caller
+// guessing the rest. Four of them, all the same shape — a quantity read down a
+// line that passes through more than one object:
+//
+//   · the torso measured across `sleeve | torso | sleeve` as one span: half
+//     0.910 authored where the torso alone is 0.532, and the maintainer's words
+//     for the result were "the corners of the T-shirt ended up on his stomach";
+//   · the shoe measured across two overlapping feet in the profile view —
+//     1.211ft for a foot that is 0.86;
+//   · the mouth measured on the chin shadow, which put the atlas's mouth at
+//     97.3% of head height;
+//   · the shoe's colour bands never traced at all.
+//
+// `torsoTraceable` below is the right idea and it stops one step short: it
+// counts runs. Counting is not naming. These functions name them, by asking
+// which MATERIAL each run is made of, so "the torso run" is a lookup rather
+// than a guess and `sleeve | torso | sleeve` stops being three anonymous spans.
+//
+// ★ AND THE POINT IS THE REFUSAL, NOT THE NUMBER. Every one of those failures
+// would have been prevented by returning nothing. So these return
+// `{ notTraceable: { class, reason } }` rather than a plausible number whenever
+// the row cannot be attributed to one object — and `not-traceable` is a
+// first-class answer the sculpt scripts already know how to record.
+// ---------------------------------------------------------------------------
+
+import { TONE_MEMBERSHIP, TONE_SEPARATION, toneDistance } from './tone.mjs';
+
+/** Figure pixels are binned coarsely, then merged in tone space. */
+const PALETTE_BITS = 5;
+
+/**
+ * The materials a figure is painted in, largest area first.
+ *
+ * Deliberately unsupervised: a hardcoded `isShirt` is one character's wardrobe
+ * written into a shared tool, which is the mistake `measure-fidelity`'s own
+ * header records making with `isRed`/`isCream`. Bins are merged with
+ * `toneDistance`, so a garment and its own shading stay ONE material while two
+ * genuinely different garments stay two — that separation is what
+ * `TONE_SEPARATION` is for and it is not re-derived here.
+ */
+export function palette(f, { max = 8 } = {}) {
+  const shift = 8 - PALETTE_BITS;
+  const bins = new Map();
+  for (let y = f.y0; y <= f.y1; y++) {
+    for (let x = f.x0; x <= f.x1; x++) {
+      if (!f.inFigure(x, y)) continue;
+      const c = f.at(x, y);
+      const key = ((c[0] >> shift) << (PALETTE_BITS * 2)) | ((c[1] >> shift) << PALETTE_BITS) | (c[2] >> shift);
+      const bin = bins.get(key) ?? [0, 0, 0, 0];
+      bin[0] += c[0]; bin[1] += c[1]; bin[2] += c[2]; bin[3]++;
+      bins.set(key, bin);
+    }
+  }
+  const ranked = [...bins.values()]
+    .map((b) => ({ rgb: [b[0] / b[3], b[1] / b[3], b[2] / b[3]].map(Math.round), n: b[3] }))
+    .sort((a, b) => b.n - a.n);
+  const total = ranked.reduce((s, r) => s + r.n, 0) || 1;
+  const kept = [];
+  for (const r of ranked) {
+    const near = kept.find((k) => toneDistance(k.rgb, r.rgb) <= TONE_SEPARATION);
+    if (near) { near.n += r.n; continue; }
+    if (kept.length < max) kept.push({ rgb: r.rgb, n: r.n });
+  }
+  return kept
+    .sort((a, b) => b.n - a.n)
+    .map((k) => ({ rgb: k.rgb, hex: '#' + k.rgb.map((v) => v.toString(16).padStart(2, '0')).join(''), sharePct: (100 * k.n) / total }));
+}
+
+/**
+ * Pixel -> material index, or -1.
+ *
+ * ⚠️ NEVER "NEAREST WINS". A pixel further than `TONE_MEMBERSHIP` from every
+ * material abstains, exactly as `bandSplit` abstains, because a rule that
+ * always answers cannot report that it does not know — and not knowing is the
+ * outcome this whole module exists to be able to express.
+ */
+export function classifier(pal) {
+  return (rgb) => {
+    let best = -1, bestD = Infinity;
+    for (let i = 0; i < pal.length; i++) {
+      const d = toneDistance(pal[i].rgb, rgb);
+      if (d < bestD) { bestD = d; best = i; }
+    }
+    return bestD > TONE_MEMBERSHIP ? -1 : best;
+  };
+}
+
+/**
+ * The runs at a height, each named by the material it is made of.
+ *
+ * Runs of the SAME material separated by a gap thinner than `seamPx` are kept
+ * apart and the gap is reported, because that gap is the shadow between a
+ * sleeve and the body it lies on — Tank's is one to two pixels wide, and
+ * merging it is precisely how the sleeves ended up measured into his stomach.
+ */
+export function regionRunsAt(f, pal, z, { minPx = 3 } = {}) {
+  const y = rowAt(f, z);
+  const classify = classifier(pal);
+  const runs = [];
+  let cur = null;
+  for (let x = f.x0; x <= f.x1; x++) {
+    const inside = f.inFigure(x, y);
+    const m = inside ? classify(f.at(x, y)) : -2;
+    if (cur && cur.material === m) { cur.x1 = x; continue; }
+    if (cur && cur.x1 - cur.x0 + 1 >= minPx && cur.material !== -2) runs.push(cur);
+    cur = m === -2 ? null : { x0: x, x1: x, material: m };
+  }
+  if (cur && cur.x1 - cur.x0 + 1 >= minPx && cur.material !== -2) runs.push(cur);
+
+  const centre = Math.round((f.x0 + f.x1) / 2);
+  return runs.map((r, i) => ({
+    ...r,
+    widthFt: (r.x1 - r.x0 + 1) * f.ftPerPx,
+    hex: r.material >= 0 ? pal[r.material].hex : null,
+    role: r.x0 <= centre && centre <= r.x1 ? 'centre' : r.x1 < centre ? 'flankLeft' : 'flankRight',
+    seamLeftPx: i > 0 ? r.x0 - runs[i - 1].x1 - 1 : null,
+    seamRightPx: i < runs.length - 1 ? runs[i + 1].x0 - r.x1 - 1 : null,
+  }));
+}
+
+/**
+ * One named run, or a refusal that says why.
+ *
+ * `parts` is the discriminator the four failures all needed: three parts of one
+ * material is `flank | centre | flank` and is answerable; one part is the whole
+ * thing and is answerable; TWO is ambiguous — an arm crossing the body, or two
+ * feet — and answering it is how 1.211ft of "foot" was authored.
+ */
+export function namedRunAt(f, pal, z, { material, role = 'centre', paired = false, minPx = 3 } = {}) {
+  const runs = regionRunsAt(f, pal, z, { minPx });
+  if (!runs.length) return { notTraceable: { class: 'no-view', reason: `z ${z} is off the figure` } };
+  const abstained = runs.filter((r) => r.material === -1);
+  const mine = runs.filter((r) => r.material === material);
+  if (!mine.length) {
+    return { notTraceable: {
+      class: 'no-such-material',
+      reason: `material ${material} is not present at z ${z}; the row is ${runs.map((r) => r.hex ?? 'abstain').join(' | ')}`,
+    } };
+  }
+  // ★ A PAIR IS DECLARED, NOT COUNTED, and that distinction is the shoe bug.
+  //
+  // Counting runs looks like it should work and does not: at Tank's shoe height
+  // the cream is SEVEN runs, because each shoe is cream|navy|cream across its
+  // own width, and the run that contains the centre column spans the inner edge
+  // of BOTH feet — which is precisely the span that was authored as 1.211ft of
+  // foot. No count distinguishes that from a torso.
+  //
+  // So the caller declares the part paired (a recipe knows a kid has two feet;
+  // pixels do not), and any run crossing the centreline is then refused rather
+  // than returned. `insteadUse` names the reading that IS available, because a
+  // refusal with no alternative just moves the guess somewhere else.
+  if (paired) {
+    const centreX = Math.round((f.x0 + f.x1) / 2);
+    const straddles = mine.find((r) => r.x0 <= centreX && centreX <= r.x1);
+    if (straddles) {
+      return { notTraceable: {
+        class: 'paired-part',
+        reason:
+          `material ${material} is declared paired, and the run at z ${z} spanning ` +
+          `${straddles.x0}-${straddles.x1} crosses the centreline at ${centreX} — it is both ` +
+          'of them read as one, which is how a foot came to measure 1.211ft',
+        insteadUse: 'one side: take the widest run wholly left or right of the centreline',
+      } };
+    }
+  }
+  const pick = mine.find((r) => r.role === role) ?? (mine.length === 1 ? mine[0] : null);
+  if (!pick) {
+    return { notTraceable: {
+      class: 'ambiguous-parts',
+      reason: `${mine.length} runs of material ${material} at z ${z} and none is the ${role} one`,
+    } };
+  }
+  return {
+    value: pick.widthFt / 2,
+    widthFt: pick.widthFt,
+    px: { row: rowAt(f, z), x0: pick.x0, x1: pick.x1, seamLeftPx: pick.seamLeftPx, seamRightPx: pick.seamRightPx },
+    parts: mine.length,
+    abstainedRuns: abstained.length,
+  };
+}
