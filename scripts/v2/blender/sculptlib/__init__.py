@@ -44,10 +44,26 @@ vertices for one hand and confirm they wrap the bone that drives them.
 must be among its nearest — because distance alone cannot separate a misbound
 forearm from a skull that legitimately sits 1.3ft above the Head bone.
 
-★ HOW TO KNOW A CHANGE HERE WAS SAFE. Re-run a character's sculpt script,
-re-export, and compare geometry:
+★ HOW TO KNOW A CHANGE HERE WAS SAFE. Three commands, in this order, and the
+first one is the one that gets skipped:
 
-    npm run compare:glb-geometry -- <baseline>.glb public/v2/models/kid_<id>.glb
+    cp public/v2/models/kid_<id>.glb /tmp/baseline.glb
+    blender --background assets/v2/source/<slug>-pilot.blend \
+      --python scripts/v2/blender/sculpt-<slug>-source.py     # rebuilds the .blend
+    npm run export:authored-character -- <id>                 # .blend -> .glb
+    npm run compare:glb-geometry -- /tmp/baseline.glb public/v2/models/kid_<id>.glb
+
+⚠️ `export:authored-character` DOES NOT RUN THE SCULPT SCRIPT. It reads the
+`.blend`. Skip the Blender line and every downstream check re-certifies the
+build you already had — which is how a source file with a `NameError` in it
+once passed both a hash comparison and a geometry comparison, and took the whole
+test suite green with it because no test opens Blender.
+
+⚠️ AND THE DELIVERED GLB'S OWN SHA256 IS NOT A GEOMETRY CHECK. The exporter
+stamps the `.blend`'s hash into the GLB and Blender's save is not
+byte-reproducible, so that hash changes whenever the source IS rebuilt and holds
+whenever it is not. Use `compare:glb-geometry`, which ignores that field by
+name.
 
 The pipeline is deterministic where it matters — Junebug's binary buffer and all
 89 accessors reproduce byte for byte — so a refactor that changes no float

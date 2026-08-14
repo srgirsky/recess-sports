@@ -627,12 +627,19 @@ PALETTE = Palette(
 # his own.
 EAR_SPEC = EarSpec(center=(0.045, 3.128), radii=(0.1044, 0.1483))
 
+# Her face-atlas window: (bearing off the nose at the island's u edges, the
+# latitude at v = 0 below the chin, the latitude sweep to v = 1), in radians.
+# These were module constants in `sculptlib/head.py` — and the silent DEFAULT for
+# every character — until Tank's taller skull needed his own. See that field.
+FACE_ISLAND = (0.92, -1.10, 1.54)
+
 HEAD_SPEC = HeadSpec(
     center=HEAD_CENTER,
     radii=HEAD_RADII,
     half_scale=face_half_scale,
     socket=socket_push,
     nose=nose_push,
+    island=FACE_ISLAND,
 )
 
 
