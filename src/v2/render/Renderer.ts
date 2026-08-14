@@ -7,7 +7,17 @@
 // any future headless screenshot harness can share this file unchanged.
 // ---------------------------------------------------------------------------
 
-import { ACESFilmicToneMapping, Color, PCFSoftShadowMap, SRGBColorSpace, WebGLRenderer } from 'three';
+import {
+  ACESFilmicToneMapping,
+  Color,
+  LinearToneMapping,
+  NeutralToneMapping,
+  NoToneMapping,
+  PCFSoftShadowMap,
+  SRGBColorSpace,
+  WebGLRenderer,
+} from 'three';
+import type { ToneMapping } from 'three';
 import type { Camera, Scene } from 'three';
 import { DynamicResolution, detectTier, type TierSettings } from './perfTier';
 import type { OutlineRegistry } from './materials/outline';
@@ -24,6 +34,65 @@ export interface RendererStats {
   textureMB: number;
   scale: number;
   tier: string;
+}
+
+/**
+ * The curve and exposure, overridable with `?tonemap=` and `?exposure=`.
+ *
+ * ★ THE OVERRIDE EXISTS BECAUSE THIS DECISION IS INVISIBLE TO EVERY GATE.
+ * `measure:fidelity` grades the BLENDER board, not the runtime, so a tone
+ * mapping change moves no measured number and can be silently reverted. The
+ * flag is what lets an A/B run through one code path instead of two edits, and
+ * it stays afterwards as the handle a reviewer needs to see the alternative.
+ *
+ * Follows `perfTier.ts`'s `?perf=` precedent. Unknown values fall through to the
+ * default rather than throwing — a debug flag must never break the game.
+ */
+const TONE_CURVES: Readonly<Record<string, ToneMapping>> = {
+  aces: ACESFilmicToneMapping,
+  neutral: NeutralToneMapping,
+  linear: LinearToneMapping,
+  none: NoToneMapping,
+};
+
+/**
+ * ★ NEUTRAL, NOT ACES, AND THE EXPOSURE IS SOLVED RATHER THAN PICKED.
+ *
+ * ACES desaturates pale, warm values — its whole purpose is a filmic shoulder —
+ * and this roster is pale warm creams on saturated garments. Measured on Tank's
+ * own delivered swatches, bounded to the character (the HUD is DOM and is not
+ * tone-mapped, so a full-frame reading means nothing):
+ *
+ *              shoe cream r-b    skin r-b    grass lum    kid lum
+ *   authored        104            128           -           -
+ *   ACES 1.05        89 (86%)      110 (86%)     74          85
+ *   Neutral 1.05     97 (93%)      118 (92%)     71          79
+ *   Neutral 1.25    100 (96%)      123 (96%)     78          81
+ *   Neutral 1.35    102 (98%)      124 (97%)     81          84
+ *
+ * 1.25 is where the warmth is recovered without moving the world: the field
+ * stays within ~5% of what it was authored against under ACES, nothing clips,
+ * and night mode keeps its mood. 1.35 buys two more points of chroma and costs
+ * a 9.5% brighter field, which is a bigger change to the game than to the kids.
+ *
+ * ⚠️ NO GATE CAN SEE THIS. `measure:fidelity` grades the BLENDER board, not the
+ * runtime, so every metric is identical either way and a silent revert would go
+ * unnoticed. `scripts/v2/tonemapping.lint.test.js` pins it textually and
+ * `render.toneMapping` in `scripts/measures.json` carries the table above.
+ */
+export const DEFAULT_TONE_MAPPING: ToneMapping = NeutralToneMapping;
+export const DEFAULT_TONE_EXPOSURE = 1.25;
+
+function toneMappingFromQuery(): { mapping: ToneMapping; exposure: number } {
+  let mapping: ToneMapping = DEFAULT_TONE_MAPPING;
+  let exposure = DEFAULT_TONE_EXPOSURE;
+  if (typeof location === 'undefined') return { mapping, exposure };
+  const params = new URLSearchParams(location.search);
+  const named = TONE_CURVES[params.get('tonemap') ?? ''];
+  if (named !== undefined) mapping = named;
+  const exp = Number(params.get('exposure'));
+  if (Number.isFinite(exp) && exp > 0) exposure = exp;
+  return { mapping, exposure };
 }
 
 export class Renderer {
@@ -51,8 +120,9 @@ export class Renderer {
     this.tier = detectTier(this.gl.getContext());
 
     this.gl.outputColorSpace = SRGBColorSpace;
-    this.gl.toneMapping = ACESFilmicToneMapping;
-    this.gl.toneMappingExposure = 1.05;
+    const tone = toneMappingFromQuery();
+    this.gl.toneMapping = tone.mapping;
+    this.gl.toneMappingExposure = tone.exposure;
     // The draft renders one clipped character view after the world. Keep the
     // counters cumulative across both passes so the perf readout still reports
     // the frame's real cost rather than only whichever pass rendered last.
