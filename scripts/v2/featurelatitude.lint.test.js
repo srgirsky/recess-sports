@@ -1,0 +1,172 @@
+// ---------------------------------------------------------------------------
+// ★ A FACE CAN SIT AT THE WRONG HEIGHT ON ITS OWN HEAD, AND NOTHING SAW IT.
+//
+// Every feature Tank has was authored one notch too low. Measured on his board
+// against the approved turnaround, as a percentage of head height from crown to
+// neck:
+//
+//                 turnaround   delivered
+//     brow            36.7%       37.9%
+//     eyes            56.5%       57.5%
+//     nose            67.7%       82.8%      <- a whole feature low
+//     mouth           78.3%       94.6%      <- on his chin
+//     ear line        64.3%       69.9%
+//
+// The maintainer saw it immediately — "the eyebrows, eyes, nose, and mouth, as
+// well as the ears, all seem like they're lower on the head than they should
+// be" — and every automated gate was green, because none of them asked WHERE a
+// feature is. `measure:fidelity` checks head height, head aspect and how much
+// skin is visible; `skeleton.test.ts` checks the rig; `clips.test.ts` checks
+// animation. A face slid two-thirds of the way onto the jaw and passed all of it.
+//
+// ★ THE CAUSE WAS A MEASUREMENT, NOT A SCULPT. `sculpt-tank-source.py`'s own
+// header records "mouth z 3.00" read off a dark-pixel detector — and z 3.00 is
+// 97.3% of the way down that head. The detector had found the shadow UNDER the
+// jaw and called it the lip line. The island window was then solved to honour
+// that number, so the atlas obediently painted the mouth onto the chin. It is
+// the same class as the shoe built from two overlapping feet: a quantity read
+// down a line that passes through more than one thing.
+//
+// ★ WHY THIS IS ARITHMETIC AND NOT A PIXEL DETECTOR. The obvious gate re-runs
+// feature detection on both images and compares. It was written first and
+// thrown away: on the turnaround the darkest row in the lower face is the
+// NOSTRIL (luminance 20) not the lip line (22), so it reports the mouth 10
+// points high; and Junebug's fringe merges with her brow, so the band ordering
+// that works for a bald kid finds one band instead of three. A gate that
+// mis-identifies a feature fires falsely, and a gate that fires falsely gets
+// weakened. This one instead asks the SOURCE where it has put each feature —
+// the atlas row, the island window, the head ellipsoid, the ear centre — which
+// is exactly the arithmetic that was wrong, and compares it against a ratio
+// measured once from the turnaround and recorded below.
+//
+// Break-it record, in the tests below: restoring `mouthY: 104` fires with
+// "tank mouth sits at 94.6% of head height, want 78.3% (+-2.5)".
+// ---------------------------------------------------------------------------
+
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { describe, expect, it } from 'vitest';
+
+import { FACE_SPECS } from './face-specs.mjs';
+
+const here = dirname(fileURLToPath(import.meta.url));
+const sculpt = (slug) => readFileSync(resolve(here, 'blender', `sculpt-${slug}-source.py`), 'utf8');
+
+/**
+ * ★ THE CROWN-TO-NECK SPAN IS NOT THE ELLIPSOID'S DIAMETER, and this constant
+ * is the difference. "Percent of head height" everywhere in this project means
+ * the span the board renders — crown down to the neck pinch — because that is
+ * what a person measures off a turnaround with a ruler. That span is set by the
+ * collar and the neck, not by the skull alone, so it cannot be derived from
+ * `HEAD_RADII`.
+ *
+ * Calibrated once, on the two features that were never in doubt: with the head
+ * at centre z 3.460 and vertical radius 0.552, Tank's delivered brow and eye
+ * measured 37.9% and 57.5% of head height at latitudes +0.289 and -0.081 rad.
+ * Both solve `pct = K * (1 - sin(latitude))` at K = 53.0 and 53.2 — agreement
+ * to 0.2 of a point across a 20-point separation, which is what makes the
+ * linear-in-z form trustworthy rather than assumed.
+ */
+const PCT_PER_RADIUS = 53.1;
+
+/** Where a latitude on the skull lands, as % of head height from the crown. */
+const pctOfHead = (latitude) => PCT_PER_RADIUS * (1 - Math.sin(latitude));
+
+/** The latitude an atlas cell row is painted onto, through the island window. */
+const latitudeOfCell = (cellY, low, span) => low + (1 - cellY / 128) * span;
+
+/**
+ * ★ MEASURED OFF THE APPROVED TURNAROUND, ONCE, AND CITED HERE.
+ *
+ * Front figure, crown row 137 to neck pinch row 319 — a 182px head. Brow and
+ * eye are the centroids of the two topmost dark bands in the central third
+ * (rows 199-210 and 230-247). The mouth is the darkest run in the central 60px
+ * BELOW the nose, rows 278-281, taken narrow on purpose so the nostril above it
+ * and the chin shadow below it are both excluded. The ear line is the head's
+ * widest row, which is what an ear IS in a front silhouette.
+ *
+ * ⚠️ Tolerances are the honest precision of that trace, not a comfort margin.
+ * A band centroid on a 182px head is good to about a pixel, which is 0.55 of a
+ * point; 2.5 allows for the render's own softness and for a character's brow
+ * being drawn thicker than the mark that represents it. Do not widen one to
+ * clear a change — the change is what moved.
+ */
+const TURNAROUND = {
+  tank: {
+    slug: 'tank',
+    brow: 36.7,
+    eye: 56.5,
+    mouth: 78.3,
+    earLine: 64.3,
+    tolerance: 2.5,
+  },
+};
+
+function constantsFor(slug) {
+  const src = sculpt(slug);
+  const num = '(-?\\d+\\.?\\d*)';
+  const island = src.match(new RegExp(`^FACE_ISLAND = \\(${num}, ${num}, ${num}\\)`, 'm'));
+  const centre = src.match(new RegExp(`^HEAD_CENTER = \\(${num}, ${num}, ${num}\\)`, 'm'));
+  const radii = src.match(new RegExp(`^HEAD_RADII = \\(${num}, ${num}, ${num}\\)`, 'm'));
+  const ear = src.match(new RegExp(`EarSpec\\(center=\\(${num}, ${num}\\)`));
+  if (!island || !centre || !radii || !ear) {
+    throw new Error(`${slug}: could not read FACE_ISLAND / HEAD_CENTER / HEAD_RADII / EarSpec — ` +
+      'the regexes above track the literal shape of those lines, so a reformat breaks this gate ' +
+      'rather than silently skipping it');
+  }
+  return {
+    islandLow: Number(island[2]),
+    islandSpan: Number(island[3]),
+    headZ: Number(centre[3]),
+    headRz: Number(radii[3]),
+    earZ: Number(ear[2]),
+  };
+}
+
+describe('a face sits where the turnaround puts it', () => {
+  for (const [id, want] of Object.entries(TURNAROUND)) {
+    const spec = FACE_SPECS[id];
+    const k = constantsFor(want.slug);
+
+    // The atlas rows the generator is TOLD to draw at. `brow()` and `eye()`
+    // centre their marks ~2 cells above the anchor, which is why the numbers in
+    // face-specs.mjs sit 2 below where the feature lands; that offset is part of
+    // what these ratios were fitted against and is why this asserts the
+    // delivered POSITION rather than the anchor.
+    const at = (cellY) => pctOfHead(latitudeOfCell(cellY, k.islandLow, k.islandSpan));
+
+    it(`${id}: brow, eyes and mouth land at the turnaround's ratios`, () => {
+      const got = { brow: at(spec.browY - 2), eye: at(spec.eyeY - 2), mouth: at(spec.mouthY + 3) };
+      const bad = [];
+      for (const feature of ['brow', 'eye', 'mouth']) {
+        if (Math.abs(got[feature] - want[feature]) > want.tolerance) {
+          bad.push(
+            `${id} ${feature} sits at ${got[feature].toFixed(1)}% of head height, ` +
+            `want ${want[feature]}% (+-${want.tolerance}). Move it with face-specs.mjs's ` +
+            `${feature}Y or with FACE_ISLAND in sculpt-${want.slug}-source.py — and re-measure ` +
+            'the turnaround before changing the target, because the target is the drawing',
+          );
+        }
+      }
+      expect(bad).toEqual([]);
+    });
+
+    it(`${id}: the ear line sits where the head is widest in the drawing`, () => {
+      const got = PCT_PER_RADIUS * (1 - (k.earZ - k.headZ) / k.headRz);
+      expect(
+        Math.abs(got - want.earLine) <= want.tolerance,
+        `${id} ear line at ${got.toFixed(1)}% of head height, want ${want.earLine}% ` +
+        `(+-${want.tolerance}) — EAR_SPEC's centre z in sculpt-${want.slug}-source.py`,
+      ).toBe(true);
+    });
+  }
+
+  // ★ Broken once, against the real constants: the value that actually shipped.
+  it('fires on the mouth position that shipped', () => {
+    const k = constantsFor('tank');
+    const shipped = pctOfHead(latitudeOfCell(104 + 3, k.islandLow, k.islandSpan));
+    expect(Math.abs(shipped - TURNAROUND.tank.mouth)).toBeGreaterThan(TURNAROUND.tank.tolerance);
+    expect(shipped).toBeGreaterThan(90); // it was on his chin
+  });
+});

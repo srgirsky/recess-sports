@@ -207,7 +207,13 @@ export const FACE_SPECS = {
     irisR: 7.0,
     irisInward: 3,
     eyeX: [34, 94],
-    eyeY: 52,
+    // ★ ROUND 31: +2 CELLS EACH, because the window is solved against the cell
+    // rows the generator DRAWS, not the anchors it is given. `brow()` and
+    // `eye()` centre their marks about 2 cells above their anchor, so a window
+    // fitted to browY/eyeY put both features ~1.7% of head height high once the
+    // mouth was corrected. Measured on the board: brow 34.9% and eye 54.9%
+    // against the turnaround's 36.7% and 56.5%, at ~0.85% of head per cell.
+    eyeY: 54,
     // Thick and even, tapering less: his brows are the boldest mark on a face
     // with no hair to frame it.
     // Thinner and longer, and LEVEL. The concept draws a thin gently-arched
@@ -220,7 +226,7 @@ export const FACE_SPECS = {
     browThin: 1.3,
     browHalf: 12.5,
     browX: [35, 93],
-    browY: 30,
+    browY: 32,
     browTilt: 0,
     // Thin through the middle, arch kept. See `brow()` in generate-face-atlas:
     // at the default 10/1.5 the bar measures 7.45 cells through its centre,
@@ -228,7 +234,15 @@ export const FACE_SPECS = {
     // reviews read as a wedge. 8 / -2.0 lands it near 4.7 and leaves the curve.
     browArch: 8,
     browBase: -2.0,
-    mouthY: 104,
+    // ★ ROUND 31: 104 PUT HIS MOUTH ON HIS CHIN. The island window that maps
+    // this cell onto the skull was solved against a measured "mouth z 3.00",
+    // and z 3.00 is 97.3% of the way down his head — the detector that produced
+    // it had found the shadow UNDER the jaw, not the lip line. Re-measured
+    // (turnaround rows 278-281 of a head spanning 137-319) his mouth is at
+    // 78.3% of head height, and through the corrected window that is cell 77.
+    // The 27-cell move is the whole of why the face read as sliding off the
+    // chin: brow and eye were within a point of right the entire time.
+    mouthY: 77,
     // See generate-face-atlas.mjs: distinct silhouettes for grin/cheer/tongue.
     tongueOut: true,
   },

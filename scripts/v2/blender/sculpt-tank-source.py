@@ -264,9 +264,21 @@ def nose_push(nx: float, nz: float) -> float:
     # mouth, at z ~3.20, i.e. nz -0.471. The profile board showed the
     # consequence as an absence: rubric 3.5's 5/5 asks for "a real nose breaks
     # the profile" and the silhouette ran unbroken from brow to lip.
+    # ★ ROUND 31: AND nz -0.471 IS THE CONCEPT'S MOUTH, NOT ITS NOSE. That
+    # latitude is 78.1% of head height; re-measuring the turnaround puts his
+    # mouth at 78.3% and his nose at 67.5%, between the eyes at 56.5% and the
+    # mouth. So the whole nose form was authored one feature too low — which is
+    # why the board reads as a smudge on the upper lip rather than a button
+    # between the eyes, and why an independent look called every feature "low".
+    #
+    # ⚠️ SIZED AGAINST THE RENDER, NOT THE PUSH'S OWN PEAK. The shaded band the
+    # board draws sits ~6.3% of head height BELOW the peak, so matching the
+    # concept's band at 67.7% puts the peak at 61.4% — nz -0.156. The eyes end
+    # at 62% and the concept's nose ball begins there; they are adjacent in the
+    # drawing, which is what -0.160 reproduces.
     if abs(nx) > 0.26:
         return 0.0
-    dz = nz + 0.471
+    dz = nz + 0.160
     if dz < -0.16 or dz > 0.18:
         return 0.0
     across = max(0.0, 1.0 - (nx / 0.26) ** 2)
@@ -326,7 +338,19 @@ def nose_push(nx: float, nz: float) -> float:
 # whole brow line reading as skin (`faceSkin`, 48.8% per side against a concept
 # that runs 48.3 and 40.8). Both want a little more ear, and the concept's own
 # ear tips are the widest point of his head at half-width 0.615.
-EAR_SPEC = EarSpec(center=(0.030, 3.268), radii=(0.1242, 0.1755))
+# ★ ROUND 31: THE EAR LINE WAS 5.6 POINTS LOW. A child's ear brackets the eye:
+# measured on the turnaround the head's widest row — which IS the ear line — is
+# 64.3% of head height, and the delivery put it at 69.9%. z 3.268 is 71.6% of
+# this head; 64.3% is z 3.344.
+# ★ AND IT WAS A QUARTER TOO SMALL. Measured as the head's silhouette width at
+# the ear line minus its width at the temple, halved: the concept's ears stand
+# 13.7% of head height proud per side and the delivery stood 11.0%. That also
+# shows up in `headAspect` — the concept's 1.12 is measured ACROSS THE EARS,
+# which is the note EarSpec's own docstring opens with — and in `faceSkin`,
+# whose 62%-of-head sample row lands on the ear line: the concept's ear is a
+# proud form with its concha in shadow and reads as non-skin there, while a
+# flatter ear stays lit and reads as face.
+EAR_SPEC = EarSpec(center=(0.030, 3.344), radii=(0.1242, 0.1755))
 
 # ★ ROUND 3: HIS FACE NEEDS ITS OWN ATLAS WINDOW.
 #
@@ -339,7 +363,23 @@ EAR_SPEC = EarSpec(center=(0.030, 3.268), radii=(0.1242, 0.1755))
 # Solved for a brow at cell 30 and a mouth at cell 104: span 2.147, low -1.388.
 # His eyes then land at cell 52. Nothing would have gone red without this — the
 # atlas would simply have been drawn with a clipped mouth.
-FACE_ISLAND = (0.92, -1.388, 2.147)
+# ★ ROUND 31: AND THE MOUTH'S MEASURED z WAS THE CHIN'S. The note above reads
+# "mouth z 3.00" off a dark-pixel detector, and z 3.00 is 97.3% of the way down
+# this head — the jaw, not the lip line. The detector found the shadow UNDER the
+# chin, which is the same class of error as the shoe's two overlapping feet and
+# is the third time this file has recorded it: a quantity read down a line that
+# passes through more than one thing.
+#
+# Re-measured on the turnaround with the search bounded to the central 60px and
+# the darkest run taken rather than the largest: his lip line is rows 278-281 of
+# a head spanning 137-319, i.e. 78.3% of head height, z 3.198 — not 3.00.
+# Brow and eye re-measure at 36.7% and 56.5% (z 3.630, 3.425), within a point of
+# where they already were, which is why only the mouth ever looked wrong.
+#
+# Solved against the atlas's own drawn rows (browY 30, eyeY 52) the window is
+# low -1.370, span 2.200, and the mouth then belongs at cell 77 rather than 104.
+# `face-specs.mjs` carries that half.
+FACE_ISLAND = (0.92, -1.370, 2.200)
 
 HEAD_SPEC = HeadSpec(
     center=HEAD_CENTER,
@@ -432,6 +472,42 @@ def torso_levels(detail: int) -> list[tuple[float, float, float, str]]:
 #   z 2.35  0.743      z 1.95  0.910   <- widest
 #   z 1.87  0.869
 #
+# ★ ROUND 31: EVERY NUMBER IN THAT LIST IS SLEEVE-TO-SLEEVE, NOT THE TORSO.
+#
+# The scan above takes the OUTER edge of the outermost purple run. Between
+# z 1.87 and 2.23 there are THREE runs and they are sleeve | torso | sleeve —
+# at z 1.942 they are 60-114, 119-300, 305-372, the two 4px gaps being the
+# shadow where each sleeve meets the body. The torso alone is 119-300, half
+# 0.532; the list recorded 0.910. So the table's widest ring was authored 63%
+# over, and only that ring, which is why the board grew a hard CORNER on each
+# side of the belly — a triangular spike from 0.680 at z 1.72 to 0.880 at 1.96
+# and back to 0.720 at 2.20. The maintainer's words for it were "the corners on
+# his stomach are totally weird ... like we took the corners of the T-shirt and
+# they ended up on his stomach instead of on his arms", which is exactly right:
+# they ARE the sleeves' corners, measured into the belly.
+#
+# ⚠️ THIRD TIME FOR THIS CLASS IN THIS FILE — the shoe's two overlapping feet
+# and the mouth's chin shadow are the other two. A run count is not a run
+# identity, and the fix each time is to name which object each run IS.
+#
+# Retraced from the CENTRAL run, and from the rows where the arms are provably
+# clear of the tee (below z 1.71 the purple is a single run and the bare arms
+# measure x 63-100 and 317-355, well outside it):
+#
+#   z 1.12  0.611  (hem, arms clear)      z 1.71  0.561  (single run, arms clear)
+#   z 1.18  0.594                         z 1.88  0.541  (central run)
+#   z 1.24  0.561                         z 1.94  0.532  (central run)
+#   z 1.53  0.553                         z 2.06  0.515  (central run)
+#   z 1.59  0.564                         z 2.18  0.494  (central run)
+#
+# The readings from z 1.18 to 1.53 dip to 0.529 because his hands cross the
+# tee's edge there, so they are LOWER bounds and the column is faired between
+# the two clean anchors rather than following them down. The central-run
+# readings above z 1.87 are lower bounds too — the torso continues under the
+# sleeve — so the column holds ~0.556 through the chest rather than narrowing to
+# them. His tee is a straight-sided oversized box that flares slightly to the
+# hem, which is what the drawing shows and what the old column never did.
+#
 # ⚠️ AND ONLY THE 1.87-2.11 BAND IS THE TORSO ALONE. Above it the short sleeve
 # is inside the same silhouette, so a reading there is body-plus-sleeve and must
 # not be authored as a torso ring; below it his hands hide the tee's edges. The
@@ -476,18 +552,18 @@ TORSO_LEVELS = [
     # Four rings buy an underside, a proud band and the body above it.
     # The hem sits at z 1.108, which is where the centre column changes from
     # the tee's purple to the shorts' near-black.
-    (1.070, 0.610, 0.470, "Hips"),    # hem underside
-    (1.096, 0.660, 0.500, "Hips"),    # hem band, proud
-    (1.130, 0.640, 0.560, "Hips"),
-    (1.240, 0.650, 0.591, "Hips"),    # deepest point, traced
+    (1.070, 0.600, 0.470, "Hips"),    # hem underside
+    (1.096, 0.630, 0.500, "Hips"),    # hem band, proud
+    (1.130, 0.611, 0.560, "Hips"),    # traced: hem row, purple 102-310
+    (1.240, 0.598, 0.591, "Hips"),    # deepest point, traced (DEPTH only)
     # ★ THE PROFILE IS A TAPER, AND THAT ONE IS CORRECT. Three reviews called
     # the side view a cone and asked for a belly that bulges. Traced, the
     # concept's own profile runs 0.591 at z 1.24 down to 0.425 at z 2.40 — it
     # narrows upward monotonically, because his mass is low and his tee is
     # oversized. The side view was never the defect; the FRONT was.
-    (1.480, 0.660, 0.576, "Hips"),
-    (1.720, 0.680, 0.547, "Spine"),
-    (1.960, 0.880, 0.515, "Spine"),   # widest: traced 0.910, shipped a touch under
+    (1.480, 0.578, 0.576, "Hips"),
+    (1.720, 0.561, 0.547, "Spine"),   # traced clean: arms clear of the tee here
+    (1.960, 0.558, 0.515, "Spine"),
     # ⚠️ AND THE CHEST HAS TO LEAVE ROOM FOR THE SLEEVE, which round 15 took
     # back without noticing. Narrowing the lower torso to the trace was right,
     # but these two rings stayed where they were, and the sleeve descends
@@ -501,8 +577,8 @@ TORSO_LEVELS = [
     # the sleeve, so the BODY has to sit inside it by the sleeve's own
     # thickness. At 0.720 the sleeve stands 0.06-0.10ft proud and reads as a
     # sleeve.
-    (2.200, 0.720, 0.475, "Spine1"),
-    (2.400, 0.615, 0.425, "Spine1"),
+    (2.200, 0.556, 0.475, "Spine1"),
+    (2.400, 0.556, 0.425, "Spine1"),
     # ★ THE SHOULDER WAS 21% TOO NARROW, measured: 0.75 head widths delivered
     # against the concept's 0.95. The tee climbed monotonically from collar to
     # hem — a truncated cone with no shoulder break anywhere — which is the
