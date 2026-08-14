@@ -191,7 +191,7 @@ export function torsoTraceable(f, z) {
 // first-class answer the sculpt scripts already know how to record.
 // ---------------------------------------------------------------------------
 
-import { TONE_MEMBERSHIP, TONE_SEPARATION, toneDistance } from './tone.mjs';
+import { TONE_MEMBERSHIP, TONE_SEPARATION, lum, toneDistance } from './tone.mjs';
 
 /** Figure pixels are binned coarsely, then merged in tone space. */
 const PALETTE_BITS = 5;
@@ -331,6 +331,23 @@ export function namedRunAt(f, pal, z, { material, role = 'centre', paired = fals
       } };
     }
   }
+  // ★ TWO PARTS IS THE AMBIGUOUS CASE, and it has to be refused even when the
+  // material is not a declared pair. Three same-material runs is
+  // `flank | centre | flank` and answerable; one is the whole thing and
+  // answerable; TWO is a torso with a sleeve merged into one side, or an arm
+  // crossing the body, and the run through the centre column is then part
+  // garment and part something else. Tank's sweep shows it as a step: 0.507 at
+  // z 2.10 with three parts, 0.671 at z 2.16 with two — a discontinuity no
+  // garment has, and exactly the shape of the failure this module exists for.
+  if (role === 'centre' && mine.length === 2) {
+    return { notTraceable: {
+      class: 'ambiguous-parts',
+      reason:
+        `two runs of material ${material} at z ${z} (${mine.map((r) => `${r.x0}-${r.x1}`).join(' and ')}) — ` +
+        'one flank has merged with the centre, so a centre width here is part garment and part something else',
+      insteadUse: 'a height where the row crosses three runs of this material, or the profile view',
+    } };
+  }
   const pick = mine.find((r) => r.role === role) ?? (mine.length === 1 ? mine[0] : null);
   if (!pick) {
     return { notTraceable: {
@@ -345,4 +362,162 @@ export function namedRunAt(f, pal, z, { material, role = 'centre', paired = fals
     parts: mine.length,
     abstainedRuns: abstained.length,
   };
+}
+
+// ---------------------------------------------------------------------------
+// ★ LANDMARKS, AND THE TWO THINGS THAT DEFEAT A NAIVE DETECTOR.
+//
+// A pixel detector for face features was written for `featurelatitude.lint` and
+// thrown away, for reasons worth keeping:
+//
+//   · on a turnaround the DARKEST row in the lower face is often the NOSTRIL,
+//     not the lip line — Tank's nostril reads luminance 20 against his mouth's
+//     22 — so "darkest wins" reports the mouth ten points high;
+//   · a fringe merges with the brow, so band-ordering that works on a bald kid
+//     finds one band where there are three.
+//
+// Both have the same tell and it is not brightness: it is WIDTH RELATIVE TO THE
+// FACE. A chin shadow spans ~90% of the head run at its row and a mouth ~22%; a
+// fringe spans ~100%. So every landmark here carries `hostFrac`, and anything
+// wider than half its host is refused rather than returned.
+//
+// These do NOT replace `featurelatitude.lint`'s arithmetic check. That gate asks
+// the sculpt SOURCE where it put a feature and compares against a recorded
+// target; these produce the target, once, offline, under review.
+// ---------------------------------------------------------------------------
+
+/**
+ * Crown, neck pinch and ear line.
+ *
+ * The pinch is searched BELOW the head's widest row — searched from the crown it
+ * finds the crown. `pinchFound` is false when the minimum lands on a window
+ * edge, and a caller must treat that as a refusal rather than a measurement:
+ * the same rule `measure-fidelity`'s `headBox` states, for the same reason.
+ */
+export function headSpan(f) {
+  const wid = [];
+  for (let y = f.y0; y <= f.y1; y++) {
+    let l = null, r = null;
+    for (let x = f.x0; x <= f.x1; x++) if (f.inFigure(x, y)) { if (l === null) l = x; r = x; }
+    wid[y] = l === null ? 0 : r - l + 1;
+  }
+  let headWide = f.y0, hw = 0;
+  for (let y = f.y0; y < Math.round(f.y0 + f.figH * 0.30); y++) if (wid[y] > hw) { hw = wid[y]; headWide = y; }
+  const hi = Math.round(f.y0 + f.figH * 0.40);
+  let neck = headWide, pw = Infinity;
+  for (let y = headWide; y <= hi; y++) if (wid[y] < pw) { pw = wid[y]; neck = y; }
+  let earY = f.y0, ew = 0;
+  for (let y = Math.round(f.y0 + (neck - f.y0) * 0.15); y <= neck; y++) if (wid[y] > ew) { ew = wid[y]; earY = y; }
+  const height = neck - f.y0;
+  return {
+    crown: f.y0, neck, height, widestRow: headWide,
+    pinchFound: neck !== headWide && neck !== hi,
+    earLinePct: (100 * (earY - f.y0)) / height,
+    earWidthPx: ew,
+    templeWidthPx: wid[Math.round(f.y0 + height * 0.30)] ?? 0,
+  };
+}
+
+/** Dark bands down the centre of a face, each with the width tell. */
+export function inkBandsIn(f, head, { dark = 100, minInk = 3 } = {}) {
+  const cx = Math.round((f.x0 + f.x1) / 2);
+  const strip = Math.round(head.earWidthPx * 0.34);
+  const rows = [];
+  for (let y = head.crown; y <= head.crown + Math.round(head.height * 0.97); y++) {
+    const runs = []; let s = null; let hostW = 0;
+    for (let x = cx - strip; x <= cx + strip; x++) {
+      if (!f.inFigure(x, y)) { if (s !== null) { if (x - s >= 2) runs.push([s, x - 1]); s = null; } continue; }
+      hostW++;
+      if (lum(f.at(x, y)) < dark) { if (s === null) s = x; }
+      else if (s !== null) { if (x - s >= 2) runs.push([s, x - 1]); s = null; }
+    }
+    if (s !== null) runs.push([s, cx + strip]);
+    const ink = runs.reduce((a, r) => a + r[1] - r[0] + 1, 0);
+    if (ink >= minInk) rows.push({ y, runs, ink, hostW, widest: Math.max(...runs.map((r) => r[1] - r[0] + 1)) });
+  }
+  const bands = []; let cur = null;
+  for (const r of rows) {
+    if (cur && r.y === cur.y1 + 1) {
+      cur.y1 = r.y; cur.ink += r.ink; cur.wy += r.ink * r.y; cur.n++;
+      cur.pairs += r.runs.length >= 2 ? 1 : 0;
+      cur.hostFrac = Math.max(cur.hostFrac, r.widest / Math.max(1, r.hostW));
+    } else {
+      if (cur) bands.push(cur);
+      cur = { y0: r.y, y1: r.y, ink: r.ink, wy: r.ink * r.y, n: 1, pairs: r.runs.length >= 2 ? 1 : 0, hostFrac: r.widest / Math.max(1, r.hostW) };
+    }
+  }
+  if (cur) bands.push(cur);
+  const pct = (y) => (100 * (y - head.crown)) / head.height;
+  return bands.filter((b) => b.n >= 2).map((b) => ({
+    fromPct: pct(b.y0), toPct: pct(b.y1), centroidPct: pct(b.wy / b.ink),
+    paired: b.pairs / b.n > 0.6, hostFrac: b.hostFrac,
+  }));
+}
+
+/**
+ * The lip line, or a refusal.
+ *
+ * Narrowness is the discriminator, not darkness — see this section's header.
+ * `maxHostFrac` is what rejects a chin shadow, and it is the only reason this
+ * returns the mouth rather than the jaw.
+ */
+export function mouthIn(f, head, { below = 0.68, above = 0.95, maxHostFrac = 0.5 } = {}) {
+  const cx = Math.round((f.x0 + f.x1) / 2);
+  const strip = Math.round(head.earWidthPx * 0.22);
+  let best = null, rejected = 0;
+  for (let y = Math.round(head.crown + head.height * below); y <= Math.round(head.crown + head.height * above); y++) {
+    let hostW = 0, darkest = 999, run = 0, widest = 0;
+    for (let x = cx - strip; x <= cx + strip; x++) {
+      if (!f.inFigure(x, y)) continue;
+      hostW++;
+      const L = lum(f.at(x, y));
+      if (L < 100) { run++; widest = Math.max(widest, run); darkest = Math.min(darkest, L); } else run = 0;
+    }
+    if (!hostW || !widest) continue;
+    if (widest / hostW > maxHostFrac) { rejected++; continue; }
+    if (!best || darkest < best.darkest) best = { y, darkest, hostFrac: widest / hostW };
+  }
+  if (!best) {
+    return { notTraceable: {
+      class: 'merged-region',
+      reason: `no dark run below ${(100 * below).toFixed(0)}% of head height is narrower than ` +
+        `${maxHostFrac} of its own row — every candidate is as wide as the face, which is a shadow, not a mouth`,
+    } };
+  }
+  return { pct: (100 * (best.y - head.crown)) / head.height, row: best.y, darkest: best.darkest, hostFrac: best.hostFrac, rejectedRows: rejected };
+}
+
+/**
+ * A garment's colour bands by height, as fractions of the band window.
+ *
+ * The shoe's four bands were never traced at all — its navy quarter was authored
+ * running to 0.64 of shoe height against the drawing's 0.41, and the tone-split
+ * metric could not tell because it counts how MUCH of each tone is present and
+ * never where it sits.
+ */
+export function bandBoundaries(f, pal, { x0, x1, top, ground, minShare = 0.4 } = {}) {
+  const classify = classifier(pal);
+  const height = ground - top;
+  const rows = [];
+  for (let y = top; y <= ground; y++) {
+    const counts = new Map();
+    let n = 0;
+    for (let x = x0; x <= x1; x++) {
+      if (!f.inFigure(x, y)) continue;
+      const m = classify(f.at(x, y));
+      if (m < 0) continue;
+      counts.set(m, (counts.get(m) ?? 0) + 1); n++;
+    }
+    if (!n) continue;
+    const [material, c] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0];
+    rows.push({ y, material, share: c / n, frac: (ground - y) / height });
+  }
+  const bands = [];
+  for (const r of rows) {
+    if (r.share < minShare) continue;
+    const last = bands[bands.length - 1];
+    if (last && last.material === r.material) { last.fromFrac = Math.min(last.fromFrac, r.frac); last.toFrac = Math.max(last.toFrac, r.frac); }
+    else bands.push({ material: r.material, hex: pal[r.material].hex, fromFrac: r.frac, toFrac: r.frac });
+  }
+  return bands.filter((b) => b.toFrac - b.fromFrac > 0.02);
 }

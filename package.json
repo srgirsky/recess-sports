@@ -37,7 +37,8 @@
     "sim:game": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/game.mjs",
     "sim:harness": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/harness.mjs",
     "sim:plate-sweep": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/plate-sweep.mjs",
-    "retarget:rig": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/retarget-rig.mjs"
+    "retarget:rig": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/retarget-rig.mjs",
+    "analyse:turnaround": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/analyse-turnaround.mjs"
   },
   "dependencies": {
     "peerjs": "^1.5.5",
