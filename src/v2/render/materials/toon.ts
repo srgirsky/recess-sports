@@ -12,36 +12,48 @@
 // continuity is why the 3D characters sit on the 2D-derived field texture
 // without looking pasted on.
 //
-// ★ OPEN, ROSTER-WIDE: THE FACE ATLAS SURVIVES BLENDER AND DIES HERE.
+// ★ THE FACE ATLAS SURVIVED BLENDER AND DIED HERE, AND IT WAS AN ORDERING BUG.
 //
-// Not a to-do — a diagnosis, recorded so the next person does not re-derive it.
-// A character's eyes render with NO SCLERA at runtime: they read as two solid
-// dark blobs, which deletes most of what a face does at hero scale and holds
-// rubric 3.5 down.
+// Kept because it cost many rounds and because the way it was NARROWED is the
+// reusable part. The symptom: every kid's eyes rendered as two solid dark blobs
+// at runtime, deleting most of what a face does at hero scale.
 //
-// The asset is not the problem, and that took several rounds to establish:
+// The asset was never the problem, and establishing that was real work:
 //   · the atlas embedded in `kid_tank.glb` is byte-identical to
 //     `assets/v2/source/tank-face-atlas.png` — 0 differing pixels;
 //   · the atlas itself carries the sclera at rgb(255, 250, 240);
 //   · Blender renders the SAME GLB with the sclera plainly there — the
-//     brightest neutral pixel in the eye band of `tank-front-review.png` is
+//     brightest neutral pixel in `tank-front-review.png`'s eye band is
 //     rgb(214, 212, 210);
-//   · the runtime renders the same band with a brightest neutral pixel of
+//   · the runtime rendered that band with a brightest neutral of
 //     rgb(121, 109, 97), which is skin.
 //
-// So the loss is in this file's shading path — the 4-step `TOON_STEPS` ramp and
-// the `<map_fragment>` injection that swaps albedo inside the face UV island —
-// not in the spec, the atlas, the exporter or the GLB. Independent reviews have
-// also measured the knock-on: `cheer` and `tongue` differ by 5.59% of cell
-// pixels in the source atlas and by 1.6% on the model, and the teeth never
-// appear at all.
+// ★ WHAT IT ACTUALLY WAS. The composite was injected after `<map_fragment>`,
+// and `meshtoon.glsl.js` runs `<color_fragment>` on the very next line — which
+// is `diffuseColor *= vColor`. So the atlas was mixed in and then multiplied by
+// the identity palette underneath it. White × skin = skin, exactly. See the
+// injection site below.
 //
-// ⚠️ WHOEVER FIXES IT SHOULD KNOW WHAT IT COSTS. This material is shared by all
-// thirty characters, including approved Junebug, whose approval is pinned to an
-// evidence hash — so changing the ramp re-renders an approved asset and is a
-// human's call, not an incidental repair. Hypotheses already eliminated by live
-// A/B: a brighter swatch, iris/aperture geometry, atlas content, the exported
-// texture, mipmap filtering (pixel-identical), and ACES tone mapping (reverted).
+// ★ AND WHY THE NARROWING POINTED AT THE RAMP AND THE LIGHT RIG, WRONGLY. The
+// decisive A/B found that saturated ink survived while white converged on skin,
+// and that was read as a filmic shoulder — a plausible story that cost a whole
+// tone-mapping experiment. But white converging on skin EXACTLY is not a
+// shoulder, it is a multiply: a shoulder compresses everything and this
+// preserved magenta and green untouched. An identity is a much stronger clue
+// than a compression, and it was in hand the whole time.
+//
+// ⚠️ THE RAMP IS EXONERATED — do not spend a round on it. `toonRamp`'s top step
+// is exactly 1.0, so a fully-lit white texel is multiplied by 1.0 and reaches
+// the plateau intact. Nothing in the ramp can darken it.
+//
+// Still true, and worth not re-testing: the atlas content, the exporter, the
+// embedded texture, mipmap filtering (pixel-identical) and iris geometry were
+// all eliminated. ACES was a true negative FOR THIS DEFECT — though it is a
+// real defect of its own for pale garment colour, which is a separate matter.
+//
+// This fix re-rendered every character, so approved Junebug's board hash moved
+// and she was demoted to `candidate` pending re-approval on the better board;
+// see `assets/v2/source/character-fidelity.json`.
 // ---------------------------------------------------------------------------
 
 import {
@@ -193,11 +205,38 @@ export function makeToonMaterial(opts: ToonOptions = {}): MeshToonMaterial {
              uniform sampler2D uFaceAtlas;
              uniform vec4 uFaceCell;`
           )
-          // AFTER <map_fragment>, so the albedo has already been applied and we
-          // are replacing it — not multiplying two textures together.
+          // ★ AFTER <color_fragment>, NOT AFTER <map_fragment>, AND THAT WAS THE
+          // WHOLE BUG. `meshtoon.glsl.js` runs the two on consecutive lines:
+          //
+          //     #include <map_fragment>     diffuseColor *= texture2D( map, … )
+          //     #include <color_fragment>   diffuseColor *= vColor
+          //
+          // Every authored `M_Body` runs `vertexColors = true` —
+          // `CharacterModel.collapseVertexPalette` merges the whole kid onto
+          // this material and puts the identity palette in `COLOR_0` — and
+          // `COLOR_0` is a normalised VEC4, so that second line takes the
+          // `USE_COLOR_ALPHA` branch and it is a MULTIPLY.
+          //
+          // Composited one chunk earlier, the atlas was mixed in and then
+          // multiplied by the skin underneath it: white × skin = skin, EXACTLY.
+          // That identity is why a face rendered with no eye whites, and why
+          // the live A/B that painted an opaque white block over the eye found
+          // it indistinguishable from skin while magenta stayed magenta and
+          // green stayed green — a saturated texel times skin is still a
+          // saturated texel, and only white maps onto its multiplier.
+          //
+          // Blender's board mixes the vertex colour WITH the atlas and stops
+          // (`render-fidelity-views.py`'s `ShaderNodeMix`). This is that graph.
+          // `Field.ts` already hooks the same chunk for the same reason.
+          //
+          // Safe without a palette: <color_fragment> expands to NOTHING when
+          // `USE_COLOR`/`USE_COLOR_ALPHA` are undefined, and this block never
+          // mentions `vColor`, so a proxy or a delivery with no `COLOR_0`
+          // compiles exactly as before. `faceAtlas.test.ts` asserts that rather
+          // than trusting this sentence.
           .replace(
-            '#include <map_fragment>',
-            `#include <map_fragment>
+            '#include <color_fragment>',
+            `#include <color_fragment>
              {
                // The face owns UV [0..0.5, 0.5..1] by contract (§4).
                vec2 island = ( vMapUv - vec2( ${FACE_ISLAND.u0.toFixed(1)}, ${FACE_ISLAND.v0.toFixed(1)} ) )
