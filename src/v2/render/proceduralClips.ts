@@ -293,7 +293,34 @@ function idle(spec: ClipSpec): AnimationClip {
 }
 
 /** A run cycle. Reach -> pass -> crossover -> pass, with a forward lean. */
-function runCycle(spec: ClipSpec, lean: number, reach: number, armDrive: number): AnimationClip {
+// ★ `abduct` IS HOW FAR THE ARMS HANG FROM THE BODY, in degrees off the T-pose
+// horizontal, and it is a parameter because one kid's torso is not another's.
+// 72 (18 degrees of abduction) is what every clip used and it stays the default,
+// so passing nothing changes nothing. Tank needs more: the rig shares one
+// shoulder position across all thirty kids and his belly is the widest on the
+// roster, so at 72 his upper arm is inside his own tee and the run still showed
+// "a bare forearm exiting the middle of the belly like a peg".
+function runCycle(
+  spec: ClipSpec,
+  lean: number,
+  reach: number,
+  armDrive: number,
+  abduct = 72,
+  elbow = 58,
+  // ★ A CONSTANT ELBOW IS A HINGE, NOT AN ARM. `elbow` never varied across the
+  // cycle, so the forearm held one angle for the whole run and the limb read as
+  // a single straight taper — an independent review scored 3.11 on exactly that
+  // and could not find an elbow in the silhouette at all.
+  //
+  // It is worst on Tank because he runs the shallowest bend on the roster (30
+  // against 58) to keep his forearm off a belly 0.55ft deep, so he has both the
+  // least bend AND no change in it. Extra flex when the arm is TRAILING costs
+  // nothing there — the belly is only in the way at the front of the swing —
+  // so the elbow can articulate without the hand crossing the torso.
+  //
+  // Defaults to 0, so every other kid's run is byte-identical.
+  elbowSwing = 0,
+): AnimationClip {
   return cycle(spec, (p) => {
     const s = sin(p);
     const o = sin(p, 0.5);
@@ -310,10 +337,10 @@ function runCycle(spec: ClipSpec, lean: number, reach: number, armDrive: number)
       ru: [o * reach, 0, -3],
       rl: [-Math.max(0, -o) * reach * 1.5 - 12, 0, 0],
       rt: [Math.max(0, o) * 18, 0, 0],
-      la: [o * armDrive, 0, 72],
-      lf: [0, 58, 0],
-      ra: [s * armDrive, 0, -72],
-      rf: [0, -58, 0],
+      la: [o * armDrive, 0, abduct],
+      lf: [0, elbow + Math.max(0, -o) * elbowSwing, 0],
+      ra: [s * armDrive, 0, -abduct],
+      rf: [0, -(elbow + Math.max(0, -s) * elbowSwing), 0],
     };
   });
 }
@@ -1102,18 +1129,84 @@ function louUpsetGoofy(spec: ClipSpec): AnimationClip {
 // Tank spends as little motion as possible, then commits the whole low, wide
 // frame. Slow anticipations and heavy settles carry power without aggression.
 
+// ★ HIS SLOUCH USED TO HIDE HIS FACE. The pose pitched hips 12, spine 8 and
+// spine2 11 — 31 degrees of cumulative forward lean, against Junebug's -7 — and
+// at that angle the review camera sees the top of his head. Rubric 3.14 is
+// scored from the four `tank-runtime-face-*.png` stills and every one of them
+// was a photograph of his scalp; 3.5 and 6.1 ask the same question at hero and
+// draft-card size.
+//
+// This is the round-7 finding on Junebug repeating with a different cause: a
+// SIGNATURE idle authored to carry personality, breaking a rubric item that no
+// measured metric watches. Her fix removed an 8-degree leg roll from all five
+// idles; this one keeps the slouch and halves it. 14 degrees still reads as
+// heavy and relaxed — the direction is "power outside, snacky calm inside", and
+// the anti-caricature note says sleepy must not become dim — while leaving the
+// face where a camera at chest height can see it. The knees keep their bend.
+// ★ TANK'S ARMS HANG WIDER THAN EVERY OTHER KID'S, BECAUSE HIS BELLY IS WIDER.
+//
+// The rig fixes the shoulder at |x| 0.400ft for all thirty (`LeftShoulder`
+// -0.165 plus `LeftArm` -0.235) with 0.965ft from shoulder to wrist, and that
+// is shared and must stay shared. At the 18 degrees of abduction this pose used
+// to hold (z 72, i.e. 72 degrees off the T-pose horizontal), the wrist lands at
+// x 0.698 — comfortably inside a tee that his own concept draws 0.62 to 0.88
+// wide. An independent review found the consequence: no shoulder, no sleeve, no
+// upper arm, "a single bare forearm exiting the middle of the belly like a peg".
+//
+// ⚠️ AND EVERY MEASURED METRIC STAYED GREEN THROUGH IT, because the fidelity
+// board renders the BIND pose, where the arms are horizontal and clear the
+// torso by construction. The character was armless only in the poses nothing
+// measured. That is the same shape of failure as the mirrored arms this file's
+// round-4 note records, and it is why the runtime stills exist.
+//
+// ★ AND THE UPPER ARM AND THE FOREARM WANT DIFFERENT ANGLES, WHICH IS WHY THIS
+// IS TWO NUMBERS AND NOT ONE.
+//
+// The traced target is the FOREARM: his concept's bare arm centres on 0.778 to
+// 0.793ft from the centreline all the way down z 1.46-1.70, and
+// `0.400 + 0.965·sin(23°) = 0.78` at z 1.58. A single 25-degree abduction hits
+// that and buries the SLEEVE, because the tee is much wider higher up. Worked
+// out against the torso table: at 25 degrees the sleeve's outer surface reaches
+// 0.747 where the tee is 0.818, and the arm does not clear the garment until
+// 0.70ft down the limb — past the elbow. An independent review saw exactly that
+// and wrote "the tee has no sleeve; the arm exits the side wall at elbow
+// height".
+//
+// At 40 degrees the sleeve clears (0.826 against 0.802) and the cuff is on the
+// outside of the silhouette where the concept draws it. So the upper arm goes
+// out to 40 and the forearm angles back in by 20, which lands the hand where it
+// was traced. That is also what a heavy kid's arm does — the bulk pushes the
+// upper arm out and the forearm returns under it — and it is what the drawing
+// shows.
 const TANK_IDLE_POSE: Pose = {
-  hp: [12, 0, 0], sp: [8, 0, 0], s2: [11, 0, 0], hd: [4, 3, 0],
-  la: [12, 0, 72], lf: [0, -12, 0], ra: [12, 0, -72], rf: [0, 12, 0],
+  hp: [6, 0, 0], sp: [3, 0, 0], s2: [5, 0, 0], hd: [-4, 3, 0],
+  la: [12, 0, 50], lf: [0, -12, 20], ra: [12, 0, -50], rf: [0, 12, -20],
   lu: [12, 0, 0], ll: [-18, 0, 0], ru: [12, 0, 0], rl: [-18, 0, 0],
 };
 const TANK_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
   hp: [17, -10, 0], sp: [12, -7, 0], s2: [16, -12, 0], hd: [5, 7, 0],
   lu: [10, 0, 4], ll: [-15, 0, 0], ru: [10, 0, -4], rl: [-15, 0, 0],
 });
+// ★ BOTH ARMS WERE ABOVE SHOULDER HEIGHT AT CONTACT, AND ONE WENT THROUGH HIS
+// SKULL. An independent review caught it on the most-played clip in the game:
+// "the upper arm enters at the ear and the fist emerges on the opposite side
+// with a black interpenetration wedge at the cheek", failing 3.8 and 4.3 at
+// hero scale.
+//
+// The cause is visible once the shifts are resolved rather than read. Stance
+// holds `la` z +38 and `ra` z -26, and the shifts of -80 and +100 land them at
+// -42 and +74. Down is POSITIVE z for the left arm and NEGATIVE for the right
+// (`TANK_IDLE_POSE` hangs them at +72 and -72), so those two numbers are both
+// "raised well above the shoulder" — and with the torso twisted 96 degrees
+// underneath, the raised arm sweeps through the head rather than past it.
+//
+// A batter at contact has his hands out in front of his chest, not over his
+// head. Lowering both by about forty degrees keeps the swing's shape and its
+// arc while putting the arms where the swing actually puts them, and the head
+// turns less far so he is still looking at the ball he just hit.
 const TANK_CONTACT_END: Pose = shift(TANK_STANCE_POSE, {
-  hp: [0, 96, 0], sp: [0, 68, 0], s2: [0, 91, 0], hd: [8, -34, 0],
-  ra: [47, 0, 100], la: [39, 0, -80], rt: [0, 0, 62],
+  hp: [0, 96, 0], sp: [0, 68, 0], s2: [0, 91, 0], hd: [8, -18, 0],
+  ra: [47, 0, 62], la: [39, 0, -42], rt: [0, 0, 62],
 });
 
 function tankSwingContact(spec: ClipSpec): AnimationClip {
@@ -1121,9 +1214,11 @@ function tankSwingContact(spec: ClipSpec): AnimationClip {
   return build(spec, [
     { f: 0, pose: load },
     { f: 4, pose: shift(load, { hp: [0, 4, 0], s2: [0, 5, 0] }) },
-    { f: 6, pose: shift(load, { hp: [0, 38, 0], sp: [0, 27, 0], s2: [0, 35, 0], ra: [20, 0, 38], la: [15, 0, -28] }) },
-    { f: 7, pose: shift(load, { hp: [0, 61, 0], sp: [0, 43, 0], s2: [0, 57, 0], ra: [34, 0, 65], la: [25, 0, -48] }) },
-    { f: 8, pose: shift(load, { hp: [0, 83, 0], sp: [0, 59, 0], s2: [0, 79, 0], ra: [48, 0, 92], la: [35, 0, -68] }) },
+    // The mid-swing frames are scaled down with the end pose they run into, or
+    // the arm sweeps through the head on its way to a contact that clears it.
+    { f: 6, pose: shift(load, { hp: [0, 38, 0], sp: [0, 27, 0], s2: [0, 35, 0], ra: [20, 0, 24], la: [15, 0, -15] }) },
+    { f: 7, pose: shift(load, { hp: [0, 61, 0], sp: [0, 43, 0], s2: [0, 57, 0], ra: [34, 0, 40], la: [25, 0, -25] }) },
+    { f: 8, pose: shift(load, { hp: [0, 83, 0], sp: [0, 59, 0], s2: [0, 79, 0], ra: [48, 0, 57], la: [35, 0, -36] }) },
     { f: 13, pose: TANK_CONTACT_END },
     { f: spec.frames - 1, pose: TANK_CONTACT_END },
   ]);
@@ -1136,6 +1231,30 @@ function tankSwingFollow(spec: ClipSpec): AnimationClip {
     { f: 14, pose: shift(TANK_STANCE_POSE, { hp: [17, 4, 0], sp: [12, 3, 0], hd: [12, -16, 0], ra: [-14, 0, -24] }), hips: [0, -0.08, 0] },
     { f: 20, pose: shift(TANK_STANCE_POSE, { hp: [8, 0, 0], hd: [6, -6, 0] }) },
     { f: spec.frames - 1, pose: TANK_STANCE_POSE },
+  ]);
+}
+
+// ★ HE HAS TO LOOK UP AT SOME POINT, and until he did, rubric 3.14 had no
+// evidence at all. Its four named stills — `tank-runtime-face-*.png` — are
+// captured off the idle clip, and a plain `breathe` cycle never turns the head,
+// so all four came back as the same rear-3/4 photograph of his scalp with only
+// the button label different. The independent review marked 3.14 UNVERIFIABLE
+// for exactly that reason.
+//
+// Junebug's idle already solved this and the solution is a BEAT rather than a
+// pose: "she checks once, then goes still again". Tank gets the same beat at
+// his own tempo — he is `calm`, so the turn is slower, held longer and smaller,
+// and he takes a breath rather than snapping back. The head yaw is negative
+// because that is the direction Junebug's own check turns.
+function tankIdle(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: TANK_IDLE_POSE },
+    { f: 16, pose: shift(TANK_IDLE_POSE, { sp: [0.6, 0, 0], s2: [0.7, 0, 0] }), hips: [0, 0.007, 0] },
+    // The look. Slower into it than Junebug and held nearly twice as long.
+    { f: 30, pose: shift(TANK_IDLE_POSE, { hd: [-2, -20, 0], nk: [-1, -8, 0] }) },
+    { f: 46, pose: shift(TANK_IDLE_POSE, { hd: [-2, -20, 0], nk: [-1, -8, 0] }) },
+    { f: 54, pose: shift(TANK_IDLE_POSE, { hd: [-1, -9, 0], nk: [0, -4, 0] }), hips: [0, 0.005, 0] },
+    { f: spec.frames, pose: TANK_IDLE_POSE },
   ]);
 }
 
@@ -1781,9 +1900,29 @@ export function buildBigLouPilotClips(): AnimationClip[] {
 /** Tank's complete Batch 1 pass, exported as a partial delivery. */
 export function buildTankPilotClips(): AnimationClip[] {
   const builders: Readonly<Record<string, (spec: ClipSpec) => AnimationClip>> = {
-    idle: (spec) => breathe(spec, TANK_IDLE_POSE, 0.7),
+    idle: tankIdle,
     idle_fidget: tankIdleFidget,
-    run: (spec) => runCycle(spec, 7, 34, 32),
+    // Wider and with less drive than the roster default: 52 is 38 degrees of
+    // abduction, which is what it takes to get his upper arm and shoulder out
+    // of his own tee, and a smaller `armDrive` keeps the swing from throwing
+    // the hand across his belly.
+    // ⚠️ PARTIAL, AND SAYING SO. This recovers the shoulder and upper arm — the
+    // review's "bare forearm exiting the middle of the belly like a peg" is
+    // gone — but the FOREARM still crosses the belly at the top of the swing.
+    // That one is not an abduction problem and cannot be fixed here: the elbow
+    // bend (`lf` 58 degrees, shared by every kid's run) carries the hand
+    // forward, and his torso is 0.55ft deep at the belly against a 0.965ft arm.
+    // ★ AND THE ELBOW IS THE OTHER HALF, which is why `runCycle` now takes it.
+    // The shared 58-degree bend is sized for a normal torso; abducting the
+    // shoulder rotates the elbow's own bend axis outward with it, so on a wide
+    // kid a deep bend carries the hand ACROSS the belly rather than alongside
+    // it. Tank runs a shallower 30, which keeps the forearm outboard. Both
+    // parameters default to the roster's values, so no other kid moves.
+    // ★ AND THE FLEX IS THE REST OF IT. 30 degrees held for the whole cycle is
+    // a bent stick; 30 rising to 64 as the arm trails puts an elbow in the
+    // silhouette without ever carrying the hand across the belly, because the
+    // extra bend happens behind him.
+    run: (spec) => runCycle(spec, 7, 34, 24, 52, 30, 34),
     bat_stance: (spec) => breathe(spec, TANK_STANCE_POSE, 0.75),
     swing_contact: tankSwingContact,
     swing_follow: tankSwingFollow,

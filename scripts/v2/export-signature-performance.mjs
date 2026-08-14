@@ -29,6 +29,9 @@ const BUILDERS = {
   mimi_mash: { name: 'Mimi Mash', build: buildMimiMashPilotClips },
 };
 
+/** The ids this script can bake, for the freshness gate to walk. */
+export const PERFORMANCE_IDS = Object.keys(BUILDERS);
+
 export function buildSignaturePerformanceGlb(id, outPath = join(here, '..', '..', 'public', 'v2', 'models', `anims_${id}_v1.glb`)) {
   const entry = BUILDERS[id];
   if (!entry) throw new Error(`${id}: no authored character performance builder`);

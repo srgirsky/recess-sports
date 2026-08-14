@@ -709,6 +709,59 @@
  },
  "render": {
   "note": "v2-only records: findings about the three.js renderer that have no v1 equivalent because v1 had no camera, no lights and no depth.",
+  "toneMapping": {
+   "id": "render.tone-mapping",
+   "category": "render",
+   "reference": "derived",
+   "status": "conformed",
+   "statusChangedAt": "2026-08-14",
+   "what": "The runtime rendered every pale warm colour greyer than it was authored — reported as the shoe cream reading grey in game. ACESFilmicToneMapping has a filmic shoulder whose job is to desaturate bright values, and this roster is pale creams (a sneaker midsole, a sock, a cream trim) on saturated garments, which is the worst case for it.",
+   "found": "Measured on Tank's own delivered COLOR_0 swatches rather than an eyeballed sample, bounded to the character. ACES at exposure 1.05 retained 86% of the authored shoe-cream warmth (r-b 89 against 104) and 86% of skin (110 against 128).",
+   "method": "A ?tonemap= / ?exposure= flag on Renderer.ts drives one code path; /v2/?anims=1&kid=tank photographed under each curve at 1059x804, plus /v2/?play=1&venue=park by day and night. Warmth is r-b of the mean pixel in a fixed shoe/skin box; field luminance is Rec.709 over the grass band; clipping is any channel >= 254 inside the character box.",
+   "measurements": {
+    "authored": {
+     "shoeCreamRB": 104,
+     "skinRB": 128,
+     "note": "sculpt-tank-source.py SOLE and SKIN, sRGB"
+    },
+    "aces-1.05": {
+     "shoeCreamRB": 89,
+     "skinRB": 110,
+     "grassLum": 74,
+     "kidLum": 85,
+     "clippedPct": 0
+    },
+    "neutral-1.05": {
+     "shoeCreamRB": 97,
+     "skinRB": 118,
+     "grassLum": 71,
+     "kidLum": 79,
+     "clippedPct": 0
+    },
+    "neutral-1.25": {
+     "shoeCreamRB": 100,
+     "skinRB": 123,
+     "grassLum": 78,
+     "kidLum": 81,
+     "clippedPct": 0
+    },
+    "neutral-1.35": {
+     "shoeCreamRB": 102,
+     "skinRB": 124,
+     "grassLum": 81,
+     "kidLum": 84,
+     "clippedPct": 0
+    },
+    "rejected": "LinearToneMapping and NoToneMapping: no shoulder at all, sky and cream highlights approach clip. Keeping ACES and pre-compensating the swatches was also rejected — it means re-authoring thirty characters against a curve, in sculpt sources that are authored against the BLENDER board, and it cannot fix src/art/fieldTexture.ts, which is shared with v1."
+   },
+   "whyItMattered": "Nothing automated can see this. measure:fidelity grades the Blender board, palette.lint reads the GLB, validate:models reads the file — all upstream of the renderer. The curve could be reverted with every number in the project unchanged, which is why scripts/v2/tonemapping.lint.test.js pins it textually and points here.",
+   "fix": "NeutralToneMapping at toneMappingExposure 1.25. It recovers the warmth (96% of authored on both swatches) without moving the world the art was authored against: the field stays within ~5% of its ACES luminance and nothing clips. 1.35 buys two more points of chroma and costs a 9.5% brighter field, a bigger change to the game than to the kids.",
+   "result": "Shoe cream r-b 89 -> 100 against an authored 104; skin 110 -> 123 against 128. Night keeps its mood; no clipping at either exposure.",
+   "trap": "Reading warmth off the whole screenshot instead of the character. The HUD is DOM over the canvas and is never tone-mapped, so a full-frame mean reports the same number for every curve and the change looks like it did nothing.",
+   "n": 1,
+   "confidence": "n/a",
+   "informs": "src/v2/render/Renderer.ts DEFAULT_TONE_MAPPING and DEFAULT_TONE_EXPOSURE"
+  },
   "characterPresence": {
    "id": "render.character-presence",
    "category": "render",

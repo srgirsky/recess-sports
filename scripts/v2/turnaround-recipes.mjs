@@ -1,0 +1,108 @@
+// ---------------------------------------------------------------------------
+// ★ THE FOUR THINGS A TURNAROUND CANNOT TELL YOU ABOUT ITSELF.
+//
+// The analyser reads pixels. These are the facts no pixel carries, declared once
+// per character so the analyser can CHECK them rather than guess:
+//
+//   1. WHICH VIEW IS WHICH. "The narrowest view is the profile" is a heuristic,
+//      and Grizz's fifth view is an arm-raised yawn that breaks it. Declared
+//      roles are verified: the count must match `views()`, and a view declared
+//      `action` must be the one whose height deviates from the standing set.
+//
+//   2. WHICH PARTS COME IN PAIRS. This is the one that matters most, and it is
+//      not inferable. At Tank's shoe height the cream is SEVEN runs — each shoe
+//      is cream|navy|cream across its own width — and the run through the centre
+//      column spans the inner edge of BOTH feet. That span is exactly the
+//      1.211ft "foot" that shipped. No run count separates it from a torso; a
+//      recipe knows a kid has two feet, and pixels do not.
+//
+//   3. WHAT EACH COLOUR IS FOR. `palette()` finds a figure's materials without
+//      being told — deliberately, because a hardcoded `isShirt` is one kid's
+//      wardrobe written into a shared tool, which is the mistake
+//      `measure-fidelity`'s header records making with `isRed`/`isCream`. But
+//      the CLUSTERS are anonymous, and a spec needs names. So each material is
+//      declared with an approximate swatch and resolved by `toneDistance`,
+//      refusing outright if nothing is within `TONE_MEMBERSHIP` rather than
+//      taking the nearest — "nearest wins" is how a tool stops being able to
+//      say it does not know.
+//
+//   4. WHERE TO LOOK. A band window and a sweep range are editorial choices.
+//
+// ⚠️ THIS FILE IS WHERE WRONG ANSWERS WOULD COME TO BE BLESSED, so every
+// declaration is checked against the sheet and a mismatch is an error, never a
+// silent override. Adding a character here is a reviewable act.
+//
+// Swatch values are approximate ANCHORS for cluster resolution, not
+// measurements. The measurement is whatever the sheet's own cluster turns out to
+// be, and that is what the spec records.
+// ---------------------------------------------------------------------------
+
+/** @typedef {{ hex: string, paired?: boolean }} Material */
+
+export const RECIPES = {
+  tank: {
+    slug: 'tank',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      shirt: { hex: '#65437c' },
+      skin: { hex: '#cb824d' },
+      shoe: { hex: '#f6e9d9', paired: true },
+      pants: { hex: '#24242b', paired: true },
+    },
+    // Below z 1.71 his hands cross the tee's edge, so the run's outer edge is a
+    // hand and not the garment; above z 2.23 the sleeve covers it. The sculpt
+    // header records both, which is why the sweep is bounded rather than full.
+    sweeps: { torso: { view: 'front', material: 'shirt', role: 'centre', from: 1.80, to: 2.30, step: 0.06 } },
+    bands: { shoe: { view: 'front', material: 'shoe' } },
+  },
+
+  nostrike: {
+    slug: 'junebug',
+    // ⚠️ THREE views, not five, and on a GREY backdrop — the only sheet in the
+    // roster shaped like this. She also carries a drawn ARROW beside the
+    // ponytail; it is a separate component and must never be measured as figure.
+    views: ['front', 'profile', 'back'],
+    materials: {
+      jersey: { hex: '#a8332f' },
+      skin: { hex: '#d9a173' },
+      pants: { hex: '#e8736b' },
+      hair: { hex: '#4a3428' },
+    },
+    sweeps: { torso: { view: 'front', material: 'jersey', role: 'centre', from: 1.90, to: 2.40, step: 0.06 } },
+    bands: {},
+  },
+
+  grizz: {
+    slug: 'grizz',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: { shirt: { hex: '#8a5a34' }, skin: { hex: '#8a5836' }, hair: { hex: '#161314' }, pants: { hex: '#2c3346' } },
+    sweeps: { torso: { view: 'front', material: 'shirt', role: 'centre', from: 1.80, to: 2.30, step: 0.06 } },
+    bands: {},
+  },
+
+  sprout: {
+    slug: 'sprout',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: { skin: { hex: '#e7b88f' }, hair: { hex: '#c8873f' } },
+    sweeps: {},
+    bands: {},
+  },
+
+  bubbles: {
+    slug: 'bubbles',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: { dress: { hex: '#e0748c' }, skin: { hex: '#e9b48c' }, hair: { hex: '#cfa25e' } },
+    sweeps: { torso: { view: 'front', material: 'dress', role: 'centre', from: 1.60, to: 2.20, step: 0.06 } },
+    bands: {},
+  },
+
+  chip: {
+    slug: 'chip',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: { skin: { hex: '#dda87e' } },
+    sweeps: {},
+    bands: {},
+  },
+};
+
+export const RECIPE_IDS = Object.keys(RECIPES);

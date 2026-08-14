@@ -61,11 +61,15 @@ import process from 'node:process';
 import sharp from 'sharp';
 
 import { slugFor } from './character-registry.mjs';
+import { floodFigureMask } from './figure-mask.mjs';
+// ★ ONE RULER FOR COLOUR. These used to be defined here and reachable by
+// nothing else, so anything that needed to ask "is this pixel the same material
+// as that one" had to invent its own answer. The constants — and the defects
+// that earned each of them — live in `tone.mjs` now; this file is one reader of
+// two, and the analyser is the other.
+import { TONE_MEMBERSHIP, TONE_SEPARATION, isSkin, sat, toneDistance } from './tone.mjs';
 
 const CONCEPTS = 'docs/v2/concepts';
-
-const lum = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
-const sat = (c) => { const mx = Math.max(c[0], c[1], c[2]), mn = Math.min(c[0], c[1], c[2]); return mx ? (mx - mn) / mx : 0; };
 
 // ---------------------------------------------------------------------------
 // ★ THE BACKDROP IS SAMPLED PER COLUMN, BECAUSE IT IS NOT FLAT.
@@ -115,21 +119,27 @@ async function loadFigure(path, { keyBackdrop = false, extract = null } = {}) {
   const at = (x, y) => { const i = (y * W + x) * C; return [data[i], data[i + 1], data[i + 2], data[i + 3]]; };
   // ⚠️ Keyed membership needs the pixel's COLUMN, so `inFigure` takes (c, x).
   // Passing only the colour is what forced one global backdrop in the first place.
+  // Keyed membership is CONNECTIVITY, not colour: the backdrop is flooded in
+  // from the frame edge, so a pale pixel enclosed by the figure stays figure.
+  // Deciding it per pixel measured the bridge between Tank's eyes as his head.
+  // See figure-mask.mjs. The delivered render has real alpha and needs none of
+  // this, which is why the two paths differ.
   const bgAt = keyBackdrop ? backdropSampler(at, W, H) : null;
+  const mask = keyBackdrop ? floodFigureMask(at, bgAt, W, H, BACKDROP_TOLERANCE) : null;
   const inFigure = keyBackdrop
-    ? (c, x) => !nearBackdrop(c, bgAt(x))
+    ? (_c, x, y) => mask(x, y)
     : (c) => c[3] > 128;
   let x0 = W, x1 = -1, y0 = H, y1 = -1;
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
-      if (!inFigure(at(x, y), x)) continue;
+      if (!inFigure(at(x, y), x, y)) continue;
       if (x < x0) x0 = x; if (x > x1) x1 = x;
       if (y < y0) y0 = y; if (y > y1) y1 = y;
     }
   }
   const rowSpan = (y) => {
     let a = -1, b = -1;
-    for (let x = x0; x <= x1; x++) if (inFigure(at(x, y), x)) { if (a < 0) a = x; b = x; }
+    for (let x = x0; x <= x1; x++) if (inFigure(at(x, y), x, y)) { if (a < 0) a = x; b = x; }
     return a < 0 ? null : [a, b];
   };
   /** The contiguous figure run on row `y` that contains column `xc` — the way to
@@ -137,10 +147,10 @@ async function loadFigure(path, { keyBackdrop = false, extract = null } = {}) {
   const rowRunContaining = (y, xc) => {
     if (y < y0 || y > y1) return null;
     const xs = Math.min(Math.max(xc, x0), x1);
-    if (!inFigure(at(xs, y), xs)) return null;
+    if (!inFigure(at(xs, y), xs, y)) return null;
     let a = xc, b = xc;
-    while (a > x0 && inFigure(at(a - 1, y), a - 1)) a--;
-    while (b < x1 && inFigure(at(b + 1, y), b + 1)) b++;
+    while (a > x0 && inFigure(at(a - 1, y), a - 1, y)) a--;
+    while (b < x1 && inFigure(at(b + 1, y), b + 1, y)) b++;
     return [a, b];
   };
   return { W, H, at, inFigure, x0, x1, y0, y1, figH: y1 - y0 + 1, figW: x1 - x0 + 1, rowSpan, rowRunContaining };
@@ -194,10 +204,6 @@ function headBox(f) {
   return { top, bottom, width: widest, height: bottom - top + 1, centerX, pinchFound };
 }
 
-// Warm, saturated and light: the skin of every character in this roster reads
-// r > g > b with real saturation, which separates it from both hair and cream.
-const isSkin = (c) => c[0] > c[1] + 12 && c[1] >= c[2] && sat(c) > 0.22 && lum(c) > 80;
-
 const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
 
 /** Walk the figure pixels of a horizontal band given as fractions of figure height. */
@@ -207,19 +213,18 @@ function eachBandPixel(f, fromFrac, toFrac, visit) {
   for (let y = Math.max(ya, f.y0); y <= Math.min(yb, f.y1); y++) {
     for (let x = f.x0; x <= f.x1; x++) {
       const c = f.at(x, y);
-      if (f.inFigure(c, x)) visit(c);
+      if (f.inFigure(c, x, y)) visit(c);
     }
   }
 }
 
-// Two colours are "different garment tones" past this much RGB distance. Junebug's
-// shoe runs red (~186,63,58) against cream (~253,250,240), which is 265 apart, so
-// 60 separates real two-tone construction while refusing to split one tone's own
-// shading into two.
-const TONE_SEPARATION = 60;
-// Past this, a pixel belongs to neither declared tone — a sock, a shadow, skin.
-// The old rule-based classifier abstained the same way by simply matching neither.
-const TONE_MEMBERSHIP = 90;
+// Two colours are "different garment tones" past this much TONE distance (see
+// `toneDistance` — chromaticity-dominated, so this is mostly a hue question).
+// ★ THIS ALSO HAD TO MOVE TO CHROMATICITY, and for the same reason the split
+// did. Picked by raw RGB distance, the concept's "second tone" could be its
+// FIRST tone in shadow — cream and shadowed cream are 100+ apart in RGB — and
+// then both centroids name the same garment and the split measures nothing.
+// Cream to navy is ~83 in this space; cream to its own shadow is ~25.
 
 /**
  * ★ THE TWO TONES ARE DERIVED FROM THE CONCEPT, NOT NAMED IN THIS FILE.
@@ -253,8 +258,32 @@ function bandPalette(f, fromFrac, toFrac) {
     .map((bin) => [bin.r / bin.n, bin.g / bin.n, bin.b / bin.n]);
   if (!ranked.length) return null;
   const primary = ranked[0];
-  const secondary = ranked.find((c) => dist(c, primary) > TONE_SEPARATION) ?? null;
+  const secondary = ranked.find((c) => toneDistance(c, primary) > TONE_SEPARATION) ?? null;
   return { primary, secondary };
+}
+
+/**
+ * ★ A SPLIT CAN BE SATISFIED BY GREY, and it was.
+ *
+ * `bandSplit` asks which of two centroids each pixel is NEARER to, and near-white
+ * shading is nearer to a cream centroid than to a navy one — so a shoe with no
+ * chroma at all reported 59.1% "cream" and 19.2% "navy" against a concept's
+ * 61.8/26.2 and passed both metrics. An independent review measured the same
+ * delivered band at 1.1% saturation against the concept cream's 12.3% and found
+ * literally zero cream and zero navy pixels in it.
+ *
+ * The failure was self-inflicted in the worst way: the cream was brightened
+ * toward white over several rounds precisely BECAUSE that moved the split, and
+ * the metric rewarded each step. A ratio between two colours cannot notice that
+ * both colours have drained.
+ *
+ * So the band also reports its own CHROMA against the concept's. It is a
+ * separate question from the split and it is the one that catches this.
+ */
+function bandSaturation(f, fromFrac, toFrac) {
+  let total = 0, n = 0;
+  eachBandPixel(f, fromFrac, toFrac, (c) => { total += sat(c); n++; });
+  return n ? (100 * total) / n : 0;
 }
 
 /** The share of a band belonging to each of the concept's two declared tones. */
@@ -263,8 +292,8 @@ function bandSplit(f, fromFrac, toFrac, palette) {
   let primary = 0, secondary = 0, total = 0;
   eachBandPixel(f, fromFrac, toFrac, (c) => {
     total++;
-    const dp = dist(c, palette.primary);
-    const ds = palette.secondary ? dist(c, palette.secondary) : Infinity;
+    const dp = toneDistance(c, palette.primary);
+    const ds = palette.secondary ? toneDistance(c, palette.secondary) : Infinity;
     if (Math.min(dp, ds) > TONE_MEMBERSHIP) return;
     if (dp <= ds) primary++; else secondary++;
   });
@@ -288,7 +317,7 @@ function ankleDaylight(f) {
   if (!s) return 0;
   let best = 0, run = 0;
   for (let x = s[0]; x <= s[1]; x++) {
-    if (f.inFigure(f.at(x, y), x)) { run = 0; continue; }
+    if (f.inFigure(f.at(x, y), x, y)) { run = 0; continue; }
     run++; if (run > best) best = run;
   }
   return (100 * best) / (s[1] - s[0] + 1);
@@ -324,6 +353,7 @@ function metricsFor(f, palette) {
     headAspect: head.pinchFound ? head.width / head.height : null,
     shoePrimaryPct: shoes.primary,
     shoeSecondaryPct: shoes.secondary,
+    shoeChromaPct: bandSaturation(f, 0, 0.09),
     ankleDaylightPct: ankleDaylight(f),
     faceSkinLeftPct: face.left,
     faceSkinRightPct: face.right,
@@ -337,6 +367,7 @@ const CHECKS = [
   ['headAspect', 0.08, 'head width : head height'],
   ['shoePrimaryPct', 8.0, "the shoe band's dominant tone, % of the band"],
   ['shoeSecondaryPct', 8.0, "the shoe band's second tone, % of the band"],
+  ['shoeChromaPct', 4.0, "the shoe band's mean saturation (grey cannot pass)"],
   ['ankleDaylightPct', 12.0, 'daylight between the ankles'],
   ['faceSkinLeftPct', 6.0, 'visible face left of centre, % of head width'],
   ['faceSkinRightPct', 6.0, 'visible face right of centre, % of head width'],

@@ -25,8 +25,11 @@ from mathutils import Vector
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from sculptlib.atlas import install_face_atlas
+from sculptlib.ear import EarSpec, build_ear
+from sculptlib.head import HeadSpec, head_surface
 from sculptlib.color import rebuild_palette_material, rgba, srgb_to_linear
 from sculptlib.mesh import MeshBuilder, catmull_rom
+from sculptlib.palette import Palette
 
 
 REPO = Path.cwd()
@@ -399,12 +402,6 @@ def face_half_scale(nz: float) -> float:
     return face_half_width(nz) / (HEAD_RADII[0] * ring)
 
 
-# ★ THE FACE UV ISLAND'S ANGULAR WINDOW, and it is now the SKULL'S OWN
-# PARAMETERISATION rather than a separate patch mesh's. See `head_surface`.
-FACE_BEARING = 0.92   # radians off the nose at the island's u edges
-FACE_LOW = -1.10      # latitude (rad) at v = 0, below the chin
-FACE_SPAN = 1.54      # latitude sweep from v = 0 to v = 1
-
 # ★ THE ROWS ARE NOT EVENLY SPACED, AND THAT IS THE NOSE. `vf` is the ONLY
 # input to both the surface and the UV, so any sampling of [0, 1] keeps the
 # atlas exactly where the generator put it. Uniform sampling was spending them
@@ -493,26 +490,6 @@ def nose_push(nx: float, nz: float) -> float:
     # the tip is what turns them into the two dark commas the round-2 board
     # read either side of the nose.
     return 0.026 * bridge + 0.074 * tip + 0.028 * wing
-
-
-def face_island_uv(bearing: float, latitude: float) -> tuple[float, float]:
-    """The face-atlas UV for a skull vertex, CLAMPED outside the island.
-
-    `toon.ts` tests `island = (uv - (0, 0.5)) / (0.5, 0.5)` per FRAGMENT and
-    leaves the albedo alone outside [0,1]^2, and the atlas cell is transparent
-    outside the drawn marks (eyes and brows start at cell x 8 of 128). So a
-    skull whose UV field is CONTINUOUS and clamped to the island's border can
-    carry the atlas directly: every quad that straddles the border sweeps only
-    the cell's blank margin, which is the smear the old separate patch existed
-    to avoid.
-
-    Contract island: forehead V=1, chin V=.5. Blender's exporter flips authored
-    loop V, so author its inverse here. The runtime shader — not this mesh —
-    owns the embedded-image origin fix.
-    """
-    uf = min(1.0, max(0.0, 0.5 + 0.5 * bearing / FACE_BEARING))
-    vf = min(1.0, max(0.0, (latitude - FACE_LOW) / FACE_SPAN))
-    return (0.5 * uf, 0.5 * (1.0 - vf))
 
 
 
@@ -622,6 +599,41 @@ SOLE = rgba("FFE9CE")
 # accent, the ring is gone, and the neutral swatch is now a warm elastic
 # white instead of a photographic grey.
 TEAM_MASK = rgba("D8D2C6")
+
+# Junebug's twelve declared swatches, as the one object every shared builder is
+# handed. `palette.lint.test.js` checks the shipped GLB against exactly these.
+PALETTE = Palette(
+    skin=SKIN,
+    skin_shadow=SKIN_SHADOW,
+    hair=HAIR,
+    shirt=SHIRT,
+    shirt_dark=SHIRT_DARK,
+    pants=PANTS,
+    pants_dark=PANTS_DARK,
+    shoe=SHOE,
+    sock=SOCK,
+    white=WHITE,
+    sole=SOLE,
+    team_mask=TEAM_MASK,
+)
+
+
+
+# Junebug's skull: the four measurements `sculptlib.head` needs. Everything
+# else about the surface — rows, columns, the atlas island, the winding — is
+# shared, and this is the part that is hers.
+# Her ear, measured off the profile crop: 70px tall and 49px front-to-back at
+# 212.46 px/ft. These were module constants inside build_ear until Tank needed
+# his own.
+EAR_SPEC = EarSpec(center=(0.045, 3.128), radii=(0.1044, 0.1483))
+
+HEAD_SPEC = HeadSpec(
+    center=HEAD_CENTER,
+    radii=HEAD_RADII,
+    half_scale=face_half_scale,
+    socket=socket_push,
+    nose=nose_push,
+)
 
 
 @dataclass
@@ -843,163 +855,6 @@ class JunebugBuilder(MeshBuilder):
                 nxt = (column + 1) % segments
                 self.face((upper[column], lower[column], lower[nxt], upper[nxt]), 2)
 
-    def head_surface(self, face_columns: int, back_columns: int,
-                     face_rows: list[float], crown_rows: int, chin_rows: int) -> None:
-        """★ THE SKULL AND THE FACE-ATLAS ISLAND ARE ONE SURFACE.
-
-        Four rounds shipped the face as a SEPARATE patch mesh laid over the
-        skull, and four rounds chased the seam it draws. The round-3 verdict
-        found it again by gradient map: "a CLOSED contour around the whole face
-        — an arc ~10px inside the hairline, near-vertical seams inboard of both
-        ears, and a U through the chin", where the same map of the concept
-        shows only silhouette, hairline and features. Rubric 3.5's five forbids
-        a visible decal-island seam BY NAME.
-
-        Every previous fix moved the lip rather than removing it, because a
-        patch that is offset from the skull has a border, and a patch that is
-        not offset z-fights. There is no third setting. The seam is structural.
-
-        ★ WHY THE PATCH EXISTED, AND WHY THAT REASON IS GONE. Its docstring
-        said face UVs on a closed skull "makes boundary triangles interpolate
-        from the atlas island to the body UV and smears an eye around each
-        cheek". True of a UV field that JUMPS — the body UV is (0.75, 0.25),
-        outside the island, so a quad from a face vertex to a body vertex
-        sweeps the whole cell. It is not true of a field that is CONTINUOUS and
-        CLAMPED: `toon.ts` tests the island per FRAGMENT and leaves the albedo
-        alone outside it, and the atlas cell is transparent outside the marks
-        (the generator's own no-paint margin starts at cell x 8 of 128). So a
-        quad straddling the island border sweeps only blank cell, which paints
-        nothing. `face_island_uv` is that field.
-
-        The face's UV RESOLUTION is preserved exactly rather than approximately:
-        `face_columns` spans the island's 2*FACE_BEARING with the patch's own
-        |t|**1.25 warp about the nose, and `face_rows` IS the patch's row table.
-        At hero that is 20 columns and 14 rows over the same window the patch
-        covered with 20 and 14. What the merge costs is `back_columns` and the
-        crown/chin rows, and what it refunds is the entire patch — 952
-        triangles against the 1070 the two meshes cost apart.
-
-        ⚠️ A LONGITUDE MAPPED TO A BOUNDED INTERVAL HAS ONE SEAM, and it is put
-        at the DEAD BACK of the head between a duplicated column pair 0.008rad
-        apart. That sliver quad is the only one whose UV sweeps the cell, it is
-        sub-pixel at every board scale, and the hair cap covers the back of the
-        skull to phi 2.645 — under hair at every latitude it exists at.
-        """
-        cx, cy, cz = HEAD_CENTER
-        rx, ry, rz = HEAD_RADII
-
-        # --- longitudes, as BEARINGS off the nose in (-pi, pi] ---------------
-        # ★ THE FACE COLUMNS MUST MIRROR, AND FOR FIVE ROUNDS ONE OF THEM DID
-        # NOT. The old spacing was `2*(c+0.5)/(n+1) - 1`, which for an even `n`
-        # produces the set {-20,-18,...,+18}/21 — every column matched except
-        # the outermost left one — and then forced the two ENDS to +/-1, which
-        # overwrote +0.857 while leaving -0.857 in place. The result was a
-        # single unmatched longitude down the left temple: eight LOD0 vertices
-        # 35-46 milli-ft off their own mirror image, and a hard planar break
-        # running temple-to-jaw that round 6 measured as a 39.9-count left/right
-        # cheek shading split against the concept's 15.6.
-        #
-        # It was invisible to every gate on purpose-built evidence: the
-        # SILHOUETTE is symmetric (`measure:fidelity` reports 0.00 face
-        # asymmetry, correctly — it measures the width of visible skin, not its
-        # shading), so nothing that keys on outline could ever see it.
-        #
-        # `2*c/(n-1) - 1` spans exactly -1..+1 and mirrors for any n; an ODD n
-        # additionally puts a column on t=0, i.e. on the nose ridge, which is
-        # where the face wants its resolution anyway. Both are required, so an
-        # even count is refused rather than silently un-mirrored.
-        if face_columns % 2 == 0:
-            raise ValueError(
-                f"face_columns must be ODD (got {face_columns}) so a column lands on the nose "
-                "ridge and every other column has a mirror partner"
-            )
-        bearings: list[float] = []
-        for column in range(face_columns):
-            t = 2.0 * column / (face_columns - 1) - 1.0
-            warped = (abs(t) ** 1.25) * (1.0 if t >= 0 else -1.0)
-            bearings.append(FACE_BEARING * warped)
-        # The back run, and the sliver pair that confines the UV wrap.
-        rear = pi - FACE_BEARING
-        for step in range(1, back_columns + 1):
-            bearings.append(FACE_BEARING + rear * step / (back_columns + 1))
-        bearings.append(pi - 0.004)
-        bearings.append(-pi + 0.004)
-        for step in range(back_columns, 0, -1):
-            bearings.append(-FACE_BEARING - rear * step / (back_columns + 1))
-        bearings.sort()
-
-        # --- latitudes -------------------------------------------------------
-        # phi is colatitude from +z; the island's latitude is pi/2 - phi.
-        phis: list[float] = []
-        top_phi = pi / 2 - (FACE_LOW + FACE_SPAN)
-        for step in range(1, crown_rows + 1):
-            phis.append(top_phi * step / (crown_rows + 1))
-        for vf in reversed(face_rows):
-            phis.append(pi / 2 - (FACE_LOW + vf * FACE_SPAN))
-        bottom_phi = pi / 2 - FACE_LOW
-        for step in range(1, chin_rows + 1):
-            phis.append(bottom_phi + (pi - bottom_phi) * step / (chin_rows + 1))
-
-        def place(bearing: float, phi: float) -> int:
-            theta = bearing - pi / 2
-            nx = sin(phi) * sin(bearing)
-            ny = -sin(phi) * cos(bearing)
-            nz = cos(phi)
-            frontness = max(0.0, cos(bearing))
-            # Junebug's face carries FULL cheek width down to the jaw and only
-            # then falls away to a small chin — the concept's measured curve,
-            # tabulated in FACE_HALF_WIDTH. The ad-hoc taper this replaced shed
-            # width from the eyes down and measured 27% narrow at the cheek,
-            # 37% at the jaw.
-            width = face_half_scale(nz)
-            # A real face is a PLANE in front, not a continuation of the ball.
-            # Softened from 0.86-0.16: that full flattening rendered the profile
-            # as the literal vertical wall the round-2 critic flagged;
-            # 0.88-0.11 keeps the front plane while letting brow and cheek curve
-            # into it. The 1.02 back half meets it where ny is 0, so the surface
-            # is continuous across the side meridian even though its slope is
-            # not.
-            depth = (0.88 - 0.11 * frontness * frontness) if ny < 0 else 1.02
-            x = cx + rx * nx * width
-            y = cy + ry * ny * depth
-            z = cz + rz * nz
-            y += socket_push(nx, nz) * frontness
-            y -= nose_push(nx, nz) * frontness
-            if nz < -0.45:
-                # The turnaround gives Junebug a small determined chin and a
-                # jawline; a bare ellipsoid curves away to nothing under the
-                # mouth. The X profile is the measured table's job, so this term
-                # only carries the chin's FORWARD projection, faded by frontness
-                # so the sides stay smooth.
-                chin = min(1.0, (-nz - 0.45) / 0.45)
-                y -= 0.090 * (chin**1.8) * frontness
-                # 0.012, was 0.030. MEASURED hairline-to-chin on both boards at
-                # their own figure heights: the concept runs z 3.539 to 2.750
-                # (190.5 per 1000 of figure height) and the round-2 build
-                # shipped 186.9 — short, all of it this term lifting the chin's
-                # front off the ball.
-                z += 0.012 * (chin**1.8) * frontness
-            uv = face_island_uv(bearing, pi / 2 - phi)
-            del theta
-            return self.vertex((x, y, z), SKIN, "Head", uv)
-
-        columns = len(bearings)
-        top = self.vertex(
-            (cx, cy, cz + rz), SKIN, "Head", face_island_uv(0.0, pi / 2)
-        )
-        rows = [[place(bearing, phi) for bearing in bearings] for phi in phis]
-        bottom = self.vertex(
-            (cx, cy, cz - rz), SKIN, "Head", face_island_uv(0.0, -pi / 2)
-        )
-        for column in range(columns):
-            self.face((top, rows[0][column], rows[0][(column + 1) % columns]), 0)
-        for upper, lower in zip(rows, rows[1:]):
-            for column in range(columns):
-                nxt = (column + 1) % columns
-                self.face((upper[column], lower[column], lower[nxt], upper[nxt]), 0)
-        last = rows[-1]
-        for column in range(columns):
-            self.face((last[column], bottom, last[(column + 1) % columns]), 0)
 
 
 
@@ -1020,6 +875,18 @@ class JunebugBuilder(MeshBuilder):
 # V-neck, the placket and the belt loops are all solved against this surface
 # and a finishing pass may not move all of them at once. Recorded honestly: at
 # z 2.04 this ships 0.83ft against the concept's 0.64.
+#
+# ★ Retrofitted with machine-checkable citations. Two of her three hand-traced
+# landmarks reproduce against the sheet — at z 1.92 and z 1.48 her arms have
+# separated, the run count is 3, and the centre run is the torso alone. The
+# THIRD does not: at z 2.04 the run count is 1, so the 0.640ft she records
+# there was isolated by hand rather than read off a centre run. That is a real
+# distinction and the gate is right to refuse to confirm it, so it is cited
+# where it is checkable and left as prose where it is not.
+# measured: front z=1.920 halfWidth=0.3273
+# measured: front z=1.920 runs=3
+# measured: front z=1.480 halfWidth=0.4045
+# measured: front z=2.040 runs=1
 TORSO_LEVELS = [
     (1.865, 0.392, 0.300, "Hips"),
     (1.90, 0.386, 0.288, "Spine"),
@@ -1396,6 +1263,12 @@ SHOE_FLARE = [
 # rotates the Foot bone exactly as before — the shoe just rides it with the
 # stance the art draws.
 SHOE_TOE_OUT = 22.0 * pi / 180.0
+# ★ Retrofitted with its citation when the provenance gate was built. Junebug is
+# the fixture that proves the gate, because she is the one character whose
+# numbers are known to be right: if the trace could not be reproduced against
+# her sheet, the gate would be measuring something other than the drawing.
+# measured: front z=0.100 halfWidth=0.1795
+# measured: front z=0.100 runs=2
 #   (y, half-width at z 0.05, topline z).  -y is forward, so the toe is first.
 SHOE_STATIONS = [
     (-0.375, 0.033, 0.115),
@@ -1555,294 +1428,6 @@ def build_shoe(builder: MeshBuilder, side: int, prefix: str, detail: int, segmen
         full += [shoe_place(x0, side, -dx, lace_y, z) for dx, z in reversed(path[:-1])]
         builder.tube(full, radii + list(reversed(radii[:-1])), 1, SOLE, foot, 5)
 
-
-def build_ear(builder: MeshBuilder, side: int, detail: int) -> None:
-    """One continuous ear with a helix, a concha, a tragus and a real LOBE.
-
-    ★ THE CONCHA MUST NOT RUN ALL THE WAY ROUND, and that is what v11 got
-    wrong. Its rows were concentric scalings of one outline, so the inward
-    turn into the shadow floor happened at EVERY bearing — the board's 12x crop
-    read "a closed torus: a uniform-width rim running all the way round a dark
-    slot ... no lobe, no tragus, no helix taper", a doughnut traded for the
-    round-1 bump. On a real ear the concha is a hollow over roughly the upper
-    two thirds and the lower FRONT is solid flesh; that solid pad IS the lobe.
-    So the inward rows are interpolated between a CONCHA target and a LOBE
-    target by `well(t)`, and where `well` is zero the surface simply keeps
-    rolling over at rim radius into a filled pad.
-
-    Sizes are read off the concept's PROFILE ear, not its front view: the front
-    view loses the lobe into the jaw shading (it measures 54px tall), while the
-    profile crop gives the ear 70px tall and 49px front-to-back — 0.329ft by
-    0.231ft at 212.46 px/ft. The rim peak goes to x 0.589 because the concept's
-    ear tips are the head's widest point, 251px against the hair's 233px: at
-    v11's 0.556 the rim stood exactly level with the 0.557 hair cap and the ear
-    had no silhouette of its own.
-    """
-    # ★ RE-MEASURED IN ROUND 3, AND IT IS THE HEAD-WIDTH BLOCKER. Both boards
-    # were scanned with one silhouette detector at their own figure heights
-    # (concept 882px, delivered 578px):
-    #
-    #   the HAIR is already right — concept 234px wide (0.2653 of figure
-    #   height), delivered 154px (0.2664), a 0.4% miss;
-    #   the EARS are not — concept 251px (0.2846), delivered 172px (0.2976),
-    #   4.6% proud, and that whole 4.6% IS the "+4.3% too wide" that round 3
-    #   scored headBodyProportions down for. The skull never needed narrowing.
-    #   the ears are also 26% too TALL and 0.028ft too low: concept ear top
-    #   z 3.248, bottom 2.981 (0.267ft); delivered top 3.254, bottom 2.917
-    #   (0.337ft). Ears that hang to 79% of the way down the face instead of
-    #   the concept's 71% are also what put the round-3 40px sprite's "two
-    #   pale ear blocks jutting out at eye level".
-    #
-    # rz 0.1206 with cz 3.128 reproduces the concept's top and bottom exactly
-    # (3.128 + 0.150*0.804*1.06*0.938 = 3.248; 3.128 - 0.150*0.804*1.06*1.151
-    # = 2.981), and the rim offsets below drop by the measured 0.027ft.
-    # 16 outline points at hero, not 12: from the front an ear this size is a
-    # 5px sliver, and 30-degree steps in the outline are the "straight-edged
-    # slabs" the round-3 board read.
-    # ★ AND IT IS 0.028ft TOO LOW, re-measured in MODEL FEET on both boards.
-    # The concept's silhouette waists to 0.508 half-width at z 3.250, steps to
-    # 0.568 by 3.225 and PEAKS at 0.586-0.588 over z 3.150-3.175. The round-3
-    # build peaks at 0.595 — the width is right, round 3's narrowing landed —
-    # but it peaks at z 3.125, a quarter of the ear's own height low, which is
-    # what stretched the step over 23 rows where the concept takes 16. 3.156
-    # puts the peak at 3.153 and the top at 3.276.
-    # 16 outline points at hero, not 14: with the temple wedge gone (see
-    # HAIRLINE_REACH) the ear is no longer half-buried in hair, and the rim it
-    # now shows against sky is the one the round-3 board called a straight
-    # faceted edge at 14.
-    points = 16 if detail >= 2 else 8
-    # ★ THE EAR WAS ROUND AND AN EAR IS NOT. Round 5 read it as "a raised
-    # ellipsoid pad with one shallow crescent groove" — the helix, concha and
-    # lobe below are all really there, and the reason they did not read is one
-    # number: aspect. Measuring both crops with the same detector, the concept's
-    # profile ear is 1.42 tall to wide and this one was 1.03. A circle with a
-    # groove in it is a doughnut whatever the groove is doing, which is also
-    # what killed v11.
-    #
-    # ⚠️ THE HEIGHT WAS BOUGHT DOWNWARD, ON PURPOSE. Growing the ear UP pushes
-    # its upper-back bearings straight into the hair cap, which is the
-    # "black hole punched in the side of her head" documented at length below —
-    # a collision, not a shading bug, and it cost three rounds. The top ring
-    # therefore does not move at all (3.2763 before and after); the bottom drops
-    # from 3.0354 to 2.9797, into jaw the hair never reaches, and `lobe` swells
-    # harder to spend that reach on the thing 3.10 actually asks for.
-    cy, cz = 0.045, 3.128
-    ry, rz = 0.1044, 0.1483
-
-    def outline(t: float, scale: float) -> tuple[float, float]:
-        # t = 0 back, pi/2 up, pi front, 3pi/2 down.
-        # LOBE: a tight cubic swell centred on the lower-front arc.
-        lobe = 1.0 + 0.34 * max(0.0, cos(t - 4.13)) ** 3
-        # HELIX ROOT: at the upper front the rim dives into the face rather
-        # than standing off it, which is the taper 3.10 asked for by name.
-        root = 1.0 - 0.20 * max(0.0, cos(t - 2.55)) ** 2
-        return (
-            cy + ry * scale * lobe * root * cos(t),
-            cz + rz * scale * lobe * root * sin(t),
-        )
-
-    def well(t: float) -> float:
-        """1 where the concha hollows, 0 across the lobe's solid pad."""
-        delta = (t - 0.85 + pi) % (2 * pi) - pi
-        if abs(delta) >= 2.55:
-            return 0.0
-        return cos(delta / 2.55 * (pi / 2)) ** 1.4
-
-    def front_deep(t: float) -> float:
-        """★ HOW MUCH OF THE DISH THE FRONT CAMERA IS ALLOWED TO SEE.
-
-        The round-4 board scored the ear "a flat faceted skin nub ... no outer
-        rim, no inner concha shadow, no lobe" — rubric 3.10's forbidden bare
-        bump, verbatim, and it is not a paint problem. Measured off the rows
-        below, the dish was 0.073 - 0.056 = 0.017ft deep, which is 2.4px on the
-        front board. Smooth shading has nothing to darken at 2.4px, so the ear
-        renders as one lit plane however many rings it carries. The concept's
-        own front-view ear (junebug-turnaround.png, x 390-440) shows the
-        opposite: a lit helix rim with a clearly shadowed groove running inside
-        it, and that groove is what makes it read as an ear at 6x rather than a
-        pad.
-
-        The dish could not simply be deepened, and `build_ear`'s header says
-        why: at the ear's upper-BACK bearings the concha is inside the hair cap
-        by 0.021-0.030ft, which is the black hole round 3 found. But that is a
-        statement about ONE arc. Walking both surfaces at the upper-FRONT
-        bearing the front camera actually sees (t 2.4, model y 0.035, z 3.207),
-        the ear stands 0.0426ft clear of the cap, and at t 1.6 it stands 0.0241
-        — so the depth is available exactly where it is needed and absent
-        exactly where it is not. This window is centred on t 2.4 with a
-        half-width of 1.6rad, which is zero by t 0.8 and therefore zero across
-        the whole 15-30 degree arc the collision lives on.
-        """
-        delta = (t - 2.4 + pi) % (2 * pi) - pi
-        if abs(delta) >= 1.35:
-            return 0.0
-        return cos(delta / 1.35 * (pi / 2)) ** 2
-
-    # ★ EVERY ROW IS AN OFFSET FROM THE SKULL AT ITS OWN (y, z), never an
-    # absolute x. The head narrows 0.10ft between the ear's top and its bottom,
-    # so one absolute base ring cannot be buried at both ends — the first v12
-    # board buried it beside the eye and left it standing 0.05ft proud beside
-    # the jaw, which drew a shelf under each ear.
-    # (offset from skull, outline scale, y shift back).
-    # Offsets pulled in 0.027ft (the measured 4.6% of head width above) and a
-    # FOURTH rim row added at hero: the round-3 board read the front-view ear
-    # as "flat, uniformly shaded", which is what three rows spanning 0.13ft of
-    # depth give — one lit plane. Four rows put a shading break on the rim's
-    # outer roll where the front camera can see it.
-    # ★ THE "BLACK HOLE PUNCHED IN THE SIDE OF HER HEAD" WAS THE HAIR, SEEN
-    # THROUGH HER OWN EAR. It is worth the paragraph, because three rounds read
-    # it as a shading problem and it is a collision.
-    #
-    # Round 3 scored the ear a cavity at the gameplay camera and the obvious
-    # suspects were the toon ramp (a pocket the key light cannot reach) and the
-    # inverted-hull outline (2.5 SCREEN pixels of expansion closing over a
-    # narrow concavity). Both were wrong. Walking the ear's own rows against the
-    # hair cap's surface at 0.5-degree steps: every concha row sat INSIDE the
-    # cap by 0.021 to 0.030ft, worst at outline bearings 15-30 degrees — the
-    # ear's upper back, which is exactly where the black ellipse sits in
-    # junebug-runtime-hero.png. The concha was rendering the hair mass behind
-    # it, and the hair is near-black on that side of the head. The front board
-    # never showed it because the ear is edge-on there, and the profile board
-    # never showed it because the camera is outboard of both surfaces.
-    #
-    # It takes BOTH halves of the fix and neither alone is enough (measured:
-    # raising the rows alone leaves -0.004, tapering alone leaves -0.010):
-    #   * the concha rows come out to 0.056-0.066 off the skull, so the dish is
-    #     0.017ft deep instead of 0.043 and lives outside the hair;
-    #   * `hair_cap` thins its shell toward the hairline (see its `hug` block),
-    #     which is what a hairline does anyway.
-    # Together the whole ear clears the hair by 0.0154ft at its tightest point.
-    #
-    # The paint stays honest either way. The floor is plain SKIN — the concept's
-    # own ear (junebug-turnaround.png, profile figure) samples (176,116,74) in
-    # the concha against (203,145,101) on the helix, a 24-unit dip and not a
-    # hole — and SKIN_SHADOW survives only on the deepest inner ring, where the
-    # concept's own dip is.
-    # ★ AND THE WHOLE DISC IS FLARED, WHICH IS THE OTHER HALF OF 3.10's FRONT
-    # VIEW. Deepening the dish (see `front_deep`) buys nothing if the dish faces
-    # sideways, because the front camera then sees the disc EDGE-ON and a
-    # 0.047ft hollow projects to nothing. Measured off the concept's own front
-    # figure, its ear occupies x 390..417 — 27px of visible ear surface inboard
-    # of a silhouette edge the skull alone would put at 417 — because the disc
-    # is rotated so its opening faces forward-and-out. The delivered ear showed
-    # ~12px and read, correctly, as a pad.
-    #
-    # `back` is what rotates it: the outer rim rides 0.072ft further back than
-    # the base ring across 0.103ft of standoff, which is 35 degrees off the
-    # head's side, so the dish's normal is (0.82, -0.57, 0) and 57% of it faces
-    # the front camera. The MEAN of the four rim rows moves by 0.003 only, so
-    # the ear does not migrate backward on the profile board — it pivots.
-    # ⚠️ AND THE FLARE HAS TO BE PAID FOR IN STANDOFF, which the first flared
-    # board proved by measuring it. `skull_surface_x` FALLS as a row moves back
-    # (that is the whole reason ear rows are offsets from the skull rather than
-    # absolute x), so rotating the disc 35 degrees pulled the rim's projected
-    # half-width in with it: head max width fell 166px -> 162 and the ear's
-    # silhouette step 12.0% -> 9.9% of head width, against a concept step of
-    # 13.6%. Offsets are therefore re-solved at the flared geometry — 0.090 at
-    # the rim rather than 0.073 — which buys the step back without touching the
-    # skull. Note what that trade cannot do: the concept's waist is 0.245 of its
-    # figure height against this build's 0.253, so a 13.6% step and a 0.284
-    # head width are not simultaneously reachable here. Head width is the
-    # measured category and keeps its 166px.
-    if detail >= 2:
-        rim_rows = ((-0.030, 0.90, -0.012), (0.022, 1.04, 0.008), (0.058, 1.06, 0.028), (0.090, 0.98, 0.046))
-        concha_rows = ((0.066, 0.78, 0.044), (0.056, 0.44, 0.038))
-        lobe_rows = ((0.072, 0.90, 0.042), (0.058, 0.64, 0.034))
-    else:
-        rim_rows = ((-0.026, 0.96, -0.010), (0.080, 1.00, 0.036))
-        concha_rows = ((0.058, 0.50, 0.026),)
-        lobe_rows = ((0.062, 0.70, 0.024),)
-
-    rows: list[list[int]] = []
-
-    def emit(spec_fn) -> None:
-        row = []
-        for index in range(points):
-            t = 2 * pi * index / points
-            offset, scale, back, colour = spec_fn(t)
-            ear_y, ear_z = outline(t, scale)
-            ear_y += back
-            x_abs = skull_surface_x(ear_y, ear_z) + offset
-            row.append(builder.vertex((x_abs * side, ear_y, ear_z), colour, "Head"))
-        rows.append(row)
-
-    def helix_root(t: float) -> float:
-        """The helix ROOTS into the skull at the ear's crown and only stands
-        clear lower down: the positive standoff tapers by 38% at t = pi/2, and
-        not at all at the front and back bearings (t = 0, pi) where the ear
-        reaches its widest, nor at the lobe. Negative offsets — the buried base
-        ring — are left alone, because scaling one pushes the base OUT of the
-        skull.
-
-        ⚠️ WHAT THIS DOES AND DOES NOT DO, MEASURED, so it is not re-attempted
-        as a silhouette fix. It softens the squared corner at the top of the
-        ear's own surface, which is real and visible at 8x. It changes the
-        front-view SILHOUETTE by zero pixels, and the reason is worth keeping:
-        the front outline at the ear's latitudes is set by the ear's WIDEST
-        bearings, where this taper is 1.0 by construction, while at the ear's
-        crown the outline belongs to the hair cap. Walking both boards with one
-        alpha/background silhouette detector over rows 0.50-0.75 of head height:
-        the delivered ear step runs 146 -> 152px of a 164px head (89.0% -> 92.7%
-        of head max) and the concept's runs 225 -> 235 of 250 (90.0% -> 94.0%),
-        with a largest single-row jump of 2px on BOTH. The front step is within
-        1.3% of the concept and is not what still holds 3.10; the ear is 20px
-        tall on this board and what is missing at that size is rim, concha and
-        lobe DEPTH, which is a separate pass.
-        """
-        return 1.0 - 0.38 * max(0.0, sin(t)) ** 1.2
-
-    for offset, scale, back in rim_rows:
-        # ANTIHELIX: a low ridge inside the rim on the upper-back arc, so the
-        # rim is not one uniform-width band the whole way round.
-        emit(lambda t, o=offset, s=scale, b=back: (
-            (o * helix_root(t) + 0.016 * max(0.0, cos(t - 0.55)) ** 4) if o > 0 else o,
-            s, b, SKIN
-        ))
-    for (co, cs, cb), (lo, ls, lb) in zip(concha_rows, lobe_rows):
-        def spec(t: float, co=co, cs=cs, cb=cb, lo=lo, ls=ls, lb=lb):
-            w = well(t)
-            # TRAGUS: the small flap in front of the canal, a local outward
-            # push on the front bearing of the inner rows.
-            tragus = 0.038 * max(0.0, cos(t - pi)) ** 6
-            # ★ THE SINK IS NOT GATED ON `well`, and the first round-4 rebuild is
-            # why. Gated, it delivered 0.026 * w * front_deep = 0.012 at the
-            # window's centre, because `well` is only 0.46 there — the concha's
-            # own centre is at t 0.85 (the upper BACK) and the front is nearly
-            # all lobe. The board then measured what a 0.012ft dip in a form that
-            # spans 11px from the front is: nothing. The groove the front camera
-            # needs runs just inside the helix, so it is authored against the
-            # camera's own window and nothing else.
-            #
-            # 0.032 is a CLEARANCE. Walking the ear's rows against the cap's
-            # surface: 0.0426ft of room at t 2.4 (sink 0.0136 there, 0.029 left)
-            # and 0.0241 at t 1.6 (sink 0.0114, 0.0127 left). The 15-30 degree
-            # arc that carries the round-3 collision is outside the window
-            # entirely and takes no sink at all.
-            sink = 0.032 * front_deep(t)
-            colour = SKIN_SHADOW if (cs < 0.85 and front_deep(t) > 0.30) else SKIN
-            return (
-                lo + (co - lo) * w + tragus - sink,
-                ls + (cs - ls) * w,
-                lb + (cb - lb) * w,
-                colour,
-            )
-        emit(spec)
-    builder.grid(rows, 0, flip=side < 0)
-    # The floor of the dish. SKIN, not SKIN_SHADOW, and 0.033ft under the rim
-    # peak rather than 0.069 — see the rim/concha block above for why the deep
-    # painted version rendered as a hole at the gameplay camera.
-    # 0.042, was 0.060: the dish floor drops with the front rows above it (see
-    # `front_deep`). Solved for hair, not guessed — at (y 0.083, z 3.152) the
-    # cap's rim has already ended (its colatitude there is 1.792 against the
-    # 1.839 this point needs), so there is no hair over this vertex at all.
-    center = builder.vertex(
-        ((skull_surface_x(cy + 0.038, cz - 0.004) + 0.042) * side, cy + 0.038, cz - 0.004),
-        SKIN, "Head",
-    )
-    for index in range(points):
-        nxt = (index + 1) % points
-        face = (center, rows[-1][index], rows[-1][nxt]) if side > 0 else (center, rows[-1][nxt], rows[-1][index])
-        builder.face(face, 0)
 
 
 def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) -> None:
@@ -2273,17 +1858,17 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     # the merge adds is the back columns and the crown/chin rows; what it
     # refunds is the whole patch mesh, and with it the decal seam.
     if detail >= 2:
-        builder.head_surface(21, 4, FACE_ROWS, 2, 1)
+        head_surface(builder, 21, 4, FACE_ROWS, 2, 1, spec=HEAD_SPEC, palette=PALETTE)
     elif detail == 1:
-        builder.head_surface(9, 2, [0.0, 0.184, 0.319, 0.448, 0.632, 1.0], 1, 1)
+        head_surface(builder, 9, 2, [0.0, 0.184, 0.319, 0.448, 0.632, 1.0], 1, 1, spec=HEAD_SPEC, palette=PALETTE)
     else:
-        builder.head_surface(5, 1, [0.0, 0.32, 0.60, 1.0], 1, 1)
+        head_surface(builder, 5, 1, [0.0, 0.32, 0.60, 1.0], 1, 1, spec=HEAD_SPEC, palette=PALETTE)
     # The nose is sculpted INTO the head surface (see `nose_push`) — no mounted
     # ellipsoid, no muzzle block. Ears ride at EYE level (centre 3.119,
     # measured), one continuous smoothed form each (build_ear).
     if detail >= 1:
         for side in (-1, 1):
-            build_ear(builder, side, detail)
+            build_ear(builder, side, detail, palette=PALETTE, skull_at=skull_surface_x, spec=EAR_SPEC)
 
     # Hair is one designed mass: slicked crown to a mid-forehead hairline, a
     # gather knot at the crown-back, and one smooth swept ponytail ending in

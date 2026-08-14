@@ -6,6 +6,7 @@ Usage:
 """
 
 from pathlib import Path
+import math
 import sys
 
 import bpy
@@ -108,6 +109,45 @@ def render_view(scene: bpy.types.Scene, camera: bpy.types.Object, location: tupl
     bpy.ops.render.render(write_still=True)
 
 
+# How far the arms come down from the T-pose for the A-pose renders, in degrees.
+# Not a style choice: it is the roster's own resting abduction, the same angle
+# `proceduralClips.ts` hangs an idle arm at, so the A-pose board shows the kid
+# in the pose the game actually draws him in most of the time.
+A_POSE_DEG = 72.0
+# ⚠️ AND IT IS PER CHARACTER WHERE THE CHARACTER SAYS SO. The board exists to be
+# compared against a drawing, so it has to hold the pose the character actually
+# rests in — and a wide-bodied kid does not rest at the roster's angle. Tank's
+# idle carries 40 degrees of abduction (a 50-degree rotation) because anything
+# less buries his sleeve inside his own tee; a board still rendering him at 72
+# would be scoring a pose the game never shows. Keep this in step with
+# `proceduralClips.ts`.
+A_POSE_BY_ID = {"tank": 50.0}
+
+
+def pose_arms_down(degrees: float) -> None:
+    """Rotate both arm chains down about the forward axis.
+
+    ⚠️ POSE THE BONES, NEVER THE MESH. The mesh is skinned, so rotating the
+    object would move the geometry off the armature it is bound to and every
+    later measurement would be of something the runtime never draws.
+    """
+    armature = next((o for o in bpy.context.scene.objects if o.type == "ARMATURE"), None)
+    if armature is None:
+        return
+    bpy.context.view_layer.objects.active = armature
+    bpy.ops.object.mode_set(mode="POSE")
+    for side, sign in (("Left", 1.0), ("Right", -1.0)):
+        bone = armature.pose.bones.get(f"{side}Arm")
+        if bone is None:
+            continue
+        bone.rotation_mode = "XYZ"
+        # Local Y runs along the limb, so the swing is about local Z. The sign
+        # flips per side because the left chain points down -x and the right +x.
+        bone.rotation_euler[2] = sign * math.radians(degrees)
+    bpy.ops.object.mode_set(mode="OBJECT")
+    bpy.context.view_layer.update()
+
+
 def main() -> None:
     args = sys.argv[sys.argv.index("--") + 1 :] if "--" in sys.argv else []
     if len(args) != 2:
@@ -177,7 +217,34 @@ def main() -> None:
 
     render_view(scene, camera, (0, -12, 2.2), output_dir / f"{slug}-front-review.png")
     render_view(scene, camera, (12, 0, 2.2), output_dir / f"{slug}-profile-review.png")
-    print(f"wrote {slug} front/profile fidelity views")
+
+    # ★ AND A THIRD PAIR WITH THE ARMS DOWN, BECAUSE THE CONCEPT IS NOT T-POSED.
+    #
+    # Rubric 3.1 scores the delivered silhouette against the turnaround's. The
+    # board renders the BIND pose, and every turnaround on this roster draws the
+    # kid standing with his arms at his sides. For most characters the
+    # difference is cosmetic. For a wide-bodied one it decides the score, in
+    # both directions, and Tank produced one of each:
+    #
+    #   - the bind pose HID a real defect. Widening his tee to the traced
+    #     concept width buried his arms inside it in every arms-down pose, and
+    #     nine rounds of measured metrics stayed green because the board's arms
+    #     are horizontal and clear the torso by construction.
+    #   - the bind pose INVENTED one. Seen end-on down its own axis, his sleeve
+    #     reads as a bored socket on his chest; three separate reviews called it
+    #     a bullseye, a doorknob and an "open interior", and one scored 3.7 a
+    #     FAIL on it. Alpha-sampled, there is no hole: 0 pixels under alpha 250
+    #     across the whole shoulder window. It is a shadowed concavity that only
+    #     exists because the camera is looking along the arm.
+    #
+    # The concept cannot adjudicate either, because it never shows an arm from
+    # that angle. An A-pose render can. This is the same class as the two other
+    # instrument gaps this character exposed — a landmark that silently could
+    # not be traced, and a face camera that could not see a face.
+    pose_arms_down(A_POSE_BY_ID.get(character_id, A_POSE_DEG))
+    render_view(scene, camera, (0, -12, 2.2), output_dir / f"{slug}-front-apose-review.png")
+    render_view(scene, camera, (12, 0, 2.2), output_dir / f"{slug}-profile-apose-review.png")
+    print(f"wrote {slug} front/profile fidelity views, bind and A-pose")
 
 
 if __name__ == "__main__":

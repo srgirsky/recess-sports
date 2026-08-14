@@ -92,12 +92,12 @@ weaken one to make a change pass.**
 | `src/v2/render/cameraCues.test.ts` | a camera preset that cannot see what it exists to show |
 | `src/v2/sim/play.test.ts` | a play clock that fires — a soft-lock |
 | `src/v2/sim/game.test.ts` | the live pump and the headless run producing different games |
-| `src/systems/liveplay.test.ts` | a base off the foul line, a fielding spot outside the fair cone |
-| `src/systems/venue.test.ts` | a concave fence, which breaks containment silently |
+| `src/systems/liveplay.test.ts` / `venue.test.ts` | a base off the foul line, a fielding spot outside the fair cone, a concave fence that breaks containment silently |
 | `src/art/art.test.ts` | a bat through a kid's skull, hair layered wrong, a pose off the ground line |
-| `npm run audit:layout` | overlaps, off-frame chrome, undersized taps, an unresolved font |
-| `npm run audit:v2-layout` | the same, for v2's DOM HUD and screens, at the sizes its `clamp()` pins |
+| `npm run audit:layout` / `audit:v2-layout` | overlaps, off-frame chrome, undersized taps, an unresolved font — and the same over v2's DOM HUD at the sizes its `clamp()` pins |
 | `src/v2/ui/soundCues.test.ts` | a sim event that makes no sound — silence and a working mute are the same |
+| `scripts/v2/turnaround-spec.lint.test.js` / `runidentity.lint.test.js` / `featurelatitude.lint.test.js` | a measured spec drifting from its own sheet, a width read across two objects, a face at the wrong height on its own head |
+| `scripts/v2/silhouette.lint.test.js` / `performance-freshness.lint.test.js` / `tonemapping.lint.test.js` | a hole you can see through, a baked animation take stale against the code that bakes it, a colour default reverted silently |
 | `scripts/goldlog.browser.js` | a v1 refactor that changes the seeded game (manual, not CI) |
 
 ## Only one place

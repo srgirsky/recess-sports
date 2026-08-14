@@ -25,7 +25,8 @@ import {
 } from './faceAtlas';
 import { ROSTER } from '../../data/characters';
 import { FACE_ISLAND, makeToonMaterial } from './materials/toon';
-import { Texture } from 'three';
+import { ShaderChunk, ShaderLib, Texture } from 'three';
+import type { MeshToonMaterial } from 'three';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const contract = readFileSync(
@@ -113,23 +114,87 @@ describe('the shader agrees with the atlas', () => {
     );
   });
 
+  // ★ THE FIXTURE USED TO BE A FICTION, AND THAT IS WHY THIS SUITE COULD NOT
+  // SEE THE BUG IT WAS WRITTEN TO GUARD.
+  //
+  // These two tests used to hand-build `'#include <common>\n#include
+  // <map_fragment>\n#include <opaque_fragment>'`. That string contains no
+  // `<color_fragment>` at all — so the injection could be, and for months was,
+  // one chunk too early with every assertion here green. The atlas was mixed
+  // into `diffuseColor` and then `diffuseColor *= vColor` deleted it.
+  //
+  // A stand-in shader can only test what its author already thought of. Use
+  // three's real source: `ShaderLib.toon.fragmentShader` is exactly what
+  // `onBeforeCompile` receives, with the includes still unresolved.
+  const compileFace = (mat: MeshToonMaterial) => {
+    const shader = {
+      uniforms: {} as Record<string, { value: unknown }>,
+      fragmentShader: ShaderLib.toon.fragmentShader,
+      vertexShader: ShaderLib.toon.vertexShader,
+    };
+    mat.onBeforeCompile?.(shader as never, null as never);
+    return shader;
+  };
+
   it('defaults an undriven face to the resting cell', () => {
     // toon.ts duplicates the resting cell as GLSL-side literals so `materials/`
     // depends on nothing above it. This is the pin that keeps the copy honest.
-    const map = new Texture();
-    const mat = makeToonMaterial({ map, faceAtlas: new Texture() });
-    const shader = { uniforms: {} as Record<string, { value: unknown }>, fragmentShader: '#include <common>\n#include <map_fragment>\n#include <opaque_fragment>', vertexShader: '' };
-    mat.onBeforeCompile?.(shader as never, null as never);
-    expect(shader.uniforms.uFaceCell.value).toEqual(faceCellUv('neutral'));
+    const mat = makeToonMaterial({ map: new Texture(), faceAtlas: new Texture() });
+    expect(compileFace(mat).uniforms.uFaceCell.value).toEqual(faceCellUv('neutral'));
   });
 
   it('crosses glTF embedded-texture orientation exactly once', () => {
     // GLTFLoader sets embedded textures to flipY=false. The atlas cell maths is
     // bottom-origin, so the shader—not every authored mesh—owns the one flip.
     const mat = makeToonMaterial({ map: new Texture(), faceAtlas: new Texture() });
-    const shader = { uniforms: {} as Record<string, { value: unknown }>, fragmentShader: '#include <common>\n#include <map_fragment>\n#include <opaque_fragment>', vertexShader: '' };
-    mat.onBeforeCompile?.(shader as never, null as never);
-    expect(shader.fragmentShader).toContain('faceUv.y = 1.0 - faceUv.y');
+    expect(compileFace(mat).fragmentShader).toContain('faceUv.y = 1.0 - faceUv.y');
+  });
+
+  // ★ THE GATE. The atlas must be composited AFTER the identity palette has
+  // multiplied in, or every near-white texel is multiplied by the kid's own
+  // skin and the sclera disappears: white x skin = skin, exactly.
+  it('composites the face after the vertex palette, not before it', () => {
+    const mat = makeToonMaterial({ map: new Texture(), faceAtlas: new Texture() });
+    const out = compileFace(mat).fragmentShader;
+    const mix = out.indexOf('diffuseColor.rgb = mix( diffuseColor.rgb, faceTexel.rgb');
+    expect(mix, 'the atlas composite is not in the shader at all').toBeGreaterThan(-1);
+    expect(
+      mix,
+      'the atlas is composited BEFORE `diffuseColor *= vColor`, so every near-white ' +
+        'texel is multiplied by the kid\'s COLOR_0 skin and the sclera disappears — ' +
+        'inject at `#include <color_fragment>`, not `#include <map_fragment>`'
+    ).toBeGreaterThan(out.indexOf('#include <color_fragment>'));
+    // ...and after the albedo is sampled, or there is nothing to replace.
+    expect(mix).toBeGreaterThan(out.indexOf('#include <map_fragment>'));
+  });
+
+  it('knows what the chunk it follows actually does', () => {
+    // Without this the ordering assertion above is arbitrary. If three ever
+    // stops multiplying the palette here, that test needs re-reasoning, not
+    // re-ordering.
+    expect(ShaderChunk.color_fragment).toMatch(/diffuseColor(\.rgb)? \*= vColor/);
+  });
+
+  it('is hooked to a chunk three applies after the albedo, exactly once', () => {
+    const src = ShaderLib.toon.fragmentShader;
+    // The upgrade tripwire: a three version that reorders or drops the chunk
+    // would silently revert the fix.
+    expect(src.indexOf('#include <map_fragment>')).toBeLessThan(
+      src.indexOf('#include <color_fragment>')
+    );
+    // `String.replace` takes the FIRST match, so a second occurrence would put
+    // the composite somewhere nobody chose.
+    expect(src.split('#include <color_fragment>')).toHaveLength(2);
+  });
+
+  it('compiles on a material with no vertex palette', () => {
+    // `<color_fragment>` expands to nothing when USE_COLOR/USE_COLOR_ALPHA are
+    // undefined. The injected block must therefore never mention `vColor` — a
+    // proxy and a delivery without COLOR_0 both compile unchanged.
+    const mat = makeToonMaterial({ map: new Texture(), faceAtlas: new Texture() });
+    const out = compileFace(mat).fragmentShader;
+    const block = out.slice(out.indexOf('#include <color_fragment>'), out.indexOf('vec4 faceTexel'));
+    expect(block).not.toContain('vColor');
   });
 
   it('refuses a face atlas with no albedo, rather than rendering a black face', () => {

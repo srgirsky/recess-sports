@@ -55,6 +55,9 @@ const RATES = [0.6, 1.0, 1.4] as const;
 
 /** Criterion 4, literally: the thumbnail viewport is this many pixels tall. */
 const THUMB_PX = 40;
+// The review camera's position, named because `?facecam=1` has to turn the kid
+// to face it and a second copy of these numbers is a second camera.
+const CAMERA_AT = [8.2, 6.0, 14.6] as const;
 
 export class AnimSpike {
   private readonly scene = new Scene();
@@ -101,7 +104,7 @@ export class AnimSpike {
     this.camera = new PerspectiveCamera(34, 1, 0.1, 400);
     // ~17ft out: a 10ft-tall frame around a 6.4ft kid, so a dive or a leap
     // stays inside it. Closer than this and `catch_jump` leaves the top.
-    this.camera.position.set(8.2, 6.0, 14.6);
+    this.camera.position.set(CAMERA_AT[0], CAMERA_AT[1], CAMERA_AT[2]);
 
     this.lighting = new Lighting({ shadowMapSize: this.renderer.tier.shadowMapSize });
     this.scene.add(this.lighting.root);
@@ -140,8 +143,32 @@ export class AnimSpike {
     // the dot is +0.49 — a true three-quarter view with both eyes in shot —
     // and the lateral component is still 0.87 of maximum, so a dive crosses
     // the frame very nearly as well as it did.
+    // ★ `?facecam=1` TURNS THE KID TO FACE THE CAMERA, and rubric 3.14's
+    // evidence is unreadable without it.
+    //
+    // The default three-quarter facing above is right for judging a clip's
+    // DIRECTION and wrong for judging a MOUTH. Its face-to-camera dot is +0.49
+    // — about sixty degrees off axis — so the near cheek covers the mouth and
+    // every expression cell photographs the same. An independent review found
+    // Tank's four expression stills "visually indistinguishable" and the
+    // tongue cell "showing no tongue at all", and read that as a defect in the
+    // atlas; the atlas was fine, the camera could not see it.
+    //
+    // ⚠️ THE FIRST FIX WAS THE WRONG ONE, and it is worth recording which. The
+    // stills were also landing on arbitrary frames of a looping idle, so the
+    // frame was pinned first — and all four still came out identical, because
+    // the frame was never what hid the mouth. A capture aimed at a face needs
+    // BOTH: a deterministic frame and a camera that can see one.
+    //
+    // This is the same class `render/cameraCues.test.ts` gates for gameplay
+    // presets — "a camera preset that cannot see what it exists to show" — and
+    // the evidence surface simply had no equivalent.
     kid.setPosition(0, 0);
-    kid.setFacing(Math.PI * 0.5);
+    kid.setFacing(
+      new URLSearchParams(location.search).get('facecam') === '1'
+        ? Math.atan2(CAMERA_AT[0], CAMERA_AT[2])
+        : Math.PI * 0.5,
+    );
     this.scene.add(kid.root);
 
     this.director = new AnimationDirector(kid.mesh, {

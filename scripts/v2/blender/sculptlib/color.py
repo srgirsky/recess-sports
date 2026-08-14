@@ -52,3 +52,27 @@ def rebuild_palette_material(material: bpy.types.Material) -> None:
     material.node_tree.links.new(shader.outputs["BSDF"], output.inputs["Surface"])
 
 
+
+
+def ensure_material_slots(names: tuple[str, ...]) -> None:
+    """Create any of the contract's four material slots the .blend is missing.
+
+    ★ A BALD CHARACTER'S BOOTSTRAP HAS NO `M_Hair`, and nothing said so until a
+    sculpt script tried to use one. `export-roster-kid` builds the procedural
+    stand-in from the parts a kid actually has, so Tank — `hair: 'bald'` — came
+    out with three materials where the asset contract names four. The failure is
+    a KeyError deep inside the LOD builder, at the point of assigning slots,
+    which reads as a bug in the sculpt rather than a gap in its input.
+
+    `validate:models` would have caught the delivery, but only after a full
+    Blender run and an export, and its message is about the GLB rather than
+    about the source scene. Creating the slot here fixes it where it is missing.
+
+    The new material is deliberately bare: `rebuild_palette_material` is what
+    gives a slot its authored-albedo node graph, and it runs over every slot
+    afterwards anyway. Noodle is the other bald kid on the roster and will land
+    here too.
+    """
+    for name in names:
+        if name not in bpy.data.materials:
+            bpy.data.materials.new(name)
