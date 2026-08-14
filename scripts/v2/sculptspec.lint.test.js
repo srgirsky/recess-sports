@@ -72,13 +72,13 @@ function specFields(source) {
 describe('a shared sculpt spec cannot carry one character in its defaults', () => {
   it('finds the spec dataclasses at all, so a rename cannot silently empty this gate', () => {
     // A lint that iterates an empty list is indistinguishable from a lint that
-    // passes. These three are the specs that exist today; adding a fourth is
-    // fine, losing all of them is not.
+    // passes. These are the specs that exist today; adding another is fine and
+    // means updating this line, losing all of them is not.
     const found = new Set();
     for (const file of modules) {
       for (const f of specFields(readFileSync(join(LIB, file), 'utf8'))) found.add(f.cls);
     }
-    expect([...found].sort()).toEqual(['EarSpec', 'HeadSpec', 'ShoeSpec']);
+    expect([...found].sort()).toEqual(['ArmSpec', 'EarSpec', 'HandSpec', 'HeadSpec', 'LegSpec', 'ShoeSpec']);
   });
 
   it('gives no spec field a default value', () => {

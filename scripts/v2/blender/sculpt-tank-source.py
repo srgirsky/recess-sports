@@ -47,12 +47,17 @@ from mathutils import Vector
 # sys.path, so the package beside this file is unimportable without this.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
 from sculptlib.ear import EarSpec, build_ear
 from sculptlib.head import HeadSpec, head_surface
-from sculptlib.mesh import MeshBuilder
+from sculptlib.leg import LegSpec, build_leg, leg_x
+from sculptlib.mesh import MeshBuilder, thin_for_lod
 from sculptlib.palette import Palette
+from sculptlib.rig import (
+    ARM_ELBOW_X, ARM_SHOULDER_X, ARM_WRIST_X, ARM_Z, LEG_ANKLE_Z, limb_bone,
+)
 from sculptlib.shoe import ShoeSpec, build_shoe
 
 REPO = Path.cwd()
@@ -464,11 +469,7 @@ def skull_surface_x(y: float, z: float) -> float:
 # Depth comes from the profile view, which runs 0.64ft at the shoulder to 1.20ft
 # at the hem — his tee is baggiest at the bottom, which is what "oversized"
 # means on a body this shape.
-def torso_levels(detail: int) -> list[tuple[float, float, float, str]]:
-    """The tee's rings, thinned for the far LOD."""
-    if detail >= 1:
-        return TORSO_LEVELS
-    return [level for index, level in enumerate(TORSO_LEVELS) if index % 2 == 0 or index == len(TORSO_LEVELS) - 1]
+
 
 
 # ★ THE WIDTH COLUMN IS TRACED OFF THE CONCEPT NOW, AND FOR SEVENTEEN ROUNDS IT
@@ -704,16 +705,9 @@ NECK_LEVELS = [
 # posed view and the metrics read that render. The playbook says it in words —
 # "reject a technically valid model that only works in the bind pose" — and this
 # is what it looks like. The runtime run still is what showed it.
-ARM_SHOULDER_X = 0.400
-ARM_ELBOW_X = 0.918
-ARM_WRIST_X = 1.365
-ARM_Z = 2.471
+# The rig's own bone positions live in `sculptlib.arm`; only the sleeve hem is
+# his. See that module's header for why they are not spec fields.
 SLEEVE_HEM_X = 1.050
-
-
-def limb_bone(name: str, side: int) -> str:
-    """Left bones are at NEGATIVE x, so side -1 is the left side."""
-    return f"Left{name}" if side < 0 else f"Right{name}"
 
 
 # How much of each inboard arm ring belongs to the TORSO bone. Falls to zero by
@@ -727,299 +721,161 @@ SHOULDER_BLEND = {
 }
 
 
-def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
-    """One stitched arm along the rig's own axis: sleeve, bare forearm, mitten.
+# not-traceable: this table is authored in the RIG's T-pose, indexed by x along
+# the limb from shoulder to fingertip, while the concept draws both arms hanging
+# at the sides — so no row or column of the sheet corresponds to a station of
+# it. Measured on his own front view to be sure rather than assumed: at the
+# arm's height (z 2.471) the tee is ONE run spanning 95-327px, sleeve and torso
+# merged with no flank to separate, and the same holds from z 2.30 to 2.55. The
+# radii below come from the review rounds recorded against each entry, held
+# against approved Junebug's board at 3x rather than off a traced pixel span.
+ARM_STATIONS = [
+    # ★ THE SLEEVE MUST BE A SHOULDER THAT NARROWS, NOT A TUBE THAT STARTS.
+    #
+    # Four reviews described this corner as butt-joined primitives — "a
+    # discrete ellipsoid cap interpenetrating the torso and a free-floating
+    # sleeve torus the arm passes through" — and 3.1's 5/5 is literally
+    # "transitions between forms are organic, not butt-joined primitives".
+    #
+    # Held against approved Junebug's board at 3x the difference is not
+    # detail, it is TAPER: her sleeve leaves the torso at nearly the torso's
+    # own shoulder radius and narrows all the way to the cuff, so the garment
+    # reads as one surface crossing a joint. Tank's left at 0.196 against a
+    # tee whose shoulder ring is 0.556 — a rod out of a wide body, which is
+    # also why it rendered dark: a thin cylinder turns its whole surface away
+    # from the key where a broad deltoid faces it.
+    (0.215, 0.286, SHIRT, "Arm"),
+    # ★ THE DELTOID. Seven reviews called this corner butt-joined: the
+    # sleeve met the torso at a hard crease and the arm stepped out of it
+    # NARROWER with a dark ring, so there was never a shoulder mass at all.
+    # A ring that swells proud of both the torso and the sleeve below it is
+    # what rubric 3.11 means by "the shoulder stays a round deltoid form".
+    #
+    # ⚠️ AND WHEN IT WAS ADDED IT WENT IN OUT OF ORDER, WHICH IS WHY THE
+    # SHOULDER READ AS A SOCKET. The table ran x = 0.215, 0.330, 0.298,
+    # 0.400: the deltoid ring sat AFTER a station further out, so the quad
+    # strip travelled outward, folded back 0.032ft, and travelled out again.
+    # A surface that doubles over itself renders as a hard annulus with a
+    # dark centre — which three independent reviews then described as a
+    # bored socket, a bullseye and a doorknob on his chest, and which one
+    # measured as an "open interior" at 47% of the profile torso depth.
+    #
+    # It is the same class as the leg table's non-monotonic z, recorded
+    # further down this file: `grid` stitches rows in the order it is given
+    # them and cannot know that one of them belongs earlier.
+    (0.298, 0.292, SHIRT, "Arm"),   # deltoid peak
+    (0.330, 0.288, SHIRT, "Arm"),
+    (ARM_SHOULDER_X, 0.262, SHIRT, "Arm"),
+    (0.560, 0.216, SHIRT, "Arm"),
+    # ★ THE CUFF IS A STEP AND A BAND. Rubric 3.4 asks for garments that read
+    # as CONSTRUCTED, and the independent review scored this a 1 with "no
+    # folded sleeve cuff" named first. A colour change alone is a printed
+    # stripe; a cuff is thicker than the sleeve above it and than the arm
+    # below, so it takes three rings — swell, band, and the arm emerging.
+    # ⚠️ THE CUFF ENDED IN A SPIKE, and an independent review found it on
+    # both sides at once — the tell that it is a table, not a stray vertex.
+    # The garment dropped 0.190 to 0.130 across 0.014ft of limb, a 4:1
+    # slope, so the sleeve's edge rendered as a hard point rather than a
+    # hem with an underside. A cuff needs the same three rings the tee hem
+    # and the shorts hem already have: the band, its underside, and the arm
+    # emerging from it.
+    # ★ THE SLEEVE WAS A CAP SLEEVE ON A KID WEARING AN OVERSIZED TEE.
+    #
+    # Traced on the concept's front figure at 171.0 px/unit (685px over his
+    # 4.006-unit height, ground row 822), the left sleeve's purple run holds
+    # 56-119 at y 470 and 46-114 at y 490, then collapses through 70-111 at
+    # y 505 to 95-111 at y 515 and is gone by 525, where bare skin runs
+    # 63-100. So the hem plane crosses at y 505-515 — z 1.854 down to 1.795,
+    # which off a shoulder at ARM_Z is 0.617 to 0.676 along a hanging arm.
+    # SLEEVE_HEM_X 0.760 put it 0.360 down: a cap sleeve on the bicep where
+    # the drawing has a tee reaching past the elbow at 0.918. That is 0.29
+    # units, 7% of his height, and it was the largest single deviation from
+    # the concept left anywhere on the model.
+    #
+    # The widths come from the same rows: half 0.184 at y 470 (x 0.812),
+    # swelling to 0.199 at y 490 (x 0.929) where the sleeve passes over the
+    # elbow, and the bare forearm below the hem is half 0.108.
+    #
+    # ⚠ EXTENDING IT PAST THE ELBOW REORDERS THE TABLE, which is the one
+    # thing this table cannot survive — see the shoulder note above, where a
+    # ring out of order rendered as a bored socket three reviews argued
+    # about. The cuff stations are written off SLEEVE_HEM_X, so raising it
+    # moved them past the elbow rings that used to follow them. The elbow
+    # rings are gone rather than resorted: the sleeve now covers the elbow,
+    # so the break belongs in the garment, and the skin below the hem is
+    # forearm only — one taper, correctly.
+    (0.812, 0.184, SHIRT, "Arm"),
+    (ARM_ELBOW_X, 0.199, SHIRT, "Arm"),                # the sleeve over the elbow
+    (SLEEVE_HEM_X - 0.030, 0.170, SHIRT, "ForeArm"),
+    (SLEEVE_HEM_X, 0.180, SHIRT_DARK, "ForeArm"),      # cuff band, proud
+    (SLEEVE_HEM_X + 0.026, 0.174, SHIRT_DARK, "ForeArm"),
+    (SLEEVE_HEM_X + 0.042, 0.150, SHIRT_DARK, "ForeArm"),  # the cuff's underside
+    (SLEEVE_HEM_X + 0.058, 0.110, SKIN, "ForeArm"),
+    (1.240, 0.104, SKIN, "ForeArm"),
+    (ARM_WRIST_X, 0.098, SKIN, "Hand"),
+    # ★ THE HAND IS PART OF THE ARM, NOT A BALL RESTING ON IT.
+    #
+    # It was a separate ellipsoid centred past the wrist, and it TOUCHED the
+    # forearm over eight scanlines of a thirty-pixel wrist — a tangency, not
+    # a weld. Rotate forty degrees and the studio background shows straight
+    # through the join (#595959 against a #575757 backdrop, both arms), which
+    # fails 3.7 outright and is the defect most visible at hero scale. It
+    # also fails 3.11: a flat-capped cylinder with a ball beside it is the
+    # "stiff hinged cylinder" that item names.
+    #
+    # Continuing the same station list through the wrist into a mitten makes
+    # it one surface, so there is no join to open. The palm swells, the
+    # knuckle line is the widest ring, and the tip closes.
+    # ★ AND IT WAS HALF ITS OWN LENGTH, THE SAME MEASUREMENT JUNEBUG RECORDS.
+    # Her script solves it from the concept AND from anatomy: a child's hand
+    # runs about 10.6% of standing height from the wrist. On a 4ft rig with
+    # the wrist at 1.365 that puts the fingertip at 1.789, and this ended at
+    # 1.664 — 30% short, which is why three reviews read "undifferentiated
+    # mitten" where hers reads as a hand.
+    #
+    # The palm carries the first third and the FINGERS carry the rest. Three
+    # rings instead of five, because the digits below now do the work the
+    # extra rings were failing to do, and they pay for them.
+    (1.430, 0.116, SKIN, "Hand"),
+    (1.500, 0.134, SKIN, "Hand"),   # knuckle line, the widest ring
+    (1.556, 0.118, SKIN, "Hand"),
+]
 
-    ★ ONE SURFACE, NOT THREE. The sleeve does not end and the arm begin — the
-    same tube changes vertex colour at the hem. `sculptlib.mesh`'s `grid`
-    docstring records why: a garment built as its own shell butted against the
-    limb z-fights into the torn-paper edges Junebug's round-1 board showed.
-    """
-    sides = 14 if detail >= 2 else 6
-    stations = [
-        # ★ THE SLEEVE MUST BE A SHOULDER THAT NARROWS, NOT A TUBE THAT STARTS.
-        #
-        # Four reviews described this corner as butt-joined primitives — "a
-        # discrete ellipsoid cap interpenetrating the torso and a free-floating
-        # sleeve torus the arm passes through" — and 3.1's 5/5 is literally
-        # "transitions between forms are organic, not butt-joined primitives".
-        #
-        # Held against approved Junebug's board at 3x the difference is not
-        # detail, it is TAPER: her sleeve leaves the torso at nearly the torso's
-        # own shoulder radius and narrows all the way to the cuff, so the garment
-        # reads as one surface crossing a joint. Tank's left at 0.196 against a
-        # tee whose shoulder ring is 0.556 — a rod out of a wide body, which is
-        # also why it rendered dark: a thin cylinder turns its whole surface away
-        # from the key where a broad deltoid faces it.
-        (0.215, 0.286, SHIRT, "Arm"),
-        # ★ THE DELTOID. Seven reviews called this corner butt-joined: the
-        # sleeve met the torso at a hard crease and the arm stepped out of it
-        # NARROWER with a dark ring, so there was never a shoulder mass at all.
-        # A ring that swells proud of both the torso and the sleeve below it is
-        # what rubric 3.11 means by "the shoulder stays a round deltoid form".
-        #
-        # ⚠️ AND WHEN IT WAS ADDED IT WENT IN OUT OF ORDER, WHICH IS WHY THE
-        # SHOULDER READ AS A SOCKET. The table ran x = 0.215, 0.330, 0.298,
-        # 0.400: the deltoid ring sat AFTER a station further out, so the quad
-        # strip travelled outward, folded back 0.032ft, and travelled out again.
-        # A surface that doubles over itself renders as a hard annulus with a
-        # dark centre — which three independent reviews then described as a
-        # bored socket, a bullseye and a doorknob on his chest, and which one
-        # measured as an "open interior" at 47% of the profile torso depth.
-        #
-        # It is the same class as the leg table's non-monotonic z, recorded
-        # further down this file: `grid` stitches rows in the order it is given
-        # them and cannot know that one of them belongs earlier.
-        (0.298, 0.292, SHIRT, "Arm"),   # deltoid peak
-        (0.330, 0.288, SHIRT, "Arm"),
-        (ARM_SHOULDER_X, 0.262, SHIRT, "Arm"),
-        (0.560, 0.216, SHIRT, "Arm"),
-        # ★ THE CUFF IS A STEP AND A BAND. Rubric 3.4 asks for garments that read
-        # as CONSTRUCTED, and the independent review scored this a 1 with "no
-        # folded sleeve cuff" named first. A colour change alone is a printed
-        # stripe; a cuff is thicker than the sleeve above it and than the arm
-        # below, so it takes three rings — swell, band, and the arm emerging.
-        # ⚠️ THE CUFF ENDED IN A SPIKE, and an independent review found it on
-        # both sides at once — the tell that it is a table, not a stray vertex.
-        # The garment dropped 0.190 to 0.130 across 0.014ft of limb, a 4:1
-        # slope, so the sleeve's edge rendered as a hard point rather than a
-        # hem with an underside. A cuff needs the same three rings the tee hem
-        # and the shorts hem already have: the band, its underside, and the arm
-        # emerging from it.
-        # ★ THE SLEEVE WAS A CAP SLEEVE ON A KID WEARING AN OVERSIZED TEE.
-        #
-        # Traced on the concept's front figure at 171.0 px/unit (685px over his
-        # 4.006-unit height, ground row 822), the left sleeve's purple run holds
-        # 56-119 at y 470 and 46-114 at y 490, then collapses through 70-111 at
-        # y 505 to 95-111 at y 515 and is gone by 525, where bare skin runs
-        # 63-100. So the hem plane crosses at y 505-515 — z 1.854 down to 1.795,
-        # which off a shoulder at ARM_Z is 0.617 to 0.676 along a hanging arm.
-        # SLEEVE_HEM_X 0.760 put it 0.360 down: a cap sleeve on the bicep where
-        # the drawing has a tee reaching past the elbow at 0.918. That is 0.29
-        # units, 7% of his height, and it was the largest single deviation from
-        # the concept left anywhere on the model.
-        #
-        # The widths come from the same rows: half 0.184 at y 470 (x 0.812),
-        # swelling to 0.199 at y 490 (x 0.929) where the sleeve passes over the
-        # elbow, and the bare forearm below the hem is half 0.108.
-        #
-        # ⚠ EXTENDING IT PAST THE ELBOW REORDERS THE TABLE, which is the one
-        # thing this table cannot survive — see the shoulder note above, where a
-        # ring out of order rendered as a bored socket three reviews argued
-        # about. The cuff stations are written off SLEEVE_HEM_X, so raising it
-        # moved them past the elbow rings that used to follow them. The elbow
-        # rings are gone rather than resorted: the sleeve now covers the elbow,
-        # so the break belongs in the garment, and the skin below the hem is
-        # forearm only — one taper, correctly.
-        (0.812, 0.184, SHIRT, "Arm"),
-        (ARM_ELBOW_X, 0.199, SHIRT, "Arm"),                # the sleeve over the elbow
-        (SLEEVE_HEM_X - 0.030, 0.170, SHIRT, "ForeArm"),
-        (SLEEVE_HEM_X, 0.180, SHIRT_DARK, "ForeArm"),      # cuff band, proud
-        (SLEEVE_HEM_X + 0.026, 0.174, SHIRT_DARK, "ForeArm"),
-        (SLEEVE_HEM_X + 0.042, 0.150, SHIRT_DARK, "ForeArm"),  # the cuff's underside
-        (SLEEVE_HEM_X + 0.058, 0.110, SKIN, "ForeArm"),
-        (1.240, 0.104, SKIN, "ForeArm"),
-        (ARM_WRIST_X, 0.098, SKIN, "Hand"),
-        # ★ THE HAND IS PART OF THE ARM, NOT A BALL RESTING ON IT.
-        #
-        # It was a separate ellipsoid centred past the wrist, and it TOUCHED the
-        # forearm over eight scanlines of a thirty-pixel wrist — a tangency, not
-        # a weld. Rotate forty degrees and the studio background shows straight
-        # through the join (#595959 against a #575757 backdrop, both arms), which
-        # fails 3.7 outright and is the defect most visible at hero scale. It
-        # also fails 3.11: a flat-capped cylinder with a ball beside it is the
-        # "stiff hinged cylinder" that item names.
-        #
-        # Continuing the same station list through the wrist into a mitten makes
-        # it one surface, so there is no join to open. The palm swells, the
-        # knuckle line is the widest ring, and the tip closes.
-        # ★ AND IT WAS HALF ITS OWN LENGTH, THE SAME MEASUREMENT JUNEBUG RECORDS.
-        # Her script solves it from the concept AND from anatomy: a child's hand
-        # runs about 10.6% of standing height from the wrist. On a 4ft rig with
-        # the wrist at 1.365 that puts the fingertip at 1.789, and this ended at
-        # 1.664 — 30% short, which is why three reviews read "undifferentiated
-        # mitten" where hers reads as a hand.
-        #
-        # The palm carries the first third and the FINGERS carry the rest. Three
-        # rings instead of five, because the digits below now do the work the
-        # extra rings were failing to do, and they pay for them.
-        (1.430, 0.116, SKIN, "Hand"),
-        (1.500, 0.134, SKIN, "Hand"),   # knuckle line, the widest ring
-        (1.556, 0.118, SKIN, "Hand"),
-    ]
-    if detail < 1:
-        stations = [station for index, station in enumerate(stations) if index % 2 == 0 or index == len(stations) - 1]
-    rows: list[list[int]] = []
-    # ★ THE STATION TABLE MUST ASCEND, AND NOTHING USED TO CHECK. `grid` stitches
-    # rows in the order it is handed them and cannot know one belongs earlier, so
-    # a station out of order makes the strip travel outward, fold back, and
-    # travel out again. That surface renders as a hard annulus with a dark centre
-    # — the "bored socket" three independent reviews argued about, and the same
-    # class as the leg table's non-monotonic z further down this file. Raising
-    # SLEEVE_HEM_X past the elbow re-created it instantly, because the cuff
-    # stations are written off SLEEVE_HEM_X and the elbow rings were literals.
-    for lower, upper in zip(stations, stations[1:]):
-        assert upper[0] > lower[0], (
-            f"arm stations must ascend in x: {lower[0]:.3f} is followed by {upper[0]:.3f}. "
-            "A ring out of order folds the strip back on itself and renders as a "
-            "bored socket — resort the table, do not nudge the value."
-        )
-    for x, radius, colour, bone in stations:
-        bone_name = limb_bone(bone, side)
-        # ★ THE SHOULDER RINGS ARE SHARED WITH THE TORSO, AND THAT IS THE WHOLE
-        # FIX FOR THE CRUMPLE.
-        #
-        # Eleven reviews described this corner as butt-joined, bored, bullseyed,
-        # gashed and — once the A-pose board existed to show it under rotation —
-        # "a crumpled accordion of hard-creased shards". Rings, deltoid balls and
-        # station reordering all failed on it, because none of them touched the
-        # cause: every ring of this arm was weighted 100% to the Arm bone,
-        # INCLUDING the ones buried inside the torso. Rotate the arm and those
-        # rings rotate with it, out of a shell that does not follow. There is no
-        # geometry spanning the joint, so the deltoid cannot round — it can only
-        # tear.
-        #
-        # Weight is the thing that spans a joint, not more polygons. The rings
-        # inboard of the shoulder now blend from mostly-Spine2 to all-Arm across
-        # the joint, which is ordinary skinning falloff and what makes a shoulder
-        # deform as one surface.
-        blend = SHOULDER_BLEND.get(round(x, 3))
-        weight = bone_name if blend is None else {"Spine2": blend, bone_name: 1.0 - blend}
-        row = []
-        for index in range(sides):
-            theta = 2 * pi * index / sides
-            # Rings in the YZ plane, because the limb's axis is X.
-            row.append(
-                builder.vertex(
-                    (x * side, radius * sin(theta), ARM_Z + radius * cos(theta) * 0.94),
-                    colour,
-                    weight,
-                    (0.75, 0.25),
-                )
-            )
-        rows.append(row)
-    builder.grid(rows, 1, flip=side > 0)
 
-    # ★ THE INBOARD END IS CAPPED, and rubric 3.7 is binary about that. `grid`
-    # stitches rows and closes nothing, so the shoulder ring was an open
-    # octagon: the independent review read it as "an open octagonal armhole
-    # bored through the shirt shell with a floating arm stub inside it". A
-    # deltoid dome closes it AND gives 3.11 the round shoulder form it asks for.
-    shoulder_bone = limb_bone("Arm", side)
-    cap = builder.vertex(
-        (0.170 * side, 0.0, ARM_Z), SHIRT,
-        {"Spine2": 0.94, shoulder_bone: 0.06},   # buried in the chest: it follows the body
-        (0.75, 0.25),
-    )
-    for index in range(sides):
-        nxt = (index + 1) % sides
-        face = (cap, rows[0][nxt], rows[0][index]) if side > 0 else (cap, rows[0][index], rows[0][nxt])
-        builder.face(face, 1)
+# ★ HIS ARM, HANDED TO THE SHARED BUILDER. The table above is a measurement of
+# his turnaround and is governed here; what it is USED for lives in
+# `sculptlib/arm.py`, which reads no character's table.
 
-    # ★ A BALL AT THE JOINT WAS THE WRONG FIX, AND THE RIGHT ONE COST NOTHING.
-    #
-    # A sphere centred on the joint and weighted to the arm bone does fill the
-    # notch that opens when the arm rotates — it was here for two rounds and it
-    # worked. But it is a second surface laid over a bad join, and it showed:
-    # the next review read it in profile as "a sunken oval plate pressed into
-    # the shirt — a badge or a dent", and it cost 380 triangles out of a 7000
-    # budget that the hand needed.
-    #
-    # The notch was never a geometry shortage. It was a WEIGHT problem, fixed
-    # above in SHOULDER_BLEND: the rings inboard of the joint belonged entirely
-    # to the arm, so they rotated out of a torso that stayed put. Once they share
-    # the torso bone there is nothing to fill, and both A-pose views came out
-    # smoother WITHOUT the ball than with it.
-    #
-    # The tip closes the mitten. The wrist no longer needs a cap because the
-    # tube never ends there any more.
-    # ★ THIS FAN WAS WOUND INWARD, AND IT IS THE HOLE THREE REVIEWS ARGUED ABOUT.
-    #
-    # The predicate was the SHOULDER cap's, copied to the hand. The two caps
-    # close opposite ends of the same tube, so they cannot share a rule: the
-    # shoulder cap's outward direction is -x on the right arm and the hand
-    # cap's is +x. Measured on the shipped GLB, every one of the 14 fan
-    # triangles at the +x apex had a geometric normal of (-1, 0, 0) and the
-    # authored NORMAL agreed, on all three LODs and both arms.
-    #
-    # glTF materials are single-sided, so those triangles are discarded and a
-    # ray down the arm's axis passes through the hand and lands on the tee. The
-    # bind profile shows it as a skin annulus round a cloth centre, and both
-    # `swing_contact` and `run` show the arm ending in an open cavity with a lit
-    # inner wall, at hero scale, in the clips the game plays most.
-    #
-    # ⚠️ AND I ARGUED IT WAS NOT A HOLE, WITH THE WRONG INSTRUMENT. I sampled
-    # ALPHA across the shoulder window, got 0 pixels under 250, and concluded
-    # the dark disc was shadow. Alpha can only ever find a hole in the OUTER
-    # silhouette; the torso sits behind the arm at every one of those pixels, so
-    # an interior hole is invisible to that test by construction. The reviewer
-    # who reproduced my numbers exactly and then showed they proved nothing was
-    # right, and `scripts/v2/capwinding.lint.test.js` now checks the geometry
-    # rather than the picture.
-    tip = builder.vertex((1.588 * side, 0.0, ARM_Z), SKIN, limb_bone("Hand", side), (0.75, 0.25))
-    for index in range(sides):
-        nxt = (index + 1) % sides
-        face = (tip, rows[-1][nxt], rows[-1][index]) if side > 0 else (tip, rows[-1][index], rows[-1][nxt])
-        builder.face(face, 1)
-
-    # ★ FINGERS, NOT TWO BEADS ON A MITTEN. The pair of ellipsoids these replace
-    # were a thumb and one knuckle sitting ON the mass rather than leaving it,
-    # and every review from the second onward called the result a mitten.
-    #
-    # Junebug's hand records what makes the difference and it is SPACING, not
-    # count: fingers on 0.050 centres under 0.026 radii leave a 0.024ft groove,
-    # where her shipped 0.032 centres under 0.029 radii overlapped and fused
-    # into one silhouette. Three digits on Tank rather than her four — he is the
-    # chunky kid and his hand is shorter and broader — but the groove is hers.
-    #
-    # ⚠️ THE TRIANGLES ARE BOUGHT, NOT BORROWED. LOD0 had 194 spare against its
-    # 7000 and this costs about 320, so it is paid for by the two ellipsoids it
-    # replaces and by the two palm rings above.
-    if detail >= 1:
-        count = 3 if detail >= 2 else 2
-        # ⚠️ SIZED AGAINST HIS PALM, NOT COPIED FROM HERS. The first cut used
-        # Junebug's 0.026 radii on 0.050 centres and rendered three needles
-        # sticking out of a mitt: her palm is a 0.166 x 0.096 ellipsoid and his
-        # is a 0.134-radius tube, so the same digit is half the relative width
-        # on him. His fingers span the palm — three across 0.27ft of hand — and
-        # touch at their centres so the groove comes from the curvature, which
-        # is the arrangement her note actually describes.
-        offsets = (-0.080, 0.0, 0.080) if count == 3 else (-0.055, 0.055)
-        lengths = (0.170, 0.200, 0.178) if count == 3 else (0.186, 0.194)
-        for z_offset, length in zip(offsets, lengths):
-            root = 1.545
-            # The tips settle just forward and below, as a relaxed hand does.
-            # A deeper curl folds them inside the palm's own outline, which is
-            # how a hand becomes a fist — the trap Junebug's finger note records.
-            # ★ FOUR POINTS, BECAUSE THREE ENDS THE FINGER SQUARE. A tube's last
-            # width IS its end cap, so a spine that stops at 0.021 renders a
-            # blunt slab — which is what the second cut of this shipped. The
-            # extra control point near the tip is what rounds it, and it is why
-            # Junebug's fingers carry one.
-            spine = [
-                (root * side, -0.012, ARM_Z + z_offset),
-                ((root + length * 0.45) * side, -0.024, ARM_Z + z_offset - 0.006),
-                ((root + length * 0.82) * side, -0.035, ARM_Z + z_offset - 0.017),
-                ((root + length) * side, -0.041, ARM_Z + z_offset - 0.024),
-            ]
-            widths = [0.041, 0.039, 0.032, 0.012]
-            builder.tube(spine, widths, 0, SKIN, limb_bone("HandIndex1", side), 5)
-        # The thumb is the one digit that leaves the mass, and at 40px it is
-        # most of what makes a hand read as a hand.
-        builder.tube(
-            [
-                # ⚠️ FORWARD IS -y, AND THE FIRST CUT SENT THE THUMB BACKWARD.
-                # It was authored at +0.062 to +0.132 — behind the hand, where
-                # the front board cannot see it and no hand has one. Junebug's
-                # runs -0.056 to -0.100 for the same digit.
-                (1.452 * side, -0.058, ARM_Z - 0.030),
-                (1.524 * side, -0.096, ARM_Z - 0.048),
-                (1.578 * side, -0.118, ARM_Z - 0.059),
-                (1.610 * side, -0.128, ARM_Z - 0.065),
-            ],
-            [0.042, 0.038, 0.030, 0.012],
-            0, SKIN, limb_bone("HandThumb1", side), 5,
-        )
+TANK_ARM = ArmSpec(
+    stations=tuple(ARM_STATIONS),
+    shoulder_blend=SHOULDER_BLEND,
+    cap_x=0.170,
+    # An arm is not circular: the ring is squashed in z so the limb reads as a
+    # flattened oval from the gameplay camera rather than a dowel.
+    ring_squash=0.94,
+    hand=HandSpec(
+        tip_x=1.588,
+        finger_root=1.545,
+        finger_offsets=((-0.080, 0.0, 0.080), (-0.055, 0.055)),
+        finger_lengths=((0.170, 0.200, 0.178), (0.186, 0.194)),
+        # The tip width is the digit's own end cap, so a spine that stops at
+        # 0.021 renders a blunt slab. The extra control point near the tip is
+        # what rounds it.
+        finger_widths=(0.041, 0.039, 0.032, 0.012),
+        # ⚠️ FORWARD IS -y. The first cut of this authored the thumb at +0.062
+        # to +0.132 — behind the hand, where the front board cannot see it and
+        # no hand has one. Junebug's runs -0.056 to -0.100 for the same digit.
+        thumb_spine=(
+            (1.452, -0.058, -0.030),
+            (1.524, -0.096, -0.048),
+            (1.578, -0.118, -0.059),
+            (1.610, -0.128, -0.065),
+        ),
+        thumb_widths=(0.042, 0.038, 0.030, 0.012),
+    ),
+    garment=SHIRT,
+    skin=SKIN,
+)
 
 
 # --- Legs and shorts -----------------------------------------------------------
@@ -1034,12 +890,8 @@ def build_arm(builder: MeshBuilder, side: int, detail: int) -> None:
 # concept art (`render.leg-stance`). Rounds 1-3 invented a hip separation and
 # then TUNED it against the ankle-daylight metric, which moved the mesh off its
 # own bones to make a number in a bind-pose render come out right.
-LEG_HIP_X = 0.200
-LEG_HIP_Z = 1.600
-LEG_KNEE_X = 0.292
-LEG_KNEE_Z = 0.824
-LEG_ANKLE_X = 0.378
-LEG_ANKLE_Z = 0.095
+# The bone chain this leg hangs on lives in `sculptlib.leg` — it is the rig,
+# not a measurement. See that module's header.
 # ★ ROUND 2: HIS LEGS STAND TOO FAR APART. The concept measures ZERO ankle
 # daylight at the metric's own sample height and round 1 delivered 31.5%. The
 # splay is NOT the thing to change — it is the canonical rig's stance
@@ -1061,17 +913,6 @@ SHORTS_HEM_Z = 0.694
 SOCK_TOP_Z = 0.550
 
 
-def leg_x(z: float) -> float:
-    """Lateral centre of a leg at height `z`, interpolated along the bone chain."""
-    if z >= LEG_HIP_Z:
-        return LEG_HIP_X
-    if z >= LEG_KNEE_Z:
-        t = (LEG_HIP_Z - z) / (LEG_HIP_Z - LEG_KNEE_Z)
-        return LEG_HIP_X + (LEG_KNEE_X - LEG_HIP_X) * t
-    if z >= LEG_ANKLE_Z:
-        t = (LEG_KNEE_Z - z) / (LEG_KNEE_Z - LEG_ANKLE_Z)
-        return LEG_KNEE_X + (LEG_ANKLE_X - LEG_KNEE_X) * t
-    return LEG_ANKLE_X
 
 
 # ★ HE HAD NO INSEAM, AND THE TWO SHORTS LEGS WERE ONE SOLID MASS.
@@ -1111,174 +952,147 @@ def inseam_half(z: float) -> float:
     return INSEAM_HEM_HALF * t ** 2.2
 
 
-def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
-    """Shorts, bare shin and sock as one stitched surface."""
-    sides = 14 if detail >= 2 else 6
-    stations = [
-        # ★ THE SOCK WAS TWO DISCONNECTED RINGS, and the cause is that this
-        # table stopped descending. It ran ... 0.414 (sock top), then 0.634,
-        # 0.606 — back UP the leg — so the roll was authored ABOVE the skin band
-        # that was supposed to sit above it, and `grid` faithfully stitched the
-        # rows in the order given. The board showed a garter floating over a
-        # strip of bare shin, which the review measured as 21px of skin between
-        # the accent band and the sock.
-        #
-        # ★ AND THE SHORTS HAD NO VOLUME. Measured on the profile silhouettes,
-        # the concept's shorts are 0.228 of figure height deep and the delivery
-        # was 0.107 — the same as its own BARE LEG, so the garment added
-        # nothing. Tank is `bodyType: chunky`, `belly: 0.8`, power 9, and none
-        # of it was in the silhouette. A leg is round below the hem and a short
-        # is BAGGY above it, so the section carries its own depth factor.
-        #
-        # (z, half-width, depth factor, colour, bone) — strictly descending in z.
-        # ★ THE DEPTH FIX LANDED AND THE WIDTH DID NOT. Round 13 gave the shorts
-        # a depth factor and the profile came right (23.5%H against the
-        # concept's 22.8%), but the front view still measured 22.5-24.3%H across
-        # the pair where the concept runs 30.4-32.6% — about eight points of
-        # figure height missing, which is most of what "chunky" looks like from
-        # the front. The half-widths grow and the depth factor drops to keep the
-        # absolute depth the profile already agreed with.
-        # ⚠️ AND THE WIDTH ONLY BELONGS WHERE THE SHORTS ARE SEEN. Widening the
-        # whole leg pushed the upper rings THROUGH the tee — the board drew
-        # jagged dark spikes along the hem where the two surfaces intersect,
-        # which is worse than the narrow shorts were. Above the tee's hem
-        # (z 1.07) the shorts are hidden, so they stay inside it there and take
-        # their width in the band the concept actually measures.
-        (1.600, 0.250, 1.20, PANTS, "UpLeg"),
-        (1.360, 0.264, 1.26, PANTS, "UpLeg"),
-        (1.100, 0.298, 1.32, PANTS, "UpLeg"),
-        (0.900, 0.352, 1.24, PANTS, "UpLeg"),
-        # ★ THE SHORTS HEM WAS A CUT EDGE, and the tee already records the fix.
-        # One ring stepping 0.332 straight to bare leg at 0.196 is a garment
-        # sliced off, not one that ends — an independent review scored 3.4 with
-        # "shorts as a featureless black slab with no hem, side seam or leg
-        # opening". The tee's own hem note says it in four rings: an underside,
-        # a band proud of what is above it, and the body above that. The same
-        # three rings buy a leg opening you can see into.
-        (0.760, 0.342, 1.16, PANTS, "UpLeg"),
-        (0.716, 0.358, 1.13, PANTS_DARK, "Leg"),          # hem band, proud
-        (SHORTS_HEM_Z, 0.350, 1.10, PANTS_DARK, "Leg"),   # hem underside, z 0.694
-        (0.686, 0.252, 1.02, PANTS_DARK, "Leg"),          # inner lip of the opening
-        # The calf carries his weight-read below the hem and measured 0.38ft
-        # against the concept's 0.50 — see SHOE_LENGTH_SCALE's note. Grown to
-        # the drawing, which also leaves the 0.16ft calf gap 3.12 asks for.
-        (0.680, 0.246, 0.98, SKIN, "Leg"),                # bare shin begins
-        (0.610, 0.247, 0.96, SKIN, "Leg"),
-        (SOCK_TOP_Z + 0.014, 0.244, 0.95, SKIN, "Leg"),   # z 0.564
-        # ★ HIS SOCK RENDERED GREY AND THE CONCEPT'S IS CREAM ALL THE WAY DOWN.
-        #
-        # Walking the concept's front figure down column x=140: shorts to
-        # z 0.702, bare shin to 0.544, then CREAM — rgb(212,182,152) — from
-        # 0.544 to 0.440, where the shoe's navy starts. There is no grey band in
-        # the drawing at all. This table had TEAM_MASK (a neutral D8D2C6) from
-        # 0.550 to 0.514, which with the shoe topping out at 0.438 meant the
-        # accent covered two thirds of the only sock anyone can see, and an
-        # independent review scored 3.4 with "the sock hue is neutral grey where
-        # the concept's is warm cream".
-        #
-        # The accent cannot simply go: `M_Accessory` is where team colour lands,
-        # and `build_leg` emits a band to slot 3 only when BOTH its rows are
-        # TEAM_MASK, so one accent row would leave the material with no geometry.
-        # A third ring makes the roll a thin stripe at the sock's top edge — which
-        # is what a rolled sock looks like anyway — and hands the rest to cream.
-        #
-        # ⚠️ THE WIDTHS HERE ARE LOAD-BEARING AND THE COLOURS ARE NOT.
-        # `ankleDaylight` samples at 13% of figure height, z 0.521, which falls
-        # between these rings, and it sits at +9.64 of a 12.0 tolerance. Dropping
-        # the 0.514 ring's half-width to open the accent would have taken it to
-        # 13.9% and broken the gate. So the new ring is interpolated ON the line
-        # the old two already described (0.532 -> 0.268), the sampled half-width
-        # moves 0.267 -> 0.266, and only the colour of the lower row changes.
-        (SOCK_TOP_Z, 0.272, 0.95, TEAM_MASK, "Leg"),      # the roll, team accent
-        (SOCK_TOP_Z - 0.018, 0.268, 0.95, TEAM_MASK, "Leg"),
-        (SOCK_TOP_Z - 0.036, 0.264, 0.95, SOCK, "Leg"),   # cream, as drawn
-        # ★ THE SOCK MUST FIT INSIDE THE SHOE, AND IT NEVER DID.
-        #
-        # Three rounds went into a topline, a heel counter and a collar rim and
-        # none of them read, and the nineteenth review found why in one
-        # comparison: the shoe's widest half-section is 0.214 and these rings
-        # were 0.248, 0.238 and 0.206. The sock was wider than the shoe at every
-        # height they share, so a wedge of it split the upper down the instep in
-        # both views — and the collar rim, at 0.138, was buried inside the sock
-        # with only its fore and aft lobes escaping as the tan cliff in profile.
-        #
-        # Not a depth-sort or a surface-height problem, which is how the two
-        # previous attempts framed it. A real sock COMPRESSES inside a shoe.
-        # The shoe's top is z 0.441, so only the first ring below is still
-        # outside it; everything under that is sized against the section at its
-        # own height (v 0.90 gives ~0.16, v 0.62 gives ~0.19).
-        # ⚠️ AND THIS ONE COMES DOWN WITH THEM TOO. It is the ring just above the
-        # shoe's 0.438 topline, so it is what the eye reads as the sock ENTERING
-        # the shoe. At 0.222 against the narrowed shoe's 0.168 widest half it
-        # overhung the whole upper by a third and rendered as a mushroom sitting
-        # on the foot — the same "sock wider than the shoe" the nineteenth review
-        # caught, arriving from the other direction. 0.172 lands just proud of
-        # the upper, which is how the concept draws a slouched sock meeting a
-        # low collar. Still below `ankleDaylight`'s sample at 13% of figure
-        # height (z 0.521), which reads the two rings above this one.
-        (SOCK_TOP_Z - 0.070, 0.172, 0.95, SOCK, "Leg"),   # z 0.480, just clear
-        # Sized against the shoe at its own height, which is what the
-        # nineteenth review's finding actually asks for. ⚠️ AND IT MOVES WHEN
-        # THE SECTION MOVES: retracing the foxing ledge stepped the upper in
-        # from u 0.905 to 0.815, so the shoe's half here fell from 0.149 to
-        # 0.210 x 0.95 x u(v 0.912) = 0.114 and the 0.140 that used to sit
-        # inside it started poking through. This is the fourth time a shoe
-        # number has moved and left the sock behind, which is why the numbers
-        # are derived in the comment rather than remembered.
-        (0.400, 0.100, 0.95, SOCK, "Leg"),
-        (0.280, 0.138, 0.95, SOCK, "Leg"),
-        (0.150, 0.126, 0.95, SOCK, "Foot"),
-    ]
-    if detail < 1:
-        stations = [station for index, station in enumerate(stations) if index % 2 == 0 or index == len(stations) - 1]
-    rows: list[list[int]] = []
-    materials: list[int] = []
-    for z, radius, depth, colour, bone in stations:
-        bone_name = limb_bone(bone, side)
-        # ★ THE ACCENT RIDES THE SAME SURFACE. Its rows change MATERIAL, not
-        # mesh: a separate band welded on is the detached shell 3.7 just caught
-        # on the shoe. `grid` is emitted per row-pair so a pair whose lower row
-        # is accent-coloured goes to M_Accessory and the skin stays continuous.
-        materials.append(3 if colour == TEAM_MASK else 1)
-        # The inward reach that leaves the concept's inseam. `min` so a ring
-        # already clear of the centreline — every bare-shin and sock ring — is
-        # left exactly as it was; only the garment is ever clamped.
-        inner_radius = min(radius, leg_x(z) - inseam_half(z))
-        row = []
-        for index in range(sides):
-            theta = 2 * pi * index / sides
-            # cos > 0 is the OUTER half for both sides, because the ring is
-            # reflected whole (see below), so one predicate serves both legs.
-            radius_x = radius if cos(theta) >= 0.0 else inner_radius
-            row.append(
-                builder.vertex(
-                    # ★ THE WHOLE RING IS REFLECTED, not just its centre. Writing
-                    # `cx + r*cos(theta)` with `cx = leg_x*side` mirrors where the
-                    # leg IS and not which way round it is built, so the far leg
-                    # is the near leg translated — the same defect `shoe_place`
-                    # had. The board showed it as one shin lit and the other in
-                    # shadow at the same height, which three reviews read as a
-                    # colour difference between the socks.
-                    ((leg_x(z) + radius_x * cos(theta)) * side, radius * sin(theta) * depth, z),
-                    colour,
-                    bone_name,
-                    (0.75, 0.25),
-                )
-            )
-        rows.append(row)
-    for index in range(len(rows) - 1):
-        material = 3 if materials[index] == 3 and materials[index + 1] == 3 else 1
-        builder.grid(rows[index:index + 2], material, flip=side > 0)
-    top = builder.vertex((leg_x(1.600) * side, 0.0, 1.600), PANTS, limb_bone("UpLeg", side))
-    ankle_cap = builder.vertex((leg_x(0.150) * side, 0.0, 0.150), SOCK, limb_bone("Foot", side))
-    for index in range(sides):
-        nxt = (index + 1) % sides
-        face = (ankle_cap, rows[-1][index], rows[-1][nxt]) if side > 0 else (ankle_cap, rows[-1][nxt], rows[-1][index])
-        builder.face(face, 1)
-    for index in range(sides):
-        nxt = (index + 1) % sides
-        face = (top, rows[0][index], rows[0][nxt]) if side > 0 else (top, rows[0][nxt], rows[0][index])
-        builder.face(face, 1)
+# not-traceable: HIS LEGS TOUCH, so every instrument this gate has spans both of
+# them. The gate verifies `halfWidth` with the SILHOUETTE, and at z 0.90 that
+# reads 0.6589 where one leg is 0.3178 — the same "quantity read down a line
+# through more than one object" that `runidentity.lint.test.js` exists for.
+# `runsAt` cannot rescue it either: it reports 1 at every station here, because
+# the two legs meet across a 2px seam at x 209. Even `namedRunAt`, the good
+# instrument, refuses with `ambiguous-parts` — two same-material runs and
+# nothing declaring which is which.
+#
+# So the widths below were traced PER RUN, not off the silhouette. Measured
+# front, z 0.90: the shorts are two runs at [99-208] and [211-320] px, both
+# 0.3178ft half at 171.5 px/ft; at z 0.95 they are 0.3090 and 0.3120. Re-check
+# them with `regionRunsAt`, never with `halfWidthAt`.
+LEG_STATIONS = [
+    # ★ THE SOCK WAS TWO DISCONNECTED RINGS, and the cause is that this
+    # table stopped descending. It ran ... 0.414 (sock top), then 0.634,
+    # 0.606 — back UP the leg — so the roll was authored ABOVE the skin band
+    # that was supposed to sit above it, and `grid` faithfully stitched the
+    # rows in the order given. The board showed a garter floating over a
+    # strip of bare shin, which the review measured as 21px of skin between
+    # the accent band and the sock.
+    #
+    # ★ AND THE SHORTS HAD NO VOLUME. Measured on the profile silhouettes,
+    # the concept's shorts are 0.228 of figure height deep and the delivery
+    # was 0.107 — the same as its own BARE LEG, so the garment added
+    # nothing. Tank is `bodyType: chunky`, `belly: 0.8`, power 9, and none
+    # of it was in the silhouette. A leg is round below the hem and a short
+    # is BAGGY above it, so the section carries its own depth factor.
+    #
+    # (z, half-width, depth factor, colour, bone) — strictly descending in z.
+    # ★ THE DEPTH FIX LANDED AND THE WIDTH DID NOT. Round 13 gave the shorts
+    # a depth factor and the profile came right (23.5%H against the
+    # concept's 22.8%), but the front view still measured 22.5-24.3%H across
+    # the pair where the concept runs 30.4-32.6% — about eight points of
+    # figure height missing, which is most of what "chunky" looks like from
+    # the front. The half-widths grow and the depth factor drops to keep the
+    # absolute depth the profile already agreed with.
+    # ⚠️ AND THE WIDTH ONLY BELONGS WHERE THE SHORTS ARE SEEN. Widening the
+    # whole leg pushed the upper rings THROUGH the tee — the board drew
+    # jagged dark spikes along the hem where the two surfaces intersect,
+    # which is worse than the narrow shorts were. Above the tee's hem
+    # (z 1.07) the shorts are hidden, so they stay inside it there and take
+    # their width in the band the concept actually measures.
+    (1.600, 0.250, 1.20, PANTS, "UpLeg"),
+    (1.360, 0.264, 1.26, PANTS, "UpLeg"),
+    (1.100, 0.298, 1.32, PANTS, "UpLeg"),
+    (0.900, 0.352, 1.24, PANTS, "UpLeg"),
+    # ★ THE SHORTS HEM WAS A CUT EDGE, and the tee already records the fix.
+    # One ring stepping 0.332 straight to bare leg at 0.196 is a garment
+    # sliced off, not one that ends — an independent review scored 3.4 with
+    # "shorts as a featureless black slab with no hem, side seam or leg
+    # opening". The tee's own hem note says it in four rings: an underside,
+    # a band proud of what is above it, and the body above that. The same
+    # three rings buy a leg opening you can see into.
+    (0.760, 0.342, 1.16, PANTS, "UpLeg"),
+    (0.716, 0.358, 1.13, PANTS_DARK, "Leg"),          # hem band, proud
+    (SHORTS_HEM_Z, 0.350, 1.10, PANTS_DARK, "Leg"),   # hem underside, z 0.694
+    (0.686, 0.252, 1.02, PANTS_DARK, "Leg"),          # inner lip of the opening
+    # The calf carries his weight-read below the hem and measured 0.38ft
+    # against the concept's 0.50 — see SHOE_LENGTH_SCALE's note. Grown to
+    # the drawing, which also leaves the 0.16ft calf gap 3.12 asks for.
+    (0.680, 0.246, 0.98, SKIN, "Leg"),                # bare shin begins
+    (0.610, 0.247, 0.96, SKIN, "Leg"),
+    (SOCK_TOP_Z + 0.014, 0.244, 0.95, SKIN, "Leg"),   # z 0.564
+    # ★ HIS SOCK RENDERED GREY AND THE CONCEPT'S IS CREAM ALL THE WAY DOWN.
+    #
+    # Walking the concept's front figure down column x=140: shorts to
+    # z 0.702, bare shin to 0.544, then CREAM — rgb(212,182,152) — from
+    # 0.544 to 0.440, where the shoe's navy starts. There is no grey band in
+    # the drawing at all. This table had TEAM_MASK (a neutral D8D2C6) from
+    # 0.550 to 0.514, which with the shoe topping out at 0.438 meant the
+    # accent covered two thirds of the only sock anyone can see, and an
+    # independent review scored 3.4 with "the sock hue is neutral grey where
+    # the concept's is warm cream".
+    #
+    # The accent cannot simply go: `M_Accessory` is where team colour lands,
+    # and `build_leg` emits a band to slot 3 only when BOTH its rows are
+    # TEAM_MASK, so one accent row would leave the material with no geometry.
+    # A third ring makes the roll a thin stripe at the sock's top edge — which
+    # is what a rolled sock looks like anyway — and hands the rest to cream.
+    #
+    # ⚠️ THE WIDTHS HERE ARE LOAD-BEARING AND THE COLOURS ARE NOT.
+    # `ankleDaylight` samples at 13% of figure height, z 0.521, which falls
+    # between these rings, and it sits at +9.64 of a 12.0 tolerance. Dropping
+    # the 0.514 ring's half-width to open the accent would have taken it to
+    # 13.9% and broken the gate. So the new ring is interpolated ON the line
+    # the old two already described (0.532 -> 0.268), the sampled half-width
+    # moves 0.267 -> 0.266, and only the colour of the lower row changes.
+    (SOCK_TOP_Z, 0.272, 0.95, TEAM_MASK, "Leg"),      # the roll, team accent
+    (SOCK_TOP_Z - 0.018, 0.268, 0.95, TEAM_MASK, "Leg"),
+    (SOCK_TOP_Z - 0.036, 0.264, 0.95, SOCK, "Leg"),   # cream, as drawn
+    # ★ THE SOCK MUST FIT INSIDE THE SHOE, AND IT NEVER DID.
+    #
+    # Three rounds went into a topline, a heel counter and a collar rim and
+    # none of them read, and the nineteenth review found why in one
+    # comparison: the shoe's widest half-section is 0.214 and these rings
+    # were 0.248, 0.238 and 0.206. The sock was wider than the shoe at every
+    # height they share, so a wedge of it split the upper down the instep in
+    # both views — and the collar rim, at 0.138, was buried inside the sock
+    # with only its fore and aft lobes escaping as the tan cliff in profile.
+    #
+    # Not a depth-sort or a surface-height problem, which is how the two
+    # previous attempts framed it. A real sock COMPRESSES inside a shoe.
+    # The shoe's top is z 0.441, so only the first ring below is still
+    # outside it; everything under that is sized against the section at its
+    # own height (v 0.90 gives ~0.16, v 0.62 gives ~0.19).
+    # ⚠️ AND THIS ONE COMES DOWN WITH THEM TOO. It is the ring just above the
+    # shoe's 0.438 topline, so it is what the eye reads as the sock ENTERING
+    # the shoe. At 0.222 against the narrowed shoe's 0.168 widest half it
+    # overhung the whole upper by a third and rendered as a mushroom sitting
+    # on the foot — the same "sock wider than the shoe" the nineteenth review
+    # caught, arriving from the other direction. 0.172 lands just proud of
+    # the upper, which is how the concept draws a slouched sock meeting a
+    # low collar. Still below `ankleDaylight`'s sample at 13% of figure
+    # height (z 0.521), which reads the two rings above this one.
+    (SOCK_TOP_Z - 0.070, 0.172, 0.95, SOCK, "Leg"),   # z 0.480, just clear
+    # Sized against the shoe at its own height, which is what the
+    # nineteenth review's finding actually asks for. ⚠️ AND IT MOVES WHEN
+    # THE SECTION MOVES: retracing the foxing ledge stepped the upper in
+    # from u 0.905 to 0.815, so the shoe's half here fell from 0.149 to
+    # 0.210 x 0.95 x u(v 0.912) = 0.114 and the 0.140 that used to sit
+    # inside it started poking through. This is the fourth time a shoe
+    # number has moved and left the sock behind, which is why the numbers
+    # are derived in the comment rather than remembered.
+    (0.400, 0.100, 0.95, SOCK, "Leg"),
+    (0.280, 0.138, 0.95, SOCK, "Leg"),
+    (0.150, 0.126, 0.95, SOCK, "Foot"),
+]
+
+
+# ★ HIS LEG, HANDED TO THE SHARED BUILDER. The table above is a measurement of
+# his turnaround and is governed here; the construction it drives lives in
+# `sculptlib/leg.py`, which reads no character's table.
+
+TANK_LEG = LegSpec(
+    stations=tuple(LEG_STATIONS),
+    inseam_half=inseam_half,
+    garment=PANTS,
+    sock=SOCK,
+    team_mask=TEAM_MASK,
+)
 
 
 # --- The shoe ------------------------------------------------------------------
@@ -1789,11 +1603,11 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     # 1232 against a 1200 budget, which is the budget gate working. At LOD2 the
     # character is a 40px sprite and a 0.03ft rib is invisible, so the levels
     # collapse to the shape and the bands survive only as colour.
-    builder.loft(torso_levels(detail), 1, SHIRT, segments)
+    builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, segments)
 
     for side in (1, -1):
-        build_arm(builder, side, detail)
-        build_leg(builder, side, detail)
+        build_arm(builder, side, detail, spec=TANK_ARM)
+        build_leg(builder, side, detail, spec=TANK_LEG)
         build_shoe(builder, side, detail, spec=TANK_SHOE,
                    ankle_x=leg_x(LEG_ANKLE_Z), bone=limb_bone("ToeBase", side))
 

@@ -264,3 +264,19 @@ def catmull_rom(
     return sampled
 
 
+def thin_for_lod(rows: list, detail: int) -> list:
+    """Every other row, and always the last one, for the far LOD.
+
+    ★ THE LAST ROW IS KEPT UNCONDITIONALLY, and that is the whole subtlety. An
+    even-indexed slice drops the final entry of any odd-length table, and every
+    one of these tables ENDS somewhere load-bearing — the fingertip, the ankle,
+    the hem. Dropping it does not coarsen the form, it truncates it, and at LOD2
+    that reads as a limb that stops short rather than one with fewer rings.
+
+    It lived in three places (the arm, the leg and the tee) as the same
+    expression written out three times, which is how one of them comes to be
+    fixed and the other two not.
+    """
+    if detail >= 1:
+        return list(rows)
+    return [row for index, row in enumerate(rows) if index % 2 == 0 or index == len(rows) - 1]
