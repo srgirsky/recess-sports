@@ -230,6 +230,22 @@ npm run validate:models                # validate the complete delivery
 path. It may be used for unproduced characters and fallback recovery; the
 authored-character test rejects it if it overwrites a finished Blender delivery.
 
+Before sculpting one, read the sheet:
+
+```bash
+npm run analyse:turnaround -- tank            # print what the drawing supports
+npm run analyse:turnaround -- tank --write    # write scripts/v2/turnaround-specs/tank.spec.json
+```
+
+The spec is what a sculptor implements — views, materials, landmarks, the torso
+profile and the garment colour bands, all in feet against the canonical rig. Read
+its `notTraceable` entries FIRST: they are the numbers the drawing cannot supply,
+each with the reason and what to use instead, and every expensive failure on this
+project so far has been a number that should have been one of them. A character
+needs an entry in `scripts/v2/turnaround-recipes.mjs` before it can be analysed —
+that file declares the four things pixels cannot say (which view is which, which
+parts come in pairs, what each colour is for, and where to look).
+
 Finished characters ship from their editable Blender source with:
 
 ```bash

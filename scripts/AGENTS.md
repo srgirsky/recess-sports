@@ -60,7 +60,7 @@ something.
 ## Commands that live here
 
 `npm run sim:harness` · `npm run sim:plate-sweep` · `npm run sim:game` ·
-`npm run validate:models` · `npm run export:authored-character` ·
+`npm run analyse:turnaround` · `npm run validate:models` · `npm run export:authored-character` ·
 `npm run review:character-fidelity` · `npm run retarget:rig` · `npm run audit:layout` · the other
 `export:*` and `manifest:models` asset scripts. Details in `README.md`.
 
@@ -76,14 +76,14 @@ the `reference` and `status` rules are enforced.
 
 | File | What it owns |
 |---|---|
-| `scripts/measure/lib.js` | PURE measurement math: robust stats, `summarize`, DERIVED confidence, ratio->constant |
-| `scripts/measure/video.js` | the ffmpeg I/O, the play indexer, and the `clockFidelity` gate |
-| `scripts/measure/screenshot.js` | the EXACT-COLOUR path; throws if the window blit is not exact |
-| `scripts/measure/conformance.test.js` | the record->constant gate, and the only walk that visits each record once |
-| `scripts/layout.browser.js` | the in-page layout audit, pasteable into a dev tab |
-| `scripts/layout-audit.mjs` | `npm run audit:layout` — the Playwright gate over the scene x CONTENT matrix |
-| `scripts/v2/ui-audit.mjs` | `npm run audit:v2-layout` — the same predicates over v2's DOM HUD, on a VIEWPORT matrix |
-| `scripts/goldlog.browser.js` | the seeded v1 game drive whose fingerprint must stay byte-identical |
-| `scripts/v2/glb.mjs` | dependency-free glTF read AND write — hand-rolled because a playback loader forgives what a validator must reject |
-| `scripts/v2/modelRules.mjs` | the pure rule engine behind both `validate:models` front ends |
-| `scripts/v2/harness.mjs` / `scripts/v2/plate-sweep.mjs` | the 50k-plate-appearance run, and the coupled-constant search |
+| `scripts/measure/lib.js` | PURE measurement math: robust stats, `summarize`, DERIVED confidence |
+| `scripts/measure/video.js` | the ffmpeg I/O, the play indexer, the `clockFidelity` gate |
+| `scripts/measure/screenshot.js` | the EXACT-COLOUR path; throws if the blit is inexact |
+| `scripts/measure/conformance.test.js` | the record->constant gate; the only walk visiting each record once |
+| `scripts/layout.browser.js` | the in-page layout audit, paste into a dev tab |
+| `scripts/layout-audit.mjs` / `scripts/v2/ui-audit.mjs` | `audit:layout` over the scene x CONTENT matrix, and the same predicates over v2's DOM HUD |
+| `scripts/goldlog.browser.js` | the seeded v1 drive whose fingerprint must stay byte-identical |
+| `scripts/v2/turnaround.mjs` / `tone.mjs` / `analyse-turnaround.mjs` | one reader, one colour ruler, one spec writer. `regionRunsAt` NAMES a run, so a width cannot cross two |
+| `scripts/v2/glb.mjs` | dependency-free glTF read AND write — a playback loader forgives what a validator must reject |
+| `scripts/v2/modelRules.mjs` | the pure rule engine behind both `validate:models` fronts |
+| `scripts/v2/harness.mjs` / `plate-sweep.mjs` | the 50k-plate-appearance run, and the coupled-constant search |
