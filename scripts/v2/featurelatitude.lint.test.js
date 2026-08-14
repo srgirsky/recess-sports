@@ -100,6 +100,22 @@ const TURNAROUND = {
     mouth: 78.3,
     earLine: 64.3,
     tolerance: 2.5,
+    // ★ THE SHOE IS THE SAME PROBLEM ONE LIMB DOWN, so it is gated the same way.
+    //
+    // Its four colour bands were a stack in the right ORDER with every boundary
+    // in the wrong PLACE — the navy quarter ran to 0.64 of shoe height against
+    // the drawing's 0.41 and ate the vamp, so the board read as a cream loaf
+    // with a belt round it. Mapped cell by cell off the concept's own front-left
+    // shoe (x 86-190, y 740-824, classified navy / cream / shaded / background
+    // at 2px steps; shoe top row 748, ground 819, so 71px):
+    //
+    //   cream midsole 0.00-0.24   navy quarter 0.25-0.41
+    //   cream vamp    0.44-0.79   navy collar  0.80-1.00
+    //
+    // Only the two INNER boundaries are gated. The outer two are 0 and 1 by
+    // construction, and the vamp/collar edge at 0.795 is the one the drawing
+    // pins least precisely — it is the soft top of a shadowed panel.
+    shoeBands: { midsoleTop: 0.24, quarterTop: 0.41, tolerance: 0.05 },
   },
 };
 
@@ -159,6 +175,35 @@ describe('a face sits where the turnaround puts it', () => {
         `${id} ear line at ${got.toFixed(1)}% of head height, want ${want.earLine}% ` +
         `(+-${want.tolerance}) — EAR_SPEC's centre z in sculpt-${want.slug}-source.py`,
       ).toBe(true);
+    });
+  }
+
+  for (const [id, want] of Object.entries(TURNAROUND)) {
+    if (!want.shoeBands) continue;
+    it(`${id}: the shoe's colour bands sit where the drawing puts them`, () => {
+      const src = sculpt(want.slug);
+      const table = src.match(/^SHOE_BANDS = \[([\s\S]*?)^\]/m);
+      expect(table, 'could not read SHOE_BANDS').not.toBeNull();
+      const rows = [...table[1].matchAll(/\(\s*(-?\d+\.?\d*)\s*,\s*"(\w+)"/g)]
+        .map(([, at, band]) => ({ at: Number(at), band }));
+      // midsole -> quarter -> collar -> quarter, and the first two edges are
+      // the ones the concept pins.
+      expect(rows.map((r) => r.band)).toEqual(['midsole', 'quarter', 'collar', 'quarter']);
+      const bad = [];
+      const check = (label, got, wanted) => {
+        if (Math.abs(got - wanted) > want.shoeBands.tolerance) {
+          bad.push(
+            `${id} shoe ${label} boundary at ${got.toFixed(3)} of shoe height, want ` +
+            `${wanted} (+-${want.shoeBands.tolerance}) — SHOE_BANDS in ` +
+            `sculpt-${want.slug}-source.py. The bands are a STACK: getting the order ` +
+            'right is not getting the boundaries right, and the tone-split metric ' +
+            'cannot tell the difference because it counts how much, never where',
+          );
+        }
+      };
+      check('midsole top', rows[1].at, want.shoeBands.midsoleTop);
+      check('quarter top', rows[2].at, want.shoeBands.quarterTop);
+      expect(bad).toEqual([]);
     });
   }
 

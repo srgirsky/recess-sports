@@ -129,7 +129,30 @@ SOCK = rgba("FFF2E0")  # cooler and brighter than either shoe cream
 # catches the ground bounce — and the collar/upper runs rgb(190,176,157), which
 # is greyer and a little deeper. Authored with the ~1.3x channel spread this
 # board's ramp costs (see the note below), that is FFEDD2 against F2D3A4.
-WHITE = rgba("FFEDD2")  # the midsole: the lightest, warmest band
+# ★ ROUND 32: "THE WARMEST BAND" IS WHAT IT SAYS AND THE OPPOSITE OF WHAT IT
+# WAS. Sampled off the concept's own cupsole and vamp, front figure and profile
+# figure agreeing: the cupsole runs r-b 63-65 and the vamp r-b 49-54, so the
+# SOLE is the warmer of the two creams. Authored, this was FFEDD2 at r-b 45
+# against SOLE's 93 — the relationship inverted — and the board rendered the
+# midsole at r-b 17, which is grey. A grey slab under a tan shoe reads as a
+# plastic base, not a rubber cupsole.
+#
+# Calibrated on the two creams already in this file rather than guessed: SOLE
+# authors r-b 93 and renders 41, this authored 45 and rendered 17, so the ramp
+# costs `rendered = 0.5 * authored - 5.5`. The concept's 64 wants 139.
+#
+# ⚠️ AND 139 IS NOT AVAILABLE, which is worth recording so it is not tried
+# again. FFC878 (r-b 135) renders the midsole rgb(182,151,113) against the
+# concept's rgb(195,167,130) — visually right — and breaks TWO metrics: the
+# band's dominant tone falls 82.6 -> 70.5 because the swatch leaves the cream
+# cluster `bandSplit` classifies against, and saturation goes 21.7 -> 31.9.
+# Swept: r-b 79 gives +0.76 / +3.73 (the warmest that holds), r-b 111 gives
+# -4.19 / +6.01 (off). 72 is taken so a later change has headroom.
+#
+# So the sole is as warm as the cream cluster allows and still cooler than the
+# drawing. Closing the rest means the ramp, not this swatch — the same place
+# the face atlas dies. See `src/v2/render/materials/toon.ts`.
+WHITE = rgba("FFE4B7")  # the midsole: the warmest band, as its name says
 # ★ ROUND 3: AUTHORED WARMER THAN THE CONCEPT, ON PURPOSE. Sampled #F1E4D4 off
 # the turnaround, the first board rendered his shoe #AAA49D — the right value
 # family and no warmth at all, and only 42.4% of the band classified as the
@@ -1194,10 +1217,14 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
         # height (z 0.521), which reads the two rings above this one.
         (SOCK_TOP_Z - 0.070, 0.172, 0.95, SOCK, "Leg"),   # z 0.480, just clear
         # Sized against the shoe at its own height, which is what the
-        # nineteenth review's finding actually asks for: the shoe's half here is
-        # 0.210 x 0.95 x u(v 0.91) = 0.149, so 0.140 sits inside it without
-        # pinching the sock into the funnel a tighter value drew.
-        (0.400, 0.140, 0.95, SOCK, "Leg"),
+        # nineteenth review's finding actually asks for. ⚠️ AND IT MOVES WHEN
+        # THE SECTION MOVES: retracing the foxing ledge stepped the upper in
+        # from u 0.905 to 0.815, so the shoe's half here fell from 0.149 to
+        # 0.210 x 0.95 x u(v 0.912) = 0.114 and the 0.140 that used to sit
+        # inside it started poking through. This is the fourth time a shoe
+        # number has moved and left the sock behind, which is why the numbers
+        # are derived in the comment rather than remembered.
+        (0.400, 0.100, 0.95, SOCK, "Leg"),
         (0.280, 0.138, 0.95, SOCK, "Leg"),
         (0.150, 0.126, 0.95, SOCK, "Foot"),
     ]
@@ -1430,17 +1457,28 @@ SHOE_SECTION = [
     # reach at all — it topped out at 8% — so SHOE_HEIGHT_SCALE goes up with it.
     (0.000, 0.000, "midsole"),   # flat on the ground: a sole, not a tube bottom
     (0.620, 0.004, "midsole"),
-    (0.950, 0.050, "midsole"),   # the welt
-    (1.000, 0.230, "midsole"),   # the midsole at its widest — the flare
-    (0.995, 0.455, "midsole"),   # last cream row — a tall midsole, as drawn
-    (0.905, 0.486, "quarter"),   # THE FOXING LINE: the upper steps in 0.090
-    (0.890, 0.545, "quarter"),
-    (0.878, 0.598, "quarter"),   # the quarter panel ends
-    (0.868, 0.632, "collar"),    # cream vamp — the toe overlay and strap sit here
-    (0.828, 0.790, "collar"),
-    (0.790, 0.850, "collar"),
-    (0.746, 0.906, "quarter"),   # the navy ankle collar begins
-    (0.600, 0.962, "quarter"),
+    (0.950, 0.030, "midsole"),   # the welt
+    (1.000, 0.120, "midsole"),   # the midsole at its widest — the flare
+    (0.995, 0.235, "midsole"),   # last cream row — the cupsole's top edge
+    # ★ AND THE LEDGE WAS HALF ITS DRAWN DEPTH, which is why no amount of
+    # moving the colour boundary ever made a cupsole read. Measured on the
+    # concept's front-left shoe, taking the LEFT edge only (the right is behind
+    # the other foot): the outer edge sits at x 90 just above the step and x 80
+    # below it, on a shoe centred at 134 — so the upper is 44/54 = 0.815 of the
+    # sole's half-width. This stepped 0.995 -> 0.905, a 9% ledge against the
+    # drawing's 18.5%, and a 9% step under this ramp is a shading gradient
+    # rather than an edge.
+    #
+    # The shoe's own lateral extent is unaffected: u = 1.000 still lives on the
+    # midsole, which is what `SHOE_WIDTH_SCALE` was traced against.
+    (0.815, 0.262, "quarter"),   # THE FOXING LINE: the upper steps in 0.180
+    (0.806, 0.340, "quarter"),
+    (0.797, 0.415, "quarter"),   # the quarter panel ends
+    (0.789, 0.470, "collar"),    # cream vamp — the toe overlay and strap sit here
+    (0.765, 0.620, "collar"),
+    (0.733, 0.730, "collar"),
+    (0.692, 0.790, "quarter"),   # the navy ankle collar begins
+    (0.554, 0.930, "quarter"),
     (0.000, 1.000, "quarter"),   # instep centre, still the navy collar
 ]
 # ★ THE FAR LODS KEEP BOTH BAND EDGES AND DROP THE SHAPING ROWS BETWEEN THEM.
@@ -1451,13 +1489,13 @@ SHOE_SECTION = [
 # define where the navy starts and stops are in all three tiers.
 SHOE_SECTION_MID = [
     (0.000, 0.000, "midsole"),
-    (0.970, 0.070, "midsole"),
-    (0.995, 0.455, "midsole"),
-    (0.905, 0.486, "quarter"),
-    (0.878, 0.598, "quarter"),
-    (0.868, 0.632, "collar"),
-    (0.792, 0.876, "collar"),
-    (0.746, 0.906, "quarter"),
+    (0.970, 0.060, "midsole"),
+    (0.995, 0.235, "midsole"),
+    (0.815, 0.262, "quarter"),
+    (0.797, 0.415, "quarter"),
+    (0.789, 0.470, "collar"),
+    (0.733, 0.730, "collar"),
+    (0.692, 0.790, "quarter"),
     (0.000, 1.000, "quarter"),
 ]
 # ⚠️ LOD2 IS 1200 TRIANGLES AND THE SHOE PAYS 40 PER RING VERTEX (18 grid quads
@@ -1466,9 +1504,9 @@ SHOE_SECTION_MID = [
 # refused it, which is the budget working. Five entries is a ring of eight.
 SHOE_SECTION_LOW = [
     (0.000, 0.000, "midsole"),
-    (0.995, 0.455, "midsole"),
-    (0.905, 0.486, "quarter"),
-    (0.878, 0.598, "quarter"),
+    (0.995, 0.235, "midsole"),
+    (0.815, 0.262, "quarter"),
+    (0.797, 0.415, "quarter"),
     (0.000, 1.000, "quarter"),
 ]
 
@@ -1666,11 +1704,32 @@ SHOE_TOP_MAX = max(ztop for _, _, ztop, _ in SHOE_STATIONS)
 # AND height together rather than either separately: a toe overlay and a strap
 # that are their own geometry, laid over an unbroken quarter panel. That is the
 # next change here, and it is a bigger one than a band table.
+# ★ ROUND 32: THE STACK WAS RIGHT AND EVERY BOUNDARY WAS WRONG.
+#
+# Mapped the concept's own front-left shoe cell by cell — navy / cream / shaded
+# / background at 2px steps, x 86-190, y 740-824 — its four bands sit at these
+# fractions of shoe height (top row 748, ground row 819, so 71px):
+#
+#     cream midsole   0.00 - 0.24      navy quarter    0.25 - 0.41
+#     cream vamp      0.44 - 0.79      navy collar     0.80 - 1.00
+#
+# Delivered they ran 0.00-0.27, 0.27-0.64, 0.64-0.80, 0.80-1.00. The midsole and
+# the ankle collar were already right; the QUARTER was more than twice its drawn
+# height and ate the vamp, which is why the board reads as one cream loaf with a
+# navy stripe belted round its middle instead of a sneaker.
+#
+# ⚠️ AND THE SECTION'S FOXING STEP WAS SOMEWHERE ELSE ENTIRELY. Colour is keyed
+# on absolute height (this table) and shape on the section's own `v`, which is
+# the right split — but nothing kept them in register. The cream midsole ended
+# at height 0.27 while the geometric ledge that IS the top of a cupsole sat at
+# section v 0.486, i.e. height 0.35-0.49 depending on the station. So the board
+# drew a colour change part-way up a smooth wall and a ledge with no colour
+# change on it, and neither read as a sole. Both now land at ~0.24.
 SHOE_BANDS = [
     (0.000, "midsole"),
-    (0.270, "quarter"),
-    (0.640, "collar"),
-    (0.800, "quarter"),
+    (0.245, "quarter"),
+    (0.425, "collar"),
+    (0.795, "quarter"),
 ]
 
 
@@ -1859,8 +1918,11 @@ def build_shoe(builder: MeshBuilder, side: int, detail: int) -> None:
             # being kept in step by hand.
             if band_name == "quarter" and v >= toe_cap_v_low(y_unscaled):
                 band = SOLE                # under the cream toe cap
-            elif band_name == "quarter" and -0.30 < y < 0.15 and 0.44 <= height <= 0.54:
-                band = SOLE                # under the cream strap
+            # (The painted "under the strap" hint that used to sit here keyed on
+            # height 0.44-0.54 while the quarter ran to 0.64. Retraced, the
+            # quarter ends at 0.425, so that band is the cream vamp already and
+            # the branch could never fire again. Removed rather than left as a
+            # condition that reads live and is not.)
             elif band_name == "quarter":
                 band = SHOE                # the navy quarter, unbroken on the flanks
             elif band_name == "midsole":
