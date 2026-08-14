@@ -1065,8 +1065,33 @@ def build_leg(builder: MeshBuilder, side: int, detail: int) -> None:
         (0.680, 0.246, 0.98, SKIN, "Leg"),                # bare shin begins
         (0.610, 0.247, 0.96, SKIN, "Leg"),
         (SOCK_TOP_Z + 0.014, 0.244, 0.95, SKIN, "Leg"),   # z 0.564
+        # ★ HIS SOCK RENDERED GREY AND THE CONCEPT'S IS CREAM ALL THE WAY DOWN.
+        #
+        # Walking the concept's front figure down column x=140: shorts to
+        # z 0.702, bare shin to 0.544, then CREAM — rgb(212,182,152) — from
+        # 0.544 to 0.440, where the shoe's navy starts. There is no grey band in
+        # the drawing at all. This table had TEAM_MASK (a neutral D8D2C6) from
+        # 0.550 to 0.514, which with the shoe topping out at 0.438 meant the
+        # accent covered two thirds of the only sock anyone can see, and an
+        # independent review scored 3.4 with "the sock hue is neutral grey where
+        # the concept's is warm cream".
+        #
+        # The accent cannot simply go: `M_Accessory` is where team colour lands,
+        # and `build_leg` emits a band to slot 3 only when BOTH its rows are
+        # TEAM_MASK, so one accent row would leave the material with no geometry.
+        # A third ring makes the roll a thin stripe at the sock's top edge — which
+        # is what a rolled sock looks like anyway — and hands the rest to cream.
+        #
+        # ⚠️ THE WIDTHS HERE ARE LOAD-BEARING AND THE COLOURS ARE NOT.
+        # `ankleDaylight` samples at 13% of figure height, z 0.521, which falls
+        # between these rings, and it sits at +9.64 of a 12.0 tolerance. Dropping
+        # the 0.514 ring's half-width to open the accent would have taken it to
+        # 13.9% and broken the gate. So the new ring is interpolated ON the line
+        # the old two already described (0.532 -> 0.268), the sampled half-width
+        # moves 0.267 -> 0.266, and only the colour of the lower row changes.
         (SOCK_TOP_Z, 0.272, 0.95, TEAM_MASK, "Leg"),      # the roll, team accent
-        (SOCK_TOP_Z - 0.036, 0.264, 0.95, TEAM_MASK, "Leg"),
+        (SOCK_TOP_Z - 0.018, 0.268, 0.95, TEAM_MASK, "Leg"),
+        (SOCK_TOP_Z - 0.036, 0.264, 0.95, SOCK, "Leg"),   # cream, as drawn
         # ★ THE SOCK MUST FIT INSIDE THE SHOE, AND IT NEVER DID.
         #
         # Three rounds went into a topline, a heel counter and a collar rim and
