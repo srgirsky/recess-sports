@@ -34,7 +34,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from math import cos, pi, sin
 
-from .mesh import MeshBuilder
+from .mesh import MeshBuilder, thin_for_lod
 from .rig import ARM_Z, limb_bone
 
 
@@ -92,8 +92,7 @@ def build_arm(
     """
     sides = 14 if detail >= 2 else 6
     stations = list(spec.stations)
-    if detail < 1:
-        stations = [station for index, station in enumerate(stations) if index % 2 == 0 or index == len(stations) - 1]
+    stations = thin_for_lod(stations, detail)
     rows: list[list[int]] = []
     # ★ THE STATION TABLE MUST ASCEND, AND NOTHING USED TO CHECK. `grid` stitches
     # rows in the order it is handed them and cannot know one belongs earlier, so

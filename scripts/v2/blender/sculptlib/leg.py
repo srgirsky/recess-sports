@@ -34,7 +34,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from math import cos, pi, sin
 
-from .mesh import MeshBuilder
+from .mesh import MeshBuilder, thin_for_lod
 from .rig import (
     LEG_ANKLE_X, LEG_ANKLE_Z, LEG_HIP_X, LEG_HIP_Z, LEG_KNEE_X, LEG_KNEE_Z,
     limb_bone,
@@ -81,8 +81,7 @@ def build_leg(
     """Shorts, bare shin and sock as one stitched surface."""
     sides = 14 if detail >= 2 else 6
     stations = list(spec.stations)
-    if detail < 1:
-        stations = [station for index, station in enumerate(stations) if index % 2 == 0 or index == len(stations) - 1]
+    stations = thin_for_lod(stations, detail)
     rows: list[list[int]] = []
     materials: list[int] = []
     for z, radius, depth, colour, bone in stations:

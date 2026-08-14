@@ -53,7 +53,7 @@ from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgb
 from sculptlib.ear import EarSpec, build_ear
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
-from sculptlib.mesh import MeshBuilder
+from sculptlib.mesh import MeshBuilder, thin_for_lod
 from sculptlib.palette import Palette
 from sculptlib.rig import (
     ARM_ELBOW_X, ARM_SHOULDER_X, ARM_WRIST_X, ARM_Z, LEG_ANKLE_Z, limb_bone,
@@ -469,11 +469,7 @@ def skull_surface_x(y: float, z: float) -> float:
 # Depth comes from the profile view, which runs 0.64ft at the shoulder to 1.20ft
 # at the hem — his tee is baggiest at the bottom, which is what "oversized"
 # means on a body this shape.
-def torso_levels(detail: int) -> list[tuple[float, float, float, str]]:
-    """The tee's rings, thinned for the far LOD."""
-    if detail >= 1:
-        return TORSO_LEVELS
-    return [level for index, level in enumerate(TORSO_LEVELS) if index % 2 == 0 or index == len(TORSO_LEVELS) - 1]
+
 
 
 # ★ THE WIDTH COLUMN IS TRACED OFF THE CONCEPT NOW, AND FOR SEVENTEEN ROUNDS IT
@@ -1607,7 +1603,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     # 1232 against a 1200 budget, which is the budget gate working. At LOD2 the
     # character is a 40px sprite and a 0.03ft rib is invisible, so the levels
     # collapse to the shape and the bands survive only as colour.
-    builder.loft(torso_levels(detail), 1, SHIRT, segments)
+    builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, segments)
 
     for side in (1, -1):
         build_arm(builder, side, detail, spec=TANK_ARM)
