@@ -11,6 +11,37 @@
 // stops): one upper-left warm key light, cool navy-mixed shadow. That
 // continuity is why the 3D characters sit on the 2D-derived field texture
 // without looking pasted on.
+//
+// ★ OPEN, ROSTER-WIDE: THE FACE ATLAS SURVIVES BLENDER AND DIES HERE.
+//
+// Not a to-do — a diagnosis, recorded so the next person does not re-derive it.
+// A character's eyes render with NO SCLERA at runtime: they read as two solid
+// dark blobs, which deletes most of what a face does at hero scale and holds
+// rubric 3.5 down.
+//
+// The asset is not the problem, and that took several rounds to establish:
+//   · the atlas embedded in `kid_tank.glb` is byte-identical to
+//     `assets/v2/source/tank-face-atlas.png` — 0 differing pixels;
+//   · the atlas itself carries the sclera at rgb(255, 250, 240);
+//   · Blender renders the SAME GLB with the sclera plainly there — the
+//     brightest neutral pixel in the eye band of `tank-front-review.png` is
+//     rgb(214, 212, 210);
+//   · the runtime renders the same band with a brightest neutral pixel of
+//     rgb(121, 109, 97), which is skin.
+//
+// So the loss is in this file's shading path — the 4-step `TOON_STEPS` ramp and
+// the `<map_fragment>` injection that swaps albedo inside the face UV island —
+// not in the spec, the atlas, the exporter or the GLB. Independent reviews have
+// also measured the knock-on: `cheer` and `tongue` differ by 5.59% of cell
+// pixels in the source atlas and by 1.6% on the model, and the teeth never
+// appear at all.
+//
+// ⚠️ WHOEVER FIXES IT SHOULD KNOW WHAT IT COSTS. This material is shared by all
+// thirty characters, including approved Junebug, whose approval is pinned to an
+// evidence hash — so changing the ramp re-renders an approved asset and is a
+// human's call, not an incidental repair. Hypotheses already eliminated by live
+// A/B: a brighter swatch, iris/aperture geometry, atlas content, the exported
+// texture, mipmap filtering (pixel-identical), and ACES tone mapping (reverted).
 // ---------------------------------------------------------------------------
 
 import {
