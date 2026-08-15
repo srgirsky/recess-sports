@@ -433,6 +433,82 @@ export const RECIPES = {
     bands: {},
   },
 
+  // ★ LOU'S GOLD AND CREAM STRIPES SIT ONE WARM STEP APART and his deep
+  // brown skin is the roster's darkest — the skin/hair boundary needs the
+  // declared anchors (his buzz cut clusters two steps from his own shadow
+  // tone), and the stripe pair is declared as ONE tee lane.
+  big_lou: {
+    slug: 'big-lou',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#944b25' },
+      hair: { hex: '#030202' },
+      tee: { hex: '#e8b04a' },
+      shorts: { hex: '#20242e' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
+  // ★ ZOOM IS SEATED IN EVERY VIEW — the analyser scales each figure to
+  // 4ft, so his ftPerPx treats the SEATED height as the reference and all
+  // absolute z reads are chair-frame, not standing-frame. Percent-of-head
+  // landmarks stay valid; nothing else does. His navy tee and navy shorts
+  // sit one cluster step apart; the teal trim and the blue push rims are
+  // the two saturated anchors.
+  wheelchair_ace: {
+    slug: 'zoom',
+    // The 3q, profile and action figures MERGE through their overlapping
+    // wheels — the sheet splits into three regions and the middle one is
+    // only silhouette-and-colour (declared action).
+    views: ['front', 'action', 'back'],
+    // Tee, trim and shorts hold one navy cluster on this sheet, and the
+    // blue push rims blend into the tire ink at cluster scale — only the
+    // three separable lanes are declared.
+    materials: {
+      skin: { hex: '#e8934e' },
+      hair: { hex: '#24201e' },
+      tee: { hex: '#1f3960' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
+  // ★ THEO'S CAP TEAL AND JACKET TEAL ARE ONE CLUSTER (#2F5E6F vs #2B5260,
+  // one tone step) and his cap panel, tee, sleeves and socks all share the
+  // cream cluster — boundaries between them need geometry, not colour, so
+  // the recipe declares the two lanes and nothing finer.
+  calls_shot: {
+    slug: 'theo',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#ee9f68' },
+      hair: { hex: '#1d0f06' },
+      jacket: { hex: '#2b5260' },
+      cream: { hex: '#f2dbbc' },
+      shorts: { hex: '#383a40' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
+  // ★ MIMI'S HAIR AND SHOE-RUST BOTH NEIGHBOUR HER HOODIE'S SHADOW TONES —
+  // the deep chocolate curls (#2b1608) and the rust high-top quarters sit one
+  // cluster step from the hoodie's own shaded reds, so hair/hoodie and
+  // shoe/hoodie boundaries need the declared anchors, not darkest-wins.
+  mimi_mash: {
+    slug: 'mimi-mash',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#f2914f' },
+      hair: { hex: '#2b1608' },
+      hoodie: { hex: '#d93417' },
+      jeans: { hex: '#3b4a65' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
   // ★ CRICKET HAS THE ROSTER'S FAIREST SKIN (#FBC38B) — it clusters two
   // steps from the backdrop cream, so skin/backdrop boundaries need the
   // tone ruler, not luminance. His rolled cuffs share the cream cluster.

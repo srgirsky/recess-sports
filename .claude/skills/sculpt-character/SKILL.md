@@ -540,3 +540,45 @@ Each of these cost at least one blind round. They are constraints, not history.
   at the batch-end full run. Re-cite every copied table from the kid's own
   sheet before first build (a wrong-value probe citation makes the lint print
   the sheet's actual).
+
+## Lessons batch 6 paid for (Mimi, Theo, Zoom, Big Lou, Tank round 31)
+
+- **The runtime TEAM-TINTS everything on M_Accessory — author the accent as
+  the smallest surface that should change colour.** A full two-row denim
+  cuff on slot 3 rendered as an olive band and blocked a round; the
+  convention is ONE thin ring (Grizz's sock roll, Sprout's stripe, Chip's
+  panel). When a critic reports a colour that "no lighting could produce",
+  check the slot before the palette.
+- **Crisp-stripe inserts within ~0.008 of an existing loft row make
+  degenerate sliver bands** whose unstable normals render as hard-edged
+  backface slits at runtime (Lou's "navy crescents" — insert 2.419 beside
+  row 2.420). Dedupe inserts against the base table. Chromatically-BLUE
+  dark pixels on warm cloth = backface void, never shading.
+- **A failed export leaves the OLD GLB for every downstream step.** The
+  size/LOD budget refusal does not stop `review:character-fidelity` from
+  re-rendering the stale model — check the export's ✓ line before
+  believing any board or measure that follows (the pipes-swallow lesson,
+  now with budgets).
+- **Pre-convention blends carry stray meshes** (proxy shells, an
+  Icosphere) that export beside the LODs and eat the 400KB budget
+  invisibly — purge EVERY mesh object in main(), not just the LOD roots.
+- **A seated kid breaks the instrument's standing assumptions in one
+  family**: the bottom-9% "shoe band" lands on the wheels, the concept's
+  dominant tone is its own backdrop through the drawn spokes (the
+  flood-fill pocket class), and 4ft-scaling makes the sheet's z frame
+  chair-relative. Record the family OFF-with-measured-cause; only
+  percent-of-head landmarks carry. Chair + tucked legs ride Root (the
+  proxy's proven approach) so the shared skeleton fits without a second
+  rig; a no-earLine entry follows Zippy's precedent when a crown owns the
+  widest rows.
+- **The bill/brim reach is the TIP's absolute forward y** — a reach less
+  than the dome's own front projects NO bill (Theo's "batting helmet").
+  And an open jacket's defect can be the opening's WIDTH, not its side:
+  probe by rotating start ONLY after re-deriving which arc the gap spans,
+  and remember the sheet wants the tee readable at the centre.
+- **A chunky kid amplifies every shear**: bigger arm radii turn the
+  shoulder-blend steps into visible tears (add stations, smaller deltas),
+  the sock's own table must taper monotonically inside the shoe zone or
+  it pierces the upper (Tank's 30-round drip was a 0.100→0.138 bulge),
+  and the analyser refuses the chin-merges-into-neck pinch — hand-set the
+  neck row and say so in the featurelatitude entry.

@@ -90,7 +90,6 @@ const ANTIALIAS_ALLOWANCE = 8;
 // pass is a question for the single-character PR the plan gives him; until then
 // this holds the line rather than pretending to judge it.
 const DEBT = {
-  'mimi-mash': 400, // measured 383 — vertex-deformed proxy, rebuild pending
   zoom: 9600,       // measured 9525 — proxy, plus genuine wheel interiors
 };
 

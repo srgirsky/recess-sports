@@ -1077,8 +1077,8 @@ LEG_STATIONS = [
     # number has moved and left the sock behind, which is why the numbers
     # are derived in the comment rather than remembered.
     (0.400, 0.100, 0.95, SOCK, "Leg"),
-    (0.280, 0.138, 0.95, SOCK, "Leg"),
-    (0.150, 0.126, 0.95, SOCK, "Foot"),
+    (0.280, 0.094, 0.95, SOCK, "Leg"),
+    (0.150, 0.088, 0.95, SOCK, "Foot"),
 ]
 
 
@@ -1566,7 +1566,7 @@ TANK_SHOE = ShoeSpec(
     heel_counter_edge=heel_counter_v_low,
     collar=(0.020, 0.150),
     straps=((-0.170, -0.120), (-0.065, -0.015)),
-    strap_arc_min=0.52,
+    strap_arc_min=0.30,
     heel_point=(0.286, 0.126 + 0.030),
     toe_point=(-0.470, 0.050 + 0.052),
     upper=SHOE,
