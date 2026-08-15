@@ -179,6 +179,23 @@ const TURNAROUND = {
     span: { crownZ: 3.99, neckZ: 2.60 },
     tolerance: 2.5,
   },
+  // ★ ZIPPY HAS NO earLine TARGET although her ears ARE drawn: her paired
+  // pigtails are the widest thing at every row of the ear zone, so the
+  // widest-row trace reads hair on both the concept and any delivery — there
+  // is no honest number to gate. Her EarSpec is placed off the profile view
+  // (ear centred ~z 3.17) and reviewed by eye. Bounded traces on
+  // zippy-turnaround.png (crown row 199 = the pigtail spouts' top, neck row
+  // 383): brow bands rows 268-283 (centroid ~275), the big eyes rows 294-320
+  // centred row 307 (the spec refuses the eye band — the fringe merges with
+  // it), open-grin mouth rows 347-361 centred ~355.
+  zippy: {
+    slug: 'zippy',
+    brow: 41.3,
+    eye: 58.7,
+    mouth: 85.0,
+    span: { crownZ: 3.99, neckZ: 2.84 },
+    tolerance: 2.5,
+  },
 };
 
 function constantsFor(slug, { needsEar = true } = {}) {

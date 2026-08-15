@@ -180,6 +180,21 @@
         "red-striped crew socks",
         "confident smirk"
       ]
+    },
+    "zippy": {
+      "source": "zippy-pilot.blend",
+      "sourceSha256": "034502695b1ded2f431c3a8dbad6750c3beeb43024d79691ec90b1e7c640c84b",
+      "concept": "zippy-turnaround.png",
+      "conceptSha256": "5a6ad80e5d6ad18e455b6c4ae56447cdcab1a14fa2eccf4ebd8a7f72a611fb31",
+      "output": "kid_zippy.glb",
+      "outputSha256": "a8559a6b1799aa2c80078dc4cec14816a77163c9c0d535702dde60d075d5e5ba",
+      "definingTraits": [
+        "black side pigtails",
+        "cream headband",
+        "two-tone pink striped tee",
+        "navy dolphin shorts",
+        "huge happy grin"
+      ]
     }
   }
 }

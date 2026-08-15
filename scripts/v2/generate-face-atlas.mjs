@@ -421,6 +421,17 @@ function face(name, index) {
       .join('');
     freckles = dots(fL, 1) + dots(fR, -1);
   }
+  // ★ `mouthScale` grows the whole mouth mark about its own centre. Zippy is
+  // why: her registry identity is a "huge happy grin" and the shared cell
+  // geometry read as a thin smile at draft-card distance. Default 1 keeps
+  // every existing atlas byte-identical — Junebug's approval hash included.
+  const mScale = spec.mouthScale ?? 1;
+  if (mScale !== 1) {
+    const closed = name === 'neutral' || name === 'determined' || name === 'angry'
+      || name === 'worried' || name === 'upset' || blink || sleepy || wink;
+    const cy = closed ? my : 100;
+    lips = `<g transform="translate(64 ${cy}) scale(${mScale}) translate(-64 -${cy})">${lips}</g>`;
+  }
   return `${brows}${eyes}${freckles}${lips}`;
 }
 

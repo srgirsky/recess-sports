@@ -91,7 +91,15 @@
     },
     "zippy": {
       "name": "Zippy Kwan",
-      "slug": "zippy"
+      "slug": "zippy",
+      "source": "zippy-pilot.blend",
+      "traits": [
+        "black side pigtails",
+        "cream headband",
+        "two-tone pink striped tee",
+        "navy dolphin shorts",
+        "huge happy grin"
+      ]
     },
     "ace_kid": {
       "name": "Ace",

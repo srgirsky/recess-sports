@@ -169,6 +169,29 @@ export const RECIPES = {
     sweeps: {},
     bands: {},
   },
+
+  // ★ ZIPPY'S TEE IS THE FIRST STRIPE WHOSE BOTH TONES CLUSTER — dark pink
+  // #f25c74 and light pink #fa939c are separate clusters, so for once the
+  // stripe chart could be checked by colour rather than only geometry. Her
+  // paired pigtails are the widest thing on the sheet at their own rows, so
+  // any width metric near z 3.0-3.8 is hair, not head. The cream headband and
+  // sock stripes share the backdrop-cream cluster and are geometry traces.
+  // Her lit SKIN and the light pink resolve to the same cluster (the resolver
+  // refuses the pair as indistinct-materials — the honest answer, kept), so
+  // every skin/teeLight boundary is a geometry trace like Grizz's tee.
+  zippy: {
+    slug: 'zippy',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#eda05e' },
+      hair: { hex: '#1b140c' },
+      shorts: { hex: '#2a2e39' },
+      teeDark: { hex: '#f25c74' },
+      teeLight: { hex: '#fa939c' },
+    },
+    sweeps: {},
+    bands: {},
+  },
 };
 
 export const RECIPE_IDS = Object.keys(RECIPES);

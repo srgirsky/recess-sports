@@ -290,3 +290,30 @@ Each of these cost at least one blind round. They are constraints, not history.
 - **When the LOD0 budget refuses, trim tessellation before geometry:** torso
   24→19-20 segments, scalp 20→16, spike sides 5→4, one interpolable shape row
   — each is invisible at game scale; a lost spike or stripe is not.
+
+## Lessons Zippy paid for (pigtails, and the runtime is the evidence)
+
+- **`tube`'s `groove` subtracts ABSOLUTELY from each ring radius.** A groove
+  larger than the smallest radius drives rings negative and turns the tube
+  inside-out — Zippy's pigtails rendered as slate backface blades at runtime
+  while the double-sided board showed rounded brown masses. Keep groove well
+  under `min(radii)` (hers: 0.020 against a 0.025 tip). The broken geometry
+  had also been accidentally WIDENING her measured head silhouette — fixing
+  it un-merged the pigtails from the crown and the aspect metric caught it.
+- **Score the RUNTIME captures, not the board.** Three of Zippy's four
+  first-round defects (slate pigtails, invisible headband, crotch gap) were
+  invisible or flattering on the board. The critic prompt now says runtime
+  first; the board settles measured numbers only.
+- **A proud accessory must ride the HOST SURFACE, not the skull.** The
+  headband's arc was authored at skull-ish y and sat INSIDE the hair cap —
+  invisible everywhere. Compute each arc point as (cap surface + 0.02).
+- **Paired hair masses must MERGE with the crown if the sheet's silhouette
+  merges** — the head-box width metric reads the central run, and floating
+  pigtails 0.1ft off the head read aspect 1.18 against the sheet's 1.53.
+- **`mouthScale` exists now** (generate-face-atlas): scales the whole mouth
+  mark about its centre, default 1 keeps every existing atlas byte-identical.
+  Zippy's "huge happy grin" ships at 1.3; use it when a kid's identity IS the
+  mouth.
+- **Wrap-around trim (dolphin piping) is two consecutive SOLE-coloured
+  stations**, same pattern as every proud band; and an inseam carve deeper
+  than ~0.03 splits short-shorts into two boxes at runtime.

@@ -478,4 +478,41 @@ export const FACE_SPECS = {
     mouthBow: -1.0,
     mouthDrop: -2.5,
   },
+
+  // Zippy. The roster's biggest grin — her NEUTRAL is drawn mid-laugh, so the
+  // resting mouth is a wide high-cornered smile. Big shining eyes under a
+  // straight fringe, gently arched brows. Feature rows traced on her sheet
+  // (spec refuses her eye band — the fringe merges with it): brow bands rows
+  // 268-283 (41.3% of head), eyes rows 294-320 centred 58.7%, open smile rows
+  // 347-361 (85%). Cells through her island (0.92, -1.531, 2.438).
+  zippy: {
+    ink: '#150b04',
+    mouthInk: '#8a4030',
+    sclera: '#fffdf2',
+    irisBrown: '#4a2c12',
+    pupil: '#170d06',
+    white: '#fff8ea',
+    mouth: '#7a3423',
+    mouthDark: '#552114',
+    tongue: '#e57f86',
+    lowerLip: '#f2a066',
+    eyeHalfW: 19,
+    eyeHalfH: 13,
+    irisR: 11.5,
+    irisInward: 3,
+    eyeX: [28, 100],
+    eyeY: 50,
+    browThick: 4.6,
+    browThin: 2.2,
+    browHalf: 13,
+    browX: [32, 96],
+    browY: 24,
+    browTilt: 0,
+    mouthY: 87,
+    // The laugh: corners rise well above the centre, widest on the roster,
+    // and the whole mark is scaled up — her identity is the huge grin.
+    mouthBow: -1.5,
+    mouthDrop: -4.6,
+    mouthScale: 1.3,
+  },
 };
