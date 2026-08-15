@@ -140,6 +140,27 @@ const TURNAROUND = {
     span: { crownZ: 3.99, neckZ: 2.48 },
     tolerance: 2.5,
   },
+  // ★ BENDY BAO'S EYES ARE BEHIND GLASSES, and the spec REFUSES his eye band
+  // (merged-region: the wire frames fuse with the sideburn columns into one
+  // region as wide as the face). These are the bounded probes the refusal asks
+  // for, traced on bendy-bao-turnaround.png (bun apex row 110, neck row 354):
+  // brow bands rows 227-237 paired about cx (centroid row 232); the lens rings
+  // span rows 249-287 with their centres — which is where the eyes ARE — at
+  // row 262; the smile is rows 302-304 (corners 172-187 / 247-261, symmetric
+  // about cx 216). The analyser's own "brow" at 84.9% is the chin-crease
+  // singles at rows 315-320 misread as a paired band, and its "mouth" at 68.4%
+  // is the frames' lower arc — both recorded in sculpt-bendy-bao-source.py's
+  // FACE_ISLAND note. His crown is the bun apex, not the skull top, so like
+  // grizz he declares the span the ratios were measured against.
+  bend_it: {
+    slug: 'bendy-bao',
+    brow: 50.0,
+    eye: 62.3,
+    mouth: 79.0,
+    earLine: 71.3,
+    span: { crownZ: 3.99, neckZ: 2.49 },
+    tolerance: 2.5,
+  },
 };
 
 function constantsFor(slug, { needsEar = true } = {}) {

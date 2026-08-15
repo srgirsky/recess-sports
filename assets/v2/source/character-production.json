@@ -150,6 +150,21 @@
         "freckled bright grin",
         "striped socks bare knees"
       ]
+    },
+    "bend_it": {
+      "source": "bendy-bao-pilot.blend",
+      "sourceSha256": "cfbe4cb035a3c4b287082fb899d14d560b6655759b34fdfc9859b7d3f96dda6c",
+      "concept": "bendy-bao-turnaround.png",
+      "conceptSha256": "e0376bf5bc736b84244455be0e09cb93d94907b1dfbaad47c2eb19f9641a228a",
+      "output": "kid_bend_it.glb",
+      "outputSha256": "87357124414c575803f857eee58d7d7ebcfa8e2d23a1b064ecdb17ad0cd8a1e2",
+      "definingTraits": [
+        "swept top bun",
+        "round wire glasses",
+        "teal striped tee",
+        "navy cargo shorts",
+        "gentle knowing smile"
+      ]
     }
   }
 }

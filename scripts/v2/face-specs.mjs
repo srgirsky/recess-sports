@@ -404,4 +404,42 @@ export const FACE_SPECS = {
     freckles: true,
     freckleTone: '#aa5f28',
   },
+
+  // Bendy Bao. Round wire glasses (GEOMETRY, in his sculpt — never drawn
+  // here), thick level brows above them, calm eyes behind the lenses, and a
+  // gentle knowing smile. Feature rows traced on his sheet: brow bands rows
+  // 227-237 (50% of head), lens centres row 262 (62.3% — the spec REFUSES his
+  // eye band, the frames merge with the sideburns), smile rows 302-304 (79%).
+  // Cells through his island (0.92, -1.25, 2.00). The eye marks must sit
+  // INSIDE the lens rings (radius 0.128ft about ±0.138ft), so they are
+  // moderate and round rather than roster-huge.
+  bend_it: {
+    ink: '#120903',
+    mouthInk: '#7a4023',
+    sclera: '#fffcf0',
+    irisBrown: '#3a2210',
+    pupil: '#150d06',
+    white: '#fff6e4',
+    mouth: '#6e2f1c',
+    mouthDark: '#4c1d10',
+    tongue: '#e07980',
+    lowerLip: '#efa065',
+    eyeHalfW: 13,
+    eyeHalfH: 9,
+    irisR: 8,
+    irisInward: 2,
+    eyeX: [36, 92],
+    eyeY: 50,
+    // The thick brows are his boldest mark, level — calm, not cross.
+    browThick: 5.0,
+    browThin: 2.8,
+    browHalf: 13,
+    browX: [32, 96],
+    browY: 26,
+    browTilt: 0,
+    mouthY: 81,
+    // The knowing smile: a gentle rise, softer than Chip's grin.
+    mouthBow: -1.0,
+    mouthDrop: -3.0,
+  },
 };

@@ -115,7 +115,15 @@
     },
     "bend_it": {
       "name": "Bendy Bao",
-      "slug": "bendy-bao"
+      "slug": "bendy-bao",
+      "source": "bendy-bao-pilot.blend",
+      "traits": [
+        "swept top bun",
+        "round wire glasses",
+        "teal striped tee",
+        "navy cargo shorts",
+        "gentle knowing smile"
+      ]
     },
     "noodle": {
       "name": "Noodle",

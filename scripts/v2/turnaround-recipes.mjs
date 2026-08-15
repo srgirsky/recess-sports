@@ -128,6 +128,28 @@ export const RECIPES = {
     sweeps: {},
     bands: {},
   },
+
+  // ★ BENDY BAO'S TEE IS STRIPED, AND ONLY ONE STRIPE HAS A CLUSTER. The teal
+  // bands cluster cleanly (#8cac9a) but the cream ground sits inside the
+  // BACKDROP's own cluster, so a cream anchor would resolve to the paper — the
+  // stripe chart in the sculpt header is a geometry trace of the teal runs, and
+  // there is deliberately no torso sweep (a teal sweep would report the tee's
+  // width only at stripe heights and read as a refusal storm at the cream
+  // ones). Skin #eb9553 with shadow #ab5c24 is one warm family — only the lit
+  // value is declared. His glasses' wire is drawn at outline darkness and is
+  // never declared as a material.
+  bend_it: {
+    slug: 'bendy-bao',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#eb9553' },
+      hair: { hex: '#33251a' },
+      shorts: { hex: '#2a2e3b' },
+      tee: { hex: '#8cac9a' },
+    },
+    sweeps: {},
+    bands: {},
+  },
 };
 
 export const RECIPE_IDS = Object.keys(RECIPES);

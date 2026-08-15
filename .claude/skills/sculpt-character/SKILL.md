@@ -185,3 +185,82 @@ declare paired parts in the recipe. `runidentity.lint.test.js` is the gate.
 - **Do not claim a fix you have not measured from the artefact.** A full-page
   screenshot compared against a tight crop is not evidence; that mistake shipped
   an elbow that was never baked.
+
+## Lessons the first five sculpts paid for
+
+Each of these cost at least one blind round. They are constraints, not history.
+
+- **Probe which way the profile view faces before tracing it.** Grizz's first
+  face trace ran down the BACK of his afro because the sheet's profile faces
+  +x; three sheets since have faced the same way, none is guaranteed to.
+- **A "touching" read can be a flood-fill artifact.** Enclosed backdrop
+  pockets (between legs, between shoes) count as figure, so `ankleDaylight`'s
+  concept-side 0.00 usually means CONTAINMENT, not contact. Measure the true
+  gap and record it; never fatten the mesh past the drawing to chase the
+  number (the funnel-sock mistake).
+- **`skull_front_y` must model the face flattening.** `head_surface` scales
+  the front depth by 0.88 − 0.11·frontness², so a hair tuck clamped to the
+  raw ellipsoid floats IN FRONT of the rendered face and paints it
+  hair-colour. Chip's script carries the correct clamp (plus the no-skull
+  sentinel from Bubbles); copy it, and port it when polishing the earlier
+  hair characters.
+- **Copy `loft`'s exact winding for custom ring surfaces** (ascending rows,
+  its quad order, its cap fans). Grizz's afro shipped inside-out from a
+  by-eye copy.
+- **Only team-tintable geometry may live on M_Accessory.** The runtime tints
+  the whole slot: Chip's navy cap crown rendered olive until only the front
+  panel stayed on slot 3. Accents so far: Tank shoe collar, Grizz sock roll,
+  Sprout cuff stripe, Bubbles scrunchie, Chip cap panel.
+- **The board ramp delivers ≈ authored/1.2 with chroma compressed.** Deep
+  skin authored at the sheet's own value falls below `isSkin`'s floor
+  (Grizz); a panel that must classify as its concept tone needs the
+  concept's CHROMATICITY at ~1.3× spread, not 1.2× brightness (Sprout's
+  canvas, twice).
+- **Read the classifier's own tone pair before authoring shoe colours** —
+  `measure:fidelity` prints them. Two kids' "second tone" turned out to be
+  warm shading (a tan), not the panel colour anyone assumed, and Bubbles'
+  "pink" cost two wrong rounds.
+- **The critic loop:** measure → fresh independent critic (a new agent per
+  round, scores verbatim into the record) → fix the named findings → repeat.
+  Promote at all-4s; when a blocker oscillates across two critics without net
+  movement, record `needs-polish` with `polishFindings` and move to the next
+  kid — Tank's thirty rounds are the cautionary tale.
+
+## Lessons Bendy Bao paid for (glasses, stripes, and two silent inversions)
+
+- **`MeshBuilder.tube`'s third positional arg is the MATERIAL index.** Bendy's
+  glasses passed `3` there thinking it was sides — slot 3 is M_Accessory, so
+  the runtime team-tinted the frames navy and the temple arms read as backpack
+  straps in every capture, while the board looked fine. Name the argument or
+  count the positions; anything on slot 3 WILL be tinted.
+- **Ring-loft level tables must be strictly DESCENDING in z, and the loft
+  should assert it.** An ascending table survives `reversed()` upside-down:
+  every quad's winding inverts, the offline board (double-sided) hides it, and
+  the runtime lights the mass as a slate-grey void — Bendy's bun, one full
+  critic round to find. The assert in `sculpt-bendy-bao-source.py`'s
+  `ring_loft_hair` is the pattern; carry it into any lifted hair builder.
+- **The board renders double-sided; the runtime does not.** Any "wrong colour
+  at runtime, right on the board" split is a normals/winding suspect first
+  and a palette suspect second. Check the RUNTIME captures for colour-split
+  masses before shipping — the critic sampling pixels off
+  `*-runtime-hero.png` is what caught both of Bendy's.
+- **`npm run <x> 2>&1 | tail` swallows the exit code** — the `&&` chain sees
+  `tail`'s success, so an export refusal (LOD budget, GLB size) lets every
+  downstream step run against the STALE GLB and the round measures nothing.
+  Check for the export's own ✓ line before trusting anything after it.
+- **Glasses construction (first done here, for Noodle/The Prof/Gizmo):** two
+  cyclic wire tubes on the hair slot, lens centres at the sheet's eye line,
+  0.030 proud of the cheek — at 0.050 the profile encloses a see-through
+  pocket between rim, cheek and temple arm, and the silhouette gate counts
+  it. Bow the temple arms OUTBOARD along the skull to the ear root; run
+  straight back at the lens's own x they are buried and invisible. Atlas eyes
+  stay moderate so they sit inside the rings.
+- **A striped garment is the loft's own `color_fn`** — trace the band chart
+  off the sheet's cluster rows and paint by z; no second surface, no slot
+  games. If the sheet runs the lowest stripe to the hem, the hem band is
+  stripe-coloured too.
+- **An eye landmark refusal is normal for glasses kids.** The frames merge
+  with the sideburns into one region and the analyser refuses; the lens-ring
+  CENTRES are the eye line. Trace them by hand, record the bounded probes in
+  the featurelatitude entry, and expect the analyser's own brow/mouth picks
+  to be frame artifacts.
