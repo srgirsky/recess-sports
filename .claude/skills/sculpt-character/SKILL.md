@@ -317,3 +317,31 @@ Each of these cost at least one blind round. They are constraints, not history.
 - **Wrap-around trim (dolphin piping) is two consecutive SOLE-coloured
   stations**, same pattern as every proud band; and an inseam carve deeper
   than ~0.03 splits short-shorts into two boxes at runtime.
+
+## Lessons Noodle paid for (the bald head is a colour instrument)
+
+- **Skin is chroma-authored like any classified panel.** A bald head makes
+  `visible face` nearly all skin, and the ramp's chroma compression can pull
+  the whole dome out of `isSkin`'s warmth band — Noodle's first build
+  delivered warmth 37 against the concept's 112 and read HALF its target.
+  Author skin at ~1.3× the sheet's chromatic spread, but know the ceiling:
+  once the r channel clips at FF, lifting VALUE only raises g and b and
+  CRUSHES the `r > g+12` test (one lift too many dropped the metric from 35
+  to 23). The window between the shadow-step lum floor and the clipping
+  ceiling is narrow; measure each step.
+- **`faceSkin` samples ONE row at 62% of head height** — know what crosses
+  it. On a glasses kid that row cuts four wire crossings; authoring the wire
+  at the DRAWN weight (radius ≈ drawn-diameter/2, Noodle 0.013) is worth
+  points. The residual shadow-step failure (warm skin at lum 74-76 against
+  the 80 floor) is the renderer story recorded on Tank — record it as
+  OFF-with-measured-cause, don't chase it past the palette's physics.
+- **Replicate the instrument when it disagrees with your eye.** The
+  delivered view is alpha-masked (`loadFigure`), not backdrop-modelled — a
+  probe using `figure()` on the review PNG reads DIFFERENT numbers. The
+  exact-replica probe (alpha > 128, headBox arm-clip, one sample row) is what
+  found the failing pixels and their cause in minutes; guessing at palette
+  fixes without it wasted two build rounds.
+- **A mid-course skull change re-solves the island.** Moving HEAD_CENTER or
+  rz after the FaceSpec anchors are set silently shifts every feature —
+  featurelatitude caught the mouth drifting 2.6 points. Re-derive the anchors
+  whenever the skull numbers move.

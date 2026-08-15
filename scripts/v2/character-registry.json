@@ -135,7 +135,15 @@
     },
     "noodle": {
       "name": "Noodle",
-      "slug": "noodle"
+      "slug": "noodle",
+      "source": "noodle-pilot.blend",
+      "traits": [
+        "gleaming bald dome",
+        "big round glasses",
+        "blue striped long-sleeve tee",
+        "rolled blue jeans",
+        "skinny noodle neck"
+      ]
     },
     "bubbles": {
       "name": "Bubbles",

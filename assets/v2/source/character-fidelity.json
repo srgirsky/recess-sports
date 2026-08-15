@@ -709,6 +709,63 @@
         "The 40px strip is a T-pose sprite; a gameplay-pose strip would be stronger field evidence."
       ],
       "scoredBoardSha256": "f6edd83b3ba906b4a7c9156fdedb0a4d08eca45d3c3dabecb84b79fe75ecc0d1"
+    },
+    "noodle": {
+      "status": "candidate",
+      "evidence": "noodle-fidelity-review.png",
+      "categories": {
+        "frontProfileSilhouette": {
+          "label": "front/profile silhouette",
+          "score": 4,
+          "note": "First independent critic: the large read matches the locked turnaround - gleaming dome, big round glasses, skinny noodle neck, boxy striped tee over straight jeans; silhouette gate green, head height/aspect measured OK. Held at 4: both shoulder junctions show a butt-joined dark wedge at hero scale and the left toe pinches to a dark spike."
+        },
+        "headBodyProportions": {
+          "label": "head/body proportions",
+          "score": 4,
+          "note": "First independent critic: head 29.1 vs 31.0 and aspect 0.99 vs 1.04 measured in tolerance; the child proportion reads correctly and the signature over-long thin neck lands as designed, sitting organically into the skull. Held at 4: the head sits at the small end of tolerance and the shoulder joints read slightly disconnected."
+        },
+        "hairMass": {
+          "label": "hair mass",
+          "score": null,
+          "note": "Abstained - bald per the roster, the one sanctioned null. The bald negative space is preserved: a single smooth uninterrupted dome from every captured angle, no invented cap, no seams or holes, ears and glasses temples against a clean skull."
+        },
+        "clothingConstruction": {
+          "label": "clothing construction",
+          "score": 4,
+          "note": "First independent critic: rolled jean cuffs with a distinct roll band (the team accent - he has no socks; tint confirmed correct), wrist cuffs, soled shoes with laces. Held at 4: dark navy shoulder wedges read as a colour-split gap in the tee at both shoulders - the THIRD character with this defect class (Bendy Bao and Flash carry it too; it is a sculptlib-level polish item) - and the sleeves render darker/greyer than the torso stripes in the front view."
+        },
+        "faceExpressionRead": {
+          "label": "face/expression read",
+          "score": 4,
+          "note": "First independent critic: brown eyes legible behind the lens rings, brows above the frames, the grin shows an actual teeth band. featurelatitude green (brow 37.3/36.4, eye 53.7/51.9 at the lens centres, mouth 69.4/69.4); the visible-face shortfall has a measured cause (wire crossings + the board ramp's shadow step at lum 74-76 against the 80 floor) and is not held against the sculpt. Held at 4: the ochre cast flattens the planes and the nose only just breaks the 3/4 profile."
+        },
+        "heroAndFieldScale": {
+          "label": "hero + 40px read",
+          "score": 4,
+          "note": "First independent critic: bald-dome-plus-round-glasses unmistakable at hero from every angle including behind. At 40px the glasses are gone and the dome carries the read alone; the ochre skin drifts toward the dirt tone. Held at 4 on the single-cue 40px read."
+        }
+      },
+      "measuredFidelity": {
+        "command": "npm run measure:fidelity -- noodle",
+        "ranAt": "2026-08-14",
+        "board": "noodle-fidelity-review.png",
+        "result": "Head height 29.1 vs concept 31.0 and aspect 0.99 vs 1.04, in tolerance - the bald dome is the first crown that is its own skull, and the pinch is his real 0.10ft noodle neck. Shoe band 64.1/35.0 vs 62.9/36.1 with saturation 26.3 vs 27.1, in tolerance (the tan-brown had to separate from cream: pair #f9ecdd/#937553). Visible face 35.6/35.6 vs 45.4/44.0 is OFF with a measured cause: an exact pixel replica of the metric shows the shortfall is (a) the drawn glasses - four wire crossings on the sample row where the concept pays half as much ink, and (b) the board ramp SHADOW STEP under the frames, which lands warm skin (sat 0.50, r-b ~50) at lum 74-76 against the classifier floor of 80, where the sheet paints its shadows at lum 151. The skin swatch was chroma-tuned three rounds (first build delivered warmth 37 vs the concept 112 and read HALF the target); the remaining gap is the renderer shadow story recorded on Tank, not palette or geometry - pushing the authored value further clips the r channel and CRUSHES the r>g+12 warmth test (measured: one more lift step dropped the metric to 23.8/20.6). Ankle daylight 33.3 vs 0.00 OFF with measured cause: the sheet merges his ankles while the rig binds at the roster-wide 6.75-degree splay.",
+        "note": "Feature placement gated by featurelatitude: brow 37.3 vs traced 36.4, eye 53.7 vs 51.9, mouth 69.4 vs 69.4, ear line at the traced 57.9, through his declared 3.99-2.76 span."
+      },
+      "heroEvidence": "noodle-runtime-hero.png",
+      "animationEvidence": [
+        "noodle-runtime-run.png",
+        "noodle-runtime-swing.png"
+      ],
+      "polishFindings": [
+        "Shoulder seam wedges at both sleeve/torso junctions - the CROSS-CHARACTER defect (Bendy Bao, Flash, Noodle all carry it); fix once in sculptlib (arm cap / shoulder blend junction) in a polish round.",
+        "Sleeve/torso value split: front-view sleeves render darker/greyer than the torso stripes - verify lighting vs swatch.",
+        "Toe-cap geometry: streaky shading and a dark pinched spike at the left toe at hero scale.",
+        "Bat read at swing contact is tiny dark specks - a clip/prop presentation item, not this sculpt.",
+        "A slightly taller mouth cell would secure the grin at draft-card distance (mouthScale exists now).",
+        "The runtime ochre cast vs the concept peach is the recorded renderer story - three chroma rounds already run; do not fix the palette again."
+      ],
+      "scoredBoardSha256": "ee9085a82ad480ff2628c55153fe8fe6883d0af0d001e9abde6edeb4cbdc9eae"
     }
   }
 }

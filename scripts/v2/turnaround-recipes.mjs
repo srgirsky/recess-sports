@@ -210,6 +210,23 @@ export const RECIPES = {
     sweeps: {},
     bands: {},
   },
+
+  // ★ NOODLE'S CREAM IS THE BACKDROP'S CREAM — the tee's ground and the shoe
+  // panels sit inside the paper's own cluster, so only the blue stripe, the
+  // denim and his pale skin are declared; every cream boundary is a geometry
+  // trace. The blue-grey stripe cluster ALSO covers the rolled jean cuffs —
+  // one cluster, two garments, and the recipe cannot split them.
+  noodle: {
+    slug: 'noodle',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#fbc48b' },
+      jeans: { hex: '#334b64' },
+      stripe: { hex: '#9aadbb' },
+    },
+    sweeps: {},
+    bands: {},
+  },
 };
 
 export const RECIPE_IDS = Object.keys(RECIPES);

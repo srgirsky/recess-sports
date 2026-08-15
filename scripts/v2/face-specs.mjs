@@ -549,4 +549,42 @@ export const FACE_SPECS = {
     mouthBow: -1.0,
     mouthDrop: -2.6,
   },
+
+  // Noodle. `expression: 'surprised'`, glasses, freckles, bald. Thin arched
+  // brows riding high on the dome, calm wide eyes behind the biggest lenses
+  // on the roster, a small pleased smile. Feature rows traced on his sheet:
+  // brows rows 196-202 (36.4% of head), lens centres row 231.5 (51.9%),
+  // smile rows 262-270 (69.4%). Cells through his island (0.92, -1.3696,
+  // 2.000). Eye marks stay inside the 0.166ft lens rings.
+  noodle: {
+    ink: '#150c04',
+    mouthInk: '#8a5030',
+    sclera: '#fffdf4',
+    irisBrown: '#4a2c12',
+    pupil: '#170d06',
+    white: '#fff8ea',
+    mouth: '#7a3a26',
+    mouthDark: '#552518',
+    tongue: '#e57f86',
+    lowerLip: '#f2b078',
+    eyeHalfW: 14,
+    eyeHalfH: 10,
+    irisR: 9,
+    irisInward: 2,
+    eyeX: [36, 92],
+    eyeY: 50,
+    // Thin and gently arched, floating high — curious, not cross.
+    browThick: 3.0,
+    browThin: 1.6,
+    browHalf: 12,
+    browX: [34, 94],
+    browY: 28,
+    browTilt: -2,
+    mouthY: 67,
+    // A small pleased smile.
+    mouthBow: -1.0,
+    mouthDrop: -2.4,
+    freckles: true,
+    freckleTone: '#cf9058',
+  },
 };

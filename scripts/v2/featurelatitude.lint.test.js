@@ -212,6 +212,23 @@ const TURNAROUND = {
     span: { crownZ: 3.99, neckZ: 2.68 },
     tolerance: 2.5,
   },
+  // ★ NOODLE'S CROWN IS HIS OWN BALD SKULL — the first span head whose crown
+  // is skin — and his features crowd the LOWER half under the dome. Bounded
+  // traces on noodle-turnaround.png (crown row 123, neck row 332): thin
+  // arched brows rows 196-202 (centroid ~198), the big lens rings rows
+  // 203-260 centred row 231.5 (the eye line — his eyes sit behind the
+  // glasses like Bendy's), the small smile rows 262-270 centred ~268. Ear
+  // line at the spec's own widest row (57.9%) — real ears, the widest thing
+  // on a bald head.
+  noodle: {
+    slug: 'noodle',
+    brow: 36.4,
+    eye: 51.9,
+    mouth: 69.4,
+    earLine: 57.9,
+    span: { crownZ: 3.99, neckZ: 2.76 },
+    tolerance: 2.5,
+  },
 };
 
 function constantsFor(slug, { needsEar = true } = {}) {
