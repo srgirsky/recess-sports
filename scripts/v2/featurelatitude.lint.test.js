@@ -303,6 +303,75 @@ const TURNAROUND = {
     span: { crownZ: 3.99, neckZ: 2.68 },
     tolerance: 2.5,
   },
+  // ★ ROCKET ROSA'S PONYTAIL FLOWS BEHIND THE HEAD, so for once a
+  // long-haired kid keeps a real front ear line. Bounded traces on
+  // rocket-rosa-turnaround.png (crown row 179 = the pony's top, neck row
+  // 391): brows rows 276-284 (centroid ~279), eyes rows 298-321 centred
+  // ~row 309, the smile arc rows 352-356 centred ~354.5.
+  rocket: {
+    slug: 'rocket-rosa',
+    brow: 47.2,
+    eye: 61.3,
+    mouth: 82.8,
+    earLine: 67.5,
+    span: { crownZ: 3.99, neckZ: 2.73 },
+    tolerance: 2.5,
+  },
+  // ★ GIZMO'S EAR LINE IS REFUSED — his widest head row (z 3.42) is the
+  // spiky mop, and the drawn ears hide behind the glasses' temple arms.
+  // Bounded traces on gizmo-turnaround.png (crown row 121, neck row 363):
+  // brow band rows 229-247 centred ~237, the round lens rings rows 252-313
+  // centred 282.5 (the eye line IS the lens centre), the smile arc rows
+  // 326-330 centred 328.5.
+  gizmo: {
+    slug: 'gizmo',
+    brow: 47.9,
+    eye: 66.7,
+    mouth: 85.7,
+    span: { crownZ: 3.99, neckZ: 2.59 },
+    tolerance: 2.5,
+  },
+  // ★ DEX'S EAR LINE IS REFUSED — his widest head rows (z 3.18-3.34) are
+  // curls and ears merged in one run. Bounded traces on dex-turnaround.png
+  // (cap-top crown row 146, neck row 379): thick brow band rows 253-272
+  // centred ~262, the big eyes rows 289-318 centred ~303, the smile arc
+  // rows 335+ centred ~338.
+  dex: {
+    slug: 'dex',
+    brow: 49.0,
+    eye: 67.6,
+    mouth: 82.3,
+    span: { crownZ: 3.99, neckZ: 2.65 },
+    tolerance: 2.5,
+  },
+  // ★ CLOVER'S EAR LINE IS REFUSED — her pigtails own every width metric
+  // from z 3.4 to 2.9. Bounded traces on clover-turnaround.png (fringe-top
+  // crown row 201, neck row 424): brow band rows 295-300 centred ~297, the
+  // big eyes rows 301-319 centred ~309.5, the smile bounded at ~69% (its
+  // line is skin-adjacent; the corner shadow sits at 68.6).
+  clover: {
+    slug: 'clover',
+    brow: 43.0,
+    eye: 48.7,
+    mouth: 68.9,
+    span: { crownZ: 3.99, neckZ: 2.55 },
+    tolerance: 2.5,
+  },
+  // ★ BOOMER'S EARS SIT LOW ON THE BIG HEAD — earLine 75.1 is real (widest
+  // row z 2.88 where the ears break the jaw line, not hair). Bounded traces
+  // on boomer-turnaround.png (mohawk-top crown row 118, neck row 363):
+  // brows rows 224-232 centred ~227 (the widow's peak between them scans as
+  // a third brow), eyes rows 246-260 centred ~252, the grin outline rows
+  // 272-290 centred ~280.
+  boomer: {
+    slug: 'boomer',
+    brow: 44.5,
+    eye: 54.7,
+    mouth: 66.0,
+    earLine: 75.1,
+    span: { crownZ: 3.99, neckZ: 2.51 },
+    tolerance: 2.5,
+  },
 };
 
 function constantsFor(slug, { needsEar = true } = {}) {

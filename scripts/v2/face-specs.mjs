@@ -760,4 +760,226 @@ export const FACE_SPECS = {
     mouthBow: -1.0,
     mouthDrop: -3.0,
   },
+
+  // Rocket Rosa. Bright determined eyes under soft brows, a swept
+  // side-parted fringe, and a quick confident smile. Feature rows traced on
+  // her sheet: brows rows 276-284 (47.2% of head), eyes rows 298-321 centred
+  // 61.3%, smile rows 352-356 (82.8%). Cells through her island
+  // (0.92, -1.3240, 2.300).
+  rocket: {
+    ink: '#150b04',
+    mouthInk: '#8a4530',
+    sclera: '#fffdf2',
+    irisBrown: '#42260f',
+    pupil: '#170d06',
+    white: '#fff8ea',
+    mouth: '#7a3423',
+    mouthDark: '#552114',
+    tongue: '#e57f86',
+    lowerLip: '#f0a468',
+    eyeHalfW: 18,
+    // Concept eye half-height is 12px = 0.072ft (rows 298-321 about centre
+    // 309) — 8 cells, not the family's 12: the taller default dropped the
+    // drawn eye bottom onto the 62% faceSkin sample row, and the render's
+    // perspective extends the drawn eye ~0.03ft below its authored bottom.
+    eyeHalfH: 8,
+    irisR: 7.5,
+    irisInward: 3,
+    eyeX: [30, 98],
+    // 46, not the trace's 50: the review camera's high vantage projects the
+    // face plane ~0.13ft down the figure, so the drawn eye must sit at the
+    // top of the featurelatitude tolerance or the 62% faceSkin sample row
+    // lands across the sclera. Anchor 46 lands 58.9% vs the traced 61.3
+    // (tolerance 2.5).
+    eyeY: 46,
+    browThick: 4.2,
+    browThin: 2.0,
+    browHalf: 13,
+    browX: [32, 96],
+    browY: 25,
+    browTilt: 0,
+    // Separated mouth silhouettes: without this flag grin and cheer share a
+    // byte-identical lip path and the tongue never breaks the lip line —
+    // rubric 3.14 fails on any kid that leaves it off. Off by default only
+    // so frozen kids' atlas bytes stay put.
+    tongueOut: true,
+    mouthY: 83,
+    // The quick confident smile.
+    mouthBow: -1.1,
+    mouthDrop: -3.2,
+    // 1.28: at capture distance her default-size mouth collapsed grin, cheer
+    // and tongue into one dark blob — the open cells differ by SILHOUETTE,
+    // and the silhouette needs pixels to exist (an independent critic failed
+    // rubric 3.14 on it).
+    mouthScale: 1.28,
+  },
+  // Gizmo. Curious eyes behind round wire glasses, a spiky brown fringe,
+  // and a tinkerer's grin. Feature rows traced on his sheet: brows rows
+  // 229-247 (47.9% of head), lens centres 66.7% (rings rows 252-313 — the
+  // atlas eye sits at the lens centre), smile rows 326-330 (85.7%). Cells
+  // through his island (0.92, -1.6650, 2.500).
+  gizmo: {
+    ink: '#170c03',
+    mouthInk: '#8a4530',
+    sclera: '#fffdf2',
+    irisBrown: '#3c2410',
+    pupil: '#170d06',
+    white: '#fff8ea',
+    mouth: '#7a3423',
+    mouthDark: '#552114',
+    tongue: '#e57f86',
+    lowerLip: '#f0a468',
+    eyeHalfW: 15,
+    eyeHalfH: 9,
+    irisR: 8,
+    irisInward: 2,
+    eyeX: [32, 96],
+    eyeY: 50,
+    browThick: 4.4,
+    browThin: 2.2,
+    browHalf: 13,
+    browX: [32, 96],
+    browY: 17,
+    browTilt: 0,
+    // Separated mouth silhouettes: without this flag grin and cheer share a
+    // byte-identical lip path and the tongue never breaks the lip line —
+    // rubric 3.14 fails on any kid that leaves it off. Off by default only
+    // so frozen kids' atlas bytes stay put.
+    tongueOut: true,
+    // The sheet's grin arc spans px 179-238 = 0.34ft — 65 cells against the
+    // default mark's ~44. Without the scale the mouth is a stroke at card
+    // distance and the open cells cannot differ (rubric 3.14).
+    mouthScale: 1.32,
+    // A second critic measured his tongue tip at ~2px against cheer's near-
+    // duplicate opening; 1.45 droops it clear of the lip line at card size.
+    // 1.7, and mouthScale held to 1.32: at 1.45 the scale grew CHEER's own
+    // resting tongue until the two open cells read identical at card
+    // distance — separation comes from the reach, not the amplification.
+    tongueReach: 1.7,
+    // His mouth sits at cell-y 73; unaligned open cells paint the tongue on
+    // the under-chin and it renders invisible from every gameplay camera.
+    alignOpenMouth: true,
+    mouthY: 81,
+    // The tinkerer's grin.
+    mouthBow: -1.2,
+    mouthDrop: -3.0,
+  },
+  // Dex. Big warm brown eyes under thick black brows, a thoughtful
+  // half-smile. Feature rows traced on his sheet: brow band rows 253-272
+  // (49.0% of head), eyes rows 289-318 centred 67.6%, smile rows 335+
+  // (82.3%). Cells through his island (0.92, -1.6855, 2.500).
+  dex: {
+    ink: '#120a04',
+    mouthInk: '#5e2c1a',
+    sclera: '#fffdf2',
+    irisBrown: '#4a2a10',
+    pupil: '#170d06',
+    white: '#fff8ea',
+    mouth: '#6e2f1e',
+    mouthDark: '#4a1e12',
+    tongue: '#e57f86',
+    lowerLip: '#c97d4e',
+    eyeHalfW: 17,
+    eyeHalfH: 11,
+    irisR: 9.5,
+    irisInward: 3,
+    eyeX: [31, 97],
+    eyeY: 50,
+    browThick: 5.6,
+    browThin: 2.6,
+    browHalf: 15,
+    browX: [31, 97],
+    browY: 20,
+    browTilt: 0,
+    // His mouth sits at cell-y 73 — unaligned open cells would paint the
+    // tongue and cheer opening onto the under-chin (Gizmo's lesson).
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.5,
+    mouthY: 70,
+    // The thoughtful half-smile.
+    mouthBow: -0.9,
+    mouthDrop: -2.6,
+  },
+  // Clover. Big hazel-green eyes, soft blonde brows, freckles across the
+  // nose, a warm closed smile. Feature rows traced on her sheet: brows rows
+  // 295-300 (43.0% of head), eyes rows 301-319 centred 48.7%, smile bounded
+  // ~69% (skin-adjacent line; corner shadow 68.6). Cells through her island
+  // (0.92, -1.5887, 2.500). eyeY sits at the featurelatitude tolerance edge
+  // (46.4 vs traced 48.7, tol 2.5) so the 62% faceSkin sample row clears
+  // the drawn sclera under the review camera's parallax (Rocket's lesson).
+  clover: {
+    ink: '#3d2c12',
+    mouthInk: '#8a4530',
+    sclera: '#fffdf2',
+    irisBrown: '#5c5e20',
+    pupil: '#170d06',
+    white: '#fff8ea',
+    mouth: '#a04a30',
+    mouthDark: '#6e2c1a',
+    tongue: '#e57f86',
+    lowerLip: '#efA57a',
+    eyeHalfW: 16,
+    eyeHalfH: 10,
+    irisR: 9,
+    irisInward: 3,
+    eyeX: [31, 97],
+    eyeY: 46,
+    browThick: 3.6,
+    browThin: 1.8,
+    browHalf: 13,
+    browX: [31, 97],
+    browY: 40,
+    browTilt: 0,
+    freckles: true,
+    freckleTone: '#c46a30',
+    alignOpenMouth: true,
+    tongueOut: true,
+    // 1.0, not more: her island reaches the chin at cell ~112, and a drooped
+    // tongue paints the under-chin latitudes and vanishes (Gizmo's lesson,
+    // the short-chin corollary).
+    tongueReach: 1.0,
+    mouthY: 85,
+    // The warm closed smile.
+    mouthBow: -1.0,
+    mouthDrop: -2.8,
+  },
+  // Boomer. Big bright eyes under thick arched brows, and the roster's
+  // widest grin — a full white teeth band. Feature rows traced on his
+  // sheet: brows rows 224-232 (44.5% of head), eyes rows 246-260 centred
+  // 54.7%, grin rows 272-290 (66.0%). Cells through his island
+  // (0.92, -1.5005, 2.500).
+  boomer: {
+    ink: '#120a04',
+    mouthInk: '#4e2412',
+    sclera: '#fffdf2',
+    irisBrown: '#3c220e',
+    pupil: '#150c05',
+    white: '#fff8ea',
+    mouth: '#5e2a16',
+    mouthDark: '#3e1a0c',
+    tongue: '#e57f86',
+    lowerLip: '#c87848',
+    eyeHalfW: 16,
+    eyeHalfH: 11,
+    irisR: 9.5,
+    irisInward: 3,
+    eyeX: [31, 97],
+    eyeY: 50,
+    browThick: 5.8,
+    browThin: 2.8,
+    browHalf: 15,
+    browX: [31, 97],
+    browY: 34,
+    browTilt: 0,
+    // The roster's widest grin: the sheet's mouth spans 0.52ft. Open cells
+    // are aligned to his high mouthY 62 (Gizmo's under-chin lesson).
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.5,
+    mouthScale: 1.55,
+    mouthY: 62,
+    mouthBow: -1.4,
+    mouthDrop: -3.4,
+  },
 };

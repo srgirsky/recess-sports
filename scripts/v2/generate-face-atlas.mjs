@@ -396,10 +396,15 @@ function face(name, index) {
     // board hash. Her tongue cell has the same weakness and should take this
     // the next time she is re-rendered for other reasons; changing it here
     // would invalidate an approval to fix a defect nobody has scored her on.
-    ? `<path d="M47 92 Q64 97 81 92 Q75 105 64 105 Q53 105 47 92Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
+    // `tongueReach` stretches the hanging tongue about the lip line (y 99) —
+    // a kid whose mouth mark is small (or whose mouthScale shrinks pixels)
+    // needs more droop before the cell separates from `cheer` at card
+    // distance. Default 1 = byte-identical.
+    ? `<g transform="translate(64 99) scale(1 ${spec.tongueReach ?? 1}) translate(-64 -99)">
+    <path d="M47 92 Q64 97 81 92 Q75 105 64 105 Q53 105 47 92Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
     <path d="M49.5 93.5 Q64 98 78.5 93.5 Q73 99 64 99.3 Q55 99 49.5 93.5Z" fill="${white}"/>
     <path d="M55 99 Q52 120 64 124 Q76 120 73 99 Q64 104 55 99Z" fill="${tongue}" stroke="${ink}" stroke-width="2.0"/>
-    <path d="M64 107 L64 119" stroke="${mouthDark}" stroke-width="1.6" fill="none" opacity="0.55"/>`
+    <path d="M64 107 L64 119" stroke="${mouthDark}" stroke-width="1.6" fill="none" opacity="0.55"/></g>`
     : `<path d="M45 92 Q64 97 83 92 Q76 107 64 107 Q52 107 45 92Z" fill="${mouthDark}" stroke="${ink}" stroke-width="2.4"/>
     <path d="M47.5 93.5 Q64 98 80.5 93.5 Q75 99.5 64 99.8 Q53 99.5 47.5 93.5Z" fill="${white}"/>
     <path d="M56 101.5 Q55.5 110.5 64 111.5 Q72.5 110.5 72 101.5 Q64 104.5 56 101.5Z" fill="${tongue}" stroke="${ink}" stroke-width="1.8"/>`;
@@ -426,10 +431,22 @@ function face(name, index) {
   // geometry read as a thin smile at draft-card distance. Default 1 keeps
   // every existing atlas byte-identical — Junebug's approval hash included.
   const mScale = spec.mouthScale ?? 1;
+  const closed = name === 'neutral' || name === 'determined' || name === 'angry'
+    || name === 'worried' || name === 'upset' || blink || sleepy || wink;
+  // ★ `alignOpenMouth` lifts the open cells to the kid's own mouth line.
+  // The open-mouth marks are drawn about cell-y ≈ 100 regardless of
+  // `mouthY`, so a kid whose mouth sits high (Gizmo, mouthY 70) gets his
+  // tongue and cheer painted onto the UNDER-CHIN latitudes of the face
+  // island — geometry that faces the floor and renders invisible from any
+  // gameplay camera, while the atlas PNG looks perfect. Opt-in: shifting
+  // would change every existing kid's atlas bytes.
+  let cy = closed ? my : 100;
+  if (spec.alignOpenMouth && !closed) {
+    const shift = my + 3 - 103;
+    lips = `<g transform="translate(0 ${shift})">${lips}</g>`;
+    cy = my + 3;
+  }
   if (mScale !== 1) {
-    const closed = name === 'neutral' || name === 'determined' || name === 'angry'
-      || name === 'worried' || name === 'upset' || blink || sleepy || wink;
-    const cy = closed ? my : 100;
     lips = `<g transform="translate(64 ${cy}) scale(${mScale}) translate(-64 -${cy})">${lips}</g>`;
   }
   return `${brows}${eyes}${freckles}${lips}`;

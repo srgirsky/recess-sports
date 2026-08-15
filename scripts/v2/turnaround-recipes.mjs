@@ -314,6 +314,90 @@ export const RECIPES = {
     sweeps: {},
     bands: {},
   },
+
+  // ★ ROCKET ROSA'S TEE IS THE BACKDROP'S CREAM — the white raglan with its
+  // thin orange piping lives in the paper's own cluster, so every tee
+  // boundary is a geometry trace. Her high ponytail flows BEHIND the head,
+  // so for once the widest front row is her real ears.
+  rocket: {
+    slug: 'rocket-rosa',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#e48a3c' },
+      hair: { hex: '#332315' },
+      shorts: { hex: '#2d323c' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
+  // ★ GIZMO'S SHOES ARE THE BACKDROP'S CREAM and his rolled denim cuffs
+  // resolve to the same cluster as his light-blue tee — the sheet's washes
+  // reuse tones across garments, so the cuff/tee boundary is a geometry
+  // trace, not a colour one. His glasses sit in the hair's own dark cluster.
+  gizmo: {
+    slug: 'gizmo',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#e38c44' },
+      hair: { hex: '#6b3c13' },
+      overalls: { hex: '#344b63' },
+      tee: { hex: '#8cb4c3' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
+  // ★ DEX'S LIT SKIN NEVER GETS ITS OWN CLUSTER — the 8-tone quantizer folds
+  // his medium-brown face into the shadow tone (#5B2C0B, 2.9%), so the skin
+  // swatch is a direct cheek sample, not a cluster centroid. His cap and
+  // curls share near-black clusters; the boundary between them is geometry.
+  dex: {
+    slug: 'dex',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#8a5327' },
+      hair: { hex: '#2b241b' },
+      hoodie: { hex: '#4c5563' },
+      jeans: { hex: '#1c2632' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
+  // ★ CLOVER'S SMILE IS DRAWN IN SKIN-ADJACENT TONES — no dark lip band
+  // survives the scanner (only a corner shadow at 68.6%), so the mouth row
+  // is a bounded trace. Her pigtails own every width metric from 3.4 down
+  // to 2.9; the ear line is theirs, not hers.
+  clover: {
+    slug: 'clover',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#f3aa74' },
+      hair: { hex: '#bc833b' },
+      dress: { hex: '#849a3c' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
+  // ★ BOOMER'S TEE STRIPES SHARE THE BACKDROP'S CREAM — the pale bands live
+  // in the paper's cluster, so only the GOLD bands trace as colour; the
+  // cream bands between them are geometry bounded by the gold edges. His
+  // widow's peak descends between the brows and the dark-row scan reads it
+  // as a third brow.
+  boomer: {
+    slug: 'boomer',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#ab5d24' },
+      hair: { hex: '#14120e' },
+      teeGold: { hex: '#eda432' },
+      shorts: { hex: '#23252b' },
+    },
+    sweeps: {},
+    bands: {},
+  },
 };
 
 export const RECIPE_IDS = Object.keys(RECIPES);
