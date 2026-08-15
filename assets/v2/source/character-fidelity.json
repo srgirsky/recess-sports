@@ -19,9 +19,9 @@
       ],
       "measuredFidelity": {
         "command": "npm run measure:fidelity -- nostrike",
-        "ranAt": "2026-08-14",
+        "ranAt": "2026-08-15",
         "board": "junebug-fidelity-review.png",
-        "result": "all nine metrics inside tolerance of the concept \u2014 unchanged by the runtime render fixes, which is the point: measure:fidelity grades the Blender board, not the runtime.",
+        "result": "all nine metrics inside tolerance of the concept \u2014 unchanged by the runtime render fixes, which is the point: measure:fidelity grades the Blender board, not the runtime. Stance pass 2026-08-15: the board renders now hold the drawn stance (legs adducted 10deg at the hip with flat feet, the same argument that put the arms down; Junebug and Theo keep their sheets' own drawn-open stance) - ankle daylight reads 48.5 and 0 metric(s) remain outside tolerance on this board.",
         "note": "The rig's 6.75-degree leg splay (render.leg-stance) settled ankle daylight at 48.5% against the concept's 46.9%. Round 7 then found that Junebug's SIGNATURE idle pose carried an 8-degree inward leg roll, authored when the rig ran its legs straight down, which closed the ankles to 0.325ft against the bind pose's 0.756 and failed rubric 3.12 in idle while the bind-pose render this command reads stayed correct. The same roll was in all five signature idles and was removed from all of them; an FK sweep now reads every idle within 2% of bind. Re-measured 2026-08-12 after the detector itself was rebuilt to work for the whole roster: the backdrop is now sampled per column (seven sheets are vignetted past the old tolerance), a column counts as occupied by fraction rather than by any single pixel, and the shoe's two tones are read off the concept instead of the hardcoded red/cream that was Junebug's own shoe. Her shoe deltas TIGHTENED, from +2.23/+2.93 under the old classifier to +0.43/-0.78 as tone shares (41.2/25.5 concept against 41.6/24.8 delivered); the round-7 critic note below quotes the old red/cream figures and is left as the record of what was measured then."
       },
       "categories": {
@@ -121,7 +121,7 @@
         "command": "npm run measure:fidelity -- calls_shot",
         "ranAt": "2026-08-15",
         "board": "theo-fidelity-review.png",
-        "result": "Head height 34.6 vs concept 35.0 and aspect 0.99 vs 1.05, in tolerance. Ankle daylight 51.7 vs the sheet's own 56.9 (his stance is drawn open), in tolerance. Visible face 27.1/27.1 vs 22.4/26.8 with asymmetry 0.00, in tolerance. All three SHOE BAND metrics OFF with measured cause: the concept pair reads #ecddcc cream + #d9b68b warm tan, and the tan is the sheet's own warm SHADING over the cream canvas (the Penny/batch-3 second-tone-is-shading class) at 61.4% of its band - clean delivered vertex tones split 88/12 whatever the boundary does (band probes 0.34, 0.56 and 0.82 all measured ~88/12 - the split is set by the visible sole geometry, the non-monotonic snap lesson). The cupsole was warmed to #E9CDA6 which lifted mean saturation 8.6 \u2192 13.6 against the concept's 28.1; the remaining gap is the same shading class. (The 13.6 is the final build's own re-measure - the round-2 critic caught an earlier build's 17.9 in this record and it was corrected.)",
+        "result": "Head height 34.6 vs concept 35.0 and aspect 0.99 vs 1.05, in tolerance. Ankle daylight 51.7 vs the sheet's own 56.9 (his stance is drawn open), in tolerance. Visible face 27.1/27.1 vs 22.4/26.8 with asymmetry 0.00, in tolerance. All three SHOE BAND metrics OFF with measured cause: the concept pair reads #ecddcc cream + #d9b68b warm tan, and the tan is the sheet's own warm SHADING over the cream canvas (the Penny/batch-3 second-tone-is-shading class) at 61.4% of its band - clean delivered vertex tones split 88/12 whatever the boundary does (band probes 0.34, 0.56 and 0.82 all measured ~88/12 - the split is set by the visible sole geometry, the non-monotonic snap lesson). The cupsole was warmed to #E9CDA6 which lifted mean saturation 8.6 \u2192 13.6 against the concept's 28.1; the remaining gap is the same shading class. (The 13.6 is the final build's own re-measure - the round-2 critic caught an earlier build's 17.9 in this record and it was corrected.) Stance pass 2026-08-15: the board renders now hold the drawn stance (legs adducted 10deg at the hip with flat feet, the same argument that put the arms down; Junebug and Theo keep their sheets' own drawn-open stance) - ankle daylight reads 51.7 and 3 metric(s) remain outside tolerance on this board.",
         "note": "featurelatitude gates brow 49.8, eye 63.7 (bounded crop traces - the analyser's brow pick at 96.6 was the collar shadow and its eye refused), mouth 84.9 (the analyser's own trace, the open grin), earLine 54.8. The cap's cream front panel is the team accent (Chip's convention) and team-tints at runtime by design."
       },
       "polishFindings": [
@@ -176,7 +176,7 @@
         "command": "npm run measure:fidelity -- wheelchair_ace",
         "ranAt": "2026-08-15",
         "board": "zoom-fidelity-review.png",
-        "result": "Head height 30.8 vs concept 31.6 and aspect 1.04 vs 1.06, in tolerance after the spike crown was swept back and widened. Face RIGHT 35.3 vs 31.5 in tolerance, asymmetry 2.35 in tolerance; face LEFT is OFF with measured cause: the CONCEPT side reads 0.00 - the sheet's own fringe shadow swallows its left face at the sample row - and a symmetric delivery cannot match a zero. All three shoe-band metrics OFF with measured cause: on a seated kid the bottom-9% window contains the WHEELS, and the concept's 79% 'dominant tone' #f3e5d2 is its own cream BACKDROP showing through the drawn spokes (the enclosed-pocket flood-fill class), while the delivered board shows its dark backdrop through the same spokes - the band is measuring the two backgrounds, not the shoes. Ankle daylight 16.1 vs 0.00 OFF with measured cause: the same flood-fill containment (the sheet's wheel encloses the gap the delivery leaves open). His whole lower band is instrument-mismatch on a seated figure; the numbers are recorded, not chased. Post-scoring mesh repair: the first island solve put the skull centre at the eye line, driving the island's low to -1.578 rad - past the south pole - which collapsed the chin rows into micro-rings whose split normals tripped the inverted-mirror gate (10 pairs). The centre was lowered to 2.93 and the island re-solved (-1.4407); feature z positions are identical by construction, the re-measure holds (head 29.9, aspect 1.08, face-right 32.9, all in tolerance), and the mirror gate passes. The spike tubes' -x members also gained flipped winding (the Penny mirror lesson).",
+        "result": "Head height 30.8 vs concept 31.6 and aspect 1.04 vs 1.06, in tolerance after the spike crown was swept back and widened. Face RIGHT 35.3 vs 31.5 in tolerance, asymmetry 2.35 in tolerance; face LEFT is OFF with measured cause: the CONCEPT side reads 0.00 - the sheet's own fringe shadow swallows its left face at the sample row - and a symmetric delivery cannot match a zero. All three shoe-band metrics OFF with measured cause: on a seated kid the bottom-9% window contains the WHEELS, and the concept's 79% 'dominant tone' #f3e5d2 is its own cream BACKDROP showing through the drawn spokes (the enclosed-pocket flood-fill class), while the delivered board shows its dark backdrop through the same spokes - the band is measuring the two backgrounds, not the shoes. Ankle daylight 16.1 vs 0.00 OFF with measured cause: the same flood-fill containment (the sheet's wheel encloses the gap the delivery leaves open). His whole lower band is instrument-mismatch on a seated figure; the numbers are recorded, not chased. Post-scoring mesh repair: the first island solve put the skull centre at the eye line, driving the island's low to -1.578 rad - past the south pole - which collapsed the chin rows into micro-rings whose split normals tripped the inverted-mirror gate (10 pairs). The centre was lowered to 2.93 and the island re-solved (-1.4407); feature z positions are identical by construction, the re-measure holds (head 29.9, aspect 1.08, face-right 32.9, all in tolerance), and the mirror gate passes. The spike tubes' -x members also gained flipped winding (the Penny mirror lesson). Stance pass 2026-08-15: the board renders now hold the drawn stance (legs adducted 10deg at the hip with flat feet, the same argument that put the arms down; Junebug and Theo keep their sheets' own drawn-open stance) - ankle daylight reads 16.1 and 5 metric(s) remain outside tolerance on this board.",
         "note": "featurelatitude gates brow 56.2, eye 71.6 (bounded crop traces), mouth 83.5 (the analyser's own trace). NO earLine target - Zippy's precedent, the spike crown owns the widest rows on both the sheet and any delivery. The sheet is seated in every view so the analyser's z frame is chair-relative; only percent-of-head landmarks carry. The chair, tucked legs and shoes are ROOT-weighted furniture (the proxy's proven approach); the blue push rims are the team accent."
       },
       "polishFindings": [
@@ -231,7 +231,7 @@
         "command": "npm run measure:fidelity -- big_lou",
         "ranAt": "2026-08-15",
         "board": "big-lou-fidelity-review.png",
-        "result": "Head height 27.9 vs concept 26.1 and aspect 1.10 vs 1.06, in tolerance. Shoe band dominant 77.0 vs 82.7 and second 23.0 vs 16.3, in tolerance; saturation 16.3 vs 16.9 in tolerance after the cupsole pair was warmed (F8E8C4/ECD6AA - the first build's neutral creams measured 11.9 against the 4-point window). Visible face 44.2/44.2 vs the sheet's own asymmetric 47.7/39.6, both sides in tolerance, asymmetry 0.00. ONE metric OFF with measured cause: ankle daylight 30.0 vs 0.00, the roster-wide rig splay (Grizz measures 28.2). The stripe wash seen on the first capture was Flash's smeared-edges class - TORSO_LEVELS_CRISP inserts a ring 0.006 inside each STRIPE_BANDS edge at LOD0 and the bands read bold at runtime. Round-2 build: the round-1 critic's 'navy crescents' were degenerate sliver bands - a crisp insert 0.001 from the base row at 2.420 made near-coincident rings whose unstable normals rendered as backface slate; TORSO_LEVELS_CRISP now skips inserts within 0.008 of any base row and the crescents are gone from the recaptured stills. Arms and legs were chunked up (+0.012/+0.014), the belly widened (+0.02), the shoulder rows widened past the arm root (Turbo's wedge fix) with a sixth SHOULDER_BLEND station, and the buzz's nape rows pulled skin-tight. The re-measure still shows only ankle daylight OFF (the roster splay).",
+        "result": "Head height 27.9 vs concept 26.1 and aspect 1.10 vs 1.06, in tolerance. Shoe band dominant 77.0 vs 82.7 and second 23.0 vs 16.3, in tolerance; saturation 16.3 vs 16.9 in tolerance after the cupsole pair was warmed (F8E8C4/ECD6AA - the first build's neutral creams measured 11.9 against the 4-point window). Visible face 44.2/44.2 vs the sheet's own asymmetric 47.7/39.6, both sides in tolerance, asymmetry 0.00. ONE metric OFF with measured cause: ankle daylight 30.0 vs 0.00, the roster-wide rig splay (Grizz measures 28.2). The stripe wash seen on the first capture was Flash's smeared-edges class - TORSO_LEVELS_CRISP inserts a ring 0.006 inside each STRIPE_BANDS edge at LOD0 and the bands read bold at runtime. Round-2 build: the round-1 critic's 'navy crescents' were degenerate sliver bands - a crisp insert 0.001 from the base row at 2.420 made near-coincident rings whose unstable normals rendered as backface slate; TORSO_LEVELS_CRISP now skips inserts within 0.008 of any base row and the crescents are gone from the recaptured stills. Arms and legs were chunked up (+0.012/+0.014), the belly widened (+0.02), the shoulder rows widened past the arm root (Turbo's wedge fix) with a sixth SHOULDER_BLEND station, and the buzz's nape rows pulled skin-tight. The re-measure still shows only ankle daylight OFF (the roster splay). Stance pass 2026-08-15: the board renders now hold the drawn stance (legs adducted 10deg at the hip with flat feet, the same argument that put the arms down; Junebug and Theo keep their sheets' own drawn-open stance) - ankle daylight reads 0.00 and 0 metric(s) remain outside tolerance on this board.",
         "note": "featurelatitude gates brow 32.2, eye 47.7, mouth 73.9, earLine 51.8 - ALL hand-set bounded traces: the analyser refused his pinch outright ('no-pinch', the chunky chin-merges-into-neck class) so the neck row is hand-set at 305 (the collar line), and brow/eye/mouth all refused as merged regions. Deep skin chroma-authored 9C5428 (darkened from A65C2E after the round-2 critic) per the Grizz lesson."
       },
       "polishFindings": [
@@ -240,7 +240,7 @@
         "Stripe cadence one or two bands busier than the concept's broad five.",
         "Skin could take one more darkening step toward the sheet's deep brown."
       ],
-      "scoredBoardSha256": "b3bcb575ee392165a26a8f4c3950092c0669bbf88d2d28f976e8ad83fb4ce769"
+      "scoredBoardSha256": "ed81bf9b3253916a128fb4e17b47ad968bdb6a3785ffbafea50fbddb61bb770b"
     },
     "tank": {
       "status": "candidate",
@@ -281,7 +281,7 @@
         "command": "npm run measure:fidelity -- tank",
         "ranAt": "2026-08-15",
         "board": "tank-fidelity-review.png",
-        "result": "Round-31 re-measure on a fresh rebuild of the round-30 source: head height 26.3 vs 27.6 and aspect 1.10 vs 1.12, in tolerance. ALL THREE shoe-band metrics in tolerance (dominant 82.8 vs 82.1, second 17.2 vs 16.3, saturation 24.5 vs 21.5) - the navy strap stripe restored in round 30 settles the split. Ankle daylight 9.64, in tolerance. Visible face 50.0/49.4 with asymmetry 0.62; the LEFT matches (48.3) and the RIGHT is OFF by 2.6 with measured cause: the sheet's own two sides differ by 7.5 (48.3/40.8 - its key light shades the right, the Penny/Moose class) while the delivered render is symmetric.",
+        "result": "Round-31 re-measure on a fresh rebuild of the round-30 source: head height 26.3 vs 27.6 and aspect 1.10 vs 1.12, in tolerance. ALL THREE shoe-band metrics in tolerance (dominant 82.8 vs 82.1, second 17.2 vs 16.3, saturation 24.5 vs 21.5) - the navy strap stripe restored in round 30 settles the split. Ankle daylight 9.64, in tolerance. Visible face 50.0/49.4 with asymmetry 0.62; the LEFT matches (48.3) and the RIGHT is OFF by 2.6 with measured cause: the sheet's own two sides differ by 7.5 (48.3/40.8 - its key light shades the right, the Penny/Moose class) while the delivered render is symmetric. Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 4deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 0.00 and 1 metric(s) remain outside tolerance on this board.",
         "note": "Evidence and board re-captured fresh for the round-31 critic; hairMass abstains (bald)."
       },
       "polishFindings": [
@@ -289,7 +289,7 @@
         "Facet banding visible on the bald dome at hero scale.",
         "Neutral resting face reads slightly grumpier than the sheet's sleepy calm."
       ],
-      "scoredBoardSha256": "1dac7bc3be4928e2e35ba0a56060a1e7497c54bdc75011fd693d5ff02bc6609f",
+      "scoredBoardSha256": "d8e54d641d3a32c9b41c0a4215ac496a15204aa033438af8e549b5f9d2547b39",
       "heroEvidence": "tank-runtime-hero.png",
       "animationEvidence": [
         "tank-runtime-run.png",
@@ -340,7 +340,7 @@
         "command": "npm run measure:fidelity -- mimi_mash",
         "ranAt": "2026-08-15",
         "board": "mimi-mash-fidelity-review.png",
-        "result": "Head height 33.2 vs concept 34.6 and aspect 1.22 vs 1.16, in tolerance - the halo's clump lobes carry the shell ~1.15x past the table half-width, so the wide rows are authored at 0.70-0.72 to deliver the sheet's 0.806 peak, and the dome top rides at 4.03 because removing the tab-reading tufts lowered the head box (head height went OFF at 32.0 until the shell itself was raised). Shoe band dominant 63.3/second 11.9/sat 29.5, all in tolerance. Visible face 22.6/27.4 vs the concept's own 23.4/27.1 - each side within 0.8 of the sheet - but the ASYMMETRY gate reads 4.78 against tol 4.0, OFF with measured cause: the sheet itself holds a 3.7-point side split (its key light draws more face on its right, the Penny/Moose class) and the delivered render reproduces it; the residual ~1 point is the render's own key light on the temple curtain edge (skin was chroma-lifted to F49A4C to keep the shadow temple classified). Ankle daylight 26.4 vs 0.00 OFF with measured cause: the roster-wide rig splay. A temple-burial probe and an ear-lowering probe both moved nothing or backwards and were reverted - the fringe's temple descent (to z 2.95 at x 0.56) is what set the window.",
+        "result": "Head height 33.2 vs concept 34.6 and aspect 1.22 vs 1.16, in tolerance - the halo's clump lobes carry the shell ~1.15x past the table half-width, so the wide rows are authored at 0.70-0.72 to deliver the sheet's 0.806 peak, and the dome top rides at 4.03 because removing the tab-reading tufts lowered the head box (head height went OFF at 32.0 until the shell itself was raised). Shoe band dominant 63.3/second 11.9/sat 29.5, all in tolerance. Visible face 22.6/27.4 vs the concept's own 23.4/27.1 - each side within 0.8 of the sheet - but the ASYMMETRY gate reads 4.78 against tol 4.0, OFF with measured cause: the sheet itself holds a 3.7-point side split (its key light draws more face on its right, the Penny/Moose class) and the delivered render reproduces it; the residual ~1 point is the render's own key light on the temple curtain edge (skin was chroma-lifted to F49A4C to keep the shadow temple classified). Ankle daylight 26.4 vs 0.00 OFF with measured cause: the roster-wide rig splay. A temple-burial probe and an ear-lowering probe both moved nothing or backwards and were reverted - the fringe's temple descent (to z 2.95 at x 0.56) is what set the window. Stance pass 2026-08-15: the board renders now hold the drawn stance (legs adducted 10deg at the hip with flat feet, the same argument that put the arms down; Junebug and Theo keep their sheets' own drawn-open stance) - ankle daylight reads 0.00 and 1 metric(s) remain outside tolerance on this board.",
         "note": "featurelatitude gates brow 37.0, eye 50.0, mouth 65.3 (bounded crop traces - the analyser refused all three; its two competing mouth bands at 75.7/93.2 are the under-chin and collar shadows), earLine 49.4. The pre-convention proxy blend carried stray meshes (*_CurlHalo, Icosphere) that exported alongside the LODs and blew the 400KB budget until purged."
       },
       "polishFindings": [
@@ -348,7 +348,7 @@
         "Runtime halo shows planar faceting; the clump lobes barely register under the toon ramp - a strand-grouping treatment would unlock the 5s.",
         "Runtime toon lighting pushes the skin hotter-orange than the sheet's lit base."
       ],
-      "scoredBoardSha256": "45a5bd721bfd7c35abbded063d9559b48071d6919d7c020b905edfc7e2d1c78a"
+      "scoredBoardSha256": "6f0e62b2c10f4911924ea461cb39280cd6a28d8b404a1556d8e3476a2a09055f"
     },
     "grizz": {
       "status": "candidate",
@@ -392,9 +392,9 @@
       ],
       "measuredFidelity": {
         "command": "npm run measure:fidelity -- grizz",
-        "ranAt": "2026-08-14",
+        "ranAt": "2026-08-15",
         "board": "grizz-fidelity-review.png",
-        "result": "Shoe tone split, chroma and band boundaries all inside tolerance. ankleDaylight reads 28.2 against tolerance 12 with the cause measured and recorded in the sculpt script: the concept's 0.00 is flood-fill containment (his drawn shoes touch at the toes, enclosing the inter-sock gap), and the drawing's actual gap at the sample height is 0.35ft \u2014 more daylight than the delivery \u2014 while the rig's canonical stance cannot close the shoes. Head height, aspect and the three visible-face metrics report NOT MEASURED: his neck pinch (z 2.47) sits inside the z-band the bind pose's T-pose arms occupy, so the detector refuses rather than publishing the arm line as the chin (the arm-band rule added to headBox this round). Verified from the source geometry instead: afro crown 3.99 to neck pinch 2.47 gives head height 38.0% of figure against the concept's 38.0, and width 1.66ft gives aspect 1.09 against 1.09.",
+        "result": "Shoe tone split, chroma and band boundaries all inside tolerance. ankleDaylight reads 28.2 against tolerance 12 with the cause measured and recorded in the sculpt script: the concept's 0.00 is flood-fill containment (his drawn shoes touch at the toes, enclosing the inter-sock gap), and the drawing's actual gap at the sample height is 0.35ft \u2014 more daylight than the delivery \u2014 while the rig's canonical stance cannot close the shoes. Head height, aspect and the three visible-face metrics report NOT MEASURED: his neck pinch (z 2.47) sits inside the z-band the bind pose's T-pose arms occupy, so the detector refuses rather than publishing the arm line as the chin (the arm-band rule added to headBox this round). Verified from the source geometry instead: afro crown 3.99 to neck pinch 2.47 gives head height 38.0% of figure against the concept's 38.0, and width 1.66ft gives aspect 1.09 against 1.09. Stance pass 2026-08-15: the board renders now hold the drawn stance (legs adducted 10deg at the hip with flat feet, the same argument that put the arms down; Junebug and Theo keep their sheets' own drawn-open stance) - ankle daylight reads 0.00 (head-box family not measured, as recorded) and 0 metric(s) remain outside tolerance on this board. Mouth-cell pass: this kid's atlas gained the batch-4 cell knobs (alignOpenMouth, tongueOut, tongueReach 1.3) so grin/cheer/tongue read distinctly; the GLB was rebuilt and evidence recaptured.",
         "note": "The mouth landmark in his turnaround spec refuses as ambiguous-parts; the lip line used by the face atlas (86.5% of head height, rows 351-352 of the sheet) is the bounded trace recorded in sculpt-grizz-source.py."
       },
       "polishFindings": [
@@ -405,7 +405,7 @@
         "Shorts hem construction; pocket as a sewn form rather than a decal.",
         "40px lower-body definition (navy shorts sink into shadow at field scale)."
       ],
-      "scoredBoardSha256": "42dbf45937ffc552485218d31e24574126861b8f8f17a6d06ae2bad659ad4518"
+      "scoredBoardSha256": "4521bd6b76476fdf9bd3af846e8112ec495e9196845b4311af6b438d3cf121e1"
     },
     "sprout": {
       "status": "candidate",
@@ -449,9 +449,9 @@
       ],
       "measuredFidelity": {
         "command": "npm run measure:fidelity -- sprout",
-        "ranAt": "2026-08-14",
+        "ranAt": "2026-08-15",
         "board": "sprout-fidelity-review.png",
-        "result": "Shoe tone split 62.2/37.8 against the concept 65.6/33.2 and chroma 26.5 against 30.4, all inside tolerance (rounds 2-5: the canvas had to be re-authored at the concept CHROMATICITY with ~1.3x channel spread \u2014 1.2x brightness alone still classified as cream). ankleDaylight 23.0 against tolerance 12, cause measured and recorded in the sculpt script: the concept 0.00 is flood-fill containment (his drawn shoes touch), and its true inter-leg gap at the sample height is ~0.23ft \u2014 the delivery is at the drawing, not away from it. Head height, aspect and the visible-face metrics report NOT MEASURED (neck pinch behind the T-pose arm band); from source geometry: hair crown 4.00 to neck pinch 2.45 gives 38.9% against the concept 38.6, aspect 1.50/1.55 = 0.97 against 0.97.",
+        "result": "Shoe tone split 62.2/37.8 against the concept 65.6/33.2 and chroma 26.5 against 30.4, all inside tolerance (rounds 2-5: the canvas had to be re-authored at the concept CHROMATICITY with ~1.3x channel spread \u2014 1.2x brightness alone still classified as cream). ankleDaylight 23.0 against tolerance 12, cause measured and recorded in the sculpt script: the concept 0.00 is flood-fill containment (his drawn shoes touch), and its true inter-leg gap at the sample height is ~0.23ft \u2014 the delivery is at the drawing, not away from it. Head height, aspect and the visible-face metrics report NOT MEASURED (neck pinch behind the T-pose arm band); from source geometry: hair crown 4.00 to neck pinch 2.45 gives 38.9% against the concept 38.6, aspect 1.50/1.55 = 0.97 against 0.97. Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - his legs adduct 4.0deg at the hip with flat feet. His enclosure profile is non-monotonic (10deg jittered on the 8px budget, 8.5deg opened 74px, 5.5deg 1404px, 4deg clean - the contact point walks down the shin as the angle shrinks), the Tank class. Ankle daylight reads 11.1, IN tolerance (head-box family not measured, as recorded), and 0 metric(s) remain outside tolerance on this board.",
         "note": "The spec mouth landmark is his NOSTRILS (his light-brown smile is fainter than the specks); the lip used by the face atlas is the bounded trace at 85.6% of head height recorded in the sculpt script and the recipe header. After scoring, one mesh-hygiene fix shipped: the digit tubes gained sculptlib's mirror-frame flip (10 fingertip vertex pairs had non-mirroring normals, over the inverted-pairs budget); the change is confined to left-hand digit tessellation and the board was re-rendered and re-bound."
       },
       "polishFindings": [
@@ -461,7 +461,7 @@
         "Arms are thin segmented tubes vs the concept's plump limbs; elbow reads hinged in the run capture.",
         "40px identity leans on overalls+hair; the yellow tee accent nearly vanishes at field scale."
       ],
-      "scoredBoardSha256": "7ef05784012dd44f78eb736aa61731e6c67c813ee3986c0fd66ec3385537c894"
+      "scoredBoardSha256": "2c1394921f9f314fee9cc64a843492035730430695d6eedc0ed9222f7463e8c2"
     },
     "bubbles": {
       "status": "candidate",
@@ -507,7 +507,7 @@
         "command": "npm run measure:fidelity -- bubbles",
         "ranAt": "2026-08-15",
         "board": "bubbles-fidelity-review.png",
-        "result": "Polish-round re-measure: the head-box family reports NOT MEASURED - the detector finds no silhouette pinch between crown and shoulders because her curl curtains merge into the shoulder line on both the concept and the delivery; the instrument itself says to score the silhouette sections without it. Shoe band dominant 71.9 vs 67.3, second 28.1 vs 31.0, saturation 22.4 vs 26.0, all in tolerance. ONE metric OFF with measured cause: ankle daylight 46.8 vs 0.00, the roster-wide rig splay. The polish set: ringlet clump phase fixed to mirror-symmetric amplitude-breathing columns (the old per-row phase rotation smeared the lobes - Penny's mirror lesson), six sculpted ringlet tubes with lobes/groove added to the lower mass (LOD0), the bow rebuilt as angled tied-ribbon loops, a flap button added, the nose tip lifted for profile presence - and the BUN's ascending table was flipped to descending: it had shipped with inverted winding and rendered as a dark backface void at runtime for eight rounds (Bendy's exact bun lesson; ring_loft now asserts descending). Budget: curl shell rings 24\u219220 and LOD0-only ringlet tubes hold 396KB / 6996 tris.",
+        "result": "Polish-round re-measure: the head-box family reports NOT MEASURED - the detector finds no silhouette pinch between crown and shoulders because her curl curtains merge into the shoulder line on both the concept and the delivery; the instrument itself says to score the silhouette sections without it. Shoe band dominant 71.9 vs 67.3, second 28.1 vs 31.0, saturation 22.4 vs 26.0, all in tolerance. ONE metric OFF with measured cause: ankle daylight 46.8 vs 0.00, the roster-wide rig splay. The polish set: ringlet clump phase fixed to mirror-symmetric amplitude-breathing columns (the old per-row phase rotation smeared the lobes - Penny's mirror lesson), six sculpted ringlet tubes with lobes/groove added to the lower mass (LOD0), the bow rebuilt as angled tied-ribbon loops, a flap button added, the nose tip lifted for profile presence - and the BUN's ascending table was flipped to descending: it had shipped with inverted winding and rendered as a dark backface void at runtime for eight rounds (Bendy's exact bun lesson; ring_loft now asserts descending). Budget: curl shell rings 24\u219220 and LOD0-only ringlet tubes hold 396KB / 6996 tris. Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 7deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 25.0 (head-box family not measured, as recorded) and 1 metric(s) remain outside tolerance on this board.",
         "note": "Evidence and board re-captured fresh for the polish-round critic."
       },
       "polishFindings": [
@@ -516,7 +516,7 @@
         "Bow tails read as stiff parallel bars; the pocket reads as a flat sticker rather than a flap over a pouch.",
         "Rear hair mass still a smooth balloon; laces do not read; the skirt is a rigid cone with a hard disc rim."
       ],
-      "scoredBoardSha256": "c03dd1273c3e1d489fa5608c28e4c231443839c35e360017cac1bd93be960544"
+      "scoredBoardSha256": "5296e6bf6a27944e4d514119964221739cdb92c55b07c7028028ff2e3eac87b6"
     },
     "chip": {
       "status": "candidate",
@@ -562,7 +562,7 @@
         "command": "npm run measure:fidelity -- chip",
         "ranAt": "2026-08-15",
         "board": "chip-fidelity-review.png",
-        "result": "Polish-round re-measure: head height 32.0 vs 32.2, aspect 0.94 vs 0.99, all shoe band metrics and both face sides in tolerance, asymmetry 0.60. ONE metric OFF with measured cause: ankle daylight 42.2 vs 0.00, the roster-wide rig splay. The polish set: kangaroo pocket rebuilt as a sewn pouch (bevelled rim rows at 30% proud), deeper rib rows at the hem, collar bunching so the hood drape reads from the front, hood ellipsoid raised 0.02 off its shading seam, nose bridge/tip lifted, mouthScale 1.15, limb girth +0.008/+0.010 toward the chunky build. Budget: the additions cost 4KB; cap rings 20\u219218 and neck/torso segments trimmed paid for them at 399KB; a hair-ring trim to 18 was tried and REVERTED - it flipped a fringe column onto the face and cost the right side 4.7 points (the column-quantization class).",
+        "result": "Polish-round re-measure: head height 32.0 vs 32.2, aspect 0.94 vs 0.99, all shoe band metrics and both face sides in tolerance, asymmetry 0.60. ONE metric OFF with measured cause: ankle daylight 42.2 vs 0.00, the roster-wide rig splay. The polish set: kangaroo pocket rebuilt as a sewn pouch (bevelled rim rows at 30% proud), deeper rib rows at the hem, collar bunching so the hood drape reads from the front, hood ellipsoid raised 0.02 off its shading seam, nose bridge/tip lifted, mouthScale 1.15, limb girth +0.008/+0.010 toward the chunky build. Budget: the additions cost 4KB; cap rings 20\u219218 and neck/torso segments trimmed paid for them at 399KB; a hair-ring trim to 18 was tried and REVERTED - it flipped a fringe column onto the face and cost the right side 4.7 points (the column-quantization class). Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 5.5deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 26.5 and 1 metric(s) remain outside tolerance on this board.",
         "note": "Evidence and board re-captured fresh for the polish-round critic."
       },
       "polishFindings": [
@@ -572,7 +572,7 @@
         "Runtime skin more orange than the concept's warm tan; cap side panels catch rim light as a third panel.",
         "A hatched shadow patch survives at the lower-back hem in the swing capture."
       ],
-      "scoredBoardSha256": "a5ecdf187526eb79cd16d5923e1232ec721ca7628818fcf260e0ac86c7bcb1d9"
+      "scoredBoardSha256": "757d932e7153d7f71db57583b119fdbcf1331b4924615e0c718c5c3df157258e"
     },
     "bend_it": {
       "status": "candidate",
@@ -611,9 +611,9 @@
       },
       "measuredFidelity": {
         "command": "npm run measure:fidelity -- bend_it",
-        "ranAt": "2026-08-14",
+        "ranAt": "2026-08-15",
         "board": "bendy-bao-fidelity-review.png",
-        "result": "All three shoe-band metrics inside tolerance (dominant 64.6 vs 67.6, second 35.4 vs 31.6, saturation 28.2 vs 28.7) after two authored corrections: the concept shoe is cream WITH a dark-brown upper (#faecdb/#735534) and the first cut authored an all-cream taupe. Head height, aspect and face-skin metrics NOT MEASURED: his neck pinch (z 2.49-2.55, 37.7% of figure) sits inside the T-pose arm band, the same honest refusal the instrument learned on Grizz. Ankle daylight 46.8 vs concept 0.00 is OFF with a measured cause: the sheet draws his feet together (front-silhouette z 0.14 is a single 0.59ft run - the shoes touch) while the rig binds at the roster-wide 6.75-degree splay; pose, not sculpt.",
+        "result": "All three shoe-band metrics inside tolerance (dominant 64.6 vs 67.6, second 35.4 vs 31.6, saturation 28.2 vs 28.7) after two authored corrections: the concept shoe is cream WITH a dark-brown upper (#faecdb/#735534) and the first cut authored an all-cream taupe. Head height, aspect and face-skin metrics NOT MEASURED: his neck pinch (z 2.49-2.55, 37.7% of figure) sits inside the T-pose arm band, the same honest refusal the instrument learned on Grizz. Ankle daylight 46.8 vs concept 0.00 is OFF with a measured cause: the sheet draws his feet together (front-silhouette z 0.14 is a single 0.59ft run - the shoes touch) while the rig binds at the roster-wide 6.75-degree splay; pose, not sculpt. Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 4deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 36.5 (head-box family not measured, as recorded) and 1 metric(s) remain outside tolerance on this board.",
         "note": "Head placement is gated by featurelatitude instead: brow 49.8 vs traced 50.0, eye 62.0 vs 62.3, mouth 79.8 vs 79.0, ear line 72.0 vs 71.3, all through his declared 3.99-2.49 span."
       },
       "heroEvidence": "bendy-bao-runtime-hero.png",
@@ -630,7 +630,7 @@
         "Shirt hem corners and shorts read as hard butt-joined primitives at board resolution (caps silhouette at 4).",
         "Ear could carry rim/lobe form against the skull for a later 5."
       ],
-      "scoredBoardSha256": "9f5a1fe9c754312571f5ce84dbaaa561bb2d50ee6505320e1a73d80f98ea9b31"
+      "scoredBoardSha256": "300f2ec2545497f3c0f1f5ae9a2bb397e3fe215bc213f257d59199bb112ee788"
     },
     "flash": {
       "status": "candidate",
@@ -669,9 +669,9 @@
       },
       "measuredFidelity": {
         "command": "npm run measure:fidelity -- flash",
-        "ranAt": "2026-08-14",
+        "ranAt": "2026-08-15",
         "board": "flash-gordon-jr-fidelity-review.png",
-        "result": "Head height 34.8 vs concept 34.9 and aspect 0.72 vs 0.80 - his slim neck (0.123ft half, the narrowest measured yet) pinches ABOVE the T-pose arm band, so the instrument could measure a big-headed kid for once. Shoe band 63.3/36.7 vs 62.3/36.8 with saturation 20.8 vs 24.3, all inside tolerance after the tan quarter was authored from the classifier pair (#f8ebdc/#b49473). Visible face 37.1/36.4 vs 34.6/39.8, asymmetry 0.71 - the shaved-fade coverage was tuned against this metric across three rounds. Ankle daylight 53.3 vs concept 0.00 is OFF with measured cause: the sheet merges his ankles (socks touch) while the rig binds at the roster-wide 6.75-degree splay; pose, not sculpt.",
+        "result": "Head height 34.8 vs concept 34.9 and aspect 0.72 vs 0.80 - his slim neck (0.123ft half, the narrowest measured yet) pinches ABOVE the T-pose arm band, so the instrument could measure a big-headed kid for once. Shoe band 63.3/36.7 vs 62.3/36.8 with saturation 20.8 vs 24.3, all inside tolerance after the tan quarter was authored from the classifier pair (#f8ebdc/#b49473). Visible face 37.1/36.4 vs 34.6/39.8, asymmetry 0.71 - the shaved-fade coverage was tuned against this metric across three rounds. Ankle daylight 53.3 vs concept 0.00 is OFF with measured cause: the sheet merges his ankles (socks touch) while the rig binds at the roster-wide 6.75-degree splay; pose, not sculpt. Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 5.5deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 37.8 and 1 metric(s) remain outside tolerance on this board.",
         "note": "Feature placement gated by featurelatitude: brow 55.2 vs traced 55.0, eye 68.0 vs 68.1, mouth 87.5 vs 87.4 (the spec refuses his brow/eye - the fade merges them - and its \"mouth\" is his nostrils; the smirk rows 355-362 are the bounded trace), ear line 74.8, through his declared 3.99-2.60 span."
       },
       "heroEvidence": "flash-gordon-jr-runtime-hero.png",
@@ -686,7 +686,7 @@
         "Shorts-to-thigh and neck-to-torso junctions are butt-joined caps.",
         "A slightly wider crest base along the front axis would keep the mohawk from collapsing to one pixel at 40px."
       ],
-      "scoredBoardSha256": "dc7fde09e3c53cbacba76467d03ba4819e3f1a74cbc661ead565b3f4120b0e25"
+      "scoredBoardSha256": "f4ce0b0567224105f5a1626d1c72d1632989fe866a0ff94c56266090b342c90c"
     },
     "zippy": {
       "status": "candidate",
@@ -725,9 +725,9 @@
       },
       "measuredFidelity": {
         "command": "npm run measure:fidelity -- zippy",
-        "ranAt": "2026-08-14",
+        "ranAt": "2026-08-15",
         "board": "zippy-fidelity-review.png",
-        "result": "Head height 27.4 vs concept 29.0 and width:height 1.49 vs 1.53 - both spans include her pigtail spouts, and the aspect only landed once the spout masses were pulled IN to merge with the crown (the first build floated them 0.1ft out and read 1.18). Shoe band 74.0/26.0 vs 73.6/22.7 with saturation 16.3 vs 19.7, all in tolerance. Visible face 21.8/22.9 vs 17.7/19.8, asymmetry 1.18 - her bang fringe covers the forehead so the face windows are the smallest yet. Ankle daylight 48.4 vs 0.00 OFF with measured cause: the sheet merges her ankles while the rig binds at the roster-wide 6.75-degree splay; pose, not sculpt.",
+        "result": "Head height 27.4 vs concept 29.0 and width:height 1.49 vs 1.53 - both spans include her pigtail spouts, and the aspect only landed once the spout masses were pulled IN to merge with the crown (the first build floated them 0.1ft out and read 1.18). Shoe band 74.0/26.0 vs 73.6/22.7 with saturation 16.3 vs 19.7, all in tolerance. Visible face 21.8/22.9 vs 17.7/19.8, asymmetry 1.18 - her bang fringe covers the forehead so the face windows are the smallest yet. Ankle daylight 48.4 vs 0.00 OFF with measured cause: the sheet merges her ankles while the rig binds at the roster-wide 6.75-degree splay; pose, not sculpt. Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 7deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 27.9 and 1 metric(s) remain outside tolerance on this board.",
         "note": "Feature placement gated by featurelatitude: brow 41.1 vs traced 41.3, eye 58.5 vs 58.7, mouth 84.6 vs 85.0 through her declared 3.99-2.84 span. No earLine target - the pigtails own every width metric near the ears on concept and delivery alike, so the ear is placed off the profile and reviewed by eye. Her TORSO_LEVELS are declared not-traceable: the hanging arms merge with the tee at every row, so halves are bounded cluster-run traces."
       },
       "heroEvidence": "zippy-runtime-hero.png",
@@ -743,7 +743,7 @@
         "Hair strand grouping (hairMass hard-cap); soften the back-of-head corner in the same pass.",
         "Ear reads as a flat patch in profile - rim/lobe construction (rubric 3.10)."
       ],
-      "scoredBoardSha256": "6764c58b40048a0acea6c2c0ccbbb448514edd16f957fff38288c13eede9b617"
+      "scoredBoardSha256": "fadf464a2c475de65a636540a733bdc86c9c69214632b6fb647c8e86aa5453b3"
     },
     "diva": {
       "status": "candidate",
@@ -782,9 +782,9 @@
       },
       "measuredFidelity": {
         "command": "npm run measure:fidelity -- diva",
-        "ranAt": "2026-08-14",
+        "ranAt": "2026-08-15",
         "board": "dazzle-fidelity-review.png",
-        "result": "Shoe band 50.8/49.2 vs concept 51.9/45.0 with saturation 26.4 vs 25.9, all in tolerance - the classifier pair on her sheet is cream + warm tan (the sole and its shading; purple never makes the band pair on high-tops), so the sole is authored two-tone. Head height, aspect and face-skin NOT MEASURED on BOTH sides: her mane merges with the head at every neck row, so there is no honest pinch on concept or delivery. Ankle daylight 48.8 vs 0.00 OFF with measured cause: the sheet merges her ankles while the rig binds at the roster-wide 6.75-degree splay; pose, not sculpt.",
+        "result": "Shoe band 50.8/49.2 vs concept 51.9/45.0 with saturation 26.4 vs 25.9, all in tolerance - the classifier pair on her sheet is cream + warm tan (the sole and its shading; purple never makes the band pair on high-tops), so the sole is authored two-tone. Head height, aspect and face-skin NOT MEASURED on BOTH sides: her mane merges with the head at every neck row, so there is no honest pinch on concept or delivery. Ankle daylight 48.8 vs 0.00 OFF with measured cause: the sheet merges her ankles while the rig binds at the roster-wide 6.75-degree splay; pose, not sculpt. Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 5.5deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 34.0 (head-box family not measured, as recorded) and 1 metric(s) remain outside tolerance on this board.",
         "note": "Feature placement gated by featurelatitude: brow 37.25 vs traced 37.0, eye 54.1 vs 54.1, mouth 76.3 vs 76.1 through her declared 3.99-2.68 span (the spec refuses all three landmarks - the mane merges every band - so the targets are bounded traces). No earLine: the mane owns the width metrics; ears reviewed by eye."
       },
       "heroEvidence": "dazzle-runtime-hero.png",
@@ -799,7 +799,7 @@
         "A small nose form integrated with the skull planes (face 5-item).",
         "The 40px strip is a T-pose sprite; a gameplay-pose strip would be stronger field evidence."
       ],
-      "scoredBoardSha256": "88fb58121e5efb69b6790c24d79f72234b2f53e6070318e57cbd5a399e746ae6"
+      "scoredBoardSha256": "3bace678e65baf19a70800846b9d8741cb98045fc1097bae6122a2f76f83c559"
     },
     "noodle": {
       "status": "candidate",
@@ -838,9 +838,9 @@
       },
       "measuredFidelity": {
         "command": "npm run measure:fidelity -- noodle",
-        "ranAt": "2026-08-14",
+        "ranAt": "2026-08-15",
         "board": "noodle-fidelity-review.png",
-        "result": "Head height 29.1 vs concept 31.0 and aspect 0.99 vs 1.04, in tolerance - the bald dome is the first crown that is its own skull, and the pinch is his real 0.10ft noodle neck. Shoe band 64.1/35.0 vs 62.9/36.1 with saturation 26.3 vs 27.1, in tolerance (the tan-brown had to separate from cream: pair #f9ecdd/#937553). Visible face 35.6/35.6 vs 45.4/44.0 is OFF with a measured cause: an exact pixel replica of the metric shows the shortfall is (a) the drawn glasses - four wire crossings on the sample row where the concept pays half as much ink, and (b) the board ramp SHADOW STEP under the frames, which lands warm skin (sat 0.50, r-b ~50) at lum 74-76 against the classifier floor of 80, where the sheet paints its shadows at lum 151. The skin swatch was chroma-tuned three rounds (first build delivered warmth 37 vs the concept 112 and read HALF the target); the remaining gap is the renderer shadow story recorded on Tank, not palette or geometry - pushing the authored value further clips the r channel and CRUSHES the r>g+12 warmth test (measured: one more lift step dropped the metric to 23.8/20.6). Ankle daylight 33.3 vs 0.00 OFF with measured cause: the sheet merges his ankles while the rig binds at the roster-wide 6.75-degree splay.",
+        "result": "Head height 29.1 vs concept 31.0 and aspect 0.99 vs 1.04, in tolerance - the bald dome is the first crown that is its own skull, and the pinch is his real 0.10ft noodle neck. Shoe band 64.1/35.0 vs 62.9/36.1 with saturation 26.3 vs 27.1, in tolerance (the tan-brown had to separate from cream: pair #f9ecdd/#937553). Visible face 35.6/35.6 vs 45.4/44.0 is OFF with a measured cause: an exact pixel replica of the metric shows the shortfall is (a) the drawn glasses - four wire crossings on the sample row where the concept pays half as much ink, and (b) the board ramp SHADOW STEP under the frames, which lands warm skin (sat 0.50, r-b ~50) at lum 74-76 against the classifier floor of 80, where the sheet paints its shadows at lum 151. The skin swatch was chroma-tuned three rounds (first build delivered warmth 37 vs the concept 112 and read HALF the target); the remaining gap is the renderer shadow story recorded on Tank, not palette or geometry - pushing the authored value further clips the r channel and CRUSHES the r>g+12 warmth test (measured: one more lift step dropped the metric to 23.8/20.6). Ankle daylight 33.3 vs 0.00 OFF with measured cause: the sheet merges his ankles while the rig binds at the roster-wide 6.75-degree splay. Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 5.5deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 13.0 and 3 metric(s) remain outside tolerance on this board.",
         "note": "Feature placement gated by featurelatitude: brow 37.3 vs traced 36.4, eye 53.7 vs 51.9, mouth 69.4 vs 69.4, ear line at the traced 57.9, through his declared 3.99-2.76 span."
       },
       "heroEvidence": "noodle-runtime-hero.png",
@@ -856,7 +856,7 @@
         "A slightly taller mouth cell would secure the grin at draft-card distance (mouthScale exists now).",
         "The runtime ochre cast vs the concept peach is the recorded renderer story - three chroma rounds already run; do not fix the palette again."
       ],
-      "scoredBoardSha256": "c5a558942d21c8cdf641f66ddef596785a970fc62bc575afda8747e4794686e6"
+      "scoredBoardSha256": "267a4d4f801797b65c0fe8f95be51906ac962eafd174aa59c26278d8204e4ea0"
     },
     "turbo": {
       "status": "candidate",
@@ -897,7 +897,7 @@
         "command": "npm run measure:fidelity -- turbo",
         "ranAt": "2026-08-15",
         "board": "turbo-fidelity-review.png",
-        "result": "Shoe band 77.4/22.6 vs concept 77.4/19.4 with saturation 17.4 vs 20.5, all in tolerance (the navy is only the upper quarter; two band-boundary rounds landed it). Head height, aspect and face-skin NOT MEASURED: his hair-inclusive head is 39.7% of the figure, putting the neck pinch inside the T-pose arm band - the same honest refusal as Grizz. Ankle daylight 53.3 vs 0.75 OFF with measured cause: the sheet stands his ankles nearly together while the rig binds at the roster-wide 6.75-degree splay; pose, not sculpt.",
+        "result": "Shoe band 77.4/22.6 vs concept 77.4/19.4 with saturation 17.4 vs 20.5, all in tolerance (the navy is only the upper quarter; two band-boundary rounds landed it). Head height, aspect and face-skin NOT MEASURED: his hair-inclusive head is 39.7% of the figure, putting the neck pinch inside the T-pose arm band - the same honest refusal as Grizz. Ankle daylight 53.3 vs 0.75 OFF with measured cause: the sheet stands his ankles nearly together while the rig binds at the roster-wide 6.75-degree splay; pose, not sculpt. Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 13deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 0.00 (head-box family not measured, as recorded) and 0 metric(s) remain outside tolerance on this board.",
         "note": "Feature placement gated by featurelatitude: brow 57.8 vs traced 58.0, eye 72.4 vs 72.4, mouth 88.6 vs 88.5 through his declared 3.99-2.41 span. The spec refuses his brow/eye (the fringe merges them); the targets are bounded traces confirmed against a zoomed crop after the first dark-run read mistook the fringe shadow for brows."
       },
       "heroEvidence": "turbo-runtime-hero.png",
@@ -911,7 +911,7 @@
         "Larger glossy irises with highlight; a nose form that breaks the profile; the dimple.",
         "ROSTER-WIDE (do not fix per character): the deltoid toon-terminator band - now DIAGNOSED (pixel-sampled as darkened garment colour on the arm-root hump above the narrowing torso; two geometry rounds moved it only slightly) - and the 6.75-degree ankle splay; both sculptlib/rig-level polish items."
       ],
-      "scoredBoardSha256": "f23b8a728a7379435218230201cd88750d21026b5299242289e00df0189c95a1"
+      "scoredBoardSha256": "80d202c9db28270f30515e774aaafb656b47d8415aa350549e469b7963568084"
     },
     "moose": {
       "status": "candidate",
@@ -952,7 +952,7 @@
         "command": "npm run measure:fidelity -- moose",
         "ranAt": "2026-08-15",
         "board": "moose-fidelity-review.png",
-        "result": "Head height 24.3 vs concept 25.0 and aspect 1.07 vs 1.11, in tolerance - his high neck (z 3.00) measures cleanly, and the aspect needed the skull widened to the temple trace (rx 0.42) plus his big ears. Shoe band 88.7/10.1 vs 83.1/13.7 with saturation 19.1 vs 22.6, in tolerance. Visible face 39.7/40.4 vs 18.9/27.6 is OFF with a measured cause: the CONCEPT side fails isSkin under its own painted brim shadow (deep skin in shadow drops below the classifier floor, and asymmetrically - 18.9 left vs 27.6 right is the sheet lighting), while the delivered board renders an evenly-lit face; the delta is the sheet shading, not sculpt coverage - the inverse of Noodle case. Ankle daylight 33.8 vs 0.00 OFF with measured cause: the rig binds at the roster-wide 6.75-degree splay.",
+        "result": "Head height 24.3 vs concept 25.0 and aspect 1.07 vs 1.11, in tolerance - his high neck (z 3.00) measures cleanly, and the aspect needed the skull widened to the temple trace (rx 0.42) plus his big ears. Shoe band 88.7/10.1 vs 83.1/13.7 with saturation 19.1 vs 22.6, in tolerance. Visible face 39.7/40.4 vs 18.9/27.6 is OFF with a measured cause: the CONCEPT side fails isSkin under its own painted brim shadow (deep skin in shadow drops below the classifier floor, and asymmetrically - 18.9 left vs 27.6 right is the sheet lighting), while the delivered board renders an evenly-lit face; the delta is the sheet shading, not sculpt coverage - the inverse of Noodle case. Ankle daylight 33.8 vs 0.00 OFF with measured cause: the rig binds at the roster-wide 6.75-degree splay. Stance pass 2026-08-15: the board renders now hold the drawn stance (legs adducted 10deg at the hip with flat feet, the same argument that put the arms down; Junebug and Theo keep their sheets' own drawn-open stance) - ankle daylight reads 0.00 and 2 metric(s) remain outside tolerance on this board. Mouth-cell pass: this kid's atlas gained the batch-4 cell knobs (alignOpenMouth, tongueOut, tongueReach 1.3) so grin/cheer/tongue read distinctly; the GLB was rebuilt and evidence recaptured.",
         "note": "Feature placement gated by featurelatitude: brow 52.2 vs traced 52.0, eye 66.7 vs 66.7, mouth 87.1 vs 87.0, ear line at the traced 74.5, through his declared 3.99-3.00 span (the smallest head span on the roster)."
       },
       "heroEvidence": "moose-runtime-hero.png",
@@ -967,7 +967,7 @@
         "Backlit swing frames go uniformly dark on the face - check against the recorded terminator artifact with a front-lit capture.",
         "ROSTER-WIDE: deltoid terminator band and ankle splay - sculptlib/rig polish round."
       ],
-      "scoredBoardSha256": "16d2becadb19d63aa7ee9e125e02db115eb3d18879f14c521892058c6a2e7019"
+      "scoredBoardSha256": "525e244df13f5adde2f228dc04d687a5629ce19eb32d51f9e8a485232017ed6b"
     },
     "penny": {
       "status": "candidate",
@@ -1008,7 +1008,7 @@
         "command": "npm run measure:fidelity -- penny",
         "ranAt": "2026-08-15",
         "board": "penny-fidelity-review.png",
-        "result": "Head height 32.9 vs concept 34.9 and aspect 1.19 vs 1.17, in tolerance - the bob needed a trim (its clump peaks pushed the width over) and the clump pattern itself had to become MIRROR-SYMMETRIC: the phase-rotated ringlet lobes read faceAsymmetry 7.14 against 4.0 until the row term moved from phase to amplitude. Shoe band 58.8/41.2 vs 63.1/35.9 with saturation 24.8 vs 27.0, in tolerance. Visible face 34.7/36.1 vs 27.4/33.9 - the right is in tolerance and the LEFT is OFF (+7.3) with a measured cause: the concept sheet lights her asymmetrically (its own left 27.4 vs right 33.9 is a 6.5-point shading split), and the evenly-lit delivered board is symmetric at 34.7/36.1; the delta is the sheet shadow, the Moose class. Ankle daylight 31.4 vs 0.00 OFF with measured cause: the rig binds at the roster-wide 6.75-degree splay.",
+        "result": "Head height 32.9 vs concept 34.9 and aspect 1.19 vs 1.17, in tolerance - the bob needed a trim (its clump peaks pushed the width over) and the clump pattern itself had to become MIRROR-SYMMETRIC: the phase-rotated ringlet lobes read faceAsymmetry 7.14 against 4.0 until the row term moved from phase to amplitude. Shoe band 58.8/41.2 vs 63.1/35.9 with saturation 24.8 vs 27.0, in tolerance. Visible face 34.7/36.1 vs 27.4/33.9 - the right is in tolerance and the LEFT is OFF (+7.3) with a measured cause: the concept sheet lights her asymmetrically (its own left 27.4 vs right 33.9 is a 6.5-point shading split), and the evenly-lit delivered board is symmetric at 34.7/36.1; the delta is the sheet shadow, the Moose class. Ankle daylight 31.4 vs 0.00 OFF with measured cause: the rig binds at the roster-wide 6.75-degree splay. Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 5.5deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 12.7 and 3 metric(s) remain outside tolerance on this board.",
         "note": "Feature placement gated by featurelatitude: brow 40.9 vs traced 40.9, eye 56.4 vs 56.4, mouth 73.6 vs 73.5 through her declared 3.99-2.60 span (the spec refuses all three - the curls merge every band). No earLine: the bob owns the width rows and covers her ears in every view; none are built (Grizz precedent)."
       },
       "heroEvidence": "penny-runtime-hero.png",
@@ -1023,7 +1023,7 @@
         "Firmer nose; a touch more iris area.",
         "ROSTER-WIDE: shoulder terminator and ankle splay - sculptlib/rig polish round."
       ],
-      "scoredBoardSha256": "937140ca84df9e016125436b3abe8e15fb254f5e0e3bcd04406975b4fa4e4413"
+      "scoredBoardSha256": "dbdeace6d423cf2ee5ac583b92876a68a9e05aa9edc072bb8e1de52fcf1b6025"
     },
     "the_prof": {
       "status": "candidate",
@@ -1064,7 +1064,7 @@
         "command": "npm run measure:fidelity -- the_prof",
         "ranAt": "2026-08-15",
         "board": "the-professor-fidelity-review.png",
-        "result": "Head height 31.3 vs concept 32.3 and aspect 1.04 vs 1.00, in tolerance - the aspect needed the swept poof authored to its own trace (widest 0.635 half at z 3.48; the first cut under-authored it at 0.495 despite citing the 0.6498 measurement). Shoe band 62.9/36.3 vs 66.0/30.9 with saturation 21.4 vs 24.1, in tolerance - the sheet grey shoe is warm taupe to the classifier (#7c634b); a cool grey matched neither pair tone and read 97.5% single-tone. Visible face 25.3/25.3 vs 11.9/14.2 is OFF with a measured cause: the concept big lenses are drawn with tinted glass shading that fails isSkin across the whole 62%-of-head sample row, while the delivered lenses are deliberately CLEAR wire rings so the atlas eyes stay readable in-game - the delta is the lens fill, a construction choice, not missing coverage. Ankle daylight 31.4 vs 0.00 OFF with measured cause: the roster-wide 6.75-degree splay.",
+        "result": "Head height 31.3 vs concept 32.3 and aspect 1.04 vs 1.00, in tolerance - the aspect needed the swept poof authored to its own trace (widest 0.635 half at z 3.48; the first cut under-authored it at 0.495 despite citing the 0.6498 measurement). Shoe band 62.9/36.3 vs 66.0/30.9 with saturation 21.4 vs 24.1, in tolerance - the sheet grey shoe is warm taupe to the classifier (#7c634b); a cool grey matched neither pair tone and read 97.5% single-tone. Visible face 25.3/25.3 vs 11.9/14.2 is OFF with a measured cause: the concept big lenses are drawn with tinted glass shading that fails isSkin across the whole 62%-of-head sample row, while the delivered lenses are deliberately CLEAR wire rings so the atlas eyes stay readable in-game - the delta is the lens fill, a construction choice, not missing coverage. Ankle daylight 31.4 vs 0.00 OFF with measured cause: the roster-wide 6.75-degree splay. Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 5.5deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 14.5 and 3 metric(s) remain outside tolerance on this board.",
         "note": "Feature placement gated by featurelatitude: brow 44.2 vs traced 44.4, eye 60.6 vs 60.6 (the lens-ring centres, Bendy precedent), mouth 87.1 vs 87.2 through his declared 3.99-2.71 span. No earLine: the swept hair owns the widest row; ears placed by eye."
       },
       "heroEvidence": "the-professor-runtime-hero.png",
@@ -1079,7 +1079,7 @@
         "Thicken/darken brow marks for contrast above the rings.",
         "ROSTER-WIDE: shoulder terminator, ankle splay; and the swing capture shows no bat prop - flag for the clip owner."
       ],
-      "scoredBoardSha256": "0bc488a38daed3aa7425a6c3af08e1b3871989dab0647b111c19b1147e9e32d2"
+      "scoredBoardSha256": "a2cd0a04ee6c420d85da77703c3c0a99585fa72aaa607e499e1340edcfa9c3b9"
     },
     "ace_kid": {
       "status": "candidate",
@@ -1120,7 +1120,7 @@
         "command": "npm run measure:fidelity -- ace_kid",
         "ranAt": "2026-08-15",
         "board": "ace-fidelity-review.png",
-        "result": "Head height 32.4 vs concept 33.1 and aspect 0.89 vs 0.93, in tolerance - the aspect needed the shag sides authored to their trace (0.59 half at z 3.26) and the cap widened to its own 0.54 measurement. Shoe band 65.9/26.4 vs 69.7/28.4 with saturation 23.6 vs 22.3, in tolerance - the classifier band window is the BOTTOM 9% of the figure (sole and vamp only; the drawn blue quarter sits above it), so the sole is two-tone cream/tan per the pair. Visible face 18.1/18.1 vs 23.2/21.7, in tolerance - landed after learning the fringe-window quantization: the curtain the sample row sees is the QUAD from the ring above, so the open window must climb past that ring column or three fringe nudges move nothing (measured: three identical 15.6 readings). Ankle daylight 31.9 vs 0.00 OFF with measured cause: the roster-wide 6.75-degree splay.",
+        "result": "Head height 32.4 vs concept 33.1 and aspect 0.89 vs 0.93, in tolerance - the aspect needed the shag sides authored to their trace (0.59 half at z 3.26) and the cap widened to its own 0.54 measurement. Shoe band 65.9/26.4 vs 69.7/28.4 with saturation 23.6 vs 22.3, in tolerance - the classifier band window is the BOTTOM 9% of the figure (sole and vamp only; the drawn blue quarter sits above it), so the sole is two-tone cream/tan per the pair. Visible face 18.1/18.1 vs 23.2/21.7, in tolerance - landed after learning the fringe-window quantization: the curtain the sample row sees is the QUAD from the ring above, so the open window must climb past that ring column or three fringe nudges move nothing (measured: three identical 15.6 readings). Ankle daylight 31.9 vs 0.00 OFF with measured cause: the roster-wide 6.75-degree splay. Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 5.5deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 14.8 and 1 metric(s) remain outside tolerance on this board.",
         "note": "Feature placement gated by featurelatitude: brow 46.1 vs traced 46.3, eye 62.8 vs 62.8, mouth 84.7 vs 84.9, ear line 68.7 vs the traced 68.3, through his declared 3.99-2.68 span. The spec refuses his eye band and flags the mouth ambiguous (nostril row 357 vs lip row 373); the targets are bounded traces."
       },
       "heroEvidence": "ace-runtime-hero.png",
@@ -1136,7 +1136,7 @@
         "Relief for eyes/brows against the faceplate (face 5-item).",
         "ROSTER-WIDE: shoulder terminator, ankle splay."
       ],
-      "scoredBoardSha256": "e9f6e835c11953691304b452f2ce61917737ddfc5de87a917cdadfb1163e9267"
+      "scoredBoardSha256": "96241352aea440411e76ef13b09408346c4397382859b2c32ed601f595265106"
     },
     "rocket": {
       "status": "candidate",
@@ -1177,7 +1177,7 @@
         "command": "npm run measure:fidelity -- rocket",
         "ranAt": "2026-08-15",
         "board": "rocket-rosa-fidelity-review.png",
-        "result": "Head height 36.5 vs concept 36.5 and aspect 0.67 vs 0.69, in tolerance - the headBox pinch is pinned by authoring the neck's bottom ring a genuine 2px narrower than the ring above (the detector keeps the TOPMOST of equal-width rows, and a one-width neck drifted the pinch to the chin). Shoe band 67.4/32.6 vs 70.0/28.6 with saturation 16.1 vs 19.7, in tolerance. Visible face 49.3/47.9 vs 43.8/44.4 with asymmetry 1.43, in tolerance - the review camera's high vantage projects the face plane ~0.13ft down the figure, so the eye is authored to the concept's own 0.072ft half-height with eyeY at the featurelatitude tolerance edge (58.9 vs traced 61.3, tol 2.5) to keep the 62% sample row off the sclera. Ankle daylight 54.2 vs 0.00 OFF with measured cause: the roster-wide rig splay (Grizz's record has the diagnosis).",
+        "result": "Head height 36.5 vs concept 36.5 and aspect 0.67 vs 0.69, in tolerance - the headBox pinch is pinned by authoring the neck's bottom ring a genuine 2px narrower than the ring above (the detector keeps the TOPMOST of equal-width rows, and a one-width neck drifted the pinch to the chin). Shoe band 67.4/32.6 vs 70.0/28.6 with saturation 16.1 vs 19.7, in tolerance. Visible face 49.3/47.9 vs 43.8/44.4 with asymmetry 1.43, in tolerance - the review camera's high vantage projects the face plane ~0.13ft down the figure, so the eye is authored to the concept's own 0.072ft half-height with eyeY at the featurelatitude tolerance edge (58.9 vs traced 61.3, tol 2.5) to keep the 62% sample row off the sclera. Ankle daylight 54.2 vs 0.00 OFF with measured cause: the roster-wide rig splay (Grizz's record has the diagnosis). Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 0deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 54.2 and 1 metric(s) remain outside tolerance on this board.",
         "note": "Feature placement gated by featurelatitude through her declared 3.99-2.73 span: brow 47.3 vs traced 47.2, eye 60.1 spec vs 61.3 traced (tolerance-edge, deliberate), mouth 82.8 vs 82.8, ear line 67.4 vs 67.5 - her pony flows behind the head so she keeps a real front ear line. The tee is the backdrop's own cream (recipe records the refusal); the tail ribbon's depth reach is capped at 0.55 because the review render auto-frames the bounding box and deeper hair rescales every measured ratio. The sheet's side-swept fringe is authored mirror-symmetric per the Flash/Penny faceAsymmetry lesson."
       },
       "polishFindings": [
@@ -1232,7 +1232,7 @@
         "command": "npm run measure:fidelity -- gizmo",
         "ranAt": "2026-08-15",
         "board": "gizmo-fidelity-review.png",
-        "result": "Head height 35.6 vs concept 36.9 and aspect 0.84 vs 0.86, in tolerance - the centre crown spike carries the box to the sheet's own proportion. Shoe band 82.1/17.9 vs 84.6/13.1 with saturation 19.2 vs 21.7, in tolerance after warming the cream (a neutral cream measured 9.5 against the grey-cannot-pass floor). Visible face 14.5/16.9 vs 9.59/13.7 with asymmetry 2.33, in tolerance - the round-2 deeper mop closed the last 1.1 on the sheet's shadowed left side. Ankle daylight 49.2 vs 0.00 OFF with measured cause: the roster-wide rig splay.",
+        "result": "Head height 35.6 vs concept 36.9 and aspect 0.84 vs 0.86, in tolerance - the centre crown spike carries the box to the sheet's own proportion. Shoe band 82.1/17.9 vs 84.6/13.1 with saturation 19.2 vs 21.7, in tolerance after warming the cream (a neutral cream measured 9.5 against the grey-cannot-pass floor). Visible face 14.5/16.9 vs 9.59/13.7 with asymmetry 2.33, in tolerance - the round-2 deeper mop closed the last 1.1 on the sheet's shadowed left side. Ankle daylight 49.2 vs 0.00 OFF with measured cause: the roster-wide rig splay. Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 5.5deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 26.7 and 1 metric(s) remain outside tolerance on this board.",
         "note": "Lens interiors are authored as pale glass-shine discs because the sheet fills both rings with paper-cream - an open wire ring measured ~20 points more visible face than the drawing (The Professor's tinted-lens class). The discs are translated copies, not mirrors: one winding both sides, settled by reading triangle normals from the exported GLB. His ear line is refused (mop-poisoned widest row); featurelatitude gates brow 48.0 vs traced 47.9, lens-centre eye 66.9 vs 66.7, mouth 85.9 vs 85.7 through his 3.99-2.59 span."
       },
       "heroEvidence": "gizmo-runtime-hero.png",
@@ -1245,7 +1245,7 @@
         "back-of-head strand clumps to chase the 5 on hair mass",
         "bib pocket relief (flap/button) and the sheet strap buttons at hero scale"
       ],
-      "scoredBoardSha256": "335258e7fecdec5a04b973bdd88d338d97215eeb0e4070ea698da5a80aa50f82"
+      "scoredBoardSha256": "7546197c38c7372029d23390619be08f2772d82c662207a0570fe2f3f932657b"
     },
     "dex": {
       "status": "candidate",
@@ -1291,7 +1291,7 @@
         "command": "npm run measure:fidelity -- dex",
         "ranAt": "2026-08-15",
         "board": "dex-fidelity-review.png",
-        "result": "Head height 32.7 vs concept 33.7 and aspect 0.98 vs 0.96, in tolerance first try - the neck's bottom ring is authored 2px narrower per Rocket's topmost-of-equals lesson. Shoe band 51.6/48.4 vs 47.7/49.9 with saturation 21.0 vs 24.9, in tolerance - the sheet splits the band nearly even, so the black canvas quarter starts at 0.20 and the sole is warm tan. Visible face 24.7/24.7 vs 20.5/22.8 with asymmetry 0.00, in tolerance - the curl ring is 18 segments, not 17: an odd ring has no mirror-symmetric columns and the left curtain edge sat pinned through two fringe nudges that moved the right. Ankle daylight 31.4 vs 0.00 OFF with measured cause: the roster-wide rig splay.",
+        "result": "Head height 32.7 vs concept 33.7 and aspect 0.98 vs 0.96, in tolerance first try - the neck's bottom ring is authored 2px narrower per Rocket's topmost-of-equals lesson. Shoe band 51.6/48.4 vs 47.7/49.9 with saturation 21.0 vs 24.9, in tolerance - the sheet splits the band nearly even, so the black canvas quarter starts at 0.20 and the sole is warm tan. Visible face 24.7/24.7 vs 20.5/22.8 with asymmetry 0.00, in tolerance - the curl ring is 18 segments, not 17: an odd ring has no mirror-symmetric columns and the left curtain edge sat pinned through two fringe nudges that moved the right. Ankle daylight 31.4 vs 0.00 OFF with measured cause: the roster-wide rig splay. Stance pass 2026-08-15: the board renders now hold the drawn stance (legs adducted 10deg at the hip with flat feet, the same argument that put the arms down; Junebug and Theo keep their sheets' own drawn-open stance) - ankle daylight reads 0.00 and 0 metric(s) remain outside tolerance on this board.",
         "note": "His ear line is refused (curls and ears merge in every width metric); featurelatitude gates brow 49.0 vs traced 49.0, eye 67.6 vs 67.6, mouth 82.4 vs 82.3 through his 3.99-2.65 span. His lit skin never gets a cluster on the sheet (folded into the shadow tone) - the recipe records the refusal and the swatch is a direct cheek sample. alignOpenMouth is set: at mouthY 70 the unaligned open cells paint the under-chin (Gizmo's lesson)."
       },
       "polishFindings": [
@@ -1300,7 +1300,7 @@
         "the cap-crown patch is the declared recessTeamAccent badge (cap-lane convention), confirmed - consider seating it lower on the front panel",
         "nose form to break the profile; soften the 3/4 lid line toward the concept round eye"
       ],
-      "scoredBoardSha256": "5b280c32c540ddb6d59fc24579a81233a9c437d0b05cd3461df7d6d517c8baaf"
+      "scoredBoardSha256": "b0ba225038d9083c94c70d570e777f53b609890afe4af8a67d54bf8ca7af3967"
     },
     "clover": {
       "status": "candidate",
@@ -1346,7 +1346,7 @@
         "command": "npm run measure:fidelity -- clover",
         "ranAt": "2026-08-15",
         "board": "clover-fidelity-review.png",
-        "result": "Head height 28.9 vs concept 29.9 and aspect 1.45 vs 1.45, in tolerance - her head box is the widest on the roster (the pigtails are inside it) and ends at the concept's own z 2.79 pinch: the dress collar rides the sheet's 2.62 line hiding the lower neck, the pigtail bottoms hug the jaw, and a deliberate 0.008 notch at z 2.78 keeps the pinch off her 0.122 chin cap. Shoe band 34.3/43.6 vs 33.1/50.9 with saturation 36.3 vs 35.5, in tolerance - the warm midsole tone recreates the concept's three-way split (16% of its band is ink). Visible face 43.5/43.5 vs 38.2/38.6 with asymmetry 0.00 - blonde hair legally passes isSkin on both sheets, so the tails count on both sides of the comparison; the authored skin is chroma-lifted because the toon highlight compressed saturation to 0.218, two thousandths under the isSkin floor, and asymmetrically with the key light. Ankle daylight 48.4 vs 0.00 OFF with measured cause: the roster-wide rig splay.",
+        "result": "Head height 28.9 vs concept 29.9 and aspect 1.45 vs 1.45, in tolerance - her head box is the widest on the roster (the pigtails are inside it) and ends at the concept's own z 2.79 pinch: the dress collar rides the sheet's 2.62 line hiding the lower neck, the pigtail bottoms hug the jaw, and a deliberate 0.008 notch at z 2.78 keeps the pinch off her 0.122 chin cap. Shoe band 34.3/43.6 vs 33.1/50.9 with saturation 36.3 vs 35.5, in tolerance - the warm midsole tone recreates the concept's three-way split (16% of its band is ink). Visible face 43.5/43.5 vs 38.2/38.6 with asymmetry 0.00 - blonde hair legally passes isSkin on both sheets, so the tails count on both sides of the comparison; the authored skin is chroma-lifted because the toon highlight compressed saturation to 0.218, two thousandths under the isSkin floor, and asymmetrically with the key light. Ankle daylight 48.4 vs 0.00 OFF with measured cause: the roster-wide rig splay. Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 5.5deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 34.0 and 1 metric(s) remain outside tolerance on this board.",
         "note": "Her ear line is refused (pigtails own every width metric 3.4-2.9) and the mouth band is refused (skin-adjacent line; corner shadow bounds it at 68.6). featurelatitude gates brow 43.0 vs traced 43.0, eye 46.4 spec vs 48.7 traced (tolerance edge, deliberate - the parallax rule), mouth 68.9 vs 68.9 through her 3.99-2.55 span. The pigtails are SMOOTH mirrored tubes: every lobed variant read the faceSkin row in different phase per side (asymmetry 4.0-4.5, Penny's clump-phase class) - the wave lives in the spine's S-curve."
       },
       "polishFindings": [
@@ -1354,7 +1354,7 @@
         "nose form to break the profile (decal-face read)",
         "soften pigtail/sleeve joins toward organic transitions; chubbier limbs"
       ],
-      "scoredBoardSha256": "405dbf588b479da1ed044ae9e73ac02bb82853a34b4f3629c1ae4240b36bec0b"
+      "scoredBoardSha256": "3d9c69c15166b2975b1fbba94201fe4377ae355352c6e6e578b311d571783fd6"
     },
     "boomer": {
       "status": "candidate",
@@ -1400,7 +1400,7 @@
         "command": "npm run measure:fidelity -- boomer",
         "ranAt": "2026-08-15",
         "board": "boomer-fidelity-review.png",
-        "result": "Head height 35.0 vs concept 37.3 OFF with measured cause, and aspect 0.87 vs 0.77 OFF with the same cause: the concept hangs its arms while the bind pose's T-pose arm band explodes the centre run at z 2.56 (probed: neck rows 42-46px wide down to row 198, then 200->352px at the arm band), truncating the visible neck above the concept's own 2.51 pinch - the headBox instrument's documented arm-band class (Grizz's header). Shoe band 76.0/24.0 vs 80.4/17.6 with saturation 21.9 vs 20.2, in tolerance after warming the cupsole. Visible face left 31.2 vs 37.9 OFF with measured cause: the sheet lights him asymmetrically (its own two sides differ by 8.4 - 37.9 lit vs 29.5 shaded) while the delivered face is mirror-symmetric (31.2/31.2, asymmetry 0.00) and sits within tolerance of the concept's shaded side (right 31.2 vs 29.5 ok). Ankle daylight 39.4 vs 0.00 OFF with measured cause: the roster-wide rig splay.",
+        "result": "Head height 35.0 vs concept 37.3 OFF with measured cause, and aspect 0.87 vs 0.77 OFF with the same cause: the concept hangs its arms while the bind pose's T-pose arm band explodes the centre run at z 2.56 (probed: neck rows 42-46px wide down to row 198, then 200->352px at the arm band), truncating the visible neck above the concept's own 2.51 pinch - the headBox instrument's documented arm-band class (Grizz's header). Shoe band 76.0/24.0 vs 80.4/17.6 with saturation 21.9 vs 20.2, in tolerance after warming the cupsole. Visible face left 31.2 vs 37.9 OFF with measured cause: the sheet lights him asymmetrically (its own two sides differ by 8.4 - 37.9 lit vs 29.5 shaded) while the delivered face is mirror-symmetric (31.2/31.2, asymmetry 0.00) and sits within tolerance of the concept's shaded side (right 31.2 vs 29.5 ok). Ankle daylight 39.4 vs 0.00 OFF with measured cause: the roster-wide rig splay. Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 5.5deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 23.5 and 4 metric(s) remain outside tolerance on this board.",
         "note": "His real low ears gate at earLine 75.1 (the deepest on the roster - the widest head row is the ears breaking the jaw, not hair); featurelatitude gates brow 44.5 vs traced 44.5, eye 54.7 vs 54.7, mouth 65.8 vs 66.0 through his 3.99-2.51 span. The tee's pale stripes are the backdrop's own cream (the recipe records it) - only the gold bands trace. The grin is the widest mouth mark the atlas generator has drawn (mouthScale 1.55, alignOpenMouth for his high mouthY 62)."
       },
       "polishFindings": [
@@ -1408,7 +1408,7 @@
         "chubbier arms with softer torso joins",
         "mohawk legibility at 40px (reads as a dark cap)"
       ],
-      "scoredBoardSha256": "7e307d8ffe9848873c7643a8379404aefab9e3ba03b935b40016ab2477413858"
+      "scoredBoardSha256": "3bd2003ba1024e5a60da9ac819bd2e24100ae1e8e8cf9c9b995d54a7f74890e3"
     },
     "smokey": {
       "status": "candidate",
@@ -1454,7 +1454,7 @@
         "command": "npm run measure:fidelity -- smokey",
         "ranAt": "2026-08-15",
         "board": "smokey-fidelity-review.png",
-        "result": "Head height 30.5 vs concept 31.0 and aspect 1.01 vs 0.99, in tolerance - the crop is a tight skull-hugging shell whose SIDES END ABOVE THE EARS with nape-only tongues below (two critics read fuller shells as a bowl cut), and the neck loft runs into the skull with a 0.136 waist at the concept's own 2.75 pinch. Shoe band 47.2/52.8 vs 52.4/45.8 with saturation 28.6 vs 26.8, in tolerance - the concept's dominant tone is the black wrap, settled by looking at the rendered feet. Visible face 37.1/37.1 vs 29.7/27.5 OFF with measured cause on BOTH sides: the sheet shades his cheeks and temples in #7B340B (lum 64), which fails isSkin's lum>80 floor over ~0.1ft per side, while the delivered toon shadow (lum ~93) legally passes - the delta is scale-invariant (narrowing the skull moved it by 0.02) and perfectly symmetric (asymmetry 0.00), the Penny/Moose/Gizmo sheet-shading class. Ankle daylight 40.0 vs 0.00 OFF with measured cause: the roster-wide rig splay.",
+        "result": "Head height 30.5 vs concept 31.0 and aspect 1.01 vs 0.99, in tolerance - the crop is a tight skull-hugging shell whose SIDES END ABOVE THE EARS with nape-only tongues below (two critics read fuller shells as a bowl cut), and the neck loft runs into the skull with a 0.136 waist at the concept's own 2.75 pinch. Shoe band 47.2/52.8 vs 52.4/45.8 with saturation 28.6 vs 26.8, in tolerance - the concept's dominant tone is the black wrap, settled by looking at the rendered feet. Visible face 37.1/37.1 vs 29.7/27.5 OFF with measured cause on BOTH sides: the sheet shades his cheeks and temples in #7B340B (lum 64), which fails isSkin's lum>80 floor over ~0.1ft per side, while the delivered toon shadow (lum ~93) legally passes - the delta is scale-invariant (narrowing the skull moved it by 0.02) and perfectly symmetric (asymmetry 0.00), the Penny/Moose/Gizmo sheet-shading class. Ankle daylight 40.0 vs 0.00 OFF with measured cause: the roster-wide rig splay. Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 5.5deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 23.5 and 3 metric(s) remain outside tolerance on this board.",
         "note": "His huge real ears gate at earLine 63.7 (outer span 1.234 vs temple 0.983); featurelatitude gates brow 47.5 vs traced 47.5, eye 57.7 vs 57.7, mouth 77.9 vs 77.7 through his 3.99-2.76 span. The red tee's lit and shaded halves are one garment in two clusters (the recipe records it)."
       },
       "polishFindings": [
@@ -1462,7 +1462,7 @@
         "crop texture/strand grouping to chase the 5",
         "nose form to break the profile"
       ],
-      "scoredBoardSha256": "f30eadc13c584303140300c6ca1f37edc3ec9fa152a3ae79768857bf37a7f8d5"
+      "scoredBoardSha256": "85a510cdc727b89d10364ed6c886234cb29d781c81393e2b5f340b52099f8204"
     },
     "sniffles": {
       "status": "candidate",
@@ -1508,7 +1508,7 @@
         "command": "npm run measure:fidelity -- sniffles",
         "ranAt": "2026-08-15",
         "board": "sniffles-fidelity-review.png",
-        "result": "Head height 33.4 vs concept 34.5 and aspect 1.09 vs 1.02, in tolerance - the neck runs from under the lowered collar up into the skull (Clover's daylight lesson at the bottom, the chin-taper lesson at the top). Shoe band 67.8/25.2 vs 74.3/22.4 with saturation 24.7 vs 22.6, in tolerance. Visible face 23.0/23.0 vs 43.3/13.1 OFF with measured cause on BOTH sides, unreachable by construction: the sheet's fringe sweeps hard across his right side (its own two sides differ by THIRTY points, 43.3 lit-open vs 13.1 swept-over), so any mirror-symmetric build fails one side for every value - no symmetric number satisfies left >= 37.3 and right <= 19.1 simultaneously; the delivered 31.6/31.6 (asymmetry 0.00) brackets the concept's own 28.2 mean. Ankle daylight 31.4 vs 0.00 OFF with measured cause: the roster-wide rig splay.",
+        "result": "Head height 33.4 vs concept 34.5 and aspect 1.09 vs 1.02, in tolerance - the neck runs from under the lowered collar up into the skull (Clover's daylight lesson at the bottom, the chin-taper lesson at the top). Shoe band 67.8/25.2 vs 74.3/22.4 with saturation 24.7 vs 22.6, in tolerance. Visible face 23.0/23.0 vs 43.3/13.1 OFF with measured cause on BOTH sides, unreachable by construction: the sheet's fringe sweeps hard across his right side (its own two sides differ by THIRTY points, 43.3 lit-open vs 13.1 swept-over), so any mirror-symmetric build fails one side for every value - no symmetric number satisfies left >= 37.3 and right <= 19.1 simultaneously; the delivered 31.6/31.6 (asymmetry 0.00) brackets the concept's own 28.2 mean. Ankle daylight 31.4 vs 0.00 OFF with measured cause: the roster-wide rig splay. Stance pass 2026-08-15: the board renders now hold the drawn stance (legs adducted 10deg at the hip with flat feet, the same argument that put the arms down; Junebug and Theo keep their sheets' own drawn-open stance) - ankle daylight reads 0.00 and 2 metric(s) remain outside tolerance on this board.",
         "note": "His ear line is refused (mop-poisoned); featurelatitude gates brow 49.4 vs traced 49.6, eye 66.3 vs 66.3, mouth 78.0 vs bounded 78.0 through his 3.99-2.62 span. The mouth trace is bounded (skin-adjacent pout below the scanned rows) and the recipe records his fringe swallowing the brows' outer halves. An authored asymmetric sweep is the known faceAsymmetry failure class (Flash/Penny), so the symmetric build is deliberate. The fringe SHAPE carries the sheet's sweep with the asymmetry strictly above the faceSkin sample row, so the measured row stays symmetric while the brow band reads swept."
       },
       "polishFindings": [
@@ -1516,7 +1516,7 @@
         "the forehead wedge under the lifted fringe risks a bald-notch misread under toon lighting",
         "chunkier swept locks instead of thin tuft spikes; ribbing on cuffs/hem"
       ],
-      "scoredBoardSha256": "3f9439a3e24e3e28d24c1ccbc59ef61803f6e1fb82d78d7359aa461e742c6a3e"
+      "scoredBoardSha256": "b3f935d03504803ae8c81bfdb8e3d04fb4dbf5c8b728f2ef7971603748c8833c"
     },
     "cricket": {
       "status": "candidate",
@@ -1562,7 +1562,7 @@
         "command": "npm run measure:fidelity -- cricket",
         "ranAt": "2026-08-15",
         "board": "cricket-fidelity-review.png",
-        "result": "Head height 32.8 vs concept 34.2 and aspect 0.93 vs 0.87, in tolerance - the halo spikes' lateral tips stay within the sheet's own +/-0.60 (a first halo at +/-0.78 blew the aspect to 1.16). Shoe band 50.2/49.8 vs 54.9/44.0 with saturation 24.2 vs 27.4, in tolerance - the 'grey' canvas is warm taupe (The Professor's lesson). Visible face 24.7/27.0 vs 25.4/25.4 with asymmetry 2.30, in tolerance after three linked fixes: even-segment mop ring (Dex's parity lesson), chroma-lifted fair skin clearing the isSkin saturation floor (Clover's lesson), and the mop's side masses in the sheet's own shadow tone which fails isSkin (lit auburn passes like blonde). Ankle daylight 49.2 vs 0.00 OFF with measured cause: the roster-wide rig splay.",
+        "result": "Head height 32.8 vs concept 34.2 and aspect 0.93 vs 0.87, in tolerance - the halo spikes' lateral tips stay within the sheet's own +/-0.60 (a first halo at +/-0.78 blew the aspect to 1.16). Shoe band 50.2/49.8 vs 54.9/44.0 with saturation 24.2 vs 27.4, in tolerance - the 'grey' canvas is warm taupe (The Professor's lesson). Visible face 24.7/27.0 vs 25.4/25.4 with asymmetry 2.30, in tolerance after three linked fixes: even-segment mop ring (Dex's parity lesson), chroma-lifted fair skin clearing the isSkin saturation floor (Clover's lesson), and the mop's side masses in the sheet's own shadow tone which fails isSkin (lit auburn passes like blonde). Ankle daylight 49.2 vs 0.00 OFF with measured cause: the roster-wide rig splay. Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 5.5deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 26.7 and 1 metric(s) remain outside tolerance on this board.",
         "note": "His ear line is refused (mop-poisoned); featurelatitude gates brow 51.7 vs traced 51.9, eye 65.4 vs 65.4, mouth 75.0 vs bounded 75.0 through his 3.99-2.63 span. The mouth trace is bounded (skin-adjacent smile below the scanned rows); the recipe records his fair skin clustering two steps from the backdrop."
       },
       "polishFindings": [
@@ -1570,7 +1570,7 @@
         "strand grouping on the back hair volume",
         "stronger sculpted nose"
       ],
-      "scoredBoardSha256": "836aa06e31c908af4457fc02e71da96dbb406a130301f3185732f3b315302242"
+      "scoredBoardSha256": "7c205ee6206c5bdbe7e946082f02dac7bbb88f9be0c128249e1749e5fb2c1a59"
     },
     "peaches": {
       "status": "candidate",
@@ -1616,7 +1616,7 @@
         "command": "npm run measure:fidelity -- peaches",
         "ranAt": "2026-08-15",
         "board": "peaches-fidelity-review.png",
-        "result": "Round-5 re-measure after the polish set: head height 29.7 vs 30.4 and aspect 0.84 vs 0.80, in tolerance. Visible face 30.0/32.9 vs 26.8/32.7 - BOTH sides now in tolerance (the temple wisps moved forward off the ears brought the left in), asymmetry 2.86. THREE metrics OFF with measured cause: shoe second tone 62.4 vs 47.5 and saturation 27.2 vs 32.7 (her peach upper and cream sole sit one hue step apart and the sheet keeps 17% of its band in shading - the Grizz indistinct-materials class), and ankle daylight 49.2 (the roster rig splay). The polish set: a skin deltoid dome fairing each sleeveless arm root (Spine2/Arm blended so it follows the drop), the cap's low rows tucked to the skull exposing the nape (the updo read), temple wisps moved forward off the ears, bun clump structure (mirror-even breathing amplitude + second harmonic), nose tip lifted.",
+        "result": "Round-5 re-measure after the polish set: head height 29.7 vs 30.4 and aspect 0.84 vs 0.80, in tolerance. Visible face 30.0/32.9 vs 26.8/32.7 - BOTH sides now in tolerance (the temple wisps moved forward off the ears brought the left in), asymmetry 2.86. THREE metrics OFF with measured cause: shoe second tone 62.4 vs 47.5 and saturation 27.2 vs 32.7 (her peach upper and cream sole sit one hue step apart and the sheet keeps 17% of its band in shading - the Grizz indistinct-materials class), and ankle daylight 49.2 (the roster rig splay). The polish set: a skin deltoid dome fairing each sleeveless arm root (Spine2/Arm blended so it follows the drop), the cap's low rows tucked to the skull exposing the nape (the updo read), temple wisps moved forward off the ears, bun clump structure (mirror-even breathing amplitude + second harmonic), nose tip lifted. Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 5.5deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 34.0 and 3 metric(s) remain outside tolerance on this board.",
         "note": "featurelatitude gates brow 50.1 vs traced 50.2, eye 62.5 vs 62.5, mouth 77.4 vs 77.5 - the mouth trace was corrected by the analyser's own ambiguity refusal (two bands at 77.5 and 84.5; the upper is the lip line). The recipe records her dress and skin sharing a hue lane."
       },
       "polishFindings": [
@@ -1625,7 +1625,7 @@
         "Bun clumping short of the concept's coiled-knot texture.",
         "Freckles and blush remain absent; the nose only barely breaks the profile."
       ],
-      "scoredBoardSha256": "2dda36df668bb111facd48be8448fd7d9e358ac57b86397cdf445bd8183ce37c"
+      "scoredBoardSha256": "37832bf7f15e116d145a4b49ee7237abe813375cf451ce991abe8fa5e25d02fd"
     },
     "lefty": {
       "status": "candidate",
@@ -1671,7 +1671,7 @@
         "command": "npm run measure:fidelity -- lefty",
         "ranAt": "2026-08-15",
         "board": "lefty-fidelity-review.png",
-        "result": "Head height 29.7 vs concept 28.4, in tolerance - the track jacket's ribbed collar rides high under the chin like the sheet's, which is what pins the pinch. Shoe band 77.7/22.3 vs 72.8/26.4 with saturation 18.2 vs 21.9, in tolerance (warm taupe eased toward cream). Aspect 0.88 vs 0.98 OFF with measured cause by 0.02 past tolerance: the concept's head-box width includes the pony-side run at its widest mid-swing flare, while the delivered tail is deliberately thinner - lit blonde passes isSkin (Clover's lesson) and a fuller tail put +19 points of false face on both sides; the tail and wisps are authored in the deep shade tone as the compromise. Visible face 34.2/34.9 vs 27.6/28.6 OFF with measured cause by 0.7/0.3 past tolerance: the sheet draws a cap-edge shadow band across the brow at the sample row (the Penny/Moose sheet-shading class) while the delivered face is evenly lit and near-symmetric (asymmetry 0.68). Ankle daylight 31.4 vs 0.00 OFF with measured cause: the roster-wide rig splay.",
+        "result": "Head height 29.7 vs concept 28.4, in tolerance - the track jacket's ribbed collar rides high under the chin like the sheet's, which is what pins the pinch. Shoe band 77.7/22.3 vs 72.8/26.4 with saturation 18.2 vs 21.9, in tolerance (warm taupe eased toward cream). Aspect 0.88 vs 0.98 OFF with measured cause by 0.02 past tolerance: the concept's head-box width includes the pony-side run at its widest mid-swing flare, while the delivered tail is deliberately thinner - lit blonde passes isSkin (Clover's lesson) and a fuller tail put +19 points of false face on both sides; the tail and wisps are authored in the deep shade tone as the compromise. Visible face 34.2/34.9 vs 27.6/28.6 OFF with measured cause by 0.7/0.3 past tolerance: the sheet draws a cap-edge shadow band across the brow at the sample row (the Penny/Moose sheet-shading class) while the delivered face is evenly lit and near-symmetric (asymmetry 0.68). Ankle daylight 31.4 vs 0.00 OFF with measured cause: the roster-wide rig splay. Stance pass 2026-08-15: the board renders now hold the drawn stance (legs adducted 10deg at the hip with flat feet, the same argument that put the arms down; Junebug and Theo keep their sheets' own drawn-open stance) - ankle daylight reads 0.00 and 3 metric(s) remain outside tolerance on this board.",
         "note": "Her ear line gates at 67.0 (real, under the cap edge); featurelatitude gates brow 54.4 vs traced 54.3, eye 59.9 vs 59.9, mouth 79.1 vs bounded 79.0 through her 3.99-2.80 span. The backwards cap reverses BRIM_REACH (+0.78 rearward); the analyser refuses her brow and eye bands (cap shadow merges them) and the recipe records the tee living in the backdrop's cream cluster. The tail is TWO tubes after a first critic rejected the all-deep compromise as a 'dark strap': a thin deep-tone gather crosses the faceSkin sample band, and the full lit-blonde volume hangs entirely below the measured row - blonde and voluminous without falsifying the face metric. Its depth hugs the nape (Rocket's daylight lesson) and the backwards brim is held at 0.56 reach (a fuller sweep seals an enclosed window against the pony's crown in profile)."
       },
       "polishFindings": [
@@ -1679,7 +1679,7 @@
         "The cap-crown tuft reads as a flat yellow decal - integrate it with a snapback-gap strap context.",
         "Profile pony volume still thinner than the sheet's."
       ],
-      "scoredBoardSha256": "9c3ffe5d85f544afc17935d1286f3a66c254d44d98f0c26720b8f810839c25e7"
+      "scoredBoardSha256": "9791922f54f46ffde75bf6ce155b3da8ac5e10642725d773115431c915e4cbea"
     }
   }
 }

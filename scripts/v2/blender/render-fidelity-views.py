@@ -7,6 +7,7 @@ Usage:
 
 from pathlib import Path
 import math
+import os
 import sys
 
 import bpy
@@ -124,6 +125,63 @@ A_POSE_DEG = 72.0
 A_POSE_BY_ID = {"tank": 50.0}
 
 
+# The stance: every turnaround on this roster draws the feet together, and the
+# rig's bind pose splays the legs — the "ankle daylight" metric read that splay
+# as a delivered defect on every kid (rubric 6b.4 deferred it as a STANCE fix,
+# never a tolerance widening). The idle clips already plant the feet close; the
+# board must hold the stance the drawing and the game share, exactly the
+# argument that put the arms down. Applied to ALL views (bind and A-pose): the
+# measurement reads the bind front, and a stance is not an arm experiment.
+LEGS_IN_DEG = 10.0
+# ⚠️ AND IT IS PER CHARACTER WHERE THE SHEET SAYS SO (A_POSE_BY_ID's rule):
+# Junebug and Theo are DRAWN with an open stance (concept ankle daylight 46.9
+# and 56.9) - closing their legs would move the board AWAY from the drawing
+# the metric compares against. Zoom's tucked legs are Root-weighted furniture
+# the leg bones never move, so the default is a no-op for him.
+LEGS_IN_BY_ID = {
+    # Drawn-open stances hold their sheets (Junebug 46.9, Theo 56.9 drawn).
+    "nostrike": 0.0, "calls_shot": 0.0,
+    # Per-kid ceilings from the stance calibration: the largest angle whose
+    # silhouettes do NOT touch - contact encloses the between-legs window
+    # and the silhouette gate reads it as a puncture. Rocket touches at any
+    # angle (the ponytail bounce meets the shoulder line), so she keeps
+    # bind and her ankle metric keeps its long-recorded cause.
+    "rocket": 0.0, "tank": 4.0, "bend_it": 4.0,
+    "ace_kid": 5.5, "boomer": 5.5, "chip": 5.5, "clover": 5.5,
+    "cricket": 5.5, "diva": 5.5, "flash": 5.5, "gizmo": 5.5,
+    "noodle": 5.5, "peaches": 5.5, "penny": 5.5, "smokey": 5.5,
+    "the_prof": 5.5, "bubbles": 7.0, "zippy": 7.0, "sprout": 4.0,
+    "turbo": 13.0,
+}
+
+
+def pose_legs_in(degrees: float) -> None:
+    """Rotate both leg chains inward about the forward axis (adduction)."""
+    armature = next((o for o in bpy.context.scene.objects if o.type == "ARMATURE"), None)
+    if armature is None:
+        return
+    bpy.context.view_layer.objects.active = armature
+    bpy.ops.object.mode_set(mode="POSE")
+    for side, sign in (("Left", 1.0), ("Right", -1.0)):
+        bone = armature.pose.bones.get(f"{side}UpLeg")
+        if bone is None:
+            continue
+        bone.rotation_mode = "XYZ"
+        # Same frame as the arms: local Y runs along the limb, the swing is
+        # about local Z, and the sign flips per side to bring the ankles IN.
+        bone.rotation_euler[2] = sign * math.radians(degrees)
+        # Feet stay FLAT: counter-rotate the foot so the shoes stand upright
+        # side by side. Tilted shoes leaned into each other and shifted the
+        # shoe-band split ~2 points on a 50/50 kid - the stance must close
+        # the ankles without changing what the band window sees.
+        foot = armature.pose.bones.get(f"{side}Foot")
+        if foot is not None:
+            foot.rotation_mode = "XYZ"
+            foot.rotation_euler[2] = -sign * math.radians(degrees)
+    bpy.ops.object.mode_set(mode="OBJECT")
+    bpy.context.view_layer.update()
+
+
 def pose_arms_down(degrees: float) -> None:
     """Rotate both arm chains down about the forward axis.
 
@@ -215,6 +273,11 @@ def main() -> None:
     scene.world.color = (0.025, 0.035, 0.05)
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # FIDELITY_LEGS_DEG is the calibration override: the stance must close the
+    # legs as far as the silhouettes allow WITHOUT touching - contact encloses
+    # the between-legs window and the silhouette gate reads it as a puncture.
+    env_deg = os.environ.get("FIDELITY_LEGS_DEG")
+    pose_legs_in(float(env_deg) if env_deg else LEGS_IN_BY_ID.get(character_id, LEGS_IN_DEG))
     render_view(scene, camera, (0, -12, 2.2), output_dir / f"{slug}-front-review.png")
     render_view(scene, camera, (12, 0, 2.2), output_dir / f"{slug}-profile-review.png")
 
