@@ -582,3 +582,29 @@ Each of these cost at least one blind round. They are constraints, not history.
   it pierces the upper (Tank's 30-round drip was a 0.100→0.138 bulge),
   and the analyser refuses the chin-merges-into-neck pinch — hand-set the
   neck row and say so in the featurelatitude entry.
+
+## Lessons batch 7 paid for (the polish pass: Chip, Lefty, Bubbles, Peaches)
+
+- **"Wrong colour at runtime, right on the board" stayed the roster's most
+  expensive class to the very end.** Bubbles' bun shipped as a dark
+  backface void for EIGHT rounds because its level table was ascending
+  (Bendy's exact lesson, unlearned locally) — every ring-loft helper must
+  carry the descending assert, not just remember it. And Lefty's blonde
+  was cured by HUE, not brightness: author yellow as r≈g (his #D8B440,
+  r−g 36) so the toon ramp cannot fold it into the skin family; pixel-
+  sample the RUNTIME stills to prove separation (his tail #907909 vs ear
+  #8f601e — g−b carries the yellow).
+- **A butt-joined sleeveless shoulder needs a faired DELTOID DOME, not a
+  better blend alone**: a skin ellipsoid over the arm root, blend-weighted
+  (~0.55 Spine2 / 0.45 Arm) so it follows the drop without shearing —
+  Peaches' round-5 pass after four rounds of ring/cap/blend attempts.
+- **A segment trim can flip a fringe column onto the face** — Chip's
+  hair 20→18 cost the right side 4.7 points while the budget saved 1KB.
+  Trim shells the face never touches; re-measure after every ring-count
+  change (the column-quantization class works in both directions).
+- **Bevelled rim rows turn a decal into a sewn pouch**: rim vertices at
+  ~30% of the panel's proud height read as stitching; the same trick
+  covers pocket flaps, patches and buttons.
+- **Occluders move; landmarks don't.** Peaches' "no ear / mesh tear" was
+  the temple wisps parked OVER the ears — moving the wisps forward fixed
+  the ear AND brought faceSkin-left into tolerance in the same build.
