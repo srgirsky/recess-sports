@@ -375,6 +375,81 @@
         "chunky build",
         "navy shorts and sneakers"
       ]
+    },
+    "smokey": {
+      "source": "smokey-pilot.blend",
+      "sourceSha256": "cd6852e0035a0717696491b30f17630e12f1a1b8e87c9459a07e3480fdb98166",
+      "concept": "smokey-turnaround.png",
+      "conceptSha256": "3df75f1c323e7ea542d76adcc2f4c294ba10e0f414b0a9f4bea352e2dcb8056e",
+      "output": "kid_smokey.glb",
+      "outputSha256": "64e4144280d7fe958c4bb58ddb1efd295f3af4fd9c16bc3361d987f0c54985ff",
+      "definingTraits": [
+        "tight buzz fade",
+        "plain red tee",
+        "big sticking-out ears",
+        "charcoal shorts",
+        "two-tone black-and-cream sneakers"
+      ]
+    },
+    "sniffles": {
+      "source": "sniffles-pilot.blend",
+      "sourceSha256": "304f69cd44b2aca9c73197f8e44198f9e11a3b1f2a2ff0509712c1e8d59ecaa2",
+      "concept": "sniffles-turnaround.png",
+      "conceptSha256": "753c239c41ebe73424f487102239de4cc55d3eeb185a6018a5f6623e4ac11257",
+      "output": "kid_sniffles.glb",
+      "outputSha256": "430c1863c4dd8471552797223336137a20c123d4c07c7acacfc166ac7c6c3dc6",
+      "definingTraits": [
+        "tousled auburn mop",
+        "light-blue hoodie",
+        "hankie in the pocket",
+        "rolled blue jeans",
+        "watery big eyes"
+      ]
+    },
+    "cricket": {
+      "source": "cricket-pilot.blend",
+      "sourceSha256": "ce5347cbdb2f35f178bc8530cfc16f13351439299da967c6cf56182543067bfb",
+      "concept": "cricket-turnaround.png",
+      "conceptSha256": "cb5ff0cb23a96bb2d16b5820ae6ccfa2bbcfd17c3af88b100b439e367c317b0b",
+      "output": "kid_cricket.glb",
+      "outputSha256": "39e004686a0ae7652cf4641b64e7d90375b1c48eaab55c1711c65dd16261143f",
+      "definingTraits": [
+        "big spiky brown mop",
+        "green tee under denim overalls",
+        "freckles and fair skin",
+        "rolled pale cuffs",
+        "grey canvas sneakers"
+      ]
+    },
+    "peaches": {
+      "source": "peaches-pilot.blend",
+      "sourceSha256": "f0b8eb96957cf741c891523ed3195ef99c5b929c272ba4b38559df66a99f98fa",
+      "concept": "peaches-turnaround.png",
+      "conceptSha256": "42a7f8de5c44a061aa4f15b7dd8e9abd65a150488c8a814b0986db2e3d3f393e",
+      "output": "kid_peaches.glb",
+      "outputSha256": "6537974a575e27cbd1761d516fd1608f6a6cd8d9fbc049066307711f14ffb99c",
+      "definingTraits": [
+        "textured brown top-bun",
+        "marigold sleeveless dress",
+        "leaf patch at the hem",
+        "striped cream socks",
+        "peach sneakers"
+      ]
+    },
+    "lefty": {
+      "source": "lefty-pilot.blend",
+      "sourceSha256": "9b79706ac817f7ab404c1af300323f285a33fc765fb4a47c4211d522bb196bfd",
+      "concept": "lefty-turnaround.png",
+      "conceptSha256": "9329598dd2a08be9c6614c3bbe49812a29a44c2beceba8274353b89ffc7777d2",
+      "output": "kid_lefty.glb",
+      "outputSha256": "1572bf0900d93fe309d9bcf57ed674e153c245af4e9ef1644994828c431171a1",
+      "definingTraits": [
+        "backwards grey cap",
+        "blonde side ponytail",
+        "orange track jacket",
+        "navy joggers",
+        "confident sideways smirk"
+      ]
     }
   }
 }

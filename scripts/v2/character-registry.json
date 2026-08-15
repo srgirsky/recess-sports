@@ -147,11 +147,27 @@
     },
     "lefty": {
       "name": "Lefty Lu",
-      "slug": "lefty"
+      "slug": "lefty",
+      "source": "lefty-pilot.blend",
+      "traits": [
+        "backwards grey cap",
+        "blonde side ponytail",
+        "orange track jacket",
+        "navy joggers",
+        "confident sideways smirk"
+      ]
     },
     "smokey": {
       "name": "Smokey",
-      "slug": "smokey"
+      "slug": "smokey",
+      "source": "smokey-pilot.blend",
+      "traits": [
+        "tight buzz fade",
+        "plain red tee",
+        "big sticking-out ears",
+        "charcoal shorts",
+        "two-tone black-and-cream sneakers"
+      ]
     },
     "bend_it": {
       "name": "Bendy Bao",
@@ -191,7 +207,15 @@
     },
     "sniffles": {
       "name": "Sniffles",
-      "slug": "sniffles"
+      "slug": "sniffles",
+      "source": "sniffles-pilot.blend",
+      "traits": [
+        "tousled auburn mop",
+        "light-blue hoodie",
+        "hankie in the pocket",
+        "rolled blue jeans",
+        "watery big eyes"
+      ]
     },
     "the_prof": {
       "name": "The Professor",
@@ -243,7 +267,15 @@
     },
     "cricket": {
       "name": "Cricket",
-      "slug": "cricket"
+      "slug": "cricket",
+      "source": "cricket-pilot.blend",
+      "traits": [
+        "big spiky brown mop",
+        "green tee under denim overalls",
+        "freckles and fair skin",
+        "rolled pale cuffs",
+        "grey canvas sneakers"
+      ]
     },
     "moose": {
       "name": "Moose",
@@ -259,7 +291,15 @@
     },
     "peaches": {
       "name": "Peaches",
-      "slug": "peaches"
+      "slug": "peaches",
+      "source": "peaches-pilot.blend",
+      "traits": [
+        "textured brown top-bun",
+        "marigold sleeveless dress",
+        "leaf patch at the hem",
+        "striped cream socks",
+        "peach sneakers"
+      ]
     },
     "gizmo": {
       "name": "Gizmo",
