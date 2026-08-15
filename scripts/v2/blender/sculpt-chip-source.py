@@ -132,10 +132,10 @@ def nose_push(nx: float, nz: float) -> float:
     if dz < -0.13 or dz > 0.14:
         return 0.0
     across = max(0.0, 1.0 - (nx / 0.20) ** 2)
-    bridge = 0.012 * across * max(0.0, 1.0 - abs(dz - 0.08) / 0.10)
+    bridge = 0.017 * across * max(0.0, 1.0 - abs(dz - 0.08) / 0.10)
     reach = 0.110 if dz >= 0.0 else 0.120
     t = dz / reach
-    tip = 0.098 * across ** 1.25 * max(0.0, 1.0 - t * t) ** 1.40
+    tip = 0.110 * across ** 1.25 * max(0.0, 1.0 - t * t) ** 1.40
     return bridge + tip
 
 
@@ -230,7 +230,8 @@ BRIM_THICK = 0.030
 
 def build_cap(builder: MeshBuilder, detail: int) -> None:
     """The crown (team surface, cream front panel) and the double-sided brim."""
-    segments = 20 if detail >= 2 else (10 if detail == 1 else 8)
+    # 18 keeps mirror columns and the LOD0 budget (polish-round bevel cost).
+    segments = 18 if detail >= 2 else (10 if detail == 1 else 8)
     levels = CAP_LEVELS if detail >= 2 else thin_for_lod(
         [(z, hx, hy, yc) for z, hx, hy, yc in CAP_LEVELS], detail)
     ascending = list(reversed(levels))
@@ -345,7 +346,9 @@ def fringe_z_at(x_abs: float) -> float:
 
 def build_hair(builder: MeshBuilder, detail: int) -> None:
     """Tuft band between cap and face — Grizz's construction, fourth proving."""
-    segments = 20 if detail >= 2 else (10 if detail == 1 else 8)
+    # 20 stays: an 18-ring trim flipped a fringe column onto the face and
+    # cost the right side 4.7 points (the column-quantization class).
+    segments = 20 if detail >= 2 else (8 if detail == 1 else 8)
     levels = HAIR_LEVELS if detail >= 2 else thin_for_lod(
         [(z, hx, hy, yc) for z, hx, hy, yc in HAIR_LEVELS], detail)
     ascending = list(reversed(levels))
@@ -395,8 +398,8 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
 # measured: view2 z=1.98 halfWidth=0.3601 tol=0.06
 TORSO_LEVELS = [
     (1.240, 0.365, 0.330, "Hips"),    # hem underside
-    (1.262, 0.408, 0.362, "Hips"),    # lower rib
-    (1.280, 0.418, 0.370, "Hips"),    # upper rib, proudest
+    (1.262, 0.416, 0.370, "Hips"),    # lower rib
+    (1.280, 0.428, 0.379, "Hips"),    # upper rib, proudest
     (1.330, 0.392, 0.352, "Hips"),
     (1.500, 0.395, 0.370, "Spine"),   # traced
     (1.700, 0.390, 0.387, "Spine"),   # the belly
@@ -435,9 +438,9 @@ def torso_ring_at(z: float) -> tuple[float, float]:
 
 
 def surface_patch(builder: MeshBuilder, x0: float, x1: float, z0: float, z1: float,
-                  proud: float, colour, top_colour, bone: str) -> None:
+                  proud: float, colour, top_colour, bone: str, bevel: bool = False) -> None:
     """A raised rectangular panel on the hoodie front."""
-    steps = 3
+    steps = 4 if bevel else 3
     rows = []
     for j in range(steps + 1):
         z = z1 - (z1 - z0) * j / steps
@@ -446,7 +449,10 @@ def surface_patch(builder: MeshBuilder, x0: float, x1: float, z0: float, z1: flo
         for i in range(steps + 1):
             x = x0 + (x1 - x0) * i / steps
             inner = max(0.10, 1.0 - (x / half_w) ** 2)
-            y = -half_d * sqrt(inner) - proud
+            # With `bevel` the rim rows sink toward the body so the plate
+            # reads as a sewn pouch, not a stuck-on slab (polish finding).
+            rim = bevel and (j in (0, steps) or i in (0, steps))
+            y = -half_d * sqrt(inner) - (proud * 0.30 if rim else proud)
             row.append(builder.vertex((x, y, z), top_colour if j == 0 else colour, bone))
         rows.append(row)
     builder.grid(rows, 1, cyclic=False, flip=True)
@@ -456,11 +462,14 @@ def build_hoodie_details(builder: MeshBuilder, detail: int) -> None:
     if detail < 1:
         return
     # The kangaroo pocket: a wide proud pouch with a darker top edge.
-    surface_patch(builder, -0.235, 0.235, 1.38, 1.68, 0.040, SHIRT, SHIRT_DARK, "Spine")
+    surface_patch(builder, -0.235, 0.235, 1.38, 1.68, 0.052, SHIRT, SHIRT_DARK, "Spine", bevel=True)
     # The hood: a real draped volume on the upper back — round 9 grew it after
     # two reviews read the first bump as "a faint ridge" (it was half-buried
     # in the torso), and a knit roll rings its mouth.
-    builder.ellipsoid((0.0, 0.345, 2.440), (0.270, 0.165, 0.225), 1, SHIRT, "Spine2", 8, 5)
+    builder.ellipsoid((0.0, 0.345, 2.460), (0.270, 0.160, 0.215), 1, SHIRT, "Spine2", 8, 5)
+    # Collar bunching so the drape reads from the FRONT too (polish finding).
+    builder.ellipsoid((0.145, -0.150, 2.565), (0.095, 0.060, 0.052), 1, SHIRT_DARK, "Spine2", 6, 3)
+    builder.ellipsoid((-0.145, -0.150, 2.565), (0.095, 0.060, 0.052), 1, SHIRT_DARK, "Spine2", 6, 3)
     builder.ellipsoid((0.0, 0.250, 2.560), (0.230, 0.095, 0.085), 1, SHIRT_DARK, "Spine2", 6, 3)
     # The kangaroo pouch's side openings: two dark slits where the hands go in.
     surface_patch(builder, -0.245, -0.215, 1.40, 1.62, 0.046, SHIRT_DARK, SHIRT_DARK, "Spine")
@@ -482,13 +491,13 @@ SHOULDER_BLEND = {
 # not-traceable: authored in the rig's T-pose while the concept hangs the arms;
 # the bare-hand width is the traced number (knuckles ~0.075 half).
 ARM_STATIONS = [
-    (0.215, 0.150, SHIRT, "Arm"),
-    (0.300, 0.155, SHIRT, "Arm"),
-    (0.335, 0.148, SHIRT, "Arm"),
-    (ARM_SHOULDER_X, 0.135, SHIRT, "Arm"),
-    (0.620, 0.120, SHIRT, "Arm"),
-    (ARM_ELBOW_X, 0.112, SHIRT, "ForeArm"),
-    (SLEEVE_HEM_X - 0.030, 0.104, SHIRT, "ForeArm"),
+    (0.215, 0.158, SHIRT, "Arm"),
+    (0.300, 0.163, SHIRT, "Arm"),
+    (0.335, 0.156, SHIRT, "Arm"),
+    (ARM_SHOULDER_X, 0.143, SHIRT, "Arm"),
+    (0.620, 0.128, SHIRT, "Arm"),
+    (ARM_ELBOW_X, 0.120, SHIRT, "ForeArm"),
+    (SLEEVE_HEM_X - 0.030, 0.110, SHIRT, "ForeArm"),
     (SLEEVE_HEM_X, 0.120, SHIRT_DARK, "ForeArm"),      # ribbed cuff, proud
     (SLEEVE_HEM_X + 0.024, 0.112, SHIRT_DARK, "Hand"),
     (SLEEVE_HEM_X + 0.038, 0.086, SHIRT_DARK, "Hand"),
@@ -550,11 +559,11 @@ LEG_STATIONS = [
     (1.160, 0.218, 1.10, PANTS_DARK, "UpLeg"),        # hem band, proud
     (SHORTS_HEM_Z, 0.210, 1.06, PANTS_DARK, "UpLeg"), # hem underside
     (1.108, 0.155, 1.02, PANTS_DARK, "UpLeg"),        # inner lip
-    (1.090, 0.138, 1.00, SKIN, "UpLeg"),              # bare leg begins
-    (0.950, 0.130, 1.01, SKIN, "Leg"),
-    (0.820, 0.136, 1.01, SKIN, "Leg"),                # the calf
-    (0.680, 0.126, 1.00, SKIN, "Leg"),
-    (0.600, 0.122, 1.00, SKIN, "Leg"),
+    (1.090, 0.148, 1.00, SKIN, "UpLeg"),              # bare leg begins
+    (0.950, 0.140, 1.01, SKIN, "Leg"),
+    (0.820, 0.146, 1.01, SKIN, "Leg"),                # the calf
+    (0.680, 0.134, 1.00, SKIN, "Leg"),
+    (0.600, 0.130, 1.00, SKIN, "Leg"),
     (0.580, 0.134, 1.00, SOCK, "Leg"),                # sock top
     (0.545, 0.132, 1.00, STRIPE, "Leg"),              # the green stripe
     (0.520, 0.130, 1.00, STRIPE, "Leg"),
@@ -722,13 +731,13 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     for side in (1, -1):
         build_ear(builder, side, detail, palette=PALETTE, skull_at=skull_surface_x, spec=EAR_SPEC)
 
-    builder.loft(NECK_LEVELS, 0, SKIN, segments)
+    builder.loft(NECK_LEVELS, 0, SKIN, 14 if detail >= 2 else segments)
     def hoodie_colour(theta, z):
         # The ribbed hem band and the hood's neckline roll read as knit.
         if 1.250 < z <= 1.30 or 2.575 < z <= 2.605:
             return SHIRT_DARK
         return SHIRT
-    builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, segments,
+    builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, 18 if detail >= 2 else segments,
                  color_fn=hoodie_colour)
     build_hoodie_details(builder, detail)
 
@@ -786,10 +795,10 @@ def main() -> None:
     armature = armatures[0]
     ensure_material_slots(SLOTS)
 
-    for name in ("kid_chip_LOD0", "kid_chip_LOD1", "kid_chip_LOD2"):
-        old = bpy.data.objects.get(name)
-        if old:
-            bpy.data.objects.remove(old, do_unlink=True)
+    # ⚠️ Pre-convention blends carry stray meshes (an Icosphere here) that
+    # export beside the LODs and eat the budget — remove EVERY mesh.
+    for obj in [o for o in bpy.data.objects if o.type == "MESH"]:
+        bpy.data.objects.remove(obj, do_unlink=True)
 
     settings = {
         "kid_chip_LOD0": (20, 12, 2),

@@ -149,7 +149,7 @@ def nose_push(nx: float, nz: float) -> float:
     t = dz / reach
     # Round 7: 0.100 at power 1.05 read as "a sharp oversized wedge"; a lower
     # dome with a rounder falloff is the concept's soft button.
-    tip = 0.082 * across ** 1.30 * max(0.0, 1.0 - t * t) ** 1.45
+    tip = 0.096 * across ** 1.30 * max(0.0, 1.0 - t * t) ** 1.45
     return bridge + tip
 
 
@@ -226,12 +226,16 @@ HAIR_LEVELS = [
 
 # The bun: a small mass above the crown, scrunchie at its base.
 # measured: front z=3.82 halfWidth=0.2622
+# ⚠️ STRICTLY DESCENDING like every ring-loft table: this table shipped
+# ASCENDING, so ring_loft's reversed() re-inverted it, every quad's winding
+# flipped, and the bun rendered as a dark backface void at runtime for
+# eight rounds (Bendy's exact bun lesson - the double-sided board hid it).
 BUN_LEVELS = [
-    (3.740, 0.150, 0.140, 0.030),
-    (3.800, 0.240, 0.220, 0.030),
-    (3.880, 0.230, 0.210, 0.020),
-    (3.950, 0.150, 0.140, 0.010),
     (3.995, 0.050, 0.048, 0.000),
+    (3.950, 0.150, 0.140, 0.010),
+    (3.880, 0.230, 0.210, 0.020),
+    (3.800, 0.240, 0.220, 0.030),
+    (3.740, 0.150, 0.140, 0.030),
 ]
 
 SCRUNCHIE_Z = 3.745
@@ -270,9 +274,12 @@ def fringe_z_at(x_abs: float) -> float:
 
 def build_hair(builder: MeshBuilder, detail: int) -> None:
     """The curl mass, the bun and the scrunchie."""
-    segments = 24 if detail >= 2 else (12 if detail == 1 else 8)
+    # 20 keeps mirror columns; the ringlet tubes pay from the shell.
+    segments = 20 if detail >= 2 else (10 if detail == 1 else 8)
 
     def ring_loft(levels, curl_amp, lobe_count):
+        assert all(x[0] > y[0] for x, y in zip(levels, levels[1:])), \
+            "ring_loft tables must be strictly descending in z"
         ascending = list(reversed(levels))
         rows = []
         for z, half_x, half_y, y_centre in ascending:
@@ -280,8 +287,13 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
             curl = curl_amp if detail >= 2 else 0.0
             for column in range(segments):
                 theta = 2 * pi * column / segments
-                clump = 1.0 + curl * sin(lobe_count * theta + 2.3 * len(rows)) \
-                    + (curl * 0.5) * sin((lobe_count + 3) * theta + 1.1 * len(rows))
+                # Row variation goes in the AMPLITUDE, never the phase
+                # (Penny's mirror lesson): the old per-row phase rotation
+                # smeared the lobes into noise; fixed vertical ringlet
+                # columns with breathing amplitude read as grouped curls.
+                breathe = 1.0 + 0.35 * cos(2.1 * len(rows))
+                clump = 1.0 + curl * breathe * cos(lobe_count * (theta - pi / 2)) \
+                    + (curl * 0.45) * cos((lobe_count + 3) * (theta - pi / 2))
                 x = half_x * clump * cos(theta)
                 y = y_centre + half_y * clump * sin(theta)
                 if y < y_centre:
@@ -305,6 +317,21 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
     # ★ THE CURLS ARE LOBED HARD — she is ringlets, not a smooth mass. Seven
     # primary lobes at ±6.5% of radius; the drawing's read is texture first.
     ring_loft(HAIR_LEVELS, 0.065, 7)
+    # Sculpted ringlet tubes riding the lower mass (the polish blocker:
+    # the cloud needs real curl-clump geometry) — the ponytail tube's
+    # lobes/groove machinery, mirrored pairs with flipped winding. LOD0
+    # only: they are texture, invisible at LOD1 distance.
+    if detail >= 2:
+        for sx, y0, z0, y1, z1, r0 in (
+            (0.58, 0.16, 3.05, 0.20, 2.72, 0.085),
+            (0.44, 0.34, 3.00, 0.40, 2.70, 0.080),
+            (0.22, 0.44, 2.98, 0.50, 2.70, 0.078),
+        ):
+            for side in (1, -1):
+                builder.tube(
+                    [(side * sx, y0, z0), (side * (sx + 0.03), (y0 + y1) / 2, (z0 + z1) / 2), (side * (sx - 0.02), y1, z1)],
+                    [r0, r0 * 0.92, r0 * 0.55], 2, HAIR, "Head", 4,
+                    lobes=3, groove=0.018, flip=side < 0)
     # At the far LOD the bun is two pixels; it merges into the mass and its
     # triangles pay for the ringlet lobes that do survive 40px.
     if detail >= 1:
@@ -415,14 +442,20 @@ def build_dress_details(builder: MeshBuilder, detail: int) -> None:
     bow_y = -bow_depth - 0.020
     # Lobes only at the near LOD: the bow is a 2px sparkle at LOD1 distance.
     if detail >= 2:
-        builder.ellipsoid((-0.075, bow_y, 2.045), (0.058, 0.030, 0.042), 1, SHIRT_DARK, "Spine1", 6, 4)
-        builder.ellipsoid((0.075, bow_y, 2.045), (0.058, 0.030, 0.042), 1, SHIRT_DARK, "Spine1", 6, 4)
-        builder.ellipsoid((0.0, bow_y - 0.012, 2.045), (0.030, 0.026, 0.030), 1, SHIRT_DARK, "Spine1", 6, 4)
+        # Tied-ribbon loops: teardrop tubes angling up-and-out from the
+        # knot (the polish round's 'reads as tied' item), not level pods.
+        for side in (1, -1):
+            builder.tube(
+                [(side * 0.022, bow_y + 0.004, 2.040), (side * 0.078, bow_y - 0.006, 2.078), (side * 0.118, bow_y + 0.006, 2.052)],
+                [0.028, 0.050, 0.020], 1, SHIRT_DARK, "Spine1", 5, flip=side < 0)
+        builder.ellipsoid((0.0, bow_y - 0.014, 2.045), (0.032, 0.028, 0.032), 1, SHIRT_DARK, "Spine1", 6, 4)
     surface_patch(builder, -0.068, -0.022, 1.80, 1.97, 0.026, SHIRT_DARK, SHIRT_DARK, "Hips")
     surface_patch(builder, 0.022, 0.068, 1.80, 1.97, 0.026, SHIRT_DARK, SHIRT_DARK, "Hips")
     # The skirt's patch pocket: pouch plus a prouder cream flap, viewer-left.
     surface_patch(builder, -0.30, -0.14, 1.52, 1.63, 0.022, SHIRT, SHIRT, "Hips")
     surface_patch(builder, -0.31, -0.13, 1.62, 1.675, 0.034, SHIRT_DARK, SHIRT_DARK, "Hips")
+    # The flap's button (polish item).
+    surface_patch(builder, -0.235, -0.205, 1.630, 1.662, 0.044, SHIRT, SHIRT, "Hips")
     # The two chest buttons.
     # The two chest buttons became one (the drawing's second button is 0.03ft
     # below the first — at any camera the pair reads as one mark; the triangle

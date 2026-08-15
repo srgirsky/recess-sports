@@ -54,7 +54,7 @@ SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 # delivered·1.2 with the highlight band clear of the isSkin floor.
 SKIN = rgba("FFAC5E")
 SKIN_SHADOW = rgba("CE7C30")
-HAIR = rgba("DC9840")        # the blonde ponytail — bright enough to stay
+HAIR = rgba("D8B440")        # the blonde ponytail — chromatically YELLOW,
                              # golden under the toon ramp
 HAIR_DARK = rgba("6E4210")   # shaded underside (fails isSkin, like the sheet)
 CAP = rgba("C8B08A")         # the grey-tan cap
@@ -204,7 +204,7 @@ CAP_LEVELS = [
 
 BRIM_Z_TOP = 3.575
 BRIM_Z_BOT = 3.540
-BRIM_REACH = 0.560    # ★ BACKWARDS: the brim reaches REARWARD from the nape.
+BRIM_REACH = 0.660    # ★ BACKWARDS: the brim reaches REARWARD from the nape.
                       # 0.56, not the sheet's fuller sweep: a longer brim
                       # seals an enclosed window against the pony's crown
                       # in profile (rubric 3.7).
@@ -321,9 +321,11 @@ PONY_SPINE = [
     (0.270, 0.290, 2.920),
     (0.250, 0.230, 2.700),
     (0.300, 0.250, 2.480),
-    (0.340, 0.260, 2.300),
+    (0.380, 0.268, 2.260),
 ]
-PONY_RADII = [0.110, 0.150, 0.160, 0.120, 0.045]
+# Flared at the bottom lobes — the nape-hugging tail had erased the pony
+# flare that defines her profile (the round-3 polish list).
+PONY_RADII = [0.110, 0.155, 0.175, 0.150, 0.070]
 
 # The wisps RIDE the forehead surface — hung clear of the face they
 # enclosed a 1080px window between wisp, cap edge and cheek.
@@ -391,6 +393,17 @@ def build_side_hair(builder: MeshBuilder, detail: int) -> None:
         builder.tube([a, b], [r, 0.02], 2, HAIR, "Head", 4)
 
 
+def build_lapels(builder: MeshBuilder, detail: int) -> None:
+    """Proud lapel edges flanking the tee window — the open-jacket read the
+    round-3 polish list asked for, instead of a painted stripe."""
+    if detail < 1:
+        return
+    for side in (1, -1):
+        builder.tube(
+            [(side * 0.162, -0.268, 2.560), (side * 0.158, -0.292, 2.100), (side * 0.155, -0.305, 1.640)],
+            [0.034, 0.038, 0.034], 1, SHIRT_DARK, ["Spine2", "Spine1", "Spine"], 4)
+
+
 def build_hood(builder: MeshBuilder, detail: int) -> None:
     """The navy hood draped at the upper back — the sheet's signature
     garment read (Chip's construction)."""
@@ -424,7 +437,7 @@ TORSO_LEVELS = [
 
 def jacket_color(theta: float, z: float):
     # The open front: tee cream in a narrow window about the centre-front.
-    if z < 2.60 and sin(theta) < -0.86 and abs(cos(theta)) < 0.30:
+    if z < 2.60 and sin(theta) < -0.80 and abs(cos(theta)) < 0.34:
         return TEE
     if z > 2.710 or z < 1.505:
         return SHIRT_DARK   # ribbed collar and hem
@@ -687,6 +700,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     build_nape(builder, detail)
     build_side_hair(builder, detail)
     build_hood(builder, detail)
+    build_lapels(builder, detail)
 
     for side in (1, -1):
         build_ear(builder, side, detail, palette=PALETTE, skull_at=skull_surface_x, spec=EAR_SPEC)

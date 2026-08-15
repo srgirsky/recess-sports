@@ -397,6 +397,7 @@ export const FACE_SPECS = {
     browX: [30, 98],
     browY: 24,
     browTilt: 0,
+    mouthScale: 1.15,
     mouthY: 89,
     // A grin: corners rise clearly above the centre.
     mouthBow: -1.4,
