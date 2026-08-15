@@ -185,10 +185,23 @@ async function provenanceErrors(overrides = {}) {
   return errors;
 }
 
+// ★ A BUDGET, NOT A RAISED TIMEOUT — #45's lesson, applied to the sculpt walk.
+//
+// This reads every authored form table in all 30 sculpt scripts and resolves
+// the concept sheet behind each citation. The walk IS the rule: a provenance
+// lint that visits a subset proves nothing about the rest, so the volume cannot
+// be trimmed without trimming the guarantee. It sat at ~2.4s under vitest's 5s
+// default, which held until the roster filled and CI contention pushed it over
+// — and it then failed as a TIMEOUT, which reads like a broken gate rather than
+// a slow one. The number below is stated wall-clock with the cost on the
+// record; every citation is still checked. Make the walk cheaper before raising
+// it again.
+const WALKS_EVERY_SCULPT = 60_000;
+
 describe('a sculpt script says where its form numbers came from', () => {
   it('has a traced or declared provenance for every authored form table', async () => {
     expect(await provenanceErrors()).toEqual([]);
-  });
+  }, WALKS_EVERY_SCULPT);
 
   // ★ Break it once. A rule that never fires is indistinguishable from no rule,
   // and this one has three edges, so it is broken three ways.
