@@ -154,10 +154,33 @@ export function largestEnclosedBlob(data, width, height, channels) {
   return { largest, at };
 }
 
+// ★ A BUDGET, NOT A RAISED TIMEOUT — #45's lesson, applied to the image sweep.
+//
+// This file decodes every delivered view of every registered sculpt and
+// flood-fills it: ~120 PNGs at roughly 25ms each once the roster is full. That
+// is the thing under test, not waste around it, so it cannot be trimmed without
+// trimming coverage — and a silhouette lint that skips characters is the defect
+// it exists to catch. What WAS waste is re-decoding: three tests here measure
+// overlapping sets of the same files, so the decode is memoised below and only
+// the first pass pays for it.
+//
+// The residue is real wall-clock, so it gets a stated budget with the cost on
+// the record rather than a bare number. It sat at ~2.1s under vitest's 5s
+// default, which held until the roster filled and CI contention pushed it over
+// — and it then failed as a TIMEOUT, which reads like a broken gate rather than
+// a slow one. If this needs raising again, make the scan cheaper first.
+const SCANS_EVERY_VIEW = 60_000;
+
+const measured = new Map();
 async function measure(path) {
-  const { data, info } = await sharp(path).ensureAlpha().raw()
-    .toBuffer({ resolveWithObject: true });
-  return largestEnclosedBlob(data, info.width, info.height, info.channels);
+  if (!measured.has(path)) {
+    measured.set(path, (async () => {
+      const { data, info } = await sharp(path).ensureAlpha().raw()
+        .toBuffer({ resolveWithObject: true });
+      return largestEnclosedBlob(data, info.width, info.height, info.channels);
+    })());
+  }
+  return measured.get(path);
 }
 
 /** Every `<slug>-<view>-review.png` that exists, for every registered sculpt. */
@@ -196,7 +219,7 @@ describe('a delivered view has no hole in it', () => {
       }
     }
     expect(failures).toEqual([]);
-  });
+  }, SCANS_EVERY_VIEW);
 
   // ★ NO STALE DEBT. A budget that outlives the defect it recorded is not a
   // ratchet — it is slack waiting to be refilled by the next regression.
@@ -210,7 +233,7 @@ describe('a delivered view has no hole in it', () => {
     }
     expect(retired, `these no longer need a budget — delete their DEBT entries: ${retired.join(', ')}`)
       .toEqual([]);
-  });
+  }, SCANS_EVERY_VIEW);
 
   // ★ BROKEN ONCE, AGAINST A REAL RENDER rather than a synthetic figure. A 7x7
   // puncture well inside Tank's profile reproduces the shape of the defect that
