@@ -653,6 +653,62 @@
         "Ear reads as a flat patch in profile - rim/lobe construction (rubric 3.10)."
       ],
       "scoredBoardSha256": "ab41215c87ed2cbda91358030471409bd5e5f932cf77a8c640f3a21e3bf3b179"
+    },
+    "diva": {
+      "status": "candidate",
+      "evidence": "dazzle-fidelity-review.png",
+      "categories": {
+        "frontProfileSilhouette": {
+          "label": "front/profile silhouette",
+          "score": 4,
+          "note": "Second independent critic (first scored 4): the board's front/profile pair carries the concept's large read - big auburn mane, A-line dress flare, chunky high-tops - recognisable with no colour. The round-1 elbow kink is materially fixed: the swing arm turns as a connected rounded form. Held at 4: limbs read a notch slimmer than the concept's toddler-chubby girth."
+        },
+        "headBodyProportions": {
+          "label": "head/body proportions",
+          "score": 4,
+          "note": "Second independent critic (first scored 3 for proxy-thin limbs with a knife-edge elbow): a ~13% arm pass with two elbow blend rings resolved it - shoulders and elbows read as connected forms across idle, run and swing. Head metrics instrument-refused on BOTH sides (the mane merges every neck row); by eye the head reads large and childlike per the sheet, and featurelatitude is green."
+        },
+        "hairMass": {
+          "label": "hair mass",
+          "score": 4,
+          "note": "Second independent critic: one designed mass with wavy scalloped lobes in silhouette; the hairline reads from the front with the headband seated IN the hair, curtains frame the face, and no gameplay angle shows bare skull - the swing's back view is solid mane. Rubric-capped at 4: the interior reads as a smooth shaded volume, no sculpted strand groups."
+        },
+        "clothingConstruction": {
+          "label": "clothing construction",
+          "score": 4,
+          "note": "Second independent critic: cream ringer collar and cuffs, a crisp thin cream waistband with the gold star sitting on it (round-1's mushy purple-to-white gradient fixed with double edge rings), constructed high-tops with the measured two-tone sole (the classifier pair on her sheet is cream + warm tan - purple never makes the band pair on high-tops), striped socks. Held at 4: the skirt is a smooth cone where the concept shows pleats - the colour-pleat wedges read only softly."
+        },
+        "faceExpressionRead": {
+          "label": "face/expression read",
+          "score": 4,
+          "note": "Second independent critic: brows, big dark eyes and an open grin with visible teeth read at hero scale; the neutral keeps a legible three-quarter face in motion. featurelatitude green (brow 37.25/37.0, eye 54.1/54.1, mouth 76.3/76.1 - the spec refused all three landmarks, the mane merges every band, so the targets are bounded traces). Held at 4: features read planar; no nose breaking the hair-covered profile."
+        },
+        "heroAndFieldScale": {
+          "label": "hero + 40px read",
+          "score": 4,
+          "note": "Second independent critic: the hero capture reads unmistakably as her against the dirt; the 40px strip preserves the one memorable read - auburn mane over purple dress survives pixelation clearly."
+        }
+      },
+      "measuredFidelity": {
+        "command": "npm run measure:fidelity -- diva",
+        "ranAt": "2026-08-14",
+        "board": "dazzle-fidelity-review.png",
+        "result": "Shoe band 50.8/49.2 vs concept 51.9/45.0 with saturation 26.4 vs 25.9, all in tolerance - the classifier pair on her sheet is cream + warm tan (the sole and its shading; purple never makes the band pair on high-tops), so the sole is authored two-tone. Head height, aspect and face-skin NOT MEASURED on BOTH sides: her mane merges with the head at every neck row, so there is no honest pinch on concept or delivery. Ankle daylight 48.8 vs 0.00 OFF with measured cause: the sheet merges her ankles while the rig binds at the roster-wide 6.75-degree splay; pose, not sculpt.",
+        "note": "Feature placement gated by featurelatitude: brow 37.25 vs traced 37.0, eye 54.1 vs 54.1, mouth 76.3 vs 76.1 through her declared 3.99-2.68 span (the spec refuses all three landmarks - the mane merges every band - so the targets are bounded traces). No earLine: the mane owns the width metrics; ears reviewed by eye."
+      },
+      "heroEvidence": "dazzle-runtime-hero.png",
+      "animationEvidence": [
+        "dazzle-runtime-run.png",
+        "dazzle-runtime-swing.png"
+      ],
+      "polishFindings": [
+        "One more modest forearm-thickening pass toward the toddler-chubby concept girth.",
+        "Sculpted pleat fold ridges in the skirt (the colour wedges alone read softly) - the clothingConstruction 5-item.",
+        "Strand grouping in the mane interior (hairMass rubric cap); the direct-back view is a featureless ovoid.",
+        "A small nose form integrated with the skull planes (face 5-item).",
+        "The 40px strip is a T-pose sprite; a gameplay-pose strip would be stronger field evidence."
+      ],
+      "scoredBoardSha256": "f6edd83b3ba906b4a7c9156fdedb0a4d08eca45d3c3dabecb84b79fe75ecc0d1"
     }
   }
 }

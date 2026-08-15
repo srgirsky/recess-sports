@@ -159,7 +159,15 @@
     },
     "diva": {
       "name": "Dazzle",
-      "slug": "dazzle"
+      "slug": "dazzle",
+      "source": "dazzle-pilot.blend",
+      "traits": [
+        "long wavy auburn mane",
+        "cream headband",
+        "purple ringer dress",
+        "gold star waistband",
+        "purple high-top sneakers"
+      ]
     },
     "grizz": {
       "name": "Grizz",

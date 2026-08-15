@@ -192,6 +192,24 @@ export const RECIPES = {
     sweeps: {},
     bands: {},
   },
+
+  // ★ DAZZLE'S MANE OWNS EVERY WIDTH METRIC — the wavy auburn mass runs from
+  // crown to mid-torso and merges with the head at every row, so a "neck"
+  // found inside it is curtain-to-curtain, and the ear line lands on hair.
+  // Cream (headband, trim, socks, soles) sits in the backdrop cluster; her
+  // lit and shadowed skin are separate clusters and only the lit one is
+  // declared.
+  diva: {
+    slug: 'dazzle',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#fb9c53' },
+      hair: { hex: '#642302' },
+      dress: { hex: '#5d3a63' },
+    },
+    sweeps: {},
+    bands: {},
+  },
 };
 
 export const RECIPE_IDS = Object.keys(RECIPES);

@@ -515,4 +515,38 @@ export const FACE_SPECS = {
     mouthDrop: -4.6,
     mouthScale: 1.3,
   },
+
+  // Dazzle. Sweet confident big eyes under soft thick brows, and a small warm
+  // closed smile — she blows kisses, she does not grin. Feature rows traced
+  // on her sheet (spec refuses all three - the mane merges every band): brows
+  // rows 264-271 (37% of head), eyes rows 289-318 centred 54.1%, smile rows
+  // 344-349 (76.1%). Cells through her island (0.92, -1.367, 2.300).
+  diva: {
+    ink: '#170b04',
+    mouthInk: '#8a4530',
+    sclera: '#fffdf2',
+    irisBrown: '#4a2a10',
+    pupil: '#170d06',
+    white: '#fff8ea',
+    mouth: '#7a3423',
+    mouthDark: '#552114',
+    tongue: '#e57f86',
+    lowerLip: '#f0a06a',
+    eyeHalfW: 19,
+    eyeHalfH: 13,
+    irisR: 11.5,
+    irisInward: 3,
+    eyeX: [28, 100],
+    eyeY: 50,
+    browThick: 4.4,
+    browThin: 2.2,
+    browHalf: 13,
+    browX: [32, 96],
+    browY: 20,
+    browTilt: 0,
+    mouthY: 84,
+    // A small warm smile, corners up gently.
+    mouthBow: -1.0,
+    mouthDrop: -2.6,
+  },
 };

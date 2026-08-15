@@ -1,0 +1,722 @@
+"""Rebuild Dazzle as a reference-authored character on the canonical rig.
+
+Run from the repository root:
+  blender --background assets/v2/source/dazzle-pilot.blend \
+    --python scripts/v2/blender/sculpt-dazzle-source.py
+
+★ DAZZLE IS THE FIRST LONG MANE — one wavy ring-loft from crown to mid-torso
+whose curtains frame the face and rest on the shoulders — and the second
+dress (Bubbles' torso-loft-is-the-garment construction) with the roster's
+first colour-pleated skirt: the pleat shading is the loft's own theta hook,
+no extra geometry. The cream headband rides the mane like Zippy's.
+
+The conversion: front figure 630px over 4.0ft → 1px = 0.006349ft. The profile
+faces +x. Head band: mane top row 191 (z 3.99) to neck pinch row 398
+(z 2.68) — 32.9% of the figure.
+"""
+
+from __future__ import annotations
+
+from math import cos, pi, sin, sqrt
+from pathlib import Path
+import sys
+
+import bpy
+
+# ⚠️ Blender runs a --python script by PATH and does not put its directory on
+# sys.path, so the package beside this file is unimportable without this.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+from sculptlib.arm import ArmSpec, HandSpec, build_arm
+from sculptlib.atlas import install_face_atlas
+from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
+from sculptlib.ear import EarSpec, build_ear
+from sculptlib.head import HeadSpec, head_surface
+from sculptlib.leg import LegSpec, build_leg, leg_x
+from sculptlib.mesh import MeshBuilder, thin_for_lod
+from sculptlib.palette import Palette
+from sculptlib.rig import ARM_ELBOW_X, ARM_SHOULDER_X, LEG_ANKLE_Z, limb_bone
+from sculptlib.shoe import ShoeSpec, build_shoe
+
+REPO = Path.cwd()
+OUTPUT = REPO / "assets/v2/source/dazzle-pilot.blend"
+FACE_ATLAS = REPO / "assets/v2/source/dazzle-face-atlas.png"
+REVISION = "dazzle-turnaround-fidelity-v1"
+SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
+
+
+# --- The palette ---------------------------------------------------------------
+#
+# Sheet clusters: auburn hair #642302 (with #8C3B0B lights), dress purple
+# #5D3A63, lit skin #FB9C53 over shadow #CB6D2B, cream #F8EDE3 for headband,
+# trim, socks and soles. Ramp-authored per the calibrated boards.
+SKIN = rgba("FCA054")
+SKIN_SHADOW = rgba("C4732E")
+HAIR = rgba("8F3A10")        # rich auburn
+SHIRT = rgba("6F4A7C")       # the dress purple ("SHIRT" is the garment lane)
+SHIRT_DARK = rgba("FFF4E2")  # the cream trim lane: collar, cuffs, waistband
+PANTS = rgba("4E3159")       # the pleat-shadow purple, two steps deeper
+PANTS_DARK = rgba("472E52")
+SOCK = rgba("FFF6E6")
+SHOE = rgba("66456F")        # purple high-top canvas
+WHITE = rgba("FFF6DC")       # cream cupsole
+SOLE = rgba("FFD092")        # warm-tan toe bumper, laces, collar roll —
+                             # the classifier pair on this sheet is cream +
+                             # warm tan (#f6ece1/#f2cda3); purple never makes
+                             # the band pair on high-tops
+# The team accent is the HEADBAND, Zippy's convention — cream on the sheet so
+# the untinted board reads true, tinted at runtime.
+TEAM_MASK = rgba("D8D2C6")
+STAR = rgba("F2C24E")        # the gold waist star — identity, stays authored
+
+PALETTE = Palette(
+    skin=SKIN, skin_shadow=SKIN_SHADOW, hair=HAIR,
+    shirt=SHIRT, shirt_dark=SHIRT_DARK,
+    pants=PANTS, pants_dark=PANTS_DARK,
+    shoe=SHOE, sock=SOCK, white=WHITE, sole=SOLE, team_mask=TEAM_MASK,
+)
+
+
+# --- The skull -----------------------------------------------------------------
+#
+# Features, bounded traces: soft thick brows rows 264-271 (37% of the
+# 3.99→2.68 head, z 3.51), the big eyes rows 289-318 centred row 303 (54.1%,
+# z 3.28), nostrils rows 333-335, the closed smile rows 344-349 (76.1%,
+# z 2.99). The mane owns the width metrics; the ears hide under the curtains.
+HEAD_CENTER = (0.0, -0.020, 3.250)
+HEAD_RADII = (0.400, 0.440, 0.440)
+
+FACE_SCALE = (
+    (1.00, 1.00),
+    (0.40, 1.00),
+    (0.05, 1.03),
+    (-0.30, 1.06),
+    (-0.60, 1.03),
+    (-1.00, 0.95),
+)
+
+
+def face_half_scale(nz: float) -> float:
+    """The multiplier on the ellipsoid's own lateral radius at this latitude."""
+    table = FACE_SCALE
+    if nz >= table[0][0]:
+        return table[0][1]
+    for (z0, s0), (z1, s1) in zip(table, table[1:]):
+        if nz >= z1:
+            return s0 + (s1 - s0) * (z0 - nz) / (z0 - z1)
+    return table[-1][1]
+
+
+def socket_push(nx: float, nz: float) -> float:
+    """Big sweet eyes — a soft dish; the atlas carries the shine."""
+    dz = nz - 0.010
+    dx = abs(nx) - 0.295
+    radial = (dx * dx) / 0.058 + (dz * dz) / 0.026
+    if radial >= 1.0:
+        return 0.0
+    return 0.012 * (1.0 - radial) ** 1.3
+
+
+def nose_push(nx: float, nz: float) -> float:
+    """A small button above the smile (centre nz -0.32)."""
+    if abs(nx) > 0.17:
+        return 0.0
+    dz = nz + 0.320
+    if dz < -0.11 or dz > 0.12:
+        return 0.0
+    across = max(0.0, 1.0 - (nx / 0.17) ** 2)
+    bridge = 0.008 * across * max(0.0, 1.0 - abs(dz - 0.06) / 0.09)
+    reach = 0.095 if dz >= 0.0 else 0.105
+    t = dz / reach
+    tip = 0.085 * across ** 1.25 * max(0.0, 1.0 - t * t) ** 1.40
+    return bridge + tip
+
+
+# Her ears are drawn in the three-quarter view and hide under the curtains
+# from the front; placed at eye level against the skull side.
+EAR_SPEC = EarSpec(center=(0.020, 3.220), radii=(0.1250, 0.1500))
+
+# Island solved for her span: brow anchor 20 lands z 3.502 (37.25% of the
+# 3.99→2.68 head against the traced 37.0), eye anchor 50 lands z 3.281 (54.1
+# vs 54.1), mouth anchor 84 lands z 2.991 (76.3 vs 76.1). The spec REFUSES
+# all three landmarks — the mane merges every band; the rows above are the
+# bounded traces.
+FACE_ISLAND = (0.92, -1.367, 2.300)
+
+HEAD_SPEC = HeadSpec(
+    center=HEAD_CENTER,
+    radii=HEAD_RADII,
+    half_scale=face_half_scale,
+    socket=socket_push,
+    nose=nose_push,
+    island=FACE_ISLAND,
+)
+
+FACE_ROWS = [0.0, 0.092, 0.184, 0.276, 0.340, 0.404, 0.468,
+             0.532, 0.596, 0.660, 0.724, 0.816, 0.908, 1.0]
+
+
+def skull_surface_x(y: float, z: float) -> float:
+    """The skull's lateral half-width at (y, z) — what the ear mounts against."""
+    ny = (y - HEAD_CENTER[1]) / HEAD_RADII[1]
+    nz = (z - HEAD_CENTER[2]) / HEAD_RADII[2]
+    remainder = 1.0 - ny * ny - nz * nz
+    if remainder <= 0.0:
+        return 0.0
+    return HEAD_RADII[0] * (remainder ** 0.5) * face_half_scale(nz)
+
+
+def skull_front_y(x: float, z: float) -> float:
+    """The RENDERED face's forward extent at (x, z) — the flattened-face clamp
+    (head_surface scales front depth by 0.88 - 0.11·frontness²) with the
+    no-skull sentinel."""
+    nz = (z - HEAD_CENTER[2]) / HEAD_RADII[2]
+    rx = HEAD_RADII[0] * face_half_scale(nz)
+    nx = x / rx if rx else 2.0
+    s2 = 1.0 - nz * nz
+    if s2 <= 0.0:
+        return -10.0
+    cb2 = 1.0 - (nx * nx) / s2
+    if cb2 <= 0.0:
+        return -10.0
+    cb = sqrt(cb2)
+    depth = 0.88 - 0.11 * cb * cb
+    return HEAD_CENTER[1] - HEAD_RADII[1] * sqrt(s2) * cb * depth
+
+
+# --- The mane ------------------------------------------------------------------
+#
+# One wavy mass from the crown to mid-torso: curtains frame the face, the
+# widest rows rest across the shoulders, and the tips taper at z ~2.25.
+# measured: front z=2.94 halfWidth=0.7651
+# measured: front z=3.42 halfWidth=0.5905
+# measured: front z=2.38 halfWidth=0.7651 tol=0.06
+MANE_LEVELS = [
+    (3.900, 0.105, 0.115, 0.000),
+    (3.820, 0.240, 0.260, 0.000),
+    (3.700, 0.350, 0.380, 0.010),
+    (3.560, 0.420, 0.455, 0.020),
+    (3.400, 0.460, 0.500, 0.030),
+    (3.240, 0.480, 0.520, 0.050),
+    (3.080, 0.500, 0.540, 0.070),
+    (2.920, 0.520, 0.560, 0.090),
+    (2.760, 0.530, 0.540, 0.110),
+    (2.600, 0.545, 0.500, 0.130),
+    (2.460, 0.530, 0.450, 0.150),
+    (2.340, 0.480, 0.360, 0.170),
+    (2.250, 0.330, 0.240, 0.190),
+]
+
+# The hairline: an open face with a centre part — high across the forehead,
+# the curtains closing past the temples and hanging beside the jaw.
+MANE_FRINGE = [
+    (0.00, 3.560),
+    (0.20, 3.540),
+    (0.27, 3.380),
+    (0.33, 3.000),
+    (0.40, 2.760),
+]
+
+MANE_OPEN_BOTTOM = 2.280
+
+
+def fringe_z_at(x_abs: float) -> float:
+    """The mane's open-face edge at lateral offset |x|."""
+    table = MANE_FRINGE
+    if x_abs <= table[0][0]:
+        return table[0][1]
+    for (x0, z0), (x1, z1) in zip(table, table[1:]):
+        if x_abs <= x1:
+            return z0 + (z1 - z0) * (x_abs - x0) / (x1 - x0)
+    return table[-1][1]
+
+
+def ring_loft_mane(builder: MeshBuilder, levels, detail: int) -> None:
+    """The ring-loft-with-tuck, wavy, with a chest window below the chin."""
+    # An ascending table silently builds the loft top-down and inverts every
+    # quad's winding — the runtime lights the mass as a slate-grey void.
+    assert all(a[0] > b[0] for a, b in zip(levels, levels[1:])), \
+        "ring_loft_mane levels must be strictly descending in z"
+    segments = 18 if detail >= 2 else (10 if detail == 1 else 8)
+    use = levels if detail >= 2 else thin_for_lod([(z, hx, hy, yc) for z, hx, hy, yc in levels], detail)
+    ascending = list(reversed(use))
+    rows = []
+    for z, half_x, half_y, y_centre in ascending:
+        ring = []
+        curl = 0.05 if detail >= 2 else 0.0
+        for column in range(segments):
+            theta = 2 * pi * column / segments
+            clump = 1.0 + curl * sin(8 * theta + 1.7 * len(rows))
+            x = half_x * clump * cos(theta)
+            y = y_centre + half_y * clump * sin(theta)
+            if y < y_centre:
+                sf = skull_front_y(x, z)
+                if MANE_OPEN_BOTTOM < z < fringe_z_at(abs(x)):
+                    if sf > -9.0:
+                        y = max(y, sf + 0.050)
+                    elif abs(x) < 0.24:
+                        # Below the chin the centre stays open to the chest —
+                        # the dress front (~-0.24) hides what little remains,
+                        # and the neck front (-0.13) stays clear of hair.
+                        y = max(y, -0.085)
+                    else:
+                        y = max(y, -0.300)
+                else:
+                    y = max(y, (sf - 0.060) if sf > -9.0 else -0.320)
+            ring.append(builder.vertex((x, y, z), HAIR, "Head"))
+        rows.append(ring)
+    bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
+    top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.02), HAIR, "Head")
+    for column in range(segments):
+        nxt = (column + 1) % segments
+        builder.face((bottom, rows[0][nxt], rows[0][column]), 2)
+        builder.face((rows[-1][column], rows[-1][nxt], top), 2)
+    for lower, upper in zip(rows, rows[1:]):
+        for column in range(segments):
+            nxt = (column + 1) % segments
+            builder.face((lower[column], lower[nxt], upper[nxt], upper[column]), 2)
+
+
+# The headband: seated on the MANE's own surface +0.012 (an arc floated at
+# skull depth is invisible inside the hair — Zippy's lesson). THE team-accent
+# surface (material 3).
+# not-traceable: the band's own width hides under hair in every view; the
+# arc it rides is the mane surface.
+# The arc stays HIGH on the crown — the first cut bulged forward at the
+# apex and the band read as a V dipping onto the forehead.
+HEADBAND_ARC = [
+    (-0.440, -0.140, 3.440),
+    (-0.375, -0.200, 3.585),
+    (-0.300, -0.230, 3.700),
+    (-0.170, -0.258, 3.800),
+    (0.000, -0.243, 3.840),
+    (0.170, -0.258, 3.800),
+    (0.300, -0.230, 3.700),
+    (0.375, -0.200, 3.585),
+    (0.440, -0.140, 3.440),
+]
+
+
+def build_hair(builder: MeshBuilder, detail: int) -> None:
+    ring_loft_mane(builder, MANE_LEVELS, detail)
+    if detail >= 1:
+        arc = HEADBAND_ARC if detail >= 2 else HEADBAND_ARC[::4]
+        builder.tube(arc, [0.046] * len(arc), 3, TEAM_MASK, "Head", 4)
+
+
+# --- The dress: one loft, collar to pleated hem --------------------------------
+#
+# Bubbles' construction: the torso loft IS the garment. Cream ringer collar,
+# purple bodice, cream waistband with the gold star, and the skirt flaring to
+# the hem with an inner lip for thickness. The pleats are COLOUR — the theta
+# hook alternates the purple one step deeper in twelve wedges, no geometry.
+# measured: front z=1.18 halfWidth=0.5873
+# not-traceable: the bodice's own edges hide between the mane's curtains and
+# the hanging arms at every row; halves there are bounded off the purple
+# cluster runs (chest 132-234 at z 2.20, half 0.324 including sleeve caps).
+TORSO_LEVELS = [
+    (1.130, 0.500, 0.345, "Hips"),    # hem inner lip — the skirt has thickness
+    (1.145, 0.560, 0.390, "Hips"),    # hem underside
+    (1.180, 0.585, 0.408, "Hips"),
+    (1.300, 0.520, 0.372, "Hips"),
+    (1.420, 0.455, 0.335, "Hips"),
+    (1.520, 0.380, 0.295, "Hips"),
+    (1.600, 0.290, 0.245, "Hips"),    # skirt gathers at the waistband
+    (1.608, 0.292, 0.247, "Spine"),   # crisp lower edge
+    (1.616, 0.296, 0.250, "Spine"),   # cream waistband, proud
+    (1.644, 0.294, 0.248, "Spine"),
+    (1.652, 0.290, 0.246, "Spine"),   # crisp upper edge
+    (1.800, 0.278, 0.240, "Spine"),
+    (2.000, 0.270, 0.238, "Spine1"),
+    (2.200, 0.268, 0.232, "Spine1"),
+    (2.360, 0.262, 0.222, "Spine2"),
+    (2.440, 0.240, 0.205, "Spine2"),
+    (2.510, 0.196, 0.172, "Spine2"),
+    (2.560, 0.155, 0.142, "Spine2"),
+    (2.585, 0.150, 0.138, "Spine2"),  # cream ringer collar, proud
+    (2.615, 0.138, 0.128, "Spine2"),  # neck hole — OUTSIDE the neck loft
+]
+
+WAISTBAND = (1.610, 1.650)
+SKIRT_TOP = 1.610
+
+
+def dress_color(theta: float, z: float):
+    if z > 2.570:
+        return SHIRT_DARK  # the cream ringer collar
+    if WAISTBAND[0] <= z <= WAISTBAND[1]:
+        return SHIRT_DARK  # the cream waistband
+    if z < SKIRT_TOP:
+        # Twelve pleat wedges, colour only — the fold shadow the sheet draws.
+        return PANTS if sin(6.0 * theta) > 0.0 else SHIRT
+    return SHIRT
+
+# Her neck pinch is z 2.68 at ~0.13 half, mostly framed by the curtains.
+# not-traceable: the front silhouette at neck rows is curtain-to-curtain
+# (0.71 half); the pinch half here is bounded off the skin run between the
+# curtains at z 2.72 (run 166-199, half 0.105) plus the jaw taper.
+NECK_LEVELS = [
+    (2.605, 0.132, 0.124, "Spine2"),
+    (2.700, 0.130, 0.122, "Neck"),
+    (2.810, 0.142, 0.134, "Neck"),
+]
+
+
+# --- Arms: cream-cuffed short sleeves, bare arms -------------------------------
+SLEEVE_HEM_X = 0.620
+
+SHOULDER_BLEND = {
+    0.215: 0.86,
+    0.300: 0.58,
+    0.335: 0.34,
+    0.400: 0.12,
+}
+
+# not-traceable: authored in the rig's T-pose while the concept hangs the
+# arms beside the skirt; the bare forearm traces ~0.055 half.
+ARM_STATIONS = [
+    (0.215, 0.156, SHIRT, "Arm"),
+    (0.300, 0.160, SHIRT, "Arm"),
+    (0.335, 0.152, SHIRT, "Arm"),
+    (ARM_SHOULDER_X, 0.140, SHIRT, "Arm"),
+    (0.520, 0.128, SHIRT, "Arm"),
+    (0.585, 0.121, SHIRT, "Arm"),
+    (SLEEVE_HEM_X, 0.126, SHIRT_DARK, "Arm"),      # cream ringer cuff, proud
+    (0.644, 0.118, SHIRT_DARK, "Arm"),
+    (0.662, 0.098, SHIRT_DARK, "Arm"),
+    (0.682, 0.076, SKIN, "Arm"),
+    (0.790, 0.074, SKIN, "Arm"),
+    (ARM_ELBOW_X - 0.048, 0.072, SKIN, "Arm"),
+    (ARM_ELBOW_X, 0.071, SKIN, "ForeArm"),
+    (ARM_ELBOW_X + 0.048, 0.070, SKIN, "ForeArm"),
+    (1.240, 0.067, SKIN, "ForeArm"),
+    (1.365, 0.063, SKIN, "Hand"),
+    (1.412, 0.070, SKIN, "Hand"),
+    (1.465, 0.077, SKIN, "Hand"),   # knuckle line
+    (1.512, 0.066, SKIN, "Hand"),
+]
+
+DAZZLE_ARM = ArmSpec(
+    stations=tuple(ARM_STATIONS),
+    shoulder_blend=SHOULDER_BLEND,
+    cap_x=0.100,
+    ring_squash=0.95,
+    hand=HandSpec(
+        tip_x=1.550,
+        finger_root=1.502,
+        finger_offsets=((-0.045, 0.0, 0.045), (-0.031, 0.031)),
+        finger_lengths=((0.102, 0.116, 0.104), (0.108, 0.113)),
+        finger_widths=(0.026, 0.025, 0.020, 0.015),
+        # ⚠️ FORWARD IS -y.
+        thumb_spine=(
+            (1.388, -0.034, -0.017),
+            (1.436, -0.056, -0.029),
+            (1.472, -0.069, -0.037),
+            (1.492, -0.075, -0.041),
+        ),
+        thumb_widths=(0.026, 0.024, 0.018, 0.014),
+    ),
+    garment=SHIRT,
+    skin=SKIN,
+)
+
+
+# --- Bare legs under the skirt, striped socks, high-tops -----------------------
+#
+# The skirt hem is z 1.14; her legs are bare to the sock tops at ~0.62, the
+# socks carry one purple stripe (0.545-0.505), and the purple high-tops rise
+# to a taller topline than the roster's low-top last.
+INSEAM_TOP_Z = 1.300
+INSEAM_HEM_Z = 0.900
+INSEAM_HEM_HALF = 0.030
+
+
+def inseam_half(z: float) -> float:
+    if z >= INSEAM_TOP_Z:
+        return 0.0
+    t = min(1.0, (INSEAM_TOP_Z - z) / (INSEAM_TOP_Z - INSEAM_HEM_Z))
+    return INSEAM_HEM_HALF * t ** 1.3
+
+# (z, half-width, depth factor, colour, bone) — strictly descending in z.
+# measured: front z=1.02 halfWidth=0.3746
+LEG_STATIONS = [
+    (1.360, 0.140, 1.02, SKIN, "UpLeg"),              # under the skirt
+    (1.150, 0.133, 1.01, SKIN, "UpLeg"),
+    (0.900, 0.122, 1.01, SKIN, "Leg"),
+    (0.760, 0.126, 1.01, SKIN, "Leg"),                # the calf
+    (0.650, 0.113, 1.00, SKIN, "Leg"),
+    (0.620, 0.123, 1.00, SOCK, "Leg"),                # sock top
+    (0.545, 0.113, 1.00, SHIRT, "Leg"),               # the purple stripe
+    (0.505, 0.111, 1.00, SHIRT, "Leg"),
+    (0.470, 0.109, 1.00, SOCK, "Leg"),
+    (0.430, 0.106, 1.00, SOCK, "Leg"),
+    (0.400, 0.100, 0.98, SOCK, "Foot"),
+    (0.280, 0.092, 0.97, SOCK, "Foot"),
+    (0.150, 0.086, 0.95, SOCK, "Foot"),
+]
+
+DAZZLE_LEG = LegSpec(
+    stations=tuple(LEG_STATIONS),
+    inseam_half=inseam_half,
+    garment=SHIRT,
+    sock=SOCK,
+    team_mask=TEAM_MASK,
+)
+
+
+# --- The high-top shoe ---------------------------------------------------------
+SHOE_FLOOR = 0.006
+SHOE_TOE_OUT = 14.0 * pi / 180.0
+
+# not-traceable: the last's fore-aft profile has no sheet view; the scales it
+# is built to are the traced numbers above.
+SHOE_STATIONS = [
+    (-0.439, 0.058, 0.210, SOLE),
+    (-0.388, 0.106, 0.242, SOLE),
+    (-0.314, 0.140, 0.268, SOLE),
+    (-0.228, 0.162, 0.282, SOLE),
+    (-0.131, 0.174, 0.288, SOLE),
+    (-0.034, 0.180, 0.290, SOLE),
+    (0.057, 0.179, 0.288, SOLE),
+    (0.137, 0.168, 0.282, SOLE),
+    (0.188, 0.144, 0.272, SOLE),
+    (0.239, 0.106, 0.236, SOLE),
+]
+
+# not-traceable: a cross-section is a fore-aft cut no view can give.
+SHOE_SECTION = [
+    (0.000, 0.000, "midsole"),
+    (0.620, 0.004, "midsole"),
+    (0.950, 0.030, "midsole"),
+    (1.000, 0.130, "midsole"),
+    (0.985, 0.300, "midsole"),
+    (0.820, 0.330, "quarter"),
+    (0.805, 0.450, "quarter"),
+    (0.785, 0.580, "quarter"),
+    (0.758, 0.700, "quarter"),
+    (0.722, 0.820, "quarter"),
+    (0.662, 0.880, "quarter"),
+    (0.520, 0.950, "quarter"),
+    (0.000, 1.000, "collar"),
+]
+SHOE_SECTION_MID = [
+    (0.000, 0.000, "midsole"),
+    (0.970, 0.060, "midsole"),
+    (0.985, 0.300, "midsole"),
+    (0.820, 0.330, "quarter"),
+    (0.785, 0.580, "quarter"),
+    (0.722, 0.820, "quarter"),
+    (0.662, 0.880, "quarter"),
+    (0.000, 1.000, "collar"),
+]
+SHOE_SECTION_LOW = [
+    (0.000, 0.000, "midsole"),
+    (0.985, 0.300, "midsole"),
+    (0.820, 0.330, "quarter"),
+    (0.722, 0.820, "quarter"),
+    (0.000, 1.000, "collar"),
+]
+
+
+def shoe_floor_at(y_unscaled: float) -> float:
+    if y_unscaled <= -0.30:
+        t = (-0.30 - y_unscaled) / 0.14
+        return SHOE_FLOOR + 0.042 * min(1.0, t) ** 1.6
+    if y_unscaled >= 0.16:
+        t = (y_unscaled - 0.16) / 0.08
+        return SHOE_FLOOR + 0.025 * min(1.0, t) ** 1.5
+    return SHOE_FLOOR
+
+
+SHOE_LENGTH_SCALE = 0.98
+SHOE_WIDTH_SCALE = 0.94
+SHOE_HEIGHT_SCALE = 1.48   # the high-top: topline well above the low-top last
+
+SHOE_TOP_MAX = max(ztop for _, _, ztop, _ in SHOE_STATIONS)
+
+# Cream cupsole below, purple canvas above.
+# The sole is TWO tones on the sheet: cream wall below, warm-tan shading
+# above it — the "collar" zone here paints the midsole's upper half in the
+# trim tan so the classifier pair balances (52/45 cream/tan).
+SHOE_BANDS = [
+    (0.000, "midsole"),
+    (0.100, "collar"),
+    (0.280, "quarter"),
+]
+
+
+def toe_cap_v_low(y_unscaled: float) -> float:
+    if y_unscaled > -0.16:
+        return 2.0
+    frac = min(1.0, max(0.0, (-0.16 - y_unscaled) / 0.22))
+    return 0.80 - 0.14 * frac
+
+
+def heel_counter_v_low(y_unscaled: float) -> float:
+    if y_unscaled < 0.02:
+        return 2.0
+    frac = min(1.0, max(0.0, (y_unscaled - 0.02) / 0.20))
+    return 0.56 - 0.22 * frac
+
+
+DAZZLE_SHOE = ShoeSpec(
+    stations=SHOE_STATIONS,
+    section=SHOE_SECTION,
+    section_mid=SHOE_SECTION_MID,
+    section_low=SHOE_SECTION_LOW,
+    bands=SHOE_BANDS,
+    floor=SHOE_FLOOR,
+    toe_out=SHOE_TOE_OUT,
+    top_max=SHOE_TOP_MAX,
+    length_scale=SHOE_LENGTH_SCALE,
+    width_scale=SHOE_WIDTH_SCALE,
+    height_scale=SHOE_HEIGHT_SCALE,
+    sole_profile=shoe_floor_at,
+    toe_cap_edge=toe_cap_v_low,
+    heel_counter_edge=heel_counter_v_low,
+    collar=(0.022, 0.105),
+    straps=((-0.184, -0.112), (-0.072, 0.004)),
+    strap_arc_min=0.55,
+    heel_point=(0.286, 0.106 + 0.025),
+    toe_point=(-0.470, 0.044 + 0.042),
+    upper=SHOE,
+    trim=SOLE,
+    midsole=WHITE,
+)
+
+
+def build_star(builder: MeshBuilder, detail: int) -> None:
+    """The gold five-point star on the waistband — her dazzle."""
+    if detail < 1:
+        return
+    cx, cy, cz = 0.0, -0.262, 1.632
+    outer, inner = 0.058, 0.024
+    centre = builder.vertex((cx, cy - 0.006, cz), STAR, "Spine")
+    ring = []
+    for i in range(10):
+        a = pi / 2 + i * pi / 5
+        r = outer if i % 2 == 0 else inner
+        ring.append(builder.vertex((cx + r * cos(a), cy, cz + r * sin(a)), STAR, "Spine"))
+    for i in range(10):
+        builder.face((centre, ring[i], ring[(i + 1) % 10]), 1)
+
+
+def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) -> None:
+    face_columns = 27 if detail >= 2 else (9 if detail == 1 else 5)
+    back_columns = 6 if detail >= 2 else (2 if detail == 1 else 1)
+    if detail >= 2:
+        rows_spec, crown, chin = FACE_ROWS, 3, 2
+    elif detail == 1:
+        rows_spec, crown, chin = [0.0, 0.184, 0.340, 0.468, 0.660, 1.0], 1, 1
+    else:
+        rows_spec, crown, chin = [0.0, 0.32, 0.60, 1.0], 1, 1
+    head_surface(builder, face_columns, back_columns, rows_spec, crown, chin,
+                 spec=HEAD_SPEC, palette=PALETTE)
+
+    build_hair(builder, detail)
+
+    if detail >= 1:
+        for side in (1, -1):
+            build_ear(builder, side, detail, palette=PALETTE, skull_at=skull_surface_x, spec=EAR_SPEC)
+
+    builder.loft(NECK_LEVELS, 0, SKIN, 14 if detail >= 2 else segments)
+    torso_segments = 20 if detail >= 2 else segments
+    builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, torso_segments,
+                 color_fn=dress_color)
+    build_star(builder, detail)
+
+    for side in (1, -1):
+        build_arm(builder, side, detail, spec=DAZZLE_ARM)
+        build_leg(builder, side, detail, spec=DAZZLE_LEG)
+        build_shoe(builder, side, detail, spec=DAZZLE_SHOE,
+                   ankle_x=leg_x(LEG_ANKLE_Z), bone=limb_bone("ToeBase", side))
+
+
+def build_lod(name: str, armature: bpy.types.Object, segments: int, rings: int, detail: int) -> bpy.types.Object:
+    builder = MeshBuilder()
+    add_character(builder, segments, rings, detail)
+    mesh = bpy.data.meshes.new(f"{name}_Mesh")
+    mesh.from_pydata(builder.vertices, [], builder.faces)
+    mesh.update()
+
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    for material_name in SLOTS:
+        mesh.materials.append(bpy.data.materials[material_name])
+    for polygon, material_index in zip(mesh.polygons, builder.face_materials):
+        polygon.material_index = material_index
+        polygon.use_smooth = True
+
+    uv_layer = mesh.uv_layers.new(name="UVMap")
+    color_layer = mesh.color_attributes.new(name="Color", type="BYTE_COLOR", domain="POINT")
+    authored_color = mesh.color_attributes.new(name="_RECESS_COLOR", type="FLOAT_COLOR", domain="POINT")
+    for vertex_index, color in enumerate(builder.colors):
+        color_layer.data[vertex_index].color_srgb = color
+        authored_color.data[vertex_index].color = srgb_to_linear(color)
+    for polygon in mesh.polygons:
+        for loop_index in polygon.loop_indices:
+            vertex_index = mesh.loops[loop_index].vertex_index
+            uv_layer.data[loop_index].uv = builder.uvs[vertex_index]
+    mesh.color_attributes.active_color = color_layer
+
+    groups = {bone.name: obj.vertex_groups.new(name=bone.name) for bone in armature.data.bones}
+    for vertex_index, weights in enumerate(builder.weights):
+        total = sum(weights.values()) or 1.0
+        for bone_name, weight in weights.items():
+            groups[bone_name].add([vertex_index], weight / total, "REPLACE")
+
+    modifier = obj.modifiers.new("Canonical rig", "ARMATURE")
+    modifier.object = armature
+    obj["recessAuthoring"] = REVISION
+    obj["recessReference"] = "dazzle-turnaround.png"
+    return obj
+
+
+def main() -> None:
+    armatures = [obj for obj in bpy.context.scene.objects if obj.type == "ARMATURE"]
+    if len(armatures) != 1:
+        raise RuntimeError(f"expected one canonical armature, found {len(armatures)}")
+    armature = armatures[0]
+    ensure_material_slots(SLOTS)
+
+    for name in ("kid_diva_LOD0", "kid_diva_LOD1", "kid_diva_LOD2"):
+        old = bpy.data.objects.get(name)
+        if old:
+            bpy.data.objects.remove(old, do_unlink=True)
+
+    settings = {
+        "kid_diva_LOD0": (20, 12, 2),
+        "kid_diva_LOD1": (8, 4, 1),
+        "kid_diva_LOD2": (5, 3, 0),
+    }
+    built = [build_lod(name, armature, *config) for name, config in settings.items()]
+
+    for material_name in SLOTS:
+        material = bpy.data.materials[material_name]
+        material["recessVertexPalette"] = True
+        if material_name != "M_Body":
+            rebuild_palette_material(material)
+    bpy.data.materials["M_Uniform"]["recessIdentityPalette"] = True
+    bpy.data.materials["M_Accessory"]["recessTeamAccent"] = True
+    if FACE_ATLAS.exists():
+        install_face_atlas(FACE_ATLAS, "diva")
+
+    bpy.context.scene["recessFidelityRevision"] = REVISION
+    notes = bpy.data.texts.get("READ_ME_FIRST") or bpy.data.texts.new("READ_ME_FIRST")
+    notes.clear()
+    notes.write(
+        "Dazzle reference-authored production source\n\n"
+        "The three LOD meshes were rebuilt against dazzle-turnaround.png; they are not proxy deformations.\n"
+        "Signature wardrobe colour lives in M_Uniform vertex colour; M_Accessory is the headband accent.\n"
+        "Do not rename canonical bones, LOD roots or material slots.\n"
+        "Ship with: npm run export:authored-character -- diva\n"
+    )
+    for obj in built:
+        obj.hide_render = obj.name != "kid_diva_LOD0"
+        obj.display_type = "SOLID" if obj.name.endswith("LOD0") else "WIRE"
+    bpy.ops.wm.save_as_mainfile(filepath=str(OUTPUT), compress=True)
+    print(f"wrote {OUTPUT} ({REVISION})")
+
+
+if __name__ == "__main__":
+    main()

@@ -196,6 +196,22 @@ const TURNAROUND = {
     span: { crownZ: 3.99, neckZ: 2.84 },
     tolerance: 2.5,
   },
+  // ★ DAZZLE'S SPEC REFUSES ALL THREE FEATURES — her mane merges with every
+  // dark band and its "mouth" candidate is a curtain shadow at 90.3% of head.
+  // Bounded traces on dazzle-turnaround.png (crown row 191 = the mane's top,
+  // neck row 398): brow bands rows 264-271 (centroid ~267.5), the big eyes
+  // rows 289-318 centred ~row 303, the closed smile rows 344-349 centred
+  // ~348.5. No earLine: the widest row is the mane at 78.3%, hair on concept
+  // and delivery alike; her ears hide under the curtains and are reviewed by
+  // eye off the three-quarter view.
+  diva: {
+    slug: 'dazzle',
+    brow: 37.0,
+    eye: 54.1,
+    mouth: 76.1,
+    span: { crownZ: 3.99, neckZ: 2.68 },
+    tolerance: 2.5,
+  },
 };
 
 function constantsFor(slug, { needsEar = true } = {}) {

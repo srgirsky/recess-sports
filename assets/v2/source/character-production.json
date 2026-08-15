@@ -195,6 +195,21 @@
         "navy dolphin shorts",
         "huge happy grin"
       ]
+    },
+    "diva": {
+      "source": "dazzle-pilot.blend",
+      "sourceSha256": "d96a950e5dcb2d0efce1883d2d5a6fda5fa770d0ad2097cf43d22d7fbe7b45d0",
+      "concept": "dazzle-turnaround.png",
+      "conceptSha256": "3eb499fa87bff373ae457d620ef72ae54de5c0636b605ed24022aeca7523f8df",
+      "output": "kid_diva.glb",
+      "outputSha256": "a11602b19f27b4f3dca83ed1d0430cf6145186e202f30240037eca6221977985",
+      "definingTraits": [
+        "long wavy auburn mane",
+        "cream headband",
+        "purple ringer dress",
+        "gold star waistband",
+        "purple high-top sneakers"
+      ]
     }
   }
 }
