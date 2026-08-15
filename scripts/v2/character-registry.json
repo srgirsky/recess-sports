@@ -179,7 +179,15 @@
     },
     "the_prof": {
       "name": "The Professor",
-      "slug": "the-professor"
+      "slug": "the-professor",
+      "source": "the-professor-pilot.blend",
+      "traits": [
+        "round wire glasses",
+        "open brown jacket",
+        "side-swept dark hair",
+        "rolled blue jeans",
+        "eager open smile"
+      ]
     },
     "diva": {
       "name": "Dazzle",

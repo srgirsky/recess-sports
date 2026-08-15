@@ -274,6 +274,21 @@ const TURNAROUND = {
     span: { crownZ: 3.99, neckZ: 2.60 },
     tolerance: 2.5,
   },
+  // ★ THE PROFESSOR'S EYES SIT BEHIND BIG WIRE LENSES (the eye line is the
+  // ring centres, Bendy's precedent) and his swept fringe merges the left
+  // brow. Bounded traces on the-professor-turnaround.png (crown row 100,
+  // neck row 316): brows rows 190-201 (centroid ~196), lens rings rows
+  // 210-252 centred row 231, the open smile rows 283-290 centred ~288. No
+  // earLine: the swept hair owns the widest row (38.4% is hair, not ear);
+  // his big ears are placed by eye.
+  the_prof: {
+    slug: 'the-professor',
+    brow: 44.4,
+    eye: 60.6,
+    mouth: 87.2,
+    span: { crownZ: 3.99, neckZ: 2.71 },
+    tolerance: 2.5,
+  },
 };
 
 function constantsFor(slug, { needsEar = true } = {}) {

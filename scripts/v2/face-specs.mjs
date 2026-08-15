@@ -691,4 +691,40 @@ export const FACE_SPECS = {
     mouthDrop: -4.0,
     mouthScale: 1.15,
   },
+
+  // The Professor. `expression: eager` — thick brows above the roster's
+  // second-biggest lenses, bright eyes behind them, an open eager smile.
+  // Feature rows traced on his sheet (spec landmarks merge with the swept
+  // fringe): brows rows 190-201 (44.4% of head), lens centres row 231
+  // (60.6%), smile rows 283-290 (87.2%). Cells through his island
+  // (0.92, -1.3138, 2.300). Eye marks stay inside the 0.125ft rings.
+  the_prof: {
+    ink: '#130a04',
+    mouthInk: '#7a4023',
+    sclera: '#fffcf0',
+    irisBrown: '#3a2210',
+    pupil: '#150d06',
+    white: '#fff6e4',
+    mouth: '#6e2f1c',
+    mouthDark: '#4c1d10',
+    tongue: '#e07980',
+    lowerLip: '#efa065',
+    eyeHalfW: 13,
+    eyeHalfH: 9.5,
+    irisR: 8.5,
+    irisInward: 2,
+    eyeX: [36, 92],
+    eyeY: 50,
+    browThick: 4.6,
+    browThin: 2.4,
+    browHalf: 13,
+    browX: [32, 96],
+    browY: 21,
+    browTilt: 0,
+    mouthY: 91,
+    // The eager smile: wide, corners up.
+    mouthBow: -1.3,
+    mouthDrop: -3.6,
+    mouthScale: 1.15,
+  },
 };

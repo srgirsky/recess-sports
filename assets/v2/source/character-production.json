@@ -270,6 +270,21 @@
         "rolled denim cuffs",
         "bright open smile"
       ]
+    },
+    "the_prof": {
+      "source": "the-professor-pilot.blend",
+      "sourceSha256": "f0376e461c13f6a2b016e22a06505ede2041299826a3551e594b6a8aa579dce9",
+      "concept": "the-professor-turnaround.png",
+      "conceptSha256": "43e9c992c7020f2c683dd5356b53af714685bca0a4047ef2c7139b4302e06aff",
+      "output": "kid_the_prof.glb",
+      "outputSha256": "1947bf31388cc5c977f421dea2597df4681053675ee67bf89fc839dc31d76914",
+      "definingTraits": [
+        "round wire glasses",
+        "open brown jacket",
+        "side-swept dark hair",
+        "rolled blue jeans",
+        "eager open smile"
+      ]
     }
   }
 }

@@ -281,6 +281,23 @@ export const RECIPES = {
     sweeps: {},
     bands: {},
   },
+
+  // ★ THE PROFESSOR'S JACKET IS 42% OF THE SHEET and it is OPEN — the cream
+  // tee shows only as a centre strip between the fronts, and that cream is
+  // the backdrop's own cluster, so every tee/jacket boundary is a geometry
+  // trace. His hair and the jacket's shadow lane sit one cluster apart and
+  // are declared at their honest sampled values.
+  the_prof: {
+    slug: 'the-professor',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      jacket: { hex: '#6c4323' },
+      hair: { hex: '#1b0d03' },
+      jeans: { hex: '#344a64' },
+    },
+    sweeps: {},
+    bands: {},
+  },
 };
 
 export const RECIPE_IDS = Object.keys(RECIPES);

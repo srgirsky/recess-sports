@@ -933,6 +933,62 @@
         "ROSTER-WIDE: shoulder terminator and ankle splay - sculptlib/rig polish round."
       ],
       "scoredBoardSha256": "ff2b25038ff396943a462985609e295280c6e9d403a3b24d23da9be053929383"
+    },
+    "the_prof": {
+      "status": "candidate",
+      "evidence": "the-professor-fidelity-review.png",
+      "categories": {
+        "frontProfileSilhouette": {
+          "label": "front/profile silhouette",
+          "score": 4,
+          "note": "First independent critic: capped hair mass, open-jacket torso proud of the tee, straight jeans, chunky sneakers - head 31.3 vs 32.3, aspect 1.04 vs 1.00 measured green (the aspect needed the swept poof authored to its OWN cited trace - the first cut under-authored it). Held at 4: sleeve/torso and neck/skull junctions read as joined tubes."
+        },
+        "headBodyProportions": {
+          "label": "head/body proportions",
+          "score": 4,
+          "note": "First independent critic: measured head metrics green; stocky little kid matching the sheet; knees and elbows continuous in the run. Held at 4: the ears read bigger and set lower than the concept's glasses-line placement."
+        },
+        "hairMass": {
+          "label": "hair mass",
+          "score": 4,
+          "note": "First independent critic: one designed mass, full coverage from every angle, clean hairline. Rubric-capped at 4: the signature side-swept quiff arrives as a near-symmetric rounded cap - the sweep reads only faintly; no grouped strands."
+        },
+        "clothingConstruction": {
+          "label": "clothing construction",
+          "score": 4,
+          "note": "First independent critic: the roster's FIRST OPEN JACKET genuinely reads as a constructed garment - shell proud of the cream tee, fold-back front edges, collar flaps, stepped denim rolls (the declared team accent), shoes measured green (62.9/36.3 vs 66.0/30.9; the sheet's 'grey' shoe is warm taupe to the classifier - a cool grey matched neither pair tone). Held at 4: no pocket flaps, zipper track or ribbed hem/cuffs."
+        },
+        "faceExpressionRead": {
+          "label": "face/expression read",
+          "score": 4,
+          "note": "First independent critic: clear wire rings with eyes inside at hero scale; the eager grin shows lips and teeth. The visible-face OFF is measured as the concept's TINTED lens shading vs our deliberately clear lenses (atlas eyes must read in-game) and is not held against him; featurelatitude green (44.2/44.4, 60.6/60.6, 87.1/87.2). Held at 4: brows low-contrast under the hair shadow; nose barely breaks the profile."
+        },
+        "heroAndFieldScale": {
+          "label": "hero + 40px read",
+          "score": 4,
+          "note": "First independent critic: unmistakable at hero (glasses + open brown jacket + cream stripe); the 40px brown/cream torso split is unique on the roster. The shoulder streaks are the recorded renderer artifact."
+        }
+      },
+      "measuredFidelity": {
+        "command": "npm run measure:fidelity -- the_prof",
+        "ranAt": "2026-08-15",
+        "board": "the-professor-fidelity-review.png",
+        "result": "Head height 31.3 vs concept 32.3 and aspect 1.04 vs 1.00, in tolerance - the aspect needed the swept poof authored to its own trace (widest 0.635 half at z 3.48; the first cut under-authored it at 0.495 despite citing the 0.6498 measurement). Shoe band 62.9/36.3 vs 66.0/30.9 with saturation 21.4 vs 24.1, in tolerance - the sheet grey shoe is warm taupe to the classifier (#7c634b); a cool grey matched neither pair tone and read 97.5% single-tone. Visible face 25.3/25.3 vs 11.9/14.2 is OFF with a measured cause: the concept big lenses are drawn with tinted glass shading that fails isSkin across the whole 62%-of-head sample row, while the delivered lenses are deliberately CLEAR wire rings so the atlas eyes stay readable in-game - the delta is the lens fill, a construction choice, not missing coverage. Ankle daylight 31.4 vs 0.00 OFF with measured cause: the roster-wide 6.75-degree splay.",
+        "note": "Feature placement gated by featurelatitude: brow 44.2 vs traced 44.4, eye 60.6 vs 60.6 (the lens-ring centres, Bendy precedent), mouth 87.1 vs 87.2 through his declared 3.99-2.71 span. No earLine: the swept hair owns the widest row; ears placed by eye."
+      },
+      "heroEvidence": "the-professor-runtime-hero.png",
+      "animationEvidence": [
+        "the-professor-runtime-run.png",
+        "the-professor-runtime-swing.png"
+      ],
+      "polishFindings": [
+        "Carve two or three grouped strand planes into the quiff so the sweep reads from the front (hairMass cap).",
+        "Jacket pocket flaps, zipper-track ridge, ribbed hem/cuff steps (clothing 5-items).",
+        "Raise ears to the glasses line and pull the flare in ~20-30%.",
+        "Thicken/darken brow marks for contrast above the rings.",
+        "ROSTER-WIDE: shoulder terminator, ankle splay; and the swing capture shows no bat prop - flag for the clip owner."
+      ],
+      "scoredBoardSha256": "c9b02abff6422469a260417b367970cbc88c3a80e081f12f13cb71b41741c8dd"
     }
   }
 }
