@@ -240,6 +240,21 @@
         "big wing ears",
         "confident dimple smile"
       ]
+    },
+    "moose": {
+      "source": "moose-pilot.blend",
+      "sourceSha256": "21343384648c2610bee0d69734ecbd1ba31332bedebc0372da836fb5549eb476",
+      "concept": "moose-turnaround.png",
+      "conceptSha256": "d64f68670ae1629b82c81333c4a1be6c1ab02805f2937a1a20d3ddf679ca7bed",
+      "output": "kid_moose.glb",
+      "outputSha256": "38010298a5a314d269984eaa9c19d26555aa85e4325a9c37adac16461be6c2a6",
+      "definingTraits": [
+        "navy ball cap",
+        "mustard kangaroo hoodie",
+        "big round build",
+        "navy joggers",
+        "easy gentle smile"
+      ]
     }
   }
 }

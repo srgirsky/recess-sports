@@ -623,4 +623,38 @@ export const FACE_SPECS = {
     mouthBow: -1.0,
     mouthDrop: -2.8,
   },
+
+  // Moose. Soft bold brows under the cap brim, big warm eyes, and an easy
+  // gentle smile on the deepest skin of the authored roster so far. Feature
+  // rows traced on his sheet: brows rows 263-270 (52% of head), eyes rows
+  // 277-303 centred 66.7%, smile rows 323-324 (87%). Cells through his
+  // island (0.92, -1.3056, 2.000).
+  moose: {
+    ink: '#0e0703',
+    mouthInk: '#5c2c18',
+    sclera: '#fff8ea',
+    irisBrown: '#2e1a0c',
+    pupil: '#100a05',
+    white: '#fff4e0',
+    mouth: '#57241a',
+    mouthDark: '#39160e',
+    tongue: '#dd6f79',
+    lowerLip: '#c47c46',
+    eyeHalfW: 18,
+    eyeHalfH: 12,
+    irisR: 11,
+    irisInward: 3,
+    eyeX: [30, 98],
+    eyeY: 50,
+    browThick: 5.0,
+    browThin: 2.6,
+    browHalf: 13,
+    browX: [32, 96],
+    browY: 24,
+    browTilt: 0,
+    mouthY: 84,
+    // The easy smile: gentle rise.
+    mouthBow: -1.0,
+    mouthDrop: -3.0,
+  },
 };

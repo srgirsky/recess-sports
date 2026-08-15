@@ -821,6 +821,62 @@
         "ROSTER-WIDE (do not fix per character): the deltoid toon-terminator band - now DIAGNOSED (pixel-sampled as darkened garment colour on the arm-root hump above the narrowing torso; two geometry rounds moved it only slightly) - and the 6.75-degree ankle splay; both sculptlib/rig-level polish items."
       ],
       "scoredBoardSha256": "93586b6c023161ce57be3ee4a8794d49f6c68088586a9bede504245d0bde0da6"
+    },
+    "moose": {
+      "status": "candidate",
+      "evidence": "moose-fidelity-review.png",
+      "categories": {
+        "frontProfileSilhouette": {
+          "label": "front/profile silhouette",
+          "score": 4,
+          "note": "Third independent critic (4 \u2192 3 \u2192 4): big kid, domed navy cap, wide mustard hoodie over navy joggers; the round-2 square-cornered buzz slab no longer breaks the skull line - the band curves with the head into the cap edge. Head height 24.3 vs 25.0 measured green. Held at 4: the torso reads more cylindrical than the concept's egg-round belly and the arm joins read butt-joined in T-pose."
+        },
+        "headBodyProportions": {
+          "label": "head/body proportions",
+          "score": 4,
+          "note": "Third independent critic: head height and aspect measured green (24.3/25.0, 1.07/1.11 - his high neck at z 3.00 measures cleanly; the aspect needed the skull widened to the temple trace plus his ears). Stocky child, connected joints. Held at 4: the near ear still reads a touch generous and the legs slightly under-sell the big round build."
+        },
+        "hairMass": {
+          "label": "hair mass",
+          "score": 4,
+          "note": "Third independent critic (3 in both earlier rounds): the re-formed band is the fix it claims - flush to the skull (+0.015; round 2's protruded 0.055 and read as a slab), no daylight between hair and cap edge (top tucked under the cap at 3.52), warmed to dark brown. Temples peek dark above the ears per the sheet; no bare-skull read at any angle. Rubric-caps at 4: a smooth featureless band, correct for a buzz under a permanent cap."
+        },
+        "clothingConstruction": {
+          "label": "clothing construction",
+          "score": 4,
+          "note": "Third independent critic: drawstring cords with tips, back hood mass, ribbed hem, faint kangaroo pocket, joggers bunching at the cuff, cap brim with real edge walls (round 2's paper plane fixed), shoes measured green (88.7/10.1 vs 83.1/13.7). Held at 4: the pocket reads as a line rather than a pouch with depth and the cuff bunching is subtle."
+        },
+        "faceExpressionRead": {
+          "label": "face/expression read",
+          "score": 4,
+          "note": "Third independent critic: the grin is legible at draft-card distance; featurelatitude green (brow 52.2/52.0, eye 66.7/66.7, mouth 87.1/87.0). The visible-face OFF is measured as the CONCEPT failing isSkin under its own painted brim shadow - sheet shading, not sculpt coverage. Held at 4: eyes smaller and less glossy than the concept's saucers; the nose does not clearly break the profile."
+        },
+        "heroAndFieldScale": {
+          "label": "hero + 40px read",
+          "score": 4,
+          "note": "Third independent critic: the 40px strip delivers navy cap over a wide mustard block - unmistakably Moose; the hero holds with the flush band and thick brim. The badge-sized cap-front tint is the declared accent (Chip's convention); the shoulder terminator is the recorded roster-wide artifact."
+        }
+      },
+      "measuredFidelity": {
+        "command": "npm run measure:fidelity -- moose",
+        "ranAt": "2026-08-15",
+        "board": "moose-fidelity-review.png",
+        "result": "Head height 24.3 vs concept 25.0 and aspect 1.07 vs 1.11, in tolerance - his high neck (z 3.00) measures cleanly, and the aspect needed the skull widened to the temple trace (rx 0.42) plus his big ears. Shoe band 88.7/10.1 vs 83.1/13.7 with saturation 19.1 vs 22.6, in tolerance. Visible face 39.7/40.4 vs 18.9/27.6 is OFF with a measured cause: the CONCEPT side fails isSkin under its own painted brim shadow (deep skin in shadow drops below the classifier floor, and asymmetrically - 18.9 left vs 27.6 right is the sheet lighting), while the delivered board renders an evenly-lit face; the delta is the sheet shading, not sculpt coverage - the inverse of Noodle case. Ankle daylight 33.8 vs 0.00 OFF with measured cause: the rig binds at the roster-wide 6.75-degree splay.",
+        "note": "Feature placement gated by featurelatitude: brow 52.2 vs traced 52.0, eye 66.7 vs 66.7, mouth 87.1 vs 87.0, ear line at the traced 74.5, through his declared 3.99-3.00 span (the smallest head span on the roster)."
+      },
+      "heroEvidence": "moose-runtime-hero.png",
+      "animationEvidence": [
+        "moose-runtime-run.png",
+        "moose-runtime-swing.png"
+      ],
+      "polishFindings": [
+        "Belly roundness: more egg-shaped torso bulge and thicker thighs to land 'big round build' (silhouette 5-item).",
+        "Kangaroo pocket as a constructed pouch with depth - the biggest clothingConstruction upgrade.",
+        "One more small ear reduction; larger glossy irises for the warm smile.",
+        "Backlit swing frames go uniformly dark on the face - check against the recorded terminator artifact with a front-lit capture.",
+        "ROSTER-WIDE: deltoid terminator band and ankle splay - sculptlib/rig polish round."
+      ],
+      "scoredBoardSha256": "24a4785be6eb5590b6edd392e5f6ea1418ea84dfe50c4c2904715aebb59407e6"
     }
   }
 }

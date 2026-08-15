@@ -215,7 +215,15 @@
     },
     "moose": {
       "name": "Moose",
-      "slug": "moose"
+      "slug": "moose",
+      "source": "moose-pilot.blend",
+      "traits": [
+        "navy ball cap",
+        "mustard kangaroo hoodie",
+        "big round build",
+        "navy joggers",
+        "easy gentle smile"
+      ]
     },
     "peaches": {
       "name": "Peaches",

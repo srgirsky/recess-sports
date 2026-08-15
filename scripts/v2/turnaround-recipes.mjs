@@ -246,6 +246,23 @@ export const RECIPES = {
     sweeps: {},
     bands: {},
   },
+
+  // ★ MOOSE IS DEEP SKIN ON A HUGE BUILD — his #ab5b24 skin sits a Grizz
+  // step below the classifier's comfort and is authored bright; his mustard
+  // hoodie is a third of the sheet by itself. The navy cap, navy joggers and
+  // the outline family are neighbours in the dark cluster and resolve as one
+  // declared navy.
+  moose: {
+    slug: 'moose',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#ab5b24' },
+      hoodie: { hex: '#ed921c' },
+      navy: { hex: '#1d222b' },
+    },
+    sweeps: {},
+    bands: {},
+  },
 };
 
 export const RECIPE_IDS = Object.keys(RECIPES);

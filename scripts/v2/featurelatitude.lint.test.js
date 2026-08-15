@@ -245,6 +245,21 @@ const TURNAROUND = {
     span: { crownZ: 3.99, neckZ: 2.41 },
     tolerance: 2.5,
   },
+  // ★ MOOSE'S CROWN IS HIS CAP and his head is the SMALLEST span on the
+  // roster (24.8% of a huge figure — neck at z 3.00). Bounded traces on
+  // moose-turnaround.png (crown row 180, neck row 345): cap brim shadow rows
+  // 244-262, brows rows 263-270 (centroid ~266), eyes rows 277-303 centred
+  // row 290, nose rows 317-324, the gentle smile's central runs rows 323-324.
+  // His ears are real and on the traced widest row.
+  moose: {
+    slug: 'moose',
+    brow: 52.0,
+    eye: 66.7,
+    mouth: 87.0,
+    earLine: 74.5,
+    span: { crownZ: 3.99, neckZ: 3.00 },
+    tolerance: 2.5,
+  },
 };
 
 function constantsFor(slug, { needsEar = true } = {}) {
