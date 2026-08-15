@@ -587,4 +587,40 @@ export const FACE_SPECS = {
     freckles: true,
     freckleTone: '#cf9058',
   },
+
+  // Turbo. Bold level brows under the spiky fringe, the roster's biggest
+  // irises (near-filling the aperture), a tiny button nose and a confident
+  // dimple smile. Feature rows confirmed against a zoomed crop (the spec
+  // refuses brow/eye - the fringe merges them): brows rows 245-260 (58% of
+  // head), irises rows 279-302 centred 72.4%, smile rows 328-335 (88.5%).
+  // Cells through his island (0.92, -1.656, 2.300).
+  turbo: {
+    ink: '#120a04',
+    mouthInk: '#7a4023',
+    sclera: '#fffcf0',
+    irisBrown: '#3f2510',
+    pupil: '#150d06',
+    white: '#fff6e4',
+    mouth: '#6e2f1c',
+    mouthDark: '#4c1d10',
+    tongue: '#e07980',
+    lowerLip: '#efa062',
+    // Huge dark irises nearly filling the aperture.
+    eyeHalfW: 18,
+    eyeHalfH: 13.5,
+    irisR: 12.5,
+    irisInward: 2,
+    eyeX: [30, 98],
+    eyeY: 50,
+    browThick: 5.0,
+    browThin: 2.6,
+    browHalf: 14,
+    browX: [32, 96],
+    browY: 19,
+    browTilt: 0,
+    mouthY: 87,
+    // The dimple smile: corners up, modest.
+    mouthBow: -1.0,
+    mouthDrop: -2.8,
+  },
 };

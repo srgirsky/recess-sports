@@ -225,6 +225,21 @@
         "rolled blue jeans",
         "skinny noodle neck"
       ]
+    },
+    "turbo": {
+      "source": "turbo-pilot.blend",
+      "sourceSha256": "1962532780c0846dc87c518d0308313697310399d15f16bf379ec33ebe54b45c",
+      "concept": "turbo-turnaround.png",
+      "conceptSha256": "f3c0690117663b295a3001007eacd2a1dda10c12a5a8f7ed4d812fc63917851a",
+      "output": "kid_turbo.glb",
+      "outputSha256": "bdc2ccba7ed7ac8aab62da65886034a5d6b736351fbe7c3c3ae8977fb1d54e3c",
+      "definingTraits": [
+        "wild black spike mop",
+        "blue ringer tee",
+        "long dark shorts",
+        "big wing ears",
+        "confident dimple smile"
+      ]
     }
   }
 }

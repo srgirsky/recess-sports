@@ -75,7 +75,15 @@
     },
     "turbo": {
       "name": "Turbo",
-      "slug": "turbo"
+      "slug": "turbo",
+      "source": "turbo-pilot.blend",
+      "traits": [
+        "wild black spike mop",
+        "blue ringer tee",
+        "long dark shorts",
+        "big wing ears",
+        "confident dimple smile"
+      ]
     },
     "sprout": {
       "name": "Sprout",

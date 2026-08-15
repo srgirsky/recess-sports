@@ -227,6 +227,25 @@ export const RECIPES = {
     sweeps: {},
     bands: {},
   },
+
+  // ★ TURBO'S SPIKES OWN THE TOP OF HIS HEAD SPAN — the crown row is a spike
+  // tip half a foot above the skull, and the widest rows are hair, so the ear
+  // line is untraceable (his big ears are placed by eye). His fringe hangs to
+  // just above the brows, and the first text-read of his features mistook the
+  // fringe shadow for brows — the bounded traces below were confirmed against
+  // a zoomed crop of the sheet, not the dark-run scan alone.
+  turbo: {
+    slug: 'turbo',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#eb9b5c' },
+      hair: { hex: '#14110d' },
+      tee: { hex: '#6ca4cb' },
+      shorts: { hex: '#33353a' },
+    },
+    sweeps: {},
+    bands: {},
+  },
 };
 
 export const RECIPE_IDS = Object.keys(RECIPES);

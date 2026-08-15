@@ -229,6 +229,22 @@ const TURNAROUND = {
     span: { crownZ: 3.99, neckZ: 2.76 },
     tolerance: 2.5,
   },
+  // ★ TURBO'S CROWN IS A SPIKE TIP half a foot above his skull, and his
+  // fringe hangs to just above the brows — the spec refuses brow and eye
+  // (the fringe merges them), and the first dark-run read mistook the fringe
+  // shadow for brows. Bounded traces confirmed against a zoomed crop of
+  // turbo-turnaround.png (crown row 101, neck row 362): bold brows rows
+  // ~245-260 (centroid 252.5), the huge irises rows 279-302 centred row 290,
+  // the smile arc rows 328-335 centred ~333. No earLine: the spikes own the
+  // widest rows; his big ears are placed by eye at the irises' level.
+  turbo: {
+    slug: 'turbo',
+    brow: 58.0,
+    eye: 72.4,
+    mouth: 88.5,
+    span: { crownZ: 3.99, neckZ: 2.41 },
+    tolerance: 2.5,
+  },
 };
 
 function constantsFor(slug, { needsEar = true } = {}) {

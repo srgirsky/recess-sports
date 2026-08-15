@@ -345,3 +345,18 @@ Each of these cost at least one blind round. They are constraints, not history.
   rz after the FaceSpec anchors are set silently shifts every feature —
   featurelatitude caught the mouth drifting 2.6 points. Re-derive the anchors
   whenever the skull numbers move.
+
+## Lesson Turbo paid for (the shoulder wedge has a mechanism)
+
+- **The recurring shoulder-wedge defect is an A-POSE COVERAGE GAP.** Critics
+  flagged dark wedges at the sleeve/torso junction on Bendy, Flash and
+  Noodle; Turbo's A-pose review view finally tripped the silhouette gate with
+  an enclosed backdrop pocket there. Mechanism: when the arm rotates down,
+  the arm cap (at `cap_x`) pulls away from the torso's sloped shoulder rows.
+  Fix that worked: bury the cap deeper (`cap_x` 0.100 → 0.060) AND widen the
+  torso's shoulder rows so the slope reaches past the arm root. Apply to new
+  kids up front; the polish round should port it to the batch-1/2 kids.
+- **Verify feature traces against a zoomed CROP, not the dark-run scan
+  alone.** Turbo's fringe shadow read as "brows" in the row scan; the crop
+  showed the true brows a full 8% of head lower. A one-minute sips crop
+  beats three wrong island solves.

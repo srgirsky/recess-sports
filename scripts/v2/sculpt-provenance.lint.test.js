@@ -81,6 +81,7 @@ const GOVERNED = [
   { id: 'zippy', script: 'sculpt-zippy-source.py' },
   { id: 'diva', script: 'sculpt-dazzle-source.py' },
   { id: 'noodle', script: 'sculpt-noodle-source.py' },
+  { id: 'turbo', script: 'sculpt-turbo-source.py' },
 ];
 
 // A table is governed if its name matches. Deliberately a pattern rather than a

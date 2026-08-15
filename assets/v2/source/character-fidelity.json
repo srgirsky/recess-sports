@@ -766,6 +766,61 @@
         "The runtime ochre cast vs the concept peach is the recorded renderer story - three chroma rounds already run; do not fix the palette again."
       ],
       "scoredBoardSha256": "ee9085a82ad480ff2628c55153fe8fe6883d0af0d001e9abde6edeb4cbdc9eae"
+    },
+    "turbo": {
+      "status": "candidate",
+      "evidence": "turbo-fidelity-review.png",
+      "categories": {
+        "frontProfileSilhouette": {
+          "label": "front/profile silhouette",
+          "score": 4,
+          "note": "Second independent critic (first scored 4): spike mop, big wing ears, boxy tee over long dark shorts, chunky sneakers - recognisable with no colour; silhouette gate green (an A-pose shoulder pocket was caught by the gate mid-session and closed by burying the arm cap deeper). Held at 4: the profile's spikes carry less forward volume than the concept's swept mass and the torso-to-shorts junction reads slightly butt-joined."
+        },
+        "headBodyProportions": {
+          "label": "head/body proportions",
+          "score": 4,
+          "note": "Second independent critic: head metrics honestly refused (hair-inclusive head 39.7% puts the pinch inside the T-pose arm band, Grizz class); by eye the proportions read as a plausible big-headed kid with connected joints. Held at 4: the skull reads a touch narrow and the torso a touch long against the concept."
+        },
+        "hairMass": {
+          "label": "hair mass",
+          "score": 4,
+          "note": "Second independent critic: one designed mass with REAL sculpted strand grouping (eleven radiating spikes whose x-leans sum to zero - Flash's lesson), hairline reads from the front, no bare skull at any angle. Held at 4: the spikes are thinner and sparser than the turnaround's fat layered clumps and the brow-forward fringe sweep is missing."
+        },
+        "clothingConstruction": {
+          "label": "clothing construction",
+          "score": 4,
+          "note": "Second independent critic (first scored 3 reading the shoulder bands as authored backpack straps): the blocker DISSOLVED under measurement - the bands sample rgb(69,89,100), a darkened tee blue (body 62,117,143), not the authored navy (~38,55,80); it is the roster-wide toon shading terminator logged on Bendy Bao, Flash and Noodle, weighed as renderer polish. The authored garment is genuinely constructed: navy ringer collar, hemmed shorts, team-tinted sock roll-tops, shoes measured green (77.4/22.6 vs 77.4/19.4). Held at 4: the sleeve cuffs don't separate clearly from the shading band and the tee body is a smooth tube."
+        },
+        "faceExpressionRead": {
+          "label": "face/expression read",
+          "score": 4,
+          "note": "Second independent critic: featurelatitude green with near-perfect symmetry (brow 57.8/58.0, eye 72.4/72.4, mouth 88.6/88.5 - crop-confirmed traces after the dark-run scan mistook the fringe shadow for brows); brows, eyes and mouth legible at hero. Held at 4: eyes read smaller and flatter than the concept's glossy browns, the grin is subtle at draft-card distance, and the nose doesn't break the profile."
+        },
+        "heroAndFieldScale": {
+          "label": "hero + 40px read",
+          "score": 4,
+          "note": "Second independent critic: immediately Turbo at hero (27.0k tris, 14 draws); the 40px strip preserves the dark spiky head over a blue tee. Held at 4: the spikes thin at 40px."
+        }
+      },
+      "measuredFidelity": {
+        "command": "npm run measure:fidelity -- turbo",
+        "ranAt": "2026-08-15",
+        "board": "turbo-fidelity-review.png",
+        "result": "Shoe band 77.4/22.6 vs concept 77.4/19.4 with saturation 17.4 vs 20.5, all in tolerance (the navy is only the upper quarter; two band-boundary rounds landed it). Head height, aspect and face-skin NOT MEASURED: his hair-inclusive head is 39.7% of the figure, putting the neck pinch inside the T-pose arm band - the same honest refusal as Grizz. Ankle daylight 53.3 vs 0.75 OFF with measured cause: the sheet stands his ankles nearly together while the rig binds at the roster-wide 6.75-degree splay; pose, not sculpt.",
+        "note": "Feature placement gated by featurelatitude: brow 57.8 vs traced 58.0, eye 72.4 vs 72.4, mouth 88.6 vs 88.5 through his declared 3.99-2.41 span. The spec refuses his brow/eye (the fringe merges them); the targets are bounded traces confirmed against a zoomed crop after the first dark-run read mistook the fringe shadow for brows."
+      },
+      "heroEvidence": "turbo-runtime-hero.png",
+      "animationEvidence": [
+        "turbo-runtime-run.png",
+        "turbo-runtime-swing.png"
+      ],
+      "polishFindings": [
+        "Thicken/taper the spike clumps toward the concept fat layered mop and add the brow-forward fringe sweep - lifts hairMass, silhouette and the 40px read together.",
+        "Make the navy sleeve cuffs read distinctly from the deltoid shading terminator; crisper shorts hem.",
+        "Larger glossy irises with highlight; a nose form that breaks the profile; the dimple.",
+        "ROSTER-WIDE (do not fix per character): the deltoid toon-terminator band - now DIAGNOSED (pixel-sampled as darkened garment colour on the arm-root hump above the narrowing torso; two geometry rounds moved it only slightly) - and the 6.75-degree ankle splay; both sculptlib/rig-level polish items."
+      ],
+      "scoredBoardSha256": "93586b6c023161ce57be3ee4a8794d49f6c68088586a9bede504245d0bde0da6"
     }
   }
 }
