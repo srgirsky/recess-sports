@@ -78,126 +78,183 @@
       }
     },
     "calls_shot": {
-      "status": "needs-polish",
+      "status": "candidate",
       "evidence": "theo-fidelity-review.png",
       "categories": {
         "frontProfileSilhouette": {
           "label": "front/profile silhouette",
-          "score": 3,
-          "note": "Cap, tapered face and jacket silhouette survive; transitions remain blocky."
+          "score": 4,
+          "note": "Second independent critic: the cap now carries a real forward duckbill (long and dipping in profile, clearly present in hero and run stills, foreshortening to a thin line dead-front); no bare-skull read from any angle; the swing_contact frame is a legitimate full-body rotation, not an invisible-face defect. Held off 5 by visible hard faceting on the shorts and hem at hero scale."
         },
         "headBodyProportions": {
           "label": "head/body proportions",
-          "score": 3,
-          "note": "The broad-headed swagger read is present but not organically resolved."
+          "score": 4,
+          "note": "Second independent critic: head height 34.6 vs 35.0, aspect 0.99 vs 1.05, face 26.6/27.1 asymmetry 0.52, ankle daylight 51.7 vs the sheet's own 56.9 - all re-measured and in tolerance."
         },
         "hairMass": {
           "label": "hair mass",
-          "score": 3,
-          "note": "Hair supports the cap without becoming the read."
+          "score": 4,
+          "note": "Second independent critic: hair lifted to a legible deep brown with enlarged fringe wisps, ear-top flips both sides, and a covered nape in profile and swing views."
         },
         "clothingConstruction": {
           "label": "clothing construction",
-          "score": 3,
-          "note": "Open varsity jacket survives recolour; lapel and sleeve construction need polish."
+          "score": 4,
+          "note": "Second independent critic: the jacket no longer reads as a bib - the cream tee is a centre panel between teal side panels (if anything now narrower than the concept's, slightly vest-like); sock tops show a proud roll with two crisp teal stripes. Held off 5: the rib hem striping is faint and does not carry across the cream centre the way the concept's bold welt does."
         },
         "faceExpressionRead": {
           "label": "face/expression read",
-          "score": 3,
-          "note": "The face atlas reads, though the concept's tapered cheek planes are simplified."
+          "score": 4,
+          "note": "Second independent critic: the huge open grin with teeth - his signature - reads at draft-card distance in all four expression stills; delivered eyes a step smaller and less glossy than the concept's saucer eyes."
         },
         "heroAndFieldScale": {
           "label": "hero + 40px read",
-          "score": 3,
-          "note": "Cap and jacket identify Theo at 40px; hero scale remains procedural."
+          "score": 4,
+          "note": "Second independent critic: shoe-band OFF cause accepted - the delivered 88/12 cream/charcoal split matches the concept's measured ~12.5% charcoal share, and the 61% second tone is the sheet's own shading (the batch-3 class)."
         }
-      }
+      },
+      "heroEvidence": "theo-runtime-hero.png",
+      "animationEvidence": [
+        "theo-runtime-run.png",
+        "theo-runtime-swing.png"
+      ],
+      "measuredFidelity": {
+        "command": "npm run measure:fidelity -- calls_shot",
+        "ranAt": "2026-08-15",
+        "board": "theo-fidelity-review.png",
+        "result": "Head height 34.6 vs concept 35.0 and aspect 0.99 vs 1.05, in tolerance. Ankle daylight 51.7 vs the sheet's own 56.9 (his stance is drawn open), in tolerance. Visible face 27.1/27.1 vs 22.4/26.8 with asymmetry 0.00, in tolerance. All three SHOE BAND metrics OFF with measured cause: the concept pair reads #ecddcc cream + #d9b68b warm tan, and the tan is the sheet's own warm SHADING over the cream canvas (the Penny/batch-3 second-tone-is-shading class) at 61.4% of its band - clean delivered vertex tones split 88/12 whatever the boundary does (band probes 0.34, 0.56 and 0.82 all measured ~88/12 - the split is set by the visible sole geometry, the non-monotonic snap lesson). The cupsole was warmed to #E9CDA6 which lifted mean saturation 8.6 \u2192 13.6 against the concept's 28.1; the remaining gap is the same shading class. (The 13.6 is the final build's own re-measure - the round-2 critic caught an earlier build's 17.9 in this record and it was corrected.)",
+        "note": "featurelatitude gates brow 49.8, eye 63.7 (bounded crop traces - the analyser's brow pick at 96.6 was the collar shadow and its eye refused), mouth 84.9 (the analyser's own trace, the open grin), earLine 54.8. The cap's cream front panel is the team accent (Chip's convention) and team-tints at runtime by design."
+      },
+      "polishFindings": [
+        "Rib hem striping is faint and stops at the jacket's front edges - the concept carries a bold striped welt across the full hem including the tee.",
+        "Shorts and hem show hard faceting at hero scale.",
+        "Eyes a step smaller and less glossy than the concept's saucer eyes.",
+        "Teal front panels slightly narrower than the concept's - reads a touch vest-like."
+      ],
+      "scoredBoardSha256": "5104d5395b6520d9365f81f024787807789c2c6318aa86b8526f7b57b6375c72"
     },
     "wheelchair_ace": {
-      "status": "needs-polish",
+      "status": "candidate",
       "evidence": "zoom-fidelity-review.png",
       "categories": {
         "frontProfileSilhouette": {
           "label": "front/profile silhouette",
-          "score": 3,
-          "note": "Child and compact chair remain one fast silhouette; wheel construction needs polish."
+          "score": 4,
+          "note": "First independent critic (full re-sculpt): seated silhouette with chair reads from every angle; held off 5 because the front hair read drifts from the concept's dense one-directional sweep to a symmetric fan of paddle fins with daylight between them, and the wheels read near-vertical at the gameplay camera where the concept's camber is a signature (the board T-pose shows camber is authored)."
         },
         "headBodyProportions": {
           "label": "head/body proportions",
-          "score": 3,
-          "note": "Upper-body scale reads correctly against the sport chair."
+          "score": 4,
+          "note": "First independent critic: head 30.8 vs 31.6% of figure height and aspect 1.04 vs 1.06, re-run and reproduced exactly - the two metrics that carry on a seated figure are in tolerance."
         },
         "hairMass": {
           "label": "hair mass",
-          "score": 3,
-          "note": "Swept crown direction survives with simplified strand grouping."
+          "score": 4,
+          "note": "First independent critic: genuinely grouped strands, hairline reads front and side with no bare-skull wedge (inter-spike wedges are lit under-cap, not scalp); the butt-joined fin construction and lost sweep direction hold it off 5."
         },
         "clothingConstruction": {
           "label": "clothing construction",
-          "score": 3,
-          "note": "Athletic top reads; chair upholstery and clothing layers remain simplified."
+          "score": 4,
+          "note": "First independent critic: collar and sleeve trim, shorts hem, seat, backrest, footplate, offset push-rim rings, spoked wheels and a front caster all read in the hero still; casters render charcoal where the concept's have blue hubs, and the sneakers read as soft volumes without lace straps - polish items, not blockers."
         },
         "faceExpressionRead": {
           "label": "face/expression read",
-          "score": 3,
-          "note": "The cool expression read survives in motion."
+          "score": 4,
+          "note": "First independent critic: all four expression stills legible at draft-card distance with real teeth/tongue/brow shapes and the nose breaks the hero profile; delivered eyes rounder and darker than the concept's brown almonds, slightly decal-flat at hero scale."
         },
         "heroAndFieldScale": {
           "label": "hero + 40px read",
-          "score": 3,
-          "note": "Chair silhouette is unmistakable at 40px; hero joins need organic polish."
+          "score": 4,
+          "note": "First independent critic: the five OFF metrics carry honest instrument-mismatch causes verified against the images - the bottom-9% window lands on the wheels, the concept's dominant tone is its own backdrop through the drawn spokes, the wheel disc encloses the ankle flood-fill, and the sheet's fringe swallows its left brow line."
         }
-      }
+      },
+      "heroEvidence": "zoom-runtime-hero.png",
+      "animationEvidence": [
+        "zoom-runtime-run.png",
+        "zoom-runtime-swing.png"
+      ],
+      "measuredFidelity": {
+        "command": "npm run measure:fidelity -- wheelchair_ace",
+        "ranAt": "2026-08-15",
+        "board": "zoom-fidelity-review.png",
+        "result": "Head height 30.8 vs concept 31.6 and aspect 1.04 vs 1.06, in tolerance after the spike crown was swept back and widened. Face RIGHT 35.3 vs 31.5 in tolerance, asymmetry 2.35 in tolerance; face LEFT is OFF with measured cause: the CONCEPT side reads 0.00 - the sheet's own fringe shadow swallows its left face at the sample row - and a symmetric delivery cannot match a zero. All three shoe-band metrics OFF with measured cause: on a seated kid the bottom-9% window contains the WHEELS, and the concept's 79% 'dominant tone' #f3e5d2 is its own cream BACKDROP showing through the drawn spokes (the enclosed-pocket flood-fill class), while the delivered board shows its dark backdrop through the same spokes - the band is measuring the two backgrounds, not the shoes. Ankle daylight 16.1 vs 0.00 OFF with measured cause: the same flood-fill containment (the sheet's wheel encloses the gap the delivery leaves open). His whole lower band is instrument-mismatch on a seated figure; the numbers are recorded, not chased. Post-scoring mesh repair: the first island solve put the skull centre at the eye line, driving the island's low to -1.578 rad - past the south pole - which collapsed the chin rows into micro-rings whose split normals tripped the inverted-mirror gate (10 pairs). The centre was lowered to 2.93 and the island re-solved (-1.4407); feature z positions are identical by construction, the re-measure holds (head 29.9, aspect 1.08, face-right 32.9, all in tolerance), and the mirror gate passes. The spike tubes' -x members also gained flipped winding (the Penny mirror lesson).",
+        "note": "featurelatitude gates brow 56.2, eye 71.6 (bounded crop traces), mouth 83.5 (the analyser's own trace). NO earLine target - Zippy's precedent, the spike crown owns the widest rows on both the sheet and any delivery. The sheet is seated in every view so the analyser's z frame is chair-relative; only percent-of-head landmarks carry. The chair, tucked legs and shoes are ROOT-weighted furniture (the proxy's proven approach); the blue push rims are the team accent."
+      },
+      "polishFindings": [
+        "Front hair reads as a symmetric fan of flat paddle fins with daylight between them - regroup toward the concept's dense one-directional sweep.",
+        "Wheel camber under-reads at the gameplay camera though it is authored - consider +0.03 rad.",
+        "Casters render charcoal; the concept's have blue hubs.",
+        "Sneakers read as soft blue volumes - add lace straps and a white sole line."
+      ],
+      "scoredBoardSha256": "50b735970ac9dbbbd92ee58abba64d7fbdcbf8844122d2c410c9b86e0affd16f"
     },
     "big_lou": {
-      "status": "needs-polish",
+      "status": "candidate",
       "evidence": "big-lou-fidelity-review.png",
       "categories": {
         "frontProfileSilhouette": {
           "label": "front/profile silhouette",
-          "score": 3,
-          "note": "Broad gentle silhouette survives; torso and shoulder transitions remain geometric."
+          "score": 4,
+          "note": "Third independent critic: the belly is fixed - the profile front contour swells continuously past the chest plane, maxes at the lower third of the tee and tucks back under to the shorts hem, and the run still shows the same convex bulge under the stride; reads 'gentle giant'. Off 5: depth still a touch shallower than the concept's extreme drawing."
         },
         "headBodyProportions": {
           "label": "head/body proportions",
-          "score": 3,
-          "note": "Large friendly head and grounded body read at both views."
+          "score": 4,
+          "note": "Third independent critic: head 27.9 vs 26.1 and aspect 1.10 vs 1.06 in tolerance; the board-profile dark patch is the near arm foreshortened end-on (fingers resolvable), not a hole."
         },
         "hairMass": {
           "label": "hair mass",
-          "score": 3,
-          "note": "The small crown preserves negative space above the cheeks."
+          "score": 4,
+          "note": "Third independent critic: one snug mass with a nape hugging the skull; a smooth featureless cap caps at 4 by the rubric's own rule."
         },
         "clothingConstruction": {
           "label": "clothing construction",
-          "score": 3,
-          "note": "Layered casual shirt reads, with simplified hems and folds."
+          "score": 4,
+          "note": "Third independent critic: constructed - sleeve caps, hem over the belly, sock cuffs, laced navy sneakers with white cupsole - with bold crisp stripes; the cadence runs one or two bands busier than the concept's broad five."
         },
         "faceExpressionRead": {
           "label": "face/expression read",
-          "score": 3,
-          "note": "Soft face and atlas expressions read; cheek/chin sculpt needs refinement."
+          "score": 4,
+          "note": "Third independent critic: all four expressions distinct at draft-card distance with a real teeth band in the grin; delivered brows bolder and more angular than the concept's soft arcs (slightly mischievous drift), and the front hairline carries a peaked fringe where the concept is a clean buzz line."
         },
         "heroAndFieldScale": {
           "label": "hero + 40px read",
-          "score": 3,
-          "note": "Lou's breadth reads at 40px; hero scale remains procedural."
+          "score": 4,
+          "note": "Third independent critic: only ankle daylight OFF (roster rig splay, stance not sculpt per rubric 6b.4); runtime skin reads warm deep brown, marginally lighter than the concept but a defensible pass."
         }
-      }
+      },
+      "heroEvidence": "big-lou-runtime-hero.png",
+      "animationEvidence": [
+        "big-lou-runtime-run.png",
+        "big-lou-runtime-swing.png"
+      ],
+      "measuredFidelity": {
+        "command": "npm run measure:fidelity -- big_lou",
+        "ranAt": "2026-08-15",
+        "board": "big-lou-fidelity-review.png",
+        "result": "Head height 27.9 vs concept 26.1 and aspect 1.10 vs 1.06, in tolerance. Shoe band dominant 77.0 vs 82.7 and second 23.0 vs 16.3, in tolerance; saturation 16.3 vs 16.9 in tolerance after the cupsole pair was warmed (F8E8C4/ECD6AA - the first build's neutral creams measured 11.9 against the 4-point window). Visible face 44.2/44.2 vs the sheet's own asymmetric 47.7/39.6, both sides in tolerance, asymmetry 0.00. ONE metric OFF with measured cause: ankle daylight 30.0 vs 0.00, the roster-wide rig splay (Grizz measures 28.2). The stripe wash seen on the first capture was Flash's smeared-edges class - TORSO_LEVELS_CRISP inserts a ring 0.006 inside each STRIPE_BANDS edge at LOD0 and the bands read bold at runtime. Round-2 build: the round-1 critic's 'navy crescents' were degenerate sliver bands - a crisp insert 0.001 from the base row at 2.420 made near-coincident rings whose unstable normals rendered as backface slate; TORSO_LEVELS_CRISP now skips inserts within 0.008 of any base row and the crescents are gone from the recaptured stills. Arms and legs were chunked up (+0.012/+0.014), the belly widened (+0.02), the shoulder rows widened past the arm root (Turbo's wedge fix) with a sixth SHOULDER_BLEND station, and the buzz's nape rows pulled skin-tight. The re-measure still shows only ankle daylight OFF (the roster splay).",
+        "note": "featurelatitude gates brow 32.2, eye 47.7, mouth 73.9, earLine 51.8 - ALL hand-set bounded traces: the analyser refused his pinch outright ('no-pinch', the chunky chin-merges-into-neck class) so the neck row is hand-set at 305 (the collar line), and brow/eye/mouth all refused as merged regions. Deep skin chroma-authored 9C5428 (darkened from A65C2E after the round-2 critic) per the Grizz lesson."
+      },
+      "polishFindings": [
+        "Belly depth toward 5 - the concept's drawing is more extreme still.",
+        "Soften the brow shapes toward the concept's gentle arcs; clean the peaked fringe line to a straight buzz edge.",
+        "Stripe cadence one or two bands busier than the concept's broad five.",
+        "Skin could take one more darkening step toward the sheet's deep brown."
+      ],
+      "scoredBoardSha256": "f764eec1b29f0a50ee23a673c1f313d8b1d29ac95f2c8b535f8635a08d05ce56"
     },
     "tank": {
-      "status": "needs-polish",
+      "status": "candidate",
       "evidence": "tank-fidelity-review.png",
       "categories": {
         "frontProfileSilhouette": {
           "label": "front/profile silhouette",
           "score": 4,
-          "note": "Eighteenth independent review: reads as Tank with colour removed \u2014 bald dome, no neck, wide boxy tee, thick legs. Off 5 by the tee hem flaring more than the turnaround's and the sock/shoe junction still butt-joining."
+          "note": "Round-32 independent critic: the bald dome, neckless head-on-shoulders, boxy tee and thick legs survive at both hero and 40px; held off 5 by visible facet banding on the skull and the butt-joined sock/shoe junction."
         },
         "headBodyProportions": {
           "label": "head/body proportions",
           "score": 4,
-          "note": "Eighteenth independent review: head 26.3% vs 27.6%, aspect 1.09 vs 1.12, and the shoulder is a round deltoid cap with a raglan seam rather than a butt-joined tube."
+          "note": "Round-32 independent critic: head 26.3 vs 27.6 and aspect 1.10 vs 1.12 re-measured in tolerance; the raglan deltoid reads round."
         },
         "hairMass": {
           "label": "hair mass",
@@ -206,56 +263,92 @@
         },
         "clothingConstruction": {
           "label": "clothing construction",
-          "score": 3,
-          "note": "Eighteenth independent review: tee, shorts and sock all PASS. Held at 3 by the shoe. Of its three findings the profile-colour one is CLOSED (that review measured profile r +0.69, the stronger of the two views); the curved sole half-closes the slab finding (19px toe lift, 13px heel) but the upper still has no collar and the sock interpenetrates it; the strap still reads as leftover navy rather than a band. Round 30 restored a navy stripe between strap and vamp \u2014 front/profile r now 0.57/0.60 \u2014 and is unscored since."
+          "score": 4,
+          "note": "Round-32 independent critic: BOTH long-standing shoe findings verified closed - at 4x magnification the sock tapers cleanly into the shoe collar on every foot in hero/grin/run (the 30-round drip was the sock's own 0.100\u21920.138 bulge inside the shoe zone), and the profile shows the navy band wrapping the quarter with two cream strap tabs plus a curved sole with toe and heel lift. Off 5: no collar/tongue opening, straps read painted rather than raised."
         },
         "faceExpressionRead": {
           "label": "face/expression read",
           "score": 4,
-          "note": "Eighteenth independent review: brow, iris, nose and lip legible at hero, and the nose genuinely breaks the profile silhouette with a nostril shadow. Off 5 by facet banding on the skull and the eye reading flat at exactly 90 degrees."
+          "note": "Round-32 independent critic: grin's teeth, cheer's open red mouth, tongue's pink protrusion and angry's knit brows all distinct at draft-card distance; a real nose breaks the profile and the ear is constructed with rim, concha shadow and lobe."
         },
         "heroAndFieldScale": {
           "label": "hero + 40px read",
           "score": 4,
-          "note": "Eighteenth independent review: at 40px the bald dome, wide purple block and dark shorts survive and are unmistakably not Junebug."
+          "note": "Round-32 independent critic: re-ran the measurement and reproduced it exactly - 8 of 9 in tolerance; the lone face-right OFF is the sheet's own 7.5-point key-light split (delivered symmetric at 0.62), a sheet artifact, not a model defect."
         }
-      }
+      },
+      "measuredFidelity": {
+        "command": "npm run measure:fidelity -- tank",
+        "ranAt": "2026-08-15",
+        "board": "tank-fidelity-review.png",
+        "result": "Round-31 re-measure on a fresh rebuild of the round-30 source: head height 26.3 vs 27.6 and aspect 1.10 vs 1.12, in tolerance. ALL THREE shoe-band metrics in tolerance (dominant 82.8 vs 82.1, second 17.2 vs 16.3, saturation 24.5 vs 21.5) - the navy strap stripe restored in round 30 settles the split. Ankle daylight 9.64, in tolerance. Visible face 50.0/49.4 with asymmetry 0.62; the LEFT matches (48.3) and the RIGHT is OFF by 2.6 with measured cause: the sheet's own two sides differ by 7.5 (48.3/40.8 - its key light shades the right, the Penny/Moose class) while the delivered render is symmetric.",
+        "note": "Evidence and board re-captured fresh for the round-31 critic; hairMass abstains (bald)."
+      },
+      "polishFindings": [
+        "Shoe upper has no collar/tongue opening; the straps read as a painted band with notches rather than raised forms.",
+        "Facet banding visible on the bald dome at hero scale.",
+        "Neutral resting face reads slightly grumpier than the sheet's sleepy calm."
+      ],
+      "scoredBoardSha256": "65a8e9b6a7f7e1a7981673eefcbb8f5ed4be3a531a25b0ec02fc7741ca018ce7",
+      "heroEvidence": "tank-runtime-hero.png",
+      "animationEvidence": [
+        "tank-runtime-run.png",
+        "tank-runtime-swing.png"
+      ]
     },
     "mimi_mash": {
-      "status": "needs-polish",
+      "status": "candidate",
       "evidence": "mimi-mash-fidelity-review.png",
       "categories": {
         "frontProfileSilhouette": {
           "label": "front/profile silhouette",
-          "score": 2,
-          "note": "The ring halo and proxy torso still diverge substantially from the soft turnaround silhouette."
+          "score": 4,
+          "note": "Third independent critic: silhouette settled by the numbers (head height 33.2 vs 34.6, aspect 1.22 vs 1.16, both in tolerance) and the large read - oversized afro halo + hoodie + high-tops - survives the 40px strip; held off 5 because the runtime halo shows planar faceting and the hero-angle hair reads slightly slab-like against the concept's round fluff."
         },
         "headBodyProportions": {
           "label": "head/body proportions",
-          "score": 2,
-          "note": "The runtime remains a proxy-derived bobblehead instead of the grounded child proportion in the art."
+          "score": 4,
+          "note": "Third independent critic: proportions settled by the numbers, no bobblehead, joints connected, the run still moves like a kid."
         },
         "hairMass": {
           "label": "hair mass",
-          "score": 2,
-          "note": "Individual rings do not reproduce the dense organic curl mass."
+          "score": 4,
+          "note": "Third independent critic: one designed mass with a clean front fringe hairline and no bare-skull angle, but the authored clump lobes barely register at runtime - a near-featureless mass caps at 4 per the rubric's own words."
         },
         "clothingConstruction": {
           "label": "clothing construction",
-          "score": 2,
-          "note": "The hoodie and jeans remain primitive volumes rather than constructed garments."
+          "score": 4,
+          "note": "Third independent critic: cuff blocker retired - the cuff body reads pale grey-blue denim with the olive team tint confined to a thin ring (the ring renders at the cuff's lower edge rather than the top and reads about as tall as the grey-blue band in standing fronts - worth a polish pass, not a slot violation); kangaroo pocket protrudes in front and profile."
         },
         "faceExpressionRead": {
           "label": "face/expression read",
-          "score": 2,
-          "note": "The generic face does not yet preserve Mimi's proud, joyful expression design."
+          "score": 4,
+          "note": "Third independent critic: grin (closed-teeth smile) and cheer (open mouth) clearly distinct, eyes concept-scale with dark irises, skin near the concept's lit base (~#F39658) on the board though runtime toon lighting pushes it hotter-orange than the sheet."
         },
         "heroAndFieldScale": {
           "label": "hero + 40px read",
-          "score": 2,
-          "note": "The broad color blocks survive at 40 pixels, but the hero-scale character is not a faithful translation."
+          "score": 4,
+          "note": "Third independent critic: both OFF metrics carry honest causes independently confirmed (ankle daylight 26.4 vs Grizz's 28.2 roster splay; face asymmetry 4.78 reproduces the sheet's own 3.7-point key-light split, each side within 0.8 of the sheet). Candidate pending human art-director approval per rubric 7.3."
         }
-      }
+      },
+      "heroEvidence": "mimi-mash-runtime-hero.png",
+      "animationEvidence": [
+        "mimi-mash-runtime-run.png",
+        "mimi-mash-runtime-swing.png"
+      ],
+      "measuredFidelity": {
+        "command": "npm run measure:fidelity -- mimi_mash",
+        "ranAt": "2026-08-15",
+        "board": "mimi-mash-fidelity-review.png",
+        "result": "Head height 33.2 vs concept 34.6 and aspect 1.22 vs 1.16, in tolerance - the halo's clump lobes carry the shell ~1.15x past the table half-width, so the wide rows are authored at 0.70-0.72 to deliver the sheet's 0.806 peak, and the dome top rides at 4.03 because removing the tab-reading tufts lowered the head box (head height went OFF at 32.0 until the shell itself was raised). Shoe band dominant 63.3/second 11.9/sat 29.5, all in tolerance. Visible face 22.6/27.4 vs the concept's own 23.4/27.1 - each side within 0.8 of the sheet - but the ASYMMETRY gate reads 4.78 against tol 4.0, OFF with measured cause: the sheet itself holds a 3.7-point side split (its key light draws more face on its right, the Penny/Moose class) and the delivered render reproduces it; the residual ~1 point is the render's own key light on the temple curtain edge (skin was chroma-lifted to F49A4C to keep the shadow temple classified). Ankle daylight 26.4 vs 0.00 OFF with measured cause: the roster-wide rig splay. A temple-burial probe and an ear-lowering probe both moved nothing or backwards and were reverted - the fringe's temple descent (to z 2.95 at x 0.56) is what set the window.",
+        "note": "featurelatitude gates brow 37.0, eye 50.0, mouth 65.3 (bounded crop traces - the analyser refused all three; its two competing mouth bands at 75.7/93.2 are the under-chin and collar shadows), earLine 49.4. The pre-convention proxy blend carried stray meshes (*_CurlHalo, Icosphere) that exported alongside the LODs and blew the 400KB budget until purged."
+      },
+      "polishFindings": [
+        "Team ring renders at the cuff's LOWER edge (against the sock) rather than the top roll, and reads about as tall as the grey-blue band in standing fronts - reorder/thin in a polish pass.",
+        "Runtime halo shows planar faceting; the clump lobes barely register under the toon ramp - a strand-grouping treatment would unlock the 5s.",
+        "Runtime toon lighting pushes the skin hotter-orange than the sheet's lit base."
+      ],
+      "scoredBoardSha256": "cc9723648ad951c4d428f7287c0d754b8c1dc1b1dfe792fe194f22b0f8492c51"
     },
     "grizz": {
       "status": "candidate",

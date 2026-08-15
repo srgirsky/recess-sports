@@ -1018,6 +1018,161 @@ export const FACE_SPECS = {
     mouthBow: -0.8,
     mouthDrop: -2.4,
   },
+  // Big Lou. The roster's warmest grin - huge, toothy - big eyes under
+  // thick arched brows, deep brown skin, buzz cut, big proud ears. Feature
+  // rows, bounded crop traces on big-lou-turnaround.png (crown row 106,
+  // hand-set neck row 305 - the analyser refused his pinch, the chin
+  // merges into the neck): brows centred ~170 (32.2% of head), eyes
+  // centred ~201 (47.7%), the grin centred ~253 (73.9%). Cells through
+  // his island (0.92, -1.4836, 2.500) on skull z 3.42 rz 0.52.
+  big_lou: {
+    ink: '#0e0a06',
+    mouthInk: '#5a2412',
+    sclera: '#fffdf2',
+    irisBrown: '#3a2008',
+    pupil: '#100a04',
+    white: '#fff8ea',
+    mouth: '#6e3220',
+    mouthDark: '#48180a',
+    tongue: '#e57f86',
+    lowerLip: '#a05a34',
+    eyeHalfW: 19,
+    eyeHalfH: 13,
+    irisR: 11,
+    irisInward: 3,
+    eyeX: [31, 97],
+    eyeY: 50,
+    browThick: 6.0,
+    browThin: 2.8,
+    browHalf: 15,
+    browX: [31, 97],
+    browY: 32,
+    browTilt: 1,
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.4,
+    mouthScale: 1.35,
+    mouthY: 75,
+    // The huge warm toothy grin.
+    mouthBow: -1.4,
+    mouthDrop: -4.0,
+  },
+  // Zoom Ramirez. Confident easy smile, big warm brown eyes under thick
+  // straight brows, the swept spike crown above. Feature rows, bounded crop
+  // traces on zoom-turnaround.png (spike crown row 71, neck row 265): brows
+  // centred ~180 (56.2% of head), eyes centred ~210 (71.6%); the mouth is
+  // the analyser's own trace (83.5). Cells through his island
+  // (0.92, -1.5780, 2.500) on skull z 2.99 rz 0.44.
+  wheelchair_ace: {
+    ink: '#17110c',
+    mouthInk: '#6e3220',
+    sclera: '#fffdf2',
+    irisBrown: '#4a2a10',
+    pupil: '#150b04',
+    white: '#fff8ea',
+    mouth: '#8a4028',
+    mouthDark: '#5a2212',
+    tongue: '#e57f86',
+    lowerLip: '#dd8f56',
+    eyeHalfW: 18,
+    eyeHalfH: 13,
+    irisR: 11,
+    irisInward: 3,
+    eyeX: [31, 97],
+    eyeY: 50,
+    browThick: 5.8,
+    browThin: 2.8,
+    browHalf: 15,
+    browX: [31, 97],
+    browY: 24,
+    browTilt: 0,
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.4,
+    mouthScale: 1.15,
+    mouthY: 64,
+    // The confident easy smile.
+    mouthBow: -0.9,
+    mouthDrop: -2.2,
+  },
+  // Big Talk Theo. Huge open grin low on the broad face, big round eyes,
+  // thick dark brows under the oversized cap bill. Feature rows: bounded
+  // crop traces brows rows ~250-265 centred ~258 (49.8% of head), eyes
+  // centred ~294 (63.7%); the analyser's own mouth trace 84.9% (row 349)
+  // is the open smile. Cells through his island (0.92, -1.4503, 2.500)
+  // on skull z 3.06 rz 0.42.
+  calls_shot: {
+    ink: '#14100a',
+    mouthInk: '#6e3220',
+    sclera: '#fffdf2',
+    irisBrown: '#4a2a10',
+    pupil: '#150b04',
+    white: '#fff8ea',
+    mouth: '#8a4028',
+    mouthDark: '#5a2212',
+    tongue: '#e57f86',
+    lowerLip: '#e09058',
+    eyeHalfW: 18,
+    eyeHalfH: 13,
+    irisR: 11,
+    irisInward: 3,
+    eyeX: [31, 97],
+    eyeY: 50,
+    browThick: 6.0,
+    browThin: 2.8,
+    browHalf: 15,
+    browX: [31, 97],
+    browY: 24,
+    browTilt: 1,
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.4,
+    mouthScale: 1.3,
+    mouthY: 83,
+    // The huge open showman's grin.
+    mouthBow: -1.5,
+    mouthDrop: -4.6,
+  },
+  // Mimi Mash. Proud joyful smile, big warm brown eyes, thick dark brows,
+  // blush cheeks under the curl halo. Feature rows traced by bounded crop on
+  // mimi-mash-turnaround.png (halo crown row 92, neck row 343): thick brows
+  // rows 180-190 centred ~185 (37.0% of head), big eyes rows 205-230 centred
+  // ~217.5 (50.0%), the proud closed smile rows 253-259 centred ~256 (65.3%)
+  // - the analyser's two competing dark bands at 75.7%/93.2% are the
+  // under-chin and collar shadows, not the lip line. Cells through her
+  // island (0.92, -1.3503, 2.500) on skull z 3.20 rz 0.47.
+  mimi_mash: {
+    ink: '#1d0d03',
+    mouthInk: '#7e3a24',
+    sclera: '#fffdf2',
+    irisBrown: '#5a3010',
+    pupil: '#150b04',
+    white: '#fff8ea',
+    mouth: '#8a4028',
+    mouthDark: '#5e2413',
+    tongue: '#e57f86',
+    lowerLip: '#d87d48',
+    eyeHalfW: 20,
+    eyeHalfH: 14,
+    irisR: 12,
+    irisInward: 3,
+    eyeX: [31, 97],
+    eyeY: 50,
+    browThick: 6.2,
+    browThin: 3.0,
+    browHalf: 16,
+    browX: [31, 97],
+    browY: 28,
+    browTilt: 1,
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.3,
+    mouthScale: 1.25,
+    mouthY: 69,
+    // The proud, satisfied smile.
+    mouthBow: -1.0,
+    mouthDrop: -1.5,
+  },
   // Sniffles. Big watery eyes under thick auburn brows, a small brave pout.
   // Feature rows traced on his sheet: brows rows 229-241 (49.6% of head),
   // eyes rows 259-291 centred 66.3%, pout bounded 78%. Cells through his

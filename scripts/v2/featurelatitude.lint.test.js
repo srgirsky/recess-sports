@@ -374,6 +374,62 @@ const TURNAROUND = {
   },
   // ★ SMOKEY'S EARS ARE REAL AND HUGE — earLine 63.7 with a 1.23ft outer
   // span against a 0.98ft temple span; the widest head row is the ears.
+  // ★ LOU'S NECK ROW IS HAND-SET (305): the analyser refused his pinch
+  // ('no-pinch' - the chin merges into the neck on a chunky kid, Boomer's
+  // class) so the head band is a bounded trace, crown row 106 to the
+  // collar-line row 305. Brows centred ~170, eyes ~201, grin ~253, ears
+  // centred ~209 and proud of the buzz shell.
+  big_lou: {
+    slug: 'big-lou',
+    brow: 32.2,
+    eye: 47.7,
+    mouth: 73.9,
+    earLine: 51.8,
+    span: { crownZ: 3.99, neckZ: 2.88 },
+    tolerance: 2.5,
+  },
+  // ★ ZOOM HAS NO earLine TARGET (Zippy's precedent): his swept spike
+  // crown is the widest thing at every candidate row on the sheet AND any
+  // delivery, so the widest-row trace reads hair on both sides - no honest
+  // number to gate. Ears are placed off the face crop (~64% of head) and
+  // reviewed by eye. Bounded traces on zoom-turnaround.png (crown row 71,
+  // neck row 265): brows centred ~180, eyes centred ~210, the smile at the
+  // analyser's own 83.5.
+  wheelchair_ace: {
+    slug: 'zoom',
+    brow: 56.2,
+    eye: 71.6,
+    mouth: 83.5,
+    span: { crownZ: 3.95, neckZ: 2.60 },
+    tolerance: 2.5,
+  },
+  // Bounded traces on theo-turnaround.png (cap crown row 129, neck row
+  // 388): thick brows rows ~250-265 centred ~258, big eyes centred ~294;
+  // the mouth is the analyser's own trace (84.9, the open grin). Its brow
+  // pick at 96.6 was the collar shadow, rejected by the crop.
+  calls_shot: {
+    slug: 'theo',
+    brow: 49.8,
+    eye: 63.7,
+    mouth: 84.9,
+    earLine: 54.8,
+    span: { crownZ: 3.99, neckZ: 2.60 },
+    tolerance: 2.5,
+  },
+  // Bounded traces on mimi-mash-turnaround.png (halo crown row 92, neck row
+  // 343): thick brows rows 180-190 centred ~185, big eyes rows 205-230
+  // centred ~217.5, the proud smile rows 253-259 centred ~256. The analyser
+  // refused all three (the curl fringe merges the regions); the ear line is
+  // its own trace.
+  mimi_mash: {
+    slug: 'mimi-mash',
+    brow: 37.0,
+    eye: 50.0,
+    mouth: 65.3,
+    earLine: 49.4,
+    span: { crownZ: 3.99, neckZ: 2.60 },
+    tolerance: 2.5,
+  },
   // Bounded traces on smokey-turnaround.png (buzz-top crown row 228, neck
   // row 410): thick brows rows 311-318 centred ~314.5, eyes rows 319-350
   // centred ~333, the small smile arcs rows 367-372 centred ~369.5.
