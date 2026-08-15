@@ -657,4 +657,38 @@ export const FACE_SPECS = {
     mouthBow: -1.0,
     mouthDrop: -3.0,
   },
+
+  // Penny. Big bright eyes with lash lines under soft brows, and a wide open
+  // smile framed by the curl bob. Feature rows traced on her sheet: brows
+  // rows 212-219 (40.9% of head), eyes rows 236-267 centred 56.4%, smile
+  // rows 288-295 (73.5%). Cells through her island (0.92, -1.3098, 2.300).
+  penny: {
+    ink: '#170c04',
+    mouthInk: '#8a4530',
+    sclera: '#fffdf4',
+    irisBrown: '#4a2a12',
+    pupil: '#170d06',
+    white: '#fff8ea',
+    mouth: '#7a3423',
+    mouthDark: '#552114',
+    tongue: '#e57f86',
+    lowerLip: '#f2ac74',
+    eyeHalfW: 19,
+    eyeHalfH: 13,
+    irisR: 11.5,
+    irisInward: 3,
+    eyeX: [28, 100],
+    eyeY: 50,
+    browThick: 4.2,
+    browThin: 2.0,
+    browHalf: 13,
+    browX: [32, 96],
+    browY: 20,
+    browTilt: 0,
+    mouthY: 76,
+    // A bright open smile.
+    mouthBow: -1.3,
+    mouthDrop: -4.0,
+    mouthScale: 1.15,
+  },
 };

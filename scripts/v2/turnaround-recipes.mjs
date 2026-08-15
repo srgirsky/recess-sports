@@ -263,6 +263,24 @@ export const RECIPES = {
     sweeps: {},
     bands: {},
   },
+
+  // ★ PENNY IS THE FIRST OVERALLS — the denim bib is a FRONT panel over a
+  // pink tee, so garment boundaries at chest height change with the view and
+  // only geometry can trace them. Her curl bob owns the width metrics (the
+  // widest rows are hair), and her curls span three brown clusters that are
+  // declared once at the modal value.
+  penny: {
+    slug: 'penny',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#fbb47b' },
+      curls: { hex: '#7b4c23' },
+      denim: { hex: '#334c64' },
+      tee: { hex: '#fc939c' },
+    },
+    sweeps: {},
+    bands: {},
+  },
 };
 
 export const RECIPE_IDS = Object.keys(RECIPES);

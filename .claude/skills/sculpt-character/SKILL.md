@@ -360,3 +360,28 @@ Each of these cost at least one blind round. They are constraints, not history.
   alone.** Turbo's fringe shadow read as "brows" in the row scan; the crop
   showed the true brows a full 8% of head lower. A one-minute sips crop
   beats three wrong island solves.
+
+## Lessons Penny paid for (overalls, and two ways a mirror lies)
+
+- **A garment panel worn OVER another garment is GEOMETRY, not a colour
+  wedge.** The bib as a torso-loft theta wedge smeared across segments on
+  the board and tore into a hard pink block under the swing's deformation;
+  rebuilt as proud front/back panels the mechanism is gone and the bib
+  gains the constructed depth critics ask for. Same pattern for any apron,
+  vest or jacket front.
+- **Clump textures must be mirror-symmetric: row variation goes in the
+  AMPLITUDE, never the phase.** `sin(k·θ + c·row)` rotates the ringlet lobes
+  per row and blew faceAsymmetry at 7.14; `cos(k·(θ−π/2)) · (a+b·cos(c·row))`
+  keeps the mirror and the organic variation.
+- **A translated copy is not a mirror.** Flip the winding only for geometry
+  whose VERTEX ORDER mirrors (side·x in the ring formula); Penny's gold
+  buttons were translated rings sharing one vertex order, and flipping one
+  side's winding made 13 inverted mirror pairs. For per-side `grid()`s use
+  the `flip=` parameter, never reversed row lists.
+- **`npm test | grep` swallows the failure exit** — same trap as `| tail` on
+  exports; a commit slipped through on a red suite and needed amending. Read
+  the `Test Files` line, then run the FAILING file bare before shipping.
+- **Concept sheets light asymmetrically; expect one-sided faceSkin OFFs.**
+  Penny's sheet holds a 6.5-point left/right split in its own shading (Moose's
+  brim was the same class) — the evenly-lit delivered board cannot match the
+  shadow side. Record OFF-with-measured-cause; don't chase it with geometry.

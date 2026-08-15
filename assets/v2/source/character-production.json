@@ -255,6 +255,21 @@
         "navy joggers",
         "easy gentle smile"
       ]
+    },
+    "penny": {
+      "source": "penny-pilot.blend",
+      "sourceSha256": "95e3cc52be13236b7c8d9b6b0bf23d576991411f0c01fdc31aa2c53ee59f6751",
+      "concept": "penny-turnaround.png",
+      "conceptSha256": "c135292d56d005e054136dcd938c45459a596c1cb64f1393c7105661c6a1674d",
+      "output": "kid_penny.glb",
+      "outputSha256": "43cc4467a3fb114077e4d1a97caf838531a3ae817834221f1ff5d796e6d2dacc",
+      "definingTraits": [
+        "big curly brown bob",
+        "denim bib overalls",
+        "pink ringer tee",
+        "rolled denim cuffs",
+        "bright open smile"
+      ]
     }
   }
 }

@@ -877,6 +877,62 @@
         "ROSTER-WIDE: deltoid terminator band and ankle splay - sculptlib/rig polish round."
       ],
       "scoredBoardSha256": "24a4785be6eb5590b6edd392e5f6ea1418ea84dfe50c4c2904715aebb59407e6"
+    },
+    "penny": {
+      "status": "candidate",
+      "evidence": "penny-fidelity-review.png",
+      "categories": {
+        "frontProfileSilhouette": {
+          "label": "front/profile silhouette",
+          "score": 4,
+          "note": "Second independent critic (first scored 4): round bob mass overhanging the skull, sturdy child torso in overalls, rolled-cuff bumps - recognisable with no colour; profile shows the bob's back overhang and the bib line. Held at 4: shoulders and wrists still slightly tubular."
+        },
+        "headBodyProportions": {
+          "label": "head/body proportions",
+          "score": 4,
+          "note": "Second independent critic: head height 32.9 vs 34.9 and aspect 1.19 vs 1.17 measured in tolerance (the bob needed a trim - its clump peaks pushed width over); knees and elbows read as connected forms in the run."
+        },
+        "hairMass": {
+          "label": "hair mass",
+          "score": 4,
+          "note": "Second independent critic: one designed mass, clean front hairline arc, no bare-skull read; ears covered in all five sheet views (Grizz precedent, no earLine). The clump pattern is MIRROR-SYMMETRIC by construction - the first phase-rotated ringlets read faceAsymmetry 7.14 until the row term moved from phase to amplitude. Rubric-capped at 4: broad facets, not sculpted strand grouping."
+        },
+        "clothingConstruction": {
+          "label": "clothing construction",
+          "score": 4,
+          "note": "Second independent critic (first scored 3: no pockets on Penny POCKETS, and a pink wedge bleeding across the bib): the rebuild resolves it - the bib is proud front/back panel GEOMETRY (the torso colour wedge is gone, removing the bleed's mechanism), with a stitched chest pocket, hip pockets, constructed rolled cuffs (the declared team accent), and the swing holds solid denim mid-twist. Held at 4: the tee still fades softly into denim at the flanks and the brass hardware is fainter than the sheet's."
+        },
+        "faceExpressionRead": {
+          "label": "face/expression read",
+          "score": 4,
+          "note": "Second independent critic: the grin shows an open mouth with legible teeth at draft-card distance; featurelatitude green and symmetric (brow 40.9/40.9, eye 56.4/56.4, mouth 73.6/73.5). The LEFT visible-face OFF has a measured sheet-shadow cause (the concept lights her asymmetrically, 27.4 vs 33.9 on its own sides - the Moose class). Held at 4: eyes a touch smaller than the concept's saucers; subtle nose in near-profile."
+        },
+        "heroAndFieldScale": {
+          "label": "hero + 40px read",
+          "score": 4,
+          "note": "Second independent critic: unmistakably her at hero - bob plus pink-over-denim; the 40px strip keeps the read. No colour-splits, no team-tint surprises."
+        }
+      },
+      "measuredFidelity": {
+        "command": "npm run measure:fidelity -- penny",
+        "ranAt": "2026-08-15",
+        "board": "penny-fidelity-review.png",
+        "result": "Head height 32.9 vs concept 34.9 and aspect 1.19 vs 1.17, in tolerance - the bob needed a trim (its clump peaks pushed the width over) and the clump pattern itself had to become MIRROR-SYMMETRIC: the phase-rotated ringlet lobes read faceAsymmetry 7.14 against 4.0 until the row term moved from phase to amplitude. Shoe band 58.8/41.2 vs 63.1/35.9 with saturation 24.8 vs 27.0, in tolerance. Visible face 34.7/36.1 vs 27.4/33.9 - the right is in tolerance and the LEFT is OFF (+7.3) with a measured cause: the concept sheet lights her asymmetrically (its own left 27.4 vs right 33.9 is a 6.5-point shading split), and the evenly-lit delivered board is symmetric at 34.7/36.1; the delta is the sheet shadow, the Moose class. Ankle daylight 31.4 vs 0.00 OFF with measured cause: the rig binds at the roster-wide 6.75-degree splay.",
+        "note": "Feature placement gated by featurelatitude: brow 40.9 vs traced 40.9, eye 56.4 vs 56.4, mouth 73.6 vs 73.5 through her declared 3.99-2.60 span (the spec refuses all three - the curls merge every band). No earLine: the bob owns the width rows and covers her ears in every view; none are built (Grizz precedent)."
+      },
+      "heroEvidence": "penny-runtime-hero.png",
+      "animationEvidence": [
+        "penny-runtime-run.png",
+        "penny-runtime-swing.png"
+      ],
+      "polishFindings": [
+        "A hard hem where the pink tee meets the denim at the flanks/back - the soft vertex gradient reads painted from side angles (clothing 5-item).",
+        "Sculpted curl grouping along the bob's rim and crown (hairMass rubric cap).",
+        "Brass strap/hip hardware at hero-scale legibility.",
+        "Firmer nose; a touch more iris area.",
+        "ROSTER-WIDE: shoulder terminator and ankle splay - sculptlib/rig polish round."
+      ],
+      "scoredBoardSha256": "ff2b25038ff396943a462985609e295280c6e9d403a3b24d23da9be053929383"
     }
   }
 }

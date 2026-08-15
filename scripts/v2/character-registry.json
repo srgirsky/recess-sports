@@ -115,7 +115,15 @@
     },
     "penny": {
       "name": "Penny Pockets",
-      "slug": "penny"
+      "slug": "penny",
+      "source": "penny-pilot.blend",
+      "traits": [
+        "big curly brown bob",
+        "denim bib overalls",
+        "pink ringer tee",
+        "rolled denim cuffs",
+        "bright open smile"
+      ]
     },
     "dex": {
       "name": "Dex",

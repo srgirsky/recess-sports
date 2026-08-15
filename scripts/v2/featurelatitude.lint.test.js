@@ -260,6 +260,20 @@ const TURNAROUND = {
     span: { crownZ: 3.99, neckZ: 3.00 },
     tolerance: 2.5,
   },
+  // ★ PENNY'S CROWN IS HER CURL BOB and the bob owns every width row, so no
+  // earLine target (her ears hide under the curls; placed by eye). Bounded
+  // traces on penny-turnaround.png (crown row 119, neck row 355): brow bands
+  // rows 212-219 (centroid ~215.5), the big eyes rows 236-267 centred ~row
+  // 252, the smile arc rows 288-295 centred ~292 (the rows below it are the
+  // left curl curtain's inner edge, not a feature).
+  penny: {
+    slug: 'penny',
+    brow: 40.9,
+    eye: 56.4,
+    mouth: 73.5,
+    span: { crownZ: 3.99, neckZ: 2.60 },
+    tolerance: 2.5,
+  },
 };
 
 function constantsFor(slug, { needsEar = true } = {}) {
