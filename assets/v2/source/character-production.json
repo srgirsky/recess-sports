@@ -90,6 +90,21 @@
         "short planted legs",
         "sleepy compact face"
       ]
+    },
+    "grizz": {
+      "source": "grizz-pilot.blend",
+      "sourceSha256": "53d47e3f3249692c45b1b8e48520cb7bb1513b05ac7b31480460b8d3ee502dbb",
+      "concept": "grizz-turnaround.png",
+      "conceptSha256": "8290768d2853e29e3c09afe3e7cf73bedf97f2dc74d1b9053506b6c66dbc2e0c",
+      "output": "kid_grizz.glb",
+      "outputSha256": "2cff957904e44384fc043850b0fcde60fb87f812ef622d269869be41af4c12b3",
+      "definingTraits": [
+        "towering round afro",
+        "heavy sleepy brow",
+        "chunky grounded mass",
+        "rust tee on navy shorts",
+        "tall slouched cream socks"
+      ]
     }
   }
 }

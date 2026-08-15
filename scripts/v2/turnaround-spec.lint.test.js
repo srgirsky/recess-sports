@@ -55,6 +55,11 @@ function refusals(node, path = '', out = []) {
 const CLASSES = new Set([
   'posed-view', 'paired-part', 'occluded', 'single-run', 'ambiguous-parts',
   'weak-seam', 'no-such-material', 'merged-region', 'no-pinch', 'no-view',
+  // Earned by Grizz: his tee and skin are one cluster, and so are his afro and
+  // his shorts. Before this class existed, both his declared "shirt" and "skin"
+  // silently resolved to the same 3%-share outline cluster and the spec blessed
+  // it — the exact silent override resolveMaterials' header forbids.
+  'indistinct-materials',
 ]);
 
 describe('a turnaround spec still describes its sheet', () => {

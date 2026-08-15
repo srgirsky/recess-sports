@@ -72,6 +72,7 @@ const concepts = join(repo, 'docs', 'v2', 'concepts');
 const GOVERNED = [
   { id: 'nostrike', script: 'sculpt-junebug-source.py' },
   { id: 'tank', script: 'sculpt-tank-source.py' },
+  { id: 'grizz', script: 'sculpt-grizz-source.py' },
 ];
 
 // A table is governed if its name matches. Deliberately a pattern rather than a

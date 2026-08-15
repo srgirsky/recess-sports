@@ -117,16 +117,42 @@ const TURNAROUND = {
     // pins least precisely — it is the soft top of a shadowed panel.
     shoeBands: { midsoleTop: 0.24, quarterTop: 0.41, tolerance: 0.05 },
   },
+  // ★ GRIZZ'S CROWN IS HAIR, so `PCT_PER_RADIUS` cannot place him: that
+  // constant assumes the rendered crown is the skull's own top, and his board
+  // crown is an afro apex half a foot above it. His entry instead declares the
+  // SPAN the ratios were measured against — afro apex z 3.99 to neck pinch
+  // z 2.48, both traced off his turnaround — and the check maps a latitude to
+  // a height directly. He also has NO earLine: his ears are not drawn in any
+  // view (the afro covers them), his sculpt builds none, and his head's widest
+  // row is the afro's equator, which is not an ear however the detector
+  // labels it. An entry without `earLine` skips that check and permits a
+  // sculpt without an EarSpec — explicitly, never silently.
+  grizz: {
+    slug: 'grizz',
+    // Bounded traces on grizz-turnaround.png (crown row 128, neck row 387):
+    // brow band rows 279-292, eye band rows 309-320, lip line rows 351-352.
+    // The spec REFUSES his mouth (ambiguous-parts: nose shadow vs frown line
+    // within 7 luminance counts) — these are the bounded probes the refusal
+    // asks for, recorded in sculpt-grizz-source.py's FACE_ISLAND note.
+    brow: 60.8,
+    eye: 72.0,
+    mouth: 86.5,
+    span: { crownZ: 3.99, neckZ: 2.48 },
+    tolerance: 2.5,
+  },
 };
 
-function constantsFor(slug) {
+function constantsFor(slug, { needsEar = true } = {}) {
   const src = sculpt(slug);
   const num = '(-?\\d+\\.?\\d*)';
   const island = src.match(new RegExp(`^FACE_ISLAND = \\(${num}, ${num}, ${num}\\)`, 'm'));
   const centre = src.match(new RegExp(`^HEAD_CENTER = \\(${num}, ${num}, ${num}\\)`, 'm'));
   const radii = src.match(new RegExp(`^HEAD_RADII = \\(${num}, ${num}, ${num}\\)`, 'm'));
+  // Optional only when the character's TURNAROUND entry has no earLine target
+  // — a kid whose ears are not drawn sculpts none, and demanding the spec
+  // would invite a decorative EarSpec that exists to satisfy a regex.
   const ear = src.match(new RegExp(`EarSpec\\(center=\\(${num}, ${num}\\)`));
-  if (!island || !centre || !radii || !ear) {
+  if (!island || !centre || !radii || (needsEar && !ear)) {
     throw new Error(`${slug}: could not read FACE_ISLAND / HEAD_CENTER / HEAD_RADII / EarSpec — ` +
       'the regexes above track the literal shape of those lines, so a reformat breaks this gate ' +
       'rather than silently skipping it');
@@ -136,21 +162,27 @@ function constantsFor(slug) {
     islandSpan: Number(island[3]),
     headZ: Number(centre[3]),
     headRz: Number(radii[3]),
-    earZ: Number(ear[2]),
+    earZ: ear ? Number(ear[2]) : null,
   };
 }
 
 describe('a face sits where the turnaround puts it', () => {
   for (const [id, want] of Object.entries(TURNAROUND)) {
     const spec = FACE_SPECS[id];
-    const k = constantsFor(want.slug);
+    const k = constantsFor(want.slug, { needsEar: 'earLine' in want });
 
     // The atlas rows the generator is TOLD to draw at. `brow()` and `eye()`
     // centre their marks ~2 cells above the anchor, which is why the numbers in
     // face-specs.mjs sit 2 below where the feature lands; that offset is part of
     // what these ratios were fitted against and is why this asserts the
     // delivered POSITION rather than the anchor.
-    const at = (cellY) => pctOfHead(latitudeOfCell(cellY, k.islandLow, k.islandSpan));
+    // A `span` entry maps a latitude to its height directly against the
+    // declared crown-to-neck span; the calibrated PCT_PER_RADIUS form remains
+    // for characters whose rendered crown IS the skull top.
+    const pctAt = (latitude) => want.span
+      ? (100 * (want.span.crownZ - (k.headZ + k.headRz * Math.sin(latitude)))) / (want.span.crownZ - want.span.neckZ)
+      : pctOfHead(latitude);
+    const at = (cellY) => pctAt(latitudeOfCell(cellY, k.islandLow, k.islandSpan));
 
     it(`${id}: brow, eyes and mouth land at the turnaround's ratios`, () => {
       const got = { brow: at(spec.browY - 2), eye: at(spec.eyeY - 2), mouth: at(spec.mouthY + 3) };
@@ -168,7 +200,10 @@ describe('a face sits where the turnaround puts it', () => {
       expect(bad).toEqual([]);
     });
 
-    it(`${id}: the ear line sits where the head is widest in the drawing`, () => {
+    it(`${id}: the ear line sits where the head is widest in the drawing`, (ctx) => {
+      // No earLine target means the drawing shows no ears (see grizz's entry);
+      // there is nothing to place and no EarSpec to read.
+      if (!('earLine' in want)) return ctx.skip();
       const got = PCT_PER_RADIUS * (1 - (k.earZ - k.headZ) / k.headRz);
       expect(
         Math.abs(got - want.earLine) <= want.tolerance,

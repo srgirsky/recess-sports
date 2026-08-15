@@ -460,31 +460,111 @@ export function inkBandsIn(f, head, { dark = 100, minInk = 3 } = {}) {
  * Narrowness is the discriminator, not darkness — see this section's header.
  * `maxHostFrac` is what rejects a chin shadow, and it is the only reason this
  * returns the mouth rather than the jaw.
+ *
+ * ★ AND THE MOUTH CROSSES THE MIDLINE, WHICH EYES AND NOSTRILS DO NOT. Grizz
+ * is the sheet that proved the window alone is not enough: `below` is anchored
+ * to the crown of the HEAD, and his head is half afro, so his whole face sits
+ * low and his eye band (71.8% of head height) landed inside a window built for
+ * mouths. His eyes are drawn to pure black, so darkest-wins reported the lash
+ * line as the lip line — a quantity read off the wrong object, again. A row
+ * whose dark pixels flank a lit midline is an eye pair or a nostril pair, not
+ * a mouth, so only runs overlapping the centre column qualify.
+ *
+ * ★ AND A LIP LINE HAS WIDTH, WHICH A NOSTRIL SHADOW DOES NOT. With midline
+ * crossing required, Bubbles' next-darkest central mark was her nose shadow —
+ * three pixels wide, against a smile drawn twenty pixels wide one feature
+ * down. Every lip line on the analysed sheets runs 15-20px against heads
+ * 180-300px wide; nostril marks run 3-9px. A candidate narrower than 5% of
+ * the head's own width is a nostril or a chin dimple, never a mouth.
+ *
+ * ★ AND WHEN TWO CENTRAL FEATURES ARE EQUALLY DARK, THE ANSWER IS NO ANSWER.
+ * On Grizz two qualifying bands survive every rule above and sit within a few
+ * luminance counts of each other — darkness cannot say which is the mouth,
+ * and a tool that picks one anyway is guessing with a straight face. Two
+ * candidate bands separated by more than 4% of head height and within 15
+ * luminance of each other refuse as `ambiguous-parts`; the sculptor traces
+ * the lip with a bounded probe and records why.
  */
 export function mouthIn(f, head, { below = 0.68, above = 0.95, maxHostFrac = 0.5 } = {}) {
   const cx = Math.round((f.x0 + f.x1) / 2);
   const strip = Math.round(head.earWidthPx * 0.22);
-  let best = null, rejected = 0;
+  const rows = [], suspects = [];
+  let rejected = 0;
   for (let y = Math.round(head.crown + head.height * below); y <= Math.round(head.crown + head.height * above); y++) {
-    let hostW = 0, darkest = 999, run = 0, widest = 0;
+    let hostW = 0, run = 0, runX0 = null, widest = 0;
+    const runs = [];
     for (let x = cx - strip; x <= cx + strip; x++) {
       if (!f.inFigure(x, y)) continue;
       hostW++;
       const L = lum(f.at(x, y));
-      if (L < 100) { run++; widest = Math.max(widest, run); darkest = Math.min(darkest, L); } else run = 0;
+      if (L < 100) {
+        if (!run) runX0 = x;
+        run++; widest = Math.max(widest, run);
+        const last = runs[runs.length - 1];
+        if (last && last.x1 === x - 1) { last.x1 = x; last.darkest = Math.min(last.darkest, L); }
+        else runs.push({ x0: runX0, x1: x, darkest: L });
+      } else run = 0;
     }
-    if (!hostW || !widest) continue;
-    if (widest / hostW > maxHostFrac) { rejected++; continue; }
-    if (!best || darkest < best.darkest) best = { y, darkest, hostFrac: widest / hostW };
+    if (!hostW || !runs.length) continue;
+    const midline = runs.find((r) => r.x0 <= cx + 2 && r.x1 >= cx - 2);
+    if (widest / hostW > maxHostFrac) {
+      rejected++;
+      if (midline) suspects.push({ y, darkest: midline.darkest }); // wide AND central: maybe a mouth merged with hair
+      continue;
+    }
+    if (!midline) { rejected++; continue; } // dark pixels flank a lit midline: eyes or nostrils
+    if (midline.x1 - midline.x0 + 1 < 0.05 * head.earWidthPx) { rejected++; continue; } // a speck: nostril or dimple
+    rows.push({ y, darkest: midline.darkest, hostFrac: (midline.x1 - midline.x0 + 1) / hostW });
   }
-  if (!best) {
+  if (!rows.length) {
     return { notTraceable: {
       class: 'merged-region',
-      reason: `no dark run below ${(100 * below).toFixed(0)}% of head height is narrower than ` +
-        `${maxHostFrac} of its own row — every candidate is as wide as the face, which is a shadow, not a mouth`,
+      reason: `no midline-crossing dark run below ${(100 * below).toFixed(0)}% of head height is narrower than ` +
+        `${maxHostFrac} of its own row — every candidate is as wide as the face (a shadow) or flanks a lit ` +
+        'centre (an eye or nostril pair), and neither is a mouth',
     } };
   }
-  return { pct: (100 * (best.y - head.crown)) / head.height, row: best.y, darkest: best.darkest, hostFrac: best.hostFrac, rejectedRows: rejected };
+  const bands = [];
+  for (const r of rows) {
+    const cur = bands[bands.length - 1];
+    if (cur && r.y <= cur.y1 + 2) { cur.y1 = r.y; if (r.darkest < cur.darkest) { cur.darkest = r.darkest; cur.at = r; } }
+    else bands.push({ y0: r.y, y1: r.y, darkest: r.darkest, at: r });
+  }
+  bands.sort((a, b) => a.darkest - b.darkest);
+  const best = bands[0];
+  const rival = bands.find((b) => b !== best
+    && b.darkest - best.darkest <= 15
+    && Math.abs(b.at.y - best.at.y) > 0.04 * head.height);
+  if (rival) {
+    return { notTraceable: {
+      class: 'ambiguous-parts',
+      reason: `two central dark bands compete for the lip line — rows ${best.at.y} (lum ${Math.round(best.darkest)}) and ` +
+        `${rival.at.y} (lum ${Math.round(rival.darkest)}) at ${((100 * (best.at.y - head.crown)) / head.height).toFixed(1)}% and ` +
+        `${((100 * (rival.at.y - head.crown)) / head.height).toFixed(1)}% of head height, within 15 luminance of each ` +
+        'other — only one can be the mouth, and darkness cannot say which; trace the lip with a bounded probe',
+    } };
+  }
+  // ★ A REJECTED ROW DARKER THAN THE WINNER IS A VERDICT ON THE WINNER. On
+  // Bubbles, the open laughing mouth merges with the hair beside her face into
+  // one run wider than `maxHostFrac` allows, so its rows (lum 7-19) were
+  // rejected as chin shadow and the surviving best candidate was her nose
+  // shading at lum 57. When the detector has thrown away something central and
+  // markedly darker than what it kept, returning the runner-up is a guess.
+  const suspect = suspects.find((s) => best.darkest - s.darkest > 15 && Math.abs(s.y - best.at.y) > 0.04 * head.height);
+  if (suspect) {
+    return { notTraceable: {
+      class: 'ambiguous-parts',
+      reason: `the darkest midline-crossing region (row ${suspect.y}, lum ${Math.round(suspect.darkest)}, ` +
+        `${((100 * (suspect.y - head.crown)) / head.height).toFixed(1)}% of head height) is wider than ` +
+        `${maxHostFrac} of its row — a mouth merged with hair or shadow, whose extent this window cannot ` +
+        `read — while the best bounded candidate (row ${best.at.y}, lum ${Math.round(best.darkest)}) is ` +
+        'markedly lighter; trace the lip with a bounded probe instead of trusting the runner-up',
+    } };
+  }
+  return {
+    pct: (100 * (best.at.y - head.crown)) / head.height,
+    row: best.at.y, darkest: best.at.darkest, hostFrac: best.at.hostFrac, rejectedRows: rejected,
+  };
 }
 
 /**

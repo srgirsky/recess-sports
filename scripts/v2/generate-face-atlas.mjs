@@ -328,7 +328,12 @@ function face(name, index) {
   const lowerLip = (y) => `<path d="M46 ${y + 2.8} Q64 ${y + 4.2} 82 ${y + 2.8}
     Q73 ${y + 9.6} 64 ${y + 9.8} Q55 ${y + 9.6} 46 ${y + 2.8}Z" fill="${spec.lowerLip}"/>`;
   const my = spec.mouthY;
-  let lips = lowerLip(my) + seam(my, 1.2, 1.0);
+  // `mouthDrop` lets a character's NEUTRAL be a frown: the corners fall that
+  // many cells below the centre. Grizz is why it exists — "Grumpy" is his
+  // first roster word and the first independent review scored his straight
+  // neutral line as losing "half the grump". Defaults preserve every earlier
+  // character's mouth exactly.
+  let lips = lowerLip(my) + seam(my, spec.mouthBow ?? 1.2, spec.mouthDrop ?? 1.0);
   // An open smile is a MOUTH, not a crescent sticker: inner cavity, a band of
   // upper teeth, a tongue resting low, and a catch-light lower lip.
   // ★ `grin` AND `cheer` ARE NOT THE SAME MOUTH. They were, and three of the

@@ -193,10 +193,43 @@ function headBox(f) {
   // A boundary hit means the detector failed, so it says so and the caller
   // refuses to report a number rather than publishing the window's edge.
   const lo = Math.round(0.15 * f.figH);
-  const hi = Math.min(widths.length - 1, Math.round(0.45 * f.figH));
+  let hi = Math.min(widths.length - 1, Math.round(0.45 * f.figH));
+  // ★ AND THE WINDOW ENDS WHERE THE T-POSE ARMS BEGIN. Grizz is the character
+  // that found this: his afro-inclusive head runs 38% of his figure, which
+  // puts his neck pinch at z 2.47 — inside the z-band the bind pose's
+  // outstretched arms occupy — and the centre run there spans arm-tip to
+  // arm-tip. The minimum then lands just ABOVE the arm band and reports 32.9%
+  // with `pinchFound` true: a wrong number dressed as a measurement, which is
+  // worse than no number. A central run wider than 55% of the FIGURE'S HEIGHT
+  // (2.2ft on the 4ft rig) is arms, on any character: the widest head on the
+  // roster is Grizz's afro at 1.66ft, and a T-pose arm span runs ~5.5ft. The
+  // first cut of this rule used 75% of the bounding BOX and immediately
+  // refused Grizz's own CONCEPT — his afro is the bbox on an arms-down sheet,
+  // so it was "wider than 75% of itself". Height is pose-invariant; the box
+  // is not. A minimum landing on the new edge is a boundary hit like any
+  // other: the caller reports NOT MEASURED rather than publishing the arm
+  // line's own height as the chin.
+  const armSpan = 0.55 * f.figH;
+  let clipped = false;
+  for (let i = lo; i <= hi; i++) {
+    if (widths[i] > armSpan) { hi = i - 1; clipped = true; break; }
+  }
   let neck = lo;
   for (let i = lo; i <= hi; i++) if (widths[i] > 0 && widths[i] < widths[neck]) neck = i;
-  const pinchFound = neck !== lo && neck !== hi;
+  // ★ WHEN THE ARMS CLIPPED THE WINDOW, THE MIN MUST STILL LOOK LIKE A NECK.
+  // Grizz's true pinch (0.48ft at z 2.47) sits entirely behind the bind
+  // pose's arm band; the narrowest VISIBLE row above the arms is his
+  // jaw-to-nape waist at 0.92ft — a genuine local minimum, and not a neck.
+  // Publishing it read his head as 32.9% against the concept's 38.0 and asked
+  // the sculpt to grow an afro that already matched the drawing. Every drawn
+  // neck on the analysed sheets runs 0.42-0.53ft (11-13% of figure height);
+  // nothing anatomical between head and shoulders reaches 17%. A clipped
+  // window whose minimum is wider than that has measured hair or jaw, and
+  // says so instead. Tank keeps his number: his pinch is a real 0.48ft neck
+  // visible above his own arm band.
+  const neckLike = widths[neck] <= 0.17 * f.figH;
+  const pinchFound = neck !== lo && neck !== hi && hi > lo
+    && !(clipped && (neck >= hi - 2 || !neckLike));
   const top = f.y0;
   const bottom = f.y0 + neck;
   let widest = 0;
@@ -355,9 +388,13 @@ function metricsFor(f, palette) {
     shoeSecondaryPct: shoes.secondary,
     shoeChromaPct: bandSaturation(f, 0, 0.09),
     ankleDaylightPct: ankleDaylight(f),
-    faceSkinLeftPct: face.left,
-    faceSkinRightPct: face.right,
-    faceAsymmetryPct: Math.abs(face.left - face.right),
+    // The sample row is 62% of the HEAD box, so a refused pinch poisons these
+    // too: with the box ending at the arm band, "62% of it" is the fringe, and
+    // the first cut of the arm-band rule printed 0.00 against 0.00 and called
+    // it ok — two failures agreeing is not a measurement.
+    faceSkinLeftPct: head.pinchFound ? face.left : null,
+    faceSkinRightPct: head.pinchFound ? face.right : null,
+    faceAsymmetryPct: head.pinchFound ? Math.abs(face.left - face.right) : null,
   };
 }
 
@@ -481,9 +518,14 @@ for (const [key, tol, label] of CHECKS) {
   );
 }
 const asym = d.faceAsymmetryPct;
-const asymOk = asym <= 4.0;
-if (!asymOk) failures++;
-console.log(`${pad('face left/right asymmetry', 42)}${pad('0.00', 11)}${pad(asym.toFixed(2), 11)}${pad('', 10)}${asymOk ? 'ok' : 'OFF (tol 4.0)'}`);
+if (asym === null) {
+  unmeasured++;
+  console.log(`${pad('face left/right asymmetry', 42)}${pad('0.00', 11)}${pad('—', 11)}${pad('', 10)}NOT MEASURED (no neck pinch)`);
+} else {
+  const asymOk = asym <= 4.0;
+  if (!asymOk) failures++;
+  console.log(`${pad('face left/right asymmetry', 42)}${pad('0.00', 11)}${pad(asym.toFixed(2), 11)}${pad('', 10)}${asymOk ? 'ok' : 'OFF (tol 4.0)'}`);
+}
 
 console.log('-'.repeat(84));
 if (unmeasured) {

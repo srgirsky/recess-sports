@@ -98,11 +98,11 @@
   ],
   "materials": {
     "skin": {
-      "index": 5,
-      "hex": "#25211a",
-      "sharePct": 3.36,
+      "index": 1,
+      "hex": "#faeede",
+      "sharePct": 25.46,
       "declaredAnchor": "#dda87e",
-      "toneDistance": 16.42,
+      "toneDistance": 27.08,
       "paired": false
     }
   },
@@ -132,12 +132,12 @@
       "confidence": "traced"
     },
     "mouth": {
-      "value": 68,
+      "value": 89.5,
       "unit": "pctOfHead",
-      "row": 324,
-      "darkest": 0,
-      "hostFrac": 0.25,
-      "rejectedRows": 0,
+      "row": 371,
+      "darkest": 43,
+      "hostFrac": 0.33,
+      "rejectedRows": 34,
       "confidence": "traced"
     },
     "earLine": {

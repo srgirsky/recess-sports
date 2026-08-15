@@ -131,7 +131,15 @@
     },
     "grizz": {
       "name": "Grizz",
-      "slug": "grizz"
+      "slug": "grizz",
+      "source": "grizz-pilot.blend",
+      "traits": [
+        "towering round afro",
+        "heavy sleepy brow",
+        "chunky grounded mass",
+        "rust tee on navy shorts",
+        "tall slouched cream socks"
+      ]
     },
     "flash": {
       "name": "Flash Gordon Jr.",
