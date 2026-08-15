@@ -128,6 +128,105 @@ export const RECIPES = {
     sweeps: {},
     bands: {},
   },
+
+  // ★ BENDY BAO'S TEE IS STRIPED, AND ONLY ONE STRIPE HAS A CLUSTER. The teal
+  // bands cluster cleanly (#8cac9a) but the cream ground sits inside the
+  // BACKDROP's own cluster, so a cream anchor would resolve to the paper — the
+  // stripe chart in the sculpt header is a geometry trace of the teal runs, and
+  // there is deliberately no torso sweep (a teal sweep would report the tee's
+  // width only at stripe heights and read as a refusal storm at the cream
+  // ones). Skin #eb9553 with shadow #ab5c24 is one warm family — only the lit
+  // value is declared. His glasses' wire is drawn at outline darkness and is
+  // never declared as a material.
+  bend_it: {
+    slug: 'bendy-bao',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#eb9553' },
+      hair: { hex: '#33251a' },
+      shorts: { hex: '#2a2e3b' },
+      tee: { hex: '#8cac9a' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
+  // ★ FLASH IS ANOTHER STRIPED TEE WITH A BACKDROP-CREAM GROUND — only the
+  // red stripes have their own clusters (a lit #cb2c13 plus shading variants),
+  // so the stripe chart is a centreline geometry trace like Bendy's. His hair
+  // (#1c0d03) and charcoal shorts (#3b2d22) are both near-black; they are
+  // declared at their honest sampled values and if the ruler cannot separate
+  // them the refusal is the answer, never an eyeballed override.
+  flash: {
+    slug: 'flash-gordon-jr',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#d47432' },
+      hair: { hex: '#1c0d03' },
+      shorts: { hex: '#3b2d22' },
+      tee: { hex: '#cb2c13' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
+  // ★ ZIPPY'S TEE IS THE FIRST STRIPE WHOSE BOTH TONES CLUSTER — dark pink
+  // #f25c74 and light pink #fa939c are separate clusters, so for once the
+  // stripe chart could be checked by colour rather than only geometry. Her
+  // paired pigtails are the widest thing on the sheet at their own rows, so
+  // any width metric near z 3.0-3.8 is hair, not head. The cream headband and
+  // sock stripes share the backdrop-cream cluster and are geometry traces.
+  // Her lit SKIN and the light pink resolve to the same cluster (the resolver
+  // refuses the pair as indistinct-materials — the honest answer, kept), so
+  // every skin/teeLight boundary is a geometry trace like Grizz's tee.
+  zippy: {
+    slug: 'zippy',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#eda05e' },
+      hair: { hex: '#1b140c' },
+      shorts: { hex: '#2a2e39' },
+      teeDark: { hex: '#f25c74' },
+      teeLight: { hex: '#fa939c' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
+  // ★ DAZZLE'S MANE OWNS EVERY WIDTH METRIC — the wavy auburn mass runs from
+  // crown to mid-torso and merges with the head at every row, so a "neck"
+  // found inside it is curtain-to-curtain, and the ear line lands on hair.
+  // Cream (headband, trim, socks, soles) sits in the backdrop cluster; her
+  // lit and shadowed skin are separate clusters and only the lit one is
+  // declared.
+  diva: {
+    slug: 'dazzle',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#fb9c53' },
+      hair: { hex: '#642302' },
+      dress: { hex: '#5d3a63' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
+  // ★ NOODLE'S CREAM IS THE BACKDROP'S CREAM — the tee's ground and the shoe
+  // panels sit inside the paper's own cluster, so only the blue stripe, the
+  // denim and his pale skin are declared; every cream boundary is a geometry
+  // trace. The blue-grey stripe cluster ALSO covers the rolled jean cuffs —
+  // one cluster, two garments, and the recipe cannot split them.
+  noodle: {
+    slug: 'noodle',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#fbc48b' },
+      jeans: { hex: '#334b64' },
+      stripe: { hex: '#9aadbb' },
+    },
+    sweeps: {},
+    bands: {},
+  },
 };
 
 export const RECIPE_IDS = Object.keys(RECIPES);

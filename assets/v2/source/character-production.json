@@ -150,6 +150,81 @@
         "freckled bright grin",
         "striped socks bare knees"
       ]
+    },
+    "bend_it": {
+      "source": "bendy-bao-pilot.blend",
+      "sourceSha256": "cfbe4cb035a3c4b287082fb899d14d560b6655759b34fdfc9859b7d3f96dda6c",
+      "concept": "bendy-bao-turnaround.png",
+      "conceptSha256": "e0376bf5bc736b84244455be0e09cb93d94907b1dfbaad47c2eb19f9641a228a",
+      "output": "kid_bend_it.glb",
+      "outputSha256": "87357124414c575803f857eee58d7d7ebcfa8e2d23a1b064ecdb17ad0cd8a1e2",
+      "definingTraits": [
+        "swept top bun",
+        "round wire glasses",
+        "teal striped tee",
+        "navy cargo shorts",
+        "gentle knowing smile"
+      ]
+    },
+    "flash": {
+      "source": "flash-gordon-jr-pilot.blend",
+      "sourceSha256": "fba13792603ffa7e5e5d503d662488b90238cc1afa40a5aad428e91e5ae08409",
+      "concept": "flash-gordon-jr-turnaround.png",
+      "conceptSha256": "444a8536e21aeef1fba20e886ee27b8182091401bc48b7ffe87d847402dc3bc6",
+      "output": "kid_flash.glb",
+      "outputSha256": "c3b1e19dfe3bfea18075f8dec2ebcea787fe4e8167b02b2adbb008b837f395bb",
+      "definingTraits": [
+        "spiky faded mohawk",
+        "bold red striped tee",
+        "charcoal shorts",
+        "red-striped crew socks",
+        "confident smirk"
+      ]
+    },
+    "zippy": {
+      "source": "zippy-pilot.blend",
+      "sourceSha256": "034502695b1ded2f431c3a8dbad6750c3beeb43024d79691ec90b1e7c640c84b",
+      "concept": "zippy-turnaround.png",
+      "conceptSha256": "5a6ad80e5d6ad18e455b6c4ae56447cdcab1a14fa2eccf4ebd8a7f72a611fb31",
+      "output": "kid_zippy.glb",
+      "outputSha256": "a8559a6b1799aa2c80078dc4cec14816a77163c9c0d535702dde60d075d5e5ba",
+      "definingTraits": [
+        "black side pigtails",
+        "cream headband",
+        "two-tone pink striped tee",
+        "navy dolphin shorts",
+        "huge happy grin"
+      ]
+    },
+    "diva": {
+      "source": "dazzle-pilot.blend",
+      "sourceSha256": "d96a950e5dcb2d0efce1883d2d5a6fda5fa770d0ad2097cf43d22d7fbe7b45d0",
+      "concept": "dazzle-turnaround.png",
+      "conceptSha256": "3eb499fa87bff373ae457d620ef72ae54de5c0636b605ed24022aeca7523f8df",
+      "output": "kid_diva.glb",
+      "outputSha256": "a11602b19f27b4f3dca83ed1d0430cf6145186e202f30240037eca6221977985",
+      "definingTraits": [
+        "long wavy auburn mane",
+        "cream headband",
+        "purple ringer dress",
+        "gold star waistband",
+        "purple high-top sneakers"
+      ]
+    },
+    "noodle": {
+      "source": "noodle-pilot.blend",
+      "sourceSha256": "746984eb928880051d838149b1ebecda7fcd6d9881338d006ca13c77cc0df2c8",
+      "concept": "noodle-turnaround.png",
+      "conceptSha256": "dee0c6663214707ec91d7d06a1f7d4a59780ba48eb812399cf37e57c0b0a1738",
+      "output": "kid_noodle.glb",
+      "outputSha256": "25eb9e7f1184feaee2674e2a31bb985d7ffb7385c9c0260e4ad1480890db4698",
+      "definingTraits": [
+        "gleaming bald dome",
+        "big round glasses",
+        "blue striped long-sleeve tee",
+        "rolled blue jeans",
+        "skinny noodle neck"
+      ]
     }
   }
 }

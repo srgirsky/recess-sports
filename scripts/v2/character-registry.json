@@ -91,7 +91,15 @@
     },
     "zippy": {
       "name": "Zippy Kwan",
-      "slug": "zippy"
+      "slug": "zippy",
+      "source": "zippy-pilot.blend",
+      "traits": [
+        "black side pigtails",
+        "cream headband",
+        "two-tone pink striped tee",
+        "navy dolphin shorts",
+        "huge happy grin"
+      ]
     },
     "ace_kid": {
       "name": "Ace",
@@ -115,11 +123,27 @@
     },
     "bend_it": {
       "name": "Bendy Bao",
-      "slug": "bendy-bao"
+      "slug": "bendy-bao",
+      "source": "bendy-bao-pilot.blend",
+      "traits": [
+        "swept top bun",
+        "round wire glasses",
+        "teal striped tee",
+        "navy cargo shorts",
+        "gentle knowing smile"
+      ]
     },
     "noodle": {
       "name": "Noodle",
-      "slug": "noodle"
+      "slug": "noodle",
+      "source": "noodle-pilot.blend",
+      "traits": [
+        "gleaming bald dome",
+        "big round glasses",
+        "blue striped long-sleeve tee",
+        "rolled blue jeans",
+        "skinny noodle neck"
+      ]
     },
     "bubbles": {
       "name": "Bubbles",
@@ -143,7 +167,15 @@
     },
     "diva": {
       "name": "Dazzle",
-      "slug": "dazzle"
+      "slug": "dazzle",
+      "source": "dazzle-pilot.blend",
+      "traits": [
+        "long wavy auburn mane",
+        "cream headband",
+        "purple ringer dress",
+        "gold star waistband",
+        "purple high-top sneakers"
+      ]
     },
     "grizz": {
       "name": "Grizz",
@@ -159,7 +191,15 @@
     },
     "flash": {
       "name": "Flash Gordon Jr.",
-      "slug": "flash-gordon-jr"
+      "slug": "flash-gordon-jr",
+      "source": "flash-gordon-jr-pilot.blend",
+      "traits": [
+        "spiky faded mohawk",
+        "bold red striped tee",
+        "charcoal shorts",
+        "red-striped crew socks",
+        "confident smirk"
+      ]
     },
     "cricket": {
       "name": "Cricket",

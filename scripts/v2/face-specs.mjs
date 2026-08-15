@@ -404,4 +404,187 @@ export const FACE_SPECS = {
     freckles: true,
     freckleTone: '#aa5f28',
   },
+
+  // Bendy Bao. Round wire glasses (GEOMETRY, in his sculpt — never drawn
+  // here), thick level brows above them, calm eyes behind the lenses, and a
+  // gentle knowing smile. Feature rows traced on his sheet: brow bands rows
+  // 227-237 (50% of head), lens centres row 262 (62.3% — the spec REFUSES his
+  // eye band, the frames merge with the sideburns), smile rows 302-304 (79%).
+  // Cells through his island (0.92, -1.25, 2.00). The eye marks must sit
+  // INSIDE the lens rings (radius 0.128ft about ±0.138ft), so they are
+  // moderate and round rather than roster-huge.
+  bend_it: {
+    ink: '#120903',
+    mouthInk: '#7a4023',
+    sclera: '#fffcf0',
+    irisBrown: '#3a2210',
+    pupil: '#150d06',
+    white: '#fff6e4',
+    mouth: '#6e2f1c',
+    mouthDark: '#4c1d10',
+    tongue: '#e07980',
+    lowerLip: '#efa065',
+    eyeHalfW: 13,
+    eyeHalfH: 9,
+    irisR: 8,
+    irisInward: 2,
+    eyeX: [36, 92],
+    eyeY: 50,
+    // The thick brows are his boldest mark, level — calm, not cross.
+    browThick: 5.0,
+    browThin: 2.8,
+    browHalf: 13,
+    browX: [32, 96],
+    browY: 26,
+    browTilt: 0,
+    mouthY: 81,
+    // The knowing smile: a gentle rise, softer than Chip's grin.
+    mouthBow: -1.0,
+    mouthDrop: -3.0,
+  },
+
+  // Flash Gordon Jr. `expression: 'cool'` — bold dark brows over big confident
+  // eyes and a smirk. Feature rows traced on his sheet (spec refuses brow/eye:
+  // the fade merges them into one region; its "mouth" is his nostrils): brow
+  // bands rows 277-291 (55% of head), eye band rows 302-330 centred 68.1%,
+  // smirk rows 355-362 (87.4%). Cells through his island (0.92, -1.25, 2.00).
+  flash: {
+    ink: '#140a04',
+    mouthInk: '#77401f',
+    sclera: '#fffcf0',
+    irisBrown: '#3f2410',
+    pupil: '#150d06',
+    white: '#fff6e4',
+    mouth: '#6e2f1c',
+    mouthDark: '#4c1d10',
+    tongue: '#e07980',
+    lowerLip: '#ef9d5e',
+    // Big and confident — eye band is 28px of a 238px head.
+    eyeHalfW: 19,
+    eyeHalfH: 12.5,
+    irisR: 11,
+    irisInward: 3,
+    eyeX: [30, 98],
+    eyeY: 50,
+    // The brows are the boldest mark on the face: thick, dark, gently cocked.
+    browThick: 5.6,
+    browThin: 2.8,
+    browHalf: 15,
+    browX: [32, 96],
+    browY: 25,
+    browTilt: 2,
+    mouthY: 85,
+    // The smirk: corners rise a touch — cool, not a grin.
+    mouthBow: -1.0,
+    mouthDrop: -2.5,
+  },
+
+  // Zippy. The roster's biggest grin — her NEUTRAL is drawn mid-laugh, so the
+  // resting mouth is a wide high-cornered smile. Big shining eyes under a
+  // straight fringe, gently arched brows. Feature rows traced on her sheet
+  // (spec refuses her eye band — the fringe merges with it): brow bands rows
+  // 268-283 (41.3% of head), eyes rows 294-320 centred 58.7%, open smile rows
+  // 347-361 (85%). Cells through her island (0.92, -1.531, 2.438).
+  zippy: {
+    ink: '#150b04',
+    mouthInk: '#8a4030',
+    sclera: '#fffdf2',
+    irisBrown: '#4a2c12',
+    pupil: '#170d06',
+    white: '#fff8ea',
+    mouth: '#7a3423',
+    mouthDark: '#552114',
+    tongue: '#e57f86',
+    lowerLip: '#f2a066',
+    eyeHalfW: 19,
+    eyeHalfH: 13,
+    irisR: 11.5,
+    irisInward: 3,
+    eyeX: [28, 100],
+    eyeY: 50,
+    browThick: 4.6,
+    browThin: 2.2,
+    browHalf: 13,
+    browX: [32, 96],
+    browY: 24,
+    browTilt: 0,
+    mouthY: 87,
+    // The laugh: corners rise well above the centre, widest on the roster,
+    // and the whole mark is scaled up — her identity is the huge grin.
+    mouthBow: -1.5,
+    mouthDrop: -4.6,
+    mouthScale: 1.3,
+  },
+
+  // Dazzle. Sweet confident big eyes under soft thick brows, and a small warm
+  // closed smile — she blows kisses, she does not grin. Feature rows traced
+  // on her sheet (spec refuses all three - the mane merges every band): brows
+  // rows 264-271 (37% of head), eyes rows 289-318 centred 54.1%, smile rows
+  // 344-349 (76.1%). Cells through her island (0.92, -1.367, 2.300).
+  diva: {
+    ink: '#170b04',
+    mouthInk: '#8a4530',
+    sclera: '#fffdf2',
+    irisBrown: '#4a2a10',
+    pupil: '#170d06',
+    white: '#fff8ea',
+    mouth: '#7a3423',
+    mouthDark: '#552114',
+    tongue: '#e57f86',
+    lowerLip: '#f0a06a',
+    eyeHalfW: 19,
+    eyeHalfH: 13,
+    irisR: 11.5,
+    irisInward: 3,
+    eyeX: [28, 100],
+    eyeY: 50,
+    browThick: 4.4,
+    browThin: 2.2,
+    browHalf: 13,
+    browX: [32, 96],
+    browY: 20,
+    browTilt: 0,
+    mouthY: 84,
+    // A small warm smile, corners up gently.
+    mouthBow: -1.0,
+    mouthDrop: -2.6,
+  },
+
+  // Noodle. `expression: 'surprised'`, glasses, freckles, bald. Thin arched
+  // brows riding high on the dome, calm wide eyes behind the biggest lenses
+  // on the roster, a small pleased smile. Feature rows traced on his sheet:
+  // brows rows 196-202 (36.4% of head), lens centres row 231.5 (51.9%),
+  // smile rows 262-270 (69.4%). Cells through his island (0.92, -1.3696,
+  // 2.000). Eye marks stay inside the 0.166ft lens rings.
+  noodle: {
+    ink: '#150c04',
+    mouthInk: '#8a5030',
+    sclera: '#fffdf4',
+    irisBrown: '#4a2c12',
+    pupil: '#170d06',
+    white: '#fff8ea',
+    mouth: '#7a3a26',
+    mouthDark: '#552518',
+    tongue: '#e57f86',
+    lowerLip: '#f2b078',
+    eyeHalfW: 14,
+    eyeHalfH: 10,
+    irisR: 9,
+    irisInward: 2,
+    eyeX: [36, 92],
+    eyeY: 50,
+    // Thin and gently arched, floating high — curious, not cross.
+    browThick: 3.0,
+    browThin: 1.6,
+    browHalf: 12,
+    browX: [34, 94],
+    browY: 28,
+    browTilt: -2,
+    mouthY: 67,
+    // A small pleased smile.
+    mouthBow: -1.0,
+    mouthDrop: -2.4,
+    freckles: true,
+    freckleTone: '#cf9058',
+  },
 };

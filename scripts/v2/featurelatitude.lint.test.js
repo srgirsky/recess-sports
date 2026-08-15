@@ -140,6 +140,95 @@ const TURNAROUND = {
     span: { crownZ: 3.99, neckZ: 2.48 },
     tolerance: 2.5,
   },
+  // ★ BENDY BAO'S EYES ARE BEHIND GLASSES, and the spec REFUSES his eye band
+  // (merged-region: the wire frames fuse with the sideburn columns into one
+  // region as wide as the face). These are the bounded probes the refusal asks
+  // for, traced on bendy-bao-turnaround.png (bun apex row 110, neck row 354):
+  // brow bands rows 227-237 paired about cx (centroid row 232); the lens rings
+  // span rows 249-287 with their centres — which is where the eyes ARE — at
+  // row 262; the smile is rows 302-304 (corners 172-187 / 247-261, symmetric
+  // about cx 216). The analyser's own "brow" at 84.9% is the chin-crease
+  // singles at rows 315-320 misread as a paired band, and its "mouth" at 68.4%
+  // is the frames' lower arc — both recorded in sculpt-bendy-bao-source.py's
+  // FACE_ISLAND note. His crown is the bun apex, not the skull top, so like
+  // grizz he declares the span the ratios were measured against.
+  bend_it: {
+    slug: 'bendy-bao',
+    brow: 50.0,
+    eye: 62.3,
+    mouth: 79.0,
+    earLine: 71.3,
+    span: { crownZ: 3.99, neckZ: 2.49 },
+    tolerance: 2.5,
+  },
+  // ★ FLASH'S CROWN IS THE MOHAWK TIP (z 3.99 on a skull that ends at ~3.51),
+  // so like grizz and bend_it he declares the span his ratios were measured
+  // against. The spec REFUSES his brow and eye (the fade's dark sides merge
+  // with the features into one region) and lands its "mouth" on his NOSTRILS
+  // (rows 344-349) — Sprout's failure mode. Bounded traces on
+  // flash-gordon-jr-turnaround.png (crown row 153, neck row 391): brow bands
+  // rows 277-291 (centroid 284), eye band rows 302-330 centred row 315, the
+  // smirk rows 355-362 centred ~360.5, ear line the spec's own traced 74.8
+  // (his ears stand 18.3% of head proud — the biggest on the roster so far).
+  flash: {
+    slug: 'flash-gordon-jr',
+    brow: 55.0,
+    eye: 68.1,
+    mouth: 87.4,
+    earLine: 74.8,
+    span: { crownZ: 3.99, neckZ: 2.60 },
+    tolerance: 2.5,
+  },
+  // ★ ZIPPY HAS NO earLine TARGET although her ears ARE drawn: her paired
+  // pigtails are the widest thing at every row of the ear zone, so the
+  // widest-row trace reads hair on both the concept and any delivery — there
+  // is no honest number to gate. Her EarSpec is placed off the profile view
+  // (ear centred ~z 3.17) and reviewed by eye. Bounded traces on
+  // zippy-turnaround.png (crown row 199 = the pigtail spouts' top, neck row
+  // 383): brow bands rows 268-283 (centroid ~275), the big eyes rows 294-320
+  // centred row 307 (the spec refuses the eye band — the fringe merges with
+  // it), open-grin mouth rows 347-361 centred ~355.
+  zippy: {
+    slug: 'zippy',
+    brow: 41.3,
+    eye: 58.7,
+    mouth: 85.0,
+    span: { crownZ: 3.99, neckZ: 2.84 },
+    tolerance: 2.5,
+  },
+  // ★ DAZZLE'S SPEC REFUSES ALL THREE FEATURES — her mane merges with every
+  // dark band and its "mouth" candidate is a curtain shadow at 90.3% of head.
+  // Bounded traces on dazzle-turnaround.png (crown row 191 = the mane's top,
+  // neck row 398): brow bands rows 264-271 (centroid ~267.5), the big eyes
+  // rows 289-318 centred ~row 303, the closed smile rows 344-349 centred
+  // ~348.5. No earLine: the widest row is the mane at 78.3%, hair on concept
+  // and delivery alike; her ears hide under the curtains and are reviewed by
+  // eye off the three-quarter view.
+  diva: {
+    slug: 'dazzle',
+    brow: 37.0,
+    eye: 54.1,
+    mouth: 76.1,
+    span: { crownZ: 3.99, neckZ: 2.68 },
+    tolerance: 2.5,
+  },
+  // ★ NOODLE'S CROWN IS HIS OWN BALD SKULL — the first span head whose crown
+  // is skin — and his features crowd the LOWER half under the dome. Bounded
+  // traces on noodle-turnaround.png (crown row 123, neck row 332): thin
+  // arched brows rows 196-202 (centroid ~198), the big lens rings rows
+  // 203-260 centred row 231.5 (the eye line — his eyes sit behind the
+  // glasses like Bendy's), the small smile rows 262-270 centred ~268. Ear
+  // line at the spec's own widest row (57.9%) — real ears, the widest thing
+  // on a bald head.
+  noodle: {
+    slug: 'noodle',
+    brow: 36.4,
+    eye: 51.9,
+    mouth: 69.4,
+    earLine: 57.9,
+    span: { crownZ: 3.99, neckZ: 2.76 },
+    tolerance: 2.5,
+  },
 };
 
 function constantsFor(slug, { needsEar = true } = {}) {

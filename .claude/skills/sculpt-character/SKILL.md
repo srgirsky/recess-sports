@@ -185,3 +185,163 @@ declare paired parts in the recipe. `runidentity.lint.test.js` is the gate.
 - **Do not claim a fix you have not measured from the artefact.** A full-page
   screenshot compared against a tight crop is not evidence; that mistake shipped
   an elbow that was never baked.
+
+## Lessons the first five sculpts paid for
+
+Each of these cost at least one blind round. They are constraints, not history.
+
+- **Probe which way the profile view faces before tracing it.** Grizz's first
+  face trace ran down the BACK of his afro because the sheet's profile faces
+  +x; three sheets since have faced the same way, none is guaranteed to.
+- **A "touching" read can be a flood-fill artifact.** Enclosed backdrop
+  pockets (between legs, between shoes) count as figure, so `ankleDaylight`'s
+  concept-side 0.00 usually means CONTAINMENT, not contact. Measure the true
+  gap and record it; never fatten the mesh past the drawing to chase the
+  number (the funnel-sock mistake).
+- **`skull_front_y` must model the face flattening.** `head_surface` scales
+  the front depth by 0.88 − 0.11·frontness², so a hair tuck clamped to the
+  raw ellipsoid floats IN FRONT of the rendered face and paints it
+  hair-colour. Chip's script carries the correct clamp (plus the no-skull
+  sentinel from Bubbles); copy it, and port it when polishing the earlier
+  hair characters.
+- **Copy `loft`'s exact winding for custom ring surfaces** (ascending rows,
+  its quad order, its cap fans). Grizz's afro shipped inside-out from a
+  by-eye copy.
+- **Only team-tintable geometry may live on M_Accessory.** The runtime tints
+  the whole slot: Chip's navy cap crown rendered olive until only the front
+  panel stayed on slot 3. Accents so far: Tank shoe collar, Grizz sock roll,
+  Sprout cuff stripe, Bubbles scrunchie, Chip cap panel.
+- **The board ramp delivers ≈ authored/1.2 with chroma compressed.** Deep
+  skin authored at the sheet's own value falls below `isSkin`'s floor
+  (Grizz); a panel that must classify as its concept tone needs the
+  concept's CHROMATICITY at ~1.3× spread, not 1.2× brightness (Sprout's
+  canvas, twice).
+- **Read the classifier's own tone pair before authoring shoe colours** —
+  `measure:fidelity` prints them. Two kids' "second tone" turned out to be
+  warm shading (a tan), not the panel colour anyone assumed, and Bubbles'
+  "pink" cost two wrong rounds.
+- **The critic loop:** measure → fresh independent critic (a new agent per
+  round, scores verbatim into the record) → fix the named findings → repeat.
+  Promote at all-4s; when a blocker oscillates across two critics without net
+  movement, record `needs-polish` with `polishFindings` and move to the next
+  kid — Tank's thirty rounds are the cautionary tale.
+
+## Lessons Bendy Bao paid for (glasses, stripes, and two silent inversions)
+
+- **`MeshBuilder.tube`'s third positional arg is the MATERIAL index.** Bendy's
+  glasses passed `3` there thinking it was sides — slot 3 is M_Accessory, so
+  the runtime team-tinted the frames navy and the temple arms read as backpack
+  straps in every capture, while the board looked fine. Name the argument or
+  count the positions; anything on slot 3 WILL be tinted.
+- **Ring-loft level tables must be strictly DESCENDING in z, and the loft
+  should assert it.** An ascending table survives `reversed()` upside-down:
+  every quad's winding inverts, the offline board (double-sided) hides it, and
+  the runtime lights the mass as a slate-grey void — Bendy's bun, one full
+  critic round to find. The assert in `sculpt-bendy-bao-source.py`'s
+  `ring_loft_hair` is the pattern; carry it into any lifted hair builder.
+- **The board renders double-sided; the runtime does not.** Any "wrong colour
+  at runtime, right on the board" split is a normals/winding suspect first
+  and a palette suspect second. Check the RUNTIME captures for colour-split
+  masses before shipping — the critic sampling pixels off
+  `*-runtime-hero.png` is what caught both of Bendy's.
+- **`npm run <x> 2>&1 | tail` swallows the exit code** — the `&&` chain sees
+  `tail`'s success, so an export refusal (LOD budget, GLB size) lets every
+  downstream step run against the STALE GLB and the round measures nothing.
+  Check for the export's own ✓ line before trusting anything after it.
+- **Glasses construction (first done here, for Noodle/The Prof/Gizmo):** two
+  cyclic wire tubes on the hair slot, lens centres at the sheet's eye line,
+  0.030 proud of the cheek — at 0.050 the profile encloses a see-through
+  pocket between rim, cheek and temple arm, and the silhouette gate counts
+  it. Bow the temple arms OUTBOARD along the skull to the ear root; run
+  straight back at the lens's own x they are buried and invisible. Atlas eyes
+  stay moderate so they sit inside the rings.
+- **A striped garment is the loft's own `color_fn`** — trace the band chart
+  off the sheet's cluster rows and paint by z; no second surface, no slot
+  games. If the sheet runs the lowest stripe to the hem, the hem band is
+  stripe-coloured too.
+- **An eye landmark refusal is normal for glasses kids.** The frames merge
+  with the sideburns into one region and the analyser refuses; the lens-ring
+  CENTRES are the eye line. Trace them by hand, record the bounded probes in
+  the featurelatitude entry, and expect the analyser's own brow/mouth picks
+  to be frame artifacts.
+
+## Lessons Flash paid for (the mohawk, and stripes done right)
+
+- **Stripe band tuples are `(lo, hi)` ASCENDING** — the membership test is
+  `lo <= z <= hi`, and a top-down tuple silently paints NO stripe at all: the
+  tee rendered plain cream and only the board caught it. Assert or eyeball the
+  first build's torso before measuring anything.
+- **Crisp stripe edges need loft rings AT the band boundaries.** The loft
+  paints per-vertex and interpolates across each quad row, so a colour edge
+  between two distant rings smears across the whole gap — this was the real
+  cause of both striped kids' "washed stripes" critic notes, not chroma.
+  Pattern: a `TORSO_LEVELS_CRISP` used only at LOD0 (a ring ~0.006ft inside
+  each edge, both sides), while LOD1/2 keep the sparse table so LOD2 stays at
+  its exact budget.
+- **A spike/lean table's x offsets must SUM TO ZERO.** Alternating leans gave
+  the crest front width for free (flanking spike rows would blow the LOD0
+  budget), but the first table's net −0.047 lean shifted shading enough to
+  blow faceAsymmetry at 10.7 against 4.0.
+- **Mohawk construction (for future faded/shaved kids):** a tight stubble
+  shell over the skull (ring loft, +0.02, fronts buried below the fringe
+  line), a midline ridge tube, and 2-point spike tubes with fat bases so the
+  pickets group. The fade's fringe table is the tuning knob for the
+  `faceSkin` metric — coverage down the temples trades directly against it.
+- **When the LOD0 budget refuses, trim tessellation before geometry:** torso
+  24→19-20 segments, scalp 20→16, spike sides 5→4, one interpolable shape row
+  — each is invisible at game scale; a lost spike or stripe is not.
+
+## Lessons Zippy paid for (pigtails, and the runtime is the evidence)
+
+- **`tube`'s `groove` subtracts ABSOLUTELY from each ring radius.** A groove
+  larger than the smallest radius drives rings negative and turns the tube
+  inside-out — Zippy's pigtails rendered as slate backface blades at runtime
+  while the double-sided board showed rounded brown masses. Keep groove well
+  under `min(radii)` (hers: 0.020 against a 0.025 tip). The broken geometry
+  had also been accidentally WIDENING her measured head silhouette — fixing
+  it un-merged the pigtails from the crown and the aspect metric caught it.
+- **Score the RUNTIME captures, not the board.** Three of Zippy's four
+  first-round defects (slate pigtails, invisible headband, crotch gap) were
+  invisible or flattering on the board. The critic prompt now says runtime
+  first; the board settles measured numbers only.
+- **A proud accessory must ride the HOST SURFACE, not the skull.** The
+  headband's arc was authored at skull-ish y and sat INSIDE the hair cap —
+  invisible everywhere. Compute each arc point as (cap surface + 0.02).
+- **Paired hair masses must MERGE with the crown if the sheet's silhouette
+  merges** — the head-box width metric reads the central run, and floating
+  pigtails 0.1ft off the head read aspect 1.18 against the sheet's 1.53.
+- **`mouthScale` exists now** (generate-face-atlas): scales the whole mouth
+  mark about its centre, default 1 keeps every existing atlas byte-identical.
+  Zippy's "huge happy grin" ships at 1.3; use it when a kid's identity IS the
+  mouth.
+- **Wrap-around trim (dolphin piping) is two consecutive SOLE-coloured
+  stations**, same pattern as every proud band; and an inseam carve deeper
+  than ~0.03 splits short-shorts into two boxes at runtime.
+
+## Lessons Noodle paid for (the bald head is a colour instrument)
+
+- **Skin is chroma-authored like any classified panel.** A bald head makes
+  `visible face` nearly all skin, and the ramp's chroma compression can pull
+  the whole dome out of `isSkin`'s warmth band — Noodle's first build
+  delivered warmth 37 against the concept's 112 and read HALF its target.
+  Author skin at ~1.3× the sheet's chromatic spread, but know the ceiling:
+  once the r channel clips at FF, lifting VALUE only raises g and b and
+  CRUSHES the `r > g+12` test (one lift too many dropped the metric from 35
+  to 23). The window between the shadow-step lum floor and the clipping
+  ceiling is narrow; measure each step.
+- **`faceSkin` samples ONE row at 62% of head height** — know what crosses
+  it. On a glasses kid that row cuts four wire crossings; authoring the wire
+  at the DRAWN weight (radius ≈ drawn-diameter/2, Noodle 0.013) is worth
+  points. The residual shadow-step failure (warm skin at lum 74-76 against
+  the 80 floor) is the renderer story recorded on Tank — record it as
+  OFF-with-measured-cause, don't chase it past the palette's physics.
+- **Replicate the instrument when it disagrees with your eye.** The
+  delivered view is alpha-masked (`loadFigure`), not backdrop-modelled — a
+  probe using `figure()` on the review PNG reads DIFFERENT numbers. The
+  exact-replica probe (alpha > 128, headBox arm-clip, one sample row) is what
+  found the failing pixels and their cause in minutes; guessing at palette
+  fixes without it wasted two build rounds.
+- **A mid-course skull change re-solves the island.** Moving HEAD_CENTER or
+  rz after the FaceSpec anchors are set silently shifts every feature —
+  featurelatitude caught the mouth drifting 2.6 points. Re-derive the anchors
+  whenever the skull numbers move.
