@@ -91,6 +91,11 @@ const GOVERNED = [
   { id: 'dex', script: 'sculpt-dex-source.py' },
   { id: 'clover', script: 'sculpt-clover-source.py' },
   { id: 'boomer', script: 'sculpt-boomer-source.py' },
+  { id: 'smokey', script: 'sculpt-smokey-source.py' },
+  { id: 'sniffles', script: 'sculpt-sniffles-source.py' },
+  { id: 'cricket', script: 'sculpt-cricket-source.py' },
+  { id: 'peaches', script: 'sculpt-peaches-source.py' },
+  { id: 'lefty', script: 'sculpt-lefty-source.py' },
 ];
 
 // A table is governed if its name matches. Deliberately a pattern rather than a

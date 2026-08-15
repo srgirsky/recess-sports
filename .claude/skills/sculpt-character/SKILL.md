@@ -494,3 +494,49 @@ Each of these cost at least one blind round. They are constraints, not history.
   cycling shipped a wrong cell under a right label across the whole roster.
   If expression stills read identical, crop THE MOUTH REGION before
   diagnosing: a diff crop that misses the mouth measures the glasses.
+
+## Lessons batch 5 paid for (Smokey, Sniffles, Cricket, Peaches, Lefty)
+
+- **Every arm station inboard of the deltoid needs a SHOULDER_BLEND entry**
+  (blend value = the Spine2 share). A station with no entry weights 100% to
+  the arm bone, and when the arm drops, that fully-rotating ring next to an
+  88%-pinned one shears the skin web into a triangular shoulder fin.
+  Peaches burned three critic rounds on geometry fixes (smaller rings,
+  buried caps) that could not work because the fin was SKINNING, not mesh.
+  On a sleeveless kid the fin is naked; on sleeved kids it hides as fabric.
+- **Limb stations cannot take torso bone names** — the builder prefixes
+  Left/Right, so `(x, r, SKIN, "Spine2")` in ARM_STATIONS raises
+  KeyError 'RightSpine2'. Root-ring pinning goes through SHOULDER_BLEND,
+  never through the station's bone field.
+- **An enclosed silhouette pocket is closed by hugging, not shrinking.**
+  Lefty's 1080px rear-window came from a tail arcing away from the skull
+  plus an over-long backwards brim. Fix serially, re-measuring each: tail
+  hugs the jaw–neck line laterally AND the nape in depth, wisps ride the
+  face surface, the brim ends before it bridges. If the pocket count does
+  not move after an edit, the edit did not touch the pocket — crop and LOOK.
+- **A bald-under-cap read needs a nape SHELL, not a bigger tail.** The
+  toon terminator darkens the skull's lower rear to skin-shadow tones; a
+  blonde shell of hair levels under the cap rim (NAPE_LEVELS) is what makes
+  the rear gameplay angle read "hair", and the hair tone must stay blonde
+  under that terminator (author bright, e.g. #DC9840).
+- **Swept asymmetric fringes: keep the sweep ABOVE the faceSkin sample row**
+  (head.top + 0.62·height). Sniffles' signed-x curl sweep uses a z floor
+  `max(3.205, base+sweep)` so the asymmetry lives in the silhouette, not in
+  the per-side skin counts.
+- **Shoe band boundaries snap non-monotonically across SHOE_SECTION v-rows**
+  (0.13/0.30): a small bandSplit change can move a boundary the OTHER way,
+  and a polarity misread ("dominant" tone that is actually the dark one)
+  survives arithmetic. Settle every band question by viewing the rendered
+  feet.
+- **The team accent must OWN FACES, not just a declaration.** The finished-work
+  gate wants `M_Accessory` with `recessTeamAccent` in the GLB, but Blender's
+  exporter drops a material no polygon uses — so the accent surface (cuff roll,
+  sock top) must be coloured with the `TEAM_MASK` object the leg builder maps
+  to slot 3, not with a lookalike local colour. Sniffles declared the accent
+  and shipped three materials.
+- **Bootstrapped `# measured:` citations are the template kid's, not yours.**
+  build-signature-source.py copies LEG/TORSO provenance comments; the lint
+  re-measures them against YOUR sheet and nine stale citations surfaced only
+  at the batch-end full run. Re-cite every copied table from the kid's own
+  sheet before first build (a wrong-value probe citation makes the lint print
+  the sheet's actual).

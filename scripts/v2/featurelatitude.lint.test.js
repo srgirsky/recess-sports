@@ -372,6 +372,73 @@ const TURNAROUND = {
     span: { crownZ: 3.99, neckZ: 2.51 },
     tolerance: 2.5,
   },
+  // ★ SMOKEY'S EARS ARE REAL AND HUGE — earLine 63.7 with a 1.23ft outer
+  // span against a 0.98ft temple span; the widest head row is the ears.
+  // Bounded traces on smokey-turnaround.png (buzz-top crown row 228, neck
+  // row 410): thick brows rows 311-318 centred ~314.5, eyes rows 319-350
+  // centred ~333, the small smile arcs rows 367-372 centred ~369.5.
+  smokey: {
+    slug: 'smokey',
+    brow: 47.5,
+    eye: 57.7,
+    mouth: 77.7,
+    earLine: 63.7,
+    span: { crownZ: 3.99, neckZ: 2.76 },
+    tolerance: 2.5,
+  },
+  // ★ SNIFFLES' EAR LINE IS REFUSED — his widest head rows are the mop.
+  // Bounded traces on sniffles-turnaround.png (mop-top crown row 116, neck
+  // row 356): thick auburn brows rows 229-241 centred ~235, the big watery
+  // eyes rows 259-291 centred ~275, the small pout bounded at 78% (its
+  // line is skin-adjacent below the traced rows).
+  sniffles: {
+    slug: 'sniffles',
+    brow: 49.6,
+    eye: 66.3,
+    mouth: 78.0,
+    span: { crownZ: 3.99, neckZ: 2.62 },
+    tolerance: 2.5,
+  },
+  // ★ CRICKET'S EAR LINE IS REFUSED — the spiky mop owns the widest rows.
+  // Bounded traces on cricket-turnaround.png (spike-top crown row 154, neck
+  // row 397): brows rows 272-291 centred ~280 (under the spiky fringe),
+  // the big eyes rows 303-321 centred ~313, the smile bounded at 75%.
+  cricket: {
+    slug: 'cricket',
+    brow: 51.9,
+    eye: 65.4,
+    mouth: 75.0,
+    span: { crownZ: 3.99, neckZ: 2.63 },
+    tolerance: 2.5,
+  },
+  // ★ PEACHES KEEPS A REAL EAR LINE — her bun rides on top and the ears
+  // break the temple line (outer 0.97 vs temple 0.77). Bounded traces on
+  // peaches-turnaround.png (bun-top crown row 83, neck row 296): brows rows
+  // 184-198 centred ~190, eyes rows 209-227 centred ~218, the lip line at 77.5%
+  // (the analyser separates it from the chin shadow at 84.5).
+  peaches: {
+    slug: 'peaches',
+    brow: 50.2,
+    eye: 62.5,
+    mouth: 77.5,
+    earLine: 51.6,
+    span: { crownZ: 3.99, neckZ: 2.76 },
+    tolerance: 2.5,
+  },
+  // ★ LEFTY'S BACKWARDS CAP puts the brim at the nape — the crown row is
+  // the dome top. Bounded traces on lefty-turnaround.png (cap-top crown row
+  // 177, neck row 374): brows rows 283-287 centred ~285, eyes rows 289-303
+  // centred ~295, the smirk bounded at 79% (skin-adjacent below the traced
+  // nostril rows at 74.6).
+  lefty: {
+    slug: 'lefty',
+    brow: 54.3,
+    eye: 59.9,
+    mouth: 79.0,
+    earLine: 67.0,
+    span: { crownZ: 3.99, neckZ: 2.80 },
+    tolerance: 2.5,
+  },
 };
 
 function constantsFor(slug, { needsEar = true } = {}) {

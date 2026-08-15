@@ -398,6 +398,89 @@ export const RECIPES = {
     sweeps: {},
     bands: {},
   },
+
+  // ★ SMOKEY'S RED TEE SPLITS INTO LIT AND SHADED CLUSTERS (#E42A1C and
+  // #CC1A0E) — one garment, two tones, so the tee boundary is wherever
+  // EITHER red runs. His buzz cut hugs the skull: crown row 228 is hair,
+  // but only 0.03ft proud of the scalp.
+  smokey: {
+    slug: 'smokey',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#d37434' },
+      hair: { hex: '#1b140c' },
+      tee: { hex: '#e42a1c' },
+      shorts: { hex: '#2a241d' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
+  // ★ SNIFFLES' FRINGE SWALLOWS HIS BROWS' OUTER HALVES — the auburn mop
+  // sweeps across the forehead and the dark-row scan reads fringe and brow
+  // as one mass down to 45%; the brow band here is the thick inner segments
+  // below the sweep. His mouth is a small pout in skin-adjacent tones.
+  sniffles: {
+    slug: 'sniffles',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#ec934c' },
+      hair: { hex: '#7b340b' },
+      hoodie: { hex: '#8cacc3' },
+      jeans: { hex: '#354c63' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
+  // ★ CRICKET HAS THE ROSTER'S FAIREST SKIN (#FBC38B) — it clusters two
+  // steps from the backdrop cream, so skin/backdrop boundaries need the
+  // tone ruler, not luminance. His rolled cuffs share the cream cluster.
+  cricket: {
+    slug: 'cricket',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#fbc38b' },
+      hair: { hex: '#945314' },
+      overalls: { hex: '#3b4d5c' },
+      tee: { hex: '#9b9c4c' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
+  // ★ PEACHES' DRESS AND SKIN SHARE A HUE LANE — marigold #F29D23 against
+  // warm skin #EC924D, two clusters one hue-step apart, so the shoulder
+  // strap edges are tone-ruler work, not luminance. Her bun's curly wisps
+  // scatter the dark-row scan at every forehead row.
+  peaches: {
+    slug: 'peaches',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#ec924d' },
+      hair: { hex: '#a4541b' },
+      dress: { hex: '#f29d23' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
+  // ★ LEFTY'S CAP IS BACKWARDS — the brim lives at the nape, so the front
+  // view shows a clean dome edge and the PROFILE carries the brim. Her tee
+  // is the backdrop's cream in the jacket's narrow front gap, and her side
+  // ponytail swings to the viewer's right in every view.
+  lefty: {
+    slug: 'lefty',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#e49453' },
+      hair: { hex: '#9b6324' },
+      jacket: { hex: '#e3631d' },
+      joggers: { hex: '#2c2d33' },
+    },
+    sweeps: {},
+    bands: {},
+  },
 };
 
 export const RECIPE_IDS = Object.keys(RECIPES);
