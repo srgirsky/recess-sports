@@ -289,6 +289,20 @@ const TURNAROUND = {
     span: { crownZ: 3.99, neckZ: 2.71 },
     tolerance: 2.5,
   },
+  // ★ ACE'S CROWN IS HIS CAP; his shaggy hair pokes below it but the ears
+  // are REAL and on the traced widest row. Bounded traces on
+  // ace-turnaround.png (crown row 187, neck row 405): thick brows rows
+  // 283-293 (centroid ~288), eyes rows 310-339 centred ~row 324, the calm
+  // smile rows 367-374 centred ~372.
+  ace_kid: {
+    slug: 'ace',
+    brow: 46.3,
+    eye: 62.8,
+    mouth: 84.9,
+    earLine: 68.3,
+    span: { crownZ: 3.99, neckZ: 2.68 },
+    tolerance: 2.5,
+  },
 };
 
 function constantsFor(slug, { needsEar = true } = {}) {

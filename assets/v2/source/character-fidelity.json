@@ -989,6 +989,63 @@
         "ROSTER-WIDE: shoulder terminator, ankle splay; and the swing capture shows no bat prop - flag for the clip owner."
       ],
       "scoredBoardSha256": "c9b02abff6422469a260417b367970cbc88c3a80e081f12f13cb71b41741c8dd"
+    },
+    "ace_kid": {
+      "status": "candidate",
+      "evidence": "ace-fidelity-review.png",
+      "categories": {
+        "frontProfileSilhouette": {
+          "label": "front/profile silhouette",
+          "score": 4,
+          "note": "First independent critic: cap dome with brim, open jacket over a lighter core, rolled jeans, chunky shoes - the large read with no colour; head metrics measured green. Held at 4: pelvis reads as a wedge against the jacket hem, elbow/wrist breaks read jointed, and the hair covers the ears the concept keeps visible."
+        },
+        "headBodyProportions": {
+          "label": "head/body proportions",
+          "score": 4,
+          "note": "First independent critic: head 32.4 vs 33.1 and aspect 0.89 vs 0.93 measured green (the shag sides and cap authored to their own traces). Held at 4: joints read assembled - the hand pops off the cuff as a block."
+        },
+        "hairMass": {
+          "label": "hair mass",
+          "score": 4,
+          "note": "First independent critic: one designed mass, no bare-skull read, nape fills the cap gap, fringe with a parted peak and sideburn locks. Rubric-capped at 4: essentially a smooth volume; the ears are swallowed from the front."
+        },
+        "clothingConstruction": {
+          "label": "clothing construction",
+          "score": 4,
+          "note": "First independent critic: the roster's second open-jacket shell reads constructed - fold-back front edges against the cream tee, ribbed cuffs, collar line; authored light-denim rolls; shoes with soles, toe caps and stripes (band measured green 65.9/26.4 - the classifier window is the bottom 9%, sole-only, so the sole is two-tone per the pair). Held at 4: no sculpted laces and the jacket hem is a colour change without thickness. The critic's tint-bleed suspicion on the warm shoe trim was checked: the trim is material 1 with no tint path, and its sampled tone (172,114,36) differs from the badge tint (199,145,59) - two warm tans under one light."
+        },
+        "faceExpressionRead": {
+          "label": "face/expression read",
+          "score": 4,
+          "note": "First independent critic: featurelatitude green (46.1/46.3, 62.8/62.8, 84.7/84.9, ear 68.7/68.3); the grin shows an open mouth with distinct teeth at draft-card distance; a small nose and brow ridge break the run profile. Held at 4: eyes/brows read as paint on a smooth faceplate. The faceSkin landing taught the fringe-window quantization (three identical readings until the window climbed past the ring column)."
+        },
+        "heroAndFieldScale": {
+          "label": "hero + 40px read",
+          "score": 4,
+          "note": "First independent critic: the 40px strip reads cap + dark hair + open blue jacket over cream tee; hero matches the sheet. Held at 4: the brim nearly vanishes at the straight-on hero angle and the cap reads as a beanie dome."
+        }
+      },
+      "measuredFidelity": {
+        "command": "npm run measure:fidelity -- ace_kid",
+        "ranAt": "2026-08-15",
+        "board": "ace-fidelity-review.png",
+        "result": "Head height 32.4 vs concept 33.1 and aspect 0.89 vs 0.93, in tolerance - the aspect needed the shag sides authored to their trace (0.59 half at z 3.26) and the cap widened to its own 0.54 measurement. Shoe band 65.9/26.4 vs 69.7/28.4 with saturation 23.6 vs 22.3, in tolerance - the classifier band window is the BOTTOM 9% of the figure (sole and vamp only; the drawn blue quarter sits above it), so the sole is two-tone cream/tan per the pair. Visible face 18.1/18.1 vs 23.2/21.7, in tolerance - landed after learning the fringe-window quantization: the curtain the sample row sees is the QUAD from the ring above, so the open window must climb past that ring column or three fringe nudges move nothing (measured: three identical 15.6 readings). Ankle daylight 31.9 vs 0.00 OFF with measured cause: the roster-wide 6.75-degree splay.",
+        "note": "Feature placement gated by featurelatitude: brow 46.1 vs traced 46.3, eye 62.8 vs 62.8, mouth 84.7 vs 84.9, ear line 68.7 vs the traced 68.3, through his declared 3.99-2.68 span. The spec refuses his eye band and flags the mouth ambiguous (nostril row 357 vs lip row 373); the targets are bounded traces."
+      },
+      "heroEvidence": "ace-runtime-hero.png",
+      "animationEvidence": [
+        "ace-runtime-run.png",
+        "ace-runtime-swing.png"
+      ],
+      "polishFindings": [
+        "Strand grouping in the hair; recess it around the ears so they read from the front (concept shows them).",
+        "Blend the pelvis/jacket-hem, wrist/hand and elbow transitions.",
+        "Extend or tilt the cap brim to survive the straight-on hero read.",
+        "Sculpted laces; jacket hem thickness.",
+        "Relief for eyes/brows against the faceplate (face 5-item).",
+        "ROSTER-WIDE: shoulder terminator, ankle splay."
+      ],
+      "scoredBoardSha256": "97fcf23873caf08e2398f4b8c1ce274fede45e57e0849edc896250a2ef99cdb1"
     }
   }
 }

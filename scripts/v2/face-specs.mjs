@@ -727,4 +727,37 @@ export const FACE_SPECS = {
     mouthDrop: -3.6,
     mouthScale: 1.15,
   },
+
+  // Ace. The captain: thick level brows under the brim, steady warm eyes, a
+  // calm confident smile. Feature rows traced on his sheet: brows rows
+  // 283-293 (46.3% of head), eyes rows 310-339 centred 62.8%, smile rows
+  // 367-374 (84.9%). Cells through his island (0.92, -1.3273, 2.300).
+  ace_kid: {
+    ink: '#120a04',
+    mouthInk: '#7a4023',
+    sclera: '#fffcf0',
+    irisBrown: '#3c2410',
+    pupil: '#150d06',
+    white: '#fff6e4',
+    mouth: '#6e2f1c',
+    mouthDark: '#4c1d10',
+    tongue: '#e07980',
+    lowerLip: '#efa065',
+    eyeHalfW: 17,
+    eyeHalfH: 11.5,
+    irisR: 10,
+    irisInward: 3,
+    eyeX: [30, 98],
+    eyeY: 50,
+    browThick: 5.0,
+    browThin: 2.6,
+    browHalf: 14,
+    browX: [32, 96],
+    browY: 19,
+    browTilt: 0,
+    mouthY: 84,
+    // The captain's calm smile.
+    mouthBow: -1.0,
+    mouthDrop: -3.0,
+  },
 };

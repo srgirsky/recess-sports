@@ -385,3 +385,24 @@ Each of these cost at least one blind round. They are constraints, not history.
   Penny's sheet holds a 6.5-point left/right split in its own shading (Moose's
   brim was the same class) — the evenly-lit delivered board cannot match the
   shadow side. Record OFF-with-measured-cause; don't chase it with geometry.
+
+## Lessons the batch-3 open-jacket kids paid for
+
+- **An open jacket is a partial ring shell** — swept front-edge to front-edge
+  around the back, fold-back inner vertices at both front edges so the rim
+  reads as cloth, small collar-flap grids at the top corners. Proven on The
+  Professor and reused verbatim on Ace; the tee underneath is the plain
+  torso loft.
+- **The `bandSplit` shoe window is the BOTTOM 9% of the figure** — sole and
+  vamp only. A drawn quarter-panel colour above z ≈ 0.36 never reaches the
+  pair: The Professor's "grey" and Ace's "blue" uppers both read as
+  cream + warm tan there, and the fix is a two-tone sole (Dazzle's split),
+  not repainting the upper.
+- **The fringe window is COLUMN-QUANTIZED.** The visible curtain edge is the
+  quad wall from the ring ABOVE the sample row, so a fringe nudge that flips
+  no ring column moves the faceSkin metric by exactly nothing — Ace measured
+  three identical 15.6 readings across three nudges. Compute which column
+  (|x| = half·cos(kθ)) must bury and raise the window past ITS ring's z.
+- **Author silhouette tables to their own citations.** The Professor's sweep
+  cited halfWidth 0.6498 and was authored at 0.495; the aspect metric caught
+  it. If the number is in the header, the table must say it.

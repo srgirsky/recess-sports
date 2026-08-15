@@ -298,6 +298,22 @@ export const RECIPES = {
     sweeps: {},
     bands: {},
   },
+
+  // ★ ACE'S CAP AND JACKET SHARE ONE BLUE — 47% of the sheet is a single
+  // #739dbb cluster spanning both garments, so cap/jacket boundaries are
+  // geometry traces. The cream tee strip sits in the backdrop's cluster, and
+  // his shaggy hair pokes below the cap in its own near-black cluster.
+  ace_kid: {
+    slug: 'ace',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      blue: { hex: '#739dbb' },
+      skin: { hex: '#e3924d' },
+      hair: { hex: '#130c03' },
+    },
+    sweeps: {},
+    bands: {},
+  },
 };
 
 export const RECIPE_IDS = Object.keys(RECIPES);

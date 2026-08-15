@@ -285,6 +285,21 @@
         "rolled blue jeans",
         "eager open smile"
       ]
+    },
+    "ace_kid": {
+      "source": "ace-pilot.blend",
+      "sourceSha256": "bd6bf51e420fe9d4df38056a690bda9d5acb131d414ade1be50192b020444279",
+      "concept": "ace-turnaround.png",
+      "conceptSha256": "641fb80ce9726fe50255da0275f584d4f1722709a0cc51b11d2dbf633af49a43",
+      "output": "kid_ace_kid.glb",
+      "outputSha256": "6dd2b8dcd7471ab0e7f4d862387963703db8f72cd4e4a28264517dd25fdc4679",
+      "definingTraits": [
+        "sky-blue ball cap",
+        "open blue bomber jacket",
+        "shaggy dark hair",
+        "rolled blue jeans",
+        "calm captain smile"
+      ]
     }
   }
 }

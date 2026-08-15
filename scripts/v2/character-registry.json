@@ -111,7 +111,15 @@
     },
     "ace_kid": {
       "name": "Ace",
-      "slug": "ace"
+      "slug": "ace",
+      "source": "ace-pilot.blend",
+      "traits": [
+        "sky-blue ball cap",
+        "open blue bomber jacket",
+        "shaggy dark hair",
+        "rolled blue jeans",
+        "calm captain smile"
+      ]
     },
     "penny": {
       "name": "Penny Pockets",
