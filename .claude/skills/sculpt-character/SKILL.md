@@ -406,3 +406,91 @@ Each of these cost at least one blind round. They are constraints, not history.
 - **Author silhouette tables to their own citations.** The Professor's sweep
   cited halfWidth 0.6498 and was authored at 0.495; the aspect metric caught
   it. If the number is in the header, the table must say it.
+
+## Lessons Rocket Rosa and Gizmo paid for (batch 4)
+
+- **Set `tongueOut: true` in every NEW kid's FaceSpec.** Without it the atlas
+  generator emits a byte-identical lip path for `grin` and `cheer` and a
+  tongue that never breaks the lip line — rubric 3.14 fails on sight, and a
+  critic round was spent proving the runtime innocent. The flag is off by
+  default only so frozen kids' atlas bytes stay put. Pair it with
+  `mouthScale` when the concept's mouth is small: silhouettes need pixels.
+- **The review surface now holds a chosen expression sticky** (AnimSpike
+  reapplies the face-button cell after the director's update). Before that,
+  the idle blink cycle restored the resting face seconds after the capture
+  script cycled the button, and every cheer/tongue still across the roster
+  silently photographed the RESTING cell. If expression stills ever read
+  identical again, pixel-diff them BEFORE touching the atlas: identical
+  stills mean instrument, similar stills mean cells.
+- **The review render auto-frames the model's bounding box.** Deep geometry
+  behind the figure (a ponytail fan's y-reach) backs the camera up and
+  rescales every measured ratio — two rounds chased "faceSkin regressions"
+  that were the camera. Keep hanging-hair depth reach ≈ ≤ 0.55 and carry
+  the bounce in z, not depth.
+- **The headBox pinch keeps the TOPMOST of equal-width rows.** A neck whose
+  rings quantize to one pixel width drifts the pinch up to the chin and
+  slides the 62% faceSkin row onto the drawn eyes. Author the neck's bottom
+  ring a genuine 2px narrower than the ring above. Related: the T-pose arm
+  band clips the pinch window — the collar's widening rows must sit ABOVE
+  the arm tubes' top edge or the detector refuses with "no pinch".
+- **The render camera's high vantage shifts the drawn face ~0.13ft down the
+  figure.** A drawn eye bottom that clears the sample row in z-arithmetic
+  still lands on it in pixels. Author the eye to the concept's own measured
+  half-height, put eyeY at the featurelatitude tolerance edge if needed, and
+  verify on the render, not the math.
+- **An accent must ride OUTSIDE every surface that renders over it** — the
+  Zippy headband lesson generalizes radially. Rocket's scrunchie died twice
+  inside the cap dome (the deep cap occludes everything above z ≈ 3.1 from
+  the profile ray); the fix was squeezing a real gather WAIST into the tail
+  ribbon and wrapping the band around the waist, fatter than the waist in
+  every axis but inside the tail's own bbox.
+- **Glass lenses are DISCS, not open rings.** The sheets fill spectacle
+  rings with paper-cream shine; an open wire ring measures ~20 points more
+  visible face than the drawing (The Professor's tinted-lens class). A pale
+  disc 0.012 behind the wire is both the measured answer and what the
+  drawing shows. And lens discs are TRANSLATED copies, not mirrors — one
+  winding for both sides (Penny's button lesson; settled by reading triangle
+  normals out of the exported GLB, which beats three build-cycles of
+  guessing).
+
+## Lessons Dex, Clover and Boomer paid for (batch 4, second wave)
+
+- **Even segment counts on any ring the faceSkin row can touch.** An odd
+  ring (17) has no mirror-symmetric columns, so the two curtain edges
+  quantize to different |x| and the metric's sides move independently —
+  Dex's left sat pinned through two fringe nudges that moved his right by
+  4.5. The same parity rule picks petal counts: cos(5θ) flips under
+  θ→π−θ, cos(6θ) doesn't — 6 petals mirror, 5 cannot.
+- **The isSkin saturation floor is 0.22 and the toon highlight walks kids
+  into it.** Clover's delivered skin compressed to sat 0.218 — two
+  thousandths under — and the highlight lands asymmetrically with the key
+  light, so the failure showed up as face ASYMMETRY before it showed up as
+  a level. Chroma-author skin so the HIGHLIGHT band clears 0.24.
+- **Blonde hair legally passes isSkin** (r>g+12 holds for warm golds), on
+  the concept AND the delivered render — so a blonde kid's faceSkin metric
+  counts her hair on both sides of the comparison. Author blonde deep
+  enough to contrast skin at hero scale (Clover's crown read near-bare)
+  while keeping it warm enough to keep passing.
+- **A drooped tongue must fit the kid's island.** tongueReach 1.5 overran
+  Clover's short chin onto under-chin latitudes and vanished — the
+  short-chin corollary of Gizmo's alignOpenMouth lesson. Check where cell
+  ~112+ lands on the head before choosing reach.
+- **Chunky T-pose arms put a ceiling on the measurable head box.** Boomer's
+  concept pinch (2.51) sits below the z where his bind-pose arm band
+  explodes the centre run (2.56) — no sculpt change can reach it, and the
+  head-height/aspect pair goes OFF together with the same cause. Probe the
+  rows, record OFF-with-measured-cause, move on.
+- **A neck ring narrower than every chin row, placed at the concept's own
+  pinch z, steers the headBox exactly** — Clover needed a deliberate 0.008
+  notch at z 2.78 because her chin cap tapered to 0.122 and stole the
+  pinch. Corollary of the topmost-of-equals rule.
+- **The two-tone shoe split needs the concept's third tone.** Clover's
+  cream+green summed to 100 where the concept keeps 16% in ink, making the
+  joint tolerance window 0.3pt wide — warm the midsole to a third
+  chromaticity (Dazzle's two-tone sole, generalized) and the window opens.
+  And the toe-cap/heel edges cut the OPPOSITE way from intuition — measure
+  after every band change, never chain two band edits on a prediction.
+- **Face-cycle clicks in the capture script are PACED (80ms)** — unpaced
+  cycling shipped a wrong cell under a right label across the whole roster.
+  If expression stills read identical, crop THE MOUTH REGION before
+  diagnosing: a diff crop that misses the mouth measures the glasses.

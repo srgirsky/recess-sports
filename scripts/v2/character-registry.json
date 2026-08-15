@@ -135,7 +135,15 @@
     },
     "dex": {
       "name": "Dex",
-      "slug": "dex"
+      "slug": "dex",
+      "source": "dex-pilot.blend",
+      "traits": [
+        "charcoal ball cap",
+        "black curls under the brim",
+        "slate zip hoodie",
+        "rolled dark jeans",
+        "thoughtful half-smile"
+      ]
     },
     "lefty": {
       "name": "Lefty Lu",
@@ -255,15 +263,39 @@
     },
     "gizmo": {
       "name": "Gizmo",
-      "slug": "gizmo"
+      "slug": "gizmo",
+      "source": "gizmo-pilot.blend",
+      "traits": [
+        "round wire glasses",
+        "brown spiky mop",
+        "denim overalls with bib",
+        "light-blue tee sleeves",
+        "rolled pale cuffs"
+      ]
     },
     "clover": {
       "name": "Clover",
-      "slug": "clover"
+      "slug": "clover",
+      "source": "clover-pilot.blend",
+      "traits": [
+        "blonde low pigtails",
+        "swept side fringe",
+        "green petal-hem dress",
+        "freckles across the nose",
+        "green high-top sneakers"
+      ]
     },
     "rocket": {
       "name": "Rocket Rosa",
-      "slug": "rocket-rosa"
+      "slug": "rocket-rosa",
+      "source": "rocket-rosa-pilot.blend",
+      "traits": [
+        "high flowing ponytail",
+        "white raglan tee",
+        "orange piping and tie",
+        "navy sprint shorts",
+        "ready-to-run lean"
+      ]
     },
     "chip": {
       "name": "Chip",
@@ -279,7 +311,15 @@
     },
     "boomer": {
       "name": "Boomer",
-      "slug": "boomer"
+      "slug": "boomer",
+      "source": "boomer-pilot.blend",
+      "traits": [
+        "tall black mohawk crest",
+        "gold-and-cream striped tee",
+        "big toothy grin",
+        "chunky build",
+        "navy shorts and sneakers"
+      ]
     }
   }
 }

@@ -300,6 +300,81 @@
         "rolled blue jeans",
         "calm captain smile"
       ]
+    },
+    "rocket": {
+      "source": "rocket-rosa-pilot.blend",
+      "sourceSha256": "c9e781806e5ec21c8f72815bc7b4dcece25f90d4f6b0ce4198b8280e36a60007",
+      "concept": "rocket-rosa-turnaround.png",
+      "conceptSha256": "ea89c2b7b3014b9433019cbb9b649f0415731b61f37eb3e46439453640e6e2a3",
+      "output": "kid_rocket.glb",
+      "outputSha256": "6d21b55727141a59fb0d6784946fcec379f7792457c5187bd9f7403ee1097100",
+      "definingTraits": [
+        "high flowing ponytail",
+        "white raglan tee",
+        "orange piping and tie",
+        "navy sprint shorts",
+        "ready-to-run lean"
+      ]
+    },
+    "gizmo": {
+      "source": "gizmo-pilot.blend",
+      "sourceSha256": "95c79fe095e2b6dc883f3d366244227ec9c018d016d48e6ef811b78911f0ffcd",
+      "concept": "gizmo-turnaround.png",
+      "conceptSha256": "3d133b007e6af158eea9ef446fe962af27d95a9828d922a6a96f66a65c0e1400",
+      "output": "kid_gizmo.glb",
+      "outputSha256": "c35a95a840d8f71368434c8b0dd32c73b1207a5cb4e255614ef1d8ed76d3b220",
+      "definingTraits": [
+        "round wire glasses",
+        "brown spiky mop",
+        "denim overalls with bib",
+        "light-blue tee sleeves",
+        "rolled pale cuffs"
+      ]
+    },
+    "dex": {
+      "source": "dex-pilot.blend",
+      "sourceSha256": "f76e3bf32c1d61adc1c3f600239f1938bcee380e837bfd4e5cd5bda453eaad2f",
+      "concept": "dex-turnaround.png",
+      "conceptSha256": "d9dc2741e65c4e928b0188a0d0ca509d50a33dc4d9ed37363ae9f05fad1614b3",
+      "output": "kid_dex.glb",
+      "outputSha256": "6544a496284bd08b36b9c2497d7d23e230bf2b501e8fbcef718b647e1aa22254",
+      "definingTraits": [
+        "charcoal ball cap",
+        "black curls under the brim",
+        "slate zip hoodie",
+        "rolled dark jeans",
+        "thoughtful half-smile"
+      ]
+    },
+    "clover": {
+      "source": "clover-pilot.blend",
+      "sourceSha256": "f64b8c34fbaf9c53786117b65e4d053d8564009ffda94a7c7d89671933871765",
+      "concept": "clover-turnaround.png",
+      "conceptSha256": "1cff5e0a9ac0306500dc1786ace77af0e9b888d3501262d23839a81bbbcc4142",
+      "output": "kid_clover.glb",
+      "outputSha256": "6ee557712e10af144324485837b1ebbacd4842789bceb03b50de65106a054454",
+      "definingTraits": [
+        "blonde low pigtails",
+        "swept side fringe",
+        "green petal-hem dress",
+        "freckles across the nose",
+        "green high-top sneakers"
+      ]
+    },
+    "boomer": {
+      "source": "boomer-pilot.blend",
+      "sourceSha256": "ff02a84c3fdcaf226944c09f4e840d19b6dce22e1f2279ef848bc88a2011dc6e",
+      "concept": "boomer-turnaround.png",
+      "conceptSha256": "3748d36bff3ab7120b26edf7d5cea8da733140f40a0ac8adeccc0b88f55ca732",
+      "output": "kid_boomer.glb",
+      "outputSha256": "122c046aaf824bd16aa3019ddb8ecd8b67c8de1a9371686a0dd9a263f9a32d19",
+      "definingTraits": [
+        "tall black mohawk crest",
+        "gold-and-cream striped tee",
+        "big toothy grin",
+        "chunky build",
+        "navy shorts and sneakers"
+      ]
     }
   }
 }

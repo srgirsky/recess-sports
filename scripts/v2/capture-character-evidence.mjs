@@ -143,10 +143,21 @@ async function captureCharacter(page, id, slug) {
       // order and prints the current cell, so this is a wait-and-press rather
       // than an index guess — a reordered atlas moves the button, not this.
       const faceBtn = page.locator('button', { hasText: /^😐/ }).first();
+      // ⚠️ PACED, 80ms BETWEEN CLICKS. Unpaced cycling reliably shipped a
+      // WRONG CELL under a RIGHT LABEL: the cheer and tongue stills came
+      // out byte-identical across the whole roster while the button read
+      // "cheer" at the shot, and two critics failed rubric 3.14 on stills
+      // the instrument had corrupted. Paced clicking with a settle renders
+      // every cell correctly (verified against all 16 on a live page); the
+      // exact race below playwright's click dispatch was never pinned down,
+      // so do not remove the pacing on a hunch — re-run the cheer↔tongue
+      // pixel-diff if you touch this.
       for (let press = 0; press < 20; press++) {
         if ((await faceBtn.textContent())?.includes(capture.face)) break;
         await faceBtn.click();
+        await page.waitForTimeout(80);
       }
+      await page.waitForTimeout(300);
       if (!(await faceBtn.textContent())?.includes(capture.face)) {
         throw new Error(`could not reach face cell "${capture.face}" — is it still in FACE_CELLS?`);
       }

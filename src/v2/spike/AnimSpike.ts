@@ -399,6 +399,15 @@ export class AnimSpike {
     this.lastNow = now;
 
     this.director.update(dt);
+    // ★ A chosen expression is STICKY on this review surface. The director's
+    // blink cycle restores the face to `faceForClip(current)` when the lids
+    // reopen, which silently overwrote the face button's cell within seconds
+    // — every "cheer"/"tongue" evidence still across the roster photographed
+    // the RESTING cell while the button's label claimed otherwise, and a
+    // critic failed rubric 3.14 on evidence the instrument had falsified.
+    // Reapplying after the director's update wins the write order; cycling
+    // back to `neutral` (index 0) returns the face to the director.
+    if (this.faceIndex !== 0) this.kid?.setExpression(FACE_CELLS[this.faceIndex]);
     this.camera.lookAt(0, 3.4, 0);
     this.lighting.fitShadowTo([this.kid.root]);
 
