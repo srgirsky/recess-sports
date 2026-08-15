@@ -98,19 +98,35 @@
   ],
   "materials": {
     "skin": {
-      "index": 3,
-      "hex": "#f9ecdb",
-      "sharePct": 17.71,
-      "declaredAnchor": "#e7b88f",
-      "toneDistance": 21.41,
+      "index": 1,
+      "hex": "#dc7b2c",
+      "sharePct": 22.22,
+      "declaredAnchor": "#dc7b2c",
+      "toneDistance": 0,
       "paired": false
     },
     "hair": {
-      "index": 5,
-      "hex": "#ed934b",
-      "sharePct": 2.44,
-      "declaredAnchor": "#c8873f",
-      "toneDistance": 6.32,
+      "index": 2,
+      "hex": "#1c0c02",
+      "sharePct": 20.95,
+      "declaredAnchor": "#1c0c02",
+      "toneDistance": 0,
+      "paired": false
+    },
+    "denim": {
+      "index": 0,
+      "hex": "#3a4d5b",
+      "sharePct": 24.55,
+      "declaredAnchor": "#3a4d5b",
+      "toneDistance": 0,
+      "paired": false
+    },
+    "tee": {
+      "index": 4,
+      "hex": "#f3a41c",
+      "sharePct": 3.09,
+      "declaredAnchor": "#f3a41c",
+      "toneDistance": 0,
       "paired": false
     }
   },
@@ -163,13 +179,323 @@
       }
     ]
   },
-  "profiles": {},
+  "profiles": {
+    "torso": {
+      "material": "denim",
+      "view": "front",
+      "role": "centre",
+      "stations": [
+        {
+          "z": 1.3,
+          "halfWidth": {
+            "value": 0.1994,
+            "unit": "ft",
+            "view": "front",
+            "region": "denim",
+            "role": "centre",
+            "parts": 3,
+            "px": {
+              "row": 573,
+              "x0": 172,
+              "x1": 233,
+              "seamLeftPx": 0,
+              "seamRightPx": 2
+            },
+            "confidence": "weak-seam",
+            "silhouetteHalfWidth": 0.6592,
+            "note": "the silhouette figure beside it is what a run-count-blind trace would have recorded"
+          }
+        },
+        {
+          "z": 1.36,
+          "halfWidth": {
+            "value": 0.1736,
+            "unit": "ft",
+            "view": "front",
+            "region": "denim",
+            "role": "centre",
+            "parts": 6,
+            "px": {
+              "row": 564,
+              "x0": 180,
+              "x1": 233,
+              "seamLeftPx": 0,
+              "seamRightPx": 2
+            },
+            "confidence": "weak-seam",
+            "silhouetteHalfWidth": 0.6463,
+            "note": "the silhouette figure beside it is what a run-count-blind trace would have recorded"
+          }
+        },
+        {
+          "z": 1.42,
+          "halfWidth": {
+            "value": 0.1511,
+            "unit": "ft",
+            "view": "front",
+            "region": "denim",
+            "role": "centre",
+            "parts": 5,
+            "px": {
+              "row": 554,
+              "x0": 186,
+              "x1": 232,
+              "seamLeftPx": 2,
+              "seamRightPx": 0
+            },
+            "confidence": "weak-seam",
+            "silhouetteHalfWidth": 0.6463,
+            "note": "the silhouette figure beside it is what a run-count-blind trace would have recorded"
+          }
+        },
+        {
+          "z": 1.48,
+          "halfWidth": {
+            "notTraceable": {
+              "class": "ambiguous-parts",
+              "reason": "4 runs of material 0 at z 1.48 and none is the centre one"
+            },
+            "evidence": {
+              "silhouetteHalfWidth": 0.6334,
+              "runs": [
+                "#dc7b2c:137-155",
+                "#1c0c02:156-162",
+                "#f9ecdb:168-171",
+                "#3a4d5b:172-176",
+                "#f9ecdb:177-201",
+                "#f9ecdb:203-207",
+                "#3a4d5b:208-230",
+                "#f9ecdb:231-235",
+                "#3a4d5b:236-256",
+                "#f9ecdb:257-260",
+                "#f9ecdb:262-264",
+                "#f9ecdb:268-288",
+                "#3a4d5b:289-295",
+                "#f9ecdb:296-303",
+                "#1c0c02:304-311",
+                "#dc7b2c:312-320",
+                "#ed934b:321-323",
+                "#dc7b2c:324-331"
+              ]
+            }
+          }
+        },
+        {
+          "z": 1.54,
+          "halfWidth": {
+            "value": 0.2476,
+            "unit": "ft",
+            "view": "front",
+            "region": "denim",
+            "role": "centre",
+            "parts": 3,
+            "px": {
+              "row": 536,
+              "x0": 195,
+              "x1": 271,
+              "seamLeftPx": 2,
+              "seamRightPx": 4
+            },
+            "confidence": "traced",
+            "silhouetteHalfWidth": 0.6399,
+            "note": "the silhouette figure beside it is what a run-count-blind trace would have recorded"
+          }
+        },
+        {
+          "z": 1.6,
+          "halfWidth": {
+            "value": 0.1608,
+            "unit": "ft",
+            "view": "front",
+            "region": "denim",
+            "role": "centre",
+            "parts": 5,
+            "px": {
+              "row": 526,
+              "x0": 184,
+              "x1": 233,
+              "seamLeftPx": 0,
+              "seamRightPx": 2
+            },
+            "confidence": "weak-seam",
+            "silhouetteHalfWidth": 0.6334,
+            "note": "the silhouette figure beside it is what a run-count-blind trace would have recorded"
+          }
+        },
+        {
+          "z": 1.66,
+          "halfWidth": {
+            "value": 0.0579,
+            "unit": "ft",
+            "view": "front",
+            "region": "denim",
+            "role": "centre",
+            "parts": 4,
+            "px": {
+              "row": 517,
+              "x0": 215,
+              "x1": 232,
+              "seamLeftPx": 0,
+              "seamRightPx": 0
+            },
+            "confidence": "weak-seam",
+            "silhouetteHalfWidth": 0.6174,
+            "note": "the silhouette figure beside it is what a run-count-blind trace would have recorded"
+          }
+        },
+        {
+          "z": 1.72,
+          "halfWidth": {
+            "value": 0.164,
+            "unit": "ft",
+            "view": "front",
+            "region": "denim",
+            "role": "centre",
+            "parts": 4,
+            "px": {
+              "row": 508,
+              "x0": 208,
+              "x1": 258,
+              "seamLeftPx": 0,
+              "seamRightPx": 0
+            },
+            "confidence": "weak-seam",
+            "silhouetteHalfWidth": 0.6045,
+            "note": "the silhouette figure beside it is what a run-count-blind trace would have recorded"
+          }
+        },
+        {
+          "z": 1.78,
+          "halfWidth": {
+            "value": 0.1768,
+            "unit": "ft",
+            "view": "front",
+            "region": "denim",
+            "role": "centre",
+            "parts": 5,
+            "px": {
+              "row": 498,
+              "x0": 206,
+              "x1": 260,
+              "seamLeftPx": 2,
+              "seamRightPx": 2
+            },
+            "confidence": "traced",
+            "silhouetteHalfWidth": 0.582,
+            "note": "the silhouette figure beside it is what a run-count-blind trace would have recorded"
+          }
+        },
+        {
+          "z": 1.84,
+          "halfWidth": {
+            "value": 0.1768,
+            "unit": "ft",
+            "view": "front",
+            "region": "denim",
+            "role": "centre",
+            "parts": 7,
+            "px": {
+              "row": 489,
+              "x0": 206,
+              "x1": 260,
+              "seamLeftPx": 2,
+              "seamRightPx": 2
+            },
+            "confidence": "traced",
+            "silhouetteHalfWidth": 0.5659,
+            "note": "the silhouette figure beside it is what a run-count-blind trace would have recorded"
+          }
+        },
+        {
+          "z": 1.9,
+          "halfWidth": {
+            "value": 0.1768,
+            "unit": "ft",
+            "view": "front",
+            "region": "denim",
+            "role": "centre",
+            "parts": 6,
+            "px": {
+              "row": 480,
+              "x0": 206,
+              "x1": 260,
+              "seamLeftPx": 1,
+              "seamRightPx": 1
+            },
+            "confidence": "weak-seam",
+            "silhouetteHalfWidth": 0.6334,
+            "note": "the silhouette figure beside it is what a run-count-blind trace would have recorded"
+          }
+        },
+        {
+          "z": 1.96,
+          "halfWidth": {
+            "notTraceable": {
+              "class": "ambiguous-parts",
+              "reason": "5 runs of material 0 at z 1.96 and none is the centre one"
+            },
+            "evidence": {
+              "silhouetteHalfWidth": 0.5949,
+              "runs": [
+                "#d48304:145-160",
+                "#f3a41c:161-163",
+                "#d48304:164-175",
+                "#d48304:178-182",
+                "#3a4d5b:185-187",
+                "#3a4d5b:190-198",
+                "#ed934b:201-205",
+                "#f9ecdb:206-250",
+                "#3a4d5b:251-260",
+                "#f9ecdb:261-264",
+                "#3a4d5b:267-276",
+                "#3a4d5b:279-281",
+                "#f3a41c:283-288",
+                "#d48304:289-294",
+                "#f3a41c:295-324"
+              ]
+            }
+          }
+        },
+        {
+          "z": 2.02,
+          "halfWidth": {
+            "value": 0.1061,
+            "unit": "ft",
+            "view": "front",
+            "region": "denim",
+            "role": "centre",
+            "parts": 4,
+            "px": {
+              "row": 461,
+              "x0": 201,
+              "x1": 233,
+              "seamLeftPx": 0,
+              "seamRightPx": 1
+            },
+            "confidence": "weak-seam",
+            "silhouetteHalfWidth": 0.5659,
+            "note": "the silhouette figure beside it is what a run-count-blind trace would have recorded"
+          }
+        }
+      ]
+    }
+  },
   "bands": {},
   "notTraceable": [
     {
       "at": "/views/4",
       "class": "posed-view",
       "reason": "500px against a 607px standing view — every figure is scaled independently to 4ft, so a z read here is off by 17.6%. Silhouette and colour only."
+    },
+    {
+      "at": "/profiles/torso/stations/3/halfWidth",
+      "class": "ambiguous-parts",
+      "reason": "4 runs of material 0 at z 1.48 and none is the centre one"
+    },
+    {
+      "at": "/profiles/torso/stations/11/halfWidth",
+      "class": "ambiguous-parts",
+      "reason": "5 runs of material 0 at z 1.96 and none is the centre one"
     }
   ]
 }

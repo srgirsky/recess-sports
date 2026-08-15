@@ -204,7 +204,11 @@ describe('a face sits where the turnaround puts it', () => {
       // No earLine target means the drawing shows no ears (see grizz's entry);
       // there is nothing to place and no EarSpec to read.
       if (!('earLine' in want)) return ctx.skip();
-      const got = PCT_PER_RADIUS * (1 - (k.earZ - k.headZ) / k.headRz);
+      // A span entry maps the ear's own z directly; the PCT_PER_RADIUS form
+      // stays for characters whose rendered crown is the skull top.
+      const got = want.span
+        ? (100 * (want.span.crownZ - k.earZ)) / (want.span.crownZ - want.span.neckZ)
+        : PCT_PER_RADIUS * (1 - (k.earZ - k.headZ) / k.headRz);
       expect(
         Math.abs(got - want.earLine) <= want.tolerance,
         `${id} ear line at ${got.toFixed(1)}% of head height, want ${want.earLine}% ` +

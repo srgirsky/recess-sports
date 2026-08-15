@@ -90,11 +90,26 @@ export const RECIPES = {
     bands: {},
   },
 
+  // ★ SPROUT'S ANCHORS ARE SAMPLED, NOT REMEMBERED. The first cut declared his
+  // hair #c8873f — a caramel, from memory of "brown hair" — while the sheet
+  // draws deep chocolate (modal cluster #1c0c02), and the resolver matched the
+  // caramel to his SKIN cluster instead. His sheet is otherwise the cleanest
+  // on the roster: denim, skin, hair and the yellow tee are four well-separated
+  // clusters, so the torso sweep can finally trace by garment colour.
+  // ⚠️ His drawn mouth is a light-brown smile FAINTER than his nostril specks,
+  // so the spec's mouth landmark lands on the nose (darkest-wins has nothing
+  // darker to find at the lip line). The lip trace for the sculpt is bounded
+  // by hand: smile arc rows 351-359, centre row ~358, 85.6% of head height.
   sprout: {
     slug: 'sprout',
     views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
-    materials: { skin: { hex: '#e7b88f' }, hair: { hex: '#c8873f' } },
-    sweeps: {},
+    materials: {
+      skin: { hex: '#dc7b2c' },
+      hair: { hex: '#1c0c02' },
+      denim: { hex: '#3a4d5b' },
+      tee: { hex: '#f3a41c' },
+    },
+    sweeps: { torso: { view: 'front', material: 'denim', role: 'centre', from: 1.30, to: 2.05, step: 0.06 } },
     bands: {},
   },
 

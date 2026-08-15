@@ -290,4 +290,118 @@ export const FACE_SPECS = {
     mouthBow: 0.6,
     mouthDrop: 4.5,
   },
+
+  // Sprout. Big round wonder eyes — the largest on the roster relative to his
+  // face — under thin gentle brows, and a wide easy smile. Feature rows traced
+  // on his sheet: brow band rows 247-259 (41.4% of head), eye band rows
+  // 282-316 (61%), smile centre rows 358-359 (85.6% — the spec's mouth
+  // landmark is his NOSTRILS; his light-brown smile is fainter than the
+  // specks, so the lip row is the bounded trace in his sculpt script).
+  // Cells solved through his island (0.92, -1.45, 2.20).
+  sprout: {
+    ink: '#140a04',
+    mouthInk: '#7a4526',
+    sclera: '#fffdf2',
+    irisBrown: '#3a2313',
+    pupil: '#150d08',
+    white: '#fff8e8',
+    mouth: '#6b3420',
+    mouthDark: '#4a2114',
+    tongue: '#e07980',
+    lowerLip: '#f0a468',
+    // Huge and round: one eye is ~18% of his face width and nearly as tall.
+    eyeHalfW: 19,
+    eyeHalfH: 13,
+    irisR: 11,
+    irisInward: 3,
+    eyeX: [26, 102],
+    eyeY: 47,
+    browThick: 4.5,
+    browThin: 2.2,
+    browHalf: 13,
+    browX: [30, 98],
+    browY: 20,
+    browTilt: 0,
+    mouthY: 81,
+    // A smile: the corners RISE 3.6 cells above the centre (negative drop),
+    // with the centre easing down — the inverse of Grizz's pout.
+    mouthBow: -1.2,
+    mouthDrop: -3.6,
+    // Roster visual.freckles — three per cheek, in skin shading, absent at 40px.
+    freckles: true,
+    freckleTone: '#a55f28',
+  },
+
+  // Bubbles. "Here for a good time" — enormous warm amber eyes with high
+  // catchlights, thin gold brows, a broad easy smile, and the roster's densest
+  // freckles. Feature rows traced on her sheet: thin brows ~46% of head, the
+  // big eyes centred 56% (rows 281-305), the laugh line ~86% (the spec's
+  // mouth REFUSES: her laugh merges with the hair curtains — bounded trace in
+  // the sculpt script). Cells through her island (0.92, -1.45, 2.55).
+  bubbles: {
+    ink: '#1a0e04',
+    mouthInk: '#8a4530',
+    sclera: '#fffdf4',
+    irisBrown: '#8a5a1e',
+    pupil: '#241505',
+    white: '#fff8ea',
+    mouth: '#7a3423',
+    mouthDark: '#552114',
+    tongue: '#e57f86',
+    lowerLip: '#f0a06a',
+    eyeHalfW: 20,
+    eyeHalfH: 14,
+    irisR: 12,
+    irisInward: 3,
+    eyeX: [30, 98],
+    eyeY: 48,
+    browThick: 3.2,
+    browThin: 1.8,
+    browHalf: 12,
+    browX: [32, 96],
+    browY: 28,
+    browTilt: 0,
+    mouthY: 92,
+    // A broad smile: corners rise well above the centre.
+    mouthBow: -1.4,
+    mouthDrop: -4.2,
+    freckles: true,
+    freckleTone: '#b46a30',
+  },
+
+  // Chip. "Little bat, quick feet" — big round eager eyes under the cap brim,
+  // soft brows, a bright open grin, freckles. Feature rows on his sheet:
+  // brows rows 300-311 (60% of head), eyes rows 312-336 (67.6%), smile rows
+  // 362-371 (89.5% — the fixed mouthIn detector's own landmark, verified by
+  // hand). Cells through his island (0.92, -1.35, 2.20).
+  chip: {
+    ink: '#160b03',
+    mouthInk: '#7a4023',
+    sclera: '#fffcf0',
+    irisBrown: '#4a2a10',
+    pupil: '#170d05',
+    white: '#fff6e4',
+    mouth: '#6e2f1c',
+    mouthDark: '#4c1d10',
+    tongue: '#e07980',
+    lowerLip: '#efa065',
+    eyeHalfW: 19,
+    eyeHalfH: 13,
+    irisR: 11,
+    irisInward: 3,
+    eyeX: [28, 100],
+    eyeY: 40,
+    browThick: 4.0,
+    browThin: 2.0,
+    browHalf: 13,
+    browX: [30, 98],
+    browY: 24,
+    browTilt: 0,
+    mouthY: 89,
+    // A grin: corners rise clearly above the centre.
+    mouthBow: -1.4,
+    mouthDrop: -4.0,
+    freckles: true,
+    freckleTone: '#aa5f28',
+  },
 };

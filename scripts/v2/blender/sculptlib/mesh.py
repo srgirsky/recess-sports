@@ -177,7 +177,18 @@ class MeshBuilder:
         axis: Vector | None = None,
         lobes: int = 0,
         groove: float = 0.0,
+        flip: bool = False,
     ) -> None:
+        """`flip` mirrors the ring traversal AND the face winding together.
+
+        The frame is derived from the tangent, so a spine mirrored across x
+        yields a ring whose sample points coincide with the mirror as a SET
+        but not point-for-point — the phases differ, and vertex normals at
+        coincident positions disagree. Sprout's left-hand digits are what
+        found it: 10 mirrored fingertip pairs tripped the inverted-normals
+        gate while both tubes were individually sound. A mirrored limb passes
+        `flip=True` and gets the exact mirror, normals included. Default
+        False keeps every existing tube byte-identical."""
         centers = [Vector(point) for point in points]
         if isinstance(bone, list) and len(bone) != len(centers):
             raise ValueError("tube needs one weight map per center")
@@ -190,6 +201,14 @@ class MeshBuilder:
             before = centers[index - 1] if index else (centers[-1] if cyclic else centers[index])
             after = centers[(index + 1) % len(centers)] if index + 1 < len(centers) or cyclic else centers[index]
             tangent = (after - before).normalized()
+            if flip:
+                # Derive the frame AS THE UNFLIPPED TWIN WOULD, then mirror it
+                # back — the only construction that makes ring positions and
+                # normals the exact mirror of the twin's. Reversing the angle
+                # or the winding alone does not: the 5-point ring is symmetric
+                # under a sin-flip, so those variants moved nothing or made
+                # every face backwards.
+                tangent = Vector((-tangent.x, tangent.y, tangent.z))
             if axis is None:
                 # Per-row axis switching flips the frame mid-path and twists a
                 # quad — the visible kink the headband wore. A ring whose
@@ -202,6 +221,9 @@ class MeshBuilder:
                 row_axis = axis
             normal = tangent.cross(row_axis).normalized()
             binormal = tangent.cross(normal).normalized()
+            if flip:
+                normal = Vector((-normal.x, normal.y, normal.z))
+                binormal = Vector((-binormal.x, binormal.y, binormal.z))
             row = []
             for side in range(sides):
                 angle = 2 * pi * side / sides
@@ -222,14 +244,16 @@ class MeshBuilder:
             nxt_row = (index + 1) % len(rows)
             for side in range(sides):
                 nxt = (side + 1) % sides
-                self.face((rows[index][side], rows[index][nxt], rows[nxt_row][nxt], rows[nxt_row][side]), material)
+                quad = (rows[index][side], rows[index][nxt], rows[nxt_row][nxt], rows[nxt_row][side])
+                self.face(tuple(reversed(quad)) if flip else quad, material)
         if not cyclic:
             start = self.vertex(centers[0], color, weight_at(0))
             end = self.vertex(centers[-1], color, weight_at(len(centers) - 1))
             for side in range(sides):
                 nxt = (side + 1) % sides
-                self.face((start, rows[0][side], rows[0][nxt]), material)
-                self.face((end, rows[-1][nxt], rows[-1][side]), material)
+                caps = ((start, rows[0][side], rows[0][nxt]), (end, rows[-1][nxt], rows[-1][side]))
+                for cap in caps:
+                    self.face(tuple(reversed(cap)) if flip else cap, material)
 
 
 

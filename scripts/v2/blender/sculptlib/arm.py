@@ -247,7 +247,11 @@ def build_arm(
                 ((root + length) * side, -0.041, ARM_Z + z_offset - 0.024),
             ]
             widths = list(spec.hand.finger_widths)
-            builder.tube(spine, widths, 0, spec.skin, limb_bone("HandIndex1", side), 5)
+            # flip on the mirrored side: see `tube`'s own docstring — the
+            # frame follows the tangent, and only a flipped traversal gives
+            # the left hand the exact mirror of the right, normals included.
+            builder.tube(spine, widths, 0, spec.skin, limb_bone("HandIndex1", side), 5,
+                         flip=side < 0)
         # The thumb is the one digit that leaves the mass, and at 40px it is
         # most of what makes a hand read as a hand. Its spine is authored in
         # the character's spec because a hand is sized to its owner; the
@@ -256,4 +260,5 @@ def build_arm(
             [(x * side, y, ARM_Z + dz) for x, y, dz in spec.hand.thumb_spine],
             list(spec.hand.thumb_widths),
             0, spec.skin, limb_bone("HandThumb1", side), 5,
+            flip=side < 0,
         )
