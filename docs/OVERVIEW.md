@@ -1834,6 +1834,22 @@ its hero, 40px, run and contact evidence finally measure the asset that ships.
 Junebug is `candidate`, pending human art-direction approval; Theo, Zoom, Big
 Lou, Tank and Mimi remain `needs-polish`. Batch 2 stays paused until all six pass.
 
+**The 40-pixel panel was clipped on every board for the whole sculpt campaign.**
+The zoom strip ran to y=900 while the run/contact thumbnails composited at
+y=840, and sharp composites in source order, so the bottom 31px — 4.4 of the 40
+source pixels, the shoes and ankles — were painted over on all 30 boards. It
+hid because the strip is bottom-padded: the cut lands mid-shin and reads as a
+short kid, not a clipped one. It surfaced from the opposite end, when the
+reviewer said the read "looks blurry" on the sign-off page — which was a
+separate defect (JPEG at 4:2:0 plus a browser downscale over a 7× nearest zoom)
+that sent someone looking at the panel closely for the first time. All 30 boards
+were re-rendered on a 1600×1150 canvas with the animation row moved below the
+strip, and `scoredBoardSha256` was rebound for all 30. **The GLBs are untouched
+and the front/profile/hero renders are pixel-identical** — this is the Junebug
+demotion's shape (better evidence, not a regression), but it does mean the
+`heroAndFieldScale` scores were reached against a panel with no feet in it, and
+that category is the one worth re-reading on the corrected boards.
+
 ### 2026 parity pass — two city parks, not two palettes
 
 The BB2026 video only exposes two of its eleven fields clearly, so those are the

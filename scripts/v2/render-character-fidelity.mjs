@@ -18,6 +18,32 @@ const renderer = join(here, 'blender', 'render-fidelity-views.py');
 const fidelity = JSON.parse(readFileSync(fidelityPath, 'utf8'));
 
 
+// ★ THE 40-PIXEL PANEL IS 280px TALL AND NOTHING MAY BE COMPOSITED OVER IT.
+//
+// The zoom strip is the one panel whose evidence IS its pixels: it is the 40px
+// field read blown up 7x with a nearest kernel so a reviewer can count what
+// survives at gameplay scale. It ran 620..900 while the animation thumbnails
+// composited at top:840 — and sharp composites in source order, so on all 30
+// boards the run/contact stills painted over the bottom 31px of it. That is 4.4
+// of the 40 source pixels: the shoes and ankles, gone from every board, on the
+// one panel where a missing pixel is the finding. The "Authored model
+// deformation" label at y:825 overprinted the shins on top of that.
+//
+// It went unnoticed because the strip is bottom-padded — the figure does not
+// reach y:900, so the cut lands mid-shin and reads as a short character rather
+// than a clipped one. Several critic notes reason explicitly about feet at 40px
+// ("the feet no longer fuse", "ankle daylight 48.5%"); whatever those measured,
+// it was not this panel.
+//
+// So the animation row moved BELOW the strip rather than the strip shrinking:
+// the zoom factor is the instrument, and trading it away to reclaim 60px would
+// have quietly made the panel a worse ruler to fix a layout bug. The board grew
+// instead. Keep ANIM_LABEL_Y's cap-height clear of ZOOM_TOP + 280 = 900.
+const BOARD_H = 1150;
+const ZOOM_TOP = 620;          // strip occupies 620..900
+const ANIM_LABEL_Y = 935;      // 20px cap height -> glyphs start ~915, clear of 900
+const ANIM_TOP = 950;          // thumbnails are 180 tall -> 950..1130, inside BOARD_H
+
 function svgText(width, height, content) {
   return Buffer.from(`<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
     <style>.title{font:700 32px system-ui;fill:#f7f0dc}.label{font:700 20px system-ui;fill:#f7f0dc}.small{font:600 16px system-ui;fill:#b9c7d8}.pass{fill:#89d185}.hold{fill:#f4bf67}</style>
@@ -27,6 +53,33 @@ function svgText(width, height, content) {
 
 async function fit(path, width, height, background = { r: 18, g: 27, b: 39, alpha: 1 }) {
   return sharp(path).resize(width, height, { fit: 'contain', background }).png().toBuffer();
+}
+
+// The guard for the rule above. Only layers composited AFTER the strip can cover
+// it, which is why this walks the tail of the list rather than the whole of it.
+// The `labels` layer is full-canvas and transparent, so it is exempt by name —
+// its own overprinting risk is ANIM_LABEL_Y, checked separately.
+function assertZoomStripUncovered(layers, slug) {
+  const index = layers.findIndex((layer) => layer.width && layer.top === ZOOM_TOP);
+  const strip = layers[index];
+  const bottom = ZOOM_TOP + strip.height;
+  for (const layer of layers.slice(index + 1)) {
+    if (!layer.width) continue;                       // full-canvas transparent text
+    const clash = layer.left < 850 + strip.width && layer.left + layer.width > 850
+      && layer.top < bottom && layer.top + layer.height > ZOOM_TOP;
+    if (clash) throw new Error(
+      `${slug}: a layer at (${layer.left},${layer.top}) ${layer.width}x${layer.height} covers the ` +
+      `40px zoom strip (850,${ZOOM_TOP} ${strip.width}x${strip.height}). Move that layer below ` +
+      `y=${bottom} and grow BOARD_H to fit — do not shrink the strip, its zoom factor is the instrument.`
+    );
+  }
+  if (ANIM_LABEL_Y - 20 < bottom) throw new Error(
+    `${slug}: ANIM_LABEL_Y=${ANIM_LABEL_Y} puts label glyphs over the 40px zoom strip, which ends at ` +
+    `y=${bottom}. Set it to at least ${bottom + 20}.`
+  );
+  if (ANIM_TOP + 180 > BOARD_H) throw new Error(
+    `${slug}: the animation row runs to y=${ANIM_TOP + 180}, past BOARD_H=${BOARD_H}. Grow BOARD_H.`
+  );
 }
 
 async function board(id) {
@@ -74,29 +127,35 @@ async function board(id) {
     `${category.score === null ? 'n/a' : `${category.score}/5`}</text>`
   ).join('');
   const statusClass = review.status === 'approved' ? 'pass' : 'hold';
-  const labels = svgText(1600, 1050, `
+  const labels = svgText(1600, BOARD_H, `
     <text class="title" x="40" y="42">${character.name} — concept/runtime fidelity gate</text>
     <text class="${statusClass} label" x="1210" y="42">${review.status.toUpperCase()}</text>
     <text class="label" x="40" y="78">Approved turnaround</text>
     <text class="label" x="840" y="78">Delivered front / profile silhouette</text>
     <text class="label" x="40" y="500">Runtime hero read</text>
     <text class="label" x="840" y="500">40-pixel gameplay read</text>
-    ${animationImages.length ? '<text class="label" x="840" y="825">Authored model deformation — run / contact</text>' : ''}
+    ${animationImages.length ? `<text class="label" x="840" y="${ANIM_LABEL_Y}">Authored model deformation — run / contact</text>` : ''}
     ${categoryLines}
   `);
 
   const output = join(concepts, `${slug}-fidelity-review.png`);
-  await sharp({ create: { width: 1600, height: 1050, channels: 4, background: '#121b27' } })
-    .composite([
-      { input: concept, left: 40, top: 92 },
-      { input: front, left: 850, top: 84 },
-      { input: profile, left: 1190, top: 84 },
-      { input: hero, left: 40, top: 520 },
-      { input: field40, left: 960, top: 560 },
-      { input: fieldZoom, left: 850, top: 620 },
-      ...animationImages.map((input, index) => ({ input, left: 840 + index * 340, top: 840 })),
-      { input: labels, left: 0, top: 0 },
-    ]).png().toFile(output);
+  const zoomMeta = await sharp(fieldZoom).metadata();
+  const layers = [
+    { input: concept, left: 40, top: 92 },
+    { input: front, left: 850, top: 84 },
+    { input: profile, left: 1190, top: 84 },
+    { input: hero, left: 40, top: 520 },
+    { input: field40, left: 960, top: 560 },
+    { input: fieldZoom, left: 850, top: ZOOM_TOP, width: zoomMeta.width, height: zoomMeta.height },
+    ...animationImages.map((input, index) => ({
+      input, left: 840 + index * 340, top: ANIM_TOP, width: 320, height: 180,
+    })),
+    { input: labels, left: 0, top: 0 },
+  ];
+  assertZoomStripUncovered(layers, slug);
+  await sharp({ create: { width: 1600, height: BOARD_H, channels: 4, background: '#121b27' } })
+    .composite(layers.map(({ input, left, top }) => ({ input, left, top })))
+    .png().toFile(output);
   console.log(`✓ ${output}`);
 }
 

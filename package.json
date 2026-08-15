@@ -25,6 +25,7 @@
     "export:roster-kid": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/export-roster-kid.mjs",
     "export:authored-character": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/export-authored-character.mjs",
     "review:character-fidelity": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/render-character-fidelity.mjs",
+    "review:signoff-page": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/render-signoff-page.mjs",
     "capture:character-evidence": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/capture-character-evidence.mjs",
     "capture:parity-stills": "node scripts/v2/capture-parity-stills.mjs",
     "measure:fidelity": "node scripts/v2/measure-fidelity.mjs",

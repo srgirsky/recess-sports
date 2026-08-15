@@ -287,6 +287,14 @@ approver and a hash of the exact board. A raw Blender export is not the
 delivery path. The full checklist that defines a finished character is
 `docs/v2/character-quality-rubric.md`.
 
+`npm run review:signoff-page` collects all 30 boards, scores and critic notes
+into one scrollable HTML page for a human pass (`--out <path>`, default
+`docs/v2/concepts/roster-signoff.html`); publish it as an Artifact by hand. It
+embeds each board as JPEG for size, but the **40-pixel read additionally as its
+own lossless native-40px PNG** magnified with `image-rendering: pixelated` —
+judge the field read from that strip, never from the board's JPEG copy. The
+generated page is not committed; regenerate it after any board changes.
+
 `measure:fidelity` reads the same board's front render and the approved
 turnaround with ONE detector and prints each metric as concept vs delivered vs
 delta, exiting non-zero when any is outside tolerance. Every target is derived

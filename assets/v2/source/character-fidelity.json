@@ -56,7 +56,7 @@
           "note": "Critic (round 7, independent): identity survives both ends \u2014 at hero the brows, headband, bun and ponytail all read, and at 40px the light headband over a dark bun on a red top survives the pixel zoom. Both round-4 reasons for a 3 here are measurably gone: the feet no longer fuse (ankle daylight 48.5% against the concept's 46.9%, from 3%) and the face is no longer a dark-framed mask (36.4% visible face per side against 31.1/31.9)."
         }
       },
-      "scoredBoardSha256": "4e4adaedc7d69ef5b843f52226cc2b85134124f29866fecc616b77df9e8bf0d5",
+      "scoredBoardSha256": "8e8b1ab1e318b714f0029ff52296460bda2d2ff15c6a918a6db465b3c072eea5",
       "expressionEvidence": [
         "junebug-runtime-face-grin.png",
         "junebug-runtime-face-cheer.png",
@@ -130,7 +130,7 @@
         "Eyes a step smaller and less glossy than the concept's saucer eyes.",
         "Teal front panels slightly narrower than the concept's - reads a touch vest-like."
       ],
-      "scoredBoardSha256": "5104d5395b6520d9365f81f024787807789c2c6318aa86b8526f7b57b6375c72"
+      "scoredBoardSha256": "5dad8c55f88b05b0c506e627d29d0c404d9de97ace38dde474be81c7dbc73e27"
     },
     "wheelchair_ace": {
       "status": "candidate",
@@ -185,7 +185,7 @@
         "Casters render charcoal; the concept's have blue hubs.",
         "Sneakers read as soft blue volumes - add lace straps and a white sole line."
       ],
-      "scoredBoardSha256": "50b735970ac9dbbbd92ee58abba64d7fbdcbf8844122d2c410c9b86e0affd16f"
+      "scoredBoardSha256": "261cdfdd93b8301e21cced83d89e07896ecaea924f0bcf36406050ffc0ee0a81"
     },
     "big_lou": {
       "status": "candidate",
@@ -240,7 +240,7 @@
         "Stripe cadence one or two bands busier than the concept's broad five.",
         "Skin could take one more darkening step toward the sheet's deep brown."
       ],
-      "scoredBoardSha256": "f764eec1b29f0a50ee23a673c1f313d8b1d29ac95f2c8b535f8635a08d05ce56"
+      "scoredBoardSha256": "b3bcb575ee392165a26a8f4c3950092c0669bbf88d2d28f976e8ad83fb4ce769"
     },
     "tank": {
       "status": "candidate",
@@ -289,7 +289,7 @@
         "Facet banding visible on the bald dome at hero scale.",
         "Neutral resting face reads slightly grumpier than the sheet's sleepy calm."
       ],
-      "scoredBoardSha256": "65a8e9b6a7f7e1a7981673eefcbb8f5ed4be3a531a25b0ec02fc7741ca018ce7",
+      "scoredBoardSha256": "1dac7bc3be4928e2e35ba0a56060a1e7497c54bdc75011fd693d5ff02bc6609f",
       "heroEvidence": "tank-runtime-hero.png",
       "animationEvidence": [
         "tank-runtime-run.png",
@@ -348,7 +348,7 @@
         "Runtime halo shows planar faceting; the clump lobes barely register under the toon ramp - a strand-grouping treatment would unlock the 5s.",
         "Runtime toon lighting pushes the skin hotter-orange than the sheet's lit base."
       ],
-      "scoredBoardSha256": "cc9723648ad951c4d428f7287c0d754b8c1dc1b1dfe792fe194f22b0f8492c51"
+      "scoredBoardSha256": "45a5bd721bfd7c35abbded063d9559b48071d6919d7c020b905edfc7e2d1c78a"
     },
     "grizz": {
       "status": "candidate",
@@ -405,7 +405,7 @@
         "Shorts hem construction; pocket as a sewn form rather than a decal.",
         "40px lower-body definition (navy shorts sink into shadow at field scale)."
       ],
-      "scoredBoardSha256": "6f7f96787dcd67b15ef5a6ab66d4931c22830222c23fb70ab8dbf4a422942bf0"
+      "scoredBoardSha256": "42dbf45937ffc552485218d31e24574126861b8f8f17a6d06ae2bad659ad4518"
     },
     "sprout": {
       "status": "candidate",
@@ -461,7 +461,7 @@
         "Arms are thin segmented tubes vs the concept's plump limbs; elbow reads hinged in the run capture.",
         "40px identity leans on overalls+hair; the yellow tee accent nearly vanishes at field scale."
       ],
-      "scoredBoardSha256": "e3c1d6472d2623575c16da97672a83cdb41f482f2d9f594f285a28bcc56a5faa"
+      "scoredBoardSha256": "7ef05784012dd44f78eb736aa61731e6c67c813ee3986c0fd66ec3385537c894"
     },
     "bubbles": {
       "status": "candidate",
@@ -516,7 +516,7 @@
         "Bow tails read as stiff parallel bars; the pocket reads as a flat sticker rather than a flap over a pouch.",
         "Rear hair mass still a smooth balloon; laces do not read; the skirt is a rigid cone with a hard disc rim."
       ],
-      "scoredBoardSha256": "43ab926326cfc0d0d2ede7b58f0cba41bb8d973ff2b25667bfba1194dce2273c"
+      "scoredBoardSha256": "c03dd1273c3e1d489fa5608c28e4c231443839c35e360017cac1bd93be960544"
     },
     "chip": {
       "status": "candidate",
@@ -572,7 +572,7 @@
         "Runtime skin more orange than the concept's warm tan; cap side panels catch rim light as a third panel.",
         "A hatched shadow patch survives at the lower-back hem in the swing capture."
       ],
-      "scoredBoardSha256": "28e68875ba28f833123220958b21618f7afbb06c410a2d670004e5ba2cf55bd4"
+      "scoredBoardSha256": "a5ecdf187526eb79cd16d5923e1232ec721ca7628818fcf260e0ac86c7bcb1d9"
     },
     "bend_it": {
       "status": "candidate",
@@ -630,7 +630,7 @@
         "Shirt hem corners and shorts read as hard butt-joined primitives at board resolution (caps silhouette at 4).",
         "Ear could carry rim/lobe form against the skull for a later 5."
       ],
-      "scoredBoardSha256": "c8e563c754faba5339459957c29f0aeeb37c64d2239d14756ec864377cc3c386"
+      "scoredBoardSha256": "9f5a1fe9c754312571f5ce84dbaaa561bb2d50ee6505320e1a73d80f98ea9b31"
     },
     "flash": {
       "status": "candidate",
@@ -686,7 +686,7 @@
         "Shorts-to-thigh and neck-to-torso junctions are butt-joined caps.",
         "A slightly wider crest base along the front axis would keep the mohawk from collapsing to one pixel at 40px."
       ],
-      "scoredBoardSha256": "ded84998687ad20a5cd6d5a3e08ca4bd513e4ba0286e80e61c7b2a8dfdd110cf"
+      "scoredBoardSha256": "dc7fde09e3c53cbacba76467d03ba4819e3f1a74cbc661ead565b3f4120b0e25"
     },
     "zippy": {
       "status": "candidate",
@@ -743,7 +743,7 @@
         "Hair strand grouping (hairMass hard-cap); soften the back-of-head corner in the same pass.",
         "Ear reads as a flat patch in profile - rim/lobe construction (rubric 3.10)."
       ],
-      "scoredBoardSha256": "ab41215c87ed2cbda91358030471409bd5e5f932cf77a8c640f3a21e3bf3b179"
+      "scoredBoardSha256": "6764c58b40048a0acea6c2c0ccbbb448514edd16f957fff38288c13eede9b617"
     },
     "diva": {
       "status": "candidate",
@@ -799,7 +799,7 @@
         "A small nose form integrated with the skull planes (face 5-item).",
         "The 40px strip is a T-pose sprite; a gameplay-pose strip would be stronger field evidence."
       ],
-      "scoredBoardSha256": "f6edd83b3ba906b4a7c9156fdedb0a4d08eca45d3c3dabecb84b79fe75ecc0d1"
+      "scoredBoardSha256": "88fb58121e5efb69b6790c24d79f72234b2f53e6070318e57cbd5a399e746ae6"
     },
     "noodle": {
       "status": "candidate",
@@ -856,7 +856,7 @@
         "A slightly taller mouth cell would secure the grin at draft-card distance (mouthScale exists now).",
         "The runtime ochre cast vs the concept peach is the recorded renderer story - three chroma rounds already run; do not fix the palette again."
       ],
-      "scoredBoardSha256": "ee9085a82ad480ff2628c55153fe8fe6883d0af0d001e9abde6edeb4cbdc9eae"
+      "scoredBoardSha256": "c5a558942d21c8cdf641f66ddef596785a970fc62bc575afda8747e4794686e6"
     },
     "turbo": {
       "status": "candidate",
@@ -911,7 +911,7 @@
         "Larger glossy irises with highlight; a nose form that breaks the profile; the dimple.",
         "ROSTER-WIDE (do not fix per character): the deltoid toon-terminator band - now DIAGNOSED (pixel-sampled as darkened garment colour on the arm-root hump above the narrowing torso; two geometry rounds moved it only slightly) - and the 6.75-degree ankle splay; both sculptlib/rig-level polish items."
       ],
-      "scoredBoardSha256": "93586b6c023161ce57be3ee4a8794d49f6c68088586a9bede504245d0bde0da6"
+      "scoredBoardSha256": "f23b8a728a7379435218230201cd88750d21026b5299242289e00df0189c95a1"
     },
     "moose": {
       "status": "candidate",
@@ -967,7 +967,7 @@
         "Backlit swing frames go uniformly dark on the face - check against the recorded terminator artifact with a front-lit capture.",
         "ROSTER-WIDE: deltoid terminator band and ankle splay - sculptlib/rig polish round."
       ],
-      "scoredBoardSha256": "24a4785be6eb5590b6edd392e5f6ea1418ea84dfe50c4c2904715aebb59407e6"
+      "scoredBoardSha256": "16d2becadb19d63aa7ee9e125e02db115eb3d18879f14c521892058c6a2e7019"
     },
     "penny": {
       "status": "candidate",
@@ -1023,7 +1023,7 @@
         "Firmer nose; a touch more iris area.",
         "ROSTER-WIDE: shoulder terminator and ankle splay - sculptlib/rig polish round."
       ],
-      "scoredBoardSha256": "ff2b25038ff396943a462985609e295280c6e9d403a3b24d23da9be053929383"
+      "scoredBoardSha256": "937140ca84df9e016125436b3abe8e15fb254f5e0e3bcd04406975b4fa4e4413"
     },
     "the_prof": {
       "status": "candidate",
@@ -1079,7 +1079,7 @@
         "Thicken/darken brow marks for contrast above the rings.",
         "ROSTER-WIDE: shoulder terminator, ankle splay; and the swing capture shows no bat prop - flag for the clip owner."
       ],
-      "scoredBoardSha256": "c9b02abff6422469a260417b367970cbc88c3a80e081f12f13cb71b41741c8dd"
+      "scoredBoardSha256": "0bc488a38daed3aa7425a6c3af08e1b3871989dab0647b111c19b1147e9e32d2"
     },
     "ace_kid": {
       "status": "candidate",
@@ -1136,7 +1136,7 @@
         "Relief for eyes/brows against the faceplate (face 5-item).",
         "ROSTER-WIDE: shoulder terminator, ankle splay."
       ],
-      "scoredBoardSha256": "97fcf23873caf08e2398f4b8c1ce274fede45e57e0849edc896250a2ef99cdb1"
+      "scoredBoardSha256": "e9f6e835c11953691304b452f2ce61917737ddfc5de87a917cdadfb1163e9267"
     },
     "rocket": {
       "status": "candidate",
@@ -1186,7 +1186,7 @@
         "give the nose more form in profile (reads sticker-flat)",
         "shorten/soften the neck read (constrained by the headBox pinch instrument - see measuredFidelity note)"
       ],
-      "scoredBoardSha256": "1c70931d79460c7908e23dfc5a34c8e40b83a60228e7db5de6426003d596e987",
+      "scoredBoardSha256": "9315fcb316c3ea7aa000024c54ecfda94ee743c60a9fbc0eaf6e7e157b3dbb39",
       "heroEvidence": "rocket-rosa-runtime-hero.png",
       "animationEvidence": [
         "rocket-rosa-runtime-run.png",
@@ -1245,7 +1245,7 @@
         "back-of-head strand clumps to chase the 5 on hair mass",
         "bib pocket relief (flap/button) and the sheet strap buttons at hero scale"
       ],
-      "scoredBoardSha256": "0c4be33789836632e5e49da023fbb3e445110ce5184f161e11d4399a76d53d43"
+      "scoredBoardSha256": "335258e7fecdec5a04b973bdd88d338d97215eeb0e4070ea698da5a80aa50f82"
     },
     "dex": {
       "status": "candidate",
@@ -1300,7 +1300,7 @@
         "the cap-crown patch is the declared recessTeamAccent badge (cap-lane convention), confirmed - consider seating it lower on the front panel",
         "nose form to break the profile; soften the 3/4 lid line toward the concept round eye"
       ],
-      "scoredBoardSha256": "395a0716c43eb009a567bf2ad84a5abd5ad916857f1d840c18517cea3bc3c56b"
+      "scoredBoardSha256": "5b280c32c540ddb6d59fc24579a81233a9c437d0b05cd3461df7d6d517c8baaf"
     },
     "clover": {
       "status": "candidate",
@@ -1354,7 +1354,7 @@
         "nose form to break the profile (decal-face read)",
         "soften pigtail/sleeve joins toward organic transitions; chubbier limbs"
       ],
-      "scoredBoardSha256": "f96803a38ded2a6f0cb5784aff0b2c19267a213b5dc113c1d2ad29c0c7c917b0"
+      "scoredBoardSha256": "405dbf588b479da1ed044ae9e73ac02bb82853a34b4f3629c1ae4240b36bec0b"
     },
     "boomer": {
       "status": "candidate",
@@ -1408,7 +1408,7 @@
         "chubbier arms with softer torso joins",
         "mohawk legibility at 40px (reads as a dark cap)"
       ],
-      "scoredBoardSha256": "e2506e0f0a85c34b15d6874675e7ed612f640a134f5cde032c8fe6391a486c89"
+      "scoredBoardSha256": "7e307d8ffe9848873c7643a8379404aefab9e3ba03b935b40016ab2477413858"
     },
     "smokey": {
       "status": "candidate",
@@ -1462,7 +1462,7 @@
         "crop texture/strand grouping to chase the 5",
         "nose form to break the profile"
       ],
-      "scoredBoardSha256": "79435a112e169a4f54daf95b7fb8da9f7cea165075fa06f15f9b7263821a23c1"
+      "scoredBoardSha256": "f30eadc13c584303140300c6ca1f37edc3ec9fa152a3ae79768857bf37a7f8d5"
     },
     "sniffles": {
       "status": "candidate",
@@ -1516,7 +1516,7 @@
         "the forehead wedge under the lifted fringe risks a bald-notch misread under toon lighting",
         "chunkier swept locks instead of thin tuft spikes; ribbing on cuffs/hem"
       ],
-      "scoredBoardSha256": "13bc62fbf618b3553cecfd8c8c4b1487be9ccb39f0bb0c05e137ca672cd820c5"
+      "scoredBoardSha256": "3f9439a3e24e3e28d24c1ccbc59ef61803f6e1fb82d78d7359aa461e742c6a3e"
     },
     "cricket": {
       "status": "candidate",
@@ -1570,7 +1570,7 @@
         "strand grouping on the back hair volume",
         "stronger sculpted nose"
       ],
-      "scoredBoardSha256": "51dcb9bbedb06e05829065a0882af4901b87dfaaf25ae856b4a4cef0716b0794"
+      "scoredBoardSha256": "836aa06e31c908af4457fc02e71da96dbb406a130301f3185732f3b315302242"
     },
     "peaches": {
       "status": "candidate",
@@ -1625,7 +1625,7 @@
         "Bun clumping short of the concept's coiled-knot texture.",
         "Freckles and blush remain absent; the nose only barely breaks the profile."
       ],
-      "scoredBoardSha256": "118c9e5cc7d55bc37a141102a97ccd02d49f3637a1d5238874bfadba2369d6d5"
+      "scoredBoardSha256": "2dda36df668bb111facd48be8448fd7d9e358ac57b86397cdf445bd8183ce37c"
     },
     "lefty": {
       "status": "candidate",
@@ -1679,7 +1679,7 @@
         "The cap-crown tuft reads as a flat yellow decal - integrate it with a snapback-gap strap context.",
         "Profile pony volume still thinner than the sheet's."
       ],
-      "scoredBoardSha256": "42720891aefd053dfa7b6c2a9281392965e22c75c6599cafa5cc2cd2469c67fb"
+      "scoredBoardSha256": "9c3ffe5d85f544afc17935d1286f3a66c254d44d98f0c26720b8f810839c25e7"
     }
   }
 }
