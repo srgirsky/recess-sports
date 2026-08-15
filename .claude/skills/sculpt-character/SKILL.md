@@ -608,3 +608,30 @@ Each of these cost at least one blind round. They are constraints, not history.
 - **Occluders move; landmarks don't.** Peaches' "no ear / mesh tear" was
   the temple wisps parked OVER the ears — moving the wisps forward fixed
   the ear AND brought faceSkin-left into tolerance in the same build.
+
+## Lessons the stance-and-mouth pass paid for (post-campaign)
+
+- **The ankle-daylight tolerance is unreachable by construction, and now the
+  record says so.** The concept side reads 0.00 through flood CONTAINMENT of
+  a drawn-closed outline; the moment a render closes the same outline, the
+  enclosed between-legs window trips the silhouette gate's binary puncture
+  rule. The render stance now adducts each kid to a calibrated ceiling
+  (LEGS_IN_BY_ID in render-fidelity-views.py, flat feet via foot
+  counter-rotation so the shoe-band read survives) — but a residual OFF is
+  the recorded instrument conflict, not a stance regression. The real
+  closure is the rig-and-sculpt leg pass the metric's own header names.
+- **Enclosure vs adduction is NON-MONOTONIC** (Tank 10°→23px, 7°→227,
+  4°→4; Sprout 10°→4-10 jittering the budget, 8.5°→74, 4°→0): the contact
+  point walks down the shin as the angle shrinks. Calibrate with a ladder
+  and re-verify at the chosen angle — a single probe lies, and renders
+  jitter ±6px at grazing contact.
+- **Stances are per-character where the sheet says so** (the A_POSE_BY_ID
+  rule again): Junebug and Theo are DRAWN open-stanced and keep 0°.
+- **measure:fidelity exits nonzero when metrics sit outside tolerance** —
+  a report, not a crash. A sweep script must capture stdout from the
+  "failure" or die on its first honest kid.
+- **The mouth-cell knobs are now roster-wide** (every kid except frozen
+  Junebug): the 14 pre-batch-4 kids gained alignOpenMouth/tongueOut/
+  tongueReach 1.3 in one sweep — grin/cheer/tongue verified distinct on
+  the recaptured stills. When a knob becomes universal, sweep it; two
+  critics had flagged the same defect on two kids scored months apart.

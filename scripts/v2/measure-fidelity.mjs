@@ -343,7 +343,19 @@ const hex = (c) => '#' + c.map((v) => Math.round(v).toString(16).padStart(2, '0'
  *  kid standing with her feet apart. Read a failure here as "look at the stance",
  *  not as a colour or sculpt defect — and do NOT widen the tolerance to clear it,
  *  because the fix is the leg placement in the sculpt and the matching bone
- *  positions, which is a rig change and wants its own pass. */
+ *  positions, which is a rig change and wants its own pass.
+ *
+ *  ⚠️ AND THE 2026-08-15 STANCE PASS PROVED THE TOLERANCE UNREACHABLE BY
+ *  CONSTRUCTION for most kids. The render stance now adducts the legs to each
+ *  kid's calibrated ceiling (render-fidelity-views.py LEGS_IN_BY_ID), but the
+ *  concept side reads 0.00 through flood CONTAINMENT of a drawn-closed outline
+ *  — and the moment a rendered kid closes the same outline, the enclosed
+ *  between-legs window trips the silhouette gate's puncture rule, which is
+ *  binary and may only shrink. The two instruments contradict at exactly zero
+ *  gap: a delivered figure can match the drawing's number or the puncture rule,
+ *  never both. So a residual OFF here is the recorded instrument conflict, not
+ *  a stance regression; the real closure remains the rig-and-sculpt leg pass
+ *  above, which would move the CONTACT point rather than the render pose. */
 function ankleDaylight(f) {
   const y = Math.round(f.y1 - 0.13 * f.figH);
   const s = f.rowSpan(y);

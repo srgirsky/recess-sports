@@ -283,6 +283,12 @@ export const FACE_SPECS = {
     browX: [44, 84],
     browY: 30,
     browTilt: 4,
+    // The mouth-cell pass: grin/cheer/tongue were near-identical on the
+    // pre-batch-4 atlases (two critics pixel-diffed it) - the batch-4 knobs
+    // open cheer and break the tongue past the lip line.
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.3,
     mouthY: 79,
     // The pout: corners fall 4.5 cells — the concept's neutral is a clear
     // downturned frown (rows 353-358 of the sheet diverge downward from the
@@ -322,6 +328,12 @@ export const FACE_SPECS = {
     browX: [30, 98],
     browY: 20,
     browTilt: 0,
+    // The mouth-cell pass: grin/cheer/tongue were near-identical on the
+    // pre-batch-4 atlases (two critics pixel-diffed it) - the batch-4 knobs
+    // open cheer and break the tongue past the lip line.
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.3,
     mouthY: 81,
     // A smile: the corners RISE 3.6 cells above the centre (negative drop),
     // with the centre easing down — the inverse of Grizz's pout.
@@ -361,6 +373,12 @@ export const FACE_SPECS = {
     browX: [32, 96],
     browY: 28,
     browTilt: 0,
+    // The mouth-cell pass: grin/cheer/tongue were near-identical on the
+    // pre-batch-4 atlases (two critics pixel-diffed it) - the batch-4 knobs
+    // open cheer and break the tongue past the lip line.
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.3,
     mouthY: 92,
     // A broad smile: corners rise well above the centre.
     mouthBow: -1.4,
@@ -398,6 +416,12 @@ export const FACE_SPECS = {
     browY: 24,
     browTilt: 0,
     mouthScale: 1.15,
+    // The mouth-cell pass: grin/cheer/tongue were near-identical on the
+    // pre-batch-4 atlases (two critics pixel-diffed it) - the batch-4 knobs
+    // open cheer and break the tongue past the lip line.
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.3,
     mouthY: 89,
     // A grin: corners rise clearly above the centre.
     mouthBow: -1.4,
@@ -438,6 +462,12 @@ export const FACE_SPECS = {
     browX: [32, 96],
     browY: 26,
     browTilt: 0,
+    // The mouth-cell pass: grin/cheer/tongue were near-identical on the
+    // pre-batch-4 atlases (two critics pixel-diffed it) - the batch-4 knobs
+    // open cheer and break the tongue past the lip line.
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.3,
     mouthY: 81,
     // The knowing smile: a gentle rise, softer than Chip's grin.
     mouthBow: -1.0,
@@ -474,6 +504,12 @@ export const FACE_SPECS = {
     browX: [32, 96],
     browY: 25,
     browTilt: 2,
+    // The mouth-cell pass: grin/cheer/tongue were near-identical on the
+    // pre-batch-4 atlases (two critics pixel-diffed it) - the batch-4 knobs
+    // open cheer and break the tongue past the lip line.
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.3,
     mouthY: 85,
     // The smirk: corners rise a touch — cool, not a grin.
     mouthBow: -1.0,
@@ -509,6 +545,12 @@ export const FACE_SPECS = {
     browX: [32, 96],
     browY: 24,
     browTilt: 0,
+    // The mouth-cell pass: grin/cheer/tongue were near-identical on the
+    // pre-batch-4 atlases (two critics pixel-diffed it) - the batch-4 knobs
+    // open cheer and break the tongue past the lip line.
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.3,
     mouthY: 87,
     // The laugh: corners rise well above the centre, widest on the roster,
     // and the whole mark is scaled up — her identity is the huge grin.
@@ -545,6 +587,12 @@ export const FACE_SPECS = {
     browX: [32, 96],
     browY: 20,
     browTilt: 0,
+    // The mouth-cell pass: grin/cheer/tongue were near-identical on the
+    // pre-batch-4 atlases (two critics pixel-diffed it) - the batch-4 knobs
+    // open cheer and break the tongue past the lip line.
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.3,
     mouthY: 84,
     // A small warm smile, corners up gently.
     mouthBow: -1.0,
@@ -581,6 +629,12 @@ export const FACE_SPECS = {
     browX: [34, 94],
     browY: 28,
     browTilt: -2,
+    // The mouth-cell pass: grin/cheer/tongue were near-identical on the
+    // pre-batch-4 atlases (two critics pixel-diffed it) - the batch-4 knobs
+    // open cheer and break the tongue past the lip line.
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.3,
     mouthY: 67,
     // A small pleased smile.
     mouthBow: -1.0,
@@ -619,6 +673,12 @@ export const FACE_SPECS = {
     browX: [32, 96],
     browY: 19,
     browTilt: 0,
+    // The mouth-cell pass: grin/cheer/tongue were near-identical on the
+    // pre-batch-4 atlases (two critics pixel-diffed it) - the batch-4 knobs
+    // open cheer and break the tongue past the lip line.
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.3,
     mouthY: 87,
     // The dimple smile: corners up, modest.
     mouthBow: -1.0,
@@ -653,6 +713,12 @@ export const FACE_SPECS = {
     browX: [32, 96],
     browY: 24,
     browTilt: 0,
+    // The mouth-cell pass: grin/cheer/tongue were near-identical on the
+    // pre-batch-4 atlases (two critics pixel-diffed it) - the batch-4 knobs
+    // open cheer and break the tongue past the lip line.
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.3,
     mouthY: 84,
     // The easy smile: gentle rise.
     mouthBow: -1.0,
@@ -686,6 +752,12 @@ export const FACE_SPECS = {
     browX: [32, 96],
     browY: 20,
     browTilt: 0,
+    // The mouth-cell pass: grin/cheer/tongue were near-identical on the
+    // pre-batch-4 atlases (two critics pixel-diffed it) - the batch-4 knobs
+    // open cheer and break the tongue past the lip line.
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.3,
     mouthY: 76,
     // A bright open smile.
     mouthBow: -1.3,
@@ -722,6 +794,12 @@ export const FACE_SPECS = {
     browX: [32, 96],
     browY: 21,
     browTilt: 0,
+    // The mouth-cell pass: grin/cheer/tongue were near-identical on the
+    // pre-batch-4 atlases (two critics pixel-diffed it) - the batch-4 knobs
+    // open cheer and break the tongue past the lip line.
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.3,
     mouthY: 91,
     // The eager smile: wide, corners up.
     mouthBow: -1.3,
@@ -756,6 +834,12 @@ export const FACE_SPECS = {
     browX: [32, 96],
     browY: 19,
     browTilt: 0,
+    // The mouth-cell pass: grin/cheer/tongue were near-identical on the
+    // pre-batch-4 atlases (two critics pixel-diffed it) - the batch-4 knobs
+    // open cheer and break the tongue past the lip line.
+    alignOpenMouth: true,
+    tongueOut: true,
+    tongueReach: 1.3,
     mouthY: 84,
     // The captain's calm smile.
     mouthBow: -1.0,
