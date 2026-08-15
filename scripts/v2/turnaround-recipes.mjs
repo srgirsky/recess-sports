@@ -150,6 +150,25 @@ export const RECIPES = {
     sweeps: {},
     bands: {},
   },
+
+  // ★ FLASH IS ANOTHER STRIPED TEE WITH A BACKDROP-CREAM GROUND — only the
+  // red stripes have their own clusters (a lit #cb2c13 plus shading variants),
+  // so the stripe chart is a centreline geometry trace like Bendy's. His hair
+  // (#1c0d03) and charcoal shorts (#3b2d22) are both near-black; they are
+  // declared at their honest sampled values and if the ruler cannot separate
+  // them the refusal is the answer, never an eyeballed override.
+  flash: {
+    slug: 'flash-gordon-jr',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#d47432' },
+      hair: { hex: '#1c0d03' },
+      shorts: { hex: '#3b2d22' },
+      tee: { hex: '#cb2c13' },
+    },
+    sweeps: {},
+    bands: {},
+  },
 };
 
 export const RECIPE_IDS = Object.keys(RECIPES);

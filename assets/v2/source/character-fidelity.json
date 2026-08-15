@@ -540,6 +540,62 @@
         "Ear could carry rim/lobe form against the skull for a later 5."
       ],
       "scoredBoardSha256": "c8e563c754faba5339459957c29f0aeeb37c64d2239d14756ec864377cc3c386"
+    },
+    "flash": {
+      "status": "candidate",
+      "evidence": "flash-gordon-jr-fidelity-review.png",
+      "categories": {
+        "frontProfileSilhouette": {
+          "label": "front/profile silhouette",
+          "score": 4,
+          "note": "Second independent critic (first scored 4): the delivered front/profile matches the turnaround's large read - narrow spiked crest over a faded skull, prominent ears, boxy striped tee, striped crew socks, chunky low-tops - recognisable with no colour. Aspect 0.72 vs 0.80 measured in tolerance; ankle daylight settled as the roster-wide splay. Held at 4: shorts meet the thighs as capped blocks and the neck inserts with a hard junction."
+        },
+        "headBodyProportions": {
+          "label": "head/body proportions",
+          "score": 4,
+          "note": "Second independent critic: head height measured-settled at 34.8 vs 34.9 (his slim neck pinches above the T-pose arm band, so a big-headed kid finally measured). Child proportion reads correctly against the turnaround; joints read as connected forms in idle and run."
+        },
+        "hairMass": {
+          "label": "hair mass",
+          "score": 4,
+          "note": "Second independent critic (first scored 3 and named three defects; all verifiably resolved): the crest reads as a multi-point tuft from the front (alternating spike leans summing to zero - the first lean table's net -0.047 blew faceAsymmetry at 10.7), the fade wraps the temples to the ears with no bare-skull band at any runtime angle found, and the profile pickets group at fat bases against a connected ridge. Held at 4 per rubric: no sculpted strand grouping, and a pale interior seam inside the crest from rear 3/4."
+        },
+        "clothingConstruction": {
+          "label": "clothing construction",
+          "score": 4,
+          "note": "Second independent critic: ringer collar present (top stripe reaches the neckline), cream sleeves with red cuff rings, sock roll-top team accent over authored-red stripes, shoe band tones measured green (63.3/36.7, saturation 20.8). Stripes are crisp after the LOD0 boundary-ring fix - vertex interpolation across sparse rings was the washed-stripe cause. Held at 4: two dark navy wedge notches at the collar/shoulder junction at hero scale - the same defect class recorded on Bendy Bao, now a cross-character polish item."
+        },
+        "faceExpressionRead": {
+          "label": "face/expression read",
+          "score": 4,
+          "note": "Second independent critic: featurelatitude green (brow 55.2/55.0, eye 68.0/68.1, mouth 87.5/87.4, ear 74.8); bold brows, large eyes with highlights, grin opens to lips/teeth/tongue at draft-card distance; the neutral carries the smirk; the nose breaks the profile. Held at 4: eye/brow set reads as flat decals rather than forms integrated with the skull."
+        },
+        "heroAndFieldScale": {
+          "label": "hero + 40px read",
+          "score": 4,
+          "note": "Second independent critic: hero on the real field holds - dark crest against green, red stripes separating cleanly from grass and dirt, 29.6k tris at 14 draws. At 40px the crest point, striped torso, dark shorts and striped socks keep the read. Held at 4: the crest nearly collapses to a nub at 40px and the shorts merge with shadowed thighs."
+        }
+      },
+      "measuredFidelity": {
+        "command": "npm run measure:fidelity -- flash",
+        "ranAt": "2026-08-14",
+        "board": "flash-gordon-jr-fidelity-review.png",
+        "result": "Head height 34.8 vs concept 34.9 and aspect 0.72 vs 0.80 - his slim neck (0.123ft half, the narrowest measured yet) pinches ABOVE the T-pose arm band, so the instrument could measure a big-headed kid for once. Shoe band 63.3/36.7 vs 62.3/36.8 with saturation 20.8 vs 24.3, all inside tolerance after the tan quarter was authored from the classifier pair (#f8ebdc/#b49473). Visible face 37.1/36.4 vs 34.6/39.8, asymmetry 0.71 - the shaved-fade coverage was tuned against this metric across three rounds. Ankle daylight 53.3 vs concept 0.00 is OFF with measured cause: the sheet merges his ankles (socks touch) while the rig binds at the roster-wide 6.75-degree splay; pose, not sculpt.",
+        "note": "Feature placement gated by featurelatitude: brow 55.2 vs traced 55.0, eye 68.0 vs 68.1, mouth 87.5 vs 87.4 (the spec refuses his brow/eye - the fade merges them - and its \"mouth\" is his nostrils; the smirk rows 355-362 are the bounded trace), ear line 74.8, through his declared 3.99-2.60 span."
+      },
+      "heroEvidence": "flash-gordon-jr-runtime-hero.png",
+      "animationEvidence": [
+        "flash-gordon-jr-runtime-run.png",
+        "flash-gordon-jr-runtime-swing.png"
+      ],
+      "polishFindings": [
+        "Collar/shoulder junction: dark navy wedge notches either side of the neck at hero scale - the SAME defect class as Bendy Bao (recorded there too). A dedicated cross-character fix (likely the raglan/collar band meeting or arm-cap backfaces) belongs in a polish round for both kids.",
+        "Hair strand grouping: fade and crest cap are smooth featureless masses; coarse strand grouping is the hairMass 5 requirement. Clean the pale interior seam inside the crest visible from rear 3/4.",
+        "Eyes/brows are flat decals; brow ridge + socket depression integration is the face 5-blocker.",
+        "Shorts-to-thigh and neck-to-torso junctions are butt-joined caps.",
+        "A slightly wider crest base along the front axis would keep the mohawk from collapsing to one pixel at 40px."
+      ],
+      "scoredBoardSha256": "ded84998687ad20a5cd6d5a3e08ca4bd513e4ba0286e80e61c7b2a8dfdd110cf"
     }
   }
 }

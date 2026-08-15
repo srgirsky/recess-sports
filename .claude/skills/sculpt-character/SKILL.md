@@ -264,3 +264,29 @@ Each of these cost at least one blind round. They are constraints, not history.
   CENTRES are the eye line. Trace them by hand, record the bounded probes in
   the featurelatitude entry, and expect the analyser's own brow/mouth picks
   to be frame artifacts.
+
+## Lessons Flash paid for (the mohawk, and stripes done right)
+
+- **Stripe band tuples are `(lo, hi)` ASCENDING** — the membership test is
+  `lo <= z <= hi`, and a top-down tuple silently paints NO stripe at all: the
+  tee rendered plain cream and only the board caught it. Assert or eyeball the
+  first build's torso before measuring anything.
+- **Crisp stripe edges need loft rings AT the band boundaries.** The loft
+  paints per-vertex and interpolates across each quad row, so a colour edge
+  between two distant rings smears across the whole gap — this was the real
+  cause of both striped kids' "washed stripes" critic notes, not chroma.
+  Pattern: a `TORSO_LEVELS_CRISP` used only at LOD0 (a ring ~0.006ft inside
+  each edge, both sides), while LOD1/2 keep the sparse table so LOD2 stays at
+  its exact budget.
+- **A spike/lean table's x offsets must SUM TO ZERO.** Alternating leans gave
+  the crest front width for free (flanking spike rows would blow the LOD0
+  budget), but the first table's net −0.047 lean shifted shading enough to
+  blow faceAsymmetry at 10.7 against 4.0.
+- **Mohawk construction (for future faded/shaved kids):** a tight stubble
+  shell over the skull (ring loft, +0.02, fronts buried below the fringe
+  line), a midline ridge tube, and 2-point spike tubes with fat bases so the
+  pickets group. The fade's fringe table is the tuning knob for the
+  `faceSkin` metric — coverage down the temples trades directly against it.
+- **When the LOD0 budget refuses, trim tessellation before geometry:** torso
+  24→19-20 segments, scalp 20→16, spike sides 5→4, one interpolable shape row
+  — each is invisible at game scale; a lost spike or stripe is not.

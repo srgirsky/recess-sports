@@ -167,7 +167,15 @@
     },
     "flash": {
       "name": "Flash Gordon Jr.",
-      "slug": "flash-gordon-jr"
+      "slug": "flash-gordon-jr",
+      "source": "flash-gordon-jr-pilot.blend",
+      "traits": [
+        "spiky faded mohawk",
+        "bold red striped tee",
+        "charcoal shorts",
+        "red-striped crew socks",
+        "confident smirk"
+      ]
     },
     "cricket": {
       "name": "Cricket",

@@ -161,6 +161,24 @@ const TURNAROUND = {
     span: { crownZ: 3.99, neckZ: 2.49 },
     tolerance: 2.5,
   },
+  // ★ FLASH'S CROWN IS THE MOHAWK TIP (z 3.99 on a skull that ends at ~3.51),
+  // so like grizz and bend_it he declares the span his ratios were measured
+  // against. The spec REFUSES his brow and eye (the fade's dark sides merge
+  // with the features into one region) and lands its "mouth" on his NOSTRILS
+  // (rows 344-349) — Sprout's failure mode. Bounded traces on
+  // flash-gordon-jr-turnaround.png (crown row 153, neck row 391): brow bands
+  // rows 277-291 (centroid 284), eye band rows 302-330 centred row 315, the
+  // smirk rows 355-362 centred ~360.5, ear line the spec's own traced 74.8
+  // (his ears stand 18.3% of head proud — the biggest on the roster so far).
+  flash: {
+    slug: 'flash-gordon-jr',
+    brow: 55.0,
+    eye: 68.1,
+    mouth: 87.4,
+    earLine: 74.8,
+    span: { crownZ: 3.99, neckZ: 2.60 },
+    tolerance: 2.5,
+  },
 };
 
 function constantsFor(slug, { needsEar = true } = {}) {

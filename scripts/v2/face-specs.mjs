@@ -442,4 +442,40 @@ export const FACE_SPECS = {
     mouthBow: -1.0,
     mouthDrop: -3.0,
   },
+
+  // Flash Gordon Jr. `expression: 'cool'` — bold dark brows over big confident
+  // eyes and a smirk. Feature rows traced on his sheet (spec refuses brow/eye:
+  // the fade merges them into one region; its "mouth" is his nostrils): brow
+  // bands rows 277-291 (55% of head), eye band rows 302-330 centred 68.1%,
+  // smirk rows 355-362 (87.4%). Cells through his island (0.92, -1.25, 2.00).
+  flash: {
+    ink: '#140a04',
+    mouthInk: '#77401f',
+    sclera: '#fffcf0',
+    irisBrown: '#3f2410',
+    pupil: '#150d06',
+    white: '#fff6e4',
+    mouth: '#6e2f1c',
+    mouthDark: '#4c1d10',
+    tongue: '#e07980',
+    lowerLip: '#ef9d5e',
+    // Big and confident — eye band is 28px of a 238px head.
+    eyeHalfW: 19,
+    eyeHalfH: 12.5,
+    irisR: 11,
+    irisInward: 3,
+    eyeX: [30, 98],
+    eyeY: 50,
+    // The brows are the boldest mark on the face: thick, dark, gently cocked.
+    browThick: 5.6,
+    browThin: 2.8,
+    browHalf: 15,
+    browX: [32, 96],
+    browY: 25,
+    browTilt: 2,
+    mouthY: 85,
+    // The smirk: corners rise a touch — cool, not a grin.
+    mouthBow: -1.0,
+    mouthDrop: -2.5,
+  },
 };

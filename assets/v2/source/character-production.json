@@ -165,6 +165,21 @@
         "navy cargo shorts",
         "gentle knowing smile"
       ]
+    },
+    "flash": {
+      "source": "flash-gordon-jr-pilot.blend",
+      "sourceSha256": "fba13792603ffa7e5e5d503d662488b90238cc1afa40a5aad428e91e5ae08409",
+      "concept": "flash-gordon-jr-turnaround.png",
+      "conceptSha256": "444a8536e21aeef1fba20e886ee27b8182091401bc48b7ffe87d847402dc3bc6",
+      "output": "kid_flash.glb",
+      "outputSha256": "c3b1e19dfe3bfea18075f8dec2ebcea787fe4e8167b02b2adbb008b837f395bb",
+      "definingTraits": [
+        "spiky faded mohawk",
+        "bold red striped tee",
+        "charcoal shorts",
+        "red-striped crew socks",
+        "confident smirk"
+      ]
     }
   }
 }
