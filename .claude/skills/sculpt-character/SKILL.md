@@ -345,3 +345,64 @@ Each of these cost at least one blind round. They are constraints, not history.
   rz after the FaceSpec anchors are set silently shifts every feature —
   featurelatitude caught the mouth drifting 2.6 points. Re-derive the anchors
   whenever the skull numbers move.
+
+## Lesson Turbo paid for (the shoulder wedge has a mechanism)
+
+- **The recurring shoulder-wedge defect is an A-POSE COVERAGE GAP.** Critics
+  flagged dark wedges at the sleeve/torso junction on Bendy, Flash and
+  Noodle; Turbo's A-pose review view finally tripped the silhouette gate with
+  an enclosed backdrop pocket there. Mechanism: when the arm rotates down,
+  the arm cap (at `cap_x`) pulls away from the torso's sloped shoulder rows.
+  Fix that worked: bury the cap deeper (`cap_x` 0.100 → 0.060) AND widen the
+  torso's shoulder rows so the slope reaches past the arm root. Apply to new
+  kids up front; the polish round should port it to the batch-1/2 kids.
+- **Verify feature traces against a zoomed CROP, not the dark-run scan
+  alone.** Turbo's fringe shadow read as "brows" in the row scan; the crop
+  showed the true brows a full 8% of head lower. A one-minute sips crop
+  beats three wrong island solves.
+
+## Lessons Penny paid for (overalls, and two ways a mirror lies)
+
+- **A garment panel worn OVER another garment is GEOMETRY, not a colour
+  wedge.** The bib as a torso-loft theta wedge smeared across segments on
+  the board and tore into a hard pink block under the swing's deformation;
+  rebuilt as proud front/back panels the mechanism is gone and the bib
+  gains the constructed depth critics ask for. Same pattern for any apron,
+  vest or jacket front.
+- **Clump textures must be mirror-symmetric: row variation goes in the
+  AMPLITUDE, never the phase.** `sin(k·θ + c·row)` rotates the ringlet lobes
+  per row and blew faceAsymmetry at 7.14; `cos(k·(θ−π/2)) · (a+b·cos(c·row))`
+  keeps the mirror and the organic variation.
+- **A translated copy is not a mirror.** Flip the winding only for geometry
+  whose VERTEX ORDER mirrors (side·x in the ring formula); Penny's gold
+  buttons were translated rings sharing one vertex order, and flipping one
+  side's winding made 13 inverted mirror pairs. For per-side `grid()`s use
+  the `flip=` parameter, never reversed row lists.
+- **`npm test | grep` swallows the failure exit** — same trap as `| tail` on
+  exports; a commit slipped through on a red suite and needed amending. Read
+  the `Test Files` line, then run the FAILING file bare before shipping.
+- **Concept sheets light asymmetrically; expect one-sided faceSkin OFFs.**
+  Penny's sheet holds a 6.5-point left/right split in its own shading (Moose's
+  brim was the same class) — the evenly-lit delivered board cannot match the
+  shadow side. Record OFF-with-measured-cause; don't chase it with geometry.
+
+## Lessons the batch-3 open-jacket kids paid for
+
+- **An open jacket is a partial ring shell** — swept front-edge to front-edge
+  around the back, fold-back inner vertices at both front edges so the rim
+  reads as cloth, small collar-flap grids at the top corners. Proven on The
+  Professor and reused verbatim on Ace; the tee underneath is the plain
+  torso loft.
+- **The `bandSplit` shoe window is the BOTTOM 9% of the figure** — sole and
+  vamp only. A drawn quarter-panel colour above z ≈ 0.36 never reaches the
+  pair: The Professor's "grey" and Ace's "blue" uppers both read as
+  cream + warm tan there, and the fix is a two-tone sole (Dazzle's split),
+  not repainting the upper.
+- **The fringe window is COLUMN-QUANTIZED.** The visible curtain edge is the
+  quad wall from the ring ABOVE the sample row, so a fringe nudge that flips
+  no ring column moves the faceSkin metric by exactly nothing — Ace measured
+  three identical 15.6 readings across three nudges. Compute which column
+  (|x| = half·cos(kθ)) must bury and raise the window past ITS ring's z.
+- **Author silhouette tables to their own citations.** The Professor's sweep
+  cited halfWidth 0.6498 and was authored at 0.495; the aspect metric caught
+  it. If the number is in the header, the table must say it.

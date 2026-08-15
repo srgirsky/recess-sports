@@ -587,4 +587,177 @@ export const FACE_SPECS = {
     freckles: true,
     freckleTone: '#cf9058',
   },
+
+  // Turbo. Bold level brows under the spiky fringe, the roster's biggest
+  // irises (near-filling the aperture), a tiny button nose and a confident
+  // dimple smile. Feature rows confirmed against a zoomed crop (the spec
+  // refuses brow/eye - the fringe merges them): brows rows 245-260 (58% of
+  // head), irises rows 279-302 centred 72.4%, smile rows 328-335 (88.5%).
+  // Cells through his island (0.92, -1.656, 2.300).
+  turbo: {
+    ink: '#120a04',
+    mouthInk: '#7a4023',
+    sclera: '#fffcf0',
+    irisBrown: '#3f2510',
+    pupil: '#150d06',
+    white: '#fff6e4',
+    mouth: '#6e2f1c',
+    mouthDark: '#4c1d10',
+    tongue: '#e07980',
+    lowerLip: '#efa062',
+    // Huge dark irises nearly filling the aperture.
+    eyeHalfW: 18,
+    eyeHalfH: 13.5,
+    irisR: 12.5,
+    irisInward: 2,
+    eyeX: [30, 98],
+    eyeY: 50,
+    browThick: 5.0,
+    browThin: 2.6,
+    browHalf: 14,
+    browX: [32, 96],
+    browY: 19,
+    browTilt: 0,
+    mouthY: 87,
+    // The dimple smile: corners up, modest.
+    mouthBow: -1.0,
+    mouthDrop: -2.8,
+  },
+
+  // Moose. Soft bold brows under the cap brim, big warm eyes, and an easy
+  // gentle smile on the deepest skin of the authored roster so far. Feature
+  // rows traced on his sheet: brows rows 263-270 (52% of head), eyes rows
+  // 277-303 centred 66.7%, smile rows 323-324 (87%). Cells through his
+  // island (0.92, -1.3056, 2.000).
+  moose: {
+    ink: '#0e0703',
+    mouthInk: '#5c2c18',
+    sclera: '#fff8ea',
+    irisBrown: '#2e1a0c',
+    pupil: '#100a05',
+    white: '#fff4e0',
+    mouth: '#57241a',
+    mouthDark: '#39160e',
+    tongue: '#dd6f79',
+    lowerLip: '#c47c46',
+    eyeHalfW: 18,
+    eyeHalfH: 12,
+    irisR: 11,
+    irisInward: 3,
+    eyeX: [30, 98],
+    eyeY: 50,
+    browThick: 5.0,
+    browThin: 2.6,
+    browHalf: 13,
+    browX: [32, 96],
+    browY: 24,
+    browTilt: 0,
+    mouthY: 84,
+    // The easy smile: gentle rise.
+    mouthBow: -1.0,
+    mouthDrop: -3.0,
+  },
+
+  // Penny. Big bright eyes with lash lines under soft brows, and a wide open
+  // smile framed by the curl bob. Feature rows traced on her sheet: brows
+  // rows 212-219 (40.9% of head), eyes rows 236-267 centred 56.4%, smile
+  // rows 288-295 (73.5%). Cells through her island (0.92, -1.3098, 2.300).
+  penny: {
+    ink: '#170c04',
+    mouthInk: '#8a4530',
+    sclera: '#fffdf4',
+    irisBrown: '#4a2a12',
+    pupil: '#170d06',
+    white: '#fff8ea',
+    mouth: '#7a3423',
+    mouthDark: '#552114',
+    tongue: '#e57f86',
+    lowerLip: '#f2ac74',
+    eyeHalfW: 19,
+    eyeHalfH: 13,
+    irisR: 11.5,
+    irisInward: 3,
+    eyeX: [28, 100],
+    eyeY: 50,
+    browThick: 4.2,
+    browThin: 2.0,
+    browHalf: 13,
+    browX: [32, 96],
+    browY: 20,
+    browTilt: 0,
+    mouthY: 76,
+    // A bright open smile.
+    mouthBow: -1.3,
+    mouthDrop: -4.0,
+    mouthScale: 1.15,
+  },
+
+  // The Professor. `expression: eager` — thick brows above the roster's
+  // second-biggest lenses, bright eyes behind them, an open eager smile.
+  // Feature rows traced on his sheet (spec landmarks merge with the swept
+  // fringe): brows rows 190-201 (44.4% of head), lens centres row 231
+  // (60.6%), smile rows 283-290 (87.2%). Cells through his island
+  // (0.92, -1.3138, 2.300). Eye marks stay inside the 0.125ft rings.
+  the_prof: {
+    ink: '#130a04',
+    mouthInk: '#7a4023',
+    sclera: '#fffcf0',
+    irisBrown: '#3a2210',
+    pupil: '#150d06',
+    white: '#fff6e4',
+    mouth: '#6e2f1c',
+    mouthDark: '#4c1d10',
+    tongue: '#e07980',
+    lowerLip: '#efa065',
+    eyeHalfW: 13,
+    eyeHalfH: 9.5,
+    irisR: 8.5,
+    irisInward: 2,
+    eyeX: [36, 92],
+    eyeY: 50,
+    browThick: 4.6,
+    browThin: 2.4,
+    browHalf: 13,
+    browX: [32, 96],
+    browY: 21,
+    browTilt: 0,
+    mouthY: 91,
+    // The eager smile: wide, corners up.
+    mouthBow: -1.3,
+    mouthDrop: -3.6,
+    mouthScale: 1.15,
+  },
+
+  // Ace. The captain: thick level brows under the brim, steady warm eyes, a
+  // calm confident smile. Feature rows traced on his sheet: brows rows
+  // 283-293 (46.3% of head), eyes rows 310-339 centred 62.8%, smile rows
+  // 367-374 (84.9%). Cells through his island (0.92, -1.3273, 2.300).
+  ace_kid: {
+    ink: '#120a04',
+    mouthInk: '#7a4023',
+    sclera: '#fffcf0',
+    irisBrown: '#3c2410',
+    pupil: '#150d06',
+    white: '#fff6e4',
+    mouth: '#6e2f1c',
+    mouthDark: '#4c1d10',
+    tongue: '#e07980',
+    lowerLip: '#efa065',
+    eyeHalfW: 17,
+    eyeHalfH: 11.5,
+    irisR: 10,
+    irisInward: 3,
+    eyeX: [30, 98],
+    eyeY: 50,
+    browThick: 5.0,
+    browThin: 2.6,
+    browHalf: 14,
+    browX: [32, 96],
+    browY: 19,
+    browTilt: 0,
+    mouthY: 84,
+    // The captain's calm smile.
+    mouthBow: -1.0,
+    mouthDrop: -3.0,
+  },
 };

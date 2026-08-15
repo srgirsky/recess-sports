@@ -225,6 +225,81 @@
         "rolled blue jeans",
         "skinny noodle neck"
       ]
+    },
+    "turbo": {
+      "source": "turbo-pilot.blend",
+      "sourceSha256": "1962532780c0846dc87c518d0308313697310399d15f16bf379ec33ebe54b45c",
+      "concept": "turbo-turnaround.png",
+      "conceptSha256": "f3c0690117663b295a3001007eacd2a1dda10c12a5a8f7ed4d812fc63917851a",
+      "output": "kid_turbo.glb",
+      "outputSha256": "bdc2ccba7ed7ac8aab62da65886034a5d6b736351fbe7c3c3ae8977fb1d54e3c",
+      "definingTraits": [
+        "wild black spike mop",
+        "blue ringer tee",
+        "long dark shorts",
+        "big wing ears",
+        "confident dimple smile"
+      ]
+    },
+    "moose": {
+      "source": "moose-pilot.blend",
+      "sourceSha256": "21343384648c2610bee0d69734ecbd1ba31332bedebc0372da836fb5549eb476",
+      "concept": "moose-turnaround.png",
+      "conceptSha256": "d64f68670ae1629b82c81333c4a1be6c1ab02805f2937a1a20d3ddf679ca7bed",
+      "output": "kid_moose.glb",
+      "outputSha256": "38010298a5a314d269984eaa9c19d26555aa85e4325a9c37adac16461be6c2a6",
+      "definingTraits": [
+        "navy ball cap",
+        "mustard kangaroo hoodie",
+        "big round build",
+        "navy joggers",
+        "easy gentle smile"
+      ]
+    },
+    "penny": {
+      "source": "penny-pilot.blend",
+      "sourceSha256": "95e3cc52be13236b7c8d9b6b0bf23d576991411f0c01fdc31aa2c53ee59f6751",
+      "concept": "penny-turnaround.png",
+      "conceptSha256": "c135292d56d005e054136dcd938c45459a596c1cb64f1393c7105661c6a1674d",
+      "output": "kid_penny.glb",
+      "outputSha256": "43cc4467a3fb114077e4d1a97caf838531a3ae817834221f1ff5d796e6d2dacc",
+      "definingTraits": [
+        "big curly brown bob",
+        "denim bib overalls",
+        "pink ringer tee",
+        "rolled denim cuffs",
+        "bright open smile"
+      ]
+    },
+    "the_prof": {
+      "source": "the-professor-pilot.blend",
+      "sourceSha256": "f0376e461c13f6a2b016e22a06505ede2041299826a3551e594b6a8aa579dce9",
+      "concept": "the-professor-turnaround.png",
+      "conceptSha256": "43e9c992c7020f2c683dd5356b53af714685bca0a4047ef2c7139b4302e06aff",
+      "output": "kid_the_prof.glb",
+      "outputSha256": "1947bf31388cc5c977f421dea2597df4681053675ee67bf89fc839dc31d76914",
+      "definingTraits": [
+        "round wire glasses",
+        "open brown jacket",
+        "side-swept dark hair",
+        "rolled blue jeans",
+        "eager open smile"
+      ]
+    },
+    "ace_kid": {
+      "source": "ace-pilot.blend",
+      "sourceSha256": "bd6bf51e420fe9d4df38056a690bda9d5acb131d414ade1be50192b020444279",
+      "concept": "ace-turnaround.png",
+      "conceptSha256": "641fb80ce9726fe50255da0275f584d4f1722709a0cc51b11d2dbf633af49a43",
+      "output": "kid_ace_kid.glb",
+      "outputSha256": "6dd2b8dcd7471ab0e7f4d862387963703db8f72cd4e4a28264517dd25fdc4679",
+      "definingTraits": [
+        "sky-blue ball cap",
+        "open blue bomber jacket",
+        "shaggy dark hair",
+        "rolled blue jeans",
+        "calm captain smile"
+      ]
     }
   }
 }

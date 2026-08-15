@@ -229,6 +229,80 @@ const TURNAROUND = {
     span: { crownZ: 3.99, neckZ: 2.76 },
     tolerance: 2.5,
   },
+  // ★ TURBO'S CROWN IS A SPIKE TIP half a foot above his skull, and his
+  // fringe hangs to just above the brows — the spec refuses brow and eye
+  // (the fringe merges them), and the first dark-run read mistook the fringe
+  // shadow for brows. Bounded traces confirmed against a zoomed crop of
+  // turbo-turnaround.png (crown row 101, neck row 362): bold brows rows
+  // ~245-260 (centroid 252.5), the huge irises rows 279-302 centred row 290,
+  // the smile arc rows 328-335 centred ~333. No earLine: the spikes own the
+  // widest rows; his big ears are placed by eye at the irises' level.
+  turbo: {
+    slug: 'turbo',
+    brow: 58.0,
+    eye: 72.4,
+    mouth: 88.5,
+    span: { crownZ: 3.99, neckZ: 2.41 },
+    tolerance: 2.5,
+  },
+  // ★ MOOSE'S CROWN IS HIS CAP and his head is the SMALLEST span on the
+  // roster (24.8% of a huge figure — neck at z 3.00). Bounded traces on
+  // moose-turnaround.png (crown row 180, neck row 345): cap brim shadow rows
+  // 244-262, brows rows 263-270 (centroid ~266), eyes rows 277-303 centred
+  // row 290, nose rows 317-324, the gentle smile's central runs rows 323-324.
+  // His ears are real and on the traced widest row.
+  moose: {
+    slug: 'moose',
+    brow: 52.0,
+    eye: 66.7,
+    mouth: 87.0,
+    earLine: 74.5,
+    span: { crownZ: 3.99, neckZ: 3.00 },
+    tolerance: 2.5,
+  },
+  // ★ PENNY'S CROWN IS HER CURL BOB and the bob owns every width row, so no
+  // earLine target (her ears hide under the curls; placed by eye). Bounded
+  // traces on penny-turnaround.png (crown row 119, neck row 355): brow bands
+  // rows 212-219 (centroid ~215.5), the big eyes rows 236-267 centred ~row
+  // 252, the smile arc rows 288-295 centred ~292 (the rows below it are the
+  // left curl curtain's inner edge, not a feature).
+  penny: {
+    slug: 'penny',
+    brow: 40.9,
+    eye: 56.4,
+    mouth: 73.5,
+    span: { crownZ: 3.99, neckZ: 2.60 },
+    tolerance: 2.5,
+  },
+  // ★ THE PROFESSOR'S EYES SIT BEHIND BIG WIRE LENSES (the eye line is the
+  // ring centres, Bendy's precedent) and his swept fringe merges the left
+  // brow. Bounded traces on the-professor-turnaround.png (crown row 100,
+  // neck row 316): brows rows 190-201 (centroid ~196), lens rings rows
+  // 210-252 centred row 231, the open smile rows 283-290 centred ~288. No
+  // earLine: the swept hair owns the widest row (38.4% is hair, not ear);
+  // his big ears are placed by eye.
+  the_prof: {
+    slug: 'the-professor',
+    brow: 44.4,
+    eye: 60.6,
+    mouth: 87.2,
+    span: { crownZ: 3.99, neckZ: 2.71 },
+    tolerance: 2.5,
+  },
+  // ★ ACE'S CROWN IS HIS CAP; his shaggy hair pokes below it but the ears
+  // are REAL and on the traced widest row. Bounded traces on
+  // ace-turnaround.png (crown row 187, neck row 405): thick brows rows
+  // 283-293 (centroid ~288), eyes rows 310-339 centred ~row 324, the calm
+  // smile rows 367-374 centred ~372.
+  ace_kid: {
+    slug: 'ace',
+    brow: 46.3,
+    eye: 62.8,
+    mouth: 84.9,
+    earLine: 68.3,
+    span: { crownZ: 3.99, neckZ: 2.68 },
+    tolerance: 2.5,
+  },
 };
 
 function constantsFor(slug, { needsEar = true } = {}) {

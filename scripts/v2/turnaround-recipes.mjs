@@ -227,6 +227,93 @@ export const RECIPES = {
     sweeps: {},
     bands: {},
   },
+
+  // ★ TURBO'S SPIKES OWN THE TOP OF HIS HEAD SPAN — the crown row is a spike
+  // tip half a foot above the skull, and the widest rows are hair, so the ear
+  // line is untraceable (his big ears are placed by eye). His fringe hangs to
+  // just above the brows, and the first text-read of his features mistook the
+  // fringe shadow for brows — the bounded traces below were confirmed against
+  // a zoomed crop of the sheet, not the dark-run scan alone.
+  turbo: {
+    slug: 'turbo',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#eb9b5c' },
+      hair: { hex: '#14110d' },
+      tee: { hex: '#6ca4cb' },
+      shorts: { hex: '#33353a' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
+  // ★ MOOSE IS DEEP SKIN ON A HUGE BUILD — his #ab5b24 skin sits a Grizz
+  // step below the classifier's comfort and is authored bright; his mustard
+  // hoodie is a third of the sheet by itself. The navy cap, navy joggers and
+  // the outline family are neighbours in the dark cluster and resolve as one
+  // declared navy.
+  moose: {
+    slug: 'moose',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#ab5b24' },
+      hoodie: { hex: '#ed921c' },
+      navy: { hex: '#1d222b' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
+  // ★ PENNY IS THE FIRST OVERALLS — the denim bib is a FRONT panel over a
+  // pink tee, so garment boundaries at chest height change with the view and
+  // only geometry can trace them. Her curl bob owns the width metrics (the
+  // widest rows are hair), and her curls span three brown clusters that are
+  // declared once at the modal value.
+  penny: {
+    slug: 'penny',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      skin: { hex: '#fbb47b' },
+      curls: { hex: '#7b4c23' },
+      denim: { hex: '#334c64' },
+      tee: { hex: '#fc939c' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
+  // ★ THE PROFESSOR'S JACKET IS 42% OF THE SHEET and it is OPEN — the cream
+  // tee shows only as a centre strip between the fronts, and that cream is
+  // the backdrop's own cluster, so every tee/jacket boundary is a geometry
+  // trace. His hair and the jacket's shadow lane sit one cluster apart and
+  // are declared at their honest sampled values.
+  the_prof: {
+    slug: 'the-professor',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      jacket: { hex: '#6c4323' },
+      hair: { hex: '#1b0d03' },
+      jeans: { hex: '#344a64' },
+    },
+    sweeps: {},
+    bands: {},
+  },
+
+  // ★ ACE'S CAP AND JACKET SHARE ONE BLUE — 47% of the sheet is a single
+  // #739dbb cluster spanning both garments, so cap/jacket boundaries are
+  // geometry traces. The cream tee strip sits in the backdrop's cluster, and
+  // his shaggy hair pokes below the cap in its own near-black cluster.
+  ace_kid: {
+    slug: 'ace',
+    views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
+    materials: {
+      blue: { hex: '#739dbb' },
+      skin: { hex: '#e3924d' },
+      hair: { hex: '#130c03' },
+    },
+    sweeps: {},
+    bands: {},
+  },
 };
 
 export const RECIPE_IDS = Object.keys(RECIPES);

@@ -75,7 +75,15 @@
     },
     "turbo": {
       "name": "Turbo",
-      "slug": "turbo"
+      "slug": "turbo",
+      "source": "turbo-pilot.blend",
+      "traits": [
+        "wild black spike mop",
+        "blue ringer tee",
+        "long dark shorts",
+        "big wing ears",
+        "confident dimple smile"
+      ]
     },
     "sprout": {
       "name": "Sprout",
@@ -103,11 +111,27 @@
     },
     "ace_kid": {
       "name": "Ace",
-      "slug": "ace"
+      "slug": "ace",
+      "source": "ace-pilot.blend",
+      "traits": [
+        "sky-blue ball cap",
+        "open blue bomber jacket",
+        "shaggy dark hair",
+        "rolled blue jeans",
+        "calm captain smile"
+      ]
     },
     "penny": {
       "name": "Penny Pockets",
-      "slug": "penny"
+      "slug": "penny",
+      "source": "penny-pilot.blend",
+      "traits": [
+        "big curly brown bob",
+        "denim bib overalls",
+        "pink ringer tee",
+        "rolled denim cuffs",
+        "bright open smile"
+      ]
     },
     "dex": {
       "name": "Dex",
@@ -163,7 +187,15 @@
     },
     "the_prof": {
       "name": "The Professor",
-      "slug": "the-professor"
+      "slug": "the-professor",
+      "source": "the-professor-pilot.blend",
+      "traits": [
+        "round wire glasses",
+        "open brown jacket",
+        "side-swept dark hair",
+        "rolled blue jeans",
+        "eager open smile"
+      ]
     },
     "diva": {
       "name": "Dazzle",
@@ -207,7 +239,15 @@
     },
     "moose": {
       "name": "Moose",
-      "slug": "moose"
+      "slug": "moose",
+      "source": "moose-pilot.blend",
+      "traits": [
+        "navy ball cap",
+        "mustard kangaroo hoodie",
+        "big round build",
+        "navy joggers",
+        "easy gentle smile"
+      ]
     },
     "peaches": {
       "name": "Peaches",
