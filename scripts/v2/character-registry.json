@@ -79,7 +79,15 @@
     },
     "sprout": {
       "name": "Sprout",
-      "slug": "sprout"
+      "slug": "sprout",
+      "source": "sprout-pilot.blend",
+      "traits": [
+        "denim bib overalls",
+        "big round wonder eyes",
+        "wing-nut ears",
+        "tousled forward swoosh",
+        "rolled denim cuffs"
+      ]
     },
     "zippy": {
       "name": "Zippy Kwan",
@@ -115,7 +123,15 @@
     },
     "bubbles": {
       "name": "Bubbles",
-      "slug": "bubbles"
+      "slug": "bubbles",
+      "source": "bubbles-pilot.blend",
+      "traits": [
+        "golden ringlet cloud",
+        "topknot bun and scrunchie",
+        "pink trimmed dress",
+        "freckled laughing face",
+        "striped crew socks"
+      ]
     },
     "sniffles": {
       "name": "Sniffles",
@@ -171,7 +187,15 @@
     },
     "chip": {
       "name": "Chip",
-      "slug": "chip"
+      "slug": "chip",
+      "source": "chip-pilot.blend",
+      "traits": [
+        "navy and cream ball cap",
+        "green kangaroo hoodie",
+        "big wing ears",
+        "freckled bright grin",
+        "striped socks bare knees"
+      ]
     },
     "boomer": {
       "name": "Boomer",

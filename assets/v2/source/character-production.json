@@ -105,6 +105,51 @@
         "rust tee on navy shorts",
         "tall slouched cream socks"
       ]
+    },
+    "sprout": {
+      "source": "sprout-pilot.blend",
+      "sourceSha256": "153d309c8652fa0f68419d566b52d1fc95e6e1dc781b1a062fea6a87ac32f9ca",
+      "concept": "sprout-turnaround.png",
+      "conceptSha256": "b734a39041e715ae23861523b44b118cf5b18919ba12533b241058591888f995",
+      "output": "kid_sprout.glb",
+      "outputSha256": "884f1b085733fbe6afca4673bab2208a070dd0fbee2c53754de18674457e4790",
+      "definingTraits": [
+        "denim bib overalls",
+        "big round wonder eyes",
+        "wing-nut ears",
+        "tousled forward swoosh",
+        "rolled denim cuffs"
+      ]
+    },
+    "bubbles": {
+      "source": "bubbles-pilot.blend",
+      "sourceSha256": "09e9529cafbf20113195aca287ec462b660d8ec69d58d6f32284df9d6f52421e",
+      "concept": "bubbles-turnaround.png",
+      "conceptSha256": "b4b3ec04e975bf1f2d85b449073afbd71edb99af3f17579fe24050bc5edcd9db",
+      "output": "kid_bubbles.glb",
+      "outputSha256": "a5aeda2a4ca850867e783ae215592615fe80431d491146da94c5dbeeb0765348",
+      "definingTraits": [
+        "golden ringlet cloud",
+        "topknot bun and scrunchie",
+        "pink trimmed dress",
+        "freckled laughing face",
+        "striped crew socks"
+      ]
+    },
+    "chip": {
+      "source": "chip-pilot.blend",
+      "sourceSha256": "b43e4a61abb6c1036cf825f76c7c5930000fce5d1c66a6267b35171530308993",
+      "concept": "chip-turnaround.png",
+      "conceptSha256": "244f188db5957fd2674ec2cbfd321a0211067696ddb6601cd09c45dc6a325575",
+      "output": "kid_chip.glb",
+      "outputSha256": "c03d27803bc68662f4afd688050dcfa8042c77f766fce2ae0758187b1b8385f2",
+      "definingTraits": [
+        "navy and cream ball cap",
+        "green kangaroo hoodie",
+        "big wing ears",
+        "freckled bright grin",
+        "striped socks bare knees"
+      ]
     }
   }
 }

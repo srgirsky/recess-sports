@@ -405,7 +405,23 @@ function face(name, index) {
     <path d="M56 101.5 Q55.5 110.5 64 111.5 Q72.5 110.5 72 101.5 Q64 104.5 56 101.5Z" fill="${tongue}" stroke="${ink}" stroke-width="1.8"/>`;
   if (blink || sleepy || wink) lips = lowerLip(my + 0.5) + seam(my + 0.5, 1.6, 0.8);
 
-  return `${brows}${eyes}${lips}`;
+  // ★ FRECKLES ARE A ROSTER FEATURE, NOT DECORATION. Eight kids carry
+  // `freckles: true` in their roster visual, and Sprout's first independent
+  // review scored the face down for shipping without them. Three small dots
+  // scatter on each cheek below the eye line, in a skin-shading tone rather
+  // than ink — dark enough to survive the hero read, light enough to vanish
+  // at 40px instead of reading as dirt. Absent unless the spec asks.
+  let freckles = '';
+  if (spec.freckles) {
+    const tone = spec.freckleTone ?? '#a55f28';
+    const [fL, fR] = spec.eyeX;
+    const fy = spec.eyeY + (spec.eyeHalfH ?? 10) + 8;
+    const dots = (cx, s) => [[-6, 2], [0, -1], [6, 3]]
+      .map(([dx, dy]) => `<circle cx="${cx + s * dx}" cy="${fy + dy}" r="2.1" fill="${tone}" opacity="0.85"/>`) 
+      .join('');
+    freckles = dots(fL, 1) + dots(fR, -1);
+  }
+  return `${brows}${eyes}${freckles}${lips}`;
 }
 
 const contents = cells.map((name, index) => {
