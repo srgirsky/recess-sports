@@ -246,4 +246,48 @@ export const FACE_SPECS = {
     // See generate-face-atlas.mjs: distinct silhouettes for grin/cheer/tongue.
     tongueOut: true,
   },
+
+  // Grizz. `hair: afro`, grumpy, powerful, napping. His face is small features
+  // in a huge field: bead eyes 19px wide each against a 195px face opening
+  // (9.7%, against Tank's 14.9%), brows 40px each (20.5% — the boldest mark on
+  // the face), a frown line at cell 82 through the island window solved in
+  // sculpt-grizz-source.py. The spec's mouth landmark REFUSES on his sheet
+  // (nose shadow and frown within 7 luminance counts), so the lip row is the
+  // bounded trace in the sculpt script's FACE_ISLAND note: z 2.684, 86.5% of
+  // the afro-inclusive head.
+  grizz: {
+    ink: '#0a0503',
+    mouthInk: '#4a2015',
+    sclera: '#fff8ec',
+    irisBrown: '#2a1710',
+    pupil: '#100a06',
+    white: '#fff4e0',
+    mouth: '#57241c',
+    mouthDark: '#39160f',
+    tongue: '#dd6f79',
+    lowerLip: '#b97e50',
+    // Small heavy-lidded beads — sleepy, not squinting. Sized against the
+    // measurement, Tank's lesson: one eye is 9.7% of his face width where
+    // Tank's is 14.9% of his head, so the marks scale by that ratio.
+    eyeHalfW: 12,
+    eyeHalfH: 6,
+    irisR: 5.5,
+    irisInward: 2,
+    eyeX: [46, 82],
+    eyeY: 52,
+    // The brows are the read: thick, dark, low over the eyes, inner ends
+    // dropped a touch — grumpy without Junebug's full scowl.
+    browThick: 5.5,
+    browThin: 3.5,
+    browHalf: 14,
+    browX: [44, 84],
+    browY: 30,
+    browTilt: 4,
+    mouthY: 79,
+    // The pout: corners fall 4.5 cells — the concept's neutral is a clear
+    // downturned frown (rows 353-358 of the sheet diverge downward from the
+    // lip line's ends), and the review scored the straight line as losing it.
+    mouthBow: 0.6,
+    mouthDrop: 4.5,
+  },
 };

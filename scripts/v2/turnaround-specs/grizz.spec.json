@@ -98,33 +98,27 @@
   ],
   "materials": {
     "shirt": {
-      "index": 4,
-      "hex": "#050302",
-      "sharePct": 3.1,
-      "declaredAnchor": "#8a5a34",
-      "toneDistance": 8.95,
-      "paired": false
+      "notTraceable": {
+        "class": "indistinct-materials",
+        "reason": "\"shirt\" and \"skin\" both resolve to this sheet's #8b4d24 cluster (46.8% of the figure) — the drawing holds them in one tone, so no colour read can separate them; trace their boundary by geometry, or fix whichever anchor is wrong"
+      }
     },
     "skin": {
-      "index": 4,
-      "hex": "#050302",
-      "sharePct": 3.1,
-      "declaredAnchor": "#8a5836",
-      "toneDistance": 7.19,
-      "paired": false
+      "notTraceable": {
+        "class": "indistinct-materials",
+        "reason": "\"skin\" and \"shirt\" both resolve to this sheet's #8b4d24 cluster (46.8% of the figure) — the drawing holds them in one tone, so no colour read can separate them; trace their boundary by geometry, or fix whichever anchor is wrong"
+      }
     },
     "hair": {
-      "index": 1,
-      "hex": "#131313",
-      "sharePct": 25.04,
-      "declaredAnchor": "#161314",
-      "toneDistance": 9.21,
-      "paired": false
+      "notTraceable": {
+        "class": "indistinct-materials",
+        "reason": "\"hair\" and \"pants\" both resolve to this sheet's #131313 cluster (25% of the figure) — the drawing holds them in one tone, so no colour read can separate them; trace their boundary by geometry, or fix whichever anchor is wrong"
+      }
     },
     "pants": {
       "notTraceable": {
-        "class": "no-such-material",
-        "reason": "no cluster on this sheet is within 30 of the declared #2c3346 for \"pants\" (nearest is #131313 at 30) — the recipe's anchor is wrong, or the art changed"
+        "class": "indistinct-materials",
+        "reason": "\"pants\" and \"hair\" both resolve to this sheet's #131313 cluster (25% of the figure) — the drawing holds them in one tone, so no colour read can separate them; trace their boundary by geometry, or fix whichever anchor is wrong"
       }
     }
   },
@@ -148,13 +142,10 @@
       }
     },
     "mouth": {
-      "value": 71.8,
-      "unit": "pctOfHead",
-      "row": 314,
-      "darkest": 0,
-      "hostFrac": 0.16,
-      "rejectedRows": 11,
-      "confidence": "traced"
+      "notTraceable": {
+        "class": "ambiguous-parts",
+        "reason": "two central dark bands compete for the lip line — rows 334 (lum 0) and 312 (lum 3) at 79.5% and 71.0% of head height, within 15 luminance of each other — only one can be the mouth, and darkness cannot say which; trace the lip with a bounded probe"
+      }
     },
     "earLine": {
       "value": 47.9,
@@ -174,223 +165,10 @@
   "profiles": {
     "torso": {
       "material": "shirt",
-      "view": "front",
-      "role": "centre",
-      "stations": [
-        {
-          "z": 1.8,
-          "halfWidth": {
-            "notTraceable": {
-              "class": "ambiguous-parts",
-              "reason": "3 runs of material 4 at z 1.8 and none is the centre one"
-            },
-            "evidence": {
-              "silhouetteHalfWidth": 0.7953,
-              "runs": [
-                "#1d1914:60-62",
-                "#050302:64-66",
-                "#8b4d24:67-74",
-                "#050302:75-83",
-                "#4b250c:87-97",
-                "#8b4d24:101-103",
-                "#8b4d24:109-280",
-                "#4b250c:284-291",
-                "#331504:292-295",
-                "#4b250c:296-303",
-                "#8b4d24:306-309",
-                "#050302:310-320",
-                "#8b4d24:321-326"
-              ]
-            }
-          }
-        },
-        {
-          "z": 1.86,
-          "halfWidth": {
-            "value": 0.0088,
-            "unit": "ft",
-            "view": "front",
-            "region": "shirt",
-            "role": "centre",
-            "parts": 1,
-            "px": {
-              "row": 493,
-              "x0": 68,
-              "x1": 70,
-              "seamLeftPx": 0,
-              "seamRightPx": 0
-            },
-            "confidence": "weak-seam",
-            "silhouetteHalfWidth": 0.7778,
-            "note": "the silhouette figure beside it is what a run-count-blind trace would have recorded"
-          }
-        },
-        {
-          "z": 1.92,
-          "halfWidth": {
-            "notTraceable": {
-              "class": "ambiguous-parts",
-              "reason": "two runs of material 4 at z 1.92 (86-88 and 326-328) — one flank has merged with the centre, so a centre width here is part garment and part something else",
-              "insteadUse": "a height where the row crosses three runs of this material, or the profile view"
-            },
-            "evidence": {
-              "silhouetteHalfWidth": 0.7982,
-              "runs": [
-                "#8b4d24:66-85",
-                "#050302:86-88",
-                "#8b4d24:91-105",
-                "#331504:108-110",
-                "#8b4d24:113-227",
-                "#8b4d24:231-267",
-                "#8b4d24:269-277",
-                "#4b250c:281-285",
-                "#4b250c:290-293",
-                "#8b4d24:294-296",
-                "#4b250c:299-302",
-                "#8b4d24:303-325",
-                "#050302:326-328"
-              ]
-            }
-          }
-        },
-        {
-          "z": 1.98,
-          "halfWidth": {
-            "notTraceable": {
-              "class": "ambiguous-parts",
-              "reason": "two runs of material 4 at z 1.98 (64-67 and 69-71) — one flank has merged with the centre, so a centre width here is part garment and part something else",
-              "insteadUse": "a height where the row crosses three runs of this material, or the profile view"
-            },
-            "evidence": {
-              "silhouetteHalfWidth": 0.7895,
-              "runs": [
-                "#050302:64-67",
-                "#050302:69-71",
-                "#8b4d24:72-108",
-                "#8b4d24:116-230",
-                "#8b4d24:232-266",
-                "#8b4d24:269-275",
-                "#4b250c:279-282",
-                "#8b4d24:289-320",
-                "#8b4d24:323-325"
-              ]
-            }
-          }
-        },
-        {
-          "z": 2.04,
-          "halfWidth": {
-            "notTraceable": {
-              "class": "ambiguous-parts",
-              "reason": "two runs of material 4 at z 2.04 (71-79 and 317-321) — one flank has merged with the centre, so a centre width here is part garment and part something else",
-              "insteadUse": "a height where the row crosses three runs of this material, or the profile view"
-            },
-            "evidence": {
-              "silhouetteHalfWidth": 0.7456,
-              "runs": [
-                "#050302:71-79",
-                "#8b4d24:80-108",
-                "#8b4d24:117-226",
-                "#8b4d24:230-238",
-                "#8b4d24:240-252",
-                "#8b4d24:255-275",
-                "#8b4d24:281-290",
-                "#8b4d24:292-316",
-                "#050302:317-321"
-              ]
-            }
-          }
-        },
-        {
-          "z": 2.1,
-          "halfWidth": {
-            "notTraceable": {
-              "class": "ambiguous-parts",
-              "reason": "3 runs of material 4 at z 2.1 and none is the centre one"
-            },
-            "evidence": {
-              "silhouetteHalfWidth": 0.7135,
-              "runs": [
-                "#050302:77-81",
-                "#8b4d24:82-109",
-                "#8b4d24:112-116",
-                "#8b4d24:119-226",
-                "#8b4d24:230-245",
-                "#050302:246-251",
-                "#8b4d24:252-259",
-                "#8b4d24:262-273",
-                "#8b4d24:278-280",
-                "#8b4d24:282-309",
-                "#050302:310-313"
-              ]
-            }
-          }
-        },
-        {
-          "z": 2.16,
-          "halfWidth": {
-            "notTraceable": {
-              "class": "ambiguous-parts",
-              "reason": "two runs of material 4 at z 2.16 (86-88 and 304-308) — one flank has merged with the centre, so a centre width here is part garment and part something else",
-              "insteadUse": "a height where the row crosses three runs of this material, or the profile view"
-            },
-            "evidence": {
-              "silhouetteHalfWidth": 0.6754,
-              "runs": [
-                "#0c0a06:83-85",
-                "#050302:86-88",
-                "#8b4d24:91-109",
-                "#8b4d24:111-117",
-                "#8b4d24:120-283",
-                "#8b4d24:285-303",
-                "#050302:304-308"
-              ]
-            }
-          }
-        },
-        {
-          "z": 2.22,
-          "halfWidth": {
-            "notTraceable": {
-              "class": "ambiguous-parts",
-              "reason": "two runs of material 4 at z 2.22 (91-95 and 296-301) — one flank has merged with the centre, so a centre width here is part garment and part something else",
-              "insteadUse": "a height where the row crosses three runs of this material, or the profile view"
-            },
-            "evidence": {
-              "silhouetteHalfWidth": 0.6287,
-              "runs": [
-                "#050302:91-95",
-                "#8b4d24:98-101",
-                "#8b4d24:105-287",
-                "#8b4d24:289-295",
-                "#050302:296-301"
-              ]
-            }
-          }
-        },
-        {
-          "z": 2.28,
-          "halfWidth": {
-            "notTraceable": {
-              "class": "ambiguous-parts",
-              "reason": "3 runs of material 4 at z 2.28 and none is the centre one"
-            },
-            "evidence": {
-              "silhouetteHalfWidth": 0.5877,
-              "runs": [
-                "#050302:99-105",
-                "#8b4d24:106-175",
-                "#4b250c:176-179",
-                "#8b4d24:180-210",
-                "#050302:211-213",
-                "#4b250c:215-219",
-                "#8b4d24:220-288",
-                "#050302:292-294"
-              ]
-            }
-          }
-        }
-      ]
+      "notTraceable": {
+        "class": "indistinct-materials",
+        "reason": "\"shirt\" and \"skin\" both resolve to this sheet's #8b4d24 cluster (46.8% of the figure) — the drawing holds them in one tone, so no colour read can separate them; trace their boundary by geometry, or fix whichever anchor is wrong"
+      }
     }
   },
   "bands": {},
@@ -401,9 +179,24 @@
       "reason": "644px against a 672px standing view — every figure is scaled independently to 4ft, so a z read here is off by 4.2%. Silhouette and colour only."
     },
     {
+      "at": "/materials/shirt",
+      "class": "indistinct-materials",
+      "reason": "\"shirt\" and \"skin\" both resolve to this sheet's #8b4d24 cluster (46.8% of the figure) — the drawing holds them in one tone, so no colour read can separate them; trace their boundary by geometry, or fix whichever anchor is wrong"
+    },
+    {
+      "at": "/materials/skin",
+      "class": "indistinct-materials",
+      "reason": "\"skin\" and \"shirt\" both resolve to this sheet's #8b4d24 cluster (46.8% of the figure) — the drawing holds them in one tone, so no colour read can separate them; trace their boundary by geometry, or fix whichever anchor is wrong"
+    },
+    {
+      "at": "/materials/hair",
+      "class": "indistinct-materials",
+      "reason": "\"hair\" and \"pants\" both resolve to this sheet's #131313 cluster (25% of the figure) — the drawing holds them in one tone, so no colour read can separate them; trace their boundary by geometry, or fix whichever anchor is wrong"
+    },
+    {
       "at": "/materials/pants",
-      "class": "no-such-material",
-      "reason": "no cluster on this sheet is within 30 of the declared #2c3346 for \"pants\" (nearest is #131313 at 30) — the recipe's anchor is wrong, or the art changed"
+      "class": "indistinct-materials",
+      "reason": "\"pants\" and \"hair\" both resolve to this sheet's #131313 cluster (25% of the figure) — the drawing holds them in one tone, so no colour read can separate them; trace their boundary by geometry, or fix whichever anchor is wrong"
     },
     {
       "at": "/landmarks/brow",
@@ -416,49 +209,14 @@
       "reason": "no distinct eye band survived the width guard on this sheet"
     },
     {
-      "at": "/profiles/torso/stations/0/halfWidth",
+      "at": "/landmarks/mouth",
       "class": "ambiguous-parts",
-      "reason": "3 runs of material 4 at z 1.8 and none is the centre one"
+      "reason": "two central dark bands compete for the lip line — rows 334 (lum 0) and 312 (lum 3) at 79.5% and 71.0% of head height, within 15 luminance of each other — only one can be the mouth, and darkness cannot say which; trace the lip with a bounded probe"
     },
     {
-      "at": "/profiles/torso/stations/2/halfWidth",
-      "class": "ambiguous-parts",
-      "reason": "two runs of material 4 at z 1.92 (86-88 and 326-328) — one flank has merged with the centre, so a centre width here is part garment and part something else",
-      "insteadUse": "a height where the row crosses three runs of this material, or the profile view"
-    },
-    {
-      "at": "/profiles/torso/stations/3/halfWidth",
-      "class": "ambiguous-parts",
-      "reason": "two runs of material 4 at z 1.98 (64-67 and 69-71) — one flank has merged with the centre, so a centre width here is part garment and part something else",
-      "insteadUse": "a height where the row crosses three runs of this material, or the profile view"
-    },
-    {
-      "at": "/profiles/torso/stations/4/halfWidth",
-      "class": "ambiguous-parts",
-      "reason": "two runs of material 4 at z 2.04 (71-79 and 317-321) — one flank has merged with the centre, so a centre width here is part garment and part something else",
-      "insteadUse": "a height where the row crosses three runs of this material, or the profile view"
-    },
-    {
-      "at": "/profiles/torso/stations/5/halfWidth",
-      "class": "ambiguous-parts",
-      "reason": "3 runs of material 4 at z 2.1 and none is the centre one"
-    },
-    {
-      "at": "/profiles/torso/stations/6/halfWidth",
-      "class": "ambiguous-parts",
-      "reason": "two runs of material 4 at z 2.16 (86-88 and 304-308) — one flank has merged with the centre, so a centre width here is part garment and part something else",
-      "insteadUse": "a height where the row crosses three runs of this material, or the profile view"
-    },
-    {
-      "at": "/profiles/torso/stations/7/halfWidth",
-      "class": "ambiguous-parts",
-      "reason": "two runs of material 4 at z 2.22 (91-95 and 296-301) — one flank has merged with the centre, so a centre width here is part garment and part something else",
-      "insteadUse": "a height where the row crosses three runs of this material, or the profile view"
-    },
-    {
-      "at": "/profiles/torso/stations/8/halfWidth",
-      "class": "ambiguous-parts",
-      "reason": "3 runs of material 4 at z 2.28 and none is the centre one"
+      "at": "/profiles/torso",
+      "class": "indistinct-materials",
+      "reason": "\"shirt\" and \"skin\" both resolve to this sheet's #8b4d24 cluster (46.8% of the figure) — the drawing holds them in one tone, so no colour read can separate them; trace their boundary by geometry, or fix whichever anchor is wrong"
     }
   ]
 }

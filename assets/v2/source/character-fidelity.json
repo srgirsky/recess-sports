@@ -256,6 +256,63 @@
           "note": "The broad color blocks survive at 40 pixels, but the hero-scale character is not a faithful translation."
         }
       }
+    },
+    "grizz": {
+      "status": "candidate",
+      "evidence": "grizz-fidelity-review.png",
+      "categories": {
+        "frontProfileSilhouette": {
+          "label": "front/profile silhouette",
+          "score": 4,
+          "note": "Second independent review: the large read holds — unmistakably a chunky kid under an oversized afro, surviving with colour removed; measured head height (38.0 vs 38.0) and aspect (1.09 vs 1.09) settle the proportion half. Held at 4 by butt-joined transitions: the A-pose shows a shelf where the sleeve meets the arm, and the afro crown runs flatter than the turnaround's near-hemisphere."
+        },
+        "headBodyProportions": {
+          "label": "head/body proportions",
+          "score": 4,
+          "note": "Second independent review: measured numbers are exact matches (head 38.0%, aspect 1.09) and the body reads as the turnaround's child — big head, short chunky torso, low centre of gravity. Held from 5 by stepped shoulder forms in the A-pose and arms running slimmer than the concept's chubby build."
+        },
+        "hairMass": {
+          "label": "hair mass",
+          "score": 4,
+          "note": "Second independent review: one designed mass, clean hairline arc front and side, no bare-skull read in any gameplay capture. Caps at 4 per the rubric's own wording — a smooth blob with no sculpted curl grouping — with two polish notes: the crown is flatter than the drawing's and the hairline exposes more forehead than the concept, where the afro rides near the brows."
+        },
+        "clothingConstruction": {
+          "label": "clothing construction",
+          "score": 4,
+          "note": "Second independent review: socks and shoes carry it — constructed slouch rolls, laces, toe cap and sole band with the shoe tone split, chroma and band boundaries measured inside tolerance; the tee has its chest pocket and a sleeve-cuff step. Held from 5: the pocket reads as an applied decal rather than a sewn form, and the shorts have no hem construction at the leg opening."
+        },
+        "faceExpressionRead": {
+          "label": "face/expression read",
+          "score": 4,
+          "note": "Second independent review: the heavy angled brows read grumpy across the diamond and survive the run capture; a real nose breaks the profile with sculpted lips. Held at 4: the eyes are wide-open ovals where the turnaround draws heavy-lidded half-closed ones — the 'Napping' half of the identity — and the mouth stroke is thinner than the concept's full downturned pout."
+        },
+        "heroAndFieldScale": {
+          "label": "hero + 40px read",
+          "score": 4,
+          "note": "Second independent review: identity survives both ends — the hero reads instantly as Grizz, and the 40px strip keeps the memorable read of a dark afro dome over a brown chunky body. Held from 5: the field read leans almost entirely on afro-to-skin contrast; the navy shorts merge into shadow at that scale."
+        }
+      },
+      "heroEvidence": "grizz-runtime-hero.png",
+      "animationEvidence": [
+        "grizz-runtime-run.png",
+        "grizz-runtime-swing.png"
+      ],
+      "measuredFidelity": {
+        "command": "npm run measure:fidelity -- grizz",
+        "ranAt": "2026-08-14",
+        "board": "grizz-fidelity-review.png",
+        "result": "Shoe tone split, chroma and band boundaries all inside tolerance. ankleDaylight reads 28.2 against tolerance 12 with the cause measured and recorded in the sculpt script: the concept's 0.00 is flood-fill containment (his drawn shoes touch at the toes, enclosing the inter-sock gap), and the drawing's actual gap at the sample height is 0.35ft — more daylight than the delivery — while the rig's canonical stance cannot close the shoes. Head height, aspect and the three visible-face metrics report NOT MEASURED: his neck pinch (z 2.47) sits inside the z-band the bind pose's T-pose arms occupy, so the detector refuses rather than publishing the arm line as the chin (the arm-band rule added to headBox this round). Verified from the source geometry instead: afro crown 3.99 to neck pinch 2.47 gives head height 38.0% of figure against the concept's 38.0, and width 1.66ft gives aspect 1.09 against 1.09.",
+        "note": "The mouth landmark in his turnaround spec refuses as ambiguous-parts; the lip line used by the face atlas (86.5% of head height, rows 351-352 of the sheet) is the bounded trace recorded in sculpt-grizz-source.py."
+      },
+      "polishFindings": [
+        "Heavy-lidded sleepy eyes (the turnaround's half-closed lids; currently wide-open ovals) — the largest identity gap.",
+        "Afro curl grouping and a rounder crown; hairline lower toward the brows.",
+        "Fuller downturned pout (the current stroke risks collapsing at draft-card distance).",
+        "Organic sleeve-to-shoulder blend; arms up toward the concept's chubby build.",
+        "Shorts hem construction; pocket as a sewn form rather than a decal.",
+        "40px lower-body definition (navy shorts sink into shadow at field scale)."
+      ],
+      "scoredBoardSha256": "6f7f96787dcd67b15ef5a6ab66d4931c22830222c23fb70ab8dbf4a422942bf0"
     }
   }
 }

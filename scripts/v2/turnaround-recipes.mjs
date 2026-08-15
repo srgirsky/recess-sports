@@ -72,10 +72,20 @@ export const RECIPES = {
     bands: {},
   },
 
+  // ★ GRIZZ IS THE SHEET THE COLOUR RULER CANNOT READ, and this recipe's job is
+  // to make the spec SAY so rather than guess. Sampled inside the figure mask:
+  // his tee is #844a23 and his cheek #905834 — 15 tone units apart, inside the
+  // clusterer's own merge distance, so they are ONE cluster on the sheet. His
+  // shorts are #1d1e21 and his afro's modal cluster #131313 — one cluster too.
+  // All four anchors are declared at their honest sampled values so the
+  // resolver refuses them in pairs (`indistinct-materials`) instead of the
+  // first cut of this recipe, whose eyeballed #8a5a34/#8a5836 both resolved to
+  // a 3%-share OUTLINE cluster (#050302) and specced the outlines as his tee.
+  // Every tee/skin and hair/shorts boundary on him is a geometry trace.
   grizz: {
     slug: 'grizz',
     views: ['front', 'threeQuarter', 'profile', 'back', 'action'],
-    materials: { shirt: { hex: '#8a5a34' }, skin: { hex: '#8a5836' }, hair: { hex: '#161314' }, pants: { hex: '#2c3346' } },
+    materials: { shirt: { hex: '#844a23' }, skin: { hex: '#905834' }, hair: { hex: '#161314' }, pants: { hex: '#1d1e21' } },
     sweeps: { torso: { view: 'front', material: 'shirt', role: 'centre', from: 1.80, to: 2.30, step: 0.06 } },
     bands: {},
   },

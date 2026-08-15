@@ -37,7 +37,7 @@ import process from 'node:process';
 
 import { slugFor } from './character-registry.mjs';
 import { RECIPES } from './turnaround-recipes.mjs';
-import { TONE_MEMBERSHIP, toneDistance } from './tone.mjs';
+import { TONE_MEMBERSHIP, lum, toneDistance } from './tone.mjs';
 import {
   REFERENCE_HEIGHT_FT,
   bandBoundaries,
@@ -67,22 +67,57 @@ export const specPath = (slug) => join(SPEC_DIR, `${slug}.spec.json`);
 const POSED_DEVIATION = 0.03;
 
 /**
+ * ★ AN ANCHOR NAMES A LIT MATERIAL, SO ITS CLUSTER MUST HOLD COMPARABLE VALUE.
+ *
+ * `toneDistance` decides in chromaticity with a deliberately tiny value term,
+ * because for PIXEL membership that is correct — shading changes value, not
+ * hue. Anchor→cluster RESOLUTION is a different question, and Grizz is the
+ * sheet that proved it: his 3%-share outline cluster #050302 (luminance 3) sat
+ * 9 tone units from his declared #8a5a34 tee anchor (luminance 103), because a
+ * near-black keeps the ratio of whatever ink it was drawn with — so both his
+ * "shirt" and his "skin" resolved to the outlines, and the spec blessed it.
+ * An anchor describes the material as DRAWN; a cluster thirty times dimmer is
+ * not that material with the light off it, it is a different thing that
+ * happens to share a hue. 3x spans every lit-to-shadow range on the six
+ * sheets analysed so far (the widest, Tank's shorts #24242B to their shadow
+ * #121116, is 2.1x) without admitting an outline.
+ */
+const ANCHOR_VALUE_RATIO = 3;
+
+/**
  * Resolve each declared material to one of the sheet's own clusters.
  *
  * Refuses rather than taking the nearest: a tool that always answers cannot
  * report that it does not know, and not knowing is the outcome this exists for.
+ *
+ * ★ AND ONE CLUSTER MAY CARRY ONLY ONE NAME. When two declared materials both
+ * resolve to the same cluster, the sheet is saying it draws them in one tone —
+ * Grizz's tee and his skin are 15 tone units apart, inside the clusterer's own
+ * merge distance — and assigning the cluster to either name would be a silent
+ * override of exactly the kind this file's header forbids. Both refuse, and
+ * the boundary between those regions must be traced by geometry, not colour.
+ * Break-it record: regenerating Grizz's spec with this rule fired both ways —
+ * "indistinct-materials" on shirt/skin (one warm cluster) and on hair/pants
+ * (his afro's black and his shorts' near-black are one cluster too).
  */
 function resolveMaterials(pal, recipe) {
   const out = {};
   for (const [name, decl] of Object.entries(recipe.materials)) {
     const want = hexToRgb(decl.hex);
-    let best = -1, bestD = Infinity;
-    pal.forEach((p, i) => { const d = toneDistance(p.rgb, want); if (d < bestD) { bestD = d; best = i; } });
-    if (bestD > TONE_MEMBERSHIP) {
+    let best = -1, bestD = Infinity, nearestAny = -1, nearestAnyD = Infinity;
+    pal.forEach((p, i) => {
+      const d = toneDistance(p.rgb, want);
+      if (d < nearestAnyD) { nearestAnyD = d; nearestAny = i; }
+      const bright = Math.max(lum(p.rgb), lum(want)), dim = Math.min(lum(p.rgb), lum(want));
+      if (bright > ANCHOR_VALUE_RATIO * Math.max(dim, 1)) return; // an outline, not this material unlit
+      if (d < bestD) { bestD = d; best = i; }
+    });
+    if (best === -1 || bestD > TONE_MEMBERSHIP) {
       out[name] = { notTraceable: {
         class: 'no-such-material',
         reason: `no cluster on this sheet is within ${TONE_MEMBERSHIP} of the declared ${decl.hex} for "${name}" ` +
-          `(nearest is ${pal[best]?.hex} at ${round(bestD, 1)}) — the recipe's anchor is wrong, or the art changed`,
+          `at compatible value (nearest by tone is ${pal[nearestAny]?.hex} at ${round(nearestAnyD, 1)}) — ` +
+          'the recipe\'s anchor is wrong, or the art changed',
       } };
       continue;
     }
@@ -90,6 +125,24 @@ function resolveMaterials(pal, recipe) {
       index: best, hex: pal[best].hex, sharePct: round(pal[best].sharePct, 2),
       declaredAnchor: decl.hex, toneDistance: round(bestD, 2), paired: decl.paired === true,
     };
+  }
+  const claims = new Map();
+  for (const [name, m] of Object.entries(out)) {
+    if (m.notTraceable) continue;
+    if (!claims.has(m.index)) claims.set(m.index, []);
+    claims.get(m.index).push(name);
+  }
+  for (const [index, names] of claims) {
+    if (names.length < 2) continue;
+    for (const name of names) {
+      const rivals = names.filter((n) => n !== name).map((n) => `"${n}"`).join(', ');
+      out[name] = { notTraceable: {
+        class: 'indistinct-materials',
+        reason: `"${name}" and ${rivals} both resolve to this sheet's ${pal[index].hex} cluster ` +
+          `(${round(pal[index].sharePct, 1)}% of the figure) — the drawing holds them in one tone, so no ` +
+          'colour read can separate them; trace their boundary by geometry, or fix whichever anchor is wrong',
+      } };
+    }
   }
   return out;
 }

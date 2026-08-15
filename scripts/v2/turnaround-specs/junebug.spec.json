@@ -71,11 +71,11 @@
       "paired": false
     },
     "skin": {
-      "index": 3,
-      "hex": "#45342a",
-      "sharePct": 12.33,
+      "index": 0,
+      "hex": "#cc844a",
+      "sharePct": 29.57,
       "declaredAnchor": "#d9a173",
-      "toneDistance": 10.52,
+      "toneDistance": 20.37,
       "paired": false
     },
     "pants": {
@@ -121,12 +121,12 @@
       "confidence": "traced"
     },
     "mouth": {
-      "value": 68.4,
+      "value": 91.2,
       "unit": "pctOfHead",
-      "row": 275,
-      "darkest": 3,
-      "hostFrac": 0.14,
-      "rejectedRows": 0,
+      "row": 343,
+      "darkest": 51,
+      "hostFrac": 0.33,
+      "rejectedRows": 44,
       "confidence": "traced"
     },
     "earLine": {

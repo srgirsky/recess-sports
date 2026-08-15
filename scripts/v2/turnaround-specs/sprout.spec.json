@@ -145,7 +145,7 @@
       "row": 338,
       "darkest": 16,
       "hostFrac": 0.3,
-      "rejectedRows": 0,
+      "rejectedRows": 40,
       "confidence": "traced"
     },
     "earLine": {
