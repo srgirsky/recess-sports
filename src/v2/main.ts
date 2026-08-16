@@ -64,6 +64,19 @@ const surface = params.has('play')
     : params.has('spike')
       ? new LookSpike(canvas)
       : new App(canvas, screens);
+if (surface instanceof GameView) {
+  // The bare play surface gets a freeze/resume toggle instead of the App's
+  // pause screen. This is not only a courtesy — it is what closes the gate
+  // hole the round-2 re-audit found: the layout audit drives `?play=1`,
+  // which never mounted the App's pause button, so pause-vs-HUD collisions
+  // (the ⏸ sat ON the matchup plate) were invisible to `audit:v2-layout`.
+  // With the button live here, the audit measures it in every game state.
+  let frozen = false;
+  surface.onPauseRequest(() => {
+    frozen = !frozen;
+    surface.setPaused(frozen);
+  });
+}
 void surface.start();
 
 if (import.meta.env.DEV) {

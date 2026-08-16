@@ -1083,9 +1083,10 @@ export class GameView {
   }
 
   /**
-   * Show the ⏸ control and route its tap. The button exists only once a host
-   * (the App) can answer it with a pause screen — the bare `?play=1` review
-   * surface has no screens, so it keeps no dead control.
+   * Show the ⏸ control and route its tap. The button appears only once a host
+   * wired an answer: the App answers with a pause screen, and `main.ts` gives
+   * the bare `?play=1` surface a freeze/resume toggle — partly so the layout
+   * audit, which drives `?play=1`, measures the button it once could not see.
    */
   onPauseRequest(fn: () => void): void {
     this.pauseRequest = fn;
@@ -1095,6 +1096,12 @@ export class GameView {
   /** Freeze or resume the whole view. See the tick's pause branch. */
   setPaused(paused: boolean): void {
     this.paused = paused;
+    // On the App path a pause screen covers the HUD, so the glyph swap is
+    // invisible there; on the bare play surface the button IS the resume.
+    if (this.pauseBtn) {
+      this.pauseBtn.textContent = paused ? '▶' : '⏸';
+      this.pauseBtn.setAttribute('aria-label', paused ? 'resume the game' : 'pause the game');
+    }
   }
 
   /**
