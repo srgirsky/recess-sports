@@ -14,3 +14,7 @@ docs/v2/concepts/roster-signoff.html
 # Python bytecode — Blender writes these when a --python script imports sculptlib.
 __pycache__/
 *.pyc
+
+# Critic/agent scratch scripts — never committed
+_crit_*.mjs
+*.tmp.mjs
