@@ -228,6 +228,105 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
    home-run camera and fireworks. Shifts, stamina and power-ups were reviewed and
    deliberately left out until playtesting establishes a product need.
 
+## 2026-08-15 full-playthrough re-audit (what the screen actually shows)
+
+Method: a complete player-chair pass through the shipped v2 front door on the
+dev server — first-run title, Clubhouse, custom captain, a full 9-pick draft,
+strategy, team screen with live venue/night flips, a pickup game batting and
+pitching through real input, a night watch game to completion, batting
+practice, the Recess Week entry route, all eleven venues via `?play=1&venue=`,
+the 30-kid roster grid (`?spike=1&roster=1`) and the clip review page
+(`?anims=1`). Every claim below was observed on screen this session (seeds
+`audit-2026-08-15`, `audit-night`, `v1`); nothing is carried over from the
+struck backlog above. The struck backlog is accurate about *existence* —
+every listed surface is present and wired — but several items do not yet
+survive being looked at. The spike-bb26 exit scorecard (silhouette 7 vs 2,
+HUD 9 vs 1, etc. — see `spike-harvest.md`) is directionally confirmed for
+motion, venue and contact spectacle; the character-silhouette gap has since
+closed substantially (all 30 kids load as delivered models, zero proxies).
+
+### Broken on screen (bugs, ranked by how hard they undercut parity)
+
+1. **No bat exists anywhere in v2.** Batters at the plate, mid-swing, and in
+   the *authored* `bat_stance` clip (`?anims=1`, ★ clip) hold nothing — the
+   stance clip is an upright stand facing the pitcher. Every plate camera
+   frame reads "kid standing around" where BB2026 shows waggle-and-load.
+2. **Contact spectacle renders as artifact confetti.** On every hit, the
+   render-only burst (backlog §9) draws dozens of untextured white/yellow
+   squares across the sky and field, and nearby characters flash glowing
+   yellow. The marquee moment of the game looks broken, not juicy.
+3. **T-poses during play.** At contact and during live balls, the batter,
+   catcher and infielders snap to T-pose between clips. The `?anims=1` list
+   shows why: `pitch_windup/stride/release`, `bat_load`, `swing_whiff`,
+   `bunt`, `run_fast`, `trot`, `jog_back` and both shuffles are still
+   placeholder (■) — the whole action vocabulary between authored keyframes
+   falls back to nothing.
+4. **A passive defender means the half never ends.** In `both` mode the
+   pitch clock auto-throws grooved fastballs, the CPU hits nearly all of
+   them, and un-steered fielders record no outs: observed 11 batters, 9
+   runs, 0 outs in bottom 1. No mercy rule, no fielding assist, and **no
+   pause/quit/home control exists in-game** — a 5-year-old who doesn't
+   master drag-steering is trapped in a blowout with no exit. (CPU-vs-CPU
+   halves field fine — watch mode ended itself in a walk-off — so this is
+   the human-defence policy, not the sim.)
+5. **Verdict callouts render in-world and get occluded.** BALL/WALK/FOUL +
+   EARLY/LATE exist (good), but they draw at plate depth behind the batter
+   and catcher heads — the one thing BB2026 never lets happen to a verdict.
+6. **The inning-break line score was never seen.** Across three
+   between-half beats (including `?break=1`), the board's state said open
+   (`body.inning-break`, display grid, opacity 1, centered rect) while the
+   pixels showed the field. Either it flashes sub-second or a stacking bug
+   hides it; either way the player never reads a line score.
+7. **Polish debris:** a stray red ▶ glyph floats on every DOM screen; a
+   giant unlit black triangle dominates the sky behind CF in the live
+   camera at Parks #2; the strike-zone box + aim bar sit visibly left of
+   the plate from the batting camera; Tank's face ships with closed eyes
+   and no mouth; the title/custom portraits default to a frown; the
+   matchup plate has a washed-out ghost state.
+
+### Parity gaps that are design-level, not bugs
+
+8. **Venue identity does not survive the play camera.** All eleven venues
+   share one stage; from the plate the only changes are fence material,
+   skyline strip and ground tint. None of the signature props (pool,
+   playset, barn, espresso kiosk, dumpsters, fire escapes, tire stacks)
+   are visible from gameplay cameras; Tin Can and Blacktop floors read as
+   flat black voids; the Dome is a purple sky, not an interior. BB2026's
+   bar is venue identity in *every* camera.
+9. **The draft has ceremony but no star moment.** One-kid-at-a-time with a
+   CPU reveal works, but the candidate stays crowd-sized inside a dimmed,
+   desaturated spotlight scene (a scrim mutes exactly the pixels being
+   sold), and there is no trading card — no portrait, birthday or
+   personality copy. The bench strip also clips below the fold at a
+   1300×860 window.
+10. **The title hides its own world.** The treehouse is a static
+    illustration that fully covers the live park, so the attract game runs
+    invisibly behind it; the hero portraits are flat 2D and frowning.
+11. **Night is a blue filter.** Light towers exist but pool no light; the
+    live camera brightens back toward day; lit windows are the only warm
+    accent. (HR fireworks at night not observed this session.)
+12. **Live-play readability:** the camera follows chaser+ball only —
+    runners and target bags are off-frame (the scoreboard diamond is the
+    only runner telemetry), and the wide bottom-center scoreboard bar
+    occludes play near home.
+13. **The result screen is a plain dark card** — functional verdict, stars
+    and buttons, but nothing like the diegetic green line-score board with
+    portraits that BB2026 ends every game on.
+
+### Confirmed working at or near the bar
+
+All 30 roster kids load as delivered GLBs (0 proxies, LOD0) with strong,
+varied silhouettes and faces in direct light; the HUD sticker kit
+(scoreboard, pitch cards, matchup plate, plank headers) holds; one-tap
+pickup flow, live venue/night flips on the team screen, Clubhouse + sticker
+book + custom captain, More Games' three card-fronted modes with honest
+labels, watch-mode walk-off ending, wheelchair inclusion end to end, the
+AI-voice disclosure line, and a clean console.
+
+Not yet verified this session: the Recess Week board and pennant loop past
+its draft gate, HR fireworks, the audio mix, and the break-board paint bug's
+root cause.
+
 Gameplay: their new modes (Backyard Derby, Backyard Bash, Wiggle Ball, T-Ball)
 map to the focused practice/watch arc Recess now ships, and their 10-point skill system
 matches our 1-10 stats already. Their named FAULTS — batting either trivial or
