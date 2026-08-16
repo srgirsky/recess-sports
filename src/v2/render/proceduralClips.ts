@@ -1523,6 +1523,20 @@ function slide(spec: ClipSpec): AnimationClip {
 
 // --- The library -------------------------------------------------------------
 
+/**
+ * ★ NO KEY MAY LEAVE THE ARMS AT BIND. `build()` fills an unkeyed alias with
+ * `[0,0,0]` — the T-pose — and the mixer blends any bone the incoming clip
+ * does not track back toward its REST pose during a crossfade. Either way the
+ * kid throws his arms straight out sideways. That was re-audit #3's "kids
+ * snap to T-pose during play": every fidget, cheer and upset started and
+ * ended at `pose: {}`, so the whole park periodically hit the bind pose while
+ * looking wired. Author reaction/fidget keys through `withArms`, which fills
+ * whatever the key does not say with the idle hang; a gate in
+ * `AnimationDirector.test.ts` fails any clip whose arm track touches bind.
+ */
+const NEUTRAL_ARMS: Pose = { la: [0, 0, 74], lf: [0, 12, 0], ra: [0, 0, -74], rf: [0, -12, 0] };
+const withArms = (pose: Pose): Pose => ({ ...NEUTRAL_ARMS, ...pose });
+
 type ReactionStyle = 'cool' | 'fierce' | 'goofy' | 'tender';
 type ReactionBeat = [Pose, Pose, Key['hips']?, Key['hips']?];
 
@@ -1568,10 +1582,10 @@ function directedReaction(spec: ClipSpec, won: boolean, style: ReactionStyle): A
     ];
   }
   return build(spec, [
-    { f: 0, pose: {} },
-    { f: Math.round(spec.frames * 0.28), pose: beat[0], hips: beat[2] },
-    { f: Math.round(spec.frames * 0.62), pose: beat[1], hips: beat[3] },
-    { f: spec.frames - 1, pose: {} },
+    { f: 0, pose: withArms({}) },
+    { f: Math.round(spec.frames * 0.28), pose: withArms(beat[0]), hips: beat[2] },
+    { f: Math.round(spec.frames * 0.62), pose: withArms(beat[1]), hips: beat[3] },
+    { f: spec.frames - 1, pose: withArms({}) },
   ]);
 }
 
@@ -1579,12 +1593,12 @@ const BUILDERS: Record<string, (spec: ClipSpec) => AnimationClip> = {
   idle,
   idle_fidget: (s) =>
     build(s, [
-      { f: 0, pose: {} },
-      { f: 20, pose: { ra: [-96, 0, -30], rf: [0, 96, 0], hd: [-8, 0, 6], s2: [3, 0, 0] } },
-      { f: 34, pose: { ra: [-104, 0, -24], rf: [0, 108, 0], hd: [-10, 0, 8] } },
-      { f: 52, pose: { ra: [-90, 0, -36], rf: [0, 88, 0], hd: [-6, 0, 4], ru: [-8, 0, 0] } },
-      { f: 68, pose: { ru: [-18, 0, 0], rl: [26, 0, 0], hp: [0, -6, 0], s2: [2, -4, 0] } },
-      { f: s.frames - 1, pose: {} },
+      { f: 0, pose: withArms({}) },
+      { f: 20, pose: withArms({ ra: [-96, 0, -30], rf: [0, 96, 0], hd: [-8, 0, 6], s2: [3, 0, 0] }) },
+      { f: 34, pose: withArms({ ra: [-104, 0, -24], rf: [0, 108, 0], hd: [-10, 0, 8] }) },
+      { f: 52, pose: withArms({ ra: [-90, 0, -36], rf: [0, 88, 0], hd: [-6, 0, 4], ru: [-8, 0, 0] }) },
+      { f: 68, pose: withArms({ ru: [-18, 0, 0], rl: [26, 0, 0], hp: [0, -6, 0], s2: [2, -4, 0] }) },
+      { f: s.frames - 1, pose: withArms({}) },
     ]),
   run: (s) => runCycle(s, 12, 44, 42),
   run_fast: (s) => runCycle(s, 20, 54, 54),
@@ -1750,12 +1764,12 @@ const BUILDERS: Record<string, (spec: ClipSpec) => AnimationClip> = {
 
   cheer: (s) =>
     build(s, [
-      { f: 0, pose: {} },
-      { f: 6, pose: { hp: [22, 0, 0], lu: [34, 0, 10], ll: [-52, 0, 0], ru: [34, 0, -10], rl: [-52, 0, 0], la: [30, 0, 40], ra: [30, 0, -40] } },
-      { f: 14, pose: { hp: [-8, 0, 0], hd: [-16, 0, 0], la: [-172, 0, 16], ra: [-172, 0, -16], lu: [-26, 0, 8], ll: [46, 0, 0], ru: [-26, 0, -8], rl: [46, 0, 0] } },
-      { f: 24, pose: { hp: [-6, 0, 0], hd: [-12, 0, 0], la: [-166, 0, 22], ra: [-166, 0, -22], lu: [-10, 0, 8], ru: [-10, 0, -8] } },
-      { f: 32, pose: { hp: [14, 0, 0], hd: [-6, 0, 0], la: [-150, 0, 26], ra: [-150, 0, -26], lu: [22, 0, 10], ll: [-30, 0, 0], ru: [22, 0, -10], rl: [-30, 0, 0] } },
-      { f: s.frames - 1, pose: {} },
+      { f: 0, pose: withArms({}) },
+      { f: 6, pose: withArms({ hp: [22, 0, 0], lu: [34, 0, 10], ll: [-52, 0, 0], ru: [34, 0, -10], rl: [-52, 0, 0], la: [30, 0, 40], ra: [30, 0, -40] }) },
+      { f: 14, pose: withArms({ hp: [-8, 0, 0], hd: [-16, 0, 0], la: [-172, 0, 16], ra: [-172, 0, -16], lu: [-26, 0, 8], ll: [46, 0, 0], ru: [-26, 0, -8], rl: [46, 0, 0] }) },
+      { f: 24, pose: withArms({ hp: [-6, 0, 0], hd: [-12, 0, 0], la: [-166, 0, 22], ra: [-166, 0, -22], lu: [-10, 0, 8], ru: [-10, 0, -8] }) },
+      { f: 32, pose: withArms({ hp: [14, 0, 0], hd: [-6, 0, 0], la: [-150, 0, 26], ra: [-150, 0, -26], lu: [22, 0, 10], ll: [-30, 0, 0], ru: [22, 0, -10], rl: [-30, 0, 0] }) },
+      { f: s.frames - 1, pose: withArms({}) },
     ]),
   // Failure-only browser fallbacks reuse the broad beats. The first-party GLB
   // gets the richer directed keys through buildDirectedReactionClips below.
@@ -1765,7 +1779,9 @@ const BUILDERS: Record<string, (spec: ClipSpec) => AnimationClip> = {
   cheer_tender: (s) => BUILDERS.cheer(s),
   upset: (s) =>
     build(s, [
-      { f: 0, pose: BAT_STANCE_POSE },
+      // Not the bat stance: the pitcher plays this too, and with the stance
+      // now a two-hand grip a batless kid miming it reads wrong.
+      { f: 0, pose: withArms({ hp: [0, -8, 0], s2: [6, -6, 0], hd: [12, -8, 0] }) },
       { f: 10, pose: { hp: [0, -14, 0], s2: [8, -10, 0], hd: [22, -18, 0], la: [-6, 0, 66], ra: [-6, 0, -66] } },
       { f: 26, pose: { hp: [10, 0, 0], sp: [14, 0, 0], s2: [10, 0, 0], hd: [30, 0, 0], la: [8, 0, 70], ra: [8, 0, -70], lu: [12, 0, 10], ru: [12, 0, -10] } },
       { f: 44, pose: { hp: [12, 0, 0], sp: [16, 0, 0], hd: [34, 0, 0], la: [10, 0, 72], ra: [10, 0, -72] } },

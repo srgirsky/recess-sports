@@ -12,7 +12,7 @@ import { describe, it, expect } from 'vitest';
 import { AnimationClip, Object3D, Vector3, VectorKeyframeTrack } from 'three';
 import { AnimationDirector } from './AnimationDirector';
 import { OutlineRegistry, attachOutline } from './materials/outline';
-import { buildDirectedReactionClips, buildJunebugPilotClips, buildMimiMashPilotClips, buildProceduralClips, buildTankPilotClips, buildTheoPilotClips, buildZoomPilotClips } from './proceduralClips';
+import { buildBigLouPilotClips, buildDirectedReactionClips, buildJunebugPilotClips, buildMimiMashPilotClips, buildProceduralClips, buildTankPilotClips, buildTheoPilotClips, buildZoomPilotClips } from './proceduralClips';
 import { CLIPS, CLIP_NAMES, FPS, LOOP_MAX_RATE, LOOP_MIN_RATE, clipSpec, type AnimName } from './clips';
 import { ProxyCharacter } from './ProxyCharacter';
 import { ROSTER } from '../../data/characters';
@@ -87,6 +87,42 @@ describe('the procedural stand-in library', () => {
       } else {
         expect(travel, `${spec.name} travel`).toBeGreaterThan(spec.bodyTravelFt - 0.35);
         expect(travel, `${spec.name} travel`).toBeLessThan(spec.bodyTravelFt + 0.35);
+      }
+    }
+  });
+
+  it('never lets any clip put the arms at bind — the T-pose has no author', () => {
+    // Two roads lead to a kid with his arms straight out sideways, and both
+    // start with an innocent-looking key. `build()` fills an unkeyed alias
+    // with [0,0,0] — the bind rotation — so `pose: {}` IS the T-pose. And the
+    // mixer blends any bone the active clip does not track toward its REST
+    // pose during a crossfade, so a clip with no arm track parks the arms at
+    // bind for its whole run. Re-audit #3 ("kids snap to T-pose during play")
+    // was every fidget, cheer and upset starting and ending exactly there.
+    // The fix is `withArms`; this is the ratchet that keeps it fixed, over the
+    // shared library, the directed reactions and all six character takes.
+    const libraries = [
+      clips,
+      buildDirectedReactionClips(),
+      buildJunebugPilotClips(),
+      buildTheoPilotClips(),
+      buildZoomPilotClips(),
+      buildBigLouPilotClips(),
+      buildTankPilotClips(),
+      buildMimiMashPilotClips(),
+    ];
+    for (const library of libraries) {
+      for (const clip of library) {
+        for (const bone of ['LeftArm', 'RightArm']) {
+          const track = clip.tracks.find((t) => t.name === `${bone}.quaternion`);
+          expect(track, `${clip.name} never keys ${bone}`).toBeTruthy();
+          for (let k = 0; k < track!.times.length; k++) {
+            const [x, y, z, w] = Array.from(track!.values.slice(k * 4, k * 4 + 4));
+            const atBind =
+              Math.abs(x) < 1e-4 && Math.abs(y) < 1e-4 && Math.abs(z) < 1e-4 && Math.abs(w - 1) < 1e-4;
+            expect(atBind, `${clip.name} ${bone} key ${k} is the bind pose`).toBe(false);
+          }
+        }
       }
     }
   });
