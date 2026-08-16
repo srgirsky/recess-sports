@@ -25,6 +25,7 @@ import {
   DirectionalLight,
   Group,
   HemisphereLight,
+  PointLight,
   Vector3,
   type Object3D,
 } from 'three';
@@ -70,7 +71,7 @@ export class Lighting {
     this.hemi = new HemisphereLight(
       new Color(night ? 0x2c3e66 : SKY_TINT),
       new Color(night ? 0x1f2e1f : GROUND_BOUNCE),
-      night ? 0.32 : 0.55
+      night ? 0.22 : 0.55
     );
     this.root.add(this.hemi);
 
@@ -81,7 +82,10 @@ export class Lighting {
       .set(Math.sin(az) * Math.cos(el), Math.sin(el), Math.cos(az) * Math.cos(el))
       .normalize();
 
-    this.key = new DirectionalLight(new Color(night ? 0xdcebff : KEY_TINT), night ? 0.95 : 1.5);
+    // Night key dims well below day so the warm tower pools below can OWN the
+    // read — at the audit-era 0.95 the field lit back toward day the moment a
+    // camera framed it without sky (re-audit #11: "night is a blue filter").
+    this.key = new DirectionalLight(new Color(night ? 0xdcebff : KEY_TINT), night ? 0.45 : 1.5);
     this.key.position.copy(this.dir).multiplyScalar(140);
     this.key.castShadow = opts.shadowMapSize > 0;
     if (this.key.castShadow) {
@@ -103,6 +107,22 @@ export class Lighting {
     this.fill.position.set(-this.dir.x, 0.6, -this.dir.z).multiplyScalar(120);
     this.fill.castShadow = false;
     this.root.add(this.fill);
+
+    // ★ THE TOWERS POOL LIGHT AT NIGHT. Two warm point lights hang high over
+    // the infield corners — the light the four fence towers claim to throw.
+    // Physical falloff does the composition: a bright warm infield fading to
+    // cool dark outfield reads as "under the lights" from EVERY camera,
+    // including the ones that frame no sky. Deliberately shadowless: two more
+    // shadow maps would double the per-frame cost for a moodier penumbra
+    // nobody can point to.
+    if (night) {
+      for (const side of [-1, 1] as const) {
+        const tower = new PointLight(0xffd9a0, 5200, 340, 2);
+        tower.position.set(side * 55, 74, 46);
+        tower.castShadow = false;
+        this.root.add(tower);
+      }
+    }
   }
 
   /**
