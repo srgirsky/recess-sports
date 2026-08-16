@@ -152,6 +152,11 @@ export class App {
   }
 
   private showTitle(): void {
+    // Null on purpose, looked at through the title's new window (see
+    // `.screen--title::before`): the attract game's own cues put a batter's
+    // head and shoulders in the opening and keep cutting with the plays,
+    // which reads as a real game outside. A locked FIELD/PLAY rig was tried
+    // and shows only a static band of dirt through the same slot.
     this.game.setScreenCue(null);
     this.rosters = null;
     this.seasonDraft = false;

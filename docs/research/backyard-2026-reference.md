@@ -585,6 +585,18 @@ skipped time and painted once mid-life — both vanish at a real clock).
    `insideFrame`, failing a leaf inside a legitimate horizontal scroller
    for an x reason the horizontal rule had already excused — the code now
    matches its own comment. Clean at 4,589 boxes.
+7. **#10 closed: the title's window is real.** The treehouse art moved to a
+   `.screen--title::before` carrying an SVG alpha mask that unpaints the
+   window's clear band (image px 552,272 → 1136,464 — below the branch,
+   above the sill), so the attract game that always ran behind the title
+   finally shows through the painted opening; mask and art share
+   `cover center`, so the hole tracks the window at every viewport, and the
+   art rides the pseudo because a mask on the screen itself would erase the
+   wordmark and buttons. The camera stays on the attract game's own cues —
+   a locked FIELD/PLAY rig was tried through the slot and reads as a static
+   band of dirt, while the game's cues put a batter's head and shoulders in
+   the window and keep cutting with the plays. Pointer rules untouched: the
+   window is pixels, not a hole in input.
 
 ### Verified working this round
 

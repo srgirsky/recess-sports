@@ -695,7 +695,6 @@ body.inning-break #hud > *:not(.inning-board):not(.btn--mute) {
 /* Commissioned, text-free clubhouse art turns shell screens into one physical
    place. The dark wash is paint-order first and keeps every existing contrast
    and layout assertion intact; navigation remains ordinary DOM above it. */
-.screen--title,
 .screen--clubhouse,
 .screen--modes {
   background-image:
@@ -703,6 +702,39 @@ body.inning-break #hud > *:not(.inning-board):not(.btn--mute) {
     var(--clubhouse-art);
   background-size: cover;
   background-position: center;
+}
+/*
+ * ★ THE TITLE'S WINDOW IS REAL. BB2026's "Pick-Up Window" is a literal window
+ * with the field visible through it — and an attract game has ALWAYS been
+ * running behind our title, invisible under the opaque treehouse raster
+ * (round-2 re-audit #10 / v1 gap #10). The art rides a ::before with an SVG
+ * alpha mask that unpaints the window's clear band (image px 552,272 →
+ * 1136,464 of the 1600×901 raster — below the branch, above the sill), so
+ * the LIVE park shows through the painted opening. Mask and art share
+ * `cover center`, so the hole tracks the window at every viewport. The art
+ * lives on the pseudo, never the screen itself: a mask on `.screen--title`
+ * would erase the wordmark and buttons too. Pointer rules are untouched —
+ * the screen stays modal; the window is pixels, not a hole in input.
+ */
+.screen--title {
+  background: none;
+}
+.screen--title::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    linear-gradient(180deg, rgb(20 32 46 / 0.28), rgb(20 32 46 / 0.72)),
+    var(--clubhouse-art);
+  background-size: cover;
+  background-position: center;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 901'%3E%3Cpath fill='white' fill-rule='evenodd' d='M0 0h1600v901H0z M552 272h584v192H552z'/%3E%3C/svg%3E");
+  -webkit-mask-size: cover;
+  -webkit-mask-position: center;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 901'%3E%3Cpath fill='white' fill-rule='evenodd' d='M0 0h1600v901H0z M552 272h584v192H552z'/%3E%3C/svg%3E");
+  mask-size: cover;
+  mask-position: center;
 }
 
 /* ---- Buttons ---- */
