@@ -29,6 +29,7 @@ import { CharacterModel, type KidView } from '../render/CharacterModel';
 import { createCharacter, proxyForced, type KidSource } from '../render/CharacterFactory';
 import { configureModelLoader } from '../render/modelLoader';
 import { AnimationDirector } from '../render/AnimationDirector';
+import { attachBatProp } from '../render/props';
 import { performanceFor } from '../render/performance';
 import { buildProceduralClips } from '../render/proceduralClips';
 import type { AnimName } from '../render/clips';
@@ -182,6 +183,7 @@ export class LookSpike {
       const requestedFace = new URLSearchParams(location.search).get('face');
       const dir = new AnimationDirector(kid.mesh, {
         fallback: this.clipLibrary,
+        bat: attachBatProp(kid) ?? undefined,
         actor: requestedFace ? undefined : {
           id: character.id,
           profile: performanceFor(character.id),

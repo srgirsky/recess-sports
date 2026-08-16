@@ -41,6 +41,7 @@ import { createCharacter, type KidSource } from '../render/CharacterFactory';
 import { FACE_CELLS } from '../render/faceAtlas';
 import type { KidView } from '../render/CharacterModel';
 import { AnimationDirector } from '../render/AnimationDirector';
+import { attachBatProp } from '../render/props';
 import { buildProceduralClips } from '../render/proceduralClips';
 import {
   configureModelLoader,
@@ -175,6 +176,7 @@ export class AnimSpike {
       clips: this.deliveredClips,
       performanceClips: this.performanceClips,
       fallback: buildProceduralClips(),
+      bat: attachBatProp(kid) ?? undefined,
     });
     this.playCurrent();
   }

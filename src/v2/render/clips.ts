@@ -294,6 +294,20 @@ export function clipSpec(name: string): ClipSpec {
   return spec;
 }
 
+/**
+ * Whether a kid visibly holds the bat during this clip.
+ *
+ * Derived from the table rather than enumerated: every batting-group clip, plus
+ * anything that settles back into `bat_stance` — the settle graph already says
+ * "this clip happens at the plate", and a batter bailing out of a dodge keeps
+ * his bat. `AnimationDirector` applies this on every play, so a batter turned
+ * runner drops the bat the moment locomotion takes over.
+ */
+export function holdsBat(name: string): boolean {
+  const spec = clipSpec(name);
+  return spec.group === 'batting' || spec.returnsTo === 'bat_stance';
+}
+
 // --- Timing -----------------------------------------------------------------
 
 export function framesToSec(frames: number): number {
