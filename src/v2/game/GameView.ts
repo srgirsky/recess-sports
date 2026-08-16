@@ -602,6 +602,7 @@ export class GameView {
     const geo = VENUE_GEOMETRY[this.venue];
     const look = VENUE_LOOKS[this.venue];
     this.field = buildField(geo, look, this.outlines, { anisotropy: this.renderer.tier.anisotropy });
+    this.field.setNight(this.night);
     this.fence = buildFence(geo, look, this.outlines);
     this.scenery = buildScenery(geo, this.venue, { night: this.night });
     this.scene.add(this.field.root, this.fence.root, this.scenery.root);
@@ -1642,6 +1643,7 @@ export class GameView {
 
     this.applySky();
 
+    this.field.setNight(night);
     this.scene.remove(this.lighting.root);
     this.lighting.key.dispose();
     this.lighting.fill.dispose();
@@ -1695,6 +1697,7 @@ export class GameView {
     this.scenery.root.removeFromParent();
     this.scenery.dispose();
     this.field = buildField(geo, look, this.outlines, { anisotropy: this.renderer.tier.anisotropy });
+    this.field.setNight(this.night);
     this.fence = buildFence(geo, look, this.outlines);
     this.scenery = buildScenery(geo, id, { night: this.night });
     this.scene.add(this.field.root, this.fence.root, this.scenery.root);

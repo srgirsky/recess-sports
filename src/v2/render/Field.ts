@@ -209,6 +209,9 @@ export interface FieldBuild {
   root: Group;
   /** Everything a shadow may fall on. */
   receivers: Mesh[];
+  /** Fade the turf's baked night pool in or out — the field is NOT rebuilt on
+   *  a day/night flip, so the shader takes it as a live uniform. */
+  setNight(night: boolean): void;
   dispose(): void;
 }
 
@@ -223,7 +226,7 @@ export function buildField(
   const disposers: Array<() => void> = [];
 
   // ---- Turf ---------------------------------------------------------------
-  const turf = buildTurf(look);
+  const { mesh: turf, setNight } = buildTurf(look);
   turf.position.y = Y_TURF;
   turf.receiveShadow = true;
   root.add(turf);
@@ -270,9 +273,30 @@ export function buildField(
 
   const receivers = [turf, overlay, mound];
 
+  // The dirt is most of a live frame, and an untinted canvas texture lit by
+  // even a dim key still reads day-bright — the turf pool alone changed
+  // nothing the eye noticed. Night pulls the whole dirt family toward warm
+  // dusk; the chalk deliberately keeps its pop.
+  const overlayMat = overlay.material as MeshToonMaterial;
+  const moundMat = mound.material as MeshToonMaterial;
+  const dayOverlay = overlayMat.color.clone();
+  const dayMound = moundMat.color.clone();
+  // Linear-space multiplier: sRGB display halves the apparent dim.
+  const duskDirt = new Color(0.44, 0.36, 0.24);
+  const setNightAll = (night: boolean): void => {
+    setNight(night);
+    overlayMat.color.copy(dayOverlay);
+    moundMat.color.copy(dayMound);
+    if (night) {
+      overlayMat.color.multiply(duskDirt);
+      moundMat.color.multiply(duskDirt);
+    }
+  };
+
   return {
     root,
     receivers,
+    setNight: setNightAll,
     dispose() {
       for (const d of disposers) d();
     },
@@ -297,7 +321,7 @@ export function buildField(
  * trapezoids through its affine projection and could never get the far end
  * right — this is one of the places 3D simply deletes a category of work.
  */
-function buildTurf(look: VenueLook): Mesh {
+function buildTurf(look: VenueLook): { mesh: Mesh; setNight: (night: boolean) => void } {
   const W = 560;
   const D = 400;
 
@@ -322,10 +346,12 @@ function buildTurf(look: VenueLook): Mesh {
   const dark = new Color(look.grass).lerp(new Color(look.grassDark), 0.3).convertSRGBToLinear();
   const mode = { stripes: 0, checker: 1, tufts: 2, court: 3 }[look.mowPattern];
 
+  const uNight = { value: 0 };
   mat.onBeforeCompile = (shader) => {
     shader.uniforms.uLight = { value: light };
     shader.uniforms.uDark = { value: dark };
     shader.uniforms.uMode = { value: mode };
+    shader.uniforms.uNight = uNight;
     shader.uniforms.uCell = { value: 17 }; // ft — a real mower width
 
     shader.vertexShader = shader.vertexShader
@@ -343,6 +369,7 @@ function buildTurf(look: VenueLook): Mesh {
          uniform vec3  uLight;
          uniform vec3  uDark;
          uniform float uMode;
+         uniform float uNight;
          uniform float uCell;
 
          float h21( vec2 p ) {
@@ -423,6 +450,18 @@ function buildTurf(look: VenueLook): Mesh {
            turf = mix( turf, turf * vec3( 1.07, 1.0, 0.82 ),
                        smoothstep( 0.58, 0.92, broad ) * 0.55 );
 
+           // ★ NIGHT LIVES IN THE SURFACE, not only in the lights. Analytic
+           // lights dim the toon ramp, but a frame full of turf still reads
+           // day-green to the eye — re-audit #11's "the live camera brightens
+           // back toward day". So the tower pool is baked here too: a warm
+           // disc over the infield falling to cool dark outfield, and every
+           // camera sees the same night whether or not sky is in frame.
+           float nightPool = 1.0 - smoothstep( 55.0, 175.0, length( wxz - vec2( 0.0, 55.0 ) ) );
+           // Values are LINEAR multipliers — sRGB halves the apparent dim, so what
+           // reads as dusk on screen needs to look drastic here.
+           vec3 nightTurf = turf * mix( vec3( 0.13, 0.17, 0.32 ), vec3( 0.80, 0.72, 0.52 ), nightPool );
+           turf = mix( turf, nightTurf, uNight );
+
            diffuseColor.rgb *= turf;
          }`
       )
@@ -445,7 +484,7 @@ function buildTurf(look: VenueLook): Mesh {
 
   const mesh = new Mesh(geom, mat);
   mesh.name = 'turf';
-  return mesh;
+  return { mesh, setNight: (night: boolean) => { uNight.value = night ? 1 : 0; } };
 }
 
 // --- The infield overlay ----------------------------------------------------
