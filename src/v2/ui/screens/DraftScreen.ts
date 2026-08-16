@@ -254,11 +254,14 @@ export class DraftScreen implements Screen {
       // Standalone/tests can still use the shared portrait without a scene.
       art.appendChild(portrait(c.visual, c.name, { street: true }));
     }
+    // The trading-card moment: the identity plate wears the card frame and
+    // carries the kid's own line, so a pick reads as pulling their card.
     const identity = el('div', 'draft-preview__identity');
     identity.append(
       el('h2', 'draft-preview__name', `${c.emoji ?? '⭐'} ${c.name}`),
       el('p', 'draft-preview__tagline', c.tagline)
     );
+    if (c.draftLine) identity.appendChild(el('p', 'draft-preview__line', `“${c.draftLine}”`));
 
     const ratings = el('div', 'draft-preview__ratings');
     for (const [key, icon, label] of SPOTLIGHT_STATS) {
