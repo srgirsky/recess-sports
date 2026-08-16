@@ -553,6 +553,19 @@ skipped time and painted once mid-life — both vanish at a real clock).
    cross-check, the climb-when-cropped fixture, and a structural assertion
    that the bridge really feeds the ladder (the vacancy that hid this for
    months).
+5. **Pause vs matchup plate: both get the corner, and the gate can finally
+   see them.** The ⏸ is now an absolutely-positioned corner button (it must
+   not size the HUD's top row — on the pauseless `?play=1` surface that row
+   was empty, and a grid-placed pause pushed the scoreboard off a 320px
+   frame the moment it appeared), and the matchup plate starts after it via
+   `#hud:has(.btn--pause)` — sliding right on wide frames, dropping below
+   on narrow ones, where the first fix attempt widened the top-left column
+   past a 390px viewport and shoved the mute off-glass. The gate hole
+   closed with it: `main.ts` gives `?play=1` a real freeze/resume toggle
+   (⏸/▶), so the audit's game states now measure the button they never saw
+   — which is how both wrong first attempts were caught. Audit clean at
+   4,460 boxes, nine more than before: the pause, measured in every game
+   state.
 
 ### Verified working this round
 
