@@ -151,6 +151,51 @@ function promoteAuthoredColors(gltf) {
   }
 }
 
+/**
+ * ★ EVERY KID SHIPPED A SECOND COPY OF THEIR OWN PALETTE, AND NOTHING READ IT.
+ *
+ * Blender writes the authored colour layer twice — once as the custom
+ * `_RECESS_COLOR` attribute the function above promotes to COLOR_0, and once as
+ * a standard colour layer, which glTF numbers COLOR_1. It is not white filler:
+ * decoded, Grizz's COLOR_1 is #AF6A3E against his authored SKIN of #B06A3E. It
+ * is the same palette at u16, beside the u8 copy `quantizePaletteAndWeights`
+ * makes, so it costs exactly twice what the attribute that IS used costs.
+ *
+ * Measured across the delivered roster before this ran: 43.5KB per character,
+ * 1.3MB in total, 13% of every kid's 400KB budget. Nothing in `src/` or
+ * `scripts/` mentions COLOR_1, and three.js binds only COLOR_0 to
+ * `geometry.attributes.color`, so all of it was freight.
+ *
+ * ⚠️ IT SURVIVED `pruneUnusedAccessorsAndViews` BECAUSE IT IS NOT UNUSED. That
+ * pass drops accessors nothing REFERENCES, and the primitive still referenced
+ * this one — the white COLOR_0 it was written to catch really does go
+ * unreferenced once the authored layer is promoted over it, and this one never
+ * does. An attribute has to be dropped by NAME, by someone who knows the
+ * runtime does not read it.
+ *
+ * This matters more than a byte count: the roster sits hard against both
+ * budgets — six kids under 100 LOD0 triangles of slack, `calls_shot` at exactly
+ * 400.0/400KB — while the entire rubric 4->5 backlog is construction to ADD
+ * (hems, cuffs, soles, strand grouping, deltoid domes). There was no room to
+ * add it in.
+ */
+function dropDuplicateColourLayers(gltf) {
+  let dropped = 0;
+  for (const mesh of gltf.json.meshes ?? []) {
+    for (const primitive of mesh.primitives ?? []) {
+      for (const semantic of Object.keys(primitive.attributes ?? {})) {
+        // COLOR_0 is the palette the toon shader reads; any further colour set
+        // is a Blender export artifact.
+        if (/^COLOR_[1-9]\d*$/.test(semantic)) {
+          delete primitive.attributes[semantic];
+          dropped++;
+        }
+      }
+    }
+  }
+  return dropped;
+}
+
 /** Give the image carrying M_Body's emissive atlas its contract name. */
 function normalizeFaceAtlasName(gltf) {
   const body = gltf.json.materials?.find((material) => material.name === 'M_Body');
@@ -321,6 +366,7 @@ export async function exportAuthoredCharacter(id, { blender = process.env.BLENDE
 
     const gltf = readGlb(intermediate);
     promoteAuthoredColors(gltf);
+    dropDuplicateColourLayers(gltf);
     normalizeFaceAtlasName(gltf);
     pruneUnusedAccessorsAndViews(gltf);
     const normalizedBin = normalizeSkinOrder(gltf, contract.BONE_NAMES);
