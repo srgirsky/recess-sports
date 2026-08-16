@@ -60,9 +60,18 @@ them.
 Produce characters in batches of at most five, chosen so no two sculpts in a
 batch touch the same file. Mimi's earlier approval was revoked because Blender
 provenance and manually entered scores did not prove visual fidelity. Junebug is
-the reference sculpt and the only approved character; procedural validity is not
-sculpt completion, so a generated GLB is a placeholder however cleanly it
-validates.
+the reference sculpt; procedural validity is not sculpt completion, so a
+generated GLB is a placeholder however cleanly it validates.
+
+**Status, 2026-08-16: all thirty characters are `candidate` and NONE is
+`approved`.** The sculpt campaign completed in seven batches (PRs #123–#137)
+plus a stance-and-mouth pass (#140), and every kid carries six independent
+critic scores of ≥4 bound to its own board. Junebug's 2026-08-12 approval was
+demoted on 2026-08-14 — the face-atlas and tone-mapping fixes re-rendered the
+runtime hero the board composites, so the board that approval was bound to no
+longer exists. Her GLB is byte-identical; it is a re-approval on better
+evidence, not a regression. `assets/v2/source/character-fidelity.json` is the
+record, and it — not this paragraph — is what to read.
 
 One pull request per batch, carrying a separate review block per character. Two
 rules make a batch as safe as the single-character pass it replaces:

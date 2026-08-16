@@ -1833,6 +1833,9 @@ small accent surface. The animation spike now loads the delivered model through
 its hero, 40px, run and contact evidence finally measure the asset that ships.
 Junebug is `candidate`, pending human art-direction approval; Theo, Zoom, Big
 Lou, Tank and Mimi remain `needs-polish`. Batch 2 stays paused until all six pass.
+*(Superseded — see "2026-08-15 — the campaign reaches candidate on all thirty"
+below. Every kid named here is now `candidate`, the `batch2Status` flag is
+retired, and `assets/v2/source/character-fidelity.json` is the record.)*
 
 **The 40-pixel panel was clipped on every board for the whole sculpt campaign.**
 The zoom strip ran to y=900 while the run/contact thumbnails composited at
@@ -2235,9 +2238,14 @@ in this order:
    partial animation files let those individual takes override the shared
    library kid by kid. Commission the shared movement language first, pilot
    Junebug, Theo and Zoom as complete performances, then replace the roster in
-   reviewed batches through the existing validator and A/B page. Big Lou,
-   Tank and Mimi Mash now complete that first batch handoff; Turbo, Sprout and
-   Zippy are next.
+   reviewed batches through the existing validator and A/B page.
+
+   **Sculpt: done to `candidate`, all thirty (2026-08-15).** Seven batches,
+   PRs #123–#137, plus a stance-and-mouth pass (#140). **Acting: still six of
+   thirty** — `anims_<id>_v1.glb` takes exist for Junebug, Theo, Zoom, Tank,
+   Mimi Mash and Big Lou; the other twenty-four ride the shared library. That
+   split is the live one: the remaining distance on characters is per-kid
+   performance and the 4→5 sculpt polish, not sculpting from scratch.
 2. **Venue art density.** Eleven parks now play differently and carry signature
    props, but their houses, foliage and ground are low-poly procedural forms.
    The reference layers hand-authored buildings, vegetation, decals, litter,
@@ -2532,6 +2540,60 @@ metric's own comment warns against ("read a failure here as *look at the
 stance*"). His concept draws his feet touching; the canonical stance splays
 every character's legs. It is a recorded drift for him, not a sculpt defect, and
 trying to close it is what caused the binding error.
+
+## 2026-08-15 — the campaign reaches candidate on all thirty
+
+Seven batches (PRs #123–#137) plus a stance-and-mouth pass (#140) took the
+roster from two authored characters to thirty. Every kid now ships a
+Blender-authored `kid_<id>.glb` with a turnaround spec, a fidelity board, runtime
+and expression evidence, and six category scores from an **independent critic** —
+never its own sculptor — bound to that board's hash. No proxy remains on disk.
+
+**The batches were chosen to retire shared construction, not to walk the
+roster**, and it paid: Junebug's script is 2,418 lines where a batch-6 kid's is
+under 900, because `sculptlib/` carries the body. The order was Grizz (the first
+hair mass, #130), then Sprout/Bubbles/Chip (#131), then batches through the
+hardest five — Mimi, Theo, Zoom, Big Lou and Tank at round 32 — last (#136).
+
+**Nothing is `approved`, and that is the gate working.** Junebug was approved on
+2026-08-12 and demoted on 08-14: the face-atlas composite fix and the ACES→Neutral
+tone-mapping change both re-render the runtime hero that her board composites, so
+the board her approval was bound to stopped existing. Her GLB is byte-identical.
+`approvedBy`/`approvedAt`/`approvedEvidenceSha256` were cleared and `humanReview`
+moved to `priorHumanReview` verbatim, because **an agent may not author, rewrite
+or re-affirm a human verdict**.
+
+### What the campaign left behind, and it is a list not a mood
+
+Every kid carries a `polishFindings` array naming exactly what stands between its
+4s and 5s — **125 findings across the 29 unfrozen kids**. They are not 125
+separate defects; clustered they are a few missing shared primitives, each hitting
+many kids: no sculpted strand grouping (14 kids — the rubric caps a smooth blob at
+4 however correct its silhouette), missing hem/cuff/sole construction (13),
+decal-not-form pockets and patches (10), faceted or butt-joined transitions (9),
+a mouth that collapses to a stroke at card distance (8), and a 40 px lower body
+that sinks into shadow (7). That is the shape of the 4→5 pass: build the primitive
+once, give each kid its own traced numbers, sweep.
+
+### Two instrument findings from the 2026-08-16 audit of the gates themselves
+
+- **`featurelatitude.lint.test.js` covered 26 of 30 and nothing asked who was
+  missing.** It iterated its own table, so `nostrike`, `sprout`, `bubbles` and
+  `chip` sat outside it while it reported green. Membership is now stated from
+  both sides — measured, or exempt with a recorded reason and the measurement
+  behind it. The three unsculpted-trace kids are there because their sheets defeat
+  the analyser anatomically (Sprout's "mouth" is his nostrils and lands *above*
+  his eyes; Bubbles' "brow" is her crown; Chip's mouth lands between his brow and
+  his eye), which is the failure that file's own header predicts.
+- **That gate's arithmetic is model space, and the board has a camera.** It
+  reproduces the shipped GLB's island→z map to 0.002 ft, but the board is a
+  *perspective* render and the two do not compose linearly — on Junebug,
+  crown-to-brow implies 142 px/ft where brow-to-eye implies 135 and eye-to-mouth
+  132. So a delivery can sit inside the gate and read differently on the board, or
+  the reverse. Hers is the reverse: against a geometry-measured span her brow and
+  eye sit ~3 points high, while on the board they read within 1.2 points of her
+  drawing. Neither instrument is wrong; they measure different things, and the
+  repair is never to fit a `span` backwards from what the model already delivers.
 
 ## What's explicitly not built yet
 

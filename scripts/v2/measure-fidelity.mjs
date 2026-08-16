@@ -42,11 +42,22 @@
 // WINDOW EDGE. Tank measured 15.2% head height against Junebug's 33.9% — the
 // floor's own value. It reports NOT MEASURED now; see `headBox`.
 //
-// It is deliberately NOT a `*.test.*` file yet. Vitest's default globs would
-// make it a CI gate over all thirty characters, and the twenty-four nobody has
-// sculpted have no delivered render to compare against — they would go red for
-// existing rather than for being wrong. Promote it when the roster is delivered,
-// or when it can be scoped to the characters that have a board.
+// It is deliberately NOT a `*.test.*` file. The original reason has expired —
+// it was that Vitest's default globs would make this a CI gate over all thirty
+// characters while the twenty-four nobody had sculpted had no delivered render
+// to compare against, so they would go red for existing rather than for being
+// wrong. As of 2026-08-16 every character has a board.
+//
+// ⚠️ THE SECOND REASON HAS NOT EXPIRED, AND IT IS THE ONE THAT MATTERS NOW.
+// This command exits non-zero on a metric that sits outside tolerance AND on
+// one it could not take — by design, because "a metric the detector could not
+// take is NOT a pass". Several of those OFFs are recorded instrument conflicts
+// with a measured cause, not defects (Grizz's ankle daylight against a
+// flood-CONTAINED concept outline; the head-box family on kids whose T-pose arm
+// band swallows the neck pinch). Turning this into a CI gate today would make
+// the roster permanently red, and the only cheap repair would be widening a
+// tolerance — which is the one thing this file must never invite. Promote it
+// when those conflicts are closed at the instrument, not before.
 //
 // Scale-invariance is the whole trick: a concept render and a shipped GLB
 // render at different pixel sizes, so every metric is a RATIO against something

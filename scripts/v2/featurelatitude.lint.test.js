@@ -41,6 +41,26 @@
 //
 // Break-it record, in the tests below: restoring `mouthY: 104` fires with
 // "tank mouth sits at 94.6% of head height, want 78.3% (+-2.5)".
+//
+// ★ AND THE TABLE ITSELF WAS THE SECOND BLIND SPOT. This file iterated over
+// `TURNAROUND` and nothing asked who was NOT in it, so four of the thirty
+// authored kids — nostrike, sprout, bubbles, chip — sat outside the gate while
+// it reported green. Membership is now stated from both sides (see
+// `NO_TURNAROUND_ENTRY` below): measured, or exempt with a reason.
+// Broken twice: deleting chip's exemption fires "chip declare a .blend but
+// appear in neither TURNAROUND nor NO_TURNAROUND_ENTRY", and exempting a kid
+// who already has an entry fires "tank have a real entry now — delete the
+// exemption."
+//
+// ⚠️ THIS ARITHMETIC IS MODEL SPACE, AND THE BOARD HAS A CAMERA. The numbers
+// here are z on the head ellipsoid; the review board is a PERSPECTIVE render,
+// and the two do not compose linearly. Measured on Junebug, crown-to-brow
+// implies 142 px/ft where brow-to-eye implies 135 and eye-to-mouth 132. So a
+// delivery can sit inside this gate and read differently on the board, or the
+// reverse — as hers does. Verified against the shipped GLB's own island->z map,
+// which this arithmetic reproduces to 0.002 ft, so when they disagree it is the
+// projection, never this file's algebra. Never reconcile them by fitting a
+// `span` backwards from what the model already delivers.
 // ---------------------------------------------------------------------------
 
 import { readFileSync } from 'node:fs';
@@ -48,6 +68,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
+import { AUTHORED_CHARACTERS } from './character-registry.mjs';
 import { FACE_SPECS } from './face-specs.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -607,5 +628,90 @@ describe('a face sits where the turnaround puts it', () => {
     const shipped = pctOfHead(latitudeOfCell(104 + 3, k.islandLow, k.islandSpan));
     expect(Math.abs(shipped - TURNAROUND.tank.mouth)).toBeGreaterThan(TURNAROUND.tank.tolerance);
     expect(shipped).toBeGreaterThan(90); // it was on his chin
+  });
+
+  // ★ THIS GATE ITERATED OVER ITS OWN TABLE AND NOTHING ASKED WHO WAS MISSING.
+  //
+  // `TURNAROUND` carried 26 of the roster's 30 and the four absentees were
+  // invisible: no test named them, no test counted them, and a sweep that runs
+  // 26 kids green reads exactly like a sweep that runs 30 green. That is the
+  // same shape as the census `brief.lint.test.js` keeps — a gate with a silent
+  // hole is a gate that holds until someone looks.
+  //
+  // So membership is now stated from BOTH sides. Every authored character is
+  // either measured above or exempt below WITH ITS REASON, and adding a kid to
+  // the roster fails here until someone decides which.
+  //
+  // ⚠️ AN EXEMPTION IS A DEBT, NOT A VERDICT. It may only be discharged by
+  // tracing that kid's sheet and adding a real entry — never by widening a
+  // tolerance, and never by fitting a `span` backwards from what the model
+  // already delivers. The target is the drawing.
+  const NO_TURNAROUND_ENTRY = {
+    // Measured 2026-08-16 while adding this coverage check. Her sheet's own
+    // landmarks are unusable as targets: the analyser merges her brows with her
+    // eyes into ONE band (centroid 66.7%) and lands its "eye" on her NOSE at
+    // 85.7% — the failure this file's header predicts for a fringed kid.
+    //
+    // Bounded traces on junebug-turnaround.png (crown row 72 = the bun apex,
+    // neck row 369, cols 220-395 to exclude the hair and ear edges): brow band
+    // rows 233-265 ink-centroid 249.2 (59.6%), eye band rows 267-306 centroid
+    // 286.3 (72.2%), lip line rows 341-345 centroid 342.9 (91.2%), ear line the
+    // head's widest row 276 (68.7%).
+    //
+    // Against a span measured off her delivered GLB (bun apex z 4.150, neck
+    // pinch z 2.720) those traces sit 3.4 / 2.9 / 0.7 / 2.8 points from what her
+    // island window delivers — brow and eye JUST outside this file's 2.5. That
+    // is a real, small placement gap and it is why an entry cannot simply be
+    // pasted in today. It is NOT a broken sculpt: measured on the delivered
+    // board render her brow, eye and mouth read 58.4 / 71.3 / 91.7 against the
+    // drawing's 59.6 / 72.2 / 91.2 — inside 1.2 points on all three.
+    //
+    // ⚠️ THE TWO INSTRUMENTS DISAGREE BECAUSE ONE OF THEM HAS A CAMERA. This
+    // file's arithmetic is model-space z; the board is a PERSPECTIVE render, and
+    // on her head the two do not compose linearly — crown-to-brow implies 142
+    // px/ft where brow-to-eye implies 135 and eye-to-mouth 132. Do not "fix" one
+    // by fitting the other. Verified against the shipped GLB's own island->z
+    // map, which this arithmetic reproduces to 0.002 ft.
+    nostrike: 'traced 2026-08-16; brow/eye sit ~3 points high against a ' +
+      'geometry-measured span. Give her an entry in the 4->5 pass, after the ' +
+      'island window is re-solved — not before, or the target gets fitted.',
+    // The analyser's landmarks are anatomically impossible on these three, so
+    // there is nothing to lift and a bounded trace has not been done yet.
+    // Each is recorded with what the sheet actually reports, so the next
+    // person starts from a measurement rather than from scratch.
+    sprout: 'spec puts the mouth at 77.0% ABOVE the eyes at 94.5% — its ' +
+      '"mouth" is his NOSTRILS (the Flash failure mode, already named in ' +
+      "flash's entry). Needs a bounded lip trace.",
+    bubbles: 'spec puts the brow at 6.4% and the eye at 13.5% — that is her ' +
+      'CROWN, not a face — and it already refuses the mouth as ambiguous-parts. ' +
+      'Needs bounded traces for all three.',
+    chip: 'spec puts the mouth at 89.5% BETWEEN brow 87.0 and eye 95.6. ' +
+      'Needs a bounded lip trace.',
+  };
+
+  it('every authored character is either measured here or exempt with a reason', () => {
+    const authored = Object.keys(AUTHORED_CHARACTERS).sort();
+    const covered = new Set([...Object.keys(TURNAROUND), ...Object.keys(NO_TURNAROUND_ENTRY)]);
+    const missing = authored.filter((id) => !covered.has(id));
+    expect(
+      missing,
+      `${missing.join(', ')} declare a .blend but appear in neither TURNAROUND nor ` +
+      'NO_TURNAROUND_ENTRY. Trace the sheet and add a real entry, or record why it ' +
+      'cannot be traced yet — silence is what let four kids sit outside this gate.',
+    ).toEqual([]);
+  });
+
+  it('carries no exemption for a character that has since been measured', () => {
+    const both = Object.keys(NO_TURNAROUND_ENTRY).filter((id) => id in TURNAROUND);
+    expect(
+      both,
+      `${both.join(', ')} have a real entry now — delete the exemption. ` +
+      'A debt list that keeps paid entries stops being a debt list.',
+    ).toEqual([]);
+  });
+
+  it('carries no exemption for a character nobody has sculpted', () => {
+    const strays = Object.keys(NO_TURNAROUND_ENTRY).filter((id) => !(id in AUTHORED_CHARACTERS));
+    expect(strays, `${strays.join(', ')} declare no .blend — nothing to exempt`).toEqual([]);
   });
 });
