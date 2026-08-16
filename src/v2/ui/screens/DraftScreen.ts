@@ -216,8 +216,12 @@ export class DraftScreen implements Screen {
     this.paintSpotlight();
 
     const done = isDraftComplete(this.state);
+    // The CPU reveal names its kid AND hands the turn back — without the
+    // second half the board reads locked after every reveal (round-2 nit).
     this.status.textContent = cpuTook
-      ? `they took ${this.lookup(cpuTook).name}`
+      ? isDraftComplete(this.state)
+        ? `they took ${this.lookup(cpuTook).name}`
+        : `they took ${this.lookup(cpuTook).name} — your turn!`
       : done
         ? 'your team is ready!'
         : this.busy
