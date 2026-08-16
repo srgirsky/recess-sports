@@ -242,7 +242,12 @@ body.screen-open .play-callout {
   visibility: hidden;
 }
 .sb-side.is-batting .sb-side__mark {
-  visibility: visible;
+  /* ★ `inherit`, NEVER `visible`. An explicit `visible` on a DESCENDANT
+   * escapes an ancestor's `visibility: hidden` — this mark was the stray
+   * red ▶ floating over every DOM screen (re-audit #7) while the rest of
+   * its scoreboard obeyed `body.screen-open`. `inherit` follows the
+   * scoreboard wherever the HUD rules put it. */
+  visibility: inherit;
 }
 .sb-side__name {
   font-size: 0.8rem;
@@ -416,6 +421,8 @@ body.screen-open .play-callout {
 .pitch-picker.is-open {
   opacity: 1;
   visibility: visible;
+  /* Instant-on for the same reason as the matchup — and this one is INPUT. */
+  transition: none;
 }
 .pitch-card {
   display: grid;
@@ -580,6 +587,10 @@ body.inning-break #hud > *:not(.inning-board):not(.btn--mute) {
 .matchup.is-open {
   opacity: 1;
   visibility: visible;
+  /* Instant-on, fade-out only — same rule as the inning board. A throttled
+   * tab stalls a fade-in half-done, which is re-audit #7's "washed-out
+   * ghost" matchup plate. */
+  transition: none;
 }
 /* On a short landscape phone there is no row to give: the plate's top row +
    the picker's middle row + the scoreboard exceed the frame and the grid

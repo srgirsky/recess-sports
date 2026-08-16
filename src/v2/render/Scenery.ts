@@ -454,6 +454,40 @@ function paint(geom: BufferGeometry, hex: number): BufferGeometry {
   return geom;
 }
 
+/**
+ * Paint a gable roof with baked two-tone slopes.
+ *
+ * ★ A FLAT-PAINTED ROOF READS AS A HOLE FROM THE OUTFIELD CAMERAS. The gable
+ * is a box rotated 45°, so seen ridge-on its silhouette is a diamond — and
+ * when the house happens to sit behind CF, BOTH visible slopes face away from
+ * the key light, land on the toon ramp's darkest step together, and the whole
+ * shape renders one flat dark diamond floating on the sky (re-audit #7's
+ * "giant unlit black triangle behind CF"). Baking a light/dark split across
+ * the ridge into the vertex colours keeps the prism readable from any angle
+ * under any key, for zero extra triangles or draws.
+ */
+function paintGable(geom: BufferGeometry, roofHex: number, bodyHex: number): BufferGeometry {
+  paint(geom, roofHex);
+  const lit = new Color(shade(roofHex, 1.18)).convertSRGBToLinear();
+  const dark = new Color(shade(roofHex, 0.72)).convertSRGBToLinear();
+  const wall = new Color(bodyHex).convertSRGBToLinear();
+  const normals = geom.getAttribute('normal');
+  const colors = geom.getAttribute('color') as BufferAttribute;
+  for (let i = 0; i < normals.count; i++) {
+    const nx = normals.getX(i);
+    if (Math.abs(nx) < 0.2) {
+      // The ridge-end CAPS are the diamond the outfield camera stares at.
+      // A real house shows its gable WALL there, so they wear the body
+      // colour and the "roof" survives as the two shaded slopes.
+      colors.setXYZ(i, wall.r, wall.g, wall.b);
+      continue;
+    }
+    const c = nx > 0 ? lit : dark;
+    colors.setXYZ(i, c.r, c.g, c.b);
+  }
+  return geom;
+}
+
 /** Merged parts do not survive as objects, so UVs only need to exist. */
 function place(geom: BufferGeometry, x: number, y: number, z: number, rotY = 0, scale = 1): BufferGeometry {
   const m = new Matrix4()
@@ -579,7 +613,7 @@ function addHouse(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: numb
     const ridge = new BoxGeometry(half * 1.05, half * 1.05, d + 2);
     ridge.applyMatrix4(new Matrix4().makeRotationZ(Math.PI / 4));
     ridge.applyMatrix4(new Matrix4().makeScale(1, rh / (half * 0.74), 1));
-    parts.push(place(paint(ridge, roof), x, h, z, rotY));
+    parts.push(place(paintGable(ridge, roof, body), x, h, z, rotY));
     if (seed > 0.55) {
       parts.push(place(paint(new BoxGeometry(2.2, 5, 2.2), 0xb0684f), x + w * 0.22, h + rh * 0.7, z, rotY));
     }
@@ -657,7 +691,7 @@ function addShed(parts: BufferGeometry[], x: number, z: number, rotY: number): v
   const roof = new BoxGeometry(10.5, 10.5, 12);
   roof.applyMatrix4(new Matrix4().makeRotationZ(Math.PI / 4));
   roof.applyMatrix4(new Matrix4().makeScale(1, 0.5, 1));
-  parts.push(place(paint(roof, 0x9a6b47), x, 9, z, rotY));
+  parts.push(place(paintGable(roof, 0x9a6b47, 0xe8d9a8), x, 9, z, rotY));
 }
 
 /** Recycling dumpster: body, sloped lid, wheels, and a bright side badge. */
