@@ -635,3 +635,36 @@ Each of these cost at least one blind round. They are constraints, not history.
   tongueReach 1.3 in one sweep — grin/cheer/tongue verified distinct on
   the recaptured stills. When a knob becomes universal, sweep it; two
   critics had flagged the same defect on two kids scored months apart.
+
+## Lessons the hair-mass pass paid for (rubric 3.3, the 4->5 sweep)
+
+- **Rubric 3.3 now has a ruler: `npm run measure:strands -- <id>`.** It counts
+  the creases between strand groups per row on the concept and on the board with
+  one detector. Run it before arguing about hair, the same way
+  `measure:fidelity` settles the other categories.
+- **Every hair kid under-carries strand COUNT, not depth** (first sweep: penny
+  2%, mimi 3%, lefty 8%, grizz 10% ... smokey 57% of the concept's count, at
+  70-318% of its prominence). Junebug's round-7 note guessed this from one bun;
+  it is now measured across all fourteen. **Do not deepen a groove to fix hair.**
+- **★ A RING CANNOT EXPRESS A CREASE IT HAS NO COLUMNS FOR, and every hair
+  builder on the roster is authored past that limit.** Grizz asks for six lobes
+  across twenty-four columns — four samples per lobe — and delivers 1.56 minima
+  per row. Adding lobes into the same ring buys nothing: measured, 12 lobes at 24
+  columns moved him 10% -> 12%, and a sharpened crease profile at 8 lobes
+  10% -> 14%. Author **at least four columns per lobe**, and if you cannot afford
+  them, do not add the lobes.
+- **Strands are VERTICAL grooves, so trade rows for columns — it is usually
+  free.** Grizz ships at 6800/7000 LOD0 triangles and 391/400KB, and 24 -> 32
+  columns refuses the export on both limits at once. But 14 rows x 32 columns is
+  896 triangles against 19 x 24's 912: measured, that trade exported 6KB
+  SMALLER, moved no `measure:fidelity` metric, and took him 10% -> 15%. Keep the
+  crown rounding rows and the widest row; thin the smooth barrel between them.
+- **⚠️ AND THEN STOP LOOKING AT THE NUMBER.** Crop the concept afro and the
+  delivered one side by side before optimising further. Grizz's sheet is
+  PHOTOGRAPHIC curl texture and its 15.9 minima per row are not something a toon
+  mesh should carry or a player would want. What the drawing reads as at game
+  scale is a **scalloped silhouette edge over a near-hemisphere crown**; what
+  ships is a smooth dome with a **pointed, faceted apex** — the cap vertex sits
+  0.03 above a 0.06-radius top ring, which is a cone point, and that is the
+  "crown runs flatter than the turnaround's" polish finding seen from the other
+  side. Fix the silhouette and the crown; the relief is the smaller half.
