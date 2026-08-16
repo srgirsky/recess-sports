@@ -811,3 +811,78 @@ the known traps buys more accuracy than a harsher instruction to be harsh.
 ⚠️ **And the sculptor still may not score.** Correcting a critic's factual error
 is not scoring; substituting your own number for its judgement is. Fix the
 brief, re-run the critic, take what it says.
+## ★ The curl fix, proved on Mimi: COUNT THE COLUMNS AGAINST THE LOBES
+
+`hairMass` scored **2** on almost every hair kid the re-audit touched, always
+for the same measured reason — 3-5% of the concept's strand count. It is one
+bug, written the same way in every hair builder, and it is arithmetic.
+
+**Mimi's halo asked for twelve lobes on a sixteen-column ring.** Her `clump` is
+`1 + 0.095·cos(6θ) + 0.055·cos(12θ)`. Twelve lobes across sixteen columns is
+**1.33 samples per lobe** — below Nyquist, so the fine term was not faint, it was
+UNREPRESENTABLE. The coarse term at 2.67 samples was barely above it. The ring
+could not carry the curls its own table described.
+
+Measured with `npm run measure:strands`, changing NOTHING but the column count:
+
+| columns | strand count vs concept | LOD0 tris | size |
+|---|---|---|---|
+| 16 (shipped) | **3%** | 6186 | 326KB |
+| 32 | 13% | 6506 | 334KB |
+| 48 | **24%** | 6826 | 343KB |
+
+An eightfold gain, and every one of her `measure:fidelity` metrics came INTO
+tolerance in the same build. On screen the halo went from a smooth dome to
+grouped clumps with a scalloped silhouette edge.
+
+**The rule: author at least four columns per lobe, and if you cannot afford
+them, do not author the lobes.** Two samples per lobe is the theoretical floor
+and renders as a soft ripple; four is where a crease reads.
+
+**Check depth LAST, not first.** Her prominence was already **214%** of the
+concept's — the creases were more than deep enough. There were too few of them
+because the ring had nowhere to put them. Every hair kid measured so far shows
+the same signature: strand count far under, prominence at or over 100%. If you
+see that pair, the answer is columns, never a deeper groove.
+
+**Budget it before you author it.** 48 was Mimi's ceiling (64 would need 7146
+triangles against the 7000 cap). Where the columns will not fit, trade rows for
+them — strands are VERTICAL grooves, so a hair mass can swap silhouette rows for
+angular resolution at constant or lower cost (Grizz: 19x24 = 912 tris against
+14x32 = 896, and the export got SMALLER).
+
+## ★ A CHARACTER SHIPPED CUT IN HALF (and what that says about enclosure tests)
+
+Zippy's delivered board carried a 21-pixel band — 0.150ft, at 56% of her figure
+height — with NO figure pixels in it. Background, straight through her body,
+front and profile both. Her tee's hem ring sat at z 1.755 and `LEG_STATIONS`
+began at 1.560, so 0.195ft of her had no geometry: **she had no pelvis.** She had
+been reviewed, scored 4/4/4/4/4/4, and recorded as a finished candidate.
+
+- **★ AN ENCLOSURE TEST CANNOT SEE A SEVERANCE, AND THAT IS STRUCTURAL.**
+  `silhouette.lint` floods the backdrop in from the frame edge and measures the
+  largest pocket left over. A gap that runs clean through the figure is OPEN AT
+  BOTH SIDES, so the flood reaches it from outside and it is never a pocket.
+  Rubric 3.7's "no holes, gaps or open interiors" was being enforced only for
+  holes the backdrop cannot walk INTO — and a body in two pieces is the one
+  shape that escapes that test while being the worst thing on the list.
+  `continuity.lint.test.js` now asks the complementary question: is there a row
+  inside the figure with nothing in it?
+- **Scan the whole roster the moment you find one.** Three kids were severed:
+  zippy 0.150ft, cricket 0.035ft at the neck/shoulder in ALL FOUR views, rocket
+  0.014ft. Two are still shipping, in that gate's debt list.
+- **The cause is always two forms that do not meet**, and usually a GARMENT ring
+  authored as if it were the body: a hem is where cloth ends, not where the kid
+  ends. Check every level table's bottom row against the limb stations below it.
+- **Fixing it can cost nothing.** Zippy is the roster's tightest kid — 6984 of
+  7000 LOD0 triangles, 16 spare — and three pelvis rows measured 7086 and refused
+  the export. MOVING the existing bottom ring down instead of adding rings closed
+  the gap for zero triangles. Prefer a moved ring to a new one whenever the
+  budget is tight.
+- **⚠️ But moving a ring stretches the band it belongs to, and vertex colours
+  interpolate across a band.** The hem's colour switch then fell INSIDE the tall
+  new band and ramped navy to pink across 32px — a critic called it "hiding half
+  her shorts", and it cost more in `clothingConstruction` than the severance had.
+  Put the threshold ABOVE the stretched band so the whole band is one colour and
+  the ramp lands in a short one (32px -> 11px here). A colour switch belongs on a
+  ring, never between two distant ones.

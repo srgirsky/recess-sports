@@ -701,39 +701,39 @@
     "frontProfileSilhouette": {
      "label": "front/profile silhouette",
      "score": 4,
-     "note": "Third independent critic (rounds scored 3 then 4): the front idle gives the turnaround's large read with no colour - two side pigtails, headband bump, boxy tee over shorts, striped socks, chunky sneakers; the run profile matches the concept's beats. Held at 4: the tee-to-shorts junction reads as a shelf and the hair meets the skull with a hard corner in profile."
+     "note": "Front board (zippy-front-review.png, zippy-front-apose-review.png) gives the turnaround's large read with no colour: two side pigtails, headband arc, boxy tee over shorts, striped socks, chunky sneakers. Held at 4, not 5, because two transitions are butt joints rather than organic: the torso block ends in a flat horizontal cut at y~428 with the shorts tubes flaring outside it (visible step at each hip, front-review x 225-250 and x 290-315, y 425-435), and in profile (zippy-profile-review.png) the back of the hair is a flat vertical wall meeting the crown at a hard corner (x 300-340, y 100-230)."
     },
     "headBodyProportions": {
      "label": "head/body proportions",
      "score": 4,
-     "note": "Third independent critic (3 in both earlier rounds): head metrics measured green (27.4 vs 29.0, aspect 1.49 vs 1.53 - both spans include the pigtail spouts, which must MERGE with the crown to read). Two limb-thickening passes killed the proxy read: thighs and calves carry volume, hands read as mitts with a thumb. Held at 4: forearms are still the thinnest read and the shoulder balls faintly show through the sleeve."
+     "note": "Measured green: head 27.3% of figure vs concept 29.0 (-1.72), head width:height 1.49 vs 1.53 (-0.04). Child proportion, not proxy - thighs and calves carry volume and the hands read as mitts in zippy-front-review.png (y 470-560, y 285-300). Held at 4: the forearm and shin are near-constant-diameter tubes in zippy-profile-apose-review.png (x 255-280, y 300-360 and y 470-560), the thinnest read on the figure."
     },
     "hairMass": {
      "label": "hair mass",
      "score": 4,
-     "note": "Third independent critic (round 1 scored 2: the pigtails rendered as slate backface blades - tube groove exceeded the tip radii and drove rings negative, inside-out geometry the double-sided board hid). Now solid black-brown drooping masses at runtime from every angle, fringe under the headband, no bare-skull read. Rubric-capped at 4: no sculpted strand grouping, and the back of the head reads blocky in profile."
+     "note": "One designed mass, fringe reads under the headband from the front, no bare-skull read from front, profile or the back view in zippy-runtime-swing.png. Rubric-capped at 4 by the instrument: measure:strands reports 4.41 minima/row vs the concept's 9.09 (48% of the strand count) at 115% prominence - a few deep creases where the concept has many groups, plus the blocky flat back of the head in zippy-profile-review.png (x 300-340, y 100-230)."
     },
     "clothingConstruction": {
      "label": "clothing construction",
      "score": 4,
-     "note": "Third independent critic (3 in both earlier rounds): the crotch is closed by a pelvis yoke bridging the leg tubes - two rounds of shrinking the inseam carve never closed it, because the gap IS the space between the tubes. Shorts read as one garment from every angle; tee two-tone stripes crisp (LOD0 boundary rings); sock stripes, laces, soles all read; the tie is a solid band. Held at 4: the dolphin hem piping is not legible at runtime and the team-tinted headband trails a jagged streak down the back hair."
+     "note": "Genuinely constructed where it counts: sneakers have sole, collar, three stripes, lace aglet (zippy-front-review.png y 555-655 at 5x), socks carry the double pink stripe, the sleeve hem rolls, and the shorts' cream piping is legible on the board AND at runtime hero (y 435-450 / hero y 545-560), which fixes a prior polish finding. Held at 4: the tee hem is a colour ramp with no constructed lip, and the hip block shades from #464d5a at y=400 to #11141a at y=428 across the FULL hip width before the shorts tubes render ~3x lighter (lum ~90) - the garment reads two-tone where the concept is one even navy."
     },
     "faceExpressionRead": {
      "label": "face/expression read",
      "score": 4,
-     "note": "Third independent critic: featurelatitude green (brow 41.1/41.3, eye 58.5/58.7, mouth 84.6/85.0); big eyes, brows, and the mouthScale-1.3 grin all read at hero scale. Held at 4: features read decal-flat, the nose barely breaks the profile, and the signature huge grin is still a modest smile at draft-card distance."
+     "note": "Face visible and legible in the front board view and at hero scale; all four runtime cells read - grin shows a white tooth shape, cheer and tongue show teeth plus red interior, angry reads as a frown (zippy-runtime-face-*.png, head region 465,210 120x110). The nose is a real form and does break the profile silhouette (zippy-profile-review.png x 208-215, y 175-205), and build_ear/EAR_SPEC give a rim and inner shadow at 8x. Held at 4: features read decal-flat against the skull planes, and the bold brow arcs that exist in every cell of zippy-face-atlas.png do not read on delivery because the fringe's lower edge sits on the brow band and swallows them - the angry cell suffers most."
     },
     "heroAndFieldScale": {
      "label": "hero + 40px read",
      "score": 4,
-     "note": "Third independent critic: the 40px strip keeps the read - pink striped tee, black pigtails, navy shorts - and the hero close-up is unmistakably her; pink separates cleanly from grass and dirt. Held at 4: the runtime hero is dim enough that shorts construction and hair interior form vanish into silhouette."
+     "note": "The 40px strip on zippy-fidelity-review.png keeps the memorable read (pink striped tee, black side pigtails, navy shorts); the hero close-up is unmistakably her and pink separates cleanly from both grass and dirt in zippy-runtime-hero.png and zippy-runtime-run.png. Held at 4: the hero lighting is dim enough that the shorts construction and all hair interior form collapse into silhouette, and the team-tinted headband is the one element that draws the eye at hero scale for the wrong reason."
     }
    },
    "measuredFidelity": {
     "command": "npm run measure:fidelity -- zippy",
-    "ranAt": "2026-08-15",
+    "ranAt": "2026-08-16",
     "board": "zippy-fidelity-review.png",
-    "result": "Head height 27.4 vs concept 29.0 and width:height 1.49 vs 1.53 - both spans include her pigtail spouts, and the aspect only landed once the spout masses were pulled IN to merge with the crown (the first build floated them 0.1ft out and read 1.18). Shoe band 74.0/26.0 vs 73.6/22.7 with saturation 16.3 vs 19.7, all in tolerance. Visible face 21.8/22.9 vs 17.7/19.8, asymmetry 1.18 - her bang fringe covers the forehead so the face windows are the smallest yet. Ankle daylight 48.4 vs 0.00 OFF with measured cause: the sheet merges her ankles while the rig binds at the roster-wide 6.75-degree splay; pose, not sculpt. Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 7deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 27.9 and 1 metric(s) remain outside tolerance on this board.",
+    "result": "measure:fidelity -- zippy (concept front 283x638, delivered 450x561; shoe tones #f4e5d4 / #33353c): head height as % of figure 29.0 -> 27.3, delta -1.72 ok; head width:height 1.53 -> 1.49, delta -0.04 ok; shoe band dominant tone 73.6 -> 74.0, +0.43 ok; shoe band second tone 22.7 -> 26.0, +3.33 ok; shoe band mean saturation 19.7 -> 16.3, -3.35 ok; daylight between the ankles 0.00 -> 27.9, +27.9 OFF (tol 12); visible face left of centre 17.7 -> 14.5, -3.19 ok; visible face right of centre 19.8 -> 17.5, -2.24 ok; face left/right asymmetry 0.00 -> 3.07 ok. 1 metric outside tolerance - ankle daylight, the recorded roster-wide 6.75deg rig splay against a feet-together drawing, pose not sculpt. measure:strands -- zippy (band 5-45% of head height): concept head rows 199-383, 9.09 strand minima/row at mean prominence 33.5 over 75 rows; delivered head rows 87-239, 4.41 minima/row at prominence 38.5 over 61 rows => 48% of the concept's strand count at 115% of its prominence. My own measurements on the current evidence: zero fully-empty rows inside the bbox of all four board views (front 0/562 rows, profile 0/563, front-apose 0/562, profile-apose 0/563) and zero enclosed background components under a border flood-fill in all four - the waist severance is gone and rubric 3.7 passes structurally. Hem ramp, front-review centre column x=269: pink #d6b0b4 lum 188 at y=386 falling to navy #49505d lum 79 at y=398, an 11-row ramp = 2.0% of the 562px figure; the hue class flips within 1-2 rows (pink@340 -> navy@397 at the thigh column x=250). Garment extent, thigh column: delivered navy runs y397-451 = 55px = 9.8% of figure height; concept turnaround thigh column x=161 runs navy y557-619 = 62px = 9.7% of its ~640px figure - the shorts now occupy the concept's share, so 'half her shorts hidden' is resolved. Row profile across the hips: y=400 lum 48-77 full width, y=410 37-60, y=420 27-37 full width, y=430 outer columns jump to 79-96 while the crotch stays 21-27. Profile head depth:height, delivered 125/155 = 0.806 vs concept profile figure 204/188 = 1.085 (my measurement, and the concept's profile pigtail sweeps back where the bind-pose one splays laterally, so treat as indicative). Evidence freshness: all 12 zippy PNGs and public/v2/models/kid_zippy.glb share mtime 2026-08-16 16:44; runtime HUD reads 'model model', tris 29.7k idle / 30.1k swing_contact; the stills show the crisp 11-row hem and the cream shorts piping that the pre-fix model could not, so they match the current GLB. The RECEIPT is what is stale: scoredBoardSha256 fadf464a... vs the current board e3a99261..., and its recorded 'visible face 21.8/22.9' no longer matches the instrument's 14.5/17.5.",
     "note": "Feature placement gated by featurelatitude: brow 41.1 vs traced 41.3, eye 58.5 vs 58.7, mouth 84.6 vs 85.0 through her declared 3.99-2.84 span. No earLine target - the pigtails own every width metric near the ears on concept and delivery alike, so the ear is placed off the profile and reviewed by eye. Her TORSO_LEVELS are declared not-traceable: the hanging arms merge with the tee at every row, so halves are bounded cluster-run traces."
    },
    "heroEvidence": "zippy-runtime-hero.png",
@@ -742,14 +742,18 @@
     "zippy-runtime-swing.png"
    ],
    "polishFindings": [
-    "Dolphin hem piping invisible at runtime - the sculpted cream band does not survive the lighting; the main clothingConstruction 5-blocker.",
-    "Team-tinted headband trails a jagged streak down the BACK of the hair in hero/run captures; the concept's band tucks under the hair - terminate or hide the back segment.",
-    "Forearms still the thinnest limb read; one more small pass or a sleeve-to-wrist taper.",
-    "Grin cell: teeth as a readable white shape for draft-card distance (rubric 3.14) - mouthScale 1.3 helped, not enough for the identity grin.",
-    "Hair strand grouping (hairMass hard-cap); soften the back-of-head corner in the same pass.",
-    "Ear reads as a flat patch in profile - rim/lobe construction (rubric 3.10)."
+    "WORST REMAINING: the headband terminates in a blunt, open-ended tube that projects past the hair silhouette at the crown-front (zippy-profile-review.png x 215-250, y 95-140; same hook in zippy-profile-apose-review.png). It reads as a bent twig rather than a ribbon hugging the crown, and it carries the team tint, so at hero scale (zippy-runtime-hero.png, head crop 440,160 180x180) a yellow bent stick with a grey stub is the first thing the eye lands on. Rubric 3.8.",
+    "Full-width hip shading band: the tee/shorts block darkens from #464d5a at y=400 to near-black #11141a at y=428 across every column x225-315 of zippy-front-review.png, then the shorts tubes below render at lum ~90 - the garment reads as a dark yoke plus lighter cuffs where the concept is one even navy. Visible at runtime hero too.",
+    "The tee/shorts junction is a butt joint: the torso loft ends in a flat horizontal cut and the shorts tubes flare OUTSIDE that silhouette, leaving a shelf/step at each hip (front-review y 425-435, x 225-250 and 290-315). This is the single item blocking a 5 on both silhouette and clothing.",
+    "The fringe's lower edge is stair-stepped - square notches across the forehead (zippy-front-review.png y 130-150, x 240-300) that survive into all four runtime face stills at hero scale.",
+    "Brows are authored (bold arcs in every cell of assets/v2/source/zippy-face-atlas.png) but do not read on delivery: the fringe's lower edge sits on the brow band, so they merge into the hair. The concept's signature brow is lost and the angry cell reads weakest as a result. Raise fringe_z or lower the brow band.",
+    "Hair strand grouping is 48% of the concept's density at 115% prominence (measure:strands) - a handful of deep creases rather than many groups. Hard-caps hairMass at 4; fix in the same pass as the blocky back-of-head corner.",
+    "Shoe toe cap renders as a soft unbounded cream lozenge on the navy upper (front-review y 585-615) rather than a constructed bumper, and the concept's shoe side stripes are pink/red while delivered are cream (shoe band metrics still measure green, so this is cosmetic).",
+    "Forearms remain the thinnest limb read; zippy-profile-apose-review.png shows a near-constant-diameter forearm (x 255-280, y 300-360) and shin.",
+    "The ear IS constructed - build_ear with EAR_SPEC(center 0.020/3.170, radii 0.1300/0.1600) at sculpt-zippy-source.py:709, and at 8x the rim and inner shadow both read - but the pigtail slab clips across its rear third in profile (zippy-profile-review.png x 265-285, y 195-225), which is what made an earlier critic call it a flat patch.",
+    "Receipt hygiene: assets/v2/source/character-fidelity.json still carries scoredBoardSha256 fadf464a... against the current board e3a99261..., and its measured block quotes face windows 21.8/22.9 that the instrument now reports as 14.5/17.5. Rewrite the measured block with this round's numbers."
    ],
-   "scoredBoardSha256": "fadf464a2c475de65a636540a733bdc86c9c69214632b6fb647c8e86aa5453b3"
+   "scoredBoardSha256": "e3a99261811154bec23644f84fa1e4ea0ff4d24b27acd6ff7fec5081bf45418e"
   },
   "diva": {
    "status": "candidate",

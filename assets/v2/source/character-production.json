@@ -183,11 +183,11 @@
     },
     "zippy": {
       "source": "zippy-pilot.blend",
-      "sourceSha256": "af26215db374cac29a30b1b6a8a78ae967ee90da40ae7f19fa255f82194a0f30",
+      "sourceSha256": "d2a1e571bb00a4d325527098f137d28245771bffc416c205f58882e510c87e3a",
       "concept": "zippy-turnaround.png",
       "conceptSha256": "5a6ad80e5d6ad18e455b6c4ae56447cdcab1a14fa2eccf4ebd8a7f72a611fb31",
       "output": "kid_zippy.glb",
-      "outputSha256": "4ca19bfb2cd1e1318ac3846ec06ca191f8b4107b61dc330645810a5df6eae3b3",
+      "outputSha256": "f3e5e4fd4973884a9e7b74c4cf1060dac86eacdab73bf58aa49ba2203ae7d0c2",
       "definingTraits": [
         "black side pigtails",
         "cream headband",

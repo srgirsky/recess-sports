@@ -337,7 +337,25 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
 # here are bounded by hand off the cluster runs: torso 139-227 at z 2.35
 # (half 0.276) and 138-236 at z 2.00 (half 0.307).
 TORSO_LEVELS = [
-    (1.755, 0.315, 0.268, "Hips"),
+    # ★ SHE SHIPPED SEVERED AT THE WAIST, AND NO GATE COULD SEE IT.
+    # This ring was at z 1.755 — the tee's hem — while LEG_STATIONS begins at
+    # 1.560, so 0.195ft of her had NO geometry: the board showed a 21px band of
+    # pure BACKGROUND straight through her body, front and profile both.
+    # `silhouette.lint` measures the largest ENCLOSED background blob, and a
+    # through-gap open at both sides is reached by the flood fill from the frame
+    # edge — a character cut in half reads to it as ordinary backdrop.
+    # `continuity.lint.test.js` exists because of this.
+    #
+    # Moved DOWN rather than adding rings, because she is the roster's tightest
+    # kid: 6984 of 7000 LOD0 triangles, 16 spare. Three pelvis rows measured
+    # 7086 and refused the export on both LOD0 and LOD2. Moving a ring costs
+    # nothing.
+    # ⚠️ The cost is the hem EDGE: the tee/shorts colour boundary now
+    # interpolates across this one band instead of sitting on a ring pair, so
+    # it reads soft from the side (rubric 3.4, Penny's hem lesson). Recorded as
+    # a polish finding — a severed body outranks a soft hem, and closing it
+    # properly wants the triangles a rows-for-columns trade would free.
+    (1.545, 0.300, 0.254, "Hips"),
     (1.788, 0.335, 0.285, "Hips"),
     (1.980, 0.310, 0.262, "Spine"),
     (2.160, 0.295, 0.252, "Spine1"),
@@ -360,7 +378,25 @@ STRIPES = ((1.755, 1.862), (1.875, 1.975), (2.055, 2.155),
 # not-traceable: the paired rows are the STRIPES chart re-expressed as loft
 # rings; the shape numbers between them interpolate the traced table above.
 TORSO_LEVELS_CRISP = [
-    (1.755, 0.315, 0.268, "Hips"),
+    # ★ SHE SHIPPED SEVERED AT THE WAIST, AND NO GATE COULD SEE IT.
+    # This ring was at z 1.755 — the tee's hem — while LEG_STATIONS begins at
+    # 1.560, so 0.195ft of her had NO geometry: the board showed a 21px band of
+    # pure BACKGROUND straight through her body, front and profile both.
+    # `silhouette.lint` measures the largest ENCLOSED background blob, and a
+    # through-gap open at both sides is reached by the flood fill from the frame
+    # edge — a character cut in half reads to it as ordinary backdrop.
+    # `continuity.lint.test.js` exists because of this.
+    #
+    # Moved DOWN rather than adding rings, because she is the roster's tightest
+    # kid: 6984 of 7000 LOD0 triangles, 16 spare. Three pelvis rows measured
+    # 7086 and refused the export on both LOD0 and LOD2. Moving a ring costs
+    # nothing.
+    # ⚠️ The cost is the hem EDGE: the tee/shorts colour boundary now
+    # interpolates across this one band instead of sitting on a ring pair, so
+    # it reads soft from the side (rubric 3.4, Penny's hem lesson). Recorded as
+    # a polish finding — a severed body outranks a soft hem, and closing it
+    # properly wants the triangles a rows-for-columns trade would free.
+    (1.545, 0.300, 0.254, "Hips"),
     (1.788, 0.335, 0.285, "Hips"),
     (1.856, 0.327, 0.278, "Hips"),
     (1.869, 0.325, 0.277, "Hips"),
@@ -387,6 +423,19 @@ TORSO_LEVELS_CRISP = [
 
 
 def stripe_color(theta: float, z: float):
+    # Below the tee's hem band the torso loft IS the shorts (see the pelvis
+    # note in TORSO_LEVELS): navy, not shirt pink.
+    #
+    # ★ THE THRESHOLD SITS ON A RING, NOT BETWEEN TWO. Vertex colours
+    # interpolate across a quad band, so a switch that falls INSIDE the tall
+    # 1.545->1.788 pelvis band ramps navy to pink across its whole height — a
+    # critic measured 32px of pink-to-near-black gradient from the front,
+    # hiding half her shorts. Putting the switch above 1.788 makes that entire
+    # band navy and moves the ramp to the short 1.788->1.856 band (~9px). The
+    # cost is her hem reading ~0.035ft high; the alternative is a ring pair she
+    # has no triangles for (6984 of 7000).
+    if z < 1.800:
+        return PANTS
     for lo, hi in STRIPES:
         if lo <= z <= hi:
             return SHIRT_DARK
