@@ -495,6 +495,13 @@ body.screen-open .play-callout {
 .inning-board.is-open {
   opacity: 1;
   visibility: visible;
+  /* ★ APPEAR INSTANTLY, fade only on the way out. The 140ms fade-IN tied the
+   * board's first visible pixels to compositor frames, and a throttled tab
+   * (occluded window, backgrounded audit run) can present so few that the
+   * whole open-and-close happens between two of them — re-audit #6 watched
+   * three breaks whose state said open while the pixels showed the field.
+   * An instant-on board is visible on the very first presented frame. */
+  transition: none;
 }
 body.inning-break #hud > *:not(.inning-board):not(.btn--mute) {
   visibility: hidden;
