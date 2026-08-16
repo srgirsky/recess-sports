@@ -386,7 +386,12 @@ function mouth(expr: Expression): string {
     case 'cool':
       return `<path d="M 84 ${y} q 20 12 34 -2" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>`;
     case 'determined':
-      return `<path d="M 84 ${y + 2} q 16 -4 32 0" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>`;
+      // Set jaw, not a scowl: the control point bows DOWN (a shallow smile-U).
+      // It used to bow up 4px — an inverted arc, i.e. a mild frown — and since
+      // 'determined' is the custom captain's default and Junebug's resting
+      // face, the title and clubhouse greeted every kid with a grump
+      // (re-audit #7's "portraits default to a frown").
+      return `<path d="M 84 ${y + 2} q 16 6 32 0" fill="none" stroke="${INK}" stroke-width="4" stroke-linecap="round"/>`;
     case 'goofy':
       return `
         <path d="M 80 ${y - 2} q 20 22 40 0 q -20 6 -40 0 Z" fill="#7a2b2b" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
