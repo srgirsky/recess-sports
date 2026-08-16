@@ -3,7 +3,7 @@ import { PerspectiveCamera, Vector3 } from 'three';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { FIELD_SOLVE, RIGS, chooseCamera, damp, type CameraPreset } from './cameraCues';
+import { FIELD_SOLVE, RIGS, SAFE_RECT, chooseCamera, damp, ndcThrough, type CameraPreset } from './cameraCues';
 import { FIRST, HOME, SECOND, THIRD, VENUE_GEOMETRY, fenceDistAt, pointAt } from '../sim/field';
 
 // The measurement records are the source of truth; read them rather than
@@ -263,5 +263,83 @@ describe('★ the policy finally has a caller', () => {
     // A cut zeroes the velocities; carrying them over is how a "cut" turns
     // into a lurch on the following frames.
     expect(playView).toMatch(/eyeVel\.set\(0, 0, 0\)/);
+  });
+});
+
+describe('the fit ladder (round-2 re-audit #12)', () => {
+  it('★ ndcThrough agrees with a real PerspectiveCamera', () => {
+    // The policy's pure projection is only trustworthy if it says exactly
+    // what three.js will draw. Cross-validate over every preset and a spread
+    // of field points, including off-axis focus targets.
+    const points: Array<[number, number, number]> = [
+      [0, 0, 0], [42.4, 0, 42.4], [-42.4, 0, 42.4], [0, 0, 84.9],
+      [0, 25, 120], [-60, 2.5, 100], [15, 2.5, 30],
+    ];
+    const focus: [number, number, number] = [8, 1.5, 55];
+    for (const preset of ['PLAY', 'FIELD', 'DEEP'] as CameraPreset[]) {
+      const rig = RIGS[preset];
+      const aspect = 4 / 3;
+      const cam = new PerspectiveCamera(rig.fov, aspect, 0.1, 2000);
+      cam.position.set(...rig.eye);
+      cam.lookAt(...focus);
+      cam.updateMatrixWorld(true);
+      cam.updateProjectionMatrix();
+      for (const p of points) {
+        const truth = new Vector3(...p).project(cam);
+        const ours = ndcThrough(rig.eye, focus, rig.fov, aspect, p);
+        expect(ours).not.toBeNull();
+        expect(ours![0]).toBeCloseTo(truth.x, 5);
+        expect(ours![1]).toBeCloseTo(truth.y, 5);
+      }
+    }
+  });
+
+  it('stays PLAY when the whole cast fits, climbs when a runner would crop', () => {
+    // A compact infield play: everything within the PLAY frustum.
+    const compact = chooseCamera({
+      phase: 'live',
+      ball: [10, 4, 60],
+      chaser: [12, 62],
+      runners: [[15, 15]],
+      targetBags: [[42.4, 42.4]],
+    });
+    expect(compact.preset).toBe('PLAY');
+
+    // The audit's failing frame: ball run down in a deep corner while the
+    // runner is still near the plate — PLAY cannot hold both, so the ladder
+    // must climb rather than crop the race.
+    const spread = chooseCamera({
+      phase: 'live',
+      ball: [-150, 3, 150],
+      chaser: [-145, 148],
+      runners: [[8, 8]],
+      targetBags: [[42.4, 42.4]],
+    });
+    expect(spread.preset).not.toBe('PLAY');
+    // And whatever rig it picked genuinely holds the cast: this is the
+    // promise, not the preset name.
+    const rig = RIGS[spread.preset];
+    for (const p of [
+      [-150, 3, 150], [-145, 2.5, 148], [8, 2.5, 8], [42.4, 0, 42.4],
+    ] as Array<[number, number, number]>) {
+      const n = ndcThrough(rig.eye, spread.focus, rig.fov, 4 / 3, p);
+      expect(n).not.toBeNull();
+      expect(Math.abs(n![0])).toBeLessThanOrEqual(SAFE_RECT + 1e-9);
+      expect(Math.abs(n![1])).toBeLessThanOrEqual(SAFE_RECT + 1e-9);
+    }
+  });
+
+  it('★ the bridge actually feeds the ladder its cast and the launch verdict', () => {
+    // DEEP and BANG were unreachable for their whole lives: the bridge never
+    // produced launchDeg, carryFt or bangBangSec, and no test noticed until
+    // the round-2 re-audit watched a deep fly stay in the 115ft rig. Pin the
+    // wiring structurally, like the contact-cut assertion above.
+    const bridge = readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), 'bridge.ts'),
+      'utf8'
+    );
+    for (const field of ['runners:', 'targetBags:', 'launchDeg', 'carryFt', 'bangBangSec']) {
+      expect(bridge).toContain(field);
+    }
   });
 });

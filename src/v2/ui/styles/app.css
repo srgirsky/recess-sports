@@ -191,10 +191,15 @@ body.screen-open .play-callout {
 /* ---------------------------------------------------------------------------
  * THE SCOREBOARD — a bottom sticker, the way BB2026's field chrome reads.
  *
+ * BOTTOM-LEFT, which is where BB2026 itself parks it — and not bottom-centre,
+ * where the round-2 re-audit photographed a play at the plate happening
+ * BEHIND the board. In every live camera home plate projects to the bottom-
+ * centre of the frame, so that is the one strip of glass the scoreboard may
+ * never own.
+ *
  * It inherits `#hud`'s `pointer-events: none` and nothing in it is
  * `.interactive`, so every tap over it falls through to the canvas. That is
- * load-bearing: the strip spans the full width along the bottom edge, which on a
- * phone is exactly where a thumb rests.
+ * load-bearing on a phone, where the bottom edge is where a thumb rests.
  *
  * Sized entirely in `rem` off the one `--u`-style scalar in tokens.css, so the
  * whole strip scales with the viewport and nothing is positioned by hand. This
@@ -203,9 +208,10 @@ body.screen-open .play-callout {
  * ------------------------------------------------------------------------- */
 .sb {
   grid-area: bottom;
-  justify-self: center;
+  justify-self: start;
   align-self: end;
   margin-block-end: var(--s3);
+  margin-inline-start: var(--s3);
   display: grid;
   grid-template-columns: auto auto auto auto;
   align-items: center;

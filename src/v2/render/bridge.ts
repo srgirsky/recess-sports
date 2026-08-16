@@ -25,7 +25,7 @@ import type { LiveFrame } from '../sim/game';
 import type { PlayState } from '../sim/play';
 import { FIELD_POSITIONS, HOME, basePos } from '../sim/field';
 import { DEFENSE } from '../sim/params';
-import { isSettled, runnerPos } from '../sim/runners';
+import { isSettled, remainingFt, runnerPos } from '../sim/runners';
 import { cloneState, sampleAt, stepFlight, type BallState } from '../sim/flight';
 import type { KidView } from './CharacterModel';
 import { AnimationDirector } from './AnimationDirector';
@@ -265,7 +265,30 @@ export function cameraInputFor(frame: LiveFrame): CameraInput {
   if (frame.phase === 'live' && frame.play) {
     const p = frame.play;
     const chaser = p.fielders[p.active];
-    const lead = p.runners.find((r) => r.done === null);
+    const live = p.runners.filter((r) => r.done === null);
+    const lead = live[0];
+    // The launch verdict from the trace, which is fixed at contact — the
+    // policy's own comment asks for "the launch, not where the ball is now".
+    // A vacuum parabola satisfies tan(θ) = 4·apex/carry; drag skews it, but
+    // as the camera's deep-fly heuristic the stable version is the honest one.
+    const landing = p.trace.landing ?? p.trace.settle;
+    const carryFt = Math.sqrt(landing.x * landing.x + landing.z * landing.z);
+    const launchDeg = (Math.atan2(4 * p.trace.apexFt, Math.max(carryFt, 1)) * 180) / Math.PI;
+    // A bang-bang play: a thrown ball and a runner converging on one bag at
+    // nearly the same instant. Both ETAs are approximations — the camera cue
+    // needs "is this a race", not an umpire's call.
+    let bangBangSec: number | undefined;
+    if (p.throw && p.throw.target.kind === 'base') {
+      const bag = p.throw.target.base;
+      const racer = live.find((r) => r.to === bag);
+      if (racer) {
+        const throwEta = p.throw.arrivesAtSec - p.elapsedSec;
+        const runEta = remainingFt(racer) / Math.max(racer.speedFts, 6);
+        if (Math.abs(throwEta - runEta) <= 0.35) {
+          bangBangSec = Math.max(0, Math.min(throwEta, runEta));
+        }
+      }
+    }
     return {
       // ★ THE FIRST TICK OF A PLAY IS `contact`, AND SAYING SO IS WHAT MAKES
       // THE HARD CUT REACHABLE. `chooseCamera` cuts on `phase === 'contact'`
@@ -277,6 +300,21 @@ export function cameraInputFor(frame: LiveFrame): CameraInput {
       ball: [p.ball.p.x, p.ball.p.y, p.ball.p.z],
       chaser: chaser ? [chaser.p.x, chaser.p.z] : undefined,
       leadRunner: lead ? [runnerPos(lead).x, runnerPos(lead).z] : undefined,
+      // The whole cast, so the policy's fit ladder can promise every runner
+      // and every contested bag a place in the frame (round-2 re-audit #12).
+      runners: live.map((r) => {
+        const at = runnerPos(r);
+        return [at.x, at.z] as const;
+      }),
+      targetBags: live
+        .filter((r) => !isSettled(r))
+        .map((r) => {
+          const bag = basePos(r.to);
+          return [bag.x, bag.z] as const;
+        }),
+      launchDeg,
+      carryFt,
+      bangBangSec,
       homer: p.homeRun,
     };
   }
