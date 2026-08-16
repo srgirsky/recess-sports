@@ -25,6 +25,17 @@ export interface ResultModel {
   homerId: string | null;
   /** Most strikeouts thrown, if anyone threw one. */
   strikeoutId: string | null;
+  /**
+   * The finished game's per-inning line, away then home per entry — the board
+   * BB2026 ends every game on. Unlike the score rows above this is in
+   * SCOREBOARD order (away/home), because a line score is a fixture of the
+   * sport, not of whoever held the device.
+   */
+  lineScore: ReadonlyArray<readonly [number, number | null]>;
+  awayName: string;
+  homeName: string;
+  awayRuns: number;
+  homeRuns: number;
 }
 
 export interface ResultTeams {
@@ -70,6 +81,11 @@ export function resultModel(
     mvpId: awards.mvp,
     homerId: awards.homerKing,
     strikeoutId: awards.strikeoutKing,
+    lineScore: result.lineScore,
+    awayName: teams.away,
+    homeName: teams.home,
+    awayRuns: result.awayScore,
+    homeRuns: result.homeScore,
   };
 }
 

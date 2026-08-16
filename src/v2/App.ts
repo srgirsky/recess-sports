@@ -469,7 +469,7 @@ export class App {
     this.router.show(
       new ResultScreen(
         model,
-        (id) => this.lookup(id).name,
+        (id) => this.lookup(id),
         // PLAY AGAIN is a REMATCH — same nine kids, so a player is not made to
         // re-draft to have another go at a team they just built.
         () => completedWeek ? this.showSeason(completedWeek) : void this.playBall(),

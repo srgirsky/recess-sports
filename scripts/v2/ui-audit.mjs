@@ -449,7 +449,7 @@ const SHOW_RESULT = `(async () => {
   const m = resultModel(result, { away: 'ROCKETS', home: 'COMETS', you: 'away' },
     ROSTER.map((c) => c.id));
   new Router(document.getElementById('screens'))
-    .show(new ResultScreen(m, (id) => getCharacter(id).name, () => {}, () => {}));
+    .show(new ResultScreen(m, (id) => getCharacter(id), () => {}, () => {}));
   return document.querySelector('.screen--result') ? 'ok' : 'no result screen';
 })()`;
 
@@ -613,7 +613,14 @@ async function auditScreen(page, vp, screen) {
     // by axis without exempting accidental page-width overflow.
     const horizontal = b.reachableByHorizontalScroll ||
       (b.x >= -0.5 && b.x + b.w <= frame.w + 0.5);
-    const vertical = r.scrolls ? b.y >= -0.5 : insideFrame(asBox(b), frame.w, frame.h, -0.5);
+    // ★ VERTICAL MEANS VERTICAL. This branch once called insideFrame — a
+    // BOTH-axes check — so on a non-scrolling screen a leaf inside a
+    // legitimate horizontal scroller failed "vertical" for an x reason the
+    // horizontal rule had already excused. The comment above always said the
+    // rule splits by axis; now the code does too.
+    const vertical = r.scrolls
+      ? b.y >= -0.5
+      : b.y >= -0.5 && b.y + b.h <= frame.h + 0.5;
     if (!horizontal || !vertical) {
       fail(where, `"${b.label}" is off-frame at ${Math.round(b.x)},${Math.round(b.y)} ${Math.round(b.w)}x${Math.round(b.h)} in ${frame.w}x${frame.h}${r.scrolls ? ' (scrolling screen)' : ''}`);
     }
