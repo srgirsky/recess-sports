@@ -198,6 +198,10 @@ export interface CameraInput {
   leadRunner?: [number, number];
   /** The chasing fielder, ft. */
   chaser?: [number, number];
+  /** Every live runner, ft — the cast the frame must keep readable. */
+  runners?: ReadonlyArray<readonly [number, number]>;
+  /** The bags those runners are racing toward, ft. */
+  targetBags?: ReadonlyArray<readonly [number, number]>;
   /** Launch angle of the batted ball, degrees. */
   launchDeg?: number;
   /** Projected carry, ft. */
@@ -205,6 +209,61 @@ export interface CameraInput {
   /** A play at a base is within this many seconds. */
   bangBangSec?: number;
   homer?: boolean;
+}
+
+/**
+ * Pure pinhole projection through a rig: where a world point lands in NDC
+ * when the camera sits at `eye` looking at `focus` with vertical fov `fovDeg`.
+ * Null when the point is behind the camera. This is the policy's own eyes —
+ * the reason it can promise a cast fits a frame without importing three.
+ */
+export function ndcThrough(
+  eye: readonly [number, number, number],
+  focus: readonly [number, number, number],
+  fovDeg: number,
+  aspect: number,
+  p: readonly [number, number, number]
+): [number, number] | null {
+  const fx = focus[0] - eye[0];
+  const fy = focus[1] - eye[1];
+  const fz = focus[2] - eye[2];
+  const fl = Math.sqrt(fx * fx + fy * fy + fz * fz) || 1;
+  const f = [fx / fl, fy / fl, fz / fl];
+  // right = normalize(f × up), up = right × f — the standard y-up basis.
+  let rx = -f[2];
+  let rz = f[0];
+  const rl = Math.sqrt(rx * rx + rz * rz) || 1;
+  rx /= rl;
+  rz /= rl;
+  const ux = -f[1] * rz;
+  const uy = f[0] * rz - f[2] * rx;
+  const uz = f[1] * rx;
+  const px = p[0] - eye[0];
+  const py = p[1] - eye[1];
+  const pz = p[2] - eye[2];
+  const depth = px * f[0] + py * f[1] + pz * f[2];
+  if (depth <= 0.01) return null;
+  const cx = px * rx + pz * rz;
+  const cy = px * ux + py * uy + pz * uz;
+  const halfV = Math.tan((fovDeg * Math.PI) / 360);
+  return [cx / (depth * halfV * aspect), cy / (depth * halfV)];
+}
+
+/**
+ * Would every interest point sit inside the safe rect from this rig? Judged
+ * at 4:3 — the narrowest frame the game ships to — so a fit here fits every
+ * wider aspect too (vertical fov is fixed; width only grows).
+ */
+function fitsRig(
+  rig: CameraRig,
+  focus: readonly [number, number, number],
+  pts: ReadonlyArray<readonly [number, number, number]>
+): boolean {
+  for (const p of pts) {
+    const n = ndcThrough(rig.eye, focus, rig.fov, 4 / 3, p);
+    if (!n || Math.abs(n[0]) > SAFE_RECT || Math.abs(n[1]) > SAFE_RECT) return false;
+  }
+  return true;
 }
 
 /**
@@ -217,6 +276,23 @@ export interface CameraInput {
  * cannot tell where the ball is. Blends are reserved for non-gameplay.
  */
 export function chooseCamera(input: CameraInput, prev?: CameraCue): CameraCue {
+  /**
+   * The cast the live frame owes the player: ball, chaser, every runner and
+   * the bag each is racing toward — BB2026's high view "keeps ball, chaser,
+   * runners and target bags readable at the same time", and the round-2
+   * re-audit's failing frame was exactly this list cropped to a dot and an
+   * elbow. Kids get a torso height so a fit means their bodies, not their
+   * shoelaces.
+   */
+  const interest = (): Array<[number, number, number]> => {
+    const pts: Array<[number, number, number]> = [];
+    if (input.ball) pts.push(input.ball);
+    if (input.chaser) pts.push([input.chaser[0], 2.5, input.chaser[1]]);
+    for (const r of input.runners ?? []) pts.push([r[0], 2.5, r[1]]);
+    for (const b of input.targetBags ?? []) pts.push([b[0], 0, b[1]]);
+    return pts;
+  };
+
   const focusOf = (): [number, number, number] => {
     if (!input.ball) return [0, 0, 46];
     // Weighted focus: mostly the ball, but pulled toward the lead runner and
@@ -236,6 +312,20 @@ export function chooseCamera(input: CameraInput, prev?: CameraCue): CameraCue {
       fx += input.chaser[0] * 0.15;
       fz += input.chaser[1] * 0.15;
     }
+    // With the full cast on the wire, split the look between the ball and the
+    // cast's centre — a ball-only focus parks half the race off one edge.
+    const pts = interest();
+    if ((input.runners?.length ?? 0) > 0 && pts.length > 1) {
+      let loX = pts[0][0], hiX = pts[0][0], loZ = pts[0][2], hiZ = pts[0][2];
+      for (const p of pts) {
+        if (p[0] < loX) loX = p[0];
+        if (p[0] > hiX) hiX = p[0];
+        if (p[2] < loZ) loZ = p[2];
+        if (p[2] > hiZ) hiZ = p[2];
+      }
+      fx = fx * 0.55 + ((loX + hiX) / 2) * 0.45;
+      fz = fz * 0.55 + ((loZ + hiZ) / 2) * 0.45;
+    }
     return [fx, fy, fz];
   };
 
@@ -254,20 +344,45 @@ export function chooseCamera(input: CameraInput, prev?: CameraCue): CameraCue {
   // A deep fly needs the wider rig BEFORE it gets there, or the ball leaves
   // frame at the apex. Decided on the launch, not on where the ball is now.
   const deep = (input.launchDeg ?? 0) > 25 && (input.carryFt ?? 0) > 140;
-  const preset: CameraPreset = deep ? 'DEEP' : 'PLAY';
+  let preset: CameraPreset = deep ? 'DEEP' : 'PLAY';
+
+  // ★ THE FIT LADDER. The presets are the dolly stops (115 → 155 → 210 ft),
+  // and the policy climbs them until the whole cast sits inside SAFE_RECT —
+  // solved through `ndcThrough`, never guessed from a spread constant. A
+  // climb also re-centres the look on the cast: a ball-biased focus is right
+  // when everything fits close, and exactly what parks half the race off one
+  // edge when it does not. The climb deliberately trades against
+  // CHARACTER_PRESENCE — a wider rig means smaller kids — so it happens only
+  // when the alternative is a runner the player cannot see at all.
+  let focus = focusOf();
+  if (preset === 'PLAY') {
+    const pts = interest();
+    if (!fitsRig(RIGS.PLAY, focus, pts)) {
+      let loX = pts[0][0], hiX = pts[0][0], loZ = pts[0][2], hiZ = pts[0][2];
+      for (const p of pts) {
+        if (p[0] < loX) loX = p[0];
+        if (p[0] > hiX) hiX = p[0];
+        if (p[2] < loZ) loZ = p[2];
+        if (p[2] > hiZ) hiZ = p[2];
+      }
+      focus = [(loX + hiX) / 2, focus[1], (loZ + hiZ) / 2];
+      preset = fitsRig(RIGS.FIELD, focus, pts) ? 'FIELD' : 'DEEP';
+    }
+  }
 
   return {
     preset,
-    focus: focusOf(),
+    focus,
     // Contact is THE cut. Everything after it is a damped move.
     transition: input.phase === 'contact' ? 'cut' : { blendMs: 260 },
   };
 }
 
 /**
- * The framing constraint the FIELD camera must satisfy: home plate and the
- * ball both inside a safe rect. Pure, so the director can solve for a dolly
- * distance instead of guessing.
+ * The framing constraint a live frame must satisfy: the whole cast inside
+ * this fraction of NDC. `chooseCamera`'s fit ladder climbs the preset rigs
+ * until it holds — the "solve for a dolly distance instead of guessing" this
+ * constant was exported for.
  */
 export const SAFE_RECT = 0.85;
 

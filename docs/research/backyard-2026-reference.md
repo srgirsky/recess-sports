@@ -532,6 +532,27 @@ skipped time and painted once mid-life — both vanish at a real clock).
    his head so far back at the ~12ft card camera that his face is
    unreadable — that is his approved acting, and any change is a
    character-art decision for the performance packet, not a bug fix.
+4. **#12 closed: the live camera now owes the whole race a frame, and the
+   scoreboard moved to BB's own corner.** The fix pass found DEEP and BANG
+   had been unreachable their whole lives — the bridge never produced
+   `launchDeg`, `carryFt` or `bangBangSec`, so every fly ball lived in the
+   115ft PLAY rig. The bridge now derives the launch verdict from the trace
+   (stable from contact, as the policy's comment always asked), flags a
+   bang-bang race when a throw and a runner converge on one bag, and hands
+   over every live runner plus their target bags. `chooseCamera` gained a
+   FIT LADDER: a pure pinhole projection (`ndcThrough`, cross-validated
+   against a real PerspectiveCamera to 1e-5) climbs PLAY → FIELD → DEEP
+   until the cast sits inside `SAFE_RECT` — the solve that constant was
+   exported for — re-centring the look on the cast as it climbs, and the
+   trade against `CHARACTER_PRESENCE` is taken only when the alternative is
+   a runner off-frame. The scoreboard sits bottom-LEFT (as in BB2026's own
+   HUD), off the strip of glass where every live camera puts home plate.
+   Verified on screen: a fly ball drew the DEEP frame holding ball, chaser,
+   all fielders, the runner and both bags at once; the pitch view keeps the
+   batter clear of the board. Three new gates pin it: the projection
+   cross-check, the climb-when-cropped fixture, and a structural assertion
+   that the bridge really feeds the ladder (the vacancy that hid this for
+   months).
 
 ### Verified working this round
 
