@@ -492,6 +492,20 @@ skipped time and painted once mid-life — both vanish at a real clock).
     language); Tin Can's mid-outfield still reads near-black from the plate
     camera; outfield grass shows no mow bands from gameplay cameras.
 
+### Round-2 fixes
+
+1. **Mirrored park: fixed.** `scene.scale.x = -1` at the root — the one flip,
+   reasoned in `GameView.ts`'s scene field header. Venue geometry and
+   gameplay objects mirror together so an asymmetric fence can never disagree
+   with the runner on it; three.js flips its cull face on a negative world
+   determinant, so winding, normals and outline hulls survive. Three seams
+   negate x where world meets sim outside the graph: the pointer raycasts,
+   the camera focus, and the draft stage (authored in visual coordinates,
+   rendered with the mirror suspended). Re-verified on screen: the batter now
+   stands LARGE and unoccluded screen-left with first base up the right line
+   — the mirror had also been the author of the "catcher owns the plate
+   camera" gap, since the PITCH rig's +7.5ft offset was peeking over the
+   wrong shoulder. Runner, live tracking and mound aim all re-checked.
 2. **Below-the-fold hero buttons: fixed, and the gate now forbids the
    class.** The draft's completed-state PLAY BALL moved into the spotlight's
    hero slot (the panel a child is already looking at); strategy, team and
