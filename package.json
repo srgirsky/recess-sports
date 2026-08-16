@@ -28,6 +28,7 @@
     "review:signoff-page": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/render-signoff-page.mjs",
     "capture:character-evidence": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/capture-character-evidence.mjs",
     "capture:parity-stills": "node scripts/v2/capture-parity-stills.mjs",
+    "apply:critique": "node scripts/v2/apply-critique.mjs",
     "measure:fidelity": "node scripts/v2/measure-fidelity.mjs",
     "measure:strands": "node scripts/v2/measure-strands.mjs",
     "measure:turnaround": "node scripts/v2/measure-turnaround.mjs",

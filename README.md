@@ -287,6 +287,23 @@ approver and a hash of the exact board. A raw Blender export is not the
 delivery path. The full checklist that defines a finished character is
 `docs/v2/character-quality-rubric.md`.
 
+`npm run apply:critique -- /tmp/critique-<id>.json` writes an independent
+critic's verdict into the record in **the one order that is correct**: scores and
+notes first, status **derived** from them, *then* the board re-rendered, and only
+then that board's sha256 bound as `scoredBoardSha256`. The board prints the
+scores, so hashing before rendering binds them to a board showing the previous
+ones — the Mimi failure `authored-character.test.js` exists to catch, and it
+looks exactly like success. This script exists so that ordering is not
+re-derived by hand thirty times.
+
+It **cannot** write `approved`, by construction rather than by rule: status is
+computed as `candidate` when every applicable category scores ≥ 4 and
+`needs-polish` otherwise, and there is no code path to anything else. It also
+refuses a score that is not an integer 1–5 (or `null` for a bald kid's
+`hairMass`), and refuses any score submitted without a note. ⚠️ It *applies* a
+critique, it does not make one — the input must come from an independent critic
+that rendered the board and ran the instruments itself, never from the sculptor.
+
 `npm run review:signoff-page` collects all 30 boards, scores and critic notes
 into one scrollable HTML page for a human pass (`--out <path>`, default
 `docs/v2/concepts/roster-signoff.html`); publish it as an Artifact by hand. It
