@@ -62,6 +62,7 @@ import {
 } from '../render/modelLoader';
 import { hasDeliveredPerformance } from '../render/assets';
 import { AnimationDirector } from '../render/AnimationDirector';
+import { attachBatProp } from '../render/props';
 import { buildProceduralClips } from '../render/proceduralClips';
 import { heroClipFor, performanceFor } from '../render/performance';
 import { impactStrength } from '../render/impactCues';
@@ -698,6 +699,7 @@ export class GameView {
       clips: this.deliveredClips,
       performanceClips: this.performanceClips.get(character.id),
       fallback: this.clipLibrary,
+      bat: attachBatProp(view) ?? undefined,
       actor: {
         id: character.id,
         profile: performanceFor(character.id),

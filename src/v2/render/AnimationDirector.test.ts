@@ -332,6 +332,27 @@ describe('the director', () => {
     kid.dispose();
   });
 
+  it('shows the bat during plate clips and hides it everywhere else', () => {
+    const kid = proxy();
+    const bat = new Object3D();
+    bat.visible = false;
+    const dir = new AnimationDirector(kid.mesh, { fallback: clips, bat });
+    dir.play('bat_stance');
+    expect(bat.visible).toBe(true);
+    dir.play('swing_contact' as AnimName);
+    expect(bat.visible).toBe(true);
+    // A dodge settles back into the stance — a batter bailing out keeps his bat.
+    dir.play('dodge' as AnimName);
+    expect(bat.visible).toBe(true);
+    // The batter turned runner drops it the moment locomotion takes over.
+    dir.setLocomotionSpeed(12);
+    expect(bat.visible).toBe(false);
+    dir.play('field_ready' as AnimName);
+    expect(bat.visible).toBe(false);
+    dir.dispose();
+    kid.dispose();
+  });
+
   it('plays a clip and reports it', () => {
     const kid = proxy();
     const dir = new AnimationDirector(kid.mesh, { fallback: clips });

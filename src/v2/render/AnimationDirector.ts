@@ -29,6 +29,7 @@ import {
   LOOP_MAX_RATE,
   LOOP_MIN_RATE,
   clipSpec,
+  holdsBat,
   locomotionRateFor,
   markerLeadSec,
   pickLocomotion,
@@ -69,6 +70,12 @@ export interface DirectorOptions {
   /** Called once per clip name that had to fall back. */
   onFallback?: (name: string) => void;
   /**
+   * This kid's bat prop (see `props.attachBatProp`). The director shows it
+   * exactly when `clips.holdsBat` says the playing clip is a plate clip —
+   * visibility is a consequence of what is playing, so it cannot desync.
+   */
+  bat?: Object3D;
+  /**
    * The kid behind the rig. When present, the director coordinates face,
    * reaction tempo, blinks and fidgets with the body clip it alone controls.
    */
@@ -91,6 +98,7 @@ export class AnimationDirector {
   private pending: (() => void) | null = null;
   private warned = new Set<string>();
   private readonly actor: DirectorOptions['actor'];
+  private readonly bat: Object3D | undefined;
   private nextBlinkSec = Infinity;
   private nextFidgetSec = Infinity;
   private blinkLeftSec = 0;
@@ -99,6 +107,7 @@ export class AnimationDirector {
   constructor(root: Object3D, opts: DirectorOptions = {}) {
     this.mixer = new AnimationMixer(root);
     this.actor = opts.actor;
+    this.bat = opts.bat;
     if (this.actor) {
       this.nextBlinkSec = blinkEverySec(this.actor.profile) * (0.55 + performancePhase(this.actor.id, 17));
       this.nextFidgetSec = fidgetEverySec(this.actor.profile) * (0.65 + performancePhase(this.actor.id, 29));
@@ -185,6 +194,7 @@ export class AnimationDirector {
 
     this.current = name;
     this.pending = opts.onDone ?? null;
+    if (this.bat) this.bat.visible = holdsBat(name);
     this.applyExpression(name);
     return next;
   }

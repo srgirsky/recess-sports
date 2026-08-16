@@ -404,7 +404,24 @@ function walkOn(spec: ClipSpec): AnimationClip {
   });
 }
 
-/** Waiting for the pitch: bat up and back, small waggle, weight loaded. */
+/**
+ * Waiting for the pitch: both hands on the bat, barrel up over the shoulder.
+ *
+ * ★ THE ARMS ARE A GRIP NOW, AND THE NUMBERS ARE SOLVED, NOT STYLED. The
+ * original stance held the hands 1.8ft apart at hip height — authored before
+ * any bat existed, so nothing could see that the two hands never met. Once
+ * `props.attachBatProp` hung a real bat on `Prop_BatGrip` (re-audit #1), the
+ * gap was the first thing on screen. These arm and wrist values are solved by
+ * FK against three targets: both hands within ~0.2ft on the grip, the knob at
+ * waist height on the back side, and the barrel at ~60° elevation clearing
+ * the (chibi, ~30%-of-height) head silhouette. Re-tune by re-solving, not by
+ * nudging: a 10-degree arm edit moves the off hand clean off the bat.
+ *
+ * ★ THE WRIST (`rh`) CARRIES THE BAT'S AIM. The bat hangs off the right
+ * hand, so every batting clip keys `rh` to steer the barrel — see
+ * `SWING_WRIST` below. Arm terms stay CONSTANT through a swing; the torso
+ * yaw supplies the power and the wrist lays the barrel through the zone.
+ */
 const BAT_STANCE_POSE: Pose = {
   hp: [0, -26, 0],
   sp: [6, -10, 0],
@@ -414,10 +431,29 @@ const BAT_STANCE_POSE: Pose = {
   ll: [-16, 0, 0],
   ru: [8, 0, -12],
   rl: [-18, 0, 0],
-  la: [-52, 0, 38],
-  lf: [0, -84, 0],
-  ra: [-64, 0, -26],
-  rf: [0, 78, 0],
+  la: [-165, 160, -15],
+  lf: [-40, 0, 0],
+  ra: [-45, 60, 45],
+  rf: [0, 0, -110],
+  rh: [9, 6, 66],
+};
+
+/**
+ * Wrist deltas (against the stance's own `rh`) that steer the barrel through
+ * a swing: loaded up-back → laid level through the zone at contact → wrapped
+ * over the lead shoulder. Solved so the bat's +Y axis hits each phase's
+ * target direction under that phase's torso yaw; shared by the roster swing
+ * and every character take, so re-solving one phase re-aims everybody.
+ */
+const SWING_WRIST: Readonly<Record<string, [number, number, number]>> = {
+  load: [-11, -7, 6],
+  early: [-7, -5, -6],
+  launch: [87, -13, -72],
+  contact: [-156, -39, -56],
+  through: [-73, -30, -29],
+  wrap: [-15, -8, -30],
+  end: [56, 8, -44],
+  bunt: [66, -5, -65],
 };
 
 const FIELD_READY_POSE: Pose = {
@@ -463,18 +499,23 @@ function shift(pose: Pose, delta: Pose): Pose {
  * the largest angular sweep is centred on 6->8 — which is what the validator
  * reads a marker off, and what makes the placeholder pass the same gate a
  * delivered clip will.
+ *
+ * The arms never leave the grip: the torso yaw is the power and the
+ * `SWING_WRIST` keys lay the barrel level through the zone (re-audit #1's
+ * "the bat never comes down" — the old arm-delta sweep kept the barrel
+ * vertical straight through the contact frame).
  */
 function swingContact(spec: ClipSpec): AnimationClip {
-  const loaded = shift(BAT_STANCE_POSE, { s2: [0, -16, 0], ra: [-8, 0, -10], hp: [0, -8, 0] });
+  const loaded = shift(BAT_STANCE_POSE, { s2: [0, -16, 0], hp: [0, -8, 0], rh: SWING_WRIST.load });
   return build(spec, [
     { f: 0, pose: loaded },
-    { f: 3, pose: shift(loaded, { hp: [0, 6, 0], s2: [0, 6, 0], ru: [0, 0, -6] }) },
-    { f: 6, pose: shift(loaded, { hp: [0, 30, 0], sp: [0, 20, 0], s2: [0, 26, 0], ra: [14, 0, 24], la: [10, 0, -18], rt: [0, 0, 26] }) },
-    // Contact.
-    { f: 7, pose: shift(loaded, { hp: [0, 44, 0], sp: [0, 30, 0], s2: [0, 40, 0], ra: [22, 0, 44], la: [16, 0, -34], rt: [0, 0, 34] }) },
-    { f: 8, pose: shift(loaded, { hp: [0, 58, 0], sp: [0, 40, 0], s2: [0, 54, 0], ra: [30, 0, 64], la: [22, 0, -50], rt: [0, 0, 42] }) },
-    { f: 12, pose: shift(loaded, { hp: [0, 70, 0], sp: [0, 48, 0], s2: [0, 66, 0], ra: [34, 0, 78], la: [26, 0, -60], rt: [0, 0, 48] }) },
-    { f: 17, pose: shift(loaded, { hp: [0, 76, 0], sp: [0, 52, 0], s2: [0, 72, 0], ra: [36, 0, 84], la: [28, 0, -66], rt: [0, 0, 50] }) },
+    { f: 3, pose: shift(BAT_STANCE_POSE, { hp: [0, -2, 0], s2: [0, -10, 0], rh: SWING_WRIST.early }) },
+    { f: 6, pose: shift(BAT_STANCE_POSE, { hp: [0, 22, 0], sp: [0, 20, 0], s2: [0, 10, 0], rt: [0, 0, 26], rh: SWING_WRIST.launch }) },
+    // Contact: barrel level, pointing across the front of the plate.
+    { f: 7, pose: shift(BAT_STANCE_POSE, { hp: [0, 36, 0], sp: [0, 30, 0], s2: [0, 24, 0], rt: [0, 0, 34], rh: SWING_WRIST.contact }) },
+    { f: 8, pose: shift(BAT_STANCE_POSE, { hp: [0, 50, 0], sp: [0, 40, 0], s2: [0, 38, 0], rt: [0, 0, 42], rh: SWING_WRIST.through }) },
+    { f: 12, pose: shift(BAT_STANCE_POSE, { hp: [0, 62, 0], sp: [0, 48, 0], s2: [0, 50, 0], rt: [0, 0, 48], rh: SWING_WRIST.wrap }) },
+    { f: 17, pose: shift(BAT_STANCE_POSE, { hp: [0, 68, 0], sp: [0, 52, 0], s2: [0, 56, 0], rt: [0, 0, 50], rh: SWING_WRIST.end }) },
   ]);
 }
 
@@ -506,16 +547,17 @@ const JUNEBUG_IDLE_POSE: Pose = {
   lu: [2, 0, 0], ru: [-2, 0, 0],
 };
 
+// Arm terms stay on the shared grip (see BAT_STANCE_POSE) — personality lives
+// in the torso, head, legs and the WRIST, which is what actually waggles a bat.
 const JUNEBUG_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
   hp: [5, -4, 0], sp: [3, -5, 0], s2: [2, -8, 0], hd: [-2, 7, -2],
   lu: [8, 0, 1], ll: [-5, 0, 0], ru: [-3, 0, -1], rl: [4, 0, 0],
-  la: [-4, 0, 3], lf: [0, -5, 0], ra: [-6, 0, -5], rf: [0, 6, 0],
 });
 
 const JUNEBUG_CONTACT_END: Pose = shift(JUNEBUG_STANCE_POSE, {
   hp: [0, 78, 0], sp: [0, 54, 0], s2: [0, 74, 0], hd: [2, -18, 0],
-  ra: [38, 0, 86], rf: [0, -28, 0], la: [30, 0, -68], lf: [0, 24, 0],
   lu: [-10, 0, 0], ru: [8, 0, 0], rt: [0, 0, 52],
+  rh: SWING_WRIST.end,
 });
 
 function junebugIdle(spec: ClipSpec): AnimationClip {
@@ -593,11 +635,11 @@ function junebugRun(spec: ClipSpec): AnimationClip {
 function junebugBatStance(spec: ClipSpec): AnimationClip {
   return build(spec, [
     { f: 0, pose: JUNEBUG_STANCE_POSE },
-    { f: 13, pose: shift(JUNEBUG_STANCE_POSE, { s2: [0, -2, 0], ra: [-2, 0, -3], hd: [0, 1, 0] }), hips: [0, -0.012, 0] },
-    { f: 24, pose: shift(JUNEBUG_STANCE_POSE, { s2: [0, -4, 0], ra: [-4, 0, -5], rf: [0, 5, 0], hd: [0, -2, 0] }), hips: [0, -0.018, 0] },
+    { f: 13, pose: shift(JUNEBUG_STANCE_POSE, { s2: [0, -2, 0], rh: [-2, 0, -3], hd: [0, 1, 0] }), hips: [0, -0.012, 0] },
+    { f: 24, pose: shift(JUNEBUG_STANCE_POSE, { s2: [0, -4, 0], rh: [-5, 0, -6], hd: [0, -2, 0] }), hips: [0, -0.018, 0] },
     // The waggle stops here: she has decided.
-    { f: 36, pose: shift(JUNEBUG_STANCE_POSE, { s2: [0, -4, 0], ra: [-4, 0, -5], rf: [0, 5, 0], hd: [0, -2, 0] }), hips: [0, -0.018, 0] },
-    { f: 49, pose: shift(JUNEBUG_STANCE_POSE, { s2: [0, -1, 0], ra: [-1, 0, -2] }), hips: [0, -0.007, 0] },
+    { f: 36, pose: shift(JUNEBUG_STANCE_POSE, { s2: [0, -4, 0], rh: [-5, 0, -6], hd: [0, -2, 0] }), hips: [0, -0.018, 0] },
+    { f: 49, pose: shift(JUNEBUG_STANCE_POSE, { s2: [0, -1, 0], rh: [-1, 0, -2] }), hips: [0, -0.007, 0] },
     { f: spec.frames, pose: JUNEBUG_STANCE_POSE },
   ]);
 }
@@ -605,17 +647,19 @@ function junebugBatStance(spec: ClipSpec): AnimationClip {
 function junebugSwingContact(spec: ClipSpec): AnimationClip {
   const loaded = shift(JUNEBUG_STANCE_POSE, {
     hp: [0, -10, 0], sp: [0, -5, 0], s2: [0, -18, 0],
-    ra: [-10, 0, -13], la: [-5, 0, 6], lu: [-8, 0, 0], hd: [0, 4, 0],
+    lu: [-8, 0, 0], hd: [0, 4, 0], rh: SWING_WRIST.load,
   });
   return build(spec, [
     { f: 0, pose: loaded },
-    { f: 3, pose: shift(loaded, { hp: [0, 3, 0], s2: [0, 3, 0], hd: [0, -2, 0] }) },
-    { f: 5, pose: shift(loaded, { hp: [0, 12, 0], sp: [0, 7, 0], s2: [0, 10, 0], ra: [4, 0, 8], la: [2, 0, -5] }) },
-    { f: 6, pose: shift(loaded, { hp: [0, 31, 0], sp: [0, 21, 0], s2: [0, 28, 0], ra: [15, 0, 28], la: [11, 0, -20], rt: [0, 0, 23] }) },
+    { f: 3, pose: shift(JUNEBUG_STANCE_POSE, { hp: [0, -7, 0], s2: [0, -15, 0], hd: [0, 2, 0], rh: SWING_WRIST.early }) },
+    { f: 5, pose: shift(JUNEBUG_STANCE_POSE, { hp: [0, 2, 0], sp: [0, 2, 0], s2: [0, -8, 0], rh: SWING_WRIST.early }) },
+    { f: 6, pose: shift(JUNEBUG_STANCE_POSE, { hp: [0, 14, 0], sp: [0, 12, 0], s2: [0, 4, 0], rt: [0, 0, 23], rh: SWING_WRIST.launch }) },
     // Contact: the widest hand sweep is centred on 6 -> 8, making frame 7
-    // the derived bat marker rather than merely a number in the brief.
-    { f: 7, pose: shift(loaded, { hp: [0, 48, 0], sp: [0, 33, 0], s2: [0, 44, 0], ra: [25, 0, 49], la: [18, 0, -37], rt: [0, 0, 37] }) },
-    { f: 8, pose: shift(loaded, { hp: [0, 65, 0], sp: [0, 45, 0], s2: [0, 60, 0], ra: [35, 0, 70], la: [25, 0, -54], rt: [0, 0, 51] }) },
+    // the derived bat marker rather than merely a number in the brief. With
+    // the arms pinned to the grip, the torso arc alone must ACCELERATE into
+    // frame 8 — the central-difference speed at 7 reads p(8)-p(6).
+    { f: 7, pose: shift(JUNEBUG_STANCE_POSE, { hp: [0, 34, 0], sp: [0, 26, 0], s2: [0, 24, 0], rt: [0, 0, 37], rh: SWING_WRIST.contact }) },
+    { f: 8, pose: shift(JUNEBUG_STANCE_POSE, { hp: [0, 62, 0], sp: [0, 44, 0], s2: [0, 48, 0], rt: [0, 0, 51], rh: SWING_WRIST.through }) },
     { f: 12, pose: shift(JUNEBUG_CONTACT_END, { hp: [0, -5, 0], sp: [0, -4, 0], s2: [0, -5, 0] }) },
     { f: spec.frames - 1, pose: JUNEBUG_CONTACT_END },
   ]);
@@ -624,10 +668,10 @@ function junebugSwingContact(spec: ClipSpec): AnimationClip {
 function junebugSwingFollow(spec: ClipSpec): AnimationClip {
   return build(spec, [
     { f: 0, pose: JUNEBUG_CONTACT_END },
-    { f: 5, pose: shift(JUNEBUG_CONTACT_END, { hp: [0, 7, 0], s2: [0, 5, 0], hd: [-2, -4, 0], ra: [-4, 0, -8] }) },
-    { f: 10, pose: shift(JUNEBUG_CONTACT_END, { hp: [0, -8, 0], sp: [0, -8, 0], s2: [0, -11, 0], ra: [-12, 0, -24], la: [-8, 0, 18] }) },
+    { f: 5, pose: shift(JUNEBUG_CONTACT_END, { hp: [0, 7, 0], s2: [0, 5, 0], hd: [-2, -4, 0] }) },
+    { f: 10, pose: shift(JUNEBUG_CONTACT_END, { hp: [0, -8, 0], sp: [0, -8, 0], s2: [0, -11, 0], rh: [-30, -5, 5] }) },
     // One small shoulder release carries the satisfaction; no victory dance.
-    { f: 15, pose: shift(JUNEBUG_STANCE_POSE, { s2: [-5, 0, -2], hd: [1, -5, 0], ra: [-4, 0, -3] }) },
+    { f: 15, pose: shift(JUNEBUG_STANCE_POSE, { s2: [-5, 0, -2], hd: [1, -5, 0], rh: [-4, 0, -3] }) },
     { f: 20, pose: shift(JUNEBUG_STANCE_POSE, { s2: [-2, 0, -1], hd: [0, -2, 0] }) },
     { f: spec.frames - 1, pose: JUNEBUG_STANCE_POSE },
   ]);
@@ -737,14 +781,13 @@ const THEO_IDLE_POSE: Pose = {
 
 const THEO_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
   hp: [-3, -7, 0], sp: [-4, -8, 0], s2: [-5, -11, 0], hd: [-2, 12, 3],
-  la: [-8, 0, 8], lf: [0, -8, 0], ra: [-8, 0, -8], rf: [0, 10, 0],
   lu: [2, 0, 2], ru: [-2, 0, -2],
 });
 
 const THEO_CONTACT_END: Pose = shift(THEO_STANCE_POSE, {
   hp: [0, 83, 0], sp: [0, 58, 0], s2: [0, 78, 0], hd: [-3, -21, -2],
-  ra: [41, 0, 90], rf: [0, -30, 0], la: [33, 0, -71], lf: [0, 27, 0],
   lu: [-9, 0, 0], ru: [9, 0, 0], rt: [0, 0, 55],
+  rh: SWING_WRIST.end,
 });
 
 function theoIdle(spec: ClipSpec): AnimationClip {
@@ -761,23 +804,23 @@ function theoIdle(spec: ClipSpec): AnimationClip {
 function theoBatStance(spec: ClipSpec): AnimationClip {
   return build(spec, [
     { f: 0, pose: THEO_STANCE_POSE },
-    { f: 12, pose: shift(THEO_STANCE_POSE, { s2: [0, -5, 0], ra: [-5, 0, -8], hd: [0, 5, 0] }), hips: [0, -0.02, 0] },
-    { f: 25, pose: shift(THEO_STANCE_POSE, { s2: [0, 7, 0], ra: [5, 0, 10], hd: [0, -12, 0] }), hips: [0, 0.018, 0] },
-    { f: 38, pose: shift(THEO_STANCE_POSE, { s2: [0, -7, 0], ra: [-6, 0, -11], hd: [0, 11, 0] }), hips: [0, -0.022, 0] },
-    { f: 50, pose: shift(THEO_STANCE_POSE, { s2: [0, 3, 0], ra: [2, 0, 5], hd: [0, -4, 0] }) },
+    { f: 12, pose: shift(THEO_STANCE_POSE, { s2: [0, -5, 0], rh: [-6, 0, -8], hd: [0, 5, 0] }), hips: [0, -0.02, 0] },
+    { f: 25, pose: shift(THEO_STANCE_POSE, { s2: [0, 7, 0], rh: [6, 0, 10], hd: [0, -12, 0] }), hips: [0, 0.018, 0] },
+    { f: 38, pose: shift(THEO_STANCE_POSE, { s2: [0, -7, 0], rh: [-7, 0, -11], hd: [0, 11, 0] }), hips: [0, -0.022, 0] },
+    { f: 50, pose: shift(THEO_STANCE_POSE, { s2: [0, 3, 0], rh: [3, 0, 5], hd: [0, -4, 0] }) },
     { f: spec.frames, pose: THEO_STANCE_POSE },
   ]);
 }
 
 function theoSwingContact(spec: ClipSpec): AnimationClip {
-  const loaded = shift(THEO_STANCE_POSE, { hp: [0, -12, 0], s2: [0, -20, 0], ra: [-11, 0, -15], la: [-6, 0, 7], hd: [0, 7, 0] });
+  const loaded = shift(THEO_STANCE_POSE, { hp: [0, -12, 0], s2: [0, -20, 0], hd: [0, 7, 0], rh: SWING_WRIST.load });
   return build(spec, [
     { f: 0, pose: loaded },
-    { f: 3, pose: shift(loaded, { hp: [0, 4, 0], s2: [0, 4, 0] }) },
-    { f: 5, pose: shift(loaded, { hp: [0, 14, 0], sp: [0, 8, 0], s2: [0, 12, 0], ra: [5, 0, 10], la: [3, 0, -6] }) },
-    { f: 6, pose: shift(loaded, { hp: [0, 34, 0], sp: [0, 23, 0], s2: [0, 30, 0], ra: [17, 0, 31], la: [12, 0, -22], rt: [0, 0, 25] }) },
-    { f: 7, pose: shift(loaded, { hp: [0, 52, 0], sp: [0, 36, 0], s2: [0, 48, 0], ra: [28, 0, 54], la: [20, 0, -40], rt: [0, 0, 40] }) },
-    { f: 8, pose: shift(loaded, { hp: [0, 70, 0], sp: [0, 49, 0], s2: [0, 65, 0], ra: [39, 0, 76], la: [28, 0, -58], rt: [0, 0, 54] }) },
+    { f: 3, pose: shift(THEO_STANCE_POSE, { hp: [0, -8, 0], s2: [0, -16, 0], hd: [0, 7, 0], rh: SWING_WRIST.early }) },
+    { f: 5, pose: shift(THEO_STANCE_POSE, { hp: [0, 2, 0], sp: [0, 8, 0], s2: [0, -8, 0], rh: SWING_WRIST.early }) },
+    { f: 6, pose: shift(THEO_STANCE_POSE, { hp: [0, 14, 0], sp: [0, 16, 0], s2: [0, 4, 0], rt: [0, 0, 25], rh: SWING_WRIST.launch }) },
+    { f: 7, pose: shift(THEO_STANCE_POSE, { hp: [0, 36, 0], sp: [0, 32, 0], s2: [0, 24, 0], rt: [0, 0, 40], rh: SWING_WRIST.contact }) },
+    { f: 8, pose: shift(THEO_STANCE_POSE, { hp: [0, 64, 0], sp: [0, 52, 0], s2: [0, 50, 0], rt: [0, 0, 54], rh: SWING_WRIST.through }) },
     { f: 12, pose: shift(THEO_CONTACT_END, { hp: [0, -5, 0], s2: [0, -6, 0] }) },
     { f: spec.frames - 1, pose: THEO_CONTACT_END },
   ]);
@@ -787,9 +830,9 @@ function theoSwingFollow(spec: ClipSpec): AnimationClip {
   return build(spec, [
     { f: 0, pose: THEO_CONTACT_END },
     { f: 6, pose: shift(THEO_CONTACT_END, { hp: [0, 9, 0], s2: [0, 7, 0], hd: [-3, -8, 0] }) },
-    { f: 12, pose: shift(THEO_STANCE_POSE, { hp: [-8, 10, 0], sp: [-6, 8, 0], s2: [-8, 12, 0], hd: [-5, -22, 4], ra: [-22, 0, -35], la: [-14, 0, 25] }) },
+    { f: 12, pose: shift(THEO_STANCE_POSE, { hp: [-8, 10, 0], sp: [-6, 8, 0], s2: [-8, 12, 0], hd: [-5, -22, 4], rh: [-25, 0, -20] }) },
     // He admires the imaginary homer before remembering the next pitch.
-    { f: 18, pose: shift(THEO_STANCE_POSE, { hp: [-5, -4, 0], hd: [-2, -15, 2], ra: [-8, 0, -12] }) },
+    { f: 18, pose: shift(THEO_STANCE_POSE, { hp: [-5, -4, 0], hd: [-2, -15, 2], rh: [-8, 0, -12] }) },
     { f: spec.frames - 1, pose: THEO_STANCE_POSE },
   ]);
 }
@@ -869,7 +912,7 @@ const ZOOM_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
 
 const ZOOM_CONTACT_END: Pose = shift(ZOOM_STANCE_POSE, {
   hp: [0, 70, 0], sp: [0, 53, 0], s2: [0, 72, 0], hd: [-2, -18, -1],
-  ra: [35, 0, 82], rf: [0, -28, 0], la: [29, 0, -66], lf: [0, 25, 0],
+  rh: SWING_WRIST.end,
 });
 
 function zoomIdle(spec: ClipSpec): AnimationClip {
@@ -903,22 +946,22 @@ function zoomRun(spec: ClipSpec): AnimationClip {
 function zoomBatStance(spec: ClipSpec): AnimationClip {
   return build(spec, [
     { f: 0, pose: ZOOM_STANCE_POSE },
-    { f: 15, pose: shift(ZOOM_STANCE_POSE, { s2: [0, -5, 0], hd: [0, 4, 0], la: [-3, 0, 4], ra: [-3, 0, -4] }) },
-    { f: 30, pose: shift(ZOOM_STANCE_POSE, { s2: [0, 6, 0], hd: [0, -8, 0], la: [4, 0, -5], ra: [4, 0, 5] }) },
+    { f: 15, pose: shift(ZOOM_STANCE_POSE, { s2: [0, -5, 0], hd: [0, 4, 0], rh: [-4, 0, -4] }) },
+    { f: 30, pose: shift(ZOOM_STANCE_POSE, { s2: [0, 6, 0], hd: [0, -8, 0], rh: [5, 0, 5] }) },
     { f: 45, pose: shift(ZOOM_STANCE_POSE, { s2: [0, -4, 0], hd: [0, 6, 0] }) },
     { f: spec.frames, pose: ZOOM_STANCE_POSE },
   ]);
 }
 
 function zoomSwingContact(spec: ClipSpec): AnimationClip {
-  const loaded = shift(ZOOM_STANCE_POSE, { hp: [0, -11, 0], sp: [0, -8, 0], s2: [0, -18, 0], ra: [-10, 0, -14], la: [-5, 0, 7], hd: [0, 6, 0] });
+  const loaded = shift(ZOOM_STANCE_POSE, { hp: [0, -11, 0], sp: [0, -8, 0], s2: [0, -18, 0], hd: [0, 6, 0], rh: SWING_WRIST.load });
   return build(spec, [
     { f: 0, pose: loaded },
-    { f: 3, pose: shift(loaded, { hp: [0, 4, 0], s2: [0, 5, 0] }) },
-    { f: 5, pose: shift(loaded, { hp: [0, 14, 0], sp: [0, 9, 0], s2: [0, 13, 0], ra: [5, 0, 10], la: [3, 0, -6] }) },
-    { f: 6, pose: shift(loaded, { hp: [0, 31, 0], sp: [0, 22, 0], s2: [0, 29, 0], ra: [16, 0, 29], la: [12, 0, -21] }) },
-    { f: 7, pose: shift(loaded, { hp: [0, 48, 0], sp: [0, 35, 0], s2: [0, 46, 0], ra: [27, 0, 51], la: [20, 0, -38] }) },
-    { f: 8, pose: shift(loaded, { hp: [0, 64, 0], sp: [0, 47, 0], s2: [0, 62, 0], ra: [37, 0, 72], la: [27, 0, -55] }) },
+    { f: 3, pose: shift(ZOOM_STANCE_POSE, { hp: [0, -7, 0], sp: [0, -8, 0], s2: [0, -13, 0], rh: SWING_WRIST.early }) },
+    { f: 5, pose: shift(ZOOM_STANCE_POSE, { hp: [0, 3, 0], sp: [0, 1, 0], s2: [0, -5, 0], rh: SWING_WRIST.early }) },
+    { f: 6, pose: shift(ZOOM_STANCE_POSE, { hp: [0, 20, 0], sp: [0, 14, 0], s2: [0, 11, 0], rh: SWING_WRIST.launch }) },
+    { f: 7, pose: shift(ZOOM_STANCE_POSE, { hp: [0, 37, 0], sp: [0, 27, 0], s2: [0, 28, 0], rh: SWING_WRIST.contact }) },
+    { f: 8, pose: shift(ZOOM_STANCE_POSE, { hp: [0, 53, 0], sp: [0, 39, 0], s2: [0, 44, 0], rh: SWING_WRIST.through }) },
     { f: 12, pose: shift(ZOOM_CONTACT_END, { hp: [0, -5, 0], s2: [0, -6, 0] }) },
     { f: spec.frames - 1, pose: ZOOM_CONTACT_END },
   ]);
@@ -928,8 +971,8 @@ function zoomSwingFollow(spec: ClipSpec): AnimationClip {
   return build(spec, [
     { f: 0, pose: ZOOM_CONTACT_END },
     { f: 6, pose: shift(ZOOM_CONTACT_END, { hp: [0, 8, 0], s2: [0, 6, 0], hd: [-2, -7, 0] }) },
-    { f: 12, pose: shift(ZOOM_STANCE_POSE, { hp: [-5, 8, 0], sp: [-4, 7, 0], s2: [-6, 10, 0], hd: [-4, -17, 3], ra: [-18, 0, -30], la: [-12, 0, 22] }) },
-    { f: 18, pose: shift(ZOOM_STANCE_POSE, { hd: [-2, -12, 2], ra: [-6, 0, -9] }) },
+    { f: 12, pose: shift(ZOOM_STANCE_POSE, { hp: [-5, 8, 0], sp: [-4, 7, 0], s2: [-6, 10, 0], hd: [-4, -17, 3], rh: [-20, 0, -18] }) },
+    { f: 18, pose: shift(ZOOM_STANCE_POSE, { hd: [-2, -12, 2], rh: [-6, 0, -9] }) },
     { f: spec.frames - 1, pose: ZOOM_STANCE_POSE },
   ]);
 }
@@ -998,14 +1041,13 @@ const LOU_IDLE_POSE: Pose = {
 
 const LOU_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
   hp: [10, -7, 0], sp: [8, -6, 0], s2: [11, -8, 0], hd: [-2, 10, 2],
-  la: [-2, 0, 7], lf: [0, -6, 0], ra: [-2, 0, -7], rf: [0, 7, 0],
   lu: [6, 0, 3], ll: [-8, 0, 0], ru: [6, 0, -3], rl: [-8, 0, 0],
 });
 
 const LOU_CONTACT_END: Pose = shift(LOU_STANCE_POSE, {
   hp: [0, 91, 0], sp: [0, 62, 0], s2: [0, 85, 0], hd: [6, -30, -2],
-  ra: [44, 0, 96], rf: [0, -34, 0], la: [36, 0, -77], lf: [0, 30, 0],
   lu: [-12, 0, 2], ll: [15, 0, 0], ru: [10, 0, -4], rl: [-13, 0, 0], rt: [0, 0, 58],
+  rh: SWING_WRIST.end,
 });
 
 function louIdle(spec: ClipSpec): AnimationClip {
@@ -1021,9 +1063,9 @@ function louIdle(spec: ClipSpec): AnimationClip {
 function louBatStance(spec: ClipSpec): AnimationClip {
   return build(spec, [
     { f: 0, pose: LOU_STANCE_POSE },
-    { f: 15, pose: shift(LOU_STANCE_POSE, { hp: [0, -5, 0], s2: [0, -8, 0], ra: [-5, 0, -9], hd: [0, 4, 0] }), hips: [0, -0.035, 0] },
-    { f: 31, pose: shift(LOU_STANCE_POSE, { hp: [0, -9, 0], sp: [0, -5, 0], s2: [0, -13, 0], ra: [-8, 0, -13], hd: [0, 7, 0] }), hips: [0, -0.06, 0] },
-    { f: 45, pose: shift(LOU_STANCE_POSE, { hp: [0, -4, 0], s2: [0, -6, 0], ra: [-3, 0, -6] }), hips: [0, -0.025, 0] },
+    { f: 15, pose: shift(LOU_STANCE_POSE, { hp: [0, -5, 0], s2: [0, -8, 0], rh: [-6, 0, -9], hd: [0, 4, 0] }), hips: [0, -0.035, 0] },
+    { f: 31, pose: shift(LOU_STANCE_POSE, { hp: [0, -9, 0], sp: [0, -5, 0], s2: [0, -13, 0], rh: [-9, 0, -13], hd: [0, 7, 0] }), hips: [0, -0.06, 0] },
+    { f: 45, pose: shift(LOU_STANCE_POSE, { hp: [0, -4, 0], s2: [0, -6, 0], rh: [-4, 0, -6] }), hips: [0, -0.025, 0] },
     { f: spec.frames, pose: LOU_STANCE_POSE },
   ]);
 }
@@ -1031,17 +1073,17 @@ function louBatStance(spec: ClipSpec): AnimationClip {
 function louSwingContact(spec: ClipSpec): AnimationClip {
   const loaded = shift(LOU_STANCE_POSE, {
     hp: [0, -18, 0], sp: [0, -10, 0], s2: [0, -25, 0], hd: [-2, 12, 0],
-    ra: [-15, 0, -20], la: [-8, 0, 10], lu: [8, 0, 0], ru: [8, 0, 0],
+    lu: [8, 0, 0], ru: [8, 0, 0], rh: SWING_WRIST.load,
   });
   return build(spec, [
     { f: 0, pose: loaded },
-    { f: 3, pose: shift(loaded, { hp: [0, 3, 0], s2: [0, 4, 0], hd: [0, 2, 0] }) },
-    { f: 5, pose: shift(loaded, { hp: [0, 12, 0], sp: [0, 7, 0], s2: [0, 11, 0], ra: [5, 0, 10], la: [3, 0, -7], hd: [0, -3, 0] }) },
-    { f: 6, pose: shift(loaded, { hp: [0, 35, 0], sp: [0, 24, 0], s2: [0, 32, 0], ra: [18, 0, 34], la: [13, 0, -25], hd: [0, -7, 0] }) },
+    { f: 3, pose: shift(LOU_STANCE_POSE, { hp: [0, -15, 0], sp: [0, -10, 0], s2: [0, -21, 0], hd: [-2, 14, 0], rh: SWING_WRIST.early }) },
+    { f: 5, pose: shift(LOU_STANCE_POSE, { hp: [0, -6, 0], sp: [0, -3, 0], s2: [0, -14, 0], hd: [-2, 9, 0], rh: SWING_WRIST.early }) },
+    { f: 6, pose: shift(LOU_STANCE_POSE, { hp: [0, 17, 0], sp: [0, 14, 0], s2: [0, 7, 0], hd: [-2, 5, 0], rh: SWING_WRIST.launch }) },
     // The hand sweep peaks around frame 7 while Lou's gaze is still catching
     // up to the torso. The marker therefore remains derived, not declared.
-    { f: 7, pose: shift(loaded, { hp: [0, 56, 0], sp: [0, 39, 0], s2: [0, 52, 0], ra: [31, 0, 59], la: [23, 0, -44], hd: [0, -11, 0] }) },
-    { f: 8, pose: shift(loaded, { hp: [0, 76, 0], sp: [0, 54, 0], s2: [0, 72, 0], ra: [43, 0, 84], la: [32, 0, -63], hd: [0, -17, 0] }) },
+    { f: 7, pose: shift(LOU_STANCE_POSE, { hp: [0, 38, 0], sp: [0, 29, 0], s2: [0, 27, 0], hd: [-2, 1, 0], rh: SWING_WRIST.contact }) },
+    { f: 8, pose: shift(LOU_STANCE_POSE, { hp: [0, 58, 0], sp: [0, 44, 0], s2: [0, 47, 0], hd: [-2, -5, 0], rh: SWING_WRIST.through }) },
     { f: 12, pose: shift(LOU_CONTACT_END, { hp: [0, -7, 0], s2: [0, -8, 0], hd: [0, 8, 0] }) },
     { f: spec.frames - 1, pose: LOU_CONTACT_END },
   ]);
@@ -1055,13 +1097,13 @@ function louSwingFollow(spec: ClipSpec): AnimationClip {
   const scrambleB = shift(LOU_STANCE_POSE, {
     hp: [8, 20, 0], sp: [6, 13, 0], s2: [8, 18, 0], hd: [-5, -25, 3],
     lu: [-20, 0, 3], ll: [30, 0, 0], ru: [18, 0, -3], rl: [-27, 0, 0],
-    ra: [-20, 0, -34], la: [-14, 0, 25],
+    rh: [-22, 0, -25],
   });
   return build(spec, [
     { f: 0, pose: LOU_CONTACT_END },
     { f: 5, pose: scrambleA, hips: [0.07, 0.04, 0] },
     { f: 10, pose: scrambleB, hips: [-0.09, 0.025, 0] },
-    { f: 15, pose: shift(LOU_STANCE_POSE, { hp: [5, 3, 0], s2: [4, 4, 0], hd: [-3, -18, 2], ra: [-9, 0, -14] }) },
+    { f: 15, pose: shift(LOU_STANCE_POSE, { hp: [5, 3, 0], s2: [4, 4, 0], hd: [-3, -18, 2], rh: [-10, 0, -14] }) },
     { f: 20, pose: shift(LOU_STANCE_POSE, { hd: [-1, -8, 1] }) },
     { f: spec.frames - 1, pose: LOU_STANCE_POSE },
   ]);
@@ -1187,38 +1229,24 @@ const TANK_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
   hp: [17, -10, 0], sp: [12, -7, 0], s2: [16, -12, 0], hd: [5, 7, 0],
   lu: [10, 0, 4], ll: [-15, 0, 0], ru: [10, 0, -4], rl: [-15, 0, 0],
 });
-// ★ BOTH ARMS WERE ABOVE SHOULDER HEIGHT AT CONTACT, AND ONE WENT THROUGH HIS
-// SKULL. An independent review caught it on the most-played clip in the game:
-// "the upper arm enters at the ear and the fist emerges on the opposite side
-// with a black interpenetration wedge at the cheek", failing 3.8 and 4.3 at
-// hero scale.
-//
-// The cause is visible once the shifts are resolved rather than read. Stance
-// holds `la` z +38 and `ra` z -26, and the shifts of -80 and +100 land them at
-// -42 and +74. Down is POSITIVE z for the left arm and NEGATIVE for the right
-// (`TANK_IDLE_POSE` hangs them at +72 and -72), so those two numbers are both
-// "raised well above the shoulder" — and with the torso twisted 96 degrees
-// underneath, the raised arm sweeps through the head rather than past it.
-//
-// A batter at contact has his hands out in front of his chest, not over his
-// head. Lowering both by about forty degrees keeps the swing's shape and its
-// arc while putting the arms where the swing actually puts them, and the head
-// turns less far so he is still looking at the ball he just hit.
+// (An earlier pass here lowered mimed arm sweeps that put a fist through his
+// skull at contact — that whole class went away when the arms became the
+// shared grip: they no longer move during a swing, so there is nothing to
+// sweep through the head. The torso still twists his 96 degrees.)
 const TANK_CONTACT_END: Pose = shift(TANK_STANCE_POSE, {
   hp: [0, 96, 0], sp: [0, 68, 0], s2: [0, 91, 0], hd: [8, -18, 0],
-  ra: [47, 0, 62], la: [39, 0, -42], rt: [0, 0, 62],
+  rt: [0, 0, 62],
+  rh: SWING_WRIST.end,
 });
 
 function tankSwingContact(spec: ClipSpec): AnimationClip {
-  const load = shift(TANK_STANCE_POSE, { hp: [0, -22, 0], s2: [0, -29, 0], ra: [-17, 0, -22], hd: [0, 12, 0] });
+  const load = shift(TANK_STANCE_POSE, { hp: [0, -22, 0], s2: [0, -29, 0], hd: [0, 12, 0], rh: SWING_WRIST.load });
   return build(spec, [
     { f: 0, pose: load },
-    { f: 4, pose: shift(load, { hp: [0, 4, 0], s2: [0, 5, 0] }) },
-    // The mid-swing frames are scaled down with the end pose they run into, or
-    // the arm sweeps through the head on its way to a contact that clears it.
-    { f: 6, pose: shift(load, { hp: [0, 38, 0], sp: [0, 27, 0], s2: [0, 35, 0], ra: [20, 0, 24], la: [15, 0, -15] }) },
-    { f: 7, pose: shift(load, { hp: [0, 61, 0], sp: [0, 43, 0], s2: [0, 57, 0], ra: [34, 0, 40], la: [25, 0, -25] }) },
-    { f: 8, pose: shift(load, { hp: [0, 83, 0], sp: [0, 59, 0], s2: [0, 79, 0], ra: [48, 0, 57], la: [35, 0, -36] }) },
+    { f: 4, pose: shift(TANK_STANCE_POSE, { hp: [0, -18, 0], s2: [0, -24, 0], hd: [0, 12, 0], rh: SWING_WRIST.early }) },
+    { f: 6, pose: shift(TANK_STANCE_POSE, { hp: [0, 16, 0], sp: [0, 27, 0], s2: [0, 6, 0], hd: [0, 8, 0], rh: SWING_WRIST.launch }) },
+    { f: 7, pose: shift(TANK_STANCE_POSE, { hp: [0, 39, 0], sp: [0, 43, 0], s2: [0, 28, 0], hd: [0, 4, 0], rh: SWING_WRIST.contact }) },
+    { f: 8, pose: shift(TANK_STANCE_POSE, { hp: [0, 61, 0], sp: [0, 59, 0], s2: [0, 50, 0], hd: [0, 0, 0], rh: SWING_WRIST.through }) },
     { f: 13, pose: TANK_CONTACT_END },
     { f: spec.frames - 1, pose: TANK_CONTACT_END },
   ]);
@@ -1228,7 +1256,7 @@ function tankSwingFollow(spec: ClipSpec): AnimationClip {
   return build(spec, [
     { f: 0, pose: TANK_CONTACT_END },
     { f: 7, pose: shift(TANK_CONTACT_END, { hp: [8, 9, 0], s2: [6, 8, 0], hd: [4, -9, 0] }) },
-    { f: 14, pose: shift(TANK_STANCE_POSE, { hp: [17, 4, 0], sp: [12, 3, 0], hd: [12, -16, 0], ra: [-14, 0, -24] }), hips: [0, -0.08, 0] },
+    { f: 14, pose: shift(TANK_STANCE_POSE, { hp: [17, 4, 0], sp: [12, 3, 0], hd: [12, -16, 0], rh: [-15, 0, -20] }), hips: [0, -0.08, 0] },
     { f: 20, pose: shift(TANK_STANCE_POSE, { hp: [8, 0, 0], hd: [6, -6, 0] }) },
     { f: spec.frames - 1, pose: TANK_STANCE_POSE },
   ]);
@@ -1279,27 +1307,26 @@ const MIMI_IDLE_POSE: Pose = {
 };
 const MIMI_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
   hp: [21, -15, 0], sp: [15, -11, 0], s2: [20, -18, 0], hd: [-7, 14, 0],
-  la: [-8, 0, 10], ra: [-12, 0, -15],
   lu: [14, 0, 6], ll: [-20, 0, 0], ru: [14, 0, -6], rl: [-20, 0, 0],
 });
 const MIMI_CONTACT_END: Pose = shift(MIMI_STANCE_POSE, {
   hp: [0, 107, 0], sp: [0, 79, 0], s2: [0, 102, 0], hd: [3, -42, -3],
-  ra: [52, 0, 108], rf: [0, -31, 0], la: [43, 0, -88], lf: [0, 27, 0],
   rt: [0, 0, 69], lu: [-9, 0, 2], ll: [12, 0, 0], ru: [9, 0, -3], rl: [-13, 0, 0],
+  rh: SWING_WRIST.end,
 });
 
 function mimiSwingContact(spec: ClipSpec): AnimationClip {
   const load = shift(MIMI_STANCE_POSE, {
     hp: [0, -25, 0], sp: [0, -16, 0], s2: [0, -31, 0], hd: [-3, 17, 0],
-    ra: [-19, 0, -25], la: [-11, 0, 14], lu: [7, 0, 0], ru: [7, 0, 0],
+    lu: [7, 0, 0], ru: [7, 0, 0], rh: SWING_WRIST.load,
   });
   return build(spec, [
     { f: 0, pose: load },
-    { f: 2, pose: shift(load, { hp: [0, -4, 0], s2: [0, -6, 0], hd: [0, 4, 0] }), hips: [0, -0.06, 0] },
-    { f: 5, pose: shift(load, { hp: [0, 17, 0], sp: [0, 12, 0], s2: [0, 16, 0], ra: [9, 0, 18], la: [7, 0, -13] }) },
-    { f: 6, pose: shift(load, { hp: [0, 43, 0], sp: [0, 31, 0], s2: [0, 40, 0], ra: [25, 0, 47], la: [18, 0, -35], hd: [0, -8, 0] }) },
-    { f: 7, pose: shift(load, { hp: [0, 69, 0], sp: [0, 50, 0], s2: [0, 65, 0], ra: [41, 0, 76], la: [30, 0, -57], hd: [0, -15, 0] }) },
-    { f: 8, pose: shift(load, { hp: [0, 94, 0], sp: [0, 69, 0], s2: [0, 90, 0], ra: [57, 0, 105], la: [42, 0, -79], hd: [0, -23, 0] }), hips: [0.04, 0.06, 0] },
+    { f: 2, pose: shift(MIMI_STANCE_POSE, { hp: [0, -29, 0], s2: [0, -37, 0], hd: [-3, 21, 0], rh: SWING_WRIST.load }), hips: [0, -0.06, 0] },
+    { f: 5, pose: shift(MIMI_STANCE_POSE, { hp: [0, -8, 0], sp: [0, -4, 0], s2: [0, -15, 0], hd: [-3, 17, 0], rh: SWING_WRIST.early }) },
+    { f: 6, pose: shift(MIMI_STANCE_POSE, { hp: [0, 8, 0], sp: [0, 8, 0], s2: [0, 0, 0], hd: [-3, 9, 0], rh: SWING_WRIST.launch }) },
+    { f: 7, pose: shift(MIMI_STANCE_POSE, { hp: [0, 36, 0], sp: [0, 28, 0], s2: [0, 28, 0], hd: [-3, 2, 0], rh: SWING_WRIST.contact }) },
+    { f: 8, pose: shift(MIMI_STANCE_POSE, { hp: [0, 72, 0], sp: [0, 56, 0], s2: [0, 62, 0], hd: [-3, -6, 0], rh: SWING_WRIST.through }), hips: [0.04, 0.06, 0] },
     { f: 12, pose: shift(MIMI_CONTACT_END, { hp: [0, 8, 0], s2: [0, 7, 0], hd: [0, -7, 0] }), hips: [0.09, 0.09, 0] },
     { f: spec.frames - 1, pose: MIMI_CONTACT_END },
   ]);
@@ -1314,7 +1341,7 @@ function mimiSwingFollow(spec: ClipSpec): AnimationClip {
     { f: 0, pose: MIMI_CONTACT_END },
     { f: 4, pose: pulledAround, hips: [0.12, 0.14, 0] },
     { f: 8, pose: shift(pulledAround, { hp: [8, -13, 0], s2: [7, -11, 0], hd: [-9, 22, -4], lu: [-28, 0, 0], ru: [24, 0, 0] }), hips: [-0.09, -0.04, 0] },
-    { f: 13, pose: shift(MIMI_STANCE_POSE, { hp: [8, 9, 0], s2: [6, 8, 0], hd: [-5, -18, 3], ra: [-15, 0, -24] }), hips: [0.03, 0.08, 0] },
+    { f: 13, pose: shift(MIMI_STANCE_POSE, { hp: [8, 9, 0], s2: [6, 8, 0], hd: [-5, -18, 3], rh: [-16, 0, -20] }), hips: [0.03, 0.08, 0] },
     { f: 18, pose: shift(MIMI_STANCE_POSE, { hp: [-3, 0, 0], s2: [-2, 0, 0], hd: [2, 8, -1] }) },
     { f: spec.frames - 1, pose: MIMI_STANCE_POSE },
   ]);
@@ -1570,35 +1597,43 @@ const BUILDERS: Record<string, (spec: ClipSpec) => AnimationClip> = {
   bat_load: (s) =>
     build(s, [
       { f: 0, pose: BAT_STANCE_POSE },
-      { f: 7, pose: shift(BAT_STANCE_POSE, { s2: [0, -14, 0], ra: [-10, 0, -12], lu: [-8, 0, 0], hp: [0, -6, 0] }) },
-      { f: s.frames - 1, pose: shift(BAT_STANCE_POSE, { s2: [0, -16, 0], ra: [-8, 0, -10], hp: [0, -8, 0] }) },
+      { f: 7, pose: shift(BAT_STANCE_POSE, { s2: [0, -14, 0], lu: [-8, 0, 0], hp: [0, -6, 0], rh: SWING_WRIST.load }) },
+      { f: s.frames - 1, pose: shift(BAT_STANCE_POSE, { s2: [0, -16, 0], hp: [0, -8, 0], rh: SWING_WRIST.load }) },
     ]),
   swing_contact: swingContact,
   swing_follow: (s) => {
-    const end = shift(BAT_STANCE_POSE, { hp: [0, 76, 0], sp: [0, 52, 0], s2: [0, 72, 0], ra: [36, 0, 84], la: [28, 0, -66] });
+    const end = shift(BAT_STANCE_POSE, { hp: [0, 68, 0], sp: [0, 52, 0], s2: [0, 56, 0], rh: SWING_WRIST.end });
     return build(s, [
       { f: 0, pose: end },
-      { f: 8, pose: shift(end, { hp: [0, 14, 0], s2: [0, 10, 0], ra: [-10, 0, -20], la: [-6, 0, 16] }) },
+      { f: 8, pose: shift(BAT_STANCE_POSE, { hp: [0, 40, 0], sp: [0, 30, 0], s2: [0, 32, 0], rh: SWING_WRIST.wrap }) },
       { f: s.frames - 1, pose: BAT_STANCE_POSE },
     ]);
   },
   swing_whiff: (s) => {
-    const over = shift(BAT_STANCE_POSE, { hp: [0, 128, 0], sp: [0, 60, 0], s2: [0, 96, 0], ra: [40, 0, 96], la: [34, 0, -78], lu: [-24, 0, 0], hd: [12, 0, 0] });
+    const over = shift(BAT_STANCE_POSE, { hp: [0, 100, 0], sp: [0, 60, 0], s2: [0, 80, 0], lu: [-24, 0, 0], hd: [12, 0, 0], rh: SWING_WRIST.wrap });
     return build(s, [
-      { f: 0, pose: shift(BAT_STANCE_POSE, { s2: [0, -16, 0] }) },
-      { f: 7, pose: shift(BAT_STANCE_POSE, { hp: [0, 50, 0], s2: [0, 46, 0], ra: [26, 0, 52] }) },
+      { f: 0, pose: shift(BAT_STANCE_POSE, { s2: [0, -16, 0], rh: SWING_WRIST.load }) },
+      { f: 7, pose: shift(BAT_STANCE_POSE, { hp: [0, 40, 0], sp: [0, 32, 0], s2: [0, 30, 0], rh: SWING_WRIST.contact }) },
       { f: 12, pose: over },
-      { f: 20, pose: shift(over, { hp: [0, 16, 0], hd: [-10, 0, 0], lu: [10, 0, 0] }) },
+      { f: 20, pose: shift(over, { hp: [0, 16, 0], hd: [-10, 0, 0], lu: [10, 0, 0], rh: [30, 5, -7] }) },
       { f: s.frames - 1, pose: BAT_STANCE_POSE },
     ]);
   },
-  bunt: (s) =>
-    build(s, [
+  bunt: (s) => {
+    // Squared around: torso opens to the pitcher and the wrist lays the bat
+    // level across the front — the hands never leave the grip.
+    const square = shift(BAT_STANCE_POSE, {
+      hp: [14, 26, 0], sp: [10, 10, 0], s2: [6, 12, 0], hd: [0, -32, 0],
+      lu: [20, 0, 0], ll: [-22, 0, 0], ru: [18, 0, 0], rl: [-20, 0, 0],
+      rh: SWING_WRIST.bunt,
+    });
+    return build(s, [
       { f: 0, pose: BAT_STANCE_POSE },
-      { f: 8, pose: { hp: [14, 34, 0], sp: [10, 0, 0], hd: [0, 8, 0], lu: [26, 0, 12], ll: [-38, 0, 0], ru: [26, 0, -12], rl: [-38, 0, 0], la: [-70, 0, 30], lf: [0, -40, 0], ra: [-60, 0, -34], rf: [0, 36, 0] } },
-      { f: 16, pose: { hp: [16, 36, 0], sp: [12, 0, 0], hd: [0, 6, 0], lu: [28, 0, 12], ll: [-40, 0, 0], ru: [28, 0, -12], rl: [-40, 0, 0], la: [-72, 0, 28], lf: [0, -38, 0], ra: [-62, 0, -32], rf: [0, 34, 0] } },
+      { f: 8, pose: square },
+      { f: 16, pose: shift(square, { hp: [2, 2, 0], hd: [0, -2, 0] }) },
       { f: s.frames - 1, pose: BAT_STANCE_POSE },
-    ]),
+    ]);
+  },
 
   pitch_windup: (s) =>
     build(s, [
@@ -1761,8 +1796,8 @@ const BUILDERS: Record<string, (spec: ClipSpec) => AnimationClip> = {
     build(s, [
       { f: 0, pose: BAT_STANCE_POSE },
       // Fast in...
-      { f: 4, pose: shift(BAT_STANCE_POSE, { hp: [-26, 0, 0], sp: [-16, 0, 0], s2: [-14, 0, 0], hd: [-24, -30, 0], la: [-30, 0, 26], ra: [-20, 0, -30], lu: [-16, 0, 0] }) },
-      { f: 8, pose: shift(BAT_STANCE_POSE, { hp: [-30, 0, 0], sp: [-18, 0, 0], hd: [-28, -34, 0], la: [-34, 0, 24], ra: [-24, 0, -28] }) },
+      { f: 4, pose: shift(BAT_STANCE_POSE, { hp: [-26, 0, 0], sp: [-16, 0, 0], s2: [-14, 0, 0], hd: [-24, -30, 0], lu: [-16, 0, 0], rh: SWING_WRIST.load }) },
+      { f: 8, pose: shift(BAT_STANCE_POSE, { hp: [-30, 0, 0], sp: [-18, 0, 0], hd: [-28, -34, 0], rh: SWING_WRIST.load }) },
       // ...slow recover.
       { f: 18, pose: shift(BAT_STANCE_POSE, { hp: [-10, 0, 0], hd: [-8, -12, 0] }) },
       { f: s.frames - 1, pose: BAT_STANCE_POSE },

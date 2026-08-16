@@ -27,6 +27,7 @@ import {
   WARP_MIN_RATE,
   clipDurationMs,
   clipSpec,
+  holdsBat,
   locomotionRateFor,
   markerLeadSec,
   pickLocomotion,
@@ -42,6 +43,19 @@ describe('the clip library', () => {
   it('is 43 uniquely-named clips', () => {
     expect(CLIPS).toHaveLength(43);
     expect(new Set(CLIP_NAMES).size).toBe(43);
+  });
+
+  it('hands the bat to every plate clip and to nothing that has left the box', () => {
+    // Derived from the table: batting group, plus anything settling into
+    // `bat_stance` (the dodge). Locomotion is the load-bearing negative — the
+    // director drops the bat the moment a batter becomes a runner.
+    for (const c of CLIPS) {
+      const expected = c.group === 'batting' || c.returnsTo === 'bat_stance';
+      expect(holdsBat(c.name), c.name).toBe(expected);
+    }
+    expect(holdsBat('dodge')).toBe(true);
+    expect(holdsBat('run')).toBe(false);
+    expect(holdsBat('field_ready')).toBe(false);
   });
 
   it('puts every marker inside its own clip', () => {

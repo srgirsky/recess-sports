@@ -218,6 +218,7 @@ propagation" simply cannot happen here.
 | `src/v2/render/clips.ts` | the animation contract, in code and pure |
 | `src/v2/render/AnimationDirector.ts` | the only place clips are played |
 | `src/v2/render/proceduralClips.ts` | crude stand-ins for every clip name |
+| `src/v2/render/props.ts` | the bat; shown iff `holdsBat` |
 | `src/v2/render/CharacterFactory.ts` | the one seam that decides model-or-proxy |
 | `src/v2/render/CharacterModel.ts` | a delivered `.glb` made playable: LODs, material slots, face atlas, outlines |
 | `src/v2/render/ProxyCharacter.ts` | a kid built from primitives — the acceptance test for the skeleton spec |
