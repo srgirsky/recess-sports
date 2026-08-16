@@ -288,7 +288,14 @@ export class DraftScreen implements Screen {
       this.state.pool.includes(id) &&
       !this.busy;
     if (canPick) this.spotlight.appendChild(button('⭐  PICK ME!', () => this.take(id), 'draft-preview__pick'));
-    else this.spotlight.appendChild(el('div', `draft-preview__stamp is-${this.spotlightMode}`, this.spotlightMode === 'mine' ? 'ON YOUR TEAM!' : 'OFF THE BOARD'));
+    else if (isDraftComplete(this.state)) {
+      // ★ THE WAY FORWARD LIVES IN THE HERO SLOT. The go button used to sit
+      // at the bottom of the scroll column — below the fold at laptop sizes,
+      // so a child who finished the draft saw no way to continue (round-2
+      // re-audit). The slot that sold every pick now sells the game.
+      this.go.classList.remove('is-hidden');
+      this.spotlight.appendChild(this.go);
+    } else this.spotlight.appendChild(el('div', `draft-preview__stamp is-${this.spotlightMode}`, this.spotlightMode === 'mine' ? 'ON YOUR TEAM!' : 'OFF THE BOARD'));
     this.onSpotlight?.(
       id,
       this.state.pool,

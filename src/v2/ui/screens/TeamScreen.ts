@@ -133,15 +133,11 @@ export class TeamScreen implements Screen {
       venues.appendChild(b);
     }
 
-    this.root.append(
-      head,
-      colours,
-      logos,
-      venues,
-      lengths,
-      times,
-      button('⚾  PLAY BALL', () => this.onReady(this.choice), 'btn--hero')
-    );
+    // The choice rows scroll inside `.screen-scroll`; the head and the hero
+    // stay on glass, so PLAY BALL is always visible (round-2 re-audit).
+    const scroll = el('div', 'screen-scroll');
+    scroll.append(colours, logos, venues, lengths, times);
+    this.root.append(head, scroll, button('⚾  PLAY BALL', () => this.onReady(this.choice), 'btn--hero'));
     this.paint();
     return this.root;
   }
