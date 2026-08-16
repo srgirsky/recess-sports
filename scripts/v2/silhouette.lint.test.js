@@ -89,8 +89,23 @@ const ANTIALIAS_ALLOWANCE = 8;
 // the inside of a wheel is legitimately enclosed background. Whether that is a
 // pass is a question for the single-character PR the plan gives him; until then
 // this holds the line rather than pretending to judge it.
+//
+// ★ RE-MEASURED 2026-08-16, AND THE ENTRY WAS CARRYING EIGHT TIMES ITS OWN
+// DEBT. 9600 was set against a measured 9525 when Zoom was a PROXY. He has
+// shipped as an authored sculpt since batch 6 (PR #136) and his worst view now
+// measures 1170 — so the budget had ~8x unused slack, which is precisely the
+// "a ratchet that permits unused slack just gets refilled" failure this repo's
+// lint conventions name. The stale word in the old comment ("proxy") is what
+// made it survive: a number nobody could read as current is a number nobody
+// re-measures.
+//
+// What remains is the wheel interiors and nothing else: front and front-apose
+// read 234 in one pocket at (220,507), profile and profile-apose 1170 at
+// (274,581) — the side-on view through the wheel, which is the largest honest
+// enclosure a wheelchair has. Both A-pose views match their standing twin
+// exactly, which is the tell that this is structure and not a posing artifact.
 const DEBT = {
-  zoom: 9600,       // measured 9525 — proxy, plus genuine wheel interiors
+  zoom: 1200,       // measured 1170 (profile, through the wheel) — authored sculpt, not a proxy
 };
 
 const VIEWS = ['front', 'profile', 'front-apose', 'profile-apose'];

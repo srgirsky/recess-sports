@@ -21,11 +21,19 @@
 // detector agrees with itself, which is true of any detector including a wrong
 // one.
 //
-// ⚠️ IT ITERATES OVER FILES, NEVER OVER THE ROSTER. Twenty-four characters have
-// no spec because nobody has sculpted them; walking `ROSTER` would turn that
-// into twenty-four red tests about work that has not started.
-// `measure-fidelity.mjs`'s header records this same mistake being made and
-// undone.
+// ⚠️ IT ITERATES OVER FILES, NEVER OVER THE ROSTER. That was written when
+// twenty-four characters had no spec because nobody had sculpted them, and
+// walking `ROSTER` would have turned that into twenty-four red tests about work
+// that had not started. `measure-fidelity.mjs`'s header records the same
+// mistake being made and undone.
+//
+// As of 2026-08-16 all thirty are sculpted and all thirty specs exist, so the
+// file walk and a roster walk now agree — but the file walk stays, because the
+// reason it exists is that a spec belongs to a SCULPT, not to a roster row, and
+// the next character added to `ROSTER` will again have neither for a while.
+// The membership question is answered where it belongs: `character-registry`
+// gates spec-for-every-recipe, and `featurelatitude.lint.test.js` carries the
+// roster-coverage census for face landmarks.
 //
 // Break-it record: editing one `value` in a checked-in spec fires with the
 // pointer to the changed field and the command that regenerates it; deleting a
