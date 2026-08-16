@@ -204,6 +204,28 @@ function nearestBase(at: Vec2): 1 | 2 | 3 | 4 | null {
 }
 
 export class GameView {
+  /**
+   * ★ THE PARK IS MIRRORED AT THE ROOT, and this is the only flip.
+   *
+   * The sim puts FIRST at +x (`sim/field.ts`) and calls +x "right field", but
+   * a y-up right-handed camera behind home on −z maps world +x to SCREEN
+   * LEFT — so the shipped park drew first base up the left edge, a mirror
+   * image of v1, BB2001, BB2026 and every broadcast. The field is symmetric
+   * enough that no gate could see it; only a runner legging out a grounder
+   * told the truth. `scene.scale.x = -1` mirrors gameplay objects AND venue
+   * geometry together, so an asymmetric fence ("short left line") can never
+   * disagree with the runner on it. three.js flips the cull face when a world
+   * matrix determinant goes negative, so winding, normals and the outline
+   * hulls all survive.
+   *
+   * The corollary: WORLD space is now the mirror of SIM space. Everything
+   * inside `this.scene` keeps speaking sim coordinates and displays mirrored
+   * for free — but every seam that crosses between world and sim OUTSIDE the
+   * graph must negate x. There are exactly three: the pointer raycasts
+   * (`toField`/`toPlate`), the camera focus in `driveCamera`, and the draft
+   * presentation pass, which is authored in visual coordinates and renders
+   * with the mirror suspended.
+   */
   private readonly scene = new Scene();
   private readonly camera: PerspectiveCamera;
   /** The same scene through the draft schoolyard's full-width clipped camera. */
@@ -350,6 +372,8 @@ export class GameView {
     this.renderer.bindOutlines(this.outlines);
     configureModelLoader(this.renderer.gl);
     this.camera = new PerspectiveCamera(RIGS.PITCH.fov, 1, 0.5, 900);
+    // The one flip — see the field's header comment on the scene.
+    this.scene.scale.x = -1;
     this.lighting = new Lighting({ shadowMapSize: this.renderer.tier.shadowMapSize, night: this.night });
     this.scene.add(this.lighting.root);
     const skyc = this.skyColours();
@@ -384,7 +408,8 @@ export class GameView {
     this.ray.setFromCamera(this.ndc, this.camera);
     const hit = new Vector3();
     if (!this.ray.ray.intersectPlane(this.ground, hit)) return null;
-    return { x: hit.x, z: hit.z };
+    // World → sim: the scene is mirrored at the root, so x negates here.
+    return { x: -hit.x, z: hit.z };
   }
 
   /**
@@ -402,7 +427,8 @@ export class GameView {
     this.ray.setFromCamera(this.ndc, this.camera);
     const hit = new Vector3();
     if (!this.ray.ray.intersectPlane(this.platePlane, hit)) return null;
-    return { x: hit.x, y: hit.y };
+    // World → sim: `x` becomes `aimLateralFt`, so the mirror negates it too.
+    return { x: -hit.x, y: hit.y };
   }
 
   /**
@@ -1365,8 +1391,13 @@ export class GameView {
       this.draftCamera.position.set(0, portraitStage ? 4.1 : 3.6, portraitStage ? -15 : -12.2);
       this.draftCamera.lookAt(0, 2.55, 1.6);
       this.draftCamera.updateProjectionMatrix();
+      // The stage is authored in VISUAL coordinates — bench sides are paired
+      // to the DOM's YOUR/THEIR labels and the walk-ons carry signed
+      // directions — so the park mirror is suspended for this one pass.
+      this.scene.scale.x = 1;
       this.renderer.renderInset(this.scene, this.draftCamera, rect);
     } finally {
+      this.scene.scale.x = -1;
       this.refs.ball.visible = ballVisible;
       for (const [id, state] of saved) {
         const view = this.refs.kids.get(id);
@@ -1516,7 +1547,10 @@ export class GameView {
     this.cue = next;
     const rig = RIGS[next.preset];
     const wantEye = new Vector3(rig.eye[0], rig.eye[1], rig.eye[2]);
-    const wantTgt = new Vector3(next.focus[0], next.focus[1], next.focus[2]);
+    // Sim → world: the policy's focus is sim-space (it tracks ball and
+    // runners), and the scene mirror means the drawn ball sits at −x. The
+    // rig eyes stay as authored — they are already visual-space.
+    const wantTgt = new Vector3(-next.focus[0], next.focus[1], next.focus[2]);
     if (cut) {
       this.eye.copy(wantEye);
       this.target.copy(wantTgt);
