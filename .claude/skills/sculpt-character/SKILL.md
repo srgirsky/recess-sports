@@ -668,3 +668,35 @@ Each of these cost at least one blind round. They are constraints, not history.
   0.03 above a 0.06-radius top ring, which is a cone point, and that is the
   "crown runs flatter than the turnaround's" polish finding seen from the other
   side. Fix the silhouette and the crown; the relief is the smaller half.
+
+## Lessons the hem pass paid for (rubric 3.4, the 4->5 sweep)
+
+- **★ A GARMENT EDGE THAT IS ONLY A COLOUR CHANGE READS AS PAINT, and thirteen
+  kids were scored 4 for it.** A `color_fn` switching at some z, with no loft
+  rings around that z, makes the loft interpolate the switch across the WHOLE
+  gap between its nearest rings. Penny's waist switched denim to pink at z 1.999
+  with rings at 1.950 and 2.150 — a fifth of a foot of gradient standing in for a
+  sewn hem, and the critic read it exactly as built: "the soft vertex gradient
+  reads PAINTED from side angles". Flash's stripes paid for the same lesson
+  (crisp edges need rings AT the boundary); it is a garment rule, not a stripe
+  rule.
+- **The fix is a ring PAIR plus a PROUD LIP, and the second half is what earns
+  the 5.** A pair straddling the boundary (Penny: 1.987/1.999) makes the edge
+  crisp; standing the lower ring ~0.010ft proud makes the waistband OVERHANG the
+  tee tucked under it, which is batch 7's "a rim row proud of its panel reads as
+  stitching" applied to a waistband instead of a pocket. Crisp alone is a clean
+  colour edge; crisp + proud is a constructed garment. Cost on Penny: 2 rings x
+  24 segments = 96 triangles, and the export got SMALLER.
+- **Find candidates by arithmetic, then confirm every one by eye.** For each
+  `if z < N` in a colour function, ask whether the level table has a ring on both
+  sides within ~0.02ft. A regex sweep of that shape reports twenty boundaries on
+  twelve kids smearing 0.055-0.180ft — ace, big-lou, clover, cricket, dex, gizmo,
+  lefty, moose, penny, the-professor, theo, zoom — and it is a CANDIDATE LIST,
+  not a defect list. It over-reports two ways, both found immediately: Dex's
+  3.67/3.77 are width selections inside an explicit ring loop whose rings sit at
+  exactly those z (not a colour edge at all), and Penny's 2.2/2.35 are her bib,
+  which is proud geometry rather than a painted boundary. Crop the profile board
+  at the z in question before authoring a single ring.
+- **Check the kid's headroom BEFORE designing the fix.** The roster sits hard
+  against both asset budgets and adding rings is not free; see the hair-mass
+  lesson for the rows-for-columns trade when it is.
