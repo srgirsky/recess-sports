@@ -272,6 +272,10 @@ export class GameView {
   private spotMarker: Mesh | null = null;
   private readonly ndc = new Vector2();
   private pointerDownAt = 0;
+  /** Frozen by the pause screen. The renderer keeps painting; time stops. */
+  private paused = false;
+  private pauseBtn: HTMLButtonElement | null = null;
+  private pauseRequest: (() => void) | null = null;
   private frame: LiveFrame | null = null;
   private cue: CameraCue | null = null;
 
@@ -1038,6 +1042,21 @@ export class GameView {
   }
 
   /**
+   * Show the ⏸ control and route its tap. The button exists only once a host
+   * (the App) can answer it with a pause screen — the bare `?play=1` review
+   * surface has no screens, so it keeps no dead control.
+   */
+  onPauseRequest(fn: () => void): void {
+    this.pauseRequest = fn;
+    if (this.pauseBtn) this.pauseBtn.hidden = false;
+  }
+
+  /** Freeze or resume the whole view. See the tick's pause branch. */
+  setPaused(paused: boolean): void {
+    this.paused = paused;
+  }
+
+  /**
    * Put the candidate, waiting group and two benches into the draft's live 3D yard.
    * The screen reports identity and bounds; this view keeps all model and clip
    * work on the render side and uses the characters loaded during `start()`.
@@ -1090,11 +1109,17 @@ export class GameView {
   private advance(): void {
     if (!this.game) return;
     const r = this.game.next(this.inputs);
-    // ★ THE ONE-SHOTS ARE CONSUMED, the pointer is not. A dive or a throw is an
-    // instant; steering is a state that persists until the player moves it. v1
-    // makes the same split, and conflating them means either a dive that fires
-    // every tick or a fielder who forgets where he was sent.
-    this.inputs = { pointer: this.inputs.pointer };
+    // ★ THE ONE-SHOTS ARE CONSUMED, the pointer is not — WITHIN ONE PLAY. A
+    // dive or a throw is an instant; steering is a state that persists until
+    // the player moves it. But a pointer that outlived the play pinned the
+    // chaser to a stale spot on every LATER ball: one early tap (even a
+    // tap-to-throw sets it) and the defence never recorded another out —
+    // re-audit #4's "11 batters, 9 runs, 0 outs". The moment the frame leaves
+    // `live`, steering is over; an un-steered chaser falls back to the sim's
+    // own chase, so a passive defence fields at CPU strength and the half
+    // ends itself.
+    const stillLive = !r.done && (r.value as LiveFrame).phase === 'live';
+    this.inputs = { pointer: stillLive ? this.inputs.pointer : undefined };
     if (r.done) {
       this.frame = null;
       // ★ ONCE. The tick loop keeps running after the game ends (the park is
@@ -1336,6 +1361,16 @@ export class GameView {
     const dt = Math.min((now - this.last) / 1000, 0.1);
     this.last = now;
 
+    // Paused is FROZEN, not torn down: the park stays visible behind the
+    // pause screen, but no sim time, no animation and no chrome advances —
+    // and nothing accumulates, so resuming does not fast-forward.
+    if (this.paused) {
+      this.acc = 0;
+      this.renderer.render(this.scene, this.camera, now);
+      requestAnimationFrame(this.tick);
+      return;
+    }
+
     // ★ FIXED-STEP ACCUMULATOR. The sim never sees the render delta.
     this.acc += dt;
     const step = 1 / SIM_HZ;
@@ -1512,6 +1547,17 @@ export class GameView {
   private mountHud(): void {
     const hud = document.getElementById('hud');
     if (!hud) return;
+    // The pause, top-left — the mute's mirror, and the one exit a five-year-old
+    // has from a game going badly (re-audit #4: no in-game pause/quit existed).
+    const pause = document.createElement('button');
+    pause.type = 'button';
+    pause.className = 'btn interactive btn--pause';
+    pause.textContent = '⏸';
+    pause.setAttribute('aria-label', 'pause the game');
+    pause.hidden = !this.pauseRequest;
+    pause.addEventListener('click', () => this.pauseRequest?.());
+    this.pauseBtn = pause;
+    hud.appendChild(pause);
     hud.appendChild(this.board.root);
     hud.appendChild(this.matchup.root);
     hud.appendChild(this.inningBreak.root);

@@ -569,6 +569,18 @@ const SCREENS = [
     mustSee: '.screen--team .swatch',
   },
   { name: 'result', reach: SHOW_RESULT, mustSee: '.screen--result .btn' },
+  {
+    // Shown synthetically, like the result: reaching it live needs a whole
+    // game, and the screen's layout does not care how it was reached.
+    name: 'pause',
+    reach: `(async () => {
+      const [{ PauseScreen }, { Router }] = await Promise.all([
+        import('/src/v2/ui/screens/PauseScreen.ts'), import('/src/v2/ui/Router.ts')]);
+      new Router(document.getElementById('screens')).show(new PauseScreen(() => {}, () => {}));
+      return document.querySelector('.screen--pause') ? 'ok' : 'no pause screen';
+    })()`,
+    mustSee: '.screen--pause .mode-card',
+  },
 ];
 
 async function auditScreen(page, vp, screen) {
