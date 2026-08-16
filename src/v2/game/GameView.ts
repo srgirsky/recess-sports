@@ -781,9 +781,17 @@ export class GameView {
   private buildPlateCues(): void {
     const [lo, hi] = zoneBandFt();
     const hw = zoneHalfWidthFt();
+    // ★ CUES DRAW THROUGH THE SCENE, on purpose. The pitch camera's offset eye
+    // puts the catcher over the plate's right half, so a depth-tested zone box
+    // and aim bar lost their right sides behind him — and a half-hidden bar
+    // reads as a whole bar sitting LEFT of the plate (re-audit #5). These are
+    // input UI, not scenery: no depth test, a late render order, and enough
+    // transparency that the ball still reads through the bar.
+    const overlay = { transparent: true, depthTest: false, depthWrite: false } as const;
     const box = new EdgesGeometry(new BoxGeometry(hw * 2, hi - lo, 0.02));
-    this.zoneBox = new LineSegments(box, new LineBasicMaterial({ color: 0xffffff }));
+    this.zoneBox = new LineSegments(box, new LineBasicMaterial({ color: 0xffffff, ...overlay, opacity: 0.9 }));
     this.zoneBox.position.set(HOME.x, (lo + hi) / 2, HOME.z);
+    this.zoneBox.renderOrder = 40;
     this.scene.add(this.zoneBox);
     this.aimHeightFt = (lo + hi) / 2;
 
@@ -793,17 +801,19 @@ export class GameView {
     const reach = (BALL_RADIUS_FT + BAT.BARREL_RADIUS_FT) * 2;
     this.aimBar = new Mesh(
       new BoxGeometry(hw * 2.4, reach, 0.02),
-      new MeshStandardMaterial({ color: 0xffd23f, emissive: 0x6b5300 })
+      new MeshStandardMaterial({ color: 0xffd23f, emissive: 0x6b5300, ...overlay, opacity: 0.55 })
     );
     this.aimBar.position.set(HOME.x, this.aimHeightFt, HOME.z);
+    this.aimBar.renderOrder = 39;
     this.scene.add(this.aimBar);
 
     // The pitcher's spot. A point, not a bar — he aims in two axes, and unlike
     // the batter his lateral intent IS read (`aimLateralFt` reaches the release).
     this.spotMarker = new Mesh(
       new BoxGeometry(0.35, 0.35, 0.02),
-      new MeshStandardMaterial({ color: 0xff5470, emissive: 0x66131f })
+      new MeshStandardMaterial({ color: 0xff5470, emissive: 0x66131f, ...overlay, opacity: 0.85 })
     );
+    this.spotMarker.renderOrder = 41;
     this.spot = { x: 0, y: (lo + hi) / 2 };
     this.spotMarker.position.set(this.spot.x, this.spot.y, HOME.z);
     this.scene.add(this.spotMarker);

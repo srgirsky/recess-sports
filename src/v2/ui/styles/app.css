@@ -91,11 +91,19 @@ body {
 }
 
 /* Broadcast-sized verdicts. The play has already resolved before these mount;
-   they explain it without covering or delaying the action. */
+   they explain it without covering or delaying the action.
+
+   ★ UP AND LEFT OF DEAD CENTRE, because dead centre is the batter's head. The
+   plate camera stacks the batter and catcher across the middle-right of the
+   frame, and a verdict at (50%, 45%) landed exactly on that mass — re-audit
+   #5 read it as "occluded", and at several sizes it effectively was. The
+   clear sky/fence band over the infield's left half is composition-stable
+   across the viewport matrix; a verdict there is the first thing the eye
+   finds, which is the whole job. */
 .play-callout {
   position: absolute;
-  inset-inline-start: 50%;
-  inset-block-start: 45%;
+  inset-inline-start: 40%;
+  inset-block-start: 30%;
   display: grid;
   justify-items: center;
   transform: translate(-50%, -50%) scale(0.7) rotate(-2deg);
