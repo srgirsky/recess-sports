@@ -962,12 +962,13 @@ body.inning-break #hud > *:not(.inning-board):not(.btn--mute) {
 .clubhouse-player__copy { white-space: pre-line; font-size: 0.78rem; font-weight: 700; }
 .clubhouse-player__edit { font-size: 1.2rem; }
 
-/* ---- Custom captain creator. One scroll owns every responsive extreme. ---- */
+/* ---- Custom captain creator. The panel scrolls; SAVE stays on glass. ---- */
 .screen--custom-player {
-  place-content: start center;
-  align-content: start;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-content: stretch;
+  justify-content: center;
+  gap: var(--s3);
+  overflow-y: hidden;
   padding-block: var(--s4);
 }
 .custom-player-panel {
@@ -1266,12 +1267,26 @@ button.clubhouse-sticker {
 
 /* ---- Strategy: the one lineup decision a pre-reader can see and control ---- */
 .screen--strategy {
-  place-content: start center;
-  align-content: start;
+  /* Head / scrolling middle / hero — the way forward never leaves the glass.
+     Reachable-by-scroll is fine for browsing; it is not fine for the one
+     button that continues the game (round-2 re-audit, enforced for every
+     `.btn--hero` by scripts/v2/ui-audit.mjs). */
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-content: stretch;
+  justify-content: center;
   gap: var(--s3);
+  overflow-y: hidden;
+  padding-block: var(--s4);
+}
+.screen-scroll {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: inherit;
+  min-block-size: 0;
+  inline-size: 100%;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding-block: var(--s4);
 }
 .strategy-head {
   display: grid;
@@ -1853,6 +1868,14 @@ body.screen-open #hud > *:not(.btn--mute) {
   padding-inline: var(--s3);
   background: var(--gold);
 }
+/* The completed draft's PLAY BALL takes the pick slot — the hero action
+   stays in the panel a child is already looking at. */
+.draft-preview > .btn--hero {
+  grid-column: 2;
+  grid-row: 4;
+  z-index: 3;
+  justify-self: center;
+}
 .draft-preview__stamp {
   grid-column: 2;
   grid-row: 4;
@@ -1881,7 +1904,7 @@ body.screen-open #hud > *:not(.btn--mute) {
   .draft-preview__ribbon { grid-column: 1 / -1; }
   .draft-preview__identity { grid-column: 1; grid-row: 3; }
   .draft-preview__ratings { grid-column: 2; grid-row: 3; }
-  .draft-preview__pick, .draft-preview__stamp { grid-column: 1 / -1; grid-row: 4; }
+  .draft-preview__pick, .draft-preview__stamp, .draft-preview > .btn--hero { grid-column: 1 / -1; grid-row: 4; }
   .draft-rating { grid-template-columns: 1rem 1fr; }
   .draft-rating__label { display: none; }
 }
@@ -1953,11 +1976,12 @@ body.screen-open #hud > *:not(.btn--mute) {
  * screen is exactly this: below the fold is reachable, above the top is not.
  */
 .screen--team {
-  place-content: start center;
-  align-content: start;
+  /* Same head / scrolling middle / hero shape as the strategy screen. */
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-content: stretch;
+  justify-content: center;
   gap: var(--s4);
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow-y: hidden;
   padding-block: var(--s4);
 }
 @media (max-height: 460px) {

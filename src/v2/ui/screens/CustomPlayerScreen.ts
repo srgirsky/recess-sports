@@ -71,8 +71,12 @@ export class CustomPlayerScreen implements Screen {
       button('←', this.onBack, 'btn--quiet custom-player-back'),
       button('⭐  SAVE MY PLAYER', () => this.onSave({ ...this.profile }), 'btn--hero custom-player-save')
     );
-    panel.append(preview, choices, actions);
-    this.root.appendChild(panel);
+    // The panel scrolls inside `.screen-scroll`; the actions stay on glass so
+    // SAVE is always visible (round-2 re-audit's hero rule).
+    panel.append(preview, choices);
+    const scroll = el('div', 'screen-scroll');
+    scroll.appendChild(panel);
+    this.root.append(scroll, actions);
     this.paint();
     return this.root;
   }

@@ -225,6 +225,7 @@ const COLLECT = (hostId) => `(() => {
     return { x: r.x, y: r.y, w: r.width, h: r.height,
              label: el.className || el.tagName.toLowerCase(),
              interactive: el.classList.contains('interactive'),
+             hero: el.classList.contains('btn--hero'),
              reachableByHorizontalScroll: reachableByHorizontalScroll(el) };
   };
   const blocks = [], leaves = [];
@@ -615,6 +616,16 @@ async function auditScreen(page, vp, screen) {
     const vertical = r.scrolls ? b.y >= -0.5 : insideFrame(asBox(b), frame.w, frame.h, -0.5);
     if (!horizontal || !vertical) {
       fail(where, `"${b.label}" is off-frame at ${Math.round(b.x)},${Math.round(b.y)} ${Math.round(b.w)}x${Math.round(b.h)} in ${frame.w}x${frame.h}${r.scrolls ? ' (scrolling screen)' : ''}`);
+    }
+    // ★ EXCEPT THE HERO. Below-the-fold is reachable, but the one button that
+    // continues the game must never require the scroll a five-year-old will
+    // not perform: the round-2 re-audit found PLAY BALL at y=962 in a 739px
+    // frame after the draft, and the child's session simply ended there. A
+    // visible `.btn--hero` is held to strict insideFrame even on a scrolling
+    // screen — put it in a non-scrolling grid row (see `.screen-scroll`), not
+    // at the end of the scroll column.
+    if (b.hero && !insideFrame(asBox(b), frame.w, frame.h, -0.5)) {
+      fail(where, `hero "${b.label}" is not fully on-glass at ${Math.round(b.x)},${Math.round(b.y)} ${Math.round(b.w)}x${Math.round(b.h)} in ${frame.w}x${frame.h} — hero actions may not hide below the fold`);
     }
   }
   for (let i = 0; i < r.blocks.length; i++) {

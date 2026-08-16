@@ -33,7 +33,11 @@ export class StrategyScreen implements Screen {
     );
     this.list = el('div', 'strategy-list');
     this.paint();
-    root.append(head, this.list, button('✓  LOOKS GOOD', () => this.onReady([...this.order]), 'btn--hero'));
+    // The list scrolls inside `.screen-scroll`; the head and the hero stay on
+    // glass, so the way forward is always visible (round-2 re-audit).
+    const scroll = el('div', 'screen-scroll');
+    scroll.appendChild(this.list);
+    root.append(head, scroll, button('✓  LOOKS GOOD', () => this.onReady([...this.order]), 'btn--hero'));
     return root;
   }
 

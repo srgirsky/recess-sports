@@ -506,6 +506,16 @@ skipped time and painted once mid-life — both vanish at a real clock).
    — the mirror had also been the author of the "catcher owns the plate
    camera" gap, since the PITCH rig's +7.5ft offset was peeking over the
    wrong shoulder. Runner, live tracking and mound aim all re-checked.
+2. **Below-the-fold hero buttons: fixed, and the gate now forbids the
+   class.** The draft's completed-state PLAY BALL moved into the spotlight's
+   hero slot (the panel a child is already looking at); strategy, team and
+   the custom captain became head / scrolling-middle / hero grids via a
+   shared `.screen-scroll` wrapper, so the way forward never leaves the
+   glass. `ui-audit.mjs` now holds every visible `.btn--hero` to strict
+   insideFrame even on scrolling screens — and the new rule's first run
+   caught a fourth instance the manual review had missed (the custom
+   captain's SAVE, below the fold at five viewports). Full audit clean
+   across 4,451 boxes.
 
 ### Verified working this round
 
