@@ -223,8 +223,26 @@ CAP_LEVELS = [
 
 BRIM_Z_ROOT = 3.460
 BRIM_Z_TIP = 3.340
-BRIM_REACH = 0.600          # forward extent; round 6 raised and flattened the plate so the key light reaches the forehead the drawing lights
-BRIM_HALF_W = 0.340
+# ★ THIS WAS 0.600, AND AT 0.600 THE BILL POINTED BACKWARDS.
+#
+# `BRIM_REACH` is the tip's ABSOLUTE forward y, and the plate's root is the
+# dome's own front ring — `CAP_LEVELS[-2]` at y_centre -0.040, half_y 0.565,
+# so dome_front = -0.605. A tip at -0.600 is 0.005ft LESS far forward than its
+# own root: the brim sloped back into the dome and projected no bill at all,
+# which is why the board reads as a bike helmet rather than a ball cap.
+#
+# It is batch 6's Theo lesson exactly — "the bill/brim reach is the TIP's
+# absolute forward y; a reach less than the dome's own front projects NO bill"
+# — and it survived because the round-6 note beside it described a lighting
+# intent ("raised and flattened the plate so the key light reaches the
+# forehead") that reads like a decision rather than a regression. Chasing the
+# forehead's key light shortened the bill past its own root.
+#
+# 0.680 is this file's own measured citation, at the top of this section: "the
+# brim reaches ~0.68ft forward of the axis across z 3.45-3.30". The number was
+# in the header the whole time; only the constant drifted.
+BRIM_REACH = 1.050
+BRIM_HALF_W = 0.640
 BRIM_THICK = 0.030
 
 
@@ -273,6 +291,18 @@ def build_cap(builder: MeshBuilder, detail: int) -> None:
     steps = 4 if detail >= 2 else 2
     cols = 7 if detail >= 2 else 5
     dome_front = CAP_LEVELS[-2][3] - CAP_LEVELS[-2][2]  # ~ -0.605 at the root ring
+    # ★ A BILL THAT DOES NOT CLEAR ITS OWN ROOT IS NOT A BILL. Refuse the table
+    # rather than build a backwards plate: the tip is at -BRIM_REACH and the
+    # root at dome_front, so the tip must be the more forward (more negative) of
+    # the two by a margin that actually reads. 0.05ft is the smallest overhang
+    # visible at the board's cap scale. This shipped at -0.600 against a root of
+    # -0.605 and no gate saw it, because every gate measures the SILHOUETTE and a
+    # bill buried in the dome changes none of it.
+    assert -BRIM_REACH < dome_front - 0.05, (
+        f"brim tip y={-BRIM_REACH:.3f} does not clear the dome front "
+        f"{dome_front:.3f} by 0.05ft — raise BRIM_REACH; a shorter reach "
+        "projects no bill (Theo's batting helmet, batch 6)"
+    )
     for underside in (False, True):
         rows_b = []
         for j in range(steps + 1):
