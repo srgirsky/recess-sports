@@ -597,6 +597,15 @@ skipped time and painted once mid-life — both vanish at a real clock).
    band of dirt, while the game's cues put a batter's head and shoulders in
    the window and keep cutting with the plays. Pointer rules untouched: the
    window is pixels, not a hole in input.
+8. **Polish pass (round-2 item 10).** The strategy rows joined the sticker
+   kit — cream fields, drop shadow, the kit's alternating rotation jitter —
+   in place of the dark slabs; Tin Can's `grassDark` came up one ramp step
+   (0x5a5350 → 0x635b57) so the mid-outfield's checker reads as shadowed
+   asphalt rather than a void at the plate camera's grazing angle. The mow
+   band note closes with no change: the park's checker pattern reads
+   clearly in the DEEP/FIELD frames the fit ladder now actually reaches —
+   the "flat grass" observation was made when every fly lived in the PLAY
+   rig.
 
 ### Verified working this round
 
