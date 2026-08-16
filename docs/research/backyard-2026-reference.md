@@ -425,3 +425,79 @@ game), #12 (live-camera runner/bag framing and the bottom-centre scoreboard
 near home), #13 (the plain result card), and this pass's own deferral —
 Tank's face at gameplay distance is faithful to his approved sleepy-eyed
 sculpt, and any change there is a character-art decision, not a bug fix.
+
+## 2026-08-15 round-2 review (after PRs #142–#151)
+
+Method: the same player-chair pass on the dev server — front-door title, a
+full 9-pick draft, strategy, team screen, a pickup game batting and pitching
+through real input (seed `fw1`, venues `park`/`dome`/`tin_can`, day and
+night), the result screen, and the Recess Week board and pennant view via a
+seeded `recess_season`. The tab was throttled, so the clock was hand-driven;
+two artifacts of that driving were chased and ruled NOT product bugs (the
+"stuck" draft was Chrome's 1/minute hidden-tab timer clamp on the CPU-pick
+beat, and a frame of park-wide ember debris was particles spawned during
+skipped time and painted once mid-life — both vanish at a real clock).
+
+### Bugs found this round (ranked)
+
+1. **The whole park renders mirror-imaged.** From every behind-home camera,
+   first base is up the SCREEN-LEFT line: the sim puts FIRST at +x
+   (`src/v2/sim/field.ts`), and a three.js camera on −z looking at +z maps
+   world +x to screen-left, so a batter runs out a grounder toward the left
+   edge. v1 draws FIRST at x=618 of 960 — screen-right — and BB2001, BB2026
+   and every broadcast agree. The sim is internally consistent and every
+   venue is near-symmetric, so no gate and no test can see it; verified by
+   projecting `FIRST`/`THIRD` through the live camera matrices (NDC x −2.64
+   vs +0.57) and by watching the runner. Asymmetric venue copy ("short left
+   line") describes the wrong side of the screen.
+2. **Hero buttons fall below the fold.** At a 1300×739 CSS viewport: the
+   draft-complete PLAY BALL paints at y=962, strategy's LOOKS GOOD at
+   y=1082 — both on scrollable screens with no scroll affordance, so a
+   five-year-old who finishes the draft sees no way forward. The team
+   screen's PLAY BALL top edge lands at y=727 — a 12px sliver. Same class
+   as the audited bench-strip clip.
+3. **The draft candidate does not reliably face the draft camera.** Junebug
+   (as candidate) and Ace (at his CPU reveal) settle fully back-to-camera
+   with PICK? floating over a ponytail; Big Lou settles head thrown back,
+   tongue out, face cropped by the frame top. The waiting group and Chip
+   face the lens correctly — same `setFacing(Math.PI)`, different outcome
+   per kid, which points at per-kid authored performance takes baking a
+   root orientation that fights the presentation's facing.
+4. **The pause button overlaps the matchup plate.** In App-hosted games the
+   ⏸ sits on the plate's left name chip and hides the batter's name, both
+   halves, at 1300×739. `audit:v2-layout` cannot see it: the in-game states
+   audit under `/v2/?play=1`, which never mounts the app shell's pause
+   button — a real gate hole, recorded in the audit's own header comments.
+5. **Draft flow nits:** after a CPU reveal the status stays "they took X"
+   with no invitation to tap the next kid; long `draftLine`s overflow the
+   card plate ("…coming through!" clips at the frame).
+
+### Design gaps confirmed still open
+
+6. **#10 stands** — the treehouse webp is an opaque full-bleed cover over
+   `.screen--title/--clubhouse/--modes` while the attract game runs unseen
+   behind it (confirmed live: the canvas keeps simulating under the DOM).
+7. **#12 stands, with pixels** — on a live ball the ball is a near-invisible
+   dot, the chaser is cropped at the frame edge, and a play near home
+   happens visibly BEHIND the bottom-centre scoreboard bar. Runners and
+   target bags are out of frame; only the scoreboard diamond tells you.
+8. **#13 stands** — the result is the plain dark card. The Recess Week
+   pennant view (verified this round) already renders portrait award cards;
+   it is the in-house donor idiom for the result board.
+9. **The catcher owns the plate camera.** In both halves the catcher is the
+   largest thing on screen and fully occludes the batter — BB2026's frame
+   gives the batter ~40% of frame height, readable. Ours reads "back of a
+   catcher's head" at the most-seen camera in the game.
+10. **Polish:** the strategy screen is flat dark rows (off the sticker
+    language); Tin Can's mid-outfield still reads near-black from the plate
+    camera; outfield grass shows no mow bands from gameplay cameras.
+
+### Verified working this round
+
+Recess Week board, pennant awards and FINISH WEEK → album loop (seeded
+past its draft gate); night light pooling at the plate camera; HR fireworks
+in-frame at fence-top height at night; the Dome interior; the bat prop and
+solved grip at every venue; the ember burst (small soft embers, no
+squares); verdict callouts at the (40%, 30%) sky band; the steering ring
+and ball shadow; pitch cards; the CPU-pick reveal ceremony; result-screen
+data (verdict, note, awards); a clean console.
