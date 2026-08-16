@@ -396,8 +396,8 @@ export function sceneryPlan(geo: FieldGeometry, venue: VenueId): SceneryItem[] {
     rotY: Math.atan2(-pointAt(sprayDeg, 1).x, -pointAt(sprayDeg, 1).z),
     seed: hash01(radiusFt, sprayDeg + 173),
   });
-  if (cfg.theme === 'backyard') signature('pool', -27, 10, 2);
-  if (cfg.theme === 'playground') signature('playset', 28, 9, 2);
+  if (cfg.theme === 'backyard') signature('pool', -20, 10, 2);
+  if (cfg.theme === 'playground') signature('playset', -16, 9, 2);
   if (cfg.theme === 'acres') signature('barn', -24, 14, 4);
   if (cfg.theme === 'dirt') {
     signature('tires', -24, 4);
@@ -515,7 +515,7 @@ export function buildScenery(geo: FieldGeometry, venue: VenueId, opts: SceneryOp
     else if (it.kind === 'pool') addPool(parts, p.x, p.z, it.rotY);
     else if (it.kind === 'playset') addPlayset(parts, p.x, p.z, it.rotY);
     else if (it.kind === 'barn') addBarn(parts, p.x, p.z, it.rotY);
-    else if (it.kind === 'tires') addTires(parts, p.x, p.z, it.rotY);
+    else if (it.kind === 'tires') addTires(parts, p.x, p.z, it.rotY, Math.abs(it.sprayDeg) < 10);
     else if (it.kind === 'bleacher') addBleacher(parts, p.x, p.z, it.rotY);
     else if (it.kind === 'dome_portal') addDomePortal(parts, p.x, p.z, it.rotY);
     else if (it.kind === 'bench') addBench(parts, p.x, p.z, it.rotY);
@@ -531,6 +531,7 @@ export function buildScenery(geo: FieldGeometry, venue: VenueId, opts: SceneryOp
     parts,
     plan.filter((it) => it.kind === 'pole').map((it) => pointAt(it.sprayDeg, it.distFt))
   );
+  if (cfg.theme === 'dome') addDomeCeiling(parts);
 
   const root = new Group();
   root.name = 'scenery';
@@ -704,20 +705,36 @@ function addPool(parts: BufferGeometry[], x: number, z: number, rotY: number): v
     parts.push(placeLocal(paint(new BoxGeometry(19, 0.55, 1.2), 0xe9e1cd), x, z, rotY, 0, 0.35, side * 9.7));
   }
   parts.push(placeLocal(paint(new BoxGeometry(2.2, 0.35, 7), 0xf2f0e7), x, z, rotY, 0, 1.2, -7));
+  // ★ A POOL IS FLAT, AND FLAT VANISHES BEHIND AN 8FT FENCE (re-audit #8: no
+  // signature prop was visible from the gameplay cameras). The slide tower
+  // and the big umbrella are the pool's periscope: the parts that clear the
+  // fence line and say "backyard pool" from the plate.
+  parts.push(placeLocal(paint(new CylinderGeometry(0.4, 0.4, 17, 6), 0xe9e1cd), x, z, rotY, 5, 8.5, 5));
+  parts.push(placeLocal(paint(new CylinderGeometry(0.5, 8.5, 4.2, 10), 0xd9504d), x, z, rotY, 5, 18.4, 5));
+  for (const side of [-1, 1]) {
+    parts.push(placeLocal(paint(new BoxGeometry(0.7, 15, 0.7), 0x3d74a5), x, z, rotY, -6 + side * 1.6, 7.5, -5));
+  }
+  parts.push(placeLocal(paint(new BoxGeometry(4.6, 0.7, 4.2), 0xe5b43f), x, z, rotY, -6, 15, -5));
+  const chute = new BoxGeometry(2.8, 0.55, 14);
+  chute.applyMatrix4(new Matrix4().makeRotationX(-0.78));
+  parts.push(placeLocal(paint(chute, 0x58b7e0), x, z, rotY, -6, 10, 0.5));
 }
 
 /** Playground Commons' slide, deck and swing frame. */
 function addPlayset(parts: BufferGeometry[], x: number, z: number, rotY: number): void {
+  // Tall enough to clear the privacy ring from the plate camera — at the
+  // audit-era 10ft the whole set hid behind the fence line (re-audit #8).
   for (const side of [-1, 1]) {
-    parts.push(placeLocal(paint(new BoxGeometry(0.7, 10, 0.7), 0x3d74a5), x, z, rotY, side * 3.5, 5, 0));
+    parts.push(placeLocal(paint(new BoxGeometry(0.8, 14, 0.8), 0x3d74a5), x, z, rotY, side * 3.5, 7, 0));
   }
-  parts.push(placeLocal(paint(new BoxGeometry(8, 0.7, 6), 0xe5b43f), x, z, rotY, 0, 6.2, 0));
-  const slide = new BoxGeometry(3.2, 0.55, 10);
-  slide.applyMatrix4(new Matrix4().makeRotationX(-0.55));
-  parts.push(placeLocal(paint(slide, 0xd9504d), x, z, rotY, 0, 3.7, 6));
-  parts.push(placeLocal(paint(new BoxGeometry(12, 0.65, 0.65), 0x3d74a5), x, z, rotY, 0, 10, -4));
+  parts.push(placeLocal(paint(new BoxGeometry(8, 0.8, 6), 0xe5b43f), x, z, rotY, 0, 8.6, 0));
+  parts.push(placeLocal(paint(new CylinderGeometry(0.35, 4.6, 3.4, 4), 0xd9504d), x, z, rotY, 0, 15.4, 0));
+  const slide = new BoxGeometry(3.2, 0.6, 13);
+  slide.applyMatrix4(new Matrix4().makeRotationX(-0.6));
+  parts.push(placeLocal(paint(slide, 0xd9504d), x, z, rotY, 0, 5.2, 7));
+  parts.push(placeLocal(paint(new BoxGeometry(12, 0.7, 0.7), 0x3d74a5), x, z, rotY, 0, 13, -4));
   for (const side of [-1, 1]) {
-    parts.push(placeLocal(paint(new BoxGeometry(0.28, 6, 0.28), 0xd9d2bc), x, z, rotY, side * 3.2, 6.8, -4));
+    parts.push(placeLocal(paint(new BoxGeometry(0.3, 8.5, 0.3), 0xd9d2bc), x, z, rotY, side * 3.2, 8.6, -4));
   }
 }
 
@@ -733,11 +750,24 @@ function addBarn(parts: BufferGeometry[], x: number, z: number, rotY: number): v
 }
 
 /** Dirt Yards' stacks of discarded tires. */
-function addTires(parts: BufferGeometry[], x: number, z: number, rotY: number): void {
+function addTires(parts: BufferGeometry[], x: number, z: number, rotY: number, tall = false): void {
   for (let i = 0; i < 3; i++) {
     parts.push(placeLocal(paint(new CylinderGeometry(2.2, 2.2, 0.9, 14), 0x2d3032), x, z, rotY, 0, 0.5 + i * 0.85, 0));
   }
   parts.push(placeLocal(paint(new CylinderGeometry(0.8, 0.8, 3, 12), 0xb96f42), x, z, rotY, 0, 1.4, 0));
+  if (!tall) return;
+  // ★ The centre-field stack carries the venue's flag: a dead tree with a
+  // tire swing, tall enough to clear the fence line from the plate — a 3ft
+  // stack alone is invisible from every gameplay camera (re-audit #8).
+  parts.push(placeLocal(paint(new CylinderGeometry(0.7, 1.1, 17, 7), 0x6e553f), x, z, rotY, 3.5, 8.5, -1));
+  const limb = new BoxGeometry(9, 0.8, 0.8);
+  limb.applyMatrix4(new Matrix4().makeRotationZ(0.24));
+  parts.push(placeLocal(paint(limb, 0x64503c), x, z, rotY, -0.6, 14.6, -1));
+  parts.push(placeLocal(paint(new BoxGeometry(0.7, 6.5, 0.7), 0x59493a), x, z, rotY, 5.2, 16.4, -1));
+  parts.push(placeLocal(paint(new CylinderGeometry(0.18, 0.18, 4.6, 5), 0xc9b791), x, z, rotY, -3.6, 12, -1));
+  const swing = new CylinderGeometry(1.7, 1.7, 0.8, 12);
+  swing.applyMatrix4(new Matrix4().makeRotationX(Math.PI / 2));
+  parts.push(placeLocal(paint(swing, 0x2d3032), x, z, rotY, -3.6, 8.6, -1));
 }
 
 /** Big City Stadium's two compact banks of bleachers. */
@@ -765,6 +795,57 @@ function addDomePortal(parts: BufferGeometry[], x: number, z: number, rotY: numb
     parts.push(placeLocal(paint(new TubeGeometry(curve, 24, 1.15, 7, false), color), x, z, rotY, 0, 0, depth));
   }
   parts.push(placeLocal(paint(new BoxGeometry(22, 7, 1), 0x282d55), x, z, rotY, 0, 17, 1));
+}
+
+/**
+ * The dome INTERIOR. Re-audit #8: with only a purple gradient overhead, the
+ * Dome read as an outdoor court under a strange sky. A ceiling is what makes
+ * an indoor venue read indoor from EVERY camera, because every camera has sky
+ * in frame: ten radial ribs rise to a glowing hub over the middle of the
+ * field, two concentric ring trusses tie them into panels, and a light bank
+ * hangs at the hub. All of it merges into the one neighborhood mesh; the
+ * triangle-budget test keeps it honest.
+ */
+function addDomeCeiling(parts: BufferGeometry[]): void {
+  // ★ SIZED FOR THE PITCH CAMERA'S SKY BAND, which is the frame every pitch
+  // shows: roughly 0-12° of elevation toward the outfield, i.e. things at
+  // 200-400ft that stand 30-80ft tall. A first pass hung the whole ceiling at
+  // 130-185ft directly overhead — geometrically a fine roof, and completely
+  // out of frame from the plate, which is exactly the mistake the audit
+  // caught in the venue props ("a camera preset that has never seen a scene
+  // is a guess" applies to scenery too). So the INTERIOR read comes from the
+  // parts that live in that band: a heavy rim truss, support columns down to
+  // the wall ring, and ribs that spring off it toward a hub light.
+  const hub = new Vector3(0, 150, 120);
+  const rimY = 56;
+  const R = 265;
+  const rib = 0x7068aa;
+  const accent = 0x65d9df;
+  const seg = 24;
+  for (let i = 0; i < seg; i++) {
+    const a0 = (i / seg) * Math.PI * 2;
+    const a1 = ((i + 1) / seg) * Math.PI * 2;
+    const mid = (a0 + a1) / 2;
+    const mx = hub.x + Math.cos(mid) * R;
+    const mz = hub.z + Math.sin(mid) * R;
+    const chord = 2 * R * Math.sin(Math.PI / seg);
+    parts.push(place(paint(new BoxGeometry(chord + 1, 4, 4), rib), mx, rimY, mz, -mid + Math.PI / 2));
+    // Every other joint drops a column to the ground ring and hoists a rib to
+    // the hub — twelve bays, like a real air-supported roof's mast line.
+    if (i % 2 === 0) {
+      parts.push(place(paint(new BoxGeometry(3, rimY, 3), rib), mx, rimY / 2, mz, -mid));
+      parts.push(place(paint(new BoxGeometry(4.5, 3, 4.5), accent), mx, rimY + 3, mz, -mid));
+      const curve = new QuadraticBezierCurve3(
+        new Vector3(mx, rimY, mz),
+        new Vector3((mx + hub.x) / 2, hub.y * 0.92, (mz + hub.z) / 2),
+        hub.clone()
+      );
+      parts.push(paint(new TubeGeometry(curve, 12, 1.8, 5, false), rib));
+    }
+  }
+  // The hub light bank: the "roof light" the venue look already claims.
+  parts.push(place(paint(new BoxGeometry(34, 4, 34), 0x3a3d6e), hub.x, hub.y + 3, hub.z));
+  parts.push(place(paint(new BoxGeometry(27, 2.5, 27), 0xfff3c9), hub.x, hub.y, hub.z));
 }
 
 // --- Production environment kit -------------------------------------------
