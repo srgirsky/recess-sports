@@ -616,3 +616,43 @@ solved grip at every venue; the ember burst (small soft embers, no
 squares); verdict callouts at the (40%, 30%) sky band; the steering ring
 and ball shadow; pitch cards; the CPU-pick reveal ceremony; result-screen
 data (verdict, note, awards); a clean console.
+
+## 2026-08-16 round-3 verification (PRs #153–#161 merged, re-observed)
+
+Method: the same player-chair pass on merged `main` (seed `round3`), through
+the REAL front door end to end — no fabricated states except where noted.
+Every round-2 fix was re-observed on screen:
+
+- **Title**: the treehouse window shows the live attract game — sampled
+  canvas pixels inside the opening change over three seconds of play.
+- **Draft**, at real timer pace: the candidate presents to the lens (a
+  single frame can still catch the stance loop mid-waggle — it reads fine
+  in motion); the CPU reveal says "they took Ace — your turn!"; nine picks
+  in, PLAY BALL appears inside the spotlight panel at y 570 of 739 — fully
+  on glass.
+- **Strategy**: cream sticker rows (rgba 255,244,222) over the live park,
+  LOOKS GOOD at y 633. **Team**: PLAY BALL at y 629 — the audit-era 12px
+  sliver is gone.
+- **In game**: first base up the RIGHT line in every camera; the pause sits
+  beside the matchup plate (right edge 83, plate starts at 98); the
+  scoreboard opens at x 14 — bottom-left, off the plate's glass; the pause
+  screen offers KEEP PLAYING / GO HOME and resumes cleanly; on `?play=1`
+  the same button freezes the view and swaps ⏸ → ▶.
+- **Live camera**: within one live fly ball the policy visited PLAY, FIELD
+  and DEEP — the fit ladder's whole vocabulary, previously unreachable.
+- **Result**, via the real game end: the green board with both team names,
+  a per-inning line score, and portrait award cards (Big Lou MVP, Zoom
+  Ramirez K's) over the live park.
+
+One more instrument note for the next auditor: `GameView.cue` updates only
+inside `tick`, so a driver that samples it between `devStepFixedClock`
+batches reads a stale PITCH forever — pump one tick before reading, or the
+fit ladder looks broken while working.
+
+Open, by explicit deferral, and character-art decisions rather than code:
+Big Lou's swagger card take (head back, face unreadable at the ~12ft card
+camera) and Tank's sleepy-lidded face at gameplay distance. Everything else
+on the round-2 list is closed and re-verified. Against the reference's own
+definition — "on par means their presentation bar, not their fielding" —
+the front door, draft, gameplay cameras, HUD, verdicts, night, venues,
+result and retention shell all now hold that bar on screen.
