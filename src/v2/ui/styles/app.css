@@ -590,6 +590,22 @@ body.inning-break #hud > *:not(.inning-board):not(.btn--mute) {
   visibility: hidden;
   transition: opacity 120ms ease;
 }
+/* The pause shares the topleft cell (round-2 re-audit: it sat ON the plate's
+   left chip and hid the batter's name). When a visible pause exists, the
+   plate starts after it; a pauseless surface keeps the corner. On a narrow
+   frame that inline margin would WIDEN the topleft column past the viewport
+   (a hidden plate still occupies layout, and the first audit run of this fix
+   pushed the mute off-frame at 390px) — so the plate drops BELOW the pause
+   instead, where portrait height is the axis with room. */
+#hud:has(.btn--pause:not([hidden])) .matchup {
+  margin-inline-start: calc(var(--s3) * 2 + var(--tap-min));
+}
+@media (max-width: 600px) {
+  #hud:has(.btn--pause:not([hidden])) .matchup {
+    margin-inline-start: var(--s3);
+    margin-block-start: calc(var(--s3) * 2 + var(--tap-min));
+  }
+}
 .matchup.is-open {
   opacity: 1;
   visibility: visible;
@@ -1953,12 +1969,16 @@ body.screen-open #hud > *:not(.btn--mute) {
  * The pause, top-left — the mute's mirror. Unlike the mute it belongs to the
  * game, so `body.screen-open` hides it with the rest of the HUD (the pause
  * screen itself included), and it renders only when a host wired a pause
- * flow — the bare review surfaces never show it.
+ * flow — the App's pause screen, or `?play=1`'s freeze/resume toggle.
  */
 .btn--pause {
-  grid-area: topleft;
-  align-self: start;
-  justify-self: start;
+  /* ABSOLUTE, not a grid item: a corner button must not size the top row.
+     On the bare `?play=1` surface the top row is otherwise EMPTY, and the
+     button's 84px pushed the scoreboard's bottom row off a 320px-tall frame
+     the moment the audit could finally see it. */
+  position: absolute;
+  inset-block-start: env(safe-area-inset-top, 0px);
+  inset-inline-start: env(safe-area-inset-left, 0px);
   margin: var(--s3);
   padding: 0;
   display: grid;
