@@ -258,11 +258,11 @@
     },
     "penny": {
       "source": "penny-pilot.blend",
-      "sourceSha256": "56b7da3e69e57a5409bf4a3fd285db1c5db0df830e3062a890461384a81eb0ae",
+      "sourceSha256": "127c71a6cc7eaa5fdb382321ebbc152c7562951a6a6bd957e0679ecb4a05110a",
       "concept": "penny-turnaround.png",
       "conceptSha256": "c135292d56d005e054136dcd938c45459a596c1cb64f1393c7105661c6a1674d",
       "output": "kid_penny.glb",
-      "outputSha256": "14e9b70fa98a14338be4299ae9a3273b7ee50b435367de46d6167683cfdd5974",
+      "outputSha256": "7d8e74e5082ae59135ebeed63a5f113e65fe264972d7bc6707bf9dfc6f83aebb",
       "definingTraits": [
         "big curly brown bob",
         "denim bib overalls",

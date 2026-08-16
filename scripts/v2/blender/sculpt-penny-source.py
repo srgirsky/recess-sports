@@ -267,6 +267,25 @@ TORSO_LEVELS = [
     (1.550, 0.330, 0.296, "Spine"),
     (1.750, 0.318, 0.288, "Spine"),
     (1.950, 0.305, 0.268, "Spine1"),
+    # ★ THE WAIST IS A GARMENT EDGE, AND IT WAS ONLY A COLOUR CHANGE.
+    #
+    # `overalls_color` switches denim to pink at z 1.999 and the nearest rings
+    # were 1.950 and 2.150, so the loft interpolated that switch across a 0.20ft
+    # band — a fifth of a foot of gradient standing in for a sewn hem. The
+    # round-6 critic read it exactly as built: "a hard hem where the pink tee
+    # meets the denim at the flanks/back — the soft vertex gradient reads
+    # PAINTED from side angles". Flash's stripes paid for the same lesson (crisp
+    # edges need loft rings AT the band boundary) and this table already applies
+    # it twelve rows up, at the bib top.
+    #
+    # The pair does two jobs. 1.987/1.999 straddle the colour switch so the edge
+    # is crisp instead of smeared; and the lower ring stands 0.010ft PROUD, so
+    # the denim waistband overhangs the tee that tucks under it. That is batch
+    # 7's finding — a rim row proud of its panel reads as stitching — applied to
+    # a waistband rather than a pocket, which is what turns rubric 3.4's
+    # "primitive volume" into a "constructed garment".
+    (1.987, 0.313, 0.275, "Spine1"),  # denim waistband lip, proud — the seam
+    (1.999, 0.303, 0.265, "Spine1"),  # the tee tucks under it; crisp colour edge
     (2.150, 0.295, 0.255, "Spine1"),
     (2.320, 0.285, 0.240, "Spine2"),
     (2.394, 0.276, 0.231, "Spine2"),  # crisp bib-top edge — the wedge
