@@ -78,7 +78,14 @@ PALETTE = Palette(
 # head, z 3.42), the big lashed eyes rows 236-267 centred row 252 (56.4%,
 # z 3.21), nose rows 278-279, the smile arc rows 288-295 (73.5%, z 2.97 — the
 # rows below it are the left curl curtain's inner edge, not a feature). Her
-# ears never show under the bob; none are built (Grizz's precedent).
+# ⚠️ ears: the note here read "never show under the bob; none are built
+# (Grizz's precedent)", and that is FALSE about the drawing — corrected
+# 2026-08-16. Her turnaround's profile view (x 732-950) draws a fully
+# constructed ear (helix rim, concha shadow, lobe) entirely clear of the hair,
+# in an open temple hairline that also leaves brow, eye, nose, lips, chin and
+# jaw clear. Grizz's precedent was itself an unmeasured claim and is corrected
+# in his script too. Rubric 3.10 is failing here; building the ear, and pulling
+# the bob back off the face, are findings 2 and 3 in her record.
 HEAD_CENTER = (0.0, -0.020, 3.150)
 HEAD_RADII = (0.400, 0.420, 0.440)
 

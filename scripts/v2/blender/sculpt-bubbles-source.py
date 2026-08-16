@@ -15,8 +15,14 @@ first topknot bun, and her scrunchie is the team-accent accessory.
 (`ambiguous-parts` — her open laugh merges with the hair framing her face into
 one dark run), so the lip line is the bounded trace: the laugh's dark interior
 spans rows 375-389 of the sheet, centred ~86% of head height, z 2.63. Her
-ears are never drawn (the curl curtains cover them in all five views): no
-EarSpec, like Grizz.
+⚠️ ears: this read "never drawn (the curl curtains cover them in all five
+views): no EarSpec, like Grizz", and it is FALSE about the drawing — corrected
+2026-08-16. Her profile view (x 638-846) draws a LARGE, fully constructed ear
+— outer helix rim, deep concha shadow, lobe — with the curls deliberately
+tucked BEHIND it, and her face clear of the hair besides. It is one of the
+most prominent ears on the roster, not an absent feature. The "like Grizz"
+was inherited from an unmeasured claim in his script, corrected there too;
+rubric 3.10 is failing here and the ear is a bounded trace off this profile.
 
 The conversion: front figure 740px over 4.0ft → 1px = 0.005405ft; profile
 0.005428. The profile faces +x, per Grizz's and Sprout's sheets.
