@@ -92,9 +92,11 @@ export const VENUE_LOOKS: Record<VenueId, VenueLook> = {
     nightSky: { top: 0x0a1326, horizon: 0x22314e },
   },
   blacktop: {
-    grass: 0x4a4f5a,
-    grassDark: 0x42474f,
-    dirt: 0x5a606c,
+    // Same rule as tin_can: asphalt must survive the toon ramp's shadow step
+    // or the whole court reads as a hole.
+    grass: 0x666d7d,
+    grassDark: 0x5a606d,
+    dirt: 0x747b8a,
     fence: 0x9aa4ad,
     fenceTrim: 0x7b8790,
     mowPattern: 'court',
@@ -103,9 +105,13 @@ export const VENUE_LOOKS: Record<VenueId, VenueLook> = {
     nightSky: { top: 0x141625, horizon: 0x54465a },
   },
   tin_can: {
-    grass: 0x4b4544,
-    grassDark: 0x3e3939,
-    dirt: 0x625957,
+    // Authored bright like the park roofs: the toon ramp's shadow step eats
+    // ~40%, and the audit-era 0x4b4544 asphalt crushed to a flat black void
+    // from the plate (re-audit #8). This is charcoal that still reads as a
+    // surface after the ramp.
+    grass: 0x6b625e,
+    grassDark: 0x5a5350,
+    dirt: 0x7d716b,
     fence: 0x934f3d,
     fenceTrim: 0x69747b,
     mowPattern: 'court',
