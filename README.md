@@ -319,6 +319,31 @@ turnaround's front view from the rest of the sheet; fix the sheet, never the
 tolerance, because the alternative is eight numbers measured across three
 collaged views.
 
+`npm run measure:strands -- <id> [bandLo] [bandHi]` is the ruler rubric 3.3
+never had. "Hair mass" is the one scored category with no number behind it —
+every critic reaches for "a smooth featureless blob caps at 4" and none can say
+by how much — so this contrast-stretches each row of the hair mass, counts the
+local minima along it (the creases between strand groups) and reports their
+prominence, on the concept sheet and the delivered board with the same detector.
+The band is the fraction of head height to sample from the crown down, default
+0.05–0.45; a kid whose hair hangs low wants a taller one.
+
+The first roster sweep says one thing plainly: **all fourteen hair kids
+under-carry strand count while their prominence is fine or well over** — from
+penny at 2% and mimi_mash at 3% up to smokey at 57% of the concept's count, at
+70–318% of its prominence. The creases that exist are deep enough; there are not
+enough of them, and the cause is Nyquist rather than art direction — Grizz's
+afro asks for six lobes across twenty-four columns and no ring can express a
+crease it has no columns for.
+
+⚠️ **Read it as a relative instrument, never as a target to reach.** A concept
+sheet's hair is drawn or photographed texture — Grizz's afro is hundreds of
+individual curls at 15.9 minima per row — and a toon mesh should not reproduce
+that, nor would a player want it. What a drawing like that actually reads as at
+game scale is a scalloped silhouette over a rounded crown. Use this to answer
+"did this build carry more grouping than the last one", and settle "is the hair
+right" on the silhouette and the eye.
+
 The id a character is registered under and the slug their art was drawn under
 differ for eleven of the thirty. `scripts/v2/character-registry.json` is the one
 place that mapping lives — the `.mjs` tooling, the two Blender scripts and
