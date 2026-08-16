@@ -23,6 +23,7 @@ import { DEFAULT_INNINGS, GameView } from './game/GameView';
 import type { VenueId } from './sim/field';
 import { Router } from './ui/Router';
 import { TitleScreen } from './ui/screens/TitleScreen';
+import { PauseScreen } from './ui/screens/PauseScreen';
 import { DraftScreen } from './ui/screens/DraftScreen';
 import { TeamScreen } from './ui/screens/TeamScreen';
 import {
@@ -118,8 +119,31 @@ export class App {
       this.sound.setBatter(this.lookup(f.batterId).name);
       this.sound.onFrame(f);
     });
+    this.game.onPauseRequest(() => this.pauseGame());
     new MuteButton(this.sound).mount();
     this.showTitle();
+  }
+
+  /**
+   * Freeze the game under a two-card pause screen. Guarded on `showing`
+   * because the button is hidden under any open screen anyway — this is the
+   * belt for a tap racing a screen transition.
+   */
+  private pauseGame(): void {
+    if (this.router.showing) return;
+    this.game.setPaused(true);
+    this.router.show(
+      new PauseScreen(
+        () => {
+          this.router.hide();
+          this.game.setPaused(false);
+        },
+        () => {
+          this.game.setPaused(false);
+          this.showTitle();
+        }
+      )
+    );
   }
 
   /** The app-shell form of the existing dev-only fixed-clock verifier seam. */

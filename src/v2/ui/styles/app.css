@@ -806,6 +806,12 @@ body.inning-break #hud > *:not(.inning-board):not(.btn--mute) {
   gap: var(--s4);
   inline-size: min(58rem, 92vw);
 }
+/* The pause holds two cards, not three — a 3-track grid leaves an empty
+ * column and the pair reads shoved left of the PAUSED headline. */
+.screen--pause .mode-cards {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  inline-size: min(40rem, 92vw);
+}
 .mode-card {
   display: grid;
   justify-items: center;
@@ -1862,6 +1868,31 @@ body.screen-open #hud > *:not(.btn--mute) {
 }
 .btn--mute.is-muted {
   background: var(--red);
+}
+
+/*
+ * The pause, top-left — the mute's mirror. Unlike the mute it belongs to the
+ * game, so `body.screen-open` hides it with the rest of the HUD (the pause
+ * screen itself included), and it renders only when a host wired a pause
+ * flow — the bare review surfaces never show it.
+ */
+.btn--pause {
+  grid-area: topleft;
+  align-self: start;
+  justify-self: start;
+  margin: var(--s3);
+  padding: 0;
+  display: grid;
+  place-items: center;
+  font-size: 1.4rem;
+  line-height: 1;
+  background: rgb(20 32 46 / 0.82);
+  color: var(--cream);
+  border-radius: 50%;
+  z-index: 25;
+}
+.btn--pause[hidden] {
+  display: none;
 }
 
 /* ---- The team picker ---- */
