@@ -1356,9 +1356,13 @@ export class GameView {
 
       this.draftCamera.aspect = rect.width / rect.height;
       const portraitStage = this.draftCamera.aspect < 0.9;
-      this.draftCamera.fov = portraitStage ? 42 : 34;
-      this.draftCamera.position.set(0, portraitStage ? 4.5 : 4.1, portraitStage ? -21 : -17.5);
-      this.draftCamera.lookAt(0, 2.35, 2.9);
+      // ★ HERO FRAMING. At the old 17.5ft the candidate spanned barely half
+      // the stage height and read crowd-sized (re-audit #9). ~12ft with a
+      // slightly tighter fov fills the frame with the kid being sold while the
+      // waiting group and benches stay readable behind and beside them.
+      this.draftCamera.fov = portraitStage ? 40 : 32;
+      this.draftCamera.position.set(0, portraitStage ? 4.1 : 3.6, portraitStage ? -15 : -12.2);
+      this.draftCamera.lookAt(0, 2.55, 1.6);
       this.draftCamera.updateProjectionMatrix();
       this.renderer.renderInset(this.scene, this.draftCamera, rect);
     } finally {
