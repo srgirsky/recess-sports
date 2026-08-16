@@ -229,6 +229,8 @@ export class GameView {
   private sky!: Mesh;
   /** Built lazily on the first night homer — a day game never pays for it. */
   private fireworks: Fireworks | null = null;
+  /** Plate-scale spark pool: same system as the sky shells, sized for 18ft away. */
+  private impactBurst: Fireworks | null = null;
   private burstQueue: Array<{ delay: number; x: number; z: number; h: number; color: number }> = [];
   private impactPunch = 0;
   private uniformIdx = { away: 0, home: 1 };
@@ -909,9 +911,11 @@ export class GameView {
           if (e.t === 'contact' && e.hit === 'HR' && !e.foul && this.night) this.queueFireworks();
           if (e.t === 'contact') {
             const strength = impactStrength(e.launch.exitVelocityFts, e.hit, e.foul);
-            // Reuse the existing deterministic particle system at the plate;
-            // home-run sky bursts remain queued separately above the fence.
-            this.burstQueue.push({ delay: 0, x: 0, z: 0, h: e.launch.heightFt, color: 0xffce3a });
+            // The PLATE burst gets its own pool, sized and paced for a camera
+            // 18ft away — re-audit #2: firing the 2.6ft sky shells here drew
+            // untextured squares across the frame and additively washed the
+            // batter and catcher yellow. Home-run sky shells stay in burstQueue.
+            this.spawnImpactBurst(e.launch.heightFt, strength);
             this.impactPunch = strength;
           }
           this.simEvent?.(e);
@@ -1354,6 +1358,7 @@ export class GameView {
       }
     }
     this.fireworks?.update(dt);
+    this.impactBurst?.update(dt);
 
     if (this.frame) {
       this.frameTap?.(this.frame);
@@ -1632,6 +1637,23 @@ export class GameView {
   }
 
   /** Three staggered team-colour bursts over the outfield. */
+  /**
+   * A quick spark shower at the point of contact, scaled by how well the ball
+   * was struck. Small soft embers, short lives: juice that reads as a flash
+   * of sparks rather than a fireworks shell going off in the batter's face.
+   */
+  private spawnImpactBurst(contactHeightFt: number, strength: number): void {
+    if (!this.impactBurst) {
+      this.impactBurst = new Fireworks({ sizeFt: 0.5 });
+      this.scene.add(this.impactBurst.points);
+    }
+    this.impactBurst.spawn(0, 0, Math.max(1.5, Math.min(contactHeightFt, 5)), 0xffce3a, {
+      count: Math.round(22 + strength * 34),
+      speedFts: 7 + strength * 8,
+      lifeSec: 0.4 + strength * 0.3,
+    });
+  }
+
   private queueFireworks(): void {
     const side = this.frame?.half === 'bottom' ? 'home' : 'away';
     const hex = Number(
