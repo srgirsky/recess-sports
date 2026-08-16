@@ -148,6 +148,10 @@ const PITCH_CARDS: Record<PitchKind, { icon: string; label: string }> = {
 
 /** How long a between-pitch beat lasts, seconds. v1's `FLOW.BETWEEN_PITCH_MS`. */
 const BETWEEN_SEC = 2.55;
+/** The half-end beat, where the inning board shows. Longer than a pitch beat
+ *  on purpose: a line score is READ, not glanced — BB2026 holds its park
+ *  scoreboard about this long, and 2.55s was the audit-era blink. */
+const HALF_BREAK_SEC = 4.5;
 /** The sim's own tick. Never the render delta — see the header. */
 const SIM_HZ = 60;
 /** Below this a pointer press is a TAP (a verb), above it a drag (steering). */
@@ -1142,7 +1146,9 @@ export class GameView {
       // The CPU has no picker to wait for; its visible delivery is the wait.
       if (!this.onTheMound) this.beginPitchDelivery();
     }
-    if (this.frame.phase === 'between') this.wait = BETWEEN_SEC;
+    if (this.frame.phase === 'between') {
+      this.wait = this.frame.outs >= 3 ? HALF_BREAK_SEC : BETWEEN_SEC;
+    }
     this.showOnly(this.frame);
     if (this.frame.phase === 'live' && this.frame.play) this.animatePlayActions(this.frame.play);
   }
