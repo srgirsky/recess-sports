@@ -1343,6 +1343,14 @@ export class GameView {
     }
     const ballVisible = this.refs.ball.visible;
     this.refs.ball.visible = false;
+    // The plate cues draw depth-free through the scene (#146) — through the
+    // draft's candidate too, where the attract game's strike zone read as
+    // ghost boxes across a kid's chest. The stage borrows the scene; the
+    // cues stay the game's.
+    const zoneVisible = this.zoneBox?.visible ?? false;
+    const aimVisible = this.aimBar?.visible ?? false;
+    if (this.zoneBox) this.zoneBox.visible = false;
+    if (this.aimBar) this.aimBar.visible = false;
 
     try {
       const hero = draftHeroPose(draft.ageSec, draft.mode, draft.walkIn, draft.id);
@@ -1399,6 +1407,8 @@ export class GameView {
     } finally {
       this.scene.scale.x = -1;
       this.refs.ball.visible = ballVisible;
+      if (this.zoneBox) this.zoneBox.visible = zoneVisible;
+      if (this.aimBar) this.aimBar.visible = aimVisible;
       for (const [id, state] of saved) {
         const view = this.refs.kids.get(id);
         if (!view) continue;

@@ -516,6 +516,22 @@ skipped time and painted once mid-life — both vanish at a real clock).
    caught a fourth instance the manual review had missed (the custom
    captain's SAVE, below the fold at five viewports). Full audit clean
    across 4,451 boxes.
+3. **The "candidate facing" finding was the instrument, mostly** — retracted
+   with the same honesty as the ember debris. The draft's age advances only
+   through the render tick, and the round-2 driver starved it: a candidate
+   frozen at the top of `walk_on` shows the clip's authored back-first entry,
+   which read as "settles back-to-camera". At a properly driven clock,
+   Junebug presents face-on in her batting stance and the reveals track.
+   What survived the retraction and was fixed: the attract game's
+   depth-free plate cues (#146) drew THROUGH the draft's candidate as ghost
+   boxes on his chest — the stage now hides them like it hides the ball;
+   the post-reveal status invites the next tap ("— your turn!"); and the
+   identity plate's inline padding now clears the card frame's painted
+   ornament so a long `draftLine` stops reading as clipped. Still real and
+   deliberately NOT fixed in code: Big Lou's authored swagger take throws
+   his head so far back at the ~12ft card camera that his face is
+   unreadable — that is his approved acting, and any change is a
+   character-art decision for the performance packet, not a bug fix.
 
 ### Verified working this round
 

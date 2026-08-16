@@ -1789,7 +1789,9 @@ body.screen-open #hud > *:not(.btn--mute) {
   text-align: center;
   inline-size: 100%;
   box-sizing: border-box;
-  padding: var(--s3) var(--s3) var(--s2);
+  /* Wider inline padding than the frame art's painted border, or a long
+     `draftLine` runs into the ornament and reads as clipped (round-2 nit). */
+  padding: var(--s3) var(--s4) var(--s2);
   border-radius: var(--radius);
   /* The trading-card frame the clubhouse album already wears — the pick beat
    * IS a card pull (re-audit #9: "no trading card moment"). */
