@@ -1386,85 +1386,115 @@ button.clubhouse-sticker {
 }
 
 /* ---- Result ---- */
-.result-card {
+/* Board scrolls, actions stay on glass — the fold rule this repo audits. On
+   frames with room the auto margins float the board to the middle; when it
+   overflows they collapse and the top stays reachable. */
+.screen--result {
+  grid-template-rows: minmax(0, 1fr) auto;
+  align-content: stretch;
+  justify-content: center;
+  overflow-y: hidden;
+}
+.screen--result .screen-scroll > .result-board {
+  margin-block: auto;
+}
+/*
+ * The game ends on the GREEN BOARD — the inning-break board's own language
+ * (scoreboard green, gold caption, tabular numerals in smoked cells), because
+ * BB2026 closes every game on that diegetic park scoreboard with portraits
+ * and the round-2 re-audit called our dark card the last plain rectangle in
+ * the product. The line-score cells come from the same builder the break
+ * board uses (`lineScoreTable.ts`); the award cards are the season screen's
+ * portrait-card idiom, shared classes and all.
+ */
+.result-board {
   display: grid;
   justify-items: center;
   gap: var(--s3);
-  padding: var(--s5) var(--s7);
+  /* border-box, or the vw cap below measures the CONTENT box and the padded
+     board still sails past a phone's edge while "capped". */
+  box-sizing: border-box;
+  padding: var(--s5) var(--s6);
   border-radius: var(--radius-lg);
   border: var(--stroke) solid var(--outline);
-  background: rgb(20 32 46 / 0.86);
-  box-shadow: var(--shadow-soft);
-  min-inline-size: min(22rem, 86vw);
+  background: #1d4d33;
+  box-shadow: 0 0.4rem 0 rgb(20 32 46 / 0.4);
+  color: var(--cream);
+  min-inline-size: min(24rem, 90vw);
+  max-inline-size: 94vw;
 }
-.result-card__verdict {
+.result-board__verdict {
   margin: 0;
   font-size: clamp(1.8rem, 6vw, 3rem);
   color: var(--gold);
   -webkit-text-stroke: 0.06em var(--outline);
   paint-order: stroke fill;
 }
-.screen--result.is-loss .result-card__verdict {
+.screen--result.is-loss .result-board__verdict {
   color: var(--cream);
 }
-.result-score {
+.result-board__note {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.result-board__table {
   display: grid;
-  gap: var(--s2);
+  gap: 0.15rem;
+  /* `inline-size: 100%` and a zero minimum, NOT `max-inline-size: 100%`: a
+     percentage max against an auto-sized grid track doesn't constrain, so a
+     long line score grew the track and sailed past the board's edge on a
+     phone instead of engaging this scroller. */
   inline-size: 100%;
+  min-inline-size: 0;
+  overflow-x: auto;
 }
-.result-score__row {
+.result-board__row {
+  display: flex;
+  gap: 0.15rem;
+}
+.result-board__row.is-winner .result-board__cell--name::after {
+  content: ' ★';
+  color: var(--gold);
+}
+.result-board__cell {
+  min-inline-size: clamp(1.2rem, 3.6svh, 1.7rem);
+  block-size: clamp(1.2rem, 3.6svh, 1.7rem);
   display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: baseline;
-  gap: var(--s4);
-  opacity: 0.7;
-}
-.result-score__row.is-mine {
-  opacity: 1;
-}
-.result-score__name {
-  font-size: 1rem;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-align: left;
-}
-.result-score__runs {
-  font-size: 1.9rem;
+  place-items: center;
+  border-radius: 0.3rem;
+  background: rgb(0 0 0 / 0.28);
+  font-size: clamp(0.6rem, 2.1svh, 0.8rem);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  color: #ffe9a8;
 }
-.result-card__note {
-  margin: 0;
-  font-size: 0.78rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  opacity: 0.7;
+.result-board__cell--head {
+  background: none;
+  color: var(--cream);
+  opacity: 0.75;
 }
-.result-stars {
+.result-board__cell--name {
+  min-inline-size: clamp(4rem, 13svh, 6.5rem);
+  justify-content: start;
+  padding-inline: var(--s2);
+  background: none;
+  color: var(--cream);
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--s2);
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
-.result-star {
-  display: grid;
-  justify-items: center;
-  gap: 0.1rem;
-  padding: var(--s2) var(--s3);
-  border-radius: var(--radius);
-  background: rgb(255 244 222 / 0.1);
+.result-board__cell--total {
+  background: rgb(255 206 58 / 0.22);
+  color: var(--gold);
 }
-.result-star__icon {
-  font-size: 1.2rem;
-}
-.result-star__who {
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-.result-star__label {
-  font-size: 0.6rem;
-  letter-spacing: 0.1em;
-  opacity: 0.7;
+.result-board__stars {
+  /* The season-award cards read dark-on-cream; keep them that way on green. */
+  margin-block-start: var(--s1);
 }
 .result-actions {
   display: flex;

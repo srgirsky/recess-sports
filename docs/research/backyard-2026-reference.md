@@ -566,6 +566,25 @@ skipped time and painted once mid-life — both vanish at a real clock).
    — which is how both wrong first attempts were caught. Audit clean at
    4,460 boxes, nine more than before: the pause, measured in every game
    state.
+6. **#13 closed: the game ends on the green board.** `ResultScreen` is now
+   the inning-break board's own language — scoreboard green, gold caption,
+   per-inning line score in smoked tabular cells with a winner star, built
+   by the same new `lineScoreTable.ts` the break board now uses (one
+   builder, so the two can never disagree; the break board's mid-half
+   total-minus-recorded correction stays its own, because a finished
+   `GameResult` must not apply it). The award chips became the season
+   screen's portrait cards, shared classes and all — Friday's pennant and
+   tonight's game read as one product — and the screen adopted the
+   head/scroll/hero grid so PLAY AGAIN stays on glass. The model gained the
+   line score in SCOREBOARD order (a line score is a fixture of the sport,
+   not of whoever held the device — pinned in `resultModel.test.ts` from
+   both chairs). Two instrument findings en route: `.result-board` needed
+   `border-box` or its vw cap measured the content box and the padded board
+   sailed past a phone edge while "capped"; and the audit's off-frame rule
+   said "splits by axis" while its vertical branch called a both-axes
+   `insideFrame`, failing a leaf inside a legitimate horizontal scroller
+   for an x reason the horizontal rule had already excused — the code now
+   matches its own comment. Clean at 4,589 boxes.
 
 ### Verified working this round
 

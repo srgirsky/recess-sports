@@ -15,6 +15,7 @@
 // ---------------------------------------------------------------------------
 
 import type { LiveFrame } from '../sim/game';
+import { lineScoreHTML } from './lineScoreTable';
 
 export class InningBreak {
   readonly root = document.createElement('div');
@@ -92,25 +93,24 @@ export class InningBreak {
       runs: frame.half === 'top' ? frame.awayScore - recorded[0] : frame.homeScore - recorded[1],
     };
     const innings = Math.max(this.regulation, frame.inning);
-    const cell = (text: string, mod = ''): string =>
-      `<span class="inning-board__cell${mod ? ` ${mod}` : ''}">${text}</span>`;
-    const row = (name: string, side: 0 | 1, total: number): string => {
-      let cells = cell(name, 'inning-board__cell--name');
+    const cells = (side: 0 | 1): Array<number | null | undefined> => {
+      const out: Array<number | null | undefined> = [];
       for (let i = 0; i < innings; i++) {
-        const v =
+        out.push(
           i === finished.inning - 1 && side === finished.side
             ? finished.runs
-            : frame.lineScore[i]?.[side];
-        cells += cell(v === undefined || v === null ? '–' : String(v));
+            : frame.lineScore[i]?.[side]
+        );
       }
-      cells += cell(String(total), 'inning-board__cell--total');
-      return cells;
+      return out;
     };
-    let head = cell('', 'inning-board__cell--name');
-    for (let i = 0; i < innings; i++) head += cell(String(i + 1), 'inning-board__cell--head');
-    head += cell('R', 'inning-board__cell--head');
-    this.rows[0].innerHTML = row(this.names.away.toUpperCase(), 0, frame.awayScore);
-    this.rows[1].innerHTML = row(this.names.home.toUpperCase(), 1, frame.homeScore);
+    const html = lineScoreHTML('inning-board', innings, [
+      { name: this.names.away.toUpperCase(), cells: cells(0), total: frame.awayScore },
+      { name: this.names.home.toUpperCase(), cells: cells(1), total: frame.homeScore },
+    ]);
+    const head = html.head;
+    this.rows[0].innerHTML = html.rows[0];
+    this.rows[1].innerHTML = html.rows[1];
     this.rows[0].insertAdjacentHTML('beforebegin', '');
     const table = this.rows[0].parentElement!;
     let header = table.querySelector('.inning-board__row--head');

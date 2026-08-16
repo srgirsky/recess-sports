@@ -114,3 +114,27 @@ describe('the headline', () => {
     expect(verdictLine('tie')).not.toMatch(/lose|lost/i);
   });
 });
+
+describe('the line score (round-2 re-audit #13)', () => {
+  it('is passed through in SCOREBOARD order, whoever held the device', () => {
+    // The you/them rows flip with `teams.you`; the board must NOT — a line
+    // score is a fixture of the sport. Its per-inning sums must also agree
+    // with the totals, from either chair.
+    for (const g of GAMES.slice(0, 8)) {
+      for (const you of ['away', 'home'] as const) {
+        const m = resultModel(g, { ...TEAMS, you }, ORDER);
+        expect(m.lineScore).toBe(g.lineScore);
+        expect(m.awayName).toBe(TEAMS.away);
+        expect(m.homeName).toBe(TEAMS.home);
+        expect(m.awayRuns).toBe(g.awayScore);
+        expect(m.homeRuns).toBe(g.homeScore);
+        const sums = m.lineScore.reduce<[number, number]>(
+          (acc, [a, h]) => [acc[0] + a, acc[1] + (h ?? 0)],
+          [0, 0]
+        );
+        expect(sums[0]).toBe(m.awayRuns);
+        expect(sums[1]).toBe(m.homeRuns);
+      }
+    }
+  });
+});
