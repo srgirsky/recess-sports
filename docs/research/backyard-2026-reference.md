@@ -334,3 +334,94 @@ impossible per difficulty, "slower and inferior" fielding — are exactly the
 two systems our sim solves from measurement (`sim.humanSwing`,
 `defense.fielderSpeed`), so parity there is holding our line, not chasing
 theirs.
+
+### 2026-08-15 fix pass (PRs #142–#151): what a fresh playthrough now shows
+
+Same method as the audit above — dev server + Chrome, fresh seeds
+(`final-verify`, `night1/2`, `v1`), the clock hand-pumped where the tab was
+throttled — after ten PRs worked the list top-down. Each item below was
+re-observed on screen against `main`; where the fix taught us the audit's
+diagnosis was wrong, the correction is recorded with it.
+
+1. **Bat: fixed** (#142). `props.attachBatProp` hangs one shared bat on the
+   rig's `Prop_BatGrip`; `clips.holdsBat` derives visibility from the clip
+   table. The deeper half was the stance itself — authored before any bat
+   existed, it held the hands 1.8ft apart at hip height, and the swing's
+   mimed arm deltas kept the barrel vertical through the contact frame. The
+   arms are now a solved two-hand grip constant through every batting clip;
+   torso yaw is the power and solved `SWING_WRIST` keys lay the barrel level
+   (3°) through the zone at the derived marker. Verified at the plate camera
+   and on `?anims=1` for the shared library and all six character takes.
+2. **Contact burst: fixed** (#143). The cause was an untextured
+   `PointsMaterial` (a hard square per ember) borrowed from the 2.6ft sky
+   shells at 18ft. Every ember now carries a soft radial sprite and the
+   plate burst has its own 0.5ft pool. A real foul at `final-verify` drew
+   small glowing embers; no squares, no additively-washed kids.
+3. **T-poses: fixed** (#144), and the ■ diagnosis was wrong — all 43 clips
+   resolved then and now (▪ is *shared*, ▫ procedural; both animate). The
+   real author of the T-pose was keys AT the bind pose: `build()` fills an
+   unkeyed alias with the identity rotation, and the mixer blends untracked
+   bones toward rest during fades — `idle_fidget`, the cheers and all nine
+   directed reactions started and ended exactly there. A geometric detector
+   (both arms horizontal and opposed, per rendered tick) counted 6,356
+   incidents over five simulated minutes before, and 0 after, with a new
+   gate in `AnimationDirector.test.ts` holding the line.
+4. **Passive defence: fixed** (#145), and it was a stale pointer, not the
+   sim: `inputs.pointer` survived across plays forever, so one early tap
+   pinned every later chaser to a dead spot. Steering now ends when the
+   frame leaves `live`; re-run with a pointer deliberately planted on all
+   nine live plays of an inning, both halves ended (0-2 after 1). And the
+   exit exists: a ⏸ HUD button freezes the game under a two-card
+   KEEP PLAYING / GO HOME screen, audited at all six viewports.
+5. **Verdicts and plate cues: fixed** (#146). The callouts were already
+   screen-space DOM — "occluded" was composition: (50%, 45%) is the batter's
+   head. They pop at (40%, 30%), the clear sky band. The zone box and aim
+   bar were depth-tested scenery the catcher ate half of (hence "left of the
+   plate"); they draw through the scene now, translucent, complete, centred.
+6. **Inning board: hardened** (#147); the invisibility itself no longer
+   reproduces — the natural three-out `between` beat paints the green board
+   on screen. Two real fragilities closed: the 140ms fade-IN (a throttled
+   tab can present zero frames of it — the likely audit-era culprit) is now
+   instant-on, and the half-end beat holds 4.5s instead of a between-pitch
+   2.55s blink.
+7. **Debris: swept** (#148). The stray red ▶ was the scoreboard's batting
+   mark escaping `visibility: hidden` via an explicit `visible` on a
+   descendant (now `inherit`); the ghost matchup was a fade-in stalling on
+   throttled tabs (instant-on now, picker too); the black triangle behind CF
+   was a gable roof's flat ridge-end cap reading as a floating diamond
+   (`paintGable` bakes two-tone slopes and wall-coloured caps); the frowning
+   portraits were the `'determined'` mouth arc bowing UP — Junebug's resting
+   face and the custom captain's default. Tank's "closed eyes / no mouth"
+   did not reproduce: his sleepy-lidded eyes and frown mouth are present and
+   read at `?anims=1&facecam=1` (the #140 mouth-cell pass predates this
+   audit's claim; no change to approved art).
+
+Design gaps closed this pass:
+
+8. **Venue identity** (#149): Tin Can and Blacktop floors re-authored bright
+   enough to survive the toon ramp (they were flat black voids); the Dome
+   gets a real interior sized for the pitch camera's 0–12° sky band (rim
+   truss, twelve columns, ribs to a glowing hub); Steele's pool grew a 17ft
+   umbrella and slide tower, Dirt Yards a tire-swing tree, Playground a 14ft
+   playset in the visible band — each verified from the plate camera. The
+   general lesson is recorded in `Scenery.ts`: a signature prop that does
+   not clear the privacy ring does not exist to the cameras that play the
+   game.
+9. **Draft star moment** (#150): the `.screen` scrim no longer washes the
+   spotlight (the stage shows at full brightness), the candidate is framed
+   hero-size (~12ft camera), and the identity plate wears the album's
+   trading-card frame with the kid's own `draftLine`.
+10. *(unchanged — title treehouse still covers the attract game; recorded
+    below as an open gap.)*
+11. **Night** (#151): the towers pool light — dimmer key/hemisphere plus two
+    warm point lights over the infield — and the pool is baked into the turf
+    shader and the dirt tint as well, so the overhead live camera (the
+    audit's exact failing frame) reads dusk with no sky in frame. The trap
+    recorded: all three passes are linear-space multipliers and sRGB halves
+    their apparent strength.
+
+Still open from the audit's list: #10 (the title art covers the attract
+game), #12 (live-camera runner/bag framing and the bottom-centre scoreboard
+near home), #13 (the plain result card), and this pass's own deferral —
+Tank's face at gameplay distance is faithful to his approved sleepy-eyed
+sculpt, and any change there is a character-art decision, not a bug fix.
