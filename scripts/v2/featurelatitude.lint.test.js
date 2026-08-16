@@ -143,11 +143,26 @@ const TURNAROUND = {
   // crown is an afro apex half a foot above it. His entry instead declares the
   // SPAN the ratios were measured against — afro apex z 3.99 to neck pinch
   // z 2.48, both traced off his turnaround — and the check maps a latitude to
-  // a height directly. He also has NO earLine: his ears are not drawn in any
-  // view (the afro covers them), his sculpt builds none, and his head's widest
-  // row is the afro's equator, which is not an ear however the detector
-  // labels it. An entry without `earLine` skips that check and permits a
-  // sculpt without an EarSpec — explicitly, never silently.
+  // a height directly.
+  //
+  // ⚠️ HE HAS NO `earLine`, AND THE REASON THIS FILE GAVE FOR IT WAS FALSE.
+  // Corrected 2026-08-16. It read "his ears are not drawn in any view (the afro
+  // covers them), his sculpt builds none". Cropped and looked at, his
+  // turnaround's profile (x 693-927) draws a large, fully constructed ear —
+  // helix rim, concha shadow, lobe — entirely clear of the afro. So do
+  // Penny's and Bubbles', the two other kids who build none, both citing his
+  // "precedent" by name. Rubric 3.10 is failing on all three, and this comment
+  // is where an unmeasured sentence about a drawing turned into the thing that
+  // legalises it: an entry without `earLine` skips the ear check AND permits a
+  // sculpt with no EarSpec.
+  //
+  // The omission stays for now — the ear line cannot be gated off the
+  // widest-row trace for him, because his head's widest row IS the afro's
+  // equator, which is not an ear however the detector labels it. But it is a
+  // DEBT, not a fact about the art: when his ear is built it will be a bounded
+  // trace off the profile, and this entry gains a real `earLine`.
+  // ★ Never infer "the drawing has no X" from "the sculpt builds no X". That
+  // inference is the whole of this defect.
   grizz: {
     slug: 'grizz',
     // Bounded traces on grizz-turnaround.png (crown row 128, neck row 387):
@@ -524,9 +539,16 @@ function constantsFor(slug, { needsEar = true } = {}) {
   const island = src.match(new RegExp(`^FACE_ISLAND = \\(${num}, ${num}, ${num}\\)`, 'm'));
   const centre = src.match(new RegExp(`^HEAD_CENTER = \\(${num}, ${num}, ${num}\\)`, 'm'));
   const radii = src.match(new RegExp(`^HEAD_RADII = \\(${num}, ${num}, ${num}\\)`, 'm'));
-  // Optional only when the character's TURNAROUND entry has no earLine target
-  // — a kid whose ears are not drawn sculpts none, and demanding the spec
-  // would invite a decorative EarSpec that exists to satisfy a regex.
+  // Optional only when the character's TURNAROUND entry has no earLine target,
+  // because demanding the spec would invite a decorative EarSpec that exists to
+  // satisfy a regex.
+  //
+  // ⚠️ THIS USED TO SAY "a kid whose ears are not drawn sculpts none", AND THAT
+  // READING IS WHAT WENT WRONG. All three kids with no EarSpec — grizz, penny,
+  // bubbles — have prominent ears in their turnarounds; the omission is a
+  // SCULPT DEBT, and the missing `earLine` records only that the widest-row
+  // detector cannot place it for a big-hair kid. An absent target here means
+  // "not gateable yet", never "not in the drawing".
   const ear = src.match(new RegExp(`EarSpec\\(center=\\(${num}, ${num}\\)`));
   if (!island || !centre || !radii || (needsEar && !ear)) {
     throw new Error(`${slug}: could not read FACE_ISLAND / HEAD_CENTER / HEAD_RADII / EarSpec — ` +

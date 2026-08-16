@@ -700,3 +700,31 @@ Each of these cost at least one blind round. They are constraints, not history.
 - **Check the kid's headroom BEFORE designing the fix.** The roster sits hard
   against both asset budgets and adding rings is not free; see the hair-mass
   lesson for the rows-for-columns trade when it is.
+## The lesson three kids' ears paid for (and it is a REASONING failure)
+
+- **★ NEVER INFER "THE DRAWING HAS NO X" FROM "THE SCULPT BUILDS NO X."** Three
+  characters build no ears — Grizz, Penny, Bubbles — and each carried a written
+  reason: "the afro covers them completely in all five views", "ears never show
+  under the bob; none are built (Grizz's precedent)", "never drawn (the curl
+  curtains cover them in all five views): no EarSpec, like Grizz". Crop the
+  three profile views and all three are false. Every one draws a large, fully
+  constructed ear — outer helix rim, deep concha shadow, lobe — sitting entirely
+  clear of the hair, with Bubbles' curls deliberately tucked BEHIND hers.
+  Rubric 3.10 is failing outright on all three.
+- **The claim propagated because it was written as a fact and cited as a
+  precedent.** Grizz's was first and unmeasured; Penny's names it ("Grizz's
+  precedent"); Bubbles' inherits it ("like Grizz"); and
+  `featurelatitude.lint.test.js` repeated it in the comment that makes an entry
+  without `earLine` *permit a sculpt with no EarSpec*. One unmeasured sentence
+  about a drawing became the thing that legalises three missing features, in a
+  GATE. Check what a claim is load-bearing for before you copy it.
+- **A missing gate target means "not gateable", never "not in the art."** The
+  reason Grizz has no `earLine` is real and still stands — his head's widest row
+  is the afro's equator, so the widest-row detector cannot find an ear line for
+  him. That is a statement about the DETECTOR. It says nothing about whether the
+  ear exists, and the two got conflated.
+- **The same hair hid two defects at once.** The mass that "covers the ears" is
+  also swallowing the face: on Penny's profile board the hair takes brow, cheek,
+  mouth and jaw where her sheet keeps all of them clear behind a temple
+  hairline. If a kid's ears went missing under hair, check the face in the same
+  crop — it is one fix, not two.

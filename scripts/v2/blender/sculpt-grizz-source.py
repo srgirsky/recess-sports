@@ -229,12 +229,28 @@ def face_push(nx: float, nz: float) -> float:
     return nose_push(nx, nz) + muzzle_push(nx, nz)
 
 
-# ★ NO EARS. The afro covers them completely in all five views — there is no
-# ear line, no ear width, and nothing for `EarSpec` to cite. Sculpting ears
-# inside the afro volume would spend triangles on geometry no camera can see.
-# The head's widest row on his sheet (z 3.26, half 0.8275) is the AFRO's
-# equator, not an ear line, which is why the spec's `earLine` landmark must not
-# be read as one for him.
+# ★ NO EARS — AND THE REASON RECORDED HERE WAS FALSE. Corrected 2026-08-16.
+#
+# It read: "The afro covers them completely in all five views — there is no ear
+# line, no ear width, and nothing for `EarSpec` to cite." Cropped and looked at,
+# his turnaround's PROFILE view (x 693-927) draws a large, fully constructed ear
+# — outer helix rim, deep concha shadow, lobe against the skull — sitting
+# entirely CLEAR of the afro, which springs back behind it. His whole face is
+# clear of it too, heavy-lidded eye and all.
+#
+# The claim was never measured, and it did not stay local: Penny cites it by
+# name as "Grizz's precedent", Bubbles builds none on the same reasoning, and
+# `featurelatitude.lint.test.js` repeats it in the comment that makes an entry
+# without `earLine` permit a sculpt with no `EarSpec`. So one unmeasured
+# sentence about a drawing became the thing that legalises three missing
+# features — rubric 3.10 ("an outer rim, an inner shadow and a lobe against the
+# skull, never a bare ellipsoid bump") is failing outright on all three.
+#
+# What IS true and still holds: the head's widest row on his sheet (z 3.26,
+# half 0.8275) is the AFRO's equator, not an ear line, so the spec's `earLine`
+# landmark must not be read as one for him — the ear has to be traced off the
+# profile by hand. Building it is his next round's work, and the ear line there
+# is a bounded trace, not the widest-row detector.
 
 # ★ THE FACE-ATLAS WINDOW IS SOLVED AGAINST HIS OWN FEATURE ROWS. Brow z 3.07
 # (lat +0.096), eye z 2.90 (lat -0.228) onto the generator's drawn rows 30 and
