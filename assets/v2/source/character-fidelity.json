@@ -519,38 +519,38 @@
    "scoredBoardSha256": "5296e6bf6a27944e4d514119964221739cdb92c55b07c7028028ff2e3eac87b6"
   },
   "chip": {
-   "status": "candidate",
+   "status": "needs-polish",
    "evidence": "chip-fidelity-review.png",
    "categories": {
     "frontProfileSilhouette": {
      "label": "front/profile silhouette",
      "score": 4,
-     "note": "Polish-round independent critic: the sewn-pouch pocket, raised hem band and cap silhouette all read; held off 5 by the hood still reading as an outlined pad butt-joined to the back rather than draped fabric."
+     "note": "The enlarged brim WORKS as reach: in chip-profile-review.png the navy bill runs x=123..185 at y=159..183, i.e. 60px forward of the crown wall (26% of the 232px head depth) and 85px past the nose tip (x=208) — the concept's bill leads its nose by 47px on a 238px head depth (20%), so delivered is now if anything slightly long. Front flare is right too: chip-front-review.png rows y=160..176 carry a navy crescent 179px wide against a 155px crown (concept 191 vs 172). It is held off 5 by FORM, not size — every column x=125..180 measures a uniform 9-10px slab (4.3% of head depth) where the concept's bill is a tapered wedge 28-50px thick (~14%), so it reads as flat card stock with a squared tip, butt-joined to the crown, not a rolled brim."
     },
     "headBodyProportions": {
      "label": "head/body proportions",
      "score": 4,
-     "note": "Polish-round independent critic: head 32.0 vs 32.2, aspect 0.94 vs 0.99, re-run and reproduced exactly; limb girth now carries the chunky build."
+     "note": "Measured dead on: head 31.9% vs concept 32.2% (-0.30), head w:h 0.99 vs 0.99 (+0.00) — 3.13 face-aspect passes on the number, not the eye. Joints read as connected forms (rounded shoulder caps, continuous elbow line, soft knees in chip-front-apose-review.png). Off 5 for two junctions: a hard horizontal ledge where the head's skin volume steps onto the neck (chip-profile-review.png, approx x 235-300 / y 255-275), and forearms that taper into flat paddle hands with only faint digit grooves (front A-pose, x 165-190 and 365-390 / y 415-460)."
     },
     "hairMass": {
      "label": "hair mass",
-     "score": 4,
-     "note": "Polish-round independent critic: full coverage with tuft band; smooth-lobed rather than strand-grouped caps at 4 per the rubric's own clause."
+     "score": 3,
+     "note": "measure:strands is decisive and it is not close: delivered carries 0.29 strand minima/row against the concept's 6.31 — 5% of the concept's strand count over a 72-row band, at 127% prominence. That is depth relief with no strand separation: a smooth mass. Worse than the rubric's 'featureless blob caps at 4' case, because the silhouette departs too — the back of the hair in chip-profile-review.png (x 300-355 / y 175-265) is a visible straight-facet polygon chain, and across the brow in chip-front-review.png (x 185-355 / y 175-200) it is a flat slab band where the concept turnaround has a curly mop with separated temple lobes and tufts breaking the cap line. Coverage is complete — no bare-skull read from any angle — which is what keeps it off 2."
     },
     "clothingConstruction": {
      "label": "clothing construction",
      "score": 4,
-     "note": "Polish-round independent critic: the kangaroo pocket now reads as a sewn pouch at 4x - top seam, bevelled proud rim with a lit edge, darker side-opening shadows - retiring the flat-decal read; rib bands present at cuffs and hem; collar bunching exists at both front corners though the crease strokes flirt with reading as tears at hero scale."
+     "note": "Genuinely constructed: kangaroo pocket reads as a sewn pouch with a top seam and a proud bevelled rim (chip-front-apose-review.png, x 235-315 / y 405-455); rib bands at hem and cuffs; shoes carry a navy heel counter, three lace bars, a cream midsole and a sole line (front board x 195-345 / y 585-650); shorts have a hem cuff. The hood is present and now drapes rather than sitting as a pad — chip-profile-apose-review.png x 225-345 / y 255-365 shows a bunched roll with a vertical fold crease behind the neck. Held off 5 by the collar: a dark angular notch at each collar corner (same crop, approx x 245-260 and 290-300 / y 285-300) still reads as a rip in the fabric at hero scale — flagged the previous round and not repaired — and the sock carries only the green band where the concept turnaround has navy over green."
     },
     "faceExpressionRead": {
      "label": "face/expression read",
      "score": 4,
-     "note": "Polish-round independent critic: the nose clearly breaks the profile and the mouth is a genuine lips-teeth-tongue form at draft-card distance; grin/cheer/tongue nearly indistinguishable by pixel-diff (60px in the mouth region) - a follow-up cell pass noted."
+     "note": "The nose is a real form that breaks the profile (chip-profile-review.png, skin reaches x=208 at y=196-226 against a cheek plane ~15px behind it) and there is no decal-island seam — freckles, brow ridges and the modelled mouth sit on the skull's planes. All four atlas cells are distinguishable at draft-card distance, so 3.14 holds: cheer (chip-runtime-face-cheer.png, x 540-590 / y 390-460) is an open mouth with white upper teeth and a red tongue; angry is a frowning trapezoid with a lower-lip form and inward-angled brows; tongue is an open cell with the tongue; grin is a closed upturned line. Off 5 because that profile nose is a sharp beak-like point rather than the concept's soft button, the grin cell collapses nearly to a stroke, and visible face right measures 19.1 vs the concept's 23.9 (in tolerance but the largest shortfall on the sheet)."
     },
     "heroAndFieldScale": {
      "label": "hero + 40px read",
      "score": 4,
-     "note": "Polish-round independent critic: the one OFF (ankle daylight 42.2 vs a feet-together concept) is the roster rig splay, recorded and accepted; runtime skin runs more orange than the sheet and the cap's side panels catch rim light as a silver-grey third panel - palette nits, not blockers."
+     "note": "The 40px strip in chip-fidelity-review.png (right column, ~x 960-990 / y 570-600) still carries the memorable read — two-tone cap dome over green hoodie over tan legs — and the hero close-up is fully legible (face, freckles, brows, cap). The one OFF metric, ankle daylight 26.5 vs 0.00 (tol 12), is the roster-wide rig splay against a feet-together drawn stance: a known cause, not a new defect. Off 5 because the hero, run and swing panels embedded in the board are the 2026-08-15 captures and predate the brim change — they show the OLD short bill, so the board's own hero evidence does not depict the asset the front/profile panels were re-rendered from."
     }
    },
    "heroEvidence": "chip-runtime-hero.png",
@@ -560,19 +560,25 @@
    ],
    "measuredFidelity": {
     "command": "npm run measure:fidelity -- chip",
-    "ranAt": "2026-08-15",
+    "ranAt": "2026-08-16",
     "board": "chip-fidelity-review.png",
-    "result": "Polish-round re-measure: head height 32.0 vs 32.2, aspect 0.94 vs 0.99, all shoe band metrics and both face sides in tolerance, asymmetry 0.60. ONE metric OFF with measured cause: ankle daylight 42.2 vs 0.00, the roster-wide rig splay. The polish set: kangaroo pocket rebuilt as a sewn pouch (bevelled rim rows at 30% proud), deeper rib rows at the hem, collar bunching so the hood drape reads from the front, hood ellipsoid raised 0.02 off its shading seam, nose bridge/tip lifted, mouthScale 1.15, limb girth +0.008/+0.010 toward the chunky build. Budget: the additions cost 4KB; cap rings 20→18 and neck/torso segments trimmed paid for them at 399KB; a hair-ring trim to 18 was tried and REVERTED - it flipped a fringe column onto the face and cost the right side 4.7 points (the column-quantization class). Stance pass 2026-08-15: the board renders hold the drawn feet-together stance where the silhouettes allow - this kid's legs adduct 5.5deg at the hip with flat feet, the largest calibrated angle whose silhouettes do not touch (contact encloses the between-legs window and the silhouette gate reads it as a puncture). Ankle daylight reads 26.5 and 1 metric(s) remain outside tolerance on this board.",
+    "result": "measure:fidelity -- chip (concept front 245x683px, delivered 454x561px; shoe tones read off the concept #f9ecdc and #bb9c73): head height as % of figure height concept 32.2 / delivered 31.9 / delta -0.30 ok; head width:head height concept 0.99 / delivered 0.99 / delta +0.00 ok; shoe band dominant tone % of band concept 64.6 / delivered 61.3 / delta -3.32 ok; shoe band second tone % of band concept 33.5 / delivered 38.7 / delta +5.23 ok; shoe band mean saturation concept 22.3 / delivered 21.4 / delta -0.90 ok; daylight between the ankles concept 0.00 / delivered 26.5 / delta +26.5 OFF (tol 12); visible face left of centre % of head width concept 20.6 / delivered 18.0 / delta -2.66 ok; visible face right of centre % of head width concept 23.9 / delivered 19.1 / delta -4.75 ok; face left/right asymmetry concept 0.00 / delivered 1.12 ok. 1 metric outside tolerance. measure:strands -- chip (hair band 5-45% of head height): concept chip-turnaround.png head rows 175-394, 6.31 strand minima/row, mean prominence 21.6 over 89 rows; delivered chip-front-review.png head rows 87-265, 0.29 strand minima/row, mean prominence 27.4 over 72 rows; delivered carries 5% of the concept's strand count at 127% of its prominence. Own pixel measurements on the current board: delivered profile head depth x185(crown front)..x355 = 170px by opaque alpha, x123..x355 = 232px including the bill; navy bill forward-most x=123 @y176 vs pale crown forward-most x=185 @y144, so the bill leads the crown by 62px; bill vertical thickness a uniform 9-10px at every column x=125..180 (alpha 255 throughout, so it is a real slab, not a zero-thickness plane); nose tip x=208. Concept profile: cream crown forward-most x=883 @y191, navy bill forward-most x=884 @y196 (bill and crown coincident), nose tip x~837, back of hair x=647, head depth 237px; concept bill navy thickness per column 31/30/28/31/35/50/48/44/36/11 at x=830..884, i.e. a tapered wedge peaking at 50px. Relative bill thickness: delivered 10/232 = 4.3% of head depth vs concept ~34/237 = 14.3% — delivered is about one third the concept's. Front-view lateral flare: delivered navy bill 179px wide at y=162 against a 155px crown at y=160 (+15%); concept cap widest 191px at y=280 against a 172px crown at y=232 (+11%). TEAM_MASK extent, foreground-masked cream/pale share of cap pixels: concept front 54.1% vs delivered front 71.3% (+17pp over-extended, and part of that gap is the concept's all-navy bill occupying its lower cap band); concept profile 26.8% vs delivered profile 25.7% (matched); concept back cap 1.2% cream (all-navy back) — no delivered back board exists to check against. TEAM_MASK confirmed as the tinting surface: it renders raw grey #D8D2C6 on the board and gold in every chip-runtime-face-*.png. Receipt cross-check: assets/v2/source/character-fidelity.json scoredBoardSha256 = 757d932e7153d7f71db57583b119fdbcf1331b4924615e0c718c5c3df157258e, actual sha256 of docs/v2/concepts/chip-fidelity-review.png = bee00a95d8e49fb4ceba16d31e7a378ae1a7b7183f586903471ec87db84a192c — MISMATCH; the receipt's stored measures (head 32.0, aspect 0.94, ankle 42.2, asymmetry 0.60) also disagree with today's re-run (31.9 / 0.99 / 26.5 / 1.12), confirming the recorded scores and notes describe a superseded model.",
     "note": "Evidence and board re-captured fresh for the polish-round critic."
    },
    "polishFindings": [
-    "Hood still reads as an outlined ellipsoid pad butt-joined to the back; a draped form would unlock the 5.",
-    "Collar bunching crease strokes read almost as tears at hero scale - soften.",
-    "Grin/cheer/tongue cells nearly indistinguishable (60px mouth diff) - an atlas cell pass.",
-    "Runtime skin more orange than the concept's warm tan; cap side panels catch rim light as a third panel.",
-    "A hatched shadow patch survives at the lower-back hem in the swing capture."
+    "THE BILL IS NOW ADEQUATE IN REACH AND FLARE but is a flat card: a uniform 9-10px slab across its whole length (4.3% of head depth) where the concept is a tapered wedge peaking at 50px (~14%). Give it thickness and a downward curl with a rounded tip; it is currently butt-joined to the crown with no under-brim break.",
+    "WORST REMAINING DEFECT: hair carries 5% of the concept's strand count (0.29 vs 6.31 minima/row) and the profile back edge is a visible straight-facet polygon chain (chip-profile-review.png x 300-355 / y 175-265). It is the only category below the >=4 approval bar. Needs sculpted strand grouping plus temple lobes and tufts breaking the cap line.",
+    "Collar corner notches still read as rips in the fabric at hero scale (chip-profile-apose-review.png, approx x 245-260 and 290-300 / y 285-300). Flagged in the previous round's receipt and not repaired.",
+    "Ear is articulated per 3.10 — outer rim, an inner concha shadow and a lobe against the skull, not a bare ellipsoid — so the binary PASSES, but the shape is wrong: a broad triangular fin whose long axis runs horizontally with a sharp upper point, where the concept ear is a small rounded vertical ear. It also joins the cheek on a hard fold with no blend (chip-profile-review.png x 240-290 / y 215-250).",
+    "TEAM_MASK is over-extended in the front view: 71.3% pale share vs the concept's 54.1%. On the board it reads as a pale helmet dome with a navy rim rather than a navy cap with a narrow cream centre panel; the profile split (25.7% vs 26.8%) is correct, so the fix is a defined seam and navy side panels in front, not a global shrink.",
+    "Hard horizontal ledge where the head's skin volume steps onto the neck, visible at hero scale in the profile board (x 235-300 / y 255-275).",
+    "Sock carries only a green band; the concept turnaround has navy over green.",
+    "EVIDENCE/GATE FINDING, not art: the receipt's scoredBoardSha256 no longer matches the regenerated board, and its recorded measures (head 32.0 / aspect 0.94 / ankle 42.2 / asymmetry 0.60) disagree with today's run (31.9 / 0.99 / 26.5 / 1.12). Rubric 7.1/7.2/7.3 are red until the six scores and notes are rewritten against the current board.",
+    "The hero, run and swing panels inside chip-fidelity-review.png are the 2026-08-15 captures showing the OLD short bill, while the front/profile panels are the 2026-08-16 re-render. The board is internally inconsistent; re-run capture:character-evidence before any approval.",
+    "Not a defect — checked and cleared: the tan blob inside a green ring on the chest in chip-profile-review.png (x 240-290 / y 285-330) is the far arm's hand seen end-on in T-pose, not skin penetrating the hoodie. It is absent from the A-pose board.",
+    "Hands are flat paddles with only faint digit grooves; the concept has chunky mitts with a defined thumb."
    ],
-   "scoredBoardSha256": "757d932e7153d7f71db57583b119fdbcf1331b4924615e0c718c5c3df157258e"
+   "scoredBoardSha256": "dfe9cbc48eda30a158261ec5a3b0d467904de940e7d7ded73f578709a9fe4518"
   },
   "bend_it": {
    "status": "candidate",

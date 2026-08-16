@@ -728,3 +728,86 @@ Each of these cost at least one blind round. They are constraints, not history.
   mouth and jaw where her sheet keeps all of them clear behind a temple
   hairline. If a kid's ears went missing under hair, check the face in the same
   crop — it is one fix, not two.
+
+## The bill lesson, paid TWICE (Theo then Chip) — now with an assert
+
+- **Batch 6 already recorded it:** "the bill/brim reach is the TIP's absolute
+  forward y — a reach less than the dome's own front projects NO bill (Theo's
+  'batting helmet')." Chip shipped the identical defect anyway, and an
+  independent critic read his cap as "a bike helmet" without knowing Theo's
+  had been read as a batting helmet. **A lesson in prose did not survive one
+  character.**
+- **It is arithmetic, so it belongs in an assert.** Chip's `BRIM_REACH` was
+  0.600 while his plate's root — the dome's own front ring, `CAP_LEVELS[-2]` —
+  sits at -0.605. The tip was 0.005ft LESS far forward than its own root: the
+  brim sloped backwards into the dome. His script now refuses to build it:
+  `assert -BRIM_REACH < dome_front - 0.05`. Copy that assert into any cap.
+- **★ NO GATE COULD HAVE SEEN IT, AND THAT IS THE POINT.** A bill buried inside
+  the dome changes no SILHOUETTE, so `silhouette.lint`, the head-box metrics and
+  `measure:fidelity` are all blind to it by construction. The whole cap read
+  wrong and every automated check stayed green. When a feature lives INSIDE
+  another form's envelope, the only instruments are an assert and an eye.
+- **Watch for a regression disguised as a decision.** The comment beside the
+  wrong number read "round 6 raised and flattened the plate so the key light
+  reaches the forehead the drawing lights" — a lighting *intent*, which reads
+  like a considered choice rather than a bill shortened past its own root.
+  Chasing the forehead's key light is what broke it. And the correct value was
+  in the same file the whole time: the section header cites "the brim reaches
+  ~0.68ft forward of the axis". **Check a constant against its own header's
+  citation before believing the note next to it.**
+
+## How to read a team-accent surface on the board (a critic trap)
+
+- **★ THE FIDELITY BOARD RENDERS `TEAM_MASK` RAW, SO EVERY TEAM-ACCENT SURFACE
+  LOOKS LIKE A GREY DEFECT.** The runtime tints that slot with the drafting
+  team's colour; the board does not tint anything. Chip's cap panel is
+  `TEAM_MASK` (#D8D2C6) and reads as a dead pale grey on the board — a critic
+  scored it as "the cream panel is delivered neutral grey ... reads as a bike
+  helmet". At runtime the same panel renders GOLD, which is correct.
+- **The right question is EXTENT, not colour.** Whether the accent surface is
+  the right SIZE and in the right PLACE against the drawing is a real board
+  judgement; whether it is the concept's own colour is not, because it is never
+  meant to be. Chip's panel is still wrong on extent — it covers most of the
+  crown where the concept has a narrow cream centre panel flanked by navy.
+- **Tell every critic which surface is the accent**, or the finding comes back
+  as a palette defect and someone "fixes" it by painting over the team's colour.
+  Penny's critic got this right unprompted ("the yellow cuff in
+  penny-runtime-hero.png is intended tinting, not a defect"); Chip's did not.
+  Check `TEAM_MASK` in the sculpt script and name the surface in the brief.
+
+## Writing the critic's brief (the sculptor's one real job in scoring)
+
+The critic loop works — a fresh critic re-scored four kids from a recorded
+4,4,4,4,4,4 down to 2s and 3s, and the demotions were right. But **critics
+overstate, and they overstate in three specific ways.** Of five headline claims
+checked against the artefact, three did not survive:
+
+| the claim | what was actually there |
+|---|---|
+| "EARS ARE DRAWN AND ARE NOT BUILT" (Chip) | an `EarSpec`, a `build_ear` call, and a visible ear |
+| "the cap has no bill" (Chip) | a bill, authored shorter than its own dome front |
+| "a rectangular gouge ... an open black hole at gameplay camera" (Bubbles) | her EYE and brow, seen from a rear three-quarter angle |
+
+All three read as damning, none was true as written, and any of them applied
+unverified would have sent a round chasing a defect that was not there — the
+mirror image of the inflation the loop exists to catch. Put these three lines in
+every brief:
+
+- **"Before claiming a feature is ABSENT, grep the sculpt script for its builder
+  and report what you found."** `EarSpec`, `build_ear`, `BRIM_REACH` — a missing
+  feature and a misbuilt one need opposite fixes, and only the source separates
+  them.
+- **"Before calling anything a hole, gouge or artifact, crop it at 4x and
+  describe what you see."** A face-atlas mark at a grazing angle, a team-tinted
+  surface and a shading terminator all read as damage in a full-body still.
+- **"`TEAM_MASK` renders RAW on the board and tinted at runtime — judge its
+  EXTENT, never its colour."** See the team-accent section above.
+
+And the reusable half: **feed the correction back and re-run.** Chip scored
+2,3,2,2,3,2 from a critic working blind, and 2,4,3,3,4,3 from one told which two
+claims had been wrong — on a build that had barely changed. A brief that names
+the known traps buys more accuracy than a harsher instruction to be harsh.
+
+⚠️ **And the sculptor still may not score.** Correcting a critic's factual error
+is not scoring; substituting your own number for its judgement is. Fix the
+brief, re-run the critic, take what it says.
