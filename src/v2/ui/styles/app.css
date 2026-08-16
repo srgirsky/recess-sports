@@ -1373,11 +1373,20 @@ button.clubhouse-sticker {
   padding: var(--s1) var(--s2);
   border: 0.11rem solid var(--outline);
   border-radius: var(--radius);
-  background: rgb(20 32 46 / 0.9);
+  /* Cream stickers, not dark slabs — the HUD kit's own language (the
+     reference's "zero flat rectangles"; round-2 polish note). The tiny
+     alternating tilt is the kit's rotation jitter. */
+  background: rgb(255 244 222 / 0.95);
+  color: var(--ink);
+  box-shadow: 0 0.18rem 0 rgb(20 32 46 / 0.35);
+  rotate: -0.4deg;
   text-align: left;
 }
+.strategy-row:nth-child(even) {
+  rotate: 0.4deg;
+}
 .strategy-row__slot {
-  color: var(--gold);
+  color: var(--grass-dark);
   font-size: 1.2rem;
   text-align: center;
 }

@@ -110,7 +110,11 @@ export const VENUE_LOOKS: Record<VenueId, VenueLook> = {
     // from the plate (re-audit #8). This is charcoal that still reads as a
     // surface after the ramp.
     grass: 0x6b625e,
-    grassDark: 0x5a5350,
+    // 0x5a5350 survived the ramp at the NEAR floor but the mid-outfield —
+    // seen at a grazing angle where the ramp's shadow step dominates — still
+    // crushed toward a void (round-2 polish note). Keep the checker legible
+    // by keeping the dark square within one ramp step of the light one.
+    grassDark: 0x635b57,
     dirt: 0x7d716b,
     fence: 0x934f3d,
     fenceTrim: 0x69747b,
