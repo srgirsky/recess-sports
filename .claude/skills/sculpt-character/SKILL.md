@@ -851,6 +851,36 @@ them — strands are VERTICAL grooves, so a hair mass can swap silhouette rows f
 angular resolution at constant or lower cost (Grizz: 19x24 = 912 tris against
 14x32 = 896, and the export got SMALLER).
 
+### ★ And the two clump frequencies must not be HARMONICS
+
+This is the half that is not obvious, and it cost two extra rounds on Mimi.
+
+Columns buy strand COUNT; they do not stop the creases running as vertical
+FLUTES down the whole mass — a critic measured 80.6% column-concentrated against
+the concept's 37.2% AFTER the column fix. The instinct is to vary the clump per
+row; the instinct after that is to vary its AMPLITUDE rather than its phase
+(Penny's mirror lesson — a phase offset destroys the evenness of `cos(kθ)` and
+blew her faceAsymmetry to 7.14 against a tolerance of 4). Both instincts are
+right, and together they still did nothing, because her two terms were
+`cos(6θ)` and `cos(12θ)`:
+
+**12 is 2x6, so the two share every minimum and the sum's grooves sit at the
+same theta whatever the amplitudes do.** Deeper and shallower flutes, still
+flutes.
+
+`cos(6θ) + cos(10θ)` are non-harmonic, so the sum's minima WANDER in theta as
+the amplitudes trade — and both are still even in θ, so the mirror is untouched.
+**Frequency choice is what moves a crease between columns; amplitude only
+changes how deep it is.**
+
+⚠️ **And the two available measures of "does it read as curls" DISAGREE**, so
+treat neither as settled. Counting crease RUNS (a minimum persisting within
+±2px on the next row) makes the delivery look fine — mean run 2.30 rows against
+the concept's 3.22, i.e. shorter, not fluted — and says the real gap is sheer
+quantity, 340 runs against 2437. A column-concentration measure says the
+opposite. Until one is written down as a script with its definition in its
+header, use `measure:strands` for DIRECTION and score the hair on the eye.
+
 ## ★ A CHARACTER SHIPPED CUT IN HALF (and what that says about enclosure tests)
 
 Zippy's delivered board carried a 21-pixel band — 0.150ft, at 56% of her figure
@@ -886,3 +916,98 @@ been reviewed, scored 4/4/4/4/4/4, and recorded as a finished candidate.
   Put the threshold ABOVE the stretched band so the whole band is one colour and
   the ramp lands in a short one (32px -> 11px here). A colour switch belongs on a
   ring, never between two distant ones.
+
+## The Nyquist scan (the curl fix's per-kid backlog), and who is still failing it
+
+Run this over the roster before planning any hair work. Every `cos(kθ)` in a
+clump is a lobe count; the `segments = N if detail >= 2` beside it is the column
+count. A ring can only EXPRESS lobes up to S/2, and a crease only READS at about
+S/4:
+
+```bash
+grep -n "segments = \|cos(.*theta" scripts/v2/blender/sculpt-<slug>-source.py
+```
+
+Scanned 2026-08-16, worst first (Mimi already fixed at 48/12 = 4.00):
+
+| kid | builder | cols | lobes | col/lobe | |
+|---|---|---|---|---|---|
+| calls_shot | build_hair | 10 | 6 | **1.67** | ★ UNREPRESENTABLE |
+| wheelchair_ace | build_hair | 12 | 6 | 2.00 | at the floor |
+| diva | ring_loft_mane | 18 | 8 | 2.25 | soft |
+| sprout | build_hair | 24 | 5, 9 | 2.67 | soft |
+| gizmo | ring_loft_cap | 17 | 6 | 2.83 | soft |
+| dex | build_curls | 18 | 6 | 3.00 | soft |
+| sniffles | build_curls | 18 | 6 | 3.00 | soft |
+| cricket | ring_loft_cap | 18 | 6 | 3.00 | soft |
+| chip | build_hair | 20 | 6 | 3.33 | soft |
+| grizz | build_afro | 24 | 6 | 4.00 | ok |
+
+⚠️ **This is a grep over builder NAMES, so treat it as a candidate list, not a
+census** — a hair builder called something else is invisible to it, and that is
+exactly the silent-gap failure this file keeps recording. Check the kid you are
+about to work on by hand.
+
+**And a lint was considered and deliberately not written.** The rule is
+mechanical and would have prevented all of this, but every expression of it
+depends on matching builder names by regex — so the gate would go quiet the
+first time someone names a builder `build_locks`, and a gate that fails silently
+is worse than a table you have to read. If it becomes a lint, it must enumerate
+from the ROSTER and refuse a kid it cannot find a clump for, never skip them.
+
+## Two open questions, recorded so nobody re-derives them from scratch
+
+- **"A full frontal eye renders on the SIDE plane in profile"** — reported
+  independently by critics on Sprout, Bubbles and Mimi, and the eye IS clearly
+  readable in Sprout's profile board. But the diagnosis is NOT established.
+  The profile camera is a true 90-degree ORTHOGRAPHIC side view (camera at
+  (12, 0, 2.2) in `render-fidelity-views.py`), and the arithmetic does not
+  obviously support a wrap: `face_island_uv` maps `uf = 0.5 + 0.5·bearing/
+  face_bearing`, so an eye whose outer edge sits at cell x ~89 of 128 is only
+  ~20 degrees off the nose, where a mark compresses to about sin(20) = 34% of
+  its width rather than disappearing. A large eye foreshortened to a third of
+  its width can still read as "a full eye", which is the innocent explanation.
+  ⚠️ Settle this by measuring the eye's WIDTH in the profile board against its
+  width in the front board and comparing the ratio to sin(bearing) — do not
+  sculpt against it until that number exists. ⚠️ And BOUND that probe to dark
+  runs flanked by SKIN on both sides: a plain widest-dark-run scan over the head
+  measures the HAIR. Tried naively on Sprout it returned 216px front against
+  179px profile, a ratio of 0.83 that looks like damning evidence and is
+  entirely his mop. The failure class this file already names — a quantity read
+  down a line that passes through more than one object — applies to the eye as
+  readily as to the shoe. Three critics agreeing is not a
+  measurement; it is three people looking at the same ambiguous picture.
+- **Bubbles has a rectangular slot cut into her hair shell** at ear height
+  (`bubbles-profile-review.png` x 280-297, y 220-268) — hard corners, both
+  sides, clearly artificial. She builds no ear and cuts no slot deliberately,
+  so it is a geometry artifact, most likely the hair's tuck clamp folding
+  against the skull (`skull_front_y`'s sentinel is the usual suspect — see
+  Bubbles' own no-skull lesson). Her next round owns it.
+
+★ AND ONE PROCESS NOTE FROM GETTING THIS WRONG. The slot above was dismissed
+once as "just her eye seen at a grazing angle", because the check was run on her
+runtime HERO instead of the profile board the critic actually cited. **Crop the
+region the finding names, not a picture of the same character.** That is the
+same rule this file gives critics, and it applies to whoever is reading them.
+
+## A critic may argue against a decision; that is not a defect report
+
+Grizz's re-audit filed "SPLIT THE LEGS. Undo the 10deg hip adduction from the
+2026-08-15 stance pass and restore daylight between thighs, calves". That
+adduction is a DELIBERATE, per-character, calibrated decision — `LEGS_IN_BY_ID`
+in `render-fidelity-views.py`, with the residual ankle-daylight OFF recorded as
+an instrument conflict (the concept side reads 0.00 through flood CONTAINMENT of
+a drawn-closed outline) rather than as a stance regression. The critic could not
+know that; it sees a board and a drawing.
+
+**So separate the two kinds of finding before acting on any of them:**
+
+- **"This does not match the drawing"** — a defect report. Act on it.
+- **"This decision was wrong"** — an argument, and it is arguing with a record
+  it has not read. Put it in `polishFindings` marked as CONTESTED, with the
+  record's own reasoning beside it, and let the maintainer settle it.
+
+Undoing a calibrated decision because a fresh reviewer disliked it is how a
+project loops: the stance pass exists precisely because an earlier round chased
+ankle daylight by moving a mesh off its bones. **A critic's job is the board;
+the record's job is remembering why.**

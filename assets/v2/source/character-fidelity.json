@@ -297,38 +297,38 @@
    ]
   },
   "mimi_mash": {
-   "status": "candidate",
+   "status": "needs-polish",
    "evidence": "mimi-mash-fidelity-review.png",
    "categories": {
     "frontProfileSilhouette": {
      "label": "front/profile silhouette",
-     "score": 4,
-     "note": "Third independent critic: silhouette settled by the numbers (head height 33.2 vs 34.6, aspect 1.22 vs 1.16, both in tolerance) and the large read - oversized afro halo + hoodie + high-tops - survives the 40px strip; held off 5 because the runtime halo shows planar faceting and the hero-angle hair reads slightly slab-like against the concept's round fluff."
+     "score": 2,
+     "note": "I compared the front hair-mass width profile, crown to neck, each normalised to its own max, at 21 stations. Delivered is a FLAT-TOPPED BOB where the concept is a round ball: at t=0.05/0.10/0.15/0.20/0.25 the delivered mass is already 45.5/61.8/74.5/84.5/93.6% of full width against the concept's 29.9/46.4/56.4/67.0/77.3% - it reaches near-full width three stations early. At the nape it is cut off abruptly, 17.3% at t=1.00 against the concept's 49.1%. RMS shape difference 11.74 percentage points. The profile silhouette is a squarish helmet with a hard rear corner (the ten z-levels showing as ten straight facets), not the concept's puff. It reads as a DOME. Not flutes any more - a dome. The previous round's flutes were at least evidence of modulation; at 48 columns with row-varying amplitudes the modulation has become so fine and so shallow relative to the smooth-shaded normals that a 6x contrast stretch of the crown band shows exactly two dark features, and both are the left and right terminator rolloff where the shell curves away from the light. The whole front-facing region of the halo is featureless."
     },
     "headBodyProportions": {
      "label": "head/body proportions",
-     "score": 4,
-     "note": "Third independent critic: proportions settled by the numbers, no bobblehead, joints connected, the run still moves like a kid."
+     "score": 3,
+     "note": "CONFIRMED, and it is the worst structural defect. Zero interior daylight at EVERY height in BOTH board poses. Front bind: at z = 1.35/1.20/1.00/0.85/0.70/0.55/0.45 ft the leg mass spans 108/104/100/96/92/90/92 px with widest interior transparent run = 0 px at all seven. Front A-pose: identical, 0 px at all seven (the 42 px gap at z=1.35 is between arm and torso). The two shoes are butted together with no gap. It reads as one flared trapezoidal trouser column with a shading crease down the middle and one continuous cuff band across both legs. The sculpt script does author two tubes with an inseam (inseam_half tops out at 0.030 ft = ~8.4 px of daylight at this render scale), so the geometry intends daylight and the render does not deliver it - the tubes' own half-widths (0.182-0.205) plus the crotch yoke close the slot. Note measure:fidelity's 'daylight between the ankles' CANNOT catch this: the concept measures 0.00 too, so concept and delivered agree at 0.00 and the metric passes. The run clip does separate the legs, so 3.12's EYES half passes in motion and its BOARD half fails."
     },
     "hairMass": {
      "label": "hair mass",
-     "score": 4,
-     "note": "Third independent critic: one designed mass with a clean front fringe hairline and no bare-skull angle, but the authored clump lobes barely register at runtime - a near-featureless mass caps at 4 per the rubric's own words."
+     "score": 2,
+     "note": "The clump term modulates RADIUS: x = half_x * clump(theta) * cos(theta), y = y_centre + half_y * clump(theta) * sin(theta). In an orthographic front or profile view the halo's outline at a given z is the extremum over theta of that expression, which lands near theta=0 / pi where cos(6t)=cos(10t)=1 for every row and every amplitude. So the outline is always half_x*(1+a6+a10) - one number per z-level, ten z-levels, ten straight facets. No amount of theta-modulation can scallop that outline; it can only shade the interior. The code comment's promised payoff ('grouped clumps with a scalloped silhouette instead of a smooth dome') is unreachable by construction. What Mimi needs is z-modulation (a per-row radius wobble, or real proud tufts) or an outline built from separate clump volumes, not a finer theta term. The halo is still roughly twice as column-locked as the drawing, and the raw top-K number that the last critic quoted (80.6%) is not comparable across the two images because K differs (3 vs 13) and so does its chance baseline. Chance-corrected, delivered 35.0% vs concept 17.4% over the default 5-45% band; effective columns 19.59 of 48 vs the concept's 44.60; 24 of the 48 bins carry ZERO creases in any row, while two bins (7 and 40 - the left and right shading rolloffs) carry 33% of all of them. On the tighter crown-only band (5-30%) it is worse: 15.14 effective columns of 48. Row-to-row persistence is 80.9% vs 82.7%, which looks like parity until you correct for chance (2.89 creases/row vs 12.67 gives baselines of ~17% and ~55%), after which it is 77% vs 61%. So yes: the minima DO wander with row now, exactly as the comment claims - they just have almost nothing to wander in, because the modulation never becomes a visible crease in the first place. The headline 23% is inflated by the band. measure:strands' default 5-45% of head height reaches down past the fringe onto the forehead and brows, and those hard skin/hair and brow edges are counted as strand creases. Re-run on hair only: 5-30% gives 19% of the concept's count, 5-20% gives 18%. The honest number for the crown is ~19%, at 116-156% prominence."
     },
     "clothingConstruction": {
      "label": "clothing construction",
-     "score": 4,
-     "note": "Third independent critic: cuff blocker retired - the cuff body reads pale grey-blue denim with the olive team tint confined to a thin ring (the ring renders at the cuff's lower edge rather than the top and reads about as tall as the grey-blue band in standing fronts - worth a polish pass, not a slot violation); kangaroo pocket protrudes in front and profile."
+     "score": 2,
+     "note": "NEW DEFECT, and it is a floating accessory (3.8). build_hoodie_details puts the hood at ellipsoid centre (0, 0.360, 2.480) with radii (0.300, 0.180, 0.250), so its top reaches z 2.73 - above the shoulders, where the body is only NECK_LEVELS' 0.116-0.158 half-depth. Result: in both profile views the hood is a red ball behind the neck with genuine BACKGROUND between it and the body. Cropped at 8x over a green matte and confirmed: an unbroken green wedge separates hood from torso from the hood's crown down to ~40% of its height, ~8 px (0.06 ft) at its widest, alpha-verified (transparent runs of 8-10 px at y 274-290 in mimi-mash-profile-apose-review.png). At the runtime toon camera the same separation prints as two dark navy slashes flanking the neck in every face still. The cream tee sliver (surface_patch at z 2.545-2.600) reads as a flat white bar taped across the collarbone in every board and runtime still, not a collar. The kangaroo pocket reads in profile as a rectangular slab butt-joined to the front of the torso with a hard undercut and a visible shadow gap, at 5x. Neither is a hole; both are the 'butt-joined primitives' 3.1's 5/5 and 3.4's whole criterion rule out. Judged as extent, not colour, per the trap. The TEAM_MASK ring is one 0.030-ft-tall roll station (z 0.520) on top of two CUFF stations and a PANTS_DARK lip - the accent is a thin top ring, the roll body is its own grey-blue, which is the correct Grizz sock-roll construction and the correct answer to the round-2 full-cuff blocker. On the board the whole roll is ~16 px of a ~200 px lower leg, proportionally matching the turnaround's double roll. No finding. The one problem with the roll is that it crosses BOTH legs as a single band, which is a symptom of the fused-legs defect, not of the mask."
     },
     "faceExpressionRead": {
      "label": "face/expression read",
-     "score": 4,
-     "note": "Third independent critic: grin (closed-teeth smile) and cheer (open mouth) clearly distinct, eyes concept-scale with dark irises, skin near the concept's lit base (~#F39658) on the board though runtime toon lighting pushes it hotter-orange than the sheet."
+     "score": 3,
+     "note": "PARTLY CONFIRMED, and misattributed. There is no decal-island seam inside the skin on the board: a strict skin-only horizontal-gradient sweep of rows 150-255 finds no step that is not adjacent to hair, and a 16x crop of both temples shows continuous shading across the cheek. What IS there on the board is a stair-stepped HAIR EDGE: at 16x the right temple's hair/cheek boundary descends in 2-4 px jogs with a rectangular notch partway down - the curl shell's fringe silhouette, aliased by its 10 rows and 48 columns. BUT the seam the last critic described is real at the runtime face camera: mimi-mash-runtime-face-{cheer,tongue,angry}.png all show an unmistakable stepped polygon boundary around the face island, lighter inside than out, with visible corners at both temples and above the brows. It is the atlas island, and the board's soft key light hides what the toon ramp exposes. Judge it on the runtime stills, not the board. Present in code (nose_push, a 0.086-tall button plus a 0.008 bridge) and it DOES break the profile - a small triangular wedge, verified at 16x. But it is invisible from the front: a 5x contrast stretch of the nose region (x 245-295, y 190-235) shows perfectly uniform skin with no shading break at all. Do not call it absent; call it unreadable frontally, which is the view the draft card uses. NOT A DEFECT - measured, not eyeballed. The near-side eye in the profile render spans x 220-226 (7 px) before the hair fringe covers it, at 140 px/ft. Foreshortening prediction: the same eye in the front render spans x 282-314, i.e. 0.093-0.321 ft from centre, nx 0.199-0.688 of the head's lateral radius (0.4673 ft at the eye line, from HEAD_RADII 0.460 and face_half_scale(0.215)=1.016). Porting skull_front_y from the sculpt script, that lateral arc spans a DEPTH of 0.0778 ft, which is 10.9 px in a true 90-degree orthographic side view. Measured 7 px < predicted 10.9 px, and the shortfall is exactly the outer end being occluded by the fringe. The eye is narrower than foreshortening predicts, not wider. Clear it."
     },
     "heroAndFieldScale": {
      "label": "hero + 40px read",
      "score": 4,
-     "note": "Third independent critic: both OFF metrics carry honest causes independently confirmed (ankle daylight 26.4 vs Grizz's 28.2 roster splay; face asymmetry 4.78 reproduces the sheet's own 3.7-point key-light split, each side within 0.8 of the sheet). Candidate pending human art-director approval per rubric 7.3."
+     "note": "Score preserved as the critic set it (4). ⚠️ EDITORIAL NOTE, NOT THE CRITIC'S: it keyed its notes by TOPIC rather than by rubric category and filed none that maps to hero/40px alone, so there is no note of its own to quote here. The other five notes are its verbatim text, refiled under the category each addresses; no judgement was rewritten. Its own colour flag, unscored because 2.2's AUTO half belongs to palette.lint: Not scored (2.2 is a BOARD item, palette.lint owns the AUTO half), but flagged: HAIR is authored 5A2E12 and the board renders it as a mid milk-chocolate, while the turnaround's afro is a much deeper near-black chocolate (the script's own sheet-cluster note says #331B0B). The lighter tone costs the mass its internal contrast, which is part of why no crease survives."
     }
    },
    "heroEvidence": "mimi-mash-runtime-hero.png",
@@ -338,17 +338,94 @@
    ],
    "measuredFidelity": {
     "command": "npm run measure:fidelity -- mimi_mash",
-    "ranAt": "2026-08-15",
+    "ranAt": "2026-08-17",
     "board": "mimi-mash-fidelity-review.png",
-    "result": "Head height 33.2 vs concept 34.6 and aspect 1.22 vs 1.16, in tolerance - the halo's clump lobes carry the shell ~1.15x past the table half-width, so the wide rows are authored at 0.70-0.72 to deliver the sheet's 0.806 peak, and the dome top rides at 4.03 because removing the tab-reading tufts lowered the head box (head height went OFF at 32.0 until the shell itself was raised). Shoe band dominant 63.3/second 11.9/sat 29.5, all in tolerance. Visible face 22.6/27.4 vs the concept's own 23.4/27.1 - each side within 0.8 of the sheet - but the ASYMMETRY gate reads 4.78 against tol 4.0, OFF with measured cause: the sheet itself holds a 3.7-point side split (its key light draws more face on its right, the Penny/Moose class) and the delivered render reproduces it; the residual ~1 point is the render's own key light on the temple curtain edge (skin was chroma-lifted to F49A4C to keep the shadow temple classified). Ankle daylight 26.4 vs 0.00 OFF with measured cause: the roster-wide rig splay. A temple-burial probe and an ear-lowering probe both moved nothing or backwards and were reverted - the fringe's temple descent (to z 2.95 at x 0.56) is what set the window. Stance pass 2026-08-15: the board renders now hold the drawn stance (legs adducted 10deg at the hip with flat feet, the same argument that put the arms down; Junebug and Theo keep their sheets' own drawn-open stance) - ankle daylight reads 0.00 and 1 metric(s) remain outside tolerance on this board.",
+    "result": "measure:fidelity -- mimi_mash (concept front 291x722, delivered 451x567, shoe tones #faecd9 / #9b7c63): head height as % of figure height 34.6 -> 33.2 (-1.47, ok); head width:height 1.16 -> 1.18 (+0.02, ok); shoe band dominant tone 70.4 -> 64.0 (-6.43, ok); shoe band second tone 17.7 -> 12.8 (-4.88, ok); shoe band mean saturation 26.6 -> 29.1 (+2.51, ok); daylight between ankles 0.00 -> 0.00 (+0.00, ok - concept is also 0.00, so this metric is blind to the fused legs); visible face left of centre 23.4 -> 27.0 (+3.66, ok); right of centre 27.1 -> 28.4 (+1.23, ok); face left/right asymmetry 0.00 -> 1.35 (ok, so the even-in-theta mirror is indeed intact). ALL METRICS WITHIN TOLERANCE. || measure:strands -- mimi_mash, band 5-45%: concept 12.67 minima/row at prominence 31.3 over 101 rows; delivered 2.89 at 48.3 over 76 rows => 23% of count, 154% of prominence. Band 5-30% (crown only, no brows): 11.86@31.5 vs 2.27@49.3 => 19% / 156%. Band 5-20%: 10.92@35.8 vs 2.00@41.6 => 18% / 116%. || COLUMN CONCENTRATION (my metric, definition in notes), band 5-45%: concept 1280 creases over 101 rows, K=13, top-K share 39.8% against a 27.1% uniform baseline = 17.4% chance-corrected, effective columns 44.60/48, row-to-row persistence 82.7% (chance ~55%); delivered 220 creases over 76 rows, K=3, top-K share 39.1% against a 6.3% baseline = 35.0% chance-corrected, effective columns 19.59/48, persistence 80.9% (chance ~17%). Band 5-30%: concept 38.0% raw / 17.4% corrected / 44.17 effective columns; delivered 30.3% raw / 27.2% corrected / 15.14 effective columns. Delivered histogram over 48 bins, band 5-45%: 0,0,0,7,8,10,13,38,0,0,1,0,11,1,2,1,4,5,4,2,1,2,1,0,1,0,1,2,4,9,0,0,12,1,1,7,6,1,0,1,35,7,9,6,5,1,0,0 - 24 empty bins, bins 7 and 40 (the terminator rolloffs) holding 73 of 220. || HAIR SILHOUETTE PROFILE, front, width as % of own max at t = 0.00..1.00 in 0.05 steps of head height: concept 1.0/29.9/46.4/56.4/67.0/77.3/83.5/90.0/90.7/93.8/99.3/100.0/99.7/97.6/95.2/93.5/85.2/82.1/73.9/60.8/49.1; delivered 0.9/45.5/61.8/74.5/84.5/93.6/96.4/94.5/94.5/95.5/97.3/98.2/100.0/100.0/98.2/96.4/92.7/86.4/79.1/48.2/17.3; RMS difference 11.74 pp; concept max head width 291 px, delivered 220 px. || LEG DAYLIGHT, widest interior transparent run: front bind at z=1.35/1.20/1.00/0.85/0.70/0.55/0.45 ft = 0/0/0/0/0/0/0 px (spans 108/104/100/96/92/90/92 px); front A-pose = 0/0/0/0/0/0/0 px. || PROFILE EYE: visible 7 px (x 220-226 at 140 px/ft) vs 10.9 px predicted by 90-degree orthographic foreshortening of its own front-view lateral arc (nx 0.199-0.688, depth span 0.0778 ft via skull_front_y with HEAD_CENTER (0,-0.020,3.200), HEAD_RADII (0.460,0.460,0.470), face_half_scale(0.215)=1.0159, rx=0.4673 ft). Within prediction - cleared. || HOOD GAP: transparent runs of 8-10 px between torso and hood at y 274-290 in mimi-mash-profile-apose-review.png, confirmed at 8x over a green matte. || RUNTIME FACE STILLS: mimi-mash-runtime-face-grin.png contains exactly ONE distinct 4-bit colour and 0 green pixels across the whole 400x300 viewport sample - the canvas never rendered. cheer/tongue/angry contain 274/276/276. || validate:models: kid_mimi_mash.glb green, height 4.000ft floor to HeadTop_End, LOD0 6826/7000 tris, LOD1 2628/3000, LOD2 1112/1200, 3 skinned meshes, drawn height 4.050ft (+1.3%). || Review page reports 'model model' in all six runtime stills (4.1 satisfied). I could define it, so I did, and I ran the same detector over concept and delivered. Take measure-strands.mjs's own per-row crease detector (contrast-stretch the row to 0-255, smooth by 3, keep local minima of prominence >= 6) and, instead of only counting them, record each crease's position u as a fraction of that row's hair-mass width. Quantise u into 48 bins - one bin per mesh ring column. Then report three things: (a) TOP-K SHARE, the fraction of all creases falling in the K busiest bins where K = round(mean creases per row), reported against its own uniform-chance baseline K/48 and chance-corrected as (C - K/48)/(1 - K/48); (b) EFFECTIVE COLUMNS, exp(entropy of the bin histogram), i.e. how many distinct columns the creases actually occupy; (c) ROW-TO-ROW PERSISTENCE, the fraction of creases that recur in the next row within +-1.5 bins. A perfect flute scores 100% / ~K / 100%. A drawing of real curls scores near chance / ~48 / near chance.",
     "note": "featurelatitude gates brow 37.0, eye 50.0, mouth 65.3 (bounded crop traces - the analyser refused all three; its two competing mouth bands at 75.7/93.2 are the under-chin and collar shadows), earLine 49.4. The pre-convention proxy blend carried stray meshes (*_CurlHalo, Icosphere) that exported alongside the LODs and blew the 400KB budget until purged."
    },
    "polishFindings": [
-    "Team ring renders at the cuff's LOWER edge (against the sock) rather than the top roll, and reads about as tall as the grey-blue band in standing fronts - reorder/thin in a polish pass.",
-    "Runtime halo shows planar faceting; the clump lobes barely register under the toon ramp - a strand-grouping treatment would unlock the 5s.",
-    "Runtime toon lighting pushes the skin hotter-orange than the sheet's lit base."
+    "Stop modulating theta. The outline is the only place a toon character's hair reads, and the outline is built from CURL_LEVELS. Either (a) push the row table itself in and out so consecutive z-levels alternate proud and tucked - that scallops the front and profile outline directly, costs no triangles, and is mirror-safe because it never touches theta; or (b) spend triangles on a handful of real proud tuft volumes at the rim, which was tried and rejected as 'floating rectangular tabs' - but that verdict was about tabs, not about tufts that intersect the shell. Column count is spent; 6826 of 7000 leaves nothing anyway.",
+    {
+     "id": "halo-modulates-the-wrong-axis",
+     "severity": "blocker",
+     "rubric": "3.3, 3.1",
+     "finding": "The clump term modulates radius as a function of theta only, so it can never touch the front or profile outline - the outline is the per-z extremum, which sits at theta=0/pi where both cosines are +1 for every row. Ten z-levels give ten straight facets and a flat-topped dome. 48 columns bought interior shading that the smooth normals and the soft key then erase.",
+     "evidence": "6x contrast stretch of the crown band shows only the two terminator rolloffs; 24 of 48 crease bins are empty; effective columns 19.59/48 vs concept 44.60/48; silhouette RMS 11.74 pp with the crown +11 to +18 pp too wide.",
+     "fix": "Move the row variation into the RADIUS TABLE (alternate proud/tucked z-levels) so it reaches the outline, or add intersecting proud tuft volumes at the rim. Do not spend more columns - 6826 of 7000 is already the ceiling."
+    },
+    {
+     "id": "legs-are-one-column",
+     "severity": "blocker",
+     "rubric": "3.12, 3.1, 3.4",
+     "finding": "Zero interior daylight at all seven sampled heights in both board poses; the shoes are butted together; the cuff roll crosses both legs as one band. The script authors two tubes with a 0.030 ft inseam, so the intent is there and the built half-widths (0.182-0.205) close it.",
+     "evidence": "front-review and front-apose-review, widest interior transparent run = 0 px at z = 1.35, 1.20, 1.00, 0.85, 0.70, 0.55, 0.45 ft.",
+     "fix": "Widen inseam_half or narrow LEG_STATIONS until the bind pose shows daylight on the board. And note that measure:fidelity's ankle-daylight metric reads 0.00 on the CONCEPT too, so it will stay green either way - do not let it settle this one."
+    },
+    {
+     "id": "hood-floats-off-the-back",
+     "severity": "blocker",
+     "rubric": "3.8, 3.7",
+     "finding": "The hood ellipsoid (centre z 2.480, radius_z 0.250) tops out at z 2.73, above the shoulder line where the body is only 0.116-0.158 half-depth, so it stands clear of the body with visible background between the two.",
+     "evidence": "8-10 px transparent runs at y 274-290 in profile-apose; 8x green-matte crop; two dark navy slashes flanking the neck in all three rendered runtime face stills.",
+     "fix": "Drop the hood's centre or shrink radius_z so the drape merges into the trapezius, and skin it to Spine2 low enough that it stays merged through the head-turn clips."
+    },
+    {
+     "id": "grin-still-is-blank",
+     "severity": "blocker",
+     "rubric": "3.14, 7.1",
+     "finding": "mimi-mash-runtime-face-grin.png is an empty viewport - one distinct colour across the whole sample region, no field, no character - yet it was written at the same timestamp as the other three. One of the four required mouth-cell stills is unjudgeable.",
+     "evidence": "1 distinct 4-bit colour and 0 green pixels in a 400x300 sample; 84 KB file vs 293 KB for the other three.",
+     "fix": "Recapture. NOT a Mimi bug: a sweep of all 30 kids' grin stills finds the same blank canvas for dazzle and sprout. capture:character-evidence is racing the first render on the grin cell for some kids."
+    },
+    {
+     "id": "atlas-island-seam-at-the-toon-camera",
+     "severity": "major",
+     "rubric": "3.5",
+     "finding": "A stepped face-island boundary is plainly visible around the face in the runtime face stills, with corners at both temples and above the brows. The board's key light hides it; the toon ramp does not. Score 3.5 off the runtime stills, not the board.",
+     "evidence": "mimi-mash-runtime-face-{cheer,tongue,angry}.png. A strict skin-only gradient sweep of the BOARD finds no such step, which is why it was previously argued away.",
+     "fix": "Feather the island's colour boundary or move its edge behind the hair line."
+    },
+    {
+     "id": "nose-invisible-from-the-front",
+     "severity": "major",
+     "rubric": "3.5, 6.1",
+     "finding": "nose_push exists and breaks the profile silhouette as a small wedge, but produces no shading break at all in the front view - the view the draft card uses.",
+     "evidence": "5x contrast stretch of x 245-295, y 190-235 in front-review shows uniform skin above the mouth.",
+     "fix": "Deepen the alar creases or let the atlas carry a nostril/shadow pair; do not simply enlarge the push, which will spoil the profile."
+    },
+    {
+     "id": "butt-joined-garment-props",
+     "severity": "major",
+     "rubric": "3.4, 3.1",
+     "finding": "The kangaroo pocket reads in profile as a rectangular slab with a hard undercut and a shadow gap; the cream tee sliver reads as a flat white bar taped across the collarbone; no ribbed hem reads at the hoodie's bottom edge despite TORSO_LEVELS authoring one.",
+     "evidence": "5x profile crops (x 205-325, y 255-435) and every runtime face still.",
+     "fix": "Bevel the pocket's top edge into the torso and let the tee follow the neck's curve rather than a flat patch."
+    },
+    {
+     "id": "fringe-edge-stair-steps-on-the-cheek",
+     "severity": "minor",
+     "rubric": "3.1",
+     "finding": "The hair/cheek boundary descends in 2-4 px jogs with a rectangular notch, at 16x on both temples. This is the curl shell's own faceted silhouette (10 rows x 48 columns), not an atlas seam - the previous critic's 'stair-stepped face-atlas seam down the cheek' is this, misattributed.",
+     "evidence": "16x crops at x 206-240 and x 300-334, y 150-255 of front-review.",
+     "fix": "Falls out of any fix that adds z-resolution to CURL_LEVELS."
+    },
+    {
+     "id": "halo-tone-too-light",
+     "severity": "minor",
+     "rubric": "2.2",
+     "finding": "HAIR is authored 5A2E12 and reads mid milk-chocolate on the board against the turnaround's near-black chocolate (the script's own sheet cluster records #331B0B). The lighter tone flattens the mass's internal contrast, which compounds the crease problem.",
+     "evidence": "board vs turnaround side by side; script line 50 vs line 57.",
+     "fix": "Only after the silhouette fix - darkening a featureless dome makes it a darker featureless dome."
+    },
+    {
+     "id": "code-comment-asserts-an-unreachable-outcome",
+     "severity": "minor",
+     "rubric": "docs",
+     "finding": "The build_curls header claims the 48-column change delivers 'grouped clumps with a scalloped silhouette instead of a smooth dome'. The silhouette is not scalloped and cannot be, for the reason above. A future agent reading that comment will believe the problem is solved.",
+     "fix": "Correct the comment in the same branch as the geometry fix; it is the kind of claim gate 167 was written to stop."
+    }
    ],
-   "scoredBoardSha256": "6f0e62b2c10f4911924ea461cb39280cd6a28d8b404a1556d8e3476a2a09055f"
+   "scoredBoardSha256": "6e586edfa913912c1c2eb44e742edc46f311f24fa4a6646bceefbae41f4cbaa2"
   },
   "grizz": {
    "status": "candidate",

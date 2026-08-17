@@ -236,7 +236,34 @@ def build_curls(builder: MeshBuilder, detail: int) -> None:
     assert all(a[0] > b[0] for a, b in zip(CURL_LEVELS, CURL_LEVELS[1:])), \
         "CURL_LEVELS must be strictly descending in z"
     # 16 keeps mirror columns (even) and the LOD0 budget; 18 blew it.
-    segments = 16 if detail >= 2 else (10 if detail == 1 else 8)
+    # ★ THIS WAS 16, AND THE CLUMP BELOW ASKS FOR TWELVE LOBES.
+    #
+    # `clump` is `1 + 0.095·cos(6θ) + 0.055·cos(12θ)`. Twelve lobes across
+    # sixteen columns is 1.33 samples per lobe — below Nyquist, so the fine
+    # term was not merely faint, it was UNREPRESENTABLE; and the six-lobe term
+    # at 2.67 samples was barely above it. The ring could not carry the curls
+    # the table already described, and the board read as a swim cap.
+    #
+    # Measured with `npm run measure:strands -- mimi_mash`, which counts the
+    # creases between strand groups on the board against the concept's:
+    #
+    #     16 columns   3% of the concept's strand count   6186 tris  326KB
+    #     32 columns  13%                                 6506      334KB
+    #     48 columns  24%                                 6826      343KB
+    #
+    # 48 gives the fine term four samples per lobe and the coarse term eight.
+    # It is the ceiling her budget allows — 64 would need 7146 triangles
+    # against the 7000 cap — and it is why this is a column count rather than a
+    # deeper groove: her prominence was already at 214% of the concept's. There
+    # were not too few creases because they were shallow. There were too few
+    # because the ring had nowhere to put them.
+    #
+    # ⚠️ Do not read 24% as a shortfall against 100%. A concept sheet's hair is
+    # DRAWN texture — hundreds of individual curls — which no toon mesh should
+    # reproduce; `measure-strands.mjs`'s header explains why the ratio is a
+    # relative instrument. What matters here is that the mass now reads as
+    # grouped clumps with a scalloped silhouette instead of a smooth dome.
+    segments = 48 if detail >= 2 else (10 if detail == 1 else 8)
     use = CURL_LEVELS if detail >= 2 else thin_for_lod(
         [(z, hx, hy, yc) for z, hx, hy, yc in CURL_LEVELS], detail)
     ascending = list(reversed(use))
@@ -247,7 +274,35 @@ def build_curls(builder: MeshBuilder, detail: int) -> None:
         # second, finer lobe so the shell reads as curls, not a swim cap.
         for column in range(segments):
             theta = 2 * pi * column / segments
-            clump = 1.0 + 0.095 * cos(6 * theta) + 0.055 * cos(12 * theta)
+            # ★ AMPLITUDE VARIES DOWN THE SHELL, PHASE NEVER DOES.
+            # With constant amplitudes these two terms are z-INVARIANT: every
+            # groove runs the full height of the halo, so the mass reads as a
+            # fluted column rather than clumped curls. Measured on the board,
+            # the creases were 78.6% column-concentrated against the concept's
+            # 41.3%.
+            # The obvious fix — a per-row phase, as Grizz's afro uses — is
+            # forbidden here: `cos(kθ)` is even under θ→π−θ and a phase offset
+            # destroys that mirror, which is what blew Penny's faceAsymmetry to
+            # 7.14 against a tolerance of 4. Her lesson is the pattern: put the
+            # row variation in the AMPLITUDE. The lobes stay exactly where they
+            # are and simply wax and wane down the shell, which is what makes a
+            # clump instead of a flute.
+            # ⚠️ AND THE TWO FREQUENCIES MUST NOT BE HARMONICS.
+            # The first attempt varied the amplitudes of cos(6θ) and cos(12θ)
+            # per row and the creases did not move: 12 is 2x6, so the two terms
+            # share every minimum and the sum's grooves sit at the SAME theta
+            # whatever the amplitudes do. Measured, column-concentration stayed
+            # 80.6% against the concept's 37.2% — deeper and shallower flutes,
+            # still flutes.
+            # cos(6θ) and cos(10θ) are non-harmonic, so their sum's minima WANDER
+            # in theta as the two amplitudes trade, which is what puts a crease
+            # in a different column one row down. Both are still even in θ, so
+            # the mirror Penny's faceAsymmetry lesson demands is untouched — it
+            # is the PHASE that may never carry the row term, not the frequency.
+            row = len(rows)
+            a6 = 0.095 * (0.80 + 0.62 * cos(1.15 * row))
+            a10 = 0.062 * (0.80 + 0.62 * cos(1.90 * row + 1.0))
+            clump = 1.0 + a6 * cos(6 * theta) + a10 * cos(10 * theta)
             x = half_x * clump * cos(theta)
             y = y_centre + half_y * clump * sin(theta)
             if y < y_centre:
