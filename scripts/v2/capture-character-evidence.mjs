@@ -17,7 +17,9 @@
 // the board from the fresh captures.
 // ---------------------------------------------------------------------------
 
+import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
@@ -89,6 +91,43 @@ const CAPTURES = [
   { clip: 'idle', out: 'face-tongue', atFrameFrac: 0.05, face: 'tongue' },
   { clip: 'idle', out: 'face-angry', atFrameFrac: 0.05, face: 'angry' },
 ];
+
+const EVIDENCE_RECORD = join(repo, 'assets', 'v2', 'source', 'character-evidence.json');
+
+/**
+ * ★ STAMP WHICH MODEL THE STILLS WERE SHOT FROM, so a later reader does not
+ * have to trust that somebody remembered to re-run this.
+ *
+ * This file's own header says evidence a human must remember to refresh is
+ * evidence that lies eventually — and then it did exactly that. A roster scan
+ * on 2026-08-16 found 26 of 30 characters carrying `-runtime-*.png` stills
+ * whose last-touching commit PREDATES their own `.glb`, because a bulk model
+ * change re-exported every kid and nothing re-shot the captures. Hero and
+ * 40px scores had been read off those stills for weeks.
+ *
+ * The full file sha256 is the right instrument HERE even though the sculpt
+ * skill warns it is the wrong one for geometry. That warning is about asking
+ * "did the shape change", which this hash cannot answer — Blender's save is
+ * not byte-reproducible, so it moves on a no-op rebuild. The question this
+ * gate asks is narrower and the hash answers it exactly: "were these pixels
+ * produced by the bytes now on disk?" A no-op rebuild costs one re-shoot,
+ * which is minutes; the failure it replaces cost weeks of scoring the wrong
+ * model.
+ */
+function stampCapturedFrom(id) {
+  const glb = join(repo, 'public', 'v2', 'models', `kid_${id}.glb`);
+  const sha = createHash('sha256').update(readFileSync(glb)).digest('hex');
+  let record = {};
+  try {
+    record = JSON.parse(readFileSync(EVIDENCE_RECORD, 'utf8'));
+  } catch {
+    record = {};
+  }
+  record[id] = { capturedFromGlbSha256: sha };
+  const ordered = Object.fromEntries(Object.keys(record).sort().map((k) => [k, record[k]]));
+  writeFileSync(EVIDENCE_RECORD, `${JSON.stringify(ordered, null, 2)}\n`);
+  return sha;
+}
 
 function startVite() {
   const p = spawn('npx', ['vite', '--port', String(PORT), '--strictPort'], {
@@ -284,7 +323,12 @@ async function main() {
   const browser = await chromium.launch({ args: process.env.CI ? ['--no-sandbox'] : [] });
   try {
     const page = await browser.newPage({ viewport: VIEWPORT });
-    for (const id of ids) await captureCharacter(page, id, slugFor(id));
+    for (const id of ids) {
+      await captureCharacter(page, id, slugFor(id));
+      // Stamp only after every still for this kid landed — a half-captured
+      // character must not claim to be evidence for the current model.
+      console.log(`  stamped ${id} ← kid_${id}.glb ${stampCapturedFrom(id).slice(0, 12)}`);
+    }
   } finally {
     await browser.close();
     vite.kill();
