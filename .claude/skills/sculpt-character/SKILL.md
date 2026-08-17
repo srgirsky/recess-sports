@@ -1035,6 +1035,24 @@ runtime HERO instead of the profile board the critic actually cited. **Crop the
 region the finding names, not a picture of the same character.** That is the
 same rule this file gives critics, and it applies to whoever is reading them.
 
+## Do not rebuild a character while a critic is auditing it
+
+Obvious once stated, easy to do when a roster-wide sweep and a batch of critics
+are both in flight. The shoulder-blend sweep rebuilt clover and peaches while
+their critics were mid-pass, so those two scored a model that moved underneath
+them.
+
+It was survivable here for a specific reason worth knowing: **skin weights do not
+move the bind pose**, so the fidelity BOARD — which composites bind-pose views —
+re-rendered byte-identical and every `scoredBoardSha256` stayed bound. Only the
+A-pose views changed, and those are not in the board. A geometry change would
+have invalidated the scores outright and the critique would have described a mesh
+that no longer shipped, which is the Mimi failure arriving by the back door.
+
+**Sequence the two:** finish the audit batch, apply the critiques, then sweep.
+If a sweep must run first, re-score the characters it touched — and remember the
+board hash cannot tell you a critique is stale when the change was weights-only.
+
 ## ★★ THE LESSONS IN THIS FILE WERE NEVER SWEPT ACROSS THE ROSTER
 
 The single biggest finding of the 2026-08-16 audit is not any one defect. It is
