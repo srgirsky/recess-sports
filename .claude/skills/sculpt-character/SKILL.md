@@ -881,6 +881,51 @@ quantity, 340 runs against 2437. A column-concentration measure says the
 opposite. Until one is written down as a script with its definition in its
 header, use `measure:strands` for DIRECTION and score the hair on the eye.
 
+### ★★ Theta-modulation cannot scallop a silhouette — and paint did not save it
+
+Four rounds on Mimi raised her measured strand count 3% -> 27% and moved her
+`hairMass` score from 2 to 2. The rounds are worth the space because each failed
+for a different, findable reason, and the last one failed AFTER the geometry was
+ruled out.
+
+**Why geometry cannot do it.** Three measurements, none of them arguable:
+
+1. **The CONCEPT's own hair outline is nearly smooth.** Local roughness against
+   a 9-row moving average: mimi 2.33% mean / 3.59% p90, grizz 1.59 / 1.63,
+   bubbles 1.04 / 2.32. The curls were never read from the silhouette, so
+   scalloping the level table would make the outline JAGGIER than the drawing.
+2. **A ring's outline is a MAX over its columns**, so `clump(theta)` can only
+   push it OUT, never cut a notch. Measured on 48 columns at 9.5% amplitude the
+   outline swings 0.9999-1.0950 — one-sided — against 0.9050-1.0950 for the same
+   amplitude applied to the ROW's half-width. And only 6 of 48 columns sit within
+   15 degrees of the outline tangents, so most of the resolution a higher column
+   count buys lands where the silhouette cannot see it.
+3. **The toon ramp quantises lighting**, flattening whatever interior relief the
+   clump does buy.
+
+**★ AND THEN ALBEDO WAS TRIED, AND IT READ AS STRIPES.** If the ramp eats
+lighting, paint the crease instead: band trough vertices to a second declared
+hair swatch (`HAIR_DARK`, already declared and unused on the mesh, so zero
+triangles and no palette change). Prominence went 154% -> 326% and it looked,
+to me, like a clear improvement.
+
+The critic — asked point blank whether it read as curls or as stripes — said
+**stripes**, and measured it: 80.2% column-concentrated against the concept's
+34.6%, *unchanged from the 78.6% before painting*. The score went DOWN.
+
+The reason is the same one that defeated rounds two and three: the trough test
+is `a6*cos(6θ) + a10*cos(10θ) < k*(a6+a10)`, and with `a6` (0.095) dominating
+`a10` (0.062) the minima barely move with row. Painting a fixed-theta trough
+does not make a clump — **it draws a full-height stripe and makes the flute
+MORE visible.**
+
+⚠️ **So the open problem is genuinely 2D, and nothing tried so far is.** A curl
+clump is localised in theta AND z; every attempt here has been a theta pattern
+with a row-varying knob, which is not the same thing. The next attempt needs a
+trough test that is a function of both — and it should be judged by
+column-concentration, not by strand count or prominence, both of which improved
+while the read did not.
+
 ## ★ A CHARACTER SHIPPED CUT IN HALF (and what that says about enclosure tests)
 
 Zippy's delivered board carried a 21-pixel band — 0.150ft, at 56% of her figure
