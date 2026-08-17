@@ -21,6 +21,7 @@ import { spawn } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
+import sharp from 'sharp';
 
 import { CHARACTERS, slugFor } from './character-registry.mjs';
 
@@ -104,6 +105,53 @@ function startVite() {
     });
     p.on('error', reject);
   });
+}
+
+/**
+ * ★ A STILL CAN CONTAIN THE HUD AND NO SCENE, AND IT LOOKS LIKE EVIDENCE.
+ *
+ * `loadSurface` waits for `window.__spike` and for devstats to read
+ * `model model`, and BOTH can be true while the WebGL canvas has not presented
+ * its first frame after a reload — the DOM readout updates ahead of the paint.
+ * The result is a screenshot carrying the clip list, the buttons and a live
+ * frame counter over a flat dark canvas, at roughly 29% the byte size of its
+ * siblings. Three characters shipped one: mimi_mash, sprout and diva each had a
+ * `-runtime-face-grin.png` with no character and no park in it, and `grin` is
+ * the FIRST capture taken after the `?facecam=1` reload, which is exactly where
+ * the race lives.
+ *
+ * That still is what rubric 3.14 is scored from ("the mouth's emotion is
+ * readable at draft-card distance"), so an empty one does not fail the
+ * category — it makes the category unjudgeable while looking judged.
+ *
+ * ⚠️ THE FIRST VERSION OF THIS CHECK WAS EXACTLY BACKWARDS, which is why the
+ * numbers below are measured rather than reasoned. It asked whether a band of
+ * the frame was "lit and varied": the broken frame's flat navy passes that
+ * (r+g+b over 90, and the HUD supplies the variety) while a real frame's BLACK
+ * SKY fails it. Never invent a threshold for an image you can measure.
+ *
+ * The park is the tell, and it is unambiguous. Measured across good and bad
+ * stills: a painted frame carries ~13% grass and ~27% dirt by pixel share; the
+ * three empty ones carry 0.0-0.2% of each.
+ */
+async function sceneWasPainted(file) {
+  const { data, info } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { width, height } = info;
+  let grass = 0;
+  let dirt = 0;
+  let total = 0;
+  for (let y = 0; y < height; y += 3) {
+    for (let x = 0; x < width; x += 3) {
+      const i = (y * width + x) * 4;
+      const [r, g, b] = [data[i], data[i + 1], data[i + 2]];
+      total++;
+      if (g > 70 && g > r * 1.25 && g > b * 1.25) grass++;
+      if (r > 90 && r > b * 1.35 && g > b * 1.1 && g < r) dirt++;
+    }
+  }
+  // A tenth of the measured share is a wide margin: good frames sit at 13/27,
+  // empty ones at 0.0-0.2, and nothing observed lands between.
+  return total > 0 && (100 * grass) / total > 1.3 && (100 * dirt) / total > 2.7;
 }
 
 async function loadSurface(page, id, facecam) {
@@ -207,6 +255,18 @@ async function captureCharacter(page, id, slug) {
     // still that was just saved.
     const landed = (await page.textContent('body'))?.match(/frame\s*(\d+)\s*\/\s*(\d+)/);
     await page.screenshot({ path: output });
+    // Re-shoot rather than file an unpainted frame. See `sceneWasPainted`.
+    for (let attempt = 1; !(await sceneWasPainted(output)); attempt++) {
+      if (attempt > 4) {
+        throw new Error(
+          `${output}: the canvas never painted — the still carries the HUD and no scene. ` +
+          'This is the empty-capture that shipped on three kids; do not file it as evidence.',
+        );
+      }
+      console.warn(`  ⚠ ${capture.out}: canvas not painted, re-shooting (attempt ${attempt})`);
+      await page.waitForTimeout(700);
+      await page.screenshot({ path: output });
+    }
     if (capture.atFrameFrac !== undefined) await page.keyboard.press('2');
     console.log(`✓ ${output}${landed ? `  (frame ${landed[1]}/${landed[2]})` : ''}`);
   }

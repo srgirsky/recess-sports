@@ -3,11 +3,11 @@
   "characters": {
     "mimi_mash": {
       "source": "mimi-mash-pilot.blend",
-      "sourceSha256": "8daf38000a61dcd34d81b1084288e206879c01e65c49598a22a77b81cc57b79a",
+      "sourceSha256": "2508e92374e4a125f7b5e7943c0cdbc2b474b4806f1a50a5cf34d72cc58f3b3e",
       "concept": "mimi-mash-turnaround.png",
       "conceptSha256": "a372e490bfa94712c4d9f902128098c4facfccd247dab52063eb3a4072b5451d",
       "output": "kid_mimi_mash.glb",
-      "outputSha256": "b0ef31ca09dcf65ee938055cc8b0f067319460a09aa591e7e159d4be89a6fa4f",
+      "outputSha256": "4ee13a94d433909abb7d437b31b728e473c0b2d78a632aac464b968978b079f3",
       "definingTraits": [
         "dense curly halo",
         "proud chin",
