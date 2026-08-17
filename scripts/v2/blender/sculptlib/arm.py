@@ -76,6 +76,46 @@ class ArmSpec:
     skin: tuple           # forearm, hand and digits
 
 
+def shoulder_blend_at(table: dict[float, float], x: float) -> float | None:
+    """The torso share for a ring at `x`, INTERPOLATED between the table's stops.
+
+    ★ THIS WAS AN EXACT DICT LOOKUP, AND A STATION THAT MISSED A KEY BY 0.010
+    SILENTLY WEIGHTED 100% TO THE ARM BONE.
+
+    Peaches' lesson says every arm station inboard of the deltoid needs a blend
+    entry, or that fully-rotating ring sits next to an 88%-pinned one and shears
+    the skin web into a triangular fin when the arm drops. The lesson was
+    written; the ENFORCEMENT was `table.get(round(x, 3))`, which returns None for
+    any station whose x is not a literal key — so obeying the lesson meant
+    hand-matching two tables float for float, forever, in thirty files.
+
+    Six kids did not: boomer, clover, cricket, gizmo, rocket and smokey each
+    carry a station at x 0.335 while their table stops at 0.300 and 0.345 —
+    missing by a hundredth of a foot. Smokey's independent critic found the fin
+    in four clips ("unblended shoulder rings shear a triangular fin, tearing the
+    sleeve in A-pose, idle, run and swing"); cropping Gizmo's A-pose showed the
+    same wedge at the sleeve/torso junction.
+
+    Interpolating removes the whole class. At an exact key it returns that key's
+    value unchanged, so every character whose tables already lined up is
+    byte-identical. Outside the table's span it still returns None — past the
+    last stop the sleeve has cleared the body and the ring belongs wholly to the
+    arm, which is what keeps the hand untouched.
+    """
+    if not table:
+        return None
+    stops = sorted(table)
+    if x < stops[0] or x > stops[-1]:
+        return None
+    for lo, hi in zip(stops, stops[1:]):
+        if lo <= x <= hi:
+            if hi == lo:
+                return table[lo]
+            t = (x - lo) / (hi - lo)
+            return table[lo] + t * (table[hi] - table[lo])
+    return table[stops[-1]]
+
+
 def build_arm(
     builder: MeshBuilder,
     side: int,
@@ -127,7 +167,7 @@ def build_arm(
         # inboard of the shoulder now blend from mostly-Spine2 to all-Arm across
         # the joint, which is ordinary skinning falloff and what makes a shoulder
         # deform as one surface.
-        blend = spec.shoulder_blend.get(round(x, 3))
+        blend = shoulder_blend_at(spec.shoulder_blend, x)
         weight = bone_name if blend is None else {"Spine2": blend, bone_name: 1.0 - blend}
         row = []
         for index in range(sides):
