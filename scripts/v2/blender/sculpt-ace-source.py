@@ -243,7 +243,20 @@ def build_cap(builder, detail):
         for i in range(cols):
             t = i / (cols - 1) - 0.5
             x = 2 * t * half
-            zt = BRIM_Z_TOP - 0.015 * abs(2 * t) - 0.012 * y_frac
+            # ★ THE BILL WAS AUTHORED ALMOST FLAT AND READ AS A BEANIE.
+            # The drop was 0.012 over a 0.290 run — atan(0.012/0.290) = 2.4
+            # degrees — where his sheet draws a bill that clearly sweeps down.
+            # Bounded trace on ace-turnaround.png's profile view (x 673-863):
+            # the bill's top edge leaves the crown near (804, 240) and reaches
+            # its tip near (862, 251), an 11px drop over a 58px run = ~11
+            # degrees. 0.056 delivers that over this run.
+            # ⚠️ The critic that found it reported "~50 degrees", which the crop
+            # does not support; 11 is what the drawing measures. Corrected
+            # toward the measurement, not toward the report — and recorded here
+            # so the next round re-traces rather than splitting the difference.
+            # This is Theo's batting-helmet class one cap along: a brim whose
+            # angle is authored by feel reads as headgear of a different kind.
+            zt = BRIM_Z_TOP - 0.015 * abs(2 * t) - 0.056 * y_frac
             row_t.append(builder.vertex((x, y, zt), CAP, "Head"))
             row_b.append(builder.vertex((x, y, zt - 0.035), CAP, "Head"))
         top_rows.append(row_t)

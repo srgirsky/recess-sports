@@ -288,11 +288,11 @@
     },
     "ace_kid": {
       "source": "ace-pilot.blend",
-      "sourceSha256": "545a3f8c744688fa8891f1fff02e8662da5646d94975921c4d9cca9594388489",
+      "sourceSha256": "30aaa832dd5b3db18c1cfd67e4953b57093cde40a2244cb1faeb9d8281b42263",
       "concept": "ace-turnaround.png",
       "conceptSha256": "641fb80ce9726fe50255da0275f584d4f1722709a0cc51b11d2dbf633af49a43",
       "output": "kid_ace_kid.glb",
-      "outputSha256": "38e6a56789e1a1baabd95459f52633c826e9f8546a0f238432eee7eec96b5f20",
+      "outputSha256": "7e58588b6b2f5e67e96329b825d00027189a418c9c4d9b6a435d5408c04bf198",
       "definingTraits": [
         "sky-blue ball cap",
         "open blue bomber jacket",
