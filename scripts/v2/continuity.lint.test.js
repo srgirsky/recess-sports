@@ -60,9 +60,15 @@ const DEBT = {
   // 0.035ft at 32.7% of figure — the neck/shoulder joint, in ALL FOUR views,
   // which is the tell that it is structure and not a posing artifact.
   cricket: 5,
-  // 0.014ft at 60.5%, front only; 1px in profile. Small enough to be a near-
-  // miss at the waist rather than a true severance, but it is still a row with
-  // nothing in it.
+  // 0.014ft at 60.5%, front only; 1px in profile.
+  // ⚠️ THIS ENTRY ONCE CALLED IT "small enough to be a near-miss rather than a
+  // true severance", AND THAT WAS WRONG. A row count is a HEIGHT, not a size: an
+  // independent critic measured his gap as zero pixels at y=421 across the full
+  // 92px hip width, plus a second see-through notch at the shorts crotch. One
+  // row spanning the whole body is a body in two pieces exactly as much as
+  // twenty-one rows are. Never read a small row count as a small defect — the
+  // metric this file reports is how TALL the gap is, and it says nothing about
+  // how WIDE.
   rocket: 2,
 };
 

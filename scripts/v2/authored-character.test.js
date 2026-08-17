@@ -250,6 +250,24 @@ function stateErrors(production, reviews) {
     // the scores and the status, so the hash has to be taken from a board
     // rendered AFTER the scores are written. `npm run apply:critique` does that
     // in the right order; by hand it is easy to get backwards.
+    // ★ AND THE MEASUREMENT REQUIREMENT BELONGS AT EVERY STATUS TOO, for the
+    // same reason and by the same mistake. Rubric §6b says the measurement
+    // settles what it covers BEFORE a 1-5 score is discussed — which is a
+    // statement about SCORING, not about being finished. Left inside
+    // `claimsFinished` it switched off the moment a character was demoted, and
+    // demoting Junebug to `needs-polish` silently disarmed this file's own two
+    // negative fixtures: they delete her `measuredFidelity`, expect the error,
+    // and got none. A gate whose break-test stops firing because a record
+    // changed STATUS was never gating that record.
+    if (claimsAnyScore(review)) {
+      const measured = review.measuredFidelity;
+      if (!measured?.ranAt?.trim() || !measured?.result?.trim()) {
+        errors.push(`${id}: no measure:fidelity run recorded — run it before scoring §3`);
+      } else if (measured.board !== review.evidence) {
+        errors.push(`${id}: the measure:fidelity run cites a different board than the review`);
+      }
+    }
+
     if (review.scoredBoardSha256 !== undefined || claimsAnyScore(review)) {
       if (!existsSync(evidencePath) || review.scoredBoardSha256 !== sha(evidencePath)) {
         errors.push(`${id}: the six scores are not bound to the current fidelity board`);
@@ -283,12 +301,6 @@ function stateErrors(production, reviews) {
       // and 3,4,3,3,3,3 from the next on barely-changed evidence, and a verdict
       // asserted a shoe colour nobody had measured. Requiring the run is what
       // makes "where a number exists, the number wins" checkable.
-      const measured = review.measuredFidelity;
-      if (!measured?.ranAt?.trim() || !measured?.result?.trim()) {
-        errors.push(`${id}: no measure:fidelity run recorded — run it before scoring §3`);
-      } else if (measured.board !== review.evidence) {
-        errors.push(`${id}: the measure:fidelity run cites a different board than the review`);
-      }
     }
 
     const categoryNames = Object.keys(review.categories ?? {}).sort();
