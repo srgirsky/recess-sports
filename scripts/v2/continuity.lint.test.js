@@ -30,9 +30,21 @@
 // somebody widens later. An empty row inside a figure is never antialiasing,
 // never a style, and never correct.
 //
+// ★ AND THE ROW TEST WAS STILL REPORTING THE WRONG UNIT. It says how TALL a
+// gap is, which is not what anyone means by "how bad". Cricket's entry read
+// "5 empty rows" and Rocket's "2"; a connected-component scan says those gaps
+// detach 39.4% and 30.9% OF THE CHARACTER — his head and her legs are separate
+// objects. A 2-vs-21 row count reads as a 10x difference in severity and is
+// nothing of the kind. The component test below asks the question in the unit
+// that matters, and also catches a part that comes away SIDEWAYS, which no
+// row test can see because the row still holds the rest of the body.
+//
 // Break-it record: restoring Zippy's hem ring to z 1.755 fires with
 //   "zippy front-review: 21 empty row(s) inside the figure (0.150ft at 56.1%
 //    of figure height) — the body is severed there"
+// and zeroing rocket's detached-ink budget fires with
+//   "rocket front-review: 30.8% of the figure's ink is NOT connected to the
+//    rest of it (largest loose piece 17609px at x189-350 y423-645)"
 // ---------------------------------------------------------------------------
 
 import { existsSync } from 'node:fs';
@@ -59,6 +71,9 @@ const VIEWS = ['front-review', 'profile-review', 'front-apose-review', 'profile-
 const DEBT = {
   // 0.035ft at 32.7% of figure — the neck/shoulder joint, in ALL FOUR views,
   // which is the tell that it is structure and not a posing artifact.
+  // ⚠️ AND THE ROW COUNT BADLY UNDERSTATES IT. A connected-component scan (see
+  // DETACHED_INK below) says the piece above that gap is a SEPARATE OBJECT
+  // carrying 31.7% of his ink: cricket's head is not attached to cricket.
   cricket: 5,
   // 0.014ft at 60.5%, front only; 1px in profile.
   // ⚠️ THIS ENTRY ONCE CALLED IT "small enough to be a near-miss rather than a
@@ -69,7 +84,50 @@ const DEBT = {
   // twenty-one rows are. Never read a small row count as a small defect — the
   // metric this file reports is how TALL the gap is, and it says nothing about
   // how WIDE.
+  // ⚠️ CONFIRMED THE HARD WAY: the component scan puts 30.8% of her ink in a
+  // separate object below that 2-row gap. Her legs are not attached to her.
+  // Two rows; a third of the character.
   rocket: 2,
+};
+
+/**
+ * ★ THE SAME QUESTION ASKED SO IT CANNOT BE UNDERSTATED: how much of the
+ * character is not attached to the character?
+ *
+ * The row test above reports how TALL a gap is. That is the wrong unit for the
+ * thing anyone cares about, and its own `rocket` comment already says so. Two
+ * empty rows and twenty-one empty rows read as a 10x difference in severity and
+ * are nothing of the kind — rocket's two rows detach 30.8% of her ink and
+ * cricket's five detach 31.7%. It also cannot see a part that comes away
+ * SIDEWAYS, because the row still holds the rest of the body.
+ *
+ * So this counts connected components of the figure mask (8-connectivity, so a
+ * single diagonal touch still counts as attached) and reports stray ink as a
+ * share of the whole.
+ *
+ * ⚠️ THE FLOOR IS NOT A TUNED THRESHOLD, and the measurement is why. Across all
+ * 30 characters x 4 views the strays fall into two populations three orders of
+ * magnitude apart: antialiasing specks at 1-21px (bubbles, calls_shot,
+ * nostrike, penny — single pixels where a ponytail or a badge grazes an edge)
+ * and real detachments at 2853-20896px. Any floor between 25 and 2000 gives the
+ * same answer, so 25 is not a knob anyone can lean on.
+ */
+const SPECK_PX = 25;
+
+/** Detached ink as a fraction of the figure, per character's WORST view. */
+const DETACHED_INK = {
+  // The head, above the neck gap, in all four views — 31.7% of his ink seen
+  // from the front and 39.4% in profile, which is the worst view and so the
+  // number here. His head is not attached to him.
+  cricket: 0.395,
+  // The legs, below the hip gap: 30.9% at worst (front A-pose).
+  rocket: 0.31,
+  // 9.5% at worst (front A-pose), across two loose pieces: a wheel is modelled
+  // as free-standing geometry that never touches the frame. Unlike the two above it is a
+  // PROP rather than a body part, so it is the least urgent of the three —
+  // but a wheel that touches nothing is still a wheel that will separate
+  // from the chair the moment anything moves it.
+  wheelchair_ace: 0.096,
 };
 
 /** Rows inside the figure's own span that contain no figure pixel at all. */
@@ -105,6 +163,48 @@ async function emptyRows(file) {
   return { figureHeight: bottom - top + 1, top, runs };
 }
 
+/** Connected components of the figure mask, largest first. 8-connectivity. */
+async function components(file) {
+  const { data, info } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { width: W, height: H } = info;
+  const on = (i) => data[i * 4 + 3] > 128;
+  const seen = new Uint8Array(W * H);
+  const stack = new Int32Array(W * H);
+  const comps = [];
+  for (let start = 0; start < W * H; start++) {
+    if (!on(start) || seen[start]) continue;
+    let sp = 0;
+    let size = 0;
+    let minX = W, maxX = -1, minY = H, maxY = -1;
+    stack[sp++] = start;
+    seen[start] = 1;
+    while (sp > 0) {
+      const p = stack[--sp];
+      const x = p % W;
+      const y = (p / W) | 0;
+      size++;
+      if (x < minX) minX = x;
+      if (x > maxX) maxX = x;
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const nx = x + dx;
+          const ny = y + dy;
+          if ((dx === 0 && dy === 0) || nx < 0 || ny < 0 || nx >= W || ny >= H) continue;
+          const q = ny * W + nx;
+          if (!seen[q] && on(q)) {
+            seen[q] = 1;
+            stack[sp++] = q;
+          }
+        }
+      }
+    }
+    comps.push({ size, minX, maxX, minY, maxY });
+  }
+  return comps.sort((a, b) => b.size - a.size);
+}
+
 describe('a delivered character is one connected body', () => {
   const ids = Object.keys(AUTHORED_CHARACTERS).sort();
 
@@ -131,6 +231,49 @@ describe('a delivered character is one connected body', () => {
       expect(bad).toEqual([]);
     }, 20_000);
   }
+
+  for (const id of ids) {
+    it(`${id}: every part of the figure is attached to the figure`, async () => {
+      const bad = [];
+      for (const view of VIEWS) {
+        const file = join(CONCEPTS, `${slugFor(id)}-${view}.png`);
+        if (!existsSync(file)) continue;
+        const comps = (await components(file)).filter((c) => c.size > SPECK_PX);
+        if (comps.length <= 1) continue;
+        const total = comps.reduce((a, c) => a + c.size, 0);
+        const stray = comps.slice(1).reduce((a, c) => a + c.size, 0) / total;
+        if (stray > (DETACHED_INK[id] ?? 0)) {
+          const s = comps[1];
+          bad.push(
+            `${id} ${view}: ${(100 * stray).toFixed(1)}% of the figure's ink is NOT ` +
+            `connected to the rest of it (largest loose piece ${s.size}px at ` +
+            `x${s.minX}-${s.maxX} y${s.minY}-${s.maxY}). Find the two forms that ` +
+            'should meet and do not. A budget here may only shrink.',
+          );
+        }
+      }
+      expect(bad).toEqual([]);
+    }, 30_000);
+  }
+
+  it('carries no detached-ink debt for a character that is whole again', async () => {
+    const paid = [];
+    for (const [id, budget] of Object.entries(DETACHED_INK)) {
+      let worst = 0;
+      for (const view of VIEWS) {
+        const file = join(CONCEPTS, `${slugFor(id)}-${view}.png`);
+        if (!existsSync(file)) continue;
+        const comps = (await components(file)).filter((c) => c.size > SPECK_PX);
+        if (comps.length <= 1) continue;
+        const total = comps.reduce((a, c) => a + c.size, 0);
+        worst = Math.max(worst, comps.slice(1).reduce((a, c) => a + c.size, 0) / total);
+      }
+      if (worst < budget - 0.005) {
+        paid.push(`${id}: debt says ${budget}, measures ${worst.toFixed(3)} — lower it or delete it`);
+      }
+    }
+    expect(paid).toEqual([]);
+  }, 60_000);
 
   it('carries no debt entry for a character that is whole again', async () => {
     const paid = [];
