@@ -195,6 +195,12 @@ function invertedMirrorPairs(gltf) {
   return worst;
 }
 
+/** True when a record carries any 1-5 score, at any status. A kid nobody has
+ *  scored yet has nothing to bind; one that HAS been scored always does. */
+function claimsAnyScore(review) {
+  return Object.values(review.categories ?? {}).some((c) => typeof c?.score === 'number');
+}
+
 function stateErrors(production, reviews) {
   const errors = [];
   const expectedCategories = reviews.categories ?? [];
@@ -216,6 +222,40 @@ function stateErrors(production, reviews) {
     if (!existsSync(output) || sha(output) !== record.outputSha256) errors.push(`${id}: runtime hash differs`);
     const evidencePath = join(conceptsDir, review.evidence ?? '');
     if (!existsSync(evidencePath)) errors.push(`${id}: fidelity evidence is missing`);
+    // ★ THE SCORES ARE BOUND TO THE BOARD THEY WERE READ OFF — AT EVERY STATUS.
+    //
+    // This is the Mimi failure made mechanical. Her approval was revoked because
+    // manually entered scores did not prove visual fidelity, and the structural
+    // half of that is that a score can outlive the asset it describes:
+    // re-sculpt, re-export, do not re-score, and the record still reads 4/5 with
+    // a note describing a mesh that no longer exists. Every hash in the receipt
+    // tracked the ASSET and none tracked the REVIEW.
+    //
+    // ⚠️ AND IT USED TO LIVE INSIDE `claimsFinished`, WHICH MEANT IT SWITCHED
+    // ITSELF OFF EXACTLY WHEN IT WAS MOST NEEDED. A character demoted to
+    // `needs-polish` stopped having its scores checked against its board at all
+    // — and `needs-polish` is where the ITERATING happens, so it is where a
+    // score most easily outlives its mesh. The 2026-08-16 audit demoted twenty
+    // characters and silently un-gated every one of them; ace_kid's bill was
+    // then re-sculpted and his board re-rendered with his scores still bound to
+    // the previous one, and the whole suite stayed green.
+    //
+    // The other checks below stay inside `claimsFinished` and should: it is
+    // reasonable not to demand hero and run evidence from a kid still being
+    // built. It is never reasonable to let a SCORE float free of the board it
+    // was read from. The board renders the shipped GLB, so binding the scores
+    // to the board's bytes binds them to the delivery.
+    //
+    // Note the ordering trap this creates and does not remove: the board PRINTS
+    // the scores and the status, so the hash has to be taken from a board
+    // rendered AFTER the scores are written. `npm run apply:critique` does that
+    // in the right order; by hand it is easy to get backwards.
+    if (review.scoredBoardSha256 !== undefined || claimsAnyScore(review)) {
+      if (!existsSync(evidencePath) || review.scoredBoardSha256 !== sha(evidencePath)) {
+        errors.push(`${id}: the six scores are not bound to the current fidelity board`);
+      }
+    }
+
     const claimsFinished = review.status === 'candidate' || review.status === 'approved';
     if (claimsFinished) {
       if (!existsSync(join(conceptsDir, review.heroEvidence ?? ''))) errors.push(`${id}: authored-model hero evidence is missing`);
@@ -237,9 +277,7 @@ function stateErrors(production, reviews) {
       // bytes binds them to the delivery. Note the ordering trap this creates
       // and does not remove: the board PRINTS the scores and the status, so the
       // hash has to be taken from a board rendered AFTER the scores are written.
-      if (!existsSync(evidencePath) || review.scoredBoardSha256 !== sha(evidencePath)) {
-        errors.push(`${id}: the six scores are not bound to the current fidelity board`);
-      }
+
       // Rubric §6b: the measurement settles what it covers BEFORE a 1-5 score is
       // discussed. Four rounds on Junebug produced 4,4,4,4,4,3 from one reviewer
       // and 3,4,3,3,3,3 from the next on barely-changed evidence, and a verdict

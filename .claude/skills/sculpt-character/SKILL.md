@@ -1035,6 +1035,37 @@ runtime HERO instead of the profile board the critic actually cited. **Crop the
 region the finding names, not a picture of the same character.** That is the
 same rule this file gives critics, and it applies to whoever is reading them.
 
+## ★ A gate that only runs at `candidate` switches off when you need it most
+
+`authored-character.test.js` binds a character's six scores to the sha256 of the
+board they were read off — the Mimi failure made mechanical, so a score cannot
+outlive the mesh it describes. That check lived inside `if (claimsFinished)`,
+i.e. it ran only at status `candidate` or `approved`.
+
+**So demoting a character to `needs-polish` un-gated it.** And `needs-polish` is
+precisely where the iterating happens, which is where a score most easily
+outlives its board. The 2026-08-16 audit demoted twenty characters and silently
+switched the check off for every one of them; ace_kid's bill was then
+re-sculpted, his board re-rendered, his scores left bound to the previous board
+— and the whole suite stayed green.
+
+Proven rather than argued: with the old gate, corrupting `scoredBoardSha256` on
+a `needs-polish` kid passes all 15 tests. With the check moved out of
+`claimsFinished`, it fails.
+
+**The general rule: ask what a status guard TURNS OFF, not just what it lets
+through.** The other checks in that block belong there — it is reasonable not to
+demand hero and run evidence from a kid still being built. It is never
+reasonable to let a SCORE float free of the board it was read from, and the two
+kinds of check had been bundled under one condition because both happened to be
+about "finished" characters.
+
+⚠️ And note what hid it: `npm run apply:critique` re-binds the hash on every
+write, so the invariant held in practice while the gate that enforces it was
+dead. **A tool that keeps an invariant by construction will mask a gate that has
+stopped checking it** — which is an argument for the break-test, not against the
+tool.
+
 ## A critic may argue against a decision; that is not a defect report
 
 Grizz's re-audit filed "SPLIT THE LEGS. Undo the 10deg hip adduction from the
