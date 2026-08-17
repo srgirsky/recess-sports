@@ -165,6 +165,24 @@ A_POSE_BY_ID = {"tank": 50.0}
 # ankle row it optimised for is exactly the row that says nothing about the
 # thighs. Sweep with FIDELITY_LEGS_DEG and take the angle whose inter-leg
 # daylight profile sits closest to the concept front figure's.
+#
+# ⚠️ THE TRADE THIS MAKES, STATED PLAINLY. All eight re-angled characters now
+# read `ankleDaylight` OFF (big_lou +26.4, dex +14.3, grizz +28.2, lefty +31.4,
+# mimi_mash +26.4, moose +30.2, sniffles +14.3, turbo +42.1, against tol 12).
+# At the old angles that metric was GREEN — because the legs were shut. That is
+# the exact move rubric 6b.4 forbids: never close the legs to clear the number.
+# A binary 3.12 failure on the board is worse than a metric reading OFF with a
+# recorded cause, so this is the right side of the trade, but it is a trade.
+#
+# ★ AND IT POINTS AT THE REAL FIX, WHICH NOBODY HAS DONE. Both readings are
+# correct at once: these sheets DO draw the feet together (the ankle row is
+# genuinely 0.00) and they DO open at the thigh (36-60% daylight). One hip
+# adduction cannot produce both, because rotating the whole chain about the hip
+# closes the thighs and the ankles together. Closing at the KNEE and ANKLE
+# instead — or letting the idle clips' own planted-feet pose drive the board —
+# would satisfy the drawing and the metric at the same time. Until someone does
+# that, an angle here can only choose which of the two to be wrong about, and
+# this table chooses the thighs, because that is the one a child sees.
 LEGS_IN_BY_ID = {
     # Drawn-open stances hold their sheets (Junebug 46.9, Theo 56.9 drawn).
     "nostrike": 0.0, "calls_shot": 0.0,
