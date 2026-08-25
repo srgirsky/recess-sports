@@ -126,20 +126,30 @@ export function draftStageCast(
   return { waiting, player, cpu, all: [selectedId, ...waiting, ...player, ...cpu] };
 }
 
-/** Background positions, left-to-right in two shallow rows behind the hero. */
+/**
+ * Background positions, left-to-right in two shallow rows behind the hero.
+ *
+ * ★ SPACED FOR DRAWN BODIES, NOT DOTS. A kid is drawn at CHARACTER_SCALE and
+ * the wide ones (Big Lou, Tank) push ~1.8 drawn feet of shoulder; a carried
+ * bat sweeps further. The original bench pairs sat 2.0ft apart and the live
+ * stage showed kids standing inside each other with a bat through a
+ * neighbour's chest. `draftPresentation.test.ts` § spacing now floors every
+ * pairwise gap (hero mark included), so a new position cannot regress this
+ * by eye.
+ */
 export const DRAFT_CAST_POSITIONS: ReadonlyArray<readonly [number, number]> = [
-  [-4.2, 3.8],
-  [-2.2, 4.7],
-  [2.2, 4.7],
-  [4.2, 3.8],
-  [-3.2, 6.3],
-  [3.2, 6.3],
+  [-4.4, 3.8],
+  [-2.1, 4.8],
+  [2.1, 4.8],
+  [4.4, 3.8],
+  [-3.6, 6.7],
+  [3.6, 6.7],
 ];
 
 /** Side benches, nearest recent pick first. */
 export const DRAFT_PLAYER_POSITIONS: ReadonlyArray<readonly [number, number]> = [
-  [7.2, 1.8], [9.1, 2.5], [7.3, 4.2], [9.2, 5],
+  [7.4, 2.6], [9.9, 3.4], [7.8, 5.6], [10.4, 6.5],
 ];
 export const DRAFT_CPU_POSITIONS: ReadonlyArray<readonly [number, number]> = [
-  [-7.2, 1.8], [-9.1, 2.5], [-7.3, 4.2], [-9.2, 5],
+  [-7.4, 2.6], [-9.9, 3.4], [-7.8, 5.6], [-10.4, 6.5],
 ];

@@ -144,6 +144,10 @@ function applyIdleDefence(
     // his hips, which lifts a kid's feet rather than lowering his head. See
     // `proceduralClips.ts`'s ground solve and `groundContact.test.ts`.
     const dir = refs.directors.get(id);
+    // On defence you wear the mitt — a role, asserted every frame for the
+    // same reason the posts are: whoever just came in from batting still has
+    // last half's state.
+    dir?.setGloveVisible(true);
     if (!protectedIds.has(id) && !holdsOneShot(dir)) {
       if (pos === 'C') dir?.play('field_ready');
       else dir?.setLocomotionSpeed(0);
@@ -160,6 +164,7 @@ function applyIdleDefence(
     // been in. Same class as the defence standing in bind pose before PR 13
     // drew it: a clip that exists, is documented, and has no caller.
     const dir = refs.directors.get(frame.batterId);
+    dir?.setGloveVisible(false);
     if (!protectedIds.has(frame.batterId) && !holdsOneShot(dir)) dir?.play('bat_stance');
   }
 }
@@ -175,6 +180,7 @@ function applyLive(
   for (const f of play.fielders) {
     const kid = refs.kids.get(f.charId);
     if (!kid) continue;
+    refs.directors.get(f.charId)?.setGloveVisible(true);
     kid.setPosition(f.p.x, f.p.z);
     // ★ FACE THE BALL, not the direction of travel. A fielder running to a spot
     // is watching the ball the whole way, and `moveToward` gives no heading to
@@ -189,6 +195,7 @@ function applyLive(
   for (const r of play.runners) {
     const kid = refs.kids.get(r.charId);
     if (!kid) continue;
+    refs.directors.get(r.charId)?.setGloveVisible(false);
     const p = runnerPos(r);
     kid.setPosition(p.x, p.z);
     if (!isSettled(r)) {

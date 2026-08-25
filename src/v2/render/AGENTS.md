@@ -218,12 +218,12 @@ propagation" simply cannot happen here.
 | `src/v2/render/clips.ts` | the animation contract, in code and pure |
 | `src/v2/render/AnimationDirector.ts` | the only place clips are played |
 | `src/v2/render/proceduralClips.ts` | crude stand-ins for every clip name |
-| `src/v2/render/props.ts` | the bat; shown iff `holdsBat` |
+| `src/v2/render/props.ts` | the bat (iff `holdsBat`); the mitt (a defence role) |
 | `src/v2/render/CharacterFactory.ts` | the one seam that decides model-or-proxy |
-| `src/v2/render/CharacterModel.ts` | a delivered `.glb` made playable: LODs, material slots, face atlas, outlines |
-| `src/v2/render/ProxyCharacter.ts` | a kid built from primitives — the acceptance test for the skeleton spec |
-| `src/v2/render/modelLoader.ts` | the only `GLTFLoader`, with Draco and KTX2 wired |
-| `src/v2/render/assets.ts` | runtime URLs against `document.baseURI`, and the delivery manifest |
+| `src/v2/render/CharacterModel.ts` | a delivered `.glb` made playable: LODs, materials, face atlas, outlines |
+| `src/v2/render/ProxyCharacter.ts` | a kid from primitives — the acceptance test for the skeleton spec |
+| `src/v2/render/modelLoader.ts` | the only `GLTFLoader`; Draco and KTX2 wired |
+| `src/v2/render/assets.ts` | runtime URLs against `document.baseURI`; the delivery manifest |
 | `src/v2/render/faceAtlas.ts` | the 4x4 expression grid, pure |
 | `src/v2/render/skeleton.ts` | the rig spec that `docs/v2/asset-contract.md` mirrors |
 | `src/v2/render/Scenery.ts` | the merged, deterministic neighborhood beyond the fence |

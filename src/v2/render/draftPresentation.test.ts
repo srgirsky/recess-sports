@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import {
+  DRAFT_CAST_POSITIONS,
+  DRAFT_CPU_POSITIONS,
+  DRAFT_PLAYER_POSITIONS,
   DRAFT_REACT_SEC,
   DRAFT_BENCH_X_FT,
   DRAFT_WALK_OFF_SEC,
@@ -67,6 +70,29 @@ describe('draft presentation policy', () => {
     expect(cast.cpu).toEqual(['cpu-1', 'cpu-0']);
     expect(new Set(cast.all).size).toBe(cast.all.length);
     expect(cast.all).toHaveLength(11);
+  });
+
+  it('spaces every stage mark for a drawn body, bat included', () => {
+    // A kid is drawn at 1.6x scale (~1.8ft of shoulder on the wide ones), so
+    // two marks closer than 2.3ft stand kids inside each other — the
+    // 2026-08-24 live review's bench showed exactly that, plus a carried bat
+    // through a neighbour's chest. The hero holds the [0, 0] chalk mark.
+    // The hero holds the [0, 0] chalk mark, and a just-picked kid finishes
+    // their walk-off standing at [±DRAFT_BENCH_X_FT, 0] next to the bench.
+    const marks: Array<readonly [number, number]> = [
+      [0, 0],
+      [DRAFT_BENCH_X_FT, 0],
+      [-DRAFT_BENCH_X_FT, 0],
+      ...DRAFT_CAST_POSITIONS,
+      ...DRAFT_PLAYER_POSITIONS,
+      ...DRAFT_CPU_POSITIONS,
+    ];
+    for (let i = 0; i < marks.length; i++) {
+      for (let j = i + 1; j < marks.length; j++) {
+        const gap = Math.hypot(marks[i][0] - marks[j][0], marks[i][1] - marks[j][1]);
+        expect(gap, `marks ${i} and ${j} are ${gap.toFixed(2)}ft apart`).toBeGreaterThanOrEqual(2.3);
+      }
+    }
   });
 
   it('is connected from the draft screen to the one scene and renderer', () => {
