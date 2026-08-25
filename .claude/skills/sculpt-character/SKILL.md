@@ -1035,6 +1035,59 @@ runtime HERO instead of the profile board the critic actually cited. **Crop the
 region the finding names, not a picture of the same character.** That is the
 same rule this file gives critics, and it applies to whoever is reading them.
 
+## Do not rebuild a character while a critic is auditing it
+
+Obvious once stated, easy to do when a roster-wide sweep and a batch of critics
+are both in flight. The shoulder-blend sweep rebuilt clover and peaches while
+their critics were mid-pass, so those two scored a model that moved underneath
+them.
+
+It was survivable here for a specific reason worth knowing: **skin weights do not
+move the bind pose**, so the fidelity BOARD — which composites bind-pose views —
+re-rendered byte-identical and every `scoredBoardSha256` stayed bound. Only the
+A-pose views changed, and those are not in the board. A geometry change would
+have invalidated the scores outright and the critique would have described a mesh
+that no longer shipped, which is the Mimi failure arriving by the back door.
+
+**Sequence the two:** finish the audit batch, apply the critiques, then sweep.
+If a sweep must run first, re-score the characters it touched — and remember the
+board hash cannot tell you a critique is stale when the change was weights-only.
+
+## ★★ THE LESSONS IN THIS FILE WERE NEVER SWEPT ACROSS THE ROSTER
+
+The single biggest finding of the 2026-08-16 audit is not any one defect. It is
+that **almost every defect found was a lesson already written down here, fixed on
+the character that discovered it, and left broken on everyone else.**
+
+| the lesson | who paid for it | who still had it |
+|---|---|---|
+| a bill shorter than its dome projects nothing | Theo (batch 6) | Chip (backwards), Ace (2.4 deg) |
+| an inboard arm station with no `SHOULDER_BLEND` shears a fin | Peaches (batch 5) | smokey, boomer, clover, cricket, gizmo, rocket |
+| an ascending ring-loft table renders a backface void | Bendy (batch 2) | Bubbles (eight rounds later) |
+| the analyser's "mouth" lands on the NOSTRILS | Sprout, Flash | noodle — and it reached his gate TARGET |
+| a lobe count above columns/4 is unrepresentable | (found this round) | 10 kids |
+
+Writing the lesson down stopped the SAME character regressing and did nothing
+for the other twenty-nine. So when a round produces a lesson, the round is not
+finished:
+
+1. **Express it as a scan** over all thirty sculpt scripts, not as prose. Every
+   one of the rows above is a grep or a few lines of Python — inboard stations
+   without a blend entry, `BRIM_REACH` against its dome front, lobe count
+   against column count, level tables that ascend.
+2. **Run the scan and put its OUTPUT in the lesson**, named kid by kid, so the
+   next person inherits a work list instead of a warning.
+3. **Prefer a lint where the property is mechanical.** A scan run once decays;
+   `continuity.lint.test.js` exists because "is the figure severed" is checkable
+   forever. Where a lint would be brittle (matching builder names by regex), say
+   so in the lesson and keep the scan — but never leave it implicit.
+
+⚠️ And check the scan against a kid nobody has reviewed before trusting it. The
+shoulder scan above predicted six kids; Smokey's critic had independently found
+the fin on him, and cropping Gizmo's A-pose — unaudited at the time — showed the
+same dark angular wedge at the sleeve/torso junction. A scan that agrees with a
+critic on one kid and with the art on a second is worth acting on.
+
 ## ★ A gate that only runs at `candidate` switches off when you need it most
 
 `authored-character.test.js` binds a character's six scores to the sha256 of the
@@ -1066,24 +1119,91 @@ dead. **A tool that keeps an invariant by construction will mask a gate that has
 stopped checking it** — which is an argument for the break-test, not against the
 tool.
 
-## A critic may argue against a decision; that is not a defect report
+## A critic may argue against a decision — but CHECK THE DECISION COVERS THIS KID
+
+**★ THIS SECTION WAS WRITTEN TO DISMISS A FINDING THAT WAS CORRECT, AND THE WAY
+IT WENT WRONG IS THE MOST USEFUL THING IN IT.**
 
 Grizz's re-audit filed "SPLIT THE LEGS. Undo the 10deg hip adduction from the
-2026-08-15 stance pass and restore daylight between thighs, calves". That
-adduction is a DELIBERATE, per-character, calibrated decision — `LEGS_IN_BY_ID`
-in `render-fidelity-views.py`, with the residual ankle-daylight OFF recorded as
-an instrument conflict (the concept side reads 0.00 through flood CONTAINMENT of
-a drawn-closed outline) rather than as a stance regression. The critic could not
-know that; it sees a board and a drawing.
+2026-08-15 stance pass and restore daylight between thighs, calves." That was
+classed here as an argument against a deliberate, per-character, calibrated
+decision — `LEGS_IN_BY_ID` in `render-fidelity-views.py` — and filed CONTESTED
+instead of acted on.
 
-**So separate the two kinds of finding before acting on any of them:**
+**Grizz was never in `LEGS_IN_BY_ID`.** Nor were big_lou, dex, lefty, mimi_mash,
+moose or sniffles. They fell through to `LEGS_IN_DEG = 10.0`, a bare default,
+while every angle anyone had actually calibrated sat at 0.0-7.0. At 10 degrees
+the legs meet, and the board is what rubric 3.12 is scored from. **Nine
+independent critics filed 3.12 against seven sculpts that were correct**, one as
+a BLOCKER; re-rendered against his own drawing, dex goes from 0.0% inter-leg
+daylight to 33.3% against the sheet's 29.5%. The decision cited to dismiss the
+finding did not exist for the character the finding was about.
+
+**So the rule stands, with the step that was skipped made explicit:**
 
 - **"This does not match the drawing"** — a defect report. Act on it.
-- **"This decision was wrong"** — an argument, and it is arguing with a record
-  it has not read. Put it in `polishFindings` marked as CONTESTED, with the
-  record's own reasoning beside it, and let the maintainer settle it.
+- **"This decision was wrong"** — an argument. Before filing it CONTESTED,
+  **open the table and confirm the decision actually applies to THIS character.**
+  A per-kid table with a default is not a per-kid decision for the kids taking
+  the default; it is one number wearing the authority of thirty measurements.
+- Where a table like that exists, **delete the default so a missing entry
+  raises.** `LEGS_IN_BY_ID` does this now. This is `sculptspec.lint`'s rule ("a
+  default is one kid's body silently worn by twenty-nine") turning up in a
+  renderer, where that lint cannot see it — go looking for the others.
 
-Undoing a calibrated decision because a fresh reviewer disliked it is how a
-project loops: the stance pass exists precisely because an earlier round chased
-ankle daylight by moving a mesh off its bones. **A critic's job is the board;
-the record's job is remembering why.**
+And weight the reviewers differently: when many critics report one defect across
+many kids, suspect **the instrument they share** before the things they each
+looked at — their agreement is a common cause, not corroboration. The one who
+names a MECHANISM rather than a symptom is worth more than the rest together.
+Grizz's critic named it exactly and was overruled by this file.
+
+## Evidence goes stale silently, and "easy to refresh" is not a gate
+
+A roster scan found **26 of 30 characters carrying `-runtime-*.png` stills whose
+last-touching commit predated their own `.glb`.** A bulk model change had
+re-exported every kid and nothing re-shot the captures, so every hero and 40px
+score on the record had been read off a previous sculpt — including scores that
+sampled specific pixels and named specific colours.
+
+**The part worth remembering is that this was a REPEAT.**
+`capture-character-evidence.mjs` was written *because* it happened once to
+Junebug, and its header already said it: *"evidence that a human must remember
+to refresh is evidence that lies eventually."* The response at the time was to
+make refreshing easy. It rotted again at eight times the scale, because easy is
+not enforced.
+
+- **Before scoring anything, check the evidence is newer than the model.**
+  `evidence-freshness.lint.test.js` now does it — the capturer stamps the GLB's
+  sha256 into `character-evidence.json` and the gate fails if they disagree.
+- The full-file hash is the RIGHT instrument here even though this skill warns
+  it is the wrong one for geometry. That warning answers "did the shape change",
+  which it cannot. The question here is "were these pixels made by these bytes",
+  which it answers exactly. Cost of the difference: one re-shoot on a no-op
+  rebuild.
+- **Never re-render or re-capture while a critic is reading.** Two agents were
+  mid-review when a roster recapture overwrote the stills under them, and their
+  runtime findings became unattributable to either version. Sequence it:
+  refresh, then review.
+
+## Two kids can ship one body, and the provenance gate will not say so
+
+Three PAIRS carry byte-identical `LEG_STATIONS`, comments included, under
+`measured:` citations that disagree: cricket/gizmo by 31-34% (gizmo's legs are
+drawn a third wider and he ships cricket's numbers), dex/lefty by 39% and in
+opposite directions at the two heights, clover/peaches by 9%. Resolved through
+`leg_x`, the cricket/gizmo table lands BETWEEN the two children and outside both
+declared tolerances — cricket +0.095ft against a stated 0.03, gizmo -0.126ft
+against 0.04.
+
+`sculpt-provenance.lint.test.js` is green on all six **and is right to be**: its
+header says plainly that it checks the citation, not the table, because a sculpt
+may legitimately ship away from the drawing with the residual recorded. It
+cannot separate a considered deviation from a copy-paste nobody re-fitted.
+`sculpt-sharing.lint.test.js` asks the question that does, and needs no
+tolerance to ask it — two kids traced from two sheets do not reach the same
+table to the byte.
+
+**When you start a kid from another kid's script, the tables are the work.**
+Copying the structure is the point of having an exemplar; copying the numbers is
+shipping the wrong child. Re-trace every `measured:` table against the new
+sheet, and check your result is not byte-identical to where you started.

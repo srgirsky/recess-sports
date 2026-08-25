@@ -125,19 +125,64 @@ A_POSE_DEG = 72.0
 A_POSE_BY_ID = {"tank": 50.0}
 
 
-# The stance: every turnaround on this roster draws the feet together, and the
+# The stance: many turnarounds on this roster draw the feet together, and the
 # rig's bind pose splays the legs — the "ankle daylight" metric read that splay
-# as a delivered defect on every kid (rubric 6b.4 deferred it as a STANCE fix,
-# never a tolerance widening). The idle clips already plant the feet close; the
-# board must hold the stance the drawing and the game share, exactly the
-# argument that put the arms down. Applied to ALL views (bind and A-pose): the
+# as a delivered defect (rubric 6b.4 deferred it as a STANCE fix, never a
+# tolerance widening). The idle clips already plant the feet close; the board
+# must hold the stance the drawing and the game share, exactly the argument
+# that put the arms down. Applied to ALL views (bind and A-pose): the
 # measurement reads the bind front, and a stance is not an arm experiment.
-LEGS_IN_DEG = 10.0
-# ⚠️ AND IT IS PER CHARACTER WHERE THE SHEET SAYS SO (A_POSE_BY_ID's rule):
-# Junebug and Theo are DRAWN with an open stance (concept ankle daylight 46.9
-# and 56.9) - closing their legs would move the board AWAY from the drawing
-# the metric compares against. Zoom's tucked legs are Root-weighted furniture
-# the leg bones never move, so the default is a no-op for him.
+#
+# ★ THERE IS NO DEFAULT ANGLE, AND REMOVING IT IS THE POINT OF THIS BLOCK.
+#
+# There used to be: `LEGS_IN_DEG = 10.0`, taken by every character with no
+# entry below. It closed their legs so far that the two legs met and rendered
+# as ONE MASS, and the board is what rubric 3.12 ("the legs are two legs") is
+# scored from. Seven characters inherited it — big_lou, dex, grizz, lefty,
+# mimi_mash, moose, sniffles — and NINE independent critics duly filed 3.12
+# against the sculpt, one of them as a BLOCKER, while a tenth got the cause
+# exactly right and was not acted on: "undo the 10deg hip adduction."
+#
+# The sculpts were never at fault. Re-rendering dex at the median calibrated
+# angle takes his inter-leg daylight from 0.0% of figure width to 31.3%,
+# against his own drawing's 29.5% — the legs he ships were correct all along,
+# and only the pose the board photographed them in was not.
+#
+# ⚠️ AND NOTE WHY THE DEFAULT WAS SO FAR OFF: every angle below was calibrated
+# per kid and they land at 0.0-7.0, so 10.0 was not a middle value, it was
+# nearly double the median of every measurement anyone had actually taken. A
+# default is not a neutral choice — this is `sculptspec.lint.test.js`'s rule
+# ("a default on a spec field is one kid's body silently worn by twenty-nine")
+# reappearing in a renderer, where that lint cannot see it.
+#
+# So a character with no entry now RAISES. Adding a kid costs one measurement;
+# it must never again cost nine misdirected reviews.
+#
+# ★ HOW TO PICK AN ANGLE. Match the kid's OWN drawing, measured over the whole
+# lower body rather than at one row. The original calibration maximised
+# adduction subject to the silhouette gate not seeing a puncture, which asks
+# "how closed can this get" instead of "what does the sheet show" — and the
+# ankle row it optimised for is exactly the row that says nothing about the
+# thighs. Sweep with FIDELITY_LEGS_DEG and take the angle whose inter-leg
+# daylight profile sits closest to the concept front figure's.
+#
+# ⚠️ THE TRADE THIS MAKES, STATED PLAINLY. All eight re-angled characters now
+# read `ankleDaylight` OFF (big_lou +26.4, dex +14.3, grizz +28.2, lefty +31.4,
+# mimi_mash +26.4, moose +30.2, sniffles +14.3, turbo +42.1, against tol 12).
+# At the old angles that metric was GREEN — because the legs were shut. That is
+# the exact move rubric 6b.4 forbids: never close the legs to clear the number.
+# A binary 3.12 failure on the board is worse than a metric reading OFF with a
+# recorded cause, so this is the right side of the trade, but it is a trade.
+#
+# ★ AND IT POINTS AT THE REAL FIX, WHICH NOBODY HAS DONE. Both readings are
+# correct at once: these sheets DO draw the feet together (the ankle row is
+# genuinely 0.00) and they DO open at the thigh (36-60% daylight). One hip
+# adduction cannot produce both, because rotating the whole chain about the hip
+# closes the thighs and the ankles together. Closing at the KNEE and ANKLE
+# instead — or letting the idle clips' own planted-feet pose drive the board —
+# would satisfy the drawing and the metric at the same time. Until someone does
+# that, an angle here can only choose which of the two to be wrong about, and
+# this table chooses the thighs, because that is the one a child sees.
 LEGS_IN_BY_ID = {
     # Drawn-open stances hold their sheets (Junebug 46.9, Theo 56.9 drawn).
     "nostrike": 0.0, "calls_shot": 0.0,
@@ -151,7 +196,34 @@ LEGS_IN_BY_ID = {
     "cricket": 5.5, "diva": 5.5, "flash": 5.5, "gizmo": 5.5,
     "noodle": 5.5, "peaches": 5.5, "penny": 5.5, "smokey": 5.5,
     "the_prof": 5.5, "bubbles": 7.0, "zippy": 7.0, "sprout": 4.0,
-    "turbo": 13.0,
+    # ★ Turbo was calibrated, and calibrated wrong, which is why the entry
+    # moved: 13.0 was the highest angle in this table and it left him with a
+    # gap on 3% of his sampled rows — fused everywhere but one. A critic filed
+    # "FUSED LEGS AND MERGED SHOES IN BIND AND A-POSE" against the sculpt. He
+    # measures concept 45.8; the sweep gives 49.1 at 2deg and 42.9 at 4deg.
+    # A per-kid number is not automatically a measured number — 13.0 came from
+    # the "largest angle that does not puncture" rule, which is a ceiling, and
+    # a ceiling was being used as a target.
+    "turbo": 4.0,
+    # ★ The seven that used to inherit the 10.0 default, each measured against
+    # its own concept front figure (delivered max inter-leg daylight as a % of
+    # row span, swept 0/2/4/5.5/7 deg, versus the drawing's own):
+    #   big_lou   concept 36.4 -> 0.0deg gives 36.3   (10.0deg gave 0.0)
+    #   grizz     concept 37.5 -> 0.0deg gives 38.2   (10.0deg gave 0.0)
+    #   lefty     concept 60.1 -> 0.0deg gives 54.8   (10.0deg gave 0.0)
+    #   mimi_mash concept 55.6 -> 0.0deg gives 45.9   (10.0deg gave 18.2)
+    #   moose     concept 35.2 -> 2.0deg gives 36.8   (10.0deg gave 0.0)
+    #   sniffles  concept 31.9 -> 5.5deg gives 31.3   (10.0deg gave 2.9)
+    #   dex       concept 29.5 -> 5.5deg gives 31.3   (10.0deg gave 0.0)
+    # Five of the seven want NO adduction at all, which is the tell that the
+    # "every turnaround draws the feet together" premise above was read off the
+    # ankle row and does not hold for the kids drawn with an open stance.
+    "big_lou": 0.0, "grizz": 0.0, "lefty": 0.0, "mimi_mash": 0.0,
+    "moose": 2.0, "sniffles": 5.5, "dex": 5.5,
+    # Zoom's tucked legs are Root-weighted furniture the leg bones never move,
+    # so any angle is a no-op for him. Recorded explicitly rather than left to
+    # fall through, because there is nothing to fall through to any more.
+    "wheelchair_ace": 0.0,
 }
 
 
@@ -277,7 +349,20 @@ def main() -> None:
     # legs as far as the silhouettes allow WITHOUT touching - contact encloses
     # the between-legs window and the silhouette gate reads it as a puncture.
     env_deg = os.environ.get("FIDELITY_LEGS_DEG")
-    pose_legs_in(float(env_deg) if env_deg else LEGS_IN_BY_ID.get(character_id, LEGS_IN_DEG))
+    if env_deg:
+        pose_legs_in(float(env_deg))
+    else:
+        if character_id not in LEGS_IN_BY_ID:
+            raise SystemExit(
+                f"no stance angle for '{character_id}'. Sweep it against the kid's own "
+                "concept front figure and add an entry to LEGS_IN_BY_ID:\n"
+                f"  for d in 0 2 4 5.5 7; do FIDELITY_LEGS_DEG=$d npm run "
+                f"review:character-fidelity -- {character_id}; done\n"
+                "Take the angle whose inter-leg daylight profile is closest to the "
+                "drawing's. There is deliberately no default: the one that used to be "
+                "here fused seven characters' legs and cost nine reviews."
+            )
+        pose_legs_in(LEGS_IN_BY_ID[character_id])
     render_view(scene, camera, (0, -12, 2.2), output_dir / f"{slug}-front-review.png")
     render_view(scene, camera, (12, 0, 2.2), output_dir / f"{slug}-profile-review.png")
 

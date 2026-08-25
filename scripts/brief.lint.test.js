@@ -166,6 +166,11 @@ describe('the briefs are reachable', () => {
       for (const e of readdirSync(join(ROOT, rel || '.'), { withFileTypes: true })) {
         if (e.name === 'node_modules' || e.name === '.git' || e.name === 'dist') continue;
         const child = rel ? `${rel}/${e.name}` : e.name;
+        // A nested git checkout (a worktree under .claude/worktrees, say) is
+        // another session's copy of this repo — its briefs are budgeted there,
+        // and counting them here fails the census for files this tree does not
+        // own. `.git` is a FILE in a worktree, so check for it before descending.
+        if (e.isDirectory() && existsSync(join(ROOT, child, '.git'))) continue;
         if (e.isDirectory()) walk(child);
         else if (e.name === 'AGENTS.md') found.push(child);
       }
