@@ -906,11 +906,15 @@ const ZOOM_FIELD_POSE: Pose = shift(ZOOM_IDLE_POSE, {
   la: [22, 0, -14], lf: [0, 20, 0], ra: [22, 0, 14], rf: [0, -20, 0],
 });
 
-const ZOOM_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
-  hp: [-2, -5, 0], sp: [-2, -7, 0], s2: [-3, -8, 0], hd: [-1, 10, 1],
+const ZOOM_STANCE_POSE: Pose = {
+  ...shift(BAT_STANCE_POSE, {
+    hp: [-2, -5, 0], sp: [-2, -7, 0], s2: [-3, -8, 0], hd: [-1, 10, 1],
+  }),
+  // OVERRIDDEN to bind, not shifted by zero — `shift` adds, so a zero delta
+  // kept the standing stance's leg pose and bent his seated sculpt's legs.
   lu: [0, 0, 0], ll: [0, 0, 0], lt: [0, 0, 0],
   ru: [0, 0, 0], rl: [0, 0, 0], rt: [0, 0, 0],
-});
+};
 
 const ZOOM_CONTACT_END: Pose = shift(ZOOM_STANCE_POSE, {
   hp: [0, 70, 0], sp: [0, 53, 0], s2: [0, 72, 0], hd: [-2, -18, -1],
@@ -1956,6 +1960,50 @@ export function buildZoomPilotClips(): AnimationClip[] {
     if (!spec) throw new Error(`Zoom pilot names unknown contract clip "${name}"`);
     return make(spec as ClipSpec);
   });
+}
+
+/**
+ * ★ ZOOM'S DELIVERED TAKE COVERS EVERY CLIP NAME, because a fallback IS the
+ * bug for him. His model is sculpted seated over bind-pose legs — the nine
+ * bespoke clips above zero every leg channel for exactly that reason — so any
+ * shared clip reaching him through the character → shared → procedural
+ * precedence animates legs his mesh does not have standing skin for: he rose
+ * out of his own chair to pitch, walked on upright through the frame, and a
+ * leg-swinging clip tore the seated silhouette apart (2026-08-24 review).
+ *
+ * The derivation keeps the shared clip's torso, arms and head — timing,
+ * markers and loop closure ride along untouched — strips the six leg-bone
+ * tracks so the sculpted tuck stays authoritative, and pins the hips to bind
+ * height while preserving authored X/Z travel (a dive still covers its
+ * `bodyTravelFt`; a jump no longer launches a seated kid into the air).
+ */
+const SEATED_STRIPPED_BONES = new Set([
+  'LeftUpLeg.quaternion',
+  'LeftLeg.quaternion',
+  'LeftFoot.quaternion',
+  'RightUpLeg.quaternion',
+  'RightLeg.quaternion',
+  'RightFoot.quaternion',
+]);
+
+function seatedVariant(shared: AnimationClip): AnimationClip {
+  const clip = shared.clone();
+  clip.tracks = clip.tracks.filter((track) => !SEATED_STRIPPED_BONES.has(track.name));
+  for (const track of clip.tracks) {
+    if (track.name !== 'Hips.position') continue;
+    const values = Float32Array.from(track.values);
+    for (let i = 1; i < values.length; i += 3) values[i] = HIPS_BIND_Y;
+    track.values = values;
+  }
+  return clip;
+}
+
+export function buildZoomSeatedLibrary(): AnimationClip[] {
+  const bespoke = buildZoomPilotClips();
+  const covered = new Set(bespoke.map((clip) => clip.name));
+  const shared = buildProceduralClips();
+  const derived = shared.filter((clip) => !covered.has(clip.name)).map(seatedVariant);
+  return [...bespoke, ...derived];
 }
 
 /** Big Lou's complete Batch 1 pass, exported as a partial delivery. */

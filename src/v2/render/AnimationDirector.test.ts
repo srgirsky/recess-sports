@@ -12,7 +12,8 @@ import { describe, it, expect } from 'vitest';
 import { AnimationClip, Object3D, Vector3, VectorKeyframeTrack } from 'three';
 import { AnimationDirector } from './AnimationDirector';
 import { OutlineRegistry, attachOutline } from './materials/outline';
-import { buildBigLouPilotClips, buildDirectedReactionClips, buildJunebugPilotClips, buildMimiMashPilotClips, buildProceduralClips, buildTankPilotClips, buildTheoPilotClips, buildZoomPilotClips } from './proceduralClips';
+import { buildBigLouPilotClips, buildDirectedReactionClips, buildJunebugPilotClips, buildMimiMashPilotClips, buildProceduralClips, buildTankPilotClips, buildTheoPilotClips, buildZoomPilotClips, buildZoomSeatedLibrary } from './proceduralClips';
+import { bindWorld } from './skeleton';
 import { CLIPS, CLIP_NAMES, FPS, LOOP_MAX_RATE, LOOP_MIN_RATE, clipSpec, type AnimName } from './clips';
 import { ProxyCharacter } from './ProxyCharacter';
 import { ROSTER } from '../../data/characters';
@@ -265,6 +266,60 @@ describe('the Zoom Ramirez character pass', () => {
         }
       }
     }
+  });
+});
+
+describe("★ Zoom's delivered library leaves no standing fallback", () => {
+  const library = buildZoomSeatedLibrary();
+
+  it('covers every clip name in the contract', () => {
+    // The fallback IS the bug for a seated athlete: any name missing here
+    // reaches him as a shared STANDING clip, and he rises out of his chair —
+    // the 2026-08-24 review watched him pitch upright from his own footplate.
+    const names = new Set(library.map((clip) => clip.name));
+    for (const spec of CLIPS) {
+      expect(names.has(spec.name), `${spec.name} falls back to standing motion`).toBe(true);
+    }
+  });
+
+  it('never animates the legs his sculpt sits on, and never lifts the seat', () => {
+    const legs = new Set([
+      'LeftUpLeg.quaternion', 'LeftLeg.quaternion', 'LeftFoot.quaternion',
+      'RightUpLeg.quaternion', 'RightLeg.quaternion', 'RightFoot.quaternion',
+    ]);
+    const bindY = bindWorld().get('Hips')![1];
+    for (const clip of library) {
+      for (const track of clip.tracks) {
+        if (legs.has(track.name)) {
+          // A bespoke pose may KEY a leg — his stance zeroes them on purpose —
+          // but every key must hold the bind rotation the seated sculpt skins.
+          for (let k = 0; k < track.values.length; k += 4) {
+            const [x, y, z, w] = Array.from(track.values.slice(k, k + 4));
+            const identity = Math.abs(x) < 1e-4 && Math.abs(y) < 1e-4 && Math.abs(z) < 1e-4 && Math.abs(Math.abs(w) - 1) < 1e-4;
+            expect(identity, `${clip.name} bends ${track.name} out of the seat`).toBe(true);
+          }
+          continue;
+        }
+        if (track.name !== 'Hips.position') continue;
+        for (let i = 1; i < track.values.length; i += 3) {
+          // His bespoke clips breathe a authored ~0.015ft settle; the defect
+          // this pins is the shared library's ground solves and jumps, which
+          // move the hips by tenths of a foot to over two feet.
+          expect(Math.abs(track.values[i] - bindY), `${clip.name} lifts the hips off the seat`).toBeLessThan(0.08);
+        }
+      }
+    }
+  });
+
+  it('keeps a derived dive its authored lateral travel', () => {
+    // Stripping legs must not strip the reach the sim grants: the dive covers
+    // its bodyTravelFt through Hips X, which the seat pin preserves.
+    const dive = library.find((clip) => clip.name === 'dive_left')!;
+    const hips = dive.tracks.find((track) => track.name === 'Hips.position')!;
+    const xs = [];
+    for (let i = 0; i < hips.values.length; i += 3) xs.push(hips.values[i]);
+    const span = Math.max(...xs) - Math.min(...xs);
+    expect(span).toBeGreaterThanOrEqual(2.5);
   });
 });
 
