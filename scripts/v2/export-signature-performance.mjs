@@ -14,7 +14,7 @@ import {
   buildMimiMashPilotClips,
   buildTankPilotClips,
   buildTheoPilotClips,
-  buildZoomPilotClips,
+  buildZoomSeatedLibrary,
 } from '../../src/v2/render/proceduralClips.ts';
 import { writeAnimationClipsGlb } from './export-animation-library.mjs';
 import { scanPerformances, writeManifest } from './models-manifest.mjs';
@@ -23,7 +23,7 @@ const here = fileURLToPath(new URL('.', import.meta.url));
 const BUILDERS = {
   nostrike: { name: 'Junebug', build: buildJunebugPilotClips },
   calls_shot: { name: 'Big Talk Theo', build: buildTheoPilotClips },
-  wheelchair_ace: { name: 'Zoom Ramirez', build: buildZoomPilotClips },
+  wheelchair_ace: { name: 'Zoom Ramirez', build: buildZoomSeatedLibrary },
   big_lou: { name: 'Big Lou', build: buildBigLouPilotClips },
   tank: { name: 'Tank', build: buildTankPilotClips },
   mimi_mash: { name: 'Mimi Mash', build: buildMimiMashPilotClips },
