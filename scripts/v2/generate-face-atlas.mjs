@@ -141,8 +141,29 @@ const IRIS_INWARD = spec.irisInward;
 const almond = (x, y) =>
   `M${x - EYE_HALF_W} ${y} Q${x} ${y - EYE_HALF_H * 2} ${x + EYE_HALF_W} ${y} Q${x} ${y + EYE_HALF_H * 2} ${x - EYE_HALF_W} ${y}Z`;
 
-function eye(x, y, uid, { closed = false, wink = false, inward = 0 } = {}) {
+function eye(x, y, uid, { closed = false, wink = false, heavy = false, inward = 0 } = {}) {
   if (closed || wink) return `<path d="M${x - 17} ${y} Q${x} ${y + 9} ${x + 17} ${y}" fill="none" stroke="${ink}" stroke-width="4.5" stroke-linecap="round"/>`;
+  if (heavy) {
+    // ★ SLEEPY IS NOT A BLINK. The first cut ORed `sleepy` into `closed`, so a
+    // kid whose REST face is sleepy (Tank, `performance.ts`) played whole
+    // games with his eyes drawn shut — and every per-spec iris/sclera number
+    // was dead code on that path. Heavy-lidded keeps the lower half of the
+    // open eye (sclera, iris, pupil all visible) under a flat lid line: asleep
+    // reads shut, sleepy reads half-open.
+    const id = `iris${uid}`;
+    const cx = x + inward;
+    const lidY = y - EYE_HALF_H * 0.2;
+    return `<clipPath id="${id}"><path d="${almond(x, y)}"/></clipPath>
+      <clipPath id="${id}l"><rect x="${x - EYE_HALF_W}" y="${lidY}" width="${EYE_HALF_W * 2}" height="${EYE_HALF_H * 2 + 8}"/></clipPath>
+      <g clip-path="url(#${id}l)">
+        <path d="${almond(x, y)}" fill="${sclera}"/>
+        <g clip-path="url(#${id})">
+          <circle cx="${cx}" cy="${y + 2}" r="${IRIS_R}" fill="${irisBrown}"/>
+          <circle cx="${cx}" cy="${y + 2}" r="5.4" fill="${pupil}"/>
+        </g>
+      </g>
+      <path d="M${x - EYE_HALF_W + 1} ${lidY} L${x + EYE_HALF_W - 1} ${lidY}" fill="none" stroke="${ink}" stroke-width="4" stroke-linecap="round"/>`;
+  }
   const id = `iris${uid}`;
   const cx = x + inward;
   // The iris is clipped to the almond so a converged pupil can ride toward the
@@ -237,8 +258,8 @@ function face(name, index) {
   // toward the nose; 'determined' only deepens what is already there.
   const [eyeL, eyeR] = spec.eyeX;
   const eyes =
-    eye(eyeL, spec.eyeY, index * 2, { closed: blink || sleepy, inward: IRIS_INWARD }) +
-    eye(eyeR, spec.eyeY, index * 2 + 1, { closed: blink || sleepy, wink, inward: -IRIS_INWARD });
+    eye(eyeL, spec.eyeY, index * 2, { closed: blink, heavy: sleepy, inward: IRIS_INWARD }) +
+    eye(eyeR, spec.eyeY, index * 2 + 1, { closed: blink, heavy: sleepy, wink, inward: -IRIS_INWARD });
   // Brows ride 25px above the eye centres: the concept holds 23px of skin
   // between brow and eye against a 30px eye box, and closing that gap lets the
   // toon ramp merge brow into lash. Their bar runs from |x| 0.345ft at the
