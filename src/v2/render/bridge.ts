@@ -31,7 +31,7 @@ import type { KidView } from './CharacterModel';
 import { AnimationDirector } from './AnimationDirector';
 import type { CameraInput } from './cameraCues';
 import { clipSpec } from './clips';
-import { activeFielderCue, ballShadowCue } from './readabilityCues';
+import { activeFielderCue, ballPresenceCue, ballShadowCue } from './readabilityCues';
 
 /** Everything the bridge is allowed to move. */
 export interface SceneRefs {
@@ -50,6 +50,8 @@ export interface FrameViewOptions {
   readability?: boolean;
   /** True only when this live half routes human input to the defence. */
   fieldingFocus?: boolean;
+  /** Last frame's camera eye, for the ball's apparent-size cue. */
+  cameraAt?: { x: number; y: number; z: number };
 }
 
 const NO_PROTECTED_IDS: ReadonlySet<string> = new Set();
@@ -87,6 +89,13 @@ export function applyFrame(
 /** Field chrome reads the already-positioned ball and active fielder. */
 function applyReadability(refs: SceneRefs, frame: LiveFrame, view: FrameViewOptions): void {
   const enabled = view.readability !== false;
+  const presence = ballPresenceCue(
+    { x: refs.ball.position.x, y: refs.ball.position.y, z: refs.ball.position.z },
+    view.cameraAt ?? { x: 0, y: 0, z: 0 },
+    frame.phase,
+    enabled && view.cameraAt !== undefined
+  );
+  refs.ball.scale.setScalar(presence.scale);
   if (refs.ballShadow) {
     const cue = ballShadowCue(
       { x: refs.ball.position.x, y: refs.ball.position.y, z: refs.ball.position.z },

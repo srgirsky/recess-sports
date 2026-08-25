@@ -1484,6 +1484,9 @@ export class GameView {
       applyFrame(this.refs, this.frame, dt, this.pitchElapsed, this.draftProtected, {
         readability: this.screenCue === null,
         fieldingFocus: this.liveControl === 'field',
+        // One frame stale on purpose: the camera moves after the frame is
+        // applied, and a 16ms-old eye moves the cue by under a percent.
+        cameraAt: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z },
       });
       this.updateDraftPresentation(dt);
       this.animateCpuSwing();

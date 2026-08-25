@@ -3,6 +3,9 @@ import {
   SHADOW_MAX_SCALE,
   activeFielderCue,
   ballShadowCue,
+  BALL_PRESENCE_MAX_SCALE,
+  BALL_PRESENCE_REF_FT,
+  ballPresenceCue,
 } from './readabilityCues';
 
 describe('ballShadowCue', () => {
@@ -52,5 +55,27 @@ describe('activeFielderCue', () => {
     expect(activeFielderCue(play, false).visible).toBe(false);
     expect(activeFielderCue(play, true, false).visible).toBe(false);
     expect(activeFielderCue(null, true).visible).toBe(false);
+  });
+});
+
+describe('ballPresenceCue', () => {
+  const eye = { x: 0, y: 5, z: -18 };
+
+  it('leaves a close ball honest and grows a far one', () => {
+    const near = ballPresenceCue({ x: 0, y: 5, z: -10 }, eye, 'pitch');
+    expect(near.scale).toBeCloseTo(1, 5);
+    const far = ballPresenceCue({ x: 0, y: 5, z: 24 }, eye, 'pitch');
+    expect(far.scale).toBeCloseTo(42 / BALL_PRESENCE_REF_FT, 5);
+  });
+
+  it('caps before the ball reads as a beach ball', () => {
+    const deep = ballPresenceCue({ x: 0, y: 5, z: 300 }, eye, 'live');
+    expect(deep.scale).toBe(BALL_PRESENCE_MAX_SCALE);
+  });
+
+  it('is a gameplay cue only: honest at rest and on review surfaces', () => {
+    expect(ballPresenceCue({ x: 0, y: 5, z: 46 }, eye, 'windup').scale).toBe(1);
+    expect(ballPresenceCue({ x: 0, y: 5, z: 46 }, eye, 'between').scale).toBe(1);
+    expect(ballPresenceCue({ x: 0, y: 5, z: 46 }, eye, 'pitch', false).scale).toBe(1);
   });
 });
