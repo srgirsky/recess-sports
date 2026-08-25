@@ -46,6 +46,7 @@ import {
   Vector3,
   type AnimationClip,
   type Quaternion,
+  type Object3D,
 } from 'three';
 import { Renderer } from '../render/Renderer';
 import { Lighting } from '../render/Lighting';
@@ -62,7 +63,7 @@ import {
 } from '../render/modelLoader';
 import { hasDeliveredPerformance } from '../render/assets';
 import { AnimationDirector } from '../render/AnimationDirector';
-import { attachBatProp, attachGloveProp } from '../render/props';
+import { attachBatProp, attachGloveProp, attachTeamBandProp, paintTeamBand } from '../render/props';
 import { buildProceduralClips } from '../render/proceduralClips';
 import { heroClipFor, performanceFor } from '../render/performance';
 import { impactStrength } from '../render/impactCues';
@@ -91,6 +92,7 @@ import { BALL_RADIUS_FT } from '../sim/ball';
 import { BAT, DEFENSE } from '../sim/params';
 import { kidHeightFt } from '../render/ProxyCharacter';
 import { UNIFORM_COLORS } from '../../art/palette';
+import { jerseyHex } from '../render/materials/registry';
 import type { KidView } from '../render/CharacterModel';
 import {
   DRAFT_CAST_POSITIONS,
@@ -744,8 +746,27 @@ export class GameView {
     return getCharacter(id);
   }
 
+  /** charId -> the armband prop riding that kid's current view. */
+  private readonly teamBands = new Map<string, Object3D>();
+  /** The kids currently dressed in TEAM kit (not draft-personal colours). */
+  private readonly teamDressed = new Set<string>();
+
+  /** Show the band in the kid's team colour, or hide it off-team. */
+  private paintTeamBandFor(id: string): void {
+    const band = this.teamBands.get(id);
+    if (!band) return;
+    const uniform = this.teamUniforms.get(id);
+    paintTeamBand(
+      band,
+      this.teamDressed.has(id) && uniform !== undefined ? jerseyHex(uniform) : null
+    );
+  }
+
   /** Bind procedural → shared → character motion to authored face direction. */
   private directorFor(character: Character, view: KidView): AnimationDirector {
+    const band = attachTeamBandProp(view);
+    if (band) this.teamBands.set(character.id, band);
+    else this.teamBands.delete(character.id);
     return new AnimationDirector(view.mesh, {
       clips: this.deliveredClips,
       performanceClips: this.performanceClips.get(character.id),
@@ -1020,8 +1041,14 @@ export class GameView {
       ...away.map((id) => [id, uniforms.away] as const),
       ...home.map((id) => [id, uniforms.home] as const),
     ];
-    for (const [id, uniform] of wanted) this.teamUniforms.set(id, uniform);
+    for (const [id, uniform] of wanted) {
+      this.teamUniforms.set(id, uniform);
+      // Identity outfits stay; the armband is what says which side a kid is
+      // on (see props.attachTeamBandProp).
+      this.teamDressed.add(id);
+    }
     await Promise.all(wanted.map(([id, uniform]) => this.dressCharacter(id, uniform)));
+    for (const [id] of wanted) this.paintTeamBandFor(id);
   }
 
   /**
@@ -1057,6 +1084,7 @@ export class GameView {
       this.refs.kids.set(id, view);
       this.refs.directors.set(id, this.directorFor(character, view));
       this.dressed.set(id, uniform);
+      this.paintTeamBandFor(id);
     })().finally(() => {
       if (this.dressPending.get(id) === task) this.dressPending.delete(id);
     });
@@ -1139,6 +1167,7 @@ export class GameView {
         .map((castId) => [castId, this.teamUniforms.get(castId)] as const)
         .filter((entry): entry is readonly [string, number] => entry[1] !== undefined);
       this.draftPersonal.clear();
+      for (const [castId] of restore) this.teamDressed.add(castId);
       void Promise.all(restore.map(([castId, uniform]) => this.dressCharacter(castId, uniform)));
       return;
     }
@@ -1162,6 +1191,10 @@ export class GameView {
     }
     // The draft is about individuals, not two teams that do not exist yet.
     // Reuse the kid's authored personal colour; newGame restores team kits.
+    for (const castId of cast.all) {
+      this.teamDressed.delete(castId);
+      this.paintTeamBandFor(castId);
+    }
     void Promise.all(cast.all.map((castId) => {
       const character = this.character(castId);
       return this.dressCharacter(castId, character.visual.uniform);
