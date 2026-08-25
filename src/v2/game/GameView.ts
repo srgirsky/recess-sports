@@ -62,7 +62,7 @@ import {
 } from '../render/modelLoader';
 import { hasDeliveredPerformance } from '../render/assets';
 import { AnimationDirector } from '../render/AnimationDirector';
-import { attachBatProp } from '../render/props';
+import { attachBatProp, attachGloveProp } from '../render/props';
 import { buildProceduralClips } from '../render/proceduralClips';
 import { heroClipFor, performanceFor } from '../render/performance';
 import { impactStrength } from '../render/impactCues';
@@ -720,6 +720,20 @@ export class GameView {
     this.buildPlateCues();
     this.mountHud();
     this.onResize();
+    // ★ COMING BACK FROM A HIDDEN TAB MUST NOT REPLAY THE AWAY TIME. Browsers
+    // stop rAF entirely while the page is hidden (the root brief's first
+    // gotcha), so `this.last` goes stale by however long the kid was on
+    // another tab. The dt clamp already caps the damage at 0.1s, but stamping
+    // the clock on the visibility edge makes the resume exact: the first
+    // visible frame advances from NOW, with nothing accumulated and nothing
+    // lost but the time the game was genuinely not on screen — the same
+    // contract the pause screen keeps.
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        this.last = performance.now();
+        this.acc = 0;
+      }
+    });
     this.last = performance.now();
     requestAnimationFrame(this.tick);
   }
@@ -737,6 +751,7 @@ export class GameView {
       performanceClips: this.performanceClips.get(character.id),
       fallback: this.clipLibrary,
       bat: attachBatProp(view) ?? undefined,
+      glove: attachGloveProp(view) ?? undefined,
       actor: {
         id: character.id,
         profile: performanceFor(character.id),
@@ -1669,7 +1684,13 @@ export class GameView {
       frame.pitcherId,
       this.matchupTally.lines(frame.batterId, frame.pitcherId),
       // Both reference games collapse the HUD the moment the ball is live.
-      frame.phase !== 'live'
+      frame.phase !== 'live',
+      // The chips wear each kid's TEAM kit — the same index their model's
+      // accents are dressed with — never the roster street colour.
+      {
+        batter: this.teamUniforms.get(frame.batterId),
+        pitcher: this.teamUniforms.get(frame.pitcherId),
+      }
     );
     // ★ THE PICKER IS SHOWN, NOT HIDDEN BEHIND A KEYBINDING NOBODY KNOWS.
     if (!this.pickerEl) return;

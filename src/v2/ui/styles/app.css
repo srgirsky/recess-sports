@@ -1814,7 +1814,13 @@ body.screen-open #hud > *:not(.btn--mute) {
   grid-template-rows: auto 1fr auto auto;
   align-items: end;
   gap: clamp(0.2rem, 0.7svh, var(--s2));
-  min-block-size: clamp(19rem, 57svh, 37rem);
+  /* The stage takes what the viewport can SPARE, not a flat share of it: head,
+     slot tray, gaps and one card row cost ~27rem, and a flat 57svh at a short
+     laptop viewport (712px) spent the board's budget on the stage — the card
+     row a child must tap after every CPU pick sat wholly below the fold
+     (2026-08-24 live review). Subtracting the fixed budget keeps the row on
+     screen at short heights and still grows the stage on tall ones. */
+  min-block-size: clamp(15rem, calc(100svh - 27rem), 37rem);
   padding: var(--s3);
   overflow: hidden;
   border: var(--stroke) solid var(--outline);
@@ -1883,8 +1889,11 @@ body.screen-open #hud > *:not(.btn--mute) {
   inline-size: 100%;
   box-sizing: border-box;
   /* Wider inline padding than the frame art's painted border, or a long
-     `draftLine` runs into the ornament and reads as clipped (round-2 nit). */
-  padding: var(--s3) var(--s4) var(--s2);
+     `draftLine` runs into the ornament and reads as clipped (round-2 nit).
+     The border art stretches with the plate (background-size 100% 100%), so
+     the safe inset must scale too — a fixed --s4 let a long TAGLINE run
+     under the ornament with its first letter swallowed at wide plates. */
+  padding: var(--s3) clamp(var(--s4), 8%, 2.4rem) var(--s2);
   border-radius: var(--radius);
   /* The trading-card frame the clubhouse album already wears — the pick beat
    * IS a card pull (re-audit #9: "no trading card moment"). */

@@ -50,14 +50,26 @@ export class Matchup {
     this.arts = [bat.art, pit.art];
   }
 
-  update(batterId: string, pitcherId: string, lines: MatchupLines, visible: boolean): void {
+  update(
+    batterId: string,
+    pitcherId: string,
+    lines: MatchupLines,
+    visible: boolean,
+    /** Each principal's TEAM palette index, so the chip matches the model's
+     * accents rather than showing a third colour source. Portraits drew each
+     * kid's fixed roster street colour before this — a batter whose chip wore
+     * green while his model wore team-accented red (2026-08-24 review). */
+    uniforms?: { batter?: number; pitcher?: number }
+  ): void {
     this.root.classList.toggle('is-open', visible);
     if (!visible) return;
+    const kit = [uniforms?.batter, uniforms?.pitcher];
     [batterId, pitcherId].forEach((id, i) => {
-      if (this.shown[i] !== id) {
-        this.shown[i] = id;
+      const key = `${id}:${kit[i] ?? 'street'}`;
+      if (this.shown[i] !== key) {
+        this.shown[i] = key;
         const c = this.lookup(id);
-        this.arts[i].replaceChildren(portrait(c.visual, c.name));
+        this.arts[i].replaceChildren(portrait(c.visual, c.name, kit[i] === undefined ? undefined : { uniform: kit[i] }));
         this.names[i].textContent = c.name.toUpperCase();
       }
     });

@@ -489,6 +489,20 @@ content because v2 sizes everything off one `clamp()` in `tokens.css` — the
 interesting sizes are the ones that pin that clamp at either end. It drives the
 sim clock by hand, since a headless page throttles `requestAnimationFrame`.
 
+The layout audit measures boxes; a second, cheaper gate watches the PICTURE:
+
+```bash
+npm run smoke:presentation [outDir]
+```
+
+It boots the real game, reaches each beat (waiting, delivery, pitch flight,
+between) with the same hand-driven clock, paints real frames with synthetic
+timestamps, and asserts which clip each principal is actually playing — the
+batter in `bat_stance` holding a visible bat, the catcher crouched in
+`field_ready`, the pitcher mid-`pitch_windup`. Screenshots and a `report.json`
+land in `outDir` (default `.smoke/`). It exists because 1,857 state-level
+tests stayed green while the painted game showed none of those things.
+
 ## Building & deploying (free)
 
 ```bash

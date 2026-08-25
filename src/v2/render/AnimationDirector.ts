@@ -76,6 +76,13 @@ export interface DirectorOptions {
    */
   bat?: Object3D;
   /**
+   * This kid's mitt (see `props.attachGloveProp`). Wearing it is a ROLE, not
+   * a clip: `bridge.ts` flips `setGloveVisible` from membership in the
+   * frame's defence, and the director only vetoes it while a bat clip plays —
+   * one kid never carries both.
+   */
+  glove?: Object3D;
+  /**
    * The kid behind the rig. When present, the director coordinates face,
    * reaction tempo, blinks and fidgets with the body clip it alone controls.
    */
@@ -99,6 +106,8 @@ export class AnimationDirector {
   private warned = new Set<string>();
   private readonly actor: DirectorOptions['actor'];
   private readonly bat: Object3D | undefined;
+  private readonly glove: Object3D | undefined;
+  private gloveOn = false;
   private nextBlinkSec = Infinity;
   private nextFidgetSec = Infinity;
   private blinkLeftSec = 0;
@@ -108,6 +117,7 @@ export class AnimationDirector {
     this.mixer = new AnimationMixer(root);
     this.actor = opts.actor;
     this.bat = opts.bat;
+    this.glove = opts.glove;
     if (this.actor) {
       this.nextBlinkSec = blinkEverySec(this.actor.profile) * (0.55 + performancePhase(this.actor.id, 17));
       this.nextFidgetSec = fidgetEverySec(this.actor.profile) * (0.65 + performancePhase(this.actor.id, 29));
@@ -195,6 +205,7 @@ export class AnimationDirector {
     this.current = name;
     this.pending = opts.onDone ?? null;
     if (this.bat) this.bat.visible = holdsBat(name);
+    if (this.glove) this.glove.visible = this.gloveOn && !holdsBat(name);
     this.applyExpression(name);
     return next;
   }
@@ -247,6 +258,12 @@ export class AnimationDirector {
     const name = this.actor ? reactionClipFor(this.actor.profile, won) : (won ? 'cheer' : 'upset');
     this.play(name, opts);
     return name;
+  }
+
+  /** This kid is (or stops being) on defence — the mitt follows the role. */
+  setGloveVisible(on: boolean): void {
+    this.gloveOn = on;
+    if (this.glove) this.glove.visible = on && (!this.current || !holdsBat(this.current));
   }
 
   /** Cancel any pending settle and hold whatever is playing. */

@@ -13,7 +13,10 @@ import { describe, it, expect } from 'vitest';
 import { Box3, Vector3, type Object3D } from 'three';
 import { ROSTER } from '../../data/characters';
 import { ProxyCharacter } from './ProxyCharacter';
-import { BAT_ANCHOR_BONE, BAT_LENGTH_FT, BAT_PROP_NAME, attachBatProp } from './props';
+import { BAT_ANCHOR_BONE, BAT_LENGTH_FT, BAT_PROP_NAME, GLOVE_ANCHOR_BONE, attachBatProp, attachGloveProp } from './props';
+import { AnimationDirector } from './AnimationDirector';
+import { buildProceduralClips } from './proceduralClips';
+import type { Mesh } from 'three';
 
 describe('attachBatProp', () => {
   it('parents a hidden bat to the Prop_BatGrip bone', () => {
@@ -54,5 +57,42 @@ describe('attachBatProp', () => {
 
   it('returns null on a rig with no anchor, so wiring can be unconditional', () => {
     expect(attachBatProp({ bones: [] })).toBeNull();
+  });
+});
+
+describe('attachGloveProp', () => {
+  it('parents a hidden mitt to the Prop_GloveAnchor bone', () => {
+    const kid = new ProxyCharacter(ROSTER[0].visual);
+    const glove = attachGloveProp(kid)!;
+    expect(glove).toBeTruthy();
+    expect(glove.visible).toBe(false);
+    expect(glove.parent?.name).toBe(GLOVE_ANCHOR_BONE);
+  });
+
+  it('shares geometry and material across the roster, like the bat', () => {
+    const a = attachGloveProp(new ProxyCharacter(ROSTER[0].visual))!;
+    const b = attachGloveProp(new ProxyCharacter(ROSTER[1].visual))!;
+    const meshesOf = (g: typeof a) => g.children.filter((c): c is Mesh => (c as Mesh).isMesh);
+    const [aShell] = meshesOf(a);
+    const [bShell] = meshesOf(b);
+    expect(aShell.geometry).toBe(bShell.geometry);
+    expect(aShell.material).toBe(bShell.material);
+  });
+
+  it('is a role the director wears, vetoed while a bat clip plays', () => {
+    // The batter cannot carry a mitt: `setGloveVisible(true)` on a kid whose
+    // playing clip holds the bat stays hidden until the clip lets go.
+    const kid = new ProxyCharacter(ROSTER[0].visual);
+    const glove = attachGloveProp(kid)!;
+    const dir = new AnimationDirector(kid.mesh, { fallback: buildProceduralClips(), glove });
+    dir.setGloveVisible(true);
+    expect(glove.visible).toBe(true);
+    dir.play('bat_stance');
+    expect(glove.visible).toBe(false);
+    dir.play('field_ready');
+    expect(glove.visible).toBe(true);
+    dir.setGloveVisible(false);
+    expect(glove.visible).toBe(false);
+    dir.dispose();
   });
 });

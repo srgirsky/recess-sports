@@ -184,7 +184,23 @@ export class DraftScreen implements Screen {
         this.spotlightMode = 'cpu';
       }
       this.paint(taken);
-      this.timer = null;
+      // ★ AND THEN THE SPOTLIGHT COMES BACK. Leaving the CPU's kid up ended
+      // the flow: `canPick` needs `spotlightMode === 'pick'`, nothing else
+      // re-armed it, so after every CPU reveal the hero slot showed a dead
+      // OFF THE BOARD stamp until the player discovered the card row —
+      // which, at short viewports, was below the fold. A 6-year-old is not
+      // going to find that. After the same beat the reveal itself got, hand
+      // the spotlight to the next candidate; a card tap during the beat
+      // (which sets `pick` mode itself) wins over this default.
+      this.timer = setTimeout(() => {
+        this.timer = null;
+        if (this.spotlightMode !== 'cpu' || isDraftComplete(this.state) || this.state.turn !== 'player') {
+          return;
+        }
+        this.spotlightId = this.state.pool[0] ?? null;
+        this.spotlightMode = 'pick';
+        this.paint();
+      }, CPU_BEAT_MS);
     }, CPU_BEAT_MS);
   }
 

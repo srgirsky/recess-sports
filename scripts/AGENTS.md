@@ -76,14 +76,15 @@ the `reference` and `status` rules are enforced.
 
 | File | What it owns |
 |---|---|
-| `scripts/measure/lib.js` | PURE measurement math: robust stats, `summarize`, DERIVED confidence |
-| `scripts/measure/video.js` | the ffmpeg I/O, the play indexer, the `clockFidelity` gate |
+| `scripts/measure/lib.js` | PURE measure math: robust stats, `summarize`, DERIVED confidence |
+| `scripts/measure/video.js` | ffmpeg I/O, the play indexer, the `clockFidelity` gate |
 | `scripts/measure/screenshot.js` | the EXACT-COLOUR path; throws if the blit is inexact |
-| `scripts/measure/conformance.test.js` | the record->constant gate; the only walk visiting each record once |
+| `scripts/measure/conformance.test.js` | the record->constant gate; one walk, each record once |
 | `scripts/layout.browser.js` | the in-page layout audit, paste into a dev tab |
-| `scripts/layout-audit.mjs` / `scripts/v2/ui-audit.mjs` | `audit:layout` over the scene x CONTENT matrix, and the same predicates over v2's DOM HUD |
-| `scripts/goldlog.browser.js` | the seeded v1 drive whose fingerprint must stay byte-identical |
-| `scripts/v2/turnaround.mjs` / `tone.mjs` / `analyse-turnaround.mjs` | one reader, one colour ruler, one spec writer. `regionRunsAt` NAMES a run, so a width cannot cross two |
-| `scripts/v2/glb.mjs` | dependency-free glTF read AND write — a playback loader forgives what a validator must reject |
-| `scripts/v2/modelRules.mjs` | the pure rule engine behind both `validate:models` fronts |
-| `scripts/v2/harness.mjs` / `plate-sweep.mjs` | the 50k-plate-appearance run, and the coupled-constant search |
+| `scripts/layout-audit.mjs` / `scripts/v2/ui-audit.mjs` | `audit:layout` over the scene x CONTENT matrix; same predicates over v2's HUD |
+| `scripts/v2/presentation-smoke.mjs` | `smoke:presentation`: paint beats, assert PLAYING clips |
+| `scripts/goldlog.browser.js` | the seeded v1 drive; its fingerprint stays byte-identical |
+| `scripts/v2/turnaround.mjs` / `tone.mjs` / `analyse-turnaround.mjs` | reader, colour ruler, spec writer; `regionRunsAt` NAMES a run |
+| `scripts/v2/glb.mjs` | dependency-free glTF read AND write — a playback loader forgives; a validator rejects |
+| `scripts/v2/modelRules.mjs` | the rule engine behind both `validate:models` fronts |
+| `scripts/v2/harness.mjs` / `plate-sweep.mjs` | the 50k-PA run, and the coupled-constant search |
