@@ -161,8 +161,11 @@ describe('★ the rule fires, and the motion survives it', () => {
     const before = measure(unsolved, spec);
     const after = measure(solved, spec);
 
-    // The defect, at its recorded size: a catcher standing on nothing.
-    expect(before.lowestToeFt).toBeGreaterThan(0.4);
+    // The defect the solve exists for: a catcher standing on nothing. The
+    // original pose floated 0.451ft; the 2026-08 squat re-author (knees
+    // forward, feet planted under the body) folds less air under the toes, so
+    // the pin is "clearly hovering", not the old pose's exact altitude.
+    expect(before.lowestToeFt).toBeGreaterThan(0.1);
     expect(after.lowestToeFt).toBeLessThan(GROUND_EPSILON_FT);
   });
 
@@ -210,5 +213,90 @@ describe('★ the rule fires, and the motion survives it', () => {
     // the drawn figure is this times CHARACTER_SCALE.
     expect(y).toBeLessThan(3.45);
     expect(y).toBeGreaterThan(2.9);
+  });
+});
+
+describe('★ the plate trio poses read as their jobs', () => {
+  // ★ WHY CROWN HEIGHT WAS NOT ENOUGH. The 2026-08-24 presentation smoke put a
+  // painted screenshot next to this suite's green run: `field_ready` satisfied
+  // every ground and crown bound while the knees bent BACKWARD — thighs swept
+  // 48° behind the body, shins slung forward, both feet ground-solved to a
+  // "plant" a foot BEHIND the hips with 0.2ft between the ankles, so the shoes
+  // crossed and interpenetrated on screen. A kneel and a crouch put the crown
+  // at the same height; only the joints can tell them apart. These landmarks
+  // are the difference, measured on the same real-mixer path as everything
+  // above.
+  const landmarks = (name: string) => {
+    const spec = CLIPS.find((c) => c.name === name)! as ClipSpec;
+    const clip = LIBRARY.get(name)!;
+    const { root } = buildSkeleton();
+    const holder = new Object3D();
+    holder.add(root);
+    const mixer = new AnimationMixer(holder);
+    mixer.clipAction(clip).play();
+    mixer.update(spec.frames / 2 / FPS);
+    holder.updateWorldMatrix(true, true);
+    const at = (boneName: string) => {
+      let found: Object3D | undefined;
+      root.traverse((n) => {
+        if (n.name === boneName) found = n;
+      });
+      return found!.getWorldPosition(new Vector3());
+    };
+    return { at };
+  };
+
+  it('★ field_ready is a squat, not a kneel: knees forward of the ankles', () => {
+    const { at } = landmarks('field_ready');
+    for (const side of ['Left', 'Right'] as const) {
+      const knee = at(`${side}Leg`);
+      const ankle = at(`${side}Foot`);
+      // The kneel's signature, inverted: a squatting knee travels FORWARD of
+      // its own ankle. In the shipped defect knee z was -0.78 with the ankle
+      // at -0.97 — both behind the body — and knees pointed the wrong way.
+      expect(knee.z, `${side} knee behind its ankle — the legs fold backward`).toBeGreaterThan(ankle.z + 0.3);
+      // And the ankles stay under the kid, not swept out behind the hips.
+      expect(ankle.z).toBeGreaterThan(-0.45);
+    }
+  });
+
+  it('★ field_ready plants the feet apart — crossed shoes read as a glitch', () => {
+    const { at } = landmarks('field_ready');
+    const gap = at('RightFoot').x - at('LeftFoot').x;
+    // Bind stance is 0.76ft between the ankles. The defect adducted them to
+    // 0.2ft, inside a single drawn sneaker's width, so the two shoes occupied
+    // the same space on screen.
+    expect(gap).toBeGreaterThan(0.6);
+  });
+
+  it('★ field_ready holds the hands ready in FRONT, mitt height', () => {
+    const { at } = landmarks('field_ready');
+    for (const side of ['Left', 'Right'] as const) {
+      const hand = at(`${side}Hand`);
+      // Hands trailing behind the torso read as a ski jumper, not a catcher.
+      expect(hand.z, `${side} hand trails behind the body`).toBeGreaterThan(0.4);
+      expect(hand.y).toBeLessThan(1.9);
+    }
+  });
+
+  it('★ bat_stance stands athletic: feet apart, knees never hyper-extended', () => {
+    const { at } = landmarks('bat_stance');
+    const gap = at('RightFoot').x - at('LeftFoot').x;
+    // The shipped stance held both ankles on the centreline (0.13ft apart) —
+    // the "bolt upright, feet together" batter every re-audit screenshot shows.
+    expect(gap).toBeGreaterThan(0.6);
+    for (const side of ['Left', 'Right'] as const) {
+      const knee = at(`${side}Leg`);
+      const ankle = at(`${side}Foot`);
+      // A knee behind its own ankle is the backward bend again.
+      expect(knee.z).toBeGreaterThan(ankle.z - 0.05);
+    }
+  });
+
+  it('★ bat_stance keeps both hands on the one bat it holds', () => {
+    const { at } = landmarks('bat_stance');
+    // Two hands, one grip — the arm solve's own contract (see
+    // proceduralClips.ts § the arms are a grip now).
+    expect(at('LeftHand').distanceTo(at('RightHand'))).toBeLessThan(0.4);
   });
 });

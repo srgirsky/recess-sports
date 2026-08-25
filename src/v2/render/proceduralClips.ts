@@ -427,10 +427,12 @@ const BAT_STANCE_POSE: Pose = {
   sp: [6, -10, 0],
   s2: [4, -12, 0],
   hd: [0, 40, 0],
-  lu: [6, 0, 12],
-  ll: [-16, 0, 0],
-  ru: [8, 0, -12],
-  rl: [-18, 0, 0],
+  lu: [-8, 0, -4],
+  ll: [18, 0, 0],
+  lt: [-9, 0, 0],
+  ru: [-6, 0, 4],
+  rl: [16, 0, 0],
+  rt: [-9, 0, 0],
   la: [-165, 160, -15],
   lf: [-40, 0, 0],
   ra: [-45, 60, 45],
@@ -461,16 +463,16 @@ const FIELD_READY_POSE: Pose = {
   sp: [10, 0, 0],
   s2: [6, 0, 0],
   hd: [-32, 0, 0],
-  lu: [48, 0, 14],
-  ll: [-62, 0, 0],
-  lt: [18, 0, 0],
-  ru: [48, 0, -14],
-  rl: [-62, 0, 0],
-  rt: [18, 0, 0],
-  la: [-44, 0, 52],
-  lf: [0, -62, 0],
-  ra: [-30, 0, -48],
-  rf: [0, 54, 0],
+  lu: [-55, 0, -6],
+  ll: [88, 0, 0],
+  lt: [-28, 0, 0],
+  ru: [-55, 0, 6],
+  rl: [88, 0, 0],
+  rt: [-28, 0, 0],
+  la: [-40, 46, 46],
+  lf: [0, 38, 0],
+  ra: [-30, -46, -42],
+  rf: [0, -32, 0],
 };
 
 /** A held pose with a small breathing loop on top. */
@@ -1399,9 +1401,26 @@ function diff(a: Pose, b: Pose, k: number): Pose {
  *
  * So the frames after the marker must gather the ball IN, never reach further.
  */
+/**
+ * ★ A CATCH STARTS COILED, NOT FROM THE READY REACH. `FIELD_READY_POSE`
+ * holds the hands forward at mitt height (the 2026-08 squat re-author), so a
+ * catch keyed straight off it barely EXTENDS — and the validator derives the
+ * marker from full glove extension, which then lands on whatever frame noise
+ * says is furthest. Tucking the hands to the chest for a catch's first and
+ * last keys restores a real coil → explode → gather arc, and puts the
+ * extension peak back on the authored marker frame. `catch_jump` keys it
+ * directly for the same reason.
+ */
+const CATCH_BASE_POSE: Pose = shift(FIELD_READY_POSE, {
+  la: [0, -30, 0],
+  lf: [0, -20, 0],
+  ra: [0, 30, 0],
+  rf: [0, 18, 0],
+});
+
 function catchClip(spec: ClipSpec, reach: Pose, extra: Key[] = []): AnimationClip {
   const f = spec.marker!.frame;
-  const ready = FIELD_READY_POSE;
+  const ready = CATCH_BASE_POSE;
   const half = shift(ready, diff(ready, reach, 0.35));
   const gather = shift(reach, diff(reach, ready, 0.18));
   return build(spec, [
@@ -1461,11 +1480,13 @@ function dive(spec: ClipSpec, dir: number): AnimationClip {
   };
   // Full extension has to be UNIQUE to the marker frame, or "where is the
   // glove furthest from the body" has two answers and the marker is ambiguous.
-  const reaching = shift(FIELD_READY_POSE, diff(FIELD_READY_POSE, air, 0.7));
-  const gather = shift(air, diff(air, FIELD_READY_POSE, 0.2));
+  // Launch and land from the tucked CATCH_BASE_POSE — the ready pose's own
+  // forward hands would rival the dive's extension (the catch-family rule).
+  const reaching = shift(CATCH_BASE_POSE, diff(CATCH_BASE_POSE, air, 0.7));
+  const gather = shift(air, diff(air, CATCH_BASE_POSE, 0.5));
   return build(spec, [
-    { f: 0, pose: FIELD_READY_POSE, hips: [0, 0, 0] },
-    { f: 5, pose: shift(FIELD_READY_POSE, { hp: [10, 0, 20 * dir], lu: [-14, 0, 0], ru: [-14, 0, 0] }), hips: [travel * 0.06 * dir, -0.18, 0] },
+    { f: 0, pose: CATCH_BASE_POSE, hips: [0, 0, 0] },
+    { f: 5, pose: shift(CATCH_BASE_POSE, { hp: [10, 0, 20 * dir], lu: [-14, 0, 0], ru: [-14, 0, 0] }), hips: [travel * 0.06 * dir, -0.18, 0] },
     { f: f - 2, pose: reaching, hips: [travel * 0.42 * dir, 0.35, 0] },
     // Full extension, glove on the ball.
     { f, pose: air, hips: [travel * 0.8 * dir, 0.3, 0] },
@@ -1677,14 +1698,16 @@ const BUILDERS: Record<string, (spec: ClipSpec) => AnimationClip> = {
       hp: [46, 0, 0],
       sp: [16, 0, 0],
       hd: [-42, 0, 0],
-      lu: [76, 0, 16],
-      ll: [-92, 0, 0],
-      ru: [64, 0, -16],
-      rl: [-84, 0, 0],
-      la: [-88, 0, 26],
-      lf: [0, -30, 0],
-      ra: [-78, 0, -24],
-      rf: [0, 28, 0],
+      lu: [-58, 0, 8],
+      ll: [100, 0, 0],
+      lt: [-42, 0, 0],
+      ru: [-50, 0, -8],
+      rl: [92, 0, 0],
+      rt: [-38, 0, 0],
+      la: [-88, 34, 20],
+      lf: [0, 6, 0],
+      ra: [-78, -20, -24],
+      rf: [0, -18, 0],
     }),
   catch_high: (s) =>
     catchClip(s, {
@@ -1702,43 +1725,50 @@ const BUILDERS: Record<string, (spec: ClipSpec) => AnimationClip> = {
       hp: [12, 0, 0],
       sp: [4, 0, 0],
       hd: [-14, 0, 0],
-      la: [-96, 0, 30],
-      lf: [0, -40, 0],
-      ra: [-72, 0, -36],
-      rf: [0, 34, 0],
-      lu: [22, 0, 12],
-      ll: [-34, 0, 0],
-      ru: [22, 0, -12],
-      rl: [-34, 0, 0],
+      la: [-96, 30, 22],
+      lf: [0, 4, 0],
+      ra: [-72, -16, -36],
+      rf: [0, -20, 0],
+      lu: [-16, 0, -6],
+      ll: [30, 0, 0],
+      lt: [-14, 0, 0],
+      ru: [-16, 0, 6],
+      rl: [30, 0, 0],
+      rt: [-14, 0, 0],
     }),
   catch_low: (s) =>
     catchClip(s, {
       hp: [52, 0, 0],
       sp: [18, 0, 0],
       hd: [-46, 0, 0],
-      lu: [86, 0, 18],
-      ll: [-104, 0, 0],
-      ru: [70, 0, -18],
-      rl: [-96, 0, 0],
-      la: [-80, 0, 22],
-      lf: [0, -26, 0],
-      ra: [-66, 0, -22],
+      lu: [-62, 0, 8],
+      ll: [106, 0, 0],
+      lt: [-46, 0, 0],
+      ru: [-54, 0, -8],
+      rl: [98, 0, 0],
+      rt: [-42, 0, 0],
+      la: [-80, 38, 18],
+      lf: [0, 8, 0],
+      ra: [-66, -18, -22],
+      rf: [0, -16, 0],
     }),
   catch_jump: (s) => {
     const f = s.marker!.frame;
-    const up: Pose = { hp: [-10, 0, 0], sp: [-10, 0, 0], hd: [-36, 0, 0], la: [-172, 0, 20], ra: [-130, 0, -34], lu: [-30, 0, 8], ll: [50, 0, 0], ru: [-24, 0, -8], rl: [40, 0, 0] };
+    const up: Pose = { hp: [-10, 0, 0], sp: [-10, 0, 0], hd: [-36, 0, 0], la: [-172, 0, 34], ra: [-130, 0, -34], lu: [-30, 0, 8], ll: [50, 0, 0], ru: [-24, 0, -8], rl: [40, 0, 0] };
     // The glove must be UNIQUELY furthest from the body on frame `f`, or the
-    // marker is ambiguous — the rise and the reach have to peak together.
-    const rising = shift(FIELD_READY_POSE, diff(FIELD_READY_POSE, up, 0.6));
-    const gather = shift(up, diff(up, FIELD_READY_POSE, 0.2));
+    // marker is ambiguous — the rise and the reach have to peak together. The
+    // gather tucks HALFWAY home for that reason: a 20% tuck left the reach on
+    // a 1.72–1.74ft plateau for eight frames and the derived marker walked it.
+    const rising = shift(CATCH_BASE_POSE, diff(CATCH_BASE_POSE, up, 0.45));
+    const gather = shift(up, diff(up, CATCH_BASE_POSE, 0.5));
     return build(s, [
-      { f: 0, pose: FIELD_READY_POSE, hips: [0, 0, 0] },
-      { f: 5, pose: shift(FIELD_READY_POSE, { hp: [16, 0, 0], lu: [22, 0, 0], ru: [22, 0, 0], la: [40, 0, 0], ra: [40, 0, 0] }), hips: [0, -0.35, 0] },
+      { f: 0, pose: CATCH_BASE_POSE, hips: [0, 0, 0] },
+      { f: 5, pose: shift(CATCH_BASE_POSE, { hp: [16, 0, 0], lu: [22, 0, 0], ru: [22, 0, 0], la: [40, 0, 0], ra: [40, 0, 0] }), hips: [0, -0.35, 0] },
       { f: f - 3, pose: rising, hips: [0, 1.5, 0] },
       { f, pose: up, hips: [0, 2.1, 0] },
       { f: f + 4, pose: gather, hips: [0, 1.7, 0] },
-      { f: 24, pose: shift(FIELD_READY_POSE, { hp: [18, 0, 0], lu: [16, 0, 0], ru: [16, 0, 0] }), hips: [0, -0.3, 0] },
-      { f: s.frames - 1, pose: FIELD_READY_POSE, hips: [0, 0, 0] },
+      { f: 24, pose: shift(CATCH_BASE_POSE, { hp: [18, 0, 0], lu: [16, 0, 0], ru: [16, 0, 0] }), hips: [0, -0.3, 0] },
+      { f: s.frames - 1, pose: CATCH_BASE_POSE, hips: [0, 0, 0] },
     ]);
   },
   dive_left: (s) => dive(s, -1),
