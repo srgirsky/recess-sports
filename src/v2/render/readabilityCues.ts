@@ -41,6 +41,34 @@ export function ballShadowCue(point: CuePoint3, phase: BallCuePhase, enabled = t
   };
 }
 
+/**
+ * The pitched and batted ball, grown for the lens.
+ *
+ * `BALL_RADIUS_FT` is the real 0.12ft ball and the flight it flies is the
+ * sim's — but drawn honestly it is a 3-4px dot from the plate camera, and
+ * `docs/research/backyard-2026-reference.md` gap #12 records the consequence:
+ * "on a live ball the ball is a near-invisible dot". Both reference games
+ * draw the ball far larger than life. The cue is pure policy: a uniform draw
+ * scale from camera distance, growing past the distance where honest pixels
+ * stop being readable and capped before the ball reads as a beach ball.
+ * Render-only, like the shadow: reach, catches and bounces stay real feet.
+ */
+export const BALL_PRESENCE_REF_FT = 14;
+export const BALL_PRESENCE_MAX_SCALE = 3.2;
+
+export function ballPresenceCue(
+  point: CuePoint3,
+  cameraAt: CuePoint3,
+  phase: BallCuePhase,
+  enabled = true
+): { scale: number } {
+  if (!enabled || (phase !== 'pitch' && phase !== 'live')) return { scale: 1 };
+  const d = Math.sqrt(
+    (point.x - cameraAt.x) ** 2 + (point.y - cameraAt.y) ** 2 + (point.z - cameraAt.z) ** 2
+  );
+  return { scale: Math.min(BALL_PRESENCE_MAX_SCALE, Math.max(1, d / BALL_PRESENCE_REF_FT)) };
+}
+
 export interface ActiveFielderState {
   active: number;
   fielders: ReadonlyArray<{ p: { x: number; z: number } }>;

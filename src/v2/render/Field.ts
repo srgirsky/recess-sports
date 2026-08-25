@@ -261,6 +261,14 @@ export function buildField(
   root.add(mound);
   disposers.push(() => mound.geometry.dispose());
 
+  // The rubber sits ON the dome's flat top — real geometry, so it can never
+  // lose a depth fight with the overlay the way its painted predecessor did.
+  const rubber = buildRubber();
+  rubber.position.set(MOUND.x, Y_TURF + MOUND_HEIGHT + RUBBER_THICK / 2, MOUND.z);
+  rubber.receiveShadow = true;
+  root.add(rubber);
+  disposers.push(() => rubber.geometry.dispose());
+
   // ---- Bases + plate -----------------------------------------------------
   for (const p of [FIRST, SECOND, THIRD]) {
     const bag = buildBase();
@@ -692,9 +700,11 @@ function drawInfield(
   g.fillEllipse(m.x + mr * 0.32, m.y + mr * 0.3, mr * 0.9, mr * 0.9);
   speckleEllipse(g, m.x, m.y, mr * 0.85, mr * 0.85, [dirtLo, dirtHi], 160, 0.3, 29);
 
-  // The rubber.
-  g.fillStyle(0xf4f1ea, 0.95);
-  g.fillEllipse(m.x, m.y, ftToPx(2), ftToPx(0.5));
+  // The rubber is a real mesh on the dome now (`buildRubber`). Painting it
+  // here put a flat patch at Y_OVERLAY under a 0.5ft dome whose depth the
+  // overlay's polygonOffset bias deliberately loses — from some cameras the
+  // patch won the depth fight and read as a slab floating in the grass
+  // beside the mound (2026-08-24 review).
 
   // ---- Home plate circle + batter's boxes --------------------------------
   g.fillCircle(home.x, home.y, ftToPx(13), dirt, 1);
@@ -799,6 +809,17 @@ function buildMound(look: VenueLook): Mesh {
   const mat = makeToonMaterial({ color: look.dirt, rimStrength: 0.1 });
   const mesh = new Mesh(geom, mat);
   mesh.name = 'mound';
+  return mesh;
+}
+
+/** Little-league rubber: 2ft x 6in, proud of the dome by its own thickness. */
+const RUBBER_THICK = 0.07;
+
+function buildRubber(): Mesh {
+  const geom = new BoxGeometry(2, RUBBER_THICK, 0.5);
+  const mat = makeToonMaterial({ color: 0xf4f1ea, rimStrength: 0.2 });
+  const mesh = new Mesh(geom, mat);
+  mesh.name = 'rubber';
   return mesh;
 }
 
