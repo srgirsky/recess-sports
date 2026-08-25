@@ -13,7 +13,7 @@ import { describe, it, expect } from 'vitest';
 import { Box3, Vector3, type Object3D } from 'three';
 import { ROSTER } from '../../data/characters';
 import { ProxyCharacter } from './ProxyCharacter';
-import { BAT_ANCHOR_BONE, BAT_LENGTH_FT, BAT_PROP_NAME, GLOVE_ANCHOR_BONE, attachBatProp, attachGloveProp } from './props';
+import { BAT_ANCHOR_BONE, BAT_LENGTH_FT, BAT_PROP_NAME, GLOVE_ANCHOR_BONE, TEAM_BAND_ANCHOR_BONE, attachBatProp, attachGloveProp, attachTeamBandProp, paintTeamBand } from './props';
 import { AnimationDirector } from './AnimationDirector';
 import { buildProceduralClips } from './proceduralClips';
 import type { Mesh } from 'three';
@@ -94,5 +94,34 @@ describe('attachGloveProp', () => {
     dir.setGloveVisible(false);
     expect(glove.visible).toBe(false);
     dir.dispose();
+  });
+});
+
+describe('attachTeamBandProp', () => {
+  it('parents a hidden band holder to the throwing arm', () => {
+    const kid = new ProxyCharacter(ROSTER[0].visual);
+    const band = attachTeamBandProp(kid)!;
+    expect(band).toBeTruthy();
+    expect(band.visible).toBe(false);
+    expect(band.parent?.name).toBe(TEAM_BAND_ANCHOR_BONE);
+  });
+
+  it('dresses in a team colour, shares materials per colour, and undresses', () => {
+    const a = attachTeamBandProp(new ProxyCharacter(ROSTER[0].visual))!;
+    const b = attachTeamBandProp(new ProxyCharacter(ROSTER[1].visual))!;
+    paintTeamBand(a, 0x7b5bd6);
+    paintTeamBand(b, 0x7b5bd6);
+    expect(a.visible).toBe(true);
+    const meshA = a.children[0] as Mesh;
+    const meshB = b.children[0] as Mesh;
+    // One geometry and one material per palette colour — the bat's budget rule.
+    expect(meshA.geometry).toBe(meshB.geometry);
+    expect(meshA.material).toBe(meshB.material);
+    paintTeamBand(a, null);
+    expect(a.visible).toBe(false);
+    // Re-dressing after undress keeps the one mesh rather than stacking more.
+    paintTeamBand(a, 0xd6455b);
+    expect(a.children.length).toBe(2);
+    expect((a.children[0] as Mesh).material).not.toBe(meshB.material);
   });
 });

@@ -23,7 +23,7 @@
 // the "materials are shared by slot+colour" budget rule in `materials/`.
 // ---------------------------------------------------------------------------
 
-import { Group, LatheGeometry, Mesh, SphereGeometry, Vector2, type Object3D } from 'three';
+import { CylinderGeometry, Group, LatheGeometry, Mesh, SphereGeometry, Vector2, type Object3D } from 'three';
 import { makeToonMaterial } from './materials/toon';
 
 /** Youth bat, knob to tip, in reference feet (a real 26" bat is 2.17ft). */
@@ -153,4 +153,89 @@ export function attachGloveProp(view: { bones: readonly { name: string; add(o: O
   glove.visible = false;
   anchor.add(glove);
   return glove;
+}
+
+/** The band's tube, proud of a reference forearm (~0.07ft radius). */
+export const TEAM_BAND_RADIUS_FT = 0.1;
+export const TEAM_BAND_WIDTH_FT = 0.12;
+
+/**
+ * A WRISTBAND, not an armband: most kids wear sleeves over the upper arm, and
+ * a band mounted there vanished inside the sleeve geometry on the first
+ * painted check. Forearms are bare on nearly every outfit, and a wristband on
+ * the throwing arm is the most baseball accessory there is.
+ */
+const TEAM_BAND_ALONG_ARM_FT = 0.38;
+
+export const TEAM_BAND_ANCHOR_BONE = 'RightForeArm';
+export const TEAM_BAND_PROP_NAME = 'prop_team_band';
+
+let bandGeometry: CylinderGeometry | null = null;
+let bandTrimGeometry: CylinderGeometry | null = null;
+let bandTrimMaterial: ReturnType<typeof makeToonMaterial> | null = null;
+const bandMaterials = new Map<number, ReturnType<typeof makeToonMaterial>>();
+
+function bandParts(colorHex: number) {
+  // The colour ring rides a slightly wider white base tube: a sweatband's
+  // white edges are what keep the team colour legible when a kid's own
+  // sleeve happens to BE the team colour (first painted check: a blue band
+  // on Ace's blue cuff read as nothing at all).
+  bandGeometry ??= new CylinderGeometry(TEAM_BAND_RADIUS_FT + 0.006, TEAM_BAND_RADIUS_FT + 0.006, TEAM_BAND_WIDTH_FT * 0.55, 10, 1, true);
+  bandTrimGeometry ??= new CylinderGeometry(TEAM_BAND_RADIUS_FT, TEAM_BAND_RADIUS_FT, TEAM_BAND_WIDTH_FT, 10, 1, true);
+  bandTrimMaterial ??= makeToonMaterial({ color: 0xf6f2e8 });
+  let material = bandMaterials.get(colorHex);
+  if (!material) {
+    material = makeToonMaterial({ color: colorHex });
+    bandMaterials.set(colorHex, material);
+  }
+  return { geometry: bandGeometry, material, trimGeometry: bandTrimGeometry, trimMaterial: bandTrimMaterial };
+}
+
+/**
+ * A team-coloured armband on the throwing arm, hidden until a team dresses it.
+ *
+ * ★ THE TEAM HAS TO READ WITHOUT REPAINTING THE KID. A finished signature
+ * palette is identity, not team paint (`render/CLAUDE.md`), and the one
+ * `recessTeamAccent` surface every kid carries is a cap-band or headband that
+ * disappears at field distance — so a "Purple Tigers" game showed no purple
+ * anywhere (2026-08-24 review; Seth's call: identity stays, accents get
+ * louder). The band is a PROP like the bat and the mitt: one shared tube, one
+ * toon material per palette colour, parented to the arm bone so it rides
+ * every clip for free. `GameView` shows and tints it from `teamUniforms` —
+ * a kid with no team (the draft pod, spectators) never wears one.
+ */
+export function attachTeamBandProp(view: {
+  bones: readonly { name: string; add(o: Object3D): unknown }[];
+}): Object3D | null {
+  const anchor = view.bones.find((b) => b.name === TEAM_BAND_ANCHOR_BONE);
+  if (!anchor) return null;
+  const holder = new Group();
+  holder.name = TEAM_BAND_PROP_NAME;
+  holder.position.set(TEAM_BAND_ALONG_ARM_FT, 0, 0);
+  // Cylinder axis is Y; the arm bone runs along +X.
+  holder.rotation.z = Math.PI / 2;
+  holder.visible = false;
+  anchor.add(holder);
+  return holder;
+}
+
+/** Dress (or undress) an attached band in a team colour. */
+export function paintTeamBand(band: Object3D, colorHex: number | null): void {
+  const holder = band as Group;
+  if (colorHex === null) {
+    holder.visible = false;
+    return;
+  }
+  const { geometry, material, trimGeometry, trimMaterial } = bandParts(colorHex);
+  let mesh = holder.children[0] as Mesh | undefined;
+  if (!mesh) {
+    const trim = new Mesh(trimGeometry, trimMaterial);
+    trim.castShadow = false;
+    mesh = new Mesh(geometry, material);
+    mesh.castShadow = false;
+    holder.add(mesh, trim);
+  } else {
+    mesh.material = material;
+  }
+  holder.visible = true;
 }
