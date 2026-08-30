@@ -32,6 +32,7 @@ from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
 from sculptlib.ear import EarSpec, build_ear
+from sculptlib.hair import curl_field, curl_seeds
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
@@ -270,18 +271,46 @@ def build_cap(builder: MeshBuilder, detail: int) -> None:
 
 # --- The hair: dark flips under the cap ----------------------------------------
 #
-# A shallow skull-hugging shell from the cap edge down over the nape (no
-# enclosed pockets — the Rocket/Lefty rule), with mirrored flip tubes at
-# the nape and over the ear tops, and fringe wisps riding the forehead.
+# A hair MASS from the cap edge down over the nape (no enclosed pockets —
+# the Rocket/Lefty rule), with mirrored flip tubes at the nape and over the
+# ear tops, and fringe wisps riding the forehead.
 # not-traceable: every hair row on the sheet is bounded by cap above and
-# jaw below; the shell hugs the authored skull at +0.035.
+# jaw below, so no row's half-width survives regionRunsAt. The VOLUME is
+# authored, not traced: the previous +0.035 liner added 5% over the skull
+# and scored hairMass 1 ("front, A-pose and swing all read bare-skulled"),
+# while the sheet draws a thick wavy mass filling the cap-to-jaw band and
+# flipping out at the ends. +0.055-0.065 standoff with the lower rows kept
+# full; the cap rim above (half_x 0.65 at z 3.29) still covers the top.
 HAIR_LEVELS = [
-    (3.400, 0.455, 0.465, -0.010),
-    (3.240, 0.446, 0.458, 0.010),
-    (3.050, 0.410, 0.430, 0.060),
-    (2.940, 0.350, 0.370, 0.110),
-    (2.860, 0.260, 0.290, 0.150),
+    (3.400, 0.470, 0.480, -0.010),
+    (3.240, 0.492, 0.505, 0.010),
+    (3.050, 0.478, 0.500, 0.060),
+    (2.940, 0.448, 0.470, 0.110),
+    (2.860, 0.395, 0.425, 0.150),
 ]
+
+# ★ THE CURL FIELD — sculptlib/hair.py holds the mechanism and the identity
+# that closed the θ-only family; the ladder discipline is in the skill.
+# measured: `npm run measure:strands -- calls_shot` reads the CONCEPT at
+# 4.91 strand minima/row on the hair band — three mirror pairs put 6 lobes
+# across a row, the nearest even count, and 24 columns give them the
+# four-columns-per-lobe floor. Bands cover only the VISIBLE strip (the cap
+# owns everything above ~3.35). Widths at the Mimi rule: σ ≈ half the
+# seed half-spacing (π/6 ≈ 0.52 → θw 0.24) and half the band gap
+# (0.16 → zw 0.08) so neighbouring curls part without merging.
+CURL_SEEDS = curl_seeds(
+    pairs_per_row=3,
+    bands=4,
+    z_top=3.350,
+    z_bottom=2.870,
+    amplitude=0.100,
+)
+CURL_THETA_WIDTH = 0.24
+CURL_Z_WIDTH = 0.08
+# Two-tone: HAIR is the lifted brown (the lit strand tops), HAIR_DARK the
+# near-void base — same trough mapping as Mimi, and on near-black hair it is
+# the LIT side that carries the read under the ramp.
+CURL_TROUGH = 0.018
 
 HAIR_OPEN_BOTTOM = 2.840
 HAIR_FRINGE_Z = 3.330      # the shell stays behind the face above this
@@ -289,19 +318,27 @@ HAIR_FRINGE_Z = 3.330      # the shell stays behind the face above this
 
 def hair_window_z(x_signed: float) -> float:
     # The face window: open from centre out to the temples, closing at the
-    # sideburn line.
+    # sideburn line. The boundaries moved out with the shell's standoff
+    # (0.30/0.42 → 0.34/0.46): leaving them put while the shell widened
+    # painted hair over the cheek edges and took visible-face-right from
+    # 27.1 to 17.7 against a tolerance of 6 — the window must widen WITH
+    # the mass or the mass eats the face (Mimi's fringe lesson, laterally).
     x_abs = abs(x_signed)
-    if x_abs < 0.30:
+    if x_abs < 0.34:
         return HAIR_FRINGE_Z
-    if x_abs < 0.42:
-        return HAIR_FRINGE_Z - (x_abs - 0.30) * 2.2
+    if x_abs < 0.46:
+        return HAIR_FRINGE_Z - (x_abs - 0.34) * 2.2
     return 2.980
 
 
 def build_hair(builder: MeshBuilder, detail: int) -> None:
     assert all(a[0] > b[0] for a, b in zip(HAIR_LEVELS, HAIR_LEVELS[1:])), \
         "HAIR_LEVELS must be strictly descending in z"
-    segments = 10 if detail >= 2 else (8 if detail == 1 else 8)
+    # 24 columns: the 10-column ring made cos(6θ) unrepresentable (1.67
+    # samples per lobe) and sampled hair_window_z's step into a sawtooth
+    # hairline that read as stubble. 24 gives the field's 6 lobes their
+    # four-column floor and the window a real curve.
+    segments = 24 if detail >= 2 else (8 if detail == 1 else 8)
     use = HAIR_LEVELS if detail >= 2 else thin_for_lod(
         [(z, hx, hy, yc) for z, hx, hy, yc in HAIR_LEVELS], detail)
     ascending = list(reversed(use))
@@ -310,16 +347,32 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
         ring = []
         for column in range(segments):
             theta = 2 * pi * column / segments
-            wave = 1.0 + 0.05 * cos(6 * theta)
-            x = half_x * wave * cos(theta)
-            y = y_centre + half_y * wave * sin(theta)
+            # The 2D curl field (see the constants above): θ-only waves flute,
+            # and the paint below is what reads under the ramp.
+            f = curl_field(
+                theta, z, CURL_SEEDS,
+                theta_width=CURL_THETA_WIDTH,
+                z_width=CURL_Z_WIDTH,
+            )
+            clump = 1.0 + f
+            x = half_x * clump * cos(theta)
+            y = y_centre + half_y * clump * sin(theta)
             if y < y_centre:
                 sf = skull_front_y(x, z)
+                # The ear band: the widened shell (0.478-0.492) buried his
+                # ears (outer ~0.46) in profile — the critic's regression on
+                # this branch. Diva's lesson applies laterally-eaten features
+                # generally: the sheet hangs hair BEHIND the ear in depth,
+                # so the front-half wall starts behind it (y ≥ -0.02) across
+                # the ear's own z span; the flip tubes still arc over the
+                # ear tops, which is what the sheet draws.
+                in_ear_band = 3.050 < z < 3.400
                 if HAIR_OPEN_BOTTOM < z < hair_window_z(x):
-                    y = max(y, (sf + 0.045) if sf > -9.0 else -0.150)
+                    y = max(y, (sf + 0.045) if sf > -9.0 else (-0.020 if in_ear_band else -0.150))
                 else:
-                    y = max(y, (sf - 0.050) if sf > -9.0 else -0.260)
-            ring.append(builder.vertex((x, y, z), HAIR, "Head"))
+                    y = max(y, (sf - 0.050) if sf > -9.0 else (-0.020 if in_ear_band else -0.260))
+            tone = HAIR if f > CURL_TROUGH else HAIR_DARK
+            ring.append(builder.vertex((x, y, z), tone, "Head"))
         rows.append(ring)
     bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
     top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.02), HAIR, "Head")
