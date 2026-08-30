@@ -68,7 +68,13 @@ SOLE = rgba("F8E6C4")        # cream toe bumper, laces
 # socks anywhere on the sheet).
 TEAM_MASK = rgba("D8D2C6")
 JACKET = rgba("8A5A2E")      # the brown jacket — chroma up over #6c4323
-JACKET_DARK = rgba("6E4620") # ribbed hem/cuffs and collar
+JACKET_DARK = rgba("66401B") # ribbed hem/cuffs and collar — deepened from
+                             # 6E4620 (ΔLum 21 → 28 against JACKET; Dex's
+                             # cuffs measured ΔLum 21 as invisible under the
+                             # board ramp, ~28 delivered-legible)
+ZIP = rgba("C0B9AE")         # the metal zipper tape — the sheet draws silver
+                             # teeth down both front edges; grey so it reads
+                             # against both the brown shell and the cream tee
 GLASSES = rgba("241A12")     # the wire frames
 
 PALETTE = Palette(
@@ -319,7 +325,9 @@ def build_glasses(builder: MeshBuilder, detail: int) -> None:
 # fronts (cream run 213-253 at z 1.6-2.35); the torso halves are bounded off
 # the jacket silhouette minus its shell.
 TORSO_LEVELS = [
-    (1.400, 0.320, 0.272, "Hips"),    # tee hem under the jacket
+    (1.400, 0.320, 0.272, "Hips"),    # jeans waist under the jacket
+    (1.498, 0.317, 0.271, "Hips"),    # jeans-waist ring pair — TEE_HEM_Z
+    (1.512, 0.316, 0.270, "Hips"),    #   between them, crisp (Zippy's hem)
     (1.560, 0.315, 0.270, "Spine"),
     (1.760, 0.305, 0.262, "Spine"),
     (1.960, 0.295, 0.255, "Spine1"),
@@ -332,15 +340,43 @@ TORSO_LEVELS = [
     (2.605, 0.132, 0.122, "Spine2"),  # neck hole — OUTSIDE the neck loft
 ]
 
+# The tee loft's colour: cream tee above the jeans waist, denim below — the
+# old all-cream loft showed a cream sliver under the cropped jacket where the
+# sheet draws the jeans rising to its hem (the switch sits ABOVE the shell's
+# 1.482 bottom edge so no cream survives below the band, and at the drawn
+# jeans waist in the open-front gap, z ~1.51).
+TEE_HEM_Z = 1.505   # inside the 1.498/1.512 pair
+
+
+def tee_color(theta: float, z: float):
+    return PANTS if z < TEE_HEM_Z else SHIRT
+
+
+# ★ THE HEM-SWEEP REBUILD: the old table's widest rows were its bottom two
+# (0.352/0.358 at 1.440/1.500), so the shell FLARED downward into the
+# "labcoat cone" the critic named, and its "ribbed hem" was one slightly-
+# proud colour row. The sheet draws a cropped bomber: a ribbed waistband
+# that CINCHES under a fuller body, plus a back yoke seam. Traced on the
+# front view: the shell's brown ends at z 1.48 (jeans below), the band-top
+# terminator seam sits at z 1.60-1.62 (dark rows 46230d/542f16 at cols ±55),
+# band height 0.13ft; the profile depth cinches 0.407 → 0.310 through the
+# band. The back yoke seam is a dark row at z 2.33 on BOTH back columns
+# (51280f at dx +45, 522e19 at dx -45) — a colour-on-ring pair, back arc
+# only. Ring pairs at both band edges; the body drape ring stands PROUD of
+# the cinched band top (crisp + proud is a constructed garment — Penny/Dex).
 # not-traceable: the shell hugs the tee +0.026; its silhouette IS the traced
 # figure at torso rows (front z=1.66 halfWidth=0.7064 includes the arms).
 JACKET_LEVELS = [
-    (1.440, 0.352, 0.302),
-    (1.500, 0.358, 0.306),    # ribbed hem, slightly proud
-    (1.660, 0.345, 0.298),
-    (1.860, 0.334, 0.290),
+    (1.482, 0.334, 0.286),    # rib band bottom edge — brown ends z 1.48
+    (1.512, 0.342, 0.292),    # band bottom roll, proud lip
+    (1.600, 0.330, 0.282),    # band top ring — the CINCH
+    (1.612, 0.344, 0.296),    # body drape ring, PROUD +0.014 — the blouson
+    (1.700, 0.347, 0.299),    # body fullness the band gathers under
+    (1.860, 0.336, 0.291),
     (2.060, 0.324, 0.280),
     (2.240, 0.315, 0.268),
+    (2.325, 0.309, 0.261),    # yoke seam pair — the dark row lands between
+    (2.340, 0.307, 0.259),    #   them, back arc only (traced z 2.33)
     (2.380, 0.300, 0.252),
     (2.470, 0.262, 0.222),
     (2.545, 0.205, 0.180),
@@ -348,6 +384,19 @@ JACKET_LEVELS = [
 ]
 
 JACKET_GAP = 0.55   # radians of front opening either side of centre-front
+
+JACKET_BAND_TOP = 1.606          # inside the 1.600/1.612 pair
+JACKET_YOKE = (2.322, 2.343)     # the seam row rides the 2.325/2.340 pair
+
+
+def jacket_shell_color(theta: float, z: float):
+    """Ribbed band and collar dark; the yoke seam dark on the BACK arc only
+    (the front panels carry no seam on the sheet)."""
+    if z < JACKET_BAND_TOP or z > 2.58:
+        return JACKET_DARK
+    if JACKET_YOKE[0] <= z <= JACKET_YOKE[1] and sin(theta) > 0.35:
+        return JACKET_DARK
+    return JACKET
 
 
 def build_jacket(builder: MeshBuilder, detail: int) -> None:
@@ -358,17 +407,19 @@ def build_jacket(builder: MeshBuilder, detail: int) -> None:
     sweep = 2 * pi - 2 * JACKET_GAP
     rows = []
     for (z, hx, hy) in JACKET_LEVELS:
-        colour = JACKET_DARK if z < 1.52 or z > 2.58 else JACKET
         bone = "Hips" if z < 1.7 else ("Spine" if z < 2.1 else "Spine2")
         row = []
         # Fold-back inner vertex at the leading front edge.
         t0 = start
-        row.append(builder.vertex((hx * cos(t0) * 0.93, hy * sin(t0) * 0.93, z), colour, bone))
+        row.append(builder.vertex((hx * cos(t0) * 0.93, hy * sin(t0) * 0.93, z),
+                                  jacket_shell_color(t0, z), bone))
         for i in range(cols):
             t = start + sweep * i / (cols - 1)
-            row.append(builder.vertex((hx * cos(t), hy * sin(t), z), colour, bone))
+            row.append(builder.vertex((hx * cos(t), hy * sin(t), z),
+                                      jacket_shell_color(t, z), bone))
         t1 = start + sweep
-        row.append(builder.vertex((hx * cos(t1) * 0.93, hy * sin(t1) * 0.93, z), colour, bone))
+        row.append(builder.vertex((hx * cos(t1) * 0.93, hy * sin(t1) * 0.93, z),
+                                  jacket_shell_color(t1, z), bone))
         rows.append(row)
     builder.grid(rows, 1, cyclic=False)
     # Collar flaps: two small grids folding outward at the top front edges.
@@ -382,6 +433,97 @@ def build_jacket(builder: MeshBuilder, detail: int) -> None:
                 row.append(builder.vertex((x, base_y + dy, 2.585 + dz - 0.02 * i), JACKET_DARK, "Spine2"))
             frows.append(row)
         builder.grid(frows, 1, cyclic=False, flip=side < 0)
+
+
+def jacket_ring_at(z: float) -> tuple[float, float]:
+    """(half-width, half-depth) of the jacket shell at height z (Ace)."""
+    levels = JACKET_LEVELS
+    for (za, wa, da), (zb, wb, db) in zip(levels, levels[1:]):
+        if za <= z <= zb:
+            t = (z - za) / (zb - za)
+            return wa + t * (wb - wa), da + t * (db - da)
+    return (levels[0][1], levels[0][2]) if z < levels[0][0] else (levels[-1][1], levels[-1][2])
+
+
+def jacket_bone(z: float) -> str:
+    return "Hips" if z < 1.7 else ("Spine" if z < 2.1 else "Spine2")
+
+
+def jacket_surface_point(a: float, z: float, proud: float) -> tuple[float, float, float]:
+    """A point `proud` outside the shell at bearing `a` off centre-front (+x
+    positive), pushed along the ellipse's outward normal (Ace)."""
+    hx, hy = jacket_ring_at(z)
+    theta = 1.5 * pi + a
+    x, y = hx * cos(theta), hy * sin(theta)
+    nx, ny = cos(theta) / hx, sin(theta) / hy
+    norm = sqrt(nx * nx + ny * ny)
+    return (x + proud * nx / norm, y + proud * ny / norm, z)
+
+
+# --- Jacket construction: zipper tapes, slider, buttoned flap pockets ----------
+#
+# The sheet's jacket zips: silver teeth tapes run BOTH front edges collar to
+# hem, the slider hangs at the bottom of the +x tape, and each panel carries
+# a large patch pocket under a buttoned flap. Bevelled proud patches are
+# batch 7's construction (a rim row proud of its panel reads as sewn); Dex's
+# pull tab is the sweep's slider exemplar, and the buttons are TRANSLATED
+# copies, never mirrors (Penny's 13 inverted button pairs).
+# measured: front — flap top z 1.967, pocket bottom z 1.627, button z 1.90;
+#   drawn at |x| 0.20-0.44 on the flared OPEN panels, authored at the same
+#   panel fraction of the closed shell (bearings 0.78-1.12 rad) — recorded
+#   deviation, the open-jacket drape has no shell x (Ace's welt precedent)
+ZIP_TAPE_Z = (1.500, 1.630, 1.780, 1.950, 2.120, 2.290, 2.450, 2.560)
+
+
+def build_jacket_details(builder: MeshBuilder, detail: int) -> None:
+    if detail < 2:
+        return
+    # The zipper tape: a proud bevelled strip riding each front edge.
+    for side in (1, -1):
+        rows = []
+        for z in ZIP_TAPE_Z:
+            row = []
+            for da, pr in ((0.005, 0.006), (0.055, 0.020), (0.105, 0.006)):
+                a = side * (JACKET_GAP + da)
+                row.append(builder.vertex(jacket_surface_point(a, z, pr), ZIP, jacket_bone(z)))
+            rows.append(row)
+        builder.grid(rows, 1, cyclic=False, flip=side < 0)
+    # The slider at the base of the +x tape: Dex's two stacked patches — a
+    # base step, and a raised face with a dark hinge-shadow top row.
+    for a0, a1, z0, z1, pr, top_colour in (
+        (0.470, 0.640, 1.502, 1.578, 0.030, ZIP),
+        (0.500, 0.610, 1.512, 1.564, 0.044, JACKET_DARK),
+    ):
+        rows = []
+        for j, z in enumerate((z0, z1)):
+            colour = top_colour if j == 1 else ZIP
+            rows.append([builder.vertex(jacket_surface_point(a, z, pr), colour, "Hips")
+                         for a in (a0, (a0 + a1) / 2, a1)])
+        builder.grid(rows, 1, cyclic=False)
+    # The flap pockets: a bevelled patch pocket on each panel, its top row
+    # dark (the slit shadow), under a prouder flap; a silver button rides
+    # each flap. Grids flip on the -x side; the button ellipsoids are
+    # translated copies sharing one winding.
+    for side in (1, -1):
+        body_rows = []
+        for z, pr in ((1.640, 0.005), (1.660, 0.016), (1.870, 0.016), (1.888, 0.006)):
+            colour = JACKET_DARK if z > 1.88 else JACKET
+            row = []
+            for i in range(3):
+                a = side * (0.780 + 0.170 * i)
+                row.append(builder.vertex(jacket_surface_point(a, z, pr), colour, jacket_bone(z)))
+            body_rows.append(row)
+        builder.grid(body_rows, 1, cyclic=False, flip=side < 0)
+        flap_rows = []
+        for z, pr in ((1.895, 0.030), (1.975, 0.010)):
+            row = []
+            for i in range(3):
+                a = side * (0.765 + 0.185 * i)
+                row.append(builder.vertex(jacket_surface_point(a, z, pr), JACKET, jacket_bone(z)))
+            flap_rows.append(row)
+        builder.grid(flap_rows, 1, cyclic=False, flip=side < 0)
+        bx, by, bz = jacket_surface_point(side * 0.950, 1.905, 0.040)
+        builder.ellipsoid((bx, by, bz), (0.020, 0.014, 0.020), 1, ZIP, "Spine", 5, 3)
 
 
 # Neck.
@@ -404,6 +546,13 @@ SHOULDER_BLEND = {
 # not-traceable: authored in the rig's T-pose while the concept hangs the
 # arms; sleeve girth bounded off the below-shoulder silhouette. Deltoid kept
 # LOW (Turbo's wedge lesson).
+# ★ The wrist is a RIBBED CUFF, and the old table drew a bare diameter step:
+# one slightly-proud dark ring (1.300 at 0.109 over 1.240's 0.103) tapering
+# straight into the hand. The sheet draws Dex's construction — the sleeve
+# bellows, then a ribbed band CINCHES over the wrist under a terminator: a
+# proud sleeve drape roll, a crisp step IN onto the rib band (~0.10ft long,
+# the drawn cuff's own length), and the roll-under to the hand. Colour
+# switch ON the 1.246/1.260 pair.
 ARM_STATIONS = [
     (0.215, 0.142, JACKET, "Arm"),
     (0.300, 0.147, JACKET, "Arm"),
@@ -413,10 +562,11 @@ ARM_STATIONS = [
     (0.720, 0.116, JACKET, "Arm"),
     (ARM_ELBOW_X, 0.112, JACKET, "ForeArm"),
     (1.100, 0.108, JACKET, "ForeArm"),
-    (1.240, 0.103, JACKET, "ForeArm"),
-    (1.300, 0.109, JACKET_DARK, "Hand"),   # ribbed cuff, proud
-    (1.340, 0.101, JACKET_DARK, "Hand"),
-    (1.362, 0.082, JACKET_DARK, "Hand"),
+    (1.230, 0.104, JACKET, "ForeArm"),
+    (1.246, 0.113, JACKET, "ForeArm"),     # sleeve drape roll, PROUD lip —
+    (1.260, 0.093, JACKET_DARK, "Hand"),   #   overhangs the rib cinch
+    (1.336, 0.090, JACKET_DARK, "Hand"),   # rib band bottom
+    (1.362, 0.078, JACKET_DARK, "Hand"),   # roll under
     (1.382, 0.060, SKIN, "Hand"),
     (1.420, 0.064, SKIN, "Hand"),
     (1.470, 0.072, SKIN, "Hand"),   # knuckle line
@@ -624,8 +774,10 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
 
     builder.loft(NECK_LEVELS, 0, SKIN, 14 if detail >= 2 else segments)
     torso_segments = 18 if detail >= 2 else segments
-    builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, torso_segments)
+    builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, torso_segments,
+                 color_fn=tee_color)
     build_jacket(builder, detail)
+    build_jacket_details(builder, detail)
 
     for side in (1, -1):
         build_arm(builder, side, detail, spec=PROF_ARM)

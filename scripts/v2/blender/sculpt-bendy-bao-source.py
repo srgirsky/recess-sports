@@ -372,8 +372,16 @@ TORSO_LEVELS = [
     (2.380, 0.262, 0.220, "Spine2"),  # shoulder slope
     (2.450, 0.200, 0.180, "Spine2"),
     (2.505, 0.150, 0.140, "Spine2"),
-    (2.528, 0.156, 0.146, "Spine2"),  # collar rib, proud — the team ring
-    (2.550, 0.128, 0.122, "Spine2"),  # neck hole
+    # ★ The neckline-clearance fix. The hole ring shipped at 0.128 while the
+    # neck loft is ~0.149 at z 2.55, so the tee's top band dove INSIDE the
+    # neck (−0.021) — the turbo/ace interpenetration class, and the board
+    # showed it: see-through backdrop notches flanking the neck at the
+    # collar line, the rib reading as a 2px sliver. The hole ring now stands
+    # OUTSIDE the neck loft (0.158/0.148 vs the neck's 0.1489/0.1389 at
+    # z 2.55, ≥0.008 clear on both axes) with the rib overhanging it — the
+    # neck emerges from an open collar instead of piercing the band.
+    (2.528, 0.164, 0.152, "Spine2"),  # collar rib, proud
+    (2.550, 0.158, 0.148, "Spine2"),  # neck hole — OUTSIDE the neck loft
 ]
 
 # The pinch at the bottom of the neck, widening into the jaw.
@@ -423,19 +431,36 @@ SHOULDER_BLEND = {
 
 # not-traceable: authored in the rig's T-pose while the concept hangs the
 # arms; the bare forearm traces ~0.06 half and the fists ~0.075.
+#
+# ★ The sleeve carries the tee's STRIPES, not plain cream (the sheet
+# continues them across the shoulder and down the sleeve). Traced on the
+# front view (mid-sleeve columns x 152/278/286, seam row ~385 → hem row
+# ~461): the yoke teal crosses the shoulder crown to rows ~381-385, the
+# sleeve's own teal band runs rows 393-417, cream resumes to the cuff at
+# rows 441-461 — as fractions of the drawn sleeve: teal 0.11-0.42, cuff
+# from 0.74. Mapped onto the authored visible sleeve (torso exit ~0.310 →
+# hem 0.736): band 0.361-0.489, with crisp station pairs AT each boundary
+# (Flash's rule: a colour edge between distant rings smears across the
+# whole gap). The root run is teal so the torso's yoke stripe (2.300-2.440)
+# continues over the shoulder with no cream flash when the arm hangs.
+# Budget: +2 net stations paid for by the LOD0 torso 24→20 trade below and
+# dropping the interpolable 1.240 forearm ring (linear radius error
+# 0.0016ft) — trim tessellation before geometry, never a drawn feature.
 ARM_STATIONS = [
-    (0.215, 0.140, SHIRT, "Arm"),
-    (0.300, 0.145, SHIRT, "Arm"),
-    (0.335, 0.138, SHIRT, "Arm"),
-    (ARM_SHOULDER_X, 0.126, SHIRT, "Arm"),
-    (0.560, 0.112, SHIRT, "Arm"),
+    (0.215, 0.140, SHIRT_DARK, "Arm"),   # root run — the yoke stripe's teal
+    (0.300, 0.145, SHIRT_DARK, "Arm"),
+    (0.312, 0.143, SHIRT, "Arm"),        # crisp pair — yoke stripe's outboard edge
+    (0.355, 0.135, SHIRT, "Arm"),        # cream-side guard, band top
+    (0.367, 0.133, SHIRT_DARK, "Arm"),   # the sleeve's teal band begins
+    (ARM_SHOULDER_X, 0.126, SHIRT_DARK, "Arm"),
+    (0.483, 0.119, SHIRT_DARK, "Arm"),   # the band's traced lower edge
+    (0.495, 0.118, SHIRT, "Arm"),        # cream-side guard, band bottom
     (SLEEVE_HEM_X - 0.026, 0.104, SHIRT, "Arm"),
     (SLEEVE_HEM_X, 0.110, SHIRT_DARK, "Arm"),          # teal hem band, proud
     (SLEEVE_HEM_X + 0.022, 0.104, SHIRT_DARK, "Arm"),
     (SLEEVE_HEM_X + 0.036, 0.086, SHIRT_DARK, "Arm"),
     (SLEEVE_HEM_X + 0.052, 0.062, SKIN, "Arm"),
     (ARM_ELBOW_X, 0.058, SKIN, "ForeArm"),
-    (1.240, 0.055, SKIN, "ForeArm"),
     (1.365, 0.054, SKIN, "Hand"),
     (1.412, 0.062, SKIN, "Hand"),
     (1.465, 0.071, SKIN, "Hand"),   # knuckle line
@@ -680,7 +705,11 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         build_ear(builder, side, detail, palette=PALETTE, skull_at=skull_surface_x, spec=EAR_SPEC)
 
     builder.loft(NECK_LEVELS, 0, SKIN, segments)
-    torso_segments = 24 if detail >= 2 else segments
+    # 20, not 24: Flash's rows-for-columns trade pays for the sleeve's stripe
+    # station pairs — the stripes are horizontal, so the torso's colour edges
+    # keep their crispness at any column count, and 20 stays even (mirror-
+    # symmetric columns). Invisible at game scale; a lost stripe is not.
+    torso_segments = 20 if detail >= 2 else segments
     builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, torso_segments,
                  color_fn=stripe_color)
     build_cargo_pockets(builder, detail)

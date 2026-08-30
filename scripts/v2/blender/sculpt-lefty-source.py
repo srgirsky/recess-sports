@@ -63,11 +63,26 @@ SHIRT_DARK = rgba("E05E14")  # ribbing and zip shadow
 TEE = rgba("FFF4DE")         # the cream tee in the jacket's front gap
 PANTS = rgba("363740")       # navy joggers
 PANTS_DARK = rgba("26272E")
-CUFF = rgba("2E2F36")        # jogger ankle cuffs
+# ★ The jogger cuff was #2E2F36 against PANTS #363740 — ΔLum 4, and the board
+# ramp (≈ authored/1.2, chroma compressed) folded them into one navy: "the
+# jogger cuff reads as nothing" (hem-sweep critic). Dex's SHIRT_DARK cuffs
+# measured the thresholds: ΔLum ~21 authored is invisible, ~34 reads. This is
+# the roster's HUE-not-value lesson (Lefty's own blonde: separation the toon
+# ramp cannot fold) applied to navy: the rib is a lighter STEEL BLUE — b−r 38
+# against the joggers' 10, ΔLum 33 authored — so the cuff survives the ramp
+# chromatically, not just tonally. Sheet support: the drawn rib's lit rows
+# (393a3d/3c3c43) sit a step bluer and lighter than the pant mid (2b2c32).
+CUFF = rgba("515777")        # jogger ankle cuffs — ribbed steel-navy
 SOCK = rgba("FFF6E6")
 SHOE = rgba("AC9578")        # warm taupe canvas, eased toward cream
 WHITE = rgba("FFF2D2")       # cream cupsole
 SOLE = rgba("F6E0B8")        # toe bumper and laces
+ZIP = rgba("A69E94")         # zipper tape and teeth — traced 8e7e72/847e7d at
+                             # the tape columns (dx ±28 of centre, z 1.75);
+                             # authored ≈ delivered·1.2 (lum 159 → ~132)
+PIPE = rgba("FFF8E8")        # the cream piping — traced fdf3e8/fefbf3 where
+                             # the lines cross z 1.75 and 2.4; the sheet's
+                             # near-white cream, authored at the clip ceiling
 # The team accent is the CAP FRONT PANEL badge (the cap lane's convention).
 TEAM_MASK = rgba("D8D2C6")
 
@@ -395,12 +410,14 @@ def build_side_hair(builder: MeshBuilder, detail: int) -> None:
 
 def build_lapels(builder: MeshBuilder, detail: int) -> None:
     """Proud lapel edges flanking the tee window — the open-jacket read the
-    round-3 polish list asked for, instead of a painted stripe."""
+    round-3 polish list asked for, instead of a painted stripe. They end at
+    the ribbed hem band now that the jacket is cropped to its drawn length
+    (the old 1.640 bottom ran the fold into the joggers)."""
     if detail < 1:
         return
     for side in (1, -1):
         builder.tube(
-            [(side * 0.162, -0.268, 2.560), (side * 0.158, -0.292, 2.100), (side * 0.155, -0.305, 1.640)],
+            [(side * 0.162, -0.268, 2.560), (side * 0.158, -0.292, 2.100), (side * 0.155, -0.295, 1.755)],
             [0.034, 0.038, 0.034], 1, SHIRT_DARK, ["Spine2", "Spine1", "Spine"], 4)
 
 
@@ -415,15 +432,29 @@ def build_hood(builder: MeshBuilder, detail: int) -> None:
 
 # --- The open track jacket -----------------------------------------------------
 #
-# One loft carries jacket and tee: the orange shell everywhere except a
-# narrow front window where the cream tee shows through the open zip —
-# colour, with the ribbed collar and hem as bands.
+# One loft carries jacket, tee and jogger waist: the orange shell everywhere
+# except a narrow front window where the cream tee shows through the open zip —
+# colour, with the ribbed collar as a band. The hem-sweep round rebuilt the
+# bottom: the old table ran the jacket to z 1.505 as a flat colour cut into
+# the joggers, where the sheet draws a CROPPED bomber ending in a ribbed band
+# at z 1.73-1.85 with the navy joggers rising beneath it. The band is Dex's
+# construction (Penny's waistband pattern): a ring pair at each edge so the
+# colour switch is crisp, the band's bottom roll standing PROUD over the
+# joggers and the body draping PROUD over the band top — crisp alone is a
+# colour edge; crisp + proud is a constructed garment.
 # not-traceable: her hanging arms merge with the torso at every row; halves
-# bounded off the orange cluster runs.
+# bounded off the orange cluster runs. The band EDGES are traced on the front
+# view: jacket→jogger boundary at z 1.722-1.734 (hard seam, cols ±45 of
+# centre), the band-top terminator seam at z 1.831-1.855 (dark rows 963505/
+# 702705 where the body drapes over the rib).
 TORSO_LEVELS = [
-    (1.470, 0.350, 0.295, "Hips"),    # ribbed hem
-    (1.505, 0.365, 0.308, "Hips"),
-    (1.700, 0.352, 0.300, "Spine"),
+    (1.470, 0.340, 0.287, "Hips"),    # jogger waist — tucks toward the legs
+    (1.505, 0.352, 0.297, "Hips"),    # jogger hip
+    (1.660, 0.350, 0.297, "Hips"),    # joggers under the jacket hem
+    (1.722, 0.348, 0.295, "Hips"),    # jacket hem bottom ring — crisp edge
+    (1.736, 0.360, 0.305, "Hips"),    # rib band bottom roll, PROUD over joggers
+    (1.834, 0.346, 0.293, "Spine"),   # rib band top ring — cinched
+    (1.846, 0.356, 0.302, "Spine"),   # body drape ring, PROUD +0.010 (Penny)
     (1.900, 0.338, 0.288, "Spine"),
     (2.100, 0.320, 0.272, "Spine1"),
     (2.280, 0.300, 0.255, "Spine1"),
@@ -434,14 +465,142 @@ TORSO_LEVELS = [
     (2.760, 0.138, 0.124, "Spine2"),  # jacket rides high under the chin
 ]
 
+# Each colour switch sits ON its ring pair (the Zippy stretched-band lesson:
+# a switch between distant rings ramps colour across 32px).
+HEM_EDGE_Z = 1.729   # inside the 1.722/1.736 pair — joggers below, rib above
+BAND_TOP_Z = 1.840   # inside the 1.834/1.846 pair — rib below, shell above
+
 
 def jacket_color(theta: float, z: float):
-    # The open front: tee cream in a narrow window about the centre-front.
-    if z < 2.60 and sin(theta) < -0.80 and abs(cos(theta)) < 0.34:
-        return TEE
-    if z > 2.710 or z < 1.505:
-        return SHIRT_DARK   # ribbed collar and hem
+    # The open front: a narrow window about the centre-front — the cream tee
+    # above the band top, the joggers showing through the gap below it (the
+    # centre-front strip traces tee cream down to z 1.84, navy from 1.82).
+    in_window = sin(theta) < -0.80 and abs(cos(theta)) < 0.34
+    if z > 2.710:
+        return SHIRT_DARK   # ribbed collar
+    if in_window and z < 2.60:
+        return TEE if z > BAND_TOP_Z else PANTS
+    if z < HEM_EDGE_Z:
+        return PANTS        # the joggers rise under the cropped jacket
+    if z <= BAND_TOP_Z:
+        return SHIRT_DARK   # the ribbed hem band
     return SHIRT
+
+
+def torso_ring_at(z: float) -> tuple[float, float]:
+    """(half-width, half-depth) of the jacket shell at height z (Dex)."""
+    levels = TORSO_LEVELS
+    for (za, wa, da, _), (zb, wb, db, _) in zip(levels, levels[1:]):
+        if za <= z <= zb:
+            t = (z - za) / (zb - za)
+            return wa + t * (wb - wa), da + t * (db - da)
+    return (levels[0][1], levels[0][2]) if z < levels[0][0] else (levels[-1][1], levels[-1][2])
+
+
+def torso_surface_point(a: float, z: float, proud: float) -> tuple[float, float, float]:
+    """A point `proud` outside the shell at bearing `a` off centre-front (+x
+    positive), pushed along the ellipse's outward normal (Ace)."""
+    hx, hy = torso_ring_at(z)
+    theta = 1.5 * pi + a
+    x, y = hx * cos(theta), hy * sin(theta)
+    nx, ny = cos(theta) / hx, sin(theta) / hy
+    norm = sqrt(nx * nx + ny * ny)
+    return (x + proud * nx / norm, y + proud * ny / norm, z)
+
+
+def jacket_bone(z: float) -> str:
+    return "Hips" if z < 1.80 else ("Spine" if z < 2.10 else ("Spine1" if z < 2.40 else "Spine2"))
+
+
+# --- Jacket construction: zipper tapes, pull, welt pockets, piping -------------
+#
+# The concept's track jacket carries construction the old build painted or
+# omitted: metal zipper tapes down both front edges (stippled grey teeth,
+# traced 8e7e72/847e7d at dx ±28 of centre, running collar to hem), a slider
+# at the base of the -x tape, two vertical welt pockets, and the cream piping
+# line that runs from the collar over each shoulder and down the sleeve.
+# Bevelled proud patches are batch 7's construction (a decal becomes sewn when
+# its rim rows step); Dex's pull tab is the sweep's exemplar.
+# measured: front — welt slit from (129,487) to (121,514): z 2.121→1.958,
+#   |x| 0.296-0.344 on the flared OPEN panels; authored at the same panel
+#   fraction of the closed shell (bearings 0.85-1.00 rad) — recorded
+#   deviation, the open-jacket drape has no shell x (Ace's welt precedent)
+# measured: front — piping crosses z 2.54 at |x| 0.26 and continues onto the
+#   hanging sleeve (back view: bright cream at the sleeve edge, |x| 0.50-0.61
+#   at z 1.9-2.4); one continuous collar→cuff line per side
+ZIP_TAPE_Z = (1.740, 1.870, 2.010, 2.150, 2.300, 2.440, 2.570)
+
+# The window edge sits at bearing 0.347 (|cos theta| = 0.34); the tape
+# straddles it, inboard of the lapel fold at |x| 0.155.
+ZIP_TAPE_A = 0.280
+
+# Sleeve piping stations: (x along the arm, sleeve radius at that station,
+# bone weight). 40 degrees front-of-top so the line reads on the front board
+# AND in profile; radii interpolated off ARM_STATIONS + 0.006 proud.
+PIPE_SLEEVE = (
+    (0.420, 0.140, None),        # None -> full Arm bone
+    (0.700, 0.123, None),
+    (0.920, 0.118, "fore"),
+    (1.100, 0.113, "fore"),
+    (1.255, 0.110, "fore"),
+)
+
+
+def build_jacket_details(builder: MeshBuilder, detail: int) -> None:
+    if detail < 2:
+        return
+    # The zipper tape: a proud bevelled strip riding each front edge.
+    for side in (1, -1):
+        rows = []
+        for z in ZIP_TAPE_Z:
+            row = []
+            for da, pr in ((0.005, 0.006), (0.055, 0.020), (0.105, 0.006)):
+                a = side * (ZIP_TAPE_A + da)
+                row.append(builder.vertex(torso_surface_point(a, z, pr), ZIP, jacket_bone(z)))
+            rows.append(row)
+        builder.grid(rows, 1, cyclic=False, flip=side < 0)
+    # The slider at the base of the -x tape (the sheet unzips fully): Dex's
+    # two stacked patches — a base step, and a raised face whose top row goes
+    # SHIRT_DARK for the hinge shadow separating tab from tape.
+    for a0, a1, z0, z1, pr, top_colour in (
+        (-0.415, -0.255, 1.742, 1.822, 0.030, ZIP),
+        (-0.385, -0.285, 1.752, 1.808, 0.044, SHIRT_DARK),
+    ):
+        rows = []
+        for j, z in enumerate((z0, z1)):
+            colour = top_colour if j == 1 else ZIP
+            rows.append([builder.vertex(torso_surface_point(a, z, pr), colour, "Hips")
+                         for a in (a0, (a0 + a1) / 2, a1)])
+        builder.grid(rows, 1, cyclic=False, flip=True)
+    # The welt pockets: near-vertical proud rolls mid-panel, slit crease dark
+    # on the inboard row, slanting outboard toward the hem like the drawing.
+    for side in (1, -1):
+        rows = []
+        for da, pr, colour in ((-0.055, 0.006, SHIRT_DARK), (0.0, 0.018, SHIRT), (0.055, 0.006, SHIRT)):
+            row = []
+            for i in range(3):
+                t = i / 2
+                a = side * (0.850 + 0.100 * t + da)
+                z = 2.121 - 0.163 * t
+                row.append(builder.vertex(torso_surface_point(a, z, pr), colour, jacket_bone(z)))
+            rows.append(row)
+        builder.grid(rows, 1, cyclic=False, flip=side < 0)
+    # The piping: one continuous cream line per side — collar, over the
+    # shoulder, down the sleeve to the ribbed cuff. The torso leg rides the
+    # shell (Zippy: a proud accessory rides the HOST surface); the sleeve leg
+    # rides the sleeve at its own stations, weighted like the rings beneath
+    # it so the arm's drop cannot shear it.
+    for side in (1, -1):
+        arm = limb_bone("Arm", side)
+        fore = limb_bone("ForeArm", side)
+        points = [torso_surface_point(side * 0.42, 2.648, 0.012),
+                  (side * 0.215, -0.100, 2.582)]
+        bones: list = ["Spine2", {"Spine2": 0.86, arm: 0.14}]
+        for x, r, tag in PIPE_SLEEVE:
+            points.append((side * x, -0.643 * r, 2.471 + 0.728 * r * 0.95))
+            bones.append(fore if tag == "fore" else arm)
+        radii = [0.013, 0.014, 0.014, 0.013, 0.013, 0.012, 0.011]
+        builder.tube(points, radii, 1, PIPE, bones, 4, flip=side < 0)
 
 
 # His neck pinch is row 379 → z 2.65. The bottom ring is a genuine 2px
@@ -526,8 +685,18 @@ def inseam_half(z: float) -> float:
 # (z, half-width, depth factor, colour, bone) — strictly descending in z.
 # The pair-outer extents below are the sheet's own silhouette; per-leg
 # halves come from the central jeans runs (139-268 at z 1.40 across both).
+# ★ The ankle is a GATHERED JOGGER CUFF, and the old table had it backwards:
+# a CUFF ring 0.014 WIDER than the leg above it (a rolled jeans cuff), in a
+# colour ΔLum 4 from the pants. The profile view draws the opposite
+# construction — the baggy leg bellows to 0.187 half at z 0.72, then the rib
+# cinches IN to 0.144 through z 0.58-0.64 under a hard terminator seam (the
+# drape overhangs the cuff; sheet row lum drops to 18 at z 0.64). Rebuilt as
+# Dex's cuff: a proud PANTS drape roll, then the crisp cinch onto the ribbed
+# CUFF band, colour switch ON the 0.662/0.648 pair.
 # measured: front z=1.25 halfWidth=0.4441 tol=0.04
 # measured: front z=0.80 halfWidth=0.5136 tol=0.04
+# measured: view2 z=0.72 halfWidth=0.187 tol=0.03
+# measured: view2 z=0.62 halfWidth=0.144 tol=0.03
 LEG_STATIONS = [
     (1.520, 0.200, 1.10, PANTS, "UpLeg"),
     (1.350, 0.196, 1.07, PANTS, "UpLeg"),
@@ -535,9 +704,10 @@ LEG_STATIONS = [
     (0.980, 0.184, 1.03, PANTS, "Leg"),
     (0.840, 0.180, 1.02, PANTS, "Leg"),
     (0.700, 0.178, 1.01, PANTS, "Leg"),
-    (0.660, 0.192, 1.00, CUFF, "Leg"),             # rolled cuff, proud
-    (0.560, 0.188, 1.00, CUFF, "Leg"),
-    (0.520, 0.172, 1.00, PANTS_DARK, "Leg"),       # cuff underside lip
+    (0.662, 0.190, 1.00, PANTS, "Leg"),            # drape roll, PROUD lip —
+    (0.648, 0.150, 1.00, CUFF, "Leg"),             #   overhangs the rib cinch
+    (0.560, 0.146, 1.00, CUFF, "Leg"),             # rib band bottom
+    (0.528, 0.126, 1.00, PANTS_DARK, "Leg"),       # cuff underside lip
     (0.480, 0.108, 1.00, SOCK, "Foot"),            # sock sliver
     (0.400, 0.100, 0.99, SOCK, "Foot"),
     (0.280, 0.092, 0.97, SOCK, "Foot"),
@@ -710,6 +880,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         builder.loft(CROTCH_LEVELS, 1, PANTS, 8 if detail >= 2 else 6)
     builder.loft(TORSO_LEVELS if detail >= 2 else thin_for_lod(TORSO_LEVELS, detail),
                  1, SHIRT, 18 if detail >= 2 else segments, color_fn=jacket_color)
+    build_jacket_details(builder, detail)
 
     for side in (1, -1):
         build_arm(builder, side, detail, spec=LEFTY_ARM)

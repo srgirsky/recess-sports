@@ -440,7 +440,16 @@ TORSO_LEVELS = [
     (2.500, 0.240, 0.220, "Spine2"),
     (2.560, 0.268, 0.246, "Spine2"),  # hood collar mouth
     (2.590, 0.298, 0.276, "Spine2"),  # the hood's draped roll, proud and round
-    (2.620, 0.252, 0.230, "Spine2"),  # neck hole
+    # ★ HEM SWEEP: the hole ring shipped at 0.252/0.230 against the neck
+    # loft's interpolated 0.2524/0.2268 at the same z — clearance -0.000, the
+    # turbo/ace sawtooth-collar class (neckline-clearance-scan.mjs). Two lofts
+    # at different column counts (torso 18, neck 14) interpenetrating at the
+    # neckline zigzag per column, and the profile board read the zigzag's
+    # silhouette corners as rips (chip-profile-apose-review.png x 245-260 and
+    # 290-300 / y 285-300). The visible edge must be the ring itself:
+    # not-traceable: neck + >=0.008 construction clearance (0.2524+0.0096 x,
+    # 0.2268+0.0092 y); the sheet draws the collar closed against the neck.
+    (2.620, 0.262, 0.236, "Spine2"),  # neck hole, clear of the neck loft
 ]
 
 # The pinch is at the bottom of the neck and widens into the jaw.
@@ -498,9 +507,20 @@ def build_hoodie_details(builder: MeshBuilder, detail: int) -> None:
     # in the torso), and a knit roll rings its mouth.
     builder.ellipsoid((0.0, 0.345, 2.460), (0.270, 0.160, 0.215), 1, SHIRT, "Spine2", 8, 5)
     # Collar bunching so the drape reads from the FRONT too (polish finding).
-    builder.ellipsoid((0.145, -0.150, 2.565), (0.095, 0.060, 0.052), 1, SHIRT_DARK, "Spine2", 6, 3)
-    builder.ellipsoid((-0.145, -0.150, 2.565), (0.095, 0.060, 0.052), 1, SHIRT_DARK, "Spine2", 6, 3)
-    builder.ellipsoid((0.0, 0.250, 2.560), (0.230, 0.095, 0.085), 1, SHIRT_DARK, "Spine2", 6, 3)
+    # ★ HEM SWEEP: the front bunches shipped GRAZING the collar loft — front
+    # reach -0.210 against the loft surface -0.213 at their own (x, z) — so
+    # the intersection was a tangential sliver whose pointed tip read as a rip
+    # (chip-profile-apose-review.png x 245-260 / y 285-300, the same class as
+    # the neck-hole sawtooth one table up). Proud by 0.027 they overlap the
+    # loft as round bunches; 8x4 segments so the crest is a curve, not a
+    # corner (ace's collar-rib fin is the counterexample).
+    builder.ellipsoid((0.145, -0.180, 2.565), (0.095, 0.060, 0.052), 1, SHIRT_DARK, "Spine2", 8, 4)
+    builder.ellipsoid((-0.145, -0.180, 2.565), (0.095, 0.060, 0.052), 1, SHIRT_DARK, "Spine2", 8, 4)
+    # The nape bunch crested past the collar top into open silhouette (top
+    # z 2.645 vs the hole ring 2.620) and its 6-segment facets cut the hard
+    # angular notch at x 290-300 / y 285-300 of the same board. Tucked (top
+    # 2.620) and rounded, it stays a bunch inside the collar's own outline.
+    builder.ellipsoid((0.0, 0.250, 2.550), (0.230, 0.080, 0.070), 1, SHIRT_DARK, "Spine2", 8, 4)
     # The kangaroo pouch's side openings: two dark slits where the hands go in.
     surface_patch(builder, -0.245, -0.215, 1.40, 1.62, 0.046, SHIRT_DARK, SHIRT_DARK, "Spine")
     surface_patch(builder, 0.215, 0.245, 1.40, 1.62, 0.046, SHIRT_DARK, SHIRT_DARK, "Spine")
