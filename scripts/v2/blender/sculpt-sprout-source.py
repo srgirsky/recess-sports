@@ -44,6 +44,7 @@ from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
 from sculptlib.ear import EarSpec, build_ear
+from sculptlib.hair import curl_field, curl_seeds
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
@@ -70,7 +71,14 @@ SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 # keeps him above the detector floor and visibly bare-armed.
 SKIN = rgba("ED8B32")
 SKIN_SHADOW = rgba("BE6318")
-HAIR = rgba("2E1A0C")        # deep chocolate; the modal #1C0C02 would render a hole
+HAIR = rgba("3C2208")        # deep chocolate, hue-warmed: the critic read the
+                             # old #2E1A0C/#1F1006 pair as monochrome at board
+                             # scale — a 15-point VALUE step in near-black.
+                             # Separation must come from HUE under the ramp
+                             # (Lefty's lesson): r−g widens 20 → 26 while the
+                             # trough tone stays put, so the curl tops read
+                             # warm against it instead of merely lighter.
+HAIR_DARK = rgba("1F1006")   # the trough tone — above the render-a-hole floor
 SHIRT = rgba("FFBA2E")       # the yellow tee
 SHIRT_DARK = rgba("D8860C")  # the hem/cuff bands need real contrast against the sleeve
 PANTS = rgba("46617A")       # the denim, lifted and kept blue
@@ -177,7 +185,10 @@ EAR_SPEC = EarSpec(center=(0.020, 2.900), radii=(0.1650, 0.2050))
 # generator's drawn rows land: brow ≈ cell 18 (z 3.344, 42.2% of head), eye ≈
 # cell 45 (z 3.066, 60.4%), mouth ≈ cell 84 (z 2.683, 85.4%) — each within a
 # point of the bounded traces above.
-FACE_ISLAND = (0.92, -1.450, 2.200)
+# Floor 2.500, NOT 2.200: the collar rib sits proud at z 2.442, and an
+# island floor below it wrapped atlas texels onto the knob — the critic's
+# "smeared second face on the collar". The mouth (2.683) keeps its margin.
+FACE_ISLAND = (0.92, -1.450, 2.500)
 
 HEAD_SPEC = HeadSpec(
     center=HEAD_CENTER,
@@ -220,6 +231,33 @@ def skull_front_y(x: float, z: float) -> float:
 # over them), and falls to a nape at z ~2.85. Grizz's ring-loft-with-tuck
 # construction, his second proving; the fringe arc and radii are this kid's.
 #
+# ★ THE CURL FIELD — sculptlib/hair.py holds the mechanism. The old clump
+# `sin(5θ+2.6·row) + 0.5·sin(9θ+1.3·row)` broke the mirror THREE ways: sin
+# is odd, 5 and 9 lobes cannot mirror (the Dex parity rule), and both
+# carried a row-varying phase (the Penny rule). measured:
+# `npm run measure:strands -- sprout` reads the concept near 8.6 minima/row;
+# three mirror pairs (6 lobes) is the largest even count 24 columns can
+# carry at the four-per-lobe floor — going to 32 columns for 8 lobes needs
+# a row trade the torso budget note says is already tight; ladder there
+# only if the critic still reads it smooth.
+CURL_SEEDS = curl_seeds(
+    pairs_per_row=3,
+    bands=8,
+    z_top=3.930,
+    z_bottom=2.880,
+    amplitude=0.075,
+)
+CURL_THETA_WIDTH = 0.24
+CURL_Z_WIDTH = 0.075
+CURL_TROUGH = 0.020
+# ⚠️ The delivered-side "no neck pinch" refusal is RECORDED, not chased.
+# His true neck sits at the T-pose arm band (the Grizz family); the
+# pre-port builds "measured" via a hair-notch artifact the curl field
+# removed, and the detector's own header says a wrong number dressed as a
+# measurement is worse than no number. A nape taper was tried to buy the
+# pinch back and REVERTED — slimming the mesh past the drawing to chase an
+# instrument is the funnel-sock mistake.
+
 # measured: front z=3.90 halfWidth=0.3505
 # measured: front z=3.74 halfWidth=0.5723
 # measured: front z=3.42 halfWidth=0.7524
@@ -249,12 +287,24 @@ HAIR_LEVELS = [
 # arc fully above the ears (ear top ~3.09).
 # Round 7: the first review found the ear tops swallowed — the hairline now
 # arcs fully ABOVE the ears (ear top z 3.10) at the ear columns.
+# ★ THE BROW TRADE, recorded. The sheet PAINTS the brows over the fringe
+# hair — layering a mesh cannot do: the traced fringe (temples clear by
+# 3.20) crosses the brow band (z 3.32-3.37, browX out to |x|≈0.30), and
+# the atlas brows rendered NOWHERE (the critic's find; 4x crop shows the
+# curtain hanging to the eye tops). The fringe lifts to 3.390 across the
+# brow arc so the brows read, which is the READ the sheet achieves by
+# layering; the temple drop beyond |x| 0.42 keeps the sheet's shape.
+# ...and the numbers sit ~0.06-0.08 ABOVE the traced hairline because the
+# board camera's high vantage projects the PROUD fringe edge that much down
+# the face (the batch-4 lesson: clearing a landmark in z-arithmetic still
+# lands on it in pixels — verified here: the 3.46 centre projected onto the
+# EYE TOPS). Author to the render, not the math.
 HAIR_FRINGE = [
-    (0.00, 3.460),
-    (0.15, 3.445),
-    (0.30, 3.240),
-    (0.40, 3.150),
-    (0.55, 3.110),
+    (0.00, 3.520),
+    (0.15, 3.505),
+    (0.32, 3.450),
+    (0.42, 3.190),
+    (0.55, 3.130),
     (0.75, 3.060),
 ]
 
@@ -282,12 +332,16 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
     rows = []
     for z, half_x, half_y, y_centre in ascending:
         ring = []
-        # Round 7: doubled — 0.030 rendered as a smooth balloon and the first
-        # review named it; the crop is TEXTURED in the drawing.
-        curl = 0.055 if detail >= 2 else 0.0
         for column in range(segments):
             theta = 2 * pi * column / segments
-            clump = 1.0 + curl * sin(5.0 * theta + 2.6 * len(rows)) + (curl * 0.5) * sin(9.0 * theta + 1.3 * len(rows))
+            # The 2D curl field (constants above the level table); the tone
+            # split below is what reads under the ramp.
+            f = (curl_field(
+                theta, z, CURL_SEEDS,
+                theta_width=CURL_THETA_WIDTH,
+                z_width=CURL_Z_WIDTH,
+            ) if detail >= 2 else 0.0)
+            clump = 1.0 + f
             x = half_x * clump * cos(theta)
             y = y_centre + half_y * clump * sin(theta)
             if y < y_centre:
@@ -301,9 +355,10 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
                     # heavy, with the front a thin shell over the skull (the
                     # 1.44ft profile depth is mostly swoosh and rear mass).
                     y = max(y, skull_front_y(x, z) - 0.075)
-            ring.append(builder.vertex((x, y, z), HAIR, "Head"))
+            tone = HAIR if f > CURL_TROUGH else HAIR_DARK
+            ring.append(builder.vertex((x, y, z), tone, "Head"))
         rows.append(ring)
-    bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
+    bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR_DARK, "Head")
     top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.02), HAIR, "Head")
     for column in range(segments):
         nxt = (column + 1) % segments

@@ -491,33 +491,33 @@
    "categories": {
     "frontProfileSilhouette": {
      "label": "front/profile silhouette",
-     "score": 2,
-     "note": "The front read is acceptable, but the profile (sprout-profile-review.png / sprout-profile-apose-review.png) is a flat plank: the torso is a featureless lathe pod with no chest, belly or seat, and it terminates in a hard horizontal shelf at ~y560 from which a plain tapered leg tube emerges — the textbook butt-joined primitive the 5/4 language names. The head silhouette is broken by a dead-flat triangular nose fin (crop /tmp/nose-prof.png, ~x155-260 y380-450 of the source) and by a lumpy yellow collar knob floating at the chin (source ~x300-410 y280-330)."
+     "score": 3,
+     "note": "The front large read now matches the turnaround (round-cheeked mop over wide overalls), but the profile is still broken in three places — nose spike, detached collar knob, faceted hair back."
     },
     "headBodyProportions": {
      "label": "head/body proportions",
-     "score": 2,
-     "note": "There is no neck: measure:fidelity could not take 5 of its 9 metrics because the head/neck detector found no silhouette pinch. Measured by hand on sprout-front-review.png the minimum width between crown and shoulders is 104px against a 217px max head width (48%); on the turnaround the same pinch is 49px against 237px (21%). Head is also squatter than the drawing — delivered w:h ~1.10 (217/197px) vs the instrument's concept 0.97. Head->shoulder, hip->thigh and sleeve->forearm all butt-join rather than reading as connected forms."
+     "score": 3,
+     "note": "Head band 38.4% of figure per source matches the concept and a real neck pinch now exists at ~24% of head width (concept 21%), but the chin-to-collar zone is congested and the visual neck read is still near zero."
     },
     "hairMass": {
      "label": "hair mass",
-     "score": 2,
-     "note": "measure:strands: 2.42 minima/row delivered vs 8.72 concept = 28% of the concept's strand count. It is a smooth featureless dome, which the rubric caps at 4 on its own, and it also loses the identity: the turnaround's signature is a forward-swept spiky quiff with a crown peak, the delivered is a rounded mushroom cap (sprout-front-review.png y86-200). It swallows the forehead the sheet keeps clear, clips the character's left eyebrow to a stub (/tmp/f-head.png, brow at crop x420-520), and leaks an orange eyebrow fragment ONTO the hair (source ~x330 y188 front, ~x225 y185 profile)."
+     "score": 3,
+     "note": "The mop is genuinely one designed mass with no flutes, stripes, or bare-skull read, and it groups as curls at runtime, but the board-scale interior is monochrome dark-on-dark and a hard fringe/crown crease plus polygonal rear facets still read as construction, not strand grouping."
     },
     "clothingConstruction": {
      "label": "clothing construction",
      "score": 3,
-     "note": "Real construction is present at the extremities: rolled denim cuffs, shoes with a sole, toe cap, three lace stripes and a knot, and a scored bib pocket. The garment BOUNDARIES are painted, not constructed — sculpt-sprout-source.py's overalls_color() is explicit ('one surface, no second shell'), and a scanline across sprout-front-review.png y315-345 shows a 3-4px blended ramp between the tee yellow and the bib denim. In sprout-runtime-swing.png the tee reads as a yellow rectangle stamped on the bib (~x400-455 y440-580). The concept's brass overall buttons at both strap/bib junctions are absent, and sleeve->forearm is a colour change on one tube, not a cuff."
+     "note": "Real gains (stitched bib pocket, rolled cuffs, laced shoes with toe bumper, authored collar rib) are offset by painted tee/denim boundaries with visible blend bleed, zero overall buttons, and the collar rib rendering as a floating knob."
     },
     "faceExpressionRead": {
      "label": "face/expression read",
-     "score": 2,
-     "note": "The mouth work is the strongest part — /tmp/face-cheer.png and /tmp/face-tongue.png show real teeth and a real tongue, and angry reads. But the face is a sticker on a ball: in pure profile the whole frontal eye (sclera + iris) is visible wrapped onto the side plane (/tmp/nose-prof.png, crop x250-360 y200-420), and the nose is a flat triangular wedge whose tip sits at eye centre height with no ball, bridge or nostril. sprout-runtime-face-grin.png is BLANK — no character rendered — so 3.14's four-still evidence set is incomplete."
+     "score": 3,
+     "note": "Eyes, nose, freckles and all four mouth expressions are legible at hero and card distance, but no eyebrow renders anywhere — a signature concept feature whose absence halves the angry read — and the full frontal eye decal still shows at 90 degrees."
     },
     "heroAndFieldScale": {
      "label": "hero + 40px read",
-     "score": 3,
-     "note": "The 40px strip on sprout-fidelity-review.png does carry a dark-cap kid in blue overalls, so identity survives small. The hero and gameplay 3/4 is where it breaks: sprout-runtime-hero.png (~x480-590 y300-370) reads as one oversized eye plus an orange spike, with the near ear a flat flesh paddle and no neck under it."
+     "score": 4,
+     "note": "The one memorable read (dark mop + yellow tee + blue overalls) survives both the hero close-up and the 40 px strip cleanly; this is the character's strongest category."
     }
    },
    "heroEvidence": "sprout-runtime-hero.png",
@@ -527,27 +527,30 @@
    ],
    "measuredFidelity": {
     "command": "npm run measure:fidelity -- sprout",
-    "ranAt": "2026-08-17",
+    "ranAt": "2026-08-30",
     "board": "sprout-fidelity-review.png",
-    "result": "measure:fidelity -- sprout: concept front 234x622px, delivered 458x560px; shoe tones read off concept #f9ecdb and #7a5c3c. head height as % of figure height: concept 38.6, delivered NOT MEASURED (no neck pinch). head width:height: concept 0.97, delivered NOT MEASURED (no neck pinch). shoe band dominant tone %: 65.6 vs 62.1, delta -3.57, ok. shoe band second tone %: 33.2 vs 37.9, delta +4.70, ok. shoe band mean saturation: 30.4 vs 26.6, delta -3.87, ok. daylight between ankles: 0.00 vs 11.1, delta +11.1, ok (concept is a posed drawing). visible face left of centre % of head width: concept 22.6, delivered NOT MEASURED. visible face right of centre: concept 26.1, delivered NOT MEASURED. face left/right asymmetry: concept 0.00, delivered NOT MEASURED. 5 of 9 metrics unmeasurable — the detector found no silhouette pinch between crown and shoulders. measure:strands -- sprout: hair band 5-45% of head height; concept sprout-turnaround.png head rows 154-393, 8.72 strand minima/row, mean prominence 16.7 over 97 rows; delivered sprout-front-review.png head rows 87-281, 2.42 minima/row, mean prominence 16.1 over 78 rows; delivered carries 28% of the concept's strand count at 96% of its prominence. Own measurements on sprout-front-review.png: figure bbox y86-647 (562px tall), head crown y86, max head width 217px at y170, minimum crown-to-shoulder width 104px at y280 (48% of head width); turnaround front figure y152-782 (631px), max head width 237px at y240, neck minimum 49px at y400 (21% of head width). Delivered head w:h approx 217/197 = 1.10 vs concept 0.97. Tee/denim boundary scanline on sprout-front-review.png rows 315/330/345: 3-4 unclassified (blended) pixels between the last denim pixel and the first tee pixel on every crossing.",
+    "result": "Construction verified in source before every absence claim: curl_field/curl_seeds real (3 mirror pairs x 8 bands, golden-ratio stagger, mirror-exact by emitting seeds at +/-theta0 — the claimed three-way mirror break of the old sin(5/9) clump is confirmed in the source's own header and is fixed structurally); two-tone real but HAIR #2E1A0C over HAIR_DARK #1F1006 is only a ~(15,10,6) RGB step in near-black, so the grouping reads at runtime key light and not on the flat board; grep 'button' = 0 hits outside nose_push, so overall buttons remain absent; NECK_LEVELS pinch 2*0.130=0.26ft = 23.6% of 1.10ft head width vs concept 21% (prior 48% — cleared); EAR_SPEC 2*0.205=0.41ft = 26.8% of the 1.53ft head vs concept ~22% (prior ~38% — improved); nose_push authors bridge+tip 0.11ft proud with tip z 2.90 below eye centre z 3.06 (prior 'tip at eye height' no longer true) yet renders as a sharp fin at 90 degrees; source's own strand note: 6 lobes/row vs concept's measured ~8.6 minima/row. All seven runtime stills render model-model; the grin still is no longer blank. Claims not re-runnable here and taken as reported, not verified: strand count 28%->31% at 176% prominence, zero measure:fidelity OFFs. Fidelity board's printed 2/2/2/3/2/3 scores are stale and ignored per brief.",
     "note": "The spec mouth landmark is his NOSTRILS (his light-brown smile is fainter than the specks); the lip used by the face atlas is the bounded trace at 85.6% of head height recorded in the sculpt script and the recipe header. After scoring, one mesh-hygiene fix shipped: the digit tubes gained sculptlib's mirror-frame flip (10 fingertip vertex pairs had non-mirroring normals, over the inverted-pairs budget); the change is confined to left-hand digit tessellation and the board was re-rendered and re-bound."
    },
    "polishFindings": [
-    "PROFILE NOSE: a dead-flat triangular fin with no ball, bridge or nostril, tip at eye-centre height, projecting past the brow. It is the single loudest defect and it is visible at gameplay camera as an orange spike.",
+    "PROFILE NOSE STILL A FIN: bridge and tip are authored (nose_push, 0.11ft proud, tip z 2.90 correctly below eye centre — the prior 'tip at eye-centre height' half is cleared) but at 90 degrees the nose renders as a sharp orange spike with no ball and no nostril; crop-profile-head shows it clearly.",
     "EYE DECAL WRAPS TO THE PROFILE PLANE: the full frontal almond eye (sclera, iris, highlight) renders in a pure 90-degree profile view. A decal island, not a form.",
-    "EYEBROW PAINTED ON THE HAIR: an orange eyebrow fragment sits on the dark hair mass in BOTH front (~x330 y188) and profile (~x225 y185) renders, while the character's left brow is clipped to a stub by the hairline. The brows are asymmetric in a straight front view.",
-    "NO NECK: measure:fidelity forfeited 5 of 9 metrics for lack of a pinch. Concept pinches to 21% of head width; delivered to 48%.",
-    "FLOATING COLLAR KNOB: the tee collar is a separate lumpy yellow ball with a puckered crater sitting at the chin in profile, disconnected from both jaw and torso. 3.8 (accessories sit on the body) fails.",
-    "NO CHIN OR JAW IN PROFILE: from the mouth down the face is a flat vertical wall to the collar.",
-    "HIP SHELF: the denim bell overhangs the thighs and cuts off at a hard horizontal rim from which two plain tubes emerge — a cone butt-joined to two cylinders, visible in both sprout-front-review.png (y560-600) and profile.",
-    "GARMENT BOUNDARIES ARE PAINTED: overalls_color() lofts one surface and paints tee/denim by bearing. Scanlines show a 3-4px blend ramp; sprout-runtime-swing.png shows the tee as a straight-edged yellow rectangle stamped on the bib.",
-    "NO OVERALL BUTTONS: the concept's brass strap/bib buttons (both sides, front and 3/4 panels of the turnaround) are absent from the model.",
-    "EARS ARE BUILT BUT DO NOT READ: sculptlib/ear.py builds a helix, concha, tragus and lobe and sculpt-sprout-source.py wires EAR_SPEC at (0.020, 2.900) r(0.165, 0.205) — the construction is real and legible at 90 degrees. From the front and at gameplay 3/4 the same ear collapses to a flat flesh paddle with no rim or shadow, and it is oversized (~38% of head height vs ~22% in the turnaround).",
-    "SHOULDER AND ELBOW: sprout-runtime-swing.png shows the arms as thin noodles with a hard-kinked elbow and a stepped sleeve-to-shoulder join — no round deltoid form. 3.11 is at risk.",
-    "BLANK EVIDENCE: docs/v2/concepts/sprout-runtime-face-grin.png renders no character at all — the still is empty scene chrome. 3.14's four-still set is incomplete and should be recaptured before any approval.",
-    "HAIR FACETING: a hard vertical crease/seam runs down the profile hair mass (sprout-profile-review.png ~x270 y80-260) and the cap silhouette is visibly polygonal rather than a designed strand grouping."
+    "NO EYEBROWS RENDER ANYWHERE (replaces the prior 'eyebrow painted on the hair'): the orange fragment on the hair is gone, and so are the brows — no brow stroke shows on skin or hair in the front board, hero still, or any of the four face stills, though the source places the fringe bottom (z 3.46 centre) above the brow cell (z 3.344). Concept's thick brows are a signature read and the angry expression loses half its meaning; face-atlas class, untouched this round.",
+    "JAGGED TEMPLE NOTCHES: the front hairline cuts angular skin wedges into the fringe above each eye's outer corner (front board and both face-still crops) — they read as polygonal bites, not a drawn hairline.",
+    "NECK CLEARED IN CONSTRUCTION (non-defect record): NECK_LEVELS now pinch to 0.26ft = 23.6% of head width against the concept's 21% (prior finding measured 48%); the visual neck read is still minimal because the chin and collar knob crowd it, but the pinch exists and measures near-concept.",
+    "FLOATING COLLAR KNOB HOLDS AND GAINED AN ARTIFACT: the authored 'tee collar rib, proud' (z 2.442, r 0.157 over the 0.130 neck hole) still renders in profile as a detached tan ball at the chin, and it now carries dark decal blotches that read like a smeared second face — consistent with the face island (span to lat -1.45, below the head's bottom) projecting mouth-region texels onto the rib. Loudest defect in the fresh profile board.",
+    "PROFILE CHIN CLEARED (non-defect record): the lower face now curves back through a small chin (FACE_SCALE egg) instead of the prior flat vertical wall; remaining congestion at the jaw is the collar knob, not the chin.",
+    "HIP SHELF SOFTENED BUT PRESENT: the overall bell still terminates at a hard horizontal fold from which two straight tubes emerge, but leg width now matches the hem so it reads closer to a fabric fold than the prior cone-butt-joined-to-cylinders shelf.",
+    "GARMENT BOUNDARIES ARE PAINTED: overalls remain one lofted surface with tee/denim split by vertex tone — strap edges show soft blend bleed with yellow halos at the shoulders on the front board, and the swing still shows blotchy yellow patches scattered across the back where the painted strap X breaks up in motion.",
+    "NO OVERALL BUTTONS: re-verified by grep (zero 'button' hits in the source outside nose_push) — the concept's brass strap/bib buttons on both sides of the turnaround are still absent from the model.",
+    "EARS RESIZED BUT STILL FLAT FROM THE FRONT: EAR_SPEC now gives 0.41ft = 26.8% of head height (prior ~38%, concept ~22%) and the profile shows a rim and inner shading, but at front and gameplay 3/4 the ear still collapses to a flat flesh paddle.",
+    "SHOULDER AND ELBOW: the swing still shows the sleeve as a separate yellow box, a hard-kinked bare-forearm elbow and a stepped sleeve-to-shoulder join — no round deltoid form; 3.11 remains at risk.",
+    "GRIN EVIDENCE RESTORED (non-defect record): sprout-runtime-face-grin.png now renders the model with an open-tooth grin at idle — the prior blank still is cleared and the 3.14 four-still set is complete.",
+    "PROFILE HAIRLINE CREASE SURVIVES THE TWO-TONE: a hard near-vertical seam still splits the front fringe slab from the crown mass in profile (crop-profile-hair, upper-left of the mass), and the rear silhouette remains long straight facets — polygon construction, not strand groups.",
+    "HAIR TWO-TONE IS DARK-ON-DARK: HAIR #2E1A0C over HAIR_DARK #1F1006 is a ~(15,10,6) RGB step in near-black, so under flat board light the interior reads monochrome and the curls only show in the silhouette lumps; under runtime key light the lit tops do wander over dark troughs and read as grouped curls. Lifting the lit tone toward the concept's warm mid-brown would make the grouping read on the board too.",
+    "CURL COUNT BELOW CONCEPT: 3 mirror pairs = 6 lobes/row against the concept's measured ~8.6 minima/row; the source's own ladder note (32 columns for 8 lobes, budget permitting) stands open. The field no longer reads smooth or fluted, so this is a polish ladder, not a blocker."
    ],
-   "scoredBoardSha256": "d74f8d4f721aa7c496de7c55bdf5c4c9f9828d6afe4798d12193ab159f59555b"
+   "scoredBoardSha256": "eaa6a60c098926cb6ced6cee60babb6b8811fb6c8d1c40afc8c8a72dd0e1d828"
   },
   "bubbles": {
    "status": "needs-polish",
