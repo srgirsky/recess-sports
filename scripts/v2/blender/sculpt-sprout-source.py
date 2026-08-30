@@ -250,6 +250,13 @@ CURL_SEEDS = curl_seeds(
 CURL_THETA_WIDTH = 0.24
 CURL_Z_WIDTH = 0.075
 CURL_TROUGH = 0.020
+# ⚠️ The delivered-side "no neck pinch" refusal is RECORDED, not chased.
+# His true neck sits at the T-pose arm band (the Grizz family); the
+# pre-port builds "measured" via a hair-notch artifact the curl field
+# removed, and the detector's own header says a wrong number dressed as a
+# measurement is worse than no number. A nape taper was tried to buy the
+# pinch back and REVERTED — slimming the mesh past the drawing to chase an
+# instrument is the funnel-sock mistake.
 
 # measured: front z=3.90 halfWidth=0.3505
 # measured: front z=3.74 halfWidth=0.5723
@@ -280,12 +287,24 @@ HAIR_LEVELS = [
 # arc fully above the ears (ear top ~3.09).
 # Round 7: the first review found the ear tops swallowed — the hairline now
 # arcs fully ABOVE the ears (ear top z 3.10) at the ear columns.
+# ★ THE BROW TRADE, recorded. The sheet PAINTS the brows over the fringe
+# hair — layering a mesh cannot do: the traced fringe (temples clear by
+# 3.20) crosses the brow band (z 3.32-3.37, browX out to |x|≈0.30), and
+# the atlas brows rendered NOWHERE (the critic's find; 4x crop shows the
+# curtain hanging to the eye tops). The fringe lifts to 3.390 across the
+# brow arc so the brows read, which is the READ the sheet achieves by
+# layering; the temple drop beyond |x| 0.42 keeps the sheet's shape.
+# ...and the numbers sit ~0.06-0.08 ABOVE the traced hairline because the
+# board camera's high vantage projects the PROUD fringe edge that much down
+# the face (the batch-4 lesson: clearing a landmark in z-arithmetic still
+# lands on it in pixels — verified here: the 3.46 centre projected onto the
+# EYE TOPS). Author to the render, not the math.
 HAIR_FRINGE = [
-    (0.00, 3.460),
-    (0.15, 3.445),
-    (0.30, 3.240),
-    (0.40, 3.150),
-    (0.55, 3.110),
+    (0.00, 3.520),
+    (0.15, 3.505),
+    (0.32, 3.450),
+    (0.42, 3.190),
+    (0.55, 3.130),
     (0.75, 3.060),
 ]
 
