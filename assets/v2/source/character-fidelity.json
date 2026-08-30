@@ -550,7 +550,7 @@
     "HAIR TWO-TONE IS DARK-ON-DARK: HAIR #2E1A0C over HAIR_DARK #1F1006 is a ~(15,10,6) RGB step in near-black, so under flat board light the interior reads monochrome and the curls only show in the silhouette lumps; under runtime key light the lit tops do wander over dark troughs and read as grouped curls. Lifting the lit tone toward the concept's warm mid-brown would make the grouping read on the board too.",
     "CURL COUNT BELOW CONCEPT: 3 mirror pairs = 6 lobes/row against the concept's measured ~8.6 minima/row; the source's own ladder note (32 columns for 8 lobes, budget permitting) stands open. The field no longer reads smooth or fluted, so this is a polish ladder, not a blocker."
    ],
-   "scoredBoardSha256": "00a17a6ce3307a9fbf37b8e6b36362ed39a9147442e610de43d6d4db031ac76c"
+   "scoredBoardSha256": "eaa6a60c098926cb6ced6cee60babb6b8811fb6c8d1c40afc8c8a72dd0e1d828"
   },
   "bubbles": {
    "status": "needs-polish",
