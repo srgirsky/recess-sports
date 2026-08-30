@@ -441,10 +441,34 @@ TORSO_LEVELS = [
     (2.320, 0.518, 0.372, "Spine2"),  # yoke — holds the shoulder out
     (2.400, 0.455, 0.340, "Spine2"),  # shoulder slope
     (2.440, 0.352, 0.300, "Spine2"),
-    (2.475, 0.278, 0.258, "Spine2"),
-    (2.502, 0.292, 0.268, "Spine2"),  # collar rib, proud
-    (2.524, 0.254, 0.244, "Spine2"),  # neck hole
+    (2.468, 0.284, 0.260, "Spine2"),  # yoke: the last tee ring under the collar
+    (2.476, 0.290, 0.266, "Spine2"),  # rib lower edge — COLLAR_Z sits inside this pair
+    (2.502, 0.296, 0.272, "Spine2"),  # rib crown, 0.012 proud of the yoke
+    (2.524, 0.262, 0.250, "Spine2"),  # neck hole: the rib rolls inward to it
 ]
+
+# THE TEE HAS A COLLAR (hem sweep, rubric 3.4 — before this the opening was a
+# raw colour-free drop and read as skin-on-skin). The sheet draws a crew-neck
+# rib: down the profile's nape column (x=800) the band sits between a lower
+# seam at z 2.468 (tee 0x844b26 -> seam 0x6e391a -> rib 0x763c17) and the
+# roll-over at ~z 2.517; the front dip is occluded by the jowls, so the nape
+# is the only lit, unoccluded read. Its colour traces DARKER than the tee
+# (lit rib ~0x80441E against lit tee ~0x915127, ~0.87/0.84/0.77 per channel);
+# a step that subtle dies in the board ramp (the round-9 monochrome lesson),
+# so the rib wears SHIRT_DARK — the hem tone the sleeve cuff and pocket top
+# already wear, which is also the wardrobe's own logic: one rib fabric on
+# every edge. Recorded deviation: authored 0.76x of the tee against the
+# sheet's ~0.85x, so the band survives 40px. The colour switch sits INSIDE
+# the 2.468/2.476 ring pair so the ramp lives in a 0.008ft band (the Zippy
+# stretched-band lesson), and the rib crown stands proud so the collar
+# OVERHANGS the yoke — crisp + proud is a constructed garment (Penny's
+# exemplar), and the widened hole ring fills the saddle between the sleeves.
+COLLAR_Z = 2.472
+
+
+def torso_color(theta: float, z: float):
+    """SHIRT_DARK rib above COLLAR_Z; the tee everywhere else."""
+    return SHIRT_DARK if z >= COLLAR_Z else SHIRT
 
 # His neck barely exists — the pinch is at z 2.481 (front half-width 0.263) and
 # the chin is at 2.49, so the head sits straight on the collar like Tank's.
@@ -832,7 +856,8 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     build_afro(builder, detail)
 
     builder.loft(NECK_LEVELS, 0, SKIN, segments)
-    builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, segments)
+    builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, segments,
+                 color_fn=torso_color)
     build_pocket(builder, detail)
 
     for side in (1, -1):

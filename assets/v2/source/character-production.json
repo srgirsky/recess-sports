@@ -93,11 +93,11 @@
     },
     "grizz": {
       "source": "grizz-pilot.blend",
-      "sourceSha256": "66151548426f57f0cb72c7a3f54bae0a27130ff6be2a54c092ef5268e18c00a8",
+      "sourceSha256": "5d9eec1c11c55a5f4804a7dadc3abeed0f65853d7f44e4bb80674f8a200fb60a",
       "concept": "grizz-turnaround.png",
       "conceptSha256": "8290768d2853e29e3c09afe3e7cf73bedf97f2dc74d1b9053506b6c66dbc2e0c",
       "output": "kid_grizz.glb",
-      "outputSha256": "6a4738fc7033e6869cbb54acfc7bd8ffa12a3d0b335342c89b19b582dce31f67",
+      "outputSha256": "9f73cabe10418bdc55e23844e2743652b990c6b8c3c8fe12aa1d269af3220f82",
       "definingTraits": [
         "towering round afro",
         "heavy sleepy brow",
@@ -243,11 +243,11 @@
     },
     "moose": {
       "source": "moose-pilot.blend",
-      "sourceSha256": "205e6e5565342ff69fb6074e41ac4c06a58787ab9feb5d0106b24dea9ebe406c",
+      "sourceSha256": "bdebc9a3caa68a97c7fd06e8f994b166d611ee5f6fd0d96ddfa2d85a9a5aeecd",
       "concept": "moose-turnaround.png",
       "conceptSha256": "d64f68670ae1629b82c81333c4a1be6c1ab02805f2937a1a20d3ddf679ca7bed",
       "output": "kid_moose.glb",
-      "outputSha256": "af0c2684429b1bc5b6f447055dcd1a24a8d2f8cf10b6eb508a78e3351109daf5",
+      "outputSha256": "f8a94a8c79a41870c1d7453188cc742685156f8fb5c78d994ef8bd22a379cde4",
       "definingTraits": [
         "navy ball cap",
         "mustard kangaroo hoodie",
@@ -303,11 +303,11 @@
     },
     "rocket": {
       "source": "rocket-rosa-pilot.blend",
-      "sourceSha256": "9e21d37cec9039d545023d81f8431fe4f74aab24381ea254fc51f44f247fa38c",
+      "sourceSha256": "c37cf5c16992aa09bca7f51c8cab5c07b634578f21d2190a45bd4af64e9c556f",
       "concept": "rocket-rosa-turnaround.png",
       "conceptSha256": "ea89c2b7b3014b9433019cbb9b649f0415731b61f37eb3e46439453640e6e2a3",
       "output": "kid_rocket.glb",
-      "outputSha256": "feffe9fc768b46817efbc52ebb17d79c62756c7816165eae5f750e27af36fd5e",
+      "outputSha256": "1441c669aea992dd1361da15ae051c5b96d4ed6db0da44e7730bc2a4852938f1",
       "definingTraits": [
         "high flowing ponytail",
         "white raglan tee",
@@ -378,11 +378,11 @@
     },
     "smokey": {
       "source": "smokey-pilot.blend",
-      "sourceSha256": "2be89bd32781164760870325e0d42753b4faaec258b4e225bfbb6ac04855e07c",
+      "sourceSha256": "e29d45457bc3b039fb3f36bbc591f501e04f8d80d4dc80288474a05a171d97ae",
       "concept": "smokey-turnaround.png",
       "conceptSha256": "3df75f1c323e7ea542d76adcc2f4c294ba10e0f414b0a9f4bea352e2dcb8056e",
       "output": "kid_smokey.glb",
-      "outputSha256": "74c95e00a1226c8bb56d55c2c814c33d366f6e75ba8119d69309de6b6f972904",
+      "outputSha256": "bc9e7536c28cc8bf3bc7f8cd4190448ca23a31e351304f464320dc132e28c370",
       "definingTraits": [
         "tight buzz fade",
         "plain red tee",

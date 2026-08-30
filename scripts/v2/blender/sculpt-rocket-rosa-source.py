@@ -383,16 +383,33 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
 
 # --- The white raglan tee ------------------------------------------------------
 #
-# Cream-white body from the collar (z ~2.66) to the hem at z 1.62, with the
+# Cream-white body from the collar (z ~2.66) down over the shorts, with the
 # orange piping ring at the collar. The piping's second appearance is the
 # sleeve hems (see ARM_STATIONS).
 # not-traceable: the tee IS the backdrop cream — the front silhouette
 # through the torso band reads only ink outline and hands (halfWidth
 # 0.17-0.25), so the halves here are bounded by hand from her hip span
 # (navy shorts trace 0.34 half at z 1.60) tapering to the neck.
+#
+# ★ THE HEM IS WHERE CLOTH ENDS, NOT WHERE THE KID ENDS (Zippy's pelvis).
+# The old bottom ring sat at z 1.620 while LEG_STATIONS top out at 1.600:
+# a 0.020ft band of her had no geometry, and the delivered front board
+# showed backdrop straight through the hips at y=421 (continuity.lint's
+# rocket debt). The bottom ring pair now reaches 1.560 — 0.040ft BELOW the
+# shorts' top — so tee and shorts overlap, and it is built as a hem, not a
+# disc: the bottom ring stands 0.010ft proud of the ring above (Penny's
+# waistband lesson — crisp alone is a colour edge; crisp + proud is a
+# constructed garment). Both rings are SHIRT so no colour ramps across the
+# band.
+# measured: the sheet's visible hem line (navy full-width from row 573,
+# front view) is z 1.638; the ring z below it is construction, not trace.
+# not-traceable: hem ring z 1.560 — forced below the rig's leg-station cap
+# (LEG_HIP_Z 1.600) plus ~0.03ft of board perspective shift, so the two
+# forms overlap in every rendered view; the sheet cannot give a z for
+# cloth that is hidden behind cloth.
 TORSO_LEVELS = [
-    (1.620, 0.330, 0.280, "Hips"),
-    (1.655, 0.345, 0.292, "Hips"),
+    (1.560, 0.354, 0.302, "Hips"),  # hem lip — proud, overhangs the shorts
+    (1.585, 0.344, 0.292, "Hips"),  # the tee body tucks back above the lip
     (1.850, 0.315, 0.266, "Spine"),
     (2.050, 0.298, 0.252, "Spine1"),
     (2.360, 0.285, 0.240, "Spine1"),
@@ -416,8 +433,8 @@ COLLAR_PIPE = (2.505, 2.558)
 # not-traceable: the paired rows re-express COLLAR_PIPE as loft rings; the
 # shape numbers interpolate the bounded table above.
 TORSO_LEVELS_CRISP = [
-    (1.620, 0.330, 0.280, "Hips"),
-    (1.655, 0.345, 0.292, "Hips"),
+    (1.560, 0.354, 0.302, "Hips"),  # hem lip — proud (see TORSO_LEVELS)
+    (1.585, 0.344, 0.292, "Hips"),
     (1.850, 0.315, 0.266, "Spine"),
     (2.050, 0.298, 0.252, "Spine1"),
     (2.360, 0.285, 0.240, "Spine1"),
@@ -539,8 +556,16 @@ def inseam_half(z: float) -> float:
 # measured: front z=1.25 halfWidth=0.4036 tol=0.03
 # measured: front z=1.10 halfWidth=0.3647 tol=0.03
 # measured: front z=0.80 halfWidth=0.3946 tol=0.03
+# ★ The top station is the shorts' RIM, and the rim lives under the tee.
+# At 0.180 half the rim's outer corners stood wider than the tee hem above
+# them and notched the hem line with two V-shaped cream wedges (the first
+# overlap build showed them at the hem's flanks). 0.142 tucks the rim
+# inside the tee (outer 0.342 < the 1.560 hem lip's 0.354) and the tubes
+# flare back to their traced widths by 1.480; the visible navy at the hem
+# line then measures 0.354 half against the sheet's 0.353.
+# measured: front z=1.638 navy halfWidth=0.353 (rows 573+, full-width runs)
 LEG_STATIONS = [
-    (1.600, 0.180, 1.12, PANTS, "UpLeg"),
+    (1.600, 0.142, 1.12, PANTS, "UpLeg"),
     (1.480, 0.172, 1.10, PANTS, "UpLeg"),
     (1.400, 0.164, 1.06, PANTS, "UpLeg"),
     (1.250, 0.170, 1.03, PANTS, "UpLeg"),
@@ -561,12 +586,21 @@ LEG_STATIONS = [
 # The yoke that closes the crotch: a small centre loft between the two leg
 # tubes so the shorts read as ONE garment (Zippy's lesson — the gap is the
 # space between the tubes, not the inseam carve).
+#
+# ★ THE YOKE MUST REACH THE TOP OF THE GAP IT CLOSES. Topped at 1.500 it
+# left a see-through notch above it — the delivered front board showed
+# backdrop through the crotch at x267-272, y422-435 (z ≈ 1.48-1.57),
+# because the tube inner walls only near each other and the tee's old
+# bottom sat at 1.620. The top ring is MOVED (not added — zero triangles)
+# to 1.620, inside the lowered tee, so tube walls, yoke and tee overlap;
+# the middle ring is re-spaced to match.
 # not-traceable: interior geometry no view can show; sized to bridge the
-# authored leg tubes at their own stations.
+# authored leg tubes at their own stations and to overlap the tee's
+# 1.560 hem ring from inside.
 CROTCH_LEVELS = [
     (1.200, 0.140, 0.160, "Hips"),
-    (1.350, 0.160, 0.190, "Hips"),
-    (1.500, 0.180, 0.210, "Hips"),
+    (1.410, 0.168, 0.192, "Hips"),
+    (1.620, 0.195, 0.215, "Hips"),
 ]
 
 ROCKET_LEG = LegSpec(

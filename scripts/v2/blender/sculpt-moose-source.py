@@ -274,11 +274,21 @@ def build_cap(builder: MeshBuilder, detail: int) -> None:
 # a hood bump behind the neck, a kangaroo pocket, drawstrings and ribbed hem.
 # not-traceable: his hanging long sleeves merge with the body at every torso
 # row (the front silhouette runs 0.82-0.95 half); the body proper is bounded
-# off the profile (depth 674-840 at z 1.94) and the below-sleeve rows.
+# off the profile (depth 674-840 at z 1.94) and the below-sleeve rows. The
+# ribbed hem band IS bounded, at the front centre column (col 188): bottom
+# edge row 606 (z 1.428), ribbing top seam row 587 (z 1.542), 0.006024 ft/px.
 TORSO_LEVELS = [
-    (1.430, 0.455, 0.395, "Hips"),    # hem underside
-    (1.470, 0.480, 0.415, "Hips"),    # ribbed hem band, proud
-    (1.540, 0.472, 0.410, "Hips"),
+    # The hem is Penny's 1.987/1.999 lesson applied at a hem instead of a
+    # waistband: a ring PAIR at the traced top seam so the colour switch is
+    # crisp, the band ring 0.010 PROUD so the ribbing overhangs the body it
+    # hangs from, and an under-roll ring so the bottom edge turns IN before
+    # the loft's flat bottom fan — the 9x hip crop read the old single-ring
+    # terminus as a hard 90-degree slab corner.
+    (1.424, 0.446, 0.386, "Hips"),    # hem underside — traced bottom edge z 1.428
+    (1.438, 0.474, 0.410, "Hips"),    # under-roll — the band turns in, no corner
+    (1.470, 0.480, 0.415, "Hips"),    # ribbed hem band, widest
+    (1.534, 0.478, 0.413, "Hips"),    # band top lip, 0.010 proud — traced seam z 1.542
+    (1.546, 0.468, 0.405, "Hips"),    # the body tucks behind it; crisp colour edge
     (1.700, 0.465, 0.408, "Spine"),
     (1.900, 0.455, 0.402, "Spine"),
     (2.100, 0.440, 0.390, "Spine1"),
@@ -293,8 +303,10 @@ TORSO_LEVELS = [
 
 
 def hoodie_color(theta: float, z: float):
-    if 1.430 <= z <= 1.475:
-        return SHIRT_DARK  # the ribbed hem
+    # The switch sits ON the 1.534/1.546 ring pair (a switch inside a
+    # stretched band ramps colour across the gap — the Zippy hem lesson).
+    if 1.424 <= z <= 1.540:
+        return SHIRT_DARK  # the ribbed hem band, traced rows 587-606
     return SHIRT
 
 # His neck is short and thick, mostly inside the hood collar.
@@ -400,11 +412,25 @@ def build_hoodie_details(builder: MeshBuilder, detail: int) -> None:
             row.append(builder.vertex((x, y, z), colour, "Spine"))
         prows.append(row)
     builder.grid(prows, 1, cyclic=False)
-    # Drawstrings: two short tubes hanging from the collar.
+    # Drawstrings: two cords that EMERGE from the hood collar roll (the ring
+    # at z 2.900) and lie against the chest — the first build started them
+    # 0.066 proud of a bare chest at z 2.815, hanging from nothing, and the
+    # 4x crop read them as scratch marks. Each spine starts 0.010 INSIDE the
+    # collar surface, then tracks the torso rings ~0.015 proud, and ends in a
+    # crimp + wider bulb so the tip reads as an aglet.
+    # Traced, front view: cord centres cols ~163/209 vs centre 188 (x +-0.14),
+    # cord ~6px wide (r 0.018), aglet bulb ~10px (r 0.030) ending row ~469
+    # (z 2.25). The sheet hangs them from the drawn hood edge (row 399,
+    # z 2.675); the model's hood front edge IS the collar roll, so they start
+    # there and keep the traced tip height.
     for side in (1, -1):
         builder.tube(
-            [(side * 0.075, -0.242, 2.815), (side * 0.084, -0.268, 2.665), (side * 0.080, -0.258, 2.550)],
-            [0.024, 0.022, 0.026], 1, SHIRT_DARK, "Spine2", 5, flip=side < 0)
+            [(side * 0.100, -0.108, 2.905),   # buried in the collar roll
+             (side * 0.132, -0.280, 2.640),   # lying on the chest
+             (side * 0.140, -0.354, 2.345),   # the crimp above the tip
+             (side * 0.141, -0.360, 2.295)],  # the aglet bulb
+            [0.017, 0.020, 0.018, 0.028], 1, SHIRT_DARK,
+            ["Spine2", "Spine2", "Spine1", "Spine1"], 5, flip=side < 0)
 
 
 # --- Arms: long mustard sleeves on a big build ---------------------------------
@@ -485,11 +511,17 @@ LEG_STATIONS = [
     (0.650, 0.172, 1.05, PANTS, "Leg"),
     (0.500, 0.156, 1.03, PANTS, "Leg"),
     (0.455, 0.152, 1.02, PANTS, "Leg"),
+    (0.442, 0.164, 1.03, PANTS_DARK, "Leg"),          # crisp colour edge onto the cuff
     (0.428, 0.168, 1.03, PANTS_DARK, "Leg"),          # bunched elastic cuff,
     (0.398, 0.164, 1.02, PANTS_DARK, "Foot"),         # proud of the leg
-    (0.372, 0.134, 1.00, PANTS_DARK, "Foot"),
-    (0.300, 0.100, 0.97, SKIN, "Foot"),               # ankle into the shoe
-    (0.150, 0.092, 0.95, SKIN, "Foot"),
+    # The sheet cuffs the joggers INTO the shoes — front col 120: navy jogger
+    # to row 776 (z 0.404) meeting the shoe's cream collar directly, no skin.
+    # The authored shoe's topline is SHOE_FLOOR + (0.290 - SHOE_FLOOR) * 1.28
+    # = z 0.3695, so the cuff rolls proud just above it and tucks in under it;
+    # the old table went SKIN at 0.300/0.150 and shipped a bare ankle ring.
+    (0.376, 0.156, 1.01, PANTS_DARK, "Foot"),         # roll over the shoe topline
+    (0.354, 0.116, 1.00, PANTS_DARK, "Foot"),         # tucks inside the collar
+    (0.150, 0.092, 0.95, PANTS_DARK, "Foot"),         # fabric on into the shoe
 ]
 
 MOOSE_LEG = LegSpec(

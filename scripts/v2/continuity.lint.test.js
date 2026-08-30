@@ -75,19 +75,11 @@ const DEBT = {
   // DETACHED_INK below) says the piece above that gap is a SEPARATE OBJECT
   // carrying 31.7% of his ink: cricket's head is not attached to cricket.
   cricket: 5,
-  // 0.014ft at 60.5%, front only; 1px in profile.
-  // ⚠️ THIS ENTRY ONCE CALLED IT "small enough to be a near-miss rather than a
-  // true severance", AND THAT WAS WRONG. A row count is a HEIGHT, not a size: an
-  // independent critic measured his gap as zero pixels at y=421 across the full
-  // 92px hip width, plus a second see-through notch at the shorts crotch. One
-  // row spanning the whole body is a body in two pieces exactly as much as
-  // twenty-one rows are. Never read a small row count as a small defect — the
-  // metric this file reports is how TALL the gap is, and it says nothing about
-  // how WIDE.
-  // ⚠️ CONFIRMED THE HARD WAY: the component scan puts 30.8% of her ink in a
-  // separate object below that 2-row gap. Her legs are not attached to her.
-  // Two rows; a third of the character.
-  rocket: 2,
+  // Rocket is deliberately absent, like Zippy: her 2-row hip gap (which
+  // detached 30.8% of her ink — her legs) was closed by the hem sweep: the
+  // tee's bottom ring moved from z 1.620 to 1.560, below the leg stations'
+  // 1.600 top, so the two forms overlap. Never read a small row count as a
+  // small defect — the metric here is how TALL a gap is, not how WIDE.
 };
 
 /**
@@ -120,8 +112,6 @@ const DETACHED_INK = {
   // from the front and 39.4% in profile, which is the worst view and so the
   // number here. His head is not attached to him.
   cricket: 0.395,
-  // The legs, below the hip gap: 30.9% at worst (front A-pose).
-  rocket: 0.31,
   // 9.5% at worst (front A-pose), across two loose pieces: a wheel is modelled
   // as free-standing geometry that never touches the frame. Unlike the two above it is a
   // PROP rather than a body part, so it is the least urgent of the three —
