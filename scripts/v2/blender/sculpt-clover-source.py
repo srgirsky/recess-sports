@@ -6,9 +6,12 @@ Run from the repository root:
 
 ★ CLOVER IS LOW WAVY PIGTAILS AND THE PETAL DRESS — Zippy's lobed-tube
 pigtail construction dropped to ear height and curved outward, over
-Bubbles/Dazzle's one-loft dress with the widest hem flare on the roster and
-a petal read carried by the theta hook (scallop shading plus a cream stitch
-ring). Bare arms and legs, striped socks, green hi-tops.
+Bubbles/Dazzle's one-loft dress with the widest hem flare on the roster.
+The petals are GEOMETRY (Dazzle's pleated-loft pattern): a six-lobe comb
+carves the hem edge to the sheet's own 29px dip, the panel-seam shading and
+the cream stitch shell follow the same comb, and the gold topstitch SWIRL
+runs one-sided down the bodice as the sheet draws it. Bare arms and legs,
+striped socks, green hi-tops.
 
 The conversion: front figure 616px over 4.0ft → 1px = 0.006494ft. Head band:
 fringe-top crown row 201 (z 3.99) to neck pinch row 424 (z 2.55) — 36.2% of
@@ -59,6 +62,9 @@ HAIR_DEEP = rgba("A2732A")   # curtain and underside tone
 SHIRT = rgba("9AB648")       # the dress green
 SHIRT_DARK = rgba("7E9838")  # petal scallop shading
 TRIM = rgba("F5EBD2")        # cream collar/sleeve trim and stitch line
+STITCH_GOLD = rgba("E8D77A") # the bodice topstitch swirl — sheet samples on
+                             # the drawn thread run #BFAE64-#C6BB76 (bright
+                             # dashes ~(193,184,106)); authored ≈ sheet × 1.2
 PANTS = rgba("74882F")       # deep pleat green (theta hook)
 PANTS_DARK = rgba("5E7026")
 TIE = rgba("6E7A24")         # the green pigtail ties — identity
@@ -289,25 +295,36 @@ TIE_RADII = [0.095, 0.085]
 
 
 def build_petal_hem(builder: MeshBuilder, detail: int) -> None:
-    """The scalloped petal hem — the dress's signature construction. Six
-    petals (an EVEN count: cos(6θ) survives θ→π−θ, five does not — the
-    Penny/Clover mirror lessons), a thin proud shell riding the hem cone,
-    petal bottoms dipping between scallop highs, cream stitch on top."""
+    """The petal hem's proud shell — a 1.8% lip riding OUTSIDE the carved
+    skirt cone (crisp + proud is a constructed garment; the hem-pass rule),
+    carrying the rolled petal edge and the cream topstitch. Every ring
+    follows the SAME `petal_comb` the loft carves (finding 4: the stitch
+    used to run as a dead-straight ringer at constant z), so the stitch
+    traces the petal outline. 24 columns at LOD0 = the 4-columns-per-lobe
+    Nyquist floor for 6 lobes; at LOD1's 12 columns the lobes are
+    unrepresentable, so the shell ships FLAT there, hugging LOD1's uncarved
+    hem edge (author no lobes you have no columns for)."""
     if detail < 1:
         return
     segments = 24 if detail >= 2 else 12
     rows = []
     specs = [
-        (1.310, 0.545, 0.378, 0.0, TRIM),      # stitch ring
-        (1.245, 0.585, 0.404, 0.0, SHIRT),
-        (1.180, 0.625, 0.432, 1.0, SHIRT_DARK),  # petal edge, dipping
+        (1.150, 0.612, 0.422, SHIRT),       # blends back into the skirt cone
+        (1.118, 0.617, 0.426, SHIRT),       # bounds the stitch — the colour switch
+                                            # lives in a short band (the Zippy hem
+                                            # lesson; without this ring the cream
+                                            # ramped 0.044 and read as a ribbon)
+        (1.092, 0.620, 0.429, TRIM),        # the cream topstitch, thin as drawn
+        (1.060, 0.625, 0.432, SHIRT_DARK),  # the rolled petal edge rim
     ]
-    for z0, half_x, half_y, dip, col in specs:
+    for z0, half_x, half_y, col in specs:
         ring = []
         for column in range(segments):
             theta = 2 * pi * column / segments
-            scallop = 0.5 + 0.5 * cos(6 * theta)
-            z = z0 - dip * 0.055 * (1.0 - scallop)
+            if detail >= 2:
+                z = z0 + petal_edge_lift(theta)
+            else:
+                z = z0    # hugs LOD1's uncarved hem edge (its cone bottoms at the lobe z)
             ring.append(builder.vertex(
                 (half_x * cos(theta) * 1.018, half_y * sin(theta) * 1.018, z),
                 col, "Hips"))
@@ -340,16 +357,28 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
 #
 # Bubbles/Dazzle's construction: the torso loft IS the garment, cream ringer
 # collar, A-line flare to the widest hem on the roster, an inner hem lip for
-# thickness. The petal read is the theta hook: five scallop wedges shade one
-# step deeper toward the hem, under a cream stitch ring.
+# thickness. ★ THE PETALS ARE GEOMETRY NOW (the hem-sweep finding: the old
+# 0.055 shell dip delivered 7px against the sheet's 29px — 28% of the
+# drawing's depth). `petal_shape` lifts the hem rows into the cusps between
+# six lobed panels, LOD0-only (Dazzle's pleat precedent); the comb colour
+# carries the read at distance. Lobes sit at theta = 30° + n·60° so the
+# centre-front meridian (270°) carries the drawn centre lobe and the cusps
+# land where the sheet draws them: the traced cusp apex at col 140 is
+# 0.34ft left of the midline ≈ hem half_x / 2, the projected 240°/300°
+# cusp, with the silhouette tangents (0°/180°) in cusps too.
 # measured: front z=1.26 halfWidth=0.7338 tol=0.06
-# not-traceable: the hem run merges with her hanging hands (the 0.73 above
-# includes them); the hem half here is bounded off the green cluster run
-# 90-311 at z 1.25 minus the hand runs.
+# measured: front z=1.10 runs=3
+# measured: front z=1.06 halfWidth=0.3636 tol=0.03
+# not-traceable: the hem run at z=1.26 merges with her hanging hands (the
+# 0.73 above includes them); the hem half there is bounded off the green
+# cluster run 90-311 at z 1.25 minus the hand runs. The z=1.10 runs are the
+# three visible lobed panels (side lobes end row ~648, z 1.088); the z=1.06
+# half is the centre lobe's own run (bottom row 657, z 1.032).
 TORSO_LEVELS = [
-    (1.130, 0.520, 0.360, "Hips"),    # hem inner lip — the skirt has thickness
-    (1.145, 0.590, 0.405, "Hips"),    # hem underside
-    (1.180, 0.615, 0.425, "Hips"),
+    (1.045, 0.535, 0.368, "Hips"),    # hem inner lip — the skirt has thickness
+    (1.060, 0.605, 0.415, "Hips"),    # hem underside — the petal edge rim
+    (1.095, 0.622, 0.428, "Hips"),    # petal face; full comb dip below here
+    (1.235, 0.562, 0.395, "Hips"),    # cusp-line ring — the notch walls need a ring
     (1.300, 0.540, 0.385, "Hips"),
     (1.430, 0.465, 0.340, "Hips"),
     (1.560, 0.395, 0.300, "Hips"),
@@ -365,19 +394,181 @@ TORSO_LEVELS = [
     (2.700, 0.138, 0.126, "Spine2"),  # neck hole — OUTSIDE the neck loft
 ]
 
-STITCH_RING = (1.235, 1.275)
 SKIRT_TOP = 1.700
+
+# The petal comb. Six lobes — an EVEN count: cos(6θ) survives θ→π−θ where
+# five cannot (the Penny faceAsymmetry lesson) — and 24 LOD0 columns is
+# exactly the 4-columns-per-lobe Nyquist floor.
+PETAL_COUNT = 6
+# traced: front — lobe bottoms rows 648/657/649 (z 1.088/1.032/1.084), cusp
+# apex row 622 (z 1.260): dip 29px = 0.188ft, ~1/7 of the drawn hem run.
+# Authored 0.185 with the lobe bottoms at z 1.060, keeping the hem edge
+# clear of the z=1.02 leg-citation row.
+PETAL_DIP = 0.185
+PETAL_TOP_Z = 1.300   # the cusp notch fades to nothing by here
+PETAL_FULL_Z = 1.095  # full dip at and below the petal-face ring
+# The notch SHAPING: the drawn contour is flat-bottomed lobes with a narrow
+# V (the traced notch descends 648→622→648 over ~24px — ±7° at the hem
+# radius — while the lobe floors run flat for ~30px). A raw cosine comb
+# spread the dip evenly and the first rebuilt board read as a jester
+# zigzag; power 2 still bent each lobe into a shallow V (shoulder columns
+# ±15° off a lobe centre sat at 0.25× dip). Power 4 puts the shoulders at
+# 0.06× — flat lobe floors, the notch walls inside one column — while the
+# apex keeps the full traced dip.
+PETAL_NOTCH_POWER = 4.0
+
+
+def petal_comb(theta: float) -> float:
+    """1 on the lobe centres (30° + n·60°), 0 in the cusps; even under the
+    θ→π−θ mirror, so the two sides shade and carve identically."""
+    return 0.5 - 0.5 * cos(PETAL_COUNT * theta)
+
+
+def petal_edge_lift(theta: float) -> float:
+    """The hem edge's z rise at this theta — shared by the loft carve and
+    the stitch shell so the two surfaces stay phase- and shape-locked."""
+    return PETAL_DIP * (1.0 - petal_comb(theta)) ** PETAL_NOTCH_POWER
+
+
+def petal_lift_frac(z: float) -> float:
+    if z >= PETAL_TOP_Z:
+        return 0.0
+    return min(1.0, (PETAL_TOP_Z - z) / (PETAL_TOP_Z - PETAL_FULL_Z))
+
+
+def petal_shape(theta: float, z: float) -> tuple[float, float]:
+    """(radial scale, z lift) for one skirt vertex — the cusp columns lift
+    toward z 1.245 while the lobe centres keep the table's own hemline."""
+    return 1.0, petal_edge_lift(theta) * petal_lift_frac(z)
+
+
+# ★ The gold topstitch SWIRL — the drawing's second most identifying garment
+# mark after the petals (it was entirely missing). ONE-SIDED BY THE SHEET:
+# the S starts just left of the collar, bulges 0.13ft to the wearer-right at
+# the chest, recrosses the midline at the waist and runs down-left to meet
+# the hem stitch at the left-front cusp seam. Traced off the front view's
+# gold-thread runs (isGold pixel scan, x offset from the figure midline in
+# ft; rows 424-580 plus the hem-crop tail below 616 where the dashes thin):
+# (row, offset px): 424,-6 · 436,4 · 448,14 · 464,20 · 484,19 · 512,7 ·
+# 516,5 · 532,-12 · 548,-23 · 560,-31 · 580,-41 · ~620,-60. The board's
+# front camera (0,-12,2.2) puts model +x on screen right, so offsets map
+# sign-for-sign. BUILT AS A PROUD CORD, NOT PAINT: painting the nearest
+# column on each ring was tried first and the quad interpolation bled the
+# gold ±15° — ten times the drawn thread weight — and the rebuilt board
+# read it as a pale smear down the bodice. Same arithmetic as the hem:
+# 24 columns cannot express a 0.015ft line (a ring cannot express a crease
+# it has no columns for). A 0.011 tube riding 0.010 proud of the dress is
+# crisp at any width and is the drawn raised topstitch (the bevelled-rim
+# lesson: proud rim rows read as stitching). The asymmetry is the sheet's
+# own; its budget impact is checked against faceAsymmetry (tol 4) after
+# every build — measured 0.00 on the first rebuilt board.
+SWIRL_PATH = [
+    (1.300, -0.390),
+    (1.532, -0.266),
+    (1.662, -0.201),
+    (1.740, -0.149),
+    (1.844, -0.078),
+    (1.948, 0.032),
+    (2.000, 0.065),
+    (2.156, 0.123),
+    (2.286, 0.130),
+    (2.390, 0.091),
+    (2.468, 0.030),
+    (2.560, -0.043),  # extrapolated 0.015 past the last run so the 2.560 collar-base ring catches the tail
+]
+
+
+def _interp(pairs, z: float) -> float:
+    for (z0, v0), (z1, v1) in zip(pairs, pairs[1:]):
+        if z0 <= z <= z1:
+            return v0 + (v1 - v0) * (z - z0) / (z1 - z0)
+    return pairs[0][1] if z < pairs[0][0] else pairs[-1][1]
+
+
+def _torso_half_x(z: float) -> float:
+    return _interp([(lz, hx) for lz, hx, _, _ in TORSO_LEVELS], z)
+
+
+def _torso_half_y(z: float) -> float:
+    return _interp([(lz, hy) for lz, _, hy, _ in TORSO_LEVELS], z)
+
+
+def _swirl_point(z: float) -> tuple[float, float, float]:
+    """The cord's centre at this z: on the dress's front surface, pushed
+    0.010 out along the ellipse normal so the cord rides proud."""
+    hx, hy = _torso_half_x(z), _torso_half_y(z)
+    x = _interp(SWIRL_PATH, z)
+    x = max(-0.90 * hx, min(0.90 * hx, x))   # never wraps onto the silhouette
+    y = -hy * sqrt(max(0.0, 1.0 - (x / hx) ** 2))
+    nx, ny = x / (hx * hx), y / (hy * hy)    # the ellipse normal, outward
+    norm = sqrt(nx * nx + ny * ny) or 1.0
+    return (x + 0.010 * nx / norm, y + 0.010 * ny / norm, z)
+
+
+# One continuous cord; per-station bones follow the loft's own bone bands so
+# the stitch rides the dress under the swing's deformation.
+# not-traceable: the station z's are resampling knots along SWIRL_PATH above
+# (the gold-run trace there is this cord's provenance); their spacing is the
+# cord's own tessellation, which no view constrains.
+SWIRL_STATIONS = [
+    (1.310, "Hips"), (1.420, "Hips"), (1.530, "Hips"), (1.640, "Hips"),
+    (1.760, "Spine"), (1.880, "Spine"),
+    (2.000, "Spine1"), (2.120, "Spine1"), (2.240, "Spine1"),
+    (2.360, "Spine2"), (2.460, "Spine2"), (2.555, "Spine2"),
+]
+SWIRL_RADIUS = 0.011   # the drawn thread runs w1-w2 px ≈ 0.013ft across
+
+
+def build_swirl_stitch(builder: MeshBuilder, detail: int) -> None:
+    if detail < 2:
+        return   # a 0.011ft cord is sub-pixel at LOD1 range
+    pts = [_swirl_point(z) for z, _ in SWIRL_STATIONS]
+    radii = [SWIRL_RADIUS] * len(pts)
+    builder.tube(pts, radii, 1, STITCH_GOLD, [b for _, b in SWIRL_STATIONS], 4)
 
 
 def dress_color(theta: float, z: float):
     if z > 2.662:
-        return TRIM        # the cream ringer collar
-    if STITCH_RING[0] <= z <= STITCH_RING[1]:
-        return TRIM        # the petal stitch line
+        return TRIM            # the cream ringer collar
     if z < SKIRT_TOP:
-        # Five petal scallops, colour only — deeper green in the folds.
-        return SHIRT_DARK if sin(2.5 * theta) > 0.55 else SHIRT
+        # The petal panel seams: deep green one column wide in each cusp
+        # fold, phase-locked to the SAME even comb the geometry carves
+        # (sin(2.5θ) was five wedges AND odd under the mirror — the shading
+        # and the geometry were at different counts).
+        return SHIRT_DARK if petal_comb(theta) < 0.30 else SHIRT
     return SHIRT
+
+
+def petal_loft(builder: MeshBuilder, levels, material: int, color, segments: int,
+               color_fn=None, shape_fn=None) -> None:
+    """`MeshBuilder.loft` with a `shape_fn(theta, z) -> (scale, dz)` hook.
+
+    Copied winding-for-winding from `loft` (the Grizz inside-out lesson: copy
+    the exact quad order and cap fans) — the only addition is the per-vertex
+    radial scale and z lift the petal cusps need. Dazzle's `pleated_loft`
+    pattern; `sculptlib` stays untouched because the hook reads this kid's
+    tables, so it lives here.
+    """
+    rows = []
+    for z, rx, ry, bone in levels:
+        row = []
+        for column in range(segments):
+            theta = 2 * pi * column / segments
+            scale, dz = shape_fn(theta, z) if shape_fn else (1.0, 0.0)
+            at = (rx * scale * cos(theta), ry * scale * sin(theta), z + dz)
+            vertex_color = color_fn(theta, z) if color_fn else color
+            row.append(builder.vertex(at, vertex_color, bone))
+        rows.append(row)
+    bottom = builder.vertex((0.0, 0.0, levels[0][0]), color, levels[0][3])
+    top = builder.vertex((0.0, 0.0, levels[-1][0]), color, levels[-1][3])
+    for column in range(segments):
+        nxt = (column + 1) % segments
+        builder.face((bottom, rows[0][nxt], rows[0][column]), material)
+        builder.face((rows[-1][column], rows[-1][nxt], top), material)
+    for lower, upper in zip(rows, rows[1:]):
+        for column in range(segments):
+            nxt = (column + 1) % segments
+            builder.face((lower[column], lower[nxt], upper[nxt], upper[column]), material)
 
 # Her neck pinch is row 424 → z 2.55. Bottom ring 2px narrower than the
 # ring above (the headBox detector keeps the topmost of equal-width rows).
@@ -643,9 +834,14 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     builder.loft(NECK_LEVELS, 0, SKIN, 14 if detail >= 2 else segments)
     if detail >= 1:
         builder.loft(CROTCH_LEVELS, 0, SKIN, 8 if detail >= 2 else 6)
-    builder.loft(TORSO_LEVELS if detail >= 2 else thin_for_lod(TORSO_LEVELS, detail),
-                 1, SHIRT, 18 if detail >= 2 else segments, color_fn=dress_color)
+    # 24 columns at LOD0: the 6-lobe petal comb needs its 4-columns-per-lobe
+    # Nyquist floor (18 gave 3 — an unrepresentable crease). The carve is
+    # LOD0-only; lower LODs get the plain cone and the comb colour.
+    petal_loft(builder, TORSO_LEVELS if detail >= 2 else thin_for_lod(TORSO_LEVELS, detail),
+               1, SHIRT, 24 if detail >= 2 else segments, color_fn=dress_color,
+               shape_fn=petal_shape if detail >= 2 else None)
     build_petal_hem(builder, detail)
+    build_swirl_stitch(builder, detail)
 
     for side in (1, -1):
         build_arm(builder, side, detail, spec=CLOVER_ARM)

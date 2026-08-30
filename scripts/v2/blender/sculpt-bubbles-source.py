@@ -5,9 +5,10 @@ Run from the repository root:
     --python scripts/v2/blender/sculpt-bubbles-source.py
 
 ★ BUBBLES IS THE FIRST DRESS. The torso loft IS the garment: a fitted pink
-bodice gathering at the waist into an A-line skirt that flares to a 1.3ft hem,
-with the legs bare beneath it — no character before her has had a garment
-whose silhouette leaves the body. She is also the second big hair mass
+bodice meeting a gathered A-line skirt at a constructed waist seam (z 1.90),
+the skirt falling to a deliberately ASYMMETRIC hem — low on her right, high on
+her left, a z(θ) hem edge — with the legs bare beneath it; no character before
+her has had a garment whose silhouette leaves the body. She is also the second big hair mass
 (Grizz's ring-loft-with-tuck construction, third proving) plus the roster's
 first topknot bun, and her scrunchie is the team-accent accessory.
 
@@ -361,22 +362,49 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
 #
 # Traced off the front figure by the dress's own pink runs (her arms hang
 # clear below the short sleeves, so the bodice edges are readable): bodice
-# half 0.19 at z 2.25, waist gather ~2.05, then the A-line flares to a 0.655
-# hem at z 1.345 with the cream band. Depth from the profile: bodice 0.28,
-# hem 0.45.
+# half 0.19 at z 2.25. Depth from the profile: bodice 0.28.
+#
+# ★ THE HEM-SWEEP ROUND CONSTRUCTED THE WAIST AND THE DRAWN ASYMMETRIC HEM.
+# The delivered garment was one uninterrupted cone from armpit to hem; the
+# sheet draws a fitted bodice with a clear waist seam and a gathered skirt.
+# Waist seam traced per view as the row where the gathers spring from the
+# fitted bodice: front row 515, profile row 514, back row 516 -> z 1.90
+# (1.897 / 1.905 / 1.883). Penny's proven pattern (her TORSO_LEVELS
+# 1.987/1.999): a ring PAIR straddling the seam so the edge is crisp, with
+# the skirt-side ring standing PROUD so the gathered skirt overhangs the
+# bodice that tucks in above it — the profile then shows two forms, not one.
+# The gather pop is drawn ~5-8px (~0.03-0.04ft) beyond the bodice line in
+# the profile view; authored 0.028.
+#
+# The hem itself: per-column pink-bottom trace across all three standing
+# views agrees on a pure LATERAL tilt — the band-top edge sits at z 0.91-0.98
+# on her right (-x, front view viewer-left dx -0.58..-0.41 and back view
+# dx +0.38..+0.50), 1.12-1.22 on her left (+x), ~1.00-1.04 at centre front
+# and back, so z(theta) = 1.055 + 0.125*cos(theta) at the band top; the
+# profile's per-column read (min of both sides) holds ~0.96 as it must. The
+# cream binding is drawn ~0.05ft tall and follows the tilt. The tilt is
+# applied by `hem_drop` below as a z-shear of the loft, full at the hem and
+# fading to zero at the waist seam; the levels here carry the MEAN z.
 # measured: front z=2.38 halfWidth=0.4486
 # measured: view2 z=2.18 halfWidth=0.2768
-# measured: view2 z=1.38 halfWidth=0.4342
+# measured: front z=1.15 halfWidth=0.5568
+# measured: front z=1.48 halfWidth=0.6649
+# measured: view2 z=1.06 halfWidth=0.4342
 TORSO_LEVELS = [
-    (1.295, 0.560, 0.385, "Hips"),    # the hem's inner lip — the skirt has thickness
-    (1.310, 0.630, 0.430, "Hips"),    # hem underside
-    (1.345, 0.658, 0.452, "Hips"),    # the cream hem band, proud
-    (1.400, 0.615, 0.428, "Hips"),
-    (1.500, 0.560, 0.400, "Hips"),
-    (1.660, 0.470, 0.352, "Hips"),
+    (0.960, 0.560, 0.385, "Hips"),    # the hem's inner lip — the skirt has thickness
+    (0.975, 0.615, 0.425, "Hips"),    # hem underside — the binding wraps under
+    (1.010, 0.635, 0.438, "Hips"),    # cream band's bottom edge, proud lip
+    (1.062, 0.622, 0.430, "Hips"),    # band top — the pink/cream switch ring
+    (1.074, 0.618, 0.428, "Hips"),    # lowest pink ring: crisp pair with 1.062
+    # Deviation, recorded: the bell traces 0.6649 at z 1.48 but is authored
+    # 0.632 — the sheet hangs the arms IN FRONT of the skirt while the
+    # calibrated A-pose hangs them BESIDE it, and at the traced width the
+    # raised left flank seals against the arm and encloses a 2230px backdrop
+    # pocket (silhouette.lint, rubric 3.7, binary). Residual -0.033.
+    (1.480, 0.632, 0.452, "Hips"),    # the bell's widest (traced 0.6649 at 1.48)
     (1.820, 0.400, 0.312, "Spine"),
-    (2.000, 0.310, 0.262, "Spine"),
-    (2.060, 0.278, 0.245, "Spine1"),  # the waist gather (the bow rides here)
+    (1.890, 0.360, 0.290, "Spine"),   # gathered skirt top, PROUD — overhangs the seam
+    (1.902, 0.332, 0.268, "Spine"),   # waist seam — the bodice tucks IN above it
     (2.150, 0.240, 0.228, "Spine1"),
     (2.250, 0.200, 0.215, "Spine2"),  # traced: bodice
     (2.340, 0.190, 0.200, "Spine2"),
@@ -385,6 +413,56 @@ TORSO_LEVELS = [
     (2.448, 0.140, 0.146, "Spine2"),  # cream collar rib, proud
     (2.466, 0.118, 0.120, "Spine2"),  # neck hole
 ]
+
+WAIST_SEAM_Z = 1.902   # the seam ring — hem shear fades to zero here
+HEM_TILT_X = 0.125     # z(theta) amplitude: +x (her left) high, -x (her right) low
+HEM_TILT_TOP = 1.074   # full tilt at and below the lowest pink ring
+
+
+def hem_drop(cos_t: float, z: float) -> float:
+    """The asymmetric hem's z-shear at a point whose ring direction has
+    cos(theta) = cos_t (equivalently x / half-width), for a ring authored at
+    the MEAN z. Positive raises (+x, her left); negative lowers (her right).
+    Fades linearly to zero at the waist seam so the bodice stays mirror-true —
+    the asymmetry is the skirt's cut, not the body's."""
+    if z >= WAIST_SEAM_Z:
+        return 0.0
+    w = min(1.0, (WAIST_SEAM_Z - z) / (WAIST_SEAM_Z - HEM_TILT_TOP))
+    # The 1.6 power keeps the full drawn amplitude at the hem while the
+    # mid-skirt carries less lift: at the linear fade the raised left flank
+    # (z ~1.5-1.6) grazed the calibrated A-pose arm and enclosed a backdrop
+    # pocket the silhouette gate counts.
+    return HEM_TILT_X * max(-1.0, min(1.0, cos_t)) * w ** 1.6
+
+
+def dress_loft(builder: MeshBuilder, levels, material: int, color, segments: int,
+               color_fn=None) -> None:
+    """`MeshBuilder.loft` with the hem's z(theta) shear — winding, caps and
+    colour handling copied EXACTLY from the shared loft (the Grizz afro
+    lesson: a by-eye copy ships inside-out). The colour function receives the
+    ring's AUTHORED z, never the sheared one, so the cream binding follows
+    the tilt on its own rings and the switch stays inside its crisp pair."""
+    assert all(a[0] < b[0] for a, b in zip(levels, levels[1:])), \
+        "dress_loft levels must be strictly ascending in z (loft convention)"
+    rows = []
+    for z, rx, ry, bone in levels:
+        row = []
+        for column in range(segments):
+            theta = 2 * pi * column / segments
+            at = (rx * cos(theta), ry * sin(theta), z + hem_drop(cos(theta), z))
+            vertex_color = color_fn(theta, z) if color_fn else color
+            row.append(builder.vertex(at, vertex_color, bone))
+        rows.append(row)
+    bottom = builder.vertex((0.0, 0.0, levels[0][0]), color, levels[0][3])
+    top = builder.vertex((0.0, 0.0, levels[-1][0]), color, levels[-1][3])
+    for column in range(segments):
+        nxt = (column + 1) % segments
+        builder.face((bottom, rows[0][nxt], rows[0][column]), material)
+        builder.face((rows[-1][column], rows[-1][nxt], top), material)
+    for lower, upper in zip(rows, rows[1:]):
+        for column in range(segments):
+            nxt = (column + 1) % segments
+            builder.face((lower[column], lower[nxt], upper[nxt], upper[column]), material)
 
 # The pinch is at the bottom of the neck and widens into the jaw (the Grizz
 # lesson, third application).
@@ -397,11 +475,15 @@ NECK_LEVELS = [
 
 
 def dress_color(theta: float, z: float):
-    """Cream trim at the collar; pink everywhere else (hem band rings carry
-    their own cream in the level colours below via the loft's base colour)."""
+    """Cream trim at the collar and the hem binding; pink everywhere else.
+    Called with the ring's AUTHORED z (pre-shear), so the binding's cream
+    lands exactly on its own rings — 0.975 (underside wrap), 1.010 (band
+    bottom) and 1.062 (band top) — and the pink returns on the crisp partner
+    ring at 1.074. A switch belongs ON a ring, never between two distant
+    ones (the Zippy hem lesson)."""
     if z > 2.44:
         return SHIRT_DARK
-    if 1.315 < z <= 1.36:
+    if 0.970 < z <= 1.068:
         return SHIRT_DARK
     return SHIRT
 
@@ -419,9 +501,18 @@ def torso_ring_at(z: float) -> tuple[float, float]:
     return levels[-1][1], levels[-1][2]
 
 
+def dress_surface_y(x: float, z: float) -> float:
+    """The dress front surface's y at (x, z), off TORSO_LEVELS."""
+    half_w, half_d = torso_ring_at(z)
+    inner = max(0.10, 1.0 - (x / half_w) ** 2)
+    return -half_d * sqrt(inner)
+
+
 def surface_patch(builder: MeshBuilder, x0: float, x1: float, z0: float, z1: float,
                   proud: float, colour, top_colour, bone: str) -> None:
-    """A raised rectangular panel on the dress front."""
+    """A raised rectangular panel on the dress front. Rides the hem shear:
+    each vertex takes the same z-drop as the loft surface beneath it, so a
+    patch on the tilted skirt moves with the fabric instead of floating."""
     steps = 3
     rows = []
     for j in range(steps + 1):
@@ -432,9 +523,29 @@ def surface_patch(builder: MeshBuilder, x0: float, x1: float, z0: float, z1: flo
             x = x0 + (x1 - x0) * i / steps
             inner = max(0.10, 1.0 - (x / half_w) ** 2)
             y = -half_d * sqrt(inner) - proud
-            row.append(builder.vertex((x, y, z), top_colour if j == 0 else colour, bone))
+            zz = z + hem_drop(x / half_w, z)
+            row.append(builder.vertex((x, y, zz), top_colour if j == 0 else colour, bone))
         rows.append(row)
     builder.grid(rows, 1, cyclic=False, flip=True)
+
+
+def button_disc(builder: MeshBuilder, bx: float, bz: float, radius: float,
+                colour, bone: str) -> None:
+    """A round sewn button: a 6-triangle fan proud of the dress front.
+    ★ TRANSLATED copies sharing ONE vertex order, never mirrors — Penny's
+    gold buttons proved the winding (flipping one side made 13 inverted
+    pairs; triangle normals read out of the GLB settled it)."""
+    half_w, _ = torso_ring_at(bz)
+    bz = bz + hem_drop(bx / half_w, bz)   # ride the tilted skirt like the patches
+    by = dress_surface_y(bx, bz) - 0.012
+    centre = builder.vertex((bx, by - 0.012, bz), colour, bone)
+    ring = []
+    for i in range(6):
+        a = 2 * pi * i / 6
+        ring.append(builder.vertex((bx + radius * cos(a), by, bz + radius * sin(a)), colour, bone))
+    for i in range(6):
+        nxt = (i + 1) % 6
+        builder.face((centre, ring[i], ring[nxt]), 1)
 
 
 def build_dress_details(builder: MeshBuilder, detail: int) -> None:
@@ -444,29 +555,50 @@ def build_dress_details(builder: MeshBuilder, detail: int) -> None:
     # patch-built bow "a cluster of blocky white rectangles"; two ellipsoid
     # lobes and a knot read as ribbon from every angle, and the tails stay
     # patches (they ARE flat ribbon).
-    _, bow_depth = torso_ring_at(2.04)
-    bow_y = -bow_depth - 0.020
+    #
+    # ★ HEM-SWEEP ROUND: THE BOW LIVES AT HER LEFT WAIST, ON THE SEAM — NOT ON
+    # THE CENTRE LINE. Traced off the front view: knot at dx +0.26, z 1.90
+    # (exactly the waist seam row), loops spanning dx +0.146..+0.335, tails
+    # hanging to ~z 1.64; the profile view shows the same bow's ribbon peeking
+    # proud of the front-left waist. The old centred tails at z 1.80-1.97 were
+    # two of the "white rectangular slabs stacked on the centre line" the
+    # hem-sweep critic read as a zipper pull.
+    bow_x = 0.255
+    bow_y = dress_surface_y(bow_x, 1.900) - 0.020
     # Lobes only at the near LOD: the bow is a 2px sparkle at LOD1 distance.
     if detail >= 2:
-        # Tied-ribbon loops: teardrop tubes angling up-and-out from the
-        # knot (the polish round's 'reads as tied' item), not level pods.
-        for side in (1, -1):
-            builder.tube(
-                [(side * 0.022, bow_y + 0.004, 2.040), (side * 0.078, bow_y - 0.006, 2.078), (side * 0.118, bow_y + 0.006, 2.052)],
-                [0.028, 0.050, 0.020], 1, SHIRT_DARK, "Spine1", 5, flip=side < 0)
-        builder.ellipsoid((0.0, bow_y - 0.014, 2.045), (0.032, 0.028, 0.032), 1, SHIRT_DARK, "Spine1", 6, 4)
-    surface_patch(builder, -0.068, -0.022, 1.80, 1.97, 0.026, SHIRT_DARK, SHIRT_DARK, "Hips")
-    surface_patch(builder, 0.022, 0.068, 1.80, 1.97, 0.026, SHIRT_DARK, SHIRT_DARK, "Hips")
+        # Tied-ribbon loops: teardrop tubes angling up-and-out from the knot.
+        # Both loops are TRANSLATED constructions on one side of the body —
+        # one winding serves both (Penny's button lesson); no flip.
+        builder.tube(
+            [(bow_x - 0.020, bow_y + 0.004, 1.900), (bow_x - 0.072, bow_y - 0.006, 1.938), (bow_x - 0.108, bow_y + 0.006, 1.910)],
+            [0.028, 0.050, 0.020], 1, SHIRT_DARK, "Spine", 5)
+        builder.tube(
+            [(bow_x + 0.020, bow_y + 0.004, 1.900), (bow_x + 0.068, bow_y - 0.006, 1.938), (bow_x + 0.100, bow_y + 0.006, 1.906)],
+            [0.028, 0.050, 0.020], 1, SHIRT_DARK, "Spine", 5)
+        builder.ellipsoid((bow_x, bow_y - 0.014, 1.902), (0.032, 0.028, 0.032), 1, SHIRT_DARK, "Spine", 6, 4)
+    # The tails hang from the knot down the skirt front, drawn to ~1.64.
+    surface_patch(builder, bow_x - 0.050, bow_x - 0.010, 1.680, 1.885, 0.026, SHIRT_DARK, SHIRT_DARK, "Spine")
+    surface_patch(builder, bow_x + 0.008, bow_x + 0.048, 1.680, 1.885, 0.026, SHIRT_DARK, SHIRT_DARK, "Spine")
     # The skirt's patch pocket: pouch plus a prouder cream flap, viewer-left.
     surface_patch(builder, -0.30, -0.14, 1.52, 1.63, 0.022, SHIRT, SHIRT, "Hips")
     surface_patch(builder, -0.31, -0.13, 1.62, 1.675, 0.034, SHIRT_DARK, SHIRT_DARK, "Hips")
-    # The flap's button (polish item).
-    surface_patch(builder, -0.235, -0.205, 1.630, 1.662, 0.044, SHIRT, SHIRT, "Hips")
-    # The two chest buttons.
-    # The two chest buttons became one (the drawing's second button is 0.03ft
-    # below the first — at any camera the pair reads as one mark; the triangle
-    # budget spends better on the bow).
-    surface_patch(builder, -0.022, 0.022, 2.250, 2.290, 0.016, SHIRT_DARK, SHIRT_DARK, "Spine2")
+    # The flap's round pink button (a rectangle here read as a slab — same
+    # class as the chest pair; the disc is 12 triangles cheaper too).
+    button_disc(builder, -0.220, 1.646, 0.020, SHIRT, "Hips")
+    # ★ THE TWO CHEST BUTTONS, ROUND AND OFF-CENTRE — the sheet draws them.
+    # measured off the front view as cream-disc clusters on the pink bodice:
+    # (dx +0.181, z 2.358) and (dx +0.198, z 2.217), ~0.04-0.05ft across, on
+    # the placket diagonal at her LEFT chest (viewer-right; her right chest
+    # holds nothing — the critic's "her right" was mirror-handed, the trace
+    # is the authority). Deviation, recorded: the drawn dx sits under the
+    # delivered T-pose arm root (ARM_Z 2.471, first station radius 0.130
+    # reaches down to z~2.34 outboard of x 0.10, where the sheet hangs the
+    # arms clear), so the pair keeps the drawn 0.141ft spacing and the drawn
+    # ~0.5 fraction of the local bodice half-width, tucked inboard of the
+    # arm cap: (+0.095, 2.330) and (+0.110, 2.190).
+    button_disc(builder, 0.095, 2.330, 0.024, SHIRT_DARK, "Spine2")
+    button_disc(builder, 0.110, 2.190, 0.024, SHIRT_DARK, "Spine2")
 
 
 # --- Arms: short trimmed sleeves, long bare arms -------------------------------
@@ -534,11 +666,14 @@ BUBBLES_ARM = ArmSpec(
 
 # --- Bare legs, striped socks --------------------------------------------------
 #
-# Below the skirt hem (z 1.31) her legs are bare to the sock tops at ~0.62;
+# Below the skirt hem (mean z 1.01, tilted by hem_drop) her legs are bare to
+# the sock tops at ~0.62;
 # the crew socks carry two pink stripes near the top and fold at ~0.35 into
 # the shoes. Traced per-run: the bare thigh-calf runs 0.205ft wide (radius
 # 0.103) and the socks 0.216 (0.108). Her legs are the slimmest yet.
-SHORTS_HEM_Z = 1.310   # the skirt hem — the garment boundary this table obeys
+SHORTS_HEM_Z = 1.010   # the skirt hem's MEAN z (tilted ±0.125 by hem_drop) —
+                       # the garment boundary this table obeys; legs part
+                       # below INSEAM_TOP_Z hidden under the skirt
 INSEAM_TOP_Z = 1.300
 INSEAM_HEM_Z = 0.620
 INSEAM_HEM_HALF = 0.120
@@ -725,8 +860,8 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
 
     builder.loft(NECK_LEVELS, 0, SKIN, segments)
     torso_segments = 26 if detail >= 2 else segments
-    builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, torso_segments,
-                 color_fn=dress_color)
+    dress_loft(builder, thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, torso_segments,
+               color_fn=dress_color)
     build_dress_details(builder, detail)
 
     for side in (1, -1):

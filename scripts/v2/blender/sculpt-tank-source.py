@@ -577,9 +577,23 @@ TORSO_LEVELS = [
     # Four rings buy an underside, a proud band and the body above it.
     # The hem sits at z 1.108, which is where the centre column changes from
     # the tee's purple to the shorts' near-black.
-    (1.070, 0.600, 0.470, "Hips"),    # hem underside
+    (1.070, 0.600, 0.470, "Hips"),    # hem underside — SHIRT_DARK via tee_color
     (1.096, 0.630, 0.500, "Hips"),    # hem band, proud
     (1.130, 0.611, 0.560, "Hips"),    # traced: hem row, purple 102-310
+    # ★ THE HEM BAND HAS A STITCH CREASE ABOVE IT, AND THE SHEET DRAWS IT. The
+    # proud lip alone still read to a hem critic as a bare edge, and the
+    # drawing agrees there is more: scanning the front figure's tee rows for
+    # mean luminance, z 1.20 dips to 84.4 between 90 above and a lit fold of
+    # 98.1 at z 1.19 — a crease line with the rolled band catching light
+    # under it, the top of a ~0.09ft hem band over the bottom edge at 1.108.
+    # Penny's waistband rule: the colour switch sits ON the 1.200 ring and the
+    # 1.186/1.216 pair bounds its gradient to short bands (the Zippy lesson —
+    # a switch inside a stretched band ramps colour across 32px). Widths ride
+    # the line the neighbouring traced rings already describe, minus a 0.011
+    # inset at the crease so the shadow line is geometry as well as paint.
+    (1.186, 0.607, 0.573, "Hips"),    # band top — bounds the crease from below
+    (1.200, 0.596, 0.568, "Hips"),    # stitch crease — SHIRT_DARK via tee_color
+    (1.216, 0.604, 0.577, "Hips"),    # bounds the crease from above
     (1.240, 0.598, 0.591, "Hips"),    # deepest point, traced (DEPTH only)
     # ★ THE PROFILE IS A TAPER, AND THAT ONE IS CORRECT. Three reviews called
     # the side view a cone and asked for a belly that bulges. Traced, the
@@ -635,6 +649,20 @@ TORSO_LEVELS = [
     (2.822, 0.278, 0.262, "Spine2"),  # collar rib, proud
     (2.848, 0.244, 0.242, "Spine2"),  # neck hole
 ]
+
+
+def tee_color(theta: float, z: float):
+    """The tee's own two swatches, by height — the hem's constructed shadow.
+
+    A colour switch belongs ON a ring, never between two distant ones (the
+    Zippy hem lesson). Both switches here sit on rings the table places for
+    them: the under-hem shadow on the 1.070 underside ring (its gradient dies
+    into the proud lip at 1.096, a 0.026ft band), and the stitch-crease dark
+    on the 1.200 ring, bounded by the 1.186/1.216 pair.
+    """
+    if z <= 1.083 or 1.193 <= z <= 1.207:
+        return SHIRT_DARK
+    return SHIRT
 
 # The neck. Measured depth at z 2.85 is 0.477ft, and the front-view pinch at
 # z 2.962 is 0.519ft across — so it is barely a neck at all, which is the
@@ -999,23 +1027,40 @@ LEG_STATIONS = [
     (1.360, 0.264, 1.26, PANTS, "UpLeg"),
     (1.100, 0.298, 1.32, PANTS, "UpLeg"),
     (0.900, 0.352, 1.24, PANTS, "UpLeg"),
-    # ★ THE SHORTS HEM WAS A CUT EDGE, and the tee already records the fix.
-    # One ring stepping 0.332 straight to bare leg at 0.196 is a garment
-    # sliced off, not one that ends — an independent review scored 3.4 with
-    # "shorts as a featureless black slab with no hem, side seam or leg
-    # opening". The tee's own hem note says it in four rings: an underside,
-    # a band proud of what is above it, and the body above that. The same
-    # three rings buy a leg opening you can see into.
-    (0.760, 0.342, 1.16, PANTS, "UpLeg"),
-    (0.716, 0.358, 1.13, PANTS_DARK, "Leg"),          # hem band, proud
-    (SHORTS_HEM_Z, 0.350, 1.10, PANTS_DARK, "Leg"),   # hem underside, z 0.694
+    # ★ THE SHORTS HEM IS A TURNED-UP CUFF, AND THE SHEET DRAWS ITS SEAM. The
+    # earlier repair gave the opening an underside and a proud band, and a hem
+    # critic still read "a smooth truncated cone with no hem, no turned cuff" —
+    # because a lip at the very bottom edge is not the turned-up cuff the
+    # concept draws. Traced as a luminance crease inside the shorts' own runs
+    # (the navy is too dark for a colour run to split): the front figure holds
+    # the cuff's fold-line at z ~0.765 (row mean lum 41 above, 43 on the lit
+    # cuff face below) and the profile at z ~0.735 (48 above, dip to 39-44 at
+    # the crease, 51 below); the outer silhouette barely changes across it
+    # ([95-207] at z 0.75 against [96-207] at z 0.80), so the cuff is the
+    # CREASE plus small steps, not a width event. Smokey's cuff is the sweep's
+    # proven pattern: tube bulge, a PANTS_DARK crease ring between short gaps,
+    # an inset cuff face, a bottom lip ~0.012 proud, and a dark turned-under
+    # inner lip carrying the under-hem shadow.
+    (0.780, 0.346, 1.16, PANTS, "UpLeg"),             # tube above the crease
+    (0.756, 0.336, 1.14, PANTS_DARK, "UpLeg"),        # cuff seam crease — the fold line
+    (0.735, 0.344, 1.13, PANTS, "Leg"),               # cuff face, inset from the lip
+    (0.706, 0.356, 1.11, PANTS, "Leg"),               # cuff bottom lip, proud
+    (SHORTS_HEM_Z, 0.348, 1.10, PANTS_DARK, "Leg"),   # hem underside, z 0.694
     (0.686, 0.252, 1.02, PANTS_DARK, "Leg"),          # inner lip of the opening
-    # The calf carries his weight-read below the hem and measured 0.38ft
-    # against the concept's 0.50 — see SHOE_LENGTH_SCALE's note. Grown to
-    # the drawing, which also leaves the 0.16ft calf gap 3.12 asks for.
-    (0.680, 0.246, 0.98, SKIN, "Leg"),                # bare shin begins
-    (0.610, 0.247, 0.96, SKIN, "Leg"),
-    (SOCK_TOP_Z + 0.014, 0.244, 0.95, SKIN, "Leg"),   # z 0.564
+    # ★ THE CALF'S "0.50ft CONCEPT WIDTH" WAS THE PAIR, NOT THE LEG — the
+    # fourth two-object read in this file (sleeve|torso|sleeve, the two
+    # overlapping feet, the chin-shadow mouth, and now the leg pair: at z 0.60
+    # the halfWidth detector spans left leg + between-legs gap + right leg,
+    # 0.96ft, and half of THAT is the 0.50 the old note cited). Re-traced PER
+    # RUN with regionRunsAt, as this table's own header instructs: the front
+    # figure's left leg runs x 125-180 at z 0.68 (0.327ft, half 0.163),
+    # 127-178 at z 0.60 (half 0.152) and 128-174 at z 0.56 (half 0.137,
+    # shadow included). The 0.246-0.247 the table carried was 60% over the
+    # drawing and is what forced the sock below into a funnel. Slimming to the
+    # trace also widens the calf daylight 3.12 asks for.
+    (0.680, 0.170, 0.98, SKIN, "Leg"),                # bare shin begins
+    (0.610, 0.156, 0.96, SKIN, "Leg"),
+    (SOCK_TOP_Z + 0.014, 0.140, 0.95, SKIN, "Leg"),   # z 0.564
     # ★ HIS SOCK RENDERED GREY AND THE CONCEPT'S IS CREAM ALL THE WAY DOWN.
     #
     # Walking the concept's front figure down column x=140: shorts to
@@ -1030,52 +1075,47 @@ LEG_STATIONS = [
     # The accent cannot simply go: `M_Accessory` is where team colour lands,
     # and `build_leg` emits a band to slot 3 only when BOTH its rows are
     # TEAM_MASK, so one accent row would leave the material with no geometry.
-    # A third ring makes the roll a thin stripe at the sock's top edge — which
-    # is what a rolled sock looks like anyway — and hands the rest to cream.
+    # The roll stays a thin two-row stripe at the sock's top edge — which is
+    # what a rolled sock looks like anyway — and the rest is cream.
     #
-    # ⚠️ THE WIDTHS HERE ARE LOAD-BEARING AND THE COLOURS ARE NOT.
-    # `ankleDaylight` samples at 13% of figure height, z 0.521, which falls
-    # between these rings, and it sits at +9.64 of a 12.0 tolerance. Dropping
-    # the 0.514 ring's half-width to open the accent would have taken it to
-    # 13.9% and broken the gate. So the new ring is interpolated ON the line
-    # the old two already described (0.532 -> 0.268), the sampled half-width
-    # moves 0.267 -> 0.266, and only the colour of the lower row changes.
-    (SOCK_TOP_Z, 0.272, 0.95, TEAM_MASK, "Leg"),      # the roll, team accent
-    (SOCK_TOP_Z - 0.018, 0.268, 0.95, TEAM_MASK, "Leg"),
-    (SOCK_TOP_Z - 0.036, 0.264, 0.95, SOCK, "Leg"),   # cream, as drawn
-    # ★ THE SOCK MUST FIT INSIDE THE SHOE, AND IT NEVER DID.
+    # ★ THE FUNNEL SOCK IS DEAD, AND ITS WIDTHS WERE THE INSTRUMENT'S, NOT THE
+    # DRAWING'S. The old rings ran 0.272/0.268/0.264 and then dived to 0.172
+    # and 0.100 — an inverted cone whose rim overhung the shoe on both sides
+    # with backdrop visible underneath, at the most-looked-at joint on the
+    # figure (a hem critic costed it 3.4 and 3.8 together). The 0.267 rim was
+    # fattened to hold `ankleDaylight` inside tolerance, which is exactly the
+    # funnel-sock mistake the stance pass named: the concept side of that
+    # metric reads 0.00 through flood CONTAINMENT of a drawn-closed outline,
+    # so matching it by mesh means fattening past the drawing forever. The
+    # drawing itself, per run with regionRunsAt (front figure, left leg):
     #
-    # Three rounds went into a topline, a heel counter and a collar rim and
-    # none of them read, and the nineteenth review found why in one
-    # comparison: the shoe's widest half-section is 0.214 and these rings
-    # were 0.248, 0.238 and 0.206. The sock was wider than the shoe at every
-    # height they share, so a wedge of it split the upper down the instep in
-    # both views — and the collar rim, at 0.138, was buried inside the sock
-    # with only its fore and aft lobes escaping as the tan cliff in profile.
+    #   z 0.53  x 124-178  half 0.160   (roll)
+    #   z 0.50  x 125-177  half 0.155   (body, slight waist)
+    #   z 0.47  x 122-180  half 0.172   (the slouch fold bulge)
+    #   z 0.44  x 125-175  half 0.149   (base — and the shoe collar directly
+    #                                    below reads 0.146: FLUSH, not stepped)
     #
-    # Not a depth-sort or a surface-height problem, which is how the two
-    # previous attempts framed it. A real sock COMPRESSES inside a shoe.
-    # The shoe's top is z 0.441, so only the first ring below is still
-    # outside it; everything under that is sized against the section at its
-    # own height (v 0.90 gives ~0.16, v 0.62 gives ~0.19).
-    # ⚠️ AND THIS ONE COMES DOWN WITH THEM TOO. It is the ring just above the
-    # shoe's 0.438 topline, so it is what the eye reads as the sock ENTERING
-    # the shoe. At 0.222 against the narrowed shoe's 0.168 widest half it
-    # overhung the whole upper by a third and rendered as a mushroom sitting
-    # on the foot — the same "sock wider than the shoe" the nineteenth review
-    # caught, arriving from the other direction. 0.172 lands just proud of
-    # the upper, which is how the concept draws a slouched sock meeting a
-    # low collar. Still below `ankleDaylight`'s sample at 13% of figure
-    # height (z 0.521), which reads the two rings above this one.
-    (SOCK_TOP_Z - 0.070, 0.172, 0.95, SOCK, "Leg"),   # z 0.480, just clear
-    # Sized against the shoe at its own height, which is what the
-    # nineteenth review's finding actually asks for. ⚠️ AND IT MOVES WHEN
-    # THE SECTION MOVES: retracing the foxing ledge stepped the upper in
-    # from u 0.905 to 0.815, so the shoe's half here fell from 0.149 to
-    # 0.210 x 0.95 x u(v 0.912) = 0.114 and the 0.140 that used to sit
-    # inside it started poking through. This is the fourth time a shoe
-    # number has moved and left the sock behind, which is why the numbers
-    # are derived in the comment rather than remembered.
+    # A slouched ribbed cylinder, near-constant gauge, that lands ON the shoe
+    # collar at the collar's own width — its ribs are the roll's proud lip and
+    # the fold bulge, since 14 columns cannot carry vertical ribbing. The
+    # residual `ankleDaylight` OFF this reintroduces is the recorded
+    # instrument conflict (see measure-fidelity.mjs's own header), not a
+    # regression; it is measured and reported, never chased with the mesh.
+    (SOCK_TOP_Z, 0.165, 0.95, TEAM_MASK, "Leg"),        # roll top, team accent
+    (SOCK_TOP_Z - 0.015, 0.162, 0.95, TEAM_MASK, "Leg"),  # roll bottom, z 0.535
+    (SOCK_TOP_Z - 0.030, 0.152, 0.95, SOCK, "Leg"),     # under-roll crease, z 0.520
+    (SOCK_TOP_Z - 0.050, 0.155, 0.95, SOCK, "Leg"),     # rib swell, z 0.500
+    (SOCK_TOP_Z - 0.080, 0.172, 0.95, SOCK, "Leg"),     # slouch fold, z 0.470
+    (SOCK_TOP_Z - 0.105, 0.150, 0.95, SOCK, "Leg"),     # base on the collar, z 0.445
+    # ★ THE SOCK MUST FIT INSIDE THE SHOE, AND IT MUST TAPER MONOTONICALLY
+    # THERE. The thirty-round drip on this joint was a sock table that bulged
+    # 0.100 -> 0.138 inside the shoe zone and pierced the upper; below the
+    # shoe's z 0.441 topline every ring narrows, strictly. The tuck ring dives
+    # inside the collar rim (lateral 0.128 at z 0.42) and the rings below sit
+    # just inside the dome's own flank (u(v) x 0.2095 x 0.95 gives 0.113 at
+    # z 0.40) — derived, not remembered, because the shoe's numbers have moved
+    # and left the sock behind four times before.
+    (SOCK_TOP_Z - 0.118, 0.108, 0.95, SOCK, "Leg"),     # tuck, inside the rim, z 0.432
     (0.400, 0.100, 0.95, SOCK, "Leg"),
     (0.280, 0.094, 0.95, SOCK, "Leg"),
     (0.150, 0.088, 0.95, SOCK, "Foot"),
@@ -1195,8 +1235,21 @@ SHOE_STATIONS = [
     (-0.034, 0.210, 0.302, SOLE),
     (0.057, 0.209, 0.304, SOLE),
     (0.137, 0.196, 0.302, SOLE),
-    (0.188, 0.170, 0.292, SOLE),
-    (0.239, 0.126, 0.250, SOLE),
+    # ★ THE REAR TOPLINE RISES INTO A HEEL-COUNTER CUP, WHICH IS WHAT THE SOCK
+    # SITS ON. These two toplines drooped to 0.292/0.250 (scaled z 0.43/0.37),
+    # so behind the ankle the shoe fell away and the profile showed backdrop
+    # under the sock's rim — the hem critic's "give the shoe a heel counter
+    # for it to sit on". The sheet holds the cup: on the profile figure the
+    # heel's navy runs persist to z 0.42 at the rear (regionRunsAt, x 854-873
+    # at z 0.40, x 866-871 at z 0.42, with the collar's navy at x 835-850
+    # still present at z 0.44 directly behind the sock). Scaled these toplines
+    # land at z 0.435/0.427 — a level cup even with the instep, as the
+    # concept's "vertical sides, tall heel counter" block already records.
+    # `SHOE_TOP_MAX` (0.304) is untouched, so the colour-band boundaries do
+    # not move; the raised region falls in the 0.795+ band and paints as the
+    # navy ankle collar, which is what the drawing holds there.
+    (0.188, 0.170, 0.302, SOLE),
+    (0.239, 0.126, 0.296, SOLE),
 ]
 
 
@@ -1603,7 +1656,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     # 1232 against a 1200 budget, which is the budget gate working. At LOD2 the
     # character is a 40px sprite and a 0.03ft rib is invisible, so the levels
     # collapse to the shape and the bands survive only as colour.
-    builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, segments)
+    builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, segments, color_fn=tee_color)
 
     for side in (1, -1):
         build_arm(builder, side, detail, spec=TANK_ARM)
@@ -1688,7 +1741,7 @@ def main() -> None:
     notes.write(
         "Tank reference-authored production source\n\n"
         "The three LOD meshes were rebuilt against tank-turnaround.png; they are not proxy deformations.\n"
-        "Signature wardrobe colour lives in M_Uniform vertex colour; M_Accessory is the shoe collar accent.\n"
+        "Signature wardrobe colour lives in M_Uniform vertex colour; M_Accessory is the sock roll-top accent.\n"
         "Do not rename canonical bones, LOD roots or material slots.\n"
         "Ship with: npm run export:authored-character -- tank\n"
     )
