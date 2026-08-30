@@ -318,11 +318,11 @@
     },
     "gizmo": {
       "source": "gizmo-pilot.blend",
-      "sourceSha256": "d51ceba11bef0f1109a4f0280ffa80d21192c11a157a8a53250431d2f3233669",
+      "sourceSha256": "910ae4008c80258284e6e58d2efd259a42d81c814f300ec3fd19e93a95b94a43",
       "concept": "gizmo-turnaround.png",
       "conceptSha256": "3d133b007e6af158eea9ef446fe962af27d95a9828d922a6a96f66a65c0e1400",
       "output": "kid_gizmo.glb",
-      "outputSha256": "7c8c925d565426f9588aadd4b063cdb8756815b283ffb1861aada7f55ceb73e9",
+      "outputSha256": "12f9340f5ce0442f3fdbebb11cd5fbb0edca7955c0ced76c7e117f9f7309c179",
       "definingTraits": [
         "round wire glasses",
         "brown spiky mop",
@@ -393,11 +393,11 @@
     },
     "sniffles": {
       "source": "sniffles-pilot.blend",
-      "sourceSha256": "304f69cd44b2aca9c73197f8e44198f9e11a3b1f2a2ff0509712c1e8d59ecaa2",
+      "sourceSha256": "230e445917c47f31b06b3519bf161630cf704dc9b7bcebf5991d47540efedafa",
       "concept": "sniffles-turnaround.png",
       "conceptSha256": "753c239c41ebe73424f487102239de4cc55d3eeb185a6018a5f6623e4ac11257",
       "output": "kid_sniffles.glb",
-      "outputSha256": "005c3535dc41c66d1d72cefae800d4dc010ec0d629a7d85261278e1d10dfc7ec",
+      "outputSha256": "a9468d8516368fca1ff58a05d4012394e0400cb2471d684c964c6267434638d5",
       "definingTraits": [
         "tousled auburn mop",
         "light-blue hoodie",
@@ -408,11 +408,11 @@
     },
     "cricket": {
       "source": "cricket-pilot.blend",
-      "sourceSha256": "802d57f5f5240278a556526d2c3a503a0811984ff86f9834163f354c67774c03",
+      "sourceSha256": "bd74235d1e2d43e094d7b7ac4ee21c48b865f8066eb40dde20fc63e672c76fe0",
       "concept": "cricket-turnaround.png",
       "conceptSha256": "cb5ff0cb23a96bb2d16b5820ae6ccfa2bbcfd17c3af88b100b439e367c317b0b",
       "output": "kid_cricket.glb",
-      "outputSha256": "8aa2dc9d9fec74a7ac50c743f4809bd614ba8b7b9e10cda919db65538c6af15b",
+      "outputSha256": "851d2a91922aad6bcd0461a0d3c9e94855923319ca53436d18fcc6c15e764476",
       "definingTraits": [
         "big spiky brown mop",
         "green tee under denim overalls",

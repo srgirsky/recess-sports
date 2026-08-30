@@ -31,6 +31,7 @@ from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
 from sculptlib.ear import EarSpec, build_ear
+from sculptlib.hair import curl_field, curl_seeds
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
@@ -189,6 +190,22 @@ def skull_front_y(x: float, z: float) -> float:
 # 0.631 half — 0.22 beyond the skull), a spiky fringe ending above the
 # brows, a nape that hangs to the collar, and mirror-symmetric spike tufts
 # over the crown.
+# ★ THE CURL FIELD — sculptlib/hair.py holds the mechanism; the θ-only
+# cos(6θ) at 18 columns fluted (31% of the concept's strand count at 296%
+# prominence). Three mirror pairs at 24 columns hold the four-per-lobe
+# floor. The trough paint below RESPECTS the isSkin side-shading rule this
+# file already records: lit tops never on the side masses.
+CURL_SEEDS = curl_seeds(
+    pairs_per_row=3,
+    bands=7,
+    z_top=3.740,
+    z_bottom=2.940,
+    amplitude=0.070,
+)
+CURL_THETA_WIDTH = 0.24
+CURL_Z_WIDTH = 0.070
+CURL_TROUGH = 0.018
+
 # measured: front z=3.39 halfWidth=0.5966 tol=0.06
 # measured: front z=3.98 halfWidth=0.0243 tol=0.08
 CAP_LEVELS = [
@@ -233,21 +250,23 @@ def ring_loft_cap(builder: MeshBuilder, levels, detail: int) -> None:
     # quad's winding — the runtime lights the mass as a slate-grey void.
     assert all(a[0] > b[0] for a, b in zip(levels, levels[1:])), \
         "ring_loft_cap levels must be strictly descending in z"
-    # 18, not 17: an odd ring has no mirror-symmetric columns (Dex's parity
-    # lesson) — the first build measured faceAsymmetry 4.71 from the clump
-    # columns quantizing differently per side.
-    segments = 18 if detail >= 2 else (10 if detail == 1 else 8)
+    # Even, per Dex's parity lesson (17 measured faceAsymmetry 4.71); 24
+    # gives the curl field's lobes their four-column floor.
+    segments = 24 if detail >= 2 else (10 if detail == 1 else 8)
     use = levels if detail >= 2 else thin_for_lod([(z, hx, hy, yc) for z, hx, hy, yc in levels], detail)
     ascending = list(reversed(use))
     rows = []
     for z, half_x, half_y, y_centre in ascending:
         ring = []
-        # Mirror-symmetric clump bumps (cos(6θ) is even under θ→π−θ, so the
-        # leans sum to zero) — without them the mop's back is a featureless
-        # helmet against the sheet's leaf-like strand clumps.
         for column in range(segments):
             theta = 2 * pi * column / segments
-            clump = 1.0 + 0.055 * cos(6 * theta) * min(1.0, half_x / 0.5)
+            # The 2D curl field (constants above CAP_LEVELS).
+            f = (curl_field(
+                theta, z, CURL_SEEDS,
+                theta_width=CURL_THETA_WIDTH,
+                z_width=CURL_Z_WIDTH,
+            ) if detail >= 2 else 0.0) * min(1.0, half_x / 0.5)
+            clump = 1.0 + f
             x = half_x * clump * cos(theta)
             y = y_centre + half_y * clump * sin(theta)
             if y < y_centre:
@@ -259,8 +278,9 @@ def ring_loft_cap(builder: MeshBuilder, levels, detail: int) -> None:
             # The sheet lights the crown and SHADES the side masses in tones
             # that fail isSkin — auburn passes the classifier like blonde
             # does (Clover's lesson), so the lit tone on the sides would
-            # count the whole mop as face. Sides take the dark tone.
-            col = HAIR if abs(cos(theta)) < 0.55 else HAIR_DARK
+            # count the whole mop as face. Sides stay dark UNCONDITIONALLY;
+            # elsewhere the curl trough decides.
+            col = HAIR if (abs(cos(theta)) < 0.55 and f > CURL_TROUGH) else HAIR_DARK
             ring.append(builder.vertex((x, y, z), col, "Head"))
         rows.append(ring)
     bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
@@ -363,6 +383,13 @@ NECK_LEVELS = [
     (2.530, 0.132, 0.124, "Spine2"),
     (2.610, 0.135, 0.127, "Neck"),
     (2.720, 0.148, 0.139, "Neck"),
+    # ★ THE RING THAT ATTACHES HIS HEAD. The loft used to stop at 2.720 and
+    # the skull's underside starts at ~2.760 — a 0.04ft band with no
+    # geometry, and continuity.lint's scan is right that the piece above it
+    # (31.7-40% of his ink, the whole head) was a separate object. This ring
+    # ends INSIDE the skull (head half-width at 2.800 is 0.175), so the two
+    # forms overlap the way a neck meets a jaw. One ring, 28 triangles.
+    (2.800, 0.165, 0.155, "Neck"),
 ]
 
 
