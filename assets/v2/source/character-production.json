@@ -198,11 +198,11 @@
     },
     "diva": {
       "source": "dazzle-pilot.blend",
-      "sourceSha256": "ee3f02b97722078f3b63bc17d0f1a0bef6aaa3e7a9ca0e7a5a3c96a4b6017abe",
+      "sourceSha256": "124ca0510c13a59b8ece526dc8091ad71c9f6686c8c2d18f7ea19befd1abd1c6",
       "concept": "dazzle-turnaround.png",
       "conceptSha256": "3eb499fa87bff373ae457d620ef72ae54de5c0636b605ed24022aeca7523f8df",
       "output": "kid_diva.glb",
-      "outputSha256": "16902f46c9e438a3ed2d61bb9d6c00104eb9855343c6da3003eb11626c31e1d5",
+      "outputSha256": "369a15e740d4e8de6d9fa0f4033f812edf077ce3b32d4f2ff8e4424d89456ffc",
       "definingTraits": [
         "long wavy auburn mane",
         "cream headband",
