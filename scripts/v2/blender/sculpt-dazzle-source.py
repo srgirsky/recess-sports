@@ -7,8 +7,10 @@ Run from the repository root:
 ★ DAZZLE IS THE FIRST LONG MANE — one wavy ring-loft from crown to mid-torso
 whose curtains frame the face and rest on the shoulders — and the second
 dress (Bubbles' torso-loft-is-the-garment construction) with the roster's
-first colour-pleated skirt: the pleat shading is the loft's own theta hook,
-no extra geometry. The cream headband rides the mane like Zippy's.
+first SCULPTED pleated skirt: `skirt_shape` carves the pleat grooves and
+scallops the hem band into the loft itself (the hem pass retired the
+colour-only wedges, which read as paint). The cream headband rides the mane
+like Zippy's.
 
 The conversion: front figure 630px over 4.0ft → 1px = 0.006349ft. The profile
 faces +x. Head band: mane top row 191 (z 3.99) to neck pinch row 398
@@ -308,8 +310,22 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
 #
 # Bubbles' construction: the torso loft IS the garment. Cream ringer collar,
 # purple bodice, cream waistband with the gold star, and the skirt flaring to
-# the hem with an inner lip for thickness. The pleats are COLOUR — the theta
-# hook alternates the purple one step deeper in twelve wedges, no geometry.
+# the hem with an inner lip for thickness.
+#
+# ★ THE PLEATS ARE GEOMETRY NOW (the hem-pass finding: "a smooth cone with a
+# flat hem — no pleats" against a concept whose signature garment is a pleated
+# A-line; colour wedges alone "read only softly"). `skirt_shape` carves 6
+# grooves into the skirt loft — 12 fold lines against the sheet's ~13-14
+# (front z=1.30 fold creases at x 95/103/128/171/213/251, a ~25.5° spacing;
+# 6 is the Nyquist cap at 24 columns, the 4-columns-per-lobe floor) — and the
+# same comb lifts the hem-band rows into the drawn scallop (front hem contour
+# swings 9px = 0.057ft over the central 70% of its run, mean hem z 1.118).
+# The comb is even under theta -> pi - theta (Penny's faceAsymmetry lesson:
+# cos(k*(theta - pi/2)), amplitude varies by row, never the phase), grooves
+# land on the front/back meridians where the sheet draws its centre crease,
+# and the silhouette tangents (theta 0/pi) sit on uncarved ridges so the
+# cited hem half-width still ships. Pleat geometry is LOD0-only; colour
+# wedges carry the read at distance, as before.
 # measured: front z=1.18 halfWidth=0.5873
 # not-traceable: the bodice's own edges hide between the mane's curtains and
 # the hanging arms at every row; halves there are bounded off the purple
@@ -318,6 +334,14 @@ TORSO_LEVELS = [
     (1.130, 0.500, 0.345, "Hips"),    # hem inner lip — the skirt has thickness
     (1.145, 0.560, 0.390, "Hips"),    # hem underside
     (1.180, 0.585, 0.408, "Hips"),
+    # The sewn hem band: a ring pair straddling the band top (crisp edge) with
+    # the band standing 0.010 proud of the cone's own trend (interp 1.180->
+    # 1.300 gives 0.568/0.399 at z 1.212) — Penny's waistband lip, worn at the
+    # hem. Band height 1.180-1.212 = 0.032ft inside the roster's 0.02-0.04.
+    # not-traceable: the sheet draws the hem roll as a soft brightening over
+    # the last ~10px (71->79 at x=150) with no crisp band edge to trace.
+    (1.212, 0.578, 0.409, "Hips"),    # hem band lip, proud
+    (1.224, 0.561, 0.396, "Hips"),    # the skirt cone resumes; crisp edge
     (1.300, 0.520, 0.372, "Hips"),
     (1.420, 0.455, 0.335, "Hips"),
     (1.520, 0.380, 0.295, "Hips"),
@@ -327,7 +351,9 @@ TORSO_LEVELS = [
     (1.644, 0.294, 0.248, "Spine"),
     (1.652, 0.290, 0.246, "Spine"),   # crisp upper edge
     (1.800, 0.278, 0.240, "Spine"),
-    (2.000, 0.270, 0.238, "Spine1"),
+    # (2.000) row retired to pay for the hem-band pair: the bodice is near-
+    # cylindrical here and 1.800->2.200 interpolates to 0.273 against the
+    # retired 0.270 — invisible; the LOD0 budget was 232 triangles.
     (2.200, 0.268, 0.232, "Spine1"),
     (2.360, 0.262, 0.222, "Spine2"),
     (2.440, 0.240, 0.205, "Spine2"),
@@ -340,6 +366,40 @@ TORSO_LEVELS = [
 WAISTBAND = (1.610, 1.650)
 SKIRT_TOP = 1.610
 
+# The pleat comb. 6 grooves = 12 fold lines (the sheet draws ~13-14; capped by
+# Nyquist at 24 columns). Grooves at theta = 90° + n*60° — the front/back
+# meridians carry the drawn centre-front crease; ridges at 0°/180° keep the
+# silhouette at the table's own width.
+PLEAT_COUNT = 6
+# not-traceable: fold depth has no silhouette signature on the sheet (the
+# drawn skirt outline is smooth — the hair-mass lesson); authored 0.075
+# relative (~0.044ft at the hem) so the toon ramp shades each groove.
+PLEAT_DEPTH = 0.075
+PLEAT_FULL_Z = 1.300      # full depth from here down; 0 at SKIRT_TOP (gathers)
+# measured: the front hem contour swings 9px = 0.057ft over its central 70%;
+# authored 0.035 as the z component (the radial carve carries the rest).
+SCALLOP_LIFT = 0.035
+SCALLOP_TOP_Z = 1.240     # the hem-band rows (1.130-1.224) ride the scallop
+
+
+def pleat_comb(theta: float) -> float:
+    """0 on the ridges, 1 in the grooves; even under theta -> pi - theta."""
+    return 0.5 + 0.5 * cos(PLEAT_COUNT * (theta - pi / 2))
+
+
+def pleat_amp(z: float) -> float:
+    if z >= SKIRT_TOP:
+        return 0.0
+    return PLEAT_DEPTH * min(1.0, (SKIRT_TOP - z) / (SKIRT_TOP - PLEAT_FULL_Z))
+
+
+def skirt_shape(theta: float, z: float) -> tuple[float, float]:
+    """(radial scale, z lift) for one skirt vertex — the pleats and the scallop."""
+    comb = pleat_comb(theta)
+    scale = 1.0 - pleat_amp(z) * comb
+    lift = SCALLOP_LIFT * comb if z <= SCALLOP_TOP_Z else 0.0
+    return scale, lift
+
 
 def dress_color(theta: float, z: float):
     if z > 2.570:
@@ -347,9 +407,44 @@ def dress_color(theta: float, z: float):
     if WAISTBAND[0] <= z <= WAISTBAND[1]:
         return SHIRT_DARK  # the cream waistband
     if z < SKIRT_TOP:
-        # Twelve pleat wedges, colour only — the fold shadow the sheet draws.
-        return PANTS if sin(6.0 * theta) > 0.0 else SHIRT
+        # The fold shadow, phase-locked to the carved grooves (the old
+        # sin(6*theta) wedges were odd under the mirror; pleat_comb is even).
+        # PANTS_DARK, not PANTS: the line is one column wide and interpolates
+        # 15° each side, and the toon ramp washed the two-step purple to
+        # near-invisible on the first board — the crease needs the deep step.
+        return PANTS_DARK if pleat_comb(theta) > 0.55 else SHIRT
     return SHIRT
+
+
+def pleated_loft(builder: MeshBuilder, levels, material: int, color, segments: int,
+                 color_fn=None, shape_fn=None) -> None:
+    """`MeshBuilder.loft` with a `shape_fn(theta, z) -> (scale, dz)` hook.
+
+    Copied winding-for-winding from `loft` (the Grizz inside-out lesson: copy
+    the exact quad order and cap fans) — the only addition is the per-vertex
+    radial scale and z lift the pleats and the hem scallop need. `sculptlib`
+    stays untouched: the hook reads this kid's tables, so it lives here.
+    """
+    rows = []
+    for z, rx, ry, bone in levels:
+        row = []
+        for column in range(segments):
+            theta = 2 * pi * column / segments
+            scale, dz = shape_fn(theta, z) if shape_fn else (1.0, 0.0)
+            at = (rx * scale * cos(theta), ry * scale * sin(theta), z + dz)
+            vertex_color = color_fn(theta, z) if color_fn else color
+            row.append(builder.vertex(at, vertex_color, bone))
+        rows.append(row)
+    bottom = builder.vertex((0.0, 0.0, levels[0][0]), color, levels[0][3])
+    top = builder.vertex((0.0, 0.0, levels[-1][0]), color, levels[-1][3])
+    for column in range(segments):
+        nxt = (column + 1) % segments
+        builder.face((bottom, rows[0][nxt], rows[0][column]), material)
+        builder.face((rows[-1][column], rows[-1][nxt], top), material)
+    for lower, upper in zip(rows, rows[1:]):
+        for column in range(segments):
+            nxt = (column + 1) % segments
+            builder.face((lower[column], lower[nxt], upper[nxt], upper[column]), material)
 
 # Her neck pinch is z 2.68 at ~0.13 half, mostly framed by the curtains.
 # not-traceable: the front silhouette at neck rows is curtain-to-curtain
@@ -620,9 +715,13 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
             build_ear(builder, side, detail, palette=PALETTE, skull_at=skull_surface_x, spec=EAR_SPEC)
 
     builder.loft(NECK_LEVELS, 0, SKIN, 14 if detail >= 2 else segments)
-    torso_segments = 20 if detail >= 2 else segments
-    builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, torso_segments,
-                 color_fn=dress_color)
+    # 24 columns at LOD0: the Nyquist floor for 6 pleat grooves (4 cols/lobe).
+    # The carve is LOD0-only — 8/5 columns cannot express it (the hair lesson);
+    # the colour wedges keep carrying the read at LOD1/2, as they always did.
+    torso_segments = 24 if detail >= 2 else segments
+    pleated_loft(builder, thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, torso_segments,
+                 color_fn=dress_color,
+                 shape_fn=skirt_shape if detail >= 2 else None)
     build_star(builder, detail)
 
     for side in (1, -1):

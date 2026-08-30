@@ -168,11 +168,11 @@
     },
     "flash": {
       "source": "flash-gordon-jr-pilot.blend",
-      "sourceSha256": "051882d95d7fabf3f1ff2d2e2cf7b5aab20ca707df74a12f21d0ed4de125b4d2",
+      "sourceSha256": "2041d9deb0b55557875f50bc2918f4e230e9e50babbf9cdcd2f36b1f58b2ee3b",
       "concept": "flash-gordon-jr-turnaround.png",
       "conceptSha256": "444a8536e21aeef1fba20e886ee27b8182091401bc48b7ffe87d847402dc3bc6",
       "output": "kid_flash.glb",
-      "outputSha256": "8b2dd5d323483dd37b4c314a3e7e2c616a9b1303802728b51ad0f2fe8d63d7e0",
+      "outputSha256": "0faa39f274d926b2b0deacf17de5eec36c97d2c13bde06bb9ddaa1a47d3f8004",
       "definingTraits": [
         "spiky faded mohawk",
         "bold red striped tee",
@@ -198,11 +198,11 @@
     },
     "diva": {
       "source": "dazzle-pilot.blend",
-      "sourceSha256": "a47b23cd3bb341cb76941893339d0d2151cf8cf3ccc74f916755b246c1700348",
+      "sourceSha256": "ee3f02b97722078f3b63bc17d0f1a0bef6aaa3e7a9ca0e7a5a3c96a4b6017abe",
       "concept": "dazzle-turnaround.png",
       "conceptSha256": "3eb499fa87bff373ae457d620ef72ae54de5c0636b605ed24022aeca7523f8df",
       "output": "kid_diva.glb",
-      "outputSha256": "08769342df7dfb0461fb6a374a721129d034edce28cd40e8f7c7493132334008",
+      "outputSha256": "16902f46c9e438a3ed2d61bb9d6c00104eb9855343c6da3003eb11626c31e1d5",
       "definingTraits": [
         "long wavy auburn mane",
         "cream headband",
@@ -228,11 +228,11 @@
     },
     "turbo": {
       "source": "turbo-pilot.blend",
-      "sourceSha256": "90677878477be8c44437589bb1fb474fac4286dc299caa116f79ba8d446df2e9",
+      "sourceSha256": "ed6e19b2794a69a02095ce7ced45f5d5a8f391ae26e2eefba1e31f4e2af940ae",
       "concept": "turbo-turnaround.png",
       "conceptSha256": "f3c0690117663b295a3001007eacd2a1dda10c12a5a8f7ed4d812fc63917851a",
       "output": "kid_turbo.glb",
-      "outputSha256": "87669b69cbdacda3786b857109bf08e4950a680668df52e8cc6ccfb71d22bcae",
+      "outputSha256": "8622fe8ebd80005bea503ae84e5574cb8f3c6d218eb0fb2b1cd31ffc066f6474",
       "definingTraits": [
         "wild black spike mop",
         "blue ringer tee",
@@ -333,11 +333,11 @@
     },
     "dex": {
       "source": "dex-pilot.blend",
-      "sourceSha256": "f76e3bf32c1d61adc1c3f600239f1938bcee380e837bfd4e5cd5bda453eaad2f",
+      "sourceSha256": "67112dd8792c3cf4f1dd29d4a341ebf594d374063c912eeb3be474dfe52c0126",
       "concept": "dex-turnaround.png",
       "conceptSha256": "d9dc2741e65c4e928b0188a0d0ca509d50a33dc4d9ed37363ae9f05fad1614b3",
       "output": "kid_dex.glb",
-      "outputSha256": "0b45603f20999cc8d8dde694892b6273d360de262b081ff414069ee75331cd18",
+      "outputSha256": "7bea745e8515e18918142882cd522c616fb56dc71460bcc991a9c5e1b545b03c",
       "definingTraits": [
         "charcoal ball cap",
         "black curls under the brim",

@@ -60,10 +60,17 @@ SKIN_SHADOW = rgba("9A5A28")
 HAIR = rgba("241A12")        # the black curls
 CAP = rgba("3F444B")         # charcoal cap
 SHIRT = rgba("5C6577")       # slate zip hoodie
-SHIRT_DARK = rgba("47505F")  # ribbing, pouch shadow, hood lining
+# Deepened 47505F → 3E4757 for the hem-sweep: the ribbed hem and cuffs are
+# SHIRT_DARK bands and at ΔLum ~21 the board ramp (≈ authored/1.2, chroma
+# compressed) folded them into the body slate — "the SHIRT_DARK sleeve cuffs
+# do not read at any scale". ΔLum ~34 authored ≈ ~28 delivered, and the hue
+# stays the hoodie's own so the ribbing reads as knit, not trim.
+SHIRT_DARK = rgba("3E4757")  # ribbing, pouch shadow, hood lining
 ZIP = rgba("E8E2D4")         # the cream zipper line
 PANTS = rgba("26303E")       # dark denim
 PANTS_DARK = rgba("1B232E")
+STITCH = rgba("C08A48")      # the jeans' gold topstitch — sampled warm ochre
+                             # off the waistband/pocket stitch rows
 CUFF = rgba("96A4BA")        # pale rolled jean cuff — identity
 SOCK = rgba("FFF6E6")
 SHOE = rgba("2A2723")        # black-brown canvas upper
@@ -375,8 +382,17 @@ def build_curls(builder: MeshBuilder, detail: int) -> None:
 # bounded off the cluster runs (slate 92-311 at z 1.60 arm-to-arm; the
 # central jeans run 139-268 at z 1.40 bounds the hip).
 TORSO_LEVELS = [
-    (1.470, 0.340, 0.290, "Hips"),    # ribbed hem
-    (1.505, 0.355, 0.302, "Hips"),
+    # ★ The ribbed hem is a BAND, not a line. Traced on the front view: the
+    # vertically-ribbed band spans rows 557-582 → z 1.626-1.481 (~25px,
+    # 0.145ft; back view rows 558-580 agrees at z 1.647-1.515). The band is
+    # SHIRT_DARK via `hoodie_color` with the switch ON the 1.603/1.615 ring
+    # pair (Penny's waistband pattern), and the 1.615 body ring stands
+    # 0.010ft PROUD so the fleece drapes OVER the ribbing that cinches under
+    # it — crisp alone is a colour edge; crisp + proud is a constructed hem.
+    (1.470, 0.340, 0.290, "Hips"),    # hem band bottom
+    (1.505, 0.355, 0.302, "Hips"),    # the band's bottom roll
+    (1.603, 0.346, 0.294, "Spine"),   # band top ring — crisp edge, cinched
+    (1.615, 0.356, 0.304, "Spine"),   # body drape ring, PROUD +0.010
     (1.700, 0.345, 0.295, "Spine"),
     (1.900, 0.330, 0.282, "Spine"),
     (2.100, 0.312, 0.265, "Spine1"),
@@ -386,6 +402,17 @@ TORSO_LEVELS = [
     (2.560, 0.172, 0.150, "Spine2"),
     (2.600, 0.150, 0.134, "Spine2"),  # neck hole — OUTSIDE the neck loft
 ]
+
+
+# The colour threshold sits at the midpoint of the 1.603/1.615 ring pair, so
+# the interpolated ramp spans 0.012ft (~2px) instead of a whole band (the
+# Zippy hem lesson: a switch inside a stretched band ramps colour across 32px).
+HEM_BAND_TOP = 1.609
+
+
+def hoodie_color(theta: float, z: float):
+    """SHIRT_DARK ribbed hem band below the ring pair; slate body above."""
+    return SHIRT_DARK if z <= HEM_BAND_TOP else SHIRT
 
 
 def torso_ring_at(z: float) -> tuple[float, float]:
@@ -422,7 +449,13 @@ def build_hoodie_details(builder: MeshBuilder, detail: int) -> None:
     # The zipper: a thin cream proud strip down the centre front, collar to
     # hem, with a small darker pull at the top.
     surface_patch(builder, -0.014, 0.014, 1.505, 2.540, 0.022, ZIP, ZIP, "Spine")
-    surface_patch(builder, -0.020, 0.020, 2.470, 2.530, 0.030, SHIRT_DARK, SHIRT_DARK, "Spine2")
+    # The pull TAB at the collar end — the old SHIRT_DARK nub vanished into
+    # the slate ("no pull tab"). Two stacked ZIP patches make a bevelled tab
+    # (batch 7: bevelled rim rows turn a decal into sewn construction): a base
+    # step proud of the 0.022 strip, and a raised face whose top row goes
+    # SHIRT_DARK for the hinge shadow that separates tab from collar.
+    surface_patch(builder, -0.028, 0.028, 2.445, 2.545, 0.032, ZIP, ZIP, "Spine2")
+    surface_patch(builder, -0.018, 0.018, 2.462, 2.532, 0.048, ZIP, SHIRT_DARK, "Spine2")
     # The kangaroo pocket, split by the zipper: one proud pouch each side.
     surface_patch(builder, -0.250, -0.040, 1.550, 1.860, 0.040, SHIRT, SHIRT_DARK, "Spine")
     surface_patch(builder, 0.040, 0.250, 1.550, 1.860, 0.040, SHIRT, SHIRT_DARK, "Spine")
@@ -463,8 +496,16 @@ ARM_STATIONS = [
     (ARM_SHOULDER_X, 0.135, SHIRT, "Arm"),
     (0.620, 0.120, SHIRT, "Arm"),
     (ARM_ELBOW_X, 0.112, SHIRT, "ForeArm"),
-    (SLEEVE_HEM_X - 0.030, 0.104, SHIRT, "ForeArm"),
-    (SLEEVE_HEM_X, 0.120, SHIRT_DARK, "ForeArm"),      # ribbed cuff, proud
+    # ★ The ribbed cuff is a BAND, same construction as the hem: traced on the
+    # front view the wrist ribbing spans rows ~557-580 (≈0.133ft along the
+    # hanging forearm), so the cuff runs 1.198 → the 1.328 hand edge, not the
+    # old 0.038ft sliver at the hem lip. The 1.186/1.198 ring pair makes the
+    # edge crisp, and the 1.186 sleeve ring stands 0.012 PROUD so the fleece
+    # drapes over the ribbing that cinches beneath it.
+    (1.186, 0.116, SHIRT, "ForeArm"),                  # sleeve drape, PROUD lip
+    (1.198, 0.104, SHIRT_DARK, "ForeArm"),             # cuff top — crisp edge
+    (SLEEVE_HEM_X - 0.030, 0.106, SHIRT_DARK, "ForeArm"),  # ribbed cuff body
+    (SLEEVE_HEM_X, 0.120, SHIRT_DARK, "ForeArm"),      # cuff-end roll, proud
     (SLEEVE_HEM_X + 0.024, 0.112, SHIRT_DARK, "Hand"),
     (SLEEVE_HEM_X + 0.038, 0.086, SHIRT_DARK, "Hand"),
     (SLEEVE_HEM_X + 0.054, 0.064, SKIN, "Hand"),
@@ -516,7 +557,17 @@ def inseam_half(z: float) -> float:
 # measured: front z=1.25 halfWidth=0.6167 tol=0.04
 # measured: front z=0.80 halfWidth=0.4467 tol=0.04
 LEG_STATIONS = [
-    (1.520, 0.200, 1.10, PANTS, "UpLeg"),
+    # ★ The belt line. Traced on the front view: the jeans' waistband shows as
+    # a sliver under the hoodie hem with its gold topstitch line at row ~600
+    # → z 1.378 (the fly button sits at row ~595 → z 1.407). Authored as a
+    # PANTS_DARK band standing 0.008 PROUD of the leg below (the overhang
+    # lip), a STITCH gold line on the 1.402/1.392 ring pair, and the colour
+    # switches ON adjacent rings so each ramp spans ~0.008ft, not a band.
+    (1.520, 0.206, 1.10, PANTS_DARK, "UpLeg"),   # waistband, PROUD
+    (1.410, 0.206, 1.09, PANTS_DARK, "UpLeg"),   # band bottom — overhang ring
+    (1.402, 0.198, 1.08, STITCH, "UpLeg"),       # gold topstitch line
+    (1.392, 0.198, 1.08, STITCH, "UpLeg"),
+    (1.384, 0.197, 1.08, PANTS, "UpLeg"),        # leg denim resumes
     (1.350, 0.196, 1.07, PANTS, "UpLeg"),
     (1.150, 0.190, 1.05, PANTS, "UpLeg"),
     (0.980, 0.184, 1.03, PANTS, "Leg"),
@@ -547,6 +598,49 @@ DEX_LEG = LegSpec(
     sock=SOCK,
     team_mask=TEAM_MASK,
 )
+
+
+def leg_ring_at(z: float) -> tuple[float, float]:
+    """(half-width, depth factor) of the jeans leg at height z, off LEG_STATIONS."""
+    for (za, ra, da, _, _), (zb, rb, db, _, _) in zip(LEG_STATIONS, LEG_STATIONS[1:]):
+        if zb <= z <= za:
+            t = (za - z) / (za - zb)
+            return ra + t * (rb - ra), da + t * (db - da)
+    return LEG_STATIONS[0][1], LEG_STATIONS[0][2]
+
+
+def leg_patch(builder: MeshBuilder, side: int, x0: float, x1: float,
+              z0: float, z1: float, proud: float, colour, top_colour,
+              front: bool) -> None:
+    """A bevelled proud patch riding one leg tube's front or back surface.
+
+    The jeans' sewn details (yoke pockets, the fly's J-stitch) — batch 7's
+    'bevelled rim rows turn a decal into a sewn pouch': every rim vertex sits
+    at ~35% of the panel's proud height, the interior at full proud, so the
+    edge reads as stitching. x0/x1 are authored for the +x leg and the whole
+    patch is mirrored by `side` (the whole ring is reflected, build_leg's own
+    rule). Winding: the front patch at side>0 matches surface_patch's
+    flip=True; each of mirror and front→back reverses it once.
+    """
+    steps = 3
+    sign = -1.0 if front else 1.0
+    rows = []
+    for j in range(steps + 1):
+        z = z1 - (z1 - z0) * j / steps
+        radius, depth = leg_ring_at(z)
+        cx = leg_x(z)
+        row = []
+        for i in range(steps + 1):
+            x = x0 + (x1 - x0) * i / steps
+            dx = x - cx
+            inner = max(0.0004, radius * radius - dx * dx)
+            rim = j in (0, steps) or i in (0, steps)
+            y = sign * (sqrt(inner) * depth + (0.35 * proud if rim else proud))
+            shade = top_colour if j == 0 else colour
+            row.append(builder.vertex((x * side, y, z), shade,
+                                      limb_bone("UpLeg", side)))
+        rows.append(row)
+    builder.grid(rows, 1, cyclic=False, flip=front == (side > 0))
 
 
 # --- The shoe ------------------------------------------------------------------
@@ -693,14 +787,27 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     if detail >= 1:
         builder.loft(CROTCH_LEVELS, 1, PANTS, 8 if detail >= 2 else 6)
     builder.loft(TORSO_LEVELS if detail >= 2 else thin_for_lod(TORSO_LEVELS, detail),
-                 1, SHIRT, 17 if detail >= 2 else segments)
+                 1, SHIRT, 17 if detail >= 2 else segments,
+                 color_fn=hoodie_color)
     build_hoodie_details(builder, detail)
 
     for side in (1, -1):
         build_arm(builder, side, detail, spec=DEX_ARM)
         build_leg(builder, side, detail, spec=DEX_LEG)
+        if detail >= 1:
+            # Back yoke pockets: traced on the back view rows 583-613 →
+            # z 1.497-1.317, |x| 0.159-0.374 of centre; authored to the
+            # window visible below the hoodie hem, gold stitch top row.
+            leg_patch(builder, side, 0.160, 0.330, 1.300, 1.440,
+                      0.020, PANTS, STITCH, front=False)
         build_shoe(builder, side, detail, spec=DEX_SHOE,
                    ankle_x=leg_x(LEG_ANKLE_Z), bone=limb_bone("ToeBase", side))
+    if detail >= 1:
+        # The fly's gold J-stitch: one narrow proud strip just off centre on
+        # one leg (front view rows ~600-635 → z 1.378-1.176; authored to the
+        # span the leg tube's front face can carry).
+        leg_patch(builder, 1, 0.045, 0.065, 1.240, 1.384,
+                  0.010, STITCH, STITCH, front=True)
 
 
 def build_lod(name: str, armature: bpy.types.Object, segments: int, rings: int, detail: int) -> bpy.types.Object:

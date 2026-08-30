@@ -351,6 +351,14 @@ STRIPES = ((2.390, 2.505), (2.165, 2.290), (1.945, 2.060),
 # paints per-vertex and interpolates across each quad row, so a colour edge
 # between two distant rings smears across the whole gap — the washed-stripe
 # read both striped kids' first boards had. LOD1/2 keep the sparse table.
+# The collar got the same treatment (hem-boundary scan: the 2.522 switch
+# smeared 2.508->2.542, 0.034ft, and the board showed no crisp neckline):
+# 2.480/2.508/2.542 MOVED to 2.499/2.514/2.528 so both the stripe-top edge
+# (2.505) and the collar edge (2.522) sit inside short bands, and the rib at
+# 2.528 stands ~0.009 proud of 2.514 — crisp + proud, the constructed-hem
+# rule — for zero added rings. The moved rows' widths interpolate the sparse
+# table's own curve at their new z (2.480 sat behind the T-pose arm band, so
+# the slope change is invisible to the silhouette).
 # not-traceable: the paired rows are the STRIPES chart re-expressed as loft
 # rings; the shape numbers between them interpolate the traced table above.
 TORSO_LEVELS_CRISP = [
@@ -372,9 +380,9 @@ TORSO_LEVELS_CRISP = [
     (2.384, 0.276, 0.230, "Spine2"),
     (2.396, 0.274, 0.228, "Spine2"),
     (2.420, 0.245, 0.205, "Spine2"),
-    (2.480, 0.190, 0.170, "Spine2"),
-    (2.508, 0.150, 0.140, "Spine2"),
-    (2.542, 0.154, 0.144, "Spine2"),
+    (2.499, 0.163, 0.150, "Spine2"),  # stripe-top pair, red side
+    (2.514, 0.151, 0.141, "Spine2"),  # the cream sliver under the collar
+    (2.528, 0.160, 0.149, "Spine2"),  # collar rib, proud over the 2.522 edge
     (2.565, 0.134, 0.126, "Spine2"),
 ]
 
@@ -388,7 +396,7 @@ def stripe_color(theta: float, z: float):
     return SHIRT
 
 
-# --- Arms: red-cuffed short sleeves, slender bare forearms ---------------------
+# --- Arms: band-striped short sleeves, slender bare forearms -------------------
 SLEEVE_HEM_X = 0.660
 
 SHOULDER_BLEND = {
@@ -401,21 +409,33 @@ SHOULDER_BLEND = {
 # not-traceable: authored in the rig's T-pose while the concept hangs the
 # arms; the bare forearm traces ~0.05 half and his build is the roster's
 # slenderest so far.
+# The BAND boundaries are traced, though: the concept wraps the tee's chart
+# continuously over the shoulder and down the sleeve — red at the shoulder,
+# the cream band, the red cuff. Read along both hanging sleeves' own axes and
+# anchored at the cuff's drawn skin edge (station x 0.712): cuff red band
+# 0.146ft tall (L 0.159/R 0.132 -> boundary x 0.566), cream band 0.097ft
+# (L 0.253/R 0.232 above the skin edge -> boundary x 0.469), red from there
+# to the root. Station pairs straddle each boundary — the loft interpolates a
+# colour switch across the whole gap between its nearest rings, so a crisp
+# stripe edge needs stations AT the boundary (the TORSO_LEVELS_CRISP rule).
+# The pairs are paid for: 1.240 (interp 0.0501) and 1.412 (interp 0.0570)
+# were exactly interpolable and are removed, LOD0 sitting against its 7000.
 ARM_STATIONS = [
-    (0.215, 0.130, SHIRT, "Arm"),
-    (0.300, 0.135, SHIRT, "Arm"),
-    (0.335, 0.128, SHIRT, "Arm"),
-    (ARM_SHOULDER_X, 0.118, SHIRT, "Arm"),
+    (0.215, 0.130, SHIRT_RED, "Arm"),
+    (0.300, 0.135, SHIRT_RED, "Arm"),
+    (0.335, 0.128, SHIRT_RED, "Arm"),
+    (ARM_SHOULDER_X, 0.118, SHIRT_RED, "Arm"),  # the top band wraps the shoulder
+    (0.463, 0.112, SHIRT_RED, "Arm"),
+    (0.475, 0.111, SHIRT, "Arm"),               # cream band, crisp edge
     (0.560, 0.104, SHIRT, "Arm"),
-    (0.634, 0.096, SHIRT, "Arm"),
-    (0.660, 0.102, SHIRT_RED, "Arm"),          # red cuff band, proud
+    (0.572, 0.103, SHIRT_RED, "Arm"),           # cuff band top, crisp edge
+    (0.634, 0.096, SHIRT_RED, "Arm"),
+    (0.660, 0.102, SHIRT_RED, "Arm"),          # hem seam ring, proud
     (0.682, 0.096, SHIRT_RED, "Arm"),
     (0.696, 0.078, SHIRT_RED, "Arm"),
     (0.712, 0.056, SKIN, "Arm"),
     (ARM_ELBOW_X, 0.053, SKIN, "ForeArm"),
-    (1.240, 0.050, SKIN, "ForeArm"),
     (1.365, 0.049, SKIN, "Hand"),
-    (1.412, 0.057, SKIN, "Hand"),
     (1.465, 0.066, SKIN, "Hand"),   # knuckle line
     (1.512, 0.056, SKIN, "Hand"),
 ]
@@ -440,7 +460,10 @@ FLASH_ARM = ArmSpec(
         ),
         thumb_widths=(0.024, 0.022, 0.017, 0.012),
     ),
-    garment=SHIRT,
+    # The shoulder cap fan is buried in the chest but flanks the sleeve's RED
+    # root stations — cream here would flash inside a red sleeve if the A-pose
+    # ever opens the join.
+    garment=SHIRT_RED,
     skin=SKIN,
 )
 
@@ -484,7 +507,9 @@ LEG_STATIONS = [
     (0.428, 0.096, 1.00, SHIRT_RED, "Leg"),
     (0.410, 0.094, 1.00, SOCK, "Leg"),
     (0.400, 0.090, 0.98, SOCK, "Foot"),
-    (0.280, 0.084, 0.97, SOCK, "Foot"),
+    # The 0.280 mid-foot row (0.084/0.97, interp 0.0855/0.966) was absorbed
+    # into the 0.400->0.150 taper — it sits entirely inside the shoe shell —
+    # to pay for the sleeve stripe stations against the LOD0 budget.
     (0.150, 0.081, 0.95, SOCK, "Foot"),
 ]
 
