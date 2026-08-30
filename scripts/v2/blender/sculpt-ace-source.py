@@ -67,6 +67,9 @@ JACKET = rgba("85AEDC")      # the sky-blue bomber — chroma up over #739dbb
 JACKET_DARK = rgba("3A4550") # navy ribbed hem/cuffs and collar
 CAP = JACKET                 # the cap shares the jacket blue
 ROLL = rgba("B8C8DC")        # the light-denim jean rolls
+ZIP = rgba("E3D2B8")         # the cream zipper tape — traced d8c6ab/ccb89b on
+                             # the lit tapes (front row 580), ~0.89x of the tee
+CAP_SEAM = rgba("6D90B8")    # the cap's panel-seam lines, ~0.82x of the dome blue
 
 PALETTE = Palette(
     skin=SKIN, skin_shadow=SKIN_SHADOW, hair=HAIR,
@@ -201,6 +204,9 @@ CAP_LEVELS = [
 BRIM_Z_TOP = 3.560
 BRIM_REACH = -0.760
 
+# See the seam comment in build_cap; mirror-symmetric under θ→π−θ.
+CAP_SEAM_COLUMNS = frozenset({0, 3, 5, 8, 11, 13})
+
 
 def cap_dome_y(x, z, half_x, half_y):
     if half_x <= 0.0:
@@ -219,7 +225,17 @@ def build_cap(builder, detail):
         ring = []
         for column in range(segments):
             theta = 2 * pi * column / segments
-            ring.append(builder.vertex((half_x * cos(theta), y_centre + half_y * sin(theta), z), CAP, "Head"))
+            # The six-panel crown reads through its SEAMS: thin darker bands
+            # down the dome's own columns, converging on the top button (hem
+            # sweep finding 5 — colour on existing geometry, zero triangles).
+            # not-traceable: the drawn arcs sit at ~±30/±90/±150° of
+            # centre-front, where a 16-column ring has no vertex; the nearest
+            # MIRROR-SYMMETRIC column set {0,3,5,8,11,13} carries them (the
+            # set must be even under θ→π−θ — Dex's parity lesson — and the
+            # front panel stays centred on the front column, 12).
+            seam = detail >= 2 and column in CAP_SEAM_COLUMNS and z < 3.95
+            ring.append(builder.vertex((half_x * cos(theta), y_centre + half_y * sin(theta), z),
+                                       CAP_SEAM if seam else CAP, "Head"))
         rows.append(ring)
     bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), CAP, "Head")
     top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.02), CAP, "Head")
@@ -231,6 +247,10 @@ def build_cap(builder, detail):
         for column in range(segments):
             nxt = (column + 1) % segments
             builder.face((lower[column], lower[nxt], upper[nxt], upper[column]), 2)
+    if detail >= 2:
+        # The covered top button the sheet draws at the apex (cap crop, rows
+        # 185-196). Kept under the 4.0ft reference height: top = 3.994.
+        builder.ellipsoid((0.0, 0.0, 3.972), (0.036, 0.038, 0.022), 2, CAP, "Head", 6, 3)
 
     if detail < 1:
         return
@@ -376,8 +396,29 @@ def build_shag(builder, detail):
 # not-traceable: the tee shows only as the centre strip between the jacket
 # fronts (cream run 213-253 at z 1.6-2.35); the torso halves are bounded off
 # the jacket silhouette minus its shell.
+#
+# ★ THE TEE LOFT OWNS THE NECKLINE (hem sweep, rubric 3.4). The jacket shell's
+# 2×0.55rad front gap can never wrap the front of the neck, so its navy top
+# row delivered exactly two wedges at the shoulder tops. The bomber's collar
+# rib therefore lives on the tee's top rows and wraps the full opening,
+# merging with the shell's collar at the back (Grizz's collar is the sweep's
+# exemplar: ring pair + proud crown + the colour switch inside a short band).
+# measured: front col 140 rows 425-437 — navy rib 374f60..44616f, z 2.556→2.483;
+#   col 222 rows 419-427 — cream roll-over stripe e1d3bf..decfb1, z 2.592→2.544
+# measured: profile col 780 — cream stripe e8d2b4 z 2.665→2.652 over navy
+#   545e68 to ~2.615 at the nape (the collar slopes down toward the front)
+# Recorded deviation: authored 2.545→2.615 — the band's height and stacking
+# are the trace's; it sits at the loft's top so the hole ring clears the neck
+# loft (0.134/0.126 at 2.595) by ≥0.016 at every shared z. The board's 1-2px
+# neckline sawtooth was the two lofts INTERPENETRATING (Turbo's class — the
+# old 2.605 ring was 0.132 against the neck's 0.134), not ring count.
 TORSO_LEVELS = [
-    (1.400, 0.320, 0.272, "Hips"),    # tee hem under the jacket
+    (1.400, 0.328, 0.280, "Hips"),    # tee hem lip, 0.008 proud — the lit hem
+                                      # roll (fcf0d6, front row 614, z 1.414)
+    (1.416, 0.319, 0.271, "Hips"),    # measured: front tee bottom row 614 z=1.414
+    (1.462, 0.318, 0.270, "Spine"),   # hem-lane top — TEE_BAND_Z inside this pair
+    (1.474, 0.317, 0.269, "Spine"),   # measured: shaded lane ebd8be..f1dfc7,
+                                      # centre col 183 rows 599-611 (z 1.51→1.43)
     (1.560, 0.315, 0.270, "Spine"),
     (1.760, 0.305, 0.262, "Spine"),
     (1.960, 0.295, 0.255, "Spine1"),
@@ -385,16 +426,58 @@ TORSO_LEVELS = [
     (2.320, 0.280, 0.235, "Spine2"),
     (2.420, 0.258, 0.215, "Spine2"),
     (2.490, 0.215, 0.185, "Spine2"),
-    (2.545, 0.165, 0.148, "Spine2"),
-    (2.575, 0.148, 0.136, "Spine2"),  # collar rib
-    (2.605, 0.132, 0.122, "Spine2"),  # neck hole — OUTSIDE the neck loft
+    (2.545, 0.164, 0.146, "Spine2"),  # yoke: last tee ring under the collar
+    (2.553, 0.170, 0.152, "Spine2"),  # rib lower edge — COLLAR_Z inside this pair
+    (2.582, 0.174, 0.156, "Spine2"),  # rib crown, 0.010 proud of the yoke —
+                                      # the collar OVERHANGS the tee (Penny)
+    (2.590, 0.173, 0.155, "Spine2"),  # stripe lower ring — COLLAR_STRIPE_Z
+                                      # inside this pair
+    (2.615, 0.150, 0.138, "Spine2"),  # hole ring: the cream roll turns in,
+                                      # clear of the neck loft at every shared z
 ]
+
+# Each colour switch sits inside its own ~0.01ft ring pair (the Zippy
+# stretched-band lesson: a switch between distant rings ramps across 32px).
+COLLAR_Z = 2.549          # inside the 2.545/2.553 pair — navy rib above
+COLLAR_STRIPE_Z = 2.586   # inside the 2.582/2.590 pair — cream roll-over above
+TEE_BAND_Z = 1.468        # inside the 1.462/1.474 pair — shaded hem lane below
+TEE_HEM_LIP_Z = 1.408     # inside the 1.400/1.416 pair — lit hem roll below
+
+
+def tee_color(theta: float, z: float):
+    """The bomber collar rib on the tee's top rows; the tee's drawn hem below."""
+    if z >= COLLAR_STRIPE_Z:
+        return WHITE
+    if z >= COLLAR_Z:
+        return JACKET_DARK
+    if z <= TEE_HEM_LIP_Z:
+        return SHIRT
+    if z <= TEE_BAND_Z:
+        return SHIRT_DARK
+    return SHIRT
 
 # not-traceable: the shell hugs the tee +0.026; its silhouette IS the traced
 # figure at torso rows (front z=1.66 halfWidth=0.7064 includes the arms).
+#
+# ★ THE HEM RIB IS THE GARMENT'S STRONGEST HORIZONTAL on the sheet, and the
+# old table never drew it: the colour rule was `z < 1.52` against a bottom
+# row at exactly 1.520, so no vertex ever went navy and the "rib" was one
+# slightly-proud blue ring — the hairline the hem sweep flagged. Rebuilt as
+# the traced tall band: navy rib with the cream stripe through it, crown
+# proud of the body ring above (crisp + proud is a constructed garment).
+# measured: front hem band rows 595-616, z 1.53→1.40 (rib 61859c/6b98b1
+#   against body 7aa1bd; deep fold 2b3d49); stripe warm cream e4ccae/a59074
+#   rows 601-613, centre ~z 1.455
+# measured: profile rear col 730 — solid navy band rows 587-609, z 1.63→1.48
+#   (the drawn hem sits higher at the back; the front trace is authored)
 JACKET_LEVELS = [
-    (1.520, 0.352, 0.302),
-    (1.575, 0.358, 0.306),    # navy ribbed hem, slightly proud
+    (1.408, 0.358, 0.306),    # hem rib bottom edge — front row 616, z 1.40
+    (1.436, 0.361, 0.309),    # stripe lower pair —
+    (1.444, 0.362, 0.310),    #   JACKET_STRIPE[0] between them
+    (1.466, 0.362, 0.310),    # stripe upper pair —
+    (1.474, 0.361, 0.309),    #   JACKET_STRIPE[1] between them
+    (1.505, 0.356, 0.304),    # rib crown rows, 0.006 proud of the body ring
+    (1.517, 0.350, 0.299),    # body lower ring — JACKET_HEM_TOP_Z inside this pair
     (1.660, 0.345, 0.298),
     (1.860, 0.334, 0.290),
     (2.060, 0.324, 0.280),
@@ -407,6 +490,18 @@ JACKET_LEVELS = [
 
 JACKET_GAP = 0.55   # radians of front opening either side of centre-front
 
+JACKET_HEM_TOP_Z = 1.511            # inside the 1.505/1.517 pair
+JACKET_STRIPE = (1.440, 1.470)      # each edge inside its own ring pair
+
+
+def jacket_color(z: float):
+    """Navy ribbed hem (cream stripe through it) and collar; body blue between."""
+    if JACKET_STRIPE[0] <= z <= JACKET_STRIPE[1]:
+        return WHITE
+    if z <= JACKET_HEM_TOP_Z or z > 2.58:
+        return JACKET_DARK
+    return JACKET
+
 
 def build_jacket(builder: MeshBuilder, detail: int) -> None:
     if detail < 1:
@@ -416,7 +511,7 @@ def build_jacket(builder: MeshBuilder, detail: int) -> None:
     sweep = 2 * pi - 2 * JACKET_GAP
     rows = []
     for (z, hx, hy) in JACKET_LEVELS:
-        colour = JACKET_DARK if z < 1.52 or z > 2.58 else JACKET
+        colour = jacket_color(z)
         bone = "Hips" if z < 1.7 else ("Spine" if z < 2.1 else "Spine2")
         row = []
         # Fold-back inner vertex at the leading front edge.
@@ -440,6 +535,93 @@ def build_jacket(builder: MeshBuilder, detail: int) -> None:
                 row.append(builder.vertex((x, base_y + dy, 2.585 + dz - 0.02 * i), JACKET_DARK, "Spine2"))
             frows.append(row)
         builder.grid(frows, 1, cyclic=False, flip=side < 0)
+
+
+def jacket_ring_at(z: float) -> tuple[float, float]:
+    """(half-width, half-depth) of the jacket shell at height z."""
+    levels = JACKET_LEVELS
+    for (za, wa, da), (zb, wb, db) in zip(levels, levels[1:]):
+        if za <= z <= zb:
+            t = (z - za) / (zb - za)
+            return wa + t * (wb - wa), da + t * (db - da)
+    return (levels[0][1], levels[0][2]) if z < levels[0][0] else (levels[-1][1], levels[-1][2])
+
+
+def jacket_bone(z: float) -> str:
+    return "Hips" if z < 1.7 else ("Spine" if z < 2.1 else "Spine2")
+
+
+def jacket_surface_point(a: float, z: float, proud: float) -> tuple[float, float, float]:
+    """A point `proud` outside the shell at bearing `a` off centre-front (+x
+    positive), pushed along the ellipse's outward normal."""
+    hx, hy = jacket_ring_at(z)
+    theta = 1.5 * pi + a
+    x, y = hx * cos(theta), hy * sin(theta)
+    nx, ny = cos(theta) / hx, sin(theta) / hy
+    norm = sqrt(nx * nx + ny * ny)
+    return (x + proud * nx / norm, y + proud * ny / norm, z)
+
+
+# The zipper runs hem to collar on both front edges; the pull tab and welt
+# pockets are proud bevelled patches (batch 7: bevelled rim rows turn a decal
+# into sewn construction; Dex's pull tab is the sweep's exemplar).
+# measured: front — cream tapes flank the tee at cols 157-163 / 200-206
+#   (d8c6ab / ccb89b, row 580), running the full opening to the hem
+# measured: front — chest zip pocket cols 216-231, rows 470-518 (z 2.28→1.99),
+#   navy strip with the metal slider at its top
+# measured: front — welt slits rows 532-548, outer ends high (z ~1.88) inner
+#   low (z ~1.80); drawn at |x| 0.32-0.42 on the flared OPEN panels, authored
+#   at the same panel fraction of the closed shell (bearings 0.75-1.15 rad,
+#   |x| 0.22-0.30) — recorded deviation, the open-jacket drape has no shell z
+ZIP_TAPE_Z = (1.412, 1.550, 1.720, 1.900, 2.080, 2.260, 2.420, 2.545)
+
+
+def build_jacket_details(builder: MeshBuilder, detail: int) -> None:
+    if detail < 1:
+        return
+    # The zipper tape: a proud bevelled strip riding each front edge.
+    for side in (1, -1):
+        rows = []
+        for z in ZIP_TAPE_Z:
+            row = []
+            for da, pr in ((0.005, 0.006), (0.055, 0.020), (0.105, 0.006)):
+                a = side * (JACKET_GAP + da)
+                row.append(builder.vertex(jacket_surface_point(a, z, pr), ZIP, jacket_bone(z)))
+            rows.append(row)
+        builder.grid(rows, 1, cyclic=False, flip=side < 0)
+    if detail < 2:
+        return
+    # The chest zip pocket on the +x panel (screen-right on the front board,
+    # like the sheet): a navy vertical strip, slider tab stacked at its top.
+    rows = []
+    for z in (2.000, 2.140, 2.280):
+        row = []
+        for a, pr in ((0.720, 0.005), (0.860, 0.016), (1.000, 0.005)):
+            row.append(builder.vertex(jacket_surface_point(a, z, pr), JACKET_DARK, "Spine2"))
+        rows.append(row)
+    builder.grid(rows, 1, cyclic=False)
+    for z0, z1, a0, a1, pr, top_colour in (
+        (2.220, 2.300, 0.740, 0.980, 0.026, ZIP),          # slider base step
+        (2.240, 2.292, 0.790, 0.930, 0.038, JACKET_DARK),  # tab face, hinge-shadow top
+    ):
+        rows = []
+        for j, z in enumerate((z0, z1)):
+            colour = top_colour if j == 1 else ZIP
+            rows.append([builder.vertex(jacket_surface_point(a, z, pr), colour, "Spine2")
+                         for a in (a0, (a0 + a1) / 2, a1)])
+        builder.grid(rows, 1, cyclic=False)
+    # The hip welts: slanted proud bars, slit shadow on the top row.
+    for side in (1, -1):
+        rows = []
+        for dz, pr, colour in ((-0.024, 0.006, JACKET), (0.0, 0.018, JACKET), (0.024, 0.006, JACKET_DARK)):
+            row = []
+            for i in range(4):
+                t = i / 3
+                a = side * (0.750 + 0.400 * t)
+                z = 1.800 + 0.080 * t + dz
+                row.append(builder.vertex(jacket_surface_point(a, z, pr), colour, jacket_bone(z)))
+            rows.append(row)
+        builder.grid(rows, 1, cyclic=False, flip=side < 0)
 
 
 # Neck.
@@ -686,8 +868,10 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
 
     builder.loft(NECK_LEVELS, 0, SKIN, 14 if detail >= 2 else segments)
     torso_segments = 18 if detail >= 2 else segments
-    builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, torso_segments)
+    builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, torso_segments,
+                 color_fn=tee_color)
     build_jacket(builder, detail)
+    build_jacket_details(builder, detail)
 
     for side in (1, -1):
         build_arm(builder, side, detail, spec=PROF_ARM)

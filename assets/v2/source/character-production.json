@@ -78,11 +78,11 @@
     },
     "tank": {
       "source": "tank-pilot.blend",
-      "sourceSha256": "3718dbd897d11be27ae5fe60ad1c63b24d4f76ae11addd1eb16daf59f3719d87",
+      "sourceSha256": "1a255a81e05bfc3246421a6546e4b453dfb639cf7a536195b255aaa52c98fe64",
       "concept": "tank-turnaround.png",
       "conceptSha256": "32d3e55d0bb1f56fa6edacf9d87f7d53cc516cd3877740042f9c82e0c5756bd4",
       "output": "kid_tank.glb",
-      "outputSha256": "f96d7d892f87b5ccb4d2a68b26e58cd2ffdfac9c0876cb997670375161c982dd",
+      "outputSha256": "0833eba672d4a624cc2321a5dd166b7c4bedb979f053059f2884cb80316829d1",
       "definingTraits": [
         "low wide silhouette",
         "bald round crown",
@@ -123,11 +123,11 @@
     },
     "bubbles": {
       "source": "bubbles-pilot.blend",
-      "sourceSha256": "83989ede66005ce2ec2417846ce06816ffc24e3db012a375e1e523aded8176a4",
+      "sourceSha256": "079e0df47eb0a0dfbd5890f6b457989fc3e8619c0acd75a4298a3bb8007d0148",
       "concept": "bubbles-turnaround.png",
       "conceptSha256": "b4b3ec04e975bf1f2d85b449073afbd71edb99af3f17579fe24050bc5edcd9db",
       "output": "kid_bubbles.glb",
-      "outputSha256": "792e180491084c48d43c824c359eb1e9dc02fe5edc1be72c3db69f68253f6428",
+      "outputSha256": "8e30daae79248edf8359f9812b29720eb9e5d83e12c172cea894bb237b65e26b",
       "definingTraits": [
         "golden ringlet cloud",
         "topknot bun and scrunchie",
@@ -288,11 +288,11 @@
     },
     "ace_kid": {
       "source": "ace-pilot.blend",
-      "sourceSha256": "30aaa832dd5b3db18c1cfd67e4953b57093cde40a2244cb1faeb9d8281b42263",
+      "sourceSha256": "4c30520476029f76be8e168cda2cacab0945f73836176a41b53124abac8214aa",
       "concept": "ace-turnaround.png",
       "conceptSha256": "641fb80ce9726fe50255da0275f584d4f1722709a0cc51b11d2dbf633af49a43",
       "output": "kid_ace_kid.glb",
-      "outputSha256": "7e58588b6b2f5e67e96329b825d00027189a418c9c4d9b6a435d5408c04bf198",
+      "outputSha256": "d453f314f009f9779131833f28224ab9ad50f0669c9f89c46868f389f27190ce",
       "definingTraits": [
         "sky-blue ball cap",
         "open blue bomber jacket",
@@ -348,11 +348,11 @@
     },
     "clover": {
       "source": "clover-pilot.blend",
-      "sourceSha256": "3a64424fa26bc3b59f064664948e3474320ddd1975888e1435f5b49f5ec84ae7",
+      "sourceSha256": "f93e4606fd0ed809290dca3458c3bd2cc8f6132c8f31519d89a318ac6ebd9035",
       "concept": "clover-turnaround.png",
       "conceptSha256": "1cff5e0a9ac0306500dc1786ace77af0e9b888d3501262d23839a81bbbcc4142",
       "output": "kid_clover.glb",
-      "outputSha256": "467743860b166adda76dbc10b7b263402bc95be6e1c28c4b30cb5bb3ef8bce0f",
+      "outputSha256": "8319c29e4ebf4f79733723fb849b9ee668a841545a93a77173a220add1d17c4e",
       "definingTraits": [
         "blonde low pigtails",
         "swept side fringe",
