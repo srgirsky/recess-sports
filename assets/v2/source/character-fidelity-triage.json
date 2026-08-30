@@ -1870,71 +1870,6 @@
       "class": "no-defect-note",
       "excerpt": "CLEARED this round \u2014 the stale-scores finding: character-fidelity.json now recor"
     },
-    "diva:e75edc2002b2": {
-      "char": "diva",
-      "class": "ears",
-      "excerpt": "THE 'NO earLine' CLAIM IS FALSE, and it is the load-bearing one. scripts/v2/turn"
-    },
-    "diva:44a964e6c651": {
-      "char": "diva",
-      "class": "ears",
-      "excerpt": "CONSEQUENCE, MEASURED: EAR_SPEC center z = 3.220 (now line 139 of sculpt-dazzle-"
-    },
-    "diva:53af760b2fb2": {
-      "char": "diva",
-      "class": "ears",
-      "excerpt": "3.10 FAIL (and 3.8 FAIL), re-verified on the fresh boards. The ear is NOT absent"
-    },
-    "diva:05890fae3b69": {
-      "char": "diva",
-      "class": "no-defect-note",
-      "excerpt": "NOT A DEFECT - re-verified this round. The pale cream annulus with a skin-toned,"
-    },
-    "diva:0ba48f7a9ec7": {
-      "char": "diva",
-      "class": "proportions",
-      "excerpt": "TEAM_MASK judged on EXTENT only, never colour (the headband is the declared team"
-    },
-    "diva:bd9eb30d1297": {
-      "char": "diva",
-      "class": "no-defect-note",
-      "excerpt": "Garment colour boundaries are CONSTRUCTED EDGES, not painted gradients - verifie"
-    },
-    "diva:513d2abbfa2b": {
-      "char": "diva",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED - the smooth-cone skirt finding is FIXED and must not be re-filed. Grep "
-    },
-    "diva:5fad3f3074ab": {
-      "char": "diva",
-      "class": "hems-cuffs",
-      "excerpt": "Shoe laces are single 1-2px dark strokes with no eyelets, tongue or crossings; r"
-    },
-    "diva:32384669fb45": {
-      "char": "diva",
-      "class": "material-light",
-      "excerpt": "Skin tone is very close to the infield dirt in the runtime stills; at the run an"
-    },
-    "diva:1c8050f1acb9": {
-      "char": "diva",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED - the 'swing_contact renders bat-less' finding no longer holds: fresh da"
-    },
-    "diva:82c5528a797f": {
-      "char": "diva",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED - the 'grin capture is an empty frame' finding no longer holds: fresh da"
-    },
-    "diva:c6bfe313dd20": {
-      "char": "diva",
-      "class": "no-defect-note",
-      "excerpt": "The recorded card asserts 'no nose breaking the hair-covered profile'. That is w"
-    },
-    "diva:324a50ebec8b": {
-      "char": "diva",
-      "class": "face-atlas",
-      "excerpt": "NEW, minor: the delivered brows are thin sharp dark strokes where the sheet's bo"
-    },
     "turbo:76e1443cb40a": {
       "char": "turbo",
       "class": "sheared-edges",
@@ -2179,6 +2114,91 @@
       "char": "calls_shot",
       "class": "no-defect-note",
       "excerpt": "Not defects, checked and cleared so nobody re-files them: the old hairMass-1 bas"
+    },
+    "diva:dacfc9ac7a49": {
+      "char": "diva",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED \u2014 the 'ear 19.5 points too high / ungated earLine' pair of findings is F"
+    },
+    "diva:9e75a9226533": {
+      "char": "diva",
+      "class": "ears",
+      "excerpt": "NEW, measured: centering the ear ON the traced earLine overshot LOW. The drawn p"
+    },
+    "diva:a47670bd3c41": {
+      "char": "diva",
+      "class": "ears",
+      "excerpt": "3.10 STILL OPEN, new form: the ear is no longer buried shards but it reads as a "
+    },
+    "diva:4c85c0f47acc": {
+      "char": "diva",
+      "class": "other",
+      "excerpt": "Stale comments in the sculpt source contradict both the sheet and the shipped va"
+    },
+    "diva:6167c44873f9": {
+      "char": "diva",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED \u2014 the mirror-violating sin(8\u03b8+1.7\u00b7row) mane finding is FIXED and must no"
+    },
+    "diva:740eb5460bf4": {
+      "char": "diva",
+      "class": "ears",
+      "excerpt": "Residual mane polish, minor: the wave read lives on the back and sides \u2014 the FRO"
+    },
+    "diva:a76101bf71dd": {
+      "char": "diva",
+      "class": "hair-nyquist",
+      "excerpt": "The profile face is GENUINELY OPEN \u2014 brow, eye and nose all read, the nose wedge"
+    },
+    "diva:4a5bfdfc31e2": {
+      "char": "diva",
+      "class": "40px-read",
+      "excerpt": "TEAM_MASK judged on EXTENT only, never colour (headband is the declared team-acc"
+    },
+    "diva:3299ebd9a55e": {
+      "char": "diva",
+      "class": "other",
+      "excerpt": "NOT A DEFECT \u2014 carried non-defect record: the pale cream annulus with a folded s"
+    },
+    "diva:fda5cecece83": {
+      "char": "diva",
+      "class": "other",
+      "excerpt": "Garment colour boundaries are CONSTRUCTED EDGES, not painted gradients \u2014 carried"
+    },
+    "diva:4034216b39c5": {
+      "char": "diva",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED \u2014 the smooth-cone skirt finding remains FIXED, do not re-file: pleat geo"
+    },
+    "diva:5eb89de46436": {
+      "char": "diva",
+      "class": "decal-not-form",
+      "excerpt": "Shoe laces are single 1-2px dark strokes with no eyelets, tongue or crossings; t"
+    },
+    "diva:2d453e6355a1": {
+      "char": "diva",
+      "class": "material-light",
+      "excerpt": "Skin tone remains very close to the infield dirt in the runtime stills; hands an"
+    },
+    "diva:4ec95a08c067": {
+      "char": "diva",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED \u2014 swing_contact bat evidence holds again this round: fresh dazzle-runtim"
+    },
+    "diva:837562be7999": {
+      "char": "diva",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED \u2014 the grin capture is a real frame again this round (open smile with tee"
+    },
+    "diva:af184cd6cdf0": {
+      "char": "diva",
+      "class": "hair-nyquist",
+      "excerpt": "Record correction, carried: the recorded card's claim of 'no nose breaking the h"
+    },
+    "diva:d0cc9832bee2": {
+      "char": "diva",
+      "class": "face-atlas",
+      "excerpt": "CARRIED, minor: the delivered brows are thin sharp dark strokes where the sheet'"
     }
   }
 }

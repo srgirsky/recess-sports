@@ -86,7 +86,8 @@ PALETTE = Palette(
 # Features, bounded traces: soft thick brows rows 264-271 (37% of the
 # 3.99→2.68 head, z 3.51), the big eyes rows 289-318 centred row 303 (54.1%,
 # z 3.28), nostrils rows 333-335, the closed smile rows 344-349 (76.1%,
-# z 2.99). The mane owns the width metrics; the ears hide under the curtains.
+# z 2.99). The mane owns the width metrics; both ears are DRAWN VISIBLE in
+# front and profile (poking out at the jaw beside the curtains).
 HEAD_CENTER = (0.0, -0.020, 3.250)
 HEAD_RADII = (0.400, 0.440, 0.440)
 
@@ -136,12 +137,14 @@ def nose_push(nx: float, nz: float) -> float:
     return bridge + tip
 
 
-# Her ears are drawn in the three-quarter view and hide under the curtains
-# from the front; placed at eye level against the skull side.
-# measured: dazzle.spec.json landmarks.earLine 78.3% of head (3.99→2.68),
-# proud 17.4% — z 2.964, NOT the eye line the first cut assumed (3.220 put
-# them at 58.8% and the audit called the no-earLine claim false).
-EAR_SPEC = EarSpec(center=(0.020, 2.964), radii=(0.1250, 0.1500))
+# Both ears are drawn fully visible (front AND profile — the sheet pokes
+# them out at the jaw beside the curtains; an earlier comment claiming they
+# hide was the propagating-false-claim class and is scrubbed).
+# measured: dazzle.spec.json landmarks.earLine 78.3% of head (3.99→2.68) is
+# the ear's LOWER THIRD — the drawn ear spans 54.8-83.9% of head with its
+# CENTRE at 69.4% → z 3.081. Centering ON the earLine (2.964) left the
+# visible tip at the jaw; the critic re-traced the span.
+EAR_SPEC = EarSpec(center=(0.020, 3.081), radii=(0.1250, 0.1500))
 
 # Island solved for her span: brow anchor 20 lands z 3.502 (37.25% of the
 # 3.99→2.68 head against the traced 37.0), eye anchor 50 lands z 3.281 (54.1
