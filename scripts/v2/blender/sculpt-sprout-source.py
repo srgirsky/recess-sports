@@ -44,6 +44,7 @@ from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
 from sculptlib.ear import EarSpec, build_ear
+from sculptlib.hair import curl_field, curl_seeds
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
@@ -71,6 +72,7 @@ SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 SKIN = rgba("ED8B32")
 SKIN_SHADOW = rgba("BE6318")
 HAIR = rgba("2E1A0C")        # deep chocolate; the modal #1C0C02 would render a hole
+HAIR_DARK = rgba("1F1006")   # the trough tone — above the render-a-hole floor
 SHIRT = rgba("FFBA2E")       # the yellow tee
 SHIRT_DARK = rgba("D8860C")  # the hem/cuff bands need real contrast against the sleeve
 PANTS = rgba("46617A")       # the denim, lifted and kept blue
@@ -226,6 +228,26 @@ def skull_front_y(x: float, z: float) -> float:
 # measured: front z=3.26 halfWidth=0.7267
 # measured: view2 z=3.42 halfWidth=0.7216
 # measured: view2 z=3.26 halfWidth=0.6787
+# ★ THE CURL FIELD — sculptlib/hair.py holds the mechanism. The old clump
+# `sin(5θ+2.6·row) + 0.5·sin(9θ+1.3·row)` broke the mirror THREE ways: sin
+# is odd, 5 and 9 lobes cannot mirror (the Dex parity rule), and both
+# carried a row-varying phase (the Penny rule). measured:
+# `npm run measure:strands -- sprout` reads the concept near 8.6 minima/row;
+# three mirror pairs (6 lobes) is the largest even count 24 columns can
+# carry at the four-per-lobe floor — going to 32 columns for 8 lobes needs
+# a row trade the torso budget note says is already tight; ladder there
+# only if the critic still reads it smooth.
+CURL_SEEDS = curl_seeds(
+    pairs_per_row=3,
+    bands=8,
+    z_top=3.930,
+    z_bottom=2.880,
+    amplitude=0.075,
+)
+CURL_THETA_WIDTH = 0.24
+CURL_Z_WIDTH = 0.075
+CURL_TROUGH = 0.020
+
 HAIR_LEVELS = [
     (3.985, 0.070, 0.065, 0.015),
     (3.945, 0.210, 0.195, 0.028),
@@ -282,12 +304,16 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
     rows = []
     for z, half_x, half_y, y_centre in ascending:
         ring = []
-        # Round 7: doubled — 0.030 rendered as a smooth balloon and the first
-        # review named it; the crop is TEXTURED in the drawing.
-        curl = 0.055 if detail >= 2 else 0.0
         for column in range(segments):
             theta = 2 * pi * column / segments
-            clump = 1.0 + curl * sin(5.0 * theta + 2.6 * len(rows)) + (curl * 0.5) * sin(9.0 * theta + 1.3 * len(rows))
+            # The 2D curl field (constants above the level table); the tone
+            # split below is what reads under the ramp.
+            f = (curl_field(
+                theta, z, CURL_SEEDS,
+                theta_width=CURL_THETA_WIDTH,
+                z_width=CURL_Z_WIDTH,
+            ) if detail >= 2 else 0.0)
+            clump = 1.0 + f
             x = half_x * clump * cos(theta)
             y = y_centre + half_y * clump * sin(theta)
             if y < y_centre:
@@ -301,9 +327,10 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
                     # heavy, with the front a thin shell over the skull (the
                     # 1.44ft profile depth is mostly swoosh and rear mass).
                     y = max(y, skull_front_y(x, z) - 0.075)
-            ring.append(builder.vertex((x, y, z), HAIR, "Head"))
+            tone = HAIR if f > CURL_TROUGH else HAIR_DARK
+            ring.append(builder.vertex((x, y, z), tone, "Head"))
         rows.append(ring)
-    bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
+    bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR_DARK, "Head")
     top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.02), HAIR, "Head")
     for column in range(segments):
         nxt = (column + 1) % segments
