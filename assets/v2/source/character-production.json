@@ -408,11 +408,11 @@
     },
     "cricket": {
       "source": "cricket-pilot.blend",
-      "sourceSha256": "802d57f5f5240278a556526d2c3a503a0811984ff86f9834163f354c67774c03",
+      "sourceSha256": "bd74235d1e2d43e094d7b7ac4ee21c48b865f8066eb40dde20fc63e672c76fe0",
       "concept": "cricket-turnaround.png",
       "conceptSha256": "cb5ff0cb23a96bb2d16b5820ae6ccfa2bbcfd17c3af88b100b439e367c317b0b",
       "output": "kid_cricket.glb",
-      "outputSha256": "8aa2dc9d9fec74a7ac50c743f4809bd614ba8b7b9e10cda919db65538c6af15b",
+      "outputSha256": "851d2a91922aad6bcd0461a0d3c9e94855923319ca53436d18fcc6c15e764476",
       "definingTraits": [
         "big spiky brown mop",
         "green tee under denim overalls",
