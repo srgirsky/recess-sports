@@ -97,7 +97,7 @@ weaken one to make a change pass.**
 | `npm run audit:layout` / `audit:v2-layout` | overlaps, off-frame chrome, undersized taps, an unresolved font — and the same over v2's DOM HUD at the sizes its `clamp()` pins |
 | `src/v2/ui/soundCues.test.ts` | a sim event that makes no sound — silence and a working mute are the same |
 | `scripts/v2/turnaround-spec.lint.test.js` / `runidentity.lint.test.js` / `featurelatitude.lint.test.js` | a measured spec drifting from its own sheet, a width read across two objects, a face at the wrong height on its own head |
-| `scripts/v2/silhouette.lint.test.js` / `performance-freshness.lint.test.js` / `tonemapping.lint.test.js` / `sculptspec.lint.test.js` / `evidence-freshness.lint.test.js` / `sculpt-sharing.lint.test.js` | a hole you can see through, a baked animation take stale against the code that bakes it, a colour default reverted silently, one kid's measurement defaulted into the shared sculpt library, a character scored from stills of an older model, two kids shipping one body while citing two drawings |
+| `scripts/v2/silhouette.lint.test.js` / `performance-freshness.lint.test.js` / `tonemapping.lint.test.js` / `sculptspec.lint.test.js` / `evidence-freshness.lint.test.js` / `sculpt-sharing.lint.test.js` / `triage.lint.test.js` | a hole you can see through, a baked animation take stale against the code that bakes it, a colour default reverted silently, one kid's measurement defaulted into the shared sculpt library, a character scored from stills of an older model, two kids shipping one body while citing two drawings, a polish finding outside every sweep worklist |
 | `scripts/goldlog.browser.js` | a v1 refactor that changes the seeded game (manual, not CI) |
 
 ## Only one place
