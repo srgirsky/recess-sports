@@ -33,6 +33,7 @@ from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
 from sculptlib.ear import EarSpec, build_ear
+from sculptlib.hair import curl_field, curl_seeds
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
@@ -54,7 +55,8 @@ SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 # trim, socks and soles. Ramp-authored per the calibrated boards.
 SKIN = rgba("FCA054")
 SKIN_SHADOW = rgba("C4732E")
-HAIR = rgba("8F3A10")        # rich auburn
+HAIR = rgba("8F3A10")        # rich auburn — the lit wave tops
+HAIR_DARK = rgba("5A2408")   # the trough tone between waves (two-tone mane paint)
 SHIRT = rgba("6F4A7C")       # the dress purple ("SHIRT" is the garment lane)
 SHIRT_DARK = rgba("FFF4E2")  # the cream trim lane: collar, cuffs, waistband
 PANTS = rgba("4E3159")       # the pleat-shadow purple, two steps deeper
@@ -136,7 +138,10 @@ def nose_push(nx: float, nz: float) -> float:
 
 # Her ears are drawn in the three-quarter view and hide under the curtains
 # from the front; placed at eye level against the skull side.
-EAR_SPEC = EarSpec(center=(0.020, 3.220), radii=(0.1250, 0.1500))
+# measured: dazzle.spec.json landmarks.earLine 78.3% of head (3.99→2.68),
+# proud 17.4% — z 2.964, NOT the eye line the first cut assumed (3.220 put
+# them at 58.8% and the audit called the no-earLine claim false).
+EAR_SPEC = EarSpec(center=(0.020, 2.964), radii=(0.1250, 0.1500))
 
 # Island solved for her span: brow anchor 20 lands z 3.502 (37.25% of the
 # 3.99→2.68 head against the traced 37.0), eye anchor 50 lands z 3.281 (54.1
@@ -193,33 +198,72 @@ def skull_front_y(x: float, z: float) -> float:
 # measured: front z=2.94 halfWidth=0.7651
 # measured: front z=3.42 halfWidth=0.5905
 # measured: front z=2.38 halfWidth=0.7651 tol=0.06
+# Strands are VERTICAL grooves, so rows trade for columns (the Grizz rule):
+# 24 columns blew the LOD0 budget by 132, and rows 3.240, 2.760 and 2.460
+# are linear interpolations of their neighbours to within 0.022 half-width
+# (checked numerically before deleting) — the barrel keeps its shape, the
+# crown rounding rows and the widest row stay, and the export gets smaller.
 MANE_LEVELS = [
     (3.900, 0.105, 0.115, 0.000),
     (3.820, 0.240, 0.260, 0.000),
     (3.700, 0.350, 0.380, 0.010),
     (3.560, 0.420, 0.455, 0.020),
     (3.400, 0.460, 0.500, 0.030),
-    (3.240, 0.480, 0.520, 0.050),
     (3.080, 0.500, 0.540, 0.070),
     (2.920, 0.520, 0.560, 0.090),
-    (2.760, 0.530, 0.540, 0.110),
     (2.600, 0.545, 0.500, 0.130),
-    (2.460, 0.530, 0.450, 0.150),
     (2.340, 0.480, 0.360, 0.170),
     (2.250, 0.330, 0.240, 0.190),
 ]
 
 # The hairline: an open face with a centre part — high across the forehead,
 # the curtains closing past the temples and hanging beside the jaw.
+# The curtain boundary moved OUT and UP (0.27/0.33/0.40 → 0.30/0.37/0.44):
+# the tighter table walled the profile face to 46.4% visible skin against
+# the sheet's 91.5% — the sheet hangs the curtains behind the jaw with the
+# whole face clear. (The mass must not eat the face — the Mimi/Theo rule.)
+# The sheet's profile hairline is NEAR-VERTICAL at the temple: headband down
+# past the eye to the ear, the WHOLE face clear, mane behind the ear. The
+# earlier slopes (0.27→3.38→3.00→2.76, then 0.30/0.37/0.44 at 3.44/3.16/2.90)
+# each left proud above-the-fringe wall columns over the cheek — the profile
+# face was a sliver at 46.4% visible skin against the sheet's 91.5%.
 MANE_FRINGE = [
     (0.00, 3.560),
     (0.20, 3.540),
-    (0.27, 3.380),
-    (0.33, 3.000),
-    (0.40, 2.760),
+    (0.30, 3.460),
+    (0.40, 3.400),
+    (0.48, 3.300),
 ]
 
 MANE_OPEN_BOTTOM = 2.280
+
+# ★ THE WAVE FIELD — sculptlib/hair.py holds the mechanism. The old clump was
+# `1 + 0.05·sin(8θ + 1.7·row)`: a row-varying PHASE, the exact pattern the
+# Penny lesson forbids (sin is odd — the term breaks the mirror outright),
+# and at 18 columns its 8 lobes had 2.25 samples each. measured:
+# `npm run measure:strands -- diva` reads the CONCEPT at 5.86 strand
+# minima/row — three mirror pairs put 6 lobes across a row and 24 columns
+# give them the four-column floor. Widths at the Mimi rule: θw ≈ half the
+# 1.05 seed half-spacing; zw ≈ half the 0.17 band gap.
+MANE_SEEDS = curl_seeds(
+    pairs_per_row=3,
+    bands=10,
+    z_top=3.850,
+    z_bottom=2.320,
+    amplitude=0.080,
+)
+MANE_THETA_WIDTH = 0.24
+MANE_Z_WIDTH = 0.085
+# Two-tone: lit auburn wave tops over the deep-auburn troughs.
+MANE_TROUGH = 0.022
+
+# ★ NO RADIAL EAR DENT — tried at depth 0.16 and 0.19 and REMOVED. Pulling
+# the shell laterally inside the ear tips exposed both ears from the FRONT
+# as skin blobs beside the chin, where the sheet's front view keeps them
+# fully under the mane. What actually clears the ear (and the whole
+# profile face) is the face-band DEPTH floor in ring_loft_mane: the sheet
+# hangs the mane BEHIND the ear in y, not thinner in x. The ear's rear
+# half staying under the wall matches the drawing.
 
 
 def fringe_z_at(x_abs: float) -> float:
@@ -239,35 +283,60 @@ def ring_loft_mane(builder: MeshBuilder, levels, detail: int) -> None:
     # quad's winding — the runtime lights the mass as a slate-grey void.
     assert all(a[0] > b[0] for a, b in zip(levels, levels[1:])), \
         "ring_loft_mane levels must be strictly descending in z"
-    segments = 18 if detail >= 2 else (10 if detail == 1 else 8)
+    segments = 24 if detail >= 2 else (10 if detail == 1 else 8)
     use = levels if detail >= 2 else thin_for_lod([(z, hx, hy, yc) for z, hx, hy, yc in levels], detail)
     ascending = list(reversed(use))
     rows = []
     for z, half_x, half_y, y_centre in ascending:
         ring = []
-        curl = 0.05 if detail >= 2 else 0.0
         for column in range(segments):
             theta = 2 * pi * column / segments
-            clump = 1.0 + curl * sin(8 * theta + 1.7 * len(rows))
+            f = (curl_field(
+                theta, z, MANE_SEEDS,
+                theta_width=MANE_THETA_WIDTH,
+                z_width=MANE_Z_WIDTH,
+            ) if detail >= 2 else 0.0)
+            clump = 1.0 + f
             x = half_x * clump * cos(theta)
             y = y_centre + half_y * clump * sin(theta)
             if y < y_centre:
                 sf = skull_front_y(x, z)
+                in_face_band = 2.800 < z < 3.440
                 if MANE_OPEN_BOTTOM < z < fringe_z_at(abs(x)):
                     if sf > -9.0:
-                        y = max(y, sf + 0.050)
+                        # +0.110, not +0.050: at +0.050 the window hair is a
+                        # film one twentieth of a foot behind the face plane,
+                        # and the PROFILE's visible skin is only that sliver —
+                        # the "face erased to 46.4%" mechanism. The skull
+                        # fills the space behind, so no see-through pocket.
+                        y = max(y, sf + 0.110)
                     elif abs(x) < 0.24:
                         # Below the chin the centre stays open to the chest —
                         # the dress front (~-0.24) hides what little remains,
                         # and the neck front (-0.13) stays clear of hair.
                         y = max(y, -0.085)
                     else:
-                        y = max(y, -0.300)
+                        # Face band: the wall starts behind the cheek's WIDEST
+                        # sweep, which sits near mid-depth (y≈0) — recessions
+                        # to -0.12 and -0.15 both still walled the cheek, and
+                        # the front view loses nothing (its width comes from
+                        # the back-half columns). Elsewhere the chest floor.
+                        y = max(y, -0.020 if in_face_band else -0.300)
                 else:
-                    y = max(y, (sf - 0.060) if sf > -9.0 else -0.320)
-            ring.append(builder.vertex((x, y, z), HAIR, "Head"))
+                    # ★ THE PROFILE FACE IS EATEN LATERALLY, NOT IN DEPTH. A
+                    # side-wall column at x 0.44-0.50 exceeds the cheek's own
+                    # half-width (~0.42), so from the profile it hides the
+                    # face at EVERY depth its span covers — receding it in y
+                    # is the only carve that shows the cheek, and the y-clamp
+                    # here is what decides. In the face band the front half
+                    # of the wall starts BEHIND the cheek's sweep (-0.150);
+                    # everywhere else the old -0.320 keeps the mane full.
+                    floor = -0.020 if in_face_band else -0.320
+                    y = max(y, (sf - 0.060) if sf > -9.0 else floor)
+            tone = HAIR if f > MANE_TROUGH else HAIR_DARK
+            ring.append(builder.vertex((x, y, z), tone, "Head"))
         rows.append(ring)
-    bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
+    bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR_DARK, "Head")
     top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.02), HAIR, "Head")
     for column in range(segments):
         nxt = (column + 1) % segments
