@@ -1,7 +1,16 @@
 import { defineConfig } from 'vite';
+import { configDefaults } from 'vitest/config';
 import { resolve } from 'node:path';
 
 export default defineConfig({
+  test: {
+    // A worktree under .claude/worktrees is another session's checkout of this
+    // repo. Its tests are that checkout's to run: collecting them here doubles
+    // the heaviest sim suites, and the contention makes the deadline-bound
+    // play/game tests flake — 8 failures that vanish when the file runs alone.
+    // (brief.lint.test.js skips nested checkouts for the same reason.)
+    exclude: [...configDefaults.exclude, '.claude/worktrees/**'],
+  },
   // Relative paths so the built site works from any static host path
   // (Cloudflare Pages, Netlify, GitHub Pages sub-paths, etc.)
   //
