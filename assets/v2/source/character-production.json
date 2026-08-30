@@ -48,11 +48,11 @@
     },
     "wheelchair_ace": {
       "source": "zoom-pilot.blend",
-      "sourceSha256": "1303d262a5c208abb18ac62a57169bd070ec67cd3ee9e6440e6fd921e21f9803",
+      "sourceSha256": "051a93b7af0e8ff76477a1ae330d0658a774872be1b556dc8c88223835296c19",
       "concept": "zoom-turnaround.png",
       "conceptSha256": "ab2ddf9b07a00ad095b4583046164edb23c26e542465ab4b2f7663fe8a38b296",
       "output": "kid_wheelchair_ace.glb",
-      "outputSha256": "440cb17c757e31f2063d10f18d0ea17b2257bef6518532e2941196b0a58ac75b",
+      "outputSha256": "168fa1bbc02a5dea3a758744dcdddae5471489909cdbcfcb97a2be9201fc64e7",
       "definingTraits": [
         "compact sport chair",
         "cambered wheels",
