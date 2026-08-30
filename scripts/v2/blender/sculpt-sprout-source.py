@@ -222,12 +222,6 @@ def skull_front_y(x: float, z: float) -> float:
 # over them), and falls to a nape at z ~2.85. Grizz's ring-loft-with-tuck
 # construction, his second proving; the fringe arc and radii are this kid's.
 #
-# measured: front z=3.90 halfWidth=0.3505
-# measured: front z=3.74 halfWidth=0.5723
-# measured: front z=3.42 halfWidth=0.7524
-# measured: front z=3.26 halfWidth=0.7267
-# measured: view2 z=3.42 halfWidth=0.7216
-# measured: view2 z=3.26 halfWidth=0.6787
 # ★ THE CURL FIELD — sculptlib/hair.py holds the mechanism. The old clump
 # `sin(5θ+2.6·row) + 0.5·sin(9θ+1.3·row)` broke the mirror THREE ways: sin
 # is odd, 5 and 9 lobes cannot mirror (the Dex parity rule), and both
@@ -248,6 +242,12 @@ CURL_THETA_WIDTH = 0.24
 CURL_Z_WIDTH = 0.075
 CURL_TROUGH = 0.020
 
+# measured: front z=3.90 halfWidth=0.3505
+# measured: front z=3.74 halfWidth=0.5723
+# measured: front z=3.42 halfWidth=0.7524
+# measured: front z=3.26 halfWidth=0.7267
+# measured: view2 z=3.42 halfWidth=0.7216
+# measured: view2 z=3.26 halfWidth=0.6787
 HAIR_LEVELS = [
     (3.985, 0.070, 0.065, 0.015),
     (3.945, 0.210, 0.195, 0.028),
