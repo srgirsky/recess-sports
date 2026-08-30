@@ -71,7 +71,13 @@ SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 # keeps him above the detector floor and visibly bare-armed.
 SKIN = rgba("ED8B32")
 SKIN_SHADOW = rgba("BE6318")
-HAIR = rgba("2E1A0C")        # deep chocolate; the modal #1C0C02 would render a hole
+HAIR = rgba("3C2208")        # deep chocolate, hue-warmed: the critic read the
+                             # old #2E1A0C/#1F1006 pair as monochrome at board
+                             # scale — a 15-point VALUE step in near-black.
+                             # Separation must come from HUE under the ramp
+                             # (Lefty's lesson): r−g widens 20 → 26 while the
+                             # trough tone stays put, so the curl tops read
+                             # warm against it instead of merely lighter.
 HAIR_DARK = rgba("1F1006")   # the trough tone — above the render-a-hole floor
 SHIRT = rgba("FFBA2E")       # the yellow tee
 SHIRT_DARK = rgba("D8860C")  # the hem/cuff bands need real contrast against the sleeve
@@ -179,7 +185,10 @@ EAR_SPEC = EarSpec(center=(0.020, 2.900), radii=(0.1650, 0.2050))
 # generator's drawn rows land: brow ≈ cell 18 (z 3.344, 42.2% of head), eye ≈
 # cell 45 (z 3.066, 60.4%), mouth ≈ cell 84 (z 2.683, 85.4%) — each within a
 # point of the bounded traces above.
-FACE_ISLAND = (0.92, -1.450, 2.200)
+# Floor 2.500, NOT 2.200: the collar rib sits proud at z 2.442, and an
+# island floor below it wrapped atlas texels onto the knob — the critic's
+# "smeared second face on the collar". The mouth (2.683) keeps its margin.
+FACE_ISLAND = (0.92, -1.450, 2.500)
 
 HEAD_SPEC = HeadSpec(
     center=HEAD_CENTER,
