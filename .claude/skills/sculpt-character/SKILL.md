@@ -919,12 +919,26 @@ is `a6*cos(6θ) + a10*cos(10θ) < k*(a6+a10)`, and with `a6` (0.095) dominating
 does not make a clump — **it draws a full-height stripe and makes the flute
 MORE visible.**
 
-⚠️ **So the open problem is genuinely 2D, and nothing tried so far is.** A curl
-clump is localised in theta AND z; every attempt here has been a theta pattern
-with a row-varying knob, which is not the same thing. The next attempt needs a
-trough test that is a function of both — and it should be judged by
-column-concentration, not by strand count or prominence, both of which improved
-while the read did not.
+★ **RESOLVED: the 2D attempt was made, and it reads as curls.**
+`sculptlib/hair.py` is the mechanism — mirror-paired Gaussian curl blobs
+compact in θ AND z, banded with a golden-ratio stagger — plus the half no
+θ-only round could reach: a 2D TROUGH PAINT (vertices below the field's
+threshold take `HAIR_DARK`), which draws a honeycomb web between lit blob tops
+where the θ-only paint drew stripes. Judged exactly as this section asked: an
+independent critic returned an explicit CURLS verdict (hairMass 2 → 4 on Mimi)
+and a column-concentration probe agreed — 1 persistent column bin against the
+flutes' column-locked grooves. The identity that closes the θ-only family for
+good is in hair.py's docstring: `cos(6θ)+cos(10θ) = 2·cos(8θ)·cos(2θ)` — a
+fixed-θ envelope pins the extrema whatever the amplitudes do.
+
+Two traps the port must carry (both measured on Mimi, recorded at her
+constants): widths that MERGE — a θ-width under ~half the seed half-spacing
+flattens the whole field to uniform inflation and the board is a smooth dome
+(8% strand count, WORSE than the flutes' 23%) — and band densities where the
+golden stagger goes quasi-periodic and reads as QUILTING (12 bands did; 9
+stayed organic). Ladder the widths and look at every rung; the final rung is
+judged by the critic, not the counter. Residual open: clump size lands ~2x the
+concept's coil size at the buyable resolution.
 
 ## ★ A CHARACTER SHIPPED CUT IN HALF (and what that says about enclosure tests)
 
