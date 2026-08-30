@@ -318,11 +318,11 @@
     },
     "gizmo": {
       "source": "gizmo-pilot.blend",
-      "sourceSha256": "de7d4abaad30f504aa50f31b9540b54486d9eaee933f4e5632e87175625d869a",
+      "sourceSha256": "910ae4008c80258284e6e58d2efd259a42d81c814f300ec3fd19e93a95b94a43",
       "concept": "gizmo-turnaround.png",
       "conceptSha256": "3d133b007e6af158eea9ef446fe962af27d95a9828d922a6a96f66a65c0e1400",
       "output": "kid_gizmo.glb",
-      "outputSha256": "098271226cb8b15d8799cd2fd3eedab22dc0ca28026add38f5b8746b66a328d0",
+      "outputSha256": "12f9340f5ce0442f3fdbebb11cd5fbb0edca7955c0ced76c7e117f9f7309c179",
       "definingTraits": [
         "round wire glasses",
         "brown spiky mop",
@@ -393,11 +393,11 @@
     },
     "sniffles": {
       "source": "sniffles-pilot.blend",
-      "sourceSha256": "2f6d6698d5c25aa1fd3a2c5ac363508ddac2f5ab9597832ddbf621bfdff03751",
+      "sourceSha256": "230e445917c47f31b06b3519bf161630cf704dc9b7bcebf5991d47540efedafa",
       "concept": "sniffles-turnaround.png",
       "conceptSha256": "753c239c41ebe73424f487102239de4cc55d3eeb185a6018a5f6623e4ac11257",
       "output": "kid_sniffles.glb",
-      "outputSha256": "d72a93fb189a5e08c6d3b53c967554d0fbdca3416f4fc6e5cc2a44828d7d21d2",
+      "outputSha256": "a9468d8516368fca1ff58a05d4012394e0400cb2471d684c964c6267434638d5",
       "definingTraits": [
         "tousled auburn mop",
         "light-blue hoodie",

@@ -343,7 +343,12 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
 # bridge. Ring radius traced: rings rows 252-313 → R (313-252)/2 px = 0.177;
 # lens centres offset so the outer rims stop inside the mop's curtains.
 GLASSES_Z = 3.056
-GLASSES_LENS_X = 0.180
+# measured (critic re-trace): the rings at LENS_X 0.180 COLLIDED at the
+# bridge — R + wire = 0.199 > 0.180 — where the sheet keeps ~13% of head
+# width in skin between the inner rims. 0.255 = R + wire + half that gap
+# (0.13 × 0.86 head width / 2); the outer rims land at 0.432, still inside
+# the mop's curtains.
+GLASSES_LENS_X = 0.255
 GLASSES_RADIUS = 0.177
 GLASSES_WIRE = 0.022
 
@@ -381,34 +386,14 @@ def build_glasses(builder: MeshBuilder, detail: int) -> None:
          (GLASSES_LENS_X - GLASSES_RADIUS + 0.01, plane_y, GLASSES_Z + 0.02)],
         [GLASSES_WIRE, GLASSES_WIRE, GLASSES_WIRE],
         2, GLASSES, "Head", 4)
-    # The glass-shine lens discs. The sheet fills both rings with the paper's
-    # own cream (glass catching light) — the lens interior on the concept
-    # fails isSkin, so an open wire ring here would read 20 points more face
-    # than the drawing. A pale disc just behind the wire is both the measured
-    # answer and what the drawing shows.
-    # LOD0 only: at field scale the shine is sub-pixel, and LOD1 sits 8
-    # triangles over its budget with the discs in.
-    if detail < 2:
-        return
-    disc_sides = 10
-    for side in (1, -1):
-        centre = builder.vertex(
-            (side * GLASSES_LENS_X, plane_y + 0.012, GLASSES_Z), LENS, "Head")
-        rim = []
-        for i in range(disc_sides):
-            a = 2 * pi * i / disc_sides
-            rim.append(builder.vertex(
-                (side * GLASSES_LENS_X + (GLASSES_RADIUS - 0.003) * cos(a),
-                 plane_y + 0.012,
-                 GLASSES_Z + (GLASSES_RADIUS - 0.003) * sin(a)), LENS, "Head"))
-        # ⚠️ TRANSLATED COPIES, NOT MIRRORS (Penny's button lesson): only the
-        # disc CENTRE moves with `side` — the rim circle keeps one angular
-        # orientation on both sides, so both discs take ONE winding. Settled
-        # by reading the exported GLB's triangle normals, not by eye: this
-        # winding gives normal +z (camera-facing) on both discs.
-        for i in range(disc_sides):
-            nxt = (i + 1) % disc_sides
-            builder.face((centre, rim[i], rim[nxt]), 2)
+    # ★ NO LENS DISCS — deleted, with the measurement that killed them. The
+    # cream-fill defence ("the sheet fills both rings with paper cream")
+    # measured FALSE for THIS kid: the concept's lens interiors carry
+    # sd(luma) 50.7/60.7 — a drawn iris, pupil and catchlight — while the
+    # discs delivered 6.7/8.2 (opaque plates hiding the atlas eyes; face
+    # score 1, "the kid has no eyes"). The tinted-lens disc rule is The
+    # Professor's, not a glasses-wide law: open rings HERE show the drawn
+    # eyes, which is what the sheet does.
 
 
 # --- The overalls torso --------------------------------------------------------

@@ -248,8 +248,14 @@ def fringe_z_at(x_signed: float) -> float:
             if x_abs <= x1:
                 base = z0 + (z1 - z0) * (x_abs - x0) / (x1 - x0)
                 break
+    # The sweep may COVER more (lower the window) but barely ever EXPOSE
+    # more: an uncapped raise cut a ~40x40px skin WEDGE into the mass on the
+    # raised side at the 3/4 gameplay angle — a bald-notch read the critic
+    # verified by raw pixel values, and which no gate caught (see
+    # skinnotch-scan.mjs, written for exactly this find — a scan, not a lint; its header records why). The sheet's
+    # sweep asymmetry lives in the LOW side's extra coverage.
     sweep = -CURL_SWEEP * (x_signed / 0.5)
-    return max(3.205, base + sweep)
+    return max(3.205, base + min(sweep, 0.015))
 
 
 def build_curls(builder: MeshBuilder, detail: int) -> None:
