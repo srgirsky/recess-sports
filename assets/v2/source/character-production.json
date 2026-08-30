@@ -138,11 +138,11 @@
     },
     "chip": {
       "source": "chip-pilot.blend",
-      "sourceSha256": "42833254f79ec2d377685c07bd1b77818307ec1bd459cf180220cc4880b48d9d",
+      "sourceSha256": "3707da3f630724b63df1fba946dead4df77f230b57ee5d7a5dadd536ab661dba",
       "concept": "chip-turnaround.png",
       "conceptSha256": "244f188db5957fd2674ec2cbfd321a0211067696ddb6601cd09c45dc6a325575",
       "output": "kid_chip.glb",
-      "outputSha256": "67418fe1c20185dd56fe683eba9dad5ea849c69fd1d0eeafa33c57dff9267a34",
+      "outputSha256": "52262e8eea00c7ebddf885abf8e1def78387d063c1f4d78e2a23c3c1319b8a15",
       "definingTraits": [
         "navy and cream ball cap",
         "green kangaroo hoodie",
