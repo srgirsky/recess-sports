@@ -85,9 +85,10 @@ const DEBT = [
   // cited pair-outer half at z=1.10 / 0.80 / 0.46; shipped lands between them
   // and outside BOTH declared tolerances (+0.095 cricket, -0.126 gizmo).
   ['cricket', 'gizmo', 'LEG_STATIONS'],
-  // cited 0.6167/0.4467 vs 0.4441/0.5136 — opposite directions at the two
-  // heights, so one table cannot be a rounding of the other.
-  ['dex', 'lefty', 'LEG_STATIONS'],
+  // dex+lefty was paid 2026-08-29: the hem sweep's belt-line rows broke the
+  // byte-identity. Whether dex's station numbers are now truly HIS remains
+  // tracked by his open proportions findings — this lint only ever saw the
+  // copy, and the copy is gone.
   // cited 0.3864 vs 0.4226 at z=0.70 (9.4% apart).
   ['clover', 'peaches', 'LEG_STATIONS'],
 ];

@@ -293,10 +293,25 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
 # not-traceable: his hanging arms merge with the tee at every torso row; the
 # halves here are bounded off the blue cluster runs (169-301 at z 2.20 spans
 # the sleeves too — the torso proper is ~0.30).
+#
+# ★ THE HEM WAS AN APRON AND ITS CAP WAS THE CROTCH. The tee used to stop at
+# 1.300 half 0.330 with nothing under it: the loft's bottom fan WAS the crotch
+# line, and the shorts tubes (outer edge 0.409 at their old 1.340 top) stuck
+# out past the tee's sides in a hard diagonal corner at each hip. Re-traced
+# low: the tee FLARES — the hem's blue run is 171-299 about centre column 236
+# at z 1.40 (half 0.389, against ~0.30 at the chest), the blue ends at z 1.35
+# on the centreline and ~1.37 at the flanks, and the shorts' dark flanks the
+# blue from z 1.36 down. So the hem is built as Penny's waistband: a band top,
+# a lip 0.010 proud of it that OVERHANGS the shorts tubes (outer 0.374 at
+# 1.31) and the crotch yoke, and a turned-under ring beneath. Cloth ends here;
+# the kid does not (Zippy's severance lesson) — CROTCH_LEVELS and the raised
+# tube tops carry the body on below.
+# measured: front z=1.40 halfWidth=0.6231 tol=0.03
+# measured: front z=2.40 halfWidth=0.1429 tol=0.03
 TORSO_LEVELS = [
-    (1.300, 0.330, 0.275, "Hips"),    # hem underside
-    (1.335, 0.352, 0.295, "Hips"),    # hem band, proud
-    (1.390, 0.342, 0.288, "Hips"),
+    (1.310, 0.380, 0.300, "Hips"),    # hem underside — turned-under lip
+    (1.345, 0.390, 0.310, "Hips"),    # hem lip, proud — overhangs the shorts
+    (1.398, 0.380, 0.302, "Hips"),    # hem band top
     (1.560, 0.325, 0.278, "Spine"),
     (1.780, 0.308, 0.265, "Spine"),
     (2.000, 0.298, 0.255, "Spine1"),
@@ -310,7 +325,16 @@ TORSO_LEVELS = [
     # near-vertical BEHIND the rib — left sloped, that ring reads as two dark
     # "shoulder panels" flanking the collar from the front (the wedge defect
     # at its worst; the critic read them as authored backpack straps).
-    (2.505, 0.134, 0.126, "Spine2"),
+    #
+    # ★ AND THE HOLE MUST SIT OUTSIDE THE NECK LOFT (Penny's collar). At
+    # 0.134/0.126 this ring was INSIDE the neck (0.140/0.132 at 2.448), so the
+    # collar's visible top edge was not this ring at all but the interpenetration
+    # circle of two lofts tessellated 20-against-14 — a per-column SAWTOOTH of
+    # skin against navy, plain at 6x in both T- and A-pose fronts. Not a colour
+    # smear: `collar_color` switches inside the short 2.410/2.436 band. With the
+    # hole 0.008 clear of the neck all the way up, the top edge is this ring's
+    # own crisp circle and the collar stands as a roll the neck emerges from.
+    (2.505, 0.146, 0.138, "Spine2"),  # neck hole — OUTSIDE the neck loft
 ]
 
 
@@ -411,9 +435,20 @@ def inseam_half(z: float) -> float:
     return INSEAM_HEM_HALF * t ** 1.3
 
 # (z, half-width, depth factor, colour, bone) — strictly descending in z.
+#
+# ★ THE TUBES MEET THE YOKE, NOT THE TEE'S SILHOUETTE. The old 1.340 top
+# (radius 0.178, outer edge 0.409) stood proud of the tee hem (0.352) and the
+# handoff read as a hard diagonal corner notch at each hip. The tops now taper
+# and rise INSIDE the tee (outer 0.350 at 1.445 against the tee's ~0.365
+# there), where they meet CROTCH_LEVELS; the first ring the hem lip actually
+# overhangs is 1.310 at outer 0.374, inside the lip's 0.390. Below the hem the
+# tube swells back to the drawn baggy thigh (the sheet's outer dark edge holds
+# ~0.377-0.389 from z 1.32 to 1.10 about centre column 236).
+# measured: front z=1.30 halfWidth=0.6353 tol=0.03
 # measured: front z=1.10 halfWidth=0.6322 tol=0.08
 LEG_STATIONS = [
-    (1.340, 0.178, 1.14, PANTS, "UpLeg"),
+    (1.445, 0.132, 1.02, PANTS, "UpLeg"),   # tucked top — meets the yoke in the tee
+    (1.310, 0.140, 1.08, PANTS, "UpLeg"),   # first ring under the hem lip
     (1.150, 0.180, 1.14, PANTS, "UpLeg"),
     (0.980, 0.176, 1.10, PANTS, "Leg"),
     (0.860, 0.172, 1.06, PANTS_DARK, "Leg"),          # hem band
@@ -427,6 +462,23 @@ LEG_STATIONS = [
     (0.400, 0.098, 0.98, SOCK, "Foot"),
     (0.280, 0.090, 0.97, SOCK, "Foot"),
     (0.150, 0.084, 0.95, SOCK, "Foot"),
+]
+
+# The yoke that closes the crotch (Zippy's lesson, Smokey's construction).
+# The sheet draws the shorts as ONE joined dark hip mass from the tee hem down
+# to the crotch — a single run 175-300 at every row from z 1.32 to 1.20 — and
+# the inseam daylight only opens at z 1.18 (5px of backdrop by 1.10). Without
+# this loft that whole span was the tee's bottom cap and then backdrop: the
+# hem line WAS the crotch line. Bottom ring at the traced crotch z 1.19 (its
+# fan is the crotch underside), top ring tucked inside the tee at 1.43 where
+# the raised tube tops meet it. Depth bounded off the profile's shorts runs
+# (841-921 at z 1.30 → 0.25 half); ASCENDING like Smokey's — `loft` stitches
+# in table order.
+# measured: front z=1.24 halfWidth=0.6444 tol=0.03
+CROTCH_LEVELS = [
+    (1.190, 0.150, 0.190, "Hips"),
+    (1.320, 0.220, 0.235, "Hips"),
+    (1.430, 0.245, 0.265, "Hips"),
 ]
 
 TURBO_LEG = LegSpec(
@@ -576,6 +628,8 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         build_ear(builder, side, detail, palette=PALETTE, skull_at=skull_surface_x, spec=EAR_SPEC)
 
     builder.loft(NECK_LEVELS, 0, SKIN, 14 if detail >= 2 else segments)
+    if detail >= 1:
+        builder.loft(CROTCH_LEVELS, 1, PANTS, 8 if detail >= 2 else 6)
     torso_segments = 20 if detail >= 2 else segments
     builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, torso_segments,
                  color_fn=collar_color)
