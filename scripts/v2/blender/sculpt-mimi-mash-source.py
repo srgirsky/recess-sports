@@ -31,6 +31,7 @@ from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
 from sculptlib.ear import EarSpec, build_ear
+from sculptlib.hair import curl_field, curl_seeds
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
@@ -204,6 +205,39 @@ CURL_LEVELS = [
     (2.780, 0.445, 0.415, 0.155),
 ]
 
+# ★ THE CURL FIELD — see sculptlib/hair.py for why this shape and not a cosine.
+# measured: `npm run measure:strands -- mimi_mash` reports the CONCEPT sheet
+# carrying 12.67 strand minima per row on the 5-45% band. Six mirror pairs put
+# 12 lobes across a row, which is that count (48 columns / 12 lobes = the
+# four-columns-per-lobe floor); the bands span the shell's own CURL_LEVELS
+# extent (4.030 crown to 2.780 hem) so curls reach the whole mass.
+#
+# ⚠️ THE WIDTHS WERE LADDERED, NOT DERIVED, and the first rung is the trap:
+# theta_width 0.24 ("a little under half the 0.52 pair spacing") MERGES
+# neighbouring curls — the midpoint sits 1.1σ out, each contributes 0.3 of its
+# peak there, and staggered bands fill the rest: the field flattens to a near-
+# uniform inflation and the board is a smooth dome (measured 8% of the
+# concept's strand count, DOWN from the flutes' 23%). Parting needs the
+# midpoint ~2σ out: theta_width 0.13 against the 0.26 half-spacing. Same for
+# z: 0.07 against the 0.156 band gap. 12 bands at z_width 0.06 was also tried
+# and reads as regular QUILTING — the golden stagger goes quasi-periodic at
+# that density; 9 bands stays organic.
+CURL_SEEDS = curl_seeds(
+    pairs_per_row=6,
+    bands=9,
+    z_top=4.030,
+    z_bottom=2.780,
+    amplitude=0.100,
+)
+CURL_THETA_WIDTH = 0.13
+CURL_Z_WIDTH = 0.07
+# The trough threshold for the two-tone paint: below this field value a vertex
+# takes HAIR_DARK (the 2D web — see the paint note in build_curls). Laddered:
+# 0.026 left the dark web dominating the mass; 0.016 thins it to curl
+# separations. measured: the ladder's strand counts were 8% (0.24/0.11, no
+# paint) → 44% (paint at 0.026) → 45% (this rung), prominence 180%.
+CURL_TROUGH = 0.016
+
 # The fringe crosses just above the brows and frames the face down the
 # temples, symmetric (her sheet has no sweep). The side descent stops at
 # 3.15 — the faceSkin sample row sits at z ≈ 3.13 (62% of the hair-
@@ -270,39 +304,22 @@ def build_curls(builder: MeshBuilder, detail: int) -> None:
     rows = []
     for z, half_x, half_y, y_centre in ascending:
         ring = []
-        # Mirror-symmetric clumps (cos(6θ) is even under θ→π−θ), with a
-        # second, finer lobe so the shell reads as curls, not a swim cap.
+        # Mirror-symmetric curl blobs (the 2D field below), so the shell
+        # reads as curls, not a swim cap — and not a fluted column either.
         for column in range(segments):
             theta = 2 * pi * column / segments
-            # ★ AMPLITUDE VARIES DOWN THE SHELL, PHASE NEVER DOES.
-            # With constant amplitudes these two terms are z-INVARIANT: every
-            # groove runs the full height of the halo, so the mass reads as a
-            # fluted column rather than clumped curls. Measured on the board,
-            # the creases were 78.6% column-concentrated against the concept's
-            # 41.3%.
-            # The obvious fix — a per-row phase, as Grizz's afro uses — is
-            # forbidden here: `cos(kθ)` is even under θ→π−θ and a phase offset
-            # destroys that mirror, which is what blew Penny's faceAsymmetry to
-            # 7.14 against a tolerance of 4. Her lesson is the pattern: put the
-            # row variation in the AMPLITUDE. The lobes stay exactly where they
-            # are and simply wax and wane down the shell, which is what makes a
-            # clump instead of a flute.
-            # ⚠️ AND THE TWO FREQUENCIES MUST NOT BE HARMONICS.
-            # The first attempt varied the amplitudes of cos(6θ) and cos(12θ)
-            # per row and the creases did not move: 12 is 2x6, so the two terms
-            # share every minimum and the sum's grooves sit at the SAME theta
-            # whatever the amplitudes do. Measured, column-concentration stayed
-            # 80.6% against the concept's 37.2% — deeper and shallower flutes,
-            # still flutes.
-            # cos(6θ) and cos(10θ) are non-harmonic, so their sum's minima WANDER
-            # in theta as the two amplitudes trade, which is what puts a crease
-            # in a different column one row down. Both are still even in θ, so
-            # the mirror Penny's faceAsymmetry lesson demands is untouched — it
-            # is the PHASE that may never carry the row term, not the frequency.
-            row = len(rows)
-            a6 = 0.095 * (0.80 + 0.62 * cos(1.15 * row))
-            a10 = 0.062 * (0.80 + 0.62 * cos(1.90 * row + 1.0))
-            clump = 1.0 + a6 * cos(6 * theta) + a10 * cos(10 * theta)
+            # The clump is a 2D curl field — mirror-paired Gaussian blobs in
+            # (θ, z), never a cosine of θ. Every θ-only family (harmonic,
+            # non-harmonic, row-varying amplitudes) has its extrema pinned in
+            # θ and flutes; the identity and the four measured failures are in
+            # sculptlib/hair.py's docstring. Mirror symmetry (faceAsymmetry's
+            # concern) holds by construction: every seed emits at ±θ₀.
+            f = curl_field(
+                theta, z, CURL_SEEDS,
+                theta_width=CURL_THETA_WIDTH,
+                z_width=CURL_Z_WIDTH,
+            )
+            clump = 1.0 + f
             x = half_x * clump * cos(theta)
             y = y_centre + half_y * clump * sin(theta)
             if y < y_centre:
@@ -314,7 +331,16 @@ def build_curls(builder: MeshBuilder, detail: int) -> None:
                     y = max(y, (sf + 0.050) if sf > -9.0 else -0.170)
                 else:
                     y = max(y, (sf - 0.060) if sf > -9.0 else -0.310)
-            ring.append(builder.vertex((x, y, z), HAIR, "Head"))
+            # ★ THE READ IS THE PAINT, NOT THE RELIEF. The toon ramp quantises
+            # whatever the blobs displace, and the θ-only trough paint that was
+            # tried before drew full-height STRIPES because its trough test was
+            # a function of θ alone. The 2D field changes what a trough IS: the
+            # low-field region between staggered blobs is a connected web
+            # wandering in θ from band to band, so the dark tone draws curl
+            # SEPARATIONS around each lit blob top — a honeycomb, not stripes.
+            # Mirror-safe because f is even in θ by construction.
+            tone = HAIR if f > CURL_TROUGH else HAIR_DARK
+            ring.append(builder.vertex((x, y, z), tone, "Head"))
         rows.append(ring)
     bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
     top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.02), HAIR, "Head")
