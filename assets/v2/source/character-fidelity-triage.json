@@ -85,86 +85,6 @@
       "class": "no-defect-note",
       "excerpt": "NOT a defect, recorded so the next critic does not re-report it: the pale quad o"
     },
-    "calls_shot:c8aa1c6148ad": {
-      "char": "calls_shot",
-      "class": "proportions",
-      "excerpt": "Hair is a skin-tight liner, not a mass: HAIR_LEVELS max half_x 0.455 against a s"
-    },
-    "calls_shot:ccb3b88b2ef0": {
-      "char": "calls_shot",
-      "class": "hair-nyquist",
-      "excerpt": "The cos(6*theta) wave at segments=10 is 1.67 columns per lobe at 5% amplitude — "
-    },
-    "calls_shot:07664c276f57": {
-      "char": "calls_shot",
-      "class": "hair-nyquist",
-      "excerpt": "hair_window_z's piecewise step at |x|=0.42 sampled by 10 columns produces a ragg"
-    },
-    "calls_shot:887dbf294b1e": {
-      "char": "calls_shot",
-      "class": "proportions",
-      "excerpt": "Bare skull from a real gameplay camera: theo-runtime-swing.png cropped at 5x sho"
-    },
-    "calls_shot:1a683c6ad391": {
-      "char": "calls_shot",
-      "class": "proportions",
-      "excerpt": "Cap reads as a mushroom, not a ball cap: front-board cap 192px over a 144px head"
-    },
-    "calls_shot:21f5a6a15c9b": {
-      "char": "calls_shot",
-      "class": "proportions",
-      "excerpt": "The bill is a wafer: 8-10px section over a 58px projection on the profile board "
-    },
-    "calls_shot:e58171578717": {
-      "char": "calls_shot",
-      "class": "decal-not-form",
-      "excerpt": "The cap's cream team panel is a painted gradient: 32px of ramp = 18% of cap widt"
-    },
-    "calls_shot:d42d56fd472d": {
-      "char": "calls_shot",
-      "class": "face-atlas",
-      "excerpt": "Every one of the 16 face-atlas cells carries thick black brows and none render: "
-    },
-    "calls_shot:ecd422b4704a": {
-      "char": "calls_shot",
-      "class": "interpenetration",
-      "excerpt": "Cream geometry punches through the teal jacket back in swing_contact — five hard"
-    },
-    "calls_shot:5b6c46b44a24": {
-      "char": "calls_shot",
-      "class": "hems-cuffs",
-      "excerpt": "Shoe fails all three of its metrics (88.4/11.6 split vs 37.6/61.4, saturation 13"
-    },
-    "calls_shot:193d24e863ee": {
-      "char": "calls_shot",
-      "class": "butt-joins",
-      "excerpt": "No knee, no calf, no deltoid, no elbow: limbs are smooth tapered cones and the s"
-    },
-    "calls_shot:315a71b10f68": {
-      "char": "calls_shot",
-      "class": "ears",
-      "excerpt": "In profile the ear's front edge sits almost against the eye decal with no cheek "
-    },
-    "calls_shot:adcb992a8269": {
-      "char": "calls_shot",
-      "class": "proportions",
-      "excerpt": "The profile nose reads as a sharp triangular beak rather than the drawing's smal"
-    },
-    "calls_shot:01e4514d1c74": {
-      "char": "calls_shot",
-      "class": "evidence",
-      "excerpt": "Section 6 integration evidence is stale AND a proxy: theo-in-game-review.png was"
-    },
-    "calls_shot:f256db9eefca": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "Not defects, checked and cleared so nobody re-files them: nothing is severed (no"
-    },
-    "calls_shot:93fa0ace33a6": {
-      "char": "calls_shot",
-      "class": "evidence",
-      "excerpt": "The recorded 4/5s are unsupported by the evidence they cite: 'no bare-skull read"
-    },
     "wheelchair_ace:380cb72f3461": {
       "char": "wheelchair_ace",
       "class": "proportions",
@@ -568,7 +488,7 @@
     "chip:f576edb344db": {
       "char": "chip",
       "class": "ears",
-      "excerpt": "Ear is articulated per 3.10 — outer rim, an inner concha shadow and a lobe again"
+      "excerpt": "Ear is articulated per 3.10 \u2014 outer rim, an inner concha shadow and a lobe again"
     },
     "chip:d7badaa52997": {
       "char": "chip",
@@ -598,7 +518,7 @@
     "chip:f28b3257400e": {
       "char": "chip",
       "class": "no-defect-note",
-      "excerpt": "Not a defect — checked and cleared: the tan blob inside a green ring on the ches"
+      "excerpt": "Not a defect \u2014 checked and cleared: the tan blob inside a green ring on the ches"
     },
     "chip:0ba71fd32b11": {
       "char": "chip",
@@ -798,7 +718,7 @@
     "penny:70a02eb991a5": {
       "char": "penny",
       "class": "proportions",
-      "excerpt": "★ HIGHEST VALUE: pull the hair back off the face in profile and 3/4. The fringe "
+      "excerpt": "\u2605 HIGHEST VALUE: pull the hair back off the face in profile and 3/4. The fringe "
     },
     "penny:179de271e57b": {
       "char": "penny",
@@ -963,12 +883,12 @@
     "gizmo:2f7a35e54ca6": {
       "char": "gizmo",
       "class": "face-atlas",
-      "excerpt": "BLOCKER — the lenses are opaque and the eyes are never visible. build_glasses fi"
+      "excerpt": "BLOCKER \u2014 the lenses are opaque and the eyes are never visible. build_glasses fi"
     },
     "gizmo:1beba28d5848": {
       "char": "gizmo",
       "class": "proportions",
-      "excerpt": "BLOCKER — the two lens rings collide and there is no bridge. GLASSES_LENS_X 0.18"
+      "excerpt": "BLOCKER \u2014 the two lens rings collide and there is no bridge. GLASSES_LENS_X 0.18"
     },
     "gizmo:13d61e42fea8": {
       "char": "gizmo",
@@ -1003,7 +923,7 @@
     "gizmo:185c72838ee8": {
       "char": "gizmo",
       "class": "hair-nyquist",
-      "excerpt": "The back of the hair mass is visibly faceted — five or six straight chords with "
+      "excerpt": "The back of the hair mass is visibly faceted \u2014 five or six straight chords with "
     },
     "gizmo:275469cd3502": {
       "char": "gizmo",
@@ -1028,12 +948,12 @@
     "clover:fad0963df4a5": {
       "char": "clover",
       "class": "evidence",
-      "excerpt": "★ THE EVIDENCE I SCORED IS STALE AND THE SHOULDER VERDICT MUST BE RE-SHOT. Every"
+      "excerpt": "\u2605 THE EVIDENCE I SCORED IS STALE AND THE SHOULDER VERDICT MUST BE RE-SHOT. Every"
     },
     "clover:9f2a4b3f68c0": {
       "char": "clover",
       "class": "no-defect-note",
-      "excerpt": "★ CORRECTION TO THE BRIEFED PREMISE, verified in source. clover's SHOULDER_BLEND"
+      "excerpt": "\u2605 CORRECTION TO THE BRIEFED PREMISE, verified in source. clover's SHOULDER_BLEND"
     },
     "clover:2791b85c4bde": {
       "char": "clover",
@@ -1133,7 +1053,7 @@
     "boomer:fc25c523cfeb": {
       "char": "boomer",
       "class": "proportions",
-      "excerpt": "Lower body is at 52-57% of the concept's mass while the belly is at 78-83% — Boo"
+      "excerpt": "Lower body is at 52-57% of the concept's mass while the belly is at 78-83% \u2014 Boo"
     },
     "boomer:4bc2099841cc": {
       "char": "boomer",
@@ -1148,12 +1068,12 @@
     "boomer:22297974d204": {
       "char": "boomer",
       "class": "decal-not-form",
-      "excerpt": "No nose from the front — measured, the profile nose is 2.2x as proud and ~3.5x a"
+      "excerpt": "No nose from the front \u2014 measured, the profile nose is 2.2x as proud and ~3.5x a"
     },
     "boomer:85421f10f568": {
       "char": "boomer",
       "class": "hems-cuffs",
-      "excerpt": "Shoe has no laces — one dark V notch where the concept has cream flat laces cris"
+      "excerpt": "Shoe has no laces \u2014 one dark V notch where the concept has cream flat laces cris"
     },
     "boomer:aab06ca97921": {
       "char": "boomer",
@@ -1213,7 +1133,7 @@
     "sniffles:0d439ea5e396": {
       "char": "sniffles",
       "class": "decal-not-form",
-      "excerpt": "No nose front-on — only a shading crease. The profile nose is a thin flat wedge "
+      "excerpt": "No nose front-on \u2014 only a shading crease. The profile nose is a thin flat wedge "
     },
     "sniffles:4c3c99d7556d": {
       "char": "sniffles",
@@ -1258,7 +1178,7 @@
     "cricket:caa470658d0e": {
       "char": "cricket",
       "class": "severed",
-      "excerpt": "BLOCKER — the head is severed from the body. 5 empty rows (0.035ft) at 32.7% of "
+      "excerpt": "BLOCKER \u2014 the head is severed from the body. 5 empty rows (0.035ft) at 32.7% of "
     },
     "cricket:70061b14fe62": {
       "char": "cricket",
@@ -1358,52 +1278,52 @@
     "peaches:9db124459607": {
       "char": "peaches",
       "class": "decal-not-form",
-      "excerpt": "3.5 BLOCKER — visible decal-island seam on the face. A lighter, flat-shaded poly"
+      "excerpt": "3.5 BLOCKER \u2014 visible decal-island seam on the face. A lighter, flat-shaded poly"
     },
     "peaches:76e3f05fb673": {
       "char": "peaches",
       "class": "butt-joins",
-      "excerpt": "3.11 BLOCKER — the deltoid dome exists in the script but does not fair. Cropped "
+      "excerpt": "3.11 BLOCKER \u2014 the deltoid dome exists in the script but does not fair. Cropped "
     },
     "peaches:5fcfad2c5e49": {
       "char": "peaches",
       "class": "proportions",
-      "excerpt": "3.8 — the temple wisps still cross the ears in the delivered render. In peaches-"
+      "excerpt": "3.8 \u2014 the temple wisps still cross the ears in the delivered render. In peaches-"
     },
     "peaches:df454e750e8e": {
       "char": "peaches",
       "class": "hair-nyquist",
-      "excerpt": "3.3 — the bun is an acorn, not a coil. measure:strands returns 1% of the concept"
+      "excerpt": "3.3 \u2014 the bun is an acorn, not a coil. measure:strands returns 1% of the concept"
     },
     "peaches:73c8238e0a0d": {
       "char": "peaches",
       "class": "hems-cuffs",
-      "excerpt": "3.4 — the dress bodice has no straps, no scoop neck and no armhole. The concept "
+      "excerpt": "3.4 \u2014 the dress bodice has no straps, no scoop neck and no armhole. The concept "
     },
     "peaches:03161851c195": {
       "char": "peaches",
       "class": "decal-not-form",
-      "excerpt": "3.4 — the leaf appliqué is a smooth featureless TRIM ellipsoid (radii 0.070, 0.0"
+      "excerpt": "3.4 \u2014 the leaf appliqu\u00e9 is a smooth featureless TRIM ellipsoid (radii 0.070, 0.0"
     },
     "peaches:59cab38a2141": {
       "char": "peaches",
       "class": "material-light",
-      "excerpt": "6b.2 — the sneaker reads greyish-cream, not peach. Second tone 63.0% of the band"
+      "excerpt": "6b.2 \u2014 the sneaker reads greyish-cream, not peach. Second tone 63.0% of the band"
     },
     "peaches:5a993d4df656": {
       "char": "peaches",
       "class": "stance",
-      "excerpt": "6b.4 — stance, not tolerance. Ankle daylight measures 34.0 against the concept's"
+      "excerpt": "6b.4 \u2014 stance, not tolerance. Ankle daylight measures 34.0 against the concept's"
     },
     "peaches:9d58d3b7a8a0": {
       "char": "peaches",
       "class": "butt-joins",
-      "excerpt": "3.2 — the neck is a long unmodulated skin cylinder and the leg from hem to sock "
+      "excerpt": "3.2 \u2014 the neck is a long unmodulated skin cylinder and the leg from hem to sock "
     },
     "peaches:d9115149abaa": {
       "char": "peaches",
       "class": "interpenetration",
-      "excerpt": "Minor artifact, cropped before reporting — a faint dashed trail of ~4 dark olive"
+      "excerpt": "Minor artifact, cropped before reporting \u2014 a faint dashed trail of ~4 dark olive"
     },
     "peaches:8bfbd34b36a5": {
       "char": "peaches",
@@ -1513,22 +1433,22 @@
     "grizz:a94ce8cd60fe": {
       "char": "grizz",
       "class": "proportions",
-      "excerpt": "THE AFRO IS STILL A FLAT BOWL, NOT A BALL — unchanged this round and re-measured"
+      "excerpt": "THE AFRO IS STILL A FLAT BOWL, NOT A BALL \u2014 unchanged this round and re-measured"
     },
     "grizz:1292a0c6f903": {
       "char": "grizz",
       "class": "proportions",
-      "excerpt": "THE NAPE IS BARE UNDER THE AFRO — new, profile evidence. On grizz-profile-apose-"
+      "excerpt": "THE NAPE IS BARE UNDER THE AFRO \u2014 new, profile evidence. On grizz-profile-apose-"
     },
     "grizz:583cd53be5a0": {
       "char": "grizz",
       "class": "ears",
-      "excerpt": "EARS ARE ABSENT AND THE CONCEPT DRAWS TWO BIG ONES — carried, grep re-confirmed:"
+      "excerpt": "EARS ARE ABSENT AND THE CONCEPT DRAWS TWO BIG ONES \u2014 carried, grep re-confirmed:"
     },
     "grizz:20a6dc2308b9": {
       "char": "grizz",
       "class": "face-atlas",
-      "excerpt": "THE NEUTRAL FACE STILL GLARES INSTEAD OF THE CONCEPT'S BORED DEADPAN — moderated"
+      "excerpt": "THE NEUTRAL FACE STILL GLARES INSTEAD OF THE CONCEPT'S BORED DEADPAN \u2014 moderated"
     },
     "grizz:16fd9fc57b6e": {
       "char": "grizz",
@@ -1538,7 +1458,7 @@
     "grizz:e5aa2e0f9d4e": {
       "char": "grizz",
       "class": "decal-not-form",
-      "excerpt": "THE NOSE HAS NO FRONT READ — carried. It exists and breaks the profile, but the "
+      "excerpt": "THE NOSE HAS NO FRONT READ \u2014 carried. It exists and breaks the profile, but the "
     },
     "grizz:3a8a26ac7e8a": {
       "char": "grizz",
@@ -1553,22 +1473,22 @@
     "grizz:565e6affd5a3": {
       "char": "grizz",
       "class": "proportions",
-      "excerpt": "THE CHEST POCKET IS ON THE WRONG BREAST — new, misbuilt not missing. Both delive"
+      "excerpt": "THE CHEST POCKET IS ON THE WRONG BREAST \u2014 new, misbuilt not missing. Both delive"
     },
     "grizz:8170dcd59325": {
       "char": "grizz",
       "class": "decal-not-form",
-      "excerpt": "THE CHEST POCKET STILL READS AS AN EMBOSSED DECAL — moderated carry. The script "
+      "excerpt": "THE CHEST POCKET STILL READS AS AN EMBOSSED DECAL \u2014 moderated carry. The script "
     },
     "grizz:b7961419c5d7": {
       "char": "grizz",
       "class": "material-light",
-      "excerpt": "SKIN IS NOW ONLY SLIGHTLY LIGHT — re-measured, prior '~35% too light' no longer "
+      "excerpt": "SKIN IS NOW ONLY SLIGHTLY LIGHT \u2014 re-measured, prior '~35% too light' no longer "
     },
     "grizz:5977490b59b1": {
       "char": "grizz",
       "class": "material-light",
-      "excerpt": "THE SKULL AND AFRO ARE VISIBLY FACETED AT RUNTIME — carried, re-verified this ro"
+      "excerpt": "THE SKULL AND AFRO ARE VISIBLY FACETED AT RUNTIME \u2014 carried, re-verified this ro"
     },
     "grizz:b096529f50ff": {
       "char": "grizz",
@@ -1603,17 +1523,17 @@
     "moose:fd870397efcc": {
       "char": "moose",
       "class": "ears",
-      "excerpt": "Carried, unchanged: EAR_SPEC radii (0.1700, 0.1650) in sculpt-moose-source.py — "
+      "excerpt": "Carried, unchanged: EAR_SPEC radii (0.1700, 0.1650) in sculpt-moose-source.py \u2014 "
     },
     "moose:7156c2485852": {
       "char": "moose",
       "class": "ears",
-      "excerpt": "Carried, unchanged: ear construction is thin for rubric 3.10 — helix rim only al"
+      "excerpt": "Carried, unchanged: ear construction is thin for rubric 3.10 \u2014 helix rim only al"
     },
     "moose:add31b67eabb": {
       "char": "moose",
       "class": "decal-not-form",
-      "excerpt": "Carried, unchanged: no nose reads from any front camera — front board, hero, and"
+      "excerpt": "Carried, unchanged: no nose reads from any front camera \u2014 front board, hero, and"
     },
     "moose:77e664e26e86": {
       "char": "moose",
@@ -1678,32 +1598,32 @@
     "rocket:8750126f83c5": {
       "char": "rocket",
       "class": "no-defect-note",
-      "excerpt": "CLEARED — the shipped severance and the crotch notch are both measured closed. A"
+      "excerpt": "CLEARED \u2014 the shipped severance and the crotch notch are both measured closed. A"
     },
     "rocket:a3a60363b5cc": {
       "char": "rocket",
       "class": "no-defect-note",
-      "excerpt": "CLEARED — the 'nappy flap' shorts read is gone: at the runtime hero camera the s"
+      "excerpt": "CLEARED \u2014 the 'nappy flap' shorts read is gone: at the runtime hero camera the s"
     },
     "rocket:7ca7b447acf1": {
       "char": "rocket",
       "class": "no-defect-note",
-      "excerpt": "CLEARED — 'hair swallows the forehead' no longer holds: the hairline sits clear "
+      "excerpt": "CLEARED \u2014 'hair swallows the forehead' no longer holds: the hairline sits clear "
     },
     "rocket:f277602b83ba": {
       "char": "rocket",
       "class": "no-defect-note",
-      "excerpt": "CLEARED — the behind-view 'undifferentiated cone' no longer holds: from the batt"
+      "excerpt": "CLEARED \u2014 the behind-view 'undifferentiated cone' no longer holds: from the batt"
     },
     "rocket:55fd1394387d": {
       "char": "rocket",
       "class": "no-defect-note",
-      "excerpt": "CLEARED — the dotted decal-island seam down brow/cheek is gone from the runtime "
+      "excerpt": "CLEARED \u2014 the dotted decal-island seam down brow/cheek is gone from the runtime "
     },
     "rocket:4f0f57fcd7fc": {
       "char": "rocket",
       "class": "no-defect-note",
-      "excerpt": "CLEARED — the flat-parallelogram eyebrows no longer hold: the front board shows "
+      "excerpt": "CLEARED \u2014 the flat-parallelogram eyebrows no longer hold: the front board shows "
     },
     "rocket:47b31b7e241e": {
       "char": "rocket",
@@ -1723,17 +1643,17 @@
     "rocket:174505ae3b30": {
       "char": "rocket",
       "class": "hair-nyquist",
-      "excerpt": "NEW — the fringe edge takes a hard angular chip at the right temple, and the too"
+      "excerpt": "NEW \u2014 the fringe edge takes a hard angular chip at the right temple, and the too"
     },
     "rocket:c1aaba63ffaf": {
       "char": "rocket",
       "class": "butt-joins",
-      "excerpt": "NEW — from the batting camera the crest/tail junction opens a thin seam through "
+      "excerpt": "NEW \u2014 from the batting camera the crest/tail junction opens a thin seam through "
     },
     "rocket:1d7d8edf87fb": {
       "char": "rocket",
       "class": "stance",
-      "excerpt": "The tail hangs dead vertical through the run still with no trail or whip — uncha"
+      "excerpt": "The tail hangs dead vertical through the run still with no trail or whip \u2014 uncha"
     },
     "rocket:e8b78a34243c": {
       "char": "rocket",
@@ -1748,7 +1668,7 @@
     "rocket:736e31550959": {
       "char": "rocket",
       "class": "butt-joins",
-      "excerpt": "Sleeve-to-forearm is no longer a naked step — the orange piping hem ring is prou"
+      "excerpt": "Sleeve-to-forearm is no longer a naked step \u2014 the orange piping hem ring is prou"
     },
     "rocket:8f1eecef6aa1": {
       "char": "rocket",
@@ -1758,7 +1678,7 @@
     "rocket:767863384490": {
       "char": "rocket",
       "class": "proportions",
-      "excerpt": "From behind, the orange tie itself is nearly occluded by the tail fan — a sliver"
+      "excerpt": "From behind, the orange tie itself is nearly occluded by the tail fan \u2014 a sliver"
     },
     "rocket:df366df06325": {
       "char": "rocket",
@@ -1768,7 +1688,7 @@
     "smokey:4e7f353cc030": {
       "char": "smokey",
       "class": "sheared-edges",
-      "excerpt": "Shoulders, REVISED: the SHOULDER_BLEND exact-match bug is FIXED in code — sculpt"
+      "excerpt": "Shoulders, REVISED: the SHOULDER_BLEND exact-match bug is FIXED in code \u2014 sculpt"
     },
     "smokey:a8dae7345d10": {
       "char": "smokey",
@@ -1788,12 +1708,12 @@
     "smokey:9a46d0dd4589": {
       "char": "smokey",
       "class": "proportions",
-      "excerpt": "NEW — profile hair silhouette reads bowl cut, not high fade: on smokey-profile-r"
+      "excerpt": "NEW \u2014 profile hair silhouette reads bowl cut, not high fade: on smokey-profile-r"
     },
     "smokey:af42b152ec4c": {
       "char": "smokey",
       "class": "proportions",
-      "excerpt": "NEW — neck roughly twice the concept's: front board chin-to-collar is ~40px on a"
+      "excerpt": "NEW \u2014 neck roughly twice the concept's: front board chin-to-collar is ~40px on a"
     },
     "smokey:037cd47b836d": {
       "char": "smokey",
@@ -1813,27 +1733,27 @@
     "smokey:74b552ef0a59": {
       "char": "smokey",
       "class": "no-defect-note",
-      "excerpt": "CLEARED — shorts cuff (drop the prior 'bare tapered tube' finding): this round's"
+      "excerpt": "CLEARED \u2014 shorts cuff (drop the prior 'bare tapered tube' finding): this round's"
     },
     "smokey:915ccc84f624": {
       "char": "smokey",
       "class": "no-defect-note",
-      "excerpt": "CLEARED — decal-island seam not reproducible on fresh evidence (do not re-file w"
+      "excerpt": "CLEARED \u2014 decal-island seam not reproducible on fresh evidence (do not re-file w"
     },
     "smokey:716a142bdc25": {
       "char": "smokey",
       "class": "no-defect-note",
-      "excerpt": "CLEARED — ear-skull notch: fresh front board at 8x shows the ear meeting the sku"
+      "excerpt": "CLEARED \u2014 ear-skull notch: fresh front board at 8x shows the ear meeting the sku"
     },
     "smokey:6470042db141": {
       "char": "smokey",
       "class": "no-defect-note",
-      "excerpt": "CLEARED — swing bat: smokey-runtime-swing.png now shows the bat in both hands at"
+      "excerpt": "CLEARED \u2014 swing bat: smokey-runtime-swing.png now shows the bat in both hands at"
     },
     "smokey:79a7620f2b2c": {
       "char": "smokey",
       "class": "no-defect-note",
-      "excerpt": "CLEARED — cocked eyebrow, measured clean: measure:fidelity reports face asymmetr"
+      "excerpt": "CLEARED \u2014 cocked eyebrow, measured clean: measure:fidelity reports face asymmetr"
     },
     "smokey:546b8483029d": {
       "char": "smokey",
@@ -1928,7 +1848,7 @@
     "flash:b9097326bea5": {
       "char": "flash",
       "class": "ears",
-      "excerpt": "EAR_SPEC/build_ear are present and the ears ARE constructed — outer rim, inner c"
+      "excerpt": "EAR_SPEC/build_ear are present and the ears ARE constructed \u2014 outer rim, inner c"
     },
     "flash:372244bada5c": {
       "char": "flash",
@@ -1938,17 +1858,17 @@
     "flash:10b41cb4c245": {
       "char": "flash",
       "class": "no-defect-note",
-      "excerpt": "CLEARED this round — sleeves: the prior 'sleeves lose the tee's stripes entirely"
+      "excerpt": "CLEARED this round \u2014 sleeves: the prior 'sleeves lose the tee's stripes entirely"
     },
     "flash:0b62abcac47d": {
       "char": "flash",
       "class": "no-defect-note",
-      "excerpt": "CLEARED this round — collar: the prior 'lowest two torso stripe transitions smea"
+      "excerpt": "CLEARED this round \u2014 collar: the prior 'lowest two torso stripe transitions smea"
     },
     "flash:2a299253d2e2": {
       "char": "flash",
       "class": "no-defect-note",
-      "excerpt": "CLEARED this round — the stale-scores finding: character-fidelity.json now recor"
+      "excerpt": "CLEARED this round \u2014 the stale-scores finding: character-fidelity.json now recor"
     },
     "diva:e75edc2002b2": {
       "char": "diva",
@@ -2023,7 +1943,7 @@
     "turbo:4c7a5cfe5817": {
       "char": "turbo",
       "class": "face-atlas",
-      "excerpt": "BROWS LAND ON THE EYES, NOT UNDER THE HAIRLINE (new — replaces the no-eyebrows f"
+      "excerpt": "BROWS LAND ON THE EYES, NOT UNDER THE HAIRLINE (new \u2014 replaces the no-eyebrows f"
     },
     "turbo:313d3f555694": {
       "char": "turbo",
@@ -2053,7 +1973,7 @@
     "turbo:a17ba8be9088": {
       "char": "turbo",
       "class": "stance",
-      "excerpt": "STANCE STILL TOED OUT (visual finding only — the 42.9% ankle-daylight OFF is the"
+      "excerpt": "STANCE STILL TOED OUT (visual finding only \u2014 the 42.9% ankle-daylight OFF is the"
     },
     "turbo:03fb1f3917cb": {
       "char": "turbo",
@@ -2113,12 +2033,12 @@
     "dex:a2ab29e92c10": {
       "char": "dex",
       "class": "proportions",
-      "excerpt": "BLOCKER, 3.1/3.6: the cap bill has no front silhouette — verified unchanged in s"
+      "excerpt": "BLOCKER, 3.1/3.6: the cap bill has no front silhouette \u2014 verified unchanged in s"
     },
     "dex:5a0e9ed84408": {
       "char": "dex",
       "class": "proportions",
-      "excerpt": "BLOCKER, 3.1: the bill is a flat blade in profile — the fresh profile board show"
+      "excerpt": "BLOCKER, 3.1: the bill is a flat blade in profile \u2014 the fresh profile board show"
     },
     "dex:c597cd651396": {
       "char": "dex",
@@ -2138,7 +2058,7 @@
     "dex:db4e6f4c587b": {
       "char": "dex",
       "class": "decal-not-form",
-      "excerpt": "3.5 (revised): the nose is no longer absent — it nicks the profile with a small "
+      "excerpt": "3.5 (revised): the nose is no longer absent \u2014 it nicks the profile with a small "
     },
     "dex:eb4951422654": {
       "char": "dex",
@@ -2148,7 +2068,7 @@
     "dex:ab13a6bf3989": {
       "char": "dex",
       "class": "material-light",
-      "excerpt": "2.2 (revised): the hoodie body still renders light on boards — board hoodie/thig"
+      "excerpt": "2.2 (revised): the hoodie body still renders light on boards \u2014 board hoodie/thig"
     },
     "dex:c4bc2428a439": {
       "char": "dex",
@@ -2158,7 +2078,7 @@
     "dex:571e8040558d": {
       "char": "dex",
       "class": "material-light",
-      "excerpt": "3.4 minor (new): the gold stitching reads hotter than the sheet — STITCH C08A48 "
+      "excerpt": "3.4 minor (new): the gold stitching reads hotter than the sheet \u2014 STITCH C08A48 "
     },
     "dex:ba58caabfe5c": {
       "char": "dex",
@@ -2193,12 +2113,72 @@
     "dex:7eaff7d8f5ab": {
       "char": "dex",
       "class": "no-defect-note",
-      "excerpt": "SWEEP (resolved, residual): the identical-leg-table class finding was paid — scr"
+      "excerpt": "SWEEP (resolved, residual): the identical-leg-table class finding was paid \u2014 scr"
     },
     "dex:c528619ba164": {
       "char": "dex",
       "class": "no-defect-note",
-      "excerpt": "CREDIT (carried): the shoes remain the most honestly constructed garment — cream"
+      "excerpt": "CREDIT (carried): the shoes remain the most honestly constructed garment \u2014 cream"
+    },
+    "calls_shot:5457122fe4d9": {
+      "char": "calls_shot",
+      "class": "proportions",
+      "excerpt": "Cap reads as a mushroom, not a ball cap: front-board cap 192px over a 143px head"
+    },
+    "calls_shot:87e4a12d4438": {
+      "char": "calls_shot",
+      "class": "proportions",
+      "excerpt": "The bill is a wafer: re-measured at 9-10px section (4.0-4.4% of the 227px head) "
+    },
+    "calls_shot:f34a3a847342": {
+      "char": "calls_shot",
+      "class": "40px-read",
+      "excerpt": "The cap's cream team panel no longer ramps but is still far too big: the painted"
+    },
+    "calls_shot:4c2ba0d69730": {
+      "char": "calls_shot",
+      "class": "hems-cuffs",
+      "excerpt": "Cream geometry punches through the teal jacket back in swing_contact \u2014 re-verifi"
+    },
+    "calls_shot:27c7c442b819": {
+      "char": "calls_shot",
+      "class": "decal-not-form",
+      "excerpt": "Shoe fails all three of its metrics (88.4/11.6 split vs 37.6/61.4, saturation 13"
+    },
+    "calls_shot:a1215eceb960": {
+      "char": "calls_shot",
+      "class": "hems-cuffs",
+      "excerpt": "No knee, no calf, no deltoid, no elbow: limbs are smooth tapered cones and the s"
+    },
+    "calls_shot:e1f138191011": {
+      "char": "calls_shot",
+      "class": "ears",
+      "excerpt": "The ear is now buried in profile: the new hair shell (half_x 0.492 at z 3.240) s"
+    },
+    "calls_shot:40dac53ac6b4": {
+      "char": "calls_shot",
+      "class": "other",
+      "excerpt": "The profile nose still reads as a pointed wedge rather than the drawing's small "
+    },
+    "calls_shot:912b11b1f193": {
+      "char": "calls_shot",
+      "class": "other",
+      "excerpt": "The cap's navy underbrim shows as jagged triangular wedges between the fringe tu"
+    },
+    "calls_shot:4d497704e928": {
+      "char": "calls_shot",
+      "class": "hair-nyquist",
+      "excerpt": "The profile hair silhouette is hard-faceted: five HAIR_LEVELS rows and flat shad"
+    },
+    "calls_shot:b428fe02b9a6": {
+      "char": "calls_shot",
+      "class": "other",
+      "excerpt": "Section 6 integration evidence is stale AND a proxy: theo-in-game-review.png was"
+    },
+    "calls_shot:160004433cb6": {
+      "char": "calls_shot",
+      "class": "no-defect-note",
+      "excerpt": "Not defects, checked and cleared so nobody re-files them: the old hairMass-1 bas"
     }
   }
 }

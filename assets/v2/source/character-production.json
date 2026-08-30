@@ -33,11 +33,11 @@
     },
     "calls_shot": {
       "source": "theo-pilot.blend",
-      "sourceSha256": "e3659c8bf8d805711cbef959f98ab6b8b31d14e40a9d37fc258075790e440588",
+      "sourceSha256": "e43aacd5721d72dfef25e8598a93fbeeb9fbd0848d2731cb37f87cf66b86ee0c",
       "concept": "theo-turnaround.png",
       "conceptSha256": "f93d976869f437a92be482302db4124c064d33b708bb22a7e16fcfc51e403e66",
       "output": "kid_calls_shot.glb",
-      "outputSha256": "8649725277cd9665458edb9572647cd0814f5625c3677b6a3982aa9e6faeb6fb",
+      "outputSha256": "a4f3ec5825702b0fdca1bac726c69cde8c75871ad497f5aab454a5002455e391",
       "definingTraits": [
         "oversized cap",
         "broad tapered face",

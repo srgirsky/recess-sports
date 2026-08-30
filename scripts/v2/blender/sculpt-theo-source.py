@@ -359,10 +359,18 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
             y = y_centre + half_y * clump * sin(theta)
             if y < y_centre:
                 sf = skull_front_y(x, z)
+                # The ear band: the widened shell (0.478-0.492) buried his
+                # ears (outer ~0.46) in profile — the critic's regression on
+                # this branch. Diva's lesson applies laterally-eaten features
+                # generally: the sheet hangs hair BEHIND the ear in depth,
+                # so the front-half wall starts behind it (y ≥ -0.02) across
+                # the ear's own z span; the flip tubes still arc over the
+                # ear tops, which is what the sheet draws.
+                in_ear_band = 3.050 < z < 3.400
                 if HAIR_OPEN_BOTTOM < z < hair_window_z(x):
-                    y = max(y, (sf + 0.045) if sf > -9.0 else -0.150)
+                    y = max(y, (sf + 0.045) if sf > -9.0 else (-0.020 if in_ear_band else -0.150))
                 else:
-                    y = max(y, (sf - 0.050) if sf > -9.0 else -0.260)
+                    y = max(y, (sf - 0.050) if sf > -9.0 else (-0.020 if in_ear_band else -0.260))
             tone = HAIR if f > CURL_TROUGH else HAIR_DARK
             ring.append(builder.vertex((x, y, z), tone, "Head"))
         rows.append(ring)
