@@ -376,14 +376,29 @@ def inseam_half(z: float) -> float:
 
 # (z, half-width, depth factor, colour, bone) — strictly descending in z.
 # The pair-outer extents below are the sheet's own silhouette.
+#
+# The leg opening is a TURNED-UP CUFF on the sheet, not a raw taper: the tube
+# bulges to its widest just above an ink seam crease (front-view ink dips at
+# z 0.997-0.970 across the leg, deepest at the inseam), the cuff band below
+# the crease sits slightly INSET from that bulge, and the bottom edge lands
+# at z 0.90 ± 0.01 with the under-hem shadow painted straight onto the thigh.
+# Built as Penny's waistband lesson applied to a cuff: the crease is a
+# PANTS_DARK ring between two short gaps so the shadow line stays a line, the
+# cuff's bottom lip stands 0.010 proud of the cuff face so the rolled edge
+# overhangs, and the turned-under PANTS_DARK lip keeps the under-hem shadow.
 # measured: front z=1.10 halfWidth=0.5966 tol=0.06
+# measured: front z=1.00 halfWidth=0.5729 tol=0.06
+# measured: front z=0.945 halfWidth=0.5356 tol=0.06
 # measured: front z=0.65 halfWidth=0.5288 tol=0.06
 LEG_STATIONS = [
     (1.440, 0.235, 1.08, PANTS, "UpLeg"),
     (1.280, 0.230, 1.06, PANTS, "UpLeg"),
     (1.120, 0.226, 1.04, PANTS, "UpLeg"),
-    (0.960, 0.228, 1.02, PANTS, "UpLeg"),
-    (SHORTS_HEM_Z, 0.222, 1.01, PANTS_DARK, "Leg"), # hem inner lip
+    (0.985, 0.228, 1.02, PANTS, "UpLeg"),           # tube bulge above the seam
+    (0.970, 0.220, 1.02, PANTS_DARK, "UpLeg"),      # cuff seam crease — the ink line
+    (0.945, 0.224, 1.01, PANTS, "UpLeg"),           # cuff face, inset from the bulge
+    (0.895, 0.234, 1.01, PANTS, "Leg"),             # cuff bottom lip, proud
+    (SHORTS_HEM_Z, 0.190, 1.00, PANTS_DARK, "Leg"), # hem inner lip, turned under
     (0.850, 0.152, 1.00, SKIN, "Leg"),              # chunky bare leg
     (0.740, 0.146, 1.01, SKIN, "Leg"),              # the calf
     (0.640, 0.138, 1.00, SKIN, "Leg"),
