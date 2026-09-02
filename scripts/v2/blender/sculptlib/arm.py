@@ -87,6 +87,15 @@ class ArmSpec:
     # 0.0 keeps the single cap vertex (a frozen kid's geometry stays put);
     # stated by every script, never defaulted — sculpt-sharing.lint says why.
     root_ring: float
+    # ★ AN ELBOW IS A CREASE AND A BULGE, NOT A TAPER. Eight critics read the
+    # arm as "a smooth tapered cone" or "a hard kink where the forearm exits
+    # the sleeve": every table runs straight through `ARM_ELBOW_X` with radii
+    # that only shrink. This is the joint's form as a fraction of the local
+    # radius: a ring 0.03 inboard of the elbow pinched by half of it and a ring
+    # at the elbow swollen by all of it — the crease and the knob a bent arm
+    # shows in swing and run. Interpolated off the table, so the tables stay
+    # the trace. 0.0 keeps the taper; stated by every script.
+    elbow: float
 
 
 def shoulder_blend_at(table: dict[float, float], x: float) -> float | None:
@@ -129,6 +138,38 @@ def shoulder_blend_at(table: dict[float, float], x: float) -> float | None:
     return table[stops[-1]]
 
 
+def _with_elbow(stations, amount: float):
+    """The table with an elbow crease and knob folded in at `ARM_ELBOW_X`."""
+    from .rig import ARM_ELBOW_X
+
+    def at(x):
+        # radius, colour and bone interpolated/held from the table at x.
+        prev = None
+        for st in stations:
+            if st[0] >= x:
+                if prev is None:
+                    return st
+                t = (x - prev[0]) / (st[0] - prev[0])
+                return (x, prev[1] + (st[1] - prev[1]) * t, prev[2], prev[3] if x < ARM_ELBOW_X else st[3])
+            prev = st
+        return stations[-1]
+
+    out = []
+    crease_x, knob_x = ARM_ELBOW_X - 0.030, ARM_ELBOW_X + 0.005
+    wanted = [(crease_x, 1.0 - amount * 0.5), (knob_x, 1.0 + amount)]
+    for x, r, colour, bone in stations:
+        for wx, f in list(wanted):
+            if abs(x - wx) < 0.012:
+                # A station already sits here: reshape it instead of doubling.
+                r = r * f
+                wanted.remove((wx, f))
+        out.append((x, r, colour, bone))
+    for wx, f in wanted:
+        _, r, colour, bone = at(wx)
+        out.append((wx, r * f, colour, bone))
+    return sorted(out, key=lambda st: st[0])
+
+
 def build_arm(
     builder: MeshBuilder,
     side: int,
@@ -155,6 +196,8 @@ def build_arm(
     # class as the leg table's non-monotonic z further down this file. Raising
     # SLEEVE_HEM_X past the elbow re-created it instantly, because the cuff
     # stations are written off SLEEVE_HEM_X and the elbow rings were literals.
+    if spec.elbow > 0.0 and detail >= 2:
+        stations = _with_elbow(stations, spec.elbow)
     for lower, upper in zip(stations, stations[1:]):
         assert upper[0] > lower[0], (
             f"arm stations must ascend in x: {lower[0]:.3f} is followed by {upper[0]:.3f}. "

@@ -510,6 +510,7 @@ PEACHES_ARM = ArmSpec(
     # body-weighted root ring at the cap turns the cap fan into a strip that
     # stretches with the arm — see ArmSpec.root_ring.
     root_ring=0.92,
+    elbow=0.0,
     ring_squash=0.95,
     hand=HandSpec(
         tip_x=1.546,

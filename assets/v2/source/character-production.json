@@ -33,11 +33,11 @@
     },
     "calls_shot": {
       "source": "theo-pilot.blend",
-      "sourceSha256": "e43aacd5721d72dfef25e8598a93fbeeb9fbd0848d2731cb37f87cf66b86ee0c",
+      "sourceSha256": "f61d11bb21e7c6a0102fb211028830b9ec09106fa2d79cd923c8059e2d31182a",
       "concept": "theo-turnaround.png",
       "conceptSha256": "f93d976869f437a92be482302db4124c064d33b708bb22a7e16fcfc51e403e66",
       "output": "kid_calls_shot.glb",
-      "outputSha256": "a4f3ec5825702b0fdca1bac726c69cde8c75871ad497f5aab454a5002455e391",
+      "outputSha256": "e00ec45ec38a0ef73a17f687137563ba8faa81e10fd4ea353ef92efade46e609",
       "definingTraits": [
         "oversized cap",
         "broad tapered face",
@@ -63,11 +63,11 @@
     },
     "big_lou": {
       "source": "big-lou-pilot.blend",
-      "sourceSha256": "ab9513b84d8ec054b89e2b5b96c620cf4ced0928aa1c8d9aa9fef3025bba3894",
+      "sourceSha256": "6d5e1d7a045e59cdd5972cc8fdbe71f16d30af8225668ee215de53d379e6785a",
       "concept": "big-lou-turnaround.png",
       "conceptSha256": "8e613340d5955ce7af1a8c9b2ac381514c0c7b577129202d8843bb35e13d2a45",
       "output": "kid_big_lou.glb",
-      "outputSha256": "2a9d8d102ef5c9c691f65b5d90cc94ca4e94ea2cec5c6cf1db306da38af96921",
+      "outputSha256": "b7ece4001f8c7be416ab03bea1115ea575597a95ae00ef328cdefbaa1720f066",
       "definingTraits": [
         "gentle broad silhouette",
         "soft rounded face",
@@ -108,11 +108,11 @@
     },
     "sprout": {
       "source": "sprout-pilot.blend",
-      "sourceSha256": "35f84d90d27a0cc60a99fbe4196b966c1d60dcfae3fcd894006eeffe5cf636f7",
+      "sourceSha256": "6926f29859b86e6f0b2736e2a827f7a4e1166e380fa5a882b6a5d938d265aa96",
       "concept": "sprout-turnaround.png",
       "conceptSha256": "b734a39041e715ae23861523b44b118cf5b18919ba12533b241058591888f995",
       "output": "kid_sprout.glb",
-      "outputSha256": "015c54a05ee51b3bcc92d80e0f8984c25c99fbc3a93e9a95340dceb108ee6f18",
+      "outputSha256": "30a5325fa2329398765eca85beaab8b6ce0cc94165b282006a16a29cc56df1b0",
       "definingTraits": [
         "denim bib overalls",
         "big round wonder eyes",

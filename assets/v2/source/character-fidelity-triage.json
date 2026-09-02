@@ -85,156 +85,6 @@
       "class": "no-defect-note",
       "excerpt": "NOT a defect, recorded so the next critic does not re-report it: the pale quad o"
     },
-    "calls_shot:5457122fe4d9": {
-      "char": "calls_shot",
-      "class": "proportions",
-      "excerpt": "Cap reads as a mushroom, not a ball cap: front-board cap 192px over a 143px head"
-    },
-    "calls_shot:87e4a12d4438": {
-      "char": "calls_shot",
-      "class": "proportions",
-      "excerpt": "The bill is a wafer: re-measured at 9-10px section (4.0-4.4% of the 227px head) "
-    },
-    "calls_shot:f34a3a847342": {
-      "char": "calls_shot",
-      "class": "40px-read",
-      "excerpt": "The cap's cream team panel no longer ramps but is still far too big: the painted"
-    },
-    "calls_shot:4c2ba0d69730": {
-      "char": "calls_shot",
-      "class": "hems-cuffs",
-      "excerpt": "Cream geometry punches through the teal jacket back in swing_contact — re-verifi"
-    },
-    "calls_shot:27c7c442b819": {
-      "char": "calls_shot",
-      "class": "decal-not-form",
-      "excerpt": "Shoe fails all three of its metrics (88.4/11.6 split vs 37.6/61.4, saturation 13"
-    },
-    "calls_shot:a1215eceb960": {
-      "char": "calls_shot",
-      "class": "hems-cuffs",
-      "excerpt": "No knee, no calf, no deltoid, no elbow: limbs are smooth tapered cones and the s"
-    },
-    "calls_shot:e1f138191011": {
-      "char": "calls_shot",
-      "class": "ears",
-      "excerpt": "The ear is now buried in profile: the new hair shell (half_x 0.492 at z 3.240) s"
-    },
-    "calls_shot:40dac53ac6b4": {
-      "char": "calls_shot",
-      "class": "other",
-      "excerpt": "The profile nose still reads as a pointed wedge rather than the drawing's small "
-    },
-    "calls_shot:912b11b1f193": {
-      "char": "calls_shot",
-      "class": "other",
-      "excerpt": "The cap's navy underbrim shows as jagged triangular wedges between the fringe tu"
-    },
-    "calls_shot:4d497704e928": {
-      "char": "calls_shot",
-      "class": "hair-nyquist",
-      "excerpt": "The profile hair silhouette is hard-faceted: five HAIR_LEVELS rows and flat shad"
-    },
-    "calls_shot:b428fe02b9a6": {
-      "char": "calls_shot",
-      "class": "other",
-      "excerpt": "Section 6 integration evidence is stale AND a proxy: theo-in-game-review.png was"
-    },
-    "calls_shot:160004433cb6": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "Not defects, checked and cleared so nobody re-files them: the old hairMass-1 bas"
-    },
-    "big_lou:db35eafb3b93": {
-      "char": "big_lou",
-      "class": "proportions",
-      "excerpt": "Widen and deepen the torso: the tee is 28.9% of figure height wide against the c"
-    },
-    "big_lou:3a2e69167dd9": {
-      "char": "big_lou",
-      "class": "butt-joins",
-      "excerpt": "Round the tee. In profile at 5x it is a box - flat front face, flat side face, a"
-    },
-    "big_lou:6f12c32cf156": {
-      "char": "big_lou",
-      "class": "40px-read",
-      "excerpt": "Halve the stripe count. Pitch 3.6% of figure height vs the concept's 5.2%, ~10 b"
-    },
-    "big_lou:e158db624410": {
-      "char": "big_lou",
-      "class": "decal-not-form",
-      "excerpt": "Harden the stripe boundaries: cream<->gold currently blends over ~4 native px, a"
-    },
-    "big_lou:916392397579": {
-      "char": "big_lou",
-      "class": "decal-not-form",
-      "excerpt": "Build the nose as geometry rather than a `nose_push` displacement. It protrudes "
-    },
-    "big_lou:e0317c05af68": {
-      "char": "big_lou",
-      "class": "ears",
-      "excerpt": "Shrink the ears by about a third: authored EAR_SPEC radii 0.170 vs head radius 0"
-    },
-    "big_lou:a4018a6e477c": {
-      "char": "big_lou",
-      "class": "proportions",
-      "excerpt": "Re-cut the hair as a buzz. It is a bowl/mushroom helmet standing off the back of"
-    },
-    "big_lou:3cb623278724": {
-      "char": "big_lou",
-      "class": "hair-nyquist",
-      "excerpt": "Add strand grain to the hair: 33-52% of the concept's strand count at every band"
-    },
-    "big_lou:7619bef0c4a7": {
-      "char": "big_lou",
-      "class": "proportions",
-      "excerpt": "Lengthen the shorts to mid-thigh: hem at 73.1% of figure height vs the concept's"
-    },
-    "big_lou:fcbb84705444": {
-      "char": "big_lou",
-      "class": "proportions",
-      "excerpt": "Raise the shoe upper: navy quarter spans 2.7% of figure height vs the concept's "
-    },
-    "big_lou:1602cb72f362": {
-      "char": "big_lou",
-      "class": "severed",
-      "excerpt": "Investigate the flat near-black ~21x2px rectangle under the shirt hem at the cro"
-    },
-    "big_lou:84a1b60db699": {
-      "char": "big_lou",
-      "class": "butt-joins",
-      "excerpt": "Fix the sleeve/torso shell intersection: it emits a broken dotted dark outline a"
-    },
-    "big_lou:4e4eaab052e1": {
-      "char": "big_lou",
-      "class": "butt-joins",
-      "excerpt": "Give the elbow and wrist real forms. In swing_contact the elbow is a hard hinge "
-    },
-    "big_lou:b4d2f08e6e77": {
-      "char": "big_lou",
-      "class": "proportions",
-      "excerpt": "Compress the neck. A visible cylinder plus a collar ring sits where the concept "
-    },
-    "big_lou:c1fd1e6d3607": {
-      "char": "big_lou",
-      "class": "evidence",
-      "excerpt": "Reframe the runtime hero shot or reduce the head yaw: at the current hero camera"
-    },
-    "big_lou:e71c2023d3e6": {
-      "char": "big_lou",
-      "class": "material-light",
-      "excerpt": "Tame the shoulder-cap specular: it blows out roughly 50 of the torso's 195 rows "
-    },
-    "big_lou:14e995852459": {
-      "char": "big_lou",
-      "class": "butt-joins",
-      "excerpt": "Subdivide the belly: plainly faceted low-poly quads with visible shading discont"
-    },
-    "big_lou:26e0bdea4bc0": {
-      "char": "big_lou",
-      "class": "no-defect-note",
-      "excerpt": "NOT DEFECTS, recorded so they are not re-filed: legs are two legs (35.0% max int"
-    },
     "tank:418f1e11a108": {
       "char": "tank",
       "class": "proportions",
@@ -2205,21 +2055,6 @@
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT (re-checked, do not re-file) — the throat 'annulus' in boomer-profile"
     },
-    "sprout:7c81e19ba72f": {
-      "char": "sprout",
-      "class": "butt-joins",
-      "excerpt": "SHOULDER — CLEARED; ELBOW AND SLEEVE HEM — CARRIED; ONE NEW MINOR CREASE: on spr"
-    },
-    "sprout:c04382519f22": {
-      "char": "sprout",
-      "class": "no-defect-note",
-      "excerpt": "HAIR RING PAIR REVERTED — CONFIRMED: the source's HAIR_LEVELS is back to the sin"
-    },
-    "sprout:843fe6b4536f": {
-      "char": "sprout",
-      "class": "hair-nyquist",
-      "excerpt": "HAIRLINE IS A JAGGED M WITH A CENTRE SPIKE — CARRIED (fringe-round state): sprou"
-    },
     "sprout:2eb13f5d4d8d": {
       "char": "sprout",
       "class": "hair-nyquist",
@@ -2249,11 +2084,6 @@
       "char": "sprout",
       "class": "hair-nyquist",
       "excerpt": "CURL COUNT BELOW CONCEPT — CARRIED: measure:strands reads 2.32 minima/row agains"
-    },
-    "sprout:49820c6d7d53": {
-      "char": "sprout",
-      "class": "decal-not-form",
-      "excerpt": "GARMENT BOUNDARIES ARE PAINTED — CARRIED: sprout-front-review.png (170-370, 270-"
     },
     "sprout:b994795d7652": {
       "char": "sprout",
@@ -2509,6 +2339,196 @@
       "char": "penny",
       "class": "no-defect-note",
       "excerpt": "CLEARED, confirmed again: the pockets are bevelled proud pouches with a gold mou"
+    },
+    "big_lou:bf52f794ee13": {
+      "char": "big_lou",
+      "class": "proportions",
+      "excerpt": "CARRIED (measured, unchanged): torso 29.2% of figH wide (front-review.png row 41"
+    },
+    "big_lou:4d13c3c28241": {
+      "char": "big_lou",
+      "class": "40px-read",
+      "excerpt": "CARRIED: the stripes are gone at the field read. Ten bands on the front-review c"
+    },
+    "big_lou:95b0f21a18bf": {
+      "char": "big_lou",
+      "class": "other",
+      "excerpt": "CARRIED (refined): the near-black rectangle under the shirt hem at the crotch, b"
+    },
+    "big_lou:d1b9d791f8eb": {
+      "char": "big_lou",
+      "class": "proportions",
+      "excerpt": "CARRIED: nose. Builder present (nose_push, sculpt-big-lou-source.py:119-131, tip"
+    },
+    "big_lou:e37461004ea2": {
+      "char": "big_lou",
+      "class": "ears",
+      "excerpt": "CARRIED: ears. EAR_SPEC radii (0.160, 0.170) against HEAD_RADII (0.500, 0.500, 0"
+    },
+    "big_lou:681e2fb81f14": {
+      "char": "big_lou",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED: hair. big-lou-front-review.png 4x crop x175-365 y80-180: hard horizonta"
+    },
+    "big_lou:e6b760b20167": {
+      "char": "big_lou",
+      "class": "butt-joins",
+      "excerpt": "CARRIED: sleeve/torso intersection. big-lou-runtime-hero.png 5x crop x470-560 y3"
+    },
+    "big_lou:0ea07d8ebed6": {
+      "char": "big_lou",
+      "class": "butt-joins",
+      "excerpt": "REVISED (elbow, this build): in big-lou-runtime-run.png (4x crop x475-615 y330-4"
+    },
+    "big_lou:3391cde23f43": {
+      "char": "big_lou",
+      "class": "interpenetration",
+      "excerpt": "CARRIED: the two forearms still interpenetrate at contact - big-lou-runtime-swin"
+    },
+    "big_lou:1510b89d7b6e": {
+      "char": "big_lou",
+      "class": "no-defect-note",
+      "excerpt": "CHECKED (elbow at rest, this build): no crease, step or see-through introduced. "
+    },
+    "big_lou:9e3596106f70": {
+      "char": "big_lou",
+      "class": "proportions",
+      "excerpt": "CARRIED: neck. On big-lou-front-review.png centre column x=270 the skin run betw"
+    },
+    "big_lou:065266df8377": {
+      "char": "big_lou",
+      "class": "material-light",
+      "excerpt": "CARRIED (revised extent): shoulder-cap specular. big-lou-front-apose-review.png "
+    },
+    "big_lou:f6936996c5a0": {
+      "char": "big_lou",
+      "class": "material-light",
+      "excerpt": "CARRIED (revised): stripe edges. In the same crop the cream/gold boundary blends"
+    },
+    "big_lou:3497dec94397": {
+      "char": "big_lou",
+      "class": "sheared-edges",
+      "excerpt": "CARRIED: belly faceting. big-lou-runtime-hero.png 3x crop x470-620 y320-520: fla"
+    },
+    "big_lou:29de303defb2": {
+      "char": "big_lou",
+      "class": "proportions",
+      "excerpt": "CARRIED (measured): shorts hem at 73.7-73.8% figH (front-review leg columns x=22"
+    },
+    "big_lou:f3381f5d817d": {
+      "char": "big_lou",
+      "class": "proportions",
+      "excerpt": "CARRIED (revised): shoe upper. Navy quarter measures 22-24px = 3.9-4.3% figH on "
+    },
+    "big_lou:246104e7c0d6": {
+      "char": "big_lou",
+      "class": "proportions",
+      "excerpt": "REVISED (torso 'box'): at 3x (big-lou-profile-review.png crop x170-340 y240-460)"
+    },
+    "big_lou:af018df7762b": {
+      "char": "big_lou",
+      "class": "other",
+      "excerpt": "CARRIED: hero framing. big-lou-runtime-hero.png shows the head yawed to three-qu"
+    },
+    "big_lou:cee8b13627fe": {
+      "char": "big_lou",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (re-recorded): legs are two legs (front-review and front-apose show c"
+    },
+    "sprout:97d8cb0814f1": {
+      "char": "sprout",
+      "class": "butt-joins",
+      "excerpt": "ELBOW — CLEARED IN RUN, PARTIAL IN SWING, INVISIBLE AT REST; SLEEVE HEM — CARRIE"
+    },
+    "sprout:1cdee2bf88cf": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "SHOULDER — CLEARED (carried from the root-ring round): on sprout-front-apose-rev"
+    },
+    "sprout:55238078a582": {
+      "char": "sprout",
+      "class": "hair-nyquist",
+      "excerpt": "HAIRLINE IS A JAGGED M WITH A CENTRE SPIKE — CARRIED (fringe-round state, hair u"
+    },
+    "sprout:def06101357d": {
+      "char": "sprout",
+      "class": "decal-not-form",
+      "excerpt": "GARMENT BOUNDARIES ARE PAINTED — CARRIED: sprout-front-review.png (170-370, 270-"
+    },
+    "calls_shot:8c48dc55835d": {
+      "char": "calls_shot",
+      "class": "interpenetration",
+      "excerpt": "CARRIED — Cream geometry punches through the teal jacket back in swing_contact: "
+    },
+    "calls_shot:7403478c10f1": {
+      "char": "calls_shot",
+      "class": "material-light",
+      "excerpt": "CARRIED — Shoe fails all three fidelity metrics (dominant tone 88.4 vs 37.6, sec"
+    },
+    "calls_shot:33c8d9a83b13": {
+      "char": "calls_shot",
+      "class": "proportions",
+      "excerpt": "CARRIED — Cap reads as a mushroom: theo-front-review.png cap 194px wide at row 1"
+    },
+    "calls_shot:72d9d53648a9": {
+      "char": "calls_shot",
+      "class": "proportions",
+      "excerpt": "CARRIED — The bill is a wafer: theo-profile-review.png bill section 11-13px acro"
+    },
+    "calls_shot:889e1a3f409d": {
+      "char": "calls_shot",
+      "class": "proportions",
+      "excerpt": "CARRIED — The cap's cream team panel is a plateau, not a wedge: on theo-front-re"
+    },
+    "calls_shot:449bb8db8674": {
+      "char": "calls_shot",
+      "class": "no-defect-note",
+      "excerpt": "REVISED — No elbow: the recorded 'limbs are smooth tapered cones ... no elbow' i"
+    },
+    "calls_shot:3d227333d9f4": {
+      "char": "calls_shot",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (checked) — The tan lozenge inside the crook of the lead elbow in the"
+    },
+    "calls_shot:ad07e036efdf": {
+      "char": "calls_shot",
+      "class": "sheared-edges",
+      "excerpt": "CARRIED — The profile hair silhouette is hard-faceted: theo-profile-review.png a"
+    },
+    "calls_shot:adbf8fb8bae2": {
+      "char": "calls_shot",
+      "class": "sheared-edges",
+      "excerpt": "NEW — A hairline skin streak where the skull grazes the hair shell: theo-profile"
+    },
+    "calls_shot:4c0109f2cfdc": {
+      "char": "calls_shot",
+      "class": "ears",
+      "excerpt": "CARRIED — The ear is buried in profile: build_ear runs (EAR_SPEC centre z 3.230,"
+    },
+    "calls_shot:d74244b15819": {
+      "char": "calls_shot",
+      "class": "proportions",
+      "excerpt": "CARRIED — The profile nose is a pointed wedge: nose_push exists ('small upturned"
+    },
+    "calls_shot:8758c4f05306": {
+      "char": "calls_shot",
+      "class": "sheared-edges",
+      "excerpt": "CARRIED (minor) — Navy underbrim chevrons between the fringe tufts: theo-runtime"
+    },
+    "calls_shot:4e3c24782bd8": {
+      "char": "calls_shot",
+      "class": "hair-nyquist",
+      "excerpt": "NEW (minor) — A dark hair lock rides the cheek at mouth height: the hair window "
+    },
+    "calls_shot:91f5dec5849a": {
+      "char": "calls_shot",
+      "class": "evidence",
+      "excerpt": "CARRIED — Section 6 integration evidence is stale and a proxy: docs/v2/concepts/"
+    },
+    "calls_shot:4f70043bfb12": {
+      "char": "calls_shot",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (kept clear) — The old hairMass-1 basis stays cleared: theo-front-review"
     }
   }
 }
