@@ -221,7 +221,19 @@ def skull_front_y(x: float, z: float) -> float:
     remainder = 1.0 - nx * nx - nz * nz
     if remainder <= 0.0:
         return HEAD_CENTER[1]
-    return HEAD_CENTER[1] - HEAD_RADII[1] * sqrt(remainder)
+    # ★ THE RENDERED FACE IS FLATTER THAN THE ELLIPSOID. head_surface scales
+    # the front depth by 0.88 - 0.11·frontness², so the full-ellipsoid answer
+    # sat ~0.08 ft in FRONT of the skin at the forehead — and the window's
+    # "buried behind the skull" tuck (skull + 0.05) landed hair 0.03 in front
+    # of the face. That is why the fringe read at 63% of head height against
+    # the sheet's 32% however high its arc was authored (hairline-scan.mjs),
+    # and why no atlas brow could reach daylight (#204). Penny's helper had
+    # the factor; this one did not.
+    s2 = 1.0 - nz * nz
+    cb2 = 1.0 - (nx * nx) / s2 if s2 > 0.0 else 0.0
+    cb = sqrt(cb2) if cb2 > 0.0 else 0.0
+    depth = 0.88 - 0.11 * cb * cb
+    return HEAD_CENTER[1] - HEAD_RADII[1] * sqrt(remainder) * depth
 
 
 # --- The hair ------------------------------------------------------------------
@@ -299,6 +311,15 @@ HAIR_LEVELS = [
 # the face (the batch-4 lesson: clearing a landmark in z-arithmetic still
 # lands on it in pixels — verified here: the 3.46 centre projected onto the
 # EYE TOPS). Author to the render, not the math.
+# ★ THE ARC IS NOT THE EDGE. hairline-scan.mjs on the front board: the
+# rendered hairline sat at 63% of head height against the sheet's 32% with
+# the arc at 3.520 — the rows above the arc stand ~0.2 ft proud of the face
+# and the camera looks down on them, so the edge lands near the eyes and no
+# atlas brow can reach daylight (#204). Ladder, measured on fresh boards:
+#   arc 3.520 / 3.505 / 3.450, full-ellipsoid tuck      63.1%   (shipped)
+#   arc 3.720 / 3.700 / 3.620, full-ellipsoid tuck      63.1%   (the arc is not the lever)
+#   arc 3.720 / 3.700 / 3.620, flattened-face tuck      24.3%   (the tuck was: skull_front_y)
+#   arc 3.520 / 3.505 / 3.450, flattened-face tuck      (this rung — the sheet reads 31.9%)
 HAIR_FRINGE = [
     (0.00, 3.520),
     (0.15, 3.505),

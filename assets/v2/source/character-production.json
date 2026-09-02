@@ -93,11 +93,11 @@
     },
     "grizz": {
       "source": "grizz-pilot.blend",
-      "sourceSha256": "f19dd9001998b1136cf0be476f8e0f173ee29d8457a3cc92663d8dd37383b1bb",
+      "sourceSha256": "8f9e6619577d307c2d91401d76989d8af2365d41a211ae31961a4a180146ee61",
       "concept": "grizz-turnaround.png",
       "conceptSha256": "8290768d2853e29e3c09afe3e7cf73bedf97f2dc74d1b9053506b6c66dbc2e0c",
       "output": "kid_grizz.glb",
-      "outputSha256": "1d0f09a7cdd280ca98e4b8b8203d14d261208436a0a5f102961be7d8d2334811",
+      "outputSha256": "ea26593d1007b17ee0fd58074840ac1f0bf6054577ac4222c5f9f75399e94768",
       "definingTraits": [
         "towering round afro",
         "heavy sleepy brow",
@@ -108,11 +108,11 @@
     },
     "sprout": {
       "source": "sprout-pilot.blend",
-      "sourceSha256": "5b1753e6148423134478eae1fa5993e41f1036cc1a49e627fa4c053feae5c9e2",
+      "sourceSha256": "269cd4e9fcba2761555aad149eb012995b296298b9a025bcb30f90aa1ae895c7",
       "concept": "sprout-turnaround.png",
       "conceptSha256": "b734a39041e715ae23861523b44b118cf5b18919ba12533b241058591888f995",
       "output": "kid_sprout.glb",
-      "outputSha256": "14b814d51bf66d3161adb84ed056175763893cfab98360c74e35e9236e7aaeef",
+      "outputSha256": "1d2b873e2918d81817bbfd9ac8491861c49724590627ca508c166211e6e09432",
       "definingTraits": [
         "denim bib overalls",
         "big round wonder eyes",
@@ -123,11 +123,11 @@
     },
     "bubbles": {
       "source": "bubbles-pilot.blend",
-      "sourceSha256": "47c463f1d4f5b68aab46c56f825a90a5981a09dac4aeda3d3364285972895e96",
+      "sourceSha256": "53349bb384528d031ba59813783af1c29942423e06aa33785ffe40c8af19dd53",
       "concept": "bubbles-turnaround.png",
       "conceptSha256": "b4b3ec04e975bf1f2d85b449073afbd71edb99af3f17579fe24050bc5edcd9db",
       "output": "kid_bubbles.glb",
-      "outputSha256": "535f9d0b5be9c629b94514c85ad4b46cacfaa0c72df403d53cf758b3eb067386",
+      "outputSha256": "c1c833a0cc1efe546ad2f838d499e9a2d6998bbefdf5a19624451e2524ed3749",
       "definingTraits": [
         "golden ringlet cloud",
         "topknot bun and scrunchie",
