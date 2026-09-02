@@ -22,7 +22,13 @@
 //
 // Deliberately a scan: skin classification is a heuristic (isSkin in
 // tone.mjs), sheets vary in framing, and a fringe DRAWN to the brows is
-// correct. Read it, then decide; do not gate on it.
+// correct. Read it, then decide; do not gate on it. Two caveats critics have
+// already filed: the "ink below the hairline" line compares whatever dark
+// mark comes first (a sheet's swept bang against a board's brow), so only
+// the hairline percentage is worth reading; and the head band is bounded at
+// the chin by a width rule that a kid with no drawn neck can miss — when
+// the sheet and board numbers disagree by more than the eye's own height,
+// crop and look before touching a fringe table.
 // ---------------------------------------------------------------------------
 import sharp from 'sharp';
 import { existsSync } from 'node:fs';
@@ -76,7 +82,15 @@ function bgTest(img) {
  * face bottom), which is the sheet's own frame for "where the fringe stops".
  */
 function scan(img, face) {
-  const [bx0, bx1, by0, by1] = face.box; const nonBg = bgTest(img);
+  const [bx0, bx1, by0, byBlob] = face.box; const nonBg = bgTest(img);
+  // ★ THE HEAD ENDS AT THE CHIN, NOT WHERE THE SKIN ENDS. On a sheet the skin
+  // blob runs down the neck to the collar; on a board with no neck pinch it
+  // stops at the chin — and "46.7% of one" against "49.0% of the other" was
+  // not the same rung (Turbo's critic, 2026-09-02). The chin is the first row
+  // below the widest face row where the skin narrows to under 55% of it.
+  let maxW = 0, maxRow = by0; const widthAt = [];
+  for (let y = by0; y <= byBlob; y++) { let w = 0; for (let x = bx0; x <= bx1; x++) if (face.is(x, y)) w++; widthAt[y] = w; if (w > maxW) { maxW = w; maxRow = y; } }
+  let by1 = byBlob; for (let y = maxRow; y <= byBlob; y++) if (widthAt[y] < 0.55 * maxW) { by1 = y; break; }
   const cx0 = Math.round(bx0 + (bx1 - bx0) * 0.2), cx1 = Math.round(bx0 + (bx1 - bx0) * 0.8);
   const hair = [], gap = []; let headTop = by0;
   for (let x = cx0; x <= cx1; x++) { for (let y = 0; y < by0; y++) if (nonBg(x, y)) { headTop = Math.min(headTop, y); break; } }

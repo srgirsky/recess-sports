@@ -205,10 +205,14 @@ CAP_LEVELS = [
 
 # The bang line: hair covers the forehead down to just above the brows, then
 # drops past the temples toward the jaw as short curtains.
+# Ladder (hairline-scan.mjs, front board; the sheet's hairline reads 25.7%
+# of head height):
+#   arc 3.545 / 3.530 / 3.460     42.5%   (shipped)
+#   arc 3.685 / 3.670 / 3.590     26.9%   (the sheet reads 25.7%)
 CAP_FRINGE = [
-    (0.00, 3.545),
-    (0.22, 3.530),
-    (0.30, 3.460),
+    (0.00, 3.685),
+    (0.22, 3.670),
+    (0.30, 3.590),
     (0.36, 3.240),
     (0.44, 3.060),
 ]
