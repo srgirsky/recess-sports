@@ -1410,51 +1410,6 @@
       "class": "no-defect-note",
       "excerpt": "CLEARED — eyes inboard of the ring centres: after face-specs.mjs gizmo eyeX move"
     },
-    "sprout:d0713f89a99e": {
-      "char": "sprout",
-      "class": "ears",
-      "excerpt": "EARS STILL FLAT FROM THE FRONT — CARRIED: sprout-front-review.png left ear (165-"
-    },
-    "sprout:87d1e1dc8d7f": {
-      "char": "sprout",
-      "class": "no-defect-note",
-      "excerpt": "PROFILE CHIN — NON-DEFECT RECORD CARRIED: sprout-profile-review.png curves back "
-    },
-    "sprout:320581a3c1a8": {
-      "char": "sprout",
-      "class": "no-defect-note",
-      "excerpt": "TEAM_MASK EXTENT — NON-DEFECT: the source paints TEAM_MASK on the trouser cuff b"
-    },
-    "sprout:d9dabce77fa3": {
-      "char": "sprout",
-      "class": "severed",
-      "excerpt": "FLOATING COLLAR KNOB WITH DECAL BLOTCHES — CARRIED: sprout-profile-review.png (2"
-    },
-    "sprout:7582e3045b90": {
-      "char": "sprout",
-      "class": "decal-not-form",
-      "excerpt": "NO OVERALL BUTTONS — CARRIED: grep 'button' in scripts/v2/blender/sculpt-sprout-"
-    },
-    "sprout:9cc661c57442": {
-      "char": "sprout",
-      "class": "hems-cuffs",
-      "excerpt": "HIP SHELF SOFTENED BUT PRESENT — CARRIED: sprout-front-review.png row ~470 (180-"
-    },
-    "sprout:751d17744276": {
-      "char": "sprout",
-      "class": "no-defect-note",
-      "excerpt": "HAIR TWO-TONE — REVISED RECORD CARRIED: the source declares HAIR #3C2208 over HA"
-    },
-    "sprout:dd62f9d92611": {
-      "char": "sprout",
-      "class": "no-defect-note",
-      "excerpt": "NECK — NON-DEFECT RECORD CARRIED: the neck pinch is ~100 px against a 217 px hai"
-    },
-    "sprout:118f3a49e857": {
-      "char": "sprout",
-      "class": "no-defect-note",
-      "excerpt": "GRIN EVIDENCE — NON-DEFECT RECORD CARRIED: sprout-runtime-face-grin.png renders "
-    },
     "zippy:4804fc840920": {
       "char": "zippy",
       "class": "butt-joins",
@@ -1830,41 +1785,6 @@
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT, re-checked: the jogger cuff still reads - lefty-front-review.png and"
     },
-    "sprout:2eb13f5d4d8d": {
-      "char": "sprout",
-      "class": "hair-nyquist",
-      "excerpt": "BROWS RENDER, HANGING FROM THE HAIR — CARRIED: dark tapered wedges on skin above"
-    },
-    "sprout:fddfe70a4b62": {
-      "char": "sprout",
-      "class": "no-defect-note",
-      "excerpt": "EYES CLIPPED BY THE FRINGE — CLEARED (carried): sprout-front-review.png x=224 re"
-    },
-    "sprout:2a8445fd2b97": {
-      "char": "sprout",
-      "class": "proportions",
-      "excerpt": "PROFILE NOSE STILL A FIN — CARRIED: sprout-profile-review.png (185-215, 225-250)"
-    },
-    "sprout:5af75144213c": {
-      "char": "sprout",
-      "class": "face-atlas",
-      "excerpt": "EYE DECAL WRAPS TO THE PROFILE PLANE — CARRIED: sprout-profile-review.png (195-2"
-    },
-    "sprout:3037242b4959": {
-      "char": "sprout",
-      "class": "hair-nyquist",
-      "excerpt": "PROFILE HAIRLINE CREASE AND REAR FACETS — CARRIED: sprout-profile-review.png (20"
-    },
-    "sprout:665a199d3aa4": {
-      "char": "sprout",
-      "class": "hair-nyquist",
-      "excerpt": "CURL COUNT BELOW CONCEPT — CARRIED: measure:strands reads 2.32 minima/row agains"
-    },
-    "sprout:b994795d7652": {
-      "char": "sprout",
-      "class": "proportions",
-      "excerpt": "HEAD PROPORTION — CARRIED (critic-measured, instrument blind): the fidelity inst"
-    },
     "bend_it:f61e8c13825a": {
       "char": "bend_it",
       "class": "no-defect-note",
@@ -2129,26 +2049,6 @@
       "char": "big_lou",
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT (re-recorded): legs are two legs (front-review and front-apose show c"
-    },
-    "sprout:97d8cb0814f1": {
-      "char": "sprout",
-      "class": "butt-joins",
-      "excerpt": "ELBOW — CLEARED IN RUN, PARTIAL IN SWING, INVISIBLE AT REST; SLEEVE HEM — CARRIE"
-    },
-    "sprout:1cdee2bf88cf": {
-      "char": "sprout",
-      "class": "no-defect-note",
-      "excerpt": "SHOULDER — CLEARED (carried from the root-ring round): on sprout-front-apose-rev"
-    },
-    "sprout:55238078a582": {
-      "char": "sprout",
-      "class": "hair-nyquist",
-      "excerpt": "HAIRLINE IS A JAGGED M WITH A CENTRE SPIKE — CARRIED (fringe-round state, hair u"
-    },
-    "sprout:def06101357d": {
-      "char": "sprout",
-      "class": "decal-not-form",
-      "excerpt": "GARMENT BOUNDARIES ARE PAINTED — CARRIED: sprout-front-review.png (170-370, 270-"
     },
     "clover:93c1aad7240d": {
       "char": "clover",
@@ -2639,6 +2539,116 @@
       "char": "clover",
       "class": "no-defect-note",
       "excerpt": "CLEARED (record) — prior cleared/non-defect items re-checked and still clear: fa"
+    },
+    "sprout:10549c410e2d": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "12-VS-14 SIDES VERDICT, PER REGION — NO VISIBLE DIFFERENCE. Upper arm (sleeve): "
+    },
+    "sprout:532dee0a7ba2": {
+      "char": "sprout",
+      "class": "proportions",
+      "excerpt": "ELBOW — CLEARED AT REST ON THE BOARDS AT 8x, HINT AT 4x; CLEARED IN RUN (carried"
+    },
+    "sprout:21ff395d03ab": {
+      "char": "sprout",
+      "class": "hems-cuffs",
+      "excerpt": "SLEEVE HEM — CARRIED (the separate half of finding 1): the hem silhouette is 0 p"
+    },
+    "sprout:80d073ea5b59": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "SHOULDER — CLEARED (carried from the root-ring round): sprout-front-apose-review"
+    },
+    "sprout:90cca04262d5": {
+      "char": "sprout",
+      "class": "hair-nyquist",
+      "excerpt": "HAIRLINE IS A JAGGED M WITH A CENTRE SPIKE — CARRIED (hair untouched, pixel-iden"
+    },
+    "sprout:214b86295a0d": {
+      "char": "sprout",
+      "class": "face-atlas",
+      "excerpt": "BROWS RENDER, HANGING FROM THE HAIR — CARRIED: dark tapered wedges on skin above"
+    },
+    "sprout:4e370bff2283": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "EYES CLIPPED BY THE FRINGE — CLEARED (carried): sprout-front-review.png (185-365"
+    },
+    "sprout:356a9ab52cdc": {
+      "char": "sprout",
+      "class": "proportions",
+      "excerpt": "PROFILE NOSE STILL A FIN — CARRIED: sprout-profile-review.png (175-245, 180-260)"
+    },
+    "sprout:e994ffb776ff": {
+      "char": "sprout",
+      "class": "face-atlas",
+      "excerpt": "EYE DECAL WRAPS TO THE PROFILE PLANE — CARRIED: sprout-profile-review.png (195-2"
+    },
+    "sprout:cec9db6835bc": {
+      "char": "sprout",
+      "class": "severed",
+      "excerpt": "FLOATING COLLAR KNOB WITH DECAL BLOTCHES — CARRIED: sprout-profile-review.png (2"
+    },
+    "sprout:256cccff0da1": {
+      "char": "sprout",
+      "class": "sheared-edges",
+      "excerpt": "PROFILE HAIRLINE CREASE AND REAR FACETS — CARRIED: sprout-profile-review.png (20"
+    },
+    "sprout:7e54d249ef5a": {
+      "char": "sprout",
+      "class": "hair-nyquist",
+      "excerpt": "CURL COUNT BELOW CONCEPT — CARRIED: hair untouched this build; the recorded meas"
+    },
+    "sprout:fece2267d1d6": {
+      "char": "sprout",
+      "class": "decal-not-form",
+      "excerpt": "GARMENT BOUNDARIES ARE PAINTED — CARRIED: sprout-front-review.png (235-305, 295-"
+    },
+    "sprout:6e27927e75eb": {
+      "char": "sprout",
+      "class": "decal-not-form",
+      "excerpt": "NO OVERALL BUTTONS — CARRIED: grep 'button' in scripts/v2/blender/sculpt-sprout-"
+    },
+    "sprout:fbccc3b6fba1": {
+      "char": "sprout",
+      "class": "butt-joins",
+      "excerpt": "HIP SHELF SOFTENED BUT PRESENT — CARRIED: sprout-front-review.png (170-370, 440-"
+    },
+    "sprout:1fcb619740e8": {
+      "char": "sprout",
+      "class": "ears",
+      "excerpt": "EARS STILL FLAT FROM THE FRONT — CARRIED: sprout-front-review.png left ear (165-"
+    },
+    "sprout:e62c1d55265d": {
+      "char": "sprout",
+      "class": "proportions",
+      "excerpt": "HEAD PROPORTION — CARRIED (critic-measured, instrument blind): measure:fidelity "
+    },
+    "sprout:59a970118dbf": {
+      "char": "sprout",
+      "class": "material-light",
+      "excerpt": "HAIR TWO-TONE — REVISED RECORD CARRIED: the source declares HAIR #3C2208 over HA"
+    },
+    "sprout:4542423778b4": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "NECK — NON-DEFECT RECORD CARRIED: the neck pinch is ~100 px against a 217 px hai"
+    },
+    "sprout:255bfe1c2974": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "PROFILE CHIN — NON-DEFECT RECORD CARRIED: sprout-profile-review.png curves back "
+    },
+    "sprout:67b58ffdcff1": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "GRIN EVIDENCE — NON-DEFECT RECORD CARRIED: sprout-runtime-face-grin.png renders "
+    },
+    "sprout:f56fa6380437": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "TEAM_MASK EXTENT — NON-DEFECT: the source paints TEAM_MASK on the trouser cuff t"
     }
   }
 }
