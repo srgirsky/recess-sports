@@ -114,16 +114,23 @@ def _with_knee(stations, amount: float):
     # straight down to the hollow. A shoulder ring 0.040 above the cap at half
     # the swell turns the ridge into a bump that softens into the thigh.
     wanted = [(cap_z + 0.040, 1.0 + amount * 0.5), (cap_z, 1.0 + amount), (hollow_z, 1.0 - amount * 0.5)]
+    # The hollow ring tapers the runtime outline hull (alpha 0.5), for the
+    # reason `arm._crease_colour` records: an inverted hull draws a dark line
+    # down every concave ring it is not tapered at ("the toon outliner traces
+    # the ribbing" — Peaches' critic, 2026-09-02).
+    from .arm import _crease_colour
+
     out = []
     for z, half, depth, colour, bone in stations:
         for wz, f in list(wanted):
             if abs(z - wz) < 0.012:
                 half = half * f
+                colour = _crease_colour(colour) if f < 1.0 else colour
                 wanted.remove((wz, f))
         out.append((z, half, depth, colour, bone))
     for wz, f in wanted:
         _, half, depth, colour, bone = at(wz)
-        out.append((wz, half * f, depth, colour, bone))
+        out.append((wz, half * f, depth, _crease_colour(colour) if f < 1.0 else colour, bone))
     return sorted(out, key=lambda st: -st[0])
 
 

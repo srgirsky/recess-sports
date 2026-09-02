@@ -175,12 +175,31 @@ def _with_elbow(stations, amount: float):
             if abs(x - wx) < 0.012:
                 # A station already sits here: reshape it instead of doubling.
                 r = r * f
+                colour = _crease_colour(colour) if f < 1.0 else colour
                 wanted.remove((wx, f))
         out.append((x, r, colour, bone))
     for wx, f in wanted:
         _, r, colour, bone = at(wx)
-        out.append((wx, r * f, colour, bone))
+        out.append((wx, r * f, _crease_colour(colour) if f < 1.0 else colour, bone))
     return sorted(out, key=lambda st: st[0])
+
+
+def _crease_colour(colour):
+    """The crease ring's colour with the OUTLINE HULL TAPERED.
+
+    ★ THE RUNTIME OUTLINE IS AN INVERTED HULL, and a hull protrudes at a
+    concavity: offset outward along the normals, the two flanks of a crease
+    ring cross in front of the surface and draw a dark line down the pinch.
+    Four critics read it — "a dark outline chevron at the crook", "a thin
+    drawn fold stroke inside the bend", "the toon outliner traces the
+    ribbing" (2026-09-02). The shader scales the hull's width by the vertex
+    colour's ALPHA (asset contract mask.G; `materials/outline.ts`), so the
+    ring that makes the concavity carries 0.5 and the hull stays inside it —
+    0.35 thinned a 2.5 px line to nothing for two rows (darkest px 48 → 100,
+    a critic's reading on Peaches); 0.5 keeps the stroke dark.
+    The boards render no hull, so this is a runtime-still repair only.
+    """
+    return (colour[0], colour[1], colour[2], 0.5)
 
 
 @part("arm")
