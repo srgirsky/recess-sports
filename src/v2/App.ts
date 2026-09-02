@@ -151,6 +151,11 @@ export class App {
     return this.game.devStepFixedClock(ticks);
   }
 
+  /** Its painting half: `frames` drawn frames, one sim step each, off the fixed clock. */
+  devPaint(frames = 1) {
+    this.game.devPaint(frames);
+  }
+
   private showTitle(): void {
     // Null on purpose, looked at through the title's new window (see
     // `.screen--title::before`): the attract game's own cues put a batter's

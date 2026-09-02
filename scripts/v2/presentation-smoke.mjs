@@ -9,13 +9,21 @@
 // every gate passed, because every gate asserts state, and nobody was
 // asserting the PAINTED state. This script reaches each game beat with
 // `devStepFixedClock` (the ui-audit's instrument), then paints real `tick()`
-// frames with SYNTHETIC timestamps — the mixers advance deterministically,
-// with no dependence on a headless page's erratic rAF — and captures a
-// screenshot plus a machine-readable probe of which clip each principal is
-// actually playing.
+// frames through `devPaint` — off the fixed clock's own last instant, one sim
+// step per frame, so the mixers advance deterministically with no dependence
+// on a headless page's erratic rAF — and captures a screenshot plus a
+// machine-readable probe of which clip each principal is actually playing.
 //
 // ⚠️ HEADLESS PAGES ARE TREATED AS BACKGROUNDED (see ui-audit.mjs's header):
-// never wait for rAF here. Every painted frame is an explicit `tick(t)` call.
+// never wait for rAF here. Every painted frame is an explicit `devPaint`.
+//
+// ⚠️ NEVER PAINT FROM `performance.now()`. The first wall-clock tick after a
+// reach carries the whole reach's wall time, clamped to 0.1s — six unsampled
+// sim steps before the paint's own — and how many depended on the machine's
+// load, so the same seed pumped a different game run to run and the
+// fielded-or-throw beat reached a fly-out's catch and painted the plate
+// (2026-09-01, on main, with every gate green). `paintclock.lint.test.js`
+// keeps the wall clock out of the instruments.
 //
 // Exit code: non-zero when a REQUIRED expectation fails (see EXPECT below) —
 // so this can gate the presentation the way audit:v2-layout gates the DOM.
@@ -55,8 +63,13 @@ function startVite() {
   });
 }
 
-/** Pump the fixed clock until `until(frame, view)` holds, then paint. */
-const REACH = (untilSrc, paintTicks, endIsReach = false) => `(async () => {
+/**
+ * Pump the fixed clock `step` sim steps at a time until `until(frame, view)`
+ * holds, then paint `paintTicks` frames — one sim step each — off that clock.
+ * A beat whose state can end within a few steps of arriving samples at
+ * `step: 1`; the default six is the ui-audit's grid.
+ */
+const REACH = (untilSrc, paintTicks, endIsReach = false, step = 6) => `(async () => {
   const s = window.__spike;
   const until = ${untilSrc};
   // Wait for the game to START — but not when it is already OVER: scoreboard()
@@ -68,14 +81,13 @@ const REACH = (untilSrc, paintTicks, endIsReach = false) => `(async () => {
     await new Promise((r) => setTimeout(r, 50));
   let reached = false;
   // An untilEnd beat pumps the whole rest of the game, so it gets more rope.
-  for (let i = 0; i < ${endIsReach ? 30000 : 8000}; i++) {
-    const f = s.devStepFixedClock(6);
+  for (let i = 0; i < ${Math.ceil((endIsReach ? 30000 : 8000) * (6 / step))}; i++) {
+    const f = s.devStepFixedClock(${step});
     if (f && until(f, s)) { reached = true; break; }
     if (!f) { reached = ${endIsReach ? 'true' : 'reached'}; break; }
   }
-  // Paint with synthetic, monotonic timestamps: deterministic mixer time.
-  let t = performance.now();
-  for (let i = 0; i < ${paintTicks}; i++) { t += 16.7; s.tick(t); }
+  // Paint off the fixed clock: exactly ${paintTicks} more sim steps, drawn.
+  s.devPaint(${paintTicks});
   const f = s.scoreboard();
   const dir = (id) => s.refs.directors.get(id);
   const catcherId = f ? Object.entries(f.defence).find(([, p]) => p === 'C')?.[0] ?? null : null;
@@ -93,7 +105,7 @@ const REACH = (untilSrc, paintTicks, endIsReach = false) => `(async () => {
     ball: { x: +s.refs.ball.position.x.toFixed(2), y: +s.refs.ball.position.y.toFixed(2), z: +s.refs.ball.position.z.toFixed(2), visible: s.refs.ball.visible },
     // Live-play probe: who holds the ball, whether a throw is in the air, and
     // the runner picture — the fields the live beats assert on.
-    play: f?.play ? { heldBy: f.play.heldBy, throw: !!f.play.throw, runners: f.play.runners?.length ?? 0 } : null,
+    play: f?.play ? { heldBy: f.play.heldBy, throw: !!f.play.throw, done: f.play.phase === 'done', runners: f.play.runners?.length ?? 0 } : null,
     bases: f?.bases ?? null,
     half: f?.half ?? null,
     inning: f?.inning ?? null,
@@ -173,7 +185,18 @@ const BEATS = [
   },
   {
     name: 'fielded-or-throw',
-    until: '(f) => f.phase === "live" && f.play && (f.play.heldBy !== null || f.play.throw)',
+    // A fly-out ends the play in the SAME step as the catch: the sim yields
+    // exactly one live frame with the ball gloved and `playOver` already in
+    // its events (`play.phase === "done"`), and the next step is `between`.
+    // Every paint moves at least one step, so that frame can never be the
+    // painted one — the beat asks for a hold or a throw on a play that is
+    // still going (measured on the smoke seed: a grounder holds 18-28 steps
+    // before the throw, a throw flies 39-47, a single's pickup holds 13).
+    // Sampling one step at a time so the first such instant is the sampled
+    // one, with the paint's six steps still inside it.
+    until:
+      '(f) => f.phase === "live" && f.play && f.play.phase === "live" && (f.play.heldBy !== null || f.play.throw)',
+    step: 1,
     paint: 6,
     expect: (r) => [
       [
@@ -222,18 +245,13 @@ async function frontDoorBeats(browser, failures, report) {
   page.on('pageerror', (e) => errors.push(String(e)));
   const pump = (ticks) =>
     page
-      .evaluate(`(() => { const s = window.__spike; s.devStepFixedClock(${ticks});
-        // On the App surface the painter lives on its inner GameView (TS
-        // "private" is erased at runtime, same access the ?play=1 beats use).
-        const v = s.tick ? s : s.game; let t = performance.now();
-        for (let i = 0; i < 10; i++) { t += 16.7; v?.tick?.(t); } })()`)
+      .evaluate(`(() => { const s = window.__spike; s.devStepFixedClock(${ticks}); s.devPaint(10); })()`)
       .catch(() => {});
   const shoot = async (name, ok, msg) => {
     const shot = join(OUT, `${name}.png`);
     await page.screenshot({ path: shot, timeout: 15_000 }).catch(async () => {
       const data = await page
-        .evaluate(`(() => { const s = window.__spike; const v = s.tick ? s : s.game;
-          let t = performance.now(); for (let i = 0; i < 8; i++) { t += 16.7; v?.tick?.(t); }
+        .evaluate(`(() => { window.__spike.devPaint(2);
           return document.querySelector('canvas')?.toDataURL('image/png') ?? null; })()`)
         .catch(() => null);
       if (data) writeFileSync(shot, Buffer.from(data.split(',')[1], 'base64'));
@@ -310,7 +328,7 @@ async function runGameBeats(browser, url, beats, failures, report) {
       window.__spike.onGameEnd((r) => { window.__result = { awayScore: r.awayScore, homeScore: r.homeScore, innings: r.innings }; });
       true`);
     for (const beat of beats) {
-      const r = await page.evaluate(REACH(beat.until, beat.paint, !!beat.untilEnd));
+      const r = await page.evaluate(REACH(beat.until, beat.paint, !!beat.untilEnd, beat.step ?? 6));
       const shot = join(OUT, `${beat.name}.png`);
       // An occluded headless page can miss its rendering opportunity; a lost
       // screenshot is a warning, never a hang — the probe is the assertion.
@@ -319,10 +337,11 @@ async function runGameBeats(browser, url, beats, failures, report) {
       const snap = () => page.screenshot({ path: shot, timeout: 15_000 });
       await snap().catch(async () => {
         // The headless compositor stalls sometimes; the canvas itself never
-        // does. Tick and read the WebGL buffer in ONE task (it is only valid
+        // does. Paint and read the WebGL buffer in ONE task (it is only valid
         // until the task yields), losing the DOM HUD but keeping the scene.
+        // Two steps past the probe — the picture stays the probed state.
         const data = await page
-          .evaluate(`(() => { let t = performance.now(); for (let i = 0; i < 8; i++) { t += 16.7; window.__spike.tick(t); }
+          .evaluate(`(() => { window.__spike.devPaint(2);
             return document.querySelector('canvas')?.toDataURL('image/png') ?? null; })()`)
           .catch(() => null);
         if (data) writeFileSync(shot, Buffer.from(data.split(',')[1], 'base64'));
