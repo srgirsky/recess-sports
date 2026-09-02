@@ -627,6 +627,7 @@ THEO_LEG = LegSpec(
     garment=SHORTS,
     sock=SOCK,
     team_mask=TEAM_MASK,
+    calf=(0.740, 0.15),  # a lanky calf, small, behind the shin: LegSpec.calf
     knee=0.14,  # the kneecap and the hollow under it (0.12-0.15 of the local
                  # half-width is what survives the board — LegSpec.knee)
 )

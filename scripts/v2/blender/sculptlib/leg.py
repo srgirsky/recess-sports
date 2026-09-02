@@ -32,7 +32,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from math import cos, pi, sin
+from math import cos, exp, pi, sin
 
 from .mesh import MeshBuilder, thin_for_lod
 from .rig import (
@@ -66,6 +66,16 @@ class LegSpec:
     # so the tables stay the trace. 0.0 keeps the taper; stated by every
     # script, never defaulted (sculpt-sharing.lint).
     knee: float
+    # ★ THE CALF IS A PROFILE SHAPE, NOT A WIDER RING. Every sheet draws the
+    # calf as the leg's biggest form BEHIND the shin, and a wider station
+    # cannot draw it: the front board sees the width, the profile sees front
+    # and back extents, and a symmetric ring (or a deeper one — Clover's
+    # depth 1.08 gave +5.6% against the sheet's +21%, a critic's measurement,
+    # 2026-09-02) fattens both. This is (z, rear factor): the BACK half of
+    # every ring near `z` is deepened by `rear` × a Gaussian (σ 0.07 ft) of
+    # its distance, so the belly sits behind the calf and fades into the knee
+    # and the ankle. (0.0, 0.0) keeps the ring; stated by every script.
+    calf: tuple[float, float]
 
 
 def leg_x(z: float) -> float:
@@ -142,12 +152,23 @@ def build_leg(
         # already clear of the centreline — every bare-shin and sock ring — is
         # left exactly as it was; only the garment is ever clamped.
         inner_radius = min(radius, leg_x(z) - spec.inseam_half(z))
+        # The calf belly: the rear half only (forward is -y, so sin > 0 is
+        # the back), at LOD0/1 where the ring has a back to deepen.
+        calf_z, calf_rear = spec.calf
+        rear = 1.0 + calf_rear * exp(-((z - calf_z) / 0.07) ** 2 / 2) if calf_rear > 0.0 and detail >= 1 else 1.0
+        # The kneecap is a FRONT form: `_with_knee` swells its ring all round
+        # (the front board wants the width), so the back half gives the
+        # swell back here — a knee that bulges behind as much as in front
+        # read as "a turned baluster" in profile (a critic, 2026-09-02).
+        if spec.knee > 0.0 and abs(z - (LEG_KNEE_Z + 0.035)) < 1e-6:
+            rear = rear / (1.0 + spec.knee)
         row = []
         for index in range(sides):
             theta = 2 * pi * index / sides
             # cos > 0 is the OUTER half for both sides, because the ring is
             # reflected whole (see below), so one predicate serves both legs.
             radius_x = radius if cos(theta) >= 0.0 else inner_radius
+            depth_y = depth * (rear if sin(theta) > 0.0 else 1.0)
             row.append(
                 builder.vertex(
                     # ★ THE WHOLE RING IS REFLECTED, not just its centre. Writing
@@ -157,7 +178,7 @@ def build_leg(
                     # had. The board showed it as one shin lit and the other in
                     # shadow at the same height, which three reviews read as a
                     # colour difference between the socks.
-                    ((leg_x(z) + radius_x * cos(theta)) * side, radius * sin(theta) * depth, z),
+                    ((leg_x(z) + radius_x * cos(theta)) * side, radius * sin(theta) * depth_y, z),
                     colour,
                     bone_name,
                     (0.75, 0.25),
