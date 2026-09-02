@@ -81,7 +81,7 @@ weaken one to make a change pass.**
 | `scripts/measure/conformance.test.js` | a feel constant drifting from the record that informs it |
 | `scripts/brief.lint.test.js` | a brief over budget, an unreachable brief, a lost rule |
 | `scripts/hitrect.lint.test.js` | a new hand-written tap target |
-| `scripts/simclock.lint.test.js` | sim-milliseconds ceasing to be real milliseconds |
+| `scripts/simclock.lint.test.js` / `v2/paintclock.lint.test.js` | sim-milliseconds ceasing to be real milliseconds; an instrument painting from the wall clock, so the probed state is not the painted one |
 | `scripts/pitchbase.lint.test.js` | the pitch corridor being read from the wrong base |
 | `scripts/v2/bundle.lint.test.js` | v1 bundle bloat |
 | `scripts/v2/manifest.test.js` | a delivered model that renders as a proxy forever |
