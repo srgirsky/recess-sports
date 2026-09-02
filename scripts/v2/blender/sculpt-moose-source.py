@@ -297,8 +297,18 @@ TORSO_LEVELS = [
     (2.620, 0.330, 0.300, "Spine2"),
     (2.740, 0.260, 0.245, "Spine2"),
     (2.830, 0.190, 0.185, "Spine2"),
-    (2.900, 0.160, 0.155, "Spine2"),  # hood collar roll, proud
-    (2.960, 0.140, 0.136, "Spine2"),  # neck hole — OUTSIDE the neck loft
+    # The collar roll, raised to the chin line: the sheet seats the chin/jowls
+    # IN the collar with no bare neck (front view: skin runs to row ~394 at
+    # the centre while the collar tops the shoulders at rows 362-378) — the
+    # old roll at z 2.900 left a skin stalk between it and the head's bottom
+    # (ellipsoid floor z 2.99). The rim rides ~0.02 proud of the neck loft
+    # (0.148/0.140 at z 3.01) so it frames the neck from the front.
+    # measured: front chin-on-collar overlap rows 362-394; the model maps the
+    # rim to its own head floor z 2.99 (the sheet's jowl hangs below the
+    # model's ellipsoid chin, so the sheet row cannot be used as a raw z).
+    (2.910, 0.180, 0.176, "Spine2"),  # roll base — thickens instead of necking in
+    (2.995, 0.170, 0.166, "Spine2"),  # collar rim at the chin line, proud of the neck
+    (3.020, 0.142, 0.136, "Spine2"),  # neck hole — turns in, hidden inside the neck loft
 ]
 
 
@@ -412,25 +422,30 @@ def build_hoodie_details(builder: MeshBuilder, detail: int) -> None:
             row.append(builder.vertex((x, y, z), colour, "Spine"))
         prows.append(row)
     builder.grid(prows, 1, cyclic=False)
-    # Drawstrings: two cords that EMERGE from the hood collar roll (the ring
-    # at z 2.900) and lie against the chest — the first build started them
-    # 0.066 proud of a bare chest at z 2.815, hanging from nothing, and the
-    # 4x crop read them as scratch marks. Each spine starts 0.010 INSIDE the
-    # collar surface, then tracks the torso rings ~0.015 proud, and ends in a
-    # crimp + wider bulb so the tip reads as an aglet.
+    # Drawstrings: two cords that EMERGE from the hood collar roll and lie
+    # against the chest — the first build started them 0.066 proud of a bare
+    # chest at z 2.815, hanging from nothing, and the 4x crop read them as
+    # scratch marks; the second tracked ~0.015 proud with an r 0.028 bulb,
+    # and edge-on (x +-0.14) the crimp+bulb read as a dark barnacle sitting
+    # on the chest at z 2.3-2.5. Now every spine centre sits ~0.002-0.012
+    # PROUD-OF-ZERO on the torso surface (half the tube buried), so the side
+    # read is a seam, and the bulb is shrunk to a modest aglet.
     # Traced, front view: cord centres cols ~163/209 vs centre 188 (x +-0.14),
-    # cord ~6px wide (r 0.018), aglet bulb ~10px (r 0.030) ending row ~469
-    # (z 2.25). The sheet hangs them from the drawn hood edge (row 399,
-    # z 2.675); the model's hood front edge IS the collar roll, so they start
-    # there and keep the traced tip height.
+    # cord ~6px wide (r 0.018), tip ending row ~469 (z 2.25). The drawn aglet
+    # is ~10px LONG but lies flat on the cloth; r 0.019 keeps it a tick wider
+    # than the crimp without the traced length becoming authored proudness.
+    # The sheet hangs the cords from the drawn hood edge (row 399, z 2.675);
+    # the model's hood front edge IS the collar rim (z 2.995), so they start
+    # buried there and keep the traced tip height.
     for side in (1, -1):
         builder.tube(
-            [(side * 0.100, -0.108, 2.905),   # buried in the collar roll
-             (side * 0.132, -0.280, 2.640),   # lying on the chest
-             (side * 0.140, -0.354, 2.345),   # the crimp above the tip
-             (side * 0.141, -0.360, 2.295)],  # the aglet bulb
-            [0.017, 0.020, 0.018, 0.028], 1, SHIRT_DARK,
-            ["Spine2", "Spine2", "Spine1", "Spine1"], 5, flip=side < 0)
+            [(side * 0.100, -0.125, 2.950),   # buried in the collar roll
+             (side * 0.120, -0.185, 2.790),   # over the roll's base
+             (side * 0.132, -0.272, 2.640),   # lying on the chest
+             (side * 0.140, -0.343, 2.345),   # the crimp above the tip
+             (side * 0.141, -0.350, 2.295)],  # the aglet bulb, on the surface
+            [0.016, 0.018, 0.018, 0.014, 0.019], 1, SHIRT_DARK,
+            ["Spine2", "Spine2", "Spine2", "Spine1", "Spine1"], 5, flip=side < 0)
 
 
 # --- Arms: long mustard sleeves on a big build ---------------------------------

@@ -63,6 +63,10 @@ SOLE = rgba("FAE4C0")        # cream toe bumper, laces
 # she has no socks) — light denim on the sheet, mask-friendly.
 TEAM_MASK = rgba("D8D2C6")
 BUTTON = rgba("F2C24E")      # the gold strap buttons — identity, authored
+STITCH = rgba("D9B36A")      # the denim topstitch — the button gold
+                             # desaturated a step (sat 0.51 vs 0.68): dex's
+                             # #C08A48 stitch was scored "runs hotter than
+                             # the sheet", so this one starts a step cooler
 
 PALETTE = Palette(
     skin=SKIN, skin_shadow=SKIN_SHADOW, hair=HAIR,
@@ -343,46 +347,82 @@ def torso_surface_y(z: float, frac_x: float, back: bool = False) -> float:
     return yy if back else -yy
 
 
+def torso_patch(builder: MeshBuilder, x0: float, x1: float, z0: float,
+                z1: float, base: float, proud: float, colour, top_colour,
+                bone: str, back: bool = False, flip: bool = False,
+                span: float = 0.30) -> None:
+    """A bevelled proud patch riding the torso surface — batch 7's sewn-pouch
+    pattern (rim vertices at ~35% of the proud height read as stitching),
+    dex's leg_patch ported to the torso loft. `base` is the surface the patch
+    sits on (0 for the loft itself, the bib panel's own offset for a pocket
+    ON the bib); the TOP row takes `top_colour` — the pocket-mouth topstitch.
+    Rows run bottom-up like build_bib's panels; `flip` mirrors the winding
+    for the -x copy (the flip= parameter, never reversed row lists — Penny's
+    own button lesson)."""
+    steps = 3
+    rows = []
+    for j in range(steps + 1):
+        z = z0 + (z1 - z0) * j / steps
+        row = []
+        for i in range(steps + 1):
+            x = x0 + (x1 - x0) * i / steps
+            rim = j in (0, steps) or i in (0, steps)
+            d = base + (0.35 * proud if rim else proud)
+            y = torso_surface_y(z, x / span, back) + (d if back else -d)
+            shade = top_colour if j == steps else colour
+            row.append(builder.vertex((x, y, z), shade, bone))
+        rows.append(row)
+    builder.grid(rows, 1, cyclic=False, flip=flip != back)
+
+
 def build_bib(builder: MeshBuilder, detail: int) -> None:
     """The denim bib and back panel as proud panels, with the chest pocket."""
     if detail < 1:
         return
     for back in (False, True):
         rows = []
-        for z in (2.020, 2.150, 2.300, 2.410):
+        # The bib-edge topstitch: a thin STITCH band ON adjacent rows (dex's
+        # belt-line ring-pair pattern) so the line is crisp, with guard rows
+        # at 2.364/2.396 keeping each colour ramp inside a short band.
+        # measured: front bib top edge row 392 (z 2.381 drawn), its stitch
+        # line row 397 — 0.030ft below the edge; authored 2.372-2.386 under
+        # the 2.410 bib top, the same offset. LOD1/2 keep the sparse rows.
+        zs = ((2.020, 2.150, 2.300, 2.364, 2.372, 2.386, 2.396, 2.410)
+              if detail >= 2 else (2.020, 2.150, 2.300, 2.410))
+        for z in zs:
             half = 0.195 if z < 2.35 else 0.165
+            colour = STITCH if 2.370 < z < 2.390 else PANTS
             row = []
             cols = 4 if detail >= 2 else 3
             for i in range(cols):
                 t = 2 * (i / (cols - 1)) - 1.0
                 x = t * half
                 y = torso_surface_y(z, x / 0.30, back) + (0.014 if back else -0.014)
-                row.append(builder.vertex((x, y, z), PANTS, "Spine1" if z < 2.2 else "Spine2"))
+                row.append(builder.vertex((x, y, z), colour, "Spine1" if z < 2.2 else "Spine2"))
             rows.append(row)
         builder.grid(rows, 1, cyclic=False, flip=back)
-    # The chest pocket — she is Penny POCKETS: a smaller proud patch with a
-    # darker rim row on the bib.
-    prows = []
-    for j, z in enumerate((2.100, 2.180, 2.260)):
-        row = []
-        for i in range(3):
-            t = i - 1
-            x = t * 0.105
-            y = torso_surface_y(z, x / 0.30) - 0.026
-            row.append(builder.vertex((x, y, z), PANTS_DARK if j != 1 else PANTS, "Spine1"))
-        prows.append(row)
-    builder.grid(prows, 1, cyclic=False)
-    # Hip pockets, one per side.
+    # The chest pocket — she is Penny POCKETS: a bevelled sewn pouch on the
+    # bib (interior at the old 0.026 proud, rims at the bib's own 0.014 +
+    # 35% bevel) with the mouth's topstitch as its STITCH top row.
+    # measured: front pocket rows 420-427 put the drawn mouth stitch at
+    # z 2.21-2.17; authored mouth 2.260 rides the authored bib's proportions.
+    torso_patch(builder, -0.105, 0.105, 2.100, 2.260, 0.014, 0.012,
+                PANTS, STITCH, "Spine1")
+    # Hip pockets, one per side — the drawn slant-mouth front pockets,
+    # authored as bevelled proud patch pockets with the mouth stitch on top.
+    # measured: front pocket mouth rows 505-535 → z 1.713-1.536 drawn;
+    # authored 1.700-1.530 under the exemplar waistband at its traced height.
     for side in (1, -1):
-        hrows = []
-        for z in (1.480, 1.600):
-            row = []
-            for i in range(2):
-                x = side * (0.170 + 0.115 * i)
-                y = torso_surface_y(z, x / 0.34) - 0.016
-                row.append(builder.vertex((x, y, z), PANTS_DARK, "Hips"))
-            hrows.append(row)
-        builder.grid(hrows, 1, cyclic=False, flip=side < 0)
+        torso_patch(builder, side * 0.140, side * 0.275, 1.530, 1.700,
+                    0.0, 0.020, PANTS, STITCH, "Hips",
+                    flip=side < 0, span=0.34)
+    # Back seat pockets — the back view's five-sided patches, same pouch.
+    # measured: back pockets rows 506-565 → z 1.698-1.341 drawn (ftPerPx
+    # 0.006042); authored 1.660-1.400 clear of the hem flare at 1.215.
+    for side in (1, -1):
+        torso_patch(builder, side * 0.100, side * 0.280, 1.400, 1.660,
+                    0.0, 0.020, PANTS, STITCH, "Hips",
+                    back=True, flip=side < 0, span=0.34)
 
 
 def build_straps(builder: MeshBuilder, detail: int) -> None:

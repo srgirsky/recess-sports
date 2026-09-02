@@ -268,19 +268,32 @@ def ring_loft_cap(builder: MeshBuilder, levels, detail: int) -> None:
 # untinted board reads true while teams tint it at runtime.
 # not-traceable: the band's own width hides under fringe and pigtails in
 # every view; the arc it rides is the cap surface + 0.02.
-# The y values ride the CAP's own front surface +0.02 — the first build put
-# the arc at y -0.02..-0.095, which is INSIDE the cap volume, and the band
-# was invisible from every angle. The ends tuck under the pigtail roots.
+# The y values ride the CAP's own front surface — the first build put the
+# arc at y -0.02..-0.095, which is INSIDE the cap volume, and the band was
+# invisible from every angle.
+# ★ HEM SWEEP: riding the surface with the CENTERLINE at +0.02 put the OUTER
+# edge (+ the 0.048 tube radius) 0.068-0.080 past the crown-front silhouette
+# where the crown curves away — the "bent twig" hook of
+# zippy-profile-review.png x 215-250 / y 95-140 (apex outer -0.340 against
+# the cap's own -0.260 at z 3.83). And the old ends (±0.440, -0.050, 3.440)
+# sat laterally OUTSIDE the cap (half_x 0.428 at that z), so each blunt
+# 4-sided end cap faced the profile camera as an open tube mouth. Every knot
+# below is re-derived so the tube's OUTER edge = the rendered cap surface
+# (ellipse with ring_loft_cap's -0.300 tuck clamp) + 0.020 — visible as a
+# ribbon pressed into the hair, projecting no more than 0.02 anywhere — and
+# the ends now terminate INSIDE the pigtail ties (tie spine 0.400→0.462,
+# radius 0.085), so no mouth shows. Moved points only: zero triangles, she
+# has sixteen.
 HEADBAND_ARC = [
-    (-0.440, -0.050, 3.440),
-    (-0.375, -0.147, 3.600),
-    (-0.300, -0.277, 3.690),
-    (-0.170, -0.333, 3.770),
-    (0.000, -0.292, 3.830),
-    (0.170, -0.333, 3.770),
-    (0.300, -0.277, 3.690),
-    (0.375, -0.147, 3.600),
-    (0.440, -0.050, 3.440),
+    (-0.410, 0.010, 3.560),
+    (-0.375, -0.096, 3.600),
+    (-0.300, -0.228, 3.690),
+    (-0.170, -0.272, 3.770),
+    (0.000, -0.232, 3.830),
+    (0.170, -0.272, 3.770),
+    (0.300, -0.228, 3.690),
+    (0.375, -0.096, 3.600),
+    (0.410, 0.010, 3.560),
 ]
 
 # One curved lobed tube per pigtail: spouting up-out from the tie, arcing over
@@ -580,11 +593,20 @@ SHOE_TOE_OUT = 14.0 * pi / 180.0
 
 # not-traceable: the last's fore-aft profile has no sheet view; the scales it
 # is built to are the traced numbers above.
+# ★ HEM SWEEP: the toe bumper's rear boundary (toe_cap_v_low activates at
+# y < -0.26) had no station near it — the nearest rows sat at -0.314 and
+# -0.228, so the cream cap paint interpolated across that whole 0.086ft gap
+# and the bumper read as a soft unbounded lozenge (zippy-front-review.png
+# y 585-615). The two rows are MOVED to straddle the boundary (-0.270 in,
+# -0.256 out — a 0.014ft band, Penny's ring-pair rule), widths interpolated
+# off the original table at the new y so the last's plan shape holds
+# (-0.270 → 0.151/0.275, -0.256 → 0.155/0.277). Station count unchanged and
+# the cap overlay still owns three rows: zero triangles.
 SHOE_STATIONS = [
     (-0.439, 0.058, 0.210, SOLE),
     (-0.388, 0.106, 0.242, SOLE),
-    (-0.314, 0.140, 0.268, SOLE),
-    (-0.228, 0.162, 0.282, SOLE),
+    (-0.270, 0.151, 0.275, SOLE),
+    (-0.256, 0.155, 0.277, SOLE),
     (-0.131, 0.174, 0.288, SOLE),
     (-0.034, 0.180, 0.290, SOLE),
     (0.057, 0.179, 0.288, SOLE),

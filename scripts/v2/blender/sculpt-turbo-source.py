@@ -309,9 +309,21 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
 # measured: front z=1.40 halfWidth=0.6231 tol=0.03
 # measured: front z=2.40 halfWidth=0.1429 tol=0.03
 TORSO_LEVELS = [
-    (1.310, 0.380, 0.300, "Hips"),    # hem underside — turned-under lip
-    (1.345, 0.390, 0.310, "Hips"),    # hem lip, proud — overhangs the shorts
-    (1.398, 0.380, 0.302, "Hips"),    # hem band top
+    # The hem's PROFILE is drape, not a lampshade: the first band+lip build was
+    # a straight cone 1.560→1.398 ending in a near-horizontal brim, and the
+    # critic read it exactly as built. Three short bands round the lip edge
+    # (crown ring between lip and band top), the fore-aft halves pull in
+    # 0.008-0.012 so the flare is shallower in depth than in width, and an
+    # ease ring at 1.475 sits 0.008 inside the straight cone so the fall is
+    # concave like cloth. The traced front width holds: lip 0.390 / band top
+    # 0.380 against the sheet's half 0.389 at z 1.40.
+    # not-traceable: the fore-aft halves — the profile view's hem depth is
+    # bounded only through the hanging arm that merges with the tee there.
+    (1.310, 0.380, 0.288, "Hips"),    # hem underside — turned-under lip
+    (1.342, 0.390, 0.298, "Hips"),    # hem lip, proud — overhangs the shorts
+    (1.372, 0.388, 0.298, "Hips"),    # lip crown — the edge rounds off, no shelf corner
+    (1.398, 0.380, 0.294, "Hips"),    # hem band top
+    (1.475, 0.350, 0.284, "Hips"),    # drape ease — concave fall, not a cone
     (1.560, 0.325, 0.278, "Spine"),
     (1.780, 0.308, 0.265, "Spine"),
     (2.000, 0.298, 0.255, "Spine1"),
@@ -498,7 +510,20 @@ SHOE_TOE_OUT = 14.0 * pi / 180.0
 
 # not-traceable: the last's fore-aft profile has no sheet view; the scales it
 # is built to are the traced numbers above.
+#
+# ★ THE END STATIONS TAPER TO NEAR-POINTS, because the strip's end holes were
+# never really capped: build_shoe fans `heel_point` against the table's FIRST
+# ring and `toe_point` against its LAST, and this table (like the roster's)
+# runs toe-first — so each "cap" is a cone crossing the whole shoe interior,
+# and each apex poked out of the far wall as a backfacing needle. On the
+# board that rendered as the symmetric dark tick where the cream toe bumper
+# meets the cupsole (ray-cast against the exported GLB: the frontmost surface
+# at the tick pixels was the toe-fan cone, back-facing; a see-through slit at
+# runtime — the Lou backface class in warm cream). With 0.010-half tip rings
+# the WALL itself closes both ends and the cross-fans shrink to buried
+# needles no aperture can expose.
 SHOE_STATIONS = [
+    (-0.462, 0.010, 0.150, SOLE),   # toe tip ring — closes the front hole
     (-0.439, 0.058, 0.210, SOLE),
     (-0.388, 0.106, 0.242, SOLE),
     (-0.314, 0.140, 0.268, SOLE),
@@ -509,6 +534,7 @@ SHOE_STATIONS = [
     (0.137, 0.168, 0.282, SOLE),
     (0.188, 0.144, 0.272, SOLE),
     (0.239, 0.106, 0.236, SOLE),
+    (0.262, 0.010, 0.160, SOLE),    # heel tip ring — closes the back hole
 ]
 
 # not-traceable: a cross-section is a fore-aft cut no view can give.
@@ -602,8 +628,13 @@ TURBO_SHOE = ShoeSpec(
     collar=(0.022, 0.105),
     straps=((-0.170, -0.122), (-0.060, -0.012)),
     strap_arc_min=0.55,
-    heel_point=(0.286, 0.106 + 0.025),
-    toe_point=(-0.470, 0.044 + 0.042),
+    # The end-fan apexes sit INSIDE the shoe volume, behind their own tip
+    # rings — see the SHOE_STATIONS header: each fan crosses to the FAR tip
+    # ring, so apex and cone must both stay buried.
+    # not-traceable: interior sentinel points — the sheet cannot draw a
+    # vertex that exists to be invisible.
+    heel_point=(0.245, 0.106 + 0.025),
+    toe_point=(-0.450, 0.044 + 0.042),
     upper=SHOE,
     trim=SOLE,
     midsole=WHITE,
