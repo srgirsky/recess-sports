@@ -326,7 +326,13 @@ export const FACE_SPECS = {
     browThin: 2.2,
     browHalf: 13,
     browX: [30, 98],
-    browY: 20,
+    // ★ UNDER THE FRINGE'S RENDERED EDGE, NOT ITS AUTHORED ARC. Cell 20 put
+    // the brows at z 3.489 against a fringe arc at 3.520 — clear on paper,
+    // and a critic found "no eyebrows render anywhere": the rendered edge
+    // hangs half a ring below the arc and the board camera projects a proud
+    // fringe 0.06-0.15 down the face. Cell 27 lands them at z 3.41, 0.11
+    // under the arc — the projection margin the hair rounds recorded.
+    browY: 27,
     browTilt: 0,
     // The mouth-cell pass: grin/cheer/tongue were near-identical on the
     // pre-batch-4 atlases (two critics pixel-diffed it) - the batch-4 knobs
