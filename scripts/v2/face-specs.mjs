@@ -918,7 +918,13 @@ export const FACE_SPECS = {
     eyeHalfH: 9,
     irisR: 8,
     irisInward: 2,
-    eyeX: [32, 96],
+    // ★ UNDER THE RINGS. The glasses' ring centres sit at ±0.255ft (the
+    // sheet keeps 13% of head width in skin between the inner rims), and the
+    // island window (face_bearing 0.92) put cell 32 at ±0.18ft — a critic
+    // measured the eyes ~30% of a ring radius inboard, "cross-eyed with the
+    // glasses hanging outboard". Cell 20 lands them at ±0.24ft; the marks
+    // start at cell 8, so this is as far out as the atlas can carry them.
+    eyeX: [20, 108],
     eyeY: 50,
     browThick: 4.4,
     browThin: 2.2,
