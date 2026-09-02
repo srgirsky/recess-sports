@@ -197,7 +197,8 @@ CAP_LEVELS = [
     (3.850, 0.430, 0.450, -0.040),
     (3.700, 0.558, 0.578, -0.050),
     (3.550, 0.645, 0.640, -0.050),
-    (3.450, 0.670, 0.650, -0.045),
+    # 3.450 was within 0.010 of its neighbours' lerp (redundant-rows-scan,
+    # 2026-09-02): 24 LOD0 tris toward the knee rings.
     (3.360, 0.688, 0.640, -0.040),
     (3.290, 0.650, 0.595, -0.030),
 ]
@@ -283,6 +284,11 @@ def build_cap(builder: MeshBuilder, detail: int) -> None:
 # full; the cap rim above (half_x 0.65 at z 3.29) still covers the top.
 HAIR_LEVELS = [
     (3.400, 0.470, 0.480, -0.010),
+    # ★ 3.240 and 2.940 are within 0.02 of their neighbours' lerp, but they
+    # are NOT spare: hair_window_z was tuned against this row grid, and
+    # dropping them moved the shell so the window let the mass eat the right
+    # side of the face (visible face right of centre 27.1 → 15.1, a critic's
+    # measurement, 2026-09-02). Interpolation-redundant is not window-neutral.
     (3.240, 0.492, 0.505, 0.010),
     (3.050, 0.478, 0.500, 0.060),
     (2.940, 0.448, 0.470, 0.110),
@@ -591,7 +597,10 @@ LEG_STATIONS = [
     (1.250, 0.120, 1.00, SKIN, "UpLeg"),          # the bare leg
     (1.100, 0.114, 1.00, SKIN, "Leg"),
     (0.950, 0.108, 1.00, SKIN, "Leg"),
-    (0.740, 0.103, 1.00, SKIN, "Leg"),
+    # ★ A calf the board can see (the Peaches lesson, #214): 0.103 under a
+    # 0.108 knee row read as a straight pipe. 0.110 is a swell the sheet's
+    # lanky leg does draw, small, above the proud sock roll.
+    (0.740, 0.110, 1.00, SKIN, "Leg"),            # the calf
     (0.640, 0.116, 1.00, SOCK, "Leg"),            # sock top roll, proud
     (0.612, 0.108, 1.00, SOCK, "Leg"),
     (0.585, 0.107, 1.00, TEAL, "Leg"),            # stripes: one ring each, close
@@ -618,7 +627,8 @@ THEO_LEG = LegSpec(
     garment=SHORTS,
     sock=SOCK,
     team_mask=TEAM_MASK,
-    knee=0.0,
+    knee=0.14,  # the kneecap and the hollow under it (0.12-0.15 of the local
+                 # half-width is what survives the board — LegSpec.knee)
 )
 
 

@@ -201,11 +201,15 @@ def skull_front_y(x: float, z: float) -> float:
 CAP_LEVELS = [
     (3.940, 0.140, 0.150, 0.000),
     (3.860, 0.290, 0.305, 0.000),
-    (3.760, 0.365, 0.385, 0.005),
+    # 3.760 and 3.340 were within 0.025 of their neighbours' lerp
+    # (redundant-rows-scan, 2026-09-02): 96 LOD0 tris that pay for the knee
+    # rings. 3.560 measured spare too, but losing it turned the crown's curve
+    # between 3.86 and 3.46 into two chords with a corner at 3.66 (a critic's
+    # before/after, 2026-09-02) — interpolation-redundant is not curvature-
+    # neutral where three rows carry one arc. It stays.
     (3.660, 0.415, 0.435, 0.010),
     (3.560, 0.448, 0.465, 0.015),
     (3.460, 0.462, 0.478, 0.020),
-    (3.340, 0.470, 0.486, 0.030),
     (3.200, 0.440, 0.462, 0.055),
     (3.060, 0.350, 0.380, 0.100),
     (2.960, 0.270, 0.310, 0.145),
@@ -693,8 +697,13 @@ LEG_STATIONS = [
     (1.100, 0.122, 1.01, SKIN, "UpLeg"),
     (0.950, 0.116, 1.01, SKIN, "Leg"),
     (0.800, 0.112, 1.01, SKIN, "Leg"),
-    (0.700, 0.115, 1.00, SKIN, "Leg"),             # the calf
-    (0.580, 0.104, 1.00, SKIN, "Leg"),
+    # ★ A calf the board can see: 0.115 over a 0.112 knee was sub-pixel (the
+    # Peaches lesson, #214). Clover's sheet reads slimmer than Peaches' at the
+    # calf (sharing lint: 0.3864 vs 0.4226 at z=0.70), so 0.122 here, not 0.126.
+    # The sheet's PROFILE calf is the leg's biggest shape (+21% behind the
+    # knee); a wider ring cannot draw it, a deeper one can — depth 1.08 here.
+    (0.700, 0.122, 1.08, SKIN, "Leg"),             # the calf
+    (0.580, 0.100, 1.00, SKIN, "Leg"),             # the ankle narrows
     (0.520, 0.114, 1.00, SOCK, "Leg"),             # sock top roll
     (0.460, 0.108, 1.00, SOCK, "Leg"),
     (0.425, 0.110, 1.00, TEAM_MASK, "Leg"),        # the stripe — THE accent
@@ -719,7 +728,8 @@ CLOVER_LEG = LegSpec(
     garment=SKIN,
     sock=SOCK,
     team_mask=TEAM_MASK,
-    knee=0.0,
+    knee=0.14,  # the kneecap and the hollow under it (0.12-0.15 of the local
+                 # half-width is what survives the board — LegSpec.knee)
 )
 
 

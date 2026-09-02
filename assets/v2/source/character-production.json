@@ -33,11 +33,11 @@
     },
     "calls_shot": {
       "source": "theo-pilot.blend",
-      "sourceSha256": "ed24bdcfc3d5ff35dbe709d69fb65d0dd1780381cfd1dbf0215c16fc4731097d",
+      "sourceSha256": "3c1f078f8cf9f82b76c81b693fd232db28f0d0ce78e6df70cdf9055dc22b7108",
       "concept": "theo-turnaround.png",
       "conceptSha256": "f93d976869f437a92be482302db4124c064d33b708bb22a7e16fcfc51e403e66",
       "output": "kid_calls_shot.glb",
-      "outputSha256": "f9729a6ac96d162f117a3b3a9da7ff5da781e7ab536481c9bd69c788fdca44eb",
+      "outputSha256": "aa07de5fbe8035a8e8572fdc3c6f51366a4034616558a271482c3586d98654bc",
       "definingTraits": [
         "oversized cap",
         "broad tapered face",
@@ -348,11 +348,11 @@
     },
     "clover": {
       "source": "clover-pilot.blend",
-      "sourceSha256": "5ce1756dd4d2d2d2f5601e925581ee55ebdbc2ea53504e2292c9ffbadb182068",
+      "sourceSha256": "60d419ed65911ee9537827af31f2a51e646f22bc64c0bdcc33f5c3214c224df3",
       "concept": "clover-turnaround.png",
       "conceptSha256": "1cff5e0a9ac0306500dc1786ace77af0e9b888d3501262d23839a81bbbcc4142",
       "output": "kid_clover.glb",
-      "outputSha256": "407fa3f38d0be9011919369ef44244bd08e4ff694d7a8dfb89914eca48997090",
+      "outputSha256": "98b6b7be2efb8469819eeb96f93c27a848eddab552cba80ece4c4ae89a3ab34b",
       "definingTraits": [
         "blonde low pigtails",
         "swept side fringe",
