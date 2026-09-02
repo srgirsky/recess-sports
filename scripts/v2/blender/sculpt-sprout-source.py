@@ -801,6 +801,7 @@ def build_lod(name: str, armature: bpy.types.Object, segments: int, rings: int, 
     add_character(builder, segments, rings, detail)
     mesh = bpy.data.meshes.new(f"{name}_Mesh")
     mesh.from_pydata(builder.vertices, [], builder.faces)
+    print(builder.part_report(name))  # the LOD0 budget by part: sculptlib.mesh
     mesh.update()
 
     obj = bpy.data.objects.new(name, mesh)

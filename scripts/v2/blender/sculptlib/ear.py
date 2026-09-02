@@ -25,7 +25,7 @@ from math import cos, pi, sin
 
 from dataclasses import dataclass
 
-from .mesh import MeshBuilder
+from .mesh import MeshBuilder, part
 from .palette import Palette
 
 
@@ -53,6 +53,7 @@ class EarSpec:
     radii: tuple[float, float]
 
 
+@part("ear")
 def build_ear(
     builder: MeshBuilder,
     side: int,
