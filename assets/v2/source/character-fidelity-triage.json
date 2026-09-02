@@ -1910,11 +1910,6 @@
       "class": "proportions",
       "excerpt": "CARRIED — gizmo-front-review.png x 211-328, y 490-540: the legs are still narrow"
     },
-    "gizmo:f1d7d17ee1a7": {
-      "char": "gizmo",
-      "class": "face-atlas",
-      "excerpt": "NEW — gizmo-runtime-face-grin.png x 470-590, y 272-326 (all four face stills): t"
-    },
     "gizmo:9dbbdbd4d57a": {
       "char": "gizmo",
       "class": "material-light",
@@ -2384,6 +2379,11 @@
       "char": "bubbles",
       "class": "material-light",
       "excerpt": "CARRIED, MEASURED — shoe-band mean saturation 21.6 vs the sheet's 26.0, OFF by 4"
+    },
+    "gizmo:c99d7b5f942c": {
+      "char": "gizmo",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED — eyes inboard of the ring centres: after face-specs.mjs gizmo eyeX move"
     }
   }
 }
