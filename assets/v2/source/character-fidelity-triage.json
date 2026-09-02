@@ -145,76 +145,6 @@
       "class": "no-defect-note",
       "excerpt": "Not defects, checked and cleared so nobody re-files them: the old hairMass-1 bas"
     },
-    "wheelchair_ace:380cb72f3461": {
-      "char": "wheelchair_ace",
-      "class": "proportions",
-      "excerpt": "PRIMARY. The chair is half the mass the sheet gives it and sits too low on the f"
-    },
-    "wheelchair_ace:21b8f9e91e41": {
-      "char": "wheelchair_ace",
-      "class": "butt-joins",
-      "excerpt": "The drive wheels read as flat parallel-sided black slabs with square-cut faceted"
-    },
-    "wheelchair_ace:b410780426cc": {
-      "char": "wheelchair_ace",
-      "class": "severed",
-      "excerpt": "The four frame rails per side terminate in tapered points hanging in mid-air (ra"
-    },
-    "wheelchair_ace:ff67211df889": {
-      "char": "wheelchair_ace",
-      "class": "interpenetration",
-      "excerpt": "The METAL footplate ellipsoid is buried inside the WHITE sole tube (sole bottom "
-    },
-    "wheelchair_ace:792cb1a9e612": {
-      "char": "wheelchair_ace",
-      "class": "hems-cuffs",
-      "excerpt": "The sneakers deliver none of the sheet's construction: no toe, no heel, no ankle"
-    },
-    "wheelchair_ace:d03af2395323": {
-      "char": "wheelchair_ace",
-      "class": "severed",
-      "excerpt": "The caster is an open torus (ring radius 0.130, tube radius 0.040) so the field "
-    },
-    "wheelchair_ace:43a9399a6e08": {
-      "char": "wheelchair_ace",
-      "class": "butt-joins",
-      "excerpt": "The shin is a constant-diameter dowel from knee to ankle with no calf and no ank"
-    },
-    "wheelchair_ace:def7f5a64ada": {
-      "char": "wheelchair_ace",
-      "class": "hair-nyquist",
-      "excerpt": "Hair: 67% of the concept's strand count at 390% of its prominence on the crown b"
-    },
-    "wheelchair_ace:795f93a8fe98": {
-      "char": "wheelchair_ace",
-      "class": "proportions",
-      "excerpt": "The hair fins splay radially in the front board where the sheet sweeps the whole"
-    },
-    "wheelchair_ace:7ae2a68d9bbe": {
-      "char": "wheelchair_ace",
-      "class": "material-light",
-      "excerpt": "The flat hair facets take a steel-blue specular in game light, so a #2A211C near"
-    },
-    "wheelchair_ace:c2f37390dd32": {
-      "char": "wheelchair_ace",
-      "class": "40px-read",
-      "excerpt": "The push rim, the only team-accent geometry on the asset, survives the front boa"
-    },
-    "wheelchair_ace:17124e0260e9": {
-      "char": "wheelchair_ace",
-      "class": "decal-not-form",
-      "excerpt": "The skull is an undifferentiated sphere with no jaw or cheekbone and the nose is"
-    },
-    "wheelchair_ace:13b81cd5c7bc": {
-      "char": "wheelchair_ace",
-      "class": "proportions",
-      "excerpt": "VERIFIED, NOT REPRODUCED - the earlier finding that 'the backrest ellipsoid (y 0"
-    },
-    "wheelchair_ace:c57000c562f3": {
-      "char": "wheelchair_ace",
-      "class": "no-defect-note",
-      "excerpt": "FALSE FINDING I ALMOST FILED, recorded so the next reviewer does not file it: in"
-    },
     "big_lou:db35eafb3b93": {
       "char": "big_lou",
       "class": "proportions",
@@ -2234,6 +2164,91 @@
       "char": "chip",
       "class": "no-defect-note",
       "excerpt": "REFUSAL RECORD, not re-filed: the sock ships a green band only against the conce"
+    },
+    "wheelchair_ace:bc781c72c70b": {
+      "char": "wheelchair_ace",
+      "class": "proportions",
+      "excerpt": "PRIMARY. The chair is half the mass the sheet gives it and sits too low on the f"
+    },
+    "wheelchair_ace:b1886daf971b": {
+      "char": "wheelchair_ace",
+      "class": "butt-joins",
+      "excerpt": "The drive wheels read as flat parallel-sided black slabs with square-cut faceted"
+    },
+    "wheelchair_ace:626b18785835": {
+      "char": "wheelchair_ace",
+      "class": "severed",
+      "excerpt": "The four frame rails per side terminate in tapered points hanging in mid-air (ra"
+    },
+    "wheelchair_ace:333da60e6a6e": {
+      "char": "wheelchair_ace",
+      "class": "interpenetration",
+      "excerpt": "The METAL footplate ellipsoid is buried inside the WHITE sole tube (sole bottom "
+    },
+    "wheelchair_ace:e42645b858e0": {
+      "char": "wheelchair_ace",
+      "class": "severed",
+      "excerpt": "The caster is an open torus (ring radius 0.130, tube radius 0.040) so the field "
+    },
+    "wheelchair_ace:29513f77c63c": {
+      "char": "wheelchair_ace",
+      "class": "40px-read",
+      "excerpt": "The push rim, the only team-accent geometry on the asset, survives the front boa"
+    },
+    "wheelchair_ace:9db1b51c7a82": {
+      "char": "wheelchair_ace",
+      "class": "hems-cuffs",
+      "excerpt": "RE-VERIFIED, HOLDS. The sneakers deliver none of the sheet's construction: no to"
+    },
+    "wheelchair_ace:5b11ae19e342": {
+      "char": "wheelchair_ace",
+      "class": "butt-joins",
+      "excerpt": "RE-VERIFIED, HOLDS. The shin is a near-constant dowel from knee to ankle (author"
+    },
+    "wheelchair_ace:aa0747791b41": {
+      "char": "wheelchair_ace",
+      "class": "decal-not-form",
+      "excerpt": "RE-VERIFIED, HOLDS. The skull is an undifferentiated sphere with no jaw or cheek"
+    },
+    "wheelchair_ace:93e006d73058": {
+      "char": "wheelchair_ace",
+      "class": "no-defect-note",
+      "excerpt": "MEASURED CLEAR. Prior finding 'seven flat blades too deep/too few at 390% promin"
+    },
+    "wheelchair_ace:22aa624b44af": {
+      "char": "wheelchair_ace",
+      "class": "no-defect-note",
+      "excerpt": "MEASURED CLEAR. Prior finding 'fins splay radially where the sheet sweeps the ma"
+    },
+    "wheelchair_ace:5fb30ccfbd67": {
+      "char": "wheelchair_ace",
+      "class": "material-light",
+      "excerpt": "PARTIAL CLEAR, REFINED. The steel-BLUE glint is gone: lit hair facets now averag"
+    },
+    "wheelchair_ace:beb10bec3856": {
+      "char": "wheelchair_ace",
+      "class": "no-defect-note",
+      "excerpt": "NEW. The head-aspect claim does not reproduce: with one instrument on both image"
+    },
+    "wheelchair_ace:112f6842976a": {
+      "char": "wheelchair_ace",
+      "class": "hair-nyquist",
+      "excerpt": "NEW, MINOR. The locks are dead-straight 3-point spines, so in profile the crown "
+    },
+    "wheelchair_ace:cd6b963351e3": {
+      "char": "wheelchair_ace",
+      "class": "no-defect-note",
+      "excerpt": "NEW, NOTE ONLY - probably not actionable. The x-mirror constraint (faceAsymmetry"
+    },
+    "wheelchair_ace:685126826291": {
+      "char": "wheelchair_ace",
+      "class": "no-defect-note",
+      "excerpt": "VERIFIED, NOT REPRODUCED - the earlier finding that 'the backrest ellipsoid (y 0"
+    },
+    "wheelchair_ace:dae3d4075854": {
+      "char": "wheelchair_ace",
+      "class": "no-defect-note",
+      "excerpt": "FALSE FINDING I ALMOST FILED, recorded so the next reviewer does not file it: in"
     }
   }
 }
