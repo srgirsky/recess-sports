@@ -3,7 +3,8 @@ import { PerspectiveCamera, Vector3 } from 'three';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { FIELD_SOLVE, RIGS, SAFE_RECT, chooseCamera, damp, ndcThrough, type CameraPreset } from './cameraCues';
+import { CAMERA_FAR_FT, FIELD_SOLVE, RIGS, SAFE_RECT, chooseCamera, damp, ndcThrough, type CameraPreset } from './cameraCues';
+import { SKY_RADIUS_FT } from './Sky';
 import { FIRST, HOME, SECOND, THIRD, VENUE_GEOMETRY, fenceDistAt, pointAt } from '../sim/field';
 
 // The measurement records are the source of truth; read them rather than
@@ -341,5 +342,27 @@ describe('the fit ladder (round-2 re-audit #12)', () => {
     for (const field of ['runners:', 'targetBags:', 'launchDeg', 'carryFt', 'bangBangSec']) {
       expect(bridge).toContain(field);
     }
+  });
+});
+
+describe('the far plane reaches the sky dome from every rig', () => {
+  // A far plane equal to the dome's radius clips its far side for any eye
+  // that is not at the origin, and the clip shows the clear colour: a black
+  // wedge on the horizon behind CF from FIELD and DEEP (2026-09-01, found by
+  // the presentation smoke). `frame()` above builds its own cameras at 2000,
+  // which is why no projection test here could see it — so this one reads the
+  // constant the game camera is built from, and pins that citation.
+  it('CAMERA_FAR_FT clears the dome radius plus the farthest rig eye', () => {
+    const reach = Math.max(...Object.values(RIGS).map((rig) => Math.hypot(...rig.eye)));
+    expect(reach).toBeGreaterThan(0);
+    expect(CAMERA_FAR_FT).toBeGreaterThanOrEqual(SKY_RADIUS_FT + reach);
+  });
+
+  it('GameView builds its camera from CAMERA_FAR_FT, not a literal', () => {
+    const view = readFileSync(
+      join(dirname(fileURLToPath(import.meta.url)), '..', 'game', 'GameView.ts'),
+      'utf8'
+    );
+    expect(view).toMatch(/new PerspectiveCamera\(RIGS\.PITCH\.fov, 1, [\d.]+, CAMERA_FAR_FT\)/);
   });
 });

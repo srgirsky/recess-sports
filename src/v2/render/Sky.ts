@@ -50,7 +50,17 @@ export const SKY_HORIZON = 0xb9e4fa;
 export const NIGHT_TOP = 0x101c34;
 export const NIGHT_HORIZON = 0x2c3e66;
 
-export function buildSky(topHex = SKY_TOP, bottomHex = SKY_HORIZON, radius = 900): Mesh {
+/**
+ * The dome's radius, in feet. Exported because THE CAMERA'S FAR PLANE MUST
+ * REACH PAST IT from wherever a rig stands: a far plane equal to the radius
+ * clips the dome's far side for any eye that is not at the origin, and what
+ * shows through the clip is the WebGL clear colour — a flat black wedge on
+ * the horizon behind CF from the FIELD and DEEP rigs (2026-09-01, the
+ * presentation smoke's fielded beat). `cameraCues.CAMERA_FAR_FT` cites this.
+ */
+export const SKY_RADIUS_FT = 900;
+
+export function buildSky(topHex = SKY_TOP, bottomHex = SKY_HORIZON, radius = SKY_RADIUS_FT): Mesh {
   const geom = new SphereGeometry(radius, 24, 16);
   const mat = new ShaderMaterial({
     vertexShader: VERT,

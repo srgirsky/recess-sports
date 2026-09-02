@@ -75,7 +75,7 @@ import {
   slideCue,
 } from '../render/actionCues';
 import type { AnimName } from '../render/clips';
-import { RIGS, chooseCamera, damp, type CameraCue, type CameraPreset } from '../render/cameraCues';
+import { CAMERA_FAR_FT, RIGS, chooseCamera, damp, type CameraCue, type CameraPreset } from '../render/cameraCues';
 import { applyFrame, cameraInputFor, type SceneRefs } from '../render/bridge';
 import { simulateGameLive, type GameResult, type LiveFrame, type SimEvent } from '../sim/game';
 import type { PlayInputs } from '../sim/play';
@@ -373,7 +373,7 @@ export class GameView {
     this.renderer = new Renderer(canvas);
     this.renderer.bindOutlines(this.outlines);
     configureModelLoader(this.renderer.gl);
-    this.camera = new PerspectiveCamera(RIGS.PITCH.fov, 1, 0.5, 900);
+    this.camera = new PerspectiveCamera(RIGS.PITCH.fov, 1, 0.5, CAMERA_FAR_FT);
     // The one flip — see the field's header comment on the scene.
     this.scene.scale.x = -1;
     this.lighting = new Lighting({ shadowMapSize: this.renderer.tier.shadowMapSize, night: this.night });
