@@ -325,51 +325,6 @@
       "class": "material-light",
       "excerpt": "CARRIED: investigate the board saturation at the instrument, do not repaint. The"
     },
-    "mimi_mash:11d895ae1dd4": {
-      "char": "mimi_mash",
-      "class": "hair-nyquist",
-      "excerpt": "CURLS-VS-STRIPES VERDICT (the round's key question): the halo reads as CURLS. On"
-    },
-    "mimi_mash:11a06d3d0e06": {
-      "char": "mimi_mash",
-      "class": "hair-nyquist",
-      "excerpt": "mimi-mash-profile-review.png, hair crown/back (approx x 220-360, y 85-260): the "
-    },
-    "mimi_mash:6cf224a421f5": {
-      "char": "mimi_mash",
-      "class": "hair-nyquist",
-      "excerpt": "mimi-mash-profile-review.png, face (approx x 200-240, y 170-235): the CURL_FRING"
-    },
-    "mimi_mash:15dc2f289081": {
-      "char": "mimi_mash",
-      "class": "40px-read",
-      "excerpt": "sculpt-mimi-mash-source.py lines 65 and 71: CUFF and TEAM_MASK are byte-identica"
-    },
-    "mimi_mash:86747f3a7ec6": {
-      "char": "mimi_mash",
-      "class": "butt-joins",
-      "excerpt": "mimi-mash-runtime-face-grin.png (and the other three face stills), shoulders bes"
-    },
-    "mimi_mash:919bc2c83d58": {
-      "char": "mimi_mash",
-      "class": "decal-not-form",
-      "excerpt": "mimi-mash-front-review.png, shoes (approx y 590-650): front-on, the cream trim ("
-    },
-    "mimi_mash:f59378076f70": {
-      "char": "mimi_mash",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (cleared): the pale grey band at the ankles on both boards is RAW TEA"
-    },
-    "mimi_mash:e6c05116857e": {
-      "char": "mimi_mash",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (cleared): the tan patch with dark marks on the profile boards at the"
-    },
-    "mimi_mash:b5f5258fe60a": {
-      "char": "mimi_mash",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (cleared): the dark slab behind the neck in mimi-mash-runtime-hero.pn"
-    },
     "mimi_mash:06096fea3486": {
       "char": "mimi_mash",
       "class": "no-defect-note",
@@ -2249,6 +2204,61 @@
       "char": "wheelchair_ace",
       "class": "no-defect-note",
       "excerpt": "FALSE FINDING I ALMOST FILED, recorded so the next reviewer does not file it: in"
+    },
+    "mimi_mash:a6baa409b21c": {
+      "char": "mimi_mash",
+      "class": "no-defect-note",
+      "excerpt": "CURLS-VS-STRIPES VERDICT (carried, still holds): the halo reads as CURLS on this"
+    },
+    "mimi_mash:e41a166d986c": {
+      "char": "mimi_mash",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (measured): the profile crown-to-back rounded-rectangle finding. mimi-ma"
+    },
+    "mimi_mash:b04a1f00ebd8": {
+      "char": "mimi_mash",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED (re-verified, updated numbers): mimi-mash-profile-review.png, face (x~21"
+    },
+    "mimi_mash:31469f76e10d": {
+      "char": "mimi_mash",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (measured): the CUFF/TEAM_MASK identical-hex finding. Source now declare"
+    },
+    "mimi_mash:bc6acb9baa25": {
+      "char": "mimi_mash",
+      "class": "butt-joins",
+      "excerpt": "CARRIED (butt-joins class, already filed - not new): mimi-mash-runtime-face-grin"
+    },
+    "mimi_mash:e65035d54a3c": {
+      "char": "mimi_mash",
+      "class": "decal-not-form",
+      "excerpt": "CARRIED (unchanged evidence): mimi-mash-front-apose-review.png, shoes - front-on"
+    },
+    "mimi_mash:7a4a2a5db6a5": {
+      "char": "mimi_mash",
+      "class": "other",
+      "excerpt": "NEW (minor): the inverted-hull outline pinches at each toe front-on - all four r"
+    },
+    "mimi_mash:912c297ff1e4": {
+      "char": "mimi_mash",
+      "class": "face-atlas",
+      "excerpt": "NEW (minor, blocks 3.5's 5 not its 4): mimi-mash-runtime-run.png, near eye (x~49"
+    },
+    "mimi_mash:5eda19603511": {
+      "char": "mimi_mash",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (carried, updated): the pale band at the ankles on both review boards"
+    },
+    "mimi_mash:4a015127a08e": {
+      "char": "mimi_mash",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (carried): the tan patch with dark marks on the profile boards at the"
+    },
+    "mimi_mash:be131360c588": {
+      "char": "mimi_mash",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (carried, re-verified this round): the dark slab behind the neck in m"
     }
   }
 }

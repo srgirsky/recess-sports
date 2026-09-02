@@ -362,38 +362,38 @@
    ]
   },
   "mimi_mash": {
-   "status": "needs-polish",
+   "status": "candidate",
    "evidence": "mimi-mash-fidelity-review.png",
    "categories": {
     "frontProfileSilhouette": {
      "label": "front/profile silhouette",
-     "score": 3,
-     "note": "The front large read matches the sheet (halo, hoodie, straight-leg jeans, hi-tops), but the profile hair volume is squared off — a flat crown plane meeting a near-vertical back wall at a hard corner where the concept draws a round cloud — and the fringe curtain closes the profile face to a narrow sliver, both of which a player sees in any hero profile."
+     "score": 4,
+     "note": "3 -> 4. The blocker cleared: the profile crown-to-back now ROUNDS, measured, not eyeballed. On mimi-mash-profile-review.png the back edge expands from the crown top with monotonically decelerating slope (y79 R277 -> y97 R338) and stays convex to its widest point (R379 at y200) before tapering into the neck - no flat cap, no vertical wall, no hard corner. The prior 'rounded rectangle' was part sculpt, part instrument: a <25 background threshold on the black board clipped the shadowed dark-brown hair and amputated the real curve. What keeps this at 4: the fringe curtain still closes the profile face to a sliver (concept shows it fully open), and the hood ships as two butt-joined primitives (filed class)."
     },
     "headBodyProportions": {
      "label": "head/body proportions",
      "score": 4,
-     "note": "Head-plus-halo share, stocky child torso and connected joints all track the turnaround's proportions on the boards and in every runtime still; nothing reads proxy-derived."
+     "note": "4, held. Child proportion matches the turnaround's big-head read on both boards; joints read connected; no bobblehead. Evidence unchanged from the prior round."
     },
     "hairMass": {
      "label": "hair mass",
      "score": 4,
-     "note": "One designed mass with genuinely sculpted, mirror-safe clump grouping and a scalloped front silhouette — it reads as curls, not stripes or quilting — but the clumps resolve at roughly twice the concept's coil size (45% of its strand count at 180% prominence) and smear toward marbling at grazing angles, so it is solid rather than indistinguishable."
+     "note": "4, held - the CURLS verdict stands on this round's boards (honeycomb interior, scalloped organic edge, no lattice), and the profile rounding strengthens the one-designed-mass read. Not 5: clumps still run ~2x the concept's coil size and the two-tone paint smears toward wood-grain marbling at the crown's grazing angle in mimi-mash-runtime-hero.png - grouping, not sculpted strands."
     },
     "clothingConstruction": {
      "label": "clothing construction",
      "score": 4,
-     "note": "Ribbed hem, proud kangaroo pocket, cream tee sliver, ruched elbow sleeve rolls over bare forearms, rolled cuff, sock sliver and fully lasted hi-tops are real construction; the hood's two low-segment ellipsoids read as hard faceted blocks at the shoulders in runtime stills and the pocket corners stay butt-joined boxes."
+     "note": "4, held, with the cuff defect cleared: CUFF (AAB2BA) and TEAM_MASK (BFC4C6) are now distinct hexes, the accent is confined to the single top roll ring (source z 0.520), and at runtime the cuff body reads its own grey-blue with no full-roll team tint. Pocket, hem, collar tee sliver, rolled cuffs, cupsole all construct. Not 5: the hood still reads as two disjoint hard-edged primitives beside the neck (butt-joins, filed), and the outline shell pinches into a dark claw at each toe front-on."
     },
     "faceExpressionRead": {
      "label": "face/expression read",
      "score": 4,
-     "note": "All four runtime face stills read at draft-card distance (furrowed angry brow, open-mouth cheer with teeth, toothy grin, pink tongue), the nose is a sculpted form, and the front-board face is fully visible; the profile face crowded to a one-eye sliver by the fringe is what holds it at 4."
+     "note": "4, held. All four runtime cells read at draft-card distance: grin shows teeth, cheer opens the mouth, angry carries knitted brows plus frown, tongue is unmistakable. The nose breaks the profile silhouette. Not 5: the eye-white cell edge rides the cheek curvature at run-clip angles (a faint sticker read at the silhouette), and the fringe bisects the eye in true profile."
     },
     "heroAndFieldScale": {
      "label": "hero + 40px read",
      "score": 4,
-     "note": "The one memorable read — big chocolate halo over a rust hoodie — survives the hero close-up, the 40 px strip and the field camera against both grass and dirt."
+     "note": "4, held. Hero close-up carries the identity (curl halo, rust hoodie, grey cuff rolls, rust high-tops); the in-game field sprite at ~40px still reads as brown-halo-plus-red-hoodie Mimi against both grass and dirt."
     }
    },
    "heroEvidence": "mimi-mash-runtime-hero.png",
@@ -403,24 +403,26 @@
    ],
    "measuredFidelity": {
     "command": "npm run measure:fidelity -- mimi_mash",
-    "ranAt": "2026-08-30",
+    "ranAt": "2026-09-02",
     "board": "mimi-mash-fidelity-review.png",
-    "result": "measure:strands: delivered 5.72 strand minima/row vs concept 12.67 on the 5-45% head-height band — 45% of the concept's strand count at 180% of its prominence. Column-concentration probe (24 bins/row; persistent = holds minima in >=50% of rows): concept 65.5% of 1280 minima in 13 persistent bins; delivered 11.0% of 435 minima in 1 persistent bin — the delivered minima wander across columns rather than locking to fixed columns (caveat recorded: persistent-fraction is confounded by minima density, so the comparison is qualitative).",
+    "result": "Profile back edge (mimi-mash-profile-review.png, bg threshold <12 - the <25 threshold the prior round implied clips shadowed hair on the black board and fabricates a wall): crown top y79 R277 -> y83 R311 -> y89 R327 -> y97 R338, then convex expansion to max R379 at y200, tapering to R370 by y239 - continuous curvature, no flat span, corner gone. Crown top descends smoothly x275(y79) -> x335(y94) -> x375(y164). Profile visible face skin: rows y202-254 only, max run 17px wide at y246 vs ~150px head width - the fringe still bisects the eye in orthographic profile. Cuff column (mimi-mash-runtime-face-grin.png x490): denim (13,40,66) for y<578 -> grey-blue roll body (96-116,105-125,99-119) y581-594 (~14px) -> cream sock band (135-139,136-139,111-114) y595-600 -> rust shoe; no yellow-green full-roll tint anywhere (prior round: entire roll tinted). Source: CUFF=AAB2BA line 65, TEAM_MASK=BFC4C6 line 75, accent ring only at z0.520 (line 540). Field sprite ~40x55px in-game minimap: identity reads.",
     "note": "featurelatitude gates brow 37.0, eye 50.0, mouth 65.3 (bounded crop traces - the analyser refused all three; its two competing mouth bands at 75.7/93.2 are the under-chin and collar shadows), earLine 49.4. The pre-convention proxy blend carried stray meshes (*_CurlHalo, Icosphere) that exported alongside the LODs and blew the 400KB budget until purged."
    },
    "polishFindings": [
-    "CURLS-VS-STRIPES VERDICT (the round's key question): the halo reads as CURLS. On mimi-mash-front-review.png the interior is lit blob tops separated by a dark web that wanders band-to-band (honeycomb, no full-height groove, no repeating lattice), and the silhouette edge is scalloped with irregular organic bumps; the instrument agrees (1 persistent column bin, minima wander). The prior rounds' stripe/quilting failure is CLEARED — do not re-file it. Residual softness only: clumps are ~2x the concept's coil size and the two-tone paint smears toward wood-grain marbling at the crown's grazing angle in mimi-mash-runtime-hero.png.",
-    "mimi-mash-profile-review.png, hair crown/back (approx x 220-360, y 85-260): the profile hair mass is a rounded rectangle — flat crown from the z=4.030 cap ring meeting a near-vertical back wall at a hard top-back corner — where the turnaround profile is a round cloud; adding one intermediate CURL_LEVELS ring near the crown and easing the top rings' y extents to round the crown-to-back transition would fix it without touching the front read.",
-    "mimi-mash-profile-review.png, face (approx x 200-240, y 170-235): the CURL_FRINGE curtain leaves only a one-eye sliver of face in profile while the concept profile shows the whole face with hair behind the brow; the source records that burying the temple columns lowered faceSkin, so the fix is to pull the fringe table's descent slightly rearward/upward (x entries outward), not to bury the rim.",
-    "sculpt-mimi-mash-source.py lines 65 and 71: CUFF and TEAM_MASK are byte-identical rgba(\"BFC4C6\"), so the source's own round-2 rule that 'only the thin top roll ring is the accent; the cuff body stays its own grey-blue' is unenforceable by colour — and in all four runtime face stills the ENTIRE ankle roll tints team yellow-green with no grey-blue cuff body visible below it. Judged on extent per the review discipline: the accent is on the correct surface (the cuff roll) but covers the whole roll instead of the recorded thin top ring. Fix: give CUFF a distinct hex so the two lanes separate.",
-    "mimi-mash-runtime-face-grin.png (and the other three face stills), shoulders beside the neck: the hood reads as two disjoint hard-edged primitives — a faceted red box past the character's left shoulder and a dark slab at the right — because the two hood ellipsoids ship at 8x5 and 6x3 segments; a lofted crescent hugging the collar, or simply more segments, would make it read as one draped hood. Verified present in source (build_hoodie_details, lines 420-422): this is a misbuilt feature, not a missing one.",
-    "mimi-mash-front-review.png, shoes (approx y 590-650): front-on, the cream trim (toe bumper + heel counter + cupsole) dominates and the rust quarter reads as patches, while the concept's front view is rust-dominant with a cream toe cap; the side/runtime reads are correctly rust-dominant, so verify with the 6b.2 garment-split measure before resculpting — this may be a front-projection artifact of the tall trim edges rather than a banding error.",
-    "NON-DEFECT (cleared): the pale grey band at the ankles on both boards is RAW TEAM_MASK geometry rendering untinted, per the board convention — placement on the jean cuff roll is correct; do not file its colour.",
-    "NON-DEFECT (cleared): the tan patch with dark marks on the profile boards at the shoulder (approx x 260-280, y 290-310, both profile and profile-apose) is the foreshortened far hand and fingers of the bind-pose arm seen end-on past the torso, not a hole or a skin-coloured gouge in the hoodie.",
-    "NON-DEFECT (cleared): the dark slab behind the neck in mimi-mash-runtime-hero.png is the hood lining ellipsoid in shade plus outline, not an open interior; no holes or see-through gaps found in any front or profile silhouette (rubric 3.7 passes on this evidence).",
+    "CURLS-VS-STRIPES VERDICT (carried, still holds): the halo reads as CURLS on this round's boards - lit blob tops over a wandering dark honeycomb web, scalloped organic silhouette edge, no repeating lattice. Do not re-file the stripe/quilting failure. Residual softness only: clumps ~2x the concept's coil size, and the two-tone paint smears toward wood-grain marbling at the crown's grazing angle in mimi-mash-runtime-hero.png - this is what caps hairMass at 4.",
+    "CLEARED (measured): the profile crown-to-back rounded-rectangle finding. mimi-mash-profile-review.png back edge now expands from the crown top with monotonically decelerating slope (y79 R277, y83 R311, y89 R327, y97 R338) and stays convex to its widest point (R379 at y200) before tapering - the flat crown and near-vertical back wall are gone; the crown top itself descends continuously x275(y79) to x375(y164). Measurement lesson recorded: the prior round's silhouette read used an effective background threshold near <25 on the black board, which clips the shadowed dark-brown back-of-hair pixels (values 10-34) and amputates ~40px of real curve - it manufactured part of the 'wall'. Re-measure dark hair on dark boards at threshold <12 or on a lit background.",
+    "CARRIED (re-verified, updated numbers): mimi-mash-profile-review.png, face (x~214-244, y~200-256) - the CURL_FRINGE curtain still closes the profile face to a sliver: visible skin is confined to rows y202-254 with a max run of 17px against a ~150px head, and the curtain edge bisects the eye in orthographic profile, where the locked turnaround's profile shows the whole face open with hair behind the brow. At the runtime run-clip angle (mimi-mash-runtime-run.png) the eye is fully visible, so the closure only bites in true profile - but the concept deviation stands. Fix direction unchanged: pull the fringe table's descent rearward/upward (x entries outward); do not bury the rim (that lowered faceSkin last time).",
+    "CLEARED (measured): the CUFF/TEAM_MASK identical-hex finding. Source now declares CUFF=rgba(AAB2BA) (line 65) and TEAM_MASK=rgba(BFC4C6) (line 75) with the accent confined to the single top roll ring at z 0.520 (line 540); the cuff body rings (z 0.490/0.440) are CUFF and the underside lip is PANTS_DARK. Runtime extent (judged on extent per the discipline, never colour): in mimi-mash-runtime-face-grin.png at x490 the roll reads as ~14px of grey-blue cuff body (96-116,105-125,99-119) with no full-roll team tint - the prior round's entire-roll yellow-green tint is gone in all four face stills. The cream band below the roll (135-139,136-139,111-114) is the SOCK (FFF6E6) in warm shade, not accent bleed.",
+    "CARRIED (butt-joins class, already filed - not new): mimi-mash-runtime-face-grin.png (and the other three face stills), shoulders beside the neck - the hood still reads as two disjoint hard-edged primitives: a faceted red box past the character's left shoulder and a dark navy-edged slab at the right, from the 8x5 and 6x3 segment hood ellipsoids (build_hoodie_details). A lofted crescent hugging the collar, or more segments, would make it one draped hood.",
+    "CARRIED (unchanged evidence): mimi-mash-front-apose-review.png, shoes - front-on, the cream trim (toe bumper + heel counter + cupsole) still dominates and the rust quarter reads as patches, while the concept's front view is rust-dominant with a cream toe cap; side and runtime reads are correctly rust-dominant. Verify with the 6b.2 garment-split measure before resculpting - plausibly a front-projection artifact of the tall trim edges.",
+    "NEW (minor): the inverted-hull outline pinches at each toe front-on - all four runtime face stills show a dark hook (~10px at 0.6x zoom, both feet) curling under the toe tip, e.g. mimi-mash-runtime-face-grin.png at (470,625) and (555,625); at draft-card distance it reads as a split or claw in the shoe front. Likely the outline shell folding through the toe crease; check the shell offset at the toe cap before touching the shoe sculpt.",
+    "NEW (minor, blocks 3.5's 5 not its 4): mimi-mash-runtime-run.png, near eye (x~495-520, y~250-280) - the eye-white atlas cell edge rides the cheek curvature at run-clip angles, giving a faint sticker/decal-island read where the white crescent meets the face silhouette. Cosmetic at gameplay camera; note for a future face-as-form pass.",
+    "NON-DEFECT (carried, updated): the pale band at the ankles on both review boards is now TWO untinted greys - CUFF (AAB2BA) body plus the raw TEAM_MASK (BFC4C6) top ring rendering untinted per the board convention; placement on the jean cuff roll is correct; do not file its colour.",
+    "NON-DEFECT (carried): the tan patch with dark marks on the profile boards at the shoulder (~x260-280, y290-310) is the foreshortened far hand and fingers of the bind-pose arm seen end-on past the torso, not a hole or a skin-coloured gouge in the hoodie.",
+    "NON-DEFECT (carried, re-verified this round): the dark slab behind the neck in mimi-mash-runtime-hero.png is the hood lining ellipsoid in shade plus outline, not an open interior; no holes or see-through gaps found in any front or profile silhouette on this round's boards (rubric 3.7 passes on this evidence).",
     "NOT FILED per instruction: the ankle-daylight/stance measure reading OFF is the recorded flood-fill-containment vs adducted-stance instrument conflict, not a defect."
    ],
-   "scoredBoardSha256": "39dcf839ac4c584b16a2986d2d7197136b7541ee1c6425a71c98ad166fc7eb53"
+   "scoredBoardSha256": "ea0d8372b6b6a37d2ca1da72309df2d5c9508b2813f19adb547a10338ea669f8"
   },
   "grizz": {
    "status": "needs-polish",
