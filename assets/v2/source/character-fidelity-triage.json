@@ -1270,86 +1270,6 @@
       "class": "no-defect-note",
       "excerpt": "VERIFIED FIXED, do not re-open: the bun is no longer a dark backface void. Front"
     },
-    "turbo:76e1443cb40a": {
-      "char": "turbo",
-      "class": "sheared-edges",
-      "excerpt": "SHOULDER-WEDGE COVERAGE GAP (the defect this character is named for, STILL PRESE"
-    },
-    "turbo:4c7a5cfe5817": {
-      "char": "turbo",
-      "class": "face-atlas",
-      "excerpt": "BROWS LAND ON THE EYES, NOT UNDER THE HAIRLINE (new — replaces the no-eyebrows f"
-    },
-    "turbo:8ff6aca990d5": {
-      "char": "turbo",
-      "class": "hair-nyquist",
-      "excerpt": "HAIR CAP IS A FEATURELESS SMOOTH DOME with eleven separate cones butt-joined int"
-    },
-    "turbo:313d3f555694": {
-      "char": "turbo",
-      "class": "hair-nyquist",
-      "excerpt": "STAIRCASE HAIRLINE, still present: cropped at 6x the fringe edge is axis-aligned"
-    },
-    "turbo:ab13f34f25f5": {
-      "char": "turbo",
-      "class": "ears",
-      "excerpt": "EARS ARE 1.4x OVERSIZED. EarSpec (0.1700, 0.2000) is unchanged: 0.40ft tall = 25"
-    },
-    "turbo:e2b363433ee7": {
-      "char": "turbo",
-      "class": "proportions",
-      "excerpt": "HEAD IS ~5 POINTS TOO SMALL relative to the figure (prior manual measure 34.5% v"
-    },
-    "turbo:b26b74b524d5": {
-      "char": "turbo",
-      "class": "proportions",
-      "excerpt": "PROFILE TORSO IS STILL A SLAB ABOVE THE HEM. The new hem gives the profile a bot"
-    },
-    "turbo:fb83c82f07ca": {
-      "char": "turbo",
-      "class": "decal-not-form",
-      "excerpt": "NOSE DOES NOT BREAK THE PROFILE. nose_push (tip 0.075, unchanged) gives a soft r"
-    },
-    "turbo:a17ba8be9088": {
-      "char": "turbo",
-      "class": "stance",
-      "excerpt": "STANCE STILL TOED OUT (visual finding only — the 42.9% ankle-daylight OFF is the"
-    },
-    "turbo:0829ee5c9127": {
-      "char": "turbo",
-      "class": "face-atlas",
-      "excerpt": "TONGUE CELL IS READABLE BUT SMALL (residue of a cleared finding). The tongue now"
-    },
-    "turbo:3a56ca8ed536": {
-      "char": "turbo",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (fixed, measured): NO EYEBROWS - brows now render on the board front vie"
-    },
-    "turbo:0d0dde2854f0": {
-      "char": "turbo",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (fixed, measured): FACE PUSHED TOO LOW - the eye anchor lands at 72.4% o"
-    },
-    "turbo:a176286741c2": {
-      "char": "turbo",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (fixed, measured): SAWTOOTH COLLAR EDGE - at 6x in both T- and A-pose fr"
-    },
-    "turbo:30883e6a256e": {
-      "char": "turbo",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (fixed): EXPRESSION CELLS BARELY DIFFER - the four cells now read as fro"
-    },
-    "turbo:b5466c4cd1ff": {
-      "char": "turbo",
-      "class": "no-defect-note",
-      "excerpt": "NOT A DEFECT, recorded so it is not re-filed: the skin-toned disc inside the blu"
-    },
-    "turbo:0f5a33599e2f": {
-      "char": "turbo",
-      "class": "no-defect-note",
-      "excerpt": "NOT A DEFECT, recorded so it is not re-filed: legs are two legs. Continuous dayl"
-    },
     "moose:dc0a81884d7a": {
       "char": "moose",
       "class": "proportions",
@@ -1504,86 +1424,6 @@
       "char": "bend_it",
       "class": "no-defect-note",
       "excerpt": "NOT A DEFECT, recorded for the same reason: the glasses ship as open wire rings "
-    },
-    "zippy:cf232305068a": {
-      "char": "zippy",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (verified fixed, do not re-file): the headband no longer terminates as a"
-    },
-    "zippy:5795ff4092e1": {
-      "char": "zippy",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (verified fixed, do not re-file): the shoe toe cap is now a bounded bump"
-    },
-    "zippy:3e30c5836aec": {
-      "char": "zippy",
-      "class": "no-defect-note",
-      "excerpt": "Recorded cosmetic non-fix (carry, not a sculpt defect): the concept's shoe side "
-    },
-    "zippy:060981726e07": {
-      "char": "zippy",
-      "class": "material-light",
-      "excerpt": "Full-width hip shading band (still holds, re-verified at 4x this round): the tee"
-    },
-    "zippy:6e2985ff89d5": {
-      "char": "zippy",
-      "class": "butt-joins",
-      "excerpt": "The tee/shorts junction is a butt joint (still holds): the torso loft ends in a "
-    },
-    "zippy:cf4b26e09189": {
-      "char": "zippy",
-      "class": "hair-nyquist",
-      "excerpt": "The fringe's lower edge is stair-stepped (still holds) - square notches across t"
-    },
-    "zippy:4764ef45f6eb": {
-      "char": "zippy",
-      "class": "hair-nyquist",
-      "excerpt": "Brows are authored (bold arcs in every cell of assets/v2/source/zippy-face-atlas"
-    },
-    "zippy:f72900496fe2": {
-      "char": "zippy",
-      "class": "hair-nyquist",
-      "excerpt": "Hair strand grouping is 45% of the concept's density at 113% prominence (measure"
-    },
-    "zippy:1626dd0c4b40": {
-      "char": "zippy",
-      "class": "proportions",
-      "excerpt": "Forearms remain the thinnest limb read (still holds); zippy-profile-apose-review"
-    },
-    "zippy:8a5234df17ef": {
-      "char": "zippy",
-      "class": "interpenetration",
-      "excerpt": "The ear IS constructed (recorded non-defect, keep) - build_ear with EAR_SPEC(cen"
-    },
-    "zippy:a598a47cc74c": {
-      "char": "zippy",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (verified fixed): the receipt-hygiene finding is done - character-fideli"
-    },
-    "zippy:1950a5e17ae3": {
-      "char": "zippy",
-      "class": "material-light",
-      "excerpt": "NEW minor: a thin dark diagonal streak (~2-3px at 1x) crosses the toe bumper's n"
-    },
-    "turbo:b5fcf2f6eec6": {
-      "char": "turbo",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (fixed, measured): DARK SEAM SLIVER ON BOTH SHOES - at 6x on the fresh f"
-    },
-    "turbo:75af5988e4a5": {
-      "char": "turbo",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (fixed, measured): HEM BRIM IS STIFF / LAMPSHADE - the hem now drapes. S"
-    },
-    "turbo:481bbe80891e": {
-      "char": "turbo",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (fixed, verified in script and crops): NO CROTCH / NO WAISTBAND / HIP NO"
-    },
-    "turbo:9a68f8ace3c4": {
-      "char": "turbo",
-      "class": "no-defect-note",
-      "excerpt": "NOT A DEFECT, recorded so it is not re-filed: the navy ringer sleeve cuffs ARE b"
     },
     "moose:1e501b6baafd": {
       "char": "moose",
@@ -2399,6 +2239,201 @@
       "char": "sprout",
       "class": "no-defect-note",
       "excerpt": "GRIN EVIDENCE — NON-DEFECT RECORD CARRIED: sprout-runtime-face-grin.png renders "
+    },
+    "zippy:4804fc840920": {
+      "char": "zippy",
+      "class": "butt-joins",
+      "excerpt": "CARRIED (worst remaining, re-verified at 4x): full-width hip shading band and bu"
+    },
+    "zippy:1bec96fc01b4": {
+      "char": "zippy",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED (reduced but still holds): the fringe's lower edge is a stepped polygon."
+    },
+    "zippy:992123dafdb2": {
+      "char": "zippy",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (verified fixed by this build, do not re-file): brows now read on delive"
+    },
+    "zippy:549c711153d9": {
+      "char": "zippy",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (verified): no skin shows through the hair where it should not. Pixel sw"
+    },
+    "zippy:345b142d1554": {
+      "char": "zippy",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED (re-run this round): hair strand grouping is 46% of the concept's count "
+    },
+    "zippy:aa1a6ca5a275": {
+      "char": "zippy",
+      "class": "proportions",
+      "excerpt": "CARRIED: forearms remain the thinnest limb read. zippy-profile-apose-review.png "
+    },
+    "zippy:4f50c057867a": {
+      "char": "zippy",
+      "class": "sheared-edges",
+      "excerpt": "NEW minor, examined at 8x (rule 2): the thin dark diagonal on both toes of zippy"
+    },
+    "zippy:645d1bd01650": {
+      "char": "zippy",
+      "class": "interpenetration",
+      "excerpt": "NEW minor: the headband rides so close to the cap (+0.02) that single hair pixel"
+    },
+    "zippy:98a5d77b4400": {
+      "char": "zippy",
+      "class": "other",
+      "excerpt": "NEW trivial: a single pink tie pixel peeks between the cap and the pigtail slab "
+    },
+    "zippy:abcfe5162812": {
+      "char": "zippy",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (recorded, keep): the ear IS constructed - build_ear with EAR_SPEC(ce"
+    },
+    "zippy:7ad28f2e4ddc": {
+      "char": "zippy",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (re-verified, do not re-file): the headband no longer terminates as an o"
+    },
+    "zippy:8a21b2fef28c": {
+      "char": "zippy",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (re-verified, do not re-file): the shoe toe cap is a bounded bumper. At "
+    },
+    "zippy:2b628d0f2e82": {
+      "char": "zippy",
+      "class": "material-light",
+      "excerpt": "CARRIED cosmetic non-fix (not a sculpt defect): the concept's shoe side stripes "
+    },
+    "zippy:dcabc410f079": {
+      "char": "zippy",
+      "class": "evidence",
+      "excerpt": "CARRIED as recorded (not re-examined this pass - receipt hygiene, not sculpt): c"
+    },
+    "zippy:8b25bf0d492b": {
+      "char": "zippy",
+      "class": "no-defect-note",
+      "excerpt": "INSTRUMENT CAVEAT (for the next critic): hairline-scan's 'ink within 30% below t"
+    },
+    "zippy:05fc8c0c47ef": {
+      "char": "zippy",
+      "class": "no-defect-note",
+      "excerpt": "MEASURED, not a sculpt finding: daylight between the ankles reads 27.9 vs 0 (tol"
+    },
+    "turbo:ce170c00372e": {
+      "char": "turbo",
+      "class": "hair-nyquist",
+      "excerpt": "STAIRCASE HAIRLINE - CARRIED and now the worst hair defect, because the fringe s"
+    },
+    "turbo:ffa5af1e8709": {
+      "char": "turbo",
+      "class": "butt-joins",
+      "excerpt": "SHOULDER-WEDGE COVERAGE GAP - CARRIED, unchanged (only CAP_FRINGE moved; the A-p"
+    },
+    "turbo:cc45f9e09cef": {
+      "char": "turbo",
+      "class": "proportions",
+      "excerpt": "HEAD TOO SMALL AND NO NECK - CARRIED, hand-measured on the fresh board since the"
+    },
+    "turbo:f89adcebb452": {
+      "char": "turbo",
+      "class": "hair-nyquist",
+      "excerpt": "HAIR CAP IS A SMOOTH DOME WITH ELEVEN BUTT-JOINED CONES - CARRIED. measure:stran"
+    },
+    "turbo:e96876bd0cf9": {
+      "char": "turbo",
+      "class": "ears",
+      "excerpt": "EARS OVERSIZED - CARRIED, unchanged (EarSpec radii 0.1700, 0.2000 at line 133). "
+    },
+    "turbo:d22d9a8ebb15": {
+      "char": "turbo",
+      "class": "proportions",
+      "excerpt": "PROFILE TORSO IS A SLAB - CARRIED, unchanged. turbo-profile-review.png tee spans"
+    },
+    "turbo:5c91b882596c": {
+      "char": "turbo",
+      "class": "proportions",
+      "excerpt": "NOSE DOES NOT BREAK THE PROFILE - CARRIED, unchanged (nose_push tip 0.075). A so"
+    },
+    "turbo:4ba2db27e68e": {
+      "char": "turbo",
+      "class": "stance",
+      "excerpt": "STANCE STILL TOED OUT (visual only; the 42.9% ankle-daylight OFF is the recorded"
+    },
+    "turbo:6f50006c3a37": {
+      "char": "turbo",
+      "class": "face-atlas",
+      "excerpt": "TONGUE CELL IS READABLE BUT SMALL - CARRIED, minor. turbo-runtime-face-tongue.pn"
+    },
+    "turbo:d62360e77f49": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "NO SKIN SHOWS THROUGH THE HAIR - checked on the fresh evidence, none. 0 skin-cla"
+    },
+    "turbo:7e490906a310": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "TEAM_MASK EXTENT - correct, unchanged: the sock roll-top band (LEG_STATIONS 0.46"
+    },
+    "turbo:2cec0a10709c": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (this build): FRINGE OVERSHOT THE SHEET - the rung 3.180 / 3.160 / 3.080"
+    },
+    "turbo:19e04cbfad78": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (stays cleared): BROWS LAND ON THE EYES - brows 15-20 px above the eye t"
+    },
+    "turbo:c2f221b2c0fd": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (stays cleared): DARK SEAM SLIVER ON BOTH SHOES - at 4x on turbo-front-r"
+    },
+    "turbo:15c68789075a": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (stays cleared): HEM BRIM IS STIFF - turbo-profile-review.png hem flares"
+    },
+    "turbo:209fb71f4610": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (stays cleared): NO EYEBROWS - brows render on the board and in all four"
+    },
+    "turbo:029951885397": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (stays cleared): FACE PUSHED TOO LOW - eye centre on the board at row ~2"
+    },
+    "turbo:be808d687745": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (stays cleared): SAWTOOTH COLLAR EDGE - the collar's top edge is one cle"
+    },
+    "turbo:d603ad67371d": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (stays cleared): NO CROTCH / NO WAISTBAND / HIP NOTCHES - hem band with "
+    },
+    "turbo:f7da21ec734d": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (stays cleared): EXPRESSION CELLS BARELY DIFFER - the four stills differ"
+    },
+    "turbo:ca64a6fc77ba": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (record): the skin-toned disc inside the collar ring on turbo-profile"
+    },
+    "turbo:818facf60d3c": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (record): legs are two legs - daylight from crotch to soles on both f"
+    },
+    "turbo:b72ba61486a4": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (record): the navy ringer sleeve cuffs render - the SHIRT_DARK ring a"
     }
   }
 }

@@ -199,10 +199,19 @@ CAP_LEVELS = [
 
 # The fringe hangs LOW — the hairline sits just above the brows and the
 # sides drop past the temples to the big ears.
+# Ladder (hairline-scan.mjs, front board; the sheet's hairline reads 46.7%
+# of head height):
+#   arc 3.100 / 3.080 / 3.000     63.0%   (shipped — "brows land on the eyes")
+#   arc 3.230 / 3.210 / 3.130     53.5%
+#   arc 3.320 / 3.300 / 3.220     49.0%   — the critic measured this rung 0.14 ft
+#     too HIGH: the scan's head height ran to the skin blob's bottom, which on
+#     the sheet is the collar and on the board the chin. Scan re-bounded at the
+#     chin; the critic's like-for-like read puts the sheet's hairline at z 3.16.
+#   arc 3.180 / 3.160 / 3.080     (this rung — the critic's own suggestion)
 CAP_FRINGE = [
-    (0.00, 3.100),
-    (0.18, 3.080),
-    (0.28, 3.000),
+    (0.00, 3.180),
+    (0.18, 3.160),
+    (0.28, 3.080),
     (0.36, 2.900),
     (0.44, 2.820),
 ]

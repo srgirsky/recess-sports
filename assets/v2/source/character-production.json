@@ -183,11 +183,11 @@
     },
     "zippy": {
       "source": "zippy-pilot.blend",
-      "sourceSha256": "2ff9e7d0f10c5fd70cb041f2d5ea1083443fd41176e33bafbd547ea0c387441a",
+      "sourceSha256": "c1368989e4e0559b3ba7abac521de3953b45af21a04e869774ea2a803b1b8202",
       "concept": "zippy-turnaround.png",
       "conceptSha256": "5a6ad80e5d6ad18e455b6c4ae56447cdcab1a14fa2eccf4ebd8a7f72a611fb31",
       "output": "kid_zippy.glb",
-      "outputSha256": "f9d87df530c1c79302cbf5182faab85b61f26bde04e1cebea20ebe0749a5d878",
+      "outputSha256": "ccacae0e8dbadcef40621ddbbfa7d7a68fac70f3e87c9008e720a2cab299c21a",
       "definingTraits": [
         "black side pigtails",
         "cream headband",
@@ -228,11 +228,11 @@
     },
     "turbo": {
       "source": "turbo-pilot.blend",
-      "sourceSha256": "c742f1eb9cb980058df3e452bd639c82c68bf1ade9619a92aa689ff89948ad27",
+      "sourceSha256": "22b701518499c9999cd8955cd177791a673f75d28a8440905e3be0bd72038996",
       "concept": "turbo-turnaround.png",
       "conceptSha256": "f3c0690117663b295a3001007eacd2a1dda10c12a5a8f7ed4d812fc63917851a",
       "output": "kid_turbo.glb",
-      "outputSha256": "2530b427e323d36bd7a3ac3d3464f3c8c48de1b8dcf80a68e76d9d9f1e84ed0e",
+      "outputSha256": "27f14a6247eabcfad7d9a4be39f979d4612fb05df3a342ef3b8683eaa62446a9",
       "definingTraits": [
         "wild black spike mop",
         "blue ringer tee",
