@@ -425,7 +425,7 @@ BOOMER_ARM = ArmSpec(
     shoulder_blend=SHOULDER_BLEND,
     cap_x=0.060,
     root_ring=0.92,  # the A-pose coverage gap: see ArmSpec.root_ring (#208)
-    elbow=0.0,
+    elbow=0.15,  # 0.06 was one board px per side on this arm (a critic): ArmSpec.elbow
     ring_squash=0.95,
     hand=HandSpec(
         tip_x=1.546,
@@ -497,8 +497,8 @@ BOOMER_LEG = LegSpec(
     garment=PANTS,
     sock=SOCK,
     team_mask=TEAM_MASK,
-    calf=(0.0, 0.0),
-    knee=0.0,
+    calf=(0.760, 0.45),  # the sheet deepens +39% into the calf belly; 0.20 gave +4% (a critic): LegSpec.calf
+    knee=0.10,  # his sheet sits the hem ON the knee with no forward protrusion — a smaller, rounder bump (a critic): LegSpec.knee
 )
 
 

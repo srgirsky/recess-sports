@@ -108,7 +108,12 @@ def _with_knee(stations, amount: float):
         return stations[-1]
 
     cap_z, hollow_z = LEG_KNEE_Z + 0.035, LEG_KNEE_Z - 0.030
-    wanted = [(cap_z, 1.0 + amount), (hollow_z, 1.0 - amount * 0.5)]
+    # ★ A FORM NEEDS THREE RINGS TO ROUND IT. One cap ring between stations
+    # 0.12 ft apart read as "a collar with hard corners" on Boomer's chunky
+    # leg (a critic, 2026-09-02): the loft ramps straight up to the cap and
+    # straight down to the hollow. A shoulder ring 0.040 above the cap at half
+    # the swell turns the ridge into a bump that softens into the thigh.
+    wanted = [(cap_z + 0.040, 1.0 + amount * 0.5), (cap_z, 1.0 + amount), (hollow_z, 1.0 - amount * 0.5)]
     out = []
     for z, half, depth, colour, bone in stations:
         for wz, f in list(wanted):
@@ -131,7 +136,7 @@ def build_leg(
     spec: LegSpec,
 ) -> None:
     """Shorts, bare shin and sock as one stitched surface."""
-    sides = 14 if detail >= 2 else 6
+    sides = 12 if detail >= 2 else 6
     stations = list(spec.stations)
     if spec.knee > 0.0 and detail >= 2:
         stations = _with_knee(stations, spec.knee)
@@ -163,6 +168,11 @@ def build_leg(
         # read as "a turned baluster" in profile (a critic, 2026-09-02).
         if spec.knee > 0.0 and abs(z - (LEG_KNEE_Z + 0.035)) < 1e-6:
             rear = rear / (1.0 + spec.knee)
+        # ...and the shoulder ring above it gives back its half-swell the same
+        # way, or the forward-only rule leaves a bump behind the knee (a
+        # critic's latent note on Clover, +1 px; a chunky knee would show it).
+        if spec.knee > 0.0 and abs(z - (LEG_KNEE_Z + 0.075)) < 1e-6:
+            rear = rear / (1.0 + spec.knee * 0.5)
         row = []
         for index in range(sides):
             theta = 2 * pi * index / sides

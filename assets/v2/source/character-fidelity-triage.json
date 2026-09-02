@@ -1235,11 +1235,6 @@
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT Trap-4 — the dark slit at the near eye in peaches-profile-review.png "
     },
-    "penny:63c960f94d9f": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "RECORDED REFUSALS, not re-filed: side-seam topstitch (colour-on-ring smears at 2"
-    },
     "grizz:9fed7fe6c996": {
       "char": "grizz",
       "class": "hair-nyquist",
@@ -1835,81 +1830,6 @@
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT, re-checked: the jogger cuff still reads - lefty-front-review.png and"
     },
-    "boomer:a798ab2cd899": {
-      "char": "boomer",
-      "class": "proportions",
-      "excerpt": "CARRIED — lower body: boomer-front-apose-review x190-350 y430-600 at 4x shows bo"
-    },
-    "boomer:a7328e49d519": {
-      "char": "boomer",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED — mohawk daylight: boomer-profile-review x180-390 y80-260 at 4x, every o"
-    },
-    "boomer:3624758dc1eb": {
-      "char": "boomer",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED — bare-skull sides: SCALP_FRINGE ends at (0.56, 3.000) so the fade drops"
-    },
-    "boomer:407b2d64c886": {
-      "char": "boomer",
-      "class": "sheared-edges",
-      "excerpt": "CARRIED — stubble boundary: the 18-segment ring clamp (ring_loft_scalp) makes th"
-    },
-    "boomer:4a12b9f3c18e": {
-      "char": "boomer",
-      "class": "material-light",
-      "excerpt": "CARRIED (re-measured, worse than recorded) — stripe contrast: delivered cream-go"
-    },
-    "boomer:1b32441b9df5": {
-      "char": "boomer",
-      "class": "butt-joins",
-      "excerpt": "REVISED — shoulder: the recorded flat horizontal shelf with a butt-joined sleeve"
-    },
-    "boomer:5810a438c0d7": {
-      "char": "boomer",
-      "class": "butt-joins",
-      "excerpt": "CARRIED — swing_contact back sleeve: boomer-runtime-swing x550-585 y337-375 at 4"
-    },
-    "boomer:cd816bd86015": {
-      "char": "boomer",
-      "class": "butt-joins",
-      "excerpt": "CARRIED — elbow: boomer-runtime-swing near arm at ~x455 y350 and boomer-runtime-"
-    },
-    "boomer:7c8973ccb8e6": {
-      "char": "boomer",
-      "class": "proportions",
-      "excerpt": "CARRIED — nose: nose_push exists (|nx| <= 0.20, tip 0.090, source lines 122-134)"
-    },
-    "boomer:a9d7079668ef": {
-      "char": "boomer",
-      "class": "decal-not-form",
-      "excerpt": "REVISED — shoe: the laces ARE built (BOOMER_SHOE.straps two flat bands on the va"
-    },
-    "boomer:dbb3df9b81f0": {
-      "char": "boomer",
-      "class": "decal-not-form",
-      "excerpt": "CARRIED — socks: no ribbing builder anywhere in sculptlib (grep 'rib' finds none"
-    },
-    "boomer:fccb5d69ab83": {
-      "char": "boomer",
-      "class": "face-atlas",
-      "excerpt": "REVISED — hero/run yaw: boomer-runtime-hero x430-610 y140-330 and boomer-runtime"
-    },
-    "boomer:c3317fb4543f": {
-      "char": "boomer",
-      "class": "face-atlas",
-      "excerpt": "CARRIED (softened) — cheer mouth: boomer-runtime-face-cheer x440-620 y200-320 at"
-    },
-    "boomer:eb096458716d": {
-      "char": "boomer",
-      "class": "evidence",
-      "excerpt": "NOT RE-DERIVED — the recorded hair head-box coverage (33.3% vs 41.5%) and interi"
-    },
-    "boomer:6d24877fe48a": {
-      "char": "boomer",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (re-checked, do not re-file) — the throat 'annulus' in boomer-profile"
-    },
     "sprout:2eb13f5d4d8d": {
       "char": "sprout",
       "class": "hair-nyquist",
@@ -2105,86 +2025,6 @@
       "class": "no-defect-note",
       "excerpt": "CLEARED (stays cleared) - recorded scores: the prior record is the honest 2/3/2/"
     },
-    "penny:b5c348ff0bb1": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (the rootring round's measured regression): the recess above each ear an"
-    },
-    "penny:65b9b57e0ffb": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED, confirmed again (shoulder half of finding [6]): the sleeve/torso juncti"
-    },
-    "penny:1ad53d0a5ba7": {
-      "char": "penny",
-      "class": "butt-joins",
-      "excerpt": "CARRIED (arm half of finding [6]): the arm below the cuff is still a uniform cyl"
-    },
-    "penny:e4ad816c57df": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "NO CHANGE IN READ (the 36 -> 32 column price): the curl lattice. penny-runtime-s"
-    },
-    "penny:8a0b8777d804": {
-      "char": "penny",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED, HIGHEST VALUE: the curl read at the gameplay camera. penny-runtime-swin"
-    },
-    "penny:c4e831adef3f": {
-      "char": "penny",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED (from the ears round): the bob's front edge reads as a cut wall, not the"
-    },
-    "penny:1433f7c17b38": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED, confirmed again: hair over the face in profile and 3/4. penny-runtime-h"
-    },
-    "penny:a7eff4713e06": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED, confirmed again: ears. sculpt-penny-source.py line 34 imports EarSpec/b"
-    },
-    "penny:6c944db21d38": {
-      "char": "penny",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED: no hairline from the front. penny-runtime-face-angry.png x~460-620, y~2"
-    },
-    "penny:2e12f711b949": {
-      "char": "penny",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED: bring the nape down. penny-profile-review.png x~200-360, y~220-320 (4x "
-    },
-    "penny:45b5938e7398": {
-      "char": "penny",
-      "class": "proportions",
-      "excerpt": "CARRIED (softened): nose and muzzle. penny-profile-apose-review.png x~210-225, y"
-    },
-    "penny:4ca6bf54b6f1": {
-      "char": "penny",
-      "class": "proportions",
-      "excerpt": "CARRIED (measured): head height 32.8 vs 34.9, -2.07pp, OFF at tol 2 — unchanged "
-    },
-    "penny:976831d4f2bc": {
-      "char": "penny",
-      "class": "decal-not-form",
-      "excerpt": "CARRIED, ABSENT: the two mid-thigh cargo pockets. torso_patch calls on chest, hi"
-    },
-    "penny:486d4d41bfb6": {
-      "char": "penny",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED (minor): silhouette faceting. penny-front-review.png x~150-200, y~200-33"
-    },
-    "penny:f043353a3ed7": {
-      "char": "penny",
-      "class": "hems-cuffs",
-      "excerpt": "CARRIED (minor): pocket-mouth stitch ramp and slant mouths. penny-front-review.p"
-    },
-    "penny:58dfca47843a": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT: the TEAM_MASK cuff. penny-front-review.png y~570-600 renders it raw "
-    },
     "penny:e2d5272c626d": {
       "char": "penny",
       "class": "no-defect-note",
@@ -2310,11 +2150,6 @@
       "class": "decal-not-form",
       "excerpt": "GARMENT BOUNDARIES ARE PAINTED — CARRIED: sprout-front-review.png (170-370, 270-"
     },
-    "clover:477e4e8b212a": {
-      "char": "clover",
-      "class": "hems-cuffs",
-      "excerpt": "CARRIED — clover-front-review.png hem x 170-370, y 440-520 at 4x: the HEM is a z"
-    },
     "clover:93c1aad7240d": {
       "char": "clover",
       "class": "other",
@@ -2349,11 +2184,6 @@
       "char": "clover",
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT (record) — measure:fidelity 'daylight between the ankles' 34.0 vs con"
-    },
-    "clover:5e9f175fc626": {
-      "char": "clover",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (record) — prior cleared/non-defect items re-checked and still clear: fa"
     },
     "calls_shot:058ce1a154ed": {
       "char": "calls_shot",
@@ -2505,46 +2335,6 @@
       "class": "no-defect-note",
       "excerpt": "PASSES re-verified on the 04:37 evidence — nothing is severed; legs are two legs"
     },
-    "clover:02bef7ebd560": {
-      "char": "clover",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED — the KNEECAP is now forward-only (the symmetric half of the bead-loft n"
-    },
-    "clover:15a957d6d238": {
-      "char": "clover",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED — the PROFILE CALF (finding 2). LegSpec.calf=(0.700, 0.30) (sculpt-clove"
-    },
-    "clover:87d11394687e": {
-      "char": "clover",
-      "class": "no-defect-note",
-      "excerpt": "VERIFIED (no new finding) — the Gaussian fades before the hem and the sock: clov"
-    },
-    "clover:cb33ce6cbd7b": {
-      "char": "clover",
-      "class": "no-defect-note",
-      "excerpt": "REVISED (split) — clover-front-review.png legs x 220-320, y 500-580: THE FRONT K"
-    },
-    "clover:899cf85cd717": {
-      "char": "clover",
-      "class": "proportions",
-      "excerpt": "CARRIED (arms only) — clover-runtime-hero.png x 500-560, y 330-500, clover-runti"
-    },
-    "clover:539cff34499f": {
-      "char": "clover",
-      "class": "proportions",
-      "excerpt": "NOTE (residual, front view only) — clover-front-review.png at 4x, both legs y 53"
-    },
-    "clover:2847770e5b4f": {
-      "char": "clover",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED — the cap-loft REGRESSION. Restoring CAP_LEVELS row 3.560 put the crown'"
-    },
-    "clover:6bec8c090237": {
-      "char": "clover",
-      "class": "sheared-edges",
-      "excerpt": "CARRIED — clover-front-review.png x 150-230 and 320-400, y 150-260: PIGTAILS are"
-    },
     "calls_shot:8f563971fc6e": {
       "char": "calls_shot",
       "class": "interpenetration",
@@ -2604,6 +2394,251 @@
       "char": "calls_shot",
       "class": "evidence",
       "excerpt": "CARRIED — Section 6 integration evidence stale and a proxy: docs/v2/concepts/the"
+    },
+    "penny:73aa512713bf": {
+      "char": "penny",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED, HIGHEST VALUE: the curl read at the gameplay camera. penny-runtime-swin"
+    },
+    "penny:b60430d2630e": {
+      "char": "penny",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED: the bob's front edge reads as a cut wall, not the sheet's halo. penny-p"
+    },
+    "penny:0a8d7d444bf6": {
+      "char": "penny",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED: bring the nape down. penny-profile-review.png x~200-360, y~220-320: wed"
+    },
+    "penny:983ef3919f4a": {
+      "char": "penny",
+      "class": "proportions",
+      "excerpt": "CARRIED (softened): nose and muzzle. penny-profile-apose-review.png x~210-225, y"
+    },
+    "penny:2ed662913197": {
+      "char": "penny",
+      "class": "decal-not-form",
+      "excerpt": "CARRIED, ABSENT: the two mid-thigh cargo pockets. sculpt-penny-source.py torso_p"
+    },
+    "penny:cdc7e28f7158": {
+      "char": "penny",
+      "class": "sheared-edges",
+      "excerpt": "CARRIED (minor): silhouette faceting of the bob. penny-front-review.png x~150-20"
+    },
+    "penny:89bc3cec5363": {
+      "char": "penny",
+      "class": "decal-not-form",
+      "excerpt": "CARRIED (minor): pocket-mouth stitch ramp and slant mouths. penny-front-review.p"
+    },
+    "penny:6175d90f9ed0": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED, confirmed again: the recess above each ear and the curtains at the brow"
+    },
+    "penny:ac59cb7f6e75": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED, confirmed again: hair over the face in profile and 3/4, and the constru"
+    },
+    "penny:4295b321f95f": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT: the TEAM_MASK cuff. penny-front-review.png y~570-600 renders it raw "
+    },
+    "penny:6ccc1f662565": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "NO CHANGE IN READ (the 36 -> 32 column price, from the columns round): the curl "
+    },
+    "penny:9f0b7f768a2b": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "RECORDED REFUSALS, not re-filed: side-seam topstitch (colour-on-ring smears at 2"
+    },
+    "penny:5d07b676a815": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "VERDICT, 12-vs-14 SIDES (unchanged through four elbow rebuilds, re-checked on th"
+    },
+    "penny:6f74f2697cbd": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (the crease-to-knob corner the other two critics measured): moving the c"
+    },
+    "penny:f8e14859b383": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (the bead finding from the lone-knob build, confirmed on this build): th"
+    },
+    "penny:1a4fc3b51e43": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (arm half of finding [6], 'the arm below the cuff is a uniform cylinder "
+    },
+    "penny:2537a2114b77": {
+      "char": "penny",
+      "class": "proportions",
+      "excerpt": "CARRIED (measured): head height 32.8 vs 34.9, -2.07pp, OFF at tol 2 — unchanged "
+    },
+    "penny:36f609e27aab": {
+      "char": "penny",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED: no hairline from the front. penny-runtime-face-angry.png x~460-620, y~2"
+    },
+    "penny:e8925cf8b0ed": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED, confirmed again: the sleeve/torso junction. penny-front-apose-review.pn"
+    },
+    "penny:661dd1046642": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (the shared knee builder's shoulder ring): _with_knee only runs when "
+    },
+    "boomer:f0c6c3adc32c": {
+      "char": "boomer",
+      "class": "no-defect-note",
+      "excerpt": "12-vs-14 VERDICT per region (unchanged through four rebuilds, re-checked against"
+    },
+    "boomer:b0fa537be615": {
+      "char": "boomer",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (finding 2, knee collar) — boomer-front-apose-review x205-335 y505-565: "
+    },
+    "boomer:97ef75654aa4": {
+      "char": "boomer",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (finding 3, profile kneecap lip) — boomer-profile-apose-review front con"
+    },
+    "boomer:5180f85ad634": {
+      "char": "boomer",
+      "class": "proportions",
+      "excerpt": "REVISED (finding 4, calf) — unchanged since rebuild 2: profile-apose back contou"
+    },
+    "boomer:c7b966a53512": {
+      "char": "boomer",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (finding 5, elbow shoulder-side step) — moving the crease to ARM_ELBOW_X"
+    },
+    "boomer:864731201c19": {
+      "char": "boomer",
+      "class": "proportions",
+      "excerpt": "CARRIED — lower body identity: measure:fidelity head w:h +0.12 and head height -"
+    },
+    "boomer:5e8102b50043": {
+      "char": "boomer",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED — mohawk daylight: boomer-profile-review x180-390 y80-260 unchanged; thi"
+    },
+    "boomer:0a61d46e5f79": {
+      "char": "boomer",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED — bare-skull sides and stubble stair-step: boomer-profile-apose-review x"
+    },
+    "boomer:919a942bcb3a": {
+      "char": "boomer",
+      "class": "40px-read",
+      "excerpt": "CARRIED — stripe contrast 33% of the sheet's (front-review x=270 rows 300-430 dL"
+    },
+    "boomer:193efc06d1c4": {
+      "char": "boomer",
+      "class": "butt-joins",
+      "excerpt": "CARRIED — swing_contact far sleeve cap: boomer-runtime-swing x550-585 y337-375 a"
+    },
+    "boomer:3c6542ec9d1c": {
+      "char": "boomer",
+      "class": "proportions",
+      "excerpt": "CARRIED — nose: no front nose form at front-review x170-370 y80-280; profile wed"
+    },
+    "boomer:850b5c3d8331": {
+      "char": "boomer",
+      "class": "decal-not-form",
+      "excerpt": "CARRIED — shoe: lace straps read as two cream diagonal stripes on the navy quart"
+    },
+    "boomer:8b0199c90dfb": {
+      "char": "boomer",
+      "class": "decal-not-form",
+      "excerpt": "CARRIED — socks: smooth tubes, no ribbing builder in sculptlib; TEAM_MASK is the"
+    },
+    "boomer:73c0067f7a48": {
+      "char": "boomer",
+      "class": "face-atlas",
+      "excerpt": "CARRIED — hero/run yaw: boomer-runtime-hero x430-610 y140-330 one brow bar and h"
+    },
+    "boomer:498772a9e048": {
+      "char": "boomer",
+      "class": "face-atlas",
+      "excerpt": "CARRIED (softened) — cheer mouth on the sphere's under-curve with no chin (runti"
+    },
+    "boomer:1a0d1cd9cf6a": {
+      "char": "boomer",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (re-checked, do not re-file) — the throat annulus in boomer-profile-r"
+    },
+    "clover:3624d1e31ec3": {
+      "char": "clover",
+      "class": "no-defect-note",
+      "excerpt": "12-vs-14 VERDICT (no finding) — the 12-sided rings are free on Clover. THIGH (cl"
+    },
+    "clover:401367f9d1f7": {
+      "char": "clover",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED — the ELBOW (the carried 'tube arms' finding). ArmSpec.elbow=0.20 (sculp"
+    },
+    "clover:dc9030558d61": {
+      "char": "clover",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED — the ELBOW KNOB no longer corners. Moving the crease from ARM_ELBOW_X-0"
+    },
+    "clover:cbc74d727547": {
+      "char": "clover",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED — the KNEE SHOULDER RING is rear-divided (sculptlib/leg.py:174-175, ÷(1+"
+    },
+    "clover:88aa7dd26c65": {
+      "char": "clover",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED — the PROFILE CALF (finding 2). LegSpec.calf=(0.700, 0.30) holds: back e"
+    },
+    "clover:d091e09f5848": {
+      "char": "clover",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED — the KNEECAP is forward-only: clover-profile-review.png kneecap rows 52"
+    },
+    "clover:c0c7b9361b98": {
+      "char": "clover",
+      "class": "no-defect-note",
+      "excerpt": "VERIFIED (no new finding) — hem, sock, legs unchanged this build: clover-profile"
+    },
+    "clover:81bca788b9d6": {
+      "char": "clover",
+      "class": "no-defect-note",
+      "excerpt": "REVISED (split) — clover-front-review.png legs x 220-320, y 500-580: THE FRONT K"
+    },
+    "clover:96114638c5e6": {
+      "char": "clover",
+      "class": "proportions",
+      "excerpt": "NOTE (residual, front view only) — clover-front-review.png at 4x, both legs y 53"
+    },
+    "clover:c4d55e39e12b": {
+      "char": "clover",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED — the cap-loft REGRESSION. CAP_LEVELS row 3.560 restored: clover-front-r"
+    },
+    "clover:e3792ed2cf3a": {
+      "char": "clover",
+      "class": "sheared-edges",
+      "excerpt": "CARRIED — clover-front-review.png x 150-230 and 320-400, y 150-260: PIGTAILS are"
+    },
+    "clover:8aa22b09e34d": {
+      "char": "clover",
+      "class": "hems-cuffs",
+      "excerpt": "CARRIED — clover-front-review.png hem x 170-370, y 440-520 at 4x: the HEM is a z"
+    },
+    "clover:08d4061e1931": {
+      "char": "clover",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (record) — prior cleared/non-defect items re-checked and still clear: fa"
     }
   }
 }

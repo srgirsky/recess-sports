@@ -91,10 +91,16 @@ class ArmSpec:
     # arm as "a smooth tapered cone" or "a hard kink where the forearm exits
     # the sleeve": every table runs straight through `ARM_ELBOW_X` with radii
     # that only shrink. This is the joint's form as a fraction of the local
-    # radius: a ring 0.03 inboard of the elbow pinched by half of it and a ring
-    # at the elbow swollen by all of it — the crease and the knob a bent arm
+    # radius: a ring 0.055 inboard of the elbow pinched by half of it, a ring
+    # at the elbow swollen by all of it and a shoulder ring 0.040 outboard at
+    # half — the crease and the knob a bent arm
     # shows in swing and run. Interpolated off the table, so the tables stay
     # the trace. 0.0 keeps the taper; stated by every script.
+    # ★ THE AMOUNT IS A FRACTION OF A SMALL RADIUS. 0.06 on a bare arm at
+    # r 0.063 is 0.5 board px per side — built, measurable, invisible (three
+    # critics, 2026-09-02); the knee's 0.14 on a 0.112 half-width is 2.2 px.
+    # A bare arm needs ~0.14-0.25; a sleeved arm whose hem sits at the elbow
+    # takes 0.03 or the knob reads as a second cuff (Calls Shot).
     elbow: float
 
 
@@ -155,8 +161,15 @@ def _with_elbow(stations, amount: float):
         return stations[-1]
 
     out = []
-    crease_x, knob_x = ARM_ELBOW_X - 0.030, ARM_ELBOW_X + 0.005
-    wanted = [(crease_x, 1.0 - amount * 0.5), (knob_x, 1.0 + amount)]
+    # The crease sits 0.055 inboard of the knob: at 0.030 the two rings were
+    # five board px apart at −7.5% and +15%, a built-in step that two critics
+    # measured as "28 → 27 → 24 → 23 across six px" on the shoulder side.
+    crease_x, knob_x = ARM_ELBOW_X - 0.055, ARM_ELBOW_X + 0.005
+    # ★ A FORM NEEDS THREE RINGS TO ROUND IT (the knee's lesson, the same
+    # day): a lone knob ring read as "a bead on a rod" on three kids at 8x.
+    # A shoulder ring 0.040 outboard at half the swell makes it a bulge that
+    # fades into the forearm.
+    wanted = [(crease_x, 1.0 - amount * 0.5), (knob_x, 1.0 + amount), (knob_x + 0.040, 1.0 + amount * 0.5)]
     for x, r, colour, bone in stations:
         for wx, f in list(wanted):
             if abs(x - wx) < 0.012:
@@ -185,7 +198,7 @@ def build_arm(
     docstring records why: a garment built as its own shell butted against the
     limb z-fights into the torn-paper edges Junebug's round-1 board showed.
     """
-    sides = 14 if detail >= 2 else 6
+    sides = 12 if detail >= 2 else 6
     stations = list(spec.stations)
     stations = thin_for_lod(stations, detail)
     rows: list[list[int]] = []
