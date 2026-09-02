@@ -1335,71 +1335,6 @@
       "class": "hair-nyquist",
       "excerpt": "CURL COUNT BELOW CONCEPT: 3 mirror pairs = 6 lobes/row against the concept's mea"
     },
-    "gizmo:1873a9088a9a": {
-      "char": "gizmo",
-      "class": "face-atlas",
-      "excerpt": "BLOCKER (carried, re-measured) — the lenses are still opaque and the eyes never "
-    },
-    "gizmo:ac0c2b6be26e": {
-      "char": "gizmo",
-      "class": "face-atlas",
-      "excerpt": "BLOCKER (carried, constants unchanged) — the lens rings still collide and the br"
-    },
-    "gizmo:1ead81cccb22": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "CARRIED — the legs are still cricket's. LEG_STATIONS unchanged (halves 0.210->0."
-    },
-    "gizmo:a3482fddc6b3": {
-      "char": "gizmo",
-      "class": "hems-cuffs",
-      "excerpt": "CARRIED — the pant hem still strands a bare sock column the concept does not hav"
-    },
-    "gizmo:f39d9b6c259e": {
-      "char": "gizmo",
-      "class": "no-defect-note",
-      "excerpt": "REVISED (part cleared, part holds) — hair. CLEARED: the flute read is gone — the"
-    },
-    "gizmo:601f4bd962b1": {
-      "char": "gizmo",
-      "class": "hair-nyquist",
-      "excerpt": "OPEN CARRIED (untouched this round, not a new discovery) — the spike-cone crest:"
-    },
-    "gizmo:875a1437945d": {
-      "char": "gizmo",
-      "class": "ears",
-      "excerpt": "CARRIED (ears class, untouched) — the ear is still a pointed crescent, sharp at "
-    },
-    "gizmo:9c95ad5bba24": {
-      "char": "gizmo",
-      "class": "face-atlas",
-      "excerpt": "CARRIED — no nose in profile: below the glasses plate the skin contour recedes m"
-    },
-    "gizmo:2c3fc7146a6e": {
-      "char": "gizmo",
-      "class": "hems-cuffs",
-      "excerpt": "CARRIED — the shoulder still reads as a detached ball-joint in swing_contact: a "
-    },
-    "gizmo:aeea57d48cd3": {
-      "char": "gizmo",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (measured this round) — the back-of-hair faceting: at 24 columns the nap"
-    },
-    "gizmo:08d7faa0f25d": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "CARRIED (now measured, and it is in the shipped colours, not just the review pag"
-    },
-    "gizmo:aae47de26c36": {
-      "char": "gizmo",
-      "class": "decal-not-form",
-      "excerpt": "NEW (upgraded from the prior geometry-only note, with numbers) — the shoe's colo"
-    },
-    "gizmo:e7585a0fefa1": {
-      "char": "gizmo",
-      "class": "other",
-      "excerpt": "NOT A DEFECT, recorded so nobody re-files it: the blue-grey edge on the frames i"
-    },
     "sniffles:704e45cbb19f": {
       "char": "sniffles",
       "class": "ears",
@@ -2354,6 +2289,81 @@
       "char": "chip",
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT - chip-profile-review.png x 245-290, y 285-330 shows a green disc wit"
+    },
+    "gizmo:d749b9fa5eac": {
+      "char": "gizmo",
+      "class": "proportions",
+      "excerpt": "CARRIED — gizmo-front-review.png x 211-328, y 490-540: the legs are still narrow"
+    },
+    "gizmo:f1d7d17ee1a7": {
+      "char": "gizmo",
+      "class": "face-atlas",
+      "excerpt": "NEW — gizmo-runtime-face-grin.png x 470-590, y 272-326 (all four face stills): t"
+    },
+    "gizmo:9dbbdbd4d57a": {
+      "char": "gizmo",
+      "class": "material-light",
+      "excerpt": "CARRIED — gizmo-front-review.png x 195-345, y 590-660 and gizmo-runtime-hero.png"
+    },
+    "gizmo:f0812fff241e": {
+      "char": "gizmo",
+      "class": "hems-cuffs",
+      "excerpt": "CARRIED — gizmo-runtime-hero.png x 470-600, y 600-640; gizmo-runtime-run.png x 6"
+    },
+    "gizmo:2ef6716938fc": {
+      "char": "gizmo",
+      "class": "decal-not-form",
+      "excerpt": "CARRIED — gizmo-runtime-hero.png x 470-580, y 165-230; gizmo-profile-review.png "
+    },
+    "gizmo:6023f920d25a": {
+      "char": "gizmo",
+      "class": "proportions",
+      "excerpt": "CARRIED, but BUILT not absent — gizmo-profile-review.png x 215-240, y 190-270: n"
+    },
+    "gizmo:5270ea2efa57": {
+      "char": "gizmo",
+      "class": "ears",
+      "excerpt": "CARRIED, but BUILT not absent — gizmo-profile-review.png x 255-300, y 215-245 (8"
+    },
+    "gizmo:edd24fbcde35": {
+      "char": "gizmo",
+      "class": "butt-joins",
+      "excerpt": "CARRIED — gizmo-runtime-swing.png x 560-590, y 360-400: at contact the sleeve ca"
+    },
+    "gizmo:4f7614019a92": {
+      "char": "gizmo",
+      "class": "hems-cuffs",
+      "excerpt": "CARRIED on the boards, cause REVISED — gizmo-front-review.png and gizmo-front-ap"
+    },
+    "gizmo:72b1cfb430f7": {
+      "char": "gizmo",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED — measure:fidelity visible face at brow 20.3/19.8 vs 9.59/13.7 OFF: the "
+    },
+    "gizmo:b31425a5692c": {
+      "char": "gizmo",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED — lens opacity: gizmo-runtime-face-grin/angry/cheer/tongue.png x 480-575"
+    },
+    "gizmo:aeed9c64634e": {
+      "char": "gizmo",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED — ring collision: gizmo-front-review.png x 235-300, y 195-235 and gizmo-"
+    },
+    "gizmo:3bb59623d2f4": {
+      "char": "gizmo",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT — the navy outline on the frames is the runtime toon edge that every "
+    },
+    "gizmo:1923f8f48a71": {
+      "char": "gizmo",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT — TEAM_MASK chest pocket (source lines 479-488): 0.24 x 0.16 ft at x "
+    },
+    "gizmo:d4ba031ec757": {
+      "char": "gizmo",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT — gizmo-front-review.png x 205-260, y 564: the column scan's 'backgro"
     }
   }
 }
