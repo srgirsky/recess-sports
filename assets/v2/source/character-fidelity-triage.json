@@ -1490,86 +1490,6 @@
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT, confirmed: the dark interiors in the hem notches on clover-front-rev"
     },
-    "penny:e97d6d43f4f4": {
-      "char": "penny",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED, HIGHEST VALUE NOW: the curl read at the gameplay camera. penny-runtime-"
-    },
-    "penny:c0efe8fa689f": {
-      "char": "penny",
-      "class": "hair-nyquist",
-      "excerpt": "NEW (revises the carried 'pull the hair off the face' finding): the bob's front "
-    },
-    "penny:7e983d9ff465": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED: hair over the face in profile and 3/4. penny-runtime-hero.png x~460-560"
-    },
-    "penny:7ff6986d472f": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED: ears absent. grep of sculpt-penny-source.py: line 34 imports EarSpec/bu"
-    },
-    "penny:b4c7b3e96954": {
-      "char": "penny",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED: no hairline from the front. penny-runtime-face-angry.png x~460-620, y~2"
-    },
-    "penny:a830b00d6129": {
-      "char": "penny",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED: bring the nape down. penny-profile-review.png x~200-360, y~220-320 (4x "
-    },
-    "penny:415c8be4a5a7": {
-      "char": "penny",
-      "class": "butt-joins",
-      "excerpt": "CARRIED: build the shoulder / soften the butt joints. penny-front-apose-review.p"
-    },
-    "penny:06f7570aff40": {
-      "char": "penny",
-      "class": "proportions",
-      "excerpt": "CARRIED (softened): nose and muzzle. penny-profile-apose-review.png x~210-225, y"
-    },
-    "penny:b0ac42e6d37c": {
-      "char": "penny",
-      "class": "proportions",
-      "excerpt": "CARRIED (measured): head height 32.8 vs 34.9, -2.07pp, OFF at tol 2 — unchanged "
-    },
-    "penny:396679b08ecf": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (measured): face left/right asymmetry 1.79, ok at tol 4.0 (prior round 5"
-    },
-    "penny:b01ac6515f05": {
-      "char": "penny",
-      "class": "decal-not-form",
-      "excerpt": "CARRIED, ABSENT: the two mid-thigh cargo pockets. grep finds five torso_patch ca"
-    },
-    "penny:482f0ab79163": {
-      "char": "penny",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED (minor): silhouette faceting. penny-front-review.png x~150-200, y~200-33"
-    },
-    "penny:85647c5743cd": {
-      "char": "penny",
-      "class": "hems-cuffs",
-      "excerpt": "CARRIED (minor): pocket-mouth stitch ramp and slant mouths. penny-front-review.p"
-    },
-    "penny:f5f97602fc70": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT: the TEAM_MASK cuff. penny-front-review.png y~570-600 renders it as t"
-    },
-    "penny:58b6e02906ab": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (measured, read as 'look at the stance'): daylight between the ankles"
-    },
-    "penny:1df0acdf4619": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED, confirmed again: the pockets are bevelled proud pouches with a gold mou"
-    },
     "grizz:9fed7fe6c996": {
       "char": "grizz",
       "class": "hair-nyquist",
@@ -2499,6 +2419,96 @@
       "char": "flash",
       "class": "no-defect-note",
       "excerpt": "CLEARED (stays cleared) - recorded scores: the prior record is the honest 2/3/2/"
+    },
+    "penny:b5c348ff0bb1": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (the rootring round's measured regression): the recess above each ear an"
+    },
+    "penny:65b9b57e0ffb": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED, confirmed again (shoulder half of finding [6]): the sleeve/torso juncti"
+    },
+    "penny:1ad53d0a5ba7": {
+      "char": "penny",
+      "class": "butt-joins",
+      "excerpt": "CARRIED (arm half of finding [6]): the arm below the cuff is still a uniform cyl"
+    },
+    "penny:e4ad816c57df": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "NO CHANGE IN READ (the 36 -> 32 column price): the curl lattice. penny-runtime-s"
+    },
+    "penny:8a0b8777d804": {
+      "char": "penny",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED, HIGHEST VALUE: the curl read at the gameplay camera. penny-runtime-swin"
+    },
+    "penny:c4e831adef3f": {
+      "char": "penny",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED (from the ears round): the bob's front edge reads as a cut wall, not the"
+    },
+    "penny:1433f7c17b38": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED, confirmed again: hair over the face in profile and 3/4. penny-runtime-h"
+    },
+    "penny:a7eff4713e06": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED, confirmed again: ears. sculpt-penny-source.py line 34 imports EarSpec/b"
+    },
+    "penny:6c944db21d38": {
+      "char": "penny",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED: no hairline from the front. penny-runtime-face-angry.png x~460-620, y~2"
+    },
+    "penny:2e12f711b949": {
+      "char": "penny",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED: bring the nape down. penny-profile-review.png x~200-360, y~220-320 (4x "
+    },
+    "penny:45b5938e7398": {
+      "char": "penny",
+      "class": "proportions",
+      "excerpt": "CARRIED (softened): nose and muzzle. penny-profile-apose-review.png x~210-225, y"
+    },
+    "penny:4ca6bf54b6f1": {
+      "char": "penny",
+      "class": "proportions",
+      "excerpt": "CARRIED (measured): head height 32.8 vs 34.9, -2.07pp, OFF at tol 2 — unchanged "
+    },
+    "penny:976831d4f2bc": {
+      "char": "penny",
+      "class": "decal-not-form",
+      "excerpt": "CARRIED, ABSENT: the two mid-thigh cargo pockets. torso_patch calls on chest, hi"
+    },
+    "penny:486d4d41bfb6": {
+      "char": "penny",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED (minor): silhouette faceting. penny-front-review.png x~150-200, y~200-33"
+    },
+    "penny:f043353a3ed7": {
+      "char": "penny",
+      "class": "hems-cuffs",
+      "excerpt": "CARRIED (minor): pocket-mouth stitch ramp and slant mouths. penny-front-review.p"
+    },
+    "penny:58dfca47843a": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT: the TEAM_MASK cuff. penny-front-review.png y~570-600 renders it raw "
+    },
+    "penny:e2d5272c626d": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (measured, read as 'look at the stance'): daylight between the ankles"
+    },
+    "penny:244eeffd1625": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED, confirmed again: the pockets are bevelled proud pouches with a gold mou"
     }
   }
 }
