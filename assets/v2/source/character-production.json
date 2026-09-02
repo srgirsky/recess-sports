@@ -108,11 +108,11 @@
     },
     "sprout": {
       "source": "sprout-pilot.blend",
-      "sourceSha256": "6926f29859b86e6f0b2736e2a827f7a4e1166e380fa5a882b6a5d938d265aa96",
+      "sourceSha256": "d92ccd67d6eeec047a24385d513a10c510645b02b65ff27c1916ed580bc665bf",
       "concept": "sprout-turnaround.png",
       "conceptSha256": "b734a39041e715ae23861523b44b118cf5b18919ba12533b241058591888f995",
       "output": "kid_sprout.glb",
-      "outputSha256": "30a5325fa2329398765eca85beaab8b6ce0cc94165b282006a16a29cc56df1b0",
+      "outputSha256": "8558fe8a53253268ea208ee20712993704e7d1958157cc6a7b5d8fe2cd52d000",
       "definingTraits": [
         "denim bib overalls",
         "big round wonder eyes",
