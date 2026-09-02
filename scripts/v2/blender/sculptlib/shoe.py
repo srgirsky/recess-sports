@@ -64,7 +64,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from math import cos, pi, sin
 
-from .mesh import MeshBuilder
+from .mesh import MeshBuilder, part
 
 # How far proud of the upper each overlay sits, as a fraction of the station's
 # half-width. A panel flush with the surface z-fights it; these are the smallest
@@ -225,6 +225,7 @@ def shoe_station_at(spec: ShoeSpec, y_unscaled: float) -> tuple[float, float]:
     return rows[-1][1], rows[-1][2]
 
 
+@part("shoe")
 def build_shoe(
     builder: MeshBuilder,
     side: int,
@@ -235,6 +236,7 @@ def build_shoe(
     bone: str,
 ) -> None:
     ring = shoe_ring(spec, detail)
+    builder.part = "shoe.upper"          # sub-parts of the tally: see MeshBuilder.part_report
     rows: list[list[int]] = []
     for y, half, ztop, colour in spec.stations:
         floor = spec.sole_profile(y)
@@ -421,6 +423,7 @@ def build_shoe(
     # both overlays ask it, and the assert makes a sentinel that reaches the loop
     # a build failure instead of a fin.
     if detail >= 1:
+        builder.part = "shoe.cap"
         CAP_POINTS = 11
         cap_rows: list[list[int]] = []
         for y_s, half_s, ztop_s, _c in spec.stations:
@@ -457,6 +460,7 @@ def build_shoe(
     # counter puts slate exactly where the concept holds it — on the back of the
     # last, at mid-height.
     if detail >= 1:
+        builder.part = "shoe.counter"
         COUNTER_POINTS = 9
         counter_rows: list[list[int]] = []
         for y_s, half_s, ztop_s, _c in spec.stations:
@@ -494,6 +498,7 @@ def build_shoe(
     # what a collar IS on a real shoe — a bound edge standing off the upper —
     # and it reads as one without disturbing anything under it.
     if detail >= 2:
+        builder.part = "shoe.rim"
         RIM_POINTS = 14
         inner_row: list[int] = []
         outer_row: list[int] = []
@@ -513,6 +518,7 @@ def build_shoe(
         builder.grid([inner_row, outer_row], 1, flip=side > 0)
 
     # Cap both ends so the upper is closed — rubric 3.7 is binary about holes.
+    builder.part = "shoe.ends"
     heel = builder.vertex(shoe_place(spec, ankle_x, side, spec.heel_point[0] * spec.length_scale, 0.0, spec.heel_point[1]), spec.upper, bone, (0.75, 0.25))
     toe = builder.vertex(shoe_place(spec, ankle_x, side, spec.toe_point[0] * spec.length_scale, 0.0, spec.toe_point[1]), spec.trim, bone, (0.75, 0.25))
     for index in range(len(ring)):
@@ -525,6 +531,7 @@ def build_shoe(
     # Three lace straps lying ON the vamp, which is what the concept draws —
     # not pegs standing proud of it, the defect Junebug's round-5 board scored.
     if detail >= 2:
+        builder.part = "shoe.straps"
         # ★ THE STRAP IS A SURFACE, NOT TUBES. Two reviews running described it
         # as "converging chevrons over the slate — a paper fold, not a
         # fastening", and a tube laid along the vamp's curve is exactly that

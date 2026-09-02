@@ -34,7 +34,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from math import cos, exp, pi, sin
 
-from .mesh import MeshBuilder, thin_for_lod
+from .mesh import MeshBuilder, part, thin_for_lod
 from .rig import (
     LEG_ANKLE_X, LEG_ANKLE_Z, LEG_HIP_X, LEG_HIP_Z, LEG_KNEE_X, LEG_KNEE_Z,
     limb_bone,
@@ -122,6 +122,7 @@ def _with_knee(stations, amount: float):
     return sorted(out, key=lambda st: -st[0])
 
 
+@part("leg")
 def build_leg(
     builder: MeshBuilder,
     side: int,

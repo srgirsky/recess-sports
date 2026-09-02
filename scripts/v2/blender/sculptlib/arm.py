@@ -34,7 +34,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from math import cos, pi, sin
 
-from .mesh import MeshBuilder, thin_for_lod
+from .mesh import MeshBuilder, part, thin_for_lod
 from .rig import ARM_Z, limb_bone
 
 
@@ -170,6 +170,7 @@ def _with_elbow(stations, amount: float):
     return sorted(out, key=lambda st: st[0])
 
 
+@part("arm")
 def build_arm(
     builder: MeshBuilder,
     side: int,
@@ -330,6 +331,7 @@ def build_arm(
     # 7000 and this costs about 320, so it is paid for by the two ellipsoids it
     # replaces and by the two palm rings above.
     if detail >= 1:
+        builder.part = "arm.fingers"      # a sub-part of the tally: MeshBuilder.part_report
         count = 3 if detail >= 2 else 2
         # ⚠️ SIZED AGAINST HIS PALM, NOT COPIED FROM HERS. The first cut used
         # Junebug's 0.026 radii on 0.050 centres and rendered three needles

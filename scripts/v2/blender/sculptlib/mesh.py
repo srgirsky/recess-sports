@@ -16,9 +16,33 @@ no second shell has no crack, ever.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from functools import wraps
 from math import cos, pi, sin
 
 from mathutils import Vector
+
+
+def part(name: str):
+    """Label every face a builder function emits with `name` in the tally.
+
+    Decorates a `build_*(builder, ...)` entry point: `builder.part` is set for
+    the call and restored after, so nested helpers inherit the label and a
+    kid script's own code stays under its own (`body`). See `part_report`.
+    """
+
+    def decorate(fn):
+        @wraps(fn)
+        def wrapped(builder, *args, **kwargs):
+            previous = builder.part
+            builder.part = name
+            try:
+                return fn(builder, *args, **kwargs)
+            finally:
+                builder.part = previous
+
+        return wrapped
+
+    return decorate
 
 
 @dataclass
@@ -29,6 +53,20 @@ class MeshBuilder:
     colors: list[tuple[float, float, float, float]] = field(default_factory=list)
     uvs: list[tuple[float, float]] = field(default_factory=list)
     weights: list[dict[str, float]] = field(default_factory=list)
+    # ★ WHERE THE BUDGET GOES. The roster is jammed against the LOD0 wall
+    # (7000 tris) and every joint ring costs 56-112; until this tally, which
+    # part of a kid paid for the wall was guessed one table at a time.
+    # `face` charges each face's triangles to the current `part` (set by the
+    # `@part` decorator on the shared builders; a kid's own code is `body`),
+    # and `part_report` prints the table into the Blender log, where the
+    # rebuild chain greps it. A scan, not a gate.
+    part: str = "body"
+    part_tris: dict[str, int] = field(default_factory=dict)
+
+    def part_report(self, name: str) -> str:
+        total = sum(self.part_tris.values())
+        parts = " ".join(f"{key}={value}" for key, value in sorted(self.part_tris.items(), key=lambda kv: -kv[1]))
+        return f"PART TRIS {name}: total={total} {parts}"
 
     def vertex(
         self,
@@ -46,6 +84,7 @@ class MeshBuilder:
     def face(self, indices: tuple[int, ...], material: int) -> None:
         self.faces.append(indices)
         self.face_materials.append(material)
+        self.part_tris[self.part] = self.part_tris.get(self.part, 0) + len(indices) - 2
 
     def grid(self, rows: list[list[int]], material: int, *, cyclic: bool = True, flip: bool = False) -> None:
         """Stitch consecutive vertex-index rows into quads.
