@@ -56,6 +56,16 @@ class LegSpec:
     garment: tuple     # the shorts
     sock: tuple
     team_mask: tuple   # the sock's roll-top, the one team-accent surface here
+    # ★ A KNEE IS A CAP AND A HOLLOW, NOT A TAPER — the leg's twin of
+    # `ArmSpec.elbow`. Eight critics read the shin as "a straight untapered
+    # pipe" or "a dowel from knee to ankle": every table runs through the
+    # rig's `LEG_KNEE_Z` with widths that only shrink. This is the joint's
+    # form as a fraction of the local width: a ring 0.035 above the knee
+    # swollen by all of it (the kneecap) and a ring 0.030 below pinched by
+    # half (the hollow the shin leaves under it), interpolated off the table
+    # so the tables stay the trace. 0.0 keeps the taper; stated by every
+    # script, never defaulted (sculpt-sharing.lint).
+    knee: float
 
 
 def leg_x(z: float) -> float:
@@ -71,6 +81,37 @@ def leg_x(z: float) -> float:
     return LEG_ANKLE_X
 
 
+def _with_knee(stations, amount: float):
+    """The table with a kneecap and the hollow under it folded in at `LEG_KNEE_Z`."""
+    from .rig import LEG_KNEE_Z
+
+    def at(z):
+        # width and depth interpolated, colour and bone held from the station above.
+        prev = None
+        for st in stations:  # descending in z
+            if st[0] <= z:
+                if prev is None:
+                    return st
+                t = (prev[0] - z) / (prev[0] - st[0])
+                return (z, prev[1] + (st[1] - prev[1]) * t, prev[2] + (st[2] - prev[2]) * t, prev[3], prev[4])
+            prev = st
+        return stations[-1]
+
+    cap_z, hollow_z = LEG_KNEE_Z + 0.035, LEG_KNEE_Z - 0.030
+    wanted = [(cap_z, 1.0 + amount), (hollow_z, 1.0 - amount * 0.5)]
+    out = []
+    for z, half, depth, colour, bone in stations:
+        for wz, f in list(wanted):
+            if abs(z - wz) < 0.012:
+                half = half * f
+                wanted.remove((wz, f))
+        out.append((z, half, depth, colour, bone))
+    for wz, f in wanted:
+        _, half, depth, colour, bone = at(wz)
+        out.append((wz, half * f, depth, colour, bone))
+    return sorted(out, key=lambda st: -st[0])
+
+
 def build_leg(
     builder: MeshBuilder,
     side: int,
@@ -81,6 +122,8 @@ def build_leg(
     """Shorts, bare shin and sock as one stitched surface."""
     sides = 14 if detail >= 2 else 6
     stations = list(spec.stations)
+    if spec.knee > 0.0 and detail >= 2:
+        stations = _with_knee(stations, spec.knee)
     stations = thin_for_lod(stations, detail)
     rows: list[list[int]] = []
     materials: list[int] = []

@@ -547,6 +547,7 @@ MOOSE_LEG = LegSpec(
     garment=PANTS,
     sock=SOCK,
     team_mask=TEAM_MASK,
+    knee=0.0,
 )
 
 
