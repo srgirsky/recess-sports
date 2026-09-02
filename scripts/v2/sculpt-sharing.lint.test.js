@@ -90,7 +90,7 @@ const DEBT = [
   // tracked by his open proportions findings — this lint only ever saw the
   // copy, and the copy is gone.
   // cited 0.3864 vs 0.4226 at z=0.70 (9.4% apart).
-  ['clover', 'peaches', 'LEG_STATIONS'],
+  // clover/peaches LEG_STATIONS: re-traced apart 2026-09-02 (Peaches' calf and ankle, #214).
 ];
 
 const debtKey = (a, b, t) => [[a, b].sort().join('+'), t].join(':');

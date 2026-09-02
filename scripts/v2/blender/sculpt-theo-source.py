@@ -618,6 +618,7 @@ THEO_LEG = LegSpec(
     garment=SHORTS,
     sock=SOCK,
     team_mask=TEAM_MASK,
+    knee=0.0,
 )
 
 

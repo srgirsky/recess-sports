@@ -793,6 +793,7 @@ BUBBLES_LEG = LegSpec(
     garment=SKIN,
     sock=SOCK,
     team_mask=TEAM_MASK,
+    knee=0.0,
 )
 
 

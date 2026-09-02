@@ -576,6 +576,7 @@ PEACHES_LEG = LegSpec(
     garment=SKIN,
     sock=SOCK,
     team_mask=TEAM_MASK,
+    knee=0.06,  # the kneecap and the hollow under it: see LegSpec.knee
 )
 
 

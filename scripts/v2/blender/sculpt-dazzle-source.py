@@ -630,6 +630,7 @@ DAZZLE_LEG = LegSpec(
     garment=SHIRT,
     sock=SOCK,
     team_mask=TEAM_MASK,
+    knee=0.0,
 )
 
 
