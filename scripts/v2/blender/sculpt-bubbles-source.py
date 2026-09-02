@@ -232,7 +232,16 @@ def skull_front_y(x: float, z: float) -> float:
     remainder = 1.0 - nx * nx - nz * nz
     if remainder <= 0.0:
         return -10.0
-    return HEAD_CENTER[1] - HEAD_RADII[1] * sqrt(remainder)
+    # ★ THE RENDERED FACE IS FLATTER THAN THE ELLIPSOID (Sprout's lesson,
+    # hairline-scan.mjs): head_surface scales the front depth by
+    # 0.88 - 0.11·frontness², so the full-ellipsoid answer sat in FRONT of
+    # the skin and the window's "behind the skull" tuck put hair over the
+    # forehead however high its arc was authored.
+    s2 = 1.0 - nz * nz
+    cb2 = 1.0 - (nx * nx) / s2 if s2 > 0.0 else 0.0
+    cb = sqrt(cb2) if cb2 > 0.0 else 0.0
+    depth = 0.88 - 0.11 * cb * cb
+    return HEAD_CENTER[1] - HEAD_RADII[1] * sqrt(remainder) * depth
 
 
 # --- The hair: curls, curtains and the topknot ---------------------------------
