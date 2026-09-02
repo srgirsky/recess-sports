@@ -31,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
+from sculptlib.hair import curl_field, curl_seeds
 from sculptlib.ear import EarSpec, build_ear
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
@@ -56,6 +57,8 @@ SKIN = rgba("FFAC58")
 SKIN_SHADOW = rgba("D8801E")
 HAIR = rgba("9A551E")        # the textured bun, chestnut
 HAIR_DEEP = rgba("5E2C08")   # the shaded underside (fails isSkin, like the sheet)
+HAIR_TROUGH = rgba("7A4014")  # the bun's curl valleys — a step under HAIR: at HAIR_DEEP
+                              # the valleys alone ran measure:strands' prominence to 346%
 SHIRT = rgba("FFB532")       # the marigold dress
 SHIRT_DARK = rgba("E89A1E")  # fold shading
 TRIM = rgba("F5EBD2")        # cream neckline/waistband trim and leaf patch
@@ -214,6 +217,34 @@ CAP_FRINGE = [
 
 CAP_OPEN_BOTTOM = 2.940
 
+# ★ THE CURL FIELD (sculptlib.hair). The cap shipped SMOOTH at 18 columns
+# and the bun as cos(6θ)+cos(9θ) on 14 — the roster's worst strand read,
+# 0.10 minima/row against the sheet's 8.71 at 213% prominence, and a θ-only
+# cosine is a flute whatever its harmonics. Mirror-paired Gaussian blobs,
+# compact in θ AND z, staggered band to band; the trough takes HAIR_DEEP.
+CURL_SEEDS = curl_seeds(
+    pairs_per_row=4,
+    bands=5,
+    z_top=3.680,
+    z_bottom=3.060,
+    amplitude=0.050,
+)
+# Ladder (measure:strands, concept 8.71 minima/row at 20.5):
+#   18-col smooth cap + 14-col cosine bun   0.10/row   1%  at 213%  (shipped)
+#   24-col field cap + 18-col field bun @0.090   1.45/row  17%  at 363%
+#   bun @0.055, trough 0.010                  1.45→2.4/row 28%  at 346% — the tone, not the depth
+#   bun valleys HAIR_TROUGH not HAIR_DEEP   (this rung)
+BUN_SEEDS = curl_seeds(
+    pairs_per_row=3,
+    bands=4,
+    z_top=3.960,
+    z_bottom=3.620,
+    amplitude=0.055,
+)
+CURL_THETA_WIDTH = 0.20
+CURL_Z_WIDTH = 0.080
+CURL_TROUGH = 0.010
+
 
 def fringe_z_at(x_abs: float) -> float:
     table = CAP_FRINGE
@@ -229,7 +260,8 @@ def ring_loft_cap(builder: MeshBuilder, levels, detail: int) -> None:
     """The ring-loft-with-tuck over the skull."""
     assert all(a[0] > b[0] for a, b in zip(levels, levels[1:])), \
         "ring_loft_cap levels must be strictly descending in z"
-    segments = 18 if detail >= 2 else (10 if detail == 1 else 8)
+    # 24 even columns: four pairs a row get three samples a lobe.
+    segments = 24 if detail >= 2 else (10 if detail == 1 else 8)
     use = levels if detail >= 2 else thin_for_lod([(z, hx, hy, yc) for z, hx, hy, yc in levels], detail)
     ascending = list(reversed(use))
     rows = []
@@ -237,15 +269,21 @@ def ring_loft_cap(builder: MeshBuilder, levels, detail: int) -> None:
         ring = []
         for column in range(segments):
             theta = 2 * pi * column / segments
-            x = half_x * cos(theta)
-            y = y_centre + half_y * sin(theta)
+            f = curl_field(
+                theta, z, CURL_SEEDS,
+                theta_width=CURL_THETA_WIDTH,
+                z_width=CURL_Z_WIDTH,
+            ) if detail >= 2 else 0.0
+            clump = 1.0 + f
+            x = half_x * clump * cos(theta)
+            y = y_centre + half_y * clump * sin(theta)
             if y < y_centre:
                 sf = skull_front_y(x, z)
                 if CAP_OPEN_BOTTOM < z < fringe_z_at(abs(x)):
                     y = max(y, (sf + 0.050) if sf > -9.0 else -0.160)
                 else:
                     y = max(y, (sf - 0.060) if sf > -9.0 else -0.300)
-            col = HAIR if abs(cos(theta)) < 0.60 else HAIR_DEEP
+            col = HAIR if (abs(cos(theta)) < 0.60 and f > CURL_TROUGH) else HAIR_DEEP
             ring.append(builder.vertex((x, y, z), col, "Head"))
         rows.append(ring)
     bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
@@ -278,7 +316,10 @@ BUN_LEVELS = [
 def build_bun(builder: MeshBuilder, detail: int) -> None:
     assert all(a[0] > b[0] for a, b in zip(BUN_LEVELS, BUN_LEVELS[1:])), \
         "BUN_LEVELS must be strictly descending in z"
-    segments = 14 if detail >= 2 else 8
+    # 18 even columns: three pairs a row get three samples a lobe, where
+    # the 14-column cos(6θ)+cos(9θ) bun sampled nine lobes at 1.6 — under
+    # Nyquist, so the fine term was unrepresentable, not faint.
+    segments = 18 if detail >= 2 else 8
     use = BUN_LEVELS if detail >= 1 else BUN_LEVELS[::2]
     ascending = list(reversed(use))
     rows = []
@@ -286,13 +327,16 @@ def build_bun(builder: MeshBuilder, detail: int) -> None:
         ring = []
         for column in range(segments):
             theta = 2 * pi * column / segments
-            # Clump structure the round-4 critic asked for: breathing
-            # amplitude per row plus a second harmonic, both mirror-even.
-            clump = 1.0 + (0.10 + 0.035 * cos(2.4 * len(rows))) * cos(6 * theta) \
-                + 0.045 * cos(9 * (theta - pi / 2))
+            f = curl_field(
+                theta, z, BUN_SEEDS,
+                theta_width=CURL_THETA_WIDTH,
+                z_width=CURL_Z_WIDTH,
+            ) if detail >= 2 else 0.0
+            clump = 1.0 + f
+            tone = HAIR if f > CURL_TROUGH else HAIR_TROUGH
             ring.append(builder.vertex(
                 (half_x * clump * cos(theta), y_centre + half_y * clump * sin(theta), z),
-                HAIR, "Head"))
+                tone, "Head"))
         rows.append(ring)
     bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
     top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.02), HAIR, "Head")
