@@ -25,6 +25,14 @@
 // the face-band floor and skull clamp were sampled; dropping it turned two
 // green visible-face metrics red (a critic's measurement, 2026-09-02). Run
 // measure:fidelity after a drop, before a critic.
+//
+// Two more ways a numerically spare row is load-bearing (the knee rollout,
+// 2026-09-02): a hair row the `hair_window_z` was tuned against — Calls
+// Shot's 3.240 — moves the shell when dropped and the window lets the mass
+// eat a side of the face (visible face right 27.1 → 15.1); and the middle
+// row of three carrying one arc — Clover's cap 3.560 — turns the curve into
+// two chords with a corner. Prefer rows at a loft's ends, never the one a
+// window or a comment is tuned against, and diff the before/after boards.
 // ---------------------------------------------------------------------------
 import { readdirSync, readFileSync } from 'node:fs';
 
