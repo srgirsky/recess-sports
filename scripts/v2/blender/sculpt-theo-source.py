@@ -542,7 +542,11 @@ THEO_ARM = ArmSpec(
     shoulder_blend=SHOULDER_BLEND,
     cap_x=0.060,
     root_ring=0.0,
-    elbow=0.06,  # the crease and knob a bent arm shows: see ArmSpec.elbow
+    # 0.03, not 0.06: the sleeve runs to SLEEVE_HEM_X 1.300, past the elbow,
+    # so the knob sits UNDER the sleeve and at 0.06 its critic read a hard
+    # 1px step at rest, "a second cuff". Half the amount keeps the bend's
+    # read in motion without a cuff the sheet does not draw.
+    elbow=0.03,
     ring_squash=0.95,
     hand=HandSpec(
         tip_x=1.550,
