@@ -26,7 +26,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from math import cos, pi, sin
+from math import acos, cos, pi, sin
 
 from .mesh import MeshBuilder
 from .palette import Palette
@@ -231,6 +231,43 @@ def head_surface(
     bottom_phi = pi / 2 - face_low
     for step in range(1, chin_rows + 1):
         phis.append(bottom_phi + (pi - bottom_phi) * step / (chin_rows + 1))
+
+    # ★ THE NOSE IS NYQUIST, LIKE THE HAIR. Every `nose` callable is a smooth
+    # dome — `(1 - t²)^1.3` over a reach of ~0.12 — and every board drew it
+    # as "a fin", "a thorn", "a pointed wedge with a straight bridge" (23
+    # kids' critiques, 2026-09-02). The face rows are ~0.09 apart in atlas v
+    # and the tip's half-width is ~0.05 in nz, so the dome is sampled at its
+    # peak and at two points already down its flanks: a spike by
+    # construction, whatever the formula. The repair is resolution, not a
+    # rounder formula: probe the callable down the ridge for its peak and
+    # half-height, and give the hero mesh three rows on the tip's shoulders —
+    # two above at 75% and 35% of the peak, one below at 50%. A pair near the peak made
+    # the tip "a four-row plateau between two corners" (a critic, Peaches).
+    # Cost ~3 × columns × 2 tris; the far LODs keep their rows.
+    if len(face_rows) >= 12:
+        samples = [(-0.9 + 1.3 * i / 260, spec.nose(0.0, -0.9 + 1.3 * i / 260)) for i in range(261)]
+        peak_nz, peak = max(samples, key=lambda s: s[1])
+        if peak > 0.0:
+            # Two rows a side, where the dome has fallen to 75% and 35% of
+            # the peak: a pair near the peak alone made the tip "a four-row
+            # plateau between two corners" (a critic, Peaches), and a pair
+            # at half-height left the peak row a corner. Four points draw
+            # an arc; the far LODs keep their table.
+            # Three rows, not four: the bridge side gets both (75% and 35%),
+            # since that is where the point and the "knee" live, and the
+            # underside — the formula's own straight nostril shelf — gets one
+            # at 50%. The fourth row cost Sprout the budget (7080 > 7000).
+            shoulders = []
+            for fraction in (0.75, 0.35):
+                above = [nz for nz, v in samples if nz > peak_nz and v < peak * fraction]
+                shoulders.append(min(above) if above else peak_nz + 0.06 * (2.0 - fraction))
+            below = [nz for nz, v in samples if nz < peak_nz and v < peak * 0.5]
+            shoulders.append(max(below) if below else peak_nz - 0.09)
+            for shoulder in shoulders:
+                phi = acos(max(-1.0, min(1.0, shoulder)))
+                if all(abs(phi - existing) > 0.02 for existing in phis):
+                    phis.append(phi)
+            phis.sort()
 
     def place(bearing: float, phi: float) -> int:
         theta = bearing - pi / 2

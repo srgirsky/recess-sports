@@ -108,11 +108,11 @@
     },
     "sprout": {
       "source": "sprout-pilot.blend",
-      "sourceSha256": "d92ccd67d6eeec047a24385d513a10c510645b02b65ff27c1916ed580bc665bf",
+      "sourceSha256": "8f26c20c6c12bfa50cbdedc151230112f60d3830656135de83a033e8fc1fb6a3",
       "concept": "sprout-turnaround.png",
       "conceptSha256": "b734a39041e715ae23861523b44b118cf5b18919ba12533b241058591888f995",
       "output": "kid_sprout.glb",
-      "outputSha256": "8558fe8a53253268ea208ee20712993704e7d1958157cc6a7b5d8fe2cd52d000",
+      "outputSha256": "fc8a9eaeac9ea071127385476dc76de553179a794a49ac606e9a128019eb6dc3",
       "definingTraits": [
         "denim bib overalls",
         "big round wonder eyes",
@@ -423,11 +423,11 @@
     },
     "peaches": {
       "source": "peaches-pilot.blend",
-      "sourceSha256": "ef8f03e8efe34681e21b35e10563abdfe19c65cbf8f33c69ae88a935ee3fa1bc",
+      "sourceSha256": "df14bfad68d9a6e7be0c16f1a53f490dbf529f1bf23ba1e15aed53da87562389",
       "concept": "peaches-turnaround.png",
       "conceptSha256": "42a7f8de5c44a061aa4f15b7dd8e9abd65a150488c8a814b0986db2e3d3f393e",
       "output": "kid_peaches.glb",
-      "outputSha256": "88b441d5e68e75ac2e810314064e836adad225409d9bdf3ffaa6ed75f05bcbec",
+      "outputSha256": "781cd0b66a298831b4d6fa017b62de219f332b10128e7ecc3758cb1c3ec90ea3",
       "definingTraits": [
         "textured brown top-bun",
         "marigold sleeveless dress",

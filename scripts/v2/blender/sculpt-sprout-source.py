@@ -280,7 +280,9 @@ HAIR_LEVELS = [
     (3.985, 0.070, 0.065, 0.015),
     (3.945, 0.210, 0.195, 0.028),
     (3.905, 0.350, 0.345, 0.048),
-    (3.820, 0.444, 0.480, 0.030),
+    # 3.820 was within 0.020 of its neighbours' lerp (redundant-rows-scan) and is
+    # a crown row, away from the fringe arc and the window: 48 LOD0 tris that
+    # pay for the third nose row (sculptlib.head), 2026-09-02.
     (3.740, 0.572, 0.600, 0.028),
     (3.660, 0.698, 0.655, 0.060),
     (3.580, 0.715, 0.700, 0.100),
