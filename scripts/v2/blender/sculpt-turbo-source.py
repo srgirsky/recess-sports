@@ -423,6 +423,10 @@ TURBO_ARM = ArmSpec(
     # pocket between collar, shoulder and arm cap — the cap must sit deep
     # enough in the torso to stay covered when the arm swings down.
     cap_x=0.060,
+    # The A-pose coverage gap (two navy triangles at the sleeve/torso junction,
+    # carried through every round): a body-weighted root ring at the cap turns
+    # the cap fan into a strip that stretches with the arm — see ArmSpec.
+    root_ring=0.92,
     ring_squash=0.95,
     hand=HandSpec(
         tip_x=1.550,

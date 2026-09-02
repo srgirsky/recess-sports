@@ -506,6 +506,10 @@ PEACHES_ARM = ArmSpec(
     # as a triangular fin in every arms-down pose (two critic rounds saw
     # it) — a sleeveless kid has no sleeve to hide the corner.
     cap_x=0.130,
+    # The A-pose coverage gap (the shoulder butt joint the critics carry): a
+    # body-weighted root ring at the cap turns the cap fan into a strip that
+    # stretches with the arm — see ArmSpec.root_ring.
+    root_ring=0.92,
     ring_squash=0.95,
     hand=HandSpec(
         tip_x=1.546,

@@ -228,11 +228,11 @@
     },
     "turbo": {
       "source": "turbo-pilot.blend",
-      "sourceSha256": "d1fa773706f52866014e0de955d9dda3266f3ed0c380570f88fbfbace8595392",
+      "sourceSha256": "0cc7077927dc49334fc7cfdeed282d286c77e3e405ff4548a29d98afadcf44ca",
       "concept": "turbo-turnaround.png",
       "conceptSha256": "f3c0690117663b295a3001007eacd2a1dda10c12a5a8f7ed4d812fc63917851a",
       "output": "kid_turbo.glb",
-      "outputSha256": "d3c03b7d051bd684e9ad351c21ff3c26de8138d86165ec7385bfc6795d52806a",
+      "outputSha256": "06ec768f9df4f5b49b6b749f5e8a15c91c04b1fc3877174cebd163badf60c97d",
       "definingTraits": [
         "wild black spike mop",
         "blue ringer tee",
@@ -423,11 +423,11 @@
     },
     "peaches": {
       "source": "peaches-pilot.blend",
-      "sourceSha256": "dab3a1a74aee716e7c27329bbba972879aeed3a3ca0364cdccd95c28506ea563",
+      "sourceSha256": "2849b32adb5935f06c8ddffa00b8e39bf0206cff5d58151bb9968dc1d6fa0aa9",
       "concept": "peaches-turnaround.png",
       "conceptSha256": "42a7f8de5c44a061aa4f15b7dd8e9abd65a150488c8a814b0986db2e3d3f393e",
       "output": "kid_peaches.glb",
-      "outputSha256": "b0c69aca95eb42f1dc7fb7f47dea4db73950e2cc2f70eccefb07751d3d4fa049",
+      "outputSha256": "5e3fec592c5e2e044e8dae0706f9f78f50bf933d8673e4d427da8872cf554ba3",
       "definingTraits": [
         "textured brown top-bun",
         "marigold sleeveless dress",

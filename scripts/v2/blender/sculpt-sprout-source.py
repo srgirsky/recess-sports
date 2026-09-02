@@ -552,6 +552,7 @@ SPROUT_ARM = ArmSpec(
     # always filled. Burying the cap vertex deeper inside the torso fattens
     # that cone and closes the triangle without touching any visible surface.
     cap_x=0.100,
+    root_ring=0.0,
     ring_squash=0.95,
     hand=HandSpec(
         tip_x=1.560,
