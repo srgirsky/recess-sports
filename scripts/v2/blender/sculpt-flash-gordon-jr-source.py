@@ -190,13 +190,14 @@ def skull_front_y(x: float, z: float) -> float:
 # open across the face. Ring half-widths are the skull's own surface + 0.02.
 # measured: front z=3.26 halfWidth=0.4467
 # measured: front z=2.94 halfWidth=0.5460 tol=0.12
+# ★ ROWS 3.360 AND 2.900 PAID TO THE SHOULDER (redundant-rows-scan.mjs: within
+# 0.02 of their neighbours' interpolation); their 80 triangles bought
+# ArmSpec.root_ring and the buried cap.
 SCALP_LEVELS = [
     (3.500, 0.105, 0.115, 0.000),
     (3.440, 0.235, 0.260, 0.000),
-    (3.360, 0.320, 0.355, 0.010),
     (3.260, 0.395, 0.432, 0.010),
     (3.020, 0.438, 0.478, 0.030),
-    (2.900, 0.420, 0.450, 0.060),
     (2.820, 0.390, 0.415, 0.100),
 ]
 
@@ -443,8 +444,8 @@ ARM_STATIONS = [
 FLASH_ARM = ArmSpec(
     stations=tuple(ARM_STATIONS),
     shoulder_blend=SHOULDER_BLEND,
-    cap_x=0.100,
-    root_ring=0.0,
+    cap_x=0.060,  # buried, as the shoulder-wedge doctrine asks (was 0.100)
+    root_ring=0.92,  # the A-pose coverage gap: see ArmSpec.root_ring (#208)
     ring_squash=0.95,
     hand=HandSpec(
         tip_x=1.548,

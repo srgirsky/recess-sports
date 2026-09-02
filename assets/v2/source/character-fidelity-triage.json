@@ -330,61 +330,6 @@
       "class": "no-defect-note",
       "excerpt": "NOT FILED per instruction: the ankle-daylight/stance measure reading OFF is the "
     },
-    "flash:d8b7d09ab63b": {
-      "char": "flash",
-      "class": "hair-nyquist",
-      "excerpt": "SCALP_FRINGE (sculpt-flash-gordon-jr-source.py:205-211) sets the front hairline "
-    },
-    "flash:b6f5ee43c2f3": {
-      "char": "flash",
-      "class": "hair-nyquist",
-      "excerpt": "SPIKE_TABLE is 7 isolated 4-sided cones on a tube (build_mohawk, lines 287-310)."
-    },
-    "flash:b233bf9a6a84": {
-      "char": "flash",
-      "class": "severed",
-      "excerpt": "The shorts are two unconnected tubes: transparent background is visible between "
-    },
-    "flash:531289754f70": {
-      "char": "flash",
-      "class": "hems-cuffs",
-      "excerpt": "The bottom stripe's top edge at z 1.690 still smears at the tunic hem: TORSO_LEV"
-    },
-    "flash:a4745fdc7442": {
-      "char": "flash",
-      "class": "butt-joins",
-      "excerpt": "The sleeve root is butt-joined to the torso: a hard rim step where the capped sl"
-    },
-    "flash:cbff9312d68d": {
-      "char": "flash",
-      "class": "40px-read",
-      "excerpt": "TEAM_MASK is placed correctly (the sock roll-top above the red stripes, LEG_STAT"
-    },
-    "flash:b9097326bea5": {
-      "char": "flash",
-      "class": "ears",
-      "excerpt": "EAR_SPEC/build_ear are present and the ears ARE constructed — outer rim, inner c"
-    },
-    "flash:372244bada5c": {
-      "char": "flash",
-      "class": "no-defect-note",
-      "excerpt": "Checked and NOT defects, recorded so nobody re-files them: the striped disc on t"
-    },
-    "flash:10b41cb4c245": {
-      "char": "flash",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED this round — sleeves: the prior 'sleeves lose the tee's stripes entirely"
-    },
-    "flash:0b62abcac47d": {
-      "char": "flash",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED this round — collar: the prior 'lowest two torso stripe transitions smea"
-    },
-    "flash:2a299253d2e2": {
-      "char": "flash",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED this round — the stale-scores finding: character-fidelity.json now recor"
-    },
     "diva:dacfc9ac7a49": {
       "char": "diva",
       "class": "no-defect-note",
@@ -1130,16 +1075,6 @@
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT (carried, re-verified this round): the dark slab behind the neck in m"
     },
-    "bend_it:584a0745f38b": {
-      "char": "bend_it",
-      "class": "no-defect-note",
-      "excerpt": "NOT A DEFECT, recorded so the next reviewer does not re-file it: the round teal-"
-    },
-    "bend_it:841f544fed57": {
-      "char": "bend_it",
-      "class": "no-defect-note",
-      "excerpt": "VERIFIED FIXED, do not re-open: the bun is no longer a dark backface void. Front"
-    },
     "moose:dc0a81884d7a": {
       "char": "moose",
       "class": "proportions",
@@ -1199,76 +1134,6 @@
       "char": "the_prof",
       "class": "proportions",
       "excerpt": "The concept's asymmetric side-sweep is lost; the delivered mass reads as a symme"
-    },
-    "bend_it:37486abe4ca1": {
-      "char": "bend_it",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED, verified fixed - the swing_contact waistband tear is gone: a 5x crop of"
-    },
-    "bend_it:f25aeed5d9b5": {
-      "char": "bend_it",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED, verified fixed - the collar see-through notches and 2px rib sliver are "
-    },
-    "bend_it:57cdbb8b8f52": {
-      "char": "bend_it",
-      "class": "no-defect-note",
-      "excerpt": "VERIFIED, no new defect from the LOD0 torso 24-to-20 column trade - row scans al"
-    },
-    "bend_it:058df8d0ac13": {
-      "char": "bend_it",
-      "class": "no-defect-note",
-      "excerpt": "Sleeves now carry the tee's full band chart, verified against script and pixels:"
-    },
-    "bend_it:f01731440bd0": {
-      "char": "bend_it",
-      "class": "hems-cuffs",
-      "excerpt": "WORST REMAINING CLOTHING DEFECT - the torso's three teal stripes (STRIPES z 2.30"
-    },
-    "bend_it:a8c052d06565": {
-      "char": "bend_it",
-      "class": "ears",
-      "excerpt": "The ear is built (EAR_SPEC / build_ear both present and called - grepped, not as"
-    },
-    "bend_it:b5b015abbde8": {
-      "char": "bend_it",
-      "class": "butt-joins",
-      "excerpt": "The bun butt-joins the crown: A-pose front silhouette width jumps 79px -> 121px "
-    },
-    "bend_it:d048bf9feee3": {
-      "char": "bend_it",
-      "class": "proportions",
-      "excerpt": "Profile head depth re-measured at 77.1% of head height (148px depth over 192px h"
-    },
-    "bend_it:aeaeb587d169": {
-      "char": "bend_it",
-      "class": "hair-nyquist",
-      "excerpt": "Hair strand grouping is still near-absent: the 8x front-board bun crop is a smoo"
-    },
-    "bend_it:743b937c1090": {
-      "char": "bend_it",
-      "class": "40px-read",
-      "excerpt": "In the run still the hair mass still reads as a round mop with a bump on top rat"
-    },
-    "bend_it:e5d0b1d471e6": {
-      "char": "bend_it",
-      "class": "hair-nyquist",
-      "excerpt": "The concept's asymmetric brow sweep is missing: measure:fidelity now reports vis"
-    },
-    "bend_it:723bf9ff7346": {
-      "char": "bend_it",
-      "class": "decal-not-form",
-      "excerpt": "Nose, revised: in profile the nose now projects - the front-edge pixels at y240-"
-    },
-    "bend_it:2f3a501c1fc3": {
-      "char": "bend_it",
-      "class": "face-atlas",
-      "excerpt": "Brows and face-plane, revised and softened: the brows are now shaped angular wed"
-    },
-    "bend_it:8ca53b7e6a39": {
-      "char": "bend_it",
-      "class": "no-defect-note",
-      "excerpt": "NOT A DEFECT, recorded for the same reason: the glasses ship as open wire rings "
     },
     "moose:1e501b6baafd": {
       "char": "moose",
@@ -2474,6 +2339,166 @@
       "char": "sprout",
       "class": "proportions",
       "excerpt": "HEAD PROPORTION — CARRIED (critic-measured, instrument blind): the fidelity inst"
+    },
+    "bend_it:f61e8c13825a": {
+      "char": "bend_it",
+      "class": "no-defect-note",
+      "excerpt": "VERIFIED, the build is NOT what the brief describes on one point: git diff HEAD "
+    },
+    "bend_it:c421b15c3a4d": {
+      "char": "bend_it",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED, verified fixed - the A-pose shoulder pocket (#208): an 8x crop of bendy"
+    },
+    "bend_it:4a8807183202": {
+      "char": "bend_it",
+      "class": "no-defect-note",
+      "excerpt": "VERIFIED, the strip introduced no see-through and no new crease: a 4x crop of be"
+    },
+    "bend_it:a25bf5b2873e": {
+      "char": "bend_it",
+      "class": "no-defect-note",
+      "excerpt": "VERIFIED, the dropped hair rows moved the silhouette but not the read: silh.mjs "
+    },
+    "bend_it:6047b67652bd": {
+      "char": "bend_it",
+      "class": "material-light",
+      "excerpt": "CARRIED, worst remaining clothing defect - the torso's three teal stripes render"
+    },
+    "bend_it:4101955474a5": {
+      "char": "bend_it",
+      "class": "butt-joins",
+      "excerpt": "CARRIED - the bun butt-joins the crown: silh.mjs on bendy-bao-front-apose-review"
+    },
+    "bend_it:8c5288cca933": {
+      "char": "bend_it",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED - hair strand grouping near-absent: measure:strands 1.14 minima/row vs t"
+    },
+    "bend_it:83e8be8b31f5": {
+      "char": "bend_it",
+      "class": "ears",
+      "excerpt": "CARRIED - the ear is built (grep: EAR_SPEC at sculpt-bendy-bao-source.py line 14"
+    },
+    "bend_it:637cfac4f8a8": {
+      "char": "bend_it",
+      "class": "proportions",
+      "excerpt": "CARRIED - profile head depth 77% of head height vs the concept's 81.7%: silh.mjs"
+    },
+    "bend_it:04bcaa2755e1": {
+      "char": "bend_it",
+      "class": "face-atlas",
+      "excerpt": "CARRIED - the concept's asymmetric brow/hairline sweep is missing: measure:fidel"
+    },
+    "bend_it:a8a8b4feb14b": {
+      "char": "bend_it",
+      "class": "face-atlas",
+      "excerpt": "CARRIED, softened - brows are shaped angular wedges that participate in expressi"
+    },
+    "bend_it:34d406d9b493": {
+      "char": "bend_it",
+      "class": "proportions",
+      "excerpt": "MEASURED, new record for the next reviewer - head height 35.0% of figure vs the "
+    },
+    "bend_it:1b3131ddea46": {
+      "char": "bend_it",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED, re-verified - the swing_contact waistband tear stays gone: 3x crop of b"
+    },
+    "bend_it:28ccafdb3703": {
+      "char": "bend_it",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED, re-verified - collar see-through notches and rib sliver stay gone: 3x c"
+    },
+    "bend_it:20ba9d1a107c": {
+      "char": "bend_it",
+      "class": "no-defect-note",
+      "excerpt": "VERIFIED, no new defect from the LOD0 torso 24->20 column trade: the 3x stripe c"
+    },
+    "bend_it:84132a90a37d": {
+      "char": "bend_it",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT, do not re-file: the teal-rimmed disc with a skin lump inside on the "
+    },
+    "bend_it:e7f800965d30": {
+      "char": "bend_it",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT, do not re-file: the glasses ship as open wire rings with no lens dis"
+    },
+    "bend_it:d035a7be671c": {
+      "char": "bend_it",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT, TEAM_MASK: the source (line 72-75) puts the team accent on the sock "
+    },
+    "bend_it:8d87269a6d8e": {
+      "char": "bend_it",
+      "class": "no-defect-note",
+      "excerpt": "VERIFIED FIXED, do not re-open: the bun is not a backface void - in bendy-bao-ru"
+    },
+    "flash:0a7bc7e173c8": {
+      "char": "flash",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED - hair mass, front read: flash-gordon-jr-front-review.png x190-350,y80-2"
+    },
+    "flash:24633deb0115": {
+      "char": "flash",
+      "class": "severed",
+      "excerpt": "CARRIED - shorts are two unconnected tubes: flash-gordon-jr-front-apose-review.p"
+    },
+    "flash:ec84af23f2f0": {
+      "char": "flash",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED - SPIKE_TABLE (source lines 288-296, build_mohawk 299-311) is 7 isolated"
+    },
+    "flash:c2374c554a7b": {
+      "char": "flash",
+      "class": "hems-cuffs",
+      "excerpt": "CARRIED - bottom stripe smear: TORSO_LEVELS_CRISP (source 365-388) has ring 1.69"
+    },
+    "flash:56f76e3f2742": {
+      "char": "flash",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED - sleeve root butt-join / armpit notch: with root_ring=0.92 and cap_x=0."
+    },
+    "flash:73bf601fdd31": {
+      "char": "flash",
+      "class": "no-defect-note",
+      "excerpt": "VERIFIED - dropped scalp rows 3.360 and 2.900 (git diff confirms only those two "
+    },
+    "flash:0ba6a71b67a6": {
+      "char": "flash",
+      "class": "proportions",
+      "excerpt": "CARRIED - TEAM_MASK extent: source line 67-70 says the accent is the sock's crea"
+    },
+    "flash:7af671e6b2c6": {
+      "char": "flash",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT - ears: EAR_SPEC (source line 137) and build_ear (line 663) are prese"
+    },
+    "flash:058e539e190f": {
+      "char": "flash",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT - the striped disc on flash-gordon-jr-profile-review.png x235-305,y27"
+    },
+    "flash:5a4301ed45ab": {
+      "char": "flash",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT - profile boards y233-241 x342-346: a 1-5 px alpha-0 sliver between t"
+    },
+    "flash:471f4f6f32b5": {
+      "char": "flash",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (stays cleared) - sleeves carry the traced stripe chart with crisp pairs"
+    },
+    "flash:7d1caa1ddd34": {
+      "char": "flash",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (stays cleared) - collar: rows 2.499/2.514/2.528 give a crisp neckline w"
+    },
+    "flash:e01de046d6b6": {
+      "char": "flash",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (stays cleared) - recorded scores: the prior record is the honest 2/3/2/"
     }
   }
 }
