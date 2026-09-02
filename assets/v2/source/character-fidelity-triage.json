@@ -2115,110 +2115,10 @@
       "class": "no-defect-note",
       "excerpt": "CLEARED (kept clear) — The old hairMass-1 basis: theo-front-review.png still sho"
     },
-    "peaches:7ee61eea419c": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (finding 1 of the calf critique; the kneecap half of the old baluster fi"
-    },
-    "peaches:6f7a09ef50f8": {
-      "char": "peaches",
-      "class": "proportions",
-      "excerpt": "CARRIED minor, revised (finding 2 of the calf critique) — the profile calf-to-an"
-    },
-    "peaches:f9a95526f780": {
-      "char": "peaches",
-      "class": "other",
-      "excerpt": "CARRIED cosmetic — the toon outliner still traces the ribbing. peaches-runtime-f"
-    },
-    "peaches:b38298639720": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "PASSES (calf build) verified — runtime is clean behind the leg on the 04:37 stil"
-    },
-    "peaches:388abe2b67ed": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "PASSES (calf build) verified — the front board's leg run is unchanged: a row-tab"
-    },
-    "peaches:7087ac58cfe4": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED 3.2 (knee half) — still cleared on the fresh boards. peaches-front-revie"
-    },
-    "peaches:4885f41be5d4": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED 3.2 (calf/ankle half) — still cleared: 33 -> 34 (kneecap) -> 31 (hollow)"
-    },
-    "peaches:b2187d06f5b3": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED 3.11 — still cleared: the deltoid fairs into the sleeveless arm on peach"
-    },
-    "peaches:5113560bfd13": {
-      "char": "peaches",
-      "class": "face-atlas",
-      "excerpt": "CARRIED 3.5 BLOCKER — decal-island seam on the face, unchanged. peaches-front-re"
-    },
-    "peaches:bc9012f51da7": {
-      "char": "peaches",
-      "class": "butt-joins",
-      "excerpt": "CARRIED 3.3 — the bun's STEP SEAM ring, unchanged. peaches-front-review.png (200"
-    },
-    "peaches:8f4be2b89a39": {
-      "char": "peaches",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED 3.3 — the bun is a faceted walnut, unchanged. peaches-runtime-hero.png ("
-    },
-    "peaches:07bd91eca9e8": {
-      "char": "peaches",
-      "class": "ears",
-      "excerpt": "CARRIED 3.8 — the temple wisps cross the ears in the front view, unchanged. peac"
-    },
-    "peaches:a8ea8ebcf93b": {
-      "char": "peaches",
-      "class": "hems-cuffs",
-      "excerpt": "CARRIED 3.4 — no bodice straps, scoop or armhole binding, unchanged. peaches-fro"
-    },
-    "peaches:6a3585531ee6": {
-      "char": "peaches",
-      "class": "decal-not-form",
-      "excerpt": "CARRIED 3.4 — the leaf applique is a blob, unchanged. Source line 735 builder.el"
-    },
-    "peaches:4ec50c27b30d": {
-      "char": "peaches",
-      "class": "40px-read",
-      "excerpt": "CARRIED 6b.2 — the sneaker reads cream, not peach, unchanged. Measured: second t"
-    },
-    "peaches:b2d83f12c015": {
-      "char": "peaches",
-      "class": "stance",
-      "excerpt": "CARRIED 6b.4 — stance, not tolerance. Ankle daylight 34.0 vs the sheet's 0.00 (t"
-    },
     "peaches:80da3173d371": {
       "char": "peaches",
       "class": "proportions",
       "excerpt": "CARRIED minor — the neck is a plain cylinder above the collar ring, unchanged (p"
-    },
-    "peaches:4e55b8731385": {
-      "char": "peaches",
-      "class": "ears",
-      "excerpt": "CARRIED minor — the ear reads as a claw in profile, unchanged. peaches-profile-r"
-    },
-    "peaches:0c78e682c26e": {
-      "char": "peaches",
-      "class": "proportions",
-      "excerpt": "CARRIED minor — the profile nose is a thorn, unchanged. peaches-profile-review.p"
-    },
-    "peaches:876b82eea5ef": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (cropped) — the dark trail at the armpit in peaches-runtime-swing.png"
-    },
-    "peaches:77d9e25aec19": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (cropped) — the black diagonal sliver on the medial forefoot of each "
     },
     "peaches:2d9b04baf340": {
       "char": "peaches",
@@ -2229,11 +2129,6 @@
       "char": "peaches",
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT Trap-3 — TEAM_MASK is the raw grey ring on both socks on the boards ("
-    },
-    "peaches:aa23a83e6437": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "PASSES re-verified on the 04:37 evidence — nothing is severed; legs are two legs"
     },
     "calls_shot:8f563971fc6e": {
       "char": "calls_shot",
@@ -2540,31 +2435,6 @@
       "class": "no-defect-note",
       "excerpt": "CLEARED (record) — prior cleared/non-defect items re-checked and still clear: fa"
     },
-    "sprout:10549c410e2d": {
-      "char": "sprout",
-      "class": "no-defect-note",
-      "excerpt": "12-VS-14 SIDES VERDICT, PER REGION — NO VISIBLE DIFFERENCE. Upper arm (sleeve): "
-    },
-    "sprout:532dee0a7ba2": {
-      "char": "sprout",
-      "class": "proportions",
-      "excerpt": "ELBOW — CLEARED AT REST ON THE BOARDS AT 8x, HINT AT 4x; CLEARED IN RUN (carried"
-    },
-    "sprout:21ff395d03ab": {
-      "char": "sprout",
-      "class": "hems-cuffs",
-      "excerpt": "SLEEVE HEM — CARRIED (the separate half of finding 1): the hem silhouette is 0 p"
-    },
-    "sprout:80d073ea5b59": {
-      "char": "sprout",
-      "class": "no-defect-note",
-      "excerpt": "SHOULDER — CLEARED (carried from the root-ring round): sprout-front-apose-review"
-    },
-    "sprout:90cca04262d5": {
-      "char": "sprout",
-      "class": "hair-nyquist",
-      "excerpt": "HAIRLINE IS A JAGGED M WITH A CENTRE SPIKE — CARRIED (hair untouched, pixel-iden"
-    },
     "sprout:214b86295a0d": {
       "char": "sprout",
       "class": "face-atlas",
@@ -2574,31 +2444,6 @@
       "char": "sprout",
       "class": "no-defect-note",
       "excerpt": "EYES CLIPPED BY THE FRINGE — CLEARED (carried): sprout-front-review.png (185-365"
-    },
-    "sprout:356a9ab52cdc": {
-      "char": "sprout",
-      "class": "proportions",
-      "excerpt": "PROFILE NOSE STILL A FIN — CARRIED: sprout-profile-review.png (175-245, 180-260)"
-    },
-    "sprout:e994ffb776ff": {
-      "char": "sprout",
-      "class": "face-atlas",
-      "excerpt": "EYE DECAL WRAPS TO THE PROFILE PLANE — CARRIED: sprout-profile-review.png (195-2"
-    },
-    "sprout:cec9db6835bc": {
-      "char": "sprout",
-      "class": "severed",
-      "excerpt": "FLOATING COLLAR KNOB WITH DECAL BLOTCHES — CARRIED: sprout-profile-review.png (2"
-    },
-    "sprout:256cccff0da1": {
-      "char": "sprout",
-      "class": "sheared-edges",
-      "excerpt": "PROFILE HAIRLINE CREASE AND REAR FACETS — CARRIED: sprout-profile-review.png (20"
-    },
-    "sprout:7e54d249ef5a": {
-      "char": "sprout",
-      "class": "hair-nyquist",
-      "excerpt": "CURL COUNT BELOW CONCEPT — CARRIED: hair untouched this build; the recorded meas"
     },
     "sprout:fece2267d1d6": {
       "char": "sprout",
@@ -2610,20 +2455,10 @@
       "class": "decal-not-form",
       "excerpt": "NO OVERALL BUTTONS — CARRIED: grep 'button' in scripts/v2/blender/sculpt-sprout-"
     },
-    "sprout:fbccc3b6fba1": {
-      "char": "sprout",
-      "class": "butt-joins",
-      "excerpt": "HIP SHELF SOFTENED BUT PRESENT — CARRIED: sprout-front-review.png (170-370, 440-"
-    },
     "sprout:1fcb619740e8": {
       "char": "sprout",
       "class": "ears",
       "excerpt": "EARS STILL FLAT FROM THE FRONT — CARRIED: sprout-front-review.png left ear (165-"
-    },
-    "sprout:e62c1d55265d": {
-      "char": "sprout",
-      "class": "proportions",
-      "excerpt": "HEAD PROPORTION — CARRIED (critic-measured, instrument blind): measure:fidelity "
     },
     "sprout:59a970118dbf": {
       "char": "sprout",
@@ -2649,6 +2484,201 @@
       "char": "sprout",
       "class": "no-defect-note",
       "excerpt": "TEAM_MASK EXTENT — NON-DEFECT: the source paints TEAM_MASK on the trouser cuff t"
+    },
+    "peaches:7e38672b30a3": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (finding 19, 'the profile nose is a thorn') — the spike is gone and the "
+    },
+    "peaches:0af3900ad1ac": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "VERIFIED (nose from the front) — the nose reads in the front views with no seam."
+    },
+    "peaches:bc8b3513dafe": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "SIDES record (14 -> 12 at LOD0, arm and leg rings; unchanged since the previous "
+    },
+    "peaches:33e0e1256f31": {
+      "char": "peaches",
+      "class": "proportions",
+      "excerpt": "CARRIED minor (calf critique finding 2) — the profile calf-to-ankle taper still "
+    },
+    "peaches:151bb07f2b5b": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (calf critique finding 1; the kneecap half of the old baluster finding) "
+    },
+    "peaches:c95d14b83b6a": {
+      "char": "peaches",
+      "class": "other",
+      "excerpt": "CARRIED cosmetic — the toon outliner still traces the ribbing. peaches-runtime-f"
+    },
+    "peaches:e7f8da83f145": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "PASSES verified — runtime is clean behind the leg and the arm on the 05:43 still"
+    },
+    "peaches:d944f3646046": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "PASSES verified — hem, sock roll and shoe: front board rows y465-488 (hem) ident"
+    },
+    "peaches:2aacd9d6947a": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED 3.2 (knee half) — still cleared. peaches-front-review.png (200,480 140x1"
+    },
+    "peaches:af33cc09b486": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED 3.2 (calf/ankle half) — still cleared: 34 -> 34 (kneecap) -> 31 (hollow)"
+    },
+    "peaches:76ca8eacd4cc": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED 3.11 — still cleared: the deltoid fairs into the sleeveless arm on peach"
+    },
+    "peaches:4f3b848791c0": {
+      "char": "peaches",
+      "class": "face-atlas",
+      "excerpt": "CARRIED 3.5 BLOCKER — decal-island seam on the face, unchanged by the nose rows."
+    },
+    "peaches:df3b4791ee5c": {
+      "char": "peaches",
+      "class": "butt-joins",
+      "excerpt": "CARRIED 3.3 — the bun's STEP SEAM ring, unchanged. peaches-front-review.png (200"
+    },
+    "peaches:c030860d6418": {
+      "char": "peaches",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED 3.3 — the bun is a faceted walnut, unchanged. peaches-runtime-hero.png ("
+    },
+    "peaches:47dd3cb7655e": {
+      "char": "peaches",
+      "class": "ears",
+      "excerpt": "CARRIED 3.8 — the temple wisps cross the ears in the front view, unchanged. peac"
+    },
+    "peaches:3870aa529988": {
+      "char": "peaches",
+      "class": "hems-cuffs",
+      "excerpt": "CARRIED 3.4 — no bodice straps, scoop or armhole binding, unchanged. peaches-fro"
+    },
+    "peaches:1579a586df13": {
+      "char": "peaches",
+      "class": "decal-not-form",
+      "excerpt": "CARRIED 3.4 — the leaf applique is a blob, unchanged. Source line 735 builder.el"
+    },
+    "peaches:5fb1ef890583": {
+      "char": "peaches",
+      "class": "40px-read",
+      "excerpt": "CARRIED 6b.2 — the sneaker reads cream, not peach, unchanged. Measured: second t"
+    },
+    "peaches:bb89a0bc82e0": {
+      "char": "peaches",
+      "class": "stance",
+      "excerpt": "CARRIED 6b.4 — stance, not tolerance. Ankle daylight 34.0 vs the sheet's 0.00 (t"
+    },
+    "peaches:960356c43d92": {
+      "char": "peaches",
+      "class": "ears",
+      "excerpt": "CARRIED minor — the ear reads as a claw in profile, unchanged. peaches-profile-r"
+    },
+    "peaches:9edf549ffe4b": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (cropped) — the dark trail at the armpit in peaches-runtime-swing.png"
+    },
+    "peaches:50bea212874d": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (cropped) — the black diagonal sliver on the medial forefoot of each "
+    },
+    "peaches:26b5975eaa09": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "PASSES re-verified on the 05:43 evidence — nothing is severed; legs are two legs"
+    },
+    "sprout:98096a5908b6": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "12-VS-14 SIDES VERDICT, PER REGION — NO VISIBLE DIFFERENCE. Upper arm (sleeve): "
+    },
+    "sprout:62d6d96c51c3": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "PROFILE NOSE FIN — CLEARED; STRAIGHT UNDERSIDE — CARRIED AS ITS OWN ITEM. sprout"
+    },
+    "sprout:33626427336a": {
+      "char": "sprout",
+      "class": "proportions",
+      "excerpt": "PROFILE NOSE UNDERSIDE STILL A STRAIGHT PLANE WITH A CORNER — CARRIED: rows 241-"
+    },
+    "sprout:ec4b26964b9f": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "NOSE FROM THE FRONT — CLEARED (new record), WITH ONE NOTE: sprout-front-review.p"
+    },
+    "sprout:13306dc54e20": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "CROWN ROW z 3.820 DROPPED — VERIFIED, NO REGRESSION (and one concave knee remove"
+    },
+    "sprout:5d0255bf412d": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "HAIRLINE AND BROWS AFTER THE NOSE ROWS AND THE CROWN ROW — PIXEL-IDENTICAL (veri"
+    },
+    "sprout:ce23665023a1": {
+      "char": "sprout",
+      "class": "proportions",
+      "excerpt": "ELBOW — CLEARED AT REST ON THE BOARDS AT 8x, HINT AT 4x; CLEARED IN RUN (carried"
+    },
+    "sprout:f1720566e22b": {
+      "char": "sprout",
+      "class": "hems-cuffs",
+      "excerpt": "SLEEVE HEM — CARRIED (the separate half of finding 1): the hem silhouette is 0 p"
+    },
+    "sprout:98501f270ac5": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "SHOULDER — CLEARED (carried from the root-ring round): sprout-front-apose-review"
+    },
+    "sprout:b854730b73f2": {
+      "char": "sprout",
+      "class": "hair-nyquist",
+      "excerpt": "HAIRLINE IS A JAGGED M WITH A CENTRE SPIKE — CARRIED (band pixel-identical to HE"
+    },
+    "sprout:6c804796b9ba": {
+      "char": "sprout",
+      "class": "face-atlas",
+      "excerpt": "EYE DECAL WRAPS TO THE PROFILE PLANE — CARRIED: sprout-profile-review.png (195-2"
+    },
+    "sprout:22bab491871c": {
+      "char": "sprout",
+      "class": "severed",
+      "excerpt": "FLOATING COLLAR KNOB WITH DECAL BLOTCHES — CARRIED: sprout-profile-review.png (2"
+    },
+    "sprout:f33f65f92442": {
+      "char": "sprout",
+      "class": "sheared-edges",
+      "excerpt": "PROFILE HAIRLINE CREASE AND REAR FACETS — CARRIED: sprout-profile-review.png (20"
+    },
+    "sprout:81876652e523": {
+      "char": "sprout",
+      "class": "hair-nyquist",
+      "excerpt": "CURL COUNT BELOW CONCEPT — CARRIED: the recorded measure:strands 2.32 minima/row"
+    },
+    "sprout:917a9874dea0": {
+      "char": "sprout",
+      "class": "butt-joins",
+      "excerpt": "HIP SHELF SOFTENED BUT PRESENT — CARRIED: sprout-front-review.png (170-370, 440-"
+    },
+    "sprout:2733e92b7728": {
+      "char": "sprout",
+      "class": "proportions",
+      "excerpt": "HEAD PROPORTION — CARRIED (critic-measured, instrument blind): measure:fidelity "
     }
   }
 }
