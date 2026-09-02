@@ -108,11 +108,11 @@
     },
     "sprout": {
       "source": "sprout-pilot.blend",
-      "sourceSha256": "269cd4e9fcba2761555aad149eb012995b296298b9a025bcb30f90aa1ae895c7",
+      "sourceSha256": "35f84d90d27a0cc60a99fbe4196b966c1d60dcfae3fcd894006eeffe5cf636f7",
       "concept": "sprout-turnaround.png",
       "conceptSha256": "b734a39041e715ae23861523b44b118cf5b18919ba12533b241058591888f995",
       "output": "kid_sprout.glb",
-      "outputSha256": "1d2b873e2918d81817bbfd9ac8491861c49724590627ca508c166211e6e09432",
+      "outputSha256": "015c54a05ee51b3bcc92d80e0f8984c25c99fbc3a93e9a95340dceb108ee6f18",
       "definingTraits": [
         "denim bib overalls",
         "big round wonder eyes",
@@ -213,11 +213,11 @@
     },
     "noodle": {
       "source": "noodle-pilot.blend",
-      "sourceSha256": "7cee01b90cacf3d626dd405231c7fdce638cf3ecc71c619154a7b78d4247a4b1",
+      "sourceSha256": "de179875607a36c5aa0796e9bd724ec9a68fc069e059fbcf30b55ccdeabe3839",
       "concept": "noodle-turnaround.png",
       "conceptSha256": "dee0c6663214707ec91d7d06a1f7d4a59780ba48eb812399cf37e57c0b0a1738",
       "output": "kid_noodle.glb",
-      "outputSha256": "ccccbfa7a8aee87f6d612d2f99c649d1fb68383f21e92ed68f71d23c8b2e5336",
+      "outputSha256": "c00b090f916b254d36e502b6e80570de535e8810bf463939a8f3e6a48e602af6",
       "definingTraits": [
         "gleaming bald dome",
         "big round glasses",
@@ -363,11 +363,11 @@
     },
     "boomer": {
       "source": "boomer-pilot.blend",
-      "sourceSha256": "ab292694af7c062a83bf689ee55ec54bd009adcf35a4add6edcfa51cc75e63b4",
+      "sourceSha256": "d8ad2b3ac647ee9bd1edfec3808dd6d8f281eb0149c2efd2cbf27d33a2d6f6ec",
       "concept": "boomer-turnaround.png",
       "conceptSha256": "3748d36bff3ab7120b26edf7d5cea8da733140f40a0ac8adeccc0b88f55ca732",
       "output": "kid_boomer.glb",
-      "outputSha256": "658c1a1162a38775cb54cf0f546ec3c854b93566fda434ec4cab06c0b04f1729",
+      "outputSha256": "d4ee70a389d80388ca56bf3e3dd46e3d035e8a358f22d79f15e8aeb568ef8713",
       "definingTraits": [
         "tall black mohawk crest",
         "gold-and-cream striped tee",
@@ -438,11 +438,11 @@
     },
     "lefty": {
       "source": "lefty-pilot.blend",
-      "sourceSha256": "05cbf6ec15bb2064a4de4d2bdebfbb835e9ecac325a8c54ccbc8198b87f6cc0d",
+      "sourceSha256": "e28d83769ef2ea648c9bef2103d7e23b74804bf33cc49dfe4c5ff894d0145650",
       "concept": "lefty-turnaround.png",
       "conceptSha256": "9329598dd2a08be9c6614c3bbe49812a29a44c2beceba8274353b89ffc7777d2",
       "output": "kid_lefty.glb",
-      "outputSha256": "104e57cdaff36145cd4b41525806a8fa413cf7544a1afb4b20bacc6f6c069542",
+      "outputSha256": "1fe2d4bae650491a10338cf8ffe783492b03b1812856863fe874f9a2adcd09e9",
       "definingTraits": [
         "backwards grey cap",
         "blonde side ponytail",

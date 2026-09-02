@@ -551,8 +551,8 @@ SPROUT_ARM = ArmSpec(
     # to first ring left a daylight triangle Tank's and Grizz's fat necks
     # always filled. Burying the cap vertex deeper inside the torso fattens
     # that cone and closes the triangle without touching any visible surface.
-    cap_x=0.100,
-    root_ring=0.0,
+    cap_x=0.060,  # buried, as the shoulder-wedge doctrine asks (was 0.100)
+    root_ring=0.92,  # the A-pose coverage gap: see ArmSpec.root_ring (#208)
     ring_squash=0.95,
     hand=HandSpec(
         tip_x=1.560,
