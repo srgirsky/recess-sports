@@ -1570,66 +1570,6 @@
       "class": "other",
       "excerpt": "RECORD (not a defect) — bind stance daylight: 18-26px between the legs at ankle "
     },
-    "chip:08cc55d95c6d": {
-      "char": "chip",
-      "class": "no-defect-note",
-      "excerpt": "HAIR VERDICT (was the round's question): hairMass reaches 4. Front and runtime r"
-    },
-    "chip:0a78141195a4": {
-      "char": "chip",
-      "class": "no-defect-note",
-      "excerpt": "MEASURED CLEAR: the flute defect is gone. No crown-to-hem groove reads on any bo"
-    },
-    "chip:4d20e9bd5d9d": {
-      "char": "chip",
-      "class": "proportions",
-      "excerpt": "TEAM_MASK front extent unrepaired: re-measured 71.0% pale share today (prior 71."
-    },
-    "chip:ee2a76ca46a3": {
-      "char": "chip",
-      "class": "hems-cuffs",
-      "excerpt": "CARRIED-ELSEWHERE: collar corner notches still visible at both shoulder corners "
-    },
-    "chip:12cc9f8aca80": {
-      "char": "chip",
-      "class": "decal-not-form",
-      "excerpt": "CARRIED-ELSEWHERE: cap crown is plain (no six-panel seams, no apex button) on al"
-    },
-    "chip:1c825f446dae": {
-      "char": "chip",
-      "class": "proportions",
-      "excerpt": "CARRIED-ELSEWHERE: the bill remains a uniform thin blade in profile with no unde"
-    },
-    "chip:7edc21f3c345": {
-      "char": "chip",
-      "class": "ears",
-      "excerpt": "Ear shape still wrong: rubric 3.10 passes (rim, concha shadow, lobe all present)"
-    },
-    "chip:976e7ab299e8": {
-      "char": "chip",
-      "class": "butt-joins",
-      "excerpt": "Neck ledge carried, softened: the horizontal step where the head's skin volume m"
-    },
-    "chip:6a8275bdf692": {
-      "char": "chip",
-      "class": "butt-joins",
-      "excerpt": "Hands carried: still flat paddles with faint digit grooves and no defined thumb "
-    },
-    "chip:6a3cf29a6a66": {
-      "char": "chip",
-      "class": "evidence",
-      "excerpt": "EVIDENCE/GATE: chip-fidelity-review.png is stale twice over — its delivered fron"
-    },
-    "chip:3c9e7ce8226f": {
-      "char": "chip",
-      "class": "no-defect-note",
-      "excerpt": "Not a defect — re-verified and kept: the tan blob inside a ring on the hoodie ch"
-    },
-    "chip:8b099b5d0120": {
-      "char": "chip",
-      "class": "no-defect-note",
-      "excerpt": "REFUSAL RECORD, not re-filed: the sock ships a green band only against the conce"
-    },
     "wheelchair_ace:bc781c72c70b": {
       "char": "wheelchair_ace",
       "class": "proportions",
@@ -2339,6 +2279,81 @@
       "char": "lefty",
       "class": "no-defect-note",
       "excerpt": "NOT A DEFECT, recorded so it is not re-filed: 3.12 passes - 159 rows of two legs"
+    },
+    "chip:ae85c34528cd": {
+      "char": "chip",
+      "class": "decal-not-form",
+      "excerpt": "Cap reads as a bowler/hard hat from the front: chip-front-review.png cap rows x "
+    },
+    "chip:131ee9a505dc": {
+      "char": "chip",
+      "class": "material-light",
+      "excerpt": "Hair tone is near-black against a warm mid-brown sheet: front board lit hair #2d"
+    },
+    "chip:89a5427a3adb": {
+      "char": "chip",
+      "class": "proportions",
+      "excerpt": "CARRIED - TEAM_MASK front extent: at runtime the tinted band spans 72-74% of the"
+    },
+    "chip:d3dfc2fdeb71": {
+      "char": "chip",
+      "class": "hems-cuffs",
+      "excerpt": "Hood is a ball, not a drape: chip-profile-apose-review.png and chip-profile-revi"
+    },
+    "chip:bd7d69f0baf4": {
+      "char": "chip",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED - the profile A-pose 'rips' at x 245-260 / y 285-300: chip-profile-apose"
+    },
+    "chip:9ce39a13c746": {
+      "char": "chip",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED - the profile A-pose notch at x 290-300 / y 285-300: the same rows are s"
+    },
+    "chip:824eafdcb978": {
+      "char": "chip",
+      "class": "ears",
+      "excerpt": "CARRIED - ear reads as a broad half-disc: chip-profile-review.png x ~250-300, y "
+    },
+    "chip:df845c977349": {
+      "char": "chip",
+      "class": "butt-joins",
+      "excerpt": "CARRIED - horizontal ledge where head skin meets neck: chip-profile-apose-review"
+    },
+    "chip:a4a59d664e25": {
+      "char": "chip",
+      "class": "butt-joins",
+      "excerpt": "CARRIED - hands are flat paddles: chip-front-review.png x 40-110, y 280-320 (4x "
+    },
+    "chip:c555d3d2ca51": {
+      "char": "chip",
+      "class": "decal-not-form",
+      "excerpt": "CARRIED - cap crown is plain: build_cap (source lines 252-292) is a smooth 9-lev"
+    },
+    "chip:ad2707d6857f": {
+      "char": "chip",
+      "class": "proportions",
+      "excerpt": "CARRIED - bill is a uniform thin blade in profile: BRIM_THICK 0.030 renders as a"
+    },
+    "chip:dd1ca5867103": {
+      "char": "chip",
+      "class": "hems-cuffs",
+      "excerpt": "Minor - the hoodie's ribbed hem band does not read: hoodie_colour paints SHIRT_D"
+    },
+    "chip:ba956fba55e3": {
+      "char": "chip",
+      "class": "no-defect-note",
+      "excerpt": "RECORD (non-defect) - the sock ships a green band only: a recorded sheet refusal"
+    },
+    "chip:959d4ddf10c3": {
+      "char": "chip",
+      "class": "no-defect-note",
+      "excerpt": "RECORD (non-defect) - measure:fidelity 'daylight between the ankles 0.00 vs 26.5"
+    },
+    "chip:0322b44a2ce8": {
+      "char": "chip",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT - chip-profile-review.png x 245-290, y 285-330 shows a green disc wit"
     }
   }
 }
