@@ -89,7 +89,18 @@ WHITE = rgba("FFF6E4")       # the cream cupsole
 # round the sole is a third of the band — and round 1 shipped 100/0 all-cream.
 # The trim colour becomes the pink and the band stack puts it at the sole's
 # base; the cream toe cap is disabled rather than painted pink.
-SOLE = rgba("F6C48C")        # beige: the laces and the sole base line, like the quarter
+# ★ THE TRIM LANE MUST DIFFER FROM THE PANEL, or the laces are built and
+# invisible: at #F6C48C (= SHOE) three declared straps and the toe cap shipped
+# painted the quarter colour through two critic rounds. The round-2 note
+# above already said the trim IS the pink sole line; the value now agrees.
+# ★ THE TRIM IS PINK, BY MEASUREMENT. The lane paints laces, tongue, collar
+# and the band stack's sole line as ONE colour. A critic read the sheet's
+# laces as cream; measure:fidelity settled it the other way — cream trim
+# put the band at 82-86% cream against the sheet's 67.3 (OFF, tol 8) with
+# or without the toe cap, while pink held the split (73.3/26.7 ok). Pink is
+# also where the sheet's sole line is. The toe cap is OFF (below) so the
+# pink does not wash the toe.
+SOLE = rgba("F29A9A")        # the pink sole line, laces and tongue
 TEAM_MASK = rgba("D8D2C6")   # the scrunchie — her team-accent surface
 
 # The sock stripes are the dress's own pink, authored directly (the accent
@@ -859,6 +870,16 @@ SHOE_BANDS = [
 ]
 
 
+def no_toe_cap(y_unscaled: float) -> float:
+    """The sheet's toe is the beige quarter with cream laces over it; the
+    trim lane (toe cap, collar, tongue, straps AND the band stack's sole line)
+    is one colour, so a cap in that lane is either pink over a cream-laced
+    sheet or cream over a beige one. Off, as round 2 first had it — the
+    2.0 sentinel `build_shoe` documents — and the pink sole line is recorded
+    as a lane limit until the band stack can carry its own colour."""
+    return 2.0
+
+
 def toe_cap_v_low(y_unscaled: float) -> float:
     """Re-enabled in round 8: the second review read the capless shoe as "a
     bar-of-soap slab". The trim lane is beige now, and a beige bumper is
@@ -890,7 +911,7 @@ BUBBLES_SHOE = ShoeSpec(
     width_scale=SHOE_WIDTH_SCALE,
     height_scale=SHOE_HEIGHT_SCALE,
     sole_profile=shoe_floor_at,
-    toe_cap_edge=toe_cap_v_low,
+    toe_cap_edge=no_toe_cap,
     heel_counter_edge=heel_counter_v_low,
     collar=(0.022, 0.105),
     straps=((-0.185, -0.140), (-0.105, -0.060), (-0.025, 0.020)),

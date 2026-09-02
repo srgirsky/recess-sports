@@ -60,7 +60,9 @@ SHIRT_DARK = rgba("8AAEC8")  # ribbing, pouch shadow, hood lining
 HANKIE = rgba("D8E8F2")      # the pocket hankie — identity
 PANTS = rgba("3F5A77")       # blue jeans
 PANTS_DARK = rgba("2E4258")
-CUFF = rgba("96A4BA")        # pale rolled jean cuff
+# (A CUFF colour used to be declared here, byte-identical to TEAM_MASK and
+# painted by nothing — palette-identity.lint.test.js retired it: the whole
+# roll is TEAM_MASK on purpose, two stations, and the name was a loaded trap.)
 SOCK = rgba("FFF6E6")
 SHOE = rgba("3A4A66")        # navy canvas upper
 WHITE = rgba("F2D794")       # warm cream cupsole

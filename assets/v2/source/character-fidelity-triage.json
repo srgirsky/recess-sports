@@ -2320,16 +2320,6 @@
       "class": "hair-nyquist",
       "excerpt": "CARRIED — flat crown lid: bubbles-front-review.png y ~128-132 across x 205-335 i"
     },
-    "bubbles:0d6031f8ed75": {
-      "char": "bubbles",
-      "class": "40px-read",
-      "excerpt": "CARRIED — shoe laces misbuilt, not absent: BUBBLES_SHOE declares three straps (:"
-    },
-    "bubbles:55e5334bb4d3": {
-      "char": "bubbles",
-      "class": "sheared-edges",
-      "excerpt": "MINOR, CARRIED — dark sliver at each shoe's medial toe/midsole junction: bubbles"
-    },
     "bubbles:fe1933f1f617": {
       "char": "bubbles",
       "class": "no-defect-note",
@@ -2379,6 +2369,21 @@
       "char": "bubbles",
       "class": "material-light",
       "excerpt": "NOTED, NOT SCORED — runtime skin renders a saturated orange in every bubbles-run"
+    },
+    "bubbles:5e9b258ec86a": {
+      "char": "bubbles",
+      "class": "40px-read",
+      "excerpt": "REVISED, CARRIED (narrower) — laces and toe: with toe_cap_edge=no_toe_cap (:873,"
+    },
+    "bubbles:454eb8125ab5": {
+      "char": "bubbles",
+      "class": "sheared-edges",
+      "excerpt": "MINOR, CARRIED — dark sliver at each shoe's medial toe/midsole junction: bubbles"
+    },
+    "bubbles:bb9ae0c5c5e1": {
+      "char": "bubbles",
+      "class": "material-light",
+      "excerpt": "CARRIED, MEASURED — shoe-band mean saturation 21.6 vs the sheet's 26.0, OFF by 4"
     }
   }
 }
