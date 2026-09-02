@@ -258,11 +258,11 @@
     },
     "penny": {
       "source": "penny-pilot.blend",
-      "sourceSha256": "a679d3c0b7b7158d430a9c39d76f90194beab53aea8e765d067559bbc9628f21",
+      "sourceSha256": "12b39262b506d081ecef4dd3bbd5144fb6106d4de378969438fb9b4462f7f351",
       "concept": "penny-turnaround.png",
       "conceptSha256": "c135292d56d005e054136dcd938c45459a596c1cb64f1393c7105661c6a1674d",
       "output": "kid_penny.glb",
-      "outputSha256": "53ac31b9e2af853b4bc9a25b70587fbe9a6ed081c0a6ff19882a6d51a4378840",
+      "outputSha256": "89d9763c1c5f6f4e004607bc948c94b28cb57b4b2404e6bada016645eba47ca8",
       "definingTraits": [
         "big curly brown bob",
         "denim bib overalls",
@@ -348,11 +348,11 @@
     },
     "clover": {
       "source": "clover-pilot.blend",
-      "sourceSha256": "2fac64625c791fda6f94b26fbe70b35bca648c1528aa5a6af0b9f466185d1d48",
+      "sourceSha256": "65d386dbc4ed970268792f7d94a436f2effb6bc532e7a78a139f77702073c9ab",
       "concept": "clover-turnaround.png",
       "conceptSha256": "1cff5e0a9ac0306500dc1786ace77af0e9b888d3501262d23839a81bbbcc4142",
       "output": "kid_clover.glb",
-      "outputSha256": "efcdb292fa555c825a6048a870e657d34a88805ed31dc7d6f5f14d67ee08d6b3",
+      "outputSha256": "5cc884f266c0cfa3abb3a76063565a4d03991d38a3f203c647e423790291c1d2",
       "definingTraits": [
         "blonde low pigtails",
         "swept side fringe",
@@ -363,11 +363,11 @@
     },
     "boomer": {
       "source": "boomer-pilot.blend",
-      "sourceSha256": "d8ad2b3ac647ee9bd1edfec3808dd6d8f281eb0149c2efd2cbf27d33a2d6f6ec",
+      "sourceSha256": "c1db83eb067c0c818142b39051351ce63242bfa0f8e045f530cb63a742ed62b0",
       "concept": "boomer-turnaround.png",
       "conceptSha256": "3748d36bff3ab7120b26edf7d5cea8da733140f40a0ac8adeccc0b88f55ca732",
       "output": "kid_boomer.glb",
-      "outputSha256": "d4ee70a389d80388ca56bf3e3dd46e3d035e8a358f22d79f15e8aeb568ef8713",
+      "outputSha256": "3ebf2f209567f68f226f7b8d1ddd79111203d992ee285bbb9cc8341b34badb10",
       "definingTraits": [
         "tall black mohawk crest",
         "gold-and-cream striped tee",
