@@ -2495,16 +2495,6 @@
       "class": "no-defect-note",
       "excerpt": "REVISED — No elbow (elbow 0.06 → 0.03, delta-verified): the rest step is CLEARED"
     },
-    "peaches:4976ca2ee533": {
-      "char": "peaches",
-      "class": "butt-joins",
-      "excerpt": "PARTIALLY CLEARED 3.2 (leg half) — the knee is built and measurable, but it does"
-    },
-    "peaches:aa91291896f2": {
-      "char": "peaches",
-      "class": "proportions",
-      "excerpt": "CARRIED 3.2 (calf/ankle half) — still open. peaches-profile-review.png (220,480 "
-    },
     "peaches:fa8a1bf28a2d": {
       "char": "peaches",
       "class": "no-defect-note",
@@ -2514,11 +2504,6 @@
       "char": "peaches",
       "class": "hair-nyquist",
       "excerpt": "CARRIED 3.3 — the bun is no longer an acorn at 1% (measure:strands 24% at 222%),"
-    },
-    "peaches:0ac32fd72097": {
-      "char": "peaches",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED 3.8 — the temple wisps cross the ears in the front view. peaches-front-r"
     },
     "peaches:92ecba59d116": {
       "char": "peaches",
@@ -2530,7 +2515,37 @@
       "class": "material-light",
       "excerpt": "CARRIED 6b.2 — the sneaker reads cream, not peach. Measured: second tone 63.0% v"
     },
-    "peaches:705a784426f2": {
+    "peaches:d659ced23d8a": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED 3.2 (knee half) — the knee now reads as a cap and hollow at 1x. peaches-"
+    },
+    "peaches:7987633dd073": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED 3.2 (calf/ankle half) — the taper is in the silhouette. Profile contour "
+    },
+    "peaches:ee8d90d0cb7a": {
+      "char": "peaches",
+      "class": "proportions",
+      "excerpt": "NEW minor — the knee and calf are radially symmetric, so the profile reads as a "
+    },
+    "peaches:f14a112aac1e": {
+      "char": "peaches",
+      "class": "sheared-edges",
+      "excerpt": "NEW cosmetic — the toon outliner traces the ribbing. peaches-runtime-face-angry."
+    },
+    "peaches:ac38b2db9c10": {
+      "char": "peaches",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED 3.8 — the temple wisps cross the ears in the front view. peaches-front-r"
+    },
+    "peaches:4e86a96525b0": {
+      "char": "peaches",
+      "class": "proportions",
+      "excerpt": "CARRIED minor (was part of 3.2) — the neck is a plain cylinder above the collar "
+    },
+    "peaches:d42dadf1d1c0": {
       "char": "peaches",
       "class": "no-defect-note",
       "excerpt": "PASSES verified on the fresh evidence — nothing is severed; legs are two legs wi"
