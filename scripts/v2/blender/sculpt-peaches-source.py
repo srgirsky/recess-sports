@@ -550,8 +550,11 @@ LEG_STATIONS = [
     (1.100, 0.122, 1.01, SKIN, "UpLeg"),
     (0.950, 0.116, 1.01, SKIN, "Leg"),
     (0.800, 0.112, 1.01, SKIN, "Leg"),
-    (0.700, 0.115, 1.00, SKIN, "Leg"),             # the calf
-    (0.580, 0.104, 1.00, SKIN, "Leg"),
+    # ★ A CALF THE BOARD CAN SEE: 0.115 against a 0.112 knee was 0.4 board px
+    # (critic, 2026-09-02). 0.126 here and 0.098 at the shin's narrowest is
+    # the sheet's taper — a calf behind, an ankle that narrows into the sock.
+    (0.700, 0.126, 1.00, SKIN, "Leg"),             # the calf
+    (0.580, 0.098, 1.00, SKIN, "Leg"),             # the ankle narrows
     (0.520, 0.114, 1.00, SOCK, "Leg"),             # sock top roll
     (0.460, 0.108, 1.00, SOCK, "Leg"),
     (0.425, 0.110, 1.00, TEAM_MASK, "Leg"),        # the stripe — THE accent
@@ -576,7 +579,8 @@ PEACHES_LEG = LegSpec(
     garment=SKIN,
     sock=SOCK,
     team_mask=TEAM_MASK,
-    knee=0.06,  # the kneecap and the hollow under it: see LegSpec.knee
+    knee=0.14,  # the kneecap and the hollow under it (0.06 measured at one board
+                 # pixel — the critic's 0.12-0.15 is what survives the board)
 )
 
 
