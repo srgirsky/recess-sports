@@ -46,6 +46,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
+from sculptlib.ear import EarSpec, build_ear
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
@@ -314,6 +315,9 @@ def skull_front_y(x: float, z: float) -> float:
 # cone. The crown now carries four rings on the concept's own curve, and the
 # back column (y_centre + half_y) descends monotonically so the profile's rear
 # edge is one arc instead of the notched lumps the same review flagged.
+# ★ FIVE ROWS PAID FOR THE EARS (2026-09-02): 3.660, 3.500, 3.140, 2.880 and
+# 2.680 sat within 0.025 of the linear interpolation of their neighbours, and
+# build_ear at hero costs ~300 triangles the LOD0 budget did not have.
 AFRO_LEVELS = [
     (3.980, 0.060, 0.055, 0.010),
     (3.945, 0.215, 0.195, 0.030),
@@ -321,18 +325,13 @@ AFRO_LEVELS = [
     (3.860, 0.412, 0.400, 0.060),
     (3.820, 0.444, 0.472, 0.070),
     (3.740, 0.588, 0.532, 0.080),
-    (3.660, 0.652, 0.577, 0.090),
     (3.580, 0.714, 0.643, 0.100),
-    (3.500, 0.778, 0.664, 0.105),
     (3.420, 0.792, 0.660, 0.118),
     (3.340, 0.807, 0.635, 0.150),
     (3.260, 0.828, 0.516, 0.245),
-    (3.140, 0.795, 0.455, 0.290),
     (3.020, 0.740, 0.424, 0.322),
     (2.940, 0.690, 0.255, 0.445),
-    (2.880, 0.600, 0.230, 0.435),
     (2.780, 0.470, 0.210, 0.415),
-    (2.680, 0.365, 0.190, 0.390),
     (2.600, 0.270, 0.155, 0.360),
 ]
 
@@ -362,6 +361,28 @@ def fringe_z_at(x_abs: float) -> float:
         if x_abs <= x1:
             return z0 + (z1 - z0) * (x_abs - x0) / (x1 - x0)
     return table[-1][1]
+
+
+# ★ THE EAR, BUILT (sculptlib.ear, 2026-09-02) — the note above records that
+# "no ears" was false against the drawing. Off the profile (x 693-927): a big
+# ear from just under the brow band to the pout line, z 3.17 → 2.79, entirely
+# clear of the afro, which springs back behind it.
+EAR_SPEC = EarSpec(center=(0.030, 2.980), radii=(0.150, 0.190))
+
+# The afro stays BEHIND the ear line at face height (his whole face is clear
+# of it in profile). Diva's face-band floor, as on Penny and Bubbles.
+FACE_BAND = (2.700, 3.220)
+FACE_BAND_FLOOR_Y = 0.060
+
+
+def skull_surface_x(y: float, z: float) -> float:
+    """The skull's lateral half-width at (y, z) — what the ear mounts against."""
+    ny = (y - HEAD_CENTER[1]) / HEAD_RADII[1]
+    nz = (z - HEAD_CENTER[2]) / HEAD_RADII[2]
+    remainder = 1.0 - ny * ny - nz * nz
+    if remainder <= 0.0:
+        return 0.0
+    return HEAD_RADII[0] * (remainder ** 0.5) * face_half_scale(nz)
 
 
 def build_afro(builder: MeshBuilder, detail: int) -> None:
@@ -398,6 +419,8 @@ def build_afro(builder: MeshBuilder, detail: int) -> None:
             if y < y_centre and AFRO_OPEN_BOTTOM < z < fringe_z_at(abs(x)):
                 # forward half, inside the arc: bury it behind the face
                 y = max(y, skull_front_y(x, z) + 0.050)
+                if FACE_BAND[0] < z < FACE_BAND[1]:
+                    y = max(y, FACE_BAND_FLOOR_Y)
             ring.append(builder.vertex((x, y, z), HAIR, "Head"))
         rows.append(ring)
     bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
@@ -853,6 +876,10 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     head_surface(builder, face_columns, back_columns, rows_spec, crown, chin,
                  spec=HEAD_SPEC, palette=PALETTE)
 
+    # Ears at the two near LODs: at LOD2 an ear is two pixels and 58 triangles.
+    if detail >= 1:
+        for side in (1, -1):
+            build_ear(builder, side, detail, palette=PALETTE, skull_at=skull_surface_x, spec=EAR_SPEC)
     build_afro(builder, detail)
 
     builder.loft(NECK_LEVELS, 0, SKIN, segments)

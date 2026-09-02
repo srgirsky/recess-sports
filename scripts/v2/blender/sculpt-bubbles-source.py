@@ -45,6 +45,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
+from sculptlib.ear import EarSpec, build_ear
 from sculptlib.hair import curl_field, curl_seeds
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
@@ -162,7 +163,30 @@ def nose_push(nx: float, nz: float) -> float:
     return bridge + tip
 
 
-# ★ NO EARS — the curl curtains cover them in every view, like Grizz's afro.
+# ★ THE EAR, BUILT (sculptlib.ear, 2026-09-02). The line here read "NO EARS —
+# the curl curtains cover them in every view, like Grizz's afro", and the
+# header above records why that was false: her profile draws one of the
+# roster's largest ears with the curls tucked BEHIND it. Off that profile
+# (x 638-846): top just under the brow, lobe level with the laugh — z 3.24 →
+# 2.80 on a 1.60ft head — and the whole ear clear of the hair.
+EAR_SPEC = EarSpec(center=(0.030, 3.020), radii=(0.140, 0.190))
+
+# The curls sit BEHIND the ear line at face height (the same profile shows
+# brow, eye, cheek, laugh and chin all in front of the hair). Diva's
+# face-band floor: no ring vertex comes further forward than the ear's back
+# edge in these rows, whatever the loft's half-depth says.
+FACE_BAND = (2.620, 3.300)
+FACE_BAND_FLOOR_Y = 0.060
+
+
+def skull_surface_x(y: float, z: float) -> float:
+    """The skull's lateral half-width at (y, z) — what the ear mounts against."""
+    ny = (y - HEAD_CENTER[1]) / HEAD_RADII[1]
+    nz = (z - HEAD_CENTER[2]) / HEAD_RADII[2]
+    remainder = 1.0 - ny * ny - nz * nz
+    if remainder <= 0.0:
+        return 0.0
+    return HEAD_RADII[0] * (remainder ** 0.5) * face_half_scale(nz)
 
 # Island solved for her span (skull crown under the curls at ~3.52): brow at
 # generator row 28 lands z 3.27 (45.7% of the 4.00→2.40 head), eyes at row 46
@@ -213,11 +237,12 @@ def skull_front_y(x: float, z: float) -> float:
 # measured: front z=2.94 halfWidth=0.6865
 # measured: front z=2.62 halfWidth=0.6351
 # measured: view2 z=3.18 halfWidth=0.5183
+# ★ FOUR ROWS PAID FOR THE EARS (2026-09-02): 3.560, 3.300, 2.820 and 2.460
+# were within 0.025 of the linear interpolation of their neighbours, and
+# build_ear at hero costs ~300 triangles the LOD0 budget did not have.
 HAIR_LEVELS = [
     (3.690, 0.345, 0.325, 0.062),
-    (3.560, 0.470, 0.360, 0.110),
     (3.400, 0.545, 0.400, 0.150),
-    (3.300, 0.575, 0.400, 0.190),
     # ★ ROUND 7: THE CURTAINS KEEP THEIR BACKS AND GIVE UP THEIR FRONTS. The
     # first review found the hair "engulfing the face": these rings' front
     # extents (yc - hy) reached -0.42, at the face plane, where the concept's
@@ -227,9 +252,7 @@ HAIR_LEVELS = [
     (3.180, 0.625, 0.385, 0.280),
     (3.060, 0.660, 0.385, 0.290),
     (2.940, 0.687, 0.380, 0.300),
-    (2.820, 0.670, 0.360, 0.310),
     (2.640, 0.640, 0.310, 0.338),
-    (2.460, 0.460, 0.235, 0.365),
     (2.320, 0.220, 0.140, 0.380),
 ]
 
@@ -282,9 +305,12 @@ HAIR_OPEN_BOTTOM = 2.34
 #   24 cols 4 pairs x 8 @0.070  (this rung) — the six ringlet tubes go: the
 #     field is the ringlets now, and their ~140 triangles pay for the four
 #     columns (LOD0 had forty to spare). The bun keeps two bands of its own.
+# Six bands over seven rows with z_width 0.12: with four rows paid to the
+# ears, eight bands at 0.085 fell between the survivors and the relief
+# dropped to 14% — a band has to reach its neighbouring rows to emit a lobe.
 CURL_SEEDS = curl_seeds(
     pairs_per_row=4,
-    bands=8,
+    bands=6,
     z_top=3.660,
     z_bottom=2.380,
     amplitude=0.070,
@@ -297,7 +323,7 @@ BUN_SEEDS = curl_seeds(
     amplitude=0.055,
 )
 CURL_THETA_WIDTH = 0.21
-CURL_Z_WIDTH = 0.085
+CURL_Z_WIDTH = 0.120
 CURL_TROUGH = 0.018
 
 
@@ -317,15 +343,17 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
     # 24 even columns keep mirror columns and give eight lobes three samples.
     segments = 24 if detail >= 2 else (10 if detail == 1 else 8)
 
-    def ring_loft(levels, seeds):
+    def ring_loft(levels, seeds, columns=None):
+        segs = columns or segments
         assert all(x[0] > y[0] for x, y in zip(levels, levels[1:])), \
             "ring_loft tables must be strictly descending in z"
         ascending = list(reversed(levels))
         rows = []
         for z, half_x, half_y, y_centre in ascending:
             ring = []
-            for column in range(segments):
-                theta = 2 * pi * column / segments
+            for column in range(segs):
+                theta = 2 * pi * column / segs  # over THIS loft's columns — the bun at 12
+                # once divided by the mass's 24 and swept two thirds of a turn
                 # The field is even in θ by construction (every seed is
                 # emitted at ±θ₀), so faceAsymmetry holds with no mirror
                 # rule at this call site — Penny's lesson, now structural.
@@ -342,22 +370,28 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
                         y = max(y, skull_front_y(x, z) + 0.050)
                     else:
                         y = max(y, skull_front_y(x, z) - 0.085)
+                    if seeds is CURL_SEEDS and FACE_BAND[0] < z < FACE_BAND[1]:
+                        y = max(y, FACE_BAND_FLOOR_Y)
                 tone = HAIR if f > CURL_TROUGH else HAIR_DARK
                 ring.append(builder.vertex((x, y, z), tone, "Head"))
             rows.append(ring)
         bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
         top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.02), HAIR, "Head")
-        for column in range(segments):
-            nxt = (column + 1) % segments
+        for column in range(segs):
+            nxt = (column + 1) % segs
             builder.face((bottom, rows[0][nxt], rows[0][column]), 2)
             builder.face((rows[-1][column], rows[-1][nxt], top), 2)
         for lower, upper in zip(rows, rows[1:]):
-            for column in range(segments):
-                nxt = (column + 1) % segments
+            for column in range(segs):
+                nxt = (column + 1) % segs
                 builder.face((lower[column], lower[nxt], upper[nxt], upper[column]), 2)
 
     # ★ THE CURLS ARE LOBED HARD — she is ringlets, not a smooth mass. Seven
     # primary lobes at ±6.5% of radius; the drawing's read is texture first.
+    # Ears at the two near LODs: at LOD2 an ear is two pixels and 58 triangles.
+    if detail >= 1:
+        for side in (1, -1):
+            build_ear(builder, side, detail, palette=PALETTE, skull_at=skull_surface_x, spec=EAR_SPEC)
     ring_loft(HAIR_LEVELS, CURL_SEEDS)
     # The six sculpted ringlet tubes that rode the lower mass are gone: they
     # were the earlier answer to "the cloud needs real curl-clump geometry",
@@ -366,7 +400,8 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
     # At the far LOD the bun is two pixels; it merges into the mass and its
     # triangles pay for the ringlet lobes that do survive 40px.
     if detail >= 1:
-        ring_loft(BUN_LEVELS, BUN_SEEDS)
+        # 12 columns: the bun is a fist-sized mass; its columns paid for the ears.
+        ring_loft(BUN_LEVELS, BUN_SEEDS, columns=12 if detail >= 2 else None)
 
     # The scrunchie: a pink torus at the bun's base — the team-accent surface,
     # on M_Accessory (slot 3).

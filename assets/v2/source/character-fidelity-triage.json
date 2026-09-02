@@ -330,81 +330,6 @@
       "class": "no-defect-note",
       "excerpt": "NOT FILED per instruction: the ankle-daylight/stance measure reading OFF is the "
     },
-    "grizz:a94ce8cd60fe": {
-      "char": "grizz",
-      "class": "proportions",
-      "excerpt": "THE AFRO IS STILL A FLAT BOWL, NOT A BALL — unchanged this round and re-measured"
-    },
-    "grizz:1292a0c6f903": {
-      "char": "grizz",
-      "class": "proportions",
-      "excerpt": "THE NAPE IS BARE UNDER THE AFRO — new, profile evidence. On grizz-profile-apose-"
-    },
-    "grizz:583cd53be5a0": {
-      "char": "grizz",
-      "class": "ears",
-      "excerpt": "EARS ARE ABSENT AND THE CONCEPT DRAWS TWO BIG ONES — carried, grep re-confirmed:"
-    },
-    "grizz:20a6dc2308b9": {
-      "char": "grizz",
-      "class": "face-atlas",
-      "excerpt": "THE NEUTRAL FACE STILL GLARES INSTEAD OF THE CONCEPT'S BORED DEADPAN — moderated"
-    },
-    "grizz:16fd9fc57b6e": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED / NON-DEFECT: THE EXPRESSIONS ARE NO LONGER BYTE-STATIC. Row-diff of the"
-    },
-    "grizz:e5aa2e0f9d4e": {
-      "char": "grizz",
-      "class": "decal-not-form",
-      "excerpt": "THE NOSE HAS NO FRONT READ — carried. It exists and breaks the profile, but the "
-    },
-    "grizz:3a8a26ac7e8a": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED / NON-DEFECT: THE BELLY IS BUILT AND MEASURES CORRECT. The prior 'NO BEL"
-    },
-    "grizz:347dcb01998a": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED / NON-DEFECT: THE TEE HAS A COLLAR NOW, AND IT IS THE ONE THIS ROUND CLA"
-    },
-    "grizz:565e6affd5a3": {
-      "char": "grizz",
-      "class": "proportions",
-      "excerpt": "THE CHEST POCKET IS ON THE WRONG BREAST — new, misbuilt not missing. Both delive"
-    },
-    "grizz:8170dcd59325": {
-      "char": "grizz",
-      "class": "decal-not-form",
-      "excerpt": "THE CHEST POCKET STILL READS AS AN EMBOSSED DECAL — moderated carry. The script "
-    },
-    "grizz:b7961419c5d7": {
-      "char": "grizz",
-      "class": "material-light",
-      "excerpt": "SKIN IS NOW ONLY SLIGHTLY LIGHT — re-measured, prior '~35% too light' no longer "
-    },
-    "grizz:5977490b59b1": {
-      "char": "grizz",
-      "class": "material-light",
-      "excerpt": "THE SKULL AND AFRO ARE VISIBLY FACETED AT RUNTIME — carried, re-verified this ro"
-    },
-    "grizz:b096529f50ff": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED / NON-DEFECT: THE SHOULDER HAS A DELTOID NOW. The sculpt script's arm ta"
-    },
-    "grizz:99fcca8d110c": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "RECORDED NON-DEFECT: THE DISC BEHIND THE JAW ON grizz-profile-review.png IS THE "
-    },
-    "grizz:f30e0eb6161e": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "RECORDED NON-DEFECT: measure:fidelity's five head metrics report NOT MEASURED (n"
-    },
     "sprout:a6db272082bd": {
       "char": "sprout",
       "class": "decal-not-form",
@@ -2145,155 +2070,10 @@
       "class": "no-defect-note",
       "excerpt": "PASSES verified — nothing is severed: the white at the A-pose armpit is backgrou"
     },
-    "penny:bf3baaa87cb6": {
-      "char": "penny",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED, HIGHEST VALUE: pull the hair back off the face in profile and 3/4. penn"
-    },
-    "penny:791c45d7b31b": {
-      "char": "penny",
-      "class": "ears",
-      "excerpt": "CARRIED, ABSENT (missing, not misbuilt): ears. grep of sculpt-penny-source.py fi"
-    },
-    "penny:a70cf8973fb7": {
-      "char": "penny",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED, changed form: the curl read at the gameplay camera. measure:strands 4.7"
-    },
-    "penny:94aa3b485e38": {
-      "char": "penny",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED: no hairline from the front. penny-runtime-face-angry.png x~500-570, y~2"
-    },
-    "penny:168a0dddb0e7": {
-      "char": "penny",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED: bring the nape down. penny-runtime-swing.png back-3/4 x~520-600, y~325-"
-    },
-    "penny:4c5ae7c41d57": {
-      "char": "penny",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED: silhouette faceting. penny-profile-apose-review.png x~340-385, y~100-26"
-    },
-    "penny:dd3798078cd9": {
-      "char": "penny",
-      "class": "butt-joins",
-      "excerpt": "CARRIED: build the shoulder / soften the butt joints. penny-front-apose-review.p"
-    },
-    "penny:8305cf00b7d7": {
-      "char": "penny",
-      "class": "proportions",
-      "excerpt": "CARRIED (softened): nose and muzzle. penny-profile-apose-review.png x~210-225, y"
-    },
-    "penny:358fba93d88b": {
-      "char": "penny",
-      "class": "proportions",
-      "excerpt": "CARRIED (measured): head height 32.8 vs 34.9, -2.07pp, OFF at tol 2 — unchanged "
-    },
-    "penny:1d9cfb8fdc0a": {
-      "char": "penny",
-      "class": "other",
-      "excerpt": "NEW (measured): face left/right asymmetry 5.36, OFF at tol 4.0 — concept 0. The "
-    },
-    "penny:5aa908bb027a": {
-      "char": "penny",
-      "class": "decal-not-form",
-      "excerpt": "CARRIED, ABSENT: the two mid-thigh cargo pockets. The sheet's front and 3/4 view"
-    },
-    "penny:3f59ee1a2b5e": {
-      "char": "penny",
-      "class": "hems-cuffs",
-      "excerpt": "CARRIED (minor): pocket-mouth stitch ramp. penny-front-review.png x~255-285, y~1"
-    },
-    "penny:fb6704f0a525": {
-      "char": "penny",
-      "class": "decal-not-form",
-      "excerpt": "CARRIED (minor): hip pockets are square patches with horizontal mouths (penny-fr"
-    },
-    "penny:31c126fe9318": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT: the TEAM_MASK cuff. On the boards it is the raw #D8D2C6 grey band at"
-    },
-    "penny:cdeedf343935": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (measured, read as 'look at the stance'): daylight between the ankles"
-    },
-    "penny:ffafe089fab5": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED, confirmed this round: the pockets are no longer flat recessed rectangle"
-    },
     "penny:63c960f94d9f": {
       "char": "penny",
       "class": "no-defect-note",
       "excerpt": "RECORDED REFUSALS, not re-filed: side-seam topstitch (colour-on-ring smears at 2"
-    },
-    "bubbles:0fd3453fc933": {
-      "char": "bubbles",
-      "class": "ears",
-      "excerpt": "CARRIED, 3.10 HARD FAIL — no ears: grep of scripts/v2/blender/sculpt-bubbles-sou"
-    },
-    "bubbles:d89a0692dc8d": {
-      "char": "bubbles",
-      "class": "40px-read",
-      "excerpt": "MISBUILT, NOT ABSENT — shoe laces and toe cap: BUBBLES_SHOE declares three lace "
-    },
-    "bubbles:17d3ef9e59ff": {
-      "char": "bubbles",
-      "class": "hems-cuffs",
-      "excerpt": "CARRIED — dark wine wedges at the neckline: bubbles-front-review.png x ~235-265 "
-    },
-    "bubbles:52622f1e5b05": {
-      "char": "bubbles",
-      "class": "hair-nyquist",
-      "excerpt": "NEW — flat crown lid: the top HAIR_LEVELS ring (3.690, 0.345, 0.325, 0.062) is c"
-    },
-    "bubbles:844803b08a4f": {
-      "char": "bubbles",
-      "class": "hair-nyquist",
-      "excerpt": "REVISED (was 'smooth cap, ~10% strands') — hair read: the curl field's mirror pa"
-    },
-    "bubbles:6993584f33cc": {
-      "char": "bubbles",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED — fringe hangs to the brows: bubbles-front-review.png hairline y ~170 (w"
-    },
-    "bubbles:ea70a2f8a02f": {
-      "char": "bubbles",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED — ear-slot gouges: 8x crops of bubbles-front-review.png x 160-220 and x "
-    },
-    "bubbles:ce8c47827042": {
-      "char": "bubbles",
-      "class": "sheared-edges",
-      "excerpt": "MINOR — dark sliver at each shoe's medial toe/midsole junction: bubbles-front-re"
-    },
-    "bubbles:c46d776ddc7f": {
-      "char": "bubbles",
-      "class": "face-atlas",
-      "excerpt": "MINOR, CARRIED — her left brow (viewer-right, bubbles-front-review.png x ~300-36"
-    },
-    "bubbles:037a6c96c75a": {
-      "char": "bubbles",
-      "class": "proportions",
-      "excerpt": "MINOR — scrunchie extent (TEAM_MASK, judged by extent never colour): the torus a"
-    },
-    "bubbles:7a8cb81bf131": {
-      "char": "bubbles",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT — measure:fidelity 'daylight between the ankles 25.0 vs 0.00 OFF': co"
-    },
-    "bubbles:2db1a95f0e47": {
-      "char": "bubbles",
-      "class": "no-defect-note",
-      "excerpt": "KEPT CLEARED, re-checked on bubbles-front-review.png: waist step at y ~395 with "
-    },
-    "bubbles:c979da1cda3f": {
-      "char": "bubbles",
-      "class": "material-light",
-      "excerpt": "NOTED, NOT SCORED — runtime skin renders a saturated orange in every bubbles-run"
     },
     "clover:56a9da58567c": {
       "char": "clover",
@@ -2354,6 +2134,251 @@
       "char": "clover",
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT, confirmed: the dark interiors in the hem notches on clover-front-rev"
+    },
+    "penny:e97d6d43f4f4": {
+      "char": "penny",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED, HIGHEST VALUE NOW: the curl read at the gameplay camera. penny-runtime-"
+    },
+    "penny:c0efe8fa689f": {
+      "char": "penny",
+      "class": "hair-nyquist",
+      "excerpt": "NEW (revises the carried 'pull the hair off the face' finding): the bob's front "
+    },
+    "penny:7e983d9ff465": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED: hair over the face in profile and 3/4. penny-runtime-hero.png x~460-560"
+    },
+    "penny:7ff6986d472f": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED: ears absent. grep of sculpt-penny-source.py: line 34 imports EarSpec/bu"
+    },
+    "penny:b4c7b3e96954": {
+      "char": "penny",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED: no hairline from the front. penny-runtime-face-angry.png x~460-620, y~2"
+    },
+    "penny:a830b00d6129": {
+      "char": "penny",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED: bring the nape down. penny-profile-review.png x~200-360, y~220-320 (4x "
+    },
+    "penny:415c8be4a5a7": {
+      "char": "penny",
+      "class": "butt-joins",
+      "excerpt": "CARRIED: build the shoulder / soften the butt joints. penny-front-apose-review.p"
+    },
+    "penny:06f7570aff40": {
+      "char": "penny",
+      "class": "proportions",
+      "excerpt": "CARRIED (softened): nose and muzzle. penny-profile-apose-review.png x~210-225, y"
+    },
+    "penny:b0ac42e6d37c": {
+      "char": "penny",
+      "class": "proportions",
+      "excerpt": "CARRIED (measured): head height 32.8 vs 34.9, -2.07pp, OFF at tol 2 — unchanged "
+    },
+    "penny:396679b08ecf": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (measured): face left/right asymmetry 1.79, ok at tol 4.0 (prior round 5"
+    },
+    "penny:b01ac6515f05": {
+      "char": "penny",
+      "class": "decal-not-form",
+      "excerpt": "CARRIED, ABSENT: the two mid-thigh cargo pockets. grep finds five torso_patch ca"
+    },
+    "penny:482f0ab79163": {
+      "char": "penny",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED (minor): silhouette faceting. penny-front-review.png x~150-200, y~200-33"
+    },
+    "penny:85647c5743cd": {
+      "char": "penny",
+      "class": "hems-cuffs",
+      "excerpt": "CARRIED (minor): pocket-mouth stitch ramp and slant mouths. penny-front-review.p"
+    },
+    "penny:f5f97602fc70": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT: the TEAM_MASK cuff. penny-front-review.png y~570-600 renders it as t"
+    },
+    "penny:58b6e02906ab": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (measured, read as 'look at the stance'): daylight between the ankles"
+    },
+    "penny:1df0acdf4619": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED, confirmed again: the pockets are bevelled proud pouches with a gold mou"
+    },
+    "grizz:9fed7fe6c996": {
+      "char": "grizz",
+      "class": "hair-nyquist",
+      "excerpt": "THE AFRO IS STILL A SHALLOW CAP, NOT THE SHEET'S BALL — CARRIED, re-measured, an"
+    },
+    "grizz:b3b0cc6a8bc8": {
+      "char": "grizz",
+      "class": "hair-nyquist",
+      "excerpt": "THE NAPE IS BARE UNDER THE AFRO — CARRIED, unchanged this round. grizz-profile-a"
+    },
+    "grizz:577091bc2a21": {
+      "char": "grizz",
+      "class": "hair-nyquist",
+      "excerpt": "THE AFRO'S CROWN IS A PEAKED POLYGON ON THE FRONT BOARD — CARRIED faceting, and "
+    },
+    "grizz:300cf5d55868": {
+      "char": "grizz",
+      "class": "no-defect-note",
+      "excerpt": "THE EARS ARE BUILT AND READ CONSTRUCTED PER 3.10 — CLEARED (was 'EARS ARE ABSENT"
+    },
+    "grizz:83481194ab0b": {
+      "char": "grizz",
+      "class": "hair-nyquist",
+      "excerpt": "THE FRONT VIEW NOW SHOWS BARE EARS WHERE THE SHEET SHOWS HAIR — NEW, a side effe"
+    },
+    "grizz:7ed8461b9d9e": {
+      "char": "grizz",
+      "class": "proportions",
+      "excerpt": "THE NOSE HAS NO FRONT READ — CARRIED. nose_push exists (line 183) and a pointed "
+    },
+    "grizz:746bde829c79": {
+      "char": "grizz",
+      "class": "face-atlas",
+      "excerpt": "THE NEUTRAL FACE STILL GLARES INSTEAD OF THE SHEET'S BORED DEADPAN — moderated C"
+    },
+    "grizz:ad8dbfe5908c": {
+      "char": "grizz",
+      "class": "decal-not-form",
+      "excerpt": "THE CHEST POCKET IS ON THE WRONG BREAST — CARRIED. grizz-front-apose-review.png:"
+    },
+    "grizz:f381667752bb": {
+      "char": "grizz",
+      "class": "decal-not-form",
+      "excerpt": "THE CHEST POCKET READS AS AN EMBOSSED DECAL — moderated CARRY. At 4x (grizz-fron"
+    },
+    "grizz:4c2b73d285c9": {
+      "char": "grizz",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED / NON-DEFECT: THE EXPRESSIONS ARE NOT STATIC. grizz-runtime-face-angry/-"
+    },
+    "grizz:2d76b2ee10e4": {
+      "char": "grizz",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED / NON-DEFECT: THE BELLY IS BUILT. grizz-profile-apose-review.png: the to"
+    },
+    "grizz:15fbd7aea09c": {
+      "char": "grizz",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED / NON-DEFECT: THE TEE HAS A COLLAR. grizz-front-apose-review.png shows a"
+    },
+    "grizz:b57883dfedb7": {
+      "char": "grizz",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED / NON-DEFECT: THE SHOULDER HAS A DELTOID. grizz-profile-apose-review.png"
+    },
+    "grizz:1381b2fea59f": {
+      "char": "grizz",
+      "class": "no-defect-note",
+      "excerpt": "RECORDED NON-DEFECT: THE DISC BEHIND THE JAW ON grizz-profile-review.png (x~245-"
+    },
+    "grizz:3d9d987cd0bc": {
+      "char": "grizz",
+      "class": "no-defect-note",
+      "excerpt": "RECORDED NON-DEFECT: measure:fidelity's five head metrics are NOT MEASURED (no n"
+    },
+    "grizz:dc2f50c35c3a": {
+      "char": "grizz",
+      "class": "no-defect-note",
+      "excerpt": "RECORDED NON-DEFECT: TEAM_MASK extent. Source line 117 (#D8D2C6) with lines 114-"
+    },
+    "grizz:67c070503104": {
+      "char": "grizz",
+      "class": "material-light",
+      "excerpt": "SKIN IS ONLY SLIGHTLY LIGHT — CARRIED as minor, not re-measured this round; noth"
+    },
+    "bubbles:cf95a8b7228a": {
+      "char": "bubbles",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED — the half-bun: the rebuilt ring_loft computes theta = 2*pi*column/segs "
+    },
+    "bubbles:43f89e8cb614": {
+      "char": "bubbles",
+      "class": "hems-cuffs",
+      "excerpt": "CARRIED — dark wine wedges at the neckline: bubbles-front-review.png x ~235-265 "
+    },
+    "bubbles:b1a98f7d6c05": {
+      "char": "bubbles",
+      "class": "hair-nyquist",
+      "excerpt": "REVISED, CARRIED — curl relief partly recovered, not restored: with bands 8 -> 6"
+    },
+    "bubbles:6310f972b3ea": {
+      "char": "bubbles",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED — flat crown lid: bubbles-front-review.png y ~128-132 across x 205-335 i"
+    },
+    "bubbles:0d6031f8ed75": {
+      "char": "bubbles",
+      "class": "40px-read",
+      "excerpt": "CARRIED — shoe laces misbuilt, not absent: BUBBLES_SHOE declares three straps (:"
+    },
+    "bubbles:55e5334bb4d3": {
+      "char": "bubbles",
+      "class": "sheared-edges",
+      "excerpt": "MINOR, CARRIED — dark sliver at each shoe's medial toe/midsole junction: bubbles"
+    },
+    "bubbles:fe1933f1f617": {
+      "char": "bubbles",
+      "class": "no-defect-note",
+      "excerpt": "3.10 PASS — the ear reads constructed: bubbles-profile-review.png x 250-290, y 1"
+    },
+    "bubbles:39c16d9af375": {
+      "char": "bubbles",
+      "class": "ears",
+      "excerpt": "MINOR, NEW — the ear is about a fifth too tall for the head: on bubbles-profile-"
+    },
+    "bubbles:a9f0956f60aa": {
+      "char": "bubbles",
+      "class": "hair-nyquist",
+      "excerpt": "REVISED to minor — fringe: measured at the board's centre column x=270 the hair "
+    },
+    "bubbles:cd35ed381ed3": {
+      "char": "bubbles",
+      "class": "no-defect-note",
+      "excerpt": "KEPT CLEARED — ear-slot gouges: 6x crops of bubbles-front-review.png x 150-250 a"
+    },
+    "bubbles:ab7a7f0ce4ec": {
+      "char": "bubbles",
+      "class": "face-atlas",
+      "excerpt": "MINOR, CARRIED — her left brow (viewer-right, bubbles-front-review.png x ~300-36"
+    },
+    "bubbles:6d708b13a5c4": {
+      "char": "bubbles",
+      "class": "proportions",
+      "excerpt": "MINOR, CARRIED — scrunchie extent (TEAM_MASK, judged by extent never colour): bu"
+    },
+    "bubbles:78d7840ea56c": {
+      "char": "bubbles",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT — measure:fidelity 'daylight between the ankles 25.0 vs 0.00 OFF (tol"
+    },
+    "bubbles:a0a778147196": {
+      "char": "bubbles",
+      "class": "no-defect-note",
+      "excerpt": "KEPT CLEARED — dress construction: bubbles-front-review.png waist step at y ~395"
+    },
+    "bubbles:3db54a751617": {
+      "char": "bubbles",
+      "class": "no-defect-note",
+      "excerpt": "POSITIVE — face-band floor verified: bubbles-profile-review.png x 200-340, y 170"
+    },
+    "bubbles:f3ecf59aa770": {
+      "char": "bubbles",
+      "class": "material-light",
+      "excerpt": "NOTED, NOT SCORED — runtime skin renders a saturated orange in every bubbles-run"
     }
   }
 }
