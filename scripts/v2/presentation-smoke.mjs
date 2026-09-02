@@ -31,7 +31,7 @@
 // Coverage (three pages): the FRONT DOOR (title, draft opens, a pick hands
 // the turn back), the seeded GAME (plate, delivery, pitch, between, swing at
 // its own tick, live play, a fielder gloving or throwing, a throw in the
-// air, a runner waiting, the inning-break board, the half flip, a caught fly
+// air, a runner mid-leg, a runner waiting, the inning-break board, the half flip, a caught fly
 // with its catcher still in the catch clip, and the whole game run out to
 // its result), and a dedicated
 // HOME-RUN page on a hunted seed. Screenshots fall back to reading the WebGL
@@ -228,6 +228,23 @@ const BEATS = [
     expect: (r) => [
       [r.play !== null && (r.play.throw === true || r.play.heldBy !== null), 'the throw is in the air or has arrived in a glove'],
       [r.ball.visible === true, 'the thrown ball is visible'],
+    ],
+  },
+  {
+    name: 'baserunning',
+    // A kid mid-leg between bags — a runner with `to !== from` at least a
+    // quarter of the way along, so the paint shows him running, not the
+    // dwell at either end. Runners are the batter's own team, so the batter
+    // probe's clip is the run clip when he is the one on the leg.
+    until: '(f) => f.phase === "live" && f.play && f.play.phase === "live" && f.play.runners.some((r) => r.to !== r.from && r.alongFt > 0.25 * r.legFt)',
+    step: 1,
+    paint: 6,
+    expect: (r) => [
+      [r.play !== null && r.play.runners > 0, 'a runner is on the bases'],
+      [
+        ['run', 'run_fast', 'trot', 'slide', 'walk_on'].includes(r.batter?.clip),
+        `the batter-runner is playing a running clip (got ${r.batter?.clip})`,
+      ],
     ],
   },
   {

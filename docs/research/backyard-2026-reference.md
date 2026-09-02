@@ -689,3 +689,34 @@ raycast through the black pixel hit only the dome. The far plane is now
 holds it above the dome radius plus the farthest rig's reach, and the
 in-frame probe that found it reads zero fully-black cells in the upper half
 of the same FIELD frame, from 96.
+
+## 2026-09-02 playthrough record (the smoke's beats, reviewed for defects)
+
+Method: `smoke:presentation` on the smoke seed, painted off the fixed clock
+(`devPaint`), every still opened and read for the four defect classes the
+brief names — clipping, floating or detached props, bind-pose kids, and
+unreadable action. Verdicts per beat; a beat that verifies by probe rather
+than by pixels says so.
+
+| beat | what the still shows | verdict |
+|---|---|---|
+| title | PLAY offered over the live park | clean |
+| draft-open, draft-pick | PICK YOUR TEAM with the card, stat bars, bench strip and the CPU turn | clean (a single frame can catch the candidate mid walk-on; reads in motion) |
+| plate-waiting, delivery | full HUD, batter in `bat_stance` holding the bat, pitcher idle then in windup, catcher `field_ready` | clean |
+| pitch-flight, between | ball in flight at the zone; the umpire's between beat with reactions | clean |
+| swing | `swing_contact` under the ball, bat in hand | clean |
+| live-play | ball off the bat with its shadow, the chaser ringed, batter walking on | clean |
+| fielded-or-throw | outfielder holding a single at (122, 133), runner trotting | clean |
+| throw | the ball in the air toward the infield, batter in `run` | clean |
+| baserunning | the deep rig: the batter-runner (`run_fast`) a quarter-plus of the way up the first leg, the throw in the air from right-centre | clean (a new beat, added with this record) |
+| runner-on | top of the 2nd from the plate, runner on first, pitcher in windup | clean |
+| inning-break | `body.inning-break` up at the third out; the still fell back to the canvas capture and so shows the park without the DOM board — verified by the class, and by `audit:v2-layout`'s `?break=1` state | probe-verified |
+| half-flip | first windup of the bottom half; the mound kid's probe reads a stale one-shot (`slide`/`getup`) because the reach pumps 4.5 s of sim while the mixers move six frames — instrument, not game | clean on pixels |
+| fly-catch | the between cut after a caught fly, the batter reacting at the plate; the catcher's director is in `catch_chest` (probe) — the catch itself is one frame on screen, recorded above as the feel decision | probe-verified |
+| home-run | the batter in `cheer_goofy`, pitcher in `upset_fierce`, fireworks queued | clean |
+| result | the bare play surface's final frame (the Result screen is the App's; `audit:v2-layout` covers it) | probe-verified |
+
+Two defects this record found and closed on the way: the black wedge on the
+horizon (far plane, above) and the wall-clock paint that made the same seed a
+different game run to run. Nothing in these stills clips, floats, or stands
+in a bind pose.
