@@ -254,6 +254,7 @@ BOB_OPEN_BOTTOM = 2.720
 #   24 cols 3 pairs x 7      2.88/row  19%  at 171%
 #   36 cols 5 pairs x 8 @0.080   5.15/row  33%  at 243%  (reads as curls; too proud)
 #   36 cols 5 pairs x 8 @0.055   5.29/row  34%  at 230% — amplitude is not the lever
+#   32 cols (paid to the shoulder root ring; re-measured below on fresh boards)
 #   same, HAIR_DARK 4E2B10→6A3C18, trough 0.014   (this rung: the contrast is)
 CURL_SEEDS = curl_seeds(
     pairs_per_row=5,
@@ -288,7 +289,12 @@ def ring_loft_bob(builder: MeshBuilder, levels, detail: int) -> None:
     # samples each — the 18-column bob sampled its seven at 2.6. Eleven rows
     # at 36 columns is ~800 triangles, inside the 756 of headroom plus the
     # cosine bob's own 400.
-    segments = 36 if detail >= 2 else (10 if detail == 1 else 8)
+    # 32, from 36: the eleven-row bob at 36 columns left no room for the
+    # shoulder's root ring (#208, +56 triangles), and the one loft row within
+    # interpolation tolerance turned out to be the brow line the face clamps
+    # sample (#210 — two visible-face metrics went red). Four columns are the
+    # honest price: ten lobes a row still get 3.2 samples each.
+    segments = 32 if detail >= 2 else (10 if detail == 1 else 8)
     use = levels if detail >= 2 else thin_for_lod([(z, hx, hy, yc) for z, hx, hy, yc in levels], detail)
     ascending = list(reversed(use))
     rows = []
@@ -564,7 +570,7 @@ PENNY_ARM = ArmSpec(
     stations=tuple(ARM_STATIONS),
     shoulder_blend=SHOULDER_BLEND,
     cap_x=0.060,
-    root_ring=0.0,
+    root_ring=0.92,  # the A-pose coverage gap: see ArmSpec.root_ring (#208)
     ring_squash=0.95,
     hand=HandSpec(
         tip_x=1.550,
