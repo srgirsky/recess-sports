@@ -542,6 +542,7 @@ THEO_ARM = ArmSpec(
     shoulder_blend=SHOULDER_BLEND,
     cap_x=0.060,
     root_ring=0.0,
+    elbow=0.06,  # the crease and knob a bent arm shows: see ArmSpec.elbow
     ring_squash=0.95,
     hand=HandSpec(
         tip_x=1.550,

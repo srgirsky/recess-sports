@@ -723,6 +723,7 @@ BUBBLES_ARM = ArmSpec(
     # as his, so the cone from cap to first ring closes the same triangle.
     cap_x=0.100,
     root_ring=0.0,
+    elbow=0.0,
     ring_squash=0.95,
     hand=HandSpec(
         tip_x=1.552,
