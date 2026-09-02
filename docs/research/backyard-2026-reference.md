@@ -677,3 +677,15 @@ the play reducer's step order is load-bearing (`src/v2/AGENTS.md` § The play).
 The smoke's fielded-or-throw beat asks for a hold or throw on a play that is
 still going, so it cannot be satisfied by the catch frame and does not mask
 this.
+
+The same green run's fielded still also carried a flat black wedge on the
+horizon behind CF — re-audit #7's "giant unlit black triangle", which #148
+closed as a gable roof's ridge-end cap. That was one cause; the other was
+the game camera's far plane: 900 ft, equal to the sky dome's radius, so
+from any rig not at the origin the dome's far side (over 980 ft from the
+FIELD eye) fell past the clip and the WebGL clear colour showed through. A
+raycast through the black pixel hit only the dome. The far plane is now
+`CAMERA_FAR_FT` (1600, cited from `cameraCues.ts`), `cameraCues.test.ts`
+holds it above the dome radius plus the farthest rig's reach, and the
+in-frame probe that found it reads zero fully-black cells in the upper half
+of the same FIELD frame, from 96.

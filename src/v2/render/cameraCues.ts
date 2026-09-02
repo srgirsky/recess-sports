@@ -19,6 +19,23 @@
 // slope is what the camera must project them to.
 // ---------------------------------------------------------------------------
 
+/**
+ * The game camera's far plane, in feet.
+ *
+ * ★ IT MUST REACH THE SKY DOME FROM EVERY RIG. The dome is a sphere of
+ * `Sky.SKY_RADIUS_FT` about the origin, and a far plane equal to that radius
+ * (as it was) clips the dome's far side for any eye not at the origin — from
+ * the FIELD rig's elevation the horizon behind CF is over 980 ft away, and
+ * what showed through the clip was the WebGL clear colour: a flat black wedge
+ * on the sky, found by the presentation smoke's fielded beat (2026-09-01),
+ * and probably the other half of re-audit #7's "giant unlit black triangle"
+ * that #148 attributed to a roof cap. The fog already saturates to the
+ * horizon colour at the old value, so nothing beyond it can read differently
+ * from the dome. `cameraCues.test.ts` holds this above the radius plus the
+ * farthest rig's reach, and pins GameView to citing it.
+ */
+export const CAMERA_FAR_FT = 1600;
+
 export type CameraPreset = 'PITCH' | 'PITCH_HERO' | 'PLAY' | 'FIELD' | 'DEEP' | 'BANG' | 'HOMER';
 
 /**
