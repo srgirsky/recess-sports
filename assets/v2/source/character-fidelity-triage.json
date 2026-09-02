@@ -1245,25 +1245,10 @@
       "class": "hair-nyquist",
       "excerpt": "CARRIED 3.8 — the temple wisps cross the ears in the front view. peaches-front-r"
     },
-    "peaches:07ec1035fc59": {
-      "char": "peaches",
-      "class": "decal-not-form",
-      "excerpt": "CARRIED 3.4 — no bodice straps, scoop or armhole binding. peaches-front-review.p"
-    },
-    "peaches:2e7581fadf3a": {
-      "char": "peaches",
-      "class": "material-light",
-      "excerpt": "CARRIED 6b.2 — the sneaker reads cream, not peach. Measured: second tone 63.0% v"
-    },
     "peaches:949d48057005": {
       "char": "peaches",
       "class": "stance",
       "excerpt": "CARRIED 6b.4 — stance, not tolerance. Ankle daylight 34.0 vs the sheet's 0.00 (t"
-    },
-    "peaches:e3a0c387db3a": {
-      "char": "peaches",
-      "class": "proportions",
-      "excerpt": "CARRIED 3.2 — neck and leg are unmodulated primitives. peaches-profile-review.pn"
     },
     "peaches:bc722c3d5ed4": {
       "char": "peaches",
@@ -1765,20 +1750,10 @@
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT (record): the navy ringer sleeve cuffs render - the SHIRT_DARK ring a"
     },
-    "peaches:6bcd93a1654e": {
-      "char": "peaches",
-      "class": "butt-joins",
-      "excerpt": "PARTIALLY CLEARED 3.11 — the root ring closed the pocket, not the ball. What cha"
-    },
     "peaches:16545c965cd0": {
       "char": "peaches",
       "class": "hair-nyquist",
       "excerpt": "CARRIED 3.3 — the bun is no longer an acorn at 1% (measure:strands 24% at 222%),"
-    },
-    "peaches:d3f08d53924a": {
-      "char": "peaches",
-      "class": "decal-not-form",
-      "excerpt": "CARRIED 3.4 — the leaf appliqué is a blob. Source line 724 builder.ellipsoid((0."
     },
     "peaches:b7ae2f883362": {
       "char": "peaches",
@@ -1790,25 +1765,10 @@
       "class": "proportions",
       "excerpt": "CARRIED minor — the profile nose is a thorn. peaches-profile-review.png (205,195"
     },
-    "peaches:302176d5a319": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (cropped) — the dashed dark trail at the armpit in peaches-runtime-sw"
-    },
     "peaches:fffbd8a7812d": {
       "char": "peaches",
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT (cropped) — a black diagonal sliver on the medial forefoot of each sh"
-    },
-    "peaches:b68c663d8017": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT Trap-3 — TEAM_MASK is the raw grey ring on both socks on the boards ("
-    },
-    "peaches:2a3283c1e58b": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "PASSES verified on the fresh evidence — nothing is severed: the white at the A-p"
     },
     "noodle:3e7b058714aa": {
       "char": "noodle",
@@ -2480,11 +2440,6 @@
       "class": "proportions",
       "excerpt": "CARRIED — The cap's cream team panel is a plateau, not a wedge: on theo-front-re"
     },
-    "calls_shot:449bb8db8674": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "REVISED — No elbow: the recorded 'limbs are smooth tapered cones ... no elbow' i"
-    },
     "calls_shot:3d227333d9f4": {
       "char": "calls_shot",
       "class": "no-defect-note",
@@ -2529,6 +2484,56 @@
       "char": "calls_shot",
       "class": "no-defect-note",
       "excerpt": "CLEARED (kept clear) — The old hairMass-1 basis stays cleared: theo-front-review"
+    },
+    "peaches:d09cb9fc9b28": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED 3.11 (with one residual, below) — the deltoid now fairs into the sleevel"
+    },
+    "peaches:b89a068ef361": {
+      "char": "peaches",
+      "class": "sheared-edges",
+      "excerpt": "CARRIED minor (residual of 3.11) — the toon outliner still draws a short crease "
+    },
+    "peaches:8823942bd524": {
+      "char": "peaches",
+      "class": "decal-not-form",
+      "excerpt": "CARRIED 3.4 — no bodice straps, scoop or armhole binding. peaches-front-review.p"
+    },
+    "peaches:e9fe4846a96a": {
+      "char": "peaches",
+      "class": "decal-not-form",
+      "excerpt": "CARRIED 3.4 — the leaf appliqué is a blob. Source line 729 builder.ellipsoid((0."
+    },
+    "peaches:e08ab3b57d27": {
+      "char": "peaches",
+      "class": "material-light",
+      "excerpt": "CARRIED 6b.2 — the sneaker reads cream, not peach. Measured: second tone 63.0% v"
+    },
+    "peaches:b99909d58e39": {
+      "char": "peaches",
+      "class": "proportions",
+      "excerpt": "CARRIED 3.2 — neck and leg are unmodulated primitives. peaches-profile-review.pn"
+    },
+    "peaches:ffb278a56898": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (cropped) — the dashed dark trail at the armpit in peaches-runtime-sw"
+    },
+    "peaches:220bce8d359e": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT Trap-3 — TEAM_MASK is the raw grey ring on both socks on the boards ("
+    },
+    "peaches:07e2d52c96df": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "PASSES verified on the fresh evidence — nothing is severed: the white at the A-p"
+    },
+    "calls_shot:bd24416bd2fa": {
+      "char": "calls_shot",
+      "class": "no-defect-note",
+      "excerpt": "REVISED — No elbow (elbow 0.06 → 0.03, delta-verified): the rest step is CLEARED"
     }
   }
 }

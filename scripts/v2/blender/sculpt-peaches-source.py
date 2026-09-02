@@ -735,7 +735,14 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         # (the round-4 blocker rubric 3.11). Weighted between Spine2 and
         # the arm so it follows the drop without shearing.
         if detail >= 1:
-            builder.ellipsoid((side * 0.232, 0.004, 2.486), (0.098, 0.108, 0.102), 0, SKIN,
+            # ★ THE DOME FAIRS INTO THE ARM, OR IT IS A BALL ON A STICK. Two
+            # critics measured it: radii (0.098, 0.108, 0.102) against arm
+            # stations of 0.080-0.090 left the dome overhanging the tube with
+            # a shadow crease under it and a hard outboard step; the root ring
+            # (#208) closed the pocket but could not reach this. The y/z radii
+            # now sit 0.004 proud of the 0.090 ring and the x radius reaches
+            # it, so the dome rolls into the arm instead of stepping off it.
+            builder.ellipsoid((side * 0.240, 0.004, 2.486), (0.104, 0.094, 0.092), 0, SKIN,
                               {"Spine2": 0.55, limb_bone("Arm", side): 0.45}, 6, 4)
         build_leg(builder, side, detail, spec=PEACHES_LEG)
         build_shoe(builder, side, detail, spec=PEACHES_SHOE,

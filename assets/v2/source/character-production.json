@@ -33,11 +33,11 @@
     },
     "calls_shot": {
       "source": "theo-pilot.blend",
-      "sourceSha256": "f61d11bb21e7c6a0102fb211028830b9ec09106fa2d79cd923c8059e2d31182a",
+      "sourceSha256": "ed24bdcfc3d5ff35dbe709d69fb65d0dd1780381cfd1dbf0215c16fc4731097d",
       "concept": "theo-turnaround.png",
       "conceptSha256": "f93d976869f437a92be482302db4124c064d33b708bb22a7e16fcfc51e403e66",
       "output": "kid_calls_shot.glb",
-      "outputSha256": "e00ec45ec38a0ef73a17f687137563ba8faa81e10fd4ea353ef92efade46e609",
+      "outputSha256": "f9729a6ac96d162f117a3b3a9da7ff5da781e7ab536481c9bd69c788fdca44eb",
       "definingTraits": [
         "oversized cap",
         "broad tapered face",
@@ -423,11 +423,11 @@
     },
     "peaches": {
       "source": "peaches-pilot.blend",
-      "sourceSha256": "2849b32adb5935f06c8ddffa00b8e39bf0206cff5d58151bb9968dc1d6fa0aa9",
+      "sourceSha256": "deff3d07d68ba644268831fcd8937bbd41241840edb30e7998b65684c3c37b1a",
       "concept": "peaches-turnaround.png",
       "conceptSha256": "42a7f8de5c44a061aa4f15b7dd8e9abd65a150488c8a814b0986db2e3d3f393e",
       "output": "kid_peaches.glb",
-      "outputSha256": "5e3fec592c5e2e044e8dae0706f9f78f50bf933d8673e4d427da8872cf554ba3",
+      "outputSha256": "f5eb7252abdd2598e9a655a22e1fcbb6f6e914d1f4ecece8f7a071a37f926b94",
       "definingTraits": [
         "textured brown top-bun",
         "marigold sleeveless dress",
