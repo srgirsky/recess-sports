@@ -330,11 +330,6 @@
       "class": "no-defect-note",
       "excerpt": "NOT FILED per instruction: the ankle-daylight/stance measure reading OFF is the "
     },
-    "sprout:a6db272082bd": {
-      "char": "sprout",
-      "class": "decal-not-form",
-      "excerpt": "EYE DECAL WRAPS TO THE PROFILE PLANE: the full frontal almond eye (sclera, iris,"
-    },
     "flash:d8b7d09ab63b": {
       "char": "flash",
       "class": "hair-nyquist",
@@ -954,81 +949,6 @@
       "char": "smokey",
       "class": "no-defect-note",
       "excerpt": "Confirmed NOT defects, so nobody re-reports them: the skin-coloured disc on the "
-    },
-    "sprout:0c395ae14d49": {
-      "char": "sprout",
-      "class": "other",
-      "excerpt": "PROFILE NOSE STILL A FIN: bridge and tip are authored (nose_push, 0.11ft proud, "
-    },
-    "sprout:a6cbd17bacb6": {
-      "char": "sprout",
-      "class": "face-atlas",
-      "excerpt": "NO EYEBROWS RENDER ANYWHERE (replaces the prior 'eyebrow painted on the hair'): "
-    },
-    "sprout:432297c77010": {
-      "char": "sprout",
-      "class": "hair-nyquist",
-      "excerpt": "JAGGED TEMPLE NOTCHES: the front hairline cuts angular skin wedges into the frin"
-    },
-    "sprout:a6cbba76b736": {
-      "char": "sprout",
-      "class": "no-defect-note",
-      "excerpt": "NECK CLEARED IN CONSTRUCTION (non-defect record): NECK_LEVELS now pinch to 0.26f"
-    },
-    "sprout:c07e38457b18": {
-      "char": "sprout",
-      "class": "face-atlas",
-      "excerpt": "FLOATING COLLAR KNOB HOLDS AND GAINED AN ARTIFACT: the authored 'tee collar rib,"
-    },
-    "sprout:3fd09c47efb7": {
-      "char": "sprout",
-      "class": "no-defect-note",
-      "excerpt": "PROFILE CHIN CLEARED (non-defect record): the lower face now curves back through"
-    },
-    "sprout:4209d43aaf18": {
-      "char": "sprout",
-      "class": "other",
-      "excerpt": "HIP SHELF SOFTENED BUT PRESENT: the overall bell still terminates at a hard hori"
-    },
-    "sprout:b59f05c01b89": {
-      "char": "sprout",
-      "class": "other",
-      "excerpt": "GARMENT BOUNDARIES ARE PAINTED: overalls remain one lofted surface with tee/deni"
-    },
-    "sprout:9a0845cd6b73": {
-      "char": "sprout",
-      "class": "other",
-      "excerpt": "NO OVERALL BUTTONS: re-verified by grep (zero 'button' hits in the source outsid"
-    },
-    "sprout:9cfb6c6947fa": {
-      "char": "sprout",
-      "class": "other",
-      "excerpt": "EARS RESIZED BUT STILL FLAT FROM THE FRONT: EAR_SPEC now gives 0.41ft = 26.8% of"
-    },
-    "sprout:ff65a25927a2": {
-      "char": "sprout",
-      "class": "hems-cuffs",
-      "excerpt": "SHOULDER AND ELBOW: the swing still shows the sleeve as a separate yellow box, a"
-    },
-    "sprout:83f3d810e4fb": {
-      "char": "sprout",
-      "class": "other",
-      "excerpt": "GRIN EVIDENCE RESTORED (non-defect record): sprout-runtime-face-grin.png now ren"
-    },
-    "sprout:d60b98a4969d": {
-      "char": "sprout",
-      "class": "hair-nyquist",
-      "excerpt": "PROFILE HAIRLINE CREASE SURVIVES THE TWO-TONE: a hard near-vertical seam still s"
-    },
-    "sprout:43fe31cdb20c": {
-      "char": "sprout",
-      "class": "hair-nyquist",
-      "excerpt": "HAIR TWO-TONE IS DARK-ON-DARK: HAIR #2E1A0C over HAIR_DARK #1F1006 is a ~(15,10,"
-    },
-    "sprout:f30286b3940d": {
-      "char": "sprout",
-      "class": "hair-nyquist",
-      "excerpt": "CURL COUNT BELOW CONCEPT: 3 mirror pairs = 6 lobes/row against the concept's mea"
     },
     "sniffles:704e45cbb19f": {
       "char": "sniffles",
@@ -2384,6 +2304,96 @@
       "char": "gizmo",
       "class": "no-defect-note",
       "excerpt": "CLEARED — eyes inboard of the ring centres: after face-specs.mjs gizmo eyeX move"
+    },
+    "sprout:b57fd49f6be9": {
+      "char": "sprout",
+      "class": "hair-nyquist",
+      "excerpt": "BROWS STILL DO NOT RENDER — CARRIED, CAUSE RELOCATED: the atlas (assets/v2/sourc"
+    },
+    "sprout:d22da5bed63a": {
+      "char": "sprout",
+      "class": "hair-nyquist",
+      "excerpt": "EYES CLIPPED BY THE FRINGE — NEW, SAME ROOT: on all four sprout-runtime-face-*.p"
+    },
+    "sprout:16d2e91d1d3a": {
+      "char": "sprout",
+      "class": "proportions",
+      "excerpt": "PROFILE NOSE STILL A FIN — CARRIED: sprout-profile-review.png (185-215, 225-250)"
+    },
+    "sprout:5af75144213c": {
+      "char": "sprout",
+      "class": "face-atlas",
+      "excerpt": "EYE DECAL WRAPS TO THE PROFILE PLANE — CARRIED: sprout-profile-review.png (195-2"
+    },
+    "sprout:f29d5761c924": {
+      "char": "sprout",
+      "class": "sheared-edges",
+      "excerpt": "JAGGED TEMPLE NOTCHES — CARRIED: sprout-front-review.png right temple (320-400, "
+    },
+    "sprout:7c7bc3670a2f": {
+      "char": "sprout",
+      "class": "severed",
+      "excerpt": "FLOATING COLLAR KNOB WITH DECAL BLOTCHES — CARRIED: sprout-profile-review.png (2"
+    },
+    "sprout:cf71e0db2705": {
+      "char": "sprout",
+      "class": "hair-nyquist",
+      "excerpt": "PROFILE HAIRLINE CREASE AND REAR FACETS — CARRIED: sprout-profile-review.png (20"
+    },
+    "sprout:2d85ef61ea5c": {
+      "char": "sprout",
+      "class": "hair-nyquist",
+      "excerpt": "CURL COUNT BELOW CONCEPT — CARRIED, MEASURED WORSE THAN THE 6-LOBE CLAIM: measur"
+    },
+    "sprout:2014391203c7": {
+      "char": "sprout",
+      "class": "butt-joins",
+      "excerpt": "SHOULDER AND ELBOW — CARRIED: sprout-runtime-swing.png (400-620, 340-500) at 4x "
+    },
+    "sprout:495503700e7c": {
+      "char": "sprout",
+      "class": "decal-not-form",
+      "excerpt": "GARMENT BOUNDARIES ARE PAINTED — CARRIED: sprout-front-review.png (170-370, 270-"
+    },
+    "sprout:7df5a8e2a92d": {
+      "char": "sprout",
+      "class": "decal-not-form",
+      "excerpt": "NO OVERALL BUTTONS — CARRIED: grep 'button' in scripts/v2/blender/sculpt-sprout-"
+    },
+    "sprout:b7007cca5b3a": {
+      "char": "sprout",
+      "class": "hems-cuffs",
+      "excerpt": "HIP SHELF SOFTENED BUT PRESENT — CARRIED: sprout-front-review.png row ~470 (180-"
+    },
+    "sprout:d0713f89a99e": {
+      "char": "sprout",
+      "class": "ears",
+      "excerpt": "EARS STILL FLAT FROM THE FRONT — CARRIED: sprout-front-review.png left ear (165-"
+    },
+    "sprout:20808d0c6ed6": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "HAIR TWO-TONE — REVISED: the source now declares HAIR #3C2208 over HAIR_DARK #1F"
+    },
+    "sprout:01d47ad28df0": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "NECK — NON-DEFECT RECORD CARRIED: my row scan puts the neck pinch at 100 px agai"
+    },
+    "sprout:87d1e1dc8d7f": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "PROFILE CHIN — NON-DEFECT RECORD CARRIED: sprout-profile-review.png curves back "
+    },
+    "sprout:0c1f62d36cae": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "GRIN EVIDENCE — NON-DEFECT RECORD CARRIED: sprout-runtime-face-grin.png renders "
+    },
+    "sprout:320581a3c1a8": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "TEAM_MASK EXTENT — NON-DEFECT: the source paints TEAM_MASK on the trouser cuff b"
     }
   }
 }
