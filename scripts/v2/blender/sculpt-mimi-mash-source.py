@@ -535,10 +535,16 @@ LEG_STATIONS = [
     (0.560, 0.182, 1.00, PANTS, "Leg"),
     # ⚠️ The runtime TEAM-TINTS everything on M_Accessory — a full accent
     # cuff renders in team colour, not denim (round-2 blocker). Only the
-    # thin top roll ring is the accent (Grizz's sock-roll convention); the
-    # cuff body stays its own grey-blue.
-    (0.520, 0.198, 1.00, TEAM_MASK, "Leg"),        # top roll ring — THE accent
-    (0.490, 0.196, 1.00, CUFF, "Leg"),
+    # thin top roll is the accent (Grizz's sock-roll convention); the cuff
+    # body stays its own grey-blue.
+    # ★ TWO stations, not one. The leg builder sends a row PAIR to
+    # M_Accessory only when BOTH its rows are team-mask coloured, so a lone
+    # accent ring makes no accessory geometry at all — the exporter dropped
+    # the material and the finished-work gate refused "no deliberate
+    # team-accent surface" the moment Mimi claimed candidate. The band is
+    # 0.520-0.490: the roll's top edge and its fattest ring, as Grizz's.
+    (0.520, 0.198, 1.00, TEAM_MASK, "Leg"),        # roll top — THE accent
+    (0.490, 0.196, 1.00, TEAM_MASK, "Leg"),        # the roll's fattest ring
     (0.440, 0.194, 1.00, CUFF, "Leg"),
     (0.415, 0.176, 1.00, PANTS_DARK, "Leg"),       # cuff underside lip
     (0.390, 0.110, 1.00, SOCK, "Foot"),            # sock sliver
