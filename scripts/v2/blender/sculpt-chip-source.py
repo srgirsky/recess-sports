@@ -32,6 +32,7 @@ from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
 from sculptlib.ear import EarSpec, build_ear
+from sculptlib.hair import curl_field, curl_seeds
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
@@ -53,7 +54,10 @@ SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 # over-authored for colours that must survive it).
 SKIN = rgba("FF9C49")
 SKIN_SHADOW = rgba("C97430")
-HAIR = rgba("2E1808")        # deep warm brown tufts
+HAIR = rgba("3E2408")        # deep warm brown tufts, hue-warmed for the lit
+                             # curl tops (Sprout's lesson: near-black two-tone
+                             # separates by HUE under the ramp, never value)
+HAIR_DARK = rgba("1F1004")   # the trough tone
 SHIRT = rgba("778240")       # the hoodie green
 SHIRT_DARK = rgba("4A5226")  # ribbed hem, cuffs and the hood roll — dark enough to read
 PANTS = rgba("363B44")       # navy shorts
@@ -327,6 +331,25 @@ def build_cap(builder: MeshBuilder, detail: int) -> None:
 # Wavy brown tufts peek below the cap line: a fringe curl on the forehead
 # (rows 252-269 of the sheet), side sweeps over the ear tops, and a nape tuft.
 # A shallow ring-loft hugging the skull between cap edge and ears.
+#
+# ★ THE CURL FIELD — sculptlib/hair.py holds the mechanism; the old
+# `sin(6θ + 2.1·row)` was an odd function with a row phase (double mirror
+# violation) and delivered 5% of the concept's strand count. measured:
+# the concept reads ~5.8 minima/row on his visible band — three mirror
+# pairs at 24 columns hold the four-per-lobe floor. 20 → 24 columns
+# re-quantizes the fringe (the very trim lesson recorded below), so
+# faceSkin was re-measured after the change, per that lesson's own rule.
+CURL_SEEDS = curl_seeds(
+    pairs_per_row=3,
+    bands=5,
+    z_top=3.420,
+    z_bottom=2.920,
+    amplitude=0.075,
+)
+CURL_THETA_WIDTH = 0.24
+CURL_Z_WIDTH = 0.075
+CURL_TROUGH = 0.020
+
 # measured: front z=3.26 halfWidth=0.6237
 # measured: front z=3.02 halfWidth=0.6296
 HAIR_LEVELS = [
@@ -351,12 +374,17 @@ HAIR_LEVELS = [
 # keep 0.18 of clearance.
 # Round 10: the 3.37 strip hid exactly behind the brim plate (tip z 3.34) —
 # the fringe must poke BELOW the brim to read from the front.
+# The temple descent moved out (0.34/0.42 → 0.37/0.46) when the ring went
+# 24 columns: the re-quantized fringe column flipped onto the face and took
+# visible-face-right from 23.9 to 15.2 against tolerance 6 — the same
+# window-widens-with-the-mass rule Theo's shell paid for. Re-measured back
+# in tolerance after the move.
 HAIR_FRINGE = [
     (0.00, 3.300),
     (0.14, 3.295),
     (0.24, 3.280),
-    (0.34, 3.240),
-    (0.42, 3.020),
+    (0.37, 3.240),
+    (0.46, 3.020),
     (0.60, 2.920),
 ]
 
@@ -376,19 +404,24 @@ def fringe_z_at(x_abs: float) -> float:
 
 def build_hair(builder: MeshBuilder, detail: int) -> None:
     """Tuft band between cap and face — Grizz's construction, fourth proving."""
-    # 20 stays: an 18-ring trim flipped a fringe column onto the face and
-    # cost the right side 4.7 points (the column-quantization class).
-    segments = 20 if detail >= 2 else (8 if detail == 1 else 8)
+    # 24 (was 20; an 18-ring TRIM once flipped a fringe column onto the
+    # face and cost 4.7 points — the quantization class works in both
+    # directions, so the change was re-measured: see the field note above).
+    segments = 24 if detail >= 2 else (8 if detail == 1 else 8)
     levels = HAIR_LEVELS if detail >= 2 else thin_for_lod(
         [(z, hx, hy, yc) for z, hx, hy, yc in HAIR_LEVELS], detail)
     ascending = list(reversed(levels))
     rows = []
     for z, half_x, half_y, y_centre in ascending:
         ring = []
-        curl = 0.065 if detail >= 2 else 0.0
         for column in range(segments):
             theta = 2 * pi * column / segments
-            clump = 1.0 + curl * sin(6.0 * theta + 2.1 * len(rows))
+            f = (curl_field(
+                theta, z, CURL_SEEDS,
+                theta_width=CURL_THETA_WIDTH,
+                z_width=CURL_Z_WIDTH,
+            ) if detail >= 2 else 0.0)
+            clump = 1.0 + f
             x = half_x * clump * cos(theta)
             y = y_centre + half_y * clump * sin(theta)
             if y < y_centre:
@@ -403,9 +436,10 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
                     y = max(y, (sf + 0.050) if sf > -9.0 else -0.160)
                 else:
                     y = max(y, (sf - 0.070) if sf > -9.0 else -0.300)
-            ring.append(builder.vertex((x, y, z), HAIR, "Head"))
+            tone = HAIR if f > CURL_TROUGH else HAIR_DARK
+            ring.append(builder.vertex((x, y, z), tone, "Head"))
         rows.append(ring)
-    bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
+    bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR_DARK, "Head")
     top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.02), HAIR, "Head")
     for column in range(segments):
         nxt = (column + 1) % segments
