@@ -878,6 +878,7 @@ TANK_ARM = ArmSpec(
     stations=tuple(ARM_STATIONS),
     shoulder_blend=SHOULDER_BLEND,
     cap_x=0.170,
+    root_ring=0.0,
     # An arm is not circular: the ring is squashed in z so the limb reads as a
     # flattened oval from the gameplay camera rather than a dowel.
     ring_squash=0.94,

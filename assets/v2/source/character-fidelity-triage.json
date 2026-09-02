@@ -1740,20 +1740,10 @@
       "class": "face-atlas",
       "excerpt": "CARRIED 3.5 BLOCKER — decal-island seam on the face. peaches-front-review.png (1"
     },
-    "peaches:94778879be38": {
-      "char": "peaches",
-      "class": "butt-joins",
-      "excerpt": "CARRIED 3.11 BLOCKER — the deltoid dome does not fair. peaches-front-apose-revie"
-    },
     "peaches:3226d1114876": {
       "char": "peaches",
       "class": "hair-nyquist",
       "excerpt": "CARRIED 3.3 — the bun's STEP SEAM ring. peaches-front-review.png (215,110 110x45"
-    },
-    "peaches:d18f0cce3584": {
-      "char": "peaches",
-      "class": "hair-nyquist",
-      "excerpt": "REVISED 3.3 — the bun is no longer an acorn at 1%: measure:strands reads 24% of "
     },
     "peaches:32178b2d3404": {
       "char": "peaches",
@@ -1764,11 +1754,6 @@
       "char": "peaches",
       "class": "decal-not-form",
       "excerpt": "CARRIED 3.4 — no bodice straps, scoop or armhole binding. peaches-front-review.p"
-    },
-    "peaches:561639db275d": {
-      "char": "peaches",
-      "class": "decal-not-form",
-      "excerpt": "CARRIED 3.4 — the leaf appliqué is a blob. Source line 724 builder.ellipsoid((0."
     },
     "peaches:2e7581fadf3a": {
       "char": "peaches",
@@ -1785,45 +1770,15 @@
       "class": "proportions",
       "excerpt": "CARRIED 3.2 — neck and leg are unmodulated primitives. peaches-profile-review.pn"
     },
-    "peaches:c59e4914b12a": {
-      "char": "peaches",
-      "class": "ears",
-      "excerpt": "NEW minor — the ear reads as a claw in profile. peaches-profile-review.png (250,"
-    },
-    "peaches:6806641bf386": {
-      "char": "peaches",
-      "class": "proportions",
-      "excerpt": "NEW minor — the profile nose is a thorn. peaches-profile-review.png (205,195 30x"
-    },
-    "peaches:9e72bd5eadec": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (cropped) — the dashed dark trail at the armpit in peaches-runtime-sw"
-    },
-    "peaches:296111c4a34c": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (cropped) — a black diagonal sliver on the medial forefoot of each sh"
-    },
     "peaches:bc722c3d5ed4": {
       "char": "peaches",
       "class": "face-atlas",
       "excerpt": "CARRIED polish — no freckles and no blush anywhere on the delivered face (all fo"
     },
-    "peaches:58d840514b60": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT Trap-3 — TEAM_MASK is the raw grey ring on both socks on the boards ("
-    },
     "peaches:b756080bebcb": {
       "char": "peaches",
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT Trap-4 — the dark slit at the near eye in peaches-profile-review.png "
-    },
-    "peaches:28e224dbe8f1": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "PASSES verified — nothing is severed: the white at the A-pose armpit is backgrou"
     },
     "penny:63c960f94d9f": {
       "char": "penny",
@@ -2320,30 +2275,10 @@
       "class": "no-defect-note",
       "excerpt": "MEASURED, not a sculpt finding: daylight between the ankles reads 27.9 vs 0 (tol"
     },
-    "turbo:cc45f9e09cef": {
-      "char": "turbo",
-      "class": "proportions",
-      "excerpt": "HEAD TOO SMALL AND NO NECK - CARRIED, hand-measured on the fresh board since the"
-    },
-    "turbo:e96876bd0cf9": {
-      "char": "turbo",
-      "class": "ears",
-      "excerpt": "EARS OVERSIZED - CARRIED, unchanged (EarSpec radii 0.1700, 0.2000 at line 133). "
-    },
-    "turbo:d22d9a8ebb15": {
-      "char": "turbo",
-      "class": "proportions",
-      "excerpt": "PROFILE TORSO IS A SLAB - CARRIED, unchanged. turbo-profile-review.png tee spans"
-    },
     "turbo:5c91b882596c": {
       "char": "turbo",
       "class": "proportions",
       "excerpt": "NOSE DOES NOT BREAK THE PROFILE - CARRIED, unchanged (nose_push tip 0.075). A so"
-    },
-    "turbo:4ba2db27e68e": {
-      "char": "turbo",
-      "class": "stance",
-      "excerpt": "STANCE STILL TOED OUT (visual only; the 42.9% ankle-daylight OFF is the recorded"
     },
     "turbo:6f50006c3a37": {
       "char": "turbo",
@@ -2405,40 +2340,110 @@
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT (record): legs are two legs - daylight from crotch to soles on both f"
     },
-    "turbo:b72ba61486a4": {
+    "turbo:eab53e9b3790": {
       "char": "turbo",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (record): the navy ringer sleeve cuffs render - the SHIRT_DARK ring a"
+      "class": "proportions",
+      "excerpt": "HEAD TOO SMALL AND NO NECK - CARRIED, hand-measured on the fresh board since the"
     },
-    "turbo:4076cf2ea070": {
-      "char": "turbo",
-      "class": "butt-joins",
-      "excerpt": "SHOULDER-WEDGE COVERAGE GAP - CARRIED, unchanged (the A-pose scan is byte-identi"
-    },
-    "turbo:fc485aa69067": {
+    "turbo:e2d8f5f223d9": {
       "char": "turbo",
       "class": "hair-nyquist",
-      "excerpt": "STAIRCASE HAIRLINE - REVISED DOWN to one temple. The ring pair did what it was m"
+      "excerpt": "STAIRCASE HAIRLINE, RIGHT TEMPLE ONLY - CARRIED, unchanged since the ring pair ("
     },
-    "turbo:674189b320cc": {
+    "turbo:0034bf7fb32b": {
       "char": "turbo",
       "class": "hair-nyquist",
       "excerpt": "HAIR CAP IS A SMOOTH DOME WITH ELEVEN BUTT-JOINED CONES - CARRIED. measure:stran"
     },
-    "turbo:84adce278031": {
+    "turbo:136f94ff8494": {
+      "char": "turbo",
+      "class": "proportions",
+      "excerpt": "PROFILE TORSO IS A SLAB - CARRIED, unchanged, and now the named gap on clothingC"
+    },
+    "turbo:6e44fb2aa8dd": {
+      "char": "turbo",
+      "class": "ears",
+      "excerpt": "EARS OVERSIZED - CARRIED, unchanged (EarSpec radii 0.1700, 0.2000). turbo-profil"
+    },
+    "turbo:b2668fa87bc2": {
+      "char": "turbo",
+      "class": "stance",
+      "excerpt": "STANCE STILL TOED OUT (visual only; the 42.9% ankle-daylight OFF is the recorded"
+    },
+    "turbo:f70def6ed64d": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "NEW, RECORDED NOT SCORED: ARMPIT SHADOW CREASE ON THE A-POSE - the root-ring str"
+    },
+    "turbo:ee911e296db9": {
       "char": "turbo",
       "class": "no-defect-note",
       "excerpt": "NO SKIN SHOWS THROUGH THE HAIR - checked on the fresh evidence, none. 0 skin-cla"
     },
-    "turbo:47c1329d0bba": {
+    "turbo:0f2fa8d1743c": {
       "char": "turbo",
       "class": "no-defect-note",
-      "excerpt": "CLEARED (this build): HAIRLINE TILT AND HANGING BLOCK ACROSS THE FOREHEAD - the "
+      "excerpt": "CLEARED (this build): SHOULDER-WEDGE COVERAGE GAP - the navy triangles are gone."
     },
-    "turbo:d497691c69bc": {
+    "turbo:73ef46d6b492": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (stays cleared): HAIRLINE TILT AND HANGING BLOCK ACROSS THE FOREHEAD - b"
+    },
+    "turbo:a871754ac072": {
       "char": "turbo",
       "class": "no-defect-note",
       "excerpt": "CLEARED (stays cleared): FRINGE OVERSHOT THE SHEET - centre hairline z 3.18 agai"
+    },
+    "turbo:bd9fe69cf10f": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (record): the navy ringer sleeve cuffs render - the SHIRT_DARK ring a"
+    },
+    "peaches:6bcd93a1654e": {
+      "char": "peaches",
+      "class": "butt-joins",
+      "excerpt": "PARTIALLY CLEARED 3.11 — the root ring closed the pocket, not the ball. What cha"
+    },
+    "peaches:16545c965cd0": {
+      "char": "peaches",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED 3.3 — the bun is no longer an acorn at 1% (measure:strands 24% at 222%),"
+    },
+    "peaches:d3f08d53924a": {
+      "char": "peaches",
+      "class": "decal-not-form",
+      "excerpt": "CARRIED 3.4 — the leaf appliqué is a blob. Source line 724 builder.ellipsoid((0."
+    },
+    "peaches:b7ae2f883362": {
+      "char": "peaches",
+      "class": "ears",
+      "excerpt": "CARRIED minor — the ear reads as a claw in profile. peaches-profile-review.png ("
+    },
+    "peaches:8e76dbf6cf93": {
+      "char": "peaches",
+      "class": "proportions",
+      "excerpt": "CARRIED minor — the profile nose is a thorn. peaches-profile-review.png (205,195"
+    },
+    "peaches:302176d5a319": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (cropped) — the dashed dark trail at the armpit in peaches-runtime-sw"
+    },
+    "peaches:fffbd8a7812d": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (cropped) — a black diagonal sliver on the medial forefoot of each sh"
+    },
+    "peaches:b68c663d8017": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT Trap-3 — TEAM_MASK is the raw grey ring on both socks on the boards ("
+    },
+    "peaches:2a3283c1e58b": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "PASSES verified on the fresh evidence — nothing is severed: the white at the A-p"
     }
   }
 }

@@ -570,6 +570,7 @@ GRIZZ_ARM = ArmSpec(
     stations=tuple(ARM_STATIONS),
     shoulder_blend=SHOULDER_BLEND,
     cap_x=0.170,
+    root_ring=0.0,
     ring_squash=0.95,
     hand=HandSpec(
         tip_x=1.600,

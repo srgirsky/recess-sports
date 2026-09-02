@@ -74,6 +74,19 @@ class ArmSpec:
 
     garment: tuple        # the sleeve
     skin: tuple           # forearm, hand and digits
+    # ★ THE A-POSE COVERAGE GAP HAS A MECHANISM, AND THIS IS THE REPAIR. The
+    # cap is one vertex that follows the body while the first ring follows
+    # the arm, so when the arm rotates down the ring's upper half swings away
+    # from the torso's shoulder slope and the fan between them opens into a
+    # backdrop pocket (Turbo's A-pose board tripped the silhouette gate on
+    # it; Bendy, Flash, Noodle, Penny and Peaches carry it as dark wedges).
+    # Burying the cap (`cap_x` 0.060) narrows the pocket but cannot close it,
+    # because a point cannot stretch. A ROOT RING at `cap_x`, this fraction
+    # of the first ring's radius and weighted like the cap, turns the fan
+    # into a strip that stretches with the rotation instead of opening.
+    # 0.0 keeps the single cap vertex (a frozen kid's geometry stays put);
+    # stated by every script, never defaulted — sculpt-sharing.lint says why.
+    root_ring: float
 
 
 def shoulder_blend_at(table: dict[float, float], x: float) -> float | None:
@@ -190,14 +203,28 @@ def build_arm(
     # bored through the shirt shell with a floating arm stub inside it". A
     # deltoid dome closes it AND gives 3.11 the round shoulder form it asks for.
     shoulder_bone = limb_bone("Arm", side)
-    cap = builder.vertex(
-        (spec.cap_x * side, 0.0, ARM_Z), spec.garment,
-        {"Spine2": 0.94, shoulder_bone: 0.06},   # buried in the chest: it follows the body
-        (0.75, 0.25),
-    )
+    body_weight = {"Spine2": 0.94, shoulder_bone: 0.06}   # buried in the chest: it follows the body
+    first = rows[0]
+    if spec.root_ring > 0.0 and detail >= 1:
+        # The root ring: body-weighted, at the cap's x, a little inside the
+        # first ring — a strip from it to the first ring spans the rotation.
+        r0 = stations[0][1] * spec.root_ring
+        root = []
+        for index in range(sides):
+            theta = 2 * pi * index / sides
+            root.append(builder.vertex(
+                (spec.cap_x * side, r0 * sin(theta), ARM_Z + r0 * cos(theta) * spec.ring_squash),
+                spec.garment, body_weight, (0.75, 0.25),
+            ))
+        builder.grid([root, first], 1, flip=side > 0)
+        first = root
+        cap_x = spec.cap_x - 0.03
+    else:
+        cap_x = spec.cap_x
+    cap = builder.vertex((cap_x * side, 0.0, ARM_Z), spec.garment, body_weight, (0.75, 0.25))
     for index in range(sides):
         nxt = (index + 1) % sides
-        face = (cap, rows[0][nxt], rows[0][index]) if side > 0 else (cap, rows[0][index], rows[0][nxt])
+        face = (cap, first[nxt], first[index]) if side > 0 else (cap, first[index], first[nxt])
         builder.face(face, 1)
 
     # ★ A BALL AT THE JOINT WAS THE WRONG FIX, AND THE RIGHT ONE COST NOTHING.
