@@ -2320,25 +2320,10 @@
       "class": "no-defect-note",
       "excerpt": "MEASURED, not a sculpt finding: daylight between the ankles reads 27.9 vs 0 (tol"
     },
-    "turbo:ce170c00372e": {
-      "char": "turbo",
-      "class": "hair-nyquist",
-      "excerpt": "STAIRCASE HAIRLINE - CARRIED and now the worst hair defect, because the fringe s"
-    },
-    "turbo:ffa5af1e8709": {
-      "char": "turbo",
-      "class": "butt-joins",
-      "excerpt": "SHOULDER-WEDGE COVERAGE GAP - CARRIED, unchanged (only CAP_FRINGE moved; the A-p"
-    },
     "turbo:cc45f9e09cef": {
       "char": "turbo",
       "class": "proportions",
       "excerpt": "HEAD TOO SMALL AND NO NECK - CARRIED, hand-measured on the fresh board since the"
-    },
-    "turbo:f89adcebb452": {
-      "char": "turbo",
-      "class": "hair-nyquist",
-      "excerpt": "HAIR CAP IS A SMOOTH DOME WITH ELEVEN BUTT-JOINED CONES - CARRIED. measure:stran"
     },
     "turbo:e96876bd0cf9": {
       "char": "turbo",
@@ -2365,20 +2350,10 @@
       "class": "face-atlas",
       "excerpt": "TONGUE CELL IS READABLE BUT SMALL - CARRIED, minor. turbo-runtime-face-tongue.pn"
     },
-    "turbo:d62360e77f49": {
-      "char": "turbo",
-      "class": "no-defect-note",
-      "excerpt": "NO SKIN SHOWS THROUGH THE HAIR - checked on the fresh evidence, none. 0 skin-cla"
-    },
     "turbo:7e490906a310": {
       "char": "turbo",
       "class": "no-defect-note",
       "excerpt": "TEAM_MASK EXTENT - correct, unchanged: the sock roll-top band (LEG_STATIONS 0.46"
-    },
-    "turbo:2cec0a10709c": {
-      "char": "turbo",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (this build): FRINGE OVERSHOT THE SHEET - the rung 3.180 / 3.160 / 3.080"
     },
     "turbo:19e04cbfad78": {
       "char": "turbo",
@@ -2434,6 +2409,36 @@
       "char": "turbo",
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT (record): the navy ringer sleeve cuffs render - the SHIRT_DARK ring a"
+    },
+    "turbo:4076cf2ea070": {
+      "char": "turbo",
+      "class": "butt-joins",
+      "excerpt": "SHOULDER-WEDGE COVERAGE GAP - CARRIED, unchanged (the A-pose scan is byte-identi"
+    },
+    "turbo:fc485aa69067": {
+      "char": "turbo",
+      "class": "hair-nyquist",
+      "excerpt": "STAIRCASE HAIRLINE - REVISED DOWN to one temple. The ring pair did what it was m"
+    },
+    "turbo:674189b320cc": {
+      "char": "turbo",
+      "class": "hair-nyquist",
+      "excerpt": "HAIR CAP IS A SMOOTH DOME WITH ELEVEN BUTT-JOINED CONES - CARRIED. measure:stran"
+    },
+    "turbo:84adce278031": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "NO SKIN SHOWS THROUGH THE HAIR - checked on the fresh evidence, none. 0 skin-cla"
+    },
+    "turbo:47c1329d0bba": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (this build): HAIRLINE TILT AND HANGING BLOCK ACROSS THE FOREHEAD - the "
+    },
+    "turbo:d497691c69bc": {
+      "char": "turbo",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (stays cleared): FRINGE OVERSHOT THE SHEET - centre hairline z 3.18 agai"
     }
   }
 }
