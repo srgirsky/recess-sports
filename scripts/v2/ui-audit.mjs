@@ -258,8 +258,12 @@ const COLLECT = (hostId) => `(() => {
  * in software WebGL. Once full pitch deliveries landed, those intentionally
  * longer timelines pushed a completely-green CI run past the 660s watchdog.
  * `devStepFixedClock(6)` invokes the same `pump(1 / SIM_HZ)` six times without
- * drawing; the final `tick(performance.now())` paints the real shipping HUD
- * before visibility and geometry are read. Layout assertions are unchanged.
+ * drawing; the final `devPaint(1)` paints the real shipping HUD one step on,
+ * off the same fixed clock, before visibility and geometry are read. Never
+ * `tick(performance.now())` — that first wall-clock tick carries the whole
+ * reach's wall time (clamped to 0.1s, six unsampled steps) and can carry the
+ * HUD past the state the pump reached; `paintclock.lint.test.js` says so.
+ * Layout assertions are unchanged.
  */
 const PUMP = (untilSrc, mustSee) => `(async () => {
   const s = window.__spike;
@@ -268,7 +272,7 @@ const PUMP = (untilSrc, mustSee) => `(async () => {
   for (let i = 0; i < 4000; i++) {
     const f = s.devStepFixedClock(6);
     if (f && i > 4 && until(f)) {
-      s.tick(performance.now());
+      s.devPaint(1);
       const el = document.querySelector(${JSON.stringify(mustSee)});
       const r = el && el.getBoundingClientRect();
       const vs = el && getComputedStyle(el);

@@ -656,3 +656,24 @@ on the round-2 list is closed and re-verified. Against the reference's own
 definition — "on par means their presentation bar, not their fielding" —
 the front door, draft, gameplay cameras, HUD, verdicts, night, venues,
 result and retention shell all now hold that bar on screen.
+
+## 2026-09-01 instrument note: the catch is one frame long
+
+Found by `smoke:presentation` once it painted off the fixed clock instead of
+the wall clock (`scripts/v2/paintclock.lint.test.js` has the story): on the
+smoke seed, every caught fly ends the play in the SAME sim step as the catch
+— `play.ts` emits `playOver` with the final out, the sim yields exactly one
+live frame with the ball gloved, and the next step is `between`, where the
+camera eases to the plate and the defence resets to its positions. On screen
+that is a 16ms catch followed by the batter's reaction at the plate; the
+fielder who made it is never seen holding the ball. A grounder reads fine
+(the pickup holds 18-28 steps before the throw, the throw flies 39-47) and so
+does a single. BB2026 holds on its catches.
+
+Not changed here: whether the sim's live loop should yield settle frames
+after the final out, or the view should hold the live camera on the fielder
+before the between cut, is a feel decision — how long a catch lands — and
+the play reducer's step order is load-bearing (`src/v2/AGENTS.md` § The play).
+The smoke's fielded-or-throw beat asks for a hold or throw on a play that is
+still going, so it cannot be satisfied by the catch frame and does not mask
+this.

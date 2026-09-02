@@ -209,17 +209,27 @@ HAIR_FRINGE_Z = 3.240      # the crown sits high — his forehead is open
 
 def hair_window_z(x_signed: float) -> float:
     x_abs = abs(x_signed)
-    if x_abs < 0.30:
+    # 0.28/0.40 (was 0.30/0.42): the 16-column shell re-quantized the window
+    # and opened visible-face to 39.9 against the concept's 31.5 (tol 6) —
+    # the window moves WITH the ring, in whichever direction the measure
+    # says (Theo's rule ran the other way).
+    if x_abs < 0.28:
         return HAIR_FRINGE_Z
-    if x_abs < 0.42:
-        return HAIR_FRINGE_Z - (x_abs - 0.30) * 2.0
+    if x_abs < 0.40:
+        return HAIR_FRINGE_Z - (x_abs - 0.28) * 2.0
     return 2.960
 
 
 def build_hair(builder: MeshBuilder, detail: int) -> None:
     assert all(a[0] > b[0] for a, b in zip(HAIR_LEVELS, HAIR_LEVELS[1:])), \
         "HAIR_LEVELS must be strictly descending in z"
-    segments = 12 if detail >= 2 else 8
+    # 16 even columns (was 12): six lobes on twelve columns was TWO samples
+    # per lobe — below the readable floor, pure ring noise — and the big flat
+    # facets took the game light as steel-blue glints on a near-black crown
+    # (the critic's grey-blue finding). The wave is DROPPED rather than
+    # ported to the curl field: his texture is the SPIKES; the shell is the
+    # scalp under them and the sheet draws it smooth.
+    segments = 16 if detail >= 2 else 8
     use = HAIR_LEVELS if detail >= 2 else thin_for_lod(
         [(z, hx, hy, yc) for z, hx, hy, yc in HAIR_LEVELS], detail)
     ascending = list(reversed(use))
@@ -228,9 +238,8 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
         ring = []
         for column in range(segments):
             theta = 2 * pi * column / segments
-            wave = 1.0 + 0.05 * cos(6 * theta)
-            x = half_x * wave * cos(theta)
-            y = y_centre + half_y * wave * sin(theta)
+            x = half_x * cos(theta)
+            y = y_centre + half_y * sin(theta)
             if y < y_centre:
                 sf = skull_front_y(x, z)
                 if HAIR_OPEN_BOTTOM < z < hair_window_z(x):
@@ -251,24 +260,37 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
             builder.face((lower[column], lower[nxt], upper[nxt], upper[column]), 2)
     if detail < 1:
         return
-    # The swept spikes: fat 3-point locks rising from the forehead line and
-    # raking back over the crown, x-mirrored (leans sum to zero).
+    # The swept locks: 3-point tubes rising from the forehead line and
+    # raking BACK over the crown, x-mirrored (leans sum to zero).
+    #
+    # ★ THE SWEEP LIVES IN Y, NOT X. The first table walked every tip
+    # outward (0.18→0.38, 0.34→0.64, 0.24→0.44) as it raked back, and the
+    # FRONT board projected that as a radial hedgehog splay — the critic's
+    # finding — while the sheet rakes every lock up-and-rearward with the
+    # tips staying nearly over their roots laterally — but the SILHOUETTE
+    # stays wide: the sheet's own head aspect is 1.06 WITH its crown, and
+    # the first fully-tucked rung measured 0.95 against tol 0.08 (the old
+    # splay had been load-bearing for the head box). The SIDE locks carry
+    # the width (tips ±0.61/±0.44, laddered against the aspect metric); the front/centre locks stay over their
+    # roots, which is what kills the radial-hedgehog front read. Ten locks
+    # (was eight) at shallower radii close the too-few/too-deep pair.
     for spine, radii in (
-        # The sweep: every lock rises from the brow line and RAKES BACK -
-        # round-1 read as a vertical hedgehog, so the tips fold rearward
-        # and outward, lower and wider than the first pass.
-        (((0.000, -0.300, 3.280), (0.000, -0.060, 3.560), (0.000, 0.300, 3.720)), (0.125, 0.090, 0.032)),
-        (((0.180, -0.260, 3.260), (0.260, 0.020, 3.520), (0.380, 0.360, 3.640)), (0.110, 0.080, 0.028)),
-        (((-0.180, -0.260, 3.260), (-0.260, 0.020, 3.520), (-0.380, 0.360, 3.640)), (0.110, 0.080, 0.028)),
-        (((0.340, -0.140, 3.160), (0.480, 0.120, 3.370), (0.640, 0.380, 3.460)), (0.100, 0.072, 0.026)),
-        (((-0.340, -0.140, 3.160), (-0.480, 0.120, 3.370), (-0.640, 0.380, 3.460)), (0.100, 0.072, 0.026)),
-        (((0.000, 0.140, 3.300), (0.000, 0.380, 3.480), (0.000, 0.580, 3.560)), (0.115, 0.082, 0.030)),
-        (((0.240, 0.200, 3.220), (0.340, 0.420, 3.360), (0.440, 0.580, 3.420)), (0.095, 0.068, 0.026)),
-        (((-0.240, 0.200, 3.220), (-0.340, 0.420, 3.360), (-0.440, 0.580, 3.420)), (0.095, 0.068, 0.026)),
+        (((0.000, -0.300, 3.280), (0.000, -0.060, 3.560), (0.000, 0.300, 3.720)), (0.115, 0.082, 0.030)),
+        (((0.180, -0.260, 3.260), (0.220, 0.020, 3.540), (0.250, 0.360, 3.660)), (0.100, 0.072, 0.026)),
+        (((-0.180, -0.260, 3.260), (-0.220, 0.020, 3.540), (-0.250, 0.360, 3.660)), (0.100, 0.072, 0.026)),
+        (((0.340, -0.140, 3.160), (0.440, 0.120, 3.400), (0.610, 0.380, 3.470)), (0.092, 0.066, 0.024)),
+        (((-0.340, -0.140, 3.160), (-0.440, 0.120, 3.400), (-0.610, 0.380, 3.470)), (0.092, 0.066, 0.024)),
+        (((0.000, 0.140, 3.300), (0.000, 0.380, 3.500), (0.000, 0.600, 3.580)), (0.105, 0.076, 0.028)),
+        (((0.240, 0.200, 3.220), (0.310, 0.420, 3.380), (0.440, 0.600, 3.420)), (0.088, 0.062, 0.024)),
+        (((-0.240, 0.200, 3.220), (-0.310, 0.420, 3.380), (-0.440, 0.600, 3.420)), (0.088, 0.062, 0.024)),
+        (((0.100, -0.060, 3.330), (0.130, 0.200, 3.560), (0.150, 0.470, 3.640)), (0.085, 0.060, 0.024)),
+        (((-0.100, -0.060, 3.330), (-0.130, 0.200, 3.560), (-0.150, 0.470, 3.640)), (0.085, 0.060, 0.024)),
     ):
         # ⚠️ The -x members of each mirrored spike pair need flipped winding
-        # (Penny's button lesson) - their spines are x-reflections.
-        builder.tube(list(spine), list(radii), 2, HAIR, "Head", 5, flip=spine[0][0] < 0)
+        # (Penny's button lesson) - their spines are x-reflections. Seven
+        # sides (was five): the pentagonal facets were the steel-blue
+        # glint's other half.
+        builder.tube(list(spine), list(radii), 2, HAIR, "Head", 7, flip=spine[0][0] < 0)
 
 
 # --- The navy tee (torso) with teal trim ---------------------------------------

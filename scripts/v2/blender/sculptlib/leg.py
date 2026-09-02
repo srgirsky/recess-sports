@@ -88,8 +88,12 @@ def build_leg(
         bone_name = limb_bone(bone, side)
         # ★ THE ACCENT RIDES THE SAME SURFACE. Its rows change MATERIAL, not
         # mesh: a separate band welded on is the detached shell 3.7 just caught
-        # on the shoe. `grid` is emitted per row-pair so a pair whose lower row
-        # is accent-coloured goes to M_Accessory and the skin stays continuous.
+        # on the shoe. `grid` is emitted per row-pair, and a pair goes to
+        # M_Accessory only when BOTH its rows are accent-coloured — so an
+        # accent needs two adjacent stations (Grizz's roll: top edge plus the
+        # fattest ring). A lone accent station makes no accessory geometry,
+        # the exporter drops the unused material, and the finished-work gate
+        # refuses the character (Mimi, 2026-09-01).
         materials.append(3 if colour == spec.team_mask else 1)
         # The inward reach that leaves the concept's inseam. `min` so a ring
         # already clear of the centreline — every bare-shin and sock ring — is

@@ -69,12 +69,10 @@ const VIEWS = ['front-review', 'profile-review', 'front-apose-review', 'profile-
  * is what makes the other two credible rather than a blanket exemption.
  */
 const DEBT = {
-  // 0.035ft at 32.7% of figure — the neck/shoulder joint, in ALL FOUR views,
-  // which is the tell that it is structure and not a posing artifact.
-  // ⚠️ AND THE ROW COUNT BADLY UNDERSTATES IT. A connected-component scan (see
-  // DETACHED_INK below) says the piece above that gap is a SEPARATE OBJECT
-  // carrying 31.7% of his ink: cricket's head is not attached to cricket.
-  cricket: 5,
+  // Cricket is deliberately absent, like Rocket and Zippy: his 0.035ft
+  // neck gap (which detached his whole HEAD — 31.7-40% of his ink) was
+  // closed by a fourth NECK_LEVELS ring at z 2.800 that ends inside the
+  // skull, the same moved-ring pattern as the other two.
   // Rocket is deliberately absent, like Zippy: her 2-row hip gap (which
   // detached 30.8% of her ink — her legs) was closed by the hem sweep: the
   // tee's bottom ring moved from z 1.620 to 1.560, below the leg stations'
@@ -108,10 +106,6 @@ const SPECK_PX = 25;
 
 /** Detached ink as a fraction of the figure, per character's WORST view. */
 const DETACHED_INK = {
-  // The head, above the neck gap, in all four views — 31.7% of his ink seen
-  // from the front and 39.4% in profile, which is the worst view and so the
-  // number here. His head is not attached to him.
-  cricket: 0.395,
   // 9.5% at worst (front A-pose), across two loose pieces: a wheel is modelled
   // as free-standing geometry that never touches the frame. Unlike the two above it is a
   // PROP rather than a body part, so it is the least urgent of the three —

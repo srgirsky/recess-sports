@@ -62,7 +62,11 @@ SHIRT_DARK = rgba("C22E12")  # ribbing, pouch shadow, hood lining
 TEE = rgba("FFF3DC")         # the cream tee sliver at the collar
 PANTS = rgba("46597A")       # blue jeans
 PANTS_DARK = rgba("32405A")
-CUFF = rgba("BFC4C6")      # pale grey-blue rolled cuff
+CUFF = rgba("AAB2BA")      # pale grey-blue rolled cuff BODY — deliberately a
+                           # different hex from TEAM_MASK: byte-identical, the
+                           # runtime tinted the ENTIRE ankle roll team-colour
+                           # and the recorded thin-top-ring convention was
+                           # unenforceable by colour (the critique's find)
 SOCK = rgba("FFF6E6")
 SHOE = rgba("C05A2E")        # rust canvas high-top upper
 WHITE = rgba("FFF0D8")       # cream cupsole
@@ -193,7 +197,12 @@ def skull_front_y(x: float, z: float) -> float:
 # measured: front z=3.25 halfWidth=0.8061 tol=0.03
 # measured: front z=3.55 halfWidth=0.6898 tol=0.03
 CURL_LEVELS = [
-    (4.030, 0.235, 0.250, 0.010),
+    # The crown rounds through an intermediate ring: without 3.995 the lid
+    # jumped 0.250 → 0.430 in one quad row and the profile read a FLAT
+    # CROWN PLANE meeting the back wall at a hard corner (the critique's
+    # frontProfileSilhouette-3 finding, with this exact fix named).
+    (4.030, 0.200, 0.215, 0.010),
+    (3.995, 0.330, 0.345, 0.010),
     (3.950, 0.415, 0.430, 0.010),
     (3.840, 0.545, 0.560, 0.010),
     (3.690, 0.630, 0.640, 0.015),
@@ -526,10 +535,16 @@ LEG_STATIONS = [
     (0.560, 0.182, 1.00, PANTS, "Leg"),
     # ⚠️ The runtime TEAM-TINTS everything on M_Accessory — a full accent
     # cuff renders in team colour, not denim (round-2 blocker). Only the
-    # thin top roll ring is the accent (Grizz's sock-roll convention); the
-    # cuff body stays its own grey-blue.
-    (0.520, 0.198, 1.00, TEAM_MASK, "Leg"),        # top roll ring — THE accent
-    (0.490, 0.196, 1.00, CUFF, "Leg"),
+    # thin top roll is the accent (Grizz's sock-roll convention); the cuff
+    # body stays its own grey-blue.
+    # ★ TWO stations, not one. The leg builder sends a row PAIR to
+    # M_Accessory only when BOTH its rows are team-mask coloured, so a lone
+    # accent ring makes no accessory geometry at all — the exporter dropped
+    # the material and the finished-work gate refused "no deliberate
+    # team-accent surface" the moment Mimi claimed candidate. The band is
+    # 0.520-0.490: the roll's top edge and its fattest ring, as Grizz's.
+    (0.520, 0.198, 1.00, TEAM_MASK, "Leg"),        # roll top — THE accent
+    (0.490, 0.196, 1.00, TEAM_MASK, "Leg"),        # the roll's fattest ring
     (0.440, 0.194, 1.00, CUFF, "Leg"),
     (0.415, 0.176, 1.00, PANTS_DARK, "Leg"),       # cuff underside lip
     (0.390, 0.110, 1.00, SOCK, "Foot"),            # sock sliver

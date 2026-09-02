@@ -35,6 +35,7 @@ from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
 from sculptlib.ear import EarSpec, build_ear
+from sculptlib.hair import curl_field, curl_seeds
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
@@ -198,6 +199,23 @@ def skull_front_y(x: float, z: float) -> float:
 # brows, a nape that hangs to the collar, and mirror-symmetric spike tufts
 # over the crown.
 # measured: front z=3.42 halfWidth=0.6310
+# ★ THE CURL FIELD — sculptlib/hair.py holds the mechanism; the θ-only
+# cos(6θ) at 17 columns delivered 18% of the concept's strand count at
+# 299% prominence (too-deep flutes, too few), and 17 is ODD — no
+# mirror-symmetric columns at all (the Dex parity rule). measured:
+# `npm run measure:strands -- gizmo` reads the concept near 8.9 minima/row;
+# three mirror pairs (6 lobes) at 24 columns holds the four-per-lobe floor.
+CURL_SEEDS = curl_seeds(
+    pairs_per_row=3,
+    bands=7,
+    z_top=3.740,
+    z_bottom=2.820,
+    amplitude=0.070,
+)
+CURL_THETA_WIDTH = 0.24
+CURL_Z_WIDTH = 0.075
+CURL_TROUGH = 0.018
+
 # measured: front z=3.66 halfWidth=0.4891
 # measured: front z=3.90 halfWidth=0.0839 tol=0.10
 CAP_LEVELS = [
@@ -243,18 +261,26 @@ def ring_loft_cap(builder: MeshBuilder, levels, detail: int) -> None:
     # quad's winding — the runtime lights the mass as a slate-grey void.
     assert all(a[0] > b[0] for a, b in zip(levels, levels[1:])), \
         "ring_loft_cap levels must be strictly descending in z"
-    segments = 17 if detail >= 2 else (10 if detail == 1 else 8)
+    # 24, EVEN: 17 columns had no mirror pair anywhere and drew the back as
+    # five hard chords; even counts are the rule for any ring the face row
+    # can touch, and the curl field's lobes need their four-column floor.
+    segments = 24 if detail >= 2 else (10 if detail == 1 else 8)
     use = levels if detail >= 2 else thin_for_lod([(z, hx, hy, yc) for z, hx, hy, yc in levels], detail)
     ascending = list(reversed(use))
     rows = []
     for z, half_x, half_y, y_centre in ascending:
         ring = []
-        # Mirror-symmetric clump bumps (cos(6θ) is even under θ→π−θ, so the
-        # leans sum to zero) — without them the mop's back is a featureless
-        # helmet against the sheet's leaf-like strand clumps.
         for column in range(segments):
             theta = 2 * pi * column / segments
-            clump = 1.0 + 0.055 * cos(6 * theta) * min(1.0, half_x / 0.5)
+            # The 2D curl field (constants above CAP_LEVELS): the θ-only bump
+            # was a flute, and the two-tone below is what reads as the
+            # sheet's leaf-like strand clumps under the ramp.
+            f = (curl_field(
+                theta, z, CURL_SEEDS,
+                theta_width=CURL_THETA_WIDTH,
+                z_width=CURL_Z_WIDTH,
+            ) if detail >= 2 else 0.0) * min(1.0, half_x / 0.5)
+            clump = 1.0 + f
             x = half_x * clump * cos(theta)
             y = y_centre + half_y * clump * sin(theta)
             if y < y_centre:
@@ -263,9 +289,10 @@ def ring_loft_cap(builder: MeshBuilder, levels, detail: int) -> None:
                     y = max(y, (sf + 0.050) if sf > -9.0 else -0.160)
                 else:
                     y = max(y, (sf - 0.060) if sf > -9.0 else -0.300)
-            ring.append(builder.vertex((x, y, z), HAIR, "Head"))
+            tone = HAIR if f > CURL_TROUGH else HAIR_DARK
+            ring.append(builder.vertex((x, y, z), tone, "Head"))
         rows.append(ring)
-    bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
+    bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR_DARK, "Head")
     top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.02), HAIR, "Head")
     for column in range(segments):
         nxt = (column + 1) % segments
@@ -316,7 +343,12 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
 # bridge. Ring radius traced: rings rows 252-313 → R (313-252)/2 px = 0.177;
 # lens centres offset so the outer rims stop inside the mop's curtains.
 GLASSES_Z = 3.056
-GLASSES_LENS_X = 0.180
+# measured (critic re-trace): the rings at LENS_X 0.180 COLLIDED at the
+# bridge — R + wire = 0.199 > 0.180 — where the sheet keeps ~13% of head
+# width in skin between the inner rims. 0.255 = R + wire + half that gap
+# (0.13 × 0.86 head width / 2); the outer rims land at 0.432, still inside
+# the mop's curtains.
+GLASSES_LENS_X = 0.255
 GLASSES_RADIUS = 0.177
 GLASSES_WIRE = 0.022
 
@@ -354,34 +386,14 @@ def build_glasses(builder: MeshBuilder, detail: int) -> None:
          (GLASSES_LENS_X - GLASSES_RADIUS + 0.01, plane_y, GLASSES_Z + 0.02)],
         [GLASSES_WIRE, GLASSES_WIRE, GLASSES_WIRE],
         2, GLASSES, "Head", 4)
-    # The glass-shine lens discs. The sheet fills both rings with the paper's
-    # own cream (glass catching light) — the lens interior on the concept
-    # fails isSkin, so an open wire ring here would read 20 points more face
-    # than the drawing. A pale disc just behind the wire is both the measured
-    # answer and what the drawing shows.
-    # LOD0 only: at field scale the shine is sub-pixel, and LOD1 sits 8
-    # triangles over its budget with the discs in.
-    if detail < 2:
-        return
-    disc_sides = 10
-    for side in (1, -1):
-        centre = builder.vertex(
-            (side * GLASSES_LENS_X, plane_y + 0.012, GLASSES_Z), LENS, "Head")
-        rim = []
-        for i in range(disc_sides):
-            a = 2 * pi * i / disc_sides
-            rim.append(builder.vertex(
-                (side * GLASSES_LENS_X + (GLASSES_RADIUS - 0.003) * cos(a),
-                 plane_y + 0.012,
-                 GLASSES_Z + (GLASSES_RADIUS - 0.003) * sin(a)), LENS, "Head"))
-        # ⚠️ TRANSLATED COPIES, NOT MIRRORS (Penny's button lesson): only the
-        # disc CENTRE moves with `side` — the rim circle keeps one angular
-        # orientation on both sides, so both discs take ONE winding. Settled
-        # by reading the exported GLB's triangle normals, not by eye: this
-        # winding gives normal +z (camera-facing) on both discs.
-        for i in range(disc_sides):
-            nxt = (i + 1) % disc_sides
-            builder.face((centre, rim[i], rim[nxt]), 2)
+    # ★ NO LENS DISCS — deleted, with the measurement that killed them. The
+    # cream-fill defence ("the sheet fills both rings with paper cream")
+    # measured FALSE for THIS kid: the concept's lens interiors carry
+    # sd(luma) 50.7/60.7 — a drawn iris, pupil and catchlight — while the
+    # discs delivered 6.7/8.2 (opaque plates hiding the atlas eyes; face
+    # score 1, "the kid has no eyes"). The tinted-lens disc rule is The
+    # Professor's, not a glasses-wide law: open rings HERE show the drawn
+    # eyes, which is what the sheet does.
 
 
 # --- The overalls torso --------------------------------------------------------

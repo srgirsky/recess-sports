@@ -30,6 +30,7 @@ from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
 from sculptlib.ear import EarSpec, build_ear
+from sculptlib.hair import curl_field, curl_seeds
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
@@ -185,6 +186,23 @@ def skull_front_y(x: float, z: float) -> float:
 #
 # One clump-modulated cap standing well proud of the skull — Gizmo's mop
 # construction without the spikes, with a swept fringe.
+#
+# ★ THE CURL FIELD — sculptlib/hair.py holds the mechanism; the θ-only
+# cos(6θ) at 18 columns delivered 14% of the concept's strand count at
+# 200% prominence. Three mirror pairs at 24 columns hold the
+# four-per-lobe floor; the sweep stays in the FRINGE table where the
+# batch-5 lesson keeps asymmetry (silhouette, never per-side counts).
+CURL_SEEDS = curl_seeds(
+    pairs_per_row=3,
+    bands=7,
+    z_top=3.900,
+    z_bottom=2.960,
+    amplitude=0.070,
+)
+CURL_THETA_WIDTH = 0.24
+CURL_Z_WIDTH = 0.075
+CURL_TROUGH = 0.018
+
 # measured: front z=3.42 halfWidth=0.6753
 # measured: front z=3.58 halfWidth=0.6409
 CURL_LEVELS = [
@@ -230,25 +248,37 @@ def fringe_z_at(x_signed: float) -> float:
             if x_abs <= x1:
                 base = z0 + (z1 - z0) * (x_abs - x0) / (x1 - x0)
                 break
+    # The sweep may COVER more (lower the window) but barely ever EXPOSE
+    # more: an uncapped raise cut a ~40x40px skin WEDGE into the mass on the
+    # raised side at the 3/4 gameplay angle — a bald-notch read the critic
+    # verified by raw pixel values, and which no gate caught (see
+    # skinnotch-scan.mjs, written for exactly this find — a scan, not a lint; its header records why). The sheet's
+    # sweep asymmetry lives in the LOW side's extra coverage.
     sweep = -CURL_SWEEP * (x_signed / 0.5)
-    return max(3.205, base + sweep)
+    return max(3.205, base + min(sweep, 0.015))
 
 
 def build_curls(builder: MeshBuilder, detail: int) -> None:
     # An ascending table silently inverts the winding — descending, asserted.
     assert all(a[0] > b[0] for a, b in zip(CURL_LEVELS, CURL_LEVELS[1:])), \
         "CURL_LEVELS must be strictly descending in z"
-    segments = 18 if detail >= 2 else (10 if detail == 1 else 8)
+    segments = 24 if detail >= 2 else (10 if detail == 1 else 8)
     use = CURL_LEVELS if detail >= 2 else thin_for_lod(
         [(z, hx, hy, yc) for z, hx, hy, yc in CURL_LEVELS], detail)
     ascending = list(reversed(use))
     rows = []
     for z, half_x, half_y, y_centre in ascending:
         ring = []
-        # Mirror-symmetric clumps (cos(6θ) is even under θ→π−θ).
         for column in range(segments):
             theta = 2 * pi * column / segments
-            clump = 1.0 + 0.06 * cos(6 * theta)
+            # The 2D curl field (constants above CURL_LEVELS) — θ-only
+            # cosines flute; the two-tone below carries the read.
+            f = (curl_field(
+                theta, z, CURL_SEEDS,
+                theta_width=CURL_THETA_WIDTH,
+                z_width=CURL_Z_WIDTH,
+            ) if detail >= 2 else 0.0)
+            clump = 1.0 + f
             x = half_x * clump * cos(theta)
             y = y_centre + half_y * clump * sin(theta)
             if y < y_centre:
@@ -257,9 +287,10 @@ def build_curls(builder: MeshBuilder, detail: int) -> None:
                     y = max(y, (sf + 0.050) if sf > -9.0 else -0.160)
                 else:
                     y = max(y, (sf - 0.060) if sf > -9.0 else -0.300)
-            ring.append(builder.vertex((x, y, z), HAIR, "Head"))
+            tone = HAIR if f > CURL_TROUGH else HAIR_DARK
+            ring.append(builder.vertex((x, y, z), tone, "Head"))
         rows.append(ring)
-    bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
+    bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR_DARK, "Head")
     top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.02), HAIR, "Head")
     for column in range(segments):
         nxt = (column + 1) % segments

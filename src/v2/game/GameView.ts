@@ -1867,4 +1867,32 @@ export class GameView {
     for (let i = 0; i < count; i++) this.pump(1 / SIM_HZ);
     return this.frame;
   }
+
+  /**
+   * Paint `frames` real `tick()` frames from the fixed clock's OWN last
+   * instant, each exactly one sim step — for the presentation smoke and the
+   * layout audit, which reach a state with `devStepFixedClock` and then need
+   * it drawn.
+   *
+   * ★ WHY NOT `tick(performance.now())`. The first wall-clock tick after a
+   * reach carries the whole reach's wall time, and the 0.1s clamp is the only
+   * thing bounding it — six sim steps the probe never sampled, on top of the
+   * paint's own. The smoke reached a fly-out's catch at a sample boundary and
+   * painted the between-pitch plate instead; and the same seed pumped a
+   * DIFFERENT game run to run, because how far each paint carried the sim was
+   * decided by the machine's load. Painting from `this.last` makes a paint
+   * cost exactly `frames` steps whatever the machine is doing, so a reached
+   * state and its painted state are the same state. The residual accumulator
+   * is dropped for the same reason `devStepFixedClock` ignores it.
+   */
+  devPaint(frames = 1): void {
+    if (!import.meta.env.DEV) return;
+    const count = Math.max(0, Math.floor(frames));
+    for (let i = 0; i < count; i++) {
+      this.acc = 0;
+      // A microsecond over the step, so float rounding cannot leave the
+      // accumulator a hair short and paint a frame that pumped nothing.
+      this.tick(this.last + 1000 / SIM_HZ + 1e-3);
+    }
+  }
 }
