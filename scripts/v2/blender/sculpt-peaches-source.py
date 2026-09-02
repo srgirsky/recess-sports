@@ -579,6 +579,7 @@ PEACHES_LEG = LegSpec(
     garment=SKIN,
     sock=SOCK,
     team_mask=TEAM_MASK,
+    calf=(0.700, 0.24),  # the rear belly the profile sheet draws (0.30 read heavy for a four-year-old: calf:ankle 1.34 vs the sheet's 1.17): LegSpec.calf
     knee=0.14,  # the kneecap and the hollow under it (0.06 measured at one board
                  # pixel — the critic's 0.12-0.15 is what survives the board)
 )

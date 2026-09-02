@@ -701,8 +701,9 @@ LEG_STATIONS = [
     # Peaches lesson, #214). Clover's sheet reads slimmer than Peaches' at the
     # calf (sharing lint: 0.3864 vs 0.4226 at z=0.70), so 0.122 here, not 0.126.
     # The sheet's PROFILE calf is the leg's biggest shape (+21% behind the
-    # knee); a wider ring cannot draw it, a deeper one can — depth 1.08 here.
-    (0.700, 0.122, 1.08, SKIN, "Leg"),             # the calf
+    # knee); a wider ring cannot draw it and a deeper one fattens the front
+    # too (depth 1.08 measured +5.6%) — LegSpec.calf deepens the back alone.
+    (0.700, 0.122, 1.00, SKIN, "Leg"),             # the calf
     (0.580, 0.100, 1.00, SKIN, "Leg"),             # the ankle narrows
     (0.520, 0.114, 1.00, SOCK, "Leg"),             # sock top roll
     (0.460, 0.108, 1.00, SOCK, "Leg"),
@@ -728,6 +729,7 @@ CLOVER_LEG = LegSpec(
     garment=SKIN,
     sock=SOCK,
     team_mask=TEAM_MASK,
+    calf=(0.700, 0.30),  # the rear belly the profile sheet draws: LegSpec.calf
     knee=0.14,  # the kneecap and the hollow under it (0.12-0.15 of the local
                  # half-width is what survives the board — LegSpec.knee)
 )

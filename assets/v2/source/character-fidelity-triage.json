@@ -1230,26 +1230,6 @@
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT — gizmo-front-review.png x 205-260, y 564: the column scan's 'backgro"
     },
-    "peaches:0b2cbfc389e8": {
-      "char": "peaches",
-      "class": "face-atlas",
-      "excerpt": "CARRIED 3.5 BLOCKER — decal-island seam on the face. peaches-front-review.png (1"
-    },
-    "peaches:3226d1114876": {
-      "char": "peaches",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED 3.3 — the bun's STEP SEAM ring. peaches-front-review.png (215,110 110x45"
-    },
-    "peaches:949d48057005": {
-      "char": "peaches",
-      "class": "stance",
-      "excerpt": "CARRIED 6b.4 — stance, not tolerance. Ankle daylight 34.0 vs the sheet's 0.00 (t"
-    },
-    "peaches:bc722c3d5ed4": {
-      "char": "peaches",
-      "class": "face-atlas",
-      "excerpt": "CARRIED polish — no freckles and no blush anywhere on the delivered face (all fo"
-    },
     "peaches:b756080bebcb": {
       "char": "peaches",
       "class": "no-defect-note",
@@ -1684,21 +1664,6 @@
       "char": "turbo",
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT (record): the navy ringer sleeve cuffs render - the SHIRT_DARK ring a"
-    },
-    "peaches:b7ae2f883362": {
-      "char": "peaches",
-      "class": "ears",
-      "excerpt": "CARRIED minor — the ear reads as a claw in profile. peaches-profile-review.png ("
-    },
-    "peaches:8e76dbf6cf93": {
-      "char": "peaches",
-      "class": "proportions",
-      "excerpt": "CARRIED minor — the profile nose is a thorn. peaches-profile-review.png (205,195"
-    },
-    "peaches:fffbd8a7812d": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (cropped) — a black diagonal sliver on the medial forefoot of each sh"
     },
     "noodle:3e7b058714aa": {
       "char": "noodle",
@@ -2345,106 +2310,6 @@
       "class": "decal-not-form",
       "excerpt": "GARMENT BOUNDARIES ARE PAINTED — CARRIED: sprout-front-review.png (170-370, 270-"
     },
-    "peaches:8823942bd524": {
-      "char": "peaches",
-      "class": "decal-not-form",
-      "excerpt": "CARRIED 3.4 — no bodice straps, scoop or armhole binding. peaches-front-review.p"
-    },
-    "peaches:ffb278a56898": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (cropped) — the dashed dark trail at the armpit in peaches-runtime-sw"
-    },
-    "peaches:220bce8d359e": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT Trap-3 — TEAM_MASK is the raw grey ring on both socks on the boards ("
-    },
-    "peaches:fa8a1bf28a2d": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED 3.11 (carried from the deltoid round, re-checked on the fresh boards) — "
-    },
-    "peaches:e88dcb0f0d9e": {
-      "char": "peaches",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED 3.3 — the bun is no longer an acorn at 1% (measure:strands 24% at 222%),"
-    },
-    "peaches:92ecba59d116": {
-      "char": "peaches",
-      "class": "decal-not-form",
-      "excerpt": "CARRIED 3.4 — the leaf appliqué is a blob. builder.ellipsoid((0.200,-0.330,1.360"
-    },
-    "peaches:2d196889a894": {
-      "char": "peaches",
-      "class": "material-light",
-      "excerpt": "CARRIED 6b.2 — the sneaker reads cream, not peach. Measured: second tone 63.0% v"
-    },
-    "peaches:d659ced23d8a": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED 3.2 (knee half) — the knee now reads as a cap and hollow at 1x. peaches-"
-    },
-    "peaches:7987633dd073": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED 3.2 (calf/ankle half) — the taper is in the silhouette. Profile contour "
-    },
-    "peaches:ee8d90d0cb7a": {
-      "char": "peaches",
-      "class": "proportions",
-      "excerpt": "NEW minor — the knee and calf are radially symmetric, so the profile reads as a "
-    },
-    "peaches:f14a112aac1e": {
-      "char": "peaches",
-      "class": "sheared-edges",
-      "excerpt": "NEW cosmetic — the toon outliner traces the ribbing. peaches-runtime-face-angry."
-    },
-    "peaches:ac38b2db9c10": {
-      "char": "peaches",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED 3.8 — the temple wisps cross the ears in the front view. peaches-front-r"
-    },
-    "peaches:4e86a96525b0": {
-      "char": "peaches",
-      "class": "proportions",
-      "excerpt": "CARRIED minor (was part of 3.2) — the neck is a plain cylinder above the collar "
-    },
-    "peaches:d42dadf1d1c0": {
-      "char": "peaches",
-      "class": "no-defect-note",
-      "excerpt": "PASSES verified on the fresh evidence — nothing is severed; legs are two legs wi"
-    },
-    "clover:6a293b01a7c8": {
-      "char": "clover",
-      "class": "no-defect-note",
-      "excerpt": "REVISED (split) — clover-front-review.png legs x 220-320, y 500-580: THE FRONT K"
-    },
-    "clover:96cc0191fb3b": {
-      "char": "clover",
-      "class": "proportions",
-      "excerpt": "CARRIED (revised down) — clover-profile-review.png x 250-290, y 520-560: the PRO"
-    },
-    "clover:7070d6d7fb5a": {
-      "char": "clover",
-      "class": "proportions",
-      "excerpt": "CARRIED (arms only) — clover-runtime-hero.png x 500-560, y 330-500 and clover-fr"
-    },
-    "clover:ddb6d22fbfdf": {
-      "char": "clover",
-      "class": "proportions",
-      "excerpt": "NOTE on the knee construction — clover-front-review.png at 4x, both legs y 520-5"
-    },
-    "clover:d26c6ba48475": {
-      "char": "clover",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED — the cap-loft REGRESSION. Restoring CAP_LEVELS row 3.560 (sculpt-clover"
-    },
-    "clover:40828d5c4e17": {
-      "char": "clover",
-      "class": "sheared-edges",
-      "excerpt": "CARRIED — clover-front-review.png x 150-230 and 320-400, y 150-260: PIGTAILS are"
-    },
     "clover:477e4e8b212a": {
       "char": "clover",
       "class": "hems-cuffs",
@@ -2490,26 +2355,6 @@
       "class": "no-defect-note",
       "excerpt": "CLEARED (record) — prior cleared/non-defect items re-checked and still clear: fa"
     },
-    "calls_shot:dfbaa9955a4d": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED — The right-side face wedge regression (hair eating the brow line after "
-    },
-    "calls_shot:3b23a4628a6e": {
-      "char": "calls_shot",
-      "class": "interpenetration",
-      "excerpt": "CARRIED — Cream geometry punches through the teal jacket back in swing_contact: "
-    },
-    "calls_shot:16fb76d7b941": {
-      "char": "calls_shot",
-      "class": "40px-read",
-      "excerpt": "CARRIED — Shoe fails all three fidelity metrics (dominant tone 88.4 vs 37.6, sec"
-    },
-    "calls_shot:6c88b2365fda": {
-      "char": "calls_shot",
-      "class": "proportions",
-      "excerpt": "CARRIED — Cap reads as a mushroom: theo-front-review.png row widths are identica"
-    },
     "calls_shot:058ce1a154ed": {
       "char": "calls_shot",
       "class": "decal-not-form",
@@ -2530,50 +2375,235 @@
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT (carried) — The tan lozenge inside the crook of the lead elbow in the"
     },
-    "calls_shot:40cf6701dc8e": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "NEW (measured positive) — The knee is on the mesh and the 'straight pipe from th"
-    },
-    "calls_shot:54e0ac81dc20": {
-      "char": "calls_shot",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED, back to pre-round — Profile hair hard-faceted: theo-profile-review.png'"
-    },
-    "calls_shot:73c34da54834": {
-      "char": "calls_shot",
-      "class": "sheared-edges",
-      "excerpt": "CARRIED, back to pre-round — Hairline skin streak where the skull grazes the hai"
-    },
-    "calls_shot:203e175028fe": {
-      "char": "calls_shot",
-      "class": "ears",
-      "excerpt": "CARRIED — Ear buried in profile: build_ear runs (EAR_SPEC centre z 3.230, radii "
-    },
     "calls_shot:2df7d294f7f1": {
       "char": "calls_shot",
       "class": "proportions",
       "excerpt": "CARRIED — Profile nose a pointed wedge: nose_push exists (sculpt-theo-source.py:"
     },
-    "calls_shot:674ef6e6fecb": {
-      "char": "calls_shot",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED (minor) — Navy underbrim chevrons between the fringe tufts: theo-runtime"
-    },
-    "calls_shot:0f81e7464464": {
-      "char": "calls_shot",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED (minor) — Dark hair lock on the cheek at mouth height: the hair window c"
-    },
-    "calls_shot:8c107a92d47d": {
-      "char": "calls_shot",
-      "class": "evidence",
-      "excerpt": "CARRIED — Section 6 integration evidence stale and a proxy: docs/v2/concepts/the"
-    },
     "calls_shot:6cfd50ef1fa0": {
       "char": "calls_shot",
       "class": "no-defect-note",
       "excerpt": "CLEARED (kept clear) — The old hairMass-1 basis: theo-front-review.png still sho"
+    },
+    "peaches:7ee61eea419c": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (finding 1 of the calf critique; the kneecap half of the old baluster fi"
+    },
+    "peaches:6f7a09ef50f8": {
+      "char": "peaches",
+      "class": "proportions",
+      "excerpt": "CARRIED minor, revised (finding 2 of the calf critique) — the profile calf-to-an"
+    },
+    "peaches:f9a95526f780": {
+      "char": "peaches",
+      "class": "other",
+      "excerpt": "CARRIED cosmetic — the toon outliner still traces the ribbing. peaches-runtime-f"
+    },
+    "peaches:b38298639720": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "PASSES (calf build) verified — runtime is clean behind the leg on the 04:37 stil"
+    },
+    "peaches:388abe2b67ed": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "PASSES (calf build) verified — the front board's leg run is unchanged: a row-tab"
+    },
+    "peaches:7087ac58cfe4": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED 3.2 (knee half) — still cleared on the fresh boards. peaches-front-revie"
+    },
+    "peaches:4885f41be5d4": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED 3.2 (calf/ankle half) — still cleared: 33 -> 34 (kneecap) -> 31 (hollow)"
+    },
+    "peaches:b2187d06f5b3": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED 3.11 — still cleared: the deltoid fairs into the sleeveless arm on peach"
+    },
+    "peaches:5113560bfd13": {
+      "char": "peaches",
+      "class": "face-atlas",
+      "excerpt": "CARRIED 3.5 BLOCKER — decal-island seam on the face, unchanged. peaches-front-re"
+    },
+    "peaches:bc9012f51da7": {
+      "char": "peaches",
+      "class": "butt-joins",
+      "excerpt": "CARRIED 3.3 — the bun's STEP SEAM ring, unchanged. peaches-front-review.png (200"
+    },
+    "peaches:8f4be2b89a39": {
+      "char": "peaches",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED 3.3 — the bun is a faceted walnut, unchanged. peaches-runtime-hero.png ("
+    },
+    "peaches:07bd91eca9e8": {
+      "char": "peaches",
+      "class": "ears",
+      "excerpt": "CARRIED 3.8 — the temple wisps cross the ears in the front view, unchanged. peac"
+    },
+    "peaches:a8ea8ebcf93b": {
+      "char": "peaches",
+      "class": "hems-cuffs",
+      "excerpt": "CARRIED 3.4 — no bodice straps, scoop or armhole binding, unchanged. peaches-fro"
+    },
+    "peaches:6a3585531ee6": {
+      "char": "peaches",
+      "class": "decal-not-form",
+      "excerpt": "CARRIED 3.4 — the leaf applique is a blob, unchanged. Source line 735 builder.el"
+    },
+    "peaches:4ec50c27b30d": {
+      "char": "peaches",
+      "class": "40px-read",
+      "excerpt": "CARRIED 6b.2 — the sneaker reads cream, not peach, unchanged. Measured: second t"
+    },
+    "peaches:b2d83f12c015": {
+      "char": "peaches",
+      "class": "stance",
+      "excerpt": "CARRIED 6b.4 — stance, not tolerance. Ankle daylight 34.0 vs the sheet's 0.00 (t"
+    },
+    "peaches:80da3173d371": {
+      "char": "peaches",
+      "class": "proportions",
+      "excerpt": "CARRIED minor — the neck is a plain cylinder above the collar ring, unchanged (p"
+    },
+    "peaches:4e55b8731385": {
+      "char": "peaches",
+      "class": "ears",
+      "excerpt": "CARRIED minor — the ear reads as a claw in profile, unchanged. peaches-profile-r"
+    },
+    "peaches:0c78e682c26e": {
+      "char": "peaches",
+      "class": "proportions",
+      "excerpt": "CARRIED minor — the profile nose is a thorn, unchanged. peaches-profile-review.p"
+    },
+    "peaches:876b82eea5ef": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (cropped) — the dark trail at the armpit in peaches-runtime-swing.png"
+    },
+    "peaches:77d9e25aec19": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (cropped) — the black diagonal sliver on the medial forefoot of each "
+    },
+    "peaches:2d9b04baf340": {
+      "char": "peaches",
+      "class": "face-atlas",
+      "excerpt": "CARRIED polish — no freckles and no blush anywhere on the delivered face (all fo"
+    },
+    "peaches:bbb115b73c9a": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT Trap-3 — TEAM_MASK is the raw grey ring on both socks on the boards ("
+    },
+    "peaches:aa23a83e6437": {
+      "char": "peaches",
+      "class": "no-defect-note",
+      "excerpt": "PASSES re-verified on the 04:37 evidence — nothing is severed; legs are two legs"
+    },
+    "clover:02bef7ebd560": {
+      "char": "clover",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED — the KNEECAP is now forward-only (the symmetric half of the bead-loft n"
+    },
+    "clover:15a957d6d238": {
+      "char": "clover",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED — the PROFILE CALF (finding 2). LegSpec.calf=(0.700, 0.30) (sculpt-clove"
+    },
+    "clover:87d11394687e": {
+      "char": "clover",
+      "class": "no-defect-note",
+      "excerpt": "VERIFIED (no new finding) — the Gaussian fades before the hem and the sock: clov"
+    },
+    "clover:cb33ce6cbd7b": {
+      "char": "clover",
+      "class": "no-defect-note",
+      "excerpt": "REVISED (split) — clover-front-review.png legs x 220-320, y 500-580: THE FRONT K"
+    },
+    "clover:899cf85cd717": {
+      "char": "clover",
+      "class": "proportions",
+      "excerpt": "CARRIED (arms only) — clover-runtime-hero.png x 500-560, y 330-500, clover-runti"
+    },
+    "clover:539cff34499f": {
+      "char": "clover",
+      "class": "proportions",
+      "excerpt": "NOTE (residual, front view only) — clover-front-review.png at 4x, both legs y 53"
+    },
+    "clover:2847770e5b4f": {
+      "char": "clover",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED — the cap-loft REGRESSION. Restoring CAP_LEVELS row 3.560 put the crown'"
+    },
+    "clover:6bec8c090237": {
+      "char": "clover",
+      "class": "sheared-edges",
+      "excerpt": "CARRIED — clover-front-review.png x 150-230 and 320-400, y 150-260: PIGTAILS are"
+    },
+    "calls_shot:8f563971fc6e": {
+      "char": "calls_shot",
+      "class": "interpenetration",
+      "excerpt": "CARRIED — Cream geometry punches through the teal jacket back in swing_contact: "
+    },
+    "calls_shot:8407219e6acc": {
+      "char": "calls_shot",
+      "class": "40px-read",
+      "excerpt": "CARRIED — Shoe fails all three fidelity metrics (dominant tone 88.4 vs 37.6, sec"
+    },
+    "calls_shot:59dc28c3d829": {
+      "char": "calls_shot",
+      "class": "proportions",
+      "excerpt": "CARRIED — Cap reads as a mushroom: theo-front-review.png row widths are identica"
+    },
+    "calls_shot:97d120605e28": {
+      "char": "calls_shot",
+      "class": "no-defect-note",
+      "excerpt": "REVISED (measured positive) — Knee and calf: the recorded 'limbs are smooth tape"
+    },
+    "calls_shot:034b982db216": {
+      "char": "calls_shot",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (checked) — Shorts hem and sock roll after the calf belly and the kne"
+    },
+    "calls_shot:475a9a6e3d61": {
+      "char": "calls_shot",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED — Profile hair hard-faceted: theo-profile-review.png's hair/face band y1"
+    },
+    "calls_shot:efbacf487362": {
+      "char": "calls_shot",
+      "class": "sheared-edges",
+      "excerpt": "CARRIED — Hairline skin streak where the skull grazes the hair shell: at 8x on t"
+    },
+    "calls_shot:2f7aaedf6ef5": {
+      "char": "calls_shot",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (record) — The right-side face wedge seen when HAIR_LEVELS 3.240 and 2.9"
+    },
+    "calls_shot:40b30326b29d": {
+      "char": "calls_shot",
+      "class": "ears",
+      "excerpt": "CARRIED — Ear buried in profile: build_ear runs (EAR_SPEC centre z 3.230, radii "
+    },
+    "calls_shot:4e4546345390": {
+      "char": "calls_shot",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED (minor) — Navy underbrim chevrons between the fringe tufts: theo-runtime"
+    },
+    "calls_shot:2f9da862fd89": {
+      "char": "calls_shot",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED (minor) — Dark hair lock on the cheek at mouth height: the hair window c"
+    },
+    "calls_shot:2d3efcdb31f0": {
+      "char": "calls_shot",
+      "class": "evidence",
+      "excerpt": "CARRIED — Section 6 integration evidence stale and a proxy: docs/v2/concepts/the"
     }
   }
 }
