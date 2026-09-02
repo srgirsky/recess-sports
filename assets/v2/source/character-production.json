@@ -153,11 +153,11 @@
     },
     "bend_it": {
       "source": "bendy-bao-pilot.blend",
-      "sourceSha256": "70082f659ae7fdf39250064a4dce4bc54313a423687fc00c4b8186e8e7932879",
+      "sourceSha256": "214b2d24687e86dc3af8d006b008bc85731052f65ed26d02db03f3a591c11806",
       "concept": "bendy-bao-turnaround.png",
       "conceptSha256": "e0376bf5bc736b84244455be0e09cb93d94907b1dfbaad47c2eb19f9641a228a",
       "output": "kid_bend_it.glb",
-      "outputSha256": "c996cf88e79b65231f5e364417e83c0e8cf98b060ef6e8a46e8fa90b156f35ae",
+      "outputSha256": "90180162296bce61c978131e6be251b4d169db8c179e0f9ebba1675e3f082b2a",
       "definingTraits": [
         "swept top bun",
         "round wire glasses",
@@ -168,11 +168,11 @@
     },
     "flash": {
       "source": "flash-gordon-jr-pilot.blend",
-      "sourceSha256": "2041d9deb0b55557875f50bc2918f4e230e9e50babbf9cdcd2f36b1f58b2ee3b",
+      "sourceSha256": "bb57c31412a89b9482019a9111c8fcc1d4608907e8b0b78ca65625073e90cc9a",
       "concept": "flash-gordon-jr-turnaround.png",
       "conceptSha256": "444a8536e21aeef1fba20e886ee27b8182091401bc48b7ffe87d847402dc3bc6",
       "output": "kid_flash.glb",
-      "outputSha256": "0faa39f274d926b2b0deacf17de5eec36c97d2c13bde06bb9ddaa1a47d3f8004",
+      "outputSha256": "6fefd2ac98349e9700deebfdd6b6507ff3dca83ed1353b8e24bef2e2e4b62da8",
       "definingTraits": [
         "spiky faded mohawk",
         "bold red striped tee",

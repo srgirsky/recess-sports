@@ -200,12 +200,13 @@ def skull_front_y(x: float, z: float) -> float:
 # measured: front z=3.58 halfWidth=0.4123
 # measured: front z=3.26 halfWidth=0.5877
 # measured: view2 z=3.26 halfWidth=0.5754 tol=0.06
+# ★ ROWS 3.480 AND 3.140 PAID TO THE SHOULDER (redundant-rows-scan.mjs: within
+# 0.010 of their neighbours' interpolation); their 80 triangles bought
+# ArmSpec.root_ring. cap_x stays at 0.100 — its comment records why.
 HAIR_LEVELS = [
     (3.560, 0.430, 0.430, 0.010),
-    (3.480, 0.470, 0.470, 0.020),
     (3.380, 0.530, 0.520, 0.040),
     (3.260, 0.585, 0.560, 0.060),
-    (3.140, 0.570, 0.545, 0.080),
     (3.020, 0.540, 0.510, 0.110),
     (2.900, 0.470, 0.430, 0.160),
     (2.800, 0.360, 0.310, 0.220),
@@ -471,7 +472,7 @@ BENDY_ARM = ArmSpec(
     stations=tuple(ARM_STATIONS),
     shoulder_blend=SHOULDER_BLEND,
     cap_x=0.100,   # the fuller cap that closes the thin-neck puncture
-    root_ring=0.0,
+    root_ring=0.92,  # the A-pose coverage gap: see ArmSpec.root_ring (#208)
     ring_squash=0.95,
     hand=HandSpec(
         tip_x=1.552,
