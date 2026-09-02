@@ -7,8 +7,10 @@ Run from the repository root:
 ★ PENNY IS THE FIRST OVERALLS — the denim bib is a colour WEDGE on the torso
 loft (front and back panels by theta, the pink tee showing at the shoulders
 and sides), with real strap strips over the shoulders and gold buttons. Her
-curl bob is Bubbles' hard-lobed ringlet loft at bob scale, and it covers her
-ears in every view, so like Grizz she builds none.
+curl bob is Bubbles' hard-lobed ringlet loft at bob scale. Her ears are BUILT
+(sculptlib.ear, 2026-09-02): the sheet's profile draws the whole ear clear of
+the hair, with the curls behind the ear line — see the face-band floor in
+`ring_loft_bob`.
 
 The conversion: front figure 677px over 4.0ft → 1px = 0.005908ft. The profile
 faces +x. Head band: curl top row 119 (z 3.99) to neck pinch row 355 (z 2.60).
@@ -29,6 +31,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
+from sculptlib.ear import EarSpec, build_ear
 from sculptlib.hair import curl_field, curl_seeds
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
@@ -162,6 +165,30 @@ FACE_ROWS = [0.0, 0.092, 0.184, 0.276, 0.340, 0.404, 0.468,
              0.532, 0.596, 0.660, 0.724, 0.816, 0.908, 1.0]
 
 
+def skull_surface_x(y: float, z: float) -> float:
+    """The skull's lateral half-width at (y, z) — what the ear mounts against."""
+    ny = (y - HEAD_CENTER[1]) / HEAD_RADII[1]
+    nz = (z - HEAD_CENTER[2]) / HEAD_RADII[2]
+    remainder = 1.0 - ny * ny - nz * nz
+    if remainder <= 0.0:
+        return 0.0
+    return HEAD_RADII[0] * (remainder ** 0.5) * face_half_scale(nz)
+
+
+# ★ THE EAR, off the sheet's profile (x 732-950): top at the brow line, lobe
+# at the smile — z 3.30 → 2.97 — and the whole ear clear of the hair. Rubric
+# 3.10 failed outright with none built (the header's "like Grizz she builds
+# none" was an unmeasured claim, corrected 2026-08-16 and acted on here).
+EAR_SPEC = EarSpec(center=(0.030, 3.135), radii=(0.135, 0.165))
+
+# The hair sits BEHIND the ear line at face height: the sheet's profile shows
+# forehead, brow, eye, cheek, mouth, chin and the ear in front of the curls.
+# Diva's face-band floor: at these rows no ring vertex comes further forward
+# than the ear's back edge, whatever the loft's half-depth says.
+FACE_BAND = (2.780, 3.440)
+FACE_BAND_FLOOR_Y = 0.060
+
+
 def skull_front_y(x: float, z: float) -> float:
     """The RENDERED face's forward extent at (x, z) — the flattened-face clamp
     (head_surface scales front depth by 0.88 - 0.11·frontness²) with the
@@ -286,6 +313,8 @@ def ring_loft_bob(builder: MeshBuilder, levels, detail: int) -> None:
                     y = max(y, (sf + 0.050) if sf > -9.0 else -0.160)
                 else:
                     y = max(y, (sf - 0.060) if sf > -9.0 else -0.300)
+                if FACE_BAND[0] < z < FACE_BAND[1]:
+                    y = max(y, FACE_BAND_FLOOR_Y)
             tone = HAIR if f > CURL_TROUGH else HAIR_DARK
             ring.append(builder.vertex((x, y, z), tone, "Head"))
         rows.append(ring)
@@ -723,6 +752,10 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     head_surface(builder, face_columns, back_columns, rows_spec, crown, chin,
                  spec=HEAD_SPEC, palette=PALETTE)
 
+    # Ears at the two near LODs: at LOD2 an ear is two pixels.
+    if detail >= 1:
+        for side in (1, -1):
+            build_ear(builder, side, detail, palette=PALETTE, skull_at=skull_surface_x, spec=EAR_SPEC)
     ring_loft_bob(builder, BOB_LEVELS, detail)
 
     builder.loft(NECK_LEVELS, 0, SKIN, 14 if detail >= 2 else segments)
