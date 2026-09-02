@@ -190,7 +190,13 @@ CAP_LEVELS = [
     (3.420, 0.150, 0.160, 0.000),
     (3.360, 0.280, 0.300, 0.000),
     (3.280, 0.370, 0.400, 0.010),
-    (3.160, 0.430, 0.460, 0.020),
+    # ★ A RING PAIR STRADDLING THE FRINGE ARC (3.180). The critic's mechanism
+    # for the staircase hairline: the tuck makes the diving quads' crossing
+    # with the face the visible edge, and with 18 columns and rows 0.12
+    # apart that crossing tilted 0.07 ft across the forehead. A pair either
+    # side of the arc (the hem sweep's pattern) pins the crossing to a curve.
+    (3.195, 0.413, 0.443, 0.017),
+    (3.165, 0.428, 0.458, 0.020),
     (3.020, 0.450, 0.480, 0.030),
     (2.880, 0.435, 0.455, 0.060),
     (2.780, 0.395, 0.410, 0.100),

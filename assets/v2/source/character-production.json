@@ -228,11 +228,11 @@
     },
     "turbo": {
       "source": "turbo-pilot.blend",
-      "sourceSha256": "22b701518499c9999cd8955cd177791a673f75d28a8440905e3be0bd72038996",
+      "sourceSha256": "d1fa773706f52866014e0de955d9dda3266f3ed0c380570f88fbfbace8595392",
       "concept": "turbo-turnaround.png",
       "conceptSha256": "f3c0690117663b295a3001007eacd2a1dda10c12a5a8f7ed4d812fc63917851a",
       "output": "kid_turbo.glb",
-      "outputSha256": "27f14a6247eabcfad7d9a4be39f979d4612fb05df3a342ef3b8683eaa62446a9",
+      "outputSha256": "d3c03b7d051bd684e9ad351c21ff3c26de8138d86165ec7385bfc6795d52806a",
       "definingTraits": [
         "wild black spike mop",
         "blue ringer tee",
