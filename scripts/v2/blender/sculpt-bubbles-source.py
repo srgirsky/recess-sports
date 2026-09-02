@@ -45,6 +45,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
+from sculptlib.hair import curl_field, curl_seeds
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
@@ -68,6 +69,7 @@ SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 SKIN = rgba("FFAA56")
 SKIN_SHADOW = rgba("C77B36")
 HAIR = rgba("F2C070")        # bright ringlet gold — the mid tones live in shading
+HAIR_DARK = rgba("C48A34")   # the trough between ringlets — the sheet's shadow gold
 SHIRT = rgba("FF8686")       # the dress pink
 SHIRT_DARK = rgba("FFF4E2")  # the cream trim lane: collar, sleeve hems, skirt hem
 PANTS = rgba("D95F62")       # dress shadow tone (no trousers on this kid)
@@ -267,6 +269,37 @@ HAIR_FRINGE = [
 
 HAIR_OPEN_BOTTOM = 2.34
 
+# ★ THE CURL FIELD (sculptlib.hair). The mass shipped as cos(7θ)+0.45·cos(10θ)
+# on 20 columns — and cos(7θ)+cos(10θ) = 2·cos(8.5θ)·cos(1.5θ): any θ-only
+# cosine family has its extrema pinned in θ, so every row grooved in the
+# same columns and the ringlets read as flutes (~10% of the sheet's strand
+# count). Mirror-paired Gaussian blobs, compact in θ AND z and staggered
+# band to band by the golden-ratio conjugate, put a curl in every groove;
+# the trough is painted HAIR_DARK so the read is a honeycomb of ringlets.
+# Ladder (measure:strands, concept 13.50 minima/row at 34.4):
+#   20 cols cos(7θ)+cos(10θ)    1.35/row  10%  (shipped)
+#   20 cols 3 pairs x 8 @0.070  2.56/row  19%  at 140% — Nyquist-capped
+#   24 cols 4 pairs x 8 @0.070  (this rung) — the six ringlet tubes go: the
+#     field is the ringlets now, and their ~140 triangles pay for the four
+#     columns (LOD0 had forty to spare). The bun keeps two bands of its own.
+CURL_SEEDS = curl_seeds(
+    pairs_per_row=4,
+    bands=8,
+    z_top=3.660,
+    z_bottom=2.380,
+    amplitude=0.070,
+)
+BUN_SEEDS = curl_seeds(
+    pairs_per_row=3,
+    bands=2,
+    z_top=3.950,
+    z_bottom=3.800,
+    amplitude=0.055,
+)
+CURL_THETA_WIDTH = 0.21
+CURL_Z_WIDTH = 0.085
+CURL_TROUGH = 0.018
+
 
 def fringe_z_at(x_abs: float) -> float:
     """The hair's lower edge over the face at lateral offset |x|."""
@@ -281,26 +314,27 @@ def fringe_z_at(x_abs: float) -> float:
 
 def build_hair(builder: MeshBuilder, detail: int) -> None:
     """The curl mass, the bun and the scrunchie."""
-    # 20 keeps mirror columns; the ringlet tubes pay from the shell.
-    segments = 20 if detail >= 2 else (10 if detail == 1 else 8)
+    # 24 even columns keep mirror columns and give eight lobes three samples.
+    segments = 24 if detail >= 2 else (10 if detail == 1 else 8)
 
-    def ring_loft(levels, curl_amp, lobe_count):
+    def ring_loft(levels, seeds):
         assert all(x[0] > y[0] for x, y in zip(levels, levels[1:])), \
             "ring_loft tables must be strictly descending in z"
         ascending = list(reversed(levels))
         rows = []
         for z, half_x, half_y, y_centre in ascending:
             ring = []
-            curl = curl_amp if detail >= 2 else 0.0
             for column in range(segments):
                 theta = 2 * pi * column / segments
-                # Row variation goes in the AMPLITUDE, never the phase
-                # (Penny's mirror lesson): the old per-row phase rotation
-                # smeared the lobes into noise; fixed vertical ringlet
-                # columns with breathing amplitude read as grouped curls.
-                breathe = 1.0 + 0.35 * cos(2.1 * len(rows))
-                clump = 1.0 + curl * breathe * cos(lobe_count * (theta - pi / 2)) \
-                    + (curl * 0.45) * cos((lobe_count + 3) * (theta - pi / 2))
+                # The field is even in θ by construction (every seed is
+                # emitted at ±θ₀), so faceAsymmetry holds with no mirror
+                # rule at this call site — Penny's lesson, now structural.
+                f = curl_field(
+                    theta, z, seeds,
+                    theta_width=CURL_THETA_WIDTH,
+                    z_width=CURL_Z_WIDTH,
+                ) if detail >= 2 else 0.0
+                clump = 1.0 + f
                 x = half_x * clump * cos(theta)
                 y = y_centre + half_y * clump * sin(theta)
                 if y < y_centre:
@@ -308,7 +342,8 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
                         y = max(y, skull_front_y(x, z) + 0.050)
                     else:
                         y = max(y, skull_front_y(x, z) - 0.085)
-                ring.append(builder.vertex((x, y, z), HAIR, "Head"))
+                tone = HAIR if f > CURL_TROUGH else HAIR_DARK
+                ring.append(builder.vertex((x, y, z), tone, "Head"))
             rows.append(ring)
         bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
         top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.02), HAIR, "Head")
@@ -323,26 +358,15 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
 
     # ★ THE CURLS ARE LOBED HARD — she is ringlets, not a smooth mass. Seven
     # primary lobes at ±6.5% of radius; the drawing's read is texture first.
-    ring_loft(HAIR_LEVELS, 0.065, 7)
-    # Sculpted ringlet tubes riding the lower mass (the polish blocker:
-    # the cloud needs real curl-clump geometry) — the ponytail tube's
-    # lobes/groove machinery, mirrored pairs with flipped winding. LOD0
-    # only: they are texture, invisible at LOD1 distance.
-    if detail >= 2:
-        for sx, y0, z0, y1, z1, r0 in (
-            (0.58, 0.16, 3.05, 0.20, 2.72, 0.085),
-            (0.44, 0.34, 3.00, 0.40, 2.70, 0.080),
-            (0.22, 0.44, 2.98, 0.50, 2.70, 0.078),
-        ):
-            for side in (1, -1):
-                builder.tube(
-                    [(side * sx, y0, z0), (side * (sx + 0.03), (y0 + y1) / 2, (z0 + z1) / 2), (side * (sx - 0.02), y1, z1)],
-                    [r0, r0 * 0.92, r0 * 0.55], 2, HAIR, "Head", 4,
-                    lobes=3, groove=0.018, flip=side < 0)
+    ring_loft(HAIR_LEVELS, CURL_SEEDS)
+    # The six sculpted ringlet tubes that rode the lower mass are gone: they
+    # were the earlier answer to "the cloud needs real curl-clump geometry",
+    # and the curl field IS that geometry now, in every band rather than
+    # three. Their triangles bought the 20→24 columns above.
     # At the far LOD the bun is two pixels; it merges into the mass and its
     # triangles pay for the ringlet lobes that do survive 40px.
     if detail >= 1:
-        ring_loft(BUN_LEVELS, 0.075, 6)
+        ring_loft(BUN_LEVELS, BUN_SEEDS)
 
     # The scrunchie: a pink torus at the bun's base — the team-accent surface,
     # on M_Accessory (slot 3).

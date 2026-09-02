@@ -29,6 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
+from sculptlib.hair import curl_field, curl_seeds
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
@@ -51,6 +52,9 @@ SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 SKIN = rgba("FFC38A")
 SKIN_SHADOW = rgba("D08E52")
 HAIR = rgba("8A5224")        # the curl bob's chestnut
+HAIR_DARK = rgba("6A3C18")   # the trough between curls — a step under HAIR, not the
+                             # sheet's deepest shadow: at #4E2B10 the trough alone
+                             # drove measure:strands' prominence to 230% of the sheet
 SHIRT = rgba("FFA6B0")       # the pink ringer tee
 SHIRT_DARK = rgba("FF7A8C")  # the tee's deeper trim pink
 PANTS = rgba("3E5C7A")       # overalls denim
@@ -209,6 +213,32 @@ BOB_FRINGE = [
 
 BOB_OPEN_BOTTOM = 2.720
 
+# ★ THE CURL FIELD (sculptlib.hair). The bob shipped as cos(7θ) on 18
+# columns — 2.6 samples per lobe, and a θ-only cosine is a FLUTE: its extrema
+# are pinned in θ, so every row grooves in the same place and measure:strands
+# read 0.42 minima/row against the sheet's 15.46 at 324% prominence. The
+# field is mirror-paired Gaussian blobs, compact in θ AND z, staggered band
+# to band by the golden-ratio conjugate; the trough between blobs is painted
+# HAIR_DARK so the read is a honeycomb of curls, not stripes. Three pairs a
+# row (six lobes — the sheet's bob shows five to seven across the front),
+# seven bands from the crown to the jaw-length hem.
+# Ladder (measure:strands, 5-45% band, concept 15.46 minima/row at 30.2):
+#   18 cols cos(7θ)          0.42/row   3%  at 324% prominence  (shipped)
+#   24 cols 3 pairs x 7      2.88/row  19%  at 171%
+#   36 cols 5 pairs x 8 @0.080   5.15/row  33%  at 243%  (reads as curls; too proud)
+#   36 cols 5 pairs x 8 @0.055   5.29/row  34%  at 230% — amplitude is not the lever
+#   same, HAIR_DARK 4E2B10→6A3C18, trough 0.014   (this rung: the contrast is)
+CURL_SEEDS = curl_seeds(
+    pairs_per_row=5,
+    bands=8,
+    z_top=3.900,
+    z_bottom=2.800,
+    amplitude=0.055,
+)
+CURL_THETA_WIDTH = 0.17
+CURL_Z_WIDTH = 0.070
+CURL_TROUGH = 0.014
+
 
 def fringe_z_at(x_abs: float) -> float:
     """The bob's open-face edge at lateral offset |x|."""
@@ -227,20 +257,27 @@ def ring_loft_bob(builder: MeshBuilder, levels, detail: int) -> None:
     # quad's winding — the runtime lights the mass as a slate-grey void.
     assert all(a[0] > b[0] for a, b in zip(levels, levels[1:])), \
         "ring_loft_bob levels must be strictly descending in z"
-    segments = 18 if detail >= 2 else (10 if detail == 1 else 8)
+    # 36 even columns: mirror columns survive, and ten lobes a row get 3.6
+    # samples each — the 18-column bob sampled its seven at 2.6. Eleven rows
+    # at 36 columns is ~800 triangles, inside the 756 of headroom plus the
+    # cosine bob's own 400.
+    segments = 36 if detail >= 2 else (10 if detail == 1 else 8)
     use = levels if detail >= 2 else thin_for_lod([(z, hx, hy, yc) for z, hx, hy, yc in levels], detail)
     ascending = list(reversed(use))
     rows = []
     for z, half_x, half_y, y_centre in ascending:
         ring = []
-        curl = 0.085 if detail >= 2 else 0.0
         for column in range(segments):
             theta = 2 * pi * column / segments
-            # ⚠️ MIRROR-SYMMETRIC clumps: cos about the front axis, with the
-            # row VARYING THE AMPLITUDE, not the phase — a phase-shifted sin
-            # rotates the lumps per row and the silhouette's faceAsymmetry
-            # blew at 7.14 against 4.0.
-            clump = 1.0 + curl * cos(7 * (theta - pi / 2)) * (0.65 + 0.35 * cos(1.7 * len(rows)))
+            # The curl field is even in θ by construction (every seed is
+            # emitted at ±θ₀), so the silhouette's faceAsymmetry holds
+            # without a mirror rule at this call site.
+            f = curl_field(
+                theta, z, CURL_SEEDS,
+                theta_width=CURL_THETA_WIDTH,
+                z_width=CURL_Z_WIDTH,
+            ) if detail >= 2 else 0.0
+            clump = 1.0 + f
             x = half_x * clump * cos(theta)
             y = y_centre + half_y * clump * sin(theta)
             if y < y_centre:
@@ -249,7 +286,8 @@ def ring_loft_bob(builder: MeshBuilder, levels, detail: int) -> None:
                     y = max(y, (sf + 0.050) if sf > -9.0 else -0.160)
                 else:
                     y = max(y, (sf - 0.060) if sf > -9.0 else -0.300)
-            ring.append(builder.vertex((x, y, z), HAIR, "Head"))
+            tone = HAIR if f > CURL_TROUGH else HAIR_DARK
+            ring.append(builder.vertex((x, y, z), tone, "Head"))
         rows.append(ring)
     bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
     top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.02), HAIR, "Head")

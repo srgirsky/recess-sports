@@ -34,6 +34,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
+from sculptlib.hair import curl_field, curl_seeds
 from sculptlib.ear import EarSpec, build_ear
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
@@ -221,6 +222,24 @@ CAP_FRINGE = [
 
 CAP_OPEN_BOTTOM = 2.980
 
+# ★ THE CURL FIELD (sculptlib.hair). The cap shipped as a SMOOTH 18-column
+# loft — "a crown that breaks into flat polygons at hero", 0.08 strand
+# minima/row against the sheet's 10.89 — where the sheet draws a wavy,
+# clumped crown. Mirror-paired Gaussian blobs, compact in θ AND z, staggered
+# band to band; the trough between blobs takes HAIR_DEEP so the read is
+# waves, not stripes. Four pairs a row on 24 even columns (three samples a
+# lobe), six bands from the crown to the cap's open bottom.
+CURL_SEEDS = curl_seeds(
+    pairs_per_row=4,
+    bands=6,
+    z_top=3.900,
+    z_bottom=3.020,
+    amplitude=0.055,
+)
+CURL_THETA_WIDTH = 0.19
+CURL_Z_WIDTH = 0.080
+CURL_TROUGH = 0.014
+
 
 def fringe_z_at(x_abs: float) -> float:
     table = CAP_FRINGE
@@ -236,7 +255,9 @@ def ring_loft_cap(builder: MeshBuilder, levels, detail: int) -> None:
     """The ring-loft-with-tuck over the skull."""
     assert all(a[0] > b[0] for a, b in zip(levels, levels[1:])), \
         "ring_loft_cap levels must be strictly descending in z"
-    segments = 18 if detail >= 2 else (10 if detail == 1 else 8)
+    # 24 even columns (mirror columns survive; the pigtail tubes already
+    # pay 24). LOD0 headroom is ~150 triangles and this costs ~144.
+    segments = 24 if detail >= 2 else (10 if detail == 1 else 8)
     use = levels if detail >= 2 else thin_for_lod([(z, hx, hy, yc) for z, hx, hy, yc in levels], detail)
     ascending = list(reversed(use))
     rows = []
@@ -244,8 +265,14 @@ def ring_loft_cap(builder: MeshBuilder, levels, detail: int) -> None:
         ring = []
         for column in range(segments):
             theta = 2 * pi * column / segments
-            x = half_x * cos(theta)
-            y = y_centre + half_y * sin(theta)
+            f = curl_field(
+                theta, z, CURL_SEEDS,
+                theta_width=CURL_THETA_WIDTH,
+                z_width=CURL_Z_WIDTH,
+            ) if detail >= 2 else 0.0
+            clump = 1.0 + f
+            x = half_x * clump * cos(theta)
+            y = y_centre + half_y * clump * sin(theta)
             if y < y_centre:
                 sf = skull_front_y(x, z)
                 if CAP_OPEN_BOTTOM < z < fringe_z_at(abs(x)):
@@ -253,8 +280,9 @@ def ring_loft_cap(builder: MeshBuilder, levels, detail: int) -> None:
                 else:
                     y = max(y, (sf - 0.060) if sf > -9.0 else -0.300)
             # The curtains and underside take the deep tone — hair and skin
-            # sat so close in hue the crown read near-bare at hero scale.
-            col = HAIR if z > 3.30 else HAIR_DEEP
+            # sat so close in hue the crown read near-bare at hero scale —
+            # and so does the trough between curls on the crown.
+            col = HAIR if (z > 3.30 and f > CURL_TROUGH) else HAIR_DEEP
             ring.append(builder.vertex((x, y, z), col, "Head"))
         rows.append(ring)
     bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
