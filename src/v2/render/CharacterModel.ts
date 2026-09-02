@@ -230,12 +230,21 @@ export class CharacterModel implements KidView {
         });
         const skinned = meshes.filter((mesh): mesh is SkinnedMesh => (mesh as SkinnedMesh).isSkinnedMesh);
         const commonParent = skinned[0]?.parent;
+        // ★ THE VERTEX-ALPHA TAPER IS ON for delivered models. The asset
+        // contract's optional channel (COLOR_0 alpha scales the hull's width)
+        // was authored — the sculpt builders write 0.35 at every joint crease
+        // ring, because an inverted hull draws a dark line down a concavity —
+        // and then never read: no attach call passed `useVertexTaper`, so a
+        // critic measured the crease alpha in the .glb and 0 changed pixels in
+        // the stills (2026-09-02). Every roster .glb carries alpha 1.0 except
+        // where a builder tapered it, so this changes nothing else.
+        const taper = { useVertexTaper: true };
         const mergedHull =
           commonParent && skinned.length === meshes.length && skinned.every((mesh) => mesh.parent === commonParent)
-            ? attachMergedOutline(skinned, commonParent, opts.outlines)
+            ? attachMergedOutline(skinned, commonParent, opts.outlines, taper)
             : null;
         if (mergedHull) this.ownedGeometry.push(mergedHull.geometry);
-        else for (const m of meshes) attachOutline(m, opts.outlines);
+        else for (const m of meshes) attachOutline(m, opts.outlines, taper);
       }
       if (this.proxy) attachOutline(this.proxy.mesh, opts.outlines);
     }

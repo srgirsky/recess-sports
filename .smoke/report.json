@@ -1,0 +1,692 @@
+[
+  {
+    "beat": "title",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/title.png",
+    "ok": true,
+    "msg": "PLAY offered on the title"
+  },
+  {
+    "beat": "draft-open",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/draft-open.png",
+    "ok": true,
+    "msg": "a candidate presents with PICK ME! armed"
+  },
+  {
+    "beat": "draft-pick",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/draft-pick.png",
+    "ok": true,
+    "msg": "the CPU picked and the turn came back"
+  },
+  {
+    "beat": "plate-waiting",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/plate-waiting.png",
+    "reached": true,
+    "phase": "windup",
+    "batter": {
+      "id": "ace_kid",
+      "clip": "bat_stance",
+      "bat": true
+    },
+    "pitcher": {
+      "id": "wheelchair_ace",
+      "clip": "idle",
+      "bat": false
+    },
+    "catcher": {
+      "id": "zippy",
+      "clip": "field_ready",
+      "bat": false
+    },
+    "caught": null,
+    "breakUp": false,
+    "ball": {
+      "x": 0,
+      "y": 3,
+      "z": 46,
+      "visible": true
+    },
+    "play": null,
+    "bases": [
+      false,
+      false,
+      false
+    ],
+    "half": "bottom",
+    "inning": 1,
+    "ev": {
+      "pitch": 21,
+      "contact": 9,
+      "pa": 5
+    },
+    "hr": 0,
+    "gameOver": false
+  },
+  {
+    "beat": "delivery",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/delivery.png",
+    "reached": true,
+    "phase": "windup",
+    "batter": {
+      "id": "ace_kid",
+      "clip": "bat_stance",
+      "bat": true
+    },
+    "pitcher": {
+      "id": "wheelchair_ace",
+      "clip": "pitch_windup",
+      "bat": false
+    },
+    "catcher": {
+      "id": "zippy",
+      "clip": "field_ready",
+      "bat": false
+    },
+    "caught": null,
+    "breakUp": false,
+    "ball": {
+      "x": 0,
+      "y": 3,
+      "z": 46,
+      "visible": true
+    },
+    "play": null,
+    "bases": [
+      false,
+      false,
+      false
+    ],
+    "half": "bottom",
+    "inning": 1,
+    "ev": {
+      "pitch": 21,
+      "contact": 9,
+      "pa": 5
+    },
+    "hr": 0,
+    "gameOver": false
+  },
+  {
+    "beat": "pitch-flight",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/pitch-flight.png",
+    "reached": true,
+    "phase": "pitch",
+    "batter": {
+      "id": "ace_kid",
+      "clip": "bat_stance",
+      "bat": true
+    },
+    "pitcher": {
+      "id": "wheelchair_ace",
+      "clip": "pitch_windup",
+      "bat": false
+    },
+    "catcher": {
+      "id": "zippy",
+      "clip": "field_ready",
+      "bat": false
+    },
+    "caught": null,
+    "breakUp": false,
+    "ball": {
+      "x": -0.03,
+      "y": 7.51,
+      "z": 37.43,
+      "visible": true
+    },
+    "play": null,
+    "bases": [
+      false,
+      false,
+      false
+    ],
+    "half": "bottom",
+    "inning": 1,
+    "ev": {
+      "pitch": 21,
+      "contact": 9,
+      "pa": 5
+    },
+    "hr": 0,
+    "gameOver": false
+  },
+  {
+    "beat": "between",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/between.png",
+    "reached": true,
+    "phase": "between",
+    "batter": {
+      "id": "ace_kid",
+      "clip": "upset_cool",
+      "bat": false
+    },
+    "pitcher": {
+      "id": "wheelchair_ace",
+      "clip": "cheer_cool",
+      "bat": false
+    },
+    "catcher": {
+      "id": "zippy",
+      "clip": "field_ready",
+      "bat": false
+    },
+    "caught": null,
+    "breakUp": false,
+    "ball": {
+      "x": -0.62,
+      "y": 7.03,
+      "z": 10.59,
+      "visible": true
+    },
+    "play": null,
+    "bases": [
+      false,
+      false,
+      false
+    ],
+    "half": "bottom",
+    "inning": 1,
+    "ev": {
+      "pitch": 27,
+      "contact": 12,
+      "pa": 6
+    },
+    "hr": 0,
+    "gameOver": false
+  },
+  {
+    "beat": "swing",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/swing.png",
+    "reached": true,
+    "phase": "pitch",
+    "batter": {
+      "id": "penny",
+      "clip": "swing_contact",
+      "bat": true
+    },
+    "pitcher": {
+      "id": "wheelchair_ace",
+      "clip": "pitch_windup",
+      "bat": false
+    },
+    "catcher": {
+      "id": "zippy",
+      "clip": "field_ready",
+      "bat": false
+    },
+    "caught": null,
+    "breakUp": false,
+    "ball": {
+      "x": 0.44,
+      "y": 4.42,
+      "z": 9.38,
+      "visible": true
+    },
+    "play": null,
+    "bases": [
+      false,
+      false,
+      false
+    ],
+    "half": "bottom",
+    "inning": 1,
+    "ev": {
+      "pitch": 27,
+      "contact": 12,
+      "pa": 6
+    },
+    "hr": 0,
+    "gameOver": false
+  },
+  {
+    "beat": "live-play",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/live-play.png",
+    "reached": true,
+    "phase": "live",
+    "batter": {
+      "id": "penny",
+      "clip": "walk_on",
+      "bat": false
+    },
+    "pitcher": {
+      "id": "wheelchair_ace",
+      "clip": "pitch_windup",
+      "bat": false
+    },
+    "catcher": {
+      "id": "zippy",
+      "clip": "idle",
+      "bat": false
+    },
+    "caught": null,
+    "breakUp": false,
+    "ball": {
+      "x": 5.08,
+      "y": 13.86,
+      "z": 2.93,
+      "visible": true
+    },
+    "play": {
+      "heldBy": null,
+      "throw": false,
+      "done": false,
+      "runners": 1
+    },
+    "bases": [
+      false,
+      false,
+      false
+    ],
+    "half": "bottom",
+    "inning": 1,
+    "ev": {
+      "pitch": 29,
+      "contact": 12,
+      "pa": 6
+    },
+    "hr": 0,
+    "gameOver": false
+  },
+  {
+    "beat": "fielded-or-throw",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/fielded-or-throw.png",
+    "reached": true,
+    "phase": "live",
+    "batter": {
+      "id": "zippy",
+      "clip": "trot",
+      "bat": false
+    },
+    "pitcher": {
+      "id": "lefty",
+      "clip": "pitch_windup",
+      "bat": false
+    },
+    "catcher": {
+      "id": "ace_kid",
+      "clip": "catch_chest",
+      "bat": false
+    },
+    "caught": null,
+    "breakUp": false,
+    "ball": {
+      "x": 122.28,
+      "y": 3,
+      "z": 133.1,
+      "visible": true
+    },
+    "play": {
+      "heldBy": 2,
+      "throw": false,
+      "done": false,
+      "runners": 1
+    },
+    "bases": [
+      false,
+      false,
+      false
+    ],
+    "half": "top",
+    "inning": 2,
+    "ev": {
+      "pitch": 35,
+      "contact": 15,
+      "pa": 9
+    },
+    "hr": 0,
+    "gameOver": false
+  },
+  {
+    "beat": "throw",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/throw.png",
+    "reached": true,
+    "phase": "live",
+    "batter": {
+      "id": "zippy",
+      "clip": "run",
+      "bat": false
+    },
+    "pitcher": {
+      "id": "lefty",
+      "clip": "pitch_windup",
+      "bat": false
+    },
+    "catcher": {
+      "id": "ace_kid",
+      "clip": "idle",
+      "bat": false
+    },
+    "caught": null,
+    "breakUp": false,
+    "ball": {
+      "x": 117.61,
+      "y": 3,
+      "z": 128.1,
+      "visible": true
+    },
+    "play": {
+      "heldBy": null,
+      "throw": true,
+      "done": false,
+      "runners": 1
+    },
+    "bases": [
+      false,
+      false,
+      false
+    ],
+    "half": "top",
+    "inning": 2,
+    "ev": {
+      "pitch": 35,
+      "contact": 15,
+      "pa": 9
+    },
+    "hr": 0,
+    "gameOver": false
+  },
+  {
+    "beat": "baserunning",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/baserunning.png",
+    "reached": true,
+    "phase": "live",
+    "batter": {
+      "id": "zippy",
+      "clip": "run_fast",
+      "bat": false
+    },
+    "pitcher": {
+      "id": "lefty",
+      "clip": "pitch_stride",
+      "bat": false
+    },
+    "catcher": {
+      "id": "ace_kid",
+      "clip": "idle_fidget",
+      "bat": false
+    },
+    "caught": null,
+    "breakUp": false,
+    "ball": {
+      "x": 117.61,
+      "y": 3,
+      "z": 128.1,
+      "visible": true
+    },
+    "play": {
+      "heldBy": null,
+      "throw": true,
+      "done": false,
+      "runners": 1
+    },
+    "bases": [
+      false,
+      false,
+      false
+    ],
+    "half": "top",
+    "inning": 2,
+    "ev": {
+      "pitch": 35,
+      "contact": 15,
+      "pa": 9
+    },
+    "hr": 0,
+    "gameOver": false
+  },
+  {
+    "beat": "runner-on",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/runner-on.png",
+    "reached": true,
+    "phase": "windup",
+    "batter": {
+      "id": "sprout",
+      "clip": "bat_stance",
+      "bat": true
+    },
+    "pitcher": {
+      "id": "lefty",
+      "clip": "pitch_windup",
+      "bat": false
+    },
+    "catcher": {
+      "id": "ace_kid",
+      "clip": "idle_fidget",
+      "bat": false
+    },
+    "caught": null,
+    "breakUp": false,
+    "ball": {
+      "x": 0,
+      "y": 3,
+      "z": 46,
+      "visible": true
+    },
+    "play": null,
+    "bases": [
+      true,
+      false,
+      false
+    ],
+    "half": "top",
+    "inning": 2,
+    "ev": {
+      "pitch": 43,
+      "contact": 18,
+      "pa": 11
+    },
+    "hr": 0,
+    "gameOver": false
+  },
+  {
+    "beat": "inning-break",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/inning-break.png",
+    "reached": true,
+    "phase": "between",
+    "batter": {
+      "id": "nostrike",
+      "clip": "cheer_fierce",
+      "bat": false
+    },
+    "pitcher": {
+      "id": "lefty",
+      "clip": "upset_fierce",
+      "bat": false
+    },
+    "catcher": {
+      "id": "ace_kid",
+      "clip": "idle_fidget",
+      "bat": false
+    },
+    "caught": null,
+    "breakUp": true,
+    "ball": {
+      "x": 0,
+      "y": 3,
+      "z": 46,
+      "visible": true
+    },
+    "play": null,
+    "bases": [
+      true,
+      true,
+      false
+    ],
+    "half": "top",
+    "inning": 2,
+    "ev": {
+      "pitch": 49,
+      "contact": 21,
+      "pa": 13
+    },
+    "hr": 0,
+    "gameOver": false
+  },
+  {
+    "beat": "half-flip",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/half-flip.png",
+    "reached": true,
+    "phase": "windup",
+    "batter": {
+      "id": "smokey",
+      "clip": "bat_stance",
+      "bat": true
+    },
+    "pitcher": {
+      "id": "wheelchair_ace",
+      "clip": "getup",
+      "bat": false
+    },
+    "catcher": {
+      "id": "zippy",
+      "clip": "upset",
+      "bat": false
+    },
+    "caught": null,
+    "breakUp": false,
+    "ball": {
+      "x": 0,
+      "y": 3,
+      "z": 46,
+      "visible": true
+    },
+    "play": null,
+    "bases": [
+      false,
+      false,
+      false
+    ],
+    "half": "bottom",
+    "inning": 2,
+    "ev": {
+      "pitch": 49,
+      "contact": 21,
+      "pa": 13
+    },
+    "hr": 0,
+    "gameOver": false
+  },
+  {
+    "beat": "fly-catch",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/fly-catch.png",
+    "reached": true,
+    "phase": "between",
+    "batter": {
+      "id": "mimi_mash",
+      "clip": "upset_fierce",
+      "bat": false
+    },
+    "pitcher": {
+      "id": "lefty",
+      "clip": "cheer_fierce",
+      "bat": false
+    },
+    "catcher": {
+      "id": "ace_kid",
+      "clip": "idle_fidget",
+      "bat": false
+    },
+    "caught": {
+      "id": "bend_it",
+      "clip": "catch_chest",
+      "bat": false
+    },
+    "breakUp": false,
+    "ball": {
+      "x": 0,
+      "y": 3,
+      "z": 46,
+      "visible": true
+    },
+    "play": null,
+    "bases": [
+      true,
+      false,
+      false
+    ],
+    "half": "top",
+    "inning": 3,
+    "ev": {
+      "pitch": 92,
+      "contact": 38,
+      "pa": 21
+    },
+    "hr": 0,
+    "gameOver": false
+  },
+  {
+    "beat": "result",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/result.png",
+    "reached": true,
+    "phase": "none",
+    "batter": null,
+    "pitcher": null,
+    "catcher": null,
+    "caught": {
+      "id": "bend_it",
+      "clip": "idle",
+      "bat": false
+    },
+    "breakUp": false,
+    "ball": {
+      "x": 0,
+      "y": 3,
+      "z": 46,
+      "visible": true
+    },
+    "play": null,
+    "bases": null,
+    "half": null,
+    "inning": null,
+    "ev": {
+      "pitch": 110,
+      "contact": 42,
+      "pa": 27
+    },
+    "hr": 0,
+    "gameOver": true
+  },
+  {
+    "beat": "home-run",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/home-run.png",
+    "reached": true,
+    "phase": "between",
+    "batter": {
+      "id": "big_lou",
+      "clip": "cheer_goofy",
+      "bat": false
+    },
+    "pitcher": {
+      "id": "lefty",
+      "clip": "upset_fierce",
+      "bat": false
+    },
+    "catcher": {
+      "id": "ace_kid",
+      "clip": "field_ready",
+      "bat": false
+    },
+    "caught": null,
+    "breakUp": false,
+    "ball": {
+      "x": 0,
+      "y": 3,
+      "z": 46,
+      "visible": true
+    },
+    "play": null,
+    "bases": [
+      false,
+      false,
+      false
+    ],
+    "half": "top",
+    "inning": 1,
+    "ev": {
+      "pitch": 11,
+      "contact": 5,
+      "pa": 3
+    },
+    "hr": 1,
+    "gameOver": false
+  }
+]

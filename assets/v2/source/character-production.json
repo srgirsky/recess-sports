@@ -423,11 +423,11 @@
     },
     "peaches": {
       "source": "peaches-pilot.blend",
-      "sourceSha256": "df14bfad68d9a6e7be0c16f1a53f490dbf529f1bf23ba1e15aed53da87562389",
+      "sourceSha256": "ccce45c692e206bcad979d723ce960edb840ef91cafd0ded1eadb5fee6edba39",
       "concept": "peaches-turnaround.png",
       "conceptSha256": "42a7f8de5c44a061aa4f15b7dd8e9abd65a150488c8a814b0986db2e3d3f393e",
       "output": "kid_peaches.glb",
-      "outputSha256": "781cd0b66a298831b4d6fa017b62de219f332b10128e7ecc3758cb1c3ec90ea3",
+      "outputSha256": "4a9a7ec9c24346969966932a5861242802d774bad7e6b051ecdb3f1b13ac5c38",
       "definingTraits": [
         "textured brown top-bun",
         "marigold sleeveless dress",
