@@ -30,8 +30,10 @@
 //
 // Coverage (three pages): the FRONT DOOR (title, draft opens, a pick hands
 // the turn back), the seeded GAME (plate, delivery, pitch, between, swing at
-// its own tick, live play, a fielder gloving or throwing, a runner waiting,
-// the half flip, and the whole game run out to its result), and a dedicated
+// its own tick, live play, a fielder gloving or throwing, a throw in the
+// air, a runner waiting, the inning-break board, the half flip, a caught fly
+// with its catcher still in the catch clip, and the whole game run out to
+// its result), and a dedicated
 // HOME-RUN page on a hunted seed. Screenshots fall back to reading the WebGL
 // canvas in-task when the headless compositor stalls.
 // ---------------------------------------------------------------------------
@@ -83,7 +85,13 @@ const REACH = (untilSrc, paintTicks, endIsReach = false, step = 6) => `(async ()
   // An untilEnd beat pumps the whole rest of the game, so it gets more rope.
   for (let i = 0; i < ${Math.ceil((endIsReach ? 30000 : 8000) * (6 / step))}; i++) {
     const f = s.devStepFixedClock(${step});
-    if (f && until(f, s)) { reached = true; break; }
+    if (f && until(f, s)) {
+      reached = true;
+      // Who gloved a caught fly, read at the reached instant: the play is
+      // over one step later and the probe could not ask the frame.
+      window.__catchBy = f.play ? (f.play.events.find((e) => e.t === 'catch') || {}).fielder ?? null : null;
+      break;
+    }
     if (!f) { reached = ${endIsReach ? 'true' : 'reached'}; break; }
   }
   // Paint off the fixed clock: exactly ${paintTicks} more sim steps, drawn.
@@ -102,6 +110,11 @@ const REACH = (untilSrc, paintTicks, endIsReach = false, step = 6) => `(async ()
     batter: probe(f?.batterId),
     pitcher: probe(f?.pitcherId),
     catcher: probe(catcherId),
+    // The kid who gloved the fly the beat reached, and what he is PLAYING
+    // six frames on — the catch clip is a one-shot the director keeps
+    // through the between cut, so it is the one painted proof of a catch.
+    caught: probe(window.__catchBy ?? null),
+    breakUp: document.body.classList.contains('inning-break'),
     ball: { x: +s.refs.ball.position.x.toFixed(2), y: +s.refs.ball.position.y.toFixed(2), z: +s.refs.ball.position.z.toFixed(2), visible: s.refs.ball.visible },
     // Live-play probe: who holds the ball, whether a throw is in the air, and
     // the runner picture — the fields the live beats assert on.
@@ -206,16 +219,49 @@ const BEATS = [
     ],
   },
   {
+    name: 'throw',
+    // A throw in the air on a play still going — 39-47 steps of flight on
+    // the smoke seed, so the paint's six stay inside it.
+    until: '(f) => f.phase === "live" && f.play && f.play.phase === "live" && !!f.play.throw',
+    step: 1,
+    paint: 6,
+    expect: (r) => [
+      [r.play !== null && (r.play.throw === true || r.play.heldBy !== null), 'the throw is in the air or has arrived in a glove'],
+      [r.ball.visible === true, 'the thrown ball is visible'],
+    ],
+  },
+  {
     name: 'runner-on',
     until: '(f) => f.phase === "windup" && f.bases.some(Boolean)',
     paint: 20,
     expect: (r) => [[r.bases?.some(Boolean) === true, 'a runner waits on base at the next windup']],
   },
   {
+    name: 'inning-break',
+    // The third out's between frame: the line-score board is DOM over the
+    // park (`body.inning-break`) and the one thing re-audit #6 never saw.
+    until: '(f) => f.phase === "between" && f.outs >= 3',
+    paint: 6,
+    expect: (r) => [[r.breakUp === true, 'the inning-break board is up (body.inning-break)']],
+  },
+  {
     name: 'half-flip',
     until: '(f) => f.half === "bottom"',
     paint: 30,
     expect: (r) => [[r.half === 'bottom', 'the inning flips to the YOU-PITCH half']],
+  },
+  {
+    name: 'fly-catch',
+    // The catch frame: the sim yields exactly one live frame with the ball
+    // gloved and `playOver` already in its events, so this samples one step
+    // at a time and reads WHO caught it there; the paint then shows the
+    // between cut with that kid still playing his catch one-shot.
+    until: '(f) => f.phase === "live" && f.play && f.play.events.some((e) => e.t === "catch")',
+    step: 1,
+    paint: 6,
+    expect: (r) => [
+      [r.caught !== null && typeof r.caught.clip === 'string' && r.caught.clip.startsWith('catch'), `the fielder who gloved the fly is playing a catch clip (got ${r.caught?.clip})`],
+    ],
   },
   // A homer depends on the seeded game containing one, so this beat pumps
   // until an HR flies OR the game ends — `optional` turns its failures into
