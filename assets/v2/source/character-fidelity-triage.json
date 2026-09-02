@@ -470,66 +470,6 @@
       "class": "face-atlas",
       "excerpt": "CARRIED, minor: the delivered brows are thin sharp dark strokes where the sheet'"
     },
-    "noodle:d47fe0afa9df": {
-      "char": "noodle",
-      "class": "proportions",
-      "excerpt": "MOUTH LATITUDE IS TRACED WRONG AT SOURCE, and the gate certifies the error. scri"
-    },
-    "noodle:80b2192ad1d6": {
-      "char": "noodle",
-      "class": "decal-not-form",
-      "excerpt": "NOSE READS AS NOTHING FROM THE FRONT. nose_push (line 128) is built but so shall"
-    },
-    "noodle:26570325e053": {
-      "char": "noodle",
-      "class": "ears",
-      "excerpt": "EARS DO NOT REACH THE FRONT SILHOUETTE. EarSpec(center=(0.020, 3.280), radii=(0."
-    },
-    "noodle:46e86d9d090a": {
-      "char": "noodle",
-      "class": "butt-joins",
-      "excerpt": "BALD DOME IS VISIBLY FACETED at hero. A 4x crop of the head in noodle-runtime-he"
-    },
-    "noodle:e9d957cb9c16": {
-      "char": "noodle",
-      "class": "material-light",
-      "excerpt": "SKIN STILL FAILS THE WARMTH BAND ON THE DOMINANT SURFACE, whatever the recorded "
-    },
-    "noodle:a7b8251e4c49": {
-      "char": "noodle",
-      "class": "sheared-edges",
-      "excerpt": "SHOULDER SEAM WEDGE, both sides, and worse than 'a polish item'. A 6x crop of no"
-    },
-    "noodle:ffcc70c39fe1": {
-      "char": "noodle",
-      "class": "hems-cuffs",
-      "excerpt": "SHOE HAS NO LACING READ. Both authored straps ((-0.170,-0.122), (-0.060,-0.012))"
-    },
-    "noodle:3503bf7f6930": {
-      "char": "noodle",
-      "class": "interpenetration",
-      "excerpt": "DARK SPIKE ACROSS THE MIDSOLE ON BOTH SHOES. Cropped at 14x from noodle-front-re"
-    },
-    "noodle:09d8e76daa49": {
-      "char": "noodle",
-      "class": "interpenetration",
-      "excerpt": "GEOMETRY SPUR AT THE SHOE TOE IN PROFILE. Cropped at 16x from noodle-profile-rev"
-    },
-    "noodle:4946282bc507": {
-      "char": "noodle",
-      "class": "hems-cuffs",
-      "excerpt": "ANKLE CUFF READS AS A NAPKIN RING. The TEAM_MASK roll is a smooth cylinder wider"
-    },
-    "noodle:d41601b65225": {
-      "char": "noodle",
-      "class": "face-atlas",
-      "excerpt": "EYEBROWS ARE HIDDEN BEHIND THE LENS RIMS AT THE GAMEPLAY CAMERA in all four -run"
-    },
-    "noodle:caae20d45981": {
-      "char": "noodle",
-      "class": "material-light",
-      "excerpt": "GARMENT WARMTH IS ALSO WASHED OUT: the cream stripe delivers r-b 8 against the c"
-    },
     "ace_kid:a9cdbc928504": {
       "char": "ace_kid",
       "class": "proportions",
@@ -799,76 +739,6 @@
       "char": "dex",
       "class": "no-defect-note",
       "excerpt": "CREDIT (carried): the shoes remain the most honestly constructed garment — cream"
-    },
-    "boomer:e0cf2711824a": {
-      "char": "boomer",
-      "class": "hair-nyquist",
-      "excerpt": "Stubble/skin boundary is a stair-stepped zigzag at loft-ring resolution, not a f"
-    },
-    "boomer:59785e847a41": {
-      "char": "boomer",
-      "class": "proportions",
-      "excerpt": "The shaved fade stops at the temples. The concept carries dark shaved sides from"
-    },
-    "boomer:699a5b5df8da": {
-      "char": "boomer",
-      "class": "severed",
-      "excerpt": "The mohawk is nine separate faceted cones with clean background between them (pr"
-    },
-    "boomer:e9a4045c5177": {
-      "char": "boomer",
-      "class": "proportions",
-      "excerpt": "Hair mass carries 80% of the concept's head-box coverage (33.3% vs 41.5%) and is"
-    },
-    "boomer:9ecd391b7928": {
-      "char": "boomer",
-      "class": "40px-read",
-      "excerpt": "Shirt stripe contrast is 44% of the drawing's (gold-cream luminance 28.3 vs 63.6"
-    },
-    "boomer:fc25c523cfeb": {
-      "char": "boomer",
-      "class": "proportions",
-      "excerpt": "Lower body is at 52-57% of the concept's mass while the belly is at 78-83% — Boo"
-    },
-    "boomer:4bc2099841cc": {
-      "char": "boomer",
-      "class": "butt-joins",
-      "excerpt": "Shoulder is a flat horizontal shelf with the sleeve cylinder butt-joined to it, "
-    },
-    "boomer:8b00d6a14c06": {
-      "char": "boomer",
-      "class": "butt-joins",
-      "excerpt": "Elbow is a hinge between two straight tubes with no elbow volume and a visible c"
-    },
-    "boomer:22297974d204": {
-      "char": "boomer",
-      "class": "decal-not-form",
-      "excerpt": "No nose from the front — measured, the profile nose is 2.2x as proud and ~3.5x a"
-    },
-    "boomer:85421f10f568": {
-      "char": "boomer",
-      "class": "hems-cuffs",
-      "excerpt": "Shoe has no laces — one dark V notch where the concept has cream flat laces cris"
-    },
-    "boomer:aab06ca97921": {
-      "char": "boomer",
-      "class": "hems-cuffs",
-      "excerpt": "Socks are smooth tubes; the concept's crew socks are heavily ribbed with a rolle"
-    },
-    "boomer:9edaeb09f8d8": {
-      "char": "boomer",
-      "class": "face-atlas",
-      "excerpt": "Hero and run stills both catch the shared idle/run head yaw at ~60-70 degrees, w"
-    },
-    "boomer:48f350f73176": {
-      "char": "boomer",
-      "class": "decal-not-form",
-      "excerpt": "The mouth decal's lower lip overruns the chin line onto the jaw (cheer, 4x), whi"
-    },
-    "boomer:ad91356223ec": {
-      "char": "boomer",
-      "class": "no-defect-note",
-      "excerpt": "Not findings, checked and cleared so nobody re-files them: the throat 'annulus' "
     },
     "smokey:4e7f353cc030": {
       "char": "smokey",
@@ -1330,31 +1200,6 @@
       "class": "proportions",
       "excerpt": "The concept's asymmetric side-sweep is lost; the delivered mass reads as a symme"
     },
-    "lefty:e0df4f96e17c": {
-      "char": "lefty",
-      "class": "proportions",
-      "excerpt": "NO HAIRLINE FROM THE FRONT (3.3): the forehead is bare skin from brow to cap edg"
-    },
-    "lefty:31ae56da77f4": {
-      "char": "lefty",
-      "class": "hair-nyquist",
-      "excerpt": "HAIR IS FLAT CARDS WITH KNIFE-CUT EDGES, not a mass: at 7x the near-side hair is"
-    },
-    "lefty:b3fb49c00c4d": {
-      "char": "lefty",
-      "class": "interpenetration",
-      "excerpt": "PONYTAIL INTERPENETRATES THE JACKET at swing_contact: the ponytail card passes i"
-    },
-    "lefty:11519977e66d": {
-      "char": "lefty",
-      "class": "40px-read",
-      "excerpt": "BARE-SKULL READ AT THE GAMEPLAY CAMERA (3.3, 3.9): at the 3/4 field angle in the"
-    },
-    "lefty:ff2115a76d4e": {
-      "char": "lefty",
-      "class": "proportions",
-      "excerpt": "THE NAVY HOOD IS INVISIBLE FROM THE FRONT where the concept makes it a defining "
-    },
     "bend_it:37486abe4ca1": {
       "char": "bend_it",
       "class": "no-defect-note",
@@ -1524,71 +1369,6 @@
       "char": "the_prof",
       "class": "no-defect-note",
       "excerpt": "NOT findings, checked and cleared so they are not re-raised: nothing is severed "
-    },
-    "lefty:774487f393d7": {
-      "char": "lefty",
-      "class": "severed",
-      "excerpt": "PROUD PANEL STILL DETACHES IN PROFILE, IMPROVED: the placket/lapel assembly open"
-    },
-    "lefty:d7742926b89d": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED, recorded so it is not re-filed: the two detached islands (cap splinter "
-    },
-    "lefty:f36aedd391e2": {
-      "char": "lefty",
-      "class": "proportions",
-      "excerpt": "LEG_STATIONS PROVENANCE PARTLY REPAIRED, REMAINDER CARRIES: the cuff rows (0.700"
-    },
-    "lefty:1c6a2ad042e0": {
-      "char": "lefty",
-      "class": "proportions",
-      "excerpt": "HEAD IS 10% TOO NARROW (3.13 board-vs-turnaround fail): width:height 0.88 delive"
-    },
-    "lefty:1804a85713fe": {
-      "char": "lefty",
-      "class": "butt-joins",
-      "excerpt": "SHOULDER JUNCTION RE-CHARACTERISED (old 'no deltoid' claim no longer holds as fi"
-    },
-    "lefty:635cb84de3fe": {
-      "char": "lefty",
-      "class": "sheared-edges",
-      "excerpt": "NEW - PIPING KINKS PROUD AT THE A-POSE SHOULDER: the cream collar-to-shoulder pi"
-    },
-    "lefty:809fd1650f77": {
-      "char": "lefty",
-      "class": "proportions",
-      "excerpt": "PROFILE TORSO IS STILL A NEAR-CONSTANT-DEPTH SLAB: 86px at y=360, 84px at y=420 "
-    },
-    "lefty:37342a5a1b90": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED, recorded so it is not re-filed: THE JOGGER CUFF NOW READS. Rebuilt to t"
-    },
-    "lefty:0a6a61a3692a": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED, recorded so it is not re-filed: the 'missing garment detail' list is BU"
-    },
-    "lefty:df37bf546ecc": {
-      "char": "lefty",
-      "class": "40px-read",
-      "excerpt": "TEAM_MASK EXTENT (extent only, no colour judgement): the declared accent is one "
-    },
-    "lefty:484aff261ec8": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "RECORDED INSTRUMENT CONFLICT, not a defect to fix: ankle daylight measures 44.4 "
-    },
-    "lefty:12f704979e6b": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED, recorded so it is not re-filed: the face-atlas seam dashes on the neck "
-    },
-    "lefty:228bef823d9b": {
-      "char": "lefty",
-      "class": "no-defect-note",
-      "excerpt": "NOT A DEFECT, recorded so it is not re-filed: 3.12 passes - 159 rows of two legs"
     },
     "chip:ae85c34528cd": {
       "char": "chip",
@@ -2100,11 +1880,6 @@
       "class": "no-defect-note",
       "excerpt": "CLEARED — eyes inboard of the ring centres: after face-specs.mjs gizmo eyeX move"
     },
-    "sprout:495503700e7c": {
-      "char": "sprout",
-      "class": "decal-not-form",
-      "excerpt": "GARMENT BOUNDARIES ARE PAINTED — CARRIED: sprout-front-review.png (170-370, 270-"
-    },
     "sprout:d0713f89a99e": {
       "char": "sprout",
       "class": "ears",
@@ -2120,50 +1895,10 @@
       "class": "no-defect-note",
       "excerpt": "TEAM_MASK EXTENT — NON-DEFECT: the source paints TEAM_MASK on the trouser cuff b"
     },
-    "sprout:90577bf32763": {
-      "char": "sprout",
-      "class": "hair-nyquist",
-      "excerpt": "BROWS RENDER — CLEARED, WITH ONE MEASURED RESIDUAL: on sprout-front-review.png ("
-    },
-    "sprout:3acd048b2248": {
-      "char": "sprout",
-      "class": "no-defect-note",
-      "excerpt": "EYES CLIPPED BY THE FRINGE — CLEARED: sprout-front-review.png x=224 now reads ha"
-    },
-    "sprout:a7a4ae84b9f5": {
-      "char": "sprout",
-      "class": "hair-nyquist",
-      "excerpt": "HAIRLINE IS A JAGGED POLYGON WITH A CENTRE SPIKE — REVISED FROM 'JAGGED TEMPLE N"
-    },
-    "sprout:5b56f96e6114": {
-      "char": "sprout",
-      "class": "proportions",
-      "excerpt": "PROFILE NOSE STILL A FIN — CARRIED: sprout-profile-review.png (185-215, 225-250)"
-    },
-    "sprout:dd8ea9aae86f": {
-      "char": "sprout",
-      "class": "face-atlas",
-      "excerpt": "EYE DECAL WRAPS TO THE PROFILE PLANE — CARRIED: sprout-profile-review.png (195-2"
-    },
     "sprout:d9dabce77fa3": {
       "char": "sprout",
       "class": "severed",
       "excerpt": "FLOATING COLLAR KNOB WITH DECAL BLOTCHES — CARRIED: sprout-profile-review.png (2"
-    },
-    "sprout:640c9c9d244b": {
-      "char": "sprout",
-      "class": "hair-nyquist",
-      "excerpt": "PROFILE HAIRLINE CREASE AND REAR FACETS — CARRIED: sprout-profile-review.png (20"
-    },
-    "sprout:3083493788ef": {
-      "char": "sprout",
-      "class": "hair-nyquist",
-      "excerpt": "CURL COUNT BELOW CONCEPT — CARRIED, MEASURED SLIGHTLY WORSE ON THE FRESH BOARD: "
-    },
-    "sprout:86b7f1bd7b33": {
-      "char": "sprout",
-      "class": "butt-joins",
-      "excerpt": "SHOULDER AND ELBOW — CARRIED: sprout-runtime-swing.png (400-620, 340-500) at 4x "
     },
     "sprout:7582e3045b90": {
       "char": "sprout",
@@ -2174,11 +1909,6 @@
       "char": "sprout",
       "class": "hems-cuffs",
       "excerpt": "HIP SHELF SOFTENED BUT PRESENT — CARRIED: sprout-front-review.png row ~470 (180-"
-    },
-    "sprout:9a546273e4a4": {
-      "char": "sprout",
-      "class": "proportions",
-      "excerpt": "HEAD PROPORTION — CARRIED (critic-measured, instrument blind): the fidelity inst"
     },
     "sprout:751d17744276": {
       "char": "sprout",
@@ -2444,6 +2174,306 @@
       "char": "peaches",
       "class": "no-defect-note",
       "excerpt": "PASSES verified on the fresh evidence — nothing is severed: the white at the A-p"
+    },
+    "noodle:3e7b058714aa": {
+      "char": "noodle",
+      "class": "other",
+      "excerpt": "CARRIED — MOUTH LATITUDE TRACED WRONG AT SOURCE, gate certifies the error. Own s"
+    },
+    "noodle:ec8675bcf751": {
+      "char": "noodle",
+      "class": "material-light",
+      "excerpt": "CARRIED — SKIN FAILS THE WARMTH BAND ON THE DOMINANT SURFACE. noodle-front-revie"
+    },
+    "noodle:427373822f7b": {
+      "char": "noodle",
+      "class": "face-atlas",
+      "excerpt": "CARRIED — EYEBROWS HIDDEN BEHIND THE RIM TOPS AT THE GAMEPLAY CAMERA. noodle-run"
+    },
+    "noodle:b2b3e4d6db58": {
+      "char": "noodle",
+      "class": "sheared-edges",
+      "excerpt": "CARRIED — BALD DOME VISIBLY FACETED AT HERO. noodle-runtime-hero.png 4x crop x43"
+    },
+    "noodle:3e1bae5a5422": {
+      "char": "noodle",
+      "class": "proportions",
+      "excerpt": "CARRIED — NOSE READS AS NOTHING FROM THE FRONT. nose_push is built (sculpt-noodl"
+    },
+    "noodle:83d5ce7ec8dc": {
+      "char": "noodle",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED — SHOULDER SEAM WEDGE. noodle-front-apose-review.png 6x crops x150-260 y"
+    },
+    "noodle:dd0f073371de": {
+      "char": "noodle",
+      "class": "decal-not-form",
+      "excerpt": "CARRIED — SHOE HAS NO LACING READ. Both straps ((-0.170,-0.122),(-0.060,-0.012),"
+    },
+    "noodle:7ba88211302c": {
+      "char": "noodle",
+      "class": "sheared-edges",
+      "excerpt": "CARRIED — DARK SLIVER ACROSS THE MIDSOLE ON BOTH SHOES. noodle-front-review.png "
+    },
+    "noodle:db0a6586ed9a": {
+      "char": "noodle",
+      "class": "sheared-edges",
+      "excerpt": "CARRIED — GEOMETRY TABS AT THE SHOE TOE AND HEEL IN PROFILE. noodle-profile-revi"
+    },
+    "noodle:ed30b7b64009": {
+      "char": "noodle",
+      "class": "hems-cuffs",
+      "excerpt": "CARRIED — ANKLE CUFF READS AS A NAPKIN RING. noodle-front-review.png 6x crop x20"
+    },
+    "noodle:fa881a9fc49e": {
+      "char": "noodle",
+      "class": "material-light",
+      "excerpt": "REVISED — GARMENT WARMTH: the cream half holds, the blue half does not on my sam"
+    },
+    "noodle:e0533021bc38": {
+      "char": "noodle",
+      "class": "ears",
+      "excerpt": "REVISED — EARS DO REACH THE FRONT SILHOUETTE, UNDER-PROUD. Rightmost silhouette "
+    },
+    "noodle:310dabdf2fc9": {
+      "char": "noodle",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT — the round 'plate' with dark marks at the shoulder on noodle-profile"
+    },
+    "noodle:358ed253e0ee": {
+      "char": "noodle",
+      "class": "stance",
+      "excerpt": "CARRIED (stance, read via the instrument) — daylight between the ankles 13.0 vs "
+    },
+    "noodle:77c2957b121f": {
+      "char": "noodle",
+      "class": "proportions",
+      "excerpt": "NEW, minor — LONG BARE NECK AT HERO. noodle-runtime-hero.png x515-560 y275-320: "
+    },
+    "lefty:e73b7bf000f7": {
+      "char": "lefty",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED - NO HAIRLINE FROM THE FRONT (3.3): lefty-front-review.png crop x180-380"
+    },
+    "lefty:e585824d6d0a": {
+      "char": "lefty",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED - BARE-SKULL READ AT THE GAMEPLAY CAMERA (3.3, 3.9): lefty-runtime-hero."
+    },
+    "lefty:563df5f583d4": {
+      "char": "lefty",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED - HAIR IS FLAT CARDS WITH KNIFE-CUT EDGES: measure:strands 0.58 vs 7.60 "
+    },
+    "lefty:16654cf97834": {
+      "char": "lefty",
+      "class": "interpenetration",
+      "excerpt": "CARRIED - PONYTAIL INTERPENETRATES THE JACKET AT swing_contact: lefty-runtime-sw"
+    },
+    "lefty:58eba6d983ab": {
+      "char": "lefty",
+      "class": "proportions",
+      "excerpt": "CARRIED - HEAD IS 10% TOO NARROW (3.13): head width:height 0.88 delivered vs 0.9"
+    },
+    "lefty:a0c4c4be20ea": {
+      "char": "lefty",
+      "class": "40px-read",
+      "excerpt": "REVISED - THE NAVY HOOD IS INVISIBLE FROM THE FRONT, with the one place it shows"
+    },
+    "lefty:88360f9e6dbe": {
+      "char": "lefty",
+      "class": "severed",
+      "excerpt": "CARRIED - PROUD PANEL STILL DETACHES IN PROFILE, UNCHANGED: lefty-profile-review"
+    },
+    "lefty:091e062ee5ba": {
+      "char": "lefty",
+      "class": "proportions",
+      "excerpt": "CARRIED - PROFILE TORSO IS A NEAR-CONSTANT-DEPTH SLAB: lefty-profile-review.png "
+    },
+    "lefty:22c1198f17f1": {
+      "char": "lefty",
+      "class": "sheared-edges",
+      "excerpt": "CARRIED - PIPING KINKS PROUD AT THE A-POSE SHOULDER, unchanged by the root ring:"
+    },
+    "lefty:75b04a3ffd09": {
+      "char": "lefty",
+      "class": "butt-joins",
+      "excerpt": "CARRIED - SHOULDER JUNCTION: the crease notch at the sleeve/torso armpit is stil"
+    },
+    "lefty:e5aba5e6e91f": {
+      "char": "lefty",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED by this build - THE A-POSE COVERAGE POCKET: the HEAD board (root_ring 0."
+    },
+    "lefty:c3bcd5a97292": {
+      "char": "lefty",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED by this build - the T-pose arm-root creases: lefty-front-review.png crop"
+    },
+    "lefty:7d19a5553a0e": {
+      "char": "lefty",
+      "class": "proportions",
+      "excerpt": "CARRIED - TEAM_MASK EXTENT (extent only, no colour judgement): the declared acce"
+    },
+    "lefty:eae09c096cfc": {
+      "char": "lefty",
+      "class": "no-defect-note",
+      "excerpt": "CARRIED - RECORDED INSTRUMENT CONFLICT, not a defect to fix: daylight between th"
+    },
+    "lefty:90480967829c": {
+      "char": "lefty",
+      "class": "evidence",
+      "excerpt": "CARRIED - LEG_STATIONS PROVENANCE: not re-verifiable from renders; nothing in th"
+    },
+    "lefty:1b304676917a": {
+      "char": "lefty",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT, re-checked: the round bulge on the profile T-pose chest (lefty-profi"
+    },
+    "lefty:21fc48792aa9": {
+      "char": "lefty",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT, re-checked: the face-atlas seam dashes on the neck do not reproduce "
+    },
+    "lefty:4a2d6e6ea1d6": {
+      "char": "lefty",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT, re-checked: all four board views measure as exactly one connected co"
+    },
+    "lefty:e076067aa938": {
+      "char": "lefty",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT, re-checked: the jogger cuff still reads - lefty-front-review.png and"
+    },
+    "boomer:a798ab2cd899": {
+      "char": "boomer",
+      "class": "proportions",
+      "excerpt": "CARRIED — lower body: boomer-front-apose-review x190-350 y430-600 at 4x shows bo"
+    },
+    "boomer:a7328e49d519": {
+      "char": "boomer",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED — mohawk daylight: boomer-profile-review x180-390 y80-260 at 4x, every o"
+    },
+    "boomer:3624758dc1eb": {
+      "char": "boomer",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED — bare-skull sides: SCALP_FRINGE ends at (0.56, 3.000) so the fade drops"
+    },
+    "boomer:407b2d64c886": {
+      "char": "boomer",
+      "class": "sheared-edges",
+      "excerpt": "CARRIED — stubble boundary: the 18-segment ring clamp (ring_loft_scalp) makes th"
+    },
+    "boomer:4a12b9f3c18e": {
+      "char": "boomer",
+      "class": "material-light",
+      "excerpt": "CARRIED (re-measured, worse than recorded) — stripe contrast: delivered cream-go"
+    },
+    "boomer:1b32441b9df5": {
+      "char": "boomer",
+      "class": "butt-joins",
+      "excerpt": "REVISED — shoulder: the recorded flat horizontal shelf with a butt-joined sleeve"
+    },
+    "boomer:5810a438c0d7": {
+      "char": "boomer",
+      "class": "butt-joins",
+      "excerpt": "CARRIED — swing_contact back sleeve: boomer-runtime-swing x550-585 y337-375 at 4"
+    },
+    "boomer:cd816bd86015": {
+      "char": "boomer",
+      "class": "butt-joins",
+      "excerpt": "CARRIED — elbow: boomer-runtime-swing near arm at ~x455 y350 and boomer-runtime-"
+    },
+    "boomer:7c8973ccb8e6": {
+      "char": "boomer",
+      "class": "proportions",
+      "excerpt": "CARRIED — nose: nose_push exists (|nx| <= 0.20, tip 0.090, source lines 122-134)"
+    },
+    "boomer:a9d7079668ef": {
+      "char": "boomer",
+      "class": "decal-not-form",
+      "excerpt": "REVISED — shoe: the laces ARE built (BOOMER_SHOE.straps two flat bands on the va"
+    },
+    "boomer:dbb3df9b81f0": {
+      "char": "boomer",
+      "class": "decal-not-form",
+      "excerpt": "CARRIED — socks: no ribbing builder anywhere in sculptlib (grep 'rib' finds none"
+    },
+    "boomer:fccb5d69ab83": {
+      "char": "boomer",
+      "class": "face-atlas",
+      "excerpt": "REVISED — hero/run yaw: boomer-runtime-hero x430-610 y140-330 and boomer-runtime"
+    },
+    "boomer:c3317fb4543f": {
+      "char": "boomer",
+      "class": "face-atlas",
+      "excerpt": "CARRIED (softened) — cheer mouth: boomer-runtime-face-cheer x440-620 y200-320 at"
+    },
+    "boomer:eb096458716d": {
+      "char": "boomer",
+      "class": "evidence",
+      "excerpt": "NOT RE-DERIVED — the recorded hair head-box coverage (33.3% vs 41.5%) and interi"
+    },
+    "boomer:6d24877fe48a": {
+      "char": "boomer",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (re-checked, do not re-file) — the throat 'annulus' in boomer-profile"
+    },
+    "sprout:7c81e19ba72f": {
+      "char": "sprout",
+      "class": "butt-joins",
+      "excerpt": "SHOULDER — CLEARED; ELBOW AND SLEEVE HEM — CARRIED; ONE NEW MINOR CREASE: on spr"
+    },
+    "sprout:c04382519f22": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "HAIR RING PAIR REVERTED — CONFIRMED: the source's HAIR_LEVELS is back to the sin"
+    },
+    "sprout:843fe6b4536f": {
+      "char": "sprout",
+      "class": "hair-nyquist",
+      "excerpt": "HAIRLINE IS A JAGGED M WITH A CENTRE SPIKE — CARRIED (fringe-round state): sprou"
+    },
+    "sprout:2eb13f5d4d8d": {
+      "char": "sprout",
+      "class": "hair-nyquist",
+      "excerpt": "BROWS RENDER, HANGING FROM THE HAIR — CARRIED: dark tapered wedges on skin above"
+    },
+    "sprout:fddfe70a4b62": {
+      "char": "sprout",
+      "class": "no-defect-note",
+      "excerpt": "EYES CLIPPED BY THE FRINGE — CLEARED (carried): sprout-front-review.png x=224 re"
+    },
+    "sprout:2a8445fd2b97": {
+      "char": "sprout",
+      "class": "proportions",
+      "excerpt": "PROFILE NOSE STILL A FIN — CARRIED: sprout-profile-review.png (185-215, 225-250)"
+    },
+    "sprout:5af75144213c": {
+      "char": "sprout",
+      "class": "face-atlas",
+      "excerpt": "EYE DECAL WRAPS TO THE PROFILE PLANE — CARRIED: sprout-profile-review.png (195-2"
+    },
+    "sprout:3037242b4959": {
+      "char": "sprout",
+      "class": "hair-nyquist",
+      "excerpt": "PROFILE HAIRLINE CREASE AND REAR FACETS — CARRIED: sprout-profile-review.png (20"
+    },
+    "sprout:665a199d3aa4": {
+      "char": "sprout",
+      "class": "hair-nyquist",
+      "excerpt": "CURL COUNT BELOW CONCEPT — CARRIED: measure:strands reads 2.32 minima/row agains"
+    },
+    "sprout:49820c6d7d53": {
+      "char": "sprout",
+      "class": "decal-not-form",
+      "excerpt": "GARMENT BOUNDARIES ARE PAINTED — CARRIED: sprout-front-review.png (170-370, 270-"
+    },
+    "sprout:b994795d7652": {
+      "char": "sprout",
+      "class": "proportions",
+      "excerpt": "HEAD PROPORTION — CARRIED (critic-measured, instrument blind): the fidelity inst"
     }
   }
 }
