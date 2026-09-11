@@ -8,7 +8,8 @@
 // ---------------------------------------------------------------------------
 
 import type { PlayEvent, PlayState } from '../sim/play';
-import type { RunnerState } from '../sim/runners';
+import { runnerPos, type RunnerState } from '../sim/runners';
+import { basePos, dist } from '../sim/field';
 import {
   WARP_MAX_RATE,
   clipSpec,
@@ -53,24 +54,98 @@ export const SWING_PREROLL_SEC = markerLeadSec('swing_contact');
  * it keeps painting the finished `PlayState`, which the sim never touches
  * again, and only then starts the between beat.
  *
- * Two tiers, because the verdicts differ. An OUT is the payoff of the whole
+ * Three tiers, because the endings differ. An OUT is the payoff of the whole
  * chase and reads with the callout over the frozen catch, so it holds past
  * the catch clip's own length (20 frames, marker at 8). A SAFE ending — the
  * throw-in after a single — holds long enough for the runner to be seen on
- * his bag and not long enough to slow a two-inning game. A foul, a homer and
- * a play that ran out the clock end with nobody holding the ball: the foul
- * cuts, and the homer has its own staging (the camera cue, fireworks, the
- * reactions).
+ * his bag and not long enough to slow a two-inning game. A HOMER holds for
+ * the trot (`homeRunTrot` below): the sim scores everybody the instant the
+ * ball clears the fence, so without a hold the runners never round the
+ * bases at all. A foul and a play that ran out the clock end with nobody
+ * holding the ball and cut.
  */
-export const PLAY_END_HOLD_SEC = { out: 1.2, safe: 0.6 } as const;
+export const PLAY_END_HOLD_SEC = { out: 1.2, safe: 0.6, homer: 6 } as const;
 
 export function playEndHoldSec(play: PlayState): number {
-  if (play.phase !== 'done' || play.heldBy === null || play.foul || play.homeRun) return 0;
+  if (play.phase !== 'done' || play.foul) return 0;
+  if (play.homeRun) return PLAY_END_HOLD_SEC.homer;
+  if (play.heldBy === null) return 0;
   // The last thing that happened, read off the final tick's own events: a
   // play that recorded an out at first and then waited for a runner to reach
   // third ends on the runner, not the out.
   const out = play.flyCaught || play.events.some((e) => e.t === 'out');
   return out ? PLAY_END_HOLD_SEC.out : PLAY_END_HOLD_SEC.safe;
+}
+
+/**
+ * A home-run trot is this fraction of the kid's own sprint. His `topFts` is
+ * the ONE kid speed (`athletes.ts`); this scales it for a lap nobody is
+ * racing, and it lives here because it is choreography, not a sim quantity.
+ */
+export const TROT_FRACTION = 0.75;
+
+export interface TrotCue {
+  characterId: string;
+  x: number;
+  z: number;
+  /** Radians, the same convention as `KidView.setFacing`. */
+  facing: number;
+  /** Zero once he has touched the plate. */
+  speedFts: number;
+  /** The bag he is trotting toward; the plate once he is on it. */
+  next: { x: number; z: number };
+  home: boolean;
+}
+
+/**
+ * Where each scoring runner is, `elapsedSec` into the home-run hold.
+ *
+ * ★ RENDER-ONLY CHOREOGRAPHY FOR A PLAY THAT IS ALREADY OVER. `checkTermination`
+ * marks every runner `scored` and ends the play the tick the ball leaves the
+ * park, so the sim has no trot to draw; BB2026 shows one. Each runner starts
+ * exactly where the sim left him (`runnerPos`, which still reads a scored
+ * runner's leg) and follows the remaining bags home at his own trot. Nothing
+ * here is written back: the bridge positions kids from these cues the way it
+ * positions them from a live play, and the finished `PlayState` is untouched.
+ *
+ * ★ THE HOLD IS FIXED AND THE SPEEDS ARE REAL, so a batter who homered from
+ * the box does not reach the plate inside it — a full lap at a kid's trot is
+ * over twenty seconds, and "short games" is a pillar. Six seconds is sized
+ * so a runner from third gets home and the batter rounds first with the
+ * camera on him; the between beat then finds him at the plate for his
+ * cheer, which is the same cut every other ending makes.
+ */
+export function homeRunTrot(play: PlayState, elapsedSec: number): TrotCue[] {
+  const cues: TrotCue[] = [];
+  for (const r of play.runners) {
+    if (r.done !== 'scored') continue;
+    const speed = r.topFts * TROT_FRACTION;
+    let budget = Math.max(0, elapsedSec) * speed;
+    // The path home: from where he stands, through every bag still ahead.
+    let at = runnerPos(r);
+    const firstAhead = r.to === r.from ? r.from + 1 : r.to;
+    const waypoints: Array<{ x: number; z: number }> = [];
+    for (let b = firstAhead; b <= 4; b++) waypoints.push(basePos(b));
+    let facing = r.to === r.from ? 0 : Math.atan2(basePos(r.to).x - at.x, basePos(r.to).z - at.z);
+    let home = waypoints.length === 0;
+    let next = basePos(4);
+    for (const w of waypoints) {
+      const leg = dist(at, w);
+      facing = Math.atan2(w.x - at.x, w.z - at.z);
+      next = w;
+      if (budget < leg) {
+        const f = leg > 0 ? budget / leg : 1;
+        at = { x: at.x + (w.x - at.x) * f, z: at.z + (w.z - at.z) * f };
+        budget = 0;
+        break;
+      }
+      budget -= leg;
+      at = { x: w.x, z: w.z };
+      if (w === waypoints[waypoints.length - 1]) home = true;
+    }
+    cues.push({ characterId: r.charId, x: at.x, z: at.z, facing, speedFts: home ? 0 : speed, next, home });
+  }
+  return cues;
 }
 
 export function cpuSwingCue(

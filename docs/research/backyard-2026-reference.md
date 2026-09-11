@@ -756,7 +756,26 @@ checksum are unchanged).
    bags facing the next one, and `game.test.ts` holds the id-iff-pip
    invariant on every frame of a game.
 
+3. **The home-run trot.** `checkTermination` scores every runner and ends
+   the play the tick the ball clears the fence, so a homer was the ball
+   leaving, then a cut to the batter cheering at the plate — nobody rounded a
+   base. It now holds for six seconds (`PLAY_END_HOLD_SEC.homer`) while
+   `actionCues.homeRunTrot` moves each scorer from exactly where the sim
+   froze him through the bags ahead at his own trot (`topFts`, the one kid
+   speed, scaled by `TROT_FRACTION`); the bridge positions them from the cue
+   and the camera's fit ladder is handed the lap instead of the vanished
+   ball, following the batter-runner round first and second. The speeds are
+   real and the hold is fixed, on purpose: a full lap at a kid's trot is
+   over twenty seconds and "short games" is a pillar. Six seconds gets a
+   runner from third home and the batter round first; the between beat then
+   finds him at the plate for his cheer the way every other ending cuts
+   there.
+   The pitcher's upset plays at once; the batter's cheer is held back until
+   the trot ends, or he would celebrate in place while sliding round the
+   bases.
+
 Verified by the unit gates above and by `smoke:presentation` on the smoke
 seed: the fly-catch beat's six painted steps after the catch frame now show
-the held play rather than the between cut, and the runner-on beat's runner
-is on the field, not only on the diamond.
+the held play rather than the between cut, the runner-on beat's runner is
+on the field, not only on the diamond, and the home-run beat on `smokeHR2`
+runs through the trot.

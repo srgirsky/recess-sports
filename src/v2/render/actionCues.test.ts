@@ -6,8 +6,10 @@ import {
   PITCH_DELIVERY_RELEASE_SEC,
   PLAY_END_HOLD_SEC,
   SWING_PREROLL_SEC,
+  TROT_FRACTION,
   cpuSwingCue,
   diveClip,
+  homeRunTrot,
   playEndHoldSec,
   playEventCue,
   slideCue,
@@ -16,7 +18,8 @@ import { FPS, clipSpec, framesToSec, markerLeadSec } from './clips';
 import { beginPlay, stepPlay, type PlaySpec } from '../sim/play';
 import type { LaunchSpec } from '../sim/launch';
 import { PLAY } from '../sim/params';
-import { VENUE_GEOMETRY } from '../sim/field';
+import { VENUE_GEOMETRY, basePos, dist } from '../sim/field';
+import { runnerPos } from '../sim/runners';
 import { makeRng } from '../sim/rng';
 import { autoAssign } from '../../systems/lineup';
 import { ROSTER, getCharacter } from '../../data/characters';
@@ -122,12 +125,74 @@ describe('★ the play-end hold — a catch is longer than one frame', () => {
     expect(playEndHoldSec(s)).toBe(PLAY_END_HOLD_SEC.safe);
   });
 
-  it('cuts straight to the between beat on a foul, a homer, a loose ball, or a play still going', () => {
+  it('cuts straight to the between beat on a foul, a loose ball, or a play still going', () => {
     const base = { phase: 'done', heldBy: 3, foul: false, homeRun: false, flyCaught: false, events: [] } as unknown as PlayState;
     expect(playEndHoldSec({ ...base, foul: true })).toBe(0);
-    expect(playEndHoldSec({ ...base, homeRun: true })).toBe(0);
     expect(playEndHoldSec({ ...base, heldBy: null })).toBe(0);
     expect(playEndHoldSec({ ...base, phase: 'live' })).toBe(0);
+  });
+
+  it('holds a homer for the trot, whoever is holding nothing', () => {
+    const base = { phase: 'done', heldBy: null, foul: false, homeRun: true, flyCaught: false, events: [] } as unknown as PlayState;
+    expect(playEndHoldSec(base)).toBe(PLAY_END_HOLD_SEC.homer);
+    expect(PLAY_END_HOLD_SEC.homer).toBeGreaterThan(PLAY_END_HOLD_SEC.out);
+  });
+
+  it('★ trots every scorer home from where the sim left him, at his own pace, and no further', () => {
+    const s = finished(
+      { exitVelocityFts: 115, launchAngleDeg: 28, sprayDeg: 0, spinRpm: 2200, heightFt: 2.5 },
+      { runners: [{ base: 1, char: ROSTER[3] }, { base: 3, char: ROSTER[4] }] }
+    );
+    expect(s.homeRun).toBe(true);
+    const scorers = s.runners.filter((r) => r.done === 'scored');
+    expect(scorers.length).toBe(3);
+
+    const start = homeRunTrot(s, 0);
+    expect(start.map((c) => c.characterId)).toEqual(scorers.map((r) => r.charId));
+    for (const c of start) {
+      const r = scorers.find((x) => x.charId === c.characterId)!;
+      const p = runnerPos(r);
+      expect(c.x, 'starts where the sim froze him').toBeCloseTo(p.x, 9);
+      expect(c.z).toBeCloseTo(p.z, 9);
+      expect(c.speedFts, 'his own sprint, scaled').toBeCloseTo(r.topFts * TROT_FRACTION, 9);
+      expect(c.home).toBe(false);
+    }
+
+    // He covers exactly his trot's worth of ground every step until the
+    // plate — never more, never idle — and stops there. (Straight-line
+    // distance to home is NOT monotone on a lap: first to second runs away
+    // from the plate, which is why this measures the ground covered.)
+    let prev = start;
+    for (let t = 0.25; t <= 30; t += 0.25) {
+      const now = homeRunTrot(s, t);
+      for (let i = 0; i < now.length; i++) {
+        const moved = dist({ x: prev[i].x, z: prev[i].z }, { x: now[i].x, z: now[i].z });
+        const stride = prev[i].speedFts * 0.25;
+        expect(moved, 'never faster than his trot').toBeLessThanOrEqual(stride + 1e-6);
+        // A step that turns a 90° corner at a bag shows a chord of at least
+        // stride/√2; anything under that is a kid who stopped short.
+        if (!now[i].home) expect(moved, 'never idle on the lap').toBeGreaterThanOrEqual(stride * 0.7 - 1e-6);
+        if (prev[i].home) expect(now[i].home, 'nobody leaves the plate').toBe(true);
+      }
+      prev = now;
+    }
+    for (const c of homeRunTrot(s, 60)) {
+      expect(c.home).toBe(true);
+      expect(c.speedFts).toBe(0);
+      expect(dist({ x: c.x, z: c.z }, basePos(4))).toBeLessThan(1e-9);
+      expect(c.next).toEqual(basePos(4));
+    }
+    // The bag ahead is the trot's own, not the leg the sim froze: four
+    // seconds in, the batter is round first and heading for second.
+    const batter = homeRunTrot(s, 4)[2];
+    expect(dist({ x: batter.x, z: batter.z }, basePos(1)), 'past first by four seconds').toBeGreaterThan(1);
+    expect(batter.next).toEqual(basePos(2));
+    // The runner from third is home first; the batter, with the longest lap,
+    // last — at eight seconds a kid has trotted more than one leg and less
+    // than three.
+    const at = homeRunTrot(s, 8);
+    expect(at.find((c) => c.characterId === ROSTER[4].id)!.home).toBe(true);
+    expect(at[at.length - 1].home).toBe(false);
   });
 
   it('★ the OUT tier outlasts the catch clip, so the fielder is seen holding the ball', () => {
