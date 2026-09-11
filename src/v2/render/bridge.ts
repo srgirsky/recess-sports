@@ -162,7 +162,31 @@ function applyIdleDefence(
       else dir?.setLocomotionSpeed(0);
     }
   }
-  const batter = refs.kids.get(frame.batterId);
+  // ★ THE RUNNERS STAND ON THEIR BAGS BETWEEN PITCHES, for the same reason the
+  // defence stands at its posts. A runner was only ever positioned inside a
+  // live `PlayState`, so a kid who singled stood on first for the one frame the
+  // play had left, vanished at the between cut, and reappeared at the next
+  // contact — while the scoreboard's pip said he was there the whole time. The
+  // identities are `LiveFrame.baseIds`, the half's own occupants; the sim moves
+  // them (a walk, a steal, the next play) and this only draws where they are.
+  frame.baseIds.forEach((id, i) => {
+    if (!id) return;
+    const kid = refs.kids.get(id);
+    if (!kid) return;
+    const at = basePos(i + 1);
+    const next = basePos(i + 2);
+    kid.setPosition(at.x, at.z);
+    // Facing the next bag, the way a runner takes his lead.
+    kid.setFacing(Math.atan2(next.x - at.x, next.z - at.z));
+    const dir = refs.directors.get(id);
+    dir?.setGloveVisible(false);
+    if (!protectedIds.has(id) && !holdsOneShot(dir)) dir?.setLocomotionSpeed(0);
+  });
+  // ★ NOT WHEN HE IS THE RUNNER. The between frame still names the kid who
+  // just batted, and if he singled or walked he is on first in `baseIds` —
+  // standing him in the box for the between beat and moving him to the bag at
+  // the next windup would be a teleport with a 2.5s layover.
+  const batter = frame.baseIds.includes(frame.batterId) ? undefined : refs.kids.get(frame.batterId);
   if (batter) {
     batter.setPosition(-2.2, 1.2);
     batter.setFacing(Math.PI);

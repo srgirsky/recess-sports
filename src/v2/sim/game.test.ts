@@ -593,4 +593,24 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
     }
     expect(sawPitch && sawLive && sawBetween, 'all three phases occur').toBe(true);
   }, PLAYS_GAMES);
+
+  it('★ names who is on each base on every frame, so a runner exists between pitches', () => {
+    // `bases` is three booleans for the scoreboard's diamond; the scene needs
+    // the kid. Without `baseIds` a runner was drawable only inside a live play:
+    // on first for the one frame the play had left, gone at the between cut,
+    // back at the next contact, while the lit pip said he was there throughout.
+    const it = simulateGameLive(spec(), makeRng('frames'));
+    let sawRunnerBetween = false;
+    for (let r = it.next(), n = 0; !r.done && n < 40_000; r = it.next(), n++) {
+      const f = r.value;
+      for (let i = 0; i < 3; i++) {
+        expect(f.baseIds[i] !== null, `base ${i + 1}: a kid iff the pip is lit`).toBe(f.bases[i]);
+      }
+      const ids = f.baseIds.filter((id): id is string => id !== null);
+      expect(new Set(ids).size, 'one kid per bag').toBe(ids.length);
+      for (const id of ids) expect(f.defence[id], 'a runner is never also a fielder').toBeUndefined();
+      if (f.phase !== 'live' && ids.length > 0) sawRunnerBetween = true;
+    }
+    expect(sawRunnerBetween, 'somebody reached base and stood there between pitches').toBe(true);
+  }, PLAYS_GAMES);
 });

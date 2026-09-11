@@ -71,6 +71,7 @@ import {
   PITCH_DELIVERY_RELEASE_SEC,
   cpuSwingCue,
   diveClip,
+  playEndHoldSec,
   playEventCue,
   slideCue,
 } from '../render/actionCues';
@@ -78,7 +79,7 @@ import type { AnimName } from '../render/clips';
 import { CAMERA_FAR_FT, RIGS, chooseCamera, damp, type CameraCue, type CameraPreset } from '../render/cameraCues';
 import { applyFrame, cameraInputFor, type SceneRefs } from '../render/bridge';
 import { simulateGameLive, type GameResult, type LiveFrame, type SimEvent } from '../sim/game';
-import type { PlayInputs } from '../sim/play';
+import type { PlayInputs, PlayState } from '../sim/play';
 import type { PitchKind } from '../sim/pitch';
 import { FIRST, SECOND, THIRD, HOME, dist, fenceDistAt, pointAt, type FieldGeometry, type Vec2 } from '../sim/field';
 import { hash01 } from '../../art/fieldTexture';
@@ -318,6 +319,17 @@ export class GameView {
   private pitchElapsed = 0;
   /** Real seconds still to wait on a `between` beat. */
   private wait = 0;
+  /**
+   * A play that just ended, still being painted.
+   *
+   * The sim yields ONE live frame with the final out in it and the next frame
+   * is `between` (`actionCues.playEndHoldSec` has the story), so the view keeps
+   * the finished `PlayState` and paints it — camera, fielders, ball in the
+   * glove — for the hold before the between beat starts. The sim never touches
+   * a finished play again, so retaining it is not the `LiveFrame` trap: what is
+   * held is a play that is over, not the frame that is reused.
+   */
+  private hold: { play: PlayState; sec: number } | null = null;
   private venue: VenueId;
   private readonly board = new Scoreboard();
   private readonly matchup = new Matchup((id) => this.character(id));
@@ -1011,6 +1023,7 @@ export class GameView {
     this.diveClips.clear();
     this.inputs = {};
     this.wait = 0;
+    this.hold = null;
     this.pitchElapsed = 0;
     this.windupElapsed = 0;
     this.cue = null;
@@ -1204,6 +1217,9 @@ export class GameView {
   /** Pull the next frame out of the sim. Null once the game is over. */
   private advance(): void {
     if (!this.game) return;
+    // The play this frame carried, read BEFORE the pump mutates the frame in
+    // place: if the next frame is `between`, this play has just ended.
+    const ending = this.frame?.phase === 'live' ? this.frame.play : null;
     const r = this.game.next(this.inputs);
     // ★ THE ONE-SHOTS ARE CONSUMED, the pointer is not — WITHIN ONE PLAY. A
     // dive or a throw is an instant; steering is a state that persists until
@@ -1240,9 +1256,24 @@ export class GameView {
     }
     if (this.frame.phase === 'between') {
       this.wait = this.frame.outs >= 3 ? HALF_BREAK_SEC : BETWEEN_SEC;
+      // A catch or a throw-in holds on screen before the between beat; a foul
+      // or a homer cuts straight to its own staging. The reactions the `pa`
+      // event just started play where the kids stand in the held picture.
+      const sec = ending ? playEndHoldSec(ending) : 0;
+      this.hold = sec > 0 && ending ? { play: ending, sec } : null;
     }
-    this.showOnly(this.frame);
+    this.showOnly(this.painted());
     if (this.frame.phase === 'live' && this.frame.play) this.animatePlayActions(this.frame.play);
+  }
+
+  /**
+   * The frame the scene draws: the real one, or — during a play-end hold —
+   * the same scoreboard with the finished play back in it. A shallow copy per
+   * render frame, never the sim's own object with a field poked.
+   */
+  private painted(): LiveFrame {
+    const frame = this.frame!;
+    return this.hold ? { ...frame, phase: 'live', play: this.hold.play } : frame;
   }
 
   /** Start the complete windup -> stride -> release chain once. */
@@ -1309,6 +1340,7 @@ export class GameView {
   /** Only the kids actually on the field are visible — plus the yard kids. */
   private showOnly(frame: LiveFrame): void {
     const live = new Set<string>(Object.keys(frame.defence));
+    for (const id of frame.baseIds) if (id) live.add(id);
     if (frame.play) {
       for (const f of frame.play.fielders) live.add(f.charId);
       for (const r of frame.play.runners) if (r.done === null) live.add(r.charId);
@@ -1514,7 +1546,8 @@ export class GameView {
 
     if (this.frame) {
       this.frameTap?.(this.frame);
-      applyFrame(this.refs, this.frame, dt, this.pitchElapsed, this.draftProtected, {
+      const painted = this.painted();
+      applyFrame(this.refs, painted, dt, this.pitchElapsed, this.draftProtected, {
         readability: this.screenCue === null,
         fieldingFocus: this.liveControl === 'field',
         // One frame stale on purpose: the camera moves after the frame is
@@ -1524,7 +1557,7 @@ export class GameView {
       this.updateDraftPresentation(dt);
       this.animateCpuSwing();
       this.paintPlateCues();
-      this.driveCamera(this.frame, dt);
+      this.driveCamera(painted, dt);
       if (this.impactPunch > 0) {
         const punch = this.impactPunch;
         this.impactPunch = Math.max(0, punch - dt * 3.4);
@@ -1543,6 +1576,15 @@ export class GameView {
   /** One sim step of real time. */
   private pump(step: number): void {
     if (!this.frame) return;
+    if (this.hold) {
+      // The finished play stays on screen; the between beat has not started.
+      this.hold.sec -= step;
+      if (this.hold.sec <= 0) {
+        this.hold = null;
+        this.showOnly(this.frame);
+      }
+      return;
+    }
     if (this.frame.phase === 'between') {
       this.wait -= step;
       if (this.wait <= 0) this.advance();
