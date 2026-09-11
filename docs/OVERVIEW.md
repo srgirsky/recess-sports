@@ -2241,12 +2241,13 @@ in this order:
    reviewed batches through the existing validator and A/B page.
 
    **Sculpt: done to `candidate`, all thirty (2026-08-15).** Seven batches,
-   PRs #123–#137, plus a stance-and-mouth pass (#140). **Acting: fifteen of
+   PRs #123–#137, plus a stance-and-mouth pass (#140). **Acting: twenty-one of
    thirty** — `anims_<id>_v1.glb` takes exist for Junebug, Theo, Zoom, Tank,
    Mimi Mash and Big Lou, and since 2026-09-11 for Batch 2's Turbo, Sprout
-   and Zippy and Batches 3–4's Ace, Penny, Dex, Lefty, Smokey and Bend-It
-   (`docs/research/backyard-2026-reference.md`, that date); the other
-   fifteen ride the shared library. That split is the live one: the
+   and Zippy, Batches 3–4's Ace, Penny, Dex, Lefty, Smokey and Bend-It, and
+   Batches 5–6's Noodle, Bubbles, Sniffles, The Professor, Dazzle and Grizz
+   (`docs/research/backyard-2026-reference.md`, that date); the other nine
+   ride the shared library. That split is the live one: the
    remaining distance on characters is per-kid performance and the 4→5
    sculpt polish, not sculpting from scratch.
 2. **Venue art density.** Eleven parks now play differently and carry signature
