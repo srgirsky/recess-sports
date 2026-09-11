@@ -2711,3 +2711,365 @@ function buildNamed(
     return make(spec as ClipSpec);
   });
 }
+
+// --- Batches 5 and 6: Noodle, Bubbles, Sniffles, The Professor, Dazzle, Grizz --
+
+// Noodle: effort visible before outcome. He rehearses a pose, checks whether
+// it worked, then commits too hard; recoveries are earnest and rebuilt.
+const NOODLE_IDLE_POSE: Pose = {
+  hp: [6, 0, 0], sp: [6, 0, 0], s2: [8, 0, 0], hd: [-5, -4, 2],
+  la: [-4, 0, 66], lf: [0, -24, 0], ra: [-4, 0, -66], rf: [0, 24, 0],
+  lu: [7, 0, 4], ll: [-12, 0, 0], ru: [7, 0, -4], rl: [-12, 0, 0],
+};
+function noodleIdle(spec: ClipSpec): AnimationClip {
+  // A rehearsal: he tries a taller version of himself, checks, and deflates.
+  const taller = shift(NOODLE_IDLE_POSE, { hp: [-8, 0, 0], sp: [-6, 0, 0], s2: [-10, 0, 0], hd: [-2, 0, 0] });
+  return build(spec, [
+    { f: 0, pose: NOODLE_IDLE_POSE },
+    { f: 14, pose: taller, hips: [0, 0.03, 0] },
+    { f: 24, pose: shift(taller, { hd: [4, -14, 0] }), hips: [0, 0.03, 0] },
+    { f: 34, pose: shift(taller, { hd: [4, 12, 0] }), hips: [0, 0.028, 0] },
+    { f: 46, pose: shift(NOODLE_IDLE_POSE, { hd: [4, 0, 0], s2: [2, 0, 0] }) },
+    { f: spec.frames, pose: NOODLE_IDLE_POSE },
+  ]);
+}
+function noodleNervous(spec: ClipSpec): AnimationClip {
+  return cycle(spec, (p) => {
+    const sway = sin(p) * 5;
+    const look = sin(p, 0.33) * 14;
+    return shift(NOODLE_IDLE_POSE, {
+      hp: [0, sway, 0], sp: [0, sway * 0.4, 0], s2: [0, -sway * 0.5, 0],
+      hd: [0, look, sin(p, 0.11) * 3],
+      la: [-10, 0, -6 + sway], lf: [0, -22, 0], ra: [-10, 0, 6 - sway], rf: [0, 22, 0],
+      lu: [sway * 0.5, 0, 6], ru: [-sway * 0.5, 0, -6],
+    });
+  });
+}
+function noodleIdleFidget(spec: ClipSpec): AnimationClip {
+  // Rehearse a hero stance, check it, commit too hard, wobble, rebuild.
+  const rehearse = shift(NOODLE_IDLE_POSE, { hp: [-6, -10, 0], s2: [-6, -6, 0], hd: [-4, 12, 0], la: [-10, 0, -8], lf: [0, -50, 0], ra: [-30, 0, 10], rf: [0, 50, 0] });
+  const tooHard = shift(rehearse, { hp: [-8, -8, 4], s2: [-8, -6, 0], hd: [-6, 8, -4], ra: [-30, 0, 6], lu: [-6, 0, 0], ru: [8, 0, 0] });
+  return build(spec, [
+    { f: 0, pose: NOODLE_IDLE_POSE },
+    { f: 16, pose: rehearse, hips: [0, 0.01, 0] },
+    { f: 26, pose: shift(rehearse, { hd: [6, -10, 0] }) },
+    { f: 36, pose: tooHard, hips: [0.06, 0.02, 0] },
+    { f: 44, pose: shift(tooHard, { hp: [4, 0, -8], hd: [4, 0, 6] }), hips: [0.1, 0, 0] },
+    { f: 56, pose: shift(NOODLE_IDLE_POSE, { hp: [2, 0, -3], hd: [2, -6, 0] }), hips: [0.05, 0, 0] },
+    { f: 72, pose: shift(NOODLE_IDLE_POSE, { hd: [-2, 2, 0] }), hips: [0.01, 0, 0] },
+    { f: spec.frames - 1, pose: NOODLE_IDLE_POSE },
+  ]);
+}
+/** Noodle's Batch 5 pass, exported as a partial delivery. */
+export function buildNoodlePilotClips(): AnimationClip[] {
+  return buildNamed('Noodle', {
+    idle: noodleIdle,
+    idle_fidget: noodleIdleFidget,
+    nervous: noodleNervous,
+    run: (spec) => runCycle(spec, 14, 50, 46),
+    cheer_tender: (spec) => directedReaction(spec, true, 'tender'),
+    upset_tender: (spec) => directedReaction(spec, false, 'tender'),
+  });
+}
+
+// Bubbles: she rebounds from every contact as if the ground is friendly.
+// Holds are short, turns float through the shoulders.
+const BUBBLES_IDLE_POSE: Pose = {
+  hp: [4, 0, 0], sp: [2, 0, 0], s2: [3, -2, 0], hd: [-4, 8, -3],
+  la: [6, 0, 62], lf: [0, -28, 0], ra: [6, 0, -62], rf: [0, 28, 0],
+  lu: [4, 0, 3], ll: [-8, 0, 0], ru: [4, 0, -3], rl: [-8, 0, 0],
+};
+const BUBBLES_CARD_POSE: Pose = shift(BUBBLES_IDLE_POSE, {
+  hp: [0, 14, -4], s2: [0, 10, 0], hd: [-4, -18, 6],
+  la: [-20, 0, -8], lf: [0, -60, 0], ra: [-70, 0, 20], rf: [0, 40, 0],
+  lu: [-4, 0, 0], ll: [6, 0, 0], ru: [6, 0, 0], rl: [-8, 0, 0],
+});
+function bubblesIdle(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: BUBBLES_IDLE_POSE },
+    { f: 8, pose: shift(BUBBLES_IDLE_POSE, { s2: [-1, 3, 0], ls: [0, 0, -4], rs: [0, 0, 4] }), hips: [0, 0.035, 0] },
+    { f: 16, pose: shift(BUBBLES_IDLE_POSE, { hp: [0, 8, 0], s2: [0, 6, 0] }) },
+    { f: 24, pose: shift(BUBBLES_IDLE_POSE, { hp: [0, 8, 0], s2: [0, 6, 0], hd: [-2, 12, -4] }), hips: [0, 0.035, 0] },
+    { f: 34, pose: shift(BUBBLES_IDLE_POSE, { hp: [0, -6, 0], s2: [0, -5, 0], hd: [-2, 4, -2] }) },
+    { f: 42, pose: shift(BUBBLES_IDLE_POSE, { hp: [0, -6, 0], s2: [0, -5, 0], hd: [-3, -8, 3] }), hips: [0, 0.035, 0] },
+    { f: 52, pose: shift(BUBBLES_IDLE_POSE, { hd: [-2, 0, 0] }), hips: [0, 0.018, 0] },
+    { f: spec.frames, pose: BUBBLES_IDLE_POSE },
+  ]);
+}
+function bubblesIdleFidget(spec: ClipSpec): AnimationClip {
+  // A bounce, a wave to somebody, another bounce, and she finds one more
+  // person to wave at on the other side.
+  const wave = shift(BUBBLES_IDLE_POSE, { hd: [-4, -20, 6], s2: [0, -8, 0], ra: [-120, 0, 24], rf: [0, 50, 0] });
+  const waveOther = shift(BUBBLES_IDLE_POSE, { hd: [-4, 22, -6], s2: [0, 8, 0], la: [-120, 0, -24], lf: [0, -50, 0] });
+  return build(spec, [
+    { f: 0, pose: BUBBLES_IDLE_POSE },
+    { f: 8, pose: shift(BUBBLES_IDLE_POSE, { ll: [-14, 0, 0], rl: [-14, 0, 0] }), hips: [0, -0.03, 0] },
+    { f: 14, pose: wave, hips: [0, 0.12, 0] },
+    { f: 22, pose: shift(wave, { rf: [0, -14, 0], hd: [0, -2, 0] }) },
+    { f: 30, pose: shift(wave, { rf: [0, 10, 0] }) },
+    { f: 40, pose: shift(BUBBLES_IDLE_POSE, { ll: [-14, 0, 0], rl: [-14, 0, 0] }), hips: [0, -0.03, 0] },
+    { f: 46, pose: waveOther, hips: [0, 0.12, 0] },
+    { f: 54, pose: shift(waveOther, { lf: [0, 14, 0] }) },
+    { f: 62, pose: shift(waveOther, { lf: [0, -10, 0] }) },
+    { f: 76, pose: shift(BUBBLES_IDLE_POSE, { hd: [-2, 4, 0] }), hips: [0, 0.02, 0] },
+    { f: spec.frames - 1, pose: BUBBLES_IDLE_POSE },
+  ]);
+}
+function bubblesCheer(spec: ClipSpec): AnimationClip {
+  const up = shift(BUBBLES_IDLE_POSE, {
+    hp: [-8, 0, 0], hd: [-8, 0, 0], la: [-126, 0, -30], ra: [-126, 0, 30],
+    lu: [-20, 0, 6], ll: [30, 0, 0], ru: [-20, 0, -6], rl: [30, 0, 0],
+  });
+  const include = shift(BUBBLES_IDLE_POSE, { hp: [0, 20, 0], s2: [0, 10, 0], hd: [-4, -24, 6], la: [-90, 0, -40], lf: [0, -30, 0], ra: [-30, 0, 10] });
+  return build(spec, [
+    { f: 0, pose: BUBBLES_IDLE_POSE },
+    { f: 6, pose: shift(BUBBLES_IDLE_POSE, { hp: [10, 0, 0], ll: [-18, 0, 0], rl: [-18, 0, 0] }), hips: [0, -0.05, 0] },
+    { f: 13, pose: up, hips: [0, 0.4, 0] },
+    { f: 21, pose: shift(BUBBLES_IDLE_POSE, { hp: [8, 0, 0], la: [-40, 0, 0], ra: [-40, 0, 0], ll: [-14, 0, 0], rl: [-14, 0, 0] }), hips: [0, -0.03, 0] },
+    { f: 30, pose: include, hips: [0, 0.03, 0] },
+    { f: 38, pose: shift(include, { hp: [0, -30, 0], s2: [0, -14, 0], hd: [0, 40, -10], la: [60, 0, 0], ra: [-60, 0, -30], rf: [0, 30, 0] }), hips: [0, 0.03, 0] },
+    { f: spec.frames - 1, pose: shift(BUBBLES_IDLE_POSE, { hd: [-4, 8, -2] }) },
+  ]);
+}
+function bubblesUpset(spec: ClipSpec): AnimationClip {
+  const sag = shift(BUBBLES_IDLE_POSE, { hp: [10, 0, 0], s2: [10, 0, 0], hd: [18, 0, 0], ls: [0, 0, 6], rs: [0, 0, -6] });
+  return build(spec, [
+    { f: 0, pose: BUBBLES_IDLE_POSE },
+    { f: 10, pose: sag, hips: [0, -0.03, 0] },
+    { f: 24, pose: shift(sag, { hd: [4, -12, 0] }), hips: [0, -0.035, 0] },
+    // The rebound: even this is over quickly.
+    { f: 38, pose: shift(BUBBLES_IDLE_POSE, { hp: [-2, 0, 0], hd: [-6, 6, -2] }), hips: [0, 0.05, 0] },
+    { f: 48, pose: shift(BUBBLES_IDLE_POSE, { hd: [-2, 2, 0] }), hips: [0, 0.01, 0] },
+    { f: spec.frames - 1, pose: BUBBLES_IDLE_POSE },
+  ]);
+}
+/** Bubbles' Batch 5 pass, exported as a partial delivery. */
+export function buildBubblesPilotClips(): AnimationClip[] {
+  return buildNamed('Bubbles', {
+    idle: bubblesIdle,
+    idle_fidget: bubblesIdleFidget,
+    pose_card: (spec) => heldPose(spec, BUBBLES_CARD_POSE, [0, 0.01, 0]),
+    run: (spec) => runCycle(spec, 15, 50, 48),
+    cheer: bubblesCheer,
+    upset: bubblesUpset,
+  });
+}
+
+// Sniffles: he braces for sneezes that may not arrive. The signature fidget
+// is a nose scrunch and an aborted reach for the pocket.
+const SNIFFLES_IDLE_POSE: Pose = {
+  hp: [7, 0, 0], sp: [7, 0, 0], s2: [8, 0, 0], hd: [2, -5, 3],
+  ls: [0, 0, 6], rs: [0, 0, -6],
+  la: [-8, 0, 64], lf: [0, -30, 0], ra: [-8, 0, -64], rf: [0, 30, 0],
+  lu: [7, 0, 4], ll: [-12, 0, 0], ru: [7, 0, -4], rl: [-12, 0, 0],
+};
+function snifflesIdle(spec: ClipSpec): AnimationClip {
+  // The brace: head back a touch, a held breath, and nothing comes.
+  return build(spec, [
+    { f: 0, pose: SNIFFLES_IDLE_POSE },
+    { f: 18, pose: shift(SNIFFLES_IDLE_POSE, { sp: [0.8, 0, 0], s2: [0.8, 0, 0] }), hips: [0, 0.006, 0] },
+    { f: 28, pose: shift(SNIFFLES_IDLE_POSE, { hd: [-10, 0, 0], nk: [-3, 0, 0], s2: [-4, 0, 0], ls: [0, 0, -4], rs: [0, 0, 4] }) },
+    { f: 38, pose: shift(SNIFFLES_IDLE_POSE, { hd: [-10, 0, 0], nk: [-3, 0, 0], s2: [-4, 0, 0], ls: [0, 0, -4], rs: [0, 0, 4] }) },
+    { f: 48, pose: shift(SNIFFLES_IDLE_POSE, { hd: [4, -2, 0], s2: [2, 0, 0] }) },
+    { f: spec.frames, pose: SNIFFLES_IDLE_POSE },
+  ]);
+}
+function snifflesNervous(spec: ClipSpec): AnimationClip {
+  return cycle(spec, (p) => {
+    const sway = sin(p) * 4;
+    const look = sin(p, 0.33) * 10;
+    return shift(SNIFFLES_IDLE_POSE, {
+      hp: [0, sway, 0], sp: [0, sway * 0.4, 0], s2: [0, -sway * 0.5, 0],
+      hd: [0, look, sin(p, 0.11) * 3],
+      la: [-8, 0, -4 + sway], lf: [0, -20, 0], ra: [-8, 0, 4 - sway], rf: [0, 20, 0],
+      lu: [sway * 0.4, 0, 6], ru: [-sway * 0.4, 0, -6],
+    });
+  });
+}
+function snifflesIdleFidget(spec: ClipSpec): AnimationClip {
+  // Nose scrunch (head tips back, shoulders up), a reach toward the pocket
+  // that stops halfway, and a sheepish settle.
+  const scrunch = shift(SNIFFLES_IDLE_POSE, { hd: [-14, 4, 4], nk: [-4, 0, 0], ls: [0, 0, -10], rs: [0, 0, 10], s2: [-4, 0, 0] });
+  const reach = shift(SNIFFLES_IDLE_POSE, { hd: [10, -8, 0], ra: [-24, 0, 18], rf: [0, 44, 0], s2: [4, -4, 0] });
+  return build(spec, [
+    { f: 0, pose: SNIFFLES_IDLE_POSE },
+    { f: 12, pose: scrunch },
+    { f: 22, pose: shift(scrunch, { hd: [-4, 0, 0] }) },
+    { f: 30, pose: shift(SNIFFLES_IDLE_POSE, { hd: [6, 0, 0], s2: [3, 0, 0] }) },
+    { f: 42, pose: reach },
+    { f: 50, pose: shift(reach, { ra: [8, 0, -6], rf: [0, -16, 0] }) },
+    { f: 62, pose: shift(SNIFFLES_IDLE_POSE, { hd: [6, -10, 2], s2: [3, 0, 0] }) },
+    { f: 78, pose: shift(SNIFFLES_IDLE_POSE, { hd: [2, -2, 0] }) },
+    { f: spec.frames - 1, pose: SNIFFLES_IDLE_POSE },
+  ]);
+}
+/** Sniffles' Batch 5 pass, exported as a partial delivery. */
+export function buildSnifflesPilotClips(): AnimationClip[] {
+  return buildNamed('Sniffles', {
+    idle: snifflesIdle,
+    idle_fidget: snifflesIdleFidget,
+    nervous: snifflesNervous,
+    run: (spec) => runCycle(spec, 12, 46, 42),
+    cheer_tender: (spec) => directedReaction(spec, true, 'tender'),
+    upset_tender: (spec) => directedReaction(spec, false, 'tender'),
+  });
+}
+
+// The Professor: observes before acting, annotates afterward. One invisible
+// calculation before the card beat.
+const PROF_IDLE_POSE: Pose = {
+  hp: [3, 0, 0], sp: [3, 0, 0], s2: [4, 0, 0], hd: [-2, 2, 0],
+  la: [0, 0, 70], lf: [0, -14, 0], ra: [0, 0, -70], rf: [0, 14, 0],
+  lu: [3, 0, 2], ll: [-6, 0, 0], ru: [3, 0, -2], rl: [-6, 0, 0],
+};
+function profIdle(spec: ClipSpec): AnimationClip {
+  // Observation: the head tracks something across the field, slowly, and
+  // nods once when the calculation lands.
+  return build(spec, [
+    { f: 0, pose: PROF_IDLE_POSE },
+    { f: 16, pose: shift(PROF_IDLE_POSE, { hd: [-2, -12, 0], nk: [0, -4, 0] }) },
+    { f: 34, pose: shift(PROF_IDLE_POSE, { hd: [-2, 10, 0], nk: [0, 4, 0] }) },
+    { f: 42, pose: shift(PROF_IDLE_POSE, { hd: [6, 8, 0] }) },
+    { f: 50, pose: shift(PROF_IDLE_POSE, { hd: [-2, 4, 0] }) },
+    { f: spec.frames, pose: PROF_IDLE_POSE },
+  ]);
+}
+function profIdleFidget(spec: ClipSpec): AnimationClip {
+  // The annotation: a finger raised, a point at where the ball would go, and
+  // a small nod — the invisible calculation.
+  const finger = shift(PROF_IDLE_POSE, { hd: [-6, 6, 0], ra: [-70, 0, 8], rf: [0, 110, 0], s2: [-2, 0, 0] });
+  const point = shift(PROF_IDLE_POSE, { hd: [-8, -22, 0], nk: [0, -6, 0], s2: [0, -10, 0], ra: [-96, 0, 26], rf: [0, 30, 0] });
+  return build(spec, [
+    { f: 0, pose: PROF_IDLE_POSE },
+    { f: 16, pose: finger },
+    { f: 30, pose: shift(finger, { hd: [2, 0, 0] }) },
+    { f: 42, pose: point },
+    { f: 56, pose: shift(point, { hd: [4, 0, 0] }) },
+    { f: 68, pose: shift(PROF_IDLE_POSE, { hd: [4, 2, 0], ra: [-20, 0, 6], rf: [0, 30, 0] }) },
+    { f: spec.frames - 1, pose: PROF_IDLE_POSE },
+  ]);
+}
+/** The Professor's Batch 6 pass, exported as a partial delivery. */
+export function buildProfPilotClips(): AnimationClip[] {
+  return buildNamed('The Professor', {
+    idle: profIdle,
+    idle_fidget: profIdleFidget,
+    field_ready: (spec) => readyLoop(spec, { hd: [-2, 0, 0] }, 1.4),
+    run: (spec) => runCycle(spec, 10, 46, 42),
+    cheer_cool: (spec) => directedReaction(spec, true, 'cool'),
+    upset_cool: (spec) => directedReaction(spec, false, 'cool'),
+  });
+}
+
+// Dazzle: she always knows where the camera would be. Turns finish on a
+// clean three-quarter; a missed beat protects dignity before showing hurt.
+const DIVA_IDLE_POSE: Pose = {
+  hp: [3, -8, 2], sp: [2, -4, 0], s2: [2, -6, 0], hd: [-4, 12, -3],
+  la: [4, 0, 66], lf: [0, -22, 0], ra: [4, 0, -66], rf: [0, 22, 0],
+  lu: [4, 0, 4], ll: [-8, 0, 0], ru: [2, 0, -2], rl: [-4, 0, 0],
+};
+const DIVA_CARD_POSE: Pose = shift(DIVA_IDLE_POSE, {
+  hp: [0, -22, 4], s2: [0, -10, 0], hd: [-4, 26, -4],
+  la: [-8, 0, -6], lf: [0, -62, 0], ra: [-12, 0, 6], rf: [0, 44, 0],
+  lu: [-2, 0, 2], ll: [4, 0, 0], ru: [6, 0, -2], rl: [-6, 0, 0],
+});
+function divaIdle(spec: ClipSpec): AnimationClip {
+  // The turn to three-quarter, finished and held, then released.
+  return build(spec, [
+    { f: 0, pose: DIVA_IDLE_POSE },
+    { f: 16, pose: shift(DIVA_IDLE_POSE, { hp: [0, -10, 2], s2: [0, -4, 0], hd: [0, 8, -2] }), hips: [0.01, 0.006, 0] },
+    { f: 24, pose: shift(DIVA_IDLE_POSE, { hp: [0, -10, 2], s2: [0, -4, 0], hd: [-2, 12, -3] }), hips: [0.01, 0.006, 0] },
+    { f: 40, pose: shift(DIVA_IDLE_POSE, { hp: [0, -10, 2], s2: [0, -4, 0], hd: [-2, 12, -3] }), hips: [0.01, 0.006, 0] },
+    { f: 52, pose: shift(DIVA_IDLE_POSE, { hp: [0, -2, 0], hd: [0, 2, 0] }) },
+    { f: spec.frames, pose: DIVA_IDLE_POSE },
+  ]);
+}
+function divaIdleFidget(spec: ClipSpec): AnimationClip {
+  // Hair back with the left hand, a clean three-quarter turn, and the kiss —
+  // tossed after the pose has already been struck.
+  const hair = shift(DIVA_IDLE_POSE, { hd: [-8, 14, -6], la: [-100, 0, -6], lf: [0, -120, 0] });
+  const kiss = shift(DIVA_CARD_POSE, { ra: [-70, 0, 10], rf: [0, 96, 0], hd: [-2, 24, -2] });
+  return build(spec, [
+    { f: 0, pose: DIVA_IDLE_POSE },
+    { f: 14, pose: hair },
+    { f: 24, pose: shift(hair, { la: [10, 0, 0], lf: [0, 20, 0], hd: [0, -4, 0] }) },
+    { f: 36, pose: DIVA_CARD_POSE, hips: [0.02, 0.01, 0] },
+    { f: 48, pose: kiss, hips: [0.02, 0.01, 0] },
+    { f: 56, pose: shift(kiss, { ra: [-20, 0, 20], rf: [0, -40, 0] }), hips: [0.02, 0.01, 0] },
+    { f: 72, pose: shift(DIVA_IDLE_POSE, { hd: [-2, 6, -1] }) },
+    { f: spec.frames - 1, pose: DIVA_IDLE_POSE },
+  ]);
+}
+/** Dazzle's Batch 6 pass, exported as a partial delivery. */
+export function buildDivaPilotClips(): AnimationClip[] {
+  return buildNamed('Dazzle', {
+    idle: divaIdle,
+    idle_fidget: divaIdleFidget,
+    pose_card: (spec) => heldPose(spec, DIVA_CARD_POSE, [0.02, 0.01, 0]),
+    run: (spec) => runCycle(spec, 13, 48, 46),
+    cheer_fierce: (spec) => directedReaction(spec, true, 'fierce'),
+    upset_fierce: (spec) => directedReaction(spec, false, 'fierce'),
+  });
+}
+
+// Grizz: gravity wins until baseball interrupts it. The idle nearly naps,
+// and the upset is mostly the inconvenience of having to react.
+const GRIZZ_IDLE_POSE: Pose = {
+  hp: [8, 0, 0], sp: [8, 0, 0], s2: [10, 0, 0], hd: [8, -3, 2],
+  ls: [0, 0, 4], rs: [0, 0, -4],
+  la: [0, 0, 70], lf: [0, -10, 0], ra: [0, 0, -70], rf: [0, 10, 0],
+  lu: [8, 0, 4], ll: [-14, 0, 0], ru: [8, 0, -4], rl: [-14, 0, 0],
+};
+function grizzIdle(spec: ClipSpec): AnimationClip {
+  // The nod: head sinks, catches itself, sinks again.
+  return build(spec, [
+    { f: 0, pose: GRIZZ_IDLE_POSE },
+    { f: 20, pose: shift(GRIZZ_IDLE_POSE, { hd: [8, 0, 0], nk: [3, 0, 0], s2: [2, 0, 0] }), hips: [0, -0.01, 0] },
+    { f: 26, pose: shift(GRIZZ_IDLE_POSE, { hd: [-4, 2, 0], nk: [-1, 0, 0], s2: [-1, 0, 0] }), hips: [0, 0.006, 0] },
+    { f: 44, pose: shift(GRIZZ_IDLE_POSE, { hd: [6, -2, 1], nk: [2, 0, 0], s2: [2, 0, 0] }), hips: [0, -0.008, 0] },
+    { f: spec.frames, pose: GRIZZ_IDLE_POSE },
+  ]);
+}
+function grizzNervous(spec: ClipSpec): AnimationClip {
+  return cycle(spec, (p) => {
+    const sway = sin(p) * 3;
+    const look = sin(p, 0.33) * 8;
+    return shift(GRIZZ_IDLE_POSE, {
+      hp: [0, sway, 0], sp: [0, sway * 0.3, 0], s2: [0, -sway * 0.4, 0],
+      hd: [0, look, sin(p, 0.11) * 2],
+      la: [-6, 0, -2 + sway], lf: [0, -14, 0], ra: [-6, 0, 2 - sway], rf: [0, 14, 0],
+      lu: [sway * 0.3, 0, 6], ru: [-sway * 0.3, 0, -6],
+    });
+  });
+}
+function grizzIdleFidget(spec: ClipSpec): AnimationClip {
+  // Gravity wins: a sag, a stretch that is one enormous slow uncoiling —
+  // arms up, chest open, head back — and then back down into the slouch.
+  const sag = shift(GRIZZ_IDLE_POSE, { hp: [4, 0, 0], s2: [4, 0, 0], hd: [6, 0, 0] });
+  const stretch = shift(GRIZZ_IDLE_POSE, {
+    hp: [-14, 0, 0], sp: [-10, 0, 0], s2: [-16, 0, 0], hd: [-18, 0, 0], nk: [-4, 0, 0],
+    ls: [0, 0, -6], rs: [0, 0, 6],
+    la: [-150, 0, -36], lf: [0, 20, 0], ra: [-150, 0, 36], rf: [0, -20, 0],
+    lu: [-6, 0, 0], ll: [6, 0, 0], ru: [-6, 0, 0], rl: [6, 0, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: GRIZZ_IDLE_POSE },
+    { f: 16, pose: sag, hips: [0, -0.02, 0] },
+    { f: 44, pose: stretch, hips: [0, 0.05, 0] },
+    { f: 56, pose: shift(stretch, { hd: [4, 6, 0], la: [10, 0, 4], ra: [10, 0, -4] }), hips: [0, 0.05, 0] },
+    { f: 74, pose: shift(GRIZZ_IDLE_POSE, { hp: [2, 0, 0], hd: [2, 0, 0] }), hips: [0, -0.005, 0] },
+    { f: spec.frames - 1, pose: GRIZZ_IDLE_POSE },
+  ]);
+}
+/** Grizz's Batch 6 pass, exported as a partial delivery. */
+export function buildGrizzPilotClips(): AnimationClip[] {
+  return buildNamed('Grizz', {
+    idle: grizzIdle,
+    idle_fidget: grizzIdleFidget,
+    nervous: grizzNervous,
+    // Heavy: less lean, a shorter reach, more drive from the arms.
+    run: (spec) => runCycle(spec, 8, 40, 50),
+    cheer_cool: (spec) => directedReaction(spec, true, 'cool'),
+    upset_cool: (spec) => directedReaction(spec, false, 'cool'),
+  });
+}

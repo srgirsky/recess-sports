@@ -808,6 +808,19 @@ checksum are unchanged).
    is poses and beats, not plumbing. Reviewed from 72 stills off the
    animation page; nothing clipped or stood at bind. Acting is now fifteen
    of thirty.
+6. **Acting Batches 5 and 6: Noodle, Bubbles, Sniffles, The Professor,
+   Dazzle, Grizz.** Six more through the same path. Noodle rehearses a
+   taller version of himself, checks it, and commits too hard before an
+   earnest rebuild; Bubbles bounces, waves, and finds one more person to
+   wave at, with a cheer that turns to include somebody; Sniffles braces for
+   a sneeze that never comes, scrunches, and aborts a reach for the pocket;
+   The Professor tracks something across the field, raises a finger, and
+   points where the ball would go; Dazzle pushes her hair back, finishes on
+   a clean three-quarter, and tosses the kiss after the pose is already
+   struck; Grizz's idle nearly naps, his fidget is one enormous slow
+   uncoiling stretch, and his run carries the weight. Reviewed from 52
+   stills; nothing clipped or stood at bind. Acting is now twenty-one of
+   thirty.
 
 Verified by the unit gates above and by `smoke:presentation` on the smoke
 seed: the fly-catch beat's six painted steps after the catch frame now show

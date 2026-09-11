@@ -45,7 +45,13 @@ import {
   GROUND_EPSILON_FT,
   buildAcePilotClips,
   buildBendItPilotClips,
+  buildBubblesPilotClips,
   buildDexPilotClips,
+  buildDivaPilotClips,
+  buildGrizzPilotClips,
+  buildNoodlePilotClips,
+  buildProfPilotClips,
+  buildSnifflesPilotClips,
   buildJunebugPilotClips,
   buildLeftyPilotClips,
   buildPennyPilotClips,
@@ -173,6 +179,12 @@ for (const [who, make] of [
   ['Lefty Lu', buildLeftyPilotClips],
   ['Smokey', buildSmokeyPilotClips],
   ['Bend-It', buildBendItPilotClips],
+  ['Noodle', buildNoodlePilotClips],
+  ['Bubbles', buildBubblesPilotClips],
+  ['Sniffles', buildSnifflesPilotClips],
+  ['The Professor', buildProfPilotClips],
+  ['Dazzle', buildDivaPilotClips],
+  ['Grizz', buildGrizzPilotClips],
 ] as const) {
   describe(`${who} batch ground contact`, () => {
     for (const clip of make()) {

@@ -12,7 +12,13 @@ import {
   buildAcePilotClips,
   buildBendItPilotClips,
   buildBigLouPilotClips,
+  buildBubblesPilotClips,
   buildDexPilotClips,
+  buildDivaPilotClips,
+  buildGrizzPilotClips,
+  buildNoodlePilotClips,
+  buildProfPilotClips,
+  buildSnifflesPilotClips,
   buildLeftyPilotClips,
   buildPennyPilotClips,
   buildSmokeyPilotClips,
@@ -45,6 +51,12 @@ const BUILDERS = {
   lefty: { name: 'Lefty Lu', build: buildLeftyPilotClips },
   smokey: { name: 'Smokey', build: buildSmokeyPilotClips },
   bend_it: { name: 'Bend-It', build: buildBendItPilotClips },
+  noodle: { name: 'Noodle', build: buildNoodlePilotClips },
+  bubbles: { name: 'Bubbles', build: buildBubblesPilotClips },
+  sniffles: { name: 'Sniffles', build: buildSnifflesPilotClips },
+  the_prof: { name: 'The Professor', build: buildProfPilotClips },
+  diva: { name: 'Dazzle', build: buildDivaPilotClips },
+  grizz: { name: 'Grizz', build: buildGrizzPilotClips },
 };
 
 /** The ids this script can bake, for the freshness gate to walk. */
