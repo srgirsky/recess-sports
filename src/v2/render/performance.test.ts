@@ -75,6 +75,17 @@ describe('character performance direction', () => {
     for (const kid of [turbo, sprout, zippy]) expect(actingRateFor(kid, 'idle')).toBeGreaterThan(1);
   });
 
+  it('directs Batches 3 and 4 — four gloves, a swagger and a bashful — each on its own read', () => {
+    const [ace, penny, dex, lefty, smokey, bendit] = ['ace_kid', 'penny', 'dex', 'lefty', 'smokey', 'bend_it'].map(performanceFor);
+    expect([ace, penny, dex, lefty].map(heroClipFor)).toEqual(['field_ready', 'field_ready', 'field_ready', 'field_ready']);
+    expect(heroClipFor(smokey)).toBe('pose_card');
+    expect(heroClipFor(bendit)).toBe('nervous');
+    expect([ace, penny, dex, lefty, smokey, bendit].map((k) => reactionClipFor(k, true)))
+      .toEqual(['cheer_cool', 'cheer_tender', 'cheer_cool', 'cheer_fierce', 'cheer_fierce', 'cheer_goofy']);
+    expect(actingRateFor(dex, 'idle')).toBeLessThan(1);
+    expect(actingRateFor(smokey, 'idle')).toBeGreaterThan(1);
+  });
+
   it('does not let acting tempo retime a marker or locomotion calculation', () => {
     const fast = performanceFor('boomer');
     expect(actingRateFor(fast, 'cheer')).toBeGreaterThan(1);
