@@ -59,6 +59,22 @@ describe('character performance direction', () => {
     expect(actingRateFor(mimi, 'idle')).toBeGreaterThan(1);
   });
 
+  it('directs Batch 2 — Turbo, Sprout and Zippy — as three different kids at one quick tempo', () => {
+    const turbo = performanceFor('turbo');
+    const sprout = performanceFor('sprout');
+    const zippy = performanceFor('zippy');
+    expect([heroClipFor(turbo), heroClipFor(sprout), heroClipFor(zippy)]).toEqual([
+      'bat_stance',
+      'nervous',
+      'field_ready',
+    ]);
+    expect([reactionClipFor(turbo, true), reactionClipFor(sprout, true), reactionClipFor(zippy, true)])
+      .toEqual(['cheer_goofy', 'cheer', 'cheer']);
+    expect([reactionClipFor(turbo, false), reactionClipFor(sprout, false), reactionClipFor(zippy, false)])
+      .toEqual(['upset_goofy', 'upset', 'upset']);
+    for (const kid of [turbo, sprout, zippy]) expect(actingRateFor(kid, 'idle')).toBeGreaterThan(1);
+  });
+
   it('does not let acting tempo retime a marker or locomotion calculation', () => {
     const fast = performanceFor('boomer');
     expect(actingRateFor(fast, 'cheer')).toBeGreaterThan(1);
