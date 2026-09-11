@@ -12,7 +12,7 @@ import { describe, it, expect } from 'vitest';
 import { AnimationClip, Object3D, Vector3, VectorKeyframeTrack } from 'three';
 import { AnimationDirector } from './AnimationDirector';
 import { OutlineRegistry, attachOutline } from './materials/outline';
-import { buildBigLouPilotClips, buildDirectedReactionClips, buildJunebugPilotClips, buildMimiMashPilotClips, buildProceduralClips, buildSproutPilotClips, buildTankPilotClips, buildTheoPilotClips, buildTurboPilotClips, buildZippyPilotClips, buildZoomPilotClips, buildZoomSeatedLibrary } from './proceduralClips';
+import { buildAcePilotClips, buildBendItPilotClips, buildBigLouPilotClips, buildDexPilotClips, buildDirectedReactionClips, buildLeftyPilotClips, buildPennyPilotClips, buildSmokeyPilotClips, buildJunebugPilotClips, buildMimiMashPilotClips, buildProceduralClips, buildSproutPilotClips, buildTankPilotClips, buildTheoPilotClips, buildTurboPilotClips, buildZippyPilotClips, buildZoomPilotClips, buildZoomSeatedLibrary } from './proceduralClips';
 import { bindWorld } from './skeleton';
 import { CLIPS, CLIP_NAMES, FPS, LOOP_MAX_RATE, LOOP_MIN_RATE, clipSpec, type AnimName } from './clips';
 import { ProxyCharacter } from './ProxyCharacter';
@@ -114,6 +114,12 @@ describe('the procedural stand-in library', () => {
       buildTurboPilotClips(),
       buildSproutPilotClips(),
       buildZippyPilotClips(),
+      buildAcePilotClips(),
+      buildPennyPilotClips(),
+      buildDexPilotClips(),
+      buildLeftyPilotClips(),
+      buildSmokeyPilotClips(),
+      buildBendItPilotClips(),
     ];
     for (const library of libraries) {
       for (const clip of library) {

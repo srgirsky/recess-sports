@@ -9,7 +9,13 @@
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
+  buildAcePilotClips,
+  buildBendItPilotClips,
   buildBigLouPilotClips,
+  buildDexPilotClips,
+  buildLeftyPilotClips,
+  buildPennyPilotClips,
+  buildSmokeyPilotClips,
   buildJunebugPilotClips,
   buildMimiMashPilotClips,
   buildSproutPilotClips,
@@ -33,6 +39,12 @@ const BUILDERS = {
   turbo: { name: 'Turbo', build: buildTurboPilotClips },
   sprout: { name: 'Sprout', build: buildSproutPilotClips },
   zippy: { name: 'Zippy Kwan', build: buildZippyPilotClips },
+  ace_kid: { name: 'Ace', build: buildAcePilotClips },
+  penny: { name: 'Penny Pockets', build: buildPennyPilotClips },
+  dex: { name: 'Dex', build: buildDexPilotClips },
+  lefty: { name: 'Lefty Lu', build: buildLeftyPilotClips },
+  smokey: { name: 'Smokey', build: buildSmokeyPilotClips },
+  bend_it: { name: 'Bend-It', build: buildBendItPilotClips },
 };
 
 /** The ids this script can bake, for the freshness gate to walk. */

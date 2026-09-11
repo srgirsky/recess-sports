@@ -2399,3 +2399,315 @@ export function buildZippyPilotClips(): AnimationClip[] {
     return make(spec as ClipSpec);
   });
 }
+
+// --- Batches 3 and 4: Ace, Penny, Dex, Lefty, Smokey, Bend-It ---------------
+// The brief's next six, one PR: four gloves with four different temperaments,
+// a contained swagger and a bashful curve-drawer. Same discipline as Batch 2.
+
+/** A glove kid's authored ready loop: the shared crouch, shifted, breathing. */
+function readyLoop(spec: ClipSpec, delta: Pose, amount: number, bounceFt = 0): AnimationClip {
+  const base = shift(FIELD_READY_POSE, delta);
+  return cycle(
+    spec,
+    (p) => shift(base, { hp: [sin(p) * amount * 0.4, 0, 0], s2: [sin(p) * amount * 0.3, 0, 0], hd: [-sin(p) * amount * 0.3, 0, 0] }),
+    bounceFt > 0 ? (p) => [0, Math.abs(sin(p)) * bounceFt, 0] : undefined
+  );
+}
+
+/** A clip that only names a pose, held: the card beat is two frames. */
+function heldPose(spec: ClipSpec, pose: Pose, hips?: Key['hips']): AnimationClip {
+  return build(spec, [
+    { f: 0, pose, hips },
+    { f: spec.frames - 1, pose, hips },
+  ]);
+}
+
+// Ace: economical, square, settled. The card beat is a quiet check of the
+// glove and the field, never a stare at the lens.
+const ACE_IDLE_POSE: Pose = {
+  hp: [4, 0, 0], sp: [3, 0, 0], s2: [3, -2, 0], hd: [-2, 4, 0],
+  la: [2, 0, 68], lf: [0, -16, 0], ra: [2, 0, -68], rf: [0, 16, 0],
+  lu: [4, 0, 2], ll: [-8, 0, 0], ru: [4, 0, -2], rl: [-8, 0, 0],
+};
+function aceIdle(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: ACE_IDLE_POSE },
+    { f: 18, pose: shift(ACE_IDLE_POSE, { sp: [0.6, 0, 0], s2: [0.6, 0, 0] }), hips: [0, 0.006, 0] },
+    // One settle of the weight, square, and back. Nothing else moves.
+    { f: 30, pose: shift(ACE_IDLE_POSE, { hp: [0, 3, 1] }), hips: [0.02, 0, 0] },
+    { f: 46, pose: shift(ACE_IDLE_POSE, { hp: [0, 3, 1] }), hips: [0.02, 0, 0] },
+    { f: spec.frames, pose: ACE_IDLE_POSE },
+  ]);
+}
+function aceIdleFidget(spec: ClipSpec): AnimationClip {
+  // The glove comes up, he looks into it, taps it once, then reads the field
+  // left to right and settles square.
+  const gloveUp = shift(ACE_IDLE_POSE, { hd: [12, -12, 0], la: [-52, 0, -14], lf: [0, -66, 0] });
+  const tap = shift(gloveUp, { ra: [-58, 0, 22], rf: [0, 68, 0], s2: [2, -4, 0] });
+  return build(spec, [
+    { f: 0, pose: ACE_IDLE_POSE },
+    { f: 14, pose: gloveUp },
+    { f: 22, pose: tap },
+    { f: 28, pose: shift(gloveUp, { ra: [-20, 0, 8], rf: [0, 30, 0] }) },
+    { f: 40, pose: shift(ACE_IDLE_POSE, { hd: [-3, -22, 0], nk: [0, -6, 0] }) },
+    { f: 56, pose: shift(ACE_IDLE_POSE, { hd: [-3, 20, 0], nk: [0, 6, 0] }) },
+    { f: 72, pose: shift(ACE_IDLE_POSE, { hd: [-1, 4, 0] }) },
+    { f: spec.frames - 1, pose: ACE_IDLE_POSE },
+  ]);
+}
+/** Ace's Batch 3 pass, exported as a partial delivery. */
+export function buildAcePilotClips(): AnimationClip[] {
+  return buildNamed('Ace', {
+    idle: aceIdle,
+    idle_fidget: aceIdleFidget,
+    field_ready: (spec) => readyLoop(spec, { hp: [-2, 0, 0] }, 2.2),
+    run: (spec) => runCycle(spec, 12, 48, 44),
+    cheer_cool: (spec) => directedReaction(spec, true, 'cool'),
+    upset_cool: (spec) => directedReaction(spec, false, 'cool'),
+  });
+}
+
+// Penny Pockets: steady and prepared. She checks a pocket, catches with two
+// hands, and celebrates outward rather than up.
+const PENNY_IDLE_POSE: Pose = {
+  hp: [5, 0, 0], sp: [4, 0, 0], s2: [4, 0, 0], hd: [-3, 5, 1],
+  la: [4, 0, 66], lf: [0, -20, 0], ra: [4, 0, -66], rf: [0, 20, 0],
+  lu: [5, 0, 3], ll: [-9, 0, 0], ru: [5, 0, -3], rl: [-9, 0, 0],
+};
+function pennyIdle(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: PENNY_IDLE_POSE },
+    { f: 16, pose: shift(PENNY_IDLE_POSE, { sp: [0.8, 0, 0], s2: [0.8, 0, 0] }), hips: [0, 0.008, 0] },
+    // A warm look to the side — checking on a teammate, not the crowd.
+    { f: 30, pose: shift(PENNY_IDLE_POSE, { hd: [-2, 16, 3], nk: [0, 5, 0] }) },
+    { f: 42, pose: shift(PENNY_IDLE_POSE, { hd: [-2, 16, 3], nk: [0, 5, 0] }) },
+    { f: 52, pose: shift(PENNY_IDLE_POSE, { hd: [-1, 6, 1] }), hips: [0, 0.005, 0] },
+    { f: spec.frames, pose: PENNY_IDLE_POSE },
+  ]);
+}
+function pennyIdleFidget(spec: ClipSpec): AnimationClip {
+  // The pocket check: right hand to the hip pocket, two pats, a look down to
+  // confirm, and back to ready.
+  const pocket = shift(PENNY_IDLE_POSE, { hd: [14, -12, 0], ra: [-14, 0, 22], rf: [0, 52, 0], s2: [3, -3, 0] });
+  return build(spec, [
+    { f: 0, pose: PENNY_IDLE_POSE },
+    { f: 14, pose: pocket },
+    { f: 22, pose: shift(pocket, { ra: [4, 0, 0], rf: [0, -6, 0] }) },
+    { f: 30, pose: pocket },
+    { f: 38, pose: shift(pocket, { ra: [4, 0, 0], rf: [0, -6, 0] }) },
+    { f: 52, pose: shift(PENNY_IDLE_POSE, { hd: [8, -6, 0], ra: [-6, 0, 10], rf: [0, 30, 0] }) },
+    { f: 70, pose: shift(PENNY_IDLE_POSE, { hd: [-2, 2, 0] }) },
+    { f: spec.frames - 1, pose: PENNY_IDLE_POSE },
+  ]);
+}
+/** Penny's Batch 3 pass, exported as a partial delivery. */
+export function buildPennyPilotClips(): AnimationClip[] {
+  return buildNamed('Penny', {
+    idle: pennyIdle,
+    idle_fidget: pennyIdleFidget,
+    // Two hands: the arms sit a little closer to centre than the roster crouch.
+    field_ready: (spec) => readyLoop(spec, { la: [0, -8, 0], ra: [0, 8, 0] }, 2.4),
+    run: (spec) => runCycle(spec, 14, 48, 46),
+    cheer_tender: (spec) => directedReaction(spec, true, 'tender'),
+    upset_tender: (spec) => directedReaction(spec, false, 'tender'),
+  });
+}
+
+// Dex: the cast's still point. Weight changes nearly invisible; the hero
+// beat is one glove tap and direct eye contact.
+const DEX_IDLE_POSE: Pose = {
+  hp: [3, 0, 0], sp: [2, 0, 0], s2: [2, 0, 0], hd: [-1, 0, 0],
+  la: [1, 0, 70], lf: [0, -12, 0], ra: [1, 0, -70], rf: [0, 12, 0],
+  lu: [3, 0, 2], ll: [-6, 0, 0], ru: [3, 0, -2], rl: [-6, 0, 0],
+};
+function dexIdle(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: DEX_IDLE_POSE },
+    { f: 30, pose: shift(DEX_IDLE_POSE, { sp: [0.5, 0, 0], s2: [0.5, 0, 0] }), hips: [0, 0.004, 0] },
+    { f: spec.frames, pose: DEX_IDLE_POSE },
+  ]);
+}
+function dexIdleFidget(spec: ClipSpec): AnimationClip {
+  // Glove up, one tap, then the head comes up level: eye contact, held.
+  const gloveUp = shift(DEX_IDLE_POSE, { hd: [8, -8, 0], la: [-48, 0, -12], lf: [0, -70, 0] });
+  const tap = shift(gloveUp, { ra: [-54, 0, 16], rf: [0, 74, 0] });
+  return build(spec, [
+    { f: 0, pose: DEX_IDLE_POSE },
+    { f: 18, pose: gloveUp },
+    { f: 26, pose: tap },
+    { f: 32, pose: shift(gloveUp, { ra: [-10, 0, 4], rf: [0, 20, 0] }) },
+    { f: 44, pose: shift(DEX_IDLE_POSE, { hd: [-4, 0, 0] }) },
+    { f: 74, pose: shift(DEX_IDLE_POSE, { hd: [-4, 0, 0] }) },
+    { f: spec.frames - 1, pose: DEX_IDLE_POSE },
+  ]);
+}
+/** Dex's Batch 3 pass, exported as a partial delivery. */
+export function buildDexPilotClips(): AnimationClip[] {
+  return buildNamed('Dex', {
+    idle: dexIdle,
+    idle_fidget: dexIdleFidget,
+    field_ready: (spec) => readyLoop(spec, {}, 1.6),
+    run: (spec) => runCycle(spec, 10, 46, 42),
+    cheer_cool: (spec) => directedReaction(spec, true, 'cool'),
+    upset_cool: (spec) => directedReaction(spec, false, 'cool'),
+  });
+}
+
+// Lefty Lu: she thinks in arcs. The idle is a slow loop through the spine,
+// and even a shrug traces a controlled curve.
+const LEFTY_IDLE_POSE: Pose = {
+  hp: [5, 0, 0], sp: [4, 0, 0], s2: [4, -3, 0], hd: [-3, 6, -2],
+  la: [3, 0, 66], lf: [0, -22, 0], ra: [3, 0, -66], rf: [0, 22, 0],
+  lu: [5, 0, 2], ll: [-9, 0, 0], ru: [5, 0, -2], rl: [-9, 0, 0],
+};
+function leftyIdle(spec: ClipSpec): AnimationClip {
+  // A loop, not a sway: the hips lead, the chest follows a quarter behind,
+  // the head a quarter behind that.
+  return cycle(spec, (p) => shift(LEFTY_IDLE_POSE, {
+    hp: [sin(p) * 1.5, sin(p) * 5, sin(p, 0.25) * 2],
+    s2: [sin(p, 0.25) * 1.5, -sin(p, 0.25) * 4, 0],
+    hd: [sin(p, 0.5) * 2, sin(p, 0.5) * 6, -sin(p, 0.5) * 3],
+  }));
+}
+function leftyIdleFidget(spec: ClipSpec): AnimationClip {
+  // The shrug: shoulders rise on a curve, the torso sweeps one way and back,
+  // the glove hand finishes on a delayed arc.
+  const up = shift(LEFTY_IDLE_POSE, { ls: [0, 0, -16], rs: [0, 0, 16], s2: [2, 10, 0], hd: [-4, -8, 6], la: [-12, 0, -10], ra: [-12, 0, 10] });
+  return build(spec, [
+    { f: 0, pose: LEFTY_IDLE_POSE },
+    { f: 16, pose: up },
+    { f: 30, pose: shift(up, { s2: [0, -18, 0], hd: [0, 16, -10], la: [-14, 0, -6], lf: [0, -30, 0] }) },
+    { f: 44, pose: shift(LEFTY_IDLE_POSE, { ls: [0, 0, -6], rs: [0, 0, 6], s2: [0, 4, 0], la: [-30, 0, -10], lf: [0, -44, 0] }) },
+    { f: 60, pose: shift(LEFTY_IDLE_POSE, { la: [-16, 0, -4], lf: [0, -20, 0], hd: [-2, 4, -2] }) },
+    { f: spec.frames - 1, pose: LEFTY_IDLE_POSE },
+  ]);
+}
+/** Lefty Lu's Batch 4 pass, exported as a partial delivery. */
+export function buildLeftyPilotClips(): AnimationClip[] {
+  return buildNamed('Lefty Lu', {
+    idle: leftyIdle,
+    idle_fidget: leftyIdleFidget,
+    field_ready: (spec) => cycle(spec, (p) => shift(FIELD_READY_POSE, { hp: [sin(p) * 1.2, sin(p) * 4, 0], s2: [0, -sin(p, 0.25) * 3, 0], hd: [-sin(p) * 1, sin(p, 0.5) * 6, 0] })),
+    run: (spec) => runCycle(spec, 14, 50, 48),
+    cheer_fierce: (spec) => directedReaction(spec, true, 'fierce'),
+    upset_fierce: (spec) => directedReaction(spec, false, 'fierce'),
+  });
+}
+
+// Smokey: all energy contained until release. The card is weight on the
+// planted leg and a level stare; the fidget coils and snaps.
+const SMOKEY_IDLE_POSE: Pose = {
+  hp: [6, -4, 2], sp: [4, -3, 0], s2: [5, -4, 0], hd: [-3, 8, 0],
+  la: [3, 0, 66], lf: [0, -22, 0], ra: [3, 0, -66], rf: [0, 22, 0],
+  lu: [5, 0, 3], ll: [-10, 0, 0], ru: [3, 0, -3], rl: [-6, 0, 0],
+};
+const SMOKEY_CARD_POSE: Pose = shift(SMOKEY_IDLE_POSE, {
+  hp: [0, -10, 3], s2: [0, -6, 0], hd: [-2, 14, 0],
+  la: [-6, 0, -4], lf: [0, -26, 0], ra: [-34, 0, 8], rf: [0, 62, 0],
+  lu: [4, 0, 0], ll: [-6, 0, 0], ru: [-4, 0, 0], rl: [4, 0, 0],
+});
+function smokeyIdle(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: SMOKEY_IDLE_POSE },
+    { f: 12, pose: shift(SMOKEY_IDLE_POSE, { sp: [0.8, 0, 0], s2: [0.8, 0, 0] }), hips: [0, 0.006, 0] },
+    // Contained: the only visible thing is a slow, small coil and release.
+    { f: 26, pose: shift(SMOKEY_IDLE_POSE, { hp: [0, -6, 0], s2: [0, -4, 0], hd: [0, 6, 0] }) },
+    { f: 36, pose: shift(SMOKEY_IDLE_POSE, { hp: [0, -6, 0], s2: [0, -4, 0], hd: [0, 6, 0] }) },
+    { f: 44, pose: shift(SMOKEY_IDLE_POSE, { hp: [0, 3, 0], hd: [0, -2, 0] }) },
+    { f: spec.frames, pose: SMOKEY_IDLE_POSE },
+  ]);
+}
+function smokeyIdleFidget(spec: ClipSpec): AnimationClip {
+  // Coil into the planted leg, hold the tension, snap through, exhale hard.
+  const coil = shift(SMOKEY_IDLE_POSE, { hp: [4, -16, 4], sp: [2, -8, 0], s2: [2, -10, 0], hd: [-4, 18, 0], ra: [-20, 0, 6], rf: [0, 40, 0], lu: [4, 0, 0], ll: [-8, 0, 0] });
+  const snap = shift(SMOKEY_IDLE_POSE, { hp: [2, 12, -2], sp: [0, 8, 0], s2: [0, 10, 0], hd: [-2, -10, 0], ra: [-40, 0, 12], rf: [0, 20, 0] });
+  return build(spec, [
+    { f: 0, pose: SMOKEY_IDLE_POSE },
+    { f: 16, pose: coil, hips: [0.05, -0.02, 0] },
+    { f: 36, pose: shift(coil, { hp: [0, -2, 0] }), hips: [0.06, -0.025, 0] },
+    { f: 41, pose: snap, hips: [-0.03, 0.01, 0] },
+    { f: 52, pose: shift(SMOKEY_IDLE_POSE, { hp: [8, 0, 0], s2: [6, 0, 0], hd: [10, 0, 0] }) },
+    { f: 66, pose: shift(SMOKEY_IDLE_POSE, { hp: [3, 0, 0], hd: [4, 0, 0] }) },
+    { f: spec.frames - 1, pose: SMOKEY_IDLE_POSE },
+  ]);
+}
+/** Smokey's Batch 4 pass, exported as a partial delivery. */
+export function buildSmokeyPilotClips(): AnimationClip[] {
+  return buildNamed('Smokey', {
+    idle: smokeyIdle,
+    idle_fidget: smokeyIdleFidget,
+    pose_card: (spec) => heldPose(spec, SMOKEY_CARD_POSE, [0.05, 0, 0]),
+    run: (spec) => runCycle(spec, 16, 50, 52),
+    cheer_fierce: (spec) => directedReaction(spec, true, 'fierce'),
+    upset_fierce: (spec) => directedReaction(spec, false, 'fierce'),
+  });
+}
+
+// Bend-It: his body follows the path he imagines for the ball. Gestures draw
+// curves, balances recover through side steps, the goofy win is discovery.
+const BENDIT_IDLE_POSE: Pose = {
+  hp: [5, 2, 0], sp: [4, 0, 0], s2: [5, 2, 0], hd: [-4, -6, 3],
+  la: [2, 0, 66], lf: [0, -20, 0], ra: [2, 0, -66], rf: [0, 20, 0],
+  lu: [5, 0, 4], ll: [-9, 0, 0], ru: [5, 0, -4], rl: [-9, 0, 0],
+};
+function benditIdle(spec: ClipSpec): AnimationClip {
+  // The right hand traces the curve he is imagining, small, then drops.
+  return build(spec, [
+    { f: 0, pose: BENDIT_IDLE_POSE },
+    { f: 14, pose: shift(BENDIT_IDLE_POSE, { ra: [-30, 0, 4], rf: [0, 30, 0], hd: [-2, -12, 2] }) },
+    { f: 26, pose: shift(BENDIT_IDLE_POSE, { ra: [-56, 0, 16], rf: [0, 44, 0], hd: [-6, 4, -2], s2: [0, 6, 0] }) },
+    { f: 38, pose: shift(BENDIT_IDLE_POSE, { ra: [-40, 0, 26], rf: [0, 22, 0], hd: [-4, 14, -4], s2: [0, 8, 0] }) },
+    { f: 50, pose: shift(BENDIT_IDLE_POSE, { ra: [-10, 0, 8], rf: [0, 10, 0], hd: [-2, 2, 0] }) },
+    { f: spec.frames, pose: BENDIT_IDLE_POSE },
+  ]);
+}
+function benditNervous(spec: ClipSpec): AnimationClip {
+  return cycle(spec, (p) => {
+    const sway = sin(p) * 5;
+    const look = sin(p, 0.33) * 14;
+    return shift(BENDIT_IDLE_POSE, {
+      hp: [0, sway, 0], sp: [0, sway * 0.4, 0], s2: [0, -sway * 0.5, 0],
+      hd: [0, look, sin(p, 0.11) * 5],
+      la: [-12, 0, -6 + sway], lf: [0, -26, 0], ra: [-12, 0, 6 - sway], rf: [0, 26, 0],
+      lu: [sway * 0.5, 0, 6], ru: [-sway * 0.5, 0, -6],
+    });
+  });
+}
+function benditIdleFidget(spec: ClipSpec): AnimationClip {
+  // A balance that goes wrong and recovers through an unexpected side step.
+  const lean = shift(BENDIT_IDLE_POSE, { hp: [2, 0, 10], s2: [0, 0, 6], hd: [-2, -8, -8], la: [-40, 0, -20], lf: [0, -30, 0] });
+  const step = shift(BENDIT_IDLE_POSE, { hp: [2, 0, -4], lu: [4, 0, 22], ll: [-14, 0, 0], hd: [-4, 10, 4], la: [-20, 0, -30], ra: [-20, 0, 30] });
+  return build(spec, [
+    { f: 0, pose: BENDIT_IDLE_POSE },
+    { f: 16, pose: lean, hips: [0.04, 0, 0] },
+    { f: 28, pose: shift(lean, { hp: [0, 0, 6], hd: [0, 0, -4] }), hips: [0.09, -0.01, 0] },
+    { f: 36, pose: step, hips: [0.16, 0.03, 0] },
+    { f: 46, pose: shift(BENDIT_IDLE_POSE, { lu: [2, 0, 10], hd: [-4, 6, 2] }), hips: [0.14, 0, 0] },
+    { f: 62, pose: shift(BENDIT_IDLE_POSE, { hd: [-2, -4, 0] }), hips: [0.07, 0, 0] },
+    { f: 78, pose: BENDIT_IDLE_POSE, hips: [0.02, 0, 0] },
+    { f: spec.frames - 1, pose: BENDIT_IDLE_POSE },
+  ]);
+}
+/** Bend-It's Batch 4 pass, exported as a partial delivery. */
+export function buildBendItPilotClips(): AnimationClip[] {
+  return buildNamed('Bend-It', {
+    idle: benditIdle,
+    idle_fidget: benditIdleFidget,
+    nervous: benditNervous,
+    run: (spec) => runCycle(spec, 13, 46, 44),
+    cheer_goofy: (spec) => directedReaction(spec, true, 'goofy'),
+    upset_goofy: (spec) => directedReaction(spec, false, 'goofy'),
+  });
+}
+
+/** Resolve a kid's named builders against the contract, as every pass does. */
+function buildNamed(
+  who: string,
+  builders: Readonly<Record<string, (spec: ClipSpec) => AnimationClip>>
+): AnimationClip[] {
+  return Object.entries(builders).map(([name, make]) => {
+    const spec = CLIPS.find((candidate) => candidate.name === name);
+    if (!spec) throw new Error(`${who} pass names unknown contract clip "${name}"`);
+    return make(spec as ClipSpec);
+  });
+}

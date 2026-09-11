@@ -794,6 +794,20 @@ checksum are unchanged).
    rule 5 still stands — these are generated, disclosed stand-ins until the
    maintainer records provenance — which is the same footing the six
    earlier takes are on.
+5. **Acting Batches 3 and 4: Ace, Penny, Dex, Lefty Lu, Smokey, Bend-It.**
+   The brief's next six in one pass, same path and gates as Batch 2. Four
+   gloves on four temperaments — Ace's economical glove-check-and-scan,
+   Penny's pocket pat and two-handed ready, Dex's near-invisible idle with
+   one glove tap and level eye contact, Lefty's idle that loops through the
+   spine and a shrug that traces a curve — plus Smokey's contained coil,
+   snap and hard exhale with a weight-on-the-planted-leg card pose, and
+   Bend-It's hand tracing the curve he imagines, a sideways balance
+   recovered by a side step, and his nervous loop drawn with more arc. A
+   `readyLoop` primitive now carries a glove kid's authored ready crouch
+   and `buildNamed` resolves a pass against the contract, so the next batch
+   is poses and beats, not plumbing. Reviewed from 72 stills off the
+   animation page; nothing clipped or stood at bind. Acting is now fifteen
+   of thirty.
 
 Verified by the unit gates above and by `smoke:presentation` on the smoke
 seed: the fly-catch beat's six painted steps after the catch frame now show

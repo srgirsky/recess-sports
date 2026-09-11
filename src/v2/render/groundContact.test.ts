@@ -43,7 +43,13 @@ import { AnimationClip, AnimationMixer, Object3D, Vector3 } from 'three';
 import { CLIPS, FPS, type ClipSpec } from './clips';
 import {
   GROUND_EPSILON_FT,
+  buildAcePilotClips,
+  buildBendItPilotClips,
+  buildDexPilotClips,
   buildJunebugPilotClips,
+  buildLeftyPilotClips,
+  buildPennyPilotClips,
+  buildSmokeyPilotClips,
   buildProceduralClips,
   buildSproutPilotClips,
   buildTheoPilotClips,
@@ -161,8 +167,14 @@ for (const [who, make] of [
   ['Turbo', buildTurboPilotClips],
   ['Sprout', buildSproutPilotClips],
   ['Zippy', buildZippyPilotClips],
+  ['Ace', buildAcePilotClips],
+  ['Penny', buildPennyPilotClips],
+  ['Dex', buildDexPilotClips],
+  ['Lefty Lu', buildLeftyPilotClips],
+  ['Smokey', buildSmokeyPilotClips],
+  ['Bend-It', buildBendItPilotClips],
 ] as const) {
-  describe(`${who} Batch 2 ground contact`, () => {
+  describe(`${who} batch ground contact`, () => {
     for (const clip of make()) {
       it(`${clip.name} touches the field without sinking`, () => {
         const spec = CLIPS.find((candidate) => candidate.name === clip.name)! as ClipSpec;
