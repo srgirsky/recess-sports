@@ -12,7 +12,7 @@ import { describe, it, expect } from 'vitest';
 import { AnimationClip, Object3D, Vector3, VectorKeyframeTrack } from 'three';
 import { AnimationDirector } from './AnimationDirector';
 import { OutlineRegistry, attachOutline } from './materials/outline';
-import { buildAcePilotClips, buildBendItPilotClips, buildBigLouPilotClips, buildBubblesPilotClips, buildDexPilotClips, buildDirectedReactionClips, buildDivaPilotClips, buildGrizzPilotClips, buildNoodlePilotClips, buildProfPilotClips, buildSnifflesPilotClips, buildLeftyPilotClips, buildPennyPilotClips, buildSmokeyPilotClips, buildJunebugPilotClips, buildMimiMashPilotClips, buildProceduralClips, buildSproutPilotClips, buildTankPilotClips, buildTheoPilotClips, buildTurboPilotClips, buildZippyPilotClips, buildZoomPilotClips, buildZoomSeatedLibrary } from './proceduralClips';
+import { buildFlashPilotClips, buildCricketPilotClips, buildMoosePilotClips, buildPeachesPilotClips, buildGizmoPilotClips, buildCloverPilotClips, buildRocketPilotClips, buildChipPilotClips, buildBoomerPilotClips, buildAcePilotClips, buildBendItPilotClips, buildBigLouPilotClips, buildBubblesPilotClips, buildDexPilotClips, buildDirectedReactionClips, buildDivaPilotClips, buildGrizzPilotClips, buildNoodlePilotClips, buildProfPilotClips, buildSnifflesPilotClips, buildLeftyPilotClips, buildPennyPilotClips, buildSmokeyPilotClips, buildJunebugPilotClips, buildMimiMashPilotClips, buildProceduralClips, buildSproutPilotClips, buildTankPilotClips, buildTheoPilotClips, buildTurboPilotClips, buildZippyPilotClips, buildZoomPilotClips, buildZoomSeatedLibrary } from './proceduralClips';
 import { bindWorld } from './skeleton';
 import { CLIPS, CLIP_NAMES, FPS, LOOP_MAX_RATE, LOOP_MIN_RATE, clipSpec, type AnimName } from './clips';
 import { ProxyCharacter } from './ProxyCharacter';
@@ -126,6 +126,15 @@ describe('the procedural stand-in library', () => {
       buildProfPilotClips(),
       buildDivaPilotClips(),
       buildGrizzPilotClips(),
+      buildFlashPilotClips(),
+      buildCricketPilotClips(),
+      buildMoosePilotClips(),
+      buildPeachesPilotClips(),
+      buildGizmoPilotClips(),
+      buildCloverPilotClips(),
+      buildRocketPilotClips(),
+      buildChipPilotClips(),
+      buildBoomerPilotClips(),
     ];
     for (const library of libraries) {
       for (const clip of library) {

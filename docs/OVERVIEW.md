@@ -2241,15 +2241,16 @@ in this order:
    reviewed batches through the existing validator and A/B page.
 
    **Sculpt: done to `candidate`, all thirty (2026-08-15).** Seven batches,
-   PRs #123–#137, plus a stance-and-mouth pass (#140). **Acting: twenty-one of
-   thirty** — `anims_<id>_v1.glb` takes exist for Junebug, Theo, Zoom, Tank,
-   Mimi Mash and Big Lou, and since 2026-09-11 for Batch 2's Turbo, Sprout
-   and Zippy, Batches 3–4's Ace, Penny, Dex, Lefty, Smokey and Bend-It, and
-   Batches 5–6's Noodle, Bubbles, Sniffles, The Professor, Dazzle and Grizz
-   (`docs/research/backyard-2026-reference.md`, that date); the other nine
-   ride the shared library. That split is the live one: the
-   remaining distance on characters is per-kid performance and the 4→5
-   sculpt polish, not sculpting from scratch.
+   PRs #123–#137, plus a stance-and-mouth pass (#140). **Acting: all thirty
+   (2026-09-11).** `anims_<id>_v1.glb` takes exist for every roster kid: the
+   six pilots, then Batches 2–8 in one day through the same path and gates
+   (`docs/research/backyard-2026-reference.md`, that date). They are
+   generated, disclosed stand-ins on the same footing as the pilots —
+   acceptance rule 5 of the performance brief still asks the maintainer to
+   record provenance — so the shared library is now a failure fallback only.
+   The remaining distance on characters is the 4→5 sculpt polish and any
+   per-kid take the maintainer wants re-directed, not sculpting or acting
+   from scratch.
 2. **Venue art density.** Eleven parks now play differently and carry signature
    props, but their houses, foliage and ground are low-poly procedural forms.
    The reference layers hand-authored buildings, vegetation, decals, litter,

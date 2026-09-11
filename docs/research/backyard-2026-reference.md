@@ -821,6 +821,25 @@ checksum are unchanged).
    uncoiling stretch, and his run carries the weight. Reviewed from 52
    stills; nothing clipped or stood at bind. Acting is now twenty-one of
    thirty.
+7. **Acting Batches 7 and 8: Flash, Cricket, Moose, Peaches, Gizmo, Clover,
+   Rocket Rosa, Chip, Boomer — the roster is complete.** Flash's hands are
+   faster than the rest of him (a wrist snap around a clear hold in the
+   stance, a hand that flips over twice in the fidget); Cricket stores
+   energy in a crouch and one bounce becomes three before a proud attempt
+   at stillness; Moose waves a teammate over and holds a thumbs up until
+   they see it; Peaches rolls her shoulders one at a time and lets the
+   smile arrive after the body settles; Gizmo works at something at his
+   belt, checks the glove strap, tests the hinge, and presents the result;
+   Clover notices late, reaches softly for something already handled, and
+   shrugs with amused gratitude; Rocket counts down in the knees and
+   releases in one decisive lunge that stops on a dime; Chip's feet patter
+   under a calm glove and his fidget is two hops into one clean decision,
+   then a step aside to make room; Boomer whispers with a hand cupped and
+   the other arm flung wide, then checks that everyone survived. Two more
+   primitives — `sunnyCheer` and `sunnyUpset`, sized to a kid's own idle —
+   give the sunny-spirit kids a read of their own. Reviewed from 76 stills.
+   **Acting is thirty of thirty**; the shared library is now a failure
+   fallback only.
 
 Verified by the unit gates above and by `smoke:presentation` on the smoke
 seed: the fly-catch beat's six painted steps after the catch frame now show

@@ -43,6 +43,16 @@ import { AnimationClip, AnimationMixer, Object3D, Vector3 } from 'three';
 import { CLIPS, FPS, type ClipSpec } from './clips';
 import {
   GROUND_EPSILON_FT,
+  buildFlashPilotClips,
+  buildCricketPilotClips,
+  buildMoosePilotClips,
+  buildPeachesPilotClips,
+  buildGizmoPilotClips,
+  buildCloverPilotClips,
+  buildRocketPilotClips,
+  buildChipPilotClips,
+  buildBoomerPilotClips,
+
   buildAcePilotClips,
   buildBendItPilotClips,
   buildBubblesPilotClips,
@@ -185,6 +195,15 @@ for (const [who, make] of [
   ['The Professor', buildProfPilotClips],
   ['Dazzle', buildDivaPilotClips],
   ['Grizz', buildGrizzPilotClips],
+  ['Flash', buildFlashPilotClips],
+  ['Cricket', buildCricketPilotClips],
+  ['Moose', buildMoosePilotClips],
+  ['Peaches', buildPeachesPilotClips],
+  ['Gizmo', buildGizmoPilotClips],
+  ['Clover', buildCloverPilotClips],
+  ['Rocket Rosa', buildRocketPilotClips],
+  ['Chip', buildChipPilotClips],
+  ['Boomer', buildBoomerPilotClips],
 ] as const) {
   describe(`${who} batch ground contact`, () => {
     for (const clip of make()) {

@@ -3073,3 +3073,521 @@ export function buildGrizzPilotClips(): AnimationClip[] {
     upset_cool: (spec) => directedReaction(spec, false, 'cool'),
   });
 }
+
+// --- Batches 7 and 8: the last nine ------------------------------------------
+// Flash, Cricket, Moose, Peaches, Gizmo, Clover, Rocket, Chip and Boomer.
+
+/** A sunny kid's cheer: a crouch, one hop with the arms up, and a settle
+ * that keeps the smile — the broad read, sized to the kid's own idle. */
+function sunnyCheer(spec: ClipSpec, idle: Pose, hopFt = 0.35): AnimationClip {
+  const crouch = shift(idle, { hp: [10, 0, 0], lu: [10, 0, 0], ll: [-18, 0, 0], ru: [10, 0, 0], rl: [-18, 0, 0] });
+  const up = shift(idle, {
+    hp: [-8, 0, 0], hd: [-8, 0, 0], la: [-126, 0, -30], ra: [-126, 0, 30],
+    lu: [-20, 0, 6], ll: [30, 0, 0], ru: [-20, 0, -6], rl: [30, 0, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: idle },
+    { f: 7, pose: crouch, hips: [0, -0.05, 0] },
+    { f: 14, pose: up, hips: [0, hopFt, 0] },
+    { f: 22, pose: shift(idle, { hp: [8, 0, 0], la: [-50, 0, 0], ra: [-50, 0, 0], ll: [-14, 0, 0], rl: [-14, 0, 0] }), hips: [0, -0.03, 0] },
+    { f: 30, pose: shift(idle, { hp: [-4, 0, 0], hd: [-6, 8, -3], la: [-70, 0, -10], lf: [0, -40, 0], ra: [-30, 0, 6] }), hips: [0, 0.02, 0] },
+    { f: 38, pose: shift(idle, { hd: [-4, 6, -2], la: [-20, 0, -4], lf: [0, -20, 0] }) },
+    { f: spec.frames - 1, pose: idle },
+  ]);
+}
+/** A sunny kid's upset: a sag, a look down, a shoulder shrug, and a
+ * recovery that does not stay down long. */
+function sunnyUpset(spec: ClipSpec, idle: Pose): AnimationClip {
+  const sag = shift(idle, { hp: [10, 0, 0], s2: [10, 0, 0], hd: [18, 0, 0] });
+  return build(spec, [
+    { f: 0, pose: idle },
+    { f: 10, pose: sag, hips: [0, -0.03, 0] },
+    { f: 24, pose: shift(sag, { hd: [4, -12, 0], ls: [0, 0, -8], rs: [0, 0, 8], la: [-12, 0, -8], ra: [-12, 0, 8] }), hips: [0, -0.03, 0] },
+    { f: 38, pose: shift(sag, { hd: [2, 8, 0] }), hips: [0, -0.02, 0] },
+    { f: 50, pose: shift(idle, { hd: [4, 0, 0] }) },
+    { f: spec.frames - 1, pose: idle },
+  ]);
+}
+
+// Flash Gordon Jr.: his hands are faster than the rest of him. Bat actions
+// snap around a clear hold; locomotion stays smooth so speed reads as control.
+const FLASH_IDLE_POSE: Pose = {
+  hp: [6, -2, 0], sp: [4, -2, 0], s2: [5, -3, 0], hd: [-4, 6, 0],
+  la: [2, 0, 66], lf: [0, -22, 0], ra: [2, 0, -66], rf: [0, 22, 0],
+  lu: [5, 0, 2], ll: [-9, 0, 0], ru: [5, 0, -2], rl: [-9, 0, 0],
+};
+const FLASH_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
+  hp: [8, -4, 0], sp: [5, -3, 0], s2: [4, -5, 0], hd: [-3, 6, 0],
+  lu: [5, 0, 2], ll: [-6, 0, 0], ru: [-3, 0, -2], rl: [4, 0, 0],
+});
+function flashIdle(spec: ClipSpec): AnimationClip {
+  // Still — then the hands flick, twice, fast, and he is still again.
+  const flick = shift(FLASH_IDLE_POSE, { lf: [0, -30, 0], rf: [0, 30, 0], lh: [0, 0, -20], rh: [0, 0, 20] });
+  return build(spec, [
+    { f: 0, pose: FLASH_IDLE_POSE },
+    { f: 22, pose: shift(FLASH_IDLE_POSE, { sp: [0.6, 0, 0] }), hips: [0, 0.005, 0] },
+    { f: 25, pose: flick },
+    { f: 28, pose: FLASH_IDLE_POSE },
+    { f: 31, pose: flick },
+    { f: 35, pose: shift(FLASH_IDLE_POSE, { hd: [-2, 4, 0] }) },
+    { f: spec.frames, pose: FLASH_IDLE_POSE },
+  ]);
+}
+function flashBatStance(spec: ClipSpec): AnimationClip {
+  // The hold is the point: a snap of the wrists, then absolutely still.
+  return build(spec, [
+    { f: 0, pose: FLASH_STANCE_POSE },
+    { f: 10, pose: shift(FLASH_STANCE_POSE, { rh: [-8, 0, -12], s2: [0, -2, 0] }), hips: [0, -0.01, 0] },
+    { f: 13, pose: shift(FLASH_STANCE_POSE, { rh: [2, 0, 3] }) },
+    { f: 16, pose: FLASH_STANCE_POSE },
+    { f: 44, pose: shift(FLASH_STANCE_POSE, { s2: [0, -1, 0] }), hips: [0, -0.006, 0] },
+    { f: spec.frames, pose: FLASH_STANCE_POSE },
+  ]);
+}
+function flashIdleFidget(spec: ClipSpec): AnimationClip {
+  // Proving it: a hand comes up, flips over twice, snaps shut, and he grins
+  // at whoever was watching.
+  const handUp = shift(FLASH_IDLE_POSE, { ra: [-70, 0, 12], rf: [0, 96, 0], hd: [4, -10, 0] });
+  return build(spec, [
+    { f: 0, pose: FLASH_IDLE_POSE },
+    { f: 12, pose: handUp },
+    { f: 16, pose: shift(handUp, { rh: [0, 0, 60] }) },
+    { f: 20, pose: shift(handUp, { rh: [0, 0, -60] }) },
+    { f: 24, pose: shift(handUp, { rh: [0, 0, 60] }) },
+    { f: 28, pose: shift(handUp, { rh: [0, 0, 0], rf: [0, 10, 0] }) },
+    { f: 40, pose: shift(FLASH_IDLE_POSE, { hd: [-6, 18, -3], ra: [-20, 0, 6], rf: [0, 30, 0] }) },
+    { f: 56, pose: shift(FLASH_IDLE_POSE, { hd: [-4, 10, -2] }) },
+    { f: spec.frames - 1, pose: FLASH_IDLE_POSE },
+  ]);
+}
+/** Flash's Batch 7 pass, exported as a partial delivery. */
+export function buildFlashPilotClips(): AnimationClip[] {
+  return buildNamed('Flash', {
+    idle: flashIdle,
+    idle_fidget: flashIdleFidget,
+    bat_stance: flashBatStance,
+    run: (spec) => runCycle(spec, 16, 52, 48),
+    cheer_fierce: (spec) => directedReaction(spec, true, 'fierce'),
+    upset_fierce: (spec) => directedReaction(spec, false, 'fierce'),
+  });
+}
+
+// Cricket: energy stored in every crouch, released vertically. One contained
+// bounce accidentally becomes three, then a proud attempt at stillness.
+const CRICKET_IDLE_POSE: Pose = {
+  hp: [8, 0, 0], sp: [6, 0, 0], s2: [6, 0, 0], hd: [-6, -4, 3],
+  la: [-4, 0, 66], lf: [0, -30, 0], ra: [-4, 0, -66], rf: [0, 30, 0],
+  lu: [10, 0, 4], ll: [-18, 0, 0], ru: [10, 0, -4], rl: [-18, 0, 0],
+};
+function cricketIdle(spec: ClipSpec): AnimationClip {
+  const deeper = shift(CRICKET_IDLE_POSE, { hp: [4, 0, 0], lu: [6, 0, 0], ll: [-10, 0, 0], ru: [6, 0, 0], rl: [-10, 0, 0] });
+  return build(spec, [
+    { f: 0, pose: CRICKET_IDLE_POSE },
+    { f: 20, pose: deeper, hips: [0, -0.04, 0] },
+    { f: 30, pose: deeper, hips: [0, -0.045, 0] },
+    // The release, small: she catches it before it becomes a bounce.
+    { f: 36, pose: shift(CRICKET_IDLE_POSE, { hp: [-4, 0, 0], hd: [-4, 0, 0] }), hips: [0, 0.05, 0] },
+    { f: 44, pose: shift(CRICKET_IDLE_POSE, { hd: [-2, 6, 0] }), hips: [0, 0.01, 0] },
+    { f: spec.frames, pose: CRICKET_IDLE_POSE },
+  ]);
+}
+function cricketNervous(spec: ClipSpec): AnimationClip {
+  return cycle(spec, (p) => {
+    const sway = sin(p) * 4;
+    const look = sin(p, 0.33) * 12;
+    return shift(CRICKET_IDLE_POSE, {
+      hp: [0, sway, 0], sp: [0, sway * 0.4, 0], s2: [0, -sway * 0.5, 0],
+      hd: [0, look, sin(p, 0.11) * 4],
+      la: [-10, 0, -6 + sway], ra: [-10, 0, 6 - sway],
+      lu: [sway * 0.5, 0, 6], ru: [-sway * 0.5, 0, -6],
+    });
+  }, (p) => [0, Math.abs(sin(p, 0.5)) * 0.02, 0]);
+}
+function cricketIdleFidget(spec: ClipSpec): AnimationClip {
+  const crouch = shift(CRICKET_IDLE_POSE, { hp: [6, 0, 0], lu: [8, 0, 0], ll: [-14, 0, 0], ru: [8, 0, 0], rl: [-14, 0, 0] });
+  const air = shift(CRICKET_IDLE_POSE, { hp: [-6, 0, 0], hd: [-6, 0, 0], lu: [-10, 0, 0], ll: [16, 0, 0], ru: [-10, 0, 0], rl: [16, 0, 0], la: [-20, 0, -6], ra: [-20, 0, 6] });
+  const still = shift(CRICKET_IDLE_POSE, { hp: [-6, 0, 0], sp: [-4, 0, 0], s2: [-6, 0, 0], hd: [-2, 0, 0], lu: [-6, 0, 0], ll: [10, 0, 0], ru: [-6, 0, 0], rl: [10, 0, 0] });
+  return build(spec, [
+    { f: 0, pose: CRICKET_IDLE_POSE },
+    { f: 10, pose: crouch, hips: [0, -0.06, 0] },
+    { f: 16, pose: air, hips: [0, 0.3, 0] },
+    { f: 22, pose: crouch, hips: [0, -0.04, 0] },
+    { f: 27, pose: air, hips: [0, 0.22, 0] },
+    { f: 33, pose: crouch, hips: [0, -0.03, 0] },
+    { f: 38, pose: air, hips: [0, 0.14, 0] },
+    { f: 46, pose: shift(crouch, { hd: [4, 0, 0] }), hips: [0, -0.02, 0] },
+    // The proud attempt at stillness: tall, chin up, and it holds.
+    { f: 58, pose: still, hips: [0, 0.02, 0] },
+    { f: 78, pose: shift(still, { hd: [-2, 6, -2] }), hips: [0, 0.02, 0] },
+    { f: spec.frames - 1, pose: CRICKET_IDLE_POSE },
+  ]);
+}
+/** Cricket's Batch 7 pass, exported as a partial delivery. */
+export function buildCricketPilotClips(): AnimationClip[] {
+  return buildNamed('Cricket', {
+    idle: cricketIdle,
+    idle_fidget: cricketIdleFidget,
+    nervous: cricketNervous,
+    run: (spec) => runCycle(spec, 14, 46, 48),
+    cheer_goofy: (spec) => directedReaction(spec, true, 'goofy'),
+    upset_goofy: (spec) => directedReaction(spec, false, 'goofy'),
+  });
+}
+
+// Moose: he moves toward teammates, not the camera. Even frustration turns
+// into checking whether someone else is okay.
+const MOOSE_IDLE_POSE: Pose = {
+  hp: [5, 0, 0], sp: [4, 0, 0], s2: [5, 0, 0], hd: [-2, 10, 0],
+  la: [0, 0, 70], lf: [0, -12, 0], ra: [0, 0, -70], rf: [0, 12, 0],
+  lu: [5, 0, 5], ll: [-10, 0, 0], ru: [5, 0, -5], rl: [-10, 0, 0],
+};
+function mooseIdle(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: MOOSE_IDLE_POSE },
+    { f: 18, pose: shift(MOOSE_IDLE_POSE, { sp: [0.8, 0, 0], s2: [0.8, 0, 0] }), hips: [0, 0.007, 0] },
+    // A look toward a teammate, a nod, and back.
+    { f: 30, pose: shift(MOOSE_IDLE_POSE, { hd: [-2, 14, 2], nk: [0, 5, 0], hp: [0, 4, 0] }) },
+    { f: 38, pose: shift(MOOSE_IDLE_POSE, { hd: [6, 14, 2], nk: [0, 5, 0], hp: [0, 4, 0] }) },
+    { f: 50, pose: shift(MOOSE_IDLE_POSE, { hd: [-1, 4, 0] }) },
+    { f: spec.frames, pose: MOOSE_IDLE_POSE },
+  ]);
+}
+function mooseIdleFidget(spec: ClipSpec): AnimationClip {
+  // A wave-over to a teammate, then a thumbs up held until they see it.
+  const wave = shift(MOOSE_IDLE_POSE, { hd: [-4, 26, 4], hp: [0, 10, 0], s2: [0, 8, 0], ra: [-96, 0, 22], rf: [0, 60, 0] });
+  const thumb = shift(MOOSE_IDLE_POSE, { hd: [-4, 24, 3], hp: [0, 8, 0], s2: [0, 6, 0], ra: [-56, 0, 14], rf: [0, 84, 0], rh: [0, 0, 30] });
+  return build(spec, [
+    { f: 0, pose: MOOSE_IDLE_POSE },
+    { f: 14, pose: wave },
+    { f: 22, pose: shift(wave, { rf: [0, -20, 0], ra: [0, 0, 6] }) },
+    { f: 30, pose: wave },
+    { f: 42, pose: thumb },
+    { f: 60, pose: shift(thumb, { hd: [-2, 0, 0] }) },
+    { f: 76, pose: shift(MOOSE_IDLE_POSE, { hd: [-2, 8, 1] }) },
+    { f: spec.frames - 1, pose: MOOSE_IDLE_POSE },
+  ]);
+}
+/** Moose's Batch 7 pass, exported as a partial delivery. */
+export function buildMoosePilotClips(): AnimationClip[] {
+  return buildNamed('Moose', {
+    idle: mooseIdle,
+    idle_fidget: mooseIdleFidget,
+    field_ready: (spec) => readyLoop(spec, { hp: [2, 0, 0], la: [0, -6, 0], ra: [0, 6, 0] }, 2.4),
+    run: (spec) => runCycle(spec, 10, 44, 46),
+    cheer_tender: (spec) => directedReaction(spec, true, 'tender'),
+    upset_tender: (spec) => directedReaction(spec, false, 'tender'),
+  });
+}
+
+// Peaches: smooth and generous timing. The hero pose lets the smile arrive
+// after the body settles.
+const PEACHES_IDLE_POSE: Pose = {
+  hp: [4, 0, 0], sp: [3, 0, 0], s2: [3, -2, 0], hd: [-3, 6, 1],
+  la: [3, 0, 68], lf: [0, -18, 0], ra: [3, 0, -68], rf: [0, 18, 0],
+  lu: [4, 0, 3], ll: [-8, 0, 0], ru: [4, 0, -3], rl: [-8, 0, 0],
+};
+const PEACHES_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
+  hp: [4, -3, 0], sp: [3, -3, 0], s2: [2, -5, 0], hd: [-2, 5, 0],
+  lu: [4, 0, 1], ll: [-4, 0, 0], ru: [-2, 0, -1], rl: [3, 0, 0],
+});
+function peachesIdle(spec: ClipSpec): AnimationClip {
+  // The quiet breath, and the smile arriving after the body settles.
+  return build(spec, [
+    { f: 0, pose: PEACHES_IDLE_POSE },
+    { f: 20, pose: shift(PEACHES_IDLE_POSE, { sp: [-1.5, 0, 0], s2: [-2, 0, 0], hd: [-1, 0, 0] }), hips: [0, 0.012, 0] },
+    { f: 34, pose: shift(PEACHES_IDLE_POSE, { sp: [0.5, 0, 0] }), hips: [0, 0.002, 0] },
+    { f: 42, pose: shift(PEACHES_IDLE_POSE, { hd: [-2, 8, 3] }) },
+    { f: 52, pose: shift(PEACHES_IDLE_POSE, { hd: [-2, 8, 3] }) },
+    { f: spec.frames, pose: PEACHES_IDLE_POSE },
+  ]);
+}
+function peachesIdleFidget(spec: ClipSpec): AnimationClip {
+  // A slow roll of the shoulders, one at a time, and a settle with the
+  // head tilted toward the team.
+  const leftUp = shift(PEACHES_IDLE_POSE, { ls: [0, 0, -14], s2: [0, 6, 0], hd: [-2, -6, 4] });
+  const rightUp = shift(PEACHES_IDLE_POSE, { rs: [0, 0, 14], s2: [0, -6, 0], hd: [-2, 6, -4] });
+  return build(spec, [
+    { f: 0, pose: PEACHES_IDLE_POSE },
+    { f: 16, pose: leftUp },
+    { f: 30, pose: shift(PEACHES_IDLE_POSE, { s2: [0, 2, 0] }) },
+    { f: 44, pose: rightUp },
+    { f: 58, pose: shift(PEACHES_IDLE_POSE, { s2: [0, -2, 0] }) },
+    { f: 72, pose: shift(PEACHES_IDLE_POSE, { hd: [-2, 10, 4] }) },
+    { f: spec.frames - 1, pose: PEACHES_IDLE_POSE },
+  ]);
+}
+/** Peaches' Batch 7 pass, exported as a partial delivery. */
+export function buildPeachesPilotClips(): AnimationClip[] {
+  return buildNamed('Peaches', {
+    idle: peachesIdle,
+    idle_fidget: peachesIdleFidget,
+    bat_stance: (spec) => breathe(spec, PEACHES_STANCE_POSE, 1.0),
+    run: (spec) => runCycle(spec, 13, 48, 44),
+    cheer: (spec) => sunnyCheer(spec, PEACHES_IDLE_POSE, 0.25),
+    upset: (spec) => sunnyUpset(spec, PEACHES_IDLE_POSE),
+  });
+}
+
+// Gizmo: he tests mechanisms even while waiting. The hero pose presents one
+// improvement.
+const GIZMO_IDLE_POSE: Pose = {
+  hp: [5, -3, 0], sp: [4, -2, 0], s2: [5, -3, 0], hd: [2, 6, 0],
+  la: [-8, 0, 62], lf: [0, -40, 0], ra: [-8, 0, -62], rf: [0, 40, 0],
+  lu: [4, 0, 2], ll: [-8, 0, 0], ru: [4, 0, -2], rl: [-8, 0, 0],
+};
+const GIZMO_CARD_POSE: Pose = shift(GIZMO_IDLE_POSE, {
+  hp: [0, -12, 2], s2: [0, -6, 0], hd: [-6, 14, -2],
+  ra: [-62, 0, 10], rf: [0, 30, 0], rh: [0, 0, -70], la: [4, 0, 4], lf: [0, 6, 0],
+  lu: [-2, 0, 0], ll: [4, 0, 0], ru: [4, 0, 0], rl: [-4, 0, 0],
+});
+function gizmoIdle(spec: ClipSpec): AnimationClip {
+  // Hands at the belt, working at something; a look down at it; a nod.
+  return build(spec, [
+    { f: 0, pose: GIZMO_IDLE_POSE },
+    { f: 12, pose: shift(GIZMO_IDLE_POSE, { rh: [0, 0, 24], lh: [0, 0, -24], hd: [8, 2, 0] }) },
+    { f: 22, pose: shift(GIZMO_IDLE_POSE, { rh: [0, 0, -20], lh: [0, 0, 20], hd: [8, -2, 0] }) },
+    { f: 32, pose: shift(GIZMO_IDLE_POSE, { rh: [0, 0, 20], lh: [0, 0, -20], hd: [10, 0, 0] }) },
+    { f: 44, pose: shift(GIZMO_IDLE_POSE, { hd: [-4, 4, 0] }) },
+    { f: spec.frames, pose: GIZMO_IDLE_POSE },
+  ]);
+}
+function gizmoIdleFidget(spec: ClipSpec): AnimationClip {
+  // He checks the glove strap, tightens it, tests the hinge twice, and
+  // presents the result to nobody in particular.
+  const strap = shift(GIZMO_IDLE_POSE, { hd: [14, -8, 0], la: [-40, 0, -6], lf: [0, -30, 0], ra: [-46, 0, 14], rf: [0, 34, 0] });
+  const present = shift(GIZMO_IDLE_POSE, { hd: [-4, 10, -2], la: [-60, 0, -14], lf: [0, -20, 0], lh: [0, 0, 60], ra: [4, 0, 4] });
+  return build(spec, [
+    { f: 0, pose: GIZMO_IDLE_POSE },
+    { f: 14, pose: strap },
+    { f: 22, pose: shift(strap, { ra: [6, 0, 0], rf: [0, 14, 0] }) },
+    { f: 30, pose: shift(strap, { lf: [0, 16, 0] }) },
+    { f: 36, pose: shift(strap, { lf: [0, -10, 0] }) },
+    { f: 42, pose: shift(strap, { lf: [0, 16, 0] }) },
+    { f: 56, pose: present },
+    { f: 70, pose: shift(present, { hd: [2, 0, 0] }) },
+    { f: spec.frames - 1, pose: GIZMO_IDLE_POSE },
+  ]);
+}
+/** Gizmo's Batch 8 pass, exported as a partial delivery. */
+export function buildGizmoPilotClips(): AnimationClip[] {
+  return buildNamed('Gizmo', {
+    idle: gizmoIdle,
+    idle_fidget: gizmoIdleFidget,
+    pose_card: (spec) => heldPose(spec, GIZMO_CARD_POSE, [0.01, 0, 0]),
+    run: (spec) => runCycle(spec, 14, 48, 46),
+    cheer_cool: (spec) => directedReaction(spec, true, 'cool'),
+    upset_cool: (spec) => directedReaction(spec, false, 'cool'),
+  });
+}
+
+// Clover: good outcomes happen around her before she notices. Amused
+// gratitude rather than claiming control.
+const CLOVER_IDLE_POSE: Pose = {
+  hp: [3, 2, 0], sp: [2, 0, 0], s2: [2, 2, 0], hd: [-3, -4, 4],
+  la: [2, 0, 68], lf: [0, -16, 0], ra: [2, 0, -68], rf: [0, 16, 0],
+  lu: [3, 0, 3], ll: [-6, 0, 0], ru: [3, 0, -3], rl: [-6, 0, 0],
+};
+const CLOVER_CARD_POSE: Pose = shift(CLOVER_IDLE_POSE, {
+  hp: [0, 10, -2], s2: [0, 6, 0], hd: [-4, -12, 8],
+  ra: [-10, 0, 6], rf: [0, 60, 0], la: [-6, 0, -4], lf: [0, -20, 0],
+  lu: [2, 0, 0], ll: [-4, 0, 0], ru: [-2, 0, 0], rl: [2, 0, 0],
+});
+function cloverIdle(spec: ClipSpec): AnimationClip {
+  // Something happens off to the side; she notices late, and is amused.
+  return build(spec, [
+    { f: 0, pose: CLOVER_IDLE_POSE },
+    { f: 20, pose: shift(CLOVER_IDLE_POSE, { sp: [0.6, 0, 0] }), hips: [0, 0.006, 0] },
+    { f: 34, pose: shift(CLOVER_IDLE_POSE, { hd: [-2, -18, 6], nk: [0, -5, 0] }) },
+    { f: 42, pose: shift(CLOVER_IDLE_POSE, { hd: [-4, -18, 8], nk: [0, -5, 0], s2: [0, -3, 0] }) },
+    { f: 52, pose: shift(CLOVER_IDLE_POSE, { hd: [-2, -6, 4] }) },
+    { f: spec.frames, pose: CLOVER_IDLE_POSE },
+  ]);
+}
+function cloverIdleFidget(spec: ClipSpec): AnimationClip {
+  // A late soft reach for something that was already handled, a look at
+  // the empty hand, and a shrug of amused gratitude.
+  const reach = shift(CLOVER_IDLE_POSE, { hd: [-4, -14, 4], ra: [-60, 0, 14], rf: [0, 20, 0], hp: [4, -6, 0] });
+  const look = shift(CLOVER_IDLE_POSE, { hd: [12, -4, 0], ra: [-56, 0, 10], rf: [0, 70, 0] });
+  const shrug = shift(CLOVER_IDLE_POSE, { ls: [0, 0, -12], rs: [0, 0, 12], la: [-12, 0, -10], lf: [0, -40, 0], ra: [-12, 0, 10], rf: [0, 40, 0], hd: [-4, 4, 6] });
+  return build(spec, [
+    { f: 0, pose: CLOVER_IDLE_POSE },
+    { f: 18, pose: reach },
+    { f: 28, pose: shift(reach, { ra: [-6, 0, 0] }) },
+    { f: 42, pose: look },
+    { f: 56, pose: shrug },
+    { f: 66, pose: shift(shrug, { hd: [0, 0, -2] }) },
+    { f: 78, pose: shift(CLOVER_IDLE_POSE, { hd: [-2, 0, 3] }) },
+    { f: spec.frames - 1, pose: CLOVER_IDLE_POSE },
+  ]);
+}
+/** Clover's Batch 8 pass, exported as a partial delivery. */
+export function buildCloverPilotClips(): AnimationClip[] {
+  return buildNamed('Clover', {
+    idle: cloverIdle,
+    idle_fidget: cloverIdleFidget,
+    pose_card: (spec) => heldPose(spec, CLOVER_CARD_POSE, [0, 0, 0]),
+    run: (spec) => runCycle(spec, 12, 46, 44),
+    cheer: (spec) => sunnyCheer(spec, CLOVER_IDLE_POSE, 0.2),
+    upset: (spec) => sunnyUpset(spec, CLOVER_IDLE_POSE),
+  });
+}
+
+// Rocket Rosa: every start has a visible countdown in the knees and one
+// decisive release; stops finish in a compact ready stance.
+const ROCKET_IDLE_POSE: Pose = {
+  hp: [8, 0, 0], sp: [4, 0, 0], s2: [5, 0, 0], hd: [-6, 4, 0],
+  la: [-6, 0, 64], lf: [0, -30, 0], ra: [-6, 0, -64], rf: [0, 30, 0],
+  lu: [8, 0, 3], ll: [-14, 0, 0], ru: [8, 0, -3], rl: [-14, 0, 0],
+};
+function rocketIdle(spec: ClipSpec): AnimationClip {
+  // The countdown: three small dips of the knees, each a little deeper.
+  const dip = (d: number): Pose => shift(ROCKET_IDLE_POSE, { hp: [d * 0.5, 0, 0], lu: [d, 0, 0], ll: [-d * 1.6, 0, 0], ru: [d, 0, 0], rl: [-d * 1.6, 0, 0] });
+  return build(spec, [
+    { f: 0, pose: ROCKET_IDLE_POSE },
+    { f: 12, pose: dip(3), hips: [0, -0.015, 0] },
+    { f: 20, pose: ROCKET_IDLE_POSE },
+    { f: 30, pose: dip(5), hips: [0, -0.025, 0] },
+    { f: 38, pose: ROCKET_IDLE_POSE },
+    { f: 48, pose: dip(7), hips: [0, -0.035, 0] },
+    { f: spec.frames, pose: ROCKET_IDLE_POSE },
+  ]);
+}
+function rocketIdleFidget(spec: ClipSpec): AnimationClip {
+  // Countdown, one decisive release — a lunge step that stops on a dime —
+  // and back to the compact ready.
+  const loaded = shift(ROCKET_IDLE_POSE, { hp: [10, 0, 0], s2: [4, 0, 0], hd: [-8, 0, 0], lu: [10, 0, 0], ll: [-22, 0, 0], ru: [10, 0, 0], rl: [-22, 0, 0], la: [10, 0, 0], ra: [-30, 0, 0] });
+  const lunge = shift(ROCKET_IDLE_POSE, { hp: [16, 0, 0], hd: [-12, 0, 0], lu: [-36, 0, 2], ll: [30, 0, 0], ru: [24, 0, -2], rl: [-6, 0, 0], la: [30, 0, 0], ra: [-40, 0, 0], rf: [0, 20, 0] });
+  const compact = shift(ROCKET_IDLE_POSE, { hp: [6, 0, 0], lu: [6, 0, 0], ll: [-12, 0, 0], ru: [6, 0, 0], rl: [-12, 0, 0] });
+  return build(spec, [
+    { f: 0, pose: ROCKET_IDLE_POSE },
+    { f: 12, pose: shift(loaded, { lu: [-4, 0, 0], ll: [6, 0, 0], ru: [-4, 0, 0], rl: [6, 0, 0] }), hips: [0, -0.02, 0] },
+    { f: 22, pose: loaded, hips: [0, -0.05, 0] },
+    { f: 30, pose: shift(loaded, { hp: [2, 0, 0] }), hips: [0, -0.06, 0] },
+    { f: 36, pose: lunge, hips: [0, 0.03, 0.14] },
+    { f: 44, pose: compact, hips: [0, -0.01, 0.16] },
+    { f: 62, pose: shift(compact, { hd: [-2, 8, 0] }), hips: [0, -0.01, 0.16] },
+    { f: 78, pose: shift(ROCKET_IDLE_POSE, { hd: [-2, 2, 0] }), hips: [0, 0, 0.08] },
+    { f: spec.frames - 1, pose: ROCKET_IDLE_POSE },
+  ]);
+}
+/** Rocket Rosa's Batch 8 pass, exported as a partial delivery. */
+export function buildRocketPilotClips(): AnimationClip[] {
+  return buildNamed('Rocket Rosa', {
+    idle: rocketIdle,
+    idle_fidget: rocketIdleFidget,
+    field_ready: (spec) => readyLoop(spec, { hp: [2, 0, 0] }, 2.8, 0.03),
+    run: (spec) => runCycle(spec, 18, 56, 52),
+    cheer_fierce: (spec) => directedReaction(spec, true, 'fierce'),
+    upset_fierce: (spec) => directedReaction(spec, false, 'fierce'),
+  });
+}
+
+// Chip: many tiny adjustments and one clean decision. Feet patter under an
+// otherwise calm glove; the win ends by making room for the next play.
+const CHIP_IDLE_POSE: Pose = {
+  hp: [6, 0, 0], sp: [4, 0, 0], s2: [4, 0, 0], hd: [-4, 4, 0],
+  la: [-2, 0, 66], lf: [0, -24, 0], ra: [-2, 0, -66], rf: [0, 24, 0],
+  lu: [6, 0, 3], ll: [-10, 0, 0], ru: [6, 0, -3], rl: [-10, 0, 0],
+};
+function chipIdle(spec: ClipSpec): AnimationClip {
+  // The patter: tiny alternating weight shifts, fast, under a calm top.
+  return cycle(
+    spec,
+    (p) => shift(CHIP_IDLE_POSE, {
+      lu: [sin(p * 4) * 3, 0, 0], ll: [-sin(p * 4) * 3, 0, 0],
+      ru: [-sin(p * 4) * 3, 0, 0], rl: [sin(p * 4) * 3, 0, 0],
+      hd: [0, sin(p) * 4, 0],
+    }),
+    (p) => [sin(p * 4) * 0.015, Math.abs(sin(p * 4)) * 0.008, 0]
+  );
+}
+function chipFieldReady(spec: ClipSpec): AnimationClip {
+  const base = shift(FIELD_READY_POSE, { hp: [-2, 0, 0] });
+  return cycle(
+    spec,
+    (p) => shift(base, { lu: [sin(p * 3) * 2, 0, 0], ru: [-sin(p * 3) * 2, 0, 0], hd: [0, sin(p) * 5, 0] }),
+    (p) => [sin(p * 3) * 0.012, Math.abs(sin(p * 3)) * 0.012, 0]
+  );
+}
+function chipIdleFidget(spec: ClipSpec): AnimationClip {
+  // Two hops into a ready pose — the one clean decision — a hold, and then
+  // he steps aside to make room.
+  const ready = shift(CHIP_IDLE_POSE, { hp: [12, 0, 0], hd: [-8, 0, 0], lu: [-10, 0, 4], ll: [22, 0, 0], ru: [-10, 0, -4], rl: [22, 0, 0], la: [-30, 0, -8], lf: [0, -40, 0], ra: [-30, 0, 8], rf: [0, 40, 0] });
+  return build(spec, [
+    { f: 0, pose: CHIP_IDLE_POSE },
+    { f: 8, pose: shift(CHIP_IDLE_POSE, { ll: [-14, 0, 0], rl: [-14, 0, 0] }), hips: [0, -0.03, 0] },
+    { f: 14, pose: shift(CHIP_IDLE_POSE, { hp: [4, 0, 0] }), hips: [0, 0.12, 0] },
+    { f: 20, pose: shift(CHIP_IDLE_POSE, { ll: [-14, 0, 0], rl: [-14, 0, 0] }), hips: [0, -0.03, 0] },
+    { f: 26, pose: shift(CHIP_IDLE_POSE, { hp: [6, 0, 0] }), hips: [0, 0.12, 0] },
+    { f: 32, pose: ready, hips: [0, -0.02, 0] },
+    { f: 52, pose: shift(ready, { hd: [0, 6, 0] }), hips: [0, -0.02, 0] },
+    { f: 64, pose: shift(CHIP_IDLE_POSE, { hp: [2, 0, 6], lu: [2, 0, 16], ll: [-8, 0, 0], hd: [-2, 10, 2] }), hips: [0.12, 0.01, 0] },
+    { f: 76, pose: shift(CHIP_IDLE_POSE, { hd: [-2, 6, 0] }), hips: [0.14, 0, 0] },
+    { f: spec.frames - 1, pose: CHIP_IDLE_POSE, hips: [0.14, 0, 0] },
+  ]);
+}
+/** Chip's Batch 8 pass, exported as a partial delivery. */
+export function buildChipPilotClips(): AnimationClip[] {
+  return buildNamed('Chip', {
+    idle: chipIdle,
+    idle_fidget: chipIdleFidget,
+    field_ready: chipFieldReady,
+    run: (spec) => runCycle(spec, 15, 50, 48),
+    cheer: (spec) => sunnyCheer(spec, CHIP_IDLE_POSE, 0.3),
+    upset: (spec) => sunnyUpset(spec, CHIP_IDLE_POSE),
+  });
+}
+
+// Boomer: he broadcasts through the whole skeleton. Even a whisper uses
+// giant mime; the settle includes a sheepish check that everyone survived
+// the volume.
+const BOOMER_IDLE_POSE: Pose = {
+  hp: [4, 0, 0], sp: [2, 0, 0], s2: [2, 0, 0], hd: [-6, 4, 0],
+  ls: [0, 0, -4], rs: [0, 0, 4],
+  la: [-6, 0, 60], lf: [0, -26, 0], ra: [-6, 0, -60], rf: [0, 26, 0],
+  lu: [4, 0, 6], ll: [-8, 0, 0], ru: [4, 0, -6], rl: [-8, 0, 0],
+};
+const BOOMER_CARD_POSE: Pose = shift(BOOMER_IDLE_POSE, {
+  hp: [-4, -8, 0], s2: [-4, -4, 0], hd: [-8, 12, 0],
+  la: [-90, 0, -50], lf: [0, -20, 0], ra: [-90, 0, 50], rf: [0, 20, 0],
+  lu: [-4, 0, 6], ll: [6, 0, 0], ru: [-4, 0, -6], rl: [6, 0, 0],
+});
+function boomerIdle(spec: ClipSpec): AnimationClip {
+  // Big breathing, and the arms take part in it.
+  return build(spec, [
+    { f: 0, pose: BOOMER_IDLE_POSE },
+    { f: 18, pose: shift(BOOMER_IDLE_POSE, { sp: [-3, 0, 0], s2: [-4, 0, 0], ls: [0, 0, -4], rs: [0, 0, 4], la: [-6, 0, -6], ra: [-6, 0, 6], hd: [-2, 0, 0] }), hips: [0, 0.02, 0] },
+    { f: 34, pose: shift(BOOMER_IDLE_POSE, { sp: [2, 0, 0], s2: [2, 0, 0], hd: [2, 0, 0] }), hips: [0, -0.005, 0] },
+    { f: 44, pose: shift(BOOMER_IDLE_POSE, { hd: [-4, -14, 0], nk: [0, -4, 0] }) },
+    { f: 52, pose: shift(BOOMER_IDLE_POSE, { hd: [-4, 12, 0], nk: [0, 4, 0] }) },
+    { f: spec.frames, pose: BOOMER_IDLE_POSE },
+  ]);
+}
+function boomerIdleFidget(spec: ClipSpec): AnimationClip {
+  // The whisper: hand cupped to the mouth, the other arm flung wide — and
+  // then the sheepish check, both arms down, small.
+  const whisper = shift(BOOMER_IDLE_POSE, { hd: [2, -20, 4], s2: [0, -10, 0], ra: [-96, 0, 6], rf: [0, 118, 0], la: [-80, 0, -60], lf: [0, -10, 0] });
+  const sheepish = shift(BOOMER_IDLE_POSE, { hp: [6, 0, 0], s2: [6, 0, 0], hd: [8, 16, -4], ls: [0, 0, 6], rs: [0, 0, -6], la: [4, 0, 6], ra: [4, 0, -6] });
+  return build(spec, [
+    { f: 0, pose: BOOMER_IDLE_POSE },
+    { f: 14, pose: whisper, hips: [0.03, 0, 0] },
+    { f: 22, pose: shift(whisper, { hd: [0, -4, 0], la: [-10, 0, -6] }), hips: [0.03, 0, 0] },
+    { f: 30, pose: shift(whisper, { hd: [0, 4, 0], la: [6, 0, 4] }), hips: [0.03, 0, 0] },
+    { f: 38, pose: whisper, hips: [0.03, 0, 0] },
+    { f: 52, pose: sheepish },
+    { f: 62, pose: shift(sheepish, { hd: [0, -30, 4] }) },
+    { f: 74, pose: shift(BOOMER_IDLE_POSE, { hd: [2, 0, 0] }) },
+    { f: spec.frames - 1, pose: BOOMER_IDLE_POSE },
+  ]);
+}
+/** Boomer's Batch 8 pass, exported as a partial delivery. */
+export function buildBoomerPilotClips(): AnimationClip[] {
+  return buildNamed('Boomer', {
+    idle: boomerIdle,
+    idle_fidget: boomerIdleFidget,
+    pose_card: (spec) => heldPose(spec, BOOMER_CARD_POSE, [0, 0.01, 0]),
+    run: (spec) => runCycle(spec, 16, 52, 52),
+    cheer_goofy: (spec) => directedReaction(spec, true, 'goofy'),
+    upset_goofy: (spec) => directedReaction(spec, false, 'goofy'),
+  });
+}
