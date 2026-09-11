@@ -97,6 +97,16 @@ describe('character performance direction', () => {
     expect(actingRateFor(bubbles, 'idle')).toBeGreaterThan(1);
   });
 
+  it('directs Batches 7 and 8 — the last nine — each on its own read', () => {
+    const kids = ['flash', 'cricket', 'moose', 'peaches', 'gizmo', 'clover', 'rocket', 'chip', 'boomer'].map(performanceFor);
+    expect(kids.map(heroClipFor)).toEqual([
+      'bat_stance', 'nervous', 'field_ready', 'bat_stance', 'pose_card', 'pose_card', 'field_ready', 'field_ready', 'pose_card',
+    ]);
+    expect(kids.map((k) => reactionClipFor(k, true))).toEqual([
+      'cheer_fierce', 'cheer_goofy', 'cheer_tender', 'cheer', 'cheer_cool', 'cheer', 'cheer_fierce', 'cheer', 'cheer_goofy',
+    ]);
+  });
+
   it('does not let acting tempo retime a marker or locomotion calculation', () => {
     const fast = performanceFor('boomer');
     expect(actingRateFor(fast, 'cheer')).toBeGreaterThan(1);

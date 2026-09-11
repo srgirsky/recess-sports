@@ -9,6 +9,15 @@
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
+  buildFlashPilotClips,
+  buildCricketPilotClips,
+  buildMoosePilotClips,
+  buildPeachesPilotClips,
+  buildGizmoPilotClips,
+  buildCloverPilotClips,
+  buildRocketPilotClips,
+  buildChipPilotClips,
+  buildBoomerPilotClips,
   buildAcePilotClips,
   buildBendItPilotClips,
   buildBigLouPilotClips,
@@ -57,6 +66,15 @@ const BUILDERS = {
   the_prof: { name: 'The Professor', build: buildProfPilotClips },
   diva: { name: 'Dazzle', build: buildDivaPilotClips },
   grizz: { name: 'Grizz', build: buildGrizzPilotClips },
+  flash: { name: 'Flash', build: buildFlashPilotClips },
+  cricket: { name: 'Cricket', build: buildCricketPilotClips },
+  moose: { name: 'Moose', build: buildMoosePilotClips },
+  peaches: { name: 'Peaches', build: buildPeachesPilotClips },
+  gizmo: { name: 'Gizmo', build: buildGizmoPilotClips },
+  clover: { name: 'Clover', build: buildCloverPilotClips },
+  rocket: { name: 'Rocket Rosa', build: buildRocketPilotClips },
+  chip: { name: 'Chip', build: buildChipPilotClips },
+  boomer: { name: 'Boomer', build: buildBoomerPilotClips },
 };
 
 /** The ids this script can bake, for the freshness gate to walk. */
