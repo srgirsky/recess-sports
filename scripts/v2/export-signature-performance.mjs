@@ -12,8 +12,11 @@ import {
   buildBigLouPilotClips,
   buildJunebugPilotClips,
   buildMimiMashPilotClips,
+  buildSproutPilotClips,
   buildTankPilotClips,
   buildTheoPilotClips,
+  buildTurboPilotClips,
+  buildZippyPilotClips,
   buildZoomSeatedLibrary,
 } from '../../src/v2/render/proceduralClips.ts';
 import { writeAnimationClipsGlb } from './export-animation-library.mjs';
@@ -27,6 +30,9 @@ const BUILDERS = {
   big_lou: { name: 'Big Lou', build: buildBigLouPilotClips },
   tank: { name: 'Tank', build: buildTankPilotClips },
   mimi_mash: { name: 'Mimi Mash', build: buildMimiMashPilotClips },
+  turbo: { name: 'Turbo', build: buildTurboPilotClips },
+  sprout: { name: 'Sprout', build: buildSproutPilotClips },
+  zippy: { name: 'Zippy Kwan', build: buildZippyPilotClips },
 };
 
 /** The ids this script can bake, for the freshness gate to walk. */

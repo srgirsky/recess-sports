@@ -2083,3 +2083,319 @@ export function buildMimiMashPilotClips(): AnimationClip[] {
     return make(spec as ClipSpec);
   });
 }
+
+// --- Batch 2: Turbo, Sprout, Zippy -------------------------------------------
+// The roster's second acting batch, in the brief's order after the pilots and
+// Batch 1 (`docs/v2/character-performance-brief.md`). Same discipline as Tank
+// and Mimi: personality in the torso, head, legs and timing; arms stay on the
+// shared grip wherever a bat is held; every key derives from the kid's own
+// idle pose so no arm ever falls to bind.
+
+// Turbo: "already on second base". Forward diagonals — nose-first, weight on
+// the balls of the feet — and he never quite reaches stillness.
+const TURBO_IDLE_POSE: Pose = {
+  hp: [12, -3, 0], sp: [6, -2, 0], s2: [7, -4, 0], hd: [-6, 9, 2],
+  la: [4, 0, 64], lf: [0, -14, 0], ra: [4, 0, -64], rf: [0, 14, 0],
+  lu: [6, 0, 0], ll: [-10, 0, 0], ru: [6, 0, 0], rl: [-10, 0, 0],
+};
+const TURBO_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
+  hp: [12, -6, 0], sp: [8, -4, 0], s2: [6, -6, 0], hd: [-4, 8, 0],
+  lu: [6, 0, 2], ll: [-8, 0, 0], ru: [-4, 0, -2], rl: [6, 0, 0],
+});
+
+/** Weight changes on the balls of the feet, a glance each way, no rest. */
+function turboIdle(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: TURBO_IDLE_POSE },
+    { f: 10, pose: shift(TURBO_IDLE_POSE, { hp: [0, 4, 2], s2: [0, 2, 0] }), hips: [0.03, 0.012, 0] },
+    { f: 20, pose: shift(TURBO_IDLE_POSE, { hp: [0, -4, -2], s2: [0, -2, 0] }), hips: [-0.03, 0.012, 0] },
+    { f: 30, pose: shift(TURBO_IDLE_POSE, { hd: [-2, -16, 0], nk: [0, -4, 0] }), hips: [0.02, 0.008, 0] },
+    { f: 40, pose: shift(TURBO_IDLE_POSE, { hd: [-2, 14, 0], nk: [0, 4, 0] }), hips: [-0.02, 0.008, 0] },
+    { f: 50, pose: shift(TURBO_IDLE_POSE, { s2: [1, 0, 0] }), hips: [0, 0.015, 0] },
+    { f: spec.frames, pose: TURBO_IDLE_POSE },
+  ]);
+}
+
+/** A joke interrupts the pose; the stop is two tiny recovery steps, never a
+ * planted hero landing. */
+function turboIdleFidget(spec: ClipSpec): AnimationClip {
+  // Deltas against the idle: the right arm comes up and out to point (to
+  // about -110 raised, -40 abducted), and the laugh brings both arms a
+  // little forward and out while the torso folds.
+  const point = shift(TURBO_IDLE_POSE, {
+    hp: [6, 14, 0], s2: [4, 10, 0], hd: [-8, -24, 6],
+    ra: [-114, 0, 24], rf: [0, 46, 0], la: [4, 0, -4],
+  });
+  const laugh = shift(TURBO_IDLE_POSE, {
+    hp: [12, 0, 0], s2: [8, 0, 0], hd: [12, 0, 0],
+    la: [-34, 0, -14], lf: [0, -26, 0], ra: [-34, 0, 14], rf: [0, 26, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: TURBO_IDLE_POSE },
+    { f: 12, pose: point },
+    { f: 24, pose: shift(point, { hd: [0, -4, 0], rf: [0, 10, 0] }) },
+    { f: 34, pose: laugh, hips: [0, -0.03, 0] },
+    { f: 44, pose: shift(laugh, { hp: [-4, 0, 0], hd: [-6, 0, 0] }), hips: [0, 0.02, 0] },
+    { f: 52, pose: shift(TURBO_IDLE_POSE, { lu: [-16, 0, 0], ll: [10, 0, 0], hp: [4, 6, 0] }), hips: [0.08, 0.03, 0] },
+    { f: 62, pose: shift(TURBO_IDLE_POSE, { ru: [-14, 0, 0], rl: [10, 0, 0], hp: [4, -6, 0] }), hips: [0, 0.03, 0] },
+    { f: 76, pose: shift(TURBO_IDLE_POSE, { hd: [-2, 4, 0] }), hips: [0.01, 0.01, 0] },
+    { f: spec.frames - 1, pose: TURBO_IDLE_POSE },
+  ]);
+}
+
+/** Turbo's complete Batch 2 pass, exported as a partial delivery. */
+export function buildTurboPilotClips(): AnimationClip[] {
+  const builders: Readonly<Record<string, (spec: ClipSpec) => AnimationClip>> = {
+    idle: turboIdle,
+    idle_fidget: turboIdleFidget,
+    // More lean and reach than the roster: the silhouette a step ahead of its shadow.
+    run: (spec) => runCycle(spec, 20, 54, 50),
+    bat_stance: (spec) => breathe(spec, TURBO_STANCE_POSE, 1.5),
+    cheer_goofy: (spec) => directedReaction(spec, true, 'goofy'),
+    upset_goofy: (spec) => directedReaction(spec, false, 'goofy'),
+  };
+  return Object.entries(builders).map(([name, make]) => {
+    const spec = CLIPS.find((candidate) => candidate.name === name);
+    if (!spec) throw new Error(`Turbo pass names unknown contract clip "${name}"`);
+    return make(spec as ClipSpec);
+  });
+}
+
+// Sprout: "tiny, quick, sneaky bunts". Compressed until surprise pops him
+// into full extension; the signature fidget is a dirt-scrape that becomes an
+// accidental practice bunt stance.
+const SPROUT_IDLE_POSE: Pose = {
+  hp: [6, 0, 0], sp: [8, 0, 0], s2: [10, 0, 0], hd: [-6, -10, 4],
+  ls: [0, 0, 8], rs: [0, 0, -8],
+  la: [-6, 0, 66], lf: [0, -26, 0], ra: [-6, 0, -66], rf: [0, 26, 0],
+  lu: [8, 0, 4], ll: [-14, 0, 0], ru: [8, 0, -4], rl: [-14, 0, 0],
+};
+const SPROUT_POP_POSE: Pose = shift(SPROUT_IDLE_POSE, {
+  hp: [-10, 0, 0], sp: [-12, 0, 0], s2: [-16, 0, 0], hd: [-6, 16, -6],
+  la: [-34, 0, -6], ra: [-34, 0, 6], lu: [-8, 0, 0], ll: [8, 0, 0], ru: [-8, 0, 0], rl: [8, 0, 0],
+});
+
+/** Compressed, still — then the pop, then back down with a look at the dirt. */
+function sproutIdle(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: SPROUT_IDLE_POSE },
+    { f: 20, pose: shift(SPROUT_IDLE_POSE, { s2: [1, 0, 0] }), hips: [0, 0.006, 0] },
+    { f: 26, pose: SPROUT_POP_POSE, hips: [0, 0.04, 0] },
+    { f: 34, pose: shift(SPROUT_POP_POSE, { hd: [0, -4, 0] }), hips: [0, 0.035, 0] },
+    { f: 44, pose: shift(SPROUT_IDLE_POSE, { hd: [16, 2, -4] }) },
+    { f: spec.frames, pose: SPROUT_IDLE_POSE },
+  ]);
+}
+
+/** The shared nervous sway, inside Sprout's compressed frame. */
+function sproutNervous(spec: ClipSpec): AnimationClip {
+  return cycle(spec, (p) => {
+    const sway = sin(p) * 4;
+    const look = sin(p, 0.33) * 12;
+    return shift(SPROUT_IDLE_POSE, {
+      hp: [4, sway * 0.6, 0], sp: [0, sway * 0.3, 0], s2: [0, -sway * 0.4, 0],
+      hd: [-2, look, sin(p, 0.11) * 3],
+      la: [-14, 0, -8 + sway], lf: [0, -34, 0], ra: [-14, 0, 8 - sway], rf: [0, 34, 0],
+      lu: [sway * 0.4, 0, 6], ru: [-sway * 0.4, 0, -6],
+    });
+  });
+}
+
+/** He looks at the dirt, scrapes it twice with the right foot, and comes up
+ * squared away in a bunt stance he did not mean to take. Then remembers
+ * himself. */
+function sproutIdleFidget(spec: ClipSpec): AnimationClip {
+  const lookDown = shift(SPROUT_IDLE_POSE, { hd: [18, -6, 0], hp: [10, 0, 0] });
+  const scrape = shift(lookDown, { ru: [-14, 0, -4], rl: [6, 0, 0], rt: [-12, 0, 0] });
+  const scrapeBack = shift(lookDown, { ru: [10, 0, -4], rt: [8, 0, 0] });
+  const bunt = shift(SPROUT_IDLE_POSE, {
+    hp: [4, -10, 0], sp: [-4, -4, 0], s2: [-6, -6, 0], hd: [-2, 16, 0],
+    la: [-64, 0, -26], lf: [0, -44, 0], ra: [-64, 0, 26], rf: [0, 44, 0],
+    lu: [-6, 0, 0], ll: [6, 0, 0], ru: [-6, 0, 0], rl: [6, 0, 0],
+  });
+  const embarrassed = shift(SPROUT_IDLE_POSE, { hd: [14, -12, 4], s2: [4, 0, 0] });
+  return build(spec, [
+    { f: 0, pose: SPROUT_IDLE_POSE },
+    { f: 14, pose: lookDown },
+    { f: 24, pose: scrape, hips: [0, 0, -0.02] },
+    { f: 34, pose: scrapeBack },
+    { f: 44, pose: scrape, hips: [0, 0, -0.02] },
+    { f: 56, pose: bunt, hips: [0, 0.03, 0] },
+    { f: 68, pose: shift(bunt, { hd: [2, -3, 0] }), hips: [0, 0.03, 0] },
+    { f: 78, pose: embarrassed },
+    { f: spec.frames - 1, pose: SPROUT_IDLE_POSE },
+  ]);
+}
+
+/** Two hops: the first a full-extension pop from a crouch, the second smaller. */
+function sproutCheer(spec: ClipSpec): AnimationClip {
+  const crouch = shift(SPROUT_IDLE_POSE, { hp: [14, 0, 0], s2: [14, 0, 0], lu: [12, 0, 0], ll: [-22, 0, 0], ru: [12, 0, 0], rl: [-22, 0, 0] });
+  // Arms to about -130 raised and 36 abducted — the read the goofy beat's
+  // raised arm gets — rather than flung out level.
+  const pop = shift(SPROUT_IDLE_POSE, {
+    hp: [-16, 0, 0], sp: [-8, 0, 0], s2: [-16, 0, 0], hd: [-10, 10, -4],
+    la: [-124, 0, -30], lf: [0, 6, 0], ra: [-124, 0, 30], rf: [0, -6, 0],
+    lu: [-28, 0, 4], ll: [44, 0, 0], ru: [-28, 0, -4], rl: [44, 0, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: SPROUT_IDLE_POSE },
+    { f: 6, pose: crouch, hips: [0, -0.06, 0] },
+    { f: 14, pose: pop, hips: [0, 0.5, 0] },
+    { f: 22, pose: shift(pop, { hp: [28, 0, 0], la: [12, 0, 6], ra: [12, 0, -6], lu: [40, 0, 0], ru: [40, 0, 0], ll: [-66, 0, 0], rl: [-66, 0, 0] }), hips: [0, -0.04, 0] },
+    { f: 30, pose: shift(pop, { la: [10, 0, 20], ra: [10, 0, -20] }), hips: [0, 0.15, 0] },
+    { f: 38, pose: shift(SPROUT_IDLE_POSE, { hp: [-4, 0, 0], hd: [-8, 8, -4], la: [-20, 0, 0], ra: [-20, 0, 0] }) },
+    { f: spec.frames - 1, pose: SPROUT_IDLE_POSE },
+  ]);
+}
+
+/** He folds smaller, hides, then peeks. */
+function sproutUpset(spec: ClipSpec): AnimationClip {
+  const hide = shift(SPROUT_IDLE_POSE, {
+    hp: [18, 0, 0], sp: [10, 0, 0], s2: [14, 0, 0], hd: [26, 0, 0],
+    la: [4, 0, 4], ra: [4, 0, -4], lu: [10, 0, 6], ll: [-18, 0, 0], ru: [10, 0, -6], rl: [-18, 0, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: SPROUT_IDLE_POSE },
+    { f: 10, pose: shift(SPROUT_IDLE_POSE, { hd: [16, -10, 0], hp: [12, 0, 0], s2: [12, 0, 0] }) },
+    { f: 26, pose: hide, hips: [0, -0.05, 0] },
+    { f: 42, pose: shift(hide, { hd: [-16, -16, 4] }), hips: [0, -0.04, 0] },
+    { f: spec.frames - 1, pose: shift(SPROUT_IDLE_POSE, { hd: [8, -4, 0] }) },
+  ]);
+}
+
+/** Sprout's complete Batch 2 pass, exported as a partial delivery. */
+export function buildSproutPilotClips(): AnimationClip[] {
+  const builders: Readonly<Record<string, (spec: ClipSpec) => AnimationClip>> = {
+    idle: sproutIdle,
+    idle_fidget: sproutIdleFidget,
+    nervous: sproutNervous,
+    // Short, quick strides: a small kid at a high cadence.
+    run: (spec) => runCycle(spec, 12, 40, 44),
+    cheer: sproutCheer,
+    upset: sproutUpset,
+  };
+  return Object.entries(builders).map(([name, make]) => {
+    const spec = CLIPS.find((candidate) => candidate.name === name);
+    if (!spec) throw new Error(`Sprout pass names unknown contract clip "${name}"`);
+    return make(spec as ClipSpec);
+  });
+}
+
+// Zippy Kwan: "runs before she hits". She begins moving before the thought
+// finishes: a bouncing rhythm on the toes, the head lagging every turn, and a
+// win take that exits on a playful challenge.
+const ZIPPY_IDLE_POSE: Pose = {
+  hp: [8, 0, 0], sp: [4, 0, 0], s2: [6, -3, 0], hd: [-4, 6, -3],
+  la: [10, 0, 64], lf: [0, -24, 0], ra: [10, 0, -64], rf: [0, 24, 0],
+  lu: [4, 0, 2], ll: [-8, 0, 0], ru: [4, 0, -2], rl: [-8, 0, 0],
+};
+const ZIPPY_FIELD_POSE: Pose = shift(FIELD_READY_POSE, {
+  hp: [-4, 0, 0], hd: [-4, 0, 0], lu: [6, 0, 0], ru: [6, 0, 0], ll: [-10, 0, 0], rl: [-10, 0, 0],
+});
+
+/** A bounce on the toes; the body turns first and the head catches up. */
+function zippyIdle(spec: ClipSpec): AnimationClip {
+  return build(spec, [
+    { f: 0, pose: ZIPPY_IDLE_POSE },
+    { f: 8, pose: shift(ZIPPY_IDLE_POSE, { hd: [-2, -6, 0] }), hips: [0, 0.03, 0] },
+    { f: 16, pose: shift(ZIPPY_IDLE_POSE, { hp: [0, 10, 0], s2: [0, 6, 0] }) },
+    { f: 22, pose: shift(ZIPPY_IDLE_POSE, { hp: [0, 10, 0], s2: [0, 6, 0], hd: [-2, 12, -4] }), hips: [0, 0.03, 0] },
+    { f: 32, pose: shift(ZIPPY_IDLE_POSE, { hp: [0, -8, 0], s2: [0, -5, 0], hd: [-2, 8, -3] }) },
+    { f: 38, pose: shift(ZIPPY_IDLE_POSE, { hp: [0, -8, 0], s2: [0, -5, 0], hd: [-2, -10, 2] }), hips: [0, 0.03, 0] },
+    { f: 48, pose: shift(ZIPPY_IDLE_POSE, { hd: [-1, -4, 0] }), hips: [0, 0.015, 0] },
+    { f: spec.frames, pose: ZIPPY_IDLE_POSE },
+  ]);
+}
+
+/** A springier, shallower crouch that bounces rather than settles. */
+function zippyFieldReady(spec: ClipSpec): AnimationClip {
+  return cycle(
+    spec,
+    (p) => shift(ZIPPY_FIELD_POSE, { hp: [sin(p) * 3, 0, 0], hd: [-sin(p) * 2, sin(p, 0.5) * 10, 0] }),
+    (p) => [0, Math.abs(sin(p)) * 0.04, 0]
+  );
+}
+
+/** A false start: she leans, takes two strides in place, checks herself with
+ * two small hops, and looks back as if nothing happened. */
+function zippyIdleFidget(spec: ClipSpec): AnimationClip {
+  const lean = shift(ZIPPY_IDLE_POSE, { hp: [16, 0, 0], hd: [-10, -16, 0] });
+  // Running form, as `runCycle` has it: the arm opposite the forward leg
+  // swings forward (negative X), the other back — and modest, it is a false
+  // start from a standstill, not a sprint.
+  const strideA = shift(ZIPPY_IDLE_POSE, {
+    hp: [14, 0, 0], lu: [-40, 0, 4], ll: [40, 0, 0], ru: [20, 0, -4], rl: [-10, 0, 0],
+    la: [10, 0, 0], lf: [0, -8, 0], ra: [-16, 0, 0], rf: [0, 16, 0],
+  });
+  const strideB = shift(ZIPPY_IDLE_POSE, {
+    hp: [14, 0, 0], ru: [-40, 0, -4], rl: [40, 0, 0], lu: [20, 0, 4], ll: [-10, 0, 0],
+    ra: [10, 0, 0], rf: [0, 8, 0], la: [-16, 0, 0], lf: [0, -16, 0],
+  });
+  return build(spec, [
+    { f: 0, pose: ZIPPY_IDLE_POSE },
+    { f: 10, pose: lean },
+    { f: 18, pose: strideA, hips: [0, 0.05, 0.06] },
+    { f: 26, pose: strideB, hips: [0, 0.05, 0.12] },
+    { f: 34, pose: shift(ZIPPY_IDLE_POSE, { hp: [6, 0, 0], ll: [-16, 0, 0], rl: [-16, 0, 0] }), hips: [0, 0.08, 0.12] },
+    { f: 40, pose: shift(ZIPPY_IDLE_POSE, { hp: [6, 0, 0] }), hips: [0, 0.06, 0.12] },
+    { f: 48, pose: shift(ZIPPY_IDLE_POSE, { hd: [-4, 20, 0], hp: [4, 6, 0] }), hips: [0, 0, 0.12] },
+    { f: 62, pose: shift(ZIPPY_IDLE_POSE, { hd: [-2, 10, 0] }), hips: [0, 0.02, 0.06] },
+    { f: 74, pose: shift(ZIPPY_IDLE_POSE, { hd: [-2, 2, 0] }), hips: [0, 0.01, 0] },
+    { f: spec.frames - 1, pose: ZIPPY_IDLE_POSE },
+  ]);
+}
+
+/** A jump, and the exit is a point at the other bench: try and catch me. */
+function zippyCheer(spec: ClipSpec): AnimationClip {
+  const jump = shift(ZIPPY_IDLE_POSE, {
+    hp: [-10, 0, 0], hd: [-10, 0, 0],
+    la: [-170, 0, -40], lf: [0, 0, 0], ra: [-170, 0, 40], rf: [0, 0, 0],
+    lu: [-24, 0, 6], ll: [36, 0, 0], ru: [-24, 0, -6], rl: [36, 0, 0],
+  });
+  const challenge = shift(ZIPPY_IDLE_POSE, {
+    hp: [6, -18, 0], s2: [2, -8, 0], hd: [-6, 22, 4],
+    ra: [-106, 0, 34], rf: [0, 20, 0], la: [10, 0, -2], lf: [0, -50, 0],
+    lu: [-4, 0, 2], ru: [8, 0, -2],
+  });
+  return build(spec, [
+    { f: 0, pose: ZIPPY_IDLE_POSE },
+    { f: 8, pose: shift(ZIPPY_IDLE_POSE, { hp: [12, 0, 0], lu: [10, 0, 0], ll: [-18, 0, 0], ru: [10, 0, 0], rl: [-18, 0, 0] }), hips: [0, -0.05, 0] },
+    { f: 14, pose: jump, hips: [0, 0.45, 0] },
+    { f: 22, pose: shift(ZIPPY_IDLE_POSE, { hp: [10, 0, 0], la: [-40, 0, 0], ra: [-40, 0, 0], ll: [-14, 0, 0], rl: [-14, 0, 0] }), hips: [0, -0.03, 0] },
+    { f: 30, pose: challenge },
+    { f: 38, pose: shift(challenge, { hd: [2, 22, 4], rf: [0, 6, 0] }) },
+    { f: spec.frames - 1, pose: shift(ZIPPY_IDLE_POSE, { hd: [-4, 10, 0] }) },
+  ]);
+}
+
+/** Head down, one quick shake, and she is already over it. */
+function zippyUpset(spec: ClipSpec): AnimationClip {
+  const down = shift(ZIPPY_IDLE_POSE, { hd: [20, 0, 0], hp: [10, 0, 0], s2: [8, 0, 0] });
+  return build(spec, [
+    { f: 0, pose: ZIPPY_IDLE_POSE },
+    { f: 8, pose: down },
+    { f: 18, pose: shift(down, { hd: [-4, -18, 0] }) },
+    { f: 26, pose: shift(down, { hd: [-4, 18, 0] }) },
+    { f: 34, pose: shift(down, { hd: [-2, -12, 0] }) },
+    { f: 44, pose: shift(ZIPPY_IDLE_POSE, { hp: [4, 0, 0], hd: [-2, 4, 0] }), hips: [0, 0.02, 0] },
+    { f: spec.frames - 1, pose: ZIPPY_IDLE_POSE },
+  ]);
+}
+
+/** Zippy's complete Batch 2 pass, exported as a partial delivery. */
+export function buildZippyPilotClips(): AnimationClip[] {
+  const builders: Readonly<Record<string, (spec: ClipSpec) => AnimationClip>> = {
+    idle: zippyIdle,
+    idle_fidget: zippyIdleFidget,
+    field_ready: zippyFieldReady,
+    // Long light legs at a quick cadence: a longer reach than the roster.
+    run: (spec) => runCycle(spec, 16, 56, 50),
+    cheer: zippyCheer,
+    upset: zippyUpset,
+  };
+  return Object.entries(builders).map(([name, make]) => {
+    const spec = CLIPS.find((candidate) => candidate.name === name);
+    if (!spec) throw new Error(`Zippy pass names unknown contract clip "${name}"`);
+    return make(spec as ClipSpec);
+  });
+}

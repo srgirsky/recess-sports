@@ -774,6 +774,27 @@ checksum are unchanged).
    the trot ends, or he would celebrate in place while sliding round the
    bases.
 
+4. **Acting Batch 2: Turbo, Sprout and Zippy.** The next three kids in the
+   performance brief's order after the pilots and Batch 1, taken through the
+   same path as Tank and Mimi: an authored idle with a beat in it, the
+   priority takes the brief names (Turbo's bat stance, fidget and goofy
+   reactions; Sprout's nervous loop, dirt-scrape-into-bunt fidget and sunny
+   cheer and upset; Zippy's springy field-ready, false-start fidget and a
+   cheer that exits on a challenge), a run with the kid's own lean and
+   reach, every key derived from the kid's own idle pose so no arm falls to
+   bind. Baked to `anims_<id>_v1.glb` by the signature exporter; the
+   freshness, ground-contact and arm-bind gates cover all three, and the
+   review page marks their clips ★. Reviewed from stills captured off
+   `/v2/?anims=1&kid=<id>` (not committed: the concept-board evidence and
+   the critic scores bound to it belong to the sculpt, which did not
+   change). Two things the stills caught before shipping: a pose written as
+   absolute arm angles but passed through `shift`, which adds, put Turbo's
+   pointing arm behind his back; and a false-start stride swung the
+   same-side arm and leg forward. Acting is now nine of thirty. Acceptance
+   rule 5 still stands — these are generated, disclosed stand-ins until the
+   maintainer records provenance — which is the same footing the six
+   earlier takes are on.
+
 Verified by the unit gates above and by `smoke:presentation` on the smoke
 seed: the fly-catch beat's six painted steps after the catch frame now show
 the held play rather than the between cut, the runner-on beat's runner is
