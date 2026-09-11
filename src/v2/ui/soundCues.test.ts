@@ -137,6 +137,7 @@ describe('state changes', () => {
       balls: 0,
       strikes: 0,
       bases: [false, false, false] as [boolean, boolean, boolean],
+      baseIds: [null, null, null] as [string | null, string | null, string | null],
       batterId: 'x',
       pitcherId: 'y',
       lineScore: [],

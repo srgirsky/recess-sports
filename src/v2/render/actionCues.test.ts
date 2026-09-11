@@ -4,13 +4,44 @@ import type { PlayState } from '../sim/play';
 import type { RunnerState } from '../sim/runners';
 import {
   PITCH_DELIVERY_RELEASE_SEC,
+  PLAY_END_HOLD_SEC,
   SWING_PREROLL_SEC,
   cpuSwingCue,
   diveClip,
+  playEndHoldSec,
   playEventCue,
   slideCue,
 } from './actionCues';
 import { FPS, clipSpec, framesToSec, markerLeadSec } from './clips';
+import { beginPlay, stepPlay, type PlaySpec } from '../sim/play';
+import type { LaunchSpec } from '../sim/launch';
+import { PLAY } from '../sim/params';
+import { VENUE_GEOMETRY } from '../sim/field';
+import { makeRng } from '../sim/rng';
+import { autoAssign } from '../../systems/lineup';
+import { ROSTER, getCharacter } from '../../data/characters';
+
+/** A real play, stepped to its end — the fixture `play.test.ts` uses. */
+function finished(launch: LaunchSpec, over: Partial<PlaySpec> = {}): PlayState {
+  const plan = autoAssign(ROSTER.slice(0, 9).map((c) => c.id));
+  const s = beginPlay(
+    {
+      launch,
+      batter: ROSTER.find((c) => c.stats.speed === 5) ?? ROSTER[0],
+      runners: [],
+      defence: plan.positions,
+      lookup: getCharacter,
+      outs: 0,
+      geo: VENUE_GEOMETRY.park,
+      ...over,
+    },
+    makeRng('hold-tests')
+  );
+  const dt = 1 / 60;
+  for (let n = 0; s.phase === 'live' && n < Math.ceil(PLAY.MAX_PLAY_SEC / dt) + 8; n++) stepPlay(s, dt);
+  expect(s.phase).toBe('done');
+  return s;
+}
 
 describe('action choreography', () => {
   it('derives the pitch release from the clip chain', () => {
@@ -64,5 +95,48 @@ describe('action choreography', () => {
     expect(view).toMatch(/playEventCue\(/);
     expect(view).toMatch(/slideCue\(/);
     expect(view).toMatch(/\.playToMarker\(/);
+    expect(view, 'the play-end hold is wired, not decorative').toMatch(/playEndHoldSec\(/);
+  });
+});
+
+describe('★ the play-end hold — a catch is longer than one frame', () => {
+  it('holds a caught fly on the OUT tier', () => {
+    const s = finished({ exitVelocityFts: 70, launchAngleDeg: 38, sprayDeg: 0, spinRpm: 1500, heightFt: 2.5 });
+    expect(s.flyCaught).toBe(true);
+    expect(s.heldBy, 'the play ends in a glove').not.toBeNull();
+    expect(playEndHoldSec(s)).toBe(PLAY_END_HOLD_SEC.out);
+  });
+
+  it('holds a grounder retired at first on the OUT tier — the throw arrives and the play is over', () => {
+    const s = finished({ exitVelocityFts: 45, launchAngleDeg: -2, sprayDeg: 0, spinRpm: -400, heightFt: 2.5 });
+    expect(s.flyCaught).toBe(false);
+    expect(s.outs).toBe(1);
+    expect(s.events.some((e) => e.t === 'out'), 'the out is on the final tick').toBe(true);
+    expect(playEndHoldSec(s)).toBe(PLAY_END_HOLD_SEC.out);
+  });
+
+  it('holds a ball into the gap on the SAFE tier, once the throw-in is held', () => {
+    const s = finished({ exitVelocityFts: 95, launchAngleDeg: 22, sprayDeg: -13, spinRpm: 1800, heightFt: 2.5 });
+    expect(s.outs).toBe(0);
+    expect(s.heldBy).not.toBeNull();
+    expect(playEndHoldSec(s)).toBe(PLAY_END_HOLD_SEC.safe);
+  });
+
+  it('cuts straight to the between beat on a foul, a homer, a loose ball, or a play still going', () => {
+    const base = { phase: 'done', heldBy: 3, foul: false, homeRun: false, flyCaught: false, events: [] } as unknown as PlayState;
+    expect(playEndHoldSec({ ...base, foul: true })).toBe(0);
+    expect(playEndHoldSec({ ...base, homeRun: true })).toBe(0);
+    expect(playEndHoldSec({ ...base, heldBy: null })).toBe(0);
+    expect(playEndHoldSec({ ...base, phase: 'live' })).toBe(0);
+  });
+
+  it('★ the OUT tier outlasts the catch clip, so the fielder is seen holding the ball', () => {
+    // The clip is 20 frames with the marker at 8; the hold starts on the
+    // marker. Shorter than what remains and the kid would still be mid-catch
+    // at the cut, which is the 16ms failure in a longer coat.
+    const remains = framesToSec(clipSpec('catch_chest').frames) - markerLeadSec('catch_chest');
+    expect(PLAY_END_HOLD_SEC.out).toBeGreaterThan(remains);
+    expect(PLAY_END_HOLD_SEC.safe).toBeGreaterThan(0);
+    expect(PLAY_END_HOLD_SEC.safe, 'a safe ending must not out-hold an out').toBeLessThan(PLAY_END_HOLD_SEC.out);
   });
 });

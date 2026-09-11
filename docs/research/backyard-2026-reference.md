@@ -674,6 +674,7 @@ Not changed here: whether the sim's live loop should yield settle frames
 after the final out, or the view should hold the live camera on the fielder
 before the between cut, is a feel decision — how long a catch lands — and
 the play reducer's step order is load-bearing (`src/v2/AGENTS.md` § The play).
+**Decided 2026-09-11, below: the view holds.**
 The smoke's fielded-or-throw beat asks for a hold or throw on a play that is
 still going, so it cannot be satisfied by the catch frame and does not mask
 this.
@@ -720,3 +721,42 @@ Two defects this record found and closed on the way: the black wedge on the
 horizon (far plane, above) and the wall-clock paint that made the same seed a
 different game run to run. Nothing in these stills clips, floats, or stands
 in a bind pose.
+
+## 2026-09-11 — the catch lands, and the runner stays on his bag
+
+Two gaps in the live game against BB2026's bar, both in the second between
+one play and the next pitch, both closed on the view side of the membrane
+with no sim outcome moved (the golden fingerprints and the thirty-game
+checksum are unchanged).
+
+1. **The catch is no longer one frame long.** `GameView` keeps the finished
+   `PlayState` — which the sim never touches again — and paints it for a hold
+   before the between beat starts: the fielder with the ball in the glove,
+   the live camera where the fit ladder left it, the OUT callout over it,
+   the reactions the `pa` event started playing where the kids stand. The
+   hold is `actionCues.playEndHoldSec`, pure and tested: an ending that is
+   an out (a caught fly, a throw beating the runner) holds 1.2 s, longer than
+   what remains of a catch clip past its marker, so the kid is seen holding
+   it; a safe ending (the throw-in after a single) holds 0.6 s, enough to see
+   the runner on his bag and not enough to slow a two-inning game; a foul, a
+   homer and a clocked-out play cut as before, because nobody is holding the
+   ball and the homer has its own staging. It is the view's beat, beside
+   `BETWEEN_SEC` and `HALF_BREAK_SEC`, not settle frames in the one
+   implementation the harness drains — the alternative the 09-01 note left
+   open, and the reason it is closed this way.
+2. **A runner exists between pitches.** The frame carried `bases` — three
+   booleans for the scoreboard's diamond — and `defence`, so the bridge could
+   draw the nine fielders at their posts between plays but a runner only ever
+   inside a live `PlayState`. A kid who singled stood on first for the one
+   frame the play had left, vanished at the between cut and reappeared at the
+   next contact, while the lit pip said he was there the whole time. BB2026's
+   runners lead off their bags between every pitch. `LiveFrame.baseIds` now
+   names who is on each base (the half's own occupants, which a walk, a steal
+   and the play already move), `bridge.applyIdleDefence` stands them on their
+   bags facing the next one, and `game.test.ts` holds the id-iff-pip
+   invariant on every frame of a game.
+
+Verified by the unit gates above and by `smoke:presentation` on the smoke
+seed: the fly-catch beat's six painted steps after the catch frame now show
+the held play rather than the between cut, and the runner-on beat's runner
+is on the field, not only on the diamond.

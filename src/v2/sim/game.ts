@@ -188,6 +188,18 @@ export interface LiveFrame {
    */
   lineScore: ReadonlyArray<readonly [number, number | null]>;
   bases: [boolean, boolean, boolean];
+  /**
+   * WHO is on each base, between plays.
+   *
+   * ★ THE FRAME CARRIES THIS FOR THE SAME REASON IT CARRIES `defence`: a runner
+   * exists between pitches too. `bases` is three booleans for the scoreboard's
+   * diamond, and until this field existed the view could only draw a runner
+   * inside a live `PlayState` — so a kid who singled stood on first for one
+   * frame, vanished at the between cut, and reappeared at the next contact.
+   * Nine fielders on their posts and an empty bag with a lit pip is not a
+   * runner on first. The identities are the half's own `occupants`, copied.
+   */
+  baseIds: [string | null, string | null, string | null];
   /** The batter and the pitcher, for the view to pose. */
   batterId: string;
   pitcherId: string;
@@ -663,6 +675,7 @@ function syncFrame(frame: LiveFrame, half: HalfState, phase: LiveFrame['phase'])
   frame.balls = half.state.count.balls;
   frame.strikes = half.state.count.strikes;
   frame.bases = [...half.state.bases] as [boolean, boolean, boolean];
+  frame.baseIds = [...half.occupants] as LiveFrame['baseIds'];
 }
 
 function* runPlayLive(
@@ -757,6 +770,7 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
     homeScore: 0,
     lineScore,
     bases: [false, false, false],
+    baseIds: [null, null, null],
     batterId: '',
     pitcherId: '',
     defence: {},
