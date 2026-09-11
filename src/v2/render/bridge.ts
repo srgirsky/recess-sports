@@ -32,6 +32,7 @@ import { AnimationDirector } from './AnimationDirector';
 import type { CameraInput } from './cameraCues';
 import { clipSpec } from './clips';
 import { activeFielderCue, ballPresenceCue, ballShadowCue } from './readabilityCues';
+import { homeRunTrot } from './actionCues';
 
 /** Everything the bridge is allowed to move. */
 export interface SceneRefs {
@@ -52,6 +53,11 @@ export interface FrameViewOptions {
   fieldingFocus?: boolean;
   /** Last frame's camera eye, for the ball's apparent-size cue. */
   cameraAt?: { x: number; y: number; z: number };
+  /**
+   * Seconds into a play-end hold, when the frame's play is a finished one the
+   * view is still painting. A homer's runners trot from it (`homeRunTrot`).
+   */
+  holdElapsedSec?: number;
 }
 
 const NO_PROTECTED_IDS: ReadonlySet<string> = new Set();
@@ -72,7 +78,7 @@ export function applyFrame(
   view: FrameViewOptions = {}
 ): void {
   if (frame.phase === 'live' && frame.play) {
-    applyLive(refs, frame.play, protectedIds);
+    applyLive(refs, frame.play, protectedIds, view.holdElapsedSec);
   } else {
     // ★ THE DEFENCE STANDS AT ITS POSTS BETWEEN PITCHES. Skipping this was the
     // first thing watching the page found: with no live `PlayState` the view
@@ -206,9 +212,14 @@ function applyIdleDefence(
 function applyLive(
   refs: SceneRefs,
   play: PlayState,
-  protectedIds: ReadonlySet<string>
+  protectedIds: ReadonlySet<string>,
+  holdElapsedSec?: number
 ): void {
   refs.ball.position.set(play.ball.p.x, play.ball.p.y, play.ball.p.z);
+  // The home-run trot: choreography for a play the sim has already scored.
+  // Positions come from the cue instead of the runner's frozen leg; the
+  // `PlayState` itself is read and never written, as everything here is.
+  const trot = play.homeRun && holdElapsedSec !== undefined ? homeRunTrot(play, holdElapsedSec) : null;
 
   for (const f of play.fielders) {
     const kid = refs.kids.get(f.charId);
@@ -229,13 +240,24 @@ function applyLive(
     const kid = refs.kids.get(r.charId);
     if (!kid) continue;
     refs.directors.get(r.charId)?.setGloveVisible(false);
+    const dir = refs.directors.get(r.charId);
+    const trotting = trot?.find((c) => c.characterId === r.charId);
+    if (trotting) {
+      kid.setPosition(trotting.x, trotting.z);
+      kid.setFacing(trotting.facing);
+      if (!protectedIds.has(r.charId)) {
+        // Home, he celebrates; the one-shot settles to idle and goes again.
+        if (trotting.home && !holdsOneShot(dir)) dir?.playReaction(true);
+        else if (!trotting.home) dir?.setLocomotionSpeed(trotting.speedFts);
+      }
+      continue;
+    }
     const p = runnerPos(r);
     kid.setPosition(p.x, p.z);
     if (!isSettled(r)) {
       const to = basePos(r.to);
       kid.setFacing(Math.atan2(to.x - p.x, to.z - p.z));
     }
-    const dir = refs.directors.get(r.charId);
     // Once the ball is live, the batter has left the box. Let the sim-owned
     // run interrupt a batting follow-through; fielding actions and slides still
     // finish while their root continues along the sim track.
@@ -301,7 +323,22 @@ function restBall(refs: SceneRefs): void {
  * not learn about `PlayState` — it is the reason `cameraCues.test.ts` can
  * project the bases through a preset with no pixels and no sim.
  */
-export function cameraInputFor(frame: LiveFrame): CameraInput {
+export function cameraInputFor(frame: LiveFrame, holdElapsedSec?: number): CameraInput {
+  if (frame.phase === 'live' && frame.play && frame.play.homeRun && holdElapsedSec !== undefined) {
+    // The trot: the ball is gone, so the fit ladder is handed the runners
+    // still on their lap and the bags ahead of them, with the batter-runner —
+    // the last one home — as the lead the frame follows.
+    const trot = homeRunTrot(frame.play, holdElapsedSec).filter((c) => !c.home);
+    const lead = trot[trot.length - 1];
+    if (!lead) return { phase: 'between' };
+    return {
+      phase: 'live',
+      ball: [lead.x, 3, lead.z],
+      leadRunner: [lead.x, lead.z],
+      runners: trot.map((c) => [c.x, c.z] as const),
+      targetBags: trot.map((c) => [c.next.x, c.next.z] as const),
+    };
+  }
   if (frame.phase === 'live' && frame.play) {
     const p = frame.play;
     const chaser = p.fielders[p.active];
@@ -365,3 +402,4 @@ export function cameraInputFor(frame: LiveFrame): CameraInput {
   if (frame.phase === 'pitch' || frame.phase === 'windup') return { phase: 'pitch' };
   return { phase: 'between' };
 }
+

@@ -329,7 +329,11 @@ export class GameView {
    * a finished play again, so retaining it is not the `LiveFrame` trap: what is
    * held is a play that is over, not the frame that is reused.
    */
-  private hold: { play: PlayState; sec: number } | null = null;
+  private hold: { play: PlayState; sec: number; total: number } | null = null;
+  /** The plate appearance that just ended, waiting for `advance` to stage its reactions. */
+  private paEvent: Extract<SimEvent, { t: 'pa' }> | null = null;
+  /** A batter's reaction held back until his home-run trot is over. */
+  private pendingReaction: { id: string; won: boolean } | null = null;
   private venue: VenueId;
   private readonly board = new Scoreboard();
   private readonly matchup = new Matchup((id) => this.character(id));
@@ -1024,18 +1028,32 @@ export class GameView {
     this.inputs = {};
     this.wait = 0;
     this.hold = null;
+    this.paEvent = null;
+    this.pendingReaction = null;
     this.pitchElapsed = 0;
     this.windupElapsed = 0;
     this.cue = null;
     this.advance();
   }
 
-  /** Let both principals react to the plate appearance they just finished.
-   * The bridge protects these one-shots from its idle loops until they settle. */
+  /** The `pa` event arrives inside the pump, before `advance` knows whether a
+   * hold follows it — so it is kept, and `stageReactions` decides. */
   private reactToPlateAppearance(e: Extract<SimEvent, { t: 'pa' }>): void {
+    this.paEvent = e;
+  }
+
+  /** Let both principals react to the plate appearance they just finished.
+   * The bridge protects these one-shots from its idle loops until they settle.
+   * A batter who homered is trotting for the hold; his cheer waits for the
+   * plate, or he would celebrate in place while sliding round the bases. */
+  private stageReactions(): void {
+    const e = this.paEvent;
+    if (!e) return;
+    this.paEvent = null;
     const batterWon = e.result === 'hit' || e.result === 'walk';
-    this.refs.directors.get(e.batterId)?.playReaction(batterWon, { restart: true });
     this.refs.directors.get(e.pitcherId)?.playReaction(!batterWon, { restart: true });
+    if (this.hold?.play.homeRun) this.pendingReaction = { id: e.batterId, won: batterWon };
+    else this.refs.directors.get(e.batterId)?.playReaction(batterWon, { restart: true });
   }
 
   /**
@@ -1260,8 +1278,9 @@ export class GameView {
       // or a homer cuts straight to its own staging. The reactions the `pa`
       // event just started play where the kids stand in the held picture.
       const sec = ending ? playEndHoldSec(ending) : 0;
-      this.hold = sec > 0 && ending ? { play: ending, sec } : null;
+      this.hold = sec > 0 && ending ? { play: ending, sec, total: sec } : null;
     }
+    this.stageReactions();
     this.showOnly(this.painted());
     if (this.frame.phase === 'live' && this.frame.play) this.animatePlayActions(this.frame.play);
   }
@@ -1343,7 +1362,8 @@ export class GameView {
     for (const id of frame.baseIds) if (id) live.add(id);
     if (frame.play) {
       for (const f of frame.play.fielders) live.add(f.charId);
-      for (const r of frame.play.runners) if (r.done === null) live.add(r.charId);
+      // On a homer everyone has already scored and is trotting — still on the field.
+      for (const r of frame.play.runners) if (r.done === null || frame.play.homeRun) live.add(r.charId);
     }
     live.add(frame.batterId);
     live.add(frame.pitcherId);
@@ -1547,9 +1567,11 @@ export class GameView {
     if (this.frame) {
       this.frameTap?.(this.frame);
       const painted = this.painted();
+      const holdElapsedSec = this.hold ? this.hold.total - this.hold.sec : undefined;
       applyFrame(this.refs, painted, dt, this.pitchElapsed, this.draftProtected, {
         readability: this.screenCue === null,
         fieldingFocus: this.liveControl === 'field',
+        holdElapsedSec,
         // One frame stale on purpose: the camera moves after the frame is
         // applied, and a 16ms-old eye moves the cue by under a percent.
         cameraAt: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z },
@@ -1557,7 +1579,7 @@ export class GameView {
       this.updateDraftPresentation(dt);
       this.animateCpuSwing();
       this.paintPlateCues();
-      this.driveCamera(painted, dt);
+      this.driveCamera(painted, dt, holdElapsedSec);
       if (this.impactPunch > 0) {
         const punch = this.impactPunch;
         this.impactPunch = Math.max(0, punch - dt * 3.4);
@@ -1582,6 +1604,11 @@ export class GameView {
       if (this.hold.sec <= 0) {
         this.hold = null;
         this.showOnly(this.frame);
+        if (this.pendingReaction) {
+          const { id, won } = this.pendingReaction;
+          this.pendingReaction = null;
+          this.refs.directors.get(id)?.playReaction(won, { restart: true });
+        }
       }
       return;
     }
@@ -1635,7 +1662,7 @@ export class GameView {
     this.screenCue = preset;
   }
 
-  private driveCamera(frame: LiveFrame, dt: number): void {
+  private driveCamera(frame: LiveFrame, dt: number, holdElapsedSec?: number): void {
     if (this.screenCue) {
       const rig = RIGS[this.screenCue];
       const wantEye = new Vector3(rig.eye[0], rig.eye[1], rig.eye[2]);
@@ -1652,7 +1679,7 @@ export class GameView {
       this.cue = null;
       return;
     }
-    const next = chooseCamera(cameraInputFor(frame), this.cue ?? undefined);
+    const next = chooseCamera(cameraInputFor(frame, holdElapsedSec), this.cue ?? undefined);
     const cut = next.transition === 'cut' || !this.cue;
     this.cue = next;
     const rig = RIGS[next.preset];
