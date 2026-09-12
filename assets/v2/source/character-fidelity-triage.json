@@ -2280,86 +2280,6 @@
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT (the shared knee builder's shoulder ring): _with_knee only runs when "
     },
-    "boomer:f0c6c3adc32c": {
-      "char": "boomer",
-      "class": "no-defect-note",
-      "excerpt": "12-vs-14 VERDICT per region (unchanged through four rebuilds, re-checked against"
-    },
-    "boomer:b0fa537be615": {
-      "char": "boomer",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (finding 2, knee collar) — boomer-front-apose-review x205-335 y505-565: "
-    },
-    "boomer:97ef75654aa4": {
-      "char": "boomer",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (finding 3, profile kneecap lip) — boomer-profile-apose-review front con"
-    },
-    "boomer:5180f85ad634": {
-      "char": "boomer",
-      "class": "proportions",
-      "excerpt": "REVISED (finding 4, calf) — unchanged since rebuild 2: profile-apose back contou"
-    },
-    "boomer:c7b966a53512": {
-      "char": "boomer",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (finding 5, elbow shoulder-side step) — moving the crease to ARM_ELBOW_X"
-    },
-    "boomer:864731201c19": {
-      "char": "boomer",
-      "class": "proportions",
-      "excerpt": "CARRIED — lower body identity: measure:fidelity head w:h +0.12 and head height -"
-    },
-    "boomer:5e8102b50043": {
-      "char": "boomer",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED — mohawk daylight: boomer-profile-review x180-390 y80-260 unchanged; thi"
-    },
-    "boomer:0a61d46e5f79": {
-      "char": "boomer",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED — bare-skull sides and stubble stair-step: boomer-profile-apose-review x"
-    },
-    "boomer:919a942bcb3a": {
-      "char": "boomer",
-      "class": "40px-read",
-      "excerpt": "CARRIED — stripe contrast 33% of the sheet's (front-review x=270 rows 300-430 dL"
-    },
-    "boomer:193efc06d1c4": {
-      "char": "boomer",
-      "class": "butt-joins",
-      "excerpt": "CARRIED — swing_contact far sleeve cap: boomer-runtime-swing x550-585 y337-375 a"
-    },
-    "boomer:3c6542ec9d1c": {
-      "char": "boomer",
-      "class": "proportions",
-      "excerpt": "CARRIED — nose: no front nose form at front-review x170-370 y80-280; profile wed"
-    },
-    "boomer:850b5c3d8331": {
-      "char": "boomer",
-      "class": "decal-not-form",
-      "excerpt": "CARRIED — shoe: lace straps read as two cream diagonal stripes on the navy quart"
-    },
-    "boomer:8b0199c90dfb": {
-      "char": "boomer",
-      "class": "decal-not-form",
-      "excerpt": "CARRIED — socks: smooth tubes, no ribbing builder in sculptlib; TEAM_MASK is the"
-    },
-    "boomer:73c0067f7a48": {
-      "char": "boomer",
-      "class": "face-atlas",
-      "excerpt": "CARRIED — hero/run yaw: boomer-runtime-hero x430-610 y140-330 one brow bar and h"
-    },
-    "boomer:498772a9e048": {
-      "char": "boomer",
-      "class": "face-atlas",
-      "excerpt": "CARRIED (softened) — cheer mouth on the sphere's under-curve with no chin (runti"
-    },
-    "boomer:1a0d1cd9cf6a": {
-      "char": "boomer",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (re-checked, do not re-file) — the throat annulus in boomer-profile-r"
-    },
     "clover:3624d1e31ec3": {
       "char": "clover",
       "class": "no-defect-note",
@@ -2689,6 +2609,96 @@
       "char": "peaches",
       "class": "no-defect-note",
       "excerpt": "PASSES re-verified on the 06:16 evidence — nothing is severed; legs are two legs"
+    },
+    "boomer:eb8d618d93f6": {
+      "char": "boomer",
+      "class": "proportions",
+      "excerpt": "REVISED (nose, the round's target; not CLEARED) - front nose form: boomer-front-"
+    },
+    "boomer:767e72c2f3ae": {
+      "char": "boomer",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (the intermediate build's regression) - front hairline: with SCALP_LEVEL"
+    },
+    "boomer:0a2b7c1458e3": {
+      "char": "boomer",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (incidental) - profile skin island at ~x326 y188: boomer-profile-review "
+    },
+    "boomer:bbb3a0d9433a": {
+      "char": "boomer",
+      "class": "no-defect-note",
+      "excerpt": "NON-CHANGE (do not re-file the intermediate build's 'hero temple lip' clearance)"
+    },
+    "boomer:69cb306a2cdc": {
+      "char": "boomer",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED - mohawk daylight: boomer-profile-review x180-390 y80-150 and boomer-fro"
+    },
+    "boomer:b97733211c70": {
+      "char": "boomer",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED - bare-skull sides: boomer-profile-apose-review x190-360 y120-270 (r2-pr"
+    },
+    "boomer:470e61226c7b": {
+      "char": "boomer",
+      "class": "proportions",
+      "excerpt": "CARRIED - head identity: measure:fidelity head w:h +0.12 and head height -3.34 O"
+    },
+    "boomer:fbcb602ca558": {
+      "char": "boomer",
+      "class": "proportions",
+      "excerpt": "CARRIED (verbatim, region byte-identical) - REVISED calf (finding 4 of the recor"
+    },
+    "boomer:900373494b70": {
+      "char": "boomer",
+      "class": "no-defect-note",
+      "excerpt": "CARRIED (verbatim, region byte-identical) - CLEARED knee collar, CLEARED profile"
+    },
+    "boomer:878efde6b39d": {
+      "char": "boomer",
+      "class": "40px-read",
+      "excerpt": "CARRIED - stripe contrast: front-review x=270 y296-432 gold L176-195 vs cream L2"
+    },
+    "boomer:4feecc558bc8": {
+      "char": "boomer",
+      "class": "butt-joins",
+      "excerpt": "CARRIED - swing_contact far sleeve cap: boomer-runtime-swing x550-585 y337-375 a"
+    },
+    "boomer:c5fa52314284": {
+      "char": "boomer",
+      "class": "decal-not-form",
+      "excerpt": "CARRIED - shoe: lace straps read as two cream diagonal bars across the navy vamp"
+    },
+    "boomer:79b16604cc61": {
+      "char": "boomer",
+      "class": "decal-not-form",
+      "excerpt": "CARRIED - socks: smooth tubes; grep 'ribb' finds no ribbing builder in sculptlib"
+    },
+    "boomer:c978a2897d24": {
+      "char": "boomer",
+      "class": "face-atlas",
+      "excerpt": "CARRIED - hero/run yaw: boomer-runtime-hero x430-610 y140-330 (r2-hero-head 4x) "
+    },
+    "boomer:0509d6aa4c68": {
+      "char": "boomer",
+      "class": "face-atlas",
+      "excerpt": "CARRIED (softened) - cheer mouth on the sphere's under-curve with no chin: boome"
+    },
+    "boomer:e379029f4936": {
+      "char": "boomer",
+      "class": "proportions",
+      "excerpt": "CARRIED - no philtrum (folded into the nose finding, filed separately so the nex"
+    },
+    "boomer:ebcb57bb2c70": {
+      "char": "boomer",
+      "class": "no-defect-note",
+      "excerpt": "12-vs-14 VERDICT carries unchanged: no facet at 8x in the thigh, sleeve or forea"
+    },
+    "boomer:545f45d45db2": {
+      "char": "boomer",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (re-checked, do not re-file) - the throat annulus in boomer-profile-r"
     }
   }
 }
