@@ -195,9 +195,16 @@ def skull_front_y(x: float, z: float) -> float:
 SCALP_LEVELS = [
     (3.640, 0.180, 0.190, 0.000),
     (3.560, 0.330, 0.345, 0.005),
+    # 3.460 is NOT redundant even though redundant-rows-scan calls it so (within 0.025 of
+    # its neighbours' lerp): it is the ring just above SCALP_FRINGE's front z 3.400, and
+    # the visible curtain edge is the quad wall from the ring ABOVE the fringe row (the
+    # column-quantized fringe lesson, sideways). Deleting it moved the hairline up to
+    # 3.560 and broke the fade into a thin crown band — an independent critic caught it
+    # on the front board (y166 stubble 87px -> 15px). 36 LOD0 tris, kept. 2026-09-12.
     (3.460, 0.420, 0.440, 0.010),
+    # 3.200 sits under the mohawk's scalp and below the fringe at every x, within 0.025
+    # of its neighbours' lerp: 36 LOD0 tris toward the nose rows, 2026-09-02.
     (3.340, 0.480, 0.500, 0.020),
-    (3.200, 0.520, 0.545, 0.030),
     (3.060, 0.530, 0.555, 0.040),
     (2.940, 0.480, 0.510, 0.070),
     (2.860, 0.400, 0.440, 0.105),
@@ -624,7 +631,10 @@ BOOMER_SHOE = ShoeSpec(
 
 def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) -> None:
     face_columns = 27 if detail >= 2 else (9 if detail == 1 else 5)
-    back_columns = 6 if detail >= 2 else (2 if detail == 1 else 1)
+    # 4 back columns, not 6: the back of his head is under the scalp loft and the
+    # mohawk, and the shared head's three nose rows cost 2 x (27 + 2 x back + 2)
+    # each — at 6 his first build with them refused at 7184. 2026-09-02.
+    back_columns = 4 if detail >= 2 else (2 if detail == 1 else 1)
     if detail >= 2:
         rows_spec, crown, chin = FACE_ROWS, 3, 2
     elif detail == 1:
