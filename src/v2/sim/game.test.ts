@@ -18,7 +18,7 @@
 // ---------------------------------------------------------------------------
 
 import { beforeAll, describe, it, expect } from 'vitest';
-import { simulateGame, simulateGameLive, type GameResult, type GameSpec } from './game';
+import { simulateGame, simulateGameLive, type GameResult, type GameSpec, type LiveFrame } from './game';
 import { battingOrder, planDefence, throwDemandFt } from './lineup';
 import { GAME } from './params';
 import { maxThrowFt } from './fielders';
@@ -616,26 +616,116 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
   }, PLAYS_GAMES);
 });
 
-describe('★ the held features are threaded and INERT', () => {
+describe('★ the held features are threaded, and only the ported one bites', () => {
   // `docs/playtests/holds.json` says shifts, stamina and juice are held until
-  // a playtest with children says otherwise, and `features.ts` gives the later
-  // ports a seam. This PR threads the type and consumes nothing — so a game
-  // with the field absent, at the defaults, and with EVERYTHING switched on
-  // must fingerprint identically. When a port lands, the third case must
-  // DIFFER (that is its own test) and the first two must still agree.
+  // a playtest with children says otherwise, and `features.ts` gives the
+  // ports a seam. Three cases, and each is its own gate: the field absent and
+  // at the defaults must fingerprint identically (the ship path is unchanged);
+  // the three UNPORTED flags must still be inert (a port landing without its
+  // own test is exactly the "wired but inert" failure); and `stamina: true`
+  // must DIFFER, because a port that changes nothing is the same failure from
+  // the other side.
   const fp = (g: GameResult) =>
     `${g.awayScore}-${g.homeScore} i${g.innings} pa${g.tally.plateAppearances} h${g.tally.hits} k${g.tally.strikeouts} r${g.tally.runs} s${g.tally.stealAttempts} log${g.log.length}`;
 
-  it('★ produces the same game with features absent, at DEFAULT_FEATURES, and at parseFeatures("all")', () => {
+  it('★ produces the same game with features absent and at DEFAULT_FEATURES', () => {
     for (const seed of ['a', 'b', 'c']) {
       const absent = fp(game(seed));
-      const defaults = fp(game(seed, { features: DEFAULT_FEATURES }));
-      const all = fp(game(seed, { features: parseFeatures('all') }));
+      const defaults = fp(game(seed, { features: { ...DEFAULT_FEATURES } }));
       expect(defaults, `${seed}: DEFAULT_FEATURES changed the game`).toBe(absent);
-      expect(
-        all,
-        `${seed}: parseFeatures('all') changed the game — a port landed without its own test`
-      ).toBe(absent);
     }
+  }, PLAYS_GAMES);
+
+  it('★ the unported flags (juice, specialPitches, shifts) are still inert', () => {
+    const unported = { ...parseFeatures('all'), stamina: false };
+    for (const seed of ['a', 'b', 'c']) {
+      expect(
+        fp(game(seed, { features: unported })),
+        `${seed}: an unported flag changed the game — a port landed without its own test`
+      ).toBe(fp(game(seed)));
+    }
+  }, PLAYS_GAMES);
+
+  it('★ stamina: true changes the game — the port is not inert', () => {
+    for (const seed of ['a', 'b', 'c']) {
+      expect(
+        fp(game(seed, { features: { ...DEFAULT_FEATURES, stamina: true } })),
+        `${seed}: stamina on played the identical game`
+      ).not.toBe(fp(game(seed)));
+    }
+  }, PLAYS_GAMES);
+});
+
+describe('★ stamina: a tiring arm misses the zone more as the game goes on', () => {
+  /**
+   * Zone share by inning band, over the same seeds, with the flag on or off.
+   *
+   * The `pitch` event carries no inning, and adding one would widen an event
+   * every consumer reads. The frame does: `simulateGameLive` yields ONE frame
+   * object mutated in place, and `onEvent` fires synchronously inside the
+   * generator, so the inning the last yield carried is the inning the pitch
+   * was thrown in.
+   */
+  function zoneShares(stamina: boolean, seeds: string[]): { early: number; late: number } {
+    const n = { early: 0, late: 0 };
+    const inZone = { early: 0, late: 0 };
+    for (const seed of seeds) {
+      let frame: LiveFrame | null = null;
+      const it = simulateGameLive(
+        spec({
+          features: { ...DEFAULT_FEATURES, stamina },
+          onEvent: (e) => {
+            if (e.t !== 'pitch' || !frame) return;
+            const band = frame.inning <= 2 ? 'early' : frame.inning >= 5 ? 'late' : null;
+            if (!band) return;
+            n[band] += 1;
+            if (e.inZone) inZone[band] += 1;
+          },
+        }),
+        makeRng(seed)
+      );
+      for (let r = it.next(); !r.done; r = it.next()) frame = r.value;
+    }
+    return { early: inZone.early / n.early, late: inZone.late / n.late };
+  }
+
+  it('★ the late-inning zone share is below the early one with stamina on, and the drop is the flag', () => {
+    const seeds = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    const on = zoneShares(true, seeds);
+    const off = zoneShares(false, seeds);
+    expect(on.late, `stamina on: early ${on.early.toFixed(3)} late ${on.late.toFixed(3)}`).toBeLessThan(on.early);
+    // Controlled: the same seeds with the flag off. A drop that is there
+    // anyway — a lineup's third time through, say — is not stamina.
+    expect(on.early - on.late, `off: early ${off.early.toFixed(3)} late ${off.late.toFixed(3)}`).toBeGreaterThan(
+      off.early - off.late
+    );
+  }, PLAYS_GAMES);
+
+  it('★ the frame carries the tank only when the flag is on', () => {
+    let sawNumber = false;
+    for (const stamina of [false, true]) {
+      const it = simulateGameLive(spec({ features: { ...DEFAULT_FEATURES, stamina } }), makeRng('tank'));
+      let prevHalf = '';
+      let prev = 1;
+      for (let r = it.next(), n = 0; !r.done && n < 40_000; r = it.next(), n++) {
+        const f = r.value;
+        if (!stamina) {
+          expect(f.stamina, 'flag off: null on every frame').toBeNull();
+          continue;
+        }
+        expect(f.stamina).not.toBeNull();
+        sawNumber = true;
+        const key = `${f.inning}${f.half}`;
+        if (key !== prevHalf) {
+          prevHalf = key;
+          prev = f.stamina!;
+        }
+        // Within a half one arm is pitching, so the tank only goes down.
+        expect(f.stamina!, `${key}: the tank rose`).toBeLessThanOrEqual(prev + 1e-12);
+        expect(f.stamina!).toBeGreaterThanOrEqual(0);
+        prev = f.stamina!;
+      }
+    }
+    expect(sawNumber).toBe(true);
   }, PLAYS_GAMES);
 });

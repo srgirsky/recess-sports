@@ -48,7 +48,7 @@ judging the art direction). Useful query flags:
 | `?face=<cell>` | force an expression atlas cell during model review |
 | `?perf=low\|mid\|high` | override the auto-detected device tier |
 | `?proxy=1` | force primitive proxy characters everywhere |
-| `?features=<list>` | switch **held** features on for a playtest: `all`, or a comma list of `stamina`, `juice`, `specialPitches`, `shifts`. All off otherwise — see "Playtesting with kids" |
+| `?features=<list>` | switch **held** features on for a playtest: `all`, or a comma list of `stamina`, `juice`, `specialPitches`, `shifts`. All off otherwise — see "Playtesting with kids". `stamina` is the one port that does something today (a tiring pitcher; the other three are seams) |
 | `?log=1` | record the session and show the `⬇ LOG` download (counts only) |
 
 Keys on the spike page: `1`–`5` switch camera preset, `V` cycles venue.
@@ -112,6 +112,13 @@ pitches — are **held**: they ship off, and only a session with children can tu
 one on. The holds are data in `docs/playtests/holds.json`; the flags are
 `src/v2/sim/features.ts`; `scripts/playtest.lint.test.js` (part of `npm test`)
 fails a held feature that defaults on and a hold lifted without a record.
+
+Of the four, **stamina is ported** (`src/v2/sim/stamina.ts`, tunables in
+`params.ts` `STAMINA`, provenance in `sim.stamina`): with `?features=stamina`
+every pitch drains the pitcher's tank, below the line a 💦 pip shows on his
+matchup chip and his pitches miss the spot more — both sides, CPU included.
+There is no bullpen; a tired pitcher finishes the game. The other three flags
+parse and ride the game spec but change nothing yet.
 
 To run a session, follow `docs/playtests/PROTOCOL.md`. In short:
 

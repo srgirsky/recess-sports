@@ -37,6 +37,8 @@ import type { PitchKind } from './pitch';
 import { flyToPlate, releasePitch } from './pitch';
 import { resolvePlate, type PlateOverrides, type PlateParams } from './params';
 import type { Features } from './features';
+import { drainPitch, effectivePitching, newStamina } from './stamina';
+import type { StaminaState } from './stamina';
 import {
   beginPlay,
   finishPlay,
@@ -224,6 +226,13 @@ export interface LiveFrame {
     /** CPU-only preview for render timing. Null means the CPU takes. */
     cpuSwingAtSec: number | null;
   } | null;
+  /**
+   * The fielding pitcher's tank, 1 down to 0 — or null when `features.stamina`
+   * is off, so a view cannot mistake a full tank for a feature that is not
+   * running. The HUD's sweat pip reads `isTired({ stamina })` off this; the
+   * threshold is `stamina.ts`'s, not the view's.
+   */
+  stamina: number | null;
 }
 
 export interface GameSpec {
@@ -249,9 +258,11 @@ export interface GameSpec {
   plate?: PlateOverrides;
   /**
    * The held features, if a playtest switched any on. Omitted means
-   * `DEFAULT_FEATURES` — every one of them off. See `features.ts`: nothing
-   * reads this yet; the type is threaded so the ports have a seam, and the
-   * fingerprint test proves the field is inert until one of them lands.
+   * `DEFAULT_FEATURES` — every one of them off. See `features.ts`. `stamina`
+   * is consumed (`playAtBatLive` sags the pitcher's stat from `Side.stamina`);
+   * the other three are still seams, and `game.test.ts` proves each case:
+   * absent and the defaults fingerprint identically, the unported flags are
+   * inert, and `stamina: true` changes the game.
    */
   features?: Features;
 }
@@ -305,6 +316,12 @@ interface Side {
   plan: DefencePlan;
   lineupIdx: number;
   score: number;
+  /**
+   * This side's pitcher's tank. One object for the whole game because there is
+   * no relief (`stamina.ts`); drained only when `features.stamina` is on, so
+   * with the flag off it stays at 1 and nothing reads it.
+   */
+  stamina: StaminaState;
 }
 
 /**
@@ -350,14 +367,17 @@ function* playAtBatLive(
     onEvent?: (e: SimEvent) => void;
     plate?: PlateParams;
     frame: LiveFrame;
+    /** The fielding side's tank, or null when `features.stamina` is off. */
+    stamina: StaminaState | null;
   },
   rng: Rng
 ): Generator<LiveFrame, void, PlayInputs> {
-  const { half, tally, stats, log, onEvent, frame } = args;
+  const { half, tally, stats, log, onEvent, frame, stamina } = args;
   let pitches = 0;
   frame.batterId = args.batter.id;
   frame.pitcherId = args.pitcher.id;
   frame.defence = args.defence;
+  frame.stamina = stamina ? stamina.stamina : null;
 
   for (;;) {
     if (pitches++ >= GAME.MAX_PITCHES_PER_PA) {
@@ -388,13 +408,35 @@ function* playAtBatLive(
     // off the same parent are indistinguishable from one that forked both.
     // PR 13's golden fingerprints and 30-game checksum are what prove it.
     const pitchRng = rng.fork(`p${pitches}`);
+    // ★ THE TIRED ARM IS A SPREAD COPY, AND THE FRESH ONE IS THE SAME OBJECT.
+    // With `features.stamina` off `pitcher` IS `args.pitcher` — no copy, no
+    // rounding, nothing for a fingerprint to see, which is how the golden
+    // values stay byte-identical while the port sits in the same function.
+    // With it on, the sagged stat is an integer in 1..10 (`stamina.ts`), so the
+    // release memo and `fastballFlightSec` keep hitting. The steal race below
+    // reads the same tired arm: the runner projects against the fastball the
+    // kid can throw NOW. His arm in the field (`fielders.ts`, by id) is not
+    // sagged — that is a separate question the hold does not ask.
+    const pitcher = stamina
+      ? {
+          ...args.pitcher,
+          stats: { ...args.pitcher.stats, pitching: effectivePitching(args.pitcher.stats.pitching, stamina) },
+        }
+      : args.pitcher;
     const spec = {
-      pitcher: args.pitcher,
+      pitcher,
       batter: args.batter,
       count: half.state.count,
       plate: args.plate,
     };
     const inFlight = throwPitch(spec, pitchRng, chosen);
+    if (stamina) {
+      // Drained on the throw, before the swing: the pitch just thrown was the
+      // tired arm's, the NEXT one is a little more so. `false` until PR D
+      // lands the special kinds; `PitchKind` has no special member yet.
+      drainPitch(stamina, false);
+      frame.stamina = stamina.stamina;
+    }
     frame.pitch = {
       release: inFlight.release,
       travelSec: inFlight.travelSec,
@@ -419,7 +461,12 @@ function* playAtBatLive(
     // thrown, which is how a changeup becomes a gift rather than an assumption:
     // `sim.stealRace` measures the same runner out by 0.18s on a fastball and
     // safe by 0.13s on a changeup, with nothing anywhere saying so.
-    const steal = tryStealBefore(half, args, result.travelSec, rng.fork(`steal${pitches}`));
+    const steal = tryStealBefore(
+      half,
+      { defence: args.defence, lookup: args.lookup, pitcher },
+      result.travelSec,
+      rng.fork(`steal${pitches}`)
+    );
     if (steal) {
       tally.stealAttempts += 1;
       if (steal.safe) tally.stealsSafe += 1;
@@ -751,6 +798,7 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
     plan: planDefence(t.ids, spec.lookup, t.order),
     lineupIdx: 0,
     score: 0,
+    stamina: newStamina(),
   });
   const away = mk(spec.away);
   const home = mk(spec.home);
@@ -784,6 +832,7 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
     defence: {},
     play: null,
     pitch: null,
+    stamina: null,
   };
 
   for (;;) {
@@ -810,6 +859,8 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
           onEvent: spec.onEvent,
           plate: resolvePlate(spec.plate),
           frame,
+          // CPU pitchers tire too: the flag is per game, not per side.
+          stamina: spec.features?.stamina ? field.stamina : null,
         },
         rng.fork(`${inning}${half}${bat.lineupIdx}`)
       );

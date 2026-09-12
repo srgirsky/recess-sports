@@ -144,6 +144,7 @@ describe('state changes', () => {
       defence: {},
       play: null,
       pitch: null,
+      stamina: null,
     };
     const snap = snapshot(frame);
     frame.outs = 3;
