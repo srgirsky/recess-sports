@@ -2600,6 +2600,43 @@ once, give each kid its own traced numbers, sweep.
   drawing. Neither instrument is wrong; they measure different things, and the
   repair is never to fit a `span` backwards from what the model already delivers.
 
+## 2026-09-12 — rule 5 gets a record, and thirty stand-ins say so
+
+**What was believed.** The performance brief's acceptance rule 5 — "the
+maintainer records performer/model/animation provenance before shipping;
+generated and system stand-ins are not final delivery" — was a sentence in a
+generated document, and everyone treated a sentence as a gate. It was not. There
+was no field to write into, no script to derive one, and nothing that went red
+when a kid shipped without it.
+
+**What the symptom looked like.** Six kids got a code-baked take in August;
+Acting Batches 2–8 (#225–#228) gave the other twenty-four theirs in one day in
+September. Every one of the thirty is `proceduralClips.ts` output played by
+`AnimationDirector` ahead of the shared library, and every voice is either the
+macOS `say` bank or a Kokoro stock voice. All of that is disclosed in prose
+somewhere, and none of it was on any record a test read — so the roster
+sign-off page could show thirty rows at candidate with nothing on them saying
+"stand-in", and nobody had ever recorded looking. A second thing hid under the
+same silence: the takes carry `idle` and `run`, the clips six of the seven
+evidence stills are shot on, and the evidence record stamped only the model.
+Twenty-four kids' hero, run and face stills predate their takes.
+
+**The change.** `assets/v2/source/character-provenance.json` is the record:
+per kid, the model's receipt and board, the take with its sha and the builder
+that baked it, the voice with its sha and generator, `finalDelivery` derived
+from each kind, and a `recorded` block only a human writes.
+`scripts/v2/character-provenance.mjs` derives the machine half — the kind is
+read off `proceduralClips.ts` and `AI_VOICE_CAST`, never typed — and the two
+exporters call it after the manifest. `provenance.lint.test.js` holds the record
+to the shipped bytes, refuses a claimed kind, refuses an agent's name in
+`recorded.by`, and reports (never fails) a signature that has gone stale. The
+evidence record now stamps the take too, with the first stamping derived from
+disk rather than shot — the re-capture of the twenty-four is a named follow-up.
+`export-pilot-performance.mjs` is retired: it re-baked Junebug under a second
+generator string and turned the freshness lint red. Every row today reads
+`generated-stand-in` / `awaiting-maintainer`, which is the rule's own verdict,
+and the honest one.
+
 ## What's explicitly not built yet
 
 Human-performed voice acting, a cross-player pick-rate backend, externally

@@ -16,6 +16,7 @@ or animation contracts.
 | How are assets generated, checked and reviewed? | `README.md` |
 | Which source/runtime hashes and visual scores were approved? | `assets/v2/source/character-production.json` and `character-fidelity.json` |
 | Which concept file, `.blend` and traits belong to an id? | `scripts/v2/character-registry.json` |
+| Who or what made the shipped take and voice, is it final, and has a maintainer signed? | `assets/v2/source/character-provenance.json` (`npm run record:provenance`) |
 
 If two of these disagree, fix the owning source rather than copying the fact
 into another file.
@@ -257,6 +258,7 @@ Fidelity: approved — <side-by-side board and six scores, critic ≠ sculptor>
 Motion: approved — <animation-review screenshot or recording>
 Face/voice: approved AI master | fallback retained — <draft-flow + audio evidence>
 AI voice: <model · generator · stock voice · speed · license/disclosure check>
+Provenance: recorded by <maintainer> <date> in character-provenance.json | awaiting maintainer — take <kind> · voice <kind>
 Integration: approved — <gameplay evidence>
 Automated gates: <commands and results>
 Known follow-up: none | <explicitly scoped item>

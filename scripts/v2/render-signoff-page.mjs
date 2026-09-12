@@ -35,6 +35,20 @@ const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '..', '..');
 const concepts = join(repo, 'docs', 'v2', 'concepts');
 const fidelity = JSON.parse(readFileSync(join(repo, 'assets', 'v2', 'source', 'character-fidelity.json'), 'utf8'));
+// Rule 5's record: who made the take and the voice, and whether a maintainer
+// has signed. Printed per kid so the sign-off page cannot show a stand-in as
+// finished. `npm run record:provenance` refreshes it.
+const provenance = JSON.parse(readFileSync(join(repo, 'assets', 'v2', 'source', 'character-provenance.json'), 'utf8'));
+
+function provenanceCell(id) {
+  const row = provenance.characters[id];
+  if (!row) return '<span class="prov">no provenance row — run npm run record:provenance</span>';
+  const take = `${row.animation.kind}${row.animation.take === 'shared' ? ' ▪' : ' ★'}`;
+  const status = row.status === 'recorded'
+    ? `recorded by ${row.recorded.by} ${row.recorded.at}`
+    : row.status === 'stale' ? 'stale — re-sign' : 'awaiting maintainer';
+  return `<span class="prov">take: ${esc(take)} · voice: ${esc(row.voice.kind)} · ${esc(status)}</span>`;
+}
 
 // Quality 88 with 4:4:4. Measured: ~232kB a board, ~9.1MB of base64 across the
 // roster, inside the 16MB artifact ceiling with room for the HTML and strips.
@@ -89,6 +103,7 @@ async function section(id) {
     <code class="kid-id">${esc(id)}</code>
     <span class="status">${esc(review.status)}</span>
     ${demoted}
+    ${provenanceCell(id)}
     <label class="reviewed-toggle"><input type="checkbox" data-check="${esc(id)}"> Reviewed</label>
   </header>
   <div class="kid-body">
@@ -166,6 +181,7 @@ function chrome(sections, order) {
     border-radius: 999px; padding: 0.12rem 0.6rem;
   }
   .frozen { font-size: 0.78rem; color: var(--clay); }
+  .prov { font-size: 0.78rem; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
   .reviewed-toggle {
     margin-left: auto; display: inline-flex; align-items: center; gap: 0.45rem;
     font-size: 0.85rem; color: var(--muted); cursor: pointer; user-select: none;
