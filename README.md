@@ -361,6 +361,17 @@ game scale is a scalloped silhouette over a rounded crown. Use this to answer
 "did this build carry more grouping than the last one", and settle "is the hair
 right" on the silhouette and the eye.
 
+`npm run census:sculptlib` answers "which kids are actually built on HEAD's
+shared library" — a report, never a gate. A change to `sculptlib/` reaches a kid
+only when their `.blend` is rebuilt through Blender and re-exported, so after a
+primitive lands most of the roster still ships a mesh the old library made, with
+every score honestly bound to a board of that older mesh. The census prints, per
+kid, how many library commits their source predates and which files moved, their
+LOD0 triangles and headroom under the ceiling (a kid under about sixty spare must
+trim before a shared change can even build), their status and scores, and open
+findings by triage class — sorted most-stale-then-tightest, which is the batch
+order for a polish sweep.
+
 The id a character is registered under and the slug their art was drawn under
 differ for eleven of the thirty. `scripts/v2/character-registry.json` is the one
 place that mapping lives — the `.mjs` tooling, the two Blender scripts and
