@@ -2664,6 +2664,45 @@ measured box like the pause and the mute. What stays with the maintainer is the
 session itself: run one per `PROTOCOL.md`, file the record, and lift a hold —
 which is now the only way a held feature defaults on.
 
+### The first port: stamina, behind its flag
+
+The stamina port landed the same day, and it is the instrument's first
+customer. `src/v2/sim/stamina.ts` is v2-native — `systems/fatigue.ts` reads
+`src/config.ts`'s `FATIGUE` and is not on the sim's five-module fence — and its
+four numbers (`params.ts` `STAMINA`: 0.03 a pitch, 0.09 for a special, tired
+below 0.45, four stat points lost at empty) are v1's restated, recorded as
+unmeasured in `sim.stamina`. Every pitch drains the fielding side's tank; below
+the line the pitcher's effective `pitching` stat sags and the plate model
+already there does the rest — a tired arm misses the spot more, and the CPU
+batter punishes it through the same judgement it always had. Nothing new is
+drawn from the rng, and CPU pitchers tire too: the flag is per game, not per
+side.
+
+Two things about the port are worth more than the port. First, the sagged stat
+is **rounded to an integer in 1..10**, because `releaseAtSpot` memoises the
+release solve on `kind|pitchingStat|spot` at 13.6ms a miss and
+`fastballFlightSec` on the stat alone — v1 handed a fraction to a scatter
+formula and paid nothing; here a fraction would be a fresh key every pitch and
+the forty-nine-minute harness again. `stamina.test.ts` sweeps the whole
+(stat, stamina) plane for integers in the band. Second, with the flag off the
+pitcher handed to `throwPitch` **is the roster object** — no spread, no
+rounding — which is why the nine golden fingerprints and `CHECKSUM_30` did not
+move, and `game.test.ts` now proves all three cases the instrument asked for:
+absent and the defaults identical, the three unported flags inert, and
+`stamina: true` a different game on every seed. The effect is measured rather
+than asserted: over eight seeded games the share of pitches in the zone falls
+from 49.6% in innings 1–2 to 43.4% from the fifth on with the flag on, against
+51.4% → 51.1% on the same seeds with it off (`sim.stamina`).
+
+The tell is a 💦 pip inside the pitcher's chip on the matchup plate, in flow so
+the chip grows by one row rather than a badge overhanging it, and
+`audit:v2-layout` now runs the game scenarios with `&features=stamina` and pumps
+a `tired pitcher` state until it shows. There is no bullpen — v2 has no relief
+UI and no CPU relief rule — and that is deliberate: whether children ask to
+change pitcher is one of the questions `PROTOCOL.md` § Stamina sends the
+observer in with, and the answer decides whether a bullpen is worth its UI.
+`DEFAULT_FEATURES.stamina` stays `false` until a record says lift.
+
 ## What's explicitly not built yet
 
 Human-performed voice acting, a cross-player pick-rate backend, externally

@@ -63,7 +63,11 @@ const PORT = 5178;
 // `log=1`: the playtest session log's `⬇ LOG` button is mounted in `#hud`
 // only when asked for, so without this the audit could never measure it —
 // the same hole the pause button sat in before `main.ts` wired it here.
-const GAME_URL = `http://localhost:${PORT}/v2/?play=1&seed=audit&break=1&log=1`;
+// `features=stamina`: the held stamina port's sweat pip lives on the matchup
+// plate and only exists with the flag on, so the game scenarios run with it
+// and the `tired pitcher` state below pumps until it shows. The other flags
+// stay off here until their ports land a box to measure.
+const GAME_URL = `http://localhost:${PORT}/v2/?play=1&seed=audit&break=1&log=1&features=stamina`;
 const APP_URL = `http://localhost:${PORT}/v2/`;
 
 /** A gate that can hang is worse than no gate — it burns a runner in silence.
@@ -171,6 +175,23 @@ const STATES = [
     name: 'log button',
     until: (f) => f.phase === 'windup',
     mustSee: '.btn--log',
+  },
+  {
+    // The stamina port's tell (`&features=stamina` above): a pip inside the
+    // pitcher's chip once his tank is below the sim's line. `frame.stamina`
+    // is null with the flag off, so a null here fails to reach rather than
+    // passing over a plate that never grew. Twenty-odd pitches of pumping.
+    //
+    // `mustSee` is a function of the viewport here because the WHOLE matchup
+    // plate is `display: none` at `max-height: 430px` (app.css: on a short
+    // landscape phone there is no row to give it, and BB collapses its HUD
+    // there too). On that viewport the pip cannot be shown by design, so the
+    // state still requires the scoreboard — a reached state that shows
+    // nothing must fail, not pass over empty chrome — and measures the tired
+    // HUD without the plate. Everywhere else the pip itself is required.
+    name: 'tired pitcher',
+    until: (f) => f.phase === 'windup' && f.stamina !== null && f.stamina < 0.45,
+    mustSee: (vp) => (vp.height <= 430 ? '.sb' : '.matchup-chip__sweat'),
   },
 ];
 
@@ -381,7 +402,11 @@ function tapMinPx(rootFontPx) {
 
 async function auditOne(page, vp, state) {
   const where = `${vp.name} / ${state.name}`;
-  const got = await page.evaluate(PUMP(String(state.until), state.mustSee));
+  // A state's `mustSee` is a selector, or a function of the viewport for the
+  // one piece of chrome the stylesheet collapses on a size (see `tired
+  // pitcher` above).
+  const mustSee = typeof state.mustSee === 'function' ? state.mustSee(vp) : state.mustSee;
+  const got = await page.evaluate(PUMP(String(state.until), mustSee));
   if (!got.reached) {
     // Not a layout failure — say so plainly rather than passing quietly.
     fail(where, `never reached the state (stuck at ${got.phase}/${got.half})`);
@@ -390,7 +415,7 @@ async function auditOne(page, vp, state) {
   if (!got.shown) {
     // The state was reached and the thing it exists to audit is not on screen.
     // Auditing anyway would report a clean run over chrome nobody looked at.
-    fail(where, `reached ${got.phase}/${got.half} but "${state.mustSee}" is not visible`);
+    fail(where, `reached ${got.phase}/${got.half} but "${mustSee}" is not visible`);
     return 0;
   }
   const r = await page.evaluate(COLLECT('hud'));

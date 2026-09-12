@@ -929,6 +929,38 @@ export const ATBAT = {
 } as const;
 
 /**
+ * Pitcher stamina — a held feature (`features.stamina`, off by default).
+ *
+ * ★ THIS IS v1's SHAPE RESTATED, NOT A MEASUREMENT. `src/config.ts`'s `FATIGUE`
+ * block was tuned by feel for the pixel game and never measured against
+ * anything; these four numbers are the same four, carried over so the v2 port
+ * plays the way v1's did and a playtest compares one thing. Stamina is a
+ * fraction of a full tank (unitless), the drains are fractions per pitch, and
+ * `MAX_STAT_LOSS` is in pitching-stat points — so this is the one block here
+ * that is neither feet nor seconds, and `sim.stamina` says why it is allowed:
+ * nothing in it is a physical quantity, and the record names the playtest that
+ * would settle whether the shape is right at all.
+ *
+ * ★ THE SAGGED STAT IS ROUNDED TO AN INTEGER BEFORE IT REACHES A CACHE.
+ * `releaseAtSpot` memoises on `kind|pitchingStat|spot` (13.6ms per miss) and
+ * `fastballFlightSec` on the stat alone; a fractional stat would miss every
+ * key and re-solve every pitch. `stamina.ts` owns that rounding.
+ *
+ * There is no bullpen: v2 has no relief UI and no CPU relief rule, so a tired
+ * pitcher stays tired. Recorded in `sim.stamina`.
+ */
+export const STAMINA = {
+  /** Fraction of the tank one ordinary pitch costs (~33 pitches to empty). */
+  DRAIN_PER_PITCH: 0.03,
+  /** Fraction a special pitch costs — triple, as in v1 — once PR D lands them. */
+  DRAIN_SPECIAL: 0.09,
+  /** Below this the sweat pip shows and the stat starts to sag. */
+  TIRED_AT: 0.45,
+  /** Pitching-stat points lost at an empty tank, floored at stat 1. */
+  MAX_STAT_LOSS: 4,
+} as const;
+
+/**
  * The game above the plate appearance.
  *
  * Everything here is a RULE rather than a measurement, which is why the block is

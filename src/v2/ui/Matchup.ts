@@ -10,6 +10,13 @@
 // DOM only: numbers come from `matchupModel`, ids from the frame, and nothing
 // here is `.interactive` — the plate is a readout, so every tap over it falls
 // through to the canvas like the scoreboard's do.
+//
+// The sweat pip (`features.stamina`, a held feature) is a row INSIDE the
+// pitcher's chip, in flow, so the plate's box grows by one small line when the
+// arm is tired and `audit:v2-layout` measures the same box it always did — an
+// absolutely-positioned badge could poke outside the chip and collide with the
+// pause. Hidden by `[hidden]` when fresh or when the feature is off; the view
+// decides tired-or-not from the sim's own threshold (`stamina.ts`).
 // ---------------------------------------------------------------------------
 
 import { getCharacter } from '../../data/characters';
@@ -22,6 +29,8 @@ export class Matchup {
   private readonly names: [HTMLElement, HTMLElement];
   private readonly lines: [HTMLElement, HTMLElement];
   private readonly arts: [HTMLElement, HTMLElement];
+  /** The tired tell on the pitcher's chip. */
+  private readonly sweat: HTMLElement;
   /** Which kid each chip currently draws, so a portrait rebuilds on change only. */
   private shown: [string, string] = ['', ''];
 
@@ -44,6 +53,12 @@ export class Matchup {
     vs.className = 'matchup__vs';
     vs.textContent = 'VS';
     const pit = build('pit');
+    this.sweat = document.createElement('div');
+    this.sweat.className = 'matchup-chip__sweat';
+    this.sweat.textContent = '💦';
+    this.sweat.setAttribute('aria-label', 'tired');
+    this.sweat.hidden = true;
+    pit.chip.append(this.sweat);
     this.root.append(bat.chip, vs, pit.chip);
     this.names = [bat.name, pit.name];
     this.lines = [bat.line, pit.line];
@@ -59,10 +74,13 @@ export class Matchup {
      * accents rather than showing a third colour source. Portraits drew each
      * kid's fixed roster street colour before this — a batter whose chip wore
      * green while his model wore team-accented red (2026-08-24 review). */
-    uniforms?: { batter?: number; pitcher?: number }
+    uniforms?: { batter?: number; pitcher?: number },
+    /** The pitcher is tired (`features.stamina` on and below the line). */
+    tired = false
   ): void {
     this.root.classList.toggle('is-open', visible);
     if (!visible) return;
+    this.sweat.hidden = !tired;
     const kit = [uniforms?.batter, uniforms?.pitcher];
     [batterId, pitcherId].forEach((id, i) => {
       const key = `${id}:${kit[i] ?? 'street'}`;

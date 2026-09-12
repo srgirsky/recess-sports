@@ -80,6 +80,7 @@ import { CAMERA_FAR_FT, RIGS, chooseCamera, damp, type CameraCue, type CameraPre
 import { applyFrame, cameraInputFor, type SceneRefs } from '../render/bridge';
 import { simulateGameLive, type GameResult, type LiveFrame, type SimEvent } from '../sim/game';
 import { parseFeatures, type Features } from '../sim/features';
+import { isTired } from '../sim/stamina';
 import type { InputVerb } from '../ui/sessionModel';
 import type { PlayInputs, PlayState } from '../sim/play';
 import type { PitchKind } from '../sim/pitch';
@@ -1050,9 +1051,10 @@ export class GameView {
           }
           for (const fn of this.simEvent) fn(e);
         },
-        // ★ READ, NEVER CONSUMED — yet. The flags ride the spec so the ports
-        // have a seam; `game.test.ts` proves `all` and `absent` play the same
-        // game until one lands. Headless runs never set this.
+        // The flags ride the spec. `stamina` is consumed by the sim (a tiring
+        // pitcher, `sim/stamina.ts`); the other three are seams until their
+        // ports land, and `game.test.ts` proves which is which. Headless runs
+        // never set this.
         features: this.featureFlags,
       },
       makeRng(seed)
@@ -1864,7 +1866,10 @@ export class GameView {
       {
         batter: this.teamUniforms.get(frame.batterId),
         pitcher: this.teamUniforms.get(frame.pitcherId),
-      }
+      },
+      // The sweat pip: null is the feature off, and the threshold is the
+      // sim's (`stamina.ts`), never restated here.
+      frame.stamina !== null && isTired({ stamina: frame.stamina })
     );
     // ★ THE PICKER IS SHOWN, NOT HIDDEN BEHIND A KEYBINDING NOBODY KNOWS.
     if (!this.pickerEl) return;

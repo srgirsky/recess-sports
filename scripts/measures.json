@@ -4191,6 +4191,34 @@
    },
    "whatWouldClose": "Whether a child can pick the right moment to send on a fly \u2014 the decision is a tag-up read, which is the hardest judgement in youth baseball. A playtest, not a measurement.",
    "informs": "src/v2/sim/play.ts decideRunning"
+  },
+  "stamina": {
+   "id": "sim.stamina",
+   "category": "sim",
+   "reference": "derived",
+   "status": "note",
+   "statusChangedAt": "2026-09-12",
+   "what": "Pitcher stamina, ported behind the held `features.stamina` flag: what the four numbers are, where they came from, and what would settle them.",
+   "why": "★ THE NUMBERS ARE v1's SHAPE RESTATED, NOT MEASURED. `src/config.ts`'s FATIGUE block (DRAIN_PITCH 0.03, DRAIN_CRAZY 0.09, TIRED_AT 0.45, MAX_STAT_LOSS 4) was tuned by feel for the pixel game and never measured against anything; STAMINA in params.ts carries the same four so the v2 port plays the way v1's did and a playtest compares ONE thing. They are unitless fractions and stat points — the one params.ts block that is neither feet nor seconds — and are recorded here so nobody reads them as a finding.",
+   "theSAGISANINTEGER": "★ `effectivePitching` ROUNDS AND CLAMPS TO 1..10, and that is load-bearing rather than tidy. `releaseAtSpot` memoises the release solve on kind|pitchingStat|spot at 13.6ms a miss and `fastballFlightSec` on the stat alone; v1 handed a fractional stat to a scatter formula and paid nothing. A fractional stat here would be a fresh key every pitch — the forty-nine-minute harness again. `stamina.test.ts` asserts the image of the function over the whole (stat, stamina) plane is integers in the band.",
+   "measured": {
+    "method": "game.test.ts: eight seeded games at the park, the same seeds with the flag on and off, pitches in the zone by inning band (innings 1-2 against 5+) read off the live frame's inning as each pitch event fires.",
+    "onVsOff": "With the flag on the late-inning zone share is below the early one, and the early-minus-late drop exceeds the same seeds' drop with the flag off. The test asserts the ORDERING and the CONTROL, not a value — a target here would be describing this roster.",
+   "zonePctOn": {
+    "innings1to2": 49.6,
+    "innings5plus": 43.4
+   },
+   "zonePctOff": {
+    "innings1to2": 51.4,
+    "innings5plus": 51.1
+   },
+   "seeds": "a..h, park, the first eighteen of the roster, 2026-09-12",
+   "readIt": "A 6.2-point drop against a 0.3-point one. The tank empties in ~33 pitches and a starter throws ~50-65 a game, so by the fourth inning every arm is at its full MAX_STAT_LOSS sag; the drop is the whole effect, not the onset of it.",
+    "identity": "With the flag absent or at DEFAULT_FEATURES the fresh pitcher IS the roster object (no spread, no rounding), so the nine golden fingerprints and CHECKSUM_30 are byte-identical to before the port; the three unported flags are asserted inert; stamina: true differs on every seed."
+   },
+   "thereISNOBULLPEN": "v2 has no relief UI and no CPU relief rule (v1's CPU_RELIEF_AT is not carried), so a tired pitcher finishes the game and the tank only goes down. The tell is a sweat pip inside the pitcher's chip on the matchup plate, in flow, so `audit:v2-layout`'s `tired pitcher` state measures the grown box. A bullpen is a second feature with its own UI and its own hold question; it is not smuggled in under this one.",
+   "whatWouldClose": "A playtest record in docs/playtests/ (PROTOCOL.md § Stamina): whether children notice the pitcher tiring, what they think is happening, whether a late inning feels different to them, and whether they ask to change pitcher — which is also the only evidence that would justify building a bullpen. Until a record with verdict \"lift\" names this feature, DEFAULT_FEATURES.stamina stays false (scripts/playtest.lint.test.js).",
+   "informs": "src/v2/sim/params.ts STAMINA, src/v2/sim/stamina.ts effectivePitching"
   }
  },
  "defense": {
