@@ -63,9 +63,17 @@ const assets = join(repo, 'dist', 'assets');
  *                undrafted cast from reading as two synchronized teams.
  *   983 -> 1005  Bespoke performance delivery: per-kid partial clip loading,
  *                manifest discovery and source-labelled animation review.
+ *   1005 -> 1038 Two things, one measured on a clean build of main. Acting
+ *                Batches 2-8 (#225-#228): twenty-four per-kid pilot builders in
+ *                `render/proceduralClips.ts`, about 27kB, shipped with vitest
+ *                green because this gate reads `dist/` and none of those PRs
+ *                built one — main was already 2.7% over this pin. And the
+ *                instant replay (`render/replayCues.ts`, the snapshot/seek pair
+ *                in the bridge and the director, the tape and playback in
+ *                `GameView`), about 6kB.
  */
 const V1_KB = 1909;
-const V2_KB = 1005;
+const V2_KB = 1038;
 const TOLERANCE = 0.02;
 
 /**

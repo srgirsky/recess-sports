@@ -762,6 +762,22 @@
    "confidence": "n/a",
    "informs": "src/v2/render/Renderer.ts DEFAULT_TONE_MAPPING and DEFAULT_TONE_EXPOSURE"
   },
+  "replayFeel": {
+   "id": "render.replay-feel",
+   "category": "render",
+   "reference": "derived",
+   "status": "awaiting-measurement",
+   "statusChangedAt": "2026-09-12",
+   "what": "The instant replay's playback rate and the play-end hold before it: how slow BB2026's replay runs, and how long its catch holds before the cut. Both numbers in src/v2/render/replayCues.ts and src/v2/render/actionCues.ts are inherited feel, not readings.",
+   "ours": {
+    "constants": "REPLAY.SPEED 0.55 (v1's FX.REPLAY.SPEED, itself unmeasured), PLAY_END_HOLD_SEC.out 1.2"
+   },
+   "measured": null,
+   "whatWouldWork": "A BB2026 capture at full frame rate (the storyboard corpus is sampled every 10s, which cannot see a rate change): frame-count one caught fly from the glove to the cut for the hold, and one replayed play against its live length for the rate. Three of each. The 2026-09-01 instrument note in docs/research/backyard-2026-reference.md records the hold's existence, not its length.",
+   "n": 0,
+   "confidence": "n/a",
+   "informs": "src/v2/render/replayCues.ts REPLAY.SPEED and src/v2/render/actionCues.ts PLAY_END_HOLD_SEC"
+  },
   "characterPresence": {
    "id": "render.character-presence",
    "category": "render",

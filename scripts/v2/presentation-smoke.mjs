@@ -115,6 +115,14 @@ const REACH = (untilSrc, paintTicks, endIsReach = false, step = 6) => `(async ()
     // through the between cut, so it is the one painted proof of a catch.
     caught: probe(window.__catchBy ?? null),
     breakUp: document.body.classList.contains('inning-break'),
+    // The play-end hold and the instant replay, both view-side: the hold
+    // keeps the finished play painted; the replay plays the tape back and
+    // raises its own chrome (body.replay). No backticks in here: this is a
+    // template literal.
+    hold: !!s.hold,
+    replay: s.replaying === true,
+    replayUp: document.body.classList.contains('replay'),
+    tape: Array.isArray(s.tape) ? s.tape.length : 0,
     ball: { x: +s.refs.ball.position.x.toFixed(2), y: +s.refs.ball.position.y.toFixed(2), z: +s.refs.ball.position.z.toFixed(2), visible: s.refs.ball.visible },
     // Live-play probe: who holds the ball, whether a throw is in the air, and
     // the runner picture — the fields the live beats assert on.
@@ -278,6 +286,9 @@ const BEATS = [
     paint: 6,
     expect: (r) => [
       [r.caught !== null && typeof r.caught.clip === 'string' && r.caught.clip.startsWith('catch'), `the fielder who gloved the fly is playing a catch clip (got ${r.caught?.clip})`],
+      // Six frames on, the view is still holding the catch — BB2026 holds on
+      // its catches (`actionCues.playEndHoldSec`), so the cut has not happened.
+      [r.hold === true, 'the view holds on the catch before the between cut'],
     ],
   },
   // A homer depends on the seeded game containing one, so this beat pumps
@@ -429,6 +440,37 @@ async function runGameBeats(browser, url, beats, failures, report) {
   }
 }
 
+/**
+ * The instant-replay page's beats (see main). `?replay=1` replays EVERY play
+ * that has a tape. The tape is recorded from PAINTED ticks only — a replay is
+ * playback of what was drawn — and the reach pumps without painting, so the
+ * first beat arms it: reach the live play and paint a stretch of it. The
+ * second beat then reaches the between frame after the play-end hold, and
+ * the paints do the starting (the tape hands over to playback on the first
+ * painted tick), which is why the reach waits on `pendingReplay`.
+ */
+const REPLAY_BEATS = [
+  {
+    name: 'replay-arm',
+    // A fair ball being fielded: a foul is decided when the ball LANDS, so a
+    // play whose ball has landed and is not foul is one that will last long
+    // enough to tape (the smoke seed's first ball in play is a quick foul).
+    until: '(f) => f.phase === "live" && f.play && f.play.landedAtSec !== null && !f.play.foul',
+    paint: 24,
+    expect: (r) => [[r.tape >= 12, `the painted stretch of the play is on the tape (got ${r.tape} frames)`]],
+  },
+  {
+    name: 'replay',
+    until: '(f, s) => f.phase === "between" && s.pendingReplay === true && !s.hold',
+    paint: 12,
+    expect: (r) => [
+      [r.replay === true, 'the tape is playing back after the play-end hold'],
+      [r.replayUp === true, 'the letterbox and badge are up (body.replay)'],
+      [r.phase === 'between', 'the sim is frozen on its between frame while the tape plays'],
+    ],
+  },
+];
+
 /** The dedicated home-run page's beats (see main). */
 const HR_BEATS = [
   {
@@ -457,6 +499,17 @@ async function main() {
       browser,
       `http://localhost:${PORT}/v2/?play=1&seed=smokeHR2`,
       HR_BEATS,
+      failures,
+      report
+    );
+    // The replay gets its own page too: on the main page an instrument owns
+    // the clock and no replay starts unbidden (`GameView.devStepFixedClock`);
+    // `?replay=1` is the deliberate exception, and it makes every play replay
+    // so the beat does not depend on the seed producing a double play.
+    await runGameBeats(
+      browser,
+      `http://localhost:${PORT}/v2/?play=1&seed=smoke&replay=1`,
+      REPLAY_BEATS,
       failures,
       report
     );
