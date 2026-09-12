@@ -1573,5 +1573,19 @@
     "owner": "AGENTS.md",
     "kind": "bullet",
     "section": "Keeping docs current (do this as part of each change)"
+  },
+  {
+    "anchor": "scripts/playtest.lint.test.js",
+    "claim": "a held feature defaulting on; a hold lifted with no record",
+    "owner": "AGENTS.md",
+    "kind": "row",
+    "section": "The gates"
+  },
+  {
+    "anchor": "`?features=` and `?log=1` stay reachable",
+    "claim": "?features= and ?log=1 are review surfaces, like ?play=1",
+    "owner": "src/v2/AGENTS.md",
+    "kind": "sentence",
+    "section": "The screens"
   }
 ]

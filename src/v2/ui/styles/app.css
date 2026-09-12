@@ -1558,7 +1558,7 @@ button.clubhouse-sticker {
  * rather than by listing the things to hide, so a new piece of game chrome is
  * hidden by default and a new persistent control is a deliberate exemption.
  */
-body.screen-open #hud > *:not(.btn--mute) {
+body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
   visibility: hidden;
 }
 
@@ -2071,6 +2071,36 @@ body.screen-open #hud > *:not(.btn--mute) {
   z-index: 25;
 }
 .btn--pause[hidden] {
+  display: none;
+}
+
+/*
+ * The playtest log download, top-right beside the mute. Hidden unless the
+ * page was opened with `?log=1` or a `?features=` (`ui/sessionLog.ts`), so a
+ * kid at home never sees it. Absolute for the pause's reason: a corner
+ * button must not size the top row. It sits one tap-min plus a gap inside
+ * the mute's corner, and it survives `body.screen-open` like the mute does,
+ * because the observer downloads at the result screen or the title.
+ */
+.btn--log {
+  position: absolute;
+  inset-block-start: env(safe-area-inset-top, 0px);
+  inset-inline-end: calc(env(safe-area-inset-right, 0px) + var(--s3) + var(--tap-min));
+  margin: var(--s3);
+  padding: 0 var(--s3);
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  background: rgb(20 32 46 / 0.82);
+  color: var(--cream);
+  border-radius: var(--radius);
+  z-index: 25;
+}
+.btn--log[hidden] {
   display: none;
 }
 

@@ -56,6 +56,7 @@
 
 import type { Character } from '../../data/types';
 import { DEFENSE, PLAY, resolvePlate, type PlateOverrides, type PlateParams } from './params';
+import type { Features } from './features';
 import { reachFt, sprintTimeForFt } from './athletes';
 import { launch, type LaunchSpec } from './launch';
 import type { BallState } from './flight';
@@ -292,6 +293,8 @@ export interface PlaySpec {
   geo: FieldGeometry;
   /** Retune overrides. Omit for the shipped constants. */
   plate?: PlateOverrides;
+  /** The held features (`features.ts`). Nothing reads it yet; omit for all off. */
+  features?: Features;
 }
 
 // --- Setup ------------------------------------------------------------------

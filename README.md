@@ -48,6 +48,8 @@ judging the art direction). Useful query flags:
 | `?face=<cell>` | force an expression atlas cell during model review |
 | `?perf=low\|mid\|high` | override the auto-detected device tier |
 | `?proxy=1` | force primitive proxy characters everywhere |
+| `?features=<list>` | switch **held** features on for a playtest: `all`, or a comma list of `stamina`, `juice`, `specialPitches`, `shifts`. All off otherwise — see "Playtesting with kids" |
+| `?log=1` | record the session and show the `⬇ LOG` download (counts only) |
 
 Keys on the spike page: `1`–`5` switch camera preset, `V` cycles venue.
 
@@ -102,6 +104,33 @@ Phaser, so they're unit-tested headlessly:
 ```bash
 npm test
 ```
+
+## Playtesting with kids
+
+Four features — defensive shifts, pitcher stamina, juice/power-ups and special
+pitches — are **held**: they ship off, and only a session with children can turn
+one on. The holds are data in `docs/playtests/holds.json`; the flags are
+`src/v2/sim/features.ts`; `scripts/playtest.lint.test.js` (part of `npm test`)
+fails a held feature that defaults on and a hold lifted without a record.
+
+To run a session, follow `docs/playtests/PROTOCOL.md`. In short:
+
+1. Open the game with the flags in the URL — `/?log=1` for the baseline, then
+   `/?features=stamina` (or `juice`, `specialPitches`, `shifts`) for ONE
+   feature. Any `?features=` also switches the session log on.
+2. Watch, and write down behaviour. At the end of a block tap **⬇ LOG** (top
+   right, beside the speaker) to download `playtest-<n>.json` — pitches, the
+   child's swings/whiffs/hits, outs made in the field, taps per verb, elapsed
+   time, and how the session ended. The last twenty sessions also sit in that
+   browser's `localStorage` under `recess_playtest_log`.
+3. Copy `docs/playtests/TEMPLATE.json` to `docs/playtests/<date>-<slug>.json`,
+   fill it in (age bands only — no names, no recordings, no observer names;
+   the lint checks), and open a PR.
+
+**Lifting a hold:** with a record whose `verdicts.<feature>` is `"lift"`, set
+that feature's `status` to `"lifted"` in `holds.json` with `liftedOn` and
+`liftedBy: ["<record id>"]`. Only then may its `DEFAULT_FEATURES` entry become
+`true`. The lint enforces the order.
 
 ## Checking a 3D asset delivery (v2)
 

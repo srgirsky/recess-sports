@@ -2600,6 +2600,70 @@ once, give each kid its own traced numbers, sweep.
   drawing. Neither instrument is wrong; they measure different things, and the
   repair is never to fit a `span` backwards from what the model already delivers.
 
+## 2026-09-12 — the playtest instrument: the holds become data
+
+The 2026-08-08 re-audit above ends with a sentence that bound nothing:
+"Defensive shifts, stamina and power-up systems were deliberately not added:
+without playtest evidence they would make the measured core less legible rather
+than more complete." It was true, it was in two prose files, and it enforced
+itself the way every unenforced rule in this repo has — until somebody ported a
+feature and defaulted it on, nobody would know a decision had been reversed.
+Special pitches were worse off: listed among the reference's arcade systems in
+item 5 and never held at all, so the sentence could not even be quoted for them.
+
+The instrument comes before any of the four ports because the ports are cheap
+and the evidence is not. Each port is a day; each has a v1 precedent
+(`fatigue.ts`, `juice.ts`, the special pitch kinds) and a clear v2-native shape.
+What none of them has is a child who has played it. Porting first and holding
+the flag off would still leave the same question — *should this default on?* —
+with the same answer, which is a session with kids and a record of what they
+did. So the record format, the session shape and the rule that a hold lifts only
+by a record all landed first, and the flags landed with them so the ports have
+something to hang off.
+
+What shipped:
+
+- **`docs/playtests/holds.json`** — the four features as data: `shifts`,
+  `stamina` and `juice` `held` (2026-08-08, Seth Girsky, the sentence quoted
+  and its two sources cited), `specialPitches` `never-held` with a note. A hold
+  becomes `lifted` only with `liftedOn` and `liftedBy: [record ids]`.
+- **`docs/playtests/PROTOCOL.md`** — the ages 4–8 session shape (pairs, two
+  fifteen-minute blocks, baseline first, then ONE feature), observation prompts
+  per feature, the two `measures.json` records whose `whatWouldClose` already
+  said "a playtest, not a measurement" (`sim.human-pitch`, `sim.runner-sends`)
+  quoted verbatim as the questions every session answers, and the privacy rule:
+  observations only, age bands `4-5`/`6-8`, no names, recordings or observer
+  names. `TEMPLATE.json` is the record to copy.
+- **`scripts/playtest.lint.test.js`** — the teeth. Every `held`/`never-held`
+  feature's `DEFAULT_FEATURES` value must be `false`; a `lifted` hold must name
+  a record carrying `verdict: "lift"` for it; every record is scanned for keys
+  that could identify a child and for email addresses; the protocol must quote
+  the two questions verbatim. Broken once each way before it was trusted, and
+  the messages are in its header.
+- **`src/v2/sim/features.ts`** — `Features`, `DEFAULT_FEATURES` (all false) and
+  `parseFeatures('all' | 'a,b')`, pure and import-free. `GameSpec.features` and
+  `PlaySpec.features` carry the type; `GameView.newGame` reads `?features=`.
+  Nothing consumes it, and `game.test.ts` proves it: the fingerprints with the
+  field absent, at the defaults and at `all` are identical, and the golden
+  values and `CHECKSUM_30` did not move. When a port lands, `all` must differ.
+- **The session log** — `ui/sessionModel.ts` is a pure fold over the sim's
+  events, the frame scalars `soundCues.snapshot` already copies, and the input
+  verbs `GameView.onInput` now reports at every site that writes `PlayInputs`.
+  It counts pitches, human-side swings/whiffs/hits, outs made while fielding,
+  taps per verb, elapsed time and how the session ended. `sessionModel.test.ts`
+  folds real seeded games and reconciles every count against
+  `GameResult.tally`, the per-kid lines and the rule that every top half ends on
+  three outs. `ui/sessionLog.ts` stores it (`recess_playtest_log`, capped at
+  twenty), enabled by `?log=1` or any `?features=`, and downloads it from a
+  `⬇ LOG` button beside the mute. `GameView.onSimEvent`/`onFrame`/`onGameEnd`
+  became listener lists so the log is a second consumer rather than a
+  replacement for sound. The sim has no path to any of it.
+
+The `audit:v2-layout` matrix gained a `&log=1` scenario so the button is a
+measured box like the pause and the mute. What stays with the maintainer is the
+session itself: run one per `PROTOCOL.md`, file the record, and lift a hold —
+which is now the only way a held feature defaults on.
+
 ## What's explicitly not built yet
 
 Human-performed voice acting, a cross-player pick-rate backend, externally
