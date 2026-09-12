@@ -60,7 +60,10 @@ const PORT = 5178;
 // a half-inning of sim away — 78 measured seconds of pumping per viewport,
 // after which the tab would not even navigate. Same reach class SHOW_RESULT
 // solves for the result screen: real component, synthetic trigger).
-const GAME_URL = `http://localhost:${PORT}/v2/?play=1&seed=audit&break=1`;
+// `log=1`: the playtest session log's `⬇ LOG` button is mounted in `#hud`
+// only when asked for, so without this the audit could never measure it —
+// the same hole the pause button sat in before `main.ts` wired it here.
+const GAME_URL = `http://localhost:${PORT}/v2/?play=1&seed=audit&break=1&log=1`;
 const APP_URL = `http://localhost:${PORT}/v2/`;
 
 /** A gate that can hang is worse than no gate — it burns a runner in silence.
@@ -159,6 +162,15 @@ const STATES = [
     // one pitch of pumping rather than a half-inning of it.
     until: (f) => f.phase === 'between',
     mustSee: '.inning-board.is-open',
+  },
+  {
+    // The playtest log button (`&log=1` above). The break hides it with the
+    // rest of the game chrome, so this pumps on to the next windup and
+    // requires it visible there — beside the corner the mute owns on the app
+    // route, over the picker's rail on the half the person pitches.
+    name: 'log button',
+    until: (f) => f.phase === 'windup',
+    mustSee: '.btn--log',
   },
 ];
 

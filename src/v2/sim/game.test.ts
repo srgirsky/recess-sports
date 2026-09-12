@@ -24,6 +24,7 @@ import { GAME } from './params';
 import { maxThrowFt } from './fielders';
 import { VENUE_GEOMETRY, FIELD_POSITIONS, FIRST, dist, type VenueId } from './field';
 import { makeRng } from './rng';
+import { DEFAULT_FEATURES, parseFeatures } from './features';
 import { autoAssign } from '../../systems/lineup';
 import { ROSTER, getCharacter } from '../../data/characters';
 
@@ -612,5 +613,29 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
       if (f.phase !== 'live' && ids.length > 0) sawRunnerBetween = true;
     }
     expect(sawRunnerBetween, 'somebody reached base and stood there between pitches').toBe(true);
+  }, PLAYS_GAMES);
+});
+
+describe('★ the held features are threaded and INERT', () => {
+  // `docs/playtests/holds.json` says shifts, stamina and juice are held until
+  // a playtest with children says otherwise, and `features.ts` gives the later
+  // ports a seam. This PR threads the type and consumes nothing — so a game
+  // with the field absent, at the defaults, and with EVERYTHING switched on
+  // must fingerprint identically. When a port lands, the third case must
+  // DIFFER (that is its own test) and the first two must still agree.
+  const fp = (g: GameResult) =>
+    `${g.awayScore}-${g.homeScore} i${g.innings} pa${g.tally.plateAppearances} h${g.tally.hits} k${g.tally.strikeouts} r${g.tally.runs} s${g.tally.stealAttempts} log${g.log.length}`;
+
+  it('★ produces the same game with features absent, at DEFAULT_FEATURES, and at parseFeatures("all")', () => {
+    for (const seed of ['a', 'b', 'c']) {
+      const absent = fp(game(seed));
+      const defaults = fp(game(seed, { features: DEFAULT_FEATURES }));
+      const all = fp(game(seed, { features: parseFeatures('all') }));
+      expect(defaults, `${seed}: DEFAULT_FEATURES changed the game`).toBe(absent);
+      expect(
+        all,
+        `${seed}: parseFeatures('all') changed the game — a port landed without its own test`
+      ).toBe(absent);
+    }
   }, PLAYS_GAMES);
 });

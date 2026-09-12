@@ -79,6 +79,8 @@ import type { AnimName } from '../render/clips';
 import { CAMERA_FAR_FT, RIGS, chooseCamera, damp, type CameraCue, type CameraPreset } from '../render/cameraCues';
 import { applyFrame, cameraInputFor, type SceneRefs } from '../render/bridge';
 import { simulateGameLive, type GameResult, type LiveFrame, type SimEvent } from '../sim/game';
+import { parseFeatures, type Features } from '../sim/features';
+import type { InputVerb } from '../ui/sessionModel';
 import type { PlayInputs, PlayState } from '../sim/play';
 import type { PitchKind } from '../sim/pitch';
 import { FIRST, SECOND, THIRD, HOME, dist, fenceDistAt, pointAt, type FieldGeometry, type Vec2 } from '../sim/field';
@@ -361,10 +363,20 @@ export class GameView {
    * the floor. The page simply froze on the last pitch, which looked like a
    * hang and was in fact a completed game with nobody listening.
    */
-  private onEnd: ((result: GameResult) => void) | null = null;
-  private simEvent: ((e: SimEvent) => void) | null = null;
-  private frameTap: ((f: LiveFrame) => void) | null = null;
+  /**
+   * Listener LISTS, not single slots. The App consumes all three for sound and
+   * the result screen; the playtest session log (`ui/sessionLog.ts`) is a
+   * second, read-only consumer of the same streams. A setter that overwrote
+   * would silence whichever registered first with no error.
+   */
+  private readonly onEnd: Array<(result: GameResult) => void> = [];
+  private readonly simEvent: Array<(e: SimEvent) => void> = [];
+  private readonly frameTap: Array<(f: LiveFrame) => void> = [];
+  private readonly inputTap: Array<(verb: InputVerb) => void> = [];
   private ended = false;
+  /** The held features this game was started with. Read off `?features=`. */
+  private featureFlags: Features = parseFeatures(null);
+  private currentSeed = '';
   private actionPlay: LiveFrame['play'] = null;
   private readonly slidLegs = new Set<string>();
   private readonly diveClips = new Map<string, AnimName>();
@@ -527,7 +539,10 @@ export class GameView {
     }
     if (!this.liveControl) return;
     const at = this.toField(e);
-    if (at) this.inputs.pointer = at;
+    if (at) {
+      this.inputs.pointer = at;
+      this.tapped('pointer');
+    }
   };
 
   private readonly onPointerMove = (e: PointerEvent): void => {
@@ -548,7 +563,10 @@ export class GameView {
     if (!this.liveControl) return;
     if (e.buttons === 0) return;
     const at = this.toField(e);
-    if (at) this.inputs.pointer = at;
+    if (at) {
+      this.inputs.pointer = at;
+      this.tapped('steer');
+    }
   };
 
   /**
@@ -568,6 +586,7 @@ export class GameView {
       // keeps the first — a bat cannot be un-swung.
       if (!this.inputs.swing) {
         this.inputs.swing = { atSec: this.pitchElapsed, aimHeightFt: this.aimHeightFt };
+        this.tapped('swing');
         // The human's tap IS the simulated swing instant. We learn it now, so
         // the director seeks the CONTACT marker onto this rendered tick and
         // plays the follow-through rather than drawing contact late.
@@ -585,6 +604,7 @@ export class GameView {
         aimLateralFt: this.spot.x,
         aimHeightFt: this.spot.y,
       };
+      this.tapped('pitch');
       this.beginPitchDelivery();
       return;
     }
@@ -596,8 +616,13 @@ export class GameView {
     // policy can remove a verb, but it must never move that verb to a new side.
     if (liveControl === 'run' && this.humanBats) return this.tapBaseAsRunner(at);
     const bag = nearestBase(at);
-    if (bag !== null) this.inputs.throwTo = { base: bag };
-    else this.inputs.dive = true;
+    if (bag !== null) {
+      this.inputs.throwTo = { base: bag };
+      this.tapped('throwTo');
+    } else {
+      this.inputs.dive = true;
+      this.tapped('dive');
+    }
   };
 
   /**
@@ -616,10 +641,14 @@ export class GameView {
     const ahead = live.find((r) => r.from + 1 === bag);
     if (ahead) {
       this.inputs.sendRunner = ahead.charId;
+      this.tapped('sendRunner');
       return;
     }
     const behind = live.find((r) => r.from >= bag && r.from > 0);
-    if (behind) this.inputs.holdRunner = behind.charId;
+    if (behind) {
+      this.inputs.holdRunner = behind.charId;
+      this.tapped('holdRunner');
+    }
   }
 
   /** Number keys pick the pitch. Labelled in the HUD, so nothing is hidden. */
@@ -950,6 +979,10 @@ export class GameView {
     innings = DEFAULT_INNINGS
   ): Promise<void> {
     const geo = VENUE_GEOMETRY[this.venue];
+    // The held features, off unless `?features=` names them — the same idiom
+    // as `?break=1` above. Re-read per game so a review URL is the whole
+    // configuration; nothing else may switch one on.
+    this.featureFlags = parseFeatures(new URLSearchParams(location.search).get('features'));
     // ★ THE DRAFTED TEAM, WHEN THERE IS ONE. `/v2/?play=1` has no draft in front
     // of it and must still play, so the first eighteen of the roster stay the
     // fallback — which is also what every measurement sweep and the layout audit
@@ -1015,11 +1048,16 @@ export class GameView {
             this.spawnImpactBurst(e.launch.heightFt, strength);
             this.impactPunch = strength;
           }
-          this.simEvent?.(e);
+          for (const fn of this.simEvent) fn(e);
         },
+        // ★ READ, NEVER CONSUMED — yet. The flags ride the spec so the ports
+        // have a seam; `game.test.ts` proves `all` and `absent` play the same
+        // game until one lands. Headless runs never set this.
+        features: this.featureFlags,
       },
       makeRng(seed)
     );
+    this.currentSeed = seed;
     this.ended = false;
     this.callouts.reset();
     this.actionPlay = null;
@@ -1135,7 +1173,7 @@ export class GameView {
 
   /** Register the end-of-game callback. */
   onGameEnd(fn: (result: GameResult) => void): void {
-    this.onEnd = fn;
+    this.onEnd.push(fn);
   }
 
   /**
@@ -1148,12 +1186,43 @@ export class GameView {
    * yielded a swing and a take are indistinguishable.
    */
   onSimEvent(fn: (e: SimEvent) => void): void {
-    this.simEvent = fn;
+    this.simEvent.push(fn);
   }
 
   /** Read every rendered frame. Read-only, like everything on this side. */
   onFrame(fn: (f: LiveFrame) => void): void {
-    this.frameTap = fn;
+    this.frameTap.push(fn);
+  }
+
+  /**
+   * Hear every verb the person uses, as it is written into `PlayInputs`.
+   *
+   * Fired at the sites that set `this.inputs.*` and nowhere else, so the
+   * count is of inputs the sim could have read — never of raw pointer events.
+   * Read-only: a listener cannot reach the inputs object, and the sim never
+   * learns a listener exists.
+   */
+  onInput(fn: (verb: InputVerb) => void): void {
+    this.inputTap.push(fn);
+  }
+
+  private tapped(verb: InputVerb): void {
+    for (const fn of this.inputTap) fn(verb);
+  }
+
+  /** The held features this game runs with (`?features=`; all off by default). */
+  get features(): Readonly<Features> {
+    return this.featureFlags;
+  }
+
+  /** The seed the current game was started from. */
+  get seed(): string {
+    return this.currentSeed;
+  }
+
+  /** Which verbs are the person's this game — the session log folds by it. */
+  get playerControlMode(): PlayerControlMode {
+    return this.controlMode;
   }
 
   /**
@@ -1258,7 +1327,7 @@ export class GameView {
       // frame — which reads as a Result screen that will not go away.
       if (!this.ended) {
         this.ended = true;
-        this.onEnd?.(r.value as GameResult);
+        for (const fn of this.onEnd) fn(r.value as GameResult);
       }
       return;
     }
@@ -1565,7 +1634,7 @@ export class GameView {
     this.impactBurst?.update(dt);
 
     if (this.frame) {
-      this.frameTap?.(this.frame);
+      for (const fn of this.frameTap) fn(this.frame);
       const painted = this.painted();
       const holdElapsedSec = this.hold ? this.hold.total - this.hold.sec : undefined;
       applyFrame(this.refs, painted, dt, this.pitchElapsed, this.draftProtected, {

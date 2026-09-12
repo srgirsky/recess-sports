@@ -1,0 +1,52 @@
+{
+  "v": 1,
+  "about": "The product holds, as data. Each key is a flag in src/v2/sim/features.ts; scripts/playtest.lint.test.js holds every `held` and `never-held` feature's DEFAULT_FEATURES value to false, and lets a hold become `lifted` only when a record under docs/playtests/ carries `verdict: \"lift\"` for it and is named in `liftedBy`. The protocol for producing such a record is docs/playtests/PROTOCOL.md.",
+  "statuses": {
+    "held": "Deliberately withheld pending playtest evidence. Requires heldOn, heldBy, source, reason.",
+    "never-held": "Never formally decided either way. Requires note. Treated as held for the default.",
+    "lifted": "A playtest record with verdict `lift` exists and is named. Requires liftedOn and liftedBy: [record ids]. Only then may the flag default on."
+  },
+  "features": {
+    "shifts": {
+      "label": "defensive shifts",
+      "status": "held",
+      "heldOn": "2026-08-08",
+      "heldBy": "Seth Girsky",
+      "source": [
+        "docs/OVERVIEW.md § 2026-08-08 BB2026 production re-audit › Production plan delivered › 5. Spectacle before systems",
+        "docs/research/backyard-2026-reference.md § 2026-08-08 re-audit › 9. Contact spectacle before optional systems"
+      ],
+      "reason": "Defensive shifts, stamina and power-up systems were deliberately not added: without playtest evidence they would make the measured core less legible rather than more complete."
+    },
+    "stamina": {
+      "label": "pitcher stamina",
+      "status": "held",
+      "heldOn": "2026-08-08",
+      "heldBy": "Seth Girsky",
+      "source": [
+        "docs/OVERVIEW.md § 2026-08-08 BB2026 production re-audit › Production plan delivered › 5. Spectacle before systems",
+        "docs/research/backyard-2026-reference.md § 2026-08-08 re-audit › 9. Contact spectacle before optional systems"
+      ],
+      "reason": "Defensive shifts, stamina and power-up systems were deliberately not added: without playtest evidence they would make the measured core less legible rather than more complete."
+    },
+    "juice": {
+      "label": "juice / power-ups",
+      "status": "held",
+      "heldOn": "2026-08-08",
+      "heldBy": "Seth Girsky",
+      "source": [
+        "docs/OVERVIEW.md § 2026-08-08 BB2026 production re-audit › Production plan delivered › 5. Spectacle before systems",
+        "docs/research/backyard-2026-reference.md § 2026-08-08 re-audit › 9. Contact spectacle before optional systems"
+      ],
+      "reason": "Defensive shifts, stamina and power-up systems were deliberately not added: without playtest evidence they would make the measured core less legible rather than more complete."
+    },
+    "specialPitches": {
+      "label": "special pitches (crazy ball, fireball, freezeball)",
+      "status": "never-held",
+      "note": "Listed among the reference's optional arcade systems (docs/OVERVIEW.md § 2026-08-08 re-audit › 5: 'hustle, defensive shifts, juice/stamina and special pitches') but never formally held or ported. Recorded here so the port lands behind its flag, defaults off, and is judged by the same protocol as the held three rather than slipping in as parity work."
+    }
+  },
+  "questions": ["sim.human-pitch", "sim.runner-sends"],
+  "verdicts": ["lift", "hold", "inconclusive"],
+  "ageBands": ["4-5", "6-8"]
+}

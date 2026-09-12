@@ -36,6 +36,7 @@ import type { BallState } from './flight';
 import type { PitchKind } from './pitch';
 import { flyToPlate, releasePitch } from './pitch';
 import { resolvePlate, type PlateOverrides, type PlateParams } from './params';
+import type { Features } from './features';
 import {
   beginPlay,
   finishPlay,
@@ -246,6 +247,13 @@ export interface GameSpec {
    * resolves to the shipped constants, so the default path is unchanged.
    */
   plate?: PlateOverrides;
+  /**
+   * The held features, if a playtest switched any on. Omitted means
+   * `DEFAULT_FEATURES` — every one of them off. See `features.ts`: nothing
+   * reads this yet; the type is threaded so the ports have a seam, and the
+   * fingerprint test proves the field is inert until one of them lands.
+   */
+  features?: Features;
 }
 
 export interface GameResult {

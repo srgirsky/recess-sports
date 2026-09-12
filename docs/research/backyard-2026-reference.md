@@ -226,7 +226,10 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
 9. ~~**Contact spectacle before optional systems.**~~ Contact now drives a
    render-only 3D burst and strength-scaled lens punch before the existing
    home-run camera and fireworks. Shifts, stamina and power-ups were reviewed and
-   deliberately left out until playtesting establishes a product need.
+   deliberately left out until playtesting establishes a product need. As of
+   2026-09-12 that hold is data (`docs/playtests/holds.json`), the protocol for
+   the playtest is `docs/playtests/PROTOCOL.md`, and a lint keeps each held
+   feature's flag off until a filed record lifts it.
 
 ## 2026-08-15 full-playthrough re-audit (what the screen actually shows)
 
