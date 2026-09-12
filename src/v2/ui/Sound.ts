@@ -147,6 +147,16 @@ export class Sound {
     say(`${name}!`, commentatorProfile('A'), 'flush');
   }
 
+  /**
+   * The instant replay's own cue: a pop as the tape starts, the way v1's 📼
+   * announced itself. Not a sim event — the sim knows nothing of replays —
+   * so it is a call from the view rather than a `cuesForEvent` entry, and it
+   * reuses an existing cue rather than growing the vocabulary.
+   */
+  onReplay(kind: 'start' | 'end'): void {
+    if (kind === 'start') this.fire(['pop']);
+  }
+
   private fire(cues: Cue[]): void {
     const seen = new Map<Cue, number>();
     for (const cue of cues) {

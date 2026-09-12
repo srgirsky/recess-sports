@@ -271,6 +271,34 @@ export class AnimationDirector {
     this.pending = null;
   }
 
+  /** Whether this kid is wearing the mitt — the role, not the clip's veto. */
+  get gloveVisible(): boolean {
+    return this.gloveOn;
+  }
+
+  /**
+   * Put `name` at `timeSec`, with no crossfade and no warp.
+   *
+   * The instant replay's seam: the tape recorded which clip each kid was
+   * playing and where in it he was, and playback puts the action back there.
+   * Nothing is re-decided — a marker warped onto a simulated instant at
+   * record time is re-shown at the same clip time, so the bat is on the ball
+   * in the replay exactly where it was live. A finished one-shot is unpaused
+   * so it can be shown mid-motion again; when playback ends, the mixer runs
+   * it out at 1x and the settle graph takes over as it always does.
+   */
+  seek(name: AnimName, timeSec: number): void {
+    if (this.current !== name) this.play(name, { fadeMs: 0, rate: 1, restart: true });
+    const action = this.action;
+    if (!action) return;
+    const duration = action.getClip().duration;
+    action.enabled = true;
+    action.paused = false;
+    action.timeScale = 1;
+    action.time = timeSec <= 0 ? 0 : timeSec >= duration ? duration : timeSec;
+    this.mixer.update(0);
+  }
+
   update(dtSec: number): void {
     this.mixer.update(dtSec);
     this.updatePresence(dtSec);

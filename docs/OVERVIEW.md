@@ -1969,6 +1969,43 @@ the top or bottom half exposes human batting/pitching verbs. CPU-only halves
 therefore neither wait on invisible input nor claim YOU PITCH on the scoreboard,
 and practice/watch games do not dilute the drafted-game pick-rate denominator.
 
+### Instant replay — playback, never re-simulation (2026-09-12)
+
+The last of the "spectacle" items from the 2026-08-08 re-audit, and the one
+its own text had the least evidence for: "slow-motion hit cameras" is a
+one-line assertion against a storyboard corpus sampled every ten seconds,
+which cannot see a rate change at all. What the reference DOES record with a
+frame is that BB2026 holds on its catches (the 2026-09-01 instrument note),
+and that hold shipped first as `actionCues.playEndHoldSec`, view-side, with
+the homer's trot behind it.
+
+The replay that now follows the hold is v1's architecture carried across the
+membrane. `render/replayCues.ts` is the pure half: a classifier folded tick by
+tick from the play's own events (a dive that becomes a catch, two outs, a
+carom, an out on a bang-bang throw — never a homer, whose beat the trot owns),
+a snapshot of what the scene DREW each live tick (positions, facing, the clip
+each kid was in and where, the ball, the camera policy's input — values, never
+the frame, which is mutated in place), and the same camera policy over the
+recorded input. `GameView` records one snapshot per drawn tick, and when a
+play earns it, plays the tape back at `REPLAY.SPEED` through the same bridge
+with each kid's clip SEEKED to its recorded time (`AnimationDirector.seek`),
+under letterbox bars and a badge; any tap skips.
+
+Two decisions carry the sim guarantee. The pump is skipped for the replay's
+length exactly as pause skips it — the accumulator is zeroed, no sim step is
+taken, the game resumes on the same sim instant — so no `pace.*` record and
+no seeded fingerprint moves; running it inside the between beat was rejected
+because a 3–15 s play at 0.55× would have needed the one between-pitch number
+a stopwatch can see extended. And an instrument owns the clock: the first
+`devStepFixedClock` call ends any replay and suppresses further ones, so the
+layout audit and the presentation smoke probe the state they reached, with
+`?replay=1` the deliberate exception that gives the smoke a page of its own.
+
+`simclock.lint.test.js` named this shape as legitimate before it existed here
+— "the replay's slow-motion playback clock legitimately scales delta ... a
+render-side effect that never reaches the sim" — and the rate is recorded as
+inherited, not measured (`render.replay-feel`).
+
 ### PR 41 — each park owns its night
 
 The venue chips made night-at-the-sandlot a place a player can actually

@@ -679,6 +679,11 @@ The smoke's fielded-or-throw beat asks for a hold or throw on a play that is
 still going, so it cannot be satisfied by the catch frame and does not mask
 this.
 
+Closed 2026-09-12: the hold is the view's (`actionCues.playEndHoldSec`, #223),
+and the instant replay that follows it is playback of recorded snapshots at
+`REPLAY.SPEED`, never re-simulation (`render/replayCues.ts`). Its rate is
+inherited from v1 and unmeasured; `render.replay-feel` says what would settle it.
+
 The same green run's fielded still also carried a flat black wedge on the
 horizon behind CF — re-audit #7's "giant unlit black triangle", which #148
 closed as a gable roof's ridge-end cap. That was one cause; the other was

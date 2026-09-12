@@ -21,6 +21,13 @@
 // on asserting 4197 — with every test green. Real time accumulates, the sim
 // steps at its own rate, and there is no tempo dial to add.
 //
+// ★ THE INSTANT REPLAY IS NOT A TEMPO DIAL. It scales a PLAYBACK clock over
+// snapshots the scene recorded of what it drew (`render/replayCues.ts`), and
+// while it plays the pump is skipped the way pause skips it — the accumulator
+// is zeroed, no sim step is taken, and the game resumes on the same sim
+// instant it left. That is the carve-out `simclock.lint.test.js` names for
+// v1's replay, kept in the same shape here.
+//
 // The scene is built by the SAME functions the Look Spike uses. Duplicating
 // them would be a second park that drifts from the reviewed one.
 // ---------------------------------------------------------------------------
@@ -77,7 +84,17 @@ import {
 } from '../render/actionCues';
 import type { AnimName } from '../render/clips';
 import { CAMERA_FAR_FT, RIGS, chooseCamera, damp, type CameraCue, type CameraPreset } from '../render/cameraCues';
-import { applyFrame, cameraInputFor, type SceneRefs } from '../render/bridge';
+import { applyFrame, applySnapshot, cameraInputFor, snapshotScene, type SceneRefs } from '../render/bridge';
+import {
+  REPLAY,
+  foldHighlights,
+  isReplayWorthy,
+  lerpSnapshot,
+  newHighlights,
+  replayCamera,
+  type PlayHighlights,
+  type ReplaySnapshot,
+} from '../render/replayCues';
 import { simulateGameLive, type GameResult, type LiveFrame, type SimEvent } from '../sim/game';
 import type { PlayInputs, PlayState } from '../sim/play';
 import type { PitchKind } from '../sim/pitch';
@@ -334,6 +351,30 @@ export class GameView {
   private paEvent: Extract<SimEvent, { t: 'pa' }> | null = null;
   /** A batter's reaction held back until his home-run trot is over. */
   private pendingReaction: { id: string; won: boolean } | null = null;
+  /**
+   * The instant replay's tape: one snapshot per DRAWN live tick of the play in
+   * progress, values only (`render/replayCues.ts` on why never the frame).
+   * Reset at every windup; a play that earns a replay hands it to `replay`.
+   */
+  private tape: ReplaySnapshot[] = [];
+  private highlights: PlayHighlights = newHighlights();
+  /** The tape being played back, its playback clock and the frame it is on. */
+  private replay: { frames: ReplaySnapshot[]; t: number; idx: number } | null = null;
+  /** Decided when the play ends; started once the play-end hold is over. */
+  private pendingReplay = false;
+  /** `?replay=1` replays every play (the smoke's page), `?replay=0` none. */
+  private readonly replayMode: 'auto' | 'force' | 'off' = (() => {
+    const v = new URLSearchParams(location.search).get('replay');
+    return v === '1' ? 'force' : v === '0' ? 'off' : 'auto';
+  })();
+  /**
+   * Set by `devStepFixedClock`: an instrument is driving the clock, and a
+   * replay it never asked for would sit between it and the state it probed.
+   * The forced mode is the one way an instrument gets a replay on purpose.
+   */
+  private instrumented = false;
+  private replayChrome: HTMLElement[] = [];
+  private onReplayCb: ((kind: 'start' | 'end') => void) | null = null;
   private venue: VenueId;
   private readonly board = new Scoreboard();
   private readonly matchup = new Matchup((id) => this.character(id));
@@ -515,6 +556,12 @@ export class GameView {
 
   private readonly onPointerDown = (e: PointerEvent): void => {
     this.pointerDownAt = performance.now();
+    // Any tap skips a replay — the canvas already receives every non-HUD tap
+    // by construction, so no new target exists to size or audit.
+    if (this.replay) {
+      this.endReplay();
+      return;
+    }
     if (this.batting) {
       const h = this.toPlateHeight(e);
       if (h !== null) this.aimHeightFt = h;
@@ -1030,6 +1077,10 @@ export class GameView {
     this.hold = null;
     this.paEvent = null;
     this.pendingReaction = null;
+    if (this.replay) this.endReplay();
+    this.tape = [];
+    this.highlights = newHighlights();
+    this.pendingReplay = false;
     this.pitchElapsed = 0;
     this.windupElapsed = 0;
     this.cue = null;
@@ -1263,6 +1314,17 @@ export class GameView {
       return;
     }
     this.frame = r.value;
+    // The tape is one play long: it starts empty at the windup and folds the
+    // play's events tick by tick, because the reducer clears `play.events`
+    // every tick and the `between` frame that follows carries none of them.
+    if (this.frame.phase === 'windup') {
+      this.tape = [];
+      this.highlights = newHighlights();
+      this.pendingReplay = false;
+    }
+    if (this.frame.phase === 'live' && this.frame.play) {
+      foldHighlights(this.highlights, this.frame.play, cameraInputFor(this.frame));
+    }
     if (this.frame.phase === 'pitch') this.pitchElapsed = 0;
     if (this.frame.phase === 'pitch') this.cpuSwingStarted = false;
     if (this.frame.phase === 'windup') {
@@ -1279,6 +1341,10 @@ export class GameView {
       // event just started play where the kids stand in the held picture.
       const sec = ending ? playEndHoldSec(ending) : 0;
       this.hold = sec > 0 && ending ? { play: ending, sec, total: sec } : null;
+      // Decided here, on the play's own highlights; started by `tick` once the
+      // hold has shown the catch, so the replay follows the moment, not
+      // interrupts it.
+      this.pendingReplay = ending !== null && this.replayWanted();
     }
     this.stageReactions();
     this.showOnly(this.painted());
@@ -1540,12 +1606,31 @@ export class GameView {
       return;
     }
 
+    // A replay is playback, not time: the pump is skipped exactly as pause
+    // skips it, and the game resumes on the same sim instant it left.
+    if (this.replay) {
+      this.acc = 0;
+      this.stepReplay(dt);
+      this.renderer.render(this.scene, this.camera, now);
+      requestAnimationFrame(this.tick);
+      return;
+    }
+
     // ★ FIXED-STEP ACCUMULATOR. The sim never sees the render delta.
     this.acc += dt;
     const step = 1 / SIM_HZ;
     while (this.acc >= step) {
       this.acc -= step;
       this.pump(step);
+    }
+    if (this.pendingReplay && !this.hold) {
+      this.pendingReplay = false;
+      if (this.startReplay()) {
+        this.stepReplay(0);
+        this.renderer.render(this.scene, this.camera, now);
+        requestAnimationFrame(this.tick);
+        return;
+      }
     }
 
     // Fireworks are chrome: stepped here, never tweened, built on demand.
@@ -1580,6 +1665,16 @@ export class GameView {
       this.animateCpuSwing();
       this.paintPlateCues();
       this.driveCamera(painted, dt, holdElapsedSec);
+      // The tape records what was just DRAWN — after the frame, the directors
+      // and the camera input — one snapshot per distinct sim tick.
+      if (painted.phase === 'live' && painted.play) {
+        const snap = snapshotScene(this.refs, painted, holdElapsedSec);
+        const last = this.tape[this.tape.length - 1];
+        if (snap && (!last || snap.t > last.t)) {
+          this.tape.push(snap);
+          if (this.tape.length > REPLAY.MAX_FRAMES) this.tape.shift();
+        }
+      }
       if (this.impactPunch > 0) {
         const punch = this.impactPunch;
         this.impactPunch = Math.max(0, punch - dt * 3.4);
@@ -1598,6 +1693,8 @@ export class GameView {
   /** One sim step of real time. */
   private pump(step: number): void {
     if (!this.frame) return;
+    // Belt to `tick`'s braces: no sim step is ever taken under a replay.
+    if (this.replay) return;
     if (this.hold) {
       // The finished play stays on screen; the between beat has not started.
       this.hold.sec -= step;
@@ -1641,6 +1738,98 @@ export class GameView {
     this.advance();
   }
 
+  /** Told when a replay starts and ends — the sound facade plays its pop. */
+  onReplay(fn: (kind: 'start' | 'end') => void): void {
+    this.onReplayCb = fn;
+  }
+
+  /** Read by the presentation smoke: is a replay on, is one pending. */
+  get replaying(): boolean {
+    return this.replay !== null;
+  }
+
+  private replayWanted(): boolean {
+    if (this.replayMode === 'off' || this.tape.length < REPLAY.MIN_FRAMES) return false;
+    if (this.replayMode === 'force') return true;
+    return !this.instrumented && isReplayWorthy(this.highlights);
+  }
+
+  /**
+   * Hand the tape to playback and raise the chrome. The letterbox bars and
+   * the badge are plain DOM under `#hud`, inert to the pointer like every
+   * other non-`.interactive` child, so the skip tap falls to the canvas.
+   */
+  private startReplay(): boolean {
+    if (this.replay || this.tape.length < REPLAY.MIN_FRAMES) return false;
+    this.replay = { frames: this.tape, t: 0, idx: 0 };
+    this.tape = [];
+    this.cue = null;
+    document.body.classList.add('replay');
+    const hud = document.getElementById('hud');
+    if (hud) {
+      for (const side of ['top', 'bottom'] as const) {
+        const bar = document.createElement('div');
+        bar.className = `replay-bar replay-bar--${side}`;
+        hud.appendChild(bar);
+        this.replayChrome.push(bar);
+      }
+      const badge = document.createElement('div');
+      badge.className = 'replay-badge';
+      badge.setAttribute('role', 'status');
+      const label = document.createElement('span');
+      label.className = 'replay-badge__label';
+      label.textContent = '📼 INSTANT REPLAY';
+      const hint = document.createElement('span');
+      hint.className = 'replay-badge__hint';
+      hint.textContent = 'TAP TO SKIP';
+      badge.append(label, hint);
+      hud.appendChild(badge);
+      this.replayChrome.push(badge);
+    }
+    this.onReplayCb?.('start');
+    return true;
+  }
+
+  /**
+   * One drawn frame of playback. The playback clock runs at `REPLAY.SPEED`
+   * of real time; the frame is the interpolation of the two recorded ticks
+   * around it, re-applied through the bridge with each kid's clip seeked to
+   * its recorded time; the camera is the same policy over the recorded input,
+   * cut on the first frame and blended after.
+   */
+  private stepReplay(dt: number): void {
+    const rp = this.replay;
+    if (!rp) return;
+    rp.t += dt * REPLAY.SPEED;
+    const t0 = rp.frames[0].t;
+    while (rp.idx + 1 < rp.frames.length && rp.frames[rp.idx + 1].t - t0 <= rp.t) rp.idx++;
+    const a = rp.frames[rp.idx];
+    const b = rp.frames[Math.min(rp.idx + 1, rp.frames.length - 1)];
+    const span = b.t - a.t;
+    const k = span > 0 ? (rp.t - (a.t - t0)) / span : 1;
+    const snap = lerpSnapshot(a, b, k);
+    applySnapshot(this.refs, snap, {
+      seekClips: true,
+      cameraAt: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z },
+    });
+    this.applyCue(replayCamera(snap, this.cue ?? undefined), dt);
+    if (this.frame) this.paintHud(this.frame);
+    if (rp.idx >= rp.frames.length - 1) this.endReplay();
+  }
+
+  /** Drop the chrome and hand the scene back to the sim's frame; the cleared
+   * cue makes the next between frame a clean cut to the plate. */
+  private endReplay(): void {
+    if (!this.replay) return;
+    this.replay = null;
+    document.body.classList.remove('replay');
+    for (const el of this.replayChrome) el.remove();
+    this.replayChrome = [];
+    this.cue = null;
+    if (this.frame) this.showOnly(this.painted());
+    this.onReplayCb?.('end');
+  }
+
   /**
    * ★ THE CAMERA POLICY'S FIRST CALLER. `chooseCamera` has been complete,
    * tested and invoked by nothing since it was written. The hard cut is
@@ -1679,7 +1868,11 @@ export class GameView {
       this.cue = null;
       return;
     }
-    const next = chooseCamera(cameraInputFor(frame, holdElapsedSec), this.cue ?? undefined);
+    this.applyCue(chooseCamera(cameraInputFor(frame, holdElapsedSec), this.cue ?? undefined), dt);
+  }
+
+  /** Move the camera toward a cue: a cut lands it, a blend damps it. */
+  private applyCue(next: CameraCue, dt: number): void {
     const cut = next.transition === 'cut' || !this.cue;
     this.cue = next;
     const rig = RIGS[next.preset];
@@ -1932,6 +2125,11 @@ export class GameView {
    */
   devStepFixedClock(ticks = 6): LiveFrame | null {
     if (!import.meta.env.DEV) return this.frame;
+    // An instrument owns the clock from here: a replay would sit between it
+    // and the state it probes, so one in progress ends and none starts
+    // unbidden (`?replay=1` is the deliberate exception).
+    this.instrumented = true;
+    if (this.replay) this.endReplay();
     const count = Math.max(0, Math.floor(ticks));
     for (let i = 0; i < count; i++) this.pump(1 / SIM_HZ);
     return this.frame;

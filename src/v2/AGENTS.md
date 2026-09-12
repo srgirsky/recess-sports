@@ -288,9 +288,8 @@ produce a byte-identical `GameResult`, because every record rests on it.
   rather than assert it.
 - **⚠️ The SAME `LiveFrame` is yielded every tick, mutated in place — read it and
   drop it, NEVER retain it.** Collect frames in an array and you hold N
-  references to one object carrying the last tick's state: no error, no red test,
-  every field a plausible value. A sweep of 5,000 frames asking for the peak ball
-  count answers 0. Fold as you iterate, or copy the fields you want.
+  references to one object carrying the last tick's state — no red test. Fold as
+  you iterate, or copy the fields you want.
 - **`LiveFrame` has a `windup` phase** because a choice must be collected before
   the thing it decides; without it a player chooses pitch N during pitch N−1's
   flight. It cannot hang — the view throws for you.
@@ -354,18 +353,19 @@ are in `scripts/AGENTS.md`; cite the record id rather than the value.
 `src/v2/render/**` reads sim state and never writes it, through the single
 coupling point `render/bridge.ts`. Rules for that side are in
 `src/v2/render/AGENTS.md`. One thing the sim side must get right:
-`chooseCamera` has to actually be told the contact phase, or the hard cut is
-unreachable while looking wired.
+`chooseCamera` must be told the contact phase, or the hard cut is unreachable
+while looking wired.
 
 ⚠️ **rAF is throttled when the window is backgrounded**, so `/v2/?play=1` appears
-frozen mid-pitch with NO console error. Drive it by hand with `__spike.tick(t)`
-and a monotonically increasing `t` — the same rule `.claude/skills/verify` gives
-for v1's Phaser clock.
+frozen mid-pitch with no error. Drive it by hand with `__spike.tick(t)`,
+`t` increasing — the rule `.claude/skills/verify` gives for v1's Phaser clock.
 
 `src/v2/game/GameView.ts` pumps the sim's own generator against a real clock
 with a **fixed-step accumulator, never the render delta**
-(`scripts/simclock.lint.test.js` exists because a tempo scalar once broke a
-measured pace record while every test stayed green).
+(`scripts/simclock.lint.test.js`: a tempo scalar once broke a pace record with
+every test green). The instant replay plays back the view's own snapshots and
+never re-simulates: the pump is skipped as under pause, and `devStepFixedClock`
+suppresses it unless `?replay=1` asks.
 
 ## Where things live
 

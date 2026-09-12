@@ -31,6 +31,9 @@
 //                   walks from it rather than re-rolling, so a session stays
 //                   reproducible from one flag.
 //   ?venue=<VenueId>  where the game is played; TeamScreen owns the full list.
+//   ?replay=1|0     replay EVERY play (the presentation smoke's page) or none;
+//                   unset, the view replays the plays that earn one
+//                   (`render/replayCues.ts`) — in slow motion, never re-simulated.
 // ---------------------------------------------------------------------------
 
 import { App } from './App';
