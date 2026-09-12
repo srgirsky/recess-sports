@@ -19,7 +19,7 @@
 
 import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { chromium } from 'playwright';
@@ -113,17 +113,29 @@ const EVIDENCE_RECORD = join(repo, 'assets', 'v2', 'source', 'character-evidence
  * produced by the bytes now on disk?" A no-op rebuild costs one re-shoot,
  * which is minutes; the failure it replaces cost weeks of scoring the wrong
  * model.
+ *
+ * ★ AND THE TAKE, NOT ONLY THE MODEL. `AnimationDirector` resolves a clip
+ * character take → shared → procedural, and every `anims_<id>_v1.glb` now
+ * carries `idle` and `run` — the clips the hero, run and four face stills are
+ * shot on. So a take landing or re-baking changes these pixels exactly as a
+ * model re-export does, and a stamp that named only the model was blind to
+ * it: twenty-four kids got their takes in one week and every one of their
+ * stills stayed a picture of the shared library. `capturedFromTakeSha256` is
+ * null when no take ships, and `evidence-freshness.lint.test.js` holds it to
+ * the file on disk.
  */
-function stampCapturedFrom(id) {
+export function stampCapturedFrom(id) {
   const glb = join(repo, 'public', 'v2', 'models', `kid_${id}.glb`);
+  const take = join(repo, 'public', 'v2', 'models', `anims_${id}_v1.glb`);
   const sha = createHash('sha256').update(readFileSync(glb)).digest('hex');
+  const takeSha = existsSync(take) ? createHash('sha256').update(readFileSync(take)).digest('hex') : null;
   let record = {};
   try {
     record = JSON.parse(readFileSync(EVIDENCE_RECORD, 'utf8'));
   } catch {
     record = {};
   }
-  record[id] = { capturedFromGlbSha256: sha };
+  record[id] = { capturedFromGlbSha256: sha, capturedFromTakeSha256: takeSha };
   const ordered = Object.fromEntries(Object.keys(record).sort().map((k) => [k, record[k]]));
   writeFileSync(EVIDENCE_RECORD, `${JSON.stringify(ordered, null, 2)}\n`);
   return sha;

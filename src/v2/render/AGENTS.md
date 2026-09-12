@@ -187,8 +187,7 @@ popping" checkable).
   writes it and its test catches drift; an unlisted model
   correctly falls back to a proxy.
 - **Animation precedence is character → shared → procedural.** Manifested
-  partial `anims_<id>_v1.glb` files override matching names only;
-  `AnimationDirector` remains the only clip player.
+  partial `anims_<id>_v1.glb` files override matching names only.
 - **`ProxyCharacter.ts` builds a kid from primitives on the shared skeleton** — it
   is both the acceptance test for the spec and the reason no engineering is ever
   blocked on art. `npm run export:proxy-kid` writes a contract-legal stand-in
@@ -217,7 +216,7 @@ propagation" simply cannot happen here.
 |---|---|
 | `src/v2/render/clips.ts` | the animation contract, in code and pure |
 | `src/v2/render/AnimationDirector.ts` | the only place clips are played |
-| `src/v2/render/proceduralClips.ts` | crude stand-ins for every clip name |
+| `src/v2/render/proceduralClips.ts` | crude stand-ins for every clip name; a take baked here is `generated-stand-in`, never final |
 | `src/v2/render/props.ts` | props: bat (iff `holdsBat`), mitt (defence), team band |
 | `src/v2/render/CharacterFactory.ts` | the one seam that decides model-or-proxy |
 | `src/v2/render/CharacterModel.ts` | a delivered `.glb` made playable: LODs, materials, face atlas, outlines |

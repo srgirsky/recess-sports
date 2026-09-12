@@ -80,6 +80,16 @@ const BUILDERS = {
 /** The ids this script can bake, for the freshness gate to walk. */
 export const PERFORMANCE_IDS = Object.keys(BUILDERS);
 
+/**
+ * The name of the function that bakes `id`'s take, or null when nothing here
+ * does. `character-provenance.mjs` checks that name against
+ * `proceduralClips.ts` to derive `generated-stand-in` — the kind is read off
+ * the code that bakes the bytes, never claimed.
+ */
+export function builderNameFor(id) {
+  return BUILDERS[id]?.build.name ?? null;
+}
+
 export function buildSignaturePerformanceGlb(id, outPath = join(here, '..', '..', 'public', 'v2', 'models', `anims_${id}_v1.glb`)) {
   const entry = BUILDERS[id];
   if (!entry) throw new Error(`${id}: no authored character performance builder`);
@@ -94,6 +104,10 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   if (!id) throw new Error(`usage: npm run export:signature-performance -- <character-id>`);
   const result = buildSignaturePerformanceGlb(id);
   writeManifest();
+  // Imported late: the provenance script reads `builderNameFor` from this
+  // module, and a static import both ways is a cycle nobody needs at load.
+  const { writeProvenance } = await import('./character-provenance.mjs');
+  writeProvenance();
   console.log(`wrote ${result.outPath}`);
   console.log(`  ${result.clips} clips · ${result.tracks} tracks · ${(result.bytes / 1024).toFixed(0)}KB`);
   console.log(`manifest performances: ${scanPerformances().join(', ') || 'missing'}`);
