@@ -131,7 +131,10 @@ def nose_push(nx: float, nz: float) -> float:
 
 
 # Real ears on the head's widest traced row.
-EAR_SPEC = EarSpec(center=(0.020, 3.260), radii=(0.1700, 0.1650))
+# 2026-09-12: the roster's one circular ear spec (0.170 x 0.165) hung pads
+# from eye level to jaw; an ear is taller than it is deep, and every other
+# kid's spec says so (0.10-0.175 across, 0.15-0.205 tall). Drawn to that.
+EAR_SPEC = EarSpec(center=(0.020, 3.260), radii=(0.1300, 0.1700))
 
 # Island solved for his span: brow anchor 24 lands z 3.474 (52.2% of the
 # 3.99→3.00 head against the traced 52.0), eye anchor 50 lands z 3.330 (66.7
@@ -224,7 +227,14 @@ def build_cap(builder: MeshBuilder, detail: int) -> None:
     for z_row, shrink in ((BRIM_Z_TOP, 1.0), (BRIM_Z_BOT, 0.96)):
         pass  # rows built inline below
     top_rows, bot_rows = [], []
-    for j, (y_frac, half) in enumerate(((0.0, 0.310), (0.5, 0.295), (1.0, 0.235))):
+    # measured: front z=3.52 halfWidth=0.467
+    # The bill's own rows: the front silhouette is 0.467 at z 3.50-3.52 and
+    # 0.458 at 3.56, WIDER than the dome above it (0.446 at 3.62, 0.425 at
+    # 3.70) — a bill flares past the crown, and that flare is the whole front
+    # read of a ballcap. The old halves (0.310/0.295/0.235) sat inside the
+    # dome's 0.4518, so the bill added 0px to the front silhouette and the
+    # cap read as a beanie (three critic rounds, then measure:fidelity).
+    for j, (y_frac, half) in enumerate(((0.0, 0.465), (0.5, 0.455), (1.0, 0.400))):
         y = -0.400 + y_frac * (BRIM_REACH + 0.400)
         row_t, row_b = [], []
         for i in range(cols):
@@ -288,12 +298,16 @@ TORSO_LEVELS = [
     (1.438, 0.474, 0.410, "Hips"),    # under-roll — the band turns in, no corner
     (1.470, 0.480, 0.415, "Hips"),    # ribbed hem band, widest
     (1.534, 0.478, 0.413, "Hips"),    # band top lip, 0.010 proud — traced seam z 1.542
-    (1.546, 0.468, 0.405, "Hips"),    # the body tucks behind it; crisp colour edge
-    (1.700, 0.465, 0.408, "Spine"),
-    (1.900, 0.455, 0.402, "Spine"),
-    (2.100, 0.440, 0.390, "Spine1"),
-    (2.300, 0.415, 0.370, "Spine1"),
-    (2.480, 0.380, 0.340, "Spine2"),
+    (1.546, 0.468, 0.440, "Hips"),    # the body tucks behind it; crisp colour edge
+    # Depth re-traced 2026-09-12 off the profile's own halves — 0.480 at
+    # z 1.60, 0.517 at 1.90, 0.462 at 2.20, 0.471 at 2.50 — less the hanging
+    # sleeve where it stands proud of the chest. The old column ran 0.73-0.83
+    # of the drawing (the critic's clean-station measurement).
+    (1.700, 0.465, 0.455, "Spine"),
+    (1.900, 0.455, 0.460, "Spine"),
+    (2.100, 0.440, 0.445, "Spine1"),
+    (2.300, 0.415, 0.425, "Spine1"),
+    (2.480, 0.380, 0.395, "Spine2"),
     (2.620, 0.330, 0.300, "Spine2"),
     (2.740, 0.260, 0.245, "Spine2"),
     (2.830, 0.190, 0.185, "Spine2"),
@@ -416,7 +430,10 @@ def build_hoodie_details(builder: MeshBuilder, detail: int) -> None:
         for i in range(4):
             t = i / 3 - 0.5
             x = 2 * t * half
-            depth = 0.395 + (0.02 if j == 1 else 0.012)
+            # 0.445 rides the RE-TRACED torso depth (0.440-0.455 at these z,
+            # 2026-09-12); at the old 0.395 the whole patch sat inside the
+            # deeper loft and the front board lost the pocket.
+            depth = 0.445 + (0.02 if j == 1 else 0.012)
             y = -depth * sqrt(max(0.05, 1.0 - (x / 0.47) ** 2))
             colour = SHIRT_DARK if j != 1 else SHIRT
             row.append(builder.vertex((x, y, z), colour, "Spine"))
@@ -441,9 +458,9 @@ def build_hoodie_details(builder: MeshBuilder, detail: int) -> None:
         builder.tube(
             [(side * 0.100, -0.125, 2.950),   # buried in the collar roll
              (side * 0.120, -0.185, 2.790),   # over the roll's base
-             (side * 0.132, -0.272, 2.640),   # lying on the chest
-             (side * 0.140, -0.343, 2.345),   # the crimp above the tip
-             (side * 0.141, -0.350, 2.295)],  # the aglet bulb, on the surface
+             (side * 0.132, -0.300, 2.640),   # lying on the chest (torso depth re-traced 2026-09-12: +0.03 here,
+             (side * 0.140, -0.398, 2.345),   # the crimp above the tip           +0.055 below, so the cords
+             (side * 0.141, -0.405, 2.295)],  # the aglet bulb, on the surface    stay half-buried, not buried)
             [0.016, 0.018, 0.018, 0.014, 0.019], 1, SHIRT_DARK,
             ["Spine2", "Spine2", "Spine2", "Spine1", "Spine1"], 5, flip=side < 0)
 
@@ -520,23 +537,36 @@ def inseam_half(z: float) -> float:
 
 # (z, half-width, depth factor, colour, bone) — strictly descending in z.
 # measured: front z=0.95 halfWidth=0.6295 tol=0.08
+# The 0.6295 is the figure's outer extent, and for three rounds the table
+# shipped 0.452 against it while carrying the citation — the critic's "the
+# sculpt misses its own recorded measurement". The half-width column is the
+# LEG's radius, not the extent, so it is traced per leg with `regionRunsAt`
+# (2026-09-12): the navy runs are 0.506 / 0.566 / 0.578 / 0.614 ft wide at
+# z 0.50 / 0.70 / 0.95 / 1.20 with cream daylight between (0.241 / 0.181 /
+# 0.096 / none), and one merged 1.187 run at z 1.40. Halves 0.253 / 0.283 /
+# 0.289 / 0.307, and at z 1.40 the pair meets at the rig's leg_x — which is
+# what the drawing shows. Depth is the profile's single navy run: 0.535 /
+# 0.658 / 0.677 at z 0.50 / 0.70 / 0.95, factors 1.06-1.19 over the width.
+# The cuff bunch below the knee-joint rows follows the 0.440 navy run at
+# z 0.45-0.50 (half 0.22) down onto the cream shoe collar at z 0.40. The old
+# table (0.200 at the shin) was 0.68 of the drawing — the critic's headline.
 LEG_STATIONS = [
-    (1.480, 0.215, 1.14, PANTS, "UpLeg"),
-    (1.250, 0.210, 1.14, PANTS, "UpLeg"),
-    (1.050, 0.200, 1.10, PANTS, "Leg"),
-    (0.850, 0.188, 1.08, PANTS, "Leg"),
-    (0.650, 0.172, 1.05, PANTS, "Leg"),
-    (0.500, 0.156, 1.03, PANTS, "Leg"),
-    (0.455, 0.152, 1.02, PANTS, "Leg"),
-    (0.442, 0.164, 1.03, PANTS_DARK, "Leg"),          # crisp colour edge onto the cuff
-    (0.428, 0.168, 1.03, PANTS_DARK, "Leg"),          # bunched elastic cuff,
-    (0.398, 0.164, 1.02, PANTS_DARK, "Foot"),         # proud of the leg
+    (1.480, 0.305, 1.14, PANTS, "UpLeg"),
+    (1.250, 0.305, 1.14, PANTS, "UpLeg"),
+    (1.050, 0.292, 1.17, PANTS, "Leg"),
+    (0.850, 0.287, 1.17, PANTS, "Leg"),
+    (0.650, 0.278, 1.16, PANTS, "Leg"),
+    (0.500, 0.250, 1.08, PANTS, "Leg"),
+    (0.455, 0.232, 1.04, PANTS, "Leg"),
+    (0.442, 0.222, 1.04, PANTS_DARK, "Leg"),          # crisp colour edge onto the cuff
+    (0.428, 0.226, 1.04, PANTS_DARK, "Leg"),          # bunched elastic cuff,
+    (0.398, 0.220, 1.03, PANTS_DARK, "Foot"),         # proud of the leg
     # The sheet cuffs the joggers INTO the shoes — front col 120: navy jogger
     # to row 776 (z 0.404) meeting the shoe's cream collar directly, no skin.
     # The authored shoe's topline is SHOE_FLOOR + (0.290 - SHOE_FLOOR) * 1.28
     # = z 0.3695, so the cuff rolls proud just above it and tucks in under it;
     # the old table went SKIN at 0.300/0.150 and shipped a bare ankle ring.
-    (0.376, 0.156, 1.01, PANTS_DARK, "Foot"),         # roll over the shoe topline
+    (0.376, 0.205, 1.01, PANTS_DARK, "Foot"),         # roll over the shoe topline
     (0.354, 0.116, 1.00, PANTS_DARK, "Foot"),         # tucks inside the collar
     (0.150, 0.092, 0.95, PANTS_DARK, "Foot"),         # fabric on into the shoe
 ]
