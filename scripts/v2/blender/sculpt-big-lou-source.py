@@ -249,34 +249,50 @@ def build_buzz(builder: MeshBuilder, detail: int) -> None:
 
 # --- The striped tee over the round belly --------------------------------------
 #
-# not-traceable: his chunky arms merge with the torso at every row (front
-# z=1.85 measures 0.9242 arm-to-arm); the belly halves are bounded off that
-# minus the drawn arm girth (~0.17 a side), and the profile's own 0.60
-# depth at z 1.70.
+# measured: front z=1.85 halfWidth=0.924
+# The 0.924 is arm-to-arm — his arms hang against the belly — and for
+# twenty rounds that made this table "not-traceable" and it was authored by
+# eye at 0.580, a third of his cross-section short (the 2026-09-02 critic:
+# 29.2% of figure height against the sheet's ~34%). But `regionRunsAt` NAMES
+# the runs, and from z 1.65 to 2.25 the tee is ONE unbroken centre run with
+# the skin of the arms outboard of it: 1.281ft at z 1.65, 1.315 at 1.85,
+# 1.270 at 2.05, 1.096 at 2.25 — halves 0.640 / 0.657 / 0.635 / 0.548, which
+# is what the rows below carry. The arms only merge into the tee from z 2.3
+# up (the shoulder rows keep their authored slope) and at the hem (z 1.42:
+# the centre run is 0.388, the hands are over it), so the hem is bounded
+# between the belly above and the shorts. Depth is the profile's own half
+# (0.595 at 1.65, 0.592 at 1.85, 0.550 at 2.05, 0.483 at 1.42) less the arm
+# that hangs ~0.035 proud of the belly in that view; BELLY_PUSH adds the
+# forward tuck on top. 2026-09-12.
 TORSO_LEVELS = [
-    (1.420, 0.540, 0.460, "Hips"),    # hem riding the belly
-    (1.460, 0.555, 0.470, "Hips"),
-    (1.650, 0.580, 0.495, "Spine"),   # the belly's equator
-    (1.850, 0.572, 0.489, "Spine"),
-    (2.050, 0.540, 0.463, "Spine1"),
-    (2.250, 0.486, 0.417, "Spine1"),
-    (2.420, 0.414, 0.354, "Spine2"),  # shoulder rows widened past the arm
+    (1.420, 0.600, 0.480, "Hips"),    # hem riding the belly
+    (1.460, 0.618, 0.500, "Hips"),
+    (1.650, 0.640, 0.560, "Spine"),   # the belly's equator
+    (1.850, 0.657, 0.555, "Spine"),
+    (2.050, 0.635, 0.520, "Spine1"),
+    (2.250, 0.548, 0.470, "Spine1"),
+    (2.420, 0.440, 0.375, "Spine2"),  # shoulder rows widened past the arm
     (2.560, 0.344, 0.294, "Spine2"),  # root (Turbo's wedge fix)
     (2.680, 0.252, 0.214, "Spine2"),
     (2.790, 0.192, 0.166, "Spine2"),
     (2.860, 0.172, 0.150, "Spine2"),  # collar — OUTSIDE the neck loft
 ]
 
-# Ascending (lo, hi) gold bands; everything else is cream. Bands traced off
-# the front view's stripe rows (~0.15ft pitch on his tall tee).
-# not-traceable: the stripe rows are colour, not silhouette; the pitch is
-# read off the drawn bands and the seams land on loft rings via color_fn.
+# Ascending (lo, hi) gold bands; everything else is cream.
+# not-traceable: the stripe rows are colour, not silhouette — the gate cannot
+# re-derive a colour edge — so they are traced by hand off the front view's
+# centre column with `regionRunsAt` at 0.01ft steps (2026-09-12): GOLD
+# 1.50-1.68, 1.92-2.13, 2.33-2.50 and 2.67-2.75 under the collar, cream
+# between, a cream hem with a hairline gold edge at 1.37 that is the drawn
+# outline. Four bands ~0.19ft wide on a ~0.41ft pitch. The previous chart —
+# five bands 0.14 wide on a 0.29 pitch — was authored by eye and doubled the
+# count, which is why the 40px strip read as a flat beige shirt: bands at
+# 3.5% of figure height vanish where the sheet's 5% ones survive.
 STRIPE_BANDS = [
-    (1.420, 1.560),
-    (1.700, 1.845),
-    (1.990, 2.135),
-    (2.280, 2.425),
-    (2.570, 2.715),
+    (1.500, 1.680),
+    (1.920, 2.130),
+    (2.330, 2.500),
+    (2.670, 2.770),
 ]
 
 

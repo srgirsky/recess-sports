@@ -48,11 +48,11 @@
     },
     "wheelchair_ace": {
       "source": "zoom-pilot.blend",
-      "sourceSha256": "051a93b7af0e8ff76477a1ae330d0658a774872be1b556dc8c88223835296c19",
+      "sourceSha256": "40a06ec9a18447fdb235dbccaabf44a1cdb668a20a24d26299da6abf51c05316",
       "concept": "zoom-turnaround.png",
       "conceptSha256": "ab2ddf9b07a00ad095b4583046164edb23c26e542465ab4b2f7663fe8a38b296",
       "output": "kid_wheelchair_ace.glb",
-      "outputSha256": "168fa1bbc02a5dea3a758744dcdddae5471489909cdbcfcb97a2be9201fc64e7",
+      "outputSha256": "5659fa7ac7965e0dd54af685754a9d4b219abf851f98f748c0707211b7035b58",
       "definingTraits": [
         "compact sport chair",
         "cambered wheels",
@@ -63,11 +63,11 @@
     },
     "big_lou": {
       "source": "big-lou-pilot.blend",
-      "sourceSha256": "6d5e1d7a045e59cdd5972cc8fdbe71f16d30af8225668ee215de53d379e6785a",
+      "sourceSha256": "e863a12211e8a7a9daadfca8726f8a13bcc203adaad3252019c8b62628bcd664",
       "concept": "big-lou-turnaround.png",
       "conceptSha256": "8e613340d5955ce7af1a8c9b2ac381514c0c7b577129202d8843bb35e13d2a45",
       "output": "kid_big_lou.glb",
-      "outputSha256": "b7ece4001f8c7be416ab03bea1115ea575597a95ae00ef328cdefbaa1720f066",
+      "outputSha256": "0b9b1c43774d24f70104a17bb55c7392ff4c552e11cde44e478f5de6184ee277",
       "definingTraits": [
         "gentle broad silhouette",
         "soft rounded face",
@@ -93,11 +93,11 @@
     },
     "grizz": {
       "source": "grizz-pilot.blend",
-      "sourceSha256": "8f9e6619577d307c2d91401d76989d8af2365d41a211ae31961a4a180146ee61",
+      "sourceSha256": "2e8a92bd3c1ffbc1c211dae644502549f35f2d37d4fc082f684a983b98dca643",
       "concept": "grizz-turnaround.png",
       "conceptSha256": "8290768d2853e29e3c09afe3e7cf73bedf97f2dc74d1b9053506b6c66dbc2e0c",
       "output": "kid_grizz.glb",
-      "outputSha256": "ea26593d1007b17ee0fd58074840ac1f0bf6054577ac4222c5f9f75399e94768",
+      "outputSha256": "c0b1a2d566044cde4d977312a3442852d8bb048a3a44cb31d0034a260e700c0c",
       "definingTraits": [
         "towering round afro",
         "heavy sleepy brow",
@@ -243,11 +243,11 @@
     },
     "moose": {
       "source": "moose-pilot.blend",
-      "sourceSha256": "c166532369c0a49e147149a008fa54510e183807292bbea54b00500c6b935bfa",
+      "sourceSha256": "b164272089538cc144f6a0430c1468107d822e6fcd5d925f244e616cf3e9d52a",
       "concept": "moose-turnaround.png",
       "conceptSha256": "d64f68670ae1629b82c81333c4a1be6c1ab02805f2937a1a20d3ddf679ca7bed",
       "output": "kid_moose.glb",
-      "outputSha256": "52a30ca3d9f3bd7915800e2c22b2ca936a48b74b2e8a7482e584f20c057f104a",
+      "outputSha256": "c809c0d7dd1cf6b1650828c357c6378fdac4545005ae4e66790235376705490e",
       "definingTraits": [
         "navy ball cap",
         "mustard kangaroo hoodie",
