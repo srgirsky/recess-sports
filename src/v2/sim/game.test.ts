@@ -637,7 +637,10 @@ describe('★ the held features are threaded, and only the ported one bites', ()
     }
   }, PLAYS_GAMES);
 
-  it('★ the unported flags (specialPitches, shifts) are still inert', () => {
+  it('★ the unported flag (shifts) is still inert, and specialPitches without juice is too', () => {
+    // `specialPitches` is ported but bought off the juice meter, so with the
+    // meter off it changes nothing by construction; `specialPitches.test.ts`
+    // proves it differs WITH juice. `shifts` is the one seam left.
     const unported = { ...parseFeatures('all'), stamina: false, juice: false };
     for (const seed of ['a', 'b', 'c']) {
       expect(
@@ -708,7 +711,8 @@ describe('★ juice: the meters charge, the CPU spends, and a person proposes', 
     }
     expect(spends.some((s) => s.side === 'home'), 'the CPU never spent in eight games').toBe(true);
     expect(spends.filter((s) => s.side === 'away'), 'the CPU spent the person\'s meter').toEqual([]);
-    // Every kind is reachable by the CPU: it bats and it fields.
+    // Every POWER is reachable by the CPU: it bats and it fields. The special
+    // pitches are spends too, but only with their own flag on (they are not).
     const kinds = new Set(spends.map((s) => s.kind));
     expect([...kinds].sort()).toEqual(['goldenGlove', 'powerSwing', 'turboLegs']);
   }, PLAYS_GAMES);

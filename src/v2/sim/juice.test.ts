@@ -16,6 +16,7 @@
 import { describe, expect, it } from 'vitest';
 import { addJuice, canSpend, cpuWantsSpend, newJuice, spend, spendSide, SPEND_KINDS } from './juice';
 import { JUICE, PLAY } from './params';
+import { SPECIAL_PITCH_KINDS } from './pitch';
 import { makeRng } from './rng';
 import { resolvePitch, throwPitch, type PitchInFlight } from './atbat';
 import { beginPlay, finishPlay, stepPlay, type PlaySpec, type PlayState } from './play';
@@ -50,10 +51,13 @@ describe('the meter', () => {
   });
 
   it('names every spend once, and which side each belongs to', () => {
-    expect([...SPEND_KINDS].sort()).toEqual(Object.keys(JUICE.COSTS).sort());
+    // The costs table is the three powers (the tray's chips) plus the three
+    // special pitches (the picker's extra cards, `specialPitches.test.ts`).
+    expect([...SPEND_KINDS, ...SPECIAL_PITCH_KINDS].sort()).toEqual(Object.keys(JUICE.COSTS).sort());
     expect(spendSide('powerSwing')).toBe('batting');
     expect(spendSide('turboLegs')).toBe('batting');
     expect(spendSide('goldenGlove')).toBe('fielding');
+    for (const k of SPECIAL_PITCH_KINDS) expect(spendSide(k)).toBe('fielding');
   });
 });
 

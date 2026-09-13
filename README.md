@@ -48,7 +48,7 @@ judging the art direction). Useful query flags:
 | `?face=<cell>` | force an expression atlas cell during model review |
 | `?perf=low\|mid\|high` | override the auto-detected device tier |
 | `?proxy=1` | force primitive proxy characters everywhere |
-| `?features=<list>` | switch **held** features on for a playtest: `all`, or a comma list of `stamina`, `juice`, `specialPitches`, `shifts`. All off otherwise — see "Playtesting with kids". `stamina` (a tiring pitcher) and `juice` (the meter, its tray and three spends; keys `Q`/`W`/`E`) are the ports that do something today; the other two are seams |
+| `?features=<list>` | switch **held** features on for a playtest: `all`, or a comma list of `stamina`, `juice`, `specialPitches`, `shifts`. All off otherwise — see "Playtesting with kids". `stamina` (a tiring pitcher), `juice` (the meter, its tray and three spends; keys `Q`/`W`/`E`) and `specialPitches` (three more pitch cards bought off that meter — needs `juice` too; keys `5`/`6`/`7`) are the ports that do something today; `shifts` is a seam |
 | `?log=1` | record the session and show the `⬇ LOG` download (counts only) |
 
 Keys on the spike page: `1`–`5` switch camera preset, `V` cycles venue.
@@ -127,14 +127,24 @@ edge offers what your side can afford — 💥 POWER (a faster bat that is harde
 to time), 💨 TURBO (your runners' legs on the next ball in play) when you bat,
 🧤 GLOVE (a longer reach and no drops) when you field; tap a chip or press
 `Q`/`W`/`E`. A spend lasts the plate appearance. The CPU spends its own meter
-when it trails and never yours. The other two flags parse and ride the game
-spec but change nothing yet.
+when it trails and never yours.
+
+**Special pitches are ported** as well (`src/v2/sim/pitch.ts`
+`SPECIAL_PITCHES`, costs in `params.ts` `JUICE.COSTS`, provenance in
+`sim.specialPitches`): with `?features=specialPitches,juice` the pitch picker
+grows three cards below the four — 🤪 CRAZY (slower, breaks hard and is thrown
+wild), ☄️ BLAZE (a quarter faster, rising) and 🧊 FLOATER (slow and hanging
+on heavy backspin) — each a spend off the same meter, bought per pitch; a card
+the meter cannot cover is greyed. Keys `5`/`6`/`7`. The CPU buys one when it
+trails. Without `juice` there is no meter, so `specialPitches` alone changes
+nothing. `shifts` parses and rides the game spec but changes nothing yet.
 
 To run a session, follow `docs/playtests/PROTOCOL.md`. In short:
 
 1. Open the game with the flags in the URL — `/?log=1` for the baseline, then
-   `/?features=stamina` (or `juice`, `specialPitches`, `shifts`) for ONE
-   feature. Any `?features=` also switches the session log on.
+   `/?features=stamina` (or `juice`, `specialPitches,juice`, `shifts`) for ONE
+   feature — the special pitches need the meter they are bought from, so their
+   block carries `juice` too. Any `?features=` also switches the session log on.
 2. Watch, and write down behaviour. At the end of a block tap **⬇ LOG** (top
    right, beside the speaker) to download `playtest-<n>.json` — pitches, the
    child's swings/whiffs/hits, outs made in the field, taps per verb, elapsed

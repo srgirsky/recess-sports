@@ -68,8 +68,11 @@ const PORT = 5178;
 // matchup plate (the `tired pitcher` state pumps until it shows), the juice
 // meters on the scoreboard strip in every state, and the spend tray on the
 // left edge (the `spend tray` state pumps until the person's side can afford
-// a chip). The two unported flags parse and change nothing yet; when a port
-// lands a box, the state that reaches it goes below.
+// a chip), and the three special-pitch cards on the picker, which turn the
+// stack into two columns of four (`windup, picker open` requires a special
+// card visible, so a picker that silently lost them fails to reach). `shifts`
+// parses and changes nothing yet; when its port lands a box, the state that
+// reaches it goes below.
 const GAME_URL = `http://localhost:${PORT}/v2/?play=1&seed=audit&break=1&log=1&features=all`;
 const APP_URL = `http://localhost:${PORT}/v2/`;
 
@@ -158,9 +161,13 @@ const STATES = [
   { name: 'pitch', until: (f) => f.phase === 'pitch', mustSee: '.sb' },
   {
     name: 'windup, picker open',
-    // The bottom half, because that is the half the human pitches in.
+    // The bottom half, because that is the half the human pitches in. With
+    // `&features=all` the picker holds SEVEN cards — the special-pitch port's
+    // three sit in a second column — so the state requires one of them, not
+    // just the open picker: a special card that stopped rendering would
+    // otherwise pass over a four-card stack this row claims is seven.
     until: (f) => f.phase === 'windup' && f.half === 'bottom',
-    mustSee: '.pitch-picker.is-open',
+    mustSee: '.pitch-picker.is-open .pitch-card--special',
   },
   { name: 'live play', until: (f) => f.phase === 'live', mustSee: '.sb' },
   {

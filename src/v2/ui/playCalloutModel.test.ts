@@ -45,5 +45,9 @@ describe('play callouts', () => {
     });
     expect(playCalloutFor(event({ t: 'spend', side: 'away', kind: 'goldenGlove' }))?.kind).toBe('spend');
     expect(playCalloutFor(event({ t: 'spend', side: 'away', kind: 'powerSwing' }))?.label).toMatch(/POWER/);
+    // The special pitches are spends too, and the callout wears the card's icon.
+    expect(playCalloutFor(event({ t: 'spend', side: 'home', kind: 'freezeball' }))?.label).toMatch(/🧊 FLOATER/);
+    expect(playCalloutFor(event({ t: 'spend', side: 'home', kind: 'fireball' }))?.label).toMatch(/☄️ BLAZE/);
+    expect(playCalloutFor(event({ t: 'spend', side: 'home', kind: 'crazy' }))?.label).toMatch(/🤪 CRAZY/);
   });
 });

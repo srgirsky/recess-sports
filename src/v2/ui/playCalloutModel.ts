@@ -17,6 +17,11 @@ const SPEND_LABELS: Record<SpendKind, string> = {
   powerSwing: '💥 POWER SWING!',
   turboLegs: '💨 TURBO LEGS!',
   goldenGlove: '🧤 GOLDEN GLOVE!',
+  // The three special pitches (`features.specialPitches`) are spends too, and
+  // the icon is the card's — a kid connects the callout to what he tapped.
+  crazy: '🤪 CRAZY BALL!',
+  fireball: '☄️ BLAZE!',
+  freezeball: '🧊 FLOATER!',
 };
 
 export interface PlayCalloutModel {

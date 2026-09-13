@@ -22,6 +22,12 @@
 //
 // 46ft in 1230ms is 37.4 ft/s — 25.5 mph, a real seven-year-old's fastball.
 //
+// ★ THE THREE SPECIALS ARE PARAMETER SETS IN THE SAME MODEL, in their own
+// record (`SPECIAL_PITCHES`) so `PITCHES` — the CPU's draw — is untouched.
+// v1's freezeball was a time remap the bridge's `stepFlight` replay cannot
+// draw; here it is a floater. The record above `SPECIAL_PITCHES` says why,
+// and what the solve can and cannot deliver.
+//
 // ★ ON TRIG: once per pitch, to turn an aim point into a release direction.
 // Same boundary as `launch.ts` and `contact.ts`; the per-step path stays clean.
 // ---------------------------------------------------------------------------
@@ -31,7 +37,11 @@ import { PITCH } from './params';
 import { clamp } from './units';
 import { FLIGHT_HZ, cloneState, stepFlight, type BallState, type Guard } from './flight';
 
-export type PitchKind = 'fastball' | 'changeup' | 'curve' | 'screwball';
+/** The four kinds every pitcher has. `choosePitch` draws from exactly these. */
+export type BasePitchKind = 'fastball' | 'changeup' | 'curve' | 'screwball';
+/** The three juice-gated specials (`features.specialPitches`). See below. */
+export type SpecialPitchKind = 'crazy' | 'fireball' | 'freezeball';
+export type PitchKind = BasePitchKind | SpecialPitchKind;
 
 export interface PitchDef {
   /** Multiplier on the base release speed. */
@@ -68,7 +78,7 @@ export interface PitchDef {
  * with the break pointing the wrong way. Found by printing the break, which is
  * why the demo prints it.
  */
-export const PITCHES: Record<PitchKind, PitchDef> = {
+export const PITCHES: Record<BasePitchKind, PitchDef> = {
   /** Backspin: falls less than gravity alone, which is why it reads as flat. */
   fastball: { speedMult: 1.0, spinRpm: 1400, axis: { x: 1, y: 0, z: 0 } },
   /** Slower and spun less, so it drops away. */
@@ -78,6 +88,82 @@ export const PITCHES: Record<PitchKind, PitchDef> = {
   /** The mirror image — drops and runs toward first. */
   screwball: { speedMult: 0.9, spinRpm: 1300, axis: { x: -0.8, y: -0.6, z: 0 } },
 };
+
+/**
+ * The three specials, in a SEPARATE record so `PITCHES` stays byte-identical:
+ * `choosePitch` does `rng.pick(Object.keys(PITCHES))`, so a fifth key there
+ * would move every draw the CPU pitcher makes and break every golden
+ * fingerprint. The CPU reaches these only through `juice.ts`'s
+ * `cpuPickSpecialPitch`, and a person through the picker's extra cards; the
+ * game loop (`game.ts`) downgrades a special the meter cannot cover to a
+ * fastball BEFORE the throw, so `releasePitch` never asks whether it was paid
+ * for — by the time a kind reaches here it is a physical fact.
+ *
+ * ★ EACH ONE IS A PHYSICAL PARAMETER SET, AND THAT IS THE WHOLE PORT. v1's
+ * `PITCH_KINDS` carry `breakX`/`breakY`/`wobble` — bows drawn on a lerp — and
+ * its FREEZEBALL is not a pitch at all but a TIME REMAP: `pitchkind.ts`'s
+ * `flightProgress` holds the ball mid-flight (`PITCH_FX.FREEZE`, 45%→75% of the
+ * travel) so the timing the batter read at release is wrong at the plate.
+ * That cannot be reproduced here. The bridge draws the pitch by re-integrating
+ * `frame.pitch.release` with plain `stepFlight` (`render/bridge.ts`
+ * `applyPitch`), so a mid-flight hold would need a second flight model in the
+ * renderer that the sim's crossing does not share; and slowing the CLOCK
+ * instead is barred twice over — `scripts/simclock.lint.test.js` and
+ * `paintclock.lint.test.js` require sim-milliseconds to be real milliseconds,
+ * and the fixed-step accumulator has no seam for a per-pitch rate. So the
+ * freezeball is a FLOATER: released slow with heavy backspin, so Magnus lift
+ * makes it hang and it arrives late. Same effect on the batter — his timing
+ * must wait — from the physics rather than from a trick. `sim.specialPitches`
+ * records the decision and the numbers below.
+ *
+ * ★ AND THE FLOATER IS AS SLOW AS THE SOLVE CAN THROW, NOT AS SLOW AS THE
+ * PLAN ASKED. The port was specified at 0.58x (~2.1 s). The physics can hang
+ * a ball that long — measured: 39 ft/s at 0.8 rad crosses the plate after
+ * 1.83 s — but `releasePitch` bisects the LOW branch of the elevation curve
+ * (the one a pitcher throws) and its six-step secant over speed reads an
+ * unreachable trial as a 5 s flight; asked for more hang than that branch
+ * has, it ends on an unreachable speed and the fallback elevation, and the
+ * ball crosses EIGHT FEET over its aim for stats 1-7. 0.72 is the slowest
+ * multiplier at which every (stat, spot) solve lands within 0.05 ft — swept,
+ * not chosen — and it hangs 1.15-1.58 s against the fastball's 1.01-1.19.
+ * That is the same saturation `sim.throwSpeed.comparedWithThePitch` records
+ * for the base changeup, and closing it is the solver's job, not a spend's.
+ *
+ *   crazy       slower, spun hard and mostly SIDEWAYS (the axis leans +y, so
+ *               the force is toward third — about 1.8 ft of break at stat 5
+ *               against the curve's 1.1) and thrown WILD: `scatterMult`
+ *               doubles the pitcher's own execution error in `throwPitch`,
+ *               the only place scatter is applied. Wild by construction, not
+ *               by a wobble drawn on the path.
+ *   fireball    a quarter faster than the kid's fastball with more backspin —
+ *               rising heat, about a second of flight for an average arm.
+ *   freezeball  the floater above: 0.72x speed, 2400 rpm backspin.
+ *
+ * Flight-time ORDER is what a test pins (floater > changeup > fastball >
+ * fireball, over every stat and spot), never the values: the base flight is
+ * `pace.pitchCorridor`'s one measurement and these ride on it as multipliers.
+ */
+export const SPECIAL_PITCHES: Record<SpecialPitchKind, PitchDef & { scatterMult: number }> = {
+  crazy: { speedMult: 0.85, spinRpm: 2000, axis: { x: 0.5, y: 0.85, z: 0 }, scatterMult: 2.0 },
+  fireball: { speedMult: 1.25, spinRpm: 1800, axis: { x: 1, y: 0, z: 0 }, scatterMult: 1.0 },
+  freezeball: { speedMult: 0.72, spinRpm: 2400, axis: { x: 1, y: 0, z: 0 }, scatterMult: 1.0 },
+};
+
+/** The specials, in the order the picker's extra cards show them. */
+export const SPECIAL_PITCH_KINDS: ReadonlyArray<SpecialPitchKind> = Object.freeze([
+  'crazy',
+  'fireball',
+  'freezeball',
+] as const);
+
+export function isSpecialPitch(kind: PitchKind): kind is SpecialPitchKind {
+  return kind in SPECIAL_PITCHES;
+}
+
+/** The definition behind a kind, whichever record holds it. */
+export function pitchDef(kind: PitchKind): PitchDef {
+  return isSpecialPitch(kind) ? SPECIAL_PITCHES[kind] : PITCHES[kind];
+}
 
 /**
  * Release a pitch toward a point at the plate.
@@ -93,7 +179,7 @@ export function releasePitch(opts: {
   aimHeightFt: number;
   aimLateralFt: number;
 }): BallState {
-  const def = PITCHES[opts.kind];
+  const def = pitchDef(opts.kind);
   const from: Vec3 = { x: 0, y: PITCH.RELEASE_HEIGHT_FT, z: MOUND_DIST };
 
   const w = (def.spinRpm * 2 * Math.PI) / 60;
@@ -191,7 +277,9 @@ export const PITCH_SPOTS: ReadonlyArray<{ lateral: number; height: number }> = [
  *
  * Module-level state, and safe: the solve is a deterministic function of its
  * key, so the cache is unobservable except in time. It holds at most
- * (kinds x stats x spots) entries.
+ * (kinds x stats x spots) entries — seven kinds, ten integer stats, nine
+ * spots — and stays bounded only because `stamina.ts` rounds the sagged stat
+ * and the specials are a fixed record rather than a per-pitch parameter.
  */
 const releaseCache = new Map<string, ReleasePlan>();
 
