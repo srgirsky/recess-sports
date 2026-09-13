@@ -162,6 +162,14 @@ cost this project at least five expensive rounds:
 Before trusting any width: ask `regionRunsAt` which object each run is, and
 declare paired parts in the recipe. `runidentity.lint.test.js` is the gate.
 
+- **And `regionRunsAt` classifies by CHROMATICITY first** (`tone.mjs`'s
+  `toneDistance`, VALUE_WEIGHT 0.06): a dark orange-brown crest (#201106,
+  luminance ~20) shares skin's chromaticity and came back as SKIN beside
+  Flash's mohawk, so the crest measured 0.11-0.20ft wide where a luminance
+  scan reads 0.58-0.70. Where a hair tone is a darker version of the skin
+  tone, confirm a run's identity with a luminance crop before authoring to
+  it (found by an independent critic, 2026-09-12).
+
 ## Definition of done
 
 - [ ] `npm test` and `npm run validate:models` green

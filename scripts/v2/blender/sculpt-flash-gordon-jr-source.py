@@ -293,12 +293,21 @@ SPIKE_TABLE = [
     ((-0.020, 0.290, 3.420), (-0.075, 0.420, 3.790)),
     ((0.018, 0.430, 3.280), (0.070, 0.600, 3.575)),
     ((-0.018, 0.530, 3.100), (-0.070, 0.720, 3.295)),
+    # 2026-09-12: four shorter pickets INTERLEAVED between the seven — the
+    # sheet's profile crest is dense (alternating tip runs every ~0.05ft
+    # from z 3.55 to 3.95) and the critic read seven isolated cones as
+    # sparse. Bases overlap their neighbours' 0.105 so the pickets group
+    # (the mohawk lesson); leans alternate and sum to zero.
+    ((0.015, -0.230, 3.450), (0.055, -0.310, 3.800)),
+    ((-0.015, -0.085, 3.505), (-0.055, -0.110, 3.930)),
+    ((0.015, 0.065, 3.510), (0.055, 0.100, 3.945)),
+    ((-0.015, 0.215, 3.460), (-0.055, 0.310, 3.850)),
 ]
 
 
 def build_mohawk(builder: MeshBuilder, detail: int) -> None:
     ring_loft_scalp(builder, SCALP_LEVELS, detail)
-    sides = 5 if detail >= 2 else 4
+    sides = 4
     spine = CREST_SPINE if detail >= 1 else CREST_SPINE[::2]
     radii = CREST_RADII if detail >= 1 else CREST_RADII[::2]
     builder.tube(spine, radii, 2, HAIR, "Head", sides)
@@ -365,7 +374,11 @@ STRIPES = ((2.390, 2.505), (2.165, 2.290), (1.945, 2.060),
 TORSO_LEVELS_CRISP = [
     (1.518, 0.361, 0.301, "Hips"),
     (1.552, 0.385, 0.320, "Hips"),
-    (1.690, 0.361, 0.312, "Hips"),
+    # The 1.690 edge (red below, cream above) had ONE ring sitting on the
+    # boundary and the next 0.089 above it, so the lowest band's top smeared
+    # (critic, 2026-09-02). A straddling pair, like every other edge here.
+    (1.684, 0.362, 0.312, "Hips"),
+    (1.696, 0.360, 0.312, "Hips"),
     (1.779, 0.346, 0.309, "Spine"),
     (1.791, 0.344, 0.309, "Spine"),
     (1.849, 0.335, 0.306, "Spine"),
@@ -487,6 +500,17 @@ def inseam_half(z: float) -> float:
         return 0.0
     t = min(1.0, (INSEAM_TOP_Z - z) / (INSEAM_TOP_Z - INSEAM_HEM_Z))
     return INSEAM_HEM_HALF * t ** 1.3
+
+# The yoke that closes the crotch (Zippy's lesson, Big Lou's construction):
+# the shorts were two unconnected tubes with a chamfered triangle of
+# background under the tee hem (critic, 2026-09-02, front-apose y436-500).
+# not-traceable: interior geometry no view can show; sized to bridge the
+# authored leg tubes at their own top stations, under the hem at 1.518.
+CROTCH_LEVELS = [
+    (1.380, 0.200, 0.230, "Hips"),
+    (1.460, 0.232, 0.262, "Hips"),
+    (1.560, 0.252, 0.284, "Hips"),
+]
 
 # (z, half-width, depth factor, colour, bone) — strictly descending in z.
 # measured: front z=0.65 runs=1
@@ -650,7 +674,7 @@ FLASH_SHOE = ShoeSpec(
 
 def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) -> None:
     face_columns = 27 if detail >= 2 else (9 if detail == 1 else 5)
-    back_columns = 6 if detail >= 2 else (2 if detail == 1 else 1)
+    back_columns = 4 if detail >= 2 else (2 if detail == 1 else 1)
     if detail >= 2:
         rows_spec, crown, chin = FACE_ROWS, 3, 2
     elif detail == 1:
@@ -666,8 +690,14 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
         build_ear(builder, side, detail, palette=PALETTE, skull_at=skull_surface_x, spec=EAR_SPEC)
 
     builder.loft(NECK_LEVELS, 0, SKIN, segments)
+    if detail >= 1:
+        builder.loft(CROTCH_LEVELS, 1, PANTS, 8 if detail >= 2 else 6)
     if detail >= 2:
-        builder.loft(TORSO_LEVELS_CRISP, 1, SHIRT, 19, color_fn=stripe_color)
+        # 16 torso segments, not 19: with the shared head's nose rows (#221),
+        # the crotch yoke and the stripe pair, the LOD0 budget needed ~250
+        # back — three torso columns, four head back columns and one crest
+        # side are invisible at game scale; a lost stripe edge is not.
+        builder.loft(TORSO_LEVELS_CRISP, 1, SHIRT, 16, color_fn=stripe_color)
     else:
         builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, segments,
                      color_fn=stripe_color)

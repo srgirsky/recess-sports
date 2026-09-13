@@ -101,7 +101,10 @@ PALETTE = Palette(
 # centred ~295 (59.9%, z 3.28), the smirk bounded at 79% (z 3.05 —
 # skin-adjacent below the nostril rows at 74.6).
 HEAD_CENTER = (0.0, -0.020, 3.300)
-HEAD_RADII = (0.420, 0.440, 0.420)
+# rx 0.462, not 0.420: measure:fidelity read the head box at 0.88 w:h
+# against the sheet's 0.98 (tol 0.08) for three rounds with nothing in the
+# head moving — the skull is a tenth too narrow. 2026-09-12.
+HEAD_RADII = (0.462, 0.440, 0.420)
 
 FACE_SCALE = (
     (1.00, 1.00),
@@ -206,15 +209,19 @@ def skull_front_y(x: float, z: float) -> float:
 # the badge-sized team panel on the front.
 # measured: front z=3.90 halfWidth=0.2921
 # measured: front z=3.58 halfWidth=0.4743
+# Lateral halves re-fit to the widened skull (HEAD_RADII rx 0.420 -> 0.462,
+# 2026-09-12): every cap level's x half x1.10, so the cap still sits ON a
+# head the sheet draws narrower than its cap (rim 0.492 over a 0.480 skull)
+# instead of a head standing proud of its own cap at the temples.
 CAP_LEVELS = [
-    (3.960, 0.110, 0.120, 0.000),
-    (3.900, 0.280, 0.295, 0.000),
-    (3.820, 0.380, 0.395, 0.005),
-    (3.720, 0.435, 0.450, 0.015),
-    (3.620, 0.465, 0.478, 0.025),
-    (3.540, 0.478, 0.490, 0.035),
-    (3.460, 0.495, 0.508, 0.045),
-    (3.400, 0.470, 0.488, 0.062),
+    (3.960, 0.121, 0.120, 0.000),
+    (3.900, 0.308, 0.295, 0.000),
+    (3.820, 0.418, 0.395, 0.005),
+    (3.720, 0.479, 0.450, 0.015),
+    (3.620, 0.512, 0.478, 0.025),
+    (3.540, 0.526, 0.490, 0.035),
+    (3.460, 0.545, 0.508, 0.045),
+    (3.400, 0.517, 0.488, 0.062),
 ]
 
 BRIM_Z_TOP = 3.575
@@ -350,20 +357,22 @@ FRINGE_WISPS = [
     ((0.000, -0.355, 3.560), (0.000, -0.395, 3.440), 0.055),
     # Face-framing side locks riding the temples — the concept frames the
     # face in blonde on both sides.
-    ((0.395, -0.120, 3.420), (0.430, -0.150, 3.150), 0.070),
-    ((-0.395, -0.120, 3.420), (-0.430, -0.150, 3.150), 0.070),
+    # x +0.042 with the skull (rx 0.420 -> 0.462, 2026-09-12): at the old x
+    # the locks sat half inside the wider head.
+    ((0.437, -0.120, 3.420), (0.472, -0.150, 3.150), 0.070),
+    ((-0.437, -0.120, 3.420), (-0.472, -0.150, 3.150), 0.070),
 ]
 
 
 # The nape shell: blonde coverage under the cap's back edge — without it
 # the rear gameplay angle reads bare skull either side of the tail band.
 # not-traceable: hugs the authored skull +0.02, front half buried.
-NAPE_LEVELS = [
-    (3.440, 0.450, 0.462, 0.020),
-    (3.320, 0.430, 0.445, 0.035),
-    (3.180, 0.390, 0.410, 0.060),
-    (3.040, 0.320, 0.350, 0.105),
-    (2.940, 0.240, 0.285, 0.150),
+NAPE_LEVELS = [   # x halves +0.042 with the skull (2026-09-12)
+    (3.440, 0.492, 0.462, 0.020),
+    (3.320, 0.472, 0.445, 0.035),
+    (3.180, 0.432, 0.410, 0.060),
+    (3.040, 0.362, 0.350, 0.105),
+    (2.940, 0.282, 0.285, 0.150),
 ]
 
 
@@ -447,19 +456,25 @@ def build_hood(builder: MeshBuilder, detail: int) -> None:
 # view: jacket→jogger boundary at z 1.722-1.734 (hard seam, cols ±45 of
 # centre), the band-top terminator seam at z 1.831-1.855 (dark rows 963505/
 # 702705 where the body drapes over the rib).
+# The DEPTH column is the profile's own half-width (regionRunsAt, 2026-09-12,
+# less ~0.01-0.02 where the hanging arm stands proud): 0.236 / 0.279 / 0.307
+# / 0.316 / 0.307 / 0.307 / 0.282 at z 1.5 / 1.7 / 1.9 / 2.1 / 2.3 / 2.5 /
+# 2.7 — a chest that DEEPENS upward under the jacket and a waist that tucks,
+# where the old column tapered 0.29 -> 0.23 from waist to chest and the
+# profile board read as a constant-depth slab (critic, three rounds).
 TORSO_LEVELS = [
-    (1.470, 0.340, 0.287, "Hips"),    # jogger waist — tucks toward the legs
-    (1.505, 0.352, 0.297, "Hips"),    # jogger hip
-    (1.660, 0.350, 0.297, "Hips"),    # joggers under the jacket hem
-    (1.722, 0.348, 0.295, "Hips"),    # jacket hem bottom ring — crisp edge
-    (1.736, 0.360, 0.305, "Hips"),    # rib band bottom roll, PROUD over joggers
-    (1.834, 0.346, 0.293, "Spine"),   # rib band top ring — cinched
-    (1.846, 0.356, 0.302, "Spine"),   # body drape ring, PROUD +0.010 (Penny)
-    (1.900, 0.338, 0.288, "Spine"),
-    (2.100, 0.320, 0.272, "Spine1"),
-    (2.280, 0.300, 0.255, "Spine1"),
-    (2.420, 0.272, 0.230, "Spine2"),
-    (2.520, 0.225, 0.192, "Spine2"),
+    (1.470, 0.340, 0.240, "Hips"),    # jogger waist — tucks toward the legs
+    (1.505, 0.352, 0.255, "Hips"),    # jogger hip
+    (1.660, 0.350, 0.276, "Hips"),    # joggers under the jacket hem
+    (1.722, 0.348, 0.280, "Hips"),    # jacket hem bottom ring — crisp edge
+    (1.736, 0.360, 0.290, "Hips"),    # rib band bottom roll, PROUD over joggers
+    (1.834, 0.346, 0.288, "Spine"),   # rib band top ring — cinched
+    (1.846, 0.356, 0.298, "Spine"),   # body drape ring, PROUD +0.010 (Penny)
+    (1.900, 0.338, 0.296, "Spine"),
+    (2.100, 0.320, 0.302, "Spine1"),
+    (2.280, 0.300, 0.294, "Spine1"),
+    (2.420, 0.272, 0.276, "Spine2"),
+    (2.520, 0.225, 0.240, "Spine2"),
     (2.660, 0.172, 0.150, "Spine2"),
     (2.720, 0.152, 0.135, "Spine2"),  # ribbed collar, proud — the track
     (2.760, 0.138, 0.124, "Spine2"),  # jacket rides high under the chin
