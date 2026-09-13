@@ -66,7 +66,7 @@ PANTS_DARK = rgba("2E4258")
 GLASSES = rgba("2A1808")     # the wire frames
 LENS = rgba("E8EFEA")        # glass shine — the sheet's cream fill
 SOCK = rgba("FFF6E6")
-SHOE = rgba("FFE494")        # warm cream canvas upper — the sheet's own shoe
+SHOE = rgba("3D5169")        # navy canvas upper — the sheet's shoe is a navy low-top with a cream toe cap, laces and cupsole (cropped 2026-09-12; three rounds shipped it cream with a blue cap, the split inverted)
 WHITE = rgba("F9E6B2")       # cupsole, warm
 SOLE = rgba("EAC672")        # toe bumper and laces, warm
 CUFF = rgba("C4CCD1")        # the pale grey-denim rolled cuff — IDENTITY
@@ -411,7 +411,8 @@ TORSO_LEVELS = [
     (1.400, 0.418, 0.348, "Hips"),
     (1.600, 0.400, 0.335, "Spine"),
     (1.800, 0.375, 0.315, "Spine"),
-    (2.000, 0.345, 0.290, "Spine1"),
+    (1.994, 0.346, 0.291, "Spine1"),  # waist colour edge — a straddling pair, so the
+    (2.006, 0.344, 0.289, "Spine1"),  # denim/tee switch is crisp (it smeared over 0.2ft)
     (2.180, 0.320, 0.268, "Spine1"),
     (2.274, 0.300, 0.248, "Spine2"),  # crisp bib-top edge — ring pair
     (2.286, 0.298, 0.246, "Spine2"),
@@ -598,12 +599,22 @@ LEG_STATIONS = [
     (0.980, 0.196, 1.04, PANTS, "Leg"),
     (0.860, 0.192, 1.03, PANTS, "Leg"),
     (0.760, 0.190, 1.02, PANTS, "Leg"),
-    (0.740, 0.202, 1.01, CUFF, "Leg"),             # rolled cuff at the ankle, proud
-    (0.640, 0.198, 1.00, CUFF, "Leg"),
-    (0.600, 0.182, 1.00, PANTS_DARK, "Leg"),       # cuff underside lip
-    (0.560, 0.114, 1.00, SOCK, "Leg"),             # sock sliver above the hi-top
-    (0.520, 0.106, 1.00, SOCK, "Foot"),
-    (0.400, 0.098, 0.99, SOCK, "Foot"),
+    # The rolled cuff reaches DOWN to the shoe: the sheet's denim run is
+    # still 0.33ft wide at z 0.55 and the shoe's cream begins by z 0.45, so
+    # the sock is a sliver (critic: 6px over a 50px shoe). The old table ended
+    # the cuff at 0.60 over a hi-top and shipped a bare sock column. 2026-09-12.
+    # The cuff is 0.13ft tall on the sheet (denim to z 0.54, the roll to
+    # ~0.41) — the 0.700 start was twice that (critic, 2026-09-12).
+    # A straddling pair at the roll's top: the single 0.760 -> 0.540 quad
+    # interpolated denim to grey over 0.22ft and the cuff READ as tall as
+    # before even at the sheet's height (critic, round 2). Same class as the
+    # waist smear: a colour switch belongs on a ring, never between two.
+    (0.548, 0.192, 1.02, PANTS, "Leg"),
+    (0.540, 0.202, 1.01, CUFF, "Leg"),             # rolled cuff at the ankle, proud
+    (0.430, 0.198, 1.00, CUFF, "Leg"),
+    (0.400, 0.182, 1.00, PANTS_DARK, "Leg"),       # cuff underside lip
+    (0.380, 0.110, 1.00, SOCK, "Leg"),             # sock sliver above the collar
+    (0.350, 0.098, 0.99, SOCK, "Foot"),
     (0.280, 0.090, 0.97, SOCK, "Foot"),
     (0.150, 0.085, 0.95, SOCK, "Foot"),
 ]
@@ -630,7 +641,7 @@ GIZMO_LEG = LegSpec(
 
 # --- The shoe ------------------------------------------------------------------
 #
-# Cream canvas hi-top with light-blue toe cap and lace accents — the family
+# Navy canvas low-top with a cream toe cap, laces and cupsole — the family
 # last, chunky.
 SHOE_FLOOR = 0.006
 SHOE_TOE_OUT = 14.0 * pi / 180.0
@@ -697,15 +708,17 @@ def shoe_floor_at(y_unscaled: float) -> float:
 
 SHOE_LENGTH_SCALE = 1.06
 SHOE_WIDTH_SCALE = 1.00
-SHOE_HEIGHT_SCALE = 1.30
+SHOE_HEIGHT_SCALE = 1.22   # the collar reaches z ~0.36 as the sheet's throat does (1.05 cut it to 0.29 and left 0.146ft of sock; 1.30 was a hi-top)
 
 SHOE_TOP_MAX = max(ztop for _, _, ztop, _ in SHOE_STATIONS)
 
-# Cream cupsole and cream canvas — the tonal split the sheet actually draws
-# is sole-shadow against upper, plus the blue accents.
+# Cream cupsole under a navy canvas quarter. The cupsole is TALL on the
+# sheet — measure:fidelity's bottom-9% band reads 84.6% cream there — so the
+# quarter starts at 0.42 of the shoe's height; at 0.33 the navy reached into
+# the band and the split measured 75/25 against the sheet's 85/13. 2026-09-12.
 SHOE_BANDS = [
     (0.000, "midsole"),
-    (0.330, "quarter"),
+    (0.420, "quarter"),
 ]
 
 
@@ -744,14 +757,15 @@ GIZMO_SHOE = ShoeSpec(
     heel_point=(0.286, 0.106 + 0.025),
     toe_point=(-0.470, 0.044 + 0.042),
     upper=SHOE,
-    trim=SHIRT,
+    trim=SOLE,          # cream toe cap and laces, as drawn — not the tee's blue
     midsole=WHITE,
 )
 
 
 def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) -> None:
     face_columns = 27 if detail >= 2 else (9 if detail == 1 else 5)
-    back_columns = 6 if detail >= 2 else (2 if detail == 1 else 1)
+    # 4 back columns under the mop: pays for the shared head's nose rows (#221). 2026-09-12.
+    back_columns = 4 if detail >= 2 else (2 if detail == 1 else 1)
     if detail >= 2:
         rows_spec, crown, chin = FACE_ROWS, 3, 2
     elif detail == 1:

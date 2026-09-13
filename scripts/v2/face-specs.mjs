@@ -641,7 +641,12 @@ export const FACE_SPECS = {
     alignOpenMouth: true,
     tongueOut: true,
     tongueReach: 1.3,
-    mouthY: 67,
+    // 78, not 67: the 67 landed the mouth at 69.4% of head height, which is
+    // where the LENS RIMS bottom out on the sheet — the analyser's "mouth"
+    // was the rim shadow, and the gate certified it. The only isolated dark
+    // run below the rims is row 288 = 78.9% (noodle.spec.json agrees); an
+    // independent critic re-traced it 2026-09-02. 2026-09-12.
+    mouthY: 78,
     // A small pleased smile.
     mouthBow: -1.0,
     mouthDrop: -2.4,

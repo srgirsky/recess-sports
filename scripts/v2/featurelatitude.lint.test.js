@@ -253,14 +253,18 @@ const TURNAROUND = {
   // traces on noodle-turnaround.png (crown row 123, neck row 332): thin
   // arched brows rows 196-202 (centroid ~198), the big lens rings rows
   // 203-260 centred row 231.5 (the eye line — his eyes sit behind the
-  // glasses like Bendy's), the small smile rows 262-270 centred ~268. Ear
-  // line at the spec's own widest row (57.9%) — real ears, the widest thing
-  // on a bald head.
+  // glasses like Bendy's). ⚠️ The mouth was first traced at rows 262-270
+  // (69.4%) — that is the LENS RIMS' bottom edge, and this entry certified a
+  // mouth painted on the rims for three rounds (the "analyser's mouth lands
+  // on the nostrils" class, here on the glasses). The only isolated dark run
+  // below the rims is row 288 = 78.9%, which noodle.spec.json's own landmark
+  // carries; corrected 2026-09-12. Ear line at the spec's own widest row
+  // (57.9%) — real ears, the widest thing on a bald head.
   noodle: {
     slug: 'noodle',
     brow: 36.4,
     eye: 51.9,
-    mouth: 69.4,
+    mouth: 78.9,
     earLine: 57.9,
     span: { crownZ: 3.99, neckZ: 2.76 },
     tolerance: 2.5,
