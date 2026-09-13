@@ -39,7 +39,7 @@ backgrounded tab freezes the game — the root brief's first gotcha).
 | baseline | `/?log=1` |
 | stamina | `/?features=stamina` |
 | juice / power-ups | `/?features=juice` |
-| special pitches | `/?features=specialPitches` |
+| special pitches | `/?features=specialPitches,juice` (they are bought off the juice meter, so the meter comes with them) |
 | defensive shifts | `/?features=shifts` |
 
 Any `?features=` turns the session log on by itself. `?log=1` turns it on for
@@ -98,7 +98,8 @@ save those for the end.
 - Did they notice the extra cards? Did they pick one before a normal pitch?
 - Batting against one: did they swing at a floater early, at a fireball late?
   Did they laugh at the crazy ball, or complain it was unfair?
-- Did they understand these cost something, or throw them every pitch?
+- Did they understand these cost something, or throw them every pitch? A
+  greyed card is one they cannot afford — did they tap it anyway?
 - Did the pitch names mean anything to them (they cannot read — the icon has
   to carry it)?
 

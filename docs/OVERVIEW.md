@@ -2747,6 +2747,57 @@ into the play and `power` false into the swing, and the nine goldens,
 `CHECKSUM_30` and the live==headless identity did not move.
 `DEFAULT_FEATURES.juice` stays `false` until a record says lift.
 
+### The third port: special pitches, behind its flag
+
+The three special pitches followed, and the shape is the smallest of the
+three ports because the sim already had everything but the kinds: a special
+is a **parameter set** in the one pitch model (`pitch.ts` `SPECIAL_PITCHES`:
+speed multiplier, spin rate, spin axis, and a `scatterMult` on the kid's own
+execution error), kept in a separate record so `PITCHES` — the four keys the
+CPU's `choosePitch` draws from — is byte-identical and every golden holds.
+The kinds are spends off the juice meter (`JUICE.COSTS`: v1's 55 / 60 / 60,
+bought per pitch, only ever the fielding side's), which is why the flag needs
+`juice` on and is inert alone. `game.ts` is the gate: a person's plan may
+carry a special kind whatever the picker showed, and it is thrown as one only
+when the flag is on, the meter is theirs, and `spend` covers it — otherwise it
+is a fastball, silently, with no `spend` event. The CPU buys one when it
+trails off the same per-PA `fork('juice')` its powers roll on, keeping the
+spot it would have drawn (`fork('choose')` keys on the label, so drawing it in
+`game.ts` and handing it in is the same plan). A special drains the arm
+triple, the seam `stamina.ts` had been holding for it.
+
+What v1's freezeball was could not be ported, and that is written down rather
+than approximated: it was a **time remap** — `flightProgress` held the ball at
+45-75% of its travel so the timing read at release was wrong at the plate. The
+v2 bridge draws the pitch by re-integrating the sim's release with plain
+`stepFlight`, so a mid-flight hold would need a second flight model in the
+renderer; slowing the clock instead is barred by `simclock.lint` and
+`paintclock.lint`. So the freezeball is a **floater** — slow, heavy backspin,
+Magnus lift making it hang — and the card says 🧊 FLOATER. And the floater is
+as slow as the solve can throw, not as slow as the plan asked: specified at
+0.58x (~2.1 s), the physics can hang a ball that long (measured: 39 ft/s at
+0.8 rad crosses after 1.83 s) but `releasePitch` bisects the pitcher's low
+branch and its six-step secant reads an unreachable trial as a 5 s flight, so
+asked for more hang than that branch has it ends on the fallback elevation and
+the ball crosses eight feet over its aim for stats 1-7. 0.72x is the slowest
+multiplier at which every (stat, spot) solve lands within 0.05 ft — swept,
+recorded in `sim.specialPitches` — and it hangs 1.15-1.58 s against the
+fastball's 1.01-1.19. That is the same saturation the base changeup already
+shows at weak arms, and closing it is the solver's job.
+
+The picker grows three cards below the four (🤪 CRAZY, ☄️ BLAZE, 🧊 FLOATER;
+keys 5-7), built by the same card construction so `hitrect.lint` sees one,
+greyed and `aria-disabled` when the sim's own `canSpend` says the meter is
+short, and the stack becomes two columns of four so it is never taller than
+it was on a short landscape phone. `audit:v2-layout`'s `windup, picker open`
+state now requires a special card visible. `specialPitches.test.ts` sweeps all
+seven kinds over ten arms and nine spots, pins the flight ORDER (floater >
+changeup > fastball > fireball) rather than any value, asserts the crazy ball
+as a spread, and drives the gate both ways — downgrade with the flag off or
+the meter short, paid at the sim's cost with both on, a different game on the
+seeds where the CPU affords one. `DEFAULT_FEATURES.specialPitches` stays
+`false` until a record says lift.
+
 ## What's explicitly not built yet
 
 Human-performed voice acting, a cross-player pick-rate backend, externally

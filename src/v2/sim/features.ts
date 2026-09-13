@@ -11,15 +11,18 @@
 // default flip. That is the whole mechanism: a feature port lands behind its
 // flag, the flag stays false, and a session with children is what turns it on.
 //
-// ★ TWO PORTS HAVE LANDED: `stamina` is read by `game.ts` (`Side.stamina`,
-// `sim/stamina.ts`) and so is `juice` (`Side.juice`, `sim/juice.ts`, with its
-// spends reaching `contact.ts`, `play.ts` and `fielders.ts`). The other two
-// are still seams — `GameSpec.features` and `PlaySpec.features` carry the type
-// so their ports have something to hang off. `game.test.ts` proves each case:
-// the fingerprints with the field absent and at `DEFAULT_FEATURES` are
-// identical, the two unported flags are inert, and each ported flag changes
-// the game — "wired but inert" is the failure `src/v2/AGENTS.md` § The human
-// names, and a port without that third test is exactly it.
+// ★ THREE PORTS HAVE LANDED: `stamina` is read by `game.ts` (`Side.stamina`,
+// `sim/stamina.ts`), so is `juice` (`Side.juice`, `sim/juice.ts`, with its
+// spends reaching `contact.ts`, `play.ts` and `fielders.ts`), and so is
+// `specialPitches` (`pitch.ts` `SPECIAL_PITCHES`, bought off the juice meter
+// in `game.ts` — so it needs `juice` on too, and alone it is inert by
+// construction). `shifts` is the seam left — `GameSpec.features` and
+// `PlaySpec.features` carry the type so its port has something to hang off.
+// `game.test.ts` and `specialPitches.test.ts` prove each case: the
+// fingerprints with the field absent and at `DEFAULT_FEATURES` are identical,
+// the unported flag is inert, and each ported flag changes the game — "wired
+// but inert" is the failure `src/v2/AGENTS.md` § The human names, and a port
+// without that third test is exactly it.
 //
 // Pure and import-free on purpose: the purity lint applies to everything in
 // `src/v2/sim/**`, and a flags module that reached for `location.search` would

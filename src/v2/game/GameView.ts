@@ -81,10 +81,10 @@ import { applyFrame, cameraInputFor, type SceneRefs } from '../render/bridge';
 import { simulateGameLive, type GameResult, type LiveFrame, type SimEvent } from '../sim/game';
 import { parseFeatures, type Features } from '../sim/features';
 import { isTired } from '../sim/stamina';
-import { SPEND_KINDS, canSpend, spendSide, type SpendKind } from '../sim/juice';
+import { SPEND_KINDS, canSpend, isSpecialSpend, spendSide, type PowerKind } from '../sim/juice';
 import type { InputVerb } from '../ui/sessionModel';
 import type { PlayInputs, PlayState } from '../sim/play';
-import type { PitchKind } from '../sim/pitch';
+import { SPECIAL_PITCH_KINDS, isSpecialPitch, type PitchKind, type SpecialPitchKind } from '../sim/pitch';
 import { FIRST, SECOND, THIRD, HOME, dist, fenceDistAt, pointAt, type FieldGeometry, type Vec2 } from '../sim/field';
 import { hash01 } from '../../art/fieldTexture';
 import { makeRng } from '../sim/rng';
@@ -138,19 +138,34 @@ const SWING_TAIL_SEC = 0.35;
  */
 const PITCH_CLOCK_SEC = 8;
 
-/** The four kinds, in the order the picker shows them. */
+/** The four kinds every pitcher has, in the order the picker shows them. Keys 1-4. */
 const KINDS: PitchKind[] = ['fastball', 'changeup', 'curve', 'screwball'];
+/**
+ * The three specials (`features.specialPitches`), appended below the four
+ * and shown only with the flag on. Keys 5-7. A special is a SPEND off the
+ * juice meter: a card reads as broke (`aria-disabled`, `.is-broke`) when
+ * `canSpend` says the person's side cannot cover it, and the sim re-checks
+ * every proposal regardless (`game.ts` downgrades one it cannot pay for).
+ */
+const SPECIAL_KINDS: ReadonlyArray<SpecialPitchKind> = SPECIAL_PITCH_KINDS;
+/** Where a special card sits in the picker, 1-based — the base four are 1-4. */
+const specialKey = (kind: SpecialPitchKind): number => KINDS.length + SPECIAL_KINDS.indexOf(kind) + 1;
 
 /**
  * What each pitch card shows. Icon first, one short word — the design pillar
  * is minimal reading, and BB2001/BB2026 both sell the pitch with the card art
- * (HEAT's flame, the hooks' curved path) rather than the label.
+ * (HEAT's flame, the hooks' curved path) rather than the label. The specials
+ * do not reuse the fastball's flame or the turbo chip's gust: a kid who
+ * cannot read tells the seven cards apart by icon alone.
  */
 const PITCH_CARDS: Record<PitchKind, { icon: string; label: string }> = {
   fastball: { icon: '🔥', label: 'FAST' },
   changeup: { icon: '🐢', label: 'SLOW' },
   curve: { icon: '🌈', label: 'CURVE' },
   screwball: { icon: '🌀', label: 'TWISTY' },
+  crazy: { icon: '🤪', label: 'CRAZY' },
+  fireball: { icon: '☄️', label: 'BLAZE' },
+  freezeball: { icon: '🧊', label: 'FLOATER' },
 };
 
 /**
@@ -159,7 +174,7 @@ const PITCH_CARDS: Record<PitchKind, { icon: string; label: string }> = {
  * touch. The COST is not printed: a chip only appears when the sim's own
  * `canSpend` says the side can afford it, so a kid never reads a number.
  */
-const SPEND_CARDS: Record<SpendKind, { icon: string; label: string; key: string }> = {
+const SPEND_CARDS: Record<PowerKind, { icon: string; label: string; key: string }> = {
   powerSwing: { icon: '💥', label: 'POWER', key: 'Q' },
   turboLegs: { icon: '💨', label: 'TURBO', key: 'W' },
   goldenGlove: { icon: '🧤', label: 'GLOVE', key: 'E' },
@@ -308,13 +323,16 @@ export class GameView {
   private pitchKind: PitchKind = 'fastball';
   /** The spend tray (`features.juice`), mounted beside the picker. */
   private trayEl: HTMLElement | null = null;
-  private readonly trayChips = new Map<SpendKind, HTMLButtonElement>();
+  private readonly trayChips = new Map<PowerKind, HTMLButtonElement>();
+  /** The special pitch cards, so `paintHud` can mark each affordable or broke. */
+  private readonly specialCards = new Map<SpecialPitchKind, HTMLButtonElement>();
   /**
    * What the sim ARMED for the person's side this plate appearance — set off
    * the sim's own `spend` event, never off the tap, so a proposal the meter
    * could not cover never reads as bought. Cleared when the batter changes.
+   * A special pitch is a per-pitch spend and never arms.
    */
-  private readonly armedSpends = new Set<SpendKind>();
+  private readonly armedSpends = new Set<PowerKind>();
   private armedFor = '';
   /** Real seconds spent on the current windup, so it can never hang. */
   private windupElapsed = 0;
@@ -675,15 +693,36 @@ export class GameView {
     }
   }
 
-  /** Number keys pick the pitch; Q/W/E propose a spend. Both labelled in the HUD. */
+  /** Number keys pick the pitch (5-7 the specials); Q/W/E propose a spend. Both labelled in the HUD. */
   private readonly onKeyDown = (e: KeyboardEvent): void => {
     const i = KINDS.indexOf(KINDS[Number(e.key) - 1]);
     if (Number(e.key) >= 1 && Number(e.key) <= KINDS.length && i >= 0) {
       this.pitchKind = KINDS[Number(e.key) - 1];
     }
+    const special = SPECIAL_KINDS.find((k) => specialKey(k) === Number(e.key));
+    if (special) this.pickSpecial(special);
     const spend = SPEND_KINDS.find((k) => SPEND_CARDS[k].key === e.key.toUpperCase());
     if (spend) this.proposeSpend(spend);
   };
+
+  /**
+   * Which specials the person could throw next, or none: the flag on, the
+   * meter on (`frame.juice` is null otherwise), and `canSpend` for each — the
+   * sim's own question, never a cost restated here. Like `affordableSpends`
+   * this only proposes; `game.ts` downgrades what it cannot pay for.
+   */
+  private affordableSpecials(): SpecialPitchKind[] {
+    const f = this.frame;
+    if (!f || !f.juice || !this.featureFlags.specialPitches) return [];
+    const meter = { value: f.juice[this.humanSide] };
+    return SPECIAL_KINDS.filter((k) => canSpend(meter, k));
+  }
+
+  /** Pick a special for the next pitch, if the meter can cover it. */
+  private pickSpecial(kind: SpecialPitchKind): void {
+    if (!this.affordableSpecials().includes(kind)) return;
+    this.pitchKind = kind;
+  }
 
   /**
    * Which spends the person could buy for the coming pitch, or none.
@@ -696,7 +735,7 @@ export class GameView {
    * and can the person's meter afford it by `canSpend`. Nothing here knows a
    * cost; the sim re-checks every proposal regardless.
    */
-  private affordableSpends(): SpendKind[] {
+  private affordableSpends(): PowerKind[] {
     const f = this.frame;
     if (!f || !f.juice) return [];
     if (this.controlMode === 'watch') return [];
@@ -711,7 +750,7 @@ export class GameView {
   }
 
   /** Propose a spend for the next windup. The sim decides; the view only asks. */
-  private proposeSpend(kind: SpendKind): void {
+  private proposeSpend(kind: PowerKind): void {
     if (!this.affordableSpends().includes(kind)) return;
     this.inputs.spend = kind;
     this.tapped('spend');
@@ -1109,13 +1148,15 @@ export class GameView {
           // The tray reads what the sim actually BOUGHT for the person's side,
           // not what was tapped — a proposal the meter could not cover is
           // silently ignored by the sim and must not read as armed here.
-          if (e.t === 'spend' && e.side === this.humanSide) this.armedSpends.add(e.kind);
+          if (e.t === 'spend' && e.side === this.humanSide && !isSpecialSpend(e.kind)) this.armedSpends.add(e.kind);
           for (const fn of this.simEvent) fn(e);
         },
-        // The flags ride the spec. `stamina` (a tiring pitcher, `sim/stamina.ts`)
-        // and `juice` (the meter and its spends, `sim/juice.ts`) are consumed
-        // by the sim; the other two are seams until their ports land, and
-        // `game.test.ts` proves which is which. Headless runs never set this.
+        // The flags ride the spec. `stamina` (a tiring pitcher, `sim/stamina.ts`),
+        // `juice` (the meter and its spends, `sim/juice.ts`) and
+        // `specialPitches` (three more cards on the picker, bought off that
+        // meter) are consumed by the sim; `shifts` is a seam until its port
+        // lands, and the sim's tests prove which is which. Headless runs never
+        // set this.
         features: this.featureFlags,
         // The juice port must not spend the PERSON's meter for them; a watcher
         // has no side, so both are the CPU's.
@@ -1416,6 +1457,10 @@ export class GameView {
     if (this.frame.phase === 'pitch') this.pitchElapsed = 0;
     if (this.frame.phase === 'pitch') this.cpuSwingStarted = false;
     if (this.frame.phase === 'windup') {
+      // A special is bought per pitch, so it is picked per pitch: the card
+      // falls back to the fastball on every fresh windup rather than
+      // re-spending the meter until it is empty.
+      if (isSpecialPitch(this.pitchKind)) this.pitchKind = 'fastball';
       this.windupElapsed = 0;
       this.deliveryElapsed = 0;
       this.deliveryStarted = false;
@@ -1905,7 +1950,7 @@ export class GameView {
     hud.appendChild(this.inningBreak.root);
     this.pickerEl = document.createElement('div');
     this.pickerEl.className = 'pitch-picker';
-    KINDS.forEach((kind, i) => {
+    const pitchCard = (kind: PitchKind, key: number): HTMLButtonElement => {
       const card = document.createElement('button');
       card.type = 'button';
       card.className = 'pitch-card interactive';
@@ -1914,12 +1959,29 @@ export class GameView {
       card.innerHTML =
         `<span class="pitch-card__icon">${art.icon}</span>` +
         `<span class="pitch-card__name">${art.label}</span>` +
-        `<kbd class="pitch-card__key">${i + 1}</kbd>`;
+        `<kbd class="pitch-card__key">${key}</kbd>`;
+      return card;
+    };
+    KINDS.forEach((kind, i) => {
+      const card = pitchCard(kind, i + 1);
       card.addEventListener('pointerdown', () => {
         this.pitchKind = kind;
       });
       this.pickerEl?.appendChild(card);
     });
+    // The special cards (`features.specialPitches`): the same card, built
+    // once and kept hidden until the flag is read off the URL at `newGame`;
+    // `paintHud` shows them with the flag on and marks each affordable or
+    // broke off the sim's own `canSpend`. Same `.interactive` floor as the
+    // four above, so `hitrect.lint` sees one card construction.
+    for (const kind of SPECIAL_KINDS) {
+      const card = pitchCard(kind, specialKey(kind));
+      card.classList.add('pitch-card--special');
+      card.hidden = true;
+      card.addEventListener('pointerdown', () => this.pickSpecial(kind));
+      this.specialCards.set(kind, card);
+      this.pickerEl.appendChild(card);
+    }
     hud.appendChild(this.pickerEl);
     // The spend tray (`features.juice`): the picker's mirror on the left
     // edge, built once like everything here and shown by `paintHud` only on
@@ -1988,6 +2050,20 @@ export class GameView {
     // ★ THE PICKER IS SHOWN, NOT HIDDEN BEHIND A KEYBINDING NOBODY KNOWS.
     if (!this.pickerEl) return;
     this.pickerEl.classList.toggle('is-open', this.onTheMound);
+    // The specials: on the picker only with the flag on; each card broke or
+    // not by the sim's own `canSpend`. A picked special the meter can no
+    // longer cover falls back to the fastball, so what the card says is what
+    // the sim will throw — the sim would downgrade it anyway.
+    const specials = this.featureFlags.specialPitches;
+    const affordable = this.affordableSpecials();
+    this.pickerEl.classList.toggle('has-specials', specials);
+    for (const [kind, card] of this.specialCards) {
+      card.hidden = !specials;
+      const broke = !affordable.includes(kind);
+      card.classList.toggle('is-broke', broke);
+      card.setAttribute('aria-disabled', String(broke));
+    }
+    if (isSpecialPitch(this.pitchKind) && !affordable.includes(this.pitchKind)) this.pitchKind = 'fastball';
     if (!this.onTheMound) return;
     for (const chip of this.pickerEl.children) {
       const el = chip as HTMLElement;

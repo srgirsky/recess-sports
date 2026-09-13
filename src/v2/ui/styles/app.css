@@ -454,6 +454,30 @@ body.screen-open .play-callout {
   /* Instant-on for the same reason as the matchup — and this one is INPUT. */
   transition: none;
 }
+/* With the special pitches on (`features.specialPitches`) the picker holds
+   seven cards. Seven in one stack is taller than the row on a short landscape
+   phone (the svh note above was written for FOUR), so the stack becomes two
+   columns of four — the base kinds down the first, the specials down the
+   second — and the picker is never taller than it was. */
+.pitch-picker.has-specials {
+  grid-auto-flow: column;
+  grid-template-rows: repeat(4, auto);
+  column-gap: clamp(0.3rem, 1vw, 0.6rem);
+}
+.pitch-card[hidden] {
+  display: none;
+}
+/* A special card the meter cannot cover: still on the picker so a kid learns
+   it exists, greyed and inert (`aria-disabled`); the tap is ignored by the
+   view and the sim would downgrade it regardless. */
+.pitch-card--special {
+  background: var(--gold);
+}
+.pitch-card.is-broke {
+  opacity: 0.45;
+  filter: grayscale(1);
+  cursor: default;
+}
 .pitch-card {
   display: grid;
   justify-items: center;

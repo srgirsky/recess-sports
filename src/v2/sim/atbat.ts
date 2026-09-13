@@ -52,7 +52,9 @@ import {
 import {
   PITCHES,
   PITCH_SPOTS,
+  SPECIAL_PITCHES,
   flyToPlate,
+  isSpecialPitch,
   releaseAtSpot,
   releaseFrom,
   type PitchKind,
@@ -180,6 +182,10 @@ export interface PitchPlan {
 }
 
 export function choosePitch(spec: PitchSpec, rng: Rng): PitchPlan {
+  // ★ THE BASE FOUR ONLY. `SPECIAL_PITCHES` is a separate record so this draw
+  // never sees a fifth key; the CPU reaches a special through `game.ts` and
+  // `juice.ts` `cpuPickSpecialPitch`, which replaces the KIND and keeps the
+  // spot this function drew.
   const kinds = Object.keys(PITCHES) as PitchKind[];
   const kind = rng.pick(kinds);
   const [lo, hi] = zoneBandFt();
@@ -298,7 +304,15 @@ export function throwPitch(spec: PitchSpec, rng: Rng, human?: PitchPlan): PitchI
     aimLateralFt: plan.aimLateralFt,
   });
   const miss = rng.fork('execute');
-  const scatterRad = pitchScatterFt(spec.pitcher.stats.pitching) / MOUND_DIST;
+  // ★ A SPECIAL IS A PARAMETER SET, AND THIS IS ITS ONLY OTHER KNOB. The
+  // crazy ball is wild by `scatterMult` on the kid's OWN execution error —
+  // same draws, same bell, a wider nudge — so a strong arm's crazy ball is
+  // still tamer than a weak arm's. Every base kind and the other two
+  // specials multiply by exactly 1, which is exact in IEEE and is why the
+  // goldens do not see this line. Whether the kind was PAID FOR is not asked
+  // here: `game.ts` downgrades an unaffordable special before the throw.
+  const scatterMult = isSpecialPitch(plan.kind) ? SPECIAL_PITCHES[plan.kind].scatterMult : 1;
+  const scatterRad = (pitchScatterFt(spec.pitcher.stats.pitching) * scatterMult) / MOUND_DIST;
   const released = releaseFrom(plan2, miss.bell() * scatterRad, miss.bell() * scatterRad);
 
   const flown = flyToPlate(released);

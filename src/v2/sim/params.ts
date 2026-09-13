@@ -952,7 +952,7 @@ export const ATBAT = {
 export const STAMINA = {
   /** Fraction of the tank one ordinary pitch costs (~33 pitches to empty). */
   DRAIN_PER_PITCH: 0.03,
-  /** Fraction a special pitch costs — triple, as in v1 — once PR D lands them. */
+  /** Fraction a special pitch (`pitch.ts` `SPECIAL_PITCHES`) costs — triple, as in v1. */
   DRAIN_SPECIAL: 0.09,
   /** Below this the sweat pip shows and the stat starts to sag. */
   TIRED_AT: 0.45,
@@ -990,6 +990,9 @@ export const STAMINA = {
  * it spends an affordable kind, keyed on the score: v1's 0.6 / 0.3 / 0.12. The
  * roll is drawn from a per-plate-appearance `fork('juice')` that nothing else
  * reads, so with the flag off the fork is never drawn and the goldens hold.
+ * The special pitches (`features.specialPitches`) ride the same meter and
+ * the same roll — `juice.ts` `cpuPickSpecialPitch` — and are only ever a
+ * fielding-side spend; their physics live in `pitch.ts`, not here.
  */
 export const JUICE = {
   /** The meter's ceiling, meter points. */
@@ -1012,6 +1015,18 @@ export const JUICE = {
     turboLegs: 40,
     /** The fielding side: longer reach and no drops, on this PA's ball in play. */
     goldenGlove: 40,
+    /**
+     * The fielding side's three special pitches (`features.specialPitches`,
+     * `pitch.ts` `SPECIAL_PITCHES`), bought on the windup for THIS pitch: v1's
+     * crazyPitch 55 / fireball 60 / freezeball 60, the ace's discount left
+     * behind with the other ability hooks. A special is a spend so the meter
+     * is the one thing that gates it — the sim downgrades an unaffordable one
+     * to a fastball before the throw (`game.ts`), and the `spend` event names
+     * the kind the way it names a glove.
+     */
+    crazy: 55,
+    fireball: 60,
+    freezeball: 60,
   },
   /** Bat speed multiplier on a power swing. */
   POWER_BAT_MULT: 1.15,
