@@ -123,11 +123,11 @@
     },
     "bubbles": {
       "source": "bubbles-pilot.blend",
-      "sourceSha256": "53349bb384528d031ba59813783af1c29942423e06aa33785ffe40c8af19dd53",
+      "sourceSha256": "ce42a6cb70775ae58da5bf1e00deb291efdcc0a986bdd4acc89f3268508ac340",
       "concept": "bubbles-turnaround.png",
       "conceptSha256": "b4b3ec04e975bf1f2d85b449073afbd71edb99af3f17579fe24050bc5edcd9db",
       "output": "kid_bubbles.glb",
-      "outputSha256": "c1c833a0cc1efe546ad2f838d499e9a2d6998bbefdf5a19624451e2524ed3749",
+      "outputSha256": "8cc91643b25660710aa8952aa4020ceb0c3dec0d03e54d4892a8dbd97e3af3fa",
       "definingTraits": [
         "golden ringlet cloud",
         "topknot bun and scrunchie",
@@ -258,11 +258,11 @@
     },
     "penny": {
       "source": "penny-pilot.blend",
-      "sourceSha256": "12b39262b506d081ecef4dd3bbd5144fb6106d4de378969438fb9b4462f7f351",
+      "sourceSha256": "fe7a3b39a1d2e5fb150e2adc718295dc993fb94a79cfab0881a5bb050fe86483",
       "concept": "penny-turnaround.png",
       "conceptSha256": "c135292d56d005e054136dcd938c45459a596c1cb64f1393c7105661c6a1674d",
       "output": "kid_penny.glb",
-      "outputSha256": "89d9763c1c5f6f4e004607bc948c94b28cb57b4b2404e6bada016645eba47ca8",
+      "outputSha256": "b374559a3d66ab7f69904b292ef1e7d1a1eb59270e05e60a7bbc2308c8f46888",
       "definingTraits": [
         "big curly brown bob",
         "denim bib overalls",
@@ -378,11 +378,11 @@
     },
     "smokey": {
       "source": "smokey-pilot.blend",
-      "sourceSha256": "e29d45457bc3b039fb3f36bbc591f501e04f8d80d4dc80288474a05a171d97ae",
+      "sourceSha256": "75381c9532b107aba8016a76a7bc569e6292fa9278e08764b15b7615b8421149",
       "concept": "smokey-turnaround.png",
       "conceptSha256": "3df75f1c323e7ea542d76adcc2f4c294ba10e0f414b0a9f4bea352e2dcb8056e",
       "output": "kid_smokey.glb",
-      "outputSha256": "bc9e7536c28cc8bf3bc7f8cd4190448ca23a31e351304f464320dc132e28c370",
+      "outputSha256": "6fc08eb87ea9c134f42bb03bac2fa22f2e4ff2e0bd6d5c3a57874f64516dce8b",
       "definingTraits": [
         "tight buzz fade",
         "plain red tee",

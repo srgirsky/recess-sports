@@ -124,7 +124,9 @@ def nose_push(nx: float, nz: float) -> float:
     bridge = 0.008 * across * max(0.0, 1.0 - abs(dz - 0.06) / 0.09)
     reach = 0.095 if dz >= 0.0 else 0.105
     t = dz / reach
-    tip = 0.090 * across ** 1.25 * max(0.0, 1.0 - t * t) ** 1.40
+    # 0.120, not 0.090: the profile board projected ~3.5% of the head where
+    # the sheet's button reads more (critic, 2026-09-02). 2026-09-12.
+    tip = 0.120 * across ** 1.25 * max(0.0, 1.0 - t * t) ** 1.40
     return bridge + tip
 
 
@@ -186,18 +188,28 @@ def skull_front_y(x: float, z: float) -> float:
 # paint (the Moose too-black lesson).
 # measured: front z=3.90 halfWidth=0.3220
 # measured: front z=3.50 halfWidth=0.5017
+# ★ 2026-09-12, two things off the sheet. (1) THE FADE IS HIGH: in profile
+# the sheet shows skin at z 3.0-3.3 all round the back (regionRunsAt: skin
+# runs, no dark) and hair only from ~3.45 up; the shell ran down to 2.98 and
+# two critics read a bowl cut. The two nape tongues (3.10, 2.98) are gone;
+# the temples keep their traced coverage (BUZZ_FRINGE) down to 3.22 — a cut
+# to 3.38 moved visible-face 7-10 points OFF because the sheet's temples
+# are haired where its nape is not.
+# (2) THE HAIRLINE RENDERS FROM THE RING ABOVE THE FRINGE (Boomer's lesson):
+# the sheet's centre hairline is between z 3.50 and 3.55 and BUZZ_FRINGE says
+# 3.500, but the nearest ring above sat at 3.560, so the curtain edge drew
+# there and the forehead read 7.5% of head height tall. A ring at 3.505.
 BUZZ_LEVELS = [
     (3.950, 0.170, 0.180, 0.000),
     (3.900, 0.225, 0.235, 0.000),
     (3.820, 0.350, 0.360, 0.000),
     (3.700, 0.460, 0.470, 0.005),
     (3.560, 0.520, 0.530, 0.010),
+    (3.505, 0.533, 0.543, 0.014),
     (3.420, 0.540, 0.550, 0.020),
     (3.300, 0.530, 0.545, 0.035),
-    (3.220, 0.500, 0.520, 0.055),
-    (3.100, 0.300, 0.440, 0.100),
-    (2.980, 0.240, 0.400, 0.145),
-]
+    (3.220, 0.500, 0.520, 0.055),   # the temples keep hair to here (BUZZ_FRINGE 0.42 -> 3.14);
+]                                   # the 3.10 and 2.98 nape tongues below were the bowl
 
 # A tight high-fade crop: the SIDES END ABOVE THE EARS (the ring at 3.22 is
 # the last full-width one; the two below shrink to nape-hugging tongues so
@@ -276,10 +288,14 @@ TORSO_LEVELS = [
     (2.050, 0.395, 0.330, "Spine1"),
     (2.220, 0.365, 0.305, "Spine1"),
     (2.340, 0.320, 0.270, "Spine2"),
-    (2.440, 0.255, 0.218, "Spine2"),
-    (2.500, 0.200, 0.172, "Spine2"),
-    (2.545, 0.168, 0.148, "Spine2"),  # collar roll, proud
-    (2.580, 0.150, 0.135, "Spine2"),  # neck hole — OUTSIDE the neck loft
+    # The collar rises 0.14: the sheet's shirt red reaches z ~2.65 and skin
+    # shows only from 2.7 up (front runs), a chin-to-collar of ~2.5% of the
+    # figure; the old collar at 2.58 under a chin at 2.86 read a neck twice
+    # the drawing's (critic, 2026-09-02). Rows keep outside the neck loft.
+    (2.480, 0.255, 0.218, "Spine2"),
+    (2.620, 0.200, 0.172, "Spine2"),
+    (2.680, 0.176, 0.155, "Spine2"),  # collar roll, proud
+    (2.720, 0.158, 0.142, "Spine2"),  # neck hole — OUTSIDE the neck loft
 ]
 
 
