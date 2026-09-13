@@ -2703,6 +2703,50 @@ change pitcher is one of the questions `PROTOCOL.md` § Stamina sends the
 observer in with, and the answer decides whether a bullpen is worth its UI.
 `DEFAULT_FEATURES.stamina` stays `false` until a record says lift.
 
+### The second port: juice, behind its flag
+
+The meter followed the same day and the same shape: `src/v2/sim/juice.ts` is
+v2-native (`systems/juice.ts` reads `src/config.ts`'s `JUICE` and the ability
+hooks, neither on the fence), its numbers are v1's restated in `params.ts`
+`JUICE` and recorded as unmeasured in `sim.juice`, and the flag stays off. Each
+side has a meter, charged at the five sites the game loop already had — the
+hit push (a homer charges 30 instead of 10), the scored loop, a strikeout
+thrown, a caught fly, a steal — and spent on the windup, the one frame the sim
+reads a person's choices on. A spend is armed for the plate appearance it was
+bought in.
+
+What was ported is three spends, and what each one is in v2 is the point. A
+**power swing** is the kid's own bat speed times 1.15 AND both timing windows
+times 0.8 — v1 made it better in every way, which is a cheat code; here
+swinging harder is harder to time, and `juice.test.ts` measures both halves in
+one sweep (mean exit velocity up on a square swing, contact rate down across
+the window in both directions). **Turbo legs** multiply every batting-side
+runner's top speed at the boost site in `beginPlay`, so `makeRunner` and
+`makeFielder` stay the one kid speed the purity lint asserts. A **golden
+glove** adds a foot to every fielder's reach and overrides the drop VERDICT
+while the drop roll is still drawn — so `rng.drop.draws` is identical with and
+without it and no later stream moves. Two pinned plays, found by a grid search
+and recorded as found: a speed-5 kid's blooper is a single on his legs and a
+double at 1.35x; a can of corn that seed `glove3` muffs is caught with the
+glove. `rallyCap` was left behind on purpose — a second window-widening on top
+of the plate's own is how v1's 380 ms band got wider than a 270 ms flight.
+
+Two things the port needed that the sim did not have. `GameSpec.humanSide`,
+because the CPU rolls to spend when it trails and must never spend the person's
+meter for them — a person proposes through `PlayInputs.spend` and the sim
+checks its own `canSpend`; the view only asks. And a `spend` event, so the
+crowd cheers it, the callout names it, and the session log can count what a
+child pressed. The HUD is a thin gold track under each team's name on the
+scoreboard strip and a `.spend-tray` of `.interactive` chips on the left edge,
+the picker's mirror, shown on the beats before a windup when the person's side
+can afford one (`Q`/`W`/`E` on a keyboard). `audit:v2-layout` now runs the game
+scenarios with `&features=all` and pumps a `spend tray` state until the tray
+opens — on the bottom half beside the open picker, which is the collision worth
+measuring. With the flag off every site is a null guard, `boost` is undefined
+into the play and `power` false into the swing, and the nine goldens,
+`CHECKSUM_30` and the live==headless identity did not move.
+`DEFAULT_FEATURES.juice` stays `false` until a record says lift.
+
 ## What's explicitly not built yet
 
 Human-performed voice acting, a cross-player pick-rate backend, externally

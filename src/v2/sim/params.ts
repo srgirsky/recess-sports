@@ -961,6 +961,75 @@ export const STAMINA = {
 } as const;
 
 /**
+ * The juice meter — a held feature (`features.juice`, off by default).
+ *
+ * ★ v1's SHAPE RESTATED, NOT A MEASUREMENT, like `STAMINA` above. `src/config.ts`'s
+ * `JUICE` block was tuned by feel; the meter is unitless (0..MAX), the gains
+ * and costs are meter points, and the three multipliers are the only physical
+ * quantities here — each applied at one site so the roster's own numbers stay
+ * the base: a power swing is the kid's OWN bat speed times `POWER_BAT_MULT`,
+ * turbo legs are his OWN top speed times `TURBO_SPEED_MULT`, and the glove
+ * bonus is added to the one `reachFt()` every fielder shares. `sim.juice` says
+ * what would settle any of it.
+ *
+ * ★ A POWER SWING IS HARDER TO TIME, ON PURPOSE. v1 handed the power swing a
+ * band upgrade and a quality bonus — a swing that is better in every way, which
+ * is a cheat code rather than a choice. Here the bat is faster AND the contact
+ * window is `POWER_WINDOW_MULT` of the normal one, because swinging harder is
+ * harder to time; `juice.test.ts` measures both halves in a sweep. So a
+ * six-year-old who spends it and whiffs was not robbed — he swung for the
+ * fences.
+ *
+ * ★ `rallyCap` IS NOT PORTED. It widened the swing window for a whole half,
+ * on top of the plate's own window — a second window-widening in a model whose
+ * one window is a fraction of the flight by construction (`pace.swingWindows`).
+ * Two knobs on one tolerance is how v1's 380ms band ended up wider than a
+ * 270ms flight. Recorded in `sim.juice`.
+ *
+ * ★ THE CPU SPENDS WHEN IT IS BEHIND. `CPU_EAGERNESS` is the per-windup chance
+ * it spends an affordable kind, keyed on the score: v1's 0.6 / 0.3 / 0.12. The
+ * roll is drawn from a per-plate-appearance `fork('juice')` that nothing else
+ * reads, so with the flag off the fork is never drawn and the goldens hold.
+ */
+export const JUICE = {
+  /** The meter's ceiling, meter points. */
+  MAX: 100,
+  /** What each play charges the side that made it. */
+  GAINS: {
+    hit: 10,
+    /** Charged INSTEAD of `hit` when the batter came all the way round. */
+    homer: 30,
+    run: 12,
+    kThrown: 18,
+    flyCaught: 10,
+    steal: 20,
+  },
+  /** What each spend costs. Armed for the rest of the plate appearance. */
+  COSTS: {
+    /** The batting side: a faster bat with a narrower window (this PA's swings). */
+    powerSwing: 55,
+    /** The batting side: every runner's top speed up, on this PA's ball in play. */
+    turboLegs: 40,
+    /** The fielding side: longer reach and no drops, on this PA's ball in play. */
+    goldenGlove: 40,
+  },
+  /** Bat speed multiplier on a power swing. */
+  POWER_BAT_MULT: 1.15,
+  /** Contact and perfect window multiplier on a power swing — under 1: harder to time. */
+  POWER_WINDOW_MULT: 0.8,
+  /** Runner top-speed multiplier under turbo legs. */
+  TURBO_SPEED_MULT: 1.35,
+  /** Feet added to every fielder's reach under a golden glove. */
+  GLOVE_REACH_BONUS_FT: 1.0,
+  /** Per-windup chance a CPU side spends an affordable kind, by score. */
+  CPU_EAGERNESS: {
+    trailing: 0.6,
+    level: 0.3,
+    leading: 0.12,
+  },
+} as const;
+
+/**
  * The game above the plate appearance.
  *
  * Everything here is a RULE rather than a measurement, which is why the block is

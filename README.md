@@ -48,7 +48,7 @@ judging the art direction). Useful query flags:
 | `?face=<cell>` | force an expression atlas cell during model review |
 | `?perf=low\|mid\|high` | override the auto-detected device tier |
 | `?proxy=1` | force primitive proxy characters everywhere |
-| `?features=<list>` | switch **held** features on for a playtest: `all`, or a comma list of `stamina`, `juice`, `specialPitches`, `shifts`. All off otherwise — see "Playtesting with kids". `stamina` is the one port that does something today (a tiring pitcher; the other three are seams) |
+| `?features=<list>` | switch **held** features on for a playtest: `all`, or a comma list of `stamina`, `juice`, `specialPitches`, `shifts`. All off otherwise — see "Playtesting with kids". `stamina` (a tiring pitcher) and `juice` (the meter, its tray and three spends; keys `Q`/`W`/`E`) are the ports that do something today; the other two are seams |
 | `?log=1` | record the session and show the `⬇ LOG` download (counts only) |
 
 Keys on the spike page: `1`–`5` switch camera preset, `V` cycles venue.
@@ -117,8 +117,18 @@ Of the four, **stamina is ported** (`src/v2/sim/stamina.ts`, tunables in
 `params.ts` `STAMINA`, provenance in `sim.stamina`): with `?features=stamina`
 every pitch drains the pitcher's tank, below the line a 💦 pip shows on his
 matchup chip and his pitches miss the spot more — both sides, CPU included.
-There is no bullpen; a tired pitcher finishes the game. The other three flags
-parse and ride the game spec but change nothing yet.
+There is no bullpen; a tired pitcher finishes the game.
+
+**Juice is ported** too (`src/v2/sim/juice.ts`, tunables in `params.ts`
+`JUICE`, provenance in `sim.juice`): with `?features=juice` each side has a
+meter under its name on the scoreboard, charged by its own hits, homers, runs,
+strikeouts thrown, caught flies and steals. Before a pitch, a tray on the left
+edge offers what your side can afford — 💥 POWER (a faster bat that is harder
+to time), 💨 TURBO (your runners' legs on the next ball in play) when you bat,
+🧤 GLOVE (a longer reach and no drops) when you field; tap a chip or press
+`Q`/`W`/`E`. A spend lasts the plate appearance. The CPU spends its own meter
+when it trails and never yours. The other two flags parse and ride the game
+spec but change nothing yet.
 
 To run a session, follow `docs/playtests/PROTOCOL.md`. In short:
 

@@ -81,6 +81,7 @@ import { applyFrame, cameraInputFor, type SceneRefs } from '../render/bridge';
 import { simulateGameLive, type GameResult, type LiveFrame, type SimEvent } from '../sim/game';
 import { parseFeatures, type Features } from '../sim/features';
 import { isTired } from '../sim/stamina';
+import { SPEND_KINDS, canSpend, spendSide, type SpendKind } from '../sim/juice';
 import type { InputVerb } from '../ui/sessionModel';
 import type { PlayInputs, PlayState } from '../sim/play';
 import type { PitchKind } from '../sim/pitch';
@@ -150,6 +151,18 @@ const PITCH_CARDS: Record<PitchKind, { icon: string; label: string }> = {
   changeup: { icon: '🐢', label: 'SLOW' },
   curve: { icon: '🌈', label: 'CURVE' },
   screwball: { icon: '🌀', label: 'TWISTY' },
+};
+
+/**
+ * What each spend chip shows (`features.juice`). Icon first, one short word,
+ * for the reason the pitch cards are; the key is for keyboards and hides on
+ * touch. The COST is not printed: a chip only appears when the sim's own
+ * `canSpend` says the side can afford it, so a kid never reads a number.
+ */
+const SPEND_CARDS: Record<SpendKind, { icon: string; label: string; key: string }> = {
+  powerSwing: { icon: '💥', label: 'POWER', key: 'Q' },
+  turboLegs: { icon: '💨', label: 'TURBO', key: 'W' },
+  goldenGlove: { icon: '🧤', label: 'GLOVE', key: 'E' },
 };
 
 /** How long a between-pitch beat lasts, seconds. v1's `FLOW.BETWEEN_PITCH_MS`. */
@@ -293,6 +306,16 @@ export class GameView {
   /** Where the player is aiming the PITCH, in plate coordinates, ft. */
   private spot = { x: 0, y: 2 };
   private pitchKind: PitchKind = 'fastball';
+  /** The spend tray (`features.juice`), mounted beside the picker. */
+  private trayEl: HTMLElement | null = null;
+  private readonly trayChips = new Map<SpendKind, HTMLButtonElement>();
+  /**
+   * What the sim ARMED for the person's side this plate appearance — set off
+   * the sim's own `spend` event, never off the tap, so a proposal the meter
+   * could not cover never reads as bought. Cleared when the batter changes.
+   */
+  private readonly armedSpends = new Set<SpendKind>();
+  private armedFor = '';
   /** Real seconds spent on the current windup, so it can never hang. */
   private windupElapsed = 0;
   /** The visible delivery runs before the sim releases the ball. */
@@ -652,13 +675,47 @@ export class GameView {
     }
   }
 
-  /** Number keys pick the pitch. Labelled in the HUD, so nothing is hidden. */
+  /** Number keys pick the pitch; Q/W/E propose a spend. Both labelled in the HUD. */
   private readonly onKeyDown = (e: KeyboardEvent): void => {
     const i = KINDS.indexOf(KINDS[Number(e.key) - 1]);
     if (Number(e.key) >= 1 && Number(e.key) <= KINDS.length && i >= 0) {
       this.pitchKind = KINDS[Number(e.key) - 1];
     }
+    const spend = SPEND_KINDS.find((k) => SPEND_CARDS[k].key === e.key.toUpperCase());
+    if (spend) this.proposeSpend(spend);
   };
+
+  /**
+   * Which spends the person could buy for the coming pitch, or none.
+   *
+   * The tray's whole policy, and it only asks the sim's own questions: is the
+   * feature on (`frame.juice` is null otherwise), is this a beat before a
+   * windup (`windup`, or the `between` beat of the same half — never the
+   * third-out one, whose next windup is the other half's), does the kind
+   * belong to the role the person has this half, is it not already armed,
+   * and can the person's meter afford it by `canSpend`. Nothing here knows a
+   * cost; the sim re-checks every proposal regardless.
+   */
+  private affordableSpends(): SpendKind[] {
+    const f = this.frame;
+    if (!f || !f.juice) return [];
+    if (this.controlMode === 'watch') return [];
+    const before = f.phase === 'windup' || (f.phase === 'between' && f.outs < 3);
+    if (!before) return [];
+    const controls = controlsAt(this.controlMode, f.half);
+    const meter = { value: f.juice[this.humanSide] };
+    return SPEND_KINDS.filter((k) => {
+      const role = spendSide(k) === 'batting' ? controls.bat : controls.field;
+      return role && !this.armedSpends.has(k) && canSpend(meter, k);
+    });
+  }
+
+  /** Propose a spend for the next windup. The sim decides; the view only asks. */
+  private proposeSpend(kind: SpendKind): void {
+    if (!this.affordableSpends().includes(kind)) return;
+    this.inputs.spend = kind;
+    this.tapped('spend');
+  }
 
   async start(): Promise<void> {
     // One library for the entire roster. A missing/corrupt delivery is a
@@ -1049,16 +1106,25 @@ export class GameView {
             this.spawnImpactBurst(e.launch.heightFt, strength);
             this.impactPunch = strength;
           }
+          // The tray reads what the sim actually BOUGHT for the person's side,
+          // not what was tapped — a proposal the meter could not cover is
+          // silently ignored by the sim and must not read as armed here.
+          if (e.t === 'spend' && e.side === this.humanSide) this.armedSpends.add(e.kind);
           for (const fn of this.simEvent) fn(e);
         },
-        // The flags ride the spec. `stamina` is consumed by the sim (a tiring
-        // pitcher, `sim/stamina.ts`); the other three are seams until their
-        // ports land, and `game.test.ts` proves which is which. Headless runs
-        // never set this.
+        // The flags ride the spec. `stamina` (a tiring pitcher, `sim/stamina.ts`)
+        // and `juice` (the meter and its spends, `sim/juice.ts`) are consumed
+        // by the sim; the other two are seams until their ports land, and
+        // `game.test.ts` proves which is which. Headless runs never set this.
         features: this.featureFlags,
+        // The juice port must not spend the PERSON's meter for them; a watcher
+        // has no side, so both are the CPU's.
+        humanSide: this.controlMode === 'watch' ? undefined : this.humanSide,
       },
       makeRng(seed)
     );
+    this.armedSpends.clear();
+    this.armedFor = '';
     this.currentSeed = seed;
     this.ended = false;
     this.callouts.reset();
@@ -1309,6 +1375,10 @@ export class GameView {
     // The play this frame carried, read BEFORE the pump mutates the frame in
     // place: if the next frame is `between`, this play has just ended.
     const ending = this.frame?.phase === 'live' ? this.frame.play : null;
+    // A spend proposed on the between beat must survive to the windup that
+    // reads it, and is consumed there — the windup is the ONE frame the sim
+    // reads `spend` on, so it is cleared exactly when that frame is advanced.
+    const wasWindup = this.frame?.phase === 'windup';
     const r = this.game.next(this.inputs);
     // ★ THE ONE-SHOTS ARE CONSUMED, the pointer is not — WITHIN ONE PLAY. A
     // dive or a throw is an instant; steering is a state that persists until
@@ -1320,7 +1390,10 @@ export class GameView {
     // own chase, so a passive defence fields at CPU strength and the half
     // ends itself.
     const stillLive = !r.done && (r.value as LiveFrame).phase === 'live';
-    this.inputs = { pointer: stillLive ? this.inputs.pointer : undefined };
+    this.inputs = {
+      pointer: stillLive ? this.inputs.pointer : undefined,
+      spend: wasWindup ? undefined : this.inputs.spend,
+    };
     if (r.done) {
       this.frame = null;
       // ★ ONCE. The tick loop keeps running after the game ends (the park is
@@ -1334,6 +1407,12 @@ export class GameView {
       return;
     }
     this.frame = r.value;
+    // A spend is armed for ONE plate appearance (`sim/juice.ts`); a new
+    // batter means the tray may offer it again.
+    if (this.frame.batterId !== this.armedFor) {
+      this.armedFor = this.frame.batterId;
+      this.armedSpends.clear();
+    }
     if (this.frame.phase === 'pitch') this.pitchElapsed = 0;
     if (this.frame.phase === 'pitch') this.cpuSwingStarted = false;
     if (this.frame.phase === 'windup') {
@@ -1842,6 +1921,27 @@ export class GameView {
       this.pickerEl?.appendChild(card);
     });
     hud.appendChild(this.pickerEl);
+    // The spend tray (`features.juice`): the picker's mirror on the left
+    // edge, built once like everything here and shown by `paintHud` only on
+    // the beats before a windup when the person's meter can buy something.
+    this.trayEl = document.createElement('div');
+    this.trayEl.className = 'spend-tray';
+    for (const kind of SPEND_KINDS) {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'spend-chip interactive';
+      chip.dataset.spend = kind;
+      const art = SPEND_CARDS[kind];
+      chip.innerHTML =
+        `<span class="spend-chip__icon">${art.icon}</span>` +
+        `<span class="spend-chip__name">${art.label}</span>` +
+        `<kbd class="spend-chip__key">${art.key}</kbd>`;
+      chip.hidden = true;
+      chip.addEventListener('pointerdown', () => this.proposeSpend(kind));
+      this.trayChips.set(kind, chip);
+      this.trayEl.appendChild(chip);
+    }
+    hud.appendChild(this.trayEl);
   }
 
   private paintHud(frame: LiveFrame): void {
@@ -1871,6 +1971,20 @@ export class GameView {
       // sim's (`stamina.ts`), never restated here.
       frame.stamina !== null && isTired({ stamina: frame.stamina })
     );
+    // The tray: open when the person could buy something for the coming
+    // pitch, each chip shown only while affordable, and read as armed once
+    // the sim's own event said the meter paid for it.
+    if (this.trayEl) {
+      const affordable = this.affordableSpends();
+      const open = affordable.length > 0 || (frame.juice !== null && this.armedSpends.size > 0 && frame.phase !== 'live');
+      this.trayEl.classList.toggle('is-open', open);
+      for (const [kind, chip] of this.trayChips) {
+        const armed = this.armedSpends.has(kind);
+        chip.hidden = !(affordable.includes(kind) || armed);
+        chip.classList.toggle('is-armed', armed);
+        chip.classList.toggle('is-picked', this.inputs.spend === kind);
+      }
+    }
     // ★ THE PICKER IS SHOWN, NOT HIDDEN BEHIND A KEYBINDING NOBODY KNOWS.
     if (!this.pickerEl) return;
     this.pickerEl.classList.toggle('is-open', this.onTheMound);

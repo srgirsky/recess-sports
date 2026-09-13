@@ -242,6 +242,15 @@ export interface PitchInFlight {
  * intent has no channel — this repo has shipped an unread field before (PR 8's
  * count and hit type), and "a field nobody reads is a field nobody can trust".
  */
+/**
+ * What the meter bought this plate appearance (`features.juice`). Only the
+ * batting side's power swing reaches the plate model; the other two spends
+ * are the play's. Omitted is an ordinary swing.
+ */
+export interface SwingBoost {
+  power: boolean;
+}
+
 export interface HumanSwing {
   /** Seconds into the flight at which they swung. */
   atSec: number;
@@ -312,7 +321,8 @@ export function resolvePitch(
   inFlight: PitchInFlight,
   spec: PitchSpec,
   rng: Rng,
-  human?: HumanSwing
+  human?: HumanSwing,
+  boost?: SwingBoost
 ): PitchResult {
   const { kind: pitchKind, release: released, crossing, travelSec, plateSpeedFts } = inFlight;
   const plate = spec.plate ?? resolvePlate();
@@ -323,7 +333,17 @@ export function resolvePitch(
   // quietly acquires different physics from the CPU's.
   const offer = (timingErrorSec: number, undercutFt: number): PitchResult => {
     const swing = resolveSwing(
-      { timingErrorSec, undercutFt, batter: spec.batter, travelSec, pitchSpeedFts: plateSpeedFts, plate },
+      {
+        timingErrorSec,
+        undercutFt,
+        batter: spec.batter,
+        travelSec,
+        pitchSpeedFts: plateSpeedFts,
+        plate,
+        // The power swing grades the CPU's and a person's timing alike —
+        // one offer, one physics, the rule this closure exists for.
+        power: boost?.power ?? false,
+      },
       rng.fork('swing')
     );
     const base = { crossing, pitch: pitchKind, travelSec, release: released, timingErrorSec };

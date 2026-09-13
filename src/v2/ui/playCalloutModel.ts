@@ -8,8 +8,16 @@
 // ---------------------------------------------------------------------------
 
 import type { SimEvent } from '../sim/game';
+import type { SpendKind } from '../sim/juice';
 
-export type PlayCalloutKind = 'ball' | 'strike' | 'foul' | 'safe' | 'out' | 'homer';
+export type PlayCalloutKind = 'ball' | 'strike' | 'foul' | 'safe' | 'out' | 'homer' | 'spend';
+
+/** What each spend is called over the field — an icon carries it; the word is short. */
+const SPEND_LABELS: Record<SpendKind, string> = {
+  powerSwing: '💥 POWER SWING!',
+  turboLegs: '💨 TURBO LEGS!',
+  goldenGlove: '🧤 GOLDEN GLOVE!',
+};
 
 export interface PlayCalloutModel {
   kind: PlayCalloutKind;
@@ -50,6 +58,7 @@ export function playCalloutFor(e: SimEvent): PlayCalloutModel | null {
   }
 
   if (e.t === 'pa') return null;
+  if (e.t === 'spend') return { kind: 'spend', label: SPEND_LABELS[e.kind], detail: null };
   if (e.foul) return { kind: 'foul', label: 'FOUL', detail: timingDetail(e.timingErrorSec) };
   if (e.hit === 'HR') return { kind: 'homer', label: 'HOME RUN!', detail: 'TOUCH ’EM ALL' };
   if (e.hit === 'out') return { kind: 'out', label: 'OUT', detail: e.flyCaught ? 'NICE CATCH' : null };
