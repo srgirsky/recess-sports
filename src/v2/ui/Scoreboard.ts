@@ -71,27 +71,47 @@ class PipRow {
   }
 }
 
-/** One team's name and runs. */
+/**
+ * One team's name and runs — and, under `features.juice`, its meter.
+ *
+ * The meter is a track with a fill whose width is the fraction, in flow under
+ * the name so the row grows by one thin line rather than a badge overhanging
+ * the strip; `[hidden]` collapses it when the feature is off, and the fill
+ * only repaints when the fraction changes (the PipRow rule: diff, never
+ * rebuild). Non-interactive like everything else here — the SPENDING lives
+ * in the tray, which is `.interactive`.
+ */
 class SideRow {
   readonly root: HTMLElement;
   private readonly nameEl: HTMLElement;
   private readonly runsEl: HTMLElement;
   private readonly markEl: HTMLElement;
-  private last = { name: '', runs: -1, batting: false };
+  private readonly juiceEl: HTMLElement;
+  private readonly juiceFill: HTMLElement;
+  private last = { name: '', runs: -1, batting: false, juice: -1 as number | null };
 
   constructor() {
     this.root = el('div', 'sb-side');
     this.markEl = el('span', 'sb-side__mark', '▶');
     this.nameEl = el('span', 'sb-side__name');
     this.runsEl = el('span', 'sb-side__runs');
-    this.root.append(this.markEl, this.nameEl, this.runsEl);
+    this.juiceEl = el('span', 'sb-side__juice');
+    this.juiceEl.setAttribute('aria-label', 'juice');
+    this.juiceFill = el('i', 'sb-side__juice-fill');
+    this.juiceEl.appendChild(this.juiceFill);
+    this.juiceEl.hidden = true;
+    this.root.append(this.markEl, this.nameEl, this.runsEl, this.juiceEl);
   }
 
-  set(name: string, runs: number, batting: boolean): void {
+  set(name: string, runs: number, batting: boolean, juice: number | null): void {
     if (name !== this.last.name) this.nameEl.textContent = name;
     if (runs !== this.last.runs) this.runsEl.textContent = String(runs);
     if (batting !== this.last.batting) this.root.classList.toggle('is-batting', batting);
-    this.last = { name, runs, batting };
+    if (juice !== this.last.juice) {
+      this.juiceEl.hidden = juice === null;
+      if (juice !== null) this.juiceFill.style.inlineSize = `${Math.round(juice * 100)}%`;
+    }
+    this.last = { name, runs, batting, juice };
   }
 }
 
@@ -137,8 +157,8 @@ export class Scoreboard {
   }
 
   update(m: ScoreboardModel): void {
-    this.away.set(m.away.name, m.away.runs, m.away.batting);
-    this.home.set(m.home.name, m.home.runs, m.home.batting);
+    this.away.set(m.away.name, m.away.runs, m.away.batting, m.juice ? m.juice.away : null);
+    this.home.set(m.home.name, m.home.runs, m.home.batting, m.juice ? m.juice.home : null);
 
     const inning = `${halfMark(m.half)}${m.inning}`;
     if (inning !== this.last.inning) this.inningEl.textContent = inning;

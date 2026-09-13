@@ -63,11 +63,14 @@ const PORT = 5178;
 // `log=1`: the playtest session log's `⬇ LOG` button is mounted in `#hud`
 // only when asked for, so without this the audit could never measure it —
 // the same hole the pause button sat in before `main.ts` wired it here.
-// `features=stamina`: the held stamina port's sweat pip lives on the matchup
-// plate and only exists with the flag on, so the game scenarios run with it
-// and the `tired pitcher` state below pumps until it shows. The other flags
-// stay off here until their ports land a box to measure.
-const GAME_URL = `http://localhost:${PORT}/v2/?play=1&seed=audit&break=1&log=1&features=stamina`;
+// `features=all`: every held port's chrome only exists with its flag on, so
+// the game scenarios run with all of them — the stamina sweat pip on the
+// matchup plate (the `tired pitcher` state pumps until it shows), the juice
+// meters on the scoreboard strip in every state, and the spend tray on the
+// left edge (the `spend tray` state pumps until the person's side can afford
+// a chip). The two unported flags parse and change nothing yet; when a port
+// lands a box, the state that reaches it goes below.
+const GAME_URL = `http://localhost:${PORT}/v2/?play=1&seed=audit&break=1&log=1&features=all`;
 const APP_URL = `http://localhost:${PORT}/v2/`;
 
 /** A gate that can hang is worse than no gate — it burns a runner in silence.
@@ -192,6 +195,18 @@ const STATES = [
     name: 'tired pitcher',
     until: (f) => f.phase === 'windup' && f.stamina !== null && f.stamina < 0.45,
     mustSee: (vp) => (vp.height <= 430 ? '.sb' : '.matchup-chip__sweat'),
+  },
+  {
+    // The juice port's tray (`&features=all` above): chips on the left edge
+    // once the PERSON's side — away, on `?play=1` — can afford the cheapest
+    // spend (40 of 100; `sim/juice.ts` is the authority, this is the reach
+    // condition). The CPU never spends away's meter, so it only grows, and
+    // `f.juice` is null with the flag off so a null fails to reach rather
+    // than passing over an empty rail. On the bottom half the tray and the
+    // picker are open together, which is exactly the collision to measure.
+    name: 'spend tray',
+    until: (f) => f.phase === 'windup' && f.juice !== null && f.juice.away >= 40,
+    mustSee: '.spend-tray.is-open',
   },
 ];
 

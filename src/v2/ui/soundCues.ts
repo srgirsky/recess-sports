@@ -116,6 +116,10 @@ export function cuesForEvent(e: SimEvent): Cue[] {
     }
   }
 
+  // A spend is a beat worth cheering: the meter a kid filled just bought
+  // something, and the same crowd that greets a hit greets that.
+  if (e.t === 'spend') return ['cheer'];
+
   // Contact — the ball that was actually put in play, or fouled away.
   if (e.foul) return ['crack', 'call:foul'];
   const cues: Cue[] = ['crack'];
@@ -177,6 +181,8 @@ export function announceFor(e: SimEvent): { kind: AnnounceKind; priority: 1 | 2 
   // `pa` restatement is for tallies, and announcing it would say everything
   // twice.
   if (e.t === 'pa') return null;
+  // The tray's callout names the spend; the booth has no line for it.
+  if (e.t === 'spend') return null;
 
   // ★ A FOUL IS NOT A MOMENT. It is the most common contact event there is, and
   // a booth that calls every one of them says nothing else all game.

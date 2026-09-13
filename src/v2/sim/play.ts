@@ -55,8 +55,9 @@
 // ---------------------------------------------------------------------------
 
 import type { Character } from '../../data/types';
-import { DEFENSE, PLAY, resolvePlate, type PlateOverrides, type PlateParams } from './params';
+import { DEFENSE, JUICE, PLAY, resolvePlate, type PlateOverrides, type PlateParams } from './params';
 import type { Features } from './features';
+import type { SpendKind } from './juice';
 import { reachFt, sprintTimeForFt } from './athletes';
 import { launch, type LaunchSpec } from './launch';
 import type { BallState } from './flight';
@@ -190,6 +191,14 @@ export interface PlayInputs {
    * never sees either.
    */
   pitch?: PitchPlan;
+  /**
+   * A person spending the meter (`features.juice`, `sim/juice.ts`), proposed
+   * on the `windup` frame beside `pitch`. The view only PROPOSES: the sim
+   * checks `canSpend` against its own meter and ignores what it cannot
+   * afford, so a stale tray cannot buy anything. Here for the reason `pitch`
+   * is: one input type for the whole live loop. `stepPlay` never sees it.
+   */
+  spend?: SpendKind;
 }
 
 export interface PlayState {
@@ -245,6 +254,13 @@ export interface PlayState {
   /** Resolved retune constants for this play. */
   tune: PlateParams;
   /**
+   * The golden glove (`PlaySpec.boost`): the drop roll is STILL DRAWN, so the
+   * `drop` substream is exactly where it would have been, and only the
+   * verdict is overridden. A spend that skipped the draw would shift every
+   * later drop in the play, and a feature that is off must not be able to.
+   */
+  sureHands: boolean;
+  /**
    * Who the batter is.
    *
    * ★ BY IDENTITY, NEVER BY BASE. `retireBatterOnCatch` used to find him with
@@ -295,6 +311,15 @@ export interface PlaySpec {
   plate?: PlateOverrides;
   /** The held features (`features.ts`). Nothing reads it yet; omit for all off. */
   features?: Features;
+  /**
+   * What the meter bought for this ball in play (`features.juice`): turbo
+   * legs scale every batting-side runner's top speed by
+   * `JUICE.TURBO_SPEED_MULT`; the golden glove adds
+   * `JUICE.GLOVE_REACH_BONUS_FT` to every fielder and sets `sureHands`.
+   * Omitted is an ordinary play — the athletes are exactly `makeRunner` and
+   * `makeFielder`, which is what the one-kid-speed lint asserts.
+   */
+  boost?: { turboLegs?: boolean; goldenGlove?: boolean };
 }
 
 // --- Setup ------------------------------------------------------------------
@@ -309,6 +334,11 @@ export function beginPlay(spec: PlaySpec, rng: Rng): PlayState {
     ...(spec.runners ?? []).map((r) => makeRunner(r.char, r.base, 0)),
     makeRunner(spec.batter, 0, 0),
   ];
+  // The spends, applied AT THE BOOST SITE and nowhere else: `makeRunner` and
+  // `makeFielder` stay the one kid speed, and a multiplier on top of it is a
+  // fact about this play rather than a second constant for a kid's legs.
+  if (spec.boost?.turboLegs) for (const r of runners) r.topFts *= JUICE.TURBO_SPEED_MULT;
+  if (spec.boost?.goldenGlove) for (const f of fielders) f.reachBonusFt = JUICE.GLOVE_REACH_BONUS_FT;
 
   const trace = traceLooseBall(ball, spec.geo, {
     horizonSec: DEFENSE.CHASE_HORIZON_SEC,
@@ -346,6 +376,7 @@ export function beginPlay(spec: PlaySpec, rng: Rng): PlayState {
     events: [],
     rng: { drop: rng.fork('drop'), wild: rng.fork('wild') },
     tune,
+    sureHands: spec.boost?.goldenGlove ?? false,
     batterId: spec.batter.id,
   };
 
@@ -759,7 +790,9 @@ function tryGrab(s: PlayState): void {
   // catchable in this last fraction of its flight" — a timing constant standing
   // in for the geometry `canReach` now has.
   const isFly = s.landedAtSec === null && s.ballPhase === 'flight';
-  if (!tryCatch(f, isFly ? 'fly' : 'grounder', s.rng.drop, s.tune.dropBase)) {
+  // The roll is drawn whether or not the glove is golden — see `sureHands`.
+  const stuck = tryCatch(f, isFly ? 'fly' : 'grounder', s.rng.drop, s.tune.dropBase) || s.sureHands;
+  if (!stuck) {
     fumble(f, s.elapsedSec);
     s.ball = settleBallAt(s.ball, s.geo);
     s.ballPhase = 'atRest';

@@ -87,6 +87,12 @@ export interface FielderState {
   /** Sim seconds the dive's reach bonus expires, or null. */
   diveUntilSec: number | null;
   hasBall: boolean;
+  /**
+   * Feet added to this kid's reach for the play — the golden glove
+   * (`features.juice`, `JUICE.GLOVE_REACH_BONUS_FT`). Zero for everyone
+   * unless `beginPlay` was told the fielding side spent, and `x + 0` is exact.
+   */
+  reachBonusFt: number;
 }
 
 export function makeFielder(
@@ -114,6 +120,7 @@ export function makeFielder(
     fumbleUntilSec: -1,
     diveUntilSec: null,
     hasBall: false,
+    reachBonusFt: 0,
   };
 }
 
@@ -170,7 +177,7 @@ export function stepFielder(
  */
 export function reachOf(f: FielderState, nowSec: number): number {
   const diving = f.diveUntilSec !== null && nowSec < f.diveUntilSec;
-  return reachFt() + (diving ? DEFENSE.DIVE_REACH_FT : 0);
+  return reachFt() + f.reachBonusFt + (diving ? DEFENSE.DIVE_REACH_FT : 0);
 }
 
 /**
@@ -214,7 +221,7 @@ export function canReach(f: FielderState, ball: Vec3, nowSec: number): boolean {
  */
 export function couldReachDiving(f: FielderState, ball: Vec3, nowSec: number): boolean {
   if (isFrozen(f, nowSec) || f.diveUntilSec !== null) return false;
-  return withinReach(f, ball, reachFt() + DEFENSE.DIVE_REACH_FT);
+  return withinReach(f, ball, reachFt() + f.reachBonusFt + DEFENSE.DIVE_REACH_FT);
 }
 
 /** The catch envelope at an explicit reach: cylinder below the chest, sphere above. */

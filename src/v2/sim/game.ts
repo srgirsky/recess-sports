@@ -39,6 +39,8 @@ import { resolvePlate, type PlateOverrides, type PlateParams } from './params';
 import type { Features } from './features';
 import { drainPitch, effectivePitching, newStamina } from './stamina';
 import type { StaminaState } from './stamina';
+import { addJuice, cpuWantsSpend, newJuice, spend, spendSide } from './juice';
+import type { JuiceGain, JuiceState, SpendKind } from './juice';
 import {
   beginPlay,
   finishPlay,
@@ -122,6 +124,16 @@ export type SimEvent =
       batterId: string;
       pitcherId: string;
       result: 'k' | 'walk' | 'hit' | 'out';
+    }
+  | {
+      /**
+       * A side spent its juice (`features.juice`, `sim/juice.ts`) — a person's
+       * proposal the sim could afford, or the CPU's roll. Fired on the windup
+       * it was bought in; the effect lasts the plate appearance.
+       */
+      t: 'spend';
+      side: 'away' | 'home';
+      kind: SpendKind;
     };
 
 /**
@@ -233,6 +245,13 @@ export interface LiveFrame {
    * threshold is `stamina.ts`'s, not the view's.
    */
   stamina: number | null;
+  /**
+   * Both meters, 0..`JUICE.MAX` — or null when `features.juice` is off, for
+   * the reason `stamina` is null: a view must not mistake an empty meter for
+   * a feature that is not running. The HUD's bar and the spend tray read
+   * these; what a spend costs is `juice.ts`'s, never restated in the view.
+   */
+  juice: { away: number; home: number } | null;
 }
 
 export interface GameSpec {
@@ -259,12 +278,20 @@ export interface GameSpec {
   /**
    * The held features, if a playtest switched any on. Omitted means
    * `DEFAULT_FEATURES` — every one of them off. See `features.ts`. `stamina`
-   * is consumed (`playAtBatLive` sags the pitcher's stat from `Side.stamina`);
-   * the other three are still seams, and `game.test.ts` proves each case:
+   * is consumed (`playAtBatLive` sags the pitcher's stat from `Side.stamina`)
+   * and so is `juice` (`Side.juice`, charged and spent in the same function);
+   * the other two are still seams, and `game.test.ts` proves each case:
    * absent and the defaults fingerprint identically, the unported flags are
-   * inert, and `stamina: true` changes the game.
+   * inert, and each ported flag changes the game.
    */
   features?: Features;
+  /**
+   * Which side a PERSON is playing, if any — read only by the juice port,
+   * which must not spend that side's meter for them: a human proposes through
+   * `PlayInputs.spend` on the windup, and the CPU's roll runs for every OTHER
+   * side. Omitted (every headless run) means both sides are the CPU's.
+   */
+  humanSide?: 'away' | 'home';
 }
 
 export interface GameResult {
@@ -322,6 +349,33 @@ interface Side {
    * with the flag off it stays at 1 and nothing reads it.
    */
   stamina: StaminaState;
+  /**
+   * This side's juice meter. Charged by its own plays and spent on its own
+   * windups, only when `features.juice` is on; otherwise it stays at 0 and
+   * nothing reads it.
+   */
+  juice: JuiceState;
+}
+
+/**
+ * Everything one plate appearance needs to charge and spend the meters —
+ * null when `features.juice` is off, so the flag is asked once per PA and
+ * every site below is a one-line guard.
+ */
+interface JuiceArgs {
+  batting: 'away' | 'home';
+  meters: { away: JuiceState; home: JuiceState };
+  /** The person's side, whose meter the CPU never spends. Null: both CPU. */
+  human: 'away' | 'home' | null;
+  /** The score as this PA begins — the CPU's eagerness is keyed on it. */
+  scores: { away: number; home: number };
+}
+
+/** Copy both meters onto the frame, if the feature is on. */
+function syncJuice(frame: LiveFrame, meters: JuiceArgs['meters']): void {
+  if (!frame.juice) return;
+  frame.juice.away = meters.away.value;
+  frame.juice.home = meters.home.value;
 }
 
 /**
@@ -369,15 +423,58 @@ function* playAtBatLive(
     frame: LiveFrame;
     /** The fielding side's tank, or null when `features.stamina` is off. */
     stamina: StaminaState | null;
+    /** Both meters and who owns them, or null when `features.juice` is off. */
+    juice: JuiceArgs | null;
   },
   rng: Rng
 ): Generator<LiveFrame, void, PlayInputs> {
-  const { half, tally, stats, log, onEvent, frame, stamina } = args;
+  const { half, tally, stats, log, onEvent, frame, stamina, juice } = args;
   let pitches = 0;
   frame.batterId = args.batter.id;
   frame.pitcherId = args.pitcher.id;
   frame.defence = args.defence;
   frame.stamina = stamina ? stamina.stamina : null;
+
+  // ★ THE JUICE PORT, ALL OF IT IN ONE PLACE. `juice` is null with the flag
+  // off, so every site is a guard and a call; with it on, the fielding side
+  // is whoever is not batting, the spends bought on a windup stay ARMED for
+  // the rest of this plate appearance, and the CPU rolls off a fork nothing
+  // else reads — never drawn from when the flag is off, so the goldens hold.
+  const fielding: 'away' | 'home' = juice?.batting === 'away' ? 'home' : 'away';
+  const armed: Record<SpendKind, boolean> = { powerSwing: false, turboLegs: false, goldenGlove: false };
+  const juiceRng = juice ? rng.fork('juice') : null;
+  const charge = (side: 'away' | 'home', kind: JuiceGain): void => {
+    if (!juice) return;
+    addJuice(juice.meters[side], kind);
+    syncJuice(frame, juice.meters);
+  };
+  const buy = (side: 'away' | 'home', kind: SpendKind): void => {
+    if (!juice || armed[kind] || !spend(juice.meters[side], kind)) return;
+    armed[kind] = true;
+    syncJuice(frame, juice.meters);
+    log.push(`  ${side} spends ${kind}`);
+    onEvent?.({ t: 'spend', side, kind });
+  };
+  /** The windup's spending: the person's proposal, then the CPU's rolls. */
+  const decideSpends = (proposed: SpendKind | undefined): void => {
+    if (!juice || !juiceRng) return;
+    if (proposed) {
+      // The view only PROPOSES, and only for its own side: the sim checks the
+      // meter, and a proposal for the other side is not a person's to make.
+      const side = spendSide(proposed) === 'batting' ? juice.batting : fielding;
+      if (juice.human === null || side === juice.human) buy(side, proposed);
+    }
+    for (const side of ['away', 'home'] as const) {
+      if (side === juice.human) continue;
+      const other = side === 'away' ? 'home' : 'away';
+      const diff = juice.scores[side] - juice.scores[other];
+      const kinds: SpendKind[] = side === juice.batting ? ['powerSwing', 'turboLegs'] : ['goldenGlove'];
+      for (const kind of kinds) {
+        if (!armed[kind] && cpuWantsSpend(juice.meters[side], kind, diff, juiceRng)) buy(side, kind);
+      }
+    }
+  };
+  if (juice) syncJuice(frame, juice.meters);
 
   for (;;) {
     if (pitches++ >= GAME.MAX_PITCHES_PER_PA) {
@@ -391,8 +488,13 @@ function* playAtBatLive(
     frame.play = null;
     frame.pitch = null;
     // The mound's decision, if a person is making it. A CPU pitcher passes
-    // nothing and `choosePitch` runs exactly as before.
-    const chosen = ((yield frame) ?? {}).pitch;
+    // nothing and `choosePitch` runs exactly as before. The same frame carries
+    // a person's spend, which is decided here — BEFORE the throw, because a
+    // power swing changes how this pitch is graded and turbo legs change who
+    // runs on it.
+    const windupInput = (yield frame) ?? {};
+    const chosen = windupInput.pitch;
+    decideSpends(windupInput.spend);
     syncFrame(frame, half, 'pitch');
     // ★ THE PITCH IS THROWN, YIELDED, AND ONLY THEN JUDGED — and that ordering
     // is the whole architectural change. `pitchAndSwing` did all three in one
@@ -449,7 +551,10 @@ function* playAtBatLive(
     // `swing` exactly as before; a human draws neither, which again shifts
     // nothing for anybody else.
     const swing = ((yield frame) ?? {}).swing;
-    const result = resolvePitch(inFlight, spec, pitchRng, swing);
+    // Undefined unless a power swing is armed — `resolveSwing` then reads
+    // `power: false`, and the ordinary arithmetic is untouched.
+    const boost = armed.powerSwing ? { power: true } : undefined;
+    const result = resolvePitch(inFlight, spec, pitchRng, swing, boost);
 
     // ★ THE COUNT IS READ BEFORE THE FOLD. `applyAtBat` resets it to 0-0 on
     // every batter-done branch, so an observer told afterwards would see every
@@ -469,7 +574,10 @@ function* playAtBatLive(
     );
     if (steal) {
       tally.stealAttempts += 1;
-      if (steal.safe) tally.stealsSafe += 1;
+      if (steal.safe) {
+        tally.stealsSafe += 1;
+        if (juice) charge(juice.batting, 'steal');
+      }
       log.push(steal.line);
     }
 
@@ -507,6 +615,7 @@ function* playAtBatLive(
         tally.plateAppearances += 1;
         stats.push({ t: 'atBat', kid: args.batter.id });
         stats.push({ t: 'kThrown', kid: args.pitcher.id });
+        charge(fielding, 'kThrown');
         log.push(`  ${args.batter.name} strikes out`);
         onEvent?.({ t: 'pa', batterId: args.batter.id, pitcherId: args.pitcher.id, result: 'k' });
       } else {
@@ -536,6 +645,9 @@ function* playAtBatLive(
         geo: args.geo,
         // The same resolved tune the plate used — one seam, both sides.
         plate: args.plate,
+        // Undefined with the flag off, so `beginPlay` builds the athletes
+        // exactly as the one-kid-speed lint asserts.
+        boost: juice ? { turboLegs: armed.turboLegs, goldenGlove: armed.goldenGlove } : undefined,
       },
       rng.fork(`play${pitches}`),
       frame,
@@ -570,6 +682,7 @@ function* playAtBatLive(
       foul: false,
       timingErrorSec: result.timingErrorSec,
     });
+    if (outcome.flyCaught) charge(fielding, 'flyCaught');
     // ★ TAKE THE IDENTITIES BEFORE FOLDING. `applyLivePlay` reads four fields
     // and `baseIds` is not one of them.
     half.occupants = [...outcome.baseIds] as [string | null, string | null, string | null];
@@ -581,8 +694,10 @@ function* playAtBatLive(
     stats.push({ t: 'atBat', kid: args.batter.id });
     if (!outcome.batterOut) {
       tally.hits += 1;
-      stats.push({ t: 'hit', kid: args.batter.id, homer: scored.includes(args.batter.id) });
-      if (scored.includes(args.batter.id)) tally.homeRuns += 1;
+      const homer = scored.includes(args.batter.id);
+      stats.push({ t: 'hit', kid: args.batter.id, homer });
+      if (homer) tally.homeRuns += 1;
+      if (juice) charge(juice.batting, homer ? 'homer' : 'hit');
     }
     onEvent?.({
       t: 'pa',
@@ -593,7 +708,10 @@ function* playAtBatLive(
     // ★ RUN ATTRIBUTION COMES OFF THE PLAY, NOT THE FOLD. `applyLivePlay`
     // returns a count of runs and drops `baseIds` entirely, so a run folded
     // through it has no owner. The play's own `score` events do.
-    for (const id of scored) stats.push({ t: 'run', kid: id });
+    for (const id of scored) {
+      stats.push({ t: 'run', kid: id });
+      if (juice) charge(juice.batting, 'run');
+    }
     log.push(
       `  ${args.batter.name}: ${outcome.description.replace('\n', ' ')}` +
         (folded.runsScored ? ` (${folded.runsScored} in)` : '')
@@ -799,6 +917,7 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
     lineupIdx: 0,
     score: 0,
     stamina: newStamina(),
+    juice: newJuice(),
   });
   const away = mk(spec.away);
   const home = mk(spec.home);
@@ -833,6 +952,7 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
     play: null,
     pitch: null,
     stamina: null,
+    juice: spec.features?.juice ? { away: 0, home: 0 } : null,
   };
 
   for (;;) {
@@ -861,6 +981,19 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
           frame,
           // CPU pitchers tire too: the flag is per game, not per side.
           stamina: spec.features?.stamina ? field.stamina : null,
+          // Both meters, and whose is a person's; the score as of now, for
+          // the CPU's eagerness.
+          juice: spec.features?.juice
+            ? {
+                batting: half === 'top' ? 'away' : 'home',
+                meters: { away: away.juice, home: home.juice },
+                human: spec.humanSide ?? null,
+                scores: {
+                  away: away.score + (half === 'top' ? hs.score : 0),
+                  home: home.score + (half === 'bottom' ? hs.score : 0),
+                },
+              }
+            : null,
         },
         rng.fork(`${inning}${half}${bat.lineupIdx}`)
       );

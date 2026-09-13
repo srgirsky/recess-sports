@@ -21,6 +21,7 @@
 // ---------------------------------------------------------------------------
 
 import type { LiveFrame } from '../sim/game';
+import { JUICE } from '../sim/params';
 
 /**
  * How many slots a pip row draws, and how many are lit.
@@ -70,6 +71,14 @@ export interface ScoreboardModel {
    * why it is on the model rather than left to the view.
    */
   you: 'bat' | 'pitch' | null;
+  /**
+   * Each side's juice meter as a FRACTION of full, or null when
+   * `features.juice` is off — copied off the frame, never the frame's own
+   * object, so the view's diff compares values and not a reference to the
+   * thing being mutated. The ceiling is `JUICE.MAX`'s; nothing here restates
+   * what a spend costs.
+   */
+  juice: { away: number; home: number } | null;
 }
 
 /** Which side bats in this half. Away bats the top; it is the only rule here. */
@@ -112,6 +121,7 @@ export function scoreboardModel(
     batter: names(frame.batterId),
     pitcher: names(frame.pitcherId),
     you,
+    juice: frame.juice ? { away: frame.juice.away / JUICE.MAX, home: frame.juice.home / JUICE.MAX } : null,
   };
 }
 

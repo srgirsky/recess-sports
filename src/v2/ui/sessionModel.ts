@@ -39,7 +39,9 @@ export type InputVerb =
   | 'throwTo'
   | 'dive'
   | 'sendRunner'
-  | 'holdRunner';
+  | 'holdRunner'
+  /** A spend PROPOSED from the juice tray (`features.juice`); the sim decides. */
+  | 'spend';
 
 export const INPUT_VERBS: ReadonlyArray<InputVerb> = Object.freeze([
   'pointer',
@@ -50,6 +52,7 @@ export const INPUT_VERBS: ReadonlyArray<InputVerb> = Object.freeze([
   'dive',
   'sendRunner',
   'holdRunner',
+  'spend',
 ] as const);
 
 export interface SessionCounts {

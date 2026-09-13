@@ -149,6 +149,7 @@ body {
   color: #66bfff;
 }
 .play-callout.is-foul .play-callout__label,
+.play-callout.is-spend .play-callout__label,
 .play-callout.is-homer .play-callout__label {
   color: var(--gold);
 }
@@ -267,6 +268,29 @@ body.screen-open .play-callout {
   font-size: 1.35rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+/* The juice meter (`features.juice`): a thin track under the name, in flow
+   so the row grows by this line and the audit measures the grown strip;
+   `[hidden]` collapses it when the feature is off. The fill is the only
+   thing that moves, and a gold fill on a dark track reads from across the
+   room without a number. */
+.sb-side__juice {
+  grid-column: 2 / 4;
+  block-size: 0.34rem;
+  border-radius: 0.2rem;
+  border: 0.08rem solid rgb(20 32 46 / 0.28);
+  background: rgb(20 32 46 / 0.12);
+  overflow: hidden;
+}
+.sb-side__juice[hidden] {
+  display: none;
+}
+.sb-side__juice-fill {
+  display: block;
+  block-size: 100%;
+  inline-size: 0%;
+  background: var(--gold);
+  transition: inline-size 180ms ease;
 }
 
 /* ---- The middle block: inning, who is up, and what YOU are doing ---- */
@@ -478,6 +502,99 @@ body.screen-open .play-callout {
 .pitch-card.is-picked {
   background: var(--gold);
   transform: scale(1.07);
+}
+
+/* ---------------------------------------------------------------------------
+ * The spend tray (`features.juice`, a held feature) — the picker's mirror on
+ * the LEFT edge: chips for what the meter can buy right now, shown only on
+ * the windup and the between beat before it (the beats with nothing to
+ * steer), and only when the person's side can afford at least one. Same
+ * sticker language, same svh breathing, same `.interactive` floor: a chip is
+ * a tap target so it sizes to `--tap-min` by the one rule every control
+ * shares. The tray PROPOSES; `sim/juice.ts` decides what it costs.
+ * ------------------------------------------------------------------------- */
+.spend-tray {
+  grid-area: left;
+  align-self: center;
+  justify-self: start;
+  margin-inline-start: var(--s4);
+  display: grid;
+  gap: clamp(0.3rem, 1.2svh, 0.75rem);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 120ms ease;
+}
+.spend-tray.is-open {
+  opacity: 1;
+  visibility: visible;
+  transition: none;
+}
+/* On a short landscape phone the matchup plate is `display: none` (above),
+   so the top-left row collapses and a stack of three chips centred in the
+   left cell rises into the pause button's corner — the audit caught the
+   overlap on its first run. There the chips flow as a ROW at the foot of
+   the cell instead, one chip tall, above the scoreboard and clear of the
+   corner the pause and the plate share everywhere else. */
+@media (max-height: 430px) {
+  .spend-tray {
+    grid-auto-flow: column;
+    align-self: end;
+    margin-block-end: var(--s2);
+  }
+}
+.spend-chip {
+  display: grid;
+  justify-items: center;
+  gap: clamp(0.02rem, 0.3svh, 0.1rem);
+  padding: clamp(0.2rem, 1svh, 0.5rem) var(--s3);
+  border-radius: var(--radius);
+  border: var(--stroke) solid var(--outline);
+  background: var(--gold);
+  color: var(--ink);
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 0.28rem 0 rgb(20 32 46 / 0.35);
+  transition: transform 100ms ease, background 100ms ease;
+}
+.spend-chip:nth-child(odd) {
+  rotate: 1.4deg;
+}
+.spend-chip:nth-child(even) {
+  rotate: -1.4deg;
+}
+.spend-chip[hidden] {
+  display: none;
+}
+.spend-chip__icon {
+  font-size: clamp(0.95rem, 4.2svh, 1.35rem);
+  line-height: 1.1;
+}
+.spend-chip__name {
+  font-size: clamp(0.45rem, 1.8svh, 0.58rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.spend-chip__key {
+  font-family: inherit;
+  font-size: clamp(0.4rem, 1.5svh, 0.5rem);
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.12rem 0.3rem;
+  border-radius: 0.35rem;
+  border: 1px solid rgb(20 32 46 / 0.35);
+  background: rgb(20 32 46 / 0.08);
+}
+@media (hover: none) and (pointer: coarse) {
+  .spend-chip__key {
+    display: none;
+  }
+}
+/* Armed for this plate appearance: the sim took the proposal (the meter
+   dropped), so the chip reads as spent until the next batter. */
+.spend-chip.is-armed {
+  background: var(--cream);
+  transform: scale(0.94);
+  opacity: 0.75;
 }
 
 /* ---------------------------------------------------------------------------
