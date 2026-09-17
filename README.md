@@ -146,7 +146,7 @@ To run a session, follow `docs/playtests/PROTOCOL.md`. In short:
    feature — the special pitches need the meter they are bought from, so their
    block carries `juice` too. Any `?features=` also switches the session log on.
 2. Watch, and write down behaviour. At the end of a block tap **⬇ LOG** (top
-   right, beside the speaker) to download `playtest-<n>.json` — pitches, the
+   right beside the speaker, or beside pause on short screens) to download `playtest-<n>.json` — pitches, the
    child's swings/whiffs/hits, outs made in the field, taps per verb, elapsed
    time, and how the session ended. The last twenty sessions also sit in that
    browser's `localStorage` under `recess_playtest_log`.
