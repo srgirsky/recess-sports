@@ -660,6 +660,58 @@ body.screen-open .play-callout {
 body.inning-break #hud > *:not(.inning-board):not(.btn--mute) {
   visibility: hidden;
 }
+
+/* ---- 📼 Instant replay ----------------------------------------------------
+ * Letterbox bars and a badge over the park while `GameView` plays a recorded
+ * play back in slow motion (`render/replayCues.ts`). Both are plain
+ * non-interactive HUD children: every tap falls through to the canvas, and
+ * the canvas's first rule under a replay is "skip", so there is no new tap
+ * target to size or audit. `body.replay` hides the rest of the HUD the way
+ * `body.inning-break` does — the frame is the play, not the strip over it.
+ * ------------------------------------------------------------------------- */
+.replay-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: clamp(28px, 9svh, 72px);
+  background: var(--ink, #14161a);
+  opacity: 0.92;
+}
+.replay-bar--top {
+  top: 0;
+}
+.replay-bar--bottom {
+  bottom: 0;
+}
+.replay-badge {
+  position: absolute;
+  top: calc(clamp(28px, 9svh, 72px) + var(--s3, 0.5rem));
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 0.15em;
+  color: var(--gold);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+}
+.replay-badge__label {
+  font-size: clamp(0.8rem, 3svh, 1.2rem);
+  animation: replay-blink 1.2s steps(2, jump-none) infinite;
+}
+.replay-badge__hint {
+  font-size: clamp(0.55rem, 2svh, 0.75rem);
+  opacity: 0.85;
+}
+@keyframes replay-blink {
+  50% {
+    opacity: 0.45;
+  }
+}
+body.replay #hud > *:not(.replay-bar):not(.replay-badge):not(.btn--mute) {
+  visibility: hidden;
+}
 .inning-board__caption {
   justify-self: center;
   font-size: clamp(0.6rem, 2.2svh, 0.8rem);
@@ -2250,6 +2302,15 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
 }
 .btn--log[hidden] {
   display: none;
+}
+/* The two-column special-pitch picker reaches the top-right controls on
+   short screens. Keep the observer's log beside pause in the clear left
+   corner; the spend tray occupies the bottom of that lane. */
+@media (max-height: 430px) {
+  .btn--log {
+    inset-inline-start: calc(env(safe-area-inset-left, 0px) + var(--s3) + var(--tap-min));
+    inset-inline-end: auto;
+  }
 }
 
 /* ---- The team picker ---- */

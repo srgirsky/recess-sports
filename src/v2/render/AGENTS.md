@@ -127,13 +127,12 @@ popping" checkable).
   quaternion track logs "unsupported interpolation" and silently falls back —
   console noise that invites believing the curve is smoothed when it is slerped.
 - **Nothing is blocked on the animator.** `render/proceduralClips.ts` ships stand-ins for
-  every clip name, deliberately correct about TIMING and CONTRACT and deliberately
-  not about look, so the director, the marker warp, the loop-seam check and the
-  review page all run today. A delivery replaces them CLIP BY CLIP — the director
-  prefers a delivered clip by name. Watch them at `/v2/?anims=1`, which labels the
-  clip under REVIEW and the clip actually PLAYING separately: a one-shot settles
-  into its `returnsTo` when it ends, and counting the settle clip's time against
-  the reviewed clip's frame count prints a frame past the end.
+  every clip name, correct about TIMING and CONTRACT, not about look, so the
+  director, the marker warp, the loop-seam check and the review page run. A
+  delivery replaces them CLIP BY CLIP, by name. `/v2/?anims=1` labels the clip under REVIEW and the clip PLAYING
+  separately: a one-shot settles into its `returnsTo`, so its time counted
+  against the reviewed clip reads a frame past the end.
+- **A replay SEEKS recorded clip state, never re-decides it** (`seek`).
 - **Character acting belongs in `performance.ts`; `AnimationDirector` joins body
   and face.** No call-site clip or expression policy.
 
@@ -228,4 +227,5 @@ propagation" simply cannot happen here.
 | `src/v2/render/Scenery.ts` | the merged neighborhood beyond the fence |
 | `src/v2/render/bridge.ts` | the single sim<->scene coupling point |
 | `src/v2/render/cameraCues.ts` | camera POLICY, pure |
+| `src/v2/render/replayCues.ts` | the instant replay, pure |
 | `spike/AnimSpike.ts` | `/v2/?anims=1`, the acceptance surface for the animation brief |

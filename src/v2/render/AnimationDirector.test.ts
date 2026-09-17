@@ -167,6 +167,55 @@ describe('the procedural stand-in library', () => {
   });
 });
 
+describe('seek — the instant replay puts a clip back where the tape recorded it', () => {
+  it('shows the recorded clip at the recorded time with no crossfade', () => {
+    const kid = proxy();
+    const dir = new AnimationDirector(kid.mesh, { fallback: clips });
+    dir.play('run');
+    dir.update(0.2);
+    dir.seek('catch_chest', 0.15);
+    expect(dir.playing).toBe('catch_chest');
+    expect(dir.action?.time).toBeCloseTo(0.15, 5);
+    expect(dir.action?.timeScale).toBe(1);
+    // Seeking the SAME clip moves only its time; nothing restarts.
+    dir.seek('catch_chest', 0.05);
+    expect(dir.playing).toBe('catch_chest');
+    expect(dir.action?.time).toBeCloseTo(0.05, 5);
+  });
+
+  it('clamps to the clip and unpauses a one-shot that had finished', () => {
+    const kid = proxy();
+    const dir = new AnimationDirector(kid.mesh, { fallback: clips });
+    dir.play('catch_chest');
+    const duration = byName.get('catch_chest')!.duration;
+    dir.update(duration + 1);
+    // The one-shot settled into its `returnsTo`; the replay wants it mid-motion again.
+    dir.seek('catch_chest', 0.5 * duration);
+    expect(dir.playing).toBe('catch_chest');
+    expect(dir.action?.paused).toBe(false);
+    expect(dir.action?.time).toBeCloseTo(0.5 * duration, 5);
+    dir.seek('catch_chest', duration * 3);
+    expect(dir.action?.time).toBeCloseTo(duration, 5);
+    dir.seek('catch_chest', -1);
+    expect(dir.action?.time).toBe(0);
+  });
+
+  it('keeps the bat and the mitt consequences of what is playing', () => {
+    const kid = proxy();
+    const bat = new Object3D();
+    const glove = new Object3D();
+    const dir = new AnimationDirector(kid.mesh, { fallback: clips, bat, glove });
+    dir.setGloveVisible(true);
+    expect(dir.gloveVisible).toBe(true);
+    dir.seek('swing_contact', 0.1);
+    expect(bat.visible).toBe(true);
+    expect(glove.visible).toBe(false);
+    dir.seek('catch_chest', 0.1);
+    expect(bat.visible).toBe(false);
+    expect(glove.visible).toBe(true);
+  });
+});
+
 describe('the Junebug vertical slice', () => {
   const pilot = buildJunebugPilotClips();
 

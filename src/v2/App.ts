@@ -122,6 +122,7 @@ export class App {
       this.sound.setBatter(this.lookup(f.batterId).name);
       this.sound.onFrame(f);
     });
+    this.game.onReplay((kind) => this.sound.onReplay(kind));
     this.game.onPauseRequest(() => this.pauseGame());
     new MuteButton(this.sound).mount();
     // The playtest log: a fourth read-only listener on the same streams,

@@ -72,9 +72,11 @@ const assets = join(repo, 'dist', 'assets');
  *                and log (`ui/sessionModel.ts`, `ui/sessionLog.ts`), the
  *                `⬇ LOG` button and the listener lists in `GameView`. 5kB
  *                for the thing every held feature is judged by.
+ *   Instant replay adds about 6kB for snapshot/seek and view-side playback
+ *   (`render/replayCues.ts`, bridge, director and `GameView`).
  */
 const V1_KB = 1909;
-const V2_KB = 1037;
+const V2_KB = 1038;
 const TOLERANCE = 0.02;
 
 /**

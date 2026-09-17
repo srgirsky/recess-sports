@@ -38,6 +38,9 @@
 //                   also turns the session log on.
 //   ?log=1          record the session (`ui/sessionLog.ts`) and show the
 //                   `⬇ LOG` download. Counts only; see docs/playtests/.
+//   ?replay=1|0     replay EVERY play (the presentation smoke's page) or none;
+//                   unset, the view replays the plays that earn one
+//                   (`render/replayCues.ts`) — in slow motion, never re-simulated.
 // ---------------------------------------------------------------------------
 
 import { App } from './App';
