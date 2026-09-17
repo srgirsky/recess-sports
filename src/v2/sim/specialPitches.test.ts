@@ -18,7 +18,7 @@
 // records what was measured here, including what the solve could NOT deliver.
 // ---------------------------------------------------------------------------
 
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import {
   PITCHES,
   PITCH_SPOTS,
@@ -50,9 +50,20 @@ const SPOTS = PITCH_SPOTS.map((s) => ({ aimLateralFt: s.lateral * HALF_W, aimHei
 
 /** Seven kinds x ten stats x nine spots is 630 solves at ~9ms each: fixture, warmed once. */
 const SOLVES = 60_000;
-beforeAll(() => {
-  for (const kind of KINDS) for (let stat = 1; stat <= 10; stat++) for (const s of SPOTS) releaseAtSpot({ kind, pitchingStat: stat, ...s });
+// CI runs this suite for about a minute. A continuous synchronous solve/test
+// chain starves Vitest's onTaskUpdate RPC replies even when every assertion
+// passes. Yield between warmup batches and tests; keep the full grid and all
+// assertion/hook deadlines unchanged.
+const yieldToRunner = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+beforeAll(async () => {
+  for (const kind of KINDS) {
+    for (let stat = 1; stat <= 10; stat++) {
+      for (const s of SPOTS) releaseAtSpot({ kind, pitchingStat: stat, ...s });
+      await yieldToRunner();
+    }
+  }
 }, SOLVES);
+beforeEach(yieldToRunner);
 
 describe('★ the specials are parameter sets in the one model', () => {
   it('are three, in a separate record, and PITCHES is still the four the CPU draws from', () => {
