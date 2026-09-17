@@ -281,8 +281,8 @@ The first-party Junebug character pass proves that partial path in production:
 `anims_nostrike_v1.glb` contains `idle`, `idle_fidget`, `run`, `bat_stance`,
 `swing_contact`, `swing_follow`, `cheer_fierce` and `upset_fierce`; every other
 name still resolves to the shared library. Regenerate it with
-`npm run export:pilot-performance` and review the eight `★` rows at
-`/v2/?anims=1&kid=nostrike`.
+`npm run export:signature-performance -- nostrike` and review the eight `★`
+rows at `/v2/?anims=1&kid=nostrike`.
 
 Big Talk Theo is the second complete pass. `anims_calls_shot_v1.glb` contains
 the same five high-frequency baseball clips plus `idle_fidget`, `pose_card`,

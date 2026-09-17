@@ -1,0 +1,1062 @@
+{
+  "version": 1,
+  "rule": "docs/v2/character-performance-brief.md § Acceptance 5 — the maintainer records performer/model/animation provenance before shipping; generated and system stand-ins are not final delivery.",
+  "maintainerFields": [
+    "recorded",
+    "animation.source",
+    "animation.performer",
+    "voice.performer"
+  ],
+  "characters": {
+    "ace_kid": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.ace_kid",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.ace_kid",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_ace_kid_v1.glb",
+        "takeSha256": "e71e2e2ec68318c2f75cd7e2843a8ec2c054a6f073b6cc4bf849c343516d1079",
+        "builder": "buildAcePilotClips",
+        "generator": "recess-sports Ace authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/ace_kid.mp3",
+        "runtimeSha256": "f0ec05600ac926b7732d89193391f36538de120571aff27c9c6f2053a9ceb5b2",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "bend_it": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.bend_it",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.bend_it",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_bend_it_v1.glb",
+        "takeSha256": "214d8d02e72948dee2e71670d26b1fb821f2512b9d0cdcfc50ebe7bf2a7f94a0",
+        "builder": "buildBendItPilotClips",
+        "generator": "recess-sports Bend-It authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/bend_it.mp3",
+        "runtimeSha256": "d73df3637e15e4c5767f7d2bfffda9b18a8250aa00c8e1640719f0d6b6405be4",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "big_lou": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.big_lou",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.big_lou",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_big_lou_v1.glb",
+        "takeSha256": "4a14628709264bfd22f705528c84e8239a9fe6a4646805eaed5993e2cc4d9703",
+        "builder": "buildBigLouPilotClips",
+        "generator": "recess-sports Big Lou authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "ai-voice-cast",
+        "cast": {
+          "voice": "am_liam",
+          "speed": 0.92,
+          "model": "onnx-community/Kokoro-82M-v1.0-ONNX",
+          "license": "Apache-2.0"
+        },
+        "generator": "kokoro-js@1.2.1",
+        "runtime": "public/v2/audio/voices/kids/big_lou.mp3",
+        "runtimeSha256": "a7501309106ad782880259368eacbad135f410632473d02b74535448a1bf941d",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "boomer": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.boomer",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.boomer",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_boomer_v1.glb",
+        "takeSha256": "6b896cc3fc32dd478b90caa6f40b1ee0e59d1e728feffa14867d309a8f128955",
+        "builder": "buildBoomerPilotClips",
+        "generator": "recess-sports Boomer authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/boomer.mp3",
+        "runtimeSha256": "3fc9828baae3b05f891c22f2ca179b01e3f0c43eb78bdb605c30d0707a15f73d",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "bubbles": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.bubbles",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.bubbles",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_bubbles_v1.glb",
+        "takeSha256": "775a7d8a343f13eff9c7c40af5e9b5c03bcc7c8d79aa28d1e205579fe2311273",
+        "builder": "buildBubblesPilotClips",
+        "generator": "recess-sports Bubbles authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/bubbles.mp3",
+        "runtimeSha256": "7e650193b6b756bc7fdf1fe80590b75162714c22e17e48884e9c3f943d6a6b22",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "calls_shot": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.calls_shot",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.calls_shot",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_calls_shot_v1.glb",
+        "takeSha256": "1606e867830535839b33d4a464339ee04913e41528eb8d2a3a0d123f777eaee9",
+        "builder": "buildTheoPilotClips",
+        "generator": "recess-sports Big Talk Theo authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "ai-voice-cast",
+        "cast": {
+          "voice": "am_puck",
+          "speed": 1.06,
+          "model": "onnx-community/Kokoro-82M-v1.0-ONNX",
+          "license": "Apache-2.0"
+        },
+        "generator": "kokoro-js@1.2.1",
+        "runtime": "public/v2/audio/voices/kids/calls_shot.mp3",
+        "runtimeSha256": "f1eec07cc30b93d89470972b4fb1397491f3a1d48a044c4500d09c8c345c4503",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "chip": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.chip",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.chip",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_chip_v1.glb",
+        "takeSha256": "c848e074200f43884851fb4b8fd565fd56e4c2048cd0ca1506e21127d5a2efd1",
+        "builder": "buildChipPilotClips",
+        "generator": "recess-sports Chip authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/chip.mp3",
+        "runtimeSha256": "aa22d93fc11c9f7c9eb5191081f63750f40aed5a9646d14c659975e9bc4d5990",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "clover": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.clover",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.clover",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_clover_v1.glb",
+        "takeSha256": "32bee7b3d32fe35b0cd69370d14a2aafd250960080ac4a23c31ba356703d8dde",
+        "builder": "buildCloverPilotClips",
+        "generator": "recess-sports Clover authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/clover.mp3",
+        "runtimeSha256": "346bde9062cf914797962355730009baca0f882460e35cc5a3908a7f63547362",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "cricket": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.cricket",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.cricket",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_cricket_v1.glb",
+        "takeSha256": "649ff94f0ef92e9aae31caa153fa14b3c33e0cd4c55d23f14f35f2a3967db4d4",
+        "builder": "buildCricketPilotClips",
+        "generator": "recess-sports Cricket authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/cricket.mp3",
+        "runtimeSha256": "d781aec02adf6e2ec8b2ffcef4325079a17ff8e64c84938f4ac735cf9e0785a3",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "dex": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.dex",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.dex",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_dex_v1.glb",
+        "takeSha256": "dffeeff9ac0771875123fcf667234e2b5bbe5e6063d4a4ae10493e118a0d19f8",
+        "builder": "buildDexPilotClips",
+        "generator": "recess-sports Dex authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/dex.mp3",
+        "runtimeSha256": "a8c0c7b7efa0e4c590079d00661c04209168e8648d6b0076b7c20d41dea0e6a3",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "diva": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.diva",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.diva",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_diva_v1.glb",
+        "takeSha256": "affe475b9699ab90f8fab5abc5eee76a98ecfee062999f11368f18ae27ab11d9",
+        "builder": "buildDivaPilotClips",
+        "generator": "recess-sports Dazzle authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/diva.mp3",
+        "runtimeSha256": "c25812877400649d5b331b6a890852d9d5ef068b309bd0bf61fdbe4debfed104",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "flash": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.flash",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.flash",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_flash_v1.glb",
+        "takeSha256": "cdfda26443f0b5c7d8b2bf5abd4456ee91132dc98d9e51f94a6475e71dade6a3",
+        "builder": "buildFlashPilotClips",
+        "generator": "recess-sports Flash authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/flash.mp3",
+        "runtimeSha256": "83ac309dc3b4af816267b059fc3a96f1293675a108866d460bc9284b2d19a7cb",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "gizmo": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.gizmo",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.gizmo",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_gizmo_v1.glb",
+        "takeSha256": "44569de750ee8a7483cf77e52688dd858015dfde30aac7a124779a8cde794669",
+        "builder": "buildGizmoPilotClips",
+        "generator": "recess-sports Gizmo authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/gizmo.mp3",
+        "runtimeSha256": "c6392e40e37405aa01534e37f0de949da7fe394b35ddc4b0996e5a9499d84639",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "grizz": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.grizz",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.grizz",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_grizz_v1.glb",
+        "takeSha256": "9ffac10c7ff52ea8f52be7c8fb7b51e76c8a84cad4528c4bea06e005acef3ec5",
+        "builder": "buildGrizzPilotClips",
+        "generator": "recess-sports Grizz authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/grizz.mp3",
+        "runtimeSha256": "d5ddba1e7f18ac1a1c0065cceb17351d448f5f9ec90552d8a47dc9d639c580d5",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "lefty": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.lefty",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.lefty",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_lefty_v1.glb",
+        "takeSha256": "6fa8c8d6441f2baa641ddc16c7ddfb96768daf9358d9bdeb1349b523c9fbd124",
+        "builder": "buildLeftyPilotClips",
+        "generator": "recess-sports Lefty Lu authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/lefty.mp3",
+        "runtimeSha256": "611ba735296fdf25d876caa0350cf859208a27e8b4d4b9838abca534acfb6ea2",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "mimi_mash": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.mimi_mash",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.mimi_mash",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_mimi_mash_v1.glb",
+        "takeSha256": "bd026ebf1a23e8f81906a91097b7154f994f1f04e315e0066046f8bec06392da",
+        "builder": "buildMimiMashPilotClips",
+        "generator": "recess-sports Mimi Mash authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "ai-voice-cast",
+        "cast": {
+          "voice": "af_nicole",
+          "speed": 1.08,
+          "model": "onnx-community/Kokoro-82M-v1.0-ONNX",
+          "license": "Apache-2.0"
+        },
+        "generator": "kokoro-js@1.2.1",
+        "runtime": "public/v2/audio/voices/kids/mimi_mash.mp3",
+        "runtimeSha256": "76e15d4ee9b702061c1a9dd8a4fe3fb2d4c6d5dc850d08ed16a6ab3caadcccd1",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "moose": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.moose",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.moose",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_moose_v1.glb",
+        "takeSha256": "e7ff34dc0c9dad5070a23ee68a987424aca6bdf77769974ead711bc9011d29f1",
+        "builder": "buildMoosePilotClips",
+        "generator": "recess-sports Moose authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/moose.mp3",
+        "runtimeSha256": "a5b70ec510cdf0b6817714cf88ecd7faf09384881c32455b41ce34958b2ea4b5",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "noodle": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.noodle",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.noodle",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_noodle_v1.glb",
+        "takeSha256": "f9018de20c11bbf6c3770a2139b740e159fd377414d1b2d9a2c7b6f8634ffcec",
+        "builder": "buildNoodlePilotClips",
+        "generator": "recess-sports Noodle authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/noodle.mp3",
+        "runtimeSha256": "ce8574f3201f411447b33fd36d37ba381fe40bfdc801b529bdcd746b158f6297",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "nostrike": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.nostrike",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.nostrike",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_nostrike_v1.glb",
+        "takeSha256": "1fa51a6aa5661a3fe0aad1c99a4db61efc40c38f3953acf7ee17436daa8d7ab7",
+        "builder": "buildJunebugPilotClips",
+        "generator": "recess-sports Junebug authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "ai-voice-cast",
+        "cast": {
+          "voice": "af_bella",
+          "speed": 0.96,
+          "model": "onnx-community/Kokoro-82M-v1.0-ONNX",
+          "license": "Apache-2.0"
+        },
+        "generator": "kokoro-js@1.2.1",
+        "runtime": "public/v2/audio/voices/kids/nostrike.mp3",
+        "runtimeSha256": "052202a9e93183617912232277933397e490cb7cddb33847d6920b2b6eb0f9e6",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "peaches": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.peaches",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.peaches",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_peaches_v1.glb",
+        "takeSha256": "7b75416403a92eb7bb245e5cb5ea798cf8df6c34ec823ef929d4db15c331a050",
+        "builder": "buildPeachesPilotClips",
+        "generator": "recess-sports Peaches authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/peaches.mp3",
+        "runtimeSha256": "0391dba0cee9088da7cc7a20071fd8715a4b545f3592d0108cfb46e963155692",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "penny": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.penny",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.penny",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_penny_v1.glb",
+        "takeSha256": "796f07e4ee0f98420aa831877c9f6749805283dbcdb61f533bfb377709e03d6a",
+        "builder": "buildPennyPilotClips",
+        "generator": "recess-sports Penny Pockets authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/penny.mp3",
+        "runtimeSha256": "590bbe912f89b678cb7f81f7927a5384bf382ab671f17358fb9e5ecc361427cf",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "rocket": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.rocket",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.rocket",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_rocket_v1.glb",
+        "takeSha256": "b129731085b2b33c03a66701ee4f5d775a52c92de2197f70a2b3544dd1ec8608",
+        "builder": "buildRocketPilotClips",
+        "generator": "recess-sports Rocket Rosa authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/rocket.mp3",
+        "runtimeSha256": "cd58e22246942c1377d8a8f8b182e979bace9e04d81b28ad4596e99038261b6c",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "smokey": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.smokey",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.smokey",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_smokey_v1.glb",
+        "takeSha256": "2fc457ed7d309cad738425b857a0928eabac27b445fab61b3737d6455a6384d2",
+        "builder": "buildSmokeyPilotClips",
+        "generator": "recess-sports Smokey authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/smokey.mp3",
+        "runtimeSha256": "dec7f9dbacbf025c74d8518f53b546204d47cb50a692e53be4bbf392df601043",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "sniffles": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.sniffles",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.sniffles",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_sniffles_v1.glb",
+        "takeSha256": "c86169c1516f8d07d8f4883e5c5b4e30f823c45f919534a0a0fe2c085a9377a0",
+        "builder": "buildSnifflesPilotClips",
+        "generator": "recess-sports Sniffles authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/sniffles.mp3",
+        "runtimeSha256": "31b1dbd12679c8f9f5e23b3b0edbdcecb2602aed55196afa31cb370b45edb213",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "sprout": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.sprout",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.sprout",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_sprout_v1.glb",
+        "takeSha256": "3d121220a094e74ca38bde2e2c973dc74ba5f366f6090fcde91aa20791a89f8c",
+        "builder": "buildSproutPilotClips",
+        "generator": "recess-sports Sprout authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/sprout.mp3",
+        "runtimeSha256": "1115705e98c33399af8402bf7b4fbbd4ca74d56147bbd327ee66521d72546452",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "tank": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.tank",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.tank",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_tank_v1.glb",
+        "takeSha256": "ec5108ca160a0759b6874278994d339bf0afa6fcca5cf454dbe08804b19b75d9",
+        "builder": "buildTankPilotClips",
+        "generator": "recess-sports Tank authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "ai-voice-cast",
+        "cast": {
+          "voice": "am_eric",
+          "speed": 0.9,
+          "model": "onnx-community/Kokoro-82M-v1.0-ONNX",
+          "license": "Apache-2.0"
+        },
+        "generator": "kokoro-js@1.2.1",
+        "runtime": "public/v2/audio/voices/kids/tank.mp3",
+        "runtimeSha256": "15b7a32d6aacc172aacdc5cb8f2feba11bca0ce77fb9bda6a9e1ab91644cebf3",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "the_prof": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.the_prof",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.the_prof",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_the_prof_v1.glb",
+        "takeSha256": "687e881c4b83a5d3e08e0120d6ae1b12fd1e6d4d3fef91026038f6ebce62e3a2",
+        "builder": "buildProfPilotClips",
+        "generator": "recess-sports The Professor authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/the_prof.mp3",
+        "runtimeSha256": "e36ce1f7b2ea7d720abb640369fb61dbfce3a8ef449326be1295e7cb9dcd8d1f",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "turbo": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.turbo",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.turbo",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_turbo_v1.glb",
+        "takeSha256": "59e377aa9c430526e6bfb47fbc0db204f84f877ace998f656d34810955216650",
+        "builder": "buildTurboPilotClips",
+        "generator": "recess-sports Turbo authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/turbo.mp3",
+        "runtimeSha256": "cad03642dea2358d0eea371c08a39ef86b49c902fe92b819e982f4dd0bda1bc9",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "wheelchair_ace": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.wheelchair_ace",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.wheelchair_ace",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_wheelchair_ace_v1.glb",
+        "takeSha256": "930aacad370fa1207bd66ee2b5aa2fc6065f9ee03b33c80206115303838a05e9",
+        "builder": "buildZoomSeatedLibrary",
+        "generator": "recess-sports Zoom Ramirez authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "ai-voice-cast",
+        "cast": {
+          "voice": "am_michael",
+          "speed": 0.98,
+          "model": "onnx-community/Kokoro-82M-v1.0-ONNX",
+          "license": "Apache-2.0"
+        },
+        "generator": "kokoro-js@1.2.1",
+        "runtime": "public/v2/audio/voices/kids/wheelchair_ace.mp3",
+        "runtimeSha256": "150935b4220b8ce5252246da56693f69f1b2ad5accb42e2a8fcd016ae08d569a",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    },
+    "zippy": {
+      "model": {
+        "kind": "blender-authored",
+        "receipt": "assets/v2/source/character-production.json#characters.zippy",
+        "fidelity": "assets/v2/source/character-fidelity.json#characters.zippy",
+        "finalDelivery": false
+      },
+      "animation": {
+        "take": "anims_zippy_v1.glb",
+        "takeSha256": "2d22bb22be3b058751ac62262b2e079fee678d5e3e5bd9326c57d74f352faf4e",
+        "builder": "buildZippyPilotClips",
+        "generator": "recess-sports Zippy Kwan authored performance (bindPoseHash ea5ecbcd)",
+        "kind": "generated-stand-in",
+        "source": null,
+        "sourceSha256": null,
+        "performer": null,
+        "finalDelivery": false
+      },
+      "voice": {
+        "kind": "system-voice-bank",
+        "cast": null,
+        "generator": "macOS say (scripts/v2/export-voices.mjs)",
+        "runtime": "public/v2/audio/voices/kids/zippy.mp3",
+        "runtimeSha256": "4f4bb4fbac6e40ea481bf492e390f1da3a4ff1413c6ce312aa6d73278de8a5ec",
+        "performer": null,
+        "finalDelivery": false
+      },
+      "recorded": {
+        "by": "",
+        "at": "",
+        "boundSha256": ""
+      },
+      "status": "awaiting-maintainer"
+    }
+  }
+}

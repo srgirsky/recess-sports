@@ -12,6 +12,7 @@ This packet is generated from `scripts/v2/character-directions.mjs`; edit that s
 - Voice masters are clean 48 kHz/24-bit mono PCM WAV, delivered as `assets/v2/voice-delivery/kids/<id>.wav` and checked with `npm run validate:voice-delivery -- <ids>`. Runtime copies are mono MP3 named `public/v2/audio/voices/kids/<id>.mp3`; preserve the authored line exactly and disclose AI-generated performances in the product.
 - A human performer remains an optional future replacement. Adults may perform; if a minor performs, obtain guardian consent and follow the production jurisdiction’s child-performer and data-retention rules.
 - Review every model and motion at hero scale and at 40 px. Review every voice line in the draft flow, not only in isolation.
+- Provenance lives in `assets/v2/source/character-provenance.json`: `npm run record:provenance` derives what baked each take and voice from the shipped bytes, and the `recorded` block is signed by the maintainer alone — `scripts/v2/provenance.lint.test.js` refuses an agent’s name there.
 
 ## Review order
 

@@ -115,7 +115,7 @@ passes can move to visual review:
 ```bash
 npm run export:skeleton    # emit assets/v2/skeleton_recess_v1.glb from skeleton.ts
 npm run export:animations  # emit the shared 43-clip runtime library
-npm run export:pilot-performance # emit Junebug's eight-clip partial performance
+npm run export:signature-performance -- nostrike # emit Junebug's eight-clip partial performance
 npm run export:signature-performance -- calls_shot # emit Theo's nine clips
 npm run export:signature-performance -- wheelchair_ace # emit Zoom's nine clips
 npm run export:signature-performance -- big_lou # emit Big Lou's nine clips
@@ -255,7 +255,19 @@ npm run capture:character-evidence -- nostrike
 npm run review:character-fidelity -- nostrike
 npm run measure:fidelity -- nostrike
 npm run validate:models
+npm run record:provenance            # refresh the machine half of the provenance record
+npm run record:provenance -- --check # verify it; non-zero exit on drift
 ```
+
+`record:provenance` writes `assets/v2/source/character-provenance.json` — per
+kid, what baked the shipped take (`generated-stand-in` when it was
+`proceduralClips.ts`), what synthesised the voice (`ai-voice-cast` or
+`system-voice-bank`) and whether any of it is final delivery under the
+performance brief's rule 5. The exporters call it after the manifest. The
+`recorded` block (`by`, `at`, `boundSha256`) is the maintainer's signature: fill
+it by hand, with the digest `npm run record:provenance -- --bind <id>` prints —
+`scripts/v2/provenance.lint.test.js` refuses an agent's name there, and a script
+never writes it.
 
 The atlas command writes a character's 16-expression source texture from their
 entry in `scripts/v2/face-specs.mjs`. ⚠️ Those cell coordinates are bound to that
