@@ -145,8 +145,9 @@ EAR_SPEC = EarSpec(center=(0.020, 3.280), radii=(0.1600, 0.1900))
 
 # Island solved for his span (head centre 3.40, rz 0.59): brow anchor 28
 # lands z 3.531 (37.3% of the 3.99→2.76 head against the traced 36.4), eye
-# anchor 50 lands z 3.330 (53.7 vs 51.9), mouth anchor 67 lands z 3.136
-# (69.4 vs 69.4).
+# anchor 50 lands z 3.330 (53.7 vs 51.9), mouth anchor 78 lands ~78.4%
+# against the re-traced 78.9 (the 67/69.4 of earlier rounds was the lens
+# rims' bottom edge — see face-specs.mjs and featurelatitude.lint).
 FACE_ISLAND = (0.92, -1.3696, 2.000)
 
 HEAD_SPEC = HeadSpec(
@@ -531,7 +532,9 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     face_columns = 27 if detail >= 2 else (9 if detail == 1 else 5)
     back_columns = 6 if detail >= 2 else (2 if detail == 1 else 1)
     if detail >= 2:
-        rows_spec, crown, chin = FACE_ROWS, 3, 2
+        # 5 crown rows, not 3: his bald dome shows every facet, and the hero
+        # crown read as flat diagonal bands (critic, 2026-09-02). 2026-09-12.
+        rows_spec, crown, chin = FACE_ROWS, 5, 2
     elif detail == 1:
         rows_spec, crown, chin = [0.0, 0.184, 0.340, 0.468, 0.660, 1.0], 1, 1
     else:

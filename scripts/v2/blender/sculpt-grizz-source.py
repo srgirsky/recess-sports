@@ -327,21 +327,32 @@ def skull_front_y(x: float, z: float) -> float:
 # ★ FIVE ROWS PAID FOR THE EARS (2026-09-02): 3.660, 3.500, 3.140, 2.880 and
 # 2.680 sat within 0.025 of the linear interpolation of their neighbours, and
 # build_ear at hero costs ~300 triangles the LOD0 budget did not have.
+# ★ 2026-09-12, three things off the sheet: (1) the crown was a CONE — a
+# 0.060 top ring with the apex 0.03 above it (the critic's "peaked polygon");
+# the top ring is now the sheet's own 3.98 width and the apex sits 0.012 up.
+# (2) THE NAPE. In profile the sheet's afro keeps a rear edge ~0.6ft behind
+# the figure centre from z 3.8 all the way down to z 2.5 (regionRunsAt rear
+# extent 0.59 / 0.64 / 0.61 / 0.63 at z 2.6 / 2.7 / 2.8 / 2.9); the table's
+# last ring at 2.60 pulled to 0.515 and the board showed the shirt under the
+# hair. The two nape rings MOVE (no new rings: 48 tris spare, and the shared
+# nose rows cost ~220) so the rear stays ~0.62 to z 2.48. (3) The 3.420 row
+# is gone — within 0.022 of its neighbours' lerp (redundant-rows-scan) — and
+# the head's back columns go 6 -> 4 under the afro, which together with the
+# spare pays for the nose rows (#221) this kid had not absorbed.
 AFRO_LEVELS = [
-    (3.980, 0.060, 0.055, 0.010),
+    (3.980, 0.110, 0.100, 0.010),
     (3.945, 0.215, 0.195, 0.030),
     (3.905, 0.360, 0.320, 0.048),
     (3.860, 0.412, 0.400, 0.060),
     (3.820, 0.444, 0.472, 0.070),
     (3.740, 0.588, 0.532, 0.080),
     (3.580, 0.714, 0.643, 0.100),
-    (3.420, 0.792, 0.660, 0.118),
     (3.340, 0.807, 0.635, 0.150),
     (3.260, 0.828, 0.516, 0.245),
     (3.020, 0.740, 0.424, 0.322),
-    (2.940, 0.690, 0.255, 0.445),
-    (2.780, 0.470, 0.210, 0.415),
-    (2.600, 0.270, 0.155, 0.360),
+    (2.940, 0.690, 0.380, 0.255),
+    (2.720, 0.440, 0.250, 0.380),
+    (2.480, 0.230, 0.150, 0.460),
 ]
 
 # The fringe arc: where the afro's lower edge crosses the face, measured as the
@@ -433,7 +444,7 @@ def build_afro(builder: MeshBuilder, detail: int) -> None:
             ring.append(builder.vertex((x, y, z), HAIR, "Head"))
         rows.append(ring)
     bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
-    top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.03), HAIR, "Head")
+    top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.012), HAIR, "Head")
     for column in range(segments):
         nxt = (column + 1) % segments
         builder.face((bottom, rows[0][nxt], rows[0][column]), 2)
@@ -675,14 +686,16 @@ LEG_STATIONS = [
 # The first independent review found it missing outright: "the tee is missing
 # the concept's chest pocket entirely". The turnaround draws a square patch
 # pocket on the chest, viewer-left of the placket line on the front view.
-# The first cut placed it at +x reasoning about camera handedness and the
-# board rendered it viewer-RIGHT — the render is the authority, so it lives
-# at -x and the board confirms viewer-left. Its seams are
+# The first cut placed it at +x and the board rendered it viewer-RIGHT — and
+# viewer-right is where the SHEET draws it (crop the front figure's chest:
+# the patch sits on the character's LEFT breast, viewer-right of the
+# placket). The note that once stood here read the drawing backwards and the
+# pocket shipped on the wrong breast for three rounds; it lives at +x. Its seams are
 # rust-on-rust and defeat a pixel trace, so the size is proportioned by eye
 # against the sheet at 3x: about a quarter of the chest's half-width, sitting
 # just below the yoke. A patch pocket is a raised panel with a darker top
 # hem — the same three-part construction every hem in this file uses.
-POCKET_X = (-0.37, -0.15)
+POCKET_X = (0.15, 0.37)
 POCKET_Z = (2.02, 2.24)
 POCKET_PROUD = 0.018
 
@@ -879,7 +892,9 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     # The face carries the read that the afro does not: brow, bead eyes, nose,
     # frown. Fewer crown rows than Tank — his crown is hair, not skin.
     face_columns = 27 if detail >= 2 else (9 if detail == 1 else 5)
-    back_columns = 6 if detail >= 2 else (2 if detail == 1 else 1)
+    # 4 back columns: the back of his head is under the afro, and the shared
+    # head's nose rows (#221) had to be paid for (see AFRO_LEVELS). 2026-09-12.
+    back_columns = 4 if detail >= 2 else (2 if detail == 1 else 1)
     if detail >= 2:
         rows_spec, crown, chin = FACE_ROWS, 3, 2
     elif detail == 1:

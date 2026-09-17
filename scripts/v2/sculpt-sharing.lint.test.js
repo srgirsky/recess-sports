@@ -82,9 +82,12 @@ const BODY_TABLES = new Set([
  * row here.
  */
 const DEBT = [
-  // cited pair-outer half at z=1.10 / 0.80 / 0.46; shipped lands between them
-  // and outside BOTH declared tolerances (+0.095 cricket, -0.126 gizmo).
-  ['cricket', 'gizmo', 'LEG_STATIONS'],
+  // cricket+gizmo was paid 2026-09-12: gizmo's cuff rows were re-traced to his
+  // own sheet (the roll to z 0.54 onto a low-top) and the byte-identity broke.
+  // Whether the pair's THIGH numbers are each kid's own is still an open
+  // question — an independent critic measured gizmo's per-leg runs at
+  // 0.42/0.385ft against the shared 0.203/0.192 halves and called the
+  // residual below the finding bar; cricket has not been re-traced.
   // dex+lefty was paid 2026-08-29: the hem sweep's belt-line rows broke the
   // byte-identity. Whether dex's station numbers are now truly HIS remains
   // tracked by his open proportions findings — this lint only ever saw the

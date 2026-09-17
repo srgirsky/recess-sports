@@ -8,7 +8,7 @@
     "capturedFromTakeSha256": "214d8d02e72948dee2e71670d26b1fb821f2512b9d0cdcfc50ebe7bf2a7f94a0"
   },
   "big_lou": {
-    "capturedFromGlbSha256": "b7ece4001f8c7be416ab03bea1115ea575597a95ae00ef328cdefbaa1720f066",
+    "capturedFromGlbSha256": "0b9b1c43774d24f70104a17bb55c7392ff4c552e11cde44e478f5de6184ee277",
     "capturedFromTakeSha256": "4a14628709264bfd22f705528c84e8239a9fe6a4646805eaed5993e2cc4d9703"
   },
   "boomer": {
@@ -44,19 +44,19 @@
     "capturedFromTakeSha256": "affe475b9699ab90f8fab5abc5eee76a98ecfee062999f11368f18ae27ab11d9"
   },
   "flash": {
-    "capturedFromGlbSha256": "6fefd2ac98349e9700deebfdd6b6507ff3dca83ed1353b8e24bef2e2e4b62da8",
+    "capturedFromGlbSha256": "62cbab51f38cfc6a707222e2439bf4d01337859633bdbcd4b5770530e9f32a58",
     "capturedFromTakeSha256": "cdfda26443f0b5c7d8b2bf5abd4456ee91132dc98d9e51f94a6475e71dade6a3"
   },
   "gizmo": {
-    "capturedFromGlbSha256": "5261a67d264e8e261b74523d16aed80710295f1a880843f1f71fb2801fcf5c72",
+    "capturedFromGlbSha256": "0e5c2e5543c331d0bac17389d09587050516db54dbaccdb4aee2a6f5da1bea13",
     "capturedFromTakeSha256": "44569de750ee8a7483cf77e52688dd858015dfde30aac7a124779a8cde794669"
   },
   "grizz": {
-    "capturedFromGlbSha256": "ea26593d1007b17ee0fd58074840ac1f0bf6054577ac4222c5f9f75399e94768",
+    "capturedFromGlbSha256": "c0b1a2d566044cde4d977312a3442852d8bb048a3a44cb31d0034a260e700c0c",
     "capturedFromTakeSha256": "9ffac10c7ff52ea8f52be7c8fb7b51e76c8a84cad4528c4bea06e005acef3ec5"
   },
   "lefty": {
-    "capturedFromGlbSha256": "1fe2d4bae650491a10338cf8ffe783492b03b1812856863fe874f9a2adcd09e9",
+    "capturedFromGlbSha256": "647d9be2a487c63dbaad204dae1a68b399fdeb905ee64b2877c065be94b6d0a3",
     "capturedFromTakeSha256": "6fa8c8d6441f2baa641ddc16c7ddfb96768daf9358d9bdeb1349b523c9fbd124"
   },
   "mimi_mash": {
@@ -64,11 +64,11 @@
     "capturedFromTakeSha256": "bd026ebf1a23e8f81906a91097b7154f994f1f04e315e0066046f8bec06392da"
   },
   "moose": {
-    "capturedFromGlbSha256": "52a30ca3d9f3bd7915800e2c22b2ca936a48b74b2e8a7482e584f20c057f104a",
+    "capturedFromGlbSha256": "c809c0d7dd1cf6b1650828c357c6378fdac4545005ae4e66790235376705490e",
     "capturedFromTakeSha256": "e7ff34dc0c9dad5070a23ee68a987424aca6bdf77769974ead711bc9011d29f1"
   },
   "noodle": {
-    "capturedFromGlbSha256": "c00b090f916b254d36e502b6e80570de535e8810bf463939a8f3e6a48e602af6",
+    "capturedFromGlbSha256": "a1977e3d604ab6a0a5e4fb3fa4152ceb5f65ecff3cf5d684a9ce41e3461ca388",
     "capturedFromTakeSha256": "f9018de20c11bbf6c3770a2139b740e159fd377414d1b2d9a2c7b6f8634ffcec"
   },
   "nostrike": {
@@ -112,7 +112,7 @@
     "capturedFromTakeSha256": "59e377aa9c430526e6bfb47fbc0db204f84f877ace998f656d34810955216650"
   },
   "wheelchair_ace": {
-    "capturedFromGlbSha256": "168fa1bbc02a5dea3a758744dcdddae5471489909cdbcfcb97a2be9201fc64e7",
+    "capturedFromGlbSha256": "5659fa7ac7965e0dd54af685754a9d4b219abf851f98f748c0707211b7035b58",
     "capturedFromTakeSha256": "930aacad370fa1207bd66ee2b5aa2fc6065f9ee03b33c80206115303838a05e9"
   },
   "zippy": {
