@@ -63,9 +63,20 @@ const assets = join(repo, 'dist', 'assets');
  *                undrafted cast from reading as two synchronized teams.
  *   983 -> 1005  Bespoke performance delivery: per-kid partial clip loading,
  *                manifest discovery and source-labelled animation review.
+ *   1005 -> 1032 Found stale, not raised on purpose: the play-end hold and
+ *                home-run trot (#223, #224) and Acting Batches 2-8 (#225-#228,
+ *                ~1,500 lines of per-kid procedural clips) each landed without
+ *                a built `dist/`, which is the only time this file runs. main
+ *                measured 1032kB the day the playtest instrument was built.
+ *   1032 -> 1037 The playtest instrument: `sim/features.ts`, the session fold
+ *                and log (`ui/sessionModel.ts`, `ui/sessionLog.ts`), the
+ *                `⬇ LOG` button and the listener lists in `GameView`. 5kB
+ *                for the thing every held feature is judged by.
+ *   Instant replay adds about 6kB for snapshot/seek and view-side playback
+ *   (`render/replayCues.ts`, bridge, director and `GameView`).
  */
 const V1_KB = 1909;
-const V2_KB = 1005;
+const V2_KB = 1038;
 const TOLERANCE = 0.02;
 
 /**

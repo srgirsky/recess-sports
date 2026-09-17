@@ -1,0 +1,50 @@
+{
+  "template": true,
+  "v": 1,
+  "id": "YYYY-MM-DD-slug",
+  "date": "YYYY-MM-DD",
+  "protocol": "docs/playtests/PROTOCOL.md",
+  "participants": [
+    { "ageBand": "4-5", "count": 0 },
+    { "ageBand": "6-8", "count": 0 }
+  ],
+  "blocks": [
+    {
+      "feature": "baseline",
+      "ageBand": "6-8",
+      "minutes": 15,
+      "url": "/?log=1",
+      "observations": [
+        "One line per thing you saw. Behaviour, not judgement: 'looked at the pitch cards for a long time before tapping', not 'confused'."
+      ],
+      "log": null
+    },
+    {
+      "feature": "stamina",
+      "ageBand": "6-8",
+      "minutes": 15,
+      "url": "/?features=stamina",
+      "observations": [],
+      "log": {
+        "how": "finished",
+        "elapsedMs": 0,
+        "pitches": 0,
+        "humanBat": { "pitchesSeen": 0, "swings": 0, "whiffs": 0, "hits": 0, "strikeouts": 0, "walks": 0 },
+        "humanField": { "outs": 0 },
+        "taps": { "pointer": 0, "steer": 0, "swing": 0, "pitch": 0, "throwTo": 0, "dive": 0, "sendRunner": 0, "holdRunner": 0 }
+      }
+    }
+  ],
+  "questions": {
+    "sim.human-pitch": "What you saw when the child pitched: did picking a spot with the pointer read as a verb they enjoyed, or did they want a grid?",
+    "sim.runner-sends": "What you saw on a caught fly with a runner on: did the child send, hold, or not notice the decision existed?"
+  },
+  "verdicts": {
+    "stamina": "inconclusive"
+  },
+  "privacy": {
+    "namesRecorded": false,
+    "recordingsMade": false,
+    "observerNamed": false
+  }
+}

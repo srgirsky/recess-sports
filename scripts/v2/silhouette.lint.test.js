@@ -105,7 +105,14 @@ const ANTIALIAS_ALLOWANCE = 8;
 // enclosure a wheelchair has. Both A-pose views match their standing twin
 // exactly, which is the tell that this is structure and not a posing artifact.
 const DEBT = {
-  zoom: 1200,       // measured 1170 (profile, through the wheel) — authored sculpt, not a proxy
+  // 2026-09-12: the chair sized to the sheet. The wheel interior (the old
+  // 1170, profile) is now spoked twelve ways and measures under 1200; the
+  // largest honest enclosure is the FRONT view's space between the tucked
+  // shins, closed below by a footplate that now meets both soles (it used
+  // to hover, and the flood walked in under it) and above by the seat —
+  // 4965 px at (255,455). The sheet encloses the same space. Geometry found
+  // under the pixels before the number moved, as the rule above asks.
+  zoom: 5000,
 };
 
 const VIEWS = ['front', 'profile', 'front-apose', 'profile-apose'];

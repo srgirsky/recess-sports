@@ -28,6 +28,43 @@ import {
   halfMark,
   scoreboardModel,
 } from './scoreboardModel';
+import { DEFAULT_FEATURES } from '../sim/features';
+
+describe('★ the juice meters ride the model only when the feature is on', () => {
+  // Copied as FRACTIONS of full so the view draws a width and never learns
+  // the ceiling; null with the flag off so an empty meter and a feature that
+  // is not running cannot look the same.
+  it('copies both meters as fractions, and null with the flag off', () => {
+    let saw = false;
+    for (const juice of [false, true]) {
+      const it = simulateGameLive(
+        {
+          away: { name: 'A', ids: ROSTER.slice(0, 9).map((c) => c.id) },
+          home: { name: 'H', ids: ROSTER.slice(9, 18).map((c) => c.id) },
+          lookup: getCharacter,
+          features: { ...DEFAULT_FEATURES, juice },
+        },
+        makeRng('juice-model')
+      );
+      for (let r = it.next(), n = 0; !r.done && n < 20_000; r = it.next(), n++) {
+        const m = scoreboardModel(r.value, { away: 'A', home: 'H' }, (id) => id);
+        if (!juice) {
+          expect(m.juice).toBeNull();
+          continue;
+        }
+        expect(m.juice).not.toBeNull();
+        for (const side of ['away', 'home'] as const) {
+          expect(m.juice![side]).toBeGreaterThanOrEqual(0);
+          expect(m.juice![side]).toBeLessThanOrEqual(1);
+          if (m.juice![side] > 0) saw = true;
+        }
+        // A copy, never the frame's own object.
+        expect(m.juice).not.toBe(r.value.juice);
+      }
+    }
+    expect(saw, 'a whole game and the meter never moved').toBe(true);
+  }, 30_000);
+});
 
 const TEAMS = { away: 'ROCKETS', home: 'COMETS' };
 const names = (id: string) => getCharacter(id).name;

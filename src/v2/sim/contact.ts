@@ -42,7 +42,7 @@
 // ---------------------------------------------------------------------------
 
 import type { Character } from '../../data/types';
-import { BALL, BAT, resolvePlate, type PlateParams } from './params';
+import { BALL, BAT, JUICE, resolvePlate, type PlateParams } from './params';
 import { BALL_RADIUS_FT } from './ball';
 import { batSpeedFts } from './athletes';
 import { ftsToMph, mphToFts, clamp } from './units';
@@ -66,6 +66,13 @@ export interface SwingSpec {
   pitchSpeedFts: number;
   /** Resolved plate constants. Omit for the shipped values. */
   plate?: PlateParams;
+  /**
+   * A POWER SWING (`features.juice`, `sim/juice.ts`): bat speed times
+   * `JUICE.POWER_BAT_MULT` and BOTH timing windows times
+   * `JUICE.POWER_WINDOW_MULT` — a harder swing that is harder to time. Omitted
+   * or false is the ordinary swing, arithmetic untouched.
+   */
+  power?: boolean;
 }
 
 export type SwingResult =
@@ -96,10 +103,11 @@ export function exitVelocity(eA: number, pitchSpeed: number, batSpeed: number): 
  * below the FASTEST possible travelMs" — true by construction instead of by
  * assertion. v1 compares absolute milliseconds and can only assert it.
  */
-export function timingQuality(timingErrorSec: number, travelSec: number): number {
+export function timingQuality(timingErrorSec: number, travelSec: number, windowMult = 1): number {
   const e = Math.abs(timingErrorSec);
-  const contact = BAT.CONTACT_WINDOW_FRAC * travelSec;
-  const perfect = BAT.PERFECT_WINDOW_FRAC * travelSec;
+  // `windowMult` is 1 for every swing but a power swing, and `x * 1` is exact.
+  const contact = BAT.CONTACT_WINDOW_FRAC * travelSec * windowMult;
+  const perfect = BAT.PERFECT_WINDOW_FRAC * travelSec * windowMult;
   if (e >= contact) return 0;
   if (e <= perfect) return 1;
   return 1 - (e - perfect) / (contact - perfect);
@@ -117,7 +125,7 @@ export function timingQuality(timingErrorSec: number, travelSec: number): number
  *   5. timing sets the SPRAY — early pulls, late goes the other way.
  */
 export function resolveSwing(spec: SwingSpec, rng: Rng): SwingResult {
-  const q = timingQuality(spec.timingErrorSec, spec.travelSec);
+  const q = timingQuality(spec.timingErrorSec, spec.travelSec, spec.power ? JUICE.POWER_WINDOW_MULT : 1);
   const ability = spec.batter.ability;
   const plate = spec.plate ?? resolvePlate();
 
@@ -139,7 +147,8 @@ export function resolveSwing(spec: SwingSpec, rng: Rng): SwingResult {
 
   // 1. Bat speed. Off-square contact costs speed at the point of impact and
   //    moves the ball off the sweet spot, which costs e_A too.
-  const batSpeed = batSpeedFts(spec.batter.stats.power) * (0.7 + 0.3 * quality);
+  const batSpeed =
+    batSpeedFts(spec.batter.stats.power) * (0.7 + 0.3 * quality) * (spec.power ? JUICE.POWER_BAT_MULT : 1);
   const offSweetFt = (1 - quality) * BAT.SWEET_SPOT_SPAN_FT;
   const sweetness = clamp(1 - offSweetFt / BAT.SWEET_SPOT_SPAN_FT, 0, 1);
   const eA = collisionEfficiency() * sweetness;

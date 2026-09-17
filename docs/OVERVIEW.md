@@ -1969,6 +1969,43 @@ the top or bottom half exposes human batting/pitching verbs. CPU-only halves
 therefore neither wait on invisible input nor claim YOU PITCH on the scoreboard,
 and practice/watch games do not dilute the drafted-game pick-rate denominator.
 
+### Instant replay — playback, never re-simulation (2026-09-12)
+
+The last of the "spectacle" items from the 2026-08-08 re-audit, and the one
+its own text had the least evidence for: "slow-motion hit cameras" is a
+one-line assertion against a storyboard corpus sampled every ten seconds,
+which cannot see a rate change at all. What the reference DOES record with a
+frame is that BB2026 holds on its catches (the 2026-09-01 instrument note),
+and that hold shipped first as `actionCues.playEndHoldSec`, view-side, with
+the homer's trot behind it.
+
+The replay that now follows the hold is v1's architecture carried across the
+membrane. `render/replayCues.ts` is the pure half: a classifier folded tick by
+tick from the play's own events (a dive that becomes a catch, two outs, a
+carom, an out on a bang-bang throw — never a homer, whose beat the trot owns),
+a snapshot of what the scene DREW each live tick (positions, facing, the clip
+each kid was in and where, the ball, the camera policy's input — values, never
+the frame, which is mutated in place), and the same camera policy over the
+recorded input. `GameView` records one snapshot per drawn tick, and when a
+play earns it, plays the tape back at `REPLAY.SPEED` through the same bridge
+with each kid's clip SEEKED to its recorded time (`AnimationDirector.seek`),
+under letterbox bars and a badge; any tap skips.
+
+Two decisions carry the sim guarantee. The pump is skipped for the replay's
+length exactly as pause skips it — the accumulator is zeroed, no sim step is
+taken, the game resumes on the same sim instant — so no `pace.*` record and
+no seeded fingerprint moves; running it inside the between beat was rejected
+because a 3–15 s play at 0.55× would have needed the one between-pitch number
+a stopwatch can see extended. And an instrument owns the clock: the first
+`devStepFixedClock` call ends any replay and suppresses further ones, so the
+layout audit and the presentation smoke probe the state they reached, with
+`?replay=1` the deliberate exception that gives the smoke a page of its own.
+
+`simclock.lint.test.js` named this shape as legitimate before it existed here
+— "the replay's slow-motion playback clock legitimately scales delta ... a
+render-side effect that never reaches the sim" — and the rate is recorded as
+inherited, not measured (`render.replay-feel`).
+
 ### PR 41 — each park owns its night
 
 The venue chips made night-at-the-sandlot a place a player can actually
@@ -2599,6 +2636,240 @@ once, give each kid its own traced numbers, sweep.
   eye sit ~3 points high, while on the board they read within 1.2 points of her
   drawing. Neither instrument is wrong; they measure different things, and the
   repair is never to fit a `span` backwards from what the model already delivers.
+
+## 2026-09-12 — rule 5 gets a record, and thirty stand-ins say so
+
+**What was believed.** The performance brief's acceptance rule 5 — "the
+maintainer records performer/model/animation provenance before shipping;
+generated and system stand-ins are not final delivery" — was a sentence in a
+generated document, and everyone treated a sentence as a gate. It was not. There
+was no field to write into, no script to derive one, and nothing that went red
+when a kid shipped without it.
+
+**What the symptom looked like.** Six kids got a code-baked take in August;
+Acting Batches 2–8 (#225–#228) gave the other twenty-four theirs in one day in
+September. Every one of the thirty is `proceduralClips.ts` output played by
+`AnimationDirector` ahead of the shared library, and every voice is either the
+macOS `say` bank or a Kokoro stock voice. All of that is disclosed in prose
+somewhere, and none of it was on any record a test read — so the roster
+sign-off page could show thirty rows at candidate with nothing on them saying
+"stand-in", and nobody had ever recorded looking. A second thing hid under the
+same silence: the takes carry `idle` and `run`, the clips six of the seven
+evidence stills are shot on, and the evidence record stamped only the model.
+Twenty-four kids' hero, run and face stills predate their takes.
+
+**The change.** `assets/v2/source/character-provenance.json` is the record:
+per kid, the model's receipt and board, the take with its sha and the builder
+that baked it, the voice with its sha and generator, `finalDelivery` derived
+from each kind, and a `recorded` block only a human writes.
+`scripts/v2/character-provenance.mjs` derives the machine half — the kind is
+read off `proceduralClips.ts` and `AI_VOICE_CAST`, never typed — and the two
+exporters call it after the manifest. `provenance.lint.test.js` holds the record
+to the shipped bytes, refuses a claimed kind, refuses an agent's name in
+`recorded.by`, and reports (never fails) a signature that has gone stale. The
+evidence record now stamps the take too, with the first stamping derived from
+disk rather than shot — the re-capture of the twenty-four is a named follow-up.
+`export-pilot-performance.mjs` is retired: it re-baked Junebug under a second
+generator string and turned the freshness lint red. Every row today reads
+`generated-stand-in` / `awaiting-maintainer`, which is the rule's own verdict,
+and the honest one.
+## 2026-09-12 — the playtest instrument: the holds become data
+
+The 2026-08-08 re-audit above ends with a sentence that bound nothing:
+"Defensive shifts, stamina and power-up systems were deliberately not added:
+without playtest evidence they would make the measured core less legible rather
+than more complete." It was true, it was in two prose files, and it enforced
+itself the way every unenforced rule in this repo has — until somebody ported a
+feature and defaulted it on, nobody would know a decision had been reversed.
+Special pitches were worse off: listed among the reference's arcade systems in
+item 5 and never held at all, so the sentence could not even be quoted for them.
+
+The instrument comes before any of the four ports because the ports are cheap
+and the evidence is not. Each port is a day; each has a v1 precedent
+(`fatigue.ts`, `juice.ts`, the special pitch kinds) and a clear v2-native shape.
+What none of them has is a child who has played it. Porting first and holding
+the flag off would still leave the same question — *should this default on?* —
+with the same answer, which is a session with kids and a record of what they
+did. So the record format, the session shape and the rule that a hold lifts only
+by a record all landed first, and the flags landed with them so the ports have
+something to hang off.
+
+What shipped:
+
+- **`docs/playtests/holds.json`** — the four features as data: `shifts`,
+  `stamina` and `juice` `held` (2026-08-08, Seth Girsky, the sentence quoted
+  and its two sources cited), `specialPitches` `never-held` with a note. A hold
+  becomes `lifted` only with `liftedOn` and `liftedBy: [record ids]`.
+- **`docs/playtests/PROTOCOL.md`** — the ages 4–8 session shape (pairs, two
+  fifteen-minute blocks, baseline first, then ONE feature), observation prompts
+  per feature, the two `measures.json` records whose `whatWouldClose` already
+  said "a playtest, not a measurement" (`sim.human-pitch`, `sim.runner-sends`)
+  quoted verbatim as the questions every session answers, and the privacy rule:
+  observations only, age bands `4-5`/`6-8`, no names, recordings or observer
+  names. `TEMPLATE.json` is the record to copy.
+- **`scripts/playtest.lint.test.js`** — the teeth. Every `held`/`never-held`
+  feature's `DEFAULT_FEATURES` value must be `false`; a `lifted` hold must name
+  a record carrying `verdict: "lift"` for it; every record is scanned for keys
+  that could identify a child and for email addresses; the protocol must quote
+  the two questions verbatim. Broken once each way before it was trusted, and
+  the messages are in its header.
+- **`src/v2/sim/features.ts`** — `Features`, `DEFAULT_FEATURES` (all false) and
+  `parseFeatures('all' | 'a,b')`, pure and import-free. `GameSpec.features` and
+  `PlaySpec.features` carry the type; `GameView.newGame` reads `?features=`.
+  Nothing consumes it, and `game.test.ts` proves it: the fingerprints with the
+  field absent, at the defaults and at `all` are identical, and the golden
+  values and `CHECKSUM_30` did not move. When a port lands, `all` must differ.
+- **The session log** — `ui/sessionModel.ts` is a pure fold over the sim's
+  events, the frame scalars `soundCues.snapshot` already copies, and the input
+  verbs `GameView.onInput` now reports at every site that writes `PlayInputs`.
+  It counts pitches, human-side swings/whiffs/hits, outs made while fielding,
+  taps per verb, elapsed time and how the session ended. `sessionModel.test.ts`
+  folds real seeded games and reconciles every count against
+  `GameResult.tally`, the per-kid lines and the rule that every top half ends on
+  three outs. `ui/sessionLog.ts` stores it (`recess_playtest_log`, capped at
+  twenty), enabled by `?log=1` or any `?features=`, and downloads it from a
+  `⬇ LOG` button beside the mute. `GameView.onSimEvent`/`onFrame`/`onGameEnd`
+  became listener lists so the log is a second consumer rather than a
+  replacement for sound. The sim has no path to any of it.
+
+The `audit:v2-layout` matrix gained a `&log=1` scenario so the button is a
+measured box like the pause and the mute. What stays with the maintainer is the
+session itself: run one per `PROTOCOL.md`, file the record, and lift a hold —
+which is now the only way a held feature defaults on.
+
+### The first port: stamina, behind its flag
+
+The stamina port landed the same day, and it is the instrument's first
+customer. `src/v2/sim/stamina.ts` is v2-native — `systems/fatigue.ts` reads
+`src/config.ts`'s `FATIGUE` and is not on the sim's five-module fence — and its
+four numbers (`params.ts` `STAMINA`: 0.03 a pitch, 0.09 for a special, tired
+below 0.45, four stat points lost at empty) are v1's restated, recorded as
+unmeasured in `sim.stamina`. Every pitch drains the fielding side's tank; below
+the line the pitcher's effective `pitching` stat sags and the plate model
+already there does the rest — a tired arm misses the spot more, and the CPU
+batter punishes it through the same judgement it always had. Nothing new is
+drawn from the rng, and CPU pitchers tire too: the flag is per game, not per
+side.
+
+Two things about the port are worth more than the port. First, the sagged stat
+is **rounded to an integer in 1..10**, because `releaseAtSpot` memoises the
+release solve on `kind|pitchingStat|spot` at 13.6ms a miss and
+`fastballFlightSec` on the stat alone — v1 handed a fraction to a scatter
+formula and paid nothing; here a fraction would be a fresh key every pitch and
+the forty-nine-minute harness again. `stamina.test.ts` sweeps the whole
+(stat, stamina) plane for integers in the band. Second, with the flag off the
+pitcher handed to `throwPitch` **is the roster object** — no spread, no
+rounding — which is why the nine golden fingerprints and `CHECKSUM_30` did not
+move, and `game.test.ts` now proves all three cases the instrument asked for:
+absent and the defaults identical, the three unported flags inert, and
+`stamina: true` a different game on every seed. The effect is measured rather
+than asserted: over eight seeded games the share of pitches in the zone falls
+from 49.6% in innings 1–2 to 43.4% from the fifth on with the flag on, against
+51.4% → 51.1% on the same seeds with it off (`sim.stamina`).
+
+The tell is a 💦 pip inside the pitcher's chip on the matchup plate, in flow so
+the chip grows by one row rather than a badge overhanging it, and
+`audit:v2-layout` now runs the game scenarios with `&features=stamina` and pumps
+a `tired pitcher` state until it shows. There is no bullpen — v2 has no relief
+UI and no CPU relief rule — and that is deliberate: whether children ask to
+change pitcher is one of the questions `PROTOCOL.md` § Stamina sends the
+observer in with, and the answer decides whether a bullpen is worth its UI.
+`DEFAULT_FEATURES.stamina` stays `false` until a record says lift.
+
+### The second port: juice, behind its flag
+
+The meter followed the same day and the same shape: `src/v2/sim/juice.ts` is
+v2-native (`systems/juice.ts` reads `src/config.ts`'s `JUICE` and the ability
+hooks, neither on the fence), its numbers are v1's restated in `params.ts`
+`JUICE` and recorded as unmeasured in `sim.juice`, and the flag stays off. Each
+side has a meter, charged at the five sites the game loop already had — the
+hit push (a homer charges 30 instead of 10), the scored loop, a strikeout
+thrown, a caught fly, a steal — and spent on the windup, the one frame the sim
+reads a person's choices on. A spend is armed for the plate appearance it was
+bought in.
+
+What was ported is three spends, and what each one is in v2 is the point. A
+**power swing** is the kid's own bat speed times 1.15 AND both timing windows
+times 0.8 — v1 made it better in every way, which is a cheat code; here
+swinging harder is harder to time, and `juice.test.ts` measures both halves in
+one sweep (mean exit velocity up on a square swing, contact rate down across
+the window in both directions). **Turbo legs** multiply every batting-side
+runner's top speed at the boost site in `beginPlay`, so `makeRunner` and
+`makeFielder` stay the one kid speed the purity lint asserts. A **golden
+glove** adds a foot to every fielder's reach and overrides the drop VERDICT
+while the drop roll is still drawn — so `rng.drop.draws` is identical with and
+without it and no later stream moves. Two pinned plays, found by a grid search
+and recorded as found: a speed-5 kid's blooper is a single on his legs and a
+double at 1.35x; a can of corn that seed `glove3` muffs is caught with the
+glove. `rallyCap` was left behind on purpose — a second window-widening on top
+of the plate's own is how v1's 380 ms band got wider than a 270 ms flight.
+
+Two things the port needed that the sim did not have. `GameSpec.humanSide`,
+because the CPU rolls to spend when it trails and must never spend the person's
+meter for them — a person proposes through `PlayInputs.spend` and the sim
+checks its own `canSpend`; the view only asks. And a `spend` event, so the
+crowd cheers it, the callout names it, and the session log can count what a
+child pressed. The HUD is a thin gold track under each team's name on the
+scoreboard strip and a `.spend-tray` of `.interactive` chips on the left edge,
+the picker's mirror, shown on the beats before a windup when the person's side
+can afford one (`Q`/`W`/`E` on a keyboard). `audit:v2-layout` now runs the game
+scenarios with `&features=all` and pumps a `spend tray` state until the tray
+opens — on the bottom half beside the open picker, which is the collision worth
+measuring. With the flag off every site is a null guard, `boost` is undefined
+into the play and `power` false into the swing, and the nine goldens,
+`CHECKSUM_30` and the live==headless identity did not move.
+`DEFAULT_FEATURES.juice` stays `false` until a record says lift.
+
+### The third port: special pitches, behind its flag
+
+The three special pitches followed, and the shape is the smallest of the
+three ports because the sim already had everything but the kinds: a special
+is a **parameter set** in the one pitch model (`pitch.ts` `SPECIAL_PITCHES`:
+speed multiplier, spin rate, spin axis, and a `scatterMult` on the kid's own
+execution error), kept in a separate record so `PITCHES` — the four keys the
+CPU's `choosePitch` draws from — is byte-identical and every golden holds.
+The kinds are spends off the juice meter (`JUICE.COSTS`: v1's 55 / 60 / 60,
+bought per pitch, only ever the fielding side's), which is why the flag needs
+`juice` on and is inert alone. `game.ts` is the gate: a person's plan may
+carry a special kind whatever the picker showed, and it is thrown as one only
+when the flag is on, the meter is theirs, and `spend` covers it — otherwise it
+is a fastball, silently, with no `spend` event. The CPU buys one when it
+trails off the same per-PA `fork('juice')` its powers roll on, keeping the
+spot it would have drawn (`fork('choose')` keys on the label, so drawing it in
+`game.ts` and handing it in is the same plan). A special drains the arm
+triple, the seam `stamina.ts` had been holding for it.
+
+What v1's freezeball was could not be ported, and that is written down rather
+than approximated: it was a **time remap** — `flightProgress` held the ball at
+45-75% of its travel so the timing read at release was wrong at the plate. The
+v2 bridge draws the pitch by re-integrating the sim's release with plain
+`stepFlight`, so a mid-flight hold would need a second flight model in the
+renderer; slowing the clock instead is barred by `simclock.lint` and
+`paintclock.lint`. So the freezeball is a **floater** — slow, heavy backspin,
+Magnus lift making it hang — and the card says 🧊 FLOATER. And the floater is
+as slow as the solve can throw, not as slow as the plan asked: specified at
+0.58x (~2.1 s), the physics can hang a ball that long (measured: 39 ft/s at
+0.8 rad crosses after 1.83 s) but `releasePitch` bisects the pitcher's low
+branch and its six-step secant reads an unreachable trial as a 5 s flight, so
+asked for more hang than that branch has it ends on the fallback elevation and
+the ball crosses eight feet over its aim for stats 1-7. 0.72x is the slowest
+multiplier at which every (stat, spot) solve lands within 0.05 ft — swept,
+recorded in `sim.specialPitches` — and it hangs 1.15-1.58 s against the
+fastball's 1.01-1.19. That is the same saturation the base changeup already
+shows at weak arms, and closing it is the solver's job.
+
+The picker grows three cards below the four (🤪 CRAZY, ☄️ BLAZE, 🧊 FLOATER;
+keys 5-7), built by the same card construction so `hitrect.lint` sees one,
+greyed and `aria-disabled` when the sim's own `canSpend` says the meter is
+short, and the stack becomes two columns of four so it is never taller than
+it was on a short landscape phone. `audit:v2-layout`'s `windup, picker open`
+state now requires a special card visible. `specialPitches.test.ts` sweeps all
+seven kinds over ten arms and nine spots, pins the flight ORDER (floater >
+changeup > fastball > fireball) rather than any value, asserts the crazy ball
+as a spread, and drives the gate both ways — downgrade with the flag off or
+the meter short, paid at the sim's cost with both on, a different game on the
+seeds where the CPU affords one. `DEFAULT_FEATURES.specialPitches` stays
+`false` until a record says lift.
 
 ## What's explicitly not built yet
 

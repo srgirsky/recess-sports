@@ -36,4 +36,18 @@ describe('play callouts', () => {
     }))).toBeNull();
     expect(playCalloutFor(event({ t: 'pa', batterId: 'a', pitcherId: 'b', result: 'hit' }))).toBeNull();
   });
+
+  it('names a spend with its icon, and nothing to read beneath it', () => {
+    expect(playCalloutFor(event({ t: 'spend', side: 'home', kind: 'turboLegs' }))).toEqual({
+      kind: 'spend',
+      label: '💨 TURBO LEGS!',
+      detail: null,
+    });
+    expect(playCalloutFor(event({ t: 'spend', side: 'away', kind: 'goldenGlove' }))?.kind).toBe('spend');
+    expect(playCalloutFor(event({ t: 'spend', side: 'away', kind: 'powerSwing' }))?.label).toMatch(/POWER/);
+    // The special pitches are spends too, and the callout wears the card's icon.
+    expect(playCalloutFor(event({ t: 'spend', side: 'home', kind: 'freezeball' }))?.label).toMatch(/🧊 FLOATER/);
+    expect(playCalloutFor(event({ t: 'spend', side: 'home', kind: 'fireball' }))?.label).toMatch(/☄️ BLAZE/);
+    expect(playCalloutFor(event({ t: 'spend', side: 'home', kind: 'crazy' }))?.label).toMatch(/🤪 CRAZY/);
+  });
 });

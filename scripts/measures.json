@@ -762,6 +762,22 @@
    "confidence": "n/a",
    "informs": "src/v2/render/Renderer.ts DEFAULT_TONE_MAPPING and DEFAULT_TONE_EXPOSURE"
   },
+  "replayFeel": {
+   "id": "render.replay-feel",
+   "category": "render",
+   "reference": "derived",
+   "status": "awaiting-measurement",
+   "statusChangedAt": "2026-09-12",
+   "what": "The instant replay's playback rate and the play-end hold before it: how slow BB2026's replay runs, and how long its catch holds before the cut. Both numbers in src/v2/render/replayCues.ts and src/v2/render/actionCues.ts are inherited feel, not readings.",
+   "ours": {
+    "constants": "REPLAY.SPEED 0.55 (v1's FX.REPLAY.SPEED, itself unmeasured), PLAY_END_HOLD_SEC.out 1.2"
+   },
+   "measured": null,
+   "whatWouldWork": "A BB2026 capture at full frame rate (the storyboard corpus is sampled every 10s, which cannot see a rate change): frame-count one caught fly from the glove to the cut for the hold, and one replayed play against its live length for the rate. Three of each. The 2026-09-01 instrument note in docs/research/backyard-2026-reference.md records the hold's existence, not its length.",
+   "n": 0,
+   "confidence": "n/a",
+   "informs": "src/v2/render/replayCues.ts REPLAY.SPEED and src/v2/render/actionCues.ts PLAY_END_HOLD_SEC"
+  },
   "characterPresence": {
    "id": "render.character-presence",
    "category": "render",
@@ -4191,6 +4207,77 @@
    },
    "whatWouldClose": "Whether a child can pick the right moment to send on a fly \u2014 the decision is a tag-up read, which is the hardest judgement in youth baseball. A playtest, not a measurement.",
    "informs": "src/v2/sim/play.ts decideRunning"
+  },
+  "stamina": {
+   "id": "sim.stamina",
+   "category": "sim",
+   "reference": "derived",
+   "status": "note",
+   "statusChangedAt": "2026-09-12",
+   "what": "Pitcher stamina, ported behind the held `features.stamina` flag: what the four numbers are, where they came from, and what would settle them.",
+   "why": "★ THE NUMBERS ARE v1's SHAPE RESTATED, NOT MEASURED. `src/config.ts`'s FATIGUE block (DRAIN_PITCH 0.03, DRAIN_CRAZY 0.09, TIRED_AT 0.45, MAX_STAT_LOSS 4) was tuned by feel for the pixel game and never measured against anything; STAMINA in params.ts carries the same four so the v2 port plays the way v1's did and a playtest compares ONE thing. They are unitless fractions and stat points — the one params.ts block that is neither feet nor seconds — and are recorded here so nobody reads them as a finding.",
+   "theSAGISANINTEGER": "★ `effectivePitching` ROUNDS AND CLAMPS TO 1..10, and that is load-bearing rather than tidy. `releaseAtSpot` memoises the release solve on kind|pitchingStat|spot at 13.6ms a miss and `fastballFlightSec` on the stat alone; v1 handed a fractional stat to a scatter formula and paid nothing. A fractional stat here would be a fresh key every pitch — the forty-nine-minute harness again. `stamina.test.ts` asserts the image of the function over the whole (stat, stamina) plane is integers in the band.",
+   "measured": {
+    "method": "game.test.ts: eight seeded games at the park, the same seeds with the flag on and off, pitches in the zone by inning band (innings 1-2 against 5+) read off the live frame's inning as each pitch event fires.",
+    "onVsOff": "With the flag on the late-inning zone share is below the early one, and the early-minus-late drop exceeds the same seeds' drop with the flag off. The test asserts the ORDERING and the CONTROL, not a value — a target here would be describing this roster.",
+   "zonePctOn": {
+    "innings1to2": 49.6,
+    "innings5plus": 43.4
+   },
+   "zonePctOff": {
+    "innings1to2": 51.4,
+    "innings5plus": 51.1
+   },
+   "seeds": "a..h, park, the first eighteen of the roster, 2026-09-12",
+   "readIt": "A 6.2-point drop against a 0.3-point one. The tank empties in ~33 pitches and a starter throws ~50-65 a game, so by the fourth inning every arm is at its full MAX_STAT_LOSS sag; the drop is the whole effect, not the onset of it.",
+    "identity": "With the flag absent or at DEFAULT_FEATURES the fresh pitcher IS the roster object (no spread, no rounding), so the nine golden fingerprints and CHECKSUM_30 are byte-identical to before the port; the three unported flags are asserted inert; stamina: true differs on every seed."
+   },
+   "thereISNOBULLPEN": "v2 has no relief UI and no CPU relief rule (v1's CPU_RELIEF_AT is not carried), so a tired pitcher finishes the game and the tank only goes down. The tell is a sweat pip inside the pitcher's chip on the matchup plate, in flow, so `audit:v2-layout`'s `tired pitcher` state measures the grown box. A bullpen is a second feature with its own UI and its own hold question; it is not smuggled in under this one.",
+   "whatWouldClose": "A playtest record in docs/playtests/ (PROTOCOL.md § Stamina): whether children notice the pitcher tiring, what they think is happening, whether a late inning feels different to them, and whether they ask to change pitcher — which is also the only evidence that would justify building a bullpen. Until a record with verdict \"lift\" names this feature, DEFAULT_FEATURES.stamina stays false (scripts/playtest.lint.test.js).",
+   "informs": "src/v2/sim/params.ts STAMINA, src/v2/sim/stamina.ts effectivePitching"
+  },
+  "juice": {
+   "id": "sim.juice",
+   "category": "sim",
+   "reference": "derived",
+   "status": "note",
+   "statusChangedAt": "2026-09-12",
+   "what": "The juice meter and its three spends, ported behind the held `features.juice` flag: what the numbers are, where they came from, what was deliberately left behind, and what would settle any of it.",
+   "why": "★ THE NUMBERS ARE v1's SHAPE RESTATED, NOT MEASURED. `src/config.ts`'s JUICE block (MAX 100; gains hit 10 / homer 30 / run 12 / K thrown 18 / catch 10 / steal 20; costs powerSwing 55 / turboLegs 40 / goldenGlove 40; TURBO_SPEED_MULT 1.35; CPU eagerness 0.6 / 0.3 / 0.12 by score) was tuned by feel for the pixel game and never measured; JUICE in params.ts carries the same so the v2 port plays the way v1's did and a playtest compares ONE thing. The meter is unitless points — the second params.ts block that is neither feet nor seconds — and the three multipliers are the only physical quantities, each applied ON TOP of the roster's own number at one site (bat speed, runner top speed, the shared reach), never as a second constant.",
+   "whatIsNOTv1s": "★ THE POWER SWING IS HARDER TO TIME. v1 gave it a band upgrade and a quality bonus (POWER_Q_BONUS 0.3): better in every way, a cheat code. Here the bat is 1.15x faster AND both timing windows are 0.8x (POWER_WINDOW_MULT), because swinging harder is harder to time; juice.test.ts measures both halves in one sweep — mean exit velocity up on a square swing, contact rate down across the window in both directions. The glove bonus is 1.0 ft on a capsule whose radius `sim.catchRadius` pins from both sides (v1's 8 px on a sphere has no meaning here), and there is no magnet blend because v2 has no fielding assist (`sim.fieldingInput`).",
+   "rallyCapNOTported": "★ v1's rallyCap widened the swing window for a whole half, on top of the plate's own window. v2's one window is a FRACTION of the flight by construction (`pace.swingWindows`: 'CONTACT must stay below the FASTEST possible travelMs'), and a second knob on the same tolerance is exactly how v1's 380 ms band ended up wider than a 270 ms flight. Not ported; a playtest that asks for a forgiveness spend gets its own record.",
+   "alsoNotHere": "The ability hooks (a signature kid's discount or bonus) are a content question the hold does not ask; the special pitches ride on PitchKind and are PR D's; a spend lasts the PLATE APPEARANCE it was bought in rather than v1's 'next play', because the sim's one input seam is the windup and a person can only propose there.",
+   "measured": {
+    "method": "game.test.ts and juice.test.ts, 2026-09-12: the fingerprint with juice on differs on every seed; over eight seeded games with humanSide 'away' the CPU spends all three kinds for home and never touches away; a proposal on a top-half windup is bought at the sim's cost and a second in the same PA is not; and two pinned plays, found by a grid search over launches and seeds and recorded as found.",
+    "turboPin": "calls_shot (speed 5) on {62 ft/s, 24 deg, spray 22 deg, 1500 rpm} at the park: a single on his own legs, a double at 1.35x.",
+    "glovePin": "{60 ft/s, 30 deg, spray -15 deg, 1500 rpm}, seed glove3: the drop roll muffs it (0 outs); with the glove it is caught (1 out) and `rng.drop.draws` is identical, because the roll is drawn either way and only the verdict is overridden.",
+    "identity": "With the flag absent or at DEFAULT_FEATURES every site is a null guard, `boost` is undefined into beginPlay, `power` is false into resolveSwing (x*1 and x+0 are exact), and the per-PA fork('juice') is never drawn from — so the nine golden fingerprints, CHECKSUM_30 and the live==headless identity test did not move."
+   },
+   "theCPUisNOTtheperson": "★ `GameSpec.humanSide` exists for this port alone: the CPU rolls for every side but the person's, whose meter only a `PlayInputs.spend` proposal can spend. Without it a person's meter would be spent for them the moment they could afford it, and the tray would show nothing to buy. Headless runs never set it.",
+   "whatWouldClose": "A playtest record in docs/playtests/ (PROTOCOL.md § Juice / power-ups): whether children see the meter fill and ask what it is, whether they find the tray and try each spend, whether they connect a power swing / turbo run / golden-glove catch to the chip they pressed or it reads as luck, whether they save or spend it the moment it is affordable, and whether the meter pulls their eyes off the ball. Until a record with verdict \"lift\" names this feature, DEFAULT_FEATURES.juice stays false (scripts/playtest.lint.test.js).",
+   "informs": "src/v2/sim/params.ts JUICE, src/v2/sim/juice.ts, src/v2/sim/contact.ts resolveSwing, src/v2/sim/play.ts beginPlay"
+  },
+  "specialPitches": {
+   "id": "sim.specialPitches",
+   "category": "sim",
+   "reference": "derived",
+   "status": "note",
+   "statusChangedAt": "2026-09-12",
+   "what": "The three special pitches (crazy, fireball, freezeball), ported behind the held `features.specialPitches` flag as PHYSICAL PARAMETER SETS in the one pitch model, bought off the juice meter: what each is, why v1's freezeball could not be ported as it was, what the solve could and could not deliver, and what would settle any of it.",
+   "why": "★ A SPECIAL IS A PARAMETER SET, NOT A TRICK. v1's PITCH_KINDS carry breakX/breakY/wobble — bows drawn on a lerp — and its specials are juice spends (config.ts JUICE.COSTS crazyPitch 55 / fireball 60 / freezeball 60). Here each is a PitchDef plus a scatterMult in pitch.ts SPECIAL_PITCHES, a SEPARATE record so PITCHES (the four keys choosePitch draws from) is byte-identical and every golden fingerprint holds; the costs are v1's restated in params.ts JUICE.COSTS and the CPU buys one when it trails off the same per-PA fork('juice') its powers roll on (juice.ts cpuPickSpecialPitch: zero draws when broke). The flag needs `juice` on and is inert alone, by construction. game.ts is the gate: a proposed special the flag, the side or the meter does not cover is thrown as a FASTBALL, silently, with no spend event.",
+   "theFreezeballIsAFloaterNotAFreeze": "★ v1's freezeball is not a pitch but a TIME REMAP: systems/pitchkind.ts flightProgress holds the ball at 45-75% of its travel (config.ts PITCH_FX.FREEZE) so the timing a batter read at release is wrong at the plate. That cannot be reproduced in v2 without a second flight model: render/bridge.ts applyPitch draws the pitch by re-integrating frame.pitch.release with plain stepFlight, so a mid-flight hold in the sim would desync sim and picture, and slowing the CLOCK instead is barred by scripts/simclock.lint.test.js and scripts/v2/paintclock.lint.test.js (sim-milliseconds are real milliseconds) and by the fixed-step accumulator, which has no per-pitch rate seam. So it is a FLOATER — released slow with heavy backspin so Magnus lift makes it hang — and the card reads 🧊 FLOATER, not FREEZE.",
+   "whatTheSolveCouldNotDeliver": "★ THE FLOATER IS AS SLOW AS THE SOLVE CAN THROW, NOT AS SLOW AS THE PLAN ASKED. Specified at speedMult 0.58 (~2.1 s). The physics can hang a ball that long: swept 2026-09-12 over the solver's own elevation bracket, the slowest release that still reaches a 2.4 ft aim is 39 ft/s at 0.8 rad and crosses after 1.83 s (1.81-1.86 s across 1400-4000 rpm and 1.6-3.2 ft aims — spin barely moves it, because C_L saturates and extra spin adds drag). But releasePitch bisects the LOW branch of the elevation curve (the one a pitcher throws) and its six-step secant over speed reads an unreachable trial as a MAX_FLIGHT_SEC flight; asked for more hang than that branch has, it ends on an unreachable speed and the fallback elevation, and the ball crosses EIGHT FEET over its aim for stats 1-7 (0.58: worst aim 9.46 ft; 0.65: 2.89 ft; 0.70: 1.20 ft). 0.72 is the slowest multiplier at which every (stat 1-10 x nine spots) solve lands within 0.05 ft: worst aim 0.001 ft, flight 1.15-1.58 s, mean 1.36 s against the fastball's 1.01-1.19 (mean 1.10) and the changeup's 1.06-1.54 (mean 1.27). This is the same saturation sim.throwSpeed.comparedWithThePitch records for the base changeup at weak arms (worst aim 0.78 ft today), seen from the other end, and closing it belongs to the solver (sim.pitchCorridorV2), not to a spend.",
+   "measured": {
+    "method": "specialPitches.test.ts, 2026-09-12: all seven kinds swept over stats 1-10 and the nine PITCH_SPOTS (630 solves); flight-time ORDER pinned on grid means, never values; the crazy ball's lateral spread against the fastball's for the same arm; the game loop driven both ways with a person on the mound.",
+    "crazy": "speedMult 0.85, 2000 rpm on axis (0.5, 0.85, 0): about 1.8 ft of break toward third at stat 5 (the curve's is 1.1), and scatterMult 2.0 on the kid's OWN execution error in throwPitch — the only place scatter is applied, so a strong arm's crazy ball is still tamer than a weak arm's. Lateral spread over 160 throws at stat 5 is more than 1.5x the fastball's.",
+    "fireball": "speedMult 1.25, 1800 rpm backspin: mean flight 1.00 s over the grid, the fastest of the seven at every mean; solves cleanly (worst aim 0.002 ft).",
+    "freezeball": "speedMult 0.72, 2400 rpm backspin: mean flight 1.36 s, the slowest of the seven; see whatTheSolveCouldNotDeliver.",
+    "order": "floater > changeup > fastball > fireball on grid means, and the floater is the slowest and the fireball the fastest of all seven. Means rather than one stat because the base solve saturates at weak arms and a single stat inverts — the fastball's stat-5 flight is a half-converged 1.02 s that the fireball equals.",
+    "gate": "With the flag off (features absent, or juice alone) a proposed special is thrown as a fastball with no spend event; with specialPitches and juice on it is thrown as proposed, the person's meter drops by the cost, the spend event names the kind, and the arm drains STAMINA.DRAIN_SPECIAL with stamina on; a special on the spend channel or for the other side's mound buys nothing.",
+    "identity": "With the flag absent or at DEFAULT_FEATURES, decidePitch's one branch returns the plan unchanged, throwPitch's scatterMult is x1 (exact), PITCHES is untouched and the fork('juice') is never drawn from — the nine golden fingerprints, CHECKSUM_30 and the live==headless identity did not move; specialPitches alone is asserted inert; specialPitches with juice differs on every seed where the CPU bought one, and over eight seeds the CPU buys all three kinds."
+   },
+   "whatWouldClose": "A playtest record in docs/playtests/ (PROTOCOL.md § Special pitches): whether children notice the extra cards and pick one before a normal pitch, whether they swing early at a floater and late at a fireball, whether the crazy ball reads as funny or as unfair, whether they understand a greyed card is one they cannot afford or throw specials every pitch, and whether the icons carry the three without the words. Until a record with verdict \"lift\" names this feature, DEFAULT_FEATURES.specialPitches stays false (scripts/playtest.lint.test.js). A second question this record leaves open for the solver: whether a pitch solve that could deliver the physics' 1.8 s hang would make the floater what the plan asked for.",
+   "informs": "src/v2/sim/pitch.ts SPECIAL_PITCHES, src/v2/sim/params.ts JUICE.COSTS, src/v2/sim/juice.ts cpuPickSpecialPitch, src/v2/sim/game.ts decidePitch"
   }
  },
  "defense": {

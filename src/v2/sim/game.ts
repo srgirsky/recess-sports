@@ -30,12 +30,27 @@
 
 import type { Character } from '../../data/types';
 import { GAME, PLAY } from './params';
-import { cpuSwingAtSec, isStrike, resolvePitch, throwPitch, type PitchResult } from './atbat';
+import {
+  choosePitch,
+  cpuSwingAtSec,
+  isStrike,
+  resolvePitch,
+  throwPitch,
+  type PitchPlan,
+  type PitchResult,
+  type PitchSpec,
+} from './atbat';
+import { isSpecialPitch } from './pitch';
 import { catcherOf, cpuWantsSteal, stealRace, type StealTarget } from './steal';
 import type { BallState } from './flight';
 import type { PitchKind } from './pitch';
 import { flyToPlate, releasePitch } from './pitch';
 import { resolvePlate, type PlateOverrides, type PlateParams } from './params';
+import type { Features } from './features';
+import { drainPitch, effectivePitching, newStamina } from './stamina';
+import type { StaminaState } from './stamina';
+import { addJuice, cpuPickSpecialPitch, cpuWantsSpend, isSpecialSpend, newJuice, spend, spendSide } from './juice';
+import type { JuiceGain, JuiceState, PowerKind, SpendKind } from './juice';
 import {
   beginPlay,
   finishPlay,
@@ -119,6 +134,18 @@ export type SimEvent =
       batterId: string;
       pitcherId: string;
       result: 'k' | 'walk' | 'hit' | 'out';
+    }
+  | {
+      /**
+       * A side spent its juice (`features.juice`, `sim/juice.ts`) — a person's
+       * proposal the sim could afford, or the CPU's roll. Fired on the windup
+       * it was bought in; a power lasts the plate appearance, a special pitch
+       * (`features.specialPitches`, a `SpecialPitchKind` here) lasts the one
+       * pitch it was bought for.
+       */
+      t: 'spend';
+      side: 'away' | 'home';
+      kind: SpendKind;
     };
 
 /**
@@ -223,6 +250,20 @@ export interface LiveFrame {
     /** CPU-only preview for render timing. Null means the CPU takes. */
     cpuSwingAtSec: number | null;
   } | null;
+  /**
+   * The fielding pitcher's tank, 1 down to 0 — or null when `features.stamina`
+   * is off, so a view cannot mistake a full tank for a feature that is not
+   * running. The HUD's sweat pip reads `isTired({ stamina })` off this; the
+   * threshold is `stamina.ts`'s, not the view's.
+   */
+  stamina: number | null;
+  /**
+   * Both meters, 0..`JUICE.MAX` — or null when `features.juice` is off, for
+   * the reason `stamina` is null: a view must not mistake an empty meter for
+   * a feature that is not running. The HUD's bar and the spend tray read
+   * these; what a spend costs is `juice.ts`'s, never restated in the view.
+   */
+  juice: { away: number; home: number } | null;
 }
 
 export interface GameSpec {
@@ -246,6 +287,25 @@ export interface GameSpec {
    * resolves to the shipped constants, so the default path is unchanged.
    */
   plate?: PlateOverrides;
+  /**
+   * The held features, if a playtest switched any on. Omitted means
+   * `DEFAULT_FEATURES` — every one of them off. See `features.ts`. `stamina`
+   * is consumed (`playAtBatLive` sags the pitcher's stat from `Side.stamina`)
+   * and so is `juice` (`Side.juice`, charged and spent in the same function)
+   * and `specialPitches` (the three extra kinds, bought off that meter — so
+   * without `juice` the flag is inert by construction);
+   * the other two are still seams, and `game.test.ts` proves each case:
+   * absent and the defaults fingerprint identically, the unported flags are
+   * inert, and each ported flag changes the game.
+   */
+  features?: Features;
+  /**
+   * Which side a PERSON is playing, if any — read only by the juice port,
+   * which must not spend that side's meter for them: a human proposes through
+   * `PlayInputs.spend` on the windup, and the CPU's roll runs for every OTHER
+   * side. Omitted (every headless run) means both sides are the CPU's.
+   */
+  humanSide?: 'away' | 'home';
 }
 
 export interface GameResult {
@@ -297,6 +357,39 @@ interface Side {
   plan: DefencePlan;
   lineupIdx: number;
   score: number;
+  /**
+   * This side's pitcher's tank. One object for the whole game because there is
+   * no relief (`stamina.ts`); drained only when `features.stamina` is on, so
+   * with the flag off it stays at 1 and nothing reads it.
+   */
+  stamina: StaminaState;
+  /**
+   * This side's juice meter. Charged by its own plays and spent on its own
+   * windups, only when `features.juice` is on; otherwise it stays at 0 and
+   * nothing reads it.
+   */
+  juice: JuiceState;
+}
+
+/**
+ * Everything one plate appearance needs to charge and spend the meters —
+ * null when `features.juice` is off, so the flag is asked once per PA and
+ * every site below is a one-line guard.
+ */
+interface JuiceArgs {
+  batting: 'away' | 'home';
+  meters: { away: JuiceState; home: JuiceState };
+  /** The person's side, whose meter the CPU never spends. Null: both CPU. */
+  human: 'away' | 'home' | null;
+  /** The score as this PA begins — the CPU's eagerness is keyed on it. */
+  scores: { away: number; home: number };
+}
+
+/** Copy both meters onto the frame, if the feature is on. */
+function syncJuice(frame: LiveFrame, meters: JuiceArgs['meters']): void {
+  if (!frame.juice) return;
+  frame.juice.away = meters.away.value;
+  frame.juice.home = meters.home.value;
 }
 
 /**
@@ -342,14 +435,105 @@ function* playAtBatLive(
     onEvent?: (e: SimEvent) => void;
     plate?: PlateParams;
     frame: LiveFrame;
+    /** The fielding side's tank, or null when `features.stamina` is off. */
+    stamina: StaminaState | null;
+    /** Both meters and who owns them, or null when `features.juice` is off. */
+    juice: JuiceArgs | null;
+    /** `features.specialPitches`: may the fielding side buy a special kind? */
+    specials: boolean;
   },
   rng: Rng
 ): Generator<LiveFrame, void, PlayInputs> {
-  const { half, tally, stats, log, onEvent, frame } = args;
+  const { half, tally, stats, log, onEvent, frame, stamina, juice, specials } = args;
   let pitches = 0;
   frame.batterId = args.batter.id;
   frame.pitcherId = args.pitcher.id;
   frame.defence = args.defence;
+  frame.stamina = stamina ? stamina.stamina : null;
+
+  // ★ THE JUICE PORT, ALL OF IT IN ONE PLACE. `juice` is null with the flag
+  // off, so every site is a guard and a call; with it on, the fielding side
+  // is whoever is not batting, the spends bought on a windup stay ARMED for
+  // the rest of this plate appearance, and the CPU rolls off a fork nothing
+  // else reads — never drawn from when the flag is off, so the goldens hold.
+  const fielding: 'away' | 'home' = juice?.batting === 'away' ? 'home' : 'away';
+  // The three POWERS arm for the plate appearance; a special pitch is not in
+  // this record because it is bought per PITCH (`decidePitch` below).
+  const armed: Record<PowerKind, boolean> = {
+    powerSwing: false,
+    turboLegs: false,
+    goldenGlove: false,
+  };
+  const juiceRng = juice ? rng.fork('juice') : null;
+  const charge = (side: 'away' | 'home', kind: JuiceGain): void => {
+    if (!juice) return;
+    addJuice(juice.meters[side], kind);
+    syncJuice(frame, juice.meters);
+  };
+  /** Pay for a spend the meter covers. Returns whether it happened. */
+  const pay = (side: 'away' | 'home', kind: SpendKind): boolean => {
+    if (!juice || !spend(juice.meters[side], kind)) return false;
+    syncJuice(frame, juice.meters);
+    log.push(`  ${side} spends ${kind}`);
+    onEvent?.({ t: 'spend', side, kind });
+    return true;
+  };
+  const buy = (side: 'away' | 'home', kind: PowerKind): void => {
+    if (armed[kind] || !pay(side, kind)) return;
+    armed[kind] = true;
+  };
+  /** The windup's spending: the person's proposal, then the CPU's rolls. */
+  const decideSpends = (proposed: SpendKind | undefined): void => {
+    if (!juice || !juiceRng) return;
+    if (proposed && !isSpecialSpend(proposed)) {
+      // The view only PROPOSES, and only for its own side: the sim checks the
+      // meter, and a proposal for the other side is not a person's to make.
+      // A special pitch is not proposed here at all — it rides on
+      // `PlayInputs.pitch` and `decidePitch` below pays for it.
+      const side = spendSide(proposed) === 'batting' ? juice.batting : fielding;
+      if (juice.human === null || side === juice.human) buy(side, proposed);
+    }
+    for (const side of ['away', 'home'] as const) {
+      if (side === juice.human) continue;
+      const other = side === 'away' ? 'home' : 'away';
+      const diff = juice.scores[side] - juice.scores[other];
+      const kinds: PowerKind[] = side === juice.batting ? ['powerSwing', 'turboLegs'] : ['goldenGlove'];
+      for (const kind of kinds) {
+        if (!armed[kind] && cpuWantsSpend(juice.meters[side], kind, diff, juiceRng)) buy(side, kind);
+      }
+    }
+  };
+  /**
+   * The windup's pitch, with a SPECIAL kind paid for or taken away.
+   *
+   * ★ THE SIM GUARDS THE SPEND; THE VIEW ONLY PROPOSES. A person's plan may
+   * carry a special kind whatever the picker showed; it is thrown as one
+   * only when `features.specialPitches` is on, the meter is the fielding
+   * side's own (or nobody's, in a headless run), and `spend` covers it —
+   * otherwise it is a FASTBALL, silently, with no `spend` event, so a stale
+   * card or a hand-typed flag cannot buy a pitch. With the flag off this
+   * function is the one branch and `throwPitch` never sees a special.
+   *
+   * The CPU rolls off the same `fork('juice')` its powers roll on — nothing
+   * with the flag off, nothing when broke (`cpuPickSpecialPitch`) — and its
+   * SPOT is the plan `throwPitch` would have drawn: `fork('choose')` keys on
+   * the label, so drawing it here and handing it in as the plan is the same
+   * plan, and `throwPitch` then does not draw it. Only the kind changes.
+   */
+  const decidePitch = (proposed: PitchPlan | undefined, spec: PitchSpec, pitchRng: Rng): PitchPlan | undefined => {
+    if (proposed) {
+      if (!isSpecialPitch(proposed.kind)) return proposed;
+      const allowed = specials && juice !== null && (juice.human === null || fielding === juice.human);
+      if (allowed && pay(fielding, proposed.kind)) return proposed;
+      return { ...proposed, kind: 'fastball' };
+    }
+    if (!specials || !juice || !juiceRng || fielding === juice.human) return undefined;
+    const other = fielding === 'away' ? 'home' : 'away';
+    const kind = cpuPickSpecialPitch(juice.meters[fielding], juice.scores[fielding] - juice.scores[other], juiceRng);
+    if (!kind || !pay(fielding, kind)) return undefined;
+    return { ...choosePitch(spec, pitchRng.fork('choose')), kind };
+  };
+  if (juice) syncJuice(frame, juice.meters);
 
   for (;;) {
     if (pitches++ >= GAME.MAX_PITCHES_PER_PA) {
@@ -363,8 +547,12 @@ function* playAtBatLive(
     frame.play = null;
     frame.pitch = null;
     // The mound's decision, if a person is making it. A CPU pitcher passes
-    // nothing and `choosePitch` runs exactly as before.
-    const chosen = ((yield frame) ?? {}).pitch;
+    // nothing and `choosePitch` runs exactly as before. The same frame carries
+    // a person's spend, which is decided here — BEFORE the throw, because a
+    // power swing changes how this pitch is graded and turbo legs change who
+    // runs on it.
+    const windupInput = (yield frame) ?? {};
+    decideSpends(windupInput.spend);
     syncFrame(frame, half, 'pitch');
     // ★ THE PITCH IS THROWN, YIELDED, AND ONLY THEN JUDGED — and that ordering
     // is the whole architectural change. `pitchAndSwing` did all three in one
@@ -380,13 +568,38 @@ function* playAtBatLive(
     // off the same parent are indistinguishable from one that forked both.
     // PR 13's golden fingerprints and 30-game checksum are what prove it.
     const pitchRng = rng.fork(`p${pitches}`);
-    const spec = {
-      pitcher: args.pitcher,
+    // ★ THE TIRED ARM IS A SPREAD COPY, AND THE FRESH ONE IS THE SAME OBJECT.
+    // With `features.stamina` off `pitcher` IS `args.pitcher` — no copy, no
+    // rounding, nothing for a fingerprint to see, which is how the golden
+    // values stay byte-identical while the port sits in the same function.
+    // With it on, the sagged stat is an integer in 1..10 (`stamina.ts`), so the
+    // release memo and `fastballFlightSec` keep hitting. The steal race below
+    // reads the same tired arm: the runner projects against the fastball the
+    // kid can throw NOW. His arm in the field (`fielders.ts`, by id) is not
+    // sagged — that is a separate question the hold does not ask.
+    const pitcher = stamina
+      ? {
+          ...args.pitcher,
+          stats: { ...args.pitcher.stats, pitching: effectivePitching(args.pitcher.stats.pitching, stamina) },
+        }
+      : args.pitcher;
+    const spec: PitchSpec = {
+      pitcher,
       batter: args.batter,
       count: half.state.count,
       plate: args.plate,
     };
+    // A special kind is paid for or downgraded HERE, before the throw, so
+    // `throwPitch` only ever throws what the meter covered.
+    const chosen = decidePitch(windupInput.pitch, spec, pitchRng);
     const inFlight = throwPitch(spec, pitchRng, chosen);
+    if (stamina) {
+      // Drained on the throw, before the swing: the pitch just thrown was the
+      // tired arm's, the NEXT one is a little more so — and a special costs
+      // the arm triple (`STAMINA.DRAIN_SPECIAL`), as in v1.
+      drainPitch(stamina, isSpecialPitch(inFlight.kind));
+      frame.stamina = stamina.stamina;
+    }
     frame.pitch = {
       release: inFlight.release,
       travelSec: inFlight.travelSec,
@@ -399,7 +612,10 @@ function* playAtBatLive(
     // `swing` exactly as before; a human draws neither, which again shifts
     // nothing for anybody else.
     const swing = ((yield frame) ?? {}).swing;
-    const result = resolvePitch(inFlight, spec, pitchRng, swing);
+    // Undefined unless a power swing is armed — `resolveSwing` then reads
+    // `power: false`, and the ordinary arithmetic is untouched.
+    const boost = armed.powerSwing ? { power: true } : undefined;
+    const result = resolvePitch(inFlight, spec, pitchRng, swing, boost);
 
     // ★ THE COUNT IS READ BEFORE THE FOLD. `applyAtBat` resets it to 0-0 on
     // every batter-done branch, so an observer told afterwards would see every
@@ -411,10 +627,18 @@ function* playAtBatLive(
     // thrown, which is how a changeup becomes a gift rather than an assumption:
     // `sim.stealRace` measures the same runner out by 0.18s on a fastball and
     // safe by 0.13s on a changeup, with nothing anywhere saying so.
-    const steal = tryStealBefore(half, args, result.travelSec, rng.fork(`steal${pitches}`));
+    const steal = tryStealBefore(
+      half,
+      { defence: args.defence, lookup: args.lookup, pitcher },
+      result.travelSec,
+      rng.fork(`steal${pitches}`)
+    );
     if (steal) {
       tally.stealAttempts += 1;
-      if (steal.safe) tally.stealsSafe += 1;
+      if (steal.safe) {
+        tally.stealsSafe += 1;
+        if (juice) charge(juice.batting, 'steal');
+      }
       log.push(steal.line);
     }
 
@@ -452,6 +676,7 @@ function* playAtBatLive(
         tally.plateAppearances += 1;
         stats.push({ t: 'atBat', kid: args.batter.id });
         stats.push({ t: 'kThrown', kid: args.pitcher.id });
+        charge(fielding, 'kThrown');
         log.push(`  ${args.batter.name} strikes out`);
         onEvent?.({ t: 'pa', batterId: args.batter.id, pitcherId: args.pitcher.id, result: 'k' });
       } else {
@@ -481,6 +706,9 @@ function* playAtBatLive(
         geo: args.geo,
         // The same resolved tune the plate used — one seam, both sides.
         plate: args.plate,
+        // Undefined with the flag off, so `beginPlay` builds the athletes
+        // exactly as the one-kid-speed lint asserts.
+        boost: juice ? { turboLegs: armed.turboLegs, goldenGlove: armed.goldenGlove } : undefined,
       },
       rng.fork(`play${pitches}`),
       frame,
@@ -515,6 +743,7 @@ function* playAtBatLive(
       foul: false,
       timingErrorSec: result.timingErrorSec,
     });
+    if (outcome.flyCaught) charge(fielding, 'flyCaught');
     // ★ TAKE THE IDENTITIES BEFORE FOLDING. `applyLivePlay` reads four fields
     // and `baseIds` is not one of them.
     half.occupants = [...outcome.baseIds] as [string | null, string | null, string | null];
@@ -526,8 +755,10 @@ function* playAtBatLive(
     stats.push({ t: 'atBat', kid: args.batter.id });
     if (!outcome.batterOut) {
       tally.hits += 1;
-      stats.push({ t: 'hit', kid: args.batter.id, homer: scored.includes(args.batter.id) });
-      if (scored.includes(args.batter.id)) tally.homeRuns += 1;
+      const homer = scored.includes(args.batter.id);
+      stats.push({ t: 'hit', kid: args.batter.id, homer });
+      if (homer) tally.homeRuns += 1;
+      if (juice) charge(juice.batting, homer ? 'homer' : 'hit');
     }
     onEvent?.({
       t: 'pa',
@@ -538,7 +769,10 @@ function* playAtBatLive(
     // ★ RUN ATTRIBUTION COMES OFF THE PLAY, NOT THE FOLD. `applyLivePlay`
     // returns a count of runs and drops `baseIds` entirely, so a run folded
     // through it has no owner. The play's own `score` events do.
-    for (const id of scored) stats.push({ t: 'run', kid: id });
+    for (const id of scored) {
+      stats.push({ t: 'run', kid: id });
+      if (juice) charge(juice.batting, 'run');
+    }
     log.push(
       `  ${args.batter.name}: ${outcome.description.replace('\n', ' ')}` +
         (folded.runsScored ? ` (${folded.runsScored} in)` : '')
@@ -743,6 +977,8 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
     plan: planDefence(t.ids, spec.lookup, t.order),
     lineupIdx: 0,
     score: 0,
+    stamina: newStamina(),
+    juice: newJuice(),
   });
   const away = mk(spec.away);
   const home = mk(spec.home);
@@ -776,6 +1012,8 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
     defence: {},
     play: null,
     pitch: null,
+    stamina: null,
+    juice: spec.features?.juice ? { away: 0, home: 0 } : null,
   };
 
   for (;;) {
@@ -802,6 +1040,24 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
           onEvent: spec.onEvent,
           plate: resolvePlate(spec.plate),
           frame,
+          // CPU pitchers tire too: the flag is per game, not per side.
+          stamina: spec.features?.stamina ? field.stamina : null,
+          // Both meters, and whose is a person's; the score as of now, for
+          // the CPU's eagerness.
+          juice: spec.features?.juice
+            ? {
+                batting: half === 'top' ? 'away' : 'home',
+                meters: { away: away.juice, home: home.juice },
+                human: spec.humanSide ?? null,
+                scores: {
+                  away: away.score + (half === 'top' ? hs.score : 0),
+                  home: home.score + (half === 'bottom' ? hs.score : 0),
+                },
+              }
+            : null,
+          // The specials are bought off the meter, so this is asked only
+          // where `juice` is non-null; alone the flag changes nothing.
+          specials: spec.features?.specialPitches ?? false,
         },
         rng.fork(`${inning}${half}${bat.lineupIdx}`)
       );

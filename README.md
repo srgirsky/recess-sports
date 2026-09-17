@@ -48,6 +48,8 @@ judging the art direction). Useful query flags:
 | `?face=<cell>` | force an expression atlas cell during model review |
 | `?perf=low\|mid\|high` | override the auto-detected device tier |
 | `?proxy=1` | force primitive proxy characters everywhere |
+| `?features=<list>` | switch **held** features on for a playtest: `all`, or a comma list of `stamina`, `juice`, `specialPitches`, `shifts`. All off otherwise — see "Playtesting with kids". `stamina` (a tiring pitcher), `juice` (the meter, its tray and three spends; keys `Q`/`W`/`E`) and `specialPitches` (three more pitch cards bought off that meter — needs `juice` too; keys `5`/`6`/`7`) are the ports that do something today; `shifts` is a seam |
+| `?log=1` | record the session and show the `⬇ LOG` download (counts only) |
 
 Keys on the spike page: `1`–`5` switch camera preset, `V` cycles venue.
 
@@ -103,6 +105,60 @@ Phaser, so they're unit-tested headlessly:
 npm test
 ```
 
+## Playtesting with kids
+
+Four features — defensive shifts, pitcher stamina, juice/power-ups and special
+pitches — are **held**: they ship off, and only a session with children can turn
+one on. The holds are data in `docs/playtests/holds.json`; the flags are
+`src/v2/sim/features.ts`; `scripts/playtest.lint.test.js` (part of `npm test`)
+fails a held feature that defaults on and a hold lifted without a record.
+
+Of the four, **stamina is ported** (`src/v2/sim/stamina.ts`, tunables in
+`params.ts` `STAMINA`, provenance in `sim.stamina`): with `?features=stamina`
+every pitch drains the pitcher's tank, below the line a 💦 pip shows on his
+matchup chip and his pitches miss the spot more — both sides, CPU included.
+There is no bullpen; a tired pitcher finishes the game.
+
+**Juice is ported** too (`src/v2/sim/juice.ts`, tunables in `params.ts`
+`JUICE`, provenance in `sim.juice`): with `?features=juice` each side has a
+meter under its name on the scoreboard, charged by its own hits, homers, runs,
+strikeouts thrown, caught flies and steals. Before a pitch, a tray on the left
+edge offers what your side can afford — 💥 POWER (a faster bat that is harder
+to time), 💨 TURBO (your runners' legs on the next ball in play) when you bat,
+🧤 GLOVE (a longer reach and no drops) when you field; tap a chip or press
+`Q`/`W`/`E`. A spend lasts the plate appearance. The CPU spends its own meter
+when it trails and never yours.
+
+**Special pitches are ported** as well (`src/v2/sim/pitch.ts`
+`SPECIAL_PITCHES`, costs in `params.ts` `JUICE.COSTS`, provenance in
+`sim.specialPitches`): with `?features=specialPitches,juice` the pitch picker
+grows three cards below the four — 🤪 CRAZY (slower, breaks hard and is thrown
+wild), ☄️ BLAZE (a quarter faster, rising) and 🧊 FLOATER (slow and hanging
+on heavy backspin) — each a spend off the same meter, bought per pitch; a card
+the meter cannot cover is greyed. Keys `5`/`6`/`7`. The CPU buys one when it
+trails. Without `juice` there is no meter, so `specialPitches` alone changes
+nothing. `shifts` parses and rides the game spec but changes nothing yet.
+
+To run a session, follow `docs/playtests/PROTOCOL.md`. In short:
+
+1. Open the game with the flags in the URL — `/?log=1` for the baseline, then
+   `/?features=stamina` (or `juice`, `specialPitches,juice`, `shifts`) for ONE
+   feature — the special pitches need the meter they are bought from, so their
+   block carries `juice` too. Any `?features=` also switches the session log on.
+2. Watch, and write down behaviour. At the end of a block tap **⬇ LOG** (top
+   right beside the speaker, or beside pause on short screens) to download `playtest-<n>.json` — pitches, the
+   child's swings/whiffs/hits, outs made in the field, taps per verb, elapsed
+   time, and how the session ended. The last twenty sessions also sit in that
+   browser's `localStorage` under `recess_playtest_log`.
+3. Copy `docs/playtests/TEMPLATE.json` to `docs/playtests/<date>-<slug>.json`,
+   fill it in (age bands only — no names, no recordings, no observer names;
+   the lint checks), and open a PR.
+
+**Lifting a hold:** with a record whose `verdicts.<feature>` is `"lift"`, set
+that feature's `status` to `"lifted"` in `holds.json` with `liftedOn` and
+`liftedBy: ["<record id>"]`. Only then may its `DEFAULT_FEATURES` entry become
+`true`. The lint enforces the order.
+
 ## Checking a 3D asset delivery (v2)
 
 Character models and the animation library follow strict delivery contracts
@@ -115,7 +171,7 @@ passes can move to visual review:
 ```bash
 npm run export:skeleton    # emit assets/v2/skeleton_recess_v1.glb from skeleton.ts
 npm run export:animations  # emit the shared 43-clip runtime library
-npm run export:pilot-performance # emit Junebug's eight-clip partial performance
+npm run export:signature-performance -- nostrike # emit Junebug's eight-clip partial performance
 npm run export:signature-performance -- calls_shot # emit Theo's nine clips
 npm run export:signature-performance -- wheelchair_ace # emit Zoom's nine clips
 npm run export:signature-performance -- big_lou # emit Big Lou's nine clips
@@ -255,7 +311,19 @@ npm run capture:character-evidence -- nostrike
 npm run review:character-fidelity -- nostrike
 npm run measure:fidelity -- nostrike
 npm run validate:models
+npm run record:provenance            # refresh the machine half of the provenance record
+npm run record:provenance -- --check # verify it; non-zero exit on drift
 ```
+
+`record:provenance` writes `assets/v2/source/character-provenance.json` — per
+kid, what baked the shipped take (`generated-stand-in` when it was
+`proceduralClips.ts`), what synthesised the voice (`ai-voice-cast` or
+`system-voice-bank`) and whether any of it is final delivery under the
+performance brief's rule 5. The exporters call it after the manifest. The
+`recorded` block (`by`, `at`, `boundSha256`) is the maintainer's signature: fill
+it by hand, with the digest `npm run record:provenance -- --bind <id>` prints —
+`scripts/v2/provenance.lint.test.js` refuses an agent's name there, and a script
+never writes it.
 
 The atlas command writes a character's 16-expression source texture from their
 entry in `scripts/v2/face-specs.mjs`. ⚠️ Those cell coordinates are bound to that
@@ -360,6 +428,17 @@ that, nor would a player want it. What a drawing like that actually reads as at
 game scale is a scalloped silhouette over a rounded crown. Use this to answer
 "did this build carry more grouping than the last one", and settle "is the hair
 right" on the silhouette and the eye.
+
+`npm run census:sculptlib` answers "which kids are actually built on HEAD's
+shared library" — a report, never a gate. A change to `sculptlib/` reaches a kid
+only when their `.blend` is rebuilt through Blender and re-exported, so after a
+primitive lands most of the roster still ships a mesh the old library made, with
+every score honestly bound to a board of that older mesh. The census prints, per
+kid, how many library commits their source predates and which files moved, their
+LOD0 triangles and headroom under the ceiling (a kid under about sixty spare must
+trim before a shared change can even build), their status and scores, and open
+findings by triage class — sorted most-stale-then-tightest, which is the batch
+order for a polish sweep.
 
 The id a character is registered under and the slug their art was drawn under
 differ for eleven of the thirty. `scripts/v2/character-registry.json` is the one

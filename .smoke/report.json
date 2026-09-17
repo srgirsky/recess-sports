@@ -39,6 +39,10 @@
     },
     "caught": null,
     "breakUp": false,
+    "hold": false,
+    "replay": false,
+    "replayUp": false,
+    "tape": 0,
     "ball": {
       "x": 0,
       "y": 3,
@@ -83,6 +87,10 @@
     },
     "caught": null,
     "breakUp": false,
+    "hold": false,
+    "replay": false,
+    "replayUp": false,
+    "tape": 0,
     "ball": {
       "x": 0,
       "y": 3,
@@ -127,6 +135,10 @@
     },
     "caught": null,
     "breakUp": false,
+    "hold": false,
+    "replay": false,
+    "replayUp": false,
+    "tape": 0,
     "ball": {
       "x": -0.03,
       "y": 7.51,
@@ -166,15 +178,19 @@
     },
     "catcher": {
       "id": "zippy",
-      "clip": "field_ready",
+      "clip": "idle",
       "bat": false
     },
     "caught": null,
     "breakUp": false,
+    "hold": true,
+    "replay": false,
+    "replayUp": false,
+    "tape": 1,
     "ball": {
-      "x": -0.62,
-      "y": 7.03,
-      "z": 10.59,
+      "x": 16.08,
+      "y": 3,
+      "z": 155.93,
       "visible": true
     },
     "play": null,
@@ -215,6 +231,10 @@
     },
     "caught": null,
     "breakUp": false,
+    "hold": false,
+    "replay": false,
+    "replayUp": false,
+    "tape": 0,
     "ball": {
       "x": 0.44,
       "y": 4.42,
@@ -259,6 +279,10 @@
     },
     "caught": null,
     "breakUp": false,
+    "hold": false,
+    "replay": false,
+    "replayUp": false,
+    "tape": 12,
     "ball": {
       "x": 5.08,
       "y": 13.86,
@@ -308,6 +332,10 @@
     },
     "caught": null,
     "breakUp": false,
+    "hold": false,
+    "replay": false,
+    "replayUp": false,
+    "tape": 6,
     "ball": {
       "x": 122.28,
       "y": 3,
@@ -357,6 +385,10 @@
     },
     "caught": null,
     "breakUp": false,
+    "hold": false,
+    "replay": false,
+    "replayUp": false,
+    "tape": 18,
     "ball": {
       "x": 117.61,
       "y": 3,
@@ -406,6 +438,10 @@
     },
     "caught": null,
     "breakUp": false,
+    "hold": false,
+    "replay": false,
+    "replayUp": false,
+    "tape": 30,
     "ball": {
       "x": 117.61,
       "y": 3,
@@ -455,6 +491,10 @@
     },
     "caught": null,
     "breakUp": false,
+    "hold": false,
+    "replay": false,
+    "replayUp": false,
+    "tape": 0,
     "ball": {
       "x": 0,
       "y": 3,
@@ -499,10 +539,14 @@
     },
     "caught": null,
     "breakUp": true,
+    "hold": true,
+    "replay": false,
+    "replayUp": false,
+    "tape": 1,
     "ball": {
       "x": 0,
       "y": 3,
-      "z": 46,
+      "z": 84.85,
       "visible": true
     },
     "play": null,
@@ -543,6 +587,10 @@
     },
     "caught": null,
     "breakUp": false,
+    "hold": false,
+    "replay": false,
+    "replayUp": false,
+    "tape": 0,
     "ball": {
       "x": 0,
       "y": 3,
@@ -591,10 +639,14 @@
       "bat": false
     },
     "breakUp": false,
+    "hold": true,
+    "replay": false,
+    "replayUp": false,
+    "tape": 1,
     "ball": {
-      "x": 0,
+      "x": 83.98,
       "y": 3,
-      "z": 46,
+      "z": 129.06,
       "visible": true
     },
     "play": null,
@@ -627,10 +679,14 @@
       "bat": false
     },
     "breakUp": false,
+    "hold": false,
+    "replay": false,
+    "replayUp": false,
+    "tape": 0,
     "ball": {
-      "x": 0,
+      "x": 83.98,
       "y": 3,
-      "z": 46,
+      "z": 129.06,
       "visible": true
     },
     "play": null,
@@ -652,7 +708,7 @@
     "phase": "between",
     "batter": {
       "id": "big_lou",
-      "clip": "cheer_goofy",
+      "clip": "run",
       "bat": false
     },
     "pitcher": {
@@ -662,15 +718,19 @@
     },
     "catcher": {
       "id": "ace_kid",
-      "clip": "field_ready",
+      "clip": "idle",
       "bat": false
     },
     "caught": null,
     "breakUp": false,
+    "hold": true,
+    "replay": false,
+    "replayUp": false,
+    "tape": 1,
     "ball": {
-      "x": 0,
-      "y": 3,
-      "z": 46,
+      "x": -111.68,
+      "y": 8.51,
+      "z": 158.26,
       "visible": true
     },
     "play": null,
@@ -687,6 +747,106 @@
       "pa": 3
     },
     "hr": 1,
+    "gameOver": false
+  },
+  {
+    "beat": "replay-arm",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/replay-arm.png",
+    "reached": true,
+    "phase": "live",
+    "batter": {
+      "id": "nostrike",
+      "clip": "run",
+      "bat": false
+    },
+    "pitcher": {
+      "id": "lefty",
+      "clip": "field_scoop",
+      "bat": false
+    },
+    "catcher": {
+      "id": "ace_kid",
+      "clip": "trot",
+      "bat": false
+    },
+    "caught": null,
+    "breakUp": false,
+    "hold": false,
+    "replay": false,
+    "replayUp": false,
+    "tape": 24,
+    "ball": {
+      "x": -0.28,
+      "y": 3,
+      "z": 46.14,
+      "visible": true
+    },
+    "play": {
+      "heldBy": 0,
+      "throw": false,
+      "done": false,
+      "runners": 1
+    },
+    "bases": [
+      false,
+      false,
+      false
+    ],
+    "half": "top",
+    "inning": 1,
+    "ev": {
+      "pitch": 5,
+      "contact": 2
+    },
+    "hr": 0,
+    "gameOver": false
+  },
+  {
+    "beat": "replay",
+    "shot": "/Users/sethgirsky/Documents/Project/Recess Sports/.smoke/replay.png",
+    "reached": true,
+    "phase": "between",
+    "batter": {
+      "id": "nostrike",
+      "clip": "trot",
+      "bat": false
+    },
+    "pitcher": {
+      "id": "lefty",
+      "clip": "field_scoop",
+      "bat": false
+    },
+    "catcher": {
+      "id": "ace_kid",
+      "clip": "walk_on",
+      "bat": false
+    },
+    "caught": null,
+    "breakUp": false,
+    "hold": false,
+    "replay": true,
+    "replayUp": true,
+    "tape": 0,
+    "ball": {
+      "x": -0.28,
+      "y": 3,
+      "z": 46.14,
+      "visible": true
+    },
+    "play": null,
+    "bases": [
+      false,
+      false,
+      false
+    ],
+    "half": "top",
+    "inning": 1,
+    "ev": {
+      "pitch": 5,
+      "contact": 3,
+      "pa": 1
+    },
+    "hr": 0,
     "gameOver": false
   }
 ]

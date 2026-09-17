@@ -929,6 +929,122 @@ export const ATBAT = {
 } as const;
 
 /**
+ * Pitcher stamina — a held feature (`features.stamina`, off by default).
+ *
+ * ★ THIS IS v1's SHAPE RESTATED, NOT A MEASUREMENT. `src/config.ts`'s `FATIGUE`
+ * block was tuned by feel for the pixel game and never measured against
+ * anything; these four numbers are the same four, carried over so the v2 port
+ * plays the way v1's did and a playtest compares one thing. Stamina is a
+ * fraction of a full tank (unitless), the drains are fractions per pitch, and
+ * `MAX_STAT_LOSS` is in pitching-stat points — so this is the one block here
+ * that is neither feet nor seconds, and `sim.stamina` says why it is allowed:
+ * nothing in it is a physical quantity, and the record names the playtest that
+ * would settle whether the shape is right at all.
+ *
+ * ★ THE SAGGED STAT IS ROUNDED TO AN INTEGER BEFORE IT REACHES A CACHE.
+ * `releaseAtSpot` memoises on `kind|pitchingStat|spot` (13.6ms per miss) and
+ * `fastballFlightSec` on the stat alone; a fractional stat would miss every
+ * key and re-solve every pitch. `stamina.ts` owns that rounding.
+ *
+ * There is no bullpen: v2 has no relief UI and no CPU relief rule, so a tired
+ * pitcher stays tired. Recorded in `sim.stamina`.
+ */
+export const STAMINA = {
+  /** Fraction of the tank one ordinary pitch costs (~33 pitches to empty). */
+  DRAIN_PER_PITCH: 0.03,
+  /** Fraction a special pitch (`pitch.ts` `SPECIAL_PITCHES`) costs — triple, as in v1. */
+  DRAIN_SPECIAL: 0.09,
+  /** Below this the sweat pip shows and the stat starts to sag. */
+  TIRED_AT: 0.45,
+  /** Pitching-stat points lost at an empty tank, floored at stat 1. */
+  MAX_STAT_LOSS: 4,
+} as const;
+
+/**
+ * The juice meter — a held feature (`features.juice`, off by default).
+ *
+ * ★ v1's SHAPE RESTATED, NOT A MEASUREMENT, like `STAMINA` above. `src/config.ts`'s
+ * `JUICE` block was tuned by feel; the meter is unitless (0..MAX), the gains
+ * and costs are meter points, and the three multipliers are the only physical
+ * quantities here — each applied at one site so the roster's own numbers stay
+ * the base: a power swing is the kid's OWN bat speed times `POWER_BAT_MULT`,
+ * turbo legs are his OWN top speed times `TURBO_SPEED_MULT`, and the glove
+ * bonus is added to the one `reachFt()` every fielder shares. `sim.juice` says
+ * what would settle any of it.
+ *
+ * ★ A POWER SWING IS HARDER TO TIME, ON PURPOSE. v1 handed the power swing a
+ * band upgrade and a quality bonus — a swing that is better in every way, which
+ * is a cheat code rather than a choice. Here the bat is faster AND the contact
+ * window is `POWER_WINDOW_MULT` of the normal one, because swinging harder is
+ * harder to time; `juice.test.ts` measures both halves in a sweep. So a
+ * six-year-old who spends it and whiffs was not robbed — he swung for the
+ * fences.
+ *
+ * ★ `rallyCap` IS NOT PORTED. It widened the swing window for a whole half,
+ * on top of the plate's own window — a second window-widening in a model whose
+ * one window is a fraction of the flight by construction (`pace.swingWindows`).
+ * Two knobs on one tolerance is how v1's 380ms band ended up wider than a
+ * 270ms flight. Recorded in `sim.juice`.
+ *
+ * ★ THE CPU SPENDS WHEN IT IS BEHIND. `CPU_EAGERNESS` is the per-windup chance
+ * it spends an affordable kind, keyed on the score: v1's 0.6 / 0.3 / 0.12. The
+ * roll is drawn from a per-plate-appearance `fork('juice')` that nothing else
+ * reads, so with the flag off the fork is never drawn and the goldens hold.
+ * The special pitches (`features.specialPitches`) ride the same meter and
+ * the same roll — `juice.ts` `cpuPickSpecialPitch` — and are only ever a
+ * fielding-side spend; their physics live in `pitch.ts`, not here.
+ */
+export const JUICE = {
+  /** The meter's ceiling, meter points. */
+  MAX: 100,
+  /** What each play charges the side that made it. */
+  GAINS: {
+    hit: 10,
+    /** Charged INSTEAD of `hit` when the batter came all the way round. */
+    homer: 30,
+    run: 12,
+    kThrown: 18,
+    flyCaught: 10,
+    steal: 20,
+  },
+  /** What each spend costs. Armed for the rest of the plate appearance. */
+  COSTS: {
+    /** The batting side: a faster bat with a narrower window (this PA's swings). */
+    powerSwing: 55,
+    /** The batting side: every runner's top speed up, on this PA's ball in play. */
+    turboLegs: 40,
+    /** The fielding side: longer reach and no drops, on this PA's ball in play. */
+    goldenGlove: 40,
+    /**
+     * The fielding side's three special pitches (`features.specialPitches`,
+     * `pitch.ts` `SPECIAL_PITCHES`), bought on the windup for THIS pitch: v1's
+     * crazyPitch 55 / fireball 60 / freezeball 60, the ace's discount left
+     * behind with the other ability hooks. A special is a spend so the meter
+     * is the one thing that gates it — the sim downgrades an unaffordable one
+     * to a fastball before the throw (`game.ts`), and the `spend` event names
+     * the kind the way it names a glove.
+     */
+    crazy: 55,
+    fireball: 60,
+    freezeball: 60,
+  },
+  /** Bat speed multiplier on a power swing. */
+  POWER_BAT_MULT: 1.15,
+  /** Contact and perfect window multiplier on a power swing — under 1: harder to time. */
+  POWER_WINDOW_MULT: 0.8,
+  /** Runner top-speed multiplier under turbo legs. */
+  TURBO_SPEED_MULT: 1.35,
+  /** Feet added to every fielder's reach under a golden glove. */
+  GLOVE_REACH_BONUS_FT: 1.0,
+  /** Per-windup chance a CPU side spends an affordable kind, by score. */
+  CPU_EAGERNESS: {
+    trailing: 0.6,
+    level: 0.3,
+    leading: 0.12,
+  },
+} as const;
+
+/**
  * The game above the plate appearance.
  *
  * Everything here is a RULE rather than a measurement, which is why the block is

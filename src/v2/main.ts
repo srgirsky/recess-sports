@@ -31,12 +31,23 @@
 //                   walks from it rather than re-rolling, so a session stays
 //                   reproducible from one flag.
 //   ?venue=<VenueId>  where the game is played; TeamScreen owns the full list.
+//   ?features=<list>  switch HELD features on for a playtest: `all`, or a
+//                   comma list of `stamina`, `juice`, `specialPitches`,
+//                   `shifts` (`sim/features.ts`). Every one is off otherwise,
+//                   and `docs/playtests/holds.json` says why. Any `?features=`
+//                   also turns the session log on.
+//   ?log=1          record the session (`ui/sessionLog.ts`) and show the
+//                   `⬇ LOG` download. Counts only; see docs/playtests/.
+//   ?replay=1|0     replay EVERY play (the presentation smoke's page) or none;
+//                   unset, the view replays the plays that earn one
+//                   (`render/replayCues.ts`) — in slow motion, never re-simulated.
 // ---------------------------------------------------------------------------
 
 import { App } from './App';
 import { LookSpike } from './spike/LookSpike';
 import { AnimSpike } from './spike/AnimSpike';
 import { GameView } from './game/GameView';
+import { SessionLog } from './ui/sessionLog';
 import { assetUrl } from './render/assets';
 
 // CSS cannot resolve `public/v2/` from both `/` and the permanent `/v2/` alias
@@ -76,8 +87,15 @@ if (surface instanceof GameView) {
     frozen = !frozen;
     surface.setPaused(frozen);
   });
+  // The playtest session log on the bare surface too, so `?play=1&log=1`
+  // records from the first pitch and the layout audit measures its button.
+  // `start()` resolves before the first tick, so nothing is missed.
+  const log = new SessionLog();
+  log.attach(surface);
+  void surface.start().then(() => log.begin());
+} else {
+  void surface.start();
 }
-void surface.start();
 
 if (import.meta.env.DEV) {
   // ★ `__spike` KEEPS ITS NAME. Every measurement sweep, the layout audit and

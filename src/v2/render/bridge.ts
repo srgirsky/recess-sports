@@ -33,6 +33,7 @@ import type { CameraInput } from './cameraCues';
 import { clipSpec } from './clips';
 import { activeFielderCue, ballPresenceCue, ballShadowCue } from './readabilityCues';
 import { homeRunTrot } from './actionCues';
+import type { ReplayActor, ReplaySnapshot } from './replayCues';
 
 /** Everything the bridge is allowed to move. */
 export interface SceneRefs {
@@ -90,6 +91,84 @@ export function applyFrame(
   }
   applyReadability(refs, frame, view);
   for (const d of refs.directors.values()) d.update(dtSec);
+}
+
+/**
+ * Record what the scene is DRAWING for a live tick — the instant replay's
+ * tape. Called after `applyFrame`, so every value is the one on screen:
+ * positions and facing off the kids' roots, clip name and time off the
+ * directors, the ball off its object, and the camera policy's input for the
+ * tick. Values only; the frame and the play are read and dropped
+ * (`src/v2/AGENTS.md` § The game loop on retaining a `LiveFrame`).
+ */
+export function snapshotScene(refs: SceneRefs, frame: LiveFrame, holdElapsedSec?: number): ReplaySnapshot | null {
+  if (frame.phase !== 'live' || !frame.play) return null;
+  const live = frame.play;
+  const ids = new Set<string>();
+  for (const fielder of live.fielders) ids.add(fielder.charId);
+  for (const runner of live.runners) ids.add(runner.charId);
+  const actors: ReplayActor[] = [];
+  for (const id of ids) {
+    const kid = refs.kids.get(id);
+    if (!kid) continue;
+    const dir = refs.directors.get(id);
+    actors.push({
+      id,
+      x: kid.root.position.x,
+      z: kid.root.position.z,
+      facing: kid.root.rotation.y,
+      visible: kid.root.visible,
+      clip: dir?.playing ?? null,
+      clipTime: dir?.action?.time ?? 0,
+      glove: dir?.gloveVisible ?? false,
+    });
+  }
+  const chaser = live.fielders[live.active];
+  return {
+    t: live.elapsedSec,
+    ball: [refs.ball.position.x, refs.ball.position.y, refs.ball.position.z],
+    actors,
+    activeId: chaser ? chaser.charId : null,
+    camera: cameraInputFor(frame, holdElapsedSec),
+  };
+}
+
+export interface SnapshotViewOptions {
+  /** Put each kid's clip back at its recorded time (playback), or leave motion alone. */
+  seekClips: boolean;
+  /** Last frame's camera eye, for the ball's apparent-size cue. */
+  cameraAt?: { x: number; y: number; z: number };
+}
+
+/**
+ * Re-apply a recorded tick: the replay's other half. Writes the same scene
+ * objects `applyFrame` writes, from the tape instead of the sim, and never
+ * decides a clip — `seek` shows the recorded one at the recorded time. The
+ * steering ring is hidden: there is no input during a replay.
+ */
+export function applySnapshot(refs: SceneRefs, snap: ReplaySnapshot, view: SnapshotViewOptions): void {
+  for (const actor of snap.actors) {
+    const kid = refs.kids.get(actor.id);
+    if (!kid) continue;
+    kid.root.position.x = actor.x;
+    kid.root.position.z = actor.z;
+    kid.root.rotation.y = actor.facing;
+    kid.root.visible = actor.visible;
+    const dir = refs.directors.get(actor.id);
+    dir?.setGloveVisible(actor.glove);
+    if (view.seekClips && actor.clip) dir?.seek(actor.clip, actor.clipTime);
+  }
+  refs.ball.position.set(snap.ball[0], snap.ball[1], snap.ball[2]);
+  const at = { x: snap.ball[0], y: snap.ball[1], z: snap.ball[2] };
+  const presence = ballPresenceCue(at, view.cameraAt ?? { x: 0, y: 0, z: 0 }, 'live', view.cameraAt !== undefined);
+  refs.ball.scale.setScalar(presence.scale);
+  if (refs.ballShadow) {
+    const cue = ballShadowCue(at, 'live', true);
+    refs.ballShadow.visible = cue.visible;
+    refs.ballShadow.position.set(cue.x, 0.055, cue.z);
+    refs.ballShadow.scale.setScalar(cue.scale);
+  }
+  if (refs.activeFielderRing) refs.activeFielderRing.visible = false;
 }
 
 /** Field chrome reads the already-positioned ball and active fielder. */

@@ -431,11 +431,24 @@ def build_seated_legs(builder: MeshBuilder, detail: int) -> None:
 # Proxy-proven geometry, authored: cambered wheels with blue push rims (the
 # team accent), hubs, front casters, three frame rails a side, upholstered
 # seat and backrest, a footplate closing the chassis.
-WHEEL_CENTER_Z = 0.570
-WHEEL_R = 0.550
-WHEEL_X = 0.580
+# measured: front z=0.50 halfWidth=1.188
+# measured: view2 z=1.30 halfWidth=1.056
+# The chair, sized to the sheet (2026-09-12). Front view: the figure is 1.188
+# half-wide from z 0.2 to 0.7 and the outermost runs at both ends are tyre
+# (#030302/#16191a) — the drive wheels span 2.38ft, 59% of figure height,
+# where WHEEL_X 0.58 + tyre + camber delivered 1.5ft (the critic's "43.4% of
+# figure height against ~60%"). Profile: one dark centre run 0.97 / 0.84 /
+# 1.20 / 1.34 wide at z 1.3 / 1.4 / 1.5 / 1.6 is the wheel meeting the seat
+# and tucked legs — the wheel's diameter is ~1.55ft (r 0.76, centred at
+# 0.78), not 1.1. The backrest reaches z ~2.2 (the "chair top 44.9% down"
+# read; the old backrest topped out at 2.03 and its VISIBLE top in the front
+# board was the seat at 1.56). The seat and the kid do not move: a sport
+# chair's cambered wheels come up beside the hips, which is the whole read.
+WHEEL_CENTER_Z = 0.780
+WHEEL_R = 0.760
+WHEEL_X = 0.980
 WHEEL_CAMBER = 0.115         # top of the wheel leans inboard
-RIM_R = 0.465
+RIM_R = 0.660
 
 
 def wheel_ring(side: int, radius: float, x_out: float, points: int):
@@ -450,7 +463,9 @@ def wheel_ring(side: int, radius: float, x_out: float, points: int):
 
 
 def build_chair(builder: MeshBuilder, detail: int) -> None:
-    points = 16 if detail >= 2 else (10 if detail == 1 else 8)
+    # 24 ring points at LOD0: at 16 a 0.76 wheel read as a faceted slab with
+    # square-cut ends in the orthographic front view (critic, 2026-09-02).
+    points = 24 if detail >= 2 else (10 if detail == 1 else 8)
     sides = 6 if detail >= 2 else 4
     for side in (1, -1):
         # Tire and team-blue push rim (the accent — the ONLY slot-3 geometry).
@@ -463,9 +478,14 @@ def build_chair(builder: MeshBuilder, detail: int) -> None:
         builder.ellipsoid((side * WHEEL_X, 0.060, WHEEL_CENTER_Z),
                           (0.075, 0.110, 0.110), 1, METAL, "Root", 6, 3)
         if detail >= 1:
-            # Four flat spokes.
-            for k in range(4):
-                theta = pi * k / 4 + pi / 8
+            # Twelve spoke diameters at LOD0 (four below): the sheet's wheel is
+            # densely spoked, and at four the 0.76 wheel's spoke gaps enclosed
+            # 2586 background pixels in the profile board against the 1200
+            # silhouette.lint had recorded for the old wheel; eight left one
+            # sector at 1201. 2026-09-12.
+            spokes = 12 if detail >= 2 else 4
+            for k in range(spokes):
+                theta = pi * k / spokes + pi / (2 * spokes)
                 y1 = 0.060 + (WHEEL_R - 0.07) * sin(theta)
                 z1 = WHEEL_CENTER_Z + (WHEEL_R - 0.07) * cos(theta)
                 y2 = 0.060 - (WHEEL_R - 0.07) * sin(theta)
@@ -479,18 +499,38 @@ def build_chair(builder: MeshBuilder, detail: int) -> None:
                 theta = 2 * pi * index / 10
                 caster.append((side * 0.340, -0.660 + 0.130 * sin(theta), 0.160 + 0.130 * cos(theta)))
             builder.tube(caster, [0.040] * 10, 1, TIRE, "Root", 4, cyclic=True)
-            # Frame rails: seat-to-caster, seat-to-hub, caster-to-rim brace.
-            builder.tube([(side * 0.300, -0.080, 1.400), (side * 0.340, -0.610, 0.300)],
+            # The caster is a SOLID small wheel with a blue hub, not an open
+            # torus the field shows through (critic finding 4): a disc fills
+            # its centre.
+            if detail >= 2:   # LOD1 sits at 3000/3000 without these
+                builder.ellipsoid((side * 0.340, -0.660, 0.160), (0.028, 0.125, 0.125), 1, SEAT, "Root", 6, 3)
+                builder.ellipsoid((side * 0.340, -0.660, 0.160), (0.036, 0.045, 0.045), 3, TEAM_MASK, "Root", 5, 3)
+            # The chassis closes (critic finding 2): the drive wheel hangs on
+            # an AXLE BOSS from the seat frame, the rails meet it instead of
+            # ending in mid-air, and the caster sits in a fork off the same
+            # frame rail.
+            builder.tube([(side * 0.300, 0.060, WHEEL_CENTER_Z), (side * WHEEL_X, 0.060, WHEEL_CENTER_Z)],
+                         [0.046, 0.040], 1, METAL, "Root", 5)
+            builder.tube([(side * 0.300, -0.080, 1.400), (side * 0.340, -0.640, 0.300)],
                          [0.036, 0.036], 1, FRAME, "Root", 4)
-            builder.tube([(side * 0.300, 0.020, 1.380), (side * 0.470, 0.060, 0.660)],
+            builder.tube([(side * 0.300, 0.020, 1.380), (side * 0.300, 0.060, WHEEL_CENTER_Z + 0.02)],
                          [0.034, 0.034], 1, FRAME, "Root", 4)
-            builder.tube([(side * 0.340, -0.560, 0.320), (side * 0.430, -0.080, 0.720)],
+            builder.tube([(side * 0.340, -0.640, 0.300), (side * 0.300, 0.060, WHEEL_CENTER_Z)],
                          [0.030, 0.030], 1, FRAME, "Root", 4)
+            if detail >= 2:
+                builder.tube([(side * 0.340, -0.640, 0.300), (side * 0.340, -0.660, 0.170)],
+                             [0.028, 0.024], 1, FRAME, "Root", 4)
     # Seat sling, backrest and footplate.
     builder.ellipsoid((0.0, 0.020, 1.420), (0.345, 0.320, 0.058), 1, SEAT, "Root", 8, 4)
-    builder.ellipsoid((0.0, 0.300, 1.740), (0.335, 0.065, 0.290), 1, SEAT, "Root", 8, 4)
+    builder.ellipsoid((0.0, 0.300, 1.900), (0.360, 0.065, 0.340), 1, SEAT, "Root", 8, 4)
     if detail >= 1:
-        builder.ellipsoid((0.0, -0.800, 0.385), (0.300, 0.200, 0.038), 1, METAL, "Root", 6, 3)
+        # The footplate sits UNDER the sole and MEETS it: top z 0.366, 0.02
+        # into a sole tube whose bottom is 0.343-0.345 — at 0.300 the soles
+        # hovered above it and the plate was a loose piece of ink in the front
+        # board (continuity.lint), at 0.312 the overlap was one pixel and
+        # still read loose, and at the old 0.385 it was buried inside the
+        # sole (critic finding 3).
+        builder.ellipsoid((0.0, -0.800, 0.328), (0.300, 0.200, 0.038), 1, METAL, "Root", 6, 3)
 
 
 def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) -> None:

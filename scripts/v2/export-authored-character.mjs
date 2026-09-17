@@ -423,6 +423,10 @@ async function main() {
     console.log(`✓ ${basename(result.output)} ${(result.bytes / 1024).toFixed(0)}KB — Blender source promoted`);
   }
   writeManifest();
+  // The provenance record binds a maintainer's signature to the model bytes,
+  // so a re-export must refresh it on the same path that refreshes the manifest.
+  const { writeProvenance } = await import('./character-provenance.mjs');
+  writeProvenance();
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {

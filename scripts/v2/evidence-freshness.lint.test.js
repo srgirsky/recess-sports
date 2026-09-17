@@ -43,6 +43,30 @@
 //   "clover: runtime stills were shot from a different kid_clover.glb
 //    (stamped 1234abcd…, on disk 9f21c0de…) — re-run
 //    `npm run capture:character-evidence -- clover`"
+//
+// ★ THE MODEL IS NOT THE ONLY BYTES IN THE PICTURE. `AnimationDirector`
+// resolves a clip character take → shared → procedural, and every
+// `anims_<id>_v1.glb` carries `idle` and `run` — the clips six of the seven
+// stills are shot on. A take landing or re-baking therefore changes the hero,
+// the run and all four faces without the model moving a byte, and the stamp
+// above could not see it. `capturedFromTakeSha256` (null when no take ships)
+// closes that: a still shot before the kid had a take, or against a previous
+// bake of it, fails here.
+//
+// ⚠️ THE FIRST STAMPING WAS DERIVED, NOT SHOT. When the field was added
+// (2026-09-12) it was written from the takes on disk for all thirty kids
+// without re-capturing, so the gate would have something to hold. Twenty-four
+// of those kids' stills were in fact shot before their takes existed (Acting
+// Batches 2–8 landed 09-11; the stills date 08-29..09-02), so on that day the
+// stamp said "the take that ships", not "the take that was shot". The
+// re-capture is a named follow-up; from the next `capture:character-evidence`
+// run onward the stamp is the truth.
+//
+// Break-it record: setting `capturedFromTakeSha256` to a wrong digest fires
+// with "nostrike: runtime stills were shot against a different
+// anims_nostrike_v1.glb (stamped ffffffff…, on disk 1fa51a6a…) — the take
+// overrides idle and run, so the hero, run and face stills are pictures of a
+// previous performance. Re-run `npm run capture:character-evidence -- nostrike`".
 // ---------------------------------------------------------------------------
 
 import { createHash } from 'node:crypto';
@@ -76,6 +100,14 @@ function glbSha(id) {
   if (!existsSync(file)) return null;
   return createHash('sha256').update(readFileSync(file)).digest('hex');
 }
+
+function takeSha(id) {
+  const file = join(repo, 'public', 'v2', 'models', `anims_${id}_v1.glb`);
+  if (!existsSync(file)) return null;
+  return createHash('sha256').update(readFileSync(file)).digest('hex');
+}
+
+const short = (digest) => (digest === null ? 'none' : `${String(digest).slice(0, 8)}…`);
 
 /** Which of this character's runtime stills are actually on disk. */
 function presentViews(id) {
@@ -112,6 +144,23 @@ describe('runtime evidence shows the model that ships', () => {
           `re-run \`npm run capture:character-evidence -- ${id}\`. Any hero or ` +
           '40px score standing on these stills was read off a previous model.',
       ).toBe(onDisk);
+
+      const stampedTake = record[id]?.capturedFromTakeSha256;
+      expect(
+        stampedTake,
+        `${id}: the evidence row does not say which anims_${id}_v1.glb (or none) the stills ` +
+          `were shot against — re-run \`npm run capture:character-evidence -- ${id}\` so ` +
+          'capturedFromTakeSha256 is written',
+      ).not.toBeUndefined();
+
+      const takeOnDisk = takeSha(id);
+      expect(
+        stampedTake,
+        `${id}: runtime stills were shot against a different anims_${id}_v1.glb ` +
+          `(stamped ${short(stampedTake)}, on disk ${short(takeOnDisk)}) — the take overrides ` +
+          'idle and run, so the hero, run and face stills are pictures of a previous ' +
+          `performance. Re-run \`npm run capture:character-evidence -- ${id}\``,
+      ).toBe(takeOnDisk);
     });
   }
 

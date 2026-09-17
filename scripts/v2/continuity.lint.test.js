@@ -111,7 +111,9 @@ const DETACHED_INK = {
   // PROP rather than a body part, so it is the least urgent of the three —
   // but a wheel that touches nothing is still a wheel that will separate
   // from the chair the moment anything moves it.
-  wheelchair_ace: 0.096,
+  // wheelchair_ace carried 0.096 here until 2026-09-12: the chair sized to
+  // the sheet — wheels on an axle boss, the caster in a fork, the footplate
+  // meeting the soles — measures 0.000, so the entry is gone.
 };
 
 /** Rows inside the figure's own span that contain no figure pixel at all. */

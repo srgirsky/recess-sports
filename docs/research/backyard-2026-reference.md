@@ -226,7 +226,10 @@ place kids commandeered — bases are improvised (a plank, a chalk X).
 9. ~~**Contact spectacle before optional systems.**~~ Contact now drives a
    render-only 3D burst and strength-scaled lens punch before the existing
    home-run camera and fireworks. Shifts, stamina and power-ups were reviewed and
-   deliberately left out until playtesting establishes a product need.
+   deliberately left out until playtesting establishes a product need. As of
+   2026-09-12 that hold is data (`docs/playtests/holds.json`), the protocol for
+   the playtest is `docs/playtests/PROTOCOL.md`, and a lint keeps each held
+   feature's flag off until a filed record lifts it.
 
 ## 2026-08-15 full-playthrough re-audit (what the screen actually shows)
 
@@ -678,6 +681,11 @@ the play reducer's step order is load-bearing (`src/v2/AGENTS.md` § The play).
 The smoke's fielded-or-throw beat asks for a hold or throw on a play that is
 still going, so it cannot be satisfied by the catch frame and does not mask
 this.
+
+Closed 2026-09-12: the hold is the view's (`actionCues.playEndHoldSec`, #223),
+and the instant replay that follows it is playback of recorded snapshots at
+`REPLAY.SPEED`, never re-simulation (`render/replayCues.ts`). Its rate is
+inherited from v1 and unmeasured; `render.replay-feel` says what would settle it.
 
 The same green run's fielded still also carried a flat black wedge on the
 horizon behind CF — re-audit #7's "giant unlit black triangle", which #148

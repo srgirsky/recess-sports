@@ -21,6 +21,13 @@
 // on asserting 4197 — with every test green. Real time accumulates, the sim
 // steps at its own rate, and there is no tempo dial to add.
 //
+// ★ THE INSTANT REPLAY IS NOT A TEMPO DIAL. It scales a PLAYBACK clock over
+// snapshots the scene recorded of what it drew (`render/replayCues.ts`), and
+// while it plays the pump is skipped the way pause skips it — the accumulator
+// is zeroed, no sim step is taken, and the game resumes on the same sim
+// instant it left. That is the carve-out `simclock.lint.test.js` names for
+// v1's replay, kept in the same shape here.
+//
 // The scene is built by the SAME functions the Look Spike uses. Duplicating
 // them would be a second park that drifts from the reviewed one.
 // ---------------------------------------------------------------------------
@@ -77,10 +84,24 @@ import {
 } from '../render/actionCues';
 import type { AnimName } from '../render/clips';
 import { CAMERA_FAR_FT, RIGS, chooseCamera, damp, type CameraCue, type CameraPreset } from '../render/cameraCues';
-import { applyFrame, cameraInputFor, type SceneRefs } from '../render/bridge';
+import { applyFrame, applySnapshot, cameraInputFor, snapshotScene, type SceneRefs } from '../render/bridge';
+import {
+  REPLAY,
+  foldHighlights,
+  isReplayWorthy,
+  lerpSnapshot,
+  newHighlights,
+  replayCamera,
+  type PlayHighlights,
+  type ReplaySnapshot,
+} from '../render/replayCues';
 import { simulateGameLive, type GameResult, type LiveFrame, type SimEvent } from '../sim/game';
+import { parseFeatures, type Features } from '../sim/features';
+import { isTired } from '../sim/stamina';
+import { SPEND_KINDS, canSpend, isSpecialSpend, spendSide, type PowerKind } from '../sim/juice';
+import type { InputVerb } from '../ui/sessionModel';
 import type { PlayInputs, PlayState } from '../sim/play';
-import type { PitchKind } from '../sim/pitch';
+import { SPECIAL_PITCH_KINDS, isSpecialPitch, type PitchKind, type SpecialPitchKind } from '../sim/pitch';
 import { FIRST, SECOND, THIRD, HOME, dist, fenceDistAt, pointAt, type FieldGeometry, type Vec2 } from '../sim/field';
 import { hash01 } from '../../art/fieldTexture';
 import { makeRng } from '../sim/rng';
@@ -134,19 +155,46 @@ const SWING_TAIL_SEC = 0.35;
  */
 const PITCH_CLOCK_SEC = 8;
 
-/** The four kinds, in the order the picker shows them. */
+/** The four kinds every pitcher has, in the order the picker shows them. Keys 1-4. */
 const KINDS: PitchKind[] = ['fastball', 'changeup', 'curve', 'screwball'];
+/**
+ * The three specials (`features.specialPitches`), appended below the four
+ * and shown only with the flag on. Keys 5-7. A special is a SPEND off the
+ * juice meter: a card reads as broke (`aria-disabled`, `.is-broke`) when
+ * `canSpend` says the person's side cannot cover it, and the sim re-checks
+ * every proposal regardless (`game.ts` downgrades one it cannot pay for).
+ */
+const SPECIAL_KINDS: ReadonlyArray<SpecialPitchKind> = SPECIAL_PITCH_KINDS;
+/** Where a special card sits in the picker, 1-based — the base four are 1-4. */
+const specialKey = (kind: SpecialPitchKind): number => KINDS.length + SPECIAL_KINDS.indexOf(kind) + 1;
 
 /**
  * What each pitch card shows. Icon first, one short word — the design pillar
  * is minimal reading, and BB2001/BB2026 both sell the pitch with the card art
- * (HEAT's flame, the hooks' curved path) rather than the label.
+ * (HEAT's flame, the hooks' curved path) rather than the label. The specials
+ * do not reuse the fastball's flame or the turbo chip's gust: a kid who
+ * cannot read tells the seven cards apart by icon alone.
  */
 const PITCH_CARDS: Record<PitchKind, { icon: string; label: string }> = {
   fastball: { icon: '🔥', label: 'FAST' },
   changeup: { icon: '🐢', label: 'SLOW' },
   curve: { icon: '🌈', label: 'CURVE' },
   screwball: { icon: '🌀', label: 'TWISTY' },
+  crazy: { icon: '🤪', label: 'CRAZY' },
+  fireball: { icon: '☄️', label: 'BLAZE' },
+  freezeball: { icon: '🧊', label: 'FLOATER' },
+};
+
+/**
+ * What each spend chip shows (`features.juice`). Icon first, one short word,
+ * for the reason the pitch cards are; the key is for keyboards and hides on
+ * touch. The COST is not printed: a chip only appears when the sim's own
+ * `canSpend` says the side can afford it, so a kid never reads a number.
+ */
+const SPEND_CARDS: Record<PowerKind, { icon: string; label: string; key: string }> = {
+  powerSwing: { icon: '💥', label: 'POWER', key: 'Q' },
+  turboLegs: { icon: '💨', label: 'TURBO', key: 'W' },
+  goldenGlove: { icon: '🧤', label: 'GLOVE', key: 'E' },
 };
 
 /** How long a between-pitch beat lasts, seconds. v1's `FLOW.BETWEEN_PITCH_MS`. */
@@ -290,6 +338,19 @@ export class GameView {
   /** Where the player is aiming the PITCH, in plate coordinates, ft. */
   private spot = { x: 0, y: 2 };
   private pitchKind: PitchKind = 'fastball';
+  /** The spend tray (`features.juice`), mounted beside the picker. */
+  private trayEl: HTMLElement | null = null;
+  private readonly trayChips = new Map<PowerKind, HTMLButtonElement>();
+  /** The special pitch cards, so `paintHud` can mark each affordable or broke. */
+  private readonly specialCards = new Map<SpecialPitchKind, HTMLButtonElement>();
+  /**
+   * What the sim ARMED for the person's side this plate appearance — set off
+   * the sim's own `spend` event, never off the tap, so a proposal the meter
+   * could not cover never reads as bought. Cleared when the batter changes.
+   * A special pitch is a per-pitch spend and never arms.
+   */
+  private readonly armedSpends = new Set<PowerKind>();
+  private armedFor = '';
   /** Real seconds spent on the current windup, so it can never hang. */
   private windupElapsed = 0;
   /** The visible delivery runs before the sim releases the ball. */
@@ -334,6 +395,30 @@ export class GameView {
   private paEvent: Extract<SimEvent, { t: 'pa' }> | null = null;
   /** A batter's reaction held back until his home-run trot is over. */
   private pendingReaction: { id: string; won: boolean } | null = null;
+  /**
+   * The instant replay's tape: one snapshot per DRAWN live tick of the play in
+   * progress, values only (`render/replayCues.ts` on why never the frame).
+   * Reset at every windup; a play that earns a replay hands it to `replay`.
+   */
+  private tape: ReplaySnapshot[] = [];
+  private highlights: PlayHighlights = newHighlights();
+  /** The tape being played back, its playback clock and the frame it is on. */
+  private replay: { frames: ReplaySnapshot[]; t: number; idx: number } | null = null;
+  /** Decided when the play ends; started once the play-end hold is over. */
+  private pendingReplay = false;
+  /** `?replay=1` replays every play (the smoke's page), `?replay=0` none. */
+  private readonly replayMode: 'auto' | 'force' | 'off' = (() => {
+    const v = new URLSearchParams(location.search).get('replay');
+    return v === '1' ? 'force' : v === '0' ? 'off' : 'auto';
+  })();
+  /**
+   * Set by `devStepFixedClock`: an instrument is driving the clock, and a
+   * replay it never asked for would sit between it and the state it probed.
+   * The forced mode is the one way an instrument gets a replay on purpose.
+   */
+  private instrumented = false;
+  private replayChrome: HTMLElement[] = [];
+  private onReplayCb: ((kind: 'start' | 'end') => void) | null = null;
   private venue: VenueId;
   private readonly board = new Scoreboard();
   private readonly matchup = new Matchup((id) => this.character(id));
@@ -361,10 +446,20 @@ export class GameView {
    * the floor. The page simply froze on the last pitch, which looked like a
    * hang and was in fact a completed game with nobody listening.
    */
-  private onEnd: ((result: GameResult) => void) | null = null;
-  private simEvent: ((e: SimEvent) => void) | null = null;
-  private frameTap: ((f: LiveFrame) => void) | null = null;
+  /**
+   * Listener LISTS, not single slots. The App consumes all three for sound and
+   * the result screen; the playtest session log (`ui/sessionLog.ts`) is a
+   * second, read-only consumer of the same streams. A setter that overwrote
+   * would silence whichever registered first with no error.
+   */
+  private readonly onEnd: Array<(result: GameResult) => void> = [];
+  private readonly simEvent: Array<(e: SimEvent) => void> = [];
+  private readonly frameTap: Array<(f: LiveFrame) => void> = [];
+  private readonly inputTap: Array<(verb: InputVerb) => void> = [];
   private ended = false;
+  /** The held features this game was started with. Read off `?features=`. */
+  private featureFlags: Features = parseFeatures(null);
+  private currentSeed = '';
   private actionPlay: LiveFrame['play'] = null;
   private readonly slidLegs = new Set<string>();
   private readonly diveClips = new Map<string, AnimName>();
@@ -515,6 +610,12 @@ export class GameView {
 
   private readonly onPointerDown = (e: PointerEvent): void => {
     this.pointerDownAt = performance.now();
+    // Any tap skips a replay — the canvas already receives every non-HUD tap
+    // by construction, so no new target exists to size or audit.
+    if (this.replay) {
+      this.endReplay();
+      return;
+    }
     if (this.batting) {
       const h = this.toPlateHeight(e);
       if (h !== null) this.aimHeightFt = h;
@@ -527,7 +628,10 @@ export class GameView {
     }
     if (!this.liveControl) return;
     const at = this.toField(e);
-    if (at) this.inputs.pointer = at;
+    if (at) {
+      this.inputs.pointer = at;
+      this.tapped('pointer');
+    }
   };
 
   private readonly onPointerMove = (e: PointerEvent): void => {
@@ -548,7 +652,10 @@ export class GameView {
     if (!this.liveControl) return;
     if (e.buttons === 0) return;
     const at = this.toField(e);
-    if (at) this.inputs.pointer = at;
+    if (at) {
+      this.inputs.pointer = at;
+      this.tapped('steer');
+    }
   };
 
   /**
@@ -568,6 +675,7 @@ export class GameView {
       // keeps the first — a bat cannot be un-swung.
       if (!this.inputs.swing) {
         this.inputs.swing = { atSec: this.pitchElapsed, aimHeightFt: this.aimHeightFt };
+        this.tapped('swing');
         // The human's tap IS the simulated swing instant. We learn it now, so
         // the director seeks the CONTACT marker onto this rendered tick and
         // plays the follow-through rather than drawing contact late.
@@ -585,6 +693,7 @@ export class GameView {
         aimLateralFt: this.spot.x,
         aimHeightFt: this.spot.y,
       };
+      this.tapped('pitch');
       this.beginPitchDelivery();
       return;
     }
@@ -596,8 +705,13 @@ export class GameView {
     // policy can remove a verb, but it must never move that verb to a new side.
     if (liveControl === 'run' && this.humanBats) return this.tapBaseAsRunner(at);
     const bag = nearestBase(at);
-    if (bag !== null) this.inputs.throwTo = { base: bag };
-    else this.inputs.dive = true;
+    if (bag !== null) {
+      this.inputs.throwTo = { base: bag };
+      this.tapped('throwTo');
+    } else {
+      this.inputs.dive = true;
+      this.tapped('dive');
+    }
   };
 
   /**
@@ -616,19 +730,78 @@ export class GameView {
     const ahead = live.find((r) => r.from + 1 === bag);
     if (ahead) {
       this.inputs.sendRunner = ahead.charId;
+      this.tapped('sendRunner');
       return;
     }
     const behind = live.find((r) => r.from >= bag && r.from > 0);
-    if (behind) this.inputs.holdRunner = behind.charId;
+    if (behind) {
+      this.inputs.holdRunner = behind.charId;
+      this.tapped('holdRunner');
+    }
   }
 
-  /** Number keys pick the pitch. Labelled in the HUD, so nothing is hidden. */
+  /** Number keys pick the pitch (5-7 the specials); Q/W/E propose a spend. Both labelled in the HUD. */
   private readonly onKeyDown = (e: KeyboardEvent): void => {
     const i = KINDS.indexOf(KINDS[Number(e.key) - 1]);
     if (Number(e.key) >= 1 && Number(e.key) <= KINDS.length && i >= 0) {
       this.pitchKind = KINDS[Number(e.key) - 1];
     }
+    const special = SPECIAL_KINDS.find((k) => specialKey(k) === Number(e.key));
+    if (special) this.pickSpecial(special);
+    const spend = SPEND_KINDS.find((k) => SPEND_CARDS[k].key === e.key.toUpperCase());
+    if (spend) this.proposeSpend(spend);
   };
+
+  /**
+   * Which specials the person could throw next, or none: the flag on, the
+   * meter on (`frame.juice` is null otherwise), and `canSpend` for each — the
+   * sim's own question, never a cost restated here. Like `affordableSpends`
+   * this only proposes; `game.ts` downgrades what it cannot pay for.
+   */
+  private affordableSpecials(): SpecialPitchKind[] {
+    const f = this.frame;
+    if (!f || !f.juice || !this.featureFlags.specialPitches) return [];
+    const meter = { value: f.juice[this.humanSide] };
+    return SPECIAL_KINDS.filter((k) => canSpend(meter, k));
+  }
+
+  /** Pick a special for the next pitch, if the meter can cover it. */
+  private pickSpecial(kind: SpecialPitchKind): void {
+    if (!this.affordableSpecials().includes(kind)) return;
+    this.pitchKind = kind;
+  }
+
+  /**
+   * Which spends the person could buy for the coming pitch, or none.
+   *
+   * The tray's whole policy, and it only asks the sim's own questions: is the
+   * feature on (`frame.juice` is null otherwise), is this a beat before a
+   * windup (`windup`, or the `between` beat of the same half — never the
+   * third-out one, whose next windup is the other half's), does the kind
+   * belong to the role the person has this half, is it not already armed,
+   * and can the person's meter afford it by `canSpend`. Nothing here knows a
+   * cost; the sim re-checks every proposal regardless.
+   */
+  private affordableSpends(): PowerKind[] {
+    const f = this.frame;
+    if (!f || !f.juice) return [];
+    if (this.controlMode === 'watch') return [];
+    const before = f.phase === 'windup' || (f.phase === 'between' && f.outs < 3);
+    if (!before) return [];
+    const controls = controlsAt(this.controlMode, f.half);
+    const meter = { value: f.juice[this.humanSide] };
+    return SPEND_KINDS.filter((k) => {
+      const role = spendSide(k) === 'batting' ? controls.bat : controls.field;
+      return role && !this.armedSpends.has(k) && canSpend(meter, k);
+    });
+  }
+
+  /** Propose a spend for the next windup. The sim decides; the view only asks. */
+  private proposeSpend(kind: PowerKind): void {
+    if (!this.affordableSpends().includes(kind)) return;
+    this.inputs.spend = kind;
+    this.tapped('spend');
+  }
 
   async start(): Promise<void> {
     // One library for the entire roster. A missing/corrupt delivery is a
@@ -950,6 +1123,10 @@ export class GameView {
     innings = DEFAULT_INNINGS
   ): Promise<void> {
     const geo = VENUE_GEOMETRY[this.venue];
+    // The held features, off unless `?features=` names them — the same idiom
+    // as `?break=1` above. Re-read per game so a review URL is the whole
+    // configuration; nothing else may switch one on.
+    this.featureFlags = parseFeatures(new URLSearchParams(location.search).get('features'));
     // ★ THE DRAFTED TEAM, WHEN THERE IS ONE. `/v2/?play=1` has no draft in front
     // of it and must still play, so the first eighteen of the roster stay the
     // fallback — which is also what every measurement sweep and the layout audit
@@ -1015,11 +1192,28 @@ export class GameView {
             this.spawnImpactBurst(e.launch.heightFt, strength);
             this.impactPunch = strength;
           }
-          this.simEvent?.(e);
+          // The tray reads what the sim actually BOUGHT for the person's side,
+          // not what was tapped — a proposal the meter could not cover is
+          // silently ignored by the sim and must not read as armed here.
+          if (e.t === 'spend' && e.side === this.humanSide && !isSpecialSpend(e.kind)) this.armedSpends.add(e.kind);
+          for (const fn of this.simEvent) fn(e);
         },
+        // The flags ride the spec. `stamina` (a tiring pitcher, `sim/stamina.ts`),
+        // `juice` (the meter and its spends, `sim/juice.ts`) and
+        // `specialPitches` (three more cards on the picker, bought off that
+        // meter) are consumed by the sim; `shifts` is a seam until its port
+        // lands, and the sim's tests prove which is which. Headless runs never
+        // set this.
+        features: this.featureFlags,
+        // The juice port must not spend the PERSON's meter for them; a watcher
+        // has no side, so both are the CPU's.
+        humanSide: this.controlMode === 'watch' ? undefined : this.humanSide,
       },
       makeRng(seed)
     );
+    this.armedSpends.clear();
+    this.armedFor = '';
+    this.currentSeed = seed;
     this.ended = false;
     this.callouts.reset();
     this.actionPlay = null;
@@ -1030,6 +1224,10 @@ export class GameView {
     this.hold = null;
     this.paEvent = null;
     this.pendingReaction = null;
+    if (this.replay) this.endReplay();
+    this.tape = [];
+    this.highlights = newHighlights();
+    this.pendingReplay = false;
     this.pitchElapsed = 0;
     this.windupElapsed = 0;
     this.cue = null;
@@ -1135,7 +1333,7 @@ export class GameView {
 
   /** Register the end-of-game callback. */
   onGameEnd(fn: (result: GameResult) => void): void {
-    this.onEnd = fn;
+    this.onEnd.push(fn);
   }
 
   /**
@@ -1148,12 +1346,43 @@ export class GameView {
    * yielded a swing and a take are indistinguishable.
    */
   onSimEvent(fn: (e: SimEvent) => void): void {
-    this.simEvent = fn;
+    this.simEvent.push(fn);
   }
 
   /** Read every rendered frame. Read-only, like everything on this side. */
   onFrame(fn: (f: LiveFrame) => void): void {
-    this.frameTap = fn;
+    this.frameTap.push(fn);
+  }
+
+  /**
+   * Hear every verb the person uses, as it is written into `PlayInputs`.
+   *
+   * Fired at the sites that set `this.inputs.*` and nowhere else, so the
+   * count is of inputs the sim could have read — never of raw pointer events.
+   * Read-only: a listener cannot reach the inputs object, and the sim never
+   * learns a listener exists.
+   */
+  onInput(fn: (verb: InputVerb) => void): void {
+    this.inputTap.push(fn);
+  }
+
+  private tapped(verb: InputVerb): void {
+    for (const fn of this.inputTap) fn(verb);
+  }
+
+  /** The held features this game runs with (`?features=`; all off by default). */
+  get features(): Readonly<Features> {
+    return this.featureFlags;
+  }
+
+  /** The seed the current game was started from. */
+  get seed(): string {
+    return this.currentSeed;
+  }
+
+  /** Which verbs are the person's this game — the session log folds by it. */
+  get playerControlMode(): PlayerControlMode {
+    return this.controlMode;
   }
 
   /**
@@ -1238,6 +1467,10 @@ export class GameView {
     // The play this frame carried, read BEFORE the pump mutates the frame in
     // place: if the next frame is `between`, this play has just ended.
     const ending = this.frame?.phase === 'live' ? this.frame.play : null;
+    // A spend proposed on the between beat must survive to the windup that
+    // reads it, and is consumed there — the windup is the ONE frame the sim
+    // reads `spend` on, so it is cleared exactly when that frame is advanced.
+    const wasWindup = this.frame?.phase === 'windup';
     const r = this.game.next(this.inputs);
     // ★ THE ONE-SHOTS ARE CONSUMED, the pointer is not — WITHIN ONE PLAY. A
     // dive or a throw is an instant; steering is a state that persists until
@@ -1249,7 +1482,10 @@ export class GameView {
     // own chase, so a passive defence fields at CPU strength and the half
     // ends itself.
     const stillLive = !r.done && (r.value as LiveFrame).phase === 'live';
-    this.inputs = { pointer: stillLive ? this.inputs.pointer : undefined };
+    this.inputs = {
+      pointer: stillLive ? this.inputs.pointer : undefined,
+      spend: wasWindup ? undefined : this.inputs.spend,
+    };
     if (r.done) {
       this.frame = null;
       // ★ ONCE. The tick loop keeps running after the game ends (the park is
@@ -1258,14 +1494,35 @@ export class GameView {
       // frame — which reads as a Result screen that will not go away.
       if (!this.ended) {
         this.ended = true;
-        this.onEnd?.(r.value as GameResult);
+        for (const fn of this.onEnd) fn(r.value as GameResult);
       }
       return;
     }
     this.frame = r.value;
+    // A spend is armed for ONE plate appearance (`sim/juice.ts`); a new
+    // batter means the tray may offer it again.
+    if (this.frame.batterId !== this.armedFor) {
+      this.armedFor = this.frame.batterId;
+      this.armedSpends.clear();
+    }
+    // The tape is one play long: it starts empty at the windup and folds the
+    // play's events tick by tick, because the reducer clears `play.events`
+    // every tick and the `between` frame that follows carries none of them.
+    if (this.frame.phase === 'windup') {
+      this.tape = [];
+      this.highlights = newHighlights();
+      this.pendingReplay = false;
+    }
+    if (this.frame.phase === 'live' && this.frame.play) {
+      foldHighlights(this.highlights, this.frame.play, cameraInputFor(this.frame));
+    }
     if (this.frame.phase === 'pitch') this.pitchElapsed = 0;
     if (this.frame.phase === 'pitch') this.cpuSwingStarted = false;
     if (this.frame.phase === 'windup') {
+      // A special is bought per pitch, so it is picked per pitch: the card
+      // falls back to the fastball on every fresh windup rather than
+      // re-spending the meter until it is empty.
+      if (isSpecialPitch(this.pitchKind)) this.pitchKind = 'fastball';
       this.windupElapsed = 0;
       this.deliveryElapsed = 0;
       this.deliveryStarted = false;
@@ -1279,6 +1536,10 @@ export class GameView {
       // event just started play where the kids stand in the held picture.
       const sec = ending ? playEndHoldSec(ending) : 0;
       this.hold = sec > 0 && ending ? { play: ending, sec, total: sec } : null;
+      // Decided here, on the play's own highlights; started by `tick` once the
+      // hold has shown the catch, so the replay follows the moment, not
+      // interrupts it.
+      this.pendingReplay = ending !== null && this.replayWanted();
     }
     this.stageReactions();
     this.showOnly(this.painted());
@@ -1540,12 +1801,31 @@ export class GameView {
       return;
     }
 
+    // A replay is playback, not time: the pump is skipped exactly as pause
+    // skips it, and the game resumes on the same sim instant it left.
+    if (this.replay) {
+      this.acc = 0;
+      this.stepReplay(dt);
+      this.renderer.render(this.scene, this.camera, now);
+      requestAnimationFrame(this.tick);
+      return;
+    }
+
     // ★ FIXED-STEP ACCUMULATOR. The sim never sees the render delta.
     this.acc += dt;
     const step = 1 / SIM_HZ;
     while (this.acc >= step) {
       this.acc -= step;
       this.pump(step);
+    }
+    if (this.pendingReplay && !this.hold) {
+      this.pendingReplay = false;
+      if (this.startReplay()) {
+        this.stepReplay(0);
+        this.renderer.render(this.scene, this.camera, now);
+        requestAnimationFrame(this.tick);
+        return;
+      }
     }
 
     // Fireworks are chrome: stepped here, never tweened, built on demand.
@@ -1565,7 +1845,7 @@ export class GameView {
     this.impactBurst?.update(dt);
 
     if (this.frame) {
-      this.frameTap?.(this.frame);
+      for (const fn of this.frameTap) fn(this.frame);
       const painted = this.painted();
       const holdElapsedSec = this.hold ? this.hold.total - this.hold.sec : undefined;
       applyFrame(this.refs, painted, dt, this.pitchElapsed, this.draftProtected, {
@@ -1580,6 +1860,16 @@ export class GameView {
       this.animateCpuSwing();
       this.paintPlateCues();
       this.driveCamera(painted, dt, holdElapsedSec);
+      // The tape records what was just DRAWN — after the frame, the directors
+      // and the camera input — one snapshot per distinct sim tick.
+      if (painted.phase === 'live' && painted.play) {
+        const snap = snapshotScene(this.refs, painted, holdElapsedSec);
+        const last = this.tape[this.tape.length - 1];
+        if (snap && (!last || snap.t > last.t)) {
+          this.tape.push(snap);
+          if (this.tape.length > REPLAY.MAX_FRAMES) this.tape.shift();
+        }
+      }
       if (this.impactPunch > 0) {
         const punch = this.impactPunch;
         this.impactPunch = Math.max(0, punch - dt * 3.4);
@@ -1598,6 +1888,8 @@ export class GameView {
   /** One sim step of real time. */
   private pump(step: number): void {
     if (!this.frame) return;
+    // Belt to `tick`'s braces: no sim step is ever taken under a replay.
+    if (this.replay) return;
     if (this.hold) {
       // The finished play stays on screen; the between beat has not started.
       this.hold.sec -= step;
@@ -1641,6 +1933,98 @@ export class GameView {
     this.advance();
   }
 
+  /** Told when a replay starts and ends — the sound facade plays its pop. */
+  onReplay(fn: (kind: 'start' | 'end') => void): void {
+    this.onReplayCb = fn;
+  }
+
+  /** Read by the presentation smoke: is a replay on, is one pending. */
+  get replaying(): boolean {
+    return this.replay !== null;
+  }
+
+  private replayWanted(): boolean {
+    if (this.replayMode === 'off' || this.tape.length < REPLAY.MIN_FRAMES) return false;
+    if (this.replayMode === 'force') return true;
+    return !this.instrumented && isReplayWorthy(this.highlights);
+  }
+
+  /**
+   * Hand the tape to playback and raise the chrome. The letterbox bars and
+   * the badge are plain DOM under `#hud`, inert to the pointer like every
+   * other non-`.interactive` child, so the skip tap falls to the canvas.
+   */
+  private startReplay(): boolean {
+    if (this.replay || this.tape.length < REPLAY.MIN_FRAMES) return false;
+    this.replay = { frames: this.tape, t: 0, idx: 0 };
+    this.tape = [];
+    this.cue = null;
+    document.body.classList.add('replay');
+    const hud = document.getElementById('hud');
+    if (hud) {
+      for (const side of ['top', 'bottom'] as const) {
+        const bar = document.createElement('div');
+        bar.className = `replay-bar replay-bar--${side}`;
+        hud.appendChild(bar);
+        this.replayChrome.push(bar);
+      }
+      const badge = document.createElement('div');
+      badge.className = 'replay-badge';
+      badge.setAttribute('role', 'status');
+      const label = document.createElement('span');
+      label.className = 'replay-badge__label';
+      label.textContent = '📼 INSTANT REPLAY';
+      const hint = document.createElement('span');
+      hint.className = 'replay-badge__hint';
+      hint.textContent = 'TAP TO SKIP';
+      badge.append(label, hint);
+      hud.appendChild(badge);
+      this.replayChrome.push(badge);
+    }
+    this.onReplayCb?.('start');
+    return true;
+  }
+
+  /**
+   * One drawn frame of playback. The playback clock runs at `REPLAY.SPEED`
+   * of real time; the frame is the interpolation of the two recorded ticks
+   * around it, re-applied through the bridge with each kid's clip seeked to
+   * its recorded time; the camera is the same policy over the recorded input,
+   * cut on the first frame and blended after.
+   */
+  private stepReplay(dt: number): void {
+    const rp = this.replay;
+    if (!rp) return;
+    rp.t += dt * REPLAY.SPEED;
+    const t0 = rp.frames[0].t;
+    while (rp.idx + 1 < rp.frames.length && rp.frames[rp.idx + 1].t - t0 <= rp.t) rp.idx++;
+    const a = rp.frames[rp.idx];
+    const b = rp.frames[Math.min(rp.idx + 1, rp.frames.length - 1)];
+    const span = b.t - a.t;
+    const k = span > 0 ? (rp.t - (a.t - t0)) / span : 1;
+    const snap = lerpSnapshot(a, b, k);
+    applySnapshot(this.refs, snap, {
+      seekClips: true,
+      cameraAt: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z },
+    });
+    this.applyCue(replayCamera(snap, this.cue ?? undefined), dt);
+    if (this.frame) this.paintHud(this.frame);
+    if (rp.idx >= rp.frames.length - 1) this.endReplay();
+  }
+
+  /** Drop the chrome and hand the scene back to the sim's frame; the cleared
+   * cue makes the next between frame a clean cut to the plate. */
+  private endReplay(): void {
+    if (!this.replay) return;
+    this.replay = null;
+    document.body.classList.remove('replay');
+    for (const el of this.replayChrome) el.remove();
+    this.replayChrome = [];
+    this.cue = null;
+    if (this.frame) this.showOnly(this.painted());
+    this.onReplayCb?.('end');
+  }
+
   /**
    * ★ THE CAMERA POLICY'S FIRST CALLER. `chooseCamera` has been complete,
    * tested and invoked by nothing since it was written. The hard cut is
@@ -1679,7 +2063,11 @@ export class GameView {
       this.cue = null;
       return;
     }
-    const next = chooseCamera(cameraInputFor(frame, holdElapsedSec), this.cue ?? undefined);
+    this.applyCue(chooseCamera(cameraInputFor(frame, holdElapsedSec), this.cue ?? undefined), dt);
+  }
+
+  /** Move the camera toward a cue: a cut lands it, a blend damps it. */
+  private applyCue(next: CameraCue, dt: number): void {
     const cut = next.transition === 'cut' || !this.cue;
     this.cue = next;
     const rig = RIGS[next.preset];
@@ -1755,7 +2143,7 @@ export class GameView {
     hud.appendChild(this.inningBreak.root);
     this.pickerEl = document.createElement('div');
     this.pickerEl.className = 'pitch-picker';
-    KINDS.forEach((kind, i) => {
+    const pitchCard = (kind: PitchKind, key: number): HTMLButtonElement => {
       const card = document.createElement('button');
       card.type = 'button';
       card.className = 'pitch-card interactive';
@@ -1764,13 +2152,51 @@ export class GameView {
       card.innerHTML =
         `<span class="pitch-card__icon">${art.icon}</span>` +
         `<span class="pitch-card__name">${art.label}</span>` +
-        `<kbd class="pitch-card__key">${i + 1}</kbd>`;
+        `<kbd class="pitch-card__key">${key}</kbd>`;
+      return card;
+    };
+    KINDS.forEach((kind, i) => {
+      const card = pitchCard(kind, i + 1);
       card.addEventListener('pointerdown', () => {
         this.pitchKind = kind;
       });
       this.pickerEl?.appendChild(card);
     });
+    // The special cards (`features.specialPitches`): the same card, built
+    // once and kept hidden until the flag is read off the URL at `newGame`;
+    // `paintHud` shows them with the flag on and marks each affordable or
+    // broke off the sim's own `canSpend`. Same `.interactive` floor as the
+    // four above, so `hitrect.lint` sees one card construction.
+    for (const kind of SPECIAL_KINDS) {
+      const card = pitchCard(kind, specialKey(kind));
+      card.classList.add('pitch-card--special');
+      card.hidden = true;
+      card.addEventListener('pointerdown', () => this.pickSpecial(kind));
+      this.specialCards.set(kind, card);
+      this.pickerEl.appendChild(card);
+    }
     hud.appendChild(this.pickerEl);
+    // The spend tray (`features.juice`): the picker's mirror on the left
+    // edge, built once like everything here and shown by `paintHud` only on
+    // the beats before a windup when the person's meter can buy something.
+    this.trayEl = document.createElement('div');
+    this.trayEl.className = 'spend-tray';
+    for (const kind of SPEND_KINDS) {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'spend-chip interactive';
+      chip.dataset.spend = kind;
+      const art = SPEND_CARDS[kind];
+      chip.innerHTML =
+        `<span class="spend-chip__icon">${art.icon}</span>` +
+        `<span class="spend-chip__name">${art.label}</span>` +
+        `<kbd class="spend-chip__key">${art.key}</kbd>`;
+      chip.hidden = true;
+      chip.addEventListener('pointerdown', () => this.proposeSpend(kind));
+      this.trayChips.set(kind, chip);
+      this.trayEl.appendChild(chip);
+    }
+    hud.appendChild(this.trayEl);
   }
 
   private paintHud(frame: LiveFrame): void {
@@ -1795,11 +2221,42 @@ export class GameView {
       {
         batter: this.teamUniforms.get(frame.batterId),
         pitcher: this.teamUniforms.get(frame.pitcherId),
-      }
+      },
+      // The sweat pip: null is the feature off, and the threshold is the
+      // sim's (`stamina.ts`), never restated here.
+      frame.stamina !== null && isTired({ stamina: frame.stamina })
     );
+    // The tray: open when the person could buy something for the coming
+    // pitch, each chip shown only while affordable, and read as armed once
+    // the sim's own event said the meter paid for it.
+    if (this.trayEl) {
+      const affordable = this.affordableSpends();
+      const open = affordable.length > 0 || (frame.juice !== null && this.armedSpends.size > 0 && frame.phase !== 'live');
+      this.trayEl.classList.toggle('is-open', open);
+      for (const [kind, chip] of this.trayChips) {
+        const armed = this.armedSpends.has(kind);
+        chip.hidden = !(affordable.includes(kind) || armed);
+        chip.classList.toggle('is-armed', armed);
+        chip.classList.toggle('is-picked', this.inputs.spend === kind);
+      }
+    }
     // ★ THE PICKER IS SHOWN, NOT HIDDEN BEHIND A KEYBINDING NOBODY KNOWS.
     if (!this.pickerEl) return;
     this.pickerEl.classList.toggle('is-open', this.onTheMound);
+    // The specials: on the picker only with the flag on; each card broke or
+    // not by the sim's own `canSpend`. A picked special the meter can no
+    // longer cover falls back to the fastball, so what the card says is what
+    // the sim will throw — the sim would downgrade it anyway.
+    const specials = this.featureFlags.specialPitches;
+    const affordable = this.affordableSpecials();
+    this.pickerEl.classList.toggle('has-specials', specials);
+    for (const [kind, card] of this.specialCards) {
+      card.hidden = !specials;
+      const broke = !affordable.includes(kind);
+      card.classList.toggle('is-broke', broke);
+      card.setAttribute('aria-disabled', String(broke));
+    }
+    if (isSpecialPitch(this.pitchKind) && !affordable.includes(this.pitchKind)) this.pitchKind = 'fastball';
     if (!this.onTheMound) return;
     for (const chip of this.pickerEl.children) {
       const el = chip as HTMLElement;
@@ -1932,6 +2389,11 @@ export class GameView {
    */
   devStepFixedClock(ticks = 6): LiveFrame | null {
     if (!import.meta.env.DEV) return this.frame;
+    // An instrument owns the clock from here: a replay would sit between it
+    // and the state it probes, so one in progress ends and none starts
+    // unbidden (`?replay=1` is the deliberate exception).
+    this.instrumented = true;
+    if (this.replay) this.endReplay();
     const count = Math.max(0, Math.floor(ticks));
     for (let i = 0; i < count; i++) this.pump(1 / SIM_HZ);
     return this.frame;
