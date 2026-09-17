@@ -17,12 +17,13 @@
 import { describe, expect, it } from 'vitest';
 import { simulateGame, type SimEvent } from '../sim/game';
 import { makeRng } from '../sim/rng';
+import { parseFeatures, type Features } from '../sim/features';
 import { ROSTER, getCharacter } from '../../data/characters';
 import { announceFor, cuesForChange, cuesForEvent, snapshot, type Cue, type Snapshot } from './soundCues';
 import { poolSizes } from '../../systems/announcer';
 
 /** Every event of a real game, in order. Events are values, so keeping is safe. */
-function eventsOf(seed: string): SimEvent[] {
+function eventsOf(seed: string, features?: Features): SimEvent[] {
   const events: SimEvent[] = [];
   simulateGame(
     {
@@ -30,13 +31,35 @@ function eventsOf(seed: string): SimEvent[] {
       home: { name: 'H', ids: ROSTER.slice(9, 18).map((c) => c.id) },
       lookup: getCharacter,
       onEvent: (e) => events.push({ ...e }),
+      features,
     },
     makeRng(seed)
   );
   return events;
 }
 
-const EVENTS = ['a', 'b', 'c'].flatMap(eventsOf);
+const EVENTS = ['a', 'b', 'c'].flatMap((seed) => eventsOf(seed));
+
+describe('★ the held features add events, and those make a sound too', () => {
+  // The sweep above runs with every flag off, which is the ship path — and
+  // exactly the path on which a `spend` event never occurs, so a cue table
+  // silent on it would pass. This sweep turns everything on.
+  const ALL = ['a', 'b', 'c'].flatMap((seed) => eventsOf(seed, parseFeatures('all')));
+
+  it('★ a spend is emitted by a real game, cheers, and is not a booth line', () => {
+    const spends = ALL.filter((e) => e.t === 'spend');
+    expect(spends.length, 'three juiced games and nobody spent').toBeGreaterThan(0);
+    for (const e of spends) {
+      expect(cuesForEvent(e)).toEqual(['cheer']);
+      expect(announceFor(e)).toBeNull();
+    }
+  });
+
+  it('★ leaves nothing silent with every feature on', () => {
+    const silent = ALL.filter((e) => cuesForEvent(e).length === 0);
+    expect(silent.slice(0, 3)).toEqual([]);
+  });
+});
 
 describe('★ every event the sim can emit makes a sound', () => {
   it('★ leaves no pitch and no contact silent', () => {
@@ -144,6 +167,8 @@ describe('state changes', () => {
       defence: {},
       play: null,
       pitch: null,
+      stamina: null,
+      juice: null,
     };
     const snap = snapshot(frame);
     frame.outs = 3;

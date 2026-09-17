@@ -329,7 +329,8 @@ are in `scripts/AGENTS.md`; cite the record id rather than the value.
 ## The screens
 
 `/v2/` is the game — title, draft, play, result — and `App.ts` owns that order.
-`?play=1`, `?spike=1` and `?anims=1` stay reachable as review surfaces.
+`?play=1`, `?spike=1`, `?anims=1`, `?features=` and `?log=1` stay reachable as
+review surfaces.
 
 - **Never tear the world down to show a screen.** The canvas is always the game
   and a screen is DOM over it, so the title shows the real park and PLAY AGAIN
@@ -364,8 +365,7 @@ for v1's Phaser clock.
 
 `src/v2/game/GameView.ts` pumps the sim's own generator against a real clock
 with a **fixed-step accumulator, never the render delta**
-(`scripts/simclock.lint.test.js` exists because a tempo scalar once broke a
-measured pace record while every test stayed green).
+(`scripts/simclock.lint.test.js` gates it; its header has the story).
 
 ## Where things live
 

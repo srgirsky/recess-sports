@@ -149,6 +149,7 @@ body {
   color: #66bfff;
 }
 .play-callout.is-foul .play-callout__label,
+.play-callout.is-spend .play-callout__label,
 .play-callout.is-homer .play-callout__label {
   color: var(--gold);
 }
@@ -267,6 +268,29 @@ body.screen-open .play-callout {
   font-size: 1.35rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+}
+/* The juice meter (`features.juice`): a thin track under the name, in flow
+   so the row grows by this line and the audit measures the grown strip;
+   `[hidden]` collapses it when the feature is off. The fill is the only
+   thing that moves, and a gold fill on a dark track reads from across the
+   room without a number. */
+.sb-side__juice {
+  grid-column: 2 / 4;
+  block-size: 0.34rem;
+  border-radius: 0.2rem;
+  border: 0.08rem solid rgb(20 32 46 / 0.28);
+  background: rgb(20 32 46 / 0.12);
+  overflow: hidden;
+}
+.sb-side__juice[hidden] {
+  display: none;
+}
+.sb-side__juice-fill {
+  display: block;
+  block-size: 100%;
+  inline-size: 0%;
+  background: var(--gold);
+  transition: inline-size 180ms ease;
 }
 
 /* ---- The middle block: inning, who is up, and what YOU are doing ---- */
@@ -430,6 +454,30 @@ body.screen-open .play-callout {
   /* Instant-on for the same reason as the matchup — and this one is INPUT. */
   transition: none;
 }
+/* With the special pitches on (`features.specialPitches`) the picker holds
+   seven cards. Seven in one stack is taller than the row on a short landscape
+   phone (the svh note above was written for FOUR), so the stack becomes two
+   columns of four — the base kinds down the first, the specials down the
+   second — and the picker is never taller than it was. */
+.pitch-picker.has-specials {
+  grid-auto-flow: column;
+  grid-template-rows: repeat(4, auto);
+  column-gap: clamp(0.3rem, 1vw, 0.6rem);
+}
+.pitch-card[hidden] {
+  display: none;
+}
+/* A special card the meter cannot cover: still on the picker so a kid learns
+   it exists, greyed and inert (`aria-disabled`); the tap is ignored by the
+   view and the sim would downgrade it regardless. */
+.pitch-card--special {
+  background: var(--gold);
+}
+.pitch-card.is-broke {
+  opacity: 0.45;
+  filter: grayscale(1);
+  cursor: default;
+}
 .pitch-card {
   display: grid;
   justify-items: center;
@@ -478,6 +526,99 @@ body.screen-open .play-callout {
 .pitch-card.is-picked {
   background: var(--gold);
   transform: scale(1.07);
+}
+
+/* ---------------------------------------------------------------------------
+ * The spend tray (`features.juice`, a held feature) — the picker's mirror on
+ * the LEFT edge: chips for what the meter can buy right now, shown only on
+ * the windup and the between beat before it (the beats with nothing to
+ * steer), and only when the person's side can afford at least one. Same
+ * sticker language, same svh breathing, same `.interactive` floor: a chip is
+ * a tap target so it sizes to `--tap-min` by the one rule every control
+ * shares. The tray PROPOSES; `sim/juice.ts` decides what it costs.
+ * ------------------------------------------------------------------------- */
+.spend-tray {
+  grid-area: left;
+  align-self: center;
+  justify-self: start;
+  margin-inline-start: var(--s4);
+  display: grid;
+  gap: clamp(0.3rem, 1.2svh, 0.75rem);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 120ms ease;
+}
+.spend-tray.is-open {
+  opacity: 1;
+  visibility: visible;
+  transition: none;
+}
+/* On a short landscape phone the matchup plate is `display: none` (above),
+   so the top-left row collapses and a stack of three chips centred in the
+   left cell rises into the pause button's corner — the audit caught the
+   overlap on its first run. There the chips flow as a ROW at the foot of
+   the cell instead, one chip tall, above the scoreboard and clear of the
+   corner the pause and the plate share everywhere else. */
+@media (max-height: 430px) {
+  .spend-tray {
+    grid-auto-flow: column;
+    align-self: end;
+    margin-block-end: var(--s2);
+  }
+}
+.spend-chip {
+  display: grid;
+  justify-items: center;
+  gap: clamp(0.02rem, 0.3svh, 0.1rem);
+  padding: clamp(0.2rem, 1svh, 0.5rem) var(--s3);
+  border-radius: var(--radius);
+  border: var(--stroke) solid var(--outline);
+  background: var(--gold);
+  color: var(--ink);
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 0.28rem 0 rgb(20 32 46 / 0.35);
+  transition: transform 100ms ease, background 100ms ease;
+}
+.spend-chip:nth-child(odd) {
+  rotate: 1.4deg;
+}
+.spend-chip:nth-child(even) {
+  rotate: -1.4deg;
+}
+.spend-chip[hidden] {
+  display: none;
+}
+.spend-chip__icon {
+  font-size: clamp(0.95rem, 4.2svh, 1.35rem);
+  line-height: 1.1;
+}
+.spend-chip__name {
+  font-size: clamp(0.45rem, 1.8svh, 0.58rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.spend-chip__key {
+  font-family: inherit;
+  font-size: clamp(0.4rem, 1.5svh, 0.5rem);
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.12rem 0.3rem;
+  border-radius: 0.35rem;
+  border: 1px solid rgb(20 32 46 / 0.35);
+  background: rgb(20 32 46 / 0.08);
+}
+@media (hover: none) and (pointer: coarse) {
+  .spend-chip__key {
+    display: none;
+  }
+}
+/* Armed for this plate appearance: the sim took the proposal (the meter
+   dropped), so the chip reads as spent until the next batter. */
+.spend-chip.is-armed {
+  background: var(--cream);
+  transform: scale(0.94);
+  opacity: 0.75;
 }
 
 /* ---------------------------------------------------------------------------
@@ -660,6 +801,13 @@ body.inning-break #hud > *:not(.inning-board):not(.btn--mute) {
   font-weight: 700;
   color: var(--red);
   letter-spacing: 0.04em;
+}
+/* The tired tell (`features.stamina`). In flow under the pitcher's line so
+   the chip grows by this row rather than a badge overhanging it; `[hidden]`
+   collapses it entirely when the arm is fresh or the feature is off. */
+.matchup-chip__sweat {
+  font-size: clamp(0.5rem, 1.8svh, 0.65rem);
+  line-height: 1;
 }
 .matchup__vs {
   font-size: clamp(0.55rem, 2svh, 0.75rem);
@@ -1558,7 +1706,7 @@ button.clubhouse-sticker {
  * rather than by listing the things to hide, so a new piece of game chrome is
  * hidden by default and a new persistent control is a deliberate exemption.
  */
-body.screen-open #hud > *:not(.btn--mute) {
+body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
   visibility: hidden;
 }
 
@@ -2071,6 +2219,36 @@ body.screen-open #hud > *:not(.btn--mute) {
   z-index: 25;
 }
 .btn--pause[hidden] {
+  display: none;
+}
+
+/*
+ * The playtest log download, top-right beside the mute. Hidden unless the
+ * page was opened with `?log=1` or a `?features=` (`ui/sessionLog.ts`), so a
+ * kid at home never sees it. Absolute for the pause's reason: a corner
+ * button must not size the top row. It sits one tap-min plus a gap inside
+ * the mute's corner, and it survives `body.screen-open` like the mute does,
+ * because the observer downloads at the result screen or the title.
+ */
+.btn--log {
+  position: absolute;
+  inset-block-start: env(safe-area-inset-top, 0px);
+  inset-inline-end: calc(env(safe-area-inset-right, 0px) + var(--s3) + var(--tap-min));
+  margin: var(--s3);
+  padding: 0 var(--s3);
+  display: grid;
+  place-items: center;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  background: rgb(20 32 46 / 0.82);
+  color: var(--cream);
+  border-radius: var(--radius);
+  z-index: 25;
+}
+.btn--log[hidden] {
   display: none;
 }
 

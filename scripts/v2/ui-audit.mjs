@@ -60,7 +60,20 @@ const PORT = 5178;
 // a half-inning of sim away — 78 measured seconds of pumping per viewport,
 // after which the tab would not even navigate. Same reach class SHOW_RESULT
 // solves for the result screen: real component, synthetic trigger).
-const GAME_URL = `http://localhost:${PORT}/v2/?play=1&seed=audit&break=1`;
+// `log=1`: the playtest session log's `⬇ LOG` button is mounted in `#hud`
+// only when asked for, so without this the audit could never measure it —
+// the same hole the pause button sat in before `main.ts` wired it here.
+// `features=all`: every held port's chrome only exists with its flag on, so
+// the game scenarios run with all of them — the stamina sweat pip on the
+// matchup plate (the `tired pitcher` state pumps until it shows), the juice
+// meters on the scoreboard strip in every state, and the spend tray on the
+// left edge (the `spend tray` state pumps until the person's side can afford
+// a chip), and the three special-pitch cards on the picker, which turn the
+// stack into two columns of four (`windup, picker open` requires a special
+// card visible, so a picker that silently lost them fails to reach). `shifts`
+// parses and changes nothing yet; when its port lands a box, the state that
+// reaches it goes below.
+const GAME_URL = `http://localhost:${PORT}/v2/?play=1&seed=audit&break=1&log=1&features=all`;
 const APP_URL = `http://localhost:${PORT}/v2/`;
 
 /** A gate that can hang is worse than no gate — it burns a runner in silence.
@@ -148,9 +161,13 @@ const STATES = [
   { name: 'pitch', until: (f) => f.phase === 'pitch', mustSee: '.sb' },
   {
     name: 'windup, picker open',
-    // The bottom half, because that is the half the human pitches in.
+    // The bottom half, because that is the half the human pitches in. With
+    // `&features=all` the picker holds SEVEN cards — the special-pitch port's
+    // three sit in a second column — so the state requires one of them, not
+    // just the open picker: a special card that stopped rendering would
+    // otherwise pass over a four-card stack this row claims is seven.
     until: (f) => f.phase === 'windup' && f.half === 'bottom',
-    mustSee: '.pitch-picker.is-open',
+    mustSee: '.pitch-picker.is-open .pitch-card--special',
   },
   { name: 'live play', until: (f) => f.phase === 'live', mustSee: '.sb' },
   {
@@ -159,6 +176,44 @@ const STATES = [
     // one pitch of pumping rather than a half-inning of it.
     until: (f) => f.phase === 'between',
     mustSee: '.inning-board.is-open',
+  },
+  {
+    // The playtest log button (`&log=1` above). The break hides it with the
+    // rest of the game chrome, so this pumps on to the next windup and
+    // requires it visible there — beside the corner the mute owns on the app
+    // route, over the picker's rail on the half the person pitches.
+    name: 'log button',
+    until: (f) => f.phase === 'windup',
+    mustSee: '.btn--log',
+  },
+  {
+    // The stamina port's tell (`&features=stamina` above): a pip inside the
+    // pitcher's chip once his tank is below the sim's line. `frame.stamina`
+    // is null with the flag off, so a null here fails to reach rather than
+    // passing over a plate that never grew. Twenty-odd pitches of pumping.
+    //
+    // `mustSee` is a function of the viewport here because the WHOLE matchup
+    // plate is `display: none` at `max-height: 430px` (app.css: on a short
+    // landscape phone there is no row to give it, and BB collapses its HUD
+    // there too). On that viewport the pip cannot be shown by design, so the
+    // state still requires the scoreboard — a reached state that shows
+    // nothing must fail, not pass over empty chrome — and measures the tired
+    // HUD without the plate. Everywhere else the pip itself is required.
+    name: 'tired pitcher',
+    until: (f) => f.phase === 'windup' && f.stamina !== null && f.stamina < 0.45,
+    mustSee: (vp) => (vp.height <= 430 ? '.sb' : '.matchup-chip__sweat'),
+  },
+  {
+    // The juice port's tray (`&features=all` above): chips on the left edge
+    // once the PERSON's side — away, on `?play=1` — can afford the cheapest
+    // spend (40 of 100; `sim/juice.ts` is the authority, this is the reach
+    // condition). The CPU never spends away's meter, so it only grows, and
+    // `f.juice` is null with the flag off so a null fails to reach rather
+    // than passing over an empty rail. On the bottom half the tray and the
+    // picker are open together, which is exactly the collision to measure.
+    name: 'spend tray',
+    until: (f) => f.phase === 'windup' && f.juice !== null && f.juice.away >= 40,
+    mustSee: '.spend-tray.is-open',
   },
 ];
 
@@ -369,7 +424,11 @@ function tapMinPx(rootFontPx) {
 
 async function auditOne(page, vp, state) {
   const where = `${vp.name} / ${state.name}`;
-  const got = await page.evaluate(PUMP(String(state.until), state.mustSee));
+  // A state's `mustSee` is a selector, or a function of the viewport for the
+  // one piece of chrome the stylesheet collapses on a size (see `tired
+  // pitcher` above).
+  const mustSee = typeof state.mustSee === 'function' ? state.mustSee(vp) : state.mustSee;
+  const got = await page.evaluate(PUMP(String(state.until), mustSee));
   if (!got.reached) {
     // Not a layout failure — say so plainly rather than passing quietly.
     fail(where, `never reached the state (stuck at ${got.phase}/${got.half})`);
@@ -378,7 +437,7 @@ async function auditOne(page, vp, state) {
   if (!got.shown) {
     // The state was reached and the thing it exists to audit is not on screen.
     // Auditing anyway would report a clean run over chrome nobody looked at.
-    fail(where, `reached ${got.phase}/${got.half} but "${state.mustSee}" is not visible`);
+    fail(where, `reached ${got.phase}/${got.half} but "${mustSee}" is not visible`);
     return 0;
   }
   const r = await page.evaluate(COLLECT('hud'));

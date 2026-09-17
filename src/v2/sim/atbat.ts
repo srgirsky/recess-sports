@@ -52,7 +52,9 @@ import {
 import {
   PITCHES,
   PITCH_SPOTS,
+  SPECIAL_PITCHES,
   flyToPlate,
+  isSpecialPitch,
   releaseAtSpot,
   releaseFrom,
   type PitchKind,
@@ -180,6 +182,10 @@ export interface PitchPlan {
 }
 
 export function choosePitch(spec: PitchSpec, rng: Rng): PitchPlan {
+  // ★ THE BASE FOUR ONLY. `SPECIAL_PITCHES` is a separate record so this draw
+  // never sees a fifth key; the CPU reaches a special through `game.ts` and
+  // `juice.ts` `cpuPickSpecialPitch`, which replaces the KIND and keeps the
+  // spot this function drew.
   const kinds = Object.keys(PITCHES) as PitchKind[];
   const kind = rng.pick(kinds);
   const [lo, hi] = zoneBandFt();
@@ -242,6 +248,15 @@ export interface PitchInFlight {
  * intent has no channel — this repo has shipped an unread field before (PR 8's
  * count and hit type), and "a field nobody reads is a field nobody can trust".
  */
+/**
+ * What the meter bought this plate appearance (`features.juice`). Only the
+ * batting side's power swing reaches the plate model; the other two spends
+ * are the play's. Omitted is an ordinary swing.
+ */
+export interface SwingBoost {
+  power: boolean;
+}
+
 export interface HumanSwing {
   /** Seconds into the flight at which they swung. */
   atSec: number;
@@ -289,7 +304,15 @@ export function throwPitch(spec: PitchSpec, rng: Rng, human?: PitchPlan): PitchI
     aimLateralFt: plan.aimLateralFt,
   });
   const miss = rng.fork('execute');
-  const scatterRad = pitchScatterFt(spec.pitcher.stats.pitching) / MOUND_DIST;
+  // ★ A SPECIAL IS A PARAMETER SET, AND THIS IS ITS ONLY OTHER KNOB. The
+  // crazy ball is wild by `scatterMult` on the kid's OWN execution error —
+  // same draws, same bell, a wider nudge — so a strong arm's crazy ball is
+  // still tamer than a weak arm's. Every base kind and the other two
+  // specials multiply by exactly 1, which is exact in IEEE and is why the
+  // goldens do not see this line. Whether the kind was PAID FOR is not asked
+  // here: `game.ts` downgrades an unaffordable special before the throw.
+  const scatterMult = isSpecialPitch(plan.kind) ? SPECIAL_PITCHES[plan.kind].scatterMult : 1;
+  const scatterRad = (pitchScatterFt(spec.pitcher.stats.pitching) * scatterMult) / MOUND_DIST;
   const released = releaseFrom(plan2, miss.bell() * scatterRad, miss.bell() * scatterRad);
 
   const flown = flyToPlate(released);
@@ -312,7 +335,8 @@ export function resolvePitch(
   inFlight: PitchInFlight,
   spec: PitchSpec,
   rng: Rng,
-  human?: HumanSwing
+  human?: HumanSwing,
+  boost?: SwingBoost
 ): PitchResult {
   const { kind: pitchKind, release: released, crossing, travelSec, plateSpeedFts } = inFlight;
   const plate = spec.plate ?? resolvePlate();
@@ -323,7 +347,17 @@ export function resolvePitch(
   // quietly acquires different physics from the CPU's.
   const offer = (timingErrorSec: number, undercutFt: number): PitchResult => {
     const swing = resolveSwing(
-      { timingErrorSec, undercutFt, batter: spec.batter, travelSec, pitchSpeedFts: plateSpeedFts, plate },
+      {
+        timingErrorSec,
+        undercutFt,
+        batter: spec.batter,
+        travelSec,
+        pitchSpeedFts: plateSpeedFts,
+        plate,
+        // The power swing grades the CPU's and a person's timing alike —
+        // one offer, one physics, the rule this closure exists for.
+        power: boost?.power ?? false,
+      },
       rng.fork('swing')
     );
     const base = { crossing, pitch: pitchKind, travelSec, release: released, timingErrorSec };

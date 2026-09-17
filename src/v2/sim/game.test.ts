@@ -18,12 +18,14 @@
 // ---------------------------------------------------------------------------
 
 import { beforeAll, describe, it, expect } from 'vitest';
-import { simulateGame, simulateGameLive, type GameResult, type GameSpec } from './game';
+import { simulateGame, simulateGameLive, type GameResult, type GameSpec, type LiveFrame } from './game';
 import { battingOrder, planDefence, throwDemandFt } from './lineup';
 import { GAME } from './params';
 import { maxThrowFt } from './fielders';
 import { VENUE_GEOMETRY, FIELD_POSITIONS, FIRST, dist, type VenueId } from './field';
 import { makeRng } from './rng';
+import { DEFAULT_FEATURES, parseFeatures } from './features';
+import { JUICE } from './params';
 import { autoAssign } from '../../systems/lineup';
 import { ROSTER, getCharacter } from '../../data/characters';
 
@@ -612,5 +614,240 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
       if (f.phase !== 'live' && ids.length > 0) sawRunnerBetween = true;
     }
     expect(sawRunnerBetween, 'somebody reached base and stood there between pitches').toBe(true);
+  }, PLAYS_GAMES);
+});
+
+describe('★ the held features are threaded, and only the ported one bites', () => {
+  // `docs/playtests/holds.json` says shifts, stamina and juice are held until
+  // a playtest with children says otherwise, and `features.ts` gives the
+  // ports a seam. Three cases, and each is its own gate: the field absent and
+  // at the defaults must fingerprint identically (the ship path is unchanged);
+  // the UNPORTED flags must still be inert (a port landing without its own
+  // test is exactly the "wired but inert" failure); and each ported flag must
+  // DIFFER on its own, because a port that changes nothing is the same
+  // failure from the other side.
+  const fp = (g: GameResult) =>
+    `${g.awayScore}-${g.homeScore} i${g.innings} pa${g.tally.plateAppearances} h${g.tally.hits} k${g.tally.strikeouts} r${g.tally.runs} s${g.tally.stealAttempts} log${g.log.length}`;
+
+  it('★ produces the same game with features absent and at DEFAULT_FEATURES', () => {
+    for (const seed of ['a', 'b', 'c']) {
+      const absent = fp(game(seed));
+      const defaults = fp(game(seed, { features: { ...DEFAULT_FEATURES } }));
+      expect(defaults, `${seed}: DEFAULT_FEATURES changed the game`).toBe(absent);
+    }
+  }, PLAYS_GAMES);
+
+  it('★ the unported flag (shifts) is still inert, and specialPitches without juice is too', () => {
+    // `specialPitches` is ported but bought off the juice meter, so with the
+    // meter off it changes nothing by construction; `specialPitches.test.ts`
+    // proves it differs WITH juice. `shifts` is the one seam left.
+    const unported = { ...parseFeatures('all'), stamina: false, juice: false };
+    for (const seed of ['a', 'b', 'c']) {
+      expect(
+        fp(game(seed, { features: unported })),
+        `${seed}: an unported flag changed the game — a port landed without its own test`
+      ).toBe(fp(game(seed)));
+    }
+  }, PLAYS_GAMES);
+
+  it('★ stamina: true changes the game — the port is not inert', () => {
+    for (const seed of ['a', 'b', 'c']) {
+      expect(
+        fp(game(seed, { features: { ...DEFAULT_FEATURES, stamina: true } })),
+        `${seed}: stamina on played the identical game`
+      ).not.toBe(fp(game(seed)));
+    }
+  }, PLAYS_GAMES);
+
+  it('★ juice: true changes the game — the port is not inert', () => {
+    for (const seed of ['a', 'b', 'c']) {
+      expect(
+        fp(game(seed, { features: { ...DEFAULT_FEATURES, juice: true } })),
+        `${seed}: juice on played the identical game`
+      ).not.toBe(fp(game(seed)));
+    }
+  }, PLAYS_GAMES);
+});
+
+describe('★ juice: the meters charge, the CPU spends, and a person proposes', () => {
+  const juiced = (over: Partial<GameSpec> = {}) => spec({ features: { ...DEFAULT_FEATURES, juice: true }, ...over });
+
+  it('★ the frame carries both meters only when the flag is on, inside 0..MAX', () => {
+    let sawCharge = false;
+    for (const juice of [false, true]) {
+      const it = simulateGameLive(spec({ features: { ...DEFAULT_FEATURES, juice } }), makeRng('meters'));
+      for (let r = it.next(), n = 0; !r.done && n < 40_000; r = it.next(), n++) {
+        const f = r.value;
+        if (!juice) {
+          expect(f.juice, 'flag off: null on every frame').toBeNull();
+          continue;
+        }
+        expect(f.juice).not.toBeNull();
+        for (const side of ['away', 'home'] as const) {
+          expect(f.juice![side]).toBeGreaterThanOrEqual(0);
+          expect(f.juice![side]).toBeLessThanOrEqual(JUICE.MAX);
+          if (f.juice![side] > 0) sawCharge = true;
+        }
+      }
+    }
+    expect(sawCharge, 'a whole game charged nothing').toBe(true);
+  }, PLAYS_GAMES);
+
+  it('★ the CPU spends, and never for the person\'s side', () => {
+    // Over several seeds with `humanSide: 'away'`, the home CPU spends at
+    // least once (it trails or leads somewhere in eight games) and the away
+    // meter is never spent by anyone — a person proposes, nobody else.
+    const spends: Array<{ side: string; kind: string }> = [];
+    for (const seed of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']) {
+      simulateGame(
+        juiced({
+          humanSide: 'away',
+          onEvent: (e) => {
+            if (e.t === 'spend') spends.push({ side: e.side, kind: e.kind });
+          },
+        }),
+        makeRng(seed)
+      );
+    }
+    expect(spends.some((s) => s.side === 'home'), 'the CPU never spent in eight games').toBe(true);
+    expect(spends.filter((s) => s.side === 'away'), 'the CPU spent the person\'s meter').toEqual([]);
+    // Every POWER is reachable by the CPU: it bats and it fields. The special
+    // pitches are spends too, but only with their own flag on (they are not).
+    const kinds = new Set(spends.map((s) => s.kind));
+    expect([...kinds].sort()).toEqual(['goldenGlove', 'powerSwing', 'turboLegs']);
+  }, PLAYS_GAMES);
+
+  it('★ a proposal on the windup is bought at the sim\'s own cost, and armed once per plate appearance', () => {
+    const spends: Array<{ side: string; kind: string }> = [];
+    const it = simulateGameLive(
+      juiced({
+        humanSide: 'away',
+        onEvent: (e) => {
+          if (e.t === 'spend') spends.push({ side: e.side, kind: e.kind });
+        },
+      }),
+      makeRng('propose')
+    );
+    let proposals = 0;
+    let bought = 0;
+    let r = it.next();
+    for (let n = 0; !r.done && n < 60_000; n++) {
+      const f = r.value;
+      // On every top-half windup the person could afford it, propose turbo
+      // legs — including again in the same PA, which must NOT buy twice.
+      const affordable = f.phase === 'windup' && f.half === 'top' && f.juice !== null && f.juice.away >= JUICE.COSTS.turboLegs;
+      if (affordable) {
+        proposals++;
+        const before = f.juice!.away;
+        const spentBefore = spends.length;
+        r = it.next({ spend: 'turboLegs' });
+        if (spends.length > spentBefore) {
+          bought++;
+          expect(spends[spends.length - 1]).toEqual({ side: 'away', kind: 'turboLegs' });
+          expect((r.value as LiveFrame).juice!.away, 'the meter dropped by the cost').toBe(
+            before - JUICE.COSTS.turboLegs
+          );
+        }
+        continue;
+      }
+      r = it.next();
+    }
+    expect(proposals, 'the person could never afford a spend').toBeGreaterThan(0);
+    expect(bought, 'a proposal was never honoured').toBeGreaterThan(0);
+    expect(bought, 'a second proposal in the same plate appearance bought again').toBeLessThanOrEqual(proposals);
+  }, PLAYS_GAMES);
+
+  it('★ a proposal for the other side is ignored, and so is one the meter cannot cover', () => {
+    const spends: string[] = [];
+    const it = simulateGameLive(
+      juiced({ humanSide: 'away', onEvent: (e) => { if (e.t === 'spend') spends.push(`${e.side}:${e.kind}`); } }),
+      makeRng('ignore')
+    );
+    let r = it.next();
+    for (let n = 0; !r.done && n < 40_000; n++) {
+      const f = r.value;
+      // A batting spend proposed on the BOTTOM half belongs to home — not the
+      // person's to make; a fielding spend on the top half likewise.
+      if (f.phase === 'windup') {
+        r = it.next({ spend: f.half === 'bottom' ? 'powerSwing' : 'goldenGlove' });
+        continue;
+      }
+      r = it.next();
+    }
+    expect(spends.filter((s) => s.startsWith('away:'))).toEqual([]);
+  }, PLAYS_GAMES);
+});
+
+describe('★ stamina: a tiring arm misses the zone more as the game goes on', () => {
+  /**
+   * Zone share by inning band, over the same seeds, with the flag on or off.
+   *
+   * The `pitch` event carries no inning, and adding one would widen an event
+   * every consumer reads. The frame does: `simulateGameLive` yields ONE frame
+   * object mutated in place, and `onEvent` fires synchronously inside the
+   * generator, so the inning the last yield carried is the inning the pitch
+   * was thrown in.
+   */
+  function zoneShares(stamina: boolean, seeds: string[]): { early: number; late: number } {
+    const n = { early: 0, late: 0 };
+    const inZone = { early: 0, late: 0 };
+    for (const seed of seeds) {
+      let frame: LiveFrame | null = null;
+      const it = simulateGameLive(
+        spec({
+          features: { ...DEFAULT_FEATURES, stamina },
+          onEvent: (e) => {
+            if (e.t !== 'pitch' || !frame) return;
+            const band = frame.inning <= 2 ? 'early' : frame.inning >= 5 ? 'late' : null;
+            if (!band) return;
+            n[band] += 1;
+            if (e.inZone) inZone[band] += 1;
+          },
+        }),
+        makeRng(seed)
+      );
+      for (let r = it.next(); !r.done; r = it.next()) frame = r.value;
+    }
+    return { early: inZone.early / n.early, late: inZone.late / n.late };
+  }
+
+  it('★ the late-inning zone share is below the early one with stamina on, and the drop is the flag', () => {
+    const seeds = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+    const on = zoneShares(true, seeds);
+    const off = zoneShares(false, seeds);
+    expect(on.late, `stamina on: early ${on.early.toFixed(3)} late ${on.late.toFixed(3)}`).toBeLessThan(on.early);
+    // Controlled: the same seeds with the flag off. A drop that is there
+    // anyway — a lineup's third time through, say — is not stamina.
+    expect(on.early - on.late, `off: early ${off.early.toFixed(3)} late ${off.late.toFixed(3)}`).toBeGreaterThan(
+      off.early - off.late
+    );
+  }, PLAYS_GAMES);
+
+  it('★ the frame carries the tank only when the flag is on', () => {
+    let sawNumber = false;
+    for (const stamina of [false, true]) {
+      const it = simulateGameLive(spec({ features: { ...DEFAULT_FEATURES, stamina } }), makeRng('tank'));
+      let prevHalf = '';
+      let prev = 1;
+      for (let r = it.next(), n = 0; !r.done && n < 40_000; r = it.next(), n++) {
+        const f = r.value;
+        if (!stamina) {
+          expect(f.stamina, 'flag off: null on every frame').toBeNull();
+          continue;
+        }
+        expect(f.stamina).not.toBeNull();
+        sawNumber = true;
+        const key = `${f.inning}${f.half}`;
+        if (key !== prevHalf) {
+          prevHalf = key;
+          prev = f.stamina!;
+        }
+        // Within a half one arm is pitching, so the tank only goes down.
+        expect(f.stamina!, `${key}: the tank rose`).toBeLessThanOrEqual(prev + 1e-12);
+        expect(f.stamina!).toBeGreaterThanOrEqual(0);
+        prev = f.stamina!;
+      }
+    }
+    expect(sawNumber).toBe(true);
   }, PLAYS_GAMES);
 });
