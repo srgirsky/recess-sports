@@ -63,11 +63,11 @@
     },
     "big_lou": {
       "source": "big-lou-pilot.blend",
-      "sourceSha256": "ab9513b84d8ec054b89e2b5b96c620cf4ced0928aa1c8d9aa9fef3025bba3894",
+      "sourceSha256": "43e03a97cfb9615296c6f749aee33a24279d6d18c0fe7df223383527d9e2ede2",
       "concept": "big-lou-turnaround.png",
       "conceptSha256": "8e613340d5955ce7af1a8c9b2ac381514c0c7b577129202d8843bb35e13d2a45",
       "output": "kid_big_lou.glb",
-      "outputSha256": "2a9d8d102ef5c9c691f65b5d90cc94ca4e94ea2cec5c6cf1db306da38af96921",
+      "outputSha256": "cc2d8eeab7d35f10522c031a7c3e96ec2faaaf6ceb0d8db5c86de1574d4452f5",
       "definingTraits": [
         "gentle broad silhouette",
         "soft rounded face",
@@ -78,11 +78,11 @@
     },
     "tank": {
       "source": "tank-pilot.blend",
-      "sourceSha256": "1a255a81e05bfc3246421a6546e4b453dfb639cf7a536195b255aaa52c98fe64",
+      "sourceSha256": "df4c86389877f8cfabb11a87199ef21ebf2b0c729d54c2e9bcbac02ba6bb7372",
       "concept": "tank-turnaround.png",
       "conceptSha256": "32d3e55d0bb1f56fa6edacf9d87f7d53cc516cd3877740042f9c82e0c5756bd4",
       "output": "kid_tank.glb",
-      "outputSha256": "0833eba672d4a624cc2321a5dd166b7c4bedb979f053059f2884cb80316829d1",
+      "outputSha256": "11963ec7162694324274799ecf08b70b3b9d59fb65b0071d699db1748c161491",
       "definingTraits": [
         "low wide silhouette",
         "bald round crown",
@@ -243,11 +243,11 @@
     },
     "moose": {
       "source": "moose-pilot.blend",
-      "sourceSha256": "c166532369c0a49e147149a008fa54510e183807292bbea54b00500c6b935bfa",
+      "sourceSha256": "48cb3ebcf378a0562a5069f6784ec2bfce09bda6408e597a256b1aab44cb1465",
       "concept": "moose-turnaround.png",
       "conceptSha256": "d64f68670ae1629b82c81333c4a1be6c1ab02805f2937a1a20d3ddf679ca7bed",
       "output": "kid_moose.glb",
-      "outputSha256": "52a30ca3d9f3bd7915800e2c22b2ca936a48b74b2e8a7482e584f20c057f104a",
+      "outputSha256": "9082747ce5074be2266545756a68a5b2e6b45d479adb6fc26c9711d1d5d0e0ee",
       "definingTraits": [
         "navy ball cap",
         "mustard kangaroo hoodie",
@@ -333,11 +333,11 @@
     },
     "dex": {
       "source": "dex-pilot.blend",
-      "sourceSha256": "67112dd8792c3cf4f1dd29d4a341ebf594d374063c912eeb3be474dfe52c0126",
+      "sourceSha256": "485841a686ea87e11f4b96cba08accbfe07c74abe57716a5776dd15c9858187e",
       "concept": "dex-turnaround.png",
       "conceptSha256": "d9dc2741e65c4e928b0188a0d0ca509d50a33dc4d9ed37363ae9f05fad1614b3",
       "output": "kid_dex.glb",
-      "outputSha256": "7bea745e8515e18918142882cd522c616fb56dc71460bcc991a9c5e1b545b03c",
+      "outputSha256": "5321404e55f8a33eac747f00f582bd0caf61a139da60980b959be012d8d8e942",
       "definingTraits": [
         "charcoal ball cap",
         "black curls under the brim",

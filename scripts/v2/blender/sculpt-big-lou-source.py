@@ -205,12 +205,18 @@ BUZZ_FRINGE_Z = 3.700      # the buzz hairline sits high on the round face
 
 
 def buzz_window_z(x_signed: float) -> float:
+    # ⚠️ The far-side floor was 3.360, and the corrected headBox pinch (the
+    # neck waist at z 2.946) moved the faceSkin sample row UP to z ~3.35 —
+    # right onto the temple walls, which cost 9 points of visible face per
+    # side. 3.440 keeps the drawn high hairline (the buzz ends above the
+    # ears, whose crescents span z 3.25-3.59) while the sample row clears
+    # the temple columns.
     x_abs = abs(x_signed)
     if x_abs < 0.30:
         return BUZZ_FRINGE_Z
     if x_abs < 0.44:
-        return BUZZ_FRINGE_Z - (x_abs - 0.30) * 1.6
-    return 3.360
+        return BUZZ_FRINGE_Z - (x_abs - 0.30) * 1.857
+    return 3.440
 
 
 def build_buzz(builder: MeshBuilder, detail: int) -> None:
@@ -249,23 +255,39 @@ def build_buzz(builder: MeshBuilder, detail: int) -> None:
 
 # --- The striped tee over the round belly --------------------------------------
 #
-# not-traceable: his chunky arms merge with the torso at every row (front
-# z=1.85 measures 0.9242 arm-to-arm); the belly halves are bounded off that
-# minus the drawn arm girth (~0.17 a side), and the profile's own 0.60
-# depth at z 1.70.
+# The bulk pass (proportions ledger): the round-1 torso shipped 28.9% of
+# figure height wide and 24.8% deep against the drawing's ~34% / ~30% —
+# roughly 30% of the roster's only heavy kid's cross-section was missing.
+# The depth is CLEANLY traceable in profile (one mass, tee front to tee
+# back): max total depth 1.190ft at z 1.70-1.80, so the equator carries
+# ry 0.588 (2x = 1.176). The front width is NOT separable — his arms rest
+# against the tee in every view (the merged centre run below is arm-to-arm)
+# — so the widths are authored to the drawn TEE-FABRIC span (first fabric
+# px to last fabric px, sleeves included since they ride the torso):
+# 1.404ft at z 1.60, 1.365 at 1.70, 1.315 at 1.85, 1.270 at 2.05. The
+# sleeves account for the outer sliver of that span, so the loft sits at
+# the span's low edge, not past it.
+# measured: front z=1.85 halfWidth=0.9242 tol=0.03
+# measured: view2 z=1.70 halfWidth=0.6006 tol=0.03
 TORSO_LEVELS = [
-    (1.420, 0.540, 0.460, "Hips"),    # hem riding the belly
-    (1.460, 0.555, 0.470, "Hips"),
-    (1.650, 0.580, 0.495, "Spine"),   # the belly's equator
-    (1.850, 0.572, 0.489, "Spine"),
-    (2.050, 0.540, 0.463, "Spine1"),
-    (2.250, 0.486, 0.417, "Spine1"),
-    (2.420, 0.414, 0.354, "Spine2"),  # shoulder rows widened past the arm
-    (2.560, 0.344, 0.294, "Spine2"),  # root (Turbo's wedge fix)
-    (2.680, 0.252, 0.214, "Spine2"),
-    (2.790, 0.192, 0.166, "Spine2"),
-    (2.860, 0.172, 0.150, "Spine2"),  # collar — OUTSIDE the neck loft
-]
+    (1.420, 0.630, 0.510, "Hips"),    # hem riding the belly
+    (1.460, 0.648, 0.528, "Hips"),
+    (1.630, 0.675, 0.588, "Spine"),   # the belly's equator (drawn widest 1.60-1.65)
+    (1.850, 0.658, 0.586, "Spine"),
+    (2.050, 0.622, 0.556, "Spine1"),
+    (2.250, 0.545, 0.470, "Spine1"),
+    (2.420, 0.455, 0.392, "Spine2"),  # shoulder rows widened past the arm
+    (2.560, 0.382, 0.328, "Spine2"),  # root (Turbo's wedge fix)
+    # ⚠️ The top three rows are the shoulder roll and they must stay WIDER
+    # than the neck loft: round 2 shipped a 0.242 collar under a 0.30 jowl
+    # neck and the headBox pinch slid down the collar — head height went
+    # 27.9 → 28.4 (tol 28.1) and both faceSkin sides moved with the sample
+    # row. The drawn shoulder envelope at z 2.88 is 0.449 half, so 0.320
+    # is inside it, and the pinch lands back on the neck's own waist row.
+    (2.680, 0.345, 0.298, "Spine2"),
+    (2.790, 0.332, 0.288, "Spine2"),
+    (2.880, 0.320, 0.278, "Spine2"),  # collar — OUTSIDE the neck loft, raised
+]                                     # so the bare-neck band shortens
 
 # Ascending (lo, hi) gold bands; everything else is cream. Bands traced off
 # the front view's stripe rows (~0.15ft pitch on his tall tee).
@@ -292,14 +314,16 @@ def tee_color(theta: float, z: float):
 # The belly's FORWARD push (negative y) per z - the round-2 blocker: the
 # concept's money read protrudes past the chest plane with an under-belly
 # tuck, and a centred loft is slim in depth however wide it gets.
-# not-traceable: read off the profile view's 0.60 half-depth at z 1.70
-# against the chest's own 0.45 plane.
+# not-traceable: the profile's front line above z ~1.9 is the hanging
+# sleeve merged with the chest, so only the belly rows are set to the
+# drawn extents (leg axis x~882: front 0.704 / back 0.469 at z 1.65);
+# the chest push tapers on the authored total depth instead.
 BELLY_PUSH = [
-    (1.420, -0.075),
-    (1.650, -0.100),
-    (1.850, -0.085),
-    (2.050, -0.050),
-    (2.250, -0.018),
+    (1.420, -0.100),
+    (1.630, -0.115),
+    (1.850, -0.100),
+    (2.050, -0.060),
+    (2.250, -0.022),
     (2.420, 0.000),
 ]
 
@@ -353,23 +377,36 @@ def _torso_ring_interp(z):
 
 # ⚠️ An insert within ~0.008 of an existing row makes a degenerate sliver
 # band whose unstable normals render as dark backface slits at runtime
-# (the round-1 'navy crescents' - row 2.420 vs insert 2.419).
+# (the round-1 'navy crescents' - row 2.420 vs insert 2.419). The collar's
+# own colour switch (tee_color's 2.830) gets the same crisp pair, so the
+# gold collar ring is an edge, not a ramp across the 2.790-2.880 band.
+_CRISP_BOUNDARIES = [edge for lo, hi in STRIPE_BANDS for edge in (lo, hi)] + [2.830]
 TORSO_LEVELS_CRISP = sorted(
-    TORSO_LEVELS + [ring for lo, hi in STRIPE_BANDS for edge in (lo - 0.006, lo + 0.006, hi - 0.006, hi + 0.006)
+    TORSO_LEVELS + [ring for boundary in _CRISP_BOUNDARIES for edge in (boundary - 0.006, boundary + 0.006)
                     if all(abs(edge - level[0]) > 0.008 for level in TORSO_LEVELS)
                     and (ring := _torso_ring_interp(edge)) is not None],
     key=lambda level: level[0])
 
 
-# His chin merges into the neck (the refused pinch) — the loft is WIDE and
-# short, running up into the big skull.
-# not-traceable: the sheet draws no separate neck; halves bounded off the
-# chin-to-collar sliver (~0.17).
+# His chin merges into the neck (the refused pinch) — the concept has
+# effectively NO neck: the narrowest drawn row between shoulders and jowls
+# is 0.612ft ACROSS (half 0.306) at z 2.96, wider than the skull's own
+# 0.23 half at that height. The round-1 loft was a 0.17-half cylinder —
+# a visible neck the drawing does not have. Now the loft is a jowl roll:
+# tucked just inside the raised collar ring at its base (the collar stays
+# proud, a constructed garment edge), swelling past the skull above it so
+# chin flows into shoulders with no cylinder band.
+# The waist row at 2.946 is the DELIVERED pinch: it must be the unique
+# narrowest visible central ring (collar above-left of it is 0.320, the
+# jowl rows above are 0.306/0.310) so the headBox detector lands where the
+# concept's own pinch row sits (row ~292, z ~2.95) — the topmost-of-equals
+# trap is why 3.110 is authored clearly wider than 2.946.
+# measured: front z=2.96 halfWidth=0.3062 tol=0.03
 NECK_LEVELS = [
-    (2.850, 0.168, 0.158, "Spine2"),
-    (2.940, 0.180, 0.168, "Neck"),
-    (3.030, 0.192, 0.180, "Neck"),
-    (3.110, 0.204, 0.192, "Neck"),
+    (2.855, 0.288, 0.258, "Spine2"),  # tucked under the proud collar ring
+    (2.946, 0.294, 0.264, "Neck"),    # the waist — the pinch row
+    (3.030, 0.306, 0.274, "Neck"),
+    (3.110, 0.310, 0.276, "Neck"),    # jowls flowing into the cheeks
 ]
 
 
@@ -436,8 +473,8 @@ LOU_ARM = ArmSpec(
 
 # --- Navy shorts, chunky bare legs, proud socks, navy sneakers -----------------
 INSEAM_TOP_Z = 1.420
-INSEAM_HEM_Z = 1.000
-INSEAM_HEM_HALF = 0.032
+INSEAM_HEM_Z = 0.940     # the carve reaches the lengthened hem
+INSEAM_HEM_HALF = 0.032  # ⚠️ deeper than ~0.03 splits shorts into two boxes
 
 
 def inseam_half(z: float) -> float:
@@ -447,27 +484,41 @@ def inseam_half(z: float) -> float:
     return INSEAM_HEM_HALF * t ** 1.3
 
 # (z, half-width, depth factor, colour, bone) — strictly descending in z.
+# The hem pass: round 1 cut the shorts at z 1.08 (73.1% of figure height);
+# the drawn hem's navy runs out between z 0.925 and 0.900 on the front
+# view (76.7-77.5%), so the hem lands at 0.940/0.928 — a crisp ring pair
+# with the SHORTS_DARK lip 0.008 proud of the ring above and 0.046 proud
+# of the bare thigh under it (the Penny waistband construction).
+# The sock re-taper: the raised shoe upper (see SHOE_HEIGHT_SCALE) tops
+# out at z ~0.456, so the drawn roll-top moves up to its own z ~0.55
+# (front skin ends between 0.56 and 0.54) and the covered rows tuck to
+# 0.120 and taper monotonically inside the shoe — Tank's 30-round sock
+# bulge is the lesson.
 # measured: front z=0.80 halfWidth=0.5140 tol=0.04
 # measured: front z=0.50 halfWidth=0.4860 tol=0.04
+# measured: front z=0.93 halfWidth=0.5393 tol=0.04
 LEG_STATIONS = [
     (1.440, 0.262, 1.08, SHORTS, "UpLeg"),
     (1.300, 0.256, 1.05, SHORTS, "UpLeg"),
     (1.160, 0.250, 1.03, SHORTS, "UpLeg"),
-    (1.080, 0.254, 1.02, SHORTS_DARK, "UpLeg"),   # hem lip
-    (1.030, 0.212, 1.00, SKIN, "UpLeg"),          # the chunky bare leg
-    (0.900, 0.204, 1.00, SKIN, "Leg"),
+    (0.952, 0.244, 1.02, SHORTS, "UpLeg"),        # crisp pair, upper ring
+    (0.940, 0.252, 1.02, SHORTS_DARK, "UpLeg"),   # hem lip, proud
+    (0.928, 0.206, 1.00, SKIN, "Leg"),            # the chunky bare thigh
+    (0.850, 0.202, 1.00, SKIN, "Leg"),
     (0.760, 0.198, 1.00, SKIN, "Leg"),
     (0.620, 0.192, 1.00, SKIN, "Leg"),
-    (0.530, 0.190, 1.00, SKIN, "Leg"),
+    (0.575, 0.190, 1.00, SKIN, "Leg"),
     # ⚠️ The leg builder emits a slot-3 face only when BOTH rows of a pair
     # carry the team_mask colour — a single accent ring emits nothing and
     # the accent gate fires (the M_Accessory-dropped class).
-    (0.500, 0.200, 1.00, TEAM_MASK, "Leg"),       # sock roll-top — THE accent
-    (0.486, 0.198, 1.00, TEAM_MASK, "Leg"),
-    (0.470, 0.196, 1.00, SOCK, "Leg"),
-    (0.400, 0.184, 1.00, SOCK, "Foot"),
-    (0.300, 0.172, 0.98, SOCK, "Foot"),
-    (0.180, 0.158, 0.95, SOCK, "Foot"),
+    (0.560, 0.200, 1.00, TEAM_MASK, "Leg"),       # sock roll-top — THE accent
+    (0.546, 0.198, 1.00, TEAM_MASK, "Leg"),
+    (0.530, 0.190, 1.00, SOCK, "Leg"),
+    (0.490, 0.162, 1.00, SOCK, "Leg"),            # base over the collar
+    (0.462, 0.120, 1.00, SOCK, "Leg"),            # tuck inside the rim
+    (0.400, 0.108, 1.00, SOCK, "Foot"),
+    (0.300, 0.100, 0.98, SOCK, "Foot"),
+    (0.180, 0.094, 0.95, SOCK, "Foot"),
 ]
 
 # The yoke that closes the crotch (Zippy's lesson).
@@ -557,14 +608,23 @@ def shoe_floor_at(y_unscaled: float) -> float:
 
 SHOE_LENGTH_SCALE = 1.06
 SHOE_WIDTH_SCALE = 1.04
-SHOE_HEIGHT_SCALE = 1.20
+# The quarter pass: round 1 shipped the upper at 1.20 (top z ~0.35) and the
+# navy quarter read as a flat slipper — 2.7% of figure height against the
+# drawn ~6%. The drawn navy runs z ~0.13 to ~0.46 in profile (tips at 0.48)
+# and the front shoe top sits at ~0.42-0.44, so the last is raised to top
+# z ~0.456 — Tank's high upper (1.45) is the family precedent. ONLY the
+# height moves: the toe cap, heel counter, collar and band boundary below
+# are rescaled by 0.348/0.4495 so their ABSOLUTE heights — which the ledger
+# records as correct — stay where they shipped.
+SHOE_HEIGHT_SCALE = 1.55
 
 SHOE_TOP_MAX = max(ztop for _, _, ztop, _ in SHOE_STATIONS)
 
-# Cream cupsole below, navy canvas above.
+# Cream cupsole below, navy canvas above (0.265 of the raised height keeps
+# the boundary at the round-1 z ~0.125 the ledger called good).
 SHOE_BANDS = [
     (0.000, "midsole"),
-    (0.340, "quarter"),
+    (0.265, "quarter"),
 ]
 
 
@@ -572,14 +632,14 @@ def toe_cap_v_low(y_unscaled: float) -> float:
     if y_unscaled > -0.26:
         return 2.0
     frac = min(1.0, max(0.0, (-0.26 - y_unscaled) / 0.18))
-    return 0.86 - 0.09 * frac
+    return 0.666 - 0.070 * frac
 
 
 def heel_counter_v_low(y_unscaled: float) -> float:
     if y_unscaled < 0.08:
         return 2.0
     frac = min(1.0, max(0.0, (y_unscaled - 0.08) / 0.16))
-    return 0.62 - 0.20 * frac
+    return 0.480 - 0.155 * frac
 
 
 LOU_SHOE = ShoeSpec(
@@ -597,9 +657,18 @@ LOU_SHOE = ShoeSpec(
     sole_profile=shoe_floor_at,
     toe_cap_edge=toe_cap_v_low,
     heel_counter_edge=heel_counter_v_low,
-    collar=(0.022, 0.105),
-    straps=((-0.170, -0.122), (-0.060, -0.012)),
-    strap_arc_min=0.55,
+    collar=(0.022, 0.081),   # rim height rescaled with SHOE_HEIGHT_SCALE
+    # Widened from 0.048 each and given a third band on the taller instep:
+    # raising the upper moved the cream collar and the fat sock rows OUT of
+    # the bottom-9% band window, and the band's dominant cream fell to 65.9
+    # against the concept's 82.7 — the drawn front face is a continuous
+    # cream lace/tongue panel with navy only at the side slivers, so the
+    # cream comes back as lace coverage, not as a lowered quarter.
+    straps=((-0.200, -0.100), (-0.082, 0.010), (0.026, 0.078)),
+    # Rescaled with SHOE_HEIGHT_SCALE (0.55 x 0.348/0.4495): round 2 kept the
+    # fraction, the lace straps rode up with the raised upper, and the bottom-
+    # 9% band metric lost their cream — dominant tone went 79.7 → 64.0.
+    strap_arc_min=0.426,
     heel_point=(0.286, 0.106 + 0.025),
     toe_point=(-0.470, 0.044 + 0.042),
     upper=SHOE,

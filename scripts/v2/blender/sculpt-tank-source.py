@@ -571,15 +571,40 @@ def skull_surface_x(y: float, z: float) -> float:
 # measured: view2 z=1.960 halfWidth=0.5153
 # measured: view2 z=2.400 halfWidth=0.4250
 # measured: front z=1.960 runs=1
+#
+# ★ A BELLY IS FORE-AFT ASYMMETRY, AND A CENTRED RING CANNOT HAVE ONE. The
+# depth column above is the profile's TOTAL span, and the shared loft splits
+# it symmetrically about y=0 — so the delivered profile bowed 10.8px forward
+# and 10.8px back, identical, a surface of revolution. Re-traced against the
+# chord from hem (z 1.24) to chest (z 2.40), the concept's own profile is not
+# symmetric: the FRONT edge bows ~7px forward of its chord (1.0% of figure
+# height, peaking at z 1.85-2.0) while the BACK edge deviates ~1.5px (0.2%) —
+# the belly bows forward and the back stays flat. The fourth column is each
+# ring's fore-aft centre, traced as -(profile_centre_px - 828) * 0.005822
+# ft/px, where 828 is the legs' own profile centre at z 1.00-1.05 (the model
+# axis; nose at -y, so forward is negative). Consistency check: the head's
+# traced centre by the same rule is 830px -> y -0.012, against the authored
+# HEAD_CENTER y of -0.010. Ring centres, traced at the nearest probe row:
+# z 1.15 -> -0.012, 1.25 -> -0.012, 1.40-1.70 -> -0.015, 1.85 -> -0.018,
+# 2.00 -> -0.015, 2.20 -> -0.006, 2.40 -> +0.009 (the chest leans back as the
+# belly leans forward). Above the yoke the offsets return to 0.000 by hand:
+# the collar/neck pair has shipped two crossing-surface defects already (both
+# recorded below) and a shifted collar re-opens both, so the traced upper
+# lean (+0.015 at z 2.5) is deliberately not carried. Delivered bow after
+# this table: front 0.043ft (1.08% of figure height), back 0.013ft (0.33%),
+# against the concept's ~1.0% / ~0.2%.
 TORSO_LEVELS = [
     # ★ THE HEM IS A BAND WITH THICKNESS, and the review named its absence: the
     # torso "widens monotonically with no hem step — a lampshade, not a tee".
     # Four rings buy an underside, a proud band and the body above it.
     # The hem sits at z 1.108, which is where the centre column changes from
     # the tee's purple to the shorts' near-black.
-    (1.070, 0.600, 0.470, "Hips"),    # hem underside — SHIRT_DARK via tee_color
-    (1.096, 0.630, 0.500, "Hips"),    # hem band, proud
-    (1.130, 0.611, 0.560, "Hips"),    # traced: hem row, purple 102-310
+    # Rows are (z, half_x, half_depth, y_centre, bone); loft_asym consumes the
+    # fourth column. The hem trio fairs its centre in from the legs' axis (0 at
+    # the hip) to the traced -0.012 so the tube meets the shorts without a kink.
+    (1.070, 0.600, 0.470, -0.006, "Hips"),  # hem underside — SHIRT_DARK via tee_color
+    (1.096, 0.630, 0.500, -0.009, "Hips"),  # hem band, proud
+    (1.130, 0.611, 0.560, -0.012, "Hips"),  # traced: hem row, purple 102-310
     # ★ THE HEM BAND HAS A STITCH CREASE ABOVE IT, AND THE SHEET DRAWS IT. The
     # proud lip alone still read to a hem critic as a bare edge, and the
     # drawing agrees there is more: scanning the front figure's tee rows for
@@ -591,18 +616,20 @@ TORSO_LEVELS = [
     # a switch inside a stretched band ramps colour across 32px). Widths ride
     # the line the neighbouring traced rings already describe, minus a 0.011
     # inset at the crease so the shadow line is geometry as well as paint.
-    (1.186, 0.607, 0.573, "Hips"),    # band top — bounds the crease from below
-    (1.200, 0.596, 0.568, "Hips"),    # stitch crease — SHIRT_DARK via tee_color
-    (1.216, 0.604, 0.577, "Hips"),    # bounds the crease from above
-    (1.240, 0.598, 0.591, "Hips"),    # deepest point, traced (DEPTH only)
-    # ★ THE PROFILE IS A TAPER, AND THAT ONE IS CORRECT. Three reviews called
-    # the side view a cone and asked for a belly that bulges. Traced, the
-    # concept's own profile runs 0.591 at z 1.24 down to 0.425 at z 2.40 — it
-    # narrows upward monotonically, because his mass is low and his tee is
-    # oversized. The side view was never the defect; the FRONT was.
-    (1.480, 0.578, 0.576, "Hips"),
-    (1.720, 0.561, 0.547, "Spine"),   # traced clean: arms clear of the tee here
-    (1.960, 0.558, 0.515, "Spine"),
+    (1.186, 0.607, 0.573, -0.012, "Hips"),  # band top — bounds the crease from below
+    (1.200, 0.596, 0.568, -0.012, "Hips"),  # stitch crease — SHIRT_DARK via tee_color
+    (1.216, 0.604, 0.577, -0.012, "Hips"),  # bounds the crease from above
+    (1.240, 0.598, 0.591, -0.012, "Hips"),  # deepest point, traced (DEPTH only)
+    # ★ THE PROFILE'S TOTAL SPAN IS A TAPER, AND THAT HALF WAS ALWAYS RIGHT:
+    # 0.591 at z 1.24 narrows monotonically to 0.425 at z 2.40, because his
+    # mass is low and his tee is oversized. What the taper defence missed —
+    # and three "belly" reviews were groping at — is the SPLIT of that span:
+    # the drawing hangs it forward of the leg axis low down and behind it at
+    # the chest (the y_centre column, traced in the header block above). The
+    # depth column keeps its citations; only the centre moves.
+    (1.480, 0.578, 0.576, -0.015, "Hips"),
+    (1.720, 0.561, 0.547, -0.015, "Spine"),  # traced clean: arms clear of the tee here
+    (1.960, 0.558, 0.515, -0.015, "Spine"),
     # ⚠️ AND THE CHEST HAS TO LEAVE ROOM FOR THE SLEEVE, which round 15 took
     # back without noticing. Narrowing the lower torso to the trace was right,
     # but these two rings stayed where they were, and the sleeve descends
@@ -616,17 +643,17 @@ TORSO_LEVELS = [
     # the sleeve, so the BODY has to sit inside it by the sleeve's own
     # thickness. At 0.720 the sleeve stands 0.06-0.10ft proud and reads as a
     # sleeve.
-    (2.200, 0.556, 0.475, "Spine1"),
-    (2.400, 0.556, 0.425, "Spine1"),
+    (2.200, 0.556, 0.475, -0.006, "Spine1"),
+    (2.400, 0.556, 0.425, 0.009, "Spine1"),  # chest leans back off the belly
     # ★ THE SHOULDER WAS 21% TOO NARROW, measured: 0.75 head widths delivered
     # against the concept's 0.95. The tee climbed monotonically from collar to
     # hem — a truncated cone with no shoulder break anywhere — which is the
     # "lampshade" the review named and which loses the broad, heavy read his
     # whole silhouette is built on. A yoke ring holds the width out to the
     # deltoid before the collar takes it in.
-    (2.540, 0.556, 0.398, "Spine2"),  # yoke, holds the shoulder out
-    (2.640, 0.470, 0.336, "Spine2"),  # shoulder slope
-    (2.740, 0.336, 0.258, "Spine2"),
+    (2.540, 0.556, 0.398, 0.000, "Spine2"),  # yoke, holds the shoulder out
+    (2.640, 0.470, 0.336, 0.000, "Spine2"),  # shoulder slope
+    (2.740, 0.336, 0.258, 0.000, "Spine2"),
     # ★ THE CREW COLLAR IS A RIBBED RING, not the top of a cone. Three rings:
     # the shoulder narrowing, a ring that SWELLS proud of it, and the neck hole.
     # The swell is what makes it read as a separate piece of knitwear at 40px.
@@ -645,10 +672,59 @@ TORSO_LEVELS = [
     # ⚠️ The neck's own depth is NOT the thing to shrink: the concept's profile
     # gives a neck half-depth of ~0.227 at this height, which is what it already
     # has. The collar is what was too shallow, so the collar is what moves.
-    (2.790, 0.262, 0.252, "Spine2"),
-    (2.822, 0.278, 0.262, "Spine2"),  # collar rib, proud
-    (2.848, 0.244, 0.242, "Spine2"),  # neck hole
+    # ★ THE SKULL SEATS ON THE COLLAR, AND THE COLLAR WAS 0.05 TOO LOW. The
+    # concept's profile shows almost no neck below the jaw: walking columns of
+    # the profile view down through the neck band, skin meets shirt at z 2.910
+    # (nape, x 800), 2.895 (x 815), 2.875 (x 830), 2.850 (front, x 845) — a
+    # collar top of ~2.90. The delivered hole sat at 2.848, and with the head
+    # ellipsoid bottoming at z 2.908 the board drew a clear 0.11ft cylinder of
+    # neck below the jowls where the drawing has none. The trio rises so the
+    # hole lands at the traced 2.900 — just under the head's bottom pole, so
+    # the two never cross. The neck still fills the hole (see NECK_LEVELS: its
+    # 2.880 ring widened 0.238 -> 0.240 to keep the snug 0.005 clearance the
+    # slot lesson below demands at the new height).
+    (2.840, 0.262, 0.252, 0.000, "Spine2"),
+    (2.874, 0.278, 0.262, 0.000, "Spine2"),  # collar rib, proud
+    (2.900, 0.244, 0.242, 0.000, "Spine2"),  # neck hole — traced collar top
 ]
+
+
+def loft_asym(builder: MeshBuilder, levels, material: int, color, segments: int, color_fn=None) -> None:
+    """`loft` with a per-ring fore-aft centre — rows are (z, rx, ry, y_c, bone).
+
+    The shared loft centres every ring on the axis, which makes any torso a
+    surface of revolution in y — the mechanism behind the "no belly" finding:
+    10.8px of bow forward and 10.8px back, identical, where the drawing bows
+    the belly forward over a flat back. This is the smallest change that can
+    express the split: the ring keeps its cited half-depth and its CENTRE
+    carries the traced offset (nose at -y, so a belly offset is negative).
+
+    Winding, caps and colour behaviour are copied exactly from
+    sculptlib.mesh.MeshBuilder.loft (the Grizz inside-out lesson: never re-derive
+    a ring surface's quad order by eye); the caps sit at their own ring's
+    centre so the end fans stay inside the tube. Local to Tank because
+    sculptlib is shared and this sweep touches one kid; the table stays
+    module-level so the provenance gate can see it.
+    """
+    rows: list[list[int]] = []
+    for z, rx, ry, y_c, bone in levels:
+        row = []
+        for column in range(segments):
+            theta = 2 * pi * column / segments
+            at = (rx * cos(theta), y_c + ry * sin(theta), z)
+            vertex_color = color_fn(theta, z) if color_fn else color
+            row.append(builder.vertex(at, vertex_color, bone))
+        rows.append(row)
+    bottom = builder.vertex((0.0, levels[0][3], levels[0][0]), color, levels[0][4])
+    top = builder.vertex((0.0, levels[-1][3], levels[-1][0]), color, levels[-1][4])
+    for column in range(segments):
+        nxt = (column + 1) % segments
+        builder.face((bottom, rows[0][nxt], rows[0][column]), material)
+        builder.face((rows[-1][column], rows[-1][nxt], top), material)
+    for lower, upper in zip(rows, rows[1:]):
+        for column in range(segments):
+            nxt = (column + 1) % segments
+            builder.face((lower[column], lower[nxt], upper[nxt], upper[column]), material)
 
 
 def tee_color(theta: float, z: float):
@@ -702,8 +778,18 @@ NECK_LEVELS = [
     # Snug inside the hole rather than merely clear of it: at 0.236 the neck sat
     # 0.010 inside a 0.244 collar hole and the daylight between them read as a
     # slot. 0.004 closes it visually and still never crosses.
+    #
+    # The 2.880 ring is 0.240 (was 0.238) because the collar hole rose to
+    # z 2.900 (the skull-on-collar fix in TORSO_LEVELS): the neck interpolates
+    # to 0.239 there, 0.005 inside the 0.244 hole — the same snugness as
+    # before the rise — and stays under the 0.260 jaw. The 2.980 top ring is
+    # untouched on purpose: these rows are HAND-SET, not analyser-derived (his
+    # chin-merges-into-neck build is the class the headBox detector refuses —
+    # see measure-fidelity's window notes), and the delivered pinch the head
+    # box hangs off is that top ring against the head's own taper. Moving it
+    # moves every head metric at once.
     (2.760, 0.242, 0.226, "Spine2"),
-    (2.880, 0.238, 0.222, "Neck"),
+    (2.880, 0.240, 0.222, "Neck"),
     (2.980, 0.228, 0.212, "Neck"),
 ]
 
@@ -1656,7 +1742,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     # 1232 against a 1200 budget, which is the budget gate working. At LOD2 the
     # character is a 40px sprite and a 0.03ft rib is invisible, so the levels
     # collapse to the shape and the bands survive only as colour.
-    builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, segments, color_fn=tee_color)
+    loft_asym(builder, thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, segments, color_fn=tee_color)
 
     for side in (1, -1):
         build_arm(builder, side, detail, spec=TANK_ARM)
