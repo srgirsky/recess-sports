@@ -73,11 +73,11 @@ export interface VenueLook {
 
 export const VENUE_LOOKS: Record<VenueId, VenueLook> = {
   park: {
-    grass: 0x5bbf5a,
-    grassDark: 0x4aa84a,
+    grass: 0x76ac59,
+    grassDark: 0x60944e,
     dirt: 0xc98a4b,
-    fence: 0x2e7d4f,
-    fenceTrim: 0xffce3a,
+    fence: 0x648578,
+    fenceTrim: 0xd5bd80,
     mowPattern: 'checker',
   },
   sandlot: {
@@ -350,12 +350,17 @@ function buildTurf(look: VenueLook): { mesh: Mesh; setNight: (night: boolean) =>
     gradientSteps: GROUND_STEPS,
   });
 
-  const light = new Color(look.grass).convertSRGBToLinear();
+  // Prove the surface treatment on Parks Dept #2 before changing other venues.
+  // Color(hex) already converts sRGB to linear. A second conversion crushed
+  // the red/blue channels and made this grass read as saturated green bands.
+  const detailed = look === VENUE_LOOKS.park;
+  const light = new Color(look.grass);
   // The venue's `grassDark` is the ART palette's SHADOW tone — a ~35% step,
   // correct for a flat 2D fill and far too strong for turf variation. Pull it
   // most of the way back; the visible contrast now comes from sheen and noise,
   // not from two different greens.
-  const dark = new Color(look.grass).lerp(new Color(look.grassDark), 0.3).convertSRGBToLinear();
+  const dark = new Color(look.grass).lerp(new Color(look.grassDark), 0.3);
+  if (!detailed) { light.convertSRGBToLinear(); dark.convertSRGBToLinear(); }
   const mode = { stripes: 0, checker: 1, tufts: 2, court: 3 }[look.mowPattern];
 
   const uNight = { value: 0 };
@@ -363,6 +368,7 @@ function buildTurf(look: VenueLook): { mesh: Mesh; setNight: (night: boolean) =>
     shader.uniforms.uLight = { value: light };
     shader.uniforms.uDark = { value: dark };
     shader.uniforms.uMode = { value: mode };
+    shader.uniforms.uDetail = { value: detailed ? 1 : 0 };
     shader.uniforms.uNight = uNight;
     shader.uniforms.uCell = { value: 17 }; // ft — a real mower width
 
@@ -381,6 +387,7 @@ function buildTurf(look: VenueLook): { mesh: Mesh; setNight: (night: boolean) =>
          uniform vec3  uLight;
          uniform vec3  uDark;
          uniform float uMode;
+         uniform float uDetail;
          uniform float uNight;
          uniform float uCell;
 
@@ -453,9 +460,13 @@ function buildTurf(look: VenueLook): { mesh: Mesh; setNight: (night: boolean) =>
            float grainFade = 1.0 - smoothstep( 70.0, 220.0, dist );
 
            vec3 turf = mix( uDark, uLight, 0.42 + broad * 0.58 );
-           turf *= 1.0 + ( mottle - 0.5 ) * 0.18;
+           turf *= 1.0 + ( mottle - 0.5 ) * mix(0.18, 0.30, uDetail);
            turf *= 1.0 + ( grain  - 0.5 ) * 0.16 * grainFade;
-           turf *= 1.0 + sheen * 0.22;
+           turf *= 1.0 + sheen * mix(0.22, 0.065, uDetail);
+           // Broad wear and sparse blade clusters survive at field distance;
+           // the tiny grain still fades to keep the ball's background quiet.
+           float tufts = smoothstep(0.58, 0.80, vnoise(wxz * vec2(1.7, 0.8)));
+           turf *= 1.0 - tufts * 0.09 * grainFade * uDetail;
 
            // Sun-bleached patches go yellower, not just lighter — a pure
            // value change reads as a lighting artefact rather than as grass.
@@ -488,11 +499,11 @@ function buildTurf(look: VenueLook): { mesh: Mesh; setNight: (night: boolean) =>
            vec2 np = vWorldPos.xz * 0.06;
            float nx = vnoise( np ) - vnoise( np + vec2( 0.35, 0.0 ) );
            float nz = vnoise( np ) - vnoise( np + vec2( 0.0, 0.35 ) );
-           normal = normalize( normal + vec3( nx, 0.0, nz ) * 0.55 );
+           normal = normalize( normal + vec3( nx, 0.0, nz ) * mix(0.55, 0.12, uDetail) );
          }`
       );
   };
-  mat.customProgramCacheKey = () => `turf-${mode}`;
+  mat.customProgramCacheKey = () => `turf-${mode}-${detailed}`;
 
   const mesh = new Mesh(geom, mat);
   mesh.name = 'turf';

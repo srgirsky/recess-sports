@@ -2944,3 +2944,25 @@ files passed (2,261 tests, 12 existing skips), all 62 model contracts passed,
 and both site entry points built successfully. Historical squash-merged branches
 and six obsolete worktrees were removed only after commit/tree comparison and
 verified recovery archives. Future work starts from the reconciled main branch.
+
+## Parks Dept #2 environment benchmark pass
+
+The first complete-scene inspection exposed a material problem beneath the
+missing-detail impression: the grass and scenery decoded hexadecimal colours
+to linear twice, crushing lighter channels. The park pilot corrected that
+conversion, softened mowing contrast and ground-normal blotches, and kept the
+other venues' treatment unchanged pending review. Fence planks, joints and
+rails stayed inside the existing wall draw. Houses gained upper-storey detail
+above the playing fence; replacing the rotated-box roof with a triangular
+prism stopped its lower half cutting through those windows. Larger canopies
+and clustered hedges added depth beyond the wall. Clouds used smoothly shaded
+lobes with a cool underside, instead of the ground's hard toon terminator.
+
+The same seeded scene was inspected at plate, field and deep cameras on
+desktop and landscape phone in daylight and at night. Before/after counts
+showed no added draw calls; the existing scenery geometry budget stayed
+binding. The wider camera already exceeded the historical whole-scene draw
+target in the baseline, so this comparison does not claim full performance
+acceptance. Complete at-bat evidence and reviewer decisions belong to the
+[art acceptance workflow](v2/art-acceptance.md); this pass did not approve the
+benchmark, resolve the roster's sculpt debts or establish reference parity.

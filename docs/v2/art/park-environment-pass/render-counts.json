@@ -1,0 +1,98 @@
+[
+  {
+    "profile": "desktop-day",
+    "camera": "PLATE",
+    "beforeDrawCalls": 78,
+    "afterDrawCalls": 78,
+    "beforeTriangles": 105792,
+    "afterTriangles": 117136
+  },
+  {
+    "profile": "desktop-day",
+    "camera": "FIELD",
+    "beforeDrawCalls": 111,
+    "afterDrawCalls": 111,
+    "beforeTriangles": 89400,
+    "afterTriangles": 100744
+  },
+  {
+    "profile": "desktop-day",
+    "camera": "DEEP",
+    "beforeDrawCalls": 111,
+    "afterDrawCalls": 111,
+    "beforeTriangles": 73420,
+    "afterTriangles": 84764
+  },
+  {
+    "profile": "desktop-night",
+    "camera": "PLATE",
+    "beforeDrawCalls": 78,
+    "afterDrawCalls": 78,
+    "beforeTriangles": 105792,
+    "afterTriangles": 117136
+  },
+  {
+    "profile": "desktop-night",
+    "camera": "FIELD",
+    "beforeDrawCalls": 111,
+    "afterDrawCalls": 111,
+    "beforeTriangles": 89400,
+    "afterTriangles": 100744
+  },
+  {
+    "profile": "desktop-night",
+    "camera": "DEEP",
+    "beforeDrawCalls": 111,
+    "afterDrawCalls": 111,
+    "beforeTriangles": 73420,
+    "afterTriangles": 84764
+  },
+  {
+    "profile": "phone-day",
+    "camera": "PLATE",
+    "beforeDrawCalls": 84,
+    "afterDrawCalls": 84,
+    "beforeTriangles": 111412,
+    "afterTriangles": 122756
+  },
+  {
+    "profile": "phone-day",
+    "camera": "FIELD",
+    "beforeDrawCalls": 111,
+    "afterDrawCalls": 111,
+    "beforeTriangles": 89400,
+    "afterTriangles": 100744
+  },
+  {
+    "profile": "phone-day",
+    "camera": "DEEP",
+    "beforeDrawCalls": 111,
+    "afterDrawCalls": 111,
+    "beforeTriangles": 73420,
+    "afterTriangles": 84764
+  },
+  {
+    "profile": "phone-night",
+    "camera": "PLATE",
+    "beforeDrawCalls": 84,
+    "afterDrawCalls": 84,
+    "beforeTriangles": 111412,
+    "afterTriangles": 122756
+  },
+  {
+    "profile": "phone-night",
+    "camera": "FIELD",
+    "beforeDrawCalls": 111,
+    "afterDrawCalls": 111,
+    "beforeTriangles": 89400,
+    "afterTriangles": 100744
+  },
+  {
+    "profile": "phone-night",
+    "camera": "DEEP",
+    "beforeDrawCalls": 111,
+    "afterDrawCalls": 111,
+    "beforeTriangles": 73420,
+    "afterTriangles": 84764
+  }
+]
