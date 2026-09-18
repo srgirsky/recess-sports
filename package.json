@@ -43,7 +43,10 @@
     "sim:harness": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/harness.mjs",
     "sim:plate-sweep": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/plate-sweep.mjs",
     "retarget:rig": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/retarget-rig.mjs",
-    "analyse:turnaround": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/analyse-turnaround.mjs"
+    "analyse:turnaround": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/analyse-turnaround.mjs",
+    "review:art": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/art-review-report.mjs",
+    "capture:art-benchmark": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/capture-art-benchmark.mjs",
+    "check:art-parity": "npm run review:art -- --require-approved"
   },
   "dependencies": {
     "peerjs": "^1.5.5",

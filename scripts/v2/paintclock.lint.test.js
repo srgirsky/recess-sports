@@ -52,7 +52,7 @@ const codeOf = (rel) =>
     .replace(/(^|[^:])\/\/.*$/gm, '$1');
 
 /** The instruments that reach a state with the fixed clock and then draw it. */
-const INSTRUMENTS = ['scripts/v2/presentation-smoke.mjs', 'scripts/v2/ui-audit.mjs'];
+const INSTRUMENTS = ['scripts/v2/presentation-smoke.mjs', 'scripts/v2/ui-audit.mjs', 'scripts/v2/capture-art-benchmark.mjs'];
 
 describe('the instruments paint off the fixed clock', () => {
   for (const rel of INSTRUMENTS) {

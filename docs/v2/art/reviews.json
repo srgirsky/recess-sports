@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "reviews": {},
+  "findings": [
+    {
+      "id": "ART-001",
+      "kind": "review-task",
+      "status": "open",
+      "owner": "Art direction",
+      "targets": [
+        "benchmark:park"
+      ],
+      "observation": "No complete-scene benchmark has a current independent visual review and maintainer sign-off. Prior parity prose and passing technical gates are not that approval.",
+      "evidence": [
+        "docs/research/backyard-2026-reference.md",
+        "docs/v2/art/reviews.json:reviews"
+      ],
+      "acceptance": "Review the desktop/phone, day/night benchmark in motion against pinned reference footage; resolve its defects, record all rubric verdicts and obtain an explicit maintainer decision."
+    },
+    {
+      "id": "ART-002",
+      "kind": "defect",
+      "status": "open",
+      "owner": "Environment art",
+      "targets": [
+        "benchmark:park",
+        "venue:park"
+      ],
+      "observation": "In the desktop daylight plate view, the grass is broad saturated bands, the fence is a uniform green panel with repeated yellow posts, and the distant houses read as simple colored silhouettes. The reference plate view layers visible grass variation, built facades, shrubs, flowers and fence construction. Our setting reads markedly less finished.",
+      "evidence": [
+        "docs/v2/art/baseline/desktop-day.png",
+        "BB2026 local reference corpus: steam/steam-02.jpg (see docs/research/backyard-2026-reference.md)"
+      ],
+      "acceptance": "Build and review a cohesive Parks Dept #2 material and environment pass with readable ground variation, fence construction, layered vegetation and recognizable architectural detail at both review sizes; retain clear ball silhouettes and existing draw/triangle budgets."
+    },
+    {
+      "id": "ART-003",
+      "kind": "defect",
+      "status": "open",
+      "owner": "Lighting and environment art",
+      "targets": [
+        "benchmark:park",
+        "venue:park"
+      ],
+      "observation": "In the desktop daylight plate view, large grey faceted cloud slabs occupy the upper frame and compete with the colorful neighborhood. Their blocky, dark treatment is visually inconsistent with the softer bright sky in the pinned reference.",
+      "evidence": [
+        "docs/v2/art/baseline/desktop-day.png",
+        "BB2026 local reference corpus: steam/steam-02.jpg (see docs/research/backyard-2026-reference.md)"
+      ],
+      "acceptance": "Review the cloud silhouette, shading and sky composition from plate, field and deep cameras in day and night; establish a coherent cartoon sky without distracting dark slabs or horizon artifacts."
+    }
+  ]
+}

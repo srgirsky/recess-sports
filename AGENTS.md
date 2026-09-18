@@ -1,7 +1,6 @@
 # AGENTS.md — AI context for Recess Sports
 
-The shared brief for EVERY coding agent on this project (Claude Code, Codex, ...).
-`CLAUDE.md` is a committed symlink to this file — same bytes, never edit them
+The shared brief for EVERY coding agent on this project (Claude Code, Codex, ...). `CLAUDE.md` is a committed symlink to this file — same bytes, never edit them
 apart. This file is loaded into every session, so it carries only what binds
 before you open anything: the split, the gates, the uniqueness invariants, and
 where the rest lives. Deeper narrative is in `docs/OVERVIEW.md`; human
@@ -99,6 +98,7 @@ weaken one to make a change pass.**
 | `scripts/playtest.lint.test.js` | a held feature defaulting on; a hold lifted with no record |
 | `scripts/v2/turnaround-spec.lint.test.js` / `runidentity.lint.test.js` / `featurelatitude.lint.test.js` | a measured spec drifting from its own sheet, a width read across two objects, a face at the wrong height on its own head |
 | `scripts/v2/silhouette.lint.test.js` / `performance-freshness.lint.test.js` / `tonemapping.lint.test.js` / `sculptspec.lint.test.js` / `evidence-freshness.lint.test.js` / `sculpt-sharing.lint.test.js` / `triage.lint.test.js` / `palette-identity.lint.test.js` / `provenance.lint.test.js` | a hole you can see through, a baked animation take stale against the code that bakes it, a colour default reverted silently, one kid's measurement defaulted into the shared sculpt library, a character scored from stills of an older model, two kids shipping one body while citing two drawings, a polish finding outside every sweep worklist, two palette names in one kid sharing a hex so a built trim ships invisible, a stand-in take or system voice shipping with no maintainer on record |
+| `scripts/v2/art-acceptance.test.js` | stale whole-scene evidence, missing art coverage, or a technical pass presented as visual approval |
 | `scripts/goldlog.browser.js` | a v1 refactor that changes the seeded game (manual, not CI) |
 
 ## Only one place
