@@ -508,23 +508,28 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
     expect(acc, 'the sim changed behaviour — if deliberate, re-run and move this').toBe(CHECKSUM_30);
   }, PLAYS_GAMES);
 
-  it('★ drains to the same result the live pump produces, seed for seed', () => {
-    for (const venue of VENUES) {
-      for (const seed of ['a', 'b', 'c']) {
-        const drained = game(seed, { geo: VENUE_GEOMETRY[venue] });
-        // Pump it by hand, exactly as the render driver does.
-        const it = simulateGameLive(spec({ geo: VENUE_GEOMETRY[venue] }), makeRng(seed));
-        let r = it.next();
-        let frames = 0;
-        while (!r.done) {
-          frames++;
-          r = it.next();
-        }
-        expect(fingerprint(r.value), `${venue}:${seed}`).toBe(fingerprint(drained));
-        expect(frames, 'and it actually yielded').toBeGreaterThan(100);
+  // Keep every venue/seed pair, but report them separately and yield between
+  // pairs. One synchronous sweep blocked the worker's reporting RPC for ~26s
+  // on CI (all assertions passed), and sometimes exceeded the test budget.
+  // Neither the simulation nor the timeout needs to change.
+  it.each(VENUES.flatMap((venue) => ['a', 'b', 'c'].map((seed) => ({ venue, seed }))))(
+    '★ drains to the same result the live pump produces: $venue:$seed',
+    async ({ venue, seed }) => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      const drained = game(seed, { geo: VENUE_GEOMETRY[venue] });
+      // Pump it by hand, exactly as the render driver does.
+      const it = simulateGameLive(spec({ geo: VENUE_GEOMETRY[venue] }), makeRng(seed));
+      let r = it.next();
+      let frames = 0;
+      while (!r.done) {
+        frames++;
+        r = it.next();
       }
-    }
-  }, PLAYS_GAMES);
+      expect(fingerprint(r.value), `${venue}:${seed}`).toBe(fingerprint(drained));
+      expect(frames, 'and it actually yielded').toBeGreaterThan(100);
+    },
+    PLAYS_GAMES
+  );
 
   it('★ survives being pumped at a fixed step, as the view does', () => {
     // ★ THE VIEW'S OWN LOOP, HEADLESS. `GameView` accumulates real time and
