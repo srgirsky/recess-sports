@@ -2888,3 +2888,59 @@ sculpt critiques instead of duplicating them. Evidence is bound to current
 source bytes; independent visual review and maintainer approval are separate
 from technical validation. No new visual parity claim is made by installing the
 process. The [workflow](v2/art-acceptance.md) owns the rules; README owns commands.
+
+## 2026-09-18 — reconcile the unfinished character branches
+
+The branch audit found that most apparent outstanding work had already landed
+through squash merges. The remaining sculpt-batch-three commit held Smokey,
+Bubbles and Penny models whose critic rounds had never completed. Their runtime
+stills were recaptured with the current character takes, their boards regenerated,
+and independent reviewers compared each change with the models on main. Smokey's
+nape, nose and collar, Bubbles' crown and ears, and Penny's narrower, longer nape
+were retained as incremental improvements. Their records remained `needs-polish`;
+the new scores did not assert human approval or completion of the wider art
+campaign. Each measurement outside tolerance stayed in the fidelity record.
+
+The separate ledger-triage worktree held uncommitted alternatives for Big Lou,
+Moose, Dex and Tank. Its exact contents were checkpointed before reconciliation
+and preserved under `archive/2026-09-18/character-wip`. Main's newer body traces
+and Lou's corrected stripe chart took precedence over the older alternatives.
+The original BB2026 experiment and superseded hem sweep were archived under
+`archive/2026-09-18/bb26-one-shot` and `archive/2026-09-18/hem-sweep-4`; their
+production work had already landed through the harvest and joined hem-sweep PRs.
+
+Dex's curved cap bill and lower jean cuffs were recovered, as were Tank's
+asymmetric belly profile and raised collar. Each source was rebuilt into its
+Blender model before export, then captured with the current runtime takes and
+independently reviewed against main. Reviewers found improvements without new
+blocking visual regressions; inherited findings remained in the sculpt ledger
+with fresh measurements and sweep classifications.
+
+Dex's recovered curved bill exposed an inherited winding error: its top normal
+pointed downward and its underside upward in the exported GLB. Reversing the
+plate and perimeter faces restored outward normals before the evidence was
+recaptured. A source scan found similar grid patterns in Ace, Chip, Lefty,
+Moose and Theo; those are inspection candidates, not five independently proven
+defects. Moose's exported main model also confirmed inverted brim normals, but
+that repair remains open because the combined brim recovery below was rejected.
+
+Lou's recovered collar, neck and footwear alternative was rejected after paired
+review: it added a tall striped collar tube and pinched sock-to-shoe junctions,
+and increased the measurement failures from one to five. Lou's source, model,
+and evidence were restored exactly to main. The longer shorts may merit a
+separate future experiment, but the combined patch was not a verified improvement.
+The original alternative remains in the archived worktree checkpoint.
+
+Moose's lowered brim was also rejected: after correcting its winding, the
+fresh runtime views showed it hiding the eyes and brows. Main's source, model
+and evidence were retained exactly. A winding-only repair on the existing brim
+needs its own visual review; neither an obscured face nor an unreviewed repair
+was merged merely to empty a branch. Both rejected rebuilt alternatives and
+the independent reviews are in the local reconciliation recovery archive.
+
+The final retained set changes five characters (Smokey, Bubbles, Penny, Dex
+and Tank), with no gameplay or shared sculpt-library changes. All 114 test
+files passed (2,261 tests, 12 existing skips), all 62 model contracts passed,
+and both site entry points built successfully. Historical squash-merged branches
+and six obsolete worktrees were removed only after commit/tree comparison and
+verified recovery archives. Future work starts from the reconciled main branch.

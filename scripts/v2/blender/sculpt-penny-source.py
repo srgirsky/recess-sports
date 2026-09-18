@@ -223,9 +223,16 @@ BOB_LEVELS = [
     (3.300, 0.750, 0.730, 0.050),
     (3.150, 0.775, 0.750, 0.070),
     (3.000, 0.745, 0.700, 0.090),
-    (2.880, 0.680, 0.600, 0.110),
-    (2.780, 0.500, 0.420, 0.130),
-    (2.700, 0.300, 0.260, 0.150),
+    # ★ THE NAPE, 2026-09-12 (critic: "wedge-cut flat bottom over a bare neck
+    # column above the pink collar"). The profile's rear extent is 0.62 /
+    # 0.59 / 0.51 / 0.28 at z 3.0 / 2.9 / 2.8 / 2.7 by regionRunsAt, and the
+    # front view keeps dark hair beside the neck down to z 2.6 — so the bob
+    # hangs to ~2.62 and NARROWS to the collar at the back, where the old
+    # rows stood 0.71 deep at 2.88 (deeper than the sheet) and cut flat at 2.70.
+    (2.880, 0.680, 0.430, 0.110),
+    (2.780, 0.520, 0.330, 0.150),
+    (2.700, 0.380, 0.220, 0.110),
+    (2.620, 0.260, 0.160, 0.100),
 ]
 
 # The hairline: a centre-parted open forehead, curtains closing past the
@@ -752,7 +759,7 @@ PENNY_SHOE = ShoeSpec(
 
 def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) -> None:
     face_columns = 27 if detail >= 2 else (9 if detail == 1 else 5)
-    back_columns = 6 if detail >= 2 else (2 if detail == 1 else 1)
+    back_columns = 4 if detail >= 2 else (2 if detail == 1 else 1)   # under the bob; pays for the nose rows (#221), 2026-09-12
     if detail >= 2:
         rows_spec, crown, chin = FACE_ROWS, 3, 2
     elif detail == 1:

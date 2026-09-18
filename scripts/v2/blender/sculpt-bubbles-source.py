@@ -180,7 +180,10 @@ def nose_push(nx: float, nz: float) -> float:
 # roster's largest ears with the curls tucked BEHIND it. Off that profile
 # (x 638-846): top just under the brow, lobe level with the laugh — z 3.24 →
 # 2.80 on a 1.60ft head — and the whole ear clear of the hair.
-EAR_SPEC = EarSpec(center=(0.030, 3.020), radii=(0.140, 0.190))
+# Height 0.190 -> 0.160 (2026-09-12): a fifth too tall against the sheet's
+# profile — its top sat 9px above the eye centre on the board where the
+# sheet's tops just under the brow line (critic finding 7).
+EAR_SPEC = EarSpec(center=(0.030, 3.035), radii=(0.140, 0.160))
 
 # The curls sit BEHIND the ear line at face height (the same profile shows
 # brow, eye, cheek, laugh and chin all in front of the hair). Diva's
@@ -260,8 +263,16 @@ def skull_front_y(x: float, z: float) -> float:
 # ★ FOUR ROWS PAID FOR THE EARS (2026-09-02): 3.560, 3.300, 2.820 and 2.460
 # were within 0.025 of the linear interpolation of their neighbours, and
 # build_ear at hero costs ~300 triangles the LOD0 budget did not have.
+# ★ 2026-09-12: THE CROWN WAS A LID. The top ring sat at 3.690 at 0.345
+# half and the cap fan closed it flat — "the scrunchie and bun sitting on
+# it like a lid on a jar" (critic). Three rings dome it up to 3.720 at
+# 0.130, inside the scrunchie's 0.170 ring at 3.745 so the accessory still
+# rides outside its host (the Zippy headband lesson). Paid for, with the
+# shared nose rows, by four head back columns and torso 26 -> 22 segments.
 HAIR_LEVELS = [
-    (3.690, 0.345, 0.325, 0.062),
+    (3.720, 0.130, 0.120, 0.050),
+    (3.690, 0.300, 0.280, 0.058),
+    (3.620, 0.430, 0.380, 0.075),
     (3.400, 0.545, 0.400, 0.150),
     # ★ ROUND 7: THE CURTAINS KEEP THEIR BACKS AND GIVE UP THEIR FRONTS. The
     # first review found the hair "engulfing the face": these rings' front
@@ -939,7 +950,7 @@ BUBBLES_SHOE = ShoeSpec(
 
 def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) -> None:
     face_columns = 27 if detail >= 2 else (9 if detail == 1 else 5)
-    back_columns = 6 if detail >= 2 else (2 if detail == 1 else 1)
+    back_columns = 4 if detail >= 2 else (2 if detail == 1 else 1)   # under the bob; pays for the nose rows (#221)
     if detail >= 2:
         rows_spec, crown, chin = FACE_ROWS, 3, 2
     elif detail == 1:
@@ -952,7 +963,7 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     build_hair(builder, detail)
 
     builder.loft(NECK_LEVELS, 0, SKIN, segments)
-    torso_segments = 26 if detail >= 2 else segments
+    torso_segments = 22 if detail >= 2 else segments   # 26 -> 22, 2026-09-12: LOD0 budget for the crown dome
     dress_loft(builder, thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, torso_segments,
                color_fn=dress_color)
     build_dress_details(builder, detail)

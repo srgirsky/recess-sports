@@ -59,6 +59,13 @@ SKIN = rgba("D4874A")
 SKIN_SHADOW = rgba("9A5A28")
 HAIR = rgba("241A12")        # the black curls
 CAP = rgba("3F444B")         # charcoal cap
+# The bill's stitched rim is drawn LIGHT — the value break that keeps the
+# leading edge readable where the bill crosses the near-black curls in shadow.
+# Traced before authoring (the swatch rule): front-view edge pixels at the
+# bill tip rows 236-240 read rgb(172,163,150)/(191,187,177)/(175,166,158) and
+# the profile rim at z 3.69-3.76 reads rgb(86-109) gray; the median of the
+# clean rim samples is ~rgb(150,141,130).
+CAP_EDGE = rgba("968D82")    # the bill's pale stitched edge
 SHIRT = rgba("5C6577")       # slate zip hoodie
 # Deepened 47505F → 3E4757 for the hem-sweep: the ribbed hem and cuffs are
 # SHIRT_DARK bands and at ΔLum ~21 the board ramp (≈ authored/1.2, chroma
@@ -210,9 +217,34 @@ CAP_LEVELS = [
     (3.540, 0.500, 0.510, 0.035),
 ]
 
-BRIM_Z_TOP = 3.575
-BRIM_Z_BOT = 3.540
-BRIM_REACH = -0.720   # the brim tip's y — forward of the dome front (~-0.40)
+# ★ The bill, rebuilt to the sheet (the beanie finding). What the drawing
+# measures, traced with the analysed spec's front figure and the profile:
+# measured: front — the bill's side tips are the cap's own silhouette at
+#   z 3.44-3.48, half 0.556-0.576, PAST the crown's max 0.5274 (z 3.50-3.52);
+#   a brim narrower than its crown projects no front silhouette at all.
+# measured: front — the leading edge crosses the forehead at rows 228-240
+#   (z 3.45-3.52 at centre), with the brim-shadow band right below it.
+# measured: profile — the tip is the forward-most cap point (x 878 against
+#   the forehead's own front x 841 → 0.220ft proud of the brow) and the top
+#   surface falls to it in a continuous arc; the flat blade drooped ~2°.
+BRIM_ROOT_Y = -0.420          # buried 0.05 behind the dome front (-0.471 at z 3.60)
+BRIM_REACH = 0.720            # the TIP's absolute forward y is -BRIM_REACH.
+                              # The sheet's tip is 0.220 proud of the brow, but
+                              # the sheet's cap rides curls the bill never has
+                              # to clear; the authored curl band's front is
+                              # y -0.59 at bill height, so the tip keeps -0.720
+                              # (0.13 clear) rather than the concept-anchored
+                              # -0.555, which the curls would swallow.
+BRIM_Z_ROOT = 3.600           # top surface at the root, tucked under the dome
+BRIM_DROOP_LIN = 0.020        # z(t) = Z_ROOT - LIN*t - QUAD*t*t: root tangent
+BRIM_DROOP_QUAD = 0.030       # ~4°, tip tangent ~15° — the sheet's hard arc
+BRIM_HALF_W = 0.545           # root half PAST the crown's 0.500 (sheet ratio
+                              # 0.556/0.527 = 1.06; authored 0.545/0.500 = 1.09)
+BRIM_TAPER = 0.33             # tip half 0.365; the tip points at the viewer in
+                              # the front view so its width has no direct trace
+BRIM_THICK_ROOT = 0.045
+BRIM_THICK_TIP = 0.016        # taper the plate toward the tip (the flat blade
+                              # was a constant 0.035 slab)
 
 
 def cap_dome_y(x: float, z: float, half_x: float, half_y: float) -> float:
@@ -251,23 +283,63 @@ def build_cap(builder: MeshBuilder, detail: int) -> None:
 
     if detail < 1:
         return
-    # The brim: a two-surface wedge with edge walls (zero-width in profile
-    # without them).
-    cols = 5 if detail >= 2 else 3
-    top_rows, bot_rows = [], []
-    for j, (y_frac, half) in enumerate(((0.0, 0.340), (0.5, 0.320), (1.0, 0.255))):
-        y = -0.400 + y_frac * (BRIM_REACH + 0.400)
-        row_t, row_b = [], []
-        for i in range(cols):
-            t = i / (cols - 1) - 0.5
-            x = 2 * t * half
-            zt = BRIM_Z_TOP - 0.015 * abs(2 * t) - 0.01 * y_frac
-            row_t.append(builder.vertex((x, y, zt), CAP, "Head"))
-            row_b.append(builder.vertex((x, y, zt - 0.035), CAP, "Head"))
-        top_rows.append(row_t)
-        bot_rows.append(row_b)
-    builder.grid(top_rows, 2, cyclic=False)
-    builder.grid(list(reversed(bot_rows)), 2, cyclic=False)
+    # The brim: a curved plate (top + underside) with a stitched-edge rim
+    # wall. The old flat blade drooped ~2° over its whole reach and sat
+    # narrower than the crown, so the cap read as a beanie; the sheet's bill
+    # arcs down hard and its curved leading edge IS the cap's front boundary.
+    steps = 4 if detail >= 2 else 2
+    cols = 7 if detail >= 2 else 5
+    dome_front = CAP_LEVELS[-1][3] - CAP_LEVELS[-1][2]  # -0.475 at the front ring
+    # ★ A BILL THAT DOES NOT CLEAR ITS OWN ROOT IS NOT A BILL. Theo's batting
+    # helmet, Chip's bike helmet — the same defect twice; Chip's script carries
+    # this assert and it is copied here with dex's numbers so the class cannot
+    # return. No silhouette gate can see a bill buried inside the dome.
+    assert -BRIM_REACH < dome_front - 0.05, (
+        f"brim tip y={-BRIM_REACH:.3f} does not clear the dome front "
+        f"{dome_front:.3f} by 0.05ft — raise BRIM_REACH; a shorter reach "
+        "projects no bill (Theo's batting helmet, batch 6)"
+    )
+    # ★ AND A BRIM NARROWER THAN ITS CROWN HAS NO FRONT SILHOUETTE. The
+    # delivered halves 0.340/0.320/0.255 against a 0.4934 crown are exactly
+    # how this cap shipped as a beanie; the sheet draws the bill's side tips
+    # PAST the crown (0.556-0.576 vs 0.5274).
+    crown_half = max(hx for _, hx, _, _ in CAP_LEVELS)
+    assert BRIM_HALF_W > crown_half + 0.03, (
+        f"brim root half {BRIM_HALF_W:.3f} does not pass the crown "
+        f"{crown_half:.3f} by 0.03ft — the bill vanishes into the dome from "
+        "the front and the cap reads as a beanie"
+    )
+    surfaces = {}
+    for underside in (False, True):
+        rows_b = []
+        for j in range(steps + 1):
+            t = j / steps
+            y = BRIM_ROOT_Y * (1 - t) + (-BRIM_REACH) * t
+            z = BRIM_Z_ROOT - BRIM_DROOP_LIN * t - BRIM_DROOP_QUAD * t * t
+            thick = BRIM_THICK_ROOT + (BRIM_THICK_TIP - BRIM_THICK_ROOT) * t
+            if underside:
+                z -= thick
+            row = []
+            for i in range(cols):
+                u = 2 * i / (cols - 1) - 1
+                x = BRIM_HALF_W * u * (1.0 - BRIM_TAPER * t * t)
+                # The brim curls up at its sides, so the leading edge sweeps
+                # upward toward the temples the way the sheet draws it.
+                zz = z + 0.050 * (u * u) * (1 - 0.3 * t)
+                on_rim = j == steps or i in (0, cols - 1)
+                colour = CAP_EDGE if (underside and on_rim) else CAP
+                row.append(builder.vertex((x, y, zz), colour, "Head"))
+            rows_b.append(row)
+        # Rows advance toward -Y while columns advance toward +X. grid's
+        # default order points DOWN here; reverse the top, not the underside.
+        # Verified on the exported brim: the top normal must have positive Y
+        # in glTF's Y-up frame. The recovered plate had both faces inward.
+        builder.grid(rows_b, 2, cyclic=False, flip=not underside)
+        surfaces[underside] = rows_b
+    # The rim wall closes the plate's perimeter (zero-width in profile without
+    # it) and carries the pale stitched edge — the traced value break that
+    # keeps the leading edge readable over the near-black curls.
+    top_rows, bot_rows = surfaces[False], surfaces[True]
     edge = []
     for j in range(len(top_rows)):
         edge.append((top_rows[j][0], bot_rows[j][0]))
@@ -276,7 +348,7 @@ def build_cap(builder: MeshBuilder, detail: int) -> None:
     for j in range(len(top_rows) - 1, -1, -1):
         edge.append((top_rows[j][-1], bot_rows[j][-1]))
     for (t0, b0), (t1, b1) in zip(edge, edge[1:]):
-        builder.face((t0, t1, b1, b0), 2)
+        builder.face((b0, b1, t1, t0), 2)
 
     # The badge-sized team panel on the dome front (material 3).
     prows = []
@@ -379,8 +451,9 @@ def build_curls(builder: MeshBuilder, detail: int) -> None:
 # Chip's hoodie torso: ribbed hem, kangaroo pocket, draped hood — plus the
 # first ZIPPER LINE, a thin cream proud strip down the centre front.
 # not-traceable: his hanging arms merge with the torso at every row; halves
-# bounded off the cluster runs (slate 92-311 at z 1.60 arm-to-arm; the
-# central jeans run 139-268 at z 1.40 bounds the hip).
+# bounded off dex's own cluster runs (the sleeve-to-sleeve figure span is
+# x 90-313 at z 1.60; the central jeans block x 142-267 at z 1.40 bounds the
+# hip at half 0.363 — re-traced, the old 139-268 was the template kid's run).
 TORSO_LEVELS = [
     # ★ The ribbed hem is a BAND, not a line. Traced on the front view: the
     # vertically-ribbed band spans rows 557-582 → z 1.626-1.481 (~25px,
@@ -554,8 +627,15 @@ def inseam_half(z: float) -> float:
     return INSEAM_HEM_HALF * t ** 1.3
 
 # (z, half-width, depth factor, colour, bone) — strictly descending in z.
-# The pair-outer extents below are the sheet's own silhouette; per-leg
-# halves come from the central jeans runs (139-268 at z 1.40 across both).
+# The machine citations below are the sheet's pair-outer silhouette (the
+# flood counts the enclosed between-legs pocket as figure, so the centre run
+# spans both legs). The AUTHORED halves are per-leg, re-traced from DEX'S OWN
+# front view run by run, never across the pair: the central jeans block runs
+# x 142-267 at z 1.40 (0.726ft across both legs, bounding the hip at half
+# 0.363); per-leg denim runs read half 0.179 at z 1.10, 0.173 at z 0.98,
+# 0.163 at z 0.84, 0.159-0.176 at z 0.70-0.56; the rolled cuff peaks at half
+# 0.193 (z 0.44). The hip rows above z 1.12 are contaminated by the hanging
+# hands and stay authored to the jeans-block bound.
 # measured: front z=1.25 halfWidth=0.6167 tol=0.04
 # measured: front z=0.80 halfWidth=0.4467 tol=0.04
 LEG_STATIONS = [
@@ -574,12 +654,21 @@ LEG_STATIONS = [
     (1.150, 0.190, 1.05, PANTS, "UpLeg"),
     (0.980, 0.184, 1.03, PANTS, "Leg"),
     (0.840, 0.180, 1.02, PANTS, "Leg"),
-    (0.700, 0.178, 1.01, PANTS, "Leg"),
-    (0.660, 0.192, 1.00, CUFF, "Leg"),             # rolled cuff, proud
-    (0.560, 0.188, 1.00, CUFF, "Leg"),
-    (0.520, 0.172, 1.00, PANTS_DARK, "Leg"),       # cuff underside lip
-    (0.480, 0.108, 1.00, SOCK, "Foot"),            # sock sliver
-    (0.400, 0.100, 0.99, SOCK, "Foot"),
+    (0.700, 0.172, 1.01, PANTS, "Leg"),            # per-leg half 0.159-0.176 traced
+    (0.560, 0.168, 1.00, PANTS, "Leg"),            # denim continues to the roll
+    # ★ The rolled cuff sits ON the sneaker collar, not at lefty-height:
+    # classed row counts put the pale roll at z 0.478-0.357 on dex's sheet,
+    # denim ending ~0.49 and the shoe upper taking over ~0.355, with NO
+    # visible sock anywhere between roll and collar. The 0.498/0.486 ring
+    # pair keeps the colour switch crisp and the roll stands 0.018-0.022
+    # PROUD of the denim it hangs from (roll half 0.193 vs shin 0.167 on the
+    # sheet); the delivered shoe top sits at z 0.354 (SHOE_TOP_MAX x height
+    # scale), so the sock sliver is a few hundredths, as drawn.
+    (0.498, 0.168, 1.00, PANTS, "Leg"),            # denim end — crisp pair top
+    (0.486, 0.190, 1.00, CUFF, "Leg"),             # roll top, PROUD lip
+    (0.386, 0.186, 1.00, CUFF, "Leg"),             # roll body
+    (0.366, 0.168, 1.00, PANTS_DARK, "Leg"),       # cuff underside lip
+    (0.352, 0.096, 1.00, SOCK, "Foot"),            # sock sliver to the collar
     (0.280, 0.092, 0.97, SOCK, "Foot"),
     (0.150, 0.086, 0.95, SOCK, "Foot"),
 ]
