@@ -1,0 +1,84 @@
+{
+  "sourceHash": "f446c4389c8e7fbae8d4a6e74be7323757ca0ef20c0efc0be6ee9968cc879108",
+  "capturedAt": "2026-09-18T19:38:54.882Z",
+  "originalReceiptSha256": "d0bc1efbc206ea769c54260c5db46146d948f6528291e4ef7866fbe96374b7c7",
+  "approval": false,
+  "profiles": [
+    {
+      "id": "desktop-day",
+      "fps": 30,
+      "frames": 597,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "probe": {
+        "batter": "nostrike",
+        "pitcher": "lefty",
+        "phase": "windup",
+        "mode": "watch",
+        "venue": "park",
+        "atBatCompleted": true
+      },
+      "video": "docs/v2/art/batting-fix/desktop-day.mp4",
+      "sha256": "edac51aec6e534b196724eb1fecb6e61058ae04b3c745d0d7d45ca394c3f8c47"
+    },
+    {
+      "id": "desktop-night",
+      "fps": 30,
+      "frames": 597,
+      "viewport": {
+        "width": 1280,
+        "height": 720
+      },
+      "probe": {
+        "batter": "nostrike",
+        "pitcher": "lefty",
+        "phase": "windup",
+        "mode": "watch",
+        "venue": "park",
+        "atBatCompleted": true
+      },
+      "video": "docs/v2/art/batting-fix/desktop-night.mp4",
+      "sha256": "c5f31ce221bb6e4155d9bea5fc56489a717100fc9bd2cb073bc8c20cdaa4bad5"
+    },
+    {
+      "id": "phone-day",
+      "fps": 30,
+      "frames": 597,
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "probe": {
+        "batter": "nostrike",
+        "pitcher": "lefty",
+        "phase": "windup",
+        "mode": "watch",
+        "venue": "park",
+        "atBatCompleted": true
+      },
+      "video": "docs/v2/art/batting-fix/phone-day.mp4",
+      "sha256": "17dc0034ce4aa61aedaa631774fbaca81abe82a0fdc710743dd486c235ee2274"
+    },
+    {
+      "id": "phone-night",
+      "fps": 30,
+      "frames": 597,
+      "viewport": {
+        "width": 844,
+        "height": 390
+      },
+      "probe": {
+        "batter": "nostrike",
+        "pitcher": "lefty",
+        "phase": "windup",
+        "mode": "watch",
+        "venue": "park",
+        "atBatCompleted": true
+      },
+      "video": "docs/v2/art/batting-fix/phone-night.mp4",
+      "sha256": "2086d8dd681aca84d163df28de8f61e4b4cdda32f06b50a01c0265eaa89f7c37"
+    }
+  ]
+}

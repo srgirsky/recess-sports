@@ -1,9 +1,9 @@
-// Batting orientation diagnostic, not visual approval. The benchmark's batter
-// faced the catcher while prop-existence and generic hand-distance tests passed.
-// Sweep delivered roster takes through the production factory/director and use
-// the live bridge's actual plate transform. Head +Z is a direction proxy; hand
-// bones cannot establish finger contact. --check reports the known backward-
-// facing defect without waiving it or claiming other poses have been reviewed.
+// The old orientation and wrist-distance checks passed an implausible grip.
+// Sweep six batting actions on every delivered model IN the mirrored gameplay
+// scene. --check rejects backward heads, detached palm anchors, missed contact
+// markers and shaft centreline intersections. Passing is not visual approval:
+// finger enclosure, near misses by the barrel radius and transitions still
+// require still/motion review. Results name exact character, clip and frame.
 import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -24,6 +24,7 @@ await new Promise((resolve,reject)=>{
 import {writeFileSync} from 'node:fs';
 let browser;
 try {
+ const hash=sourceDigest(root);
  browser=await chromium.launch();
  const page=await browser.newPage({viewport:{width:1280,height:720}});
  const errors=[];page.on('pageerror',e=>errors.push(String(e)));
@@ -31,39 +32,57 @@ try {
  await page.goto(`http://localhost:${port}/v2/?play=1&seed=art-benchmark&venue=park`,{waitUntil:'networkidle'});
  await page.waitForFunction(()=>window.__spike?.refs?.kids?.size>0);
  const data=await page.evaluate(async()=>{
-  const {Vector3}=await import('/node_modules/three/build/three.module.js');
+  const {Vector3,Raycaster}=await import('/node_modules/three/build/three.module.js');
   const {ROSTER}=await import('/src/data/characters.ts');
   const {createCharacter}=await import('/src/v2/render/CharacterFactory.ts');
+  const {battingPlacement}=await import('/src/v2/render/battingPose.ts');
+  const {BAT_SWEET_SPOT_FT}=await import('/src/v2/render/props.ts');
+  const {clipSpec,FPS}=await import('/src/v2/render/clips.ts');
+  const {MOUND}=await import('/src/v2/sim/field.ts');
   const s=window.__spike;s.setControlMode('watch');s.devStepFixedClock(0);s.devPaint(1);
-  const frame=s.scoreboard();const actual=s.refs.kids.get(frame.batterId).root;
-  const placement={x:actual.position.x,z:actual.position.z,yaw:actual.rotation.y};const results=[];
+  const results=[];
   for(const c of ROSTER){
-   const {view,source}=await createCharacter(c);
+   const {view,source}=await createCharacter(c,{noProxyLevel:true});
    await s.prepareCharacterPerformance(c.id);
    const dir=s.directorFor(c,view);
    if(source!=='model')throw Error(`${c.id}: expected delivered model, got ${source}`);
-   view.setPosition(placement.x,placement.z);view.setFacing(placement.yaw);
-   for(const time of [0,.5,1]){
-    dir.seek('bat_stance',time);view.root.updateMatrixWorld(true);
-    const bone=n=>view.bones.find(b=>b.name===n);
-    const at=n=>bone(n).getWorldPosition(new Vector3());
-    const head=bone('Head');const headAt=at('Head');
-    const forward=head.localToWorld(new Vector3(0,0,1)).sub(headAt).normalize();
-    const {MOUND}=await import('/src/v2/sim/field.ts');
-    const pitcher=new Vector3(MOUND.x,headAt.y,MOUND.z).sub(headAt).normalize();
-    const lh=at('LeftHand'),rh=at('RightHand'),grip=at('Prop_BatGrip');
-    const anchor=bone('Prop_BatGrip');const axis=anchor.localToWorld(new Vector3(0,1,0)).sub(grip).normalize();
-    const offset=lh.clone().sub(grip);const along=offset.dot(axis);
-    const radial=offset.clone().addScaledVector(axis,-along).length();
-    results.push({id:c.id,name:c.name,source,clipSource:dir.sourceFor('bat_stance'),time,headTowardPitcher:forward.dot(pitcher),headForward:forward.toArray(),handsDistanceWorldFt:lh.distanceTo(rh),offHandToBatAxisWorldFt:radial,offHandAlongBatWorldFt:along});
+   const box=battingPlacement(view.root.scale.x);
+   view.setPosition(box.x,box.z);view.setFacing(box.facing);s.scene.add(view.root);
+   s.scene.updateMatrixWorld(true);
+   dir.battingPose.contact=s.scene.localToWorld(new Vector3(0,2.4,0));
+   for(const clip of ['bat_stance','bat_load','swing_contact','swing_follow','swing_whiff','bunt']){
+    for(let frame=0;frame<clipSpec(clip).frames;frame++){
+     dir.seek(clip,frame/FPS);s.scene.updateMatrixWorld(true);
+     const bone=n=>view.bones.find(b=>b.name===n);
+     const at=n=>bone(n).getWorldPosition(new Vector3());
+     const headAt=at('Head');
+     const forward=bone('Head').localToWorld(new Vector3(0,0,1)).sub(headAt).normalize();
+     const pitcher=s.scene.localToWorld(new Vector3(MOUND.x,0,MOUND.z));pitcher.y=headAt.y;
+     const anchor=bone('Prop_BatGrip');
+     const lowerPalm=anchor.localToWorld(new Vector3(0,-.18,0));
+     const tip=anchor.localToWorld(new Vector3(0,BAT_SWEET_SPOT_FT,0));
+     const origin=anchor.localToWorld(new Vector3(0,.3,0));
+     // A centreline hit is a candidate, not a clearance certificate. The
+     // instrument cannot see near misses by the barrel radius or finger shape.
+     const ray=new Raycaster(origin,tip.clone().sub(origin).normalize(),0,1.55*view.root.scale.x);
+     const hits=ray.intersectObject(view.mesh,true).filter(h=>h.object.visible);
+     results.push({id:c.id,clip,frame,clipSource:dir.sourceFor(clip),
+      headTowardPitcher:forward.dot(pitcher.sub(headAt).normalize()),
+      palmGapFt:at('Prop_GloveAnchor').distanceTo(lowerPalm)/view.root.scale.x,
+      contactGapFt:clip==='swing_contact'&&frame===clipSpec(clip).marker.frame?tip.distanceTo(dir.battingPose.contact):null,
+      shaftHits:hits.length});
+    }
    }
-   dir.dispose();view.dispose();
+   s.scene.remove(view.root);dir.dispose();view.dispose();
   }
-  return {placement,actualBatter:frame.batterId,diagnostic:'Delivered models and GameView directorFor; bat_stance sampled at 0, 0.5 and 1 seconds. Head local +Z direction is an orientation proxy, not eye tracking. Hand bones do not establish finger contact.',results};
+  return {diagnostic:'Delivered models, production director, actual mirrored gameplay scene. Every authored frame of six batting clips; fixed 2.4ft target. Palm anchors and shaft centreline intersections are diagnostics, not finger contact or visual approval.',results};
  });
- data.sourceHash=sourceDigest(root);data.capturedAt=new Date().toISOString();
+ if(sourceDigest(root)!==hash)throw Error('Source changed during audit; rerun.');
+ data.sourceHash=hash;data.capturedAt=new Date().toISOString();
  if(errors.length)throw Error(errors.join('\n'));
  writeFileSync(`${out}/probe.json`,JSON.stringify(data,null,2));
- console.log(JSON.stringify({samples:data.results.length,models:[...new Set(data.results.map(r=>r.source))],allAway:data.results.every(r=>r.headTowardPitcher<0),range:[Math.min(...data.results.map(r=>r.headTowardPitcher)),Math.max(...data.results.map(r=>r.headTowardPitcher))],junebug:data.results.filter(r=>r.id==='nostrike')},null,2));
- if(process.argv.includes('--check')&&data.results.some(r=>r.headTowardPitcher<0))process.exitCode=1;
+ const bad=data.results.filter(r=>r.headTowardPitcher<0||r.palmGapFt>.02||r.contactGapFt>.1);
+ const intersections=data.results.filter(r=>r.shaftHits>0);
+ console.log(JSON.stringify({samples:data.results.length,mechanicalFailures:bad.length,shaftIntersectionCandidates:intersections.length,affected:[...new Set(intersections.map(r=>r.id))],maxPalmGapFt:Math.max(...data.results.map(r=>r.palmGapFt)),failures:bad.slice(0,20)},null,2));
+ if(process.argv.includes('--check')&&(bad.length||intersections.length))process.exitCode=1;
 }finally{await browser?.close();server.kill();}

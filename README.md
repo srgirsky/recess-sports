@@ -592,8 +592,8 @@ separate.
 ```bash
 npm run review:art                 # inventory, findings and HTML review board
 npm run capture:art-benchmark      # local Vite + Chromium: desktop/phone, day/night
-npm run audit:batting              # all delivered kids: plate-facing and grip-bone diagnostics
-npm run audit:batting -- --check   # nonzero if a sampled stance faces away from the pitcher
+npm run audit:batting              # all 30 delivered kids: six actions, every authored frame
+npm run audit:batting -- --check   # reject facing, palm/contact gaps and shaft intersections
 npm run review:art                 # include the newly captured evidence
 npm run check:art-parity           # nonzero until every required review is approved
 ```

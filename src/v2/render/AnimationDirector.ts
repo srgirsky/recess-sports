@@ -24,6 +24,7 @@
 // ---------------------------------------------------------------------------
 
 import { AnimationMixer, LoopOnce, LoopRepeat, type AnimationAction, type AnimationClip, type Object3D } from 'three';
+import { BattingPose } from './battingPose';
 import {
   CLIP_BY_NAME,
   LOOP_MAX_RATE,
@@ -108,6 +109,7 @@ export class AnimationDirector {
   private readonly bat: Object3D | undefined;
   private readonly glove: Object3D | undefined;
   private gloveOn = false;
+  readonly battingPose: BattingPose;
   private nextBlinkSec = Infinity;
   private nextFidgetSec = Infinity;
   private blinkLeftSec = 0;
@@ -115,6 +117,7 @@ export class AnimationDirector {
 
   constructor(root: Object3D, opts: DirectorOptions = {}) {
     this.mixer = new AnimationMixer(root);
+    this.battingPose = new BattingPose(root, opts.actor?.id === 'wheelchair_ace');
     this.actor = opts.actor;
     this.bat = opts.bat;
     this.glove = opts.glove;
@@ -188,6 +191,7 @@ export class AnimationDirector {
       return existing ?? null;
     }
 
+    this.battingPose.restore();
     const next = this.actionFor(name, clip, spec);
     next.reset();
     next.timeScale = opts.rate ?? (this.actor ? actingRateFor(this.actor.profile, name) : 1);
@@ -228,6 +232,7 @@ export class AnimationDirector {
       if (action) {
         action.time = markerLeadSec(name);
         this.mixer.update(0);
+        if (holdsBat(name)) this.battingPose.apply(name, action.time);
       }
       return { rate: 1, clamped: false };
     }
@@ -288,6 +293,7 @@ export class AnimationDirector {
    * it out at 1x and the settle graph takes over as it always does.
    */
   seek(name: AnimName, timeSec: number): void {
+    this.battingPose.restore();
     if (this.current !== name) this.play(name, { fadeMs: 0, rate: 1, restart: true });
     const action = this.action;
     if (!action) return;
@@ -297,14 +303,18 @@ export class AnimationDirector {
     action.timeScale = 1;
     action.time = timeSec <= 0 ? 0 : timeSec >= duration ? duration : timeSec;
     this.mixer.update(0);
+    if (holdsBat(name)) this.battingPose.apply(name, action.time);
   }
 
   update(dtSec: number): void {
+    this.battingPose.restore();
     this.mixer.update(dtSec);
     this.updatePresence(dtSec);
+    if (this.current && holdsBat(this.current)) this.battingPose.apply(this.current, this.action?.time ?? 0);
   }
 
   dispose(): void {
+    this.battingPose.restore();
     this.mixer.removeEventListener('finished', this.onFinished);
     this.mixer.stopAllAction();
     this.actions.clear();

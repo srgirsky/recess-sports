@@ -87,11 +87,12 @@
         "character:chip",
         "character:boomer"
       ],
-      "observation": "The benchmark batter looks toward the catcher rather than the incoming pitch. bridge.ts places every batter at a root yaw of PI; the delivered stance does not compensate for it. A production-factory/director diagnostic of all 30 delivered models at stance times 0, 0.5 and 1 seconds finds head-forward dot toward pitcher negative in all 90 samples. This is a shared world-space orientation defect, not only Junebug.",
+      "observation": "The benchmark batter looks toward the catcher rather than the incoming pitch. bridge.ts places every batter at a root yaw of PI; the delivered stance does not compensate for it. A production-factory/director diagnostic of all 30 delivered models at stance times 0, 0.5 and 1 seconds finds head-forward dot toward pitcher negative in all 90 samples. This is a shared world-space orientation defect, not only Junebug. Correction implemented in the batting-fix proposal with a 5,040-frame delivered-roster sweep and refreshed evidence; remains open pending independent visual review and maintainer sign-off.",
       "evidence": [
         "docs/v2/art/batting-audit/junebug-0000.jpg",
         "docs/v2/art/batting-audit/probe.json",
-        "src/v2/render/bridge.ts:applyIdleDefence"
+        "src/v2/render/bridge.ts:applyIdleDefence",
+        "docs/v2/art/batting-fix/README.md"
       ],
       "acceptance": "Correct the integrated plate orientation, then verify all 30 delivered characters look toward the incoming pitch throughout ready/load and swing across the plate. Rerun audit:batting -- --check, capture production plate views and continuous swings at desktop/phone sizes, and independently review shoulder/feet/head orientation and contact. A positive direction metric alone is insufficient."
     },
@@ -105,11 +106,12 @@
         "character:nostrike",
         "action:contact"
       ],
-      "observation": "Junebug holds the handle behind the torso with an open trailing hand rather than a readable two-handed batting grip in the benchmark (frames 0 and 75). Existing groundContact coverage checks generic hand-bone proximity, not delivered palm/finger contact with the handle through motion. The diagnostic records bone-to-bat-axis offsets; these are not a measured mesh gap or a validated grip score.",
+      "observation": "Junebug holds the handle behind the torso with an open trailing hand rather than a readable two-handed batting grip in the benchmark (frames 0 and 75). Existing groundContact coverage checks generic hand-bone proximity, not delivered palm/finger contact with the handle through motion. The diagnostic records bone-to-bat-axis offsets; these are not a measured mesh gap or a validated grip score. Correction implemented in the batting-fix proposal with a 5,040-frame delivered-roster sweep and refreshed evidence; remains open pending independent visual review and maintainer sign-off.",
       "evidence": [
         "docs/v2/art/batting-audit/junebug-0000.jpg",
         "docs/v2/art/batting-audit/junebug-0075.jpg",
-        "src/v2/render/groundContact.test.ts:bat_stance keeps both hands on the one bat it holds"
+        "src/v2/render/groundContact.test.ts:bat_stance keeps both hands on the one bat it holds",
+        "docs/v2/art/batting-fix/README.md"
       ],
       "acceptance": "Review and correct the delivered hand/arm/prop relationship through ready, load, contact, follow-through and recovery. Show both hands plausibly enclosing the handle, sensible wrist/elbow bends, no body/bat penetration, and the barrel meeting the actual ball at contact. Sweep every delivered character for the same defect before resolving its scope; add regressions for measurable relationships without substituting bone proximity for visual approval."
     },
