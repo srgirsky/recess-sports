@@ -16,7 +16,7 @@
     "capturedFromTakeSha256": "6b896cc3fc32dd478b90caa6f40b1ee0e59d1e728feffa14867d309a8f128955"
   },
   "bubbles": {
-    "capturedFromGlbSha256": "c1c833a0cc1efe546ad2f838d499e9a2d6998bbefdf5a19624451e2524ed3749",
+    "capturedFromGlbSha256": "8cc91643b25660710aa8952aa4020ceb0c3dec0d03e54d4892a8dbd97e3af3fa",
     "capturedFromTakeSha256": "775a7d8a343f13eff9c7c40af5e9b5c03bcc7c8d79aa28d1e205579fe2311273"
   },
   "calls_shot": {
@@ -36,7 +36,7 @@
     "capturedFromTakeSha256": "649ff94f0ef92e9aae31caa153fa14b3c33e0cd4c55d23f14f35f2a3967db4d4"
   },
   "dex": {
-    "capturedFromGlbSha256": "7bea745e8515e18918142882cd522c616fb56dc71460bcc991a9c5e1b545b03c",
+    "capturedFromGlbSha256": "98106150f57b723269634138b9e70de51d38ea6140b0902a81ab01de255c36c4",
     "capturedFromTakeSha256": "dffeeff9ac0771875123fcf667234e2b5bbe5e6063d4a4ae10493e118a0d19f8"
   },
   "diva": {
@@ -80,7 +80,7 @@
     "capturedFromTakeSha256": "7b75416403a92eb7bb245e5cb5ea798cf8df6c34ec823ef929d4db15c331a050"
   },
   "penny": {
-    "capturedFromGlbSha256": "89d9763c1c5f6f4e004607bc948c94b28cb57b4b2404e6bada016645eba47ca8",
+    "capturedFromGlbSha256": "b374559a3d66ab7f69904b292ef1e7d1a1eb59270e05e60a7bbc2308c8f46888",
     "capturedFromTakeSha256": "796f07e4ee0f98420aa831877c9f6749805283dbcdb61f533bfb377709e03d6a"
   },
   "rocket": {
@@ -88,7 +88,7 @@
     "capturedFromTakeSha256": "b129731085b2b33c03a66701ee4f5d775a52c92de2197f70a2b3544dd1ec8608"
   },
   "smokey": {
-    "capturedFromGlbSha256": "bc9e7536c28cc8bf3bc7f8cd4190448ca23a31e351304f464320dc132e28c370",
+    "capturedFromGlbSha256": "6fc08eb87ea9c134f42bb03bac2fa22f2e4ff2e0bd6d5c3a57874f64516dce8b",
     "capturedFromTakeSha256": "2fc457ed7d309cad738425b857a0928eabac27b445fab61b3737d6455a6384d2"
   },
   "sniffles": {
@@ -100,7 +100,7 @@
     "capturedFromTakeSha256": "3d121220a094e74ca38bde2e2c973dc74ba5f366f6090fcde91aa20791a89f8c"
   },
   "tank": {
-    "capturedFromGlbSha256": "0833eba672d4a624cc2321a5dd166b7c4bedb979f053059f2884cb80316829d1",
+    "capturedFromGlbSha256": "a05045b49dcfbd5f32140233c8b1b6214fa5c03a2816e3e693813045a4a9e85c",
     "capturedFromTakeSha256": "ec5108ca160a0759b6874278994d339bf0afa6fcca5cf454dbe08804b19b75d9"
   },
   "the_prof": {

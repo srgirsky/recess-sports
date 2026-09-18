@@ -85,96 +85,6 @@
       "class": "no-defect-note",
       "excerpt": "NOT a defect, recorded so the next critic does not re-report it: the pale quad o"
     },
-    "tank:418f1e11a108": {
-      "char": "tank",
-      "class": "proportions",
-      "excerpt": "THE WORST ONE, CARRIED: the torso is a surface of revolution, so Tank has no bel"
-    },
-    "tank:474c9d9da4a7": {
-      "char": "tank",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED - do not re-file: the shins are split. Measured on the fresh front board"
-    },
-    "tank:7dbd3341a27b": {
-      "char": "tank",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED - do not re-file: the funnel sock is dead. The sock is now a slouched ri"
-    },
-    "tank:201f87e01ff2": {
-      "char": "tank",
-      "class": "no-defect-note",
-      "excerpt": "MOSTLY CLEARED: the shin got most of its length back. Bare skin at the left leg'"
-    },
-    "tank:e85f269dac12": {
-      "char": "tank",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED - do not re-file: the shorts no longer become leggings in motion. Sample"
-    },
-    "tank:55e18fe3d827": {
-      "char": "tank",
-      "class": "decal-not-form",
-      "excerpt": "REVISED CARRY - the nose broke the profile but still does not exist from the fro"
-    },
-    "tank:fc259037e099": {
-      "char": "tank",
-      "class": "decal-not-form",
-      "excerpt": "CARRIED: add the lip and chin shelf. From the nose to the collar the delivered p"
-    },
-    "tank:8c42c3504626": {
-      "char": "tank",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED AND RECORDED AS IDENTITY - do not re-file: the sleepy deadpan is back. T"
-    },
-    "tank:887ebb0a60ae": {
-      "char": "tank",
-      "class": "face-atlas",
-      "excerpt": "CARRIED, RE-VERIFIED: fix the face-atlas stretch at the head's grazing edge. At "
-    },
-    "tank:8a847ad4a73f": {
-      "char": "tank",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED - do not re-file: the sleeve is no longer a lozenge on the torso. The fr"
-    },
-    "tank:f00c18fe225b": {
-      "char": "tank",
-      "class": "butt-joins",
-      "excerpt": "CARRIED, SOFTENED: reshape the hand. The a-pose crop at 6x still shows three str"
-    },
-    "tank:0e9f7e817823": {
-      "char": "tank",
-      "class": "ears",
-      "excerpt": "CARRIED, RE-MEASURED: bring the ear back to scale and give it a lobe. This round"
-    },
-    "tank:6e83486017fa": {
-      "char": "tank",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED - do not re-file: the shorts and tee are constructed now. The shorts car"
-    },
-    "tank:ede09295ed08": {
-      "char": "tank",
-      "class": "proportions",
-      "excerpt": "REVISED CARRY: the neck is still taller than the drawing's. The concept profile "
-    },
-    "tank:b26bbe196f09": {
-      "char": "tank",
-      "class": "40px-read",
-      "excerpt": "CARRIED, RE-MEASURED: widen the team-accent surface. The TEAM_MASK roll is now t"
-    },
-    "tank:217dc66a6d5a": {
-      "char": "tank",
-      "class": "hems-cuffs",
-      "excerpt": "CARRIED VERBATIM (deliberately deferred to the shoe batch - do not lose it): Reb"
-    },
-    "tank:4fd2b2e3be9d": {
-      "char": "tank",
-      "class": "evidence",
-      "excerpt": "CARRIED, RE-VERIFIED: reshoot the swing_contact deformation still. The fresh cap"
-    },
-    "tank:3563d56a86f5": {
-      "char": "tank",
-      "class": "material-light",
-      "excerpt": "CARRIED: investigate the board saturation at the instrument, do not repaint. The"
-    },
     "mimi_mash:06096fea3486": {
       "char": "mimi_mash",
       "class": "no-defect-note",
@@ -434,186 +344,6 @@
       "char": "rocket",
       "class": "no-defect-note",
       "excerpt": "NOT DEFECTS, recorded so they are not re-filed: the ears are constructed (EarSpe"
-    },
-    "dex:4229c2b2191d": {
-      "char": "dex",
-      "class": "proportions",
-      "excerpt": "PROVENANCE, 3.1 (revised down from BLOCKER): dex's LEG_STATIONS core is still le"
-    },
-    "dex:27f29898e688": {
-      "char": "dex",
-      "class": "proportions",
-      "excerpt": "3.4/3.1: the rolled cuff sits a lefty-height, not a dex-height. Delivered: denim"
-    },
-    "dex:a2ab29e92c10": {
-      "char": "dex",
-      "class": "proportions",
-      "excerpt": "BLOCKER, 3.1/3.6: the cap bill has no front silhouette \u2014 verified unchanged in s"
-    },
-    "dex:5a0e9ed84408": {
-      "char": "dex",
-      "class": "proportions",
-      "excerpt": "BLOCKER, 3.1: the bill is a flat blade in profile \u2014 the fresh profile board show"
-    },
-    "dex:c597cd651396": {
-      "char": "dex",
-      "class": "proportions",
-      "excerpt": "3.4/3.1 (revised from BLOCKER): the hood now exists but sits low. Measured back-"
-    },
-    "dex:3a00dfb58d2d": {
-      "char": "dex",
-      "class": "hair-nyquist",
-      "excerpt": "3.3 (revised from BLOCKER): the curls are now one designed mass at the right wid"
-    },
-    "dex:8c77cdb48d68": {
-      "char": "dex",
-      "class": "hair-nyquist",
-      "excerpt": "3.3: the brows still run into the hair mass at their outer tips (skin gap presen"
-    },
-    "dex:db4e6f4c587b": {
-      "char": "dex",
-      "class": "decal-not-form",
-      "excerpt": "3.5 (revised): the nose is no longer absent \u2014 it nicks the profile with a small "
-    },
-    "dex:eb4951422654": {
-      "char": "dex",
-      "class": "decal-not-form",
-      "excerpt": "3.4: the kangaroo pocket is still two rectangular plates with hard 90-degree cor"
-    },
-    "dex:ab13a6bf3989": {
-      "char": "dex",
-      "class": "material-light",
-      "excerpt": "2.2 (revised): the hoodie body still renders light on boards \u2014 board hoodie/thig"
-    },
-    "dex:c4bc2428a439": {
-      "char": "dex",
-      "class": "butt-joins",
-      "excerpt": "3.11 (revised): the run clip now shows a real elbow break and the arm reads join"
-    },
-    "dex:571e8040558d": {
-      "char": "dex",
-      "class": "material-light",
-      "excerpt": "3.4 minor (new): the gold stitching reads hotter than the sheet \u2014 STITCH C08A48 "
-    },
-    "dex:ba58caabfe5c": {
-      "char": "dex",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (recorded so nobody re-files it): the dark ring with a brown, knuckle"
-    },
-    "dex:8f7a1a050618": {
-      "char": "dex",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (carried): measure:fidelity's ankle-daylight OFF (14.3 vs tol 12) is "
-    },
-    "dex:24f7e9bc6545": {
-      "char": "dex",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (cleared this round, recorded to stop re-filing): the prior 'ribbed h"
-    },
-    "dex:a16bf08dfd6a": {
-      "char": "dex",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (cleared this round): the prior 'jeans carry no fly seam, topstitch, "
-    },
-    "dex:73fc4949a288": {
-      "char": "dex",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (cleared this round): the prior 'hem is a flat shelf / neck is a bare"
-    },
-    "dex:4942fcfcfcc1": {
-      "char": "dex",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (cleared, measured): the prior 'jean cuff reads as a white sock' TONE"
-    },
-    "dex:7eaff7d8f5ab": {
-      "char": "dex",
-      "class": "no-defect-note",
-      "excerpt": "SWEEP (resolved, residual): the identical-leg-table class finding was paid \u2014 scr"
-    },
-    "dex:c528619ba164": {
-      "char": "dex",
-      "class": "no-defect-note",
-      "excerpt": "CREDIT (carried): the shoes remain the most honestly constructed garment \u2014 cream"
-    },
-    "smokey:4e7f353cc030": {
-      "char": "smokey",
-      "class": "sheared-edges",
-      "excerpt": "Shoulders, REVISED: the SHOULDER_BLEND exact-match bug is FIXED in code \u2014 sculpt"
-    },
-    "smokey:a8dae7345d10": {
-      "char": "smokey",
-      "class": "hair-nyquist",
-      "excerpt": "Hair fringe, CARRIED and now two-sided: BUZZ_FRINGE's centreline entry is still "
-    },
-    "smokey:5fa8070f52ad": {
-      "char": "smokey",
-      "class": "hair-nyquist",
-      "excerpt": "Hair fringe edge, CARRIED: at 8x on smokey-runtime-hero.png (x500-600/y190-300) "
-    },
-    "smokey:fbf4f5f8b882": {
-      "char": "smokey",
-      "class": "decal-not-form",
-      "excerpt": "Nose, CARRIED (still unbuilt to spec): nose_push's tip term is unchanged (0.090 "
-    },
-    "smokey:9a46d0dd4589": {
-      "char": "smokey",
-      "class": "proportions",
-      "excerpt": "NEW \u2014 profile hair silhouette reads bowl cut, not high fade: on smokey-profile-r"
-    },
-    "smokey:af42b152ec4c": {
-      "char": "smokey",
-      "class": "proportions",
-      "excerpt": "NEW \u2014 neck roughly twice the concept's: front board chin-to-collar is ~40px on a"
-    },
-    "smokey:037cd47b836d": {
-      "char": "smokey",
-      "class": "material-light",
-      "excerpt": "Colour drift on the board render, CARRIED with fresh numbers: board shirt sample"
-    },
-    "smokey:4248948cfb4b": {
-      "char": "smokey",
-      "class": "hems-cuffs",
-      "excerpt": "Collar, DOWNGRADED to minor: the neckline now carries a proud collar roll (SHIRT"
-    },
-    "smokey:27f44408a1a3": {
-      "char": "smokey",
-      "class": "proportions",
-      "excerpt": "Arms, LARGELY RESOLVED, one polish left: ARM_STATIONS now carries a deltoid bulg"
-    },
-    "smokey:74b552ef0a59": {
-      "char": "smokey",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED \u2014 shorts cuff (drop the prior 'bare tapered tube' finding): this round's"
-    },
-    "smokey:915ccc84f624": {
-      "char": "smokey",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED \u2014 decal-island seam not reproducible on fresh evidence (do not re-file w"
-    },
-    "smokey:716a142bdc25": {
-      "char": "smokey",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED \u2014 ear-skull notch: fresh front board at 8x shows the ear meeting the sku"
-    },
-    "smokey:6470042db141": {
-      "char": "smokey",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED \u2014 swing bat: smokey-runtime-swing.png now shows the bat in both hands at"
-    },
-    "smokey:79a7620f2b2c": {
-      "char": "smokey",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED \u2014 cocked eyebrow, measured clean: measure:fidelity reports face asymmetr"
-    },
-    "smokey:546b8483029d": {
-      "char": "smokey",
-      "class": "face-atlas",
-      "excerpt": "Face island at the 3/4 camera, SOFTENED: the hero and run stills show eye, brow,"
-    },
-    "smokey:a3d32865160c": {
-      "char": "smokey",
-      "class": "no-defect-note",
-      "excerpt": "Confirmed NOT defects, so nobody re-reports them: the skin-coloured disc on the "
     },
     "sniffles:704e45cbb19f": {
       "char": "sniffles",
@@ -985,91 +715,6 @@
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT Trap-4 \u2014 the dark slit at the near eye in peaches-profile-review.png "
     },
-    "bubbles:cf95a8b7228a": {
-      "char": "bubbles",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED \u2014 the half-bun: the rebuilt ring_loft computes theta = 2*pi*column/segs "
-    },
-    "bubbles:43f89e8cb614": {
-      "char": "bubbles",
-      "class": "hems-cuffs",
-      "excerpt": "CARRIED \u2014 dark wine wedges at the neckline: bubbles-front-review.png x ~235-265 "
-    },
-    "bubbles:b1a98f7d6c05": {
-      "char": "bubbles",
-      "class": "hair-nyquist",
-      "excerpt": "REVISED, CARRIED \u2014 curl relief partly recovered, not restored: with bands 8 -> 6"
-    },
-    "bubbles:6310f972b3ea": {
-      "char": "bubbles",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED \u2014 flat crown lid: bubbles-front-review.png y ~128-132 across x 205-335 i"
-    },
-    "bubbles:fe1933f1f617": {
-      "char": "bubbles",
-      "class": "no-defect-note",
-      "excerpt": "3.10 PASS \u2014 the ear reads constructed: bubbles-profile-review.png x 250-290, y 1"
-    },
-    "bubbles:39c16d9af375": {
-      "char": "bubbles",
-      "class": "ears",
-      "excerpt": "MINOR, NEW \u2014 the ear is about a fifth too tall for the head: on bubbles-profile-"
-    },
-    "bubbles:a9f0956f60aa": {
-      "char": "bubbles",
-      "class": "hair-nyquist",
-      "excerpt": "REVISED to minor \u2014 fringe: measured at the board's centre column x=270 the hair "
-    },
-    "bubbles:cd35ed381ed3": {
-      "char": "bubbles",
-      "class": "no-defect-note",
-      "excerpt": "KEPT CLEARED \u2014 ear-slot gouges: 6x crops of bubbles-front-review.png x 150-250 a"
-    },
-    "bubbles:ab7a7f0ce4ec": {
-      "char": "bubbles",
-      "class": "face-atlas",
-      "excerpt": "MINOR, CARRIED \u2014 her left brow (viewer-right, bubbles-front-review.png x ~300-36"
-    },
-    "bubbles:6d708b13a5c4": {
-      "char": "bubbles",
-      "class": "proportions",
-      "excerpt": "MINOR, CARRIED \u2014 scrunchie extent (TEAM_MASK, judged by extent never colour): bu"
-    },
-    "bubbles:78d7840ea56c": {
-      "char": "bubbles",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT \u2014 measure:fidelity 'daylight between the ankles 25.0 vs 0.00 OFF (tol"
-    },
-    "bubbles:a0a778147196": {
-      "char": "bubbles",
-      "class": "no-defect-note",
-      "excerpt": "KEPT CLEARED \u2014 dress construction: bubbles-front-review.png waist step at y ~395"
-    },
-    "bubbles:3db54a751617": {
-      "char": "bubbles",
-      "class": "no-defect-note",
-      "excerpt": "POSITIVE \u2014 face-band floor verified: bubbles-profile-review.png x 200-340, y 170"
-    },
-    "bubbles:f3ecf59aa770": {
-      "char": "bubbles",
-      "class": "material-light",
-      "excerpt": "NOTED, NOT SCORED \u2014 runtime skin renders a saturated orange in every bubbles-run"
-    },
-    "bubbles:5e9b258ec86a": {
-      "char": "bubbles",
-      "class": "40px-read",
-      "excerpt": "REVISED, CARRIED (narrower) \u2014 laces and toe: with toe_cap_edge=no_toe_cap (:873,"
-    },
-    "bubbles:454eb8125ab5": {
-      "char": "bubbles",
-      "class": "sheared-edges",
-      "excerpt": "MINOR, CARRIED \u2014 dark sliver at each shoe's medial toe/midsole junction: bubbles"
-    },
-    "bubbles:bb9ae0c5c5e1": {
-      "char": "bubbles",
-      "class": "material-light",
-      "excerpt": "CARRIED, MEASURED \u2014 shoe-band mean saturation 21.6 vs the sheet's 26.0, OFF by 4"
-    },
     "zippy:4804fc840920": {
       "char": "zippy",
       "class": "butt-joins",
@@ -1370,16 +1015,6 @@
       "class": "no-defect-note",
       "excerpt": "VERIFIED FIXED, do not re-open: the bun is not a backface void - in bendy-bao-ru"
     },
-    "penny:e2d5272c626d": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (measured, read as 'look at the stance'): daylight between the ankles"
-    },
-    "penny:244eeffd1625": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED, confirmed again: the pockets are bevelled proud pouches with a gold mou"
-    },
     "clover:93c1aad7240d": {
       "char": "clover",
       "class": "other",
@@ -1509,106 +1144,6 @@
       "char": "calls_shot",
       "class": "evidence",
       "excerpt": "CARRIED \u2014 Section 6 integration evidence stale and a proxy: docs/v2/concepts/the"
-    },
-    "penny:73aa512713bf": {
-      "char": "penny",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED, HIGHEST VALUE: the curl read at the gameplay camera. penny-runtime-swin"
-    },
-    "penny:b60430d2630e": {
-      "char": "penny",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED: the bob's front edge reads as a cut wall, not the sheet's halo. penny-p"
-    },
-    "penny:0a8d7d444bf6": {
-      "char": "penny",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED: bring the nape down. penny-profile-review.png x~200-360, y~220-320: wed"
-    },
-    "penny:983ef3919f4a": {
-      "char": "penny",
-      "class": "proportions",
-      "excerpt": "CARRIED (softened): nose and muzzle. penny-profile-apose-review.png x~210-225, y"
-    },
-    "penny:2ed662913197": {
-      "char": "penny",
-      "class": "decal-not-form",
-      "excerpt": "CARRIED, ABSENT: the two mid-thigh cargo pockets. sculpt-penny-source.py torso_p"
-    },
-    "penny:cdc7e28f7158": {
-      "char": "penny",
-      "class": "sheared-edges",
-      "excerpt": "CARRIED (minor): silhouette faceting of the bob. penny-front-review.png x~150-20"
-    },
-    "penny:89bc3cec5363": {
-      "char": "penny",
-      "class": "decal-not-form",
-      "excerpt": "CARRIED (minor): pocket-mouth stitch ramp and slant mouths. penny-front-review.p"
-    },
-    "penny:6175d90f9ed0": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED, confirmed again: the recess above each ear and the curtains at the brow"
-    },
-    "penny:ac59cb7f6e75": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED, confirmed again: hair over the face in profile and 3/4, and the constru"
-    },
-    "penny:4295b321f95f": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT: the TEAM_MASK cuff. penny-front-review.png y~570-600 renders it raw "
-    },
-    "penny:6ccc1f662565": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "NO CHANGE IN READ (the 36 -> 32 column price, from the columns round): the curl "
-    },
-    "penny:9f0b7f768a2b": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "RECORDED REFUSALS, not re-filed: side-seam topstitch (colour-on-ring smears at 2"
-    },
-    "penny:5d07b676a815": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "VERDICT, 12-vs-14 SIDES (unchanged through four elbow rebuilds, re-checked on th"
-    },
-    "penny:6f74f2697cbd": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (the crease-to-knob corner the other two critics measured): moving the c"
-    },
-    "penny:f8e14859b383": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (the bead finding from the lone-knob build, confirmed on this build): th"
-    },
-    "penny:1a4fc3b51e43": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (arm half of finding [6], 'the arm below the cuff is a uniform cylinder "
-    },
-    "penny:2537a2114b77": {
-      "char": "penny",
-      "class": "proportions",
-      "excerpt": "CARRIED (measured): head height 32.8 vs 34.9, -2.07pp, OFF at tol 2 \u2014 unchanged "
-    },
-    "penny:36f609e27aab": {
-      "char": "penny",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED: no hairline from the front. penny-runtime-face-angry.png x~460-620, y~2"
-    },
-    "penny:e8925cf8b0ed": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED, confirmed again: the sleeve/torso junction. penny-front-apose-review.pn"
-    },
-    "penny:661dd1046642": {
-      "char": "penny",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (the shared knee builder's shoulder ring): _with_knee only runs when "
     },
     "clover:3624d1e31ec3": {
       "char": "clover",
@@ -2819,6 +2354,211 @@
       "char": "boomer",
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT (re-checked, do not re-file) - the throat annulus in boomer-profile-r"
+    },
+    "smokey:700c639f6705": {
+      "char": "smokey",
+      "class": "hair-nyquist",
+      "excerpt": "3.3 / 3.13: Replace smooth helmet-like hair edge with the concept close fad"
+    },
+    "smokey:b93ca88513ff": {
+      "char": "smokey",
+      "class": "butt-joins",
+      "excerpt": "3.2 / 3.4 / 3.11: Refine collar/shoulder construction together: shorter exp"
+    },
+    "smokey:ad1fd3585ff3": {
+      "char": "smokey",
+      "class": "other",
+      "excerpt": "3.4 / 4.3: Correct inherited central shorts flap during run. Fresh 4x crop "
+    },
+    "smokey:fd5da0b4293a": {
+      "char": "smokey",
+      "class": "40px-read",
+      "excerpt": "3.6: Preserve legible red/charcoal/cream palette while improving close-crop"
+    },
+    "bubbles:e726435805b1": {
+      "char": "bubbles",
+      "class": "proportions",
+      "excerpt": "IMPROVED \u2014 crown lid and ear height: fresh front/profile and runtime hero c"
+    },
+    "bubbles:dcbfae040b05": {
+      "char": "bubbles",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED \u2014 hair grouping is still broad fluted/faceted panels, especially re"
+    },
+    "bubbles:483f9387ff58": {
+      "char": "bubbles",
+      "class": "proportions",
+      "excerpt": "CARRIED \u2014 thin arms/legs and abrupt shoulder joins remain against the conce"
+    },
+    "bubbles:8a0568ed2c74": {
+      "char": "bubbles",
+      "class": "butt-joins",
+      "excerpt": "CARRIED \u2014 dark angular neckline wedges remain. Four-times crop of bubbles-f"
+    },
+    "bubbles:772e6d11f177": {
+      "char": "bubbles",
+      "class": "hems-cuffs",
+      "excerpt": "CARRIED \u2014 shoes use parallel pink bars instead of concept criss-cross cream"
+    },
+    "bubbles:c93e3a0d771a": {
+      "char": "bubbles",
+      "class": "other",
+      "excerpt": "CARRIED \u2014 scrunchie extent remains a smooth thin washer rather than the con"
+    },
+    "bubbles:c2b3fa7f2e28": {
+      "char": "bubbles",
+      "class": "decal-not-form",
+      "excerpt": "IMPROVED \u2014 small nose form is visible in front A-pose and projects in profi"
+    },
+    "bubbles:d30978a36b6f": {
+      "char": "bubbles",
+      "class": "material-light",
+      "excerpt": "CARRIED, MEASURED \u2014 shoe mean saturation is 21.6 versus 26.0, -4.41 against"
+    },
+    "bubbles:c172ce8eb383": {
+      "char": "bubbles",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT NOTE \u2014 ankle daylight comparison remains 25.0 versus posed drawi"
+    },
+    "penny:1947f3a790bc": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "IMPROVED \u2014 nape: 4x paired penny-profile-review.png x190-400 y170-325 again"
+    },
+    "penny:aa2d9f515d8f": {
+      "char": "penny",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED \u2014 curl identity: penny-runtime-swing.png x440-665 y165-350 at4x rem"
+    },
+    "penny:166183be2cec": {
+      "char": "penny",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED \u2014 front bob wall, hairline and facets: profile A-pose retains verti"
+    },
+    "penny:c4e34ef20fe6": {
+      "char": "penny",
+      "class": "face-atlas",
+      "excerpt": "REVISED MEASURED DEBT \u2014 visible face right27.2 versus33.9 (-6.70 OFF at tol"
+    },
+    "penny:92013d5b5ecd": {
+      "char": "penny",
+      "class": "hems-cuffs",
+      "excerpt": "CARRIED \u2014 mid-thigh cargo pockets absent: source torso_patch calls are ches"
+    },
+    "penny:e98fac736e15": {
+      "char": "penny",
+      "class": "decal-not-form",
+      "excerpt": "CARRIED \u2014 nose and cheek: profile A-pose pointed nose versus concept round "
+    },
+    "penny:fbe32c87ad08": {
+      "char": "penny",
+      "class": "hems-cuffs",
+      "excerpt": "CARRIED \u2014 shoes: parallel raised lace bars instead of criss-cross laces/sid"
+    },
+    "penny:08a5eca973c6": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT \u2014 TEAM_MASK rolled denim cuff confirmed source z0.585/0.500/0.43"
+    },
+    "penny:fc4606fded35": {
+      "char": "penny",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT \u2014 ankle daylight12.7 versus concept detector0.00 OFF tol12. Conc"
+    },
+    "dex:8152ca83cf9e": {
+      "char": "dex",
+      "class": "proportions",
+      "excerpt": "3.1: The front bill now exists clearly, but its contour remains different f"
+    },
+    "dex:770c77ba33a1": {
+      "char": "dex",
+      "class": "hair-nyquist",
+      "excerpt": "3.3: The hair is present and continuous but reads as broad smooth side mass"
+    },
+    "dex:896e77ca0a99": {
+      "char": "dex",
+      "class": "hems-cuffs",
+      "excerpt": "3.4/3.1: The rear hood remains a compact rounded lump below the collar in d"
+    },
+    "dex:82f97516f7a0": {
+      "char": "dex",
+      "class": "hems-cuffs",
+      "excerpt": "3.4: The front kangaroo pocket still reads as two hard rectangular panels, "
+    },
+    "dex:a5788441b737": {
+      "char": "dex",
+      "class": "butt-joins",
+      "excerpt": "3.11: The front A-pose shoulder-to-sleeve junction remains angular and the "
+    },
+    "dex:0c8ae001f7e1": {
+      "char": "dex",
+      "class": "decal-not-form",
+      "excerpt": "3.5: The built nose is legible in profile but faint in true front; the oute"
+    },
+    "dex:f44102ef0128": {
+      "char": "dex",
+      "class": "40px-read",
+      "excerpt": "3.6: At 40px the head loses the cap-over-curls distinction even though the "
+    },
+    "dex:f7c3f5ca25c8": {
+      "char": "dex",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT: Current ankle daylight is OFF at 14.5 versus concept 0.00 (tol "
+    },
+    "dex:6756bb86439c": {
+      "char": "dex",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED: The bill no longer vanishes into the crown from front, and the low"
+    },
+    "tank:5d1d1affff31": {
+      "char": "tank",
+      "class": "no-defect-note",
+      "excerpt": "IMPROVED / CLOSED FOR THIS INCREMENT: origin/main has equal profile front/b"
+    },
+    "tank:349fae6480f5": {
+      "char": "tank",
+      "class": "no-defect-note",
+      "excerpt": "IMPROVED / CLOSED FOR THIS INCREMENT: the raised collar reduces the exposed"
+    },
+    "tank:4b3a3c175167": {
+      "char": "tank",
+      "class": "ears",
+      "excerpt": "INHERITED: the ear remains too large and closes as a continuous oval rather"
+    },
+    "tank:ad87d6b01882": {
+      "char": "tank",
+      "class": "hems-cuffs",
+      "excerpt": "INHERITED / DEFERRED SHOE WORK: the cream upper remains a block with steppe"
+    },
+    "tank:270e47609675": {
+      "char": "tank",
+      "class": "decal-not-form",
+      "excerpt": "INHERITED: nose_push builds a genuine nose and it breaks the profile, but f"
+    },
+    "tank:efdfa886e46c": {
+      "char": "tank",
+      "class": "butt-joins",
+      "excerpt": "INHERITED: the A-pose hand crop x75..160,y370..465 at 4x shows elongated se"
+    },
+    "tank:0c0674e8c4e9": {
+      "char": "tank",
+      "class": "40px-read",
+      "excerpt": "INHERITED: the team accent is confined to two TEAM_MASK sock-roll rows (SOC"
+    },
+    "tank:e6d3276c9874": {
+      "char": "tank",
+      "class": "evidence",
+      "excerpt": "INHERITED EVIDENCE LIMIT: fresh swing_contact capture reads frame 11/18 and"
+    },
+    "tank:91ecfeab39af": {
+      "char": "tank",
+      "class": "evidence",
+      "excerpt": "RECHECK AT MATCHED ANGLE, NOT A NEW REGRESSION: the prior ledger names a gr"
+    },
+    "tank:2a6840eaa07a": {
+      "char": "tank",
+      "class": "no-defect-note",
+      "excerpt": "PRESERVED: front/A-pose leg separation, cream sock construction, cuffs and "
     }
   }
 }
