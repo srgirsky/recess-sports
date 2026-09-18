@@ -68,4 +68,6 @@ maintainer decides. ART-006 continues to track missing coverage.
 `npm test`: 2,273 passed, 12 skipped; the additional replay-target regression
 also passes in the targeted delivery run. `npm run build` passed.
 `npm run audit:batting -- --check` passed with the source digest above.
+CI now runs the delivered-roster batting audit after the browser layout gates
+and uploads its probe, so this check is repeated on future pull requests.
 The v1 source tree and simulation code are unchanged.
