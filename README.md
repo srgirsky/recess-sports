@@ -582,6 +582,36 @@ batter in `bat_stance` holding a visible bat, the catcher crouched in
 land in `outDir` (default `.smoke/`). It exists because 1,857 state-level
 tests stayed green while the painted game showed none of those things.
 
+## Whole-game art review
+
+The [art acceptance workflow](docs/v2/art-acceptance.md) covers the complete
+scene, characters, parks, lighting, screens and action effects. It reuses the
+existing sculpt ledger and keeps capture, critique and maintainer approval
+separate.
+
+```bash
+npm run review:art                 # inventory, findings and HTML review board
+npm run capture:art-benchmark      # local Vite + Chromium: desktop/phone, day/night
+npm run review:art                 # include the newly captured evidence
+npm run check:art-parity           # nonzero until every required review is approved
+```
+
+Install Chromium once with `npx playwright install chromium`. The capture owns
+port 5187 (override with `ART_REVIEW_PORT`); it fails on missing full-page media,
+proxy warnings, browser errors or an unreached at-bat outcome. It captures a
+complete at-bat plus two seconds after the outcome at 30 fps, so allow several
+minutes and disk space for motion sequences. Still images are lossless PNG;
+motion frames are JPEG at quality 90. No visual approval is created.
+Use `-- --profile=desktop-day` for a single-profile diagnostic; the report
+correctly marks that partial benchmark incomplete. A full run replaces it.
+
+Open `.art-review/index.html` for the board; `.art-review/report.json` is its
+machine-readable counterpart. `review:art -- --out=/absolute/path` changes only
+the report output directory. Media remain linked to their receipt paths, so
+share the report together with its media. The board lists uncaptured targets,
+shows the existing character work by sweep, and allows motion scrubbing.
+For live comparison, run `npm run dev` and use the same seeded review URL.
+
 ## Building & deploying (free)
 
 ```bash

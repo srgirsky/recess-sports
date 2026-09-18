@@ -2877,3 +2877,14 @@ Human-performed voice acting, a cross-player pick-rate backend, externally
 sculpted/animated character replacements, more characters, and the Phase 3
 dinosaurs. Online-play v1 leaves a few edges for later: remote steal-reaction
 taps (wire fields reserved), guest-side manual relief, and a net rematch button.
+
+## Whole-game art acceptance
+
+The presentation campaign now has a complete-scene benchmark before roster-wide
+rollout: Parks Dept #2 through a real at-bat, at desktop and landscape-phone
+sizes, in day and night. The generated review board derives its character,
+venue and screen inventory from production definitions and reads the existing
+sculpt critiques instead of duplicating them. Evidence is bound to current
+source bytes; independent visual review and maintainer approval are separate
+from technical validation. No new visual parity claim is made by installing the
+process. The [workflow](v2/art-acceptance.md) owns the rules; README owns commands.
