@@ -46,7 +46,8 @@
     "analyse:turnaround": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/analyse-turnaround.mjs",
     "review:art": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/art-review-report.mjs",
     "capture:art-benchmark": "node --disable-warning=ExperimentalWarning --import ./scripts/v2/ts-resolve.mjs scripts/v2/capture-art-benchmark.mjs",
-    "check:art-parity": "npm run review:art -- --require-approved"
+    "check:art-parity": "npm run review:art -- --require-approved",
+    "audit:batting": "node scripts/v2/audit-batting.mjs"
   },
   "dependencies": {
     "peerjs": "^1.5.5",

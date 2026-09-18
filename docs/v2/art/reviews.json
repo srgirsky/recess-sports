@@ -48,6 +48,114 @@
         "BB2026 local reference corpus: steam/steam-02.jpg (see docs/research/backyard-2026-reference.md)"
       ],
       "acceptance": "Review the cloud silhouette, shading and sky composition from plate, field and deep cameras in day and night; establish a coherent cartoon sky without distracting dark slabs or horizon artifacts."
+    },
+    {
+      "id": "ART-004",
+      "kind": "defect",
+      "status": "open",
+      "owner": "Render integration and animation",
+      "targets": [
+        "benchmark:park",
+        "character:nostrike",
+        "character:calls_shot",
+        "character:wheelchair_ace",
+        "character:big_lou",
+        "character:tank",
+        "character:mimi_mash",
+        "character:turbo",
+        "character:sprout",
+        "character:zippy",
+        "character:ace_kid",
+        "character:penny",
+        "character:dex",
+        "character:lefty",
+        "character:smokey",
+        "character:bend_it",
+        "character:noodle",
+        "character:bubbles",
+        "character:sniffles",
+        "character:the_prof",
+        "character:diva",
+        "character:grizz",
+        "character:flash",
+        "character:cricket",
+        "character:moose",
+        "character:peaches",
+        "character:gizmo",
+        "character:clover",
+        "character:rocket",
+        "character:chip",
+        "character:boomer"
+      ],
+      "observation": "The benchmark batter looks toward the catcher rather than the incoming pitch. bridge.ts places every batter at a root yaw of PI; the delivered stance does not compensate for it. A production-factory/director diagnostic of all 30 delivered models at stance times 0, 0.5 and 1 seconds finds head-forward dot toward pitcher negative in all 90 samples. This is a shared world-space orientation defect, not only Junebug.",
+      "evidence": [
+        "docs/v2/art/batting-audit/junebug-0000.jpg",
+        "docs/v2/art/batting-audit/probe.json",
+        "src/v2/render/bridge.ts:applyIdleDefence"
+      ],
+      "acceptance": "Correct the integrated plate orientation, then verify all 30 delivered characters look toward the incoming pitch throughout ready/load and swing across the plate. Rerun audit:batting -- --check, capture production plate views and continuous swings at desktop/phone sizes, and independently review shoulder/feet/head orientation and contact. A positive direction metric alone is insufficient."
+    },
+    {
+      "id": "ART-005",
+      "kind": "defect",
+      "status": "open",
+      "owner": "Character animation and prop integration",
+      "targets": [
+        "benchmark:park",
+        "character:nostrike",
+        "action:contact"
+      ],
+      "observation": "Junebug holds the handle behind the torso with an open trailing hand rather than a readable two-handed batting grip in the benchmark (frames 0 and 75). Existing groundContact coverage checks generic hand-bone proximity, not delivered palm/finger contact with the handle through motion. The diagnostic records bone-to-bat-axis offsets; these are not a measured mesh gap or a validated grip score.",
+      "evidence": [
+        "docs/v2/art/batting-audit/junebug-0000.jpg",
+        "docs/v2/art/batting-audit/junebug-0075.jpg",
+        "src/v2/render/groundContact.test.ts:bat_stance keeps both hands on the one bat it holds"
+      ],
+      "acceptance": "Review and correct the delivered hand/arm/prop relationship through ready, load, contact, follow-through and recovery. Show both hands plausibly enclosing the handle, sensible wrist/elbow bends, no body/bat penetration, and the barrel meeting the actual ball at contact. Sweep every delivered character for the same defect before resolving its scope; add regressions for measurable relationships without substituting bone proximity for visual approval."
+    },
+    {
+      "id": "ART-006",
+      "kind": "review-task",
+      "status": "open",
+      "owner": "Whole-game visual QA",
+      "targets": [
+        "character:nostrike",
+        "character:calls_shot",
+        "character:wheelchair_ace",
+        "character:big_lou",
+        "character:tank",
+        "character:mimi_mash",
+        "character:turbo",
+        "character:sprout",
+        "character:zippy",
+        "character:ace_kid",
+        "character:penny",
+        "character:dex",
+        "character:lefty",
+        "character:smokey",
+        "character:bend_it",
+        "character:noodle",
+        "character:bubbles",
+        "character:sniffles",
+        "character:the_prof",
+        "character:diva",
+        "character:grizz",
+        "character:flash",
+        "character:cricket",
+        "character:moose",
+        "character:peaches",
+        "character:gizmo",
+        "character:clover",
+        "character:rocket",
+        "character:chip",
+        "character:boomer"
+      ],
+      "observation": "The earlier character inventory could be complete without an in-game batting-ready/load/contact/follow view or per-character pitching, throwing, pickup, dive and slide motion. The expanded generated matrix makes these missing checks visible. No claim is made that uninspected cells are defective or passed.",
+      "evidence": [
+        "docs/v2/art-acceptance.md:Action review procedure",
+        "scripts/v2/art-review.mjs:makeTargets"
+      ],
+      "acceptance": "Capture and inspect every generated character/action slot at both review sizes. Record observed failures in this ledger, including exact clip/phase/time and affected ids; retain unreviewed cells as incomplete. Fix one cause at a time and rerun the affected roster and adjacent transitions before an independent review and maintainer verdict."
     }
   ]
 }
