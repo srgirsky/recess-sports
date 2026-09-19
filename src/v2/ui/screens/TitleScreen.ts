@@ -18,6 +18,7 @@ import { button, el } from '../dom';
 import type { Screen } from '../Router';
 import { getCharacter } from '../../../data/characters';
 import { portrait } from '../portrait';
+import { assetUrl } from '../../render/assets';
 
 export class TitleScreen implements Screen {
   constructor(
@@ -38,7 +39,7 @@ export class TitleScreen implements Screen {
       const c = getCharacter(id);
       const frame = el('div', `title-hero title-hero--${mod}`);
       frame.setAttribute('aria-hidden', 'true');
-      frame.appendChild(portrait(c.visual, '', { street: true }));
+      frame.appendChild(portrait(c, '', { street: true }));
       return frame;
     };
 
@@ -76,7 +77,7 @@ export class TitleScreen implements Screen {
     // the only text on this screen a four-year-old is not expected to read,
     // which is why it is last, quiet, and below the thing they came for.
     const classic = button('🕹  CLASSIC GAME', () => {
-      location.href = './classic/';
+      location.href = assetUrl('../classic/');
     }, 'btn--quiet btn--small');
 
     // Small, persistent production disclosure. It is not a decision a child

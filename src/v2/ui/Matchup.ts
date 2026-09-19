@@ -87,7 +87,7 @@ export class Matchup {
       if (this.shown[i] !== key) {
         this.shown[i] = key;
         const c = this.lookup(id);
-        this.arts[i].replaceChildren(portrait(c.visual, c.name, kit[i] === undefined ? undefined : { uniform: kit[i] }));
+        this.arts[i].replaceChildren(portrait(c, c.name, kit[i] === undefined ? undefined : { uniform: kit[i] }));
         this.names[i].textContent = c.name.toUpperCase();
       }
     });

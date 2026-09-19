@@ -51,7 +51,7 @@ export class ClubhouseScreen implements Screen {
     const player = button('', this.onEditPlayer, 'clubhouse-player');
     const playerArt = el('span', 'clubhouse-player__art');
     if (this.customPlayer) {
-      playerArt.appendChild(portrait(this.customPlayer.visual, '', { street: true }));
+      playerArt.appendChild(portrait(this.customPlayer, '', { street: true }));
       player.append(
         playerArt,
         el('span', 'clubhouse-player__copy', `⭐ ${this.customPlayer.name}\nYOUR CAPTAIN`),
@@ -105,7 +105,7 @@ export class ClubhouseScreen implements Screen {
       const card = button('', () => this.onSpeak(c), `clubhouse-sticker${sticker.foil ? ' is-foil' : ''}`);
       card.setAttribute('aria-label', `${c.name}, ${sticker.games} games${sticker.foil ? ', foil' : ''}`);
       const art = el('span', 'clubhouse-sticker__art');
-      art.appendChild(portrait(c.visual, '', { street: true }));
+      art.appendChild(portrait(c, '', { street: true }));
       card.append(
         art,
         el('span', 'clubhouse-sticker__name', c.name.split(' ')[0]),

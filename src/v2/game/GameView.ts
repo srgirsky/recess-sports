@@ -134,6 +134,7 @@ import { MatchupTally } from '../ui/matchupModel';
 import { PlayCallouts } from '../ui/PlayCallouts';
 import { scoreboardModel, type ScoreboardTeams } from '../ui/scoreboardModel';
 import { controlHint, controlsAt, type PlayerControlMode } from './controlMode';
+import { configureCharacterPortraits } from '../render/characterPortrait';
 import { BALL_DRAW_RADIUS_FT } from '../render/readabilityCues';
 
 /**
@@ -487,6 +488,7 @@ export class GameView {
     this.renderer = new Renderer(canvas);
     this.renderer.bindOutlines(this.outlines);
     configureModelLoader(this.renderer.gl);
+    configureCharacterPortraits(this.renderer.gl);
     this.camera = new PerspectiveCamera(RIGS.PITCH.fov, 1, 0.5, CAMERA_FAR_FT);
     // The one flip — see the field's header comment on the scene.
     this.scene.scale.x = -1;

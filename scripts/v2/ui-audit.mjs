@@ -672,6 +672,17 @@ async function auditScreen(page, vp, screen) {
     fail(where, `"${screen.mustSee}" is not present`);
     return 0;
   }
+  // A technically reachable scroller hid ALL alternatives below the candidate
+  // on sideways phones. The initial choice must have a full on-screen card.
+  if (screen.name === 'draft' && vp.width >= 640 && vp.height <= 460) {
+    const card = await page.evaluate(() => {
+      const r = document.querySelector('.draft-board .kid')?.getBoundingClientRect();
+      return r ? { x: r.x, y: r.y, w: r.width, h: r.height } : null;
+    });
+    if (!card || !insideFrame(asBox(card), vp.width, vp.height, -0.5)) {
+      fail(where, 'the initial roster choice is below the fold — a phone must show alternatives before a pick');
+    }
+  }
   const r = await page.evaluate(COLLECT('screens'));
   if (r.error) {
     fail(where, r.error);

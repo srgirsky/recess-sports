@@ -50,7 +50,7 @@ export class SeasonScreen implements Screen {
         const c = getCharacter(award.id);
         const card = el('div', 'season-award');
         const art = el('span', 'season-award__art');
-        art.appendChild(portrait(c.visual, '', { street: true }));
+        art.appendChild(portrait(c, '', { street: true }));
         card.append(
           el('strong', 'season-award__label', `${award.icon} ${award.label}`),
           art,

@@ -368,6 +368,10 @@ async function frontDoorBeats(browser, failures, report) {
     // throttled to nothing — the click lands and the await never returns.
     await page.$eval('.btn--hero', (el) => el.click());
     const pick = await page.waitForFunction(() => !!document.querySelector('.draft-preview__pick'), null, { polling: 100, timeout: 15_000 }).catch(() => null);
+    await page.waitForFunction(() => {
+      const portraits = [...document.querySelectorAll('img.portrait')];
+      return portraits.length >= 30 && portraits.every(img => img.dataset.portraitSource === 'runtime');
+    }, null, { polling: 100, timeout: 60_000 });
     await pump(30);
     await shoot('draft-open', pick !== null, pick ? 'a candidate presents with PICK ME! armed' : 'PICK ME! never armed');
     if (!pick) return;

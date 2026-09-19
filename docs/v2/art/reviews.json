@@ -184,8 +184,9 @@
         "screen:DraftScreen",
         "screen:TitleScreen"
       ],
-      "observation": "The draft pairs a green-shirted illustrated Junebug portrait with a red-clothed 3D Junebug. The custom captain also differs markedly between portrait and stage. Two individually recognizable depictions are not a consistent visual identity; a child choosing by appearance may not recognize the same kid in play.",
+      "observation": "The draft pairs a green-shirted illustrated Junebug portrait with a red-clothed 3D Junebug. The custom captain also differs markedly between portrait and stage. Two individually recognizable depictions are not a consistent visual identity; a child choosing by appearance may not recognize the same kid in play. The second parity-review pass renders cached portraits through CharacterFactory using the live renderer and colour pipeline, including the custom captain. The illustration remains a loading/readback-failure fallback. Desktop and landscape-phone inspection now show matching depictions; full independent identity review remains open.",
       "evidence": [
+        "src/v2/render/characterPortrait.ts",
         "src/v2/ui/portrait.ts",
         "src/v2/ui/screens/DraftScreen.ts",
         "docs/research/parity-review-2026-09-18.md"
@@ -208,6 +209,22 @@
         "docs/research/parity-review-2026-09-18.md"
       ],
       "acceptance": "Show a continuous ground-to-horizon composition through field/deep camera moves and a ball that remains clearly identifiable at desktop and landscape-phone sizes, without changing physical ball size, collision, catches or input tolerance. Compare fresh full-scene motion and retain performance budgets."
+    },
+    {
+      "id": "ART-010",
+      "kind": "defect",
+      "status": "open",
+      "owner": "Phone draft usability",
+      "targets": [
+        "screen:DraftScreen"
+      ],
+      "observation": "At 844x390 the entire roster chooser was below the fold while the default candidate and PICK ME button filled the screen. Scroll reachability let the layout audit pass without a single visible alternative. The parity-review branch places a scrolling roster column beside the candidate on short landscape screens and adds a required first-card visibility check.",
+      "evidence": [
+        "src/v2/ui/styles/app.css",
+        "scripts/v2/ui-audit.mjs:auditScreen",
+        "docs/research/parity-review-2026-09-18.md"
+      ],
+      "acceptance": "Inspect choosing a different child, a manual pick/CPU response, autofill and the completed PLAY BALL state on supported short landscape sizes. The roster must be visible before a choice, with usable targets and no overlap; confirm the interaction with a child before treating technical checks as usability approval."
     }
   ]
 }

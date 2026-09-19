@@ -131,7 +131,7 @@ export class DraftScreen implements Screen {
     node.setAttribute('aria-pressed', String(this.spotlightMode === 'pick' && this.spotlightId === id));
 
     const art = el('div', 'kid__art');
-    art.appendChild(portrait(c.visual, c.name, { street: true }));
+    art.appendChild(portrait(c, c.name, { street: true }));
     node.appendChild(art);
     node.appendChild(el('span', 'kid__name', c.name));
 
@@ -236,7 +236,7 @@ export class DraftScreen implements Screen {
       if (id) {
         const art = el('div', 'draft-slot__art');
         const kid = this.lookup(id);
-        art.appendChild(portrait(kid.visual, kid.name, { uniform: 0 }));
+        art.appendChild(portrait(kid, kid.name, { uniform: 0 }));
         slot.appendChild(art);
       }
       this.slots.appendChild(slot);
@@ -290,7 +290,7 @@ export class DraftScreen implements Screen {
       art.setAttribute('aria-label', `${c.name} performing in 3D`);
     } else {
       // Standalone/tests can still use the shared portrait without a scene.
-      art.appendChild(portrait(c.visual, c.name, { street: true }));
+      art.appendChild(portrait(c, c.name, { street: true }));
     }
     // The trading-card moment: the identity plate wears the card frame and
     // carries the kid's own line, so a pick reads as pulling their card.

@@ -2972,7 +2972,10 @@ benchmark, resolve the roster's sculpt debts or establish reference parity.
 The current review distinguishes implemented features from a finished player
 experience. The first correction pass makes startup visible, restores
 face-forward draft presentation, adds an exit and automatic completion without
-counting automatic votes, and explains the current gameplay input. Existing
+counting automatic votes, and explains the current gameplay input. A second
+pass derives portraits from the same runtime characters, so the cards no longer
+show unrelated faces and clothing, and keeps the roster chooser visible beside
+the candidate on short landscape screens. Existing
 physical rules and held features are unchanged. The remaining readiness gaps,
 evidence limits and next review order are in the
 [critical parity review](research/parity-review-2026-09-18.md); visual findings

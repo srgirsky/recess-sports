@@ -56,7 +56,7 @@ export class StrategyScreen implements Screen {
       row.dataset.id = id;
       row.appendChild(el('strong', 'strategy-row__slot', String(index + 1)));
       const art = el('span', 'strategy-row__art');
-      art.appendChild(portrait(c.visual, '', { street: true }));
+      art.appendChild(portrait(c, '', { street: true }));
       row.append(art, el('span', 'strategy-row__name', c.name));
       const stats = el('span', 'strategy-row__stats', `🎯${c.stats.contact}  💥${c.stats.power}  ⚡${c.stats.speed}`);
       row.appendChild(stats);
