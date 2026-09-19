@@ -5,6 +5,8 @@ import {
   ballShadowCue,
   BALL_PRESENCE_MAX_SCALE,
   BALL_PRESENCE_REF_FT,
+  BALL_DRAW_RADIUS_FT,
+  LIVE_BALL_MIN_DIAMETER_PX,
   ballPresenceCue,
 } from './readabilityCues';
 
@@ -60,6 +62,25 @@ describe('activeFielderCue', () => {
 
 describe('ballPresenceCue', () => {
   const eye = { x: 0, y: 5, z: -18 };
+
+  it('keeps a live ball readable through deep-camera cuts and phone resizing', () => {
+    for (const height of [320, 390, 720, 1440]) {
+      for (const fov of [32, 46, 60]) {
+        for (const distance of [50, 150, 300, 450]) {
+          const ball = { x: 0, y: 5, z: eye.z + distance };
+          const cue = ballPresenceCue(ball, eye, 'live', true, {
+            verticalFovDeg: fov, viewportHeightPx: height,
+          });
+          const diameter = BALL_DRAW_RADIUS_FT * cue.scale * height
+            / (distance * Math.tan(fov * Math.PI / 360));
+          expect(diameter).toBeGreaterThanOrEqual(LIVE_BALL_MIN_DIAMETER_PX - 1e-8);
+          expect(ballPresenceCue(ball, eye, 'live', false, {
+            verticalFovDeg: fov, viewportHeightPx: height,
+          }).scale).toBe(1);
+        }
+      }
+    }
+  });
 
   it('leaves a close ball honest and grows a far one', () => {
     const near = ballPresenceCue({ x: 0, y: 5, z: -10 }, eye, 'pitch');

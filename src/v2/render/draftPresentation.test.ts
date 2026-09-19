@@ -10,10 +10,22 @@ import {
   DRAFT_WALK_SEC,
   draftCast,
   draftHeroPose,
+  draftHeroFacing,
   draftStageCast,
 } from './draftPresentation';
 
 describe('draft presentation policy', () => {
+  it('turns the batting face toward the lens and walks toward the chosen bench', () => {
+    // BattingPose points the head down local -X; the stage camera is on -Z.
+    const yaw = draftHeroFacing('bat_stance', 'pick');
+    expect(Math.sin(yaw - Math.PI / 2)).toBeCloseTo(0);
+    expect(Math.cos(yaw - Math.PI / 2)).toBeCloseTo(-1);
+    for (const mode of ['pick', 'mine', 'cpu'] as const) {
+      const travel = mode === 'cpu' ? -1 : 1;
+      expect(Math.sin(draftHeroFacing('walk_on', mode))).toBeCloseTo(travel);
+    }
+    expect(draftHeroFacing('pose_card', 'pick')).toBe(Math.PI);
+  });
   it('walks a new candidate to centre, then holds the authored card pose', () => {
     expect(draftHeroPose(0, 'pick', true)).toEqual({ clip: 'walk_on', xFt: -3.8 });
     const mid = draftHeroPose(DRAFT_WALK_SEC / 2, 'pick', true);

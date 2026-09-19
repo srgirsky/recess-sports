@@ -124,7 +124,7 @@ export class CustomPlayerScreen implements Screen {
 
   private paint(): void {
     const kid = customPlayerCharacter(this.profile);
-    this.art.replaceChildren(portrait(kid.visual, kid.name, { street: true }));
+    this.art.replaceChildren(portrait(kid, kid.name, { street: true }));
     this.name.textContent = `⭐ ${kid.name}`;
     this.tagline.textContent = kid.tagline;
     for (const control of this.root.querySelectorAll<HTMLElement>('.custom-choice')) {

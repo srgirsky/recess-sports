@@ -12,10 +12,11 @@
 // branch happened to call the right function.
 // ---------------------------------------------------------------------------
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import * as picklog from '../../systems/picklog';
 import { CUSTOM_PLAYER_ID, ROSTER } from '../../data/characters';
 import { makeRng } from '../sim/rng';
-import { isDraftComplete, pickByCpu, pickByHuman, startDraft } from './draftSession';
+import { completeDraft, isDraftComplete, pickByCpu, pickByHuman, startDraft } from './draftSession';
 
 const ALL = ROSTER.map((c) => c.id);
 
@@ -36,6 +37,32 @@ function runDraft(seed: string, choose: (pool: string[]) => string) {
 }
 
 describe('★ only a person’s pick votes', () => {
+  it('fills either turn without voting, preserves deliberate picks, and is idempotent', () => {
+    const record = vi.spyOn(picklog, 'recordPick').mockImplementation(() => {});
+    try {
+      for (const captain of [undefined, CUSTOM_PLAYER_ID]) {
+        for (const afterHuman of [false, true]) {
+          const rng = makeRng('autofill');
+          let state = startDraft(ALL, captain ? { player: captain, rng } : undefined);
+          if (afterHuman) state = pickByHuman(state, state.pool[state.pool.length - 1]);
+          const before = JSON.stringify(state);
+          const votes = record.mock.calls.length;
+          const done = completeDraft(state, rng);
+          expect(isDraftComplete(done)).toBe(true);
+          expect(done.playerTeam).toHaveLength(9);
+          expect(done.aiTeam).toHaveLength(9);
+          expect(new Set([...done.playerTeam, ...done.aiTeam]).size).toBe(18);
+          expect(done.playerTeam.slice(0, state.playerTeam.length)).toEqual(state.playerTeam);
+          expect(done.aiTeam.slice(0, state.aiTeam.length)).toEqual(state.aiTeam);
+          expect(record).toHaveBeenCalledTimes(votes);
+          expect(JSON.stringify(state)).toBe(before);
+          expect(completeDraft(done, rng)).toBe(done);
+        }
+      }
+    } finally {
+      record.mockRestore();
+    }
+  });
   it('★ records every human pick and not one CPU pick', () => {
     const { votes, state } = runDraft('a', (pool) => pool[0]);
 

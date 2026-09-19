@@ -8,8 +8,8 @@
 // thing to do and it is the biggest thing on screen.
 //
 // ★ AND THE PARK IS BEHIND IT, LIVE. v1's title is a drawn schoolyard in a
-// Phaser scene; here the 3D field is already rendered and the title is DOM over
-// it, so the first thing a kid sees is the place they are about to play in. That
+// Phaser scene; here the title is DOM over the 3D field as it loads, then
+// reveals the place they are about to play in. That
 // is free, and it is the reason `Router` does not tear the world down to show a
 // screen.
 // ---------------------------------------------------------------------------
@@ -18,13 +18,15 @@ import { button, el } from '../dom';
 import type { Screen } from '../Router';
 import { getCharacter } from '../../../data/characters';
 import { portrait } from '../portrait';
+import { assetUrl } from '../../render/assets';
 
 export class TitleScreen implements Screen {
   constructor(
     private readonly onPlay: () => void,
     private readonly onClubhouse: () => void,
     private readonly onSeason: () => void,
-    private readonly onModes: () => void
+    private readonly onModes: () => void,
+    private readonly startup?: 'loading' | 'error'
   ) {}
 
   mount(): HTMLElement {
@@ -37,7 +39,7 @@ export class TitleScreen implements Screen {
       const c = getCharacter(id);
       const frame = el('div', `title-hero title-hero--${mod}`);
       frame.setAttribute('aria-hidden', 'true');
-      frame.appendChild(portrait(c.visual, '', { street: true }));
+      frame.appendChild(portrait(c, '', { street: true }));
       return frame;
     };
 
@@ -45,8 +47,11 @@ export class TitleScreen implements Screen {
     card.append(
       el('h1', 'title-card__mark', 'RECESS'),
       el('h1', 'title-card__mark title-card__mark--two', 'SPORTS'),
-      el('p', 'title-card__tag', 'pick your team · play ball')
+      el('p', 'title-card__tag', this.startup === 'loading'
+        ? 'getting the team ready…'
+        : this.startup === 'error' ? 'the team couldn’t load' : 'pick your team · play ball')
     );
+    if (this.startup) card.querySelector('.title-card__tag')?.setAttribute('role', 'status');
     lockup.append(hero('nostrike', 'left'), card, hero('wheelchair_ace', 'right'));
 
     // ★ THE ONE DOMINANT VERB. `⚾ PLAY` rather than a menu of modes: choosing a
@@ -54,11 +59,17 @@ export class TitleScreen implements Screen {
     // clubhouse is retrospective—it never stands between a kid and a game.
     const actions = el('div', 'title-actions');
     actions.append(
-      button('⚾  PLAY', this.onPlay, 'btn--hero'),
+      button(this.startup === 'error' ? '↻ TRY AGAIN' : this.startup === 'loading' ? '⚾ LOADING…' : '⚾  PLAY',
+        this.startup === 'error' ? () => location.reload() : this.onPlay, 'btn--hero'),
       button('🏠  CLUBHOUSE', this.onClubhouse, 'btn--quiet btn--clubhouse'),
       button('🏆  RECESS WEEK', this.onSeason, 'btn--quiet btn--season'),
       button('🎯  MORE GAMES', this.onModes, 'btn--quiet btn--modes')
     );
+    if (this.startup) {
+      for (const action of actions.querySelectorAll('button')) {
+        action.disabled = !(this.startup === 'error' && action.classList.contains('btn--hero'));
+      }
+    }
 
     // ★ THE WAY BACK TO v1, AND IT IS DELIBERATELY SMALL. v2 took the front
     // door at the cutover, but v1 still holds pass-and-play, online play and its
@@ -66,7 +77,7 @@ export class TitleScreen implements Screen {
     // the only text on this screen a four-year-old is not expected to read,
     // which is why it is last, quiet, and below the thing they came for.
     const classic = button('🕹  CLASSIC GAME', () => {
-      location.href = './classic/';
+      location.href = assetUrl('../classic/');
     }, 'btn--quiet btn--small');
 
     // Small, persistent production disclosure. It is not a decision a child

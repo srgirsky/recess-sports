@@ -2966,3 +2966,18 @@ target in the baseline, so this comparison does not claim full performance
 acceptance. Complete at-bat evidence and reviewer decisions belong to the
 [art acceptance workflow](v2/art-acceptance.md); this pass did not approve the
 benchmark, resolve the roster's sculpt debts or establish reference parity.
+
+## September 18 critical parity review
+
+The current review distinguishes implemented features from a finished player
+experience. The first correction pass makes startup visible, restores
+face-forward draft presentation, adds an exit and automatic completion without
+counting automatic votes, and explains the current gameplay input. A second
+pass derives portraits from the same runtime characters, so the cards no longer
+show unrelated faces and clothing, and keeps the roster chooser visible beside
+the candidate on short landscape screens. Existing
+physical rules and held features are unchanged. The remaining readiness gaps,
+evidence limits and next review order are in the
+[critical parity review](research/parity-review-2026-09-18.md); visual findings
+remain owned by the existing whole-game and sculpt ledgers. No parity or art
+approval is implied by this pass.

@@ -25,6 +25,13 @@ export interface DraftHeroPose {
   xFt: number;
 }
 
+/** The stage lens is on -Z. Batting heads look down local -X; other held
+ * poses look down +Z. Walking must face the direction of actual travel. */
+export function draftHeroFacing(clip: AnimName, mode: DraftSpotlightMode): number {
+  if (clip === 'walk_on') return mode === 'cpu' ? -Math.PI / 2 : Math.PI / 2;
+  return clip === 'bat_stance' ? Math.PI * 1.5 : Math.PI;
+}
+
 /**
  * One candidate's little performance. `walkIn` is false when PICK? changes to
  * PICKED for the same kid, so confirming a choice cannot teleport them back to
@@ -127,23 +134,23 @@ export function draftStageCast(
 }
 
 /**
- * Background positions, left-to-right in two shallow rows behind the hero.
+ * Background positions in an open arc behind the hero.
  *
  * ★ SPACED FOR DRAWN BODIES, NOT DOTS. A kid is drawn at CHARACTER_SCALE and
  * the wide ones (Big Lou, Tank) push ~1.8 drawn feet of shoulder; a carried
  * bat sweeps further. The original bench pairs sat 2.0ft apart and the live
  * stage showed kids standing inside each other with a bat through a
- * neighbour's chest. `draftPresentation.test.ts` § spacing now floors every
- * pairwise gap (hero mark included), so a new position cannot regress this
- * by eye.
+ * neighbour's chest. World-space separation alone still stacked silhouettes
+ * through the stage camera. Leave the centre lane empty and put the waiting
+ * group farther back, so the candidate reads before the crowd.
  */
 export const DRAFT_CAST_POSITIONS: ReadonlyArray<readonly [number, number]> = [
-  [-4.4, 3.8],
-  [-2.1, 4.8],
-  [2.1, 4.8],
-  [4.4, 3.8],
-  [-3.6, 6.7],
-  [3.6, 6.7],
+  [-6, 10],
+  [6, 10],
+  [-10, 12],
+  [10, 12],
+  [-14, 14],
+  [14, 14],
 ];
 
 /** Side benches, nearest recent pick first. */

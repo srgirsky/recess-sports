@@ -53,6 +53,7 @@ import { chalkLine, chalkRect, hash01, lightenInt, shadeInt, speckleEllipse } fr
 import { GROUND_STEPS, makeToonMaterial } from './materials/toon';
 import type { OutlineRegistry } from './materials/outline';
 import { attachOutline } from './materials/outline';
+import { CAMERA_FAR_FT } from './cameraCues';
 
 // --- The venue's look (the v2 heir to v1's `data/venues.ts` `look` block) ----
 
@@ -333,13 +334,17 @@ export function buildField(
  * trapezoids through its affine projection and could never get the far end
  * right — this is one of the places 3D simply deletes a category of work.
  */
-function buildTurf(look: VenueLook): { mesh: Mesh; setNight: (night: boolean) => void } {
-  const W = 560;
-  const D = 400;
-
-  const geom = new PlaneGeometry(W, D, 8, 8);
+export function buildTurfGeometry(): PlaneGeometry {
+  // A finite playing-field rectangle exposed its edges in the deep camera.
+  // Extend the SAME world-position-shaded mesh through the horizon/fog, keeping
+  // its 128 triangles and one draw. This does not extend playable territory.
+  const geom = new PlaneGeometry(CAMERA_FAR_FT * 2, CAMERA_FAR_FT * 2, 8, 8);
   geom.rotateX(-Math.PI / 2);
-  geom.translate(0, 0, D / 2 - 80); // home sits 80ft from the near edge
+  return geom;
+}
+
+function buildTurf(look: VenueLook): { mesh: Mesh; setNight: (night: boolean) => void } {
+  const geom = buildTurfGeometry();
 
   const mat = makeToonMaterial({
     color: 0xffffff,

@@ -55,18 +55,34 @@ export function ballShadowCue(point: CuePoint3, phase: BallCuePhase, enabled = t
  */
 export const BALL_PRESENCE_REF_FT = 14;
 export const BALL_PRESENCE_MAX_SCALE = 3.2;
+export const BALL_DRAW_RADIUS_FT = 0.12;
+/** A presentation choice, not a measured Backyard value or a collision radius. */
+export const LIVE_BALL_MIN_DIAMETER_PX = 6;
+export interface BallProjection {
+  verticalFovDeg: number;
+  viewportHeightPx: number;
+}
 
 export function ballPresenceCue(
   point: CuePoint3,
   cameraAt: CuePoint3,
   phase: BallCuePhase,
-  enabled = true
+  enabled = true,
+  projection?: BallProjection
 ): { scale: number } {
   if (!enabled || (phase !== 'pitch' && phase !== 'live')) return { scale: 1 };
   const d = Math.sqrt(
     (point.x - cameraAt.x) ** 2 + (point.y - cameraAt.y) ** 2 + (point.z - cameraAt.z) ** 2
   );
-  return { scale: Math.min(BALL_PRESENCE_MAX_SCALE, Math.max(1, d / BALL_PRESENCE_REF_FT)) };
+  const scale = Math.min(BALL_PRESENCE_MAX_SCALE, Math.max(1, d / BALL_PRESENCE_REF_FT));
+  if (phase !== 'live' || !projection || projection.viewportHeightPx <= 0) return { scale };
+  // The old world-space cap made a deep-camera ball a one-pixel speck. A
+  // minimum apparent diameter survives camera cuts and phone viewports.
+  // Euclidean distance is conservative off-axis (camera depth is shorter).
+  const minScale = LIVE_BALL_MIN_DIAMETER_PX * d
+    * Math.tan(projection.verticalFovDeg * Math.PI / 360)
+    / (projection.viewportHeightPx * BALL_DRAW_RADIUS_FT);
+  return { scale: Math.max(scale, minScale) };
 }
 
 export interface ActiveFielderState {

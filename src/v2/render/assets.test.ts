@@ -17,6 +17,10 @@ describe('v2 public asset URLs', () => {
       .toBe('https://host.test/recess-sports/v2/audio/bat-crack.wav');
   });
 
+  it.each(['https://host.test/recess-sports/', 'https://host.test/recess-sports/v2/'])('reaches Classic from %s', page => {
+    expect(assetUrlForPage('../classic/', page)).toBe('https://host.test/recess-sports/classic/');
+  });
+
   it('names and exposes optional character-performance deliveries explicitly', () => {
     expect(characterAnimationFile('nostrike')).toBe('anims_nostrike_v1.glb');
     primeManifest(['nostrike', 'calls_shot', 'wheelchair_ace', 'big_lou', 'tank', 'mimi_mash'], ['nostrike', 'calls_shot', 'wheelchair_ace', 'big_lou', 'tank', 'mimi_mash']);

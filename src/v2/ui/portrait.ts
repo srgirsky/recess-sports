@@ -24,7 +24,8 @@
 // ---------------------------------------------------------------------------
 
 import { buildCharacterSVG } from '../../art/CharacterArt';
-import type { VisualParams } from '../../data/types';
+import type { Character } from '../../data/types';
+import { characterPortrait } from '../render/characterPortrait';
 
 function toDataUri(svg: string): string {
   const utf8 = new TextEncoder().encode(svg);
@@ -34,26 +35,24 @@ function toDataUri(svg: string): string {
 }
 
 export interface PortraitOptions {
-  /** Street clothes — what a kid wears in the draft, before they have a team. */
   street?: boolean;
-  /** Team uniform index, once they have one. */
   uniform?: number;
 }
 
-/** An `<img>` of a kid, standing. */
-export function portrait(visual: VisualParams, alt: string, opts: PortraitOptions = {}): HTMLImageElement {
+/** Use the field's character for the card too. The isolated legacy SVG stays
+ * as the loading/failure fallback; it never shares gradient IDs with a peer. */
+export function portrait(character: Character, alt: string, opts: PortraitOptions = {}): HTMLImageElement {
   const img = document.createElement('img');
   img.className = 'portrait';
   img.alt = alt;
   img.decoding = 'async';
   img.draggable = false;
-  img.src = toDataUri(
-    buildCharacterSVG(
-      visual,
-      'stand',
-      opts.uniform === undefined ? undefined : { uniform: opts.uniform },
-      { street: opts.street }
-    )
-  );
+  img.src = toDataUri(buildCharacterSVG(character.visual, 'stand',
+    opts.uniform === undefined ? undefined : { uniform: opts.uniform }, { street: opts.street }));
+  img.dataset.portraitSource = 'illustration';
+  void characterPortrait(character, opts.uniform).then(src => {
+    img.src = src;
+    img.dataset.portraitSource = 'runtime';
+  }).catch(() => {}); // The game remains usable if GPU readback is unavailable.
   return img;
 }

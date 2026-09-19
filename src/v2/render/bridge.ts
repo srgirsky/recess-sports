@@ -31,7 +31,7 @@ import type { KidView } from './CharacterModel';
 import { AnimationDirector } from './AnimationDirector';
 import type { CameraInput } from './cameraCues';
 import { clipSpec } from './clips';
-import { activeFielderCue, ballPresenceCue, ballShadowCue } from './readabilityCues';
+import { activeFielderCue, ballPresenceCue, ballShadowCue, type BallProjection } from './readabilityCues';
 import { homeRunTrot } from './actionCues';
 import { battingPlacement, battingRunOut } from './battingPose';
 import type { ReplayActor, ReplaySnapshot } from './replayCues';
@@ -49,6 +49,7 @@ export interface SceneRefs {
 }
 
 export interface FrameViewOptions {
+  ballProjection?: BallProjection;
   /** Screens use the live park as scenery but must not inherit gameplay chrome. */
   readability?: boolean;
   /** Human placement, including misses; absent for CPU batting. */
@@ -138,6 +139,7 @@ export function snapshotScene(refs: SceneRefs, frame: LiveFrame, holdElapsedSec?
 }
 
 export interface SnapshotViewOptions {
+  ballProjection?: BallProjection;
   /** Put each kid's clip back at its recorded time (playback), or leave motion alone. */
   seekClips: boolean;
   /** Last frame's camera eye, for the ball's apparent-size cue. */
@@ -167,7 +169,7 @@ export function applySnapshot(refs: SceneRefs, snap: ReplaySnapshot, view: Snaps
   }
   refs.ball.position.set(snap.ball[0], snap.ball[1], snap.ball[2]);
   const at = { x: snap.ball[0], y: snap.ball[1], z: snap.ball[2] };
-  const presence = ballPresenceCue(at, view.cameraAt ?? { x: 0, y: 0, z: 0 }, 'live', view.cameraAt !== undefined);
+  const presence = ballPresenceCue(at, view.cameraAt ?? { x: 0, y: 0, z: 0 }, 'live', view.cameraAt !== undefined, view.ballProjection);
   refs.ball.scale.setScalar(presence.scale);
   if (refs.ballShadow) {
     const cue = ballShadowCue(at, 'live', true);
@@ -185,7 +187,8 @@ function applyReadability(refs: SceneRefs, frame: LiveFrame, view: FrameViewOpti
     { x: refs.ball.position.x, y: refs.ball.position.y, z: refs.ball.position.z },
     view.cameraAt ?? { x: 0, y: 0, z: 0 },
     frame.phase,
-    enabled && view.cameraAt !== undefined
+    enabled && view.cameraAt !== undefined,
+    view.ballProjection
   );
   refs.ball.scale.setScalar(presence.scale);
   if (refs.ballShadow) {
@@ -503,4 +506,3 @@ export function cameraInputFor(frame: LiveFrame, holdElapsedSec?: number): Camer
   if (frame.phase === 'pitch' || frame.phase === 'windup') return { phase: 'pitch' };
   return { phase: 'between' };
 }
-

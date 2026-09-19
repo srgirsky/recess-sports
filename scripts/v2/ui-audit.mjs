@@ -645,6 +645,17 @@ const SCREENS = [
     })()`,
     mustSee: '.screen--pause .mode-card',
   },
+  ...['loading', 'error'].map(startup => ({
+    name: `title ${startup}`,
+    reach: `(async () => {
+      const [{ TitleScreen }, { Router }] = await Promise.all([
+        import('/src/v2/ui/screens/TitleScreen.ts'), import('/src/v2/ui/Router.ts')]);
+      const noop = () => {};
+      new Router(document.getElementById('screens')).show(new TitleScreen(noop, noop, noop, noop, '${startup}'));
+      return 'ok';
+    })()`,
+    mustSee: '.screen--title .btn--hero',
+  })),
 ];
 
 async function auditScreen(page, vp, screen) {
@@ -660,6 +671,17 @@ async function auditScreen(page, vp, screen) {
   if (!seen) {
     fail(where, `"${screen.mustSee}" is not present`);
     return 0;
+  }
+  // A technically reachable scroller hid ALL alternatives below the candidate
+  // on sideways phones. The initial choice must have a full on-screen card.
+  if (screen.name === 'draft' && vp.width >= 640 && vp.height <= 460) {
+    const card = await page.evaluate(() => {
+      const r = document.querySelector('.draft-board .kid')?.getBoundingClientRect();
+      return r ? { x: r.x, y: r.y, w: r.width, h: r.height } : null;
+    });
+    if (!card || !insideFrame(asBox(card), vp.width, vp.height, -0.5)) {
+      fail(where, 'the initial roster choice is below the fold — a phone must show alternatives before a pick');
+    }
   }
   const r = await page.evaluate(COLLECT('screens'));
   if (r.error) {
@@ -812,7 +834,7 @@ async function main() {
         'Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 5000))]).then(() => true)'
       );
       await page.addStyleTag({ content: NO_MOTION });
-      await page.waitForSelector('.screen--title', { timeout: 30_000 }).catch(() => {});
+      await page.waitForSelector('.screen--title .btn--hero:enabled', { timeout: 30_000 });
       for (const screen of SCREENS) {
         const n = await auditScreen(page, vp, screen);
         audited += n;

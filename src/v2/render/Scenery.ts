@@ -87,8 +87,8 @@ export interface SceneryItem {
 export const RING_OFFSET_FT = 18;
 /** Nothing solid may sit closer to the fence than this, ft. */
 export const CLEARANCE_FT = 10;
-/** The turf plane is 560x400 with home 80ft from the near edge (Field.ts);
- *  scenery must sit ON it, with margin for the prop's own footprint. */
+/** Keep the neighborhood inside its authored footprint, with margin for each
+ * prop. Field.ts continues the turf beyond this footprint into the horizon. */
 export const TURF_BOUND = { maxAbsX: 270, minZ: -70, maxZ: 310 } as const;
 
 interface VenueScenery {

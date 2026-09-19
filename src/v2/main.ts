@@ -44,8 +44,6 @@
 // ---------------------------------------------------------------------------
 
 import { App } from './App';
-import { LookSpike } from './spike/LookSpike';
-import { AnimSpike } from './spike/AnimSpike';
 import { GameView } from './game/GameView';
 import { SessionLog } from './ui/sessionLog';
 import { assetUrl } from './render/assets';
@@ -68,38 +66,44 @@ const screens = document.getElementById('screens');
 if (!screens) throw new Error('#screens is missing from v2/index.html');
 
 const params = new URLSearchParams(location.search);
-const surface = params.has('play')
-  ? new GameView(canvas)
-  : params.has('anims')
-    ? new AnimSpike(canvas)
-    : params.has('spike')
-      ? new LookSpike(canvas)
-      : new App(canvas, screens);
-if (surface instanceof GameView) {
-  // The bare play surface gets a freeze/resume toggle instead of the App's
-  // pause screen. This is not only a courtesy — it is what closes the gate
-  // hole the round-2 re-audit found: the layout audit drives `?play=1`,
-  // which never mounted the App's pause button, so pause-vs-HUD collisions
-  // (the ⏸ sat ON the matchup plate) were invisible to `audit:v2-layout`.
-  // With the button live here, the audit measures it in every game state.
-  let frozen = false;
-  surface.onPauseRequest(() => {
-    frozen = !frozen;
-    surface.setPaused(frozen);
-  });
-  // The playtest session log on the bare surface too, so `?play=1&log=1`
-  // records from the first pitch and the layout audit measures its button.
-  // `start()` resolves before the first tick, so nothing is missed.
-  const log = new SessionLog();
-  log.attach(surface);
-  void surface.start().then(() => log.begin());
-} else {
-  void surface.start();
-}
+// Review tools are loaded only when requested; their UI is not a startup cost
+// for every child opening the game.
+async function boot(): Promise<void> {
+  const surface = params.has('play')
+    ? new GameView(canvas!)
+    : params.has('anims')
+      ? new (await import('./spike/AnimSpike')).AnimSpike(canvas!)
+      : params.has('spike')
+        ? new (await import('./spike/LookSpike')).LookSpike(canvas!)
+        : new App(canvas!, screens!);
+  if (surface instanceof GameView) {
+    // The bare play surface gets a freeze/resume toggle instead of the App's
+    // pause screen. This is not only a courtesy — it is what closes the gate
+    // hole the round-2 re-audit found: the layout audit drives `?play=1`,
+    // which never mounted the App's pause button, so pause-vs-HUD collisions
+    // (the ⏸ sat ON the matchup plate) were invisible to `audit:v2-layout`.
+    // With the button live here, the audit measures it in every game state.
+    let frozen = false;
+    surface.onPauseRequest(() => {
+      frozen = !frozen;
+      surface.setPaused(frozen);
+    });
+    // The playtest session log on the bare surface too, so `?play=1&log=1`
+    // records from the first pitch and the layout audit measures its button.
+    // `start()` resolves before the first tick, so nothing is missed.
+    const log = new SessionLog();
+    log.attach(surface);
+    void surface.start().then(() => log.begin());
+  } else {
+    void surface.start();
+  }
 
-if (import.meta.env.DEV) {
-  // ★ `__spike` KEEPS ITS NAME. Every measurement sweep, the layout audit and
-  // `.claude/skills/verify` drive the page through it, and renaming a debug
-  // handle to match a refactor breaks all of them for nothing.
-  (window as unknown as { __spike: unknown }).__spike = surface;
+  if (import.meta.env.DEV) {
+    // ★ `__spike` KEEPS ITS NAME. Every measurement sweep, the layout audit and
+    // `.claude/skills/verify` drive the page through it, and renaming a debug
+    // handle to match a refactor breaks all of them for nothing.
+    (window as unknown as { __spike: unknown }).__spike = surface;
+  }
+
 }
+void boot();

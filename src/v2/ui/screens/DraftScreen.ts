@@ -21,7 +21,7 @@
 
 import { button, el } from '../dom';
 import type { Screen } from '../Router';
-import { isDraftComplete, pickByCpu, pickByHuman, startDraft, type DraftState } from '../draftSession';
+import { completeDraft, isDraftComplete, pickByCpu, pickByHuman, startDraft, type DraftState } from '../draftSession';
 import { portrait } from '../portrait';
 import { getCharacter } from '../../../data/characters';
 import type { Rng } from '../../sim/rng';
@@ -59,6 +59,7 @@ export class DraftScreen implements Screen {
   private slots!: HTMLElement;
   private status!: HTMLElement;
   private go!: HTMLButtonElement;
+  private fill!: HTMLButtonElement;
   private timer: ReturnType<typeof setTimeout> | null = null;
   /** Set while the CPU is picking, so a fast second tap cannot double-pick. */
   private busy = false;
@@ -80,7 +81,8 @@ export class DraftScreen implements Screen {
       mode: DraftSpotlightMode
     ) => void,
     private readonly lookup: (id: string) => Character = getCharacter,
-    playerCaptainId?: string
+    playerCaptainId?: string,
+    private readonly onBack?: () => void
   ) {
     this.state = startDraft(allIds, playerCaptainId ? { player: playerCaptainId, rng } : undefined);
     this.spotlightId = this.state.pool[0] ?? null;
@@ -93,6 +95,9 @@ export class DraftScreen implements Screen {
     head.appendChild(el('h1', 'draft-head__title', 'PICK YOUR TEAM'));
     this.status = el('p', 'draft-head__status');
     head.appendChild(this.status);
+    if (this.onBack) head.appendChild(button('← BACK', this.onBack, 'draft-head__back btn--quiet btn--small'));
+    this.fill = button('⚡ PICK THE REST', () => this.fillTeam(), 'draft-head__fill btn--quiet btn--small');
+    head.appendChild(this.fill);
 
     this.slots = el('div', 'draft-slots');
     this.board = el('div', 'draft-board');
@@ -126,7 +131,7 @@ export class DraftScreen implements Screen {
     node.setAttribute('aria-pressed', String(this.spotlightMode === 'pick' && this.spotlightId === id));
 
     const art = el('div', 'kid__art');
-    art.appendChild(portrait(c.visual, c.name, { street: true }));
+    art.appendChild(portrait(c, c.name, { street: true }));
     node.appendChild(art);
     node.appendChild(el('span', 'kid__name', c.name));
 
@@ -204,6 +209,18 @@ export class DraftScreen implements Screen {
     }, CPU_BEAT_MS);
   }
 
+  private fillTeam(): void {
+    // Cancel both the pending CPU pick and its reveal before replacing state.
+    // Otherwise a late timer can repaint over PLAY BALL after autofill.
+    if (this.timer !== null) clearTimeout(this.timer);
+    this.timer = null;
+    this.state = completeDraft(this.state, this.rng);
+    this.busy = false;
+    this.spotlightId = this.state.playerTeam[this.state.playerTeam.length - 1] ?? null;
+    this.spotlightMode = 'mine';
+    this.paint();
+  }
+
   /** How many of the nine were filled at the last paint — the newest pops. */
   private painted = 0;
 
@@ -219,7 +236,7 @@ export class DraftScreen implements Screen {
       if (id) {
         const art = el('div', 'draft-slot__art');
         const kid = this.lookup(id);
-        art.appendChild(portrait(kid.visual, kid.name, { uniform: 0 }));
+        art.appendChild(portrait(kid, kid.name, { uniform: 0 }));
         slot.appendChild(art);
       }
       this.slots.appendChild(slot);
@@ -247,6 +264,7 @@ export class DraftScreen implements Screen {
             : `tap a kid — ${9 - this.state.playerTeam.length} to go`;
 
     this.go.classList.toggle('is-hidden', !done);
+    this.fill.classList.toggle('is-hidden', done);
     this.board.classList.toggle('is-locked', this.busy || done);
   }
 
@@ -272,7 +290,7 @@ export class DraftScreen implements Screen {
       art.setAttribute('aria-label', `${c.name} performing in 3D`);
     } else {
       // Standalone/tests can still use the shared portrait without a scene.
-      art.appendChild(portrait(c.visual, c.name, { street: true }));
+      art.appendChild(portrait(c, c.name, { street: true }));
     }
     // The trading-card moment: the identity plate wears the card frame and
     // carries the kid's own line, so a pick reads as pulling their card.
