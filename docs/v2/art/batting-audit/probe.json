@@ -1,0 +1,1453 @@
+{
+  "placement": {
+    "x": -2.2,
+    "z": 1.2,
+    "yaw": 3.141592653589793
+  },
+  "actualBatter": "nostrike",
+  "diagnostic": "Delivered models and GameView directorFor; bat_stance sampled at 0, 0.5 and 1 seconds. Head local +Z direction is an orientation proxy, not eye tracking. Hand bones do not establish finger contact.",
+  "results": [
+    {
+      "id": "nostrike",
+      "name": "Junebug",
+      "source": "model",
+      "clipSource": "character",
+      "time": 0,
+      "headTowardPitcher": -0.8922075943002478,
+      "headForward": [
+        0.2955145699574596,
+        -0.3013299933433014,
+        -0.9065712184128634
+      ],
+      "handsDistanceWorldFt": 0.4794910413499118,
+      "offHandToBatAxisWorldFt": 0.5210692457533297,
+      "offHandAlongBatWorldFt": 0.2825953317613341
+    },
+    {
+      "id": "nostrike",
+      "name": "Junebug",
+      "source": "model",
+      "clipSource": "character",
+      "time": 0.5,
+      "headTowardPitcher": -0.8794274697158531,
+      "headForward": [
+        0.32677672548668907,
+        -0.30304169819215165,
+        -0.895199810565783
+      ],
+      "handsDistanceWorldFt": 0.47949104131585424,
+      "offHandToBatAxisWorldFt": 0.5329890727783787,
+      "offHandAlongBatWorldFt": 0.26497653611405775
+    },
+    {
+      "id": "nostrike",
+      "name": "Junebug",
+      "source": "model",
+      "clipSource": "character",
+      "time": 1,
+      "headTowardPitcher": -0.8491984630130878,
+      "headForward": [
+        0.39272861784277296,
+        -0.30404865646894075,
+        -0.8679393107969802
+      ],
+      "handsDistanceWorldFt": 0.47949104080704685,
+      "offHandToBatAxisWorldFt": 0.5395355560032931,
+      "offHandAlongBatWorldFt": 0.2537006511952941
+    },
+    {
+      "id": "calls_shot",
+      "name": "Big Talk Theo",
+      "source": "model",
+      "clipSource": "character",
+      "time": 0,
+      "headTowardPitcher": -0.9066110667003766,
+      "headForward": [
+        0.3742240271192922,
+        0.05101683169316511,
+        -0.9259339395500148
+      ],
+      "handsDistanceWorldFt": 0.5058367008548813,
+      "offHandToBatAxisWorldFt": 0.5496994207873591,
+      "offHandAlongBatWorldFt": 0.2981225479876185
+    },
+    {
+      "id": "calls_shot",
+      "name": "Big Talk Theo",
+      "source": "model",
+      "clipSource": "character",
+      "time": 0.5,
+      "headTowardPitcher": -0.8980276267386967,
+      "headForward": [
+        0.39282189961541575,
+        0.05013250059703829,
+        -0.9182470732686404
+      ],
+      "handsDistanceWorldFt": 0.505836701762248,
+      "offHandToBatAxisWorldFt": 0.5621837840396707,
+      "offHandAlongBatWorldFt": 0.2796937779229437
+    },
+    {
+      "id": "calls_shot",
+      "name": "Big Talk Theo",
+      "source": "model",
+      "clipSource": "character",
+      "time": 1,
+      "headTowardPitcher": -0.8949725374908498,
+      "headForward": [
+        0.39896964803125784,
+        0.05200732129296041,
+        -0.9154880984926812
+      ],
+      "handsDistanceWorldFt": 0.5058367021694258,
+      "offHandToBatAxisWorldFt": 0.5408830877071562,
+      "offHandAlongBatWorldFt": 0.31056869904951334
+    },
+    {
+      "id": "wheelchair_ace",
+      "name": "Zoom Ramirez",
+      "source": "model",
+      "clipSource": "character",
+      "time": 0,
+      "headTowardPitcher": -0.9349329997448389,
+      "headForward": [
+        0.30761121074869585,
+        -0.03869781395902586,
+        -0.9507248930245353
+      ],
+      "handsDistanceWorldFt": 0.4742219095945883,
+      "offHandToBatAxisWorldFt": 0.5153432116625353,
+      "offHandAlongBatWorldFt": 0.27948988679741155
+    },
+    {
+      "id": "wheelchair_ace",
+      "name": "Zoom Ramirez",
+      "source": "model",
+      "clipSource": "character",
+      "time": 0.5,
+      "headTowardPitcher": -0.9285881368250964,
+      "headForward": [
+        0.3241095424646514,
+        -0.040263268992619596,
+        -0.9451623530660658
+      ],
+      "handsDistanceWorldFt": 0.47422190934356145,
+      "offHandToBatAxisWorldFt": 0.5269630830811123,
+      "offHandAlongBatWorldFt": 0.261149167950305
+    },
+    {
+      "id": "wheelchair_ace",
+      "name": "Zoom Ramirez",
+      "source": "model",
+      "clipSource": "character",
+      "time": 1,
+      "headTowardPitcher": -0.9220497723149625,
+      "headForward": [
+        0.34066922744489253,
+        -0.038146542849244784,
+        -0.9394090263249286
+      ],
+      "handsDistanceWorldFt": 0.47422190994514546,
+      "offHandToBatAxisWorldFt": 0.4981772806471661,
+      "offHandAlongBatWorldFt": 0.30330683460825003
+    },
+    {
+      "id": "big_lou",
+      "name": "Big Lou",
+      "source": "model",
+      "clipSource": "character",
+      "time": 0,
+      "headTowardPitcher": -0.7662366454650344,
+      "headForward": [
+        0.2653335010338477,
+        -0.5692903322085164,
+        -0.7781430786706505
+      ],
+      "handsDistanceWorldFt": 0.4742219092654491,
+      "offHandToBatAxisWorldFt": 0.5153432091571907,
+      "offHandAlongBatWorldFt": 0.2794898900788518
+    },
+    {
+      "id": "big_lou",
+      "name": "Big Lou",
+      "source": "model",
+      "clipSource": "character",
+      "time": 0.5,
+      "headTowardPitcher": -0.6993386541964838,
+      "headForward": [
+        0.39939960150423726,
+        -0.5718298308585661,
+        -0.7165825862093776
+      ],
+      "handsDistanceWorldFt": 0.4742219088945422,
+      "offHandToBatAxisWorldFt": 0.543668252451064,
+      "offHandAlongBatWorldFt": 0.23465745160408844
+    },
+    {
+      "id": "big_lou",
+      "name": "Big Lou",
+      "source": "model",
+      "clipSource": "character",
+      "time": 1,
+      "headTowardPitcher": -0.6005380371212641,
+      "headForward": [
+        0.5421172936294724,
+        -0.563542850400199,
+        -0.6233203796689752
+      ],
+      "handsDistanceWorldFt": 0.47422190859173297,
+      "offHandToBatAxisWorldFt": 0.5528694804236177,
+      "offHandAlongBatWorldFt": 0.2167266063972419
+    },
+    {
+      "id": "tank",
+      "name": "Tank",
+      "source": "model",
+      "clipSource": "character",
+      "time": 0,
+      "headTowardPitcher": -0.4607273085829992,
+      "headForward": [
+        0.3433602562215521,
+        -0.8103487687696898,
+        -0.4748037567257845
+      ],
+      "handsDistanceWorldFt": 0.4689527774828381,
+      "offHandToBatAxisWorldFt": 0.5096171770954893,
+      "offHandAlongBatWorldFt": 0.27638444211235846
+    },
+    {
+      "id": "tank",
+      "name": "Tank",
+      "source": "model",
+      "clipSource": "character",
+      "time": 0.5,
+      "headTowardPitcher": -0.4608094067674373,
+      "headForward": [
+        0.3167768461927162,
+        -0.8216809948907601,
+        -0.47380668246820573
+      ],
+      "handsDistanceWorldFt": 0.4568366868908138,
+      "offHandToBatAxisWorldFt": 0.5045888450207457,
+      "offHandAlongBatWorldFt": 0.2641696689584945
+    },
+    {
+      "id": "tank",
+      "name": "Tank",
+      "source": "model",
+      "clipSource": "character",
+      "time": 1,
+      "headTowardPitcher": -0.4607273085829992,
+      "headForward": [
+        0.3433602562215521,
+        -0.8103487687696898,
+        -0.4748037567257845
+      ],
+      "handsDistanceWorldFt": 0.4689527774828381,
+      "offHandToBatAxisWorldFt": 0.5096171770954893,
+      "offHandAlongBatWorldFt": 0.27638444211235846
+    },
+    {
+      "id": "mimi_mash",
+      "name": "Mimi Mash",
+      "source": "model",
+      "clipSource": "character",
+      "time": 0,
+      "headTowardPitcher": -0.35196680438444095,
+      "headForward": [
+        0.45456947060445174,
+        -0.810729505201516,
+        -0.3688960094526555
+      ],
+      "handsDistanceWorldFt": 0.5005675709505194,
+      "offHandToBatAxisWorldFt": 0.5439733916372113,
+      "offHandAlongBatWorldFt": 0.29501710013472005
+    },
+    {
+      "id": "mimi_mash",
+      "name": "Mimi Mash",
+      "source": "model",
+      "clipSource": "character",
+      "time": 0.5,
+      "headTowardPitcher": -0.355397596229032,
+      "headForward": [
+        0.4161758022792204,
+        -0.8302079169817969,
+        -0.3708807303945473
+      ],
+      "handsDistanceWorldFt": 0.4809238327918221,
+      "offHandToBatAxisWorldFt": 0.5359055201480086,
+      "offHandAlongBatWorldFt": 0.2750744217406797
+    },
+    {
+      "id": "mimi_mash",
+      "name": "Mimi Mash",
+      "source": "model",
+      "clipSource": "character",
+      "time": 1,
+      "headTowardPitcher": -0.35196680438444095,
+      "headForward": [
+        0.45456947060445174,
+        -0.810729505201516,
+        -0.3688960094526555
+      ],
+      "handsDistanceWorldFt": 0.5005675709505194,
+      "offHandToBatAxisWorldFt": 0.5439733916372113,
+      "offHandAlongBatWorldFt": 0.29501710013472005
+    },
+    {
+      "id": "turbo",
+      "name": "Turbo",
+      "source": "model",
+      "clipSource": "character",
+      "time": 0,
+      "headTowardPitcher": -0.8113581484367326,
+      "headForward": [
+        0.24217129460410522,
+        -0.5143710392620969,
+        -0.8226636603364718
+      ],
+      "handsDistanceWorldFt": 0.4478762476903509,
+      "offHandToBatAxisWorldFt": 0.4867130325820066,
+      "offHandAlongBatWorldFt": 0.26396267194281986
+    },
+    {
+      "id": "turbo",
+      "name": "Turbo",
+      "source": "model",
+      "clipSource": "character",
+      "time": 0.5,
+      "headTowardPitcher": -0.8094120395749305,
+      "headForward": [
+        0.1875556305235015,
+        -0.543318182108003,
+        -0.8183081561672146
+      ],
+      "handsDistanceWorldFt": 0.4251468455034897,
+      "offHandToBatAxisWorldFt": 0.47746555301227234,
+      "offHandAlongBatWorldFt": 0.24073924887203837
+    },
+    {
+      "id": "turbo",
+      "name": "Turbo",
+      "source": "model",
+      "clipSource": "character",
+      "time": 1,
+      "headTowardPitcher": -0.8113581484367326,
+      "headForward": [
+        0.24217129460410522,
+        -0.5143710392620969,
+        -0.8226636603364718
+      ],
+      "handsDistanceWorldFt": 0.4478762476903509,
+      "offHandToBatAxisWorldFt": 0.4867130325820066,
+      "offHandAlongBatWorldFt": 0.26396267194281986
+    },
+    {
+      "id": "sprout",
+      "name": "Sprout",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.9707048143723697,
+      "headForward": [
+        0.1328077502178511,
+        -0.16044495786454918,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.42679971865378197,
+      "offHandToBatAxisWorldFt": 0.46380889045541307,
+      "offHandAlongBatWorldFt": 0.2515408982064012
+    },
+    {
+      "id": "sprout",
+      "name": "Sprout",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725397400609931,
+      "headForward": [
+        0.05333609906575832,
+        -0.21056148215739884,
+        -0.9761245426522822
+      ],
+      "handsDistanceWorldFt": 0.39559925281299957,
+      "offHandToBatAxisWorldFt": 0.4513641808155285,
+      "offHandAlongBatWorldFt": 0.21922479014275484
+    },
+    {
+      "id": "sprout",
+      "name": "Sprout",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.9707048143723697,
+      "headForward": [
+        0.1328077502178511,
+        -0.16044495786454918,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.42679971865378197,
+      "offHandToBatAxisWorldFt": 0.46380889045541307,
+      "offHandAlongBatWorldFt": 0.2515408982064012
+    },
+    {
+      "id": "zippy",
+      "name": "Zippy Kwan",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.970736798367673,
+      "headForward": [
+        0.13280775021785127,
+        -0.16044495786454926,
+        -0.9780692802546841
+      ],
+      "handsDistanceWorldFt": 0.46895277728625434,
+      "offHandToBatAxisWorldFt": 0.509617175932491,
+      "offHandAlongBatWorldFt": 0.2763844437082676
+    },
+    {
+      "id": "zippy",
+      "name": "Zippy Kwan",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725597798357345,
+      "headForward": [
+        0.05333609906575842,
+        -0.21056148215739903,
+        -0.9761245426522821
+      ],
+      "handsDistanceWorldFt": 0.43467078395502345,
+      "offHandToBatAxisWorldFt": 0.49594335916767873,
+      "offHandAlongBatWorldFt": 0.2408766212679651
+    },
+    {
+      "id": "zippy",
+      "name": "Zippy Kwan",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.970736798367673,
+      "headForward": [
+        0.13280775021785127,
+        -0.16044495786454926,
+        -0.9780692802546841
+      ],
+      "handsDistanceWorldFt": 0.46895277728625434,
+      "offHandToBatAxisWorldFt": 0.509617175932491,
+      "offHandAlongBatWorldFt": 0.2763844437082676
+    },
+    {
+      "id": "ace_kid",
+      "name": "Ace",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.9707407928402226,
+      "headForward": [
+        0.13280775021785116,
+        -0.16044495786454951,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.47422190961531246,
+      "offHandToBatAxisWorldFt": 0.5153432116171246,
+      "offHandAlongBatWorldFt": 0.27948988689600057
+    },
+    {
+      "id": "ace_kid",
+      "name": "Ace",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725622808810187,
+      "headForward": [
+        0.05333609906575853,
+        -0.21056148215739875,
+        -0.9761245426522822
+      ],
+      "handsDistanceWorldFt": 0.4395547253477765,
+      "offHandToBatAxisWorldFt": 0.5015157564616978,
+      "offHandAlongBatWorldFt": 0.2435831001586159
+    },
+    {
+      "id": "ace_kid",
+      "name": "Ace",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.9707407928402226,
+      "headForward": [
+        0.13280775021785116,
+        -0.16044495786454951,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.47422190961531313,
+      "offHandToBatAxisWorldFt": 0.5153432116171249,
+      "offHandAlongBatWorldFt": 0.27948988689600135
+    },
+    {
+      "id": "penny",
+      "name": "Penny Pockets",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.9707487794355764,
+      "headForward": [
+        0.13280775021785127,
+        -0.16044495786454896,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.4847601742734306,
+      "offHandToBatAxisWorldFt": 0.5267952829863942,
+      "offHandAlongBatWorldFt": 0.2857007732714675
+    },
+    {
+      "id": "penny",
+      "name": "Penny Pockets",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725672803562971,
+      "headForward": [
+        0.05333609906575822,
+        -0.21056148215739887,
+        -0.9761245426522822
+      ],
+      "handsDistanceWorldFt": 0.44932260813328295,
+      "offHandToBatAxisWorldFt": 0.5126605510497353,
+      "offHandAlongBatWorldFt": 0.24899605793991958
+    },
+    {
+      "id": "penny",
+      "name": "Penny Pockets",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.9707487794355764,
+      "headForward": [
+        0.13280775021785127,
+        -0.16044495786454896,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.4847601742734306,
+      "offHandToBatAxisWorldFt": 0.5267952829863942,
+      "offHandAlongBatWorldFt": 0.2857007732714675
+    },
+    {
+      "id": "dex",
+      "name": "Dex",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.970756762898843,
+      "headForward": [
+        0.13280775021785118,
+        -0.16044495786454943,
+        -0.9780692802546841
+      ],
+      "handsDistanceWorldFt": 0.4952984389315485,
+      "offHandToBatAxisWorldFt": 0.5382473543556638,
+      "offHandAlongBatWorldFt": 0.29191165964693383
+    },
+    {
+      "id": "dex",
+      "name": "Dex",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725722763459856,
+      "headForward": [
+        0.053336099065758445,
+        -0.21056148215739887,
+        -0.9761245426522821
+      ],
+      "handsDistanceWorldFt": 0.45909049091878934,
+      "offHandToBatAxisWorldFt": 0.5238053456377733,
+      "offHandAlongBatWorldFt": 0.2544090157212222
+    },
+    {
+      "id": "dex",
+      "name": "Dex",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.970756762898843,
+      "headForward": [
+        0.13280775021785118,
+        -0.16044495786454943,
+        -0.9780692802546841
+      ],
+      "handsDistanceWorldFt": 0.4952984389315485,
+      "offHandToBatAxisWorldFt": 0.5382473543556638,
+      "offHandAlongBatWorldFt": 0.29191165964693383
+    },
+    {
+      "id": "lefty",
+      "name": "Lefty Lu",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.9707407928402226,
+      "headForward": [
+        0.13280775021785116,
+        -0.16044495786454951,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.47422190961531246,
+      "offHandToBatAxisWorldFt": 0.5153432116171246,
+      "offHandAlongBatWorldFt": 0.27948988689600057
+    },
+    {
+      "id": "lefty",
+      "name": "Lefty Lu",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725622808810187,
+      "headForward": [
+        0.05333609906575853,
+        -0.21056148215739875,
+        -0.9761245426522822
+      ],
+      "handsDistanceWorldFt": 0.4395547253477765,
+      "offHandToBatAxisWorldFt": 0.5015157564616978,
+      "offHandAlongBatWorldFt": 0.2435831001586159
+    },
+    {
+      "id": "lefty",
+      "name": "Lefty Lu",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.9707407928402226,
+      "headForward": [
+        0.13280775021785116,
+        -0.16044495786454951,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.47422190961531313,
+      "offHandToBatAxisWorldFt": 0.5153432116171249,
+      "offHandAlongBatWorldFt": 0.27948988689600135
+    },
+    {
+      "id": "smokey",
+      "name": "Smokey",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.9707487794355764,
+      "headForward": [
+        0.13280775021785127,
+        -0.16044495786454896,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.4847601742734306,
+      "offHandToBatAxisWorldFt": 0.5267952829863942,
+      "offHandAlongBatWorldFt": 0.2857007732714675
+    },
+    {
+      "id": "smokey",
+      "name": "Smokey",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725672803562971,
+      "headForward": [
+        0.05333609906575822,
+        -0.21056148215739887,
+        -0.9761245426522822
+      ],
+      "handsDistanceWorldFt": 0.44932260813328295,
+      "offHandToBatAxisWorldFt": 0.5126605510497353,
+      "offHandAlongBatWorldFt": 0.24899605793991958
+    },
+    {
+      "id": "smokey",
+      "name": "Smokey",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.9707487794355764,
+      "headForward": [
+        0.13280775021785127,
+        -0.16044495786454896,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.4847601742734306,
+      "offHandToBatAxisWorldFt": 0.5267952829863942,
+      "offHandAlongBatWorldFt": 0.2857007732714675
+    },
+    {
+      "id": "bend_it",
+      "name": "Bendy Bao",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.9707527715586525,
+      "headForward": [
+        0.1328077502178513,
+        -0.16044495786454943,
+        -0.978069280254684
+      ],
+      "handsDistanceWorldFt": 0.49002930660249056,
+      "offHandToBatAxisWorldFt": 0.5325213186710303,
+      "offHandAlongBatWorldFt": 0.2888062164592007
+    },
+    {
+      "id": "bend_it",
+      "name": "Bendy Bao",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725697787867303,
+      "headForward": [
+        0.05333609906575834,
+        -0.2105614821573989,
+        -0.9761245426522821
+      ],
+      "handsDistanceWorldFt": 0.4542065495260364,
+      "offHandToBatAxisWorldFt": 0.5182329483437547,
+      "offHandAlongBatWorldFt": 0.2517025368305711
+    },
+    {
+      "id": "bend_it",
+      "name": "Bendy Bao",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.9707527715586525,
+      "headForward": [
+        0.1328077502178513,
+        -0.16044495786454943,
+        -0.978069280254684
+      ],
+      "handsDistanceWorldFt": 0.49002930660249056,
+      "offHandToBatAxisWorldFt": 0.5325213186710303,
+      "offHandAlongBatWorldFt": 0.2888062164592007
+    },
+    {
+      "id": "noodle",
+      "name": "Noodle",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.9707687322234594,
+      "headForward": [
+        0.1328077502178512,
+        -0.16044495786454943,
+        -0.9780692802546841
+      ],
+      "handsDistanceWorldFt": 0.5111058359187256,
+      "offHandToBatAxisWorldFt": 0.555425461409568,
+      "offHandAlongBatWorldFt": 0.30122798921013355
+    },
+    {
+      "id": "noodle",
+      "name": "Noodle",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725797637988756,
+      "headForward": [
+        0.053336099065758244,
+        -0.21056148215739892,
+        -0.9761245426522822
+      ],
+      "handsDistanceWorldFt": 0.4737423150970495,
+      "offHandToBatAxisWorldFt": 0.5405225375198308,
+      "offHandAlongBatWorldFt": 0.26252845239317624
+    },
+    {
+      "id": "noodle",
+      "name": "Noodle",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.9707687322234594,
+      "headForward": [
+        0.1328077502178512,
+        -0.16044495786454943,
+        -0.9780692802546841
+      ],
+      "handsDistanceWorldFt": 0.5111058359187256,
+      "offHandToBatAxisWorldFt": 0.555425461409568,
+      "offHandAlongBatWorldFt": 0.30122798921013355
+    },
+    {
+      "id": "bubbles",
+      "name": "Bubbles",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.970736798367673,
+      "headForward": [
+        0.13280775021785127,
+        -0.16044495786454926,
+        -0.9780692802546841
+      ],
+      "handsDistanceWorldFt": 0.46895277728625434,
+      "offHandToBatAxisWorldFt": 0.509617175932491,
+      "offHandAlongBatWorldFt": 0.2763844437082676
+    },
+    {
+      "id": "bubbles",
+      "name": "Bubbles",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725597798357345,
+      "headForward": [
+        0.05333609906575842,
+        -0.21056148215739903,
+        -0.9761245426522821
+      ],
+      "handsDistanceWorldFt": 0.43467078395502345,
+      "offHandToBatAxisWorldFt": 0.49594335916767873,
+      "offHandAlongBatWorldFt": 0.2408766212679651
+    },
+    {
+      "id": "bubbles",
+      "name": "Bubbles",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.970736798367673,
+      "headForward": [
+        0.13280775021785127,
+        -0.16044495786454926,
+        -0.9780692802546841
+      ],
+      "handsDistanceWorldFt": 0.46895277728625434,
+      "offHandToBatAxisWorldFt": 0.509617175932491,
+      "offHandAlongBatWorldFt": 0.2763844437082676
+    },
+    {
+      "id": "sniffles",
+      "name": "Sniffles",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.9707248102489013,
+      "headForward": [
+        0.13280775021785127,
+        -0.16044495786454932,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.4531453802990769,
+      "offHandToBatAxisWorldFt": 0.4924390688785864,
+      "offHandAlongBatWorldFt": 0.26706811414506737
+    },
+    {
+      "id": "sniffles",
+      "name": "Sniffles",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725522714666677,
+      "headForward": [
+        0.05333609906575834,
+        -0.21056148215739892,
+        -0.9761245426522821
+      ],
+      "handsDistanceWorldFt": 0.42001895977676434,
+      "offHandToBatAxisWorldFt": 0.47922616728562206,
+      "offHandAlongBatWorldFt": 0.23275718459601197
+    },
+    {
+      "id": "sniffles",
+      "name": "Sniffles",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.9707248102489013,
+      "headForward": [
+        0.13280775021785127,
+        -0.16044495786454932,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.4531453802990769,
+      "offHandToBatAxisWorldFt": 0.4924390688785864,
+      "offHandAlongBatWorldFt": 0.26706811414506737
+    },
+    {
+      "id": "the_prof",
+      "name": "The Professor",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.970756762898843,
+      "headForward": [
+        0.13280775021785118,
+        -0.16044495786454943,
+        -0.9780692802546841
+      ],
+      "handsDistanceWorldFt": 0.4952984389315485,
+      "offHandToBatAxisWorldFt": 0.5382473543556638,
+      "offHandAlongBatWorldFt": 0.29191165964693383
+    },
+    {
+      "id": "the_prof",
+      "name": "The Professor",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725722763459856,
+      "headForward": [
+        0.053336099065758445,
+        -0.21056148215739887,
+        -0.9761245426522821
+      ],
+      "handsDistanceWorldFt": 0.45909049091878934,
+      "offHandToBatAxisWorldFt": 0.5238053456377733,
+      "offHandAlongBatWorldFt": 0.2544090157212222
+    },
+    {
+      "id": "the_prof",
+      "name": "The Professor",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.970756762898843,
+      "headForward": [
+        0.13280775021785118,
+        -0.16044495786454943,
+        -0.9780692802546841
+      ],
+      "handsDistanceWorldFt": 0.4952984389315485,
+      "offHandToBatAxisWorldFt": 0.5382473543556638,
+      "offHandAlongBatWorldFt": 0.29191165964693383
+    },
+    {
+      "id": "diva",
+      "name": "Dazzle",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.9707407928402226,
+      "headForward": [
+        0.13280775021785116,
+        -0.16044495786454951,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.47422190961531246,
+      "offHandToBatAxisWorldFt": 0.5153432116171246,
+      "offHandAlongBatWorldFt": 0.27948988689600057
+    },
+    {
+      "id": "diva",
+      "name": "Dazzle",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725622808810187,
+      "headForward": [
+        0.05333609906575853,
+        -0.21056148215739875,
+        -0.9761245426522822
+      ],
+      "handsDistanceWorldFt": 0.4395547253477765,
+      "offHandToBatAxisWorldFt": 0.5015157564616978,
+      "offHandAlongBatWorldFt": 0.2435831001586159
+    },
+    {
+      "id": "diva",
+      "name": "Dazzle",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.9707407928402226,
+      "headForward": [
+        0.13280775021785116,
+        -0.16044495786454951,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.47422190961531313,
+      "offHandToBatAxisWorldFt": 0.5153432116171249,
+      "offHandAlongBatWorldFt": 0.27948988689600135
+    },
+    {
+      "id": "grizz",
+      "name": "Grizz",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.9707647432311105,
+      "headForward": [
+        0.13280775021785118,
+        -0.16044495786454943,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.5058367035896661,
+      "offHandToBatAxisWorldFt": 0.549699425724933,
+      "offHandAlongBatWorldFt": 0.29812254602239996
+    },
+    {
+      "id": "grizz",
+      "name": "Grizz",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725772688518391,
+      "headForward": [
+        0.053336099065758404,
+        -0.21056148215739892,
+        -0.9761245426522822
+      ],
+      "handsDistanceWorldFt": 0.4688583737042961,
+      "offHandToBatAxisWorldFt": 0.5349501402258118,
+      "offHandAlongBatWorldFt": 0.2598219735025249
+    },
+    {
+      "id": "grizz",
+      "name": "Grizz",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.9707647432311105,
+      "headForward": [
+        0.13280775021785118,
+        -0.16044495786454943,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.5058367035896661,
+      "offHandToBatAxisWorldFt": 0.549699425724933,
+      "offHandAlongBatWorldFt": 0.29812254602239996
+    },
+    {
+      "id": "flash",
+      "name": "Flash Gordon Jr.",
+      "source": "model",
+      "clipSource": "character",
+      "time": 0,
+      "headTowardPitcher": -0.8809773338700091,
+      "headForward": [
+        0.22179089446212336,
+        -0.39458183894641685,
+        -0.8916916347635852
+      ],
+      "handsDistanceWorldFt": 0.5005675707078897,
+      "offHandToBatAxisWorldFt": 0.5439733880664639,
+      "offHandAlongBatWorldFt": 0.2950171052259474
+    },
+    {
+      "id": "flash",
+      "name": "Flash Gordon Jr.",
+      "source": "model",
+      "clipSource": "character",
+      "time": 0.5,
+      "headTowardPitcher": -0.8809773338700091,
+      "headForward": [
+        0.22179089446212336,
+        -0.39458183894641685,
+        -0.8916916347635852
+      ],
+      "handsDistanceWorldFt": 0.5005675707078897,
+      "offHandToBatAxisWorldFt": 0.5401348176519246,
+      "offHandAlongBatWorldFt": 0.30030721171865116
+    },
+    {
+      "id": "flash",
+      "name": "Flash Gordon Jr.",
+      "source": "model",
+      "clipSource": "character",
+      "time": 1,
+      "headTowardPitcher": -0.8781855708718422,
+      "headForward": [
+        0.2301398015237388,
+        -0.3952701522923999,
+        -0.8892677765787744
+      ],
+      "handsDistanceWorldFt": 0.5005675707355399,
+      "offHandToBatAxisWorldFt": 0.543973388161296,
+      "offHandAlongBatWorldFt": 0.29501710510474716
+    },
+    {
+      "id": "cricket",
+      "name": "Cricket",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.9707128150755862,
+      "headForward": [
+        0.13280775021785143,
+        -0.1604449578645494,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.43733798331189966,
+      "offHandToBatAxisWorldFt": 0.47526096182468214,
+      "offHandAlongBatWorldFt": 0.25775178458186754
+    },
+    {
+      "id": "cricket",
+      "name": "Cricket",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725447552431665,
+      "headForward": [
+        0.05333609906575828,
+        -0.21056148215739892,
+        -0.9761245426522822
+      ],
+      "handsDistanceWorldFt": 0.4053671355985051,
+      "offHandToBatAxisWorldFt": 0.462508975403566,
+      "offHandAlongBatWorldFt": 0.2246377479240569
+    },
+    {
+      "id": "cricket",
+      "name": "Cricket",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.9707128150755862,
+      "headForward": [
+        0.13280775021785143,
+        -0.1604449578645494,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.43733798331189966,
+      "offHandToBatAxisWorldFt": 0.47526096182468214,
+      "offHandAlongBatWorldFt": 0.25775178458186754
+    },
+    {
+      "id": "moose",
+      "name": "Moose",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.9707407928402226,
+      "headForward": [
+        0.13280775021785116,
+        -0.16044495786454951,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.47422190961531246,
+      "offHandToBatAxisWorldFt": 0.5153432116171246,
+      "offHandAlongBatWorldFt": 0.27948988689600057
+    },
+    {
+      "id": "moose",
+      "name": "Moose",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725622808810187,
+      "headForward": [
+        0.05333609906575853,
+        -0.21056148215739875,
+        -0.9761245426522822
+      ],
+      "handsDistanceWorldFt": 0.4395547253477765,
+      "offHandToBatAxisWorldFt": 0.5015157564616978,
+      "offHandAlongBatWorldFt": 0.2435831001586159
+    },
+    {
+      "id": "moose",
+      "name": "Moose",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.9707407928402226,
+      "headForward": [
+        0.13280775021785116,
+        -0.16044495786454951,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.47422190961531313,
+      "offHandToBatAxisWorldFt": 0.5153432116171249,
+      "offHandAlongBatWorldFt": 0.27948988689600135
+    },
+    {
+      "id": "peaches",
+      "name": "Peaches",
+      "source": "model",
+      "clipSource": "character",
+      "time": 0,
+      "headTowardPitcher": -0.9198590687347088,
+      "headForward": [
+        0.2291585514645054,
+        -0.2832282028975514,
+        -0.931272325033936
+      ],
+      "handsDistanceWorldFt": 0.4794910416306831,
+      "offHandToBatAxisWorldFt": 0.5210692461795877,
+      "offHandAlongBatWorldFt": 0.28259533092723704
+    },
+    {
+      "id": "peaches",
+      "name": "Peaches",
+      "source": "model",
+      "clipSource": "character",
+      "time": 0.5,
+      "headTowardPitcher": -0.922625198452471,
+      "headForward": [
+        0.19333616902620265,
+        -0.3054389545472218,
+        -0.9323776974978392
+      ],
+      "handsDistanceWorldFt": 0.4630698441657545,
+      "offHandToBatAxisWorldFt": 0.5142981077487419,
+      "offHandAlongBatWorldFt": 0.26596867037620053
+    },
+    {
+      "id": "peaches",
+      "name": "Peaches",
+      "source": "model",
+      "clipSource": "character",
+      "time": 1,
+      "headTowardPitcher": -0.9198590687347088,
+      "headForward": [
+        0.2291585514645054,
+        -0.2832282028975514,
+        -0.931272325033936
+      ],
+      "handsDistanceWorldFt": 0.4794910416306831,
+      "offHandToBatAxisWorldFt": 0.5210692461795877,
+      "offHandAlongBatWorldFt": 0.28259533092723704
+    },
+    {
+      "id": "gizmo",
+      "name": "Gizmo",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.9707328031116936,
+      "headForward": [
+        0.13280775021785107,
+        -0.16044495786454926,
+        -0.9780692802546841
+      ],
+      "handsDistanceWorldFt": 0.46368364495719433,
+      "offHandToBatAxisWorldFt": 0.5038911402478554,
+      "offHandAlongBatWorldFt": 0.2732790005205335
+    },
+    {
+      "id": "gizmo",
+      "name": "Gizmo",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725572779183942,
+      "headForward": [
+        0.053336099065758286,
+        -0.21056148215739895,
+        -0.9761245426522821
+      ],
+      "handsDistanceWorldFt": 0.4297868425622712,
+      "offHandToBatAxisWorldFt": 0.49037096187366047,
+      "offHandAlongBatWorldFt": 0.2381701423773143
+    },
+    {
+      "id": "gizmo",
+      "name": "Gizmo",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.9707328031116936,
+      "headForward": [
+        0.13280775021785107,
+        -0.16044495786454926,
+        -0.9780692802546841
+      ],
+      "handsDistanceWorldFt": 0.46368364495719433,
+      "offHandToBatAxisWorldFt": 0.5038911402478554,
+      "offHandAlongBatWorldFt": 0.2732790005205335
+    },
+    {
+      "id": "clover",
+      "name": "Clover",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.9707407928402226,
+      "headForward": [
+        0.13280775021785116,
+        -0.16044495786454951,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.47422190961531246,
+      "offHandToBatAxisWorldFt": 0.5153432116171246,
+      "offHandAlongBatWorldFt": 0.27948988689600057
+    },
+    {
+      "id": "clover",
+      "name": "Clover",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725622808810187,
+      "headForward": [
+        0.05333609906575853,
+        -0.21056148215739875,
+        -0.9761245426522822
+      ],
+      "handsDistanceWorldFt": 0.4395547253477765,
+      "offHandToBatAxisWorldFt": 0.5015157564616978,
+      "offHandAlongBatWorldFt": 0.2435831001586159
+    },
+    {
+      "id": "clover",
+      "name": "Clover",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.9707407928402226,
+      "headForward": [
+        0.13280775021785116,
+        -0.16044495786454951,
+        -0.9780692802546842
+      ],
+      "handsDistanceWorldFt": 0.47422190961531313,
+      "offHandToBatAxisWorldFt": 0.5153432116171249,
+      "offHandAlongBatWorldFt": 0.27948988689600135
+    },
+    {
+      "id": "rocket",
+      "name": "Rocket Rosa",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.9707687322234594,
+      "headForward": [
+        0.1328077502178512,
+        -0.16044495786454943,
+        -0.9780692802546841
+      ],
+      "handsDistanceWorldFt": 0.5111058359187256,
+      "offHandToBatAxisWorldFt": 0.555425461409568,
+      "offHandAlongBatWorldFt": 0.30122798921013355
+    },
+    {
+      "id": "rocket",
+      "name": "Rocket Rosa",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725797637988756,
+      "headForward": [
+        0.053336099065758244,
+        -0.21056148215739892,
+        -0.9761245426522822
+      ],
+      "handsDistanceWorldFt": 0.4737423150970495,
+      "offHandToBatAxisWorldFt": 0.5405225375198308,
+      "offHandAlongBatWorldFt": 0.26252845239317624
+    },
+    {
+      "id": "rocket",
+      "name": "Rocket Rosa",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.9707687322234594,
+      "headForward": [
+        0.1328077502178512,
+        -0.16044495786454943,
+        -0.9780692802546841
+      ],
+      "handsDistanceWorldFt": 0.5111058359187256,
+      "offHandToBatAxisWorldFt": 0.555425461409568,
+      "offHandAlongBatWorldFt": 0.30122798921013355
+    },
+    {
+      "id": "chip",
+      "name": "Chip",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.970716814250756,
+      "headForward": [
+        0.13280775021785118,
+        -0.16044495786454935,
+        -0.978069280254684
+      ],
+      "handsDistanceWorldFt": 0.442607115640958,
+      "offHandToBatAxisWorldFt": 0.4809869975093165,
+      "offHandAlongBatWorldFt": 0.26085722776959996
+    },
+    {
+      "id": "chip",
+      "name": "Chip",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725472615240812,
+      "headForward": [
+        0.0533360990657584,
+        -0.21056148215739892,
+        -0.9761245426522821
+      ],
+      "handsDistanceWorldFt": 0.41025107699125807,
+      "offHandToBatAxisWorldFt": 0.4680813726975847,
+      "offHandAlongBatWorldFt": 0.2273442268147085
+    },
+    {
+      "id": "chip",
+      "name": "Chip",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.970716814250756,
+      "headForward": [
+        0.13280775021785118,
+        -0.16044495786454935,
+        -0.978069280254684
+      ],
+      "handsDistanceWorldFt": 0.442607115640958,
+      "offHandToBatAxisWorldFt": 0.4809869975093165,
+      "offHandAlongBatWorldFt": 0.26085722776959996
+    },
+    {
+      "id": "boomer",
+      "name": "Boomer",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0,
+      "headTowardPitcher": -0.970756762898843,
+      "headForward": [
+        0.13280775021785118,
+        -0.16044495786454943,
+        -0.9780692802546841
+      ],
+      "handsDistanceWorldFt": 0.4952984389315485,
+      "offHandToBatAxisWorldFt": 0.5382473543556638,
+      "offHandAlongBatWorldFt": 0.29191165964693383
+    },
+    {
+      "id": "boomer",
+      "name": "Boomer",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 0.5,
+      "headTowardPitcher": -0.9725722763459856,
+      "headForward": [
+        0.053336099065758445,
+        -0.21056148215739887,
+        -0.9761245426522821
+      ],
+      "handsDistanceWorldFt": 0.45909049091878934,
+      "offHandToBatAxisWorldFt": 0.5238053456377733,
+      "offHandAlongBatWorldFt": 0.2544090157212222
+    },
+    {
+      "id": "boomer",
+      "name": "Boomer",
+      "source": "model",
+      "clipSource": "shared",
+      "time": 1,
+      "headTowardPitcher": -0.970756762898843,
+      "headForward": [
+        0.13280775021785118,
+        -0.16044495786454943,
+        -0.9780692802546841
+      ],
+      "handsDistanceWorldFt": 0.4952984389315485,
+      "offHandToBatAxisWorldFt": 0.5382473543556638,
+      "offHandAlongBatWorldFt": 0.29191165964693383
+    }
+  ],
+  "sourceHash": "ca16df8cb741a0ab6f60b4081d38de2f28c51604849df3316d60c1356ceebdfd",
+  "capturedAt": "2026-09-18T18:33:50.424Z"
+}

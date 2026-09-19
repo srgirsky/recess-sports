@@ -28,6 +28,8 @@ import { makeToonMaterial } from './materials/toon';
 
 /** Youth bat, knob to tip, in reference feet (a real 26" bat is 2.17ft). */
 export const BAT_LENGTH_FT = 2.2;
+/** Barrel contact point measured from the upper palm anchor. */
+export const BAT_SWEET_SPOT_FT = BAT_LENGTH_FT * .75;
 
 /** The bone every kid's bat parents to — mandatory in the skeleton contract. */
 export const BAT_ANCHOR_BONE = 'Prop_BatGrip';
@@ -39,9 +41,10 @@ const BAT_COLOR = 0xc9945a;
 
 /**
  * The grip point sits INSIDE the hands, so the profile runs from just below
- * the anchor (knob) to `BAT_LENGTH_FT` above it (tip).
+ * the anchor (knob); the whole profile remains `BAT_LENGTH_FT` long.
  */
-const KNOB_BELOW_GRIP_FT = 0.15;
+// Anchor is the upper (right) palm; leave handle below it for the left hand.
+const KNOB_BELOW_GRIP_FT = 0.35;
 
 let shared: { geometry: LatheGeometry; material: ReturnType<typeof makeToonMaterial> } | null = null;
 
@@ -51,8 +54,8 @@ function sharedParts() {
   const profile: Array<[number, number]> = [
     [0.0, -KNOB_BELOW_GRIP_FT],
     [0.055, -KNOB_BELOW_GRIP_FT + 0.005],
-    [0.055, -0.1],
-    [0.033, -0.06],
+    [0.055, -KNOB_BELOW_GRIP_FT + 0.05],
+    [0.033, -KNOB_BELOW_GRIP_FT + 0.09],
     [0.033, 0.55],
     [0.07, 1.1],
     [0.088, 1.6],
