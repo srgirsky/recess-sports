@@ -627,6 +627,7 @@ For live comparison, run `npm run dev` and use the same seeded review URL.
 
 ```bash
 npm run build     # type-checks, then outputs a static site to dist/
+npm test          # run after building so bundle-size gates inspect dist/
 npm run preview   # serve the built site locally to double-check
 ```
 

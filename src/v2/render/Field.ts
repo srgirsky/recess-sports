@@ -73,11 +73,11 @@ export interface VenueLook {
 
 export const VENUE_LOOKS: Record<VenueId, VenueLook> = {
   park: {
-    grass: 0x5bbf5a,
-    grassDark: 0x4aa84a,
+    grass: 0x76ac59,
+    grassDark: 0x60944e,
     dirt: 0xc98a4b,
-    fence: 0x2e7d4f,
-    fenceTrim: 0xffce3a,
+    fence: 0x648578,
+    fenceTrim: 0xd5bd80,
     mowPattern: 'checker',
   },
   sandlot: {
@@ -350,12 +350,17 @@ function buildTurf(look: VenueLook): { mesh: Mesh; setNight: (night: boolean) =>
     gradientSteps: GROUND_STEPS,
   });
 
-  const light = new Color(look.grass).convertSRGBToLinear();
+  // Prove the surface treatment on Parks Dept #2 before changing other venues.
+  // Color(hex) already converts sRGB to linear. A second conversion crushed
+  // the red/blue channels and made this grass read as saturated green bands.
+  const detailed = look === VENUE_LOOKS.park;
+  const light = new Color(look.grass);
   // The venue's `grassDark` is the ART palette's SHADOW tone — a ~35% step,
   // correct for a flat 2D fill and far too strong for turf variation. Pull it
   // most of the way back; the visible contrast now comes from sheen and noise,
   // not from two different greens.
-  const dark = new Color(look.grass).lerp(new Color(look.grassDark), 0.3).convertSRGBToLinear();
+  const dark = new Color(look.grass).lerp(new Color(look.grassDark), 0.3);
+  if (!detailed) { light.convertSRGBToLinear(); dark.convertSRGBToLinear(); }
   const mode = { stripes: 0, checker: 1, tufts: 2, court: 3 }[look.mowPattern];
 
   const uNight = { value: 0 };
@@ -363,6 +368,7 @@ function buildTurf(look: VenueLook): { mesh: Mesh; setNight: (night: boolean) =>
     shader.uniforms.uLight = { value: light };
     shader.uniforms.uDark = { value: dark };
     shader.uniforms.uMode = { value: mode };
+    shader.uniforms.uDetail = { value: detailed ? 1 : 0 };
     shader.uniforms.uNight = uNight;
     shader.uniforms.uCell = { value: 17 }; // ft — a real mower width
 
@@ -373,109 +379,104 @@ function buildTurf(look: VenueLook): { mesh: Mesh; setNight: (night: boolean) =>
         '#include <worldpos_vertex>\nvWorldPos = ( modelMatrix * vec4( transformed, 1.0 ) ).xyz;'
       );
 
+    // Keep explanations outside GLSL strings so Vite can omit them from the bundle.
     shader.fragmentShader = shader.fragmentShader
+      // Smooth value noise. Real turf varies at several scales at once and
+      // a single frequency always reads as a pattern rather than as ground.
+      // ★ A mow stripe is VIEW-DEPENDENT, not painted on.
+      // Mowing bends the blades; a band bent toward you scatters light back
+      // and reads bright, a band bent away reads dark. Which is why real
+      // stripes SWAP as you walk around a field, and why a fixed albedo
+      // checker — however well tuned — always reads as a printed mat. This
+      // returns a signed sheen from the dot of the view direction with the
+      // band's lean direction.
+      // Soft, not stepped: a mower leaves a blended edge a foot or two wide.
       .replace(
         '#include <common>',
         `#include <common>
-         varying vec3 vWorldPos;
-         uniform vec3  uLight;
-         uniform vec3  uDark;
-         uniform float uMode;
-         uniform float uNight;
-         uniform float uCell;
-
-         float h21( vec2 p ) {
-           return fract( sin( dot( p, vec2( 127.1, 311.7 ) ) ) * 43758.5453 );
-         }
-         // Smooth value noise. Real turf varies at several scales at once and
-         // a single frequency always reads as a pattern rather than as ground.
-         float vnoise( vec2 p ) {
-           vec2 i = floor( p ), f = fract( p );
-           vec2 u = f * f * ( 3.0 - 2.0 * f );
-           return mix( mix( h21( i ),                h21( i + vec2( 1.0, 0.0 ) ), u.x ),
-                       mix( h21( i + vec2( 0.0, 1.0 ) ), h21( i + vec2( 1.0, 1.0 ) ), u.x ), u.y );
-         }
-         float fbm( vec2 p ) {
-           float v = 0.0, a = 0.5;
-           for ( int i = 0; i < 4; i++ ) { v += a * vnoise( p ); p *= 2.03; a *= 0.5; }
-           return v;
-         }
-
-         /**
-          * ★ A mow stripe is VIEW-DEPENDENT, not painted on.
-          *
-          * Mowing bends the blades; a band bent toward you scatters light back
-          * and reads bright, a band bent away reads dark. Which is why real
-          * stripes SWAP as you walk around a field, and why a fixed albedo
-          * checker — however well tuned — always reads as a printed mat. This
-          * returns a signed sheen from the dot of the view direction with the
-          * band's lean direction.
-          */
-         float mowSheen( vec2 wxz, vec2 dir, float cell, vec2 viewXZ ) {
-           float band = sin( dot( wxz, dir ) / cell * 3.14159265 );
-           // Soft, not stepped: a mower leaves a blended edge a foot or two wide.
-           float lean = smoothstep( -0.5, 0.5, band ) * 2.0 - 1.0;
-           return dot( viewXZ, dir ) * lean;
-         }`
+  varying vec3 vWorldPos;
+  uniform vec3  uLight;
+  uniform vec3  uDark;
+  uniform float uMode;
+  uniform float uDetail;
+  uniform float uNight;
+  uniform float uCell;
+  float h21( vec2 p ) {
+    return fract( sin( dot( p, vec2( 127.1, 311.7 ) ) ) * 43758.5453 );
+  }
+  float vnoise( vec2 p ) {
+    vec2 i = floor( p ), f = fract( p );
+    vec2 u = f * f * ( 3.0 - 2.0 * f );
+    return mix( mix( h21( i ),                h21( i + vec2( 1.0, 0.0 ) ), u.x ),
+                mix( h21( i + vec2( 0.0, 1.0 ) ), h21( i + vec2( 1.0, 1.0 ) ), u.x ), u.y );
+  }
+  float fbm( vec2 p ) {
+    float v = 0.0, a = 0.5;
+    for ( int i = 0; i < 4; i++ ) { v += a * vnoise( p ); p *= 2.03; a *= 0.5; }
+    return v;
+  }
+  float mowSheen( vec2 wxz, vec2 dir, float cell, vec2 viewXZ ) {
+    float band = sin( dot( wxz, dir ) / cell * 3.14159265 );
+    float lean = smoothstep( -0.5, 0.5, band ) * 2.0 - 1.0;
+    return dot( viewXZ, dir ) * lean;
+  }`
       )
+      // A checkerboard is two perpendicular mowing passes, so it is two
+      // sheen terms — not one albedo XOR.
+      // Tufts use noise for shaggy, unmown turf; asphalt has no sheen.
+      // NOTE: 'patch' is a RESERVED WORD in GLSL ES and will not compile.
+      // Noise scales: broad ~60ft (sun, wear, watering), mottle ~8ft
+      // (clumping), grain ~5in (blade texture).
+      // Fade the finest octave out with distance or it aliases into
+      // crawling noise on the outfield — the classic detail-shimmer.
+      // Broad wear and sparse blade clusters survive at field distance;
+      // the tiny grain still fades to keep the ball's background quiet.
+      // Sun-bleached patches go yellower, not just lighter — a pure
+      // value change reads as a lighting artefact rather than as grass.
+      // ★ NIGHT LIVES IN THE SURFACE, not only in the lights. Analytic
+      // lights dim the toon ramp, but a frame full of turf still reads
+      // day-green to the eye — re-audit #11's "the live camera brightens
+      // back toward day". So the tower pool is baked here too: a warm
+      // disc over the infield falling to cool dark outfield, and every
+      // camera sees the same night whether or not sky is in frame.
+      // Values are LINEAR multipliers — sRGB halves the apparent dim, so what
+      // reads as dusk on screen needs to look drastic here.
       .replace(
         '#include <color_fragment>',
         `#include <color_fragment>
-         {
-           vec2  wxz  = vWorldPos.xz;
-           vec3  toCam = cameraPosition - vWorldPos;
-           float dist  = length( toCam );
-           vec2  viewXZ = normalize( toCam.xz + vec2( 1e-5 ) );
-
-           // --- Mow sheen -------------------------------------------------
-           float sheen;
-           if ( uMode < 0.5 ) {
-             sheen = mowSheen( wxz, vec2( 0.0, 1.0 ), uCell, viewXZ );
-           } else if ( uMode < 1.5 ) {
-             // A checkerboard is two perpendicular mowing passes, so it is two
-             // sheen terms — not one albedo XOR.
-             sheen = 0.5 * ( mowSheen( wxz, vec2( 0.0, 1.0 ), uCell, viewXZ )
-                           + mowSheen( wxz, vec2( 1.0, 0.0 ), uCell, viewXZ ) );
-           } else if ( uMode < 2.5 ) {
-             sheen = ( fbm( wxz * 0.09 ) - 0.5 ) * 1.2;   // shaggy, unmown
-           } else {
-             sheen = 0.0;                                  // asphalt
-           }
-
-           // --- Multi-scale colour ----------------------------------------
-           // NOTE: 'patch' is a RESERVED WORD in GLSL ES and will not compile.
-           float broad  = fbm( wxz * 0.016 );   // ~60ft: sun, wear, watering
-           float mottle = fbm( wxz * 0.13 );    // ~8ft: clumping
-           float grain  = vnoise( wxz * 2.4 );  // ~5in: blade texture
-
-           // Fade the finest octave out with distance or it aliases into
-           // crawling noise on the outfield — the classic detail-shimmer.
-           float grainFade = 1.0 - smoothstep( 70.0, 220.0, dist );
-
-           vec3 turf = mix( uDark, uLight, 0.42 + broad * 0.58 );
-           turf *= 1.0 + ( mottle - 0.5 ) * 0.18;
-           turf *= 1.0 + ( grain  - 0.5 ) * 0.16 * grainFade;
-           turf *= 1.0 + sheen * 0.22;
-
-           // Sun-bleached patches go yellower, not just lighter — a pure
-           // value change reads as a lighting artefact rather than as grass.
-           turf = mix( turf, turf * vec3( 1.07, 1.0, 0.82 ),
-                       smoothstep( 0.58, 0.92, broad ) * 0.55 );
-
-           // ★ NIGHT LIVES IN THE SURFACE, not only in the lights. Analytic
-           // lights dim the toon ramp, but a frame full of turf still reads
-           // day-green to the eye — re-audit #11's "the live camera brightens
-           // back toward day". So the tower pool is baked here too: a warm
-           // disc over the infield falling to cool dark outfield, and every
-           // camera sees the same night whether or not sky is in frame.
-           float nightPool = 1.0 - smoothstep( 55.0, 175.0, length( wxz - vec2( 0.0, 55.0 ) ) );
-           // Values are LINEAR multipliers — sRGB halves the apparent dim, so what
-           // reads as dusk on screen needs to look drastic here.
-           vec3 nightTurf = turf * mix( vec3( 0.13, 0.17, 0.32 ), vec3( 0.80, 0.72, 0.52 ), nightPool );
-           turf = mix( turf, nightTurf, uNight );
-
-           diffuseColor.rgb *= turf;
-         }`
+  {
+    vec2  wxz  = vWorldPos.xz;
+    vec3  toCam = cameraPosition - vWorldPos;
+    float dist  = length( toCam );
+    vec2  viewXZ = normalize( toCam.xz + vec2( 1e-5 ) );
+    float sheen;
+    if ( uMode < 0.5 ) {
+      sheen = mowSheen( wxz, vec2( 0.0, 1.0 ), uCell, viewXZ );
+    } else if ( uMode < 1.5 ) {
+      sheen = 0.5 * ( mowSheen( wxz, vec2( 0.0, 1.0 ), uCell, viewXZ )
+                    + mowSheen( wxz, vec2( 1.0, 0.0 ), uCell, viewXZ ) );
+    } else if ( uMode < 2.5 ) {
+      sheen = ( fbm( wxz * 0.09 ) - 0.5 ) * 1.2;
+    } else {
+      sheen = 0.0;
+    }
+    float broad  = fbm( wxz * 0.016 );
+    float mottle = fbm( wxz * 0.13 );
+    float grain  = vnoise( wxz * 2.4 );
+    float grainFade = 1.0 - smoothstep( 70.0, 220.0, dist );
+    vec3 turf = mix( uDark, uLight, 0.42 + broad * 0.58 );
+    turf *= 1.0 + ( mottle - 0.5 ) * mix(0.18, 0.30, uDetail);
+    turf *= 1.0 + ( grain  - 0.5 ) * 0.16 * grainFade;
+    turf *= 1.0 + sheen * mix(0.22, 0.065, uDetail);
+    float tufts = smoothstep(0.58, 0.80, vnoise(wxz * vec2(1.7, 0.8)));
+    turf *= 1.0 - tufts * 0.09 * grainFade * uDetail;
+    turf = mix( turf, turf * vec3( 1.07, 1.0, 0.82 ),
+                smoothstep( 0.58, 0.92, broad ) * 0.55 );
+    float nightPool = 1.0 - smoothstep( 55.0, 175.0, length( wxz - vec2( 0.0, 55.0 ) ) );
+    vec3 nightTurf = turf * mix( vec3( 0.13, 0.17, 0.32 ), vec3( 0.80, 0.72, 0.52 ), nightPool );
+    turf = mix( turf, nightTurf, uNight );
+    diffuseColor.rgb *= turf;
+  }`
       )
       // Perturb the NORMAL as well as the colour. With 8 ramp steps this makes
       // the terminator itself wander gently, so the plane stops being one flat
@@ -484,15 +485,15 @@ function buildTurf(look: VenueLook): { mesh: Mesh; setNight: (night: boolean) =>
       .replace(
         '#include <normal_fragment_begin>',
         `#include <normal_fragment_begin>
-         {
-           vec2 np = vWorldPos.xz * 0.06;
-           float nx = vnoise( np ) - vnoise( np + vec2( 0.35, 0.0 ) );
-           float nz = vnoise( np ) - vnoise( np + vec2( 0.0, 0.35 ) );
-           normal = normalize( normal + vec3( nx, 0.0, nz ) * 0.55 );
-         }`
+  {
+    vec2 np = vWorldPos.xz * 0.06;
+    float nx = vnoise( np ) - vnoise( np + vec2( 0.35, 0.0 ) );
+    float nz = vnoise( np ) - vnoise( np + vec2( 0.0, 0.35 ) );
+    normal = normalize( normal + vec3( nx, 0.0, nz ) * mix(0.55, 0.12, uDetail) );
+  }`
       );
   };
-  mat.customProgramCacheKey = () => `turf-${mode}`;
+  mat.customProgramCacheKey = () => `turf-${mode}-${detailed}`;
 
   const mesh = new Mesh(geom, mat);
   mesh.name = 'turf';

@@ -23,7 +23,7 @@ import { BACKSTOP_Z, FOUL_ANGLE_DEG, type FieldGeometry, fenceDistAt, pointAt } 
 import { makeToonMaterial } from './materials/toon';
 import type { OutlineRegistry } from './materials/outline';
 import { attachOutline } from './materials/outline';
-import type { VenueLook } from './Field';
+import { VENUE_LOOKS, type VenueLook } from './Field';
 
 /** Sample count across the 90° of fair territory. 90 = one per degree. */
 const SEGMENTS = 90;
@@ -47,6 +47,34 @@ export function buildFence(
   // ---- The wall itself: a ribbon swept along the fence arc ---------------
   const wallGeom = sweepWall(geo, h);
   const wallMat = makeToonMaterial({ color: look.fence, rimStrength: 0.2 });
+  if (look === VENUE_LOOKS.park) {
+    // Plank joints, rails and weathering stay in the existing wall draw.
+    // Derivative-width edges fade rather than flicker at phone/outfield scale.
+    const toonCompile = wallMat.onBeforeCompile;
+    wallMat.onBeforeCompile = (shader, renderer) => {
+      toonCompile.call(wallMat, shader, renderer);
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', '#include <common>\nvarying vec2 vFenceUv;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvFenceUv = uv;');
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nvarying vec2 vFenceUv;')
+        .replace('#include <color_fragment>', `#include <color_fragment>
+          float plankU = vFenceUv.x * 140.0;
+          float plank = floor(plankU);
+          float edge = min(fract(plankU), 1.0 - fract(plankU));
+          float aa = max(fwidth(plankU), 0.01);
+          float seam = 1.0 - smoothstep(0.025, 0.025 + aa, edge);
+          float tone = fract(sin(plank * 73.13) * 43758.54);
+          float railDistance = min(abs(vFenceUv.y - 0.24), abs(vFenceUv.y - 0.76));
+          float rail = 1.0 - smoothstep(0.035, 0.035 + fwidth(vFenceUv.y), railDistance);
+          float grain = sin(plankU * 21.0 + sin(vFenceUv.y * 11.0 + plank) * 0.6);
+          float grainFade = 1.0 - smoothstep(0.08, 0.35, fwidth(plankU));
+          diffuseColor.rgb *= (0.91 + tone * 0.18) * (1.0 - seam * 0.24)
+            * (1.0 - rail * 0.12) * (1.0 + grain * grainFade * 0.035);
+        `);
+    };
+    wallMat.customProgramCacheKey = () => 'park-plank-wall';
+  }
   wallMat.side = 2; // DoubleSide — the wall is seen from both faces on a homer
   const wall = new Mesh(wallGeom, wallMat);
   wall.name = 'wall';

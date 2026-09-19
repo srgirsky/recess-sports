@@ -35,6 +35,7 @@ import {
   Group,
   Matrix4,
   Mesh,
+  MeshBasicMaterial,
   QuadraticBezierCurve3,
   SphereGeometry,
   TubeGeometry,
@@ -277,7 +278,7 @@ export function sceneryPlan(geo: FieldGeometry, venue: VenueId): SceneryItem[] {
       kind: 'house',
       sprayDeg: s,
       distFt: fenceDistAt(geo, s) + RING_OFFSET_FT + 28 + seed * 22,
-      radiusFt: 16,
+      radiusFt: venue === 'park' ? 23 : 16,
       rotY: Math.atan2(-pointAt(s, 1).x, -pointAt(s, 1).z) + (seed - 0.5) * 0.3,
       seed,
     });
@@ -291,7 +292,7 @@ export function sceneryPlan(geo: FieldGeometry, venue: VenueId): SceneryItem[] {
       kind: 'tree',
       sprayDeg: s,
       distFt: fenceDistAt(geo, s) + RING_OFFSET_FT + 8 + seed * 60,
-      radiusFt: 6,
+      radiusFt: venue === 'park' ? 13 : 6,
       rotY: seed * Math.PI * 2,
       seed,
     });
@@ -304,8 +305,8 @@ export function sceneryPlan(geo: FieldGeometry, venue: VenueId): SceneryItem[] {
     items.push({
       kind: 'bush',
       sprayDeg: s,
-      distFt: fenceDistAt(geo, s) + CLEARANCE_FT + 3 + seed * (RING_OFFSET_FT - CLEARANCE_FT - 5),
-      radiusFt: 2.5,
+      distFt: fenceDistAt(geo, s) + CLEARANCE_FT + (venue === 'park' ? 4 : 3) + seed * (RING_OFFSET_FT - CLEARANCE_FT - 5),
+      radiusFt: venue === 'park' ? 4 : 2.5,
       rotY: seed * Math.PI * 2,
       seed,
     });
@@ -534,14 +535,15 @@ export interface SceneryOptions {
 
 export function buildScenery(geo: FieldGeometry, venue: VenueId, opts: SceneryOptions = {}): SceneryBuild {
   const cfg = VENUE_SCENERY[venue];
+  const detailed = venue === 'park';
   const plan = sceneryPlan(geo, venue);
   const parts: BufferGeometry[] = [];
 
   for (const it of plan) {
     const p = pointAt(it.sprayDeg, it.distFt);
-    if (it.kind === 'house') addHouse(parts, cfg, p.x, p.z, it.rotY, it.seed, opts.night === true);
-    else if (it.kind === 'tree') addTree(parts, cfg, p.x, p.z, it.rotY, it.seed);
-    else if (it.kind === 'bush') addBush(parts, cfg, p.x, p.z, it.seed);
+    if (it.kind === 'house') addHouse(parts, cfg, p.x, p.z, it.rotY, it.seed, opts.night === true, detailed);
+    else if (it.kind === 'tree') addTree(parts, cfg, p.x, p.z, it.rotY, it.seed, detailed);
+    else if (it.kind === 'bush') addBush(parts, cfg, p.x, p.z, it.seed, detailed);
     else if (it.kind === 'shed') addShed(parts, p.x, p.z, it.rotY);
     else if (it.kind === 'tower') addLightTower(parts, p.x, p.z, it.rotY, opts.night === true);
     else if (it.kind === 'dumpster') addDumpster(parts, p.x, p.z, it.rotY, it.seed);
@@ -572,6 +574,17 @@ export function buildScenery(geo: FieldGeometry, venue: VenueId, opts: SceneryOp
 
   const merged = mergeGeometries(parts, false);
   for (const g of parts) g.dispose();
+  if (detailed) {
+    // The legacy paint helpers decode Color(hex) a second time. Undo that
+    // extra decode for this pilot's merged palette; other venues retain their
+    // reviewed appearance until the complete-scene treatment is approved.
+    const colors = merged.getAttribute('color') as BufferAttribute;
+    const color = new Color();
+    for (let i = 0; i < colors.count; i++) {
+      color.fromBufferAttribute(colors, i).convertLinearToSRGB();
+      colors.setXYZ(i, color.r, color.g, color.b);
+    }
+  }
   const mat = makeToonMaterial({ color: 0xffffff, rimStrength: 0.12 });
   mat.vertexColors = true;
   const mesh = new Mesh(merged, mat);
@@ -581,7 +594,7 @@ export function buildScenery(geo: FieldGeometry, venue: VenueId, opts: SceneryOp
   root.add(mesh);
 
   // The dome's ceiling light must never have outdoor clouds drifting through it.
-  const clouds = cfg.theme === 'dome' ? null : buildClouds(opts.night === true);
+  const clouds = cfg.theme === 'dome' ? null : buildClouds(opts.night === true, detailed);
   if (clouds) root.add(clouds);
 
   return {
@@ -589,14 +602,15 @@ export function buildScenery(geo: FieldGeometry, venue: VenueId, opts: SceneryOp
     dispose() {
       merged.dispose();
       clouds?.geometry.dispose();
+      if (detailed) (clouds?.material as MeshBasicMaterial | undefined)?.dispose();
     },
   };
 }
 
 // A house: body + gable roof + door + two windows (+ chimney on some).
-function addHouse(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: number, rotY: number, seed: number, night = false): void {
+function addHouse(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: number, rotY: number, seed: number, night = false, detailed = false): void {
   const w = 22 + seed * 10;
-  const h = cfg.cityBlocks ? 22 + seed * 14 : 12 + seed * 4;
+  const h = cfg.cityBlocks ? 22 + seed * 14 : (detailed ? 19 : 12) + seed * 4;
   const d = 18 + seed * 6;
   const body = pick(cfg.housePalette, seed);
   const roof = pick(cfg.roofPalette, hash01(Math.floor(seed * 97), 3));
@@ -606,6 +620,26 @@ function addHouse(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: numb
   if (cfg.cityBlocks) {
     // Flat parapet cap.
     parts.push(place(paint(new BoxGeometry(w + 1.5, 1.2, d + 1.5), roof), x, h + 0.6, z, rotY));
+  } else if (detailed) {
+    // A triangular prism starts AT the eaves. The old rotated cube extended
+    // a second inverted gable down through the facade and hid the windows.
+    const half = w / 2 + 0.8, rh = w * 0.29, depth = d / 2 + 0.8;
+    const a = [-half, 0, depth], b = [half, 0, depth], c = [0, rh, depth];
+    const d0 = [-half, 0, -depth], e = [half, 0, -depth], f = [0, rh, -depth];
+    const triangles = [a, b, c, e, d0, f, a, c, f, a, f, d0, c, b, e, c, e, f, a, d0, e, a, e, b];
+    const roofGeom = new BufferGeometry();
+    roofGeom.setAttribute('position', new BufferAttribute(new Float32Array(triangles.flat()), 3));
+    roofGeom.setAttribute('uv', new BufferAttribute(new Float32Array(triangles.length * 2), 2));
+    roofGeom.setIndex(Array.from({ length: triangles.length }, (_, i) => i));
+    roofGeom.computeVertexNormals();
+    parts.push(place(paintGable(roofGeom, roof, body), x, h, z, rotY));
+    const slope = Math.atan2(rh, half), length = Math.hypot(half, rh);
+    for (const side of [-1, 1]) {
+      const fascia = new BoxGeometry(length + 0.3, 0.6, 0.65);
+      fascia.rotateZ(-side * slope);
+      parts.push(placeLocal(paint(fascia, 0xf1e5cb), x, z, rotY, side * half / 2, h + rh / 2, depth + 0.1));
+    }
+    parts.push(placeLocal(paint(new BoxGeometry(2.2, 5, 2.2), 0xb77a61), x, z, rotY, w * 0.2, h + rh * 0.8, -d * 0.1));
   } else {
     // Gable roof: a box rotated 45° reads as a prism at this distance for a
     // quarter of the triangles a real prism-with-caps costs after merging.
@@ -647,6 +681,30 @@ function addHouse(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: numb
     parts.push(placeLocal(paint(new BoxGeometry(2.2 + i * 0.5, 0.32, 0.28), shade(body, 0.82)), x, z, rotY, px, py, face + 0.04));
   }
 
+  if (detailed) {
+    // Upper-storey windows and eaves remain above the eight-foot playing
+    // fence. Details below that line cannot improve the plate-camera read.
+    const trim = 0xf1e5cb;
+    const shutter = shade(roof, 0.72);
+    for (const side of [-1, 1]) {
+      const wx = side * w * 0.28;
+      for (const y of [h * 0.55, h * 0.83]) {
+        parts.push(placeLocal(paint(new BoxGeometry(4.6, 4, 0.38), trim), x, z, rotY, wx, y, face + 0.12));
+        parts.push(placeLocal(paint(new BoxGeometry(3.5, 2.9, 0.42), night ? 0xffdfa0 : 0x668eaa), x, z, rotY, wx, y, face + 0.32));
+        for (const edge of [-1, 1]) parts.push(placeLocal(paint(new BoxGeometry(1, 4, 0.5), shutter), x, z, rotY, wx + edge * 2.85, y, face + 0.22));
+        parts.push(placeLocal(paint(new BoxGeometry(0.22, 3, 0.48), trim), x, z, rotY, wx, y, face + 0.4));
+        parts.push(placeLocal(paint(new BoxGeometry(3.7, 0.22, 0.48), trim), x, z, rotY, wx, y, face + 0.4));
+      }
+    }
+    // Shallow siding courses, corner boards and a porch roof establish scale
+    // without spending another draw or extending the planned footprint.
+    for (let y = 1.8; y < h; y += 1.6) parts.push(placeLocal(paint(new BoxGeometry(w, 0.10, 0.20), shade(body, 0.86)), x, z, rotY, 0, y, face - 0.04));
+    for (const side of [-1, 1]) parts.push(placeLocal(paint(new BoxGeometry(0.48, h, 0.4), trim), x, z, rotY, side * (w / 2 - 0.3), h / 2, face));
+    parts.push(placeLocal(paint(new BoxGeometry(w + 1, 0.55, 0.8), trim), x, z, rotY, 0, h, face));
+    parts.push(placeLocal(paint(new BoxGeometry(w * 0.42, 0.5, 2), roof), x, z, rotY, 0, 8.5, face + 0.6));
+    for (const side of [-1, 1]) parts.push(placeLocal(paint(new BoxGeometry(0.38, 8.2, 0.38), trim), x, z, rotY, side * w * 0.18, 4.1, face + 1.2));
+  }
+
   if (cfg.theme === 'alley') {
     // Fire-escape platforms and ladders, proud of the home-facing brick wall.
     // Blocky silhouettes are intentional at 180ft and stay in the merged draw.
@@ -667,9 +725,9 @@ function addHouse(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: numb
 }
 
 // A tree: trunk + 3 foliage balls. Low-poly spheres; the toon ramp does the rest.
-function addTree(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: number, rotY: number, seed: number): void {
-  const trunkH = 8 + seed * 5;
-  const r = 5 + seed * 3.5;
+function addTree(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: number, rotY: number, seed: number, detailed = false): void {
+  const trunkH = (detailed ? 16 : 8) + seed * 5;
+  const r = detailed ? 7 + seed * 2 : 5 + seed * 3.5;
   parts.push(place(paint(new CylinderGeometry(0.7, 1.1, trunkH, 6), 0x8a5f3c), x, trunkH / 2, z));
   const g1 = pick(cfg.foliagePalette, seed);
   const g2 = pick(cfg.foliagePalette, hash01(Math.floor(seed * 89), 5));
@@ -682,9 +740,20 @@ function addTree(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: numbe
   );
 }
 
-function addBush(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: number, seed: number): void {
+function addBush(parts: BufferGeometry[], cfg: VenueScenery, x: number, z: number, seed: number, detailed = false): void {
   const r = 1.6 + seed * 1.2;
-  parts.push(place(paint(new SphereGeometry(r, 7, 5), pick(cfg.foliagePalette, seed)), x, r * 0.7, z));
+  if (detailed) {
+    // A hedge has shoulders, not the vertical silhouette of a cypress. Its
+    // upper leaves peek over the wall while its whole footprint stays outside.
+    for (const side of [-1, 0, 1]) {
+      const geometry = new SphereGeometry(r * (side === 0 ? 0.95 : 0.72), 8, 6);
+      geometry.scale(1, side === 0 ? 1.9 : 1.3, 1);
+      parts.push(place(paint(geometry, pick(cfg.foliagePalette, (seed + side * 0.13 + 1) % 1)), x + side * r * 0.62, r * (side === 0 ? 1.8 : 1.05), z));
+    }
+    return;
+  }
+  const geometry = new SphereGeometry(r, 7, 5);
+  parts.push(place(paint(geometry, pick(cfg.foliagePalette, seed)), x, r * 0.7, z));
 }
 
 function addShed(parts: BufferGeometry[], x: number, z: number, rotY: number): void {
@@ -1045,7 +1114,7 @@ function addPoleRun(parts: BufferGeometry[], poles: Array<{ x: number; z: number
 
 // Puffy clouds: flattened sphere clusters far up in the dome. Their own mesh —
 // they must not fog like ground objects, and white wants no vertex jitter.
-function buildClouds(night = false): Mesh {
+function buildClouds(night = false, detailed = false): Mesh {
   const parts: BufferGeometry[] = [];
   const N = 6;
   for (let i = 0; i < N; i++) {
@@ -1064,14 +1133,32 @@ function buildClouds(night = false): Mesh {
       const dx = (hash01(i * 7 + k, 103) - 0.5) * r * 2.4;
       const dz = (hash01(i * 7 + k, 107) - 0.5) * r * 0.8;
       const rr = r * (0.55 + hash01(i * 7 + k, 109) * 0.5);
-      const ball = new SphereGeometry(rr, 8, 6);
-      ball.applyMatrix4(new Matrix4().makeScale(1, 0.55, 1));
-      parts.push(place(paint(ball, night ? 0x8593b0 : 0xffffff), x + dx, y, z + dz));
+      const ball = new SphereGeometry(rr, detailed ? 16 : 8, detailed ? 10 : 6);
+      ball.applyMatrix4(new Matrix4().makeScale(1, detailed ? 0.72 : 0.55, 1));
+      paint(ball, night ? 0x8593b0 : 0xffffff);
+      if (detailed) {
+        // Clouds scatter light through their volume: the field's hard toon
+        // terminator made them grey stone slabs. Bake a gentle cool underside
+        // and warm crown into one smooth, unlit, vertex-coloured cloud mesh.
+        const colors = ball.getAttribute('color') as BufferAttribute;
+        const normals = ball.getAttribute('normal');
+        const bottom = new Color(night ? 0x354865 : 0xc1dce9);
+        const top = new Color(night ? 0x657899 : 0xfffcf0);
+        const color = new Color();
+        for (let v = 0; v < colors.count; v++) {
+          const t = Math.min(1, Math.max(0, 0.55 + normals.getY(v) * 0.45 - normals.getX(v) * 0.12));
+          color.copy(bottom).lerp(top, t);
+          colors.setXYZ(v, color.r, color.g, color.b);
+        }
+      }
+      parts.push(place(ball, x + dx, y + (detailed && k === 1 ? rr * 0.35 : 0), z + dz));
     }
   }
   const merged = mergeGeometries(parts, false);
   for (const g of parts) g.dispose();
-  const mat = makeToonMaterial({ color: 0xffffff, rimStrength: 0 });
+  const mat = detailed
+    ? new MeshBasicMaterial({ vertexColors: true, toneMapped: false })
+    : makeToonMaterial({ color: 0xffffff, rimStrength: 0 });
   mat.vertexColors = true;
   mat.fog = false;
   const mesh = new Mesh(merged, mat);
