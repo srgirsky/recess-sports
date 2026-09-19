@@ -63,6 +63,8 @@ export interface ReplayActor {
   clip: AnimName | null;
   clipTime: number;
   glove: boolean;
+  /** World-space visual swing target; copied with the pose for deterministic seeking. */
+  batContact?: [number, number, number];
 }
 
 /** One drawn tick of a live play, as values. */

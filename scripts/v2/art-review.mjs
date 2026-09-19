@@ -50,7 +50,13 @@ export function makeTargets(roster, venues, screens) {
     { id: 'benchmark:park', name: 'Parks Dept #2 — complete at-bat', owner: 'Art direction', criteria,
       required: sizes.flatMap(size => lighting.flatMap(light => [shot(`${size}-${light}`), shot(`${size}-${light}-motion`, 'sequence')])) },
     ...roster.map(kid => ({ id: `character:${kid.id}`, name: kid.name, owner: 'Character art and animation', criteria,
-      required: sizes.flatMap(size => ['draft', 'field', 'run', 'swing', 'catch', 'celebrate'].map(beat => shot(`${size}-${beat}`, ['draft', 'field'].includes(beat) ? 'still' : 'sequence'))) })),
+      // A swing clip alone missed a backward-facing batter with hands behind
+      // the torso. Require the in-game plate phases and the other action
+      // families for EVERY delivered kid, not just the benchmark's batter.
+      required: sizes.flatMap(size => [
+        ...['draft', 'field', 'bat-ready', 'bat-load', 'bat-contact', 'bat-follow'].map(beat => shot(`${size}-${beat}`)),
+        ...['run', 'swing', 'catch', 'celebrate', 'pitch', 'throw', 'pickup', 'dive', 'slide'].map(beat => shot(`${size}-${beat}`, 'sequence')),
+      ]) })),
     ...venues.map(id => ({ id: `venue:${id}`, name: id, owner: 'Environment art', criteria: ['construction', 'materials', 'grounding', 'composition', 'cohesion'],
       required: sizes.flatMap(size => lighting.flatMap(light => ['plate', 'field', 'deep'].map(view => shot(`${size}-${light}-${view}`)))) })),
     ...screens.map(name => ({ id: `screen:${name}`, name, owner: 'UI art', criteria: ['composition', 'cohesion'], required: sizes.map(size => shot(size)) })),

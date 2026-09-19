@@ -88,6 +88,33 @@ describe('art acceptance cannot be manufactured by a successful capture', () => 
   });
 });
 describe('the live art inventory stays covered', () => {
+  // Mutation check: removing bat-ready from makeTargets fails this test;
+  // removing any audited slot from an otherwise complete packet is incomplete.
+  it('refuses a character packet missing a batting phase or action family', () => fixture(({ dir, receipt: sample }) => {
+    const character = targets.find(t => t.id === 'character:nostrike');
+    const receipt = {
+      target: character.id, sourceHash: 'current',
+      evidence: character.required.map(slot => ({
+        ...sample.evidence[0], ...slot,
+        viewport: VIEWPORTS[slot.id.startsWith('desktop-') ? 'desktop' : 'phone'],
+        files: sample.evidence[0].files.slice(0, slot.kind === 'still' ? 1 : 60),
+      })),
+    };
+    expect(assess(character, receipt, {}, dir, 'current').state).toBe('awaiting-review');
+    for (const size of Object.keys(VIEWPORTS)) {
+      for (const beat of ['bat-ready', 'bat-load', 'bat-contact', 'bat-follow', 'swing', 'pitch', 'throw', 'pickup', 'dive', 'slide']) {
+        const slot = `${size}-${beat}`;
+        expect(character.required.map(r => r.id), slot).toContain(slot);
+        const missing = { ...receipt, evidence: receipt.evidence.filter(e => e.id !== slot) };
+        const result = assess(character, missing, {}, dir, 'current');
+        expect(result.state).toBe('incomplete');
+        expect(result.issues.join(' '), slot).toContain(`Missing ${slot}`);
+      }
+    }
+    for (const kid of ROSTER) {
+      expect(targets.find(t => t.id === `character:${kid.id}`).required).toEqual(character.required);
+    }
+  }));
   it('derives every character, park and screen, including additions', () => {
     expect(targets.filter(t => t.id.startsWith('character:'))).toHaveLength(ROSTER.length);
     expect(targets.filter(t => t.id.startsWith('venue:'))).toHaveLength(Object.keys(VENUE_GEOMETRY).length);

@@ -592,6 +592,8 @@ separate.
 ```bash
 npm run review:art                 # inventory, findings and HTML review board
 npm run capture:art-benchmark      # local Vite + Chromium: desktop/phone, day/night
+npm run audit:batting              # all 30 delivered kids: six actions, every authored frame
+npm run audit:batting -- --check   # reject facing, palm/contact gaps and shaft intersections
 npm run review:art                 # include the newly captured evidence
 npm run check:art-parity           # nonzero until every required review is approved
 ```
@@ -604,6 +606,15 @@ minutes and disk space for motion sequences. Still images are lossless PNG;
 motion frames are JPEG at quality 90. No visual approval is created.
 Use `-- --profile=desktop-day` for a single-profile diagnostic; the report
 correctly marks that partial benchmark incomplete. A full run replaces it.
+
+The batting diagnostic owns port 5191 (`BATTING_AUDIT_PORT` overrides it) and
+writes `.art-review/batting-diagnostic/probe.json`. It samples each delivered
+stance at 0, 0.5 and 1 second through the production factory/director, using the
+live game's plate transform. `--check` currently exposes ART-004; it is not a
+required CI gate while the defect is open. Head direction and hand-bone offsets
+are diagnostics, not proof of eye tracking, finger contact or complete motion
+quality. Review each generated phase/action slot using the
+[action review procedure](docs/v2/art-acceptance.md#action-review-procedure).
 
 Open `.art-review/index.html` for the board; `.art-review/report.json` is its
 machine-readable counterpart. `review:art -- --out=/absolute/path` changes only

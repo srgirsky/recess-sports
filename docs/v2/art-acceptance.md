@@ -33,8 +33,10 @@ The report displays exactly which views are absent. Its phone profile is
 landscape; portrait, tablet and real-device checks remain part of layout/device
 validation and must accompany release review when those surfaces are supported.
 
-- **Characters:** draft and field views plus continuous run, swing, catch and
-  celebration at both sizes. Preserve their own silhouettes and personalities.
+- **Characters:** draft and field views; in-game batting ready, load, contact
+  and follow-through stills; continuous run, swing, catch, celebration, pitch,
+  throw, pickup, dive and slide at both sizes. Preserve their silhouettes and
+  personalities. A clip-preview rotation cannot establish in-game facing.
 - **Parks and lighting:** plate, field and deep cameras, day/night, at both sizes.
   Inspect foreground, middle distance and skyline, including contact shadows,
   materials, repeated props and transitions into the sky.
@@ -82,6 +84,48 @@ new visual review before approval.
    its own observations; it may not invent an independent reviewer or human
    approval. Retain prior reviews and approvals verbatim in `history` when
    superseded. This process is not permission to replace existing human verdicts.
+
+## Action review procedure
+
+The generated matrix is the coverage checklist. An image or movie existing is
+only **captured**, not **reviewed**. Missing coverage stays incomplete, and
+unwatched media stay awaiting review. Never infer a pass from another kid,
+another phase, a successful capture command, or a technical test.
+
+For each character/action packet, watch the entire motion at normal speed,
+then scrub its anticipation, event, follow-through, recovery and transitions.
+Inspect the production camera with the HUD first; side/front diagnostic views
+may explain an issue but cannot replace that view. Repeat at both review sizes.
+Check these relationships explicitly in the rubric notes, citing frame/time:
+
+- **Direction:** eyes/head track the intended ball or target, shoulders and feet
+  make sense for the role, and travel agrees with the pose. Check both teams
+  after a half-inning switch and any supported handedness variants.
+- **Hands and props:** palms/fingers enclose the intended handle or pocket;
+  hands stay attached when required; wrists/elbows bend plausibly; bat, glove
+  and ball appear/disappear at the right beat without penetrating the body.
+- **Event contact:** the bat meets the incoming ball, the ball reaches the
+  glove before a catch, and a throw leaves the throwing hand. A named marker
+  and peak hand speed do not establish spatial contact.
+- **Ground and motion:** feet support the pose, running does not skate,
+  jumps/dives/slides have weight, and blend/recovery poses do not snap, hover,
+  fuse limbs or fall back to a bind pose.
+- **Readability:** the ball, controlled kid and next action remain readable
+  through camera cuts, replay, inning changes, day/night and occlusion.
+
+Log each observed failure immediately in `docs/v2/art/reviews.json`: existing
+ID or a new ID, owner, affected character/action targets, exact phase/time and
+evidence, observable acceptance conditions. Record suspected shared causes as
+hypotheses until swept; do not mark every uninspected character defective.
+Use `review-task` for missing coverage and `defect` for observed failures.
+Keep sculpt findings in their existing fidelity ledger and link them here.
+
+Fix one cause per iteration: reproduce → add a measurable regression where
+possible → correct the shared code or affected assets → recapture → review the
+affected roster and adjacent transitions. Resolve only with fresh evidence and
+the existing independent-review/maintainer process. An automated geometry
+check reduces recurrence; it never certifies acting quality or every possible
+game state. The batting diagnostic is a first narrow sweep, not that promise.
 
 A review record is keyed by generated target ID:
 

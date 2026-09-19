@@ -20,7 +20,7 @@
 // each of those stays testable without a GPU.
 // ---------------------------------------------------------------------------
 
-import type { Object3D } from 'three';
+import { Vector3, type Object3D } from 'three';
 import type { LiveFrame } from '../sim/game';
 import type { PlayState } from '../sim/play';
 import { FIELD_POSITIONS, HOME, basePos } from '../sim/field';
@@ -33,6 +33,7 @@ import type { CameraInput } from './cameraCues';
 import { clipSpec } from './clips';
 import { activeFielderCue, ballPresenceCue, ballShadowCue } from './readabilityCues';
 import { homeRunTrot } from './actionCues';
+import { battingPlacement, battingRunOut } from './battingPose';
 import type { ReplayActor, ReplaySnapshot } from './replayCues';
 
 /** Everything the bridge is allowed to move. */
@@ -50,6 +51,8 @@ export interface SceneRefs {
 export interface FrameViewOptions {
   /** Screens use the live park as scenery but must not inherit gameplay chrome. */
   readability?: boolean;
+  /** Human placement, including misses; absent for CPU batting. */
+  batAimHeightFt?: number;
   /** True only when this live half routes human input to the defence. */
   fieldingFocus?: boolean;
   /** Last frame's camera eye, for the ball's apparent-size cue. */
@@ -85,7 +88,7 @@ export function applyFrame(
     // first thing watching the page found: with no live `PlayState` the view
     // drew nobody but the batter, so the park was empty until contact and full
     // afterwards. A fielder is on the field the whole time.
-    applyIdleDefence(refs, frame, protectedIds);
+    applyIdleDefence(refs, frame, protectedIds, view.batAimHeightFt);
     if (frame.phase === 'pitch' && frame.pitch) applyPitch(refs, frame, pitchElapsedSec);
     else if (frame.phase === 'windup') restBall(refs);
   }
@@ -121,6 +124,7 @@ export function snapshotScene(refs: SceneRefs, frame: LiveFrame, holdElapsedSec?
       clip: dir?.playing ?? null,
       clipTime: dir?.action?.time ?? 0,
       glove: dir?.gloveVisible ?? false,
+      batContact: dir?.battingPose.contact?.toArray(),
     });
   }
   const chaser = live.fielders[live.active];
@@ -156,7 +160,10 @@ export function applySnapshot(refs: SceneRefs, snap: ReplaySnapshot, view: Snaps
     kid.root.visible = actor.visible;
     const dir = refs.directors.get(actor.id);
     dir?.setGloveVisible(actor.glove);
-    if (view.seekClips && actor.clip) dir?.seek(actor.clip, actor.clipTime);
+    if (view.seekClips && dir && actor.clip) {
+      dir.battingPose.contact = actor.batContact ? new Vector3(...actor.batContact) : null;
+      dir.seek(actor.clip, actor.clipTime);
+    }
   }
   refs.ball.position.set(snap.ball[0], snap.ball[1], snap.ball[2]);
   const at = { x: snap.ball[0], y: snap.ball[1], z: snap.ball[2] };
@@ -217,7 +224,8 @@ function holdsOneShot(dir: AnimationDirector | undefined): boolean {
 function applyIdleDefence(
   refs: SceneRefs,
   frame: LiveFrame,
-  protectedIds: ReadonlySet<string>
+  protectedIds: ReadonlySet<string>,
+  batAimHeightFt?: number
 ): void {
   for (const [id, pos] of Object.entries(frame.defence)) {
     const kid = refs.kids.get(id);
@@ -273,8 +281,10 @@ function applyIdleDefence(
   // the next windup would be a teleport with a 2.5s layover.
   const batter = frame.baseIds.includes(frame.batterId) ? undefined : refs.kids.get(frame.batterId);
   if (batter) {
-    batter.setPosition(-2.2, 1.2);
-    batter.setFacing(Math.PI);
+    // Match the reference grip + barrel reach; scale belongs to the art only.
+    const box = battingPlacement(batter.root.scale.x);
+    batter.setPosition(box.x, box.z);
+    batter.setFacing(box.facing);
     // ★ AND THE BATTER STANDS IN. `bat_stance` is in the clip contract, every
     // swing clip names it as its `returnsTo`, and nothing had ever played it —
     // so the one kid the camera is pointed at waited for the pitch in `idle`,
@@ -282,6 +292,12 @@ function applyIdleDefence(
     // been in. Same class as the defence standing in bind pose before PR 13
     // drew it: a clip that exists, is documented, and has no caller.
     const dir = refs.directors.get(frame.batterId);
+    if (dir && frame.pitch) {
+      const at = pitchAt(frame, frame.pitch.travelSec).p;
+      const point = new Vector3(at.x, batAimHeightFt ?? at.y, at.z);
+      batter.root.parent?.updateWorldMatrix(true, false);
+      dir.battingPose.contact = batter.root.parent ? batter.root.parent.localToWorld(point) : point;
+    } else if (dir && frame.phase === 'windup') dir.battingPose.contact = null;
     dir?.setGloveVisible(false);
     if (!protectedIds.has(frame.batterId) && !holdsOneShot(dir)) dir?.play('bat_stance');
   }
@@ -332,7 +348,8 @@ function applyLive(
       continue;
     }
     const p = runnerPos(r);
-    kid.setPosition(p.x, p.z);
+    const box = r.startBase === 0 && r.from === 0 ? battingRunOut(kid.root.scale.x, r.alongFt) : { x: 0, z: 0 };
+    kid.setPosition(p.x + box.x, p.z + box.z);
     if (!isSettled(r)) {
       const to = basePos(r.to);
       kid.setFacing(Math.atan2(to.x - p.x, to.z - p.z));
@@ -368,7 +385,7 @@ function applyLive(
 const PITCH_HZ = 240;
 /** One sim tick. Below this, a play has only just started — that is contact. */
 const CONTACT_TICK_SEC = 1 / 60 + 1e-9;
-function applyPitch(refs: SceneRefs, frame: LiveFrame, elapsedSec: number): void {
+function pitchAt(frame: LiveFrame, elapsedSec: number): BallState {
   const { release, travelSec } = frame.pitch!;
   const want = elapsedSec < 0 ? 0 : elapsedSec > travelSec ? travelSec : elapsedSec;
   const dt = 1 / PITCH_HZ;
@@ -380,6 +397,11 @@ function applyPitch(refs: SceneRefs, frame: LiveFrame, elapsedSec: number): void
   }
   // The remainder, interpolated — the seam `sampleAt` exists for.
   const at = want > t ? sampleAt(cur, stepFlight(cur, dt, {}).state, (want - t) / dt) : cur;
+  return at;
+}
+
+function applyPitch(refs: SceneRefs, frame: LiveFrame, elapsedSec: number): void {
+  const at = pitchAt(frame, elapsedSec);
   refs.ball.position.set(at.p.x, at.p.y, at.p.z);
 }
 
