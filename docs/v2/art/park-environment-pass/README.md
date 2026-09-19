@@ -15,6 +15,7 @@ Remaining acceptance: independent review against the pinned reference, maintaine
 - `npm test`: 114 files; 2,291 passed, 14 skips. The two bundle checks skipped while the build replaced `dist/`; both passed when rerun after the build. The remaining 12 are existing skips.
 - `npm run build`: both game entry points built.
 - CI exposed an existing synchronous simulation sweep that could starve Vitest's reporting connection. Its unchanged venue/seed cases now run separately with an event-loop yield; all assertions and timeout values are preserved.
+- Release integration with the batting fix exposed the bundle gate's fresh-checkout blind spot: CI now builds before testing so the existing size checks run. Turf shader explanations live outside GLSL strings, and excess string indentation is removed, reducing shipped bytes without changing shader tokens or raising the budget.
 - Scenery: two draws and 21,520 triangles, below the existing 25,000-triangle layer budget.
 - All twelve supplemental views preserve their baseline draw count. Geometry adds 11,344 triangles per view; the highest captured total is 122,756, below the 180,000 scene triangle target.
 - The initial scene's wide-camera count is 111 draws both before and after; the 90-draw goal is pre-existing open work. These counts use the same headless renderer and do not replace real-device timing.
