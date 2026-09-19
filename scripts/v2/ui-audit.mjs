@@ -645,6 +645,17 @@ const SCREENS = [
     })()`,
     mustSee: '.screen--pause .mode-card',
   },
+  ...['loading', 'error'].map(startup => ({
+    name: `title ${startup}`,
+    reach: `(async () => {
+      const [{ TitleScreen }, { Router }] = await Promise.all([
+        import('/src/v2/ui/screens/TitleScreen.ts'), import('/src/v2/ui/Router.ts')]);
+      const noop = () => {};
+      new Router(document.getElementById('screens')).show(new TitleScreen(noop, noop, noop, noop, '${startup}'));
+      return 'ok';
+    })()`,
+    mustSee: '.screen--title .btn--hero',
+  })),
 ];
 
 async function auditScreen(page, vp, screen) {
@@ -812,7 +823,7 @@ async function main() {
         'Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 5000))]).then(() => true)'
       );
       await page.addStyleTag({ content: NO_MOTION });
-      await page.waitForSelector('.screen--title', { timeout: 30_000 }).catch(() => {});
+      await page.waitForSelector('.screen--title .btn--hero:enabled', { timeout: 30_000 });
       for (const screen of SCREENS) {
         const n = await auditScreen(page, vp, screen);
         audited += n;

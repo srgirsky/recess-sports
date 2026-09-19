@@ -29,6 +29,7 @@ import {
   type DraftState,
 } from '../../systems/draft';
 import { recordPick } from '../../systems/picklog';
+import { CUSTOM_PLAYER_ID } from '../../data/characters';
 
 export type { DraftState };
 export { isDraftComplete };
@@ -85,4 +86,20 @@ export function pickByCpu(
   if (state.turn !== 'ai' || state.pool.length === 0) return { state, id: null };
   const id = chooseBestPick(state, rng);
   return { state: applyPick(state, id), id };
+}
+
+/** Fill only the vacant slots. These are recommendations, never preference
+ * votes; use the shared draft rules directly rather than pickByHuman. */
+export function completeDraft(state: DraftState, rng: () => number): DraftState {
+  let next = state;
+  while (!isDraftComplete(next) && next.pool.length > 0) {
+    // The shared roster evaluator knows only authored kids. A custom captain
+    // keeps its actual slot, but is not a roster lookup or a vote; recommend
+    // a complete supporting team from the authored pool.
+    const candidates = { ...next, playerTeam: next.playerTeam.filter(id => id !== CUSTOM_PLAYER_ID) };
+    const picked = applyPick(next, chooseBestPick(candidates, rng));
+    if (picked === next) break;
+    next = picked;
+  }
+  return next;
 }

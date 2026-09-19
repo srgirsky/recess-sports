@@ -15,7 +15,10 @@
 // machine-readable probe of which clip each principal is actually playing.
 //
 // ⚠️ HEADLESS PAGES ARE TREATED AS BACKGROUNDED (see ui-audit.mjs's header):
-// never wait for rAF here. Every painted frame is an explicit `devPaint`.
+// Disable native rAF before boot: every painted frame is an explicit
+// `devPaint`. DOM readiness uses timer polling; the draft CPU still gets its
+// real timeout before the pick re-arms. Continuous headless WebGL frames can
+// otherwise stall compositor capture and mutate the state after its probe.
 //
 // ⚠️ NEVER PAINT FROM `performance.now()`. The first wall-clock tick after a
 // reach carries the whole reach's wall time, clamped to 0.1s — six unsampled
@@ -34,8 +37,8 @@
 // air, a runner mid-leg, a runner waiting, the inning-break board, the half flip, a caught fly
 // with its catcher still in the catch clip, and the whole game run out to
 // its result), and a dedicated
-// HOME-RUN page on a hunted seed. Screenshots fall back to reading the WebGL
-// canvas in-task when the headless compositor stalls.
+// HOME-RUN page on a hunted seed. Native compositor captures keep the DOM HUD;
+// a canvas-only fallback cannot establish the presentation being reviewed.
 // ---------------------------------------------------------------------------
 
 import { chromium } from 'playwright';
@@ -50,6 +53,19 @@ const GAME_URL = `http://localhost:${PORT}/v2/?play=1&seed=smoke`;
 const OUT = resolve(process.argv[2] ?? join(here, '../../.smoke'));
 
 let viteProc = null;
+async function capturePage(page, path) {
+  // Same capture path as capture-art-benchmark: no animation-frame settling
+  // and no silent loss of HUD when Playwright's screenshot wait stalls.
+  const cdp = await page.context().newCDPSession(page);
+  try {
+    const shot = await cdp.send('Page.captureScreenshot', {
+      format: 'png', fromSurface: true, captureBeyondViewport: false,
+    });
+    writeFileSync(path, Buffer.from(shot.data, 'base64'));
+  } finally {
+    await cdp.detach();
+  }
+}
 function startVite() {
   const p = spawn('npx', ['vite', '--port', String(PORT), '--strictPort'], {
     cwd: join(here, '../..'),
@@ -315,6 +331,10 @@ const BEATS = [
  */
 async function frontDoorBeats(browser, failures, report) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+  await page.addInitScript(() => {
+    window.requestAnimationFrame = () => 0;
+    window.cancelAnimationFrame = () => {};
+  });
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e)));
   const pump = (ticks) =>
@@ -323,14 +343,7 @@ async function frontDoorBeats(browser, failures, report) {
       .catch(() => {});
   const shoot = async (name, ok, msg) => {
     const shot = join(OUT, `${name}.png`);
-    await page.screenshot({ path: shot, timeout: 15_000 }).catch(async () => {
-      const data = await page
-        .evaluate(`(() => { window.__spike.devPaint(2);
-          return document.querySelector('canvas')?.toDataURL('image/png') ?? null; })()`)
-        .catch(() => null);
-      if (data) writeFileSync(shot, Buffer.from(data.split(',')[1], 'base64'));
-      else console.warn(`  (screenshot for ${name} skipped: compositor and canvas both unavailable)`);
-    });
+    await capturePage(page, shot);
     report.push({ beat: name, shot, ok, msg });
     console.log(`  ${ok ? '✓' : '✗'} ${name.padEnd(16)} ${msg}`);
     if (!ok) failures.push(`${name}: ${msg}`);
@@ -340,12 +353,12 @@ async function frontDoorBeats(browser, failures, report) {
       waitUntil: 'domcontentloaded',
       timeout: 60_000,
     });
-    await page.waitForFunction('!!window.__spike', { timeout: 30_000 });
+    await page.waitForFunction('!!window.__spike', null, { polling: 100, timeout: 30_000 });
     await page.evaluate(
       'Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 5000))]).then(() => true)'
     );
     // Title: the hero PLAY button is the four-year-old's whole contract.
-    const hero = await page.waitForSelector('.btn--hero', { timeout: 15_000 }).catch(() => null);
+    const hero = await page.waitForFunction(() => !!document.querySelector('.screen--title .btn--hero:enabled'), null, { polling: 100, timeout: 30_000 }).catch(() => null);
     await pump(30);
     await shoot('title', hero !== null, hero ? 'PLAY offered on the title' : 'no .btn--hero on the title');
     if (!hero) return;
@@ -354,22 +367,14 @@ async function frontDoorBeats(browser, failures, report) {
     // animation frame for its post-action settle, and this page's rAF is
     // throttled to nothing — the click lands and the await never returns.
     await page.$eval('.btn--hero', (el) => el.click());
-    let pick = null;
-    for (let i = 0; i < 40 && !pick; i++) {
-      await pump(12);
-      pick = await page.$('.draft-preview__pick');
-    }
+    const pick = await page.waitForFunction(() => !!document.querySelector('.draft-preview__pick'), null, { polling: 100, timeout: 15_000 }).catch(() => null);
     await pump(30);
     await shoot('draft-open', pick !== null, pick ? 'a candidate presents with PICK ME! armed' : 'PICK ME! never armed');
     if (!pick) return;
     // Pick once: the CPU answers and the turn must come BACK (the re-arm fix
     // — the 2026-08-24 review found the draft dead after the first CPU pick).
     await page.$eval('.draft-preview__pick', (el) => el.click());
-    let rearmed = null;
-    for (let i = 0; i < 80 && !rearmed; i++) {
-      await pump(12);
-      rearmed = await page.$('.draft-preview__pick');
-    }
+    const rearmed = await page.waitForFunction(() => !!document.querySelector('.draft-preview__pick'), null, { polling: 100, timeout: 15_000 }).catch(() => null);
     await pump(20);
     await shoot(
       'draft-pick',
@@ -387,13 +392,18 @@ async function frontDoorBeats(browser, failures, report) {
 async function runGameBeats(browser, url, beats, failures, report) {
   try {
     const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
+    await page.addInitScript(() => {
+      window.requestAnimationFrame = () => 0;
+      window.cancelAnimationFrame = () => {};
+    });
     const errors = [];
     page.on('pageerror', (e) => errors.push(String(e)));
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60_000 });
-    await page.waitForFunction('!!window.__spike', { timeout: 30_000 });
+    await page.waitForFunction('!!window.__spike', null, { polling: 100, timeout: 30_000 });
     await page.evaluate(
       'Promise.race([document.fonts.ready, new Promise((r) => setTimeout(r, 5000))]).then(() => true)'
     );
+    await page.waitForFunction(() => !!window.__spike?.scoreboard(), null, { polling: 100, timeout: 30_000 });
     // Tap the sim's own event stream and the end-of-game callback. On the bare
     // play surface nothing else subscribes to either (Sound and the result
     // screens are the App's), so the taps steal from nobody.
@@ -404,23 +414,7 @@ async function runGameBeats(browser, url, beats, failures, report) {
     for (const beat of beats) {
       const r = await page.evaluate(REACH(beat.until, beat.paint, !!beat.untilEnd, beat.step ?? 6));
       const shot = join(OUT, `${beat.name}.png`);
-      // An occluded headless page can miss its rendering opportunity; a lost
-      // screenshot is a warning, never a hang — the probe is the assertion.
-      // One retry after fresh paint ticks recovers most misses (the compositor
-      // usually just needs a newer frame to present).
-      const snap = () => page.screenshot({ path: shot, timeout: 15_000 });
-      await snap().catch(async () => {
-        // The headless compositor stalls sometimes; the canvas itself never
-        // does. Paint and read the WebGL buffer in ONE task (it is only valid
-        // until the task yields), losing the DOM HUD but keeping the scene.
-        // Two steps past the probe — the picture stays the probed state.
-        const data = await page
-          .evaluate(`(() => { window.__spike.devPaint(2);
-            return document.querySelector('canvas')?.toDataURL('image/png') ?? null; })()`)
-          .catch(() => null);
-        if (data) writeFileSync(shot, Buffer.from(data.split(',')[1], 'base64'));
-        else console.warn(`  (screenshot for ${beat.name} skipped: compositor and canvas both unavailable)`);
-      });
+      await capturePage(page, shot);
       report.push({ beat: beat.name, shot, ...r });
       const checks = beat.expect(r);
       let bad = r.reached ? checks.filter(([ok]) => !ok) : [[false, `beat unreachable (phase ${r.phase})`]];

@@ -121,6 +121,7 @@ import {
   DRAFT_CPU_POSITIONS,
   DRAFT_PLAYER_POSITIONS,
   draftHeroPose,
+  draftHeroFacing,
   draftStageCast,
   type DraftStageCast,
   type DraftSpotlightMode,
@@ -132,7 +133,8 @@ import { Matchup } from '../ui/Matchup';
 import { MatchupTally } from '../ui/matchupModel';
 import { PlayCallouts } from '../ui/PlayCallouts';
 import { scoreboardModel, type ScoreboardTeams } from '../ui/scoreboardModel';
-import { controlsAt, type PlayerControlMode } from './controlMode';
+import { controlHint, controlsAt, type PlayerControlMode } from './controlMode';
+import { BALL_DRAW_RADIUS_FT } from '../render/readabilityCues';
 
 /**
  * How long the pitch frame is held PAST the crossing, seconds.
@@ -428,6 +430,7 @@ export class GameView {
   private readonly matchupTally = new MatchupTally();
   private readonly callouts: PlayCallouts;
   private pickerEl: HTMLElement | null = null;
+  private controlHintEl: HTMLElement | null = null;
   private teamNames: ScoreboardTeams = { away: 'ROCKETS', home: 'COMETS' };
   private customPlayer: Character | null = null;
   private controlMode: PlayerControlMode = 'both';
@@ -825,7 +828,7 @@ export class GameView {
     this.scene.add(this.field.root, this.fence.root, this.scenery.root);
 
     const ball = new Mesh(
-      new SphereGeometry(0.12, 12, 8),
+      new SphereGeometry(BALL_DRAW_RADIUS_FT, 12, 8),
       new MeshStandardMaterial({ color: 0xf8f6ef })
     );
     this.scene.add(ball);
@@ -1726,12 +1729,7 @@ export class GameView {
       if (!selected) return;
       selected.root.visible = true;
       selected.setPosition(hero.xFt, 0);
-      // Proxy/model facial geometry is +Z at rotation zero. The card camera is
-      // behind home on -Z, so PI turns that face toward the presentation lens.
-      const walkingOff = draft.mode !== 'pick' && hero.clip === 'walk_on';
-      selected.setFacing(
-        walkingOff ? (draft.mode === 'mine' ? -Math.PI / 2 : Math.PI / 2) : Math.PI
-      );
+      selected.setFacing(draftHeroFacing(hero.clip, draft.mode));
 
       draft.cast.waiting.forEach((id, i) => {
         const view = this.refs.kids.get(id);
@@ -1856,6 +1854,7 @@ export class GameView {
         // One frame stale on purpose: the camera moves after the frame is
         // applied, and a 16ms-old eye moves the cue by under a percent.
         cameraAt: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z },
+        ballProjection: { verticalFovDeg: this.camera.fov, viewportHeightPx: this.canvas.clientHeight },
       });
       this.updateDraftPresentation(dt);
       this.animateCpuSwing();
@@ -2007,6 +2006,7 @@ export class GameView {
     applySnapshot(this.refs, snap, {
       seekClips: true,
       cameraAt: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z },
+      ballProjection: { verticalFovDeg: this.camera.fov, viewportHeightPx: this.canvas.clientHeight },
     });
     this.applyCue(replayCamera(snap, this.cue ?? undefined), dt);
     if (this.frame) this.paintHud(this.frame);
@@ -2142,6 +2142,10 @@ export class GameView {
     hud.appendChild(this.board.root);
     hud.appendChild(this.matchup.root);
     hud.appendChild(this.inningBreak.root);
+    this.controlHintEl = document.createElement('div');
+    this.controlHintEl.className = 'control-hint';
+    this.controlHintEl.hidden = true;
+    hud.appendChild(this.controlHintEl);
     this.pickerEl = document.createElement('div');
     this.pickerEl.className = 'pitch-picker';
     const pitchCard = (kind: PitchKind, key: number): HTMLButtonElement => {
@@ -2202,6 +2206,11 @@ export class GameView {
 
   private paintHud(frame: LiveFrame): void {
     const controls = controlsAt(this.controlMode, frame.half);
+    if (this.controlHintEl) {
+      const hint = controlHint(this.controlMode, frame.half, frame.phase);
+      if (this.controlHintEl.textContent !== hint) this.controlHintEl.textContent = hint;
+      this.controlHintEl.hidden = !hint;
+    }
     this.board.update(
       scoreboardModel(
         frame,

@@ -158,6 +158,56 @@
         "scripts/v2/art-review.mjs:makeTargets"
       ],
       "acceptance": "Capture and inspect every generated character/action slot at both review sizes. Record observed failures in this ledger, including exact clip/phase/time and affected ids; retain unreviewed cells as incomplete. Fix one cause at a time and rerun the affected roster and adjacent transitions before an independent review and maintainer verdict."
+    },
+    {
+      "id": "ART-007",
+      "kind": "defect",
+      "status": "open",
+      "owner": "Draft presentation",
+      "targets": [
+        "screen:DraftScreen"
+      ],
+      "observation": "The September 18 live review at 1280x720 found Junebug presenting a side profile in the draft after the batting-pose correction, with waiting kids stacked behind the candidate. Walk-off facing also opposed the direction of travel. The parity-review branch corrects clip-aware facing and separates the waiting group; this is an implementation proposal, not independent visual approval.",
+      "evidence": [
+        "src/v2/render/draftPresentation.ts",
+        "src/v2/game/GameView.ts:renderDraftPresentation",
+        "docs/research/parity-review-2026-09-18.md"
+      ],
+      "acceptance": "Review the entrance, held pose, confirmation and walk to both benches for all hero-pose families at desktop and phone sizes; faces must address the viewer and the chosen child must be identifiable without reading the name. Record fresh evidence before independent review and sign-off."
+    },
+    {
+      "id": "ART-008",
+      "kind": "defect",
+      "status": "open",
+      "owner": "Character identity and UI art",
+      "targets": [
+        "screen:DraftScreen",
+        "screen:TitleScreen"
+      ],
+      "observation": "The draft pairs a green-shirted illustrated Junebug portrait with a red-clothed 3D Junebug. The custom captain also differs markedly between portrait and stage. Two individually recognizable depictions are not a consistent visual identity; a child choosing by appearance may not recognize the same kid in play.",
+      "evidence": [
+        "src/v2/ui/portrait.ts",
+        "src/v2/ui/screens/DraftScreen.ts",
+        "docs/research/parity-review-2026-09-18.md"
+      ],
+      "acceptance": "Use approved depictions that agree on silhouette, face, hair and signature clothing across title, selection card, team tray and live model. Review every roster identity and custom-player combination without altering v1 art or preference tallies."
+    },
+    {
+      "id": "ART-009",
+      "kind": "defect",
+      "status": "open",
+      "owner": "Field readability and environment",
+      "targets": [
+        "venue:park",
+        "action:contact"
+      ],
+      "observation": "The live review of seed critical-review in the wide field camera showed the rectangular turf boundary against the sky and a ball that was barely distinguishable from a single bright speck. The distance-based ball cue reaches its scale cap before the deep camera can preserve readable pixels. The parity-review branch extends the same turf mesh through the horizon and applies a viewport-aware minimum live-ball diameter. The proposal passes technical projection/geometry tests and presentation smoke; motion comparison and independent visual review remain open.",
+      "evidence": [
+        "src/v2/render/Field.ts:buildTurf",
+        "src/v2/render/readabilityCues.ts:ballPresenceCue",
+        "docs/research/parity-review-2026-09-18.md"
+      ],
+      "acceptance": "Show a continuous ground-to-horizon composition through field/deep camera moves and a ball that remains clearly identifiable at desktop and landscape-phone sizes, without changing physical ball size, collision, catches or input tolerance. Compare fresh full-scene motion and retain performance budgets."
     }
   ]
 }

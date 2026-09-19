@@ -111,10 +111,19 @@ export class App {
   }
 
   async start(): Promise<void> {
-    // The park is built and the characters are loaded BEFORE the title shows,
-    // so PLAY is instant and the title has something real behind it.
-    await this.game.start();
-    if (this.customPlayer) await this.game.setCustomPlayer(this.customPlayer);
+    // Show the actual title while assets load. A blank canvas gives a child
+    // no sign the game is starting; disabled game actions prevent entry into
+    // an incomplete scene, while Classic remains available.
+    const noop = () => {};
+    this.router.show(new TitleScreen(noop, noop, noop, noop, 'loading'));
+    try {
+      await this.game.start();
+      if (this.customPlayer) await this.game.setCustomPlayer(this.customPlayer);
+    } catch (error) {
+      console.error('[App] Could not start the game', error);
+      this.router.show(new TitleScreen(noop, noop, noop, noop, 'error'));
+      return;
+    }
     this.game.setTeamNames(this.names());
     this.game.onGameEnd((r) => this.showResult(r));
     this.game.onSimEvent((e) => this.sound.onEvent(e));
@@ -334,7 +343,8 @@ export class App {
         (id, pool, playerTeam, aiTeam, host, mode) =>
           this.game.setDraftSpotlight(id, pool, playerTeam, aiTeam, host, mode),
         (id) => this.lookup(id),
-        !this.seasonDraft ? this.customPlayer?.id : undefined
+        !this.seasonDraft ? this.customPlayer?.id : undefined,
+        () => this.showTitle()
       )
     );
   }

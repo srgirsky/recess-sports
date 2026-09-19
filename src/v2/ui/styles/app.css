@@ -63,6 +63,23 @@ body {
   pointer-events: auto;
 }
 
+.control-hint {
+  grid-area: center;
+  align-self: end;
+  justify-self: center;
+  max-inline-size: min(28rem, 100%);
+  margin: var(--s2);
+  padding: var(--s2) var(--s3);
+  border: 0.1rem solid var(--outline);
+  border-radius: 999px;
+  background: var(--cream);
+  color: var(--ink);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-align: center;
+}
+.control-hint[hidden] { display: none; }
+
 #screens {
   position: absolute;
   inset: 0;
@@ -1832,10 +1849,18 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
 
 .draft-head {
   display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
   justify-items: center;
   gap: var(--s1);
+  inline-size: min(78rem, 94vw);
+  box-sizing: border-box;
+  padding-inline-end: 4rem;
 }
+
 .draft-head__title {
+  grid-column: 2;
+  grid-row: 1;
   /* The wooden sign — BB's "Pick-Up Window" plank, in one rule. */
   margin: 0;
   padding: var(--s2) var(--s4);
@@ -1850,6 +1875,8 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
   rotate: -1deg;
 }
 .draft-head__status {
+  grid-column: 1 / -1;
+  grid-row: 2;
   margin: 0;
   min-block-size: 1.2em;
   font-size: 0.82rem;
@@ -1857,6 +1884,8 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
   text-transform: uppercase;
   color: var(--gold);
 }
+.draft-head__back { grid-column: 1; grid-row: 1; justify-self: start; }
+.draft-head__fill { grid-column: 3; grid-row: 1; justify-self: end; }
 
 /* The just-filled slot pops — same motion contract as the scoreboard pips:
    `--motion-scale` zeroes the movement and the is-filled colour change is the
@@ -2035,7 +2064,7 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
   grid-column: 2;
   grid-row: 1;
   z-index: 3;
-  justify-self: center;
+  justify-self: start;
   padding: var(--s1) var(--s4);
   border: 0.13rem solid var(--outline);
   border-radius: 999px;
@@ -2198,6 +2227,10 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
   color: var(--red);
 }
 @media (max-width: 720px) {
+  .draft-head { padding-inline-end: 0; }
+  .draft-head__title { grid-column: 1 / -1; }
+  .draft-head__back, .draft-head__fill { grid-row: 2; }
+  .draft-head__status { grid-row: 3; }
   .draft-preview {
     grid-template-columns: 1fr 1fr;
     grid-template-rows: auto 1fr auto auto;
