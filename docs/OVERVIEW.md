@@ -2981,3 +2981,21 @@ evidence limits and next review order are in the
 [critical parity review](research/parity-review-2026-09-18.md); visual findings
 remain owned by the existing whole-game and sculpt ledgers. No parity or art
 approval is implied by this pass.
+
+## September 19 arm deformation correction
+
+The delivered-model census found no elbow or wrist weight blending on 29 of
+30 characters. The shared arm builder treated garment station labels as rigid
+bone assignments, including upper-arm skin assigned to the forearm. It now
+blends around the canonical joints while preserving each character's shoulder
+falloff. The original Blender sources receive the same weight-only correction;
+their geometry and rig stay intact. Lefty's sleeve piping follows the arm's
+weights. Junebug retains her separately authored joint blends.
+
+The batting constraint also used independent shortest-arc rotations for the
+two arm segments. That placed the hands correctly while twisting the elbow.
+Both segments now share a bend plane, with elbow direction relative to the
+turning chest. Delivered-weight and elbow-twist regressions accompany matched
+runtime comparisons. This corrects deformation without claiming finished
+character art: Tank's ready-pose torso intersection and the existing sculpt
+polish findings remain separate work.

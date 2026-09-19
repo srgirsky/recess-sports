@@ -28,6 +28,21 @@ function fixture(mirrored = true, scale = 1.6, seated = false) {
 }
 
 describe('batting mechanics in the actual scene coordinate system', () => {
+  it('bends each elbow in one plane instead of twisting the sleeve between segments', () => {
+    const f = fixture();
+    for (const name of ['bat_stance', 'bat_load', 'swing_contact', 'swing_follow', 'swing_whiff', 'bunt'] as AnimName[]) {
+      for (let frame = 0; frame < clipSpec(name).frames; frame++) {
+        f.dir.seek(name, frame / FPS);
+        for (const side of ['Left', 'Right']) {
+          const elbow = f.bone(`${side}ForeArm`).quaternion;
+          // A pure hinge about Z has no relative X/Y rotation. Checking hand
+          // position alone passed the independent-shortest-arcs corkscrew.
+          expect(Math.hypot(elbow.x, elbow.y), `${name}:${frame} ${side} elbow twist`).toBeLessThan(1e-6);
+        }
+      }
+    }
+    f.cleanup();
+  });
   it.each([false, true])('keeps the head on the pitcher and both palms on the handle (mirror %s)', mirror => {
     const f = fixture(mirror);
     for (const name of ['bat_stance', 'swing_contact', 'swing_follow', 'swing_whiff'] as AnimName[]) {

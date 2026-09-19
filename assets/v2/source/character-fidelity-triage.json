@@ -1780,11 +1780,6 @@
       "class": "material-light",
       "excerpt": "SKIN IS ONLY SLIGHTLY LIGHT \u2014 CARRIED as minor, not re-measured this round: git "
     },
-    "grizz:68fa19be5543": {
-      "char": "grizz",
-      "class": "evidence",
-      "excerpt": "NEW \u2014 EVIDENCE, NOT SCULPT: THE BOARD'S HERO AND RUN/CONTACT PANELS ARE STALE. g"
-    },
     "grizz:205aba826064": {
       "char": "grizz",
       "class": "no-defect-note",
@@ -2559,6 +2554,11 @@
       "char": "tank",
       "class": "no-defect-note",
       "excerpt": "PRESERVED: front/A-pose leg separation, cream sock construction, cuffs and "
+    },
+    "grizz:0b4250df69ae": {
+      "char": "grizz",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED \u2014 EVIDENCE REFRESH: the previous stale-board hero/run/contact finding "
     }
   }
 }

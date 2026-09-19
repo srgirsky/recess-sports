@@ -74,13 +74,18 @@ export class BattingPose {
     bone.updateWorldMatrix(false, true);
   }
 
-  private arm(side: 'Left' | 'Right', palm: Vector3, rotation: Quaternion): void {
+  private arm(side: 'Left' | 'Right', palm: Vector3, rotation: Quaternion, followClearance = 0): void {
     const upper = this.bones.get(`${side}Arm`)!;
     const lower = this.bones.get(`${side}ForeArm`)!;
     const hand = this.bones.get(`${side}Hand`)!;
     const sign = side === 'Right' ? 1 : -1;
     const wrist = palm.clone().sub(this.palmOffset(side).applyQuaternion(rotation));
-    this.solve(upper, lower, hand, wrist, new Vector3(sign * .25, -1, 0));
+    // Keep the elbows outboard and in front of the chest as it turns. A
+    // straight-down world-space hint tucked wide kids' upper arms into their
+    // shirts, even though the two palms still reached the handle exactly.
+    const elbowHint = new Vector3(sign * .8, -.4, .5 + .25 * followClearance)
+      .applyQuaternion(this.rotation(this.bones.get('Spine2')!));
+    this.solve(upper, lower, hand, wrist, elbowHint, sign);
     this.set(hand, rotation);
   }
 
@@ -88,7 +93,7 @@ export class BattingPose {
     return this.bones.get(side === 'Right' ? 'Prop_BatGrip' : 'Prop_GloveAnchor')!.position.clone();
   }
 
-  private solve(upper: Object3D, lower: Object3D, end: Object3D, target: Vector3, hint: Vector3): void {
+  private solve(upper: Object3D, lower: Object3D, end: Object3D, target: Vector3, hint: Vector3, armSign?: number): void {
     const shoulder = this.at(upper);
     const to = target.clone().sub(shoulder);
     const l1 = lower.position.length(), l2 = end.position.length();
@@ -97,8 +102,23 @@ export class BattingPose {
     const along = (l1 * l1 - l2 * l2 + d * d) / (2 * d);
     const bend = hint.clone().addScaledVector(direction, -hint.dot(direction)).normalize();
     const elbow = shoulder.clone().addScaledVector(direction, along).addScaledVector(bend, Math.sqrt(Math.max(0, l1 * l1 - along * along)));
-    this.set(upper, new Quaternion().setFromUnitVectors(lower.position.clone().normalize(), elbow.clone().sub(shoulder).normalize()));
-    this.set(lower, new Quaternion().setFromUnitVectors(end.position.clone().normalize(), target.clone().sub(elbow).normalize()));
+    if (armSign !== undefined) {
+      // Both segments share one elbow plane. Independently choosing each
+      // shortest-arc quaternion gets the wrist to the right point but gives
+      // the two segments different rolls: a blended sleeve then corkscrews
+      // at the elbow. Position-only grip tests cannot see that twist.
+      const z = bend.clone().cross(direction).multiplyScalar(armSign).normalize();
+      const orient = (aim: Vector3) => {
+        const x = aim.normalize().multiplyScalar(armSign);
+        const y = z.clone().cross(x).normalize();
+        return new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(x, y, z));
+      };
+      this.set(upper, orient(elbow.clone().sub(shoulder)));
+      this.set(lower, orient(target.clone().sub(elbow)));
+    } else {
+      this.set(upper, new Quaternion().setFromUnitVectors(lower.position.clone().normalize(), elbow.clone().sub(shoulder).normalize()));
+      this.set(lower, new Quaternion().setFromUnitVectors(end.position.clone().normalize(), target.clone().sub(elbow).normalize()));
+    }
   }
 
   apply(name: AnimName, time: number): void {
@@ -211,7 +231,13 @@ export class BattingPose {
         }
       }
     }
-    this.arm('Right', grip, handRotation);
+    // The driving elbow briefly moves forward as the bat passes after contact.
+    // Applying this to both arms pulls the support sleeve into the shaft;
+    // taper to zero before recovery so ready/contact/follow joins stay fixed.
+    // Verified over every batting frame on all 30 delivered models.
+    const followClearance = name === 'swing_contact' || name === 'swing_whiff'
+      ? Math.sin(Math.PI * smooth((time * FPS - CONTACT_FRAME) / 6)) : 0;
+    this.arm('Right', grip, handRotation, followClearance);
     const lowerPalm = grip.clone().addScaledVector(axis, -.18);
     this.arm('Left', lowerPalm, handRotation.clone().multiply(new Quaternion().setFromAxisAngle(Y, Math.PI)));
     for (const side of ['Left', 'Right']) {

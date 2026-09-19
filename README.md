@@ -440,6 +440,13 @@ trim before a shared change can even build), their status and scores, and open
 findings by triage class — sorted most-stale-then-tightest, which is the batch
 order for a polish sweep.
 
+For the arm-weight migration on an existing authored source, run
+`blender --background assets/v2/source/<slug>-pilot.blend --python scripts/v2/blender/repair-arm-skinning.py`,
+then `npm run export:authored-character -- <id>`. This edits vertex groups only;
+it preserves the source geometry instead of picking up unrelated sculpt-library
+changes. Junebug is excluded because she already has authored joint blending.
+Refresh runtime evidence and review boards after exporting as for any delivery.
+
 The id a character is registered under and the slug their art was drawn under
 differ for eleven of the thirty. `scripts/v2/character-registry.json` is the one
 place that mapping lives — the `.mjs` tooling, the two Blender scripts and
