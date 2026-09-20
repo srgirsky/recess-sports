@@ -163,6 +163,11 @@ export const OPTIONAL_BONES: readonly string[] = [
   'Accessory_01',
   'Accessory_02',
   'Accessory_03',
+  // Independent cartoon digits; optional so existing deliveries keep their rig.
+  'LeftHandMiddle1', 'LeftHandRing1',
+  'RightHandMiddle1', 'RightHandRing1',
+  // Index tip moves independently; the two other cartoon tips share a hinge.
+  'LeftHandIndex2', 'LeftHandCurl2', 'RightHandIndex2', 'RightHandCurl2',
 ];
 
 /** Hard cap. 42 bones keeps every character inside one uniform block on the

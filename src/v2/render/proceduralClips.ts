@@ -777,7 +777,7 @@ function junebugUpsetFierce(spec: ClipSpec): AnimationClip {
 // Removed on all of them together, because they are one defect.
 const THEO_IDLE_POSE: Pose = {
   hp: [-5, -8, 0], sp: [-6, -8, 0], s2: [-8, -10, 0], nk: [2, 5, 0], hd: [-3, 13, 2],
-  la: [-8, 0, 65], lf: [0, -24, 0], ra: [-8, 0, -65], rf: [0, 24, 0],
+  la: [0, 0, 72], lf: [0, 18, 0], ra: [0, 0, -72], rf: [0, -18, 0],
   lu: [-3, 0, 0], ru: [3, 0, 0],
 };
 
@@ -839,41 +839,36 @@ function theoSwingFollow(spec: ClipSpec): AnimationClip {
   ]);
 }
 
+// Absolute arm poses: adding gestures to an already rotated idle folded the
+// sleeve over the face. Palms-down bind; mirrored Y flexion reaches FORWARD.
 function theoIdleFidget(spec: ClipSpec): AnimationClip {
-  const call = shift(THEO_IDLE_POSE, {
-    hp: [-5, -7, 0], sp: [-5, -8, 0], s2: [-7, -12, 0], hd: [-4, -15, 4],
-    ra: [-82, 0, -22], rf: [0, 112, 0], la: [-24, 0, 32], lf: [0, -48, 0],
-  });
+  const wave: Pose = { ...THEO_IDLE_POSE, ra: [0, -12, 18], rf: [0, -75, 0], rh: [0, 0, -8] };
   return build(spec, [
     { f: 0, pose: THEO_IDLE_POSE },
-    { f: 12, pose: shift(call, { ra: [18, 0, -12], rf: [0, -18, 0] }) },
-    { f: 23, pose: call },
-    { f: 34, pose: shift(call, { hd: [0, 30, -3], ra: [-8, 0, 8], rf: [0, 10, 0] }) },
-    { f: 46, pose: shift(THEO_IDLE_POSE, { hp: [-8, 0, 0], sp: [-8, 0, 0], s2: [-9, 0, 0], hd: [-5, 10, 2] }) },
-    { f: 61, pose: shift(THEO_IDLE_POSE, { hd: [0, -12, 0], la: [-16, 0, 18], lf: [0, -25, 0] }) },
-    { f: 75, pose: THEO_IDLE_POSE },
+    { f: 18, pose: wave },
+    { f: 30, pose: { ...wave, rh: [0, 0, 12], hd: [-3, -8, 2] } },
+    { f: 42, pose: wave },
+    { f: 62, pose: THEO_IDLE_POSE },
     { f: spec.frames - 1, pose: THEO_IDLE_POSE },
   ]);
 }
 
 function theoPoseCard(spec: ClipSpec): AnimationClip {
-  const hero = shift(THEO_IDLE_POSE, {
-    hp: [-3, -9, 0], sp: [-4, -10, 0], s2: [-6, -13, 0], hd: [-3, 17, 4],
-    la: [-42, 0, 45], lf: [0, -72, 0], ra: [-118, 0, -24], rf: [0, 88, 0],
-    ru: [-5, 0, -5], rl: [-12, 0, 0],
-  });
+  const hero: Pose = { ...THEO_IDLE_POSE,
+    la: [0, 0, 70], lf: [0, 20, 0],
+    ra: [0, -12, -42], rf: [0, -65, 0], rh: [0, 0, 0],
+  };
   return build(spec, [{ f: 0, pose: hero }, { f: 1, pose: hero }]);
 }
 
 function theoCheerGoofy(spec: ClipSpec): AnimationClip {
-  const point = shift(THEO_IDLE_POSE, { hp: [-10, -4, 0], s2: [-12, -8, 0], hd: [-8, -22, 6], la: [-86, 0, 22], lf: [0, -106, 0], ra: [-26, 0, -50], rf: [0, 70, 0] });
-  const wobble = shift(THEO_IDLE_POSE, { hp: [28, 0, 15], sp: [18, 0, 10], hd: [15, 22, -10], la: [-20, 0, 76], ra: [-70, 0, -34], lu: [26, 0, 8], ll: [-42, 0, 0], ru: [-18, 0, -8], rl: [30, 0, 0] });
+  const cheer: Pose = { ...THEO_IDLE_POSE, hd: [-6, 10, 0],
+    la: [0, 0, -25], lf: [0, 65, 0], ra: [0, 0, 25], rf: [0, -65, 0] };
   return build(spec, [
     { f: 0, pose: THEO_IDLE_POSE },
-    { f: 7, pose: point, hips: [0, 0.08, 0] },
-    { f: 13, pose: shift(point, { la: [-34, 0, -10], hd: [-2, 10, 0] }), hips: [0, 0.48, 0] },
-    { f: 18, pose: wobble, hips: [0.12, 0.04, 0] },
-    { f: 24, pose: shift(THEO_IDLE_POSE, { hp: [-8, 0, 0], hd: [-5, -15, 3] }) },
+    { f: 8, pose: cheer, hips: [0, .08, 0] },
+    { f: 14, pose: { ...cheer, hd: [-4, -12, 0] }, hips: [0, .25, 0] },
+    { f: 22, pose: cheer },
     { f: spec.frames - 1, pose: THEO_IDLE_POSE },
   ]);
 }
@@ -1922,7 +1917,7 @@ export function buildJunebugPilotClips(): AnimationClip[] {
   });
 }
 
-/** Theo's signed-off character pass, exported as a partial delivery. */
+/** Theo's reference candidate; visual approval remains pending. */
 export function buildTheoPilotClips(): AnimationClip[] {
   const builders: Readonly<Record<string, (spec: ClipSpec) => AnimationClip>> = {
     idle: theoIdle,

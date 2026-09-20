@@ -13,6 +13,7 @@ import { bindWorld } from './skeleton';
 const BIND = bindWorld();
 
 const Y = new Vector3(0, 1, 0);
+const X = new Vector3(1, 0, 0);
 const Z = new Vector3(0, 0, 1);
 const READY_AXIS = new Vector3(.65, .45, .8).normalize();
 const FOLLOW_AXIS = new Vector3(-.8, .6, .2).normalize();
@@ -83,7 +84,8 @@ export class BattingPose {
     // Keep the elbows outboard and in front of the chest as it turns. A
     // straight-down world-space hint tucked wide kids' upper arms into their
     // shirts, even though the two palms still reached the handle exactly.
-    const elbowHint = new Vector3(sign * .8, -.4, .5 + .25 * followClearance)
+    const clearanceGain=this.bones.has('RightHandIndex2')?.5:.25;
+    const elbowHint = new Vector3(sign * .8, -.4, .5 + clearanceGain * followClearance)
       .applyQuaternion(this.rotation(this.bones.get('Spine2')!));
     this.solve(upper, lower, hand, wrist, elbowHint, sign);
     this.set(hand, rotation);
@@ -175,7 +177,21 @@ export class BattingPose {
     // Plant the batting feet while the pelvis turns; lower/shift the body
     // only as far as the two hands need to reach the handle. Zoom's seated
     // clips retain their seat and leg transforms.
-    const handRotation = new Quaternion().setFromUnitVectors(Y, axis);
+    const batRotation = new Quaternion().setFromUnitVectors(Y, axis);
+    const handRotation = batRotation.clone();
+    // Reference palms lie in X/Z. The handle crosses the palm along Z,
+    // perpendicular to finger curl; legacy forward-facing mittens used Y.
+    const referenceHands = this.bones.has('RightHandIndex2');
+    if (referenceHands) {
+      handRotation.multiply(new Quaternion().setFromAxisAngle(X,-Math.PI/2));
+      // Seat the handle against the palm surface, not through its centre.
+      for (const name of ['Prop_BatGrip','Prop_GloveAnchor']) {
+        const anchor=this.bones.get(name)!;
+        this.positions.set(anchor,anchor.position.clone());
+        anchor.position.y=-.05;
+        anchor.position.x+=name==='Prop_BatGrip'?.03:-.03;
+      }
+    }
     {
       const handTargets = ['Left', 'Right'].map(side => {
         const right = side === 'Right';
@@ -240,6 +256,7 @@ export class BattingPose {
     this.arm('Right', grip, handRotation, followClearance);
     const lowerPalm = grip.clone().addScaledVector(axis, -.18);
     this.arm('Left', lowerPalm, handRotation.clone().multiply(new Quaternion().setFromAxisAngle(Y, Math.PI)));
+    if (referenceHands) this.set(this.bones.get('Prop_BatGrip')!,batRotation);
     for (const side of ['Left', 'Right']) {
       const sign = side === 'Right' ? 1 : -1;
       for (const [suffix, angle] of [['Index1', 1.65], ['Thumb1', -.65]] as const) {

@@ -47,14 +47,17 @@ def source_meshes(character_id: str) -> list[bpy.types.Object]:
     return sorted(selected, key=lambda obj: obj.name)
 
 
-def rebuild_armature(bone_names: list[str], meshes: list[bpy.types.Object]) -> bpy.types.Object:
+def rebuild_armature(bone_names: list[str], meshes: list[bpy.types.Object], optional: list[str], max_bones: int) -> bpy.types.Object:
     armatures = [obj for obj in bpy.context.scene.objects if obj.type == "ARMATURE"]
     if len(armatures) != 1:
         raise RuntimeError(f"expected exactly one armature, found {len(armatures)}")
     old = armatures[0]
     found = {bone.name for bone in old.data.bones}
     missing = [name for name in bone_names if name not in found]
+    bone_names = bone_names + [name for name in optional if name in found]
     extra = sorted(found.difference(bone_names))
+    if len(bone_names) > max_bones:
+        raise RuntimeError(f"{len(bone_names)} bones exceeds cap {max_bones}")
     if missing or extra:
         raise RuntimeError(f"armature differs from the contract; missing={missing}, extra={extra}")
 
@@ -120,7 +123,7 @@ def main() -> None:
     contract = json.loads(args.contract.read_text())
     bone_names = contract["boneNames"]
     meshes = source_meshes(args.id)
-    armature = rebuild_armature(bone_names, meshes)
+    armature = rebuild_armature(bone_names, meshes, contract.get("optionalBones", []), contract.get("maxBones", 42))
 
     for obj in bpy.context.scene.objects:
         obj.select_set(False)

@@ -6,6 +6,7 @@
 // the production gates without waiting for the rest of the roster.
 // ---------------------------------------------------------------------------
 
+import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
@@ -104,10 +105,10 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   if (!id) throw new Error(`usage: npm run export:signature-performance -- <character-id>`);
   const result = buildSignaturePerformanceGlb(id);
   writeManifest();
-  // Imported late: the provenance script reads `builderNameFor` from this
-  // module, and a static import both ways is a cycle nobody needs at load.
-  const { writeProvenance } = await import('./character-provenance.mjs');
-  writeProvenance();
+  // Provenance imports these builders: run its CLI separately so awaiting
+  // the import cannot deadlock this module’s top-level evaluation.
+  const provenance = spawnSync(process.execPath, [...process.execArgv, join(here, 'character-provenance.mjs')], { stdio: 'inherit' });
+  if (provenance.status !== 0) throw new Error('Character provenance refresh failed');
   console.log(`wrote ${result.outPath}`);
   console.log(`  ${result.clips} clips · ${result.tracks} tracks · ${(result.bytes / 1024).toFixed(0)}KB`);
   console.log(`manifest performances: ${scanPerformances().join(', ') || 'missing'}`);

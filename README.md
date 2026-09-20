@@ -190,6 +190,22 @@ npm run validate:models path/to/anims_recess_v1.glb   # or one file
 VERBOSE=1 npm run validate:models                     # also print measurements
 ```
 
+Theo's reference-hand source already contains the one-time
+`scripts/v2/blender/theo-hands.py` migration. Normal exports still use
+`npm run export:authored-character -- calls_shot`. To reproduce that migration
+without replacing the current source, extract its pre-migration revision to a
+temporary file and run Blender there:
+
+```bash
+git show f741ac7:assets/v2/source/theo-pilot.blend > /tmp/theo-pilot.blend
+blender --background /tmp/theo-pilot.blend --python scripts/v2/blender/theo-hands.py
+```
+
+The migration refuses a source that already carries its revision marker.
+It preserves topology and fixes the reference source; the older full Theo
+sculpt recipe predates these hands. Rebuilding that older recipe requires
+reapplying the reference changes and rerunning model budgets and visual review.
+
 The committed voice bank remains the stable fallback. The production packet at
 `docs/v2/character-performance-brief.md` gives every kid separate sculpt,
 motion, casting, read and anti-caricature direction. The production path is the

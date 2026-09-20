@@ -99,32 +99,32 @@
     "frontProfileSilhouette": {
      "label": "front/profile silhouette",
      "score": 3,
-     "note": "Cap remains overbroad and the bill thin relative to the concept; recognizable Theo silhouette, unchanged art debt."
+     "note": "Independent current runtime and board review: recognizable cap-and-varsity silhouette, but cap remains overbroad and helmet-like, its bill a thin straight wafer against the curved concept. The new hands improve gesture readability without repairing the large silhouette debt."
     },
     "headBodyProportions": {
      "label": "head/body proportions",
      "score": 4,
-     "note": "Head ratio measurements remain within tolerance; limbs remain slender and shoulders cylindrical. Runtime run and swing have continuous elbow bends after the scoped skinning and hinge correction."
+     "note": "Measured head height, head width ratio, ankle daylight and face exposure remain within tolerance. Current run, contact and sampled action/transition frames show connected shoulders, elbows and wrists. Hands now have separate curled fingers and an opposing thumb; at game scale the repaired thumb root reads attached. Sleeve/deltoid form remains simple; this is a proportion/connectivity score, not certification of every animation frame."
     },
     "hairMass": {
      "label": "hair mass",
      "score": 3,
-     "note": "Dark under-cap hair mass remains readable but blocky at the nape with broad facets rather than the concept curls."
+     "note": "Dark hair fills under the cap without a bare-skull read. Profile nape and temple remain broad hard facets with a buried ear and cheek-height lock instead of the concept curled grouping. No hair work this round supports an upgrade."
     },
     "clothingConstruction": {
      "label": "clothing construction",
-     "score": 2,
-     "note": "Runtime swing still exposes cream diagonal geometry through the teal torso. Shoes remain mostly cream and all three shoe metrics fail. Improved arm bending does not resolve these construction failures."
+     "score": 3,
+     "note": "Improved from 2 to 3: the former cream sawtooth penetration through the teal jacket is absent in refreshed swing runtime and sampled contact, whiff, follow and final-torso evidence. Cuffs and hem remain coherent through the reviewed bends. Shoes still read as cream clogs and fail all three measured shoe metrics; the jacket and sleeves remain simple tubular volumes with little tailored form. Those unresolved construction issues prevent 4."
     },
     "faceExpressionRead": {
      "label": "face/expression read",
      "score": 4,
-     "note": "Large eyes and open smile remain readable in the refreshed runtime stills. Profile face remains shallow and pointed compared with the drawing."
+     "note": "Current angry and cheer runtime expressions remain clearly distinct; eyes, eyebrows and open mouth are legible at hero scale. Draft and new pose_card/fidget samples leave the face visible. Profile nose remains a pointed wedge and the cheek-side hair lock reduces fidelity, so no 5."
     },
     "heroAndFieldScale": {
      "label": "hero + 40px read",
      "score": 3,
-     "note": "Cap and varsity palette carry identity at hero and field size; oversized cap and unresolved garment intersections still limit polish."
+     "note": "The cap and varsity palette preserve a basic identity at hero and 40-pixel scale, and new draft gestures no longer obscure the face. Oversized cap, primitive shoes and hard under-cap hair still dominate the tiny silhouette differently from the turnaround. Anatomy improvement alone does not bring this category to 4."
     }
    },
    "heroEvidence": "theo-runtime-hero.png",
@@ -134,13 +134,13 @@
    ],
    "measuredFidelity": {
     "command": "npm run measure:fidelity -- calls_shot",
-    "ranAt": "2026-09-19",
+    "ranAt": "2026-09-20",
     "board": "theo-fidelity-review.png",
-    "result": "> recess-sports@0.1.0 measure:fidelity\n> node scripts/v2/measure-fidelity.mjs calls_shot\n\n\nMeasured fidelity — theo\nconcept front view 306x743px   delivered 451x561px\nshoe tones read off the concept: #ecddcc and #d9b68b\n\nmetric                                    concept    delivered  delta     status\n------------------------------------------------------------------------------------\nhead height as % of figure height         35.0       34.6       -0.41     ok\nhead width : head height                  1.05       0.99       -0.06     ok\nthe shoe band's dominant tone, % of the band37.6       88.4       +50.7     OFF (tol 8)\nthe shoe band's second tone, % of the band61.4       11.6       -49.8     OFF (tol 8)\nthe shoe band's mean saturation (grey cannot pass)28.1       13.6       -14.4     OFF (tol 4)\ndaylight between the ankles               56.9       51.7       -5.24     ok\nvisible face left of centre, % of head width22.4       26.6       +4.14     ok\nvisible face right of centre, % of head width26.8       27.1       +0.25     ok\nface left/right asymmetry                 0.00       0.52                 ok\n------------------------------------------------------------------------------------\n\n3 metrics outside tolerance.\nIndependent runtime/board review 2026-09-19; reviewed board sha256 8565ff71e27000310dd6f50c917fd41496fcb42cd0f474add375c325bd94e327.",
+    "result": "> recess-sports@0.1.0 measure:fidelity\n> node scripts/v2/measure-fidelity.mjs calls_shot\n\n\nMeasured fidelity — theo\nconcept front view 306x743px   delivered 466x561px\nshoe tones read off the concept: #ecddcc and #d9b68b\n\nmetric                                    concept    delivered  delta     status\n------------------------------------------------------------------------------------\nhead height as % of figure height         35.0       34.6       -0.41     ok\nhead width : head height                  1.05       0.99       -0.06     ok\nthe shoe band's dominant tone, % of the band37.6       88.4       +50.7     OFF (tol 8)\nthe shoe band's second tone, % of the band61.4       11.6       -49.8     OFF (tol 8)\nthe shoe band's mean saturation (grey cannot pass)28.1       13.6       -14.4     OFF (tol 4)\ndaylight between the ankles               56.9       51.7       -5.24     ok\nvisible face left of centre, % of head width22.4       26.6       +4.14     ok\nvisible face right of centre, % of head width26.8       27.1       +0.25     ok\nface left/right asymmetry                 0.00       0.52                 ok\n------------------------------------------------------------------------------------\n\n3 metrics outside tolerance.\nIndependent critic reran measure:fidelity and reviewed current runtime before board. Reviewed board SHA-256 e167266f8b29f89db8f8ba0801f8c1b23ec37f37dab673c4ec4e1161fc6e8cb8. Additional evidence: hands11, two-hand-grip, final-torso, actions-framed/sheet-0 through sheet-10, and motion frames at each listed transition boundary plus/minus two frames. Still samples do not certify every intervening frame; catch_jump top hand/head and dive-left foot remain partly cropped in sheet montage. Whole-character status remains needs-polish.",
     "note": "featurelatitude gates brow 49.8, eye 63.7 (bounded crop traces - the analyser's brow pick at 96.6 was the collar shadow and its eye refused), mouth 84.9 (the analyser's own trace, the open grin), earLine 54.8. The cap's cream front panel is the team accent (Chip's convention) and team-tints at runtime by design."
    },
    "polishFindings": [
-    "CARRIED — Cream geometry punches through the teal jacket back in swing_contact: theo-runtime-swing.png ≈(470-600, 330-440) at 4x still shows five hard-edged cream parallelograms across the mid-back, (520,375)=(165,161,131) against teal (5,66,77) at (540,390), plus the cream hem triangles ≈(495-505, 430-440) and (552-565, 430-440). Torso band 0px changed on the boards; nothing this round touched it.",
+    "CLEARED (current scoped evidence) — Former cream diagonal/sawtooth geometry through the teal jacket back is absent in refreshed theo-runtime-swing.png, final-torso/calls_shot-sheet.png contact tile and actions-framed/sheet-2.png contact/follow plus sheet-3.png whiff samples after inner tee clearance and shared bend weights. This closes the named torso intrusion in the reviewed poses; it does not claim every unsampled frame or every clothing construction issue is cleared.",
     "CARRIED — Shoe fails all three fidelity metrics (dominant tone 88.4 vs 37.6, second tone 11.6 vs 61.4, saturation 13.6 vs 28.1, identical across all five builds this round) and at 4x theo-runtime-hero.png ≈(470-630, 590-690) reads as a cream clog: two dark lace slashes and a dark heel patch on a one-tone upper, the cupsole a shade off, no charcoal toe/saddle panel. Feet band 0px changed.",
     "CARRIED — Cap reads as a mushroom: theo-front-review.png row widths are identical to the pre-round build at every row 85-185 (cap 194px at row 175, head-and-hair 146px at rows 215-220, head/cap 0.75 where the sheet's head-and-hair is wider than its cap). NON-REGRESSION on the dome: the dropped CAP_LEVELS 3.450 row is 110 shading pixels on the front cap band and 56 on the profile, no silhouette pixel.",
     "CARRIED — The bill is a wafer: theo-profile-review.png's diff bbox against the pre-round build starts at x171 and the bill occupies cols 115-170, so it is pixel-identical — 11-13px section on a 177px cap-top-to-chin head (6-7%) against the sheet's 16-34px on 235px (7-14%).",
@@ -159,7 +159,7 @@
     "CARRIED — Section 6 integration evidence stale and a proxy: docs/v2/concepts/theo-in-game-review.png is still the 2026-08-09 file (97a17cd) while every board and runtime still on disk is from 04:38 today.",
     "CLEARED (kept clear) — The old hairMass-1 basis: theo-front-review.png still shows hair standing proud of the skull on both sides and filling under the cap, and no bare-skull read appears in any runtime still."
    ],
-   "scoredBoardSha256": "8565ff71e27000310dd6f50c917fd41496fcb42cd0f474add375c325bd94e327"
+   "scoredBoardSha256": "b190ae90641806a0d0b00dd92523cfb9423315bfe34f75b72f398cab50548d2f"
   },
   "wheelchair_ace": {
    "status": "needs-polish",

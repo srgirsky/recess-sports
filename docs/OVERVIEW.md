@@ -1737,6 +1737,25 @@ AI-performance disclosure. The editable `theo-pilot.blend` packs the approved
 turnaround for future sculpt iteration while the deterministic Node exporter
 remains the contract-safe shipping path.
 
+The September 20 hand-reference pass revisits Theo after draft screenshots
+exposed defects that the previous elbow-weight and batting-position tests had
+missed. His upstream source now contains a palms-down hand with separate finger
+roots, distal curl hinges, an opposing thumb, outward-facing digit caps, and
+blended roots. The delivered rig uses 41 bones under the unchanged 42-bone cap.
+`HandPose` opts into the complete optional hand chain, separates elbow flexion
+from forearm roll, blends finger poses, and leaves older rigs unchanged.
+The batting solve seats the handle across this palm's surface and preserves
+both hand contacts. Draft gestures use explicit arm poses that keep his face
+clear. Jacket and tee share spine-weight falloff, with clearance for the inner
+layer during large turns.
+
+This is a Theo reference pass, not a claim that the other 29 characters have
+the new hands or that the game has reached Backyard Baseball parity. The
+review includes palm/back/side views, actual two-hand grips, draft screens,
+all 43 action families, and a recorded transition sequence. The independent
+fidelity record remains authoritative about unfinished character art; a green
+bone, skinning, or bat-clearance test is never visual approval.
+
 ### Zoom Ramirez character pass — the chair is part of the athlete
 
 Zoom completes the three-character production proof. His approved turnaround

@@ -89,6 +89,12 @@ export function checkSkeleton(gltf, spec, report) {
     if (!OPTIONAL_BONES.includes(name)) {
       report.fail('bones.unexpected', `"${name}" is not in the skeleton and not an allowed optional bone`);
     }
+    const finger = name.match(/^(Left|Right)Hand(Middle1|Ring1|Index2|Curl2)$/);
+    if (finger) {
+      const parent = finger[1]+'Hand'+({Index2:'Index1',Curl2:'Middle1'}[finger[2]] ?? '');
+      if (nodes[byName.get(name)?.parent]?.name !== parent)
+        report.fail('bones.fingerParent', `${name} must parent to ${parent} so its curl follows the hand`);
+    }
   }
   if (jointNames.length > MAX_BONES) {
     report.fail('bones.max', `${jointNames.length} bones exceeds the hard cap of ${MAX_BONES}`);
