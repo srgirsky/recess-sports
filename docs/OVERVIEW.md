@@ -1737,6 +1737,35 @@ AI-performance disclosure. The editable `theo-pilot.blend` packs the approved
 turnaround for future sculpt iteration while the deterministic Node exporter
 remains the contract-safe shipping path.
 
+The September 20 hand-reference pass revisits Theo after draft screenshots
+exposed defects that the previous elbow-weight and batting-position tests had
+missed. His upstream source now contains a palms-down hand with separate finger
+roots, distal curl hinges, an opposing thumb, outward-facing digit caps, and
+blended roots. The delivered rig uses 41 bones under the unchanged 42-bone cap.
+`HandPose` opts into the complete optional hand chain, separates elbow flexion
+from forearm roll, blends finger poses, and leaves older rigs unchanged.
+The batting solve seats the handle across this palm's surface and preserves
+both hand contacts. A user-reported folded batting wrist exposed that anchor
+contact alone was insufficient; grip roll and elbow swivel are now solved
+together, with forearm pronation and continuous shoulder orientation. The
+[reference report](v2/art/theo-hand-reference.md) records the correction and
+its 120 Hz wrist/roll checks. His bunt now uses a separate split grip, a
+barrel-hand cradle, a turn toward the pitcher and bent knees; preparation and
+recovery move around the face while the receiving phase holds the bat steady.
+Draft gestures use explicit arm poses that keep his face
+clear. Jacket and tee share spine-weight falloff, with clearance for the inner
+layer during large turns. The upset gesture also uses absolute arm poses:
+additive shoulder rotations had driven the upper arms through the jacket.
+Its rebaked take keeps the elbows outside the torso through the shrug and
+slump. Throwing preparation and the overhand arc remain unfinished.
+
+This is a Theo reference pass, not a claim that the other 29 characters have
+the new hands or that the game has reached Backyard Baseball parity. The
+review includes palm/back/side views, actual two-hand grips, draft screens,
+all 43 action families, and a recorded transition sequence. The independent
+fidelity record remains authoritative about unfinished character art; a green
+bone, skinning, or bat-clearance test is never visual approval.
+
 ### Zoom Ramirez character pass — the chair is part of the athlete
 
 Zoom completes the three-character production proof. His approved turnaround
@@ -2981,3 +3010,21 @@ evidence limits and next review order are in the
 [critical parity review](research/parity-review-2026-09-18.md); visual findings
 remain owned by the existing whole-game and sculpt ledgers. No parity or art
 approval is implied by this pass.
+
+## September 19 arm deformation correction
+
+The delivered-model census found no elbow or wrist weight blending on 29 of
+30 characters. The shared arm builder treated garment station labels as rigid
+bone assignments, including upper-arm skin assigned to the forearm. It now
+blends around the canonical joints while preserving each character's shoulder
+falloff. The original Blender sources receive the same weight-only correction;
+their geometry and rig stay intact. Lefty's sleeve piping follows the arm's
+weights. Junebug retains her separately authored joint blends.
+
+The batting constraint also used independent shortest-arc rotations for the
+two arm segments. That placed the hands correctly while twisting the elbow.
+Both segments now share a bend plane, with elbow direction relative to the
+turning chest. Delivered-weight and elbow-twist regressions accompany matched
+runtime comparisons. This corrects deformation without claiming finished
+character art: Tank's ready-pose torso intersection and the existing sculpt
+polish findings remain separate work.

@@ -190,6 +190,22 @@ npm run validate:models path/to/anims_recess_v1.glb   # or one file
 VERBOSE=1 npm run validate:models                     # also print measurements
 ```
 
+Theo's reference-hand source already contains the one-time
+`scripts/v2/blender/theo-hands.py` migration. Normal exports still use
+`npm run export:authored-character -- calls_shot`. To reproduce that migration
+without replacing the current source, extract its pre-migration revision to a
+temporary file and run Blender there:
+
+```bash
+git show f741ac7:assets/v2/source/theo-pilot.blend > /tmp/theo-pilot.blend
+blender --background /tmp/theo-pilot.blend --python scripts/v2/blender/theo-hands.py
+```
+
+The migration refuses a source that already carries its revision marker.
+It preserves topology and fixes the reference source; the older full Theo
+sculpt recipe predates these hands. Rebuilding that older recipe requires
+reapplying the reference changes and rerunning model budgets and visual review.
+
 The committed voice bank remains the stable fallback. The production packet at
 `docs/v2/character-performance-brief.md` gives every kid separate sculpt,
 motion, casting, read and anti-caricature direction. The production path is the
@@ -439,6 +455,13 @@ LOD0 triangles and headroom under the ceiling (a kid under about sixty spare mus
 trim before a shared change can even build), their status and scores, and open
 findings by triage class — sorted most-stale-then-tightest, which is the batch
 order for a polish sweep.
+
+For the arm-weight migration on an existing authored source, run
+`blender --background assets/v2/source/<slug>-pilot.blend --python scripts/v2/blender/repair-arm-skinning.py`,
+then `npm run export:authored-character -- <id>`. This edits vertex groups only;
+it preserves the source geometry instead of picking up unrelated sculpt-library
+changes. Junebug is excluded because she already has authored joint blending.
+Refresh runtime evidence and review boards after exporting as for any delivery.
 
 The id a character is registered under and the slug their art was drawn under
 differ for eleven of the thirty. `scripts/v2/character-registry.json` is the one

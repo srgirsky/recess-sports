@@ -1085,10 +1085,10 @@
       "class": "proportions",
       "excerpt": "CARRIED minor \u2014 the neck is a plain cylinder above the collar ring, unchanged (p"
     },
-    "calls_shot:8f563971fc6e": {
+    "calls_shot:0c190e29ec4b": {
       "char": "calls_shot",
-      "class": "interpenetration",
-      "excerpt": "CARRIED \u2014 Cream geometry punches through the teal jacket back in swing_contact: "
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (current scoped evidence) \u2014 Former cream diagonal/sawtooth geometry through the teal jacket back is absent in refreshed theo-runtime-swing.png"
     },
     "calls_shot:8407219e6acc": {
       "char": "calls_shot",
@@ -1779,11 +1779,6 @@
       "char": "grizz",
       "class": "material-light",
       "excerpt": "SKIN IS ONLY SLIGHTLY LIGHT \u2014 CARRIED as minor, not re-measured this round: git "
-    },
-    "grizz:68fa19be5543": {
-      "char": "grizz",
-      "class": "evidence",
-      "excerpt": "NEW \u2014 EVIDENCE, NOT SCULPT: THE BOARD'S HERO AND RUN/CONTACT PANELS ARE STALE. g"
     },
     "grizz:205aba826064": {
       "char": "grizz",
@@ -2559,6 +2554,11 @@
       "char": "tank",
       "class": "no-defect-note",
       "excerpt": "PRESERVED: front/A-pose leg separation, cream sock construction, cuffs and "
+    },
+    "grizz:0b4250df69ae": {
+      "char": "grizz",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED \u2014 EVIDENCE REFRESH: the previous stale-board hero/run/contact finding "
     }
   }
 }

@@ -225,6 +225,39 @@
         "docs/research/parity-review-2026-09-18.md"
       ],
       "acceptance": "Inspect choosing a different child, a manual pick/CPU response, autofill and the completed PLAY BALL state on supported short landscape sizes. The roster must be visible before a choice, with usable targets and no overlap; confirm the interaction with a child before treating technical checks as usability approval."
+    },
+    {
+      "id": "ART-011",
+      "kind": "defect",
+      "status": "open",
+      "owner": "Character arm posing",
+      "targets": [
+        "character:tank"
+      ],
+      "observation": "The September 19 arm review found Tank’s hands and parts of his sleeves still intersecting his tee during bat_stance. This is present in the pre-fix model/pose. Joint skinning, a common elbow bend plane and a chest-relative elbow hint improve running/throwing and the contact silhouette, but do not establish torso clearance in the ready pose. Keep this separate from the corrected rigid-joint defect.",
+      "evidence": [
+        "docs/research/arm-deformation-2026-09-19.md",
+        "src/v2/render/battingPose.ts"
+      ],
+      "acceptance": "Show the delivered Tank in ready, load, contact and recovery with both arms connected, hands on the handle and no sleeve/hand penetration into his shirt. Verify the other wide characters, preserve contact location and planted feet, and independently review the full motion."
+    },
+    {
+      "id": "ART-012",
+      "kind": "defect",
+      "status": "open",
+      "owner": "Character clothing deformation",
+      "targets": [
+        "character:calls_shot",
+        "character:ace_kid",
+        "character:penny"
+      ],
+      "observation": "The independent September 19 review of fresh runtime evidence found large cream geometry intruding through Theo and Ace jackets during swing_contact, and smaller pink flecks through Penny’s back bib. Ace’s prior clothing clearance is contradicted by the current image; the independent critic lowered clothingConstruction from 4 to 2. Arm joints remain connected. Matched baseline imagery confirms Ace’s intrusion predates this correction. The six sampled poses do not establish the age of Theo and Penny’s observations at other frames.",
+      "evidence": [
+        "docs/v2/concepts/theo-runtime-swing.png",
+        "docs/v2/concepts/ace-runtime-swing.png",
+        "docs/v2/concepts/penny-runtime-swing.png"
+      ],
+      "acceptance": "Inspect matched baseline and corrected motion, then repair garment/torso skinning or clearance while preserving character identity and arm continuity. Review all batting phases and running from front and back, and refresh independent character critiques."
     }
   ]
 }

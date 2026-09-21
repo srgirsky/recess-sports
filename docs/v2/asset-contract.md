@@ -67,8 +67,14 @@ Prop_BallAnchor (child of RightHand)  Prop_CapAnchor (child of Head)
 Prop_HairAnchor (child of Head)
 ```
 
-Up to **6 optional secondary bones** may be added per character
-(`Hair_01..03`, `Accessory_01..03`). **Hard cap: 42 bones total.**
+Optional secondary bones are `Hair_01..03`, `Accessory_01..03`, and
+`{Left,Right}HandMiddle1` / `{Left,Right}HandRing1` for cartoon finger roots,
+plus `{Left,Right}HandIndex2` / `{Left,Right}HandCurl2` for the distal hinges.
+These are alternatives: **hard cap: 42 bones total per delivered skin**,
+including all 33 mandatory bones. Roots parent to their matching Hand; Index2
+parents to Index1 and Curl2 to Middle1. Curl2 bends the middle/ring tips together;
+their root rotations must agree. Pivots match the authored knuckles.
+Existing models need not add them.
 
 Bone names are Mixamo-style so off-the-shelf retargeting tools work.
 

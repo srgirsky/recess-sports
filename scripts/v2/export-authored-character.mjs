@@ -349,7 +349,7 @@ export async function exportAuthoredCharacter(id, { blender = process.env.BLENDE
   const contractPath = join(work, 'contract.json');
   const intermediate = join(work, `kid_${id}.glb`);
   const promoted = join(work, `kid_${id}.promoted.glb`);
-  writeFileSync(contractPath, JSON.stringify({ boneNames: contract.BONE_NAMES }));
+  writeFileSync(contractPath, JSON.stringify({ boneNames: contract.BONE_NAMES, optionalBones: contract.OPTIONAL_BONES, maxBones: contract.MAX_BONES }));
 
   try {
     const run = spawnSync(blender, [
@@ -369,7 +369,9 @@ export async function exportAuthoredCharacter(id, { blender = process.env.BLENDE
     dropDuplicateColourLayers(gltf);
     normalizeFaceAtlasName(gltf);
     pruneUnusedAccessorsAndViews(gltf);
-    const normalizedBin = normalizeSkinOrder(gltf, contract.BONE_NAMES);
+    const delivered = gltf.json.skins[0].joints.map(i => gltf.json.nodes[i].name);
+    const optional = contract.OPTIONAL_BONES.filter(name => delivered.includes(name));
+    const normalizedBin = normalizeSkinOrder(gltf, [...contract.BONE_NAMES, ...optional]);
     const compactBin = quantizePaletteAndWeights(gltf, normalizedBin);
     gltf.json.asset = {
       version: '2.0',

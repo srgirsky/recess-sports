@@ -85,7 +85,9 @@ describe('the canonical skeleton', () => {
   it('holds the shape of the contract: 33 bones, ordered, parents first', () => {
     expect(SKELETON).toHaveLength(33);
     expect(new Set(BONE_NAMES).size).toBe(33);
-    expect(33 + OPTIONAL_BONES.length).toBeLessThanOrEqual(MAX_BONES);
+    // Optional names are alternatives; each delivered skin is capped by checkSkeleton.
+    expect(new Set(OPTIONAL_BONES).size).toBe(OPTIONAL_BONES.length);
+    expect(MAX_BONES).toBe(42);
 
     const seen = new Set<string>();
     for (const b of SKELETON) {

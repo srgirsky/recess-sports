@@ -28,7 +28,7 @@ import bpy
 # sys.path, so the package beside this file is unimportable without this.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from sculptlib.arm import ArmSpec, HandSpec, build_arm
+from sculptlib.arm import ArmSpec, HandSpec, arm_weights_at, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
 from sculptlib.ear import EarSpec, build_ear
@@ -607,13 +607,12 @@ def build_jacket_details(builder: MeshBuilder, detail: int) -> None:
     # it so the arm's drop cannot shear it.
     for side in (1, -1):
         arm = limb_bone("Arm", side)
-        fore = limb_bone("ForeArm", side)
         points = [torso_surface_point(side * 0.42, 2.648, 0.012),
                   (side * 0.215, -0.100, 2.582)]
         bones: list = ["Spine2", {"Spine2": 0.86, arm: 0.14}]
         for x, r, tag in PIPE_SLEEVE:
             points.append((side * x, -0.643 * r, 2.471 + 0.728 * r * 0.95))
-            bones.append(fore if tag == "fore" else arm)
+            bones.append(arm_weights_at(x, side, SHOULDER_BLEND))
         radii = [0.013, 0.014, 0.014, 0.013, 0.013, 0.012, 0.011]
         builder.tube(points, radii, 1, PIPE, bones, 4, flip=side < 0)
 

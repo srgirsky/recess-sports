@@ -3,11 +3,11 @@
   "characters": {
     "mimi_mash": {
       "source": "mimi-mash-pilot.blend",
-      "sourceSha256": "55bd3e57314e5f38b98a31276251d69bcdd2e760fe9f3cb770f9c6a025d46af0",
+      "sourceSha256": "8a777b347a4446f1e4df703e63d29f9b33923e612b65eb16cbc29ca7cbbfa1c0",
       "concept": "mimi-mash-turnaround.png",
       "conceptSha256": "a372e490bfa94712c4d9f902128098c4facfccd247dab52063eb3a4072b5451d",
       "output": "kid_mimi_mash.glb",
-      "outputSha256": "18cd057535d8d8460ba81eb201563f612923d706b7dd0ab75561c9bf1131c593",
+      "outputSha256": "43234300c7cc5c197bb5e7a9c474d21527431378e4960c8b916ef82f6c42e68c",
       "definingTraits": [
         "dense curly halo",
         "proud chin",
@@ -33,11 +33,11 @@
     },
     "calls_shot": {
       "source": "theo-pilot.blend",
-      "sourceSha256": "96cacf28c2367effb4ab2147c28ba97aa027b785313643b2224d15b4278525f3",
+      "sourceSha256": "b036a1c88e7147f4e02d2a066b4d82007ec4e7a9c232ac07282fa48691a33b90",
       "concept": "theo-turnaround.png",
       "conceptSha256": "f93d976869f437a92be482302db4124c064d33b708bb22a7e16fcfc51e403e66",
       "output": "kid_calls_shot.glb",
-      "outputSha256": "7d4ae0c75f61ef6e5321d53347998173f444a4622c67cce19c7038fe1480fbbb",
+      "outputSha256": "fda9c96856ac05078b5446e1114ee8c597210162331193f421d92a4dfc46ac17",
       "definingTraits": [
         "oversized cap",
         "broad tapered face",
@@ -48,11 +48,11 @@
     },
     "wheelchair_ace": {
       "source": "zoom-pilot.blend",
-      "sourceSha256": "40a06ec9a18447fdb235dbccaabf44a1cdb668a20a24d26299da6abf51c05316",
+      "sourceSha256": "7a60df016ee27cca96387550f50937d58e788bafd4adb9d67fcdb5a7e06ad2a9",
       "concept": "zoom-turnaround.png",
       "conceptSha256": "ab2ddf9b07a00ad095b4583046164edb23c26e542465ab4b2f7663fe8a38b296",
       "output": "kid_wheelchair_ace.glb",
-      "outputSha256": "5659fa7ac7965e0dd54af685754a9d4b219abf851f98f748c0707211b7035b58",
+      "outputSha256": "84494d7d0cf2cc353cde4f85107b4bd9ee505a96b387a5120361b65c35bcf915",
       "definingTraits": [
         "compact sport chair",
         "cambered wheels",
@@ -63,11 +63,11 @@
     },
     "big_lou": {
       "source": "big-lou-pilot.blend",
-      "sourceSha256": "e863a12211e8a7a9daadfca8726f8a13bcc203adaad3252019c8b62628bcd664",
+      "sourceSha256": "b43f287ea7d37d28d6f2ea869eb48a0f3de6754c8ce46b14d646d2c3d80e0978",
       "concept": "big-lou-turnaround.png",
       "conceptSha256": "8e613340d5955ce7af1a8c9b2ac381514c0c7b577129202d8843bb35e13d2a45",
       "output": "kid_big_lou.glb",
-      "outputSha256": "0b9b1c43774d24f70104a17bb55c7392ff4c552e11cde44e478f5de6184ee277",
+      "outputSha256": "63f1fc0ec233b72a9491f8c5753ce65d20c29ae3dd1cf87860394e850cae7da2",
       "definingTraits": [
         "gentle broad silhouette",
         "soft rounded face",
@@ -78,11 +78,11 @@
     },
     "tank": {
       "source": "tank-pilot.blend",
-      "sourceSha256": "9096f1ddcb87fa47a654e763df0fd88578a0dbca62bc5685b5676d3452d01363",
+      "sourceSha256": "28de0f04bed1c04b807df73b24b74afc07e043d61a08d57313b02d1c7993a58a",
       "concept": "tank-turnaround.png",
       "conceptSha256": "32d3e55d0bb1f56fa6edacf9d87f7d53cc516cd3877740042f9c82e0c5756bd4",
       "output": "kid_tank.glb",
-      "outputSha256": "a05045b49dcfbd5f32140233c8b1b6214fa5c03a2816e3e693813045a4a9e85c",
+      "outputSha256": "61758d65e8d5a2ec5022da038c080ecc4c36befa63831ca303507701c974d2b3",
       "definingTraits": [
         "low wide silhouette",
         "bald round crown",
@@ -93,11 +93,11 @@
     },
     "grizz": {
       "source": "grizz-pilot.blend",
-      "sourceSha256": "2e8a92bd3c1ffbc1c211dae644502549f35f2d37d4fc082f684a983b98dca643",
+      "sourceSha256": "d65657e119d5cb774f6bac3faaea402d14aa6e296488b2f8d152d7db0fec9829",
       "concept": "grizz-turnaround.png",
       "conceptSha256": "8290768d2853e29e3c09afe3e7cf73bedf97f2dc74d1b9053506b6c66dbc2e0c",
       "output": "kid_grizz.glb",
-      "outputSha256": "c0b1a2d566044cde4d977312a3442852d8bb048a3a44cb31d0034a260e700c0c",
+      "outputSha256": "106f471f94bb3090619330de5b1b24531dc795b978d90892c605626315bc14ca",
       "definingTraits": [
         "towering round afro",
         "heavy sleepy brow",
@@ -108,11 +108,11 @@
     },
     "sprout": {
       "source": "sprout-pilot.blend",
-      "sourceSha256": "8f26c20c6c12bfa50cbdedc151230112f60d3830656135de83a033e8fc1fb6a3",
+      "sourceSha256": "71074b068e8b20cf016a44e1b0e2a68a945b0585052e368dc5d4f02480757993",
       "concept": "sprout-turnaround.png",
       "conceptSha256": "b734a39041e715ae23861523b44b118cf5b18919ba12533b241058591888f995",
       "output": "kid_sprout.glb",
-      "outputSha256": "fc8a9eaeac9ea071127385476dc76de553179a794a49ac606e9a128019eb6dc3",
+      "outputSha256": "09c4483fc6c7df4acbb757c949fb0777a7c332bc96f26c22a95837c7691ae345",
       "definingTraits": [
         "denim bib overalls",
         "big round wonder eyes",
@@ -123,11 +123,11 @@
     },
     "bubbles": {
       "source": "bubbles-pilot.blend",
-      "sourceSha256": "ce42a6cb70775ae58da5bf1e00deb291efdcc0a986bdd4acc89f3268508ac340",
+      "sourceSha256": "624bf13e6b2ef61cd9ef2b6f389a159570b1caea60a9c126bf726bc53d2d46b1",
       "concept": "bubbles-turnaround.png",
       "conceptSha256": "b4b3ec04e975bf1f2d85b449073afbd71edb99af3f17579fe24050bc5edcd9db",
       "output": "kid_bubbles.glb",
-      "outputSha256": "8cc91643b25660710aa8952aa4020ceb0c3dec0d03e54d4892a8dbd97e3af3fa",
+      "outputSha256": "e1f8e7b2de3458884797aa1dafb997e114201adfda0e33d5631b9ac1edfd9816",
       "definingTraits": [
         "golden ringlet cloud",
         "topknot bun and scrunchie",
@@ -138,11 +138,11 @@
     },
     "chip": {
       "source": "chip-pilot.blend",
-      "sourceSha256": "30d03c13cea61a640b9d310b54c919fa9e187da6df5232ae30eccaafd917613f",
+      "sourceSha256": "360353fedcdbb1d575acb44f32b2598000c37f4cfdd500db0573dd1b3c41c19e",
       "concept": "chip-turnaround.png",
       "conceptSha256": "244f188db5957fd2674ec2cbfd321a0211067696ddb6601cd09c45dc6a325575",
       "output": "kid_chip.glb",
-      "outputSha256": "d23445111a757d61ecd47a6b9b4f54216147c392e009ef834adb2415d5181aca",
+      "outputSha256": "a21071ecc7a82aaf33b75466812ff5f5cb08fd697644773a69989dd6a6df18d9",
       "definingTraits": [
         "navy and cream ball cap",
         "green kangaroo hoodie",
@@ -153,11 +153,11 @@
     },
     "bend_it": {
       "source": "bendy-bao-pilot.blend",
-      "sourceSha256": "214b2d24687e86dc3af8d006b008bc85731052f65ed26d02db03f3a591c11806",
+      "sourceSha256": "a2ee8d3050b27fd63a34debd7dd664a6bd9d69961b1e55a97c5b0f1fd2ae5940",
       "concept": "bendy-bao-turnaround.png",
       "conceptSha256": "e0376bf5bc736b84244455be0e09cb93d94907b1dfbaad47c2eb19f9641a228a",
       "output": "kid_bend_it.glb",
-      "outputSha256": "90180162296bce61c978131e6be251b4d169db8c179e0f9ebba1675e3f082b2a",
+      "outputSha256": "d0270d49bbaccfad92fb5949f1be74ee70571e64901e36574d14924917317967",
       "definingTraits": [
         "swept top bun",
         "round wire glasses",
@@ -168,11 +168,11 @@
     },
     "flash": {
       "source": "flash-gordon-jr-pilot.blend",
-      "sourceSha256": "ed951968ff3c7600d369ff1a274683688fb14859e8afc03a7d4551e92540386b",
+      "sourceSha256": "032e660fdf932d38e14793a0f85e8d10d4a473203948c7ee35d20e5bb95fdb36",
       "concept": "flash-gordon-jr-turnaround.png",
       "conceptSha256": "444a8536e21aeef1fba20e886ee27b8182091401bc48b7ffe87d847402dc3bc6",
       "output": "kid_flash.glb",
-      "outputSha256": "62cbab51f38cfc6a707222e2439bf4d01337859633bdbcd4b5770530e9f32a58",
+      "outputSha256": "9d0ec29276992dae3b7d41b38d543729c2d7f6a5a1495bc5aa1d93f073bcfdaa",
       "definingTraits": [
         "spiky faded mohawk",
         "bold red striped tee",
@@ -183,11 +183,11 @@
     },
     "zippy": {
       "source": "zippy-pilot.blend",
-      "sourceSha256": "c1368989e4e0559b3ba7abac521de3953b45af21a04e869774ea2a803b1b8202",
+      "sourceSha256": "f4325a3add0e13d6ddae083b4f44cf458b91cc025dd280635f84bf1e5338c0f1",
       "concept": "zippy-turnaround.png",
       "conceptSha256": "5a6ad80e5d6ad18e455b6c4ae56447cdcab1a14fa2eccf4ebd8a7f72a611fb31",
       "output": "kid_zippy.glb",
-      "outputSha256": "ccacae0e8dbadcef40621ddbbfa7d7a68fac70f3e87c9008e720a2cab299c21a",
+      "outputSha256": "af20566e4f604beec1d30617ab6c6eda509d220465377ae2c0b0afc9e30b86ef",
       "definingTraits": [
         "black side pigtails",
         "cream headband",
@@ -198,11 +198,11 @@
     },
     "diva": {
       "source": "dazzle-pilot.blend",
-      "sourceSha256": "124ca0510c13a59b8ece526dc8091ad71c9f6686c8c2d18f7ea19befd1abd1c6",
+      "sourceSha256": "83235a8d23179b38a808b203f2e4d9dd875a37280c28dd05e2a6ac7ea550c9ee",
       "concept": "dazzle-turnaround.png",
       "conceptSha256": "3eb499fa87bff373ae457d620ef72ae54de5c0636b605ed24022aeca7523f8df",
       "output": "kid_diva.glb",
-      "outputSha256": "369a15e740d4e8de6d9fa0f4033f812edf077ce3b32d4f2ff8e4424d89456ffc",
+      "outputSha256": "6b19d3916807e9328120c77fdef5cef458ae359d9a76895ee713a3a921b5ea46",
       "definingTraits": [
         "long wavy auburn mane",
         "cream headband",
@@ -213,11 +213,11 @@
     },
     "noodle": {
       "source": "noodle-pilot.blend",
-      "sourceSha256": "3d6c7c0cc7639cc783d4313a7f3943b0bdde2b2d7d539a51d0db5cd24740301f",
+      "sourceSha256": "fc56672f6228c95d11158e878d9db672beccae73926fba22120b384a9015a7d9",
       "concept": "noodle-turnaround.png",
       "conceptSha256": "dee0c6663214707ec91d7d06a1f7d4a59780ba48eb812399cf37e57c0b0a1738",
       "output": "kid_noodle.glb",
-      "outputSha256": "a1977e3d604ab6a0a5e4fb3fa4152ceb5f65ecff3cf5d684a9ce41e3461ca388",
+      "outputSha256": "5e68c14c0f5f7a3719e0e22be1b9463630e02720c83bbe17f6ea461945aae4e3",
       "definingTraits": [
         "gleaming bald dome",
         "big round glasses",
@@ -228,11 +228,11 @@
     },
     "turbo": {
       "source": "turbo-pilot.blend",
-      "sourceSha256": "0cc7077927dc49334fc7cfdeed282d286c77e3e405ff4548a29d98afadcf44ca",
+      "sourceSha256": "323e8d5becdbeb347cb00511559175ab32c29f088be62ce5c576b781fceb6153",
       "concept": "turbo-turnaround.png",
       "conceptSha256": "f3c0690117663b295a3001007eacd2a1dda10c12a5a8f7ed4d812fc63917851a",
       "output": "kid_turbo.glb",
-      "outputSha256": "06ec768f9df4f5b49b6b749f5e8a15c91c04b1fc3877174cebd163badf60c97d",
+      "outputSha256": "47c51158e501015cebdad1d36933460fd90dfe4b1a56589349e9ccc3a7ab61dc",
       "definingTraits": [
         "wild black spike mop",
         "blue ringer tee",
@@ -243,11 +243,11 @@
     },
     "moose": {
       "source": "moose-pilot.blend",
-      "sourceSha256": "b164272089538cc144f6a0430c1468107d822e6fcd5d925f244e616cf3e9d52a",
+      "sourceSha256": "d496b2ac567eafc8c8f585e5d2962fbd5739322f3519ef434e10f9ddd343bf21",
       "concept": "moose-turnaround.png",
       "conceptSha256": "d64f68670ae1629b82c81333c4a1be6c1ab02805f2937a1a20d3ddf679ca7bed",
       "output": "kid_moose.glb",
-      "outputSha256": "c809c0d7dd1cf6b1650828c357c6378fdac4545005ae4e66790235376705490e",
+      "outputSha256": "a3af6ecf642cac36dba66191c1bf1d9480c44e48ea8de3d9693589d77098f70a",
       "definingTraits": [
         "navy ball cap",
         "mustard kangaroo hoodie",
@@ -258,11 +258,11 @@
     },
     "penny": {
       "source": "penny-pilot.blend",
-      "sourceSha256": "fe7a3b39a1d2e5fb150e2adc718295dc993fb94a79cfab0881a5bb050fe86483",
+      "sourceSha256": "1db143d3fa9d0895042357ef3283b2d9b65f2eb632f6493c7ba45a742c5662c6",
       "concept": "penny-turnaround.png",
       "conceptSha256": "c135292d56d005e054136dcd938c45459a596c1cb64f1393c7105661c6a1674d",
       "output": "kid_penny.glb",
-      "outputSha256": "b374559a3d66ab7f69904b292ef1e7d1a1eb59270e05e60a7bbc2308c8f46888",
+      "outputSha256": "5465bf7724d9ccad98e761f28ced7f24443a6c7c18f80bdd9598c36526b2d755",
       "definingTraits": [
         "big curly brown bob",
         "denim bib overalls",
@@ -273,11 +273,11 @@
     },
     "the_prof": {
       "source": "the-professor-pilot.blend",
-      "sourceSha256": "b39de41bab0370149611e3c3ac5465e483e63ffc4d31cd544625fc3da9eab1ce",
+      "sourceSha256": "a29d3566d6e1857e354d11baf6d7d72e57c7babbf1fd148ed71a1a256b3d373c",
       "concept": "the-professor-turnaround.png",
       "conceptSha256": "43e9c992c7020f2c683dd5356b53af714685bca0a4047ef2c7139b4302e06aff",
       "output": "kid_the_prof.glb",
-      "outputSha256": "487c8101cac1a4c5c9227c33cc3721687a76e5668ff9920e29640238cefef11c",
+      "outputSha256": "c14dc85181b2bb373b7fe2ac12220d43baad906fc8eea5f0a3e3b4387e6fb217",
       "definingTraits": [
         "round wire glasses",
         "open brown jacket",
@@ -288,11 +288,11 @@
     },
     "ace_kid": {
       "source": "ace-pilot.blend",
-      "sourceSha256": "4c30520476029f76be8e168cda2cacab0945f73836176a41b53124abac8214aa",
+      "sourceSha256": "d8e71654586a6e732b765d44b0ee853f62ea49f7c0ab1ea1095e8dca0bf9d5e2",
       "concept": "ace-turnaround.png",
       "conceptSha256": "641fb80ce9726fe50255da0275f584d4f1722709a0cc51b11d2dbf633af49a43",
       "output": "kid_ace_kid.glb",
-      "outputSha256": "d453f314f009f9779131833f28224ab9ad50f0669c9f89c46868f389f27190ce",
+      "outputSha256": "a11a83abbcd11a21b2afbfe5413bda502af108dd0df9d4c83e6960ce5ef5923b",
       "definingTraits": [
         "sky-blue ball cap",
         "open blue bomber jacket",
@@ -303,11 +303,11 @@
     },
     "rocket": {
       "source": "rocket-rosa-pilot.blend",
-      "sourceSha256": "c37cf5c16992aa09bca7f51c8cab5c07b634578f21d2190a45bd4af64e9c556f",
+      "sourceSha256": "3c150142ba486ee0b058e0e3fe76c83da4c01d76289c0f6df4f21058e6412f1f",
       "concept": "rocket-rosa-turnaround.png",
       "conceptSha256": "ea89c2b7b3014b9433019cbb9b649f0415731b61f37eb3e46439453640e6e2a3",
       "output": "kid_rocket.glb",
-      "outputSha256": "1441c669aea992dd1361da15ae051c5b96d4ed6db0da44e7730bc2a4852938f1",
+      "outputSha256": "dbf28beab6d9fb29bcf9650801ed88b2c5b8ffb612979132788c25bef4bbd1fa",
       "definingTraits": [
         "high flowing ponytail",
         "white raglan tee",
@@ -318,11 +318,11 @@
     },
     "gizmo": {
       "source": "gizmo-pilot.blend",
-      "sourceSha256": "4cfc0abd090bd42be6c023e144211bbdb37d47b5be79b3ae46785322f8d817e5",
+      "sourceSha256": "76f708da6a59a209e69bae89468f012b2ee3257193e2870966eabd691b6b2d73",
       "concept": "gizmo-turnaround.png",
       "conceptSha256": "3d133b007e6af158eea9ef446fe962af27d95a9828d922a6a96f66a65c0e1400",
       "output": "kid_gizmo.glb",
-      "outputSha256": "0e5c2e5543c331d0bac17389d09587050516db54dbaccdb4aee2a6f5da1bea13",
+      "outputSha256": "2026445429a3aee8f47aac4e21ed623350108f897b64bf9d79a7c9aacaabd8ee",
       "definingTraits": [
         "round wire glasses",
         "brown spiky mop",
@@ -333,11 +333,11 @@
     },
     "dex": {
       "source": "dex-pilot.blend",
-      "sourceSha256": "c8f3141e7d8edfcb1954171b8d705294c40ccd3eb49f6f70e55e765fd5377593",
+      "sourceSha256": "4a2600ec844d8b167368831737500db9eb360f98c580db4fbab2f71a959f6644",
       "concept": "dex-turnaround.png",
       "conceptSha256": "d9dc2741e65c4e928b0188a0d0ca509d50a33dc4d9ed37363ae9f05fad1614b3",
       "output": "kid_dex.glb",
-      "outputSha256": "98106150f57b723269634138b9e70de51d38ea6140b0902a81ab01de255c36c4",
+      "outputSha256": "216362b204f80988535d04771a7c734601ec52e48ddb244999d74cf6ecc44165",
       "definingTraits": [
         "charcoal ball cap",
         "black curls under the brim",
@@ -348,11 +348,11 @@
     },
     "clover": {
       "source": "clover-pilot.blend",
-      "sourceSha256": "65d386dbc4ed970268792f7d94a436f2effb6bc532e7a78a139f77702073c9ab",
+      "sourceSha256": "a3d027ef5d1153291e9f435981f4585d65a4b6aa71ef4bde9e19f42a6ec5b2b7",
       "concept": "clover-turnaround.png",
       "conceptSha256": "1cff5e0a9ac0306500dc1786ace77af0e9b888d3501262d23839a81bbbcc4142",
       "output": "kid_clover.glb",
-      "outputSha256": "5cc884f266c0cfa3abb3a76063565a4d03991d38a3f203c647e423790291c1d2",
+      "outputSha256": "da7c3e2a4c9f1d2443d1c65cf09086be372b485a9dab6b8f9164f5a2d6680173",
       "definingTraits": [
         "blonde low pigtails",
         "swept side fringe",
@@ -363,11 +363,11 @@
     },
     "boomer": {
       "source": "boomer-pilot.blend",
-      "sourceSha256": "297e0717538c4b359c58fc53484e20e0d647a90a56bf70c0f8dcdc568210e4a6",
+      "sourceSha256": "45bc86b35dcedda25c864868607033812d82a3f68c137e6548d572a4ba19cd96",
       "concept": "boomer-turnaround.png",
       "conceptSha256": "3748d36bff3ab7120b26edf7d5cea8da733140f40a0ac8adeccc0b88f55ca732",
       "output": "kid_boomer.glb",
-      "outputSha256": "084e9a24f0e4d0e8507548b8d88a93a7995a5d4fdf4382523f3219f74b7c208c",
+      "outputSha256": "eee812b0eb15f182a5caed411a3d882fc3a74b9babed657c9711d475b0313355",
       "definingTraits": [
         "tall black mohawk crest",
         "gold-and-cream striped tee",
@@ -378,11 +378,11 @@
     },
     "smokey": {
       "source": "smokey-pilot.blend",
-      "sourceSha256": "75381c9532b107aba8016a76a7bc569e6292fa9278e08764b15b7615b8421149",
+      "sourceSha256": "4a25891a13488c40cce5dfe3b8b87b86e28d6f3d83a54a357aeb7936528c8aa2",
       "concept": "smokey-turnaround.png",
       "conceptSha256": "3df75f1c323e7ea542d76adcc2f4c294ba10e0f414b0a9f4bea352e2dcb8056e",
       "output": "kid_smokey.glb",
-      "outputSha256": "6fc08eb87ea9c134f42bb03bac2fa22f2e4ff2e0bd6d5c3a57874f64516dce8b",
+      "outputSha256": "f8528520ef0c93134ee2a87482ab90ce175aa48bf465f69242b5ff9a8d22b4d9",
       "definingTraits": [
         "tight buzz fade",
         "plain red tee",
@@ -393,11 +393,11 @@
     },
     "sniffles": {
       "source": "sniffles-pilot.blend",
-      "sourceSha256": "230e445917c47f31b06b3519bf161630cf704dc9b7bcebf5991d47540efedafa",
+      "sourceSha256": "7a9161e556d66dd102f59bab8f6b5a6aeaa33f70693ad76174d41a88b92b6bb6",
       "concept": "sniffles-turnaround.png",
       "conceptSha256": "753c239c41ebe73424f487102239de4cc55d3eeb185a6018a5f6623e4ac11257",
       "output": "kid_sniffles.glb",
-      "outputSha256": "a9468d8516368fca1ff58a05d4012394e0400cb2471d684c964c6267434638d5",
+      "outputSha256": "e826729e36b017af8a3c7ed023579df1a3dde3b665bef89cf29710fffed641e4",
       "definingTraits": [
         "tousled auburn mop",
         "light-blue hoodie",
@@ -408,11 +408,11 @@
     },
     "cricket": {
       "source": "cricket-pilot.blend",
-      "sourceSha256": "bd74235d1e2d43e094d7b7ac4ee21c48b865f8066eb40dde20fc63e672c76fe0",
+      "sourceSha256": "580224cf353f6ef2ecff6714ea75bba7ec68d8527fb693847a00d4546aee4117",
       "concept": "cricket-turnaround.png",
       "conceptSha256": "cb5ff0cb23a96bb2d16b5820ae6ccfa2bbcfd17c3af88b100b439e367c317b0b",
       "output": "kid_cricket.glb",
-      "outputSha256": "851d2a91922aad6bcd0461a0d3c9e94855923319ca53436d18fcc6c15e764476",
+      "outputSha256": "03ff193296f897f19b9574d2815aae341fa13f6539ef7eaa62240fe1d1dc2067",
       "definingTraits": [
         "big spiky brown mop",
         "green tee under denim overalls",
@@ -423,11 +423,11 @@
     },
     "peaches": {
       "source": "peaches-pilot.blend",
-      "sourceSha256": "ccce45c692e206bcad979d723ce960edb840ef91cafd0ded1eadb5fee6edba39",
+      "sourceSha256": "8076a561278e43a8a403b86c4a6799d8a901f01e6dd0f43cb042dab306d4b788",
       "concept": "peaches-turnaround.png",
       "conceptSha256": "42a7f8de5c44a061aa4f15b7dd8e9abd65a150488c8a814b0986db2e3d3f393e",
       "output": "kid_peaches.glb",
-      "outputSha256": "4a9a7ec9c24346969966932a5861242802d774bad7e6b051ecdb3f1b13ac5c38",
+      "outputSha256": "792e69ca21f778c0fd98f3a93af2242f6788a73c5809e8e39c18412658ecc608",
       "definingTraits": [
         "textured brown top-bun",
         "marigold sleeveless dress",
@@ -438,11 +438,11 @@
     },
     "lefty": {
       "source": "lefty-pilot.blend",
-      "sourceSha256": "d85d204606dc97d2cfb9a580f813162e561989c6ae08532523803105105367c6",
+      "sourceSha256": "6b4f38e88adfe2f2f223f227c0ab2bb59b8005efc8710f4aa375be1e9d8fa443",
       "concept": "lefty-turnaround.png",
       "conceptSha256": "9329598dd2a08be9c6614c3bbe49812a29a44c2beceba8274353b89ffc7777d2",
       "output": "kid_lefty.glb",
-      "outputSha256": "647d9be2a487c63dbaad204dae1a68b399fdeb905ee64b2877c065be94b6d0a3",
+      "outputSha256": "3f5f526326bba0e3c682da42e44cccb742439cde5b12fe6511bb26b1ecaaef7e",
       "definingTraits": [
         "backwards grey cap",
         "blonde side ponytail",

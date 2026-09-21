@@ -35,7 +35,7 @@ from dataclasses import dataclass
 from math import cos, pi, sin
 
 from .mesh import MeshBuilder, part, thin_for_lod
-from .rig import ARM_Z, limb_bone
+from .rig import ARM_ELBOW_X, ARM_SHOULDER_X, ARM_WRIST_X, ARM_Z, limb_bone
 
 
 
@@ -144,6 +144,40 @@ def shoulder_blend_at(table: dict[float, float], x: float) -> float | None:
     return table[stops[-1]]
 
 
+def arm_weights_at(x: float, side: int, shoulder_blend: dict[float, float]):
+    """Continuous skinning at the rig's joints, independent of garment bands.
+
+    The old station labels made a whole ring rigid: Sprout's skin at x=.774
+    followed ForeArm although the elbow is at .918. Bending that elbow pulled
+    the upper arm backwards into a hook. Adding an elbow bulge did not fix the
+    bone driving it. The 2026-09-19 delivered census found no elbow OR wrist
+    blends on 29 kids; Junebug's separately authored arm already had both.
+
+    Smoothstep spans half the shorter adjacent bone's length, centred on the
+    joint. Thus the upper arm and palm stay rigid away from each hinge, while
+    the existing rings near it share motion. This uses the canonical rig, not
+    one character's proportions, and adds no geometry or skeleton changes.
+    Sleeve piping must use this same function or it peels off the blended arm.
+    """
+    arm = limb_bone("Arm", side)
+    fore = limb_bone("ForeArm", side)
+    hand = limb_bone("Hand", side)
+    half_span = min(ARM_ELBOW_X - ARM_SHOULDER_X, ARM_WRIST_X - ARM_ELBOW_X) / 4
+
+    def blend_at(joint):
+        t = max(0.0, min(1.0, (x - joint + half_span) / (2 * half_span)))
+        return t * t * (3 - 2 * t)
+
+    elbow = blend_at(ARM_ELBOW_X)
+    wrist = blend_at(ARM_WRIST_X)
+    weights = {arm: 1 - elbow, fore: elbow * (1 - wrist), hand: wrist}
+    torso = shoulder_blend_at(shoulder_blend, x)
+    if torso is not None:
+        weights = {bone: share * (1 - torso) for bone, share in weights.items()}
+        weights["Spine2"] = torso
+    return {bone: share for bone, share in weights.items() if share > 0}
+
+
 def _with_elbow(stations, amount: float):
     """The table with an elbow crease and knob folded in at `ARM_ELBOW_X`."""
     from .rig import ARM_ELBOW_X
@@ -238,7 +272,6 @@ def build_arm(
             "bored socket — resort the table, do not nudge the value."
         )
     for x, radius, colour, bone in stations:
-        bone_name = limb_bone(bone, side)
         # ★ THE SHOULDER RINGS ARE SHARED WITH THE TORSO, AND THAT IS THE WHOLE
         # FIX FOR THE CRUMPLE.
         #
@@ -256,8 +289,7 @@ def build_arm(
         # inboard of the shoulder now blend from mostly-Spine2 to all-Arm across
         # the joint, which is ordinary skinning falloff and what makes a shoulder
         # deform as one surface.
-        blend = shoulder_blend_at(spec.shoulder_blend, x)
-        weight = bone_name if blend is None else {"Spine2": blend, bone_name: 1.0 - blend}
+        weight = arm_weights_at(x, side, spec.shoulder_blend)
         row = []
         for index in range(sides):
             theta = 2 * pi * index / sides
