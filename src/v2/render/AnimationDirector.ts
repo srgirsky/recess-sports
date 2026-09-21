@@ -232,7 +232,7 @@ export class AnimationDirector {
     // at 1x. The pose on this rendered tick is then the physical pose the sim
     // just resolved, without predicting an uncertain catch or throw.
     if (secUntilEvent <= 0) {
-      const action = this.play(name, { ...opts, rate: 1, restart: true });
+      const action = this.play(name, { ...opts, fadeMs: name.startsWith('throw_') ? 0 : opts.fadeMs, rate: 1, restart: true });
       if (action) {
         action.time = markerLeadSec(name);
         this.mixer.update(0);
@@ -245,6 +245,17 @@ export class AnimationDirector {
     const { rate, clamped } = warpRateFor(name, secUntilEvent);
     this.play(name, { ...opts, rate, restart: true });
     return { rate, clamped };
+  }
+
+  /** Pose the windup from the possession clock without letting the mixer
+   * run through release. Only the actual throw event resumes follow-through. */
+  prepareThrow(timeSec: number): void {
+    this.seek('throw_overhand', Math.min(markerLeadSec('throw_overhand')-1e-4, Math.max(0,timeSec)));
+    if (this.action) this.action.paused = true;
+  }
+
+  cancelThrowPreparation(): void {
+    if (this.current === 'throw_overhand' && this.action?.paused) this.play('field_ready');
   }
 
   /**

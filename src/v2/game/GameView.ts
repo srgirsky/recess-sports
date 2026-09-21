@@ -81,6 +81,7 @@ import {
   playEndHoldSec,
   playEventCue,
   slideCue,
+  throwPreparationCue,
 } from '../render/actionCues';
 import type { AnimName } from '../render/clips';
 import { CAMERA_FAR_FT, RIGS, chooseCamera, damp, type CameraCue, type CameraPreset } from '../render/cameraCues';
@@ -1610,6 +1611,9 @@ export class GameView {
       this.refs.directors.get(cue.characterId)?.playToMarker(clip, cue.secUntilEvent);
       if (event.t === 'catch') this.diveClips.delete(event.fielder);
     }
+
+    const preparation = throwPreparationCue(play);
+    if (preparation) this.refs.directors.get(preparation.characterId)?.prepareThrow(preparation.timeSec);
 
     for (const runner of play.runners) {
       const cue = slideCue(runner);

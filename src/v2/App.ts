@@ -37,7 +37,8 @@ import { ResultScreen } from './ui/screens/ResultScreen';
 import { resultModel } from './ui/resultModel';
 import { Sound } from './ui/Sound';
 import { MuteButton } from './ui/MuteButton';
-import { SessionLog } from './ui/sessionLog';
+import type { SessionLog } from './ui/sessionLog';
+import { isLogEnabled } from './ui/sessionLogEnabled';
 import { ROSTER, getCharacter } from '../data/characters';
 import { makeRng } from './sim/rng';
 import { getGamesPlayed, readPickRates, recordGamePlayed } from '../systems/picklog';
@@ -103,7 +104,7 @@ export class App {
     : null;
   private activeMode: 'pickup' | 'season' | ExtraModeId = 'pickup';
 
-  private readonly log = new SessionLog();
+  private log: SessionLog | null = null;
 
   constructor(canvas: HTMLCanvasElement, screens: HTMLElement) {
     this.router = new Router(screens);
@@ -117,6 +118,10 @@ export class App {
     const noop = () => {};
     this.router.show(new TitleScreen(noop, noop, noop, noop, 'loading'));
     try {
+      if (isLogEnabled(location.search)) {
+        const { SessionLog } = await import('./ui/sessionLog');
+        this.log = new SessionLog();
+      }
       await this.game.start();
       if (this.customPlayer) await this.game.setCustomPlayer(this.customPlayer);
     } catch (error) {
@@ -136,7 +141,7 @@ export class App {
     new MuteButton(this.sound).mount();
     // The playtest log: a fourth read-only listener on the same streams,
     // inert unless `?log=1` or `?features=` asked for it (`ui/sessionLog.ts`).
-    this.log.attach(this.game);
+    this.log?.attach(this.game);
     this.showTitle();
   }
 
@@ -156,7 +161,7 @@ export class App {
         },
         () => {
           // The one way out of a game mid-way: the session log closes as `quit`.
-          this.log.end('quit');
+          this.log?.end('quit');
           this.game.setPaused(false);
           this.showTitle();
         }
@@ -444,7 +449,7 @@ export class App {
     await this.game.newGame(this.seed(), this.rosters ?? undefined, this.uniforms(), this.innings);
     // A PERSON'S game is starting — this is the one place a session opens.
     // The attract game behind the title and the team-picker preview never do.
-    this.log.begin();
+    this.log?.begin();
     // ★ THE BOOTH SAYS THE NAME. It is the payoff for the whole screen, and it
     // is why the name is a spoken colour and a spoken animal rather than text.
     this.sound.sayTeam(teamName(this.identity));

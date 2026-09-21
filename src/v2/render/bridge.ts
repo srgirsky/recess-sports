@@ -32,7 +32,7 @@ import { AnimationDirector } from './AnimationDirector';
 import type { CameraInput } from './cameraCues';
 import { clipSpec } from './clips';
 import { activeFielderCue, ballPresenceCue, ballShadowCue, type BallProjection } from './readabilityCues';
-import { homeRunTrot } from './actionCues';
+import { homeRunTrot, throwFacingTarget } from './actionCues';
 import { battingPlacement, battingRunOut } from './battingPose';
 import type { ReplayActor, ReplaySnapshot } from './replayCues';
 
@@ -66,6 +66,40 @@ export interface FrameViewOptions {
 }
 
 const NO_PROTECTED_IDS: ReadonlySet<string> = new Set();
+const throwBallOrigins = new WeakMap<SceneRefs, { flight: NonNullable<PlayState['throw']>; offset: Vector3 }>();
+const lastThrowCarrier = new WeakMap<SceneRefs, string>();
+
+/** Character display scale raises the throwing hand above the sim's release
+ * point. Carry the held ball in that hand, then ease only this visual offset
+ * out over the opening quarter of flight. Physics and arrival stay unchanged. */
+function applyThrowBall(refs: SceneRefs, play: PlayState): void {
+  const held = play.heldBy === null ? null : play.fielders[play.heldBy].charId;
+  if (held) lastThrowCarrier.set(refs,held);
+  const event = play.events.find(e=>e.t==='throw'||e.t==='relay');
+  // Several sim ticks can precede one paint; the release event may already
+  // have been consumed. Remember the displayed carrier across that boundary.
+  const id = held ?? (event && 'fielder' in event ? event.fielder : lastThrowCarrier.get(refs));
+  const kid = id ? refs.kids.get(id) : null;
+  const hand = kid?.bones.find(b=>b.name==='RightHand');
+  if (hand && id && refs.directors.get(id)?.playing === 'throw_overhand') {
+    kid!.root.updateMatrixWorld(true);
+    const palm = hand.localToWorld(new Vector3(.12,-.04,0));
+    if (held) refs.ball.position.copy(palm);
+    else if (play.throw && throwBallOrigins.get(refs)?.flight !== play.throw) {
+      throwBallOrigins.set(refs,{flight:play.throw,offset:palm.sub(refs.ball.position)});
+    }
+  }
+  if (!play.throw) {
+    throwBallOrigins.delete(refs);
+    if (!held) lastThrowCarrier.delete(refs);
+    return;
+  }
+  const origin=throwBallOrigins.get(refs);
+  if (origin?.flight !== play.throw) return;
+  const progress=(play.elapsedSec-play.throw.releasedAtSec)/(play.throw.arrivesAtSec-play.throw.releasedAtSec);
+  const t=Math.min(1,Math.max(0,progress*4));
+  refs.ball.position.addScaledVector(origin.offset,1-t*t*(3-2*t));
+}
 
 /**
  * Position the scene from one frame.
@@ -93,8 +127,14 @@ export function applyFrame(
     if (frame.phase === 'pitch' && frame.pitch) applyPitch(refs, frame, pitchElapsedSec);
     else if (frame.phase === 'windup') restBall(refs);
   }
+  const carrier = frame.phase === 'live' && frame.play?.phase === 'live' && frame.play.heldBy !== null
+    ? frame.play.fielders[frame.play.heldBy].charId : null;
+  for (const [id,d] of refs.directors) {
+    if (id !== carrier) d.cancelThrowPreparation();
+    d.update(dtSec);
+  }
+  if (frame.phase === 'live' && frame.play) applyThrowBall(refs, frame.play);
   applyReadability(refs, frame, view);
-  for (const d of refs.directors.values()) d.update(dtSec);
 }
 
 /**
@@ -327,7 +367,11 @@ function applyLive(
     // ★ FACE THE BALL, not the direction of travel. A fielder running to a spot
     // is watching the ball the whole way, and `moveToward` gives no heading to
     // read anyway once he arrives.
-    kid.setFacing(Math.atan2(play.ball.p.x - f.p.x, play.ball.p.z - f.p.z));
+    const throwTarget = throwFacingTarget(play, f.charId);
+    if (throwTarget) kid.setFacing(Math.atan2(throwTarget.x-f.p.x,throwTarget.z-f.p.z));
+    else if (refs.directors.get(f.charId)?.playing !== 'throw_overhand') {
+      kid.setFacing(Math.atan2(play.ball.p.x - f.p.x, play.ball.p.z - f.p.z));
+    }
     // Playback rate follows the SIM's speed, which is what stops feet skating —
     // see `clips.ts`'s `authoredSpeedFts`.
     const dir = refs.directors.get(f.charId);
