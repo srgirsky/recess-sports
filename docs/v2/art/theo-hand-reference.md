@@ -11,7 +11,7 @@ an opposing thumb, and outward-facing finger caps. Forty-one delivered bones
 remain under the unchanged limit of 42. The existing LOD triangle budgets
 remain unchanged.
 
-The runtime separates elbow flexion from forearm roll, limits wrist bending,
+The runtime separates elbow flexion from forearm roll, limits non-batting wrist bending,
 and blends hand shapes when actions change. The bat crosses the palm and sits
 against its surface. Both hand anchors remain on the handle throughout the
 batting solve. The jacket and inner shirt share spine-weight falloff, and the
@@ -31,8 +31,9 @@ inner layer has clearance during torso twists.
 
 The independent critic reviewed palm/back/side studies, two-hand batting
 close-ups, three poses from each of 43 actions, and 45 selected frames around
-15 transition boundaries. The scoped hand/arm review found no remaining clear
-anatomical blocker in those samples. It did not certify every frame of every
+15 transition boundaries. That review missed folded batting wrists: the user subsequently identified
+a right wrist bent back about 144 degrees in the ready stance. Its prior
+scoped acceptance did not establish a correct batting grip. It did not certify every frame of every
 animation. Some jump/dive extremities were still cropped in the review sheets.
 
 ## Technical checks
@@ -42,11 +43,31 @@ winding, proper distal-joint parents, and the actual 42-bone limit. Runtime
 tests cover pointing, distal curl, hand blending, restoration after seeking,
 forward elbow flexion, handle orientation, and two-hand anchor contact.
 
-The final batting audit sampled 5,040 poses across all 30 delivered characters:
-no mechanical failures or shaft-centreline intersections. That diagnostic does
-not prove barrel-radius clearance or visually correct finger enclosure. The
-62-model validator, production build, 2,356 tests (12 existing skips), and
-full-game presentation check passed.
+The subsequent batting correction solves handle roll and elbow swivel together,
+moves pronation into the forearm, and holds the upper sleeve upright without
+angle-wrap jumps. The ready bat is more upright, and recovery retains enough
+upward tilt to avoid folding the support wrist. Both hands remain attached.
+This path is enabled for the complete reference hand chain, currently Theo.
+
+[Three-angle batting comparison](../concepts/theo-batting-wrists.png) shows ready,
+contact and follow-through after correction. The previous ready pose measured
+144 degrees of right-wrist bend; the corrected ready pose measures about
+2 degrees on the right and 2.5 on the left. The mirrored gameplay audit samples
+reference hands at 120 Hz and rejects wrist bends over 40 degrees, wrist twist
+over 25 degrees, or arm rotation steps over 25 degrees per sample. It also
+retains the original anchor, contact, head-facing and shaft intersection checks.
+The unit regression was verified to reject the previous solver. An independent
+critic reviewed the corrected ready/contact/follow views and recovery frames
+12–14 from three angles, clearing the folded-wrist and new shoulder-collapse
+findings. Existing blocky sleeve construction remains separate polish debt.
+
+The corrected audit sampled 5,544 poses across all 30 delivered characters,
+including 672 reference-hand samples: no failures or shaft-centreline
+intersections. Maximum reference wrist bend was 33.53 degrees. These are
+mechanical diagnostics, not barrel-radius clearance or finger-surface contact
+certificates. The production build and 2,357 tests (12 existing skips) passed.
+The prior 62-model validation and full-game check remain applicable to the
+unchanged asset delivery; no models or animation takes changed in this fix.
 
 ## Still unfinished
 

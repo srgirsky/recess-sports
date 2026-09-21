@@ -1745,7 +1745,11 @@ blended roots. The delivered rig uses 41 bones under the unchanged 42-bone cap.
 `HandPose` opts into the complete optional hand chain, separates elbow flexion
 from forearm roll, blends finger poses, and leaves older rigs unchanged.
 The batting solve seats the handle across this palm's surface and preserves
-both hand contacts. Draft gestures use explicit arm poses that keep his face
+both hand contacts. A user-reported folded batting wrist exposed that anchor
+contact alone was insufficient; grip roll and elbow swivel are now solved
+together, with forearm pronation and continuous shoulder orientation. The
+[reference report](v2/art/theo-hand-reference.md) records the correction and
+its 120 Hz wrist/roll checks. Draft gestures use explicit arm poses that keep his face
 clear. Jacket and tee share spine-weight falloff, with clearance for the inner
 layer during large turns.
 

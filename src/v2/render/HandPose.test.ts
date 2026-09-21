@@ -64,6 +64,34 @@ describe('reference hand behavior',()=>{
     }
     pose.restore();expect(bones.get('RightForeArm')!.quaternion.angleTo(original)).toBeLessThan(1e-7);
   });
+  // The old solver kept palm anchors together with a 144-degree folded wrist.
+  // This gate failed against that solver; it checks anatomy as well as contact.
+  it('keeps reference batting wrists aligned without detaching either grip',()=>{
+    const {mesh,bones}=rig(), bat=new BattingPose(mesh);
+    for(const mirrored of [false,true]) {
+      mesh.scale.x=mirrored?-1:1;
+      for(const clip of ['bat_stance','bat_load','swing_contact','swing_follow','swing_whiff','bunt'] as const) {
+        const previous = new Map<string,Quaternion>();
+        for(let frame=0;frame<clipSpec(clip).frames;frame+=.25) {
+          bat.restore();bat.apply(clip,frame/FPS);mesh.updateMatrixWorld(true);
+          for(const side of ['Left','Right']) {
+            const q=bones.get(side+'Hand')!.quaternion;
+            const bend=Math.acos(Math.max(-1,Math.min(1,new Vector3(1,0,0).applyQuaternion(q).x)));
+            expect(bend,`${clip}:${frame} ${side} wrist folds back`).toBeLessThan(40*Math.PI/180);
+            const twist=2*Math.atan2(Math.abs(q.x),Math.abs(q.w));
+            expect(twist,`${clip}:${frame} ${side} wrist twists`).toBeLessThan(25*Math.PI/180);
+          }
+          for(const name of ['RightArm','RightForeArm','LeftArm','LeftForeArm']) {
+            const q=bones.get(name)!.quaternion;
+            if(previous.has(name))expect(q.angleTo(previous.get(name)!),`${clip}:${frame} ${name} rolls abruptly`).toBeLessThan(25*Math.PI/180);
+            previous.set(name,q.clone());
+          }
+          const lower=bones.get('Prop_BatGrip')!.localToWorld(new Vector3(0,-.18,0));
+          expect(lower.distanceTo(bones.get('Prop_GloveAnchor')!.getWorldPosition(new Vector3()))).toBeLessThan(.001);
+        }
+      }
+    }
+  });
   it('puts the handle across the palm, keeps both grips together, and restores attachment transforms',()=>{
     const {mesh,bones}=rig(),bat=new BattingPose(mesh);
     const anchor=bones.get('Prop_BatGrip')!, old=anchor.position.clone();

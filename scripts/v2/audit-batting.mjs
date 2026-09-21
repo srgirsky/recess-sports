@@ -1,7 +1,9 @@
 // The old orientation and wrist-distance checks passed an implausible grip.
 // Sweep six batting actions on every delivered model IN the mirrored gameplay
 // scene. --check rejects backward heads, detached palm anchors, missed contact
-// markers and shaft centreline intersections. Passing is not visual approval:
+// markers, reference-hand wrist folds/roll jumps and shaft intersections.
+// Reference hands are sampled at 120Hz to catch inter-frame flips.
+// Passing is not visual approval:
 // finger enclosure, near misses by the barrel radius and transitions still
 // require still/motion review. Results name exact character, clip and frame.
 import { chromium } from 'playwright';
@@ -51,7 +53,8 @@ try {
    s.scene.updateMatrixWorld(true);
    dir.battingPose.contact=s.scene.localToWorld(new Vector3(0,2.4,0));
    for(const clip of ['bat_stance','bat_load','swing_contact','swing_follow','swing_whiff','bunt']){
-    for(let frame=0;frame<clipSpec(clip).frames;frame++){
+    const previous=new Map();
+    for(let frame=0;frame<clipSpec(clip).frames;frame+=view.bones.some(b=>b.name==='RightHandIndex2')?.25:1){
      dir.seek(clip,frame/FPS);s.scene.updateMatrixWorld(true);
      const bone=n=>view.bones.find(b=>b.name===n);
      const at=n=>bone(n).getWorldPosition(new Vector3());
@@ -66,23 +69,36 @@ try {
      // instrument cannot see near misses by the barrel radius or finger shape.
      const ray=new Raycaster(origin,tip.clone().sub(origin).normalize(),0,1.55*view.root.scale.x);
      const hits=ray.intersectObject(view.mesh,true).filter(h=>h.object.visible);
+     const wristBends = bone('RightHandIndex2') ? ['Right','Left'].map(side => {
+      const q=bone(side+'Hand').quaternion;
+      return Math.acos(Math.max(-1,Math.min(1,new Vector3(1,0,0).applyQuaternion(q).x)))*180/Math.PI;
+     }) : [];
+     const wristTwists = bone('RightHandIndex2') ? ['Right','Left'].map(side => {
+      const q=bone(side+'Hand').quaternion;
+      return 2*Math.atan2(Math.abs(q.x),Math.abs(q.w))*180/Math.PI;
+     }) : [];
+     const armSteps = bone('RightHandIndex2') ? ['RightArm','RightForeArm','RightHand','LeftArm','LeftForeArm','LeftHand'].map(name => {
+      const q=bone(name).quaternion;
+      const step=previous.has(name)?q.angleTo(previous.get(name))*180/Math.PI:0;
+      previous.set(name,q.clone());return step;
+     }) : [];
      results.push({id:c.id,clip,frame,clipSource:dir.sourceFor(clip),
       headTowardPitcher:forward.dot(pitcher.sub(headAt).normalize()),
       palmGapFt:at('Prop_GloveAnchor').distanceTo(lowerPalm)/view.root.scale.x,
       contactGapFt:clip==='swing_contact'&&frame===clipSpec(clip).marker.frame?tip.distanceTo(dir.battingPose.contact):null,
-      shaftHits:hits.length});
+      wristBendsDeg:wristBends,wristTwistsDeg:wristTwists,armStepsDeg:armSteps,shaftHits:hits.length});
     }
    }
    s.scene.remove(view.root);dir.dispose();view.dispose();
   }
-  return {diagnostic:'Delivered models, production director, actual mirrored gameplay scene. Every authored frame of six batting clips; fixed 2.4ft target. Palm anchors and shaft centreline intersections are diagnostics, not finger contact or visual approval.',results};
+  return {diagnostic:'Delivered models, production director, actual mirrored gameplay scene. Every authored frame of six batting clips, 120Hz for reference hands; fixed 2.4ft target. Palm anchors and shaft centreline intersections are diagnostics, not finger contact or visual approval.',results};
  });
  if(sourceDigest(root)!==hash)throw Error('Source changed during audit; rerun.');
  data.sourceHash=hash;data.capturedAt=new Date().toISOString();
  if(errors.length)throw Error(errors.join('\n'));
  writeFileSync(`${out}/probe.json`,JSON.stringify(data,null,2));
- const bad=data.results.filter(r=>r.headTowardPitcher<0||r.palmGapFt>.02||r.contactGapFt>.1);
+ const bad=data.results.filter(r=>r.headTowardPitcher<0||r.palmGapFt>.02||r.contactGapFt>.1||r.wristBendsDeg.some(bend=>bend>40)||r.wristTwistsDeg.some(twist=>twist>25)||r.armStepsDeg.some(step=>step>25));
  const intersections=data.results.filter(r=>r.shaftHits>0);
- console.log(JSON.stringify({samples:data.results.length,mechanicalFailures:bad.length,shaftIntersectionCandidates:intersections.length,affected:[...new Set(intersections.map(r=>r.id))],maxPalmGapFt:Math.max(...data.results.map(r=>r.palmGapFt)),failures:bad.slice(0,20)},null,2));
+ console.log(JSON.stringify({samples:data.results.length,mechanicalFailures:bad.length,shaftIntersectionCandidates:intersections.length,affected:[...new Set(intersections.map(r=>r.id))],maxArmStepDeg:Math.max(...data.results.flatMap(r=>r.armStepsDeg)),maxWristTwistDeg:Math.max(...data.results.flatMap(r=>r.wristTwistsDeg)),maxWristBendDeg:Math.max(...data.results.flatMap(r=>r.wristBendsDeg)),maxPalmGapFt:Math.max(...data.results.map(r=>r.palmGapFt)),failures:bad.slice(0,20)},null,2));
  if(process.argv.includes('--check')&&(bad.length||intersections.length))process.exitCode=1;
 }finally{await browser?.close();server.kill();}
