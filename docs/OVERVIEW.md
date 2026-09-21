@@ -1749,7 +1749,10 @@ both hand contacts. A user-reported folded batting wrist exposed that anchor
 contact alone was insufficient; grip roll and elbow swivel are now solved
 together, with forearm pronation and continuous shoulder orientation. The
 [reference report](v2/art/theo-hand-reference.md) records the correction and
-its 120 Hz wrist/roll checks. Draft gestures use explicit arm poses that keep his face
+its 120 Hz wrist/roll checks. His bunt now uses a separate split grip, a
+barrel-hand cradle, a turn toward the pitcher and bent knees; preparation and
+recovery move around the face while the receiving phase holds the bat steady.
+Draft gestures use explicit arm poses that keep his face
 clear. Jacket and tee share spine-weight falloff, with clearance for the inner
 layer during large turns.
 

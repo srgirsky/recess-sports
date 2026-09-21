@@ -65,9 +65,40 @@ The corrected audit sampled 5,544 poses across all 30 delivered characters,
 including 672 reference-hand samples: no failures or shaft-centreline
 intersections. Maximum reference wrist bend was 33.53 degrees. These are
 mechanical diagnostics, not barrel-radius clearance or finger-surface contact
-certificates. The production build and 2,357 tests (12 existing skips) passed.
+certificates. The production build and 2,358 tests (12 existing skips) passed.
 The prior 62-model validation and full-game check remain applicable to the
 unchanged asset delivery; no models or animation takes changed in this fix.
+
+## Dedicated bunt pose
+
+The user subsequently identified that the bunt was still a normal stacked grip
+pushed forward. Theo now turns toward the pitcher, pivots the planted feet,
+bends the knees, and presents a slightly raised barrel across the chest. The
+bottom hand stays near the knob while the top hand slides up the taper and
+changes to a thumb/index cradle. Preparation and recovery carry the bat around
+the face; the receiving phase holds it quiet instead of stabbing forward.
+The pose follows the split-grip and athletic-stance cues in this
+[Little League bunting drill](https://www.sclittleleague.com/Default.aspx?ctl=newsdetail&mid=1820486&newsid=212691&newskeyid=HN1&tabid=1759115).
+
+[Full-body bunt views](../concepts/theo-bunt-reference.png) and the
+[preparation/hold/recovery recording](../concepts/theo-bunt-motion.mp4) show the
+reference correction. The pose was also inspected in the actual gameplay
+camera; the review capture substitutes Theo for the batter without changing
+the underlying matchup HUD. The independent critic found that the split grip,
+raised barrel and knee flexion now read as a bunt, and reviewed all 62 frames
+of the final two-cycle recording without a remaining scoped visual blocker.
+The recorder repaints the same posed instant after adaptive viewport resizing;
+it does not advance animation to replace a blank capture. Live and seek
+transforms were compared at the held pose and agree. This remains a Theo-only
+reference correction; legacy-hand characters retain their existing bunt.
+
+The regression rejects the previous pose's closely stacked hands and checks
+hand separation, contact with the taper, chest direction, knee bend, bat angle,
+and recovery to the ordinary stance. The existing 120 Hz wrist/roll checks
+remain unchanged. The shaft audit now distinguishes deliberate top-hand
+contact from collisions: only nearby triangles weighted to that hand are
+exempt; head, torso and sleeve hits still fail. It caught a head intersection
+in an intermediate transition, which was corrected before delivery.
 
 ## Still unfinished
 

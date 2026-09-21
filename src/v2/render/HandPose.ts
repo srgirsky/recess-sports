@@ -3,6 +3,7 @@
 // Legacy mitten rigs are left to their authored clips. AnimationDirector owns
 // application/restoration, including seeks, so preview and gameplay agree.
 import { Euler, Object3D, Quaternion, Vector3, type SkinnedMesh } from 'three';
+import { buntAmount } from './buntPose';
 import { clipSpec, FPS, holdsBat, type AnimName } from './clips';
 const Z = new Vector3(0, 0, 1), Y = new Vector3(0, 1, 0), X = new Vector3(1, 0, 0);
 const clamp = (v: number, limit: number) => Math.max(-limit, Math.min(limit, v));
@@ -50,6 +51,8 @@ export class HandPose {
     for (const [side, sign] of [['Left',-1],['Right',1]] as const) {
       if (!this.supports(side)) continue;
       const bat = holdsBat(clip);
+      const bunt = clip === 'bunt' && side === 'Right' ? buntAmount(timeSec) : 0;
+      const batCurl = (closed: number, cradle: number) => closed+(cradle-closed)*bunt;
       const point = clip === 'pose_card' && side === 'Right';
       const ball = side === 'Right' && (clip.startsWith('pitch_') || clip.startsWith('throw_'));
       const marker=clipSpec(clip).marker;
@@ -57,12 +60,12 @@ export class HandPose {
         ? 1-Math.max(0,Math.min(1,(timeSec-marker.frame/FPS+.04)/.12)) : 1;
       const holding=(closed: number, relaxed: number)=>relaxed+(closed-relaxed)*ballGrip;
       for (const [finger, curl] of [
-        ['Index1', bat ? 1.3 : point ? 0 : ball ? holding(.65,.12) : .12],
-        ['Middle1', bat ? 1.3 : point ? 1.8 : ball ? holding(.8,.22) : .22],
-        ['Ring1', bat ? 1.3 : point ? 1.8 : ball ? holding(.8,.22) : .22],
-        ['Index2', bat ? 1.5 : point ? 0 : ball ? holding(.9,.16) : .16],
-        ['Curl2', bat ? 1.5 : point ? 1.6 : ball ? holding(1,.25) : .25],
-        ['Thumb1', bat ? .8 : point ? .9 : ball ? holding(.5,.08) : .08],
+        ['Index1', bat ? batCurl(1.3,.9) : point ? 0 : ball ? holding(.65,.12) : .12],
+        ['Middle1', bat ? batCurl(1.3,1.65) : point ? 1.8 : ball ? holding(.8,.22) : .22],
+        ['Ring1', bat ? batCurl(1.3,1.65) : point ? 1.8 : ball ? holding(.8,.22) : .22],
+        ['Index2', bat ? batCurl(1.5,1.1) : point ? 0 : ball ? holding(.9,.16) : .16],
+        ['Curl2', bat ? batCurl(1.5,1.6) : point ? 1.6 : ball ? holding(1,.25) : .25],
+        ['Thumb1', bat ? batCurl(.8,.5) : point ? .9 : ball ? holding(.5,.08) : .08],
       ] as const) {
         const bone = this.bones.get(`${side}Hand${finger}`);
         if (!bone) continue;

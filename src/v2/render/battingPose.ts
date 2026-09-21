@@ -9,6 +9,7 @@
 import { Matrix4, Object3D, Quaternion, Vector3, type SkinnedMesh } from 'three';
 import { FPS, clipSpec, framesToSec, type AnimName } from './clips';
 import { BAT_SWEET_SPOT_FT } from './props';
+import { buntAmount, BUNT_HAND_SLIDE_FT } from './buntPose';
 import { bindWorld } from './skeleton';
 const BIND = bindWorld();
 
@@ -76,7 +77,7 @@ export class BattingPose {
     bone.updateWorldMatrix(false, true);
   }
 
-  private arm(side: 'Left' | 'Right', palm: Vector3, rotation: Quaternion, followClearance = 0): void {
+  private arm(side: 'Left' | 'Right', palm: Vector3, rotation: Quaternion, followClearance = 0, bunt = 0): void {
     const upper = this.bones.get(`${side}Arm`)!;
     const lower = this.bones.get(`${side}ForeArm`)!;
     const hand = this.bones.get(`${side}Hand`)!;
@@ -86,7 +87,7 @@ export class BattingPose {
     // straight-down world-space hint tucked wide kids' upper arms into their
     // shirts, even though the two palms still reached the handle exactly.
     const clearanceGain=this.bones.has('RightHandIndex2')?.5:.25;
-    const elbowHint = new Vector3(sign * .8, -.4, .5 + clearanceGain * followClearance)
+    const elbowHint = new Vector3(sign * .8, -.4 - 1.5*bunt, .5 + clearanceGain * followClearance)
       .applyQuaternion(this.rotation(this.bones.get('Spine2')!));
     if (this.bones.has('RightHandIndex2')) {
       const result = this.gripSolution(side, palm, Z.clone().applyQuaternion(rotation), elbowHint);
@@ -106,7 +107,7 @@ export class BattingPose {
       // Euler/twist angle here jumps at +/-180°, despite valid wrist contact.
       const lowerRotation = this.rotation(lower);
       const upperX = X.clone().applyQuaternion(upper.quaternion);
-      const upperZ = upperX.clone().cross(Y);
+      const upperZ = upperX.clone().cross(Y.clone().addScaledVector(Z,-1.2*bunt));
       if (upperZ.lengthSq() < 1e-8) upperZ.copy(Z).addScaledVector(upperX,-upperX.dot(Z));
       upperZ.normalize();
       const neutral = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(
@@ -212,10 +213,13 @@ export class BattingPose {
     const hips = this.bones.get('Hips')!;
     const sweep = name === 'swing_contact' || name === 'swing_whiff' ? smooth((time * FPS - 3) / 8)
       : name === 'swing_follow' ? 1 - smooth(time / FOLLOW_SEC) : 0;
-    const desiredHeading = (-20 - 140 * sweep) * Math.PI / 180;
+    const referenceHands = this.bones.has('RightHandIndex2');
+    const bunt = name === 'bunt' && referenceHands ? buntAmount(time) : 0;
+    const desiredHeading = (-20 - 140 * sweep - 55 * bunt) * Math.PI / 180;
     const chestForward = Z.clone().applyQuaternion(this.rotation(spine));
     const correction = desiredHeading - Math.atan2(chestForward.x, chestForward.z);
     this.set(hips, new Quaternion().setFromAxisAngle(Y, correction).multiply(this.rotation(hips)));
+    if (bunt > 0) this.set(spine,this.rotation(spine).slerp(new Quaternion().setFromAxisAngle(Y,desiredHeading),bunt));
     const gripHeight = 2.3;
     const ready = new Vector3(.4, gripHeight - .08, .42);
     let grip = ready.clone();
@@ -246,7 +250,13 @@ export class BattingPose {
       grip.lerp(wind, Math.sin(Math.PI * time / framesToSec(clipSpec(name).frames)));
     } else if (name === 'bunt') {
       const t = smooth(Math.sin(Math.PI * time / framesToSec(clipSpec(name).frames)));
-      grip.lerp(contact, t); axis.lerp(Z, t).normalize();
+      if (referenceHands) {
+        // Receive the pitch with a quiet bat across the chest. The top hand
+        // travels up the taper; the bottom hand stays near the knob.
+        grip.lerp(new Vector3(-.85, 2.12, -.4), bunt);
+        grip.z += .25*Math.sin(Math.PI*bunt);
+        axis.lerp(new Vector3(0,.18,1).normalize(), smooth(Math.min(1,bunt*1.7))).normalize();
+      } else { grip.lerp(contact, t); axis.lerp(Z, t).normalize(); }
     } else if (name === 'swing_follow') {
       const t = smooth(time / FOLLOW_SEC);
       grip.copy(through).lerp(ready, t);
@@ -264,7 +274,6 @@ export class BattingPose {
     const handRotation = batRotation.clone();
     // Reference palms lie in X/Z. The handle crosses the palm along Z,
     // perpendicular to finger curl; legacy forward-facing mittens used Y.
-    const referenceHands = this.bones.has('RightHandIndex2');
     if (referenceHands) {
       // Seat the handle against the palm surface, not through its centre.
       for (const name of ['Prop_BatGrip','Prop_GloveAnchor']) {
@@ -274,7 +283,8 @@ export class BattingPose {
         anchor.position.x+=name==='Prop_BatGrip'?.03:-.03;
       }
     }
-    const rightRotation = referenceHands ? this.gripRotation('Right', grip, axis) : handRotation;
+    const upperPalm = grip.clone().addScaledVector(axis, BUNT_HAND_SLIDE_FT*bunt);
+    const rightRotation = referenceHands ? this.gripRotation('Right', upperPalm, axis) : handRotation;
     const lowerPalm = grip.clone().addScaledVector(axis, -.18);
     const leftRotation = referenceHands ? this.gripRotation('Left', lowerPalm, axis)
       : handRotation.clone().multiply(new Quaternion().setFromAxisAngle(Y, Math.PI));
@@ -282,7 +292,7 @@ export class BattingPose {
       const handTargets = ['Left', 'Right'].map(side => {
         const right = side === 'Right';
         const rotation = right ? rightRotation : leftRotation;
-        const palm = grip.clone().addScaledVector(axis, right ? 0 : -.18);
+        const palm = (right ? upperPalm : lowerPalm).clone();
         const wrist = palm.sub(this.palmOffset(side).applyQuaternion(rotation));
         const shoulder = this.at(this.bones.get(`${side}Arm`)!);
         const length = this.bones.get(`${side}ForeArm`)!.position.length() + this.bones.get(`${side}Hand`)!.position.length();
@@ -309,12 +319,13 @@ export class BattingPose {
       } else {
         // Alternating projections put BOTH wrists within reach. Averaging two
         // independent corrections leaves the shorter arm detached on follow-through.
+        const footRotation = new Quaternion().setFromAxisAngle(Y,-55*Math.PI/180*bunt);
         const feet = ['Left', 'Right'].map(side => ({
-          wrist: new Vector3(...BIND.get(`${side}Foot`)!),
+          wrist: new Vector3(...BIND.get(`${side}Foot`)!).applyQuaternion(footRotation),
           shoulder: this.at(this.bones.get(`${side}UpLeg`)!),
           length: this.bones.get(`${side}Leg`)!.position.length() + this.bones.get(`${side}Foot`)!.position.length(),
         }));
-        const shift = new Vector3();
+        const shift = new Vector3(0,-.16*bunt,0);
         for (let pass = 0; pass < 20; pass++) {
           for (const { wrist, shoulder, length } of [...handTargets, ...feet]) {
             const delta = wrist.clone().sub(shoulder).sub(shift);
@@ -327,9 +338,9 @@ export class BattingPose {
         this.rig.updateWorldMatrix(true, true);
         for (const side of ['Left', 'Right']) {
           const foot = this.bones.get(`${side}Foot`)!;
-          const target = new Vector3(...BIND.get(`${side}Foot`)!);
+          const target = new Vector3(...BIND.get(`${side}Foot`)!).applyQuaternion(footRotation);
           this.solve(this.bones.get(`${side}UpLeg`)!, this.bones.get(`${side}Leg`)!, foot, target, new Vector3(0, 0, 1));
-          this.set(foot, new Quaternion());
+          this.set(foot, footRotation);
         }
       }
     }
@@ -339,9 +350,15 @@ export class BattingPose {
     // Verified over every batting frame on all 30 delivered models.
     const followClearance = name === 'swing_contact' || name === 'swing_whiff'
       ? Math.sin(Math.PI * smooth((time * FPS - CONTACT_FRAME) / 6)) : 0;
-    this.arm('Right', grip, rightRotation, followClearance);
-    this.arm('Left', lowerPalm, leftRotation);
-    if (referenceHands) this.set(this.bones.get('Prop_BatGrip')!,batRotation);
+    this.arm('Right', upperPalm, rightRotation, followClearance,bunt);
+    this.arm('Left', lowerPalm, leftRotation,0,bunt);
+    if (referenceHands) {
+      const anchor = this.bones.get('Prop_BatGrip')!;
+      this.set(anchor,batRotation);
+      // Bat origin remains at the regular handle location as the right palm
+      // slides up it. Moving the palm must not move the bat along with it.
+      anchor.position.addScaledVector(axis.clone().applyQuaternion(this.rotation(this.bones.get('RightHand')!).invert()),-BUNT_HAND_SLIDE_FT*bunt);
+    }
     for (const side of ['Left', 'Right']) {
       const sign = side === 'Right' ? 1 : -1;
       for (const [suffix, angle] of [['Index1', 1.65], ['Thumb1', -.65]] as const) {

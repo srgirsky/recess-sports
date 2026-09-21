@@ -64,6 +64,31 @@ describe('reference hand behavior',()=>{
     }
     pose.restore();expect(bones.get('RightForeArm')!.quaternion.angleTo(original)).toBeLessThan(1e-7);
   });
+  it('squares to bunt with a separated barrel hand, bent knees, and a quiet bat',()=>{
+    const {mesh,bones,pose}=rig(),bat=new BattingPose(mesh);
+    const anchor=bones.get('Prop_BatGrip')!, original=anchor.position.clone();
+    const palmOffset=original.clone().add(new Vector3(.03,-.05,0));
+    for(const frame of [9,12,14]) {
+      pose.restore();bat.restore();bat.apply('bunt',frame/FPS);pose.apply('bunt',Infinity,frame/FPS);mesh.updateMatrixWorld(true);
+      const top=anchor.worldToLocal(bones.get('RightHand')!.localToWorld(palmOffset.clone()));
+      const bottom=anchor.worldToLocal(bones.get('Prop_GloveAnchor')!.getWorldPosition(new Vector3()));
+      expect(top.y-bottom.y).toBeGreaterThan(.9);
+      expect(Math.hypot(top.x,top.z)).toBeLessThan(.001);
+      expect(bottom.y).toBeCloseTo(-.18,4);
+      const shaft=new Vector3(0,1,0).applyQuaternion(anchor.getWorldQuaternion(new Quaternion()));
+      expect(shaft.y).toBeGreaterThan(.1);expect(shaft.y).toBeLessThan(.3);
+      expect(Math.abs(shaft.x)).toBeLessThan(.01);
+      const chest=new Vector3(0,0,1).applyQuaternion(bones.get('Spine2')!.getWorldQuaternion(new Quaternion()));
+      expect(chest.x).toBeLessThan(-.9);
+      expect(bones.get('Hips')!.position.y).toBeLessThan(1.54);
+      expect(bones.get('RightHandIndex2')!.quaternion.angleTo(new Quaternion())).toBeLessThan(1.2);
+    }
+    pose.restore();bat.restore();expect(anchor.position.distanceTo(original)).toBeLessThan(1e-7);
+    bat.apply('bunt',23/FPS);mesh.updateMatrixWorld(true);
+    const returning=bones.get('RightHand')!.getWorldPosition(new Vector3());
+    bat.restore();bat.apply('bat_stance',0);mesh.updateMatrixWorld(true);
+    expect(returning.distanceTo(bones.get('RightHand')!.getWorldPosition(new Vector3()))).toBeLessThan(1e-6);
+  });
   // The old solver kept palm anchors together with a 144-degree folded wrist.
   // This gate failed against that solver; it checks anatomy as well as contact.
   it('keeps reference batting wrists aligned without detaching either grip',()=>{
