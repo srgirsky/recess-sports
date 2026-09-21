@@ -192,7 +192,7 @@
       },
       "animation": {
         "take": "anims_calls_shot_v1.glb",
-        "takeSha256": "92b7b763a2a2144dfb0943d5a5fafb6b7ee524891ee8ddc69b9d4896277c40df",
+        "takeSha256": "871afcb7cf06d4c22bed2542de85748da98c3d5f85c667d97dd743dbd6ff0ec9",
         "builder": "buildTheoPilotClips",
         "generator": "recess-sports Big Talk Theo authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",

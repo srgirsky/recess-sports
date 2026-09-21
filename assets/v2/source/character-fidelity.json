@@ -104,7 +104,7 @@
     "headBodyProportions": {
      "label": "head/body proportions",
      "score": 4,
-     "note": "Measured head height, head width ratio, ankle daylight and face exposure remain within tolerance. Current run, contact and sampled action/transition frames show connected shoulders, elbows and wrists. Hands now have separate curled fingers and an opposing thumb; at game scale the repaired thumb root reads attached. Sleeve/deltoid form remains simple; this is a proportion/connectivity score, not certification of every animation frame."
+     "note": "Fresh independent review of Theo runtime hero, run, contact and the corrected upset motion: head height, head width ratio, ankle daylight and face exposure remain within measured tolerance. All 86 captured frames of idle-to-upset-to-idle twice at 20 fps keep the shoulders, elbows and wrists connected, without the former upper arms disappearing through the torso. Three additional angles at upset frames 8, 16 and 24 confirm the corrected arm path. Hands remain attached and the wrists do not visibly fold. This scope does not certify throwing or every other clip."
     },
     "hairMass": {
      "label": "hair mass",
@@ -114,7 +114,7 @@
     "clothingConstruction": {
      "label": "clothing construction",
      "score": 3,
-     "note": "Improved from 2 to 3: the former cream sawtooth penetration through the teal jacket is absent in refreshed swing runtime and sampled contact, whiff, follow and final-torso evidence. Cuffs and hem remain coherent through the reviewed bends. Shoes still read as cream clogs and fail all three measured shoe metrics; the jacket and sleeves remain simple tubular volumes with little tailored form. Those unresolved construction issues prevent 4."
+     "note": "Score remains 3. Fresh runtime swing and upset evidence show no cream sawtooth intrusion through the teal jacket; the corrected upset upper sleeves stay outside the body and preserve a continuous shoulder-to-elbow silhouette through all 86 reviewed motion frames. The cuffs and hem remain coherent. Shoes still read as cream clogs and fail all three measured shoe metrics; jacket and sleeves remain simple tubular forms without the concept tailoring. Those unresolved construction issues prevent 4."
     },
     "faceExpressionRead": {
      "label": "face/expression read",
@@ -134,9 +134,9 @@
    ],
    "measuredFidelity": {
     "command": "npm run measure:fidelity -- calls_shot",
-    "ranAt": "2026-09-20",
+    "ranAt": "2026-09-21",
     "board": "theo-fidelity-review.png",
-    "result": "> recess-sports@0.1.0 measure:fidelity\n> node scripts/v2/measure-fidelity.mjs calls_shot\n\n\nMeasured fidelity — theo\nconcept front view 306x743px   delivered 466x561px\nshoe tones read off the concept: #ecddcc and #d9b68b\n\nmetric                                    concept    delivered  delta     status\n------------------------------------------------------------------------------------\nhead height as % of figure height         35.0       34.6       -0.41     ok\nhead width : head height                  1.05       0.99       -0.06     ok\nthe shoe band's dominant tone, % of the band37.6       88.4       +50.7     OFF (tol 8)\nthe shoe band's second tone, % of the band61.4       11.6       -49.8     OFF (tol 8)\nthe shoe band's mean saturation (grey cannot pass)28.1       13.6       -14.4     OFF (tol 4)\ndaylight between the ankles               56.9       51.7       -5.24     ok\nvisible face left of centre, % of head width22.4       26.6       +4.14     ok\nvisible face right of centre, % of head width26.8       27.1       +0.25     ok\nface left/right asymmetry                 0.00       0.52                 ok\n------------------------------------------------------------------------------------\n\n3 metrics outside tolerance.\nIndependent critic reran measure:fidelity and reviewed current runtime before board. Reviewed board SHA-256 e167266f8b29f89db8f8ba0801f8c1b23ec37f37dab673c4ec4e1161fc6e8cb8. Additional evidence: hands11, two-hand-grip, final-torso, actions-framed/sheet-0 through sheet-10, and motion frames at each listed transition boundary plus/minus two frames. Still samples do not certify every intervening frame; catch_jump top hand/head and dive-left foot remain partly cropped in sheet montage. Whole-character status remains needs-polish.",
+    "result": "\n> recess-sports@0.1.0 measure:fidelity\n> node scripts/v2/measure-fidelity.mjs calls_shot\n\n\nMeasured fidelity — theo\nconcept front view 306x743px   delivered 466x561px\nshoe tones read off the concept: #ecddcc and #d9b68b\n\nmetric                                    concept    delivered  delta     status\n------------------------------------------------------------------------------------\nhead height as % of figure height         35.0       34.6       -0.41     ok\nhead width : head height                  1.05       0.99       -0.06     ok\nthe shoe band's dominant tone, % of the band37.6       88.4       +50.7     OFF (tol 8)\nthe shoe band's second tone, % of the band61.4       11.6       -49.8     OFF (tol 8)\nthe shoe band's mean saturation (grey cannot pass)28.1       13.6       -14.4     OFF (tol 4)\ndaylight between the ankles               56.9       51.7       -5.24     ok\nvisible face left of centre, % of head width22.4       26.6       +4.14     ok\nvisible face right of centre, % of head width26.8       27.1       +0.25     ok\nface left/right asymmetry                 0.00       0.52                 ok\n------------------------------------------------------------------------------------\n\n3 metrics outside tolerance.\n\n\nIndependent upset correction review, 2026-09-20: reviewed current runtime hero, run, swing and all four face-expression stills before the current fidelity board. Board SHA-256 049937bd92107ee368d48d839f26dcd000d58fef8933eb880671627897644838. Reviewed before/after three-angle sheets at upset frames 8, 16 and 24, plus every frame 0000-0085 of .art-review/theo-reference/upset-motion (20 fps, two idle/upset/idle cycles), assembled into six contact sheets. No visible torso penetration, shoulder collapse, wrist folding, sleeve inversion or detached hand appears in this supplied motion evidence. This is a scoped pass for upset_goofy; no inference of throwing quality, every other animation, or whole-character approval. Historical polish findings are carried verbatim below, including historical pixel comparisons that were not remeasured in this animation-only round. Whole-character status remains needs-polish.",
     "note": "featurelatitude gates brow 49.8, eye 63.7 (bounded crop traces - the analyser's brow pick at 96.6 was the collar shadow and its eye refused), mouth 84.9 (the analyser's own trace, the open grin), earLine 54.8. The cap's cream front panel is the team accent (Chip's convention) and team-tints at runtime by design."
    },
    "polishFindings": [
@@ -159,7 +159,7 @@
     "CARRIED — Section 6 integration evidence stale and a proxy: docs/v2/concepts/theo-in-game-review.png is still the 2026-08-09 file (97a17cd) while every board and runtime still on disk is from 04:38 today.",
     "CLEARED (kept clear) — The old hairMass-1 basis: theo-front-review.png still shows hair standing proud of the skull on both sides and filling under the cap, and no bare-skull read appears in any runtime still."
    ],
-   "scoredBoardSha256": "b190ae90641806a0d0b00dd92523cfb9423315bfe34f75b72f398cab50548d2f"
+   "scoredBoardSha256": "049937bd92107ee368d48d839f26dcd000d58fef8933eb880671627897644838"
   },
   "wheelchair_ace": {
    "status": "needs-polish",

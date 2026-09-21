@@ -1754,7 +1754,10 @@ barrel-hand cradle, a turn toward the pitcher and bent knees; preparation and
 recovery move around the face while the receiving phase holds the bat steady.
 Draft gestures use explicit arm poses that keep his face
 clear. Jacket and tee share spine-weight falloff, with clearance for the inner
-layer during large turns.
+layer during large turns. The upset gesture also uses absolute arm poses:
+additive shoulder rotations had driven the upper arms through the jacket.
+Its rebaked take keeps the elbows outside the torso through the shrug and
+slump. Throwing preparation and the overhand arc remain unfinished.
 
 This is a Theo reference pass, not a claim that the other 29 characters have
 the new hands or that the game has reached Backyard Baseball parity. The

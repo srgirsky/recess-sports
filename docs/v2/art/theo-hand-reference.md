@@ -100,6 +100,28 @@ contact from collisions: only nearby triangles weighted to that hand are
 exempt; head, torso and sleeve hits still fail. It caught a head intersection
 in an intermediate transition, which was corrected before delivery.
 
+## Upset gesture clearance
+
+The user found Theo's arms passing through his body in `upset_goofy`. The
+gesture added shoulder rotation to an already lowered idle pose, bringing
+the upper arms across the jacket. Both the disbelief and slump now use
+absolute arm poses with outward elbows and forward forearm flexion. The
+head shake and body lean remain. Theo's delivered performance take was
+rebaked so the correction reaches the production animation director.
+
+[Three-angle upset views](../concepts/theo-upset-reference.png) and the
+[two-cycle recording](../concepts/theo-upset-motion.mp4) cover the gesture
+and its transitions back to idle. The regression samples the whole clip at
+120 Hz and checks that both elbows stay outside their shoulder positions in
+chest space. It failed against the previous take's source before the fix.
+This bone-clearance check supplements visual review; it cannot establish
+clothing-surface clearance by itself.
+
+An independent critic reviewed the three-angle samples and all 86 captured
+frames at 20 fps. No torso penetration, detached shoulder, folded wrist or
+transition discontinuity remained in that evidence. The character retains
+its existing overall fidelity scores and `needs-polish` status.
+
 ## Still unfinished
 
 Theo remains `needs-polish` in the independent fidelity record. Three shoe
@@ -108,6 +130,10 @@ also retain findings. The current scoop/low-catch and chest-catch poses do not
 communicate catching well, and the slide reads as an upright lean. These are
 separate animation-authoring issues, not evidence that the hand rig is finished
 across the roster.
+
+The user also identified the short, low throwing motion. Review confirmed
+insufficient overhand preparation and extension, compressed release motion,
+and a gameplay cue that starts at release. Throwing remains unfinished.
 
 Use the reference to fit the broad-bodied and seated cases next, with their
 own proportions, sources, gestures and fresh review. A successful export or a

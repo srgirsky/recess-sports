@@ -874,12 +874,21 @@ function theoCheerGoofy(spec: ClipSpec): AnimationClip {
 }
 
 function theoUpsetGoofy(spec: ClipSpec): AnimationClip {
-  const disbelief = shift(THEO_IDLE_POSE, { hp: [10, 0, 0], sp: [12, 0, 0], s2: [10, 0, 0], hd: [22, -18, 10], la: [-15, 0, 82], lf: [0, -68, 0], ra: [-15, 0, -82], rf: [0, 68, 0] });
+  // Absolute shoulders keep the shrug outside the jacket. Adding 82 degrees
+  // to the lowered idle arms folded both upper arms across the torso.
+  const disbelief: Pose = {
+    ...shift(THEO_IDLE_POSE, { hp: [10, 0, 0], sp: [12, 0, 0], s2: [10, 0, 0], hd: [22, -18, 10] }),
+    la: [0, 0, 35], lf: [0, 70, 0], ra: [0, 0, -35], rf: [0, -70, 0],
+  };
+  const slump: Pose = {
+    ...shift(THEO_IDLE_POSE, { hp: [18, 0, 0], sp: [12, 0, 0], hd: [25, 0, 0] }),
+    la: [0, 0, 65], lf: [0, 25, 0], ra: [0, 0, -65], rf: [0, -25, 0],
+  };
   return build(spec, [
     { f: 0, pose: THEO_IDLE_POSE },
     { f: 7, pose: disbelief, hips: [0, 0.08, 0] },
     { f: 15, pose: shift(disbelief, { hd: [-8, 34, -18], hp: [8, 0, -12] }), hips: [-0.08, 0.03, 0] },
-    { f: 24, pose: shift(THEO_IDLE_POSE, { hp: [18, 0, 0], sp: [12, 0, 0], hd: [25, 0, 0], la: [12, 0, 72], ra: [12, 0, -72] }) },
+    { f: 24, pose: slump },
     { f: 34, pose: shift(THEO_IDLE_POSE, { hd: [4, -9, 2] }) },
     { f: spec.frames - 1, pose: THEO_IDLE_POSE },
   ]);

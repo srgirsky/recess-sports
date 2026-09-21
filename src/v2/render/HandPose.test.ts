@@ -2,7 +2,8 @@
 // These checks cover the runtime seams: a pointing index stays open, distal
 // joints actually curl, crossfades do not snap, and seeks/restores cannot drift.
 import { describe, it, expect } from 'vitest';
-import { Bone, Quaternion, Skeleton, SkinnedMesh, Vector3 } from 'three';
+import { AnimationMixer, Bone, Quaternion, Skeleton, SkinnedMesh, Vector3 } from 'three';
+import { buildTheoPilotClips } from './proceduralClips';
 import { HandPose } from './HandPose';
 import { SKELETON } from './skeleton';
 import { BattingPose } from './battingPose';
@@ -22,6 +23,20 @@ function rig(reference=true) {
 }
 
 describe('reference hand behavior',()=>{
+  it('keeps Theo’s upset elbows outside the torso throughout the gesture',()=>{
+    const {mesh,bones,pose}=rig(), mixer=new AnimationMixer(mesh);
+    mixer.clipAction(buildTheoPilotClips().find(c=>c.name==='upset_goofy')!).play();
+    for(let frame=0;frame<clipSpec('upset_goofy').frames;frame+=.25){
+      pose.restore();mixer.setTime(frame/FPS);pose.constrainArms('upset_goofy');mesh.updateMatrixWorld(true);
+      for(const [side,sign] of [['Left',-1],['Right',1]] as const){
+        const chest=bones.get('Spine2')!;
+        const shoulder=chest.worldToLocal(bones.get(side+'Arm')!.getWorldPosition(new Vector3()));
+        const elbow=chest.worldToLocal(bones.get(side+'ForeArm')!.getWorldPosition(new Vector3()));
+        expect(sign*(elbow.x-shoulder.x),`${side} elbow enters torso at frame ${frame}`).toBeGreaterThan(.1);
+      }
+    }
+    mixer.stopAllAction();mixer.uncacheRoot(mesh);
+  });
   it('opens the throwing fingers across the authored release marker',()=>{
     const {bones,pose}=rig(),finger=bones.get('RightHandIndex2')!;
     for(const clip of ['pitch_release','throw_overhand'] as const){
