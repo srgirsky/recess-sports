@@ -962,8 +962,6 @@ function release(s: PlayState, target: ThrowTarget, at: Vec2): void {
 function maybeThrow(s: PlayState, inputs: PlayInputs = {}): void {
   if (s.heldBy === null || s.throw || s.phase === 'done') return;
   if (s.elapsedSec - s.heldAtSec < DEFENSE.RELEASE_SEC) return;
-  const carrier = s.fielders[s.heldBy];
-
   // ★ THE HUMAN PICKS A BAG, NOT A POWER — AND v2 HAS NO METER TO GIVE HIM.
   // v1 charges a throw, and `play.ts`'s own scope note used to list "the
   // throw-charge meter" among the deferred features. There is nothing to
@@ -978,24 +976,34 @@ function maybeThrow(s: PlayState, inputs: PlayInputs = {}): void {
     release(s, { kind: 'base', base: inputs.throwTo.base }, basePos(inputs.throwTo.base));
     return;
   }
+  const plan = plannedThrow(s);
+  if (!plan) return;
+  if (plan.target.kind === 'fielder') s.relayLegs += 1;
+  release(s, plan.target, plan.at);
+}
+
+/** Read-only choice used by release and by the view during the transfer.
+ * It is an intention, not a promised event: runners and human input can change
+ * it before release. The view must never release a ball from this prediction. */
+export function plannedThrow(s: PlayState): { target: ThrowTarget; at: Vec2 } | null {
+  if (s.heldBy === null || s.throw || s.phase === 'done') return null;
+  const carrier = s.fielders[s.heldBy];
 
   const base = bestBeatableBase(s, carrier.p, carrier.arm);
   if (base !== null) {
-    release(s, { kind: 'base', base }, basePos(base));
-    return;
+    return { target: { kind: 'base', base }, at: basePos(base) };
   }
 
   // Nothing is beatable from here. If the ball is still out in the outfield,
   // getting it back in is the play — that is what the relay IS. The leg cap is
   // the infinite-relay guard.
-  if (s.relayLegs >= PLAY.RELAY_MAX_LEGS) return;
+  if (s.relayLegs >= PLAY.RELAY_MAX_LEGS) return null;
   const lead = leadRunnerTarget(s);
-  if (lead === null) return;
-  if (throwFlightSec(carrier.p, basePos(lead), carrier.arm) !== null) return; // in range, just not worth it
+  if (lead === null) return null;
+  if (throwFlightSec(carrier.p, basePos(lead), carrier.arm) !== null) return null; // in range, just not worth it
   const cutoff = pickCutoff(s, carrier.p, lead, carrier.arm);
-  if (cutoff === null || cutoff === s.heldBy) return;
-  s.relayLegs += 1;
-  release(s, { kind: 'fielder', idx: cutoff, at: { ...s.fielders[cutoff].p } }, s.fielders[cutoff].p);
+  if (cutoff === null || cutoff === s.heldBy) return null;
+  return { target: { kind: 'fielder', idx: cutoff, at: { ...s.fielders[cutoff].p } }, at: s.fielders[cutoff].p };
 }
 
 /**

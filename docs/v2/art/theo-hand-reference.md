@@ -133,7 +133,9 @@ across the roster.
 
 The user also identified the short, low throwing motion. Review confirmed
 insufficient overhand preparation and extension, compressed release motion,
-and a gameplay cue that starts at release. Throwing remains unfinished.
+and a gameplay cue that starts at release. The subsequent
+[throwing correction](throwing-reference.md) addresses the shared fielding
+throws and their live presentation; pitching is a separate clip family.
 
 Use the reference to fit the broad-bodied and seated cases next, with their
 own proportions, sources, gestures and fresh review. A successful export or a

@@ -26,6 +26,7 @@
 import {
   AnimationClip,
   Euler,
+  Matrix4,
   type Interpolant,
   Quaternion,
   QuaternionKeyframeTrack,
@@ -1389,6 +1390,35 @@ function releaseClip(spec: ClipSpec, wind: Pose, pre: Pose, post: Pose, settle: 
   ]);
 }
 
+// The arm's bind axis is X: rotating only X twists the sleeve, it cannot
+// lift the elbow. Build an orthogonal shoulder frame from the upper-arm
+// direction and the elbow's bend plane, then flex around local -Y.
+function throwingArm(direction: [number, number, number], bendToward: [number, number, number], bend: number): Pose {
+  const x = new Vector3(...direction).normalize();
+  const z = new Vector3(...bendToward).addScaledVector(x, -new Vector3(...bendToward).dot(x)).normalize();
+  const y = new Vector3().crossVectors(z, x).normalize();
+  const e = new Euler().setFromRotationMatrix(new Matrix4().makeBasis(x,y,z), 'XYZ');
+  return { ra: [e.x/D,e.y/D,e.z/D], rf: [0,-bend,0], rh: [0,0,0] };
+}
+
+function overhandThrow(spec: ClipSpec): AnimationClip {
+  const body: Pose = { hp:[0,-18,0],sp:[0,-12,0],hd:[0,30,0],
+    la:[0,0,62],lf:[0,85,0], lu:[-8,0,0],ru:[8,0,0] };
+  const pose = (arm: Pose, torso: Pose = {}): Pose => ({...body,...torso,...arm});
+  const keys: Key[] = [
+    {f:0,pose:pose(throwingArm([.8,-.5,.1],[0,1,-.2],85))},
+    {f:4,pose:pose(throwingArm([.9,.15,-.3],[0,1,-.5],95))},
+    {f:6,pose:pose(throwingArm([.85,.4,-.2],[0,1,-.5],100))},
+    {f:9,pose:pose(throwingArm([.75,.55,.15],[0,.9,.2],80),{hp:[3,-8,0],sp:[0,-4,0],hd:[0,12,0]})},
+    {f:11,pose:pose(throwingArm([.35,.6,.72],[0,-.6,1],12),{hp:[6,10,0],sp:[6,8,0],hd:[-5,-18,0]})},
+    {f:17,pose:pose(throwingArm([.15,-.1,1],[0,-1,0],22),{hp:[10,20,0],sp:[8,12,0],hd:[-8,-25,0]})},
+    {f:25,pose:pose(throwingArm([.35,-.8,.4],[0,0,1],35),{hp:[8,22,0],sp:[5,10,0],hd:[-6,-25,0]})},
+    {f:35,pose:FIELD_READY_POSE},
+  ];
+  const release = spec.marker!.frame;
+  return build(spec, keys.map(key=>({...key,f:Math.round(key.f<=11 ? key.f*release/11 : release+(key.f-11)*(spec.frames-1-release)/24)})));
+}
+
 function diff(a: Pose, b: Pose, k: number): Pose {
   const out: Pose = {};
   const keys = new Set([...Object.keys(a), ...Object.keys(b)] as Alias[]);
@@ -1782,21 +1812,8 @@ const BUILDERS: Record<string, (spec: ClipSpec) => AnimationClip> = {
   dive_left: (s) => dive(s, -1),
   dive_right: (s) => dive(s, 1),
   getup,
-  throw_overhand: (s) =>
-    releaseClip(
-      s,
-      { hp: [4, -30, 0], sp: [0, -18, 0], hd: [0, 22, 0], ra: [-30, 0, -58], rf: [0, 60, 0], la: [-60, 0, 40], lu: [14, 0, 10], ru: [-10, 0, -10] },
-      { hp: [8, -18, 0], sp: [4, -10, 0], hd: [0, 14, 0], ra: [-150, 0, -16], rf: [0, 30, 0], la: [-40, 0, 48], lu: [24, 0, 10], ru: [-16, 0, -10] },
-      { hp: [12, 24, 0], sp: [16, 16, 0], hd: [-8, -6, 0], ra: [-30, 0, -4], rf: [0, 10, 0], la: [-16, 0, 44], lu: [30, 0, 10], ru: [-22, 0, -10] },
-      { hp: [18, 30, 0], sp: [22, 20, 0], hd: [-12, -10, 0], ra: [30, 0, -34], rf: [0, 24, 0], la: [-30, 0, 46], lu: [36, 0, 12], ru: [-26, 0, -12] }
-    ),
-  throw_quick: (s) =>
-    build(s, [
-      { f: 0, pose: FIELD_READY_POSE },
-      { f: 4, pose: shift(FIELD_READY_POSE, { ra: [-100, 0, -30], rf: [0, 62, 0], s2: [0, -14, 0] }) },
-      { f: 7, pose: shift(FIELD_READY_POSE, { ra: [-30, 0, -8], rf: [0, 14, 0], s2: [0, 16, 0], hp: [0, 12, 0] }) },
-      { f: s.frames - 1, pose: shift(FIELD_READY_POSE, { ra: [20, 0, -34], s2: [0, 10, 0] }) },
-    ]),
+  throw_overhand: overhandThrow,
+  throw_quick: overhandThrow,
 
   slide,
 

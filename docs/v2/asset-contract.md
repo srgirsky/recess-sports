@@ -131,6 +131,7 @@ frames are exact.**
 | `swing_contact` | `CONTACT` | 7 |
 | `pitch_release` | `RELEASE` | 4 |
 | `throw_overhand` | `RELEASE` | 11 |
+| `throw_quick` | `RELEASE` | 6 |
 | `catch_high` | `CATCH` | 8 |
 | `catch_chest` | `CATCH` | 8 |
 | `catch_low` | `CATCH` | 9 |

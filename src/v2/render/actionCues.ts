@@ -8,6 +8,8 @@
 // ---------------------------------------------------------------------------
 
 import type { PlayEvent, PlayState } from '../sim/play';
+import { plannedThrow } from '../sim/play';
+import { DEFENSE } from '../sim/params';
 import { runnerPos, type RunnerState } from '../sim/runners';
 import { basePos, dist } from '../sim/field';
 import {
@@ -187,6 +189,30 @@ export function playEventCue(event: PlayEvent, _play: PlayState): ActionCue | nu
     default:
       return null;
   }
+}
+
+/** Gather after the catch, then prepare inside the sim's existing transfer
+ * clock. If no throw is useful, hold the cocked pose, never fake a release. */
+export function throwPreparationCue(play: PlayState): { characterId: string; timeSec: number; at: {x: number; z: number} | null } | null {
+  if (play.phase !== 'live' || play.heldBy === null || play.throw) return null;
+  const elapsed = play.elapsedSec - play.heldAtSec;
+  const gatherSec = .08;
+  if (elapsed < gatherSec) return null;
+  const plan = plannedThrow(play);
+  const lead = markerLeadSec('throw_overhand');
+  const timeSec = Math.min(plan ? lead - 1e-4 : 7/30,
+    Math.max(0, (elapsed-gatherSec)/(DEFENSE.RELEASE_SEC-gatherSec)*lead));
+  return {characterId:play.fielders[play.heldBy].charId,timeSec,at:plan?.at ?? null};
+}
+
+/** Carrier faces the intended receiver; released throwers keep that heading
+ * through their follow-through instead of tracking the departing ball. */
+export function throwFacingTarget(play: PlayState, characterId: string): {x:number;z:number} | null {
+  if (play.heldBy !== null && play.fielders[play.heldBy].charId === characterId) return plannedThrow(play)?.at ?? null;
+  const event = play.events.find(e=>(e.t==='throw'||e.t==='relay') && e.fielder===characterId);
+  if (event?.t==='throw') return basePos(event.toBase);
+  if (event?.t==='relay') return play.fielders.find(f=>f.charId===event.to)?.p ?? null;
+  return null;
 }
 
 export interface SlideCue {

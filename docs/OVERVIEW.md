@@ -1757,7 +1757,9 @@ clear. Jacket and tee share spine-weight falloff, with clearance for the inner
 layer during large turns. The upset gesture also uses absolute arm poses:
 additive shoulder rotations had driven the upper arms through the jacket.
 Its rebaked take keeps the elbows outside the torso through the shrug and
-slump. Throwing preparation and the overhand arc remain unfinished.
+slump. The subsequent [throwing pass](v2/art/throwing-reference.md) rebuilds
+the shared overhand and quick throws, including Zoom's seated variants, and
+shows preparation during the existing live-play transfer clock.
 
 This is a Theo reference pass, not a claim that the other 29 characters have
 the new hands or that the game has reached Backyard Baseball parity. The

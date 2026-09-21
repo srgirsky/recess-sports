@@ -244,13 +244,13 @@ const CLIP_TABLE = [
   {
     name: 'throw_overhand',
     group: 'fielding',
-    frames: 24,
+    frames: 36,
     loop: false,
     marker: { name: 'RELEASE', frame: 11 },
     blendMs: 80,
     returnsTo: 'field_ready',
   },
-  { name: 'throw_quick', group: 'fielding', frames: 14, loop: false, blendMs: 50, returnsTo: 'field_ready' },
+  { name: 'throw_quick', group: 'fielding', frames: 14, loop: false, marker: { name: 'RELEASE', frame: 6 }, blendMs: 50, returnsTo: 'field_ready' },
 
   // --- Baserunning ---------------------------------------------------------
   { name: 'slide', group: 'baserunning', frames: 40, loop: false, blendMs: 60, bodyTravelFt: 0.4, returnsTo: 'getup' },

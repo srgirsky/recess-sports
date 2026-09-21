@@ -228,7 +228,7 @@ describe('docs/v2 mirrors clips.ts', () => {
     // The brief and the contract each carry a marker table, and the validator
     // is written against the contract's. Three copies, one truth.
     const markers = CLIPS.filter((c) => c.marker);
-    expect(markers.length).toBe(10);
+    expect(markers.length).toBe(11); // quick throws now expose their release too
     for (const doc of [brief, contract]) {
       for (const c of markers) {
         const row = new RegExp(

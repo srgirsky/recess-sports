@@ -168,32 +168,32 @@
     "frontProfileSilhouette": {
      "label": "front/profile silhouette",
      "score": 3,
-     "note": "Sport chair and swept crown are recognizable; orthographic front still leaves an open lower silhouette while profile chair is more convincing."
+     "note": "2026-09-21 independent throwing review: retained 3. Fresh board and hero keep the sport-chair and swept-hair identity. The orthographic lower silhouette remains sparse and the chair remains short fore-aft relative to the concept. Throwing changes do not resolve these existing construction findings."
     },
     "headBodyProportions": {
      "label": "head/body proportions",
      "score": 3,
-     "note": "Head size and aspect pass the recorded ladder, but the lower body remains thin shins over an abbreviated seat/chair assembly."
+     "note": "2026-09-21 independent throwing review: retained 3. Independently rerun measure:fidelity gives head share 29.9% versus 31.6% and aspect 1.05 versus 1.06, both within tolerance. Straight narrow shins and abrupt shorts-to-knee construction remain. In the new throwing-side sequence the seated torso stays connected and the legs remain fixed to the chair."
     },
     "hairMass": {
      "label": "hair mass",
      "score": 4,
-     "note": "Swept crown is distinctive and retains the intended directional mass; parallel hard locks remain much coarser than the concept feathering."
+     "note": "2026-09-21 independent throwing review: retained 4. Fresh runtime and board retain one distinctive swept crown with an intact hairline. Hard parallel locks and pale tips remain visible; no basis for a score increase from the throwing correction."
     },
     "clothingConstruction": {
      "label": "clothing construction",
      "score": 2,
-     "note": "Seated shoes remain simplified blue blocks on light soles, with straight shins and limited garment construction. Arm bends are continuous in refreshed run and swing; this does not address shoe or chair art debt."
+     "note": "2026-09-21 independent throwing review: retained 2. Sleeve roots and arm contours remain continuous through the supplied cock/release/follow poses and my 58-frame throwing-side overhand/quick sequence. Existing block-like shoes, simplified garment construction, and chair backrest shape remain unresolved; the five measured OFF metrics are reported with the existing seated-character instrument caveats."
     },
     "faceExpressionRead": {
      "label": "face/expression read",
      "score": 4,
-     "note": "Large unobscured eyes and smile remain readable; round skull and shallow nose still lack the concept cheek structure."
+     "note": "2026-09-21 independent throwing review: retained 4. Refreshed runtime stills show readable eyes and mouth; the round skull and shallow nose remain less constructed than the concept. Overhand preparation brings the hand beside the temple without a definite visible penetration in the reviewed frames; release leaves the face readable."
     },
     "heroAndFieldScale": {
      "label": "hero + 40px read",
      "score": 3,
-     "note": "The large wheel and swept crown remain identifiable at hero scale; front field view reduces chair to thin bars. No blanket score upgrade from weight correction."
+     "note": "2026-09-21 independent throwing review: retained 3. Wheel and swept crown identify Zoom in the runtime hero and throwing-side movie. The front 40-pixel board still reduces the chair to thin bars. The throwing correction adds a raised elbow, hand-back preparation, forward extension and downward recovery, but does not fix the existing field-scale silhouette limit."
     }
    },
    "heroEvidence": "zoom-runtime-hero.png",
@@ -203,9 +203,9 @@
    ],
    "measuredFidelity": {
     "command": "npm run measure:fidelity -- wheelchair_ace",
-    "ranAt": "2026-09-19",
+    "ranAt": "2026-09-21",
     "board": "zoom-fidelity-review.png",
-    "result": "> recess-sports@0.1.0 measure:fidelity\n> node scripts/v2/measure-fidelity.mjs wheelchair_ace\n\n\nMeasured fidelity — zoom\nconcept front view 326x547px   delivered 451x529px\nshoe tones read off the concept: #f3e5d2 and #2a251d\n\nmetric                                    concept    delivered  delta     status\n------------------------------------------------------------------------------------\nhead height as % of figure height         31.6       29.9       -1.76     ok\nhead width : head height                  1.06       1.05       -0.01     ok\nthe shoe band's dominant tone, % of the band79.1       61.7       -17.4     OFF (tol 8)\nthe shoe band's second tone, % of the band13.3       0.00       -13.3     OFF (tol 8)\nthe shoe band's mean saturation (grey cannot pass)20.9       25.5       +4.67     OFF (tol 4)\ndaylight between the ankles               0.00       27.3       +27.3     OFF (tol 12)\nvisible face left of centre, % of head width0.00       33.1       +33.1     OFF (tol 6)\nvisible face right of centre, % of head width31.5       33.1       +1.61     ok\nface left/right asymmetry                 0.00       0.00                 ok\n------------------------------------------------------------------------------------\n\n5 metrics outside tolerance.\nIndependent runtime/board review 2026-09-19; reviewed board sha256 0f6044bef5c26bbddb086ceab044aff3202a64998b79cdf5cfe5ccc8c04a03f9.",
+    "result": "\n> recess-sports@0.1.0 measure:fidelity\n> node scripts/v2/measure-fidelity.mjs wheelchair_ace\n\n\nMeasured fidelity — zoom\nconcept front view 326x547px   delivered 451x529px\nshoe tones read off the concept: #f3e5d2 and #2a251d\n\nmetric                                    concept    delivered  delta     status\n------------------------------------------------------------------------------------\nhead height as % of figure height         31.6       29.9       -1.76     ok\nhead width : head height                  1.06       1.05       -0.01     ok\nthe shoe band's dominant tone, % of the band79.1       61.7       -17.4     OFF (tol 8)\nthe shoe band's second tone, % of the band13.3       0.00       -13.3     OFF (tol 8)\nthe shoe band's mean saturation (grey cannot pass)20.9       25.5       +4.67     OFF (tol 4)\ndaylight between the ankles               0.00       27.3       +27.3     OFF (tol 12)\nvisible face left of centre, % of head width0.00       33.1       +33.1     OFF (tol 6)\nvisible face right of centre, % of head width31.5       33.1       +1.61     ok\nface left/right asymmetry                 0.00       0.00                 ok\n------------------------------------------------------------------------------------\n\n5 metrics outside tolerance.\n\n\nIndependent measurement and visual review 2026-09-21. Board freshly rendered by main agent and inspected independently; board sha256 aaeb447b9fde750572d339e1e29d09055b7c94cf0ee6a7c25771637b06443a1f. Independent duplicate rendering was blocked by automatic approval review; no duplicate render or workaround was performed. Reviewed runtime hero/run/swing, complete 30-character throw strips, and independently captured 58-frame Zoom throwing-side overhand/quick sequence. Existing seated-character metric caveats and unrelated findings preserved. This is scoped throwing/deformation evidence, not whole-character approval.",
     "note": "featurelatitude gates brow 56.2, eye 71.6 (bounded crop traces), mouth 83.5 (the analyser's own trace). NO earLine target - Zippy's precedent, the spike crown owns the widest rows on both the sheet and any delivery. The sheet is seated in every view so the analyser's z frame is chair-relative; only percent-of-head landmarks carry. The chair, tucked legs and shoes are ROOT-weighted furniture (the proxy's proven approach); the blue push rims are the team accent."
    },
    "polishFindings": [
@@ -231,7 +231,7 @@
     "CLEARED (17:03 build) - the soles no longer hover over the footplate: re-probed zoom-front-review.png at x 236/240/246 and x 296/300/306, rows 592-614 (RGBA): alpha is 255 continuously from the sole down through the plate (x 240: 255 through row 604, the plate's own bottom edge at 605-606); the 2-3 fully transparent rows the previous build showed at rows 598-602 are gone. Cause addressed at the source (plate z 0.300 -> 0.328, its domed top 0.366 at centre, ~0.357 under the shoes at x +-0.19, against sole bottoms 0.343-0.345). Original finding kept for the record: the soles hover over the footplate: zoom-front-review.png x 236-246 and x 296-306, rows 598-603 at 6x. Under each sneaker's centre column there are 2-3 fully transparent rows (0.015-0.023ft at 132.75 px/ft) between the sole's last opaque row and the plate's first, because the ellipsoid plate's domed top is 0.338 only at its centre and ~0.329 under the shoes (x +-0.19) while the sole tubes bottom at 0.343-0.345. At hero scale the outline swallows it; on the board it is a hairline of daylight. Raise the plate 0.02 or flatten its top (a shallow box reads more like a footplate anyway).",
     "NON-DEFECT, recorded - the four measure:fidelity OFFs are the documented seated-kid family: the bottom-9% shoe band is now the tyres (dominant 65.2% = tyre ink, second tone 0.00%), ankle daylight 27.3% is the roster-wide containment conflict, face-left 33.1% is the sheet's turned head. The previous record stored no values for them so no delta can be stated; head height (29.9 vs 31.6) and aspect (1.05 vs 1.06) are unchanged from the sculptor's prior read. Wheel bottom z -0.04 and caster -0.01 are identical to main and invisible at board scale (validate:models 62/62, LOD0 6404/7000). RE-RUN on the 17:03 build: now 5 OFFs - the shoe band's mean saturation 25.5 vs 20.9 (tol 4) joined the family (it was 23.8, ok); dominant tone 61.7 (was 65.2), second tone 0.00, ankle daylight 27.3, face-left 33.1 unchanged; head 29.9 / 1.05 unchanged. The band is the wheels, and twelve spoke diameters put more grey metal into it - the same instrument caveat, not a shoe change (build_seated_legs still untouched). LOD0 count not re-validated by me this pass; the coordinator states only the spoke loop and the plate z moved."
    ],
-   "scoredBoardSha256": "0f6044bef5c26bbddb086ceab044aff3202a64998b79cdf5cfe5ccc8c04a03f9"
+   "scoredBoardSha256": "aaeb447b9fde750572d339e1e29d09055b7c94cf0ee6a7c25771637b06443a1f"
   },
   "big_lou": {
    "status": "needs-polish",

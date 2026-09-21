@@ -33,6 +33,8 @@ import type { GameResult } from '../sim/game';
 import { enabledFeatures } from '../sim/features';
 import { snapshot, type Snapshot } from './soundCues';
 import { emptySession, foldEvent, foldFrame, foldInput, type SessionCounts } from './sessionModel';
+import { isLogEnabled } from './sessionLogEnabled';
+export { isLogEnabled } from './sessionLogEnabled';
 
 export const PLAYTEST_LOG_KEY = 'recess_playtest_log';
 /** Sessions kept. A playtest day is a handful; twenty is a comfortable ring. */
@@ -55,12 +57,6 @@ export interface SessionRecord {
   counts: SessionCounts;
   /** The final line when the game finished; null for a partial record. */
   final: { awayScore: number; homeScore: number; innings: number } | null;
-}
-
-/** `?log=1`, or any `?features=` — a session with a feature on is a playtest. */
-export function isLogEnabled(search: string): boolean {
-  const p = new URLSearchParams(search);
-  return p.get('log') === '1' || p.has('features');
 }
 
 export function readLog(): SessionRecord[] {

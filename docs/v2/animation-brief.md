@@ -72,6 +72,7 @@ physics. **Frame counts are ±20%; marker frames are exact.**
 | `swing_contact` | `CONTACT` | **7** |
 | `pitch_release` | `RELEASE` | **4** |
 | `throw_overhand` | `RELEASE` | **11** |
+| `throw_quick` | `RELEASE` | 6 |
 | `catch_high` | `CATCH` | **8** |
 | `catch_chest` | `CATCH` | **8** |
 | `catch_low` | `CATCH` | **9** |
@@ -224,8 +225,8 @@ exact.
 | `dive_left` | 45 | — | `getup` | Full layout left, lands prone. **`Root` stays put** — the body travels 3.0 ft. **Frame 18.** |
 | `dive_right` | 45 | — | `getup` | Mirror. |
 | `getup` | 40 | — | `field_ready` | Prone → standing. Follows a dive or a slide. Sell the effort. |
-| `throw_overhand` | 24 | — | `field_ready` | **Release on frame 11.** Crow-hop, whole-body throw. |
-| `throw_quick` | 14 | — | `field_ready` | Snap throw, no wind-up. |
+| `throw_overhand` | 36 | — | `field_ready` | **Release on frame 11.** Gather, raised elbow, overhand extension and relaxed follow-through. |
+| `throw_quick` | 14 | — | `field_ready` | Compact overhand throw. Release on frame 6. |
 
 ### Baserunning
 | clip | frames | loop | settles into | notes |

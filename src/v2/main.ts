@@ -45,7 +45,7 @@
 
 import { App } from './App';
 import { GameView } from './game/GameView';
-import { SessionLog } from './ui/sessionLog';
+import { isLogEnabled } from './ui/sessionLogEnabled';
 import { assetUrl } from './render/assets';
 
 // CSS cannot resolve `public/v2/` from both `/` and the permanent `/v2/` alias
@@ -91,9 +91,10 @@ async function boot(): Promise<void> {
     // The playtest session log on the bare surface too, so `?play=1&log=1`
     // records from the first pitch and the layout audit measures its button.
     // `start()` resolves before the first tick, so nothing is missed.
-    const log = new SessionLog();
-    log.attach(surface);
-    void surface.start().then(() => log.begin());
+    const log = isLogEnabled(location.search)
+      ? new (await import('./ui/sessionLog')).SessionLog() : null;
+    log?.attach(surface);
+    void surface.start().then(() => log?.begin());
   } else {
     void surface.start();
   }
