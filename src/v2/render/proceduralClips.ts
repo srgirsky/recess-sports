@@ -325,6 +325,8 @@ function runCycle(
   return cycle(spec, (p) => {
     const s = sin(p);
     const o = sin(p, 0.5);
+    // Positive knee X folds the heel behind the thigh. Delay peak flexion
+    // until recovery: a negative knee angle made the old gait kick forward.
     // Two bounces per cycle — the body rises on each push-off.
     const bob = Math.abs(sin(p, 0.25)) * 3;
     return {
@@ -333,11 +335,11 @@ function runCycle(
       s2: [lean * 0.3, -s * 5, 0],
       hd: [-lean * 0.5, 0, 0],
       lu: [s * reach, 0, 3],
-      ll: [-Math.max(0, -s) * reach * 1.5 - 12, 0, 0],
-      lt: [Math.max(0, s) * 18, 0, 0],
+      ll: [12 + Math.max(0, sin(p, -.12)) * reach * 1.8, 0, 0],
+      lt: [-Math.max(0, s) * 25, 0, 0],
       ru: [o * reach, 0, -3],
-      rl: [-Math.max(0, -o) * reach * 1.5 - 12, 0, 0],
-      rt: [Math.max(0, o) * 18, 0, 0],
+      rl: [12 + Math.max(0, sin(p, .38)) * reach * 1.8, 0, 0],
+      rt: [-Math.max(0, o) * 25, 0, 0],
       la: [o * armDrive, 0, abduct],
       lf: [0, elbow + Math.max(0, -o) * elbowSwing, 0],
       ra: [s * armDrive, 0, -abduct],
@@ -368,20 +370,19 @@ function jogBack(spec: ClipSpec): AnimationClip {
 /** Lateral shuffle, staying square to the plate. `dir` is -1 left, +1 right. */
 function shuffle(spec: ClipSpec, dir: number): AnimationClip {
   return cycle(spec, (p) => {
-    const s = sin(p);
+    const step = (1 - Math.cos(2*Math.PI*p))/2;
+    const lead = dir < 0;
     return {
-      hp: [10, 0, s * 3 * dir],
-      s2: [4, 0, 0],
-      lu: [26 + s * 12 * dir, 0, 10],
-      ll: [-34, 0, 0],
-      ru: [26 - s * 12 * dir, 0, -10],
-      rl: [-34, 0, 0],
-      la: [-20, 0, 58],
-      ra: [-20, 0, -58],
-      lf: [0, 34, 0],
-      rf: [0, -34, 0],
+      hp: [5, 0, 0], s2: [4, 0, 0], hd: [-9,0,0],
+      // Open the leading leg sideways, then bring the trailing foot in.
+      // Knees stay flexed and feet never cross; the sim owns net travel.
+      lu: [-22, 0, -(lead ? 5+25*step : 5+14*step)],
+      ll: [40 + (lead ? 10 : -8)*Math.sin(2*Math.PI*p), 0, 0], lt: [-18,0,0],
+      ru: [-22, 0, lead ? 5+14*step : 5+25*step],
+      rl: [40 + (lead ? -8 : 10)*Math.sin(2*Math.PI*p), 0, 0], rt: [-18,0,0],
+      la: [0,0,58], ra: [0,0,-58], lf: [0,55,0], rf: [0,-55,0],
     };
-  });
+  }, p => [dir*.08*Math.sin(2*Math.PI*p),0,0]);
 }
 
 /** A confident walk-up. Slower cadence, straighter legs, chest out. */
@@ -593,20 +594,20 @@ function junebugIdle(spec: ClipSpec): AnimationClip {
 function junebugRun(spec: ClipSpec): AnimationClip {
   const reachA: Pose = {
     hp: [7, 0, 0], sp: [6, -3, 0], s2: [5, 5, 0], hd: [-9, 2, 0],
-    lu: [-46, 0, 5], ll: [-12, 0, 0], lt: [18, 0, 0],
-    ru: [48, 0, -5], rl: [-76, 0, 0], rt: [9, 0, 0],
+    lu: [-46, 0, 5], ll: [12, 0, 0], lt: [18, 0, 0],
+    ru: [48, 0, -5], rl: [76, 0, 0], rt: [9, 0, 0],
     la: [64, 0, 70], lf: [0, 78, 0], ra: [-58, 0, -70], rf: [0, -40, 0],
   };
   const passA: Pose = {
     hp: [9, 0, 0], sp: [7, 4, 0], s2: [6, -5, 0], hd: [-10, -1, 0],
-    lu: [4, 0, 4], ll: [-42, 0, 0], lt: [8, 0, 0],
-    ru: [2, 0, -4], rl: [-24, 0, 0], rt: [20, 0, 0],
+    lu: [4, 0, 4], ll: [42, 0, 0], lt: [8, 0, 0],
+    ru: [2, 0, -4], rl: [24, 0, 0], rt: [20, 0, 0],
     la: [6, 0, 70], lf: [0, 58, 0], ra: [-5, 0, -70], rf: [0, -58, 0],
   };
   const reachB: Pose = {
     hp: [7, 0, 0], sp: [6, 3, 0], s2: [5, -5, 0], hd: [-9, -2, 0],
-    lu: [48, 0, 5], ll: [-76, 0, 0], lt: [9, 0, 0],
-    ru: [-46, 0, -5], rl: [-12, 0, 0], rt: [18, 0, 0],
+    lu: [48, 0, 5], ll: [76, 0, 0], lt: [9, 0, 0],
+    ru: [-46, 0, -5], rl: [12, 0, 0], rt: [18, 0, 0],
     la: [-58, 0, 70], lf: [0, 40, 0], ra: [64, 0, -70], rf: [0, -78, 0],
   };
   const passB = shift(passA, {
@@ -1375,21 +1376,6 @@ function mimiIdleFidget(spec: ClipSpec): AnimationClip {
   ]);
 }
 
-/**
- * Release is frame 4 and frame 11 respectively; same peak-speed rule as the
- * swing. `arm` is the euler the throwing arm whips through.
- */
-function releaseClip(spec: ClipSpec, wind: Pose, pre: Pose, post: Pose, settle: Pose): AnimationClip {
-  const f = spec.marker!.frame;
-  return build(spec, [
-    { f: 0, pose: wind },
-    { f: Math.max(1, f - 1), pose: pre },
-    { f, pose: shift(pre, diff(pre, post, 0.5)) },
-    { f: f + 1, pose: post },
-    { f: spec.frames - 1, pose: settle },
-  ]);
-}
-
 // The arm's bind axis is X: rotating only X twists the sleeve, it cannot
 // lift the elbow. Build an orthogonal shoulder frame from the upper-arm
 // direction and the elbow's bend plane, then flex around local -Y.
@@ -1400,6 +1386,19 @@ function throwingArm(direction: [number, number, number], bendToward: [number, n
   const e = new Euler().setFromRotationMatrix(new Matrix4().makeBasis(x,y,z), 'XYZ');
   return { ra: [e.x/D,e.y/D,e.z/D], rf: [0,-bend,0], rh: [0,0,0] };
 }
+
+// A balanced gather -> stride -> high three-quarter delivery. Shared seam
+// poses prevent the three pitch clips from disagreeing about the elbow/leg.
+// Visual reference: Little League, Mark Melancon on Honing a Pitching Delivery
+// (2016 magazine, p44), plus East County Little League Stride Foot Drill
+// (pitching drills, p4). Angles are authoring, not measured biomechanics.
+const PITCH_SET: Pose = {hp:[0,-18,0],sp:[0,-12,0],hd:[0,30,0],
+  la:[0,0,62],lf:[0,100,0],...throwingArm([.8,-.5,.1],[0,0,1],95)};
+const PITCH_BALANCE: Pose = {...PITCH_SET,hp:[0,-28,0],hd:[0,40,0],
+  lu:[-92,0,-6],ll:[112,0,0],lt:[-20,0,0]};
+const PITCH_COIL: Pose = {...PITCH_SET,lu:[-35,0,-5],ll:[30,0,0],lt:[0,0,0],
+  ru:[20,0,5],rl:[15,0,0],rt:[-20,0,0],
+  ...throwingArm([.85,.4,-.2],[0,1,-.5],100)};
 
 function overhandThrow(spec: ClipSpec): AnimationClip {
   const body: Pose = { hp:[0,-18,0],sp:[0,-12,0],hd:[0,30,0],
@@ -1708,27 +1707,29 @@ const BUILDERS: Record<string, (spec: ClipSpec) => AnimationClip> = {
     ]);
   },
 
-  pitch_windup: (s) =>
-    build(s, [
-      { f: 0, pose: { hp: [0, -8, 0], la: [-16, 0, 62], ra: [-16, 0, -62] } },
-      { f: 12, pose: { hp: [0, -22, 0], s2: [-8, -10, 0], hd: [-6, -14, 0], lu: [-96, 0, 14], ll: [104, 0, 0], la: [-40, 0, 40], ra: [-30, 0, -48] } },
-      { f: 22, pose: { hp: [-4, -30, 0], s2: [-12, -16, 0], hd: [-8, -18, 0], lu: [-110, 0, 16], ll: [118, 0, 0], la: [-70, 0, 32], ra: [-24, 0, -54] } },
-      { f: s.frames - 1, pose: { hp: [-2, -28, 0], s2: [-10, -14, 0], lu: [-104, 0, 16], ll: [112, 0, 0], la: [-64, 0, 34], ra: [-28, 0, -52] } },
-    ]),
-  pitch_stride: (s) =>
-    build(s, [
-      { f: 0, pose: { hp: [-2, -28, 0], lu: [-104, 0, 16], ll: [112, 0, 0], la: [-64, 0, 34], ra: [-28, 0, -52] } },
-      { f: 7, pose: { hp: [8, -14, 0], sp: [6, 0, 0], lu: [-34, 0, 12], ll: [30, 0, 0], ru: [16, 0, -10], la: [-40, 0, 44], ra: [-96, 0, -30] } },
-      { f: s.frames - 1, pose: { hp: [12, -6, 0], sp: [10, 0, 0], lu: [26, 0, 10], ll: [-20, 0, 0], ru: [-14, 0, -8], la: [-20, 0, 52], ra: [-140, 0, -18] } },
-    ]),
-  pitch_release: (s) =>
-    releaseClip(
-      s,
-      { hp: [12, -6, 0], sp: [10, 0, 0], lu: [26, 0, 10], ll: [-20, 0, 0], la: [-20, 0, 52], ra: [-140, 0, -18] },
-      { hp: [14, -2, 0], sp: [12, 0, 0], lu: [28, 0, 10], ll: [-22, 0, 0], la: [-10, 0, 54], ra: [-152, 0, -10] },
-      { hp: [18, 10, 0], sp: [20, 0, 0], lu: [30, 0, 10], ll: [-24, 0, 0], la: [4, 0, 56], ra: [-40, 0, -6] },
-      { hp: [24, 14, 0], sp: [24, 0, 0], hd: [-14, 0, 0], lu: [34, 0, 12], ll: [-30, 0, 0], ru: [-20, 0, -10], la: [-24, 0, 50], ra: [26, 0, -40] }
-    ),
+  pitch_windup: (s) => build(s, [
+    {f:0,pose:PITCH_SET},
+    {f:12,pose:{...PITCH_BALANCE,lu:[-65,0,-6],ll:[85,0,0]}},
+    {f:22,pose:PITCH_BALANCE},
+    {f:s.frames-1,pose:PITCH_BALANCE},
+  ]),
+  pitch_stride: (s) => build(s, [
+    {f:0,pose:PITCH_BALANCE},
+    {f:6,pose:{...PITCH_COIL,lu:[-45,0,-8],ll:[65,0,0],
+      ...throwingArm([.9,.15,-.3],[0,1,-.5],95)}},
+    {f:s.frames-1,pose:PITCH_COIL},
+  ]),
+  pitch_release: (s) => build(s,[
+    {f:0,pose:PITCH_COIL},
+    {f:2,pose:{...PITCH_COIL,hp:[3,-8,0],sp:[0,-4,0],hd:[-3,12,0],
+      ...throwingArm([.75,.55,-.2],[0,1,-.7],110)}},
+    {f:4,pose:{...PITCH_COIL,hp:[6,10,0],sp:[6,8,0],hd:[-12,-18,0],
+      ...throwingArm([.15,.88,.45],[0,-.6,1],12)}},
+    {f:9,pose:{...PITCH_COIL,hp:[18,20,0],sp:[12,12,0],hd:[-25,-25,0],
+      ...throwingArm([.15,-.1,1],[0,-1,0],22)}},
+    {f:s.frames-1,pose:{...PITCH_COIL,hp:[22,22,0],sp:[10,10,0],hd:[-28,-25,0],
+      ru:[32,0,0],rl:[65,0,0],...throwingArm([.35,-.8,.4],[0,0,1],35)}},
+  ]),
 
   field_ready: (s) => breathe(s, FIELD_READY_POSE, 2.6),
   field_scoop: (s) =>

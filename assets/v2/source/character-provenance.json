@@ -17,7 +17,7 @@
       },
       "animation": {
         "take": "anims_ace_kid_v1.glb",
-        "takeSha256": "e71e2e2ec68318c2f75cd7e2843a8ec2c054a6f073b6cc4bf849c343516d1079",
+        "takeSha256": "163e85a02e2fbb0c999c728428c05052382e558bb201d7d3a91efc0ff1ede3b1",
         "builder": "buildAcePilotClips",
         "generator": "recess-sports Ace authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -51,7 +51,7 @@
       },
       "animation": {
         "take": "anims_bend_it_v1.glb",
-        "takeSha256": "214d8d02e72948dee2e71670d26b1fb821f2512b9d0cdcfc50ebe7bf2a7f94a0",
+        "takeSha256": "280cb8103633dc52cfcf0e42d7ebb1ecb1e30393e9f05adc629700f212e87450",
         "builder": "buildBendItPilotClips",
         "generator": "recess-sports Bend-It authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -85,7 +85,7 @@
       },
       "animation": {
         "take": "anims_big_lou_v1.glb",
-        "takeSha256": "4a14628709264bfd22f705528c84e8239a9fe6a4646805eaed5993e2cc4d9703",
+        "takeSha256": "3e0f1daa2f07afcfb276967b4415bf3c045d620dadcbe248068ea74ca7c0c95c",
         "builder": "buildBigLouPilotClips",
         "generator": "recess-sports Big Lou authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -124,7 +124,7 @@
       },
       "animation": {
         "take": "anims_boomer_v1.glb",
-        "takeSha256": "6b896cc3fc32dd478b90caa6f40b1ee0e59d1e728feffa14867d309a8f128955",
+        "takeSha256": "b22e69c6eebaaf4dea0a75a7e7f97e01dfee1573485fd6882875105f4c6afcd2",
         "builder": "buildBoomerPilotClips",
         "generator": "recess-sports Boomer authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -158,7 +158,7 @@
       },
       "animation": {
         "take": "anims_bubbles_v1.glb",
-        "takeSha256": "775a7d8a343f13eff9c7c40af5e9b5c03bcc7c8d79aa28d1e205579fe2311273",
+        "takeSha256": "60a0499d74b6ce25bb5f2772f4cd4f11405de126babfcc58ed4a228d94e38fe3",
         "builder": "buildBubblesPilotClips",
         "generator": "recess-sports Bubbles authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -192,7 +192,7 @@
       },
       "animation": {
         "take": "anims_calls_shot_v1.glb",
-        "takeSha256": "871afcb7cf06d4c22bed2542de85748da98c3d5f85c667d97dd743dbd6ff0ec9",
+        "takeSha256": "cf3695d6a27ae27f4910fe52e0cdb7408b7da072ba107fb7683a22dc1e9892d2",
         "builder": "buildTheoPilotClips",
         "generator": "recess-sports Big Talk Theo authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -231,7 +231,7 @@
       },
       "animation": {
         "take": "anims_chip_v1.glb",
-        "takeSha256": "c848e074200f43884851fb4b8fd565fd56e4c2048cd0ca1506e21127d5a2efd1",
+        "takeSha256": "581d23484e9fa38261afc600b70c0c78d156dcaaecc95fd0768c47cdd391e134",
         "builder": "buildChipPilotClips",
         "generator": "recess-sports Chip authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -265,7 +265,7 @@
       },
       "animation": {
         "take": "anims_clover_v1.glb",
-        "takeSha256": "32bee7b3d32fe35b0cd69370d14a2aafd250960080ac4a23c31ba356703d8dde",
+        "takeSha256": "c761316b06b44644be7f261dc3468cef63e02cfd87615c488258712b25c3a492",
         "builder": "buildCloverPilotClips",
         "generator": "recess-sports Clover authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -299,7 +299,7 @@
       },
       "animation": {
         "take": "anims_cricket_v1.glb",
-        "takeSha256": "649ff94f0ef92e9aae31caa153fa14b3c33e0cd4c55d23f14f35f2a3967db4d4",
+        "takeSha256": "995ffd579d41eebbf10dbaa810e79beec5bcf93e19134f390543279e637de96f",
         "builder": "buildCricketPilotClips",
         "generator": "recess-sports Cricket authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -333,7 +333,7 @@
       },
       "animation": {
         "take": "anims_dex_v1.glb",
-        "takeSha256": "dffeeff9ac0771875123fcf667234e2b5bbe5e6063d4a4ae10493e118a0d19f8",
+        "takeSha256": "7eee5e5578963e2d8314317edd0f84d53e331620e05e98d379e2d29a1e57e22a",
         "builder": "buildDexPilotClips",
         "generator": "recess-sports Dex authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -367,7 +367,7 @@
       },
       "animation": {
         "take": "anims_diva_v1.glb",
-        "takeSha256": "affe475b9699ab90f8fab5abc5eee76a98ecfee062999f11368f18ae27ab11d9",
+        "takeSha256": "f873bd10f5adb402010d639d748dda3f3208abb9d6ed151b8d5bea2740eb5285",
         "builder": "buildDivaPilotClips",
         "generator": "recess-sports Dazzle authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -401,7 +401,7 @@
       },
       "animation": {
         "take": "anims_flash_v1.glb",
-        "takeSha256": "cdfda26443f0b5c7d8b2bf5abd4456ee91132dc98d9e51f94a6475e71dade6a3",
+        "takeSha256": "69742f457e6a236d81f8a651f0f21ac5bf9451d755fcc9fbab4281bc754239da",
         "builder": "buildFlashPilotClips",
         "generator": "recess-sports Flash authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -435,7 +435,7 @@
       },
       "animation": {
         "take": "anims_gizmo_v1.glb",
-        "takeSha256": "44569de750ee8a7483cf77e52688dd858015dfde30aac7a124779a8cde794669",
+        "takeSha256": "ba9607532cf7186cd4765745bceebb9f7c0776e909e4ac55edf6793744cc2712",
         "builder": "buildGizmoPilotClips",
         "generator": "recess-sports Gizmo authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -469,7 +469,7 @@
       },
       "animation": {
         "take": "anims_grizz_v1.glb",
-        "takeSha256": "9ffac10c7ff52ea8f52be7c8fb7b51e76c8a84cad4528c4bea06e005acef3ec5",
+        "takeSha256": "abfdf899a94fd665c18d0608ed23781a8cb2b8d8a1484548bbcf66e7c47f05e4",
         "builder": "buildGrizzPilotClips",
         "generator": "recess-sports Grizz authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -503,7 +503,7 @@
       },
       "animation": {
         "take": "anims_lefty_v1.glb",
-        "takeSha256": "6fa8c8d6441f2baa641ddc16c7ddfb96768daf9358d9bdeb1349b523c9fbd124",
+        "takeSha256": "83b2bc632e5d2d4a4d3c5d6f933d9e139d1e95472e780647ceecb0e198ad7991",
         "builder": "buildLeftyPilotClips",
         "generator": "recess-sports Lefty Lu authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -537,7 +537,7 @@
       },
       "animation": {
         "take": "anims_mimi_mash_v1.glb",
-        "takeSha256": "bd026ebf1a23e8f81906a91097b7154f994f1f04e315e0066046f8bec06392da",
+        "takeSha256": "8a450f4519895415e8bf5804d24b0eac638b760272a3d8e30c09c0dcde71aeb9",
         "builder": "buildMimiMashPilotClips",
         "generator": "recess-sports Mimi Mash authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -576,7 +576,7 @@
       },
       "animation": {
         "take": "anims_moose_v1.glb",
-        "takeSha256": "e7ff34dc0c9dad5070a23ee68a987424aca6bdf77769974ead711bc9011d29f1",
+        "takeSha256": "b7689b026dfb256cb68aa9bf0cc72a928c92ba84bf7edc87fdbf4077d9d36c0e",
         "builder": "buildMoosePilotClips",
         "generator": "recess-sports Moose authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -610,7 +610,7 @@
       },
       "animation": {
         "take": "anims_noodle_v1.glb",
-        "takeSha256": "f9018de20c11bbf6c3770a2139b740e159fd377414d1b2d9a2c7b6f8634ffcec",
+        "takeSha256": "3d4044b197df5fd704541e944c386f1fc123bbc26f6b767ca1d9b1dcf9acce26",
         "builder": "buildNoodlePilotClips",
         "generator": "recess-sports Noodle authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -644,7 +644,7 @@
       },
       "animation": {
         "take": "anims_nostrike_v1.glb",
-        "takeSha256": "1fa51a6aa5661a3fe0aad1c99a4db61efc40c38f3953acf7ee17436daa8d7ab7",
+        "takeSha256": "febb0e2fe0618e79d76d87cacd8c327b4e1eb681cdb7769e43092ff5ca18c31e",
         "builder": "buildJunebugPilotClips",
         "generator": "recess-sports Junebug authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -683,7 +683,7 @@
       },
       "animation": {
         "take": "anims_peaches_v1.glb",
-        "takeSha256": "7b75416403a92eb7bb245e5cb5ea798cf8df6c34ec823ef929d4db15c331a050",
+        "takeSha256": "09c17e3b1626994e6450ce177436f42a3e07bbca29e9008b7c700f34d283211c",
         "builder": "buildPeachesPilotClips",
         "generator": "recess-sports Peaches authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -717,7 +717,7 @@
       },
       "animation": {
         "take": "anims_penny_v1.glb",
-        "takeSha256": "796f07e4ee0f98420aa831877c9f6749805283dbcdb61f533bfb377709e03d6a",
+        "takeSha256": "5b02fe5a1ba67432f32036ef8203ab317a32796882d1d928fe90c128defc38e3",
         "builder": "buildPennyPilotClips",
         "generator": "recess-sports Penny Pockets authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -751,7 +751,7 @@
       },
       "animation": {
         "take": "anims_rocket_v1.glb",
-        "takeSha256": "b129731085b2b33c03a66701ee4f5d775a52c92de2197f70a2b3544dd1ec8608",
+        "takeSha256": "2e9ee4d56cc4378c72b419eb6c3e5e22bf036c5a04eab702c62d85bbd84e271b",
         "builder": "buildRocketPilotClips",
         "generator": "recess-sports Rocket Rosa authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -785,7 +785,7 @@
       },
       "animation": {
         "take": "anims_smokey_v1.glb",
-        "takeSha256": "2fc457ed7d309cad738425b857a0928eabac27b445fab61b3737d6455a6384d2",
+        "takeSha256": "18d4e4c13768428a4fe9f09e7215492994fa0eb5a28307a8f57298d2bbf55ec4",
         "builder": "buildSmokeyPilotClips",
         "generator": "recess-sports Smokey authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -819,7 +819,7 @@
       },
       "animation": {
         "take": "anims_sniffles_v1.glb",
-        "takeSha256": "c86169c1516f8d07d8f4883e5c5b4e30f823c45f919534a0a0fe2c085a9377a0",
+        "takeSha256": "0f7a775226a2a318eaa1d36d2607f2cee391daa0f96574b8993176c1dfe84db2",
         "builder": "buildSnifflesPilotClips",
         "generator": "recess-sports Sniffles authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -853,7 +853,7 @@
       },
       "animation": {
         "take": "anims_sprout_v1.glb",
-        "takeSha256": "3d121220a094e74ca38bde2e2c973dc74ba5f366f6090fcde91aa20791a89f8c",
+        "takeSha256": "210d1d2cc6f04e2479690fb5a2936e99916e8385eeab151d82f94f19746c33c8",
         "builder": "buildSproutPilotClips",
         "generator": "recess-sports Sprout authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -887,7 +887,7 @@
       },
       "animation": {
         "take": "anims_tank_v1.glb",
-        "takeSha256": "ec5108ca160a0759b6874278994d339bf0afa6fcca5cf454dbe08804b19b75d9",
+        "takeSha256": "c7058f8f661608227cc99fa9d0098febc87fb714963d36cd8b4e6254ecfd37da",
         "builder": "buildTankPilotClips",
         "generator": "recess-sports Tank authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -926,7 +926,7 @@
       },
       "animation": {
         "take": "anims_the_prof_v1.glb",
-        "takeSha256": "687e881c4b83a5d3e08e0120d6ae1b12fd1e6d4d3fef91026038f6ebce62e3a2",
+        "takeSha256": "7622df2c3ac640eebaf292d8064aedf357750c23d7b60bec3d8d7b7ad6c0b1dc",
         "builder": "buildProfPilotClips",
         "generator": "recess-sports The Professor authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -960,7 +960,7 @@
       },
       "animation": {
         "take": "anims_turbo_v1.glb",
-        "takeSha256": "59e377aa9c430526e6bfb47fbc0db204f84f877ace998f656d34810955216650",
+        "takeSha256": "b30e1566c393ec7371519be19fc2e7790b46b963e42f1974dcf8ba9fe8a6b07b",
         "builder": "buildTurboPilotClips",
         "generator": "recess-sports Turbo authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -994,7 +994,7 @@
       },
       "animation": {
         "take": "anims_wheelchair_ace_v1.glb",
-        "takeSha256": "e813fdb0f12fa1c6b64cf0e27a93fd32ef76a4208d624a1e3b5c4a6cb35a728e",
+        "takeSha256": "b1eceae85f734dc373e9b827ccf8d144a9a4093a7f1a84dac73ecf0be5c458ed",
         "builder": "buildZoomSeatedLibrary",
         "generator": "recess-sports Zoom Ramirez authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -1033,7 +1033,7 @@
       },
       "animation": {
         "take": "anims_zippy_v1.glb",
-        "takeSha256": "2d22bb22be3b058751ac62262b2e079fee678d5e3e5bd9326c57d74f352faf4e",
+        "takeSha256": "1471f88ee79a312d30d28f1fb3707d37e337fa900dc66af1db0c52bfb7917950",
         "builder": "buildZippyPilotClips",
         "generator": "recess-sports Zippy Kwan authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",

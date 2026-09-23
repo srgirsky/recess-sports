@@ -4,6 +4,6 @@ import { clipSpec, FPS } from './clips';
 const ease = (value: number) => { const t=Math.max(0,Math.min(1,value));return t*t*(3-2*t); };
 export function buntAmount(timeSec: number): number {
   const frame=timeSec*FPS;
-  return ease(frame/9)*(1-ease((frame-14)/(clipSpec('bunt').frames-1-14)));
+  return ease(frame/15)*(1-ease((frame-24)/(clipSpec('bunt').frames-1-24)));
 }
 export const BUNT_HAND_SLIDE_FT = .8;

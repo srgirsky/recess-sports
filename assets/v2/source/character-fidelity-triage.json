@@ -1050,16 +1050,6 @@
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT (record) \u2014 measure:fidelity 'daylight between the ankles' 34.0 vs con"
     },
-    "calls_shot:058ce1a154ed": {
-      "char": "calls_shot",
-      "class": "decal-not-form",
-      "excerpt": "CARRIED \u2014 The bill is a wafer: theo-profile-review.png's diff bbox against the p"
-    },
-    "calls_shot:54d2748686be": {
-      "char": "calls_shot",
-      "class": "40px-read",
-      "excerpt": "CARRIED \u2014 The cap's cream team panel is a plateau, not a wedge: the panel (TEAM_"
-    },
     "calls_shot:8e918e78699e": {
       "char": "calls_shot",
       "class": "no-defect-note",
@@ -1089,16 +1079,6 @@
       "char": "calls_shot",
       "class": "no-defect-note",
       "excerpt": "CLEARED (current scoped evidence) \u2014 Former cream diagonal/sawtooth geometry through the teal jacket back is absent in refreshed theo-runtime-swing.png"
-    },
-    "calls_shot:8407219e6acc": {
-      "char": "calls_shot",
-      "class": "40px-read",
-      "excerpt": "CARRIED \u2014 Shoe fails all three fidelity metrics (dominant tone 88.4 vs 37.6, sec"
-    },
-    "calls_shot:59dc28c3d829": {
-      "char": "calls_shot",
-      "class": "proportions",
-      "excerpt": "CARRIED \u2014 Cap reads as a mushroom: theo-front-review.png row widths are identica"
     },
     "calls_shot:97d120605e28": {
       "char": "calls_shot",
@@ -2559,6 +2539,46 @@
       "char": "grizz",
       "class": "no-defect-note",
       "excerpt": "CLEARED \u2014 EVIDENCE REFRESH: the previous stale-board hero/run/contact finding "
+    },
+    "calls_shot:129eca730ba3": {
+      "char": "calls_shot",
+      "class": "material-light",
+      "excerpt": "CARRIED (fresh measurement) \u2014 Shoes still read as cream clogs, with two dark lace bars and a small d"
+    },
+    "calls_shot:ffc1d47065c1": {
+      "char": "calls_shot",
+      "class": "proportions",
+      "excerpt": "REVISED (final cap fit) \u2014 The smaller crown visibly sits around the forehead/hair without floating. "
+    },
+    "calls_shot:ca970b0fbd17": {
+      "char": "calls_shot",
+      "class": "sheared-edges",
+      "excerpt": "CLEARED (final cap join) \u2014 The former cream/yellow crown lip projecting below the visor as a second "
+    },
+    "calls_shot:a036b35bb5b2": {
+      "char": "calls_shot",
+      "class": "proportions",
+      "excerpt": "CARRIED (current construction) \u2014 The cream team panel is still a broad front plateau rather than the"
+    },
+    "calls_shot:d02d28bad9fd": {
+      "char": "calls_shot",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (capture defect) \u2014 Refreshed theo-runtime-run.png now genuinely paints run frame6, with the "
+    },
+    "calls_shot:bfa92519d5b7": {
+      "char": "calls_shot",
+      "class": "no-defect-note",
+      "excerpt": "CONFIRMED (final frozen shipping artefact) \u2014 Final GLB c9d967001510572f7c9ff0"
+    },
+    "calls_shot:738abf805645": {
+      "char": "calls_shot",
+      "class": "no-defect-note",
+      "excerpt": "CONFIRMED (final migrated hands and clothing) \u2014 Fresh hero/run/contact images"
+    },
+    "calls_shot:1d59186629d7": {
+      "char": "calls_shot",
+      "class": "other",
+      "excerpt": "OBSERVED (minor, final static crops) \u2014 At 4x, small dark triangular flecks re"
     }
   }
 }

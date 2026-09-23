@@ -14,24 +14,26 @@ sys.path.insert(0, str(Path(__file__).parent))
 from sculptlib.rig import ARM_Z, ARM_WRIST_X
 from sculptlib.mesh import MeshBuilder
 
-def migrate():
+def migrate(*, fresh_meshes=False):
     assert Path(bpy.data.filepath).name == 'theo-pilot.blend'
     arm = next(o for o in bpy.data.objects if o.type == 'ARMATURE')
-    assert not arm.get('recessTheoHandReference'), 'Already migrated; rebuild from the baseline first'
+    assert fresh_meshes or not arm.get('recessTheoHandReference'), 'Already migrated; rebuild from the baseline first'
     bpy.context.view_layer.objects.active = arm
     arm.select_set(True)
     bpy.ops.object.mode_set(mode='EDIT')
     for side, sign in [('Left', -1), ('Right', 1)]:
         template = arm.data.edit_bones[side+'HandIndex1']
         for name, y in [('Middle', .026), ('Ring', .076)]:
-            bone = arm.data.edit_bones.new(side+'Hand'+name+'1')
+            bone_name = side+'Hand'+name+'1'
+            bone = arm.data.edit_bones.get(bone_name) or arm.data.edit_bones.new(bone_name)
             delta = Vector((0, y-template.head.y, 0))
             bone.head, bone.tail = template.head+delta, template.tail+delta
             bone.roll = template.roll
             bone.parent = arm.data.edit_bones[side+'Hand']
         for name, parent in [('Index2','Index1'),('Curl2','Middle1')]:
             template = arm.data.edit_bones[side+'Hand'+parent]
-            bone = arm.data.edit_bones.new(side+'Hand'+name)
+            bone_name = side+'Hand'+name
+            bone = arm.data.edit_bones.get(bone_name) or arm.data.edit_bones.new(bone_name)
             delta = Vector((sign*.06, 0, 0))
             bone.head, bone.tail = template.head+delta, template.tail+delta
             bone.roll = template.roll

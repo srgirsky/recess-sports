@@ -168,6 +168,22 @@ describe('the procedural stand-in library', () => {
 });
 
 describe('seek — the instant replay puts a clip back where the tape recorded it', () => {
+  it('cancels an in-progress fade even when seeking the already selected clip', () => {
+    const kid = proxy(), reference = proxy();
+    const dir = new AnimationDirector(kid.mesh, { fallback: clips });
+    const exact = new AnimationDirector(reference.mesh, { fallback: clips });
+    dir.play('idle'); dir.update(.2);
+    dir.play('run', { fadeMs: 400 });
+    dir.seek('run', .2); dir.update(0);
+    exact.seek('run', .2);
+    for (const bone of kid.bones) {
+      const expected = reference.bones.find(b => b.name === bone.name)!;
+      expect(bone.quaternion.clone().normalize().angleTo(expected.quaternion.clone().normalize()), bone.name).toBeLessThan(1e-6);
+      expect(bone.position.distanceTo(expected.position), bone.name).toBeLessThan(1e-6);
+    }
+    dir.dispose(); exact.dispose(); kid.dispose(); reference.dispose();
+  });
+
   it('shows the recorded clip at the recorded time with no crossfade', () => {
     const kid = proxy();
     const dir = new AnimationDirector(kid.mesh, { fallback: clips });

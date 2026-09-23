@@ -3030,3 +3030,39 @@ turning chest. Delivered-weight and elbow-twist regressions accompany matched
 runtime comparisons. This corrects deformation without claiming finished
 character art: Tank's ready-pose torso intersection and the existing sculpt
 polish findings remain separate work.
+
+## September 22 athletic pose review
+
+A runtime review found four separate problems: Theo's cap sat like a helmet,
+run knees folded forward, the shuffle walked in place, and pitching rotated a
+low upper arm rather than showing a raised overhand delivery. Theo's cap now
+has a smaller rounded crown and a curved, closed-rim visor seated at its lower
+opening. The independent review confirms that the extra brow-band silhouette
+is gone. Theo remains `needs-polish`: two locked-concept proportion metrics
+reflect the requested cap reduction, and three existing shoe-tone metrics
+remain outside tolerance. Hair, shoe and clothing findings remain in his
+character-fidelity record.
+
+Shared running and Junebug's bespoke run now bend recovering knees backward;
+the seated athlete retains his own motion. Shuffles open laterally with flexed
+knees and uncrossed feet. Pitching has a balance gather, hand separation during
+the stride, a raised elbow and hand, high release, and a forward follow-through.
+The visual references were [Little League's grip and stance example](https://www.littleleague.org/university/articles/gripstancecoverage/)
+and the four-pose stride sequence on page 4 of [East County Little League's
+pitching drills](https://dt5602vnjxv0c.cloudfront.net/portals/3285/docs/coaching%20documents/ecll%20baseball%20pitching%20drills.pdf).
+The poses are cartoon authoring, not measured biomechanics. Throw/pitch physics
+and release-event timing remain unchanged.
+
+Theo's reference-hand batting stance places the hands beside the rear shoulder
+with the front elbow below them. Its preparation into the split-hand bunt is
+slower, allowing the elbows and forearms to turn continuously while the wrists
+stay aligned. Other characters retain their existing hand rigs. These scoped
+improvements do not certify whole-roster hand anatomy or Backyard Baseball
+visual parity.
+
+The evidence tool now seeks and holds exact frames instead of racing the wall
+clock. This exposed a director bug: seeking a clip during its fade could leave
+its weight at zero, painting idle under a run label. Seeking now cancels fades
+and stops competing actions. A regression compares every posed bone against a
+clean seek. Evidence still requires inspecting the pixels; a clip label alone
+is not proof of the displayed motion.
