@@ -83,7 +83,7 @@ describe('reference hand behavior',()=>{
     const {mesh,bones,pose}=rig(),bat=new BattingPose(mesh);
     const anchor=bones.get('Prop_BatGrip')!, original=anchor.position.clone();
     const palmOffset=original.clone().add(new Vector3(.03,-.05,0));
-    for(const frame of [9,12,14]) {
+    for(const frame of [15,19,24]) {
       pose.restore();bat.restore();bat.apply('bunt',frame/FPS);pose.apply('bunt',Infinity,frame/FPS);mesh.updateMatrixWorld(true);
       const top=anchor.worldToLocal(bones.get('RightHand')!.localToWorld(palmOffset.clone()));
       const bottom=anchor.worldToLocal(bones.get('Prop_GloveAnchor')!.getWorldPosition(new Vector3()));
@@ -99,7 +99,7 @@ describe('reference hand behavior',()=>{
       expect(bones.get('RightHandIndex2')!.quaternion.angleTo(new Quaternion())).toBeLessThan(1.2);
     }
     pose.restore();bat.restore();expect(anchor.position.distanceTo(original)).toBeLessThan(1e-7);
-    bat.apply('bunt',23/FPS);mesh.updateMatrixWorld(true);
+    bat.apply('bunt',(clipSpec('bunt').frames-1)/FPS);mesh.updateMatrixWorld(true);
     const returning=bones.get('RightHand')!.getWorldPosition(new Vector3());
     bat.restore();bat.apply('bat_stance',0);mesh.updateMatrixWorld(true);
     expect(returning.distanceTo(bones.get('RightHand')!.getWorldPosition(new Vector3()))).toBeLessThan(1e-6);
@@ -131,6 +131,14 @@ describe('reference hand behavior',()=>{
         }
       }
     }
+  });
+  it('holds the front elbow below the hands in the ready stance',()=>{
+    const {mesh,bones}=rig(),bat=new BattingPose(mesh);
+    bat.apply('bat_stance',0);mesh.updateMatrixWorld(true);
+    const at=(name:string)=>bones.get(name)!.getWorldPosition(new Vector3());
+    expect(at('LeftForeArm').y).toBeLessThan(at('LeftHand').y-.1);
+    expect(at('LeftForeArm').y).toBeLessThan(at('LeftArm').y);
+    bat.restore();
   });
   it('puts the handle across the palm, keeps both grips together, and restores attachment transforms',()=>{
     const {mesh,bones}=rig(),bat=new BattingPose(mesh);

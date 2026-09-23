@@ -157,7 +157,7 @@ const CLIP_TABLE = [
   },
   { name: 'swing_follow', group: 'batting', frames: 24, loop: false, blendMs: 60, returnsTo: 'bat_stance' },
   { name: 'swing_whiff', group: 'batting', frames: 30, loop: false, blendMs: 60, returnsTo: 'bat_stance' },
-  { name: 'bunt', group: 'batting', frames: 24, loop: false, blendMs: 90, returnsTo: 'bat_stance' },
+  { name: 'bunt', group: 'batting', frames: 40, loop: false, blendMs: 90, returnsTo: 'bat_stance' },
 
   // --- Pitching ------------------------------------------------------------
   { name: 'pitch_windup', group: 'pitching', frames: 30, loop: false, blendMs: 150, returnsTo: 'pitch_stride' },

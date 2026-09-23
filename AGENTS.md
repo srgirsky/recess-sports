@@ -87,7 +87,7 @@ weaken one to make a change pass.**
 | `scripts/v2/validate-models.test.js` / `authored-character.test.js` / `arm-skinning.test.js` / `reference-hands.test.js` | a `.glb` breaking its contract, Blender source, joints, finger caps or visual approval |
 | `src/v2/render/skeleton.test.ts` | a rig that misses its own height or the art's stance, a bobblehead, an invisible face |
 | `src/v2/render/clips.test.ts` | the clip table drifting from the two v2 docs |
-| `src/v2/render/groundContact.test.ts` | a clip that hovers above the field or sinks through it |
+| `src/v2/render/groundContact.test.ts` / `athleticMotion.test.ts` | floating feet, backward joints, or a low pitching arm |
 | `src/v2/render/cameraCues.test.ts` | a camera preset that cannot see what it exists to show |
 | `src/v2/sim/play.test.ts` | a play clock that fires — a soft-lock |
 | `src/v2/sim/game.test.ts` | the live pump and the headless run producing different games |

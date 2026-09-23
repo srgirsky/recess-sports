@@ -201,10 +201,11 @@ git show f741ac7:assets/v2/source/theo-pilot.blend > /tmp/theo-pilot.blend
 blender --background /tmp/theo-pilot.blend --python scripts/v2/blender/theo-hands.py
 ```
 
-The migration refuses a source that already carries its revision marker.
-It preserves topology and fixes the reference source; the older full Theo
-sculpt recipe predates these hands. Rebuilding that older recipe requires
-reapplying the reference changes and rerunning model budgets and visual review.
+The standalone migration refuses a source that already carries its revision
+marker. The full `sculpt-theo-source.py` rebuild applies it automatically to
+its fresh meshes, reusing existing finger joints and restoring the continuous
+shirt weights. Run the model/hand tests and refresh visual evidence after any
+rebuild; a cap edit must not restore the legacy fingers.
 
 The committed voice bank remains the stable fallback. The production packet at
 `docs/v2/character-performance-brief.md` gives every kid separate sculpt,

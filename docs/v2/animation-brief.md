@@ -204,7 +204,7 @@ exact.
 | `swing_contact` | 18 | — | `swing_follow` | **Contact on frame 7.** Hips open, back heel up, barrel through the zone. |
 | `swing_follow` | 24 | — | `bat_stance` | Follow-through and recover to standing. |
 | `swing_whiff` | 30 | — | `bat_stance` | A miss. Over-rotates, nearly falls over. Should be funny. |
-| `bunt` | 24 | — | `bat_stance` | Squares around, bat level, small and defensive. |
+| `bunt` | 40 | — | `bat_stance` | Squares around, bat level, small and defensive. |
 
 ### Pitching
 | clip | frames | loop | settles into | notes |

@@ -17,6 +17,7 @@ const Y = new Vector3(0, 1, 0);
 const X = new Vector3(1, 0, 0);
 const Z = new Vector3(0, 0, 1);
 const REFERENCE_READY_AXIS = new Vector3(.28, .94, .2).normalize();
+const STANCE_AXIS = new Vector3(-.7,.8,.3).normalize();
 const READY_AXIS = new Vector3(.65, .45, .8).normalize();
 const FOLLOW_AXIS = new Vector3(-.8, .6, .2).normalize();
 const CONTACT_FRAME = clipSpec('swing_contact').marker!.frame;
@@ -43,6 +44,7 @@ export class BattingPose {
   contact: Vector3 | null = null;
 
   private readonly seated: boolean;
+  private readyWeight = 0;
 
   constructor(mesh: Object3D, seated = false) {
     this.seated = seated;
@@ -87,7 +89,7 @@ export class BattingPose {
     // straight-down world-space hint tucked wide kids' upper arms into their
     // shirts, even though the two palms still reached the handle exactly.
     const clearanceGain=this.bones.has('RightHandIndex2')?.5:.25;
-    const elbowHint = new Vector3(sign * .8, -.4 - 1.5*bunt, .5 + clearanceGain * followClearance)
+    const elbowHint = new Vector3(sign * .8, (-.4 - .6*this.readyWeight) - 1.5*bunt, .5 + clearanceGain * followClearance)
       .applyQuaternion(this.rotation(this.bones.get('Spine2')!));
     if (this.bones.has('RightHandIndex2')) {
       const result = this.gripSolution(side, palm, Z.clone().applyQuaternion(rotation), elbowHint);
@@ -103,16 +105,18 @@ export class BattingPose {
       if (relative.w < 0) relative.set(-relative.x, -relative.y, -relative.z, -relative.w);
       const roll = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, 2 * Math.atan2(relative.x, relative.w)));
       this.set(lower, this.rotation(lower).multiply(new Quaternion().setFromAxisAngle(X, roll)));
-      // Keep the upper sleeve upright in the shoulder frame. Clamping an
-      // Euler/twist angle here jumps at +/-180°, despite valid wrist contact.
+      // Keep the sleeve upright for the swing, then release that correction
+      // during the bunt. Its world-up frame has a pole under the shoulder;
+      // the solved elbow plane stays continuous through that crossing.
       const lowerRotation = this.rotation(lower);
       const upperX = X.clone().applyQuaternion(upper.quaternion);
-      const upperZ = upperX.clone().cross(Y.clone().addScaledVector(Z,-1.2*bunt));
+      const upperZ = upperX.clone().cross(Y.clone().addScaledVector(Z,-bunt));
       if (upperZ.lengthSq() < 1e-8) upperZ.copy(Z).addScaledVector(upperX,-upperX.dot(Z));
       upperZ.normalize();
       const neutral = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(
         upperX,upperZ.clone().cross(upperX),upperZ));
-      this.set(upper,this.rotation(upper.parent!).multiply(neutral));
+      this.set(upper,this.rotation(upper.parent!).multiply(neutral)
+        .slerp(this.rotation(upper),smooth(Math.min(1,bunt*6))));
       this.set(lower,lowerRotation);
     }
     this.set(hand, rotation);
@@ -170,7 +174,7 @@ export class BattingPose {
 
   private gripRotation(side: 'Left' | 'Right', palm: Vector3, axis: Vector3): Quaternion {
     const sign = side === 'Right' ? 1 : -1;
-    const hint = new Vector3(sign*.8,-.4,.5).applyQuaternion(this.rotation(this.bones.get('Spine2')!));
+    const hint = new Vector3(sign*.8,-.4-.6*this.readyWeight,.5).applyQuaternion(this.rotation(this.bones.get('Spine2')!));
     return this.gripSolution(side, palm, axis.clone().multiplyScalar(sign), hint).rotation;
   }
 
@@ -253,9 +257,9 @@ export class BattingPose {
       if (referenceHands) {
         // Receive the pitch with a quiet bat across the chest. The top hand
         // travels up the taper; the bottom hand stays near the knob.
-        grip.lerp(new Vector3(-.85, 2.12, -.4), bunt);
-        grip.z += .25*Math.sin(Math.PI*bunt);
-        axis.lerp(new Vector3(0,.18,1).normalize(), smooth(Math.min(1,bunt*1.7))).normalize();
+        grip.set(.2,2.45,.5).lerp(new Vector3(-.85, 2.12, -.4), bunt);
+        grip.z += .55*Math.sin(Math.PI*bunt);
+        axis.copy(STANCE_AXIS).lerp(new Vector3(0,.18,1).normalize(), smooth(bunt+.1*Math.sin(Math.PI*bunt))).normalize();
       } else { grip.lerp(contact, t); axis.lerp(Z, t).normalize(); }
     } else if (name === 'swing_follow') {
       const t = smooth(time / FOLLOW_SEC);
@@ -266,6 +270,17 @@ export class BattingPose {
       const around = new Vector3(0, this.bones.has('RightHandIndex2') ? .65 : .1, 1).normalize();
       if (t < .5) axis.copy(FOLLOW_AXIS).lerp(around, t * 2).normalize();
       else axis.copy(around).lerp(readyAxis, t * 2 - 1).normalize();
+    }
+    // A ready grip belongs beside the rear shoulder with the front elbow
+    // below it. Blend out before contact so the established swing/bunt grip
+    // paths retain their clearances, then return along the same approach.
+    this.readyWeight = !referenceHands ? 0
+      : name === 'swing_contact' || name === 'swing_whiff' ? 1-smooth(time*FPS/3)
+      : name === 'swing_follow' ? smooth((time/FOLLOW_SEC-.7)/.3)
+      : name === 'bunt' ? 1-bunt : 1;
+    if (name !== 'bunt') {
+      grip.lerp(new Vector3(.2,2.45,.5),this.readyWeight);
+      axis.lerp(STANCE_AXIS,this.readyWeight).normalize();
     }
     // Plant the batting feet while the pelvis turns; lower/shift the body
     // only as far as the two hands need to reach the handle. Zoom's seated

@@ -21,6 +21,7 @@ from __future__ import annotations
 from math import cos, pi, sin, sqrt
 from pathlib import Path
 import sys
+import runpy
 
 import bpy
 
@@ -187,35 +188,30 @@ def skull_front_y(x: float, z: float) -> float:
 
 # --- The oversized cap ---------------------------------------------------------
 #
-# Chip's construction, scaled up: the dome IS the figure's outline at cap
-# rows, and only the cream front panel lives on M_Accessory.
-# measured: front z=3.35 halfWidth=0.6945 tol=0.03
-# measured: front z=3.55 halfWidth=0.6514 tol=0.03
+# The original crown was 0.51ft above the skull and 1.72x its width: a
+# helmet shell floating over the hair. Keep the oversized identity, but fit
+# the opening around the head and give the bill the concept's curved profile.
+# not-traceable: revised fit requested in the 2026-09-22 runtime review;
+# these are fitted construction dimensions, not a re-trace of the sheet.
 CAP_LEVELS = [
-    (3.990, 0.120, 0.120, -0.020),
-    (3.930, 0.300, 0.310, -0.030),
-    (3.850, 0.430, 0.450, -0.040),
-    (3.700, 0.558, 0.578, -0.050),
-    (3.550, 0.645, 0.640, -0.050),
-    # 3.450 was within 0.010 of its neighbours' lerp (redundant-rows-scan,
-    # 2026-09-02): 24 LOD0 tris toward the knee rings.
-    (3.360, 0.688, 0.640, -0.040),
-    (3.290, 0.650, 0.595, -0.030),
+    (3.880, 0.110, 0.110, -0.020),
+    (3.800, 0.300, 0.310, -0.020),
+    (3.680, 0.465, 0.470, -0.020),
+    (3.530, 0.565, 0.530, -0.020),
+    (3.360, 0.605, 0.535, -0.020),
+    (3.290, 0.555, 0.505, -0.020),
 ]
 
-BRIM_Z_ROOT = 3.400
-BRIM_Z_TIP = 3.230          # the oversized bill dips
-# ⚠️ REACH is the bill TIP's absolute forward y - the dome front already
-# sits at ~0.68, so a reach under that projects NO bill at all (round-1
-# blocker: the cap read as a batting helmet).
-BRIM_REACH = 1.100
-BRIM_HALF_W = 0.390
+BRIM_Z_ROOT = 3.300
+BRIM_Z_TIP = 3.420
+BRIM_REACH = 0.940
+BRIM_HALF_W = 0.490
 BRIM_THICK = 0.032
 
 
 def build_cap(builder: MeshBuilder, detail: int) -> None:
     """The crown (cream team panel forward) and the double-sided teal bill."""
-    # 16 keeps mirror columns and the LOD0 budget (20 blew it).
+    # Twelve keeps mirror columns and the LOD0 triangle budget.
     segments = 12 if detail >= 2 else (8 if detail == 1 else 8)
     levels = CAP_LEVELS if detail >= 2 else thin_for_lod(
         [(z, hx, hy, yc) for z, hx, hy, yc in CAP_LEVELS], detail)
@@ -249,25 +245,36 @@ def build_cap(builder: MeshBuilder, detail: int) -> None:
     if detail < 1:
         return
     # The bill: a curved plate, top and underside, teal like the crown.
-    steps = 3 if detail >= 2 else 2
+    steps = 2
     cols = 5 if detail >= 2 else 5
     dome_front = CAP_LEVELS[-2][3] - CAP_LEVELS[-2][2]
+    assert -BRIM_REACH < dome_front - 0.05
+    surfaces = []
     for underside in (False, True):
         rows_b = []
         for j in range(steps + 1):
             t = j / steps
-            y = dome_front * (1 - t) + (-BRIM_REACH) * t
             z = BRIM_Z_ROOT * (1 - t) + BRIM_Z_TIP * t
             if underside:
                 z -= BRIM_THICK
             row = []
             for i in range(cols):
                 u = 2 * i / (cols - 1) - 1
-                x = BRIM_HALF_W * u * (1.0 - 0.35 * t * t)
-                zz = z + 0.045 * (u * u) * (1 - 0.3 * t)
+                x = BRIM_HALF_W * u * (1.0 - 0.12 * t * t)
+                root_y = CAP_LEVELS[-1][3] - CAP_LEVELS[-1][2] * sqrt(1 - (BRIM_HALF_W*u/CAP_LEVELS[-1][1])**2)
+                y = root_y * (1-t) - (BRIM_REACH - 0.12*u*u) * t
+                zz = z + 0.045*sin(pi*t) - 0.09*u*u*t
                 row.append(builder.vertex((x, y, zz), TEAL, "Head"))
             rows_b.append(row)
         builder.grid(rows_b, 2, cyclic=False, flip=underside)
+        surfaces.append(rows_b)
+    # Close the visible rim; reuse the plate vertices within the mesh budget.
+    top, bottom = surfaces
+    for i in range(cols-1):
+        builder.face((top[-1][i],bottom[-1][i],bottom[-1][i+1],top[-1][i+1]),2)
+    for j in range(steps):
+        builder.face((top[j][0],bottom[j][0],bottom[j+1][0],top[j+1][0]),2)
+        builder.face((top[j][-1],top[j+1][-1],bottom[j+1][-1],bottom[j][-1]),2)
 
 
 # --- The hair: dark flips under the cap ----------------------------------------
@@ -847,6 +854,12 @@ def main() -> None:
         "kid_calls_shot_LOD2": (5, 3, 0),
     }
     built = [build_lod(name, armature, *config) for name, config in settings.items()]
+
+    # The armature can already carry the reference-hand revision while these
+    # newly rebuilt meshes still have the legacy fingers and rigid shirt bands.
+    # Reapply the geometry migration exactly once to the fresh meshes, reusing
+    # existing optional joints rather than adding duplicate bone names.
+    runpy.run_path(str(Path(__file__).with_name("theo-hands.py")))["migrate"](fresh_meshes=True)
 
     for material_name in SLOTS:
         material = bpy.data.materials[material_name]

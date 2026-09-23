@@ -315,6 +315,11 @@ export class AnimationDirector {
     if (this.current !== name) this.play(name, { fadeMs: 0, rate: 1, restart: true });
     const action = this.action;
     if (!action) return;
+    // A seek during a crossfade must paint the requested pose, even when the
+    // mixer clock is held. Otherwise its weight can stay at zero indefinitely
+    // while the readout claims the new clip and frame.
+    for (const other of this.actions.values()) if (other !== action) other.stop();
+    action.stopFading().stopWarping().setEffectiveWeight(1);
     const duration = action.getClip().duration;
     action.enabled = true;
     action.paused = false;
