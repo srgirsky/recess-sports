@@ -3066,3 +3066,22 @@ its weight at zero, painting idle under a run label. Seeking now cancels fades
 and stops competing actions. A regression compares every posed bone against a
 clean seek. Evidence still requires inspecting the pixels; a clip label alone
 is not proof of the displayed motion.
+
+### Batting clearance and connected pitch footwork — September 24, 2026
+
+The ready stance still pulled Theo's rear elbow across his upper torso because
+the reference-hand grip mirrored the handle direction twice. Both palms now
+share that direction; the bat sits more upright beside the rear shoulder, with
+the chest turned enough to leave both elbows outside the shirt. The transition
+into bunt clears the shoulder before settling into the receiving pose and keeps
+some elbow flexion while the upper hand slides.
+
+The pitch's old leg keys lifted both feet during the stride and reset the hips
+at clip boundaries. Windup, stride and release now share one authored hip and
+ankle trajectory: rear-foot support through the gather, lead-foot landing before
+arm acceleration, and rear-foot recovery during follow-through. Leg rotations
+are solved against those foot plants; this does not change the simulation's
+pitch speed or release instant. Regression checks cover foot plants, clip joins,
+ready elbow clearance and grip continuity. Delivered-model frame sweeps and
+multi-angle close-ups complement those checks; they do not certify anatomical
+perfection or whole-game art parity.

@@ -83,7 +83,7 @@ describe('reference hand behavior',()=>{
     const {mesh,bones,pose}=rig(),bat=new BattingPose(mesh);
     const anchor=bones.get('Prop_BatGrip')!, original=anchor.position.clone();
     const palmOffset=original.clone().add(new Vector3(.03,-.05,0));
-    for(const frame of [15,19,24]) {
+    for(const frame of [20,22,24]) {
       pose.restore();bat.restore();bat.apply('bunt',frame/FPS);pose.apply('bunt',Infinity,frame/FPS);mesh.updateMatrixWorld(true);
       const top=anchor.worldToLocal(bones.get('RightHand')!.localToWorld(palmOffset.clone()));
       const bottom=anchor.worldToLocal(bones.get('Prop_GloveAnchor')!.getWorldPosition(new Vector3()));
@@ -138,6 +138,23 @@ describe('reference hand behavior',()=>{
     const at=(name:string)=>bones.get(name)!.getWorldPosition(new Vector3());
     expect(at('LeftForeArm').y).toBeLessThan(at('LeftHand').y-.1);
     expect(at('LeftForeArm').y).toBeLessThan(at('LeftArm').y);
+    bat.restore();
+  });
+  it('keeps both ready elbows outside the shirt and the rear elbow outboard',()=>{
+    const {mesh,bones}=rig(),bat=new BattingPose(mesh),chest=bones.get('Spine2')!;
+    for(const mirrored of [false,true])for(const clip of ['bat_stance','bat_load'] as const){
+      mesh.scale.x=mirrored?-1:1;
+      bat.restore();bat.apply(clip,.2);mesh.updateMatrixWorld(true);
+      const at=(name:string)=>chest.worldToLocal(bones.get(name)!.getWorldPosition(new Vector3()));
+      const left=at('LeftForeArm'),right=at('RightForeArm');
+      expect(left.z).toBeGreaterThan(.3);
+      expect(right.z).toBeGreaterThan(.3);
+      expect(right.x).toBeGreaterThan(.55);
+      for(const elbow of [left,right])expect((elbow.x/.45)**2+(elbow.z/.30)**2).toBeGreaterThan(1.4);
+      const anchor=bones.get('Prop_BatGrip')!;
+      const axis=anchor.localToWorld(new Vector3(0,1,0)).sub(anchor.getWorldPosition(new Vector3())).normalize();
+      expect(axis.y).toBeGreaterThan(.9);
+    }
     bat.restore();
   });
   it('puts the handle across the palm, keeps both grips together, and restores attachment transforms',()=>{
