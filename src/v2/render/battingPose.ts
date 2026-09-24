@@ -17,7 +17,8 @@ const Y = new Vector3(0, 1, 0);
 const X = new Vector3(1, 0, 0);
 const Z = new Vector3(0, 0, 1);
 const REFERENCE_READY_AXIS = new Vector3(.28, .94, .2).normalize();
-const STANCE_AXIS = new Vector3(-.7,.8,.3).normalize();
+const STANCE_AXIS = new Vector3(-.3,1,.3).normalize();
+const STANCE_GRIP = new Vector3(.35,2.5,.6);
 const READY_AXIS = new Vector3(.65, .45, .8).normalize();
 const FOLLOW_AXIS = new Vector3(-.8, .6, .2).normalize();
 const CONTACT_FRAME = clipSpec('swing_contact').marker!.frame;
@@ -175,7 +176,10 @@ export class BattingPose {
   private gripRotation(side: 'Left' | 'Right', palm: Vector3, axis: Vector3): Quaternion {
     const sign = side === 'Right' ? 1 : -1;
     const hint = new Vector3(sign*.8,-.4-.6*this.readyWeight,.5).applyQuaternion(this.rotation(this.bones.get('Spine2')!));
-    return this.gripSolution(side, palm, axis.clone().multiplyScalar(sign), hint).rotation;
+    // The reference palms share the handle direction. Handedness already
+    // lives in the arm's X axis; mirroring Z as well reverses the top grip
+    // and makes the solver pull its elbow across the chest/neck.
+    return this.gripSolution(side, palm, axis.clone().negate(), hint).rotation;
   }
 
   private palmOffset(side: string): Vector3 {
@@ -219,7 +223,11 @@ export class BattingPose {
       : name === 'swing_follow' ? 1 - smooth(time / FOLLOW_SEC) : 0;
     const referenceHands = this.bones.has('RightHandIndex2');
     const bunt = name === 'bunt' && referenceHands ? buntAmount(time) : 0;
-    const desiredHeading = (-20 - 140 * sweep - 55 * bunt) * Math.PI / 180;
+    this.readyWeight = !referenceHands ? 0
+      : name === 'swing_contact' || name === 'swing_whiff' ? 1-smooth(time*FPS/3)
+      : name === 'swing_follow' ? smooth((time/FOLLOW_SEC-.7)/.3)
+      : name === 'bunt' ? 1-bunt : 1;
+    const desiredHeading = (-20 - 140 * sweep - 55 * bunt + 35*this.readyWeight) * Math.PI / 180;
     const chestForward = Z.clone().applyQuaternion(this.rotation(spine));
     const correction = desiredHeading - Math.atan2(chestForward.x, chestForward.z);
     this.set(hips, new Quaternion().setFromAxisAngle(Y, correction).multiply(this.rotation(hips)));
@@ -257,8 +265,9 @@ export class BattingPose {
       if (referenceHands) {
         // Receive the pitch with a quiet bat across the chest. The top hand
         // travels up the taper; the bottom hand stays near the knob.
-        grip.set(.2,2.45,.5).lerp(new Vector3(-.85, 2.12, -.4), bunt);
-        grip.z += .55*Math.sin(Math.PI*bunt);
+        grip.copy(STANCE_GRIP).lerp(new Vector3(-.5, 2.12, -.33), bunt);
+        // Clear the shoulder first, then bring the bat into the receiving pose.
+        grip.z += (.4 + .25*(1-bunt)**4)*Math.sin(Math.PI*bunt);
         axis.copy(STANCE_AXIS).lerp(new Vector3(0,.18,1).normalize(), smooth(bunt+.1*Math.sin(Math.PI*bunt))).normalize();
       } else { grip.lerp(contact, t); axis.lerp(Z, t).normalize(); }
     } else if (name === 'swing_follow') {
@@ -274,12 +283,8 @@ export class BattingPose {
     // A ready grip belongs beside the rear shoulder with the front elbow
     // below it. Blend out before contact so the established swing/bunt grip
     // paths retain their clearances, then return along the same approach.
-    this.readyWeight = !referenceHands ? 0
-      : name === 'swing_contact' || name === 'swing_whiff' ? 1-smooth(time*FPS/3)
-      : name === 'swing_follow' ? smooth((time/FOLLOW_SEC-.7)/.3)
-      : name === 'bunt' ? 1-bunt : 1;
     if (name !== 'bunt') {
-      grip.lerp(new Vector3(.2,2.45,.5),this.readyWeight);
+      grip.lerp(STANCE_GRIP,this.readyWeight);
       axis.lerp(STANCE_AXIS,this.readyWeight).normalize();
     }
     // Plant the batting feet while the pelvis turns; lower/shift the body
@@ -311,7 +316,9 @@ export class BattingPose {
         const wrist = palm.sub(this.palmOffset(side).applyQuaternion(rotation));
         const shoulder = this.at(this.bones.get(`${side}Arm`)!);
         const length = this.bones.get(`${side}ForeArm`)!.position.length() + this.bones.get(`${side}Hand`)!.position.length();
-        return { wrist, shoulder, length };
+        // Leave room for the palm frame to turn as the upper hand slides.
+        // A fully extended reach can flip the elbow plane between samples.
+        return { wrist, shoulder, length: length*(1-.06*bunt) };
       });
       if (this.seated) {
         // Rotate the trunk toward unreachable wrists instead of translating

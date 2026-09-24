@@ -489,6 +489,8 @@ function breathe(spec: ClipSpec, base: Pose, amount = 1.2): AnimationClip {
   });
 }
 
+// Pure pose construction: top-level character-only calls may be tree-shaken
+// from the runtime fallback library. The exporters still use those poses.
 function shift(pose: Pose, delta: Pose): Pose {
   const out: Pose = { ...pose };
   for (const [k, v] of Object.entries(delta) as [Alias, [number, number, number]][]) {
@@ -553,12 +555,12 @@ const JUNEBUG_IDLE_POSE: Pose = {
 
 // Arm terms stay on the shared grip (see BAT_STANCE_POSE) — personality lives
 // in the torso, head, legs and the WRIST, which is what actually waggles a bat.
-const JUNEBUG_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
+const JUNEBUG_STANCE_POSE: Pose = /* @__PURE__ */ shift(BAT_STANCE_POSE, {
   hp: [5, -4, 0], sp: [3, -5, 0], s2: [2, -8, 0], hd: [-2, 7, -2],
   lu: [8, 0, 1], ll: [-5, 0, 0], ru: [-3, 0, -1], rl: [4, 0, 0],
 });
 
-const JUNEBUG_CONTACT_END: Pose = shift(JUNEBUG_STANCE_POSE, {
+const JUNEBUG_CONTACT_END: Pose = /* @__PURE__ */ shift(JUNEBUG_STANCE_POSE, {
   hp: [0, 78, 0], sp: [0, 54, 0], s2: [0, 74, 0], hd: [2, -18, 0],
   lu: [-10, 0, 0], ru: [8, 0, 0], rt: [0, 0, 52],
   rh: SWING_WRIST.end,
@@ -783,12 +785,12 @@ const THEO_IDLE_POSE: Pose = {
   lu: [-3, 0, 0], ru: [3, 0, 0],
 };
 
-const THEO_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
+const THEO_STANCE_POSE: Pose = /* @__PURE__ */ shift(BAT_STANCE_POSE, {
   hp: [-3, -7, 0], sp: [-4, -8, 0], s2: [-5, -11, 0], hd: [-2, 12, 3],
   lu: [2, 0, 2], ru: [-2, 0, -2],
 });
 
-const THEO_CONTACT_END: Pose = shift(THEO_STANCE_POSE, {
+const THEO_CONTACT_END: Pose = /* @__PURE__ */ shift(THEO_STANCE_POSE, {
   hp: [0, 83, 0], sp: [0, 58, 0], s2: [0, 78, 0], hd: [-3, -21, -2],
   lu: [-9, 0, 0], ru: [9, 0, 0], rt: [0, 0, 55],
   rh: SWING_WRIST.end,
@@ -907,7 +909,7 @@ const ZOOM_IDLE_POSE: Pose = {
   la: [18, 0, 54], lf: [0, -58, 0], ra: [18, 0, -54], rf: [0, 58, 0],
 };
 
-const ZOOM_FIELD_POSE: Pose = shift(ZOOM_IDLE_POSE, {
+const ZOOM_FIELD_POSE: Pose = /* @__PURE__ */ shift(ZOOM_IDLE_POSE, {
   hp: [8, 0, 0], sp: [8, 0, 0], s2: [7, 0, 0], hd: [-10, -8, 0],
   la: [22, 0, -14], lf: [0, 20, 0], ra: [22, 0, 14], rf: [0, -20, 0],
 });
@@ -922,7 +924,7 @@ const ZOOM_STANCE_POSE: Pose = {
   ru: [0, 0, 0], rl: [0, 0, 0], rt: [0, 0, 0],
 };
 
-const ZOOM_CONTACT_END: Pose = shift(ZOOM_STANCE_POSE, {
+const ZOOM_CONTACT_END: Pose = /* @__PURE__ */ shift(ZOOM_STANCE_POSE, {
   hp: [0, 70, 0], sp: [0, 53, 0], s2: [0, 72, 0], hd: [-2, -18, -1],
   rh: SWING_WRIST.end,
 });
@@ -1051,12 +1053,12 @@ const LOU_IDLE_POSE: Pose = {
   lu: [5, 0, 0], ll: [-7, 0, 0], ru: [5, 0, 0], rl: [-7, 0, 0],
 };
 
-const LOU_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
+const LOU_STANCE_POSE: Pose = /* @__PURE__ */ shift(BAT_STANCE_POSE, {
   hp: [10, -7, 0], sp: [8, -6, 0], s2: [11, -8, 0], hd: [-2, 10, 2],
   lu: [6, 0, 3], ll: [-8, 0, 0], ru: [6, 0, -3], rl: [-8, 0, 0],
 });
 
-const LOU_CONTACT_END: Pose = shift(LOU_STANCE_POSE, {
+const LOU_CONTACT_END: Pose = /* @__PURE__ */ shift(LOU_STANCE_POSE, {
   hp: [0, 91, 0], sp: [0, 62, 0], s2: [0, 85, 0], hd: [6, -30, -2],
   lu: [-12, 0, 2], ll: [15, 0, 0], ru: [10, 0, -4], rl: [-13, 0, 0], rt: [0, 0, 58],
   rh: SWING_WRIST.end,
@@ -1237,7 +1239,7 @@ const TANK_IDLE_POSE: Pose = {
   la: [12, 0, 50], lf: [0, -12, 20], ra: [12, 0, -50], rf: [0, 12, -20],
   lu: [12, 0, 0], ll: [-18, 0, 0], ru: [12, 0, 0], rl: [-18, 0, 0],
 };
-const TANK_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
+const TANK_STANCE_POSE: Pose = /* @__PURE__ */ shift(BAT_STANCE_POSE, {
   hp: [17, -10, 0], sp: [12, -7, 0], s2: [16, -12, 0], hd: [5, 7, 0],
   lu: [10, 0, 4], ll: [-15, 0, 0], ru: [10, 0, -4], rl: [-15, 0, 0],
 });
@@ -1245,7 +1247,7 @@ const TANK_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
 // skull at contact — that whole class went away when the arms became the
 // shared grip: they no longer move during a swing, so there is nothing to
 // sweep through the head. The torso still twists his 96 degrees.)
-const TANK_CONTACT_END: Pose = shift(TANK_STANCE_POSE, {
+const TANK_CONTACT_END: Pose = /* @__PURE__ */ shift(TANK_STANCE_POSE, {
   hp: [0, 96, 0], sp: [0, 68, 0], s2: [0, 91, 0], hd: [8, -18, 0],
   rt: [0, 0, 62],
   rh: SWING_WRIST.end,
@@ -1317,11 +1319,11 @@ const MIMI_IDLE_POSE: Pose = {
   la: [7, 0, 62], lf: [0, -9, 0], ra: [7, 0, -62], rf: [0, 9, 0],
   lu: [11, 0, 0], ll: [-16, 0, 0], ru: [11, 0, 0], rl: [-16, 0, 0],
 };
-const MIMI_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
+const MIMI_STANCE_POSE: Pose = /* @__PURE__ */ shift(BAT_STANCE_POSE, {
   hp: [21, -15, 0], sp: [15, -11, 0], s2: [20, -18, 0], hd: [-7, 14, 0],
   lu: [14, 0, 6], ll: [-20, 0, 0], ru: [14, 0, -6], rl: [-20, 0, 0],
 });
-const MIMI_CONTACT_END: Pose = shift(MIMI_STANCE_POSE, {
+const MIMI_CONTACT_END: Pose = /* @__PURE__ */ shift(MIMI_STANCE_POSE, {
   hp: [0, 107, 0], sp: [0, 79, 0], s2: [0, 102, 0], hd: [3, -42, -3],
   rt: [0, 0, 69], lu: [-9, 0, 2], ll: [12, 0, 0], ru: [9, 0, -3], rl: [-13, 0, 0],
   rh: SWING_WRIST.end,
@@ -1400,6 +1402,59 @@ const PITCH_COIL: Pose = {...PITCH_SET,lu:[-35,0,-5],ll:[30,0,0],lt:[0,0,0],
   ru:[20,0,5],rl:[15,0,0],rt:[-20,0,0],
   ...throwingArm([.85,.4,-.2],[0,1,-.5],100)};
 
+/** Pitch-specific foot plants: support on the rear foot during the gather,
+ * reach forward into a front-foot plant BEFORE arm acceleration, then let the
+ * rear foot recover. These are authored ankle targets, not a per-frame lift
+ * of whichever bone happens to be lowest. The same timeline spans all three
+ * clips so their hips and feet agree at both joins. */
+function pitchFootwork(clip: AnimationClip, startFrame: number): AnimationClip {
+  const hipRotation = clip.tracks.find(t => t.name === 'Hips.quaternion')!
+    .InterpolantFactoryMethodLinear();
+  const smooth = (n: number) => { const t=Math.max(0,Math.min(1,n)); return t*t*(3-2*t); };
+  const trajectory = (frame: number, points: [number,number,number,number][]) => {
+    for (let i=1;i<points.length;i++) if(frame<=points[i][0]) {
+      const a=points[i-1],b=points[i];
+      return new Vector3(a[1],a[2],a[3]).lerp(new Vector3(b[1],b[2],b[3]),smooth((frame-a[0])/(b[0]-a[0])));
+    }
+    const p=points[points.length-1]; return new Vector3(p[1],p[2],p[3]);
+  };
+  const bind = new Map(SKELETON.map(b=>[b.name,new Vector3(...b.pos)]));
+  const times:number[]=[], positions:number[]=[], rotations=new Map<string,number[]>();
+  for(const side of ['Left','Right'])for(const part of ['UpLeg','Leg','Foot'])rotations.set(side+part,[]);
+  for(let f=0;f<=clip.duration*FPS+.001;f++) {
+    const t=f/FPS,frame=startFrame+f;times.push(t);
+    const hips=trajectory(frame,[[0,0,1.64,0],[22,.12,1.61,0],[30,.10,1.58,.12],[42,0,1.42,.38],[46,-.02,1.40,.52],[54,-.05,1.40,.66]]);
+    positions.push(...hips.toArray());
+    const h=new Quaternion().fromArray(hipRotation.evaluate(t));
+    for(const side of ['Left','Right']) {
+      const foot=side==='Left'
+        ? trajectory(frame,[[0,-.386,.095,0],[22,-.30,1.05,.32],[30,-.30,.9,.42],[42,-.33,.095,1],[54,-.33,.095,1]])
+        : trajectory(frame,[[0,.386,.095,0],[46,.386,.095,0],[54,.32,.35,.08]]);
+      const upperBind=bind.get(side+'Leg')!,lowerBind=bind.get(side+'Foot')!;
+      const shoulder=bind.get(side+'UpLeg')!.clone().applyQuaternion(h).add(hips);
+      const delta=foot.clone().sub(shoulder),direction=delta.clone().normalize();
+      const l1=upperBind.length(),l2=lowerBind.length(),d=Math.min(delta.length(),l1+l2-1e-6);
+      const along=(l1*l1-l2*l2+d*d)/(2*d);
+      const bend=new Vector3(0,0,1).addScaledVector(direction,-direction.z).normalize();
+      const knee=shoulder.clone().addScaledVector(direction,along).addScaledVector(bend,Math.sqrt(Math.max(0,l1*l1-along*along)));
+      const upper=new Quaternion().setFromUnitVectors(upperBind.clone().normalize(),knee.clone().sub(shoulder).normalize());
+      const lower=new Quaternion().setFromUnitVectors(lowerBind.clone().normalize(),foot.clone().sub(knee).normalize());
+      rotations.get(side+'UpLeg')!.push(...h.clone().invert().multiply(upper).toArray());
+      rotations.get(side+'Leg')!.push(...upper.clone().invert().multiply(lower).toArray());
+      rotations.get(side+'Foot')!.push(...lower.clone().invert().toArray());
+    }
+  }
+  clip.tracks=clip.tracks.filter(t=>t.name!=='Hips.position'&&!rotations.has(t.name.split('.')[0]));
+  clip.tracks.push(new VectorKeyframeTrack('Hips.position',times,positions));
+  for(const [name,values] of rotations)clip.tracks.push(new QuaternionKeyframeTrack(name+'.quaternion',times,values));
+  // Re-apply the standard rigid ground solve after replacing the legs. SLERP
+  // between 30fps keys can dip slightly below an exact authored ankle plant.
+  const lift = -lowestOverClip(clip.tracks as (QuaternionKeyframeTrack | VectorKeyframeTrack)[], clip.duration*FPS);
+  const hipsTrack = clip.tracks.find(t=>t.name==='Hips.position')!;
+  for(let i=1;i<hipsTrack.values.length;i+=3)hipsTrack.values[i]+=lift;
+  return clip;
+}
+
 function overhandThrow(spec: ClipSpec): AnimationClip {
   const body: Pose = { hp:[0,-18,0],sp:[0,-12,0],hd:[0,30,0],
     la:[0,0,62],lf:[0,85,0], lu:[-8,0,0],ru:[8,0,0] };
@@ -1448,7 +1503,7 @@ function diff(a: Pose, b: Pose, k: number): Pose {
  * extension peak back on the authored marker frame. `catch_jump` keys it
  * directly for the same reason.
  */
-const CATCH_BASE_POSE: Pose = shift(FIELD_READY_POSE, {
+const CATCH_BASE_POSE: Pose = /* @__PURE__ */ shift(FIELD_READY_POSE, {
   la: [0, -30, 0],
   lf: [0, -20, 0],
   ra: [0, 30, 0],
@@ -1707,19 +1762,19 @@ const BUILDERS: Record<string, (spec: ClipSpec) => AnimationClip> = {
     ]);
   },
 
-  pitch_windup: (s) => build(s, [
+  pitch_windup: (s) => pitchFootwork(build(s, [
     {f:0,pose:PITCH_SET},
     {f:12,pose:{...PITCH_BALANCE,lu:[-65,0,-6],ll:[85,0,0]}},
     {f:22,pose:PITCH_BALANCE},
-    {f:s.frames-1,pose:PITCH_BALANCE},
-  ]),
-  pitch_stride: (s) => build(s, [
+    {f:s.frames,pose:PITCH_BALANCE},
+  ]),0),
+  pitch_stride: (s) => pitchFootwork(build(s, [
     {f:0,pose:PITCH_BALANCE},
     {f:6,pose:{...PITCH_COIL,lu:[-45,0,-8],ll:[65,0,0],
       ...throwingArm([.9,.15,-.3],[0,1,-.5],95)}},
-    {f:s.frames-1,pose:PITCH_COIL},
-  ]),
-  pitch_release: (s) => build(s,[
+    {f:s.frames,pose:PITCH_COIL},
+  ]),30),
+  pitch_release: (s) => pitchFootwork(build(s,[
     {f:0,pose:PITCH_COIL},
     {f:2,pose:{...PITCH_COIL,hp:[3,-8,0],sp:[0,-4,0],hd:[-3,12,0],
       ...throwingArm([.75,.55,-.2],[0,1,-.7],110)}},
@@ -1729,7 +1784,7 @@ const BUILDERS: Record<string, (spec: ClipSpec) => AnimationClip> = {
       ...throwingArm([.15,-.1,1],[0,-1,0],22)}},
     {f:s.frames-1,pose:{...PITCH_COIL,hp:[22,22,0],sp:[10,10,0],hd:[-28,-25,0],
       ru:[32,0,0],rl:[65,0,0],...throwingArm([.35,-.8,.4],[0,0,1],35)}},
-  ]),
+  ]),42),
 
   field_ready: (s) => breathe(s, FIELD_READY_POSE, 2.6),
   field_scoop: (s) =>
@@ -2120,7 +2175,7 @@ const TURBO_IDLE_POSE: Pose = {
   la: [4, 0, 64], lf: [0, -14, 0], ra: [4, 0, -64], rf: [0, 14, 0],
   lu: [6, 0, 0], ll: [-10, 0, 0], ru: [6, 0, 0], rl: [-10, 0, 0],
 };
-const TURBO_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
+const TURBO_STANCE_POSE: Pose = /* @__PURE__ */ shift(BAT_STANCE_POSE, {
   hp: [12, -6, 0], sp: [8, -4, 0], s2: [6, -6, 0], hd: [-4, 8, 0],
   lu: [6, 0, 2], ll: [-8, 0, 0], ru: [-4, 0, -2], rl: [6, 0, 0],
 });
@@ -2192,7 +2247,7 @@ const SPROUT_IDLE_POSE: Pose = {
   la: [-6, 0, 66], lf: [0, -26, 0], ra: [-6, 0, -66], rf: [0, 26, 0],
   lu: [8, 0, 4], ll: [-14, 0, 0], ru: [8, 0, -4], rl: [-14, 0, 0],
 };
-const SPROUT_POP_POSE: Pose = shift(SPROUT_IDLE_POSE, {
+const SPROUT_POP_POSE: Pose = /* @__PURE__ */ shift(SPROUT_IDLE_POSE, {
   hp: [-10, 0, 0], sp: [-12, 0, 0], s2: [-16, 0, 0], hd: [-6, 16, -6],
   la: [-34, 0, -6], ra: [-34, 0, 6], lu: [-8, 0, 0], ll: [8, 0, 0], ru: [-8, 0, 0], rl: [8, 0, 0],
 });
@@ -2311,7 +2366,7 @@ const ZIPPY_IDLE_POSE: Pose = {
   la: [10, 0, 64], lf: [0, -24, 0], ra: [10, 0, -64], rf: [0, 24, 0],
   lu: [4, 0, 2], ll: [-8, 0, 0], ru: [4, 0, -2], rl: [-8, 0, 0],
 };
-const ZIPPY_FIELD_POSE: Pose = shift(FIELD_READY_POSE, {
+const ZIPPY_FIELD_POSE: Pose = /* @__PURE__ */ shift(FIELD_READY_POSE, {
   hp: [-4, 0, 0], hd: [-4, 0, 0], lu: [6, 0, 0], ru: [6, 0, 0], ll: [-10, 0, 0], rl: [-10, 0, 0],
 });
 
@@ -2623,7 +2678,7 @@ const SMOKEY_IDLE_POSE: Pose = {
   la: [3, 0, 66], lf: [0, -22, 0], ra: [3, 0, -66], rf: [0, 22, 0],
   lu: [5, 0, 3], ll: [-10, 0, 0], ru: [3, 0, -3], rl: [-6, 0, 0],
 };
-const SMOKEY_CARD_POSE: Pose = shift(SMOKEY_IDLE_POSE, {
+const SMOKEY_CARD_POSE: Pose = /* @__PURE__ */ shift(SMOKEY_IDLE_POSE, {
   hp: [0, -10, 3], s2: [0, -6, 0], hd: [-2, 14, 0],
   la: [-6, 0, -4], lf: [0, -26, 0], ra: [-34, 0, 8], rf: [0, 62, 0],
   lu: [4, 0, 0], ll: [-6, 0, 0], ru: [-4, 0, 0], rl: [4, 0, 0],
@@ -2801,7 +2856,7 @@ const BUBBLES_IDLE_POSE: Pose = {
   la: [6, 0, 62], lf: [0, -28, 0], ra: [6, 0, -62], rf: [0, 28, 0],
   lu: [4, 0, 3], ll: [-8, 0, 0], ru: [4, 0, -3], rl: [-8, 0, 0],
 };
-const BUBBLES_CARD_POSE: Pose = shift(BUBBLES_IDLE_POSE, {
+const BUBBLES_CARD_POSE: Pose = /* @__PURE__ */ shift(BUBBLES_IDLE_POSE, {
   hp: [0, 14, -4], s2: [0, 10, 0], hd: [-4, -18, 6],
   la: [-20, 0, -8], lf: [0, -60, 0], ra: [-70, 0, 20], rf: [0, 40, 0],
   lu: [-4, 0, 0], ll: [6, 0, 0], ru: [6, 0, 0], rl: [-8, 0, 0],
@@ -2990,7 +3045,7 @@ const DIVA_IDLE_POSE: Pose = {
   la: [4, 0, 66], lf: [0, -22, 0], ra: [4, 0, -66], rf: [0, 22, 0],
   lu: [4, 0, 4], ll: [-8, 0, 0], ru: [2, 0, -2], rl: [-4, 0, 0],
 };
-const DIVA_CARD_POSE: Pose = shift(DIVA_IDLE_POSE, {
+const DIVA_CARD_POSE: Pose = /* @__PURE__ */ shift(DIVA_IDLE_POSE, {
   hp: [0, -22, 4], s2: [0, -10, 0], hd: [-4, 26, -4],
   la: [-8, 0, -6], lf: [0, -62, 0], ra: [-12, 0, 6], rf: [0, 44, 0],
   lu: [-2, 0, 2], ll: [4, 0, 0], ru: [6, 0, -2], rl: [-6, 0, 0],
@@ -3138,7 +3193,7 @@ const FLASH_IDLE_POSE: Pose = {
   la: [2, 0, 66], lf: [0, -22, 0], ra: [2, 0, -66], rf: [0, 22, 0],
   lu: [5, 0, 2], ll: [-9, 0, 0], ru: [5, 0, -2], rl: [-9, 0, 0],
 };
-const FLASH_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
+const FLASH_STANCE_POSE: Pose = /* @__PURE__ */ shift(BAT_STANCE_POSE, {
   hp: [8, -4, 0], sp: [5, -3, 0], s2: [4, -5, 0], hd: [-3, 6, 0],
   lu: [5, 0, 2], ll: [-6, 0, 0], ru: [-3, 0, -2], rl: [4, 0, 0],
 });
@@ -3308,7 +3363,7 @@ const PEACHES_IDLE_POSE: Pose = {
   la: [3, 0, 68], lf: [0, -18, 0], ra: [3, 0, -68], rf: [0, 18, 0],
   lu: [4, 0, 3], ll: [-8, 0, 0], ru: [4, 0, -3], rl: [-8, 0, 0],
 };
-const PEACHES_STANCE_POSE: Pose = shift(BAT_STANCE_POSE, {
+const PEACHES_STANCE_POSE: Pose = /* @__PURE__ */ shift(BAT_STANCE_POSE, {
   hp: [4, -3, 0], sp: [3, -3, 0], s2: [2, -5, 0], hd: [-2, 5, 0],
   lu: [4, 0, 1], ll: [-4, 0, 0], ru: [-2, 0, -1], rl: [3, 0, 0],
 });
@@ -3357,7 +3412,7 @@ const GIZMO_IDLE_POSE: Pose = {
   la: [-8, 0, 62], lf: [0, -40, 0], ra: [-8, 0, -62], rf: [0, 40, 0],
   lu: [4, 0, 2], ll: [-8, 0, 0], ru: [4, 0, -2], rl: [-8, 0, 0],
 };
-const GIZMO_CARD_POSE: Pose = shift(GIZMO_IDLE_POSE, {
+const GIZMO_CARD_POSE: Pose = /* @__PURE__ */ shift(GIZMO_IDLE_POSE, {
   hp: [0, -12, 2], s2: [0, -6, 0], hd: [-6, 14, -2],
   ra: [-62, 0, 10], rf: [0, 30, 0], rh: [0, 0, -70], la: [4, 0, 4], lf: [0, 6, 0],
   lu: [-2, 0, 0], ll: [4, 0, 0], ru: [4, 0, 0], rl: [-4, 0, 0],
@@ -3409,7 +3464,7 @@ const CLOVER_IDLE_POSE: Pose = {
   la: [2, 0, 68], lf: [0, -16, 0], ra: [2, 0, -68], rf: [0, 16, 0],
   lu: [3, 0, 3], ll: [-6, 0, 0], ru: [3, 0, -3], rl: [-6, 0, 0],
 };
-const CLOVER_CARD_POSE: Pose = shift(CLOVER_IDLE_POSE, {
+const CLOVER_CARD_POSE: Pose = /* @__PURE__ */ shift(CLOVER_IDLE_POSE, {
   hp: [0, 10, -2], s2: [0, 6, 0], hd: [-4, -12, 8],
   ra: [-10, 0, 6], rf: [0, 60, 0], la: [-6, 0, -4], lf: [0, -20, 0],
   lu: [2, 0, 0], ll: [-4, 0, 0], ru: [-2, 0, 0], rl: [2, 0, 0],
@@ -3569,7 +3624,7 @@ const BOOMER_IDLE_POSE: Pose = {
   la: [-6, 0, 60], lf: [0, -26, 0], ra: [-6, 0, -60], rf: [0, 26, 0],
   lu: [4, 0, 6], ll: [-8, 0, 0], ru: [4, 0, -6], rl: [-8, 0, 0],
 };
-const BOOMER_CARD_POSE: Pose = shift(BOOMER_IDLE_POSE, {
+const BOOMER_CARD_POSE: Pose = /* @__PURE__ */ shift(BOOMER_IDLE_POSE, {
   hp: [-4, -8, 0], s2: [-4, -4, 0], hd: [-8, 12, 0],
   la: [-90, 0, -50], lf: [0, -20, 0], ra: [-90, 0, 50], rf: [0, 20, 0],
   lu: [-4, 0, 6], ll: [6, 0, 0], ru: [-4, 0, -6], rl: [6, 0, 0],

@@ -65,4 +65,36 @@ describe('athletic motion',()=>{
     expect(f.at('RightHand').y).toBeLessThan(released.y-.7);
     f.done();
   });
+  it('keeps a support foot planted and lands the stride before release',()=>{
+    const f=fixture();
+    let rear:Vector3|undefined,front:Vector3|undefined;
+    for(const clip of ['pitch_windup','pitch_stride','pitch_release'] as const){
+      for(let frame=0;frame<=clipSpec(clip).frames;frame+=.25){
+        f.director.seek(clip,frame/FPS);
+        const left=f.at('LeftToeBase'),right=f.at('RightToeBase');
+        expect(Math.min(left.y,right.y),`${clip}:${frame} airborne`).toBeLessThan(.003);
+        if(clip!=='pitch_release'){
+          rear??=right.clone();
+          expect(right.distanceTo(rear),`${clip}:${frame} support foot slides`).toBeLessThan(.003);
+        }else{
+          front??=left.clone();
+          expect(left.distanceTo(front),`${clip}:${frame} front plant slides`).toBeLessThan(.003);
+        }
+      }
+    }
+    expect(front!.z-rear!.z).toBeGreaterThan(.8);
+    f.done();
+  });
+  it('joins the pitching clips without a hip or ankle jump',()=>{
+    const f=fixture();
+    for(const [before,after] of [['pitch_windup','pitch_stride'],['pitch_stride','pitch_release']] as const){
+      f.director.seek(before,clipSpec(before).frames/FPS);
+      const positions=['Hips','LeftFoot','RightFoot','RightHand'].map(n=>f.at(n));
+      f.director.seek(after,0);
+      for(const [i,name] of ['Hips','LeftFoot','RightFoot','RightHand'].entries())
+        expect(f.at(name).distanceTo(positions[i]),`${before} -> ${after} ${name}`).toBeLessThan(.003);
+    }
+    f.done();
+  });
+
 });
