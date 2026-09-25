@@ -47,6 +47,7 @@ import {
   faceForClip,
   fidgetEverySec,
   performancePhase,
+  battingReadyDepth,
   reactionClipFor,
   type PerformanceProfile,
 } from './performance';
@@ -63,6 +64,8 @@ export interface PlayOptions {
 }
 
 export interface DirectorOptions {
+  /** Pose identity also applies in review tools with facial acting disabled. */
+  characterId?: string;
   /** Shared clips from `anims_recess_v1.glb`. */
   clips?: AnimationClip[];
   /** Optional kid-specific takes. These win over shared clips, name by name. */
@@ -120,7 +123,8 @@ export class AnimationDirector {
   constructor(root: Object3D, opts: DirectorOptions = {}) {
     this.mixer = new AnimationMixer(root);
     this.handPose = new HandPose(root);
-    this.battingPose = new BattingPose(root, opts.actor?.id === 'wheelchair_ace');
+    const characterId = opts.characterId ?? opts.actor?.id;
+    this.battingPose = new BattingPose(root, characterId === 'wheelchair_ace', battingReadyDepth(characterId));
     this.actor = opts.actor;
     this.bat = opts.bat;
     this.glove = opts.glove;
@@ -194,6 +198,9 @@ export class AnimationDirector {
       return existing ?? null;
     }
 
+    const fade = (opts.fadeMs ?? spec.blendMs) / 1000;
+    if (fade === 0) this.battingPose.cancelExit();
+    else if (this.current && holdsBat(this.current) && !holdsBat(name)) this.battingPose.beginExit(fade);
     this.handPose.restore();
     this.battingPose.restore();
     const next = this.actionFor(name, clip, spec);
@@ -201,9 +208,13 @@ export class AnimationDirector {
     next.timeScale = opts.rate ?? (this.actor ? actingRateFor(this.actor.profile, name) : 1);
     next.enabled = true;
 
-    const fade = (opts.fadeMs ?? spec.blendMs) / 1000;
     const prev = this.current ? this.actions.get(this.current) : undefined;
-    if (prev && prev !== next && fade > 0) {
+    if (fade === 0) {
+      // A third action can interrupt an unfinished crossfade. Stopping only
+      // `prev` leaves the first outgoing action mixed into an immediate event.
+      for (const other of this.actions.values()) if (other !== next) other.stop();
+      next.stopFading().stopWarping().setEffectiveWeight(1);
+    } else if (prev && prev !== next && fade > 0) {
       next.crossFadeFrom(prev, fade, false);
     } else if (prev && prev !== next) {
       prev.stop();
@@ -310,6 +321,7 @@ export class AnimationDirector {
    * it out at 1x and the settle graph takes over as it always does.
    */
   seek(name: AnimName, timeSec: number): void {
+    this.battingPose.cancelExit();
     this.handPose.restore();
     this.battingPose.restore();
     if (this.current !== name) this.play(name, { fadeMs: 0, rate: 1, restart: true });
@@ -338,6 +350,7 @@ export class AnimationDirector {
     this.updatePresence(dtSec);
     if (this.current) this.handPose.constrainArms(this.current);
     if (this.current && holdsBat(this.current)) this.battingPose.apply(this.current, this.action?.time ?? 0);
+    else this.battingPose.fadeOut(dtSec);
     if (this.current) this.handPose.apply(this.current,dtSec,this.action?.time ?? 0);
   }
 

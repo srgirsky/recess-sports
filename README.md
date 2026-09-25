@@ -646,6 +646,10 @@ the report output directory. Media remain linked to their receipt paths, so
 share the report together with its media. The board lists uncaptured targets,
 shows the existing character work by sweep, and allows motion scrubbing.
 For live comparison, run `npm run dev` and use the same seeded review URL.
+For a deployed animation review, open
+`/v2/?anims=1&kid=<roster-id>&facecam=1&release=<deployed-commit>`.
+The release value also versions model and animation requests, avoiding an older
+cached rig after a deployment. The character-name button cycles the roster.
 
 ## Building & deploying (free)
 

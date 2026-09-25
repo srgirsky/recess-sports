@@ -28,6 +28,7 @@ import bpy
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from sculptlib.arm import ArmSpec, HandSpec, build_arm
+from sculptlib.reference_hands import migrate as migrate_reference_hands
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
 from sculptlib.ear import EarSpec, build_ear
@@ -735,6 +736,16 @@ def build_lod(name: str, armature: bpy.types.Object, segments: int, rings: int, 
     return obj
 
 
+# not-traceable: cartoon gripping proportions fitted to the canonical hand
+# joints; Turbo keeps the narrow digit widths of his existing hand.
+REFERENCE_HAND_SHAPE = {
+    'finger_offsets': (-.024,.026,.076),
+    'finger_lengths': (.16,.17,.15),
+    'finger_widths': (.027,.026,.024,.016),
+    'thumb_widths': (.032,.035,.028,.016),
+}
+
+
 def main() -> None:
     armatures = [obj for obj in bpy.context.scene.objects if obj.type == "ARMATURE"]
     if len(armatures) != 1:
@@ -753,6 +764,8 @@ def main() -> None:
         "kid_turbo_LOD2": (5, 3, 0),
     }
     built = [build_lod(name, armature, *config) for name, config in settings.items()]
+
+    migrate_reference_hands(shape=REFERENCE_HAND_SHAPE, underlayer_clearance=False, fresh_meshes=True)
 
     for material_name in SLOTS:
         material = bpy.data.materials[material_name]

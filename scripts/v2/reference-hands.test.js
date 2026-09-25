@@ -6,6 +6,31 @@ import { describe, it, expect } from 'vitest';
 import { readGlb, readAccessor } from './glb.mjs';
 import { checkSkeleton, makeReport } from './modelRules.mjs';
 import * as spec from '../../src/v2/render/skeleton';
+import { ROSTER } from '../../src/data/characters';
+
+// Theo's construction gate once certified the reference while 29 delivered
+// characters still lacked the joints which activate HandPose/BattingPose.
+// Enumerate ROSTER, not a migration allowlist: every shipped kid must receive
+// the behavior. This is a prerequisite, not visual approval of the motion.
+const referenceNames = ['Left','Right'].flatMap(side =>
+  ['Middle1','Ring1','Index2','Curl2'].map(digit => side+'Hand'+digit));
+const missingReferenceJoints = glb => {
+  const names = glb.json.skins[0].joints.map(i=>glb.json.nodes[i].name);
+  return referenceNames.filter(name=>!names.includes(name));
+};
+
+describe('every delivered character receives the reference hand behavior',()=>{
+  for(const {id} of ROSTER)it(`${id} ships the complete reference rig`,()=>{
+    const glb=readGlb(`public/v2/models/kid_${id}.glb`);
+    expect(missingReferenceJoints(glb),'Rebuild the source with the reference-hand migration, then export it').toEqual([]);
+    expect(glb.json.skins[0].joints.length).toBeLessThanOrEqual(spec.MAX_BONES);
+  });
+  it('rejects an old rig even when its canonical skeleton is valid',()=>{
+    const glb=readGlb('public/v2/models/kid_calls_shot.glb');
+    glb.json.skins[0].joints=glb.json.skins[0].joints.filter(i=>!referenceNames.includes(glb.json.nodes[i].name));
+    expect(missingReferenceJoints(glb)).toEqual(referenceNames);
+  });
+});
 const path='public/v2/models/kid_calls_shot.glb';
 describe('Theo reference hands',()=>{
   it('faces fingertip caps outward instead of exposing the dark outline hull',()=>{
@@ -26,8 +51,28 @@ describe('Theo reference hands',()=>{
     }
     expect(caps).toBeGreaterThanOrEqual(30);
   });
-  it('ships separate fingers with volume and blended roots on both hands',()=>{
-    const g=readGlb(path), names=g.json.skins[0].joints.map(i=>g.json.nodes[i].name);
+  it('keeps the 42-bone cap even when all optional names are legal',()=>{
+    const g=readGlb(path);
+    for(const name of spec.OPTIONAL_BONES.filter(n=>n.startsWith('Hair_')||n.startsWith('Accessory_'))){
+      const i=g.json.nodes.length;g.json.nodes.push({name,translation:[0,0,0]});g.json.skins[0].joints.push(i);
+    }
+    const report=makeReport();checkSkeleton(g,spec,report);
+    expect(report.items.some(i=>i.rule==='bones.max'&&i.severity==='fail')).toBe(true);
+  });
+  it('rejects a distal joint parented to the wrist instead of its finger',()=>{
+    const g=readGlb(path),nodes=g.json.nodes;
+    const tip=nodes.findIndex(n=>n.name==='RightHandIndex2');
+    for(const n of nodes)if(n.children)n.children=n.children.filter(i=>i!==tip);
+    nodes.find(n=>n.name==='RightHand').children.push(tip);
+    const report=makeReport();checkSkeleton(g,spec,report);
+    expect(report.items.some(i=>i.rule==='bones.fingerParent'&&i.severity==='fail')).toBe(true);
+  });
+});
+
+// Bone names alone cannot prove that vertices use the new joints.
+describe('every delivered hand articulates real geometry',()=>{
+for(const {id} of ROSTER)it(`${id} ships fingers with volume and blended roots`,()=>{
+    const g=readGlb(`public/v2/models/kid_${id}.glb`), names=g.json.skins[0].joints.map(i=>g.json.nodes[i].name);
     for(const side of ['Left','Right'])for(const digit of ['Index1','Middle1','Ring1']){
       const points=[],roots=[];
       for(const m of g.json.meshes.filter(m=>m.name?.includes('LOD0')))for(const prim of m.primitives){
@@ -46,21 +91,5 @@ describe('Theo reference hands',()=>{
       expect(span(1),side+digit+' collapsed thickness').toBeGreaterThan(.025);
       expect(span(2),side+digit+' collapsed width').toBeGreaterThan(.025);
     }
-  });
-  it('keeps the 42-bone cap even when all optional names are legal',()=>{
-    const g=readGlb(path);
-    for(const name of spec.OPTIONAL_BONES.filter(n=>n.startsWith('Hair_')||n.startsWith('Accessory_'))){
-      const i=g.json.nodes.length;g.json.nodes.push({name,translation:[0,0,0]});g.json.skins[0].joints.push(i);
-    }
-    const report=makeReport();checkSkeleton(g,spec,report);
-    expect(report.items.some(i=>i.rule==='bones.max'&&i.severity==='fail')).toBe(true);
-  });
-  it('rejects a distal joint parented to the wrist instead of its finger',()=>{
-    const g=readGlb(path),nodes=g.json.nodes;
-    const tip=nodes.findIndex(n=>n.name==='RightHandIndex2');
-    for(const n of nodes)if(n.children)n.children=n.children.filter(i=>i!==tip);
-    nodes.find(n=>n.name==='RightHand').children.push(tip);
-    const report=makeReport();checkSkeleton(g,spec,report);
-    expect(report.items.some(i=>i.rule==='bones.fingerParent'&&i.severity==='fail')).toBe(true);
   });
 });

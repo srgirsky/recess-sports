@@ -161,9 +161,10 @@ These are **six-to-eight-year-olds at recess**, not professional athletes.
 - **Everything is slightly too much effort.** A throw is a whole-body event. A
   swing nearly spins them around.
 - **Readable at 40 px tall.** The wide camera draws a character about 5% of
-  screen height. Silhouette and limb extension carry everything; wrist and
-  finger detail is invisible and not worth your time. **Check every clip
-  thumbnail-sized before delivering.**
+  screen height. Silhouette and limb extension carry the action there. Draft
+  cards and close review cameras also expose wrists, finger articulation and
+  bat grips: check both scales. **Check every clip thumbnail-sized before
+  delivering, then inspect grip and joint deformation close up.**
 - **No mocap feel.** Hand-keyed, snappy, posed. Cartoon spacing: fast in, hold,
   fast out.
 - **Loops must be seamless** and hold up at 0.6×–1.4× playback, because a kid

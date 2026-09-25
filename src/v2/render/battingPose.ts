@@ -42,13 +42,54 @@ export class BattingPose {
   private original = new Map<Object3D, Quaternion>();
   private positions = new Map<Object3D, Vector3>();
   private rig: Object3D | undefined;
+  private displayedRotations = new Map<Object3D, Quaternion>();
+  private displayedPositions = new Map<Object3D, Vector3>();
+  private exiting: { duration: number; elapsed: number } | null = null;
+
+  beginExit(duration: number): void {
+    this.exiting = duration > 0 && this.displayedRotations.size ? { duration, elapsed: 0 } : null;
+  }
+
+  cancelExit(): void { this.exiting = null; }
+
+  /** Fade the last constrained pose into the live clip, not into its old
+   * unconstrained take. Otherwise the post-mixer torso correction vanishes
+   * in one frame even while the AnimationMixer is correctly crossfading. */
+  fadeOut(dt: number): void {
+    if (!this.exiting) return;
+    this.exiting.elapsed += Math.max(0, dt);
+    const t = smooth(this.exiting.elapsed / this.exiting.duration);
+    for (const [bone, from] of this.displayedRotations) {
+      this.original.set(bone, bone.quaternion.clone());
+      const target = bone.quaternion.clone();
+      const sign = bone.name.startsWith('Right') ? 1 : -1;
+      // Releasing a cross-body grip directly toward a lowered idle arm
+      // sweeps through the shirt. Travel through an outboard release pose.
+      const clearance = /^(Left|Right)Arm$/.test(bone.name)
+        ? new Quaternion().setFromAxisAngle(Z, -sign * .55)
+        : /^(Left|Right)ForeArm$/.test(bone.name)
+          ? new Quaternion().setFromAxisAngle(Y, -sign * .4) : null;
+      bone.quaternion.copy(clearance
+        ? t < .5 ? from.clone().slerp(clearance, smooth(t*2))
+          : clearance.slerp(target, smooth(t*2-1))
+        : from.clone().slerp(target, t));
+    }
+    for (const [bone, from] of this.displayedPositions) {
+      this.positions.set(bone, bone.position.clone());
+      bone.position.copy(from.clone().lerp(bone.position, t));
+    }
+    if (t >= 1) this.exiting = null;
+  }
+
   contact: Vector3 | null = null;
 
   private readonly seated: boolean;
   private readyWeight = 0;
+  private readonly stanceGrip: Vector3;
 
-  constructor(mesh: Object3D, seated = false) {
+  constructor(mesh: Object3D, seated = false, readyDepth = STANCE_GRIP.z) {
     this.seated = seated;
+    this.stanceGrip = STANCE_GRIP.clone().setZ(readyDepth);
     for (const bone of (mesh as SkinnedMesh).skeleton?.bones ?? []) this.bones.set(bone.name, bone);
     this.rig = this.bones.get('Root');
   }
@@ -215,6 +256,7 @@ export class BattingPose {
   }
 
   apply(name: AnimName, time: number): void {
+    this.cancelExit();
     if (!this.rig || !this.bones.has('LeftHand') || !this.bones.has('RightHand')) return;
     this.rig.updateWorldMatrix(true, true);
     const spine = this.bones.get('Spine2')!;
@@ -228,6 +270,15 @@ export class BattingPose {
       : name === 'swing_follow' ? smooth((time/FOLLOW_SEC-.7)/.3)
       : name === 'bunt' ? 1-bunt : 1;
     const desiredHeading = (-20 - 140 * sweep - 55 * bunt + 35*this.readyWeight) * Math.PI / 180;
+    // The old actor clips include large torso rolls. A grip solved against
+    // those shoulders can be reachable yet require a folded wrist. Establish
+    // an upright batting frame before solving reach; the swing supplies yaw.
+    if (referenceHands) {
+      for (const name of ['Hips', 'Spine', 'Spine1', 'Spine2']) {
+        const bone = this.bones.get(name)!;
+        this.set(bone, new Quaternion());
+      }
+    }
     const chestForward = Z.clone().applyQuaternion(this.rotation(spine));
     const correction = desiredHeading - Math.atan2(chestForward.x, chestForward.z);
     this.set(hips, new Quaternion().setFromAxisAngle(Y, correction).multiply(this.rotation(hips)));
@@ -265,7 +316,7 @@ export class BattingPose {
       if (referenceHands) {
         // Receive the pitch with a quiet bat across the chest. The top hand
         // travels up the taper; the bottom hand stays near the knob.
-        grip.copy(STANCE_GRIP).lerp(new Vector3(-.5, 2.12, -.33), bunt);
+        grip.copy(this.stanceGrip).lerp(new Vector3(-.5, 2.12, -.33), bunt);
         // Clear the shoulder first, then bring the bat into the receiving pose.
         grip.z += (.4 + .25*(1-bunt)**4)*Math.sin(Math.PI*bunt);
         axis.copy(STANCE_AXIS).lerp(new Vector3(0,.18,1).normalize(), smooth(bunt+.1*Math.sin(Math.PI*bunt))).normalize();
@@ -284,7 +335,10 @@ export class BattingPose {
     // below it. Blend out before contact so the established swing/bunt grip
     // paths retain their clearances, then return along the same approach.
     if (name !== 'bunt') {
-      grip.lerp(STANCE_GRIP,this.readyWeight);
+      grip.lerp(this.stanceGrip,this.readyWeight);
+      // Pass in front of long hair while lowering and recovering the bat.
+      // The arc vanishes at ready and contact, preserving both endpoints.
+      if (referenceHands) grip.z += .15 * Math.sin(Math.PI*this.readyWeight);
       axis.lerp(STANCE_AXIS,this.readyWeight).normalize();
     }
     // Plant the batting feet while the pelvis turns; lower/shift the body
@@ -393,5 +447,7 @@ export class BattingPose {
     const head = this.bones.get('Head');
     if (head) this.set(head, new Quaternion().setFromAxisAngle(Y, -Math.PI / 2));
     this.rig.updateWorldMatrix(true, true);
+    this.displayedRotations = new Map([...this.original.keys()].map(b => [b, b.quaternion.clone()]));
+    this.displayedPositions = new Map([...this.positions.keys()].map(b => [b, b.position.clone()]));
   }
 }

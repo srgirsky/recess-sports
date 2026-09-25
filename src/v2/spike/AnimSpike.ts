@@ -173,6 +173,7 @@ export class AnimSpike {
     this.scene.add(kid.root);
 
     this.director = new AnimationDirector(kid.mesh, {
+      characterId: ROSTER[this.kidIndex % ROSTER.length].id,
       clips: this.deliveredClips,
       performanceClips: this.performanceClips,
       fallback: buildProceduralClips(),

@@ -23,6 +23,13 @@ export type HeroStance = 'swagger' | 'batter' | 'glove' | 'bashful';
 export type Spirit = 'sunny' | 'cool' | 'fierce' | 'goofy' | 'tender';
 export type Tempo = 'calm' | 'steady' | 'quick';
 
+/** These long-haired kids hold the ready bat ahead of their rear hair volume. This moves the
+ * preparation only; the shared contact point still owns the actual swing. */
+export function battingReadyDepth(id?: string): number {
+  if (id === 'clover') return .75;
+  return id === 'zippy' || id === 'penny' || id === 'bubbles' ? .72 : .6;
+}
+
 export interface PerformanceProfile {
   hero: HeroStance;
   spirit: Spirit;

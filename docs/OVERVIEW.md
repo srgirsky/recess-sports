@@ -3085,3 +3085,42 @@ pitch speed or release instant. Regression checks cover foot plants, clip joins,
 ready elbow clearance and grip continuity. Delivered-model frame sweeps and
 multi-angle close-ups complement those checks; they do not certify anatomical
 perfection or whole-game art parity.
+
+### Roster hand-rig migration
+
+The roster comparison exposed a delivery gap: Theo alone had the reference
+finger joints. Updating shared animation code therefore left the other models
+on their older hands. The migration moves that construction into
+`sculptlib/reference_hands.py`, called by each character's own source builder
+with explicit finger dimensions. Bodies, faces, clothing and identity remain
+authored per character; rebuilding the whole cast from one template would lose
+the distinctions the game depends on. Junebug retains four visible fingers,
+with the last two sharing a curl hinge within the skeleton budget.
+
+The rollout pairs each rebuilt source and exported model with fresh runtime
+captures, measurements, multi-angle motion review and an independent critique.
+The reference-hand gate now enumerates the roster so a lone upgraded model
+cannot stand in for all thirty. Technical grip checks remain distinct from
+visual approval, and existing sculpt findings stay in the fidelity ledger.
+
+The wider-body pilot also exposed large authored torso rolls and absolute arm
+angles accidentally added to an existing idle pose. Batting now establishes
+an upright shoulder frame before solving the grip; Lou's draft, fidget and
+upset poses keep the arms outboard. Leaving a constrained batting pose blends
+through an outboard release waypoint instead of dropping the correction in
+one frame. Zippy, Penny, Bubbles and Clover hold their ready handles farther
+forward to clear their hair. The bat approaches and leaves that stance along
+a forward arc, which also clears Bubbles' hair during the transition. Neither
+change moves the swing's contact point. These changes affect rendering only.
+
+Character pose identity is passed separately from facial acting. The animation
+review tool had omitted the actor so expression controls stayed manual, which
+also omitted seated and hair-clearance adjustments. It now receives the same
+pose identity as gameplay while retaining manual expression control.
+
+This migration is not whole-character art approval. The independent reviews
+retain clothing intersections, face and silhouette defects in the fidelity
+ledger. Contact forearm clearance and the raised knob-side bunt elbow also
+remain open: a contact solver that looked acceptable on Theo failed on other
+body shapes, so it was not included. Further pose changes must pass the roster
+review as well as the mechanical sweep before replacing the shared motion.

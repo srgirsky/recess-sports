@@ -17,6 +17,15 @@ describe('v2 public asset URLs', () => {
       .toBe('https://host.test/recess-sports/v2/audio/bat-crack.wav');
   });
 
+  it.each(['https://host.test/recess-sports/', 'https://host.test/recess-sports/v2/'])('refreshes model deliveries for a release review from %s', page => {
+    for (const file of ['kid_zippy.glb', 'anims_big_lou_v1.glb', 'manifest.json']) {
+      expect(assetUrlForPage(`models/${file}`, `${page}?anims=1&release=review123`))
+        .toBe(`https://host.test/recess-sports/v2/models/${file}?release=review123`);
+    }
+    expect(assetUrlForPage('decoders/draco/', `${page}?release=review123`))
+      .toBe('https://host.test/recess-sports/v2/decoders/draco/');
+  });
+
   it.each(['https://host.test/recess-sports/', 'https://host.test/recess-sports/v2/'])('reaches Classic from %s', page => {
     expect(assetUrlForPage('../classic/', page)).toBe('https://host.test/recess-sports/classic/');
   });

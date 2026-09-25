@@ -25,6 +25,7 @@ from mathutils import Vector
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from sculptlib.atlas import install_face_atlas
+from sculptlib.reference_hands import migrate as migrate_reference_hands
 from sculptlib.ear import EarSpec, build_ear
 from sculptlib.head import HeadSpec, head_surface
 from sculptlib.color import rebuild_palette_material, rgba, srgb_to_linear
@@ -2371,6 +2372,16 @@ def build_lod(name: str, armature: bpy.types.Object, segments: int, rings: int, 
     return obj
 
 
+# not-traceable: authored palms-down articulation preserving the four
+# measured finger lengths above; the little finger shares the ring hinge.
+REFERENCE_HAND_SHAPE = dict(
+    finger_offsets=(-.024, .026, .076, .126),
+    finger_lengths=(.222, .262, .248, .202),
+    finger_widths=(.027, .026, .021, .010),
+    thumb_widths=(.033, .035, .028, .016),
+)
+
+
 def main() -> None:
     armatures = [obj for obj in bpy.context.scene.objects if obj.type == "ARMATURE"]
     if len(armatures) != 1:
@@ -2388,6 +2399,7 @@ def main() -> None:
         "kid_nostrike_LOD2": (5, 3, 0),
     }
     built = [build_lod(name, armature, *config) for name, config in settings.items()]
+    migrate_reference_hands(shape=REFERENCE_HAND_SHAPE, underlayer_clearance=False, fresh_meshes=True)
 
     for material_name in SLOTS:
         material = bpy.data.materials[material_name]

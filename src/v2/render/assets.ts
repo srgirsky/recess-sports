@@ -45,7 +45,13 @@ export function assetUrl(path: string): string {
 export function assetUrlForPage(path: string, pageBase: string): string {
   const pageDir = new URL('.', pageBase);
   const assetPath = pageDir.pathname.endsWith('/v2/') ? path : `v2/${path}`;
-  return new URL(assetPath, pageDir).href;
+  const url = new URL(assetPath, pageDir);
+  // Review links name the release, but public GLBs have stable filenames.
+  // Carry that revision to model requests so a fresh page cannot reuse an
+  // older cached rig. Decoder directory URLs must remain plain directories.
+  const release = new URL(pageBase).searchParams.get('release');
+  if (release && path.startsWith('models/') && !path.endsWith('/')) url.searchParams.set('release', release);
+  return url.href;
 }
 
 /** `kid_<id>.glb` — the per-character file named in the asset contract §4. */

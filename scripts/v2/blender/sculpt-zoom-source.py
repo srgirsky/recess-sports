@@ -28,6 +28,7 @@ import bpy
 # sys.path, so the package beside this file is unimportable without this.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from sculptlib.reference_hands import migrate as migrate_reference_hands
 from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
@@ -602,6 +603,15 @@ def build_lod(name: str, armature: bpy.types.Object, segments: int, rings: int, 
     return obj
 
 
+# not-traceable: canonical authored grip reach with Zoom's compact finger pads.
+REFERENCE_HAND_SHAPE = dict(
+    finger_offsets=(-.024, .028, .080),
+    finger_lengths=(.16, .17, .15),
+    finger_widths=(.028, .027, .024, .017),
+    thumb_widths=(.032, .035, .028, .017),
+)
+
+
 def main() -> None:
     armatures = [obj for obj in bpy.context.scene.objects if obj.type == "ARMATURE"]
     if len(armatures) != 1:
@@ -620,6 +630,7 @@ def main() -> None:
         "kid_wheelchair_ace_LOD2": (5, 3, 0),
     }
     built = [build_lod(name, armature, *config) for name, config in settings.items()]
+    migrate_reference_hands(shape=REFERENCE_HAND_SHAPE, underlayer_clearance=False, fresh_meshes=True)
 
     for material_name in SLOTS:
         material = bpy.data.materials[material_name]

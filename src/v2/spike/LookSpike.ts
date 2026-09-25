@@ -182,6 +182,7 @@ export class LookSpike {
     const animate = (kid: KidView, character: (typeof ROSTER)[number], clip: AnimName, offset: number): void => {
       const requestedFace = new URLSearchParams(location.search).get('face');
       const dir = new AnimationDirector(kid.mesh, {
+        characterId: character.id,
         fallback: this.clipLibrary,
         bat: attachBatProp(kid) ?? undefined,
         actor: requestedFace ? undefined : {
