@@ -1124,19 +1124,21 @@ function louSwingFollow(spec: ClipSpec): AnimationClip {
 }
 
 function louPoseCard(spec: ClipSpec): AnimationClip {
-  const hero = shift(LOU_IDLE_POSE, {
-    hp: [-5, -8, 0], sp: [-4, -7, 0], s2: [-7, -10, 0], hd: [-4, 14, 3],
-    la: [-38, 0, 47], lf: [0, -68, 0], ra: [-104, 0, -25], rf: [0, 80, 0],
-    lu: [3, 0, 4], ll: [-5, 0, 0], ru: [-2, 0, -4], rl: [4, 0, 0],
-  });
+  const hero: Pose = {
+    ...shift(LOU_IDLE_POSE, {
+      hp: [-5, -8, 0], sp: [-4, -7, 0], s2: [-7, -10, 0], hd: [-4, 14, 3],
+      lu: [3, 0, 4], ll: [-5, 0, 0], ru: [-2, 0, -4], rl: [4, 0, 0],
+    }),
+    la: [0, 0, 50], lf: [0, 55, 0], ra: [-90, 0, -35], rf: [0, -85, 0],
+  };
   return build(spec, [{ f: 0, pose: hero }, { f: 1, pose: hero }]);
 }
 
 function louIdleFidget(spec: ClipSpec): AnimationClip {
-  const squareShirt = shift(LOU_IDLE_POSE, {
-    hp: [7, 0, 0], sp: [4, 0, 0], hd: [8, -12, 3],
-    la: [-72, 0, 34], lf: [0, -68, 0], ra: [-72, 0, -34], rf: [0, 68, 0],
-  });
+  const squareShirt: Pose = {
+    ...shift(LOU_IDLE_POSE, { hp: [7, 0, 0], sp: [4, 0, 0], hd: [8, -12, 3] }),
+    la: [-60, 0, 35], lf: [0, 60, 0], ra: [-60, 0, -35], rf: [0, -60, 0],
+  };
   return build(spec, [
     { f: 0, pose: LOU_IDLE_POSE },
     { f: 12, pose: squareShirt },
@@ -1167,15 +1169,21 @@ function louCheerGoofy(spec: ClipSpec): AnimationClip {
 }
 
 function louUpsetGoofy(spec: ClipSpec): AnimationClip {
-  const where = shift(LOU_IDLE_POSE, {
-    hp: [12, 0, 0], sp: [9, 0, 0], hd: [-18, 0, 0],
-    la: [-45, 0, 57], lf: [0, -45, 0], ra: [-45, 0, -57], rf: [0, 45, 0],
-  });
+  // These are absolute arm angles. Adding them to his 67-degree idle
+  // shoulders buries both forearms in his shirt during the shrug and slump.
+  const where: Pose = {
+    ...shift(LOU_IDLE_POSE, { hp: [12, 0, 0], sp: [9, 0, 0], hd: [-18, 0, 0] }),
+    la: [0, 0, 35], lf: [0, 65, 0], ra: [0, 0, -35], rf: [0, -65, 0],
+  };
+  const slump: Pose = {
+    ...shift(LOU_IDLE_POSE, { hp: [15, 0, 0], sp: [11, 0, 0], hd: [20, 0, 0] }),
+    la: [0, 0, 60], lf: [0, 20, 0], ra: [0, 0, -60], rf: [0, -20, 0],
+  };
   return build(spec, [
     { f: 0, pose: LOU_IDLE_POSE },
     { f: 8, pose: where },
-    { f: 16, pose: shift(where, { hd: [4, -28, 7], hp: [3, 0, 0], la: [12, 0, -10], ra: [12, 0, 10] }) },
-    { f: 25, pose: shift(LOU_IDLE_POSE, { hp: [15, 0, 0], sp: [11, 0, 0], hd: [20, 0, 0], la: [-8, 0, 74], ra: [-8, 0, -74] }) },
+    { f: 16, pose: shift(where, { hd: [4, -28, 7], hp: [3, 0, 0], la: [0, 0, -10], ra: [0, 0, 10] }) },
+    { f: 25, pose: slump },
     { f: 36, pose: shift(LOU_IDLE_POSE, { hd: [-2, -9, 2] }) },
     { f: spec.frames - 1, pose: LOU_IDLE_POSE },
   ]);

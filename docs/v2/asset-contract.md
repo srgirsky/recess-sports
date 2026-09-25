@@ -74,7 +74,10 @@ These are alternatives: **hard cap: 42 bones total per delivered skin**,
 including all 33 mandatory bones. Roots parent to their matching Hand; Index2
 parents to Index1 and Curl2 to Middle1. Curl2 bends the middle/ring tips together;
 their root rotations must agree. Pivots match the authored knuckles.
-Existing models need not add them.
+The shipped roster includes all eight secondary hand bones (41 total joints).
+`reference-hands.test.js` checks every roster delivery and verifies that finger
+vertices actually use them. The canonical skeleton and temporary proxies can
+still omit these secondary joints; their presence alone is not visual approval.
 
 Bone names are Mixamo-style so off-the-shelf retargeting tools work.
 

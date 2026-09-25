@@ -43,6 +43,7 @@ import bpy
 # sys.path, so the package beside this file is unimportable without this.
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from sculptlib.reference_hands import migrate as migrate_reference_hands
 from sculptlib.arm import ArmSpec, HandSpec, build_arm
 from sculptlib.atlas import install_face_atlas
 from sculptlib.color import ensure_material_slots, rebuild_palette_material, rgba, srgb_to_linear
@@ -963,6 +964,16 @@ def build_lod(name: str, armature: bpy.types.Object, segments: int, rings: int, 
     return obj
 
 
+# not-traceable: authored canonical grip reach, retaining this character's
+# finger-pad girth; separate knuckles put the digits in the palm plane.
+REFERENCE_HAND_SHAPE = dict(
+    finger_offsets=(-0.024, 0.064, 0.152),
+    finger_lengths=(0.16, 0.172, 0.155),
+    finger_widths=(0.046, 0.044, 0.036, 0.016),
+    thumb_widths=(0.046, 0.044, 0.036, 0.016),
+)
+
+
 def main() -> None:
     armatures = [obj for obj in bpy.context.scene.objects if obj.type == "ARMATURE"]
     if len(armatures) != 1:
@@ -981,6 +992,7 @@ def main() -> None:
         "kid_grizz_LOD2": (5, 3, 0),
     }
     built = [build_lod(name, armature, *config) for name, config in settings.items()]
+    migrate_reference_hands(shape=REFERENCE_HAND_SHAPE, underlayer_clearance=False, fresh_meshes=True)
 
     for material_name in SLOTS:
         material = bpy.data.materials[material_name]

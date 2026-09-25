@@ -118,8 +118,10 @@ try {
  data.sourceHash=hash;data.capturedAt=new Date().toISOString();
  if(errors.length)throw Error(errors.join('\n'));
  writeFileSync(`${out}/probe.json`,JSON.stringify(data,null,2));
+ // All thirty reference rigs produce more values than a JS argument list can hold.
+ const max=values=>values.reduce((largest,value)=>Math.max(largest,value),0);
  const bad=data.results.filter(r=>r.headTowardPitcher<0||r.supportHandGapFt>.02||r.palmGapFt>.02||r.contactGapFt>.1||r.wristBendsDeg.some(bend=>bend>40)||r.wristTwistsDeg.some(twist=>twist>25)||r.armStepsDeg.some(step=>step>25));
  const intersections=data.results.filter(r=>r.shaftHits>0);
- console.log(JSON.stringify({samples:data.results.length,mechanicalFailures:bad.length,shaftIntersectionCandidates:intersections.length,affected:[...new Set(intersections.map(r=>r.id))],maxArmStepDeg:Math.max(...data.results.flatMap(r=>r.armStepsDeg)),maxWristTwistDeg:Math.max(...data.results.flatMap(r=>r.wristTwistsDeg)),maxWristBendDeg:Math.max(...data.results.flatMap(r=>r.wristBendsDeg)),maxPalmGapFt:Math.max(...data.results.map(r=>r.palmGapFt)),failures:bad.slice(0,20)},null,2));
+ console.log(JSON.stringify({samples:data.results.length,mechanicalFailures:bad.length,shaftIntersectionCandidates:intersections.length,affected:[...new Set(intersections.map(r=>r.id))],maxArmStepDeg:max(data.results.flatMap(r=>r.armStepsDeg)),maxWristTwistDeg:max(data.results.flatMap(r=>r.wristTwistsDeg)),maxWristBendDeg:max(data.results.flatMap(r=>r.wristBendsDeg)),maxPalmGapFt:max(data.results.map(r=>r.palmGapFt)),failures:bad.slice(0,20)},null,2));
  if(process.argv.includes('--check')&&(bad.length||intersections.length))process.exitCode=1;
 }finally{await browser?.close();server.kill();}

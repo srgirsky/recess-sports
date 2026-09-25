@@ -85,7 +85,7 @@
       },
       "animation": {
         "take": "anims_big_lou_v1.glb",
-        "takeSha256": "3e0f1daa2f07afcfb276967b4415bf3c045d620dadcbe248068ea74ca7c0c95c",
+        "takeSha256": "42a899adc957e1329d8f2a05231521a21cf309455a2d8f60a2a5739feec52b24",
         "builder": "buildBigLouPilotClips",
         "generator": "recess-sports Big Lou authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",

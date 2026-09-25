@@ -45,6 +45,7 @@ import { describe, expect, it } from 'vitest';
 import { readAccessor, readGlb } from './glb.mjs';
 import { AUTHORED_CHARACTERS } from './export-authored-character.mjs';
 import { ROSTER } from '../../src/data/characters.ts';
+import { SKELETON } from '../../src/v2/render/skeleton.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, '..', '..');
@@ -89,6 +90,13 @@ function sha(path) {
 // and ranks 28 for that reason, which is a prop, not a misbinding.
 // ---------------------------------------------------------------------------
 const MAX_BONE_RANK = 12;
+// Rank against the canonical landmarks used to establish the limit. Adding
+// secondary finger hinges must not change the binding verdict for unchanged
+// hair: Zippy's Head-weighted pigtail went from rank 9 to 13 solely because
+// four new finger bones occupied the same nearby hand. Every vertex, including
+// one driven by a secondary hinge, is still tested against these landmarks.
+// The mirrored-arm mutation below verifies that the original failure is caught.
+const BINDING_LANDMARKS = new Set(SKELETON.map(bone => bone.name));
 
 function boneRestPositions(gltf) {
   const world = new Map();
@@ -130,7 +138,10 @@ function worstDominantBoneRank(gltf) {
         const distance = (q) => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
         const mine = distance(points[best]);
         let rank = 0;
-        for (let i = 0; i < points.length; i++) if (points[i] && distance(points[i]) < mine) rank++;
+        for (let i = 0; i < points.length; i++) {
+          if (BINDING_LANDMARKS.has(gltf.json.nodes[skin.joints[i]].name)
+            && points[i] && distance(points[i]) < mine) rank++;
+        }
         if (rank > worst) { worst = rank; bone = name; }
       }
     }
@@ -481,6 +492,15 @@ function stateErrors(production, reviews) {
 }
 
 describe('Blender-authored character provenance and fidelity gate', () => {
+  it('keeps binding ranks stable with secondary fingers and rejects mirrored arm bindings', () => {
+    const gltf = readGlb(join(modelsDir, 'kid_zippy.glb'));
+    expect(worstDominantBoneRank(gltf).rank).toBeLessThanOrEqual(MAX_BONE_RANK);
+    const skin = gltf.json.skins[0];
+    const left = skin.joints.findIndex(i => gltf.json.nodes[i].name === 'LeftForeArm');
+    const right = skin.joints.findIndex(i => gltf.json.nodes[i].name === 'RightForeArm');
+    [skin.joints[left], skin.joints[right]] = [skin.joints[right], skin.joints[left]];
+    expect(worstDominantBoneRank(gltf).rank).toBeGreaterThan(MAX_BONE_RANK);
+  });
   it('binds every completed character to its source, concept, runtime and review evidence', () => {
     expect(stateErrors(receipt, fidelity)).toEqual([]);
   });

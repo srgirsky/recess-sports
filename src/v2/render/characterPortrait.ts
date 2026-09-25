@@ -38,7 +38,7 @@ export function characterPortrait(character: Character, uniform?: number): Promi
     outlines.setViewportHeight(HEIGHT);
     outlines.setWidth(1.5);
     const { view } = await createCharacter(character, { uniform, outlines });
-    const director = new AnimationDirector(view.mesh, { fallback: buildProceduralClips() });
+    const director = new AnimationDirector(view.mesh, { characterId: character.id, fallback: buildProceduralClips() });
     const scene = new Scene();
     scene.add(new Lighting({ shadowMapSize: 0 }).root, view.root);
     view.setFacing(Math.PI);
