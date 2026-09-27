@@ -104,7 +104,7 @@ import type { Shift } from '../sim/shifts';
 import { isTired } from '../sim/stamina';
 import { SPEND_KINDS, canSpend, isSpecialSpend, spendSide, type PowerKind } from '../sim/juice';
 import type { InputVerb } from '../ui/sessionModel';
-import type { PlayInputs, PlayState } from '../sim/play';
+import { plannedThrow, type PlayInputs, type PlayState } from '../sim/play';
 import { SPECIAL_PITCH_KINDS, isSpecialPitch, type PitchKind, type SpecialPitchKind } from '../sim/pitch';
 import { FIRST, SECOND, THIRD, HOME, dist, fenceDistAt, pointAt, type FieldGeometry, type Vec2 } from '../sim/field';
 import { hash01 } from '../../art/fieldTexture';
@@ -1196,10 +1196,19 @@ export class GameView {
     // or runs (a bag is a send). A soft pulse off the sim's own play clock.
     const control = this.liveControl;
     const pulse = 0.35 + 0.25 * Math.abs(Math.sin((this.frame?.play?.elapsedSec ?? 0) * 4));
-    for (const ring of this.baseTargets) {
+    // On the easy levels the bag the throw is ABOUT to go to glows green — the
+    // sim's own read (`plannedThrow`), which fires on its own after the
+    // release beat unless the child taps another bag. A hint, never a throw.
+    const play = this.frame?.play;
+    const easy = this.skill === 'tball' || this.skill === 'rookie';
+    const plan = control === 'field' && easy && play ? plannedThrow(play) : null;
+    const planned = plan?.target.kind === 'base' ? plan.target.base : null;
+    this.baseTargets.forEach((ring, i) => {
       ring.visible = control !== null;
-      (ring.material as MeshBasicMaterial).opacity = pulse;
-    }
+      const mat = ring.material as MeshBasicMaterial;
+      mat.opacity = planned === i + 1 ? 0.85 : pulse;
+      mat.color.setHex(planned === i + 1 ? 0x5dff7a : 0xffd23f);
+    });
     if (this.timingRingMesh) {
       const pitch = this.frame?.pitch;
       const show = this.timingRingOn && this.batting && !!pitch && !this.inputs.swing;
