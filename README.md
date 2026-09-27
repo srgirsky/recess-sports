@@ -48,7 +48,8 @@ judging the art direction). Useful query flags:
 | `?face=<cell>` | force an expression atlas cell during model review |
 | `?perf=low\|mid\|high` | override the auto-detected device tier |
 | `?proxy=1` | force primitive proxy characters everywhere |
-| `?features=<list>` | switch **held** features on for a playtest: `all`, or a comma list of `stamina`, `juice`, `specialPitches`, `shifts`. All off otherwise — see "Playtesting with kids". `stamina` (a tiring pitcher), `juice` (the meter, its tray and three spends; keys `Q`/`W`/`E`) and `specialPitches` (three more pitch cards bought off that meter — needs `juice` too; keys `5`/`6`/`7`) are the ports that do something today; `shifts` is a seam |
+| `?features=<list>` | switch **held** features on for a playtest: `all`, or a comma list of `stamina`, `juice`, `specialPitches`, `shifts`. All off otherwise — see "Playtesting with kids". `stamina` (a tiring pitcher), `juice` (the meter, its tray and three spends; keys `Q`/`W`/`E`) and `specialPitches` (three more pitch cards bought off that meter — needs `juice` too; keys `5`/`6`/`7`) and `shifts` (where the fielders start; the CPU pull-shifts its sluggers and a SHIFT chip cycles yours) are all ported |
+| `?skill=<level>` | seed the skill level: `tball`, `rookie`, `normal` (default) or `allstar` — the same four chips as the team screen, which remembers the choice |
 | `?log=1` | record the session and show the `⬇ LOG` download (counts only) |
 
 Keys on the spike page: `1`–`5` switch camera preset, `V` cycles venue.
@@ -137,7 +138,13 @@ wild), ☄️ BLAZE (a quarter faster, rising) and 🧊 FLOATER (slow and hangin
 on heavy backspin) — each a spend off the same meter, bought per pitch; a card
 the meter cannot cover is greyed. Keys `5`/`6`/`7`. The CPU buys one when it
 trails. Without `juice` there is no meter, so `specialPitches` alone changes
-nothing. `shifts` parses and rides the game spec but changes nothing yet.
+nothing.
+
+**Shifts are ported** last (`src/v2/sim/shifts.ts`): with `?features=shifts` the
+fielding side's alignment decides where its fielders START — rotated about home
+toward the pull side or the opposite field, with the battery and the force-bag
+corner anchored. The CPU pull-shifts on its sluggers; when you field, a SHIFT
+chip on the left edge cycles NORMAL → PULL → OPPO before the pitch.
 
 To run a session, follow `docs/playtests/PROTOCOL.md`. In short:
 

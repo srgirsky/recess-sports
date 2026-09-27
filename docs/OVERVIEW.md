@@ -3124,3 +3124,51 @@ ledger. Contact forearm clearance and the raised knob-side bunt elbow also
 remain open: a contact solver that looked acceptable on Theo failed on other
 body shapes, so it was not included. Further pose changes must pass the roster
 review as well as the mechanical sweep before replacing the shared motion.
+
+## September 27 — beyond the reference: levels, a coach, the bunt, two players, shifts
+
+A review against the reference named the gaps that code could close: no guided
+first game, no easy level or difficulty choice, no bunt, no two-player game at
+the front door, and the one unported held system. This pass closes all five in
+v2 and leaves every existing record and golden fingerprint where it was.
+
+- **Skill levels** (`sim/assist.ts`): T-BALL, ROOKIE, NORMAL and ALL-STAR, one
+  picture per chip on the team screen, remembered per browser. An assist
+  shrinks the person's own timing and aim error before the swing model sees it,
+  so contact, launch and the play stay physics. Measured over the same clumsy,
+  wandering-late tap: NORMAL 10 hits and 18 strikeouts, T-BALL 21 hits and 0.
+  The first attempt at T-BALL helped less than NORMAL. It pulled the aim to the
+  ball's centre, which launches at the swing plane alone, a low skipper. The
+  aim now pulls a few hundredths of a foot under centre, into a line drive.
+  The same measurement found a crash: a meatball is nearly the same pitch every
+  time, so a child repeating one late tap fouled forever and hit the pitch cap,
+  which throws. A patience ramp now ends the at-bat in a ball in play. With no
+  person in the game every level is the identity, and a test proves it.
+- **The coach and the timing ring** (`ui/coachModel.ts`): the control hint is
+  spoken as well as shown — each verb twice per browser, and every time on a
+  cooldown in the new LEARN TO PLAY lesson. T-BALL, ROOKIE and the lesson draw a
+  ring that closes on the zone exactly as the ball arrives, scaled from the
+  pitch's own flight time, and turns green inside the sweet window.
+- **The bunt** (`BAT.BUNT_*`): a BUNT chip (or B) squares the batter around. The
+  bat is held in the ball's path, so the timing window is wider, the barrel's own
+  speed is a small push, and Nathan's equation makes the ball soft on its own.
+  The bunt clip is timed so its held receiving pose meets the pitch. Only a
+  person bunts, so no CPU fingerprint moves.
+- **Two players** (`controlMode.ts` `versus`): pass and play on one device.
+  Player 1 bats the top and pitches the bottom; every half has one batter and
+  one fielder, the hint names whose turn it is, and runners run themselves
+  because a base tap belongs to the thrower.
+- **Shifts, the fourth port** (`sim/shifts.ts`): where the fielders START,
+  rotated about home by a literal cos/sin pair; the CPU pull-shifts on its
+  sluggers and a person cycles a SHIFT chip. It stays `held` and defaults off
+  like the other three, and `game.test.ts` now proves it is not inert.
+
+- **Base targets**: the reference notes said live play hid where to tap.
+  Captures now show all runners and bags in the wide shot, but the bags were
+  small white squares. While a base tap means something (a throw when
+  fielding, a send when running), each bag gets a pulsing ground ring drawn at
+  `BAG_TAP_FT`. That is the radius `nearestBase` accepts, so the ring shown is
+  the target that counts.
+
+What still cannot be closed from code stays open: no child has played any of
+this (`docs/playtests/` holds no record), and no art target has been approved.

@@ -493,6 +493,12 @@ export class GameView {
   /** The batting lesson's picture: a ring closing on the plate as the ball arrives. */
   private timingRingMesh: Mesh | null = null;
   private timingRingOn = false;
+  /**
+   * The four base targets: a ground ring per bag at the REAL tap tolerance
+   * (`BAG_TAP_FT`), shown only while a tap on a bag means something — so what
+   * the child is shown to hit is what `nearestBase` actually accepts.
+   */
+  private baseTargets: Mesh[] = [];
   private ended = false;
   /** The held features this game was started with. Read off `?features=`. */
   private featureFlags: Features = parseFeatures(null);
@@ -1158,6 +1164,19 @@ export class GameView {
     this.timingRingMesh.renderOrder = 42;
     this.timingRingMesh.visible = false;
     this.scene.add(this.timingRingMesh);
+
+    for (const bag of [FIRST, SECOND, THIRD, HOME]) {
+      const ring = new Mesh(
+        new RingGeometry(BAG_TAP_FT * 0.72, BAG_TAP_FT, 40),
+        new MeshBasicMaterial({ color: 0xffd23f, ...overlay, opacity: 0.5, side: DoubleSide })
+      );
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(bag.x, 0.06, bag.z);
+      ring.renderOrder = 38;
+      ring.visible = false;
+      this.scene.add(ring);
+      this.baseTargets.push(ring);
+    }
   }
 
   /** Show the plate cues only while a pitch is in the air. */
@@ -1172,6 +1191,14 @@ export class GameView {
     if (this.spotMarker) {
       this.spotMarker.visible = this.onTheMound;
       this.spotMarker.position.set(this.spot.x, this.spot.y, HOME.z);
+    }
+    // Base targets: while the person fields a live ball (any bag is a throw)
+    // or runs (a bag is a send). A soft pulse off the sim's own play clock.
+    const control = this.liveControl;
+    const pulse = 0.35 + 0.25 * Math.abs(Math.sin((this.frame?.play?.elapsedSec ?? 0) * 4));
+    for (const ring of this.baseTargets) {
+      ring.visible = control !== null;
+      (ring.material as MeshBasicMaterial).opacity = pulse;
     }
     if (this.timingRingMesh) {
       const pitch = this.frame?.pitch;
