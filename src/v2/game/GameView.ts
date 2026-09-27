@@ -1137,7 +1137,7 @@ export class GameView {
     // from the pitch's own flight time, never a wall clock.
     this.timingRingMesh = new Mesh(
       new RingGeometry(hw * 1.35, hw * 1.6, 48),
-      new MeshBasicMaterial({ color: 0xffffff, ...overlay, opacity: 0.85 })
+      new MeshBasicMaterial({ color: 0xffffff, ...overlay, opacity: 0.85, side: DoubleSide })
     );
     this.timingRingMesh.position.set(HOME.x, (lo + hi) / 2, HOME.z);
     this.timingRingMesh.renderOrder = 42;
@@ -1598,7 +1598,11 @@ export class GameView {
     if (this.frame.phase === 'pitch') this.cpuSwingStarted = false;
     // Squared around before the ball leaves the hand, so the bunt reads early.
     if (this.frame.phase === 'pitch' && this.buntArmed && this.humanBats) {
-      this.refs.directors.get(this.frame.batterId)?.play('bunt');
+      // Timed so the held receiving pose (frames 20-24 of `bunt`) is on the
+      // ball as it crosses — the clip otherwise recovers before a slow pitch
+      // arrives. Presentation only; the sim reads the flag, not the pose.
+      const travel = this.frame.pitch?.travelSec ?? 1;
+      this.refs.directors.get(this.frame.batterId)?.play('bunt', { rate: 22 / 30 / travel, restart: true });
     }
     // A new batter swings away until the person squares around again.
     if (this.frame.phase === 'windup' && this.frame.batterId !== this.buntFor) {
