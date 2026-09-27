@@ -121,6 +121,7 @@ export function assistSwing(
   const keepA = 1 - Math.min(1, def.aimPull + patience);
   const sweet = pitch.crossing.y - SWEET_UNDERCUT_FT;
   return {
+    ...swing,
     atSec: pitch.travelSec + (swing.atSec - pitch.travelSec) * keepT,
     aimHeightFt: sweet - (sweet - swing.aimHeightFt) * keepA,
   };

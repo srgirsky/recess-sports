@@ -346,6 +346,11 @@ export class GameView {
   private pitchKind: PitchKind = 'fastball';
   /** The spend tray (`features.juice`), mounted beside the picker. */
   private trayEl: HTMLElement | null = null;
+  /** The BUNT toggle (`BAT.BUNT_*`): shown while the person bats, before the tap. */
+  private buntEl: HTMLButtonElement | null = null;
+  /** Squared around for the next pitch. Persists across pitches until toggled off. */
+  private buntArmed = false;
+  private buntFor = '';
   private readonly trayChips = new Map<PowerKind, HTMLButtonElement>();
   /** The special pitch cards, so `paintHud` can mark each affordable or broke. */
   private readonly specialCards = new Map<SpecialPitchKind, HTMLButtonElement>();
@@ -706,11 +711,13 @@ export class GameView {
       // keeps the first — a bat cannot be un-swung.
       if (!this.inputs.swing) {
         this.inputs.swing = { atSec: this.pitchElapsed, aimHeightFt: this.aimHeightFt };
+        if (this.buntArmed) this.inputs.swing.bunt = true;
         this.tapped('swing');
         // The human's tap IS the simulated swing instant. We learn it now, so
         // the director seeks the CONTACT marker onto this rendered tick and
-        // plays the follow-through rather than drawing contact late.
-        this.refs.directors.get(this.frame!.batterId)?.playToMarker('swing_contact', 0);
+        // plays the follow-through rather than drawing contact late. A bunt
+        // is already held out (`bunt`, started with the pitch), so it stays.
+        if (!this.buntArmed) this.refs.directors.get(this.frame!.batterId)?.playToMarker('swing_contact', 0);
       }
       return;
     }
@@ -781,7 +788,23 @@ export class GameView {
     if (special) this.pickSpecial(special);
     const spend = SPEND_KINDS.find((k) => SPEND_CARDS[k].key === e.key.toUpperCase());
     if (spend) this.proposeSpend(spend);
+    if (e.key.toUpperCase() === 'B') this.toggleBunt();
   };
+
+  /** Square around, or back to a full swing. Only while the person bats. */
+  private toggleBunt(): void {
+    const f = this.frame;
+    if (!f || !controlsAt(this.controlMode, f.half).bat) return;
+    if (f.phase !== 'windup' && f.phase !== 'between' && f.phase !== 'pitch') return;
+    if (f.phase === 'pitch' && this.inputs.swing) return;
+    this.buntArmed = !this.buntArmed;
+    this.tapped('bunt');
+    if (f.phase === 'pitch') {
+      const d = this.refs.directors.get(f.batterId);
+      if (this.buntArmed) d?.play('bunt');
+      else d?.play('bat_stance');
+    }
+  }
 
   /**
    * Which specials the person could throw next, or none: the flag on, the
@@ -1573,6 +1596,15 @@ export class GameView {
     }
     if (this.frame.phase === 'pitch') this.pitchElapsed = 0;
     if (this.frame.phase === 'pitch') this.cpuSwingStarted = false;
+    // Squared around before the ball leaves the hand, so the bunt reads early.
+    if (this.frame.phase === 'pitch' && this.buntArmed && this.humanBats) {
+      this.refs.directors.get(this.frame.batterId)?.play('bunt');
+    }
+    // A new batter swings away until the person squares around again.
+    if (this.frame.phase === 'windup' && this.frame.batterId !== this.buntFor) {
+      this.buntFor = this.frame.batterId;
+      this.buntArmed = false;
+    }
     if (this.frame.phase === 'windup') {
       // A special is bought per pitch, so it is picked per pitch: the card
       // falls back to the fastball on every fresh windup rather than
@@ -2257,6 +2289,19 @@ export class GameView {
       this.trayEl.appendChild(chip);
     }
     hud.appendChild(this.trayEl);
+    // BUNT: a sticker chip on the right edge, the side the pitch picker uses
+    // when the person pitches — the two never show at once.
+    this.buntEl = document.createElement('button');
+    this.buntEl.type = 'button';
+    this.buntEl.className = 'spend-chip bunt-chip interactive';
+    this.buntEl.innerHTML =
+      '<span class="spend-chip__icon">🤏</span>' +
+      '<span class="spend-chip__name">BUNT</span>' +
+      '<kbd class="spend-chip__key">B</kbd>';
+    this.buntEl.setAttribute('aria-label', 'Bunt');
+    this.buntEl.hidden = true;
+    this.buntEl.addEventListener('pointerdown', () => this.toggleBunt());
+    hud.appendChild(this.buntEl);
   }
 
   private paintHud(frame: LiveFrame): void {
@@ -2295,6 +2340,11 @@ export class GameView {
       // sim's (`stamina.ts`), never restated here.
       frame.stamina !== null && isTired({ stamina: frame.stamina })
     );
+    if (this.buntEl) {
+      const beat = frame.phase === 'windup' || frame.phase === 'between' || (frame.phase === 'pitch' && !this.inputs.swing);
+      this.buntEl.hidden = !(controls.bat && beat && frame.outs < 3);
+      this.buntEl.classList.toggle('is-picked', this.buntArmed);
+    }
     // The tray: open when the person could buy something for the coming
     // pitch, each chip shown only while affordable, and read as armed once
     // the sim's own event said the meter paid for it.

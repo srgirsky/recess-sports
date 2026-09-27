@@ -73,6 +73,8 @@ export interface SwingSpec {
    * or false is the ordinary swing, arithmetic untouched.
    */
   power?: boolean;
+  /** A BUNT (`BAT.BUNT_*`): the bat held out and met, not swung. Only a person bunts. */
+  bunt?: boolean;
 }
 
 export type SwingResult =
@@ -125,7 +127,11 @@ export function timingQuality(timingErrorSec: number, travelSec: number, windowM
  *   5. timing sets the SPRAY — early pulls, late goes the other way.
  */
 export function resolveSwing(spec: SwingSpec, rng: Rng): SwingResult {
-  const q = timingQuality(spec.timingErrorSec, spec.travelSec, spec.power ? JUICE.POWER_WINDOW_MULT : 1);
+  const q = timingQuality(
+    spec.timingErrorSec,
+    spec.travelSec,
+    spec.bunt ? BAT.BUNT_WINDOW_MULT : spec.power ? JUICE.POWER_WINDOW_MULT : 1
+  );
   const ability = spec.batter.ability;
   const plate = spec.plate ?? resolvePlate();
 
@@ -147,8 +153,10 @@ export function resolveSwing(spec: SwingSpec, rng: Rng): SwingResult {
 
   // 1. Bat speed. Off-square contact costs speed at the point of impact and
   //    moves the ball off the sweet spot, which costs e_A too.
-  const batSpeed =
-    batSpeedFts(spec.batter.stats.power) * (0.7 + 0.3 * quality) * (spec.power ? JUICE.POWER_BAT_MULT : 1);
+  // A bunt's barrel is not swung: its speed is the small push, whoever holds it.
+  const batSpeed = spec.bunt
+    ? BAT.BUNT_PUSH_FTS
+    : batSpeedFts(spec.batter.stats.power) * (0.7 + 0.3 * quality) * (spec.power ? JUICE.POWER_BAT_MULT : 1);
   const offSweetFt = (1 - quality) * BAT.SWEET_SPOT_SPAN_FT;
   const sweetness = clamp(1 - offSweetFt / BAT.SWEET_SPOT_SPAN_FT, 0, 1);
   const eA = collisionEfficiency() * sweetness;
@@ -189,7 +197,7 @@ export function resolveSwing(spec: SwingSpec, rng: Rng): SwingResult {
   // Without that term the distribution is exactly zero-mean and every kid swings
   // dead level — see `BAT.ATTACK_ANGLE_DEG` and `sim.swingPlane`.
   const launchAngleDeg =
-    plate.attackAngleDeg + (Math.asin(offset / centreSep) * 180) / Math.PI;
+    (spec.bunt ? 0 : plate.attackAngleDeg) + (Math.asin(offset / centreSep) * 180) / Math.PI;
 
   // 3. Exit velocity, Nathan Eq. 3.
   const exitVelocityFts = Math.max(0, exitVelocity(eA, spec.pitchSpeedFts, batSpeed));
@@ -206,7 +214,7 @@ export function resolveSwing(spec: SwingSpec, rng: Rng): SwingResult {
   // 5. Spray. Timing decides where in front of the plate the bat met the ball;
   //    meeting it early means meeting it out front, which pulls.
   const depthFt = -spec.timingErrorSec * spec.pitchSpeedFts;
-  let sprayDeg = clamp(depthFt * plate.pullDegPerFt, -60, 60);
+  let sprayDeg = clamp(depthFt * plate.pullDegPerFt * (spec.bunt ? BAT.BUNT_SPRAY_MULT : 1), -60, 60);
   // Right-handed batters pull to left field, which is negative spray.
   sprayDeg = -sprayDeg;
 
