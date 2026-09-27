@@ -100,6 +100,7 @@ import { simulateGameLive, type GameResult, type LiveFrame, type SimEvent } from
 import { parseFeatures, type Features } from '../sim/features';
 import { DEFAULT_SKILL, type Skill } from '../sim/assist';
 import { timingRing } from '../ui/coachModel';
+import type { Shift } from '../sim/shifts';
 import { isTired } from '../sim/stamina';
 import { SPEND_KINDS, canSpend, isSpecialSpend, spendSide, type PowerKind } from '../sim/juice';
 import type { InputVerb } from '../ui/sessionModel';
@@ -351,6 +352,9 @@ export class GameView {
   /** Squared around for the next pitch. Persists across pitches until toggled off. */
   private buntArmed = false;
   private buntFor = '';
+  /** The SHIFT chip (`features.shifts`): cycles the person's alignment while they field. */
+  private shiftEl: HTMLButtonElement | null = null;
+  private shiftChoice: Shift = 'normal';
   private readonly trayChips = new Map<PowerKind, HTMLButtonElement>();
   /** The special pitch cards, so `paintHud` can mark each affordable or broke. */
   private readonly specialCards = new Map<SpecialPitchKind, HTMLButtonElement>();
@@ -790,6 +794,17 @@ export class GameView {
     if (spend) this.proposeSpend(spend);
     if (e.key.toUpperCase() === 'B') this.toggleBunt();
   };
+
+  /** Cycle the person's alignment. Proposed on the windup; the sim holds it for the PA. */
+  private cycleShift(): void {
+    const f = this.frame;
+    if (!f || !this.featureFlags.shifts || !controlsAt(this.controlMode, f.half).field) return;
+    const order: Shift[] = ['normal', 'pull', 'oppo'];
+    this.shiftChoice = this.inputs.shift ?? f.shift ?? 'normal';
+    this.shiftChoice = order[(order.indexOf(this.shiftChoice) + 1) % order.length];
+    this.inputs.shift = this.shiftChoice;
+    this.tapped('shift');
+  }
 
   /** Square around, or back to a full swing. Only while the person bats. */
   private toggleBunt(): void {
@@ -1277,9 +1292,9 @@ export class GameView {
         // The flags ride the spec. `stamina` (a tiring pitcher, `sim/stamina.ts`),
         // `juice` (the meter and its spends, `sim/juice.ts`) and
         // `specialPitches` (three more cards on the picker, bought off that
-        // meter) are consumed by the sim; `shifts` is a seam until its port
-        // lands, and the sim's tests prove which is which. Headless runs never
-        // set this.
+        // meter) and `shifts` (where the fielders start, `sim/shifts.ts`) are
+        // all consumed by the sim, each proved not inert by its tests. Headless
+        // runs never set this.
         features: this.featureFlags,
         // The juice port must not spend the PERSON's meter for them; a watcher
         // has no side, so both are the CPU's.
@@ -1565,6 +1580,7 @@ export class GameView {
     this.inputs = {
       pointer: stillLive ? this.inputs.pointer : undefined,
       spend: wasWindup ? undefined : this.inputs.spend,
+      shift: wasWindup ? undefined : this.inputs.shift,
     };
     if (r.done) {
       this.frame = null;
@@ -2308,6 +2324,14 @@ export class GameView {
     this.buntEl.hidden = true;
     this.buntEl.addEventListener('pointerdown', () => this.toggleBunt());
     hud.appendChild(this.buntEl);
+    // SHIFT (`features.shifts`): one chip that cycles NORMAL → PULL → OPPO,
+    // riding in the spend tray's column so the left edge stays one stack.
+    this.shiftEl = document.createElement('button');
+    this.shiftEl.type = 'button';
+    this.shiftEl.className = 'spend-chip shift-chip interactive';
+    this.shiftEl.hidden = true;
+    this.shiftEl.addEventListener('pointerdown', () => this.cycleShift());
+    this.trayEl.appendChild(this.shiftEl);
   }
 
   private paintHud(frame: LiveFrame): void {
@@ -2347,6 +2371,16 @@ export class GameView {
       // sim's (`stamina.ts`), never restated here.
       frame.stamina !== null && isTired({ stamina: frame.stamina })
     );
+    if (this.shiftEl) {
+      const beat = frame.phase === 'windup' || frame.phase === 'between';
+      const show = this.featureFlags.shifts && controls.field && beat && frame.shift !== null;
+      this.shiftEl.hidden = !show;
+      if (show) {
+        const art = { normal: ['⬆️', 'NORMAL'], pull: ['⬅️', 'PULL'], oppo: ['➡️', 'OPPO'] }[frame.shift ?? 'normal'];
+        const html = `<span class="spend-chip__icon">${art[0]}</span><span class="spend-chip__name">SHIFT ${art[1]}</span>`;
+        if (this.shiftEl.innerHTML !== html) this.shiftEl.innerHTML = html;
+      }
+    }
     if (this.buntEl) {
       const beat = frame.phase === 'windup' || frame.phase === 'between' || (frame.phase === 'pitch' && !this.inputs.swing);
       this.buntEl.hidden = !(controls.bat && beat && frame.outs < 3);
@@ -2357,7 +2391,10 @@ export class GameView {
     // the sim's own event said the meter paid for it.
     if (this.trayEl) {
       const affordable = this.affordableSpends();
-      const open = affordable.length > 0 || (frame.juice !== null && this.armedSpends.size > 0 && frame.phase !== 'live');
+      const open =
+        affordable.length > 0 ||
+        (frame.juice !== null && this.armedSpends.size > 0 && frame.phase !== 'live') ||
+        (this.shiftEl !== null && !this.shiftEl.hidden);
       this.trayEl.classList.toggle('is-open', open);
       for (const [kind, chip] of this.trayChips) {
         const armed = this.armedSpends.has(kind);

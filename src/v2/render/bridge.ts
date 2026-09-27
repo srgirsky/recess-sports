@@ -24,6 +24,7 @@ import { Vector3, type Object3D } from 'three';
 import type { LiveFrame } from '../sim/game';
 import type { PlayState } from '../sim/play';
 import { FIELD_POSITIONS, HOME, basePos } from '../sim/field';
+import { shiftedPost } from '../sim/shifts';
 import { DEFENSE } from '../sim/params';
 import { isSettled, remainingFt, runnerPos } from '../sim/runners';
 import { cloneState, sampleAt, stepFlight, type BallState } from '../sim/flight';
@@ -273,7 +274,7 @@ function applyIdleDefence(
   for (const [id, pos] of Object.entries(frame.defence)) {
     const kid = refs.kids.get(id);
     if (!kid) continue;
-    const at = FIELD_POSITIONS[pos];
+    const at = frame.shift ? shiftedPost(pos, frame.shift) : FIELD_POSITIONS[pos];
     kid.setPosition(at.x, at.z);
     kid.setFacing(Math.atan2(HOME.x - at.x, HOME.z - at.z));
     // ★ THE CATCHER CROUCHES, AND IT IS FRAMING RATHER THAN FLAVOUR. His post

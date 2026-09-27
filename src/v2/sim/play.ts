@@ -57,6 +57,7 @@
 import type { Character } from '../../data/types';
 import { DEFENSE, JUICE, PLAY, resolvePlate, type PlateOverrides, type PlateParams } from './params';
 import type { Features } from './features';
+import { shiftedPost, type Shift } from './shifts';
 import type { SpendKind } from './juice';
 import { reachFt, sprintTimeForFt } from './athletes';
 import { launch, type LaunchSpec } from './launch';
@@ -199,6 +200,12 @@ export interface PlayInputs {
    * is: one input type for the whole live loop. `stepPlay` never sees it.
    */
   spend?: SpendKind;
+  /**
+   * A person's defensive alignment (`features.shifts`), proposed on the
+   * `windup` frame while their side fields. Held for the rest of the plate
+   * appearance; ignored with the flag off or while they bat.
+   */
+  shift?: Shift;
 }
 
 export interface PlayState {
@@ -312,6 +319,11 @@ export interface PlaySpec {
   /** The held features (`features.ts`). Nothing reads it yet; omit for all off. */
   features?: Features;
   /**
+   * Where the defence started (`features.shifts`, `sim/shifts.ts`). Omitted or
+   * `normal` places every fielder on `FIELD_POSITIONS`, exactly as before.
+   */
+  shift?: Shift;
+  /**
    * What the meter bought for this ball in play (`features.juice`): turbo
    * legs scale every batting-side runner's top speed by
    * `JUICE.TURBO_SPEED_MULT`; the golden glove adds
@@ -339,6 +351,14 @@ export function beginPlay(spec: PlaySpec, rng: Rng): PlayState {
   // fact about this play rather than a second constant for a kid's legs.
   if (spec.boost?.turboLegs) for (const r of runners) r.topFts *= JUICE.TURBO_SPEED_MULT;
   if (spec.boost?.goldenGlove) for (const f of fielders) f.reachBonusFt = JUICE.GLOVE_REACH_BONUS_FT;
+  // A shift moves where each fielder STARTS and returns to; nothing else.
+  if (spec.shift && spec.shift !== 'normal') {
+    for (const f of fielders) {
+      const at = shiftedPost(f.position, spec.shift);
+      f.home = { ...at };
+      f.p = { ...at };
+    }
+  }
 
   const trace = traceLooseBall(ball, spec.geo, {
     horizonSec: DEFENSE.CHASE_HORIZON_SEC,

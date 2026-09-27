@@ -43,7 +43,9 @@ export type InputVerb =
   /** A spend PROPOSED from the juice tray (`features.juice`); the sim decides. */
   | 'spend'
   /** The BUNT chip toggled (squaring around, or back to a full swing). */
-  | 'bunt';
+  | 'bunt'
+  /** The SHIFT chip cycled (`features.shifts`). */
+  | 'shift';
 
 export const INPUT_VERBS: ReadonlyArray<InputVerb> = Object.freeze([
   'pointer',
@@ -56,6 +58,7 @@ export const INPUT_VERBS: ReadonlyArray<InputVerb> = Object.freeze([
   'holdRunner',
   'spend',
   'bunt',
+  'shift',
 ] as const);
 
 export interface SessionCounts {
