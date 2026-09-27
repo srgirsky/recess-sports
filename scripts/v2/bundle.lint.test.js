@@ -76,7 +76,7 @@ const assets = join(repo, 'dist', 'assets');
  *   (`render/replayCues.ts`, bridge, director and `GameView`).
  */
 const V1_KB = 1909;
-const V2_KB = 1038;
+const V2_KB = 1069;
 const TOLERANCE = 0.02;
 
 /**
