@@ -7,7 +7,7 @@ import type { PlayerControlMode } from '../../game/controlMode';
 import { button, el } from '../dom';
 import type { Screen } from '../Router';
 
-export type ExtraModeId = 'batting' | 'pitching' | 'watch';
+export type ExtraModeId = 'lesson' | 'batting' | 'pitching' | 'watch';
 
 export const EXTRA_MODES: ReadonlyArray<{
   id: ExtraModeId;
@@ -16,6 +16,9 @@ export const EXTRA_MODES: ReadonlyArray<{
   line: string;
   controls: PlayerControlMode;
 }> = [
+  // The lesson: one T-BALL inning each way with the coach speaking every verb
+  // and the timing ring on. First, because it is where a new player belongs.
+  { id: 'lesson', icon: '🎓', title: 'LEARN TO PLAY', line: 'A COACH SHOWS YOU HOW', controls: 'both' },
   { id: 'batting', icon: '💥', title: 'BATTING PRACTICE', line: 'YOU HIT · 1 INNING', controls: 'batting' },
   { id: 'pitching', icon: '🔥', title: 'PITCHING PRACTICE', line: 'YOU PITCH · 1 INNING', controls: 'pitching' },
   { id: 'watch', icon: '🍿', title: 'WATCH A GAME', line: 'KIDS PLAY · YOU CHEER', controls: 'watch' },

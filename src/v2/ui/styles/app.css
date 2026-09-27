@@ -2593,3 +2593,8 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
   padding: var(--s2) var(--s4);
   letter-spacing: 0.08em;
 }
+
+/* Skill level — the time chips' language, one picture per level. */
+.team-row--skill {
+  gap: var(--s2);
+}

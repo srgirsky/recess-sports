@@ -24,6 +24,18 @@ import {
 import { UNIFORM_COLORS } from '../../../art/palette';
 import { GAME_LENGTHS } from '../../game/GameView';
 import type { VenueId } from '../../sim/field';
+import type { Skill } from '../../sim/assist';
+
+/**
+ * How hard, as a picture: a chick for T-BALL up to a star. The sim owns what
+ * each level does (`sim/assist.ts`); the chip only names it.
+ */
+export const SKILL_OPTIONS: ReadonlyArray<{ id: Skill; icon: string; label: string }> = [
+  { id: 'tball', icon: '🐣', label: 'T-BALL' },
+  { id: 'rookie', icon: '🧢', label: 'ROOKIE' },
+  { id: 'normal', icon: '⚾', label: 'NORMAL' },
+  { id: 'allstar', icon: '⭐', label: 'ALL-STAR' },
+];
 
 /** Every playable geometry must have one reachable, icon-first chip. */
 export const VENUE_OPTIONS: ReadonlyArray<{ id: VenueId; icon: string; label: string }> = [
@@ -49,6 +61,7 @@ export class TeamScreen implements Screen {
 
   private night: boolean;
   private venue: VenueId;
+  private skill: Skill;
 
   constructor(
     start: TeamIdentity,
@@ -59,8 +72,11 @@ export class TeamScreen implements Screen {
     private readonly onNight: (night: boolean) => void,
     private readonly onVenue: (v: VenueId) => void,
     private readonly onPreview: (t: TeamIdentity) => void,
-    private readonly onReady: (t: TeamIdentity) => void
+    private readonly onReady: (t: TeamIdentity) => void,
+    startSkill: Skill = 'normal',
+    private readonly onSkill: (s: Skill) => void = () => {}
   ) {
+    this.skill = startSkill;
     this.choice = { ...start };
     this.innings = startInnings;
     this.night = startNight;
@@ -133,10 +149,22 @@ export class TeamScreen implements Screen {
       venues.appendChild(b);
     }
 
+    // ★ HOW HARD — a picture per level. T-BALL is for the four-year-old who
+    // wants to hit it every time; ALL-STAR is for the eight-year-old who
+    // already does.
+    const skills = el('div', 'team-row team-row--skill');
+    for (const k of SKILL_OPTIONS) {
+      const b = button('', () => this.setSkill(k.id), 'timechip skillchip');
+      b.dataset.skill = k.id;
+      b.setAttribute('aria-label', k.label);
+      b.append(el('span', 'timechip__icon', k.icon), el('span', 'timechip__label', k.label));
+      skills.appendChild(b);
+    }
+
     // The choice rows scroll inside `.screen-scroll`; the head and the hero
     // stay on glass, so PLAY BALL is always visible (round-2 re-audit).
     const scroll = el('div', 'screen-scroll');
-    scroll.append(colours, logos, venues, lengths, times);
+    scroll.append(colours, logos, venues, skills, lengths, times);
     this.root.append(head, scroll, button('⚾  PLAY BALL', () => this.onReady(this.choice), 'btn--hero'));
     this.paint();
     return this.root;
@@ -145,6 +173,12 @@ export class TeamScreen implements Screen {
   private setVenue(v: VenueId): void {
     this.venue = v;
     this.onVenue(v);
+    this.paint();
+  }
+
+  private setSkill(skill: Skill): void {
+    this.skill = skill;
+    this.onSkill(skill);
     this.paint();
   }
 
@@ -180,7 +214,10 @@ export class TeamScreen implements Screen {
     for (const node of this.root.querySelectorAll<HTMLElement>('.length')) {
       node.classList.toggle('is-picked', Number(node.dataset.innings) === this.innings);
     }
-    for (const node of this.root.querySelectorAll<HTMLElement>('.timechip:not(.venuechip)')) {
+    for (const node of this.root.querySelectorAll<HTMLElement>('.skillchip')) {
+      node.classList.toggle('is-picked', node.dataset.skill === this.skill);
+    }
+    for (const node of this.root.querySelectorAll<HTMLElement>('.timechip:not(.venuechip):not(.skillchip)')) {
       node.classList.toggle('is-picked', (node.dataset.night === 'true') === this.night);
     }
     for (const node of this.root.querySelectorAll<HTMLElement>('.venuechip')) {

@@ -63,6 +63,7 @@ import type { LaunchSpec } from './launch';
 import { planDefence, type DefencePlan } from './lineup';
 import { DEFAULT_GEOMETRY, type FieldGeometry, type PositionId } from './field';
 import type { Rng } from './rng';
+import { assistBatter, assistPitchPlan, assistSwing, type Skill } from './assist';
 
 import { applyAtBat, applyLivePlay, applySteal, isHalfOver, newHalfInning } from '../../systems/inning';
 import { decideAfterHalf, isWalkOff, shouldSkipBottom } from '../../systems/gameflow';
@@ -306,6 +307,12 @@ export interface GameSpec {
    * side. Omitted (every headless run) means both sides are the CPU's.
    */
   humanSide?: 'away' | 'home';
+  /**
+   * The person's skill level (`assist.ts`). Read only where `humanSide` names
+   * a side — a headless run has no person to assist, so it is NORMAL there by
+   * construction and every fingerprint holds. Omitted means NORMAL.
+   */
+  skill?: Skill;
 }
 
 export interface GameResult {
@@ -441,6 +448,8 @@ function* playAtBatLive(
     juice: JuiceArgs | null;
     /** `features.specialPitches`: may the fielding side buy a special kind? */
     specials: boolean;
+    /** The person's level and which of the two roles they hold this PA. Null: nobody. */
+    assist: { skill: Skill; bats: boolean; pitches: boolean } | null;
   },
   rng: Rng
 ): Generator<LiveFrame, void, PlayInputs> {
@@ -585,13 +594,17 @@ function* playAtBatLive(
       : args.pitcher;
     const spec: PitchSpec = {
       pitcher,
-      batter: args.batter,
+      // A CPU batter facing a person reads the level's contact stat; the same
+      // object at NORMAL, so nothing moves there.
+      batter: args.assist?.pitches ? assistBatter(args.assist.skill, args.batter) : args.batter,
       count: half.state.count,
       plate: args.plate,
     };
     // A special kind is paid for or downgraded HERE, before the throw, so
     // `throwPitch` only ever throws what the meter covered.
-    const chosen = decidePitch(windupInput.pitch, spec, pitchRng);
+    const chosen =
+      decidePitch(windupInput.pitch, spec, pitchRng) ??
+      (args.assist?.bats ? assistPitchPlan(args.assist.skill, spec, pitchRng) : undefined);
     const inFlight = throwPitch(spec, pitchRng, chosen);
     if (stamina) {
       // Drained on the throw, before the swing: the pitch just thrown was the
@@ -611,7 +624,8 @@ function* playAtBatLive(
     // somewhere to land. A CPU batter passes nothing and draws `judge` and
     // `swing` exactly as before; a human draws neither, which again shifts
     // nothing for anybody else.
-    const swing = ((yield frame) ?? {}).swing;
+    const raw = ((yield frame) ?? {}).swing;
+    const swing = args.assist?.bats ? assistSwing(args.assist.skill, raw, inFlight, pitches) : raw;
     // Undefined unless a power swing is armed — `resolveSwing` then reads
     // `power: false`, and the ordinary arithmetic is untouched.
     const boost = armed.powerSwing ? { power: true } : undefined;
@@ -1058,6 +1072,13 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
           // The specials are bought off the meter, so this is asked only
           // where `juice` is non-null; alone the flag changes nothing.
           specials: spec.features?.specialPitches ?? false,
+          assist: spec.humanSide
+            ? {
+                skill: spec.skill ?? 'normal',
+                bats: spec.humanSide === (half === 'top' ? 'away' : 'home'),
+                pitches: spec.humanSide !== (half === 'top' ? 'away' : 'home'),
+              }
+            : null,
         },
         rng.fork(`${inning}${half}${bat.lineupIdx}`)
       );

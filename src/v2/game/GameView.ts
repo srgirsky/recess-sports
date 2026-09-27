@@ -98,6 +98,8 @@ import {
 } from '../render/replayCues';
 import { simulateGameLive, type GameResult, type LiveFrame, type SimEvent } from '../sim/game';
 import { parseFeatures, type Features } from '../sim/features';
+import { DEFAULT_SKILL, type Skill } from '../sim/assist';
+import { timingRing } from '../ui/coachModel';
 import { isTired } from '../sim/stamina';
 import { SPEND_KINDS, canSpend, isSpecialSpend, spendSide, type PowerKind } from '../sim/juice';
 import type { InputVerb } from '../ui/sessionModel';
@@ -438,6 +440,21 @@ export class GameView {
   private controlMode: PlayerControlMode = 'both';
 
   /** Name the two sides. Set before `newGame`, or the scoreboard lies. */
+  /** Hear every control hint as it changes (`controlMode.controlHint`). */
+  onHint(fn: (hint: string) => void): void {
+    this.hintTap.push(fn);
+  }
+
+  /** Show the timing ring while the person bats (T-BALL, ROOKIE and the lesson). */
+  setTimingRing(on: boolean): void {
+    this.timingRingOn = on;
+  }
+
+  /** Choose the person's skill level. Set before `newGame`; read at the next one. */
+  setSkill(skill: Skill): void {
+    this.skill = skill;
+  }
+
   setTeamNames(t: ScoreboardTeams): void {
     this.teamNames = t;
   }
@@ -461,9 +478,17 @@ export class GameView {
   private readonly simEvent: Array<(e: SimEvent) => void> = [];
   private readonly frameTap: Array<(f: LiveFrame) => void> = [];
   private readonly inputTap: Array<(verb: InputVerb) => void> = [];
+  /** Hint listeners — the coach speaks what the pill shows. Fired on a change only. */
+  private readonly hintTap: Array<(hint: string) => void> = [];
+  private lastHint = '';
+  /** The batting lesson's picture: a ring closing on the plate as the ball arrives. */
+  private timingRingMesh: Mesh | null = null;
+  private timingRingOn = false;
   private ended = false;
   /** The held features this game was started with. Read off `?features=`. */
   private featureFlags: Features = parseFeatures(null);
+  /** The person's skill level (`sim/assist.ts`). The sim reads it only where a person plays. */
+  private skill: Skill = DEFAULT_SKILL;
   private currentSeed = '';
   private actionPlay: LiveFrame['play'] = null;
   private readonly slidLegs = new Set<string>();
@@ -1083,6 +1108,18 @@ export class GameView {
     this.spot = { x: 0, y: (lo + hi) / 2 };
     this.spotMarker.position.set(this.spot.x, this.spot.y, HOME.z);
     this.scene.add(this.spotMarker);
+
+    // The timing ring. Its CLOSED size frames the zone, so "swing when it
+    // closes" and "the ball is here" are one picture; `timingRing` scales it
+    // from the pitch's own flight time, never a wall clock.
+    this.timingRingMesh = new Mesh(
+      new RingGeometry(hw * 1.35, hw * 1.6, 48),
+      new MeshBasicMaterial({ color: 0xffffff, ...overlay, opacity: 0.85 })
+    );
+    this.timingRingMesh.position.set(HOME.x, (lo + hi) / 2, HOME.z);
+    this.timingRingMesh.renderOrder = 42;
+    this.timingRingMesh.visible = false;
+    this.scene.add(this.timingRingMesh);
   }
 
   /** Show the plate cues only while a pitch is in the air. */
@@ -1097,6 +1134,16 @@ export class GameView {
     if (this.spotMarker) {
       this.spotMarker.visible = this.onTheMound;
       this.spotMarker.position.set(this.spot.x, this.spot.y, HOME.z);
+    }
+    if (this.timingRingMesh) {
+      const pitch = this.frame?.pitch;
+      const show = this.timingRingOn && this.batting && !!pitch && !this.inputs.swing;
+      this.timingRingMesh.visible = show;
+      if (show && pitch) {
+        const ring = timingRing(this.pitchElapsed, pitch.travelSec);
+        this.timingRingMesh.scale.setScalar(ring.scale);
+        (this.timingRingMesh.material as MeshBasicMaterial).color.setHex(ring.now ? 0x5dff7a : 0xffffff);
+      }
     }
   }
 
@@ -1214,6 +1261,8 @@ export class GameView {
         // The juice port must not spend the PERSON's meter for them; a watcher
         // has no side, so both are the CPU's.
         humanSide: this.controlMode === 'watch' ? undefined : this.humanSide,
+        // T-BALL..ALL-STAR. Inert without a person, like the juice port above.
+        skill: this.skill,
       },
       makeRng(seed)
     );
@@ -2216,6 +2265,10 @@ export class GameView {
       const hint = controlHint(this.controlMode, frame.half, frame.phase);
       if (this.controlHintEl.textContent !== hint) this.controlHintEl.textContent = hint;
       this.controlHintEl.hidden = !hint;
+      if (hint !== this.lastHint) {
+        this.lastHint = hint;
+        for (const fn of this.hintTap) fn(hint);
+      }
     }
     this.board.update(
       scoreboardModel(
