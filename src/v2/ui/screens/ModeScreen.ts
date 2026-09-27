@@ -7,7 +7,7 @@ import type { PlayerControlMode } from '../../game/controlMode';
 import { button, el } from '../dom';
 import type { Screen } from '../Router';
 
-export type ExtraModeId = 'lesson' | 'batting' | 'pitching' | 'watch';
+export type ExtraModeId = 'lesson' | 'versus' | 'batting' | 'pitching' | 'watch';
 
 export const EXTRA_MODES: ReadonlyArray<{
   id: ExtraModeId;
@@ -19,10 +19,18 @@ export const EXTRA_MODES: ReadonlyArray<{
   // The lesson: one T-BALL inning each way with the coach speaking every verb
   // and the timing ring on. First, because it is where a new player belongs.
   { id: 'lesson', icon: '🎓', title: 'LEARN TO PLAY', line: 'A COACH SHOWS YOU HOW', controls: 'both' },
+  // Pass and play: two people on one device (`controlMode.ts` `versus`).
+  { id: 'versus', icon: '👥', title: '2 PLAYERS', line: 'PASS AND PLAY', controls: 'versus' },
   { id: 'batting', icon: '💥', title: 'BATTING PRACTICE', line: 'YOU HIT · 1 INNING', controls: 'batting' },
   { id: 'pitching', icon: '🔥', title: 'PITCHING PRACTICE', line: 'YOU PITCH · 1 INNING', controls: 'pitching' },
   { id: 'watch', icon: '🍿', title: 'WATCH A GAME', line: 'KIDS PLAY · YOU CHEER', controls: 'watch' },
 ];
+
+/** Who won a pass-and-play game. Player 1 is the away side (bats first). */
+export function versusHeadline(away: number, home: number): string {
+  if (away === home) return 'TIE GAME!';
+  return away > home ? '🏆 PLAYER 1 WINS!' : '🏆 PLAYER 2 WINS!';
+}
 
 export class ModeScreen implements Screen {
   constructor(

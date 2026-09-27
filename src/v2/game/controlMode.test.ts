@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { controlHint, controlsAt, type PlayerControlMode } from './controlMode';
+import { controlHint, controlsAt, playerOf, type PlayerControlMode } from './controlMode';
 
 describe('focused game controls', () => {
   it('never coaches an ignored input during spectator or CPU-controlled halves', () => {
@@ -35,5 +35,20 @@ describe('focused game controls', () => {
   ] as const)('%s mode exposes only its promised verbs', (mode, expected) => {
     expect(controlsAt(mode as PlayerControlMode, 'top')).toEqual(expected.top);
     expect(controlsAt(mode as PlayerControlMode, 'bottom')).toEqual(expected.bottom);
+  });
+});
+
+describe('pass and play', () => {
+  it('gives every half a batter and a fielder, and hands base taps to the fielder', () => {
+    for (const half of ['top', 'bottom'] as const) {
+      expect(controlsAt('versus', half)).toEqual({ bat: true, pitch: true, run: false, field: true });
+      expect(playerOf(half, 'bat')).not.toBe(playerOf(half, 'field'));
+    }
+    expect(playerOf('top', 'bat')).toBe(1);
+    expect(playerOf('bottom', 'bat')).toBe(2);
+    expect(controlHint('versus', 'top', 'windup')).toContain('P2');
+    expect(controlHint('versus', 'top', 'pitch')).toContain('P1');
+    expect(controlHint('versus', 'bottom', 'pitch')).toContain('P2');
+    expect(controlHint('versus', 'top', 'between')).toBe('');
   });
 });

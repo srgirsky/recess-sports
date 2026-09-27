@@ -26,6 +26,7 @@ export const COACH_LINES: Readonly<Record<CoachVerb, string>> = Object.freeze({
 
 /** Which verb a control hint names, by its leading icon. Null for no hint. */
 export function verbOfHint(hint: string): CoachVerb | null {
+  // Pass and play prefixes the player ("👆 P2: …"); the icon still leads.
   if (hint.startsWith('👆')) return 'pitch';
   if (hint.startsWith('👀')) return 'watch';
   if (hint.startsWith('🏏')) return 'bat';

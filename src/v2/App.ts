@@ -68,7 +68,7 @@ import {
   saveCustomPlayer,
   type CustomPlayerProfile,
 } from './ui/customPlayer';
-import { EXTRA_MODES, ModeScreen, type ExtraModeId } from './ui/screens/ModeScreen';
+import { EXTRA_MODES, ModeScreen, versusHeadline, type ExtraModeId } from './ui/screens/ModeScreen';
 import type { Character } from '../data/types';
 
 export class App {
@@ -320,7 +320,8 @@ export class App {
     this.season = null;
     const option = EXTRA_MODES.find((entry) => entry.id === mode)!;
     this.game.setControlMode(option.controls);
-    this.innings = 1;
+    // Practice is one inning; pass and play is a real (short) game.
+    this.innings = mode === 'versus' ? DEFAULT_INNINGS : 1;
     this.coach.setLesson(mode === 'lesson');
 
     const ids = ROSTER.map((c) => c.id);
@@ -545,6 +546,8 @@ export class App {
           ? { again: '📅  BACK TO WEEK' }
           : this.activeMode === 'watch'
             ? { headline: 'FINAL SCORE', again: '🍿  WATCH AGAIN' }
+            : this.activeMode === 'versus'
+              ? { headline: versusHeadline(result.awayScore, result.homeScore), again: '👥  REMATCH' }
             : this.activeMode === 'batting' || this.activeMode === 'pitching' || this.activeMode === 'lesson'
               ? { headline: 'NICE WORK!', again: '🎯  PRACTICE AGAIN' }
               : undefined

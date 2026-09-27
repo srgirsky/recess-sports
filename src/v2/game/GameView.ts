@@ -1283,7 +1283,9 @@ export class GameView {
         features: this.featureFlags,
         // The juice port must not spend the PERSON's meter for them; a watcher
         // has no side, so both are the CPU's.
-        humanSide: this.controlMode === 'watch' ? undefined : this.humanSide,
+        // Pass and play has two people and no CPU side to protect, so no single
+        // human side either: the sim runs it like a headless game's meters.
+        humanSide: this.controlMode === 'watch' || this.controlMode === 'versus' ? undefined : this.humanSide,
         // T-BALL..ALL-STAR. Inert without a person, like the juice port above.
         skill: this.skill,
       },
@@ -2324,7 +2326,8 @@ export class GameView {
         frame,
         this.teamNames,
         (id) => this.character(id).name,
-        controls.bat ? 'bat' : controls.pitch ? 'pitch' : null
+        // Pass and play has two people; "YOU BAT" would be wrong for one of them.
+        this.controlMode === 'versus' ? null : controls.bat ? 'bat' : controls.pitch ? 'pitch' : null
       )
     );
     this.inningBreak.update(frame);
