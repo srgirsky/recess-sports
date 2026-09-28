@@ -973,8 +973,10 @@ function poseWorld(pose: Pose): { pos: Map<string, Vector3>; rot: Map<string, Qu
  * hinge about the forearm's local Y, bent the way `HandPose.constrainArms`
  * rebuilds it — the other way round, that clamp would fold the elbow backwards.
  * Elbows point back and out, as they do driving a rim. Wrist stays neutral.
+ * `maxReach` caps the distance as a fraction of the arm, so a target out of
+ * reach bends toward it instead of locking the elbow straight.
  */
-function palmTo(pose: Pose, side: -1 | 1, target: Vector3): Pose {
+function palmTo(pose: Pose, side: -1 | 1, target: Vector3, maxReach = 0.999): Pose {
   const L = side < 0 ? 'Left' : 'Right';
   const { pos, rot } = poseWorld(pose);
   const shoulder = pos.get(`${L}Arm`)!;
@@ -982,7 +984,7 @@ function palmTo(pose: Pose, side: -1 | 1, target: Vector3): Pose {
   const a = Math.abs(bone(`${L}ForeArm`).pos[0]);
   const b = Math.abs(bone(`${L}Hand`).pos[0]) + Math.abs(bone(side < 0 ? 'Prop_GloveAnchor' : 'Prop_BatGrip').pos[0]);
   const toTarget = target.clone().sub(shoulder);
-  const d = Math.min(toTarget.length(), (a + b) * 0.999);
+  const d = Math.min(toTarget.length(), (a + b) * maxReach);
   const dir = toTarget.normalize();
   const pole = new Vector3(side * 0.5, 0.2, -1);
   const perp = pole.addScaledVector(dir, -pole.dot(dir)).normalize();
@@ -1039,6 +1041,7 @@ function zoomPush(spec: ClipSpec, direction: 1 | -1 = 1): AnimationClip {
       const s = strokeOf(phase, start);
       const from = direction > 0 ? CATCH : RELEASE, to = direction > 0 ? RELEASE : CATCH;
       let target: Vector3;
+      let reach = 0.999;
       if (s < STROKE) {
         const k = s / STROKE;
         target = zoomRimPoint(side, from + (to - from) * (k * k * (3 - 2 * k)));
@@ -1048,8 +1051,12 @@ function zoomPush(spec: ClipSpec, direction: 1 | -1 = 1): AnimationClip {
         const along = to + (from - to) * (k * k * (3 - 2 * k));
         const lift = Math.sin(Math.PI * k);
         target = zoomRimPoint(side, along).add(new Vector3(side * 0.12 * lift, 0.28 * lift, 0));
+        // While the trunk leans away this is out of reach; clamped at full
+        // length the free arm locked into a straight rod (critic, 2026-09-28).
+        // Blend the cap in off the rim so the catch and release stay on it.
+        reach = 0.999 - 0.149 * lift;
       }
-      pose = palmTo(pose, side, target);
+      pose = palmTo(pose, side, target, reach);
     }
     keys.push({ f, pose });
   }

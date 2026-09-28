@@ -994,7 +994,7 @@
       },
       "animation": {
         "take": "anims_wheelchair_ace_v1.glb",
-        "takeSha256": "cf862eeab840ec0ac727607d1cdd0854ffa874bacf0208cbab653868e12cd5e9",
+        "takeSha256": "5bbdc572e7ff3af516194dfb4ad1ea0db181db17609198e336075b8072906ff0",
         "builder": "buildZoomSeatedLibrary",
         "generator": "recess-sports Zoom Ramirez authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
