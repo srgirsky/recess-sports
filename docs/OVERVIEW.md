@@ -3176,7 +3176,11 @@ v2 and leaves every existing record and golden fingerprint where it was.
   delivered models, 0.50-0.59ft above the shoulder. The grip search now
   charges an elbow above the shoulder and treats the wrist's 40-degree gate
   as a wall, and the bunt holds the bat lower and nearer the body. Every
-  model now keeps both elbows at least 0.17ft below the shoulder. An
+  standing model now keeps both elbows at least 0.17ft below the shoulder.
+  The seated athlete is partly fixed. His trunk turns toward the wrists, and
+  at the standing weight the search jumped 42 degrees between samples
+  (`audit:batting --check` caught it in CI). At the lower seated weight his
+  elbow sits at shoulder height, down from 0.29ft above it, with no jump. An
   independent review of the first attempt judged it better but the knob arm
   too straight, and the grip was hidden under the review panel. The tucked
   hold answers both points. The per-kid findings remain in the ledger for a

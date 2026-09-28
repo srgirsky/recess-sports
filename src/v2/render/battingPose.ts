@@ -37,6 +37,14 @@ export function battingRunOut(scale: number, distanceFt: number) {
   return { x: box.x * remaining, z: box.z * remaining };
 }
 
+/**
+ * The seated trunk turns toward the wrists instead of shifting the hips, and
+ * above this elbow weight the knob-arm search switches branches mid-bunt — a
+ * 42-degree step at 0.25-frame sampling (`audit:batting --check`); jump-free
+ * at 30, which leaves the seated elbow at shoulder height rather than below.
+ */
+const SEATED_ELBOW_WEIGHT = 30;
+
 /** Inside the reference wrist's 40-degree fold gate, with a margin. */
 const WRIST_LIMIT_RAD = 34 * Math.PI / 180;
 
@@ -216,7 +224,7 @@ export class BattingPose {
       const elbowRise = Math.max(0, elbow.y - (shoulder.y - .15));
       const wristOver = Math.max(0, wristBend - WRIST_LIMIT_RAD);
       const score = 8*wristBend*wristBend + .2*(1-bend.dot(preferred)) + .03*roll*roll + 100*reach*reach + 40*Math.max(0,roll-Math.PI/2)**2
-        + this.buntWeight*(60*elbowRise*elbowRise + 400*wristOver*wristOver);
+        + this.buntWeight*((this.seated ? SEATED_ELBOW_WEIGHT : 60)*elbowRise*elbowRise + 400*wristOver*wristOver);
       return {rotation, wrist, bend, score, angle};
     };
     let best = evaluate(0);
