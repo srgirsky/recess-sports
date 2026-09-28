@@ -1229,3 +1229,26 @@ table to the byte.
 Copying the structure is the point of having an exemplar; copying the numbers is
 shipping the wrong child. Re-trace every `measured:` table against the new
 sheet, and check your result is not byte-identical to where you started.
+
+## Lessons the 2026-09-27 art pass paid for (Theo)
+
+- **Read `ShoeSpec`'s lanes before tuning a shoe metric.** `upper` is the
+  quarter and heel counter; `trim` is the toe cap, collar, tongue and laces.
+  Theo shipped them swapped (cream upper, charcoal trim) against a charcoal
+  sneaker with a cream toe cap, and three band-edge probes all read 88/12
+  because no band edge can fix an inverted palette; swapping the lanes took
+  all three shoe metrics into tolerance in one build. Scanned the same day:
+  every other kid authors `upper` darker than `trim`, so Theo was the only
+  inversion. The shoe metrics catch a regression; the scan is for triage.
+- **Fold a hair shell's columns ONTO THE SKULL, never onto a plane.** Moving
+  the lateral columns behind the ear to a fixed y left a forward-facing strip
+  outside the head. The runtime is single-sided, so from behind it was culled
+  and the outline hull showed through as a slate patch between ear and hair,
+  and the double-sided board could not see it. Pull the folded vertices in to
+  `0.97 * skull_surface_x(y, z)` so the strip is buried and the shell's edge
+  seals against skin (`sculpt-theo-source.py`, `build_hair`).
+- **A sheet-drawn ear hidden by hair is a CLAMP problem, not an ear problem.**
+  Theo's `build_ear` always ran; the shell's front-half wall (y ≥ -0.020 in
+  the ear band) still stood outboard of the whole ear. Fold everything
+  outboard of the temple behind the ear's back edge below its top. The same
+  fold removed the cheek lock, which was those columns seen from the front.
