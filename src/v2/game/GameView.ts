@@ -98,10 +98,13 @@ import {
 } from '../render/replayCues';
 import { simulateGameLive, type GameResult, type LiveFrame, type SimEvent } from '../sim/game';
 import { parseFeatures, type Features } from '../sim/features';
+import { DEFAULT_SKILL, type Skill } from '../sim/assist';
+import { timingRing } from '../ui/coachModel';
+import type { Shift } from '../sim/shifts';
 import { isTired } from '../sim/stamina';
 import { SPEND_KINDS, canSpend, isSpecialSpend, spendSide, type PowerKind } from '../sim/juice';
 import type { InputVerb } from '../ui/sessionModel';
-import type { PlayInputs, PlayState } from '../sim/play';
+import { plannedThrow, type PlayInputs, type PlayState } from '../sim/play';
 import { SPECIAL_PITCH_KINDS, isSpecialPitch, type PitchKind, type SpecialPitchKind } from '../sim/pitch';
 import { FIRST, SECOND, THIRD, HOME, dist, fenceDistAt, pointAt, type FieldGeometry, type Vec2 } from '../sim/field';
 import { hash01 } from '../../art/fieldTexture';
@@ -344,6 +347,14 @@ export class GameView {
   private pitchKind: PitchKind = 'fastball';
   /** The spend tray (`features.juice`), mounted beside the picker. */
   private trayEl: HTMLElement | null = null;
+  /** The BUNT toggle (`BAT.BUNT_*`): shown while the person bats, before the tap. */
+  private buntEl: HTMLButtonElement | null = null;
+  /** Squared around for the next pitch. Persists across pitches until toggled off. */
+  private buntArmed = false;
+  private buntFor = '';
+  /** The SHIFT chip (`features.shifts`): cycles the person's alignment while they field. */
+  private shiftEl: HTMLButtonElement | null = null;
+  private shiftChoice: Shift = 'normal';
   private readonly trayChips = new Map<PowerKind, HTMLButtonElement>();
   /** The special pitch cards, so `paintHud` can mark each affordable or broke. */
   private readonly specialCards = new Map<SpecialPitchKind, HTMLButtonElement>();
@@ -438,6 +449,21 @@ export class GameView {
   private controlMode: PlayerControlMode = 'both';
 
   /** Name the two sides. Set before `newGame`, or the scoreboard lies. */
+  /** Hear every control hint as it changes (`controlMode.controlHint`). */
+  onHint(fn: (hint: string) => void): void {
+    this.hintTap.push(fn);
+  }
+
+  /** Show the timing ring while the person bats (T-BALL, ROOKIE and the lesson). */
+  setTimingRing(on: boolean): void {
+    this.timingRingOn = on;
+  }
+
+  /** Choose the person's skill level. Set before `newGame`; read at the next one. */
+  setSkill(skill: Skill): void {
+    this.skill = skill;
+  }
+
   setTeamNames(t: ScoreboardTeams): void {
     this.teamNames = t;
   }
@@ -461,9 +487,23 @@ export class GameView {
   private readonly simEvent: Array<(e: SimEvent) => void> = [];
   private readonly frameTap: Array<(f: LiveFrame) => void> = [];
   private readonly inputTap: Array<(verb: InputVerb) => void> = [];
+  /** Hint listeners — the coach speaks what the pill shows. Fired on a change only. */
+  private readonly hintTap: Array<(hint: string) => void> = [];
+  private lastHint = '';
+  /** The batting lesson's picture: a ring closing on the plate as the ball arrives. */
+  private timingRingMesh: Mesh | null = null;
+  private timingRingOn = false;
+  /**
+   * The four base targets: a ground ring per bag at the REAL tap tolerance
+   * (`BAG_TAP_FT`), shown only while a tap on a bag means something — so what
+   * the child is shown to hit is what `nearestBase` actually accepts.
+   */
+  private baseTargets: Mesh[] = [];
   private ended = false;
   /** The held features this game was started with. Read off `?features=`. */
   private featureFlags: Features = parseFeatures(null);
+  /** The person's skill level (`sim/assist.ts`). The sim reads it only where a person plays. */
+  private skill: Skill = DEFAULT_SKILL;
   private currentSeed = '';
   private actionPlay: LiveFrame['play'] = null;
   private readonly slidLegs = new Set<string>();
@@ -681,11 +721,13 @@ export class GameView {
       // keeps the first — a bat cannot be un-swung.
       if (!this.inputs.swing) {
         this.inputs.swing = { atSec: this.pitchElapsed, aimHeightFt: this.aimHeightFt };
+        if (this.buntArmed) this.inputs.swing.bunt = true;
         this.tapped('swing');
         // The human's tap IS the simulated swing instant. We learn it now, so
         // the director seeks the CONTACT marker onto this rendered tick and
-        // plays the follow-through rather than drawing contact late.
-        this.refs.directors.get(this.frame!.batterId)?.playToMarker('swing_contact', 0);
+        // plays the follow-through rather than drawing contact late. A bunt
+        // is already held out (`bunt`, started with the pitch), so it stays.
+        if (!this.buntArmed) this.refs.directors.get(this.frame!.batterId)?.playToMarker('swing_contact', 0);
       }
       return;
     }
@@ -756,7 +798,34 @@ export class GameView {
     if (special) this.pickSpecial(special);
     const spend = SPEND_KINDS.find((k) => SPEND_CARDS[k].key === e.key.toUpperCase());
     if (spend) this.proposeSpend(spend);
+    if (e.key.toUpperCase() === 'B') this.toggleBunt();
   };
+
+  /** Cycle the person's alignment. Proposed on the windup; the sim holds it for the PA. */
+  private cycleShift(): void {
+    const f = this.frame;
+    if (!f || !this.featureFlags.shifts || !controlsAt(this.controlMode, f.half).field) return;
+    const order: Shift[] = ['normal', 'pull', 'oppo'];
+    this.shiftChoice = this.inputs.shift ?? f.shift ?? 'normal';
+    this.shiftChoice = order[(order.indexOf(this.shiftChoice) + 1) % order.length];
+    this.inputs.shift = this.shiftChoice;
+    this.tapped('shift');
+  }
+
+  /** Square around, or back to a full swing. Only while the person bats. */
+  private toggleBunt(): void {
+    const f = this.frame;
+    if (!f || !controlsAt(this.controlMode, f.half).bat) return;
+    if (f.phase !== 'windup' && f.phase !== 'between' && f.phase !== 'pitch') return;
+    if (f.phase === 'pitch' && this.inputs.swing) return;
+    this.buntArmed = !this.buntArmed;
+    this.tapped('bunt');
+    if (f.phase === 'pitch') {
+      const d = this.refs.directors.get(f.batterId);
+      if (this.buntArmed) d?.play('bunt');
+      else d?.play('bat_stance');
+    }
+  }
 
   /**
    * Which specials the person could throw next, or none: the flag on, the
@@ -1083,6 +1152,31 @@ export class GameView {
     this.spot = { x: 0, y: (lo + hi) / 2 };
     this.spotMarker.position.set(this.spot.x, this.spot.y, HOME.z);
     this.scene.add(this.spotMarker);
+
+    // The timing ring. Its CLOSED size frames the zone, so "swing when it
+    // closes" and "the ball is here" are one picture; `timingRing` scales it
+    // from the pitch's own flight time, never a wall clock.
+    this.timingRingMesh = new Mesh(
+      new RingGeometry(hw * 1.35, hw * 1.6, 48),
+      new MeshBasicMaterial({ color: 0xffffff, ...overlay, opacity: 0.85, side: DoubleSide })
+    );
+    this.timingRingMesh.position.set(HOME.x, (lo + hi) / 2, HOME.z);
+    this.timingRingMesh.renderOrder = 42;
+    this.timingRingMesh.visible = false;
+    this.scene.add(this.timingRingMesh);
+
+    for (const bag of [FIRST, SECOND, THIRD, HOME]) {
+      const ring = new Mesh(
+        new RingGeometry(BAG_TAP_FT * 0.72, BAG_TAP_FT, 40),
+        new MeshBasicMaterial({ color: 0xffd23f, ...overlay, opacity: 0.5, side: DoubleSide })
+      );
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(bag.x, 0.06, bag.z);
+      ring.renderOrder = 38;
+      ring.visible = false;
+      this.scene.add(ring);
+      this.baseTargets.push(ring);
+    }
   }
 
   /** Show the plate cues only while a pitch is in the air. */
@@ -1097,6 +1191,33 @@ export class GameView {
     if (this.spotMarker) {
       this.spotMarker.visible = this.onTheMound;
       this.spotMarker.position.set(this.spot.x, this.spot.y, HOME.z);
+    }
+    // Base targets: while the person fields a live ball (any bag is a throw)
+    // or runs (a bag is a send). A soft pulse off the sim's own play clock.
+    const control = this.liveControl;
+    const pulse = 0.35 + 0.25 * Math.abs(Math.sin((this.frame?.play?.elapsedSec ?? 0) * 4));
+    // On the easy levels the bag the throw is ABOUT to go to glows green — the
+    // sim's own read (`plannedThrow`), which fires on its own after the
+    // release beat unless the child taps another bag. A hint, never a throw.
+    const play = this.frame?.play;
+    const easy = this.skill === 'tball' || this.skill === 'rookie';
+    const plan = control === 'field' && easy && play ? plannedThrow(play) : null;
+    const planned = plan?.target.kind === 'base' ? plan.target.base : null;
+    this.baseTargets.forEach((ring, i) => {
+      ring.visible = control !== null;
+      const mat = ring.material as MeshBasicMaterial;
+      mat.opacity = planned === i + 1 ? 0.85 : pulse;
+      mat.color.setHex(planned === i + 1 ? 0x5dff7a : 0xffd23f);
+    });
+    if (this.timingRingMesh) {
+      const pitch = this.frame?.pitch;
+      const show = this.timingRingOn && this.batting && !!pitch && !this.inputs.swing;
+      this.timingRingMesh.visible = show;
+      if (show && pitch) {
+        const ring = timingRing(this.pitchElapsed, pitch.travelSec);
+        this.timingRingMesh.scale.setScalar(ring.scale);
+        (this.timingRingMesh.material as MeshBasicMaterial).color.setHex(ring.now ? 0x5dff7a : 0xffffff);
+      }
     }
   }
 
@@ -1207,13 +1328,17 @@ export class GameView {
         // The flags ride the spec. `stamina` (a tiring pitcher, `sim/stamina.ts`),
         // `juice` (the meter and its spends, `sim/juice.ts`) and
         // `specialPitches` (three more cards on the picker, bought off that
-        // meter) are consumed by the sim; `shifts` is a seam until its port
-        // lands, and the sim's tests prove which is which. Headless runs never
-        // set this.
+        // meter) and `shifts` (where the fielders start, `sim/shifts.ts`) are
+        // all consumed by the sim, each proved not inert by its tests. Headless
+        // runs never set this.
         features: this.featureFlags,
         // The juice port must not spend the PERSON's meter for them; a watcher
         // has no side, so both are the CPU's.
-        humanSide: this.controlMode === 'watch' ? undefined : this.humanSide,
+        // Pass and play has two people and no CPU side to protect, so no single
+        // human side either: the sim runs it like a headless game's meters.
+        humanSide: this.controlMode === 'watch' || this.controlMode === 'versus' ? undefined : this.humanSide,
+        // T-BALL..ALL-STAR. Inert without a person, like the juice port above.
+        skill: this.skill,
       },
       makeRng(seed)
     );
@@ -1491,6 +1616,7 @@ export class GameView {
     this.inputs = {
       pointer: stillLive ? this.inputs.pointer : undefined,
       spend: wasWindup ? undefined : this.inputs.spend,
+      shift: wasWindup ? undefined : this.inputs.shift,
     };
     if (r.done) {
       this.frame = null;
@@ -1524,6 +1650,19 @@ export class GameView {
     }
     if (this.frame.phase === 'pitch') this.pitchElapsed = 0;
     if (this.frame.phase === 'pitch') this.cpuSwingStarted = false;
+    // Squared around before the ball leaves the hand, so the bunt reads early.
+    if (this.frame.phase === 'pitch' && this.buntArmed && this.humanBats) {
+      // Timed so the held receiving pose (frames 20-24 of `bunt`) is on the
+      // ball as it crosses — the clip otherwise recovers before a slow pitch
+      // arrives. Presentation only; the sim reads the flag, not the pose.
+      const travel = this.frame.pitch?.travelSec ?? 1;
+      this.refs.directors.get(this.frame.batterId)?.play('bunt', { rate: 22 / 30 / travel, restart: true });
+    }
+    // A new batter swings away until the person squares around again.
+    if (this.frame.phase === 'windup' && this.frame.batterId !== this.buntFor) {
+      this.buntFor = this.frame.batterId;
+      this.buntArmed = false;
+    }
     if (this.frame.phase === 'windup') {
       // A special is bought per pitch, so it is picked per pitch: the card
       // falls back to the fastball on every fresh windup rather than
@@ -2208,6 +2347,27 @@ export class GameView {
       this.trayEl.appendChild(chip);
     }
     hud.appendChild(this.trayEl);
+    // BUNT: a sticker chip on the right edge, the side the pitch picker uses
+    // when the person pitches — the two never show at once.
+    this.buntEl = document.createElement('button');
+    this.buntEl.type = 'button';
+    this.buntEl.className = 'spend-chip bunt-chip interactive';
+    this.buntEl.innerHTML =
+      '<span class="spend-chip__icon">🤏</span>' +
+      '<span class="spend-chip__name">BUNT</span>' +
+      '<kbd class="spend-chip__key">B</kbd>';
+    this.buntEl.setAttribute('aria-label', 'Bunt');
+    this.buntEl.hidden = true;
+    this.buntEl.addEventListener('pointerdown', () => this.toggleBunt());
+    hud.appendChild(this.buntEl);
+    // SHIFT (`features.shifts`): one chip that cycles NORMAL → PULL → OPPO,
+    // riding in the spend tray's column so the left edge stays one stack.
+    this.shiftEl = document.createElement('button');
+    this.shiftEl.type = 'button';
+    this.shiftEl.className = 'spend-chip shift-chip interactive';
+    this.shiftEl.hidden = true;
+    this.shiftEl.addEventListener('pointerdown', () => this.cycleShift());
+    this.trayEl.appendChild(this.shiftEl);
   }
 
   private paintHud(frame: LiveFrame): void {
@@ -2216,13 +2376,18 @@ export class GameView {
       const hint = controlHint(this.controlMode, frame.half, frame.phase);
       if (this.controlHintEl.textContent !== hint) this.controlHintEl.textContent = hint;
       this.controlHintEl.hidden = !hint;
+      if (hint !== this.lastHint) {
+        this.lastHint = hint;
+        for (const fn of this.hintTap) fn(hint);
+      }
     }
     this.board.update(
       scoreboardModel(
         frame,
         this.teamNames,
         (id) => this.character(id).name,
-        controls.bat ? 'bat' : controls.pitch ? 'pitch' : null
+        // Pass and play has two people; "YOU BAT" would be wrong for one of them.
+        this.controlMode === 'versus' ? null : controls.bat ? 'bat' : controls.pitch ? 'pitch' : null
       )
     );
     this.inningBreak.update(frame);
@@ -2242,12 +2407,30 @@ export class GameView {
       // sim's (`stamina.ts`), never restated here.
       frame.stamina !== null && isTired({ stamina: frame.stamina })
     );
+    if (this.shiftEl) {
+      const beat = frame.phase === 'windup' || frame.phase === 'between';
+      const show = this.featureFlags.shifts && controls.field && beat && frame.shift !== null;
+      this.shiftEl.hidden = !show;
+      if (show) {
+        const art = { normal: ['⬆️', 'NORMAL'], pull: ['⬅️', 'PULL'], oppo: ['➡️', 'OPPO'] }[frame.shift ?? 'normal'];
+        const html = `<span class="spend-chip__icon">${art[0]}</span><span class="spend-chip__name">SHIFT ${art[1]}</span>`;
+        if (this.shiftEl.innerHTML !== html) this.shiftEl.innerHTML = html;
+      }
+    }
+    if (this.buntEl) {
+      const beat = frame.phase === 'windup' || frame.phase === 'between' || (frame.phase === 'pitch' && !this.inputs.swing);
+      this.buntEl.hidden = !(controls.bat && beat && frame.outs < 3);
+      this.buntEl.classList.toggle('is-picked', this.buntArmed);
+    }
     // The tray: open when the person could buy something for the coming
     // pitch, each chip shown only while affordable, and read as armed once
     // the sim's own event said the meter paid for it.
     if (this.trayEl) {
       const affordable = this.affordableSpends();
-      const open = affordable.length > 0 || (frame.juice !== null && this.armedSpends.size > 0 && frame.phase !== 'live');
+      const open =
+        affordable.length > 0 ||
+        (frame.juice !== null && this.armedSpends.size > 0 && frame.phase !== 'live') ||
+        (this.shiftEl !== null && !this.shiftEl.hidden);
       this.trayEl.classList.toggle('is-open', open);
       for (const [kind, chip] of this.trayChips) {
         const armed = this.armedSpends.has(kind);

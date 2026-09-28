@@ -2593,3 +2593,28 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
   padding: var(--s2) var(--s4);
   letter-spacing: 0.08em;
 }
+
+/* Skill level — the time chips' language, one picture per level. */
+.team-row--skill {
+  gap: var(--s2);
+}
+
+/* BUNT — the spend chip's sticker, on the right edge while the person bats. */
+.bunt-chip {
+  grid-area: right;
+  align-self: center;
+  justify-self: end;
+  margin-inline-end: var(--s4);
+}
+.bunt-chip.is-picked {
+  background: var(--cream);
+  box-shadow:
+    0 0 0 0.18rem var(--gold),
+    0 0.28rem 0 rgb(20 32 46 / 0.35);
+}
+@media (max-height: 430px) {
+  .bunt-chip {
+    align-self: end;
+    margin-block-end: var(--s2);
+  }
+}

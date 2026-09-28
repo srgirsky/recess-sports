@@ -545,7 +545,8 @@ const SCREENS = [
       await new Promise((r) => setTimeout(r, 60));
       document.querySelector('.screen--title .btn--modes')?.click();
       await new Promise((r) => setTimeout(r, 100));
-      return document.querySelectorAll('.mode-card').length === 3 ? 'ok' : 'no three-mode menu';
+      // Lesson, two players, batting, pitching, watch (ModeScreen.ts EXTRA_MODES).
+      return document.querySelectorAll('.mode-card').length === 5 ? 'ok' : 'no five-mode menu';
     })()`,
     mustSee: '.screen--modes .mode-card',
   },

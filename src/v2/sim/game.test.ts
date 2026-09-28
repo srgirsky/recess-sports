@@ -24,7 +24,7 @@ import { GAME } from './params';
 import { maxThrowFt } from './fielders';
 import { VENUE_GEOMETRY, FIELD_POSITIONS, FIRST, dist, type VenueId } from './field';
 import { makeRng } from './rng';
-import { DEFAULT_FEATURES, parseFeatures } from './features';
+import { DEFAULT_FEATURES } from './features';
 import { JUICE } from './params';
 import { autoAssign } from '../../systems/lineup';
 import { ROSTER, getCharacter } from '../../data/characters';
@@ -642,17 +642,26 @@ describe('★ the held features are threaded, and only the ported one bites', ()
     }
   }, PLAYS_GAMES);
 
-  it('★ the unported flag (shifts) is still inert, and specialPitches without juice is too', () => {
+  it('★ specialPitches without juice is still inert', () => {
     // `specialPitches` is ported but bought off the juice meter, so with the
     // meter off it changes nothing by construction; `specialPitches.test.ts`
-    // proves it differs WITH juice. `shifts` is the one seam left.
-    const unported = { ...parseFeatures('all'), stamina: false, juice: false };
+    // proves it differs WITH juice.
+    const alone = { ...DEFAULT_FEATURES, specialPitches: true };
     for (const seed of ['a', 'b', 'c']) {
       expect(
-        fp(game(seed, { features: unported })),
-        `${seed}: an unported flag changed the game — a port landed without its own test`
+        fp(game(seed, { features: alone })),
+        `${seed}: specialPitches alone changed the game`
       ).toBe(fp(game(seed)));
     }
+  }, PLAYS_GAMES);
+
+  it('★ shifts: true changes the game — the port is not inert', () => {
+    // Over several seeds at least one game must differ: a CPU pull shift only
+    // bites when a slugger puts a ball where the shift moved somebody from.
+    const differs = ['a', 'b', 'c', 'd', 'e'].some(
+      (seed) => fp(game(seed, { features: { ...DEFAULT_FEATURES, shifts: true } })) !== fp(game(seed))
+    );
+    expect(differs, 'shifts on played the identical game on every seed').toBe(true);
   }, PLAYS_GAMES);
 
   it('★ stamina: true changes the game — the port is not inert', () => {

@@ -21,6 +21,9 @@
 
 import { DEFAULT_INNINGS, GameView } from './game/GameView';
 import type { VenueId } from './sim/field';
+import { parseSkill, type Skill } from './sim/assist';
+import { loadCoachCounts, loadSkill, saveCoachCounts, saveSkill } from './ui/skillStore';
+import { Coach } from './ui/coachModel';
 import { Router } from './ui/Router';
 import { TitleScreen } from './ui/screens/TitleScreen';
 import { PauseScreen } from './ui/screens/PauseScreen';
@@ -65,7 +68,7 @@ import {
   saveCustomPlayer,
   type CustomPlayerProfile,
 } from './ui/customPlayer';
-import { EXTRA_MODES, ModeScreen, type ExtraModeId } from './ui/screens/ModeScreen';
+import { EXTRA_MODES, ModeScreen, versusHeadline, type ExtraModeId } from './ui/screens/ModeScreen';
 import type { Character } from '../data/types';
 
 export class App {
@@ -94,6 +97,8 @@ export class App {
    */
   private identity: TeamIdentity = getTeamIdentity() ?? { color: 5, logo: 0 };
   private innings = DEFAULT_INNINGS;
+  /** T-BALL..ALL-STAR (`sim/assist.ts`). Remembered per browser; `?skill=` seeds it for review. */
+  private skill: Skill = parseSkill(new URLSearchParams(location.search).get('skill') ?? loadSkill());
   /** Day or night, chosen on the team screen. `?night=1` seeds it for review. */
   private night = new URLSearchParams(location.search).get('night') === '1';
   /** Where we play, chosen on the team screen. `?venue=` seeds it. */
@@ -105,6 +110,8 @@ export class App {
   private activeMode: 'pickup' | 'season' | ExtraModeId = 'pickup';
 
   private log: SessionLog | null = null;
+  /** Speaks the control hint (`coachModel.ts`) — every verb a few times per browser, always in the lesson. */
+  private readonly coach = new Coach(loadCoachCounts(), saveCoachCounts);
 
   constructor(canvas: HTMLCanvasElement, screens: HTMLElement) {
     this.router = new Router(screens);
@@ -137,6 +144,13 @@ export class App {
       this.sound.onFrame(f);
     });
     this.game.onReplay((kind) => this.sound.onReplay(kind));
+    // The coach speaks only in a person's game: the attract game behind the
+    // title paints hints too, and a screen being up means nobody is playing.
+    this.game.onHint((hint) => {
+      if (this.router.showing) return;
+      const line = this.coach.onHint(hint, performance.now() / 1000);
+      if (line) this.sound.sayCoach(line);
+    });
     this.game.onPauseRequest(() => this.pauseGame());
     new MuteButton(this.sound).mount();
     // The playtest log: a fourth read-only listener on the same streams,
@@ -306,7 +320,9 @@ export class App {
     this.season = null;
     const option = EXTRA_MODES.find((entry) => entry.id === mode)!;
     this.game.setControlMode(option.controls);
-    this.innings = 1;
+    // Practice is one inning; pass and play is a real (short) game.
+    this.innings = mode === 'versus' ? DEFAULT_INNINGS : 1;
+    this.coach.setLesson(mode === 'lesson');
 
     const ids = ROSTER.map((c) => c.id);
     const rng = makeRng(`mode-${mode}-${this.seedBase()}-${this.gameNo}`);
@@ -401,6 +417,7 @@ export class App {
         (t) => {
           this.identity = t;
           setTeamIdentity(t);
+          this.game.setSkill(this.skill);
           if (this.seasonDraft && this.rosters) {
             const season = newSeason(
               this.rosters.away,
@@ -414,6 +431,12 @@ export class App {
           } else {
             void this.playBall();
           }
+        },
+        this.skill,
+        (k) => {
+          this.skill = k;
+          saveSkill(k);
+          this.game.setSkill(k);
         }
       )
     );
@@ -443,6 +466,14 @@ export class App {
 
   private async playBall(): Promise<void> {
     this.game.setScreenCue(null);
+    // The lesson always plays T-BALL with the ring; otherwise the chosen level,
+    // with the ring on for the two easy ones.
+    const lesson = this.activeMode === 'lesson';
+    const skill = lesson ? 'tball' : this.skill;
+    this.game.setSkill(skill);
+    this.game.setTimingRing(lesson || skill === 'tball' || skill === 'rookie');
+    this.coach.setLesson(lesson);
+    this.coach.reset();
     this.gameNo += 1;
     this.sound.reset();
     this.game.setTeamNames(this.names());
@@ -515,7 +546,9 @@ export class App {
           ? { again: '📅  BACK TO WEEK' }
           : this.activeMode === 'watch'
             ? { headline: 'FINAL SCORE', again: '🍿  WATCH AGAIN' }
-            : this.activeMode === 'batting' || this.activeMode === 'pitching'
+            : this.activeMode === 'versus'
+              ? { headline: versusHeadline(result.awayScore, result.homeScore), again: '👥  REMATCH' }
+            : this.activeMode === 'batting' || this.activeMode === 'pitching' || this.activeMode === 'lesson'
               ? { headline: 'NICE WORK!', again: '🎯  PRACTICE AGAIN' }
               : undefined
       )

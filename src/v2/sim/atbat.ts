@@ -265,6 +265,8 @@ export interface HumanSwing {
    * ball is an undercut, which lifts it.
    */
   aimHeightFt: number;
+  /** Squared around: the bat is held in the ball's path, not swung (`BAT.BUNT_*`). */
+  bunt?: boolean;
 }
 
 /**
@@ -345,7 +347,7 @@ export function resolvePitch(
   // and a person supplies them; from there the swing is resolved by exactly the
   // same code. Keeping two copies of these three branches is how a human path
   // quietly acquires different physics from the CPU's.
-  const offer = (timingErrorSec: number, undercutFt: number): PitchResult => {
+  const offer = (timingErrorSec: number, undercutFt: number, bunt = false): PitchResult => {
     const swing = resolveSwing(
       {
         timingErrorSec,
@@ -357,6 +359,7 @@ export function resolvePitch(
         // The power swing grades the CPU's and a person's timing alike —
         // one offer, one physics, the rule this closure exists for.
         power: boost?.power ?? false,
+        bunt,
       },
       rng.fork('swing')
     );
@@ -382,7 +385,7 @@ export function resolvePitch(
     // exists so a poor-contact CPU kid is a foul-ball machine rather than a
     // strikeout machine — a statement about an AI's decision rule, not a rule of
     // baseball. A person decides for himself whether to offer.
-    return offer(human.atSec - travelSec, crossing.y - human.aimHeightFt);
+    return offer(human.atSec - travelSec, crossing.y - human.aimHeightFt, human.bunt ?? false);
   }
 
   const decision = cpuSwingDecision(inFlight, spec, rng, plate);

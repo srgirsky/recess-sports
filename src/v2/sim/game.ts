@@ -63,6 +63,8 @@ import type { LaunchSpec } from './launch';
 import { planDefence, type DefencePlan } from './lineup';
 import { DEFAULT_GEOMETRY, type FieldGeometry, type PositionId } from './field';
 import type { Rng } from './rng';
+import { cpuShift, type Shift } from './shifts';
+import { assistBatter, assistPitchPlan, assistSwing, type Skill } from './assist';
 
 import { applyAtBat, applyLivePlay, applySteal, isHalfOver, newHalfInning } from '../../systems/inning';
 import { decideAfterHalf, isWalkOff, shouldSkipBottom } from '../../systems/gameflow';
@@ -264,6 +266,11 @@ export interface LiveFrame {
    * these; what a spend costs is `juice.ts`'s, never restated in the view.
    */
   juice: { away: number; home: number } | null;
+  /**
+   * The fielding side's alignment (`features.shifts`) — or null with the flag
+   * off, so the view places every fielder on `FIELD_POSITIONS` as before.
+   */
+  shift: Shift | null;
 }
 
 export interface GameSpec {
@@ -293,10 +300,10 @@ export interface GameSpec {
    * is consumed (`playAtBatLive` sags the pitcher's stat from `Side.stamina`)
    * and so is `juice` (`Side.juice`, charged and spent in the same function)
    * and `specialPitches` (the three extra kinds, bought off that meter — so
-   * without `juice` the flag is inert by construction);
-   * the other two are still seams, and `game.test.ts` proves each case:
-   * absent and the defaults fingerprint identically, the unported flags are
-   * inert, and each ported flag changes the game.
+   * without `juice` the flag is inert by construction) and `shifts` (where
+   * the fielders start, `sim/shifts.ts`). `game.test.ts` proves each case:
+   * absent and the defaults fingerprint identically, and each flag changes
+   * the game.
    */
   features?: Features;
   /**
@@ -306,6 +313,12 @@ export interface GameSpec {
    * side. Omitted (every headless run) means both sides are the CPU's.
    */
   humanSide?: 'away' | 'home';
+  /**
+   * The person's skill level (`assist.ts`). Read only where `humanSide` names
+   * a side — a headless run has no person to assist, so it is NORMAL there by
+   * construction and every fingerprint holds. Omitted means NORMAL.
+   */
+  skill?: Skill;
 }
 
 export interface GameResult {
@@ -441,6 +454,10 @@ function* playAtBatLive(
     juice: JuiceArgs | null;
     /** `features.specialPitches`: may the fielding side buy a special kind? */
     specials: boolean;
+    /** `features.shifts`: does the fielding side choose where it stands? */
+    shifts: boolean;
+    /** The person's level and which of the two roles they hold this PA. Null: nobody. */
+    assist: { skill: Skill; bats: boolean; pitches: boolean } | null;
   },
   rng: Rng
 ): Generator<LiveFrame, void, PlayInputs> {
@@ -534,6 +551,8 @@ function* playAtBatLive(
     return { ...choosePitch(spec, pitchRng.fork('choose')), kind };
   };
   if (juice) syncJuice(frame, juice.meters);
+  let shift: Shift = 'normal';
+  frame.shift = args.shifts ? shift : null;
 
   for (;;) {
     if (pitches++ >= GAME.MAX_PITCHES_PER_PA) {
@@ -553,6 +572,12 @@ function* playAtBatLive(
     // runs on it.
     const windupInput = (yield frame) ?? {};
     decideSpends(windupInput.spend);
+    // The alignment: a person fielding proposes it (and keeps it until they
+    // change it); the CPU sets it from the batter. No draw either way.
+    if (args.shifts) {
+      shift = args.assist?.pitches ? (windupInput.shift ?? shift) : cpuShift(args.batter);
+      frame.shift = shift;
+    }
     syncFrame(frame, half, 'pitch');
     // ★ THE PITCH IS THROWN, YIELDED, AND ONLY THEN JUDGED — and that ordering
     // is the whole architectural change. `pitchAndSwing` did all three in one
@@ -585,13 +610,17 @@ function* playAtBatLive(
       : args.pitcher;
     const spec: PitchSpec = {
       pitcher,
-      batter: args.batter,
+      // A CPU batter facing a person reads the level's contact stat; the same
+      // object at NORMAL, so nothing moves there.
+      batter: args.assist?.pitches ? assistBatter(args.assist.skill, args.batter) : args.batter,
       count: half.state.count,
       plate: args.plate,
     };
     // A special kind is paid for or downgraded HERE, before the throw, so
     // `throwPitch` only ever throws what the meter covered.
-    const chosen = decidePitch(windupInput.pitch, spec, pitchRng);
+    const chosen =
+      decidePitch(windupInput.pitch, spec, pitchRng) ??
+      (args.assist?.bats ? assistPitchPlan(args.assist.skill, spec, pitchRng) : undefined);
     const inFlight = throwPitch(spec, pitchRng, chosen);
     if (stamina) {
       // Drained on the throw, before the swing: the pitch just thrown was the
@@ -611,7 +640,8 @@ function* playAtBatLive(
     // somewhere to land. A CPU batter passes nothing and draws `judge` and
     // `swing` exactly as before; a human draws neither, which again shifts
     // nothing for anybody else.
-    const swing = ((yield frame) ?? {}).swing;
+    const raw = ((yield frame) ?? {}).swing;
+    const swing = args.assist?.bats ? assistSwing(args.assist.skill, raw, inFlight, pitches) : raw;
     // Undefined unless a power swing is armed — `resolveSwing` then reads
     // `power: false`, and the ordinary arithmetic is untouched.
     const boost = armed.powerSwing ? { power: true } : undefined;
@@ -709,6 +739,8 @@ function* playAtBatLive(
         // Undefined with the flag off, so `beginPlay` builds the athletes
         // exactly as the one-kid-speed lint asserts.
         boost: juice ? { turboLegs: armed.turboLegs, goldenGlove: armed.goldenGlove } : undefined,
+        // Undefined with the flag off: every fielder on his table post.
+        shift: args.shifts ? shift : undefined,
       },
       rng.fork(`play${pitches}`),
       frame,
@@ -1014,6 +1046,7 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
     pitch: null,
     stamina: null,
     juice: spec.features?.juice ? { away: 0, home: 0 } : null,
+    shift: spec.features?.shifts ? 'normal' : null,
   };
 
   for (;;) {
@@ -1058,6 +1091,14 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
           // The specials are bought off the meter, so this is asked only
           // where `juice` is non-null; alone the flag changes nothing.
           specials: spec.features?.specialPitches ?? false,
+          shifts: spec.features?.shifts ?? false,
+          assist: spec.humanSide
+            ? {
+                skill: spec.skill ?? 'normal',
+                bats: spec.humanSide === (half === 'top' ? 'away' : 'home'),
+                pitches: spec.humanSide !== (half === 'top' ? 'away' : 'home'),
+              }
+            : null,
         },
         rng.fork(`${inning}${half}${bat.lineupIdx}`)
       );

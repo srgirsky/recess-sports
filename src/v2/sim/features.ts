@@ -11,13 +11,13 @@
 // default flip. That is the whole mechanism: a feature port lands behind its
 // flag, the flag stays false, and a session with children is what turns it on.
 //
-// ★ THREE PORTS HAVE LANDED: `stamina` is read by `game.ts` (`Side.stamina`,
+// ★ ALL FOUR PORTS HAVE LANDED: `stamina` is read by `game.ts` (`Side.stamina`,
 // `sim/stamina.ts`), so is `juice` (`Side.juice`, `sim/juice.ts`, with its
 // spends reaching `contact.ts`, `play.ts` and `fielders.ts`), and so is
 // `specialPitches` (`pitch.ts` `SPECIAL_PITCHES`, bought off the juice meter
 // in `game.ts` — so it needs `juice` on too, and alone it is inert by
-// construction). `shifts` is the seam left — `GameSpec.features` and
-// `PlaySpec.features` carry the type so its port has something to hang off.
+// construction), and so is `shifts` (`sim/shifts.ts`: where the fielders
+// START, set by the CPU from the batter or proposed by a person fielding).
 // `game.test.ts` and `specialPitches.test.ts` prove each case: the
 // fingerprints with the field absent and at `DEFAULT_FEATURES` are identical,
 // the unported flag is inert, and each ported flag changes the game — "wired

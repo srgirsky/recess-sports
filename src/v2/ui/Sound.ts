@@ -142,6 +142,11 @@ export class Sound {
     this.recorded.playKid(c.id, fallback);
   }
 
+  /** The coach (`coachModel.ts`): the control hint, spoken for a child who cannot read it. */
+  sayCoach(line: string): void {
+    say(line, commentatorProfile('B'), 'flush');
+  }
+
   /** "THE TEAL ROCKETS!" — said by the booth, at the top of the game. */
   sayTeam(name: string): void {
     say(`${name}!`, commentatorProfile('A'), 'flush');

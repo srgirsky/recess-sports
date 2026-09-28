@@ -37,6 +37,17 @@ export function battingRunOut(scale: number, distanceFt: number) {
   return { x: box.x * remaining, z: box.z * remaining };
 }
 
+/**
+ * The seated trunk turns toward the wrists instead of shifting the hips, and
+ * above this elbow weight the knob-arm search switches branches mid-bunt — a
+ * 42-degree step at 0.25-frame sampling (`audit:batting --check`); jump-free
+ * at 30, which leaves the seated elbow at shoulder height rather than below.
+ */
+const SEATED_ELBOW_WEIGHT = 30;
+
+/** Inside the reference wrist's 40-degree fold gate, with a margin. */
+const WRIST_LIMIT_RAD = 34 * Math.PI / 180;
+
 export class BattingPose {
   private bones = new Map<string, Object3D>();
   private original = new Map<Object3D, Quaternion>();
@@ -85,6 +96,8 @@ export class BattingPose {
 
   private readonly seated: boolean;
   private readyWeight = 0;
+  /** How far into the bunt's receiving pose this frame is, 0..1. */
+  private buntWeight = 0;
   private readonly stanceGrip: Vector3;
 
   constructor(mesh: Object3D, seated = false, readyDepth = STANCE_GRIP.z) {
@@ -200,7 +213,18 @@ export class BattingPose {
       const relative = lower.invert().multiply(rotation);
       if (relative.w < 0) relative.set(-relative.x,-relative.y,-relative.z,-relative.w);
       const roll = Math.abs(2*Math.atan2(relative.x,relative.w));
-      const score = 8*wristBend*wristBend + .2*(1-bend.dot(preferred)) + .03*roll*roll + 100*reach*reach + 40*Math.max(0,roll-Math.PI/2)**2;
+      // ★ A BUNT RECEIVES THE BALL WITH THE ELBOWS DOWN. With the bat level
+      // across the chest the knob hand can only keep a straight wrist by
+      // folding its forearm vertical and lifting the elbow beside the face —
+      // measured on all 30 delivered models at the held frame (0.50-0.59ft
+      // above the shoulder). Past the shoulder line minus a small margin the
+      // elbow is charged, and the wrist's 40-degree limit (`HandPose.test.ts`)
+      // becomes a wall rather than a preference, so the search buys the
+      // lowest elbow the wrist can afford instead of trading one for the other.
+      const elbowRise = Math.max(0, elbow.y - (shoulder.y - .15));
+      const wristOver = Math.max(0, wristBend - WRIST_LIMIT_RAD);
+      const score = 8*wristBend*wristBend + .2*(1-bend.dot(preferred)) + .03*roll*roll + 100*reach*reach + 40*Math.max(0,roll-Math.PI/2)**2
+        + this.buntWeight*((this.seated ? SEATED_ELBOW_WEIGHT : 60)*elbowRise*elbowRise + 400*wristOver*wristOver);
       return {rotation, wrist, bend, score, angle};
     };
     let best = evaluate(0);
@@ -265,6 +289,7 @@ export class BattingPose {
       : name === 'swing_follow' ? 1 - smooth(time / FOLLOW_SEC) : 0;
     const referenceHands = this.bones.has('RightHandIndex2');
     const bunt = name === 'bunt' && referenceHands ? buntAmount(time) : 0;
+    this.buntWeight = bunt;
     this.readyWeight = !referenceHands ? 0
       : name === 'swing_contact' || name === 'swing_whiff' ? 1-smooth(time*FPS/3)
       : name === 'swing_follow' ? smooth((time/FOLLOW_SEC-.7)/.3)
@@ -315,8 +340,10 @@ export class BattingPose {
       const t = smooth(Math.sin(Math.PI * time / framesToSec(clipSpec(name).frames)));
       if (referenceHands) {
         // Receive the pitch with a quiet bat across the chest. The top hand
-        // travels up the taper; the bottom hand stays near the knob.
-        grip.copy(this.stanceGrip).lerp(new Vector3(-.5, 2.12, -.33), bunt);
+        // travels up the taper; the bottom hand stays near the knob, held
+        // low and in front so its elbow can tuck (measured over all 30
+        // delivered models: elbows below the shoulder, knob elbow 103-118deg).
+        grip.copy(this.stanceGrip).lerp(new Vector3(-.55, 2.0, -.45), bunt);
         // Clear the shoulder first, then bring the bat into the receiving pose.
         grip.z += (.4 + .25*(1-bunt)**4)*Math.sin(Math.PI*bunt);
         axis.copy(STANCE_AXIS).lerp(new Vector3(0,.18,1).normalize(), smooth(bunt+.1*Math.sin(Math.PI*bunt))).normalize();

@@ -169,6 +169,7 @@ describe('state changes', () => {
       pitch: null,
       stamina: null,
       juice: null,
+      shift: null,
     };
     const snap = snapshot(frame);
     frame.outs = 3;

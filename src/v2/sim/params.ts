@@ -300,6 +300,23 @@ export const BAT = {
    * this age; `sim.swingPlane` says so and says what would close it.
    */
   ATTACK_ANGLE_DEG: 8,
+  /**
+   * ★ THE BUNT (a person's verb only). The bat is held out over the plate and
+   * met by the ball, so three things change and nothing else does:
+   *   · the timing window is this many times wider — the barrel is WAITING in
+   *     the ball's path rather than crossing it,
+   *   · the bat's own speed is this small push, ft/s, so Nathan Eq. 3 makes the
+   *     exit velocity mostly `e_A x pitch speed` — a soft ball by physics, not
+   *     by a cap,
+   *   · the swing plane is level, and timing steers the ball this fraction as
+   *     much as it steers a full swing.
+   * Authored, unmeasured: nobody has timed a six-year-old's bunt. The ordering
+   * a test asserts (a bunt is softer than a swing and easier to put in play)
+   * is what binds, not these values.
+   */
+  BUNT_WINDOW_MULT: 2.5,
+  BUNT_PUSH_FTS: 6,
+  BUNT_SPRAY_MULT: 0.5,
 } as const;
 
 /**
