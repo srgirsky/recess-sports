@@ -43,7 +43,6 @@ const DIR = join(dirname(fileURLToPath(import.meta.url)), 'blender');
 const ALLOW = {
   'bubbles SHIRT/STRIPE': 'the sock stripes are the dress\'s own pink by design (source comment)',
   'chip SHIRT/STRIPE': 'the sock stripe is the hoodie green by design',
-  'theo SHOE_DARK/SOLE': 'the trim lane IS the charcoal saddle panels and laces (source comment)',
 };
 
 const sources = readdirSync(DIR).filter((f) => /^sculpt-.*-source\.py$/.test(f));

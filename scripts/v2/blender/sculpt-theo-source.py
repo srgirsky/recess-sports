@@ -65,10 +65,15 @@ CREAM_DIM = rgba("EFD9B4")   # rib shadow tone
 SHORTS = rgba("3E4048")      # charcoal-navy shorts
 SHORTS_DARK = rgba("2C2E34")
 SOCK = rgba("FFF2D8")
-SHOE = rgba("F4E8D4")        # cream canvas upper
-SHOE_DARK = rgba("57534C")   # the charcoal saddle/trim
-WHITE = rgba("E9CDA6")       # warm tan cupsole - the concept band pair is cream #ecddcc + tan #d9b68b (the charcoal saddle never reaches the bottom-9% window)
-SOLE = rgba("57534C")        # trim = the charcoal panels and laces
+# ★ THE SHOE WAS AUTHORED INSIDE OUT. The sheet's sneaker is a CHARCOAL
+# canvas upper (sampled #584d40, warm) with a cream toe cap and cream laces
+# on a tan cupsole (#e1c096); the build had a cream upper with charcoal trim,
+# which is why all three shoe metrics sat at 88/12 against the concept's
+# 38/61 whatever band edge was probed. ShoeSpec's `upper` is the quarter and
+# heel counter, `trim` the toe cap, collar, tongue and straps.
+SHOE = rgba("5E4E3E")        # warm charcoal upper - the quarter and heel counter
+SHOE_TRIM = rgba("F6DEBC")   # cream toe cap, collar and laces
+WHITE = rgba("E8BA7C")       # tan cupsole, chroma-authored ~1.3x the sheet's #e1c096
 # ★ The team accent is the CAP'S CREAM FRONT PANEL (Chip's convention — only
 # the geometry meant to change colour lives on slot 3).
 TEAM_MASK = rgba("F6E7C8")
@@ -77,7 +82,7 @@ PALETTE = Palette(
     skin=SKIN, skin_shadow=SKIN_SHADOW, hair=HAIR,
     shirt=CREAM, shirt_dark=CREAM_DIM,
     pants=SHORTS, pants_dark=SHORTS_DARK,
-    shoe=SHOE, sock=SOCK, white=WHITE, sole=SOLE, team_mask=TEAM_MASK,
+    shoe=SHOE, sock=SOCK, white=WHITE, sole=SHOE_TRIM, team_mask=TEAM_MASK,
 )
 
 
@@ -124,16 +129,22 @@ def socket_push(nx: float, nz: float) -> float:
 
 def nose_push(nx: float, nz: float) -> float:
     """A small upturned button nose above the big grin (centre nz -0.28)."""
-    if abs(nx) > 0.17:
+    # ★ A BULB, NOT A WEDGE. The sheet's profile nose is a round button about
+    # as tall as it is proud. The old dome stood 0.084 proud over a ±0.09
+    # reach in nz (±0.04ft) — twice as deep as tall — and every profile board
+    # drew it as a sharp triangle with a straight bridge, even with
+    # head_surface's shoulder rows on it. Less projection over a taller,
+    # wider reach, with a flatter-topped profile (power 0.9), is a bulb.
+    if abs(nx) > 0.20:
         return 0.0
     dz = nz + 0.280
-    if dz < -0.10 or dz > 0.11:
+    if dz < -0.13 or dz > 0.15:
         return 0.0
-    across = max(0.0, 1.0 - (nx / 0.17) ** 2)
-    bridge = 0.008 * across * max(0.0, 1.0 - abs(dz - 0.05) / 0.08)
-    reach = 0.088 if dz >= 0.0 else 0.098
+    across = max(0.0, 1.0 - (nx / 0.20) ** 2)
+    bridge = 0.006 * across * max(0.0, 1.0 - abs(dz - 0.07) / 0.09)
+    reach = 0.150 if dz >= 0.0 else 0.130
     t = dz / reach
-    tip = 0.084 * across ** 1.25 * max(0.0, 1.0 - t * t) ** 1.40
+    tip = 0.068 * across ** 0.9 * max(0.0, 1.0 - t * t) ** 0.90
     return bridge + tip
 
 
@@ -207,6 +218,9 @@ BRIM_Z_TIP = 3.420
 BRIM_REACH = 0.940
 BRIM_HALF_W = 0.490
 BRIM_THICK = 0.032
+# The cream panel's edge, as -sin(theta) of a face's mid-column: 0.9 keeps
+# the two faces within ±30° of the front at LOD0's 12 columns.
+PANEL_FRONTNESS = 0.90
 
 
 def build_cap(builder: MeshBuilder, detail: int) -> None:
@@ -216,31 +230,45 @@ def build_cap(builder: MeshBuilder, detail: int) -> None:
     levels = CAP_LEVELS if detail >= 2 else thin_for_lod(
         [(z, hx, hy, yc) for z, hx, hy, yc in CAP_LEVELS], detail)
     ascending = list(reversed(levels))
-    rows = []
+
+    # ★ ONLY THE PANEL LIVES ON M_ACCESSORY (Chip's slot rule), and the panel
+    # is the concept's TWO FRONT PANELS of a six-panel cap: ±30° of the front
+    # meridian, tapering with the rings into the crown. The old rule
+    # (frontness > 0.62 on face midpoints) took four faces, 120° of the ring,
+    # and read as the broad cream plateau every critic filed. The seam
+    # vertices are DUPLICATED — one teal copy for the crown faces, one mask
+    # copy for the panel — so the edge is a hard seam, not a vertex-colour
+    # ramp across the neighbouring face. Zero added triangles.
+    def in_panel(column):
+        theta = 2 * pi * (column + 0.5) / segments
+        return -sin(theta) > PANEL_FRONTNESS
+
+    panel_columns = {c for c in range(segments) if in_panel(c)}
+    panel_verts = panel_columns | {(c + 1) % segments for c in panel_columns}
+    rows, panel_rows = [], []
     for z, half_x, half_y, y_centre in ascending:
-        ring = []
+        ring, panel_ring = [], {}
         for column in range(segments):
             theta = 2 * pi * column / segments
-            x = half_x * cos(theta)
-            y = y_centre + half_y * sin(theta)
-            frontness = -sin(theta)
-            colour = TEAM_MASK if (frontness > 0.62 and z < 3.92) else TEAL
-            ring.append(builder.vertex((x, y, z), colour, "Head"))
+            position = (half_x * cos(theta), y_centre + half_y * sin(theta), z)
+            ring.append(builder.vertex(position, TEAL, "Head"))
+            if column in panel_verts:
+                panel_ring[column] = builder.vertex(position, TEAM_MASK, "Head")
         rows.append(ring)
+        panel_rows.append(panel_ring)
     bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), TEAL, "Head")
     top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.025), TEAL, "Head")
-    # ★ ONLY THE PANEL LIVES ON M_ACCESSORY (Chip's slot rule).
-    def cap_material(column):
-        theta = 2 * pi * (column + 0.5) / segments
-        return 3 if -sin(theta) > 0.62 else 2
     for column in range(segments):
         nxt = (column + 1) % segments
         builder.face((bottom, rows[0][nxt], rows[0][column]), 2)
         builder.face((rows[-1][column], rows[-1][nxt], top), 2)
-    for lower, upper in zip(rows, rows[1:]):
+    for (lower, upper), (plower, pupper) in zip(zip(rows, rows[1:]), zip(panel_rows, panel_rows[1:])):
         for column in range(segments):
             nxt = (column + 1) % segments
-            builder.face((lower[column], lower[nxt], upper[nxt], upper[column]), cap_material(column))
+            if column in panel_columns:
+                builder.face((plower[column], plower[nxt], pupper[nxt], pupper[column]), 3)
+            else:
+                builder.face((lower[column], lower[nxt], upper[nxt], upper[column]), 2)
 
     if detail < 1:
         return
@@ -297,9 +325,18 @@ HAIR_LEVELS = [
     # side of the face (visible face right of centre 27.1 → 15.1, a critic's
     # measurement, 2026-09-02). Interpolation-redundant is not window-neutral.
     (3.240, 0.492, 0.505, 0.010),
-    (3.050, 0.478, 0.500, 0.060),
-    (2.940, 0.448, 0.470, 0.110),
-    (2.860, 0.395, 0.425, 0.150),
+    # The back ROUNDS IN toward the nape (profile back edge 0.545 → 0.545 →
+    # 0.525 → 0.460) where it used to hang a vertical 0.56-0.58 wall that
+    # stood a hand's width proud of the cap's own back and read as a slab.
+    (3.050, 0.478, 0.495, 0.050),
+    (2.940, 0.448, 0.455, 0.090),
+    (2.860, 0.395, 0.405, 0.120),
+    # ★ The nape ROUNDS UNDER. The table used to stop at 2.860 and fan to one
+    # vertex 0.02 below: a flat disc under a vertical back wall, which the
+    # profile board read as a hard polygon corner at the nape. The sheet's
+    # back view tucks the mass in under the flips. Paid for by the leg
+    # station at z 0.300, which sat inside the shoe (48 triangles each way).
+    (2.800, 0.300, 0.300, 0.160),
 ]
 
 # ★ THE CURL FIELD — sculptlib/hair.py holds the mechanism and the identity
@@ -325,8 +362,13 @@ CURL_Z_WIDTH = 0.08
 # the LIT side that carries the read under the ramp.
 CURL_TROUGH = 0.018
 
-HAIR_OPEN_BOTTOM = 2.840
+HAIR_OPEN_BOTTOM = 2.760   # below the nape row, so its front stays behind the jaw
 HAIR_FRINGE_Z = 3.330      # the shell stays behind the face above this
+# The ear (EAR_SPEC: centre y 0.020, fore-aft radius 0.155) ends at y ≈ 0.175;
+# the shell's front-lateral columns stand behind that below the ear's top.
+HAIR_EAR_TOP_Z = 3.300
+HAIR_TEMPLE_X = 0.300
+HAIR_BEHIND_EAR_Y = 0.200
 
 
 def hair_window_z(x_signed: float) -> float:
@@ -384,6 +426,28 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
                     y = max(y, (sf + 0.045) if sf > -9.0 else (-0.020 if in_ear_band else -0.150))
                 else:
                     y = max(y, (sf - 0.050) if sf > -9.0 else (-0.020 if in_ear_band else -0.260))
+                # ★ THE SHEET HANGS THE HAIR BEHIND THE EAR, from the ear's top
+                # down to the jaw, in all three side-facing views. The -0.020
+                # wall above still left the shell's lateral columns (x ≈ 0.49
+                # plus curl) outboard of the whole ear: the profile board
+                # showed a grey sliver through the hair and no rim or lobe
+                # (rubric 3.10), and the same columns below the ear were the
+                # brown lock on the cheek beside the mouth. Below the ear top,
+                # everything outboard of the temple goes behind the ear's
+                # back edge; inboard of it the columns are already inside the
+                # skull or behind the face window.
+                #
+                # ⚠️ AND THE FOLDED COLUMNS GO ONTO THE SKULL, NOT A PLANE.
+                # Pushing them to y 0.200 at their own x stood a forward-facing
+                # strip OUTSIDE the head; the runtime is single-sided, so from
+                # behind it was culled and the outline hull showed through as
+                # a flat slate patch between ear and hair (a critic, hero and
+                # run stills). Pulled in to the skull's surface the strip is
+                # buried and the shell's edge seals against skin.
+                if z < HAIR_EAR_TOP_Z and abs(x) > HAIR_TEMPLE_X and y < HAIR_BEHIND_EAR_Y:
+                    y = HAIR_BEHIND_EAR_Y
+                    inside = 0.97 * skull_surface_x(y, z)
+                    x = (1.0 if x > 0.0 else -1.0) * min(abs(x), max(inside, HAIR_TEMPLE_X))
             tone = HAIR if f > CURL_TROUGH else HAIR_DARK
             ring.append(builder.vertex((x, y, z), tone, "Head"))
         rows.append(ring)
@@ -399,15 +463,19 @@ def build_hair(builder: MeshBuilder, detail: int) -> None:
             builder.face((lower[column], lower[nxt], upper[nxt], upper[column]), 2)
     if detail < 1:
         return
-    # The flips: mirrored outward curls at the nape and over the ear tops
+    # The flips: mirrored outward curls at the nape, temple locks before the ears
     # (leans sum to zero), plus a centre fringe wisp riding the forehead —
     # 3-point tubes with fat bases so they read as flipped locks, not tabs.
     for spine, radii in (
         (((0.300, 0.240, 2.980), (0.400, 0.280, 2.930), (0.470, 0.300, 2.900)), (0.075, 0.055, 0.030)),
         (((-0.300, 0.240, 2.980), (-0.400, 0.280, 2.930), (-0.470, 0.300, 2.900)), (0.075, 0.055, 0.030)),
         (((0.000, 0.330, 2.960), (0.000, 0.410, 2.900), (0.000, 0.450, 2.860)), (0.085, 0.060, 0.032)),
-        (((0.380, 0.040, 3.360), (0.460, 0.055, 3.330), (0.520, 0.070, 3.300)), (0.085, 0.060, 0.032)),
-        (((-0.380, 0.040, 3.360), (-0.460, 0.055, 3.330), (-0.520, 0.070, 3.300)), (0.085, 0.060, 0.032)),
+        # The temple locks: the sheet's hair comes down IN FRONT of the ear
+        # top to about mid-ear, at the face edge. These were flips arched
+        # over the ear tops; once the shell went behind the ear (below) the
+        # temples read bare, so the same tubes moved forward to be sideburns.
+        (((0.360, -0.100, 3.360), (0.400, -0.165, 3.250), (0.392, -0.190, 3.160)), (0.075, 0.050, 0.022)),
+        (((-0.360, -0.100, 3.360), (-0.400, -0.165, 3.250), (-0.392, -0.190, 3.160)), (0.075, 0.050, 0.022)),
     ):
         builder.tube(list(spine), list(radii), 2, HAIR, "Head", 5)
     # Fringe wisps on the forehead, riding the face surface (Lefty's rule).
@@ -615,7 +683,8 @@ LEG_STATIONS = [
     (0.531, 0.105, 1.00, TEAL, "Leg"),
     (0.504, 0.104, 1.00, SOCK, "Leg"),
     (0.440, 0.102, 1.00, SOCK, "Foot"),
-    (0.300, 0.096, 0.98, SOCK, "Foot"),
+    # (0.300 was here: inside the shoe upper and within 0.001 of its
+    # neighbours' lerp; its 48 triangles now round the nape.)
     (0.150, 0.090, 0.95, SOCK, "Foot"),
 ]
 
@@ -649,16 +718,16 @@ SHOE_TOE_OUT = 14.0 * pi / 180.0
 # not-traceable: the last's fore-aft profile has no sheet view; the scales it
 # is built to are the traced numbers above.
 SHOE_STATIONS = [
-    (-0.439, 0.058, 0.210, SOLE),
-    (-0.388, 0.106, 0.242, SOLE),
-    (-0.314, 0.140, 0.268, SOLE),
-    (-0.228, 0.162, 0.282, SOLE),
-    (-0.131, 0.174, 0.288, SOLE),
-    (-0.034, 0.180, 0.290, SOLE),
-    (0.057, 0.179, 0.288, SOLE),
-    (0.137, 0.168, 0.282, SOLE),
-    (0.188, 0.144, 0.272, SOLE),
-    (0.239, 0.106, 0.236, SOLE),
+    (-0.439, 0.058, 0.210, SHOE_TRIM),
+    (-0.388, 0.106, 0.242, SHOE_TRIM),
+    (-0.314, 0.140, 0.268, SHOE_TRIM),
+    (-0.228, 0.162, 0.282, SHOE_TRIM),
+    (-0.131, 0.174, 0.288, SHOE_TRIM),
+    (-0.034, 0.180, 0.290, SHOE_TRIM),
+    (0.057, 0.179, 0.288, SHOE_TRIM),
+    (0.137, 0.168, 0.282, SHOE_TRIM),
+    (0.188, 0.144, 0.272, SHOE_TRIM),
+    (0.239, 0.106, 0.236, SHOE_TRIM),
 ]
 
 # not-traceable: a cross-section is a fore-aft cut no view can give.
@@ -757,7 +826,7 @@ THEO_SHOE = ShoeSpec(
     heel_point=(0.286, 0.106 + 0.025),
     toe_point=(-0.470, 0.044 + 0.042),
     upper=SHOE,
-    trim=SOLE,
+    trim=SHOE_TRIM,
     midsole=WHITE,
 )
 

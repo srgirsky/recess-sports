@@ -95,115 +95,75 @@
       "class": "no-defect-note",
       "excerpt": "Historical finding retained; its exact numerical/crop claim was not remeasur"
     },
-    "calls_shot:0c190e29ec4b": {
+    "calls_shot:52f4f98c982b": {
       "char": "calls_shot",
       "class": "no-defect-note",
-      "excerpt": "CLEARED (current scoped evidence) — Former cream diagonal/sawtooth geometry "
+      "excerpt": "CLEARED — Shoes: all three shoe metrics now pass (32.1/67.9/29.3 vs concept"
     },
-    "calls_shot:129eca730ba3": {
-      "char": "calls_shot",
-      "class": "material-light",
-      "excerpt": "CARRIED (fresh measurement) — Shoes still read as cream clogs, with two dark"
-    },
-    "calls_shot:ffc1d47065c1": {
-      "char": "calls_shot",
-      "class": "proportions",
-      "excerpt": "REVISED (final cap fit) — The smaller crown visibly sits around the forehead"
-    },
-    "calls_shot:ca970b0fbd17": {
-      "char": "calls_shot",
-      "class": "sheared-edges",
-      "excerpt": "CLEARED (final cap join) — The former cream/yellow crown lip projecting belo"
-    },
-    "calls_shot:a036b35bb5b2": {
-      "char": "calls_shot",
-      "class": "proportions",
-      "excerpt": "CARRIED (current construction) — The cream team panel is still a broad front"
-    },
-    "calls_shot:8e918e78699e": {
+    "calls_shot:0aa61333046a": {
       "char": "calls_shot",
       "class": "no-defect-note",
-      "excerpt": "CARRIED (record) — Elbow at 0.03: the rest step found at 0.06 stays cleared "
+      "excerpt": "CLEARED — Cap front panel extent: with PANEL_FRONTNESS 0.90 (sculpt-theo-so"
     },
-    "calls_shot:79a4207821d9": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (carried) — The tan lozenge inside the crook of the lead elbow in"
-    },
-    "calls_shot:97d120605e28": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "REVISED (measured positive) — Knee and calf: the recorded 'limbs are smooth "
-    },
-    "calls_shot:034b982db216": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "NON-DEFECT (checked) — Shorts hem and sock roll after the calf belly and the"
-    },
-    "calls_shot:475a9a6e3d61": {
-      "char": "calls_shot",
-      "class": "hair-nyquist",
-      "excerpt": "CARRIED — Profile hair hard-faceted: theo-profile-review.png's hair/face ban"
-    },
-    "calls_shot:efbacf487362": {
-      "char": "calls_shot",
-      "class": "sheared-edges",
-      "excerpt": "CARRIED — Hairline skin streak where the skull grazes the hair shell: at 8x "
-    },
-    "calls_shot:2f7aaedf6ef5": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (record) — The right-side face wedge seen when HAIR_LEVELS 3.240 and"
-    },
-    "calls_shot:40b30326b29d": {
+    "calls_shot:c281f9026d1b": {
       "char": "calls_shot",
       "class": "ears",
-      "excerpt": "CARRIED — Ear buried in profile: build_ear runs (EAR_SPEC centre z 3.230, ra"
+      "excerpt": "CLEARED (visibility) / CARRIED (construction) — Ear in profile (rubric 3.10"
     },
-    "calls_shot:2df7d294f7f1": {
+    "calls_shot:dbcd8b5dfee9": {
       "char": "calls_shot",
-      "class": "proportions",
-      "excerpt": "CARRIED — Profile nose a pointed wedge: nose_push exists (sculpt-theo-source"
+      "class": "no-defect-note",
+      "excerpt": "CLEARED — Profile nose: nose_push (sculpt-theo-source.py:130) was re-author"
     },
-    "calls_shot:4e4546345390": {
+    "calls_shot:216e726bd45e": {
+      "char": "calls_shot",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED — Brown hair lock on the cheek: in all four theo-runtime-face-*.png"
+    },
+    "calls_shot:75f676b3a378": {
       "char": "calls_shot",
       "class": "hair-nyquist",
-      "excerpt": "CARRIED (minor) — Navy underbrim chevrons between the fringe tufts: theo-run"
+      "excerpt": "CARRIED (improved, NOT CLEARED) — Profile hair nape/back: the new 2.800 nap"
     },
-    "calls_shot:2f9da862fd89": {
+    "calls_shot:4631b2de2fa6": {
+      "char": "calls_shot",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED — Slate/outline patch between ear and hair: 6x crops of theo-runtim"
+    },
+    "calls_shot:0253ad3a3241": {
+      "char": "calls_shot",
+      "class": "sheared-edges",
+      "excerpt": "CARRIED (minor) — Slate notch at the nape silhouette: theo-runtime-hero.png"
+    },
+    "calls_shot:cc4150eb83f2": {
+      "char": "calls_shot",
+      "class": "sheared-edges",
+      "excerpt": "CARRIED (minor) — Pale fleck inside the rear hair in profile: theo-profile-"
+    },
+    "calls_shot:169901b867ab": {
       "char": "calls_shot",
       "class": "hair-nyquist",
-      "excerpt": "CARRIED (minor) — Dark hair lock on the cheek at mouth height: the hair wind"
+      "excerpt": "CARRIED (minor) — Navy underbrim chevrons between the fringe tufts: all fou"
     },
-    "calls_shot:2d3efcdb31f0": {
+    "calls_shot:d194a74897dc": {
       "char": "calls_shot",
-      "class": "evidence",
-      "excerpt": "CARRIED — Section 6 integration evidence stale and a proxy: docs/v2/concepts"
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED — Cap and hair are still hard-faceted: the profile crown ring (theo"
     },
-    "calls_shot:6cfd50ef1fa0": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (kept clear) — The old hairMass-1 basis: theo-front-review.png still"
-    },
-    "calls_shot:d02d28bad9fd": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED (capture defect) — Refreshed theo-runtime-run.png now genuinely pain"
-    },
-    "calls_shot:bfa92519d5b7": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "CONFIRMED (final frozen shipping artefact) — Final GLB c9d967001510572f7c9ff"
-    },
-    "calls_shot:738abf805645": {
-      "char": "calls_shot",
-      "class": "no-defect-note",
-      "excerpt": "CONFIRMED (final migrated hands and clothing) — Fresh hero/run/contact image"
-    },
-    "calls_shot:1d59186629d7": {
+    "calls_shot:c87d85115d37": {
       "char": "calls_shot",
       "class": "other",
-      "excerpt": "OBSERVED (minor, final static crops) — At 4x, small dark triangular flecks r"
+      "excerpt": "CARRIED (minor) — Small dark fleck on the cream tee near the hem: theo-runt"
+    },
+    "calls_shot:5f1a5b6db14c": {
+      "char": "calls_shot",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT — Head height 32.7% vs 35.0% and width:height 0.94 vs 1.05 stay "
+    },
+    "calls_shot:23d23c37a679": {
+      "char": "calls_shot",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (reclassified) — The old finding 'Section 6 integration evidence"
     },
     "wheelchair_ace:94d81849d8f4": {
       "char": "wheelchair_ace",
