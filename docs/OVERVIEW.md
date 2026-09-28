@@ -3170,5 +3170,17 @@ v2 and leaves every existing record and golden fingerprint where it was.
   `BAG_TAP_FT`. That is the radius `nearestBase` accepts, so the ring shown is
   the target that counts.
 
+- **The bunt's receiving pose**: every roster fidelity record carried the same
+  shared motion finding: at the held frame the knob-hand elbow rose beside the
+  face with a vertical forearm. A roster-wide probe measured it on all 30
+  delivered models, 0.50-0.59ft above the shoulder. The grip search now
+  charges an elbow above the shoulder and treats the wrist's 40-degree gate
+  as a wall, and the bunt holds the bat lower and nearer the body. Every
+  model now keeps both elbows at least 0.17ft below the shoulder. An
+  independent review of the first attempt judged it better but the knob arm
+  too straight, and the grip was hidden under the review panel. The tucked
+  hold answers both points. The per-kid findings remain in the ledger for a
+  reviewer to close. This change does not approve them.
+
 What still cannot be closed from code stays open: no child has played any of
 this (`docs/playtests/` holds no record), and no art target has been approved.
