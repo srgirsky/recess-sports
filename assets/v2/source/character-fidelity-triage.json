@@ -360,155 +360,80 @@
       "class": "no-defect-note",
       "excerpt": "HISTORICAL RECORD (retained; prior pixel coordinates and measurements not in"
     },
-    "big_lou:5b46a5d03ac7": {
+    "big_lou:b352381120d7": {
       "char": "big_lou",
       "class": "no-defect-note",
-      "excerpt": "FINAL SCOPED PASS 2026-09-24: reference-hand migration retains stacked batti"
+      "excerpt": "CLEARED — exposed neck. big-lou-front-review.png rows 236-240 go from the c"
     },
-    "big_lou:b8ad9af4c3ae": {
+    "big_lou:194f1168f2ee": {
       "char": "big_lou",
       "class": "no-defect-note",
-      "excerpt": "CLEARED — batting-exit transition defects: an initial continuous capture rev"
+      "excerpt": "CLEARED — nape ledge (silhouette). Profile back-edge trace, rows 203-224: 3"
     },
-    "big_lou:a16e924082c4": {
-      "char": "big_lou",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED — draft/fidget additive-angle burial: current pose_card at four samp"
-    },
-    "big_lou:be0b46ea36df": {
-      "char": "big_lou",
-      "class": "evidence",
-      "excerpt": "CURRENT MOTION EVIDENCE: all consecutive frames of a 30fps synthetic sequenc"
-    },
-    "big_lou:d2e68f01017c": {
-      "char": "big_lou",
-      "class": "no-defect-note",
-      "excerpt": "CLEARED — prior upset_goofy torso-burial blocker: fresh upset_goofy.png at 0"
-    },
-    "big_lou:bbd3f6099da7": {
-      "char": "big_lou",
-      "class": "stance",
-      "excerpt": "BUNT POLISH — at 0.67 seconds, bunt-2-2.png shows the lower-handle elbow lif"
-    },
-    "big_lou:24275f732f71": {
-      "char": "big_lou",
-      "class": "evidence",
-      "excerpt": "CONTACT LIMITATION — swing_contact-1-1.png shows a continuous visible near a"
-    },
-    "big_lou:f6dea3c071a2": {
-      "char": "big_lou",
-      "class": "stance",
-      "excerpt": "MEASURED CURRENT — eight of nine metrics pass. Ankle daylight remains 26.4 a"
-    },
-    "big_lou:96a83c3bbfa4": {
-      "char": "big_lou",
-      "class": "proportions",
-      "excerpt": "CURRENT IDENTITY POLISH — flat broad tee hem, belly faceting, smooth cap-lik"
-    },
-    "big_lou:8f419e463833": {
-      "char": "big_lou",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
-    },
-    "big_lou:d674f596c8d7": {
-      "char": "big_lou",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
-    },
-    "big_lou:375943f9af0c": {
-      "char": "big_lou",
-      "class": "proportions",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
-    },
-    "big_lou:f4407cc51ed3": {
-      "char": "big_lou",
-      "class": "other",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
-    },
-    "big_lou:b71752b577c8": {
-      "char": "big_lou",
-      "class": "proportions",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
-    },
-    "big_lou:79f1e12c29b3": {
-      "char": "big_lou",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
-    },
-    "big_lou:546504a23311": {
+    "big_lou:8ef459c65025": {
       "char": "big_lou",
       "class": "hair-nyquist",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
+      "excerpt": "NEW — ragged nape edge with a hair tab below the ear lobe. big-lou-profile-"
     },
-    "big_lou:d1117fed062e": {
+    "big_lou:16b3a8815c48": {
+      "char": "big_lou",
+      "class": "hair-nyquist",
+      "excerpt": "CARRIED — temple hairline notch, profile. big-lou-profile-review.png 6x cro"
+    },
+    "big_lou:50ac14b010d5": {
+      "char": "big_lou",
+      "class": "proportions",
+      "excerpt": "CARRIED (changed form) — collar/shoulder shape. It is no longer a narrow tu"
+    },
+    "big_lou:f4c71549aa04": {
+      "char": "big_lou",
+      "class": "proportions",
+      "excerpt": "CARRIED — tee hem and belly profile. big-lou-profile-review.png: the back i"
+    },
+    "big_lou:138b8ca3b8a4": {
+      "char": "big_lou",
+      "class": "proportions",
+      "excerpt": "CARRIED (improved) — nose profile reach. The tip is at x203 against the eye"
+    },
+    "big_lou:a709fc35851a": {
+      "char": "big_lou",
+      "class": "no-defect-note",
+      "excerpt": "CLEARED (runtime) — crown apex. The runtime grin/cheer crops show a round c"
+    },
+    "big_lou:77b5d521f4d9": {
+      "char": "big_lou",
+      "class": "other",
+      "excerpt": "CARRIED — belly faceting. Flat-shaded triangle facets are visible across th"
+    },
+    "big_lou:fac2d70adc15": {
+      "char": "big_lou",
+      "class": "other",
+      "excerpt": "CARRIED — near-black bar under the hem at the crotch. big-lou-front-review."
+    },
+    "big_lou:d4780a2af138": {
       "char": "big_lou",
       "class": "butt-joins",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
+      "excerpt": "CARRIED — sleeve/torso junction. In big-lou-runtime-run.png 4x crop x450-63"
     },
-    "big_lou:b7fe5a5c1aab": {
-      "char": "big_lou",
-      "class": "butt-joins",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
-    },
-    "big_lou:137d45369839": {
-      "char": "big_lou",
-      "class": "interpenetration",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
-    },
-    "big_lou:3900ebf6f2a1": {
+    "big_lou:7431ecc325ed": {
       "char": "big_lou",
       "class": "no-defect-note",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
+      "excerpt": "NON-DEFECT — shoulder deformation in run/swing is continuous. The run crop "
     },
-    "big_lou:0ae7dfcc0d8c": {
-      "char": "big_lou",
-      "class": "proportions",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
-    },
-    "big_lou:8fe3c424e7d3": {
-      "char": "big_lou",
-      "class": "material-light",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
-    },
-    "big_lou:c68c8ae790e8": {
-      "char": "big_lou",
-      "class": "material-light",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
-    },
-    "big_lou:60f799b1632f": {
-      "char": "big_lou",
-      "class": "sheared-edges",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
-    },
-    "big_lou:ea1fa6e2df4c": {
-      "char": "big_lou",
-      "class": "proportions",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
-    },
-    "big_lou:6933ca800cf4": {
-      "char": "big_lou",
-      "class": "proportions",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
-    },
-    "big_lou:c7fff67e1d19": {
-      "char": "big_lou",
-      "class": "proportions",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
-    },
-    "big_lou:b58826499061": {
-      "char": "big_lou",
-      "class": "evidence",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
-    },
-    "big_lou:17fcc4ab6fc3": {
+    "big_lou:eb34bd9b51f3": {
       "char": "big_lou",
       "class": "no-defect-note",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
+      "excerpt": "NON-DEFECT — ankle daylight OFF (26.0 vs 0.00) is flood containment by cons"
     },
-    "big_lou:9058238b1616": {
+    "big_lou:c79ce4723af1": {
       "char": "big_lou",
       "class": "no-defect-note",
-      "excerpt": "HISTORICAL RECORD — retained for continuity, not independently remeasured in"
+      "excerpt": "NON-DEFECT — TEAM_MASK sock roll-top (script lines 531-532). It renders as "
+    },
+    "big_lou:a804d6fb2c7f": {
+      "char": "big_lou",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT (instrument) — the hero still is three-quarter-back because of t"
     },
     "tank:54ebcd59effc": {
       "char": "tank",

@@ -85,14 +85,22 @@ PALETTE = Palette(
 HEAD_CENTER = (0.0, -0.020, 3.420)
 HEAD_RADII = (0.500, 0.500, 0.520)
 
-# Round cheeks widest low on the face.
+# ★ A PEAR, NOT A BALL. Row-scanned against the sheet at matched figure
+# height: the drawn cranium runs straight-sided at 0.21 of the figure from
+# the crown to the ear tops, the ears jut out below it and the jowls are the
+# widest flesh — measured 0.207 of the figure at 22%, which the old table
+# already exceeded (0.232), so the jowls are NOT widened. The old table (1.00-1.04 above the cheeks) made the temples
+# 0.26 of the figure, 20% wide, and head aspect read 1.17 against 1.06 once
+# the buzz stopped inflating the height. The buzz's own citation said so:
+# 0.4213 at z 3.65, where the unscaled skull alone is 0.45.
 FACE_SCALE = (
-    (1.00, 1.00),
-    (0.40, 1.01),
-    (0.05, 1.04),
-    (-0.30, 1.08),
-    (-0.60, 1.06),
-    (-1.00, 0.96),
+    (1.00, 0.96),
+    (0.60, 0.92),
+    (0.30, 0.88),
+    (0.05, 0.94),
+    (-0.30, 1.00),    # the jowls: widest flesh, but the scan caps them
+    (-0.60, 0.99),
+    (-1.00, 0.93),
 )
 
 
@@ -119,16 +127,18 @@ def socket_push(nx: float, nz: float) -> float:
 
 def nose_push(nx: float, nz: float) -> float:
     """A broad soft button nose (centre nz -0.26)."""
-    if abs(nx) > 0.19:
+    # Broad and soft: the sheet's nose is as wide as the gap between the
+    # eyes. The old 0.19-wide, 0.080-deep dome read as a small point.
+    if abs(nx) > 0.24:
         return 0.0
     dz = nz + 0.260
-    if dz < -0.10 or dz > 0.12:
+    if dz < -0.12 or dz > 0.14:
         return 0.0
-    across = max(0.0, 1.0 - (nx / 0.19) ** 2)
-    bridge = 0.007 * across * max(0.0, 1.0 - abs(dz - 0.05) / 0.08)
-    reach = 0.092 if dz >= 0.0 else 0.102
+    across = max(0.0, 1.0 - (nx / 0.24) ** 2)
+    bridge = 0.006 * across * max(0.0, 1.0 - abs(dz - 0.06) / 0.09)
+    reach = 0.150 if dz >= 0.0 else 0.120
     t = dz / reach
-    tip = 0.080 * across ** 1.25 * max(0.0, 1.0 - t * t) ** 1.40
+    tip = 0.110 * across ** 0.9 * max(0.0, 1.0 - t * t) ** 1.0
     return bridge + tip
 
 
@@ -188,17 +198,32 @@ def skull_front_y(x: float, z: float) -> float:
 # sides ending above the ears, nape tongues closing the back (no bald read).
 # measured: front z=3.80 halfWidth=0.3708 tol=0.03
 # measured: front z=3.65 halfWidth=0.4213 tol=0.03
+# ★ A BUZZ HUGS THE SKULL. The old rows were hand-tabulated and stood up
+# to 0.12ft proud of the back of the skull (3.36: back edge 0.605 against the
+# skull's 0.49), with the lower rows' centres pushed back to 0.16 — in
+# profile a bowl-cut helmet with a ledge at the nape, which is what hairMass 2
+# and "smooth cap-like hair/nape ledge" were scoring. These rows are the
+# skull's own cross-section (HEAD_RADII, face_half_scale, the 1.02 back and
+# ~0.90 front depths) plus a 0.030 standoff: at z 3.80 that is 0.365 against
+# the 0.3708 cited above, where the old table carried 0.423.
+# Regenerate these rows whenever FACE_SCALE or HEAD_RADII moves; the three
+# lowest are then tucked 0.015/0.030/0.040 in behind the jaw — deeper cut the
+# nape edge into the skull as a ragged zig-zag — (a hair sliver showed
+# below each lobe from the front once the jowls narrowed).
 BUZZ_LEVELS = [
-    (3.990, 0.150, 0.155, 0.000),
-    (3.930, 0.300, 0.310, 0.000),
-    (3.840, 0.400, 0.415, 0.005),
-    (3.720, 0.470, 0.485, 0.010),
-    (3.600, 0.510, 0.525, 0.020),
-    (3.480, 0.525, 0.540, 0.040),
-    (3.360, 0.515, 0.535, 0.070),
-    (3.240, 0.460, 0.482, 0.095),
-    (3.130, 0.385, 0.410, 0.128),
-    (3.050, 0.280, 0.312, 0.158),
+    # The crown follows the OFFSET surface (skull top 3.94 + 0.030, curvature
+    # radius ~0.4): a 0.030 top ring under the fan's +0.02 apex was a cone
+    # point on the board (Grizz's pointed-apex lesson).
+    (3.955, 0.100, 0.100, -0.015),
+    (3.925, 0.165, 0.160, -0.012),
+    (3.850, 0.295, 0.300, -0.003),
+    (3.750, 0.387, 0.401, 0.003),
+    (3.630, 0.439, 0.469, 0.007),
+    (3.500, 0.482, 0.504, 0.010),
+    (3.370, 0.510, 0.508, 0.010),
+    (3.250, 0.487, 0.484, 0.008),
+    (3.140, 0.418, 0.434, 0.005),
+    (3.050, 0.332, 0.367, 0.001),
 ]
 
 BUZZ_OPEN_BOTTOM = 3.030
@@ -211,7 +236,7 @@ def buzz_window_z(x_signed: float) -> float:
         return BUZZ_FRINGE_Z
     if x_abs < 0.44:
         return BUZZ_FRINGE_Z - (x_abs - 0.30) * 1.6
-    return 3.360
+    return 3.420   # above the 3.37 buzz row, so the lateral quad stays behind the cheek
 
 
 def build_buzz(builder: MeshBuilder, detail: int) -> None:
@@ -265,18 +290,36 @@ def build_buzz(builder: MeshBuilder, detail: int) -> None:
 # (0.595 at 1.65, 0.592 at 1.85, 0.550 at 2.05, 0.483 at 1.42) less the arm
 # that hangs ~0.035 proud of the belly in that view; BELLY_PUSH adds the
 # forward tuck on top. 2026-09-12.
+# ★ The belly ROUNDS UNDER to the hem. The hem ring was the widest-pushed
+# row of the whole tee (BELLY_PUSH -0.075 at 1.42), so the profile ended in
+# a flat bottom with a hard front corner and the front view in a broad flat
+# hem. The sheet's belly peaks mid-tee and tucks back to a narrower hem: an
+# under-belly ring at 1.54 carries the curve.
 TORSO_LEVELS = [
-    (1.420, 0.600, 0.480, "Hips"),    # hem riding the belly
-    (1.460, 0.618, 0.500, "Hips"),
+    (1.420, 0.500, 0.425, "Hips"),    # hem, tucked under the belly and in to
+    (1.450, 0.545, 0.470, "Hips"),    # the shorts (outer x 0.481 at z 1.44)
+    (1.540, 0.628, 0.535, "Spine"),   # the under-belly
     (1.650, 0.640, 0.560, "Spine"),   # the belly's equator
     (1.850, 0.657, 0.555, "Spine"),
     (2.050, 0.635, 0.520, "Spine1"),
     (2.250, 0.548, 0.470, "Spine1"),
-    (2.420, 0.440, 0.375, "Spine2"),  # shoulder rows widened past the arm
-    (2.560, 0.344, 0.294, "Spine2"),  # root (Turbo's wedge fix)
-    (2.680, 0.252, 0.214, "Spine2"),
-    (2.790, 0.192, 0.166, "Spine2"),
-    (2.860, 0.172, 0.150, "Spine2"),  # collar — OUTSIDE the neck loft
+    (2.420, 0.460, 0.385, "Spine2"),  # shoulder rows widened past the arm
+    (2.560, 0.425, 0.350, "Spine2"),  # root (Turbo's wedge fix)
+    # ★ THE SHOULDERS RISE TO THE CHIN. The sheet's chin sits on a crew
+    # collar with the shoulders sloping straight down out of it. A 0.20
+    # collar raised to the chin read as a mock-turtleneck tube (critics:
+    # 44-55% of head width, twice); holding 0.35-0.40 up to the chin then
+    # read as a post with square shoulder corners. The rows now fall in one
+    # even slope from the arm root to a proud neckband pair.
+    (2.680, 0.385, 0.318, "Spine2"),
+    (2.790, 0.345, 0.288, "Spine2"),
+    (2.860, 0.315, 0.265, "Spine2"),
+    (2.890, 0.305, 0.258, "Spine2"),  # neckband, proud
+    # ★ The collar rides UP UNDER THE CHIN. The sheet draws no neck — the
+    # chin sits on a wide crew collar — and a collar at 2.86 left a bare skin
+    # cylinder showing between them on the front board. The jaw's lowest
+    # rows now overlap this ring, which is the drawing.
+    (2.915, 0.290, 0.245, "Spine2"),  # collar — OUTSIDE the neck loft
 ]
 
 # Ascending (lo, hi) gold bands; everything else is cream.
@@ -312,8 +355,10 @@ def tee_color(theta: float, z: float):
 # not-traceable: read off the profile view's 0.60 half-depth at z 1.70
 # against the chest's own 0.45 plane.
 BELLY_PUSH = [
-    (1.420, -0.075),
-    (1.650, -0.100),
+    (1.420, -0.030),
+    (1.450, -0.055),
+    (1.540, -0.090),
+    (1.650, -0.105),
     (1.850, -0.085),
     (2.050, -0.050),
     (2.250, -0.018),
@@ -345,7 +390,9 @@ def build_belly_torso(builder: MeshBuilder, levels, segments: int) -> None:
             row.append(builder.vertex(at, tee_color(theta, z), bone))
         rows.append(row)
     bottom = builder.vertex((0.0, belly_push_at(levels[0][0]), levels[0][0]), CREAM, levels[0][3])
-    top = builder.vertex((0.0, 0.0, levels[-1][0]), CREAM, levels[-1][3])
+    # The collar's top fan rises into the jaw so the neckline is a shallow
+    # cone under the chin, not a flat shelf.
+    top = builder.vertex((0.0, 0.0, levels[-1][0] + 0.045), CREAM, levels[-1][3])
     for column in range(segments):
         nxt = (column + 1) % segments
         builder.face((bottom, rows[0][nxt], rows[0][column]), 1)
