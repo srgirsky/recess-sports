@@ -397,9 +397,15 @@ export function sceneryPlan(geo: FieldGeometry, venue: VenueId): SceneryItem[] {
     rotY: Math.atan2(-pointAt(sprayDeg, 1).x, -pointAt(sprayDeg, 1).z),
     seed: hash01(radiusFt, sprayDeg + 173),
   });
-  if (cfg.theme === 'backyard') signature('pool', -20, 10, 2);
-  if (cfg.theme === 'playground') signature('playset', -16, 9, 2);
-  if (cfg.theme === 'acres') signature('barn', -24, 14, 4);
+  // ★ RIGHT-CENTRE, BECAUSE THE BATTER STANDS IN LEFT-CENTRE. The plate
+  // camera looks past a right-handed batter, whose body fills the left half
+  // of the backdrop; at negative spray the pool, playset and barn cleared the
+  // fence and still hid behind the kid, so Steele, Commons and Eckman read as
+  // one park from the camera the game lives in. Right-centre is open sky.
+  // Radii are the built footprint AFTER `HERO_SCALE`, so clearance holds.
+  if (cfg.theme === 'backyard') signature('pool', 36, 10 * HERO_SCALE, 2);
+  if (cfg.theme === 'playground') signature('playset', 34, 9 * HERO_SCALE, 2);
+  if (cfg.theme === 'acres') signature('barn', 36, 14 * HERO_SCALE, 4);
   if (cfg.theme === 'dirt') {
     signature('tires', -24, 4);
     signature('tires', 4, 4);
@@ -548,9 +554,9 @@ export function buildScenery(geo: FieldGeometry, venue: VenueId, opts: SceneryOp
     else if (it.kind === 'tower') addLightTower(parts, p.x, p.z, it.rotY, opts.night === true);
     else if (it.kind === 'dumpster') addDumpster(parts, p.x, p.z, it.rotY, it.seed);
     else if (it.kind === 'kiosk') addKiosk(parts, p.x, p.z, it.rotY, opts.night === true);
-    else if (it.kind === 'pool') addPool(parts, p.x, p.z, it.rotY);
-    else if (it.kind === 'playset') addPlayset(parts, p.x, p.z, it.rotY);
-    else if (it.kind === 'barn') addBarn(parts, p.x, p.z, it.rotY);
+    else if (it.kind === 'pool') heroic(parts, p, () => addPool(parts, p.x, p.z, it.rotY));
+    else if (it.kind === 'playset') heroic(parts, p, () => addPlayset(parts, p.x, p.z, it.rotY));
+    else if (it.kind === 'barn') heroic(parts, p, () => addBarn(parts, p.x, p.z, it.rotY));
     else if (it.kind === 'tires') addTires(parts, p.x, p.z, it.rotY, Math.abs(it.sprayDeg) < 10);
     else if (it.kind === 'bleacher') addBleacher(parts, p.x, p.z, it.rotY);
     else if (it.kind === 'dome_portal') addDomePortal(parts, p.x, p.z, it.rotY);
@@ -800,6 +806,25 @@ function addKiosk(
   parts.push(placeLocal(paint(new BoxGeometry(8.5, 2.4, 0.6), 0x4d775f), x, z, rotY, 0, 11.2, 0));
 }
 
+/**
+ * The three parks whose identity is one structure are built at this scale
+ * about the structure's own base. At 200ft past the plate a true-size pool
+ * slide or barn reads as a few pixels over the fence; this is set dressing,
+ * not physics, so it is exaggerated the way `render.characterPresence`
+ * exaggerates the kids. Scaling adds no triangles.
+ */
+const HERO_SCALE = 1.5;
+
+function heroic(parts: BufferGeometry[], at: { x: number; z: number }, build: () => void): void {
+  const from = parts.length;
+  build();
+  const m = new Matrix4()
+    .makeTranslation(at.x, 0, at.z)
+    .multiply(new Matrix4().makeScale(HERO_SCALE, HERO_SCALE, HERO_SCALE))
+    .multiply(new Matrix4().makeTranslation(-at.x, 0, -at.z));
+  for (let i = from; i < parts.length; i++) parts[i].applyMatrix4(m);
+}
+
 /** Steele's unmistakable backyard pool and diving board. */
 function addPool(parts: BufferGeometry[], x: number, z: number, rotY: number): void {
   parts.push(place(paint(new CylinderGeometry(10, 10, 0.35, 24), 0x58cce0), x, 0.18, z, rotY));
@@ -845,9 +870,17 @@ function addPlayset(parts: BufferGeometry[], x: number, z: number, rotY: number)
 function addBarn(parts: BufferGeometry[], x: number, z: number, rotY: number): void {
   parts.push(place(paint(new BoxGeometry(24, 12, 18), 0xb6463e), x, 6, z, rotY));
   parts.push(placeLocal(paint(new BoxGeometry(7, 8, 0.5), 0xf0dfbf), x, z, rotY, 0, 4, 9.25));
+  // The gable: a triangular prism from the wall tops (12ft, 24ft wide) to
+  // just under the ridge, so sky never shows between the walls and the roof.
+  const gable = new CylinderGeometry(1, 1, 18, 3);
+  gable.applyMatrix4(new Matrix4().makeRotationX(-Math.PI / 2));
+  gable.applyMatrix4(new Matrix4().makeScale(12 / 0.866, 3.2, 1));
+  parts.push(placeLocal(paint(gable, 0xb6463e), x, z, rotY, 0, 12 + 1.6, 0));
   for (const side of [-1, 1]) {
     const roof = new BoxGeometry(15, 0.8, 20);
-    roof.applyMatrix4(new Matrix4().makeRotationZ(side * 0.48));
+    // Each slab slopes DOWN toward its own eave, so the pair meets in a
+    // ridge; the opposite sign built a V that only the hero scale revealed.
+    roof.applyMatrix4(new Matrix4().makeRotationZ(-side * 0.48));
     parts.push(placeLocal(paint(roof, 0x6f574b), x, z, rotY, side * 5.6, 13.7, 0));
   }
 }

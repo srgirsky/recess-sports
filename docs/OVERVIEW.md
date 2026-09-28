@@ -3182,5 +3182,13 @@ v2 and leaves every existing record and golden fingerprint where it was.
   hold answers both points. The per-kid findings remain in the ledger for a
   reviewer to close. This change does not approve them.
 
+- **Venue identity from the plate**: captured from the batting camera, Steele,
+  Commons and Eckman read as one park. Their signature structures cleared the
+  fence and still hid, because they stood in left-centre, behind a
+  right-handed batter. They now stand in right-centre, built at 1.5x about
+  their own base as set dressing (no added triangles). Scaling exposed two
+  barn defects: the roof slabs formed a V instead of a ridge, and the open
+  gable showed sky. Both are fixed.
+
 What still cannot be closed from code stays open: no child has played any of
 this (`docs/playtests/` holds no record), and no art target has been approved.
