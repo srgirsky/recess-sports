@@ -106,6 +106,26 @@ describe('reference hand behavior',()=>{
     bat.restore();bat.apply('bat_stance',0);mesh.updateMatrixWorld(true);
     expect(returning.distanceTo(bones.get('RightHand')!.getWorldPosition(new Vector3()))).toBeLessThan(1e-6);
   });
+  // Critics flagged the held bunt on every roster kid: the knob elbow level
+  // with the shoulder (seated: above it) and a forearm hanging near-vertical
+  // to a bat held at the chest. Palm and wrist gates stayed green throughout,
+  // so the arm shape itself is pinned here, in the chest's own frame.
+  it.each([false,true])('receives the bunt with both elbows low and open (seated %s)',(seated)=>{
+    const {mesh,bones}=rig(),bat=new BattingPose(mesh,seated);
+    for(const frame of [20,22,24]) {
+      bat.restore();bat.apply('bunt',frame/FPS);mesh.updateMatrixWorld(true);
+      const chest=bones.get('Spine2')!,inverse=chest.getWorldQuaternion(new Quaternion()).invert(),origin=chest.getWorldPosition(new Vector3());
+      const at=(name:string)=>bones.get(name)!.getWorldPosition(new Vector3()).sub(origin).applyQuaternion(inverse);
+      for(const side of ['Left','Right']) {
+        const shoulder=at(side+'Arm'),elbow=at(side+'ForeArm'),wrist=at(side+'Hand');
+        const upper=elbow.clone().sub(shoulder),forearm=wrist.clone().sub(elbow);
+        expect(shoulder.y-elbow.y,`${side} elbow drop at ${frame}`).toBeGreaterThan(.2);
+        expect(Math.acos(Math.abs(forearm.y)/forearm.length()),`${side} forearm hangs vertical at ${frame}`).toBeGreaterThan(55*Math.PI/180);
+        expect(upper.negate().angleTo(forearm),`${side} elbow folds at ${frame}`).toBeGreaterThan(100*Math.PI/180);
+        expect(wrist.z-shoulder.z,`${side} hands held at the chest at ${frame}`).toBeGreaterThan(.45);
+      }
+    }
+  });
   // The old solver kept palm anchors together with a 144-degree folded wrist.
   // This gate failed against that solver; it checks anatomy as well as contact.
   it.each(['calls_shot','zippy','clover'])('keeps %s batting wrists aligned without detaching either grip',(id)=>{
