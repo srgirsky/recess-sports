@@ -939,22 +939,125 @@ function zoomIdle(spec: ClipSpec): AnimationClip {
   ]);
 }
 
+/**
+ * Zoom's push rims, mirrored from `sculpt-zoom-source.py` (WHEEL_CENTER_Z,
+ * RIM_R, WHEEL_X + 0.048, WHEEL_CAMBER) through the exporter's Z-up -> Y-up
+ * swap. `seatedPropulsion.test.ts` parses the sculpt so the two cannot drift.
+ */
+export const ZOOM_RIM = { centerY: 0.78, hubBack: 0.06, radius: 0.66, x: 1.028, camber: 0.115 } as const;
+
+/** A point on a push rim's centreline; 0 degrees is the top, negative is toward the front. */
+export function zoomRimPoint(side: -1 | 1, deg: number): Vector3 {
+  const t = deg * D;
+  const y = ZOOM_RIM.centerY + ZOOM_RIM.radius * Math.cos(t);
+  const back = ZOOM_RIM.hubBack + ZOOM_RIM.radius * Math.sin(t);
+  return new Vector3(side * (ZOOM_RIM.x + ZOOM_RIM.camber * (ZOOM_RIM.centerY - y)), y, -back);
+}
+
+/** Forward kinematics of a pose on the reference rig, hips at bind. */
+function poseWorld(pose: Pose): { pos: Map<string, Vector3>; rot: Map<string, Quaternion> } {
+  const local = new Map<string, Quaternion>();
+  for (const [a, e] of Object.entries(pose) as [Alias, [number, number, number]][]) local.set(BONE[a], new Quaternion(...quat(e)));
+  const pos = new Map<string, Vector3>(), rot = new Map<string, Quaternion>();
+  for (const b of SKELETON) {
+    const parentPos = b.parent ? pos.get(b.parent)! : new Vector3();
+    const parentRot = b.parent ? rot.get(b.parent)! : new Quaternion();
+    pos.set(b.name, new Vector3(...b.pos).applyQuaternion(parentRot).add(parentPos));
+    rot.set(b.name, parentRot.clone().multiply(local.get(b.name) ?? new Quaternion()));
+  }
+  return { pos, rot };
+}
+
+/**
+ * Put one palm on a world-space target: a two-bone solve whose elbow is a pure
+ * hinge about the forearm's local Y, bent the way `HandPose.constrainArms`
+ * rebuilds it — the other way round, that clamp would fold the elbow backwards.
+ * Elbows point back and out, as they do driving a rim. Wrist stays neutral.
+ */
+function palmTo(pose: Pose, side: -1 | 1, target: Vector3): Pose {
+  const L = side < 0 ? 'Left' : 'Right';
+  const { pos, rot } = poseWorld(pose);
+  const shoulder = pos.get(`${L}Arm`)!;
+  const bone = (n: string) => SKELETON.find((b) => b.name === n)!;
+  const a = Math.abs(bone(`${L}ForeArm`).pos[0]);
+  const b = Math.abs(bone(`${L}Hand`).pos[0]) + Math.abs(bone(side < 0 ? 'Prop_GloveAnchor' : 'Prop_BatGrip').pos[0]);
+  const toTarget = target.clone().sub(shoulder);
+  const d = Math.min(toTarget.length(), (a + b) * 0.999);
+  const dir = toTarget.normalize();
+  const pole = new Vector3(side * 0.5, 0.2, -1);
+  const perp = pole.addScaledVector(dir, -pole.dot(dir)).normalize();
+  const cosA = Math.max(-1, Math.min(1, (a * a + d * d - b * b) / (2 * a * d)));
+  const elbow = shoulder.clone().addScaledVector(dir, a * cosA).addScaledVector(perp, a * Math.sqrt(1 - cosA * cosA));
+  const palm = shoulder.clone().addScaledVector(dir, d);
+  const upperX = elbow.clone().sub(shoulder).normalize().multiplyScalar(side);
+  const foreX = palm.clone().sub(elbow).normalize().multiplyScalar(side);
+  const frame = (x: Vector3, y: Vector3) => new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(x, y, x.clone().cross(y)));
+  const localOf = (hinge: Vector3) => {
+    const upper = frame(upperX, hinge), fore = frame(foreX, hinge);
+    const parent = rot.get(`${L}Shoulder`)!;
+    return { arm: parent.clone().invert().multiply(upper), fore: upper.clone().invert().multiply(fore) };
+  };
+  let hinge = upperX.clone().cross(foreX);
+  if (hinge.lengthSq() < 1e-10) hinge = new Vector3(0, 1, 0).addScaledVector(upperX, -upperX.y);
+  hinge.normalize();
+  let q = localOf(hinge);
+  // `constrainArms` keeps the elbow at setFromAxisAngle(Y, -sign * bend).
+  if (Math.sign(2 * Math.atan2(q.fore.y, q.fore.w)) === side) q = localOf(hinge.negate());
+  const euler = (r: Quaternion): [number, number, number] => {
+    const e = new Euler().setFromQuaternion(r, 'XYZ');
+    return [e.x / D, e.y / D, e.z / D];
+  };
+  const alias = side < 0 ? { a: 'la', f: 'lf', h: 'lh' } : { a: 'ra', f: 'rf', h: 'rh' };
+  return { ...pose, [alias.a]: euler(q.arm), [alias.f]: euler(q.fore), [alias.h]: [0, 0, 0] };
+}
+
+/**
+ * ★ HIS HANDS PUSH THE RIMS. The old cycle keyed `pushLeft`/`pushRight` as
+ * shoulder and elbow angles, and no palm ever came within 0.43ft of a rim.
+ * Nor could it: the sculpted rims sit 0.55-0.7ft outboard of his shoulders,
+ * past his 1.06ft palm reach from an upright seat. So each stroke leans the
+ * trunk into its side (~32 degrees, plus a dropped clavicle), which buys ~55
+ * degrees of reachable rim around the top; the palm catches it behind the top,
+ * drives it forward, releases, and recovers clear of the tyre while the other
+ * side pushes. `direction` -1 pulls the rims backward for `jog_back`.
+ */
+function zoomPush(spec: ClipSpec, direction: 1 | -1 = 1): AnimationClip {
+  const LEAN = 32, FORWARD = 10, CLAVICLE = 15, CATCH = 20, RELEASE = -30, STROKE = 0.28;
+  const strokeOf = (phase: number, start: number) => ((phase - start) % 1 + 1) % 1;
+  const keys: Key[] = [];
+  for (let f = 0; f <= spec.frames; f++) {
+    const phase = f / spec.frames;
+    // Flattened so the full lean holds for the whole time a hand is on its rim.
+    const wave = Math.max(-1, Math.min(1, 1.6 * Math.cos(TAU * (phase - STROKE / 2))));
+    const lean = LEAN * wave;
+    let pose = shift(ZOOM_FIELD_POSE, {
+      sp: [FORWARD / 3, 0, lean / 3], s1: [FORWARD / 3, 0, lean / 3], s2: [FORWARD / 3, 0, lean / 3],
+      nk: [0, 0, -lean * 0.3], hd: [0, 0, -lean * 0.3],
+      ls: [0, 0, CLAVICLE * Math.max(0, wave)], rs: [0, 0, -CLAVICLE * Math.max(0, -wave)],
+    });
+    for (const [side, start] of [[-1, 0], [1, 0.5]] as const) {
+      const s = strokeOf(phase, start);
+      const from = direction > 0 ? CATCH : RELEASE, to = direction > 0 ? RELEASE : CATCH;
+      let target: Vector3;
+      if (s < STROKE) {
+        const k = s / STROKE;
+        target = zoomRimPoint(side, from + (to - from) * (k * k * (3 - 2 * k)));
+      } else {
+        // Recover along the rim's outside, lifted clear of the tyre.
+        const k = (s - STROKE) / (1 - STROKE);
+        const along = to + (from - to) * (k * k * (3 - 2 * k));
+        const lift = Math.sin(Math.PI * k);
+        target = zoomRimPoint(side, along).add(new Vector3(side * 0.12 * lift, 0.28 * lift, 0));
+      }
+      pose = palmTo(pose, side, target);
+    }
+    keys.push({ f, pose });
+  }
+  return build(spec, keys);
+}
+
 function zoomRun(spec: ClipSpec): AnimationClip {
-  const pushLeft = shift(ZOOM_FIELD_POSE, {
-    hp: [1, -10, -3], sp: [2, -9, -3], s2: [3, -8, -2], hd: [1, 7, 1],
-    la: [35, 0, -16], lf: [0, 42, 0], ra: [-18, 0, 20], rf: [0, -34, 0],
-  });
-  const pushRight = shift(ZOOM_FIELD_POSE, {
-    hp: [1, 10, 3], sp: [2, 9, 3], s2: [3, 8, 2], hd: [1, -7, -1],
-    la: [-18, 0, -20], lf: [0, 34, 0], ra: [35, 0, 16], rf: [0, -42, 0],
-  });
-  return build(spec, [
-    { f: 0, pose: pushLeft },
-    { f: 6, pose: ZOOM_FIELD_POSE },
-    { f: 12, pose: pushRight },
-    { f: 18, pose: ZOOM_FIELD_POSE },
-    { f: spec.frames, pose: pushLeft },
-  ]);
+  return zoomPush(spec);
 }
 
 function zoomBatStance(spec: ClipSpec): AnimationClip {
@@ -2033,6 +2136,9 @@ export function buildZoomPilotClips(): AnimationClip[] {
     idle: zoomIdle,
     idle_fidget: zoomIdleFidget,
     run: zoomRun,
+    run_fast: zoomRun,
+    trot: zoomRun,
+    jog_back: (spec) => zoomPush(spec, -1),
     bat_stance: zoomBatStance,
     swing_contact: zoomSwingContact,
     swing_follow: zoomSwingFollow,

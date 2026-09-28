@@ -320,9 +320,9 @@ describe('the Big Talk Theo character pass', () => {
 describe('the Zoom Ramirez character pass', () => {
   const pilot = buildZoomPilotClips();
 
-  it('overrides five high-frequency clips plus Zoom fielding and reaction priorities', () => {
+  it('overrides the high-frequency clips, every rim-pushed gait, and Zoom fielding and reaction priorities', () => {
     expect(pilot.map((clip) => clip.name)).toEqual([
-      'idle', 'idle_fidget', 'run', 'bat_stance', 'swing_contact', 'swing_follow',
+      'idle', 'idle_fidget', 'run', 'run_fast', 'trot', 'jog_back', 'bat_stance', 'swing_contact', 'swing_follow',
       'field_ready', 'cheer_cool', 'upset_cool',
     ]);
   });
