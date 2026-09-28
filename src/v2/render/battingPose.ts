@@ -25,9 +25,115 @@ const CONTACT_FRAME = clipSpec('swing_contact').marker!.frame;
 const FOLLOW_SEC = framesToSec(clipSpec('swing_follow').frames);
 const smooth = (x: number) => { const t = Math.max(0, Math.min(1, x)); return t * t * (3 - 2 * t); };
 
+/**
+ * ★ CONTACT IS MET OUT IN FRONT. The batter stands this far behind the pitch
+ * line's contact point (rig feet, toward the catcher). At the old 0.15 the top
+ * grip sat 0.03-0.07ft ahead of the shoulders and the top elbow shut to
+ * 58-69 degrees on all 30 delivered models — critics saw a foreshortened
+ * forearm with an angular elbow. Out here it slots at 88-117 degrees
+ * (`audit:batting`, the review default and the 2.4ft pitch).
+ */
+export const CONTACT_OUT_FRONT_FT = .6;
+/** The review page's pitch when none is thrown: 2.4ft at the 1.6 reference scale. */
+const REVIEW_CONTACT_HEIGHT_FT = 1.5;
+/**
+ * Low pitches are met with the barrel, not the hands: below this grip height
+ * the bat tilts down (to MAX_BARREL_TILT) so the hands stay slotted instead of
+ * the hips squatting 0.6ft. A steeper tilt folds the knob wrist past 40 degrees.
+ */
+const SLOT_HAND_HEIGHT_FT = 1.4;
+const MAX_BARREL_TILT = .2;
+/**
+ * Seated, the same pitch is nearer the lap and the trunk can only fold down to
+ * it: the hands stay higher and the barrel may tilt further. Much higher and
+ * the knob wrist folds past 40 degrees. The seated kid never steps back, so
+ * this is also what keeps his hands off the chair.
+ */
+const SEATED_SLOT_HAND_HEIGHT_FT = 1.6;
+const SEATED_MAX_BARREL_TILT = .45;
+/**
+ * High pitches are met with the hands a touch ahead of the barrel (ramped in
+ * over rig 1.5-2.1ft). Square, the knob wrist folds to 39 degrees against the
+ * 40-degree gate; at 0.1 and above the lead forearm steps past 25 degrees
+ * just after contact on several delivered models (`audit:batting`).
+ */
+const HIGH_PITCH_LAG = .05;
+
+/**
+ * ★ THE SWING'S HAND PATH: wind -> contact -> a fixed, reachable finish, one C1
+ * Hermite curve per component, still at both ends. The old path lerped toward
+ * a finish mirrored through contact (2*contact - wind), so meeting the ball out
+ * front doubled the hand travel, pushed the finish out of reach and flipped the
+ * arms between quarter-frames. The hands DROP from frame 1 but only DRIVE
+ * forward from 1.5: moving forward earlier carries the still-upright bat
+ * through hair hanging beside the neck.
+ */
+const SWING_DROP_FRAME = 1;
+const SWING_DRIVE_FRAME = 1.5;
+const SWING_FINISH_FRAME = 13;
+/** Hand velocity at contact, as a fraction of the wind-to-finish chord per frame. */
+const CONTACT_HAND_VELOCITY = .25;
+/**
+ * The hands WHIP through contact: a little behind the curve at frame 6, a
+ * little ahead at frame 8, on it at 5, 7 and 9. A curve that must turn round
+ * the lead side right after an out-front contact is otherwise fastest before
+ * or after the ball, and the CONTACT marker is derived from peak hand speed
+ * (`AnimationDirector.test.ts`, `modelRules.mjs`) — it read frame 9.
+ */
+const CONTACT_WHIP_FT = .1;
+/** The barrel lays back toward the catcher as the hands launch (frames 1-5). */
+const BAT_LAY_BACK = .5;
+/**
+ * Swing reach, as a fraction of the arm. At the old 0.985 the straightening
+ * lead arm arrived fully extended and only a folded knob wrist held the
+ * handle (61-75 degrees); a little slack lets the hips carry the hands.
+ */
+const SWING_REACH = .92;
+/**
+ * How strongly the grip search prefers the elbow hint. The swing needs the
+ * pull: at the bunt's 0.2 the lead grip roll wanders across a flat basin while
+ * the arm straightens and the forearm steps 25-34 degrees per quarter-frame.
+ */
+const SWING_ELBOW_PREFERENCE = 1.5;
+const BUNT_ELBOW_PREFERENCE = .2;
+
+function hermite(p0: Vector3, m0: Vector3, p1: Vector3, m1: Vector3, u: number): Vector3 {
+  const u2 = u * u, u3 = u2 * u;
+  return p0.clone().multiplyScalar(2*u3 - 3*u2 + 1).addScaledVector(m0, u3 - 2*u2 + u)
+    .addScaledVector(p1, 3*u2 - 2*u3).addScaledVector(m1, u3 - u2);
+}
+
+/** The hands at frame `f` of a swing. */
+function swingHands(wind: Vector3, contact: Vector3, through: Vector3, f: number): Vector3 {
+  const velocity = through.clone().sub(wind).multiplyScalar(CONTACT_HAND_VELOCITY);
+  const along = (launch: number) => {
+    if (f <= launch) return wind.clone();
+    if (f >= SWING_FINISH_FRAME) return through.clone();
+    const still = new Vector3();
+    const [p0, m0, p1, m1, from, to] = f <= CONTACT_FRAME
+      ? [wind, still, contact, velocity, launch, CONTACT_FRAME]
+      : [contact, velocity, through, still, CONTACT_FRAME, SWING_FINISH_FRAME];
+    const span = to - from;
+    return hermite(p0, m0.clone().multiplyScalar(span), p1, m1.clone().multiplyScalar(span), (f - from) / span);
+  };
+  const hands = along(SWING_DROP_FRAME).setX(along(SWING_DRIVE_FRAME).x);
+  const u = (f - CONTACT_FRAME) / 2;
+  if (Math.abs(u) < 1) hands.x -= CONTACT_WHIP_FT * Math.sin(Math.PI * u) * Math.cos(Math.PI * u / 2) ** 2;
+  return hands;
+}
+
+/** The bat at contact for a sweet spot at `height` (rig feet): square, tilted
+ * down under low pitches and lagging behind the hands on high ones. */
+function contactBatAxis(height: number, seated: boolean): Vector3 {
+  const drop = Math.max(-1, Math.min(1, ((seated ? SEATED_SLOT_HAND_HEIGHT_FT : SLOT_HAND_HEIGHT_FT) - height) / BAT_SWEET_SPOT_FT));
+  const tilt = Math.max(0, Math.min(seated ? SEATED_MAX_BARREL_TILT : MAX_BARREL_TILT, Math.asin(drop)));
+  const lag = HIGH_PITCH_LAG * smooth((height - REVIEW_CONTACT_HEIGHT_FT) / .6);
+  return new Vector3(Math.sin(lag) * Math.cos(tilt), -Math.sin(tilt), Math.cos(lag) * Math.cos(tilt));
+}
+
 /** Side-on box placement in the render's exaggerated reference feet. */
 export function battingPlacement(scale: number) {
-  return { x: -(BAT_SWEET_SPOT_FT + .55) * scale, z: -.15 * scale, facing: Math.PI / 2 };
+  return { x: -(BAT_SWEET_SPOT_FT + .55) * scale, z: -CONTACT_OUT_FRONT_FT * scale, facing: Math.PI / 2 };
 }
 
 /** Join the sim's centre-of-plate origin without teleporting out of the box. */
@@ -63,6 +169,67 @@ const BUNT_AXIS = new Vector3(0, .28, 1).normalize();
  * gate (`HandPose.test.ts`, `audit:batting --check`).
  */
 const BUNT_ELBOW_MARGIN_FT = .25;
+
+/**
+ * ★ HANDS STAY OUTSIDE THE BELLY. Contact out front put a wide kid's palms
+ * inside his own torso — Big Lou's knob palm 0.33ft deep, the bat growing out
+ * of his stomach — where no gate looked: the bat ray starts inside the mesh
+ * and elbow angles score bones, not what shows. (`main` was deeper still, the
+ * hands merely hidden at the hip.) Each kid's torso is measured once, in 0.1ft
+ * bands of height; where a palm would sit closer than this to its surface the
+ * standing body steps STRAIGHT BACK from the hands, which the ball has fixed.
+ * Pushed radially, the body also slid off the plate and the straightening lead
+ * arm jumped 29 degrees between quarter-frames (`audit:batting`, Big Lou).
+ */
+const PALM_CLEARANCE_FT = .1;
+const TORSO_BAND_FT = .1;
+type TorsoBand = { forward: number; back: number; side: number };
+
+/** Hips-to-chest extents per height band, in the Hips bone's bind frame. */
+function measureTorso(mesh: Object3D): Map<number, TorsoBand> | null {
+  const skinned = mesh as SkinnedMesh;
+  const position = skinned.geometry?.attributes?.position, index = skinned.geometry?.attributes?.skinIndex;
+  const weight = skinned.geometry?.attributes?.skinWeight, skeleton = skinned.skeleton;
+  if (!position || !index || !weight || !skeleton) return null;
+  const hips = skeleton.bones.findIndex(bone => bone.name === 'Hips');
+  if (hips < 0) return null;
+  const torso = skeleton.bones.map(bone => /^(Hips|Spine|Spine1|Spine2)$/.test(bone.name));
+  const toHips = new Matrix4().multiplyMatrices(skeleton.boneInverses[hips], skinned.bindMatrix);
+  const bands = new Map<number, TorsoBand>(), v = new Vector3();
+  for (let i = 0; i < position.count; i++) {
+    let w = 0;
+    for (let j = 0; j < 4; j++) if (torso[index.getComponent(i, j)]) w += weight.getComponent(i, j);
+    if (w < .5) continue;
+    v.fromBufferAttribute(position, i).applyMatrix4(toHips);
+    const key = Math.round(v.y / TORSO_BAND_FT), band = bands.get(key) ?? { forward: 0, back: 0, side: 0 };
+    band.forward = Math.max(band.forward, v.z); band.back = Math.max(band.back, -v.z); band.side = Math.max(band.side, Math.abs(v.x));
+    bands.set(key, band);
+  }
+  if (!bands.size) return null;
+  // A band with no vertex of its own (a sparse belly ring) takes its
+  // neighbours' blend, so the lookup never falls through a gap.
+  const keys = [...bands.keys()].sort((x, y) => x - y);
+  for (let key = keys[0] + 1; key < keys[keys.length - 1]; key++) {
+    if (bands.has(key)) continue;
+    const below = keys.filter(k => k < key).pop()!, above = keys.find(k => k > key)!;
+    const t = (key - below) / (above - below), lo = bands.get(below)!, hi = bands.get(above)!;
+    bands.set(key, { forward: lo.forward + (hi.forward - lo.forward) * t, back: lo.back + (hi.back - lo.back) * t, side: lo.side + (hi.side - lo.side) * t });
+  }
+  return bands;
+}
+
+/** How far to move the torso back (hips frame) to clear a palm at `rel`. */
+function torsoClearance(bands: Map<number, TorsoBand>, rel: Vector3): Vector3 | null {
+  const at = rel.y / TORSO_BAND_FT, lo = Math.floor(at), t = at - lo;
+  const a = bands.get(lo), b = bands.get(lo + 1);
+  if (!a || !b) return null;
+  const mix = (k: keyof TorsoBand) => a[k] + (b[k] - a[k]) * t + PALM_CLEARANCE_FT;
+  const across = rel.x / mix('side'), along = rel.z / (rel.z >= 0 ? mix('forward') : mix('back'));
+  const inside = across * across + along * along;
+  if (inside >= 1) return null;
+  const depth = rel.z >= 0 ? mix('forward') : mix('back');
+  return new Vector3(0, 0, Math.sign(rel.z || 1) * depth * Math.sqrt(1 - across * across) - rel.z);
+}
 
 /** Inside the reference wrist's 40-degree fold gate, with a margin. */
 const WRIST_LIMIT_RAD = 34 * Math.PI / 180;
@@ -118,12 +285,14 @@ export class BattingPose {
   /** How far into the bunt's receiving pose this frame is, 0..1. */
   private buntWeight = 0;
   private readonly stanceGrip: Vector3;
+  private readonly torso: Map<number, TorsoBand> | null;
 
   constructor(mesh: Object3D, seated = false, readyDepth = STANCE_GRIP.z) {
     this.seated = seated;
     this.stanceGrip = STANCE_GRIP.clone().setZ(readyDepth);
     for (const bone of (mesh as SkinnedMesh).skeleton?.bones ?? []) this.bones.set(bone.name, bone);
     this.rig = this.bones.get('Root');
+    this.torso = seated ? null : measureTorso(mesh);
   }
 
   restore(): void {
@@ -179,16 +348,19 @@ export class BattingPose {
       if (relative.w < 0) relative.set(-relative.x, -relative.y, -relative.z, -relative.w);
       const roll = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, 2 * Math.atan2(relative.x, relative.w)));
       this.set(lower, this.rotation(lower).multiply(new Quaternion().setFromAxisAngle(X, roll)));
-      // Keep the sleeve upright for the swing, then release that correction
-      // during the bunt. Its world-up frame has a pole under the shoulder;
-      // the solved elbow plane stays continuous through that crossing.
+      // Keep a sane sleeve roll for the swing, then release that correction
+      // during the bunt. Each arm's frame puts its pole where that arm never
+      // goes. The lead arm stays world-upright (pole: hanging straight down).
+      // The top arm slots UNDER its shoulder, where the upright frame spun the
+      // sleeve 40-50 degrees per quarter-frame, so it takes the least twist
+      // from the bind pose instead (pole: pointing across the chest).
       const lowerRotation = this.rotation(lower);
       const upperX = X.clone().applyQuaternion(upper.quaternion);
       const upperZ = upperX.clone().cross(Y.clone().addScaledVector(Z,-bunt));
       if (upperZ.lengthSq() < 1e-8) upperZ.copy(Z).addScaledVector(upperX,-upperX.dot(Z));
       upperZ.normalize();
-      const neutral = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(
-        upperX,upperZ.clone().cross(upperX),upperZ));
+      const neutral = side === 'Right' ? new Quaternion().setFromUnitVectors(X, upperX)
+        : new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(upperX,upperZ.clone().cross(upperX),upperZ));
       this.set(upper,this.rotation(upper.parent!).multiply(neutral)
         .slerp(this.rotation(upper),smooth(Math.min(1,bunt*6))));
       this.set(lower,lowerRotation);
@@ -207,6 +379,7 @@ export class BattingPose {
     base.addScaledVector(z, -base.dot(z));
     if (base.lengthSq() < 1e-8) base.copy(X).addScaledVector(z,-z.dot(X));
     base.normalize();
+    const elbowPreference = SWING_ELBOW_PREFERENCE + (BUNT_ELBOW_PREFERENCE - SWING_ELBOW_PREFERENCE) * smooth(Math.min(1, this.buntWeight * 6));
     const evaluate = (angle: number) => {
       const x = base.clone().applyAxisAngle(z, angle);
       const rotation = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(x, z.clone().cross(x), z));
@@ -244,7 +417,7 @@ export class BattingPose {
       // with the hands at the chest there is no low elbow the wrist affords.
       const elbowRise = Math.max(0, elbow.y - (shoulder.y - BUNT_ELBOW_MARGIN_FT));
       const wristOver = Math.max(0, wristBend - WRIST_LIMIT_RAD);
-      const score = 8*wristBend*wristBend + .2*(1-bend.dot(preferred)) + .03*roll*roll + 100*reach*reach + 40*Math.max(0,roll-Math.PI/2)**2
+      const score = 8*wristBend*wristBend + elbowPreference*(1-bend.dot(preferred)) + .03*roll*roll + 100*reach*reach + 40*Math.max(0,roll-Math.PI/2)**2
         + this.buntWeight*((this.seated ? SEATED_ELBOW_WEIGHT : 60)*elbowRise*elbowRise + 400*wristOver*wristOver);
       return {rotation, wrist, bend, score, angle};
     };
@@ -334,27 +507,23 @@ export class BattingPose {
     let grip = ready.clone();
     const readyAxis = this.bones.has('RightHandIndex2') ? REFERENCE_READY_AXIS : READY_AXIS;
     let axis = readyAxis.clone();
-    const contact = this.contact ? this.rig.worldToLocal(this.contact.clone()).addScaledVector(Z, -BAT_SWEET_SPOT_FT) : new Vector3(-.15, gripHeight - .45, .55);
+    const sweetSpot = this.contact ? this.rig.worldToLocal(this.contact.clone())
+      : new Vector3(-CONTACT_OUT_FRONT_FT, REVIEW_CONTACT_HEIGHT_FT, .55 + BAT_SWEET_SPOT_FT);
+    const contactAxis = contactBatAxis(sweetSpot.y, this.seated);
+    const contact = sweetSpot.clone().addScaledVector(contactAxis, -BAT_SWEET_SPOT_FT);
     const wind = ready.clone().add(new Vector3(.07, .04, -.06));
-    const through = contact.clone().multiplyScalar(2).sub(wind);
-    through.y = wind.y;
-    through.z = -.3;
+    // A fixed finish round the lead side, reachable whatever the pitch.
+    const through = new Vector3(-.77, wind.y, -.3);
     if (name === 'swing_contact' || name === 'swing_whiff') {
       const f = time * FPS;
       // Contact is the MIDDLE of the fastest sweep, not a stop between two
-      // eases. Both halves share one curve, so hand speed peaks at frame 7.
-      const sweep = smooth((f - CONTACT_FRAME + 2) / 4);
-      grip.copy(wind).lerp(through, sweep);
+      // eases: both halves share one tangent and the whip peaks it at frame 7.
+      grip.copy(swingHands(wind, contact, through, f));
       if (f <= CONTACT_FRAME) {
-        grip.y = wind.y + (contact.y - wind.y) * smooth(f / CONTACT_FRAME);
-        grip.z = wind.z + (contact.z - wind.z) * smooth(f / CONTACT_FRAME);
-      } else {
-        const recover = smooth((f - CONTACT_FRAME) / 6);
-        grip.y = contact.y + (through.y - contact.y) * recover;
-        grip.z = contact.z + (through.z - contact.z) * recover;
+        axis.lerp(contactAxis, smooth((f - 3) / 4));
+        axis.addScaledVector(X, BAT_LAY_BACK * Math.sin(Math.PI * Math.max(0, Math.min(1, (f - 1) / 4)))).normalize();
       }
-      if (f <= CONTACT_FRAME) axis.lerp(Z, smooth((f - 3) / 4)).normalize();
-      else axis.copy(Z).lerp(FOLLOW_AXIS.clone(), smooth((f - CONTACT_FRAME) / 4)).normalize();
+      else axis.copy(contactAxis).lerp(FOLLOW_AXIS.clone(), smooth((f - CONTACT_FRAME) / 4)).normalize();
     } else if (name === 'bat_load') {
       grip.lerp(wind, Math.sin(Math.PI * time / framesToSec(clipSpec(name).frames)));
     } else if (name === 'bunt') {
@@ -370,7 +539,7 @@ export class BattingPose {
         // Clear the shoulder first, then bring the bat into the receiving pose.
         grip.z += (.4 + .25*(1-bunt)**4)*Math.sin(Math.PI*bunt);
         axis.copy(STANCE_AXIS).lerp(BUNT_AXIS, smooth(bunt+.1*Math.sin(Math.PI*bunt))).normalize();
-      } else { grip.lerp(contact, t); axis.lerp(Z, t).normalize(); }
+      } else { grip.lerp(contact, t); axis.lerp(contactAxis, t).normalize(); }
     } else if (name === 'swing_follow') {
       const t = smooth(time / FOLLOW_SEC);
       grip.copy(through).lerp(ready, t);
@@ -424,6 +593,8 @@ export class BattingPose {
         // A fully extended reach can flip the elbow plane between samples.
         return { wrist, shoulder, length: length*(1-.06*bunt) };
       });
+      // The bunt keeps its own tuned reach (see BUNT_GRIP).
+      const handSlack = SWING_REACH + (.985 - SWING_REACH) * smooth(Math.min(1, bunt * 6));
       if (this.seated) {
         // Rotate the trunk toward unreachable wrists instead of translating
         // the seat. Recompute shoulders after each small reach correction.
@@ -433,7 +604,7 @@ export class BattingPose {
             const { wrist, length } = handTargets[i];
             const shoulder = this.at(this.bones.get(i === 0 ? 'LeftArm' : 'RightArm')!);
             const delta = wrist.clone().sub(shoulder);
-            const excess = delta.length() - length * .985;
+            const excess = delta.length() - length * handSlack;
             if (excess <= 0) continue;
             const pivot = this.at(waist);
             const from = shoulder.clone().sub(pivot);
@@ -452,10 +623,17 @@ export class BattingPose {
           length: this.bones.get(`${side}Leg`)!.position.length() + this.bones.get(`${side}Foot`)!.position.length(),
         }));
         const shift = new Vector3(0,-.16*bunt,0);
+        const pelvis = this.at(hips), turn = this.rotation(hips), unturn = turn.clone().invert();
+        const release = 1 - smooth(Math.min(1, bunt * 6));
         for (let pass = 0; pass < 20; pass++) {
-          for (const { wrist, shoulder, length } of [...handTargets, ...feet]) {
+          if (this.torso && release > 0) for (const palm of [upperPalm, lowerPalm]) {
+            const clear = torsoClearance(this.torso, palm.clone().sub(pelvis).sub(shift).applyQuaternion(unturn));
+            if (clear) shift.addScaledVector(clear.applyQuaternion(turn), -release);
+          }
+          for (const { wrist, shoulder, length, slack } of [
+            ...handTargets.map(h => ({ ...h, slack: handSlack })), ...feet.map(foot => ({ ...foot, slack: .985 }))]) {
             const delta = wrist.clone().sub(shoulder).sub(shift);
-            const excess = delta.length() - length * .985;
+            const excess = delta.length() - length * slack;
             if (excess > 0) shift.add(delta.setLength(excess));
           }
         }
