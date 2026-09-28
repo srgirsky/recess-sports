@@ -63,11 +63,11 @@
     },
     "big_lou": {
       "source": "big-lou-pilot.blend",
-      "sourceSha256": "a184464520e3740ba6bdb81ffba3f0c3b66c176671308ac4c1cbd1f3c31ac748",
+      "sourceSha256": "5e3bb01f6441fed67bddb81110972493f1699ce21211b2b2023da231a28c3c43",
       "concept": "big-lou-turnaround.png",
       "conceptSha256": "8e613340d5955ce7af1a8c9b2ac381514c0c7b577129202d8843bb35e13d2a45",
       "output": "kid_big_lou.glb",
-      "outputSha256": "098967515625a361bce8bb7d06ea3373f68248aa2ef739404653568636f3bfe1",
+      "outputSha256": "44b9fb3822d5a540b9d959e71af756ac3e7d20051b5b9ec33f5dca95a6963047",
       "definingTraits": [
         "gentle broad silhouette",
         "soft rounded face",
