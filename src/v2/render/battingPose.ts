@@ -45,6 +45,25 @@ export function battingRunOut(scale: number, distanceFt: number) {
  */
 const SEATED_ELBOW_WEIGHT = 30;
 
+/**
+ * The held bunt, in the rig frame (the chest turns toward -X). Out in front at
+ * a relaxed reach so both elbows open past 100 degrees and hang below the
+ * shoulders, standing and seated. Nearer the midline the knob wrist can only
+ * stay straight with its elbow up; farther out a standing kid's hips follow
+ * the hands instead. The barrel rises ~15 degrees — the quiet-bat gate in
+ * `HandPose.test.ts` caps it, and a steeper bat buys no lower elbow.
+ */
+const BUNT_GRIP = new Vector3(-.9, 1.95, -.4);
+const BUNT_AXIS = new Vector3(0, .28, 1).normalize();
+
+/**
+ * How far below the shoulder the bunt's elbows are free. A deeper margin buys
+ * no lower held elbow at BUNT_GRIP and costs continuity: at 0.30ft the seated
+ * knob forearm steps 42 degrees between quarter-frames, past the 25-degree
+ * gate (`HandPose.test.ts`, `audit:batting --check`).
+ */
+const BUNT_ELBOW_MARGIN_FT = .25;
+
 /** Inside the reference wrist's 40-degree fold gate, with a margin. */
 const WRIST_LIMIT_RAD = 34 * Math.PI / 180;
 
@@ -217,11 +236,13 @@ export class BattingPose {
       // across the chest the knob hand can only keep a straight wrist by
       // folding its forearm vertical and lifting the elbow beside the face —
       // measured on all 30 delivered models at the held frame (0.50-0.59ft
-      // above the shoulder). Past the shoulder line minus a small margin the
-      // elbow is charged, and the wrist's 40-degree limit (`HandPose.test.ts`)
+      // above the shoulder). Past the shoulder line minus a margin the elbow
+      // is charged, and the wrist's 40-degree limit (`HandPose.test.ts`)
       // becomes a wall rather than a preference, so the search buys the
       // lowest elbow the wrist can afford instead of trading one for the other.
-      const elbowRise = Math.max(0, elbow.y - (shoulder.y - .15));
+      // The margin only works with the bat held out in front (see `apply`):
+      // with the hands at the chest there is no low elbow the wrist affords.
+      const elbowRise = Math.max(0, elbow.y - (shoulder.y - BUNT_ELBOW_MARGIN_FT));
       const wristOver = Math.max(0, wristBend - WRIST_LIMIT_RAD);
       const score = 8*wristBend*wristBend + .2*(1-bend.dot(preferred)) + .03*roll*roll + 100*reach*reach + 40*Math.max(0,roll-Math.PI/2)**2
         + this.buntWeight*((this.seated ? SEATED_ELBOW_WEIGHT : 60)*elbowRise*elbowRise + 400*wristOver*wristOver);
@@ -339,14 +360,16 @@ export class BattingPose {
     } else if (name === 'bunt') {
       const t = smooth(Math.sin(Math.PI * time / framesToSec(clipSpec(name).frames)));
       if (referenceHands) {
-        // Receive the pitch with a quiet bat across the chest. The top hand
-        // travels up the taper; the bottom hand stays near the knob, held
-        // low and in front so its elbow can tuck (measured over all 30
-        // delivered models: elbows below the shoulder, knob elbow 103-118deg).
-        grip.copy(this.stanceGrip).lerp(new Vector3(-.55, 2.0, -.45), bunt);
+        // Receive the pitch with a quiet bat held OUT IN FRONT. The top hand
+        // travels up the taper; the bottom hand stays near the knob. At a
+        // chest-close grip (0.24ft ahead of the shoulder) both arms had to
+        // fold to 60-70 degrees and the knob elbow escaped sideways, level
+        // with the shoulder — and seated, above it with a vertical forearm,
+        // because a chair cannot step the trunk back. See BUNT_GRIP.
+        grip.copy(this.stanceGrip).lerp(BUNT_GRIP, bunt);
         // Clear the shoulder first, then bring the bat into the receiving pose.
         grip.z += (.4 + .25*(1-bunt)**4)*Math.sin(Math.PI*bunt);
-        axis.copy(STANCE_AXIS).lerp(new Vector3(0,.18,1).normalize(), smooth(bunt+.1*Math.sin(Math.PI*bunt))).normalize();
+        axis.copy(STANCE_AXIS).lerp(BUNT_AXIS, smooth(bunt+.1*Math.sin(Math.PI*bunt))).normalize();
       } else { grip.lerp(contact, t); axis.lerp(Z, t).normalize(); }
     } else if (name === 'swing_follow') {
       const t = smooth(time / FOLLOW_SEC);
