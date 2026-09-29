@@ -18,7 +18,7 @@ function fixture(mirrored = true, scale = 1.6, seated = false) {
   const kid = new ProxyCharacter(ROSTER[0].visual);
   const scene = new Group(); scene.scale.x = mirrored ? -1 : 1;
   scene.add(kid.root); kid.root.scale.setScalar(scale);
-  const box = battingPlacement(scale); kid.setPosition(box.x, box.z); kid.setFacing(box.facing);
+  const box = battingPlacement(scale, seated); kid.setPosition(box.x, box.z); kid.setFacing(box.facing);
   const dir = new AnimationDirector(kid.mesh, { fallback: buildProceduralClips(), performanceClips: seated ? buildZoomSeatedLibrary() : buildJunebugPilotClips(), actor: { id: seated ? 'wheelchair_ace' : 'nostrike', profile: performanceFor(seated ? 'wheelchair_ace' : 'nostrike'), setExpression() {} } });
   scene.updateMatrixWorld(true);
   dir.battingPose.contact = scene.localToWorld(new Vector3(0, 2.4, 0));

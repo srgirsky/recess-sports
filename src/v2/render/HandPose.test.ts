@@ -7,7 +7,7 @@ import { buildTheoPilotClips, buildBigLouPilotClips } from './proceduralClips';
 import { HandPose } from './HandPose';
 import { AnimationDirector } from './AnimationDirector';
 import { SKELETON } from './skeleton';
-import { BattingPose, CONTACT_OUT_FRONT_FT } from './battingPose';
+import { BattingPose, contactOutFront } from './battingPose';
 import { BAT_SWEET_SPOT_FT } from './props';
 import { clipSpec, FPS } from './clips';
 import { battingReadyDepth, performanceFor } from './performance';
@@ -164,7 +164,7 @@ describe('reference hand behavior',()=>{
     const {mesh,bones}=rig(),bat=new BattingPose(mesh,seated),marker=clipSpec('swing_contact').marker!.frame;
     const at=(name:string)=>bones.get(name)!.getWorldPosition(new Vector3());
     for(const height of [1,1.5,1.94,null]){
-      bat.contact=height===null?null:new Vector3(-CONTACT_OUT_FRONT_FT,height,.55+BAT_SWEET_SPOT_FT);
+      bat.contact=height===null?null:new Vector3(-contactOutFront(seated),height,.55+BAT_SWEET_SPOT_FT);
       for(const clip of ['swing_contact','swing_whiff','swing_follow'] as const){
         const previous=new Map<string,Quaternion>();
         for(let frame=0;frame<clipSpec(clip).frames;frame+=.25){

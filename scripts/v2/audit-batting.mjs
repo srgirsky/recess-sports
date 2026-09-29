@@ -2,7 +2,8 @@
 // Sweep six batting actions on every delivered model IN the mirrored gameplay
 // scene. --check rejects backward heads, detached palm anchors, missed contact
 // markers, reference-hand wrist folds/roll jumps, a top elbow shut at contact,
-// a palm inside the torso around contact and shaft intersections.
+// a palm inside the torso around contact, a dropped pelvis, caved knees or a
+// sunken head during the swing, and shaft intersections.
 // Reference hands are sampled at 120Hz to catch inter-frame flips.
 // Passing is not visual approval:
 // finger enclosure, near misses by the barrel radius and transitions still
@@ -55,12 +56,13 @@ try {
    if(source!=='model')throw Error(`${c.id}: expected delivered model, got ${source}`);
    const referenceHands=view.bones.some(b=>b.name==='RightHandIndex2');
    const rightPalmOffset=view.bones.find(b=>b.name==='Prop_BatGrip').position.clone().add(new Vector3(.03,-.05,0));
-   const box=battingPlacement(view.root.scale.x);
+   const box=battingPlacement(view.root.scale.x,dir.battingPose.seated);
    view.setPosition(box.x,box.z);view.setFacing(box.facing);s.scene.add(view.root);
    s.scene.updateMatrixWorld(true);
    // The swing is solved against the pitch height, so one fixed target hid a
    // top arm that snapped between quarter-frames at 1.6ft. Sweep the low,
    // middle and high strike-zone heights, plus the review page's own default.
+   let stanceHipsY=null,stanceNeck=null;
    for(const [clip,aim] of [['bat_stance',2.4],['bat_load',2.4],...['swing_contact','swing_follow','swing_whiff'].flatMap(c=>[1.6,2.4,3.1,null].map(h=>[c,h])),['bunt',2.4]]){
     dir.battingPose.contact=aim===null?null:s.scene.localToWorld(new Vector3(0,aim,0));
     const previous=new Map();
@@ -136,7 +138,24 @@ try {
       });
       return body?(reach-(far-body.distance))/view.root.scale.x:Infinity;
      })):null;
+     // ★ LEGS AND NECK PAY FOR WHAT THE ARMS CANNOT REACH. Every gate above
+     // passed while Big Lou's pelvis slid 0.4ft over planted feet and his knees
+     // caved together, and while Zoom's head sank between raised shoulders.
+     // Measured against the kid's own bat_stance: the pelvis drop, each knee's
+     // offset from its hip-to-foot line toward the other leg (valgus), and the
+     // head's height over the shoulders.
+     const rig=bone('Root'),inRig=n=>rig.worldToLocal(at(n)).divideScalar(1);
+     const shoulderY=(inRig('LeftArm').y+inRig('RightArm').y)/2,neck=inRig('Head').y-shoulderY;
+     if(clip==='bat_stance'&&frame===0){stanceHipsY=inRig('Hips').y;stanceNeck=neck;}
+     const swing=clip.startsWith('swing_');
+     const valgusFt=swing?Math.max(...[['Left','Right'],['Right','Left']].map(([side,other])=>{
+      const hip=inRig(side+'UpLeg'),foot=inRig(side+'Foot'),knee=inRig(side+'Leg'),line=foot.clone().sub(hip).normalize();
+      const off=knee.clone().sub(hip);off.addScaledVector(line,-off.dot(line));
+      const toward=inRig(other+'UpLeg').add(inRig(other+'Foot')).multiplyScalar(.5).sub(hip);toward.addScaledVector(line,-toward.dot(line));
+      return toward.lengthSq()>1e-8?off.dot(toward.normalize()):0;
+     })):null;
      results.push({id:c.id,clip,aim,frame,clipSource:dir.sourceFor(clip),
+      hipDropFt:swing?stanceHipsY-inRig('Hips').y:null,valgusFt,neckRatio:swing?neck/stanceNeck:null,
       markerElbows:marker?{top:elbowShape('Right'),lead:elbowShape('Left')}:null,palmTorsoClearFt,
       headTowardPitcher:forward.dot(pitcher.sub(headAt).normalize()),
       supportHandGapFt:referenceHands?topPalm.distanceTo(topTarget)/view.root.scale.x:0,
@@ -160,7 +179,9 @@ try {
  // kids shipped 58-69 degrees at the review default and 29-65 at 3.1ft. The
  // high pitch keeps a lower floor; met there the elbow rises with the hands.
  const shutElbow=r=>r.markerElbows&&r.markerElbows.top.deg<(r.aim===3.1?65:80);
- const bad=data.results.filter(r=>r.palmTorsoClearFt<0||shutElbow(r)||r.headTowardPitcher<0||r.supportHandGapFt>.02||r.palmGapFt>.02||r.contactGapFt>.1||r.wristBendsDeg.some(bend=>bend>40)||r.wristTwistsDeg.some(twist=>twist>25)||r.armStepsDeg.some(step=>step>25));
+ // Floors set between this pose and `main`'s (0.57ft, 0.31ft, a head at -0.37).
+ const slumped=r=>r.hipDropFt>.45||r.valgusFt>.26||(r.neckRatio!==null&&r.neckRatio<.6);
+ const bad=data.results.filter(r=>slumped(r)||r.palmTorsoClearFt<0||shutElbow(r)||r.headTowardPitcher<0||r.supportHandGapFt>.02||r.palmGapFt>.02||r.contactGapFt>.1||r.wristBendsDeg.some(bend=>bend>40)||r.wristTwistsDeg.some(twist=>twist>25)||r.armStepsDeg.some(step=>step>25));
  const intersections=data.results.filter(r=>r.shaftHits>0);
  const min=values=>values.reduce((least,value)=>Math.min(least,value),Infinity);
  const aims=[...new Set(data.results.map(r=>r.aim))];
@@ -169,6 +190,6 @@ try {
   const steps=data.results.filter(r=>r.aim===aim&&r.clip.startsWith('swing_')).flatMap(r=>r.armStepsDeg);
   return [String(aim??'review'),at.length?{topDegMin:min(at.map(r=>r.markerElbows.top.deg)),topDegMax:max(at.map(r=>r.markerElbows.top.deg)),topDropFtMin:min(at.map(r=>r.markerElbows.top.dropFt)),leadDegMin:min(at.map(r=>r.markerElbows.lead.deg)),maxSwingArmStepDeg:max(steps)}:null];
  }));
- console.log(JSON.stringify({samples:data.results.length,mechanicalFailures:bad.length,shaftIntersectionCandidates:intersections.length,affected:[...new Set(intersections.map(r=>r.id))],markerElbows,maxArmStepDeg:max(data.results.flatMap(r=>r.armStepsDeg)),maxWristTwistDeg:max(data.results.flatMap(r=>r.wristTwistsDeg)),maxWristBendDeg:max(data.results.flatMap(r=>r.wristBendsDeg)),maxPalmGapFt:max(data.results.map(r=>r.palmGapFt)),minPalmTorsoClearFt:min(data.results.filter(r=>r.palmTorsoClearFt!==null).map(r=>r.palmTorsoClearFt)),failures:bad.slice(0,20)},null,2));
+ console.log(JSON.stringify({samples:data.results.length,mechanicalFailures:bad.length,shaftIntersectionCandidates:intersections.length,affected:[...new Set(intersections.map(r=>r.id))],markerElbows,maxArmStepDeg:max(data.results.flatMap(r=>r.armStepsDeg)),maxWristTwistDeg:max(data.results.flatMap(r=>r.wristTwistsDeg)),maxWristBendDeg:max(data.results.flatMap(r=>r.wristBendsDeg)),maxPalmGapFt:max(data.results.map(r=>r.palmGapFt)),maxHipDropFt:max(data.results.map(r=>r.hipDropFt??0)),maxValgusFt:max(data.results.map(r=>r.valgusFt??0)),minNeckRatio:min(data.results.filter(r=>r.neckRatio!==null).map(r=>r.neckRatio)),minPalmTorsoClearFt:min(data.results.filter(r=>r.palmTorsoClearFt!==null).map(r=>r.palmTorsoClearFt)),failures:bad.slice(0,20)},null,2));
  if(process.argv.includes('--check')&&(bad.length||intersections.length))process.exitCode=1;
 }finally{await browser?.close();server.kill();}

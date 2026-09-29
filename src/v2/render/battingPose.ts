@@ -34,14 +34,22 @@ const smooth = (x: number) => { const t = Math.max(0, Math.min(1, x)); return t 
  * (`audit:batting`, the review default and the 2.4ft pitch).
  */
 export const CONTACT_OUT_FRONT_FT = .6;
+/**
+ * Seated, the same pitch sits nearer the lap and a chair cannot step back, so
+ * reaching 0.6ft out front folded Zoom over the plate. Nearer, and the shoulder
+ * lag still opens his top elbow past 100 degrees.
+ */
+export const SEATED_CONTACT_OUT_FRONT_FT = .45;
+export const contactOutFront = (seated: boolean) => seated ? SEATED_CONTACT_OUT_FRONT_FT : CONTACT_OUT_FRONT_FT;
 /** The review page's pitch when none is thrown: 2.4ft at the 1.6 reference scale. */
 const REVIEW_CONTACT_HEIGHT_FT = 1.5;
 /**
  * Low pitches are met with the barrel, not the hands: below this grip height
- * the bat tilts down (to MAX_BARREL_TILT) so the hands stay slotted instead of
- * the hips squatting 0.6ft. A steeper tilt folds the knob wrist past 40 degrees.
+ * the bat tilts down (to MAX_BARREL_TILT) and the hands stay near the chest,
+ * which asks the trunk and pelvis for less reach. Steeper, and the top arm
+ * steps past 25 degrees at launch on Big Lou's low pitch (`audit:batting`).
  */
-const SLOT_HAND_HEIGHT_FT = 1.4;
+const SLOT_HAND_HEIGHT_FT = 1.8;
 const MAX_BARREL_TILT = .2;
 /**
  * Seated, the same pitch is nearer the lap and the trunk can only fold down to
@@ -132,13 +140,13 @@ function contactBatAxis(height: number, seated: boolean): Vector3 {
 }
 
 /** Side-on box placement in the render's exaggerated reference feet. */
-export function battingPlacement(scale: number) {
-  return { x: -(BAT_SWEET_SPOT_FT + .55) * scale, z: -CONTACT_OUT_FRONT_FT * scale, facing: Math.PI / 2 };
+export function battingPlacement(scale: number, seated = false) {
+  return { x: -(BAT_SWEET_SPOT_FT + .55) * scale, z: -contactOutFront(seated) * scale, facing: Math.PI / 2 };
 }
 
 /** Join the sim's centre-of-plate origin without teleporting out of the box. */
-export function battingRunOut(scale: number, distanceFt: number) {
-  const box = battingPlacement(scale);
+export function battingRunOut(scale: number, distanceFt: number, seated = false) {
+  const box = battingPlacement(scale, seated);
   const remaining = 1 - smooth(distanceFt / 10);
   return { x: box.x * remaining, z: box.z * remaining };
 }
@@ -179,9 +187,27 @@ const BUNT_ELBOW_MARGIN_FT = .25;
  * bands of height; where a palm would sit closer than this to its surface the
  * standing body steps STRAIGHT BACK from the hands, which the ball has fixed.
  * Pushed radially, the body also slid off the plate and the straightening lead
- * arm jumped 29 degrees between quarter-frames (`audit:batting`, Big Lou).
+ * arm jumped 29 degrees between quarter-frames (`audit:batting`, Big Lou). With
+ * the trunk taking the reach (TRUNK_REACH_RAD) the pelvis no longer chases the
+ * hands into the belly, and this is a small residual correction.
  */
 const PALM_CLEARANCE_FT = .1;
+const HEAD_FOLLOW = .5;
+/** Still inside the 18-degree look-at-the-pitcher gate (`battingPose.test.ts`). */
+const HEAD_FOLLOW_MAX = 15 * Math.PI / 180;
+/**
+ * ★ REACH WITH THE TRUNK, NOT THE PELVIS. Out-front hands are further from the
+ * shoulders than a kid's short arms reach. Made up by sliding the pelvis over
+ * planted feet, the hips dropped and the knees caved (an independent review
+ * saw Big Lou's legs scissor); the bend is soft-capped at this many radians,
+ * spread over three spine joints, and only the rest moves the pelvis.
+ */
+const TRUNK_REACH_RAD = 1;
+/**
+ * The shoulders trail the hips through contact. Square to the pitcher, the lead
+ * shoulder sat so far from out-front hands that the body had to lunge to them.
+ */
+const SHOULDER_LAG_RAD = .2;
 const TORSO_BAND_FT = .1;
 type TorsoBand = { forward: number; back: number; side: number };
 
@@ -280,7 +306,7 @@ export class BattingPose {
 
   contact: Vector3 | null = null;
 
-  private readonly seated: boolean;
+  readonly seated: boolean;
   private readyWeight = 0;
   /** How far into the bunt's receiving pose this frame is, 0..1. */
   private buntWeight = 0;
@@ -501,6 +527,11 @@ export class BattingPose {
     const chestForward = Z.clone().applyQuaternion(this.rotation(spine));
     const correction = desiredHeading - Math.atan2(chestForward.x, chestForward.z);
     this.set(hips, new Quaternion().setFromAxisAngle(Y, correction).multiply(this.rotation(hips)));
+    if ((name === 'swing_contact' || name === 'swing_whiff') && referenceHands) {
+      const lag = SHOULDER_LAG_RAD * Math.sin(Math.PI * Math.max(0, Math.min(1, (time * FPS - 3) / 8)));
+      const part = new Quaternion().setFromAxisAngle(Y, lag / 3);
+      for (const joint of ['Spine', 'Spine1', 'Spine2']) this.set(this.bones.get(joint)!, part.clone().multiply(this.rotation(this.bones.get(joint)!)));
+    }
     if (bunt > 0) this.set(spine,this.rotation(spine).slerp(new Quaternion().setFromAxisAngle(Y,desiredHeading),bunt));
     const gripHeight = 2.3;
     const ready = new Vector3(.4, gripHeight - .08, .42);
@@ -508,7 +539,7 @@ export class BattingPose {
     const readyAxis = this.bones.has('RightHandIndex2') ? REFERENCE_READY_AXIS : READY_AXIS;
     let axis = readyAxis.clone();
     const sweetSpot = this.contact ? this.rig.worldToLocal(this.contact.clone())
-      : new Vector3(-CONTACT_OUT_FRONT_FT, REVIEW_CONTACT_HEIGHT_FT, .55 + BAT_SWEET_SPOT_FT);
+      : new Vector3(-contactOutFront(this.seated), REVIEW_CONTACT_HEIGHT_FT, .55 + BAT_SWEET_SPOT_FT);
     const contactAxis = contactBatAxis(sweetSpot.y, this.seated);
     const contact = sweetSpot.clone().addScaledVector(contactAxis, -BAT_SWEET_SPOT_FT);
     const wind = ready.clone().add(new Vector3(.07, .04, -.06));
@@ -614,6 +645,40 @@ export class BattingPose {
           }
         }
       } else {
+        // Reach with the trunk first (TRUNK_REACH_RAD). Solve the whole bend at the waist, then
+        // keep a soft-capped share of it spread over the three spine joints.
+        // Capping pass by pass let the budget land on either hand by turns,
+        // and the lead arm moved in bursts between samples.
+        {
+          const waist = this.bones.get('Spine')!, rest = this.rotation(waist);
+          const total = new Quaternion();
+          for (let pass = 0; pass < 20; pass++) {
+            for (let i = 0; i < handTargets.length; i++) {
+              const { wrist, length } = handTargets[i];
+              const shoulder = this.at(this.bones.get(i === 0 ? 'LeftArm' : 'RightArm')!);
+              const delta = wrist.clone().sub(shoulder);
+              const excess = delta.length() - length * handSlack;
+              if (excess <= 0) continue;
+              const pivot = this.at(waist);
+              const from = shoulder.clone().sub(pivot);
+              const to = from.clone().add(delta.setLength(excess));
+              const correction = new Quaternion().setFromUnitVectors(from.normalize(), to.normalize());
+              total.premultiply(correction);
+              this.set(waist, correction.multiply(this.rotation(waist)));
+            }
+          }
+          this.set(waist, rest);
+          const angle = 2 * Math.acos(Math.min(1, Math.abs(total.w)));
+          if (angle > 1e-6) {
+            const kept = TRUNK_REACH_RAD * Math.tanh(angle / TRUNK_REACH_RAD) * (1 - bunt);
+            const part = new Quaternion().slerp(total, kept / angle / 3);
+            for (const name of ['Spine', 'Spine1', 'Spine2']) {
+              const joint = this.bones.get(name)!;
+              this.set(joint, part.clone().multiply(this.rotation(joint)));
+            }
+          }
+          handTargets.forEach((target, i) => target.shoulder = this.at(this.bones.get(i === 0 ? 'LeftArm' : 'RightArm')!));
+        }
         // Alternating projections put BOTH wrists within reach. Averaging two
         // independent corrections leaves the shorter arm detached on follow-through.
         const footRotation = new Quaternion().setFromAxisAngle(Y,-55*Math.PI/180*bunt);
@@ -673,7 +738,14 @@ export class BattingPose {
       }
     }
     const head = this.bones.get('Head');
-    if (head) this.set(head, new Quaternion().setFromAxisAngle(Y, -Math.PI / 2));
+    if (head) {
+      // Look down at the ball with part of the chest's lean. Held level while
+      // the trunk bends, the head sank between raised shoulders and the neck
+      // vanished (independent review, Zoom).
+      const chest = Z.clone().applyQuaternion(this.rotation(this.bones.get('Spine2')!));
+      const lean = Math.max(0, Math.asin(Math.max(-1, Math.min(1, -chest.y))));
+      this.set(head, new Quaternion().setFromAxisAngle(Y, -Math.PI / 2).multiply(new Quaternion().setFromAxisAngle(X, Math.min(HEAD_FOLLOW_MAX, HEAD_FOLLOW * lean))));
+    }
     this.rig.updateWorldMatrix(true, true);
     this.displayedRotations = new Map([...this.original.keys()].map(b => [b, b.quaternion.clone()]));
     this.displayedPositions = new Map([...this.positions.keys()].map(b => [b, b.position.clone()]));

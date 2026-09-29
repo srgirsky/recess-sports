@@ -3200,12 +3200,15 @@ v2 and leaves every existing record and golden fingerprint where it was.
   to keep it on frame 7. An independent critic then found Big Lou's and
   Tank's bats growing out of their stomachs: out front, a wide kid's palms
   sat inside his own torso. They always had (0.48ft deep on `main`, hidden at
-  the hip), and nothing measured it. Each kid's torso is now measured once and
-  the standing body steps back from the hands. `audit:batting` sweeps 1.6, 2.4
-  and 3.1ft pitches plus the review default and fails a shut elbow or a palm
-  inside the body; against `main` it reports 1,832 failures. At contact the top
-  elbow is 88-125 degrees, 71-83 on the high pitch. Seated, Zoom still leans
-  forward to lap-height pitches (the sim's zone is set from standing height).
+  the hip), and nothing measured it. A second critic found the first fix had
+  moved the cost into the legs: the pelvis slid over planted feet toward the
+  hands, so hips dropped and knees caved. Reach now comes from the trunk (a
+  soft-capped bend spread over the spine, the shoulders trailing the hips
+  through contact, the hands kept near the chest while the barrel tilts), and
+  the seated batter meets the ball nearer. `audit:batting` sweeps 1.6, 2.4 and
+  3.1ft pitches plus the review default and fails a shut elbow, a palm inside
+  the body, a dropped pelvis, caved knees or a sunken head; `main` fails all
+  of them. At contact the top elbow is 85-132 degrees.
   The fidelity findings stay open for a reviewer.
 
 - **Venue identity from the plate**: captured from the batting camera, Steele,
