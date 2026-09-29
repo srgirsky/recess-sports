@@ -220,8 +220,28 @@ const SEATED_SWING_DROP_FRAME = 4;
  * contact; earlier, the low-pitch launch folds the knob wrist past 40 degrees.
  * The seated grip keeps the square hold: his reach flipped the lead arm.
  */
-const LEAD_GRIP_DIAGONAL = -.4;
+const LEAD_GRIP_DIAGONAL = -.6;
+/**
+ * Below these contact heights (rig feet) the diagonal eases toward LOW: the
+ * low pitch already tilts the barrel down, and the two together fold the knob
+ * wrist past 40 degrees. At -.4 everywhere the lead elbow stayed level with the
+ * shoulder, so the lead upper arm pointed straight out of the front of it: seen
+ * down the sleeve, a short sleeve read as a ball with a thin arm stuck in its
+ * front (Flash, Smokey, Bendy Bao), and a high pitch foreshortened the whole
+ * arm into a stub at the collar (independent review).
+ */
+const LEAD_GRIP_DIAGONAL_LOW = -.5;
+const LEAD_GRIP_LOW_FT = 1.1;
+const LEAD_GRIP_FULL_FT = 1.4;
 const LEAD_GRIP_FROM_FRAME = 4.5;
+/**
+ * Above these heights, reached only by the smallest kids' letters-high pitches,
+ * the diagonal eases back to HIGH: at the full angle their lead forearm jumped
+ * 27-35 degrees onto the contact frame (Sprout, Cricket, Chip, Turbo).
+ */
+const LEAD_GRIP_DIAGONAL_HIGH = -.52;
+const LEAD_GRIP_EASE_FT = 1.95;
+const LEAD_GRIP_TOP_FT = 2.15;
 /** 0 -> 1 over t in [0, 1], still at 0 and arriving at slope `k` (<= 3). */
 const into = (t: number, k: number) => { const u = Math.max(0, Math.min(1, t)); return (k - 2) * u ** 3 + (3 - k) * u * u; };
 const HEAD_FOLLOW = .5;
@@ -344,6 +364,8 @@ export class BattingPose {
   private buntWeight = 0;
   /** How much of the lead hand's diagonal grip this frame holds, 0..1. */
   private gripTilt = 0;
+  /** The contact sweet spot's height this frame (rig feet). */
+  private sweetHeight = 0;
   private readonly stanceGrip: Vector3;
   private readonly torso: Map<number, TorsoBand> | null;
 
@@ -443,7 +465,7 @@ export class BattingPose {
     const evaluate = (angle: number) => {
       const x = base.clone().applyAxisAngle(z, angle);
       const rotation = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(x, z.clone().cross(x), z));
-      if (side === 'Left' && this.gripTilt) rotation.multiply(new Quaternion().setFromAxisAngle(Y, LEAD_GRIP_DIAGONAL * this.gripTilt));
+      if (side === 'Left' && this.gripTilt) rotation.multiply(new Quaternion().setFromAxisAngle(Y, (LEAD_GRIP_DIAGONAL_LOW + (LEAD_GRIP_DIAGONAL - LEAD_GRIP_DIAGONAL_LOW) * smooth((this.sweetHeight - LEAD_GRIP_LOW_FT) / (LEAD_GRIP_FULL_FT - LEAD_GRIP_LOW_FT)) + (LEAD_GRIP_DIAGONAL_HIGH - LEAD_GRIP_DIAGONAL) * smooth((this.sweetHeight - LEAD_GRIP_EASE_FT) / (LEAD_GRIP_TOP_FT - LEAD_GRIP_EASE_FT))) * this.gripTilt));
       const palmX = X.clone().applyQuaternion(rotation);
       const wrist = palm.clone().sub(this.palmOffset(side).applyQuaternion(rotation));
       const to = wrist.clone().sub(shoulder);
@@ -581,6 +603,7 @@ export class BattingPose {
     const sweetSpot = this.contact ? this.rig.worldToLocal(this.contact.clone())
       : new Vector3(-contactOutFront(this.seated), REVIEW_CONTACT_HEIGHT_FT, .55 + BAT_SWEET_SPOT_FT);
     const contactAxis = contactBatAxis(sweetSpot.y, this.seated);
+    this.sweetHeight = sweetSpot.y;
     const contact = sweetSpot.clone().addScaledVector(contactAxis, -BAT_SWEET_SPOT_FT);
     const wind = ready.clone().add(new Vector3(.07, .04, -.06));
     // A fixed finish round the lead side, reachable whatever the pitch.

@@ -190,6 +190,7 @@ describe('reference hand behavior',()=>{
               const fore=at('LeftHand').sub(at('LeftForeArm'));
               expect(local('LeftForeArm').x/local('LeftArm').x,`${height}ft lead elbow across the chest`).toBeGreaterThan(.3);
               expect(Math.acos(Math.abs(fore.y)/fore.length()),`${height}ft lead forearm vertical`).toBeGreaterThan(25*Math.PI/180);
+              expect(local('LeftArm').y-local('LeftForeArm').y,`${height}ft lead elbow level with the shoulder`).toBeGreaterThan(height===1.5||height===null?.05:0);
             }
           }
           // The knees keep the hips' order seen from the pitcher (across Z):
