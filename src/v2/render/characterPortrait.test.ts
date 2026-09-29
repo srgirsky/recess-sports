@@ -1,8 +1,12 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { ndcThrough } from './cameraCues';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Color, Group, SRGBColorSpace, NeutralToneMapping, type WebGLRenderer, type WebGLRenderTarget } from 'three';
 import { ROSTER } from '../../data/characters';
 import { createCharacter } from './CharacterFactory';
-import { characterPortrait, configureCharacterPortraits } from './characterPortrait';
+import { characterPortrait, configureCharacterPortraits, PORTRAIT_FRAME, portraitFloorShare } from './characterPortrait';
 
 vi.mock('./CharacterFactory', () => ({ createCharacter: vi.fn(), proxyForced: () => false }));
 vi.mock('./proceduralClips', () => ({ buildProceduralClips: () => [] }));
@@ -77,5 +81,25 @@ describe('runtime portraits leave the live renderer intact', () => {
     expect(gl.autoClear).toBe(false);
     await expect(characterPortrait(ROSTER[0])).resolves.toContain('data:image/png');
     expect(createCharacter).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('a portrait kid stands on the line it is placed on', () => {
+  it('portraitFloorShare is where the portrait camera puts the shoes', () => {
+    // Project y=0 through the portrait camera, as characterPortrait builds it.
+    const h = 6;
+    const distance = h * PORTRAIT_FRAME.halfSpan / Math.tan(16 * Math.PI / 180);
+    const eye: [number, number, number] = [0, h * (PORTRAIT_FRAME.centre + .02), -distance];
+    const ndc = ndcThrough(eye, [0, h * PORTRAIT_FRAME.centre, 0], 32, 288 / 384, [0, 0, 0])!;
+    const shareBelowShoes = (ndc[1] + 1) / 2;
+    expect(Math.abs(shareBelowShoes - portraitFloorShare())).toBeLessThan(0.01);
+  });
+
+  it('★ the title drops each hero by that floor (main hovered them above it)', () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const title = readFileSync(join(here, '..', 'ui', 'screens', 'TitleScreen.ts'), 'utf8');
+    expect(title).toMatch(/--floor-share', String\(portraitFloorShare\(\)\)/);
+    const css = readFileSync(join(here, '..', 'ui', 'styles', 'app.css'), 'utf8');
+    expect(css).toMatch(/\.title-hero \.portrait \{[^}]*translate: 0 calc\(var\(--floor-share/);
   });
 });

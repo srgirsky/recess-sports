@@ -19,6 +19,16 @@ import { OutlineRegistry } from './materials/outline';
 let renderer: WebGLRenderer | null = null;
 let queue: Promise<unknown> = Promise.resolve();
 const cache = new Map<string, Promise<string>>();
+/** The portrait frames the kid's height ±`halfSpan` about `centre` (shares
+ * of the kid's height), so there is floor below the shoes. */
+export const PORTRAIT_FRAME = { halfSpan: .6, centre: .5 } as const;
+
+/** How much of a portrait's height lies below the kid's shoes: the offset a
+ * layout that stands the kid on a line must drop the image by. */
+export function portraitFloorShare(): number {
+  return (PORTRAIT_FRAME.halfSpan - PORTRAIT_FRAME.centre) / (2 * PORTRAIT_FRAME.halfSpan);
+}
+
 const WIDTH = 288;
 const HEIGHT = 384;
 
@@ -48,9 +58,9 @@ export function characterPortrait(character: Character, uniform?: number): Promi
     // crown and below the shoes. Perspective matches the front-facing stage.
     const height = view.heightFt * CHARACTER_SCALE;
     const camera = new PerspectiveCamera(32, WIDTH / HEIGHT, .1, 100);
-    const distance = height * .6 / Math.tan(16 * Math.PI / 180);
-    camera.position.set(0, height * .52, -distance);
-    camera.lookAt(0, height * .5, 0);
+    const distance = height * PORTRAIT_FRAME.halfSpan / Math.tan(16 * Math.PI / 180);
+    camera.position.set(0, height * (PORTRAIT_FRAME.centre + .02), -distance);
+    camera.lookAt(0, height * PORTRAIT_FRAME.centre, 0);
     const linear = new WebGLRenderTarget(WIDTH, HEIGHT, { type: HalfFloatType, samples: 4 });
     const target = new WebGLRenderTarget(WIDTH, HEIGHT);
     const output = new OutputPass();

@@ -18,6 +18,7 @@ import { button, el } from '../dom';
 import type { Screen } from '../Router';
 import { getCharacter } from '../../../data/characters';
 import { portrait } from '../portrait';
+import { portraitFloorShare } from '../../render/characterPortrait';
 import { assetUrl } from '../../render/assets';
 
 export class TitleScreen implements Screen {
@@ -39,6 +40,13 @@ export class TitleScreen implements Screen {
       const c = getCharacter(id);
       const frame = el('div', `title-hero title-hero--${mod}`);
       frame.setAttribute('aria-hidden', 'true');
+      // ★ THE KIDS STAND ON THE SILL. The portrait keeps floor below the
+      // shoes, so an image bottom-aligned to the lockup hovered its kid a
+      // twelfth of its height above the window sill, doubled in mid-air by a
+      // hard offset shadow (2026-09-29 playthrough). The image drops by that
+      // floor, derived from the portrait camera, and a contact shadow sits
+      // where the shoes meet the line.
+      frame.style.setProperty('--floor-share', String(portraitFloorShare()));
       frame.appendChild(portrait(c, '', { street: true }));
       return frame;
     };

@@ -995,9 +995,40 @@ body.replay #hud > *:not(.replay-bar):not(.replay-badge):not(.btn--mute) {
   gap: clamp(0.2rem, 1.4vw, 1rem);
 }
 .title-hero {
+  position: relative;
   align-self: end;
   aspect-ratio: 3 / 4;
-  filter: drop-shadow(0 0.45rem 0 rgb(20 32 46 / 0.55));
+}
+/* Shoes on the line (TitleScreen): the image drops by the portrait's floor. */
+.title-hero .portrait {
+  position: relative;
+  z-index: 1;
+  display: block;
+  inline-size: 100%;
+  translate: 0 calc(var(--floor-share, 0) * 100%);
+  filter: drop-shadow(0 0 0.12rem rgb(20 32 46 / 0.6));
+}
+/* A chunky wooden figure stand under the shoes, in the sticker language of
+   the buttons beside it (heavy outline, a visible rim, a hard drop): the kids
+   stand on something at every viewport, whatever the painted room behind
+   them happens to put at that height. The chair needs the wider base. */
+.title-hero::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset-inline: 8%;
+  inset-block-end: -0.8rem;
+  block-size: 1.5rem;
+  border: var(--stroke) solid var(--outline);
+  border-radius: 50%;
+  background:
+    radial-gradient(closest-side, rgb(20 32 46 / 0.55), rgb(20 32 46 / 0) 75%) 50% 22% / 62% 55% no-repeat,
+    radial-gradient(ellipse 50% 42% at 50% 36%, #c79050 96%, transparent 100%),
+    linear-gradient(180deg, #8a5d28, #6a4419);
+  box-shadow: 0 0.35rem 0 rgb(20 32 46 / 0.55);
+}
+.title-hero--right::after {
+  inset-inline: -2%;
 }
 .title-hero--left {
   rotate: -4deg;
