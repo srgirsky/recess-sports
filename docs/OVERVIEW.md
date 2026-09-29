@@ -3186,6 +3186,31 @@ v2 and leaves every existing record and golden fingerprint where it was.
   hold answers both points. The per-kid findings remain in the ledger for a
   reviewer to close. This change does not approve them.
 
+- **The swing meets the ball out in front**: critics flagged a foreshortened
+  forearm with an angular elbow at the swing's contact frame, and a roster
+  probe found the top elbow shut to 58-69 degrees on all 30 delivered models
+  (29-65 on a high pitch), the hands tucked beside the rear hip. Moving
+  contact out front alone fixed the pose and broke the motion: the finish was
+  mirrored through contact, so the hands travelled twice as far and the arms
+  flipped between quarter-frames. The hand path is now its own curve to a
+  fixed finish, low pitches tilt the barrel instead of squatting, and three
+  solver faults the sweep exposed are gone (the top sleeve's pole under the
+  shoulder, a full-reach knob wrist, a wandering lead grip). The CONTACT
+  marker is derived from peak hand speed, so the hands whip through the ball
+  to keep it on frame 7. An independent critic then found Big Lou's and
+  Tank's bats growing out of their stomachs: out front, a wide kid's palms
+  sat inside his own torso. They always had (0.48ft deep on `main`, hidden at
+  the hip), and nothing measured it. A second critic found the first fix had
+  moved the cost into the legs: the pelvis slid over planted feet toward the
+  hands, so hips dropped and knees caved. Reach now comes from the trunk (a
+  soft-capped bend spread over the spine, the shoulders trailing the hips
+  through contact, the hands kept near the chest while the barrel tilts), and
+  the seated batter meets the ball nearer. `audit:batting` sweeps 1.6, 2.4 and
+  3.1ft pitches plus the review default and fails a shut elbow, a palm inside
+  the body, a dropped pelvis, caved knees or a sunken head; `main` fails all
+  of them. At contact the top elbow is 85-132 degrees.
+  The fidelity findings stay open for a reviewer.
+
 - **Venue identity from the plate**: captured from the batting camera, Steele,
   Commons and Eckman read as one park. Their signature structures cleared the
   fence and still hid, because they stood in left-centre, behind a

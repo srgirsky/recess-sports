@@ -7,7 +7,8 @@ import { buildTheoPilotClips, buildBigLouPilotClips } from './proceduralClips';
 import { HandPose } from './HandPose';
 import { AnimationDirector } from './AnimationDirector';
 import { SKELETON } from './skeleton';
-import { BattingPose } from './battingPose';
+import { BattingPose, contactOutFront } from './battingPose';
+import { BAT_SWEET_SPOT_FT } from './props';
 import { clipSpec, FPS } from './clips';
 import { battingReadyDepth, performanceFor } from './performance';
 
@@ -150,6 +151,37 @@ describe('reference hand behavior',()=>{
           }
           const lower=bones.get('Prop_BatGrip')!.localToWorld(new Vector3(0,-.18,0));
           expect(lower.distanceTo(bones.get('Prop_GloveAnchor')!.getWorldPosition(new Vector3()))).toBeLessThan(.001);
+        }
+      }
+    }
+  });
+  // Every swing gate above threw the review default, and the arm snapped 120
+  // degrees between quarter-frames at a 1.6ft pitch that none of them threw;
+  // meanwhile the top elbow met every ball shut at 58-69 degrees. Sweep the
+  // zone (rig heights of 1.6/2.4/3.1ft at the 1.6 reference scale, placed as
+  // `battingPlacement` places the batter) and pin the top arm at contact.
+  it.each([false,true])('swings through every pitch height without a jump, top elbow slotted at contact (seated %s)',seated=>{
+    const {mesh,bones}=rig(),bat=new BattingPose(mesh,seated),marker=clipSpec('swing_contact').marker!.frame;
+    const at=(name:string)=>bones.get(name)!.getWorldPosition(new Vector3());
+    for(const height of [1,1.5,1.94,null]){
+      bat.contact=height===null?null:new Vector3(-contactOutFront(seated),height,.55+BAT_SWEET_SPOT_FT);
+      for(const clip of ['swing_contact','swing_whiff','swing_follow'] as const){
+        const previous=new Map<string,Quaternion>();
+        for(let frame=0;frame<clipSpec(clip).frames;frame+=.25){
+          bat.restore();bat.apply(clip,frame/FPS);mesh.updateMatrixWorld(true);
+          for(const side of ['Left','Right']){
+            const bend=Math.acos(Math.max(-1,Math.min(1,new Vector3(1,0,0).applyQuaternion(bones.get(side+'Hand')!.quaternion).x)));
+            expect(bend,`${height}ft ${clip}:${frame} ${side} wrist folds back`).toBeLessThan(40*Math.PI/180);
+          }
+          for(const name of ['RightArm','RightForeArm','RightHand','LeftArm','LeftForeArm','LeftHand']){
+            const q=bones.get(name)!.quaternion;
+            if(previous.has(name))expect(q.angleTo(previous.get(name)!),`${height}ft ${clip}:${frame} ${name} jumps`).toBeLessThan(25*Math.PI/180);
+            previous.set(name,q.clone());
+          }
+          if(clip==='swing_contact'&&frame===marker){
+            const elbow=at('RightForeArm'),top=at('RightArm').sub(elbow).angleTo(at('RightHand').sub(elbow));
+            expect(top,`${height}ft top elbow shut at contact`).toBeGreaterThan((height===1.94?65:80)*Math.PI/180);
+          }
         }
       }
     }

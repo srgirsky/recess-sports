@@ -326,7 +326,7 @@ function applyIdleDefence(
   const batter = frame.baseIds.includes(frame.batterId) ? undefined : refs.kids.get(frame.batterId);
   if (batter) {
     // Match the reference grip + barrel reach; scale belongs to the art only.
-    const box = battingPlacement(batter.root.scale.x);
+    const box = battingPlacement(batter.root.scale.x, refs.directors.get(frame.batterId)?.battingPose.seated);
     batter.setPosition(box.x, box.z);
     batter.setFacing(box.facing);
     // ★ AND THE BATTER STANDS IN. `bat_stance` is in the clip contract, every
@@ -396,7 +396,7 @@ function applyLive(
       continue;
     }
     const p = runnerPos(r);
-    const box = r.startBase === 0 && r.from === 0 ? battingRunOut(kid.root.scale.x, r.alongFt) : { x: 0, z: 0 };
+    const box = r.startBase === 0 && r.from === 0 ? battingRunOut(kid.root.scale.x, r.alongFt, dir?.battingPose.seated) : { x: 0, z: 0 };
     kid.setPosition(p.x + box.x, p.z + box.z);
     if (!isSettled(r)) {
       const to = basePos(r.to);
