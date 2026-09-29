@@ -3209,6 +3209,20 @@ v2 and leaves every existing record and golden fingerprint where it was.
   3.1ft pitches plus the review default and fails a shut elbow, a palm inside
   the body, a dropped pelvis, caved knees or a sunken head; `main` fails all
   of them. At contact the top elbow is 85-132 degrees.
+
+- **The swing's three leftovers**: the reviews behind the out-front swing left
+  three things open, and all three were measurement-first. From the pitcher,
+  the knees CROSSED at every pitch height: the pelvis opened to the pitcher
+  while each knee still aimed at the plate, so both folded toward the stance
+  line between hip joints now spread across it (0.21-0.41ft of cave across
+  the pelvis). The knees now point where the hips face and the rear foot
+  pivots on its ball. The bat STALLED at the ball, easing to a stop at
+  contact (2.6 degrees per half-frame, 25 either side), so the follow-through
+  read as a snap; it now arrives and leaves at one angular speed. Zoom's rear
+  shoulder rose beside his cheek on a low pitch because his seated trunk
+  side-bent to reach; it now bends forward and turns only, and his hands drop
+  once they are past his knees instead of resting on his lap. The strike zone
+  itself is unchanged: it is a rule, and a seated zone is a product decision.
   The fidelity findings stay open for a reviewer.
 
 - **Venue identity from the plate**: captured from the batting camera, Steele,

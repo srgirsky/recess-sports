@@ -167,6 +167,7 @@ describe('reference hand behavior',()=>{
       bat.contact=height===null?null:new Vector3(-contactOutFront(seated),height,.55+BAT_SWEET_SPOT_FT);
       for(const clip of ['swing_contact','swing_whiff','swing_follow'] as const){
         const previous=new Map<string,Quaternion>();
+        const barrel={prev:null as Vector3|null,steps:new Map<number,number>()};
         for(let frame=0;frame<clipSpec(clip).frames;frame+=.25){
           bat.restore();bat.apply(clip,frame/FPS);mesh.updateMatrixWorld(true);
           for(const side of ['Left','Right']){
@@ -182,6 +183,23 @@ describe('reference hand behavior',()=>{
             const elbow=at('RightForeArm'),top=at('RightArm').sub(elbow).angleTo(at('RightHand').sub(elbow));
             expect(top,`${height}ft top elbow shut at contact`).toBeGreaterThan((height===1.94?65:80)*Math.PI/180);
           }
+          // The knees keep the hips' order seen from the pitcher (across Z):
+          // aimed at the plate while the pelvis opened, they crossed.
+          if(!seated&&clip!=='swing_follow'){
+            const hips=at('RightUpLeg').z-at('LeftUpLeg').z,knees=at('RightLeg').z-at('LeftLeg').z;
+            if(Math.abs(hips)>.05)expect(knees/hips,`${height}ft ${clip}:${frame} knees cross`).toBeGreaterThan(.1);
+          }
+          if(clip==='swing_contact'){
+            const shaft=new Vector3(0,1,0).applyQuaternion(bones.get('Prop_BatGrip')!.getWorldQuaternion(new Quaternion()));
+            if(barrel.prev)barrel.steps.set(frame,shaft.angleTo(barrel.prev));
+            barrel.prev=shaft;
+          }
+        }
+        // The bat is fastest THROUGH the ball: it once eased to a stop there
+        // (2.6 degrees per half-frame against 25 on either side) and read as a snap.
+        if(clip==='swing_contact'){
+          const through=barrel.steps.get(marker)!,peak=Math.max(...barrel.steps.values());
+          expect(through,`${height}ft barrel stalls at contact`).toBeGreaterThan(.5*peak);
         }
       }
     }
