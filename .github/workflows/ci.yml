@@ -69,6 +69,7 @@ jobs:
       - run: npm run audit:v2-layout
       # Delivered models in the actual mirrored scene, not only proxy unit tests.
       - run: npm run audit:batting -- --check
+      - run: npm run audit:draft-stage -- --check
       - uses: actions/upload-artifact@v4
         if: always()
         with:

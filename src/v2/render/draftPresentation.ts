@@ -41,7 +41,10 @@ export function draftHeroPose(
   ageSec: number,
   mode: DraftSpotlightMode,
   walkIn: boolean,
-  characterId?: string
+  characterId?: string,
+  /** The draft's last pick: after the reaction they stay on the mark, so the
+   * finished draft sells a kid under PLAY BALL instead of an empty yard. */
+  final = false
 ): DraftHeroPose {
   const age = Math.max(0, ageSec);
   if (walkIn && age < DRAFT_WALK_SEC) {
@@ -57,7 +60,7 @@ export function draftHeroPose(
       xFt: 0,
     };
   }
-  if (mode !== 'pick') {
+  if (mode !== 'pick' && !final) {
     const walkAge = afterWalk - DRAFT_REACT_SEC;
     // The stage camera looks toward +Z, so its screen-right basis is world -X.
     // Player bench is visually left and therefore +X in stage coordinates.

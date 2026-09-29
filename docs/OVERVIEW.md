@@ -3251,3 +3251,39 @@ v2 and leaves every existing record and golden fingerprint where it was.
 
 What still cannot be closed from code stays open: no child has played any of
 this (`docs/playtests/` holds no record), and no art target has been approved.
+
+## September 29 — the draft stage reads its own layout
+
+The 2026-09-29 playthrough found the draft's one live stage fighting the DOM
+plates drawn over it. At 1280x720 the candidate's head was cropped by the stage
+top and her feet stood under PICK ME; a waiting kid's face sat under the stat
+card; after Pick the Rest the benches piled into one interpenetrating clump;
+and Moose's draft line ran through the card frame's corner ornament. Every gate
+was green, because `audit:v2-layout` measures the plates and the kids are
+pixels.
+
+The DraftScreen now marks the empty centre column the candidate belongs in
+(`data-stage-slot`) and every plate (`data-stage-cover`). The stage camera
+keeps its distance, because the backstop stands just behind it (a first
+attempt that dollied back filmed the backstop wall), and solves its lens and
+view offset each frame so the candidate stands in that column. Any other kid
+whose face, crown or feet would land under a plate or off the stage is not
+drawn, and of two overlapping silhouettes only the nearer is. The finished
+draft keeps its last pick on the mark under PLAY BALL. The PICK?/YOU PICKED
+ribbon became a tab on the name card it labels, the bench labels moved to the
+stage's free bottom corners (hidden on phones, where the button spans them),
+the waiting group steps in and back on a narrow stage so a phone still shows
+someone waiting, and the card frame is nine-sliced and clipped to its painted
+border so its corners keep one size and no cream shows past them. An
+independent critic took the draft from 2/5 to 3.5/5 over three rounds
+(desktop about 4/5), each round's findings fixed and re-checked.
+
+`npm run audit:draft-stage -- --check` (in CI) drives the real draft at the
+six layout-audit viewports plus 1280x720 through four beats, and fails a face,
+crown or foot under a plate or off the stage, a clump, a vanished crowd, and
+card copy outside its frame. It fails on main's staging with the playthrough's
+exact findings. Two things stay open, recorded rather than fixed here: at
+tablet size only the centre column is clear of the plates, so two kids stand
+beside the candidate rather than six; and Moose's crouched hero pose draws his
+dark trousers as foreshortened ovals from the front, the same shading
+artifact the catcher review found on Tank.

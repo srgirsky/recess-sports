@@ -117,3 +117,12 @@ describe('draft presentation policy', () => {
     expect(view).toMatch(/renderInset\(this\.scene, this\.draftCamera/);
   });
 });
+
+describe('the finished draft keeps its last pick on the mark', () => {
+  it('reacts, then holds the hero pose at centre instead of walking to a bench', () => {
+    const late = draftHeroPose(10, 'mine', true, undefined, true);
+    expect(late.xFt).toBe(0);
+    expect(late.clip).not.toBe('walk_on');
+    expect(draftHeroPose(10, 'mine', true).xFt).not.toBe(0);
+  });
+});

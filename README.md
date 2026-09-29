@@ -625,6 +625,7 @@ npm run review:art                 # inventory, findings and HTML review board
 npm run capture:art-benchmark      # local Vite + Chromium: desktop/phone, day/night
 npm run audit:batting              # all 30 delivered kids: six actions, every authored frame, swings at 1.6/2.4/3.1ft
 npm run audit:batting -- --check   # reject facing, palm gaps, arm jumps, shut elbows, palms in the body, slumped legs/neck, shaft hits
+npm run audit:draft-stage -- --check  # the draft stage at 7 sizes: no card over a kid's face or feet, no clumped kids, card copy inside its frame
 npm run review:art                 # include the newly captured evidence
 npm run check:art-parity           # nonzero until every required review is approved
 ```
