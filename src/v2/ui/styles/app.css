@@ -648,8 +648,15 @@ body.screen-open .play-callout {
  * regardless, so skipping costs nothing and waiting costs ~2.5s.
  * ------------------------------------------------------------------------- */
 .inning-board {
-  grid-area: center;
-  place-self: center;
+  /* Centred on the FRAME, not the HUD's centre cell: hidden HUD pieces keep
+     their column widths, which sat the board right of centre. */
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-start: 50%;
+  translate: -50% -50%;
+  max-inline-size: calc(100vw - 2 * var(--s3));
+  max-block-size: calc(100svh - 2 * var(--s3));
+  box-sizing: border-box;
   display: grid;
   gap: var(--s2);
   padding: var(--s4) calc(var(--s4) * 1.4);
@@ -731,7 +738,7 @@ body.replay #hud > *:not(.replay-bar):not(.replay-badge):not(.btn--mute) {
 }
 .inning-board__caption {
   justify-self: center;
-  font-size: clamp(0.6rem, 2.2svh, 0.8rem);
+  font-size: clamp(0.7rem, 3.4svh, 1.5rem);
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--gold);
@@ -745,13 +752,13 @@ body.replay #hud > *:not(.replay-bar):not(.replay-badge):not(.btn--mute) {
   gap: 0.15rem;
 }
 .inning-board__cell {
-  min-inline-size: clamp(1.1rem, 3.4svh, 1.5rem);
-  block-size: clamp(1.1rem, 3.4svh, 1.5rem);
+  min-inline-size: clamp(1.1rem, 5svh, 2.6rem);
+  block-size: clamp(1.1rem, 5svh, 2.6rem);
   display: grid;
   place-items: center;
   border-radius: 0.3rem;
   background: rgb(0 0 0 / 0.28);
-  font-size: clamp(0.55rem, 2svh, 0.75rem);
+  font-size: clamp(0.55rem, 3svh, 1.3rem);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: #ffe9a8;
@@ -762,7 +769,7 @@ body.replay #hud > *:not(.replay-bar):not(.replay-badge):not(.btn--mute) {
   opacity: 0.75;
 }
 .inning-board__cell--name {
-  min-inline-size: clamp(3.6rem, 12svh, 5.5rem);
+  min-inline-size: clamp(3.6rem, 18svh, 10rem);
   justify-content: start;
   padding-inline: var(--s2);
   background: none;
@@ -776,6 +783,52 @@ body.replay #hud > *:not(.replay-bar):not(.replay-badge):not(.btn--mute) {
 .inning-board__cell--total {
   background: rgb(255 206 58 / 0.22);
   color: var(--gold);
+}
+
+.inning-board__next {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s2);
+}
+.inning-board__next:empty { display: none; }
+.inning-board__up {
+  display: grid;
+  justify-items: center;
+  gap: 0.15rem;
+  padding: var(--s1);
+  border-radius: var(--radius);
+  background: rgb(0 0 0 / 0.22);
+  min-inline-size: 0;
+}
+.inning-board__up.is-at-bat {
+  background: rgb(255 206 58 / 0.22);
+  outline: 0.13rem solid var(--gold);
+}
+.inning-board__up-label {
+  font-size: clamp(0.45rem, 2.4svh, 1rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  white-space: nowrap;
+}
+.inning-board__up-art {
+  /* Three across must fit a phone: capped by width as well as height. */
+  block-size: clamp(2.6rem, min(24svh, 30vw), 12rem);
+  aspect-ratio: 3 / 4;
+}
+.inning-board__up-art .portrait {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+}
+.inning-board__up-name {
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(0.5rem, 2.6svh, 1.1rem);
+  font-weight: 700;
+  color: var(--cream);
 }
 
 /* ---------------------------------------------------------------------------
