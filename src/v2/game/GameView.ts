@@ -2594,7 +2594,16 @@ export class GameView {
     this.instrumented = true;
     if (this.replay) this.endReplay();
     const count = Math.max(0, Math.floor(ticks));
-    for (let i = 0; i < count; i++) this.pump(1 / SIM_HZ);
+    for (let i = 0; i < count; i++) {
+      this.pump(1 / SIM_HZ);
+      // ★ PARTICLES AGE WITH THE REACH. Contact embers live 0.4-0.7s and age
+      // only in `tick`, which a reach skips: the smoke's stills carried a
+      // contact's embers, young and frozen, into beats seconds later, and they
+      // read as speckles on the batter and dots over the next at-bat
+      // (2026-09-29 playthrough). The live game never shows them.
+      this.fireworks?.update(1 / SIM_HZ);
+      this.impactBurst?.update(1 / SIM_HZ);
+    }
     return this.frame;
   }
 

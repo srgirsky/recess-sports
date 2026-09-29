@@ -854,3 +854,17 @@ seed: the fly-catch beat's six painted steps after the catch frame now show
 the held play rather than the between cut, the runner-on beat's runner is
 on the field, not only on the diamond, and the home-run beat on `smokeHR2`
 runs through the trot.
+
+### #6: the debris, verified before any fix (2026-09-29)
+
+- **Embers an at-bat later: the instrument.** Contact embers live 0.4-0.7s and
+  age in the render tick, which the smoke's reach skips, so the stills carried
+  them into later beats. `devStepFixedClock` now ages them per step; the
+  runner-on still is clean.
+- **White speckles on the kid at home: real, and correct.** Instrumented at
+  the fly-catch beat, contact and catch fall in the same step (a foul tip into
+  the catcher's mitt), and the glow is that contact's fresh burst (0.49s left).
+- **The dark bar under home plate: the backstop.** A raycast named it: a
+  solid 30x9ft box that read as a floating slab from the live cameras. It now
+  draws chain link under a solid top rail in the same single draw;
+  `Fence.test.ts` fails a backstop that is not mostly open air.
