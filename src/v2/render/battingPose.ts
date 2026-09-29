@@ -112,7 +112,7 @@ function hermite(p0: Vector3, m0: Vector3, p1: Vector3, m1: Vector3, u: number):
 }
 
 /** The hands at frame `f` of a swing. */
-function swingHands(wind: Vector3, contact: Vector3, through: Vector3, f: number): Vector3 {
+function swingHands(wind: Vector3, contact: Vector3, through: Vector3, f: number, drop = SWING_DROP_FRAME): Vector3 {
   const velocity = through.clone().sub(wind).multiplyScalar(CONTACT_HAND_VELOCITY);
   const along = (launch: number) => {
     if (f <= launch) return wind.clone();
@@ -124,7 +124,7 @@ function swingHands(wind: Vector3, contact: Vector3, through: Vector3, f: number
     const span = to - from;
     return hermite(p0, m0.clone().multiplyScalar(span), p1, m1.clone().multiplyScalar(span), (f - from) / span);
   };
-  const hands = along(SWING_DROP_FRAME).setX(along(SWING_DRIVE_FRAME).x);
+  const hands = along(drop).setX(along(SWING_DRIVE_FRAME).x);
   const u = (f - CONTACT_FRAME) / 2;
   if (Math.abs(u) < 1) hands.x -= CONTACT_WHIP_FT * Math.sin(Math.PI * u) * Math.cos(Math.PI * u / 2) ** 2;
   return hands;
@@ -192,6 +192,24 @@ const BUNT_ELBOW_MARGIN_FT = .25;
  * hands into the belly, and this is a small residual correction.
  */
 const PALM_CLEARANCE_FT = .1;
+/** How far each foot pivots with the opening hips: the rear on its ball, the lead a little. */
+const REAR_FOOT_PIVOT = .6;
+const LEAD_FOOT_PIVOT = .2;
+/**
+ * ★ THE BAT IS FASTEST THROUGH THE BALL. The barrel eased to a stop at contact
+ * and away from it (2.6 degrees per half-frame at the ball, 25 either side), so
+ * the follow-through read as a snap out of a stall. It now arrives at this
+ * slope and leaves at the matching angular speed. Much steeper and the lead
+ * forearm rolls past 25 degrees per quarter-frame on a high pitch (Sprout).
+ */
+const BAT_WHIP = 1.75;
+/**
+ * Seated, the hands start down only from this frame, once they are past the
+ * knees: dropping from frame 1 laid Zoom's palms on his thighs before contact.
+ */
+const SEATED_SWING_DROP_FRAME = 4;
+/** 0 -> 1 over t in [0, 1], still at 0 and arriving at slope `k` (<= 3). */
+const into = (t: number, k: number) => { const u = Math.max(0, Math.min(1, t)); return (k - 2) * u ** 3 + (3 - k) * u * u; };
 const HEAD_FOLLOW = .5;
 /** Still inside the 18-degree look-at-the-pitcher gate (`battingPose.test.ts`). */
 const HEAD_FOLLOW_MAX = 15 * Math.PI / 180;
@@ -442,9 +460,11 @@ export class BattingPose {
       // The margin only works with the bat held out in front (see `apply`):
       // with the hands at the chest there is no low elbow the wrist affords.
       const elbowRise = Math.max(0, elbow.y - (shoulder.y - BUNT_ELBOW_MARGIN_FT));
+      // The wrist limit is a wall in every batting clip, not only the bunt: a
+      // seated low pitch otherwise folded Zoom's knob wrist past 40 degrees.
       const wristOver = Math.max(0, wristBend - WRIST_LIMIT_RAD);
       const score = 8*wristBend*wristBend + elbowPreference*(1-bend.dot(preferred)) + .03*roll*roll + 100*reach*reach + 40*Math.max(0,roll-Math.PI/2)**2
-        + this.buntWeight*((this.seated ? SEATED_ELBOW_WEIGHT : 60)*elbowRise*elbowRise + 400*wristOver*wristOver);
+        + this.buntWeight*(this.seated ? SEATED_ELBOW_WEIGHT : 60)*elbowRise*elbowRise + 400*wristOver*wristOver;
       return {rotation, wrist, bend, score, angle};
     };
     let best = evaluate(0);
@@ -549,12 +569,17 @@ export class BattingPose {
       const f = time * FPS;
       // Contact is the MIDDLE of the fastest sweep, not a stop between two
       // eases: both halves share one tangent and the whip peaks it at frame 7.
-      grip.copy(swingHands(wind, contact, through, f));
+      grip.copy(swingHands(wind, contact, through, f, this.seated ? SEATED_SWING_DROP_FRAME : SWING_DROP_FRAME));
       if (f <= CONTACT_FRAME) {
-        axis.lerp(contactAxis, smooth((f - 3) / 4));
+        axis.lerp(contactAxis, into((f - 3) / 4, BAT_WHIP));
         axis.addScaledVector(X, BAT_LAY_BACK * Math.sin(Math.PI * Math.max(0, Math.min(1, (f - 1) / 4)))).normalize();
       }
-      else axis.copy(contactAxis).lerp(FOLLOW_AXIS.clone(), smooth((f - CONTACT_FRAME) / 4)).normalize();
+      else {
+        // Leave contact at the angular speed it arrived with.
+        const across = (from: Vector3, to: Vector3) => to.clone().sub(from).addScaledVector(from, -to.clone().sub(from).dot(from)).length();
+        const outWhip = Math.min(3, BAT_WHIP * across(contactAxis, contactAxis.clone().sub(readyAxis).add(contactAxis)) / Math.max(1e-3, across(contactAxis, FOLLOW_AXIS)));
+        axis.copy(contactAxis).lerp(FOLLOW_AXIS.clone(), 1 - into(1 - (f - CONTACT_FRAME) / 4, outWhip)).normalize();
+      }
     } else if (name === 'bat_load') {
       grip.lerp(wind, Math.sin(Math.PI * time / framesToSec(clipSpec(name).frames)));
     } else if (name === 'bunt') {
@@ -640,7 +665,16 @@ export class BattingPose {
             const pivot = this.at(waist);
             const from = shoulder.clone().sub(pivot);
             const to = from.clone().add(delta.setLength(excess));
-            const correction = new Quaternion().setFromUnitVectors(from.normalize(), to.normalize());
+            let correction = new Quaternion().setFromUnitVectors(from.normalize(), to.normalize());
+            {
+              // ★ Bend forward and turn, never lean SIDEWAYS: the side-bend
+              // raised Zoom's rear shoulder beside his cheek on a low pitch
+              // (independent review). Drop the roll about the chest's facing.
+              const facing = Z.clone().applyQuaternion(this.rotation(this.bones.get('Spine2')!)).setY(0).normalize();
+              const along = facing.dot(new Vector3(correction.x, correction.y, correction.z));
+              const roll = new Quaternion(facing.x * along, facing.y * along, facing.z * along, correction.w).normalize();
+              correction = correction.multiply(roll.invert());
+            }
             this.set(waist, correction.multiply(this.rotation(waist)));
           }
         }
@@ -705,11 +739,21 @@ export class BattingPose {
         this.positions.set(hips, hips.position.clone());
         hips.position.add(shift);
         this.rig.updateWorldMatrix(true, true);
+        // ★ THE KNEES FOLLOW THE HIPS. Aimed at the plate while the pelvis
+        // turned to the pitcher, both knees folded toward the stance line
+        // between hip joints now spread across it, and from the pitcher they
+        // crossed (knock-kneed at every height; an independent review). Each
+        // knee points where the pelvis faces, and the rear foot pivots on its
+        // ball as the hips open ("squash the bug"), the lead foot a little.
+        const facing = Z.clone().applyQuaternion(this.rotation(hips)); facing.y = 0; facing.normalize();
+        const opened = Math.atan2(facing.x, facing.z);
         for (const side of ['Left', 'Right']) {
           const foot = this.bones.get(`${side}Foot`)!;
           const target = new Vector3(...BIND.get(`${side}Foot`)!).applyQuaternion(footRotation);
-          this.solve(this.bones.get(`${side}UpLeg`)!, this.bones.get(`${side}Leg`)!, foot, target, new Vector3(0, 0, 1));
-          this.set(foot, footRotation);
+          const knee = facing;
+          this.solve(this.bones.get(`${side}UpLeg`)!, this.bones.get(`${side}Leg`)!, foot, target, knee);
+          const pivot = new Quaternion().setFromAxisAngle(Y, opened * (side === 'Right' ? REAR_FOOT_PIVOT : LEAD_FOOT_PIVOT) * (1 - bunt));
+          this.set(foot, pivot.multiply(footRotation));
         }
       }
     }
