@@ -3223,6 +3223,15 @@ v2 and leaves every existing record and golden fingerprint where it was.
   side-bent to reach; it now bends forward and turns only, and his hands drop
   once they are past his knees instead of resting on his lap. The strike zone
   itself is unchanged: it is a rule, and a seated zone is a product decision.
+
+- **The lead arm at contact**: a critic flagged a stubby vertical forearm above
+  the hands on some kids and an upper arm crossing high on the chest on
+  others. Both were one defect, and it was the LEAD arm, not the rear one as
+  reported: the elbow rode up in front of the chest over a forearm hanging
+  vertical to the knob. The palm model held every handle at right angles to
+  the forearm, and with the bat pointing at the plate a straight lead wrist
+  could only aim the forearm up. The lead hand now holds the bat diagonally,
+  as a real grip does. The seated grip is unchanged.
   The fidelity findings stay open for a reviewer.
 
 - **Venue identity from the plate**: captured from the batting camera, Steele,

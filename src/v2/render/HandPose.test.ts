@@ -182,6 +182,15 @@ describe('reference hand behavior',()=>{
           if(clip==='swing_contact'&&frame===marker){
             const elbow=at('RightForeArm'),top=at('RightArm').sub(elbow).angleTo(at('RightHand').sub(elbow));
             expect(top,`${height}ft top elbow shut at contact`).toBeGreaterThan((height===1.94?65:80)*Math.PI/180);
+            // The lead elbow sits out at the side with the forearm on a diagonal,
+            // not tucked across the chest over a vertical forearm (a "stub").
+            if(!seated){
+              const chest=bones.get('Spine2')!,inverse=chest.getWorldQuaternion(new Quaternion()).invert(),c=at('Spine2');
+              const local=(n:string)=>at(n).sub(c).applyQuaternion(inverse);
+              const fore=at('LeftHand').sub(at('LeftForeArm'));
+              expect(local('LeftForeArm').x/local('LeftArm').x,`${height}ft lead elbow across the chest`).toBeGreaterThan(.3);
+              expect(Math.acos(Math.abs(fore.y)/fore.length()),`${height}ft lead forearm vertical`).toBeGreaterThan(25*Math.PI/180);
+            }
           }
           // The knees keep the hips' order seen from the pitcher (across Z):
           // aimed at the plate while the pelvis opened, they crossed.

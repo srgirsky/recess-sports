@@ -2,7 +2,7 @@
 // Sweep six batting actions on every delivered model IN the mirrored gameplay
 // scene. --check rejects backward heads, detached palm anchors, missed contact
 // markers, reference-hand wrist folds/roll jumps, a top elbow shut at contact,
-// a palm inside the torso around contact, a dropped pelvis, caved knees or a
+// a lead elbow tucked across the chest, a palm inside the torso around contact, a dropped pelvis, caved knees or a
 // sunken head during the swing, and shaft intersections.
 // Reference hands are sampled at 120Hz to catch inter-frame flips.
 // Passing is not visual approval:
@@ -115,7 +115,11 @@ try {
      const chest=bone('Spine2'),inverse=chest.getWorldQuaternion(new Quaternion()).invert(),centre=at('Spine2');
      const local=n=>at(n).sub(centre).applyQuaternion(inverse).divideScalar(view.root.scale.x);
      const elbowShape=side=>{const sh=local(side+'Arm'),el=local(side+'ForeArm'),wr=local(side+'Hand');
-      return {deg:sh.clone().sub(el).angleTo(wr.clone().sub(el))*180/Math.PI,dropFt:sh.y-el.y};};
+      // Out: the elbow's sideways position as a share of its shoulder's (1 = under
+      // the shoulder, 0 = the chest's midline, below 0 = across the chest).
+      // Upright: the forearm's angle from vertical, in world, degrees.
+      const fore=at(side+'Hand').sub(at(side+'ForeArm'));
+      return {deg:sh.clone().sub(el).angleTo(wr.clone().sub(el))*180/Math.PI,dropFt:sh.y-el.y,out:el.x/sh.x,foreFromVerticalDeg:Math.acos(Math.abs(fore.y)/fore.length())*180/Math.PI};};
      // A whiff shares the contact sweep (`battingPose.ts`), so it is read at the same frame.
      const marker=(clip==='swing_contact'||clip==='swing_whiff')&&frame===clipSpec('swing_contact').marker.frame&&referenceHands;
      // ★ A PALM INSIDE THE BELLY passed every gate here: the shaft ray starts
@@ -155,7 +159,7 @@ try {
       const toward=inRig(other+'UpLeg').sub(hip);toward.addScaledVector(line,-toward.dot(line));
       return toward.lengthSq()>1e-8?off.dot(toward.normalize()):0;
      })):null;
-     results.push({id:c.id,clip,aim,frame,clipSource:dir.sourceFor(clip),
+     results.push({id:c.id,clip,aim,frame,clipSource:dir.sourceFor(clip),seated:dir.battingPose.seated,
       // Seen from the pitcher (across rig Z) the knees must keep the hips' order:
       // with the pelvis open and the knees aimed at the plate, they crossed.
       kneeOrder:swing&&Math.abs(inRig('RightUpLeg').z-inRig('LeftUpLeg').z)>.05?(inRig('RightLeg').z-inRig('LeftLeg').z)/(inRig('RightUpLeg').z-inRig('LeftUpLeg').z):null,
@@ -186,8 +190,12 @@ try {
  const shutElbow=r=>r.markerElbows&&r.markerElbows.top.deg<(r.aim===3.1?65:80);
  // Floors set between this pose and the pre-#257 one (hips 0.57ft down, knees
  // 0.41ft caved and crossed at every height, a head at -0.37).
+ // The lead arm at contact: an elbow tucked across the chest with the forearm
+ // hanging vertical to the knob read as a stub (0.19 and 33 degrees at best on
+ // the square grip). Seated, the lead arm reaches differently and is exempt.
+ const wingedLead=r=>r.markerElbows&&!r.seated&&(r.markerElbows.lead.out<.3||r.markerElbows.lead.foreFromVerticalDeg<25);
  const slumped=r=>r.hipDropFt>.45||r.valgusFt>.1||(r.kneeOrder!==null&&r.kneeOrder<.1)||(r.neckRatio!==null&&r.neckRatio<.6);
- const bad=data.results.filter(r=>slumped(r)||r.palmTorsoClearFt<0||shutElbow(r)||r.headTowardPitcher<0||r.supportHandGapFt>.02||r.palmGapFt>.02||r.contactGapFt>.1||r.wristBendsDeg.some(bend=>bend>40)||r.wristTwistsDeg.some(twist=>twist>25)||r.armStepsDeg.some(step=>step>25));
+ const bad=data.results.filter(r=>wingedLead(r)||slumped(r)||r.palmTorsoClearFt<0||shutElbow(r)||r.headTowardPitcher<0||r.supportHandGapFt>.02||r.palmGapFt>.02||r.contactGapFt>.1||r.wristBendsDeg.some(bend=>bend>40)||r.wristTwistsDeg.some(twist=>twist>25)||r.armStepsDeg.some(step=>step>25));
  const intersections=data.results.filter(r=>r.shaftHits>0);
  const min=values=>values.reduce((least,value)=>Math.min(least,value),Infinity);
  const aims=[...new Set(data.results.map(r=>r.aim))];

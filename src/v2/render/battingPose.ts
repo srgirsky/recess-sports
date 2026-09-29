@@ -208,6 +208,20 @@ const BAT_WHIP = 1.75;
  * knees: dropping from frame 1 laid Zoom's palms on his thighs before contact.
  */
 const SEATED_SWING_DROP_FRAME = 4;
+/**
+ * ★ THE LEAD HAND HOLDS THE BAT DIAGONALLY. The palm model held every handle
+ * at right angles to the forearm; with the bat pointing at the plate, a
+ * straight lead wrist could only aim the forearm straight up, and the lead
+ * elbow rode up in front of the chest: a vertical stub above the hands from
+ * one side, an upper arm across the chest from another (independent review,
+ * Tank, Grizz, Junebug, Lefty, Boomer). A real lead grip runs across the
+ * fingers from index to heel, so the handle crosses the palm at this angle
+ * and the lead arm runs back to its shoulder. It comes in from this frame to
+ * contact; earlier, the low-pitch launch folds the knob wrist past 40 degrees.
+ * The seated grip keeps the square hold: his reach flipped the lead arm.
+ */
+const LEAD_GRIP_DIAGONAL = -.4;
+const LEAD_GRIP_FROM_FRAME = 4.5;
 /** 0 -> 1 over t in [0, 1], still at 0 and arriving at slope `k` (<= 3). */
 const into = (t: number, k: number) => { const u = Math.max(0, Math.min(1, t)); return (k - 2) * u ** 3 + (3 - k) * u * u; };
 const HEAD_FOLLOW = .5;
@@ -328,6 +342,8 @@ export class BattingPose {
   private readyWeight = 0;
   /** How far into the bunt's receiving pose this frame is, 0..1. */
   private buntWeight = 0;
+  /** How much of the lead hand's diagonal grip this frame holds, 0..1. */
+  private gripTilt = 0;
   private readonly stanceGrip: Vector3;
   private readonly torso: Map<number, TorsoBand> | null;
 
@@ -427,6 +443,8 @@ export class BattingPose {
     const evaluate = (angle: number) => {
       const x = base.clone().applyAxisAngle(z, angle);
       const rotation = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(x, z.clone().cross(x), z));
+      if (side === 'Left' && this.gripTilt) rotation.multiply(new Quaternion().setFromAxisAngle(Y, LEAD_GRIP_DIAGONAL * this.gripTilt));
+      const palmX = X.clone().applyQuaternion(rotation);
       const wrist = palm.clone().sub(this.palmOffset(side).applyQuaternion(rotation));
       const to = wrist.clone().sub(shoulder);
       const reach = Math.max(0, to.length() - l1 - l2);
@@ -436,14 +454,14 @@ export class BattingPose {
       const centre = shoulder.clone().addScaledVector(direction, along);
       const radius = Math.sqrt(Math.max(0, l1*l1 - along*along));
       const preferred = hint.clone().addScaledVector(direction, -hint.dot(direction)).normalize();
-      const bend = wrist.clone().addScaledVector(x, -sign*l2).sub(centre);
+      const bend = wrist.clone().addScaledVector(palmX, -sign*l2).sub(centre);
       bend.addScaledVector(direction, -bend.dot(direction));
       // A small elbow preference resolves near-straight wrists smoothly and
       // keeps elbows on the outside of the shirt instead of behind the body.
       bend.addScaledVector(preferred, .035).normalize();
       const elbow = centre.clone().addScaledVector(bend, radius);
       const forearm = wrist.clone().sub(elbow).normalize().multiplyScalar(sign);
-      const wristBend = Math.acos(Math.max(-1, Math.min(1, forearm.dot(x))));
+      const wristBend = Math.acos(Math.max(-1, Math.min(1, forearm.dot(palmX))));
       const normal = bend.clone().cross(direction).multiplyScalar(sign).normalize();
       const lower = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(forearm, normal.clone().cross(forearm), normal));
       const relative = lower.invert().multiply(rotation);
@@ -530,6 +548,8 @@ export class BattingPose {
     const referenceHands = this.bones.has('RightHandIndex2');
     const bunt = name === 'bunt' && referenceHands ? buntAmount(time) : 0;
     this.buntWeight = bunt;
+    this.gripTilt = this.seated ? 0 : name === 'swing_contact' || name === 'swing_whiff' ? smooth((time * FPS - LEAD_GRIP_FROM_FRAME) / (CONTACT_FRAME - LEAD_GRIP_FROM_FRAME))
+      : name === 'swing_follow' ? 1 - smooth(time / FOLLOW_SEC / .6) : 0;
     this.readyWeight = !referenceHands ? 0
       : name === 'swing_contact' || name === 'swing_whiff' ? 1-smooth(time*FPS/3)
       : name === 'swing_follow' ? smooth((time/FOLLOW_SEC-.7)/.3)
