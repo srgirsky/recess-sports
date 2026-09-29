@@ -3232,6 +3232,13 @@ v2 and leaves every existing record and golden fingerprint where it was.
   the forearm, and with the bat pointing at the plate a straight lead wrist
   could only aim the forearm up. The lead hand now holds the bat diagonally,
   as a real grip does. The seated grip is unchanged.
+  A follow-up review found the lead elbow still level with the shoulder, the
+  upper arm pointing straight out of its front: a short sleeve seen down its
+  length read as a ball with a thin arm stuck in it, and on a high pitch the
+  arm foreshortened into a stub at the collar. The diagonal is now steeper at
+  mid height, easing off for low balls (where the tilted barrel already folds
+  the wrist) and the smallest kids' letters-high balls, and the lead elbow
+  sits below the shoulder.
   The fidelity findings stay open for a reviewer.
 
 - **Venue identity from the plate**: captured from the batting camera, Steele,

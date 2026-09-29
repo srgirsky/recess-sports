@@ -193,7 +193,11 @@ try {
  // The lead arm at contact: an elbow tucked across the chest with the forearm
  // hanging vertical to the knob read as a stub (0.19 and 33 degrees at best on
  // the square grip). Seated, the lead arm reaches differently and is exempt.
- const wingedLead=r=>r.markerElbows&&!r.seated&&(r.markerElbows.lead.out<.3||r.markerElbows.lead.foreFromVerticalDeg<25);
+ // Level with the shoulder, the lead upper arm points out of its front: a
+ // short sleeve seen end-on reads as a ball (it sat 0.04ft above on #259).
+ // A low or letters-high ball may carry it level with the shoulder, never above.
+ const wingedLead=r=>r.markerElbows&&!r.seated&&(r.markerElbows.lead.out<.3||r.markerElbows.lead.foreFromVerticalDeg<25
+  ||r.markerElbows.lead.dropFt<(r.aim===2.4||r.aim===null?.05:0));
  const slumped=r=>r.hipDropFt>.45||r.valgusFt>.1||(r.kneeOrder!==null&&r.kneeOrder<.1)||(r.neckRatio!==null&&r.neckRatio<.6);
  const bad=data.results.filter(r=>wingedLead(r)||slumped(r)||r.palmTorsoClearFt<0||shutElbow(r)||r.headTowardPitcher<0||r.supportHandGapFt>.02||r.palmGapFt>.02||r.contactGapFt>.1||r.wristBendsDeg.some(bend=>bend>40)||r.wristTwistsDeg.some(twist=>twist>25)||r.armStepsDeg.some(step=>step>25));
  const intersections=data.results.filter(r=>r.shaftHits>0);
