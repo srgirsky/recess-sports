@@ -28,6 +28,21 @@ import { VENUE_LOOKS, type VenueLook } from './Field';
 /** Sample count across the 90° of fair territory. 90 = one per degree. */
 const SEGMENTS = 90;
 
+/** The backstop's chain link: diamond cells across and up the 30x9ft face,
+ * the wire's half-width in cell units, and the solid top rail's share. */
+export const CHAIN_LINK = { cellsAcross: 40, cellsHigh: 12, wireHalf: 0.09, railShare: 0.07 } as const;
+
+/** Is (u, v) on the backstop face open air? The shader's own rule, in TS. */
+export function chainLinkOpen(u: number, v: number): boolean {
+  if (v > 1 - CHAIN_LINK.railShare) return false;
+  const gx = u * CHAIN_LINK.cellsAcross;
+  const gy = v * CHAIN_LINK.cellsHigh;
+  const fr = (x: number) => x - Math.floor(x);
+  const a = fr(gx + gy);
+  const b = fr(gx - gy);
+  return Math.min(a, 1 - a, b, 1 - b) > CHAIN_LINK.wireHalf;
+}
+
 export interface FenceBuild {
   root: Group;
   dispose(): void;
@@ -127,8 +142,32 @@ export function buildFence(
   }
 
   // ---- Backstop behind the plate -----------------------------------------
+  // ★ CHAIN LINK, NOT A SLAB. A solid box in the fence colour read, from the
+  // live cameras 40 degrees above the field, as a dark bar floating under
+  // home plate: the 2026-09-29 playthrough took it for HUD debris until a
+  // raycast named it. The same box now draws wire diamonds under a solid top
+  // rail (`chainLinkOpen`, mirrored in the shader), in the one existing draw.
   const backGeom = new BoxGeometry(30, 9, 0.5);
-  const back = new Mesh(backGeom, makeToonMaterial({ color: look.fence, rimStrength: 0.15 }));
+  const backMat = makeToonMaterial({ color: look.fenceTrim, rimStrength: 0.15 });
+  const toonCompile = backMat.onBeforeCompile;
+  backMat.onBeforeCompile = (shader, renderer) => {
+    toonCompile.call(backMat, shader, renderer);
+    shader.vertexShader = shader.vertexShader
+      .replace('#include <common>', '#include <common>\nvarying vec2 vLinkUv;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvLinkUv = uv;');
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <common>', '#include <common>\nvarying vec2 vLinkUv;')
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        vec2 g = vec2(vLinkUv.x * ${CHAIN_LINK.cellsAcross.toFixed(1)}, vLinkUv.y * ${CHAIN_LINK.cellsHigh.toFixed(1)});
+        vec2 d = vec2(fract(g.x + g.y), fract(g.x - g.y));
+        float wire = min(min(d.x, 1.0 - d.x), min(d.y, 1.0 - d.y));
+        bool rail = vLinkUv.y > ${(1 - CHAIN_LINK.railShare).toFixed(3)};
+        if (!rail && wire > ${CHAIN_LINK.wireHalf.toFixed(3)}) discard;
+      `);
+  };
+  backMat.customProgramCacheKey = () => 'chain-link-backstop';
+  backMat.side = 2;
+  const back = new Mesh(backGeom, backMat);
   back.position.set(0, 4.5, BACKSTOP_Z - 0.5);
   back.castShadow = true;
   back.name = 'backstop';
