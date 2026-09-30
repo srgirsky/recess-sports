@@ -36,6 +36,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { overlaps, insideFrame } from '../../src/ui/layoutMath.ts';
+import { VIEWPORTS } from './viewports.mjs';
 
 /**
  * A DOMRect as a `layoutMath` Box.
@@ -117,14 +118,7 @@ const RUN_BUDGET_MS = 11 * 60_000;
  * least vertical room, and a large display sits on the 22px ceiling. A layout
  * that survives both survives everything between them.
  */
-const VIEWPORTS = [
-  { name: 'phone portrait', width: 390, height: 844 },
-  { name: 'phone landscape', width: 844, height: 390 },
-  { name: 'short landscape', width: 740, height: 320 },
-  { name: 'tablet', width: 1024, height: 768 },
-  { name: 'desktop', width: 1440, height: 900 },
-  { name: 'large display', width: 2560, height: 1440 },
-];
+// The matrix itself lives in viewports.mjs, shared with audit:draft-stage.
 
 /**
  * ★ The GAME states run at the clamp-PINNING viewports only. Every game boot

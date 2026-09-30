@@ -627,6 +627,7 @@ npm run audit:batting              # all 30 delivered kids: six actions, every a
 npm run audit:batting -- --check   # reject facing, palm gaps, arm jumps, shut elbows, palms in the body, slumped legs/neck, shaft hits
 npm run capture:catcher            # all 30 as catcher: PITCH, PITCH_HERO, side, front boards → .art-review/catcher
 npm run capture:catcher -- --clip=field_ready --ids=tank   # a before board, one kid
+npm run audit:draft-stage -- --check  # the draft stage at 7 sizes: no card over a kid's face or feet, no clumped kids, card copy inside its frame
 npm run review:art                 # include the newly captured evidence
 npm run check:art-parity           # nonzero until every required review is approved
 ```
