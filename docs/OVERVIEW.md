@@ -3251,3 +3251,27 @@ v2 and leaves every existing record and golden fingerprint where it was.
 
 What still cannot be closed from code stays open: no child has played any of
 this (`docs/playtests/` holds no record), and no art target has been approved.
+
+## September 29 — kids you can see in the live shots
+
+The 2026-09-29 playthrough found the live cameras showing kids as dark specks.
+Measured across every live frame of three seeded games, through the real bridge
+and ladder, the chasing fielder stood 3.4% of frame height at the median and
+2.2% at p10; BB2001 draws its fielders at 8-9%. The ladder's rigs stand behind
+home and only turn toward the play, so a chase in the corner is filmed from
+about 250ft.
+
+A dolly was tried first: the same 40-degree view, moved over the field and
+centred on the cast. It raised the median to 4.0% but pushed home plate out of
+frame on throws and runs, and an independent critic judged the trade even.
+With home kept in the cast it measured worse than the parked eye (3.2%). No
+camera move can enlarge the kids without losing the landmark small children
+steer by.
+
+The maintainer then approved the lever `render.characterPresence` had refused:
+the wide live shots draw each kid larger with distance from the camera, up to a
+further 1.6x (`cameraCues.ts` `PRESENCE`), render-only like `CHARACTER_SCALE`.
+Positions, reach and catches stay the sim's; the plate, draft and break
+cameras never scale. The median is now 5.0% and p10 3.5%, and the 1.6x cap is
+what binds. `cameraPresence.test.ts` holds both floors and fails on the
+unscaled game. BB's ~3.5x proportion stays out of reach by choice.

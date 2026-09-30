@@ -323,7 +323,7 @@ describe('the Zoom Ramirez character pass', () => {
   it('overrides the high-frequency clips, every rim-pushed gait, and Zoom fielding and reaction priorities', () => {
     expect(pilot.map((clip) => clip.name)).toEqual([
       'idle', 'idle_fidget', 'run', 'run_fast', 'trot', 'jog_back', 'bat_stance', 'swing_contact', 'swing_follow',
-      'field_ready', 'cheer_cool', 'upset_cool',
+      'field_ready', 'catcher_squat', 'cheer_cool', 'upset_cool',
     ]);
   });
 

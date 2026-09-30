@@ -477,6 +477,28 @@ const FIELD_READY_POSE: Pose = {
   rf: [0, -32, 0],
 };
 
+const CATCHER_SQUAT_POSE: Pose = {
+  hp: [42, 0, 0],
+  sp: [4, 0, 0],
+  s2: [2, 0, 0],
+  hd: [-68, 0, 0],
+  lu: [-134, 0, -16],
+  ll: [158, 0, 0],
+  lt: [-34, 0, 0],
+  ru: [-134, 0, 16],
+  rl: [158, 0, 0],
+  rt: [-34, 0, 0],
+  la: [-90, 60, 60],
+  lf: [0, 60, 0],
+  ra: [-180, -70, 80],
+  rf: [0, -50, 0],
+};
+
+/** The catcher's squat, with a slow weight shift so it never reads as a still. */
+function catcherSquat(spec: ClipSpec, base: Pose): AnimationClip {
+  return cycle(spec, (p) => shift(base, { hp: [0, sin(p) * 2, sin(p) * 1.5], s2: [sin(p, 0.25) * 1.5, 0, 0], hd: [0, -sin(p) * 3, 0] }));
+}
+
 /** A held pose with a small breathing loop on top. */
 function breathe(spec: ClipSpec, base: Pose, amount = 1.2): AnimationClip {
   return cycle(spec, (p) => {
@@ -1905,6 +1927,7 @@ const BUILDERS: Record<string, (spec: ClipSpec) => AnimationClip> = {
   ]),42),
 
   field_ready: (s) => breathe(s, FIELD_READY_POSE, 2.6),
+  catcher_squat: (s) => catcherSquat(s, CATCHER_SQUAT_POSE),
   field_scoop: (s) =>
     catchClip(s, {
       hp: [46, 0, 0],
@@ -2150,6 +2173,8 @@ export function buildZoomPilotClips(): AnimationClip[] {
     swing_contact: zoomSwingContact,
     swing_follow: zoomSwingFollow,
     field_ready: zoomFieldReady,
+    // A seated athlete catches from his ready lean; the shared squat is legs.
+    catcher_squat: zoomFieldReady,
     cheer_cool: zoomCheerCool,
     upset_cool: zoomUpsetCool,
   };

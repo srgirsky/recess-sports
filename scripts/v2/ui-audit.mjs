@@ -578,44 +578,24 @@ const SCREENS = [
     mustSee: '.screen--draft .kid',
   },
   {
-    name: 'strategy',
-    reach: `(async () => {
-      for (let i = 0; i < 10 && document.querySelector('.screen--draft'); i++) {
-        if (document.querySelector('.screen--draft .btn--hero:not(.is-hidden)')) break;
-        const card = document.querySelector('.draft-board:not(.is-locked) .kid');
-        if (!card) { await new Promise((r) => setTimeout(r, 200)); i--; continue; }
-        card.click();
-        document.querySelector('.draft-preview__pick')?.click();
-        await new Promise((r) => setTimeout(r, 1780));
-      }
-      document.querySelector('.screen--draft .btn--hero')?.click();
-      await new Promise((r) => setTimeout(r, 200));
-      const before = document.querySelector('.strategy-row')?.dataset.id;
-      document.querySelector('.strategy-move--down')?.click();
-      const after = document.querySelector('.strategy-row')?.dataset.id;
-      return document.querySelector('.screen--strategy') && before !== after ? 'ok' : 'no working strategy screen';
-    })()`,
-    mustSee: '.screen--strategy .strategy-row',
-  },
-  {
     name: 'team',
     // Straight through a whole custom-captain draft — eight inspections,
     // confirmations and CPU beats. The confirmation is load-bearing: tapping a roster
     // thumbnail now PREVIEWS a kid, and only PICK ME records the person's vote.
     // A driver that skips it both fails to reach this screen and quietly stops
-    // proving the product's most important interaction.
+    // proving the product's most important interaction. The draft's PLAY BALL
+    // lands HERE: the batting order is optional (2026-09-29).
     // ★ REACHES FROM WHEREVER IT IS. The screen states run in sequence on ONE
     // page, so by the time this runs the draft state has already left the title
     // behind and a blind click on the title button throws. Each reach must be
     // written as "get to my screen from any screen", not "from the front door".
     reach: `(async () => {
-      document.querySelector('.screen--strategy .btn--hero')?.click();
-      await new Promise((r) => setTimeout(r, 150));
       if (document.querySelector('.screen--team')) return 'ok';
-      document.querySelector('.screen--title .btn')?.click();
-      await new Promise((r) => setTimeout(r, 300));
-      for (let i = 0; i < 10; i++) {
-        if (document.querySelector('.screen--team')) break;
+      if (!document.querySelector('.screen--draft')) {
+        document.querySelector('.screen--title .btn')?.click();
+        await new Promise((r) => setTimeout(r, 300));
+      }
+      for (let i = 0; i < 10 && document.querySelector('.screen--draft'); i++) {
         if (document.querySelector('.screen--draft .btn--hero:not(.is-hidden)')) break;
         const card = document.querySelector('.draft-board:not(.is-locked) .kid');
         if (!card) { await new Promise((r) => setTimeout(r, 200)); i--; continue; }
@@ -627,11 +607,22 @@ const SCREENS = [
       }
       document.querySelector('.screen--draft .btn--hero')?.click();
       await new Promise((r) => setTimeout(r, 500));
-      document.querySelector('.screen--strategy .btn--hero')?.click();
-      await new Promise((r) => setTimeout(r, 200));
+      if (document.querySelector('.screen--strategy')) return 'the draft routed through the batting order';
       return document.querySelector('.screen--team') ? 'ok' : 'never reached the team picker';
     })()`,
     mustSee: '.screen--team .swatch',
+  },
+  {
+    name: 'strategy',
+    reach: `(async () => {
+      document.querySelector('.screen--team .btn--order')?.click();
+      await new Promise((r) => setTimeout(r, 200));
+      const before = document.querySelector('.strategy-row')?.dataset.id;
+      document.querySelector('.strategy-move--down')?.click();
+      const after = document.querySelector('.strategy-row')?.dataset.id;
+      return document.querySelector('.screen--strategy') && before !== after ? 'ok' : 'no working strategy screen';
+    })()`,
+    mustSee: '.screen--strategy .strategy-row',
   },
   { name: 'result', reach: SHOW_RESULT, mustSee: '.screen--result .btn' },
   {

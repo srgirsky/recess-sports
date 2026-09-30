@@ -1,6 +1,9 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { SimEvent } from '../sim/game';
-import { playCalloutFor } from './playCalloutModel';
+import { CALLOUT_TOTAL_MS, calloutKeyframes, playCalloutFor } from './playCalloutModel';
 
 const event = (e: unknown): SimEvent => e as SimEvent;
 
@@ -49,5 +52,24 @@ describe('play callouts', () => {
     expect(playCalloutFor(event({ t: 'spend', side: 'home', kind: 'freezeball' }))?.label).toMatch(/🧊 FLOATER/);
     expect(playCalloutFor(event({ t: 'spend', side: 'home', kind: 'fireball' }))?.label).toMatch(/☄️ BLAZE/);
     expect(playCalloutFor(event({ t: 'spend', side: 'home', kind: 'crazy' }))?.label).toMatch(/🤪 CRAZY/);
+  });
+});
+
+describe('the verdict stays up long enough to read', () => {
+  it('holds full strength for at least 1.2s (main: ~650ms of a 1050ms pop)', () => {
+    const frames = calloutKeyframes();
+    const opaque = frames.filter((f) => f.opacity === 1).map((f) => f.offset as number);
+    const fullMs = (Math.max(...opaque) - Math.min(...opaque)) * CALLOUT_TOTAL_MS;
+    expect(fullMs).toBeGreaterThanOrEqual(1200);
+    expect(frames[0].opacity).toBe(0);
+    expect(frames[frames.length - 1].opacity).toBe(0);
+  });
+
+  it('★ runs on the game clock: no wall-clock timer, ticked from GameView', () => {
+    const here = dirname(fileURLToPath(import.meta.url));
+    const callouts = readFileSync(join(here, 'PlayCallouts.ts'), 'utf8').replace(/\/\/.*$/gm, '');
+    expect(callouts).not.toMatch(/setTimeout|performance\.now|Date\.now/);
+    const view = readFileSync(join(here, '..', 'game', 'GameView.ts'), 'utf8');
+    expect(view.match(/this\.callouts\.tick\(now\)/g)?.length).toBe(2);
   });
 });

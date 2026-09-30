@@ -84,7 +84,7 @@ import {
   throwPreparationCue,
 } from '../render/actionCues';
 import type { AnimName } from '../render/clips';
-import { CAMERA_FAR_FT, RIGS, chooseCamera, damp, type CameraCue, type CameraPreset } from '../render/cameraCues';
+import { CAMERA_FAR_FT, RIGS, chooseCamera, crowdTaper, damp, presenceScale, type CameraCue, type CameraPreset } from '../render/cameraCues';
 import { applyFrame, applySnapshot, cameraInputFor, snapshotScene, type SceneRefs } from '../render/bridge';
 import {
   REPLAY,
@@ -116,7 +116,7 @@ import type { Character } from '../../data/types';
 import { clampBarrelFt, zoneBandFt, zoneHalfWidthFt } from '../sim/athletes';
 import { BALL_RADIUS_FT } from '../sim/ball';
 import { BAT, DEFENSE } from '../sim/params';
-import { kidHeightFt } from '../render/ProxyCharacter';
+import { CHARACTER_SCALE, kidHeightFt, kidRootScale } from '../render/ProxyCharacter';
 import { UNIFORM_COLORS } from '../../art/palette';
 import { jerseyHex } from '../render/materials/registry';
 import type { KidView } from '../render/CharacterModel';
@@ -1005,6 +1005,46 @@ export class GameView {
   }
 
   /** Resolve the dynamic captain through the same membrane as authored kids. */
+  /**
+   * Draw each kid at his own scale, times `presenceScale` for his distance
+   * from the camera when a live gameplay shot is up. Runs before the frame
+   * is applied, so every hand, glove and ball anchor the bridge reads is
+   * already at the drawn size; the eye is one frame stale, as `cameraAt` is.
+   * Everything else (the plate, the draft, the boards) draws base scale.
+   */
+  private applyPresence(live: boolean, frame: LiveFrame): void {
+    const preset = this.cue?.preset;
+    const wide = live && this.screenCue === null && (preset === 'PLAY' || preset === 'FIELD' || preset === 'DEEP');
+    // Only the kids in the game grow: the yard kids behind the fence would
+    // otherwise rise over it as a row of heads.
+    const inPlay = new Set<string>([...Object.keys(frame.defence), frame.batterId, frame.pitcherId]);
+    for (const id of frame.baseIds) if (id) inPlay.add(id);
+    for (const f of frame.play?.fielders ?? []) inPlay.add(f.charId);
+    for (const r of frame.play?.runners ?? []) inPlay.add(r.charId);
+    const spots: Array<[string, number, number]> = [];
+    if (wide) {
+      for (const id of inPlay) {
+        const kid = this.refs.kids.get(id);
+        if (kid) spots.push([id, kid.root.position.x, kid.root.position.z]);
+      }
+    }
+    for (const [id, kid] of this.refs.kids) {
+      const visual = this.character(id).visual;
+      let m = 1;
+      if (wide && inPlay.has(id)) {
+        kid.root.getWorldPosition(this.presenceAt);
+        m = presenceScale(this.presenceAt.distanceTo(this.camera.position), this.camera.fov, kidHeightFt(visual) * CHARACTER_SCALE);
+        let nearest = Infinity;
+        for (const [other, x, z] of spots) {
+          if (other !== id) nearest = Math.min(nearest, Math.hypot(x - kid.root.position.x, z - kid.root.position.z));
+        }
+        m = crowdTaper(m, nearest);
+      }
+      kid.root.scale.setScalar(kidRootScale(visual) * m);
+    }
+  }
+  private readonly presenceAt = new Vector3();
+
   private character(id: string): Character {
     if (id === CUSTOM_PLAYER_ID && this.customPlayer) return this.customPlayer;
     return getCharacter(id);
@@ -1948,12 +1988,15 @@ export class GameView {
     // skips it, and the game resumes on the same sim instant it left.
     if (this.replay) {
       this.acc = 0;
+      this.callouts.tick(now);
       this.stepReplay(dt);
       this.renderer.render(this.scene, this.camera, now);
       requestAnimationFrame(this.tick);
       return;
     }
 
+    // The verdict's beat runs on this clock, never the wall's (PlayCallouts).
+    this.callouts.tick(now);
     // ★ FIXED-STEP ACCUMULATOR. The sim never sees the render delta.
     this.acc += dt;
     const step = 1 / SIM_HZ;
@@ -1991,6 +2034,7 @@ export class GameView {
       for (const fn of this.frameTap) fn(this.frame);
       const painted = this.painted();
       const holdElapsedSec = this.hold ? this.hold.total - this.hold.sec : undefined;
+      this.applyPresence(painted.phase === 'live', painted);
       applyFrame(this.refs, painted, dt, this.pitchElapsed, this.draftProtected, {
         readability: this.screenCue === null,
         fieldingFocus: this.liveControl === 'field',
@@ -2148,6 +2192,7 @@ export class GameView {
     const span = b.t - a.t;
     const k = span > 0 ? (rp.t - (a.t - t0)) / span : 1;
     const snap = lerpSnapshot(a, b, k);
+    if (this.frame) this.applyPresence(true, this.frame);
     applySnapshot(this.refs, snap, {
       seekClips: true,
       cameraAt: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z },

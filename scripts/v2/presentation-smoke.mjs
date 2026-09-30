@@ -162,7 +162,7 @@ const BEATS = [
     expect: (r) => [
       [r.batter?.clip === 'bat_stance', `batter waits in bat_stance (got ${r.batter?.clip})`],
       [r.batter?.bat === true, 'the batter holds a visible bat'],
-      [r.catcher?.clip === 'field_ready', `catcher crouches in field_ready (got ${r.catcher?.clip})`],
+      [r.catcher?.clip === 'catcher_squat', `catcher squats in catcher_squat (got ${r.catcher?.clip})`],
     ],
   },
   {

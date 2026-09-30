@@ -174,6 +174,7 @@ const CLIP_TABLE = [
 
   // --- Fielding ------------------------------------------------------------
   { name: 'field_ready', group: 'fielding', frames: 40, loop: true, blendMs: 200 },
+  { name: 'catcher_squat', group: 'fielding', frames: 48, loop: true, blendMs: 200 },
   {
     name: 'field_scoop',
     group: 'fielding',

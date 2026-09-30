@@ -855,6 +855,85 @@ the held play rather than the between cut, the runner-on beat's runner is
 on the field, not only on the diamond, and the home-run beat on `smokeHR2`
 runs through the trot.
 
+## 2026-09-29 — the 120% bar, and the playthrough that ranked the next ten
+
+Method: a player-chair pass through the live site at 1280×720 (title, a hand
+and a Pick-the-Rest draft, batting order, team, a real at-bat) plus
+`smoke:presentation` on the smoke seed, every still read for defects. The
+maintainer approved the bar below the same day; it is the definition of
+"120% of Backyard Baseball" until a later record replaces it. 100% matches
+BB2026; 120% beats it where the product lives: character appeal, game feel,
+and BB2026's two named faults (batting trivial-or-impossible, slow fielding).
+
+| Area | 100% | 120% | Verified by |
+|---|---|---|---|
+| Art | all 30 kids 5/5 per rubric category from an independent critic; `measure:fidelity` in tolerance; ART-001–012 closed; the maintainer approves the 59 whole-game targets | a panel of three independent critics prefers Recess on character appeal in ≥5 of 6 matched beats (plate, pitch, live, draft card, reaction, result) against BB2026 storyboard frames | critics on in-game-camera stills; maintainer sign-off |
+| Animation | every beat BB2026 animates is animated, including a crouched catcher; zero T-pose, float or bind; every `audit:batting` gate holds ≥3° of margin | a critic shown silhouettes only names the kid from plate idle, ready and reaction clips in ≥80% of trials | existing gates; the silhouette trial |
+| Camera | plate view: batter ≥35% of frame height, nothing nearer the lens above the batter's shoulder; live: ball, chaser, runner and target bag in the safe rect on every frame of a 30-game sim, every principal at least N px tall (N measured from BB2026's high oblique) | inserts on contact, catch and bang-bang plays; the ball never leaves the frame | `cameraCues.test.ts` over the headless sim |
+| Game feel | a sound and a visual for every sim event (gated); verdicts fully opaque ≥1.2 s; 8–12 minute game | contact-to-first-throw time and T-BALL hit rate at least as good as measured; one recorded child playtest in which a 4–8-year-old plays a whole game unaided | the harness; a `docs/playtests/` record (maintainer-run) |
+| UI/menus | `audit:v2-layout` clean; no DOM panel covers a character's face or feet at the six viewports | cold load to first pitch in ≤4 taps and ≤45 s on the default path, no reading required | the layout audit; a scripted default-path run |
+| Audio | a cue per event (gated); no clipping; loudness-normalised assets; no cue repeating within 3 plays in a sim game | ≥3 distinct in-context lines per kid | an asset scan and a repetition count; the maintainer listens to one whole game |
+
+Product decision recorded with the bar: the batting-order screen is skipped on
+the default path (still reachable).
+
+### What the pass found that no record held
+
+1. **The catcher stood.** `bridge.ts` asked for a crouch in `field_ready`, the
+   fielder's ready stance, which leaves a kid's crown at 86% of standing
+   height, because a third of it is head. From the PITCH rig he was level with
+   the batter's head, and in the bottom half no smaller than the batter.
+2. **Live and between-pitch cameras show kids as dark specks.** Heads and caps
+   seen from above read as dark disks; the most-watched live frames carry no
+   character.
+3. **The draft's panels sit on the kids.** The identity card and stat card
+   cover waiting kids, the stage crops the candidate's head, PICK ME covers her
+   legs; after Pick the Rest the staged kids interpenetrate in a clump, and a
+   long `draftLine` ("…Group hug, everybody") runs off its card.
+4. **The title's 3D kids float** in the painted treehouse with no floor.
+5. **Unverified debris:** embers still in the air an at-bat later, white
+   speckles on the kid at the plate, a dark translucent bar at bottom centre.
+   Any of them may be the instrument; each is re-checked on a real clock first.
+6. **Not a bug:** every smoke still caught its verdict mid-fade because the
+   callout's CSS animation runs on wall time while the smoke paints the fixed
+   clock. The real finding is the read time: about 0.5 s fully opaque.
+
+### Ranked worklist (how often seen × how badly it reads)
+
+1. Catcher squat — **closed**, below.
+2. Character presence in live and between cameras, with a size floor the fit
+   ladder must respect, and why heads read dark from above.
+3. Draft composition: a gate that no panel covers a kid's face or feet; the
+   post-autofill clump; the draft line fit.
+4. The known weak batting reads (Grizz and Tank's hidden lead arm, Moose's arm
+   into his hoodie, Zoom's lean), after restoring `audit:batting` margin.
+5. Verdict read time ≥1.2 s, and the smoke painting CSS on its own clock.
+6. The item-5 debris, verified before any fix.
+7. Title kids grounded in the treehouse.
+8. The inning-break board at full frame with AT BAT / ON DECK / IN THE HOLE.
+9. The sculpt campaign (26 needs-polish, 4 candidate), in parallel.
+10. Audio loudness and repetition metrics, then the maintainer's listen.
+
+### #1 closed: the catcher squats
+
+A `catcher_squat` clip joins the contract (44 clips): hips level with the
+knees, knees wide, glove up as the target, head tilted back to the pitcher.
+`catcherSquat.test.ts` projects every standing kid's crown through the PITCH
+rig against a same-height batter's shoulder, and fails for every kid on the
+`field_ready` it replaced. Zoom keeps his seated ready lean for the role. A tall
+catcher behind the smallest batter still reaches the batter's collar; the
+squat is already as deep as these proportions allow, so the rule is judged on
+the fair same-height pair. Evidence: `scripts/v2/capture-catcher.mjs` boards,
+before and after, all thirty kids, through PITCH, PITCH_HERO, side and front.
+An independent critic scored the in-game read 2/5 before, 3/5 after the first
+pose and a firmer 3/5 after two corrections it asked for (the bare hand hung
+to the dirt through the shin; the glove waved at shoulder height, then covered
+faces at chin height). Left open, recorded rather than hidden: from behind, a
+glove-side shin or shoe still shows past the hip on some kids; Tank's long tee
+reads as a sack; big-hair kids hide the glove from PITCH; and a front view,
+which no gameplay camera uses, shows dark foreshortened knees on the
+dark-trousered kids.
+
 ### #6: the debris, verified before any fix (2026-09-29)
 
 - **Embers an at-bat later: the instrument.** Contact embers live 0.4-0.7s and
