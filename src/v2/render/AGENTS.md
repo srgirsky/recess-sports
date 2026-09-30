@@ -16,9 +16,9 @@ rule that projection stays render-side and testable.
 
 - **Render-only exaggeration must never leak into the sim.** `CHARACTER_SCALE`
   draws a kid larger than he is; catch radii, reach, stride and collision stay
-  real feet. `render.characterPresence` records why the field scale and the
-  character scale are jointly unsatisfiable at real units, and why the answer is
-  camera distance rather than giant kids.
+  real feet (`render.characterPresence`). Live wide shots add `presenceScale`:
+  apply it BEFORE `applyFrame` (the bridge reads hands and root scale), never in
+  the plate, draft or board cameras.
 - **A camera preset that has never seen a scene is a guess.** Look through it
   before trusting its comment.
 - **⚠️ A projection test cannot see OCCLUSION.** Projecting the bases through a

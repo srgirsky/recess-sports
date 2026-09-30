@@ -799,11 +799,12 @@
    "resolution": {
     "cameraSplit": "src/v2/render/cameraCues.ts ships TWO wide rigs. FIELD conforms to geometry.fieldScale and is the establishing shot (half-inning starts, wide resets, replays). PLAY is where the game actually lives: same 40deg elevation so a cut never shifts the foul slope, at 115ft instead of 155ft. PLAY deliberately does NOT conform, and that is recorded here rather than left as an unexplained inconsistency.",
     "characterScale": "src/v2/render/ProxyCharacter.ts CHARACTER_SCALE = 1.6 -- a RENDER-ONLY exaggeration drawing a 4ft kid as 6.4ft. Chunky-cartoon, still clear of the 8ft fence, the backstop and the foul poles. It must never leak into src/v2/sim/**: catch radii, reach, stride and collision stay real feet, and scripts/v2/purity.lint.test.js keeps the sim from importing render/.",
-    "residual": "Even at 1.6x on the PLAY rig a kid reads ~5% of frame height against BB's 8-9%. The remaining presence has to come from character DESIGN -- saturated colour, heavy contour, readable silhouette -- not from more size. That is a brief for the commissioned models, and it is why the Look Spike exists. CORRECTED 2026-07-30: this 5% was aspirational when written. The rig was 3.400ft against a claimed 4.0 and the proxy drew 3.105ft, so the real figure was 3.90%. It is 5.02% now that both are fixed -- see render.rigHeight."
+    "presenceScale": "2026-09-29, maintainer decision: the residual below was measured across every live frame of seeded games (src/v2/render/cameraPresence.test.ts) at 3.4% median, 2.2% p10 for the chasing fielder, because the ladder's eye stays behind home and plays run far from it. A camera dolly could not buy more without losing home plate. The live wide shots now draw kids up to a further 1.6x with distance (cameraCues.ts PRESENCE, render-only like CHARACTER_SCALE, never in the plate, draft or board cameras): 5.0% median, 3.5% p10.",
+  "residual": "Even at 1.6x on the PLAY rig a kid reads ~5% of frame height against BB's 8-9%. The remaining presence has to come from character DESIGN -- saturated colour, heavy contour, readable silhouette -- not from more size. That is a brief for the commissioned models, and it is why the Look Spike exists. CORRECTED 2026-07-30: this 5% was aspirational when written. The rig was 3.400ft against a claimed 4.0 and the proxy drew 3.105ft, so the real figure was 3.90%. It is 5.02% now that both are fixed -- see render.rigHeight."
    },
    "n": 0,
    "confidence": "n/a",
-   "informs": "src/v2/render/cameraCues.ts RIGS.PLAY, src/v2/render/ProxyCharacter.ts CHARACTER_SCALE"
+   "informs": "src/v2/render/cameraCues.ts RIGS.PLAY and PRESENCE, src/v2/render/ProxyCharacter.ts CHARACTER_SCALE"
   },
   "rigHeight": {
    "id": "render.rig-height",
