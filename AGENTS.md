@@ -93,7 +93,7 @@ weaken one to make a change pass.**
 | `src/v2/sim/game.test.ts` | the live pump and the headless run producing different games |
 | `src/systems/liveplay.test.ts` / `venue.test.ts` | a base off the foul line, a fielding spot outside the fair cone, a concave fence that breaks containment silently |
 | `src/art/art.test.ts` | a bat through a kid's skull, hair layered wrong, a pose off the ground line |
-| `npm run audit:layout` / `audit:v2-layout` / `audit:draft-stage` | overlaps, off-frame chrome, undersized taps, an unresolved font — the same over v2's DOM HUD at the sizes its `clamp()` pins — and a draft card over a kid's face or feet |
+| `npm run audit:layout` / `audit:v2-layout` / `audit:draft-stage` | overlaps, off-frame chrome, undersized taps, an unresolved font — the same over v2's DOM HUD at the sizes its `clamp()` pins; a draft card over a kid's face or feet |
 | `src/v2/ui/soundCues.test.ts` | a sim event that makes no sound — silence and a working mute are the same |
 | `scripts/playtest.lint.test.js` | a held feature defaulting on; a hold lifted with no record |
 | `scripts/v2/turnaround-spec.lint.test.js` / `runidentity.lint.test.js` / `featurelatitude.lint.test.js` | a measured spec drifting from its own sheet, a width read across two objects, a face at the wrong height on its own head |
