@@ -423,7 +423,7 @@ export class AnimationDirector {
   }
 
   private canBlink(name: AnimName): boolean {
-    return name === 'idle' || name === 'field_ready' || name === 'bat_stance' || name === 'walk_on' || name === 'pose_card';
+    return name === 'idle' || name === 'field_ready' || name === 'catcher_squat' || name === 'bat_stance' || name === 'walk_on' || name === 'pose_card';
   }
 
   private applyExpression(name: AnimName): void {
