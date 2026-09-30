@@ -35,6 +35,7 @@ const root = fileURLToPath(new URL('../../', import.meta.url));
 const port = Number(process.env.DRAFT_STAGE_PORT ?? 5194);
 const check = process.argv.includes('--check');
 const ONLY = process.env.DRAFT_STAGE_ONLY;
+const COPY_SIZES = new Set(['phone portrait', 'short landscape', 'laptop']);
 const MATRIX = [...VIEWPORTS, { name: 'laptop', width: 1280, height: 720 }].filter((v) => !ONLY || v.name === ONLY);
 /** Keep in step with GameView's DRAFT_MAX_OVERLAP, plus float slack. */
 const MAX_OVERLAP = 0.2 + 1e-3;
@@ -87,7 +88,9 @@ try {
 
     // Every kid's card copy fits its plate. Tapping a roster card previews a
     // kid (it never votes), so the whole board is measured without a pick.
-    const spill = await page.evaluate(async () => {
+    // Copy depends on the plate's width, not the stage, so three sizes that
+    // span it are enough; all seven would cost CI minutes for nothing.
+    const spill = !COPY_SIZES.has(vp.name) ? [] : await page.evaluate(async () => {
       const out = [];
       for (const card of document.querySelectorAll('.draft-board .kid')) {
         card.click();
