@@ -161,6 +161,7 @@ describe('state changes', () => {
       strikes: 0,
       bases: [false, false, false] as [boolean, boolean, boolean],
       baseIds: [null, null, null] as [string | null, string | null, string | null],
+      nextUp: ["a", "b", "c"] as [string, string, string],
       batterId: 'x',
       pitcherId: 'y',
       lineScore: [],

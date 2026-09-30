@@ -460,6 +460,7 @@ export class GameView {
   private readonly matchup = new Matchup((id) => this.character(id));
   private readonly inningBreak = new InningBreak({
     forceEvery: new URLSearchParams(location.search).get('break') === '1',
+    lookup: (id) => this.character(id),
   });
   private readonly matchupTally = new MatchupTally();
   private readonly callouts: PlayCallouts;
