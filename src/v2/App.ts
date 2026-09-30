@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// The app: title -> draft -> strategy -> setup -> game -> result, with the
+// The app: title -> draft -> setup (-> batting order) -> game -> result, with the
 // persistent Recess Week schedule wrapping five trips through that same game.
 //
 // ★ WHAT THIS REPLACES IS NOTHING, WHICH WAS THE PROBLEM. v2 could play a whole
@@ -268,7 +268,7 @@ export class App {
       away: [...season.playerTeam],
       home: [...season.rivalTeams[season.gameIndex]],
     };
-    this.showStrategy();
+    void this.playBall();
   }
 
   /** Personal records and stickers, read from the same stores v1 maintains. */
@@ -359,7 +359,10 @@ export class App {
         (c) => this.sound.sayDraft(c),
         (playerTeam, aiTeam) => {
           this.rosters = { away: playerTeam, home: aiTeam };
-          this.showStrategy();
+          // The batting order is a choice, not a gate: the drafted order bats
+          // unless the player opens BATTING ORDER on the team screen
+          // (maintainer decision, 2026-09-29).
+          this.showTeam();
         },
         (id, pool, playerTeam, aiTeam, host, mode) =>
           this.game.setDraftSpotlight(id, pool, playerTeam, aiTeam, host, mode),
@@ -437,7 +440,8 @@ export class App {
           this.skill = k;
           saveSkill(k);
           this.game.setSkill(k);
-        }
+        },
+        () => this.showStrategy()
       )
     );
   }
