@@ -1,18 +1,25 @@
 // ---------------------------------------------------------------------------
 // The broadcast-sized verdict over the field. Policy is in playCalloutModel;
-// this file only paints it and lets CSS own the beat.
+// this file only paints it.
+//
+// ★ ON THE GAME'S CLOCK, NOT THE WALL'S. The beat used to be a CSS animation
+// plus a `setTimeout`, both wall time, while the game runs on its own render
+// clock: pause left the verdict fading over a frozen field, and the
+// presentation smoke (which paints the fixed clock) caught every verdict
+// mid-fade. GameView now calls `tick(now)` with the same `now` it renders
+// from, and the Web Animation's time is set from it.
 // ---------------------------------------------------------------------------
 
 import type { SimEvent } from '../sim/game';
-import { playCalloutFor } from './playCalloutModel';
-
-const HOLD_MS = 1050;
+import { CALLOUT_TOTAL_MS, calloutKeyframes, playCalloutFor } from './playCalloutModel';
 
 export class PlayCallouts {
   readonly root = document.createElement('div');
   private readonly label = document.createElement('div');
   private readonly detail = document.createElement('div');
-  private timer: ReturnType<typeof setTimeout> | null = null;
+  private anim: Animation | null = null;
+  private startedAt: number | null = null;
+  private lastNow = 0;
 
   constructor(host: HTMLElement) {
     this.root.className = 'play-callout';
@@ -30,20 +37,32 @@ export class PlayCallouts {
     this.label.textContent = model.label;
     this.detail.textContent = model.detail ?? '';
     this.detail.classList.toggle('is-empty', model.detail === null);
-    this.root.className = `play-callout is-${model.kind}`;
-    // Restart the pop when two calls arrive before the first has cleared.
-    void this.root.offsetWidth;
-    this.root.classList.add('is-open');
-    if (this.timer !== null) clearTimeout(this.timer);
-    this.timer = setTimeout(() => {
-      this.root.classList.remove('is-open');
-      this.timer = null;
-    }, HOLD_MS);
+    this.root.className = `play-callout is-${model.kind} is-open`;
+    // A second call before the first clears restarts the pop.
+    this.anim?.cancel();
+    const motion = Number.parseFloat(getComputedStyle(this.root).getPropertyValue('--motion-scale')) || 1;
+    this.anim = this.root.animate(calloutKeyframes(motion), { duration: CALLOUT_TOTAL_MS, fill: 'both' });
+    this.anim.pause();
+    this.anim.currentTime = 0;
+    this.startedAt = this.lastNow;
+  }
+
+  /** Advance to the game clock's `now`, ms. */
+  tick(now: number): void {
+    this.lastNow = now;
+    if (this.startedAt === null || !this.anim) return;
+    const elapsed = now - this.startedAt;
+    if (elapsed >= CALLOUT_TOTAL_MS) {
+      this.reset();
+      return;
+    }
+    this.anim.currentTime = Math.max(0, elapsed);
   }
 
   reset(): void {
-    if (this.timer !== null) clearTimeout(this.timer);
-    this.timer = null;
+    this.anim?.cancel();
+    this.anim = null;
+    this.startedAt = null;
     this.root.classList.remove('is-open');
   }
 }

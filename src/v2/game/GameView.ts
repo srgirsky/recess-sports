@@ -1988,12 +1988,15 @@ export class GameView {
     // skips it, and the game resumes on the same sim instant it left.
     if (this.replay) {
       this.acc = 0;
+      this.callouts.tick(now);
       this.stepReplay(dt);
       this.renderer.render(this.scene, this.camera, now);
       requestAnimationFrame(this.tick);
       return;
     }
 
+    // The verdict's beat runs on this clock, never the wall's (PlayCallouts).
+    this.callouts.tick(now);
     // ★ FIXED-STEP ACCUMULATOR. The sim never sees the render delta.
     this.acc += dt;
     const step = 1 / SIM_HZ;
