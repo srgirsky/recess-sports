@@ -31,7 +31,7 @@ import { cloneState, sampleAt, stepFlight, type BallState } from '../sim/flight'
 import type { KidView } from './CharacterModel';
 import { AnimationDirector } from './AnimationDirector';
 import type { CameraInput } from './cameraCues';
-import { clipSpec } from './clips';
+import { clipSpec, type AnimName } from './clips';
 import { activeFielderCue, ballPresenceCue, ballShadowCue, type BallProjection } from './readabilityCues';
 import { homeRunTrot, throwFacingTarget } from './actionCues';
 import { battingPlacement, battingRunOut } from './battingPose';
@@ -289,13 +289,19 @@ function applyIdleDefence(
     // standing height — because `field_ready` bent his knees without dropping
     // his hips, which lifts a kid's feet rather than lowering his head. See
     // `proceduralClips.ts`'s ground solve and `groundContact.test.ts`.
+    //
+    // ⚠️ AND A FIELDER'S READY IS NOT A CATCHER'S SQUAT. Grounded, `field_ready`
+    // still left his crown at 86% of standing height: level with the batter's
+    // head from the PITCH rig (2026-09-29 playthrough). He plays
+    // `catcher_squat`, and `catcherSquat.test.ts` holds his crown under the
+    // batter's shoulder through that rig.
     const dir = refs.directors.get(id);
     // On defence you wear the mitt — a role, asserted every frame for the
     // same reason the posts are: whoever just came in from batting still has
     // last half's state.
     dir?.setGloveVisible(true);
     if (!protectedIds.has(id) && !holdsOneShot(dir)) {
-      if (pos === 'C') dir?.play('field_ready');
+      if (pos === 'C') dir?.play(CATCHER_STANCE);
       else dir?.setLocomotionSpeed(0);
     }
   }
@@ -346,6 +352,9 @@ function applyIdleDefence(
     if (!protectedIds.has(frame.batterId) && !holdsOneShot(dir)) dir?.play('bat_stance');
   }
 }
+
+/** The clip the catcher holds between pitches; `catcherSquat.test.ts` measures it. */
+export const CATCHER_STANCE = 'catcher_squat' satisfies AnimName;
 
 /** A ball in play: nine fielders, the runners, and the ball itself. */
 function applyLive(

@@ -396,6 +396,51 @@ export function chooseCamera(input: CameraInput, prev?: CameraCue): CameraCue {
 }
 
 /**
+ * ★ PRESENCE: KIDS GROW WITH THEIR DISTANCE FROM THE LIVE CAMERA.
+ *
+ * `CHARACTER_PRESENCE` records that BB's kids are ~3.5x their field's real
+ * proportion and that real scale plus camera distance was the chosen answer.
+ * Measured on 2026-09-29, that answer left the chasing fielder at 3.4% of
+ * frame height at the median (2.2% at p10) against BB2001's 8-9%, and a
+ * camera dolly could not buy more without losing home plate from frame. The
+ * maintainer then approved drawing kids larger in the wide live shots only.
+ *
+ * Render-only, like `CHARACTER_SCALE`: reach, catch radii and positions stay
+ * the sim's. The multiplier rises smoothly with distance until a kid is
+ * `targetFrameFrac` of frame height, capped at `maxScale` so no kid is drawn
+ * past ~2.5x a real child. The plate, draft and break cameras never use it.
+ */
+export const PRESENCE = {
+  /** Drawn height against the frame at the kid's distance. The live rigs look
+   * 40° down, which foreshortens a standing kid to ~0.77 of it, so 0.075 here
+   * lands near 6% of the picture. */
+  targetFrameFrac: 0.075,
+  maxScale: 1.6,
+} as const;
+
+/**
+ * Two kids closing on each other (a runner and a baseman on one bag) would
+ * merge into one blob at full presence. Below `fullFt` of sim separation the
+ * extra scale eases back, and at `noneFt` it is gone: they draw at base scale,
+ * as they always had.
+ */
+export const PRESENCE_CROWD = { noneFt: 2, fullFt: 6 } as const;
+
+/** `m` eased toward 1 by the nearest other participant's distance, ft. */
+export function crowdTaper(m: number, nearestFt: number): number {
+  const t = Math.min(1, Math.max(0, (nearestFt - PRESENCE_CROWD.noneFt) / (PRESENCE_CROWD.fullFt - PRESENCE_CROWD.noneFt)));
+  return 1 + (m - 1) * t * t * (3 - 2 * t);
+}
+
+/** Render multiplier for a kid `distanceFt` from a camera of vertical
+ * `fovDeg`, whose base drawn height is `drawnHeightFt`. 1 when near. */
+export function presenceScale(distanceFt: number, fovDeg: number, drawnHeightFt: number): number {
+  const frameFt = 2 * distanceFt * Math.tan((fovDeg * Math.PI) / 360);
+  const want = (PRESENCE.targetFrameFrac * frameFt) / Math.max(drawnHeightFt, 1e-6);
+  return Math.min(PRESENCE.maxScale, Math.max(1, want));
+}
+
+/**
  * The framing constraint a live frame must satisfy: the whole cast inside
  * this fraction of NDC. `chooseCamera`'s fit ladder climbs the preset rigs
  * until it holds — the "solve for a dolly distance instead of guessing" this

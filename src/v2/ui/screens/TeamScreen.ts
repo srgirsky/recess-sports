@@ -74,7 +74,9 @@ export class TeamScreen implements Screen {
     private readonly onPreview: (t: TeamIdentity) => void,
     private readonly onReady: (t: TeamIdentity) => void,
     startSkill: Skill = 'normal',
-    private readonly onSkill: (s: Skill) => void = () => {}
+    private readonly onSkill: (s: Skill) => void = () => {},
+    /** Opens the batting order; the drafted order bats if it is never tapped. */
+    private readonly onOrder?: () => void
   ) {
     this.skill = startSkill;
     this.choice = { ...start };
@@ -165,6 +167,13 @@ export class TeamScreen implements Screen {
     // stay on glass, so PLAY BALL is always visible (round-2 re-audit).
     const scroll = el('div', 'screen-scroll');
     scroll.append(colours, logos, venues, skills, lengths, times);
+    if (this.onOrder) {
+      const order = el('div', 'team-row team-row--order');
+      const b = button('', () => this.onOrder?.(), 'timechip btn--order');
+      b.append(el('span', 'timechip__icon', '📋'), el('span', 'timechip__label', 'BATTING ORDER'));
+      order.appendChild(b);
+      scroll.appendChild(order);
+    }
     this.root.append(head, scroll, button('⚾  PLAY BALL', () => this.onReady(this.choice), 'btn--hero'));
     this.paint();
     return this.root;

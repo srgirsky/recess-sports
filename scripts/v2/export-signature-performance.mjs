@@ -81,6 +81,11 @@ const BUILDERS = {
 /** The ids this script can bake, for the freshness gate to walk. */
 export const PERFORMANCE_IDS = Object.keys(BUILDERS);
 
+/** `id`'s baked take as clips, or null when nothing here bakes one. */
+export function buildPerformanceClips(id) {
+  return BUILDERS[id]?.build() ?? null;
+}
+
 /**
  * The name of the function that bakes `id`'s take, or null when nothing here
  * does. `character-provenance.mjs` checks that name against
