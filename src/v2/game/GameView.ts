@@ -84,7 +84,7 @@ import {
   throwPreparationCue,
 } from '../render/actionCues';
 import type { AnimName } from '../render/clips';
-import { CAMERA_FAR_FT, RIGS, chooseCamera, damp, type CameraCue, type CameraPreset } from '../render/cameraCues';
+import { CAMERA_FAR_FT, RIGS, chooseCamera, crowdTaper, damp, presenceScale, type CameraCue, type CameraPreset } from '../render/cameraCues';
 import { applyFrame, applySnapshot, cameraInputFor, snapshotScene, type SceneRefs } from '../render/bridge';
 import {
   REPLAY,
@@ -116,11 +116,12 @@ import type { Character } from '../../data/types';
 import { clampBarrelFt, zoneBandFt, zoneHalfWidthFt } from '../sim/athletes';
 import { BALL_RADIUS_FT } from '../sim/ball';
 import { BAT, DEFENSE } from '../sim/params';
-import { kidHeightFt } from '../render/ProxyCharacter';
+import { CHARACTER_SCALE, kidHeightFt, kidRootScale } from '../render/ProxyCharacter';
 import { UNIFORM_COLORS } from '../../art/palette';
 import { jerseyHex } from '../render/materials/registry';
 import type { KidView } from '../render/CharacterModel';
 import {
+  DRAFT_BENCH_X_FT,
   DRAFT_CAST_POSITIONS,
   DRAFT_CPU_POSITIONS,
   DRAFT_PLAYER_POSITIONS,
@@ -259,6 +260,26 @@ function nearestBase(at: Vec2): 1 | 2 | 3 | 4 | null {
     }
   }
   return best;
+}
+
+/** Hair and caps rise above `HeadTop_End`; frame the candidate with room. */
+const DRAFT_HAIR_ALLOWANCE = 1.1;
+/** The draft camera's downward look, kept as it backs off (was eye (0,3.6,-12.2) at (0,2.55,1.6)). */
+const DRAFT_LOOK = new Vector3(0, 2.55 - 3.6, 1.6 + 12.2).normalize();
+/** The draft eye's distance from the candidate: the old rig's, clear of the backstop. */
+const DRAFT_EYE_FT = 12.4;
+/** Two staged kids may share at most this much of the smaller silhouette box. */
+export const DRAFT_MAX_OVERLAP = 0.2;
+/** Silhouette margin beyond the skeleton, as a share of the kid's box height. */
+const DRAFT_BODY_PAD = 0.12;
+
+/** Intersection over the SMALLER box's area. */
+function overlapShare(a: readonly [number, number, number, number], b: readonly [number, number, number, number]): number {
+  const w = Math.min(a[2], b[2]) - Math.max(a[0], b[0]);
+  const h = Math.min(a[3], b[3]) - Math.max(a[1], b[1]);
+  if (w <= 0 || h <= 0) return 0;
+  const area = (r: readonly [number, number, number, number]) => Math.max(1e-6, (r[2] - r[0]) * (r[3] - r[1]));
+  return (w * h) / Math.min(area(a), area(b));
 }
 
 export class GameView {
@@ -439,6 +460,7 @@ export class GameView {
   private readonly matchup = new Matchup((id) => this.character(id));
   private readonly inningBreak = new InningBreak({
     forceEvery: new URLSearchParams(location.search).get('break') === '1',
+    lookup: (id) => this.character(id),
   });
   private readonly matchupTally = new MatchupTally();
   private readonly callouts: PlayCallouts;
@@ -516,6 +538,8 @@ export class GameView {
     ageSec: number;
     walkIn: boolean;
     cast: DraftStageCast;
+    /** Both nines are full: the last pick stays on the mark. */
+    final: boolean;
   } | null = null;
   private readonly draftProtected = new Set<string>();
 
@@ -1005,6 +1029,46 @@ export class GameView {
   }
 
   /** Resolve the dynamic captain through the same membrane as authored kids. */
+  /**
+   * Draw each kid at his own scale, times `presenceScale` for his distance
+   * from the camera when a live gameplay shot is up. Runs before the frame
+   * is applied, so every hand, glove and ball anchor the bridge reads is
+   * already at the drawn size; the eye is one frame stale, as `cameraAt` is.
+   * Everything else (the plate, the draft, the boards) draws base scale.
+   */
+  private applyPresence(live: boolean, frame: LiveFrame): void {
+    const preset = this.cue?.preset;
+    const wide = live && this.screenCue === null && (preset === 'PLAY' || preset === 'FIELD' || preset === 'DEEP');
+    // Only the kids in the game grow: the yard kids behind the fence would
+    // otherwise rise over it as a row of heads.
+    const inPlay = new Set<string>([...Object.keys(frame.defence), frame.batterId, frame.pitcherId]);
+    for (const id of frame.baseIds) if (id) inPlay.add(id);
+    for (const f of frame.play?.fielders ?? []) inPlay.add(f.charId);
+    for (const r of frame.play?.runners ?? []) inPlay.add(r.charId);
+    const spots: Array<[string, number, number]> = [];
+    if (wide) {
+      for (const id of inPlay) {
+        const kid = this.refs.kids.get(id);
+        if (kid) spots.push([id, kid.root.position.x, kid.root.position.z]);
+      }
+    }
+    for (const [id, kid] of this.refs.kids) {
+      const visual = this.character(id).visual;
+      let m = 1;
+      if (wide && inPlay.has(id)) {
+        kid.root.getWorldPosition(this.presenceAt);
+        m = presenceScale(this.presenceAt.distanceTo(this.camera.position), this.camera.fov, kidHeightFt(visual) * CHARACTER_SCALE);
+        let nearest = Infinity;
+        for (const [other, x, z] of spots) {
+          if (other !== id) nearest = Math.min(nearest, Math.hypot(x - kid.root.position.x, z - kid.root.position.z));
+        }
+        m = crowdTaper(m, nearest);
+      }
+      kid.root.scale.setScalar(kidRootScale(visual) * m);
+    }
+  }
+  private readonly presenceAt = new Vector3();
+
   private character(id: string): Character {
     if (id === CUSTOM_PLAYER_ID && this.customPlayer) return this.customPlayer;
     return getCharacter(id);
@@ -1574,6 +1638,7 @@ export class GameView {
       ageSec: sameBeat ? previous.ageSec : 0,
       walkIn: sameBeat ? previous.walkIn : !sameKid,
       cast,
+      final: playerTeam.length >= 9 && aiTeam.length >= 9,
     };
     this.draftProtected.clear();
     for (const castId of cast.all) {
@@ -1824,7 +1889,7 @@ export class GameView {
     const draft = this.draftSpotlight;
     if (!draft) return;
     draft.ageSec += dt;
-    const hero = draftHeroPose(draft.ageSec, draft.mode, draft.walkIn, draft.id);
+    const hero = draftHeroPose(draft.ageSec, draft.mode, draft.walkIn, draft.id, draft.final);
     this.refs.directors.get(draft.id)?.play(hero.clip);
     for (const id of draft.cast.waiting) this.refs.directors.get(id)?.play('idle');
     for (const id of [...draft.cast.player, ...draft.cast.cpu]) {
@@ -1840,10 +1905,23 @@ export class GameView {
    * already drawn, then restored before the next simulation frame.
    */
   private renderDraftPresentation(): void {
+    this.withDraftStage((rect) => this.renderer.renderInset(this.scene, this.draftCamera, rect));
+  }
+
+  /**
+   * Pose the draft stage, run `fn` against it, and restore the scene.
+   *
+   * No character is cloned and no second loader exists. Their transforms and
+   * visibility are borrowed for one clipped pass after the world has already
+   * drawn, then restored before the next simulation frame. The render pass and
+   * the stage probe (`devDraftStage`) share this, so what the audit measures is
+   * what the player sees.
+   */
+  private withDraftStage<T>(fn: (rect: DOMRect) => T): T | undefined {
     const draft = this.draftSpotlight;
-    if (!draft || !draft.host.isConnected) return;
+    if (!draft || !draft.host.isConnected) return undefined;
     const rect = draft.host.getBoundingClientRect();
-    if (rect.width < 2 || rect.height < 2) return;
+    if (rect.width < 2 || rect.height < 2) return undefined;
 
     const saved = new Map<
       string,
@@ -1869,19 +1947,25 @@ export class GameView {
     if (this.aimBar) this.aimBar.visible = false;
 
     try {
-      const hero = draftHeroPose(draft.ageSec, draft.mode, draft.walkIn, draft.id);
+      const hero = draftHeroPose(draft.ageSec, draft.mode, draft.walkIn, draft.id, draft.final);
       const selected = this.refs.kids.get(draft.id);
-      if (!selected) return;
+      if (!selected) return undefined;
       selected.root.visible = true;
       selected.setPosition(hero.xFt, 0);
       selected.setFacing(draftHeroFacing(hero.clip, draft.mode));
 
+      // A narrow stage (a phone held upright) draws the yard's width in a
+      // sliver: the crowd steps in toward the mark so someone still fits
+      // whole beside the candidate. 1 on every landscape stage.
+      const squeeze = Math.min(1, Math.max(0.6, rect.width / rect.height / 2.2));
       draft.cast.waiting.forEach((id, i) => {
         const view = this.refs.kids.get(id);
         const at = DRAFT_CAST_POSITIONS[i];
         if (!view || !at) return;
         view.root.visible = true;
-        view.setPosition(at[0], at[1]);
+        // ...and deeper, so on a tall narrow stage their feet rise above the
+        // plates that span its width.
+        view.setPosition(at[0] * squeeze, at[1] * (1 + (1 - squeeze) * 1.5));
         view.setFacing(Math.PI);
       });
 
@@ -1894,27 +1978,23 @@ export class GameView {
         const at = positions[i];
         if (!view || !at) return;
         view.root.visible = true;
-        view.setPosition(at[0], at[1]);
+        view.setPosition(at[0] * squeeze, at[1]);
         view.setFacing(face);
       });
       placeBench(draft.cast.player, DRAFT_PLAYER_POSITIONS, Math.PI * 0.78);
       placeBench(draft.cast.cpu, DRAFT_CPU_POSITIONS, Math.PI * 1.22);
 
       this.draftCamera.aspect = rect.width / rect.height;
-      const portraitStage = this.draftCamera.aspect < 0.9;
-      // ★ HERO FRAMING. At the old 17.5ft the candidate spanned barely half
-      // the stage height and read crowd-sized (re-audit #9). ~12ft with a
-      // slightly tighter fov fills the frame with the kid being sold while the
-      // waiting group and benches stay readable behind and beside them.
-      this.draftCamera.fov = portraitStage ? 40 : 32;
-      this.draftCamera.position.set(0, portraitStage ? 4.1 : 3.6, portraitStage ? -15 : -12.2);
-      this.draftCamera.lookAt(0, 2.55, 1.6);
-      this.draftCamera.updateProjectionMatrix();
+      this.frameDraftCandidate(draft.host, rect, draft.id);
       // The stage is authored in VISUAL coordinates — bench sides are paired
       // to the DOM's YOUR/THEIR labels and the walk-ons carry signed
       // directions — so the park mirror is suspended for this one pass.
       this.scene.scale.x = 1;
-      this.renderer.renderInset(this.scene, this.draftCamera, rect);
+      // A pick that has walked off to a bench is a bench kid now, and yields
+      // to the plates like one.
+      const atBench = Math.abs(hero.xFt) >= DRAFT_BENCH_X_FT - 1e-6;
+      this.clearDraftCovers(draft.host, rect, atBench ? null : draft.id);
+      return fn(rect);
     } finally {
       this.scene.scale.x = -1;
       this.refs.ball.visible = ballVisible;
@@ -1928,6 +2008,170 @@ export class GameView {
         view.root.quaternion.copy(state.quaternion);
       }
     }
+  }
+
+  /**
+   * ★ THE CANDIDATE IS FRAMED INTO THE LAYOUT, NOT UNDER IT. A fixed camera
+   * put the kid's crown above the stage and his feet under PICK ME at
+   * 1280x720 (2026-09-29 playthrough), because the DOM plates move with the
+   * viewport and the camera did not. The DraftScreen marks the empty centre
+   * cell (`data-stage-slot`); the camera keeps its downward look and distance,
+   * the lens is solved so the kid (hair allowance included) spans 86% of that (room left for a cheer's jump)
+   * cell, and a view offset slides the picture so he stands in its middle.
+   */
+  private frameDraftCandidate(host: HTMLElement, rect: DOMRect, id: string): void {
+    const slotEl = host.parentElement?.querySelector<HTMLElement>('[data-stage-slot]');
+    const slotRect = slotEl?.getBoundingClientRect();
+    const slot = slotRect && slotRect.height > 20 && slotRect.width > 20 ? slotRect : rect;
+    const drawnFt = kidHeightFt(this.character(id).visual) * CHARACTER_SCALE * DRAFT_HAIR_ALLOWANCE;
+    // ★ ZOOM, NEVER DOLLY. The stage is the game's own park, and the
+    // backstop stands a few feet behind the old 12ft eye: a camera that backed
+    // off to fit a short stage filmed the backstop wall and drew an empty
+    // stage while every projected point said the kid was framed. Distance is
+    // fixed in front of it; the lens widens or tightens instead.
+    const fovDeg = (2 * Math.atan((drawnFt * rect.height) / (2 * DRAFT_EYE_FT * slot.height * 0.86)) * 180) / Math.PI;
+    this.draftCamera.fov = Math.min(70, Math.max(18, fovDeg));
+    const target = new Vector3(0, drawnFt * 0.5, 0);
+    this.draftCamera.position.copy(target).addScaledVector(DRAFT_LOOK, -DRAFT_EYE_FT);
+    this.draftCamera.lookAt(target);
+    // Sized on standing height, never on the live pose: refitting per frame
+    // would zoom with every crouch and hold a walking kid still while the
+    // yard slid behind him. The mark, not the kid, is what stays centred.
+    const dx = slot.left + slot.width / 2 - (rect.left + rect.width / 2);
+    const dy = slot.top + slot.height / 2 - (rect.top + rect.height / 2);
+    this.draftCamera.setViewOffset(rect.width, rect.height, -dx, -dy, rect.width, rect.height);
+    this.draftCamera.updateProjectionMatrix();
+    this.draftCamera.updateMatrixWorld(true);
+  }
+
+  /**
+   * ★ NO FACE OR FOOT UNDER A PLATE, AND NO KID INSIDE ANOTHER. Every
+   * waiting or benched kid whose face, crown or feet would land under a DOM
+   * plate (`data-stage-cover`) or off the stage is not drawn this frame, and
+   * of two that overlap heavily only the nearer is. Measured, not placed: the
+   * plates move with every viewport, and after Pick the Rest the benches
+   * stacked into one clump of interpenetrating kids.
+   */
+  private clearDraftCovers(host: HTMLElement, rect: DOMRect, id: string | null): void {
+    const covers = [...(host.parentElement?.querySelectorAll<HTMLElement>('[data-stage-cover]') ?? [])]
+      .map((e) => e.getBoundingClientRect())
+      .filter((r) => r.width > 0 && r.height > 0);
+    this.scene.updateMatrixWorld(true);
+    const shots: Array<{ id: string; depth: number; box: [number, number, number, number] }> = [];
+    const candidate = id ? this.refs.kids.get(id) : undefined;
+    const candidateBox = candidate ? this.draftShot(candidate, rect).box : null;
+    this.draftHidden = [];
+    for (const [kidId, view] of this.refs.kids) {
+      if (kidId === id || !view.root.visible) continue;
+      const shot = this.draftShot(view, rect);
+      const under = (p: [number, number]) =>
+        p[0] < rect.left || p[0] > rect.right || p[1] < rect.top || p[1] > rect.bottom ||
+        covers.some((c) => p[0] >= c.left && p[0] <= c.right && p[1] >= c.top && p[1] <= c.bottom);
+      const offStage = shot.box[0] < rect.left || shot.box[2] > rect.right;
+      if (offStage || [shot.crown, shot.face, ...shot.faceSides, ...shot.feet].some(under)) {
+        view.root.visible = false;
+        this.draftHidden.push({ id: kidId, why: 'cover' });
+        continue;
+      }
+      if (candidateBox && overlapShare(shot.box, candidateBox) > 0.5) {
+        view.root.visible = false;
+        this.draftHidden.push({ id: kidId, why: 'behind candidate' });
+        continue;
+      }
+      shots.push({ id: kidId, depth: view.root.getWorldPosition(new Vector3()).distanceTo(this.draftCamera.position), box: shot.box });
+    }
+    shots.sort((a, b) => a.depth - b.depth);
+    const kept: Array<[number, number, number, number]> = [];
+    const wasHidden = new Set(this.draftHiddenBefore);
+    for (const shot of shots) {
+      // Hysteresis: a kid hidden last frame needs clear air to come back, or
+      // an idle breath at the threshold would blink him in and out.
+      const limit = wasHidden.has(shot.id) ? DRAFT_MAX_OVERLAP * 0.7 : DRAFT_MAX_OVERLAP;
+      if (kept.some((box) => overlapShare(shot.box, box) > limit)) {
+        const view = this.refs.kids.get(shot.id);
+        if (view) view.root.visible = false;
+        this.draftHidden.push({ id: shot.id, why: 'overlap' });
+      } else kept.push(shot.box);
+    }
+    this.draftHiddenBefore = this.draftHidden.filter((h) => h.why === 'overlap').map((h) => h.id);
+  }
+
+  /** Why each staged kid was not drawn on the last stage pass (dev probe). */
+  private draftHidden: Array<{ id: string; why: string }> = [];
+  /** Who was hidden for overlap on the previous pass (hysteresis). */
+  private draftHiddenBefore: string[] = [];
+
+  /** One staged kid through the draft camera, CSS px. */
+  private draftShot(view: KidView, rect: DOMRect): { crown: [number, number]; face: [number, number]; faceSides: Array<[number, number]>; feet: Array<[number, number]>; box: [number, number, number, number] } {
+    const toPx = (v: Vector3): [number, number] => {
+      const p = v.clone().project(this.draftCamera);
+      return [rect.left + ((p.x + 1) / 2) * rect.width, rect.top + ((1 - p.y) / 2) * rect.height];
+    };
+    const at = (name: string) => view.bones.find((b) => b.name === name)?.getWorldPosition(new Vector3());
+    const head = at('Head') ?? view.root.getWorldPosition(new Vector3());
+    const top = at('HeadTop_End') ?? head;
+    const feet = ['LeftToeBase', 'RightToeBase', 'LeftFoot', 'RightFoot']
+      .map(at).filter((v): v is Vector3 => !!v).map(toPx);
+    const pts = view.bones.map((b) => toPx(b.getWorldPosition(new Vector3())));
+    const xs = pts.map((p) => p[0]);
+    const ys = pts.map((p) => p[1]);
+    // Bones sit inside the drawn body; hair, sleeves and belly stand outside
+    // them. Widen the box so "overlap" means silhouettes, not skeletons.
+    const pad = (Math.max(...ys) - Math.min(...ys)) * DRAFT_BODY_PAD;
+    const face = toPx(head.clone().lerp(top, 0.4));
+    const crown = toPx(top);
+    // A face is a width, not a point: half under a card is under a card.
+    const halfFace = Math.hypot(crown[0] - face[0], crown[1] - face[1]) * 0.75;
+    return {
+      crown,
+      face,
+      faceSides: [[face[0] - halfFace, face[1]], [face[0] + halfFace, face[1]]],
+      feet,
+      box: [Math.min(...xs) - pad, Math.min(...ys), Math.max(...xs) + pad, Math.max(...ys)],
+    };
+  }
+
+  /**
+   * The draft stage as the player sees it, in CSS pixels: each staged kid's
+   * crown, face and feet projected through the stage camera into the host
+   * rect. Dev-only; `audit:draft-stage` holds DOM panels off these points.
+   */
+  devDraftStage(verbose = false): {
+    host: { left: number; top: number; width: number; height: number };
+    kids: Array<{ id: string; role: 'candidate' | 'waiting' | 'mine' | 'cpu'; crown: [number, number]; face: [number, number]; faceSides: Array<[number, number]>; feet: Array<[number, number]>; box: [number, number, number, number] }>;
+    hidden: Array<{ id: string; why: string }>;
+    all?: Array<{ id: string; face: [number, number]; feet: Array<[number, number]>; crown: [number, number] }>;
+  } | null {
+    if (!import.meta.env.DEV) return null;
+    const draft = this.draftSpotlight;
+    if (!draft) return null;
+    return this.withDraftStage((rect) => {
+      this.scene.updateMatrixWorld(true);
+      const atBench = Math.abs(draftHeroPose(draft.ageSec, draft.mode, draft.walkIn, draft.id, draft.final).xFt) >= DRAFT_BENCH_X_FT - 1e-6;
+      const roleOf = (id: string) =>
+        id === draft.id ? (atBench ? (draft.mode === 'cpu' ? 'cpu' as const : 'mine' as const) : 'candidate' as const)
+          : draft.cast.player.includes(id) ? 'mine' as const
+            : draft.cast.cpu.includes(id) ? 'cpu' as const : 'waiting' as const;
+      const kids = [];
+      for (const id of draft.cast.all) {
+        const view = this.refs.kids.get(id);
+        if (!view || !view.root.visible) continue;
+        kids.push({ id, role: roleOf(id), ...this.draftShot(view, rect) });
+      }
+      let all;
+      if (verbose) {
+        all = draft.cast.all.map((id) => {
+          const view = this.refs.kids.get(id);
+          if (!view) return null;
+          const was = view.root.visible;
+          view.root.visible = true;
+          const shot = this.draftShot(view, rect);
+          view.root.visible = was;
+          return { id, face: shot.face, feet: shot.feet, crown: shot.crown };
+        }).filter((x): x is NonNullable<typeof x> => x !== null);
+      }
+      return { host: { left: rect.left, top: rect.top, width: rect.width, height: rect.height }, kids, hidden: [...this.draftHidden], all };
+    }) ?? null;
   }
 
   private readonly tick = (now: number): void => {
@@ -1948,12 +2192,15 @@ export class GameView {
     // skips it, and the game resumes on the same sim instant it left.
     if (this.replay) {
       this.acc = 0;
+      this.callouts.tick(now);
       this.stepReplay(dt);
       this.renderer.render(this.scene, this.camera, now);
       requestAnimationFrame(this.tick);
       return;
     }
 
+    // The verdict's beat runs on this clock, never the wall's (PlayCallouts).
+    this.callouts.tick(now);
     // ★ FIXED-STEP ACCUMULATOR. The sim never sees the render delta.
     this.acc += dt;
     const step = 1 / SIM_HZ;
@@ -1991,6 +2238,7 @@ export class GameView {
       for (const fn of this.frameTap) fn(this.frame);
       const painted = this.painted();
       const holdElapsedSec = this.hold ? this.hold.total - this.hold.sec : undefined;
+      this.applyPresence(painted.phase === 'live', painted);
       applyFrame(this.refs, painted, dt, this.pitchElapsed, this.draftProtected, {
         readability: this.screenCue === null,
         fieldingFocus: this.liveControl === 'field',
@@ -2148,6 +2396,7 @@ export class GameView {
     const span = b.t - a.t;
     const k = span > 0 ? (rp.t - (a.t - t0)) / span : 1;
     const snap = lerpSnapshot(a, b, k);
+    if (this.frame) this.applyPresence(true, this.frame);
     applySnapshot(this.refs, snap, {
       seekClips: true,
       cameraAt: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z },
@@ -2594,7 +2843,16 @@ export class GameView {
     this.instrumented = true;
     if (this.replay) this.endReplay();
     const count = Math.max(0, Math.floor(ticks));
-    for (let i = 0; i < count; i++) this.pump(1 / SIM_HZ);
+    for (let i = 0; i < count; i++) {
+      this.pump(1 / SIM_HZ);
+      // ★ PARTICLES AGE WITH THE REACH. Contact embers live 0.4-0.7s and age
+      // only in `tick`, which a reach skips: the smoke's stills carried a
+      // contact's embers, young and frozen, into beats seconds later, and they
+      // read as speckles on the batter and dots over the next at-bat
+      // (2026-09-29 playthrough). The live game never shows them.
+      this.fireworks?.update(1 / SIM_HZ);
+      this.impactBurst?.update(1 / SIM_HZ);
+    }
     return this.frame;
   }
 

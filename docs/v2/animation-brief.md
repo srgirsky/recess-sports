@@ -1,6 +1,6 @@
 # Commission brief — shared animation and character takes
 
-**Base deliverable:** one file, `anims_recess_v1.glb`. 43 clips on a supplied
+**Base deliverable:** one file, `anims_recess_v1.glb`. 44 clips on a supplied
 skeleton, no mesh. Character acting passes may add partial
 `anims_<id>_v1.glb` files after the base movement language is approved.
 
@@ -218,6 +218,7 @@ exact.
 | clip | frames | loop | settles into | notes |
 |---|---|---|---|---|
 | `field_ready` | 40 | ✔ | — | Athletic crouch, glove out, slight bounce. |
+| `catcher_squat` | 48 | ✔ | — | The catcher behind the plate: hips down near the heels, knees wide, glove up as the target, throwing hand tucked. Low enough that his crown stays under the batter's shoulder from the pitch camera. |
 | `field_scoop` | 20 | — | `field_ready` | Scoop a grounder. **Ball met on frame 9.** |
 | `catch_high` | 20 | — | `field_ready` | Glove above the head. **Frame 8.** |
 | `catch_chest` | 20 | — | `field_ready` | Routine, chest height. **Frame 8.** |

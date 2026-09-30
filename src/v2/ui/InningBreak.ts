@@ -14,8 +14,13 @@
 // the board fighting the scoreboard strip it duplicates.
 // ---------------------------------------------------------------------------
 
+import type { Character } from '../../data/types';
 import type { LiveFrame } from '../sim/game';
 import { lineScoreHTML } from './lineScoreTable';
+import { portrait } from './portrait';
+
+/** BB2026's board names the next three hitters, faces first. */
+export const UP_NEXT_LABELS = ['AT BAT', 'ON DECK', 'IN THE HOLE'] as const;
 
 export class InningBreak {
   readonly root = document.createElement('div');
@@ -30,9 +35,12 @@ export class InningBreak {
   private regulation = 2;
   private skipped = false;
   private shownFor = '';
+  private readonly upNext = document.createElement('div');
+  private readonly lookup: ((id: string) => Character) | null;
 
-  constructor(opts: { forceEvery?: boolean } = {}) {
+  constructor(opts: { forceEvery?: boolean; lookup?: (id: string) => Character } = {}) {
     this.forceEvery = opts.forceEvery === true;
+    this.lookup = opts.lookup ?? null;
     this.root.className = 'inning-board interactive';
     this.caption.className = 'inning-board__caption';
     const table = document.createElement('div');
@@ -45,7 +53,12 @@ export class InningBreak {
     };
     // Header row (inning numbers) is rebuilt with the body rows each show.
     this.rows = [mkRow(), mkRow()];
-    this.root.append(this.caption, table);
+    // ★ WHO BATS NEXT, AS FACES. BB2026's break board carries AT BAT / ON DECK
+    // / IN THE HOLE with portraits; ours was a line score alone, a table of
+    // numbers a four-year-old cannot read. The frame's `nextUp` is the team
+    // batting next half, in order.
+    this.upNext.className = 'inning-board__next';
+    this.root.append(this.caption, table, this.upNext);
     // Tap to skip: hides the visuals for THIS break only; the sim idles on.
     this.root.addEventListener('pointerdown', () => {
       this.skipped = true;
@@ -120,5 +133,27 @@ export class InningBreak {
       table.prepend(header);
     }
     header.innerHTML = head;
+    this.paintUpNext(frame.nextUp);
+  }
+
+  private paintUpNext(ids: readonly string[]): void {
+    this.upNext.replaceChildren();
+    if (!this.lookup || ids.some((id) => !id)) return;
+    ids.forEach((id, i) => {
+      const c = this.lookup!(id);
+      const card = document.createElement('div');
+      card.className = `inning-board__up${i === 0 ? ' is-at-bat' : ''}`;
+      const label = document.createElement('div');
+      label.className = 'inning-board__up-label';
+      label.textContent = UP_NEXT_LABELS[i];
+      const art = document.createElement('div');
+      art.className = 'inning-board__up-art';
+      art.appendChild(portrait(c, c.name, { street: true }));
+      const name = document.createElement('div');
+      name.className = 'inning-board__up-name';
+      name.textContent = c.name;
+      card.append(label, art, name);
+      this.upNext.appendChild(card);
+    });
   }
 }

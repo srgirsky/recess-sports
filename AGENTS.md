@@ -88,12 +88,12 @@ weaken one to make a change pass.**
 | `src/v2/render/skeleton.test.ts` | a rig that misses its own height or the art's stance, a bobblehead, an invisible face |
 | `src/v2/render/clips.test.ts` | the clip table drifting from the two v2 docs |
 | `src/v2/render/groundContact.test.ts` / `athleticMotion.test.ts` | floating feet, backward joints, or a low pitching arm |
-| `src/v2/render/cameraCues.test.ts` | a camera preset that cannot see what it exists to show |
+| `src/v2/render/cameraCues.test.ts` / `catcherSquat.test.ts` | a camera preset that cannot see what it exists to show; a catcher tall enough to crowd the batter in it |
 | `src/v2/sim/play.test.ts` | a play clock that fires — a soft-lock |
 | `src/v2/sim/game.test.ts` | the live pump and the headless run producing different games |
 | `src/systems/liveplay.test.ts` / `venue.test.ts` | a base off the foul line, a fielding spot outside the fair cone, a concave fence that breaks containment silently |
 | `src/art/art.test.ts` | a bat through a kid's skull, hair layered wrong, a pose off the ground line |
-| `npm run audit:layout` / `audit:v2-layout` | overlaps, off-frame chrome, undersized taps, an unresolved font — and the same over v2's DOM HUD at the sizes its `clamp()` pins |
+| `npm run audit:layout` / `audit:v2-layout` / `audit:draft-stage` | overlaps, off-frame chrome, undersized taps, an unresolved font — the same over v2's DOM HUD at the sizes its `clamp()` pins; a draft card over a kid's face or feet |
 | `src/v2/ui/soundCues.test.ts` | a sim event that makes no sound — silence and a working mute are the same |
 | `scripts/playtest.lint.test.js` | a held feature defaulting on; a hold lifted with no record |
 | `scripts/v2/turnaround-spec.lint.test.js` / `runidentity.lint.test.js` / `featurelatitude.lint.test.js` | a measured spec drifting from its own sheet, a width read across two objects, a face at the wrong height on its own head |

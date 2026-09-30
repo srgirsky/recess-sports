@@ -295,6 +295,10 @@ export class DraftScreen implements Screen {
     // The trading-card moment: the identity plate wears the card frame and
     // carries the kid's own line, so a pick reads as pulling their card.
     const identity = el('div', 'draft-preview__identity');
+    // The ribbon heads the kid's own card: it names the beat for THIS kid, and
+    // loose on the stage it either sat in the candidate's column or collided
+    // with the bench labels (2026-09-29 review).
+    identity.appendChild(ribbon);
     identity.append(
       el('h2', 'draft-preview__name', `${c.emoji ?? '⭐'} ${c.name}`),
       el('p', 'draft-preview__tagline', c.tagline)
@@ -312,28 +316,38 @@ export class DraftScreen implements Screen {
       ratings.appendChild(row);
     }
 
-    this.spotlight.append(
-      ribbon,
-      el('div', 'draft-preview__bench is-mine', '⭐ YOUR BENCH'),
-      el('div', 'draft-preview__bench is-cpu', '⚾ THEIR BENCH'),
-      art,
-      identity,
-      ratings
-    );
+    // ★ THE STAGE READS THIS LAYOUT. The slot is the empty centre cell the
+    // candidate is framed into, and every plate marked `stageCover` is a place
+    // no kid's face or feet may be drawn under (GameView.withDraftStage).
+    const slot = el('div', 'draft-preview__slot');
+    slot.dataset.stageSlot = '';
+    const mine = el('div', 'draft-preview__bench is-mine', '⭐ YOUR BENCH');
+    const cpu = el('div', 'draft-preview__bench is-cpu', '⚾ THEIR BENCH');
+    for (const cover of [ribbon, mine, cpu, identity, ratings]) cover.dataset.stageCover = '';
+    this.spotlight.append(mine, cpu, art, slot, identity, ratings);
     const canPick =
       this.spotlightMode === 'pick' &&
       this.state.turn === 'player' &&
       this.state.pool.includes(id) &&
       !this.busy;
-    if (canPick) this.spotlight.appendChild(button('⭐  PICK ME!', () => this.take(id), 'draft-preview__pick'));
+    if (canPick) {
+      const pick = button('⭐  PICK ME!', () => this.take(id), 'draft-preview__pick');
+      pick.dataset.stageCover = '';
+      this.spotlight.appendChild(pick);
+    }
     else if (isDraftComplete(this.state)) {
       // ★ THE WAY FORWARD LIVES IN THE HERO SLOT. The go button used to sit
       // at the bottom of the scroll column — below the fold at laptop sizes,
       // so a child who finished the draft saw no way to continue (round-2
       // re-audit). The slot that sold every pick now sells the game.
       this.go.classList.remove('is-hidden');
+      this.go.dataset.stageCover = '';
       this.spotlight.appendChild(this.go);
-    } else this.spotlight.appendChild(el('div', `draft-preview__stamp is-${this.spotlightMode}`, this.spotlightMode === 'mine' ? 'ON YOUR TEAM!' : 'OFF THE BOARD'));
+    } else {
+      const stamp = el('div', `draft-preview__stamp is-${this.spotlightMode}`, this.spotlightMode === 'mine' ? 'ON YOUR TEAM!' : 'OFF THE BOARD');
+      stamp.dataset.stageCover = '';
+      this.spotlight.appendChild(stamp);
+    }
     this.onSpotlight?.(
       id,
       this.state.pool,

@@ -40,9 +40,9 @@ const brief = readFileSync(join(docs, 'animation-brief.md'), 'utf8');
 const contract = readFileSync(join(docs, 'asset-contract.md'), 'utf8');
 
 describe('the clip library', () => {
-  it('is 43 uniquely-named clips', () => {
-    expect(CLIPS).toHaveLength(43);
-    expect(new Set(CLIP_NAMES).size).toBe(43);
+  it('is 44 uniquely-named clips', () => {
+    expect(CLIPS).toHaveLength(44);
+    expect(new Set(CLIP_NAMES).size).toBe(44);
   });
 
   it('hands the bat to every plate clip and to nothing that has left the box', () => {
@@ -250,8 +250,8 @@ describe('docs/v2 mirrors clips.ts', () => {
     for (const name of CLIP_NAMES) {
       expect(contract.includes(`\`${name}\``), `${name} missing from asset-contract.md`).toBe(true);
     }
-    expect(contract).toMatch(/\b43 clips\b/);
-    expect(brief).toMatch(/\b43 clips\b/);
+    expect(contract).toMatch(/\b44 clips\b/);
+    expect(brief).toMatch(/\b44 clips\b/);
   });
 
   it('tells the animator the wider warp band, not just the loop band', () => {

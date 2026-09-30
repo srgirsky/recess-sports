@@ -229,6 +229,13 @@ export interface LiveFrame {
    * runner on first. The identities are the half's own `occupants`, copied.
    */
   baseIds: [string | null, string | null, string | null];
+  /**
+   * The three batters due up for the team that bats NEXT half, in order: the
+   * inning-break board's AT BAT / ON DECK / IN THE HOLE. Set once per half
+   * (the fielding team's place in its order does not move while it fields),
+   * and read-only data: no draw, so no fingerprint depends on it.
+   */
+  nextUp: [string, string, string];
   /** The batter and the pitcher, for the view to pose. */
   batterId: string;
   pitcherId: string;
@@ -1039,6 +1046,7 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
     lineScore,
     bases: [false, false, false],
     baseIds: [null, null, null],
+    nextUp: ['', '', ''],
     batterId: '',
     pitcherId: '',
     defence: {},
@@ -1054,6 +1062,8 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
     frame.half = half;
     const bat = half === 'top' ? away : home;
     const field = half === 'top' ? home : away;
+    const due = (k: number) => field.plan.order[(field.lineupIdx + k) % field.plan.order.length];
+    frame.nextUp = [due(0), due(1), due(2)];
     const hs: HalfState = { state: newHalfInning(), score: 0, occupants: [null, null, null] };
     log.push(`${half === 'top' ? 'Top' : 'Bot'} ${inning} — ${bat.spec.name}`);
 

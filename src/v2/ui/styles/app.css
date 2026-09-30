@@ -129,9 +129,9 @@ body {
   text-align: center;
   filter: drop-shadow(0 0.45rem 0 rgb(20 32 46 / 0.62));
 }
+/* The beat itself is a Web Animation on the game's clock (PlayCallouts.ts). */
 .play-callout.is-open {
   visibility: visible;
-  animation: play-callout-beat 1050ms cubic-bezier(0.18, 0.86, 0.2, 1) both;
 }
 .play-callout__label {
   font-size: clamp(2.8rem, 11vw, 7.4rem);
@@ -173,13 +173,6 @@ body {
 body.screen-open .play-callout {
   visibility: hidden;
 }
-@keyframes play-callout-beat {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.7) rotate(-2deg); }
-  16% { opacity: 1; transform: translate(-50%, -50%) scale(calc(1 + 0.12 * var(--motion-scale))) rotate(1deg); }
-  28%, 78% { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(-1deg); }
-  100% { opacity: 0; transform: translate(-50%, -56%) scale(0.98) rotate(-1deg); }
-}
-
 /* ---- Minimum tap target, enforced once rather than per-component ---- */
 .interactive {
   min-inline-size: var(--tap-min);
@@ -648,8 +641,15 @@ body.screen-open .play-callout {
  * regardless, so skipping costs nothing and waiting costs ~2.5s.
  * ------------------------------------------------------------------------- */
 .inning-board {
-  grid-area: center;
-  place-self: center;
+  /* Centred on the FRAME, not the HUD's centre cell: hidden HUD pieces keep
+     their column widths, which sat the board right of centre. */
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-start: 50%;
+  translate: -50% -50%;
+  max-inline-size: calc(100vw - 2 * var(--s3));
+  max-block-size: calc(100svh - 2 * var(--s3));
+  box-sizing: border-box;
   display: grid;
   gap: var(--s2);
   padding: var(--s4) calc(var(--s4) * 1.4);
@@ -731,7 +731,7 @@ body.replay #hud > *:not(.replay-bar):not(.replay-badge):not(.btn--mute) {
 }
 .inning-board__caption {
   justify-self: center;
-  font-size: clamp(0.6rem, 2.2svh, 0.8rem);
+  font-size: clamp(0.7rem, 3.4svh, 1.5rem);
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--gold);
@@ -745,13 +745,13 @@ body.replay #hud > *:not(.replay-bar):not(.replay-badge):not(.btn--mute) {
   gap: 0.15rem;
 }
 .inning-board__cell {
-  min-inline-size: clamp(1.1rem, 3.4svh, 1.5rem);
-  block-size: clamp(1.1rem, 3.4svh, 1.5rem);
+  min-inline-size: clamp(1.1rem, 5svh, 2.6rem);
+  block-size: clamp(1.1rem, 5svh, 2.6rem);
   display: grid;
   place-items: center;
   border-radius: 0.3rem;
   background: rgb(0 0 0 / 0.28);
-  font-size: clamp(0.55rem, 2svh, 0.75rem);
+  font-size: clamp(0.55rem, 3svh, 1.3rem);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: #ffe9a8;
@@ -762,7 +762,7 @@ body.replay #hud > *:not(.replay-bar):not(.replay-badge):not(.btn--mute) {
   opacity: 0.75;
 }
 .inning-board__cell--name {
-  min-inline-size: clamp(3.6rem, 12svh, 5.5rem);
+  min-inline-size: clamp(3.6rem, 18svh, 10rem);
   justify-content: start;
   padding-inline: var(--s2);
   background: none;
@@ -776,6 +776,52 @@ body.replay #hud > *:not(.replay-bar):not(.replay-badge):not(.btn--mute) {
 .inning-board__cell--total {
   background: rgb(255 206 58 / 0.22);
   color: var(--gold);
+}
+
+.inning-board__next {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--s2);
+}
+.inning-board__next:empty { display: none; }
+.inning-board__up {
+  display: grid;
+  justify-items: center;
+  gap: 0.15rem;
+  padding: var(--s1);
+  border-radius: var(--radius);
+  background: rgb(0 0 0 / 0.22);
+  min-inline-size: 0;
+}
+.inning-board__up.is-at-bat {
+  background: rgb(255 206 58 / 0.22);
+  outline: 0.13rem solid var(--gold);
+}
+.inning-board__up-label {
+  font-size: clamp(0.45rem, 2.4svh, 1rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  white-space: nowrap;
+}
+.inning-board__up-art {
+  /* Three across must fit a phone: capped by width as well as height. */
+  block-size: clamp(2.6rem, min(24svh, 30vw), 12rem);
+  aspect-ratio: 3 / 4;
+}
+.inning-board__up-art .portrait {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: contain;
+}
+.inning-board__up-name {
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(0.5rem, 2.6svh, 1.1rem);
+  font-weight: 700;
+  color: var(--cream);
 }
 
 /* ---------------------------------------------------------------------------
@@ -995,9 +1041,40 @@ body.replay #hud > *:not(.replay-bar):not(.replay-badge):not(.btn--mute) {
   gap: clamp(0.2rem, 1.4vw, 1rem);
 }
 .title-hero {
+  position: relative;
   align-self: end;
   aspect-ratio: 3 / 4;
-  filter: drop-shadow(0 0.45rem 0 rgb(20 32 46 / 0.55));
+}
+/* Shoes on the line (TitleScreen): the image drops by the portrait's floor. */
+.title-hero .portrait {
+  position: relative;
+  z-index: 1;
+  display: block;
+  inline-size: 100%;
+  translate: 0 calc(var(--floor-share, 0) * 100%);
+  filter: drop-shadow(0 0 0.12rem rgb(20 32 46 / 0.6));
+}
+/* A chunky wooden figure stand under the shoes, in the sticker language of
+   the buttons beside it (heavy outline, a visible rim, a hard drop): the kids
+   stand on something at every viewport, whatever the painted room behind
+   them happens to put at that height. The chair needs the wider base. */
+.title-hero::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset-inline: 8%;
+  inset-block-end: -0.8rem;
+  block-size: 1.5rem;
+  border: var(--stroke) solid var(--outline);
+  border-radius: 50%;
+  background:
+    radial-gradient(closest-side, rgb(20 32 46 / 0.55), rgb(20 32 46 / 0) 75%) 50% 22% / 62% 55% no-repeat,
+    radial-gradient(ellipse 50% 42% at 50% 36%, #c79050 96%, transparent 100%),
+    linear-gradient(180deg, #8a5d28, #6a4419);
+  box-shadow: 0 0.35rem 0 rgb(20 32 46 / 0.55);
+}
+.title-hero--right::after {
+  inset-inline: -2%;
 }
 .title-hero--left {
   rotate: -4deg;
@@ -2061,15 +2138,19 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
   box-shadow: var(--shadow);
 }
 .draft-preview__ribbon {
-  grid-column: 2;
-  grid-row: 1;
-  z-index: 3;
-  justify-self: start;
-  padding: var(--s1) var(--s4);
+  /* A tab straddling the name card's top edge (DraftScreen puts it in the
+     card): it labels THIS kid's beat and costs the card no height. */
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 50%;
+  transform: translate(-50%, -45%);
+  z-index: 1;
+  white-space: nowrap;
+  padding: 0.1rem var(--s3);
   border: 0.13rem solid var(--outline);
   border-radius: 999px;
   background: var(--gold);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.12em;
 }
@@ -2092,9 +2173,20 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
    * kid's legs and read as a smoked pane. */
   box-shadow: inset 0 -2.2rem 2rem rgb(20 32 46 / 0.14);
 }
+/* The empty centre column the 3D candidate is framed into: everything above
+   the pick button, between the two plates. Layout only. */
+.draft-preview__slot {
+  grid-column: 2;
+  grid-row: 1 / 4;
+  align-self: stretch;
+  min-block-size: 0;
+  pointer-events: none;
+}
 .draft-preview__bench {
+  /* Bottom corners: the grid cells beside the pick button are the stage's
+     only free corners once the cards and the candidate's column are placed. */
   position: absolute;
-  inset-block-start: var(--s3);
+  inset-block-end: var(--s3);
   z-index: 2;
   padding: var(--s1) var(--s2);
   border: 0.1rem solid var(--outline);
@@ -2108,6 +2200,7 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
 .draft-preview__bench.is-mine { inset-inline-start: var(--s3); }
 .draft-preview__bench.is-cpu { inset-inline-end: var(--s3); }
 .draft-preview__identity {
+  position: relative;
   grid-column: 1;
   grid-row: 3;
   z-index: 2;
@@ -2117,20 +2210,30 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
   text-align: center;
   inline-size: 100%;
   box-sizing: border-box;
-  /* Wider inline padding than the frame art's painted border, or a long
-     `draftLine` runs into the ornament and reads as clipped (round-2 nit).
-     The border art stretches with the plate (background-size 100% 100%), so
-     the safe inset must scale too — a fixed --s4 let a long TAGLINE run
-     under the ornament with its first letter swallowed at wide plates. */
-  padding: var(--s3) clamp(var(--s4), 8%, 2.4rem) var(--s2);
-  border-radius: var(--radius);
-  /* The trading-card frame the clubhouse album already wears — the pick beat
-   * IS a card pull (re-audit #9: "no trading card moment"). */
-  background-color: rgb(255 244 222 / 0.96);
-  background-image: var(--trading-card-art);
-  background-size: 100% 100%;
-  background-position: center;
-  border: var(--stroke) solid var(--outline);
+  /* ★ NINE-SLICED, NOT STRETCHED. The frame is a portrait card; stretched
+     100% x 100% onto this wide plate its corner ornaments grew to ~28% of the
+     width and a long `draftLine` ran through them while sitting inside the
+     old padding (2026-09-29, Moose). Sliced, the corners keep one size, and
+     the padding clears them: `audit:draft-stage` holds every line inside it.
+     The art lives on ::before so its clip never clips the ribbon tab. */
+  padding: var(--card-corner) calc(var(--card-corner) * 0.9);
+  border: var(--stroke) solid transparent;
+  background: none;
+  isolation: isolate;
+  --card-corner: clamp(1.2rem, 2.6vw, 2rem);
+}
+.draft-preview__identity::before {
+  content: '';
+  position: absolute;
+  inset: calc(-1 * var(--stroke));
+  z-index: -1;
+  border: var(--card-corner) solid transparent;
+  border-image: var(--trading-card-art) 230 fill / var(--card-corner) / 0 stretch;
+  /* The art paints a cream margin outside its rounded navy border (35px in
+     from the sides, 22px from top and bottom, a ~72px radius, in its
+     800x1000 source). Through the 230px slice those scale by corner/230, so
+     this clips the plate to the painted border itself. */
+  clip-path: inset(calc(var(--card-corner) * 0.096) calc(var(--card-corner) * 0.152) round calc(var(--card-corner) * 0.313));
 }
 .draft-preview__line {
   margin: 0;
@@ -2238,7 +2341,9 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
     inline-size: min(20rem, calc(94vw - 2 * var(--s3)));
     justify-self: center;
   }
-  .draft-preview__ribbon { grid-column: 1 / -1; }
+  .draft-preview__slot { grid-column: 1 / -1; grid-row: 2; }
+  /* The bottom corners sit under the full-width button here. */
+  .draft-preview__bench { display: none; }
   .draft-preview__identity { grid-column: 1; grid-row: 3; }
   .draft-preview__ratings { grid-column: 2; grid-row: 3; }
   .draft-preview__pick, .draft-preview__stamp, .draft-preview > .btn--hero { grid-column: 1 / -1; grid-row: 4; }
@@ -2276,7 +2381,7 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
     box-sizing: border-box;
     padding: var(--s1);
   }
-  .draft-preview__identity { padding: var(--s2); }
+  .draft-preview__identity { --card-corner: 0.9rem; }
   .draft-preview__name { font-size: 0.9rem; }
   .draft-preview__tagline, .draft-preview__line, .draft-preview__bench { display: none; }
   .draft-rating { grid-template-columns: 0.8rem 1fr; }

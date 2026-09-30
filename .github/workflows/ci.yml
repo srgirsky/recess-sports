@@ -76,3 +76,21 @@ jobs:
           path: .art-review/batting-diagnostic/probe.json
           include-hidden-files: true
           if-no-files-found: ignore
+
+  draft-stage:
+    name: Draft stage audit
+    runs-on: ubuntu-latest
+    # Its own job, in parallel: the layout job's 18 minutes are already spent
+    # on the audits above, and this one drives the real draft at seven sizes.
+    # Software WebGL is slow at the large sizes (2560x1440 alone ~4 minutes
+    # on a runner; 15 minutes ran out on the seventh size, clean so far).
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run audit:draft-stage -- --check

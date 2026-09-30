@@ -620,6 +620,39 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
     }
     expect(sawRunnerBetween, 'somebody reached base and stood there between pitches').toBe(true);
   }, PLAYS_GAMES);
+
+  it('★ nextUp names the first three batters of the next half, in order', () => {
+    // The inning-break board shows AT BAT / ON DECK / IN THE HOLE from the
+    // half-ending frame; the next half's first three plate appearances are the
+    // truth it must match.
+    const it = simulateGameLive(spec(), makeRng('next-up'));
+    // The promise made at a half's last out, carried into the half after it.
+    let promised: string[] | null = null;
+    let pending: string[] | null = null;
+    let seen: string[] = [];
+    let checked = 0;
+    let key = '';
+    for (let r = it.next(), n = 0; !r.done && n < 400_000; r = it.next(), n++) {
+      const f = r.value;
+      const half = `${f.inning}${f.half}`;
+      if (half !== key) {
+        key = half;
+        seen = [];
+        pending = promised;
+        promised = null;
+      }
+      if (f.batterId && seen[seen.length - 1] !== f.batterId) {
+        seen.push(f.batterId);
+        if (pending && seen.length === 3) {
+          expect(seen).toEqual(pending);
+          checked++;
+          pending = null;
+        }
+      }
+      if (f.phase === 'between' && f.outs >= 3) promised = [...f.nextUp];
+    }
+    expect(checked, 'at least one half-to-half handover was checked').toBeGreaterThan(0);
+  }, PLAYS_GAMES);
 });
 
 describe('★ the held features are threaded, and only the ported one bites', () => {
