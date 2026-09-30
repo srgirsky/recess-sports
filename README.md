@@ -186,6 +186,7 @@ npm run export:signature-performance -- tank # emit Tank's eight clips
 npm run export:signature-performance -- mimi_mash # emit Mimi Mash's eight clips
 npm run export:audio       # emit stable v2 impact/crowd audio masters
 npm run export:voices      # macOS maintainer tool: pre-render commentator + roster lines
+npm run measure:audio      # ffmpeg: loudness + true peak per clip -> src/v2/ui/audioLoudness.json playback gains (re-run after any audio export)
 npm run export:performance-brief # regenerate the 30-character production packet
 npm run audition:voices    # print the non-shipping all-cast audition sheet
 npm run generate:ai-voice # print the free local AI cast and commands

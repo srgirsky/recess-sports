@@ -49,7 +49,8 @@
     "check:art-parity": "npm run review:art -- --require-approved",
     "audit:batting": "node scripts/v2/audit-batting.mjs",
     "capture:catcher": "node scripts/v2/capture-catcher.mjs",
-    "audit:draft-stage": "node scripts/v2/audit-draft-stage.mjs"
+    "audit:draft-stage": "node scripts/v2/audit-draft-stage.mjs",
+    "measure:audio": "node scripts/v2/measure-audio.mjs"
   },
   "dependencies": {
     "peerjs": "^1.5.5",
