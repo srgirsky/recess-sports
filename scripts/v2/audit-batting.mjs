@@ -1,7 +1,8 @@
 // The old orientation and wrist-distance checks passed an implausible grip.
 // Sweep six batting actions on every delivered model IN the mirrored gameplay
 // scene. --check rejects backward heads, detached palm anchors, missed contact
-// markers, reference-hand wrist folds/roll jumps, a top elbow shut at contact,
+// markers, reference-hand wrist folds/roll jumps (and any inside the 3-degree
+// margin), a top elbow shut at contact,
 // a lead elbow tucked across the chest, a palm inside the torso around contact, a dropped pelvis, caved knees or a
 // sunken head during the swing, and shaft intersections.
 // Reference hands are sampled at 120Hz to catch inter-frame flips.
@@ -200,6 +201,14 @@ try {
   ||r.markerElbows.lead.dropFt<(r.aim===2.4||r.aim===null?.05:0));
  const slumped=r=>r.hipDropFt>.45||r.valgusFt>.1||(r.kneeOrder!==null&&r.kneeOrder<.1)||(r.neckRatio!==null&&r.neckRatio<.6);
  const bad=data.results.filter(r=>wingedLead(r)||slumped(r)||r.palmTorsoClearFt<0||shutElbow(r)||r.headTowardPitcher<0||r.supportHandGapFt>.02||r.palmGapFt>.02||r.contactGapFt>.1||r.wristBendsDeg.some(bend=>bend>40)||r.wristTwistsDeg.some(twist=>twist>25)||r.armStepsDeg.some(step=>step>25));
+ // ★ THE GATES HOLD 3 DEGREES OF MARGIN (the 120% bar, docs/research/
+ // backyard-2026-reference.md). A pose at 24.2 degrees per quarter-frame passes
+ // a 25-degree gate and fails the next model delivery. Arm steps stop at 22 and
+ // wrist folds at 37; the 25/40 lines above stay the mechanical definition.
+ // Broken once on 4ed5ca0: Sprout's lead forearm stepped 24.2 at the 3.1ft
+ // contact frame and Zoom's lead wrist folded 38.3 at 1.6ft.
+ const ARM_STEP_MARGIN_DEG=22,WRIST_BEND_MARGIN_DEG=37;
+ const thin=data.results.filter(r=>!bad.includes(r)&&(r.armStepsDeg.some(step=>step>ARM_STEP_MARGIN_DEG)||r.wristBendsDeg.some(bend=>bend>WRIST_BEND_MARGIN_DEG)));
  const intersections=data.results.filter(r=>r.shaftHits>0);
  const min=values=>values.reduce((least,value)=>Math.min(least,value),Infinity);
  const aims=[...new Set(data.results.map(r=>r.aim))];
@@ -208,6 +217,11 @@ try {
   const steps=data.results.filter(r=>r.aim===aim&&r.clip.startsWith('swing_')).flatMap(r=>r.armStepsDeg);
   return [String(aim??'review'),at.length?{topDegMin:min(at.map(r=>r.markerElbows.top.deg)),topDegMax:max(at.map(r=>r.markerElbows.top.deg)),topDropFtMin:min(at.map(r=>r.markerElbows.top.dropFt)),leadDegMin:min(at.map(r=>r.markerElbows.lead.deg)),maxSwingArmStepDeg:max(steps)}:null];
  }));
- console.log(JSON.stringify({samples:data.results.length,mechanicalFailures:bad.length,shaftIntersectionCandidates:intersections.length,affected:[...new Set(intersections.map(r=>r.id))],markerElbows,maxArmStepDeg:max(data.results.flatMap(r=>r.armStepsDeg)),maxWristTwistDeg:max(data.results.flatMap(r=>r.wristTwistsDeg)),maxWristBendDeg:max(data.results.flatMap(r=>r.wristBendsDeg)),maxPalmGapFt:max(data.results.map(r=>r.palmGapFt)),maxHipDropFt:max(data.results.map(r=>r.hipDropFt??0)),maxValgusFt:max(data.results.map(r=>r.valgusFt??0)),minKneeOrder:min(data.results.filter(r=>r.kneeOrder!==null).map(r=>r.kneeOrder)),minNeckRatio:min(data.results.filter(r=>r.neckRatio!==null).map(r=>r.neckRatio)),minPalmTorsoClearFt:min(data.results.filter(r=>r.palmTorsoClearFt!==null).map(r=>r.palmTorsoClearFt)),failures:bad.slice(0,20)},null,2));
- if(process.argv.includes('--check')&&(bad.length||intersections.length))process.exitCode=1;
+ const bones=['RightArm','RightForeArm','RightHand','LeftArm','LeftForeArm','LeftHand'];
+ const marginFailures=thin.slice(0,20).map(r=>({id:r.id,clip:r.clip,aim:r.aim,frame:r.frame,
+  steps:r.armStepsDeg.map((step,i)=>step>ARM_STEP_MARGIN_DEG?`${bones[i]} ${step.toFixed(1)}`:null).filter(Boolean),
+  wrists:r.wristBendsDeg.map((bend,i)=>bend>WRIST_BEND_MARGIN_DEG?`${i?'Left':'Right'}Hand ${bend.toFixed(1)}`:null).filter(Boolean)}));
+ if(thin.length)console.error(`${thin.length} samples inside the 3-degree margin (arm step > ${ARM_STEP_MARGIN_DEG}, wrist fold > ${WRIST_BEND_MARGIN_DEG}). Fix the pose in battingPose.ts; do not relax these lines — they are the approved bar.`);
+ console.log(JSON.stringify({samples:data.results.length,mechanicalFailures:bad.length,marginFailureCount:thin.length,marginFailures,shaftIntersectionCandidates:intersections.length,affected:[...new Set(intersections.map(r=>r.id))],markerElbows,maxArmStepDeg:max(data.results.flatMap(r=>r.armStepsDeg)),maxWristTwistDeg:max(data.results.flatMap(r=>r.wristTwistsDeg)),maxWristBendDeg:max(data.results.flatMap(r=>r.wristBendsDeg)),maxPalmGapFt:max(data.results.map(r=>r.palmGapFt)),maxHipDropFt:max(data.results.map(r=>r.hipDropFt??0)),maxValgusFt:max(data.results.map(r=>r.valgusFt??0)),minKneeOrder:min(data.results.filter(r=>r.kneeOrder!==null).map(r=>r.kneeOrder)),minNeckRatio:min(data.results.filter(r=>r.neckRatio!==null).map(r=>r.neckRatio)),minPalmTorsoClearFt:min(data.results.filter(r=>r.palmTorsoClearFt!==null).map(r=>r.palmTorsoClearFt)),failures:bad.slice(0,20)},null,2));
+ if(process.argv.includes('--check')&&(bad.length||thin.length||intersections.length))process.exitCode=1;
 }finally{await browser?.close();server.kill();}

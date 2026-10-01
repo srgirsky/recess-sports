@@ -9,7 +9,7 @@
 import { Matrix4, Object3D, Quaternion, Vector3, type SkinnedMesh } from 'three';
 import { FPS, clipSpec, framesToSec, type AnimName } from './clips';
 import { BAT_SWEET_SPOT_FT } from './props';
-import { buntAmount, BUNT_HAND_SLIDE_FT } from './buntPose';
+import { buntAmount, BUNT_HAND_SLIDE_FT, BUNT_RECOVERY_FRAME } from './buntPose';
 import { bindWorld } from './skeleton';
 const BIND = bindWorld();
 
@@ -171,6 +171,16 @@ const BUNT_GRIP = new Vector3(-.9, 1.95, -.4);
 const BUNT_AXIS = new Vector3(0, .28, 1).normalize();
 
 /**
+ * ★ THE ELBOWS COME UP AS THE BAT COMES BACK. Held down through the recovery
+ * as firmly as through the catch, the knob elbow stayed pinned while the
+ * returning bat folded its wrist from 17 to 34 degrees; at the wrist's wall the
+ * elbow then rose 0.14ft in a quarter-frame (a 22.5-degree step, Zippy, Penny,
+ * Bubbles, Clover) and the grip later flipped basins outright. Receiving the
+ * ball is what needs the low elbow, so the hold eases out over this many
+ * frames of the recovery, ahead of the wall.
+ */
+const BUNT_ELBOW_RELEASE_FRAMES = 4;
+/**
  * How far below the shoulder the bunt's elbows are free. A deeper margin buys
  * no lower held elbow at BUNT_GRIP and costs continuity: at 0.30ft the seated
  * knob forearm steps 42 degrees between quarter-frames, past the 25-degree
@@ -242,6 +252,21 @@ const LEAD_GRIP_FROM_FRAME = 4.5;
 const LEAD_GRIP_DIAGONAL_HIGH = -.52;
 const LEAD_GRIP_EASE_FT = 1.95;
 const LEAD_GRIP_TOP_FT = 2.15;
+/**
+ * ★ THE DIAGONAL GIVES WHERE THE WRIST CANNOT. With only the grip roll to
+ * search, some frames had no roll at all that kept the lead wrist under its
+ * wall: 38.2 degrees was the minimum over the whole circle (Zoom at a low
+ * contact, the standing roster's low follow-through). The lead grip's
+ * diagonal may therefore move up to this far from its authored value, at a
+ * per-radian price set above the ordinary wrist term's pull (at most ~9.5 per
+ * radian under the wall) and below the wall's: the grip holds its authored
+ * angle everywhere the wrist can afford it and gives only against the wall.
+ */
+/** The lead grip roll left at the wrist joint, as a share, soft-capped in radians. */
+const LEAD_WRIST_ROLL_SHARE = .35;
+const LEAD_WRIST_ROLL_CAP = 16 * Math.PI / 180;
+const LEAD_GRIP_GIVE_RAD = .35;
+const LEAD_GRIP_GIVE_COST = 15;
 /** 0 -> 1 over t in [0, 1], still at 0 and arriving at slope `k` (<= 3). */
 const into = (t: number, k: number) => { const u = Math.max(0, Math.min(1, t)); return (k - 2) * u ** 3 + (3 - k) * u * u; };
 const HEAD_FOLLOW = .5;
@@ -362,6 +387,8 @@ export class BattingPose {
   private readyWeight = 0;
   /** How far into the bunt's receiving pose this frame is, 0..1. */
   private buntWeight = 0;
+  /** How far the bunt has let its elbows up this frame, 0..1. */
+  private elbowRelease = 0;
   /** How much of the lead hand's diagonal grip this frame holds, 0..1. */
   private gripTilt = 0;
   /** The contact sweet spot's height this frame (rig feet). */
@@ -417,7 +444,7 @@ export class BattingPose {
     const elbowHint = new Vector3(sign * .8, (-.4 - .6*this.readyWeight) - 1.5*bunt, .5 + clearanceGain * followClearance)
       .applyQuaternion(this.rotation(this.bones.get('Spine2')!));
     if (this.bones.has('RightHandIndex2')) {
-      const result = this.gripSolution(side, palm, Z.clone().applyQuaternion(rotation), elbowHint);
+      const result = this.gripSolution(side, palm, Z.clone().applyQuaternion(rotation), elbowHint, true);
       rotation = result.rotation;
       wrist = result.wrist;
       elbowHint.copy(result.bend);
@@ -429,7 +456,14 @@ export class BattingPose {
       const relative = this.rotation(lower).invert().multiply(rotation);
       if (relative.w < 0) relative.set(-relative.x, -relative.y, -relative.z, -relative.w);
       const roll = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, 2 * Math.atan2(relative.x, relative.w)));
-      this.set(lower, this.rotation(lower).multiply(new Quaternion().setFromAxisAngle(X, roll)));
+      // ★ THE WRIST END CARRIES PART OF THE PRONATION, as the radius turns
+      // most at its distal end. Taken wholly by the forearm bone, the lead
+      // grip's roll turned ~60 degrees in about a frame as the diagonal came in
+      // under the whipping bat — a 21.8-degree twist inside a 24.2-degree
+      // quarter-frame step (Sprout, 3.1ft). The wrist's share is soft-capped
+      // well inside the 25-degree wrist-twist gate.
+      const atWrist = side === 'Left' ? LEAD_WRIST_ROLL_CAP * Math.tanh(LEAD_WRIST_ROLL_SHARE * roll / LEAD_WRIST_ROLL_CAP) : 0;
+      this.set(lower, this.rotation(lower).multiply(new Quaternion().setFromAxisAngle(X, roll - atWrist)));
       // Keep a sane sleeve roll for the swing, then release that correction
       // during the bunt. Each arm's frame puts its pole where that arm never
       // goes. The lead arm stays world-upright (pole: hanging straight down).
@@ -452,7 +486,7 @@ export class BattingPose {
 
   /** Solve grip roll and elbow swivel together. Locking either first can
    * put the palm on the handle with its wrist folded back over the sleeve. */
-  private gripSolution(side: 'Left' | 'Right', palm: Vector3, z: Vector3, hint: Vector3) {
+  private gripSolution(side: 'Left' | 'Right', palm: Vector3, z: Vector3, hint: Vector3, give = false) {
     const sign = side === 'Right' ? 1 : -1;
     const shoulder = this.at(this.bones.get(`${side}Arm`)!);
     const l1 = this.bones.get(`${side}ForeArm`)!.position.length();
@@ -462,10 +496,11 @@ export class BattingPose {
     if (base.lengthSq() < 1e-8) base.copy(X).addScaledVector(z,-z.dot(X));
     base.normalize();
     const elbowPreference = SWING_ELBOW_PREFERENCE + (BUNT_ELBOW_PREFERENCE - SWING_ELBOW_PREFERENCE) * smooth(Math.min(1, this.buntWeight * 6));
-    const evaluate = (angle: number) => {
+    const diagonal = side === 'Left' ? (LEAD_GRIP_DIAGONAL_LOW + (LEAD_GRIP_DIAGONAL - LEAD_GRIP_DIAGONAL_LOW) * smooth((this.sweetHeight - LEAD_GRIP_LOW_FT) / (LEAD_GRIP_FULL_FT - LEAD_GRIP_LOW_FT)) + (LEAD_GRIP_DIAGONAL_HIGH - LEAD_GRIP_DIAGONAL) * smooth((this.sweetHeight - LEAD_GRIP_EASE_FT) / (LEAD_GRIP_TOP_FT - LEAD_GRIP_EASE_FT))) * this.gripTilt : 0;
+    const evaluate = (angle: number, give = 0, hold = this.buntWeight) => {
       const x = base.clone().applyAxisAngle(z, angle);
       const rotation = new Quaternion().setFromRotationMatrix(new Matrix4().makeBasis(x, z.clone().cross(x), z));
-      if (side === 'Left' && this.gripTilt) rotation.multiply(new Quaternion().setFromAxisAngle(Y, (LEAD_GRIP_DIAGONAL_LOW + (LEAD_GRIP_DIAGONAL - LEAD_GRIP_DIAGONAL_LOW) * smooth((this.sweetHeight - LEAD_GRIP_LOW_FT) / (LEAD_GRIP_FULL_FT - LEAD_GRIP_LOW_FT)) + (LEAD_GRIP_DIAGONAL_HIGH - LEAD_GRIP_DIAGONAL) * smooth((this.sweetHeight - LEAD_GRIP_EASE_FT) / (LEAD_GRIP_TOP_FT - LEAD_GRIP_EASE_FT))) * this.gripTilt));
+      if (diagonal || give) rotation.multiply(new Quaternion().setFromAxisAngle(Y, diagonal + give));
       const palmX = X.clone().applyQuaternion(rotation);
       const wrist = palm.clone().sub(this.palmOffset(side).applyQuaternion(rotation));
       const to = wrist.clone().sub(shoulder);
@@ -504,16 +539,51 @@ export class BattingPose {
       // seated low pitch otherwise folded Zoom's knob wrist past 40 degrees.
       const wristOver = Math.max(0, wristBend - WRIST_LIMIT_RAD);
       const score = 8*wristBend*wristBend + elbowPreference*(1-bend.dot(preferred)) + .03*roll*roll + 100*reach*reach + 40*Math.max(0,roll-Math.PI/2)**2
-        + this.buntWeight*(this.seated ? SEATED_ELBOW_WEIGHT : 60)*elbowRise*elbowRise + 400*wristOver*wristOver;
-      return {rotation, wrist, bend, score, angle};
+        + hold*(this.seated ? SEATED_ELBOW_WEIGHT : 60)*elbowRise*elbowRise + 400*wristOver*wristOver
+        + LEAD_GRIP_GIVE_COST*Math.abs(give);
+      return {rotation, wrist, bend, score, angle, give};
     };
-    let best = evaluate(0);
     const step = Math.PI / 18;
-    for (let i=1;i<36;i++) { const trial=evaluate(i*step); if(trial.score<best.score)best=trial; }
-    for (let width=step/2;width> .0001;width/=2) {
-      const left=evaluate(best.angle-width),right=evaluate(best.angle+width);
-      if(left.score<best.score)best=left;
-      if(right.score<best.score)best=right;
+    const search = (hold: number) => {
+      let found = evaluate(0, 0, hold);
+      for (let i=1;i<36;i++) { const trial=evaluate(i*step, 0, hold); if(trial.score<found.score)found=trial; }
+      for (let width=step/2;width> .0001;width/=2) {
+        const left=evaluate(found.angle-width, 0, hold),right=evaluate(found.angle+width, 0, hold);
+        if(left.score<found.score)found=left;
+        if(right.score<found.score)found=right;
+      }
+      return found;
+    };
+    let best = search(this.elbowRelease >= 1 ? 0 : this.buntWeight);
+    if (this.elbowRelease > 0 && this.elbowRelease < 1) {
+      // ★ Two grips, blended — never one grip that jumps between them. Held
+      // down, the knob elbow's best grip folds the wrist; released, its best
+      // grip lifts the elbow. Their costs cross during the release, and a
+      // single search leaps from one to the other in a quarter-frame (58
+      // degrees, Zippy). Each is solved from scratch, so this stays a pure
+      // function of time and a replay's seek lands on the same pose.
+      const free = search(0), w = this.elbowRelease;
+      const rotation = best.rotation.clone().slerp(free.rotation, w);
+      best = { ...best, rotation, wrist: palm.clone().sub(this.palmOffset(side).applyQuaternion(rotation)),
+        bend: best.bend.clone().lerp(free.bend, w).normalize() };
+    }
+    // The bunt's knob wrist rides its wall through the whole held pose, where
+    // a free diagonal flipped end to end between quarter-frames (69 degrees).
+    const giveBand = side === 'Left' && give ? LEAD_GRIP_GIVE_RAD * (1 - smooth(Math.min(1, this.buntWeight * 6))) : 0;
+    if (giveBand > 0) {
+      // Then let the diagonal give, from the roll already found, so the
+      // search never leaves the basin it would otherwise have chosen.
+      for (let width=giveBand/2, turn=step/4; width> .0001; width/=2, turn/=2) {
+        for (let tries=0; tries<8; tries++) {
+          let moved = false;
+          for (const [angle, give] of [[best.angle, best.give+width], [best.angle, best.give-width], [best.angle+turn, best.give], [best.angle-turn, best.give]]) {
+            if (Math.abs(give) > giveBand + 1e-9) continue;
+            const trial = evaluate(angle, give);
+            if (trial.score < best.score) { best = trial; moved = true; }
+          }
+          if (!moved) break;
+        }
+      }
     }
     return best;
   }
@@ -570,6 +640,7 @@ export class BattingPose {
     const referenceHands = this.bones.has('RightHandIndex2');
     const bunt = name === 'bunt' && referenceHands ? buntAmount(time) : 0;
     this.buntWeight = bunt;
+    this.elbowRelease = name === 'bunt' && referenceHands ? smooth((time * FPS - BUNT_RECOVERY_FRAME) / BUNT_ELBOW_RELEASE_FRAMES) : 0;
     this.gripTilt = this.seated ? 0 : name === 'swing_contact' || name === 'swing_whiff' ? smooth((time * FPS - LEAD_GRIP_FROM_FRAME) / (CONTACT_FRAME - LEAD_GRIP_FROM_FRAME))
       : name === 'swing_follow' ? 1 - smooth(time / FOLLOW_SEC / .6) : 0;
     this.readyWeight = !referenceHands ? 0
