@@ -992,6 +992,14 @@ Tried, with the numbers:
   chest to 70-78 degrees holds it inside the shoulder line (0.36-0.7), but
   every path INTO that pose flipped the lead arm 55-80 degrees in a
   quarter-frame: it needs a redesigned bunt entry, not a constant.
+  Searched since (2026-10-01), all failing at 46-85 degrees on the way in: the
+  bat's own angle, an elbow hint pulled inward and weighted up to 10, a
+  score-weighted blend of the two competing grips, an elbow hint expressed as
+  a swivel about the shoulder-to-hand line (the chest-frame hint degenerates
+  there), and a waypoint on the hands' entry path. The trace says why: part
+  way in, the bat's path leaves the knob hand no elbow-down grip the wrist
+  can afford, so the solver chooses between two elbow-UP grips and switches.
+  The fix is authored motion or a path planned across frames, not a solve.
 - **Big Lou's lead elbow at the 1.6ft contact** sat 0.007ft below his
   shoulder. A lower lead elbow HINT stepped the forearm 48 degrees; a world-
   height cost did nothing, because his trunk leans to a low ball and the gate
