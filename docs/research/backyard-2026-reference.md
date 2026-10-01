@@ -1002,8 +1002,13 @@ Tried, with the numbers:
   standing kids failed it on 5c08155). An independent critic scored it better
   on all four standing boards (2-2.5 to 3-3.5); still open, on slim kids
   (Zippy, Calls-Shot) the lead upper arm stands a little clear of the torso
-  at chest height. **Seated, Zoom keeps the old bunt:** the schedule twisted
-  his knob wrist to 32 degrees and his free search flipped 56.
+  at chest height. **Seated, Zoom keeps the old bunt:** the standing schedule
+  twisted his knob wrist to 32 degrees and his free search flipped 56. His own
+  schedule (320 to 350) is smooth and narrows him to 0.81-1.34 (from 1.92),
+  but every such pose hangs his knob forearm near vertical (0.77 rad from it,
+  where `HandPose.test.ts` asks 0.96) or lifts the elbow (0.12ft drop, asked
+  0.2): searched over 114 seated poses. Narrowing him means revisiting those
+  two seated rules, which is a product call.
 - **Big Lou's lead elbow at the 1.6ft contact** sat 0.007ft below his
   shoulder. A lower lead elbow HINT stepped the forearm 48 degrees; a world-
   height cost did nothing, because his trunk leans to a low ball and the gate
