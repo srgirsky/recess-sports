@@ -188,13 +188,41 @@ const SEATED_ELBOW_WEIGHT = 30;
 /**
  * The held bunt, in the rig frame (the chest turns toward -X). Out in front at
  * a relaxed reach so both elbows open past 100 degrees and hang below the
- * shoulders, standing and seated. Nearer the midline the knob wrist can only
+ * shoulders, standing and seated (squared and scheduled: BUNT_TURN_DEG). Nearer the midline the knob wrist can only
  * stay straight with its elbow up; farther out a standing kid's hips follow
  * the hands instead. The barrel rises ~15 degrees — the quiet-bat gate in
  * `HandPose.test.ts` caps it, and a steeper bat buys no lower elbow.
  */
-const BUNT_GRIP = new Vector3(-.9, 1.95, -.4);
+const BUNT_GRIP = new Vector3(-.82, 1.8, .1);
+/**
+ * Seated, the squared bunt's scheduled knob roll twisted Zoom's wrist past
+ * the 25-degree gate and his free search flipped the arm 56 degrees; a chair
+ * keeps the 55-degree bunt and its grip, winged elbow and all (still open).
+ */
+const SEATED_BUNT_GRIP = new Vector3(-.9, 1.95, -.4);
+const SEATED_BUNT_TURN_DEG = 55;
 const BUNT_AXIS = new Vector3(0, .28, 1).normalize();
+/**
+ * ★ THE BUNT SQUARES UP, AND THE KNOB ELBOW STAYS IN. Turned 55 degrees with
+ * the hands 0.9ft toward the pitcher, the held knob elbow sat at twice its
+ * shoulder's distance from the chest's midline on every kid — a chicken wing
+ * from the PITCH camera (independent review). Squared further, with the hands
+ * a little lower and forward, it sits well inside the shoulder line (0.17 at
+ * worst, `audit:batting`).
+ */
+const BUNT_TURN_DEG = 70;
+/**
+ * The squared pose was reachable but the way in was not: part way, the knob
+ * hand had no elbow-down grip its wrist could afford, and the free grip
+ * search switched between two elbow-up rolls 40 degrees apart (46-85 degree
+ * steps; a swivel hint, score blending, bat angles and entry waypoints all
+ * failed). Through the bunt the knob grip's roll is searched only this near a
+ * schedule that turns from FROM to TO as the bunt engages — still a pure
+ * function of time, and the roll can only travel, never jump.
+ */
+const BUNT_KNOB_ROLL_FROM_DEG = 330;
+const BUNT_KNOB_ROLL_TO_DEG = 360;
+const BUNT_KNOB_ROLL_SLACK_DEG = 3;
 
 /**
  * ★ THE ELBOWS COME UP AS THE BAT COMES BACK. Held down through the recovery
@@ -496,7 +524,9 @@ export class BattingPose {
       // under the whipping bat — a 21.8-degree twist inside a 24.2-degree
       // quarter-frame step (Sprout, 3.1ft). The wrist's share is soft-capped
       // well inside the 25-degree wrist-twist gate.
-      const atWrist = side === 'Left' ? LEAD_WRIST_ROLL_CAP * Math.tanh(LEAD_WRIST_ROLL_SHARE * roll / LEAD_WRIST_ROLL_CAP) : 0;
+      // The bunt's knob wrist keeps none of it: its scheduled roll is already
+      // near the wrist-twist gate (`HandPose.test.ts`).
+      const atWrist = side === 'Left' ? LEAD_WRIST_ROLL_CAP * Math.tanh(LEAD_WRIST_ROLL_SHARE * roll / LEAD_WRIST_ROLL_CAP) * (1 - smooth(Math.min(1, bunt * 6))) : 0;
       this.set(lower, this.rotation(lower).multiply(new Quaternion().setFromAxisAngle(X, roll - atWrist)));
       // Keep a sane sleeve roll for the swing, then release that correction
       // during the bunt. Each arm's frame puts its pole where that arm never
@@ -592,7 +622,18 @@ export class BattingPose {
       }
       return found;
     };
-    let best = search(this.elbowRelease >= 1 ? 0 : this.buntWeight);
+    // The knob grip's roll through the bunt follows a schedule (BUNT_KNOB_ROLL_*).
+    const scheduled = side === 'Left' && give && this.buntWeight > 0 && !this.seated;
+    const searchIn = (hold: number) => {
+      if (!scheduled) return search(hold);
+      const centre = (BUNT_KNOB_ROLL_FROM_DEG + (BUNT_KNOB_ROLL_TO_DEG - BUNT_KNOB_ROLL_FROM_DEG) * smooth(this.buntWeight)) * Math.PI / 180;
+      const half = BUNT_KNOB_ROLL_SLACK_DEG * Math.PI / 180;
+      let found = evaluate(centre, 0, hold);
+      for (let i = -40; i <= 40; i++) { const trial = evaluate(centre + half * i / 40, 0, hold); if (trial.score < found.score) found = trial; }
+      return found;
+    };
+    let best = searchIn(this.elbowRelease >= 1 ? 0 : this.buntWeight);
+
     if (this.elbowRelease > 0 && this.elbowRelease < 1) {
       // ★ Two grips, blended — never one grip that jumps between them. Held
       // down, the knob elbow's best grip folds the wrist; released, its best
@@ -600,7 +641,7 @@ export class BattingPose {
       // single search leaps from one to the other in a quarter-frame (58
       // degrees, Zippy). Each is solved from scratch, so this stays a pure
       // function of time and a replay's seek lands on the same pose.
-      const free = search(0), w = this.elbowRelease;
+      const free = searchIn(0), w = this.elbowRelease;
       const rotation = best.rotation.clone().slerp(free.rotation, w);
       best = { ...best, rotation, wrist: palm.clone().sub(this.palmOffset(side).applyQuaternion(rotation)),
         bend: best.bend.clone().lerp(free.bend, w).normalize() };
@@ -685,7 +726,7 @@ export class BattingPose {
       : name === 'swing_contact' || name === 'swing_whiff' ? 1-smooth(time*FPS/3)
       : name === 'swing_follow' ? smooth((time/FOLLOW_SEC-.7)/.3)
       : name === 'bunt' ? 1-bunt : 1;
-    const desiredHeading = (-20 - 140 * sweep - 55 * bunt + 35*this.readyWeight) * Math.PI / 180;
+    const desiredHeading = (-20 - 140 * sweep - (this.seated ? SEATED_BUNT_TURN_DEG : BUNT_TURN_DEG) * bunt + 35*this.readyWeight) * Math.PI / 180;
     // The old actor clips include large torso rolls. A grip solved against
     // those shoulders can be reachable yet require a folded wrist. Establish
     // an upright batting frame before solving reach; the swing supplies yaw.
@@ -746,7 +787,7 @@ export class BattingPose {
         // fold to 60-70 degrees and the knob elbow escaped sideways, level
         // with the shoulder — and seated, above it with a vertical forearm,
         // because a chair cannot step the trunk back. See BUNT_GRIP.
-        grip.copy(this.stanceGrip).lerp(BUNT_GRIP, bunt);
+        grip.copy(this.stanceGrip).lerp(this.seated ? SEATED_BUNT_GRIP : BUNT_GRIP, bunt);
         // Clear the shoulder first, then bring the bat into the receiving pose.
         grip.z += (.4 + .25*(1-bunt)**4)*Math.sin(Math.PI*bunt);
         axis.copy(STANCE_AXIS).lerp(BUNT_AXIS, smooth(bunt+.1*Math.sin(Math.PI*bunt))).normalize();
