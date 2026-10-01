@@ -906,7 +906,9 @@ the default path (still reachable).
 3. Draft composition: a gate that no panel covers a kid's face or feet; the
    post-autofill clump; the draft line fit.
 4. The known weak batting reads (Grizz and Tank's hidden lead arm, Moose's arm
-   into his hoodie, Zoom's lean), after restoring `audit:batting` margin.
+   into his hoodie, Zoom's lean), after restoring `audit:batting` margin —
+   **margin restored** and **the whiff finishes in view**, below; the bunt's
+   winged elbow and the other weak reads remain.
 5. Verdict read time ≥1.2 s, and the smoke painting CSS on its own clock.
 6. The item-5 debris, verified before any fix.
 7. Title kids grounded in the treehouse.
@@ -933,6 +935,67 @@ glove-side shin or shoe still shows past the hip on some kids; Tank's long tee
 reads as a sack; big-hair kids hide the glove from PITCH; and a front view,
 which no gameplay camera uses, shows dark foreshortened knees on the
 dark-trousered kids.
+
+### #4, first half: `audit:batting` holds its margin (2026-09-30)
+
+`--check` now fails anything inside 3 degrees of the arm-step and wrist gates;
+on `main` (4ed5ca0) that was 48 samples. A copy of the grip search, scoring
+exactly as production, showed no basin flip at either failing frame, so
+temporal continuity was the wrong fix (and a stateful solve would break
+`seek`). Three causes, three changes in `battingPose.ts`:
+
+- **Wrist 38.2 on low pitches** (Zoom at contact, the standing roster's
+  follow-through): 38.2 was the minimum over every grip roll — unreachable by
+  any weight. The lead diagonal may now give, priced to move only against the
+  wrist's wall, and only in the final solve (the lead diagonal is applied once
+  in `gripRotation` and again in `arm()`; that double tilt carries the approved
+  lead-elbow read — applied once, 209 lead-arm failures — so it stays).
+- **Lead forearm 24.2 at the 3.1ft contact** (Sprout, Cricket, Turbo,
+  Sniffles): a real ~60-degree pronation in about a frame. Sharing it with the
+  upper arm made it worse (32); part of it now stays at the wrist, soft-capped.
+- **Bunt 23.2 at frame 26.25** (Zippy, Penny, Bubbles, Clover): the held-down
+  elbow met the wrist wall in the recovery, then flipped grips outright at
+  27.05 (a pop the quarter-frame audit could not see). The held and released
+  grips are both solved and blended over four frames.
+
+After: worst arm step 21.9 (Clover's top arm at launch, unchanged from
+`main`), wrist fold 35.0, wrist twist 15.5; every other gate unchanged. The
+thinnest non-degree gate is still Big Lou's lead-elbow drop at 1.6ft (0.007ft).
+An independent critic, shown before/after boards through PITCH and
+PITCH_HERO, found the swings unchanged to the eye and the bunt recovery
+slightly better (2.5 → 3/5, the elbow now rises instead of popping); one
+minor regression, confirmed: at bunt frame 30 the lead hand lies flatter
+along the bat. Same before and after, and still open: from frame 9 the
+follow-through hides bat and arms behind the torso (Calls-Shot, Tank), and the
+held bunt's lead elbow splays wide.
+
+### #4, second half: the whiff finishes in view (2026-09-30)
+
+A whiff stays in PITCH, which sits behind the batter, and the lead-side wrap
+hid the bat behind the torso: `audit:batting`'s new `pitchBatVisible` found no
+kid showing even half the bat from frame 10 (Bubbles, Diva and Grizz showed
+none). From frame 9 the hands now rise toward the catcher's side and the bat
+ends up and back over the shoulder — a pose searched over 1728 candidates on
+six kids for wrists, shaft hits and visibility — and the follow-through comes
+down the way it rose before its old recovery. Every kid now shows 0.87-0.96 of
+the bat; `--check` fails below 0.8. The rise runs to frame 17, because rising
+by frame 13 moved the hands' peak speed, and with it the derived CONTACT
+marker, to frame 11. An independent critic scored the finish better on all six
+boards (1-2/5 to 3-4/5 through PITCH), with no clipping, detached hand or bad
+elbow. Open: frames 9-11 right after a miss are still hidden; seen from the
+front, which no gameplay or replay camera uses, the finish holds the lead
+forearm across the face.
+
+Tried and not shipped, with the numbers:
+- **The held bunt's winged lead elbow** sits at 2.06x its shoulder's distance
+  from the chest's midline. No grip position moves it (1.9-2.1). Squaring the
+  chest to 70-78 degrees holds it inside the shoulder line (0.36-0.7), but
+  every path INTO that pose flipped the lead arm 55-80 degrees in a
+  quarter-frame: it needs a redesigned bunt entry, not a constant.
+- **Big Lou's lead elbow at the 1.6ft contact** sits 0.007ft below his
+  shoulder. The gate allows level there by design, and a lower lead elbow hint
+  stepped the forearm 48 degrees; the elbow's height is tied to the approved
+  diagonal grip.
 
 ### #6: the debris, verified before any fix (2026-09-29)
 
