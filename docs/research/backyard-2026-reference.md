@@ -960,6 +960,13 @@ temporal continuity was the wrong fix (and a stateful solve would break
 After: worst arm step 21.9 (Clover's top arm at launch, unchanged from
 `main`), wrist fold 35.0, wrist twist 15.5; every other gate unchanged. The
 thinnest non-degree gate is still Big Lou's lead-elbow drop at 1.6ft (0.007ft).
+An independent critic, shown before/after boards through PITCH and
+PITCH_HERO, found the swings unchanged to the eye and the bunt recovery
+slightly better (2.5 → 3/5, the elbow now rises instead of popping); one
+minor regression, confirmed: at bunt frame 30 the lead hand lies flatter
+along the bat. Same before and after, and still open: from frame 9 the
+follow-through hides bat and arms behind the torso (Calls-Shot, Tank), and the
+held bunt's lead elbow splays wide.
 
 ### #6: the debris, verified before any fix (2026-09-29)
 
