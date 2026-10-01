@@ -180,6 +180,7 @@ try {
       kneeOrder:swing&&Math.abs(inRig('RightUpLeg').z-inRig('LeftUpLeg').z)>.05?(inRig('RightLeg').z-inRig('LeftLeg').z)/(inRig('RightUpLeg').z-inRig('LeftUpLeg').z):null,
       hipDropFt:swing?stanceHipsY-inRig('Hips').y:null,valgusFt,neckRatio:swing?neck/stanceNeck:null,
       markerElbows:marker?{top:elbowShape('Right'),lead:elbowShape('Left')}:null,palmTorsoClearFt,
+      buntLeadOut:clip==='bunt'&&frame===20&&referenceHands?elbowShape('Left').out:null,
       topElbowDropFt:aroundContact?elbowShape('Right').dropFt:null,
       headTowardPitcher:forward.dot(pitcher.sub(headAt).normalize()),
       supportHandGapFt:referenceHands?topPalm.distanceTo(topTarget)/view.root.scale.x:0,
@@ -215,8 +216,13 @@ try {
  // out of the shoulder while the trunk leans to the ball (fails on 4ed5ca0).
  const wingedLead=r=>r.markerElbows&&!r.seated&&(r.markerElbows.lead.out<.3||r.markerElbows.lead.foreFromVerticalDeg<25
   ||r.markerElbows.lead.dropFt<(r.aim===3.1?0:.05));
+ // ★ THE HELD BUNT KEEPS ITS KNOB ELBOW IN. Turned 55 degrees, the held knob
+ // elbow sat at 2.06x its shoulder's distance from the chest's midline on every
+ // standing kid: a chicken wing from PITCH. Squared and scheduled it is 0.17 at
+ // worst. Seated, Zoom keeps the old bunt (see SEATED_BUNT_GRIP) and is exempt.
+ const wingedBunt=r=>r.buntLeadOut!==null&&!r.seated&&r.buntLeadOut>.6;
  const slumped=r=>r.hipDropFt>.45||r.valgusFt>.1||(r.kneeOrder!==null&&r.kneeOrder<.1)||(r.neckRatio!==null&&r.neckRatio<.6);
- const bad=data.results.filter(r=>wingedLead(r)||slumped(r)||r.palmTorsoClearFt<0||shutElbow(r)||r.headTowardPitcher<0||r.supportHandGapFt>.02||r.palmGapFt>.02||r.contactGapFt>.1||r.wristBendsDeg.some(bend=>bend>40)||r.wristTwistsDeg.some(twist=>twist>25)||r.armStepsDeg.some(step=>step>25));
+ const bad=data.results.filter(r=>wingedLead(r)||wingedBunt(r)||slumped(r)||r.palmTorsoClearFt<0||shutElbow(r)||r.headTowardPitcher<0||r.supportHandGapFt>.02||r.palmGapFt>.02||r.contactGapFt>.1||r.wristBendsDeg.some(bend=>bend>40)||r.wristTwistsDeg.some(twist=>twist>25)||r.armStepsDeg.some(step=>step>25));
  // ★ THE GATES HOLD 3 DEGREES OF MARGIN (the 120% bar, docs/research/
  // backyard-2026-reference.md). A pose at 24.2 degrees per quarter-frame passes
  // a 25-degree gate and fails the next model delivery. Arm steps stop at 22 and

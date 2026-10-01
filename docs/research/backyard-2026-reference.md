@@ -907,8 +907,8 @@ the default path (still reachable).
    post-autofill clump; the draft line fit.
 4. The known weak batting reads (Grizz and Tank's hidden lead arm, Moose's arm
    into his hoodie, Zoom's lean), after restoring `audit:batting` margin —
-   **margin restored** and **the whiff finishes in view**, below; the bunt's
-   winged elbow and the other weak reads remain.
+   **margin restored**, **the whiff finishes in view** and **the bunt squares
+   up**, below; Zoom's seated bunt and the other weak reads remain.
 5. Verdict read time ≥1.2 s, and the smoke painting CSS on its own clock.
 6. The item-5 debris, verified before any fix.
 7. Title kids grounded in the treehouse.
@@ -987,19 +987,28 @@ front, which no gameplay or replay camera uses, the finish holds the lead
 forearm across the face.
 
 Tried, with the numbers:
-- **The held bunt's winged lead elbow** sits at 2.06x its shoulder's distance
-  from the chest's midline. No grip position moves it (1.9-2.1). Squaring the
-  chest to 70-78 degrees holds it inside the shoulder line (0.36-0.7), but
-  every path INTO that pose flipped the lead arm 55-80 degrees in a
-  quarter-frame: it needs a redesigned bunt entry, not a constant.
-  Searched since (2026-10-01), all failing at 46-85 degrees on the way in: the
-  bat's own angle, an elbow hint pulled inward and weighted up to 10, a
-  score-weighted blend of the two competing grips, an elbow hint expressed as
-  a swivel about the shoulder-to-hand line (the chest-frame hint degenerates
-  there), and a waypoint on the hands' entry path. The trace says why: part
-  way in, the bat's path leaves the knob hand no elbow-down grip the wrist
-  can afford, so the solver chooses between two elbow-UP grips and switches.
-  The fix is authored motion or a path planned across frames, not a solve.
+- **The held bunt's winged lead elbow** sat at 2.06x its shoulder's distance
+  from the chest's midline on every standing kid. No grip position moved it,
+  and squaring the chest further (70 degrees) held it in but every free path
+  INTO that pose flipped the arm 46-85 degrees: part way, the knob hand had
+  no elbow-down grip its wrist could afford, and the search switched between
+  two elbow-up rolls 40 degrees apart (a swivel hint, score blending, bat
+  angles and entry waypoints all failed). **Closed for standing kids
+  (2026-10-01):** squared to 70 degrees with the hands at (-0.82, 1.8, 0.1),
+  and through the bunt the knob grip's roll is searched only within 3 degrees
+  of a schedule turning 330 to 360 degrees — a pure function of time, so the
+  roll travels instead of jumping (worst arm step 17 degrees). The held elbow
+  is 0.17 at worst; `audit:batting` now fails a held bunt past 0.6 (all 29
+  standing kids failed it on 5c08155). An independent critic scored it better
+  on all four standing boards (2-2.5 to 3-3.5); still open, on slim kids
+  (Zippy, Calls-Shot) the lead upper arm stands a little clear of the torso
+  at chest height. **Seated, Zoom keeps the old bunt:** the standing schedule
+  twisted his knob wrist to 32 degrees and his free search flipped 56. His own
+  schedule (320 to 350) is smooth and narrows him to 0.81-1.34 (from 1.92),
+  but every such pose hangs his knob forearm near vertical (0.77 rad from it,
+  where `HandPose.test.ts` asks 0.96) or lifts the elbow (0.12ft drop, asked
+  0.2): searched over 114 seated poses. Narrowing him means revisiting those
+  two seated rules, which is a product call.
 - **Big Lou's lead elbow at the 1.6ft contact** sat 0.007ft below his
   shoulder. A lower lead elbow HINT stepped the forearm 48 degrees; a world-
   height cost did nothing, because his trunk leans to a low ball and the gate
