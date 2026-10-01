@@ -986,16 +986,23 @@ elbow. Open: frames 9-11 right after a miss are still hidden; seen from the
 front, which no gameplay or replay camera uses, the finish holds the lead
 forearm across the face.
 
-Tried and not shipped, with the numbers:
+Tried, with the numbers:
 - **The held bunt's winged lead elbow** sits at 2.06x its shoulder's distance
   from the chest's midline. No grip position moves it (1.9-2.1). Squaring the
   chest to 70-78 degrees holds it inside the shoulder line (0.36-0.7), but
   every path INTO that pose flipped the lead arm 55-80 degrees in a
   quarter-frame: it needs a redesigned bunt entry, not a constant.
-- **Big Lou's lead elbow at the 1.6ft contact** sits 0.007ft below his
-  shoulder. The gate allows level there by design, and a lower lead elbow hint
-  stepped the forearm 48 degrees; the elbow's height is tied to the approved
-  diagonal grip.
+- **Big Lou's lead elbow at the 1.6ft contact** sat 0.007ft below his
+  shoulder. A lower lead elbow HINT stepped the forearm 48 degrees; a world-
+  height cost did nothing, because his trunk leans to a low ball and the gate
+  reads height on the chest. **Closed (2026-10-01):** a cost on the lead
+  elbow's height along the chest's own up, scoped to the diagonal grip below
+  the high-pitch ease, holds it 0.071ft down; the gate now asks 0.05ft at a
+  low pitch as well as a middle one (fails on 436cd7b). An independent critic
+  saw no in-game change and no regression — a margin, not a look.
+- **The bunt's frame-30 lead hand** (flatter along the bat since the recovery
+  blend): the critic, asked directly, judged it not noticeable at all through
+  PITCH at game size. Closed as no defect.
 
 ### #6: the debris, verified before any fix (2026-09-29)
 
