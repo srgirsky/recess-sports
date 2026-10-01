@@ -293,6 +293,14 @@ const LEAD_WRIST_ROLL_SHARE = .35;
 const LEAD_WRIST_ROLL_CAP = 16 * Math.PI / 180;
 const LEAD_GRIP_GIVE_RAD = .35;
 const LEAD_GRIP_GIVE_COST = 15;
+/**
+ * The lead elbow stays this far below its shoulder through the diagonal grip,
+ * charged at this weight when it rises past. On a low pitch Big Lou's sat
+ * 0.007ft below — level, which the lead-arm gate allows but reads as an arm
+ * pointing out of the shoulder.
+ */
+const LEAD_ELBOW_MARGIN_FT = .08;
+const LEAD_ELBOW_WEIGHT = 200;
 /** 0 -> 1 over t in [0, 1], still at 0 and arriving at slope `k` (<= 3). */
 const into = (t: number, k: number) => { const u = Math.max(0, Math.min(1, t)); return (k - 2) * u ** 3 + (3 - k) * u * u; };
 const HEAD_FOLLOW = .5;
@@ -515,6 +523,7 @@ export class BattingPose {
   private gripSolution(side: 'Left' | 'Right', palm: Vector3, z: Vector3, hint: Vector3, give = false) {
     const sign = side === 'Right' ? 1 : -1;
     const shoulder = this.at(this.bones.get(`${side}Arm`)!);
+    const chestUp = Y.clone().applyQuaternion(this.rotation(this.bones.get('Spine2')!));
     const l1 = this.bones.get(`${side}ForeArm`)!.position.length();
     const l2 = this.bones.get(`${side}Hand`)!.position.length();
     const base = palm.clone().sub(shoulder).multiplyScalar(sign);
@@ -561,11 +570,14 @@ export class BattingPose {
       // The margin only works with the bat held out in front (see `apply`):
       // with the hands at the chest there is no low elbow the wrist affords.
       const elbowRise = Math.max(0, elbow.y - (shoulder.y - BUNT_ELBOW_MARGIN_FT));
+      // Measured along the chest's own up, as the lead-arm gate reads it: a
+      // trunk leaning to a low pitch lowers the elbow in the world, not on him.
+      const leadElbowHigh = side === 'Left' ? Math.max(0, elbow.clone().sub(shoulder).dot(chestUp) + LEAD_ELBOW_MARGIN_FT) : 0;
       // The wrist limit is a wall in every batting clip, not only the bunt: a
       // seated low pitch otherwise folded Zoom's knob wrist past 40 degrees.
       const wristOver = Math.max(0, wristBend - WRIST_LIMIT_RAD);
       const score = 8*wristBend*wristBend + elbowPreference*(1-bend.dot(preferred)) + .03*roll*roll + 100*reach*reach + 40*Math.max(0,roll-Math.PI/2)**2
-        + hold*(this.seated ? SEATED_ELBOW_WEIGHT : 60)*elbowRise*elbowRise + 400*wristOver*wristOver
+        + hold*(this.seated ? SEATED_ELBOW_WEIGHT : 60)*elbowRise*elbowRise + (1 - this.buntWeight)*this.gripTilt*smooth((LEAD_GRIP_EASE_FT - this.sweetHeight) / .3)*LEAD_ELBOW_WEIGHT*leadElbowHigh*leadElbowHigh + 400*wristOver*wristOver
         + LEAD_GRIP_GIVE_COST*Math.abs(give);
       return {rotation, wrist, bend, score, angle, give};
     };

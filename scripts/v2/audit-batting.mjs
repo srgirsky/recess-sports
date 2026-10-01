@@ -210,9 +210,11 @@ try {
  // the square grip). Seated, the lead arm reaches differently and is exempt.
  // Level with the shoulder, the lead upper arm points out of its front: a
  // short sleeve seen end-on reads as a ball (it sat 0.04ft above on #259).
- // A low or letters-high ball may carry it level with the shoulder, never above.
+ // A letters-high ball may carry it level with the shoulder, never above. A low
+ // one may not: Big Lou's sat 0.007ft below at 1.6ft, an arm pointing straight
+ // out of the shoulder while the trunk leans to the ball (fails on 4ed5ca0).
  const wingedLead=r=>r.markerElbows&&!r.seated&&(r.markerElbows.lead.out<.3||r.markerElbows.lead.foreFromVerticalDeg<25
-  ||r.markerElbows.lead.dropFt<(r.aim===2.4||r.aim===null?.05:0));
+  ||r.markerElbows.lead.dropFt<(r.aim===3.1?0:.05));
  const slumped=r=>r.hipDropFt>.45||r.valgusFt>.1||(r.kneeOrder!==null&&r.kneeOrder<.1)||(r.neckRatio!==null&&r.neckRatio<.6);
  const bad=data.results.filter(r=>wingedLead(r)||slumped(r)||r.palmTorsoClearFt<0||shutElbow(r)||r.headTowardPitcher<0||r.supportHandGapFt>.02||r.palmGapFt>.02||r.contactGapFt>.1||r.wristBendsDeg.some(bend=>bend>40)||r.wristTwistsDeg.some(twist=>twist>25)||r.armStepsDeg.some(step=>step>25));
  // ★ THE GATES HOLD 3 DEGREES OF MARGIN (the 120% bar, docs/research/
