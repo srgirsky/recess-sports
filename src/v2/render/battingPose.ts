@@ -21,6 +21,32 @@ const STANCE_AXIS = new Vector3(-.3,1,.3).normalize();
 const STANCE_GRIP = new Vector3(.35,2.5,.6);
 const READY_AXIS = new Vector3(.65, .45, .8).normalize();
 const FOLLOW_AXIS = new Vector3(-.8, .6, .2).normalize();
+/**
+ * ★ THE SWING FINISHES WHERE THE CAMERA CAN SEE IT. The lead-side wrap
+ * (`through`, FOLLOW_AXIS) ends at chest height on the pitcher's side of the
+ * body, and the PITCH camera sits behind the batter: from frame 10 a whiff's
+ * bat was mostly hidden for every kid (none reached half; `audit:batting`,
+ * `pitchBatVisible`). From frame 9 the hands rise
+ * toward the catcher's side and the bat turns up and back over the shoulder.
+ * The pose was searched, not picked: of 1728 finishes on six kids (seated Zoom
+ * among them), this one kept every wrist under 20 degrees, put no shaft
+ * through a body and stayed fully in view.
+ */
+const FINISH_AXIS = new Vector3(.1, .5, -.3).normalize();
+/** The finish's hands, relative to the lead-side wrap (`through`). */
+const FINISH_RISE = new Vector3(.5, .3, -.4);
+const FINISH_RISE_FROM_FRAME = 9;
+/**
+ * Slow enough that the hands stay fastest through the ball: risen by frame
+ * 13, their speed peaked at frame 11 and the derived CONTACT marker moved
+ * there (`AnimationDirector.test.ts`).
+ */
+const FINISH_RISE_TO_FRAME = 17;
+/** Follow-through frames spent coming back down from the finish. */
+const FINISH_RETURN_FRAMES = 6;
+/** Turn unit vector `from` toward `to` by `w`, on the sphere. */
+const turnToward = (from: Vector3, to: Vector3, w: number) =>
+  from.clone().applyQuaternion(new Quaternion().slerp(new Quaternion().setFromUnitVectors(from, to), w));
 const CONTACT_FRAME = clipSpec('swing_contact').marker!.frame;
 const FOLLOW_SEC = framesToSec(clipSpec('swing_follow').frames);
 const smooth = (x: number) => { const t = Math.max(0, Math.min(1, x)); return t * t * (3 - 2 * t); };
@@ -684,6 +710,8 @@ export class BattingPose {
       // Contact is the MIDDLE of the fastest sweep, not a stop between two
       // eases: both halves share one tangent and the whip peaks it at frame 7.
       grip.copy(swingHands(wind, contact, through, f, this.seated ? SEATED_SWING_DROP_FRAME : SWING_DROP_FRAME));
+      const rise = smooth((f - FINISH_RISE_FROM_FRAME) / (FINISH_RISE_TO_FRAME - FINISH_RISE_FROM_FRAME));
+      grip.addScaledVector(FINISH_RISE, rise);
       if (f <= CONTACT_FRAME) {
         axis.lerp(contactAxis, into((f - 3) / 4, BAT_WHIP));
         axis.addScaledVector(X, BAT_LAY_BACK * Math.sin(Math.PI * Math.max(0, Math.min(1, (f - 1) / 4)))).normalize();
@@ -693,6 +721,7 @@ export class BattingPose {
         const across = (from: Vector3, to: Vector3) => to.clone().sub(from).addScaledVector(from, -to.clone().sub(from).dot(from)).length();
         const outWhip = Math.min(3, BAT_WHIP * across(contactAxis, contactAxis.clone().sub(readyAxis).add(contactAxis)) / Math.max(1e-3, across(contactAxis, FOLLOW_AXIS)));
         axis.copy(contactAxis).lerp(FOLLOW_AXIS.clone(), 1 - into(1 - (f - CONTACT_FRAME) / 4, outWhip)).normalize();
+        axis.copy(turnToward(axis, FINISH_AXIS, smooth((f - FINISH_RISE_FROM_FRAME) / (FINISH_RISE_TO_FRAME - FINISH_RISE_FROM_FRAME))));
       }
     } else if (name === 'bat_load') {
       grip.lerp(wind, Math.sin(Math.PI * time / framesToSec(clipSpec(name).frames)));
@@ -711,14 +740,21 @@ export class BattingPose {
         axis.copy(STANCE_AXIS).lerp(BUNT_AXIS, smooth(bunt+.1*Math.sin(Math.PI*bunt))).normalize();
       } else { grip.lerp(contact, t); axis.lerp(contactAxis, t).normalize(); }
     } else if (name === 'swing_follow') {
-      const t = smooth(time / FOLLOW_SEC);
+      // Come down from the finish the way the swing rose into it, then
+      // recover as before. Recovering straight from the high finish took the
+      // bat across the face (shaft hits on all six kids sampled).
+      const frame = time * FPS;
+      const held = 1 - smooth(frame / FINISH_RETURN_FRAMES);
+      const t = smooth((frame - FINISH_RETURN_FRAMES * .5) / (clipSpec(name).frames - FINISH_RETURN_FRAMES * .5));
       grip.copy(through).lerp(ready, t);
       // Recover around the front, not through the chest/head. A direct lerp
       // between opposite shoulder poses points the barrel through the skull.
       grip.z += .5 * Math.sin(Math.PI * t);
+      grip.addScaledVector(FINISH_RISE, held);
       const around = new Vector3(0, this.bones.has('RightHandIndex2') ? .65 : .1, 1).normalize();
       if (t < .5) axis.copy(FOLLOW_AXIS).lerp(around, t * 2).normalize();
       else axis.copy(around).lerp(readyAxis, t * 2 - 1).normalize();
+      axis.copy(turnToward(axis, FINISH_AXIS, held));
     }
     // A ready grip belongs beside the rear shoulder with the front elbow
     // below it. Blend out before contact so the established swing/bunt grip

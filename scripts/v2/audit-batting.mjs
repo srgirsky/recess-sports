@@ -48,6 +48,7 @@ try {
   const {BAT_SWEET_SPOT_FT}=await import('/src/v2/render/props.ts');
   const {clipSpec,FPS}=await import('/src/v2/render/clips.ts');
   const {MOUND}=await import('/src/v2/sim/field.ts');
+  const {RIGS}=await import('/src/v2/render/cameraCues.ts');
   const s=window.__spike;s.setControlMode('watch');s.devStepFixedClock(0);s.devPaint(1);
   const results=[];
   for(const c of ROSTER.filter(c=>!only.length||only.includes(c.id))){
@@ -160,7 +161,20 @@ try {
       const toward=inRig(other+'UpLeg').sub(hip);toward.addScaledVector(line,-toward.dot(line));
       return toward.lengthSq()>1e-8?off.dot(toward.normalize()):0;
      })):null;
-     results.push({id:c.id,clip,aim,frame,clipSource:dir.sourceFor(clip),seated:dir.battingPose.seated,
+     // ★ A WHIFF IS WATCHED FROM BEHIND. Contact cuts to the live camera, but
+     // a missed swing finishes in PITCH, which sits behind the batter: the old
+     // lead-side wrap hid the bat behind his torso. Rays from the PITCH eye to
+     // points along the bat, ignoring the hand's own skin.
+     const pitchBatVisible=clip==='swing_whiff'&&frame>=10&&referenceHands?(()=>{
+      const eye=new Vector3(...RIGS.PITCH.eye);
+      const pts=[.6,.9,1.2,BAT_SWEET_SPOT_FT].map(t=>anchor.localToWorld(new Vector3(0,t,0)));
+      return pts.filter(p=>{const d=p.clone().sub(eye),L=d.length();return !new Raycaster(eye,d.normalize(),0,L-.05).intersectObject(view.mesh,true).some(hit=>{
+       if(!hit.object.visible||!hit.face)return false;
+       const mesh=hit.object,indices=mesh.geometry.attributes.skinIndex,weights=mesh.geometry.attributes.skinWeight;
+       if(!indices||!mesh.skeleton)return true;
+       let hand=0;for(const v of [hit.face.a,hit.face.b,hit.face.c])for(let j=0;j<4;j++)if(/Hand/.test(mesh.skeleton.bones[indices.getComponent(v,j)].name))hand+=weights.getComponent(v,j);
+       return hand<1.5;});}).length/pts.length;})():null;
+     results.push({id:c.id,clip,aim,frame,pitchBatVisible,clipSource:dir.sourceFor(clip),seated:dir.battingPose.seated,
       // Seen from the pitcher (across rig Z) the knees must keep the hips' order:
       // with the pelvis open and the knees aimed at the plate, they crossed.
       kneeOrder:swing&&Math.abs(inRig('RightUpLeg').z-inRig('LeftUpLeg').z)>.05?(inRig('RightLeg').z-inRig('LeftLeg').z)/(inRig('RightUpLeg').z-inRig('LeftUpLeg').z):null,
@@ -210,6 +224,14 @@ try {
  const ARM_STEP_MARGIN_DEG=22,WRIST_BEND_MARGIN_DEG=37;
  const thin=data.results.filter(r=>!bad.includes(r)&&(r.armStepsDeg.some(step=>step>ARM_STEP_MARGIN_DEG)||r.wristBendsDeg.some(bend=>bend>WRIST_BEND_MARGIN_DEG)));
  const intersections=data.results.filter(r=>r.shaftHits>0);
+ // Every kid's whiff finish must show most of the bat to the PITCH camera.
+ // Broken once on the lead-side wrap: no kid reached half (Bubbles, Diva and
+ // Grizz showed none of it, the best 0.49). The raised finish shows 0.87-0.96.
+ const WHIFF_FINISH_VISIBLE=.8;
+ const finishVisibility=Object.entries(data.results.filter(r=>r.pitchBatVisible!==null).reduce((by,r)=>((by[r.id]??=[]).push(r.pitchBatVisible),by),{}))
+  .map(([id,v])=>({id,visible:v.reduce((a,b)=>a+b,0)/v.length}));
+ const hiddenFinish=finishVisibility.filter(k=>k.visible<WHIFF_FINISH_VISIBLE);
+ if(hiddenFinish.length)console.error(`${hiddenFinish.length} kids finish a whiff with the bat mostly hidden from PITCH (below ${WHIFF_FINISH_VISIBLE}). Move the finish into view in battingPose.ts (FINISH_AXIS, FINISH_RISE); do not lower this line.`);
  const min=values=>values.reduce((least,value)=>Math.min(least,value),Infinity);
  const aims=[...new Set(data.results.map(r=>r.aim))];
  const markerElbows=Object.fromEntries(aims.map(aim=>{
@@ -222,6 +244,6 @@ try {
   steps:r.armStepsDeg.map((step,i)=>step>ARM_STEP_MARGIN_DEG?`${bones[i]} ${step.toFixed(1)}`:null).filter(Boolean),
   wrists:r.wristBendsDeg.map((bend,i)=>bend>WRIST_BEND_MARGIN_DEG?`${i?'Left':'Right'}Hand ${bend.toFixed(1)}`:null).filter(Boolean)}));
  if(thin.length)console.error(`${thin.length} samples inside the 3-degree margin (arm step > ${ARM_STEP_MARGIN_DEG}, wrist fold > ${WRIST_BEND_MARGIN_DEG}). Fix the pose in battingPose.ts; do not relax these lines — they are the approved bar.`);
- console.log(JSON.stringify({samples:data.results.length,mechanicalFailures:bad.length,marginFailureCount:thin.length,marginFailures,shaftIntersectionCandidates:intersections.length,affected:[...new Set(intersections.map(r=>r.id))],markerElbows,maxArmStepDeg:max(data.results.flatMap(r=>r.armStepsDeg)),maxWristTwistDeg:max(data.results.flatMap(r=>r.wristTwistsDeg)),maxWristBendDeg:max(data.results.flatMap(r=>r.wristBendsDeg)),maxPalmGapFt:max(data.results.map(r=>r.palmGapFt)),maxHipDropFt:max(data.results.map(r=>r.hipDropFt??0)),maxValgusFt:max(data.results.map(r=>r.valgusFt??0)),minKneeOrder:min(data.results.filter(r=>r.kneeOrder!==null).map(r=>r.kneeOrder)),minNeckRatio:min(data.results.filter(r=>r.neckRatio!==null).map(r=>r.neckRatio)),minPalmTorsoClearFt:min(data.results.filter(r=>r.palmTorsoClearFt!==null).map(r=>r.palmTorsoClearFt)),failures:bad.slice(0,20)},null,2));
- if(process.argv.includes('--check')&&(bad.length||thin.length||intersections.length))process.exitCode=1;
+ console.log(JSON.stringify({samples:data.results.length,mechanicalFailures:bad.length,marginFailureCount:thin.length,marginFailures,minWhiffFinishVisible:finishVisibility.reduce((m,k)=>Math.min(m,k.visible),1),hiddenFinish,shaftIntersectionCandidates:intersections.length,affected:[...new Set(intersections.map(r=>r.id))],markerElbows,maxArmStepDeg:max(data.results.flatMap(r=>r.armStepsDeg)),maxWristTwistDeg:max(data.results.flatMap(r=>r.wristTwistsDeg)),maxWristBendDeg:max(data.results.flatMap(r=>r.wristBendsDeg)),maxPalmGapFt:max(data.results.map(r=>r.palmGapFt)),maxHipDropFt:max(data.results.map(r=>r.hipDropFt??0)),maxValgusFt:max(data.results.map(r=>r.valgusFt??0)),minKneeOrder:min(data.results.filter(r=>r.kneeOrder!==null).map(r=>r.kneeOrder)),minNeckRatio:min(data.results.filter(r=>r.neckRatio!==null).map(r=>r.neckRatio)),minPalmTorsoClearFt:min(data.results.filter(r=>r.palmTorsoClearFt!==null).map(r=>r.palmTorsoClearFt)),failures:bad.slice(0,20)},null,2));
+ if(process.argv.includes('--check')&&(bad.length||thin.length||hiddenFinish.length||intersections.length))process.exitCode=1;
 }finally{await browser?.close();server.kill();}

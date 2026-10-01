@@ -907,7 +907,8 @@ the default path (still reachable).
    post-autofill clump; the draft line fit.
 4. The known weak batting reads (Grizz and Tank's hidden lead arm, Moose's arm
    into his hoodie, Zoom's lean), after restoring `audit:batting` margin —
-   **margin restored**, below; the weak reads remain.
+   **margin restored** and **the whiff finishes in view**, below; the bunt's
+   winged elbow and the other weak reads remain.
 5. Verdict read time ≥1.2 s, and the smoke painting CSS on its own clock.
 6. The item-5 debris, verified before any fix.
 7. Title kids grounded in the treehouse.
@@ -967,6 +968,34 @@ minor regression, confirmed: at bunt frame 30 the lead hand lies flatter
 along the bat. Same before and after, and still open: from frame 9 the
 follow-through hides bat and arms behind the torso (Calls-Shot, Tank), and the
 held bunt's lead elbow splays wide.
+
+### #4, second half: the whiff finishes in view (2026-09-30)
+
+A whiff stays in PITCH, which sits behind the batter, and the lead-side wrap
+hid the bat behind the torso: `audit:batting`'s new `pitchBatVisible` found no
+kid showing even half the bat from frame 10 (Bubbles, Diva and Grizz showed
+none). From frame 9 the hands now rise toward the catcher's side and the bat
+ends up and back over the shoulder — a pose searched over 1728 candidates on
+six kids for wrists, shaft hits and visibility — and the follow-through comes
+down the way it rose before its old recovery. Every kid now shows 0.87-0.96 of
+the bat; `--check` fails below 0.8. The rise runs to frame 17, because rising
+by frame 13 moved the hands' peak speed, and with it the derived CONTACT
+marker, to frame 11. An independent critic scored the finish better on all six
+boards (1-2/5 to 3-4/5 through PITCH), with no clipping, detached hand or bad
+elbow. Open: frames 9-11 right after a miss are still hidden; seen from the
+front, which no gameplay or replay camera uses, the finish holds the lead
+forearm across the face.
+
+Tried and not shipped, with the numbers:
+- **The held bunt's winged lead elbow** sits at 2.06x its shoulder's distance
+  from the chest's midline. No grip position moves it (1.9-2.1). Squaring the
+  chest to 70-78 degrees holds it inside the shoulder line (0.36-0.7), but
+  every path INTO that pose flipped the lead arm 55-80 degrees in a
+  quarter-frame: it needs a redesigned bunt entry, not a constant.
+- **Big Lou's lead elbow at the 1.6ft contact** sits 0.007ft below his
+  shoulder. The gate allows level there by design, and a lower lead elbow hint
+  stepped the forearm 48 degrees; the elbow's height is tied to the approved
+  diagonal grip.
 
 ### #6: the debris, verified before any fix (2026-09-29)
 
