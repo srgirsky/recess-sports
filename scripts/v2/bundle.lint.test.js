@@ -74,9 +74,17 @@ const assets = join(repo, 'dist', 'assets');
  *                for the thing every held feature is judged by.
  *   Instant replay adds about 6kB for snapshot/seek and view-side playback
  *   (`render/replayCues.ts`, bridge, director and `GameView`).
+ *   1069 -> 1091 Found stale again: #261-#269 (catcher squat, live presence,
+ *                skipped batting order, held verdicts, chain-link backstop,
+ *                draft framing, inning board, title stands, audio gains)
+ *                landed without a built `dist/`; 4ed5ca0 measured 1088.9kB.
+ *                The batting-margin work on top (#270-#272: the diagonal
+ *                give, wrist pronation share, the visible finish, the
+ *                chest-frame lead elbow and the squared, scheduled bunt)
+ *                adds 1.8kB, and was what crossed the band. v1 unchanged.
  */
 const V1_KB = 1909;
-const V2_KB = 1069;
+const V2_KB = 1091;
 const TOLERANCE = 0.02;
 
 /**
