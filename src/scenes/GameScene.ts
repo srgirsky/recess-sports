@@ -3551,8 +3551,29 @@ export class GameScene extends Phaser.Scene {
           })
         : [],
       onDone: confirm,
+      onWalk: () => {
+        autoPick.remove();
+        this.pitchSelect?.destroy();
+        this.pitchSelect = undefined;
+        this.intentionalWalk();
+      },
       pin: (o) => this.pinUI(o),
     });
+  }
+
+  /**
+   * BB2001's INTENTIONAL WALK: the batter goes straight to first. It is ball
+   * four with nothing thrown, so it runs through the same walk path as any
+   * other — forced runners only, a bases-loaded walk still scores.
+   */
+  private intentionalWalk(): void {
+    this.phase = 'resolving';
+    this.clearPitchVisuals();
+    this.scoreboard.umpCall('WALK!', BALL_GREEN);
+    this.halfState = { ...this.halfState, count: { ...this.halfState.count, balls: 3 } };
+    this.time.delayedCall(60, () =>
+      this.applyCpuResult({ kind: 'ball', bases: 0, description: 'Intentional walk!' })
+    );
   }
 
   /**

@@ -3336,3 +3336,12 @@ caught a bug that predated this work. The online-play GOOD GAME button sat
 beyond the bottom of the frame, because it was the only Result button not using
 the shared metrics. Tallying draws no rng and creates no objects mid-game, and
 both seeded fingerprints reproduce byte for byte (`scripts/goldlogs.json`).
+
+**The intentional walk** was the second gap. BB2001's pitch stack ends with an
+INTENTIONAL WALK card. v1's stack already runs seven cards deep to just above
+the scoreboard strip, so the walk is a 🚶 WALK pill in the open sky left of the
+prompt instead. One tap is ball four with nothing thrown, through the ordinary
+walk path, so only forced runners move and a bases-loaded walk scores. The
+pill's Text draws from `Math.random` for its texture key, which moved the main
+goldlog. The harness never taps it, and the game still ends 0-0 through the
+bonus inning. It was recaptured with that reason recorded.

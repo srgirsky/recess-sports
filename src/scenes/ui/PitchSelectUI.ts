@@ -11,7 +11,8 @@ import { COLORS, GAME_WIDTH, PLATE_ZONE, PLATE_VIEW, PITCHES, type PitchKind } f
 import type { PlateLoc } from '../../systems/pitchkind';
 import { availablePitches } from '../../systems/pitchkind';
 import { plateToScreen } from '../../art/plateView';
-import { FONT, OUTLINE } from '../../ui/theme';
+import { FONT, OUTLINE, pill } from '../../ui/theme';
+import { hitFromBox } from '../../ui/layout';
 import { makeCardStack, type CardDef } from './EdgeCards';
 import * as audio from '../../systems/audio';
 
@@ -48,6 +49,9 @@ export interface SpecialPitchOption {
   cost: number;
 }
 
+/** The 🚶 WALK pill's centre x: in the open sky left of the prompt. */
+const WALK_X = 104;
+
 /** Card label = the PITCHES label minus its leading emoji (the icon slot). */
 const cardParts = (kind: PitchKind): { icon: string; label: string } => {
   const [icon, ...rest] = PITCHES[kind].label.split(' ');
@@ -65,6 +69,9 @@ export function showPitchSelect(
     /** Juice specials to append below the base cards (locked when broke). */
     specials: SpecialPitchOption[];
     onDone: (kind: PitchKind, target: PlateLoc) => void;
+    /** BB2001's INTENTIONAL WALK card: when given, a 🚶 WALK pill sits left
+     *  of the prompt and one tap sends the batter to first — no aim, no throw. */
+    onWalk?: () => void;
     /** Pin screen-anchored chrome (prompt + card stack) to the UI camera. The
      *  zone grid stays in WORLD space: the frontal plate mapping already makes
      *  it a big tap target, and the camera never zooms anyway. */
@@ -89,6 +96,28 @@ export function showPitchSelect(
     .setDepth(90);
   opts.pin(prompt);
   objs.push(prompt);
+
+  // --- Intentional walk -----------------------------------------------------
+  // Not a card: the stack already runs seven deep to just above the strip,
+  // and an eighth would sit on it. The sky left of the prompt is free.
+  if (opts.onWalk) {
+    const onWalk = opts.onWalk;
+    const walk = pill(scene, WALK_X, 148, '🚶 WALK', { fill: COLORS.cream, fontSize: 18 });
+    walk.container.setDepth(90);
+    hitFromBox(walk.container);
+    walk.container.on(
+      'pointerdown',
+      (_p: unknown, _x: number, _y: number, e: Phaser.Types.Input.EventData) => {
+        e.stopPropagation(); // GameScene's scene-level tap throws
+        if (done) return;
+        done = true;
+        audio.pop();
+        onWalk();
+      }
+    );
+    opts.pin(walk.container);
+    objs.push(walk.container);
+  }
 
   // --- Pitch cards (right edge, base group + specials group) ---------------
   const cards: CardDef[] = availablePitches(false).map((kind) => ({
