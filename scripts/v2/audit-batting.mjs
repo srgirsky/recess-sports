@@ -40,7 +40,7 @@ try {
  await page.goto(`http://localhost:${port}/v2/?play=1&seed=art-benchmark&venue=park`,{waitUntil:'networkidle'});
  await page.waitForFunction(()=>window.__spike?.refs?.kids?.size>0);
  const data=await page.evaluate(async only=>{
-  const {Vector3,Raycaster,Quaternion}=await import('/node_modules/three/build/three.module.js');
+  const {Vector3,Raycaster,Quaternion,BufferGeometry,BufferAttribute,Mesh,MeshBasicMaterial,DoubleSide}=await import('/node_modules/three/build/three.module.js');
   const {ROSTER}=await import('/src/data/characters.ts');
   const {createCharacter}=await import('/src/v2/render/CharacterFactory.ts');
   const {buntAmount,BUNT_HAND_SLIDE_FT}=await import('/src/v2/render/buntPose.ts');
@@ -64,6 +64,35 @@ try {
    // The swing is solved against the pitch height, so one fixed target hid a
    // top arm that snapped between quarter-frames at 1.6ft. Sweep the low,
    // middle and high strike-zone heights, plus the review page's own default.
+   // ★ THE LEAD ARM STAYS OUTSIDE THE CHEST AT READY. Every gate here scored
+   // bones and palms while the wide kids' lead sleeves ran through their own
+   // tees in the stance the plate camera holds longest (ART-011; read from PITCH
+   // as Moose's arm sunk in his hoodie and Tank's and Grizz's missing lead arm).
+   // A lead-arm vertex is inside when rays in at least four of six axis
+   // directions cross the torso-only triangles an odd number of times.
+   const skinned=[];view.root.traverse(o=>{if(o.isSkinnedMesh&&!o.userData.isOutline)skinned.push(o);});
+   const body=skinned.sort((a,b)=>b.geometry.attributes.position.count-a.geometry.attributes.position.count)[0];
+   const leadInside=(()=>{
+    const g=body.geometry,si=g.attributes.skinIndex,sw=g.attributes.skinWeight,count=g.attributes.position.count,names=body.skeleton.bones.map(b=>b.name);
+    const part=v=>{const w={};for(let j=0;j<4;j++){const n=names[si.getComponent(v,j)];w[n]=(w[n]??0)+sw.getComponent(v,j);}
+     const [n,x]=Object.entries(w).sort((a,b)=>b[1]-a[1])[0];
+     // A clean majority, so the shoulder seam blending into the chest is not counted.
+     if(/^Left(ForeArm|Hand)/.test(n)&&x>.7||n==='LeftArm'&&x>.85)return 'lead';
+     return /^Spine|^Hips$/.test(n)?'torso':null;};
+    const parts=Array.from({length:count},(_,v)=>part(v)),lead=parts.flatMap((p,v)=>p==='lead'?[v]:[]);
+    const index=g.index?g.index.array:Array.from({length:count},(_,i)=>i),torso=[];
+    for(let i=0;i<index.length;i+=3)if(parts[index[i]]==='torso'&&parts[index[i+1]]==='torso'&&parts[index[i+2]]==='torso')torso.push(index[i],index[i+1],index[i+2]);
+    const dirs=[[1,0,0],[-1,0,0],[0,1,0],[0,-1,0],[0,0,1],[0,0,-1]].map(d=>new Vector3(...d));
+    return ()=>{
+     const P=new Float32Array(count*3),v3=new Vector3();
+     for(let v=0;v<count;v++){body.getVertexPosition(v,v3);v3.applyMatrix4(body.matrixWorld);P[v*3]=v3.x;P[v*3+1]=v3.y;P[v*3+2]=v3.z;}
+     const geometry=new BufferGeometry();geometry.setAttribute('position',new BufferAttribute(P,3));geometry.setIndex(torso);
+     const shell=new Mesh(geometry,new MeshBasicMaterial({side:DoubleSide})),probe=new Raycaster();
+     const inside=lead.filter(v=>{const o=new Vector3(P[v*3],P[v*3+1],P[v*3+2]);
+      return dirs.filter(d=>{probe.set(o,d);return probe.intersectObject(shell).length%2===1;}).length>=4;}).length;
+     geometry.dispose();return inside/lead.length;
+    };
+   })();
    let stanceHipsY=null,stanceNeck=null;
    for(const [clip,aim] of [['bat_stance',2.4],['bat_load',2.4],...['swing_contact','swing_follow','swing_whiff'].flatMap(c=>[1.6,2.4,3.1,null].map(h=>[c,h])),['bunt',2.4]]){
     dir.battingPose.contact=aim===null?null:s.scene.localToWorld(new Vector3(0,aim,0));
@@ -174,7 +203,9 @@ try {
        if(!indices||!mesh.skeleton)return true;
        let hand=0;for(const v of [hit.face.a,hit.face.b,hit.face.c])for(let j=0;j<4;j++)if(/Hand/.test(mesh.skeleton.bones[indices.getComponent(v,j)].name))hand+=weights.getComponent(v,j);
        return hand<1.5;});}).length/pts.length;})():null;
-     results.push({id:c.id,clip,aim,frame,pitchBatVisible,clipSource:dir.sourceFor(clip),seated:dir.battingPose.seated,
+     // The held stance (both ends of its loop) and the loaded hands.
+     const readyLeadInside=referenceHands&&!dir.battingPose.seated&&(clip==='bat_stance'&&(frame===0||frame===30)||clip==='bat_load'&&frame===11)?leadInside():null;
+     results.push({id:c.id,clip,aim,frame,pitchBatVisible,readyLeadInside,clipSource:dir.sourceFor(clip),seated:dir.battingPose.seated,
       // Seen from the pitcher (across rig Z) the knees must keep the hips' order:
       // with the pelvis open and the knees aimed at the plate, they crossed.
       kneeOrder:swing&&Math.abs(inRig('RightUpLeg').z-inRig('LeftUpLeg').z)>.05?(inRig('RightLeg').z-inRig('LeftLeg').z)/(inRig('RightUpLeg').z-inRig('LeftUpLeg').z):null,
@@ -221,8 +252,15 @@ try {
  // standing kid: a chicken wing from PITCH. Squared and scheduled it is 0.17 at
  // worst. Seated, Zoom keeps the old bunt (see SEATED_BUNT_GRIP) and is exempt.
  const wingedBunt=r=>r.buntLeadOut!==null&&!r.seated&&r.buntLeadOut>.6;
+ // At ready, at most 8% of the lead arm's vertices inside the torso (bind pose
+ // reads 0-4%: the shoulder seam). On 603da62 Big Lou, Tank, Nostrike, Grizz,
+ // Boomer and Moose read 0.11-0.28. Big Lou is the widest kid and one arm rests
+ // into his belly whichever way the hands go (0.11, both arms): his cap may only
+ // shrink. Measured on the lead arm, the one that crosses the chest.
+ const READY_LEAD_INSIDE=.08,READY_LEAD_INSIDE_CAP={big_lou:.13};
+ const sunkLead=r=>r.readyLeadInside!==null&&r.readyLeadInside>(READY_LEAD_INSIDE_CAP[r.id]??READY_LEAD_INSIDE);
  const slumped=r=>r.hipDropFt>.45||r.valgusFt>.1||(r.kneeOrder!==null&&r.kneeOrder<.1)||(r.neckRatio!==null&&r.neckRatio<.6);
- const bad=data.results.filter(r=>wingedLead(r)||wingedBunt(r)||slumped(r)||r.palmTorsoClearFt<0||shutElbow(r)||r.headTowardPitcher<0||r.supportHandGapFt>.02||r.palmGapFt>.02||r.contactGapFt>.1||r.wristBendsDeg.some(bend=>bend>40)||r.wristTwistsDeg.some(twist=>twist>25)||r.armStepsDeg.some(step=>step>25));
+ const bad=data.results.filter(r=>sunkLead(r)||wingedLead(r)||wingedBunt(r)||slumped(r)||r.palmTorsoClearFt<0||shutElbow(r)||r.headTowardPitcher<0||r.supportHandGapFt>.02||r.palmGapFt>.02||r.contactGapFt>.1||r.wristBendsDeg.some(bend=>bend>40)||r.wristTwistsDeg.some(twist=>twist>25)||r.armStepsDeg.some(step=>step>25));
  // ★ THE GATES HOLD 3 DEGREES OF MARGIN (the 120% bar, docs/research/
  // backyard-2026-reference.md). A pose at 24.2 degrees per quarter-frame passes
  // a 25-degree gate and fails the next model delivery. Arm steps stop at 22 and
@@ -239,6 +277,8 @@ try {
  const finishVisibility=Object.entries(data.results.filter(r=>r.pitchBatVisible!==null).reduce((by,r)=>((by[r.id]??=[]).push(r.pitchBatVisible),by),{}))
   .map(([id,v])=>({id,visible:v.reduce((a,b)=>a+b,0)/v.length}));
  const hiddenFinish=finishVisibility.filter(k=>k.visible<WHIFF_FINISH_VISIBLE);
+ const sunk=data.results.filter(sunkLead);
+ if(sunk.length)console.error(`${sunk.length} ready samples sink the lead arm into the torso (${[...new Set(sunk.map(r=>r.id))].join(', ')}). Move the ready hands clear in battingPose.ts (WIDE_READY_SHIFT, torsoGirth); do not raise this line.`);
  if(hiddenFinish.length)console.error(`${hiddenFinish.length} kids finish a whiff with the bat mostly hidden from PITCH (below ${WHIFF_FINISH_VISIBLE}). Move the finish into view in battingPose.ts (FINISH_AXIS, FINISH_RISE); do not lower this line.`);
  const min=values=>values.reduce((least,value)=>Math.min(least,value),Infinity);
  const aims=[...new Set(data.results.map(r=>r.aim))];
@@ -252,6 +292,6 @@ try {
   steps:r.armStepsDeg.map((step,i)=>step>ARM_STEP_MARGIN_DEG?`${bones[i]} ${step.toFixed(1)}`:null).filter(Boolean),
   wrists:r.wristBendsDeg.map((bend,i)=>bend>WRIST_BEND_MARGIN_DEG?`${i?'Left':'Right'}Hand ${bend.toFixed(1)}`:null).filter(Boolean)}));
  if(thin.length)console.error(`${thin.length} samples inside the 3-degree margin (arm step > ${ARM_STEP_MARGIN_DEG}, wrist fold > ${WRIST_BEND_MARGIN_DEG}). Fix the pose in battingPose.ts; do not relax these lines — they are the approved bar.`);
- console.log(JSON.stringify({samples:data.results.length,mechanicalFailures:bad.length,marginFailureCount:thin.length,marginFailures,minWhiffFinishVisible:finishVisibility.reduce((m,k)=>Math.min(m,k.visible),1),hiddenFinish,shaftIntersectionCandidates:intersections.length,affected:[...new Set(intersections.map(r=>r.id))],markerElbows,maxArmStepDeg:max(data.results.flatMap(r=>r.armStepsDeg)),maxWristTwistDeg:max(data.results.flatMap(r=>r.wristTwistsDeg)),maxWristBendDeg:max(data.results.flatMap(r=>r.wristBendsDeg)),maxPalmGapFt:max(data.results.map(r=>r.palmGapFt)),maxHipDropFt:max(data.results.map(r=>r.hipDropFt??0)),maxValgusFt:max(data.results.map(r=>r.valgusFt??0)),minKneeOrder:min(data.results.filter(r=>r.kneeOrder!==null).map(r=>r.kneeOrder)),minNeckRatio:min(data.results.filter(r=>r.neckRatio!==null).map(r=>r.neckRatio)),minPalmTorsoClearFt:min(data.results.filter(r=>r.palmTorsoClearFt!==null).map(r=>r.palmTorsoClearFt)),failures:bad.slice(0,20)},null,2));
+ console.log(JSON.stringify({samples:data.results.length,mechanicalFailures:bad.length,marginFailureCount:thin.length,marginFailures,minWhiffFinishVisible:finishVisibility.reduce((m,k)=>Math.min(m,k.visible),1),hiddenFinish,shaftIntersectionCandidates:intersections.length,affected:[...new Set(intersections.map(r=>r.id))],markerElbows,maxArmStepDeg:max(data.results.flatMap(r=>r.armStepsDeg)),maxWristTwistDeg:max(data.results.flatMap(r=>r.wristTwistsDeg)),maxWristBendDeg:max(data.results.flatMap(r=>r.wristBendsDeg)),maxPalmGapFt:max(data.results.map(r=>r.palmGapFt)),maxHipDropFt:max(data.results.map(r=>r.hipDropFt??0)),maxValgusFt:max(data.results.map(r=>r.valgusFt??0)),minKneeOrder:min(data.results.filter(r=>r.kneeOrder!==null).map(r=>r.kneeOrder)),minNeckRatio:min(data.results.filter(r=>r.neckRatio!==null).map(r=>r.neckRatio)),maxReadyLeadInside:max(data.results.map(r=>r.readyLeadInside??0)),minPalmTorsoClearFt:min(data.results.filter(r=>r.palmTorsoClearFt!==null).map(r=>r.palmTorsoClearFt)),failures:bad.slice(0,20)},null,2));
  if(process.argv.includes('--check')&&(bad.length||thin.length||hiddenFinish.length||intersections.length))process.exitCode=1;
 }finally{await browser?.close();server.kill();}

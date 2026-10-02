@@ -256,6 +256,29 @@ const BUNT_ELBOW_MARGIN_FT = .25;
  * hands into the belly, and this is a small residual correction.
  */
 const PALM_CLEARANCE_FT = .1;
+/**
+ * ★ A WIDE KID'S ARMS STAY OUTSIDE HIS CHEST AT READY. Every kid held the
+ * ready bat at one point, and the grip search placed each elbow by wrist
+ * comfort alone, so on the wide bodies the lead sleeve ran through the tee in
+ * the stance PITCH holds longest: 11-28% of the lead arm's vertices inside the
+ * torso on Big Lou, Tank, Nostrike, Grizz, Boomer and Moose (bind pose:
+ * 0-4%, the shoulder seam), read from the plate as Moose's arm sunk in his
+ * hoodie and Tank's and Grizz's missing lead arm (ART-011). The ready hands
+ * move toward the lead side, up and out by the kid's measured GIRTH (0 for
+ * every slim kid, so their stance is unchanged): 0.04-0.11 after, Big Lou the
+ * worst because one arm rests into his belly whichever way the hands go.
+ * Tried and dropped: an elbow hint (the grip search overrides it), a raised
+ * or outboard elbow (worse), and a torso cost in the grip search — it added
+ * nothing once the hands moved, and switching on with the ready blend it
+ * flipped the elbow on the way back to stance (Tank's forearm, 33 degrees in
+ * a quarter-frame). The bunt fades the shift out in its first third: held
+ * longer, the knob wrist folded to 37.9 on Big Lou and Tank. `audit:batting`
+ * reads the arm on the mesh.
+ */
+const WIDE_READY_SHIFT = new Vector3(-.2, .2, .12);
+/** Torso extents (Hips frame) where girth starts, and the span to girth 1. */
+const GIRTH_FORWARD_FT = { from: .3, span: .24 };
+const GIRTH_SIDE_FT = { from: .34, span: .26 };
 /** How far each foot pivots with the opening hips: the rear on its ball, the lead a little. */
 const REAR_FOOT_PIVOT = .6;
 const LEAD_FOOT_PIVOT = .2;
@@ -396,6 +419,13 @@ function torsoClearance(bands: Map<number, TorsoBand>, rel: Vector3): Vector3 | 
   return new Vector3(0, 0, Math.sign(rel.z || 1) * depth * Math.sqrt(1 - across * across) - rel.z);
 }
 
+/** 0 for a slim kid, 1 for the widest: the upper torso's reach past a slim chest. */
+function torsoGirth(bands: Map<number, TorsoBand>): number {
+  const keys = [...bands.keys()].sort((x, y) => x - y), upper = keys.slice(Math.floor(keys.length / 2)).map(k => bands.get(k)!);
+  const forward = Math.max(...upper.map(b => b.forward)), side = Math.max(...upper.map(b => b.side));
+  return Math.min(1, Math.max(0, (forward - GIRTH_FORWARD_FT.from) / GIRTH_FORWARD_FT.span, (side - GIRTH_SIDE_FT.from) / GIRTH_SIDE_FT.span));
+}
+
 /** Inside the reference wrist's 40-degree fold gate, with a margin. */
 const WRIST_LIMIT_RAD = 34 * Math.PI / 180;
 
@@ -456,6 +486,8 @@ export class BattingPose {
   /** The contact sweet spot's height this frame (rig feet). */
   private sweetHeight = 0;
   private readonly stanceGrip: Vector3;
+  /** This kid's share of WIDE_READY_SHIFT. */
+  private readonly readyShift = new Vector3();
   private readonly torso: Map<number, TorsoBand> | null;
 
   constructor(mesh: Object3D, seated = false, readyDepth = STANCE_GRIP.z) {
@@ -464,6 +496,7 @@ export class BattingPose {
     for (const bone of (mesh as SkinnedMesh).skeleton?.bones ?? []) this.bones.set(bone.name, bone);
     this.rig = this.bones.get('Root');
     this.torso = seated ? null : measureTorso(mesh);
+    if (this.torso) this.readyShift.copy(WIDE_READY_SHIFT).multiplyScalar(torsoGirth(this.torso));
   }
 
   restore(): void {
@@ -787,7 +820,7 @@ export class BattingPose {
         // fold to 60-70 degrees and the knob elbow escaped sideways, level
         // with the shoulder — and seated, above it with a vertical forearm,
         // because a chair cannot step the trunk back. See BUNT_GRIP.
-        grip.copy(this.stanceGrip).lerp(this.seated ? SEATED_BUNT_GRIP : BUNT_GRIP, bunt);
+        grip.copy(this.stanceGrip).addScaledVector(this.readyShift, 1 - smooth(Math.min(1, bunt * 3))).lerp(this.seated ? SEATED_BUNT_GRIP : BUNT_GRIP, bunt);
         // Clear the shoulder first, then bring the bat into the receiving pose.
         grip.z += (.4 + .25*(1-bunt)**4)*Math.sin(Math.PI*bunt);
         axis.copy(STANCE_AXIS).lerp(BUNT_AXIS, smooth(bunt+.1*Math.sin(Math.PI*bunt))).normalize();
@@ -813,7 +846,7 @@ export class BattingPose {
     // below it. Blend out before contact so the established swing/bunt grip
     // paths retain their clearances, then return along the same approach.
     if (name !== 'bunt') {
-      grip.lerp(this.stanceGrip,this.readyWeight);
+      grip.lerp(this.stanceGrip.clone().add(this.readyShift),this.readyWeight);
       // Pass in front of long hair while lowering and recovering the bat.
       // The arc vanishes at ready and contact, preserving both endpoints.
       if (referenceHands) grip.z += .15 * Math.sin(Math.PI*this.readyWeight);

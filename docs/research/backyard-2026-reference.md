@@ -908,7 +908,8 @@ the default path (still reachable).
 4. The known weak batting reads (Grizz and Tank's hidden lead arm, Moose's arm
    into his hoodie, Zoom's lean), after restoring `audit:batting` margin —
    **margin restored**, **the whiff finishes in view** and **the bunt squares
-   up**, below (Zoom's seated bunt kept by decision); the other weak reads
+   up**, below (Zoom's seated bunt kept by decision); **the wide kids'
+   lead arm leaves the chest**, below; Zoom's lean and whiff frames 9-11
    remain.
 5. Verdict read time ≥1.2 s, and the smoke painting CSS on its own clock.
 6. The item-5 debris, verified before any fix.
@@ -1024,6 +1025,38 @@ Tried, with the numbers:
 - **The bunt's frame-30 lead hand** (flatter along the bat since the recovery
   blend): the critic, asked directly, judged it not noticeable at all through
   PITCH at game size. Closed as no defect.
+
+### #4, the wide kids' ready arms (2026-10-01)
+
+Measured through PITCH before proposing anything, the two named reads turned
+out to be different things.
+
+- **Grizz's and Tank's "hidden lead arm" and ART-011 were one defect: the arm
+  was inside the body.** Counting lead-arm vertices inside torso-only
+  triangles (ray parity, posed mesh), the stance and load put 11-28% of the
+  lead arm inside the chest on Big Lou, Tank, Nostrike, Grizz, Boomer and Moose
+  (bind pose 0-4%, the shoulder seam; every slim kid 0-4%). Every kid held the
+  ready bat at the same point. The ready hands now move toward the lead side, up
+  and out in proportion to each kid's measured torso girth, which is 0 for slim
+  kids. After: 0.04-0.11, with Big Lou worst because one of his arms rests into
+  his belly whichever way the hands go. `audit:batting` fails a ready lead arm
+  above 0.08 (Big Lou capped at 0.13), and on 603da62 it failed exactly those
+  six kids. An independent critic found no regression or new clipping. From the
+  pitcher's side every wide kid's lead arm now crosses outside the chest. Through
+  PITCH and PITCH_HERO only Grizz reads better (2 to 3/5: his hands came out
+  from behind his hair), because those cameras see the lead arm's side of the
+  body poorly either way. Still open: around contact the same six read
+  0.07-0.27, on both arms.
+- **Moose's "arm into his hoodie" is colour, not pose.** Through PITCH, his
+  trail sleeve crosses his own hoodie in the same yellow. The inverted-hull
+  outline draws only where the arm stands clear of the body by more than its
+  own thickness, so no line separates them. Tank (0.35 of the trail arm's
+  pixels within 30 RGB of what is behind them) and Nostrike (0.33) are worse
+  than Moose (0.19); the roster median is about 0.10. Tried with the numbers:
+  a lifted trail elbow (worse, Tank 0.43), an outboard one (no gain), and an
+  ink contour in the toon shader at constant pixel width (0.19 to 0.15, and the
+  shoulder still merges). It is sculpt work (#9): a sleeve seam, cuff or shade
+  that differs from the body.
 
 ### #6: the debris, verified before any fix (2026-09-29)
 
