@@ -38,6 +38,7 @@ the pitcher's toss idle, the batter dodging, and the chaser's name bubble.
 | 8 | A coin toss for first pick *(recalled)* | The player always picks first | ⛔ declined on purpose: the greedy CPU captain takes the most valuable kid first, so losing the toss half the time would keep the top kid out of reach and lower their pick rate for reasons that have nothing to do with popularity. Picks are the product's vote (root brief). |
 | 9 | The live-play HUD shrinks to a mini score and outs | The full strip stays up | ✅ `feat/v1-live-hud`: the wide view drops the count, AT BAT line and mini-diamond (`Scoreboard.setCompact`). The swing cards, which used to stay on screen through a live play, now hide in flight as BB2001's do |
 | 10 | Pinch hitters and bench moves mid-game *(recalled)* | Pitchers only | ⛔ not applicable: a drafted team is exactly nine kids, so there is no bench to bring in. Relief already swaps positions within the nine |
+| 11 | Several ballparks, each with its own quirks *(recalled)* | Three venues | ✅ `feat/v1-more-venues`: 🏰 The Sandbox (sand swallows grounders, flies land dead) and 🍎 The Orchard (short left porch, apple trees in both gaps), for five |
 
 Not on the list on purpose: licensed pro players, and BB2001's flat
 three-quarter field perspective (`geometry.projectionType`, a separate

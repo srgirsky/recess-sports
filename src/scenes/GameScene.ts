@@ -1401,6 +1401,12 @@ export class GameScene extends Phaser.Scene {
       this.add.circle(q.x - r * 0.45, q.y - r * 0.2, r * 0.62, 0x3f7d3a).setDepth(23);
       this.add.circle(q.x + r * 0.45, q.y - r * 0.2, r * 0.62, 0x478940).setDepth(23);
       this.add.circle(q.x, q.y - r * 0.55, r * 0.7, 0x529a49).setDepth(23);
+      if (o.fruit) {
+        // A few apples in the canopy — the orchard reads at a glance.
+        for (const [fx, fy] of [[-0.5, -0.1], [0.35, -0.45], [0.55, 0.05], [-0.1, -0.75]]) {
+          this.add.circle(q.x + r * fx, q.y + r * fy, Math.max(2.5, r * 0.13), 0xd8352a).setDepth(23);
+        }
+      }
       groundShadow(this, 0, 0, r * 1.4).setPosition(q.x, q.y + r).setDepth(22);
     }
   }

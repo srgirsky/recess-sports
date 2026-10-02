@@ -5,7 +5,7 @@
 // Bases and mound never move, so fielding spots and the sim stay valid.
 // ---------------------------------------------------------------------------
 
-export type VenueId = 'park' | 'sandlot' | 'blacktop';
+export type VenueId = 'park' | 'sandlot' | 'blacktop' | 'sandbox' | 'orchard';
 
 export interface VenueObstacle {
   x: number;
@@ -13,6 +13,8 @@ export interface VenueObstacle {
   r: number;
   /** What to draw ('tree' for now). */
   kind: 'tree';
+  /** Hang red apples in the canopy (the orchard's trees). */
+  fruit?: boolean;
 }
 
 export interface VenueDef {
@@ -150,6 +152,68 @@ export const VENUES: Record<VenueId, VenueDef> = {
       crowdRows: 0,
       warningTrack: false,
       mowPattern: 'court',
+    },
+  },
+  sandbox: {
+    id: 'sandbox',
+    name: 'The Sandbox',
+    emoji: '🏰',
+    // The neighborhood's giant sandbox. A fair, roomy field — the sand is the
+    // whole story: grounders bog down into infield hits and fly balls land
+    // DEAD (no hop to chase down).
+    fenceLeftY: 206,
+    fenceRightY: 206,
+    fenceBulge: 20, // a gentle board arc
+    rollMult: 0.65,
+    bounceMult: 0.45,
+    obstacles: [],
+    look: {
+      grass: 0xe6cf95, // dry sand
+      grassDark: 0xd4ba7c,
+      dirt: 0xc49c62, // wet, packed sand for the basepaths
+      fence: 0x9c7a55, // weathered boards
+      fenceTrim: 0xf2e6c9,
+      stands: false,
+      stripes: false,
+      asphalt: false,
+      fenceStyle: 'planks',
+      skyline: 'rooftops', // the houses around the block
+      treeline: false,
+      crowdRows: 0,
+      warningTrack: false,
+      mowPattern: 'tufts', // ripples in the sand
+    },
+  },
+  orchard: {
+    id: 'orchard',
+    name: 'The Orchard',
+    emoji: '🍎',
+    // The sandlot's mirror: a SHORT LEFT porch, deep right — and two apple
+    // trees standing in the outfield gaps that stop a rolling ball dead.
+    fenceLeftY: 248,
+    fenceRightY: 196,
+    fenceBulge: 14,
+    rollMult: 0.9,
+    bounceMult: 0.9,
+    obstacles: [
+      { x: 345, y: 262, r: 24, kind: 'tree', fruit: true }, // the LF–SS gap
+      { x: 615, y: 262, r: 24, kind: 'tree', fruit: true }, // the 2B–RF gap
+    ],
+    look: {
+      grass: 0x63b04f,
+      grassDark: 0x529c41,
+      dirt: 0xb98146,
+      fence: 0x7a5232, // split-rail
+      fenceTrim: 0x5e3d22,
+      stands: false,
+      stripes: false,
+      asphalt: false,
+      fenceStyle: 'planks',
+      skyline: 'rooftops', // the farmhouse and barn
+      treeline: true,
+      crowdRows: 0,
+      warningTrack: false,
+      mowPattern: 'tufts',
     },
   },
 };

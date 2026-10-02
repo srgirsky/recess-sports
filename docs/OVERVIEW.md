@@ -3429,3 +3429,16 @@ kid's pick rate for a reason that has nothing to do with popularity. Picks are
 the vote, so the player keeps the first pick. **Pinch hitters** don't apply: a
 drafted team is exactly nine kids, so there is no bench to bring in. That
 closes the v1 gap list in `docs/research/bb2001-v1-parity.md`.
+
+**Two more parks**: BB2001 had several ballparks to choose from, and v1 had
+three. Venues are pure data (`data/venues.ts`), so the new ones are built from
+the existing renderer vocabulary and play differently through numbers alone.
+🏰 **The Sandbox** has a roll multiplier of 0.65 and a bounce of 0.45, so
+grounders bog down into infield hits and flies land dead. 🍎 **The Orchard**
+mirrors the sandlot's porch on the left and puts a fruit-hung tree in each
+outfield gap. Every geometry property test already iterates `VENUES`
+(convexity, fair cone, obstacle clearance, wild-throw settle, aligned spots), so
+both passed those on arrival. The layout audit's venue sweep was a literal 3,
+which would have skipped them, and it now counts the data. `hello.venueId` can
+name a park an older build doesn't know, so `NET.PROTOCOL_VERSION` went to 8.
+v2 has its own parks and doesn't import this file.
