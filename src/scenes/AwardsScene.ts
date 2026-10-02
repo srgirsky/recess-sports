@@ -6,7 +6,7 @@
 
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
-import { getSeason, clearSeason, wonPennant } from '../systems/season';
+import { getSeason, clearSeason, wonPennant, wonChampionship } from '../systems/season';
 import { computeAwards } from '../systems/awards';
 import { statLine } from '../systems/stats';
 import { recordTrophy } from '../systems/album';
@@ -33,18 +33,33 @@ export class AwardsScene extends Phaser.Scene {
       return;
     }
     const pennant = wonPennant(season);
+    // Saturday's title outranks the pennant; a tied final is a shared crown.
+    const champs = wonChampionship(season);
+    const coChamps = season.final?.result === 'T';
     const awards = computeAwards(season.stats, season.playerTeam);
 
     const bg = this.add.graphics();
     bg.fillGradientStyle(0x3a6b8f, 0x3a6b8f, 0x77a8c9, 0x77a8c9, 1);
     bg.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-    ribbon(this, GAME_WIDTH / 2, 54, pennant ? '🏆 PENNANT WINNERS! 🏆' : '⭐ AWARDS DAY ⭐', {
-      fill: pennant ? COLORS.gold : COLORS.red,
-    });
-    confetti(this, pennant ? 120 : 60);
+    const title = champs
+      ? '🏆 RECESS CHAMPIONS! 🏆'
+      : coChamps
+        ? '🤝 CO-CHAMPIONS! 🤝'
+        : pennant
+          ? '🏆 PENNANT WINNERS! 🏆'
+          : '⭐ AWARDS DAY ⭐';
+    const crowned = champs || coChamps || pennant;
+    ribbon(this, GAME_WIDTH / 2, 54, title, { fill: crowned ? COLORS.gold : COLORS.red });
+    confetti(this, champs ? 160 : crowned ? 120 : 60);
     audio.say(
-      pennant ? 'You won the pennant! Unbelievable week!' : 'What a week of recess baseball!',
+      champs
+        ? 'Champions! You won the whole league!'
+        : coChamps
+          ? 'A tie in the final! Everybody is a champion!'
+          : pennant
+            ? 'You won the pennant! Unbelievable week!'
+            : 'What a week of recess baseball!',
       commentatorProfile('A'),
       'flush'
     );

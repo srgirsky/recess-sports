@@ -79,7 +79,8 @@ import type { NetMsg, HudSnap } from '../net/protocol';
 import { getSettings } from '../systems/settings';
 import type { StatEvent } from '../systems/stats';
 import { foldBox, todayLine, type BoxEvent, type BoxLine, type PaResult } from '../systems/boxscore';
-import { getSeason, saveSeason, recordSeasonGame } from '../systems/season';
+import { getSeason, saveSeason, recordSeasonGame, recordFinal } from '../systems/season';
+import { finalOpponent } from '../systems/league';
 import {
   snapshotLive,
   applyFrame,
@@ -305,6 +306,7 @@ export class GameScene extends Phaser.Scene {
   private spectator = false; // WATCH: both teams CPU-driven, no human input
   private tee = false; // tee-ball difficulty: the pitch is a slow soft lob
   private seasonGame = false; // this game counts toward Recess Week
+  private seasonFinal = false; // …and it is Saturday's championship
   private matchType: 'solo' | 'passplay' | 'net' = 'solo';
   /** Two-device play: which end of the wire this device is (unset = local). */
   private netRole?: 'host' | 'guest';
@@ -682,6 +684,7 @@ export class GameScene extends Phaser.Scene {
     this.practice = data.practice ?? false;
     this.spectator = data.spectator ?? false;
     this.seasonGame = data.seasonGame ?? false;
+    this.seasonFinal = this.seasonGame && (data.seasonFinal ?? false);
     this.matchType = data.matchType ?? 'solo';
     this.netRole = data.netRole;
     // Seat flags EVERY game (the seat objects persist across scene restarts):
@@ -1605,8 +1608,10 @@ export class GameScene extends Phaser.Scene {
     const begin = () => {
       if (this.battingSeat().humanBats) {
         this.setMoundPitcher(this.fieldingSeat().pitcher!);
-        this.flashAnnounce(`Inning ${this.inning}\nYOU'RE UP!`, COLORS.gold);
-        if (this.firstPitchOfGame) audio.say('Play ball!', commentatorProfile('A'));
+        const final = this.seasonFinal && this.firstPitchOfGame;
+        this.flashAnnounce(final ? '🏆 CHAMPIONSHIP!\nYOU\'RE UP!' : `Inning ${this.inning}\nYOU'RE UP!`, COLORS.gold);
+        if (final) audio.say('It is the championship game! Play ball!', commentatorProfile('A'));
+        else if (this.firstPitchOfGame) audio.say('Play ball!', commentatorProfile('A'));
         this.time.delayedCall(FLOW.HALF_START_MS, () => this.nextPlayerBatter());
       } else {
         this.setMoundPitcher(this.fieldingSeat().pitcher!);
@@ -1703,7 +1708,12 @@ export class GameScene extends Phaser.Scene {
       if (season) {
         const result =
           this.playerScore > this.aiScore ? 'W' : this.playerScore < this.aiScore ? 'L' : 'T';
-        saveSeason(recordSeasonGame(season, result, this.statEvents));
+        const opp = this.seasonFinal ? finalOpponent(season) : null;
+        saveSeason(
+          opp !== null
+            ? recordFinal(season, opp, result, this.statEvents)
+            : recordSeasonGame(season, result, this.statEvents)
+        );
       }
     }
     this.time.delayedCall(400, () => {

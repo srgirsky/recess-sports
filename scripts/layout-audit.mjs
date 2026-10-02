@@ -118,7 +118,10 @@ async function auditScene(page, spec, loose) {
       if (spec.needsSeason) {
         const S = await import('/src/systems/season.ts');
         let s = S.newSeason(team, { color: longest.color, logo: longest.logo }, ids.slice(9), Math.random);
-        for (let gi = 0; gi < 5; gi++) {
+        // A real week: 'W'/'L'/'T' results (spec.weekResults, default a
+        // winning week), then optionally Saturday's final (spec.final).
+        const weekResults = spec.weekResults ?? ['W', 'W', 'L', 'W', 'W'];
+        for (let gi = 0; gi < weekResults.length; gi++) {
           const ev = [];
           team.forEach((id, i) => {
             for (let n = 0; n <= i; n++) ev.push({ t: 'atBat', kid: id });
@@ -126,7 +129,12 @@ async function auditScene(page, spec, loose) {
             ev.push({ t: 'run', kid: id });
             if (i % 2) ev.push({ t: 'kThrown', kid: id });
           });
-          s = S.recordSeasonGame(s, { rivalIdx: gi, us: 7 - gi, them: gi }, ev);
+          s = S.recordSeasonGame(s, weekResults[gi], ev);
+        }
+        if (spec.final) {
+          const L = await import('/src/systems/league.ts');
+          const opp = L.finalOpponent(s);
+          if (opp !== null) s = S.recordFinal(s, opp, spec.final, []);
         }
         S.saveSeason(s);
       }

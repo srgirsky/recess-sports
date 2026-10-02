@@ -31,7 +31,8 @@ import {
 import { queueTeamTextures, teamSuffix } from '../art/textureFactory';
 import { UNIFORM_COLORS } from '../art/palette';
 import { getGamesPlayed } from '../systems/picklog';
-import { getSeason } from '../systems/season';
+import { getSeason, saveSeason } from '../systems/season';
+import { finalOpponent } from '../systems/league';
 
 /** Game init payload once lineups exist: teams + optional full plans. */
 export interface GameInitData extends TeamState {
@@ -46,6 +47,8 @@ export interface GameInitData extends TeamState {
   spectator?: boolean;
   /** This game counts toward the Recess Week season. */
   seasonGame?: boolean;
+  /** …and it is Saturday's championship (systems/league.ts), not a weekday. */
+  seasonFinal?: boolean;
   /** Pass-and-play: both seats human-batted, the batting player holds the device.
    *  Net: two devices — the host runs the one true sim, the guest mirrors. */
   matchType?: 'solo' | 'passplay' | 'net';
@@ -84,6 +87,7 @@ export class LineupScene extends Phaser.Scene {
   private rival!: TeamIdentity;
   private identityUi?: Phaser.GameObjects.Container;
   private seasonGame = false;
+  private seasonFinal = false;
   private matchType: 'solo' | 'passplay' | 'net' = 'solo';
   private pass: 1 | 2 = 1;
   private aPlan?: LineupPlan; // pass 1's plan, carried into pass 2
@@ -104,6 +108,7 @@ export class LineupScene extends Phaser.Scene {
   create(
     data: TeamState & {
       seasonGame?: boolean;
+      seasonFinal?: boolean;
       matchType?: 'solo' | 'passplay' | 'net';
       netRole?: 'host' | 'guest';
       identity?: TeamIdentity;
@@ -115,6 +120,7 @@ export class LineupScene extends Phaser.Scene {
   ): void {
     this.teams = data;
     this.seasonGame = data.seasonGame ?? false;
+    this.seasonFinal = data.seasonFinal ?? false;
     this.matchType = data.matchType ?? 'solo';
     this.pass = data.pass ?? 1;
     this.aPlan = data.aPlan;
@@ -170,7 +176,12 @@ export class LineupScene extends Phaser.Scene {
     // Season games face the WEEK's scheduled rival; exhibitions rotate.
     if (this.matchType !== 'net') {
       const season = this.seasonGame ? getSeason() : null;
-      this.rival = season ? season.rivals[season.gameIndex] : pickRival(this.identity, getGamesPlayed());
+      // …and the week's team wears the week's colours — the league table and
+      // the rival schedule were both built around them.
+      if (season) this.identity = season.identity;
+      // Saturday's final faces whoever else topped the league table.
+      const day = season && this.seasonFinal ? finalOpponent(season) : season?.gameIndex;
+      this.rival = season && day != null ? season.rivals[day] : pickRival(this.identity, getGamesPlayed());
     }
 
     // Chalkboard-green backdrop, like the dugout wall.
@@ -278,6 +289,7 @@ export class LineupScene extends Phaser.Scene {
           identity: this.identity,
           rival: this.rival,
           seasonGame: this.seasonGame,
+          seasonFinal: this.seasonFinal,
         };
     this.cameras.main.fadeOut(240, 0, 0, 0);
     // Jersey variants render in well under a second — but never start the
@@ -358,11 +370,21 @@ export class LineupScene extends Phaser.Scene {
   }
 
   private setIdentity(next: TeamIdentity): void {
+    const season = this.seasonGame ? getSeason() : null;
+    if (season) {
+      // A season game keeps the week's scheduled rival, so a colour that
+      // matches theirs would put both teams in one jersey: refuse it.
+      if (next.color === this.rival?.color) {
+        audio.whiff();
+        return;
+      }
+      saveSeason({ ...season, identity: next });
+    }
     this.identity = next;
     // Player 2's pick is session-only; only the device owner's seat persists.
     if (!(this.matchType === 'passplay' && this.pass === 2)) {
       setTeamIdentity(next);
-      this.rival = pickRival(next, getGamesPlayed());
+      if (!season) this.rival = pickRival(next, getGamesPlayed());
     }
     audio.pop();
     audio.say(`${teamName(next)}!`, commentatorProfile('A'), 'flush');

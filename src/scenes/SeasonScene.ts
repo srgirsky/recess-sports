@@ -1,13 +1,17 @@
 // ---------------------------------------------------------------------------
 // The Recess Week hub: a chalkboard standings screen. Five weekday slots show
 // each rival's logo and the result (big chalk W/L/T); the record tallies at
-// the top; NEXT GAME rolls into the Lineup screen for that day's matchup.
-// When Friday's game is in the books, the button becomes the awards ceremony.
+// the top; under them, the whole league's table (systems/league.ts — the
+// rivals play each other too). NEXT GAME rolls into the Lineup screen for that
+// day's matchup. When Friday is in the books, a top-two finish earns Saturday's
+// CHAMPIONSHIP (BB2001's season ends in a title game); after that, or on
+// missing the cut, the button becomes the awards ceremony.
 // ---------------------------------------------------------------------------
 
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS } from '../config';
 import { getSeason, isWeekOver, wins, WEEKDAYS, type SeasonState } from '../systems/season';
+import { standings, finalOpponent, finalPending, YOU, type StandingsRow } from '../systems/league';
 import { TEAM_LOGOS, teamName } from '../systems/team';
 import { UNIFORM_COLORS } from '../art/palette';
 import { clearTeamVariant } from '../art/textureFactory';
@@ -55,7 +59,7 @@ export class SeasonScene extends Phaser.Scene {
     // The five weekdays.
     WEEKDAYS.forEach((day, i) => {
       const x = 130 + i * 175;
-      const y = 300;
+      const y = 246;
       const rival = season.rivals[i];
       const played = i < season.results.length;
       const isNext = i === season.gameIndex && !isWeekOver(season);
@@ -91,7 +95,20 @@ export class SeasonScene extends Phaser.Scene {
       enterFrom(this, slot, { dy: 26, delay: i * 90 });
     });
 
-    if (isWeekOver(season)) {
+    this.drawTable(season);
+
+    if (finalPending(season)) {
+      makeButton(this, {
+        x: GAME_WIDTH / 2,
+        y: GAME_HEIGHT - 88,
+        label: 'CHAMPIONSHIP!',
+        icon: '🏆',
+        width: 360,
+        height: 92,
+        onClick: () => this.playFinal(),
+      });
+      audio.say('You made the championship! Saturday, winner takes all!', commentatorProfile('A'), 'queue');
+    } else if (isWeekOver(season)) {
       makeButton(this, {
         x: GAME_WIDTH / 2,
         y: GAME_HEIGHT - 88,
@@ -123,6 +140,71 @@ export class SeasonScene extends Phaser.Scene {
         onClick: () => this.scene.start('Schoolyard', { straightToDraft: false }),
       });
     }
+  }
+
+  /**
+   * The league table: six teams in two chalk columns, best first, the
+   * player's row in gold. The header says what the table is FOR this week —
+   * the top-two cut, Saturday's matchup, or how Saturday went.
+   */
+  private drawTable(season: SeasonState): void {
+    const rows = standings(season);
+    const opp = finalOpponent(season);
+    const name = (team: number) => teamName(team === YOU ? season.identity : season.rivals[team]);
+    const f = season.final;
+    const header = f
+      ? f.result === 'W'
+        ? '🏆 CHAMPIONS OF RECESS! 🏆'
+        : f.result === 'T'
+          ? '🤝 CO-CHAMPIONS! WHAT A FINAL!'
+          : `🥈 RUNNERS-UP — ${name(f.opponent)} WON IT`
+      : opp !== null
+        ? `🏆 SATURDAY: YOU vs ${name(opp)}`
+        : isWeekOver(season)
+          ? 'SO CLOSE! TOP 2 PLAY THE FINAL'
+          : '📋 THE LEAGUE — TOP 2 PLAY SATURDAY';
+    heading(this, GAME_WIDTH / 2, 372, header, 22, '#ffce3a', { maxW: 880, minFontSize: 15 });
+
+    const colX = [GAME_WIDTH / 2 - 222, GAME_WIDTH / 2 + 222];
+    rows.forEach((r, i) => this.drawRow(r, i, colX[Math.floor(i / 3)], 410 + (i % 3) * 34, name(r.team), season));
+  }
+
+  private drawRow(r: StandingsRow, rank: number, cx: number, y: number, label: string, season: SeasonState): void {
+    const W = 410;
+    const you = r.team === YOU;
+    const left = cx - W / 2;
+    if (you || rank < 2) {
+      const band = this.add.graphics();
+      band.fillStyle(you ? 0xffce3a : 0xfff4de, you ? 0.3 : 0.1);
+      band.fillRoundedRect(left, y - 15, W, 30, 8);
+    }
+    const ident = you ? season.identity : season.rivals[r.team];
+    const jersey = parseInt(UNIFORM_COLORS[ident.color].jersey.slice(1), 16);
+    const chalk = (x: number, text: string, origin: number, size = 18) =>
+      this.add
+        .text(x, y, text, { fontFamily: FONT, fontSize: `${size}px`, color: you ? '#ffce3a' : '#fff4de', fontStyle: '700' })
+        .setOrigin(origin, 0.5);
+    chalk(left + 12, `${rank + 1}`, 0);
+    this.add.circle(left + 46, y, 13, jersey, 1).setStrokeStyle(2, COLORS.ink, 1);
+    this.add.text(left + 46, y, TEAM_LOGOS[ident.logo].icon, { fontSize: '15px' }).setOrigin(0.5);
+    const n = chalk(left + 68, label, 0, 17);
+    const record = chalk(left + W - 12, `${r.w}-${r.l}${r.t ? `-${r.t}` : ''}`, 1);
+    // An unbounded team name shrinks to its lane instead of running into the record.
+    const lane = W - 68 - record.width - 24;
+    if (n.width > lane) n.setScale(lane / n.width);
+  }
+
+  private playFinal(): void {
+    const season = getSeason();
+    const opp = season ? finalOpponent(season) : null;
+    if (!season || opp === null) return;
+    audio.pop();
+    this.scene.start('Lineup', {
+      playerTeam: season.playerTeam,
+      aiTeam: season.rivalTeams[opp],
+      seasonGame: true,
+      seasonFinal: true,
+    });
   }
 
   private nextGame(season: SeasonState): void {

@@ -3367,3 +3367,31 @@ than backing him into the wall. The pad is solo-only, because a net guest
 rebuilds the host's play from the classic spots, and it resets every half.
 The CPU defence stays NORMAL, so nothing changes for a player who never
 touches the pad.
+
+**The championship** was fifth. A BB2001 season is a league with a standings
+table and a title game. Recess Week was five games against five rivals and a
+pennant for three wins. `systems/league.ts` builds the rest of the league
+around those games. The six teams play a true round robin across the weekdays:
+on day *d* you play rival *d*, and the other four rivals pair off so every two
+teams meet exactly once. The hub shows a league table under the weekday slots.
+If you finish in the top two after Friday, Saturday's CHAMPIONSHIP is against
+the other top-two team. The Awards ribbon then crowns champions, co-champions
+or the pennant.
+
+The design constraint was that `recess_season` is shared with v2, which knows
+nothing of leagues and can advance the same week. So nothing about the league is
+stored. Rival-vs-rival games are derived from the saved rosters through a hashed
+seed: the same week always produces the same table, including a week v2 played.
+Only the final's result is saved, in an optional field outside the five weekday
+`results` that v2 reads.
+
+The league table exposed two older bugs. With five rival presets, a player whose
+colour matched one faced the same team twice in a week. A sixth preset (the Teal
+Rockets) fixes that, and it lengthens the exhibition rotation in both games. A
+season game's Lineup also used the global team identity instead of the week's,
+and changing colours there swapped the week's scheduled rival for an exhibition
+one. A season game now wears the week's colours and keeps its rival. A colour
+that would clash with the rival is refused, and any change is saved back to the
+week. The layout audit's season fixture had been recording objects where
+`'W'`/`'L'` belonged. It now builds real weeks: mid-week, missed the cut, final
+pending, champions, and the champions Awards.
