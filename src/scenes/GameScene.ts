@@ -77,7 +77,8 @@ import { LivePlayView } from './ui/LivePlayView';
 import { activeSession, dropSession } from '../net/peer';
 import type { NetMsg, HudSnap } from '../net/protocol';
 import { getSettings } from '../systems/settings';
-import { foldStats, statLine, type KidStats, type StatEvent } from '../systems/stats';
+import type { StatEvent } from '../systems/stats';
+import { foldBox, todayLine, type BoxEvent, type BoxLine, type PaResult } from '../systems/boxscore';
 import { getSeason, saveSeason, recordSeasonGame } from '../systems/season';
 import {
   snapshotLive,
@@ -96,6 +97,7 @@ import {
   applyLivePlay,
   applySteal,
   isHalfOver,
+  type ApplyResult,
   type HalfInningState,
   type RunnerMove,
 } from '../systems/inning';
@@ -640,9 +642,10 @@ export class GameScene extends Phaser.Scene {
   private announceBg!: Phaser.GameObjects.Rectangle;
   private baseMarks: Phaser.GameObjects.Polygon[] = [];
   private baseSideMarks: Phaser.GameObjects.Polygon[] = [];
-  /** THIS game's per-kid lines (both seats, always tallied — unlike the
-   *  season feed in seat.stats) — feeds the strip's AT BAT stat line. */
-  private gameLines: Record<string, KidStats> = {};
+  /** THIS game's box score (both seats, always tallied — unlike the season
+   *  feed in seat.stats) — feeds the strip's AT BAT line and the Result
+   *  screen's Player of the Game. */
+  private box: Record<string, BoxLine> = {};
 
   // --- Two views (Backyard-style hard cut) ---
   /** HUD camera: world objects are hidden from it via pinUI's inverse — see
@@ -731,7 +734,7 @@ export class GameScene extends Phaser.Scene {
     this.firstFieldPlay = true;
     this.firstRunPlay = true;
     this.viewMode = 'wide';
-    this.gameLines = {};
+    this.box = {};
   }
 
   create(): void {
@@ -1460,16 +1463,44 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  /** Fold one stat event into THIS game's lines (both seats, every mode —
-   *  unlike the gated season feed) and refresh the strip's AT BAT block. */
-  private tallyGame(ev: StatEvent): void {
-    this.gameLines = foldStats(this.gameLines, [ev]);
+  /** Fold box-score events into THIS game's box (both seats, every mode —
+   *  unlike the gated season feed). Pure bookkeeping: no rng, no objects. */
+  private tallyBox(...ev: BoxEvent[]): void {
+    this.box = foldBox(this.box, ev);
   }
 
-  /** The strip's stat line for a kid: '' until they have a game line. */
+  /**
+   * One pitch that settled at the plate (no live play): count it for the
+   * pitcher and, when it ended the plate appearance, record how — with its
+   * RBI and every run it pushed home. Call BEFORE the runner map is rebuilt:
+   * `movements` index the pre-pitch bases.
+   */
+  private boxPitch(batterId: string, result: AtBatResult, applied: ApplyResult): void {
+    const pitcher = this.fieldingSeat().pitcher?.id;
+    const ev: BoxEvent[] = [];
+    if (pitcher) ev.push({ t: 'pitch', pitcher });
+    if (applied.batterDone) {
+      const pa: PaResult =
+        result.kind === 'ball'
+          ? { kind: 'walk' }
+          : result.kind === 'hit'
+            ? { kind: 'hit', bases: Math.max(1, Math.min(4, result.bases)) as 1 | 2 | 3 | 4 }
+            : result.kind === 'strike'
+              ? { kind: 'k' }
+              : { kind: 'out' };
+      ev.push({ t: 'pa', kid: batterId, pitcher, result: pa, rbi: applied.runsScored });
+      for (const m of applied.movements) {
+        if (m.toBase < 4) continue;
+        const id = m.fromBase === 0 ? batterId : (this.runners.get(m.fromBase)?.getData('id') as string | undefined);
+        if (id) ev.push({ t: 'run', kid: id });
+      }
+    }
+    this.tallyBox(...ev);
+  }
+
+  /** The strip's stat line for a kid: '' until they've batted. */
   private gameLineFor(id: string): string {
-    const line = this.gameLines[id];
-    return line ? statLine(line) : '';
+    return todayLine(this.box[id]);
   }
 
   // --- Juice meter (main mode) ---------------------------------------------
@@ -1678,6 +1709,7 @@ export class GameScene extends Phaser.Scene {
         matchType: this.matchType,
         awayIdentity: this.seats[0].identity,
         homeIdentity: this.seats[1].identity,
+        box: this.box,
       });
     });
   }
@@ -2669,8 +2701,8 @@ export class GameScene extends Phaser.Scene {
     if (result.kind === 'strike' && applied.batterOut) {
       this.gainJuiceSeat(this.fieldingSeat(), 'strikeoutThrown');
       this.callIt('strikeoutSwinging', { name: prevBatter.name });
-      this.tallyGame({ t: 'kThrown', kid: this.fieldingSeat().pitcher!.id });
     }
+    this.boxPitch(prevBatter.id, result, applied);
     // Stat feed: a completed non-walk AB, and homers. (Runs on live plays
     // arrive via the 'score' event; a homer's runs are known right here —
     // batter + everyone who was aboard.) The game-line tally always runs;
@@ -2686,7 +2718,6 @@ export class GameScene extends Phaser.Scene {
           }
         }
       }
-      for (const ev of events) this.tallyGame(ev);
       if (this.seasonGame && seat.recordsStats) seat.stats.push(...events);
     }
 
@@ -2830,6 +2861,7 @@ export class GameScene extends Phaser.Scene {
           floatingText(this, to.x, to.y - 50, 'STOLE IT!', cpuRunner ? COLORS.red : COLORS.gold, 28);
           this.tweens.add({ targets: img, scaleY: img.scaleY * 0.85, yoyo: true, duration: 90 });
           this.runners.set(from + 1, token);
+          this.tallyBox({ t: 'sb', kid: token.getData('id') as string });
           this.gainJuice(cpuRunner ? 'cpu' : 'player', 'steal');
           this.callIt('stealSafe', { name: getCharacter(token.getData('id') as string).name });
           if (cpuRunner) audio.whiff();
@@ -3261,6 +3293,7 @@ export class GameScene extends Phaser.Scene {
       switch (e.t) {
         case 'catch':
           if (this.playHighlights.sawDive) this.playHighlights.diveCatch = true;
+          this.tallyBox({ t: 'catch', kid: e.fielder });
           break;
         case 'bonk':
           this.callIt('bonk', {});
@@ -3275,7 +3308,7 @@ export class GameScene extends Phaser.Scene {
           this.playHighlights.outs += 1;
           break;
         case 'score':
-          this.tallyGame({ t: 'run', kid: e.runner });
+          this.tallyBox({ t: 'run', kid: e.runner });
           if (this.seasonGame && s.mode === 'offense') {
             this.statEvents.push({ t: 'run', kid: e.runner });
           }
@@ -3310,8 +3343,19 @@ export class GameScene extends Phaser.Scene {
     // it is a hit (playground scoring — errors count, and that's fine).
     // The batter char came from whichever flow family ran this half.
     const playBatter = isOffense ? this.batter : this.cpuBatter;
-    this.tallyGame({ t: 'atBat', kid: playBatter.id });
-    if (!outcome.batterOut) this.tallyGame({ t: 'hit', kid: playBatter.id });
+    {
+      // The box: one pitch, and a plate appearance that ended in play. A hit's
+      // length is where the batter ended up (scored = an inside-the-park HR);
+      // a double play drives in nobody.
+      const pitcher = this.fieldingSeat().pitcher?.id;
+      const reached = outcome.baseIds.indexOf(playBatter.id) + 1;
+      const pa: PaResult = outcome.batterOut
+        ? { kind: 'out' }
+        : { kind: 'hit', bases: (reached > 0 ? reached : 4) as 1 | 2 | 3 | 4 };
+      const rbi = outcome.outs >= 2 ? 0 : applied.runsScored;
+      if (pitcher) this.tallyBox({ t: 'pitch', pitcher });
+      this.tallyBox({ t: 'pa', kid: playBatter.id, pitcher, result: pa, rbi });
+    }
     if (this.seasonGame && batSeat.recordsStats) {
       batSeat.stats.push({ t: 'atBat', kid: playBatter.id });
       if (!outcome.batterOut) batSeat.stats.push({ t: 'hit', kid: playBatter.id });
@@ -4376,25 +4420,12 @@ export class GameScene extends Phaser.Scene {
       const fseat = this.fieldingSeat();
       this.gainJuiceSeat(fseat, 'strikeoutThrown', fseat.pitcher!.ability);
       this.callIt('strikeoutPitched', { name: prevBatter.name });
-      this.tallyGame({ t: 'kThrown', kid: fseat.pitcher!.id });
       if (this.seasonGame && fseat.recordsStats) fseat.stats.push({ t: 'kThrown', kid: fseat.pitcher!.id });
     }
-
-    const walked = result.kind === 'ball' && applied.batterDone;
-    // Game-line tally for the CPU/remote batter (the season feed never
+    // The box records the CPU/remote batter too (the season feed never
     // records this side in solo — the strip's AT BAT line still should).
-    if (applied.batterDone && !walked) {
-      this.tallyGame({ t: 'atBat', kid: prevBatter.id });
-      if (result.kind === 'hit') {
-        this.tallyGame({ t: 'hit', kid: prevBatter.id, homer: result.bases >= 4 });
-        if (result.bases >= 4) {
-          this.tallyGame({ t: 'run', kid: prevBatter.id });
-          for (const token of this.runners.values()) {
-            this.tallyGame({ t: 'run', kid: token.getData('id') as string });
-          }
-        }
-      }
-    }
+    this.boxPitch(prevBatter.id, result, applied);
+    const walked = result.kind === 'ball' && applied.batterDone;
 
     let runDelay = 0;
     if (applied.movements.length > 0) {

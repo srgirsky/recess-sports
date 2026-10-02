@@ -3311,3 +3311,28 @@ tablet size only the centre column is clear of the plates, so two kids stand
 beside the candidate rather than six; and Moose's crouched hero pose draws his
 dark trousers as foreshortened ovals from the front, the same shading
 artifact the catcher review found on Tank.
+
+## October 1 — v1 against Backyard Baseball 2001
+
+The maintainer wants v1 kept up alongside v2, so v1 got its own review against
+BB2001. Most of the core loop was already there (draft, juice, special pitches,
+steals, tag-ups, dives, relief, three venues). The ranked list of what was
+missing is in `docs/research/bb2001-v1-parity.md`.
+
+**The first gap was the box score.** The strip's batting line only counted hits
+and at-bats, and the Result screen's "TEAM MVP" was simply the highest-*rated*
+kid on the team. A seven-strikeout pitcher lost it to a hitless slugger.
+`systems/boxscore.ts` is a new v1-only reducer: plate appearances by result,
+extra-base hits, RBI, runs, walks, steals, pitch counts, strikeouts and catches.
+It stays separate from `stats.ts` because that module is v2's season ledger and
+its shape is fixed. The strip now shows a BB-style "today" line, and the Result
+screen crowns a **Player of the Game** from that box, with the featured team's
+box beside it. A net guest never simulates, so it has no box and keeps the old
+rated card under its old, accurate name.
+
+The layout audit now feeds Result a worst-case box: the nine longest names and
+every column in double digits. It also covers the no-box fallback, and that case
+caught a bug that predated this work. The online-play GOOD GAME button sat
+beyond the bottom of the frame, because it was the only Result button not using
+the shared metrics. Tallying draws no rng and creates no objects mid-game, and
+both seeded fingerprints reproduce byte for byte (`scripts/goldlogs.json`).

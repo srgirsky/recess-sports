@@ -133,7 +133,21 @@ async function auditScene(page, spec, loose) {
 
       let data = spec.data;
       if (spec.result) {
-        data = { ...spec.result, playerTeam: team, aiTeam: ids.slice(9, 18) };
+        // The box score is content too: the nine LONGEST names, every column
+        // at double digits, both teams lined (pass-and-play features the
+        // winners). `noBox` covers the net guest's fallback card.
+        const byLen = [...R.ROSTER].sort((a, b) => b.name.length - a.name.length).map((k) => k.id);
+        const boxTeam = spec.result.noBox ? team : byLen.slice(0, 9);
+        data = { ...spec.result, playerTeam: boxTeam, aiTeam: byLen.slice(9, 18) };
+        if (!spec.result.noBox) {
+          data.box = {};
+          [...boxTeam, ...byLen.slice(9, 18)].forEach((id, i) => {
+            data.box[id] = {
+              ab: 18, h: 12 + (i % 3), doubles: 2, triples: 1, hr: 10 + (i % 4), rbi: 24 - i, r: 11, bb: 3,
+              so: 2, sb: 4, pt: 140, k: 12 + i, bbAllowed: 5, catches: 6,
+            };
+          });
+        }
         if (spec.result.useIdentity) {
           data.awayIdentity = { color: longest.color, logo: longest.logo };
           data.homeIdentity = { color: longest.color, logo: longest.logo };
