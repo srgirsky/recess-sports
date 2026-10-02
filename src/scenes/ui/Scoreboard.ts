@@ -34,6 +34,12 @@ export interface Scoreboard {
   setBatter(name: string, statLine: string): void;
   /** Umpire call anchored above the strip: 'BALL!', 'STRIKE!', 'FOUL!'. */
   umpCall(text: string, color: number): void;
+  /**
+   * BB2001's live-play HUD: in the wide view the board drops to the teams,
+   * the score, the outs and the inning — the count, the AT BAT line and the
+   * mini-diamond mean nothing while the real diamond is in play.
+   */
+  setCompact(on: boolean): void;
   destroy(): void;
 }
 
@@ -211,6 +217,10 @@ export function createScoreboard(
           t.destroy();
         },
       });
+    },
+
+    setCompact(on: boolean): void {
+      for (const o of [batterName, batterLine, ballsRow.c, strikesRow.c, diamond]) o.setVisible(!on);
     },
 
     destroy(): void {

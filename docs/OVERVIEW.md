@@ -3413,3 +3413,19 @@ never (`PICKOFF`, `rollPickoff`). Either way the runner stays put for that pitch
 and the menu returns for the same batter and count. Throws over are capped at
 two per batter so a pickoff can't stall an at-bat. The left column's pills
 narrowed to 148px to stay clear of the close view's third baseman.
+
+**The live-play HUD** was ninth. BB2001 drops to a mini scoreboard when the
+view goes wide. v1's strip now hides the count, the AT BAT line and its
+mini-diamond in the wide view, keeping the teams, score, outs and inning. Doing
+this exposed a real defect: the swing cards stayed on screen through every live
+play, covering the right field line. They now hide when the pitch is thrown, as
+BB2001's do, and come back when the same batter is up again. Both changes are
+visibility toggles that create nothing and draw no rng, and the main goldlog
+reproduces `431766fe` unchanged.
+
+Two gaps were not built, on purpose. A **coin toss** for first pick would let
+the greedy CPU captain take the most valuable kid half the time, lowering that
+kid's pick rate for a reason that has nothing to do with popularity. Picks are
+the vote, so the player keeps the first pick. **Pinch hitters** don't apply: a
+drafted team is exactly nine kids, so there is no bench to bring in. That
+closes the v1 gap list in `docs/research/bb2001-v1-parity.md`.

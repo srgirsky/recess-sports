@@ -35,10 +35,21 @@ the pitcher's toss idle, the batter dodging, and the chaser's name bubble.
 | 5 | A season ending in playoffs and a championship game; standings among all teams *(recalled)* | A 5-game Recess Week with your W/L only | ✅ `feat/v1-championship`: a six-team round-robin league table (`systems/league.ts`) and a Saturday final for the top two |
 | 6 | League leaders across the season *(recalled)* | Three end-of-week awards | ✅ `feat/v1-season-leaders`: 📊 STATS on the hub opens the week's board (AB, H, AVG, HR, R, K), each column's leader lit gold |
 | 7 | Pickoff throws to a base with a runner leading off *(recalled)* | Lead-off is cosmetic | ✅ `feat/v1-pickoff`: 👀 PICK OFF throws to the lead runner. The CPU decides to steal when the menu opens, a leaning runner pulses the pill red, and the cap is 2 throws per batter |
-| 8 | A coin toss for first pick *(recalled)* | The player always picks first | open |
-| 9 | The live-play HUD shrinks to a mini score and outs | The full strip stays up | open |
-| 10 | Pinch hitters and bench moves mid-game *(recalled)* | Pitchers only | open (low: 4–8-year-olds rarely use it) |
+| 8 | A coin toss for first pick *(recalled)* | The player always picks first | ⛔ declined on purpose: the greedy CPU captain takes the most valuable kid first, so losing the toss half the time would keep the top kid out of reach and lower their pick rate for reasons that have nothing to do with popularity. Picks are the product's vote (root brief). |
+| 9 | The live-play HUD shrinks to a mini score and outs | The full strip stays up | ✅ `feat/v1-live-hud`: the wide view drops the count, AT BAT line and mini-diamond (`Scoreboard.setCompact`). The swing cards, which used to stay on screen through a live play, now hide in flight as BB2001's do |
+| 10 | Pinch hitters and bench moves mid-game *(recalled)* | Pitchers only | ⛔ not applicable: a drafted team is exactly nine kids, so there is no bench to bring in. Relief already swaps positions within the nine |
 
 Not on the list on purpose: licensed pro players, and BB2001's flat
 three-quarter field perspective (`geometry.projectionType`, a separate
 product decision).
+
+## Where this leaves v1
+
+Every gap above is closed, or declined with a stated reason. What remains open
+against BB2001 is presentation rather than game features:
+
+- **Perspective**: the field projection is still flat, which is a product decision (`geometry.projectionType`).
+- **Voice**: production voice acting, which v2 owns.
+- **Measured pace**: the records still marked `awaiting-measurement` in `scripts/measures.json`.
+
+None of these is a missing feature a player would look for.

@@ -935,6 +935,7 @@ export class GameScene extends Phaser.Scene {
       this.rig.hide();
       this.clearRestingBall(); // a rig-space prop must never float over the field
     }
+    this.scoreboard?.setCompact(view === 'wide');
     if (this.viewMode !== view) {
       this.viewMode = view;
       this.cameras.main.flash(PLATE_VIEW.CUT_FLASH_MS, 255, 255, 255);
@@ -1885,6 +1886,8 @@ export class GameScene extends Phaser.Scene {
   private throwPitch(): void {
     // Wind up first, then release. Input is ignored until the ball is live.
     this.phase = 'resolving';
+    // BB2001 hides the swing cards while the pitch flies; the choice stands.
+    this.swingChips?.setVisible(false);
     this.setView('close'); // the batting view: batter + mound fill the screen
     this.pitcherWindup();
     this.time.delayedCall(ANIM.WINDUP_MS, () => this.launchPitch());
@@ -2718,6 +2721,8 @@ export class GameScene extends Phaser.Scene {
     const seat = this.battingSeat();
     const applied = applyAtBat(this.halfState, result);
     this.halfState = applied.state;
+    // Same batter, next pitch: the swing cards come back for the next pick.
+    if (!applied.batterDone) this.swingChips?.setVisible(true);
     // Batting practice: outs never stick, so the half never ends.
     if (this.practice) this.halfState = { ...this.halfState, outs: 0 };
     if (applied.runsScored > 0) seat.score += applied.runsScored;
