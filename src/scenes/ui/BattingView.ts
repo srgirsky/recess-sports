@@ -14,8 +14,9 @@
 // ball) must sit above DEPTH or they vanish under the backdrop.
 // ---------------------------------------------------------------------------
 
+import { isShifted, type Alignment } from '../../systems/alignment';
 import Phaser from 'phaser';
-import { GAME_WIDTH, GAME_HEIGHT, COLORS, PLATE_VIEW, ANIM } from '../../config';
+import { GAME_WIDTH, GAME_HEIGHT, COLORS, PLATE_VIEW, ANIM, ALIGN } from '../../config';
 import type { VenueDef } from '../../data/venues';
 import type { PositionId } from '../../systems/geometry';
 import { poseKey, heroKey, HERO_POSES } from '../../art/textureFactory';
@@ -37,6 +38,9 @@ export interface RigActors {
   catcherId: string;
   /** The 7 non-battery defenders (1B/2B/SS/3B/LF/CF/RF). */
   fielders: Array<{ position: PositionId; charId: string }>;
+  /** The defence's positioning preset: IN infielders crowd the camera, DEEP
+   *  outfielders shrink toward the wall. Default NORMAL. */
+  alignment?: Alignment;
 }
 
 export class BattingView {
@@ -127,9 +131,16 @@ export class BattingView {
       const spot = PLATE_VIEW.FIELDERS[f.position];
       const img = this.fielderImgs.get(f.position);
       if (!spot || !img) continue;
-      this.setKid(img, f.charId, 'ready', spot.H);
+      const a = actors.alignment ?? 'normal';
+      const shift = isShifted(f.position, a) ? (a === 'in' ? ALIGN.RIG_IN : ALIGN.RIG_DEEP) : { DY: 0, SCALE: 1 };
+      img.setPosition(spot.X, spot.Y + shift.DY);
+      this.setKid(img, f.charId, 'ready', spot.H * shift.SCALE);
       img.setVisible(true);
-      this.fielderShadows.get(f.position)?.setVisible(true);
+      this.fielderShadows
+        .get(f.position)
+        ?.setPosition(spot.X, spot.Y + shift.DY - 2)
+        .setScale(shift.SCALE)
+        .setVisible(true);
     }
     const batterChanged = this.batter.texture.key !== this.rigKey(actors.batterId, 'batRear');
     if (batterChanged) this.batterReactTimer?.remove(false); // a reaction pose never outlives its batter

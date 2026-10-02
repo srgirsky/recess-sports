@@ -1086,6 +1086,24 @@ export const SWING_TYPES = {
   CRAZY_BUNT: { FORGIVE_MS: 128, DIST_CAP: 205, Q_ADJ: -0.15, SPRAY_LO: 0.16, SPRAY_HI: 0.84 },
 };
 
+/**
+ * Defensive alignment (CLASSIC, systems/alignment.ts) — BB2001's positioning
+ * pad. INFIELD IN pulls the four infielders toward the plate to cut a run
+ * off at home; OUTFIELD DEEP backs the three outfielders up so nothing gets
+ * over their heads. DERIVED, not measured: sized against the diamond (IN is
+ * ~a fifth of a basepath, DEEP stops well short of every venue's fence).
+ */
+export const ALIGN = {
+  IN_PX: 36,
+  DEEP_PX: 22,
+  /** A DEEP outfielder never stands closer to the wall than this. */
+  FENCE_GAP_PX: 18,
+  /** The close (behind-plate) view: IN infielders stand nearer the camera. */
+  RIG_IN: { DY: 16, SCALE: 1.14 },
+  /** …and DEEP outfielders farther from it. */
+  RIG_DEEP: { DY: -5, SCALE: 0.88 },
+};
+
 /** Full-baserunning rules (main mode). */
 export const RUN2 = {
   /** Ball-carrier within this of an off-bag runner = tag, you're out. */

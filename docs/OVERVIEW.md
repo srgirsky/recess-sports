@@ -3354,3 +3354,16 @@ through the infield where a bunt would die. `SwingType` crosses the wire, so
 `NET.PROTOCOL_VERSION` went to 7. The two new Texts per at-bat moved the main
 goldlog again, and it was recaptured with the reason recorded. Kid mode shows
 neither control, and its fingerprint is unchanged.
+
+**Defensive positioning** was fourth. BB2001 repositions the defence from the
+mini-diamond before a pitch. v1's version is a 🧤 pad under WALK that cycles
+NORMAL, INFIELD IN and PLAY DEEP (`systems/alignment.ts`). Only the starting
+spots move: each fielder's `home` in the live sim, plus both views. The chaser
+election's leash and the walk back after a play therefore follow automatically,
+and no rule downstream had to learn about it. Each spot moves along its line
+from the plate and is clamped per venue. On the sandlot, the normal right
+fielder already stands on the short porch, so PLAY DEEP leaves him there rather
+than backing him into the wall. The pad is solo-only, because a net guest
+rebuilds the host's play from the classic spots, and it resets every half.
+The CPU defence stays NORMAL, so nothing changes for a player who never
+touches the pad.

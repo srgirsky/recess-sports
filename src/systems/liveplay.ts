@@ -19,7 +19,6 @@ import type { LiveParams } from './mode';
 import { electChaser, predictLoosePath, shouldSwitch, type PathSample } from './fielding';
 import {
   HOME,
-  FIELD_POSITIONS,
   BASE_COVER,
   BASEPATH_PX,
   DEFAULT_GEOMETRY,
@@ -34,6 +33,7 @@ import {
   type PositionId,
   type Vec,
 } from './geometry';
+import { alignedSpot, type Alignment } from './alignment';
 
 /**
  * How far inside the fence a RESTING ball is clamped. Smaller than the
@@ -278,6 +278,8 @@ export function startLivePlay(opts: {
   outs: number;
   params: LiveParams;
   geo?: FieldGeometry;
+  /** The fielding side's positioning preset (default NORMAL). */
+  alignment?: Alignment;
 }): LivePlayState {
   const { mode, launch, params } = opts;
   const runSpeedBase = mode === 'offense' ? params.playerRunSpeed : params.cpuRunSpeed;
@@ -290,8 +292,8 @@ export function startLivePlay(opts: {
   const fielders: FielderState[] = opts.defense.map((d) => ({
     position: d.position,
     charId: d.charId,
-    pos: { ...FIELD_POSITIONS[d.position] },
-    home: { ...FIELD_POSITIONS[d.position] },
+    pos: alignedSpot(d.position, opts.alignment ?? 'normal', opts.geo),
+    home: alignedSpot(d.position, opts.alignment ?? 'normal', opts.geo),
     hasBall: false,
     speed: d.speed ?? 5,
     glove: d.glove ?? 5,
