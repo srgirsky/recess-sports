@@ -303,6 +303,26 @@ describe('main-mode batting cursor (resolveContactAimed)', () => {
     }
   });
 
+  it('a GROUNDER is always on the ground, never capped like a bunt', () => {
+    let longest = 0;
+    for (const roll of [0.1, 0.5, 0.9, 0.99]) {
+      const r = aimed({ band: 'perfect', swingType: 'grounder', rng: () => roll });
+      if (r.swing.kind !== 'inPlay') continue; // weak-foul roll — fine
+      expect(r.swing.launch.type).toBe('grounder');
+      longest = Math.max(longest, Math.hypot(r.swing.launch.landing.x - HOME.x, r.swing.launch.landing.y - HOME.y));
+    }
+    // Hit hard, it gets through the infield — that is what it is for.
+    expect(longest).toBeGreaterThan(SWING_TYPES.BUNT.DIST_CAP * 1.5);
+  });
+
+  it('the GROUNDER is easier to time than NORMAL, harder than SAFE', () => {
+    const base = { PERFECT: 80, GOOD: 170, CONTACT: 300 };
+    const g = timingForSwing(base, 'grounder');
+    expect(g.PERFECT).toBe(base.PERFECT);
+    expect(g.CONTACT).toBeGreaterThan(base.CONTACT);
+    expect(g.CONTACT).toBeLessThan(timingForSwing(base, 'safe').CONTACT);
+  });
+
   it('a SAFE swing lands shorter than a NORMAL one on the same contact', () => {
     const norm = aimed({ band: 'good', rng: () => 0.6 });
     const safe = aimed({ band: 'good', swingType: 'safe', rng: () => 0.6 });

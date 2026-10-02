@@ -948,7 +948,7 @@ export const PASSPLAY = {
 /** Two-device play over WebRTC (src/net/*; PeerJS free cloud broker). */
 export const NET = {
   /** Bumped on any wire-format change; hello handshake rejects mismatches. */
-  PROTOCOL_VERSION: 6, // v6: the LiveEvent union gained {t:'relay'} (the cutoff relay)
+  PROTOCOL_VERSION: 7, // v7: SwingType gained 'grounder'. v6: LiveEvent gained {t:'relay'}
   /** liveFrame + liveInput pointer stream rate (full ReplayFrames, no deltas). */
   FRAME_HZ: 20,
   /** "Looking for your friend… 🔍" window before the no-blame GOOD GAME. */
@@ -1072,6 +1072,11 @@ export const SWING_TYPES = {
   SAFE: { FORGIVE_MS: 76, Q_ADJ: -0.3 },
   /** 💪 BIG: sell out — weak contact becomes a whiff, solid contact is crushed. */
   BIG: { NARROW_MS: 59, Q_ADJ: 0.22, TYPE_BIAS: 0.35 },
+  /** ⬇️ GROUNDER (BB2001's GROUNDER card): chop it on the ground — a little
+   *  easier to time than NORMAL, never a pop-up, full power behind it, so a
+   *  hard chopper still finds a hole and a runner on third can come home.
+   *  DERIVED: half the SAFE swing's forgiveness, no quality penalty. */
+  GROUNDER: { FORGIVE_MS: 38, Q_ADJ: 0 },
   /** 🤏 BUNT: easy to get bat on it; the ball dies in front of the plate. */
   BUNT: { FORGIVE_MS: 104, DIST_CAP: 115, Q_ADJ: -0.5, SPRAY_MIN: 0.34, SPRAY_MAX: 0.66 },
   /** 🤪 CRAZY BUNT (signature card, ability 'crazy_bunt' — BB2001's Tony D.
@@ -1079,6 +1084,24 @@ export const SWING_TYPES = {
    *  whichever line the swing leans toward — a chaos tool, not a sacrifice.
    *  Spray snaps to the extremes (no rng draw — goldlog/net safe). */
   CRAZY_BUNT: { FORGIVE_MS: 128, DIST_CAP: 205, Q_ADJ: -0.15, SPRAY_LO: 0.16, SPRAY_HI: 0.84 },
+};
+
+/**
+ * Defensive alignment (CLASSIC, systems/alignment.ts) — BB2001's positioning
+ * pad. INFIELD IN pulls the four infielders toward the plate to cut a run
+ * off at home; OUTFIELD DEEP backs the three outfielders up so nothing gets
+ * over their heads. DERIVED, not measured: sized against the diamond (IN is
+ * ~a fifth of a basepath, DEEP stops well short of every venue's fence).
+ */
+export const ALIGN = {
+  IN_PX: 36,
+  DEEP_PX: 22,
+  /** A DEEP outfielder never stands closer to the wall than this. */
+  FENCE_GAP_PX: 18,
+  /** The close (behind-plate) view: IN infielders stand nearer the camera. */
+  RIG_IN: { DY: 16, SCALE: 1.14 },
+  /** …and DEEP outfielders farther from it. */
+  RIG_DEEP: { DY: -5, SCALE: 0.88 },
 };
 
 /** Full-baserunning rules (main mode). */

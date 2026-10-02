@@ -11,6 +11,7 @@
 // can drive the exact same sprites from streamed ReplayFrames.
 // ---------------------------------------------------------------------------
 
+import { alignedSpot, type Alignment } from '../../systems/alignment';
 import Phaser from 'phaser';
 import {
   GAME_WIDTH,
@@ -27,7 +28,8 @@ import {
   MOUND,
   basePos,
   dist,
-  FIELD_POSITIONS,
+  DEFAULT_GEOMETRY,
+  type FieldGeometry,
   type PositionId,
   type Vec,
 } from '../../systems/geometry';
@@ -104,6 +106,9 @@ export class LivePlayView {
   private goBanner?: Phaser.GameObjects.Container;
   /** The view's copy of the defensive assignment (sim order, index 0 = P). */
   private assignment: Array<{ position: PositionId; charId: string }> = [];
+  /** Where the defence stands between plays (the positioning pad's preset). */
+  private alignment: Alignment = 'normal';
+  private geo: FieldGeometry = DEFAULT_GEOMETRY;
 
   constructor(
     private scene: Phaser.Scene,
@@ -127,7 +132,7 @@ export class LivePlayView {
 
     assignment.forEach((a, i) => {
       if (i === 0) return; // the mound sprite plays P
-      const p = FIELD_POSITIONS[a.position];
+      const p = alignedSpot(a.position, this.alignment, this.geo);
       const q = project(p);
       const ds = depthScale(p);
       const c = this.scene.add.container(q.x, q.y).setDepth(26);
@@ -139,6 +144,24 @@ export class LivePlayView {
       c.add([shadow, img]);
       idleBob(this.scene, img, { amp: 3, dur: 1000 + i * 90 }); // bob the IMAGE — the sim owns the container
       this.fielderSprites.push({ container: c, img, charId: a.charId, cycle: null, lastX: q.x, baseH });
+    });
+  }
+
+  /**
+   * The positioning pad moved the defence: trot everyone to their new spot.
+   * Only ever called between plays — mid-play the sim owns these sprites.
+   * `trot: false` just records it, for a defence about to be rebuilt.
+   */
+  setAlignment(alignment: Alignment, geo: FieldGeometry, trot = true): void {
+    this.alignment = alignment;
+    this.geo = geo;
+    if (!trot) return;
+    this.assignment.forEach((a, i) => {
+      const spr = this.fielderSpriteAt(i);
+      if (!spr) return;
+      const q = project(alignedSpot(a.position, alignment, geo));
+      this.scene.tweens.killTweensOf(spr.container);
+      this.scene.tweens.add({ targets: spr.container, x: q.x, y: q.y, duration: 380, ease: 'Sine.inOut' });
     });
   }
 
@@ -744,7 +767,7 @@ export class LivePlayView {
   /** Walk every fielder back to their spot; a successful defense cheers first. */
   private resetFieldersAfterPlay(gotAnOut: boolean): void {
     this.assignment.forEach((a, i) => {
-      const home = project(FIELD_POSITIONS[a.position]);
+      const home = project(alignedSpot(a.position, this.alignment, this.geo));
       if (i === 0) {
         const pitcher = this.deps.pitcherSprite();
         if (pitcher) {

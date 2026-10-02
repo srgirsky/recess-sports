@@ -3336,3 +3336,34 @@ caught a bug that predated this work. The online-play GOOD GAME button sat
 beyond the bottom of the frame, because it was the only Result button not using
 the shared metrics. Tallying draws no rng and creates no objects mid-game, and
 both seeded fingerprints reproduce byte for byte (`scripts/goldlogs.json`).
+
+**The intentional walk** was the second gap. BB2001's pitch stack ends with an
+INTENTIONAL WALK card. v1's stack already runs seven cards deep to just above
+the scoreboard strip, so the walk is a 🚶 WALK pill in the open sky left of the
+prompt instead. One tap is ball four with nothing thrown, through the ordinary
+walk path, so only forced runners move and a bases-loaded walk scores. The
+pill's Text draws from `Math.random` for its texture key, which moved the main
+goldlog. The harness never taps it, and the game still ends 0-0 through the
+bonus inning. It was recaptured with that reason recorded.
+
+**The GROUNDER swing** came third. BB2001 gives every batter POWER, LINE DRIVE,
+GROUNDER and BUNT. v1 had SAFE (the line-drive role), BIG and BUNT, and no way
+to say "keep it on the ground". ⬇️ GROUNDER forces a ground ball. It gets half
+SAFE's timing forgiveness and no quality penalty, so a perfect chop still gets
+through the infield where a bunt would die. `SwingType` crosses the wire, so
+`NET.PROTOCOL_VERSION` went to 7. The two new Texts per at-bat moved the main
+goldlog again, and it was recaptured with the reason recorded. Kid mode shows
+neither control, and its fingerprint is unchanged.
+
+**Defensive positioning** was fourth. BB2001 repositions the defence from the
+mini-diamond before a pitch. v1's version is a 🧤 pad under WALK that cycles
+NORMAL, INFIELD IN and PLAY DEEP (`systems/alignment.ts`). Only the starting
+spots move: each fielder's `home` in the live sim, plus both views. The chaser
+election's leash and the walk back after a play therefore follow automatically,
+and no rule downstream had to learn about it. Each spot moves along its line
+from the plate and is clamped per venue. On the sandlot, the normal right
+fielder already stands on the short porch, so PLAY DEEP leaves him there rather
+than backing him into the wall. The pad is solo-only, because a net guest
+rebuilds the host's play from the classic spots, and it resets every half.
+The CPU defence stays NORMAL, so nothing changes for a player who never
+touches the pad.

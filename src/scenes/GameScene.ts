@@ -102,6 +102,7 @@ import {
   type RunnerMove,
 } from '../systems/inning';
 import { rollSteal, cpuWantsSteal } from '../systems/steal';
+import { type Alignment } from '../systems/alignment';
 import {
   newJuice,
   juiceGain,
@@ -646,6 +647,9 @@ export class GameScene extends Phaser.Scene {
    *  feed in seat.stats) — feeds the strip's AT BAT line and the Result
    *  screen's Player of the Game. */
   private box: Record<string, BoxLine> = {};
+  /** The positioning pad's preset for the human's defence (solo CLASSIC);
+   *  back to NORMAL every half. Read through fieldAlignment(). */
+  private defAlign: Alignment = 'normal';
 
   // --- Two views (Backyard-style hard cut) ---
   /** HUD camera: world objects are hidden from it via pinUI's inverse — see
@@ -915,6 +919,7 @@ export class GameScene extends Phaser.Scene {
         pitcherId: this.moundCharId,
         catcherId: catcher?.charId ?? this.moundCharId,
         fielders: this.fieldAssignment.filter((a) => a.position !== 'P' && a.position !== 'C'),
+        alignment: this.fieldAlignment(),
       });
     } else {
       this.rig.hide();
@@ -1565,6 +1570,8 @@ export class GameScene extends Phaser.Scene {
    */
   private enterHalf(): void {
     this.clearRestingBall();
+    this.defAlign = 'normal'; // the positioning pad resets every half
+    this.liveView.setAlignment('normal', this.geo, false); // buildDefense follows
     this.clearCeremony();
     this.pitcherWindupSeq?.cancel(false); // stale windup2 must not land on next half's mound
     this.pitcherWindupSeq = undefined;
@@ -2216,12 +2223,13 @@ export class GameScene extends Phaser.Scene {
     this.swingChips?.destroy();
     this.swingChips = undefined;
     if (!this.features.swingChoice || !this.localHumanBats()) return;
-    // The base four for everyone + this batter's signature card, BB2001-style
+    // The base five for everyone + this batter's signature card, BB2001-style
     // (signature abilities gate extra cards the way juice gates pitch cards).
     const cards: CardDef[] = [
       { id: 'safe', icon: '🛡', label: 'SAFE' },
       { id: 'normal', icon: '🏏', label: 'NORMAL' },
       { id: 'big', icon: '💪', label: 'BIG SWING' },
+      { id: 'grounder', icon: '⬇️', label: 'GROUNDER' },
       { id: 'bunt', icon: '🤏', label: 'BUNT' },
     ];
     if (this.batter.ability === 'crazy_bunt') {
@@ -3077,6 +3085,7 @@ export class GameScene extends Phaser.Scene {
       outs: this.halfState.outs,
       params,
       geo: this.geo,
+      alignment: this.fieldAlignment(),
     });
     this.hostCast({
       t: 'liveStart',
@@ -3551,8 +3560,50 @@ export class GameScene extends Phaser.Scene {
           })
         : [],
       onDone: confirm,
+      alignment: this.canAlign()
+        ? { current: this.defAlign, onChange: (a) => this.setDefAlign(a) }
+        : undefined,
+      onWalk: () => {
+        autoPick.remove();
+        this.pitchSelect?.destroy();
+        this.pitchSelect = undefined;
+        this.intentionalWalk();
+      },
       pin: (o) => this.pinUI(o),
     });
+  }
+
+  /** The positioning pad is solo-only: a net guest mirrors the host's sim
+   *  from the plain spots, so a shifted host would play a different field. */
+  private canAlign(): boolean {
+    return this.matchType === 'solo' && !this.spectator && this.fieldingSeat().humanPitches;
+  }
+
+  /** Where the defence stands for the next play. */
+  private fieldAlignment(): Alignment {
+    return this.canAlign() ? this.defAlign : 'normal';
+  }
+
+  /** The pad moved: re-place the close view's fielders and the wide field's. */
+  private setDefAlign(a: Alignment): void {
+    this.defAlign = a;
+    if (this.viewMode === 'close') this.setView('close');
+    this.liveView.setAlignment(a, this.geo);
+  }
+
+  /**
+   * BB2001's INTENTIONAL WALK: the batter goes straight to first. It is ball
+   * four with nothing thrown, so it runs through the same walk path as any
+   * other — forced runners only, a bases-loaded walk still scores.
+   */
+  private intentionalWalk(): void {
+    this.phase = 'resolving';
+    this.clearPitchVisuals();
+    this.scoreboard.umpCall('WALK!', BALL_GREEN);
+    this.halfState = { ...this.halfState, count: { ...this.halfState.count, balls: 3 } };
+    this.time.delayedCall(60, () =>
+      this.applyCpuResult({ kind: 'ball', bases: 0, description: 'Intentional walk!' })
+    );
   }
 
   /**
