@@ -97,6 +97,20 @@ export class SeasonScene extends Phaser.Scene {
 
     this.drawTable(season);
 
+    // The week's stat board, once there is a stat to show.
+    if (season.results.length > 0) {
+      makeButton(this, {
+        x: GAME_WIDTH - 118,
+        y: GAME_HEIGHT - 78,
+        label: 'STATS',
+        icon: '📊',
+        width: 170,
+        height: 66,
+        color: COLORS.cream,
+        onClick: () => this.scene.start('Leaders'),
+      });
+    }
+
     if (finalPending(season)) {
       makeButton(this, {
         x: GAME_WIDTH / 2,

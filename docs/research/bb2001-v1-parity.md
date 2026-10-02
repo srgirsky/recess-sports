@@ -33,7 +33,7 @@ the pitcher's toss idle, the batter dodging, and the chaser's name bubble.
 | 3 | Swing stack POWER / LINE DRIVE / GROUNDER / BUNT | SAFE / BIG / BUNT (no grounder to move runners) | ✅ `feat/v1-grounder-swing`: ⬇️ GROUNDER forces a ground ball at full power. SAFE plays BB's LINE DRIVE role |
 | 4 | Defensive positioning from the top-left mini-diamond (infield in, outfield deep) | Fixed positions | ✅ `feat/v1-defense-alignment`: a 🧤 pad on the pitch menu cycles NORMAL / INFIELD IN / PLAY DEEP (`systems/alignment.ts`). Solo only; the CPU defence stays NORMAL |
 | 5 | A season ending in playoffs and a championship game; standings among all teams *(recalled)* | A 5-game Recess Week with your W/L only | ✅ `feat/v1-championship`: a six-team round-robin league table (`systems/league.ts`) and a Saturday final for the top two |
-| 6 | League leaders across the season *(recalled)* | Three end-of-week awards | open |
+| 6 | League leaders across the season *(recalled)* | Three end-of-week awards | ✅ `feat/v1-season-leaders`: 📊 STATS on the hub opens the week's board (AB, H, AVG, HR, R, K), each column's leader lit gold |
 | 7 | Pickoff throws to a base with a runner leading off *(recalled)* | Lead-off is cosmetic | open |
 | 8 | A coin toss for first pick *(recalled)* | The player always picks first | open |
 | 9 | The live-play HUD shrinks to a mini score and outs | The full strip stays up | open |

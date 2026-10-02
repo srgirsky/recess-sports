@@ -3395,3 +3395,9 @@ that would clash with the rival is refused, and any change is saved back to the
 week. The layout audit's season fixture had been recording objects where
 `'W'`/`'L'` belonged. It now builds real weeks: mid-week, missed the cut, final
 pending, champions, and the champions Awards.
+
+**Season stats** came sixth. BB2001 keeps season leaders beside its standings.
+In v1 the hub's 📊 STATS button opens `LeadersScene`: the week's line for each of
+your nine, read from the same `SeasonState.stats` ledger the awards use, with
+each column's leader lit gold. AB never lights up, since it counts turns rather
+than achievements, and nobody lights up in a column where the whole team ties.

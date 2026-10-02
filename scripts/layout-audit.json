@@ -27,6 +27,7 @@
     { "id": "Season (mid-week)", "key": "Season", "needsSeason": true, "teamIdentity": "longest", "weekResults": ["W", "T"] },
     { "id": "Season (final pending)", "key": "Season", "needsSeason": true, "teamIdentity": "longest", "weekResults": ["W", "W", "W", "W", "W"] },
     { "id": "Season (champions)", "key": "Season", "needsSeason": true, "teamIdentity": "longest", "weekResults": ["W", "W", "W", "W", "W"], "final": "W" },
+    { "id": "Leaders", "key": "Leaders", "needsSeason": true, "teamIdentity": "longest" },
     { "id": "Awards", "key": "Awards", "needsSeason": true, "teamIdentity": "longest" },
     { "id": "Awards (champions)", "key": "Awards", "needsSeason": true, "teamIdentity": "longest", "weekResults": ["W", "W", "W", "W", "W"], "final": "W" },
     { "id": "Result solo win", "key": "Result", "result": { "playerScore": 7, "aiScore": 3, "matchType": "solo" } },
