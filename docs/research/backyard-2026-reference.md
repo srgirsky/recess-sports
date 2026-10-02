@@ -909,8 +909,8 @@ the default path (still reachable).
    into his hoodie, Zoom's lean), after restoring `audit:batting` margin —
    **margin restored**, **the whiff finishes in view** and **the bunt squares
    up**, below (Zoom's seated bunt kept by decision); **the wide kids'
-   lead arm leaves the chest**, below; Zoom's lean and whiff frames 9-11
-   remain.
+   lead arm leaves the chest** and **Zoom stays in his chair**, below;
+   whiff frames 9-11 remain.
 5. Verdict read time ≥1.2 s, and the smoke painting CSS on its own clock.
 6. The item-5 debris, verified before any fix.
 7. Title kids grounded in the treehouse.
@@ -1057,6 +1057,28 @@ out to be different things.
   ink contour in the toon shader at constant pixel width (0.19 to 0.15, and the
   shoulder still merges). It is sculpt work (#9): a sleeve seam, cuff or shade
   that differs from the body.
+
+### #4, Zoom stays in his chair (2026-10-02)
+
+"Zoom's lean", measured: his trunk (hips to head) ran 32, 28 and 20 degrees
+off vertical through a swing at the 1.6, 2.4 and 3.1ft pitches, where the
+standing roster peaks at 27, 21 and 20. Through PITCH he tipped over the
+plate-side wheel at contact and just after. A standing kid brings his hips to
+the ball; a chair cannot, so the seated trunk made up all the reach the arms
+left. His chair now sits 0.2ft nearer the plate, and his arms reach to 0.95 of
+their length (0.92 standing), which gives 22, 20 and 14. Measured limits:
+nearer the plate, or contact nearer the body, put his palms 0.15ft inside his
+belly around contact, and straighter arms jumped the lead forearm past 25
+degrees at a 1ft pitch. `audit:batting` now fails a seated peak more than 3 degrees
+past the standing roster's at the same pitch, which 52b7aca does at 1.6 and
+2.4.
+
+An independent critic, shown before/after boards through PITCH and
+PITCH_HERO, judged contact and the frame after it better at both heights
+(middle 3 to 4/5, low 2.5 to 3.5/5) and nothing severe. One confirmed cost: at a
+low pitch's contact frame his hands sit at the near wheel's rim through PITCH,
+because the lean had carried them out past it. Still open: frame 11's
+follow-through is mostly behind his head, the same as every kid's frames 9-11.
 
 ### #6: the debris, verified before any fix (2026-09-29)
 
