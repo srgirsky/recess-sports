@@ -27,6 +27,8 @@ export interface CardDef {
 export interface CardStack {
   destroy(): void;
   setSelected(id: string): void;
+  /** Hide (keeping the choice) while the pitch flies — BB2001's stack does. */
+  setVisible(v: boolean): void;
 }
 
 export function makeCardStack(
@@ -115,6 +117,9 @@ export function makeCardStack(
   opts.pin(root);
   return {
     destroy: () => root.destroy(),
+    setVisible: (v: boolean) => {
+      root.setVisible(v);
+    },
     setSelected(id: string) {
       selected = id;
       for (const r of restyles) r();

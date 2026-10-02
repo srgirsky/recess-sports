@@ -948,7 +948,7 @@ export const PASSPLAY = {
 /** Two-device play over WebRTC (src/net/*; PeerJS free cloud broker). */
 export const NET = {
   /** Bumped on any wire-format change; hello handshake rejects mismatches. */
-  PROTOCOL_VERSION: 7, // v7: SwingType gained 'grounder'. v6: LiveEvent gained {t:'relay'}
+  PROTOCOL_VERSION: 8, // v8: hello.venueId may name 'sandbox' | 'orchard'. v7: SwingType 'grounder'
   /** liveFrame + liveInput pointer stream rate (full ReplayFrames, no deltas). */
   FRAME_HZ: 20,
   /** "Looking for your friend… 🔍" window before the no-blame GOOD GAME. */

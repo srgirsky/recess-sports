@@ -3413,3 +3413,40 @@ never (`PICKOFF`, `rollPickoff`). Either way the runner stays put for that pitch
 and the menu returns for the same batter and count. Throws over are capped at
 two per batter so a pickoff can't stall an at-bat. The left column's pills
 narrowed to 148px to stay clear of the close view's third baseman.
+
+**The live-play HUD** was ninth. BB2001 drops to a mini scoreboard when the
+view goes wide. v1's strip now hides the count, the AT BAT line and its
+mini-diamond in the wide view, keeping the teams, score, outs and inning. Doing
+this exposed a real defect: the swing cards stayed on screen through every live
+play, covering the right field line. They now hide when the pitch is thrown, as
+BB2001's do, and come back when the same batter is up again. Both changes are
+visibility toggles that create nothing and draw no rng, and the main goldlog
+reproduces `431766fe` unchanged.
+
+Two gaps were not built, on purpose. A **coin toss** for first pick would let
+the greedy CPU captain take the most valuable kid half the time, lowering that
+kid's pick rate for a reason that has nothing to do with popularity. Picks are
+the vote, so the player keeps the first pick. **Pinch hitters** don't apply: a
+drafted team is exactly nine kids, so there is no bench to bring in. That
+closes the v1 gap list in `docs/research/bb2001-v1-parity.md`.
+
+**Two more parks**: BB2001 had several ballparks to choose from, and v1 had
+three. Venues are pure data (`data/venues.ts`), so the new ones are built from
+the existing renderer vocabulary and play differently through numbers alone.
+🏰 **The Sandbox** has a roll multiplier of 0.65 and a bounce of 0.45, so
+grounders bog down into infield hits and flies land dead. 🍎 **The Orchard**
+mirrors the sandlot's porch on the left and puts a fruit-hung tree in each
+outfield gap. Every geometry property test already iterates `VENUES`
+(convexity, fair cone, obstacle clearance, wild-throw settle, aligned spots), so
+both passed those on arrival. The layout audit's venue sweep was a literal 3,
+which would have skipped them, and it now counts the data. `hello.venueId` can
+name a park an older build doesn't know, so `NET.PROTOCOL_VERSION` went to 8.
+v2 has its own parks and doesn't import this file.
+
+**The mound line**: BB2001's ON THE MOUND plate reads "2 PT, 0 K, 0 BB". The box
+already counted all three, so CLASSIC's strip now shows `⚾ 14 PT · 3 K · 1 BB`
+under the inning (`boxscore.moundLine`), and hides it in the wide view with the
+rest of the count. It stays out of kid mode on purpose. Kid mode is the
+minimal-reading tier, and its board is created before the first pitch, where one
+more Text would shift the whole seeded stream. A first attempt that drew it in
+both modes changed the kid fingerprint, so it was gated.

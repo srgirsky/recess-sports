@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   foldBox,
   todayLine,
-  pitcherLine,
+  moundLine,
   playerOfTheGame,
   highlights,
   gameScore,
@@ -58,11 +58,11 @@ describe('the strip lines', () => {
     expect(todayLine({ ...EMPTY_BOX, bb: 1 })).toBe('0-for-0 · 1 BB');
   });
 
-  it('gives the pitcher a pitch count', () => {
-    expect(pitcherLine(undefined)).toBe('');
-    expect(pitcherLine({ ...EMPTY_BOX, pt: 1 })).toBe('1 PITCH');
-    expect(pitcherLine({ ...EMPTY_BOX, pt: 14, k: 3, bbAllowed: 1 })).toBe('14 PITCHES · 3 K · 1 BB');
+  it('reads the mound line in BB2001\'s own abbreviations', () => {
+    expect(moundLine(undefined)).toBe('0 PT');
+    expect(moundLine({ ...EMPTY_BOX, pt: 14, k: 3, bbAllowed: 1 })).toBe('14 PT · 3 K · 1 BB');
   });
+
 });
 
 describe('playerOfTheGame', () => {

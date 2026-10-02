@@ -25,6 +25,8 @@ export interface ScoreboardState {
   outs: number;
   /** Occupied bases [1B, 2B, 3B] — lights the mini-diamond dots. */
   bases: [boolean, boolean, boolean];
+  /** BB2001's ON THE MOUND line under the inning ("14 PT · 3 K"). */
+  mound: string;
 }
 
 export interface Scoreboard {
@@ -34,6 +36,12 @@ export interface Scoreboard {
   setBatter(name: string, statLine: string): void;
   /** Umpire call anchored above the strip: 'BALL!', 'STRIKE!', 'FOUL!'. */
   umpCall(text: string, color: number): void;
+  /**
+   * BB2001's live-play HUD: in the wide view the board drops to the teams,
+   * the score, the outs and the inning — the count, the AT BAT line and the
+   * mini-diamond mean nothing while the real diamond is in play.
+   */
+  setCompact(on: boolean): void;
   destroy(): void;
 }
 
@@ -52,7 +60,10 @@ export interface SeatLabels {
 export function createScoreboard(
   scene: Phaser.Scene,
   pin: <T extends Phaser.GameObjects.GameObject>(o: T) => T,
-  labels?: SeatLabels
+  labels?: SeatLabels,
+  /** CLASSIC shows BB2001's ON THE MOUND line under the inning; kid mode
+   *  keeps the minimal-reading board (and its seeded rng stream) unchanged. */
+  opts: { mound?: boolean } = {}
 ): Scoreboard {
   const { CY, W, H } = HUD.STRIP;
   // All children live in the strip container's LOCAL space: x -W/2..W/2,
@@ -116,10 +127,23 @@ export function createScoreboard(
   const outsRow = pipGroup(76, 'OUT', '#ff6a5e', OUTS_MAX);
 
   // --- Right: inning + the mini-diamond base state --------------------------
+  // With the mound line, inning + line share the block between the divider
+  // (184) and the diamond (~380); without it the inning keeps its old spot.
   const inningText = scene.add
-    .text(244, 0, '▲ INN 1/2', { fontFamily: FONT, fontSize: '16px', color: '#ffce3a', fontStyle: '700' })
+    .text(opts.mound ? 282 : 244, opts.mound ? -11 : 0, '▲ INN 1/2', {
+      fontFamily: FONT,
+      fontSize: '16px',
+      color: '#ffce3a',
+      fontStyle: '700',
+    })
     .setOrigin(0.5);
   strip.add(inningText);
+  const moundText = opts.mound
+    ? scene.add
+        .text(282, 13, '', { fontFamily: FONT, fontSize: '13px', color: '#cfd8e0', fontStyle: '700' })
+        .setOrigin(0.5)
+    : undefined;
+  if (moundText) strip.add(moundText);
 
   const diamond = scene.add.container(404, 0);
   const pts = [
@@ -164,6 +188,7 @@ export function createScoreboard(
       homeRow.turn.setVisible(s.half === 'bottom');
       const half = s.half === 'top' ? '▲' : '▼';
       inningText.setText(s.bonus ? `${half} BONUS!` : `${half} INN ${s.inning}/${s.innings}`);
+      moundText?.setText(s.mound ? `⚾ ${s.mound}` : '');
       ballsRow.dots.setText(pips(s.balls, BALLS_MAX));
       strikesRow.dots.setText(pips(s.strikes, STRIKES_MAX));
       outsRow.dots.setText(pips(s.outs, OUTS_MAX));
@@ -211,6 +236,10 @@ export function createScoreboard(
           t.destroy();
         },
       });
+    },
+
+    setCompact(on: boolean): void {
+      for (const o of [batterName, batterLine, ballsRow.c, strikesRow.c, diamond, moundText]) o?.setVisible(!on);
     },
 
     destroy(): void {

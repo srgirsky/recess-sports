@@ -188,7 +188,10 @@ async function auditScene(page, spec, loose) {
         }
       }
       if (spec.cycleVenues && sc.cycleVenue) {
-        for (let v = 0; v < 3; v++) {
+        // Every venue, counted from the data — a new park is audited the day
+        // it lands (this was a literal 3 until v1 grew a fourth and fifth).
+        const V = await import('/src/data/venues.ts');
+        for (let v = 0; v < Object.keys(V.VENUES).length; v++) {
           sc.cycleVenue(1);
           pump(120);
           merge(runOne());

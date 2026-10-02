@@ -79,7 +79,7 @@ import { activeSession, dropSession } from '../net/peer';
 import type { NetMsg, HudSnap } from '../net/protocol';
 import { getSettings } from '../systems/settings';
 import type { StatEvent } from '../systems/stats';
-import { foldBox, todayLine, type BoxEvent, type BoxLine, type PaResult } from '../systems/boxscore';
+import { foldBox, todayLine, moundLine, type BoxEvent, type BoxLine, type PaResult } from '../systems/boxscore';
 import { getSeason, saveSeason, recordSeasonGame, recordFinal } from '../systems/season';
 import { finalOpponent } from '../systems/league';
 import {
@@ -935,6 +935,7 @@ export class GameScene extends Phaser.Scene {
       this.rig.hide();
       this.clearRestingBall(); // a rig-space prop must never float over the field
     }
+    this.scoreboard?.setCompact(view === 'wide');
     if (this.viewMode !== view) {
       this.viewMode = view;
       this.cameras.main.flash(PLATE_VIEW.CUT_FLASH_MS, 255, 255, 255);
@@ -1400,6 +1401,12 @@ export class GameScene extends Phaser.Scene {
       this.add.circle(q.x - r * 0.45, q.y - r * 0.2, r * 0.62, 0x3f7d3a).setDepth(23);
       this.add.circle(q.x + r * 0.45, q.y - r * 0.2, r * 0.62, 0x478940).setDepth(23);
       this.add.circle(q.x, q.y - r * 0.55, r * 0.7, 0x529a49).setDepth(23);
+      if (o.fruit) {
+        // A few apples in the canopy — the orchard reads at a glance.
+        for (const [fx, fy] of [[-0.5, -0.1], [0.35, -0.45], [0.55, 0.05], [-0.1, -0.75]]) {
+          this.add.circle(q.x + r * fx, q.y + r * fy, Math.max(2.5, r * 0.13), 0xd8352a).setDepth(23);
+        }
+      }
       groundShadow(this, 0, 0, r * 1.4).setPosition(q.x, q.y + r).setDepth(22);
     }
   }
@@ -1426,7 +1433,8 @@ export class GameScene extends Phaser.Scene {
     this.scoreboard = createScoreboard(
       this,
       (o) => this.pinUI(o),
-      idA && idB ? { away: seatLabel(idA), home: seatLabel(idB) } : undefined
+      idA && idB ? { away: seatLabel(idA), home: seatLabel(idB) } : undefined,
+      { mound: this.features.pitchSelection }
     );
 
     // Announcer lives in its own band along the top so it never sits on a sprite.
@@ -1470,6 +1478,7 @@ export class GameScene extends Phaser.Scene {
         !!this.halfState?.bases[1],
         !!this.halfState?.bases[2],
       ],
+      mound: moundLine(this.box[this.fieldingSeat().pitcher?.id ?? '']),
     });
     for (let i = 0; i < 3; i++) {
       const lit = this.halfState?.bases[i];
@@ -1885,6 +1894,8 @@ export class GameScene extends Phaser.Scene {
   private throwPitch(): void {
     // Wind up first, then release. Input is ignored until the ball is live.
     this.phase = 'resolving';
+    // BB2001 hides the swing cards while the pitch flies; the choice stands.
+    this.swingChips?.setVisible(false);
     this.setView('close'); // the batting view: batter + mound fill the screen
     this.pitcherWindup();
     this.time.delayedCall(ANIM.WINDUP_MS, () => this.launchPitch());
@@ -2718,6 +2729,8 @@ export class GameScene extends Phaser.Scene {
     const seat = this.battingSeat();
     const applied = applyAtBat(this.halfState, result);
     this.halfState = applied.state;
+    // Same batter, next pitch: the swing cards come back for the next pick.
+    if (!applied.batterDone) this.swingChips?.setVisible(true);
     // Batting practice: outs never stick, so the half never ends.
     if (this.practice) this.halfState = { ...this.halfState, outs: 0 };
     if (applied.runsScored > 0) seat.score += applied.runsScored;
