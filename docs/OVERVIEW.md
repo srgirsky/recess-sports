@@ -3401,3 +3401,15 @@ In v1 the hub's 📊 STATS button opens `LeadersScene`: the week's line for each
 your nine, read from the same `SeasonState.stats` ledger the awards use, with
 each column's leader lit gold. AB never lights up, since it counts turns rather
 than achievements, and nobody lights up in a column where the whole team ties.
+
+**Pickoffs** were seventh. BB2001 lets the pitcher throw over to catch a runner
+leaning. In v1 the CPU runner used to decide whether to steal at the moment of
+release, so there was nothing to read. The decision now happens when the pitch
+menu opens, and the left column gains a 👀 PICK OFF pill for the lead runner on
+first or second. A runner who has decided to go makes the pill throb red, which
+gives four-to-eight-year-olds a tell they can actually see. A runner caught
+leaning is out a bit over half the time, and one standing on the bag almost
+never (`PICKOFF`, `rollPickoff`). Either way the runner stays put for that pitch
+and the menu returns for the same batter and count. Throws over are capped at
+two per batter so a pickoff can't stall an at-bat. The left column's pills
+narrowed to 148px to stay clear of the close view's third baseman.
