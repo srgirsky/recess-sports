@@ -908,7 +908,8 @@ the default path (still reachable).
 4. The known weak batting reads (Grizz and Tank's hidden lead arm, Moose's arm
    into his hoodie, Zoom's lean), after restoring `audit:batting` margin —
    **margin restored**, **the whiff finishes in view** and **the bunt squares
-   up**, below; Zoom's seated bunt and the other weak reads remain.
+   up**, below (Zoom's seated bunt kept by decision); the other weak reads
+   remain.
 5. Verdict read time ≥1.2 s, and the smoke painting CSS on its own clock.
 6. The item-5 debris, verified before any fix.
 7. Title kids grounded in the treehouse.
@@ -1007,8 +1008,11 @@ Tried, with the numbers:
   schedule (320 to 350) is smooth and narrows him to 0.81-1.34 (from 1.92),
   but every such pose hangs his knob forearm near vertical (0.77 rad from it,
   where `HandPose.test.ts` asks 0.96) or lifts the elbow (0.12ft drop, asked
-  0.2): searched over 114 seated poses. Narrowing him means revisiting those
-  two seated rules, which is a product call.
+  0.2): searched over 114 seated poses. **Decided (2026-10-01): kept as
+  is.** Those two seated rules fixed a real defect (a chair cannot step the
+  trunk back, so the knob elbow rose beside the face over a vertical
+  forearm); the best pose that keeps them narrows him only to 1.34, and PITCH
+  sees his lead arm mostly behind his torso and chair.
 - **Big Lou's lead elbow at the 1.6ft contact** sat 0.007ft below his
   shoulder. A lower lead elbow HINT stepped the forearm 48 degrees; a world-
   height cost did nothing, because his trunk leans to a low ball and the gate
