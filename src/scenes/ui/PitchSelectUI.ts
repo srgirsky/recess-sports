@@ -50,10 +50,13 @@ export interface SpecialPitchOption {
   cost: number;
 }
 
-/** The 🚶 WALK pill's centre x: in the open sky left of the prompt. */
-const WALK_X = 104;
+/** The left column's centre x (WALK, the pad, the pickoff): open sky left
+ *  of the prompt. 148px pills end at x≈168, clear of the rig's third baseman. */
+const WALK_X = 94;
 /** The positioning pad sits under WALK, still clear of the rig's 3B. */
 const ALIGN_Y = 196;
+/** …and the pickoff under that. */
+const PICKOFF_Y = 244;
 const ALIGN_LABEL: Record<Alignment, string> = {
   normal: '🧤 NORMAL',
   in: '🧤 INFIELD IN',
@@ -83,6 +86,9 @@ export function showPitchSelect(
     /** BB2001's positioning pad: when given, a 🧤 pill under WALK cycles the
      *  defence NORMAL → INFIELD IN → OUTFIELD DEEP before the pitch. */
     alignment?: { current: Alignment; onChange: (a: Alignment) => void };
+    /** BB2001's pickoff: when given, a 👀 pill under the pad throws over to
+     *  the lead runner's base. `hot` = that runner is leaning (pulses red). */
+    pickoff?: { label: string; hot: boolean; onThrow: () => void };
     /** Pin screen-anchored chrome (prompt + card stack) to the UI camera. The
      *  zone grid stays in WORLD space: the frontal plate mapping already makes
      *  it a big tap target, and the camera never zooms anyway. */
@@ -135,7 +141,7 @@ export function showPitchSelect(
     const { onChange } = opts.alignment;
     let current = opts.alignment.current;
     // minW holds all three labels, so the measured hit box never changes.
-    const pad = pill(scene, WALK_X, ALIGN_Y, ALIGN_LABEL[current], { fill: COLORS.cream, fontSize: 18, minW: 168, maxW: 168 });
+    const pad = pill(scene, WALK_X, ALIGN_Y, ALIGN_LABEL[current], { fill: COLORS.cream, fontSize: 18, minW: 148, maxW: 148 });
     pad.container.setDepth(90);
     hitFromBox(pad.container);
     pad.container.on(
@@ -151,6 +157,32 @@ export function showPitchSelect(
     );
     opts.pin(pad.container);
     objs.push(pad.container);
+  }
+
+  // --- Pickoff ----------------------------------------------------------------
+  if (opts.pickoff) {
+    const { label, hot, onThrow } = opts.pickoff;
+    const po = pill(scene, WALK_X, PICKOFF_Y, label, {
+      fill: hot ? COLORS.red : COLORS.cream,
+      textColor: hot ? '#ffffff' : '#14202e',
+      fontSize: 18,
+      maxW: 148,
+    });
+    po.container.setDepth(90);
+    hitFromBox(po.container);
+    // The tell: a runner about to go has the pill throbbing at you.
+    if (hot) scene.tweens.add({ targets: po.container, scale: 1.08, duration: 300, yoyo: true, repeat: -1 });
+    po.container.on(
+      'pointerdown',
+      (_p: unknown, _x: number, _y: number, e: Phaser.Types.Input.EventData) => {
+        e.stopPropagation(); // GameScene's scene-level tap throws
+        if (done) return;
+        done = true;
+        onThrow();
+      }
+    );
+    opts.pin(po.container);
+    objs.push(po.container);
   }
 
   // --- Pitch cards (right edge, base group + specials group) ---------------

@@ -1104,6 +1104,18 @@ export const ALIGN = {
   RIG_DEEP: { DY: -5, SCALE: 0.88 },
 };
 
+/**
+ * Pickoffs (CLASSIC, systems/steal.ts rollPickoff). DERIVED: a runner caught
+ * leaning is out a bit over half the time; one on the bag almost never.
+ * MAX_PER_BATTER caps the throws over so the pitcher can't stall a kid's
+ * at-bat with endless throws.
+ */
+export const PICKOFF = {
+  LEANING: 0.6,
+  HOME: 0.06,
+  MAX_PER_BATTER: 2,
+};
+
 /** Full-baserunning rules (main mode). */
 export const RUN2 = {
   /** Ball-carrier within this of an off-bag runner = tag, you're out. */

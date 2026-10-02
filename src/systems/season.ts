@@ -23,6 +23,12 @@ export interface SeasonState {
   rivals: TeamIdentity[];
   rivalTeams: string[][];
   stats: Record<string, KidStats>;
+  /**
+   * Saturday's championship (v1's league, systems/league.ts). Absent until
+   * it is played; the five weekday `results` never include it. Optional, so
+   * a week saved by either game loads in both.
+   */
+  final?: { opponent: number; result: GameResult };
 }
 
 const KEY = 'recess_season';
@@ -80,6 +86,21 @@ export function recordSeasonGame(
     results: [...s.results, result],
     stats: foldStats(s.stats, events),
   };
+}
+
+/** Fold the championship into the week: its stats count, its result is kept apart. */
+export function recordFinal(
+  s: SeasonState,
+  opponent: number,
+  result: GameResult,
+  events: StatEvent[]
+): SeasonState {
+  return { ...s, final: { opponent, result }, stats: foldStats(s.stats, events) };
+}
+
+/** Won Saturday's championship outright (a tie is a shared title). */
+export function wonChampionship(s: SeasonState): boolean {
+  return s.final?.result === 'W';
 }
 
 export function wins(s: SeasonState): number {

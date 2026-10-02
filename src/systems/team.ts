@@ -43,6 +43,11 @@ export const RIVAL_PRESETS: TeamIdentity[] = [
   { color: 1, logo: 2 }, // the Blue Bolts
   { color: 2, logo: 6 }, // the Green Frogs
   { color: 6, logo: 7 }, // the Gold Rexes
+  // Six presets, so the five rivals of a Recess Week are five DIFFERENT teams
+  // whatever the player's colour (one clash leaves five). With five, a clash
+  // left four and the week faced the same team twice — invisible on a weekday
+  // schedule, glaring in v1's league table.
+  { color: 5, logo: 0 }, // the Teal Rockets
 ];
 
 /** A rival that doesn't clash with the player's color. */

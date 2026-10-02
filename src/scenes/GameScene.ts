@@ -28,6 +28,7 @@ import {
   ANIM,
   FX,
   HUD,
+  PICKOFF,
 } from '../config';
 import type { Character } from '../data/types';
 import { getCharacter } from '../data/characters';
@@ -79,7 +80,8 @@ import type { NetMsg, HudSnap } from '../net/protocol';
 import { getSettings } from '../systems/settings';
 import type { StatEvent } from '../systems/stats';
 import { foldBox, todayLine, type BoxEvent, type BoxLine, type PaResult } from '../systems/boxscore';
-import { getSeason, saveSeason, recordSeasonGame } from '../systems/season';
+import { getSeason, saveSeason, recordSeasonGame, recordFinal } from '../systems/season';
+import { finalOpponent } from '../systems/league';
 import {
   snapshotLive,
   applyFrame,
@@ -101,7 +103,7 @@ import {
   type HalfInningState,
   type RunnerMove,
 } from '../systems/inning';
-import { rollSteal, cpuWantsSteal } from '../systems/steal';
+import { rollSteal, cpuWantsSteal, rollPickoff, applyPickoff } from '../systems/steal';
 import { type Alignment } from '../systems/alignment';
 import {
   newJuice,
@@ -305,6 +307,7 @@ export class GameScene extends Phaser.Scene {
   private spectator = false; // WATCH: both teams CPU-driven, no human input
   private tee = false; // tee-ball difficulty: the pitch is a slow soft lob
   private seasonGame = false; // this game counts toward Recess Week
+  private seasonFinal = false; // …and it is Saturday's championship
   private matchType: 'solo' | 'passplay' | 'net' = 'solo';
   /** Two-device play: which end of the wire this device is (unset = local). */
   private netRole?: 'host' | 'guest';
@@ -575,6 +578,12 @@ export class GameScene extends Phaser.Scene {
   private stealChips: Phaser.GameObjects.Container[] = [];
   /** Main mode: a CPU runner is stealing on the current pitch. */
   private cpuStealFrom?: 1 | 2;
+  /** The CPU runner's steal decision for the pitch being picked, made when
+   *  the pitch menu opens so a pickoff can catch them leaning. undefined =
+   *  not decided yet (resolvePlayerPitchPlan rolls it then). */
+  private stealIntent?: { from?: 1 | 2 };
+  /** Throws over this at-bat, capped at PICKOFF.MAX_PER_BATTER. */
+  private pickoffs = { batter: '', n: 0 };
   // Juice meters (main mode): charge on great plays, spend on power moves.
   private armedPower = false;
   private powerBtn?: Phaser.GameObjects.Container;
@@ -682,6 +691,7 @@ export class GameScene extends Phaser.Scene {
     this.practice = data.practice ?? false;
     this.spectator = data.spectator ?? false;
     this.seasonGame = data.seasonGame ?? false;
+    this.seasonFinal = this.seasonGame && (data.seasonFinal ?? false);
     this.matchType = data.matchType ?? 'solo';
     this.netRole = data.netRole;
     // Seat flags EVERY game (the seat objects persist across scene restarts):
@@ -1571,6 +1581,7 @@ export class GameScene extends Phaser.Scene {
   private enterHalf(): void {
     this.clearRestingBall();
     this.defAlign = 'normal'; // the positioning pad resets every half
+    this.stealIntent = undefined;
     this.liveView.setAlignment('normal', this.geo, false); // buildDefense follows
     this.clearCeremony();
     this.pitcherWindupSeq?.cancel(false); // stale windup2 must not land on next half's mound
@@ -1605,8 +1616,10 @@ export class GameScene extends Phaser.Scene {
     const begin = () => {
       if (this.battingSeat().humanBats) {
         this.setMoundPitcher(this.fieldingSeat().pitcher!);
-        this.flashAnnounce(`Inning ${this.inning}\nYOU'RE UP!`, COLORS.gold);
-        if (this.firstPitchOfGame) audio.say('Play ball!', commentatorProfile('A'));
+        const final = this.seasonFinal && this.firstPitchOfGame;
+        this.flashAnnounce(final ? '🏆 CHAMPIONSHIP!\nYOU\'RE UP!' : `Inning ${this.inning}\nYOU'RE UP!`, COLORS.gold);
+        if (final) audio.say('It is the championship game! Play ball!', commentatorProfile('A'));
+        else if (this.firstPitchOfGame) audio.say('Play ball!', commentatorProfile('A'));
         this.time.delayedCall(FLOW.HALF_START_MS, () => this.nextPlayerBatter());
       } else {
         this.setMoundPitcher(this.fieldingSeat().pitcher!);
@@ -1703,7 +1716,12 @@ export class GameScene extends Phaser.Scene {
       if (season) {
         const result =
           this.playerScore > this.aiScore ? 'W' : this.playerScore < this.aiScore ? 'L' : 'T';
-        saveSeason(recordSeasonGame(season, result, this.statEvents));
+        const opp = this.seasonFinal ? finalOpponent(season) : null;
+        saveSeason(
+          opp !== null
+            ? recordFinal(season, opp, result, this.statEvents)
+            : recordSeasonGame(season, result, this.statEvents)
+        );
       }
     }
     this.time.delayedCall(400, () => {
@@ -3508,8 +3526,76 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(FLOW.CPU_NEW_BATTER_MS, () => this.beginPitchTurn());
   }
 
+  /** Does a CPU runner take off on this pitch? The lead runner with an open
+   *  base ahead gets the first look. */
+  private rollStealIntent(): 1 | 2 | undefined {
+    for (const from of [2, 1] as const) {
+      if (!this.runners.has(from) || this.runners.has(from + 1)) continue;
+      const runner = getCharacter(this.runners.get(from)!.getData('id') as string);
+      if (cpuWantsSteal(runner.stats.speed, () => Math.random())) return from;
+    }
+    return undefined;
+  }
+
+  /** The base a pickoff throws to: the lead runner on first or second. */
+  private pickoffBase(): 1 | 2 | undefined {
+    if (!this.canAlign() || !this.features.steals) return undefined;
+    if (this.pickoffs.batter === this.cpuBatter.id && this.pickoffs.n >= PICKOFF.MAX_PER_BATTER) return undefined;
+    return this.runners.has(2) ? 2 : this.runners.has(1) ? 1 : undefined;
+  }
+
+  /**
+   * BB2001's pickoff: throw over instead of pitching. A runner who was about
+   * to go is usually caught; one on the bag almost never is. Either way the
+   * pitch menu comes back for the same batter, same count.
+   */
+  private throwPickoff(base: 1 | 2): void {
+    this.pitchAutoPick?.remove(false);
+    this.pitchAutoPick = undefined;
+    this.pitchSelect?.destroy();
+    this.pitchSelect = undefined;
+    this.phase = 'resolving';
+    if (this.pickoffs.batter !== this.cpuBatter.id) this.pickoffs = { batter: this.cpuBatter.id, n: 0 };
+    this.pickoffs.n += 1;
+    const token = this.runners.get(base);
+    if (!token) {
+      this.beginPitchTurn(true);
+      return;
+    }
+    const runner = getCharacter(token.getData('id') as string);
+    const out = rollPickoff(
+      {
+        runnerSpeed: runner.stats.speed,
+        pitcherArm: this.fieldingSeat().pitcher!.stats.pitching,
+        leaning: this.stealIntent?.from === base,
+      },
+      () => Math.random()
+    );
+    this.halfState = applyPickoff(this.halfState, base, out);
+    screenShake(this, 3);
+    if (out) {
+      this.runners.delete(base);
+      this.tweens.add({ targets: token, alpha: 0, duration: 320, onComplete: () => token.destroy() });
+      this.tallyBox({ t: 'catch', kid: this.fieldAssignment.find((a) => a.position === (base === 1 ? '1B' : '2B'))!.charId });
+      this.callIt('stealCaught', {});
+      audio.cheer();
+      this.flashAnnounce(`PICKED OFF! 🎯\n${runner.name} is OUT!`, COLORS.gold, FLOW.BIG_BANNER_HOLD_MS);
+    } else {
+      audio.whiff();
+      this.flashAnnounce(`SAFE! ${runner.name}\ndove back in time!`, COLORS.white, FLOW.BANNER_HOLD_MS);
+    }
+    // Either way the runner is back on the bag and stays put this pitch.
+    this.stealIntent = { from: undefined };
+    this.refreshHud();
+    if (isHalfOver(this.halfState)) {
+      this.time.delayedCall(FLOW.BIG_BANNER_HOLD_MS, () => this.endHalf());
+      return;
+    }
+    this.time.delayedCall(out ? FLOW.BIG_BANNER_HOLD_MS : FLOW.BANNER_HOLD_MS, () => this.beginPitchTurn(true));
+  }
+
   /** Main mode picks a pitch + aim first; kid mode goes straight to the meter. */
-  private beginPitchTurn(): void {
+  private beginPitchTurn(keepIntent = false): void {
     this.setView('close'); // the pitching view mirrors the batting one
     // Two strikes on the CPU kid: they turn around and sweat while you pick.
     if (this.halfState.count.strikes === 2) this.rig.reactBatter('nervous', ANIM.REACT_HOLD_MS);
@@ -3520,6 +3606,10 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     this.phase = 'resolving'; // the select UI owns input until the aim is tapped
+    // The CPU runner makes up their mind NOW, while you pick — that is what
+    // a pickoff reads. (A throw over keeps the spooked runner's decision.)
+    if (!keepIntent) this.stealIntent = this.features.steals ? { from: this.rollStealIntent() } : undefined;
+    const pickBase = this.pickoffBase();
     const confirm = (kind: PitchKind, target: PlateLoc) => {
       autoPick.remove();
       this.pitchSelect?.destroy();
@@ -3563,6 +3653,14 @@ export class GameScene extends Phaser.Scene {
       alignment: this.canAlign()
         ? { current: this.defAlign, onChange: (a) => this.setDefAlign(a) }
         : undefined,
+      pickoff:
+        pickBase !== undefined
+          ? {
+              label: `👀 PICK OFF ${pickBase === 1 ? '1B' : '2B'}`,
+              hot: this.stealIntent?.from === pickBase,
+              onThrow: () => this.throwPickoff(pickBase),
+            }
+          : undefined,
       onWalk: () => {
         autoPick.remove();
         this.pitchSelect?.destroy();
@@ -3700,18 +3798,13 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     this.lastPitchKind = kind;
-    // Speedy CPU runners sometimes take off on the pitch.
+    // Speedy CPU runners sometimes take off on the pitch — decided when the
+    // menu opened (so a pickoff could read it), or right now if it never did.
     this.cpuStealFrom = undefined;
     if (this.features.steals) {
-      for (const from of [2, 1] as const) {
-        if (!this.runners.has(from) || this.runners.has(from + 1)) continue;
-        const runner = getCharacter(this.runners.get(from)!.getData('id') as string);
-        if (cpuWantsSteal(runner.stats.speed, () => Math.random())) {
-          this.cpuStealFrom = from;
-          break;
-        }
-      }
+      this.cpuStealFrom = this.stealIntent ? this.stealIntent.from : this.rollStealIntent();
     }
+    this.stealIntent = undefined;
     // Nominal meter error per band, for callers that only know the band.
     const NOMINAL: Record<PitchBand, number> = { perfect: 0, good: 110, weak: 205, wild: 320 };
     const err = errorMs ?? NOMINAL[band];
