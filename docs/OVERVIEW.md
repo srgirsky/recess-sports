@@ -3442,3 +3442,11 @@ both passed those on arrival. The layout audit's venue sweep was a literal 3,
 which would have skipped them, and it now counts the data. `hello.venueId` can
 name a park an older build doesn't know, so `NET.PROTOCOL_VERSION` went to 8.
 v2 has its own parks and doesn't import this file.
+
+**The mound line**: BB2001's ON THE MOUND plate reads "2 PT, 0 K, 0 BB". The box
+already counted all three, so CLASSIC's strip now shows `⚾ 14 PT · 3 K · 1 BB`
+under the inning (`boxscore.moundLine`), and hides it in the wide view with the
+rest of the count. It stays out of kid mode on purpose. Kid mode is the
+minimal-reading tier, and its board is created before the first pitch, where one
+more Text would shift the whole seeded stream. A first attempt that drew it in
+both modes changed the kid fingerprint, so it was gated.

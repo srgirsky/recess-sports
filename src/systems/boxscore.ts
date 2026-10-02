@@ -121,12 +121,14 @@ export function todayLine(l: BoxLine | undefined): string {
   return parts.join(' · ');
 }
 
-/** The pitcher's line: "14 PITCHES · 3 K · 1 BB". '' before the first pitch. */
-export function pitcherLine(l: BoxLine | undefined): string {
-  if (!l || l.pt === 0) return '';
-  const parts = [plural(l.pt, 'PITCH', 'PITCHES')];
-  if (l.k > 0) parts.push(`${l.k} K`);
-  if (l.bbAllowed > 0) parts.push(`${l.bbAllowed} BB`);
+/**
+ * BB2001's ON THE MOUND line, in its own abbreviations: "14 PT · 3 K · 1 BB".
+ * Always shows the pitch count (0 PT before the first pitch).
+ */
+export function moundLine(l: BoxLine | undefined): string {
+  const parts = [`${l?.pt ?? 0} PT`];
+  if (l && l.k > 0) parts.push(`${l.k} K`);
+  if (l && l.bbAllowed > 0) parts.push(`${l.bbAllowed} BB`);
   return parts.join(' · ');
 }
 

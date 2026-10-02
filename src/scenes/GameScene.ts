@@ -79,7 +79,7 @@ import { activeSession, dropSession } from '../net/peer';
 import type { NetMsg, HudSnap } from '../net/protocol';
 import { getSettings } from '../systems/settings';
 import type { StatEvent } from '../systems/stats';
-import { foldBox, todayLine, type BoxEvent, type BoxLine, type PaResult } from '../systems/boxscore';
+import { foldBox, todayLine, moundLine, type BoxEvent, type BoxLine, type PaResult } from '../systems/boxscore';
 import { getSeason, saveSeason, recordSeasonGame, recordFinal } from '../systems/season';
 import { finalOpponent } from '../systems/league';
 import {
@@ -1433,7 +1433,8 @@ export class GameScene extends Phaser.Scene {
     this.scoreboard = createScoreboard(
       this,
       (o) => this.pinUI(o),
-      idA && idB ? { away: seatLabel(idA), home: seatLabel(idB) } : undefined
+      idA && idB ? { away: seatLabel(idA), home: seatLabel(idB) } : undefined,
+      { mound: this.features.pitchSelection }
     );
 
     // Announcer lives in its own band along the top so it never sits on a sprite.
@@ -1477,6 +1478,7 @@ export class GameScene extends Phaser.Scene {
         !!this.halfState?.bases[1],
         !!this.halfState?.bases[2],
       ],
+      mound: moundLine(this.box[this.fieldingSeat().pitcher?.id ?? '']),
     });
     for (let i = 0; i < 3; i++) {
       const lit = this.halfState?.bases[i];
