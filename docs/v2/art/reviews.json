@@ -234,7 +234,7 @@
       "targets": [
         "character:tank"
       ],
-      "observation": "The September 19 arm review found Tank’s hands and parts of his sleeves still intersecting his tee during bat_stance. This is present in the pre-fix model/pose. Joint skinning, a common elbow bend plane and a chest-relative elbow hint improve running/throwing and the contact silhouette, but do not establish torso clearance in the ready pose. Keep this separate from the corrected rigid-joint defect.",
+      "observation": "The September 19 arm review found Tank’s hands and parts of his sleeves still intersecting his tee during bat_stance. This is present in the pre-fix model/pose. Joint skinning, a common elbow bend plane and a chest-relative elbow hint improve running/throwing and the contact silhouette, but do not establish torso clearance in the ready pose. Keep this separate from the corrected rigid-joint defect. 2026-10-01: measured on the mesh, the ready lead arm sank 11-28% into the torso on Big Lou, Tank, Nostrike, Grizz, Boomer and Moose; girth-scaled ready hands bring it to 0.04-0.11 and audit:batting now fails it at ready. Still open: around contact the same six kids read 0.07-0.27 (lead and trail), and the full motion has not been independently reviewed.",
       "evidence": [
         "docs/research/arm-deformation-2026-09-19.md",
         "src/v2/render/battingPose.ts"
