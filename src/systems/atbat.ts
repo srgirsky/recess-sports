@@ -21,7 +21,7 @@ export type SwingBand = 'perfect' | 'good' | 'weak' | 'miss';
 /** Pre-pitch swing choice (CLASSIC): trade contact ease against power.
  *  'crazyBunt' is the signature card — only batters with ability
  *  'crazy_bunt' ever see it (GameScene.showSwingChips gates the stack). */
-export type SwingType = 'normal' | 'safe' | 'big' | 'bunt' | 'crazyBunt';
+export type SwingType = 'normal' | 'safe' | 'big' | 'grounder' | 'bunt' | 'crazyBunt';
 
 /**
  * The timing windows for a swing type: SAFE widens every band (easy contact),
@@ -42,6 +42,10 @@ export function timingForSwing(base: typeof TIMING, type: SwingType): typeof TIM
         CONTACT: Math.max(base.PERFECT + 20, base.CONTACT - n),
       };
     }
+    case 'grounder': {
+      const f = SWING_TYPES.GROUNDER.FORGIVE_MS;
+      return { PERFECT: base.PERFECT, GOOD: base.GOOD + f, CONTACT: base.CONTACT + f };
+    }
     case 'bunt':
       return { ...base, CONTACT: base.CONTACT + SWING_TYPES.BUNT.FORGIVE_MS };
     case 'crazyBunt':
@@ -50,6 +54,16 @@ export function timingForSwing(base: typeof TIMING, type: SwingType): typeof TIM
       return base;
   }
 }
+
+/** Contact-quality nudge per swing type (0 = the unmodified baseline). */
+const SWING_Q_ADJ: Record<SwingType, number> = {
+  normal: 0,
+  safe: SWING_TYPES.SAFE.Q_ADJ,
+  big: SWING_TYPES.BIG.Q_ADJ,
+  grounder: SWING_TYPES.GROUNDER.Q_ADJ,
+  bunt: SWING_TYPES.BUNT.Q_ADJ,
+  crazyBunt: SWING_TYPES.CRAZY_BUNT.Q_ADJ,
+};
 
 export type AtBatKind = 'hit' | 'out' | 'strike' | 'foul' | 'ball';
 
@@ -210,16 +224,7 @@ export function resolveContactAimed(spec: {
 
   const { contact, power } = batter.stats;
   const bandBoost = band === 'perfect' ? 0.35 : band === 'good' ? 0.12 : 0;
-  const swingQAdj =
-    swingType === 'safe'
-      ? SWING_TYPES.SAFE.Q_ADJ
-      : swingType === 'big'
-        ? SWING_TYPES.BIG.Q_ADJ
-        : swingType === 'bunt'
-          ? SWING_TYPES.BUNT.Q_ADJ
-          : swingType === 'crazyBunt'
-            ? SWING_TYPES.CRAZY_BUNT.Q_ADJ
-            : 0;
+  const swingQAdj = SWING_Q_ADJ[swingType];
   let q =
     rng() +
     bandBoost +
@@ -258,7 +263,11 @@ export function resolveContactAimed(spec: {
     band: band as Exclude<SwingBand, 'miss'>,
     q,
     typeBias,
-    forceType: calledShot ? 'fly' : swingType === 'bunt' || swingType === 'crazyBunt' ? 'grounder' : undefined,
+    forceType: calledShot
+      ? 'fly'
+      : swingType === 'grounder' || swingType === 'bunt' || swingType === 'crazyBunt'
+        ? 'grounder'
+        : undefined,
     distCap:
       swingType === 'bunt'
         ? SWING_TYPES.BUNT.DIST_CAP

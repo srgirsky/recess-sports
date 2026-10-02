@@ -948,7 +948,7 @@ export const PASSPLAY = {
 /** Two-device play over WebRTC (src/net/*; PeerJS free cloud broker). */
 export const NET = {
   /** Bumped on any wire-format change; hello handshake rejects mismatches. */
-  PROTOCOL_VERSION: 6, // v6: the LiveEvent union gained {t:'relay'} (the cutoff relay)
+  PROTOCOL_VERSION: 7, // v7: SwingType gained 'grounder'. v6: LiveEvent gained {t:'relay'}
   /** liveFrame + liveInput pointer stream rate (full ReplayFrames, no deltas). */
   FRAME_HZ: 20,
   /** "Looking for your friend… 🔍" window before the no-blame GOOD GAME. */
@@ -1072,6 +1072,11 @@ export const SWING_TYPES = {
   SAFE: { FORGIVE_MS: 76, Q_ADJ: -0.3 },
   /** 💪 BIG: sell out — weak contact becomes a whiff, solid contact is crushed. */
   BIG: { NARROW_MS: 59, Q_ADJ: 0.22, TYPE_BIAS: 0.35 },
+  /** ⬇️ GROUNDER (BB2001's GROUNDER card): chop it on the ground — a little
+   *  easier to time than NORMAL, never a pop-up, full power behind it, so a
+   *  hard chopper still finds a hole and a runner on third can come home.
+   *  DERIVED: half the SAFE swing's forgiveness, no quality penalty. */
+  GROUNDER: { FORGIVE_MS: 38, Q_ADJ: 0 },
   /** 🤏 BUNT: easy to get bat on it; the ball dies in front of the plate. */
   BUNT: { FORGIVE_MS: 104, DIST_CAP: 115, Q_ADJ: -0.5, SPRAY_MIN: 0.34, SPRAY_MAX: 0.66 },
   /** 🤪 CRAZY BUNT (signature card, ability 'crazy_bunt' — BB2001's Tony D.

@@ -3345,3 +3345,12 @@ walk path, so only forced runners move and a bases-loaded walk scores. The
 pill's Text draws from `Math.random` for its texture key, which moved the main
 goldlog. The harness never taps it, and the game still ends 0-0 through the
 bonus inning. It was recaptured with that reason recorded.
+
+**The GROUNDER swing** came third. BB2001 gives every batter POWER, LINE DRIVE,
+GROUNDER and BUNT. v1 had SAFE (the line-drive role), BIG and BUNT, and no way
+to say "keep it on the ground". ⬇️ GROUNDER forces a ground ball. It gets half
+SAFE's timing forgiveness and no quality penalty, so a perfect chop still gets
+through the infield where a bunt would die. `SwingType` crosses the wire, so
+`NET.PROTOCOL_VERSION` went to 7. The two new Texts per at-bat moved the main
+goldlog again, and it was recaptured with the reason recorded. Kid mode shows
+neither control, and its fingerprint is unchanged.

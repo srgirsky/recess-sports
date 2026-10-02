@@ -30,7 +30,7 @@ the pitcher's toss idle, the batter dodging, and the chaser's name bubble.
 |---|---|---|---|
 | 1 | Running "TODAY" line per batter, a Player of the Game earned in play, an end-of-game box | Batting line was hits and at-bats only; "TEAM MVP" was the highest-*rated* kid, whatever happened | ✅ `feat/v1-box-score`: `systems/boxscore.ts`, Result card + box |
 | 2 | INTENTIONAL WALK pitch card; "ON THE MOUND" pitch count | No intentional walk; no pitch count shown | ✅ `feat/v1-intentional-walk`: 🚶 WALK on the pitch menu. Pitch counts are in the box (#1); no on-screen mound plate yet |
-| 3 | Swing stack POWER / LINE DRIVE / GROUNDER / BUNT | SAFE / BIG / BUNT (no grounder to move runners) | open |
+| 3 | Swing stack POWER / LINE DRIVE / GROUNDER / BUNT | SAFE / BIG / BUNT (no grounder to move runners) | ✅ `feat/v1-grounder-swing`: ⬇️ GROUNDER forces a ground ball at full power. SAFE plays BB's LINE DRIVE role |
 | 4 | Defensive positioning from the top-left mini-diamond (infield in, outfield deep) | Fixed positions | open |
 | 5 | A season ending in playoffs and a championship game; standings among all teams *(recalled)* | A 5-game Recess Week with your W/L only | open |
 | 6 | League leaders across the season *(recalled)* | Three end-of-week awards | open |
