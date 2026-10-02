@@ -205,7 +205,9 @@ try {
        return hand<1.5;});}).length/pts.length;})():null;
      // The held stance (both ends of its loop) and the loaded hands.
      const readyLeadInside=referenceHands&&!dir.battingPose.seated&&(clip==='bat_stance'&&(frame===0||frame===30)||clip==='bat_load'&&frame===11)?leadInside():null;
-     results.push({id:c.id,clip,aim,frame,pitchBatVisible,readyLeadInside,clipSource:dir.sourceFor(clip),seated:dir.battingPose.seated,
+     // The trunk's angle off vertical (hips to head) through the sweep.
+     const trunkLeanDeg=(clip==='swing_contact'||clip==='swing_whiff')&&frame>=5&&frame<=11&&aim!==null?(()=>{const t=at('Head').sub(at('Hips')).normalize();return Math.acos(Math.max(-1,Math.min(1,t.y)))*180/Math.PI;})():null;
+     results.push({id:c.id,clip,aim,frame,pitchBatVisible,readyLeadInside,trunkLeanDeg,clipSource:dir.sourceFor(clip),seated:dir.battingPose.seated,
       // Seen from the pitcher (across rig Z) the knees must keep the hips' order:
       // with the pelvis open and the knees aimed at the plate, they crossed.
       kneeOrder:swing&&Math.abs(inRig('RightUpLeg').z-inRig('LeftUpLeg').z)>.05?(inRig('RightLeg').z-inRig('LeftLeg').z)/(inRig('RightUpLeg').z-inRig('LeftUpLeg').z):null,
@@ -282,6 +284,17 @@ try {
  if(hiddenFinish.length)console.error(`${hiddenFinish.length} kids finish a whiff with the bat mostly hidden from PITCH (below ${WHIFF_FINISH_VISIBLE}). Move the finish into view in battingPose.ts (FINISH_AXIS, FINISH_RISE); do not lower this line.`);
  const min=values=>values.reduce((least,value)=>Math.min(least,value),Infinity);
  const aims=[...new Set(data.results.map(r=>r.aim))];
+ // ★ A SEATED SWING DOES NOT TIP OUT OF THE CHAIR. Zoom's trunk reached 32,
+ // 28 and 20 degrees off vertical at the 1.6, 2.4 and 3.1ft pitches on 52b7aca,
+ // where the standing roster peaks at 27, 21 and 20: from PITCH he tipped over
+ // his wheel after contact (fails here at 1.6 and 2.4). His peak may exceed the
+ // standing roster's at the same pitch by at most SEATED_LEAN_OVER_DEG; he
+ // now reads 22, 20 and 14, under it at every height.
+ const SEATED_LEAN_OVER_DEG=3;
+ const leanAt=(seated,aim)=>max(data.results.filter(r=>r.seated===seated&&r.aim===aim&&r.trunkLeanDeg!==null).map(r=>r.trunkLeanDeg));
+ const tipped=only.length?[]:aims.filter(aim=>aim!==null).flatMap(aim=>{const seated=leanAt(true,aim),standing=leanAt(false,aim);
+  return seated>standing+SEATED_LEAN_OVER_DEG?[{aim,seatedDeg:+seated.toFixed(1),standingDeg:+standing.toFixed(1)}]:[];});
+ if(tipped.length)console.error(`The seated swing leans past the standing roster by more than ${SEATED_LEAN_OVER_DEG} degrees: ${JSON.stringify(tipped)}. Bring the chair or the seated reach in battingPose.ts (SEATED_PLATE_STEP_FT, SEATED_SWING_REACH); do not raise this line.`);
  const markerElbows=Object.fromEntries(aims.map(aim=>{
   const at=data.results.filter(r=>r.aim===aim&&r.markerElbows);
   const steps=data.results.filter(r=>r.aim===aim&&r.clip.startsWith('swing_')).flatMap(r=>r.armStepsDeg);
@@ -292,6 +305,6 @@ try {
   steps:r.armStepsDeg.map((step,i)=>step>ARM_STEP_MARGIN_DEG?`${bones[i]} ${step.toFixed(1)}`:null).filter(Boolean),
   wrists:r.wristBendsDeg.map((bend,i)=>bend>WRIST_BEND_MARGIN_DEG?`${i?'Left':'Right'}Hand ${bend.toFixed(1)}`:null).filter(Boolean)}));
  if(thin.length)console.error(`${thin.length} samples inside the 3-degree margin (arm step > ${ARM_STEP_MARGIN_DEG}, wrist fold > ${WRIST_BEND_MARGIN_DEG}). Fix the pose in battingPose.ts; do not relax these lines — they are the approved bar.`);
- console.log(JSON.stringify({samples:data.results.length,mechanicalFailures:bad.length,marginFailureCount:thin.length,marginFailures,minWhiffFinishVisible:finishVisibility.reduce((m,k)=>Math.min(m,k.visible),1),hiddenFinish,shaftIntersectionCandidates:intersections.length,affected:[...new Set(intersections.map(r=>r.id))],markerElbows,maxArmStepDeg:max(data.results.flatMap(r=>r.armStepsDeg)),maxWristTwistDeg:max(data.results.flatMap(r=>r.wristTwistsDeg)),maxWristBendDeg:max(data.results.flatMap(r=>r.wristBendsDeg)),maxPalmGapFt:max(data.results.map(r=>r.palmGapFt)),maxHipDropFt:max(data.results.map(r=>r.hipDropFt??0)),maxValgusFt:max(data.results.map(r=>r.valgusFt??0)),minKneeOrder:min(data.results.filter(r=>r.kneeOrder!==null).map(r=>r.kneeOrder)),minNeckRatio:min(data.results.filter(r=>r.neckRatio!==null).map(r=>r.neckRatio)),maxReadyLeadInside:max(data.results.map(r=>r.readyLeadInside??0)),minPalmTorsoClearFt:min(data.results.filter(r=>r.palmTorsoClearFt!==null).map(r=>r.palmTorsoClearFt)),failures:bad.slice(0,20)},null,2));
- if(process.argv.includes('--check')&&(bad.length||thin.length||hiddenFinish.length||intersections.length))process.exitCode=1;
+ console.log(JSON.stringify({samples:data.results.length,mechanicalFailures:bad.length,marginFailureCount:thin.length,marginFailures,minWhiffFinishVisible:finishVisibility.reduce((m,k)=>Math.min(m,k.visible),1),hiddenFinish,shaftIntersectionCandidates:intersections.length,affected:[...new Set(intersections.map(r=>r.id))],markerElbows,maxArmStepDeg:max(data.results.flatMap(r=>r.armStepsDeg)),maxWristTwistDeg:max(data.results.flatMap(r=>r.wristTwistsDeg)),maxWristBendDeg:max(data.results.flatMap(r=>r.wristBendsDeg)),maxPalmGapFt:max(data.results.map(r=>r.palmGapFt)),maxHipDropFt:max(data.results.map(r=>r.hipDropFt??0)),maxValgusFt:max(data.results.map(r=>r.valgusFt??0)),minKneeOrder:min(data.results.filter(r=>r.kneeOrder!==null).map(r=>r.kneeOrder)),minNeckRatio:min(data.results.filter(r=>r.neckRatio!==null).map(r=>r.neckRatio)),tipped,maxReadyLeadInside:max(data.results.map(r=>r.readyLeadInside??0)),minPalmTorsoClearFt:min(data.results.filter(r=>r.palmTorsoClearFt!==null).map(r=>r.palmTorsoClearFt)),failures:bad.slice(0,20)},null,2));
+ if(process.argv.includes('--check')&&(tipped.length||bad.length||thin.length||hiddenFinish.length||intersections.length))process.exitCode=1;
 }finally{await browser?.close();server.kill();}

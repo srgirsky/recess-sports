@@ -124,6 +124,23 @@ const BAT_LAY_BACK = .5;
  */
 const SWING_REACH = .92;
 /**
+ * ★ A SEATED SWING DOES NOT TIP OUT OF THE CHAIR. A standing kid brings his
+ * hips to the ball; a chair cannot, so Zoom's trunk made up all the reach the
+ * arms left and through PITCH he tipped over the wheel just after contact: his
+ * trunk 32, 28 and 20 degrees off vertical at the low, middle and high pitch,
+ * where the standing roster peaks at 27, 21 and 20. His chair sits nearer the
+ * plate (SEATED_PLATE_STEP_FT) and his arms take more of the reach: 22, 20 and
+ * 14. Nearer than 0.2ft, or contact any nearer the body, and his palms sink
+ * into his belly around contact (0.15ft deep); at 0.96 his lead forearm jumped
+ * 25.5 degrees at a 1ft pitch (`HandPose.test.ts`), and at 0.97 it steps
+ * inside the 3-degree margin. The cost, seen by a critic: at
+ * a low pitch's contact frame his hands sit at the near wheel's rim through
+ * PITCH, where the lean had carried them out past it. `audit:batting` holds
+ * his lean against the standing roster's.
+ */
+const SEATED_SWING_REACH = .95;
+const SEATED_PLATE_STEP_FT = .2;
+/**
  * How strongly the grip search prefers the elbow hint. The swing needs the
  * pull: at the bunt's 0.2 the lead grip roll wanders across a flat basin while
  * the arm straightens and the forearm steps 25-34 degrees per quarter-frame.
@@ -167,7 +184,7 @@ function contactBatAxis(height: number, seated: boolean): Vector3 {
 
 /** Side-on box placement in the render's exaggerated reference feet. */
 export function battingPlacement(scale: number, seated = false) {
-  return { x: -(BAT_SWEET_SPOT_FT + .55) * scale, z: -contactOutFront(seated) * scale, facing: Math.PI / 2 };
+  return { x: -(BAT_SWEET_SPOT_FT + .55 - (seated ? SEATED_PLATE_STEP_FT : 0)) * scale, z: -contactOutFront(seated) * scale, facing: Math.PI / 2 };
 }
 
 /** Join the sim's centre-of-plate origin without teleporting out of the box. */
@@ -886,7 +903,8 @@ export class BattingPose {
         return { wrist, shoulder, length: length*(1-.06*bunt) };
       });
       // The bunt keeps its own tuned reach (see BUNT_GRIP).
-      const handSlack = SWING_REACH + (.985 - SWING_REACH) * smooth(Math.min(1, bunt * 6));
+      const reachSlack = this.seated ? SEATED_SWING_REACH : SWING_REACH;
+      const handSlack = reachSlack + (.985 - reachSlack) * smooth(Math.min(1, bunt * 6));
       if (this.seated) {
         // Rotate the trunk toward unreachable wrists instead of translating
         // the seat. Recompute shoulders after each small reach correction.
