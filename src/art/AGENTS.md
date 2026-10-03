@@ -159,13 +159,18 @@ render-side and testable. **Never import it from `systems/`.**
 - **`unproject` inverts y BEFORE reading depth.** Depth is a question about the
   flat field, and reading it off a screen row skews every pointer.
 - **`depthScale` takes a LOGICAL point and is NOT multiplied by `ZOOM`** — the
-  field grows, the kids do not.
+  field grows, the kids do not. Anything PAINTED on the ground (mound, plate,
+  chalk, worn dirt, an obstacle's footprint) sizes by `groundScale` instead,
+  so it shrinks exactly as the perspective field does.
 - Anything drawn in field space must go through `project`; the sky and skyline
   FOLLOW the fence arc rather than a hardcoded horizon.
 - A non-uniform zoom is deliberately rejected: stretching x would drag the drawn
   foul slope outside the band `geometry.foulSlope` is conformed to. The current
   zoom is `known-drift` at a measured value — see `geometry.fieldScale`, which
   also records why the remaining gap is STRUCTURAL (four constraints pin it).
+- The camera is a plate-anchored homography sized by `geometry.projectionType`.
+  Keep it projective (lines must stay lines, or chalk stops passing through the
+  bags) and keep `unproject` its exact inverse; the conformance gate checks both.
 
 `fieldTexture.ts` is the deterministic field-dressing kit shared by `drawField`
 and the rig backdrop. **RNG-free by contract** — index-hash math ONLY, never

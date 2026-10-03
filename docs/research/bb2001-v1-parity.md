@@ -49,7 +49,7 @@ product decision).
 Every gap above is closed, or declined with a stated reason. What remains open
 against BB2001 is presentation rather than game features:
 
-- **Perspective**: the field projection is still flat, which is a product decision (`geometry.projectionType`).
+- ~~**Perspective**~~: closed 2026-10-02. The field is drawn in true perspective at BB's measured strength (`geometry.projectionType`, now `conformed`).
 - **Voice**: production voice acting, which v2 owns.
 - **Measured pace**: the records still marked `awaiting-measurement` in `scripts/measures.json`.
 

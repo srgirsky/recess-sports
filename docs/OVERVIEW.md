@@ -3450,3 +3450,47 @@ rest of the count. It stays out of kid mode on purpose. Kid mode is the
 minimal-reading tier, and its board is created before the first pitch, where one
 more Text would shift the whole seeded stream. A first attempt that drew it in
 both modes changed the kid fingerprint, so it was gated.
+
+## October 2 — v1's field in true perspective
+
+BB2001 draws its field in perspective. The far half of the diamond is shorter
+than the near half, so its diagonals don't bisect each other. That was measured
+on three venues back in July (`geometry.projectionType`), and v1 stayed flat as
+a deliberate style choice until the maintainer asked for the match.
+
+The camera in `art/projection.ts` is now a homography anchored at the plate:
+`w = 1 + K·(HOME.y − y)`, with both x and y offsets divided by `w`. Three
+properties made it the right model rather than an eyeballed curve:
+- **The strength has a closed form, ½·K·leg/(1 + K·leg).** K is solved from the
+  measured median (0.0872), not tuned. The drawn diamond then reproduces BB's
+  park venue almost exactly: strength 0.0872 against 0.0872, near/far 1.422
+  against 1.422, leg spread 11.6% against 12.46%.
+- **It is projective, so lines stay lines.** The chalk is drawn as one straight
+  segment from home to the pole, and first base still sits exactly on it. The old
+  linear x-pinch was not quite projective.
+- **Anchored at the plate, it shrinks x and y by the same factor along every ray
+  from home.** So the drawn foul slope stays exactly 1.2, and `geometry.foulSlope`
+  needed no change at all.
+
+Perspective compresses the outfield toward the fence. The same four layout
+constraints that pinned the old zoom (field bottom on the frame edge, catcher
+above the strip, fence headroom, maximum basepath) now allow ZOOM 1.64 instead
+of 1.28. The diamond grows from 34% to 38% of frame height, and the
+`geometry.fieldScale` drift against BB's 41-42% halves, from −19.3% to −9.7%.
+
+Painted ground shapes (the mound, plate, chalk boxes, worn dirt circles, the
+blacktop's court paint, and the orchard trees whose canopy is the sim's
+collision circle) now size by a new `groundScale(p)`, the field's local scale.
+They used the kids' gentler `depthScale` times ZOOM, which would have left
+them the wrong size under perspective. Kids still use `depthScale`.
+
+The old conformance check measured affinity on the sim's base constants. That
+is a flat square by design, so it read 0 forever and could never see the
+camera. It now projects the four bases and asserts several things:
+- the strength sits inside BB's band;
+- the drawn foul slope stays in its band;
+- first base lies on the chalk line;
+- `unproject` inverts `project` exactly.
+
+The change is render-only. The sim, every systems test, and both goldlog
+fingerprints (main `a71e6a2f`, kid `a1686f32`) are byte-identical.

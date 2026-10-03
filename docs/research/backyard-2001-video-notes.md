@@ -146,6 +146,8 @@ Robust to camera pan/zoom: those are affine transforms and cannot convert perspe
 
 **Implication (for the graphics phase, which is sequenced last and gated on a legit game copy):** matching BB's field means adding a render-only `y' = f(y)` to `projection.ts` with a matching inverse in `unproject`, keeping the sim flat so `geometry.ts`, `clampToField`'s convexity argument, and the goldlog stay untouched. Fix the two coordinate-hygiene bugs first (the raw-`MOUND` draw in `drawField`, and `depthScale()` called on an already-projected point in `LivePlayView`). **This does not touch the pace work.** It is also a genuine product question, not a mandate — our flatter view is a deliberate style, and adding perspective is a large visual change worth deciding on its own merits.
 
+**Decided and done (2026-10-02):** the maintainer asked for the match. v1's camera is now a plate-anchored homography at the median measured strength. The drawn diamond reproduces the park venue's strength and near/far ratio to three decimals, keeps the 1.2 foul slope, and leaves the sim and both goldlogs untouched. See `geometry.projectionType` and the OVERVIEW entry for 2026-10-02.
+
 ### Confirmed independently off the local capture (2026-07-23)
 
 The perspective finding no longer rests on one frame of one venue. Repeated on
