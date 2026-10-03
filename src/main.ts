@@ -8,6 +8,7 @@
 
 import Phaser from 'phaser';
 import { GAME_WIDTH, GAME_HEIGHT, COLORS } from './config';
+import { setGameChoice } from './data/gameChoice';
 import { BootScene } from './scenes/BootScene';
 import { SchoolyardScene } from './scenes/SchoolyardScene';
 import { GameSetupScene } from './scenes/GameSetupScene';
@@ -46,3 +47,7 @@ const game = new Phaser.Game({
 if (import.meta.env.DEV) {
   (window as unknown as { __game: Phaser.Game }).__game = game;
 }
+
+// Opening CLASSIC is choosing it: the front door now sends this browser
+// straight back here until the title's ✨ 3D button says otherwise.
+setGameChoice('classic');

@@ -20,6 +20,7 @@ import { getCharacter } from '../../../data/characters';
 import { portrait } from '../portrait';
 import { portraitFloorShare } from '../../render/characterPortrait';
 import { assetUrl } from '../../render/assets';
+import { setGameChoice } from '../../../data/gameChoice';
 
 export class TitleScreen implements Screen {
   constructor(
@@ -79,12 +80,16 @@ export class TitleScreen implements Screen {
       }
     }
 
-    // ★ THE WAY BACK TO v1, AND IT IS DELIBERATELY SMALL. v2 took the front
-    // door at the cutover, but v1 still holds pass-and-play, online play and its
-    // mature setup shell — none of which anyone should have to guess the URL for. It is
-    // the only text on this screen a four-year-old is not expected to read,
-    // which is why it is last, quiet, and below the thing they came for.
-    const classic = button('🕹  CLASSIC GAME', () => {
+    // ★ THE WAY TO v1, AND IT IS DELIBERATELY SMALL. v2 took the front door
+    // at the cutover, but v1 still holds pass-and-play, online play, the
+    // Recess Week championship and its own setup shell — none of which anyone
+    // should have to guess the URL for. It is the only text on this screen a
+    // four-year-old is not expected to read, which is why it is last, quiet,
+    // and below the thing they came for. Choosing it is REMEMBERED
+    // (data/gameChoice.ts): the front door sends this browser back to CLASSIC
+    // until CLASSIC's own ✨ 3D button says otherwise.
+    const classic = button('🕹  CLASSIC', () => {
+      setGameChoice('classic');
       location.href = assetUrl('../classic/');
     }, 'btn--quiet btn--small');
 

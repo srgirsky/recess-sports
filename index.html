@@ -7,6 +7,20 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <title>Recess Sports</title>
+    <script>
+      // A player who last chose the CLASSIC game goes straight back to it,
+      // before the 3D bundle even starts downloading (src/data/gameChoice.ts
+      // owns the key; its test holds this copy in step). Only a BARE visit
+      // redirects: any query string is a deliberate link to this game. The
+      // /v2/ alias never redirects — the audits drive it by URL.
+      try {
+        if (!location.search && localStorage.getItem('recess_game') === 'classic') {
+          location.replace('classic/' + location.hash);
+        }
+      } catch (e) {
+        /* storage blocked: stay on the front door */
+      }
+    </script>
     <!--
       THE FRONT DOOR. This is v2, and it is the same page as /v2/index.html —
       that one stays as a permanent alias because every measurement script, the

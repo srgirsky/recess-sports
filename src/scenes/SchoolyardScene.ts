@@ -13,6 +13,7 @@
 // the picklog voting machine. This scene is staging only.
 // ---------------------------------------------------------------------------
 
+import { setGameChoice } from '../data/gameChoice';
 import Phaser from 'phaser';
 import {
   GAME_WIDTH,
@@ -674,6 +675,22 @@ export class SchoolyardScene extends Phaser.Scene {
     });
     this.titleObjs.push(albumBtn.container);
 
+    // ✨ 3D: the other game at the front door. A real title button, not a
+    // link floating over the canvas: it shows only on this menu, it is
+    // measured by row() and the layout audit like every other pill, and it
+    // records the choice so the front door stops sending this browser back
+    // here (data/gameChoice.ts).
+    const to3d = pill(this, GAME_WIDTH / 2, TITLE.ENTRY_Y, '✨ 3D', { fill: COLORS.cream, fontSize: 20, minW: 100 });
+    to3d.container.setDepth(5);
+    hitFromBox(to3d.container);
+    to3d.container.on('pointerdown', () => {
+      if (this.phase !== 'title') return;
+      audio.pop();
+      setGameChoice('3d');
+      window.location.href = '../';
+    });
+    this.titleObjs.push(to3d.container);
+
     // 🥎 batting practice: no draft, no innings — grab a bat and swing.
     const practice = pill(this, GAME_WIDTH / 2, TITLE.MAIN_Y, '🥎 PRACTICE', {
       fill: COLORS.cream,
@@ -712,7 +729,7 @@ export class SchoolyardScene extends Phaser.Scene {
     // why two of them had already been hand-patched with a wider hit rect than
     // the pill they belonged to. Layout reads the unscaled `ui` box, so PLAY's
     // pulse(1.05) loop and its Back.out entrance tween can't make the row jitter.
-    row([week.container, vs.container, link.container, albumBtn.container], {
+    row([week.container, vs.container, link.container, albumBtn.container, to3d.container], {
       centerX: GAME_WIDTH / 2,
       y: TITLE.ENTRY_Y,
       // Wide on purpose: the entry pills are meant to spread across the

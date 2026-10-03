@@ -11,7 +11,10 @@ description: How to run and drive Recess Sports for end-to-end verification (dev
 npm run dev          # Vite on http://localhost:5173/ (background it)
 ```
 
-Open the URL in a Chrome tab via your browser-automation tools.
+Open the game you are verifying by its own URL: `/classic/` for v1 (everything
+below is v1's procedure) or `/v2/` for v2. Don't use the bare `/`: once a
+browser has opened CLASSIC, the front door redirects it there
+(`src/data/gameChoice.ts`), so `/` does not reliably mean v2.
 
 ## The occlusion trap
 

@@ -3494,3 +3494,25 @@ camera. It now projects the four bases and asserts several things:
 
 The change is render-only. The sim, every systems test, and both goldlog
 fingerprints (main `a71e6a2f`, kid `a1686f32`) are byte-identical.
+
+## October 2 — switching between the two games
+
+Both games were reachable from each other, but awkwardly:
+- **3D → Classic:** v2's title had a deliberately quiet "🕹 CLASSIC GAME" button.
+- **Classic → 3D:** v1 had a "✨ new game" link pinned over the canvas by its
+  HTML shell. It sat next to pause and mute through every game, because v1 was
+  "frozen" and its source couldn't be touched.
+
+Now that v1 is maintained again:
+- **Matching buttons:** v1's title has a real **✨ 3D** pill in its entry row
+  (measured by `row()`, audited like every other pill), and the shell link is
+  gone. v2's button reads **🕹 CLASSIC** to match.
+- **The last choice is remembered** (`src/data/gameChoice.ts`, key
+  `recess_game`, shared like the other cross-game keys). The front door's
+  `index.html` checks it in a tiny inline script before the 3D bundle
+  downloads, so a Classic player opening the site lands straight in Classic
+  with no 3D flash.
+- **What does not redirect:** a URL with a query string (a deliberate 3D link
+  such as `/?seed=7`), and the `/v2/` alias that every audit drives.
+  `gameChoice.test.ts` holds the inline script's key and value in step with the
+  module, and asserts the alias never redirects.
