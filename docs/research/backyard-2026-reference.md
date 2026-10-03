@@ -938,6 +938,30 @@ reads as a sack; big-hair kids hide the glove from PITCH; and a front view,
 which no gameplay camera uses, shows dark foreshortened knees on the
 dark-trousered kids.
 
+### #1 follow-up: the catcher's bare hand comes out of his back (2026-10-02)
+
+Chasing "Tank's tee reads as a sack" turned up a defect underneath it. The
+squat folded the throwing arm behind the back and into it: measured on every
+delivered model, 30% of a kid's bare arm sat inside his own torso on average,
+and 87-93% on Big Lou, Tank and Grizz. Long tops hid it, which is also why
+tightening Tank's tee exposed his fingertips. A hand low on the back stays
+buried in a deep body, and one high enough to clear it reads from the side as
+an arm held straight back, so the pose splits. The shared squat tucks the hand at the lower back
+(`CATCHER_SQUAT_POSE.ra` -170, hand at 0.59 of hip-to-shoulder height). Tank,
+Grizz, Big Lou, Moose and Boomer, at 29-76% inside there, carry
+`WIDE_CATCHER_SQUAT_POSE` in their takes (-150, hand at shoulder height).
+After: at most 27% inside (Junebug). `audit:batting` fails a catcher above 30%,
+which 14 kids did on d66e832. Two searched grids found no single pose that is
+both low on the back and outside the deepest bodies.
+
+An independent critic scored the read through PITCH 2.5 to 3.5-4/5: a fist at
+the right hip on every kid, nothing through a body, nothing hanging between
+the knees. From the side, which no camera shows during the squat, slim kids
+went 2 to 3/5. Still open: the five wide kids hold the arm out straight back at
+shoulder height (2/5 from the side), and every kid's bare hand is open with
+spread fingers where a relaxed fist would read as tucked. Tank's tee is the
+next record.
+
 ### #4, first half: `audit:batting` holds its margin (2026-09-30)
 
 `--check` now fails anything inside 3 degrees of the arm-step and wrist gates;
