@@ -53,6 +53,14 @@ def hem_follows_thighs(at: tuple[float, float, float], bone: str, hem_z: float, 
     nothing at the joint to all of `share` at `hem_z`; across the middle it
     splits between both thighs, so a stride does not tear the front seam.
     Weights only: the bind pose, and so every fidelity board, is unchanged.
+
+    ⚠️ ONE SHARE ALL ROUND, AND THE COST IS KNOWN. On a short hem (Chip,
+    Bend-It, ~0.35ft below the hip) the front following the forward thigh puts
+    a small notch in the hem mid-stride. Carrying the back only removed it, and
+    the front then hung straight down between the folded thighs: a pale flap
+    between the feet through PITCH (critic: 3 -> 2.5). A front share of 0.35
+    kept the notch. The squat is the close-up read every pitch; the run is
+    seen small, so the full share stands (2026-10-02).
     Returns `bone` untouched for anything else, so a loft can call it on every
     vertex.
     """

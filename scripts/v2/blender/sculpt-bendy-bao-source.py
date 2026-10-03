@@ -37,7 +37,7 @@ from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
 from sculptlib.palette import Palette
-from sculptlib.rig import ARM_ELBOW_X, ARM_SHOULDER_X, LEG_ANKLE_Z, limb_bone
+from sculptlib.rig import ARM_ELBOW_X, ARM_SHOULDER_X, LEG_ANKLE_Z, hem_follows_thighs, limb_bone
 from sculptlib.shoe import ShoeSpec, build_shoe
 
 REPO = Path.cwd()
@@ -386,6 +386,12 @@ TORSO_LEVELS = [
     (2.550, 0.158, 0.148, "Spine2"),  # neck hole — OUTSIDE the neck loft
 ]
 
+# The share of the top's hem the thighs carry (`hem_follows_thighs`). Not a
+# measurement: Tank's value, chosen through PITCH on the catcher's squat. It
+# costs a small notch in this short hem mid-run; see the helper for why the
+# back-only alternative lost.
+TOP_THIGH_SHARE = 0.85
+
 # The pinch at the bottom of the neck, widening into the jaw.
 # measured: front z=2.49 halfWidth=0.1502 tol=0.04
 NECK_LEVELS = [
@@ -717,7 +723,8 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
     # symmetric columns). Invisible at game scale; a lost stripe is not.
     torso_segments = 20 if detail >= 2 else segments
     builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, torso_segments,
-                 color_fn=stripe_color)
+                 color_fn=stripe_color,
+                 weight_fn=lambda at, bone: hem_follows_thighs(at, bone, TORSO_LEVELS[0][0], TOP_THIGH_SHARE))
     build_cargo_pockets(builder, detail)
 
     for side in (1, -1):

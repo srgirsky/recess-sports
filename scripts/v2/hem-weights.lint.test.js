@@ -16,8 +16,10 @@
 // weight sits >= 0.99 on `Hips` alone is a skirt row. Only a kid on the list
 // below may have one, and the list may only SHRINK:
 //   - a dress hangs from the hips by design;
-//   - overalls' seat is pants, which the pelvis carries;
-//   - the rest are tops still owed the fix — debt, not decisions.
+//   - overalls' seat, and a pair of shorts' crotch (`CROTCH_LEVELS`), are
+//     pants, which the pelvis carries.
+// A top on the list would be debt, not a decision; Chip and Bend-It were the
+// last two (fixed 2026-10-02).
 // A listed kid with no skirt rows left is a stale entry and fails too.
 //
 // Broken once before trusting it: on d66e832, Tank (141 rows) and Grizz (61)
@@ -44,12 +46,10 @@ const ALLOWED = {
   gizmo: "overalls: the seat is pants, which the pelvis carries",
   penny: "overalls: the seat is pants, which the pelvis carries",
   sprout: "overalls: the seat is pants, which the pelvis carries",
-  bend_it: 'debt: stripe tee, not yet reweighted (41 rows on d66e832)',
-  boomer: 'debt: stripe tee, not yet reweighted (17 rows)',
-  chip: 'debt: hoodie, not yet reweighted (55 rows)',
-  rocket: 'debt: tee, not yet reweighted (9 rows)',
-  smokey: 'debt: tee, not yet reweighted (17 rows)',
-  turbo: 'debt: tee, not yet reweighted (9 rows)',
+  boomer: "shorts: the crotch rows (CROTCH_LEVELS) ride the pelvis",
+  rocket: "shorts: the crotch rows (CROTCH_LEVELS) ride the pelvis",
+  smokey: "shorts: the crotch rows (CROTCH_LEVELS) ride the pelvis",
+  turbo: "shorts: the crotch rows (CROTCH_LEVELS) ride the pelvis",
 };
 
 function skirtRows(file) {

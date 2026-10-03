@@ -1265,8 +1265,10 @@ sheet, and check your result is not byte-identical to where you started.
   `hem-weights.lint.test.js` is the gate. Its allowlist is the scan's output
   (2026-10-02, LOD0 pelvis-only vertices more than 0.3ft below the hip): dresses
   bubbles 111, clover 222, diva 145, peaches 145; overalls cricket 44, gizmo 44,
-  penny 49, sprout 29; still owed the fix: chip 55, bend_it 41, boomer 17,
-  smokey 17, rocket 9, turbo 9.
+  penny 49, sprout 29; shorts' crotch rows boomer 17, smokey 17, rocket 9,
+  turbo 9. Tops chip (55) and bend_it (41) were fixed the same day. ⚠️ Check
+  WHICH table owns a flagged row before calling it debt: the first reading of
+  this scan filed four kids' shorts crotch as unfixed tees.
 - **A tighter garment exposes what a loose one hid.** Tightening Tank's tee
   showed his bare-hand fingertips through it: the catcher's squat had always
   buried the throwing arm in the torso (87-93% on the widest kids). Before

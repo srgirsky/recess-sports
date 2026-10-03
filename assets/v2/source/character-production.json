@@ -138,11 +138,11 @@
     },
     "chip": {
       "source": "chip-pilot.blend",
-      "sourceSha256": "670b40d1142d4accba6384b4a320dde539c2e530487195e2a861a9215569b5c1",
+      "sourceSha256": "0f400e8e96791df7f2922940cbc2694fe02f4b324bb569b9a9633dc2db82b3da",
       "concept": "chip-turnaround.png",
       "conceptSha256": "244f188db5957fd2674ec2cbfd321a0211067696ddb6601cd09c45dc6a325575",
       "output": "kid_chip.glb",
-      "outputSha256": "7d522da7e7bbdc43cbd78dd091c28d242a1a8eefce2f4fb1f67d999e6e3b9d7f",
+      "outputSha256": "c14abf56b4ac1a3a40763e500a0fadf82dca441087de726cd35989df2ba14bcb",
       "definingTraits": [
         "navy and cream ball cap",
         "green kangaroo hoodie",
@@ -153,11 +153,11 @@
     },
     "bend_it": {
       "source": "bendy-bao-pilot.blend",
-      "sourceSha256": "3fa692ea60dd5a3decf307f279641decfa9e8ae2546a2b4033fcdc1706e0e45e",
+      "sourceSha256": "ed3c5cf912ac78b54acd47d0d4e599a5263c3211cfc6fca85e654acdb25b6554",
       "concept": "bendy-bao-turnaround.png",
       "conceptSha256": "e0376bf5bc736b84244455be0e09cb93d94907b1dfbaad47c2eb19f9641a228a",
       "output": "kid_bend_it.glb",
-      "outputSha256": "1e0ceda94aab740b7b6226e91822428b7976036ba5b2f3e45f64f2dbec1dbcf8",
+      "outputSha256": "88272755210be314771bf4c7f9880797856d3b04c4bc76a93fa1d4a951379388",
       "definingTraits": [
         "swept top bun",
         "round wire glasses",
