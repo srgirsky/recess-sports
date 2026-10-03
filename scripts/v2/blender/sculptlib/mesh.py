@@ -178,11 +178,17 @@ class MeshBuilder:
         color: tuple[float, float, float, float],
         segments: int,
         color_fn=None,
+        weight_fn=None,
     ) -> None:
         """`color_fn(theta, z)` may override the ring-vertex colour — how the
         jersey's V-neck shows skin inside the trim without a second surface.
         Cap centres keep the base colour: the top fan's centre is hidden by the
-        neck column, and a skin-toned centre would wash the shoulder fan."""
+        neck column, and a skin-toned centre would wash the shoulder fan.
+
+        `weight_fn(at, bone)` may replace a vertex's bone with a weight dict
+        (`rig.hem_follows_thighs` for a long top). None leaves every vertex on
+        its ring's bone, so a kid that does not pass it builds byte-identically."""
+        weigh = weight_fn or (lambda at, bone: bone)
         rows: list[list[int]] = []
         for z, rx, ry, bone in levels:
             row = []
@@ -190,9 +196,9 @@ class MeshBuilder:
                 theta = 2 * pi * column / segments
                 at = (rx * cos(theta), ry * sin(theta), z)
                 vertex_color = color_fn(theta, z) if color_fn else color
-                row.append(self.vertex(at, vertex_color, bone))
+                row.append(self.vertex(at, vertex_color, weigh(at, bone)))
             rows.append(row)
-        bottom = self.vertex((0.0, 0.0, levels[0][0]), color, levels[0][3])
+        bottom = self.vertex((0.0, 0.0, levels[0][0]), color, weigh((0.0, 0.0, levels[0][0]), levels[0][3]))
         top = self.vertex((0.0, 0.0, levels[-1][0]), color, levels[-1][3])
         for column in range(segments):
             nxt = (column + 1) % segments

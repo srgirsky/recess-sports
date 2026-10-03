@@ -39,3 +39,29 @@ LEG_ANKLE_Z = 0.095
 def limb_bone(name: str, side: int) -> str:
     """Left bones are at NEGATIVE x, so side -1 is the left side."""
     return f"Left{name}" if side < 0 else f"Right{name}"
+
+
+def hem_follows_thighs(at: tuple[float, float, float], bone: str, hem_z: float, share: float):
+    """A long top's skin weights below the hip: part pelvis, part thigh.
+
+    ★ A HEM WEIGHTED ONLY TO THE PELVIS HANGS LIKE A SKIRT. Tank's tee runs
+    0.53ft below the hip joint, every ring of it on `Hips`, so in the catcher's
+    squat the thighs swung forward inside it while the hem dropped straight to
+    the dirt with the pelvis: through PITCH a purple sack with shoes. Real cloth
+    is carried by the thighs. Below `LEG_HIP_Z` a `Hips` vertex passes up to
+    `share` of its weight to the thigh on its own side, ramping smoothly from
+    nothing at the joint to all of `share` at `hem_z`; across the middle it
+    splits between both thighs, so a stride does not tear the front seam.
+    Weights only: the bind pose, and so every fidelity board, is unchanged.
+    Returns `bone` untouched for anything else, so a loft can call it on every
+    vertex.
+    """
+    x, _, z = at
+    if bone != "Hips" or z >= LEG_HIP_Z:
+        return bone
+    smooth = lambda t: (lambda c: c * c * (3 - 2 * c))(max(0.0, min(1.0, t)))
+    leg = share * smooth((LEG_HIP_Z - z) / (LEG_HIP_Z - hem_z))
+    if leg <= 0:
+        return bone
+    left = smooth((x - LEG_HIP_X) / (-2 * LEG_HIP_X))  # 1 at the left thigh (-x)
+    return {"Hips": 1 - leg, limb_bone("UpLeg", -1): leg * left, limb_bone("UpLeg", 1): leg * (1 - left)}

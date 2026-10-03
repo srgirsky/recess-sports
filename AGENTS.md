@@ -97,7 +97,7 @@ weaken one to make a change pass.**
 | `src/v2/ui/soundCues.test.ts` | a sim event that makes no sound — silence and a working mute are the same |
 | `scripts/playtest.lint.test.js` | a held feature defaulting on; a hold lifted with no record |
 | `scripts/v2/turnaround-spec.lint.test.js` / `runidentity.lint.test.js` / `featurelatitude.lint.test.js` | a measured spec drifting from its own sheet, a width read across two objects, a face at the wrong height on its own head |
-| `scripts/v2/silhouette.lint.test.js` / `performance-freshness.lint.test.js` / `tonemapping.lint.test.js` / `sculptspec.lint.test.js` / `evidence-freshness.lint.test.js` / `sculpt-sharing.lint.test.js` / `triage.lint.test.js` / `palette-identity.lint.test.js` / `provenance.lint.test.js` | a hole you can see through, a baked animation take stale against the code that bakes it, a colour default reverted silently, one kid's measurement defaulted into the shared sculpt library, a character scored from stills of an older model, two kids shipping one body while citing two drawings, a polish finding outside every sweep worklist, two palette names in one kid sharing a hex so a built trim ships invisible, a stand-in take or system voice shipping with no maintainer on record |
+| `scripts/v2/silhouette.lint.test.js` / `performance-freshness.lint.test.js` / `tonemapping.lint.test.js` / `sculptspec.lint.test.js` / `evidence-freshness.lint.test.js` / `sculpt-sharing.lint.test.js` / `triage.lint.test.js` / `hem-weights.lint.test.js` / `palette-identity.lint.test.js` / `provenance.lint.test.js` | a hole you can see through, a baked animation take stale against the code that bakes it, a colour default reverted silently, one kid's measurement defaulted into the shared sculpt library, a character scored from stills of an older model, two kids shipping one body while citing two drawings, a polish finding outside every sweep worklist, two palette names in one kid sharing a hex so a built trim ships invisible, a stand-in take or system voice shipping with no maintainer on record, a top's hem hung from the pelvis |
 | `scripts/v2/art-acceptance.test.js` | stale whole-scene evidence, missing art coverage, or a technical pass presented as visual approval |
 | `scripts/goldlog.browser.js` | a v1 refactor that changes the seeded game (manual, not CI) |
 
@@ -241,9 +241,8 @@ govern.
 
 **One agent brief, many tools.** `AGENTS.md` is the single source and `CLAUDE.md`
 is a symlink to it, at the root and in every tree that has a brief;
-`.agents/skills/verify` symlinks to `.claude/skills/verify` the same way. Edits
-write through, so updating "your" file updates everyone's. Never replace a
-symlink with a real file or paste a per-tool copy; that reintroduces the drift
-the symlinks exist to prevent. Keep the wording tool-neutral.
+`.agents/skills/verify` symlinks to `.claude/skills/verify` the same way. Never
+replace a symlink with a real file or paste a per-tool copy; that reintroduces
+the drift the symlinks exist to prevent. Keep the wording tool-neutral.
 
 One source of truth per fact, and pointers between docs — don't duplicate, or they'll drift.

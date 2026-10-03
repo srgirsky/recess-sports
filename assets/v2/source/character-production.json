@@ -78,11 +78,11 @@
     },
     "tank": {
       "source": "tank-pilot.blend",
-      "sourceSha256": "f5ac9bd92446f7033f1f522f88115dda222d4744998323a157f5464fa49ab16e",
+      "sourceSha256": "ac50af310ea2388f95d6dabe49d5d670d6459fd25420f84abc6d849cb0500e6d",
       "concept": "tank-turnaround.png",
       "conceptSha256": "32d3e55d0bb1f56fa6edacf9d87f7d53cc516cd3877740042f9c82e0c5756bd4",
       "output": "kid_tank.glb",
-      "outputSha256": "0a73182673be08dd16dcd47d6142a86a9d0cd61e0d5f345af305a9c346ec393d",
+      "outputSha256": "c9a4bf22d1978c36c397e894b1c7c4b411c74afd8051ac57e6f7348eb63f89cd",
       "definingTraits": [
         "low wide silhouette",
         "bald round crown",
@@ -93,11 +93,11 @@
     },
     "grizz": {
       "source": "grizz-pilot.blend",
-      "sourceSha256": "c42fcf02ae0a2953fde386f8b7e5cdc18b9fc5d1e2007413971cbd3ec07bef84",
+      "sourceSha256": "c602cbfaff9429b89f7440a77c56936b4ee3afa7feb8b2d19d362f780090eb1d",
       "concept": "grizz-turnaround.png",
       "conceptSha256": "8290768d2853e29e3c09afe3e7cf73bedf97f2dc74d1b9053506b6c66dbc2e0c",
       "output": "kid_grizz.glb",
-      "outputSha256": "81335a1532cc23fda0a731f1413a28f14c9716862b7bc2773d503b16c251768f",
+      "outputSha256": "3a062430a4908753c422b6a5f70dc0fb426dbfd235dd58be15a032179b83622f",
       "definingTraits": [
         "towering round afro",
         "heavy sleepy brow",
