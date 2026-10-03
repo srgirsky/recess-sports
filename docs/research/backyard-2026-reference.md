@@ -909,8 +909,8 @@ the default path (still reachable).
    into his hoodie, Zoom's lean), after restoring `audit:batting` margin —
    **margin restored**, **the whiff finishes in view** and **the bunt squares
    up**, below (Zoom's seated bunt kept by decision); **the wide kids'
-   lead arm leaves the chest** and **Zoom stays in his chair**, below;
-   whiff frames 9-11 remain.
+   lead arm leaves the chest**, **Zoom stays in his chair** and **the bat
+   shows sooner after a miss**, below.
 5. Verdict read time ≥1.2 s, and the smoke painting CSS on its own clock.
 6. The item-5 debris, verified before any fix.
 7. Title kids grounded in the treehouse.
@@ -1079,6 +1079,28 @@ PITCH_HERO, judged contact and the frame after it better at both heights
 low pitch's contact frame his hands sit at the near wheel's rim through PITCH,
 because the lean had carried them out past it. Still open: frame 11's
 follow-through is mostly behind his head, the same as every kid's frames 9-11.
+
+### #4, the bat shows sooner after a miss (2026-10-02)
+
+The whiff-finish gate averaged from frame 10, so every kid passed while the
+frames right after the miss hid the bat. Measured on all 30 kids through PITCH
+(rays to eight points along the bat), the share of the bat in view was 17%, 5%,
+43% and 89% at frames 9-12, and the worst kid showed only a quarter at frame 12.
+The hands now rise from frame 8 (was 9) and the barrel turns toward the finish
+from 8.5 (was 9, with the hands): 15%, 13%, 68% and 96%, with every kid showing
+at least 88% by frame 13. The bat's angle is not the hands' speed, so the derived
+CONTACT marker holds (`AnimationDirector.test.ts`). Measured limits: turning
+sooner folded the lead wrist past 37 degrees at frame 10 on half the roster,
+because the hands are still at the wrap, and ran the shaft through Theo and
+Chip; a quicker turn put Chip's shaft through his body at frame 11. Frames 9-10
+stay hidden whatever the angle, because the hands are behind the back, on the
+camera's line of sight. `audit:batting` now fails any whiff sample from frame 13
+that shows less than three quarters of the bat. On 35b4a2b that is Zippy, whose
+ponytail still crosses the bat around frame 12.
+An independent critic, shown frames 9-12 before and after through PITCH on six
+kids, scored the read after a miss 2 to 3.5/5. Frames 11 and 12 were better on
+every kid, frames 9-10 unchanged as predicted, and there was no pop, bent wrist
+or bat through a head. Frame 11's gain is mostly the barrel's tip.
 
 ### #6: the debris, verified before any fix (2026-09-29)
 

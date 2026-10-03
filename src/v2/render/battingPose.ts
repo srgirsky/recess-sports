@@ -35,13 +35,28 @@ const FOLLOW_AXIS = new Vector3(-.8, .6, .2).normalize();
 const FINISH_AXIS = new Vector3(.1, .5, -.3).normalize();
 /** The finish's hands, relative to the lead-side wrap (`through`). */
 const FINISH_RISE = new Vector3(.5, .3, -.4);
-const FINISH_RISE_FROM_FRAME = 9;
+const FINISH_RISE_FROM_FRAME = 8;
 /**
  * Slow enough that the hands stay fastest through the ball: risen by frame
  * 13, their speed peaked at frame 11 and the derived CONTACT marker moved
  * there (`AnimationDirector.test.ts`).
  */
-const FINISH_RISE_TO_FRAME = 17;
+const FINISH_RISE_TO_FRAME = 16;
+/**
+ * ★ THE BARREL TURNS UP SOONER AFTER A MISS. With the hands rising and the bat
+ * turning over frames 9-17, a whiff hid the bat behind the torso through PITCH
+ * right after the miss: on all 30 kids it showed 5% of it at frame 10, 43% at
+ * 11 and 89% at 12 (the worst kid a quarter). Now the hands rise from frame 8
+ * and the barrel turns from 8.5: 13%, 68% and 96%, and at least 88% on every
+ * kid by frame 13.
+ * Sooner folds the lead wrist past 37 degrees at frame 10 on half the roster
+ * (the hands are still at the wrap and the wrist cannot follow the barrel up)
+ * or runs the shaft through Theo and Chip; a quicker turn put Chip's through
+ * his body at frame 11. Frames 9-10 stay hidden whatever the angle: the hands
+ * are behind the back, on the camera's line of sight.
+ */
+const FINISH_TURN_FROM_FRAME = 8.5;
+const FINISH_TURN_TO_FRAME = 15;
 /** Follow-through frames spent coming back down from the finish. */
 const FINISH_RETURN_FRAMES = 6;
 /** Turn unit vector `from` toward `to` by `w`, on the sphere. */
@@ -824,7 +839,7 @@ export class BattingPose {
         const across = (from: Vector3, to: Vector3) => to.clone().sub(from).addScaledVector(from, -to.clone().sub(from).dot(from)).length();
         const outWhip = Math.min(3, BAT_WHIP * across(contactAxis, contactAxis.clone().sub(readyAxis).add(contactAxis)) / Math.max(1e-3, across(contactAxis, FOLLOW_AXIS)));
         axis.copy(contactAxis).lerp(FOLLOW_AXIS.clone(), 1 - into(1 - (f - CONTACT_FRAME) / 4, outWhip)).normalize();
-        axis.copy(turnToward(axis, FINISH_AXIS, smooth((f - FINISH_RISE_FROM_FRAME) / (FINISH_RISE_TO_FRAME - FINISH_RISE_FROM_FRAME))));
+        axis.copy(turnToward(axis, FINISH_AXIS, smooth((f - FINISH_TURN_FROM_FRAME) / (FINISH_TURN_TO_FRAME - FINISH_TURN_FROM_FRAME))));
       }
     } else if (name === 'bat_load') {
       grip.lerp(wind, Math.sin(Math.PI * time / framesToSec(clipSpec(name).frames)));

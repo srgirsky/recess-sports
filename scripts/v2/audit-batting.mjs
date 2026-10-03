@@ -279,6 +279,15 @@ try {
  const finishVisibility=Object.entries(data.results.filter(r=>r.pitchBatVisible!==null).reduce((by,r)=>((by[r.id]??=[]).push(r.pitchBatVisible),by),{}))
   .map(([id,v])=>({id,visible:v.reduce((a,b)=>a+b,0)/v.length}));
  const hiddenFinish=finishVisibility.filter(k=>k.visible<WHIFF_FINISH_VISIBLE);
+ // ★ AN AVERAGE HID THE FRAMES RIGHT AFTER THE MISS. Averaged from frame 10,
+ // every kid passed while frames 10-12 hid the bat (at frame 12 Sprout, Penny
+ // and Grizz showed a quarter of it, on 35b4a2b). From frame 13 every sample
+ // shows at least WHIFF_EARLY_VISIBLE (every kid now shows all of it there);
+ // frames 9-10 stay hidden on the camera's line of sight, and Zippy's ponytail
+ // crosses the bat around frame 12 (battingPose.ts, FINISH_TURN_FROM_FRAME).
+ const WHIFF_EARLY_VISIBLE=.75;
+ const earlyHidden=data.results.filter(r=>r.pitchBatVisible!==null&&r.frame>=13&&r.pitchBatVisible<WHIFF_EARLY_VISIBLE);
+ if(earlyHidden.length)console.error(`${earlyHidden.length} whiff samples from frame 13 hide the bat from PITCH (below ${WHIFF_EARLY_VISIBLE}): ${[...new Set(earlyHidden.map(r=>`${r.id}@${r.frame}`))].slice(0,8).join(', ')}. Turn the barrel up sooner in battingPose.ts (FINISH_TURN_*); do not lower this line.`);
  const sunk=data.results.filter(sunkLead);
  if(sunk.length)console.error(`${sunk.length} ready samples sink the lead arm into the torso (${[...new Set(sunk.map(r=>r.id))].join(', ')}). Move the ready hands clear in battingPose.ts (WIDE_READY_SHIFT, torsoGirth); do not raise this line.`);
  if(hiddenFinish.length)console.error(`${hiddenFinish.length} kids finish a whiff with the bat mostly hidden from PITCH (below ${WHIFF_FINISH_VISIBLE}). Move the finish into view in battingPose.ts (FINISH_AXIS, FINISH_RISE); do not lower this line.`);
@@ -305,6 +314,6 @@ try {
   steps:r.armStepsDeg.map((step,i)=>step>ARM_STEP_MARGIN_DEG?`${bones[i]} ${step.toFixed(1)}`:null).filter(Boolean),
   wrists:r.wristBendsDeg.map((bend,i)=>bend>WRIST_BEND_MARGIN_DEG?`${i?'Left':'Right'}Hand ${bend.toFixed(1)}`:null).filter(Boolean)}));
  if(thin.length)console.error(`${thin.length} samples inside the 3-degree margin (arm step > ${ARM_STEP_MARGIN_DEG}, wrist fold > ${WRIST_BEND_MARGIN_DEG}). Fix the pose in battingPose.ts; do not relax these lines — they are the approved bar.`);
- console.log(JSON.stringify({samples:data.results.length,mechanicalFailures:bad.length,marginFailureCount:thin.length,marginFailures,minWhiffFinishVisible:finishVisibility.reduce((m,k)=>Math.min(m,k.visible),1),hiddenFinish,shaftIntersectionCandidates:intersections.length,affected:[...new Set(intersections.map(r=>r.id))],markerElbows,maxArmStepDeg:max(data.results.flatMap(r=>r.armStepsDeg)),maxWristTwistDeg:max(data.results.flatMap(r=>r.wristTwistsDeg)),maxWristBendDeg:max(data.results.flatMap(r=>r.wristBendsDeg)),maxPalmGapFt:max(data.results.map(r=>r.palmGapFt)),maxHipDropFt:max(data.results.map(r=>r.hipDropFt??0)),maxValgusFt:max(data.results.map(r=>r.valgusFt??0)),minKneeOrder:min(data.results.filter(r=>r.kneeOrder!==null).map(r=>r.kneeOrder)),minNeckRatio:min(data.results.filter(r=>r.neckRatio!==null).map(r=>r.neckRatio)),tipped,maxReadyLeadInside:max(data.results.map(r=>r.readyLeadInside??0)),minPalmTorsoClearFt:min(data.results.filter(r=>r.palmTorsoClearFt!==null).map(r=>r.palmTorsoClearFt)),failures:bad.slice(0,20)},null,2));
- if(process.argv.includes('--check')&&(tipped.length||bad.length||thin.length||hiddenFinish.length||intersections.length))process.exitCode=1;
+ console.log(JSON.stringify({samples:data.results.length,mechanicalFailures:bad.length,marginFailureCount:thin.length,marginFailures,earlyHiddenCount:earlyHidden.length,minWhiffFinishVisible:finishVisibility.reduce((m,k)=>Math.min(m,k.visible),1),hiddenFinish,shaftIntersectionCandidates:intersections.length,affected:[...new Set(intersections.map(r=>r.id))],markerElbows,maxArmStepDeg:max(data.results.flatMap(r=>r.armStepsDeg)),maxWristTwistDeg:max(data.results.flatMap(r=>r.wristTwistsDeg)),maxWristBendDeg:max(data.results.flatMap(r=>r.wristBendsDeg)),maxPalmGapFt:max(data.results.map(r=>r.palmGapFt)),maxHipDropFt:max(data.results.map(r=>r.hipDropFt??0)),maxValgusFt:max(data.results.map(r=>r.valgusFt??0)),minKneeOrder:min(data.results.filter(r=>r.kneeOrder!==null).map(r=>r.kneeOrder)),minNeckRatio:min(data.results.filter(r=>r.neckRatio!==null).map(r=>r.neckRatio)),tipped,maxReadyLeadInside:max(data.results.map(r=>r.readyLeadInside??0)),minPalmTorsoClearFt:min(data.results.filter(r=>r.palmTorsoClearFt!==null).map(r=>r.palmTorsoClearFt)),failures:bad.slice(0,20)},null,2));
+ if(process.argv.includes('--check')&&(earlyHidden.length||tipped.length||bad.length||thin.length||hiddenFinish.length||intersections.length))process.exitCode=1;
 }finally{await browser?.close();server.kill();}
