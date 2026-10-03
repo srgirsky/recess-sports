@@ -57,7 +57,7 @@ from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
 from sculptlib.palette import Palette
 from sculptlib.rig import (
-    ARM_ELBOW_X, ARM_SHOULDER_X, ARM_WRIST_X, ARM_Z, LEG_ANKLE_Z, limb_bone,
+    ARM_ELBOW_X, ARM_SHOULDER_X, ARM_WRIST_X, ARM_Z, LEG_ANKLE_Z, hem_follows_thighs, limb_bone,
 )
 from sculptlib.shoe import ShoeSpec, build_shoe
 
@@ -690,6 +690,13 @@ TORSO_LEVELS = [
 ]
 
 
+# The share of the tee's hem the thighs carry (`hem_follows_thighs`). Not a
+# measurement: chosen through PITCH on the catcher's squat, where 0.85 lets the
+# hem follow the folded thigh instead of hanging to the dirt (0.5 still read as
+# a cape from the side) and a run's stride barely moves it.
+TEE_THIGH_SHARE = 0.85
+
+
 def loft_asym(builder: MeshBuilder, levels, material: int, color, segments: int, color_fn=None) -> None:
     """`loft` with a per-ring fore-aft centre — rows are (z, rx, ry, y_c, bone).
 
@@ -714,9 +721,10 @@ def loft_asym(builder: MeshBuilder, levels, material: int, color, segments: int,
             theta = 2 * pi * column / segments
             at = (rx * cos(theta), y_c + ry * sin(theta), z)
             vertex_color = color_fn(theta, z) if color_fn else color
-            row.append(builder.vertex(at, vertex_color, bone))
+            row.append(builder.vertex(at, vertex_color, hem_follows_thighs(at, bone, levels[0][0], TEE_THIGH_SHARE)))
         rows.append(row)
-    bottom = builder.vertex((0.0, levels[0][3], levels[0][0]), color, levels[0][4])
+    bottom_at = (0.0, levels[0][3], levels[0][0])
+    bottom = builder.vertex(bottom_at, color, hem_follows_thighs(bottom_at, levels[0][4], levels[0][0], TEE_THIGH_SHARE))
     top = builder.vertex((0.0, levels[-1][3], levels[-1][0]), color, levels[-1][4])
     for column in range(segments):
         nxt = (column + 1) % segments

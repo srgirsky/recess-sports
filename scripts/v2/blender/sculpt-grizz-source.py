@@ -52,7 +52,7 @@ from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
 from sculptlib.palette import Palette
-from sculptlib.rig import ARM_ELBOW_X, LEG_ANKLE_Z, limb_bone
+from sculptlib.rig import ARM_ELBOW_X, LEG_ANKLE_Z, hem_follows_thighs, limb_bone
 from sculptlib.shoe import ShoeSpec, build_shoe
 
 REPO = Path.cwd()
@@ -491,6 +491,11 @@ TORSO_LEVELS = [
     (2.524, 0.262, 0.250, "Spine2"),  # neck hole: the rib rolls inward to it
 ]
 
+# The share of the top's hem the thighs carry (`hem_follows_thighs`). Not a
+# measurement: Tank's value, chosen through PITCH on the catcher's squat, for
+# the roster's other top that hangs well below the hip (0.45ft).
+TOP_THIGH_SHARE = 0.85
+
 # THE TEE HAS A COLLAR (hem sweep, rubric 3.4 — before this the opening was a
 # raw colour-free drop and read as skin-on-skin). The sheet draws a crew-neck
 # rib: down the profile's nape column (x=800) the band sits between a lower
@@ -913,7 +918,8 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
 
     builder.loft(NECK_LEVELS, 0, SKIN, segments)
     builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, segments,
-                 color_fn=torso_color)
+                 color_fn=torso_color,
+                 weight_fn=lambda at, bone: hem_follows_thighs(at, bone, TORSO_LEVELS[0][0], TOP_THIGH_SHARE))
     build_pocket(builder, detail)
 
     for side in (1, -1):
