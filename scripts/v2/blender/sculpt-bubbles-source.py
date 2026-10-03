@@ -736,6 +736,7 @@ BUBBLES_ARM = ArmSpec(
     cap_x=0.100,
     root_ring=0.0,
     elbow=0.0,
+    underarm_shade=0.0,
     ring_squash=0.95,
     hand=HandSpec(
         tip_x=1.552,

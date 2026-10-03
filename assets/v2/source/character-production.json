@@ -78,11 +78,11 @@
     },
     "tank": {
       "source": "tank-pilot.blend",
-      "sourceSha256": "ac50af310ea2388f95d6dabe49d5d670d6459fd25420f84abc6d849cb0500e6d",
+      "sourceSha256": "d57dfbb9a5657fb41b70edeb4318a1fd60560a8e7ca1cea60a90e17b35918e0e",
       "concept": "tank-turnaround.png",
       "conceptSha256": "32d3e55d0bb1f56fa6edacf9d87f7d53cc516cd3877740042f9c82e0c5756bd4",
       "output": "kid_tank.glb",
-      "outputSha256": "c9a4bf22d1978c36c397e894b1c7c4b411c74afd8051ac57e6f7348eb63f89cd",
+      "outputSha256": "64ab9aad1f8d88e103bed6107ca4b9d9c1ac9bc8e40de3c427738776c604114d",
       "definingTraits": [
         "low wide silhouette",
         "bald round crown",
@@ -243,11 +243,11 @@
     },
     "moose": {
       "source": "moose-pilot.blend",
-      "sourceSha256": "70595855906f413d5c39243d3e1d31f84b2e9e01bfd13b5903bd73c982ccb60a",
+      "sourceSha256": "d3a8f675d8734bdc53febff5be75d72a218c925f7ec4101a4f8cb4b82bccaa64",
       "concept": "moose-turnaround.png",
       "conceptSha256": "d64f68670ae1629b82c81333c4a1be6c1ab02805f2937a1a20d3ddf679ca7bed",
       "output": "kid_moose.glb",
-      "outputSha256": "d5df2aae8c3e2abfe665217bc33b032dc6604f49342494eae6326986fffd9000",
+      "outputSha256": "2104087c8740bc89b68d3625343d0989039a338a0fa043878c8089335ea5d5c7",
       "definingTraits": [
         "navy ball cap",
         "mustard kangaroo hoodie",

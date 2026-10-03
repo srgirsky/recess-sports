@@ -659,6 +659,7 @@ CLOVER_ARM = ArmSpec(
     cap_x=0.060,
     root_ring=0.0,
     elbow=0.20,  # a bare arm at r 0.063: 0.06 was 0.5 board px per side (a critic's arithmetic) — 0.20 is the knee's 0.14 scaled to the arm's width
+    underarm_shade=0.0,
     ring_squash=0.95,
     hand=HandSpec(
         tip_x=1.546,

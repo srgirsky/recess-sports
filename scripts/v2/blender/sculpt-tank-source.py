@@ -975,6 +975,7 @@ TANK_ARM = ArmSpec(
     cap_x=0.170,
     root_ring=0.0,
     elbow=0.0,
+    underarm_shade=0.35,
     # An arm is not circular: the ring is squashed in z so the limb reads as a
     # flattened oval from the gameplay camera rather than a dowel.
     ring_squash=0.94,

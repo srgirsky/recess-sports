@@ -395,91 +395,6 @@
       "class": "no-defect-note",
       "excerpt": "NON-DEFECT (instrument) — the hero still is three-quarter-back because of t"
     },
-    "tank:54ebcd59effc": {
-      "char": "tank",
-      "class": "no-defect-note",
-      "excerpt": "SCOPED HAND VERDICT: no correction required before delivery of this referenc"
-    },
-    "tank:5c3e5de05944": {
-      "char": "tank",
-      "class": "no-defect-note",
-      "excerpt": "FRESH / GRIP: bat_stance-0-1.png at 0.5s shows both hands enclosing the upri"
-    },
-    "tank:509b1416227e": {
-      "char": "tank",
-      "class": "sheared-edges",
-      "excerpt": "FRESH / WRISTS AND ARMS: run samples 0/0.15/0.30/0.45s, pitch_windup 0/0.4/0"
-    },
-    "tank:7ab5788eb40d": {
-      "char": "tank",
-      "class": "no-defect-note",
-      "excerpt": "FRESH / DRAFT GESTURE: pose_card samples 0.2/0.7/1.2/1.7s show one raised ha"
-    },
-    "tank:7556d430fcb2": {
-      "char": "tank",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL HAND FINDING SUPERSEDED FOR THIS MIGRATION: the previous A-pose r"
-    },
-    "tank:7e0c61051aff": {
-      "char": "tank",
-      "class": "evidence",
-      "excerpt": "FRESH / EVIDENCE LIMIT: contact runtime now reads frame7/18 CONTACT@7 (the o"
-    },
-    "tank:4d04337d5e90": {
-      "char": "tank",
-      "class": "no-defect-note",
-      "excerpt": "FRESH / TEAM ACCENT: source TEAM_MASK remains only the two sock-roll rows at"
-    },
-    "tank:67ea6c801400": {
-      "char": "tank",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL / NOT REMEASURED IN THIS SCOPED HAND REVIEW: IMPROVED / CLOSED FO"
-    },
-    "tank:89685e325725": {
-      "char": "tank",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL / NOT REMEASURED IN THIS SCOPED HAND REVIEW: IMPROVED / CLOSED FO"
-    },
-    "tank:b32bc4ab761e": {
-      "char": "tank",
-      "class": "ears",
-      "excerpt": "HISTORICAL / NOT REMEASURED IN THIS SCOPED HAND REVIEW: INHERITED: the ear r"
-    },
-    "tank:f9559a944230": {
-      "char": "tank",
-      "class": "hems-cuffs",
-      "excerpt": "HISTORICAL / NOT REMEASURED IN THIS SCOPED HAND REVIEW: INHERITED / DEFERRED"
-    },
-    "tank:bf7b90b9c0f5": {
-      "char": "tank",
-      "class": "decal-not-form",
-      "excerpt": "HISTORICAL / NOT REMEASURED IN THIS SCOPED HAND REVIEW: INHERITED: nose_push"
-    },
-    "tank:5a815a9a68a6": {
-      "char": "tank",
-      "class": "butt-joins",
-      "excerpt": "HISTORICAL / NOT REMEASURED IN THIS SCOPED HAND REVIEW: INHERITED: the A-pos"
-    },
-    "tank:3a3201258b48": {
-      "char": "tank",
-      "class": "40px-read",
-      "excerpt": "HISTORICAL / NOT REMEASURED IN THIS SCOPED HAND REVIEW: INHERITED: the team "
-    },
-    "tank:edbccf71b902": {
-      "char": "tank",
-      "class": "evidence",
-      "excerpt": "HISTORICAL / NOT REMEASURED IN THIS SCOPED HAND REVIEW: INHERITED EVIDENCE L"
-    },
-    "tank:2233eef86916": {
-      "char": "tank",
-      "class": "evidence",
-      "excerpt": "HISTORICAL / NOT REMEASURED IN THIS SCOPED HAND REVIEW: RECHECK AT MATCHED A"
-    },
-    "tank:6e88ddb3d37e": {
-      "char": "tank",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL / NOT REMEASURED IN THIS SCOPED HAND REVIEW: PRESERVED: front/A-p"
-    },
     "mimi_mash:725f16a479c0": {
       "char": "mimi_mash",
       "class": "no-defect-note",
@@ -1649,131 +1564,6 @@
       "char": "turbo",
       "class": "no-defect-note",
       "excerpt": "HISTORICAL RECORD (retained, prior coordinate probes not independently repea"
-    },
-    "moose:dec4f4016575": {
-      "char": "moose",
-      "class": "no-defect-note",
-      "excerpt": "SCOPED HAND MIGRATION PASS: fresh runtime hero/run/contact and four faces in"
-    },
-    "moose:badfc34e723b": {
-      "char": "moose",
-      "class": "stance",
-      "excerpt": "SHARED POSE ISSUES REMAIN OPEN: held bunt has the lower-handle elbow raised "
-    },
-    "moose:e1c0f22987f9": {
-      "char": "moose",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED — headline body b"
-    },
-    "moose:ef7112b458ff": {
-      "char": "moose",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: REVISED — the citation `m"
-    },
-    "moose:a0a3f66fb339": {
-      "char": "moose",
-      "class": "proportions",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED, MECHANISM REFINE"
-    },
-    "moose:75507a0d7837": {
-      "char": "moose",
-      "class": "proportions",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED, PARTLY CLEARED —"
-    },
-    "moose:4038dea79c29": {
-      "char": "moose",
-      "class": "ears",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: REVISED — ears: no longer"
-    },
-    "moose:5e0ae6151d80": {
-      "char": "moose",
-      "class": "decal-not-form",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — runtime front n"
-    },
-    "moose:8dfdc5381e0d": {
-      "char": "moose",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — temple hair blo"
-    },
-    "moose:c4a3519a198f": {
-      "char": "moose",
-      "class": "decal-not-form",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED — TEAM_MASK badge"
-    },
-    "moose:012b86478259": {
-      "char": "moose",
-      "class": "material-light",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED, SOFTENED (unchan"
-    },
-    "moose:f9f5d9e870a8": {
-      "char": "moose",
-      "class": "material-light",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CARRIED (not scored) — th"
-    },
-    "moose:c6d61779466a": {
-      "char": "moose",
-      "class": "proportions",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NEW — hood drape under-sc"
-    },
-    "moose:54764fd28648": {
-      "char": "moose",
-      "class": "other",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NEW (minor, verify before"
-    },
-    "moose:da1884ec3f76": {
-      "char": "moose",
-      "class": "decal-not-form",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NEW (minor) — the kangaro"
-    },
-    "moose:6e663097286a": {
-      "char": "moose",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (do not re-file):"
-    },
-    "moose:8b9d6824e42c": {
-      "char": "moose",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (do not re-file):"
-    },
-    "moose:c6ec5ed778f3": {
-      "char": "moose",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: Recorded non-defect, kept"
-    },
-    "moose:3c0d342e3b24": {
-      "char": "moose",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (do not re-file):"
-    },
-    "moose:d55332a3c478": {
-      "char": "moose",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED (do not re-file):"
-    },
-    "moose:4fbfc1af3d64": {
-      "char": "moose",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED as filed (do not "
-    },
-    "moose:ba51666fcb49": {
-      "char": "moose",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: Recorded non-defect, RESO"
-    },
-    "moose:d22a2f6252b5": {
-      "char": "moose",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: Recorded non-defect, NEW "
-    },
-    "moose:42966b0e931c": {
-      "char": "moose",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT, checked at 8x"
-    },
-    "moose:aee5d4511ec2": {
-      "char": "moose",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: GOOD, do not regress: bod"
     },
     "penny:e3669c342099": {
       "char": "penny",
@@ -2994,6 +2784,66 @@
       "char": "lefty",
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT, re-checked: t"
+    },
+    "moose:5db11d62b71f": {
+      "char": "moose",
+      "class": "no-defect-note",
+      "excerpt": "Plate stance (.art-review/shade-real vs shade-null moose-bat_stance@30.png, crop"
+    },
+    "moose:c17e3b7d5348": {
+      "char": "moose",
+      "class": "decal-not-form",
+      "excerpt": "Drawstrings render as dark navy outline streaks (runtime-face-grin, crop ~450,23"
+    },
+    "moose:963b82d88375": {
+      "char": "moose",
+      "class": "ears",
+      "excerpt": "Ears read as oversized round discs (runtime-hero crop 480,200 150x140 @4x): a si"
+    },
+    "moose:5f42a51b3d5f": {
+      "char": "moose",
+      "class": "proportions",
+      "excerpt": "Measured visible face at the brow line is OFF both sides (left 38.5 vs 18.9, rig"
+    },
+    "moose:ff85a5c13afa": {
+      "char": "moose",
+      "class": "sheared-edges",
+      "excerpt": "Buzz hairline at the temple (runtime-hero crop @4x): hard dark rectangular sideb"
+    },
+    "moose:5c5a69e56c75": {
+      "char": "moose",
+      "class": "stance",
+      "excerpt": "Catcher squat, bare hand (.art-review/catch-now2/catcher_squat-moose.png vs catc"
+    },
+    "tank:7dafdabb615b": {
+      "char": "tank",
+      "class": "no-defect-note",
+      "excerpt": "Plate stance (.art-review/shade-real vs shade-null tank-bat_stance@30.png, crop "
+    },
+    "tank:97b71903d4d5": {
+      "char": "tank",
+      "class": "proportions",
+      "excerpt": "Tee length vs concept (runtime-hero, board front): hem sits near the crotch and "
+    },
+    "tank:a23b10f7a7fa": {
+      "char": "tank",
+      "class": "sheared-edges",
+      "excerpt": "Shoe side panel (runtime-hero crop 420,500 200x150 @4x): the navy stripe on the "
+    },
+    "tank:5ac88e48584f": {
+      "char": "tank",
+      "class": "material-light",
+      "excerpt": "Face shading (runtime-face-grin crop 445,150 170x160 @4x): broad diagonal light/"
+    },
+    "tank:e0c00411cd88": {
+      "char": "tank",
+      "class": "stance",
+      "excerpt": "Bind-pose ankle daylight OFF (24.1 vs 0.00, tol 12): per rubric 6b.4, look at th"
+    },
+    "tank:4affc1df35e3": {
+      "char": "tank",
+      "class": "stance",
+      "excerpt": "Catcher squat (.art-review/catch-now2/catcher_squat-tank.png vs catch-before; PI"
     }
   }
 }
