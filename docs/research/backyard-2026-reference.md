@@ -1001,6 +1001,17 @@ nearer the crotch than the sheet's hip; and through the catcher capture both
 kids' bare hands read as an arm held out at shoulder height, with Tank's squat
 hem only partly fixed (a tongue of tee still hangs between thigh and shoe).
 
+### #9: the "dark foreshortened trousers" are not seen in play (2026-10-02)
+
+The catcher review's last open note ("a front view, which no gameplay camera
+uses, shows dark foreshortened knees on the dark-trousered kids") was checked
+against the cameras that do show crouched kids from the front: infielders in
+`field_ready` face home, where the between-pitch and live cameras sit. The
+between camera draws every kid as a speck. The live camera looks down from
+high, where the trousers read as part of an ordinary kid shape and heads and
+hair carry the silhouette (`smoke:presentation` `between` and `live-play`).
+Closed as not a gameplay defect. The specks themselves are worklist #2.
+
 ### #4, first half: `audit:batting` holds its margin (2026-09-30)
 
 `--check` now fails anything inside 3 degrees of the arm-step and wrist gates;
