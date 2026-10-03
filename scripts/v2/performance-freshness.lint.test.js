@@ -33,6 +33,13 @@
 //
 // Break-it record, below: truncating one byte of the shipped file fires with
 // "tank: the shipped performance take is stale".
+//
+// ★ AND THE SHARED LIBRARY IS A BAKE TOO. `anims_recess_v1.glb` carries every
+// clip a kid's take does not override, baked from the same file by
+// `npm run export:animations`, and this gate once named it only to skip it.
+// So a pose edit for every kid's catcher squat changed nothing in the game,
+// and two experiment rounds measured exactly zero changed pixels before anyone
+// noticed (2026-10-02). It is held to the same byte comparison.
 // ---------------------------------------------------------------------------
 
 import { createHash } from 'node:crypto';
@@ -43,6 +50,7 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
 
 import { PERFORMANCE_IDS, buildSignaturePerformanceGlb } from './export-signature-performance.mjs';
+import { buildAnimationLibraryGlb } from './export-animation-library.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const models = resolve(here, '..', '..', 'public', 'v2', 'models');
@@ -92,6 +100,15 @@ describe('a shipped performance take matches the code that bakes it', () => {
       }
     }
     expect(stale).toEqual([]);
+  });
+
+  it('ships the shared library as a fresh bake of proceduralClips.ts', () => {
+    const out = join(scratch, 'anims_recess_v1.glb');
+    buildAnimationLibraryGlb(out);
+    expect(
+      sha(readFileSync(out)),
+      'anims_recess_v1.glb is stale: proceduralClips.ts has moved since it was baked, and the runtime plays the BAKE, so the edit is not in the game. Run `npm run export:animations` and re-capture any evidence of the clips it changed',
+    ).toBe(sha(readFileSync(join(models, 'anims_recess_v1.glb'))));
   });
 
   // ★ Broken once, against the real artefact rather than a fixture.
