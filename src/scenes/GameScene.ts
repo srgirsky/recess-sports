@@ -174,7 +174,7 @@ import { FONT, pill } from '../ui/theme';
 import { hitFromBox } from '../ui/layout';
 import { idleBob, squashHop, groundShadow, runCycle, poseSequence } from '../ui/anim';
 import { poseKey } from '../art/textureFactory';
-import { project, unproject, depthScale, ZOOM } from '../art/projection';
+import { project, unproject, depthScale, groundScale } from '../art/projection';
 import {
   shadeInt,
   lightenInt,
@@ -1195,10 +1195,10 @@ export class GameScene extends Phaser.Scene {
       for (let x = 120; x < W; x += 240) seams.lineBetween(x, skyBase, x, GAME_HEIGHT);
       seams.lineBetween(0, project({ x: 0, y: 470 }).y, W, project({ x: W, y: 470 }).y);
       const sq = project(SECOND);
-      this.add.circle(sq.x, sq.y, 45 * depthScale(SECOND) * ZOOM).setStrokeStyle(4, 0xf2e6c9, 0.5);
+      this.add.circle(sq.x, sq.y, 45 * groundScale(SECOND)).setStrokeStyle(4, 0xf2e6c9, 0.5);
       // A basketball three-point arc sweeping through deep foul ground...
       const cq = project({ x: HOME.x, y: HOME.y + 40 });
-      const cz = depthScale({ x: HOME.x, y: HOME.y + 40 }) * ZOOM;
+      const cz = groundScale({ x: HOME.x, y: HOME.y + 40 });
       const court = this.add.graphics();
       court.lineStyle(4, 0xf2e6c9, 0.35);
       court.beginPath();
@@ -1208,7 +1208,7 @@ export class GameScene extends Phaser.Scene {
       court.lineStyle(3, 0xf2e6c9, 0.4);
       const hop = (lx: number, ly: number, w: number, h: number) => {
         const q = project({ x: lx, y: ly });
-        const z = depthScale({ x: lx, y: ly }) * ZOOM;
+        const z = groundScale({ x: lx, y: ly });
         court.strokeRect(q.x, q.y, w * z, h * z);
       };
       for (let i = 0; i < 4; i++) hop(56, 480 + i * 30, 34, 30);
@@ -1286,7 +1286,9 @@ export class GameScene extends Phaser.Scene {
       const circles = this.add.graphics();
       [FIRST, SECOND, THIRD].forEach((p, i) => {
         const q = project(p);
-        const ds = depthScale(p);
+        // Ground, so it shrinks with the field; 0.78 keeps the size these
+        // circles had against the diamond under the flat camera.
+        const ds = groundScale(p) * 0.78;
         circles.fillStyle(look.dirt, 1);
         circles.fillEllipse(q.x, q.y + 2, 64 * ds, 30 * ds);
         circles.lineStyle(2, shadeInt(look.dirt, 0.2), 0.7);
@@ -1294,12 +1296,12 @@ export class GameScene extends Phaser.Scene {
         speckleEllipse(circles, q.x, q.y + 2, 28 * ds, 12 * ds, mottle, 14, 0.35, i * 17);
       });
       const hq = project(HOME);
-      const hds = depthScale(HOME) * ZOOM;
+      const hds = groundScale(HOME);
       circles.fillStyle(look.dirt, 1);
-      circles.fillEllipse(hq.x, hq.y + 4 * ZOOM, 116 * hds, 54 * hds);
+      circles.fillEllipse(hq.x, hq.y + 4 * hds, 116 * hds, 54 * hds);
       circles.lineStyle(2, shadeInt(look.dirt, 0.2), 0.7);
-      circles.strokeEllipse(hq.x, hq.y + 4 * ZOOM, 116 * hds, 54 * hds);
-      speckleEllipse(circles, hq.x, hq.y + 4 * ZOOM, 50 * hds, 22 * hds, mottle, 26, 0.35, 9);
+      circles.strokeEllipse(hq.x, hq.y + 4 * hds, 116 * hds, 54 * hds);
+      speckleEllipse(circles, hq.x, hq.y + 4 * hds, 50 * hds, 22 * hds, mottle, 26, 0.35, 9);
     }
 
     // --- Base paths ---
@@ -1347,8 +1349,8 @@ export class GameScene extends Phaser.Scene {
     // a no-op there; the moment the camera gained a y term it would have left
     // the mound behind on the old ground plane.
     const mq = project(MOUND);
-    const mds = depthScale(MOUND) * ZOOM;
-    const my = (dy: number) => mq.y + dy * ZOOM;
+    const mds = groundScale(MOUND);
+    const my = (dy: number) => mq.y + dy * mds;
     this.add.ellipse(mq.x + 6 * mds, my(8), 96 * mds, 54 * mds, 0x1b2833, 0.14); // cast shadow, down-right
     this.add.ellipse(mq.x, my(4), 92 * mds, 60 * mds, look.dirt).setStrokeStyle(3, look.asphalt ? look.grassDark : 0xb87a3f);
     this.add.ellipse(mq.x, my(12), 78 * mds, 34 * mds, shadeInt(look.dirt, 0.3), 0.3); // shaded near slope
@@ -1360,7 +1362,7 @@ export class GameScene extends Phaser.Scene {
     this.add.rectangle(mq.x, mq.y, 26 * mds, 8 * mds, COLORS.white).setStrokeStyle(2, 0x9a9a9a);
 
     // --- Home plate (pentagon) ---
-    const hz = depthScale(HOME) * ZOOM;
+    const hz = groundScale(HOME);
     this.add
       .polygon(homeQ.x, homeQ.y + 6 * hz, [0, 0, 26, 0, 26, 12, 13, 22, 0, 12], COLORS.white)
       .setStrokeStyle(3, COLORS.ink)
@@ -1396,7 +1398,9 @@ export class GameScene extends Phaser.Scene {
     for (const o of this.venue.obstacles) {
       if (o.kind !== 'tree') continue;
       const q = project({ x: o.x, y: o.y });
-      const r = o.r * depthScale({ x: o.x, y: o.y });
+      // The tree's footprint IS the sim's collision circle, so it is sized as
+      // ground — a ball bonks where the canopy is drawn.
+      const r = o.r * groundScale({ x: o.x, y: o.y });
       this.add.rectangle(q.x, q.y + r - 6, 14, 26, 0x6d4426).setStrokeStyle(3, 0x4e3019).setDepth(23);
       this.add.circle(q.x - r * 0.45, q.y - r * 0.2, r * 0.62, 0x3f7d3a).setDepth(23);
       this.add.circle(q.x + r * 0.45, q.y - r * 0.2, r * 0.62, 0x478940).setDepth(23);

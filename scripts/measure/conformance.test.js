@@ -40,9 +40,9 @@ import {
   PITCH_TRAVEL_MS, CPU_PITCH_TRAVEL_MS, GAME_HEIGHT, HUD,
   DIFFICULTY_TIERS,
 } from '../../src/config.ts';
-import { HOME, FIRST, FOUL_SLOPE, FIELD_BOTTOM_Y } from '../../src/systems/geometry.ts';
+import { HOME, FIRST, SECOND, THIRD, FOUL_SLOPE, FIELD_BOTTOM_Y } from '../../src/systems/geometry.ts';
 import { BAT_STANCE_GEOMETRY } from '../../src/art/CharacterArt.ts';
-import { project, ZOOM } from '../../src/art/projection.ts';
+import { project, unproject, ZOOM, PERSPECTIVE } from '../../src/art/projection.ts';
 import { affinity, ourLegRealMs, ratioToAnchor, round } from './lib.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -303,30 +303,59 @@ describe('geometry — known drifts stay exactly as big as recorded', () => {
     expect(project({ x: 480, y: 540 }).y).toBeLessThan(HUD.STRIP.TOP);
   });
 
-  it('our projection is still exactly affine while BB is decisively not', () => {
+  it('the DRAWN diamond is in perspective, inside BB’s measured strength band', () => {
+    // Measured on what is drawn: the four bases through art/projection.ts. The
+    // sim's own bases are a flat square by design, so measuring THEM (which
+    // this test did while the camera was affine) reads 0 forever and cannot see
+    // the camera at all.
     const rec = M.geometry.projectionType;
-    expect(rec.status).toBe('known-drift');
+    expect(rec.status).toBe('conformed');
+    expect(PERSPECTIVE).toBe(rec.ours.value);
 
-    // Compute OUR diamond's affinity from the real base constants. This is the
-    // load-bearing one: if someone adds vertical foreshortening to the field,
-    // this flips and forces the record to be updated with the new reality.
-    const ours = affinity({
-      home: HOME,
-      first: FIRST,
-      second: { x: HOME.x, y: HOME.y - 2 * (HOME.y - FIRST.y) },
-      third: { x: HOME.x - (FIRST.x - HOME.x), y: FIRST.y },
-    });
-    expect(ours.isAffine).toBe(true);
+    const drawn = { home: project(HOME), first: project(FIRST), second: project(SECOND), third: project(THIRD) };
+    const ours = affinity(drawn);
+    expect(ours.isAffine).toBe(false);
     expect(ours.diagonalMidpointGap).toBe(rec.ours.diagonalMidpointGapPx);
 
-    // BB's side: both independent measurements must still clear the threshold,
-    // or the verdict this drift is defined against no longer holds.
-    expect(rec.measurements.length).toBeGreaterThanOrEqual(2);
+    // Strength = diagonal-midpoint gap / home->2B height, BB's own definition.
+    const strength = ours.diagonalMidpointGap / (drawn.home.y - drawn.second.y);
+    expect(round(strength, 4)).toBe(rec.ours.perspectiveStrength);
+    const bb = rec.measurements.map((m) => m.perspectiveStrength);
+    expect(rec.strengthBand).toEqual([Math.min(...bb), Math.max(...bb)]);
+    expect(strength).toBeGreaterThanOrEqual(rec.strengthBand[0]);
+    expect(strength).toBeLessThanOrEqual(rec.strengthBand[1]);
+    const nearFar = (drawn.home.y - drawn.first.y) / (drawn.first.y - drawn.second.y);
+    expect(round(nearFar, 3)).toBe(rec.ours.nearFarRatio);
+
+    // The perspective must not cost the conformed foul slope: a plate-anchored
+    // homography shrinks x and y by the same factor along every ray from home.
+    expect(ours.slopeCombined).toBe(rec.ours.drawnFoulSlope);
+    const slopeBand = M.geometry.foulSlope.band;
+    expect(ours.slopeCombined).toBeGreaterThanOrEqual(slopeBand[0]);
+    expect(ours.slopeCombined).toBeLessThanOrEqual(slopeBand[1]);
+
+    // Lines stay lines (the chalk is drawn as one straight segment from home to
+    // the pole, so first base must sit ON it), and pointer input inverts
+    // exactly — the steered fielder goes where the finger is.
+    const far = project({ x: HOME.x + (HOME.y - 220) * FOUL_SLOPE, y: 220 });
+    const cross = (far.x - drawn.home.x) * (drawn.first.y - drawn.home.y) - (far.y - drawn.home.y) * (drawn.first.x - drawn.home.x);
+    expect(Math.abs(cross)).toBeLessThan(1e-6);
+    for (const p of [HOME, FIRST, SECOND, { x: 120, y: 230 }, { x: 900, y: 590 }]) {
+      const back = unproject(project(p));
+      expect(back.x).toBeCloseTo(p.x, 6);
+      expect(back.y).toBeCloseTo(p.y, 6);
+    }
+
+    // BB's side: every measurement must still clear the affine threshold, or
+    // the verdict this record is defined against no longer holds.
+    expect(rec.measurements.length).toBeGreaterThanOrEqual(3);
     for (const m of rec.measurements) {
       expect(m.diagonalMidpointGapPx, `${m.source} must clear the affine threshold`).toBeGreaterThan(
         rec.affineThresholdPx
       );
     }
+    // And the reversal stays legible.
+    expect(rec.supersedes.was.ours.isAffine).toBe(true);
   });
 });
 
