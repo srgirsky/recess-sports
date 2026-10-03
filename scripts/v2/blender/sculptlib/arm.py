@@ -102,6 +102,16 @@ class ArmSpec:
     # A bare arm needs ~0.14-0.25; a sleeved arm whose hem sits at the elbow
     # takes 0.03 or the knob reads as a second cuff (Calls Shot).
     elbow: float
+    # ★ A SLEEVE THE COLOUR OF ITS SHIRT NEEDS THE CREASE THE DRAWING PAINTS.
+    # Moose's mustard sleeve crosses his mustard hoodie in the stance PITCH
+    # holds longest, and the outline hull draws no line where an arm rests
+    # against the body, so the upper arm ran into the hood (worklist #4; Tank's
+    # purple tee the same). The sheet keeps them apart with a shadow under the
+    # sleeve. This darkens the garment rings' UNDERSIDE — which faces the body
+    # once the arm hangs — by up to this fraction, fading out above the sides
+    # and by `UNDERARM_REACH_X` along the arm. Vertex colour only, no
+    # triangles. 0.0 keeps a kid byte-identical; stated by every script.
+    underarm_shade: float
 
 
 def shoulder_blend_at(table: dict[float, float], x: float) -> float | None:
@@ -218,6 +228,19 @@ def _with_elbow(stations, amount: float):
     return sorted(out, key=lambda st: st[0])
 
 
+UNDERARM_REACH_X = 0.8
+
+
+def _underarm(colour, x: float, theta: float, spec: "ArmSpec"):
+    """`colour` darkened on a sleeve ring's underside near the shoulder."""
+    if spec.underarm_shade <= 0.0 or colour != spec.garment:
+        return colour
+    below = max(0.0, min(1.0, (-cos(theta) + 0.2) / 0.8))
+    along = max(0.0, min(1.0, (UNDERARM_REACH_X - x) / (0.15 * UNDERARM_REACH_X)))
+    k = 1.0 - spec.underarm_shade * below * along
+    return (colour[0] * k, colour[1] * k, colour[2] * k, colour[3])
+
+
 def _crease_colour(colour):
     """The crease ring's colour with the OUTLINE HULL TAPERED.
 
@@ -297,7 +320,7 @@ def build_arm(
             row.append(
                 builder.vertex(
                     (x * side, radius * sin(theta), ARM_Z + radius * cos(theta) * spec.ring_squash),
-                    colour,
+                    _underarm(colour, x, theta, spec),
                     weight,
                     (0.75, 0.25),
                 )

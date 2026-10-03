@@ -628,6 +628,7 @@ THEO_ARM = ArmSpec(
     # 1px step at rest, "a second cuff". Half the amount keeps the bend's
     # read in motion without a cuff the sheet does not draw.
     elbow=0.03,
+    underarm_shade=0.0,
     ring_squash=0.95,
     hand=HandSpec(
         tip_x=1.550,

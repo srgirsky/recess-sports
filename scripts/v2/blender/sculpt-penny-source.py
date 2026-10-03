@@ -580,6 +580,7 @@ PENNY_ARM = ArmSpec(
     cap_x=0.060,
     root_ring=0.92,  # the A-pose coverage gap: see ArmSpec.root_ring (#208)
     elbow=0.14,  # 0.06 read only when bent (a critic: "roughly twice this amount" shows on the board): ArmSpec.elbow
+    underarm_shade=0.0,
     ring_squash=0.95,
     hand=HandSpec(
         tip_x=1.550,

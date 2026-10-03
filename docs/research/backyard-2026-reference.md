@@ -981,6 +981,26 @@ through PITCH Tank 1.5 to 3.5 and Grizz 2 to 3.5, with no tear, split or pinch i
 squat or the run. Minor, at 8-16x: a tan sliver in a fold at Tank's left shin,
 and Grizz's hem is lumpy.
 
+### #9: a same-colour sleeve gets the shadow the sheet paints (2026-10-02)
+
+The #4 record's open item, Moose's arm sinking into his hoodie through PITCH,
+was the outline's blind spot: the hull draws no line where an arm rests
+against the body. Moose's sheet separates the two with a shadow under the
+sleeve. `ArmSpec.underarm_shade` darkens the underside of a garment ring near
+the shoulder (vertex colour only, no triangles; 0.0 keeps a kid byte-identical,
+stated in all 29 arm scripts). Moose and Tank carry 0.35. Through PITCH, the
+share of the trail sleeve's pixels within 30 RGB of what is behind them went
+0.22 to 0.14 (Moose) and 0.41 to 0.18 (Tank). Only COLOR_0 changed, and
+`measure:fidelity` reads both re-rendered boards exactly as before. An
+independent critic, scoring fresh boards and runtime stills, found the
+separation working ("a darker band that separates it from the torso") and left
+every category score where it was (Moose 3,3,3,4,4,3; Tank 3,3,-,3,4,3): it
+helps the read and lifts no category. Its findings, now in the ledger:
+Moose's drawstrings read as streaks and his ears as discs; Tank's tee hangs
+nearer the crotch than the sheet's hip; and through the catcher capture both
+kids' bare hands read as an arm held out at shoulder height, with Tank's squat
+hem only partly fixed (a tongue of tee still hangs between thigh and shoe).
+
 ### #4, first half: `audit:batting` holds its margin (2026-09-30)
 
 `--check` now fails anything inside 3 degrees of the arm-step and wrist gates;

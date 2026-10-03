@@ -666,6 +666,7 @@ LEFTY_ARM = ArmSpec(
     cap_x=0.060,
     root_ring=0.92,  # the A-pose coverage gap: see ArmSpec.root_ring (#208)
     elbow=0.0,
+    underarm_shade=0.0,
     ring_squash=0.95,
     hand=HandSpec(
         tip_x=1.546,
