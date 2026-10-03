@@ -54,24 +54,28 @@ export class HandPose {
       const bunt = clip === 'bunt' && side === 'Right' ? buntAmount(timeSec) : 0;
       const batCurl = (closed: number, cradle: number) => closed+(cradle-closed)*bunt;
       const point = clip === 'pose_card' && side === 'Right';
+      // ★ THE CATCHER'S BARE HAND IS A RELAXED FIST. Tucked behind him with the
+      // fingers at their resting spread it read as an open, splayed palm from
+      // PITCH and the side (independent critic, 2026-10-02).
+      const fist = clip === 'catcher_squat' && side === 'Right';
       const ball = side === 'Right' && (clip.startsWith('pitch_') || clip.startsWith('throw_'));
       const marker=clipSpec(clip).marker;
       const ballGrip=ball && marker?.name==='RELEASE'
         ? 1-Math.max(0,Math.min(1,(timeSec-marker.frame/FPS+.04)/.12)) : 1;
       const holding=(closed: number, relaxed: number)=>relaxed+(closed-relaxed)*ballGrip;
       for (const [finger, curl] of [
-        ['Index1', bat ? batCurl(1.3,.9) : point ? 0 : ball ? holding(.65,.12) : .12],
-        ['Middle1', bat ? batCurl(1.3,1.65) : point ? 1.8 : ball ? holding(.8,.22) : .22],
-        ['Ring1', bat ? batCurl(1.3,1.65) : point ? 1.8 : ball ? holding(.8,.22) : .22],
-        ['Index2', bat ? batCurl(1.5,1.1) : point ? 0 : ball ? holding(.9,.16) : .16],
-        ['Curl2', bat ? batCurl(1.5,1.6) : point ? 1.6 : ball ? holding(1,.25) : .25],
-        ['Thumb1', bat ? batCurl(.8,.5) : point ? .9 : ball ? holding(.5,.08) : .08],
+        ['Index1', fist ? 1.1 : bat ? batCurl(1.3,.9) : point ? 0 : ball ? holding(.65,.12) : .12],
+        ['Middle1', fist ? 1.3 : bat ? batCurl(1.3,1.65) : point ? 1.8 : ball ? holding(.8,.22) : .22],
+        ['Ring1', fist ? 1.3 : bat ? batCurl(1.3,1.65) : point ? 1.8 : ball ? holding(.8,.22) : .22],
+        ['Index2', fist ? 1.3 : bat ? batCurl(1.5,1.1) : point ? 0 : ball ? holding(.9,.16) : .16],
+        ['Curl2', fist ? 1.4 : bat ? batCurl(1.5,1.6) : point ? 1.6 : ball ? holding(1,.25) : .25],
+        ['Thumb1', fist ? .55 : bat ? batCurl(.8,.5) : point ? .9 : ball ? holding(.5,.08) : .08],
       ] as const) {
         const bone = this.bones.get(`${side}Hand${finger}`);
         if (!bone) continue;
         if (!this.original.has(bone)) this.original.set(bone,bone.quaternion.clone());
         bone.quaternion.setFromAxisAngle(finger === 'Thumb1' ? Y : Z, sign * curl * (finger === 'Thumb1' ? 1 : -1));
-        if (finger === 'Thumb1') bone.quaternion.multiply(new Quaternion().setFromAxisAngle(X,bat ? 1 : point ? .9 : ball ? holding(.6,.1) : .1));
+        if (finger === 'Thumb1') bone.quaternion.multiply(new Quaternion().setFromAxisAngle(X,fist ? .7 : bat ? 1 : point ? .9 : ball ? holding(.6,.1) : .1));
         const previous=this.displayed.get(bone);
         if (previous && Number.isFinite(dtSec)) {
           const target=bone.quaternion.clone();

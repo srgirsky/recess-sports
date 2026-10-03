@@ -1015,6 +1015,24 @@ high, where the trousers read as part of an ordinary kid shape and heads and
 hair carry the silhouette (`smoke:presentation` `between` and `live-play`).
 Closed as not a gameplay defect. The specks themselves are worklist #2.
 
+### #1 follow-up: the bare hand hangs to a fist at the hip (2026-10-02)
+
+The previous record left two items open: the wide kids' arm held out behind like
+a wing, and an open hand. Two export grids (72 poses) found nothing lower than
+the wing that kept the arm out of the deep bodies. A search run over the pose
+directly in the page, with no export per rung (6240 candidates, filtered on
+hand height, elbow height and hand behind the hips before the inside-the-torso
+test), found a pose where the upper arm hangs down the back and the fist sits at
+the hip. It keeps every standing kid at or under 12% inside (Big Lou; Junebug
+went 27% to 3%), so it is the one shared squat pose and the wide-kid override is
+gone. `HandPose` closes the bare hand into a relaxed fist. `audit:batting`'s
+line comes down from 30% to 20%. An independent critic: wide kids' side read
+2 to 4/5 and PITCH 3 to 4/5, a fist on every kid with nothing broken; its
+finding that the slim kids still held the wing was confirmed and fixed by
+sharing the pose, after which it scored every kid 4/5 through PITCH and from the
+side (from 3 and 2-3), the fist clear of skirts and long hair. Weakest read: Grizz, whose sleeve, skin and shirt are one
+brown, so from the side the arm merges into his body (colour, not pose).
+
 ### #4, first half: `audit:batting` holds its margin (2026-09-30)
 
 `--check` now fails anything inside 3 degrees of the arm-step and wrist gates;

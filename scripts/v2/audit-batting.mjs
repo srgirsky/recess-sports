@@ -269,7 +269,9 @@ try {
  // into his belly whichever way the hands go (0.11, both arms): his cap may only
  // shrink. Measured on the lead arm, the one that crosses the chest.
  const READY_LEAD_INSIDE=.08,READY_LEAD_INSIDE_CAP={big_lou:.13};
- const CATCHER_BARE_INSIDE=.3;
+ // Lowered from 0.30 once the hung pose put every kid at 0.118 or under
+ // (Big Lou); the line only comes down.
+ const CATCHER_BARE_INSIDE=.2;
  const buriedHand=r=>r.catcherBareInside!=null&&r.catcherBareInside>CATCHER_BARE_INSIDE;
  const sunkLead=r=>r.readyLeadInside!==null&&r.readyLeadInside>(READY_LEAD_INSIDE_CAP[r.id]??READY_LEAD_INSIDE);
  const slumped=r=>r.hipDropFt>.45||r.valgusFt>.1||(r.kneeOrder!==null&&r.kneeOrder<.1)||(r.neckRatio!==null&&r.neckRatio<.6);

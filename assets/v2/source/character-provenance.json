@@ -85,7 +85,7 @@
       },
       "animation": {
         "take": "anims_big_lou_v1.glb",
-        "takeSha256": "f8f86996d5424b11e395aba6f877cc2a52f5c4a3b3be1049707d289641346728",
+        "takeSha256": "42a899adc957e1329d8f2a05231521a21cf309455a2d8f60a2a5739feec52b24",
         "builder": "buildBigLouPilotClips",
         "generator": "recess-sports Big Lou authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -124,7 +124,7 @@
       },
       "animation": {
         "take": "anims_boomer_v1.glb",
-        "takeSha256": "705a155951b590efa2f062d9256d8f328a914046f9ba224910aecb4a4c1db7cb",
+        "takeSha256": "b22e69c6eebaaf4dea0a75a7e7f97e01dfee1573485fd6882875105f4c6afcd2",
         "builder": "buildBoomerPilotClips",
         "generator": "recess-sports Boomer authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -469,7 +469,7 @@
       },
       "animation": {
         "take": "anims_grizz_v1.glb",
-        "takeSha256": "682e2ca9ec14c329a2b9fd9be1a1d38655881954f1f9f8681c037308de169163",
+        "takeSha256": "abfdf899a94fd665c18d0608ed23781a8cb2b8d8a1484548bbcf66e7c47f05e4",
         "builder": "buildGrizzPilotClips",
         "generator": "recess-sports Grizz authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -576,7 +576,7 @@
       },
       "animation": {
         "take": "anims_moose_v1.glb",
-        "takeSha256": "00e384ccdd9623b5bff91c053dac671b8e26f6d138565814089bb90d9e17afe2",
+        "takeSha256": "b7689b026dfb256cb68aa9bf0cc72a928c92ba84bf7edc87fdbf4077d9d36c0e",
         "builder": "buildMoosePilotClips",
         "generator": "recess-sports Moose authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
@@ -887,7 +887,7 @@
       },
       "animation": {
         "take": "anims_tank_v1.glb",
-        "takeSha256": "553de2c2c288ccce186bda8f7657b2b74bee3b085cb097fd126d21385d587747",
+        "takeSha256": "c7058f8f661608227cc99fa9d0098febc87fb714963d36cd8b4e6254ecfd37da",
         "builder": "buildTankPilotClips",
         "generator": "recess-sports Tank authored performance (bindPoseHash ea5ecbcd)",
         "kind": "generated-stand-in",
