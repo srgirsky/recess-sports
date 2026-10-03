@@ -38,7 +38,7 @@ from sculptlib.head import HeadSpec, head_surface
 from sculptlib.leg import LegSpec, build_leg, leg_x
 from sculptlib.mesh import MeshBuilder, thin_for_lod
 from sculptlib.palette import Palette
-from sculptlib.rig import ARM_ELBOW_X, ARM_SHOULDER_X, LEG_ANKLE_Z, limb_bone
+from sculptlib.rig import ARM_ELBOW_X, ARM_SHOULDER_X, LEG_ANKLE_Z, hem_follows_thighs, limb_bone
 from sculptlib.shoe import ShoeSpec, build_shoe
 
 REPO = Path.cwd()
@@ -487,6 +487,12 @@ TORSO_LEVELS = [
     (2.620, 0.262, 0.236, "Spine2"),  # neck hole, clear of the neck loft
 ]
 
+# The share of the top's hem the thighs carry (`hem_follows_thighs`). Not a
+# measurement: Tank's value, chosen through PITCH on the catcher's squat. It
+# costs a small notch in this short hem mid-run; see the helper for why the
+# back-only alternative lost.
+TOP_THIGH_SHARE = 0.85
+
 # The pinch is at the bottom of the neck and widens into the jaw.
 # measured: front z=2.70 halfWidth=0.2489 tol=0.04
 # Round 2: the neck was 0.155 against a drawn 0.249-half pinch, and the
@@ -827,7 +833,8 @@ def add_character(builder: MeshBuilder, segments: int, rings: int, detail: int) 
             return SHIRT_DARK
         return SHIRT
     builder.loft(thin_for_lod(TORSO_LEVELS, detail), 1, SHIRT, 18 if detail >= 2 else segments,
-                 color_fn=hoodie_colour)
+                 color_fn=hoodie_colour,
+                 weight_fn=lambda at, bone: hem_follows_thighs(at, bone, TORSO_LEVELS[0][0], TOP_THIGH_SHARE))
     build_hoodie_details(builder, detail)
 
     for side in (1, -1):

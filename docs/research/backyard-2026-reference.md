@@ -974,9 +974,12 @@ models differ from main only in JOINTS_0/WEIGHTS_0 (`compare:glb-geometry`), so
 their fidelity boards and scores are untouched. `hem-weights.lint.test.js`
 fails any delivered kid with LOD0 rows more than 0.3ft below the hip on the
 pelvis alone, unless an allowlist excuses it. On d66e832 that is Tank (141)
-and Grizz (61). The scan behind the allowlist: four dresses and four
-overalls hang there by design; six tees still owe the fix (Chip 55, Bend-It 41,
-Boomer 17, Smokey 17, Rocket 9, Turbo 9). An independent critic scored the squat
+and Grizz (61). The scan behind the allowlist: four dresses, four overalls
+and four kids' shorts crotch hang there by design. Chip's hoodie and Bend-It's
+tee did not, and they now carry the same weighting: through PITCH their squat
+went 2 to 3 and 1.5 to 3 (independent critic), at the cost of a small notch in
+the hem mid-run where the front follows the forward thigh. Carrying the back
+only removed the notch and hung the front between the feet instead (2.5). An independent critic scored the squat
 through PITCH Tank 1.5 to 3.5 and Grizz 2 to 3.5, with no tear, split or pinch in the
 squat or the run. Minor, at 8-16x: a tan sliver in a fold at Tank's left shin,
 and Grizz's hem is lumpy.
