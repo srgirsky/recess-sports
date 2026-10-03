@@ -1252,3 +1252,28 @@ sheet, and check your result is not byte-identical to where you started.
   the ear band) still stood outboard of the whole ear. Fold everything
   outboard of the temple behind the ear's back edge below its top. The same
   fold removed the cheek lock, which was those columns seen from the front.
+
+## Lessons the catcher squat paid for (Tank and Grizz, 2026-10-02)
+
+- **★ A GARMENT RING BELOW THE HIP THAT RIDES ONLY `Hips` IS A SKIRT.** No
+  bind-pose board can see it: Tank's tee (0.53ft below the hip joint) hung
+  straight down in the catcher's squat while his thighs folded up inside it, a
+  "sack" through PITCH. Weight such rows with `sculptlib.rig.hem_follows_thighs`
+  (`MeshBuilder.loft(..., weight_fn=...)`, or in a local loft like Tank's
+  `loft_asym`). It is weights only, so `compare:glb-geometry` must show only
+  JOINTS_0/WEIGHTS_0 changing, and the board and its scores stay bound.
+  `hem-weights.lint.test.js` is the gate. Its allowlist is the scan's output
+  (2026-10-02, LOD0 pelvis-only vertices more than 0.3ft below the hip): dresses
+  bubbles 111, clover 222, diva 145, peaches 145; overalls cricket 44, gizmo 44,
+  penny 49, sprout 29; still owed the fix: chip 55, bend_it 41, boomer 17,
+  smokey 17, rocket 9, turbo 9.
+- **A tighter garment exposes what a loose one hid.** Tightening Tank's tee
+  showed his bare-hand fingertips through it: the catcher's squat had always
+  buried the throwing arm in the torso (87-93% on the widest kids). Before
+  blaming the cloth, hide the limbs one bone at a time and see which speck
+  goes.
+- **`proceduralClips.ts` is not what the runtime plays.** It is baked into
+  `anims_recess_v1.glb` (`npm run export:animations`) and per-kid takes
+  (`npm run export:signature-performance -- <id>`). A pose ladder that edits
+  the source without re-exporting measures nothing; zero changed pixels across
+  very different poses is the sign.

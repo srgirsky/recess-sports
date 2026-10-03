@@ -962,6 +962,25 @@ shoulder height (2/5 from the side), and every kid's bare hand is open with
 spread fingers where a relaxed fist would read as tucked. Tank's tee is the
 next record.
 
+### #9 begins: Tank's tee stops reading as a sack (2026-10-02)
+
+The catcher review's "Tank's long tee reads as a sack" was skinning, not
+sculpt. Every ring of the tee, which runs 0.53ft below his hip joint, was
+weighted to `Hips` alone, so in the squat the thighs swung forward inside it
+and the hem dropped to the dirt with the pelvis. Grizz's top (0.45ft below the
+hip) did the same. `sculptlib.rig.hem_follows_thighs` now passes up to 0.85 of a
+garment vertex's weight below the hip to the thigh on its side. Both rebuilt
+models differ from main only in JOINTS_0/WEIGHTS_0 (`compare:glb-geometry`), so
+their fidelity boards and scores are untouched. `hem-weights.lint.test.js`
+fails any delivered kid with LOD0 rows more than 0.3ft below the hip on the
+pelvis alone, unless an allowlist excuses it. On d66e832 that is Tank (141)
+and Grizz (61). The scan behind the allowlist: four dresses and four
+overalls hang there by design; six tees still owe the fix (Chip 55, Bend-It 41,
+Boomer 17, Smokey 17, Rocket 9, Turbo 9). An independent critic scored the squat
+through PITCH Tank 1.5 to 3.5 and Grizz 2 to 3.5, with no tear, split or pinch in the
+squat or the run. Minor, at 8-16x: a tan sliver in a fold at Tank's left shin,
+and Grizz's hem is lumpy.
+
 ### #4, first half: `audit:batting` holds its margin (2026-09-30)
 
 `--check` now fails anything inside 3 degrees of the arm-step and wrist gates;
