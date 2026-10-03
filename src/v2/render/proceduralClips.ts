@@ -477,6 +477,18 @@ const FIELD_READY_POSE: Pose = {
   rf: [0, -32, 0],
 };
 
+/**
+ * ★ THE BARE HAND IS TUCKED BEHIND THE BACK, NOT INSIDE IT. At ra -180 the
+ * throwing arm folded into the back: 30% of a kid's bare arm sat inside his
+ * own torso on average, 87-93% on Big Lou, Tank and Grizz (`audit:batting`
+ * reads it on every delivered model). At -170 the hand tucks at the lower
+ * back, outside every kid but the widest (at most 26%, Junebug). Raising it
+ * further cleared them all, and from the side the arm then stuck straight back
+ * at shoulder height like a wing, so the wide kids raise it alone
+ * (WIDE_CATCHER_SQUAT_POSE). This file is baked into `anims_recess_v1.glb`
+ * (`npm run export:animations`) and the kids' takes; the runtime plays the
+ * bakes, so an edit here changes nothing until it is re-exported.
+ */
 const CATCHER_SQUAT_POSE: Pose = {
   hp: [42, 0, 0],
   sp: [4, 0, 0],
@@ -490,9 +502,17 @@ const CATCHER_SQUAT_POSE: Pose = {
   rt: [-34, 0, 0],
   la: [-90, 60, 60],
   lf: [0, 60, 0],
-  ra: [-180, -70, 80],
+  ra: [-170, -70, 80],
   rf: [0, -50, 0],
 };
+
+/**
+ * The squat for a body too deep for the shared tuck: Tank, Grizz, Big Lou,
+ * Moose and Boomer kept 29-76% of the bare arm inside the torso at -170. The
+ * hand rides higher on the back, which from the side reads as an arm held out
+ * behind him; PITCH, the camera that shows the squat, sees a fist at the hip.
+ */
+const WIDE_CATCHER_SQUAT_POSE: Pose = shift(CATCHER_SQUAT_POSE, { ra: [20, 0, 0] });
 
 /** The catcher's squat, with a slow weight shift so it never reads as a still. */
 function catcherSquat(spec: ClipSpec, base: Pose): AnimationClip {
@@ -2241,6 +2261,7 @@ export function buildBigLouPilotClips(): AnimationClip[] {
     pose_card: louPoseCard,
     cheer_goofy: louCheerGoofy,
     upset_goofy: louUpsetGoofy,
+    catcher_squat: (spec) => catcherSquat(spec, WIDE_CATCHER_SQUAT_POSE),
   };
   return Object.entries(builders).map(([name, make]) => {
     const spec = CLIPS.find((candidate) => candidate.name === name);
@@ -2280,6 +2301,7 @@ export function buildTankPilotClips(): AnimationClip[] {
     swing_follow: tankSwingFollow,
     cheer_fierce: (spec) => directedReaction(spec, true, 'fierce'),
     upset_fierce: (spec) => directedReaction(spec, false, 'fierce'),
+    catcher_squat: (spec) => catcherSquat(spec, WIDE_CATCHER_SQUAT_POSE),
   };
   return Object.entries(builders).map(([name, make]) => {
     const spec = CLIPS.find((candidate) => candidate.name === name);
@@ -3294,6 +3316,7 @@ export function buildGrizzPilotClips(): AnimationClip[] {
     run: (spec) => runCycle(spec, 8, 40, 50),
     cheer_cool: (spec) => directedReaction(spec, true, 'cool'),
     upset_cool: (spec) => directedReaction(spec, false, 'cool'),
+    catcher_squat: (spec) => catcherSquat(spec, WIDE_CATCHER_SQUAT_POSE),
   });
 }
 
@@ -3499,6 +3522,7 @@ export function buildMoosePilotClips(): AnimationClip[] {
     run: (spec) => runCycle(spec, 10, 44, 46),
     cheer_tender: (spec) => directedReaction(spec, true, 'tender'),
     upset_tender: (spec) => directedReaction(spec, false, 'tender'),
+    catcher_squat: (spec) => catcherSquat(spec, WIDE_CATCHER_SQUAT_POSE),
   });
 }
 
@@ -3812,5 +3836,6 @@ export function buildBoomerPilotClips(): AnimationClip[] {
     run: (spec) => runCycle(spec, 16, 52, 52),
     cheer_goofy: (spec) => directedReaction(spec, true, 'goofy'),
     upset_goofy: (spec) => directedReaction(spec, false, 'goofy'),
+    catcher_squat: (spec) => catcherSquat(spec, WIDE_CATCHER_SQUAT_POSE),
   });
 }

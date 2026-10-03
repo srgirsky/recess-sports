@@ -416,9 +416,11 @@ describe('the Tank character pass', () => {
   const pilot = buildTankPilotClips();
 
   it('overrides the five high-frequency clips and all Tank priority takes', () => {
+    // catcher_squat: his body is too deep for the shared bare-hand tuck
+    // (WIDE_CATCHER_SQUAT_POSE in proceduralClips.ts).
     expect(pilot.map((clip) => clip.name)).toEqual([
       'idle', 'idle_fidget', 'run', 'bat_stance', 'swing_contact', 'swing_follow',
-      'cheer_fierce', 'upset_fierce',
+      'cheer_fierce', 'upset_fierce', 'catcher_squat',
     ]);
   });
 

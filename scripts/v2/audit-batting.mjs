@@ -72,12 +72,12 @@ try {
    // directions cross the torso-only triangles an odd number of times.
    const skinned=[];view.root.traverse(o=>{if(o.isSkinnedMesh&&!o.userData.isOutline)skinned.push(o);});
    const body=skinned.sort((a,b)=>b.geometry.attributes.position.count-a.geometry.attributes.position.count)[0];
-   const leadInside=(()=>{
+   const armInside=side=>{
     const g=body.geometry,si=g.attributes.skinIndex,sw=g.attributes.skinWeight,count=g.attributes.position.count,names=body.skeleton.bones.map(b=>b.name);
     const part=v=>{const w={};for(let j=0;j<4;j++){const n=names[si.getComponent(v,j)];w[n]=(w[n]??0)+sw.getComponent(v,j);}
      const [n,x]=Object.entries(w).sort((a,b)=>b[1]-a[1])[0];
      // A clean majority, so the shoulder seam blending into the chest is not counted.
-     if(/^Left(ForeArm|Hand)/.test(n)&&x>.7||n==='LeftArm'&&x>.85)return 'lead';
+     if(new RegExp(`^${side}(ForeArm|Hand)`).test(n)&&x>.7||n===side+'Arm'&&x>.85)return 'lead';
      return /^Spine|^Hips$/.test(n)?'torso':null;};
     const parts=Array.from({length:count},(_,v)=>part(v)),lead=parts.flatMap((p,v)=>p==='lead'?[v]:[]);
     const index=g.index?g.index.array:Array.from({length:count},(_,i)=>i),torso=[];
@@ -92,7 +92,8 @@ try {
       return dirs.filter(d=>{probe.set(o,d);return probe.intersectObject(shell).length%2===1;}).length>=4;}).length;
      geometry.dispose();return inside/lead.length;
     };
-   })();
+   };
+   const leadInside=armInside('Left');
    let stanceHipsY=null,stanceNeck=null;
    for(const [clip,aim] of [['bat_stance',2.4],['bat_load',2.4],...['swing_contact','swing_follow','swing_whiff'].flatMap(c=>[1.6,2.4,3.1,null].map(h=>[c,h])),['bunt',2.4]]){
     dir.battingPose.contact=aim===null?null:s.scene.localToWorld(new Vector3(0,aim,0));
@@ -223,6 +224,14 @@ try {
       wristBendsDeg:wristBends,wristTwistsDeg:wristTwists,armStepsDeg:armSteps,shaftHits:hits.length});
     }
    }
+   // ★ THE CATCHER'S BARE HAND IS TUCKED BEHIND HIM, NOT INSIDE HIM. The squat
+   // held the throwing arm behind the back, and on 52b7aca 30% of a kid's bare
+   // arm sat inside his own torso on average — 87-93% on Big Lou, Tank and
+   // Grizz, the hand gone into the tee. Read across the squat's loop; Zoom
+   // keeps his seated lean for the role and is exempt.
+   if(!dir.battingPose.seated){const bareInside=armInside('Right');let worst=0;
+    for(const frame of [0,12,24,36]){dir.seek('catcher_squat',frame/FPS);s.scene.updateMatrixWorld(true);worst=Math.max(worst,bareInside());}
+    results.push({id:c.id,clip:'catcher_squat',aim:null,frame:-1,catcherBareInside:worst,armStepsDeg:[],wristBendsDeg:[],wristTwistsDeg:[],shaftHits:0,palmGapFt:0,supportHandGapFt:0,pitchBatVisible:null,readyLeadInside:null,trunkLeanDeg:null,markerElbows:null,palmTorsoClearFt:null,buntLeadOut:null,topElbowDropFt:null,headTowardPitcher:1,kneeOrder:null,hipDropFt:null,valgusFt:null,neckRatio:null,contactGapFt:null,seated:false});}
    s.scene.remove(view.root);dir.dispose();view.dispose();
   }
   return {diagnostic:'Delivered models, production director, actual mirrored gameplay scene. Every authored frame of six batting clips, 120Hz for reference hands; 1.6/2.4/3.1ft targets plus the review default for the swings. Palm anchors and shaft centreline intersections are diagnostics, not finger contact or visual approval.',results};
@@ -260,9 +269,11 @@ try {
  // into his belly whichever way the hands go (0.11, both arms): his cap may only
  // shrink. Measured on the lead arm, the one that crosses the chest.
  const READY_LEAD_INSIDE=.08,READY_LEAD_INSIDE_CAP={big_lou:.13};
+ const CATCHER_BARE_INSIDE=.3;
+ const buriedHand=r=>r.catcherBareInside!=null&&r.catcherBareInside>CATCHER_BARE_INSIDE;
  const sunkLead=r=>r.readyLeadInside!==null&&r.readyLeadInside>(READY_LEAD_INSIDE_CAP[r.id]??READY_LEAD_INSIDE);
  const slumped=r=>r.hipDropFt>.45||r.valgusFt>.1||(r.kneeOrder!==null&&r.kneeOrder<.1)||(r.neckRatio!==null&&r.neckRatio<.6);
- const bad=data.results.filter(r=>sunkLead(r)||wingedLead(r)||wingedBunt(r)||slumped(r)||r.palmTorsoClearFt<0||shutElbow(r)||r.headTowardPitcher<0||r.supportHandGapFt>.02||r.palmGapFt>.02||r.contactGapFt>.1||r.wristBendsDeg.some(bend=>bend>40)||r.wristTwistsDeg.some(twist=>twist>25)||r.armStepsDeg.some(step=>step>25));
+ const bad=data.results.filter(r=>buriedHand(r)||sunkLead(r)||wingedLead(r)||wingedBunt(r)||slumped(r)||r.palmTorsoClearFt<0||shutElbow(r)||r.headTowardPitcher<0||r.supportHandGapFt>.02||r.palmGapFt>.02||r.contactGapFt>.1||r.wristBendsDeg.some(bend=>bend>40)||r.wristTwistsDeg.some(twist=>twist>25)||r.armStepsDeg.some(step=>step>25));
  // ★ THE GATES HOLD 3 DEGREES OF MARGIN (the 120% bar, docs/research/
  // backyard-2026-reference.md). A pose at 24.2 degrees per quarter-frame passes
  // a 25-degree gate and fails the next model delivery. Arm steps stop at 22 and
@@ -314,6 +325,6 @@ try {
   steps:r.armStepsDeg.map((step,i)=>step>ARM_STEP_MARGIN_DEG?`${bones[i]} ${step.toFixed(1)}`:null).filter(Boolean),
   wrists:r.wristBendsDeg.map((bend,i)=>bend>WRIST_BEND_MARGIN_DEG?`${i?'Left':'Right'}Hand ${bend.toFixed(1)}`:null).filter(Boolean)}));
  if(thin.length)console.error(`${thin.length} samples inside the 3-degree margin (arm step > ${ARM_STEP_MARGIN_DEG}, wrist fold > ${WRIST_BEND_MARGIN_DEG}). Fix the pose in battingPose.ts; do not relax these lines — they are the approved bar.`);
- console.log(JSON.stringify({samples:data.results.length,mechanicalFailures:bad.length,marginFailureCount:thin.length,marginFailures,earlyHiddenCount:earlyHidden.length,minWhiffFinishVisible:finishVisibility.reduce((m,k)=>Math.min(m,k.visible),1),hiddenFinish,shaftIntersectionCandidates:intersections.length,affected:[...new Set(intersections.map(r=>r.id))],markerElbows,maxArmStepDeg:max(data.results.flatMap(r=>r.armStepsDeg)),maxWristTwistDeg:max(data.results.flatMap(r=>r.wristTwistsDeg)),maxWristBendDeg:max(data.results.flatMap(r=>r.wristBendsDeg)),maxPalmGapFt:max(data.results.map(r=>r.palmGapFt)),maxHipDropFt:max(data.results.map(r=>r.hipDropFt??0)),maxValgusFt:max(data.results.map(r=>r.valgusFt??0)),minKneeOrder:min(data.results.filter(r=>r.kneeOrder!==null).map(r=>r.kneeOrder)),minNeckRatio:min(data.results.filter(r=>r.neckRatio!==null).map(r=>r.neckRatio)),tipped,maxReadyLeadInside:max(data.results.map(r=>r.readyLeadInside??0)),minPalmTorsoClearFt:min(data.results.filter(r=>r.palmTorsoClearFt!==null).map(r=>r.palmTorsoClearFt)),failures:bad.slice(0,20)},null,2));
+ console.log(JSON.stringify({samples:data.results.length,mechanicalFailures:bad.length,marginFailureCount:thin.length,marginFailures,earlyHiddenCount:earlyHidden.length,minWhiffFinishVisible:finishVisibility.reduce((m,k)=>Math.min(m,k.visible),1),hiddenFinish,shaftIntersectionCandidates:intersections.length,affected:[...new Set(intersections.map(r=>r.id))],markerElbows,maxArmStepDeg:max(data.results.flatMap(r=>r.armStepsDeg)),maxWristTwistDeg:max(data.results.flatMap(r=>r.wristTwistsDeg)),maxWristBendDeg:max(data.results.flatMap(r=>r.wristBendsDeg)),maxPalmGapFt:max(data.results.map(r=>r.palmGapFt)),maxHipDropFt:max(data.results.map(r=>r.hipDropFt??0)),maxValgusFt:max(data.results.map(r=>r.valgusFt??0)),minKneeOrder:min(data.results.filter(r=>r.kneeOrder!==null).map(r=>r.kneeOrder)),minNeckRatio:min(data.results.filter(r=>r.neckRatio!==null).map(r=>r.neckRatio)),tipped,maxCatcherBareInside:max(data.results.map(r=>r.catcherBareInside??0)),maxReadyLeadInside:max(data.results.map(r=>r.readyLeadInside??0)),minPalmTorsoClearFt:min(data.results.filter(r=>r.palmTorsoClearFt!==null).map(r=>r.palmTorsoClearFt)),failures:bad.slice(0,20)},null,2));
  if(process.argv.includes('--check')&&(earlyHidden.length||tipped.length||bad.length||thin.length||hiddenFinish.length||intersections.length))process.exitCode=1;
 }finally{await browser?.close();server.kill();}
