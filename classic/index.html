@@ -43,36 +43,10 @@
         display: block;
         margin: 0 auto;
       }
-      .to-new {
-        position: fixed;
-        top: 0;
-        right: 0;
-        z-index: 10;
-        margin: 10px;
-        padding: 10px 14px;
-        min-width: 56px;
-        min-height: 44px;
-        box-sizing: border-box;
-        display: flex;
-        align-items: center;
-        border-radius: 12px;
-        background: rgb(20 32 46 / 0.8);
-        color: #fff4de;
-        font: 700 13px/1 Fredoka, system-ui, sans-serif;
-        letter-spacing: 0.06em;
-        text-decoration: none;
-      }
     </style>
   </head>
   <body>
     <div id="game"></div>
-    <!--
-      The way back to the new game. Deliberately in this SHELL and not in v1's
-      source: v1 is shipped and frozen, and `git diff main -- src ':!src/v2'`
-      staying empty is the review convention this whole rebuild has run under.
-      Plain DOM over the canvas, so it costs Phaser nothing.
-    -->
-    <a class="to-new" href="../">✨ new game</a>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

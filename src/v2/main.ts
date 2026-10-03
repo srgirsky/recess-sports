@@ -47,6 +47,7 @@ import { App } from './App';
 import { GameView } from './game/GameView';
 import { isLogEnabled } from './ui/sessionLogEnabled';
 import { assetUrl } from './render/assets';
+import { setGameChoice } from '../data/gameChoice';
 
 // CSS cannot resolve `public/v2/` from both `/` and the permanent `/v2/` alias
 // by itself. Route shell art through the same page-aware resolver as models and
@@ -66,6 +67,9 @@ const screens = document.getElementById('screens');
 if (!screens) throw new Error('#screens is missing from v2/index.html');
 
 const params = new URLSearchParams(location.search);
+// Opening the 3D game IS choosing it: a bare visit to the front door only got
+// here because this browser has not chosen CLASSIC (index.html's redirect).
+setGameChoice('3d');
 // Review tools are loaded only when requested; their UI is not a startup cost
 // for every child opening the game.
 async function boot(): Promise<void> {
