@@ -2332,7 +2332,10 @@ in this order:
    reactions. Cast the roster from
    named stock voices after each character batch establishes its personality,
    and produce the two commentators through the same disclosed path. Keep the
-   existing cue map as the executable coverage contract.
+   existing cue map as the executable coverage contract. Every stock voice is
+   an adult, so the kids sound like adults (Theo and Zoom measure 112–117 Hz);
+   the free local child-voice options and their bake-off are in
+   `docs/research/kid-voices.md`, awaiting a pick by ear.
 4. **Diegetic shell art.** Recess's DOM screens are usable and complete, but the
    reference's treehouse stations, floating trading cards and field-select
    binocular view feel like physical places. Replace generic emoji/card art with
