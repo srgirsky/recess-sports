@@ -3495,6 +3495,36 @@ camera. It now projects the four bases and asserts several things:
 The change is render-only. The sim, every systems test, and both goldlog
 fingerprints (main `a71e6a2f`, kid `a1686f32`) are byte-identical.
 
+## October 29 — the stolen base becomes a play
+
+What we believed: the steal was a solved sim problem with one open number.
+`sim.stealRace` had measured 10.3 attempts a game at 96% safe, called it too
+many, and traced it to the arm band — half the roster's catchers could not
+reach second, so the margin was infinite and no threshold could decline it.
+
+What the screen showed: nothing. A steal emitted no event, the pitch frame
+never said a runner was going, and the bridge drew runners from `baseIds`, so
+a child pitching saw a runner on first and then a runner on second, ten
+times a game, with no sound, no callout and no booth line — the booth has had
+`stealSafe` / `stealCaught` lines since v1 and v2 never fired them. A child
+batting could not order one; their runners went on the CPU's judgement.
+
+The change (PR `feat/v2-steal-play`): the runner is decided before the throw,
+with no draw, so the pitch frame carries him; the race resolves to a
+`{t:'steal'}` event after the pitch's own, which the callout, the crowd, the
+booth and the session log all hear; the view runs him down the basepath at
+the pace the sim raced him, to a cheer on the bag or a sulk short of it; and
+two verbs exist — STEAL for the person batting, THROW! for the person
+fielding, whose tap's lateness past the ball's arrival is the catcher's read.
+
+Two findings worth keeping. The relay (a catcher who cannot reach throws
+through the pitcher, the cutoff man's rule) made every margin finite and did
+not move the rate at all: 10.78 at 96% became 10.74 at 95%. Kids' legs beat
+kids' arms, relay or not, so the runner is right to go, and the product's
+answer is a league rule rather than a knob: at T-BALL and ROOKIE the CPU does
+not run on a child, as a 7U league does not. And a steal is still off camera
+from the plate rig; the steal cam is the next change.
+
 ## October 2 — switching between the two games
 
 Both games were reachable from each other, but awkwardly:

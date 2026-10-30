@@ -18,7 +18,8 @@
 // ---------------------------------------------------------------------------
 
 import { beforeAll, describe, it, expect } from 'vitest';
-import { simulateGame, simulateGameLive, type GameResult, type GameSpec, type LiveFrame } from './game';
+import { simulateGame, simulateGameLive, type GameResult, type GameSpec, type LiveFrame, type SimEvent } from './game';
+import type { PlayInputs } from './play';
 import { battingOrder, planDefence, throwDemandFt } from './lineup';
 import { GAME } from './params';
 import { maxThrowFt } from './fielders';
@@ -394,42 +395,52 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
    * they agree by construction, and a change to the sim moves both together.
    * The only thing that can detect a behaviour change is a golden value.
    */
+  /**
+   * ★ RECAPTURED 2026-10-29 FOR THE STEAL RELAY (`steal.ts` `throwLegsSec`):
+   * a catcher whose arm cannot reach the bag now throws through the pitcher,
+   * so a CPU runner's projected margin is finite against every catcher and
+   * the race he runs is a different race. Eleven of the thirty-three games
+   * moved, all in `h` and `s`; the plate (`pa`, `k`) is untouched, which is
+   * the check that the change stayed on the bases. Attempts per game did not
+   * fall (10.8 before and after — `sim.stealRace` has why), so this is not a
+   * tuning; it is the end of an infinite margin.
+   */
   const GOLDEN: Record<string, string> = {
     'park:a': '1-2 i6 pa50 h21 k13 r3 s7',
-    'park:b': '2-1 i6 pa53 h18 k14 r3 s8',
+    'park:b': '2-1 i6 pa53 h21 k14 r3 s10',
     'park:c': '9-11 i6 pa74 h40 k13 r20 s13',
     'sandlot:a': '1-0 i6 pa47 h18 k11 r1 s9',
-    'sandlot:b': '1-0 i6 pa53 h20 k14 r1 s10',
+    'sandlot:b': '1-0 i6 pa56 h23 k15 r1 s12',
     'sandlot:c': '0-3 i6 pa53 h28 k15 r3 s11',
     'blacktop:a': '2-0 i6 pa47 h11 k10 r2 s3',
-    'blacktop:b': '1-2 i6 pa47 h15 k13 r3 s7',
+    'blacktop:b': '1-2 i6 pa47 h18 k13 r3 s8',
     'blacktop:c': '5-8 i6 pa61 h28 k13 r13 s3',
     // Added with the venues: there is no pre-generator result for content that
     // did not exist then, so these are their birth fingerprints and ratchet
     // from here exactly as the first three do.
     'tin_can:a': '2-2 i7 pa64 h28 k17 r4 s12',
-    'tin_can:b': '2-1 i6 pa53 h21 k16 r3 s12',
+    'tin_can:b': '2-1 i6 pa53 h24 k16 r3 s13',
     'tin_can:c': '1-11 i6 pa61 h28 k13 r12 s9',
     'cement:a': '2-1 i6 pa50 h14 k15 r3 s4',
-    'cement:b': '1-2 i7 pa59 h21 k15 r3 s12',
+    'cement:b': '1-2 i7 pa59 h24 k15 r3 s13',
     'cement:c': '4-3 i6 pa59 h28 k16 r7 s8',
     'steele:a': '2-0 i6 pa48 h18 k13 r2 s7',
-    'steele:b': '1-2 i6 pa49 h17 k13 r3 s8',
+    'steele:b': '1-2 i6 pa50 h21 k13 r3 s10',
     'steele:c': '9-3 i6 pa63 h32 k15 r12 s11',
     'playground:a': '1-2 i6 pa53 h27 k10 r3 s8',
     'playground:b': '2-3 i7 pa60 h24 k15 r5 s10',
     'playground:c': '11-4 i6 pa63 h33 k14 r15 s9',
     'eckman:a': '1-0 i6 pa48 h17 k13 r1 s8',
-    'eckman:b': '1-0 i6 pa53 h20 k14 r1 s10',
+    'eckman:b': '1-0 i6 pa56 h23 k15 r1 s12',
     'eckman:c': '6-4 i6 pa59 h31 k16 r10 s9',
     'dirt_yards:a': '0-0 i7 pa60 h22 k15 r0 s8',
-    'dirt_yards:b': '1-0 i6 pa53 h20 k14 r1 s11',
+    'dirt_yards:b': '1-0 i6 pa56 h23 k15 r1 s13',
     'dirt_yards:c': '8-9 i6 pa65 h42 k13 r17 s17',
     'big_city:a': '2-3 i6 pa53 h22 k11 r5 s7',
-    'big_city:b': '3-4 i7 pa59 h19 k15 r7 s8',
+    'big_city:b': '3-4 i7 pa59 h22 k15 r7 s10',
     'big_city:c': '7-4 i6 pa60 h32 k16 r11 s5',
     'dome:a': '4-2 i6 pa50 h14 k16 r6 s3',
-    'dome:b': '3-2 i6 pa52 h19 k12 r5 s9',
+    'dome:b': '3-2 i6 pa52 h22 k12 r5 s10',
     'dome:c': '8-9 i6 pa63 h32 k13 r17 s2',
   };
 
@@ -464,7 +475,8 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
    * play, which is worth knowing. Both gates fire immediately on a real change
    * — dt 1/60 to 1/50 — which is what verified them.
    */
-  const CHECKSUM_30 = 1745365359;
+  // Moved 1745365359 -> 1283789542 with the steal relay (2026-10-29), see GOLDEN.
+  const CHECKSUM_30 = 1283789542;
   // Keep the original thirty-game ratchet on the venues it was born with.
   // New venues get explicit birth fingerprints above; adding content must not
   // silently rewrite the baseline that catches drift in the existing game.
@@ -896,5 +908,118 @@ describe('★ stamina: a tiring arm misses the zone more as the game goes on', (
       }
     }
     expect(sawNumber).toBe(true);
+  }, PLAYS_GAMES);
+});
+
+describe('★ the stolen base is a play: seen, heard, and a person’s to make', () => {
+  type StealEvent = Extract<SimEvent, { t: 'steal' }>;
+  /** Pump a live game with a policy per frame; keep every steal event and every pitch frame's steal field. */
+  function pumpWith(
+    seed: string,
+    over: Partial<GameSpec>,
+    policy: (f: LiveFrame) => PlayInputs | undefined
+  ): { events: StealEvent[]; pitches: Array<{ half: 'top' | 'bottom'; steal: LiveFrame['steal'] }>; result: GameResult } {
+    const events: StealEvent[] = [];
+    const pitches: Array<{ half: 'top' | 'bottom'; steal: LiveFrame['steal'] }> = [];
+    const it = simulateGameLive(
+      spec({
+        ...over,
+        onEvent: (e) => {
+          if (e.t === 'steal') events.push(e);
+        },
+      }),
+      makeRng(seed)
+    );
+    let r = it.next();
+    let guard = 0;
+    while (!r.done && guard++ < 2_000_000) {
+      const f = r.value;
+      if (f.phase === 'pitch') pitches.push({ half: f.half, steal: f.steal ? { ...f.steal } : null });
+      else expect(f.steal, 'the field is a pitch-frame field').toBeNull();
+      const inputs = policy(f);
+      r = inputs ? it.next(inputs) : it.next();
+    }
+    expect(r.done).toBe(true);
+    return { events, pitches, result: r.value as GameResult };
+  }
+
+  it('★ emits one steal event per attempt, agreeing with the tally', () => {
+    const { events, result } = pumpWith('a', {}, () => undefined);
+    expect(events.length, 'steals happen in this game').toBeGreaterThan(0);
+    expect(events.length).toBe(result.tally.stealAttempts);
+    expect(events.filter((e) => e.safe).length).toBe(result.tally.stealsSafe);
+    for (const e of events) {
+      expect(e.human, 'nobody is playing').toBe(false);
+      expect(e.to).toBe(e.from + 1);
+      expect(Number.isFinite(e.marginSec), 'the relay leaves no infinite margin').toBe(true);
+    }
+  }, PLAYS_GAMES);
+
+  it('★ the pitch frame names the runner going, before the race is run', () => {
+    const { events, pitches } = pumpWith('a', {}, () => undefined);
+    const going = pitches.filter((p) => p.steal !== null);
+    expect(going.length).toBe(events.length);
+    going.forEach((p, i) => {
+      expect(p.steal!.runnerId).toBe(events[i].runnerId);
+      expect(p.steal!.from).toBe(events[i].from);
+      expect(p.steal!.to).toBe(events[i].to);
+      // A kid needs a few seconds for a basepath less a lead — the view paces his run on it.
+      expect(p.steal!.runnerSec).toBeGreaterThan(1);
+      expect(p.steal!.runnerSec).toBeLessThan(8);
+    });
+  }, PLAYS_GAMES);
+
+  it('★ a person batting: their runners go on the STEAL order and otherwise hold', () => {
+    // The person is AWAY and bats the top half. With no order, none of their
+    // runners goes (the CPU's judgement runs only for the CPU's runners).
+    const held = pumpWith('h', { humanSide: 'away' }, () => undefined);
+    expect(held.pitches.filter((p) => p.half === 'top' && p.steal).length).toBe(0);
+    expect(held.events.filter((e) => e.human).length).toBe(0);
+    // Ordered on every windup, the lead runner goes whenever the bag ahead is open.
+    const ordered = pumpWith('h', { humanSide: 'away' }, (f) => (f.phase === 'windup' ? { steal: true } : undefined));
+    const human = ordered.events.filter((e) => e.human);
+    expect(human.length, 'ordered steals happen').toBeGreaterThan(0);
+    expect(ordered.pitches.filter((p) => p.half === 'top' && p.steal).length).toBe(human.length);
+    // ★ AND AN ORDER WHILE THE PERSON FIELDS IS NOT THEIRS: the bottom half
+    // carries CPU runners only, and every one of them went on his own judgement.
+    expect(ordered.events.filter((e) => !e.human).length).toBe(
+      ordered.pitches.filter((p) => p.half === 'bottom' && p.steal).length
+    );
+  }, PLAYS_GAMES);
+
+  it('★ a person fielding: the THROW! tap on arrival tightens the first race by the catcher’s own read', () => {
+    // The person is HOME and fields the top half. Up to the first top-half
+    // steal the two games are identical (a tap in the bottom half is not the
+    // person's and is dropped), so that one event is comparable race to race.
+    let compared = 0;
+    for (const seed of ['t1', 't2', 't3', 't4']) {
+      const own = pumpWith(seed, { humanSide: 'home' }, () => undefined);
+      const read = pumpWith(seed, { humanSide: 'home' }, (f) =>
+        f.phase === 'pitch' && f.steal ? { throwDown: { atSec: f.pitch!.travelSec } } : undefined
+      );
+      const k = own.pitches.filter((p) => p.steal).findIndex((p) => p.half === 'top');
+      if (k < 0) continue;
+      expect(read.events[k].runnerId).toBe(own.events[k].runnerId);
+      expect(read.events[k].marginSec).toBeLessThan(own.events[k].marginSec);
+      compared++;
+    }
+    expect(compared, 'at least one seed has the CPU stealing on the person').toBeGreaterThan(0);
+  }, PLAYS_GAMES * 2);
+
+  it('★ an order from the wrong side is dropped, so a person cannot run or throw for the CPU', () => {
+    // The person is HOME: they field the top half and bat the bottom. A STEAL
+    // sent on top-half windups is the CPU's runner being ordered by the
+    // wrong bench, and a THROW! sent on bottom-half pitches is a catcher the
+    // person does not play. Both must leave the game byte-identical.
+    const plain = pumpWith('a', { humanSide: 'home' }, () => undefined);
+    const wrong = pumpWith('a', { humanSide: 'home' }, (f) =>
+      f.phase === 'windup' && f.half === 'top'
+        ? { steal: true }
+        : f.phase === 'pitch' && f.half === 'bottom'
+          ? { throwDown: { atSec: 0.5 } }
+          : undefined
+    );
+    expect(wrong.result.tally).toEqual(plain.result.tally);
+    expect(wrong.events).toEqual(plain.events);
   }, PLAYS_GAMES);
 });

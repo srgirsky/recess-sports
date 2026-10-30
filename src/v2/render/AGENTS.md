@@ -17,29 +17,32 @@ rule that projection stays render-side and testable.
 - **Render-only exaggeration must never leak into the sim.** `CHARACTER_SCALE`
   draws a kid larger than he is; catch radii, reach, stride and collision stay
   real feet (`render.characterPresence`). Live wide shots add `presenceScale`:
-  apply it BEFORE `applyFrame` (the bridge reads hands and root scale), never in
-  the plate, draft or board cameras.
+  apply it BEFORE `applyFrame` (the bridge reads hands and root scale), never
+  in the plate, draft or board cameras.
 - **A camera preset that has never seen a scene is a guess.** Look through it
   before trusting its comment.
+- **A stealing runner is drawn from `FrameViewOptions.stealRun`, never
+  `baseIds`**, until the view drops it; the steal cam waits out a pitch the
+  person bats.
 - **⚠️ A projection test cannot see OCCLUSION.** Projecting the bases through a
-  preset and asserting they land in frame passes for a view where a catcher fills
-  the middle of the frame, because a point behind him projects to the same pixel
-  as one in front. Raycast against the live scene instead. Height cannot fix an
-  occluded plate and clearing a catcher over the top needs an absurd bird's-eye,
-  so the eye is OFFSET — the smallest offset that clears every sample point. The
-  framing that buys is honestly poor and is recorded as `render.pitchFraming`
-  for a camera pass: **do not retune the eye until a screenshot looks better**,
-  because the binding constraint is occlusion and only a raycast can see it.
+  preset and asserting they land in frame passes with a catcher filling the
+  middle of the frame: a point behind him projects to the same pixel as one in
+  front. Raycast against the live scene instead. Height cannot fix an
+  occluded plate, so the eye is OFFSET — the smallest that clears every sample
+  point. The framing that buys is poor and is recorded as
+  `render.pitchFraming`: **do not retune the eye until a screenshot looks
+  better**, because the binding constraint is occlusion and only a raycast can
+  see it.
 
 ## The rig
 
 - **The rig must sum to the height it claims.** `crownHeightFt(SKELETON)` must
   equal `REFERENCE_HEIGHT_FT` EXACTLY, and a built proxy's drawn bounding box
   must top out at `heightFt × CHARACTER_SCALE`. Both are pinned in
-  `skeleton.test.ts` because nothing computed the sum while every consumer read
-  the constant and believed it — and stride, foot plants and dive travel are all
-  authored in absolute feet. `render.rigHeight`. Corollary: the proxy DERIVES its
-  head radius from the crown; never hardcode it back.
+  `skeleton.test.ts` because nothing computed the sum while every consumer
+  believed the constant — and stride, foot plants and dive travel are authored
+  in absolute feet. `render.rigHeight`. Corollary: the proxy DERIVES its head
+  radius from the crown; never hardcode it back.
 - **Changing the rig means MOVING the authored .blends, not just re-exporting
   them** — `npm run retarget:rig`. A mesh bound to the old rest pose renders
   right at rest and animates about a pivot outside itself, and no gate sees it.

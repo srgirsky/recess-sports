@@ -57,6 +57,12 @@ export interface FrameViewOptions {
   batAimHeightFt?: number;
   /** True only when this live half routes human input to the defence. */
   fieldingFocus?: boolean;
+  /**
+   * A stolen base being RUN (`LiveFrame.steal`, carried by the view past the
+   * pitch frame): where the runner is along `from -> to`, 0..1, and how fast
+   * his feet should move. Overrides his bag placement until the view drops it.
+   */
+  stealRun?: { runnerId: string; from: 1 | 2; to: 2 | 3; frac: number; speedFts: number };
   /** Last frame's camera eye, for the ball's apparent-size cue. */
   cameraAt?: { x: number; y: number; z: number };
   /**
@@ -124,7 +130,7 @@ export function applyFrame(
     // first thing watching the page found: with no live `PlayState` the view
     // drew nobody but the batter, so the park was empty until contact and full
     // afterwards. A fielder is on the field the whole time.
-    applyIdleDefence(refs, frame, protectedIds, view.batAimHeightFt);
+    applyIdleDefence(refs, frame, protectedIds, view.batAimHeightFt, view.stealRun);
     if (frame.phase === 'pitch' && frame.pitch) applyPitch(refs, frame, pitchElapsedSec);
     else if (frame.phase === 'windup') restBall(refs);
   }
@@ -269,7 +275,8 @@ function applyIdleDefence(
   refs: SceneRefs,
   frame: LiveFrame,
   protectedIds: ReadonlySet<string>,
-  batAimHeightFt?: number
+  batAimHeightFt?: number,
+  stealRun?: FrameViewOptions['stealRun']
 ): void {
   for (const [id, pos] of Object.entries(frame.defence)) {
     const kid = refs.kids.get(id);
@@ -313,7 +320,7 @@ function applyIdleDefence(
   // identities are `LiveFrame.baseIds`, the half's own occupants; the sim moves
   // them (a walk, a steal, the next play) and this only draws where they are.
   frame.baseIds.forEach((id, i) => {
-    if (!id) return;
+    if (!id || id === stealRun?.runnerId) return;
     const kid = refs.kids.get(id);
     if (!kid) return;
     const at = basePos(i + 1);
@@ -325,6 +332,22 @@ function applyIdleDefence(
     dir?.setGloveVisible(false);
     if (!protectedIds.has(id) && !holdsOneShot(dir)) dir?.setLocomotionSpeed(0);
   });
+  // ★ THE STOLEN BASE IS RUN, NOT TELEPORTED. The sim moves a stealing runner
+  // between one frame and the next, and until 2026-10-29 this drew exactly
+  // that: on the bag, then on the next bag, ten times a game and never seen
+  // moving. The view carries the run (`LiveFrame.steal` -> `stealRun`) across
+  // the pitch and between beats, so he breaks at release, reaches the bag or
+  // is tagged short of it, and his feet move at the pace the sim raced him.
+  if (stealRun) {
+    const kid = refs.kids.get(stealRun.runnerId);
+    const a = basePos(stealRun.from);
+    const b = basePos(stealRun.to);
+    kid?.setPosition(a.x + (b.x - a.x) * stealRun.frac, a.z + (b.z - a.z) * stealRun.frac);
+    kid?.setFacing(Math.atan2(b.x - a.x, b.z - a.z));
+    const dir = refs.directors.get(stealRun.runnerId);
+    dir?.setGloveVisible(false);
+    if (!protectedIds.has(stealRun.runnerId) && !holdsOneShot(dir)) dir?.setLocomotionSpeed(stealRun.speedFts);
+  }
   // ★ NOT WHEN HE IS THE RUNNER. The between frame still names the kid who
   // just batted, and if he singled or walked he is on first in `baseIds` —
   // standing him in the box for the between beat and moving him to the bag at
@@ -481,7 +504,12 @@ function restBall(refs: SceneRefs): void {
  * not learn about `PlayState` — it is the reason `cameraCues.test.ts` can
  * project the bases through a preset with no pixels and no sim.
  */
-export function cameraInputFor(frame: LiveFrame, holdElapsedSec?: number): CameraInput {
+export function cameraInputFor(
+  frame: LiveFrame,
+  holdElapsedSec?: number,
+  /** The steal cam's subject, when the view wants it (`GameView.stealCam`). */
+  steal?: CameraInput['steal']
+): CameraInput {
   if (frame.phase === 'live' && frame.play && frame.play.homeRun && holdElapsedSec !== undefined) {
     // The trot: the ball is gone, so the fit ladder is handed the runners
     // still on their lap and the bags ahead of them, with the batter-runner —
@@ -557,6 +585,6 @@ export function cameraInputFor(frame: LiveFrame, holdElapsedSec?: number): Camer
   // `between` would cut to the field preset and back for one frame before every
   // single delivery — a flicker per pitch, which no test would see and any
   // watcher would.
-  if (frame.phase === 'pitch' || frame.phase === 'windup') return { phase: 'pitch' };
+  if (frame.phase === 'pitch' || frame.phase === 'windup') return { phase: 'pitch', steal };
   return { phase: 'between' };
 }

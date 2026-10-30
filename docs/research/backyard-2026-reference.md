@@ -1210,3 +1210,79 @@ or bat through a head. Frame 11's gain is mostly the barrel's tip.
   solid 30x9ft box that read as a floating slab from the live cameras. It now
   draws chain link under a solid top rail in the same single draw;
   `Fence.test.ts` fails a backstop that is not mostly open air.
+
+## 2026-10-29 — where both games stand, and the stolen base becomes a play
+
+Method: a cold read of both parity lists, the full gate suite on a clean
+checkout of `main` (2596 tests green, `npm run build` clean for both entries),
+then a player-chair pass through each game on the dev server — title, draft,
+team screen, a real at-bat batting and pitching, live plays on both sides —
+plus the 50,000-plate-appearance harness and the headless classic drive.
+
+### Where v1 (`/classic/`) stands against BB2001
+
+Every row of `bb2001-v1-parity.md` is closed or declined with a reason
+(#274–#278, perspective #280). The playthrough found nothing broken: title →
+GAME SETUP → draft → lineup → plate view → pitch menu with WALK / NORMAL /
+PICK OFF 1B pads → live play, all on the measured clock. What remains is
+presentation (voice is v2's) and the records still `awaiting-measurement`.
+v1 is maintained, not frozen; it needed nothing today.
+
+### Where v2 (`/`) stands against BB2026
+
+Of the 2026-09-29 ranked worklist, #1 and #3–#8 and #10 are closed (#261–#269,
+#276–#289); #4 is closed to the structural limit recorded under it; #9 (the
+sculpt campaign, 29 needs-polish / 1 candidate) is the long tail and #2
+(presence in the widest live frames) is partly closed by #262 and still
+visible when a fly goes to the wall. The four BB arcade systems (juice,
+special pitches, stamina, shifts) are all ported and all held off by
+`docs/playtests/holds.json` until a child playtest — the maintainer's to run.
+On screen today: draft, team screen, plate, live plays on both sides, Zoom's
+chair, verdicts, the inning board all read as the records say.
+
+### What the pass found that no record held: the invisible steal
+
+The harness says the CPU steals **10.8 bases a game at 96% safe**, and the
+record (`sim.stealRace`) already called that too many. What no record said is
+that **a steal was invisible**: the sim emitted no event for it, the pitch
+frame never said a runner was going, and `bridge.ts` drew runners from
+`baseIds` — so a kid pitching watched a runner stand on first and then stand
+on second, ten times a game, with no sound, no callout and no booth line. A
+person batting could not order one either; their runners went on the CPU's
+judgement. BB2001 and BB2026 both make the steal a thing you do and a thing
+you see.
+
+### What shipped: the stolen base as a play (`feat/v2-steal-play`)
+
+- **The sim says so.** `decideSteal` runs BEFORE the throw, with no draw, so
+  the pitch frame carries `steal` (runner, from, to, his leg time); the race
+  resolves after the pitch's own event into a `{t:'steal'}` event (safe,
+  margin, relayed, human). `game.test.ts` pins one event per tally attempt.
+- **The relay.** A catcher whose arm cannot reach the bag throws through the
+  pitcher (`throwLegsSec`), the cutoff man's rule applied to the steal, so no
+  roster catcher is out of range and no margin is infinite. Measured on the
+  same harness: 10.78 at 96.0% → **10.74 at 95.0%**. The rate did not move —
+  kids' legs beat kids' arms either way — which is the honest finding, and
+  it moved eleven of the thirty-three golden games, all in hits and steals.
+- **The league rule.** `cpuRunsOn(skill)`: at T-BALL and ROOKIE the CPU's
+  runners do not run on a person, as a 7U league's do not; from NORMAL up
+  they do. A person's own runners go only when ordered. Headless runs are
+  untouched.
+- **Two verbs.** STEAL (chip or S) while batting with a runner on and the bag
+  ahead open — the same race, the CPU's judgement skipped, traffic kept.
+  THROW! (chip, T, or any tap) while fielding on a stolen-base pitch: the
+  tap's lateness past the ball's arrival is the catcher's read in place of
+  his own 0.3–0.5 s, so a tap on arrival tightens the race by exactly that.
+  An order from the wrong side is dropped and the game stays byte-identical.
+- **Seen and heard.** The runner runs the basepath at the pace the sim raced
+  him, reaches the bag and cheers or is tagged short of it and sulks; the
+  callout is SAFE! / STOLE SECOND or OUT / CAUGHT STEALING; the crowd or the
+  mitt sounds; the booth's `stealSafe` / `stealCaught` lines (v1's since 2001)
+  finally fire; the hint names who is going. Verified on `/v2/?play=1` with
+  the fixed clock: the STEAL chip arms, the pitch frame carries the runner,
+  the callout lands, the run carries into the next beat.
+
+Not in this change, recorded as the next two: the plate camera cannot see
+the runner break (a steal cam that cuts to the runner when the person is not
+batting), and a PICK OFF for the person pitching — BB2001's counter and v1's
+#7 — which needs a lead model worth the name.

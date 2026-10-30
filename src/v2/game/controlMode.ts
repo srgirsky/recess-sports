@@ -31,19 +31,27 @@ export function controlsAt(
 export function controlHint(
   mode: PlayerControlMode,
   half: 'top' | 'bottom',
-  phase: 'windup' | 'pitch' | 'live' | 'between'
+  phase: 'windup' | 'pitch' | 'live' | 'between',
+  /**
+   * The NAME of a runner going on this pitch (`LiveFrame.steal`), or false. The
+   * fielder's one tap is the throw down, and the plate camera cannot see the
+   * runner break, so the hint says who is going.
+   */
+  stealing: string | false = false
 ): string {
   const controls = controlsAt(mode, half);
   if (mode === 'versus') {
     const bat = `P${playerOf(half, 'bat')}`;
     const field = `P${playerOf(half, 'field')}`;
     if (phase === 'windup') return `👆 ${field}: AIM AT THE BOX · TAP TO PITCH`;
+    if (phase === 'pitch' && stealing) return `🚨 ${field}: ${stealing.toUpperCase()} IS GOING! TAP TO THROW`;
     if (phase === 'pitch') return `🏏 ${bat}: TAP AS THE BALL REACHES THE PLATE`;
     if (phase === 'live') return `🧤 ${field}: DRAG TO RUN · TAP A BASE TO THROW`;
     return '';
   }
   if (phase === 'windup' && controls.pitch) return '👆 AIM AT THE BOX · TAP TO PITCH';
   if (phase === 'windup' && controls.bat) return '👀 WATCH THE BALL';
+  if (phase === 'pitch' && controls.field && stealing) return `🚨 ${stealing.toUpperCase()} IS GOING! TAP TO THROW`;
   if (phase === 'pitch' && controls.bat) return '🏏 TAP AS THE BALL REACHES THE PLATE';
   if (phase === 'live' && controls.field) return '🧤 DRAG TO RUN · TAP A BASE TO THROW';
   if (phase === 'live' && controls.run) return '👟 TAP THE NEXT BASE TO RUN';

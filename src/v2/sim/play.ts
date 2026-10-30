@@ -206,6 +206,22 @@ export interface PlayInputs {
    * appearance; ignored with the flag off or while they bat.
    */
   shift?: Shift;
+  /**
+   * STEAL: a person batting sends the lead runner on the coming pitch,
+   * proposed on the `windup` frame. The sim keeps the traffic rule (never
+   * into an occupied bag) and runs the same race the CPU's runner would; it
+   * skips only the CPU's judgement, because a person is allowed to gamble —
+   * the `sendRunner` precedent. Ignored while they field.
+   */
+  steal?: boolean;
+  /**
+   * THROW!: a person fielding taps as the stolen-base pitch arrives, on the
+   * `pitch` frame that carries `LiveFrame.steal`. `atSec` is seconds since
+   * release; the tap's lateness past the ball's arrival becomes the catcher's
+   * read in place of his own `reactionSec` (`StealSpec.readSec`). No tap is
+   * the kid's own read. Ignored while they bat.
+   */
+  throwDown?: { atSec: number };
 }
 
 export interface PlayState {
