@@ -3342,26 +3342,34 @@
    "why": "★ THIS RECORD EXISTS TO BE READ, NOT TO BE MET. It is the first time v2 has been able to say anything about a game rather than a play, and the temptation is to compare the numbers to baseball's and start tuning. Two reasons not to. First, PR 8's harness is what measures these properly -- over 50,000 plate appearances across seeded runs, not 1,166. Second, and this is the one the whole `reference` field exists for: the sim category's own note warns that 'conforming a game for four-to-eight-year-olds to MLB's strikeout rate is the mistake this field exists to prevent'.",
    "measured": {
     "n": 50000,
-    "over": "848 games / 50,036 plate appearances / 200,517 pitches, 8 seeds x 11 venues, all 30 kids (2026-10-29)",
-    "strikeoutPct": 17.1,
-    "walkPct": 10.4,
+    "over": "843 games / 50,052 plate appearances / 200,469 pitches, 8 seeds x 11 venues, all 30 kids (2026-10-30, the runner picking his pitch)",
+    "strikeoutPct": 17.2,
+    "walkPct": 10.5,
     "ballsInPlayPct": 72.3,
-    "babip": 0.638,
-    "battingAverageOnContact": 0.639,
+    "babip": 0.64,
+    "battingAverageOnContact": 0.642,
     "pitchesPerPlateAppearance": 4.01,
-    "runsPerGame": 7.65,
-    "homeRuns": 155,
-    "extraBaseSharePct": 15.4,
-    "stealAttemptsPerGame": 10.74,
-    "stealSuccessPct": 95.0,
+    "runsPerGame": 7.64,
+    "homeRuns": 171,
+    "extraBaseSharePct": 14.9,
+    "stealAttemptsPerGame": 9.69,
+    "stealSuccessPct": 99.6,
     "confidence": "high",
     "previous": {
-     "date": "2026-08-03",
-     "babip": 0.624,
-     "runsPerGame": 7.18,
-     "stealAttemptsPerGame": 10.29,
-     "stealSuccessPct": 95.8,
-     "note": "the 2026-10-29 re-run is over eleven venues, not three; the steal relay moved individual games (sim.stealRace) and not the shape. walkPct, ballsInPlayPct and homeRuns are carried from 2026-08-03: the 2026-10-29 harness printout did not break them out."
+     "date": "2026-10-29",
+     "babip": 0.638,
+     "runsPerGame": 7.65,
+     "stealAttemptsPerGame": 10.74,
+     "stealSuccessPct": 95.0,
+     "note": "the reading before the runner began picking his pitch (sim.pickoffRace); the relay had just landed. Its own previous block is kept beneath.",
+     "previous": {
+      "date": "2026-08-03",
+      "babip": 0.624,
+      "runsPerGame": 7.18,
+      "stealAttemptsPerGame": 10.29,
+      "stealSuccessPct": 95.8,
+      "note": "the 2026-10-29 re-run is over eleven venues, not three; the steal relay moved individual games (sim.stealRace) and not the shape. walkPct, ballsInPlayPct and homeRuns are carried from 2026-08-03: the 2026-10-29 harness printout did not break them out."
+     }
     }
    },
    "whatIsPLAUSIBLE": "The plate is unchanged and still inside its design bands (K 17.3%, BB 10.4%, 3.99 pitches per plate appearance). Runs per game rose 5.68 -> 7.18 on tag-ups, sac flies and steals, which is INSIDE striking distance of sim.retuneTargets' 8-12 and got there without a tuning constant moving.",
@@ -3940,19 +3948,24 @@
    "category": "sim",
    "reference": "derived",
    "status": "note",
-   "statusChangedAt": "2026-10-29",
+   "statusChangedAt": "2026-10-30",
    "what": "The stolen base as a race between the runner's leg and the catcher's throw -- and what happens when the throw cannot be made.",
    "why": "★ v1 ROLLS A PROBABILITY; v2 RUNS THE RACE. systems/steal.ts is `p = 0.5 + (speed-5)*0.05 - (arm-5)*0.05 - reactBonus*0.06 + 0.12 if slow stuff`, clamped 0.08..0.92 -- the 'outcome distribution rather than a kid' model sim.plateDiscipline describes replacing. Every term it approximates, v2 already owns as a real quantity: sprintTimeForFt, reactionSec, DEFENSE.RELEASE_SEC and throwFlightSec, which returns NULL when the arm simply cannot reach the bag.",
    "theLEADANDTHEJUMPAREWHATMAKEITACONTEST": "★ AND LEAVING THEM OUT IS THE TRAP. Raced from a standing start ON the bag it is degenerate: the runner loses to any arm that can reach second by 1.1-2.4s and beats any arm that cannot, so nobody would ever steal and no tuning would fix it -- the SHAPE is wrong, not the level. With a 10ft lead and a break at release the margins run from out by 0.59s to safe by 0.82s across the roster, monotone in both speed and arm.",
    "theSLOWPITCHBONUSISEMERGENT": "v1 adds a flat +0.12 for a changeup or curve. Here the catcher cannot begin until the ball reaches him, so a changeup's 1.33s flight hands the runner 0.31s more than a fastball's 1.02s -- enough to flip a speed-5 runner against a strong arm from OUT by 0.18 to SAFE by 0.13. Nothing says so; it falls out of PitchResult.travelSec, which PR 12 hoisted onto every branch for exactly this.",
    "measured": {
-    "over": "848 games / 50,036 plate appearances / 200,517 pitches, 8 seeds x 11 venues, all 30 kids (2026-10-29, after the relay)",
-    "attemptsPerGame": 10.74,
-    "successPct": 95.0,
+    "over": "843 games / 50,052 plate appearances / 200,469 pitches, 8 seeds x 11 venues, all 30 kids (2026-10-30, the runner picking his pitch)",
+    "attemptsPerGame": 9.69,
+    "successPct": 99.6,
     "before": {
-     "attemptsPerGame": 10.78,
-     "successPct": 96.0,
-     "over": "2026-10-29, same harness, direct throw only"
+     "attemptsPerGame": 10.74,
+     "successPct": 95.0,
+     "over": "2026-10-29, after the relay, before the runner picked his pitch",
+     "earlier": {
+      "attemptsPerGame": 10.78,
+      "successPct": 96.0,
+      "over": "2026-10-29, same harness, direct throw only"
+     }
     },
     "catcherToSecondFt": 90,
     "kidsWhoseArmReachesSecond": "14/30",
@@ -3981,7 +3994,61 @@
    "whatWouldClose": "Measuring the arm (sim.throwSpeed) would settle the frequency, since that is what makes half of all steals free. Measuring a real lead would settle the margins. Neither is closeable from footage v1 already has -- defense.throwSpeed records that the contested catcher-to-second steal it planned to measure never happens in the BB2001 capture.",
    "informs": "src/v2/sim/steal.ts",
    "theRELAYENDEDTHEINFINITEMARGINANDNOTTHERATE": "★ 2026-10-29. A catcher whose arm cannot reach the bag now throws through the pitcher (`throwLegsSec`: catcher to the mound, a transfer, mound to the bag, ~46ft and ~39ft, every arm in the roster), the cutoff man's consequence-not-mechanic applied to the steal. Every margin is finite and `outOfRange` is no longer reachable with a roster catcher. Measured before and after on the same harness: 10.78 at 96.0% -> 10.74 at 95.0%. The rate did not move, and that is the finding: kids' legs beat kids' arms with or without the relay, so the CPU's runner is right to go and no decision model will make him rarer without making him worse at baseball. The lever the product took instead is a league rule in `assist.ts` (`cpuRunsOn`): at T-BALL and ROOKIE the CPU's runners do not run on a person, as a 7U league's do not; from NORMAL up they run and the person's THROW! tap is the answer. Headless runs name no person, so the numbers above are untouched by it.",
-   "theSTEALISAPLAYNOWANDAPERSONSTOMAKE": "★ 2026-10-29. Until this date a steal was invisible: the sim emitted no event, the pitch frame did not say a runner was going, and the view drew him on the next bag a frame later -- ten times a game. Now `decideSteal` runs BEFORE the throw with no draw and the pitch frame carries `steal` (who, from, to, his leg time), the race resolves to a `{t:'steal'}` event (safe, margin, relayed, human) after the pitch's own event, and the view runs him down the basepath, calls SAFE!/OUT with the bag, and sounds it. Two verbs: a person batting orders the lead runner with `PlayInputs.steal` (traffic rule kept, judgement skipped -- `sendRunner`'s precedent; their runners otherwise HOLD, which is what makes it a verb), and a person fielding taps THROW! on the pitch (`PlayInputs.throwDown`): the tap's lateness past the ball's arrival is the catcher's read in place of his own 0.3-0.5s `reactionSec`, so a perfect tap tightens the race by exactly that and a late tap loosens it. Guarded by side: an order while fielding or a tap while batting is dropped, and `game.test.ts` pins that a wrong-side input leaves the game byte-identical."
+   "theSTEALISAPLAYNOWANDAPERSONSTOMAKE": "★ 2026-10-29. Until this date a steal was invisible: the sim emitted no event, the pitch frame did not say a runner was going, and the view drew him on the next bag a frame later -- ten times a game. Now `decideSteal` runs BEFORE the throw with no draw and the pitch frame carries `steal` (who, from, to, his leg time), the race resolves to a `{t:'steal'}` event (safe, margin, relayed, human) after the pitch's own event, and the view runs him down the basepath, calls SAFE!/OUT with the bag, and sounds it. Two verbs: a person batting orders the lead runner with `PlayInputs.steal` (traffic rule kept, judgement skipped -- `sendRunner`'s precedent; their runners otherwise HOLD, which is what makes it a verb), and a person fielding taps THROW! on the pitch (`PlayInputs.throwDown`): the tap's lateness past the ball's arrival is the catcher's read in place of his own 0.3-0.5s `reactionSec`, so a perfect tap tightens the race by exactly that and a late tap loosens it. Guarded by side: an order while fielding or a tap while batting is dropped, and `game.test.ts` pins that a wrong-side input leaves the game byte-identical.",
+   "theRUNNERPICKSHISPITCH": "★ 2026-10-30. The pickoff (sim.pickoffRace) exposed that a runner who goes on the first pitch he projects to win is a free out for a pitcher who throws over on the first pitch. He now goes on the pitch he reads well -- cpuWantsSteal holds when the race's own jump, read before the throw (RUN.GO_ON_JUMP_SEC), is late -- and holds for the pitch after a throw over. Same harness: 10.74 at 95.0% -> 9.69 at 99.6%. Fewer attempts, nearly all safe, because the attempts he declines are exactly the ones a bad read would have lost; the person's THROW! still tightens the race by the catcher's read."
+  },
+  "pickoffRace": {
+   "id": "sim.pickoff-race",
+   "category": "sim",
+   "reference": "derived",
+   "status": "note",
+   "statusChangedAt": "2026-10-30",
+   "what": "The pickoff -- a throw over to the lead runner's bag instead of a pitch -- as a race between the pitcher's move and throw and the runner's return, and the two leads that make it one.",
+   "why": "★ v1 ROLLS IT; v2 RACES IT. systems/steal.ts rollPickoff is `0.6 if leaning else 0.06, +0.03 per arm point, -0.03 per speed point`, clamped 0.02..0.85 -- an outcome distribution. Here the terms are the roster's own: throwFlightSec from the mound, sprintTimeForFt back to the bag, a dive over the last body length, and the steal's jump as the read.",
+   "theSTEALLEADISNOTRETURNABLE": "★ RACED FROM THE STEAL LEAD A SET RUNNER IS SIMPLY OUT, against every arm on the roster: at a kid's acceleration (10.37 ft/s^2) ten feet takes about 1.6s to come back from with a dive, and the slowest mound-to-first throw on the roster lands 1.86s after the first motion of the move -- margins run +0.06s to -0.33s against the 0.35s a runner wants to spare. The same degeneracy the steal had from a standing start, with the sign flipped: the SHAPE was wrong, not the level. A lead is by definition one you can return from, so the model has TWO leads -- the steal lead (RUN.LEAD_FT) when he is going, and a SET lead solved from the arm (setLeadFt) when he is not.",
+   "measured": {
+    "over": "all 30 runners x all 30 pitchers x both bags, projected with a perfect read (no draw), 2026-10-30",
+    "setLeadFt": {
+     "min": 5.43,
+     "max": 9.65
+    },
+    "setMarginSec": 0.35,
+    "leaningMarginSec": {
+     "worst": -0.533,
+     "best": 0.021
+    },
+    "leaningProjectedOutShare": 0.993,
+    "throwSecFromMove": {
+     "toFirst": {
+      "weakestArm": 1.861,
+      "strongestArm": 1.511
+     },
+     "toSecond": {
+      "weakestArm": 1.767,
+      "strongestArm": 1.456
+     }
+    },
+    "n": 1800,
+    "confidence": "high"
+   },
+   "ours": {
+    "constant": "src/v2/sim/steal.ts pickoffRace, setLeadFt; src/v2/sim/params.ts RUN.PICKOFF_MOVE_SEC, RUN.DIVE_FT, RUN.DIVE_SEC, RUN.PICKOFF_READ_SEC, RUN.PICKOFF_READ_LEANING_SEC, RUN.LEAD_RETURN_MARGIN_SEC, RUN.PICKOFF_MAX_PER_PA, RUN.GO_ON_JUMP_SEC",
+    "value": {
+     "moveSec": 0.9,
+     "diveFt": 4,
+     "diveSec": 0.4,
+     "readSec": 0.15,
+     "readLeaningSec": 0.45,
+     "leadReturnMarginSec": 0.35,
+     "maxPerPlateAppearance": 2,
+     "goOnJumpSec": 0.05
+    }
+   },
+   "theJUDGEMENTS": "Every constant above is a judgement, not a reading: nobody has timed a seven-year-old's step-off, dive or return. What is NOT a judgement is the shape -- a set runner is safe by construction except for his read, and a leaning runner is in a race the geometry usually decides against him (99.3% of pairs projected out; the jump, 0.08-0.22s, saves a quick kid against a weak arm now and then). v1's 0.6 and 0.06 come out of this as consequences rather than being put in.",
+   "theRUNNERPICKSHISPITCH": "★ THE PICKOFF EXPOSED A FREE OUT. The CPU's runner went on the first pitch he projected to win, deterministically, so a person who threw over on the first pitch with a runner on had him leaning every time. The fix is in the runner, not the throw: cpuWantsSteal now holds on a pitch he reads late (RUN.GO_ON_JUMP_SEC -- the race's own jump read before the throw, the same number the race then runs on), and a runner thrown at holds for the pitch that follows (v1's rule). Harness, same 50,000 PA: 10.74 attempts a game at 95.0% -> 9.69 at 99.6%. He goes less and is caught less, because he no longer goes on the read that would have cost him the bag. The goldens and CHECKSUM_30 were recaptured for it (game.test.ts).",
+   "theCOSTOFATHROWOVERISTHECAPANDTHEBEAT": "A throw over costs the pitcher nothing but one of two per plate appearance and the beat it takes; v2 has no throwing-error model for a ball to sail on, and inventing one for this verb alone would be a fitted cost. What keeps it from being a free out is the runner's unpredictability (above) and that a set runner gets back. Recorded so the next person who finds the verb too strong looks at the error model, not at these constants.",
+   "whatWouldClose": "Footage of a child's pickoff move and dive back would settle PICKOFF_MOVE_SEC, DIVE_FT and DIVE_SEC; none exists in the BB2001 capture (defense.throwSpeed). The shape would survive any of them moving.",
+   "informs": "src/v2/sim/steal.ts, src/v2/game/GameView.ts"
   },
   "tagUp": {
    "id": "sim.tag-up",

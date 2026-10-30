@@ -31,16 +31,15 @@ goldlog into an ordinary vitest that CI runs and cosmetics cannot pollute.
 ## Randomness
 
 - **The `Rng` is INJECTED and FORKED, never module-scope** (`sim/rng.ts`). A
-  module-scope `makeRng` is a hidden global that ignores the seed the harness
-  passed in, and a lint fails one.
+  module-scope `makeRng` ignores the seed the harness passed in, and a lint
+  fails one.
 - **`fork(label)` keys on `(root seed, label)`, never on stream position**, so
   adding, removing or reordering a draw in one substream cannot move another.
   Labels may not contain NUL — rejected, not discouraged, or `fork('a\0b')` and
   `fork('a').fork('b')` collide.
 - **`normal()`/`gauss()` are deliberately absent.** A normal sampler needs
-  `Math.log`, which ECMAScript leaves implementation-approximated (only
-  `+ - * /` and `Math.sqrt` are correctly rounded), so a fingerprint built on
-  it goes red on a V8 bump.
+  `Math.log`, which ECMAScript leaves implementation-approximated, so a
+  fingerprint built on it goes red on a V8 bump.
 - **`Rng.bell()` is BOUNDED** — Irwin–Hall over three uniforms, support ±3σ.
   Size any `bell`-driven band AGAINST the window it is judged by and assert the
   relationship, not the values: a band needing 2.5σ produces the event never.
@@ -51,22 +50,20 @@ goldlog into an ordinary vitest that CI runs and cosmetics cannot pollute.
   the per-step path** (`flight.ts`, `ball.ts`, `fielders.ts`, `runners.ts` are
   the HOT list). The ban is affordable because the aero model needed no tables:
   `C_D = 0.297 + 0.0292·(ω/1000rpm)` and `C_L = 1.120·S/(0.583 + 2.333·S)` with
-  `S = Rω/v` are pure `+ − × ÷` plus `Math.sqrt`, so the entire per-step force
-  path is bit-stable with no interpolation machinery at all.
-  Trig survives at conversion boundaries only — `launch.ts`, and
-  `field.ts`'s `sprayOf`/`pointAt` — a residual risk that is confined and
-  recorded, not eliminated. See `sim.aeroModel`, `sim.aeroModelLowSpeed`.
+  `S = Rω/v` are pure `+ − × ÷` plus `Math.sqrt`, so the per-step force path is
+  bit-stable with no interpolation. Trig survives at conversion boundaries only
+  (`launch.ts`, `field.ts`'s `sprayOf`/`pointAt`), confined and recorded. See
+  `sim.aeroModel`, `sim.aeroModelLowSpeed`.
 - **`FLIGHT_HZ` = 240 is not an accuracy choice.** Accuracy saturates around
   60 Hz; 240 is for PHASE (the render remainder stays exact) and for COLLISION
   SAMPLING. `sim.integratorStep`.
 - **Events are BISECTED, never stepped onto.** Each bisection trial re-integrates
   from the START of the step, so a crossing is a real RK4 solution rather than a
-  lerp between samples. Fixing this with step size needs >1000 Hz and is still
-  approximate.
+  lerp between samples. Step size cannot fix it: >1000 Hz and still approximate.
 - **The bat-ball collision is an IDENTITY, not a fit.** `contact.test.ts` asserts
-  Nathan's Eq. 3 symbolically. `e_A` is derived from the recoil factor, which is
-  what makes a kid not a small adult — a light bat recoils more. No fudge factor
-  appears anywhere. `sim.batBallCollision`, `sim.obliqueContact`.
+  Nathan's Eq. 3 symbolically. `e_A` is derived from the recoil factor — a light
+  bat recoils more, which is what makes a kid not a small adult. No fudge
+  factor. `sim.batBallCollision`, `sim.obliqueContact`.
 - **The bounce model's FORM is derived; its coefficients are cited or pending.**
   An impact either GRIPS or SLIPS. Topspin ACCELERATES the ball off the bounce —
   the invariant is total ENERGY, not speed, so a speed cap is wrong. Backspin
@@ -81,7 +78,7 @@ goldlog into an ordinary vitest that CI runs and cosmetics cannot pollute.
   asserted per venue). Convexity is what keeps `moveToward` containment valid and
   stops a caromed ball reflecting out. Smoothstep interpolation between control
   points breaks it, and so does any profile whose deepest point is a foul pole —
-  both are recorded as counterexamples in the tests.
+  both are counterexamples in the tests.
 
 ### Two `flight.ts` contracts a bounce caller must honour
 
@@ -133,7 +130,7 @@ costs no ground. Do not restructure it.
 
 - **The ball is ONE function.** `traceLooseBall` is a loop over
   `stepLooseBallFull` and the reducer calls it once a tick, so "where is it
-  going" and "where did it go" are the same code rather than two that agree. It
+  going" and "where did it go" are one code path. It
   **consumes the remainder** an event leaves; advancing a full `dt` past a
   crossing makes the resting place tick-rate dependent.
 - **A GROUNDER is a ball that never rises above a glove**, not one whose phase
@@ -170,8 +167,8 @@ costs no ground. Do not restructure it.
 - **The reducer must not re-read the ball by RE-TRACING it** — the trajectory
   does not change between ticks, only the fielders move.
 - **A play clock that fires is a soft-lock.** `play.test.ts` sweeps plays and
-  requires ZERO reach the cap. Three guards in `play.ts` are honestly labelled
-  belt-and-braces because deleting them breaks no test.
+  requires ZERO reach the cap. Three guards in `play.ts` are labelled
+  belt-and-braces: deleting them breaks no test.
 
 ### Baserunning
 
@@ -182,8 +179,8 @@ costs no ground. Do not restructure it.
   is made at full speed several strides out), is what makes a gap ball a DOUBLE.
 - **`startLeg` has no occupancy check and must not.** It is handed one runner and
   cannot see the traffic, so the guard lives in `play.ts`'s `send`. Without it
-  two runners settle on one base, which does not read as a baserunning bug — it
-  reads as a runner VANISHING, because `finishPlay` writes one `baseIds` entry.
+  two runners settle on one base, which reads as a runner VANISHING, because
+  `finishPlay` writes one `baseIds` entry.
 - **Two v1 bugs are pinned deterministically** (`defense.fielderSpeed.exposed`).
   `reverseLeg` refuses `from <= 0`, or a batter turned toward home is re-sent the
   instant he touches first. And a straggler settles on **`min(from, to)`**,
@@ -215,17 +212,25 @@ costs no ground. Do not restructure it.
   fouls and pitches/PA are balanced against out conversion, not against the plate
   alone. A target written after a sweep is a description; `sim.retuneTargets` is
   dated before the run for that reason.
-- **A steal is a RACE, not a roll** — runner's leg against pitch flight plus
-  catcher read plus release plus the throw; `RUN.LEAD_FT` is load-bearing and
+- **A steal is a RACE, not a roll** — runner's leg against pitch flight,
+  catcher read, release and throw; `RUN.LEAD_FT` is load-bearing and
   unmeasured, and the slow-stuff bonus is EMERGENT (`PitchResult.travelSec` is
   on EVERY branch). **A threshold cannot decline a free steal**, and the throw
-  now RELAYS through the pitcher when the catcher cannot reach
-  (`throwLegsSec`): every margin is finite and the rate did not move — kids'
-  legs beat kids' arms (`sim.stealRace`, `sim.throwSpeed`). The runner is
-  decided BEFORE the throw with no draw (`decideSteal`), carried on the pitch
-  frame as `steal`, resolved to a `{t:'steal'}` event AFTER the pitch's own.
-  Against a person the CPU runs only where `cpuRunsOn(skill)` says; a person's
-  own runners go only on order.
+  RELAYS through the pitcher when the catcher cannot reach (`throwLegsSec`):
+  every margin is finite and the rate did not move — kids' legs beat kids'
+  arms (`sim.stealRace`, `sim.throwSpeed`). The runner is decided BEFORE the
+  throw (`decideSteal`), carried on the pitch frame as `steal`, resolved to a
+  `{t:'steal'}` event AFTER the pitch's own. **He picks his pitch**: the one
+  draw is the race's own jump, read twice (`jumpSecOf`); he holds on a late
+  one (`RUN.GO_ON_JUMP_SEC`), or a throw over is a free out. Against a person
+  the CPU runs only where `cpuRunsOn(skill)` says; a person's runners go only
+  on order.
+- **A pickoff is the same race run back** (`pickoffRace`) with TWO leads: the
+  steal lead when he is going, a set lead SOLVED from the arm when not
+  (`setLeadFt`) — from the steal lead a set runner is simply out
+  (`sim.pickoffRace`). A throw over is not a
+  pitch: the windup is re-yielded carrying `pickoff`, capped per PA; a third
+  out cuts the PA (`HalfState.cut`).
 
 ## The human
 
@@ -234,22 +239,21 @@ costs no ground. Do not restructure it.
 failure mode, and a lint fails an underscored input parameter.
 
 - **There is no throw meter and no pitch meter, because there is no power.**
-  Flight comes from `throwFlightSec(from, to, carrier.arm)` and the arm is a
-  measured quantity, so a meter would be overriding a fact. The
+  Flight comes from `throwFlightSec(from, to, carrier.arm)` and the arm is
+  measured, so a meter would override a fact. The
   human verb is **choosing the bag**, and out of range still means out of range.
   Pitching is likewise **choosing** — a `PitchPlan` replaces `choosePitch` and
-  NOTHING else, so execution error stays downstream and a player cannot out-throw
-  his own kid's arm. `sim.humanPitch`, `sim.throwSpeed`.
+  NOTHING else, so a player cannot out-throw his own kid's arm. `sim.humanPitch`, `sim.throwSpeed`.
 - **Aim is a HEIGHT, not a point.** `contact.ts` derives spray from
   `timingErrorSec` — pulling it is what being EARLY MEANS — so a lateral aim term
   would be a second, independent source for the same quantity. A lint asserts
   `HumanSwing` carries no lateral field. The aim tolerance is NOT tunable: it is
   the distance at which a bat and a ball stop overlapping. Timing, by contrast,
-  is generous and is a fraction by construction. `sim.humanSwing`.
+  is generous, a fraction by construction. `sim.humanSwing`.
 - **A human supplies the model's own two error terms** and two CPU rules
   deliberately do not apply to him: the undercut-from-judge conversion (his
-  pointer IS the placement, so scaling it would model a person as guessing at his
-  own intention) and two-strike protection (not tapping IS the take).
+  pointer IS the placement; scaling it would model him guessing at his own
+  intention) and two-strike protection (not tapping IS the take).
   `swing.test.ts` shows each constant moves the CPU's outcomes and not the
   human's.
 - **A send overrides judgement, never traffic**, and the verb only bites on a
@@ -260,13 +264,14 @@ failure mode, and a lint fails an underscored input parameter.
   base, home excluded. `sim.runnerSends`.
 - **The human needs a SIDE, or the tap verbs collide** — the same tap on a base
   means THROW THERE when fielding and SEND HIM THERE when batting.
-- **STEAL and THROW! are side-guarded.** `steal` on the windup sends the lead
-  runner (traffic kept, judgement skipped); `throwDown` on a stolen-base pitch
-  makes the tap's lateness past arrival the catcher's read. A wrong-side input
-  is dropped and leaves the game byte-identical (`game.test.ts`).
-- **No fielding assist**, and that is measured rather than assumed: a
-  perpendicular mis-steer catches nothing and finishes far adrift, while perfect
-  aim fields exactly as well as the CPU. ⚠️ The number to worry about is the
+- **STEAL, THROW! and PICK OFF are side-guarded.** `steal` on the windup sends
+  the lead runner (traffic kept, judgement skipped); `throwDown` on a
+  stolen-base pitch makes the tap's lateness past arrival the catcher's read;
+  `pickoff` on the windup throws over. A wrong-side input is dropped and
+  leaves the game byte-identical (`game.test.ts`).
+- **No fielding assist**, measured rather than assumed: a perpendicular
+  mis-steer catches nothing and finishes far adrift, while perfect aim fields
+  as well as the CPU. ⚠️ The number to worry about is the
   TOLERANCE, which falls off a cliff because three feet IS the reach. If an
   assist is ever added it is sized from that table, never from v1's.
   `sim.fieldingInput`, `defense.fieldingAssist`.
@@ -288,12 +293,11 @@ produce a byte-identical `GameResult`, because every record rests on it.
 - **The pitch is YIELDED before it is RESOLVED**, or the view animates a ball
   whose fate is already settled and nobody can bat. `throwPitch`/`resolvePitch`
   split at the seam the model already had. Splitting it cannot move a draw —
-  `fork` keys on the label, not position — and the golden fingerprints prove that
-  rather than assert it.
+  `fork` keys on the label, not position — and the golden fingerprints prove it.
 - **⚠️ The SAME `LiveFrame` is yielded every tick, mutated in place — read it and
   drop it, NEVER retain it.** Collect frames in an array and you hold N
-  references to one object carrying the last tick's state — no red test. Fold as
-  you iterate, or copy the fields you want.
+  references to one object — no red test. Fold as you iterate, or copy the
+  fields.
 - **`LiveFrame` has a `windup` phase** because a choice must be collected before
   the thing it decides; without it a player chooses pitch N during pitch N−1's
   flight. It cannot hang — the view throws for you.
@@ -361,7 +365,7 @@ while looking wired.
 
 ⚠️ **rAF is throttled when the window is backgrounded**, so `/v2/?play=1` appears
 frozen mid-pitch with no error. Drive it by hand with `__spike.tick(t)`,
-`t` increasing — the rule `.claude/skills/verify` gives for v1's Phaser clock.
+`t` increasing, as `.claude/skills/verify` has for v1's Phaser clock.
 
 `src/v2/game/GameView.ts` pumps the sim's own generator against a real clock
 with a **fixed-step accumulator, never the render delta**
@@ -375,7 +379,7 @@ suppresses it unless `?replay=1` asks.
 |---|---|
 | `src/v2/sim/params.ts` | the tunables, in feet and seconds |
 | `src/v2/sim/ball.ts` | the published ball and the two aero coefficients |
-| `src/v2/sim/flight.ts` | RK4 + bisected events — it integrates and REPORTS, it never decides what an event means |
+| `src/v2/sim/flight.ts` | RK4 + bisected events; it integrates and REPORTS, never decides what an event means |
 | `src/v2/sim/launch.ts` | the one place an authored ANGLE becomes a vector, which is why trig lives here |
 | `src/v2/sim/bounce.ts` | what a crossing MEANS, plus the one loose-ball tick |
 | `src/v2/sim/athletes.ts` | where a 1-10 stat becomes a physical quantity |
@@ -384,5 +388,5 @@ suppresses it unless `?replay=1` asks.
 | `src/v2/sim/atbat.ts` | one pitch in two acts: `throwPitch` and `resolvePitch` |
 | `src/v2/sim/game.ts` | plate appearance -> half -> inning -> game, headless |
 | `src/v2/sim/lineup.ts` | `planDefence`, with each position's arm weight DERIVED from the throw it must make |
-| `src/v2/sim/harness.ts` | the pure aggregator — it plays nothing, it is fed |
+| `src/v2/sim/harness.ts` | the pure aggregator |
 | `src/v2/game/GameView.ts` | the game: the field, the verbs, the pump. `/v2/?play=1` |

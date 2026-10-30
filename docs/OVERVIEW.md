@@ -3495,6 +3495,39 @@ camera. It now projects the four bases and asserts several things:
 The change is render-only. The sim, every systems test, and both goldlog
 fingerprints (main `a71e6a2f`, kid `a1686f32`) are byte-identical.
 
+## October 30 — PICK OFF, and the runner who picked his pitch
+
+What we believed: the stolen base was a play now, and the pitcher's counter
+to it — BB2001's pickoff, v1's #7 — was a matter of adding a verb and a
+lead model.
+
+What building it showed: two things the records did not hold. First, raced
+from the steal lead a runner who is NOT going is simply out against every arm
+on the roster — at a kid's acceleration ten feet takes longer to come back
+from than a throw from the mound takes to land — the standing start's
+degeneracy with the sign flipped. A lead is by definition one you can return
+from, so the model has two leads: the steal lead when he is going, and a set
+lead solved from the pitcher's arm when he is not (`setLeadFt`). Second, the
+CPU's runner went on the first pitch he projected to win, deterministically,
+so a child who threw over on the first pitch with a runner on had him leaning
+every time: a free out. The fix is in the runner — he goes on the pitch he
+reads well (`RUN.GO_ON_JUMP_SEC`, the race's own jump read before the throw)
+and holds for the pitch after a throw over — and it moved the harness from
+10.74 steals a game at 95% to 9.69 at 99.6%: he goes less and is caught less,
+because the attempts he declines are the ones a bad read would have lost.
+The goldens were recaptured for it.
+
+The change (PR `feat/v2-pickoff`): PICK OFF (chip, or P) for the person
+pitching while a runner is on first or second and the league's runners go;
+the windup comes back carrying what happened, the pitcher's throw flies to
+the bag at the race's pace while the runner dives back — or breaks the wrong
+way, turns, and is tagged short — and the callout, the mitt, the booth and
+the tally land with the ball. Two throws a plate appearance, the count
+untouched; a third out this way ends the half and the batter leads off the
+next inning. A set runner is nearly never had; a runner who was going nearly
+always is. `sim.pickoffRace` records the spread and says every constant in it
+is a judgement.
+
 ## October 29 — the stolen base becomes a play
 
 What we believed: the steal was a solved sim problem with one open number.

@@ -29,7 +29,7 @@
 // ---------------------------------------------------------------------------
 
 import type { Character } from '../../data/types';
-import { GAME, PLAY } from './params';
+import { GAME, PLAY, RUN } from './params';
 import {
   choosePitch,
   cpuSwingAtSec,
@@ -44,6 +44,9 @@ import { isSpecialPitch } from './pitch';
 import {
   catcherOf,
   cpuWantsSteal,
+  jumpSecOf,
+  pickoffRace,
+  pickoffThrowSec,
   runnerSecTo,
   stealRace,
   type StealResult,
@@ -173,6 +176,22 @@ export type SimEvent =
       marginSec: number;
       relayed: boolean;
       human: boolean;
+    }
+  | {
+      /**
+       * A throw over to a bag (`sim/steal.ts` pickoffRace), the instant it
+       * resolved; the view animates the throw after the fact off the windup
+       * frame's `pickoff`. `leaning` says he had decided to go on this pitch;
+       * `leadFt` is the lead he was returning from. A person's verb only — the
+       * CPU never throws over, as in v1.
+       */
+      t: 'pickoff';
+      runnerId: string;
+      base: 1 | 2;
+      out: boolean;
+      marginSec: number;
+      leaning: boolean;
+      leadFt: number;
     };
 
 /**
@@ -291,6 +310,26 @@ export interface LiveFrame {
    * when the pitch does and `{t:'steal'}` says how. Null on every other frame.
    */
   steal: { runnerId: string; from: 1 | 2; to: 2 | 3; runnerSec: number } | null;
+  /**
+   * On the `windup` frame yielded right after a throw over: what it did, so
+   * the view can play it — the ball reaches the bag `throwSec` after the first
+   * motion, and the runner was returning from `leadFt`. Null otherwise.
+   */
+  pickoff: {
+    runnerId: string;
+    base: 1 | 2;
+    out: boolean;
+    leaning: boolean;
+    leadFt: number;
+    throwSec: number;
+  } | null;
+  /**
+   * On `windup` and `between` frames: how many throws over the pitcher has
+   * left this plate appearance, 0 when there is nobody to throw at (no runner
+   * on first or second, or a league whose CPU runners never go). The view
+   * shows PICK OFF off this.
+   */
+  pickoffsLeft: number;
   /**
    * The fielding pitcher's tank, 1 down to 0 — or null when `features.stamina`
    * is off, so a view cannot mistake a full tank for a feature that is not
@@ -592,6 +631,22 @@ function* playAtBatLive(
   if (juice) syncJuice(frame, juice.meters);
   let shift: Shift = 'normal';
   frame.shift = args.shifts ? shift : null;
+  // Whose runners run on their own judgement: every runner in a headless or
+  // hands-free game; against a person, only where the league allows it
+  // (`cpuRunsOn`); never the person's own, who go on order.
+  const cpuRunners = args.assist === null ? true : args.assist.pitches ? cpuRunsOn(args.assist.skill) : false;
+  // Throws over this plate appearance, and whether the coming pitch follows
+  // one — a runner just thrown at holds for it.
+  let pickoffs = 0;
+  let thrownOver = false;
+  const leadBase = (): 1 | 2 | null => (half.occupants[1] ? 2 : half.occupants[0] ? 1 : null);
+  // Nobody to throw at when nobody is on, or when the batting side is a CPU
+  // whose league never runs on this person — a chip that can never pay off
+  // is a trap for a kid, so it is not offered.
+  const pickoffsLeft = (): number =>
+    leadBase() === null || (args.assist?.pitches && !cpuRunners)
+      ? 0
+      : Math.max(0, RUN.PICKOFF_MAX_PER_PA - pickoffs);
 
   for (;;) {
     if (pitches++ >= GAME.MAX_PITCHES_PER_PA) {
@@ -609,7 +664,79 @@ function* playAtBatLive(
     // a person's spend, which is decided here — BEFORE the throw, because a
     // power swing changes how this pitch is graded and turbo legs change who
     // runs on it.
-    const windupInput = (yield frame) ?? {};
+    frame.pickoffsLeft = pickoffsLeft();
+    let windupInput: PlayInputs = (yield frame) ?? {};
+    // ★ THE THROW OVER IS NOT A PITCH. A person pitching may answer the
+    // windup with `pickoff` instead of a plan: the lead runner is raced back
+    // to his bag (`pickoffRace`), an out is folded, and the SAME windup is
+    // yielded again carrying `pickoff` so the view can play the throw — then
+    // this loop reads what they do next. Same batter, same count; capped per
+    // plate appearance; a throw at the wrong side's runner is dropped. The
+    // runner's intent is judged exactly as the pitch would judge it, so a
+    // runner who was going is caught leaning, and a runner thrown at holds
+    // for the pitch that follows (v1's rule). The CPU never throws over.
+    while (
+      windupInput.pickoff === true &&
+      frame.pickoffsLeft > 0 &&
+      (args.assist === null || args.assist.pitches)
+    ) {
+      pickoffs += 1;
+      const base = leadBase()!;
+      const runner = args.lookup(half.occupants[base - 1]!);
+      const going = decideSteal(
+        half,
+        { defence: args.defence, lookup: args.lookup, pitcher: args.pitcher },
+        windupInput.steal === true && !args.assist?.pitches,
+        cpuRunners && !thrownOver,
+        rng.fork(`steal${pitches}`)
+      );
+      const leaning = going !== null && going.from === base;
+      const race = pickoffRace(
+        { runner, pitcher: args.pitcher, base, leaning },
+        rng.fork(`pick${pitches}.${pickoffs}`)
+      );
+      thrownOver = true;
+      if (race.out) {
+        // v1's `applyPickoff`: the runner leaves his bag and an out is made;
+        // count and batter untouched. Not `applySteal`, which refuses a runner
+        // with the bag ahead occupied — a pickoff does not care.
+        const bases = [...half.state.bases] as [boolean, boolean, boolean];
+        bases[base - 1] = false;
+        half.state = { ...half.state, bases, outs: half.state.outs + 1 };
+        half.occupants[base - 1] = null;
+      }
+      onEvent?.({
+        t: 'pickoff',
+        runnerId: runner.id,
+        base,
+        out: race.out,
+        marginSec: race.marginSec,
+        leaning,
+        leadFt: race.leadFt,
+      });
+      log.push(
+        `${runner.name} ${race.out ? 'is PICKED OFF' : 'gets back'} at ${base === 1 ? 'first' : 'second'}` +
+          (leaning ? ' (leaning)' : '')
+      );
+      syncFrame(frame, half, 'windup');
+      frame.play = null;
+      frame.pitch = null;
+      frame.pickoffsLeft = pickoffsLeft();
+      frame.pickoff = {
+        runnerId: runner.id,
+        base,
+        out: race.out,
+        leaning,
+        leadFt: race.leadFt,
+        throwSec: pickoffThrowSec(args.pitcher, base) ?? 0,
+      };
+      windupInput = (yield frame) ?? {};
+      frame.pickoff = null;
+      if (isHalfOver(half.state)) {
+        half.cut = true;
+        return;
+      }
+    }
     decideSpends(windupInput.spend);
     // The alignment: a person fielding proposes it (and keeps it until they
     // change it); the CPU sets it from the batter. No draw either way.
@@ -688,8 +815,10 @@ function* playAtBatLive(
       half,
       { defence: args.defence, lookup: args.lookup, pitcher },
       windupInput.steal === true && !args.assist?.pitches,
-      args.assist === null ? true : args.assist.pitches ? cpuRunsOn(args.assist.skill) : false
+      cpuRunners && !thrownOver,
+      rng.fork(`steal${pitches}`)
     );
+    thrownOver = false;
     frame.steal = going
       ? { runnerId: going.spec.runner.id, from: going.from, to: going.spec.to, runnerSec: runnerSecTo(going.spec) }
       : null;
@@ -972,13 +1101,15 @@ interface StealDecision {
 }
 
 /**
- * Does a runner go on this pitch? Decided BEFORE the throw and with NO draw,
- * so the pitch frame can carry it (`LiveFrame.steal`) and the view can show
- * him break at release.
+ * Does a runner go on this pitch? Decided BEFORE the throw, so the pitch
+ * frame can carry it (`LiveFrame.steal`) and the view can show him break at
+ * release. The only draw is the race's own jump (`jumpSecOf`), read here to
+ * pick the pitch and again by `stealRace` to run it — the same number twice,
+ * so the decision cannot shift the race or any other stream.
  *
  * The CPU's runner goes when `cpuWantsSteal` says so, projecting against the
  * pitcher's FASTBALL — his own worst case, since he commits without knowing
- * what is coming. A person batting orders the lead runner with
+ * what is coming — on a pitch he reads well. A person batting orders the lead runner with
  * `PlayInputs.steal`, and the only rule kept is traffic (never into an
  * occupied bag): a person is allowed to gamble, `sendRunner`'s precedent.
  * Nearest bag first — a runner on second stealing third, else first to second.
@@ -991,7 +1122,8 @@ function decideSteal(
     pitcher: Character;
   },
   ordered: boolean,
-  cpuMay = true
+  cpuMay: boolean,
+  stealRng: Rng
 ): StealDecision | null {
   const catcher = catcherOf(args.defence, args.lookup);
   if (!catcher) return null;
@@ -1003,7 +1135,11 @@ function decideSteal(
     const to = (from + 1) as StealTarget;
     const expected = fastballFlightSec(args.pitcher.stats.pitching);
     const spec: StealSpec = { runner, catcher, pitcher: args.pitcher, to, pitchTravelSec: expected };
-    const sit = { outs: half.state.outs, nextBagOccupied: half.occupants[from] !== null };
+    const sit = {
+      outs: half.state.outs,
+      nextBagOccupied: half.occupants[from] !== null,
+      jumpSec: ordered ? undefined : jumpSecOf(runner, stealRng),
+    };
     if (!ordered && !cpuWantsSteal(spec, sit)) continue;
     return { spec, from, human: ordered };
   }
@@ -1064,6 +1200,8 @@ function syncFrame(frame: LiveFrame, half: HalfState, phase: LiveFrame['phase'])
   frame.bases = [...half.state.bases] as [boolean, boolean, boolean];
   frame.baseIds = [...half.occupants] as LiveFrame['baseIds'];
   frame.steal = null;
+  frame.pickoff = null;
+  frame.pickoffsLeft = 0;
 }
 
 function* runPlayLive(
@@ -1108,6 +1246,12 @@ interface HalfState {
    * the play's own outcome and from a walk's `movements`.
    */
   occupants: [string | null, string | null, string | null];
+  /**
+   * The half ended on a pickoff, mid plate appearance. The batter did not
+   * complete his turn, so the order must NOT advance past him — he leads off
+   * the next inning, as the rule has it.
+   */
+  cut?: boolean;
 }
 
 /**
@@ -1168,6 +1312,8 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
     play: null,
     pitch: null,
     steal: null,
+    pickoff: null,
+    pickoffsLeft: 0,
     stamina: null,
     juice: spec.features?.juice ? { away: 0, home: 0 } : null,
     shift: spec.features?.shifts ? 'normal' : null,
@@ -1241,7 +1387,8 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
       // appearance forever; if that one happens to be a walk or a hit, outs
       // never accrue and `while (!isHalfOver(...))` never exits. Found by
       // deleting the line: the suite stopped finishing rather than failing.
-      bat.lineupIdx += 1;
+      if (hs.cut) hs.cut = false;
+      else bat.lineupIdx += 1;
 
       if (half === 'bottom' && isWalkOff(inning, regulation, half, home.score + hs.score, away.score)) {
         home.score += hs.score;

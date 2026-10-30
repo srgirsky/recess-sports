@@ -474,6 +474,14 @@ body.screen-open .play-callout {
   grid-template-rows: repeat(4, auto);
   column-gap: clamp(0.3rem, 1vw, 0.6rem);
 }
+/* With PICK OFF on the picker (a runner to throw at) the stack is five, or
+   eight with the specials: the same fold into columns of four, so the picker
+   is never taller than four cards. */
+.pitch-picker.has-pickoff {
+  grid-auto-flow: column;
+  grid-template-rows: repeat(4, auto);
+  column-gap: clamp(0.3rem, 1vw, 0.6rem);
+}
 .pitch-card[hidden] {
   display: none;
 }
@@ -536,6 +544,11 @@ body.screen-open .play-callout {
 .pitch-card.is-picked {
   background: var(--gold);
   transform: scale(1.07);
+}
+/* The throw over: a verb, not a pitch, so it wears a wash of sky rather than
+   cream. After `.pitch-card` in the cascade, or cream wins. */
+.pitch-card--pickoff {
+  background: color-mix(in srgb, var(--sky) 30%, var(--cream));
 }
 
 /* ---------------------------------------------------------------------------

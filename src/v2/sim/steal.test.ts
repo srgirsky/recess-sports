@@ -19,6 +19,12 @@ import {
   stealRace,
   throwLegsSec,
   throwSecTo,
+  jumpSecOf,
+  pickoffRace,
+  pickoffThrowSec,
+  projectedPickoffMarginSec,
+  returnSec,
+  setLeadFt,
 } from './steal';
 import { DEFENSE, RUN } from './params';
 import { makeRng } from './rng';
@@ -249,5 +255,88 @@ describe('★ a person’s read replaces the kid’s, and only the read', () => 
     const own = stealRace(s, makeRng('same'));
     const late = stealRace({ ...s, readSec: reactionSec(s.catcher.stats.fielding) + 0.4 }, makeRng('same'));
     expect(late.marginSec - own.marginSec).toBeCloseTo(0.4, 9);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The pickoff: raced, not rolled. `sim.pickoffRace` records the spread these
+// orderings describe.
+// ---------------------------------------------------------------------------
+
+describe('★ the pickoff is a race, and the set lead is sized to the arm', () => {
+  it('★ a set runner returns with exactly the margin to spare against every arm, so he is nearly never picked', () => {
+    for (const r of ROSTER) {
+      for (const p of ROSTER) {
+        for (const base of [1, 2] as const) {
+          const m = projectedPickoffMarginSec({ runner: r, pitcher: p, base, leaning: false });
+          expect(m, `${r.id} vs ${p.id}`).toBeCloseTo(RUN.LEAD_RETURN_MARGIN_SEC, 6);
+          const lead = setLeadFt(r, p, base);
+          expect(lead).toBeGreaterThan(0);
+          expect(lead).toBeLessThanOrEqual(RUN.LEAD_FT);
+        }
+      }
+    }
+  });
+
+  it('★ the STEAL lead is not returnable against any roster arm — the degeneracy the set lead exists to avoid', () => {
+    // Raced from the steal lead a set runner would simply be out, the way the
+    // steal from a standing start was simply lost: at a kid's acceleration
+    // ten feet takes longer to come back from than any arm takes to throw to
+    // the bag. So the lead a runner holds when he is NOT going is solved
+    // from the arm — a lead is by definition one you can return from.
+    for (const r of ROSTER) {
+      for (const p of ROSTER) {
+        const t = pickoffThrowSec(p, 1)!;
+        expect(t - returnSec(r, RUN.LEAD_FT, RUN.PICKOFF_READ_SEC)).toBeLessThan(RUN.LEAD_RETURN_MARGIN_SEC);
+      }
+    }
+  });
+
+  it('a faster runner holds a longer lead against the same arm; a stronger arm shortens it', () => {
+    expect(setLeadFt(bySpeed(9), byArm(5), 1)).toBeGreaterThan(setLeadFt(bySpeed(2), byArm(5), 1));
+    expect(setLeadFt(bySpeed(5), byArm(2), 1)).toBeGreaterThan(setLeadFt(bySpeed(5), byArm(9), 1));
+  });
+
+  it('★ a leaning runner is in a real race: usually out, closest for quick legs against a weak arm', () => {
+    const quickVsWeak = projectedPickoffMarginSec({ runner: bySpeed(10), pitcher: byArm(1), base: 1, leaning: true });
+    const slowVsStrong = projectedPickoffMarginSec({ runner: bySpeed(1), pitcher: byArm(10), base: 1, leaning: true });
+    expect(slowVsStrong).toBeLessThan(quickVsWeak);
+    expect(slowVsStrong).toBeLessThan(0);
+    // Close enough that the jump (`jumpSigmaSec`, 0.08s for quick legs) decides it.
+    expect(quickVsWeak).toBeGreaterThan(-0.2);
+    // And always worse off than the same runner set on his sized lead.
+    expect(quickVsWeak).toBeLessThan(
+      projectedPickoffMarginSec({ runner: bySpeed(10), pitcher: byArm(1), base: 1, leaning: false })
+    );
+  });
+
+  it('the read is the only draw, and it is the steal’s own jump', () => {
+    const s = { runner: bySpeed(5), pitcher: byArm(5), base: 1 as const, leaning: false };
+    const a = pickoffRace(s, makeRng('x'));
+    expect(pickoffRace(s, makeRng('x'))).toEqual(a);
+    expect(projectedPickoffMarginSec(s) - a.marginSec).toBeCloseTo(jumpSecOf(s.runner, makeRng('x')), 9);
+    expect(a.leadFt).toBeCloseTo(setLeadFt(s.runner, s.pitcher, 1), 9);
+  });
+
+  it('second is the shorter throw from the mound', () => {
+    expect(pickoffThrowSec(byArm(5), 2)!).toBeLessThan(pickoffThrowSec(byArm(5), 1)!);
+  });
+});
+
+describe('★ the runner picks his pitch', () => {
+  it('holds on a late read and goes on an early one, the projected race being equal', () => {
+    const s = spec(8, 3);
+    expect(cpuWantsSteal(s, { ...FREE, jumpSec: RUN.GO_ON_JUMP_SEC + 0.01 })).toBe(false);
+    expect(cpuWantsSteal(s, { ...FREE, jumpSec: RUN.GO_ON_JUMP_SEC })).toBe(true);
+    // A caller with no read keeps the old answer.
+    expect(cpuWantsSteal(s, FREE)).toBe(true);
+  });
+
+  it('★ `jumpSecOf` is the race’s own draw: the same stream gives the same number, and the race ran on it', () => {
+    const r = bySpeed(5);
+    expect(jumpSecOf(r, makeRng('s'))).toBe(jumpSecOf(r, makeRng('s')));
+    const s = spec(5, 9);
+    const race = stealRace(s, makeRng('s'));
+    expect(throwSecTo(s)! - runnerSecTo(s) - race.marginSec).toBeCloseTo(jumpSecOf(r, makeRng('s')), 9);
   });
 });
