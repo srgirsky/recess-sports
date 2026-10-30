@@ -1341,3 +1341,14 @@ set so the bridge, the cam and the visibility sets needed no second path.
 Not in this change: the live-camera presence tail (#2) and the sculpt
 campaign (#9) stand where the 2026-10-29 record left them.
 
+### #2: the presence cap goes to 2.0x (2026-10-30)
+
+The tail the 2026-10-29 record left: the 1.6x cap bound on the far half of
+the field, so a fly to the wall still filmed specks. Raised to 2.0x by the
+maintainer. Re-measured by `cameraPresence.test.ts` (three seeded games,
+10,000+ live frames, the chaser as drawn through the real rig): p10 4.32%,
+p50 5.94%, p90 6.65% of frame height, from 3.48 / 4.98. The test's floors
+moved up to 5.5% and 4.0% so a cap quietly put back fails. Two kids closing
+on one bag still ease back (`PRESENCE_CROWD`). What remains of #2 is
+character design — colour, contour and silhouette — which is #9's.
+
