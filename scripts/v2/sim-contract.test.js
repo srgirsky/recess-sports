@@ -54,7 +54,7 @@ import { BASEPATH, FIELD_MARGIN, FIELD_POSITIONS, FIRST, dist } from '../../src/
 import { maxThrowFt } from '../../src/v2/sim/fielders.ts';
 import { beginPlay, finishPlay, simulatePlay, stepPlay } from '../../src/v2/sim/play.ts';
 import { classifyLaunch, LAUNCH_CUTS } from '../../src/v2/sim/harness.ts';
-import { projectedMarginSec } from '../../src/v2/sim/steal.ts';
+import { projectedMarginSec, projectedPickoffMarginSec, setLeadFt } from '../../src/v2/sim/steal.ts';
 import { SECOND } from '../../src/v2/sim/field.ts';
 import { distFromHome } from '../../src/v2/sim/field.ts';
 import { electChaser, makeFielder } from '../../src/v2/sim/fielders.ts';
@@ -1593,6 +1593,66 @@ describe('sim.stealRace', () => {
     for (const k of Object.keys(RUN)) {
       expect(/RATE|CHANCE|PROB|ATTEMPT|SUCCESS/.test(k), `RUN.${k}`).toBe(false);
     }
+  });
+});
+
+describe('sim.pickoffRace', () => {
+  const rec = M.sim.pickoffRace;
+
+  it('is a NOTE whose shape is derived and whose constants say they are judgements', () => {
+    wellFormed(rec, { reference: 'derived', status: 'note' });
+    expect(rec.why).toMatch(/v1 ROLLS IT; v2 RACES IT/);
+    expect(rec.theJUDGEMENTS).toMatch(/judgement, not a reading/);
+    expect(rec.theSTEALLEADISNOTRETURNABLE).toMatch(/TWO leads/);
+  });
+
+  it('★ recomputes the two leads: the set lead returns with exactly the margin, the steal lead never does', () => {
+    let lo = Infinity, hi = -Infinity, worst = Infinity, best = -Infinity, out = 0, n = 0;
+    for (const r of ROSTER) {
+      for (const p of ROSTER) {
+        for (const base of [1, 2]) {
+          const lead = setLeadFt(r, p, base);
+          lo = Math.min(lo, lead);
+          hi = Math.max(hi, lead);
+          expect(lead).toBeLessThan(RUN.LEAD_FT);
+          expect(projectedPickoffMarginSec({ runner: r, pitcher: p, base, leaning: false })).toBeCloseTo(rec.measured.setMarginSec, 6);
+          const l = projectedPickoffMarginSec({ runner: r, pitcher: p, base, leaning: true });
+          worst = Math.min(worst, l);
+          best = Math.max(best, l);
+          n += 1;
+          if (l <= 0) out += 1;
+        }
+      }
+    }
+    expect(n).toBe(rec.measured.n);
+    expect(lo).toBeCloseTo(rec.measured.setLeadFt.min, 2);
+    expect(hi).toBeCloseTo(rec.measured.setLeadFt.max, 2);
+    expect(worst).toBeCloseTo(rec.measured.leaningMarginSec.worst, 2);
+    expect(best).toBeCloseTo(rec.measured.leaningMarginSec.best, 2);
+    expect(out / n).toBeCloseTo(rec.measured.leaningProjectedOutShare, 3);
+    expect(rec.measured.setMarginSec).toBe(RUN.LEAD_RETURN_MARGIN_SEC);
+  });
+
+  it('★ cites every constant it is built from, at the value in the code', () => {
+    const v = rec.ours.value;
+    expect(v.moveSec).toBe(RUN.PICKOFF_MOVE_SEC);
+    expect(v.diveFt).toBe(RUN.DIVE_FT);
+    expect(v.diveSec).toBe(RUN.DIVE_SEC);
+    expect(v.readSec).toBe(RUN.PICKOFF_READ_SEC);
+    expect(v.readLeaningSec).toBe(RUN.PICKOFF_READ_LEANING_SEC);
+    expect(v.leadReturnMarginSec).toBe(RUN.LEAD_RETURN_MARGIN_SEC);
+    expect(v.maxPerPlateAppearance).toBe(RUN.PICKOFF_MAX_PER_PA);
+    expect(v.goOnJumpSec).toBe(RUN.GO_ON_JUMP_SEC);
+  });
+
+  it('★ the runner picks his pitch, and both records say what it did to the rate', () => {
+    expect(rec.theRUNNERPICKSHISPITCH).toMatch(/FREE OUT/);
+    const sr = M.sim.stealRace;
+    expect(sr.theRUNNERPICKSHISPITCH).toMatch(/sim\.pickoffRace/);
+    expect(sr.measured.attemptsPerGame).toBeLessThan(sr.measured.before.attemptsPerGame);
+    expect(sr.measured.successPct).toBeGreaterThan(sr.measured.before.successPct);
+    expect(M.sim.gameShape.measured.stealAttemptsPerGame).toBe(sr.measured.attemptsPerGame);
+    expect(M.sim.gameShape.measured.stealSuccessPct).toBe(sr.measured.successPct);
   });
 });
 

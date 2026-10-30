@@ -222,6 +222,14 @@ export interface PlayInputs {
    * the kid's own read. Ignored while they bat.
    */
   throwDown?: { atSec: number };
+  /**
+   * PICK OFF: a person pitching throws over to the lead runner's bag instead
+   * of pitching, proposed on the `windup` frame. The sim races it
+   * (`sim/steal.ts` pickoffRace), folds an out, and re-yields the windup with
+   * `LiveFrame.pickoff` saying what happened; `RUN.PICKOFF_MAX_PER_PA` caps
+   * the throws. Ignored while they bat.
+   */
+  pickoff?: boolean;
 }
 
 export interface PlayState {

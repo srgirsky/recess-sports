@@ -1286,3 +1286,58 @@ Not in this change, recorded as the next two: the plate camera cannot see
 the runner break (a steal cam that cuts to the runner when the person is not
 batting), and a PICK OFF for the person pitching — BB2001's counter and v1's
 #7 — which needs a lead model worth the name.
+
+## 2026-10-30 — PICK OFF: the pitcher's counter, and what it exposed
+
+The second of the two items the 2026-10-29 record left: a PICK OFF for the
+person pitching, BB2001's counter to the steal and v1's #7. Built on the
+steal's seams — a windup input (`PlayInputs.pickoff`), the race in
+`sim/steal.ts`, the same windup re-yielded carrying `LiveFrame.pickoff`, a
+`{t:'pickoff'}` event, and the runner drawn through `stealRun` with `back`
+set so the bridge, the cam and the visibility sets needed no second path.
+
+### What the pass found that no record held
+
+- **The steal lead is not returnable.** Raced from `RUN.LEAD_FT` a runner who
+  is NOT going is out against every arm on the roster: at 10.37 ft/s² ten feet
+  takes ~1.6 s to come back from with a dive, and the slowest mound-to-first
+  throw lands 1.86 s after the first motion of the move. The same degeneracy
+  the steal had from a standing start, with the sign flipped. So the model
+  has two leads: the steal lead when he is going, a set lead solved from the
+  arm when he is not (`setLeadFt`, 5.4–9.7 ft across the roster), and a set
+  runner's only risk is his read. A leaning runner is in a real race he
+  usually loses (99.3% of pairs projected out; a quick kid against a weak arm
+  is within the jump). v1's 0.6 / 0.06 fall out as consequences.
+- **The CPU's runner was a free out.** He went on the first pitch he projected
+  to win, deterministically, so throwing over on the first pitch with a
+  runner on caught him leaning every time. Fixed in the runner: he goes on
+  the pitch he reads well (`cpuWantsSteal` holds past `RUN.GO_ON_JUMP_SEC`,
+  the race's own jump read before the throw and run on after it) and holds
+  for the pitch after a throw over. Harness: 10.74 attempts a game at 95.0% →
+  **9.69 at 99.6%**. The 33 goldens and `CHECKSUM_30` were recaptured, with
+  the reason in `game.test.ts`.
+- **A throw over has no cost but the cap and the beat.** v2 has no
+  throwing-error model for a ball to sail on, and one invented for this verb
+  alone would be a fitted cost. Recorded in `sim.pickoffRace` so the next
+  person who finds the verb too strong looks at the error model, not at the
+  constants.
+
+### What shipped (`feat/v2-pickoff`)
+
+- PICK OFF (👀 chip, or P) on the windup while the person pitches, a runner is
+  on first or second, and the league's runners go (`pickoffsLeft` on the
+  frame; 0 at T-BALL and ROOKIE, where no runner would ever lean). Two throws
+  a plate appearance; the count and the batter untouched; a third out ends
+  the half and the batter leads off the next inning (`HalfState.cut`).
+- The throw plays after the fact at the race's pace: the pitcher's
+  `throw_overhand` warped to the move, the ball on a low arc to the bag, the
+  runner diving back from his lead — or breaking the wrong way, turning, and
+  tagged short — and the event HELD by the view until the ball lands, so the
+  callout (OUT / PICKED OFF, SAFE / ON THE BAG or GOT BACK), the mitt, the
+  booth's caught line and the tally arrive together.
+- Side-guarded like the other two verbs: a throw over sent while the person
+  bats is dropped and the game is byte-identical (`game.test.ts`).
+
+Not in this change: the live-camera presence tail (#2) and the sculpt
+campaign (#9) stand where the 2026-10-29 record left them.
+

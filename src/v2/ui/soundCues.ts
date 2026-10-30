@@ -123,6 +123,9 @@ export function cuesForEvent(e: SimEvent): Cue[] {
   // A stolen base: the crowd for a bag taken, the mitt and the call for a
   // runner cut down. Ten of these a game were silent before the event existed.
   if (e.t === 'steal') return e.safe ? ['cheer'] : ['pop', 'out'];
+  // A throw over: the ball into the baseman's mitt either way, and the call
+  // when it caught him.
+  if (e.t === 'pickoff') return e.out ? ['pop', 'out'] : ['pop'];
 
   // Contact — the ball that was actually put in play, or fouled away.
   if (e.foul) return ['crack', 'call:foul'];
@@ -190,6 +193,9 @@ export function announceFor(e: SimEvent): { kind: AnnounceKind; priority: 1 | 2 
   // The booth has had steal lines since v1 (`stealSafe` / `stealCaught`) and
   // v2 never fired them, because v2 never emitted a steal.
   if (e.t === 'steal') return { kind: e.safe ? 'stealSafe' : 'stealCaught', priority: 1 };
+  // A runner picked off is a runner caught; a runner who got back is the
+  // callout's to name, as v1 had it.
+  if (e.t === 'pickoff') return e.out ? { kind: 'stealCaught', priority: 1 } : null;
 
   // ★ A FOUL IS NOT A MOMENT. It is the most common contact event there is, and
   // a booth that calls every one of them says nothing else all game.

@@ -29,7 +29,7 @@
 // ---------------------------------------------------------------------------
 
 import type { Character } from '../../data/types';
-import { FIELD_POSITIONS, MOUND, SECOND, THIRD, type PositionId } from './field';
+import { FIELD_POSITIONS, FIRST, MOUND, SECOND, THIRD, type PositionId } from './field';
 import { BASEPATH } from './field';
 import { throwFlightSec } from './fielders';
 import { reactionSec, sprintAccelFtS2, sprintTimeForFt, sprintTopSpeedFts } from './athletes';
@@ -166,9 +166,21 @@ export function stealRace(spec: StealSpec, rng: Rng): StealResult {
   const legs = throwLegsSec(spec);
   if (legs === null) return { safe: true, marginSec: Infinity, outOfRange: true, relayed: false };
   const d = spec.pitchTravelSec + readSecOf(spec) + DEFENSE.RELEASE_SEC + legs.fly;
-  const jump = rng.fork('jump').bell() * jumpSigmaSec(spec.runner.stats.speed);
-  const marginSec = d - (runnerSecTo(spec) + jump);
+  const marginSec = d - (runnerSecTo(spec) + jumpSecOf(spec.runner, rng));
   return { safe: marginSec > 0, marginSec, outOfRange: false, relayed: legs.relayed };
+}
+
+/**
+ * This runner's jump on THIS pitch, seconds late (negative is early).
+ *
+ * ★ ONE DRAW, READ TWICE. `decideSteal` asks it to choose the pitch he goes
+ * on and `stealRace` asks it again to run the race; `fork('jump')` off the
+ * same per-pitch stream returns the same number both times (`rng.ts`: a
+ * substream is a function of its label, not of who asked first), so the
+ * runner who went on a good read races on that read.
+ */
+export function jumpSecOf(runner: Character, rng: Rng): number {
+  return rng.fork('jump').bell() * jumpSigmaSec(runner.stats.speed);
 }
 
 /**
@@ -187,6 +199,11 @@ export interface StealSituation {
   outs: number;
   /** Is the base he would vacate behind another runner? Never steal into traffic. */
   nextBagOccupied: boolean;
+  /**
+   * His read of this pitch's first move (`jumpSecOf`), when the caller has
+   * one. He picks his pitch: later than `RUN.GO_ON_JUMP_SEC` and he holds.
+   */
+  jumpSec?: number;
 }
 
 /**
@@ -222,6 +239,11 @@ export function cpuWantsSteal(spec: StealSpec, sit: StealSituation): boolean {
   // Two outs: the out ends the inning and the base buys nothing he does not
   // already have. The exception is a runner who cannot be thrown out at all.
   if (sit.outs >= 2) return false;
+  // ★ HE PICKS HIS PITCH. A runner who went on the first pitch he projected
+  // to win was a free out for a pitcher who threw over on the first pitch.
+  // He goes on the pitch he reads well, which is the same draw the race runs
+  // on — so he is never caught by a read he declined.
+  if (sit.jumpSec !== undefined && sit.jumpSec > RUN.GO_ON_JUMP_SEC) return false;
 
   if (spec.to === 3) {
     // Third only when it is close to free — he is already in scoring position.
@@ -237,4 +259,114 @@ export function catcherOf(
 ): Character | null {
   for (const [id, pos] of Object.entries(positions)) if (pos === 'C') return lookup(id);
   return null;
+}
+
+// ---------------------------------------------------------------------------
+// The pickoff. A throw over to a bag instead of a pitch — v1's #7, BB2001's
+// counter to the steal — raced like the steal is, not rolled like v1's
+// `rollPickoff` (0.6 leaning / 0.06 home).
+//
+// ★ TWO LEADS, AND THAT IS THE WHOLE MODEL. A runner who is going is on the
+// steal lead (`RUN.LEAD_FT`) with his weight forward; a runner who is not is on
+// the lead he can get back from against THIS arm with `LEAD_RETURN_MARGIN_SEC`
+// to spare (`setLeadFt`). Raced from the steal lead a set runner is simply
+// out: at a kid's acceleration ten feet takes longer to return from than any
+// roster arm takes to throw the forty-odd feet to the bag — the same
+// degeneracy the steal had from a standing start, with the sign flipped. A
+// lead is BY DEFINITION one you can return from, so the set lead is solved
+// from the arm rather than fixed, and the set runner's only risk is his read.
+//
+// ★ THE LEANING RUNNER IS IN A REAL RACE. Across the roster he is out by ~0.4s
+// against a strong arm and back by ~0.1s against a weak one with a quick
+// kid's legs, and the jump decides the rest — about v1's 0.6 from physics
+// rather than as a constant. `sim.pickoffRace` records the spread.
+// ---------------------------------------------------------------------------
+
+export interface PickoffSpec {
+  runner: Character;
+  pitcher: Character;
+  /** The bag thrown to — the lead runner's, first or second. */
+  base: 1 | 2;
+  /** Had he decided to go on this pitch? Then he is on the steal lead, leaning. */
+  leaning: boolean;
+}
+
+export interface PickoffResult {
+  out: boolean;
+  /** Seconds by which the runner beat the tag. Negative is out. */
+  marginSec: number;
+  /** The lead he was returning from, ft. */
+  leadFt: number;
+}
+
+function pickoffBag(base: 1 | 2) {
+  return base === 1 ? FIRST : SECOND;
+}
+
+/**
+ * From the first motion of the move to the ball on the bag, seconds. Null if
+ * the arm cannot make it — unreachable with a roster arm, kept for the same
+ * honesty `throwSecTo` has.
+ */
+export function pickoffThrowSec(pitcher: Character, base: 1 | 2): number | null {
+  const fly = throwFlightSec(MOUND, pickoffBag(base), pitcher.stats.pitching);
+  return fly === null ? null : RUN.PICKOFF_MOVE_SEC + fly;
+}
+
+/**
+ * How long a runner needs back to the bag from `leadFt`: his read, the run,
+ * and the dive over the last body length.
+ */
+export function returnSec(runner: Character, leadFt: number, readSec: number): number {
+  if (leadFt <= 0) return 0;
+  const speed = runner.stats.speed;
+  const dive = Math.min(leadFt, RUN.DIVE_FT);
+  return (
+    readSec +
+    sprintTimeForFt(leadFt - dive, sprintTopSpeedFts(speed), sprintAccelFtS2(speed), 0) +
+    RUN.DIVE_SEC * (dive / RUN.DIVE_FT)
+  );
+}
+
+/**
+ * The lead a SET runner takes against this arm: the longest, up to the steal
+ * lead, he returns from with `RUN.LEAD_RETURN_MARGIN_SEC` to spare. Return
+ * time rises with the lead, so a bisection finds it; no draw.
+ */
+export function setLeadFt(runner: Character, pitcher: Character, base: 1 | 2): number {
+  const throwSec = pickoffThrowSec(pitcher, base);
+  if (throwSec === null) return RUN.LEAD_FT;
+  const fits = (lead: number) =>
+    throwSec - returnSec(runner, lead, RUN.PICKOFF_READ_SEC) >= RUN.LEAD_RETURN_MARGIN_SEC;
+  if (fits(RUN.LEAD_FT)) return RUN.LEAD_FT;
+  let lo = 0;
+  let hi: number = RUN.LEAD_FT;
+  for (let i = 0; i < 24; i++) {
+    const mid = (lo + hi) / 2;
+    if (fits(mid)) lo = mid;
+    else hi = mid;
+  }
+  return lo;
+}
+
+/** The race as it would run with a perfect read. No randomness. */
+export function projectedPickoffMarginSec(spec: PickoffSpec): number {
+  const throwSec = pickoffThrowSec(spec.pitcher, spec.base);
+  if (throwSec === null) return Infinity;
+  const leadFt = spec.leaning ? RUN.LEAD_FT : setLeadFt(spec.runner, spec.pitcher, spec.base);
+  const readSec = spec.leaning ? RUN.PICKOFF_READ_LEANING_SEC : RUN.PICKOFF_READ_SEC;
+  return throwSec - returnSec(spec.runner, leadFt, readSec);
+}
+
+/**
+ * Run it. The read is the only randomness — the steal's `jumpSecOf`, the
+ * same error in TIME — so a quick kid caught leaning can still get back and a
+ * slow one on his lead can still be had.
+ */
+export function pickoffRace(spec: PickoffSpec, rng: Rng): PickoffResult {
+  const leadFt = spec.leaning ? RUN.LEAD_FT : setLeadFt(spec.runner, spec.pitcher, spec.base);
+  const projected = projectedPickoffMarginSec(spec);
+  if (!Number.isFinite(projected)) return { out: false, marginSec: projected, leadFt };
+  const marginSec = projected - jumpSecOf(spec.runner, rng);
+  return { out: !(marginSec > 0), marginSec, leadFt };
 }

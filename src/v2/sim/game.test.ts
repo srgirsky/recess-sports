@@ -21,7 +21,7 @@ import { beforeAll, describe, it, expect } from 'vitest';
 import { simulateGame, simulateGameLive, type GameResult, type GameSpec, type LiveFrame, type SimEvent } from './game';
 import type { PlayInputs } from './play';
 import { battingOrder, planDefence, throwDemandFt } from './lineup';
-import { GAME } from './params';
+import { GAME, RUN } from './params';
 import { maxThrowFt } from './fielders';
 import { VENUE_GEOMETRY, FIELD_POSITIONS, FIRST, dist, type VenueId } from './field';
 import { makeRng } from './rng';
@@ -404,43 +404,53 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
    * the check that the change stayed on the bases. Attempts per game did not
    * fall (10.8 before and after — `sim.stealRace` has why), so this is not a
    * tuning; it is the end of an infinite margin.
+   *
+   * ★ RECAPTURED AGAIN 2026-10-30, WHEN THE RUNNER BEGAN PICKING HIS PITCH.
+   * `cpuWantsSteal` now holds on a pitch he reads late (`RUN.GO_ON_JUMP_SEC`,
+   * the race's own jump read before the throw), because a runner who went on
+   * the first pitch he projected to win was a free out for a pitcher who
+   * threw over on the first pitch — the PICK OFF verb made that visible.
+   * Nearly every game moved: a runner who goes a pitch later changes which
+   * ball is in play with him on. Measured: 10.74 attempts a game at 95.0% ->
+   * 9.69 at 99.6% (`sim.stealRace`); he goes less and is caught less, which
+   * is what "he picks his pitch" ought to mean.
    */
   const GOLDEN: Record<string, string> = {
-    'park:a': '1-2 i6 pa50 h21 k13 r3 s7',
-    'park:b': '2-1 i6 pa53 h21 k14 r3 s10',
+    'park:a': '6-5 i6 pa68 h34 k17 r11 s11',
+    'park:b': '2-1 i6 pa53 h18 k14 r3 s8',
     'park:c': '9-11 i6 pa74 h40 k13 r20 s13',
-    'sandlot:a': '1-0 i6 pa47 h18 k11 r1 s9',
-    'sandlot:b': '1-0 i6 pa56 h23 k15 r1 s12',
-    'sandlot:c': '0-3 i6 pa53 h28 k15 r3 s11',
+    'sandlot:a': '0-0 i7 pa60 h23 k15 r0 s9',
+    'sandlot:b': '1-0 i6 pa53 h20 k14 r1 s10',
+    'sandlot:c': '0-2 i6 pa53 h28 k15 r2 s7',
     'blacktop:a': '2-0 i6 pa47 h11 k10 r2 s3',
-    'blacktop:b': '1-2 i6 pa47 h18 k13 r3 s8',
+    'blacktop:b': '1-2 i6 pa47 h15 k13 r3 s7',
     'blacktop:c': '5-8 i6 pa61 h28 k13 r13 s3',
     // Added with the venues: there is no pre-generator result for content that
     // did not exist then, so these are their birth fingerprints and ratchet
     // from here exactly as the first three do.
-    'tin_can:a': '2-2 i7 pa64 h28 k17 r4 s12',
-    'tin_can:b': '2-1 i6 pa53 h24 k16 r3 s13',
-    'tin_can:c': '1-11 i6 pa61 h28 k13 r12 s9',
+    'tin_can:a': '4-2 i6 pa60 h27 k18 r6 s12',
+    'tin_can:b': '2-1 i6 pa53 h21 k16 r3 s12',
+    'tin_can:c': '1-4 i6 pa48 h20 k12 r5 s8',
     'cement:a': '2-1 i6 pa50 h14 k15 r3 s4',
-    'cement:b': '1-2 i7 pa59 h24 k15 r3 s13',
+    'cement:b': '1-2 i7 pa59 h21 k15 r3 s12',
     'cement:c': '4-3 i6 pa59 h28 k16 r7 s8',
-    'steele:a': '2-0 i6 pa48 h18 k13 r2 s7',
-    'steele:b': '1-2 i6 pa50 h21 k13 r3 s10',
+    'steele:a': '2-0 i6 pa48 h17 k14 r2 s8',
+    'steele:b': '1-2 i6 pa49 h17 k13 r3 s8',
     'steele:c': '9-3 i6 pa63 h32 k15 r12 s11',
-    'playground:a': '1-2 i6 pa53 h27 k10 r3 s8',
+    'playground:a': '4-4 i7 pa71 h34 k19 r8 s9',
     'playground:b': '2-3 i7 pa60 h24 k15 r5 s10',
     'playground:c': '11-4 i6 pa63 h33 k14 r15 s9',
-    'eckman:a': '1-0 i6 pa48 h17 k13 r1 s8',
-    'eckman:b': '1-0 i6 pa56 h23 k15 r1 s12',
+    'eckman:a': '0-0 i7 pa60 h23 k15 r0 s10',
+    'eckman:b': '1-0 i6 pa53 h20 k14 r1 s10',
     'eckman:c': '6-4 i6 pa59 h31 k16 r10 s9',
-    'dirt_yards:a': '0-0 i7 pa60 h22 k15 r0 s8',
-    'dirt_yards:b': '1-0 i6 pa56 h23 k15 r1 s13',
-    'dirt_yards:c': '8-9 i6 pa65 h42 k13 r17 s17',
-    'big_city:a': '2-3 i6 pa53 h22 k11 r5 s7',
-    'big_city:b': '3-4 i7 pa59 h22 k15 r7 s10',
+    'dirt_yards:a': '4-0 i6 pa54 h20 k16 r4 s6',
+    'dirt_yards:b': '1-0 i6 pa53 h20 k14 r1 s11',
+    'dirt_yards:c': '8-9 i6 pa63 h40 k12 r17 s15',
+    'big_city:a': '2-3 i6 pa55 h22 k14 r5 s6',
+    'big_city:b': '3-4 i7 pa59 h19 k15 r7 s8',
     'big_city:c': '7-4 i6 pa60 h32 k16 r11 s5',
     'dome:a': '4-2 i6 pa50 h14 k16 r6 s3',
-    'dome:b': '3-2 i6 pa52 h22 k12 r5 s10',
+    'dome:b': '3-2 i6 pa52 h19 k12 r5 s9',
     'dome:c': '8-9 i6 pa63 h32 k13 r17 s2',
   };
 
@@ -475,8 +485,10 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
    * play, which is worth knowing. Both gates fire immediately on a real change
    * — dt 1/60 to 1/50 — which is what verified them.
    */
-  // Moved 1745365359 -> 1283789542 with the steal relay (2026-10-29), see GOLDEN.
-  const CHECKSUM_30 = 1283789542;
+  // Moved 1745365359 -> 1283789542 with the steal relay (2026-10-29), and
+  // 1283789542 -> 116246726 when the runner began picking his pitch
+  // (2026-10-30), see GOLDEN.
+  const CHECKSUM_30 = 116246726;
   // Keep the original thirty-game ratchet on the venues it was born with.
   // New venues get explicit birth fingerprints above; adding content must not
   // silently rewrite the baseline that catches drift in the existing game.
@@ -1022,4 +1034,150 @@ describe('★ the stolen base is a play: seen, heard, and a person’s to make',
     expect(wrong.result.tally).toEqual(plain.result.tally);
     expect(wrong.events).toEqual(plain.events);
   }, PLAYS_GAMES);
+});
+
+describe('★ the pickoff: a throw over is a play — capped, side-guarded, and not a pitch', () => {
+  type PickEvent = Extract<SimEvent, { t: 'pickoff' }>;
+  interface Windup {
+    inning: number;
+    half: 'top' | 'bottom';
+    batterId: string;
+    balls: number;
+    strikes: number;
+    outs: number;
+    pickoffsLeft: number;
+    pickoff: LiveFrame['pickoff'];
+  }
+  function pumpPick(
+    seed: string,
+    over: Partial<GameSpec>,
+    policy: (f: LiveFrame) => PlayInputs | undefined
+  ): { events: PickEvent[]; windups: Windup[]; result: GameResult } {
+    const events: PickEvent[] = [];
+    const windups: Windup[] = [];
+    const it = simulateGameLive(
+      spec({
+        ...over,
+        onEvent: (e) => {
+          if (e.t === 'pickoff') events.push(e);
+        },
+      }),
+      makeRng(seed)
+    );
+    let r = it.next();
+    let guard = 0;
+    while (!r.done && guard++ < 2_000_000) {
+      const f = r.value;
+      if (f.phase === 'windup') {
+        windups.push({
+          inning: f.inning,
+          half: f.half,
+          batterId: f.batterId,
+          balls: f.balls,
+          strikes: f.strikes,
+          outs: f.outs,
+          pickoffsLeft: f.pickoffsLeft,
+          pickoff: f.pickoff ? { ...f.pickoff } : null,
+        });
+      } else {
+        expect(f.pickoff, 'a windup-frame field').toBeNull();
+      }
+      const inputs = policy(f);
+      r = inputs ? it.next(inputs) : it.next();
+    }
+    expect(r.done).toBe(true);
+    return { events, windups, result: r.value as GameResult };
+  }
+  // The person is HOME: they pitch the top half and bat the bottom.
+  const throwOverEveryTop = (f: LiveFrame) =>
+    f.phase === 'windup' && f.half === 'top' && f.pickoffsLeft > 0 ? { pickoff: true } : undefined;
+
+  it('★ every throw over is answered by the same windup carrying it, with the count and the batter untouched', () => {
+    const { events, windups } = pumpPick('a', { humanSide: 'home', skill: 'normal' }, throwOverEveryTop);
+    expect(events.length).toBeGreaterThan(0);
+    const carried = windups.map((w, i) => [w, i] as const).filter(([w]) => w.pickoff);
+    expect(carried.length).toBe(events.length);
+    carried.forEach(([w, i], k) => {
+      expect(w.pickoff!.runnerId).toBe(events[k].runnerId);
+      expect(w.pickoff!.out).toBe(events[k].out);
+      expect(w.pickoff!.throwSec).toBeGreaterThan(0);
+      const before = windups[i - 1];
+      expect(before.batterId).toBe(w.batterId);
+      expect([before.balls, before.strikes]).toEqual([w.balls, w.strikes]);
+      expect(w.outs - before.outs).toBe(events[k].out ? 1 : 0);
+    });
+  });
+
+  it('★ the cap holds: never more than RUN.PICKOFF_MAX_PER_PA throws at one plate appearance', () => {
+    const { windups } = pumpPick('b', { humanSide: 'home', skill: 'normal' }, throwOverEveryTop);
+    let key = '';
+    let n = 0;
+    let most = 0;
+    for (const w of windups) {
+      const k = `${w.inning}${w.half}${w.batterId}`;
+      if (k !== key) {
+        key = k;
+        n = 0;
+      }
+      if (w.pickoff) n += 1;
+      most = Math.max(most, n);
+      expect(n).toBeLessThanOrEqual(RUN.PICKOFF_MAX_PER_PA);
+      if (n >= RUN.PICKOFF_MAX_PER_PA) expect(w.pickoffsLeft).toBe(0);
+    }
+    expect(most, 'the cap was reached at least once').toBe(RUN.PICKOFF_MAX_PER_PA);
+  });
+
+  it('★ pickoffsLeft is 0 with nobody on first or second, and always 0 at a level whose runners never go', () => {
+    const normal = pumpPick('c', { humanSide: 'home', skill: 'normal' }, () => undefined);
+    for (const w of normal.windups) if (w.half === 'top' && w.pickoffsLeft > 0) expect(w.outs).toBeLessThan(3);
+    const tball = pumpPick('c', { humanSide: 'home', skill: 'tball' }, throwOverEveryTop);
+    expect(tball.events).toEqual([]);
+    for (const w of tball.windups) if (w.half === 'top') expect(w.pickoffsLeft).toBe(0);
+  });
+
+  it('★ a throw over from the wrong side is dropped, so a person batting cannot throw at their own runner', () => {
+    const plain = pumpPick('a', { humanSide: 'home', skill: 'normal' }, () => undefined);
+    const wrong = pumpPick('a', { humanSide: 'home', skill: 'normal' }, (f) =>
+      f.phase === 'windup' && f.half === 'bottom' ? { pickoff: true } : undefined
+    );
+    expect(wrong.events).toEqual([]);
+    expect(wrong.result.tally).toEqual(plain.result.tally);
+    expect(wrong.result.awayScore).toBe(plain.result.awayScore);
+    expect(wrong.result.homeScore).toBe(plain.result.homeScore);
+  });
+
+  it('★ a runner who was going is caught far more often than one who was on his lead', () => {
+    let leaning = { out: 0, n: 0 };
+    let set = { out: 0, n: 0 };
+    for (const seed of ['a', 'b', 'c', 'd', 'e', 'f']) {
+      const { events } = pumpPick(seed, { humanSide: 'home', skill: 'normal' }, throwOverEveryTop);
+      for (const e of events) {
+        const b = e.leaning ? leaning : set;
+        b.n += 1;
+        if (e.out) b.out += 1;
+      }
+    }
+    expect(leaning.n, 'some runners were caught leaning').toBeGreaterThan(0);
+    expect(set.n).toBeGreaterThan(leaning.n);
+    expect(leaning.out / leaning.n).toBeGreaterThan(0.5);
+    expect(set.out / set.n).toBeLessThan(0.1);
+  }, PLAYS_GAMES * 6);
+
+  it('★ a half that ends on a pickoff leaves that batter due up when his side bats again', () => {
+    let checked = 0;
+    for (const seed of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']) {
+      const { windups } = pumpPick(seed, { humanSide: 'home', skill: 'normal' }, throwOverEveryTop);
+      for (let i = 0; i < windups.length; i++) {
+        const w = windups[i];
+        if (!w.pickoff?.out || w.outs < 3) continue;
+        // The next windup of the same side's batting is the next inning's top.
+        const next = windups.slice(i + 1).find((x) => x.half === 'top');
+        if (!next) continue;
+        expect(next.inning).toBe(w.inning + 1);
+        expect(next.batterId).toBe(w.batterId);
+        checked += 1;
+      }
+    }
+    expect(checked, 'at least one half ended on a throw over').toBeGreaterThan(0);
+  }, PLAYS_GAMES * 8);
 });
