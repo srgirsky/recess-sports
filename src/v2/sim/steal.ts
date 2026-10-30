@@ -29,7 +29,7 @@
 // ---------------------------------------------------------------------------
 
 import type { Character } from '../../data/types';
-import { FIELD_POSITIONS, SECOND, THIRD, type PositionId } from './field';
+import { FIELD_POSITIONS, MOUND, SECOND, THIRD, type PositionId } from './field';
 import { BASEPATH } from './field';
 import { throwFlightSec } from './fielders';
 import { reactionSec, sprintAccelFtS2, sprintTimeForFt, sprintTopSpeedFts } from './athletes';
@@ -49,14 +49,31 @@ export interface StealSpec {
    * arrives, so this IS the runner's head start — see the header.
    */
   pitchTravelSec: number;
+  /**
+   * The pitcher, for the RELAY (`throwLegsSec`): when the catcher's arm cannot
+   * reach the bag the ball goes to the mound and on. Omitted, an unreachable
+   * bag is a free steal — the pre-relay shape, kept so a test can show what
+   * the relay changed.
+   */
+  pitcher?: Character;
+  /**
+   * A PERSON'S read, seconds after the pitch arrives, in place of the kid's
+   * own `reactionSec`. This is the THROW! verb (`PlayInputs.throwDown`): a tap
+   * as the ball arrives is a perfect read, a late tap is a late one, and no
+   * tap at all is the kid fielding for himself — the model's own error term
+   * supplied by a person, the shape `HumanSwing` already has.
+   */
+  readSec?: number;
 }
 
 export interface StealResult {
   safe: boolean;
   /** Seconds by which the runner beat the throw. Negative is out. */
   marginSec: number;
-  /** True when the catcher's arm cannot reach the bag at all. */
+  /** True when no throw — direct or relayed — can reach the bag at all. */
   outOfRange: boolean;
+  /** True when the throw went catcher -> pitcher -> bag. */
+  relayed: boolean;
 }
 
 /** Where the throw goes. */
@@ -65,17 +82,50 @@ function bagFor(to: StealTarget) {
 }
 
 /**
+ * The throw's flight, catcher to bag: direct when his arm reaches, else RELAYED
+ * through the pitcher — catcher to the mound, a transfer, mound to the bag.
+ * Null only when neither route exists.
+ *
+ * ★ THE RELAY IS WHAT ENDS THE FREE STEAL. Thrown direct, 16 of 30 kids cannot
+ * reach second, and `sim.stealRace` measured what that cost: against half the
+ * roster's catchers the runner's margin was literally INFINITE, no confidence
+ * threshold could decline it, and the CPU stole 10.3 bases a game at 96% — in
+ * silence, because nothing drew it. A catcher who cannot reach the bag does
+ * not stand there holding the ball; he throws to the pitcher, who turns and
+ * throws on. Both legs are short enough for every arm in the roster (about
+ * 46ft and 39ft), so every catcher's margin is finite and `cpuWantsSteal` can
+ * decline a race it would lose. It is the cutoff man again (`sim.cutoffRelay`):
+ * a consequence of arm range, not a mechanic, and it costs exactly what two
+ * throws and a transfer cost. No constant was added or moved.
+ */
+export function throwLegsSec(spec: StealSpec): { fly: number; relayed: boolean } | null {
+  const bag = bagFor(spec.to);
+  const direct = throwFlightSec(FIELD_POSITIONS.C, bag, spec.catcher.stats.pitching);
+  if (direct !== null) return { fly: direct, relayed: false };
+  if (!spec.pitcher) return null;
+  const toMound = throwFlightSec(FIELD_POSITIONS.C, MOUND, spec.catcher.stats.pitching);
+  const onward = throwFlightSec(MOUND, bag, spec.pitcher.stats.pitching);
+  if (toMound === null || onward === null) return null;
+  return { fly: toMound + DEFENSE.RELEASE_SEC + onward, relayed: true };
+}
+
+/** The catcher's read: a person's own when one is fielding, else the kid's. */
+function readSecOf(spec: StealSpec): number {
+  return spec.readSec ?? reactionSec(spec.catcher.stats.fielding);
+}
+
+/**
  * How long the DEFENCE needs to put the ball on the bag, from release.
  *
- * Pitch flight, then the catcher's read, then his transfer, then the throw.
- * Returns null when the arm cannot make it — which is a real outcome and not an
- * error: `sim.throwSpeed` records that most of this roster cannot make long
- * throws, and a catcher who cannot reach second is a catcher who does not throw.
+ * Pitch flight, then the catcher's read, then his transfer, then the throw —
+ * direct or relayed (`throwLegsSec`). Null when no throw can get there, which
+ * with the relay is no catcher in the roster; the branch stays for a spec
+ * without a pitcher.
  */
 export function throwSecTo(spec: StealSpec): number | null {
-  const fly = throwFlightSec(FIELD_POSITIONS.C, bagFor(spec.to), spec.catcher.stats.pitching);
-  if (fly === null) return null;
-  return spec.pitchTravelSec + reactionSec(spec.catcher.stats.fielding) + DEFENSE.RELEASE_SEC + fly;
+  const legs = throwLegsSec(spec);
+  if (legs === null) return null;
+  return spec.pitchTravelSec + readSecOf(spec) + DEFENSE.RELEASE_SEC + legs.fly;
 }
 
 /**
@@ -113,11 +163,12 @@ export function projectedMarginSec(spec: StealSpec): number {
  * can steal — which is the whole point of not having a success rate.
  */
 export function stealRace(spec: StealSpec, rng: Rng): StealResult {
-  const d = throwSecTo(spec);
-  if (d === null) return { safe: true, marginSec: Infinity, outOfRange: true };
+  const legs = throwLegsSec(spec);
+  if (legs === null) return { safe: true, marginSec: Infinity, outOfRange: true, relayed: false };
+  const d = spec.pitchTravelSec + readSecOf(spec) + DEFENSE.RELEASE_SEC + legs.fly;
   const jump = rng.fork('jump').bell() * jumpSigmaSec(spec.runner.stats.speed);
   const marginSec = d - (runnerSecTo(spec) + jump);
-  return { safe: marginSec > 0, marginSec, outOfRange: false };
+  return { safe: marginSec > 0, marginSec, outOfRange: false, relayed: legs.relayed };
 }
 
 /**

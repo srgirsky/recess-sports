@@ -89,6 +89,15 @@ export function playCalloutFor(e: SimEvent): PlayCalloutModel | null {
 
   if (e.t === 'pa') return null;
   if (e.t === 'spend') return { kind: 'spend', label: SPEND_LABELS[e.kind], detail: null };
+  // The stolen base: the same SAFE / OUT a kid reads at a bag, with the bag
+  // beneath it. Fired after the pitch's own event, so this is the verdict
+  // left showing when both land on one instant.
+  if (e.t === 'steal') {
+    const bag = e.to === 2 ? 'SECOND' : 'THIRD';
+    return e.safe
+      ? { kind: 'safe', label: 'SAFE!', detail: `STOLE ${bag}` }
+      : { kind: 'out', label: 'OUT', detail: 'CAUGHT STEALING' };
+  }
   if (e.foul) return { kind: 'foul', label: 'FOUL', detail: timingDetail(e.timingErrorSec) };
   if (e.hit === 'HR') return { kind: 'homer', label: 'HOME RUN!', detail: 'TOUCH ’EM ALL' };
   if (e.hit === 'out') return { kind: 'out', label: 'OUT', detail: e.flyCaught ? 'NICE CATCH' : null };

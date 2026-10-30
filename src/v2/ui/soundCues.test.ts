@@ -168,6 +168,7 @@ describe('state changes', () => {
       defence: {},
       play: null,
       pitch: null,
+      steal: null,
       stamina: null,
       juice: null,
       shift: null,

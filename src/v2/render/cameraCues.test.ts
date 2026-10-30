@@ -366,3 +366,48 @@ describe('the far plane reaches the sky dome from every rig', () => {
     expect(view).toMatch(/new PerspectiveCamera\(RIGS\.PITCH\.fov, 1, [\d.]+, CAMERA_FAR_FT\)/);
   });
 });
+
+describe('★ the steal cam (2026-10-29): a runner going is seen', () => {
+  const legs: Array<[readonly [number, number], readonly [number, number]]> = [
+    [[FIRST.x, FIRST.z], [SECOND.x, SECOND.z]],
+    [[SECOND.x, SECOND.z], [THIRD.x, THIRD.z]],
+  ];
+
+  it('★ keeps the runner and his bag inside the safe rect from the break to the bag, on both legs', () => {
+    for (const [a, b] of legs) {
+      for (let i = 0; i <= 10; i++) {
+        const frac = i / 10;
+        const runner: readonly [number, number] = [a[0] + (b[0] - a[0]) * frac, a[1] + (b[1] - a[1]) * frac];
+        const cue = chooseCamera({ phase: 'pitch', steal: { runner, bag: b } });
+        expect(cue.preset).toBe('PLAY');
+        const rig = RIGS[cue.preset];
+        const pts: Array<readonly [number, number, number]> = [
+          [runner[0], 2.5, runner[1]],
+          [runner[0], 0, runner[1]],
+          [b[0], 0, b[1]],
+        ];
+        for (const p of pts) {
+          const n = ndcThrough(rig.eye, cue.focus, rig.fov, 4 / 3, p);
+          expect(n, 'in front of the camera').not.toBeNull();
+          expect(Math.abs(n![0]), `x at frac ${frac}`).toBeLessThanOrEqual(SAFE_RECT);
+          expect(Math.abs(n![1]), `y at frac ${frac}`).toBeLessThanOrEqual(SAFE_RECT);
+        }
+      }
+    }
+  });
+
+  it('cuts in from the plate, tracks with a blend, and yields to a live play', () => {
+    const steal = { runner: [FIRST.x, FIRST.z] as const, bag: [SECOND.x, SECOND.z] as const };
+    const plate = chooseCamera({ phase: 'pitch' });
+    const first = chooseCamera({ phase: 'pitch', steal }, plate);
+    expect(first.transition).toBe('cut');
+    const next = chooseCamera({ phase: 'between', steal }, first);
+    expect(next.preset).toBe('PLAY');
+    expect(next.transition).not.toBe('cut');
+    // The pitch view takes back over the moment the subject is gone.
+    expect(chooseCamera({ phase: 'pitch' }, next).preset).toBe('PITCH');
+    // A live play's policy is untouched by a stale subject.
+    const live = { phase: 'live' as const, ball: [10, 3, 50] as [number, number, number] };
+    expect(chooseCamera({ ...live, steal }, first)).toEqual(chooseCamera(live, first));
+  });
+});

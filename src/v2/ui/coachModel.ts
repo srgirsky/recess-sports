@@ -13,7 +13,7 @@
 // flight time, so "swing when the ring closes" is true by construction.
 // ---------------------------------------------------------------------------
 
-export type CoachVerb = 'pitch' | 'watch' | 'bat' | 'field' | 'run';
+export type CoachVerb = 'pitch' | 'watch' | 'bat' | 'field' | 'run' | 'throw';
 
 /** What the coach says for each verb — short, concrete, no baseball words a six-year-old lacks. */
 export const COACH_LINES: Readonly<Record<CoachVerb, string>> = Object.freeze({
@@ -22,6 +22,7 @@ export const COACH_LINES: Readonly<Record<CoachVerb, string>> = Object.freeze({
   bat: 'Tap when the ball gets to you. Swing when the ring closes!',
   field: 'Catch it! Drag to run to the ball, then tap a base to throw.',
   run: 'Run! Tap the next base to keep running.',
+  throw: 'He is running! Tap to throw him out!',
 });
 
 /** Which verb a control hint names, by its leading icon. Null for no hint. */
@@ -32,6 +33,7 @@ export function verbOfHint(hint: string): CoachVerb | null {
   if (hint.startsWith('🏏')) return 'bat';
   if (hint.startsWith('🧤')) return 'field';
   if (hint.startsWith('👟')) return 'run';
+  if (hint.startsWith('🚨')) return 'throw';
   return null;
 }
 

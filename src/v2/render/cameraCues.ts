@@ -226,6 +226,8 @@ export interface CameraInput {
   /** A play at a base is within this many seconds. */
   bangBangSec?: number;
   homer?: boolean;
+  /** A stolen base in progress — the runner's spot and the bag he is taking, (x, z) ft: the steal cam's subject. */
+  steal?: { runner: readonly [number, number]; bag: readonly [number, number] };
 }
 
 /**
@@ -348,6 +350,24 @@ export function chooseCamera(input: CameraInput, prev?: CameraCue): CameraCue {
 
   if (input.homer) {
     return { preset: 'HOMER', focus: input.ball ?? [0, 20, 150], transition: { blendMs: 200 } };
+  }
+
+  // ★ THE STEAL CAM. The plate rig cannot see first base, so a runner going
+  // was invisible however well the sim raced him (2026-10-29). While a steal
+  // is in progress and no play is live, the PLAY rig looks between the runner
+  // and his bag — a short blend, so it tracks him — and the plate rig takes
+  // back over the moment the next pitch is thrown. The view withholds it
+  // during the pitch while the person BATS: his tap needs the ball, not the
+  // runner. `cameraCues.test.ts` holds runner and bag inside the safe rect
+  // from the break to the bag on both legs.
+  if (input.steal && input.phase !== 'live' && input.phase !== 'contact') {
+    const [rx, rz] = input.steal.runner;
+    const [bx, bz] = input.steal.bag;
+    return {
+      preset: 'PLAY',
+      focus: [(rx + bx) / 2, 2.5, (rz + bz) / 2],
+      transition: prev?.preset === 'PLAY' ? { blendMs: 220 } : 'cut',
+    };
   }
 
   if (input.phase === 'pitch' || input.phase === 'between') {

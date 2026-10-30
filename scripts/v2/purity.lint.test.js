@@ -543,7 +543,9 @@ describe('★ the swing is a person supplying the model own two error terms', ()
   });
 
   it('★ the swing arrives through the yield and reaches the resolve', () => {
-    expect(game).toMatch(/\(\(yield frame\)[\s\S]{0,80}\)\.swing/);
+    // The pitch frame's yield is bound once (`pitchInput`) because the throw
+    // down rides it beside the swing; the swing is still read off that yield.
+    expect(game).toMatch(/pitchInput: PlayInputs = \(yield frame\)[\s\S]{0,120}\bpitchInput\.swing/);
     expect(game, 'the swing must reach resolvePitch').toMatch(
       /resolvePitch\([^)]*\bswing\b[^)]*\)/
     );

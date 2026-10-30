@@ -35,14 +35,12 @@ goldlog into an ordinary vitest that CI runs and cosmetics cannot pollute.
   passed in, and a lint fails one.
 - **`fork(label)` keys on `(root seed, label)`, never on stream position**, so
   adding, removing or reordering a draw in one substream cannot move another.
-  A single global stream makes call order part of the contract; `fork` deletes
-  that whole class of bug. Labels may not contain the NUL path separator —
-  rejected, not discouraged, or `fork('a\0b')` and `fork('a').fork('b')` collide.
-- **`normal()`/`gauss()` are deliberately absent.** Every textbook normal sampler
-  needs `Math.log`, and ECMAScript specifies `log`/`exp`/`pow`/trig as
-  implementation-approximated — only `+ - * /` and `Math.sqrt` are required to be
-  correctly rounded, so a fingerprint built on them goes red on a V8 bump and
-  reads as somebody's bug.
+  Labels may not contain NUL — rejected, not discouraged, or `fork('a\0b')` and
+  `fork('a').fork('b')` collide.
+- **`normal()`/`gauss()` are deliberately absent.** A normal sampler needs
+  `Math.log`, which ECMAScript leaves implementation-approximated (only
+  `+ - * /` and `Math.sqrt` are correctly rounded), so a fingerprint built on
+  it goes red on a V8 bump.
 - **`Rng.bell()` is BOUNDED** — Irwin–Hall over three uniforms, support ±3σ.
   Size any `bell`-driven band AGAINST the window it is judged by and assert the
   relationship, not the values: a band needing 2.5σ produces the event never.
@@ -155,8 +153,7 @@ costs no ground. Do not restructure it.
   the pitcher poaching everything. `sim.chaserLeash`, `sim.firstStep`.
 - **A dive must be a LAST RESORT, or every catch is one.** A descending fly
   passes through the diving envelope on its way into the standing one, so the
-  gate is that the gap must be OPENING. Diving whenever the ball is outside
-  standing reach costs no outs, which is exactly why it would have survived.
+  gate is that the gap must be OPENING.
 - **`isFair` is asked at first touchdown AND at the fence** — a ball hooked over
   the pole is a foul, not a home run. The rule is deliberately the SHORT version.
   `sim.foulBalls`.
@@ -219,13 +216,16 @@ costs no ground. Do not restructure it.
   alone. A target written after a sweep is a description; `sim.retuneTargets` is
   dated before the run for that reason.
 - **A steal is a RACE, not a roll** — runner's leg against pitch flight plus
-  catcher read plus release plus `throwFlightSec`. From a standing start ON the
-  bag it is degenerate, so `RUN.LEAD_FT` is load-bearing and unmeasured. v1's
-  bonus for slow stuff is EMERGENT (the catcher cannot start until the ball
-  reaches him), which is why `PitchResult.travelSec` is on EVERY branch. **A
-  threshold cannot decline a free steal** — against half the roster's catchers
-  the margin is infinite — so the limit is situational, not a confidence gate.
-  `sim.stealRace`.
+  catcher read plus release plus the throw; `RUN.LEAD_FT` is load-bearing and
+  unmeasured, and the slow-stuff bonus is EMERGENT (`PitchResult.travelSec` is
+  on EVERY branch). **A threshold cannot decline a free steal**, and the throw
+  now RELAYS through the pitcher when the catcher cannot reach
+  (`throwLegsSec`): every margin is finite and the rate did not move — kids'
+  legs beat kids' arms (`sim.stealRace`, `sim.throwSpeed`). The runner is
+  decided BEFORE the throw with no draw (`decideSteal`), carried on the pitch
+  frame as `steal`, resolved to a `{t:'steal'}` event AFTER the pitch's own.
+  Against a person the CPU runs only where `cpuRunsOn(skill)` says; a person's
+  own runners go only on order.
 
 ## The human
 
@@ -251,7 +251,7 @@ failure mode, and a lint fails an underscored input parameter.
   pointer IS the placement, so scaling it would model a person as guessing at his
   own intention) and two-strike protection (not tapping IS the take).
   `swing.test.ts` shows each constant moves the CPU's outcomes and not the
-  human's — the second half is what stops the first being vacuous.
+  human's.
 - **A send overrides judgement, never traffic**, and the verb only bites on a
   ball in the AIR. `sendRunner` skips `worthTaking`; `send` keeps `baseIsOpen`. A
   forced runner cannot be held. On a grounder the CPU already sends everyone, so
@@ -260,6 +260,10 @@ failure mode, and a lint fails an underscored input parameter.
   base, home excluded. `sim.runnerSends`.
 - **The human needs a SIDE, or the tap verbs collide** — the same tap on a base
   means THROW THERE when fielding and SEND HIM THERE when batting.
+- **STEAL and THROW! are side-guarded.** `steal` on the windup sends the lead
+  runner (traffic kept, judgement skipped); `throwDown` on a stolen-base pitch
+  makes the tap's lateness past arrival the catcher's read. A wrong-side input
+  is dropped and leaves the game byte-identical (`game.test.ts`).
 - **No fielding assist**, and that is measured rather than assumed: a
   perpendicular mis-steer catches nothing and finishes far adrift, while perfect
   aim fields exactly as well as the CPU. ⚠️ The number to worry about is the
@@ -320,10 +324,9 @@ an optional `onEvent` observer. Counters and histograms only.
 
 ## Where the numbers live
 
-`src/v2/sim/params.ts` holds the tunables in FEET and SECONDS, deliberately not
-`src/config.ts`, which is a pixel world — a number here can be checked against a
-tape measure or a paper. Provenance goes in `scripts/measures.json`, whose rules
-are in `scripts/AGENTS.md`; cite the record id rather than the value.
+`src/v2/sim/params.ts` holds the tunables in FEET and SECONDS, never
+`src/config.ts`'s pixels. Provenance goes in `scripts/measures.json` (rules in
+`scripts/AGENTS.md`); cite the record id, never the value.
 
 ## The screens
 
@@ -352,8 +355,7 @@ review surfaces.
 ## The render membrane
 
 `src/v2/render/**` reads sim state and never writes it, through the single
-coupling point `render/bridge.ts`. Rules for that side are in
-`src/v2/render/AGENTS.md`. One thing the sim side must get right:
+coupling point `render/bridge.ts`; its rules are in `src/v2/render/AGENTS.md`.
 `chooseCamera` must be told the contact phase, or the hard cut is unreachable
 while looking wired.
 
@@ -363,9 +365,9 @@ frozen mid-pitch with no error. Drive it by hand with `__spike.tick(t)`,
 
 `src/v2/game/GameView.ts` pumps the sim's own generator against a real clock
 with a **fixed-step accumulator, never the render delta**
-(`scripts/simclock.lint.test.js` gates it; its header has the story). The instant replay plays back the view's snapshots,
-never re-simulates; the pump pauses, and `devStepFixedClock` suppresses it
-unless `?replay=1` asks.
+(`scripts/simclock.lint.test.js` gates it). The instant replay plays back the
+view's snapshots, never re-simulates; the pump pauses, and `devStepFixedClock`
+suppresses it unless `?replay=1` asks.
 
 ## Where things live
 

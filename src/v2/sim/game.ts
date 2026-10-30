@@ -41,7 +41,15 @@ import {
   type PitchSpec,
 } from './atbat';
 import { isSpecialPitch } from './pitch';
-import { catcherOf, cpuWantsSteal, stealRace, type StealTarget } from './steal';
+import {
+  catcherOf,
+  cpuWantsSteal,
+  runnerSecTo,
+  stealRace,
+  type StealResult,
+  type StealSpec,
+  type StealTarget,
+} from './steal';
 import type { BallState } from './flight';
 import type { PitchKind } from './pitch';
 import { flyToPlate, releasePitch } from './pitch';
@@ -64,7 +72,7 @@ import { planDefence, type DefencePlan } from './lineup';
 import { DEFAULT_GEOMETRY, type FieldGeometry, type PositionId } from './field';
 import type { Rng } from './rng';
 import { cpuShift, type Shift } from './shifts';
-import { assistBatter, assistPitchPlan, assistSwing, type Skill } from './assist';
+import { assistBatter, assistPitchPlan, assistSwing, cpuRunsOn, type Skill } from './assist';
 
 import { applyAtBat, applyLivePlay, applySteal, isHalfOver, newHalfInning } from '../../systems/inning';
 import { decideAfterHalf, isWalkOff, shouldSkipBottom } from '../../systems/gameflow';
@@ -148,6 +156,23 @@ export type SimEvent =
       t: 'spend';
       side: 'away' | 'home';
       kind: SpendKind;
+    }
+  | {
+      /**
+       * A stolen-base race resolved (`sim/steal.ts`), the instant the pitch
+       * arrives. `from` and `to` are bags; `relayed` says the throw went
+       * catcher -> pitcher -> bag; `human` says a person ordered it. Until
+       * this existed a steal was invisible: nothing was emitted and the
+       * runner simply stood on the next bag a frame later, ten times a game.
+       */
+      t: 'steal';
+      runnerId: string;
+      from: 1 | 2;
+      to: 2 | 3;
+      safe: boolean;
+      marginSec: number;
+      relayed: boolean;
+      human: boolean;
     };
 
 /**
@@ -259,6 +284,13 @@ export interface LiveFrame {
     /** CPU-only preview for render timing. Null means the CPU takes. */
     cpuSwingAtSec: number | null;
   } | null;
+  /**
+   * On a `pitch` frame: the runner going on this pitch, if one is. Decided
+   * before the throw with no draw (`decideSteal`), so the view can show him
+   * break at release and arrive about `runnerSec` later; the race resolves
+   * when the pitch does and `{t:'steal'}` says how. Null on every other frame.
+   */
+  steal: { runnerId: string; from: 1 | 2; to: 2 | 3; runnerSec: number } | null;
   /**
    * The fielding pitcher's tank, 1 down to 0 — or null when `features.stamina`
    * is off, so a view cannot mistake a full tank for a feature that is not
@@ -636,6 +668,31 @@ function* playAtBatLive(
       drainPitch(stamina, isSpecialPitch(inFlight.kind));
       frame.stamina = stamina.stamina;
     }
+    // ★ THE RUNNER DECIDES BEFORE THE THROW, AND THE FRAME SAYS SO. A steal
+    // used to be decided and raced after the pitch resolved, and never shown:
+    // no event, no frame field, the runner simply on the next bag a frame
+    // later. Decided here with NO draw (the race's one draw stays in
+    // `resolveSteal`, off the same `steal${pitches}` fork, so nothing moves
+    // for a CPU runner), the pitch frame carries who is going and the view
+    // can show him break at release. A person batting orders it through
+    // `PlayInputs.steal`; the CPU batter's runner judges for himself.
+    // ★ WHOSE RUNNER IS IT. An order is a batting verb, so one arriving while
+    // the person FIELDS is not theirs and is dropped (the side rule that keeps
+    // the tap verbs apart). The CPU's own judgement runs for its own runners:
+    // every runner in a headless or hands-free game; against a person, only at
+    // a level whose league allows stealing (`cpuRunsOn`); and never for the
+    // person's runners, who go when the person says and otherwise hold —
+    // which is what makes STEAL a verb rather than a suggestion. Pass and play
+    // names no side, so both benches run on their own judgement there.
+    const going = decideSteal(
+      half,
+      { defence: args.defence, lookup: args.lookup, pitcher },
+      windupInput.steal === true && !args.assist?.pitches,
+      args.assist === null ? true : args.assist.pitches ? cpuRunsOn(args.assist.skill) : false
+    );
+    frame.steal = going
+      ? { runnerId: going.spec.runner.id, from: going.from, to: going.spec.to, runnerSec: runnerSecTo(going.spec) }
+      : null;
     frame.pitch = {
       release: inFlight.release,
       travelSec: inFlight.travelSec,
@@ -647,7 +704,10 @@ function* playAtBatLive(
     // somewhere to land. A CPU batter passes nothing and draws `judge` and
     // `swing` exactly as before; a human draws neither, which again shifts
     // nothing for anybody else.
-    const raw = ((yield frame) ?? {}).swing;
+    // Two inputs ride the pitch frame now: the batter's swing and, with a
+    // runner going, the fielder's THROW! (`resolveSteal` reads it).
+    const pitchInput: PlayInputs = (yield frame) ?? {};
+    const raw = pitchInput.swing;
     const swing = args.assist?.bats ? assistSwing(args.assist.skill, raw, inFlight, pitches) : raw;
     // Undefined unless a power swing is armed — `resolveSwing` then reads
     // `power: false`, and the ordinary arithmetic is untouched.
@@ -664,12 +724,18 @@ function* playAtBatLive(
     // thrown, which is how a changeup becomes a gift rather than an assumption:
     // `sim.stealRace` measures the same runner out by 0.18s on a fastball and
     // safe by 0.13s on a changeup, with nothing anywhere saying so.
-    const steal = tryStealBefore(
-      half,
-      { defence: args.defence, lookup: args.lookup, pitcher },
-      result.travelSec,
-      rng.fork(`steal${pitches}`)
-    );
+    // A person fielding supplies the catcher's read with the THROW! tap; a
+    // tap while the person BATS is not theirs; no tap is the kid's own read.
+    const steal = going
+      ? resolveSteal(
+          half,
+          going,
+          result.travelSec,
+          args.assist?.bats ? undefined : pitchInput.throwDown,
+          rng.fork(`steal${pitches}`)
+        )
+      : null;
+    frame.steal = null;
     if (steal) {
       tally.stealAttempts += 1;
       if (steal.safe) {
@@ -691,6 +757,20 @@ function* playAtBatLive(
       balls: before.balls,
       strikes: before.strikes,
     });
+    // After the pitch's own event, so the bigger moment is the one the
+    // callout is left showing: a base changed hands, or an out was made.
+    if (steal && going) {
+      onEvent?.({
+        t: 'steal',
+        runnerId: going.spec.runner.id,
+        from: going.from,
+        to: going.spec.to,
+        safe: steal.safe,
+        marginSec: steal.race.marginSec,
+        relayed: steal.race.relayed,
+        human: going.human,
+      });
+    }
 
     if (result.kind !== 'inPlay') {
       const folded = applyAtBat(half.state, asAtBatResult(result)!);
@@ -883,51 +963,85 @@ function fastballFlightSec(pitchingStat: number): number {
   return travelSec;
 }
 
+/** A runner going on the coming pitch: who, from where, and the race he faces. */
+interface StealDecision {
+  spec: StealSpec;
+  from: 1 | 2;
+  /** True when a person ordered it (`PlayInputs.steal`), not the CPU's judgement. */
+  human: boolean;
+}
+
 /**
- * A stolen base, folded through v1's `inning.applySteal`.
+ * Does a runner go on this pitch? Decided BEFORE the throw and with NO draw,
+ * so the pitch frame can carry it (`LiveFrame.steal`) and the view can show
+ * him break at release.
  *
- * Only on a pitch the batter did not put in play — with a ball in play the
- * runner is simply running, and `play.ts` owns him. `applySteal` already knows
- * the rule (the bag ahead must be free, an out is an out) and is on the pure
- * whitelist, so v2 does not restate it.
+ * The CPU's runner goes when `cpuWantsSteal` says so, projecting against the
+ * pitcher's FASTBALL — his own worst case, since he commits without knowing
+ * what is coming. A person batting orders the lead runner with
+ * `PlayInputs.steal`, and the only rule kept is traffic (never into an
+ * occupied bag): a person is allowed to gamble, `sendRunner`'s precedent.
+ * Nearest bag first — a runner on second stealing third, else first to second.
  */
-function tryStealBefore(
+function decideSteal(
   half: HalfState,
   args: {
     defence: Record<string, PositionId>;
     lookup: (id: string) => Character;
     pitcher: Character;
   },
-  pitchTravelSec: number,
-  rng: Rng
-): { safe: boolean; line: string } | null {
+  ordered: boolean,
+  cpuMay = true
+): StealDecision | null {
   const catcher = catcherOf(args.defence, args.lookup);
   if (!catcher) return null;
-  // Nearest bag first: a runner on second stealing third, else first to second.
+  if (!ordered && !cpuMay) return null;
   for (const from of [2, 1] as const) {
     const who = half.occupants[from - 1];
     if (!who || half.occupants[from]) continue;
     const runner = args.lookup(who);
     const to = (from + 1) as StealTarget;
-    // He commits against the pitcher's fastest, not against what is thrown.
     const expected = fastballFlightSec(args.pitcher.stats.pitching);
+    const spec: StealSpec = { runner, catcher, pitcher: args.pitcher, to, pitchTravelSec: expected };
     const sit = { outs: half.state.outs, nextBagOccupied: half.occupants[from] !== null };
-    if (!cpuWantsSteal({ runner, catcher, to, pitchTravelSec: expected }, sit)) continue;
-    const race = stealRace({ runner, catcher, to, pitchTravelSec }, rng);
-    const folded = applySteal(half.state, from, race.safe);
-    half.state = folded.state;
-    if (race.safe) {
-      half.occupants[from - 1] = null;
-      half.occupants[from] = who;
-    } else {
-      half.occupants[from - 1] = null;
-    }
-    return {
-      safe: race.safe,
-      line: `${runner.name} ${race.safe ? 'STEALS' : 'is caught stealing at'} ${to === 2 ? 'second' : 'third'}`,
-    };
+    if (!ordered && !cpuWantsSteal(spec, sit)) continue;
+    return { spec, from, human: ordered };
   }
   return null;
+}
+
+/**
+ * Run the race on what was ACTUALLY thrown and fold it through v1's
+ * `inning.applySteal`, which already knows the rule (the bag ahead must be
+ * free, an out is an out) and is on the pure whitelist, so v2 does not
+ * restate it. A person fielding supplies the catcher's read: the THROW! tap's
+ * lateness past the ball's arrival, clamped at zero (`StealSpec.readSec`).
+ *
+ * The runner moves BEFORE a ball in play is built from the occupants, so a
+ * runner who broke on the pitch starts the play from the bag the race put
+ * him on — or is already out.
+ */
+function resolveSteal(
+  half: HalfState,
+  going: StealDecision,
+  pitchTravelSec: number,
+  throwDown: { atSec: number } | undefined,
+  rng: Rng
+): { safe: boolean; line: string; race: StealResult } {
+  const readSec = throwDown ? Math.max(0, throwDown.atSec - pitchTravelSec) : undefined;
+  const race = stealRace({ ...going.spec, pitchTravelSec, readSec }, rng);
+  const { from } = going;
+  const who = half.occupants[from - 1];
+  const folded = applySteal(half.state, from, race.safe);
+  half.state = folded.state;
+  half.occupants[from - 1] = null;
+  if (race.safe) half.occupants[from] = who;
+  const { runner, to } = going.spec;
+  return {
+    safe: race.safe,
+    race,
+    line: `${runner.name} ${race.safe ? 'STEALS' : 'is caught stealing at'} ${to === 2 ? 'second' : 'third'}`,
+  };
 }
 
 /** Step a play to its end, keeping the identities of whoever scored. */
@@ -949,6 +1063,7 @@ function syncFrame(frame: LiveFrame, half: HalfState, phase: LiveFrame['phase'])
   frame.strikes = half.state.count.strikes;
   frame.bases = [...half.state.bases] as [boolean, boolean, boolean];
   frame.baseIds = [...half.occupants] as LiveFrame['baseIds'];
+  frame.steal = null;
 }
 
 function* runPlayLive(
@@ -1052,6 +1167,7 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
     defence: {},
     play: null,
     pitch: null,
+    steal: null,
     stamina: null,
     juice: spec.features?.juice ? { away: 0, home: 0 } : null,
     shift: spec.features?.shifts ? 'normal' : null,

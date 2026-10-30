@@ -2704,21 +2704,41 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
   gap: var(--s2);
 }
 
-/* BUNT — the spend chip's sticker, on the right edge while the person bats. */
-.bunt-chip {
+/* The right-edge stickers while a pitch is coming — STEAL and BUNT for the
+   person batting, THROW! for the person fielding while a runner is going. One
+   column, so whichever are up stack and never share a box; the pitch picker
+   owns the same edge only during the windup, when THROW! is never shown. */
+.edge-chips {
   grid-area: right;
   align-self: center;
   justify-self: end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--s2);
   margin-inline-end: var(--s4);
 }
-.bunt-chip.is-picked {
+.bunt-chip.is-picked,
+.steal-chip.is-picked,
+.throw-chip.is-picked {
   background: var(--cream);
   box-shadow:
     0 0 0 0.18rem var(--gold),
     0 0.28rem 0 rgb(20 32 46 / 0.35);
 }
+/* The one tap with a clock on it pulses; the two arming chips sit still. */
+.throw-chip {
+  animation: throw-chip-pulse 0.45s ease-in-out infinite alternate;
+}
+@keyframes throw-chip-pulse {
+  from { transform: scale(1); }
+  to { transform: scale(1.06); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .throw-chip { animation: none; }
+}
 @media (max-height: 430px) {
-  .bunt-chip {
+  .edge-chips {
     align-self: end;
     margin-block-end: var(--s2);
   }

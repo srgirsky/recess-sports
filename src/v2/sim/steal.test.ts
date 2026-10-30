@@ -17,10 +17,12 @@ import {
   projectedMarginSec,
   runnerSecTo,
   stealRace,
+  throwLegsSec,
   throwSecTo,
 } from './steal';
-import { RUN } from './params';
+import { DEFENSE, RUN } from './params';
 import { makeRng } from './rng';
+import { reactionSec } from './athletes';
 import { planDefence } from './lineup';
 import { ROSTER, getCharacter } from '../../data/characters';
 
@@ -187,5 +189,65 @@ describe('the catcher comes out of the defence plan', () => {
     const c = catcherOf(plan.positions, getCharacter);
     expect(c).toBeTruthy();
     expect(plan.positions[c!.id]).toBe('C');
+  });
+});
+
+describe('★ the relay: a catcher who cannot reach the bag throws through the pitcher', () => {
+  const weakest = ROSTER.reduce((b, c) => (c.stats.pitching < b.stats.pitching ? c : b));
+  const strongest = ROSTER.reduce((b, c) => (c.stats.pitching > b.stats.pitching ? c : b));
+
+  it('★ no catcher in the roster is out of range any more, with any pitcher behind him', () => {
+    // The old shape: 16 of 30 catchers could not reach second, and against
+    // them a steal had an INFINITE margin (`sim.stealRace`). With the mound
+    // in the chain every arm reaches, so every margin is a number.
+    let direct = 0;
+    for (const catcher of ROSTER) {
+      const s = { runner: bySpeed(5), catcher, pitcher: weakest, to: 2 as const, pitchTravelSec: 1.02 };
+      const legs = throwLegsSec(s);
+      expect(legs, `${catcher.name} has a route to second`).not.toBeNull();
+      if (!legs!.relayed) direct++;
+      expect(Number.isFinite(projectedMarginSec(s)), `${catcher.name}: a finite margin`).toBe(true);
+      expect(stealRace(s, makeRng('r')).outOfRange).toBe(false);
+    }
+    expect(direct, 'some arms still reach on the fly').toBeGreaterThan(0);
+    expect(direct, 'and some do not — the relay is exercised').toBeLessThan(ROSTER.length);
+  });
+
+  it('★ without a pitcher in the spec the old shape is kept: unreachable is a free steal', () => {
+    const catcher = ROSTER.find((c) => throwLegsSec({ runner: bySpeed(5), catcher: c, to: 2, pitchTravelSec: 1 }) === null);
+    expect(catcher, 'a catcher whose arm cannot reach second exists').toBeTruthy();
+    const r = stealRace({ runner: bySpeed(5), catcher: catcher!, to: 2, pitchTravelSec: 1 }, makeRng('r'));
+    expect(r.outOfRange).toBe(true);
+    expect(r.safe).toBe(true);
+    expect(r.marginSec).toBe(Infinity);
+  });
+
+  it('a relayed throw is slower than a direct one from the same arm would be', () => {
+    // Compare a catcher who needs the relay against the strongest arm thrown
+    // direct: the relay carries a second release and two flights.
+    const relayed = ROSTER.find((c) => throwLegsSec({ runner: bySpeed(5), catcher: c, pitcher: strongest, to: 2, pitchTravelSec: 1 })?.relayed);
+    expect(relayed).toBeTruthy();
+    const viaMound = throwLegsSec({ runner: bySpeed(5), catcher: relayed!, pitcher: strongest, to: 2, pitchTravelSec: 1 })!;
+    const direct = throwLegsSec({ runner: bySpeed(5), catcher: strongest, to: 2, pitchTravelSec: 1 })!;
+    expect(viaMound.relayed).toBe(true);
+    expect(direct.relayed).toBe(false);
+    expect(viaMound.fly).toBeGreaterThan(direct.fly + DEFENSE.RELEASE_SEC);
+  });
+});
+
+describe('★ a person’s read replaces the kid’s, and only the read', () => {
+  it('a tap on arrival (readSec 0) tightens the race by exactly the catcher’s reaction', () => {
+    const s = spec(6, 6);
+    const own = stealRace(s, makeRng('same'));
+    const read = stealRace({ ...s, readSec: 0 }, makeRng('same'));
+    expect(read.marginSec).toBeLessThan(own.marginSec);
+    expect(own.marginSec - read.marginSec).toBeCloseTo(reactionSec(s.catcher.stats.fielding), 9);
+  });
+
+  it('a late tap is a late read: worse than the kid, never clamped to his', () => {
+    const s = spec(6, 6);
+    const own = stealRace(s, makeRng('same'));
+    const late = stealRace({ ...s, readSec: reactionSec(s.catcher.stats.fielding) + 0.4 }, makeRng('same'));
+    expect(late.marginSec - own.marginSec).toBeCloseTo(0.4, 9);
   });
 });

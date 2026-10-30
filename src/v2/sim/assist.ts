@@ -18,7 +18,11 @@
 //     middle; ALL-STAR: always on the edge of the zone),
 //   · the person's swing error (T-BALL removes most of it, ALL-STAR none),
 //   · the CPU batter's contact stat when the person pitches (T-BALL weaker,
-//     ALL-STAR sharper) — a stat, so `athletes.ts` still owns what it means.
+//     ALL-STAR sharper) — a stat, so `athletes.ts` still owns what it means,
+//   · whether the CPU's runners STEAL on the person (`cpuRunsOn`): not at
+//     T-BALL or ROOKIE, the leagues this age actually plays in, where there
+//     are no leads and no steals. The race itself (`steal.ts`) is untouched;
+//     the runner simply does not go, the way a 7U runner does not.
 // ---------------------------------------------------------------------------
 
 import { ATBAT } from './params';
@@ -43,17 +47,37 @@ interface SkillDef {
   cpuPitch: 'meatball' | 'normal' | 'edge';
   /** Added to a CPU batter's contact stat while a person pitches, clamped 1..10. */
   cpuContactDelta: number;
+  /** Do the CPU's runners steal while a person fields? */
+  cpuSteals: boolean;
 }
 
 export const SKILL_DEFS: Readonly<Record<Skill, SkillDef>> = Object.freeze({
   // Measured on a clumsy, wandering-late tap over four seeds (`assist.test.ts`):
   // NORMAL 10 hits / 18 K, T-BALL 21 hits / 0 K. Aim matters more than timing —
   // a little timing error left in is what sprays the ball into the gaps.
-  tball: { timingPull: 0.75, aimPull: 0.9, cpuPitch: 'meatball', cpuContactDelta: -3 },
-  rookie: { timingPull: 0.4, aimPull: 0.5, cpuPitch: 'normal', cpuContactDelta: -1 },
-  normal: { timingPull: 0, aimPull: 0, cpuPitch: 'normal', cpuContactDelta: 0 },
-  allstar: { timingPull: 0, aimPull: 0, cpuPitch: 'edge', cpuContactDelta: 2 },
+  tball: { timingPull: 0.75, aimPull: 0.9, cpuPitch: 'meatball', cpuContactDelta: -3, cpuSteals: false },
+  rookie: { timingPull: 0.4, aimPull: 0.5, cpuPitch: 'normal', cpuContactDelta: -1, cpuSteals: false },
+  normal: { timingPull: 0, aimPull: 0, cpuPitch: 'normal', cpuContactDelta: 0, cpuSteals: true },
+  allstar: { timingPull: 0, aimPull: 0, cpuPitch: 'edge', cpuContactDelta: 2, cpuSteals: true },
 });
+
+/**
+ * Do the CPU's runners run on a person at this level?
+ *
+ * ★ A LEAGUE RULE, NOT A RATE. `sim.stealRace` measured the CPU stealing 10.8
+ * bases a game at 95% safe against every catcher in the roster — kids' legs
+ * beat kids' arms, relay or not — and the record says plainly that is too
+ * many and that no threshold can decline a race the runner wins. What a
+ * four-to-eight-year-old's own league does about it is not a threshold
+ * either: at T-ball and coach-pitch there are no leads and no stealing. So
+ * at T-BALL and ROOKIE the CPU's runner stays put, and from NORMAL up he
+ * runs and the person's THROW! tap is the answer. A person's own STEAL
+ * order works at every level — the rule is about what is done TO a child.
+ * Headless runs name no person, so nothing measured moves.
+ */
+export function cpuRunsOn(skill: Skill): boolean {
+  return SKILL_DEFS[skill].cpuSteals;
+}
 
 export function parseSkill(raw: string | null | undefined): Skill {
   return (SKILLS as readonly string[]).includes(raw ?? '') ? (raw as Skill) : DEFAULT_SKILL;

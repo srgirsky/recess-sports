@@ -84,8 +84,25 @@ import {
   throwPreparationCue,
 } from '../render/actionCues';
 import type { AnimName } from '../render/clips';
-import { CAMERA_FAR_FT, RIGS, chooseCamera, crowdTaper, damp, presenceScale, type CameraCue, type CameraPreset } from '../render/cameraCues';
-import { applyFrame, applySnapshot, cameraInputFor, snapshotScene, type SceneRefs } from '../render/bridge';
+import {
+  CAMERA_FAR_FT,
+  RIGS,
+  chooseCamera,
+  crowdTaper,
+  damp,
+  presenceScale,
+  type CameraCue,
+  type CameraInput,
+  type CameraPreset,
+} from '../render/cameraCues';
+import {
+  applyFrame,
+  applySnapshot,
+  cameraInputFor,
+  snapshotScene,
+  type FrameViewOptions,
+  type SceneRefs,
+} from '../render/bridge';
 import {
   REPLAY,
   foldHighlights,
@@ -106,7 +123,7 @@ import { SPEND_KINDS, canSpend, isSpecialSpend, spendSide, type PowerKind } from
 import type { InputVerb } from '../ui/sessionModel';
 import { plannedThrow, type PlayInputs, type PlayState } from '../sim/play';
 import { SPECIAL_PITCH_KINDS, isSpecialPitch, type PitchKind, type SpecialPitchKind } from '../sim/pitch';
-import { FIRST, SECOND, THIRD, HOME, dist, fenceDistAt, pointAt, type FieldGeometry, type Vec2 } from '../sim/field';
+import { BASEPATH, FIRST, SECOND, THIRD, HOME, basePos, dist, fenceDistAt, pointAt, type FieldGeometry, type Vec2 } from '../sim/field';
 import { hash01 } from '../../art/fieldTexture';
 import { makeRng } from '../sim/rng';
 import { VENUE_GEOMETRY, type VenueId } from '../sim/field';
@@ -215,6 +232,10 @@ const HALF_BREAK_SEC = 4.5;
 const SIM_HZ = 60;
 /** Below this a pointer press is a TAP (a verb), above it a drag (steering). */
 const TAP_MAX_MS = 220;
+/** A runner tagged out stealing sulks this long past where he would have arrived before he leaves the field. */
+const STEAL_OUT_LINGER_SEC = 1.6;
+/** How far along the basepath the tag gets him: short of the bag, not on it. */
+const STEAL_TAG_FRAC = 0.82;
 /** How close a tap must land to a bag to mean "throw there", ft. */
 const BAG_TAP_FT = 14;
 
@@ -373,6 +394,26 @@ export class GameView {
   /** Squared around for the next pitch. Persists across pitches until toggled off. */
   private buntArmed = false;
   private buntFor = '';
+  /** The column the three right-edge stickers stack in (STEAL, BUNT, THROW!). */
+  private edgeChipsEl: HTMLElement | null = null;
+  /** STEAL: a person batting sends the lead runner on the next pitch (`PlayInputs.steal`). */
+  private stealEl: HTMLButtonElement | null = null;
+  /** THROW!: a person fielding reads the runner going (`PlayInputs.throwDown`). */
+  private throwEl: HTMLButtonElement | null = null;
+  /**
+   * The stolen base being RUN on screen (`LiveFrame.steal`), carried past the
+   * pitch frame into the between beat so the runner reaches the bag — or is
+   * tagged short of it — instead of snapping there when `baseIds` moves. The
+   * bridge draws it (`FrameViewOptions.stealRun`); `showOnly` keeps him visible.
+   */
+  private stealRun: {
+    runnerId: string;
+    from: 1 | 2;
+    to: 2 | 3;
+    runnerSec: number;
+    elapsedSec: number;
+    result: 'safe' | 'out' | null;
+  } | null = null;
   /** The SHIFT chip (`features.shifts`): cycles the person's alignment while they field. */
   private shiftEl: HTMLButtonElement | null = null;
   private shiftChoice: Shift = 'normal';
@@ -769,6 +810,11 @@ export class GameView {
       this.beginPitchDelivery();
       return;
     }
+    // A runner is going and the person fields: the tap IS the throw down.
+    if (this.frame?.phase === 'pitch' && this.frame.steal && !this.humanBats) {
+      this.throwDown();
+      return;
+    }
     const liveControl = this.liveControl;
     if (!liveControl) return;
     const at = this.toField(e);
@@ -823,7 +869,74 @@ export class GameView {
     const spend = SPEND_KINDS.find((k) => SPEND_CARDS[k].key === e.key.toUpperCase());
     if (spend) this.proposeSpend(spend);
     if (e.key.toUpperCase() === 'B') this.toggleBunt();
+    if (e.key.toUpperCase() === 'S') this.toggleSteal();
+    if (e.key.toUpperCase() === 'T') this.throwDown();
   };
+
+  /** Can the lead runner go? A runner on with the bag ahead open — the sim's traffic rule, read off the frame. */
+  private stealPossible(f: LiveFrame): boolean {
+    return (f.bases[1] && !f.bases[2]) || (f.bases[0] && !f.bases[1]);
+  }
+
+  /** Order the lead runner to go on the next pitch, or call it off. Read by the sim on the windup. */
+  private toggleSteal(): void {
+    const f = this.frame;
+    if (!f || !controlsAt(this.controlMode, f.half).bat) return;
+    if (f.phase !== 'windup' && f.phase !== 'between') return;
+    if (!this.stealPossible(f)) return;
+    this.inputs.steal = this.inputs.steal ? undefined : true;
+    this.tapped('steal');
+  }
+
+  /**
+   * THROW!: the one tap a person fielding has while a runner is going. Its
+   * lateness past the ball's arrival becomes the catcher's read in the sim
+   * (`StealSpec.readSec`); no tap is the kid's own read. Once per pitch.
+   */
+  private throwDown(): void {
+    const f = this.frame;
+    if (!f || f.phase !== 'pitch' || !f.steal || this.inputs.throwDown) return;
+    if (!controlsAt(this.controlMode, f.half).field) return;
+    this.inputs.throwDown = { atSec: this.pitchElapsed };
+    this.tapped('throwDown');
+  }
+
+  /** The race resolved: a runner cut down sulks where the tag got him; one who made it cheers on arrival. */
+  private onStealResolved(e: Extract<SimEvent, { t: 'steal' }>): void {
+    if (this.stealRun?.runnerId !== e.runnerId) return;
+    this.stealRun.result = e.safe ? 'safe' : 'out';
+    if (!e.safe) this.refs.directors.get(e.runnerId)?.playReaction(false, { restart: true });
+  }
+
+  /** Carry the run on the view's clock; drop it once he is on the bag or has sulked long enough. */
+  private advanceStealRun(step: number): void {
+    const run = this.stealRun!;
+    run.elapsedSec += step;
+    const arrived = run.elapsedSec >= run.runnerSec;
+    if (run.result === 'safe' && arrived) {
+      this.refs.directors.get(run.runnerId)?.playReaction(true, { restart: true });
+      this.stealRun = null;
+    } else if (run.result === 'out' && run.elapsedSec >= run.runnerSec + STEAL_OUT_LINGER_SEC) {
+      this.stealRun = null;
+    }
+  }
+
+  /** Where the stealing runner is drawn this frame, for the bridge. */
+  private stealRunView(): FrameViewOptions['stealRun'] {
+    const run = this.stealRun;
+    if (!run) return undefined;
+    const raw = Math.min(1, run.elapsedSec / Math.max(0.05, run.runnerSec));
+    // Tagged: he never reaches the bag.
+    const frac = run.result === 'out' ? Math.min(raw, STEAL_TAG_FRAC) : raw;
+    const running = frac < 1 && !(run.result === 'out' && raw >= STEAL_TAG_FRAC);
+    return {
+      runnerId: run.runnerId,
+      from: run.from,
+      to: run.to,
+      frac,
+      speedFts: running ? BASEPATH / run.runnerSec : 0,
+    };
+  }
 
   /** Cycle the person's alignment. Proposed on the windup; the sim holds it for the PA. */
   private cycleShift(): void {
@@ -1043,6 +1156,7 @@ export class GameView {
     // otherwise rise over it as a row of heads.
     const inPlay = new Set<string>([...Object.keys(frame.defence), frame.batterId, frame.pitcherId]);
     for (const id of frame.baseIds) if (id) inPlay.add(id);
+    if (this.stealRun) inPlay.add(this.stealRun.runnerId);
     for (const f of frame.play?.fielders ?? []) inPlay.add(f.charId);
     for (const r of frame.play?.runners ?? []) inPlay.add(r.charId);
     const spots: Array<[string, number, number]> = [];
@@ -1371,6 +1485,7 @@ export class GameView {
           this.matchupTally.onEvent(e);
           this.callouts.onEvent(e);
           if (e.t === 'pa') this.reactToPlateAppearance(e);
+          if (e.t === 'steal') this.onStealResolved(e);
           // ★ THE SKY AGREES WITH A NIGHT HOMER. Render-side chrome reacting
           // to the same event the booth calls; the sim never knows.
           if (e.t === 'contact' && e.hit === 'HR' && !e.foul && this.night) this.queueFireworks();
@@ -1415,6 +1530,7 @@ export class GameView {
     this.slidLegs.clear();
     this.diveClips.clear();
     this.inputs = {};
+    this.stealRun = null;
     this.wait = 0;
     this.hold = null;
     this.paEvent = null;
@@ -1682,6 +1798,10 @@ export class GameView {
       pointer: stillLive ? this.inputs.pointer : undefined,
       spend: wasWindup ? undefined : this.inputs.spend,
       shift: wasWindup ? undefined : this.inputs.shift,
+      // A steal is ordered on the between beat or the windup and read on the
+      // windup, exactly as a spend is; the throw down is a one-shot the pitch
+      // frame consumed.
+      steal: wasWindup ? undefined : this.inputs.steal,
     };
     if (r.done) {
       this.frame = null;
@@ -1715,6 +1835,12 @@ export class GameView {
     }
     if (this.frame.phase === 'pitch') this.pitchElapsed = 0;
     if (this.frame.phase === 'pitch') this.cpuSwingStarted = false;
+    // The runner breaks at release and keeps running past the pitch frame;
+    // on a ball in play the play owns him and the run is dropped.
+    if (this.frame.phase === 'pitch') {
+      this.stealRun = this.frame.steal ? { ...this.frame.steal, elapsedSec: 0, result: null } : null;
+    }
+    if (this.frame.phase === 'live') this.stealRun = null;
     // Squared around before the ball leaves the hand, so the bunt reads early.
     if (this.frame.phase === 'pitch' && this.buntArmed && this.humanBats) {
       // Timed so the held receiving pose (frames 20-24 of `bunt`) is on the
@@ -1841,6 +1967,9 @@ export class GameView {
     }
     live.add(frame.batterId);
     live.add(frame.pitcherId);
+    // A runner cut down stealing is off every list the sim keeps; he stays in
+    // view until his sulk is over (`advanceStealRun`).
+    if (this.stealRun) live.add(this.stealRun.runnerId);
     for (const [id, view] of this.refs.kids) {
       view.root.visible = live.has(id) || this.spectators.has(id);
     }
@@ -2244,6 +2373,7 @@ export class GameView {
         fieldingFocus: this.liveControl === 'field',
         batAimHeightFt: this.humanBats ? this.inputs.swing?.aimHeightFt ?? this.aimHeightFt : undefined,
         holdElapsedSec,
+        stealRun: this.stealRunView(),
         // One frame stale on purpose: the camera moves after the frame is
         // applied, and a 16ms-old eye moves the cue by under a percent.
         cameraAt: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z },
@@ -2283,6 +2413,7 @@ export class GameView {
     if (!this.frame) return;
     // Belt to `tick`'s braces: no sim step is ever taken under a replay.
     if (this.replay) return;
+    if (this.stealRun) this.advanceStealRun(step);
     if (this.hold) {
       // The finished play stays on screen; the between beat has not started.
       this.hold.sec -= step;
@@ -2458,7 +2589,18 @@ export class GameView {
       this.cue = null;
       return;
     }
-    this.applyCue(chooseCamera(cameraInputFor(frame, holdElapsedSec), this.cue ?? undefined), dt);
+    this.applyCue(chooseCamera(cameraInputFor(frame, holdElapsedSec, this.stealCam(frame)), this.cue ?? undefined), dt);
+  }
+
+  /** The steal cam's subject when the view wants it: the runner's spot and his bag. */
+  private stealCam(frame: LiveFrame): CameraInput['steal'] {
+    const run = this.stealRunView();
+    if (!run || frame.phase === 'live') return undefined;
+    // The pitch itself stays on the plate while the person bats: his tap needs the ball.
+    if (frame.phase === 'pitch' && this.humanBats) return undefined;
+    const a = basePos(run.from);
+    const b = basePos(run.to);
+    return { runner: [a.x + (b.x - a.x) * run.frac, a.z + (b.z - a.z) * run.frac], bag: [b.x, b.z] };
   }
 
   /** Move the camera toward a cue: a cut lands it, a blend damps it. */
@@ -2608,7 +2750,33 @@ export class GameView {
     this.buntEl.setAttribute('aria-label', 'Bunt');
     this.buntEl.hidden = true;
     this.buntEl.addEventListener('pointerdown', () => this.toggleBunt());
-    hud.appendChild(this.buntEl);
+    // STEAL above BUNT, THROW! below: one column on the right edge, so the
+    // stickers that can show together (pass and play shows a batter's and a
+    // fielder's at once) stack rather than share a box.
+    this.edgeChipsEl = document.createElement('div');
+    this.edgeChipsEl.className = 'edge-chips';
+    this.stealEl = document.createElement('button');
+    this.stealEl.type = 'button';
+    this.stealEl.className = 'spend-chip steal-chip interactive';
+    this.stealEl.innerHTML =
+      '<span class="spend-chip__icon">💨</span>' +
+      '<span class="spend-chip__name">STEAL</span>' +
+      '<kbd class="spend-chip__key">S</kbd>';
+    this.stealEl.setAttribute('aria-label', 'Steal a base');
+    this.stealEl.hidden = true;
+    this.stealEl.addEventListener('pointerdown', () => this.toggleSteal());
+    this.throwEl = document.createElement('button');
+    this.throwEl.type = 'button';
+    this.throwEl.className = 'spend-chip throw-chip interactive';
+    this.throwEl.innerHTML =
+      '<span class="spend-chip__icon">🚨</span>' +
+      '<span class="spend-chip__name">THROW!</span>' +
+      '<kbd class="spend-chip__key">T</kbd>';
+    this.throwEl.setAttribute('aria-label', 'Throw to the base');
+    this.throwEl.hidden = true;
+    this.throwEl.addEventListener('pointerdown', () => this.throwDown());
+    this.edgeChipsEl.append(this.stealEl, this.buntEl, this.throwEl);
+    hud.appendChild(this.edgeChipsEl);
     // SHIFT (`features.shifts`): one chip that cycles NORMAL → PULL → OPPO,
     // riding in the spend tray's column so the left edge stays one stack.
     this.shiftEl = document.createElement('button');
@@ -2622,7 +2790,12 @@ export class GameView {
   private paintHud(frame: LiveFrame): void {
     const controls = controlsAt(this.controlMode, frame.half);
     if (this.controlHintEl) {
-      const hint = controlHint(this.controlMode, frame.half, frame.phase);
+      const hint = controlHint(
+        this.controlMode,
+        frame.half,
+        frame.phase,
+        frame.phase === 'pitch' && frame.steal !== null ? this.character(frame.steal.runnerId).name : false
+      );
       if (this.controlHintEl.textContent !== hint) this.controlHintEl.textContent = hint;
       this.controlHintEl.hidden = !hint;
       if (hint !== this.lastHint) {
@@ -2670,6 +2843,16 @@ export class GameView {
       const beat = frame.phase === 'windup' || frame.phase === 'between' || (frame.phase === 'pitch' && !this.inputs.swing);
       this.buntEl.hidden = !(controls.bat && beat && frame.outs < 3);
       this.buntEl.classList.toggle('is-picked', this.buntArmed);
+    }
+    if (this.stealEl) {
+      const beat = frame.phase === 'windup' || frame.phase === 'between';
+      this.stealEl.hidden = !(controls.bat && beat && frame.outs < 3 && this.stealPossible(frame));
+      this.stealEl.classList.toggle('is-picked', this.inputs.steal === true);
+    }
+    if (this.throwEl) {
+      const going = frame.phase === 'pitch' && frame.steal !== null;
+      this.throwEl.hidden = !(controls.field && going);
+      this.throwEl.classList.toggle('is-picked', this.inputs.throwDown !== undefined);
     }
     // The tray: open when the person could buy something for the coming
     // pitch, each chip shown only while affordable, and read as armed once

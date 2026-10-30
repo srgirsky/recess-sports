@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------------------
 
 import { describe, expect, it } from 'vitest';
-import { assistBatter, assistPitchPlan, assistSwing, parseSkill, SKILLS } from './assist';
+import { assistBatter, assistPitchPlan, assistSwing, cpuRunsOn, parseSkill, SKILLS, type Skill } from './assist';
 import { simulateGame, simulateGameLive, type GameResult, type GameSpec, type LiveFrame } from './game';
 import { throwPitch } from './atbat';
 import { makeRng } from './rng';
@@ -131,5 +131,29 @@ describe('★ a skill level touches only a person’s game', () => {
     // The same late tap on every pitch: without the patience ramp this fouls
     // forever and the sim throws.
     expect(() => personBats('tball', 's3', true)).not.toThrow();
+  }, 60_000);
+});
+
+describe('★ the league rule: the CPU does not run on a child', () => {
+  it('T-BALL and ROOKIE hold the CPU’s runners; NORMAL and ALL-STAR let them go', () => {
+    expect(cpuRunsOn('tball')).toBe(false);
+    expect(cpuRunsOn('rookie')).toBe(false);
+    expect(cpuRunsOn('normal')).toBe(true);
+    expect(cpuRunsOn('allstar')).toBe(true);
+  });
+
+  it('★ with a person fielding at T-BALL no steal is ever attempted against them, and at NORMAL some are', () => {
+    const attempts = (skill: Skill): number => {
+      let n = 0;
+      // The person is HOME: they field the top half, where the CPU's runners are.
+      const it = simulateGameLive(spec({ humanSide: 'home', skill, onEvent: (e) => { if (e.t === 'steal') n++; } }), makeRng('league'));
+      let r = it.next();
+      let guard = 0;
+      while (!r.done && guard++ < 2_000_000) r = it.next();
+      return n;
+    };
+    expect(attempts('tball')).toBe(0);
+    expect(attempts('rookie')).toBe(0);
+    expect(attempts('normal')).toBeGreaterThan(0);
   }, 60_000);
 });

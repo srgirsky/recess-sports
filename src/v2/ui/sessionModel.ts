@@ -45,7 +45,11 @@ export type InputVerb =
   /** The BUNT chip toggled (squaring around, or back to a full swing). */
   | 'bunt'
   /** The SHIFT chip cycled (`features.shifts`). */
-  | 'shift';
+  | 'shift'
+  /** The STEAL chip toggled: the lead runner goes on the next pitch, or is called off. */
+  | 'steal'
+  /** The THROW! tap on a stolen-base pitch: the catcher's read. */
+  | 'throwDown';
 
 export const INPUT_VERBS: ReadonlyArray<InputVerb> = Object.freeze([
   'pointer',
@@ -59,6 +63,8 @@ export const INPUT_VERBS: ReadonlyArray<InputVerb> = Object.freeze([
   'spend',
   'bunt',
   'shift',
+  'steal',
+  'throwDown',
 ] as const);
 
 export interface SessionCounts {
