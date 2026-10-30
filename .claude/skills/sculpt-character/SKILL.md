@@ -549,6 +549,66 @@ Each of these cost at least one blind round. They are constraints, not history.
   sheet before first build (a wrong-value probe citation makes the lint print
   the sheet's actual).
 
+## Lessons batch 5b paid for (the #9 polish pass: Tank, Moose, Grizz, Smokey, 2026-10-30)
+
+- **★ MEASURE A CRITIC'S "LONGER / LOWER / WIDER THAN THE SHEET" BEFORE MOVING
+  A RING.** Tank's recorded headline — "the turnaround's tee stops at the hip,
+  the delivered hem sits near the crotch" — was false against the sheet: its
+  centre column turns tee→shorts at z 1.08 and the legs part at 1.02, and the
+  delivery matches within a pixel. The hem was not moved; a fresh critic
+  briefed with the numbers re-scored 3→4 on three categories. The brief rule
+  "before claiming ABSENT, grep" has a twin: before claiming a length, scan the
+  column on both images.
+- **A hairline is not a form table, so no gate re-measures it.** Smokey's
+  `BUZZ_FRINGE` said 3.50 for two months while the sheet's skin begins at
+  z 3.67 (26% of head height; delivered 47%). `sculpt-provenance.lint` governs
+  `*_LEVELS/STATIONS/SECTION`; a fringe z is a bare tuple. Check every hair
+  kid's hairline as a centre-column scan of sheet and render, as a share of
+  head height, before trusting the comment beside it.
+- **A "rear extent" read at collar height is the SHOULDER.** Grizz's 2026-09-12
+  note ("rear stays ~0.6 to z 2.5") came from `regionRunsAt` on the whole
+  profile figure, where the brown shirt starts under the hair; the hair's own
+  rearmost dark run rounds in from 0.64 at z 2.90 to 0.17 at 2.55. The afro was
+  a slab to the collar for six weeks on the strength of it. Take the hair's run.
+- **Thin proud detail that reads as ink streaks is the OUTLINE HULL, and
+  vertex alpha is the knob.** Moose's half-buried drawstrings showed only the
+  hull's two edge strokes. `color.a` 0.3 on the tube's vertices (the shader's
+  `USE_OUTLINE_VCOL` taper; the arm's crease rows use 0.5) keeps a hairline
+  contour. Standing the cords one radius proud instead opened a 10px
+  see-through pocket between cord and chest in the orthographic profile —
+  `silhouette.lint` caught it — so proud-on-convex is the wrong fix.
+- **`EarSpec.radii` are HALF-extents.** Moose's (0.13, 0.17) was a 0.26 × 0.34
+  ear on a head drawn with 0.21 × 0.30; a critic read discs. Size an ear off the
+  profile crop's rows and columns, not off the roster's range of specs.
+- **A cap and a hair shell need an overlapping ring.** Cap rim at 3.55, hair
+  top at 3.52: 0.03ft of bare scalp all round, and the cap read as hovering on
+  every runtime still. One hair ring inside the cap's rim closes it.
+- **A hairline needs a ring on BOTH sides of its fringe z.** Smokey's new
+  3.665 ring put the hairline right in the table and 0.06ft low on the render:
+  the next ring (3.56) was under the fringe and buried, so the proud-to-buried
+  wall spanned 0.1ft and the face cut it midway. A buried ring at 3.655 made
+  the wall 0.01ft. Same mechanism as the crisp-stripe rings, one axis over.
+- **A fringe table must clear the buried ring at every COLUMN, not just at
+  the centre.** Smokey's (0.36, 3.640) entry put `fringe_z_at(0.24)` at 3.647,
+  under the 3.655 buried ring, so at the two front columns the ring counted as
+  hair and the tall wall came back as a 6-7px notch beside a level centre.
+  Evaluate the fringe at the ring's actual column x's before trusting it.
+- **A hair shell hugging the skull must clear the EAR builder's root.**
+  `build_ear` mounts off the same skull callable; a shell at skull +0.012 left
+  the helix root 7px proud of the hair in every runtime still (a skin diamond
+  at the ear top). +0.030 covers it; the "flush to the skull" instinct has a
+  floor set by the ear.
+- **Never run two Blender review renders at once.** An `apply:critique` board
+  render overlapping another kid's `review:character-fidelity` left a
+  110,592-byte PNG with a zero-padded tail that decoded only to the chest, and
+  a critic had to score the front from runtime stills. Serialize them and
+  decode-check every PNG (`sharp(f).raw()`) before a critic reads it.
+- **Two critics on the same still disagree by a point; the measured rows do
+  not.** Round-1 and round-2 critics on this batch re-filed the same residuals
+  (mock-neck collars, shoulder saddles, faceted crowns, pointed ear tips, cone
+  hands) in different words. Those are sculptlib classes, not kid defects —
+  the sweeps retire them; do not chase them one kid at a time.
+
 ## Lessons batch 6 paid for (Mimi, Theo, Zoom, Big Lou, Tank round 31)
 
 - **The runtime TEAM-TINTS everything on M_Accessory — author the accent as

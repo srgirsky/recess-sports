@@ -1286,3 +1286,174 @@ Not in this change, recorded as the next two: the plate camera cannot see
 the runner break (a steal cam that cuts to the runner when the person is not
 batting), and a PICK OFF for the person pitching — BB2001's counter and v1's
 #7 — which needs a lead model worth the name.
+
+## 2026-10-30 — #9, sculpt batch 5: Tank, Moose, Grizz, Smokey
+
+The four kids the #9 records of 2026-10-02 left open findings against, worked
+one at a time through the `sculpt-character` pipeline (Blender source →
+`kid_<id>.glb` → `compare:glb-geometry` → fresh captures and boards →
+`measure:fidelity` → an independent critic per round → `apply:critique`).
+Every number below was read off the sheet or the delivered render with the
+turnaround reader, never by eye. None of the four reaches `candidate`; all four
+records now say what is left and why.
+
+### Tank: the headline finding was false against the sheet
+
+The 2026-10-03 critic wrote "the turnaround's tee stops at the hip with
+knee-length shorts clearly visible; the delivered hem sits near the crotch".
+Measured on the sheet's front figure (0.005831 ft/px, ground row 822): the
+centre column turns from tee purple to shorts black between z 1.10 and 1.05,
+the legs part at z 1.02, and the shorts run to z 0.68. On the delivered front
+render the same column turns at z 1.07 and the shorts end at 0.67. The sheet
+itself hangs the tee to the crotch; the delivery matches it within a pixel. The
+model was not touched. The squat's "tongue" (`capture:catcher`, Tank and Grizz
+side by side) is the tee's rear tail reaching the dirt: both tops hang ~0.5ft
+below the hip, both carry the same thigh-following weights, and in a squat whose
+seat is near the heel a 0.5ft tail reaches the ground by geometry. A rear share
+that hands the back of the hem to the pelvis is the shared fix, with the costs
+`rig.py` already records; not done here. A fresh critic, briefed with the
+measurement, re-scored him 3,3,-,3,4,3 → **4,4,-,3,4,4** (`needs-polish`):
+clothing holds at 3 on the shoe (cream toe cap and straps laid on a cream
+upper where the sheet's upper is navy, and the stair-stepped colour edge), the
+mock-neck collar and the spike-tipped hands.
+
+### Moose: the ear, the cords, the sideburn, the cap
+
+- **Ear.** `EAR_SPEC` radii are half-extents; (0.13, 0.17) drew a 0.26 × 0.34ft
+  ear against the profile sheet's 0.21 × 0.30 (rows 300.6–348.7, columns
+  713–748 at 8x). Now (0.105, 0.150), centre z 3.235. Head aspect 1.09 → 1.07
+  against the concept's 1.11, in tolerance.
+- **Drawstrings.** The "scratch marks" were the runtime's inverted-hull outline
+  tracing both exposed edges of a half-buried tube. The cords' vertex alpha is
+  now 0.0 — the outline shader scales the hull by `color.a` (the arm's crease
+  rows use it at 0.5) — so no hull is drawn on them; at 0.3 a second critic
+  still read "broken navy dashes along both edges". Standing them one radius
+  proud was tried and reverted: `silhouette.lint` found 10 enclosed backdrop
+  pixels between cord and chest in the orthographic profile.
+- **Sideburn.** `BUZZ_LEVELS` carries a fifth column, the most-forward y each
+  ring may reach, so the buzz's front edge slants back from the temple to the
+  ear's front at the ear's top and stays behind the ear below it, and every
+  clamped vertex sits on the skull (+0.030), pushed out as well as pulled in —
+  a round-2 critic found the ones left buried showing their outline through
+  the cheek as a dotted line; at +0.012 a round-3 critic found the ear's helix
+  root (the shared ear builder mounts off the same skull) poking through the
+  hair as a 7px skin diamond, and the two rings behind the ear now clamp
+  behind its dish so the edge's hull stops crossing the concha.
+- **Cap.** A hair ring at z 3.57 tucks under the cap's rim (lowest cap ring
+  3.55); before it a 0.03ft band of bare scalp showed all round and the cap
+  read as hovering.
+
+Round-1 critic: 3,3,3,3,3,3; round 2 after the cap and skull fixes: 3,3,3,3,3,3
+(cap seating fixed; the funnel collar at 0.33 of head width against the
+sheet's 0.93, the hem at 0.27 of figure height against 0.31, and the bowl cap
+carry the scores — "the big one" is lost in the build, not the details);
+round 3 after the outline fixes: 3,3,3,3,3,3 (cheek and sideburn clean,
+the cords read as flat stripes, the ear-root diamond new); round 4 after the
+ear-root cover: **3,3,3,3,3,3** — the ear-bowl line is gone, the ear-root
+wedge is half its size and attached to the ear's rim, the sideburn and cheek
+stay clean, and the scores are held by the build: a collar at 0.33 of head
+width against the sheet's 0.70, figure width 0.37 of height against 0.50, a
+bowl cap on a faceted occiput, and the angry cell's mouth lost under the brim.
+Those are torso and cap re-traces, not ring moves; recorded for their own round.
+
+### Grizz: the one-brown arm, and the afro's hang
+
+- **Underarm shade 0.35** (vertex colour only), the value Tank and Moose carry:
+  a measurable step where the hanging sleeve meets the tee at hero scale; at
+  gameplay scale the ink outline still does most of the separating.
+- **The lobes hang beside the cheeks.** Three critics carried "a shallow cap
+  from the front; bare ears where the sheet shows hair". The width was never
+  wrong — the 2.72 ring pulled to 0.44 and the loft narrowed through the
+  cheeks. The sheet's own front silhouette (hair is the only thing that wide
+  between the collar and the ears) reads 0.52 at z 2.70 and 0.37 at 2.60; the
+  ring is now 0.53 at 2.70 and the loft to the nape lands on both rows.
+- **The nape rounds in.** The 2026-09-12 note "rear extent ~0.6 to z 2.5" does
+  not survive a re-trace: walking the profile's rearmost dark run, the hair
+  holds 0.69ft behind centre from z 3.3 to 3.0 and then rounds in — 0.64 at
+  2.90, 0.56 at 2.80, 0.44 at 2.70, 0.31 at 2.60, 0.17 at 2.55 — and below that
+  the run is the brown shirt. The old 0.6s were the sheet's shoulder. Rear
+  extent is now 0.64 → 0.44 → 0.24 from 2.94 to 2.48; rings moved, none added.
+
+Round-1 critic: 3,3,3,3,3,3 (the nape finding above was its); round 2 after
+the nape: **3,3,3,3,3,3**. The nape is "improved, not fixed" — the tuck is
+now 34% of head height against the sheet's 38%, but as a straight bevel
+where the sheet rounds in late — and the score is carried by what no ring
+move reaches: the neutral face is a glare where the sheet is a bored
+deadpan, the nose has no profile, the lower face is short (mouth-to-chin
+~12% of face height against ~23%), and the afro's front edge is a flat
+brim with polygon corners. Recorded; the face and hair-mass sweeps own them.
+
+### Smokey: the crotch, the fade, the hairline
+
+- **The third mass between the running legs was the crotch yoke**: `CROTCH_LEVELS`
+  bottomed at z 0.90, the shorts hem, where the sheet parts the legs at z 1.21
+  (a backdrop pocket opens between them at rows 640–677). The yoke now ends at
+  1.20; the leg tubes still meet at the centreline to the hem, so nothing opens.
+  Critic: fixed.
+- **The fade is colour, not a shorter shell.** The three lowest rings wear a
+  mid brown (3.42) and a stubble brown (3.30, 3.22), both authored to stay out
+  of `isSkin` under the ramp and the toon highlight; the faceSkin metric did
+  not move. Critic: improved, "a cap with a brown hem" — the shell's bottom
+  edge is still a rim.
+- **The hairline was 0.19ft low, and nothing had caught it.** The script said
+  "the sheet's centre hairline is between z 3.50 and 3.55"; down the front
+  figure's centre column the skin begins at row 276 — z 3.67, 26% of head
+  height — and the same row holds to |x| 0.36. The delivery sat at 3.48 (47%),
+  the brows touching the hair. `BUZZ_FRINGE` is 3.66 across the forehead with
+  a ring at 3.665 carrying the edge; the temple entries stay deliberately low
+  (recorded deviation, for the visible-face instrument). A second critic then
+  measured the rendered edge at z 3.61 (33%): the next ring down (3.56) sits
+  under the fringe and is buried, so the proud-to-buried wall spanned 0.1ft and
+  crossed the face midway. A buried ring at 3.655 makes the wall 0.01ft tall;
+  delivered now 3.68.
+
+Round-1 critic: 3,3,2,3,4,3; round 2 after the hairline: 3,3,3,3,4,3 (hair 2 → 3;
+new on the record: the head is short and the neck long — crown-to-chin 27% of
+figure height against the sheet's 31%, which the head metric cannot see
+because it ends the head at the neck pinch; and the body is slimmer than
+drawn, shorts 22% against 27.6%); round 3 after the under-fringe ring:
+3,3,3,3,4,3 (the hairline level at the centre and notched 6–7px at the two
+front columns where the fringe table's 0.36 entry at 3.640 fell under the
+3.655 ring — the column-quantization class again; the entry is now 3.658);
+round 4: **3,3,3,3,4,3** — the hairline is one level edge across every
+forehead column (skin from row 136, x 227–311) and in all four face stills;
+what holds the 3s is the shell itself (a flat crown, a front corner over the
+forehead, a near-vertical back with a proud ledge at ear-top height that the
+fade colours sit on like a cap's hem), the short head on a stalk neck
+(crown-to-chin 27.0% of figure height against 30.7%, which the head metric
+cannot see because it ends at the neck pinch), the straight 22% shorts tube
+against a 27.6% flare, the collar plateau, the shoulder saddles and the nub
+nose. Recorded; the skull is a mid-course change that re-solves the face
+island, so it waits for its own round.
+
+### What this batch adds to the record
+
+- **A critic's measurement claim is checked against the sheet before a ring
+  moves.** The tee-length finding would have shortened a hem the drawing agrees
+  with; the skill's brief rule ("before claiming absent, grep") now has a
+  twin for "before claiming longer, measure".
+- **A "rear extent" taken at collar height is the shoulder.** `regionRunsAt`
+  on the whole figure cannot tell hair from shirt where the two meet; take the
+  hair's own run, or the profile's rearmost dark run above the collar.
+- **The hairline is not a form table.** `sculpt-provenance.lint` governs
+  `*_LEVELS`; a wrong `BUZZ_FRINGE` z passed every gate for two months. The
+  check is a centre-column scan of sheet and render as a share of head height.
+- **Vertex alpha thins the outline on a part.** Any thin proud detail that
+  reads as ink streaks at runtime (cords, piping, laces) takes `color.a` < 1.
+- **A proud tube on a convex surface opens a silhouette pocket** in the
+  orthographic profile; half-bury it or let the gate tell you.
+- **A hairline needs a ring on BOTH sides of the fringe z**, like a stripe
+  edge: one proud ring above and one buried ring below, or the wall between
+  them crosses the face wherever the skull happens to cut it.
+- **Never run two review renders at once.** A board render for one kid
+  overlapping another's left `moose-front-apose-review.png` truncated at
+  110,592 bytes with a zero-padded tail; it decoded as far as the chest and a
+  critic worked from the runtime stills instead. Serialize Blender renders and
+  decode-check the PNGs before scoring.
+
+Where #9 stands: 29 `needs-polish` / 1 `candidate`, unchanged in count; four
+records fresher and three models closer to their sheets. The residuals the
+critics agree on across kids — faceted crowns, mock-neck collars, shoulder
+saddles, hands tapering to points, the shared ear's pointed tip — are
+sculptlib classes, and the hair-mass and hem sweeps the skill names are where
+they retire.

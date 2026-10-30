@@ -465,116 +465,6 @@
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NOT FILED per instruction"
     },
-    "grizz:be78ac42d4f7": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "SCOPED HAND ARTICULATION PASS: fresh runtime hero/run/contact and4expression"
-    },
-    "grizz:1eaa0ef34adf": {
-      "char": "grizz",
-      "class": "interpenetration",
-      "excerpt": "INHERITED GARMENT INTERPENETRATION, BASELINE CONFIRMED: exact baseline/curre"
-    },
-    "grizz:1fa6aa80a4d9": {
-      "char": "grizz",
-      "class": "interpenetration",
-      "excerpt": "SHARED POSE CAVEAT: the far contact forearm is largely obscured by the broad"
-    },
-    "grizz:d9743537a3ed": {
-      "char": "grizz",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: THE AFRO IS STILL A SHALL"
-    },
-    "grizz:d1c1e6b0ef73": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: THE NAPE IS BARE UNDER TH"
-    },
-    "grizz:ee355631e58d": {
-      "char": "grizz",
-      "class": "sheared-edges",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: THE AFRO'S CROWN IS A PEA"
-    },
-    "grizz:e223bd3bd119": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: THE EARS ARE BUILT AND RE"
-    },
-    "grizz:6fd3c5018178": {
-      "char": "grizz",
-      "class": "ears",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: THE FRONT VIEW SHOWS BARE"
-    },
-    "grizz:7a5566355575": {
-      "char": "grizz",
-      "class": "decal-not-form",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: THE NOSE HAS NO FRONT REA"
-    },
-    "grizz:b8dc153c50a2": {
-      "char": "grizz",
-      "class": "face-atlas",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: THE NEUTRAL FACE STILL GL"
-    },
-    "grizz:706aef29b349": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: THE CHEST POCKET IS ON TH"
-    },
-    "grizz:c74b7993337b": {
-      "char": "grizz",
-      "class": "decal-not-form",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: THE CHEST POCKET READS AS"
-    },
-    "grizz:58502b28902b": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED / NON-DEFECT (kep"
-    },
-    "grizz:2a33666d9d7c": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED / NON-DEFECT (kep"
-    },
-    "grizz:73f9e6179e0a": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED / NON-DEFECT (kep"
-    },
-    "grizz:0135aef9d77b": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED / NON-DEFECT (kep"
-    },
-    "grizz:fb216e8bf1d7": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: RECORDED NON-DEFECT (kept"
-    },
-    "grizz:4bfdd4ab324e": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: RECORDED NON-DEFECT (kept"
-    },
-    "grizz:5251984acb53": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: RECORDED NON-DEFECT (kept"
-    },
-    "grizz:4c5b2f56f998": {
-      "char": "grizz",
-      "class": "material-light",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: SKIN IS ONLY SLIGHTLY LIG"
-    },
-    "grizz:1334d05b26d2": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: CLEARED — EVIDENCE REFRES"
-    },
-    "grizz:565e119bc381": {
-      "char": "grizz",
-      "class": "no-defect-note",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NEW — NOTE, NOT A DEFECT:"
-    },
     "sprout:27c3a0154278": {
       "char": "sprout",
       "class": "no-defect-note",
@@ -2280,41 +2170,6 @@
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT (re-checked, d"
     },
-    "smokey:15b223723119": {
-      "char": "smokey",
-      "class": "no-defect-note",
-      "excerpt": "SCOPED HAND MIGRATION PASS: runtime hero/run/contact and all four expression"
-    },
-    "smokey:05375637fac3": {
-      "char": "smokey",
-      "class": "stance",
-      "excerpt": "SHARED POSE POLISH REOBSERVED: bunt t0.67 receiving elbow lifts beside head "
-    },
-    "smokey:7e4454d7b424": {
-      "char": "smokey",
-      "class": "other",
-      "excerpt": "CURRENT ART DEBT REOBSERVED: smooth cap-like hair, raised neckline and the c"
-    },
-    "smokey:b5e9f74f0674": {
-      "char": "smokey",
-      "class": "hair-nyquist",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: 3.3 / 3.13: Replace smoot"
-    },
-    "smokey:e72f31251555": {
-      "char": "smokey",
-      "class": "butt-joins",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: 3.2 / 3.4 / 3.11: Refine "
-    },
-    "smokey:3a325085eca2": {
-      "char": "smokey",
-      "class": "other",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: 3.4 / 4.3: Correct inheri"
-    },
-    "smokey:cd3ff1b6e93c": {
-      "char": "smokey",
-      "class": "40px-read",
-      "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: 3.6: Preserve legible red"
-    },
     "sniffles:8d55309c678c": {
       "char": "sniffles",
       "class": "no-defect-note",
@@ -2785,65 +2640,320 @@
       "class": "no-defect-note",
       "excerpt": "HISTORICAL — NOT REMEASURED IN THIS HAND-RIG PASS: NON-DEFECT, re-checked: t"
     },
-    "moose:5db11d62b71f": {
-      "char": "moose",
-      "class": "no-defect-note",
-      "excerpt": "Plate stance (.art-review/shade-real vs shade-null moose-bat_stance@30.png, crop"
-    },
-    "moose:c17e3b7d5348": {
-      "char": "moose",
-      "class": "decal-not-form",
-      "excerpt": "Drawstrings render as dark navy outline streaks (runtime-face-grin, crop ~450,23"
-    },
-    "moose:963b82d88375": {
-      "char": "moose",
-      "class": "ears",
-      "excerpt": "Ears read as oversized round discs (runtime-hero crop 480,200 150x140 @4x): a si"
-    },
-    "moose:5f42a51b3d5f": {
-      "char": "moose",
-      "class": "proportions",
-      "excerpt": "Measured visible face at the brow line is OFF both sides (left 38.5 vs 18.9, rig"
-    },
-    "moose:ff85a5c13afa": {
-      "char": "moose",
-      "class": "sheared-edges",
-      "excerpt": "Buzz hairline at the temple (runtime-hero crop @4x): hard dark rectangular sideb"
-    },
-    "moose:5c5a69e56c75": {
-      "char": "moose",
-      "class": "stance",
-      "excerpt": "Catcher squat, bare hand (.art-review/catch-now2/catcher_squat-moose.png vs catc"
-    },
-    "tank:7dafdabb615b": {
+    "tank:cd21083cf92d": {
       "char": "tank",
       "class": "no-defect-note",
-      "excerpt": "Plate stance (.art-review/shade-real vs shade-null tank-bat_stance@30.png, crop "
+      "excerpt": "NON-DEFECT: Tee length. My column scans of tank-turnaround.png (front figure"
     },
-    "tank:97b71903d4d5": {
-      "char": "tank",
-      "class": "proportions",
-      "excerpt": "Tee length vs concept (runtime-hero, board front): hem sits near the crotch and "
-    },
-    "tank:a23b10f7a7fa": {
-      "char": "tank",
-      "class": "sheared-edges",
-      "excerpt": "Shoe side panel (runtime-hero crop 420,500 200x150 @4x): the navy stripe on the "
-    },
-    "tank:5ac88e48584f": {
+    "tank:ddbe4ee1d020": {
       "char": "tank",
       "class": "material-light",
-      "excerpt": "Face shading (runtime-face-grin crop 445,150 170x160 @4x): broad diagonal light/"
+      "excerpt": "Shoe misbuilt: its overlays are cream laid on a cream upper, so they cannot "
     },
-    "tank:e0c00411cd88": {
+    "tank:abc04509d0cb": {
+      "char": "tank",
+      "class": "sheared-edges",
+      "excerpt": "Shoe side panel stair-step (tank-runtime-hero.png crop 430,580 180x110 @4x, "
+    },
+    "tank:961f6c5efba6": {
+      "char": "tank",
+      "class": "hems-cuffs",
+      "excerpt": "Neckline is a mock-neck, not a crew (critic-tank/collars.png: concept front "
+    },
+    "tank:2b3e42fd0571": {
+      "char": "tank",
+      "class": "proportions",
+      "excerpt": "Hands taper to spikes (tank-runtime-face-grin.png crop 380,420 300x80 @4x; t"
+    },
+    "tank:9f0900b5670f": {
+      "char": "tank",
+      "class": "decal-not-form",
+      "excerpt": "Face faceting (tank-runtime-hero.png crop 490,170 150x160 @4x; the four face"
+    },
+    "tank:6ab5e5161d59": {
+      "char": "tank",
+      "class": "decal-not-form",
+      "excerpt": "Profile face is a wedge (tank-profile-apose-review.png crop 180,86 160x180 @"
+    },
+    "tank:96a3d1b35ffd": {
       "char": "tank",
       "class": "stance",
-      "excerpt": "Bind-pose ankle daylight OFF (24.1 vs 0.00, tol 12): per rubric 6b.4, look at th"
+      "excerpt": "Shorts never part above the hem (front centre-column scan). On the sheet the"
     },
-    "tank:4affc1df35e3": {
+    "tank:1672529254d8": {
       "char": "tank",
       "class": "stance",
-      "excerpt": "Catcher squat (.art-review/catch-now2/catcher_squat-tank.png vs catch-before; PI"
+      "excerpt": "Catcher squat rear tail (critic-tank/squat-tank.png against squat-grizz.png;"
+    },
+    "tank:d222a2020235": {
+      "char": "tank",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT: The two OFF metrics. Ankle daylight (0.00 vs 24.1) compares the "
+    },
+    "tank:0226871f54f6": {
+      "char": "tank",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT: The sock roll-top TEAM_MASK. In tank-runtime-hero.png (crop 420,"
+    },
+    "grizz:eadf128c92fe": {
+      "char": "grizz",
+      "class": "hair-nyquist",
+      "excerpt": "NAPE (AFRO_LEVELS 2.70/2.48 rear re-trace): IMPROVED, not fixed. In grizz-pr"
+    },
+    "grizz:7a0307316660": {
+      "char": "grizz",
+      "class": "hair-nyquist",
+      "excerpt": "HAIR BRIM SHELF (grizz-front-apose-review.png crop x 140-400 y 75-335 at 3x,"
+    },
+    "grizz:f512fb43128e": {
+      "char": "grizz",
+      "class": "hair-nyquist",
+      "excerpt": "HAIR FACETS / NO CURL GROUPING (grizz-runtime-hero.png crop x 490-720 y 150-"
+    },
+    "grizz:22794fc6c23c": {
+      "char": "grizz",
+      "class": "decal-not-form",
+      "excerpt": "NO NOSE IN PROFILE (grizz-profile-apose-review.png crop x 180-270 y 170-300 "
+    },
+    "grizz:f682933a7f9a": {
+      "char": "grizz",
+      "class": "face-atlas",
+      "excerpt": "NEUTRAL GLARE (grizz-front-apose-review.png crop x 140-400 y 75-335 at 3x): "
+    },
+    "grizz:cedb835da774": {
+      "char": "grizz",
+      "class": "proportions",
+      "excerpt": "SHORT LOWER FACE (row scan of grizz-front-apose-review.png, centre column x "
+    },
+    "grizz:f5d970bdf618": {
+      "char": "grizz",
+      "class": "butt-joins",
+      "excerpt": "SHOULDER HUMPS (grizz-front-apose-review.png crop x 140-400 y 75-335 at 3x, "
+    },
+    "grizz:1fea3c4da014": {
+      "char": "grizz",
+      "class": "hems-cuffs",
+      "excerpt": "SWING HEM TONGUE (grizz-runtime-swing.png crop x 440-640 y 400-600 at 4x): t"
+    },
+    "grizz:434e503a4378": {
+      "char": "grizz",
+      "class": "interpenetration",
+      "excerpt": "RUN WAIST WEDGE (grizz-runtime-run.png crop x 400-660 y 380-580 at 3x): a bl"
+    },
+    "grizz:e2f5ec10e4ae": {
+      "char": "grizz",
+      "class": "decal-not-form",
+      "excerpt": "POCKET PLATE (grizz-front-apose-review.png crop x 260-380 y 300-420 at 4x): "
+    },
+    "grizz:8cd9a3023664": {
+      "char": "grizz",
+      "class": "proportions",
+      "excerpt": "SLAB TORSO IN PROFILE (grizz-profile-apose-review.png crop x 140-420 y 60-66"
+    },
+    "grizz:f94292da1d7d": {
+      "char": "grizz",
+      "class": "ears",
+      "excerpt": "POINTED EAR TIP (grizz-profile-apose-review.png crop x 140-340 y 70-310 at 4"
+    },
+    "grizz:bfb589922fc6": {
+      "char": "grizz",
+      "class": "sheared-edges",
+      "excerpt": "LUMPY SHOE FRONTS (grizz-front-apose-review.png crop x 160-380 y 540-660 at "
+    },
+    "grizz:1f7dbbed6f66": {
+      "char": "grizz",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT: the dark disc beside the jaw in grizz-profile-review.png (T-pose"
+    },
+    "grizz:cee96e440fdf": {
+      "char": "grizz",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT: the pale grey sock roll-tops on the bind-pose board are raw TEAM"
+    },
+    "grizz:5d4f526bfc3a": {
+      "char": "grizz",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT: the hung head and downward face in grizz-runtime-hero.png and th"
+    },
+    "grizz:3787e6ccb195": {
+      "char": "grizz",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT: ankle daylight OFF and the five NOT MEASURED head rows are instr"
+    },
+    "smokey:6bee326deadf": {
+      "char": "smokey",
+      "class": "no-defect-note",
+      "excerpt": "HAIRLINE (BUZZ_FRINGE 0.36 entry raised to 3.658): FIXED. smokey-front-revie"
+    },
+    "smokey:10599ea6742c": {
+      "char": "smokey",
+      "class": "hair-nyquist",
+      "excerpt": "BOWL / MUSHROOM HAIR SHELL, NOT FIXED. smokey-profile-review.png (crop x190-"
+    },
+    "smokey:817174e04cd7": {
+      "char": "smokey",
+      "class": "sheared-edges",
+      "excerpt": "TEMPLE WEDGES STAIR-NOTCHED AT RUNTIME, NOT FIXED. In smokey-runtime-run.png"
+    },
+    "smokey:b876e6f92ffd": {
+      "char": "smokey",
+      "class": "proportions",
+      "excerpt": "HEAD TOO SHORT / NECK A STALK, NOT FIXED. smokey-front-review.png centre col"
+    },
+    "smokey:4384ca7eba6a": {
+      "char": "smokey",
+      "class": "hems-cuffs",
+      "excerpt": "COLLAR PLATEAU, NO RIB, NOT FIXED. smokey-front-apose-review.png (crop x180-"
+    },
+    "smokey:6dfa0e208541": {
+      "char": "smokey",
+      "class": "butt-joins",
+      "excerpt": "SHOULDER SADDLES, NOT FIXED; rubric 3.11 fails. smokey-front-apose-review.pn"
+    },
+    "smokey:d4265c54c0de": {
+      "char": "smokey",
+      "class": "proportions",
+      "excerpt": "BODY TOO SLIM, NOT FIXED. smokey-front-apose-review.png rows 470-520: the sh"
+    },
+    "smokey:1dae0ad7c133": {
+      "char": "smokey",
+      "class": "decal-not-form",
+      "excerpt": "SHORTS FRONT V-POUCH, NOT FIXED. smokey-front-review.png (crop x195-345, y43"
+    },
+    "smokey:d474a0c234ee": {
+      "char": "smokey",
+      "class": "hems-cuffs",
+      "excerpt": "TRAILING SHORTS BLADE, NOT FIXED. smokey-runtime-run.png (crop x400-640, y42"
+    },
+    "smokey:1749fe20a690": {
+      "char": "smokey",
+      "class": "decal-not-form",
+      "excerpt": "NOSE UNDERSIZED, NOT FIXED. smokey-profile-review.png (crop x190-360, y85-25"
+    },
+    "smokey:301548080467": {
+      "char": "smokey",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT: the crotch yoke stays fixed. In smokey-runtime-run.png (run-shor"
+    },
+    "smokey:b4725cd2e34d": {
+      "char": "smokey",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT: TEAM_MASK extent. smokey-front-review.png (crop x195-345, y540-6"
+    },
+    "smokey:e885c8d868dc": {
+      "char": "smokey",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT: the ankle-daylight OFF (23.5 vs 0.0). It is the recorded bind-po"
+    },
+    "smokey:1bbf913ae62d": {
+      "char": "smokey",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT: the visible-face OFF (37.1 vs 29.7/27.5). It is the recorded tem"
+    },
+    "smokey:99aecfd7519c": {
+      "char": "smokey",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT: ears (rubric 3.10). build_ear with EAR_SPEC; smokey-profile-revi"
+    },
+    "smokey:ef05bcef36c6": {
+      "char": "smokey",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT: holes (rubric 3.7). No background shows through the bind or A-po"
+    },
+    "moose:2d9242dd8500": {
+      "char": "moose",
+      "class": "ears",
+      "excerpt": "ROUND-4 CHANGE (a), BUZZ AT SKULL +0.030 OVER THE HELIX ROOT: IMPROVED, not "
+    },
+    "moose:456f200cb1fe": {
+      "char": "moose",
+      "class": "no-defect-note",
+      "excerpt": "ROUND-4 CHANGE (b), REAR RINGS CLAMPED BEHIND THE EAR DISH (front_y -0.02 / "
+    },
+    "moose:65ade24dc969": {
+      "char": "moose",
+      "class": "no-defect-note",
+      "excerpt": "SURVIVED: the sideburn is still one clean slant from the cap rim to the ear'"
+    },
+    "moose:72fdffae4589": {
+      "char": "moose",
+      "class": "sheared-edges",
+      "excerpt": "NEW (not recorded in round 3, so I cannot confirm whether the round-4 change"
+    },
+    "moose:e8184d40c248": {
+      "char": "moose",
+      "class": "decal-not-form",
+      "excerpt": "UNCHANGED, CORDS AT ALPHA 0: in moose-runtime-face-grin.png at 6x (grin-cord"
+    },
+    "moose:03652b19ca7b": {
+      "char": "moose",
+      "class": "no-defect-note",
+      "excerpt": "UNCHANGED, CAP-TUCK RING: no skin row between hair and rim along the side or"
+    },
+    "moose:60c530f6bc6d": {
+      "char": "moose",
+      "class": "ears",
+      "excerpt": "UNCHANGED, EAR (3.10 partial): in moose-profile-review.png at 8x (prof-sideb"
+    },
+    "moose:f4d12c7eb41a": {
+      "char": "moose",
+      "class": "proportions",
+      "excerpt": "UNCHANGED, BACK OF HEAD: in moose-profile-review.png at 4x (prof-head4.png),"
+    },
+    "moose:5893bf84c305": {
+      "char": "moose",
+      "class": "proportions",
+      "excerpt": "UNCHANGED, CAP DOME AND BILL: in prof-head4.png the dome is a tall bowl stan"
+    },
+    "moose:357810b9391d": {
+      "char": "moose",
+      "class": "proportions",
+      "excerpt": "UNCHANGED, NECK/COLLAR: my alpha runs on moose-front-apose-review.png give 4"
+    },
+    "moose:1942c1c8a83c": {
+      "char": "moose",
+      "class": "proportions",
+      "excerpt": "UNCHANGED, TORSO/SHOULDER WIDTH: figure width at 55% of height is 206px of 5"
+    },
+    "moose:072ef130695b": {
+      "char": "moose",
+      "class": "decal-not-form",
+      "excerpt": "UNCHANGED, POCKET: moose-front-apose-review.png at 6x (fa-pocket6.png, origi"
+    },
+    "moose:a0745ad4b21f": {
+      "char": "moose",
+      "class": "sheared-edges",
+      "excerpt": "UNCHANGED, SHOES: moose-runtime-hero.png at 4x (hero-shoes4.png, origin 455,"
+    },
+    "moose:185e45b0183c": {
+      "char": "moose",
+      "class": "face-atlas",
+      "excerpt": "UNCHANGED, ANGRY MOUTH (3.14 fails for one cell): moose-runtime-face-angry.p"
+    },
+    "moose:2d1fe5c4645b": {
+      "char": "moose",
+      "class": "decal-not-form",
+      "excerpt": "UNCHANGED, NOSE: prof-head4.png shows a small pointed nub. The script's nose"
+    },
+    "moose:0a17035a159d": {
+      "char": "moose",
+      "class": "proportions",
+      "excerpt": "UNCHANGED, RESTING HANDS IN THE FRONT VIEW: in fa-torso3.png the edge-on han"
+    },
+    "moose:41c820c6495a": {
+      "char": "moose",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT: TEAM_MASK on the cap's front panel is the pale grey rectangle in"
+    },
+    "moose:d374e898e4f2": {
+      "char": "moose",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT: the visible-face left/right OFFs (35.6 vs 18.9 / 27.6) are the r"
+    },
+    "moose:2d41a515a73e": {
+      "char": "moose",
+      "class": "no-defect-note",
+      "excerpt": "NON-DEFECT: the underarm shade is unchanged. The hanging sleeve in fa-torso3"
     }
   }
 }

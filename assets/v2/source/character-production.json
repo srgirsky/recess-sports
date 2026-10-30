@@ -93,11 +93,11 @@
     },
     "grizz": {
       "source": "grizz-pilot.blend",
-      "sourceSha256": "c602cbfaff9429b89f7440a77c56936b4ee3afa7feb8b2d19d362f780090eb1d",
+      "sourceSha256": "69a3a7486328add551a9926fe15799a50a4ca038569b2dc01743a9a85bfbd7c2",
       "concept": "grizz-turnaround.png",
       "conceptSha256": "8290768d2853e29e3c09afe3e7cf73bedf97f2dc74d1b9053506b6c66dbc2e0c",
       "output": "kid_grizz.glb",
-      "outputSha256": "3a062430a4908753c422b6a5f70dc0fb426dbfd235dd58be15a032179b83622f",
+      "outputSha256": "053466130ca4159b23e3883798b04d5c2c7f0718a889d2e864f7ae4047b001f0",
       "definingTraits": [
         "towering round afro",
         "heavy sleepy brow",
@@ -243,11 +243,11 @@
     },
     "moose": {
       "source": "moose-pilot.blend",
-      "sourceSha256": "d3a8f675d8734bdc53febff5be75d72a218c925f7ec4101a4f8cb4b82bccaa64",
+      "sourceSha256": "f256201b954bc77986b0ab9ef3d6b0e4e8d49ddd85cff28e56dad1fb556e65b1",
       "concept": "moose-turnaround.png",
       "conceptSha256": "d64f68670ae1629b82c81333c4a1be6c1ab02805f2937a1a20d3ddf679ca7bed",
       "output": "kid_moose.glb",
-      "outputSha256": "2104087c8740bc89b68d3625343d0989039a338a0fa043878c8089335ea5d5c7",
+      "outputSha256": "cfd26f43308baba6d0c0ccbbc3d604e86362715743f8455ab80104cda66d027e",
       "definingTraits": [
         "navy ball cap",
         "mustard kangaroo hoodie",
@@ -378,11 +378,11 @@
     },
     "smokey": {
       "source": "smokey-pilot.blend",
-      "sourceSha256": "ad8a82829e865ae10cc7b4d7c48fef098ba3791a559eb4d084236ad587c5526a",
+      "sourceSha256": "031e44b4cc285caa1f473ee8b87606cc2da6015e4a57c6773e39f6bef6242e79",
       "concept": "smokey-turnaround.png",
       "conceptSha256": "3df75f1c323e7ea542d76adcc2f4c294ba10e0f414b0a9f4bea352e2dcb8056e",
       "output": "kid_smokey.glb",
-      "outputSha256": "85da5ab14f705875f17b93adbcfb9899fcd19ead0d7d6137059413e20e2934a5",
+      "outputSha256": "927722cbaf08694755cfdccbc52df521690180ddf6fc48a6c2e6a22798bc64ed",
       "definingTraits": [
         "tight buzz fade",
         "plain red tee",

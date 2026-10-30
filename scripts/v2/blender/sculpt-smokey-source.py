@@ -55,6 +55,22 @@ SLOTS = ("M_Body", "M_Uniform", "M_Hair", "M_Accessory")
 SKIN = rgba("F58B3E")
 SKIN_SHADOW = rgba("B65A16")
 HAIR = rgba("241A10")        # the buzz
+# ★ THE FADE IS TWO MORE TONES, NOT A SHORTER SHELL. Two critics read the
+# shell as "smooth helmet-like hair" with "a hard horizontal cap" at the
+# rear, and a shorter table (2026-09-12) only moved the hard edge up. The
+# sheet's profile and back views (smokey-turnaround.png x 666-823 and
+# 898-1124, rows 300-380) draw a HIGH SKIN FADE: full dark above the ear
+# tops, then a gradient through the ear band to skin at the lobe line. The
+# shell's three lowest rings wear these (3.42 fade, 3.30 and 3.22 stubble),
+# so the loft interpolates dark -> fade -> stubble down the sides and nape
+# over 0.2ft; a two-ring band (3.30/3.22 alone) was 0.08ft and read as a
+# brown hem on a hard cap, not a fade. Both stay out of `isSkin`'s band on
+# the delivered board — the ramp delivers ~authored/1.2 and the toon
+# highlight lifts ~1.3x, so the lighter fade lands at lum ~70 against the
+# classifier's 80 floor (Clover's highlight lesson) — and the 62% faceSkin
+# sample row (z ~3.38) sits ABOVE both faded rings.
+HAIR_FADE = rgba("44291A")   # the fade's upper step (ring 3.42)
+HAIR_STUBBLE = rgba("5E3A1E")  # the fade's lower step, skin showing through (rings 3.30, 3.22)
 SHIRT = rgba("FF3B26")       # the red tee, chroma up
 SHIRT_DARK = rgba("D42718")  # the tee's shaded tone
 PANTS = rgba("332C24")       # charcoal shorts
@@ -197,20 +213,41 @@ def skull_front_y(x: float, z: float) -> float:
 # to 3.38 moved visible-face 7-10 points OFF because the sheet's temples
 # are haired where its nape is not.
 # (2) THE HAIRLINE RENDERS FROM THE RING ABOVE THE FRINGE (Boomer's lesson):
-# the sheet's centre hairline is between z 3.50 and 3.55 and BUZZ_FRINGE says
-# 3.500, but the nearest ring above sat at 3.560, so the curtain edge drew
-# there and the forehead read 7.5% of head height tall. A ring at 3.505.
+# the curtain edge draws at the nearest ring above BUZZ_FRINGE's z, so that
+# ring must sit within a few thousandths of the hairline.
+# ★ 2026-10-30: THE HAIRLINE WAS 0.19ft TOO LOW, and the note that put it
+# there ("the sheet's centre hairline is between z 3.50 and 3.55") does not
+# survive a re-trace. Down the front figure's centre column (x 184; crown
+# row 228, ground row 817, 0.00678 ft/px) the hair is dark from row 230 and
+# the skin begins at row 276 — z 3.668, 26% of head height — and the same
+# row holds from |x| 0 to 0.36 (rows 275-280). The delivered hairline sat at
+# z 3.48 (47%), the brows touching the hair, and an independent critic
+# measured it against the sheet (hairline 47% vs 26%, brows 49% vs 47%,
+# mouth 81% vs 78%: the face atlas is placed right and the hair is low).
+# The 3.505 ring that served the old hairline stays as shape; 3.665 carries
+# the new edge.
+# ★ AND THE EDGE NEEDS A RING ON BOTH SIDES OF THE FRINGE (the crisp-stripe
+# lesson, applied to a hairline). With 3.665 proud and the next ring (3.56)
+# buried behind the face, the quad between them crossed the face surface
+# halfway down and the visible hairline landed at z ~3.61 (33% of head
+# height; critic round 2). A buried ring at 3.655 makes the wall 0.01ft tall.
+# measured: front z=3.665 halfWidth=0.4750 tol=0.06
 BUZZ_LEVELS = [
     (3.950, 0.170, 0.180, 0.000),
     (3.900, 0.225, 0.235, 0.000),
     (3.820, 0.350, 0.360, 0.000),
     (3.700, 0.460, 0.470, 0.005),
+    (3.665, 0.475, 0.485, 0.007),   # the hairline ring (BUZZ_FRINGE 0.00 -> 3.660), proud
+    (3.655, 0.480, 0.490, 0.007),   # just under the fringe: buried, so the edge is a wall
     (3.560, 0.520, 0.530, 0.010),
     (3.505, 0.533, 0.543, 0.014),
     (3.420, 0.540, 0.550, 0.020),
     (3.300, 0.530, 0.545, 0.035),
     (3.220, 0.500, 0.520, 0.055),   # the temples keep hair to here (BUZZ_FRINGE 0.42 -> 3.14);
 ]                                   # the 3.10 and 2.98 nape tongues below were the bowl
+
+# The fade, by ring (see HAIR_FADE): full hair down to 3.42, then two steps.
+BUZZ_RING_COLOR = {3.420: HAIR_FADE, 3.300: HAIR_STUBBLE, 3.220: HAIR_STUBBLE}
 
 # The ring at 3.22 ends the shell; the former lower nape tongues are gone.
 # The independent review still reads a cap-like rear edge rather than the
@@ -219,10 +256,22 @@ BUZZ_LEVELS = [
 # The fade wraps FORWARD over the temples — the sheet's own skin band at
 # the ear row is narrow, and a curtain edge that fails to flip a quad
 # COLUMN moves the faceSkin metric by nothing (Ace's quantization lesson).
+# Traced 2026-10-30 (first skin row per column, both sides agreeing within
+# a row): |x| 0.00-0.36 -> z 3.67-3.64; 0.40 -> 3.51-3.56; 0.44 -> 3.31-3.38;
+# 0.50 -> 3.23-3.28 (the sideburn's tip, between face and ear). The temple
+# entries below 0.42 are kept LOWER than the sheet on purpose: at the 62%
+# faceSkin row (z ~3.23) the sheet's temple is a dark shading band that the
+# classifier refuses as skin, and cutting the delivered temples to the drawn
+# hairline moved visible-face 7-10 points further OFF (2026-09-12). Recorded
+# deviation: 0.42 -> 3.14 and 0.50 -> 3.02 against the sheet's 3.34 / 3.25.
+# ⚠️ The forehead entries must stay ABOVE the buried 3.655 ring across the
+# whole forehead: with 18 columns the front vertices sit at |x| 0.083 and
+# 0.24, and a (0.36, 3.640) entry put fringe_z_at(0.24) at 3.647 — under the
+# ring — so at those two columns the buried ring counted as hair and the tall
+# wall to 3.56 came back as a 6-7px notch beside the centre (critic round 3).
 BUZZ_FRINGE = [
-    (0.00, 3.500),
-    (0.28, 3.470),
-    (0.36, 3.300),
+    (0.00, 3.660),
+    (0.36, 3.658),
     (0.42, 3.140),
     (0.50, 3.020),
 ]
@@ -261,9 +310,10 @@ def build_buzz(builder: MeshBuilder, detail: int) -> None:
                     y = max(y, (sf + 0.050) if sf > -9.0 else -0.160)
                 else:
                     y = max(y, (sf - 0.060) if sf > -9.0 else -0.300)
-            ring.append(builder.vertex((x, y, z), HAIR, "Head"))
+            ring.append(builder.vertex((x, y, z), BUZZ_RING_COLOR.get(z, HAIR), "Head"))
         rows.append(ring)
-    bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02), HAIR, "Head")
+    bottom = builder.vertex((0.0, ascending[0][3], ascending[0][0] - 0.02),
+                            BUZZ_RING_COLOR.get(ascending[0][0], HAIR), "Head")
     top = builder.vertex((0.0, ascending[-1][3], ascending[-1][0] + 0.02), HAIR, "Head")
     for column in range(segments):
         nxt = (column + 1) % segments
@@ -432,10 +482,20 @@ LEG_STATIONS = [
 ]
 
 # The yoke that closes the crotch (Zippy's lesson).
-# not-traceable: interior geometry no view can show.
+# ★ 2026-10-30: THE YOKE ENDS AT THE DRAWN CROTCH, not at the shorts hem. Its
+# bottom ring sat at 0.900 — the hem's own height — so between striding legs
+# a third garment mass hung the full length of the shorts (a critic's
+# "solid third hanging garment mass between moving legs", smokey-runtime-
+# run.png 4x). On the front sheet the legs part at z 1.21: a backdrop pocket
+# opens between them at rows 640-677 (x 182-185 at z 1.20, widening to
+# 175-192 at z 0.95) and is closed at z 1.22 (row 637, pants 133-176 | 189-
+# 255 with only ink between). The leg tubes themselves (LEG_STATIONS,
+# inseam_half) still meet at the centreline to the hem, so nothing opens.
+# not-traceable: interior geometry no view can show; the sheet pins only
+# where it ends (the crotch at z 1.21), never its halves.
 CROTCH_LEVELS = [
-    (0.900, 0.180, 0.220, "Hips"),
-    (1.150, 0.215, 0.265, "Hips"),
+    (1.200, 0.180, 0.220, "Hips"),
+    (1.330, 0.215, 0.265, "Hips"),
     (1.470, 0.250, 0.310, "Hips"),
 ]
 
