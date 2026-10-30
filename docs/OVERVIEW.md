@@ -3495,6 +3495,18 @@ camera. It now projects the four bases and asserts several things:
 The change is render-only. The sim, every systems test, and both goldlog
 fingerprints (main `a71e6a2f`, kid `a1686f32`) are byte-identical.
 
+## October 30 — the live-shot presence cap goes to 2.0x
+
+Worklist #2's tail: with the 1.6x cap from September 29, kids in the widest
+live shots — a fly to the wall, the DEEP rig — still read as specks, because
+the cap, not the target, was what bound on the far half of the field. The
+maintainer raised `PRESENCE.maxScale` to 2.0. Same survey as before, through
+the real bridge and ladder over three seeded games: the chasing fielder now
+stands 5.9% of frame height at the median and 4.3% at p10 (from 5.0% and
+3.5%; BB2001 is 8–9%). Render-only, as before; the plate, draft and board
+cameras never scale, and the crowd taper still eases two kids on one bag
+back to base scale. `cameraPresence.test.ts` holds the new floors.
+
 ## October 30 — PICK OFF, and the runner who picked his pitch
 
 What we believed: the stolen base was a play now, and the pitcher's counter
