@@ -241,6 +241,18 @@ optional paid cloud comparison and needs `OPENAI_API_KEY`; it is not the default
 production path. A future human performance can replace an AI master through
 the same technical contract when rights and consent are documented.
 
+**Kid voices (research, October 2026).** Kokoro's stock voices are all adults,
+so the shipped kids sound like adults. `docs/research/kid-voices.md` holds the
+licence survey and the bake-off of free local fixes. The bake-off renders the
+same lines through every approach, measures them, and writes a listening page
+to the ignored audition inbox. It needs three local Python environments; the
+setup is in that doc.
+
+```bash
+.cache/kv-dsp/bin/python scripts/v2/kid-voice/bakeoff.py
+open assets/v2/voice-auditions/kid-voice-bakeoff/index.html
+```
+
 ### Seeing what the v2 ball does
 
 ```bash
