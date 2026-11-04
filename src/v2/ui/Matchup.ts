@@ -43,6 +43,17 @@ export class Matchup {
       art.className = 'matchup-chip__art';
       const name = document.createElement('div');
       name.className = 'matchup-chip__name';
+      // Two spellings of one name, and the FRAME picks (app.css): the full
+      // name where the plate has room, the first name on a phone. Two full
+      // World 1 names ("JUNEBUG HALLORAN" vs "ROZ ACHTERBERG") plus the LOG
+      // button are wider than 390px, and the batter's chip ran off the left
+      // edge of the frame (2026-11-04 audit). A first name is also what a
+      // five-year-old calls a kid.
+      const full = document.createElement('span');
+      full.className = 'matchup-chip__name-full';
+      const short = document.createElement('span');
+      short.className = 'matchup-chip__name-short';
+      name.append(full, short);
       const line = document.createElement('div');
       line.className = 'matchup-chip__line';
       chip.append(art, name, line);
@@ -88,7 +99,9 @@ export class Matchup {
         this.shown[i] = key;
         const c = this.lookup(id);
         this.arts[i].replaceChildren(portrait(c, c.name, kit[i] === undefined ? undefined : { uniform: kit[i] }));
-        this.names[i].textContent = c.name.toUpperCase();
+        const [full, short] = Array.from(this.names[i].children) as HTMLElement[];
+        full.textContent = c.name.toUpperCase();
+        short.textContent = c.name.split(' ')[0].toUpperCase();
       }
     });
     this.lines[0].textContent = lines.batter;

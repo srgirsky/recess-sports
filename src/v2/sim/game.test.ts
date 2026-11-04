@@ -520,16 +520,22 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
   // silently rewrite the baseline that catches drift in the existing game.
   const CHECKSUM_VENUES: VenueId[] = ['park', 'sandlot', 'blacktop'];
 
-  // ★ ASYNC, AND IT YIELDS BETWEEN GAMES — a CI fix, not a style choice.
-  // Thirty games is ~15s of UNBROKEN synchronous work, which starves the vitest
-  // worker's event loop for the whole of it, so the reporter's `onTaskUpdate`
-  // RPC times out and the run fails with every single test passing. It had been
-  // failing intermittently on `main` since the checksum landed in PR 13, and the
-  // symptom is maximally misleading: "1081 passed, 1 error". One macrotask turn
-  // per game costs nothing and lets the worker answer.
-  it('★ checksums thirty games, which is what catches a subtle drift', async () => {
-    let acc = 0;
-    for (let i = 0; i < 30; i++) {
+  // ★ ONE `it` PER GAME, AND THE FOLD IN A LAST ONE — the drain sweep's
+  // shape below, for the same reason. The thirty games were one test against
+  // the shared PLAYS_GAMES budget: ~15s of unbroken synchronous work that
+  // starved the worker's event loop (the reporter RPC timed out with every
+  // assertion green, "1081 passed, 1 error", intermittently since PR 13), then
+  // yielding between games fixed that but left thirty games in one 30s budget.
+  // main's last green run spent 22s of it; the World 1 re-cast's first run went
+  // over with every game fine (2026-11-04). A game is ~0.3s here and three to
+  // five times that on CI, so each gets the whole budget to itself and a slow
+  // runner cannot fail a sim that did not change. The terms live in module
+  // state because vitest runs a file's tests in order; a game that throws
+  // leaves the fold short, and the fold says so before it compares.
+  const checksumTerms: number[] = [];
+  it.each(Array.from({ length: 30 }, (_, i) => i))(
+    '★ plays checksum game %i',
+    async (i) => {
       await new Promise((r) => setTimeout(r, 0));
       const off = (i * 7) % ROSTER.length;
       const at = (j: number) => ROSTER[(off + j) % ROSTER.length].id;
@@ -543,20 +549,24 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
         makeRng(`golden${i}`)
       );
       const t = g.tally;
-      acc =
-        (acc * 31 +
-          g.awayScore * 7 +
-          g.homeScore * 13 +
-          t.plateAppearances * 17 +
-          t.hits * 19 +
-          t.strikeouts * 23 +
-          t.runs * 29 +
-          t.stealAttempts * 37 +
-          g.innings * 41) %
-        2147483647;
-    }
+      checksumTerms[i] =
+        g.awayScore * 7 +
+        g.homeScore * 13 +
+        t.plateAppearances * 17 +
+        t.hits * 19 +
+        t.strikeouts * 23 +
+        t.runs * 29 +
+        t.stealAttempts * 37 +
+        g.innings * 41;
+    },
+    PLAYS_GAMES
+  );
+  it('★ checksums thirty games, which is what catches a subtle drift', () => {
+    expect(checksumTerms.filter((x) => x !== undefined).length, 'every game played').toBe(30);
+    let acc = 0;
+    for (const term of checksumTerms) acc = (acc * 31 + term) % 2147483647;
     expect(acc, 'the sim changed behaviour — if deliberate, re-run and move this').toBe(CHECKSUM_30);
-  }, PLAYS_GAMES);
+  });
 
   // Keep every venue/seed pair, but report them separately and yield between
   // pairs. One synchronous sweep blocked the worker's reporting RPC for ~26s

@@ -62,6 +62,18 @@ dropped the ball exactly when the tag was due, pre-existing in a sixth of swept
 plays. The self-throw is gone, and the honest long play that remained (the
 defence taking its outs in sequence) re-derived the cap: `sim.playClock`.
 
+CI then found what the local suite had not. Two full World 1 names on the
+matchup plate ("JUNEBUG HALLORAN" vs "ROZ ACHTERBERG") plus the LOG button are
+wider than a 390px phone, and the chip's column had no floor under its name
+(`overflow: hidden` zeroes a grid item's automatic minimum), so the chip
+collapsed to its portrait and the batter's name ran off the left edge. The
+column floors at the name now, and a phone shows first names — which is what a
+five-year-old calls a kid anyway. The layout audit's seeded album and season
+needed the version bump the cast gave them. And the thirty-game checksum, one
+test against a thirty-second budget that main's last green run had spent
+twenty-two seconds of, is thirty tests and a fold — the drain sweep's shape —
+so a slow runner cannot fail a sim that did not change.
+
 ### Design pillars (ages 4–8)
 
 - **Minimal reading.** Icons, color, and voice over text. A 6-year-old who can't read should be able to play.

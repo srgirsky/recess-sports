@@ -895,6 +895,12 @@ body.replay #hud > *:not(.replay-bar):not(.replay-badge):not(.btn--mute) {
 }
 .matchup-chip {
   display: grid;
+  /* ★ The column's floor is the NAME's min-content (its cap included), not
+     zero. `overflow: hidden` on the name makes its automatic minimum 0, so
+     under flex pressure the chip collapsed to its portrait's width and the
+     centred name ran past the card on both sides — off the frame's left edge
+     at 390px once the cast had sixteen-letter names (2026-11-04 audit). */
+  grid-template-columns: minmax(min-content, max-content);
   justify-items: center;
   gap: 0.08rem;
   padding: clamp(0.2rem, 1svh, 0.4rem) var(--s3);
@@ -923,6 +929,20 @@ body.replay #hud > *:not(.replay-bar):not(.replay-badge):not(.btn--mute) {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* The first name on a phone, the full name everywhere else — the same
+   600px line that drops the plate below the pause. Two full names and the
+   LOG button do not fit in 390px side by side (Matchup.ts says why). */
+.matchup-chip__name-short {
+  display: none;
+}
+@media (max-width: 600px) {
+  .matchup-chip__name-full {
+    display: none;
+  }
+  .matchup-chip__name-short {
+    display: inline;
+  }
 }
 .matchup-chip__line {
   font-size: clamp(0.4rem, 1.5svh, 0.5rem);
