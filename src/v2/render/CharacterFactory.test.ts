@@ -81,6 +81,19 @@ describe('resolution order', () => {
     warn.mockRestore();
   });
 
+  it('still loads a re-cast slot\'s delivered FILE for a gate that asks (deliveredFile)', async () => {
+    // `audit:batting` sweeps every delivered model's grip; the file is what it
+    // audits, whoever the cast now says is inside it. Under vitest the load
+    // itself fails (no fetch), which is the proof here: the factory reached
+    // the loader instead of stopping at the re-cast rule.
+    const recast = ROSTER.find((c) => c.recast && !c.recast.modelCarries)!;
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { source } = await createCharacter(recast, { deliveredFile: true });
+    expect(source).toBe('proxy-failed');
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
   it('falls back and warns ONCE when a delivered model cannot be loaded', async () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
 

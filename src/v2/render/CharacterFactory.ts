@@ -19,6 +19,10 @@
 //   2. not delivered      -> proxy, silently. The committed manifest is complete,
 //                         but a partial deploy or stale cached manifest must
 //                         remain a cosmetic downgrade rather than a crash.
+//   2b. re-cast slot      -> proxy, silently, when the delivered sculpt is the
+//                         kid who held the slot before (`Character.recast`).
+//                         A file gate that audits the ASSET rather than the
+//                         cast passes `deliveredFile` to step past this one.
 //   3. load/parse failed  -> proxy, and warn ONCE per character. A 404 or a
 //                         malformed file IS a defect, and it is the one thing
 //                         here that somebody has to fix.
@@ -44,6 +48,12 @@ export interface CreatedKid {
 export interface CharacterFactoryOptions extends CharacterModelOptions {
   /** Override the `?proxy=1` reading. Tests set it; the game reads the URL. */
   forceProxy?: boolean;
+  /**
+   * Load the delivered file even for a re-cast slot whose sculpt is the
+   * previous kid. For the gates that audit the ASSET — `audit:batting` sweeps
+   * every delivered model's grip — not the cast; the game never passes it.
+   */
+  deliveredFile?: boolean;
 }
 
 const warned = new Set<string>();
@@ -68,7 +78,7 @@ export async function createCharacter(
   character: Character,
   opts: CharacterFactoryOptions = {}
 ): Promise<CreatedKid> {
-  const { forceProxy, ...modelOpts } = opts;
+  const { forceProxy, deliveredFile, ...modelOpts } = opts;
   const proxy = (source: KidSource): CreatedKid => ({
     view: new ProxyCharacter(character.visual, {
       uniform: modelOpts.uniform,
@@ -90,7 +100,7 @@ export async function createCharacter(
   //     wrong kid is a cosmetic downgrade in the other direction, so it is a
   //     proxy on purpose, and silently: the record is on the character, and
   //     the sculpt campaign closes it by delivering against the new sheet.
-  if (character.recast && !character.recast.modelCarries) return proxy('proxy-recast');
+  if (character.recast && !character.recast.modelCarries && !deliveredFile) return proxy('proxy-recast');
 
   try {
     const gltf = await loadCharacterModel(character.id);
