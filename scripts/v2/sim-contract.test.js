@@ -589,13 +589,15 @@ describe('sim.aeroModelLowSpeed, after the mapping landed', () => {
   it('★ has had its significance raised, not quietly leaned on', () => {
     // It was a caveat on a conformed model. It is now the open question every
     // batted ball in the game passes through.
-    expect(rec.significanceRaisedBy).toMatch(/TWENTY-NINE OF THIRTY/);
+    // Re-pinned 2026-11-03 for the World 1 re-cast: twenty-nine of thirty
+    // became twenty-seven (the three power-10 kids sit a hair above the floor).
+    expect(rec.significanceRaisedBy).toMatch(/TWENTY-SEVEN OF THIRTY/);
     // And that is checkable: the roster's exit velocities against the fit floor.
     const eA = collisionEfficiency();
     const below = ROSTER.filter(
       (c) => ftsToMph(exitVelocity(eA, 37.6, batSpeedFts(c.stats.power))) < AERO.FIT_SPEED_BAND_MPH[0]
     ).length;
-    expect(below).toBeGreaterThanOrEqual(29);
+    expect(below).toBe(27);
   });
 });
 
@@ -726,8 +728,9 @@ describe('sim.throwSpeed', () => {
     const ssToFirst = dist(FIELD_POSITIONS.SS, FIRST);
     expect(cfToFirst).toBeCloseTo(129.7, 1);
     expect(ssToFirst).toBeCloseTo(68.2, 1);
-    // "27 of 30 cannot make that throw; every one of the 30 can make the short one."
-    expect(ROSTER.filter((c) => maxThrowFt(c.stats.pitching) < cfToFirst).length).toBe(27);
+    // "23 of 30 cannot make that throw; every one of the 30 can make the short one."
+    // (27 of 30 until the World 1 re-cast, 2026-11-03; the record keeps both.)
+    expect(ROSTER.filter((c) => maxThrowFt(c.stats.pitching) < cfToFirst).length).toBe(23);
     expect(ROSTER.filter((c) => maxThrowFt(c.stats.pitching) >= ssToFirst).length).toBe(ROSTER.length);
     expect(rec.theRelayBecomesAConsequence).toMatch(/806px/);
   });
@@ -1160,7 +1163,13 @@ describe('sim.lineupArm', () => {
   it('★ recomputes the arm demand from the field, and closes PR 6s finding', () => {
     expect(throwDemandFt('SS')).toBeCloseTo(rec.measured.ssToFirstFt, 1);
     expect(throwDemandFt('LF'), 'the outfield throws furthest').toBeGreaterThan(throwDemandFt('SS'));
-    const ids = ROSTER.slice(0, 9).map((c) => c.id);
+    // ★ THE NINE IS THE RECORD'S (`measured.nine`), not ROSTER[0..8]. Since the
+    // World 1 re-cast (2026-11-03) the first nine carries three real arms, the
+    // mound and the corners take them, and both planners put a 77ft arm at
+    // short — a tie that demonstrates nothing. `measured.worldOneCensus` has
+    // what the planners do across the cast; this test checks the mechanism on
+    // a nine where it can be seen.
+    const ids = ['smokey', 'wheelchair_ace', 'diva', 'bend_it', 'boomer', 'lefty', 'moose', 'rocket', 'turbo'];
     const v1SS = Object.entries(autoAssign(ids).positions).find(([, p]) => p === 'SS')[0];
     const v2SS = Object.entries(planDefence(ids, getCharacter).positions).find(([, p]) => p === 'SS')[0];
     expect(maxThrowFt(getCharacter(v1SS).stats.pitching)).toBeCloseTo(rec.measured.v1ShortstopRangeFt, 0);

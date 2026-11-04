@@ -40,48 +40,49 @@ export const AI_VOICE_CAST = {
     voice: 'af_bella',
     speed: 0.96,
     masterSha256: 'df55b8c2444d05527cd3e4be6903bad7c25af609582a39507a81a37ca288f442',
-    runtimeSha256: '052202a9e93183617912232277933397e490cb7cddb33847d6920b2b6eb0f9e6',
+    runtimeSha256: 'd69d714378bfe9af7e843ddcceff92d231e6126cfaf762801343091a9072f10a',
     direction: 'Grounded and precise; dry confidence first, smallest smile on the final word.',
   },
+  // The slot was re-cast as Mars Delacruz (2026-11); the take and voice follow.
   calls_shot: {
-    candidates: ['am_puck', 'am_fenrir', 'am_michael'],
-    voice: 'am_puck',
+    candidates: ['af_sky', 'af_nova', 'af_heart'],
+    voice: 'af_sky',
     speed: 1.06,
-    masterSha256: 'fc53b54a44020c41efb5f34b8f0b15fa8b73c82bbd3fb648ffddf4361fbbed8e',
-    runtimeSha256: 'f1eec07cc30b93d89470972b4fb1397491f3a1d48a044c4500d09c8c345c4503',
-    direction: 'Bright and elastic; delighted self-belief, with the final boast landing as a grin rather than a yell.',
+    masterSha256: '67e53cacd14452d35e8fd42a74592fa17a3ae93164cf5263d78c32383795ecde',
+    runtimeSha256: '2f847dc7ad271a24e3312ee69120b491ea14f656a4c14bddfbcae83cad36663b',
+    direction: 'Bright and elastic; Called it lands as a verdict, then delighted self-belief all the way to the MOON, grinning rather than yelling.',
   },
   wheelchair_ace: {
     candidates: ['am_michael', 'am_fenrir', 'am_puck'],
     voice: 'am_michael',
     speed: 0.98,
     masterSha256: 'd6998dca97e5290493df209c1a6b7203d200183989c2be70b9da723a968adafe',
-    runtimeSha256: '150935b4220b8ce5252246da56693f69f1b2ad5accb42e2a8fcd016ae08d569a',
+    runtimeSha256: 'd5f8b51c0638f83c434134a375936bf1a11c9782de7513c68dc4ec8a6997a83d',
     direction: 'Relaxed and inventive; share the first sentence like a secret, make the second Nobody conspiratorial, and finish with a contained half-smile rather than added laughter.',
   },
   big_lou: {
     candidates: ['am_liam', 'am_eric', 'am_fenrir'],
     voice: 'am_liam',
     speed: 0.92,
-    masterSha256: 'db127a755d61692a78509bcd4ec9c92d1d039aee0e525513351c767a32025e28',
-    runtimeSha256: 'a7501309106ad782880259368eacbad135f410632473d02b74535448a1bf941d',
-    direction: 'Warm and roomy without forced depth; take a tiny breath before Moon shot, then toss baby away with an effortless playground grin.',
+    masterSha256: '9bbb1fe14f30ea6ebf6f7ebbbb81717ce38d76de7817bdb83eb267f96c8d2aa0',
+    runtimeSha256: 'ef4c5a747813f21ce2d16502cfbcac7cf6bd3b73bbdbc2ea3353a6f541e29d8c',
+    direction: 'Warm and roomy without forced depth (Guri Sandhu); ask Which yard is this as a real question, then land Good and the rest with an effortless playground grin.',
   },
   tank: {
     candidates: ['am_eric', 'am_liam', 'am_michael'],
     voice: 'am_eric',
     speed: 0.9,
-    masterSha256: '9e6846dfb560985c531628137a8b162e94ca52e745ee05bac16eec333efbe16c',
-    runtimeSha256: '15b7a32d6aacc172aacdc5cb8f2feba11bca0ce77fb9bda6a9e1ab91644cebf3',
-    direction: 'Small, blunt and comfortable; make Tank smash an honest declaration, pause fully, then soften and slightly quicken After snacks.',
+    masterSha256: '7e03d178f2ce62cdd065c3927ad9624963141adfbffea308c55c76c02fcff48e',
+    runtimeSha256: '9ad417d0797121c02e6012cb4bdb248608fc18cae08b49c4bf91af4ec095ea10',
+    direction: 'The softest voice from the largest kid (Sonny Fifita); Me is a genuine surprise, Sorry everybody is meant, and I am not moving is calm fact, never a threat.',
   },
   mimi_mash: {
     candidates: ['af_nicole', 'af_bella', 'af_nova'],
     voice: 'af_nicole',
     speed: 1.08,
-    masterSha256: '897fc4467dbf2954703a3710f0cf032bee694a0c7e6f7346b00b080a1d07a829',
-    runtimeSha256: '76e15d4ee9b702061c1a9dd8a4fe3fb2d4c6d5dc850d08ed16a6ab3caadcccd1',
-    direction: 'Powerful young-girl ignition with a playful rasp; explode into MASH TIME, reset once, then make Point me at the fence a joyful practical instruction rather than a sustained yell.',
+    masterSha256: '40a9e0f47d32de5c8ceba8578492682ff35fa032c90d834eb16d1a3e3b220904',
+    runtimeSha256: 'a9d276fd21a0e787465e5a9c79c7e7e8693b9941d1125b0570250dab0404b74d',
+    direction: 'Powerful young-girl ignition with a playful rasp (Yaz Rahman); Eyes closed, bat ready is matter-of-fact, and Trust me is the joke she does not know is a joke.',
   },
 };
 
@@ -128,8 +129,12 @@ function encodeMaster(source, master) {
 
 function encodeRuntime(master, runtime) {
   mkdirSync(dirname(runtime), { recursive: true });
+  // Normalised to the voice target on the way to the runtime file, like the
+  // system-voice bank: `measure:audio` can only turn a clip DOWN, so a quiet
+  // take would otherwise set the whole bank's spread (audio-assets.test.js).
   run('ffmpeg', [
     '-loglevel', 'error', '-y', '-i', master,
+    '-af', 'loudnorm=I=-21:TP=-1.5:LRA=11',
     '-ac', '1', '-ar', '24000', '-b:a', '64k', runtime,
   ]);
   if (statSync(runtime).size < 4096) throw new Error(`empty runtime voice: ${runtime}`);

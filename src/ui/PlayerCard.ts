@@ -20,7 +20,7 @@ import { drawStatBars, drawStatDots } from './statbars';
 /** Display labels for the signature abilities (a card concern, not data). */
 const ABILITY_LABEL: Partial<Record<AbilityId, string>> = {
   never_strikes_out: '🎯 NEVER MISSES',
-  calls_shot: '🗣️ CALLS HIS SHOT',
+  calls_shot: '🗣️ CALLS THE SHOT',
   unhittable_pitch: '🌀 CRAZY PITCH',
   crazy_bunt: '🤪 CRAZY BUNT',
 };

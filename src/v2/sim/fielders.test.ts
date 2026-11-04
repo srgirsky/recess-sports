@@ -531,7 +531,9 @@ describe('the chaser election', () => {
     // — 160 samples — while the shared helper above uses 24 over 10s, which is a
     // 0.42s grid. `DEFENSE.CHASE_STEP_SEC`'s own comment says the grid IS the
     // resolution of the aim, so a measurement of who gets elected has to use the
-    // game's. It reads 86.5% on the coarse grid and 91.6% on the real one.
+    // game's. It read 86.5% on the coarse grid and 91.6% on the real one; the
+    // World 1 re-cast (2026-11-03) put different kids in the same nine slots
+    // and it reads 92.6% — `sim.chaserElectionGate.measured.reMeasured`.
     const traces = specs.map((s) =>
       traceLooseBall(launch(s), PARK, {
         horizonSec: DEFENSE.CHASE_HORIZON_SEC,
@@ -577,7 +579,7 @@ describe('the chaser election', () => {
     // behaviour. The record's finding rests on the superseded reading, where the
     // ratio and fixed gates drifted identically. See
     // `sim.chaserElectionGate.theMETRICCHANGEDMEANINGINPR10`.
-    expect(rates[1], 'the rate at shipped speed').toBeCloseTo(91.6, 0);
+    expect(rates[1], 'the rate at shipped speed').toBeCloseTo(92.6, 0);
     const spread = Math.max(...rates) - Math.min(...rates);
     expect(spread, 'pinned so it cannot grow unnoticed').toBeLessThan(22);
     // The gate itself is at least dimensionless, which is the thing that IS

@@ -33,7 +33,7 @@ import { ProxyCharacter } from './ProxyCharacter';
 import { hasDeliveredModel, loadManifest } from './assets';
 import { loadCharacterModel } from './modelLoader';
 
-export type KidSource = 'model' | 'proxy-forced' | 'proxy-undelivered' | 'proxy-failed';
+export type KidSource = 'model' | 'proxy-forced' | 'proxy-undelivered' | 'proxy-recast' | 'proxy-failed';
 
 export interface CreatedKid {
   view: KidView;
@@ -84,6 +84,13 @@ export async function createCharacter(
   // whose omission would show up as "every kid is a proxy" and nothing else.
   await loadManifest();
   if (!hasDeliveredModel(character.id)) return proxy('proxy-undelivered');
+
+  // 2b. The slot was re-cast and the delivered sculpt depicts who held it
+  //     before (`Character.recast`, 2026-11). A model that exists but is the
+  //     wrong kid is a cosmetic downgrade in the other direction, so it is a
+  //     proxy on purpose, and silently: the record is on the character, and
+  //     the sculpt campaign closes it by delivering against the new sheet.
+  if (character.recast && !character.recast.modelCarries) return proxy('proxy-recast');
 
   try {
     const gltf = await loadCharacterModel(character.id);

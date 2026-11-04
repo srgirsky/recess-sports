@@ -31,6 +31,37 @@ Two consequences for every design decision:
 1. The **draft** is the most important screen — it's where the vote happens. Characters must be distinct and lovable at a glance.
 2. Pick logging is a **first-class feature**, not an analytics afterthought. (Today it's `localStorage`; a cross-player backend is the obvious next step.)
 
+### The World 1 cast (2026-11)
+
+The thirty kids are now the **World 1 cast** — `docs/world1/kids-roster-v0.7.md`,
+seven Tier 1 heroes and twenty-three Tier 2 neighborhood kids across ten
+archetypes, fifteen girls and fifteen boys, each with a hook that is a habit or a
+flaw and never a heritage. The sheet arrived after thirty kids had already been
+drawn, voiced and sculpted, and it turned out to be the same product re-cast
+rather than a second roster: its three load-bearing hooks were already in the
+game under `nostrike`, `calls_shot` and `wheelchair_ace`. So the cast was
+**re-cast in place**: every kid kept the id of the slot it took over, because the
+id is the tally key, the album key, the model filename and the registry key,
+and nothing else about a kid is fixed. `Character.recast` records who held each
+slot and whether the delivered v2 sculpt still stands in; four slots flipped
+boy to girl and draw the proxy until a sculpt against the new sheet lands. The
+pick tally and the album are scoped to the cast rather than re-keyed, so the
+storage keys the root brief names stay shared across v1 and v2. What the sheet
+asks for that the game does not yet have — the sport hijab, the patka,
+tzitzit, catcher's gear, the racing chair; Clutch, the Wobble, Heater, hit by
+pitch, Zaya's silence — is scoped in `docs/world1/cast-scope.md`.
+
+Re-casting thirty kids under fixed ids moved about forty roster-derived pins,
+and two of them were not pins at all. The per-kid acting table in
+`src/v2/render/performance.ts` was indexed by roster POSITION, so reordering the
+file had every kid wearing a neighbour's direction and only the by-id tests
+noticed; it is keyed by slot id now. And the play-clock sweep's runner fixture
+is indexed too, which turned two fast runners into a slow one ahead of a fast
+one and exposed a carrier throwing to the bag he stood on — a ~0 s flight that
+dropped the ball exactly when the tag was due, pre-existing in a sixth of swept
+plays. The self-throw is gone, and the honest long play that remained (the
+defence taking its outs in sequence) re-derived the cap: `sim.playClock`.
+
 ### Design pillars (ages 4–8)
 
 - **Minimal reading.** Icons, color, and voice over text. A 6-year-old who can't read should be able to play.
@@ -403,7 +434,7 @@ The derived rolling limit is used instead, and the enhancement is recorded as
 pending rather than guessed at.
 
 Finally, an open record got much heavier. Nathan's drag fit is verified over
-60–110 mph. The roster hits 43–61, so **29 of 30 kids** put batted balls below
+60–110 mph. The roster hits 43–61, so **27 of 30 kids** (29 before the World 1 re-cast) put batted balls below
 the floor of the band the fit was measured in: essentially every ball this game
 will ever simulate is an extrapolation past the edge of the measurement, and the
 statistical harness will be measuring BABIP straight through it.
@@ -494,8 +525,8 @@ is not BABIP — grounders only, no strikeouts, uniform sprays — and
 
 The relay stopped being a mechanic. v1 had to *invent* `LIVE.RELAY`, gated on a
 hand-picked 1.39 basepath legs, "because throw DISTANCE provably cannot do this
-job". Here an arm has a range: centre field to first is 129.7 ft and 27 of 30
-kids cannot throw it, so a cutoff man is what happens when nobody can reach the
+job". Here an arm has a range: centre field to first is 129.7 ft and 23 of 30
+kids (27 before the World 1 re-cast) cannot throw it, so a cutoff man is what happens when nobody can reach the
 bag — 16% of plays. v1's **look-back rule**, which concedes a base so the relay
 buys anything, was deliberately *not* ported, and the outcome says it was not
 needed: that rule is a statement about v1's geometry, not about relays.

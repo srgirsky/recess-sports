@@ -193,7 +193,13 @@ function play(launch: LaunchSpec, boost: PlaySpec['boost'], seed = 'play-tests')
 describe('★ turbo legs turn a specific single into a double', () => {
   // A blooper into shallow right-centre: on his own legs the batter holds at
   // first; at 1.35x he rounds the bag and the race to second is his.
-  const BLOOP: LaunchSpec = { exitVelocityFts: 62, launchAngleDeg: 24, sprayDeg: 22, spinRpm: 1500, heightFt: 2.5 };
+  //
+  // Re-pinned 2026-11-03 for the World 1 re-cast: the defence is still
+  // autoAssign over ROSTER[0..8], but that nine now puts Sonny (speed 2) in
+  // right, and the old 24-degree bloop at 22 degrees of spray is a double on
+  // the batter's own legs against him. Four degrees flatter and further toward
+  // the line it is the single-then-double the case describes.
+  const BLOOP: LaunchSpec = { exitVelocityFts: 62, launchAngleDeg: 20, sprayDeg: 26, spinRpm: 1500, heightFt: 2.5 };
 
   it('★ the pinned case', () => {
     const plain = play(BLOOP, undefined);

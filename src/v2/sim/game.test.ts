@@ -299,8 +299,18 @@ describe('★ the v2 lineup planner, closing PR 6s own finding', () => {
     // `fielding*2 + speed` and never looks at `pitching`, so it put a 34mph arm
     // (77ft of range) at the position with the longest routine infield throw. He
     // fields at 72ft and cannot beat the runner across.
-    const v1 = autoAssign(AWAY);
-    const v2 = planDefence(AWAY, getCharacter);
+    //
+    // ★ ON A NINE WHERE THE DIFFERENCE CAN BE SEEN, and that is a World 1 fact
+    // worth knowing (2026-11-03, `sim.lineupArm.measured.nine`): the cast's
+    // arms are bimodal (seventeen kids at 2-3, eleven at 7-10) and short is
+    // seventh in `planDefence`'s demand order, so on AWAY — three real arms,
+    // all taken by the mound and the corners — both planners put Zaya's 77ft
+    // arm at short and the test tied itself. Seven arms and two glove-and-legs
+    // kids: autoAssign still picks Zaya for short; planDefence does not.
+    // `sim.lineupArm.worldOneCensus` records how often each planner wins.
+    const ARMS = ['smokey', 'wheelchair_ace', 'diva', 'bend_it', 'boomer', 'lefty', 'moose', 'rocket', 'turbo'];
+    const v1 = autoAssign(ARMS);
+    const v2 = planDefence(ARMS, getCharacter);
     const armAt = (positions: Record<string, string>, pos: string) => {
       const id = Object.entries(positions).find(([, p]) => p === pos)![0];
       return maxThrowFt(getCharacter(id).stats.pitching);
@@ -414,44 +424,59 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
    * ball is in play with him on. Measured: 10.74 attempts a game at 95.0% ->
    * 9.69 at 99.6% (`sim.stealRace`); he goes less and is caught less, which
    * is what "he picks his pitch" ought to mean.
+   *
+   * ★ RECAPTURED 2026-11-03 FOR THE WORLD 1 RE-CAST. Not a sim change: the
+   * thirty ids kept their slots but every kid's stats, and so every leg,
+   * arm, swing and read in these games, changed by design
+   * (`src/data/characters.ts`'s header). AWAY and HOME are still
+   * ROSTER[0..8] and ROSTER[9..17], so every one of the thirty-three moved.
+   * The previous fingerprints are in git at the commit before this one; the
+   * ratchet restarts here. `sim.gameShape`'s harness figures were NOT re-run
+   * with this recapture and describe the old cast until they are.
+   *
+   * ★ AND ONCE MORE THE SAME DAY, for one sim rule the re-cast exposed: a
+   * carrier standing on a bag no longer throws to his own bag
+   * (`bestBeatableBase`, `sim.playClock`). The self-throw was a ~0s flight that
+   * dropped the ball exactly when the tag was due, so games with an unforced
+   * runner beaten to a bag now end those plays differently.
    */
   const GOLDEN: Record<string, string> = {
-    'park:a': '6-5 i6 pa68 h34 k17 r11 s11',
-    'park:b': '2-1 i6 pa53 h18 k14 r3 s8',
-    'park:c': '9-11 i6 pa74 h40 k13 r20 s13',
-    'sandlot:a': '0-0 i7 pa60 h23 k15 r0 s9',
-    'sandlot:b': '1-0 i6 pa53 h20 k14 r1 s10',
-    'sandlot:c': '0-2 i6 pa53 h28 k15 r2 s7',
-    'blacktop:a': '2-0 i6 pa47 h11 k10 r2 s3',
-    'blacktop:b': '1-2 i6 pa47 h15 k13 r3 s7',
-    'blacktop:c': '5-8 i6 pa61 h28 k13 r13 s3',
+    'park:a': '5-4 i6 pa61 h29 k9 r9 s10',
+    'park:b': '1-0 i6 pa50 h21 k9 r1 s6',
+    'park:c': '6-0 i6 pa58 h28 k16 r6 s8',
+    'sandlot:a': '5-4 i6 pa58 h27 k13 r9 s10',
+    'sandlot:b': '1-5 i6 pa51 h21 k11 r6 s11',
+    'sandlot:c': '5-1 i6 pa57 h25 k15 r6 s9',
+    'blacktop:a': '6-2 i6 pa56 h22 k14 r8 s8',
+    'blacktop:b': '4-5 i6 pa54 h27 k12 r9 s8',
+    'blacktop:c': '3-3 i7 pa58 h23 k17 r6 s9',
     // Added with the venues: there is no pre-generator result for content that
     // did not exist then, so these are their birth fingerprints and ratchet
     // from here exactly as the first three do.
-    'tin_can:a': '4-2 i6 pa60 h27 k18 r6 s12',
-    'tin_can:b': '2-1 i6 pa53 h21 k16 r3 s12',
-    'tin_can:c': '1-4 i6 pa48 h20 k12 r5 s8',
-    'cement:a': '2-1 i6 pa50 h14 k15 r3 s4',
-    'cement:b': '1-2 i7 pa59 h21 k15 r3 s12',
-    'cement:c': '4-3 i6 pa59 h28 k16 r7 s8',
-    'steele:a': '2-0 i6 pa48 h17 k14 r2 s8',
-    'steele:b': '1-2 i6 pa49 h17 k13 r3 s8',
-    'steele:c': '9-3 i6 pa63 h32 k15 r12 s11',
-    'playground:a': '4-4 i7 pa71 h34 k19 r8 s9',
-    'playground:b': '2-3 i7 pa60 h24 k15 r5 s10',
-    'playground:c': '11-4 i6 pa63 h33 k14 r15 s9',
-    'eckman:a': '0-0 i7 pa60 h23 k15 r0 s10',
-    'eckman:b': '1-0 i6 pa53 h20 k14 r1 s10',
-    'eckman:c': '6-4 i6 pa59 h31 k16 r10 s9',
-    'dirt_yards:a': '4-0 i6 pa54 h20 k16 r4 s6',
-    'dirt_yards:b': '1-0 i6 pa53 h20 k14 r1 s11',
-    'dirt_yards:c': '8-9 i6 pa63 h40 k12 r17 s15',
-    'big_city:a': '2-3 i6 pa55 h22 k14 r5 s6',
-    'big_city:b': '3-4 i7 pa59 h19 k15 r7 s8',
-    'big_city:c': '7-4 i6 pa60 h32 k16 r11 s5',
-    'dome:a': '4-2 i6 pa50 h14 k16 r6 s3',
-    'dome:b': '3-2 i6 pa52 h19 k12 r5 s9',
-    'dome:c': '8-9 i6 pa63 h32 k13 r17 s2',
+    'tin_can:a': '8-2 i6 pa63 h26 k17 r10 s8',
+    'tin_can:b': '4-5 i6 pa54 h26 k12 r9 s9',
+    'tin_can:c': '0-10 i6 pa59 h31 k14 r10 s10',
+    'cement:a': '5-2 i6 pa58 h27 k13 r7 s7',
+    'cement:b': '2-4 i6 pa51 h24 k11 r6 s8',
+    'cement:c': '3-2 i6 pa56 h25 k16 r5 s5',
+    'steele:a': '4-2 i6 pa56 h28 k12 r6 s12',
+    'steele:b': '4-6 i6 pa58 h29 k13 r10 s11',
+    'steele:c': '7-0 i6 pa58 h27 k16 r7 s9',
+    'playground:a': '4-0 i6 pa56 h22 k12 r4 s12',
+    'playground:b': '5-5 i7 pa70 h34 k15 r10 s12',
+    'playground:c': '3-1 i6 pa57 h27 k14 r4 s9',
+    'eckman:a': '4-2 i6 pa56 h23 k15 r6 s16',
+    'eckman:b': '0-4 i6 pa49 h21 k10 r4 s9',
+    'eckman:c': '6-11 i6 pa66 h37 k13 r17 s16',
+    'dirt_yards:a': '4-2 i6 pa56 h24 k15 r6 s15',
+    'dirt_yards:b': '7-1 i6 pa63 h36 k13 r8 s12',
+    'dirt_yards:c': '3-2 i6 pa57 h26 k14 r5 s8',
+    'big_city:a': '5-4 i6 pa57 h22 k9 r9 s9',
+    'big_city:b': '1-5 i6 pa52 h24 k12 r6 s8',
+    'big_city:c': '6-0 i6 pa58 h28 k16 r6 s6',
+    'dome:a': '5-3 i6 pa57 h21 k10 r8 s7',
+    'dome:b': '3-5 i6 pa52 h24 k12 r8 s8',
+    'dome:c': '4-12 i6 pa64 h34 k11 r16 s13',
   };
 
   it('★ still produces what it produced before the generator refactor', () => {
@@ -485,10 +510,11 @@ describe('★ the flow is a generator, and draining it changes nothing', () => {
    * play, which is worth knowing. Both gates fire immediately on a real change
    * — dt 1/60 to 1/50 — which is what verified them.
    */
-  // Moved 1745365359 -> 1283789542 with the steal relay (2026-10-29), and
+  // Moved 1745365359 -> 1283789542 with the steal relay (2026-10-29),
   // 1283789542 -> 116246726 when the runner began picking his pitch
-  // (2026-10-30), see GOLDEN.
-  const CHECKSUM_30 = 116246726;
+  // (2026-10-30), and 116246726 -> 1691509118 with the World 1 re-cast
+  // (2026-11-03) — a roster change, not a sim change; see GOLDEN.
+  const CHECKSUM_30 = 2025622013;
   // Keep the original thirty-game ratchet on the venues it was born with.
   // New venues get explicit birth fingerprints above; adding content must not
   // silently rewrite the baseline that catches drift in the existing game.

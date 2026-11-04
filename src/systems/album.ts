@@ -16,13 +16,17 @@ export interface AlbumState {
 }
 
 const KEY = 'recess_album';
-const VERSION = 1;
+/** 2 since the 2026-11 re-cast: a sticker earned by the kid who held a slot
+ *  before is not a sticker of the kid who holds it now, so a v1 album starts
+ *  over rather than lighting up under the wrong faces. */
+const VERSION = 2;
 
 export function getAlbum(): AlbumState {
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return { v: VERSION, drafted: {}, wonWith: {}, trophies: {} };
     const p = JSON.parse(raw) as Partial<AlbumState>;
+    if (p.v !== VERSION) return { v: VERSION, drafted: {}, wonWith: {}, trophies: {} };
     return {
       v: VERSION,
       drafted: p.drafted ?? {},

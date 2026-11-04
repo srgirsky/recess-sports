@@ -143,12 +143,13 @@ export { HAIR_HEADROOM_FRAC } from './skeleton';
  * ★ How far the brow is shaded from the kid's hair colour, toward the shared
  * cool shadow (`shadeInt`, the same mix v1's art and the DOM tokens use).
  *
- * Chosen, not assumed. Over all 30 kids' real skin × hair pairs the worst
- * brow-against-skin separation runs 71 raw → 78 at 0.35 → **96 at 0.55**
- * (weighted RGB distance). The worst case is `moose` — brown hair on the darkest
- * skin — and he is worst at every value, because shading toward navy moves a
- * brow TOWARD dark skin; 0.8 only buys him 114, so more shade is not the answer
- * for him and the inverted-hull outline is what carries it.
+ * Chosen, not assumed. Over all 30 kids' real skin × hair pairs on the cast it
+ * was tuned against, the worst brow-against-skin separation ran 71 raw → 78 at
+ * 0.35 → **96 at 0.55** (weighted RGB distance) — brown hair on the darkest
+ * skin, worst at every value, because shading toward navy moves a brow TOWARD
+ * dark skin; 0.8 only bought 114, so more shade is not the answer there and the
+ * inverted-hull outline is what carries it. `render.proxyFace` carries the
+ * current roster's worst pair (the World 1 cast no longer has that one).
  *
  * `BROW_MIN_CONTRAST` is the floor a test holds the whole roster to. It sits
  * below the 96 the palette actually achieves so it has real headroom, rather

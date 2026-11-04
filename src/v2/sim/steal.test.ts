@@ -67,10 +67,18 @@ describe('★ the steal is a race, and the terms are real quantities', () => {
 
   it('★ speed helps and the arm hurts, monotonically', () => {
     // No band needed: these are true of baseball and of any model worth having.
+    //
+    // ★ RACED WITH A PITCHER, as the game races it. No World 1 kid has an arm
+    // of 5 or 6, so `byArm(5)` is an arm-4 kid whose 86.6ft cannot reach the
+    // 90ft to second; without a pitcher to relay through (`throwLegsSec`) his
+    // margin is Infinity and "monotone" is undefined. The shared `spec()`
+    // deliberately has no pitcher — 'an arm that cannot reach the bag does not
+    // throw' below depends on that — so the relay route is added here only.
+    const raced = (speed: number, arm: number) => ({ ...spec(speed, arm), pitcher: byArm(10) });
     for (const arm of [5, 7, 9]) {
       let prev = -Infinity;
       for (const speed of [3, 5, 7, 9]) {
-        const m = projectedMarginSec(spec(speed, arm));
+        const m = projectedMarginSec(raced(speed, arm));
         expect(m, `arm ${arm}, speed ${speed}`).toBeGreaterThan(prev);
         prev = m;
       }
@@ -78,7 +86,8 @@ describe('★ the steal is a race, and the terms are real quantities', () => {
     for (const speed of [3, 5, 7, 9]) {
       let prev = Infinity;
       for (const arm of [5, 7, 9]) {
-        const m = projectedMarginSec(spec(speed, arm));
+        const m = projectedMarginSec(raced(speed, arm));
+        expect(Number.isFinite(m), `speed ${speed}, arm ${arm} must be a real race`).toBe(true);
         expect(m, `speed ${speed}, arm ${arm}`).toBeLessThan(prev);
         prev = m;
       }
@@ -99,7 +108,7 @@ describe('★ the steal is a race, and the terms are real quantities', () => {
 
   it('an arm that cannot reach the bag does not throw', () => {
     // `throwFlightSec` returns null out of range, which is a real outcome:
-    // only 14 of 30 kids can make the 90ft to second (`sim.stealRace`).
+    // only 11 of 30 World 1 kids can make the 90ft to second (`sim.stealRace`).
     const weak = spec(5, 1);
     expect(throwSecTo(weak)).toBeNull();
     expect(projectedMarginSec(weak)).toBe(Infinity);
