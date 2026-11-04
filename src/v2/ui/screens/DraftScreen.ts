@@ -133,7 +133,9 @@ export class DraftScreen implements Screen {
     const art = el('div', 'kid__art');
     art.appendChild(portrait(c, c.name, { street: true }));
     node.appendChild(art);
-    node.appendChild(el('span', 'kid__name', c.name));
+    // A long cast name (the World 1 sheet gives every kid a surname) steps the
+    // type down one notch rather than losing its tail to the ellipsis.
+    node.appendChild(el('span', c.name.length > 13 ? 'kid__name kid__name--long' : 'kid__name', c.name));
 
     const bars = el('div', 'kid__bars');
     for (const [key, icon] of CARD_STATS) {

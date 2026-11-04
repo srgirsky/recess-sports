@@ -6,15 +6,14 @@
 // A shared skeleton must not mean thirty synchronized mannequins. Each roster
 // slot below is an explicit acting choice: how the kid presents themself, how
 // large a feeling becomes, and how quickly stillness turns into a fidget. The
-// profile list follows ROSTER order so character ids remain defined in exactly
-// one place (`src/data/characters.ts`). The test makes order drift fail loudly.
+// table is keyed by the slot ids `src/data/characters.ts` defines, and the test
+// fails loudly on a slot it does not direct or a direction with no slot.
 //
 // Physics timing still wins. These choices affect held/front-end/reaction
 // motion and face-atlas cells; marker clips and locomotion rates continue to be
 // driven by the simulated instant and ground speed in AnimationDirector.
 // ---------------------------------------------------------------------------
 
-import { ROSTER } from '../../data/characters';
 import type { Expression } from '../../data/types';
 import type { AnimName } from './clips';
 import { restingCell, type FaceCell } from './faceAtlas';
@@ -41,40 +40,71 @@ export interface PerformanceProfile {
  * One direction per ROSTER slot, deliberately hand-authored rather than
  * hashed from stats or colours. The latter would manufacture variation; these
  * choices interpret the personality already written in each kid's name,
- * tagline and draft line.
+ * tagline, draft line and the World 1 cast sheet
+ * (`docs/world1/kids-roster-v0.7.md`).
+ *
+ * Keyed by slot id, never by position: the November 2026 recast reordered
+ * ROSTER and a positional table silently handed every kid a neighbour's
+ * acting. The ids are slots (`characters.ts`); a slot with no direction here,
+ * or a direction for a slot ROSTER no longer has, fails the completeness
+ * test rather than drifting.
  */
 const HERO = { s: 'swagger', b: 'batter', g: 'glove', h: 'bashful' } as const;
 const SPIRIT = { s: 'sunny', c: 'cool', f: 'fierce', g: 'goofy', t: 'tender' } as const;
 const TEMPO = { c: 'calm', s: 'steady', q: 'quick' } as const;
 
-/** Three-character codes are hero/spirit/tempo, still grouped in ROSTER order. */
-const DIRECTION_CODES = [
-  'bfs sgq gcs', // Junebug · Theo · Zoom
-  'sgs bfc bfq', // Big Lou · Tank · Mimi
-  'bgq hsq gsq', // Turbo · Sprout · Zippy
-  'gcs gts gcc', // Ace · Penny · Dex
-  'gfs sfq hgs', // Lefty · Smokey · Bend-It
-  'htq ssq hts', // Noodle · Bubbles · Sniffles
-  'gcc sfs hcc', // The Professor · Diva · Grizz
-  'bfq hgq gts', // Flash · Cricket · Moose
-  'bss scq sss', // Peaches · Gizmo · Clover
-  'gfq gsq sgq', // Rocket · Chip · Boomer
-].join(' ').split(' ');
+/** Three-character codes are hero/spirit/tempo, grouped as the cast sheet groups the kids. */
+const DIRECTION_CODES: Readonly<Record<string, string>> = {
+  // --- Tier 1 — the Seven. Seven silhouettes that do not repeat. ---------
+  nostrike: 'bfs',       // Junebug — the underdog: planted at the plate, nine fouls with a straight face
+  calls_shot: 'sgq',     // Mars — the swagger: the called shot IS the pose; wrong constantly, unembarrassed
+  smokey: 'gfq',         // Jay — the intensity: glasses pushed up between every pitch, will not come out
+  tank: 'gtc',           // Sonny — the heart: the immovable catcher who apologizes to the ball, softest voice, slowest
+  wheelchair_ace: 'gsq', // Dev — the chaos: enormous grin, maximum delight, no idea where it goes
+  rocket: 'gcq',         // Zaya — the prodigy: silent, locked in, already leaving
+  bend_it: 'scc',        // Ezra — the purist: tall, slouchy, talks like a retired pitching coach
+  // --- Tier 2 — the Neighborhood ------------------------------------------
+  turbo: 'scq',          // Ollie — "Tag me. Go ahead. Try."
+  zippy: 'bsq',          // Fatou — "Race you to first!"
+  big_lou: 'sgc',        // Guri — the tall goofy slugger, banned from three yards, in no hurry
+  mimi_mash: 'bgs',      // Yaz — swings with her eyes closed and insists it helps
+  chip: 'bss',           // Toby — little guy, BIG swing
+  diva: 'gcs',           // Roz — throws harder than Jay, never mentions it
+  boomer: 'hts',         // Kwame — pure gas, sorry in advance
+  grizz: 'gfc',          // Greta — built like a door; nothing gets past her, nothing
+  gizmo: 'hss',          // Musa — watched the video twice, is ready, works 40% of the time
+  peaches: 'bts',        // Hattie — the underrated sister; same soft single, same spot
+  sniffles: 'bsq',       // Anton — Junebug's best friend, practices EVERY day
+  cricket: 'bcc',        // Winnie — has never swung; it is a philosophy
+  sprout: 'bgq',         // Rafi — bunts every single pitch
+  clover: 'hgq',         // Josie — "Oops! Did I hit that at you?"
+  noodle: 'hcs',         // Sam — stands in to get hit; calls it strategy
+  penny: 'gcc',          // Nora — utterly ordinary until you are behind
+  dex: 'bcs',            // Marcus — "Is this a real game? Then I am good."
+  bubbles: 'hsq',        // Yui — "Me? Okay! Just put someone on base first."
+  lefty: 'gfs',          // Lu — one perfect curve, all she throws
+  the_prof: 'ggs',       // Bao — the Rainbow; look UP
+  flash: 'gfq',          // Rudy — Roz's little sister; do not run on her
+  ace_kid: 'scs',        // Amir — plays center alone, does not need help
+  moose: 'ssq',          // Roya — watch THIS throw; which base does not matter
+};
 
-const ROSTER_PERFORMANCES: readonly PerformanceProfile[] = DIRECTION_CODES.map((code) => ({
-  hero: HERO[code[0] as keyof typeof HERO],
-  spirit: SPIRIT[code[1] as keyof typeof SPIRIT],
-  tempo: TEMPO[code[2] as keyof typeof TEMPO],
-}));
+function profileOf(code: string): PerformanceProfile {
+  return {
+    hero: HERO[code[0] as keyof typeof HERO],
+    spirit: SPIRIT[code[1] as keyof typeof SPIRIT],
+    tempo: TEMPO[code[2] as keyof typeof TEMPO],
+  };
+}
 
 const DEFAULT_PROFILE: PerformanceProfile = { hero: 'swagger', spirit: 'sunny', tempo: 'steady' };
 
-const BY_ID = new Map(ROSTER.map((character, i) => [
-  character.id,
-  character.id === 'tank'
-    ? { ...ROSTER_PERFORMANCES[i], restFace: 'sleepy' as const }
-    : ROSTER_PERFORMANCES[i],
-] as const));
+const BY_ID = new Map(Object.entries(DIRECTION_CODES).map(([id, code]) => [id, profileOf(code)] as const));
+
+/** True when a slot has an authored direction; the custom captain and unknown ids fall to the default. */
+export function hasDirection(id: string): boolean {
+  return BY_ID.has(id);
+}
 
 export function performanceFor(id: string): PerformanceProfile {
   return BY_ID.get(id) ?? DEFAULT_PROFILE;
@@ -160,4 +190,4 @@ export function performancePhase(id: string, salt: number): number {
 }
 
 /** Exported for the completeness gate; gameplay reads through performanceFor. */
-export const PERFORMANCE_COUNT = ROSTER_PERFORMANCES.length;
+export const PERFORMANCE_COUNT = BY_ID.size;

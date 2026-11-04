@@ -171,14 +171,42 @@ export type AbilityId =
   | 'unhittable_pitch' // As a pitcher, shifts the batter's timing band down one.
   | 'crazy_bunt'; // Signature 🤪 CRAZY BUNT swing card (SWING_TYPES.CRAZY_BUNT).
 
+/**
+ * The ten archetypes of the World 1 cast sheet (`docs/world1/kids-roster-v0.7.md`).
+ * Content today; the sim mechanics each one implies arrive behind flags.
+ */
+export type Archetype =
+  | 'speedster'
+  | 'slugger'
+  | 'fireballer'
+  | 'wall'
+  | 'knuckler'
+  | 'table-setter'
+  | 'junkballer'
+  | 'pest'
+  | 'clutch'
+  | 'cannon';
+
 export interface Character {
-  /** Stable key — used as the texture key AND the localStorage pick-tally key. */
+  /** Stable key — used as the texture key AND the localStorage pick-tally key.
+   *  It names a SLOT, not a kid: the cast was re-cast in place in 2026-11 and
+   *  every kid kept the id of the slot it took over (see `recast`). */
   id: string;
   name: string;
   /** Optional iconic glyph for our minimal-reading, icon-forward UI. */
   emoji?: string;
-  /** One-line kid-friendly flavor ("Never misses.", "Calls his shot. Always wrong."). */
+  /** One-line kid-friendly flavor ("Never misses.", "Calls her shot. Usually wrong."). */
   tagline: string;
+  /** Cast-sheet archetype. */
+  archetype?: Archetype;
+  /** Cast-sheet tier: 1 carries a custom rig, screen time and the first toy
+   *  line; 2 shares the modular rig. Pick-rate data can promote a 2. */
+  tier?: 1 | 2;
+  /** Who held this slot before the 2026-11 re-cast, and whether the delivered
+   *  v2 sculpt is still a credible stand-in for the new kid. When it is not,
+   *  `CharacterFactory` draws the proxy until a sculpt against the new sheet
+   *  lands — a boy's body is not a stand-in for a girl. */
+  recast?: { was: string; modelCarries: boolean };
   /** Drives voice selection only (curated-voice sublist + pitch band) — not art. */
   voiceGender: 'boy' | 'girl';
   stats: Stats;

@@ -480,17 +480,21 @@ describe('★ a bat that misses the ball misses the ball', () => {
     // A vertical miss would strike her out through the other door. The ability
     // pulls her back to the edge of the barrel — a real graze, and the worst
     // contact the geometry allows — rather than exempting her from geometry.
-    const her = ROSTER.find((c) => c.ability === 'never_strikes_out')!;
-    expect(her, 'the roster still has a never_strikes_out kid').toBeTruthy();
-    const r = swing(centreSep * 6, her.id);
-    expect(r.kind).toBe('contact');
-    if (r.kind !== 'contact') return;
-    // At the edge of the BARREL exactly, not past it — `asin(±1)` is ±90 in the
-    // bat's frame, and the swing plane tilts that into the world.
-    expect(Math.abs(r.launch.launchAngleDeg - BAT.ATTACK_ANGLE_DEG)).toBeCloseTo(90, 6);
-    // And she is alone in it.
+    // The World 1 cast has two of them (Junebug and Anton, who practise
+    // together), so the claim is about the ABILITY, not one kid.
+    const theirs = ROSTER.filter((c) => c.ability === 'never_strikes_out');
+    expect(theirs.length, 'the roster still has a never_strikes_out kid').toBeGreaterThan(0);
+    for (const her of theirs) {
+      const r = swing(centreSep * 6, her.id);
+      expect(r.kind, her.id).toBe('contact');
+      if (r.kind !== 'contact') return;
+      // At the edge of the BARREL exactly, not past it — `asin(±1)` is ±90 in the
+      // bat's frame, and the swing plane tilts that into the world.
+      expect(Math.abs(r.launch.launchAngleDeg - BAT.ATTACK_ANGLE_DEG)).toBeCloseTo(90, 6);
+    }
+    // And they are alone in it.
     for (const c of ROSTER) {
-      if (c.id === her.id) continue;
+      if (c.ability === 'never_strikes_out') continue;
       expect(swing(centreSep * 6, c.id).kind, c.id).toBe('miss');
     }
   });

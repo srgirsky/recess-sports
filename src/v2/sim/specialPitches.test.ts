@@ -331,19 +331,46 @@ describe('★ the flag is not inert, and alone it is', () => {
   }, PLAYS_GAMES);
 
   it('★ specialPitches WITH juice is a different game where the CPU affords one, and the CPU does buy them', () => {
+    // ★ COMPARED AT THE PITCH, NOT THE SCORE LINE. `fp` is the game's
+    // fingerprint and it is coarse on purpose; a special bought late, in a
+    // plate appearance whose RESULT does not move, is invisible to it. On the
+    // World 1 cast (2026-11-03) both fireball seeds did exactly that: the
+    // fireball turned a ball into a called strike (seed p) or moved a spend
+    // (seed h), the pitch sequence differed, and the score, the counts and
+    // even the log length came out identical. So the sequence of pitch calls
+    // is the thing asserted to differ — finer than `fp`, and still blind to
+    // nothing a special can do, since a special IS a pitch.
+    //
+    // Seed `h` was swapped for `k` the same day. Its fireball was bought on a
+    // pitch the batter took for the same call in the last plate appearance of
+    // the game, so not one pitch call moved — a special that changes nothing
+    // is a legal outcome of a pitch, not an inert flag. Over seeds a-z on the
+    // World 1 cast, fifteen buy a special and thirteen change the game; `k`
+    // buys a crazy ball AND a freezeball and both show, so every kind is
+    // still reached inside eight seeds.
+    const calls = (into: string[]) => (e: SimEvent) => {
+      if (e.t === 'pitch') into.push(`${e.kind}${e.balls}${e.strikes}`);
+    };
     const kinds = new Set<string>();
     let differed = 0;
-    for (const seed of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']) {
+    for (const seed of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'k']) {
       const bought: string[] = [];
+      const bothCalls: string[] = [];
+      const onlyCalls: string[] = [];
       const both = game(seed, {
         features: { ...DEFAULT_FEATURES, juice: true, specialPitches: true },
-        onEvent: (e) => { if (e.t === 'spend' && isSpecialSpend(e.kind)) bought.push(e.kind); },
+        onEvent: (e) => {
+          if (e.t === 'spend' && isSpecialSpend(e.kind)) bought.push(e.kind);
+          calls(bothCalls)(e);
+        },
       });
       for (const k of bought) kinds.add(k);
-      const juiceOnly = game(seed, { features: { ...DEFAULT_FEATURES, juice: true } });
+      const juiceOnly = game(seed, { features: { ...DEFAULT_FEATURES, juice: true }, onEvent: calls(onlyCalls) });
       if (bought.length > 0) {
         differed++;
-        expect(fp(both), `${seed}: a special was bought and the game did not change`).not.toBe(fp(juiceOnly));
+        expect(`${fp(both)} ${bothCalls.join(' ')}`, `${seed}: a special was bought and the game did not change`).not.toBe(
+          `${fp(juiceOnly)} ${onlyCalls.join(' ')}`
+        );
       }
     }
     expect(differed, 'in eight seeded games the CPU never afforded a special').toBeGreaterThan(0);

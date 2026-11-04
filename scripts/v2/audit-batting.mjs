@@ -52,7 +52,8 @@ try {
   const s=window.__spike;s.setControlMode('watch');s.devStepFixedClock(0);s.devPaint(1);
   const results=[];
   for(const c of ROSTER.filter(c=>!only.length||only.includes(c.id))){
-   const {view,source}=await createCharacter(c,{noProxyLevel:true});
+   // deliveredFile: a re-cast slot draws a proxy in the game until it is re-sculpted, but the FILE is what this gate audits.
+   const {view,source}=await createCharacter(c,{noProxyLevel:true,deliveredFile:true});
    await s.prepareCharacterPerformance(c.id);
    const dir=s.directorFor(c,view);
    if(source!=='model')throw Error(`${c.id}: expected delivered model, got ${source}`);

@@ -977,7 +977,7 @@
    "found": {
     "afro": "grizz drew ZERO pixels of skin anywhere on his head. The afro is a single convex ball 1.34r wide centred on the head, and its front surface sat at z 1.14r against a skull surface of 0.82r, so it swallowed eyes, nose and forehead together. Shipped in the same change that added the eyes.",
     "glasses": "Sat at y -0.03r -- the head's vertical CENTRE, 0.37r above the eyes -- and stood only 0.011r proud of the skull. Four of thirty kids wore an accessory that drew under a pixel. They were positioned against an older face and never re-checked when the eyes moved down.",
-    "fixedDepth": "facingCue placed every feature at an ABSOLUTE z, while the skull's z half-extent is headW * 0.95 and headW runs 0.90-1.08 across the roster. A wide-headed kid's face bulges forward past any constant. The eyes and nose survived it by luck -- still proud on all 30, but by as little as 0.014r -- and a brow at a fixed z is swallowed outright above headW 1.052: the skull front runs 0.884 * headW at the brow's latitude against a fixed brow front of 0.930. That is calls_shot, cricket, sprout and the_prof. Derived from the surface instead, the margin is a constant +0.066r for every kid.",
+    "fixedDepth": "facingCue placed every feature at an ABSOLUTE z, while the skull's z half-extent is headW * 0.95 and headW runs 0.90-1.08 across the roster. A wide-headed kid's face bulges forward past any constant. The eyes and nose survived it by luck -- still proud on all 30, but by as little as 0.014r -- and a brow at a fixed z is swallowed outright above headW 1.052: the skull front runs 0.884 * headW at the brow's latitude against a fixed brow front of 0.930. That is cricket, sprout and the_prof (and calls_shot's first holder; the World 1 re-cast of 2026-11-03 gave that slot a nominal head, so the count is three). Derived from the surface instead, the margin is a constant +0.066r for every kid.",
     "brow": "The first brow was placed at the anatomical middle of the head and drawn in raw hair colour. Nine of eleven fringes cover that latitude, so it was removed as unshippable. That diagnosis was half right: the position was wrong, the colour was not."
    },
    "whyItMattered": "The cue exists so a clip authored 180 degrees backwards is visible on the review page. A face that is invisible on the widest-headed third of the roster, absent on the afro kid and sub-pixel on the four who wear glasses does not do that -- and the page itself was showing the back of the head anyway (see reviewFacing).",
@@ -987,7 +987,7 @@
      1.08
     ],
     "browBuriedAboveHeadW": 1.052,
-    "kidsAffectedByFixedDepth": 4,
+    "kidsAffectedByFixedDepth": 3,
     "skullFrontPerHeadW": 0.884,
     "fixedBrowFront": 0.93,
     "derivedMarginR": 0.066,
@@ -997,11 +997,12 @@
     "browShade": 0.55,
     "browMinContrast": 90,
     "worstBrowContrast": {
-     "kid": "moose",
-     "raw": 71,
-     "at035": 78,
-     "at055": 96,
-     "at080": 114
+     "kid": "rocket",
+     "raw": 169,
+     "at035": 146,
+     "at055": 140.7,
+     "at080": 144,
+     "note": "2026-11-03: the World 1 re-cast moved the roster-derived worst case. The pairing that set BROW_SHADE -- moose, brown hair on the darkest skin, 71 raw / 78 / 96 / 114 -- no longer exists on the roster; the worst World 1 pair is skin 5 with hair 3 (rocket first in roster order, tied with zippy, chip, boomer and gizmo) at 140.7, well clear of BROW_MIN_CONTRAST. The constant was chosen against the harder pair and is kept; the record now says what the roster actually presents."
     },
     "visibleFractionBald": {
      "eye": 0.35,
@@ -2329,7 +2330,7 @@
     "constant": "src/v2/sim/params.ts AERO.CD_0, AERO.CD_1, AERO.FIT_SPEED_BAND_MPH",
     "value": "Nathan's fit, extrapolated below its verified band."
    },
-   "significanceRaisedBy": "PR 4 (2026-07-31). This was written as a caveat on an otherwise-conformed model, worth recording but not urgent. The power-to-bat-speed mapping has now made it the single most load-bearing open question in the sim: the roster's exit velocities run 43.5-61.4 mph, so TWENTY-NINE OF THIRTY KIDS produce batted balls below the 60 mph floor of the band Nathan's drag fit was verified over. Essentially every ball this game will ever simulate is an extrapolation past the edge of the measurement. The model may well hold there -- Reynolds number falls with speed and the drag crisis is at the other end -- but nothing has said so, and the statistical harness in PR 8 will be measuring BABIP against a drag law nobody has checked in the regime it runs in.",
+   "significanceRaisedBy": "PR 4 (2026-07-31). This was written as a caveat on an otherwise-conformed model, worth recording but not urgent. The power-to-bat-speed mapping has now made it the single most load-bearing open question in the sim: the roster's exit velocities run 43.1-60.7 mph, so TWENTY-SEVEN OF THIRTY KIDS produce batted balls below the 60 mph floor of the band Nathan's drag fit was verified over (2026-11-03: the World 1 re-cast moved this from twenty-nine -- the three power-10 kids sit at 60.7, a hair above the floor; the original cast ran 43.5-61.4 with one kid above it). Essentially every ball this game will ever simulate is an extrapolation past the edge of the measurement. The model may well hold there -- Reynolds number falls with speed and the drag crisis is at the other end -- but nothing has said so, and the statistical harness in PR 8 will be measuring BABIP against a drag law nobody has checked in the regime it runs in.",
    "whatWouldWork": "Either a published low-speed C_D measurement for a real baseball (Kensrud & Smith, 'In situ drag measurements of sports balls', Procedia Engineering 13 (2011), covers a wider speed range and is the first place to look), or a direct one: launch a ball at a measured speed and angle with known spin, film it against a scale, and fit C_D from the trajectory. n>=3 per speed bin.",
    "informs": "src/v2/sim/params.ts AERO",
    "source": "physics:published"
@@ -2774,7 +2775,7 @@
      ]
     }
    },
-   "rosterNote": "NOBODY ON THE ROSTER HAS POWER 1. The realised span is power 2 (Sprout, Noodle) to power 10 (Big Lou), so the mapping is defined over 1-10 but only ever evaluated over 2-10. Any claim about 'a power-1 kid' is about a kid who does not exist, and a test pins that.",
+   "rosterNote": "NOBODY ON THE ROSTER HAS POWER 1. The realised span is power 2 (eight World 1 kids, the table-setters and pests) to power 10 (Mars, Guri, Toby; 2026-11-03, the re-cast -- it was Sprout/Noodle to Big Lou), so the mapping is defined over 1-10 but only ever evaluated over 2-10. Any claim about 'a power-1 kid' is about a kid who does not exist, and a test pins that.",
    "whatWouldWork": "Bat-sensor readings from three or more actual four-to-eight-year-olds. A Blast Motion or Diamond Kinetics knob sensor and an afternoon at a tee-ball practice would close it outright, and would replace an extrapolation with a measurement of exactly the population this game is for.",
    "informs": "src/v2/sim/params.ts BAT",
    "source": "physics:published"
@@ -2971,14 +2972,14 @@
      }
     }
    },
-   "theRelayBecomesAConsequence": "★ AND THIS IS THE POINT. v1 had to INVENT LIVE.RELAY and gate it on a hand-picked 1.39 basepath legs, because 'throw DISTANCE provably cannot do this job: a coin-flip on a routine grounder needs an 806px throw and the longest that exists is 418px'. Here an arm has a range. Centre field to first base is 129.7ft and an average kid's maximum is 96.5ft, so 27 of 30 kids simply cannot make that throw; every one of the 30 can make the 68.2ft throw from short. A cutoff man stops being a mechanic and becomes what happens when nobody can reach the bag.",
+   "theRelayBecomesAConsequence": "★ AND THIS IS THE POINT. v1 had to INVENT LIVE.RELAY and gate it on a hand-picked 1.39 basepath legs, because 'throw DISTANCE provably cannot do this job: a coin-flip on a routine grounder needs an 806px throw and the longest that exists is 418px'. Here an arm has a range. Centre field to first base is 129.7ft and an average kid's maximum is 96.5ft, so 23 of 30 kids simply cannot make that throw (27 of 30 before the World 1 re-cast, 2026-11-03 -- the new cast carries eleven arms at 7-10 against the old cast's fewer); every one of the 30 can make the 68.2ft throw from short. A cutoff man stops being a mechanic and becomes what happens when nobody can reach the bag.",
    "vacuumCaveat": "The range is a VACUUM solve -- sin(2θ) = Rg/v², taking the fast root -- while everything the BALL does is integrated with drag and Magnus. Solving a release elevation against drag needs the iteration releasePitch runs, and a throw happens far more often than a pitch. The error is OPTIMISTIC (a vacuum range overstates a real one), so maxThrowFt reads as an upper bound on what an arm can do, and the relay above is if anything under-triggered.",
    "armIsThePitchingStat": "There is no separate arm stat: data/types.ts has contact/power/speed/pitching/fielding, and v1 maps arm = stats.pitching too (though only for WILDNESS -- in v1 a better arm throws straighter, never harder). Consequence worth stating: lineup.ts autoAssign puts the best arm on the mound, so outfield arms are middling by construction and the relay is the normal case rather than the exception.",
    "comparedWithThePitch": "sim.pitchCorridorV2 solves a pitch to a measured FLIGHT TIME and produces a 33.5 mph release at stat 5, against 38 mph here for a max-effort throw by the same arm. Those are consistent -- a game-pace pitch to a four-year-old is not a max-effort throw -- but the pitch solve also SATURATES: at a 2.4ft aim the slowest reachable flight is ~1.14s, so ARM_MULT_MIN/MAX request flights it cannot deliver and stat 1 and stat 10 end up 78ms apart and not in the order wantSec asks for. Recorded here because it is the same arm; it belongs to sim.pitchCorridorV2 to fix.",
    "whatWouldWork": "Unchanged from defense.throwSpeed: the infield-throw family, plays 03/04/12/13/15/17, located via BB's yellow throw-lane affordance, one 33ms sheet on the bracket. Failing that, a radar gun at a tee-ball practice, n>=3, which would measure the population this game is actually for.",
    "informs": "src/v2/sim/params.ts DEFENSE.THROW_SPEED_MIN_MPH",
    "source": "physics:published",
-   "theARMBANDSCONSEQUENCES": "★ THIS BAND IS NOW LOAD-BEARING IN FOUR PLACES, and every one of them was discovered rather than designed. (1) 27 of 30 cannot make CF-to-first, which is why the cutoff relay is a consequence rather than an invented mechanic (sim.cutoffRelay). (2) Ground balls are 69% hits, because a fielder who reaches the ball still has to throw it (sim.gameShape). (3) 0 of 30 can throw 180ft home, so a sac fly from third is automatic (sim.tagUp). (4) Only 14 of 30 can throw the 90ft to second, so half the roster's catchers make a stolen base FREE (sim.stealRace). PR 10 ruled this band fixed so it could not be fitted to an outcome, and that decision is worth more with every consequence: a single unmeasured number is now setting four different rates."
+   "theARMBANDSCONSEQUENCES": "★ THIS BAND IS NOW LOAD-BEARING IN FOUR PLACES, and every one of them was discovered rather than designed. (1) 23 of 30 cannot make CF-to-first (27 before the 2026-11-03 World 1 re-cast), which is why the cutoff relay is a consequence rather than an invented mechanic (sim.cutoffRelay). (2) Ground balls are 69% hits, because a fielder who reaches the ball still has to throw it (sim.gameShape). (3) 0 of 30 can throw 180ft home, so a sac fly from third is automatic (sim.tagUp). (4) Only 11 of 30 can throw the 90ft to second (14 before the re-cast; World 1's arms are bimodal, seventeen kids at 2-3 and eleven at 7-10 with nothing at 5-6), so most of the roster's catchers make a stolen base FREE without the relay (sim.stealRace). PR 10 ruled this band fixed so it could not be fitted to an outcome, and that decision is worth more with every consequence: a single unmeasured number is now setting four different rates."
   },
   "fielderReaction": {
    "id": "sim.fielder-reaction",
@@ -3010,9 +3011,10 @@
       500
      ],
      "realisedRosterMs": [
-      344,
-      478
+      300,
+      456
      ],
+     "realisedRosterMsNote": "2026-11-03: the World 1 re-cast moved the roster-derived span from 344-478 (fielding 2-8 on the old cast) to 300-456 (fielding 3-10: the walls and the centre fielder now read at the floor).",
      "releaseMs": 450,
      "worstCaseOverheadMs": 950,
      "v1OverheadMs": 2027
@@ -3036,12 +3038,13 @@
     "grid": "Ground balls, spray -42..+42 in 2deg steps x exit velocity 40/55/70/85/100 ft/s, park venue, the autoAssign lineup, reaction zeroed so only the gate varies. Every speed-dimensioned field scales with the defence multiplier, INCLUDING the first step.",
     "overrideRateByDefenceSpeed": {
      "ratioGate0_15": {
-      "x0_5": 77.7,
-      "x1": 91.6,
-      "x2": 94.4,
-      "spreadPp": 16.7
+      "x0_5": 78.1,
+      "x1": 92.6,
+      "x2": 92.6,
+      "spreadPp": 14.4
      }
     },
+    "reMeasured": "2026-11-03: the World 1 re-cast moved the roster-derived values. The same grid and the same nine SLOTS (autoAssign over ROSTER[0..8]) but different kids in them -- Tank (speed 2) is now in right and Zaya (speed 10) at short -- read 77.7/91.6/94.4 (spread 16.7pp) before and 78.1/92.6/92.6 (14.4pp) after. The finding is untouched: the override rate is a property of which fielders can intercept, and it moved with the fielders rather than with the gate.",
     "confidence": "med"
    },
    "why": "The gate form is not the dominant term. The override rate moves because a speed change alters WHICH FIELDERS CAN INTERCEPT THE BALL AT ALL -- a slow fielder's cutOff returns null and they drop out of the comparison entirely -- and no gate form touches that. Measured twice: 7.4pp before PR 10, where a fixed 0.40s gate drifted by the identical 7.4pp, and 6.0pp after the first step.",
@@ -3128,17 +3131,26 @@
     },
     "gradient": {
      "what": "Grounders swept over 15 spray angles at three contact qualities. Hits, out of 15.",
-     "31mph": "2/15",
-     "42mph": "5/15",
-     "55mph": "12/15",
+     "31mph": "0/15",
+     "42mph": "4/15",
+     "55mph": "9/15",
      "supersedes": {
       "reading": {
        "what": "Grounders swept over 15 spray angles at three contact qualities. Hits, out of 15.",
        "31mph": "2/15",
-       "42mph": "10/15",
-       "55mph": "14/15"
+       "42mph": "5/15",
+       "55mph": "12/15"
       },
-      "why": "★ RE-RUN IN PR 10, as PR 7 re-ran it rather than leaving it describing older code. The middle of the gradient is where the defence changed most: 10/15 to 5/15 at 42mph. The cause is sim.chaserLeash -- before it, a grounder headed for the outfield excluded every infielder from the election, so a medium grounder in a hole was chased by an outfielder from 200ft away. The soft end barely moved because those were already outs, and the hard end barely moved because a 55mph ball through a hole is still a hit."
+      "why": "★ RE-RUN 2026-11-03 FOR THE WORLD 1 RE-CAST, which moved the roster-derived values without touching the reducer: the defence is still autoAssign over ROSTER[0..8], but the kids in those slots changed (Sonny/Tank, fielding 10 and speed 2, in right; Zaya, speed 10, at short; a 10-arm catcher), and the gradient read 2/5/12 before and 0/4/9 after. Same shape, same ordering, a stingier infield. The reading this supersedes was itself RE-RUN IN PR 10, as PR 7 re-ran it rather than leaving it describing older code: the middle of the gradient is where the defence changed most then, 10/15 to 5/15 at 42mph, from sim.chaserLeash -- before it, a grounder headed for the outfield excluded every infielder from the election, so a medium grounder in a hole was chased by an outfielder from 200ft away.",
+      "supersedes": {
+       "reading": {
+        "what": "Grounders swept over 15 spray angles at three contact qualities. Hits, out of 15.",
+        "31mph": "2/15",
+        "42mph": "10/15",
+        "55mph": "14/15"
+       },
+       "why": "PR 7's reading, before sim.chaserLeash."
+      }
      }
     },
     "confidence": "med",
@@ -3158,7 +3170,7 @@
     "value": {
      "gapBall": "double",
      "routineGrounderRightSide": "out",
-     "softGrounderHits": 2,
+     "softGrounderHits": 0,
      "softGrounderPlays": 15
     }
    },
@@ -3175,24 +3187,41 @@
    "what": "The hard cap on a play, and the assertion v1 never had: that no legitimate play reaches it.",
    "why": "★ A CAP THAT FIRES IS A SOFT-LOCK THAT WAS CAUGHT, NOT A RULE. v1's LIVE.MAX_PLAY_MS is 21862 and its own comment says 'NOT measured -- scaled with RUNNER_SPEED'. Nothing in v1 asserts a legitimate play stays under it, so the cap quietly became the way some plays ended: eight separate anti-hang guards elsewhere in liveplay.ts exist because plays wedged, and each was added after the fact. The cap is only a backstop if something proves it is never the mechanism.",
    "measured": {
-    "n": 180,
-    "grid": "3 venues x 12 spray angles x 5 contact qualities (35-120 ft/s, -3 to 30 deg), two runners aboard.",
-    "longestPlaySec": 12.38,
-    "capSec": 20,
+    "n": 660,
+    "grid": "11 venues x 12 spray angles x 5 contact qualities (35-120 ft/s, 2 to 30 deg), two runners aboard (ROSTER[6] on first, ROSTER[7] on second), the autoAssign nine of ROSTER[0..8] in the field -- play.test.ts's own sweep, 2026-11-03.",
+    "longestPlaySec": 18.1,
+    "capSec": 25,
     "cappedPlays": 0,
-    "headroomPct": 38,
-    "confidence": "med"
+    "headroomPct": 28,
+    "confidence": "med",
+    "byRunnerFixture": {
+     "why": "The sweep's runners are ROSTER[6] and ROSTER[7], which the re-cast turned from two fast kids into a SLOW kid ahead of a FAST one. Re-run 2026-11-03 with three fixtures to see what the long play is made of.",
+     "indexed_slowAheadOfFast": { "runners": "Ezra (speed 4) on first, Ollie (speed 10) on second", "longestPlaySec": 18.1 },
+     "twoFastest": { "runners": "Zaya (10), Ollie (10)", "longestPlaySec": 13.28 },
+     "twoSlowest": { "runners": "Greta (2), Sonny (2)", "longestPlaySec": 11.95 },
+     "reading": "The long play is not a slow kid; it is the defence taking its outs IN SEQUENCE. Playground, spray 36 deg, 100 ft/s at 25 deg: a carom off the right-field fence, Sonny (speed 2) in right reaches it at 7s, two max-range lobs (Mars, arm 3; then the pitcher) bring it in by 12s, the catcher holds for the slow runner coming home and tags him at 15.5s, then throws to third for the fast runner, out at 18.1s. Every segment is physical. Two fast runners are both out or both in by 13s; two slow runners never leave their bags."
+    },
+    "supersedes": {
+     "reading": {
+      "n": 180,
+      "grid": "3 venues x 12 spray angles x 5 contact qualities (35-120 ft/s, -3 to 30 deg), two runners aboard.",
+      "longestPlaySec": 12.38,
+      "capSec": 20,
+      "headroomPct": 38
+     },
+     "why": "★ 2026-11-03: THE WORLD 1 RE-CAST FOUND ONE SIM RULE AND ONE FIXTURE. The rule: the third baseman, standing on the bag, THREW TO HIS OWN BAG -- `bestBeatableBase` admitted the bag the carrier stands on, the ~0s flight always 'beat' the runner, and for the instant the ball was in the air an UNFORCED runner could not be tagged; `receiverAt` handed it back and he released again every RELEASE_SEC until the runner stepped on safe. Pre-existing: 40 of 660 swept plays on the original roster (longest 13.87s), 21 of 660 on the new one, and the new nine made one instance long enough (18.77s) to cross the 15s headroom line. Fixed in `bestBeatableBase`: a bag within `reachFt()` is not a throwing target, `carrierTouchesBags` takes the force or the tag. The fixture: with the loop gone the same play still runs 18.1s, and `byRunnerFixture` shows why -- it is legitimate, so the cap was re-derived (20 -> 25) to keep the quarter of headroom the assertion demands, rather than the assertion loosened."
+    }
    },
-   "theBound": "The longest legitimate sequence is a ball to the deepest fence, a chase, a relay in, and a runner going first to home: 180ft from a standing start is ~11s at the slowest stat. Twenty seconds clears the measured worst case (12.38s) by 38%.",
+   "theBound": "The longest legitimate sequence is a ball to the deepest fence, a chase, a relay in, and the defence taking its outs in sequence against a slow runner ahead of a fast one: 18.1s in the World 1 sweep (`measured.byRunnerFixture`). Twenty seconds cleared the PR 6 worst case (12.38s) by 38%; twenty-five clears the 2026-11-03 worst case by 28%.",
    "andTheGuardsAreFewer": "v2 needs fewer anti-hang guards than v1 because two of v1's exist to undo bad geometry rather than to stop a hang: `wildSettlePoint` rotates rather than truncates an overshoot 'because a fielder then presses against the clamp boundary until MAX_PLAY_MS', and `settleBallAt` clamps every settle site for the same reason. v2 inherits the second (bounce.ts owns it) and does not need the first, because a throw that misses is simply live at the bag rather than sailing to an unreachable spot.",
    "ours": {
     "constant": "src/v2/sim/params.ts PLAY.MAX_PLAY_SEC",
     "value": {
-     "maxPlaySec": 20,
-     "measuredLongestSec": 12.38
+     "maxPlaySec": 25,
+     "measuredLongestSec": 18.1
     }
    },
-   "whatWouldClose": "Re-run the sweep after PR 7 adds tag-ups, rundowns and steals -- each of which lengthens a play, and rundowns most of all. The assertion is the thing to keep, not the number.",
+   "whatWouldClose": "Re-run the sweep after PR 7 adds tag-ups, rundowns and steals -- each of which lengthens a play, and rundowns most of all. The assertion is the thing to keep, not the number. The sweep's runner fixture is indexed into ROSTER; a re-cast changes what it measures, so name the fixture by stat if it is ever meant to pin one case.",
    "informs": "src/v2/sim/params.ts PLAY.MAX_PLAY_SEC"
   },
   "cutoffRelay": {
@@ -3202,14 +3231,15 @@
    "status": "conformed",
    "statusChangedAt": "2026-08-01",
    "what": "Whether the cutoff relay emerges from arm range on its own, and whether v1's look-back concession was needed to make it work.",
-   "why": "★ v1 HAD TO INVENT THE RELAY, and says so: 'throw DISTANCE provably cannot do this job. A coin-flip on a routine grounder would need an 806px throw to first; the longest that exists anywhere is 418px.' So LIVE.RELAY is a MECHANIC, armed by a hand-picked depth of 1.39 basepath legs and gated on CPU-defence-and-CLASSIC-only. Here an arm has a range: centre field to first base is 129.7ft and 27 of 30 kids cannot throw it, so a cutoff man is what happens when nobody can reach the bag.",
+   "why": "★ v1 HAD TO INVENT THE RELAY, and says so: 'throw DISTANCE provably cannot do this job. A coin-flip on a routine grounder would need an 806px throw to first; the longest that exists anywhere is 418px.' So LIVE.RELAY is a MECHANIC, armed by a hand-picked depth of 1.39 basepath legs and gated on CPU-defence-and-CLASSIC-only. Here an arm has a range: centre field to first base is 129.7ft and 23 of 30 kids cannot throw it (27 of 30 on the cast this was written against), so a cutoff man is what happens when nobody can reach the bag.",
    "measured": {
     "n": 180,
     "grid": "The same sweep as sim.playClock.",
     "relayedPct": 14,
     "cfToFirstFt": 129.7,
-    "armsThatCannotMakeIt": 27,
+    "armsThatCannotMakeIt": 23,
     "rosterSize": 30,
+    "armsNote": "2026-11-03: the World 1 re-cast moved the roster-derived count from 27 to 23 (eleven arms at 7-10 now, three of them 10s). relayedPct is the PR 6 sweep's and was not re-run.",
     "confidence": "med"
    },
    "theLookBackRuleWasNotNeeded": "★ v1's RelayState.committed is a CONCESSION -- the defence stops playing for the one leg a runner is already on -- and its comment is emphatic that 'without this the relay buys nothing. The ball lands back on the mound at ~4470ms, bestBeatableBase sees the batter running to second, and MOUND->SECOND is 118px (286ms) against a 4197ms leg, so the pitcher guns him down every single time and a gap ball is still just a single.' That is a statement about v1's GEOMETRY, not about relays. Here the same bestBeatableBase veto is the whole policy and the concession is absent: gap balls come out as doubles, not as singles and not as outs. Omitting it was the deliberate test, and the outcome is in sim.gapBallOutcome.",
@@ -3472,12 +3502,14 @@
    "why": "sim.gapBallOutcome.theArmAtShort recorded the finding and deferred the fix: systems/lineup.ts autoAssign scores shortstop on `fielding*2 + speed` and CENTRE FIELD on `fielding + speed*2` -- it puts the best arm on the mound and then never looks at `pitching` again. That was harmless in v1, where every throw was 9.65x runner speed and the catch radius was 11.4ft, so arm strength bound nothing. With real throws it put a 34mph arm (77ft of range) at the position with the longest routine infield throw, and the routine grounder to short became a single.",
    "measured": {
     "ssToFirstFt": 68.2,
+    "nine": "smokey, wheelchair_ace, diva, bend_it, boomer, lefty, moose, rocket, turbo -- seven real arms and two glove-and-legs kids, chosen 2026-11-03 so the two planners' difference is VISIBLE: autoAssign's fielding*2+speed puts Zaya (rocket, arm 3) at short; planDefence gives short Kwame (boomer, arm 9). Until the World 1 re-cast the measurement was taken on ROSTER[0..8], where it read 77 vs 86.6; that nine now ties at 77 (see worldOneCensus).",
     "v1ShortstopRangeFt": 77,
-    "v2ShortstopRangeFt": 86.6,
+    "v2ShortstopRangeFt": 141.5,
     "confidence": "high",
     "n": 1
    },
-   "whyNotTheBestArm": "The v2 shortstop reaches 86.6ft, not the roster's best 154 — because the mound takes the best arm and the demand ordering then puts the next three in left, right and behind the plate, all of which throw further than short does. That is the derivation working rather than a compromise: 86.6ft comfortably covers the 68.2ft throw, where v1's 77ft did not once the fielder had moved off his post.",
+   "whyNotTheBestArm": "On the measured nine the v2 shortstop reaches 141.5ft, not the roster's best 154 — because the mound takes the best arm and the demand ordering then puts the next arms in left, right, behind the plate, centre and third, all of which throw further than short does; short is seventh in line. That is the derivation working rather than a compromise: 141.5ft comfortably covers the 68.2ft throw, where v1's 77ft did not once the fielder had moved off his post.",
+   "worldOneCensus": "★ 2026-11-03: RECORDED, NOT FITTED. World 1's arms are bimodal -- seventeen kids at pitching 2-3, two at 4, eleven at 7-10 -- and short is seventh in the demand order, so planDefence reaches it with a real arm only when a nine carries seven of them. Over 5000 random nines v2's shortstop out-throws autoAssign's in 7.4%, ties in 51.5% and is WEAKER in 41.2%: autoAssign's glove-and-legs pick is a cannon (Amir, Rudy, Roya) more often than v2 has an arm left for short. Over the eight contiguous nines ROSTER[i..i+9] it is 0 better, 6 ties, 2 worse (ROSTER[9..18]: Greta 77ft vs Anton 68.5ft; ROSTER[21..30]: Rudy 129ft vs Nora 87ft). Every v2 shortstop still clears the 68.2ft demand in range terms (the weakest, 68.5ft, by inches). Whether a 77ft arm at a 68ft throw is acceptable, or the demand weights should spend a scarce arm on short before centre and third, is a design question for the planner, not a measurement -- the stats are content and were not touched.",
    "theArmWeightIsDERIVED": "★ NOBODY STATES THAT LEFT FIELD NEEDS AN ARM. Each position's demand is the distance from its post to the bag it actually throws to, read out of FIELD_POSITIONS -- infielders to first, outfielders and the catcher to second. So if the field changes, the lineup follows, and the ordering (LF/RF > C > CF > 3B > SS > 2B) is a consequence of the park rather than a table somebody maintains.",
    "v1IsUNTOUCHED": "src/systems/lineup.ts is v1 code on v1's bundle path, and AGENTS.md is explicit that a v2 change altering dist/assets/main-*.js is a bug. planDefence is a new file in src/v2/sim/; autoAssign keeps its own behaviour and its own tests, and a v2 test asserts the two differ in the direction this record claims.",
    "ours": {
@@ -3968,7 +4000,8 @@
      }
     },
     "catcherToSecondFt": 90,
-    "kidsWhoseArmReachesSecond": "14/30",
+    "kidsWhoseArmReachesSecond": "11/30",
+    "kidsWhoseArmReachesSecondNote": "2026-11-03: the World 1 re-cast moved the roster-derived count from 14/30 to 11/30 -- no World 1 kid has an arm of 5 or 6, and 4 (86.6ft) falls short of the 90ft. The attempt and success rates above were measured on the old cast and were not re-run.",
     "kidsWithARouteToSecond": "30/30, through the pitcher",
     "marginsSec": {
      "worst": -0.59,
@@ -3977,7 +4010,7 @@
     "n": 50000,
     "confidence": "high"
    },
-   "theFREQUENCYISTHEARMBANDAGAIN": "★ 10.29 ATTEMPTS A GAME AT 95.8% IS TOO MANY, AND IT IS sim.throwSpeed's THIRD CONSEQUENCE. Only 14 of 30 kids can throw the 90ft to second, so against half the roster's catchers a steal is FREE -- the projected margin is literally infinite and no confidence threshold can decline it. Measured: 'go when you project to win' gave 15.4 attempts a game; a 1.0-sigma threshold cut attempts only 70% to 60%; shrinking the lead 10ft to 3ft still left 9.0. The situational rules below took it to 10.29. What would actually move it is measuring the arm, which PR 10 ruled out of scope so it could not be fitted to an outcome. Recorded, not fitted -- the standing BABIP has.",
+   "theFREQUENCYISTHEARMBANDAGAIN": "★ 10.29 ATTEMPTS A GAME AT 95.8% IS TOO MANY, AND IT IS sim.throwSpeed's THIRD CONSEQUENCE. Only 14 of 30 kids on that cast (11 of 30 in World 1, 2026-11-03) can throw the 90ft to second, so against half the roster's catchers a steal is FREE -- the projected margin is literally infinite and no confidence threshold can decline it. Measured: 'go when you project to win' gave 15.4 attempts a game; a 1.0-sigma threshold cut attempts only 70% to 60%; shrinking the lead 10ft to 3ft still left 9.0. The situational rules below took it to 10.29. What would actually move it is measuring the arm, which PR 10 ruled out of scope so it could not be fitted to an outcome. Recorded, not fitted -- the standing BABIP has.",
    "theLIMITISSITUATIONALNOTPROBABILISTIC": "Since a threshold cannot decline a free steal, the runner's restraint is a DECISION MODEL: second is scoring position and worth taking; third adds almost nothing (he already scores on a single) while the out costs the same, so it is taken only when nearly free; and with two outs an out ends the inning while the base buys nothing, so he holds. Nothing here can make steals rarer without also making them worse baseball, which is the property a frequency knob would not have.",
    "ours": {
     "constant": "src/v2/sim/steal.ts; src/v2/sim/params.ts RUN.LEAD_FT, RUN.JUMP_SIGMA_WORST_SEC, RUN.JUMP_SIGMA_BEST_SEC, RUN.STEAL_THIRD_MARGIN_SEC",

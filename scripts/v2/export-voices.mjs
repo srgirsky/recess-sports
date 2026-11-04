@@ -33,7 +33,10 @@ function render(temp, out, text, voice, rate) {
   if (statSync(aiff).size <= 4096) {
     throw new Error(`say produced no audio for ${basename(out)}; run with access to the macOS speech service`);
   }
-  run('ffmpeg', ['-loglevel', 'error', '-y', '-i', aiff, '-ac', '1', '-ar', '24000', '-b:a', '64k', out]);
+  // Normalised to the voice target (`src/v2/ui/audioLoudness.json` targets):
+  // `measure:audio` can only turn a clip DOWN, so one quiet line would set the
+  // whole bank's spread (audio-assets.test.js).
+  run('ffmpeg', ['-loglevel', 'error', '-y', '-i', aiff, '-af', 'loudnorm=I=-21:TP=-1.5:LRA=11', '-ac', '1', '-ar', '24000', '-b:a', '64k', out]);
   if (statSync(out).size < 4096) throw new Error(`ffmpeg produced an empty ${basename(out)}`);
 }
 
