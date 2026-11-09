@@ -1036,6 +1036,71 @@ describe('★ the stolen base is a play: seen, heard, and a person’s to make',
   }, PLAYS_GAMES);
 });
 
+describe('★ a ball in play is side-guarded: a person fields it or runs it, never both', () => {
+  /** Pump a live game with a policy per frame; keep every event the sim raised. */
+  function pumpLive(
+    seed: string,
+    over: Partial<GameSpec>,
+    policy: (f: LiveFrame) => PlayInputs | undefined
+  ): { events: SimEvent[]; result: GameResult } {
+    const events: SimEvent[] = [];
+    const it = simulateGameLive(spec({ ...over, onEvent: (e) => events.push({ ...e }) }), makeRng(seed));
+    let r = it.next();
+    let guard = 0;
+    while (!r.done && guard++ < 2_000_000) {
+      const inputs = policy(r.value);
+      r = inputs ? it.next(inputs) : it.next();
+    }
+    expect(r.done).toBe(true);
+    return { events, result: r.value as GameResult };
+  }
+  // The three FIELDING verbs, as a view holding a pointer down on second base
+  // sends them: a destination every tick, a dive and a throw.
+  const fieldOn = (half: 'top' | 'bottom') => (f: LiveFrame): PlayInputs | undefined =>
+    f.phase === 'live' && f.half === half
+      ? { pointer: { x: 0, z: 85 }, dive: true, throwTo: { base: 2 } }
+      : undefined;
+  // The two RUNNING verbs: send the lead runner still on the bases, or hold him.
+  const runOn = (half: 'top' | 'bottom', verb: 'sendRunner' | 'holdRunner') => (f: LiveFrame): PlayInputs | undefined => {
+    if (f.phase !== 'live' || f.half !== half || !f.play) return undefined;
+    const lead = f.play.runners.find((r) => r.done === null);
+    return lead ? { [verb]: lead.charId } : undefined;
+  };
+  const same = (a: { events: SimEvent[]; result: GameResult }, b: { events: SimEvent[]; result: GameResult }): void => {
+    expect(a.result.tally).toEqual(b.result.tally);
+    expect([a.result.awayScore, a.result.homeScore]).toEqual([b.result.awayScore, b.result.homeScore]);
+    expect(a.events).toEqual(b.events);
+  };
+
+  it('★ a fielding verb from the person BATTING is dropped, so a tap to send a runner cannot steer the CPU chaser', () => {
+    // The person is AWAY: they bat and run the top half. `stepPlay` steers the
+    // elected chaser to `pointer` whoever sent it, so before the guard this
+    // one input pulled the CPU's fielder off the ball on every top-half play.
+    const plain = pumpLive('a', { humanSide: 'away' }, () => undefined);
+    same(pumpLive('a', { humanSide: 'away' }, fieldOn('top')), plain);
+    // And the person is HOME: they bat the bottom.
+    const home = pumpLive('a', { humanSide: 'home' }, () => undefined);
+    same(pumpLive('a', { humanSide: 'home' }, fieldOn('bottom')), home);
+  }, PLAYS_GAMES);
+
+  it('★ a running verb from the person FIELDING is dropped, so they cannot send or hold the CPU runners', () => {
+    const plain = pumpLive('a', { humanSide: 'away' }, () => undefined);
+    same(pumpLive('a', { humanSide: 'away' }, runOn('bottom', 'sendRunner')), plain);
+    same(pumpLive('a', { humanSide: 'away' }, runOn('bottom', 'holdRunner')), plain);
+  }, PLAYS_GAMES);
+
+  it('★ and the guard is not a mute: the same verbs from the right side, or with no side named, still change the game', () => {
+    const plain = pumpLive('a', { humanSide: 'away' }, () => undefined);
+    // The person fields the bottom and runs the top — both are theirs.
+    expect(pumpLive('a', { humanSide: 'away' }, fieldOn('bottom')).events).not.toEqual(plain.events);
+    expect(pumpLive('a', { humanSide: 'away' }, runOn('top', 'holdRunner')).events).not.toEqual(plain.events);
+    // Pass and play and a headless driver name no side: every verb is read.
+    const nobody = pumpLive('a', {}, () => undefined);
+    expect(pumpLive('a', {}, fieldOn('top')).events).not.toEqual(nobody.events);
+    expect(pumpLive('a', {}, runOn('top', 'holdRunner')).events).not.toEqual(nobody.events);
+  }, PLAYS_GAMES);
+});
+
 describe('★ the pickoff: a throw over is a play — capped, side-guarded, and not a pitch', () => {
   type PickEvent = Extract<SimEvent, { t: 'pickoff' }>;
   interface Windup {

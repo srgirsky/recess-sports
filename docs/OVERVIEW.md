@@ -3499,6 +3499,46 @@ camera. It now projects the four bases and asserts several things:
 The change is render-only. The sim, every systems test, and both goldlog
 fingerprints (main `a71e6a2f`, kid `a1686f32`) are byte-identical.
 
+## November 9 — a tap to send a runner steered the other team's fielder
+
+What we believed: the person's verbs were kept apart by side. STEAL, THROW!
+and PICK OFF each had a guard in the sim and a test that a wrong-side order
+leaves the game byte-identical, and the view routed a base tap to "send" when
+batting and "throw" when fielding.
+
+What reading it for v2's online mode turned up, and a test then confirmed:
+the five verbs of a ball in play had no guard at all. The view set
+`inputs.pointer` on every press of a live ball in EITHER role, and `stepPlay`
+steers the elected chaser to a pointer without knowing whose it is. So in the
+ordinary solo game, a child batting who tapped a base to send a runner also
+sent the CPU's chaser to stand on that base, for the rest of the play. Three
+seeded games, with a pointer on second base through the top-half live frames
+and nothing else, went from 0-2, 2-1 and 8-11 to 27-5, 44-1 and 26-11 — 19,
+33 and 23 home runs where there had been none, every one a ball nobody
+chased. That is the worst case (a tap early in every play), measured in the
+sim and not on a child. The reverse leaked in the sim too (a person fielding
+could send or hold the CPU's runners), though no view sent it.
+
+The change (PR `fix/v2-solo-pointer-leak`): `game.ts` `liveVerbs` drops the
+fielding verbs from the person batting and the running verbs from the person
+fielding, where the half is known — the sim guards, the view only proposes —
+and the view no longer sets a pointer while the person runs, so its input
+count stays a count of inputs the sim could read. No side named (headless, a
+watched game, pass and play) passes everything through, the same object, and
+no golden moved.
+
+Guarding by side exposed a second fault. PITCHING PRACTICE told the sim the
+person was HOME while handing them the bottom half's pitching and fielding —
+which is AWAY's defence. The sim therefore took the half they pitch for the
+half they bat: in one seeded game PICK OFF was offered on 44 windups and
+dropped every time, and the CPU's runners never went, so THROW! never came
+up (told the right side, the same game has 25 throws over and 3 steals
+against the person). The level's assist landed on the wrong half, the Result
+screen judged the team they had pitched against, and the new guard would
+have dropped their fielding too. `controlMode.ts` `humanSideOf` now owns
+the answer (AWAY in every mode that seats a person), their own kid joins that
+team, and a test asserts the side agrees with `controlsAt` half by half.
+
 ## October 30 — the live-shot presence cap goes to 2.0x
 
 Worklist #2's tail: with the 1.6x cap from September 29, kids in the widest
