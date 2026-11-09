@@ -44,9 +44,17 @@ export interface HudSnap {
   stamina: [number, number];
 }
 
+/**
+ * Which of the two games a device is running. Both use this protocol, the
+ * same broker and the same four-emoji rooms, so a CLASSIC kid CAN dial a room
+ * a v2 kid made — and must be told so at hello, not left to desync. A hello
+ * with no `game` is CLASSIC's.
+ */
+export type NetGame = 'v1' | 'v2';
+
 export type NetMsg =
   /** Connection handshake — the host's settings win; version must match. */
-  | { t: 'hello'; version: number; mode: GameMode; innings: number; venueId: string }
+  | { t: 'hello'; version: number; mode: GameMode; innings: number; venueId: string; game?: NetGame; night?: boolean }
   /** Team identity as INDEX PAIRS (color/logo) — never a free-text name. */
   | { t: 'identity'; seat: 0 | 1; color: number; logo: number }
   /** One draft pick; pickNo is the 0-based global pick counter (desync trip-wire). */
@@ -113,6 +121,12 @@ export type NetMsg =
   | { t: 'relief'; seat: 0 | 1; charId?: string }
   /** Either device, on the Result screen: "I want to play again." */
   | { t: 'rematch' }
+  /**
+   * v2's own traffic (`src/v2/net/`): `k` names the message, `d` is its
+   * payload. Opaque here ON PURPOSE — this file is imported by v1, and v1 may
+   * never reach v2, so v2's types cannot appear in it. v2 validates `d` itself.
+   */
+  | { t: 'v2'; k: string; d?: unknown }
   /** Host→guest: the current moment settled; `next` names the following beat. */
   | { t: 'settle'; hud: HudSnap; next: 'pitch' | 'batter' | 'half' | 'gameOver' }
   | { t: 'half'; inning: number; half: 'top' | 'bottom'; hud: HudSnap }
@@ -146,6 +160,7 @@ const MSG_KINDS = new Set<string>([
   'steal',
   'relief',
   'rematch',
+  'v2',
   'settle',
   'half',
   'gameOver',
@@ -187,9 +202,19 @@ export function decode(raw: unknown): Envelope | null {
   return { seq: env.seq, msg: env.msg as NetMsg };
 }
 
-/** Does a received hello speak our protocol version? */
-export function helloCompatible(msg: NetMsg & { t: 'hello' }): boolean {
-  return msg.version === NET.PROTOCOL_VERSION;
+/**
+ * Why a received hello cannot be played with, or null when it can: a different
+ * protocol `version` (somebody needs to reload), or the other `game` (one kid
+ * is in CLASSIC and the other in the new one).
+ */
+export function helloMismatch(msg: NetMsg & { t: 'hello' }, game: NetGame = 'v1'): 'version' | 'game' | null {
+  if (msg.version !== NET.PROTOCOL_VERSION) return 'version';
+  return (msg.game ?? 'v1') === game ? null : 'game';
+}
+
+/** Does a received hello speak our protocol version, for our game? */
+export function helloCompatible(msg: NetMsg & { t: 'hello' }, game: NetGame = 'v1'): boolean {
+  return helloMismatch(msg, game) === null;
 }
 
 /**
@@ -306,6 +331,12 @@ export class RematchVote {
 
   get agreed(): boolean {
     return this.mine && this.theirs;
+  }
+
+  /** A new game is starting on the same session: both votes are spent. */
+  reset(): void {
+    this.mine = false;
+    this.theirs = false;
   }
 }
 

@@ -156,6 +156,8 @@ import { MatchupTally } from '../ui/matchupModel';
 import { PlayCallouts } from '../ui/PlayCallouts';
 import { scoreboardModel, type ScoreboardTeams } from '../ui/scoreboardModel';
 import { controlHint, controlsAt, type PlayerControlMode } from './controlMode';
+import { NET_GRACE_SEC, type Cue, type OnlineSeat } from '../net/OnlineSeat';
+import { otherSide, roleOf } from '../net/inputWire';
 import { configureCharacterPortraits } from '../render/characterPortrait';
 import { BALL_DRAW_RADIUS_FT } from '../render/readabilityCues';
 
@@ -370,7 +372,23 @@ export class GameView {
   private uniformIdx = { away: 0, home: 1 };
   private refs: SceneRefs = { kids: new Map(), directors: new Map(), ball: new Mesh() };
 
-  private game: Generator<LiveFrame, unknown, PlayInputs> | null = null;
+  /**
+   * What is pumped: the sim's own generator — or, on an online guest, the
+   * host's game arriving over the wire (`net/frameWire.ts` `RemoteGame`), which
+   * answers the same `next()`.
+   */
+  private game: { next(inputs: PlayInputs): IteratorResult<LiveFrame, unknown> } | null = null;
+  /**
+   * This device's end of an online game, or null for every other kind.
+   *
+   * ★ ONLINE IS TWO PEOPLE AND NO CPU, AND ONLY THE HOST HAS A SIM. The host
+   * (the visitors) pumps the generator exactly as a solo game does, with the
+   * guest's verbs joined to its own and every frame it yields sent on. The
+   * guest (home) pumps those frames. Everything below that reads `this.net` is
+   * one of three things: the join, a wait for the other kid's answer, or a
+   * cue to draw something the other kid did.
+   */
+  private net: OnlineSeat | null = null;
   /**
    * What the player is asking for this tick.
    *
@@ -816,6 +834,7 @@ export class GameView {
         this.inputs.swing = { atSec: this.pitchElapsed, aimHeightFt: this.aimHeightFt };
         if (this.buntArmed) this.inputs.swing.bunt = true;
         this.tapped('swing');
+        this.net?.sendCue({ c: 'swing', bunt: this.buntArmed || undefined });
         // The human's tap IS the simulated swing instant. We learn it now, so
         // the director seeks the CONTACT marker onto this rendered tick and
         // plays the follow-through rather than drawing contact late. A bunt
@@ -1569,7 +1588,9 @@ export class GameView {
     seed: string,
     rosters?: { away: string[]; home: string[] },
     uniforms: { away: number; home: number } = { away: 0, home: 1 },
-    innings = DEFAULT_INNINGS
+    innings = DEFAULT_INNINGS,
+    /** An online game: the seat this device holds in it. */
+    net: OnlineSeat | null = null
   ): Promise<void> {
     const geo = VENUE_GEOMETRY[this.venue];
     // The held features, off unless `?features=` names them — the same idiom
@@ -1618,14 +1639,28 @@ export class GameView {
     this.matchupTally.reset();
     this.placeSpectators(geo, [...away.ids, ...home.ids]);
     void planDefence(away.ids, (id) => this.character(id));
-    this.game = simulateGameLive(
+    // Installed HERE, with the game it belongs to, and not above the `await`:
+    // the tick keeps pumping the previous game while the teams dress, and a
+    // host seat set early would stream that game's frames to the guest.
+    this.net = net;
+    if (net) net.onCue = (cue) => this.onNetCue(cue);
+    // The guest never simulates: it is handed the host's frames, and the
+    // host's sim events are fanned out here exactly as its own would be.
+    const remote = net?.role === 'guest' ? net.attach(geo, (e) => this.fanOutSimEvent(e)) : null;
+    this.game = remote ?? simulateGameLive(
       {
         away,
         home,
         lookup: (id) => this.character(id),
         geo,
         regulationInnings: innings,
-        onEvent: (e) => this.fanOutSimEvent(e),
+        onEvent: (e) => {
+          // Sent from the sim's own callback, never from `fanOutSimEvent`: that
+          // is re-entered when a held pickoff is delivered, and the guest holds
+          // and delivers its own copy.
+          this.net?.sendEvent(e);
+          this.fanOutSimEvent(e);
+        },
         // The flags ride the spec. `stamina` (a tiring pitcher, `sim/stamina.ts`),
         // `juice` (the meter and its spends, `sim/juice.ts`) and
         // `specialPitches` (three more cards on the picker, bought off that
@@ -1637,7 +1672,10 @@ export class GameView {
         // has no side, so both are the CPU's.
         // Pass and play has two people and no CPU side to protect, so no single
         // human side either: the sim runs it like a headless game's meters.
-        humanSide: this.controlMode === 'watch' || this.controlMode === 'versus' ? undefined : this.humanSide,
+        // Online is two people too, on two devices: `net/inputWire.ts` is the
+        // side guard the sim then is not.
+        humanSide:
+          net || this.controlMode === 'watch' || this.controlMode === 'versus' ? undefined : this.humanSide,
         // T-BALL..ALL-STAR. Inert without a person, like the juice port above.
         skill: this.skill,
       },
@@ -1666,7 +1704,27 @@ export class GameView {
     this.pitchElapsed = 0;
     this.windupElapsed = 0;
     this.cue = null;
+    // A guest has no frame until the host's first one lands; `pump` waits for
+    // it rather than painting the last game's.
+    if (remote) this.frame = null;
     this.advance();
+  }
+
+  /** The other device's kid did something this one has to draw. */
+  private onNetCue(cue: Cue): void {
+    if (!this.frame) return;
+    if (cue.c === 'delivery') {
+      if (this.frame.phase === 'windup') this.beginPitchDelivery();
+    } else if (this.frame.phase === 'pitch' && !this.humanBats) {
+      const director = this.refs.directors.get(this.frame.batterId);
+      if (cue.bunt) director?.play('bunt', { restart: true });
+      else director?.playToMarker('swing_contact', 0);
+    }
+  }
+
+  /** Online: is the kid on the OTHER device the one in this role this half? */
+  private remoteIs(role: 'bat' | 'field'): boolean {
+    return !!this.net && !!this.frame && roleOf(otherSide(this.net.side), this.frame.half) === role;
   }
 
   /**
@@ -1797,7 +1855,7 @@ export class GameView {
 
   /** Who the human is playing as, for the Result screen's verdict. */
   get humanSide(): 'away' | 'home' {
-    return this.controlMode === 'pitching' ? 'home' : 'away';
+    return this.controlMode === 'pitching' || this.controlMode === 'home' ? 'home' : 'away';
   }
 
   /** Register the end-of-game callback. */
@@ -1934,6 +1992,10 @@ export class GameView {
   /** Pull the next frame out of the sim. Null once the game is over. */
   private advance(): void {
     if (!this.game) return;
+    const net = this.net;
+    // A guest can only draw what has arrived. Every caller is on a clock that
+    // asks again next step, so "not yet" is simply returning.
+    if (net?.role === 'guest' && !net.game?.hasNext()) return;
     // The play this frame carried, read BEFORE the pump mutates the frame in
     // place: if the next frame is `between`, this play has just ended.
     const ending = this.frame?.phase === 'live' ? this.frame.play : null;
@@ -1941,7 +2003,9 @@ export class GameView {
     // reads it, and is consumed there — the windup is the ONE frame the sim
     // reads `spend` on, so it is cleared exactly when that frame is advanced.
     const wasWindup = this.frame?.phase === 'windup';
-    const r = this.game.next(this.inputs);
+    // Online host: the guest's verbs join ours, each cut down to the role its
+    // kid holds this half (`net/inputWire.ts`).
+    const r = this.game.next(net?.role === 'host' ? net.join(this.frame?.half, this.inputs) : this.inputs);
     // ★ THE ONE-SHOTS ARE CONSUMED, the pointer is not — WITHIN ONE PLAY. A
     // dive or a throw is an instant; steering is a state that persists until
     // the player moves it. But a pointer that outlived the play pinned the
@@ -1952,6 +2016,11 @@ export class GameView {
     // own chase, so a passive defence fields at CPU strength and the half
     // ends itself.
     const stillLive = !r.done && (r.value as LiveFrame).phase === 'live';
+    if (net?.role === 'host') {
+      net.consumed(wasWindup, stillLive);
+      if (r.done) net.sendEnd(r.value as GameResult);
+      else net.sendFrame(r.value);
+    }
     this.inputs = {
       pointer: stillLive ? this.inputs.pointer : undefined,
       spend: wasWindup ? undefined : this.inputs.spend,
@@ -1993,6 +2062,8 @@ export class GameView {
     }
     if (this.frame.phase === 'pitch') this.pitchElapsed = 0;
     if (this.frame.phase === 'pitch') this.cpuSwingStarted = false;
+    if (this.frame.phase === 'pitch' || this.frame.phase === 'windup') net?.windowOpened();
+    if (net?.role === 'guest' && net.game?.needsKey) net.askForKey();
     // The runner breaks at release and keeps running past the pitch frame;
     // on a ball in play the play owns him and the run is dropped.
     if (this.frame.phase === 'pitch') {
@@ -2023,7 +2094,9 @@ export class GameView {
       this.deliveryElapsed = 0;
       this.deliveryStarted = false;
       // The CPU has no picker to wait for; its visible delivery is the wait.
-      if (!this.onTheMound) this.beginPitchDelivery();
+      // Online there is no CPU: whoever is not pitching here is watching the
+      // other kid choose, and `pump` starts the delivery when they have.
+      if (!this.onTheMound && !net) this.beginPitchDelivery();
     }
     if (this.frame.phase === 'between') {
       this.wait = this.frame.outs >= 3 ? HALF_BREAK_SEC : BETWEEN_SEC;
@@ -2058,11 +2131,15 @@ export class GameView {
     this.deliveryStarted = true;
     this.deliveryElapsed = 0;
     this.refs.directors.get(this.frame.pitcherId)?.play('pitch_windup', { restart: true });
+    this.net?.sendCue({ c: 'delivery' });
   }
 
   /** Schedule the CPU bat only when the authored pre-roll can land on its read. */
   private animateCpuSwing(): void {
     if (!this.frame || this.frame.phase !== 'pitch' || this.humanBats) return;
+    // Online the batter on the other device is a person: his swing is drawn
+    // when HE taps (`onNetCue`), not when the CPU would have.
+    if (this.net) return;
     const cue = cpuSwingCue(
       this.frame.batterId,
       this.pitchElapsed,
@@ -2573,7 +2650,16 @@ export class GameView {
 
   /** One sim step of real time. */
   private pump(step: number): void {
-    if (!this.frame) return;
+    const net = this.net;
+    const guest = net?.role === 'guest' ? net : null;
+    // The guest's verbs leave as they are made, not when the next frame is
+    // pulled: the host may be waiting on exactly this tap to send that frame.
+    guest?.flush(this.inputs, performance.now());
+    if (!this.frame) {
+      // A guest's game begins when the host's first frame lands.
+      if (guest) this.advance();
+      return;
+    }
     // Belt to `tick`'s braces: no sim step is ever taken under a replay.
     if (this.replay) return;
     if (this.stealRun) this.advanceStealRun(step);
@@ -2593,6 +2679,9 @@ export class GameView {
     }
     if (this.frame.phase === 'between') {
       this.wait -= step;
+      // A guest that has fallen a whole beat behind stops waiting out its own:
+      // the host is already past it.
+      if (guest && (guest.game?.pending ?? 0) > 1) this.wait = 0;
       if (this.wait <= 0) this.advance();
       return;
     }
@@ -2607,9 +2696,28 @@ export class GameView {
       // out), the complete visible delivery reaches RELEASE before the sim is
       // advanced, so the ball cannot leave a stationary pitcher's hand.
       if (!this.deliveryStarted) {
-        const waiting = this.onTheMound && !this.inputs.pitch;
-        const timedOut = this.windupElapsed >= PITCH_CLOCK_SEC;
+        const remoteMound = this.remoteIs('field');
+        if (guest) {
+          // A frame waiting before any delivery is a throw over's windup.
+          if (guest.game?.hasNext()) return this.advance();
+          // The host's kid is choosing: his delivery cue starts ours.
+          if (remoteMound) return;
+        } else if (net && remoteMound && net.remote.pickoff && !this.pickoffRun && this.frame.pickoffsLeft > 0) {
+          // The guest threw over instead of pitching. Checked against the
+          // frame here as the guest's own `throwOver` checks it there: with no
+          // throw left the sim would read this advance as "pitch", and throw
+          // one nobody chose.
+          return this.advance();
+        }
+        const waiting = net?.role === 'host' && remoteMound
+          ? !net.remote.pitch && net.remoteDone !== 'windup'
+          : this.onTheMound && !this.inputs.pitch;
+        // The guest's own clock runs out first and says so; the grace is for
+        // a message that never comes.
+        const grace = net?.role === 'host' && remoteMound ? NET_GRACE_SEC : 0;
+        const timedOut = this.windupElapsed >= PITCH_CLOCK_SEC + grace;
         if (waiting && !timedOut) return;
+        if (waiting) guest?.windowDone('windup');
         this.beginPitchDelivery();
       }
       this.deliveryElapsed += step;
@@ -2618,11 +2726,33 @@ export class GameView {
     }
     if (this.frame.phase === 'pitch') {
       this.pitchElapsed += step;
-      if (this.pitchElapsed >= this.frame.pitch!.travelSec + SWING_TAIL_SEC) this.advance();
+      const closed = this.pitchElapsed >= this.frame.pitch!.travelSec + SWING_TAIL_SEC;
+      if (!closed) return;
+      // Our window has closed. The guest says so (its swing, if any, already
+      // went); the host, if the other kid had a verb on this pitch — the bat,
+      // or the throw down on a steal — waits for that word before judging it.
+      guest?.windowDone('pitch');
+      if (net?.role === 'host' && (this.remoteIs('bat') || (this.remoteIs('field') && this.frame.steal))) {
+        const answered = net.remoteDone === 'pitch' || (this.remoteIs('bat') && !!net.remote.swing);
+        const graceEnds = this.frame.pitch!.travelSec + SWING_TAIL_SEC + NET_GRACE_SEC;
+        if (!answered && this.pitchElapsed < graceEnds) return;
+      }
+      this.advance();
       return;
     }
     // Live: one frame of the generator IS one sim tick, so pulling advances it.
+    // A guest pulls what has arrived — twice a step when it has fallen behind,
+    // so a burst after a hiccup is caught up rather than carried.
     this.advance();
+    if (guest && this.frame?.phase === 'live' && (guest.game?.pending ?? 0) > 6) this.advance();
+  }
+
+  /** The online game is over or abandoned: this view is nobody's seat again. */
+  leaveOnline(): void {
+    // A guest's game was the host's, and the host is gone: there is nothing
+    // left to pump. The last frame stays painted until the app starts a game.
+    if (this.net?.role === 'guest') this.game = null;
+    this.net = null;
   }
 
   /** Told when a replay starts and ends — the sound facade plays its pop. */
@@ -2637,6 +2767,10 @@ export class GameView {
 
   private replayWanted(): boolean {
     if (this.replayMode === 'off' || this.tape.length < REPLAY.MIN_FRAMES) return false;
+    // A replay stops the pump, and online the two pumps must stay in step: one
+    // kid skipping it would leave the other watching a game that has moved on.
+    // v1 switches its replay off in net play for the same reason.
+    if (this.net) return false;
     if (this.replayMode === 'force') return true;
     return !this.instrumented && isReplayWorthy(this.highlights);
   }

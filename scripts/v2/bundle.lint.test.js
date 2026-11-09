@@ -82,9 +82,21 @@ const assets = join(repo, 'dist', 'assets');
  *                give, wrist pronation share, the visible finish, the
  *                chest-frame lead elbow and the squared, scheduled bunt)
  *                adds 1.8kB, and was what crossed the band. v1 unchanged.
+ *   1091 -> 1130 Online play, and stale once more. main measured 1103.8kB the
+ *                day this was built (0c43d555: the steal, the pickoff and the
+ *                presence work since the last pin, inside the band and so
+ *                unrecorded). v2's two-device mode is the other 26.5kB:
+ *                `src/v2/net/` (the frame diff, `RemoteGame`, the seat, the
+ *                input guard, `OnlineMatch`), the lobby and notice screens,
+ *                the friend's half of the draft, and `net/protocol.ts`, which
+ *                v2 now imports and Rollup therefore moved into the shared
+ *                chunk. peerjs itself is NOT in this number and must not be:
+ *                v2 imports `net/peer.ts` lazily, so its 92kB chunk is fetched
+ *                when the lobby opens a room and never by the front door. v1
+ *                moved 1934.4 -> 1934.7kB (the protocol's new messages).
  */
 const V1_KB = 1909;
-const V2_KB = 1091;
+const V2_KB = 1130;
 const TOLERANCE = 0.02;
 
 /**

@@ -10,6 +10,7 @@ import {
   encode,
   decode,
   helloCompatible,
+  helloMismatch,
   Sequencer,
   PickCourier,
   classifyDraftPick,
@@ -145,6 +146,8 @@ const ALL_MSGS: NetMsg[] = [
   { t: 'relief', seat: 1, charId: 'nostrike' },
   { t: 'relief', seat: 1 }, // bullpen open — hold the pitch clock
   { t: 'rematch' },
+  { t: 'v2', k: 'in', d: { swing: { atSec: 0.41, aimHeightFt: 2.1 } } },
+  { t: 'v2', k: 'pause' },
   { t: 'settle', hud: HUD, next: 'batter' },
   { t: 'half', inning: 2, half: 'bottom', hud: HUD },
   { t: 'gameOver', hud: HUD },
@@ -184,6 +187,20 @@ describe('protocol encode/decode', () => {
     const theirs: NetMsg = { t: 'hello', version: NET.PROTOCOL_VERSION + 1, mode: 'kid', innings: 1, venueId: 'park' };
     expect(helloCompatible(ours as NetMsg & { t: 'hello' })).toBe(true);
     expect(helloCompatible(theirs as NetMsg & { t: 'hello' })).toBe(false);
+  });
+
+  it('tells the other GAME from a stale version, in both directions', () => {
+    type Hello = NetMsg & { t: 'hello' };
+    const base = { t: 'hello', version: NET.PROTOCOL_VERSION, mode: 'kid', innings: 1, venueId: 'park' } as Hello;
+    const v2 = { ...base, game: 'v2' } as Hello;
+    // A hello with no `game` is CLASSIC's.
+    expect(helloMismatch(base)).toBeNull();
+    expect(helloMismatch(base, 'v1')).toBeNull();
+    expect(helloMismatch(v2, 'v2')).toBeNull();
+    expect(helloMismatch(v2, 'v1')).toBe('game');
+    expect(helloMismatch(base, 'v2')).toBe('game');
+    // A stale build is a version problem whichever game it is.
+    expect(helloMismatch({ ...v2, version: NET.PROTOCOL_VERSION - 1 }, 'v1')).toBe('version');
   });
 });
 
@@ -371,6 +388,17 @@ describe('RematchVote', () => {
     b.voteMine();
     expect(b.agreed).toBe(true);
     expect(b.theyAsked).toBe(false);
+  });
+
+  it('reset spends both votes, so the NEXT game needs two fresh taps', () => {
+    const v = new RematchVote();
+    v.voteMine();
+    v.voteTheirs();
+    expect(v.agreed).toBe(true);
+    v.reset();
+    expect(v.agreed).toBe(false);
+    expect(v.voteMine()).toBe(true);
+    expect(v.agreed).toBe(false);
   });
 
   it('sends our vote exactly once however often the button is tapped', () => {
