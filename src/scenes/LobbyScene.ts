@@ -14,7 +14,7 @@ import { GAME_WIDTH, GAME_HEIGHT, COLORS, NET } from '../config';
 import { FONT, pill, heading } from '../ui/theme';
 import * as audio from '../systems/audio';
 import { hostSession, joinSession, dropSession, type NetSession } from '../net/peer';
-import { helloCompatible, type NetMsg } from '../net/protocol';
+import { helloMismatch, type NetMsg } from '../net/protocol';
 import { getTeamIdentity, type TeamIdentity } from '../systems/team';
 import { UNIFORM_COLORS } from '../art/palette';
 import { getMode, setMode } from '../systems/mode';
@@ -222,9 +222,15 @@ export class LobbyScene extends Phaser.Scene {
     const s = this.session;
     if (!s) return;
     if (m.t === 'hello' && s.role === 'guest') {
-      if (!helloCompatible(m)) {
+      const mismatch = helloMismatch(m);
+      if (mismatch) {
         this.clearStage();
-        this.note(280, 'DIFFERENT GAME VERSIONS 😞\nUPDATE AND TRY AGAIN!');
+        this.note(
+          280,
+          mismatch === 'game'
+            ? 'YOUR FRIEND IS IN THE NEW GAME 🙃\nPLAY THE SAME ONE!'
+            : 'DIFFERENT GAME VERSIONS 😞\nUPDATE AND TRY AGAIN!'
+        );
         this.button(GAME_WIDTH / 2, GAME_HEIGHT - 70, '⬅ BACK', () => this.quit(), 180);
         return;
       }

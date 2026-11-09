@@ -2756,3 +2756,70 @@ body.screen-open #hud > *:not(.btn--mute):not(.btn--log) {
     margin-block-end: var(--s2);
   }
 }
+
+/* ---- Online: the lobby and the waiting notices ----------------------------
+ * The room code is four emoji, shown big enough to read aloud across a room
+ * and tapped on a 4x4 grid sized off the tap floor. The lobby borrows the
+ * extra-games shell (`.screen--modes`) so it reads as the same place. */
+.screen--lobby { gap: var(--s4); }
+.lobby-body {
+  display: grid;
+  justify-items: center;
+  gap: var(--s3);
+  inline-size: min(40rem, 92vw);
+}
+.lobby-cards {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  inline-size: 100%;
+}
+.lobby-note {
+  margin: 0;
+  font-size: clamp(0.85rem, 2.4vw, 1.15rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+.lobby-note--quiet { font-weight: 400; opacity: 0.85; }
+.lobby-big {
+  margin: 0;
+  font-size: clamp(3rem, 12vw, 5.5rem);
+  line-height: 1;
+}
+.lobby-code {
+  display: grid;
+  grid-auto-flow: column;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  background: var(--cream);
+  border: var(--stroke) solid var(--outline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+.lobby-code__pic {
+  display: grid;
+  place-items: center;
+  inline-size: clamp(2.6rem, 11vw, 4.6rem);
+  block-size: clamp(2.6rem, 11vw, 4.6rem);
+  font-size: clamp(2rem, 9vw, 3.8rem);
+  line-height: 1;
+}
+.lobby-code__pic.is-empty { color: var(--ink); opacity: 0.35; }
+.lobby-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(var(--tap-min), 1fr));
+  gap: var(--s2);
+  inline-size: 100%;
+}
+.lobby-grid__pic {
+  padding: 0;
+  font-size: clamp(1.5rem, 4.5vw, 2.2rem);
+  line-height: 1;
+  background: var(--cream);
+}
+.lobby-undo { font-size: 1.3rem; padding: 0 var(--s4); }
+.lobby-undo:disabled { opacity: 0.4; }
+.screen--notice { gap: var(--s5); }
+@media (max-width: 680px) {
+  .lobby-grid { grid-template-columns: repeat(4, minmax(var(--tap-min), 1fr)); }
+  .lobby-cards { grid-template-columns: 1fr; }
+}

@@ -56,6 +56,26 @@ export function startDraft(allIds: string[], captains?: DraftCaptains): DraftSta
 }
 
 /**
+ * An online draft: the same alternating draft, with a friend where the CPU
+ * was. The HOST picks first; on the guest's device the board therefore opens
+ * on the other side's turn. Each device sees ITSELF as `player`, so "your
+ * bench" is the same code path on both — and only its own picks vote.
+ */
+export function startNetDraft(allIds: string[], first: boolean): DraftState {
+  const fresh = createDraft(allIds);
+  return first ? fresh : { ...fresh, turn: 'ai' };
+}
+
+/**
+ * A pick the FRIEND made, on their own device. It does NOT vote here: their
+ * device recorded it, and counting it twice would double one child's say.
+ */
+export function pickByFriend(state: DraftState, id: string): DraftState {
+  if (state.turn !== 'ai' || !state.pool.includes(id)) return state;
+  return applyPick(state, id);
+}
+
+/**
  * A pick the PERSON made. This is the one that votes.
  *
  * The vote is recorded even though `applyPick` may refuse the id (it returns

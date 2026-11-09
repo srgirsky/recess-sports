@@ -1,7 +1,7 @@
 // Which live verbs belong to the person in each focused game mode. Pure so a
 // hands-free mode cannot accidentally wait eight seconds for a hidden pitcher.
 
-export type PlayerControlMode = 'both' | 'batting' | 'pitching' | 'watch' | 'versus';
+export type PlayerControlMode = 'both' | 'batting' | 'pitching' | 'watch' | 'versus' | 'home';
 
 /**
  * PASS AND PLAY (`versus`): two people, one device. Player 1 bats the top and
@@ -18,6 +18,12 @@ export function controlsAt(
   half: 'top' | 'bottom'
 ): { bat: boolean; pitch: boolean; run: boolean; field: boolean } {
   if (mode === 'versus') return { bat: true, pitch: true, run: false, field: true };
+  // `home` is `both` from the other dugout: the online guest is the home side,
+  // so it pitches and fields the top and bats and runs the bottom.
+  if (mode === 'home') {
+    const top = half === 'top';
+    return { bat: !top, pitch: top, run: !top, field: top };
+  }
   return {
     bat: half === 'top' && (mode === 'both' || mode === 'batting'),
     pitch: half === 'bottom' && (mode === 'both' || mode === 'pitching'),

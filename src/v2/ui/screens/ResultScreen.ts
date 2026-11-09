@@ -24,6 +24,18 @@ import { verdictLine, type ResultModel } from '../resultModel';
 import type { Character } from '../../../data/types';
 
 export class ResultScreen implements Screen {
+  private againBtn: HTMLButtonElement | null = null;
+
+  /**
+   * Relabel the left-hand button after the screen is up — an online rematch
+   * is a vote, so the button has to say it is waiting, or that it cannot.
+   */
+  setAgain(label: string, enabled = true): void {
+    if (!this.againBtn) return;
+    this.againBtn.textContent = label;
+    this.againBtn.disabled = !enabled;
+  }
+
   constructor(
     private readonly model: ResultModel,
     /** Full character lookup — the custom captain has a face here too. */
@@ -85,8 +97,9 @@ export class ResultScreen implements Screen {
     if (stars.childElementCount > 0) board.appendChild(stars);
 
     const actions = el('div', 'result-actions');
+    this.againBtn = button(this.labels.again ?? '⚾  PLAY AGAIN', this.onAgain, 'btn--hero');
     actions.append(
-      button(this.labels.again ?? '⚾  PLAY AGAIN', this.onAgain, 'btn--hero'),
+      this.againBtn,
       button(this.labels.home ?? '🏠  HOME', this.onHome, 'btn--quiet')
     );
 
