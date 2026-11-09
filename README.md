@@ -734,5 +734,4 @@ scripts/v2/          The asset gates: glb read/write, exporter, validator, lints
 - A real backend to aggregate pick rates across all players
 - Sculpt the other 29 characters in batches of five (Tank, Grizz, Sprout, Bubbles
   and Chip first — they retire the most shared hair, garment and accessory work)
-- Online-play polish: remote steal-reaction taps, guest relief, rematch
 - Eventually… the dinosaurs 🦖

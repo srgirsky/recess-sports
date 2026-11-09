@@ -40,7 +40,8 @@
       "result": { "playerScore": 12, "aiScore": 10, "matchType": "passplay", "useIdentity": true }
     },
     { "id": "Result season", "key": "Result", "result": { "playerScore": 4, "aiScore": 1, "seasonGame": true } },
-    { "id": "Result net guest (no box)", "key": "Result", "result": { "playerScore": 3, "aiScore": 1, "matchType": "net", "noBox": true } }
+    { "id": "Result net guest (no box)", "key": "Result", "result": { "playerScore": 3, "aiScore": 1, "matchType": "net", "netRole": "guest", "noBox": true } },
+    { "id": "Result net rematch row", "key": "Result", "result": { "playerScore": 3, "aiScore": 1, "matchType": "net", "netRole": "guest", "noBox": true, "rematchPreview": true } }
   ],
 
   "_waiversComment": [

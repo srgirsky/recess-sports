@@ -39,6 +39,9 @@ export interface HudSnap {
   batterId?: string;
   pitcherId?: string;
   juice: [number, number];
+  /** Each seat's mound stamina (1 = fresh). The guest's tired tell and its
+   *  🥵 NEW PITCHER chip read this — it never drains an arm itself. */
+  stamina: [number, number];
 }
 
 export type NetMsg =
@@ -56,7 +59,16 @@ export type NetMsg =
   /** Host→guest: start the local ball-flight ceremony. */
   | { t: 'pitchLaunch'; wild: boolean; travelMs: number; plan?: PitchPlan; stealFrom?: 1 | 2 }
   /** Batter→host: the locally-resolved swing (main: errorMs+cursor; kid: band). */
-  | { t: 'swing'; errorMs?: number; cursor?: PlateLoc; band?: SwingBand; swingType: SwingType; spend?: 'powerSwing' }
+  | {
+      t: 'swing';
+      errorMs?: number;
+      cursor?: PlateLoc;
+      band?: SwingBand;
+      swingType: SwingType;
+      spend?: 'powerSwing';
+      /** The base the batter's device armed a steal from on this pitch. */
+      steal?: 1 | 2;
+    }
   /** Host→guest: a settled (non-live) at-bat plus the baserunning ceremony. */
   | { t: 'atBat'; result: AtBatResult; movements: RunnerMove[]; hud: HudSnap }
   /** Host→guest: a live play just launched — everything the view needs. */
@@ -89,12 +101,30 @@ export type NetMsg =
     }
   /** Host→remote defender: a steal race armed — show the 🚨 TAP prompt. */
   | { t: 'stealRace'; from: 1 | 2 }
+  /** Host→guest: the race is decided — play the dash (or the out) for `from`. */
+  | { t: 'steal'; from: 1 | 2; safe: boolean }
+  /**
+   * A pitching change for `seat`. Guest→host it is a REQUEST for the guest's
+   * own seat (the host validates, then swaps); host→guest it announces the
+   * host's own change. With NO charId it only says "my bullpen is open" — the
+   * host holds its pitch clock instead of throwing a CPU pitch for a kid who is
+   * mid-choice.
+   */
+  | { t: 'relief'; seat: 0 | 1; charId?: string }
+  /** Either device, on the Result screen: "I want to play again." */
+  | { t: 'rematch' }
   /** Host→guest: the current moment settled; `next` names the following beat. */
   | { t: 'settle'; hud: HudSnap; next: 'pitch' | 'batter' | 'half' | 'gameOver' }
   | { t: 'half'; inning: number; half: 'top' | 'bottom'; hud: HudSnap }
   | { t: 'gameOver'; hud: HudSnap }
   | { t: 'pause' }
   | { t: 'resume'; hud: HudSnap }
+  /**
+   * Guest→host: "my end lost you and has you back — send the snapshot." Only
+   * the host can say `resume`, and it says it on its own when IT noticed the
+   * drop; a drop only the guest noticed would otherwise never be answered.
+   */
+  | { t: 'resync' }
   | { t: 'bye' };
 
 /** Every legal msg kind — decode() rejects anything else. */
@@ -113,11 +143,15 @@ const MSG_KINDS = new Set<string>([
   'liveEvents',
   'liveInput',
   'stealRace',
+  'steal',
+  'relief',
+  'rematch',
   'settle',
   'half',
   'gameOver',
   'pause',
   'resume',
+  'resync',
   'bye',
 ]);
 
@@ -240,6 +274,47 @@ export class PickCourier {
 export function classifyDraftPick(pickNo: number, applied: number): 'duplicate' | 'expected' | 'future' {
   if (pickNo < applied) return 'duplicate';
   return pickNo === applied ? 'expected' : 'future';
+}
+
+/**
+ * The Result screen's play-again handshake. Each device votes by tapping; the
+ * rematch starts only when BOTH have, in either order — so each side leaves the
+ * Result screen on the same two facts and neither can drag the other along.
+ */
+export class RematchVote {
+  private mine = false;
+  private theirs = false;
+
+  /** We tapped. True the first time only — that is when to send `rematch`. */
+  voteMine(): boolean {
+    if (this.mine) return false;
+    this.mine = true;
+    return true;
+  }
+
+  voteTheirs(): void {
+    this.theirs = true;
+  }
+
+  get waitingOnThem(): boolean {
+    return this.mine && !this.theirs;
+  }
+
+  get theyAsked(): boolean {
+    return this.theirs && !this.mine;
+  }
+
+  get agreed(): boolean {
+    return this.mine && this.theirs;
+  }
+}
+
+/**
+ * Is `charId` a legal reliever for a seat? On the team, and not the arm already
+ * on the mound. The host runs this on a guest's request before swapping.
+ */
+export function canRelieve(team: readonly string[], pitcherId: string | undefined, charId: string): boolean {
+  return charId !== pitcherId && team.includes(charId);
 }
 
 /** The transport seam peer.ts implements and tests fake. */

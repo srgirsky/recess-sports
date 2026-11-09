@@ -71,3 +71,32 @@ top half, or a pitch with `gameScene.resolvePlayerPitch(band)` in the bottom
 (wait for `phase === 'aiming'`). Drive a live play with
 `gameScene.setLivePointer(x, y)`, `commandThrow(base, power)` and `commandRun()`,
 and inspect it with `getLivePlay()` while pumping the loop.
+
+## Two-device play (v1 online) in ONE tab
+
+Two tabs cannot both be foreground, and the hidden one's rAF stops. Put both
+devices in one page instead: from `/classic/`, replace the body with two
+`<iframe src="/classic/">` (host `H`, guest `G`) and drive both
+`contentWindow.__game`s from the parent. Same origin, so they share
+`localStorage` — real devices do not.
+
+- **Clocks:** if the pane is hidden, let both games boot to `Schoolyard` on
+  their own, THEN `game.loop.sleep()` each and step both from one parent
+  `setInterval(16)` with `w.__game.loop.step(w.performance.now())` — real time,
+  so tweens and timers agree and nothing needs `pump`'s tween rewind. Taking the
+  clocks during Boot stalls the page for minutes.
+- **Connect:** `scene.start('Lobby')` on both; `lobby.hostFlow()` on H, wait for
+  `lobby.codeHex`, then `lobby.joinWithCode(code)` on G. The session object is
+  `lobby.session` (`onMessage`/`onStatus` taps make a wire log).
+- **Draft/lineup:** each side, on its own turn (`s.myDraftTurn()`),
+  `inspectKid(pool[0])` then `confirmPick()`; in CLASSIC call `Lineup.go()`.
+- **Play (CLASSIC):** the fielding side throws with
+  `resolvePlayerPitchPlan('fastball', {x:0,y:0}, 'perfect', 0)` while its
+  `pitchSelect` is up; the batting side swings with
+  `resolvePlayerSwingAimed(0, g.pitchPlan.actual)` near `pitchTravelMs`. Kid mode:
+  `resolvePlayerPitch(band)` on `phase === 'aiming'`, `resolvePlayerSwing(band, false)`.
+- **Every source edit full-reloads the page and both iframes** — finish edits,
+  then run. Do not run `npm test` beside it: one shared main thread starves, both
+  ends see a stall, and you are testing the reconnect path instead.
+- A missing jersey shows as `texture.key === '__MISSING'` on a visible Image;
+  walk both scenes' display lists for it rather than trusting a screenshot.
