@@ -182,6 +182,15 @@ class Session implements NetSession {
     if (this.trafficPending) {
       this.trafficPending = false;
       this.lastRecvTick = nowMs;
+      // A SOFT disconnect heals itself: the channel never closed, the other
+      // end was only quiet (a tab switched away, a stalled clock), and it is
+      // talking again. Without this the recovery could only end by a guest
+      // re-dial — so a HOST that tripped staleness waited out the whole window
+      // and ended the game on a friend who had been back for 25 seconds.
+      if (this.cur === 'reconnecting' && this.everConnected && this.conn?.open) {
+        this.stopRecovery();
+        this.setStatus('connected');
+      }
     }
     if (!this.conn?.open) return;
     if (nowMs - this.lastSendTick >= NET.HEARTBEAT_MS) {

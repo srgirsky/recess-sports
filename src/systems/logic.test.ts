@@ -20,7 +20,7 @@ import type { PitchPlan } from './pitchkind';
 import { CURSOR } from '../config';
 import { HOME } from './geometry';
 import { newHalfInning, applyAtBat, applyLivePlay, applySteal } from './inning';
-import { rollSteal } from './steal';
+import { rollSteal, stealReactBonus, canStealFrom } from './steal';
 import {
   newJuice,
   addJuice,
@@ -441,6 +441,23 @@ describe('steals (main mode)', () => {
     expect(applySteal(st, 1, true).state.bases).toEqual([true, true, false]); // 2nd occupied
     st.bases = [false, false, true];
     expect(applySteal(st, 2, true).state.bases).toEqual([false, false, true]); // nobody on 2nd
+  });
+
+  it('stealReactBonus: instant is the full bonus, the window end is none, junk is none', () => {
+    expect(stealReactBonus(0)).toBe(3);
+    expect(stealReactBonus(450)).toBeCloseTo(1.5);
+    expect(stealReactBonus(900)).toBe(0);
+    expect(stealReactBonus(5000)).toBe(0); // a late wire tap is no reaction
+    expect(stealReactBonus(-50)).toBe(3); // clamped, never above the cap
+    expect(stealReactBonus(NaN)).toBe(0);
+  });
+
+  it('canStealFrom: needs a runner there and the next bag open', () => {
+    expect(canStealFrom([true, false, false], 1)).toBe(true);
+    expect(canStealFrom([true, true, false], 1)).toBe(false);
+    expect(canStealFrom([false, true, false], 2)).toBe(true);
+    expect(canStealFrom([false, true, true], 2)).toBe(false);
+    expect(canStealFrom([false, false, false], 1)).toBe(false);
   });
 
   it('rollSteal: speed helps, arm and a sharp reaction hurt, slow stuff helps', () => {

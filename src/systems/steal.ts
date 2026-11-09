@@ -4,7 +4,7 @@
 // bonus when the defending player reacts fast to the throw-down prompt.
 // ---------------------------------------------------------------------------
 
-import { PICKOFF, type PitchKind } from '../config';
+import { PICKOFF, STEAL_REACT, type PitchKind } from '../config';
 import type { HalfInningState } from './inning';
 
 export interface StealSpec {
@@ -28,6 +28,23 @@ export function rollSteal(spec: StealSpec, rng: () => number): boolean {
     (spec.reactBonus ?? 0) * 0.06 +
     slowStuff;
   return rng() < Math.min(0.92, Math.max(0.08, p));
+}
+
+/**
+ * The defender's reaction time on the 🚨 throw-down prompt → `reactBonus`.
+ * Measured on the DEFENDER's device (a net guest ships its own number), so
+ * latency never eats the window. Late, missing or nonsense times score 0.
+ */
+export function stealReactBonus(reactMs: number): number {
+  if (!Number.isFinite(reactMs)) return 0;
+  const { WINDOW_MS, MAX_BONUS } = STEAL_REACT;
+  const ms = Math.min(WINDOW_MS, Math.max(0, reactMs));
+  return ((WINDOW_MS - ms) / WINDOW_MS) * MAX_BONUS;
+}
+
+/** Can a runner on `from` steal right now? Occupied, with the next bag open. */
+export function canStealFrom(bases: readonly [boolean, boolean, boolean], from: 1 | 2): boolean {
+  return bases[from - 1] && !bases[from];
 }
 
 /** Should the CPU try a steal this pitch? Speedsters go, slowpokes don't. */

@@ -29,7 +29,7 @@ import {
 } from '../config';
 import { createCrowd, stepCrowd, type CrowdKidInit, type CrowdState } from '../systems/crowd';
 import { getMode } from '../systems/mode';
-import { ROSTER } from '../data/characters';
+import { ROSTER, getCharacter } from '../data/characters';
 import type { Character } from '../data/types';
 import {
   createDraft,
@@ -40,9 +40,16 @@ import {
   type DraftState,
 } from '../systems/draft';
 import { recordPick } from '../systems/picklog';
-import { poseKey, clearTeamVariant, setTeamVariant, STREET_SUFFIX } from '../art/textureFactory';
+import {
+  poseKey,
+  clearTeamVariant,
+  setTeamVariant,
+  STREET_SUFFIX,
+  queueTeamTextures,
+  teamSuffix,
+} from '../art/textureFactory';
 import { getSeason, newSeason, saveSeason } from '../systems/season';
-import { getTeamIdentity, type TeamIdentity } from '../systems/team';
+import { getTeamIdentity, TEAM_LOGOS, type TeamIdentity } from '../systems/team';
 import { activeSession, dropSession } from '../net/peer';
 import { PickCourier, classifyDraftPick } from '../net/protocol';
 import { makeButton } from '../ui/Button';
@@ -183,6 +190,8 @@ export class SchoolyardScene extends Phaser.Scene {
         this.netDraft = false;
       } else {
         this.netCourier = new PickCourier(NET.DRAFT_RESEND_MS);
+        // A plan left over from the last game must not start this one (rematch).
+        this.registry.remove('netEarlyLineup');
         const un = session.onMessage((m) => {
           if (m.t === 'draftPick') {
             // Ack HERE, not in the idle-gated drain — the drain never runs
@@ -195,6 +204,12 @@ export class SchoolyardScene extends Phaser.Scene {
             }
           } else if (m.t === 'draftAck') {
             this.netCourier?.ackedBy(m);
+          } else if (m.t === 'lineup') {
+            // The friend's device finished the draft ceremony first and they
+            // already pressed PLAY BALL. `lineup` is sent ONCE, so dropping it
+            // here strands us on "waiting for your friend…" forever while they
+            // start a game alone — keep it for the Lineup screen to collect.
+            this.registry.set('netEarlyLineup', m.plan);
           } else if (m.t === 'bye') {
             this.netAbort(); // friend quit cleanly — don't wait out the 30s window
           }
@@ -1568,14 +1583,39 @@ export class SchoolyardScene extends Phaser.Scene {
         const ids = this.registry.get('netIdentities') as
           | { away: TeamIdentity; home: TeamIdentity }
           | undefined;
-        this.scene.start(getMode() === 'main' ? 'Lineup' : 'Game', {
-          playerTeam: this.state.playerTeam,
-          aiTeam: this.state.aiTeam,
-          identity: ids?.away,
-          rival: ids?.home,
-          matchType: 'net',
-          netRole: activeSession()?.role ?? 'host',
-        });
+        const next = getMode() === 'main' ? 'Lineup' : 'Game';
+        const go = () =>
+          this.scene.start(next, {
+            playerTeam: this.state.playerTeam,
+            aiTeam: this.state.aiTeam,
+            identity: ids?.away,
+            rival: ids?.home,
+            matchType: 'net',
+            netRole: activeSession()?.role ?? 'host',
+          });
+        // Kid mode skips the Lineup screen, and that screen is where jerseys
+        // get baked — so bake them HERE, while this scene is still ticking the
+        // session and acking the friend's last pick. (GameScene.preload would
+        // catch them too, but a scene that is loading has no update(): the
+        // device goes silent for the whole bake and the friend's end calls the
+        // channel lost.)
+        if (next === 'Game' && ids) {
+          const bake = (team: string[], identity: TeamIdentity) =>
+            queueTeamTextures(
+              this,
+              team.map(getCharacter),
+              { color: identity.color, logo: TEAM_LOGOS[identity.logo].icon },
+              teamSuffix(identity.color, identity.logo)
+            );
+          bake(this.state.playerTeam, ids.away);
+          bake(this.state.aiTeam, ids.home);
+          this.load.start();
+          if (this.load.isLoading()) {
+            this.load.once('complete', go);
+            return;
+          }
+        }
+        go();
         return;
       }
       const teams = {
