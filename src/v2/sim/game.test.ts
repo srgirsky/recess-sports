@@ -198,6 +198,26 @@ describe('★ the three seams that bite', () => {
     expect(sawWalkOff || sawSkip, 'the sweep has to exercise at least one of them').toBe(true);
   }, PLAYS_GAMES);
 
+  it('★ a walk-off closes the inning it happened in — one line-score row per inning', () => {
+    // The top half opens an inning's row and the bottom fills it. The walk-off
+    // branch PUSHED a second row instead, so every walk-off drew a phantom
+    // extra inning: a one-inning game ended on a two-column board with the
+    // winning run under "2" and a dash under "1". Nothing saw it — no golden
+    // game happens to be a walk-off — until a played game did (2026-11-09).
+    let checked = 0;
+    for (let seed = 0; seed < 40; seed++) {
+      const g = game(`wo:${seed}`, { regulationInnings: 1 + (seed % 3) });
+      const where = `seed ${seed}`;
+      expect(g.lineScore.length, `${where}: one row per inning played`).toBe(g.innings);
+      expect(g.lineScore.reduce((a, r) => a + r[0], 0), `${where}: away cells sum to the score`).toBe(g.awayScore);
+      expect(g.lineScore.reduce((a, r) => a + (r[1] ?? 0), 0), `${where}: home cells sum to the score`).toBe(g.homeScore);
+      if (!g.walkOff) continue;
+      checked++;
+      expect(g.lineScore[g.innings - 1][1], `${where}: the winning half is on the board`).not.toBeNull();
+    }
+    expect(checked, 'the sweep has to produce a walk-off').toBeGreaterThan(0);
+  }, PLAYS_GAMES);
+
   it('★ skips the BOTTOM of the last inning, never the top', () => {
     // `shouldSkipBottom` means "the home team already leads, so their at-bats
     // cannot change anything". Asked at the TOP of the loop instead of after the
