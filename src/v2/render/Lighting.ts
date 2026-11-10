@@ -29,6 +29,7 @@ import {
   Vector3,
   type Object3D,
 } from 'three';
+import { REAL } from './look';
 
 /** Key light direction, matching v1's art convention. */
 export const KEY_AZIMUTH_DEG = 135;
@@ -96,6 +97,9 @@ export class Lighting {
       this.key.shadow.camera.far = 400;
       this.key.shadow.bias = -0.0006;
       this.key.shadow.normalBias = 0.35;
+      // `real` look: a wider PCF kernel. A kid-high caster in afternoon sun
+      // throws an edge a few inches soft; the default kernel drew it as a cut.
+      if (REAL) this.key.shadow.radius = 2.6;
     }
     this.root.add(this.key);
     this.root.add(this.key.target);

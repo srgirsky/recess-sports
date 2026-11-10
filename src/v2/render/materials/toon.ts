@@ -59,12 +59,14 @@
 import {
   Color,
   DataTexture,
+  LinearFilter,
   MeshToonMaterial,
   NearestFilter,
   RGBAFormat,
   type Texture,
   UnsignedByteType,
 } from 'three';
+import { REAL } from '../look';
 
 /** How many lighting steps the ramp quantises to. 4 is the toy-brand look;
  *  3 reads as cel-animation, 6+ starts to read as ordinary smooth shading. */
@@ -94,6 +96,7 @@ const rampCache = new Map<number, DataTexture>();
  * smooth gradient and the whole look collapses.
  */
 export function toonRamp(steps = TOON_STEPS): DataTexture {
+  if (REAL) return smoothRamp();
   const cached = rampCache.get(steps);
   if (cached) return cached;
 
@@ -117,6 +120,49 @@ export function toonRamp(steps = TOON_STEPS): DataTexture {
   return tex;
 }
 
+/** Texels in the smooth ramp. Enough that 8-bit banding is the display's, not ours. */
+const SMOOTH_TEXELS = 64;
+
+/**
+ * The `real` look's ramp: one continuous wrapped falloff, shared by everything.
+ *
+ * ★ STILL A RAMP, NOT A SWITCH TO ANOTHER MATERIAL. `MeshToonMaterial` samples
+ * `gradientMap` at `dotNL * 0.5 + 0.5`, so a linear-filtered ramp turns the
+ * same material into wrapped diffuse — light bleeds a little past the
+ * terminator, which is what skin and cloth do and what a hard Lambert cut does
+ * not. Every hook this file injects (the face atlas after `<color_fragment>`,
+ * the rim before `<opaque_fragment>`) and every `MeshToonMaterial` type in the
+ * render layer stays exactly as it was.
+ *
+ * The floor is lower than the toon ramp's 0.34: bands need a bright shadow to
+ * stay readable, a continuous falloff does not, and a deeper shadow side is
+ * most of what makes a form look solid. The hemisphere light fills it.
+ */
+function smoothRamp(): DataTexture {
+  const cached = rampCache.get(-1);
+  if (cached) return cached;
+  const data = new Uint8Array(SMOOTH_TEXELS * 4);
+  for (let i = 0; i < SMOOTH_TEXELS; i++) {
+    const t = i / (SMOOTH_TEXELS - 1);
+    // Smoothstep over the wrapped term: dark until just past the terminator
+    // (t = 0.5 is dotNL = 0), fully lit a little before facing the light.
+    const u = Math.min(1, Math.max(0, (t - 0.3) / 0.62));
+    const k = u * u * (3 - 2 * u);
+    const v = Math.round(255 * (0.2 + 0.8 * k));
+    data[i * 4 + 0] = v;
+    data[i * 4 + 1] = v;
+    data[i * 4 + 2] = v;
+    data[i * 4 + 3] = 255;
+  }
+  const tex = new DataTexture(data, SMOOTH_TEXELS, 1, RGBAFormat, UnsignedByteType);
+  tex.minFilter = LinearFilter;
+  tex.magFilter = LinearFilter;
+  tex.generateMipmaps = false;
+  tex.needsUpdate = true;
+  rampCache.set(-1, tex);
+  return tex;
+}
+
 export interface ToonOptions {
   color?: Color | number | string;
   map?: Texture | null;
@@ -130,6 +176,11 @@ export interface ToonOptions {
   opacity?: number;
   /** Lighting steps. Defaults to TOON_STEPS (4); ground uses GROUND_STEPS (8). */
   gradientSteps?: number;
+  /**
+   * `real` look only: strength of the soft key-light highlight. Defaults to a
+   * matte-cloth value; 0 for ground and chalk, which are rough all the way down.
+   */
+  specular?: number;
   /** Marks the material for the selective-bloom pass on the `high` perf tier. */
   emissiveGlow?: boolean;
   /**
@@ -188,7 +239,9 @@ export function makeToonMaterial(opts: ToonOptions = {}): MeshToonMaterial {
     );
   }
 
-  if (rimStrength > 0 || faceAtlas) {
+  const specular = REAL ? (opts.specular ?? 0.16) : 0;
+
+  if (rimStrength > 0 || faceAtlas || specular > 0) {
     mat.onBeforeCompile = (shader) => {
       if (faceAtlas) {
         shader.uniforms.uFaceAtlas = { value: faceAtlas };
@@ -288,6 +341,32 @@ export function makeToonMaterial(opts: ToonOptions = {}): MeshToonMaterial {
           );
       }
 
+      if (specular > 0) {
+        shader.uniforms.uSpecular = { value: specular };
+        // ★ ONE BROAD LOBE FROM THE KEY, AND ONLY THE KEY. The toy look had
+        // zero specular on purpose ("a moulded plastic sphere, not a render");
+        // the real look wants exactly the render. Broad and weak rather than
+        // tight and bright: kids wear cotton, and a tight hotspot on a
+        // low-poly limb draws its facets. Guarded on NUM_DIR_LIGHTS so a scene
+        // with no key (a material preview) still compiles.
+        shader.fragmentShader = shader.fragmentShader
+          .replace('#include <common>', `#include <common>\n uniform float uSpecular;`)
+          .replace(
+            '#include <opaque_fragment>',
+            `#if NUM_DIR_LIGHTS > 0
+             {
+               vec3 spN = normalize( normal );
+               vec3 spV = normalize( vViewPosition );
+               vec3 spL = directionalLights[ 0 ].direction;
+               float nl = saturate( dot( spN, spL ) );
+               float nh = saturate( dot( spN, normalize( spL + spV ) ) );
+               outgoingLight += directionalLights[ 0 ].color * pow( nh, 22.0 ) * nl * uSpecular;
+             }
+             #endif
+             #include <opaque_fragment>`
+          );
+      }
+
       // The one handle on the compiled program. Without it `setFaceCell` would
       // have nothing to write to: `onBeforeCompile`'s `shader` is not reachable
       // from the material afterwards.
@@ -296,7 +375,7 @@ export function makeToonMaterial(opts: ToonOptions = {}): MeshToonMaterial {
     // Materials that compile differently must not share a program cache slot —
     // and a face material and a jersey material differ by a whole texture read.
     mat.customProgramCacheKey = () =>
-      `toon-rim-${rimStrength}-${rimColor.getHex()}-face-${faceAtlas ? faceAtlas.uuid : 'none'}`;
+      `toon-rim-${rimStrength}-${rimColor.getHex()}-spec-${specular}-face-${faceAtlas ? faceAtlas.uuid : 'none'}`;
   }
 
   mat.userData.emissiveGlow = opts.emissiveGlow === true;

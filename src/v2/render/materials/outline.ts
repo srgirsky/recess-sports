@@ -25,6 +25,15 @@
 
 import { BackSide, Color, Mesh, Object3D, ShaderMaterial, SkinnedMesh } from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { REAL } from '../look';
+
+/**
+ * The `real` look's contour: a hairline. It no longer DRAWS the kid — the
+ * lighting does that now — but a fielder at 40px against grass still needs an
+ * edge, so it is thinned rather than removed. Applied in the registry, so the
+ * tier widths and every caller stay as they were.
+ */
+const LOOK_WIDTH = REAL ? 0.36 : 1;
 
 /** The character-art contour colour. Shared with the CSS `--outline` token. */
 export const OUTLINE_COLOR = 0x26333f;
@@ -118,7 +127,7 @@ export function makeOutlineMaterial(opts: OutlineOptions = {}): ShaderMaterial {
 export class OutlineRegistry {
   private mats: ShaderMaterial[] = [];
   private heightPx = 1080;
-  private widthPx = OUTLINE_PX_DESKTOP;
+  private widthPx = OUTLINE_PX_DESKTOP * LOOK_WIDTH;
 
   create(opts: OutlineOptions = {}): ShaderMaterial {
     const mat = makeOutlineMaterial({ widthPx: this.widthPx, ...opts });
@@ -134,8 +143,8 @@ export class OutlineRegistry {
   }
 
   setWidth(px: number): void {
-    this.widthPx = px;
-    for (const m of this.mats) m.uniforms.uWidthPx.value = px;
+    this.widthPx = px * LOOK_WIDTH;
+    for (const m of this.mats) m.uniforms.uWidthPx.value = this.widthPx;
   }
 
   dispose(): void {
