@@ -682,9 +682,11 @@ First-load caching: Pages/CDN can take a minute to reflect a push, and browsers
 cache hard — hard-refresh (Cmd/Ctrl+Shift+R) if you don't see a change. Because
 it's pure static files, there's nothing to provision and no running cost.
 
-Two-device play (🔗 FRIEND on the title) also needs **no backend and no keys**:
-it connects browsers directly over WebRTC using the free public PeerJS cloud
-broker, so the deploy stays exactly this simple.
+Two-device play also needs **no backend and no keys**: it connects browsers
+directly over WebRTC using the free public PeerJS cloud broker, so the deploy
+stays exactly this simple. Both games have it — 🔗 FRIEND on CLASSIC's title, and
+🔗 PLAY A FRIEND under MORE GAMES in the new one. The two share room codes but
+not rooms: both kids must be in the same game.
 
 ---
 
@@ -734,5 +736,4 @@ scripts/v2/          The asset gates: glb read/write, exporter, validator, lints
 - A real backend to aggregate pick rates across all players
 - Sculpt the other 29 characters in batches of five (Tank, Grizz, Sprout, Bubbles
   and Chip first — they retire the most shared hair, garment and accessory work)
-- Online-play polish: remote steal-reaction taps, guest relief, rematch
 - Eventually… the dinosaurs 🦖

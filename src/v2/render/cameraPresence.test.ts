@@ -92,15 +92,17 @@ describe('live-camera character presence', () => {
 
   it('films the chaser large enough to read', () => {
     expect(s.frames).toBeGreaterThan(10_000);
-    // Measured with presence: p50 4.98%, p10 3.48% (the 1.6x cap binds on
-    // the far half). Unscaled: 3.38% and 2.16%.
-    expect(s.scaled(0.5), 'p50').toBeGreaterThan(0.046);
-    expect(s.scaled(0.1), 'p10').toBeGreaterThan(0.032);
+    // Measured with presence at the 1.6x cap: p50 4.98%, p10 3.48% (the cap
+    // bound on the far half). At 2.0x (2026-10-30): p50 5.94%, p10 4.32%,
+    // p90 6.65%. Unscaled: 3.38% and 2.16%. The floors hold the 2.0x reading,
+    // so a cap quietly put back fails here.
+    expect(s.scaled(0.5), 'p50').toBeGreaterThan(0.055);
+    expect(s.scaled(0.1), 'p10').toBeGreaterThan(0.04);
   });
 
   it('★ fires on the unscaled game', () => {
-    expect(s.bare(0.5)).toBeLessThan(0.046);
-    expect(s.bare(0.1)).toBeLessThan(0.032);
+    expect(s.bare(0.5)).toBeLessThan(0.055);
+    expect(s.bare(0.1)).toBeLessThan(0.04);
   });
 
   it('never draws a kid past the cap, and never shrinks one', () => {

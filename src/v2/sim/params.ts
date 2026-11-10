@@ -533,6 +533,47 @@ export const RUN = {
    * anywhere that makes steals in general more or less frequent.
    */
   STEAL_THIRD_MARGIN_SEC: 0.6,
+  /**
+   * How well a runner must read the pitcher's first move to GO, seconds.
+   *
+   * ★ WHICH PITCH HE GOES ON IS A READ, NOT A RATE. Until the pickoff existed
+   * the CPU's runner went on the first pitch he projected to win, which made
+   * "throw over on the first pitch" a free out. A runner picks his pitch: he
+   * goes when his jump — the race's own draw, `jumpSigmaSec` — is no later
+   * than this, and the race then runs on that same jump, so he never goes on
+   * the read that would have cost him the bag. A person's order is not gated:
+   * they are allowed to gamble.
+   */
+  GO_ON_JUMP_SEC: 0.05,
+  /**
+   * The pickoff: a throw over to a bag instead of a pitch — v1's #7 and
+   * BB2001's counter to the steal — a RACE here like the steal, from the first
+   * motion of the move to the ball on the bag.
+   *
+   * PICKOFF_MOVE_SEC: the pitcher's step-off and turn before the ball leaves,
+   * seen by the runner from its first motion. A kid's; adults take ~0.7.
+   * DIVE_FT / DIVE_SEC: the last body length back is a dive — a fall covers it
+   * faster than a standing start can.
+   * PICKOFF_READ_SEC: how late a SET runner leaves. He is watching the pitcher
+   * with his weight back.
+   * PICKOFF_READ_LEANING_SEC: how late a runner who is GOING leaves. He is on
+   * the steal lead with his weight forward, and the first step back is the
+   * slow one.
+   * LEAD_RETURN_MARGIN_SEC: ★ THE SET LEAD IS SIZED TO THE ARM. A runner who
+   * is not going takes the longest lead he can get back from with this to
+   * spare (`setLeadFt`), capped at `LEAD_FT`, the steal lead. So a runner on
+   * his lead is nearly never picked, whatever the arm — his one risk is a bad
+   * read — while a runner who was going is in a real race he often loses.
+   * Judgements, every one; `sim.pickoffRace` says so and records the spread.
+   * PICKOFF_MAX_PER_PA: v1's cap — a pitcher cannot stall a kid's at-bat.
+   */
+  PICKOFF_MOVE_SEC: 0.9,
+  DIVE_FT: 4,
+  DIVE_SEC: 0.4,
+  PICKOFF_READ_SEC: 0.15,
+  PICKOFF_READ_LEANING_SEC: 0.45,
+  LEAD_RETURN_MARGIN_SEC: 0.35,
+  PICKOFF_MAX_PER_PA: 2,
   BASE_DWELL_SEC: 0.4,
   /**
    * A reversal cannot be undone this soon. v1's `RUN2.REVERSE_COOLDOWN_MS` —

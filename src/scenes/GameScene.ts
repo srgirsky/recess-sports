@@ -29,6 +29,7 @@ import {
   FX,
   HUD,
   PICKOFF,
+  STEAL_REACT,
 } from '../config';
 import type { Character } from '../data/types';
 import { getCharacter } from '../data/characters';
@@ -76,7 +77,7 @@ import { UNIFORM_COLORS } from '../art/palette';
 import { showHandoffSplash } from './ui/HandoffSplash';
 import { LivePlayView } from './ui/LivePlayView';
 import { activeSession, dropSession } from '../net/peer';
-import type { NetMsg, HudSnap } from '../net/protocol';
+import { canRelieve, type NetMsg, type HudSnap } from '../net/protocol';
 import { getSettings } from '../systems/settings';
 import type { StatEvent } from '../systems/stats';
 import { foldBox, todayLine, moundLine, type BoxEvent, type BoxLine, type PaResult } from '../systems/boxscore';
@@ -90,7 +91,7 @@ import {
   newHighlights,
   type ReplayFrame,
 } from '../systems/replay';
-import { setTeamVariant, clearTeamVariant, teamSuffix } from '../art/textureFactory';
+import { setTeamVariant, clearTeamVariant, teamSuffix, queueTeamTextures } from '../art/textureFactory';
 import { createScoreboard, type Scoreboard } from './ui/Scoreboard';
 import { shouldSkipBottom, isWalkOff, decideAfterHalf } from '../systems/gameflow';
 import {
@@ -103,7 +104,7 @@ import {
   type HalfInningState,
   type RunnerMove,
 } from '../systems/inning';
-import { rollSteal, cpuWantsSteal, rollPickoff, applyPickoff } from '../systems/steal';
+import { rollSteal, cpuWantsSteal, rollPickoff, applyPickoff, stealReactBonus, canStealFrom } from '../systems/steal';
 import { type Alignment } from '../systems/alignment';
 import {
   newJuice,
@@ -367,9 +368,25 @@ export class GameScene extends Phaser.Scene {
     if (this.matchType === 'net' && this.netRole === 'guest') activeSession()?.send(msg);
   }
   /** What the host flow is currently blocked on, + its continuation/fallback. */
-  private netAwait?: 'pitchPlan' | 'swing';
+  private netAwait?: 'pitchPlan' | 'swing' | 'stealTap';
   private netResume?: () => void;
+  private netTimeout?: () => void;
+  private netWaitMs: number = NET.ACTION_TIMEOUT_MS;
   private netWaitTimer?: Phaser.Time.TimerEvent;
+  /** Host: the remote defender's steal reaction (ms), once their tap lands. */
+  private netStealTap?: number;
+  /** Host: the reaction the parked steal race resumed with (consumed once). */
+  private netStealReactMs?: number;
+  /** Host: a guest pitching change that arrived mid-pitch — lands at the next one. */
+  private netReliefReq?: string;
+  /** Guest: the open bullpen's idle clock (it returns to the pitch menu). */
+  private reliefIdle?: Phaser.Time.TimerEvent;
+  /**
+   * A stolen base in flight: the runner has left `to - 1` and is not on `to`
+   * until the dash tween lands, so the runner map alone reads him as GONE.
+   * hudSnap (host) and netSyncRunners (guest) both consult this instead.
+   */
+  private stealDash?: { to: number; id: string };
   /** Between-pitch ceremony: every in-flight tween/timer, killed together. */
   private ceremonyJobs: Array<Phaser.Tweens.Tween | Phaser.Time.TimerEvent> = [];
   private ceremonyResume?: () => void;
@@ -383,7 +400,9 @@ export class GameScene extends Phaser.Scene {
 
   /** Everything the guest needs to mirror the HUD after a beat. */
   private hudSnap(): HudSnap {
-    const baseId = (b: number) => (this.runners.get(b)?.getData('id') as string | undefined) ?? null;
+    const baseId = (b: number) =>
+      (this.runners.get(b)?.getData('id') as string | undefined) ??
+      (this.stealDash?.to === b ? this.stealDash.id : null);
     return {
       scores: [this.seats[0].score, this.seats[1].score],
       outs: this.halfState?.outs ?? 0,
@@ -394,26 +413,46 @@ export class GameScene extends Phaser.Scene {
       batterId: this.battingSeat().humanBats ? this.batter?.id : this.cpuBatter?.id,
       pitcherId: this.fieldingSeat().pitcher?.id,
       juice: [this.seats[0].juice.value, this.seats[1].juice.value],
+      stamina: [this.seats[0].fatigue.stamina, this.seats[1].fatigue.stamina],
     };
   }
 
   /** Park the flow on a remote intent; the timeout runs the local fallback. */
-  private netWaitFor(what: 'pitchPlan' | 'swing', resume: () => void, onTimeout: () => void): void {
+  private netWaitFor(
+    what: 'pitchPlan' | 'swing' | 'stealTap',
+    resume: () => void,
+    onTimeout: () => void,
+    waitMs: number = NET.ACTION_TIMEOUT_MS
+  ): void {
     this.netAwait = what;
     this.netResume = resume;
+    this.netTimeout = onTimeout;
+    this.netWaitMs = waitMs;
+    this.netArmWaitTimer();
+  }
+
+  private netArmWaitTimer(): void {
     this.netWaitTimer?.remove(false);
-    this.netWaitTimer = this.time.delayedCall(NET.ACTION_TIMEOUT_MS, () => {
+    this.netWaitTimer = this.time.delayedCall(this.netWaitMs, () => {
+      const onTimeout = this.netTimeout;
       this.netAwait = undefined;
       this.netResume = undefined;
+      this.netTimeout = undefined;
       this.netWaitTimer = undefined;
-      onTimeout();
+      onTimeout?.();
     });
+  }
+
+  /** The remote kid is visibly busy (bullpen open): restart the same wait. */
+  private netRearmWait(): void {
+    if (this.netAwait) this.netArmWaitTimer();
   }
 
   private netResumeWait(): void {
     this.netWaitTimer?.remove(false);
     this.netWaitTimer = undefined;
     this.netAwait = undefined;
+    this.netTimeout = undefined;
     const r = this.netResume;
     this.netResume = undefined;
     r?.();
@@ -749,6 +788,28 @@ export class GameScene extends Phaser.Scene {
     this.firstRunPlay = true;
     this.viewMode = 'wide';
     this.box = {};
+  }
+
+  /**
+   * The armed jersey variants must EXIST before create() draws a kid: poseKey
+   * resolves to the team-suffixed key whether or not anyone baked it, and a
+   * key nobody baked renders as Phaser's missing-texture box. Lineup bakes them
+   * in the background, but a kid-mode net game never visits Lineup. Existing
+   * keys are skipped, so this costs nothing wherever Lineup already ran (every
+   * solo game — the loader queue stays empty and create() runs as before).
+   */
+  preload(): void {
+    const bake = (ids: string[], identity?: TeamIdentity) => {
+      if (!identity) return;
+      queueTeamTextures(
+        this,
+        ids.map(getCharacter),
+        { color: identity.color, logo: TEAM_LOGOS[identity.logo].icon },
+        teamSuffix(identity.color, identity.logo)
+      );
+    };
+    bake(this.playerTeam, this.identity);
+    bake(this.aiTeam, this.rival);
   }
 
   create(): void {
@@ -1612,8 +1673,14 @@ export class GameScene extends Phaser.Scene {
     this.netWaitTimer = undefined;
     this.netAwait = undefined;
     this.netResume = undefined;
+    this.netTimeout = undefined;
     this.netPitchPlan = undefined;
     this.netSwing = undefined;
+    this.netStealTap = undefined;
+    this.netStealReactMs = undefined;
+    this.netReliefReq = undefined; // a change asked for last half is moot
+    this.reliefIdle?.remove(false);
+    this.reliefIdle = undefined;
   }
 
   private startHalf(): void {
@@ -1677,6 +1744,8 @@ export class GameScene extends Phaser.Scene {
     this.reliefBtn = undefined;
     this.reliefOverlay?.destroy();
     this.reliefOverlay = undefined;
+    this.reliefIdle?.remove(false);
+    this.reliefIdle = undefined;
     this.spendChips?.destroy();
     this.spendChips = undefined;
     this.rallyCapOn = false; // the rally cap comes off between halves
@@ -1745,6 +1814,7 @@ export class GameScene extends Phaser.Scene {
         aiTeam: this.aiTeam,
         seasonGame: this.seasonGame,
         matchType: this.matchType,
+        netRole: this.netRole,
         awayIdentity: this.seats[0].identity,
         homeIdentity: this.seats[1].identity,
         box: this.box,
@@ -1819,8 +1889,11 @@ export class GameScene extends Phaser.Scene {
         // Full snapshot resync; both sides resume at the at-bat boundary.
         activeSession()?.send({ t: 'resume', hud: this.hudSnap() });
         this.netResumeFromPause();
+      } else {
+        // Guest: the resume message carries the snapshot — ask for it, because
+        // a drop only WE noticed is one the host does not know to answer.
+        activeSession()?.send({ t: 'resync' });
       }
-      // Guest: wait for the resume message (it carries the snapshot).
     } else {
       this.netGoodGame();
     }
@@ -1862,7 +1935,13 @@ export class GameScene extends Phaser.Scene {
     }
     // The CPU-run defense manages its own bullpen between batters.
     const fielding = this.fieldingSeat();
-    if (this.features.fatigue && fielding.plan && cpuWantsRelief(fielding.fatigue)) {
+    // (Net: the friend's seat has its own 🥵 chip — the CPU keeps its hands off.)
+    if (
+      this.features.fatigue &&
+      fielding.plan &&
+      !this.seatIsRemote(fielding) &&
+      cpuWantsRelief(fielding.fatigue)
+    ) {
       const tiredArm = fielding.pitcher!;
       const best = fielding.team
         .filter((id) => id !== tiredArm.id)
@@ -2111,6 +2190,7 @@ export class GameScene extends Phaser.Scene {
     // here until it arrives (their 9s auto-pick guarantees liveness on a
     // healthy channel); the timeout falls back to a CPU plan.
     const remoteMound = this.seatIsRemote(this.fieldingSeat());
+    if (remoteMound) this.netFlushRelief(); // a change asked for mid-pitch lands here
     if (remoteMound && !this.netPitchPlan) {
       this.phase = 'resolving';
       this.netWaitFor(
@@ -2288,9 +2368,8 @@ export class GameScene extends Phaser.Scene {
   private showReliefButton(): void {
     this.reliefBtn?.destroy();
     this.reliefBtn = undefined;
-    // Net guest: manual relief isn't wired (no relief message) — the CPU
-    // bullpen policy manages the remote seat host-side.
-    if (this.matchType === 'net' && this.netRole === 'guest') return;
+    // Net guest: its stamina arrives in every HudSnap, and the change itself
+    // travels as a `relief` request the host validates.
     if (!this.features.fatigue || !this.fieldingSeat().plan || !isTired(this.fieldingSeat().fatigue)) return;
     const { container } = pill(this, HUD.SPEND_COL.X, HUD.SPEND_COL.ROW1_Y, '🥵 NEW PITCHER', {
       fill: COLORS.red,
@@ -2315,6 +2394,21 @@ export class GameScene extends Phaser.Scene {
     this.pitchAutoPick = undefined;
     this.pitchSelect?.destroy();
     this.pitchSelect = undefined;
+    // Net guest: the host is parked on our pitch with a timeout that throws a
+    // CPU one. Tell it the bullpen is open (it restarts that clock), and never
+    // sit here longer than the pitch menu itself would have.
+    if (this.matchType === 'net' && this.netRole === 'guest') {
+      this.guestSend({ t: 'relief', seat: 1 });
+      this.reliefIdle?.remove(false);
+      this.reliefIdle = this.time.delayedCall(FLOW.PITCH_CLOCK_MS, () => {
+        this.reliefIdle = undefined;
+        if (!this.reliefOverlay) return;
+        this.reliefOverlay.destroy();
+        this.reliefOverlay = undefined;
+        this.guestSend({ t: 'relief', seat: 1 });
+        this.beginPitchTurn();
+      });
+    }
     const root = this.add.container(0, 0).setDepth(96);
     const dim = this.add
       .rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, COLORS.ink, 0.55)
@@ -2349,16 +2443,59 @@ export class GameScene extends Phaser.Scene {
     this.reliefOverlay = undefined;
     this.reliefBtn?.destroy();
     this.reliefBtn = undefined;
+    this.reliefIdle?.remove(false);
+    this.reliefIdle = undefined;
+    this.applyRelief(this.fieldingSeat(), id);
+    // Net: the other device swaps the same two kids (a guest's is a request the
+    // host validates; the host's is an announcement).
+    if (this.matchType === 'net') activeSession()?.send({ t: 'relief', seat: this.netSeatIdx(), charId: id });
+    this.time.delayedCall(FLOW.BANNER_HOLD_MS, () => this.beginPitchTurn());
+  }
+
+  /** The swap itself: the new kid takes the mound fresh, trading positions with
+   *  the old pitcher. `seat` must be the fielding seat (buildDefense reads it). */
+  private applyRelief(seat: SeatState, id: string): void {
     const newPitcher = getCharacter(id);
-    const fseat = this.fieldingSeat();
-    if (fseat.plan) fseat.plan = swapPositions(fseat.plan, fseat.pitcher!.id, id);
-    fseat.pitcher = newPitcher;
-    fseat.fatigue = newFatigue();
+    if (seat.plan) seat.plan = swapPositions(seat.plan, seat.pitcher!.id, id);
+    seat.pitcher = newPitcher;
+    seat.fatigue = newFatigue();
     this.buildDefense();
     this.setMoundPitcher(newPitcher);
     audio.cheer();
     this.flashAnnounce(`${newPitcher.name}\nTAKES THE MOUND!`, COLORS.gold, FLOW.BANNER_HOLD_MS);
-    this.time.delayedCall(FLOW.BANNER_HOLD_MS, () => this.beginPitchTurn());
+  }
+
+  /** Net: the OTHER device changed (or is changing) its pitcher. */
+  private netOnRelief(m: NetMsg & { t: 'relief' }): void {
+    const seat = this.seats[m.seat];
+    if (!this.seatIsRemote(seat) || seat !== this.fieldingSeat() || !this.features.fatigue) return;
+    if (this.netRole === 'guest') {
+      // The host's own change, already made over there — mirror it.
+      if (m.charId && seat.plan && canRelieve(seat.team, seat.pitcher?.id, m.charId)) {
+        this.applyRelief(seat, m.charId);
+      }
+      return;
+    }
+    if (m.charId === undefined) {
+      this.netRearmWait(); // bullpen open: hold the pitch clock, throw nothing
+      return;
+    }
+    if (!seat.plan || !isTired(seat.fatigue) || !canRelieve(seat.team, seat.pitcher?.id, m.charId)) return;
+    if (this.netAwait === 'pitchPlan') {
+      this.applyRelief(seat, m.charId);
+      this.netRearmWait(); // the new arm gets a full pitch clock
+    } else {
+      this.netReliefReq = m.charId; // mid-pitch: it lands before the next one
+    }
+  }
+
+  /** Host: apply a guest pitching change that was queued behind a pitch. */
+  private netFlushRelief(): void {
+    const id = this.netReliefReq;
+    this.netReliefReq = undefined;
+    const seat = this.fieldingSeat();
+    if (!id || !seat.plan || !canRelieve(seat.team, seat.pitcher?.id, id)) return;
+    this.applyRelief(seat, id);
   }
 
   /**
@@ -2603,6 +2740,7 @@ export class GameScene extends Phaser.Scene {
         cursor,
         swingType: this.swingType,
         spend: powered ? 'powerSwing' : undefined,
+        steal: this.takeArmedSteal(),
       });
       return;
     }
@@ -2669,13 +2807,13 @@ export class GameScene extends Phaser.Scene {
       this.clearPitchVisuals();
       if (took) {
         if (takenAt) this.showRestingBall(takenAt.x, takenAt.y);
-        this.guestSend({ t: 'swing', swingType: this.swingType }); // no data = take
+        this.guestSend({ t: 'swing', swingType: this.swingType, steal: this.takeArmedSteal() }); // no data = take
         return;
       }
       const shown = this.pitchIsWild ? wildSwingBand(band) : band;
       this.animateSwing(shown === 'miss');
       this.showBandFeedback(shown);
-      this.guestSend({ t: 'swing', band, swingType: this.swingType });
+      this.guestSend({ t: 'swing', band, swingType: this.swingType, steal: this.takeArmedSteal() });
       return;
     }
     this.phase = 'resolving';
@@ -2728,7 +2866,50 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  /** Guest: hand the armed steal to the swing message (the host races it). */
+  private takeArmedSteal(): 1 | 2 | undefined {
+    const from = this.armedSteal;
+    this.armedSteal = undefined;
+    return from;
+  }
+
+  /**
+   * Net host, OUR runner going against the friend's defence: the race waits for
+   * their 🚨 tap, which is timed on THEIR device. Parks the settle exactly like
+   * netWaitFor's other two seams and re-enters applyAndContinue with the
+   * reaction in hand; silence past the window is simply no reaction.
+   */
+  private netParkStealRace(result: AtBatResult): boolean {
+    if (this.netStealReactMs !== undefined) return false; // resumed — carry on
+    if (this.matchType !== 'net' || this.netRole !== 'host') return false;
+    const from = this.armedSteal;
+    if (from === undefined || !this.features.steals) return false;
+    if (!this.seatIsRemote(this.fieldingSeat()) || !this.runners.has(from)) return false;
+    const applied = applyAtBat(this.halfState, result);
+    const walked = result.kind === 'ball' && applied.batterDone;
+    const live =
+      (result.kind === 'strike' || (result.kind === 'ball' && !walked)) && !isHalfOver(applied.state);
+    if (!live) return false;
+    this.netStealTap = undefined;
+    this.hostCast({ t: 'stealRace', from });
+    this.setView('wide'); // the race is at the bases
+    const go = (reactMs: number) => {
+      this.netStealReactMs = reactMs;
+      this.applyAndContinue(result);
+    };
+    this.netWaitFor(
+      'stealTap',
+      () => go(this.netStealTap ?? STEAL_REACT.WINDOW_MS),
+      () => go(STEAL_REACT.WINDOW_MS),
+      NET.STEAL_TAP_WAIT_MS
+    );
+    return true;
+  }
+
   private applyAndContinue(result: AtBatResult): void {
+    if (this.netParkStealRace(result)) return;
+    const stealReactMs = this.netStealReactMs;
+    this.netStealReactMs = undefined;
     const prevBatter = this.batter;
     const seat = this.battingSeat();
     const applied = applyAtBat(this.halfState, result);
@@ -2782,6 +2963,8 @@ export class GameScene extends Phaser.Scene {
             runnerSpeed: runner.stats.speed,
             catcherArm: catcher.stats.pitching,
             pitchKind: this.pitchPlan?.kind ?? null,
+            // Net: the remote defender's own reaction (undefined vs the CPU).
+            reactBonus: stealReactMs !== undefined ? stealReactBonus(stealReactMs) : undefined,
           },
           () => Math.random()
         );
@@ -2867,6 +3050,12 @@ export class GameScene extends Phaser.Scene {
     safe: boolean,
     cpuRunner = false
   ): void {
+    // Net: the guest plays the same dash off this (it never rolls a race), and
+    // as a mirror it must not bank juice or box lines — the next HudSnap does.
+    this.hostCast({ t: 'steal', from, safe });
+    const mirror = this.matchType === 'net' && this.netRole === 'guest';
+    const runnerId = token.getData('id') as string;
+    this.stealDash = safe ? { to: from + 1, id: runnerId } : undefined;
     this.runners.delete(from);
     const to = project(basePos(from + 1));
     const img = token.getAt(1) as Phaser.GameObjects.Image;
@@ -2904,8 +3093,11 @@ export class GameScene extends Phaser.Scene {
           floatingText(this, to.x, to.y - 50, 'STOLE IT!', cpuRunner ? COLORS.red : COLORS.gold, 28);
           this.tweens.add({ targets: img, scaleY: img.scaleY * 0.85, yoyo: true, duration: 90 });
           this.runners.set(from + 1, token);
-          this.tallyBox({ t: 'sb', kid: token.getData('id') as string });
-          this.gainJuice(cpuRunner ? 'cpu' : 'player', 'steal');
+          if (this.stealDash?.id === runnerId) this.stealDash = undefined;
+          if (!mirror) {
+            this.tallyBox({ t: 'sb', kid: runnerId });
+            this.gainJuice(cpuRunner ? 'cpu' : 'player', 'steal');
+          }
           this.callIt('stealSafe', { name: getCharacter(token.getData('id') as string).name });
           if (cpuRunner) audio.whiff();
           else audio.cheer();
@@ -3625,7 +3817,13 @@ export class GameScene extends Phaser.Scene {
     this.phase = 'resolving'; // the select UI owns input until the aim is tapped
     // The CPU runner makes up their mind NOW, while you pick — that is what
     // a pickoff reads. (A throw over keeps the spooked runner's decision.)
-    if (!keepIntent) this.stealIntent = this.features.steals ? { from: this.rollStealIntent() } : undefined;
+    // (Net: a remote batter arms his own steals — the swing message says so.)
+    if (!keepIntent) {
+      this.stealIntent =
+        this.features.steals && !this.seatIsRemote(this.battingSeat())
+          ? { from: this.rollStealIntent() }
+          : undefined;
+    }
     const pickBase = this.pickoffBase();
     const confirm = (kind: PitchKind, target: PlateLoc) => {
       autoPick.remove();
@@ -3818,7 +4016,7 @@ export class GameScene extends Phaser.Scene {
     // Speedy CPU runners sometimes take off on the pitch — decided when the
     // menu opened (so a pickoff could read it), or right now if it never did.
     this.cpuStealFrom = undefined;
-    if (this.features.steals) {
+    if (this.features.steals && !this.seatIsRemote(this.battingSeat())) {
       this.cpuStealFrom = this.stealIntent ? this.stealIntent.from : this.rollStealIntent();
     }
     this.stealIntent = undefined;
@@ -4019,6 +4217,16 @@ export class GameScene extends Phaser.Scene {
       return;
     }
     this.netSwing = undefined;
+    // The remote batter's device armed a steal on this pitch: race it exactly
+    // as a CPU runner's (our own 🚨 tap is the defence), once the host agrees
+    // the bag is his to leave.
+    this.cpuStealFrom =
+      sw.steal !== undefined &&
+      this.features.steals &&
+      canStealFrom(this.halfState.bases, sw.steal) &&
+      this.runners.has(sw.steal)
+        ? sw.steal
+        : undefined;
     if (sw.errorMs === undefined && sw.band === undefined) {
       this.resolveNetTake(plan);
       return;
@@ -4133,8 +4341,15 @@ export class GameScene extends Phaser.Scene {
       this.netGoodGame();
       return;
     }
+    if (m.t === 'relief') {
+      this.netOnRelief(m);
+      return;
+    }
     if (this.netRole === 'host') {
       switch (m.t) {
+        case 'resync':
+          activeSession()?.send({ t: 'resume', hud: this.hudSnap() });
+          break;
         case 'pitchPlan':
           this.netPitchPlan = m;
           if (this.netAwait === 'pitchPlan') this.netResumeWait();
@@ -4151,6 +4366,10 @@ export class GameScene extends Phaser.Scene {
           if (m.run) this.commandRun();
           if (m.send) this.commandSend(m.send);
           if (m.hold) this.commandHold(m.hold);
+          if (m.stealTap !== undefined && this.netAwait === 'stealTap') {
+            this.netStealTap = m.stealTap;
+            this.netResumeWait();
+          }
           break;
         default:
           break; // pause/resume/bye land with the disconnect pass
@@ -4196,6 +4415,19 @@ export class GameScene extends Phaser.Scene {
           }
         }
         break;
+      case 'stealRace':
+        // We defend: the reaction is timed HERE and only the number travels.
+        if (this.phase === 'ended') break;
+        this.promptStealTap((reactMs) => this.guestSend({ t: 'liveInput', stealTap: reactMs }));
+        break;
+      case 'steal': {
+        const token = this.runners.get(m.from);
+        if (!token || this.phase === 'ended') break;
+        this.setView('wide');
+        // POV: our own runner going reads gold; the friend's reads red.
+        this.animateSteal(m.from, token, m.safe, !this.localHumanBats());
+        break;
+      }
       case 'gameOver':
         this.netGuestGameOver(m);
         break;
@@ -4214,6 +4446,8 @@ export class GameScene extends Phaser.Scene {
     this.seats[1].lineupIdx = hud.lineupIdx[1];
     this.seats[0].juice = { ...this.seats[0].juice, value: hud.juice[0] };
     this.seats[1].juice = { ...this.seats[1].juice, value: hud.juice[1] };
+    this.seats[0].fatigue = { stamina: hud.stamina[0] };
+    this.seats[1].fatigue = { stamina: hud.stamina[1] };
     this.halfState = {
       ...this.halfState,
       outs: hud.outs,
@@ -4244,6 +4478,8 @@ export class GameScene extends Phaser.Scene {
       }
     }
     for (const [base, id] of want) {
+      // A stolen base still being run: the dash lands that token itself.
+      if (this.stealDash?.to === base && this.stealDash.id === id) continue;
       if (!this.runners.has(base)) {
         const token = this.makeRunner(getCharacter(id));
         const p = project(basePos(base));
@@ -4310,6 +4546,7 @@ export class GameScene extends Phaser.Scene {
 
   private netGuestPitchLaunch(m: NetMsg & { t: 'pitchLaunch' }): void {
     if (this.phase === 'ended') return;
+    if (!this.localHumanBats()) this.netGuestAbortMound();
     this.setView('close');
     if (!this.localHumanBats()) return; // our pitch — the windup already played
     // We bat: run the local flight and arm the swing. The timing window is
@@ -4386,7 +4623,28 @@ export class GameScene extends Phaser.Scene {
     }
     if (m.plan?.kind !== 'fireball' && m.plan?.kind !== 'freezeball') this.startBallTrail();
     if (this.features.battingCursor && m.plan) this.showSwingCursor();
+    if (this.features.steals && m.plan) this.showStealChips(); // armed → rides the swing msg
     if (this.features.juice) this.showPowerButton();
+  }
+
+  /**
+   * Guest, fielding: a pitch launched that we did not throw — the host's clock
+   * ran out and the CPU threw for us. Whatever mound UI is still up (the pitch
+   * menu, an open bullpen) belongs to a pitch that is already gone.
+   */
+  private netGuestAbortMound(): void {
+    if (!this.pitchSelect && !this.reliefOverlay) return;
+    this.pitchAutoPick?.remove(false);
+    this.pitchAutoPick = undefined;
+    this.pitchSelect?.destroy();
+    this.pitchSelect = undefined;
+    this.reliefIdle?.remove(false);
+    this.reliefIdle = undefined;
+    this.reliefOverlay?.destroy();
+    this.reliefOverlay = undefined;
+    this.reliefBtn?.destroy();
+    this.reliefBtn = undefined;
+    this.phase = 'resolving';
   }
 
   private netGuestLiveStart(m: NetMsg & { t: 'liveStart' }): void {
@@ -4505,6 +4763,7 @@ export class GameScene extends Phaser.Scene {
         playerTeam: this.playerTeam,
         aiTeam: this.aiTeam,
         matchType: this.matchType,
+        netRole: this.netRole,
         awayIdentity: this.seats[0].identity,
         homeIdentity: this.seats[1].identity,
       });
@@ -4531,23 +4790,10 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.setView('wide'); // the race happens on the bases
-    const { container } = pill(this, GAME_WIDTH / 2, HUD.STRIP.TOP - 28, '🚨 TAP! THROW HIM OUT!', {
-      fill: COLORS.red,
-      textColor: '#ffffff',
-      fontSize: 26,
-    });
-    container.setDepth(95);
-    this.pinUI(container);
-    const start = this.time.now;
-    let done = false;
-    const finish = (reactMs: number) => {
-      if (done) return;
-      done = true;
-      container.destroy();
+    this.promptStealTap((reactMs) => {
       const runner = getCharacter(token!.getData('id') as string);
       const catcher = getCharacter(this.fieldAssignment.find((a) => a.position === 'C')!.charId);
-      const reactBonus = Math.max(0, (900 - reactMs) / 900) * 3;
+      const reactBonus = stealReactBonus(reactMs);
       const safe = rollSteal(
         {
           runnerSpeed: runner.stats.speed,
@@ -4566,9 +4812,36 @@ export class GameScene extends Phaser.Scene {
         return;
       }
       this.time.delayedCall(600, () => this.applyCpuResult(result));
+    });
+  }
+
+  /**
+   * The defender's throw-down prompt: cut to the bases, show 🚨 TAP!, and hand
+   * back how long the tap took (the full window if it never came). One place,
+   * so the local defender and a net guest are timed by the same clock and rule.
+   *
+   * GOLDLOG: the pill's Text draws Math.random (canvas-texture UUID) — it must
+   * stay BEFORE the caller's rollSteal, which is why the roll lives in `done`.
+   */
+  private promptStealTap(done: (reactMs: number) => void): void {
+    this.setView('wide'); // the race happens on the bases
+    const { container } = pill(this, GAME_WIDTH / 2, HUD.STRIP.TOP - 28, '🚨 TAP! THROW HIM OUT!', {
+      fill: COLORS.red,
+      textColor: '#ffffff',
+      fontSize: 26,
+    });
+    container.setDepth(95);
+    this.pinUI(container);
+    const start = this.time.now;
+    let fired = false;
+    const finish = (reactMs: number) => {
+      if (fired) return;
+      fired = true;
+      container.destroy();
+      done(reactMs);
     };
     this.input.once('pointerdown', () => finish(this.time.now - start));
-    this.time.delayedCall(900, () => finish(900));
+    this.time.delayedCall(STEAL_REACT.WINDOW_MS, () => finish(STEAL_REACT.WINDOW_MS));
   }
 
   private applyCpuResult(result: AtBatResult): void {

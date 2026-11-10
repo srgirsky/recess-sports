@@ -98,6 +98,12 @@ export function playCalloutFor(e: SimEvent): PlayCalloutModel | null {
       ? { kind: 'safe', label: 'SAFE!', detail: `STOLE ${bag}` }
       : { kind: 'out', label: 'OUT', detail: 'CAUGHT STEALING' };
   }
+  // A throw over: the pitcher's one trick, named so a kid learns what it did.
+  if (e.t === 'pickoff') {
+    return e.out
+      ? { kind: 'out', label: 'OUT', detail: 'PICKED OFF' }
+      : { kind: 'safe', label: 'SAFE', detail: e.leaning ? 'GOT BACK' : 'ON THE BAG' };
+  }
   if (e.foul) return { kind: 'foul', label: 'FOUL', detail: timingDetail(e.timingErrorSec) };
   if (e.hit === 'HR') return { kind: 'homer', label: 'HOME RUN!', detail: 'TOUCH ’EM ALL' };
   if (e.hit === 'out') return { kind: 'out', label: 'OUT', detail: e.flyCaught ? 'NICE CATCH' : null };

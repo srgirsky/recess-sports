@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { controlHint, controlsAt, playerOf, type PlayerControlMode } from './controlMode';
+import { controlHint, controlsAt, humanSideOf, playerOf, type PlayerControlMode } from './controlMode';
 
 describe('focused game controls', () => {
   it('never coaches an ignored input during spectator or CPU-controlled halves', () => {
@@ -32,9 +32,40 @@ describe('focused game controls', () => {
       top: { bat: false, pitch: false, run: false, field: false },
       bottom: { bat: false, pitch: false, run: false, field: false },
     }],
+    // The online guest: `both`, from the home dugout.
+    ['home', {
+      top: { bat: false, pitch: true, run: false, field: true },
+      bottom: { bat: true, pitch: false, run: true, field: false },
+    }],
   ] as const)('%s mode exposes only its promised verbs', (mode, expected) => {
     expect(controlsAt(mode as PlayerControlMode, 'top')).toEqual(expected.top);
     expect(controlsAt(mode as PlayerControlMode, 'bottom')).toEqual(expected.bottom);
+  });
+});
+
+describe('the side the sim is told', () => {
+  it('★ agrees with controlsAt in every half, so no verb a mode hands out is one the sim drops', () => {
+    // The sim reads one fact off `GameSpec.humanSide`: away bats the top and
+    // fields the bottom, home the reverse. Every batting verb a mode grants
+    // must fall in a half that side bats, and every fielding verb in a half it
+    // fields — or the sim's side guards drop the person's own inputs.
+    for (const mode of ['both', 'batting', 'pitching', 'home'] as const) {
+      const side = humanSideOf(mode);
+      expect(side, `${mode} seats a person`).toBeDefined();
+      let verbs = 0;
+      for (const half of ['top', 'bottom'] as const) {
+        const simBats = side === (half === 'top' ? 'away' : 'home');
+        const c = controlsAt(mode, half);
+        if (c.bat || c.run) expect(simBats, `${mode} ${half}: a batting verb`).toBe(true);
+        if (c.pitch || c.field) expect(simBats, `${mode} ${half}: a fielding verb`).toBe(false);
+        verbs += Number(c.bat) + Number(c.run) + Number(c.pitch) + Number(c.field);
+      }
+      expect(verbs, `${mode} hands out something`).toBeGreaterThan(0);
+    }
+  });
+  it('names no side where no single side is a person\'s', () => {
+    expect(humanSideOf('watch')).toBeUndefined();
+    expect(humanSideOf('versus')).toBeUndefined();
   });
 });
 

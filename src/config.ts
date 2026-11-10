@@ -948,7 +948,7 @@ export const PASSPLAY = {
 /** Two-device play over WebRTC (src/net/*; PeerJS free cloud broker). */
 export const NET = {
   /** Bumped on any wire-format change; hello handshake rejects mismatches. */
-  PROTOCOL_VERSION: 8, // v8: hello.venueId may name 'sandbox' | 'orchard'. v7: SwingType 'grounder'
+  PROTOCOL_VERSION: 10, // v10: hello.game/night, the opaque 'v2' kind. v9: steal/relief/rematch/resync msgs, swing.steal, HudSnap.stamina. v8: venueId 'sandbox' | 'orchard'. v7: SwingType 'grounder'
   /** liveFrame + liveInput pointer stream rate (full ReplayFrames, no deltas). */
   FRAME_HZ: 20,
   /** "Looking for your friend… 🔍" window before the no-blame GOOD GAME. */
@@ -959,6 +959,12 @@ export const NET = {
   STALE_MS: 6000,
   /** A remote pitch/swing never arrives → CPU fallback + soft disconnect. */
   ACTION_TIMEOUT_MS: 15000,
+  /**
+   * How long the host parks a steal race for the REMOTE defender's reaction
+   * tap: the prompt window (STEAL_REACT.WINDOW_MS) plus a round trip of slack. A tap
+   * that misses it counts as no reaction — the race never stalls.
+   */
+  STEAL_TAP_WAIT_MS: 1500,
   /** Unacked draftPick retransmit cadence — Phaser clock, pumpable. */
   DRAFT_RESEND_MS: 1500,
   /** Room-code alphabet: 16 emoji = one hex digit each (PeerJS ids must be
@@ -1114,6 +1120,15 @@ export const PICKOFF = {
   LEANING: 0.6,
   HOME: 0.06,
   MAX_PER_BATTER: 2,
+};
+
+/**
+ * The defender's throw-down reaction on a steal: tap inside the window and the
+ * catcher's arm sharpens, linearly from MAX_BONUS (instant) to 0 (window end).
+ */
+export const STEAL_REACT = {
+  WINDOW_MS: 900,
+  MAX_BONUS: 3,
 };
 
 /** Full-baserunning rules (main mode). */

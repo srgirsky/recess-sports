@@ -16,7 +16,15 @@ import { describe, expect, it, vi } from 'vitest';
 import * as picklog from '../../systems/picklog';
 import { CUSTOM_PLAYER_ID, ROSTER } from '../../data/characters';
 import { makeRng } from '../sim/rng';
-import { completeDraft, isDraftComplete, pickByCpu, pickByHuman, startDraft } from './draftSession';
+import {
+  completeDraft,
+  isDraftComplete,
+  pickByCpu,
+  pickByFriend,
+  pickByHuman,
+  startDraft,
+  startNetDraft,
+} from './draftSession';
 
 const ALL = ROSTER.map((c) => c.id);
 
@@ -155,5 +163,60 @@ describe('a custom captain', () => {
     expect(state.aiTeam).toHaveLength(9);
     expect(votes).toEqual(state.playerTeam.slice(1));
     expect(votes).toHaveLength(8);
+  });
+});
+
+describe('★ an online draft: two devices, one board, and each child votes once', () => {
+  /** Two devices drafting against each other, each recording its own votes. */
+  function netDraft() {
+    const votes = { host: [] as string[], guest: [] as string[] };
+    let host = startNetDraft(ALL, true);
+    let guest = startNetDraft(ALL, false);
+    let guard = 0;
+    while (!(isDraftComplete(host) && isDraftComplete(guest)) && guard++ < 200) {
+      if (host.turn === 'player') {
+        const id = host.pool[0];
+        host = pickByHuman(host, id, (v) => votes.host.push(v));
+        guest = pickByFriend(guest, id);
+      } else {
+        const id = guest.pool[guest.pool.length - 1];
+        guest = pickByHuman(guest, id, (v) => votes.guest.push(v));
+        host = pickByFriend(host, id);
+      }
+    }
+    return { host, guest, votes };
+  }
+
+  it('the host opens; the guest’s board opens on the friend’s turn', () => {
+    expect(startNetDraft(ALL, true).turn).toBe('player');
+    expect(startNetDraft(ALL, false).turn).toBe('ai');
+  });
+
+  it('both devices finish holding the SAME two teams, mirrored', () => {
+    const { host, guest } = netDraft();
+    expect(isDraftComplete(host)).toBe(true);
+    expect(isDraftComplete(guest)).toBe(true);
+    // Each device calls its own nine `playerTeam`.
+    expect(guest.aiTeam).toEqual(host.playerTeam);
+    expect(guest.playerTeam).toEqual(host.aiTeam);
+    expect(guest.pool).toEqual(host.pool);
+    expect(new Set([...host.playerTeam, ...host.aiTeam]).size).toBe(18);
+  });
+
+  it('★ each device votes for its own nine and nobody else’s', () => {
+    const { host, guest, votes } = netDraft();
+    expect(votes.host).toEqual(host.playerTeam);
+    expect(votes.guest).toEqual(guest.playerTeam);
+    // Eighteen picks, eighteen votes, none counted on both devices.
+    expect(votes.host.filter((id) => votes.guest.includes(id))).toEqual([]);
+  });
+
+  it('a friend’s pick out of turn, or for a kid already taken, changes nothing', () => {
+    const state = startNetDraft(ALL, true);
+    expect(pickByFriend(state, state.pool[0])).toBe(state); // it is OUR turn
+    const waiting = startNetDraft(ALL, false);
+    expect(pickByFriend(waiting, 'not-a-kid')).toBe(waiting);
+    const taken = pickByFriend(waiting, waiting.pool[0]);
+    expect(pickByFriend({ ...taken, turn: 'ai' }, waiting.pool[0])).toEqual({ ...taken, turn: 'ai' });
   });
 });

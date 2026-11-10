@@ -48,6 +48,8 @@ export type InputVerb =
   | 'shift'
   /** The STEAL chip toggled: the lead runner goes on the next pitch, or is called off. */
   | 'steal'
+  /** PICK OFF: a person pitching throws over to the lead runner's bag. */
+  | 'pickoff'
   /** The THROW! tap on a stolen-base pitch: the catcher's read. */
   | 'throwDown';
 
@@ -64,6 +66,7 @@ export const INPUT_VERBS: ReadonlyArray<InputVerb> = Object.freeze([
   'bunt',
   'shift',
   'steal',
+  'pickoff',
   'throwDown',
 ] as const);
 

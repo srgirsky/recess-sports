@@ -10,9 +10,12 @@ import {
   encode,
   decode,
   helloCompatible,
+  helloMismatch,
   Sequencer,
   PickCourier,
   classifyDraftPick,
+  RematchVote,
+  canRelieve,
   emojiToRoomId,
   roomIdToEmoji,
   rollRoomCode,
@@ -82,6 +85,7 @@ const HUD: HudSnap = {
   batterId: 'dex',
   pitcherId: 'nostrike',
   juice: [40, 15],
+  stamina: [1, 0.35],
 };
 
 const FRAME = {
@@ -115,6 +119,7 @@ const ALL_MSGS: NetMsg[] = [
     },
   },
   { t: 'swing', errorMs: 42, cursor: { x: 0.1, y: 0 }, swingType: 'big', spend: 'powerSwing' },
+  { t: 'swing', swingType: 'normal', steal: 1 }, // a take with a runner going
   { t: 'atBat', result: { kind: 'hit', bases: 1, description: 'Single!' }, movements: [], hud: HUD },
   {
     t: 'liveStart',
@@ -137,11 +142,18 @@ const ALL_MSGS: NetMsg[] = [
     stealTap: 340,
   },
   { t: 'stealRace', from: 1 },
+  { t: 'steal', from: 2, safe: false },
+  { t: 'relief', seat: 1, charId: 'nostrike' },
+  { t: 'relief', seat: 1 }, // bullpen open — hold the pitch clock
+  { t: 'rematch' },
+  { t: 'v2', k: 'in', d: { swing: { atSec: 0.41, aimHeightFt: 2.1 } } },
+  { t: 'v2', k: 'pause' },
   { t: 'settle', hud: HUD, next: 'batter' },
   { t: 'half', inning: 2, half: 'bottom', hud: HUD },
   { t: 'gameOver', hud: HUD },
   { t: 'pause' },
   { t: 'resume', hud: HUD },
+  { t: 'resync' },
   { t: 'bye' },
 ];
 
@@ -175,6 +187,20 @@ describe('protocol encode/decode', () => {
     const theirs: NetMsg = { t: 'hello', version: NET.PROTOCOL_VERSION + 1, mode: 'kid', innings: 1, venueId: 'park' };
     expect(helloCompatible(ours as NetMsg & { t: 'hello' })).toBe(true);
     expect(helloCompatible(theirs as NetMsg & { t: 'hello' })).toBe(false);
+  });
+
+  it('tells the other GAME from a stale version, in both directions', () => {
+    type Hello = NetMsg & { t: 'hello' };
+    const base = { t: 'hello', version: NET.PROTOCOL_VERSION, mode: 'kid', innings: 1, venueId: 'park' } as Hello;
+    const v2 = { ...base, game: 'v2' } as Hello;
+    // A hello with no `game` is CLASSIC's.
+    expect(helloMismatch(base)).toBeNull();
+    expect(helloMismatch(base, 'v1')).toBeNull();
+    expect(helloMismatch(v2, 'v2')).toBeNull();
+    expect(helloMismatch(v2, 'v1')).toBe('game');
+    expect(helloMismatch(base, 'v2')).toBe('game');
+    // A stale build is a version problem whichever game it is.
+    expect(helloMismatch({ ...v2, version: NET.PROTOCOL_VERSION - 1 }, 'v1')).toBe('version');
   });
 });
 
@@ -341,6 +367,72 @@ describe('draft reliability over a lossy channel', () => {
     expect(receiver.applied).toBe(1); // dup deliveries never double-apply
     expect(receiver.appliedIds).toEqual(['turbo']);
     expect(sender.courier.due(RESEND * 9)).toBeNull(); // courier is done
+  });
+});
+
+describe('RematchVote', () => {
+  it('agrees only when both devices have tapped, in either order', () => {
+    const a = new RematchVote();
+    expect(a.agreed).toBe(false);
+    expect(a.voteMine()).toBe(true);
+    expect(a.waitingOnThem).toBe(true);
+    expect(a.agreed).toBe(false);
+    a.voteTheirs();
+    expect(a.agreed).toBe(true);
+    expect(a.waitingOnThem).toBe(false);
+
+    const b = new RematchVote();
+    b.voteTheirs();
+    expect(b.theyAsked).toBe(true);
+    expect(b.agreed).toBe(false);
+    b.voteMine();
+    expect(b.agreed).toBe(true);
+    expect(b.theyAsked).toBe(false);
+  });
+
+  it('reset spends both votes, so the NEXT game needs two fresh taps', () => {
+    const v = new RematchVote();
+    v.voteMine();
+    v.voteTheirs();
+    expect(v.agreed).toBe(true);
+    v.reset();
+    expect(v.agreed).toBe(false);
+    expect(v.voteMine()).toBe(true);
+    expect(v.agreed).toBe(false);
+  });
+
+  it('sends our vote exactly once however often the button is tapped', () => {
+    const v = new RematchVote();
+    expect(v.voteMine()).toBe(true);
+    expect(v.voteMine()).toBe(false);
+    expect(v.voteMine()).toBe(false);
+  });
+
+  it('two devices reach agreement over the wire from one tap each', () => {
+    const { a, b } = fakePair();
+    const va = new RematchVote();
+    const vb = new RematchVote();
+    a.onMessage((raw) => decode(raw)?.msg.t === 'rematch' && va.voteTheirs());
+    b.onMessage((raw) => decode(raw)?.msg.t === 'rematch' && vb.voteTheirs());
+    if (va.voteMine()) a.send(encode(1, { t: 'rematch' }));
+    b.flush();
+    expect(vb.theyAsked).toBe(true);
+    expect(va.agreed || vb.agreed).toBe(false);
+    if (vb.voteMine()) b.send(encode(1, { t: 'rematch' }));
+    a.flush();
+    expect(va.agreed).toBe(true);
+    expect(vb.agreed).toBe(true);
+  });
+});
+
+describe('canRelieve', () => {
+  const team = ['ace', 'bo', 'cy'];
+  it('takes a teammate who is not already pitching', () => {
+    expect(canRelieve(team, 'ace', 'bo')).toBe(true);
+  });
+  it('refuses the arm on the mound and anyone off the team', () => {
+    expect(canRelieve(team, 'ace', 'ace')).toBe(false);
+    expect(canRelieve(team, 'ace', 'stranger')).toBe(false);
   });
 });
 

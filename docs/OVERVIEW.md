@@ -2280,6 +2280,24 @@ Two kids, one device. GameScene now runs on a **two-seat model** (`SeatState` �
 
 Two kids, two devices, zero backend: WebRTC through the free PeerJS cloud broker — the site is still pure static files. Kids exchange a **four-emoji room code** (the wire id is alphanumeric hex; the emoji are just its kid-readable rendering), then draft face-to-face over the wire (each device tallies only its own picks — real votes; picks are ack'd and retransmitted until confirmed, so a transient connection blip can't strand the draft), set lineups concurrently, and play a full game. The **host runs the one true sim**; the remote player's decisions enter at the exact seams the CPU used to fill (their pitch meter and swing timing resolve on *their* device — latency can never eat a timing window), and the **guest never simulates**: it mirrors semantic beats and renders live plays by streaming positions-only `ReplayFrame`s at 20 Hz through the same `LivePlayView` the instant replay uses, interpolated to 60 fps with `lerpFrames`. No free text travels on the wire (identities are color/logo indexes). Disconnects pause under a "Looking for your friend… 🔍" overlay with a 30-second wall-clock reconnect window; a lost friend mid-play is finished by the CPU policies, and a timeout ends in a no-blame "GOOD GAME!". Pure pieces in `src/net/protocol.ts` (+ `lerpFrames` in `systems/replay.ts`), the only peerjs import in `src/net/peer.ts`, entry via `scenes/LobbyScene.ts`.
 
+The three edges the first version left open are closed (protocol v9). **Steals are human on both ends**: a guest batter arms a steal on the same 💨 chips and it rides the `swing` message, and whichever kid is defending gets the 🚨 TAP prompt on their own device — a remote defender's reaction time travels as one number (`liveInput.stealTap`), so latency cannot eat the window, and the host parks the race for it exactly as it parks for a pitch or a swing. The guest plays the dash off a `steal` message instead of watching a runner blink between bags. **The guest changes its own pitcher**: every `HudSnap` now carries both arms' stamina, so the guest's 🥵 NEW PITCHER chip appears when it should; the change is a `relief` request the host validates, and the host's own change is announced the same way. The CPU no longer manages a remote kid's bullpen. **PLAY AGAIN on the Result screen is a two-tap vote** (`RematchVote`): the channel stays open, the button says it is waiting, and when both kids have tapped both devices walk back into the networked draft — a fresh draft, because the picks are the product.
+
+Building those against two live browsers found four faults the mode had shipped with, all fixed in the same change. **Jerseys:** a guest's device baked jerseys for its own nine twice and never for the host's, so the host's whole team drew as missing-texture boxes on the guest's screen; and a kid-mode online game, which skips the Lineup screen, had nothing baking jerseys at all. Lineup now bakes the right nine, the net draft bakes both on its way out in kid mode (while it is still ticking the session), and `GameScene.preload` is the backstop. **The lineup handoff:** `lineup` is sent once, and a device still finishing the draft ceremony dropped it — leaving that kid on "waiting for your friend…" forever while the other started a game alone; the draft scene now keeps it for the Lineup screen. **Heartbeats:** the Lineup screen never ticked the session, so a device parked there sent nothing and the other end called the channel lost. **Soft disconnects never healed:** a quiet spell longer than `NET.STALE_MS` with the channel still open — a tab switched away, a stalled clock — put a session into recovery that only a guest re-dial could end, so a host that noticed first waited out the whole 30 seconds and ended the game on a friend who was already back. Traffic on an open channel now ends the recovery (`net/peer.ts`), and a guest that recovers asks for the snapshot (`resync`) because only the host can send `resume`. An 8-second stall mid-game was measured both ways: 30 seconds to GOOD GAME before, an instant resume after.
+
+### Two-device online play in v2 (🔗 PLAY A FRIEND, under MORE GAMES)
+
+v2 plays a friend on a second device with the same room codes, the same broker and the same session layer as v1 (`src/net/peer.ts`, shared and still the only peerjs import — loaded lazily, so the front door does not pay for WebRTC until the lobby opens). A v2 hello says `game: 'v2'`, so a CLASSIC device that dials a v2 room is told it is the other game rather than left to desync.
+
+**The host runs the one sim and the guest never simulates** — v1's rule, for v1's reason — but the mirror is built differently, because v2 already had the seam. `GameView` pumps a generator: it calls `next(inputs)` and draws the `LiveFrame` that comes back. The guest pumps a `RemoteGame` (`src/v2/net/frameWire.ts`) that answers the same `next()` with the host's frames, each preceded by the sim events that led to it. So the guest's windup, pitch flight, play-end hold, camera, callouts and sound are `GameView`'s own code fed the same sequence, not a second implementation. A test plays a whole game through encode → JSON text → decode and requires the guest to be handed, tick for tick, the frame the host yielded, every event in order, and the same final result.
+
+**A live play is sent as what changed.** One frame per sim tick is about 3.8 kB of JSON; a structural diff against the previous frame (`jsonDelta.ts`) is 374 bytes on the test's seed — roughly 22 kB/s at sixty ticks where whole frames would be 226. The diff is generic rather than a hand-kept list of "dynamic" fields, so a field added to `PlayState` cannot be forgotten on the wire. Every non-live frame and the first tick of every play go whole, which makes each one a resync point.
+
+**Every timing window resolves on the acting device.** A swing is `atSec`, seconds into the pitch on the batter's own screen, and a throw down likewise, so latency cannot eat a window; what it costs is a short wait while the host holds a finished pitch for the guest's word that its own window has closed (`OnlineSeat.ts`, `NET_GRACE_SEC`). **Online the sim has no side to guard** — it is run as pass-and-play runs it, with no human side — so `inputWire.ts` is the guard: each kid's verbs are admitted only for the role they hold this half, and everything off the wire is rebuilt field by field before it is believed. Tests assert it as behaviour: a guest's swing changes the game while it bats and changes nothing while the host does.
+
+**One subscriber for the whole match** (`OnlineMatch.ts`). Each of v1's online faults lived in the gap between one scene unsubscribing and the next subscribing; v2 has one listener for the life of the session, and whatever arrives before its screen exists is kept — the friend's picks queue for the draft, game traffic queues in the seat. The draft is the same alternating board with the friend picking where the CPU would; each device votes only for its own nine (`draftSession.pickByFriend` does not vote). No PLAY BALL tap: both devices go together after the last pick. Pause is both devices'; a dropped channel pauses under LOOKING FOR YOUR FRIEND and resumes with a whole frame; a friend who leaves is GOOD GAME and never a reason. PLAY AGAIN on the Result is the two-tap vote, into a fresh draft.
+
+Not in this first version: a batting-order screen (the drafted order bats), the custom captain, and instant replay (it stops the pump, and two pumps must stay in step). Reading the live-input path for this also turned up a likely fault in SOLO play that this change does not touch: `GameView` sets the steering pointer on any live tap, including a batter's tap on a base, and the sim applies a pointer to the fielding side without asking whose it was.
+
 ## 2026-08-08 BB2026 production re-audit — parity is not polish
 
 The 41-minute reference video was compared again against the deployed v2 at the
@@ -2906,8 +2924,8 @@ seeds where the CPU affords one. `DEFAULT_FEATURES.specialPitches` stays
 
 Human-performed voice acting, a cross-player pick-rate backend, externally
 sculpted/animated character replacements, more characters, and the Phase 3
-dinosaurs. Online-play v1 leaves a few edges for later: remote steal-reaction
-taps (wire fields reserved), guest-side manual relief, and a net rematch button.
+dinosaurs. Online play has no listed edges left in either game (see
+"Two-device online play" and "Two-device online play in v2").
 
 ## Whole-game art acceptance
 
@@ -3494,6 +3512,91 @@ camera. It now projects the four bases and asserts several things:
 
 The change is render-only. The sim, every systems test, and both goldlog
 fingerprints (main `a71e6a2f`, kid `a1686f32`) are byte-identical.
+
+## November 9 — a tap to send a runner steered the other team's fielder
+
+What we believed: the person's verbs were kept apart by side. STEAL, THROW!
+and PICK OFF each had a guard in the sim and a test that a wrong-side order
+leaves the game byte-identical, and the view routed a base tap to "send" when
+batting and "throw" when fielding.
+
+What reading it for v2's online mode turned up, and a test then confirmed:
+the five verbs of a ball in play had no guard at all. The view set
+`inputs.pointer` on every press of a live ball in EITHER role, and `stepPlay`
+steers the elected chaser to a pointer without knowing whose it is. So in the
+ordinary solo game, a child batting who tapped a base to send a runner also
+sent the CPU's chaser to stand on that base, for the rest of the play. Three
+seeded games, with a pointer on second base through the top-half live frames
+and nothing else, went from 0-2, 2-1 and 8-11 to 27-5, 44-1 and 26-11 — 19,
+33 and 23 home runs where there had been none, every one a ball nobody
+chased. That is the worst case (a tap early in every play), measured in the
+sim and not on a child. The reverse leaked in the sim too (a person fielding
+could send or hold the CPU's runners), though no view sent it.
+
+The change (PR `fix/v2-solo-pointer-leak`): `game.ts` `liveVerbs` drops the
+fielding verbs from the person batting and the running verbs from the person
+fielding, where the half is known — the sim guards, the view only proposes —
+and the view no longer sets a pointer while the person runs, so its input
+count stays a count of inputs the sim could read. No side named (headless, a
+watched game, pass and play) passes everything through, the same object, and
+no golden moved.
+
+Guarding by side exposed a second fault. PITCHING PRACTICE told the sim the
+person was HOME while handing them the bottom half's pitching and fielding —
+which is AWAY's defence. The sim therefore took the half they pitch for the
+half they bat: in one seeded game PICK OFF was offered on 44 windups and
+dropped every time, and the CPU's runners never went, so THROW! never came
+up (told the right side, the same game has 25 throws over and 3 steals
+against the person). The level's assist landed on the wrong half, the Result
+screen judged the team they had pitched against, and the new guard would
+have dropped their fielding too. `controlMode.ts` `humanSideOf` now owns
+the answer (AWAY in every mode that seats a person), their own kid joins that
+team, and a test asserts the side agrees with `controlsAt` half by half.
+
+## October 30 — the live-shot presence cap goes to 2.0x
+
+Worklist #2's tail: with the 1.6x cap from September 29, kids in the widest
+live shots — a fly to the wall, the DEEP rig — still read as specks, because
+the cap, not the target, was what bound on the far half of the field. The
+maintainer raised `PRESENCE.maxScale` to 2.0. Same survey as before, through
+the real bridge and ladder over three seeded games: the chasing fielder now
+stands 5.9% of frame height at the median and 4.3% at p10 (from 5.0% and
+3.5%; BB2001 is 8–9%). Render-only, as before; the plate, draft and board
+cameras never scale, and the crowd taper still eases two kids on one bag
+back to base scale. `cameraPresence.test.ts` holds the new floors.
+
+## October 30 — PICK OFF, and the runner who picked his pitch
+
+What we believed: the stolen base was a play now, and the pitcher's counter
+to it — BB2001's pickoff, v1's #7 — was a matter of adding a verb and a
+lead model.
+
+What building it showed: two things the records did not hold. First, raced
+from the steal lead a runner who is NOT going is simply out against every arm
+on the roster — at a kid's acceleration ten feet takes longer to come back
+from than a throw from the mound takes to land — the standing start's
+degeneracy with the sign flipped. A lead is by definition one you can return
+from, so the model has two leads: the steal lead when he is going, and a set
+lead solved from the pitcher's arm when he is not (`setLeadFt`). Second, the
+CPU's runner went on the first pitch he projected to win, deterministically,
+so a child who threw over on the first pitch with a runner on had him leaning
+every time: a free out. The fix is in the runner — he goes on the pitch he
+reads well (`RUN.GO_ON_JUMP_SEC`, the race's own jump read before the throw)
+and holds for the pitch after a throw over — and it moved the harness from
+10.74 steals a game at 95% to 9.69 at 99.6%: he goes less and is caught less,
+because the attempts he declines are the ones a bad read would have lost.
+The goldens were recaptured for it.
+
+The change (PR `feat/v2-pickoff`): PICK OFF (chip, or P) for the person
+pitching while a runner is on first or second and the league's runners go;
+the windup comes back carrying what happened, the pitcher's throw flies to
+the bag at the race's pace while the runner dives back — or breaks the wrong
+way, turns, and is tagged short — and the callout, the mitt, the booth and
+the tally land with the ball. Two throws a plate appearance, the count
+untouched; a third out this way ends the half and the batter leads off the
+next inning. A set runner is nearly never had; a runner who was going nearly
+always is. `sim.pickoffRace` records the spread and says every constant in it
+is a judgement.
 
 ## October 29 — the stolen base becomes a play
 

@@ -23,11 +23,11 @@ rule that projection stays render-side and testable.
   before trusting its comment.
 - **A stealing runner is drawn from `FrameViewOptions.stealRun`, never
   `baseIds`**, until the view drops it; the steal cam waits out a pitch the
-  person bats.
+  person bats. A runner thrown at rides it too (`back`), the ball
+  `pickoffThrow`; the event is HELD till it lands.
 - **⚠️ A projection test cannot see OCCLUSION.** Projecting the bases through a
   preset and asserting they land in frame passes with a catcher filling the
-  middle of the frame: a point behind him projects to the same pixel as one in
-  front. Raycast against the live scene instead. Height cannot fix an
+  frame's middle: a point behind him projects to the pixel of one in front. Raycast against the live scene instead. Height cannot fix an
   occluded plate, so the eye is OFFSET — the smallest that clears every sample
   point. The framing that buys is poor and is recorded as
   `render.pitchFraming`: **do not retune the eye until a screenshot looks
@@ -50,7 +50,7 @@ rule that projection stays render-side and testable.
 - **Summing to the right height does not make the drawing right, and a
   bounding-box test cannot tell.** It measures one point of one fixture, so it
   stays green over a bobblehead, a torso wider than it is tall, open air where
-  the neck goes, and dozens of hair × accessory combinations measured by nothing.
+  the neck goes, and dozens of hair × accessory combinations.
   Four rules, all in `skeleton.test.ts` § "the proxy draws a kid, not a
   bobblehead", all verified to fail against the code they replaced:
   - the drawn head span must equal the BONE span, with the radius derived against
@@ -86,7 +86,7 @@ span, so the silhouette tests are blind to it.** Rules, with numbers in
 - The proxy carries a FACING CUE and never a face; expression is the `face_atlas`
   texture on delivered models, and there is deliberately no mouth. A featureless
   head is rotationally ambiguous at thumbnail size, so the review page could not
-  otherwise catch a clip authored backwards.
+  catch a clip authored backwards.
 
 ## Clips
 
@@ -114,8 +114,8 @@ popping" checkable).
   SPEED for contact and release, full glove EXTENSION for a catch. The second is
   not stylistic — on a jumping catch the fastest the glove ever moves is the
   take-off, several frames before the ball. `modelRules.mjs` and
-  `AnimationDirector.test.ts` run the same derivation on purpose; if they
-  disagree the gate is checking something the engine does not believe.
+  `AnimationDirector.test.ts` run the same derivation on purpose, or the
+  gate checks something the engine does not believe.
 - **A clip is authored freely and then SET DOWN**, by one solved rigid Y offset —
   bending a knee without dropping the hips lifts a kid's feet rather than lowering
   him. Keep it **per clip, never per key**: a per-key plant glues the lower foot
@@ -128,13 +128,13 @@ popping" checkable).
   `Box3` does not.
 - **Quaternion tracks are LINEAR only.** Setting smooth interpolation on a
   quaternion track logs "unsupported interpolation" and silently falls back —
-  console noise that invites believing the curve is smoothed when it is slerped.
+  noise that invites believing the curve is smoothed when it is slerped.
 - **Nothing is blocked on the animator.** `render/proceduralClips.ts` ships stand-ins for
   every clip name, correct about TIMING and CONTRACT, not about look, so the
   director, the marker warp, the loop-seam check and the review page run. A
   delivery replaces them CLIP BY CLIP, by name. `/v2/?anims=1` labels the clip under REVIEW and the clip PLAYING
-  separately: a one-shot settles into its `returnsTo`, so its time counted
-  against the reviewed clip reads a frame past the end.
+  separately: a one-shot settles into its `returnsTo`, so its time would read
+  a frame past the end.
 - **A replay SEEKS recorded clip state, never re-decides it** (`seek`).
 - **Character acting belongs in `performance.ts`; `AnimationDirector` joins body
   and face.** No call-site clip or expression policy.

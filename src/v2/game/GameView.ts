@@ -132,7 +132,7 @@ import { CUSTOM_PLAYER_ID, ROSTER, getCharacter } from '../../data/characters';
 import type { Character } from '../../data/types';
 import { clampBarrelFt, zoneBandFt, zoneHalfWidthFt } from '../sim/athletes';
 import { BALL_RADIUS_FT } from '../sim/ball';
-import { BAT, DEFENSE } from '../sim/params';
+import { BAT, DEFENSE, RUN } from '../sim/params';
 import { CHARACTER_SCALE, kidHeightFt, kidRootScale } from '../render/ProxyCharacter';
 import { UNIFORM_COLORS } from '../../art/palette';
 import { jerseyHex } from '../render/materials/registry';
@@ -155,7 +155,9 @@ import { Matchup } from '../ui/Matchup';
 import { MatchupTally } from '../ui/matchupModel';
 import { PlayCallouts } from '../ui/PlayCallouts';
 import { scoreboardModel, type ScoreboardTeams } from '../ui/scoreboardModel';
-import { controlHint, controlsAt, type PlayerControlMode } from './controlMode';
+import { controlHint, controlsAt, humanSideOf, type PlayerControlMode } from './controlMode';
+import { NET_GRACE_SEC, type Cue, type OnlineSeat } from '../net/OnlineSeat';
+import { otherSide, roleOf } from '../net/inputWire';
 import { configureCharacterPortraits } from '../render/characterPortrait';
 import { BALL_DRAW_RADIUS_FT } from '../render/readabilityCues';
 
@@ -236,6 +238,14 @@ const TAP_MAX_MS = 220;
 const STEAL_OUT_LINGER_SEC = 1.6;
 /** How far along the basepath the tag gets him: short of the bag, not on it. */
 const STEAL_TAG_FRAC = 0.82;
+/** A runner picked off is tagged this far off his bag, diving. */
+const PICKOFF_TAG_FRAC = 0.06;
+/** A runner who got back holds his bag this long before the pitcher may go on. */
+const PICKOFF_SAFE_HOLD_SEC = 0.5;
+/** How far a leaning runner's false break carries him, basepaths, before he turns. */
+const PICKOFF_LEAN_FRAC = 0.04;
+/** A runner's feet while he is diving back, ft/s — presentation, the race is the sim's. */
+const PICKOFF_RETURN_FTS = 12;
 /** How close a tap must land to a bag to mean "throw there", ft. */
 const BAG_TAP_FT = 14;
 
@@ -362,7 +372,23 @@ export class GameView {
   private uniformIdx = { away: 0, home: 1 };
   private refs: SceneRefs = { kids: new Map(), directors: new Map(), ball: new Mesh() };
 
-  private game: Generator<LiveFrame, unknown, PlayInputs> | null = null;
+  /**
+   * What is pumped: the sim's own generator — or, on an online guest, the
+   * host's game arriving over the wire (`net/frameWire.ts` `RemoteGame`), which
+   * answers the same `next()`.
+   */
+  private game: { next(inputs: PlayInputs): IteratorResult<LiveFrame, unknown> } | null = null;
+  /**
+   * This device's end of an online game, or null for every other kind.
+   *
+   * ★ ONLINE IS TWO PEOPLE AND NO CPU, AND ONLY THE HOST HAS A SIM. The host
+   * (the visitors) pumps the generator exactly as a solo game does, with the
+   * guest's verbs joined to its own and every frame it yields sent on. The
+   * guest (home) pumps those frames. Everything below that reads `this.net` is
+   * one of three things: the join, a wait for the other kid's answer, or a
+   * cue to draw something the other kid did.
+   */
+  private net: OnlineSeat | null = null;
   /**
    * What the player is asking for this tick.
    *
@@ -400,6 +426,26 @@ export class GameView {
   private stealEl: HTMLButtonElement | null = null;
   /** THROW!: a person fielding reads the runner going (`PlayInputs.throwDown`). */
   private throwEl: HTMLButtonElement | null = null;
+  /** PICK OFF: a person pitching throws over to the lead runner's bag (`PlayInputs.pickoff`). */
+  private pickoffEl: HTMLButtonElement | null = null;
+  /**
+   * A throw over being PLAYED (`LiveFrame.pickoff` on the windup frame that
+   * follows it). The sim resolved it the instant it was ordered; the view
+   * holds the windup, flies the ball at the race's pace, brings the runner
+   * back to his bag — or short of it — and only then hands the chrome the
+   * event it held (`heldPickoff`), so the callout lands when the ball does.
+   */
+  private pickoffRun: {
+    runnerId: string;
+    base: 1 | 2;
+    out: boolean;
+    leaning: boolean;
+    leadFt: number;
+    throwSec: number;
+    elapsedSec: number;
+    delivered: boolean;
+  } | null = null;
+  private heldPickoff: Extract<SimEvent, { t: 'pickoff' }> | null = null;
   /**
    * The stolen base being RUN on screen (`LiveFrame.steal`), carried past the
    * pitch frame into the between beat so the runner reaches the bag — or is
@@ -737,7 +783,11 @@ export class GameView {
       if (at) this.spot = at;
       return;
     }
-    if (!this.liveControl) return;
+    // ★ STEERING IS A FIELDING VERB. A person running the bases taps too (a
+    // base, to send a runner), and that press must not become a destination:
+    // the sim drops it (`game.ts` `liveVerbs`), so setting it here would only
+    // count an input nothing can read.
+    if (this.liveControl !== 'field') return;
     const at = this.toField(e);
     if (at) {
       this.inputs.pointer = at;
@@ -760,7 +810,7 @@ export class GameView {
       if (at) this.spot = at;
       return;
     }
-    if (!this.liveControl) return;
+    if (this.liveControl !== 'field') return;
     if (e.buttons === 0) return;
     const at = this.toField(e);
     if (at) {
@@ -788,6 +838,7 @@ export class GameView {
         this.inputs.swing = { atSec: this.pitchElapsed, aimHeightFt: this.aimHeightFt };
         if (this.buntArmed) this.inputs.swing.bunt = true;
         this.tapped('swing');
+        this.net?.sendCue({ c: 'swing', bunt: this.buntArmed || undefined });
         // The human's tap IS the simulated swing instant. We learn it now, so
         // the director seeks the CONTACT marker onto this rendered tick and
         // plays the follow-through rather than drawing contact late. A bunt
@@ -797,6 +848,8 @@ export class GameView {
       return;
     }
     if (this.onTheMound) {
+      // A throw over is still in the air: the pitcher has no ball to pitch.
+      if (this.pickoffRun) return;
       // ★ THE TAP RELEASES IT. There is no meter to fill — `sim.humanPitch`:
       // how hard it leaves the hand is the kid's arm and how far it misses the
       // spot is his `pitching` stat, so a meter would be a second source for
@@ -871,6 +924,7 @@ export class GameView {
     if (e.key.toUpperCase() === 'B') this.toggleBunt();
     if (e.key.toUpperCase() === 'S') this.toggleSteal();
     if (e.key.toUpperCase() === 'T') this.throwDown();
+    if (e.key.toUpperCase() === 'P') this.throwOver();
   };
 
   /** Can the lead runner go? A runner on with the bag ahead open — the sim's traffic rule, read off the frame. */
@@ -901,6 +955,117 @@ export class GameView {
     this.tapped('throwDown');
   }
 
+  /**
+   * PICK OFF: throw over to the lead runner's bag instead of pitching. The
+   * windup is advanced with `pickoff` and comes straight back carrying what
+   * happened (`LiveFrame.pickoff`), which `advance` turns into a run to play.
+   * Only on the windup, only while the person pitches, only while the sim
+   * says there is somebody to throw at and a throw left (`pickoffsLeft`).
+   */
+  private throwOver(): void {
+    const f = this.frame;
+    if (!f || f.phase !== 'windup' || this.deliveryStarted || this.pickoffRun) return;
+    if (f.pickoffsLeft <= 0 || !controlsAt(this.controlMode, f.half).pitch) return;
+    this.inputs.pickoff = true;
+    this.tapped('pickoff');
+    this.advance();
+  }
+
+  /** The windup came back with a throw over on it: play it from the first motion. */
+  private beginPickoffRun(p: NonNullable<LiveFrame['pickoff']>): void {
+    this.pickoffRun = { ...p, elapsedSec: 0, delivered: false };
+    // A throw over resets the pitch clock — the person gets their full beat
+    // back once the ball is.
+    this.windupElapsed = 0;
+    this.refs.directors
+      .get(this.frame!.pitcherId)
+      ?.playToMarker('throw_overhand', RUN.PICKOFF_MOVE_SEC, { restart: true });
+  }
+
+  /**
+   * Carry the throw over on the view's clock. The held event is delivered
+   * when the ball reaches the bag — callout, sound, booth and tally all at
+   * once, the way a steal's event lands with the pitch — and the run is
+   * dropped once he is back on his bag or has sulked long enough. A third
+   * out made this way ends the half without a pitch, so the sim is advanced
+   * for the person rather than waiting on a tap for a pitch nobody throws.
+   */
+  private advancePickoffRun(step: number): void {
+    const run = this.pickoffRun!;
+    run.elapsedSec += step;
+    if (!run.delivered && run.elapsedSec >= run.throwSec) {
+      run.delivered = true;
+      const e = this.heldPickoff;
+      this.heldPickoff = null;
+      if (e) this.fanOutSimEvent(e);
+      if (run.out) this.refs.directors.get(run.runnerId)?.playReaction(false, { restart: true });
+    }
+    const over = run.elapsedSec >= run.throwSec + (run.out ? STEAL_OUT_LINGER_SEC : PICKOFF_SAFE_HOLD_SEC);
+    if (!over) return;
+    this.pickoffRun = null;
+    this.windupElapsed = 0;
+    if (!this.frame) return;
+    // A runner picked off is off every list the sim keeps; now that his sulk
+    // is over he leaves the field, rather than standing by the bag until the
+    // next pitch moves the frame.
+    this.showOnly(this.frame);
+    if (this.frame.outs >= 3) this.advance();
+  }
+
+  /**
+   * Where the runner thrown at is drawn, in the steal run's shape so the
+   * bridge, the cam and the visibility sets need no second path. A set runner
+   * is off his bag by his lead and dives back on the first motion; a leaning
+   * runner breaks the wrong way for the move's length, turns, and is usually
+   * tagged short. Presentation; the race is the sim's.
+   */
+  private pickoffRunView(): FrameViewOptions['stealRun'] {
+    const run = this.pickoffRun;
+    if (!run) return undefined;
+    const t = run.elapsedSec;
+    const lead = run.leadFt / BASEPATH;
+    const end = run.out ? PICKOFF_TAG_FRAC : 0;
+    // When he reaches his bag: a safe runner beats the ball by the margin the
+    // lead was sized to; a tagged one gets there just after it.
+    const arriveSec = run.out ? run.throwSec + 0.15 : run.throwSec - RUN.LEAD_RETURN_MARGIN_SEC;
+    let frac: number;
+    let moving: boolean;
+    if (run.leaning) {
+      const turnSec = RUN.PICKOFF_MOVE_SEC + RUN.PICKOFF_READ_LEANING_SEC;
+      if (t < turnSec) {
+        frac = lead + PICKOFF_LEAN_FRAC * Math.min(1, t / RUN.PICKOFF_MOVE_SEC);
+        moving = t < RUN.PICKOFF_MOVE_SEC;
+      } else {
+        const u = Math.min(1, (t - turnSec) / Math.max(0.05, arriveSec - turnSec));
+        frac = lead + PICKOFF_LEAN_FRAC + (end - lead - PICKOFF_LEAN_FRAC) * u;
+        moving = u < 1;
+      }
+    } else if (t < RUN.PICKOFF_READ_SEC) {
+      frac = lead;
+      moving = false;
+    } else {
+      const u = Math.min(1, (t - RUN.PICKOFF_READ_SEC) / Math.max(0.05, arriveSec - RUN.PICKOFF_READ_SEC));
+      frac = lead + (end - lead) * u;
+      moving = u < 1;
+    }
+    return {
+      runnerId: run.runnerId,
+      from: run.base,
+      to: (run.base + 1) as 2 | 3,
+      frac: Math.max(0, frac),
+      speedFts: moving ? PICKOFF_RETURN_FTS : 0,
+      back: true,
+    };
+  }
+
+  /** The thrown-over ball, for the bridge: in the hand before the move ends, then on its way. */
+  private pickoffThrowView(): FrameViewOptions['pickoffThrow'] {
+    const run = this.pickoffRun;
+    if (!run) return undefined;
+    const fly = Math.max(0.05, run.throwSec - RUN.PICKOFF_MOVE_SEC);
+    return { base: run.base, frac: (run.elapsedSec - RUN.PICKOFF_MOVE_SEC) / fly };
+  }
+
   /** The race resolved: a runner cut down sulks where the tag got him; one who made it cheers on arrival. */
   private onStealResolved(e: Extract<SimEvent, { t: 'steal' }>): void {
     if (this.stealRun?.runnerId !== e.runnerId) return;
@@ -923,6 +1088,7 @@ export class GameView {
 
   /** Where the stealing runner is drawn this frame, for the bridge. */
   private stealRunView(): FrameViewOptions['stealRun'] {
+    if (this.pickoffRun) return this.pickoffRunView();
     const run = this.stealRun;
     if (!run) return undefined;
     const raw = Math.min(1, run.elapsedSec / Math.max(0.05, run.runnerSec));
@@ -1157,6 +1323,7 @@ export class GameView {
     const inPlay = new Set<string>([...Object.keys(frame.defence), frame.batterId, frame.pitcherId]);
     for (const id of frame.baseIds) if (id) inPlay.add(id);
     if (this.stealRun) inPlay.add(this.stealRun.runnerId);
+    if (this.pickoffRun) inPlay.add(this.pickoffRun.runnerId);
     for (const f of frame.play?.fielders ?? []) inPlay.add(f.charId);
     for (const r of frame.play?.runners ?? []) inPlay.add(r.charId);
     const spots: Array<[string, number, number]> = [];
@@ -1425,7 +1592,9 @@ export class GameView {
     seed: string,
     rosters?: { away: string[]; home: string[] },
     uniforms: { away: number; home: number } = { away: 0, home: 1 },
-    innings = DEFAULT_INNINGS
+    innings = DEFAULT_INNINGS,
+    /** An online game: the seat this device holds in it. */
+    net: OnlineSeat | null = null
   ): Promise<void> {
     const geo = VENUE_GEOMETRY[this.venue];
     // The held features, off unless `?features=` names them — the same idiom
@@ -1474,7 +1643,15 @@ export class GameView {
     this.matchupTally.reset();
     this.placeSpectators(geo, [...away.ids, ...home.ids]);
     void planDefence(away.ids, (id) => this.character(id));
-    this.game = simulateGameLive(
+    // Installed HERE, with the game it belongs to, and not above the `await`:
+    // the tick keeps pumping the previous game while the teams dress, and a
+    // host seat set early would stream that game's frames to the guest.
+    this.net = net;
+    if (net) net.onCue = (cue) => this.onNetCue(cue);
+    // The guest never simulates: it is handed the host's frames, and the
+    // host's sim events are fanned out here exactly as its own would be.
+    const remote = net?.role === 'guest' ? net.attach(geo, (e) => this.fanOutSimEvent(e)) : null;
+    this.game = remote ?? simulateGameLive(
       {
         away,
         home,
@@ -1482,27 +1659,11 @@ export class GameView {
         geo,
         regulationInnings: innings,
         onEvent: (e) => {
-          this.matchupTally.onEvent(e);
-          this.callouts.onEvent(e);
-          if (e.t === 'pa') this.reactToPlateAppearance(e);
-          if (e.t === 'steal') this.onStealResolved(e);
-          // ★ THE SKY AGREES WITH A NIGHT HOMER. Render-side chrome reacting
-          // to the same event the booth calls; the sim never knows.
-          if (e.t === 'contact' && e.hit === 'HR' && !e.foul && this.night) this.queueFireworks();
-          if (e.t === 'contact') {
-            const strength = impactStrength(e.launch.exitVelocityFts, e.hit, e.foul);
-            // The PLATE burst gets its own pool, sized and paced for a camera
-            // 18ft away — re-audit #2: firing the 2.6ft sky shells here drew
-            // untextured squares across the frame and additively washed the
-            // batter and catcher yellow. Home-run sky shells stay in burstQueue.
-            this.spawnImpactBurst(e.launch.heightFt, strength);
-            this.impactPunch = strength;
-          }
-          // The tray reads what the sim actually BOUGHT for the person's side,
-          // not what was tapped — a proposal the meter could not cover is
-          // silently ignored by the sim and must not read as armed here.
-          if (e.t === 'spend' && e.side === this.humanSide && !isSpecialSpend(e.kind)) this.armedSpends.add(e.kind);
-          for (const fn of this.simEvent) fn(e);
+          // Sent from the sim's own callback, never from `fanOutSimEvent`: that
+          // is re-entered when a held pickoff is delivered, and the guest holds
+          // and delivers its own copy.
+          this.net?.sendEvent(e);
+          this.fanOutSimEvent(e);
         },
         // The flags ride the spec. `stamina` (a tiring pitcher, `sim/stamina.ts`),
         // `juice` (the meter and its spends, `sim/juice.ts`) and
@@ -1515,7 +1676,9 @@ export class GameView {
         // has no side, so both are the CPU's.
         // Pass and play has two people and no CPU side to protect, so no single
         // human side either: the sim runs it like a headless game's meters.
-        humanSide: this.controlMode === 'watch' || this.controlMode === 'versus' ? undefined : this.humanSide,
+        // Online is two people too, on two devices: `net/inputWire.ts` is the
+        // side guard the sim then is not.
+        humanSide: net ? undefined : humanSideOf(this.controlMode),
         // T-BALL..ALL-STAR. Inert without a person, like the juice port above.
         skill: this.skill,
       },
@@ -1531,6 +1694,8 @@ export class GameView {
     this.diveClips.clear();
     this.inputs = {};
     this.stealRun = null;
+    this.pickoffRun = null;
+    this.heldPickoff = null;
     this.wait = 0;
     this.hold = null;
     this.paEvent = null;
@@ -1542,7 +1707,61 @@ export class GameView {
     this.pitchElapsed = 0;
     this.windupElapsed = 0;
     this.cue = null;
+    // A guest has no frame until the host's first one lands; `pump` waits for
+    // it rather than painting the last game's.
+    if (remote) this.frame = null;
     this.advance();
+  }
+
+  /** The other device's kid did something this one has to draw. */
+  private onNetCue(cue: Cue): void {
+    if (!this.frame) return;
+    if (cue.c === 'delivery') {
+      if (this.frame.phase === 'windup') this.beginPitchDelivery();
+    } else if (this.frame.phase === 'pitch' && !this.humanBats) {
+      const director = this.refs.directors.get(this.frame.batterId);
+      if (cue.bunt) director?.play('bunt', { restart: true });
+      else director?.playToMarker('swing_contact', 0);
+    }
+  }
+
+  /** Online: is the kid on the OTHER device the one in this role this half? */
+  private remoteIs(role: 'bat' | 'field'): boolean {
+    return !!this.net && !!this.frame && roleOf(otherSide(this.net.side), this.frame.half) === role;
+  }
+
+  /**
+   * Every sim event, fanned out to the chrome — the tally, the callouts, the
+   * sound facade's listeners and the view's own reactions. A throw over is
+   * the one event HELD: the sim resolves it on the windup it was ordered on,
+   * and the view delivers it when the ball reaches the bag (`advancePickoffRun`).
+   */
+  private fanOutSimEvent(e: SimEvent): void {
+    if (e.t === 'pickoff' && !this.pickoffRun?.delivered) {
+      this.heldPickoff = e;
+      return;
+    }
+    this.matchupTally.onEvent(e);
+    this.callouts.onEvent(e);
+    if (e.t === 'pa') this.reactToPlateAppearance(e);
+    if (e.t === 'steal') this.onStealResolved(e);
+    // ★ THE SKY AGREES WITH A NIGHT HOMER. Render-side chrome reacting
+    // to the same event the booth calls; the sim never knows.
+    if (e.t === 'contact' && e.hit === 'HR' && !e.foul && this.night) this.queueFireworks();
+    if (e.t === 'contact') {
+      const strength = impactStrength(e.launch.exitVelocityFts, e.hit, e.foul);
+      // The PLATE burst gets its own pool, sized and paced for a camera
+      // 18ft away — re-audit #2: firing the 2.6ft sky shells here drew
+      // untextured squares across the frame and additively washed the
+      // batter and catcher yellow. Home-run sky shells stay in burstQueue.
+      this.spawnImpactBurst(e.launch.heightFt, strength);
+      this.impactPunch = strength;
+    }
+    // The tray reads what the sim actually BOUGHT for the person's side,
+    // not what was tapped — a proposal the meter could not cover is
+    // silently ignored by the sim and must not read as armed here.
+    if (e.t === 'spend' && e.side === this.humanSide && !isSpecialSpend(e.kind)) this.armedSpends.add(e.kind);
+    for (const fn of this.simEvent) fn(e);
   }
 
   /** The `pa` event arrives inside the pump, before `advance` knows whether a
@@ -1639,7 +1858,7 @@ export class GameView {
 
   /** Who the human is playing as, for the Result screen's verdict. */
   get humanSide(): 'away' | 'home' {
-    return this.controlMode === 'pitching' ? 'home' : 'away';
+    return humanSideOf(this.controlMode) ?? 'away';
   }
 
   /** Register the end-of-game callback. */
@@ -1776,6 +1995,10 @@ export class GameView {
   /** Pull the next frame out of the sim. Null once the game is over. */
   private advance(): void {
     if (!this.game) return;
+    const net = this.net;
+    // A guest can only draw what has arrived. Every caller is on a clock that
+    // asks again next step, so "not yet" is simply returning.
+    if (net?.role === 'guest' && !net.game?.hasNext()) return;
     // The play this frame carried, read BEFORE the pump mutates the frame in
     // place: if the next frame is `between`, this play has just ended.
     const ending = this.frame?.phase === 'live' ? this.frame.play : null;
@@ -1783,7 +2006,9 @@ export class GameView {
     // reads it, and is consumed there — the windup is the ONE frame the sim
     // reads `spend` on, so it is cleared exactly when that frame is advanced.
     const wasWindup = this.frame?.phase === 'windup';
-    const r = this.game.next(this.inputs);
+    // Online host: the guest's verbs join ours, each cut down to the role its
+    // kid holds this half (`net/inputWire.ts`).
+    const r = this.game.next(net?.role === 'host' ? net.join(this.frame?.half, this.inputs) : this.inputs);
     // ★ THE ONE-SHOTS ARE CONSUMED, the pointer is not — WITHIN ONE PLAY. A
     // dive or a throw is an instant; steering is a state that persists until
     // the player moves it. But a pointer that outlived the play pinned the
@@ -1794,6 +2019,11 @@ export class GameView {
     // own chase, so a passive defence fields at CPU strength and the half
     // ends itself.
     const stillLive = !r.done && (r.value as LiveFrame).phase === 'live';
+    if (net?.role === 'host') {
+      net.consumed(wasWindup, stillLive);
+      if (r.done) net.sendEnd(r.value as GameResult);
+      else net.sendFrame(r.value);
+    }
     this.inputs = {
       pointer: stillLive ? this.inputs.pointer : undefined,
       spend: wasWindup ? undefined : this.inputs.spend,
@@ -1835,12 +2065,16 @@ export class GameView {
     }
     if (this.frame.phase === 'pitch') this.pitchElapsed = 0;
     if (this.frame.phase === 'pitch') this.cpuSwingStarted = false;
+    if (this.frame.phase === 'pitch' || this.frame.phase === 'windup') net?.windowOpened();
+    if (net?.role === 'guest' && net.game?.needsKey) net.askForKey();
     // The runner breaks at release and keeps running past the pitch frame;
     // on a ball in play the play owns him and the run is dropped.
     if (this.frame.phase === 'pitch') {
       this.stealRun = this.frame.steal ? { ...this.frame.steal, elapsedSec: 0, result: null } : null;
     }
     if (this.frame.phase === 'live') this.stealRun = null;
+    // The windup came back with a throw over on it.
+    if (this.frame.phase === 'windup' && this.frame.pickoff) this.beginPickoffRun(this.frame.pickoff);
     // Squared around before the ball leaves the hand, so the bunt reads early.
     if (this.frame.phase === 'pitch' && this.buntArmed && this.humanBats) {
       // Timed so the held receiving pose (frames 20-24 of `bunt`) is on the
@@ -1863,7 +2097,9 @@ export class GameView {
       this.deliveryElapsed = 0;
       this.deliveryStarted = false;
       // The CPU has no picker to wait for; its visible delivery is the wait.
-      if (!this.onTheMound) this.beginPitchDelivery();
+      // Online there is no CPU: whoever is not pitching here is watching the
+      // other kid choose, and `pump` starts the delivery when they have.
+      if (!this.onTheMound && !net) this.beginPitchDelivery();
     }
     if (this.frame.phase === 'between') {
       this.wait = this.frame.outs >= 3 ? HALF_BREAK_SEC : BETWEEN_SEC;
@@ -1898,11 +2134,15 @@ export class GameView {
     this.deliveryStarted = true;
     this.deliveryElapsed = 0;
     this.refs.directors.get(this.frame.pitcherId)?.play('pitch_windup', { restart: true });
+    this.net?.sendCue({ c: 'delivery' });
   }
 
   /** Schedule the CPU bat only when the authored pre-roll can land on its read. */
   private animateCpuSwing(): void {
     if (!this.frame || this.frame.phase !== 'pitch' || this.humanBats) return;
+    // Online the batter on the other device is a person: his swing is drawn
+    // when HE taps (`onNetCue`), not when the CPU would have.
+    if (this.net) return;
     const cue = cpuSwingCue(
       this.frame.batterId,
       this.pitchElapsed,
@@ -1970,6 +2210,8 @@ export class GameView {
     // A runner cut down stealing is off every list the sim keeps; he stays in
     // view until his sulk is over (`advanceStealRun`).
     if (this.stealRun) live.add(this.stealRun.runnerId);
+    // ...and a runner picked off, until the tag has read.
+    if (this.pickoffRun) live.add(this.pickoffRun.runnerId);
     for (const [id, view] of this.refs.kids) {
       view.root.visible = live.has(id) || this.spectators.has(id);
     }
@@ -2374,6 +2616,7 @@ export class GameView {
         batAimHeightFt: this.humanBats ? this.inputs.swing?.aimHeightFt ?? this.aimHeightFt : undefined,
         holdElapsedSec,
         stealRun: this.stealRunView(),
+        pickoffThrow: this.pickoffThrowView(),
         // One frame stale on purpose: the camera moves after the frame is
         // applied, and a 16ms-old eye moves the cue by under a percent.
         cameraAt: { x: this.camera.position.x, y: this.camera.position.y, z: this.camera.position.z },
@@ -2410,7 +2653,16 @@ export class GameView {
 
   /** One sim step of real time. */
   private pump(step: number): void {
-    if (!this.frame) return;
+    const net = this.net;
+    const guest = net?.role === 'guest' ? net : null;
+    // The guest's verbs leave as they are made, not when the next frame is
+    // pulled: the host may be waiting on exactly this tap to send that frame.
+    guest?.flush(this.inputs, performance.now());
+    if (!this.frame) {
+      // A guest's game begins when the host's first frame lands.
+      if (guest) this.advance();
+      return;
+    }
     // Belt to `tick`'s braces: no sim step is ever taken under a replay.
     if (this.replay) return;
     if (this.stealRun) this.advanceStealRun(step);
@@ -2430,18 +2682,45 @@ export class GameView {
     }
     if (this.frame.phase === 'between') {
       this.wait -= step;
+      // A guest that has fallen a whole beat behind stops waiting out its own:
+      // the host is already past it.
+      if (guest && (guest.game?.pending ?? 0) > 1) this.wait = 0;
       if (this.wait <= 0) this.advance();
       return;
     }
     if (this.frame.phase === 'windup') {
+      // A throw over in the air: play it out before the clock or a pitch.
+      if (this.pickoffRun) {
+        this.advancePickoffRun(step);
+        return;
+      }
       this.windupElapsed += step;
       // A person gets until the pitch clock to choose. Once chosen (or timed
       // out), the complete visible delivery reaches RELEASE before the sim is
       // advanced, so the ball cannot leave a stationary pitcher's hand.
       if (!this.deliveryStarted) {
-        const waiting = this.onTheMound && !this.inputs.pitch;
-        const timedOut = this.windupElapsed >= PITCH_CLOCK_SEC;
+        const remoteMound = this.remoteIs('field');
+        if (guest) {
+          // A frame waiting before any delivery is a throw over's windup.
+          if (guest.game?.hasNext()) return this.advance();
+          // The host's kid is choosing: his delivery cue starts ours.
+          if (remoteMound) return;
+        } else if (net && remoteMound && net.remote.pickoff && !this.pickoffRun && this.frame.pickoffsLeft > 0) {
+          // The guest threw over instead of pitching. Checked against the
+          // frame here as the guest's own `throwOver` checks it there: with no
+          // throw left the sim would read this advance as "pitch", and throw
+          // one nobody chose.
+          return this.advance();
+        }
+        const waiting = net?.role === 'host' && remoteMound
+          ? !net.remote.pitch && net.remoteDone !== 'windup'
+          : this.onTheMound && !this.inputs.pitch;
+        // The guest's own clock runs out first and says so; the grace is for
+        // a message that never comes.
+        const grace = net?.role === 'host' && remoteMound ? NET_GRACE_SEC : 0;
+        const timedOut = this.windupElapsed >= PITCH_CLOCK_SEC + grace;
         if (waiting && !timedOut) return;
+        if (waiting) guest?.windowDone('windup');
         this.beginPitchDelivery();
       }
       this.deliveryElapsed += step;
@@ -2450,11 +2729,33 @@ export class GameView {
     }
     if (this.frame.phase === 'pitch') {
       this.pitchElapsed += step;
-      if (this.pitchElapsed >= this.frame.pitch!.travelSec + SWING_TAIL_SEC) this.advance();
+      const closed = this.pitchElapsed >= this.frame.pitch!.travelSec + SWING_TAIL_SEC;
+      if (!closed) return;
+      // Our window has closed. The guest says so (its swing, if any, already
+      // went); the host, if the other kid had a verb on this pitch — the bat,
+      // or the throw down on a steal — waits for that word before judging it.
+      guest?.windowDone('pitch');
+      if (net?.role === 'host' && (this.remoteIs('bat') || (this.remoteIs('field') && this.frame.steal))) {
+        const answered = net.remoteDone === 'pitch' || (this.remoteIs('bat') && !!net.remote.swing);
+        const graceEnds = this.frame.pitch!.travelSec + SWING_TAIL_SEC + NET_GRACE_SEC;
+        if (!answered && this.pitchElapsed < graceEnds) return;
+      }
+      this.advance();
       return;
     }
     // Live: one frame of the generator IS one sim tick, so pulling advances it.
+    // A guest pulls what has arrived — twice a step when it has fallen behind,
+    // so a burst after a hiccup is caught up rather than carried.
     this.advance();
+    if (guest && this.frame?.phase === 'live' && (guest.game?.pending ?? 0) > 6) this.advance();
+  }
+
+  /** The online game is over or abandoned: this view is nobody's seat again. */
+  leaveOnline(): void {
+    // A guest's game was the host's, and the host is gone: there is nothing
+    // left to pump. The last frame stays painted until the app starts a game.
+    if (this.net?.role === 'guest') this.game = null;
+    this.net = null;
   }
 
   /** Told when a replay starts and ends — the sound facade plays its pop. */
@@ -2469,6 +2770,10 @@ export class GameView {
 
   private replayWanted(): boolean {
     if (this.replayMode === 'off' || this.tape.length < REPLAY.MIN_FRAMES) return false;
+    // A replay stops the pump, and online the two pumps must stay in step: one
+    // kid skipping it would leave the other watching a game that has moved on.
+    // v1 switches its replay off in net play for the same reason.
+    if (this.net) return false;
     if (this.replayMode === 'force') return true;
     return !this.instrumented && isReplayWorthy(this.highlights);
   }
@@ -2716,6 +3021,22 @@ export class GameView {
       this.specialCards.set(kind, card);
       this.pickerEl.appendChild(card);
     }
+    // PICK OFF is a card ON THE PICKER, as v1's pad is on its pitch menu: the
+    // picker and the edge chips share the right column, so a chip there would
+    // sit under an open picker (the layout audit caught exactly that). The
+    // card is the fifth (or eighth) choice the mound has, shown only while the
+    // sim says there is somebody to throw at (`pickoffsLeft`).
+    this.pickoffEl = document.createElement('button');
+    this.pickoffEl.type = 'button';
+    this.pickoffEl.className = 'pitch-card pitch-card--pickoff interactive';
+    this.pickoffEl.innerHTML =
+      '<span class="pitch-card__icon">👀</span>' +
+      '<span class="pitch-card__name">PICK OFF</span>' +
+      '<kbd class="pitch-card__key">P</kbd>';
+    this.pickoffEl.setAttribute('aria-label', 'Throw over to the runner');
+    this.pickoffEl.hidden = true;
+    this.pickoffEl.addEventListener('pointerdown', () => this.throwOver());
+    this.pickerEl.appendChild(this.pickoffEl);
     hud.appendChild(this.pickerEl);
     // The spend tray (`features.juice`): the picker's mirror on the left
     // edge, built once like everything here and shown by `paintHud` only on
@@ -2881,6 +3202,15 @@ export class GameView {
     const specials = this.featureFlags.specialPitches;
     const affordable = this.affordableSpecials();
     this.pickerEl.classList.toggle('has-specials', specials);
+    // PICK OFF: the sim says whether there is anybody to throw at and a throw
+    // left; the card is off the picker while a throw over is being played.
+    // A fifth card would overrun a short landscape's row, so the picker
+    // folds into columns of four whenever the card is on it.
+    if (this.pickoffEl) {
+      const pick = this.onTheMound && !this.pickoffRun && frame.pickoffsLeft > 0;
+      this.pickoffEl.hidden = !pick;
+      this.pickerEl.classList.toggle('has-pickoff', pick);
+    }
     for (const [kind, card] of this.specialCards) {
       card.hidden = !specials;
       const broke = !affordable.includes(kind);

@@ -71,3 +71,62 @@ top half, or a pitch with `gameScene.resolvePlayerPitch(band)` in the bottom
 (wait for `phase === 'aiming'`). Drive a live play with
 `gameScene.setLivePointer(x, y)`, `commandThrow(base, power)` and `commandRun()`,
 and inspect it with `getLivePlay()` while pumping the loop.
+
+## Two-device play (v1 online) in ONE tab
+
+Two tabs cannot both be foreground, and the hidden one's rAF stops. Put both
+devices in one page instead: from `/classic/`, replace the body with two
+`<iframe src="/classic/">` (host `H`, guest `G`) and drive both
+`contentWindow.__game`s from the parent. Same origin, so they share
+`localStorage` — real devices do not.
+
+- **Clocks:** if the pane is hidden, let both games boot to `Schoolyard` on
+  their own, THEN `game.loop.sleep()` each and step both from one parent
+  `setInterval(16)` with `w.__game.loop.step(w.performance.now())` — real time,
+  so tweens and timers agree and nothing needs `pump`'s tween rewind. Taking the
+  clocks during Boot stalls the page for minutes.
+- **Connect:** `scene.start('Lobby')` on both; `lobby.hostFlow()` on H, wait for
+  `lobby.codeHex`, then `lobby.joinWithCode(code)` on G. The session object is
+  `lobby.session` (`onMessage`/`onStatus` taps make a wire log).
+- **Draft/lineup:** each side, on its own turn (`s.myDraftTurn()`),
+  `inspectKid(pool[0])` then `confirmPick()`; in CLASSIC call `Lineup.go()`.
+- **Play (CLASSIC):** the fielding side throws with
+  `resolvePlayerPitchPlan('fastball', {x:0,y:0}, 'perfect', 0)` while its
+  `pitchSelect` is up; the batting side swings with
+  `resolvePlayerSwingAimed(0, g.pitchPlan.actual)` near `pitchTravelMs`. Kid mode:
+  `resolvePlayerPitch(band)` on `phase === 'aiming'`, `resolvePlayerSwing(band, false)`.
+- **Every source edit full-reloads the page and both iframes** — finish edits,
+  then run. Do not run `npm test` beside it: one shared main thread starves, both
+  ends see a stall, and you are testing the reconnect path instead.
+- A missing jersey shows as `texture.key === '__MISSING'` on a visible Image;
+  walk both scenes' display lists for it rather than trusting a screenshot.
+
+## Two-device play (v2 online) in ONE tab
+
+Same idea at `/v2/`: two `<iframe src="/v2/">`, each with its own `__spike`
+(the `App`). Park the parent page's own loop first
+(`window.requestAnimationFrame = () => 0`).
+
+- **Clocks:** v2 has no loop object to step. Once both show the title, replace
+  each iframe's rAF with a timer —
+  `w.requestAnimationFrame = (cb) => w.setTimeout(() => cb(w.performance.now()), 16)`.
+  `GameView.tick` looks the global up on every call, so the running loop moves
+  onto the timer and keeps real time in a hidden pane.
+- **Lobby:** click `.screen--title .btn--modes`, then
+  `.mode-card[data-mode="online"]`. Host: `[data-lobby="host"]`; the room is
+  `__spike.match.session.roomId` (`recess-` + four hex digits). Guest:
+  `[data-lobby="join"]`, then click `.lobby-grid__pic` at each digit's index.
+- **Draft:** click `.screen--draft .draft-preview__pick` on whichever device has
+  one; both leave for the game on their own after the last pick.
+- **Play:** per device, `gv = __spike.game`. When `gv.onTheMound` and
+  `!gv.deliveryStarted`: set `gv.inputs.pitch = {kind, aimLateralFt, aimHeightFt}`
+  and call `gv.beginPitchDelivery()`. When `gv.batting` and the ball is about to
+  cross (`gv.pitchElapsed >= gv.frame.pitch.travelSec`): set
+  `gv.inputs.swing = {atSec: gv.pitchElapsed, aimHeightFt}`. For real contact aim
+  at the crossing: `(await w.eval('import("/src/v2/sim/pitch.ts")')).flyToPlate(release).state.p.y`.
+- **Compare:** `gv.onSimEvent` on both and require the two event lists equal;
+  `gv.frame` should match field for field, and the guest's
+  `gv.net.game.pending` should hover at 0–1.
+- **A stall:** a busy loop in the parent (`while (Date.now() - t0 < 8000) {}`)
+  stops both devices at once; both sessions should go `reconnecting` and come
+  back `connected` without help.

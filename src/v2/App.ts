@@ -17,6 +17,12 @@
 // ★ AND THE ROUTER IS DRIVEN BY THE SIM, NOT BY A TIMER. The Result screen
 // appears because `simulateGameLive` RETURNED — the same value `simulateGame`
 // hands the harness — not because the view guessed the game looked over.
+//
+// ★ ONLINE IS THE SAME ORDER WITH A FRIEND IN IT: lobby -> draft -> game ->
+// result, where the other drafter and the other dugout are a second device
+// (`net/OnlineMatch.ts`). The host's device plays the visitors and runs the
+// sim; the guest's plays the home side off the host's frames. § "Online", at
+// the bottom of this file, is all of it.
 // ---------------------------------------------------------------------------
 
 import { DEFAULT_INNINGS, GameView } from './game/GameView';
@@ -28,8 +34,13 @@ import { Router } from './ui/Router';
 import { TitleScreen } from './ui/screens/TitleScreen';
 import { PauseScreen } from './ui/screens/PauseScreen';
 import { DraftScreen } from './ui/screens/DraftScreen';
+import { LobbyScreen } from './ui/screens/LobbyScreen';
+import { NoticeScreen } from './ui/screens/NoticeScreen';
+import { OnlineMatch, type OnlineHooks } from './net/OnlineMatch';
+import { VENUE_GEOMETRY } from './sim/field';
 import { TeamScreen } from './ui/screens/TeamScreen';
 import {
+  TEAM_COLOR_NAMES,
   getTeamIdentity,
   pickRival,
   setTeamIdentity,
@@ -108,6 +119,17 @@ export class App {
     ? customPlayerCharacter(this.customProfile)
     : null;
   private activeMode: 'pickup' | 'season' | ExtraModeId = 'pickup';
+  /** The online match in progress — lobby to GOOD GAME — or null. */
+  private match: OnlineMatch | null = null;
+  private lobby: LobbyScreen | null = null;
+  /** An online game is on the field (not the draft, not the result). */
+  private onlineLive = false;
+  /** The Result screen of an online game, so the rematch vote can relabel it. */
+  private onlineResult: ResultScreen | null = null;
+  /** Which waiting notice is up, so only the thing that raised it lowers it. */
+  private onlineNotice: 'paused' | 'lost' | null = null;
+  /** The field last showed the HOST's game (we were the guest): it needs its own back. */
+  private borrowedField = false;
 
   private log: SessionLog | null = null;
   /** Speaks the control hint (`coachModel.ts`) — every verb a few times per browser, always in the lesson. */
@@ -167,11 +189,14 @@ export class App {
   private pauseGame(): void {
     if (this.router.showing) return;
     this.game.setPaused(true);
+    // Online, a pause is both devices': the friend sees why the game stopped.
+    if (this.onlineLive) this.match?.sendPause(true);
     this.router.show(
       new PauseScreen(
         () => {
           this.router.hide();
           this.game.setPaused(false);
+          if (this.onlineLive) this.match?.sendPause(false);
         },
         () => {
           // The one way out of a game mid-way: the session log closes as `quit`.
@@ -200,6 +225,8 @@ export class App {
     // which reads as a real game outside. A locked FIELD/PLAY rig was tried
     // and shows only a static band of dirt through the same slot.
     this.game.setScreenCue(null);
+    // Every road home leaves the room: the friend is told, not left waiting.
+    this.leaveOnline();
     this.rosters = null;
     this.seasonDraft = false;
     this.seasonGame = false;
@@ -314,6 +341,7 @@ export class App {
   }
 
   private async startExtraMode(mode: ExtraModeId): Promise<void> {
+    if (mode === 'online') return this.showLobby();
     this.activeMode = mode;
     this.seasonDraft = false;
     this.seasonGame = false;
@@ -332,10 +360,9 @@ export class App {
     }
     const away = ids.slice(0, 9);
     const home = ids.slice(9, 18);
-    if (this.customPlayer && mode !== 'watch') {
-      if (mode === 'pitching') home[0] = this.customPlayer.id;
-      else away[0] = this.customPlayer.id;
-    }
+    // The person is AWAY in every mode that seats them (`humanSideOf`), so
+    // their own kid goes on that team — never the one they pitch against.
+    if (this.customPlayer && mode !== 'watch') away[0] = this.customPlayer.id;
     this.rosters = { away, home };
     await this.playBall();
   }
@@ -522,7 +549,10 @@ export class App {
     // One completed v2 game advances the SAME sticker book v1 shows. Only the
     // human roster counts: CPU picks are neither votes nor earned stickers.
     const playerIds = this.rosters?.[this.game.humanSide] ?? [];
-    const isProgressGame = this.activeMode === 'pickup' || this.activeMode === 'season';
+    // An online game was drafted by a person too — it earns stickers like any
+    // other drafted game, for the nine on THIS device's side.
+    const isProgressGame =
+      this.activeMode === 'pickup' || this.activeMode === 'season' || this.activeMode === 'online';
     if (isProgressGame) {
       const authored = new Set(ROSTER.map((c) => c.id));
       recordAlbumGame(playerIds.filter((id) => authored.has(id)), model.verdict === 'win');
@@ -537,6 +567,10 @@ export class App {
       saveSeason(completedWeek);
       this.season = completedWeek;
       this.seasonGame = false;
+    }
+    if (this.activeMode === 'online') {
+      this.showOnlineResult(model);
+      return;
     }
     this.router.show(
       new ResultScreen(
@@ -557,5 +591,251 @@ export class App {
               : undefined
       )
     );
+  }
+
+  // --- Online ---------------------------------------------------------------
+
+  /** MAKE A GAME / JOIN A GAME. Leaving it leaves the room. */
+  private showLobby(): void {
+    this.leaveOnline();
+    this.game.setScreenCue('PLAY');
+    const lobby = new LobbyScreen(
+      () => void this.openMatch().host(),
+      (code) => void this.openMatch().join(code),
+      () => {
+        this.leaveOnline();
+        this.showModes();
+      }
+    );
+    this.lobby = lobby;
+    this.router.show(lobby);
+  }
+
+  /** A fresh room object, carrying this device's colours and table rules. */
+  private openMatch(): OnlineMatch {
+    this.match?.leave();
+    const hooks: OnlineHooks = {
+      onLobby: (state) => {
+        const lobby = this.lobby;
+        if (!lobby || this.router.showing !== lobby) return;
+        if (state.s === 'hosting') lobby.showCode(state.code);
+        else if (state.s === 'finding') lobby.showFinding();
+        else {
+          this.match?.leave();
+          this.match = null;
+          lobby.showFailed(state.why);
+        }
+      },
+      onDraft: () => this.showOnlineDraft(),
+      onStart: (start) => void this.playOnline(start.rosters),
+      onPause: (paused) => this.friendPaused(paused),
+      onStatus: (status) => {
+        if (status === 'gone') this.friendGone('GOOD GAME!');
+        else if (this.onlineLive) this.friendLost(status === 'reconnecting');
+      },
+      onBye: () => this.friendGone('GOOD GAME!'),
+      onDesync: () => this.friendGone('GOOD GAME!'),
+      onRematch: (vote) => {
+        if (vote.agreed) {
+          this.match?.beginDraft();
+          this.showOnlineDraft();
+        } else {
+          this.onlineResult?.setAgain(vote.waitingOnThem ? '🔍  WAITING…' : '🔁  PLAY AGAIN!');
+        }
+      },
+    };
+    const match = new OnlineMatch(
+      this.identity,
+      { innings: this.innings, venueId: this.venue, night: this.night },
+      hooks,
+      TEAM_COLOR_NAMES.length
+    );
+    this.match = match;
+    return match;
+  }
+
+  /**
+   * The draft, with a friend picking where the CPU would. Every tap is still a
+   * vote, and only THIS device's taps: the friend's picks were counted on the
+   * friend's device (`draftSession.pickByFriend`).
+   */
+  private showOnlineDraft(): void {
+    const match = this.match;
+    if (!match) return;
+    this.lobby = null;
+    this.onlineResult = null;
+    this.onlineLive = false;
+    this.activeMode = 'online';
+    this.rosters = null;
+    this.seasonDraft = false;
+    // The host's table rules win; the guest's park becomes the host's.
+    this.innings = match.settings.innings;
+    const venue = match.settings.venueId as VenueId;
+    if (venue in VENUE_GEOMETRY && venue !== this.venue) {
+      this.venue = venue;
+      this.game.applyVenue(venue);
+    }
+    if (match.settings.night !== this.night) {
+      this.night = match.settings.night;
+      this.game.applyNight(this.night);
+    }
+    this.game.setControlMode(match.role === 'host' ? 'both' : 'home');
+    this.game.setScreenCue('DEEP');
+    this.router.show(
+      new DraftScreen(
+        ROSTER.map((c) => c.id),
+        makeRng(`draft-online-${this.gameNo}`),
+        (c) => this.sound.sayDraft(c),
+        (mine, theirs) => this.onlineDrafted(mine, theirs),
+        (id, pool, playerTeam, aiTeam, host, mode) =>
+          this.game.setDraftSpotlight(id, pool, playerTeam, aiTeam, host, mode),
+        (id) => this.lookup(id),
+        undefined,
+        () => this.showTitle(),
+        {
+          first: match.role === 'host',
+          send: (id) => match.sendPick(id),
+          onPick: (fn) => match.onFriendPick(fn),
+        }
+      )
+    );
+  }
+
+  /** Both benches are full. The host says PLAY BALL; the guest waits to hear it. */
+  private onlineDrafted(mine: string[], theirs: string[]): void {
+    const match = this.match;
+    if (!match || this.onlineLive) return;
+    if (match.role === 'host') {
+      const rosters = { away: mine, home: theirs };
+      match.sendStart({ rosters });
+      void this.playOnline(rosters);
+    } else {
+      this.router.show(new NoticeScreen('⚾', 'GET READY!', 'HERE COMES THE FIRST PITCH'));
+    }
+  }
+
+  /** PLAY BALL, on either device: the same two nines, the same two colours. */
+  private async playOnline(rosters: { away: string[]; home: string[] }): Promise<void> {
+    const match = this.match;
+    if (!match?.identities || this.onlineLive) return;
+    this.onlineLive = true;
+    this.borrowedField = match.role === 'guest';
+    this.rosters = rosters;
+    const ids = match.identities;
+    this.game.setScreenCue(null);
+    this.game.setSkill(this.skill);
+    this.game.setTimingRing(this.skill === 'tball' || this.skill === 'rookie');
+    this.coach.setLesson(false);
+    this.coach.reset();
+    this.gameNo += 1;
+    this.sound.reset();
+    this.game.setTeamNames({ away: teamName(ids.away), home: teamName(ids.home) });
+    await this.game.newGame(
+      this.seed(),
+      rosters,
+      { away: ids.away.color, home: ids.home.color },
+      this.innings,
+      match.seat
+    );
+    // The friend may have left while eighteen kids were dressing.
+    if (this.match !== match) return;
+    this.log?.begin();
+    this.sound.sayTeam(teamName(match.role === 'host' ? ids.away : ids.home));
+    recordGamePlayed();
+    this.router.hide();
+  }
+
+  /** The friend's pause is ours too: say why the game stopped. */
+  private friendPaused(paused: boolean): void {
+    if (!this.onlineLive) return;
+    if (paused) {
+      if (this.router.showing) return; // we are paused ourselves
+      this.game.setPaused(true);
+      this.onlineNotice = 'paused';
+      this.router.show(new NoticeScreen('⏸', 'YOUR FRIEND PAUSED', 'BACK IN A MOMENT'));
+    } else if (this.onlineNotice === 'paused') {
+      this.onlineNotice = null;
+      this.router.hide();
+      this.game.setPaused(false);
+    }
+  }
+
+  /** The channel dropped mid-game (and may come back), or came back. */
+  private friendLost(lost: boolean): void {
+    if (lost) {
+      if (this.router.showing) return;
+      this.game.setPaused(true);
+      this.onlineNotice = 'lost';
+      this.router.show(
+        new NoticeScreen('🔍', 'LOOKING FOR YOUR FRIEND…', '', {
+          label: '🏠  HOME',
+          onTap: () => this.showTitle(),
+        })
+      );
+    } else if (this.onlineNotice === 'lost') {
+      this.onlineNotice = null;
+      this.router.hide();
+      this.game.setPaused(false);
+    }
+  }
+
+  /**
+   * The friend left, or the channel is gone for good. Never a word about who
+   * or why (`NoticeScreen`). On the Result screen the game is already over, so
+   * only the rematch goes away.
+   */
+  private friendGone(title: string): void {
+    if (!this.match) return;
+    const onResult = this.onlineResult !== null && this.router.showing === this.onlineResult;
+    const result = this.onlineResult;
+    const inLobby = this.lobby !== null && this.router.showing === this.lobby;
+    this.leaveOnline();
+    if (onResult) {
+      result?.setAgain('👋  FRIEND WENT HOME', false);
+      return;
+    }
+    if (inLobby) return this.showLobby();
+    this.game.setPaused(false);
+    this.router.show(
+      new NoticeScreen('👋', title, 'YOUR FRIEND WENT HOME', {
+        label: '🏠  HOME',
+        onTap: () => this.showTitle(),
+      })
+    );
+  }
+
+  /** An online game's Result: PLAY AGAIN is a vote both kids cast. */
+  private showOnlineResult(model: ReturnType<typeof resultModel>): void {
+    this.onlineLive = false;
+    this.game.leaveOnline();
+    const screen = new ResultScreen(
+      model,
+      (id) => this.lookup(id),
+      () => this.match?.voteRematch(),
+      () => this.showTitle(),
+      { again: '🔁  PLAY AGAIN' }
+    );
+    this.onlineResult = screen;
+    this.router.show(screen);
+    if (!this.match?.connected) screen.setAgain('👋  FRIEND WENT HOME', false);
+    else if (this.match.vote.theyAsked) screen.setAgain('🔁  PLAY AGAIN!');
+  }
+
+  /** Leave the room, if there is one. Safe from anywhere, any number of times. */
+  private leaveOnline(): void {
+    this.match?.leave();
+    this.match = null;
+    this.lobby = null;
+    this.onlineResult = null;
+    this.onlineNotice = null;
+    this.onlineLive = false;
+    this.game.leaveOnline();
+    this.game.setPaused(false);
+    // A guest's field was the host's game; give the park its own again, so the
+    // title's window is not a frozen frame.
+    if (this.borrowedField) {
+      this.borrowedField = false;
+      void this.game.newGame(this.seed());
+    }
   }
 }

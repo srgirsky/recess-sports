@@ -428,14 +428,17 @@ export function chooseCamera(input: CameraInput, prev?: CameraCue): CameraCue {
  * Render-only, like `CHARACTER_SCALE`: reach, catch radii and positions stay
  * the sim's. The multiplier rises smoothly with distance until a kid is
  * `targetFrameFrac` of frame height, capped at `maxScale` so no kid is drawn
- * past ~2.5x a real child. The plate, draft and break cameras never use it.
+ * past ~3.2x a real child (it was ~2.5x at the 1.6 cap). The plate, draft and break cameras never use it.
  */
 export const PRESENCE = {
   /** Drawn height against the frame at the kid's distance. The live rigs look
    * 40° down, which foreshortens a standing kid to ~0.77 of it, so 0.075 here
    * lands near 6% of the picture. */
   targetFrameFrac: 0.075,
-  maxScale: 1.6,
+  /** 1.6 from 2026-09-29 to 2026-10-30; the maintainer raised it to 2.0 on
+   * 2026-10-30 because the cap was what bound on the far half of the field
+   * and a fly to the wall still filmed specks. `render.characterPresence`. */
+  maxScale: 2.0,
 } as const;
 
 /**

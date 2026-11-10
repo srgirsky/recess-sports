@@ -3,6 +3,10 @@
 // (BB2001-style: earned, not rated), shows the team's box beside them, and
 // offers a rematch. Without a box (a net guest never simulates) it falls back
 // to crowning the highest-rated kid as TEAM MVP.
+//
+// Two-device games keep the channel open here: PLAY AGAIN is a vote
+// (net/protocol.ts RematchVote), and when both kids have tapped, both devices
+// walk back into the networked draft on the same session. GOOD GAME! leaves.
 // ---------------------------------------------------------------------------
 
 import Phaser from 'phaser';
@@ -19,7 +23,8 @@ import { commentatorProfile } from '../systems/voices';
 import { recordAlbumGame } from '../systems/album';
 import { teamName, type TeamIdentity } from '../systems/team';
 import { playerOfTheGame, highlights, type BoxLine } from '../systems/boxscore';
-import { dropSession } from '../net/peer';
+import { activeSession, dropSession } from '../net/peer';
+import { RematchVote } from '../net/protocol';
 import { mountLayoutOverlay } from '../dev/LayoutOverlay';
 
 /** The bottom button row. A makeButton's box runs to y + h/2 + lip + stroke/2. */
@@ -35,10 +40,14 @@ interface ResultData {
   seasonGame?: boolean;
   /** Pass-and-play/net: team-named headline, both albums credited. */
   matchType?: 'solo' | 'passplay' | 'net';
+  /** Net: which end this device was. playerScore is ALWAYS the host's (away). */
+  netRole?: 'host' | 'guest';
   awayIdentity?: TeamIdentity;
   homeIdentity?: TeamIdentity;
   /** This game's box score, keyed by kid id (absent on a net guest). */
   box?: Record<string, BoxLine>;
+  /** Layout audit only: draw the net rematch row without a live session. */
+  rematchPreview?: boolean;
 }
 
 /** The box-score columns, left to right: header + how to read a line. */
@@ -62,9 +71,13 @@ export class ResultScene extends Phaser.Scene {
     const won = data.playerScore > data.aiScore;
     const tied = data.playerScore === data.aiScore;
 
+    // Net: the guest is the HOME seat, so "player" is the friend's score there.
+    const netGuest = data.matchType === 'net' && data.netRole === 'guest';
+    const iWon = netGuest ? data.aiScore > data.playerScore : won;
+
     // Themed background.
     const bg = this.add.graphics();
-    if (won) bg.fillGradientStyle(0x5bbf5a, 0x5bbf5a, 0x9be08a, 0x9be08a, 1);
+    if (iWon) bg.fillGradientStyle(0x5bbf5a, 0x5bbf5a, 0x9be08a, 0x9be08a, 1);
     else bg.fillGradientStyle(0x5fb0ea, 0x5fb0ea, 0xa8dcf6, 0xa8dcf6, 1);
     bg.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
@@ -96,7 +109,15 @@ export class ResultScene extends Phaser.Scene {
     }
     makeMuteButton(this, GAME_WIDTH - 40, 40);
 
-    ribbon(this, cx, 122, `YOU ${data.playerScore}   —   ${data.aiScore} CPU`, {
+    // Away on the left, home on the right, labelled from THIS device's seat —
+    // a net game has no CPU, and the guest's own runs are the right-hand ones.
+    const scoreLine =
+      data.matchType === 'net'
+        ? netGuest
+          ? `FRIEND ${data.playerScore}   —   ${data.aiScore} YOU`
+          : `YOU ${data.playerScore}   —   ${data.aiScore} FRIEND`
+        : `YOU ${data.playerScore}   —   ${data.aiScore} CPU`;
+    ribbon(this, cx, 122, scoreLine, {
       fill: COLORS.ink,
       fontSize: 30,
       maxW: 880,
@@ -156,19 +177,7 @@ export class ResultScene extends Phaser.Scene {
     }
 
     if (data.matchType === 'net') {
-      // No rematch in v1 — one button, no blame, session closed.
-      makeButton(this, {
-        x: cx,
-        y: BUTTON_Y,
-        label: 'GOOD GAME!',
-        icon: '🏠',
-        width: 340,
-        height: BUTTON_H,
-        onClick: () => {
-          dropSession();
-          this.scene.start('Schoolyard', { straightToDraft: false });
-        },
-      });
+      this.netButtons(cx, data.rematchPreview === true);
       return;
     }
 
@@ -209,6 +218,102 @@ export class ResultScene extends Phaser.Scene {
     // The two buttons are different widths, so the old fixed cx±175 offsets put
     // the pair's true centre 25px right of the screen's. row() measures.
     row([newTeam, home], { centerX: cx, y: BUTTON_Y + 4, gap: 40 });
+  }
+
+  /**
+   * Net: 🔁 PLAY AGAIN beside 🏠 GOOD GAME!. The rematch is a two-tap vote —
+   * the button says what it is waiting for, and a friend who has already left
+   * (or a dead channel) leaves the one no-blame button it always had.
+   */
+  private netButtons(cx: number, preview: boolean): void {
+    const session = activeSession();
+    const vote = new RematchVote();
+    let again: Phaser.GameObjects.Container | undefined;
+    let pulse: Phaser.Tweens.Tween | undefined;
+    let left = false;
+
+    const home = makeButton(this, {
+      x: cx,
+      y: BUTTON_Y,
+      label: 'GOOD GAME!',
+      icon: '🏠',
+      width: 340,
+      height: BUTTON_H,
+      onClick: () => {
+        dropSession(); // says bye — the friend's PLAY AGAIN goes away
+        this.scene.start('Schoolyard', { straightToDraft: false });
+      },
+    });
+
+    const place = () => {
+      if (again) row([again, home], { centerX: cx, y: BUTTON_Y + 4, gap: 40 });
+      else home.setPosition(cx, BUTTON_Y);
+    };
+    /** (Re)draw the rematch button for the vote's current state. */
+    const drawAgain = () => {
+      pulse?.remove();
+      pulse = undefined;
+      again?.destroy();
+      again = undefined;
+      if (left) return place();
+      const asked = vote.theyAsked;
+      again = makeButton(this, {
+        x: cx,
+        y: BUTTON_Y,
+        label: vote.waitingOnThem ? 'WAITING…' : 'PLAY AGAIN',
+        icon: vote.waitingOnThem ? '🔍' : '🔁',
+        width: 320,
+        height: BUTTON_H,
+        color: asked ? 0x5bbf5a : vote.waitingOnThem ? 0x9aa5b1 : undefined,
+        onClick: () => {
+          if (left || !vote.voteMine()) return;
+          activeSession()?.send({ t: 'rematch' });
+          audio.pop();
+          if (vote.agreed) go();
+          else drawAgain();
+        },
+      });
+      place();
+      // The friend is waiting on US: the button bounces until it is tapped.
+      if (asked) {
+        pulse = this.tweens.add({ targets: again, scale: 1.06, duration: 380, yoyo: true, repeat: -1 });
+      }
+    };
+    /** Both tapped: same session, same identities, a fresh draft. */
+    const go = () => {
+      this.scene.start('Schoolyard', { straightToDraft: true, netDraft: true });
+    };
+    const friendLeft = () => {
+      if (left) return;
+      left = true;
+      dropSession();
+      drawAgain();
+    };
+
+    if (!session && !preview) left = true; // nobody to ask
+    drawAgain();
+    if (!session) return;
+
+    const unMsg = session.onMessage((m) => {
+      if (m.t === 'bye') friendLeft();
+      if (m.t !== 'rematch' || left) return;
+      vote.voteTheirs();
+      if (vote.agreed) return go();
+      audio.say('Play again?', commentatorProfile('B'));
+      drawAgain();
+    });
+    const unStatus = session.onStatus((st) => {
+      if (st === 'gone') friendLeft();
+    });
+    // Heartbeat + staleness ride the Phaser clock, so the open channel needs a
+    // scene that ticks it — otherwise both ends go quiet and trip STALE_MS.
+    const tick = () => activeSession()?.tick(this.time.now);
+    this.events.on('update', tick);
+    this.events.once('shutdown', () => {
+      unMsg();
+      unStatus();
+      this.events.off('update', tick);
+    });
   }
 
   /**

@@ -62,7 +62,14 @@ export interface FrameViewOptions {
    * pitch frame): where the runner is along `from -> to`, 0..1, and how fast
    * his feet should move. Overrides his bag placement until the view drops it.
    */
-  stealRun?: { runnerId: string; from: 1 | 2; to: 2 | 3; frac: number; speedFts: number };
+  stealRun?: { runnerId: string; from: 1 | 2; to: 2 | 3; frac: number; speedFts: number; back?: boolean };
+  /**
+   * A throw over in flight (`LiveFrame.pickoff` on a windup frame): which bag
+   * and how far along, 0..1; past 1 the ball sits in the baseman's mitt.
+   * Before 0 it is still in the pitcher's hand. The runner comes back along
+   * `stealRun` with `back` set.
+   */
+  pickoffThrow?: { base: 1 | 2; frac: number };
   /** Last frame's camera eye, for the ball's apparent-size cue. */
   cameraAt?: { x: number; y: number; z: number };
   /**
@@ -132,6 +139,7 @@ export function applyFrame(
     // afterwards. A fielder is on the field the whole time.
     applyIdleDefence(refs, frame, protectedIds, view.batAimHeightFt, view.stealRun);
     if (frame.phase === 'pitch' && frame.pitch) applyPitch(refs, frame, pitchElapsedSec);
+    else if (frame.phase === 'windup' && view.pickoffThrow && view.pickoffThrow.frac >= 0) applyPickoffBall(refs, view.pickoffThrow);
     else if (frame.phase === 'windup') restBall(refs);
   }
   const carrier = frame.phase === 'live' && frame.play?.phase === 'live' && frame.play.heldBy !== null
@@ -343,7 +351,9 @@ function applyIdleDefence(
     const a = basePos(stealRun.from);
     const b = basePos(stealRun.to);
     kid?.setPosition(a.x + (b.x - a.x) * stealRun.frac, a.z + (b.z - a.z) * stealRun.frac);
-    kid?.setFacing(Math.atan2(b.x - a.x, b.z - a.z));
+    // Diving back from a lead he faces his own bag; stealing, the next one.
+    const [fx, fz] = stealRun.back ? [a.x - b.x, a.z - b.z] : [b.x - a.x, b.z - a.z];
+    kid?.setFacing(Math.atan2(fx, fz));
     const dir = refs.directors.get(stealRun.runnerId);
     dir?.setGloveVisible(false);
     if (!protectedIds.has(stealRun.runnerId) && !holdsOneShot(dir)) dir?.setLocomotionSpeed(stealRun.speedFts);
@@ -495,6 +505,19 @@ function applyPitch(refs: SceneRefs, frame: LiveFrame, elapsedSec: number): void
 function restBall(refs: SceneRefs): void {
   const at = FIELD_POSITIONS.P;
   refs.ball.position.set(at.x, DEFENSE.CATCH_CENTRE_FT, at.z);
+}
+
+/**
+ * The throw over, mound to bag on a low arc. Presentation: the sim resolved
+ * the race the instant it was ordered and the view is playing it back at the
+ * race's own pace (`LiveFrame.pickoff.throwSec`), the way a steal is run.
+ */
+function applyPickoffBall(refs: SceneRefs, t: { base: 1 | 2; frac: number }): void {
+  const from = FIELD_POSITIONS.P;
+  const to = basePos(t.base);
+  const f = Math.min(1, t.frac);
+  const arc = 2.5 * 4 * f * (1 - f);
+  refs.ball.position.set(from.x + (to.x - from.x) * f, DEFENSE.CATCH_CENTRE_FT + arc, from.z + (to.z - from.z) * f);
 }
 
 /**

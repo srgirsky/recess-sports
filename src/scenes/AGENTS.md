@@ -124,7 +124,8 @@ methods). **Every timing window resolves on the acting device.**
 - **Guests never step the sim or schedule flow.** If a guest ever runs a
   `delayedCall` that resolves game state, the devices diverge.
 - Heartbeat and staleness ride the PHASER clock; RECONNECT runs on wall-clock
-  timers so it works under a frozen (paused) Phaser.
+  timers so it works under a frozen (paused) Phaser. **Every scene a live
+  session can sit in must `tick()` it**, or the friend's end calls it lost.
 - **Draft picks are the one ack'd and retransmitted message.** The acks live in
   the `onMessage` CALLBACK, never the idle-gated drain (which stops running after
   the final pick), and any scene reachable right after the net draft must re-ack

@@ -120,6 +120,7 @@ export class TeamScreen implements Screen {
     for (const choice of GAME_LENGTHS) {
       const b = button('', () => this.setInnings(choice.innings), 'length');
       b.dataset.innings = String(choice.innings);
+      b.setAttribute('aria-label', `${choice.label}, about ${choice.minutes} minutes`);
       b.append(
         el('span', 'length__label', choice.label),
         el('span', 'length__mins', `${choice.minutes} min`)
@@ -137,6 +138,7 @@ export class TeamScreen implements Screen {
     ]) {
       const b = button('', () => this.setNight(t.night), 'timechip');
       b.dataset.night = String(t.night);
+      b.setAttribute('aria-label', t.label);
       b.append(el('span', 'timechip__icon', t.icon), el('span', 'timechip__label', t.label));
       times.appendChild(b);
     }
@@ -147,6 +149,7 @@ export class TeamScreen implements Screen {
     for (const v of VENUE_OPTIONS) {
       const b = button('', () => this.setVenue(v.id), 'timechip venuechip');
       b.dataset.venue = v.id;
+      b.setAttribute('aria-label', v.label);
       b.append(el('span', 'timechip__icon', v.icon), el('span', 'timechip__label', v.label));
       venues.appendChild(b);
     }
@@ -215,22 +218,35 @@ export class TeamScreen implements Screen {
   private paint(): void {
     this.nameEl.textContent = teamName(this.choice);
     for (const node of this.root.querySelectorAll<HTMLElement>('.swatch')) {
-      node.classList.toggle('is-picked', Number(node.dataset.color) === this.choice.color);
+      mark(node, Number(node.dataset.color) === this.choice.color);
     }
     for (const node of this.root.querySelectorAll<HTMLElement>('.logo')) {
-      node.classList.toggle('is-picked', Number(node.dataset.logo) === this.choice.logo);
+      mark(node, Number(node.dataset.logo) === this.choice.logo);
     }
     for (const node of this.root.querySelectorAll<HTMLElement>('.length')) {
-      node.classList.toggle('is-picked', Number(node.dataset.innings) === this.innings);
+      mark(node, Number(node.dataset.innings) === this.innings);
     }
     for (const node of this.root.querySelectorAll<HTMLElement>('.skillchip')) {
-      node.classList.toggle('is-picked', node.dataset.skill === this.skill);
+      mark(node, node.dataset.skill === this.skill);
     }
-    for (const node of this.root.querySelectorAll<HTMLElement>('.timechip:not(.venuechip):not(.skillchip)')) {
-      node.classList.toggle('is-picked', (node.dataset.night === 'true') === this.night);
+    // By its own attribute, not by exclusion: `.timechip:not(...)` also caught
+    // the BATTING ORDER button, which then read as picked by day and as
+    // disabled at night.
+    for (const node of this.root.querySelectorAll<HTMLElement>('.timechip[data-night]')) {
+      mark(node, (node.dataset.night === 'true') === this.night);
     }
     for (const node of this.root.querySelectorAll<HTMLElement>('.venuechip')) {
-      node.classList.toggle('is-picked', node.dataset.venue === this.venue);
+      mark(node, node.dataset.venue === this.venue);
     }
   }
+}
+
+/**
+ * One call so the look and the announcement cannot disagree: a chip that is
+ * gold is also `aria-pressed`. Colour alone told a sighted player which
+ * choice was live and told a screen reader nothing.
+ */
+function mark(node: HTMLElement, picked: boolean): void {
+  node.classList.toggle('is-picked', picked);
+  node.setAttribute('aria-pressed', String(picked));
 }

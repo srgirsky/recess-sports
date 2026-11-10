@@ -143,6 +143,10 @@ export class LineupScene extends Phaser.Scene {
       this.homeIdentity = data.rival;
       this.identity = (netGuest ? data.rival : data.identity) ?? { color: 0, logo: 0 };
       this.rival = (netGuest ? data.identity : data.rival) ?? { color: 1, logo: 1 };
+      // The friend's plan may have beaten us here (see SchoolyardScene).
+      const early = this.registry.get('netEarlyLineup') as LineupPlan | undefined;
+      this.registry.remove('netEarlyLineup');
+      if (early) this.theirPlan = early;
       const session = activeSession();
       if (session) {
         const un = session.onMessage((m) => {
@@ -161,9 +165,17 @@ export class LineupScene extends Phaser.Scene {
             this.scene.start('Schoolyard', { straightToDraft: false });
           }
         });
+        // Heartbeat + staleness ride the Phaser clock, and this screen can sit
+        // open for minutes. Without a tick here the friend's device (still in
+        // the draft, or already ticking) hears silence, calls the channel
+        // lost, and a host that does so can never recover: only a guest
+        // re-dials, and this guest does not know anything is wrong.
+        const tick = () => activeSession()?.tick(this.time.now);
+        this.events.on('update', tick);
         this.events.once('shutdown', () => {
           un();
           unStatus();
+          this.events.off('update', tick);
         });
       }
     } else if (passB) {
@@ -403,11 +415,15 @@ export class LineupScene extends Phaser.Scene {
       teamSuffix(this.identity.color, this.identity.logo)
     );
     // Solo also bakes the CPU rival here; pass-and-play bakes each team on
-    // its own pass (pass 1 already covered Player 1's nine).
+    // its own pass (pass 1 already covered Player 1's nine). Net: the OTHER
+    // nine is the friend's — which for a guest is playerTeam, not aiTeam. (It
+    // used to bake aiTeam for both roles, so a guest dressed its own kids twice
+    // and drew the host's whole team as missing-texture boxes.)
     if (this.matchType !== 'passplay') {
+      const guest = this.matchType === 'net' && this.netRole === 'guest';
       queueTeamTextures(
         this,
-        chars(this.teams.aiTeam),
+        chars(guest ? this.teams.playerTeam : this.teams.aiTeam),
         { color: this.rival.color, logo: TEAM_LOGOS[this.rival.logo].icon },
         teamSuffix(this.rival.color, this.rival.logo)
       );
