@@ -7,7 +7,7 @@ import type { PlayerControlMode } from '../../game/controlMode';
 import { button, el } from '../dom';
 import type { Screen } from '../Router';
 
-export type ExtraModeId = 'lesson' | 'versus' | 'batting' | 'pitching' | 'watch';
+export type ExtraModeId = 'lesson' | 'versus' | 'online' | 'batting' | 'pitching' | 'watch';
 
 export const EXTRA_MODES: ReadonlyArray<{
   id: ExtraModeId;
@@ -21,6 +21,9 @@ export const EXTRA_MODES: ReadonlyArray<{
   { id: 'lesson', icon: '🎓', title: 'LEARN TO PLAY', line: 'A COACH SHOWS YOU HOW', controls: 'both' },
   // Pass and play: two people on one device (`controlMode.ts` `versus`).
   { id: 'versus', icon: '👥', title: '2 PLAYERS', line: 'PASS AND PLAY', controls: 'versus' },
+  // Two devices (`net/OnlineMatch.ts`). The card opens the lobby, not a game:
+  // which dugout this device gets is decided there — `both` is the host's.
+  { id: 'online', icon: '🔗', title: 'PLAY A FRIEND', line: 'TWO DEVICES · ONLINE', controls: 'both' },
   { id: 'batting', icon: '💥', title: 'BATTING PRACTICE', line: 'YOU HIT · 1 INNING', controls: 'batting' },
   { id: 'pitching', icon: '🔥', title: 'PITCHING PRACTICE', line: 'YOU PITCH · 1 INNING', controls: 'pitching' },
   { id: 'watch', icon: '🍿', title: 'WATCH A GAME', line: 'KIDS PLAY · YOU CHEER', controls: 'watch' },

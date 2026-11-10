@@ -32,6 +32,11 @@ describe('focused game controls', () => {
       top: { bat: false, pitch: false, run: false, field: false },
       bottom: { bat: false, pitch: false, run: false, field: false },
     }],
+    // The online guest: `both`, from the home dugout.
+    ['home', {
+      top: { bat: false, pitch: true, run: false, field: true },
+      bottom: { bat: true, pitch: false, run: true, field: false },
+    }],
   ] as const)('%s mode exposes only its promised verbs', (mode, expected) => {
     expect(controlsAt(mode as PlayerControlMode, 'top')).toEqual(expected.top);
     expect(controlsAt(mode as PlayerControlMode, 'bottom')).toEqual(expected.bottom);
@@ -44,7 +49,7 @@ describe('the side the sim is told', () => {
     // fields the bottom, home the reverse. Every batting verb a mode grants
     // must fall in a half that side bats, and every fielding verb in a half it
     // fields — or the sim's side guards drop the person's own inputs.
-    for (const mode of ['both', 'batting', 'pitching'] as const) {
+    for (const mode of ['both', 'batting', 'pitching', 'home'] as const) {
       const side = humanSideOf(mode);
       expect(side, `${mode} seats a person`).toBeDefined();
       let verbs = 0;

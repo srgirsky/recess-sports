@@ -3,7 +3,7 @@ import { EXTRA_MODES, versusHeadline } from './ModeScreen';
 
 describe('extra modes', () => {
   it('offers a lesson, focused batting, pitching, and a genuinely hands-free game', () => {
-    expect(EXTRA_MODES.map((m) => m.id)).toEqual(['lesson', 'versus', 'batting', 'pitching', 'watch']);
+    expect(EXTRA_MODES.map((m) => m.id)).toEqual(['lesson', 'versus', 'online', 'batting', 'pitching', 'watch']);
     expect(new Set(EXTRA_MODES.map((m) => m.controls))).toEqual(
       new Set(['both', 'versus', 'batting', 'pitching', 'watch'])
     );

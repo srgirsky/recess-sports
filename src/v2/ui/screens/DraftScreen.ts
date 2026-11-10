@@ -21,7 +21,16 @@
 
 import { button, el } from '../dom';
 import type { Screen } from '../Router';
-import { completeDraft, isDraftComplete, pickByCpu, pickByHuman, startDraft, type DraftState } from '../draftSession';
+import {
+  completeDraft,
+  isDraftComplete,
+  pickByCpu,
+  pickByFriend,
+  pickByHuman,
+  startDraft,
+  startNetDraft,
+  type DraftState,
+} from '../draftSession';
 import { portrait } from '../portrait';
 import { getCharacter } from '../../../data/characters';
 import type { Rng } from '../../sim/rng';
@@ -51,6 +60,21 @@ const SPOTLIGHT_STATS = [
   ['fielding', '🧤', 'GLOVE'],
 ] as const;
 
+/**
+ * The other drafter, when it is a friend on another device rather than the
+ * CPU. The screen stays what it was — one board, your bench and theirs — and
+ * only where the other side's pick COMES FROM changes: off the wire, whenever
+ * the friend makes it, instead of off a timer.
+ */
+export interface DraftFriend {
+  /** We pick first (the host does). */
+  first: boolean;
+  /** We picked: put it on the wire. */
+  send(id: string): void;
+  /** Hear the friend's picks, in order. Returns the unsubscribe. */
+  onPick(fn: (id: string) => void): () => void;
+}
+
 export class DraftScreen implements Screen {
   private state: DraftState;
   private root!: HTMLElement;
@@ -65,6 +89,8 @@ export class DraftScreen implements Screen {
   private busy = false;
   private spotlightId: string | null;
   private spotlightMode: DraftSpotlightMode = 'pick';
+  private unhear: (() => void) | null = null;
+  private readyTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     allIds: string[],
@@ -82,10 +108,16 @@ export class DraftScreen implements Screen {
     ) => void,
     private readonly lookup: (id: string) => Character = getCharacter,
     playerCaptainId?: string,
-    private readonly onBack?: () => void
+    private readonly onBack?: () => void,
+    /** An online draft: the friend picking where the CPU would. */
+    private readonly friend?: DraftFriend
   ) {
-    this.state = startDraft(allIds, playerCaptainId ? { player: playerCaptainId, rng } : undefined);
+    this.state = friend
+      ? startNetDraft(allIds, friend.first)
+      : startDraft(allIds, playerCaptainId ? { player: playerCaptainId, rng } : undefined);
     this.spotlightId = this.state.pool[0] ?? null;
+    // The guest's board opens on the friend's turn.
+    this.busy = this.state.turn !== 'player';
   }
 
   mount(): HTMLElement {
@@ -112,10 +144,17 @@ export class DraftScreen implements Screen {
 
     this.root.append(head, this.slots, workbench, this.go);
     this.paint();
+    // Subscribed AFTER the first paint: picks that beat this screen here are
+    // handed over at once, and each one repaints.
+    if (this.friend) this.unhear = this.friend.onPick((id) => this.friendPicked(id));
     return this.root;
   }
 
   unmount(): void {
+    this.unhear?.();
+    this.unhear = null;
+    if (this.readyTimer !== null) clearTimeout(this.readyTimer);
+    this.readyTimer = null;
     if (this.timer !== null) clearTimeout(this.timer);
     this.timer = null;
     this.onSpotlight?.(null, [], [], [], null, 'pick');
@@ -176,6 +215,13 @@ export class DraftScreen implements Screen {
     this.onPicked(this.lookup(id));
     this.paint();
 
+    if (this.friend) {
+      // Online the other pick is a person's, and arrives when they make it.
+      this.friend.send(id);
+      this.readyWhenDone();
+      return;
+    }
+
     // ★ THE CPU'S PICK IS SHOWN, NOT SILENT. v1 wanders a "?" spotlight across
     // the wall before its pick walks off; the least this can do is name the kid
     // it took and leave them on screen for a beat. A board where the other
@@ -183,29 +229,54 @@ export class DraftScreen implements Screen {
     this.timer = setTimeout(() => {
       const { state, id: taken } = pickByCpu(this.state, this.rng);
       this.state = state;
-      this.busy = false;
-      if (taken) {
-        this.spotlightId = taken;
-        this.spotlightMode = 'cpu';
+      this.reveal(taken);
+    }, CPU_BEAT_MS);
+  }
+
+  /** The friend's pick, off the wire. Not a vote here — their device took it. */
+  private friendPicked(id: string): void {
+    const next = pickByFriend(this.state, id);
+    if (next === this.state) return;
+    this.state = next;
+    if (this.timer !== null) clearTimeout(this.timer);
+    this.reveal(id);
+    this.readyWhenDone();
+  }
+
+  /**
+   * Online there is no PLAY BALL to tap: when the last pick lands, both
+   * devices go together after the reveal's beat. A button would be a second
+   * handshake for a kid to get stuck behind.
+   */
+  private readyWhenDone(): void {
+    if (!this.friend || this.readyTimer !== null || !isDraftComplete(this.state)) return;
+    this.readyTimer = setTimeout(() => this.finish(), CPU_BEAT_MS);
+  }
+
+  /** Show the other side's pick, then hand the spotlight back. */
+  private reveal(taken: string | null): void {
+    this.busy = false;
+    if (taken) {
+      this.spotlightId = taken;
+      this.spotlightMode = 'cpu';
+    }
+    this.paint(taken);
+    // ★ AND THEN THE SPOTLIGHT COMES BACK. Leaving the CPU's kid up ended
+    // the flow: `canPick` needs `spotlightMode === 'pick'`, nothing else
+    // re-armed it, so after every CPU reveal the hero slot showed a dead
+    // OFF THE BOARD stamp until the player discovered the card row —
+    // which, at short viewports, was below the fold. A 6-year-old is not
+    // going to find that. After the same beat the reveal itself got, hand
+    // the spotlight to the next candidate; a card tap during the beat
+    // (which sets `pick` mode itself) wins over this default.
+    this.timer = setTimeout(() => {
+      this.timer = null;
+      if (this.spotlightMode !== 'cpu' || isDraftComplete(this.state) || this.state.turn !== 'player') {
+        return;
       }
-      this.paint(taken);
-      // ★ AND THEN THE SPOTLIGHT COMES BACK. Leaving the CPU's kid up ended
-      // the flow: `canPick` needs `spotlightMode === 'pick'`, nothing else
-      // re-armed it, so after every CPU reveal the hero slot showed a dead
-      // OFF THE BOARD stamp until the player discovered the card row —
-      // which, at short viewports, was below the fold. A 6-year-old is not
-      // going to find that. After the same beat the reveal itself got, hand
-      // the spotlight to the next candidate; a card tap during the beat
-      // (which sets `pick` mode itself) wins over this default.
-      this.timer = setTimeout(() => {
-        this.timer = null;
-        if (this.spotlightMode !== 'cpu' || isDraftComplete(this.state) || this.state.turn !== 'player') {
-          return;
-        }
-        this.spotlightId = this.state.pool[0] ?? null;
-        this.spotlightMode = 'pick';
-        this.paint();
-      }, CPU_BEAT_MS);
+      this.spotlightId = this.state.pool[0] ?? null;
+      this.spotlightMode = 'pick';
+      this.paint();
     }, CPU_BEAT_MS);
   }
 
@@ -258,13 +329,17 @@ export class DraftScreen implements Screen {
       : done
         ? 'your team is ready!'
         : this.busy
-          ? 'they’re picking…'
+          ? this.friend
+            ? 'your friend is picking… 🔍'
+            : 'they’re picking…'
           : this.spotlightMode === 'pick'
             ? `pick your favorite — ${9 - this.state.playerTeam.length} to go`
             : `tap a kid — ${9 - this.state.playerTeam.length} to go`;
 
-    this.go.classList.toggle('is-hidden', !done);
-    this.fill.classList.toggle('is-hidden', done);
+    // Online: no auto-fill (every pick on the wire is a person's) and no PLAY
+    // BALL (`readyWhenDone`).
+    this.go.classList.toggle('is-hidden', !done || !!this.friend);
+    this.fill.classList.toggle('is-hidden', done || !!this.friend);
     this.board.classList.toggle('is-locked', this.busy || done);
   }
 
@@ -335,6 +410,11 @@ export class DraftScreen implements Screen {
       pick.dataset.stageCover = '';
       this.spotlight.appendChild(pick);
     }
+    else if (isDraftComplete(this.state) && this.friend) {
+      const stamp = el('div', 'draft-preview__stamp is-mine', 'GET READY! ⚾');
+      stamp.dataset.stageCover = '';
+      this.spotlight.appendChild(stamp);
+    }
     else if (isDraftComplete(this.state)) {
       // ★ THE WAY FORWARD LIVES IN THE HERO SLOT. The go button used to sit
       // at the bottom of the scroll column — below the fold at laptop sizes,
@@ -344,7 +424,14 @@ export class DraftScreen implements Screen {
       this.go.dataset.stageCover = '';
       this.spotlight.appendChild(this.go);
     } else {
-      const stamp = el('div', `draft-preview__stamp is-${this.spotlightMode}`, this.spotlightMode === 'mine' ? 'ON YOUR TEAM!' : 'OFF THE BOARD');
+      // Online, the kid in the spotlight while the friend chooses is still on
+      // the board — it is simply not our turn.
+      const waiting = !!this.friend && this.spotlightMode === 'pick';
+      const stamp = el(
+        'div',
+        `draft-preview__stamp is-${this.spotlightMode}`,
+        this.spotlightMode === 'mine' ? 'ON YOUR TEAM!' : waiting ? 'YOUR FRIEND’S TURN' : 'OFF THE BOARD'
+      );
       stamp.dataset.stageCover = '';
       this.spotlight.appendChild(stamp);
     }

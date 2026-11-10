@@ -2284,6 +2284,20 @@ The three edges the first version left open are closed (protocol v9). **Steals a
 
 Building those against two live browsers found four faults the mode had shipped with, all fixed in the same change. **Jerseys:** a guest's device baked jerseys for its own nine twice and never for the host's, so the host's whole team drew as missing-texture boxes on the guest's screen; and a kid-mode online game, which skips the Lineup screen, had nothing baking jerseys at all. Lineup now bakes the right nine, the net draft bakes both on its way out in kid mode (while it is still ticking the session), and `GameScene.preload` is the backstop. **The lineup handoff:** `lineup` is sent once, and a device still finishing the draft ceremony dropped it — leaving that kid on "waiting for your friend…" forever while the other started a game alone; the draft scene now keeps it for the Lineup screen. **Heartbeats:** the Lineup screen never ticked the session, so a device parked there sent nothing and the other end called the channel lost. **Soft disconnects never healed:** a quiet spell longer than `NET.STALE_MS` with the channel still open — a tab switched away, a stalled clock — put a session into recovery that only a guest re-dial could end, so a host that noticed first waited out the whole 30 seconds and ended the game on a friend who was already back. Traffic on an open channel now ends the recovery (`net/peer.ts`), and a guest that recovers asks for the snapshot (`resync`) because only the host can send `resume`. An 8-second stall mid-game was measured both ways: 30 seconds to GOOD GAME before, an instant resume after.
 
+### Two-device online play in v2 (🔗 PLAY A FRIEND, under MORE GAMES)
+
+v2 plays a friend on a second device with the same room codes, the same broker and the same session layer as v1 (`src/net/peer.ts`, shared and still the only peerjs import — loaded lazily, so the front door does not pay for WebRTC until the lobby opens). A v2 hello says `game: 'v2'`, so a CLASSIC device that dials a v2 room is told it is the other game rather than left to desync.
+
+**The host runs the one sim and the guest never simulates** — v1's rule, for v1's reason — but the mirror is built differently, because v2 already had the seam. `GameView` pumps a generator: it calls `next(inputs)` and draws the `LiveFrame` that comes back. The guest pumps a `RemoteGame` (`src/v2/net/frameWire.ts`) that answers the same `next()` with the host's frames, each preceded by the sim events that led to it. So the guest's windup, pitch flight, play-end hold, camera, callouts and sound are `GameView`'s own code fed the same sequence, not a second implementation. A test plays a whole game through encode → JSON text → decode and requires the guest to be handed, tick for tick, the frame the host yielded, every event in order, and the same final result.
+
+**A live play is sent as what changed.** One frame per sim tick is about 3.8 kB of JSON; a structural diff against the previous frame (`jsonDelta.ts`) is 374 bytes on the test's seed — roughly 22 kB/s at sixty ticks where whole frames would be 226. The diff is generic rather than a hand-kept list of "dynamic" fields, so a field added to `PlayState` cannot be forgotten on the wire. Every non-live frame and the first tick of every play go whole, which makes each one a resync point.
+
+**Every timing window resolves on the acting device.** A swing is `atSec`, seconds into the pitch on the batter's own screen, and a throw down likewise, so latency cannot eat a window; what it costs is a short wait while the host holds a finished pitch for the guest's word that its own window has closed (`OnlineSeat.ts`, `NET_GRACE_SEC`). **Online the sim has no side to guard** — it is run as pass-and-play runs it, with no human side — so `inputWire.ts` is the guard: each kid's verbs are admitted only for the role they hold this half, and everything off the wire is rebuilt field by field before it is believed. Tests assert it as behaviour: a guest's swing changes the game while it bats and changes nothing while the host does.
+
+**One subscriber for the whole match** (`OnlineMatch.ts`). Each of v1's online faults lived in the gap between one scene unsubscribing and the next subscribing; v2 has one listener for the life of the session, and whatever arrives before its screen exists is kept — the friend's picks queue for the draft, game traffic queues in the seat. The draft is the same alternating board with the friend picking where the CPU would; each device votes only for its own nine (`draftSession.pickByFriend` does not vote). No PLAY BALL tap: both devices go together after the last pick. Pause is both devices'; a dropped channel pauses under LOOKING FOR YOUR FRIEND and resumes with a whole frame; a friend who leaves is GOOD GAME and never a reason. PLAY AGAIN on the Result is the two-tap vote, into a fresh draft.
+
+Not in this first version: a batting-order screen (the drafted order bats), the custom captain, and instant replay (it stops the pump, and two pumps must stay in step). Reading the live-input path for this also turned up a likely fault in SOLO play that this change does not touch: `GameView` sets the steering pointer on any live tap, including a batter's tap on a base, and the sim applies a pointer to the fielding side without asking whose it was.
+
 ## 2026-08-08 BB2026 production re-audit — parity is not polish
 
 The 41-minute reference video was compared again against the deployed v2 at the
@@ -2910,8 +2924,8 @@ seeds where the CPU affords one. `DEFAULT_FEATURES.specialPitches` stays
 
 Human-performed voice acting, a cross-player pick-rate backend, externally
 sculpted/animated character replacements, more characters, and the Phase 3
-dinosaurs. v1's online mode has no listed edges left (see "Two-device online
-play"); v2 has no online mode yet.
+dinosaurs. Online play has no listed edges left in either game (see
+"Two-device online play" and "Two-device online play in v2").
 
 ## Whole-game art acceptance
 

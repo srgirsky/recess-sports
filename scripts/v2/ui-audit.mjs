@@ -539,14 +539,40 @@ const SCREENS = [
       await new Promise((r) => setTimeout(r, 60));
       document.querySelector('.screen--title .btn--modes')?.click();
       await new Promise((r) => setTimeout(r, 100));
-      // Lesson, two players, batting, pitching, watch (ModeScreen.ts EXTRA_MODES).
-      return document.querySelectorAll('.mode-card').length === 5 ? 'ok' : 'no five-mode menu';
+      // Lesson, two players, play a friend, batting, pitching, watch
+      // (ModeScreen.ts EXTRA_MODES).
+      return document.querySelectorAll('.mode-card').length === 6 ? 'ok' : 'no six-mode menu';
     })()`,
     mustSee: '.screen--modes .mode-card',
   },
   {
+    // The online lobby's two doors. Nothing dials from here: a room is only
+    // opened by MAKE A GAME, and only joined on the fourth picture.
+    name: 'online lobby',
+    reach: `(async () => {
+      document.querySelector('.mode-card[data-mode="online"]')?.click();
+      await new Promise((r) => setTimeout(r, 100));
+      return document.querySelectorAll('.screen--lobby .mode-card').length === 2 ? 'ok' : 'no two-door lobby';
+    })()`,
+    mustSee: '.screen--lobby .mode-card',
+  },
+  {
+    // Sixteen tap targets in a grid sized off the tap floor — the screen in
+    // this flow most able to put one under the minimum on a narrow phone.
+    name: 'online join grid',
+    reach: `(async () => {
+      document.querySelector('.screen--lobby [data-lobby="join"]')?.click();
+      await new Promise((r) => setTimeout(r, 100));
+      return document.querySelectorAll('.lobby-grid__pic').length === 16 ? 'ok' : 'no sixteen-picture grid';
+    })()`,
+    mustSee: '.lobby-grid .lobby-grid__pic',
+  },
+  {
     name: 'season',
     reach: `(async () => {
+      // The lobby's BACK lands on the modes screen, whose BACK lands on the title.
+      document.querySelector('.screen--lobby .mode-back')?.click();
+      await new Promise((r) => setTimeout(r, 60));
       document.querySelector('.screen--clubhouse .clubhouse-back')?.click();
       document.querySelector('.screen--modes .mode-back')?.click();
       await new Promise((r) => setTimeout(r, 100));

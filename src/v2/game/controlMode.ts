@@ -1,7 +1,7 @@
 // Which live verbs belong to the person in each focused game mode. Pure so a
 // hands-free mode cannot accidentally wait eight seconds for a hidden pitcher.
 
-export type PlayerControlMode = 'both' | 'batting' | 'pitching' | 'watch' | 'versus';
+export type PlayerControlMode = 'both' | 'batting' | 'pitching' | 'watch' | 'versus' | 'home';
 
 /**
  * PASS AND PLAY (`versus`): two people, one device. Player 1 bats the top and
@@ -18,6 +18,12 @@ export function controlsAt(
   half: 'top' | 'bottom'
 ): { bat: boolean; pitch: boolean; run: boolean; field: boolean } {
   if (mode === 'versus') return { bat: true, pitch: true, run: false, field: true };
+  // `home` is `both` from the other dugout: the online guest is the home side,
+  // so it pitches and fields the top and bats and runs the bottom.
+  if (mode === 'home') {
+    const top = half === 'top';
+    return { bat: !top, pitch: top, run: !top, field: top };
+  }
   return {
     bat: half === 'top' && (mode === 'both' || mode === 'batting'),
     pitch: half === 'bottom' && (mode === 'both' || mode === 'pitching'),
@@ -34,12 +40,14 @@ export function controlsAt(
  * verb by it — a verb sent in a half the sim believes belongs to the other
  * role is dropped. Away bats the top and fields the bottom, which is exactly
  * where every solo mode hands out its verbs, so the person is AWAY in all
- * three. Pitching practice used to answer 'home': the sim then took the half
+ * three; only the online guest (`home`) is HOME. Pitching practice used to answer 'home': the sim then took the half
  * the person pitches for the half they bat, and dropped PICK OFF and THROW!
  * as wrong-side. `controlMode.test.ts` asserts the agreement for every mode.
  */
 export function humanSideOf(mode: PlayerControlMode): 'away' | 'home' | undefined {
-  return mode === 'watch' || mode === 'versus' ? undefined : 'away';
+  if (mode === 'watch' || mode === 'versus') return undefined;
+  // The online guest sits in the home dugout (`controlsAt`'s `home` branch).
+  return mode === 'home' ? 'home' : 'away';
 }
 
 /** A short instruction for the verb that actually belongs to this player.
