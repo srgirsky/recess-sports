@@ -16,8 +16,12 @@
 //     still separates a kid from the grass at 40px, it no longer draws him;
 //   · grain in the dirt and softer-edged shadows (`Field.ts`, `Lighting.ts`).
 //
-// `?look=toon` is the old look, kept the way `?tonemap=` is kept: no gate can
-// see this decision, so the alternative stays one flag away for an A/B.
+// `?look=toon` is the stylised alternative, kept one flag away because no gate
+// can see this decision. Since 2026-11-10 it differs from `real` in exactly TWO
+// things: banded light (soft-edged, see `toonRamp`) and an ink contour. The
+// world's surface detail — dirt grain, turf blades, siding, soft clouds, haze,
+// lobed tree crowns — is shared by both, so do not put it behind `REAL` again:
+// a toon kid in a flat-filled world is what read as "awkward and fake".
 //
 // Pure of `three`, and safe under Node (the tests import materials).
 // ---------------------------------------------------------------------------

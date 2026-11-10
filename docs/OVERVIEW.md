@@ -3693,6 +3693,31 @@ does. The sky gains a haze band that is exactly the horizon colour at the
 horizon (the fog rule holds), and every venue takes the smooth self-shaded
 cloud. All of it sits behind `REAL`; `?look=toon` is unchanged.
 
+**November 10, a second pass on both looks.** The maintainer merged the real
+look and asked for two things at once: more real, and a toon that is "less
+awkward and fake". Looking at the side-by-side, the toon's problem was never
+that it was banded. It was three separate things: its band edges were a
+one-texel hard cut that zig-zagged along the long thin triangles of a limb; its
+ink line was heavy enough to draw the kid rather than edge him; and it stood in
+a world of flat fills. So `?look=toon` now means exactly two things — banded
+light and an ink contour — and nothing else:
+
+- the ramp's bands are still flat, but each blends into the next over a small
+  fraction of its width (`toonRamp`), so the mesh cannot serrate the edge;
+- the contour is about three quarters of its old width;
+- the WORLD is shared: dirt grain, turf blades, siding and shingles, the soft
+  clouds, the horizon haze and the lobed tree crowns belong to both looks.
+
+The real look gains what a smooth ramp cannot give a flat-coloured model: a
+faint cloth weave stitched to the bind-pose position (so it rides the limb
+rather than swimming through it) and fading by its own screen derivative, and
+an under-side darkening by world normal that seats a head on its shoulders and
+a cap brim over a face. Tree and bush crowns are no longer perfect 8-sided
+balls: a few more segments and broad radial lobes, inside the neighbourhood's
+existing triangle budget. Before and after: `docs/v2/look/pass2-cartoon.jpg`,
+`pass2-realistic.jpg`, `pass2-both.jpg`. Still true and still the ceiling: the
+kid models themselves are low-poly, and nothing here was measured on a tablet.
+
 ## October 2 — switching between the two games
 
 Both games were reachable from each other, but awkwardly:

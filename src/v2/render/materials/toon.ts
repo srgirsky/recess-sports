@@ -61,7 +61,6 @@ import {
   DataTexture,
   LinearFilter,
   MeshToonMaterial,
-  NearestFilter,
   RGBAFormat,
   type Texture,
   UnsignedByteType,
@@ -89,31 +88,51 @@ export const GROUND_STEPS = 8;
 
 const rampCache = new Map<number, DataTexture>();
 
+/** Texels per band in the toon ramp, and how much of a band its edge takes. */
+const BAND_TEXELS = 24;
+const BAND_EDGE = 0.14;
+
 /**
  * A stepped gradient ramp, built once per step count and shared.
  *
- * NearestFilter is load-bearing — with LinearFilter the steps blur back into a
- * smooth gradient and the whole look collapses.
+ * ★ THE BANDS ARE FLAT; THEIR EDGES ARE NOT A SINGLE TEXEL. The first ramp was
+ * one texel per step under NearestFilter, so a band boundary was a hard cut at
+ * one exact `dotNL` — and on a low-poly limb, where the normal is interpolated
+ * across long thin triangles, that cut zig-zags along the mesh edges. That
+ * sawtooth, not the banding itself, is what read as "awkward and fake" in the
+ * 2026-11-10 side-by-side. Each step now blends into the next over a small
+ * fraction of its width: still plainly cel bands (LinearFilter over a ramp
+ * that is flat for most of every step), with an edge the mesh cannot serrate.
  */
 export function toonRamp(steps = TOON_STEPS): DataTexture {
   if (REAL) return smoothRamp();
   const cached = rampCache.get(steps);
   if (cached) return cached;
 
-  const data = new Uint8Array(steps * 4);
-  for (let i = 0; i < steps; i++) {
-    // Bias the ramp so the lit plateau is wide and the terminator falls late:
-    // a chibi character is mostly lit, with one confident shadow side.
-    const t = (i + 1) / steps;
-    const v = Math.round(255 * (0.34 + 0.66 * t * t));
-    data[i * 4 + 0] = v;
-    data[i * 4 + 1] = v;
-    data[i * 4 + 2] = v;
-    data[i * 4 + 3] = 255;
+  // Bias the ramp so the lit plateau is wide and the terminator falls late:
+  // a chibi character is mostly lit, with one confident shadow side.
+  const level = (i: number): number => {
+    const t = (Math.min(steps - 1, Math.max(0, i)) + 1) / steps;
+    return 0.34 + 0.66 * t * t;
+  };
+  const n = steps * BAND_TEXELS;
+  const data = new Uint8Array(n * 4);
+  for (let x = 0; x < n; x++) {
+    const f = ((x + 0.5) / n) * steps;
+    const i = Math.floor(f);
+    const within = f - i;
+    // Blend toward the next band only inside the last BAND_EDGE of this one.
+    const u = Math.min(1, Math.max(0, (within - (1 - BAND_EDGE)) / BAND_EDGE));
+    const k = u * u * (3 - 2 * u);
+    const v = Math.round(255 * (level(i) + (level(i + 1) - level(i)) * k));
+    data[x * 4 + 0] = v;
+    data[x * 4 + 1] = v;
+    data[x * 4 + 2] = v;
+    data[x * 4 + 3] = 255;
   }
-  const tex = new DataTexture(data, steps, 1, RGBAFormat, UnsignedByteType);
-  tex.minFilter = NearestFilter;
-  tex.magFilter = NearestFilter;
+  const tex = new DataTexture(data, n, 1, RGBAFormat, UnsignedByteType);
+  tex.minFilter = LinearFilter;
+  tex.magFilter = LinearFilter;
   tex.generateMipmaps = false;
   tex.needsUpdate = true;
   rampCache.set(steps, tex);
@@ -181,6 +200,12 @@ export interface ToonOptions {
    * matte-cloth value; 0 for ground and chalk, which are rough all the way down.
    */
   specular?: number;
+  /**
+   * `real` look only: the fine weave and the under-side occlusion (see
+   * `makeToonMaterial`). On by default; `false` for a surface that brings its
+   * own, such as the turf and the infield.
+   */
+  surface?: boolean;
   /** Marks the material for the selective-bloom pass on the `high` perf tier. */
   emissiveGlow?: boolean;
   /**
@@ -202,6 +227,9 @@ export interface ToonOptions {
  * and no per-character shader.
  */
 export const FACE_ISLAND = { u0: 0.0, v0: 0.5, u1: 0.5, v1: 1.0 } as const;
+
+/** Weave cells per model unit (feet): threads a fraction of an inch across. */
+const WEAVE_FREQ = 42;
 
 /** The warm key highlight (matches art/fieldTexture.ts `lightenInt`'s target). */
 export const KEY_WARM = 0xfffae8;
@@ -240,8 +268,9 @@ export function makeToonMaterial(opts: ToonOptions = {}): MeshToonMaterial {
   }
 
   const specular = REAL ? (opts.specular ?? 0.16) : 0;
+  const surface = REAL && opts.surface !== false;
 
-  if (rimStrength > 0 || faceAtlas || specular > 0) {
+  if (rimStrength > 0 || faceAtlas || specular > 0 || surface) {
     mat.onBeforeCompile = (shader) => {
       if (faceAtlas) {
         shader.uniforms.uFaceAtlas = { value: faceAtlas };
@@ -367,6 +396,59 @@ export function makeToonMaterial(opts: ToonOptions = {}): MeshToonMaterial {
           );
       }
 
+      if (surface) {
+        // ★ TWO THINGS A SMOOTH RAMP CANNOT GIVE A FLAT-COLOURED MODEL.
+        //
+        // WEAVE. Every surface on a kid is one vertex colour, and a perfectly
+        // even colour under smooth light is what vinyl looks like. A real
+        // T-shirt has thread. This is a faint two-scale grain keyed on the
+        // BIND-POSE position — `position`, before skinning — so it is stitched
+        // to the cloth and rides the limb instead of swimming through it the
+        // way world-space noise would. It fades out by its own screen-space
+        // derivative, so a fielder at 40px carries none of it and cannot
+        // shimmer.
+        //
+        // OCCLUSION. The hemisphere light fills every down-facing surface as
+        // if open ground were below it, but under a chin, a cap brim, an arm
+        // or a hem there is a body in the way. Darkening by how far the WORLD
+        // normal points down is the cheapest stand-in for that, and it is most
+        // of what seats a head on its shoulders.
+        shader.vertexShader = shader.vertexShader
+          .replace('#include <common>', '#include <common>\nvarying vec3 vWeavePos;')
+          .replace('#include <begin_vertex>', '#include <begin_vertex>\nvWeavePos = position;');
+        shader.fragmentShader = shader.fragmentShader
+          .replace(
+            '#include <common>',
+            `#include <common>
+             varying vec3 vWeavePos;
+             float weaveHash( vec3 p ) {
+               return fract( sin( dot( p, vec3( 127.1, 311.7, 74.7 ) ) ) * 43758.5453 );
+             }
+             float weaveNoise( vec3 p ) {
+               vec3 i = floor( p ), f = fract( p );
+               vec3 u = f * f * ( 3.0 - 2.0 * f );
+               return mix(
+                 mix( mix( weaveHash( i ), weaveHash( i + vec3( 1, 0, 0 ) ), u.x ),
+                      mix( weaveHash( i + vec3( 0, 1, 0 ) ), weaveHash( i + vec3( 1, 1, 0 ) ), u.x ), u.y ),
+                 mix( mix( weaveHash( i + vec3( 0, 0, 1 ) ), weaveHash( i + vec3( 1, 0, 1 ) ), u.x ),
+                      mix( weaveHash( i + vec3( 0, 1, 1 ) ), weaveHash( i + vec3( 1, 1, 1 ) ), u.x ), u.y ),
+                 u.z );
+             }`
+          )
+          .replace(
+            '#include <opaque_fragment>',
+            `{
+               vec3 wp = vWeavePos * WEAVE_FREQ;
+               float wFade = 1.0 - smoothstep( 0.18, 0.7, length( fwidth( wp ) ) );
+               float weave = weaveNoise( wp ) * 0.75 + weaveNoise( wp * 0.23 ) * 0.25;
+               outgoingLight *= 1.0 + ( weave - 0.5 ) * 0.14 * wFade;
+               vec3 wN = inverseTransformDirection( normalize( normal ), viewMatrix );
+               outgoingLight *= mix( 0.72, 1.0, smoothstep( -0.95, 0.1, wN.y ) );
+             }
+             #include <opaque_fragment>`.replace('WEAVE_FREQ', WEAVE_FREQ.toFixed(1))
+          );
+      }
+
       // The one handle on the compiled program. Without it `setFaceCell` would
       // have nothing to write to: `onBeforeCompile`'s `shader` is not reachable
       // from the material afterwards.
@@ -375,7 +457,7 @@ export function makeToonMaterial(opts: ToonOptions = {}): MeshToonMaterial {
     // Materials that compile differently must not share a program cache slot —
     // and a face material and a jersey material differ by a whole texture read.
     mat.customProgramCacheKey = () =>
-      `toon-rim-${rimStrength}-${rimColor.getHex()}-spec-${specular}-face-${faceAtlas ? faceAtlas.uuid : 'none'}`;
+      `toon-rim-${rimStrength}-${rimColor.getHex()}-spec-${specular}-surf-${surface}-face-${faceAtlas ? faceAtlas.uuid : 'none'}`;
   }
 
   mat.userData.emissiveGlow = opts.emissiveGlow === true;
