@@ -52,6 +52,10 @@ judging the art direction). Useful query flags:
 | `?skill=<level>` | seed the skill level: `tball`, `rookie`, `normal` (default) or `allstar` — the same four chips as the team screen, which remembers the choice |
 | `?log=1` | record the session and show the `⬇ LOG` download (counts only) |
 
+v1 (`/classic/`) has one render flag: `?hidpi=0` draws at the old fixed 960×640
+instead of filling a dense screen's pixels (`src/hidpi.ts`) — for an A/B, or to
+rule the sharpening out when chasing a rendering bug.
+
 Keys on the spike page: `1`–`5` switch camera preset, `V` cycles venue.
 
 ### Reviewing animation — `/v2/?anims=1`

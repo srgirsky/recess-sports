@@ -3513,6 +3513,34 @@ camera. It now projects the four bases and asserts several things:
 The change is render-only. The sim, every systems test, and both goldlog
 fingerprints (main `a71e6a2f`, kid `a1686f32`) are byte-identical.
 
+## November 10 — v1 fills the pixels a dense screen actually has
+
+What we believed: v1's art was the problem when it looked "soft". It was not.
+The game is authored in a fixed 960×640 space and `Scale.FIT` stretches that
+canvas with CSS, so on a 2× tablet the browser was upscaling a 960-wide picture
+to roughly 2,000 device pixels. The kid textures are rasterised at 240×312 —
+far above their on-field size — so the detail was there and being thrown away
+at the last step.
+
+Phaser 3 dropped its `resolution` config long ago, and the usual workaround (a
+bigger game plus a zoomed camera) would touch every scene and every hand-placed
+coordinate. `src/hidpi.ts` works one layer down instead: the canvas backing
+store is enlarged by the device pixel ratio (rounded up, capped at 2), and the
+GL viewport and scissor calls that address it are translated. Phaser still
+believes it draws 960×640. Text is its own canvas texture, so `scene.add.text`
+is wrapped to rasterise glyphs at the same ratio; a Text's logical width does
+not depend on resolution, so measure-then-place layout does not move.
+
+Two things went wrong on the way and both are in the module's comments. The
+renderer CACHES its scissor and skips the GL call when the rect is unchanged,
+so the full-screen rect it set at boot is never sent again — the first capture
+drew a quarter of the picture on a black canvas until the rect was re-seeded
+from GL at install. The same cache is why the rects are re-issued whenever
+drawing moves between the screen and a render target.
+
+Render-only: no system, no rng path and no layout number changed. `?hidpi=0`
+turns it off; the Canvas-renderer fallback and 1× screens are untouched.
+
 ## November 9 — a tap to send a runner steered the other team's fielder
 
 What we believed: the person's verbs were kept apart by side. STEAL, THROW!
