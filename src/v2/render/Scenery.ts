@@ -45,6 +45,8 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { FOUL_ANGLE_DEG, type FieldGeometry, type VenueId, fenceDistAt, pointAt } from '../sim/field';
 import { hash01 } from '../../art/fieldTexture';
 import { makeToonMaterial } from './materials/toon';
+import { addSurfaceDetail } from './materials/surfaceDetail';
+import { REAL } from './look';
 
 // --- The plan: pure, deterministic, testable --------------------------------
 
@@ -593,6 +595,8 @@ export function buildScenery(geo: FieldGeometry, venue: VenueId, opts: SceneryOp
   }
   const mat = makeToonMaterial({ color: 0xffffff, rimStrength: 0.12 });
   mat.vertexColors = true;
+  // Siding, shingles, leaf clumps and a darker foot (materials/surfaceDetail.ts).
+  if (REAL) addSurfaceDetail(mat);
   const mesh = new Mesh(merged, mat);
   mesh.name = 'neighborhood';
   mesh.castShadow = false;
@@ -600,7 +604,10 @@ export function buildScenery(geo: FieldGeometry, venue: VenueId, opts: SceneryOp
   root.add(mesh);
 
   // The dome's ceiling light must never have outdoor clouds drifting through it.
-  const clouds = cfg.theme === 'dome' ? null : buildClouds(opts.night === true, detailed);
+  // The real look takes the smooth, self-shaded cloud everywhere: a toon-lit
+  // cloud has a hard terminator and reads as a painted rock.
+  const softClouds = detailed || REAL;
+  const clouds = cfg.theme === 'dome' ? null : buildClouds(opts.night === true, softClouds);
   if (clouds) root.add(clouds);
 
   return {
@@ -608,7 +615,7 @@ export function buildScenery(geo: FieldGeometry, venue: VenueId, opts: SceneryOp
     dispose() {
       merged.dispose();
       clouds?.geometry.dispose();
-      if (detailed) (clouds?.material as MeshBasicMaterial | undefined)?.dispose();
+      if (softClouds) (clouds?.material as MeshBasicMaterial | undefined)?.dispose();
     },
   };
 }

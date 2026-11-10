@@ -8,6 +8,7 @@
 // ---------------------------------------------------------------------------
 
 import { BackSide, Color, Mesh, ShaderMaterial, SphereGeometry } from 'three';
+import { REAL } from './look';
 
 const VERT = /* glsl */ `
 varying vec3 vWorld;
@@ -22,12 +23,19 @@ const FRAG = /* glsl */ `
 uniform vec3  uTop;
 uniform vec3  uBottom;
 uniform float uRadius;
+uniform float uHaze;
 varying vec3  vWorld;
 void main() {
   // Bias the blend so the horizon band sits low and the sky reads open — a
   // linear ramp puts the transition halfway up and looks like a backdrop.
   float t = clamp( vWorld.y / ( uRadius * 0.55 ), 0.0, 1.0 );
-  gl_FragColor = vec4( mix( uBottom, uTop, pow( t, 0.65 ) ), 1.0 );
+  vec3 col = mix( uBottom, uTop, pow( t, 0.65 ) );
+  // Real look: air is thickest along the ground, so the pale band lingers
+  // above the horizon before the blue takes over, and the zenith deepens.
+  // At t = 0 this is exactly uBottom, so the fog-matches-horizon rule holds.
+  col = mix( col, uBottom, uHaze * exp( -t * 7.0 ) * 0.55 );
+  col *= 1.0 - uHaze * 0.16 * smoothstep( 0.25, 1.0, t );
+  gl_FragColor = vec4( col, 1.0 );
   #include <colorspace_fragment>
 }
 `;
@@ -69,6 +77,7 @@ export function buildSky(topHex = SKY_TOP, bottomHex = SKY_HORIZON, radius = SKY
       uTop: { value: new Color(topHex) },
       uBottom: { value: new Color(bottomHex) },
       uRadius: { value: radius },
+      uHaze: { value: REAL ? 1 : 0 },
     },
     side: BackSide,
     depthWrite: false,

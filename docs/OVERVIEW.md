@@ -3612,6 +3612,19 @@ and trees beyond the fence, and the painted sky. v1 is untouched; its own
 sharpness problem is that it renders a fixed 960x640 and lets the browser
 stretch it, which is measured but not yet fixed.
 
+**November 10, the scenery follows.** The neighbourhood is one merged mesh with
+a colour per vertex and no UVs, so a house wall was one flat colour edge to
+edge — the last thing in frame still saying "toy". `materials/surfaceDetail.ts`
+adds procedural detail keyed on what a fragment already knows (world position,
+world normal, its own colour): lapped siding on upright faces, staggered
+shingle courses on pitched ones, leaf clumps on saturated green, a darker foot
+where anything meets the ground. Foliage is told from a green-painted house by
+SATURATION, not by green excess — the first cut mottled the house. Every line
+pattern fades by its own screen-space derivative, as the park's plank wall
+does. The sky gains a haze band that is exactly the horizon colour at the
+horizon (the fog rule holds), and every venue takes the smooth self-shaded
+cloud. All of it sits behind `REAL`; `?look=toon` is unchanged.
+
 ## October 2 — switching between the two games
 
 Both games were reachable from each other, but awkwardly:
