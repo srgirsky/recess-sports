@@ -1419,7 +1419,10 @@ export function* simulateGameLive(spec: GameSpec, rng: Rng): Generator<LiveFrame
 
       if (half === 'bottom' && isWalkOff(inning, regulation, half, home.score + hs.score, away.score)) {
         home.score += hs.score;
-        lineScore.push([lineScore[inning - 1]?.[0] ?? 0, hs.score]);
+        // ★ REPLACE, never push: the top half already opened this inning's
+        // row. Pushing gave every walk-off a phantom extra inning — a one-inning
+        // game ended on a two-column board with the winning run under "2".
+        lineScore[inning - 1] = [lineScore[inning - 1][0], hs.score];
         log.push(`WALK-OFF! ${home.spec.name} win it`);
         walkOff = true;
         played = inning;
